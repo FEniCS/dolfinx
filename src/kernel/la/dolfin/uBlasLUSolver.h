@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-05-31
-// Last changed: 2006-07-10
+// Last changed: 2006-08-08
 
 #ifndef __UBLAS_LU_SOLVER_H
 #define __UBLAS_LU_SOLVER_H
@@ -17,11 +17,13 @@ namespace dolfin
   /// Forward declarations
   class uBlasVector;
   template<class Mat> class uBlasMatrix;
-  class uBlasPreconditioner;
 
-  /// This class implements the direct solution (LU factorization) for
-  /// linear systems of the form Ax = b using uBlas data types.
-  
+  /// This class implements the direct solution (LU factorization) of
+  /// linear systems of the form Ax = b using uBlas data types. Dense
+  /// matrices are solved using uBlas LU factorisation, and sparse matrices
+  /// are solved using UMFPACK (http://www.cise.ufl.edu/research/sparse/umfpack/)
+  /// is installed. Matrices can also be inverted.
+    
   class uBlasLUSolver : public uBlasLinearSolver, public Parametrized
   {
 
@@ -36,29 +38,15 @@ namespace dolfin
     /// Solve linear system Ax = b (A is dense)
     uint solve(const uBlasMatrix<ublas_dense_matrix>& A, uBlasVector& x, const uBlasVector& b) const;
 
-    // FIXME: sort out uBlasLinearSolver interface
-    /// Solve linear system Ax = b (A is dense)
-//    uint solve(const uBlasKrylovMatrix& A, uBlasVector& x, const uBlasVector& b)
-//    { 
-//      dolfin_error("uBlas LU solver does not support virtual matrices"); 
-//      return 0;
-//    } 
+    /// Solve linear system Ax = b using UMFPACK if installed (A is sparse)
+    uint solve(const uBlasMatrix<ublas_sparse_matrix>& A, uBlasVector& x, const uBlasVector& b);
 
     /// Solve linear system Ax = b in place (A is dense)
     uint solveInPlaceUBlas(uBlasMatrix<ublas_dense_matrix>& A, uBlasVector& x, const uBlasVector& b) const;
 
-    /// Compute the inverse of A (A is dense)
-    void invert(uBlasMatrix<ublas_dense_matrix>& A) const;
-
-    //FIXME: not sure what's happening here
-    /// Compute the inverse of A (A is sparse)
-    void invert(uBlasMatrix<ublas_sparse_matrix>& A) const
-      {
-      }
-
-    /// Solve linear system Ax = b (A is sparse)
-    /// UMFPACK is used if it has been configured. Otherwise a Krylov is used.
-    uint solve(const uBlasMatrix<ublas_sparse_matrix>& A, uBlasVector& x, const uBlasVector& b);
+    /// Compute the inverse of A (A is dense or sparse)
+    template<class Mat>
+    void invert(Mat& A) const;
 
   private:
     
@@ -70,6 +58,22 @@ namespace dolfin
   //---------------------------------------------------------------------------
   // Implementation of template functions
   //---------------------------------------------------------------------------
+  template<class Mat>
+  void uBlasLUSolver::invert(Mat& A) const
+  {
+    const uint M = A.size1();
+    dolfin_assert(M == A.size2());
+  
+    // Create indentity matrix
+    Mat X(M, M);
+    X.assign(ublas::identity_matrix<real>(M));
+
+    // Solve
+    solveInPlace(A, X);
+
+    A.assign_temporary(X);
+  }
+  //-----------------------------------------------------------------------------
   template<class Mat, class B>
   dolfin::uint uBlasLUSolver::solveInPlace(Mat& A, B& X) const
   {

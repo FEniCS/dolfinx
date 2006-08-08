@@ -2,14 +2,14 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-06-01
-// Last changed: 2006-07-10
+// Last changed: 2006-08-08
 
-#include <dolfin/timing.h>
 #include <dolfin/dolfin_log.h>
 #include <dolfin/uBlasLUSolver.h>
 #include <dolfin/uBlasKrylovSolver.h>
 #include <dolfin/uBlasDenseMatrix.h>
 #include <dolfin/uBlasSparseMatrix.h>
+#include <dolfin/uBlasVector.h>
 
 extern "C" 
 {
@@ -45,52 +45,16 @@ dolfin::uint uBlasLUSolver::solve(const uBlasMatrix<ublas_dense_matrix>& A,
   x.assign(b);
 
   // Solve
-  solveInPlace(Atemp, x);
-
-  return 1;
-}
-//-----------------------------------------------------------------------------
-dolfin::uint uBlasLUSolver::solveInPlaceUBlas(uBlasMatrix<ublas_dense_matrix>& A, 
-                                      uBlasVector& x, const uBlasVector& b) const
-{
-  const uint M = A.size1();
-  dolfin_assert(M == b.size());
-  
-  if( x.size() != M )
-    x.resize(M);
-
-  // Initialise solution vector
-  x.assign(b);
-
-  // Solve
-  solveInPlace(A, x);
-
-  return 1;
-}
-//-----------------------------------------------------------------------------
-void uBlasLUSolver::invert(uBlasMatrix<ublas_dense_matrix>& A) const
-{
-  const uint M = A.size1();
-  dolfin_assert(M == A.size2());
-  
-  // Create indentity matrix
-  ublas_dense_matrix X(M, M);
-  X.assign(ublas::identity_matrix<real>(M));
-
-  // Solve
-  solveInPlace(A, X);
-
-  A.assign_temporary(X);
+  return solveInPlace(Atemp, x);
 }
 //-----------------------------------------------------------------------------
 #if defined(HAVE_UMFPACK_H)|| defined(HAVE_UMFPACK_UMFPACK_H) || defined(HAVE_UFSPARSE_UMFPACK_H)
-
 dolfin::uint uBlasLUSolver::solve(const uBlasMatrix<ublas_sparse_matrix>& A, uBlasVector& x, 
     const uBlasVector& b)
 {
   // Check dimensions and get number of non-zeroes
-  const uint M = A.size(0);
-  const uint N = A.size(1);
+  const uint M  = A.size(0);
+  const uint N  = A.size(1);
   const uint nz = A.nnz();
 
   dolfin_assert(M == A.size(1));
@@ -135,8 +99,9 @@ dolfin::uint uBlasLUSolver::solve(const uBlasMatrix<ublas_sparse_matrix>& A, uBl
 
   return 1;
 }
-
+//-----------------------------------------------------------------------------
 #else
+//-----------------------------------------------------------------------------
 
 dolfin::uint uBlasLUSolver::solve(const uBlasMatrix<ublas_sparse_matrix>& A, uBlasVector& x, 
     const uBlasVector& b)
@@ -147,5 +112,21 @@ dolfin::uint uBlasLUSolver::solve(const uBlasMatrix<ublas_sparse_matrix>& A, uBl
   return solver.solve(A, x, b);
 }
 #endif
+//-----------------------------------------------------------------------------
+dolfin::uint uBlasLUSolver::solveInPlaceUBlas(uBlasMatrix<ublas_dense_matrix>& A, 
+                                      uBlasVector& x, const uBlasVector& b) const
+{
+  const uint M = A.size1();
+  dolfin_assert(M == b.size());
+  
+  if( x.size() != M )
+    x.resize(M);
+
+  // Initialise solution vector
+  x.assign(b);
+
+  // Solve
+  return solveInPlace(A, x);
+}
 //-----------------------------------------------------------------------------
 
