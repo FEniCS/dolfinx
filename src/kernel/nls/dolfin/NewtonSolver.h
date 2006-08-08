@@ -10,16 +10,18 @@
 #include <dolfin/NonlinearProblem.h>
 #include <dolfin/Matrix.h>
 #include <dolfin/Vector.h>
-#include <dolfin/BilinearForm.h>
 #include <dolfin/Parametrized.h>
-#include <dolfin/LinearSolver.h>
 #include <dolfin/KrylovSolver.h>
-#include <dolfin/LU.h>
+#include <dolfin/LinearSolver.h>
 
 namespace dolfin
 {
   class BoundaryCondition;
+  class BilinearForm;
   class LinearForm;
+#ifdef HAVE_PETSC_H
+  class PETScPreconditioner;
+#endif
   class Mesh;
 
   /// This class defines a Newton solver for equations of the form F(u) = 0.
@@ -33,7 +35,7 @@ namespace dolfin
 
 #ifdef HAVE_PETSC_H
     /// Initialise nonlinear solver and choose matrix type which defines LU solver
-    NewtonSolver(PETScMatrix::Type matrix_type);
+    NewtonSolver(Matrix::Type matrix_type);
 #endif
 
     /// Initialise nonlinear solver and choose Krylov solver
@@ -41,7 +43,7 @@ namespace dolfin
 
 #ifdef HAVE_PETSC_H
     /// Initialise nonlinear solver and choose Krylov solver
-    NewtonSolver(PETScKrylovSolver::Type linear_solver, PETScPreconditioner::Type preconditioner);
+    NewtonSolver(KrylovSolver::Type linear_solver, PETScPreconditioner::Type preconditioner);
 #endif
 
     /// Destructor

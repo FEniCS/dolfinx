@@ -4,8 +4,6 @@
 // First added:  2005-09-20
 // Last changed: 2006-05-07
 
-#ifdef HAVE_PETSC_H
-
 #include <dolfin/StokesSolver.h>
 #include <dolfin/L2Error.h>
 #include <dolfin/Stokes2D.h>
@@ -62,6 +60,7 @@ void StokesSolver::solve()
 
   // Solve the linear system
   GMRES solver;
+  set("Krylov shift nonzero", 1e-10);
   solver.solve(A, x, b);
   Function w(x, mesh, a->trial());
 
@@ -103,5 +102,3 @@ void StokesSolver::checkError(Mesh& mesh, Function& U)
   dolfin_info("L2 error for velocity: %.3e", norm);
 }
 //-----------------------------------------------------------------------------
-
-#endif

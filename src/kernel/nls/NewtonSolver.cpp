@@ -7,7 +7,10 @@
 // Last changed: 2006-06-06
 
 #include <dolfin/FEM.h>
+#include <dolfin/BilinearForm.h>
+#include <dolfin/LinearForm.h>
 #include <dolfin/NewtonSolver.h>
+#include <dolfin/LU.h>
 #include <iostream>
 
 using namespace dolfin;
