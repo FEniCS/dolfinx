@@ -12,6 +12,7 @@
 #include <dolfin/Vector.h>
 #include <dolfin/BilinearForm.h>
 #include <dolfin/Parametrized.h>
+#include <dolfin/LinearSolver.h>
 #include <dolfin/KrylovSolver.h>
 #include <dolfin/LU.h>
 
