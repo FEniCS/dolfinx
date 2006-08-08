@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-27
-// Last changed: 2006-07-06
+// Last changed: 2006-08-08
 
 #ifndef __UPDATED_MULTI_ADAPTIVE_JACOBIAN_H
 #define __UPDATED_MULTI_ADAPTIVE_JACOBIAN_H
@@ -34,8 +34,8 @@ namespace dolfin
     /// Compute product y = Ax
     void mult(const uBlasVector& x, uBlasVector& y) const;
 
-    /// Recompute Jacobian if necessary
-    void update();
+    /// (Re-)initialize computation of Jacobian
+    void init();
 
     /// Friends
     friend class MultiAdaptivePreconditioner;

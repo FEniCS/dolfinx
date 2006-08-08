@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-27
-// Last changed: 2006-07-06
+// Last changed: 2006-08-08
 
 #include <dolfin/dolfin_math.h>
 #include <dolfin/uBlasVector.h>
@@ -56,7 +56,7 @@ void UpdatedMultiAdaptiveJacobian::mult(const uBlasVector& x,
   y /= h;
 }
 //-----------------------------------------------------------------------------
-void UpdatedMultiAdaptiveJacobian::update()
+void UpdatedMultiAdaptiveJacobian::init()
 {
   // Compute size of increment
   real umax = 0.0;

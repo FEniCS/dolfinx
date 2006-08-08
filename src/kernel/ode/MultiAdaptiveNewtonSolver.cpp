@@ -76,7 +76,7 @@ void MultiAdaptiveNewtonSolver::start()
   b.init(nj);
   
   // Recompute Jacobian on each time slab
-  A->update();
+  A->init();
 
   //debug();
   //A->disp(true, 10);

@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-27
-// Last changed: 2006-07-06
+// Last changed: 2006-08-08
 
 #include <dolfin/dolfin_math.h>
 #include <dolfin/uBlasVector.h>
@@ -78,7 +78,7 @@ void MultiAdaptiveJacobian::mult(const uBlasVector& x, uBlasVector& y) const
     dGmult(x, y);
 }
 //-----------------------------------------------------------------------------
-void MultiAdaptiveJacobian::update()
+void MultiAdaptiveJacobian::init()
 {
   // Compute Jacobian at the beginning of the slab
   real t = ts.starttime();
