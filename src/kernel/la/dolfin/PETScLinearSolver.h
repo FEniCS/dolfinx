@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2006.
 //
 // First added:  2004-06-19
-// Last changed: 2006-08-07
+// Last changed: 2006-08-08
 
 #ifndef __PETSC_LINEAR_SOLVER_H
 #define __PETSC_LINEAR_SOLVER_H
@@ -19,11 +19,10 @@ namespace dolfin
   /// Forward declarations
   class PETScMatrix;
   class PETScVector;
-  class PETScKrylovMatrix;
-
 
   /// This class defines the interfaces for PETSc linear solvers for
   /// systems of the form Ax = b.
+
   class PETScLinearSolver
   {
   public:
@@ -36,9 +35,6 @@ namespace dolfin
 
     /// Solve linear system Ax = b
     virtual uint solve(const PETScMatrix& A, PETScVector& x, const PETScVector& b) = 0;
-
-    /// Solve linear system Ax = b (matrix-free version)
-    virtual uint solve(const PETScKrylovMatrix& A, PETScVector& x, const PETScVector& b) = 0;
 
   };
 

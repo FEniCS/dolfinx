@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2006.
 //
 // First added:  2004-06-19
-// Last changed: 2006-08-07
+// Last changed: 2006-08-08
 
 #ifndef __UBLAS_LINEAR_SOLVER_H
 #define __UBLAS_LINEAR_SOLVER_H
@@ -18,10 +18,10 @@ namespace dolfin
   /// Forward declarations
   class uBlasVector;  
   template<class Mat> class uBlasMatrix;
-  class uBlasKrylovMatrix;  
 
   /// This class defines the interfaces for uBlas-based linear solvers for
   /// systems of the form Ax = b.
+
   class uBlasLinearSolver
   {
   public:
@@ -32,12 +32,9 @@ namespace dolfin
     /// Destructor
     virtual ~uBlasLinearSolver(){}
 
-    /// Solve linear system Ax = b
+    /// Solve linear system Ax = b (A is sparse)
     virtual uint solve(const uBlasMatrix<ublas_sparse_matrix>& A, uBlasVector& x, 
         const uBlasVector& b) = 0;
-
-    /// Solve linear system Ax = b (matrix-free version)
-//    virtual uint solve(const uBlasKrylovMatrix& A, uBlasVector& x, const uBlasVector& b) = 0;
 
   };
 
