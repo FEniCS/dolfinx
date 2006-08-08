@@ -64,7 +64,7 @@ namespace dolfin
 
     // Vectors used to compute dense copy of the Jacobian
     uBlasVector ej, Aj;
-    
+
   };
 
 }

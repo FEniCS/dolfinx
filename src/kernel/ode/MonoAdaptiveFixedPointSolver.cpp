@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-28
-// Last changed: 2006-07-06
+// Last changed: 2006-08-08
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/dolfin_parameter.h>
@@ -30,7 +30,8 @@ MonoAdaptiveFixedPointSolver::~MonoAdaptiveFixedPointSolver()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-real MonoAdaptiveFixedPointSolver::iteration(uint iter, real tol)
+real MonoAdaptiveFixedPointSolver::iteration(real tol, uint iter,
+					     real d0, real d1)
 {
   // Compute size of time step
   const real k = ts.length();

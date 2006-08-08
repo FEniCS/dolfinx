@@ -43,8 +43,8 @@ namespace dolfin
     /// End iterations (optional)
     virtual void end();
 
-    /// Make an iteration, return 
-    virtual real iteration(uint iter, real tol) = 0;
+    /// Make an iteration, return increment
+    virtual real iteration(real tol, uint itera, real d0, real d1) = 0;
 
     /// Size of system
     virtual uint size() const = 0;
@@ -72,6 +72,11 @@ namespace dolfin
 
     // Number of local iterations made (GMRES)
     uint num_local_iterations;
+
+  private:
+
+    /// Choose tolerance
+    void chooseTolerance();
 
   };
 

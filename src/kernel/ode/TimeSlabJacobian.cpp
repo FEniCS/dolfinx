@@ -30,12 +30,14 @@ void TimeSlabJacobian::init()
 //-----------------------------------------------------------------------------
 void TimeSlabJacobian::update()
 {
+  cout << "Recomputing Jacobian" << endl;
+
   // Initialize matrix if not already done
   const uint N = ode.size();
   A.init(N, N);
   ej.init(N);
   Aj.init(N);
- 
+
   // Reset unit vector
   ej = 0.0;
 
@@ -43,6 +45,9 @@ void TimeSlabJacobian::update()
   for (uint j = 0; j < ode.size(); j++)
   {
     ej(j) = 1.0;
+
+    cout << ej << endl;
+    cout << Aj << endl;
     
     // Compute product Aj = Aej
     mult(ej, Aj);

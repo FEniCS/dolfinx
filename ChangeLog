@@ -1,3 +1,4 @@
+ - Enable use of direct solver for ODE solver (experimental)
  - Remove demo bistable
  - Cleanup linear algebra
  - Use UMFPACK for LU solver with uBlas matrix types
