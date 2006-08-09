@@ -5,9 +5,7 @@
 // Modified by Anders Logg 2005-2006.
 //
 // First added:  2005
-// Last changed: 2006-05-07
-
-#ifdef HAVE_PETSC_H
+// Last changed: 2006-08-08
 
 #include <dolfin/timing.h>
 #include <dolfin/NSESolver.h>
@@ -73,7 +71,11 @@ void NSESolver::solve()
   residual_con = 1.0e3;
 
   // Initialize algebraic solvers 
+#ifdef HAVE_PETSC_H
   GMRES solver_con(PETScPreconditioner::hypre_amg);
+#else
+  GMRES solver_con;
+#endif
   GMRES solver_mom;
  
   // Create functions for the velocity and pressure 
@@ -344,5 +346,3 @@ void NSESolver::SetInitialVelocity(Vector& xvel)
   }
 }
 //-----------------------------------------------------------------------------
-
-#endif
