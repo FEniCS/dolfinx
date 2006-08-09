@@ -1,5 +1,6 @@
 EXTRA_DIST = dolfin_la.h \
              DenseMatrix.h \
+             DenseVector.h \
              GenericMatrix.h \
              GenericVector.h \
              GMRES.h \
@@ -17,6 +18,7 @@ EXTRA_DIST = dolfin_la.h \
              PETScPreconditioner.h \
              PETScVector.h \
              SparseMatrix.h \
+             SparseVector.h \
              ublas.h \
              uBlasDenseMatrix.h \
              uBlasKrylovMatrix.h \
