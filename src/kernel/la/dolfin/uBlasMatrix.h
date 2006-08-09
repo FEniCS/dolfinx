@@ -181,7 +181,9 @@ namespace dolfin
     if( !assembled )
       dolfin_error("Matrix has not been assembled. Did you forget to call A.apply()?"); 
 
-    ublas::scalar_vector<double> one(size(1), 1.0);
+    const uint n = this->size(1);
+    m.init( n );
+    ublas::scalar_vector<double> one(n, 1.0);
     ublas::axpy_prod(*this, one, m, true);
   }
   //-----------------------------------------------------------------------------

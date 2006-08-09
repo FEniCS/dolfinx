@@ -2,11 +2,10 @@
 // Licensed under the GNU GPL Version 2.
 //
 // Modified by Anders Logg 2004-2006.
+// Modified by Garth N. Wells 2006.
 //
 // First added:  2004-02-26
-// Last changed: 2006-05-07
-
-#ifdef HAVE_PETSC_H
+// Last changed: 2006-08-09
 
 //#include <iostream>
 #include <sstream>
@@ -67,7 +66,7 @@ void ElasticitySolver::solve()
   // Synchronize f with time t
   f.sync(t);
   
-  File         file("elasticity.m");
+  File file("elasticity.m");
 
   // FIXME: Temporary fix
   int N = 3 * mesh.numVertices();
@@ -127,7 +126,6 @@ void ElasticitySolver::solve()
 
   FEM::lump(M, m);
 
-
   // Assemble initial values
   FEM::assemble(Lu0, xtmp1, mesh);
   FEM::assemble(Lv0, xtmp2, mesh);
@@ -178,25 +176,34 @@ void ElasticitySolver::solve()
 
       for(unsigned int i = 0; i < m.size(); i++)
       {
-	stepresidual(i) = -x21(i) + x20(i) -
-	  k * xtmp1(i) / m(i) + k * b(i) / m(i);
+	      stepresidual(i) = -x21(i) + x20(i) - k * xtmp1(i) / m(i) + k * b(i) / m(i);
       }
 
       x21 += stepresidual;
 
-      x11 = x10;
-      x11.axpy(k, x21old);
+      //GNW Avoid using axpy for compatibility between PETSc and uBlas
+//      x11 = x10;
+//      x11.axpy(k, x21old);
+      x11 = k*x21old;
+      x11 += x10;  
 
-      xtmp1 = x11;
-      xtmp1.axpy(-1, x11old);
-      xtmp2 = x21;
-      xtmp2.axpy(-1, x21old);
+//      xtmp1 = x11;
+//      xtmp1.axpy(-1, x11old);
+      xtmp1 = -1.0*x11old;
+      xtmp1 += x11;
+
+//      xtmp2 = x21;
+//      xtmp2.axpy(-1, x21old);
+      xtmp1 = -1.0*x21old;
+      xtmp1 += x21;
+
+
       //cout << "inc1: " << xtmp1.norm(Vector::linf) << endl;
       //cout << "inc2: " << xtmp2.norm(Vector::linf) << endl;
       if(std::max(xtmp1.norm(Vector::linf), xtmp2.norm(Vector::linf)) < 1e-8)
       {
-	cout << "fixed point iteration converged" << endl;
-	break;
+	      cout << "fixed point iteration converged" << endl;
+	      break;
       }
     }
 
@@ -274,5 +281,3 @@ void ElasticitySolver::solve(Mesh& mesh,
   solver.solve();
 }
 //-----------------------------------------------------------------------------
-
-#endif
