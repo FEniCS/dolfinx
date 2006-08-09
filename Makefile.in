@@ -622,9 +622,6 @@ uninstall-info: uninstall-info-recursive
 	tags tags-recursive uninstall uninstall-am uninstall-info-am
 
 
-test:
-	make -C src/test
-
 demo:
 	make -C src/demo/
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
