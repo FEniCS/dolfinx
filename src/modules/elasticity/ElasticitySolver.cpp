@@ -184,17 +184,20 @@ void ElasticitySolver::solve()
       //GNW Avoid using axpy for compatibility between PETSc and uBlas
 //      x11 = x10;
 //      x11.axpy(k, x21old);
-      x11 = k*x21old;
+      x11  = x21old;
+      x11 *= k;
       x11 += x10;  
 
 //      xtmp1 = x11;
 //      xtmp1.axpy(-1, x11old);
-      xtmp1 = -1.0*x11old;
+      xtmp1  = x11old;
+      xtmp1 *= -1.0;
       xtmp1 += x11;
 
 //      xtmp2 = x21;
 //      xtmp2.axpy(-1, x21old);
-      xtmp1 = -1.0*x21old;
+      xtmp1  = x21old;
+      xtmp1 *= -1.0;
       xtmp1 += x21;
 
 
