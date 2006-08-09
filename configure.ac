@@ -472,7 +472,7 @@ if test "$__PATH" = "`echo $__PATH | sed s/$__BINDIR//`"; then
    echo ''
    echo 'To compile a program against DOLFIN (including the demos)'
    echo 'you need to add the bin subdirectory of the installation'
-   echo 'diretory to your PATH which you can do with the commands'
+   echo 'diretory to your PATH which you can do with the command'
    echo ''
    echo "  export PATH=\"$prefix/bin:\$PATH\""
    echo ''
@@ -482,3 +482,15 @@ if test "$__PATH" = "`echo $__PATH | sed s/$__BINDIR//`"; then
    echo ''
 fi
 
+# Hint for PyDOLFIN when installed locally
+if test x$enable_pydolfin = xyes; then
+   echo 'To use the DOLFIN Python interface (PyDOLFIN), you may need'
+   echo 'set your PYTHONPATH which you can do with the command'
+   echo ''
+   echo "  export PYTHONPATH=\"$prefix/lib/python2.4/site-packages:\$PYTHONPATH\""
+   echo ''
+   echo 'for bash or, alternatively,'
+   echo ''
+   echo "  setenv PATH $prefix/lib/python2.4/site-packages:\${PYTHONPATH}"
+   echo ''
+fi
