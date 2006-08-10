@@ -1,3 +1,4 @@
+ - Bug fixes for Python interface PyDOLFIN
  - Enable use of direct solver for ODE solver (experimental)
  - Remove demo bistable
  - Cleanup linear algebra
