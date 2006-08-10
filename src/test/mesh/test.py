@@ -22,21 +22,21 @@ class SimpleShapes(unittest.TestCase):
         self.assertEqual(mesh.numVertices(), 480)
         self.assertEqual(mesh.numCells(), 1890)
 
-#class MeshRefinement(unittest.TestCase):
-#
-#    def testRefineUnitSquare(self):
-#        """Refine mesh of unit square"""
-#        mesh = NewUnitSquare(5, 7)
-#        mesh.refine()
-#        self.assertEqual(mesh.numVertices(), 165)
-#        self.assertEqual(mesh.numCells(), 280)
-#
-#    def testRefineUnitCube(self):
-#        """Refine mesh of unit cube"""
-#        mesh = NewUnitCube(5, 7, 9)
-#        mesh.refine()
-#        self.assertEqual(mesh.numVertices(), 3135)
-#        self.assertEqual(mesh.numCells(), 15120)
+class MeshRefinement(unittest.TestCase):
+
+    def testRefineUnitSquare(self):
+        """Refine mesh of unit square"""
+        mesh = NewUnitSquare(5, 7)
+        mesh.refine()
+        self.assertEqual(mesh.numVertices(), 165)
+        self.assertEqual(mesh.numCells(), 280)
+
+    def testRefineUnitCube(self):
+        """Refine mesh of unit cube"""
+        mesh = NewUnitCube(5, 7, 9)
+        mesh.refine()
+        self.assertEqual(mesh.numVertices(), 3135)
+        self.assertEqual(mesh.numCells(), 15120)
 
 if __name__ == "__main__":
     unittest.main()
