@@ -3,7 +3,7 @@
 %{
 #include <dolfin.h>
 
-#include "SettingsGlue.h"
+#include "dolfin_glue.h"
 
 #include <string>
   
@@ -313,9 +313,8 @@ namespace dolfin {
 
 /* glue */
 
-%include "SettingsGlue.h"
+%include "dolfin_glue.h"
 
 /* modules */
 
 /* %include "dolfin/ElasticityUpdatedSolver.h" */
-

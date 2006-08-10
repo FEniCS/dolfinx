@@ -1,8 +1,7 @@
 #include <iostream>
 
 #include <dolfin.h>
-#include "SettingsGlue.h"
-
+#include "dolfin_glue.h"
 
 // This function is required when linking to libraries which contain 
 // FORTRAN code
