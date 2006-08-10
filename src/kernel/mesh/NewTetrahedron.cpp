@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-06-05
-// Last changed: 2006-08-07
+// Last changed: 2006-08-08
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/NewCell.h>
@@ -63,12 +63,14 @@ void NewTetrahedron::createEntities(uint** e, uint dim, const uint v[]) const
     e[3][0] = v[0]; e[3][1] = v[3];
     e[4][0] = v[1]; e[4][1] = v[3];
     e[5][0] = v[2]; e[5][1] = v[3];
+    break;
   case 2:
     // Create the four faces
     e[0][0] = v[1]; e[0][1] = v[3]; e[0][2] = v[2];
     e[1][0] = v[2]; e[1][1] = v[3]; e[1][2] = v[0];
     e[2][0] = v[3]; e[2][1] = v[1]; e[2][2] = v[0];
     e[3][0] = v[0]; e[3][1] = v[1]; e[3][2] = v[2];
+    break;
   default:
     dolfin_error1("Don't know how to create entities of topological dimension %d.", dim);
   }
