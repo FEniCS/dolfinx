@@ -8,13 +8,14 @@ __license__  = "GNU GPL Version 2"
 import unittest
 from dolfin import *
 
-#class AddVectors(unittest.TestCase):
-#
-#    def testUBlasVector(self):
-#        """Add uBlas vectors"""
-#        x = uBlasVector(10)
-#        y = uBlasVector(10)
-#        z = uBlasVector(10)
+class AddVectors(unittest.TestCase):
+
+    def testUBlasVector(self):
+        """Add uBlas vectors"""
+        x = Vector(10)
+        y = Vector(10)
+        z = Vector(10)
+#        z = x + y
 #        x(0) = 1.0
 #        y(1) = 1.0    
 #        z(0) = 1.0

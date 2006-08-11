@@ -59,5 +59,15 @@ class InitialiseMatrices(unittest.TestCase):
         self.assertEqual(A.size(0), 10)
         self.assertEqual(A.size(1), 20)
 
+def suite():
+    """Returns a suite containing all the test cases in this module."""
+    # Build a TestSuite containing all the possible test case instances
+    # that can be made from the ListTestCase class using its 'test*'
+    # functions.
+    suite1 = unittest.makeSuite(CreateVectors)
+    suite2 = unittest.makeSuite(CreateMatrices)
+    suite3 = unittest.makeSuite(InitialiseMatrices)
+    return unittest.TestSuite((suite1, suite2, suite3))
+
 if __name__ == "__main__":
     unittest.main()
