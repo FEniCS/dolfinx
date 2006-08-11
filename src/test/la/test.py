@@ -15,5 +15,49 @@ class CreateVectors(unittest.TestCase):
         x = uBlasVector(10)
         self.assertEqual(x.size(), 10)
 
+class CreateMatrices(unittest.TestCase):
+
+    def testUBlasDenseMatrix(self):
+        """Create uBlas dense matrix"""
+        A = uBlasSparseMatrix(10,20)
+        self.assertEqual(A.size(0), 10)
+        self.assertEqual(A.size(1), 20)
+
+    def testUBlasSparseMatrix(self):
+        """Create uBlas sparse matrix"""
+        A = uBlasSparseMatrix(10,20)
+        self.assertEqual(A.size(0), 10)
+        self.assertEqual(A.size(1), 20)
+
+class InitialiseMatrices(unittest.TestCase):
+
+    def testUBlasDenseMatrix(self):
+        """Create and initialise uBlas dense matrix"""
+        A = uBlasDenseMatrix()
+        A.init(10,20)
+        self.assertEqual(A.size(0), 10)
+        self.assertEqual(A.size(1), 20)
+
+    def testUBlasSparseMatrix(self):
+        """Create and initialise uBlas dense matrix"""
+        A = uBlasSparseMatrix()
+        A.init(10,20)
+        self.assertEqual(A.size(0), 10)
+        self.assertEqual(A.size(1), 20)
+
+    def testUBlasDenseMatrixNonzeros(self):
+        """Create and initialise uBlas dense matrix with prescribed maximum non-zeros"""
+        A = uBlasDenseMatrix()
+        A.init(10,20,5)
+        self.assertEqual(A.size(0), 10)
+        self.assertEqual(A.size(1), 20)
+
+    def testUBlasSparseMatrixNonZeros(self):
+        """Create and initialise uBlas sparse matrix with prescribed maximum non-zeros"""
+        A = uBlasSparseMatrix()
+        A.init(10,20,5)
+        self.assertEqual(A.size(0), 10)
+        self.assertEqual(A.size(1), 20)
+
 if __name__ == "__main__":
     unittest.main()
