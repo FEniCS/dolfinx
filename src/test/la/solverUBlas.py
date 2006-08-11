@@ -31,18 +31,5 @@ class CreateSolvers(unittest.TestCase):
         """Create uBlas LU solver"""
         solver = uBlasLUSolver()
 
-#class AddMatrices(unittest.TestCase):
-#
-#    def testUBlasVector(self):
-#        """Add uBlas dense matrices"""
-#        X = uBlasDenseMatrix(10,10)
-#        Y = uBlasDenseMatrix(10,10)
-#        Z = uBlasDenseMatrix(10,10)
-#        X(2,3) = 1.0
-#        Y(4,4) = 1.0    
-#        Z(2,3) = 1.0
-#        Z(4,4) = 1.0
-#        self.assertEqual(X+Y, Z)
-
 if __name__ == "__main__":
     unittest.main()
