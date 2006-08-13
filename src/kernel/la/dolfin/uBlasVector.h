@@ -94,6 +94,10 @@ namespace dolfin
     /// Set all entries to zero
     void zero();
     
+    /// Element access
+    real get(int i);
+    void set(int i, real value);
+
     /// Display vector
     void disp(uint precision = 2) const;
 

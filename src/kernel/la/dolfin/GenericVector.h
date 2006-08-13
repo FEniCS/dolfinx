@@ -47,6 +47,10 @@ namespace dolfin
 
     /// Set all entries to zero
     virtual void zero() = 0;
+
+    /// Element access
+    virtual real get(int i) = 0;
+    virtual void set(int i, real value) = 0;
     
   };  
 

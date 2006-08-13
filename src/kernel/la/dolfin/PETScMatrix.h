@@ -153,6 +153,10 @@ namespace dolfin
     
     // Add value to element
     void addval(uint i, uint j, const real a);
+
+    /// Element access
+    real get(int i, int j);
+    void set(int i, int j, real value);
     
   private:
 

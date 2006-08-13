@@ -157,6 +157,10 @@ namespace dolfin
     // Add value to element
     void addval(uint i, const real a);
 
+    /// Element access
+    real get(int i);
+    void set(int i, real value);
+
     // Create Scatterer
     static VecScatter* createScatterer(PETScVector& x1, PETScVector& x2,
 				       int offset, int size);

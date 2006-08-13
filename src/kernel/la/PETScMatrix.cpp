@@ -433,6 +433,26 @@ void PETScMatrix::addval(uint i, uint j, const real a)
   MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
 }
 //-----------------------------------------------------------------------------
+real PETScMatrix::get(int i, int j)
+{
+  const int ii = static_cast<int>(i);
+  const int jj = static_cast<int>(j);
+
+  dolfin_assert(A);
+  PetscScalar val;
+  MatGetValues(A, 1, &ii, 1, &jj, &val);
+
+  return val;
+}
+//-----------------------------------------------------------------------------
+void PETScMatrix::set(int i, int j, real value)
+{
+  MatSetValue(A, i, j, value, INSERT_VALUES);
+
+  MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
+  MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
+}
+//-----------------------------------------------------------------------------
 void PETScMatrix::setType() 
 {
   MatType mat_type = getPETScType();

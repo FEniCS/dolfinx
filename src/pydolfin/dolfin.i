@@ -1,5 +1,7 @@
 %module(directors="1") dolfin
 
+%feature("autodoc", "1");
+
 %{
 #include <dolfin.h>
 
@@ -10,10 +12,10 @@
 using namespace dolfin;
 %}
 
-%typemap(python,in) real = double; 
-%typemap(python,out) real = double; 
-%typemap(python,in) uint = int; 
-%typemap(python,out) uint = int; 
+%typemap(in) real = double; 
+%typemap(out) real = double; 
+%typemap(in) uint = int; 
+%typemap(out) uint = int; 
 
 %typemap(out) dolfin::Parameter {
   {
@@ -77,6 +79,7 @@ using namespace dolfin;
 
 
 
+%feature("director") GenericVector;
 %feature("director") Function;
 %feature("director") BoundaryCondition;
 %feature("director") ODE;
@@ -90,50 +93,21 @@ using namespace dolfin;
 %import "dolfin.h"
 %import "dolfin/constants.h"
 
-#ifdef HAVE_PETSC_H
-  %rename(Vector) PETScVector;
-  %rename(Matrix) PETScSparseMatrix;
-  %rename(KrylovSolver) PETScKrylovSolver;
-#else
-  %rename(Vector) DenseVector;
-  %rename(Matrix) uBlasSparseMatrix;
-  %rename(KrylovSolver) uBlasKrylovSolver;
-#endif
 
+// DOLFIN public interface 
 
-%rename(set) glueset;
-%rename(get) glueget;
-%rename(increment) dolfin::VertexIterator::operator++;
-%rename(increment) dolfin::CellIterator::operator++;
-%rename(increment) dolfin::EdgeIterator::operator++;
-%rename(fmono) dolfin::ODE::f(const real u[], real t, real y[]);
-%rename(fmulti) dolfin::ODE::f(const real u[], real t, uint i);
+// FIXME: Order matters, why? 
 
-%ignore dolfin::uBlasLUSolver::invert;
-
-/* FIXME: Temporary, only works for PETSc data structures */
-
-/*%rename(copy) dolfin::SparseVector::operator=;*/
-/*%rename(__getitem__) dolfin::Vector::getval;*/
-/*%rename(__setitem__) dolfin::Vector::setval;*/
-
-%rename(__call__) dolfin::Function::operator();
-%rename(__getitem__) dolfin::Function::operator[];
-
-/* DOLFIN public interface */
-
-/* FIXME: Order matters, why? */
-
-/* main includes */
+// main includes 
 
 %include "dolfin/constants.h"
 %include "dolfin/init.h"
 
-/* math includes */
+// math includes 
 
 %include "dolfin/basic.h"
 
-/* common includes */
+// common includes 
 
 %include "dolfin/Array.h"
 %include "dolfin/List.h"
@@ -142,168 +116,51 @@ using namespace dolfin;
 %include "dolfin/utils.h"
 %include "dolfin/timing.h"
 
-/* log includes */
+// log includes 
 
 %include "dolfin/LoggerMacros.h"
 
+// settings includes 
 
-/* settings includes */
+%rename(set) glueset;
+%rename(get) glueget;
 
 %include "dolfin/Parameter.h"
-//%include "dolfin/ParameterSystem.h"
-//%include "dolfin/Parameter.h"
-//%include "dolfin/Settings.h"
-//%include "dolfin/ParameterList.h"
-//%include "dolfin/SettingsMacros.h"
-//%include "dolfin/SettingsManager.h"
-//%include "dolfin/Settings.h"
 
-/* io includes */
+// io includes 
 
 %include "dolfin/File.h"
 
-/* la includes */
+// la includes 
 
-// Declare dummy uBlas classes
+%include "dolfin_la.i"
 
-%inline %{
-  namespace boost{ namespace numeric{ namespace ublas{}}}
-%}
+// function includes 
 
-namespace dolfin {
-  class ublas_dense_matrix {};
-  class ublas_sparse_matrix {};
-}
-
-%include "dolfin/Matrix.h"
-%include "dolfin/Vector.h"
-%include "dolfin/GenericMatrix.h"
-%include "dolfin/GenericVector.h"
-%include "dolfin/DenseMatrix.h"
-%include "dolfin/DenseVector.h"
-%include "dolfin/SparseMatrix.h"
-%include "dolfin/SparseVector.h"
-%include "dolfin/LinearSolver.h"
-%include "dolfin/KrylovSolver.h"
-%include "dolfin/GMRES.h"
-%include "dolfin/LU.h"
-%include "dolfin/PETScEigenvalueSolver.h"
-%include "dolfin/PETScKrylovMatrix.h"
-%include "dolfin/PETScKrylovSolver.h"
-%include "dolfin/PETScLinearSolver.h"
-%include "dolfin/PETScLUSolver.h"
-%include "dolfin/PETScManager.h"
-%include "dolfin/PETScMatrix.h"
-%include "dolfin/PETScPreconditioner.h"
-%include "dolfin/PETScVector.h"
-%include "dolfin/ublas.h"
-%include "dolfin/uBlasDenseMatrix.h"
-%include "dolfin/uBlasDummyPreconditioner.h"
-%include "dolfin/uBlasKrylovMatrix.h"
-%include "dolfin/uBlasKrylovSolver.h"
-%include "dolfin/uBlasLinearSolver.h"
-%include "dolfin/uBlasLUSolver.h"
-%include "dolfin/uBlasMatrix.h"
-%include "dolfin/uBlasILUPreconditioner.h"
-%include "dolfin/uBlasPreconditioner.h"
-%include "dolfin/uBlasSparseMatrix.h"
-%include "dolfin/uBlasVector.h"
-
-%template(uBlasSparseMatrix) dolfin::uBlasMatrix<dolfin::ublas_sparse_matrix>;
-%template(uBlasDenseMatrix) dolfin::uBlasMatrix<dolfin::ublas_dense_matrix>;
-
-/* function includes */
+%rename(__call__) dolfin::Function::operator();
+%rename(__getitem__) dolfin::Function::operator[];
 
 %include "dolfin/Function.h"
 
-/* form includes */
+// form includes
 
 %include "dolfin/Form.h"
 %include "dolfin/BilinearForm.h"
 %include "dolfin/LinearForm.h"
 
-/* mesh includes */
+// mesh includes
 
-%include "dolfin/Mesh.h"
-%include "dolfin/Boundary.h"
-%include "dolfin/Point.h"
-%include "dolfin/Vertex.h"
-%include "dolfin/Edge.h"
-%include "dolfin/Triangle.h"
-%include "dolfin/Tetrahedron.h"
-%include "dolfin/Cell.h"
-%include "dolfin/Edge.h"
-%include "dolfin/Face.h"
-%include "dolfin/VertexIterator.h"
-%include "dolfin/CellIterator.h"
-%include "dolfin/EdgeIterator.h"
-%include "dolfin/FaceIterator.h"
-%include "dolfin/MeshIterator.h"
-%include "dolfin/UnitSquare.h"
-%include "dolfin/UnitCube.h"
+%include "dolfin_mesh.i"
 
-%include "dolfin/MeshConnectivity.h"
-%include "dolfin/MeshEditor.h"
-%include "dolfin/MeshEntity.h"
-%include "dolfin/MeshEntityIterator.h"
-%include "dolfin/MeshGeometry.h"
-%include "dolfin/MeshTopology.h"
-%include "dolfin/NewMesh.h"
-%include "dolfin/NewMeshData.h"
-%include "dolfin/MeshFunction.h"
-%include "dolfin/NewVertex.h"
-%include "dolfin/NewEdge.h"
-%include "dolfin/NewFace.h"
-%include "dolfin/NewFacet.h"
-%include "dolfin/NewCell.h"
-%include "dolfin/TopologyComputation.h"
-%include "dolfin/CellType.h"
-%include "dolfin/Interval.h"
-%include "dolfin/NewTriangle.h"
-%include "dolfin/NewTetrahedron.h"
-%include "dolfin/UniformMeshRefinement.h"
-%include "dolfin/NewPoint.h"
-%include "dolfin/BoundaryComputation.h"
-%include "dolfin/BoundaryMesh.h"
-%include "dolfin/NewUnitCube.h"
-%include "dolfin/NewUnitSquare.h"
+// ode includes
 
-/* ode includes */
+%include "dolfin_ode.i"
 
-%include "dolfin/Dependencies.h"
-/*%include "dolfin/Dual.h"*/
-%include "dolfin/Homotopy.h"
-%include "dolfin/HomotopyJacobian.h"
-%include "dolfin/HomotopyODE.h"
-%include "dolfin/Method.h"
-%include "dolfin/MonoAdaptiveFixedPointSolver.h"
-%include "dolfin/MonoAdaptiveJacobian.h"
-%include "dolfin/MonoAdaptiveNewtonSolver.h"
-%include "dolfin/MonoAdaptiveTimeSlab.h"
-%include "dolfin/MonoAdaptivity.h"
-%include "dolfin/MultiAdaptiveFixedPointSolver.h"
-%include "dolfin/MultiAdaptivePreconditioner.h"
-%include "dolfin/MultiAdaptiveNewtonSolver.h"
-%include "dolfin/MultiAdaptiveTimeSlab.h"
-%include "dolfin/MultiAdaptivity.h"
-%include "dolfin/ODE.h"
-%include "dolfin/ODESolver.h"
-%include "dolfin/ParticleSystem.h"
-%include "dolfin/Partition.h"
-%include "dolfin/ReducedModel.h"
-%include "dolfin/Sample.h"
-%include "dolfin/TimeSlab.h"
-%include "dolfin/TimeSlabJacobian.h"
-//%include "dolfin/TimeSlabSolver.h"
-%include "dolfin/TimeStepper.h"
-%include "dolfin/cGqMethod.h"
-%include "dolfin/dGqMethod.h"
-
-/* pde */
+// pde 
 
 %include "dolfin/TimeDependentPDE.h"
 
-/* fem includes */
+// fem includes 
 
 %include "dolfin/FEM.h"
 %include "dolfin/FiniteElement.h"
@@ -311,10 +168,11 @@ namespace dolfin {
 %include "dolfin/BoundaryValue.h"
 %include "dolfin/BoundaryCondition.h"
 
-/* glue */
+// glue 
 
 %include "dolfin_glue.h"
 
-/* modules */
+// modules 
 
-/* %include "dolfin/ElasticityUpdatedSolver.h" */
+// %include "dolfin/ElasticityUpdatedSolver.h" 
+

@@ -50,6 +50,10 @@ namespace dolfin
 
     /// Return maximum number of nonzero entries in all rows
     virtual uint nzmax() const = 0;
+
+    /// Element access
+    virtual real get(int i, int j) = 0;
+    virtual void set(int i, int j, real value) = 0;
     
   };
 

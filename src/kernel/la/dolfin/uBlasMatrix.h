@@ -112,6 +112,10 @@ namespace dolfin
     /// Return average number of non-zeros per row
     uint nzmax() const;
 
+    /// Element access
+    real get(int i, int j);
+    void set(int i, int j, real value);
+
     friend LogStream& operator<< <Mat> (LogStream&, const uBlasMatrix<Mat>&);
 
   private:
@@ -371,6 +375,18 @@ namespace dolfin
   inline uint uBlasMatrix<Mat>::nzmax() const 
   { 
     return this->nnz()/size(0); 
+  }
+  //---------------------------------------------------------------------------
+  template <class Mat>  
+  inline real uBlasMatrix<Mat>::get(int i, int j) 
+  { 
+    return (*this)(i, j);
+  }
+  //---------------------------------------------------------------------------
+  template <class Mat>  
+  inline void uBlasMatrix<Mat>::set(int i, int j, real value) 
+  { 
+    (*this)(i, j) = value;
   }
   //---------------------------------------------------------------------------
   template <class Mat>  

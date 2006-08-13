@@ -407,6 +407,32 @@ void PETScVector::addval(uint i, const real a)
   VecAssemblyEnd(x);
 }
 //-----------------------------------------------------------------------------
+real PETScVector::get(int i)
+{
+  dolfin_assert(x);
+
+  // Assumes uniprocessor case
+
+  real val = 0.0;
+
+  PetscScalar *array = 0;
+  VecGetArray(x, &array);
+  val = array[i];
+  VecRestoreArray(x, &array);
+
+  return val;
+}
+//-----------------------------------------------------------------------------
+void PETScVector::set(int i, real value)
+{
+  dolfin_assert(x);
+
+  VecSetValue(x, static_cast<int>(i), value, INSERT_VALUES);
+
+  VecAssemblyBegin(x);
+  VecAssemblyEnd(x);
+}
+//-----------------------------------------------------------------------------
 void PETScVector::gather(PETScVector& x1, PETScVector& x2, VecScatter& x1sc)
 {
   VecScatterBegin(x1.vec(), x2.vec(), INSERT_VALUES, SCATTER_FORWARD,
