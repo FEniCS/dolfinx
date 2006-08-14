@@ -66,7 +66,7 @@ namespace dolfin
     uint size(uint dim) const;
 
     /// Access element value
-    real get(uint i, uint j);
+    real get(uint i, uint j) const;
 
     /// Set element value
     void set(uint i, uint j, real value);
@@ -159,7 +159,7 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <class Mat>  
-  inline real uBlasMatrix<Mat>::get(uint i, uint j) 
+  inline real uBlasMatrix<Mat>::get(uint i, uint j) const
   { 
     return (*this)(i, j);
   }

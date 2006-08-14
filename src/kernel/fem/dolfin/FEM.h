@@ -370,7 +370,7 @@ namespace dolfin
             if ( !row_set[node] )
             {
               if ( x ) // Compute "residual" 
-                block_b[k] = bv.value - (*x)(node);
+                block_b[k] = bv.value - x->get(node);
               else if ( b ) 
                 block_b[k] = bv.value;
 

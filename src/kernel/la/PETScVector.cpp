@@ -163,7 +163,7 @@ dolfin::uint PETScVector::size() const
   return static_cast<uint>(n);
 }
 //-----------------------------------------------------------------------------
-real PETScVector::get(uint i)
+real PETScVector::get(uint i) const
 {
   dolfin_assert(x);
 

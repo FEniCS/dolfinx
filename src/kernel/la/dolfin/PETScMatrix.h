@@ -91,7 +91,7 @@ namespace dolfin
     uint nzmax() const;
    
     /// Access element value
-    real get(uint i, uint j);
+    real get(uint i, uint j) const;
 
     /// Set element value
     void set(uint i, uint j, real value);

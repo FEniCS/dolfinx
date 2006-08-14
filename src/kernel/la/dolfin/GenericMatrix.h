@@ -37,7 +37,7 @@ namespace dolfin
     virtual uint size(uint dim) const = 0;
 
     /// Access element value
-    virtual real get(uint i, uint j) = 0;
+    virtual real get(uint i, uint j) const = 0;
 
     /// Set element value
     virtual void set(uint i, uint j, real value) = 0;

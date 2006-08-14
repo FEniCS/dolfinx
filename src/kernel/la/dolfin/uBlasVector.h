@@ -73,7 +73,7 @@ namespace dolfin
     { return ublas::vector<real>::operator() (i); };
 
     /// Access element value
-    inline real get(uint i) { return (*this)(i); }
+    inline real get(uint i) const { return (*this)(i); }
 
     /// Set element value
     inline void set(uint i, real value) { (*this)(i) = value; }

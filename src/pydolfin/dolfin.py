@@ -472,10 +472,6 @@ class GenericVector(_object):
         """size(self) -> uint"""
         return _dolfin.GenericVector_size(*args)
 
-    def __call__(*args):
-        """__call__(self, uint i) -> real"""
-        return _dolfin.GenericVector___call__(*args)
-
     def get(*args):
         """get(self, uint i) -> real"""
         return _dolfin.GenericVector_get(*args)

@@ -32,11 +32,8 @@ namespace dolfin
     /// Return size
     virtual uint size() const = 0;
 
-    /// Access value of given entry
-    virtual real operator() (uint i) const = 0;
-
     /// Access element value
-    virtual real get(uint i) = 0;
+    virtual real get(uint i) const = 0;
 
     /// Set element value
     virtual void set(uint i, real value) = 0;

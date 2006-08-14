@@ -197,7 +197,7 @@ dolfin::uint PETScMatrix::nzmax() const
   return max;
 }
 //-----------------------------------------------------------------------------
-real PETScMatrix::get(uint i, uint j)
+real PETScMatrix::get(uint i, uint j) const
 {
   const int ii = static_cast<int>(i);
   const int jj = static_cast<int>(j);

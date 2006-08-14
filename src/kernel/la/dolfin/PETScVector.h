@@ -58,7 +58,7 @@ namespace dolfin
     uint size() const;
 
     /// Access element value
-    real get(uint i);
+    real get(uint i) const;
 
     /// Set element value
     void set(uint i, real value);
