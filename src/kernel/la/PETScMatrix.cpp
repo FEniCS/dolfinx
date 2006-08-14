@@ -5,7 +5,7 @@
 // Modified by Andy R. Terrel 2005.
 //
 // First added:  2004
-// Last changed: 2006-05-29
+// Last changed: 2006-08-14
 
 #ifdef HAVE_PETSC_H
 
@@ -197,9 +197,32 @@ dolfin::uint PETScMatrix::nzmax() const
   return max;
 }
 //-----------------------------------------------------------------------------
+real PETScMatrix::get(uint i, uint j)
+{
+  const int ii = static_cast<int>(i);
+  const int jj = static_cast<int>(j);
+
+  dolfin_assert(A);
+  PetscScalar val;
+  MatGetValues(A, 1, &ii, 1, &jj, &val);
+
+  return val;
+}
+//-----------------------------------------------------------------------------
+void PETScMatrix::set(uint i, uint j, real value)
+{
+  const int ii = static_cast<int>(i);
+  const int jj = static_cast<int>(j);
+
+  MatSetValue(A, ii, jj, value, INSERT_VALUES);
+  
+  MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
+  MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
+}
+//-----------------------------------------------------------------------------
 void PETScMatrix::set(const real block[],
-		       const int rows[], int m,
-		       const int cols[], int n)
+		      const int rows[], int m,
+		      const int cols[], int n)
 {
   MatSetValues(A, m, rows, n, cols, block, INSERT_VALUES);
 }
@@ -428,26 +451,6 @@ void PETScMatrix::setval(uint i, uint j, const real a)
 void PETScMatrix::addval(uint i, uint j, const real a)
 {
   MatSetValue(A, i, j, a, ADD_VALUES);
-
-  MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
-  MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
-}
-//-----------------------------------------------------------------------------
-real PETScMatrix::get(int i, int j)
-{
-  const int ii = static_cast<int>(i);
-  const int jj = static_cast<int>(j);
-
-  dolfin_assert(A);
-  PetscScalar val;
-  MatGetValues(A, 1, &ii, 1, &jj, &val);
-
-  return val;
-}
-//-----------------------------------------------------------------------------
-void PETScMatrix::set(int i, int j, real value)
-{
-  MatSetValue(A, i, j, value, INSERT_VALUES);
 
   MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
   MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);

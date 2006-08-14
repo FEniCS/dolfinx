@@ -72,6 +72,12 @@ namespace dolfin
     inline real operator() (uint i) const
     { return ublas::vector<real>::operator() (i); };
 
+    /// Access element value
+    inline real get(uint i) { return (*this)(i); }
+
+    /// Set element value
+    inline void set(uint i, real value) { (*this)(i) = value; }
+
     /// Set block of values
     void set(const real block[], const int pos[], int n);
 
@@ -94,10 +100,6 @@ namespace dolfin
     /// Set all entries to zero
     void zero();
     
-    /// Element access
-    real get(int i);
-    void set(int i, real value);
-
     /// Display vector
     void disp(uint precision = 2) const;
 

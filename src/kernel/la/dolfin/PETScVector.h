@@ -57,6 +57,12 @@ namespace dolfin
     /// Return size of vector
     uint size() const;
 
+    /// Access element value
+    real get(uint i);
+
+    /// Set element value
+    void set(uint i, real value);
+    
     /// Return PETSc Vec pointer
     Vec vec() const;
 
@@ -156,10 +162,6 @@ namespace dolfin
 
     // Add value to element
     void addval(uint i, const real a);
-
-    /// Element access
-    real get(int i);
-    void set(int i, real value);
 
     // Create Scatterer
     static VecScatter* createScatterer(PETScVector& x1, PETScVector& x2,

@@ -1,8 +1,11 @@
 // Copyright (C) 2006 Garth N. Wells.
 // Licensed under the GNU GPL Version 2.
 //
+// Modified by Johan Jansson 2006.
+// Modified by Anders Logg 2006.
+//
 // First added:  2006-04-24
-// Last changed: 2006-05-30
+// Last changed: 2006-08-14
 
 #ifndef __GENERIC_MATRIX_H
 #define __GENERIC_MATRIX_H
@@ -33,6 +36,12 @@ namespace dolfin
     /// Return number of rows (dim = 0) or columns (dim = 1) along dimension dim
     virtual uint size(uint dim) const = 0;
 
+    /// Access element value
+    virtual real get(uint i, uint j) = 0;
+
+    /// Set element value
+    virtual void set(uint i, uint j, real value) = 0;
+
     /// Set block of values
     virtual void set(const real block[], const int rows[], int m, const int cols[], int n) = 0;
 
@@ -50,10 +59,6 @@ namespace dolfin
 
     /// Return maximum number of nonzero entries in all rows
     virtual uint nzmax() const = 0;
-
-    /// Element access
-    virtual real get(int i, int j) = 0;
-    virtual void set(int i, int j, real value) = 0;
     
   };
 

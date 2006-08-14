@@ -95,16 +95,6 @@ void uBlasVector::zero()
   clear();
 }
 //-----------------------------------------------------------------------------
-real uBlasVector::get(int i)
-{
-  return (*this)(i);
-}
-//-----------------------------------------------------------------------------
-void uBlasVector::set(int i, real value)
-{
-  (*this)(i) = value;
-}
-//-----------------------------------------------------------------------------
 const uBlasVector& uBlasVector::operator= (real a) 
 { 
   this->assign(ublas::scalar_vector<double> (this->size(), a));

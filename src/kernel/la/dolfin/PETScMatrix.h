@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells, 2006.
 //
 // First added:  2004
-// Last changed: 2006-05-30
+// Last changed: 2006-08-14
 
 #ifndef __PETSC_MATRIX_H
 #define __PETSC_MATRIX_H
@@ -89,7 +89,13 @@ namespace dolfin
 
     /// Return maximum number of nonzero entries
     uint nzmax() const;
-    
+   
+    /// Access element value
+    real get(uint i, uint j);
+
+    /// Set element value
+    void set(uint i, uint j, real value);
+
     /// Set block of values
     void set(const real block[], const int rows[], int m, const int cols[], int n);
 
@@ -153,10 +159,6 @@ namespace dolfin
     
     // Add value to element
     void addval(uint i, uint j, const real a);
-
-    /// Element access
-    real get(int i, int j);
-    void set(int i, int j, real value);
     
   private:
 

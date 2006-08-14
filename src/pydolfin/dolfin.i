@@ -79,7 +79,7 @@ using namespace dolfin;
 
 
 
-%feature("director") GenericVector;
+//%feature("director") GenericVector;
 %feature("director") Function;
 %feature("director") BoundaryCondition;
 %feature("director") ODE;

@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells 2005.
 //
 // First added:  2004
-// Last changed: 2006-05-31
+// Last changed: 2006-08-14
 
 // FIXME: Insert dolfin_assert() where appropriate
 
@@ -161,6 +161,32 @@ dolfin::uint PETScVector::size() const
   VecGetSize(x, &n);
 
   return static_cast<uint>(n);
+}
+//-----------------------------------------------------------------------------
+real PETScVector::get(uint i)
+{
+  dolfin_assert(x);
+
+  // Assumes uniprocessor case
+
+  real val = 0.0;
+
+  PetscScalar *array = 0;
+  VecGetArray(x, &array);
+  val = array[i];
+  VecRestoreArray(x, &array);
+
+  return val;
+}
+//-----------------------------------------------------------------------------
+void PETScVector::set(uint i, real value)
+{
+  dolfin_assert(x);
+
+  VecSetValue(x, static_cast<int>(i), value, INSERT_VALUES);
+
+  VecAssemblyBegin(x);
+  VecAssemblyEnd(x);
 }
 //-----------------------------------------------------------------------------
 Vec PETScVector::vec() const
@@ -402,32 +428,6 @@ void PETScVector::addval(uint i, const real a)
   dolfin_assert(x);
 
   VecSetValue(x, static_cast<int>(i), a, ADD_VALUES);
-
-  VecAssemblyBegin(x);
-  VecAssemblyEnd(x);
-}
-//-----------------------------------------------------------------------------
-real PETScVector::get(int i)
-{
-  dolfin_assert(x);
-
-  // Assumes uniprocessor case
-
-  real val = 0.0;
-
-  PetscScalar *array = 0;
-  VecGetArray(x, &array);
-  val = array[i];
-  VecRestoreArray(x, &array);
-
-  return val;
-}
-//-----------------------------------------------------------------------------
-void PETScVector::set(int i, real value)
-{
-  dolfin_assert(x);
-
-  VecSetValue(x, static_cast<int>(i), value, INSERT_VALUES);
 
   VecAssemblyBegin(x);
   VecAssemblyEnd(x);
