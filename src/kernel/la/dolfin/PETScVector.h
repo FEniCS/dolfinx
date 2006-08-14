@@ -63,6 +63,9 @@ namespace dolfin
     /// Set element value
     void set(uint i, real value);
     
+    // Add value to element
+    void add(uint i, const real value);
+
     /// Return PETSc Vec pointer
     Vec vec() const;
 
@@ -153,15 +156,6 @@ namespace dolfin
     // Friends
     friend class PETScMatrix;
     friend class PETScVectorElement;
-
-    // Element access
-    real getval(uint i) const;
-
-    // Set value of element
-    void setval(uint i, const real a);
-
-    // Add value to element
-    void addval(uint i, const real a);
 
     // Create Scatterer
     static VecScatter* createScatterer(PETScVector& x1, PETScVector& x2,

@@ -96,6 +96,9 @@ namespace dolfin
     /// Set element value
     void set(uint i, uint j, real value);
 
+    // Add value to element
+    void add(uint i, uint j, const real value);
+    
     /// Set block of values
     void set(const real block[], const int rows[], int m, const int cols[], int n);
 
@@ -151,15 +154,6 @@ namespace dolfin
     // Friends
     friend class PETScMatrixElement;
 
-    // MatrixElement access
-    real getval(uint i, uint j) const;
-
-    // Set value of element
-    void setval(uint i, uint j, const real a);
-    
-    // Add value to element
-    void addval(uint i, uint j, const real a);
-    
   private:
 
     // PETSc Mat pointer

@@ -797,7 +797,10 @@ class PETScMatrix(GenericMatrix,Variable):
         return _dolfin.PETScMatrix_set(*args)
 
     def add(*args):
-        """add(self, real block, int rows, int m, int cols, int n)"""
+        """
+        add(self, uint i, uint j, real value)
+        add(self, real block, int rows, int m, int cols, int n)
+        """
         return _dolfin.PETScMatrix_add(*args)
 
     def getRow(*args):
@@ -860,18 +863,6 @@ class PETScMatrix(GenericMatrix,Variable):
         __call__(self, uint i, uint j) -> PETScMatrixElement
         """
         return _dolfin.PETScMatrix___call__(*args)
-
-    def getval(*args):
-        """getval(self, uint i, uint j) -> real"""
-        return _dolfin.PETScMatrix_getval(*args)
-
-    def setval(*args):
-        """setval(self, uint i, uint j, real a)"""
-        return _dolfin.PETScMatrix_setval(*args)
-
-    def addval(*args):
-        """addval(self, uint i, uint j, real a)"""
-        return _dolfin.PETScMatrix_addval(*args)
 
 
 class PETScMatrixPtr(PETScMatrix):
@@ -1035,7 +1026,10 @@ class PETScVector(GenericVector,Variable):
         return _dolfin.PETScVector_set(*args)
 
     def add(*args):
-        """add(self, real block, int pos, int n)"""
+        """
+        add(self, uint i, real value)
+        add(self, real block, int pos, int n)
+        """
         return _dolfin.PETScVector_add(*args)
 
     def get(*args):
@@ -1112,18 +1106,6 @@ class PETScVector(GenericVector,Variable):
     def disp(*args):
         """disp(self)"""
         return _dolfin.PETScVector_disp(*args)
-
-    def getval(*args):
-        """getval(self, uint i) -> real"""
-        return _dolfin.PETScVector_getval(*args)
-
-    def setval(*args):
-        """setval(self, uint i, real a)"""
-        return _dolfin.PETScVector_setval(*args)
-
-    def addval(*args):
-        """addval(self, uint i, real a)"""
-        return _dolfin.PETScVector_addval(*args)
 
     def createScatterer(*args):
         """createScatterer(PETScVector x1, PETScVector x2, int offset, int size) -> VecScatter"""

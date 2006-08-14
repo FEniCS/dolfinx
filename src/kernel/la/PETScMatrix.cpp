@@ -220,6 +220,14 @@ void PETScMatrix::set(uint i, uint j, real value)
   MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
 }
 //-----------------------------------------------------------------------------
+void PETScMatrix::add(uint i, uint j, const real value)
+{
+  MatSetValue(A, i, j, value, ADD_VALUES);
+
+  MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
+  MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
+}
+//-----------------------------------------------------------------------------
 void PETScMatrix::set(const real block[],
 		      const int rows[], int m,
 		      const int cols[], int n)
@@ -385,7 +393,7 @@ void PETScMatrix::disp(bool sparse, int precision) const
     {
       for (uint j = 0; j < N; j++)
       {
-        real value = getval(i, j);
+        real value = get(i, j);
         if ( fabs(value) < DOLFIN_EPS )
         value = 0.0;	
         line << " " << value;
@@ -425,35 +433,7 @@ PETScMatrixElement PETScMatrix::operator()(uint i, uint j)
 //-----------------------------------------------------------------------------
 real PETScMatrix::operator() (uint i, uint j) const
 {
-  return getval(i, j);
-}
-//-----------------------------------------------------------------------------
-real PETScMatrix::getval(uint i, uint j) const
-{
-  const int ii = static_cast<int>(i);
-  const int jj = static_cast<int>(j);
-
-  dolfin_assert(A);
-  PetscScalar val;
-  MatGetValues(A, 1, &ii, 1, &jj, &val);
-
-  return val;
-}
-//-----------------------------------------------------------------------------
-void PETScMatrix::setval(uint i, uint j, const real a)
-{
-  MatSetValue(A, i, j, a, INSERT_VALUES);
-
-  MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
-  MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
-}
-//-----------------------------------------------------------------------------
-void PETScMatrix::addval(uint i, uint j, const real a)
-{
-  MatSetValue(A, i, j, a, ADD_VALUES);
-
-  MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
-  MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
+  return get(i, j);
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::setType() 
@@ -522,37 +502,37 @@ PETScMatrixElement::PETScMatrixElement(const PETScMatrixElement& e)
 //-----------------------------------------------------------------------------
 PETScMatrixElement::operator real() const
 {
-  return A.getval(i, j);
+  return A.get(i, j);
 }
 //-----------------------------------------------------------------------------
 const PETScMatrixElement& PETScMatrixElement::operator=(const real a)
 {
-  A.setval(i, j, a);
+  A.set(i, j, a);
   return *this;
 }
 //-----------------------------------------------------------------------------
 const PETScMatrixElement& PETScMatrixElement::operator=(const PETScMatrixElement& e)
 {
-  A.setval(i, j, e.A.getval(e.i, e.j));
+  A.set(i, j, e.A.get(e.i, e.j));
   return *this;
 }
 //-----------------------------------------------------------------------------
 const PETScMatrixElement& PETScMatrixElement::operator+=(const real a)
 {
-  A.addval(i, j, a);
+  A.add(i, j, a);
   return *this;
 }
 //-----------------------------------------------------------------------------
 const PETScMatrixElement& PETScMatrixElement::operator-=(const real a)
 {
-  A.addval(i, j, -a);
+  A.add(i, j, -a);
   return *this;
 }
 //-----------------------------------------------------------------------------
 const PETScMatrixElement& PETScMatrixElement::operator*=(const real a)
 {
-  const real val = A.getval(i, j) * a;
-  A.setval(i, j, val);
+  const real val = A.get(i, j) * a;
+  A.set(i, j, val);
   return *this;
 }
 //-----------------------------------------------------------------------------

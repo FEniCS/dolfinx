@@ -1,6 +1,8 @@
 // Copyright (C) 2006 Johan Jansson.
 // Licensed under the GNU GPL Version 2.
 //
+// Modified by Anders Logg 2006.
+//
 // First added:  2006
 // Last changed: 2006-05-04
 
@@ -156,7 +158,7 @@ TimeDependentODE::TimeDependentODE(TimeDependentPDE& pde, int N, real T) :
 //-----------------------------------------------------------------------------
 real TimeDependentODE::u0(unsigned int i)
 {
-   return pde->x->getval(i);
+   return pde->x->get(i);
 }
 //-----------------------------------------------------------------------------
 void TimeDependentODE::f(const real u[], real t, real y[])
