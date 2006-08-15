@@ -7,7 +7,7 @@
 // Modified by Garth N. Wells 2005-2006.
 //
 // First added:  2005-12-02
-// Last changed: 2006-06-06
+// Last changed: 2006-08-15
 
 #ifndef __PETSC_KRYLOV_SOLVER_H
 #define __PETSC_KRYLOV_SOLVER_H
@@ -16,6 +16,7 @@
 
 #include <dolfin/constants.h>
 #include <dolfin/Parametrized.h>
+#include <dolfin/Preconditioner.h>
 #include <dolfin/PETScPreconditioner.h>
 #include <dolfin/PETScLinearSolver.h>
 #include <dolfin/PETScManager.h>
@@ -52,13 +53,13 @@ namespace dolfin
     PETScKrylovSolver(Type solver);
 
     /// Create Krylov solver with default PETSc method and a particular PETScPreconditioner
-    PETScKrylovSolver(PETScPreconditioner::Type PETScPreconditioner);
+    PETScKrylovSolver(Preconditioner pc);
 
     /// Create Krylov solver with default PETSc method and a particular PETScPreconditioner
     PETScKrylovSolver(PETScPreconditioner& PETScPreconditioner);
 
     /// Create Krylov solver for a particular method and PETScPreconditioner
-    PETScKrylovSolver(Type solver, PETScPreconditioner::Type PETScPreconditioner);
+    PETScKrylovSolver(Type solver, Preconditioner pc);
 
     /// Create Krylov solver for a particular method and PETScPreconditioner
     PETScKrylovSolver(Type solver, PETScPreconditioner& PETScPreconditioner);
@@ -99,7 +100,7 @@ namespace dolfin
     Type type;
 
     /// PETSc PETScPreconditioner
-    PETScPreconditioner::Type pc_petsc;
+    Preconditioner pc_petsc;
 
     /// DOLFIN PETScPreconditioner
     PETScPreconditioner* pc_dolfin;

@@ -4,7 +4,7 @@
 // Modified by Anders Logg 2006.
 //
 // First added:  2006-05-31
-// Last changed: 2006-07-03
+// Last changed: 2006-08-15
 
 #ifndef __UBLAS_KRYLOV_SOLVER_H
 #define __UBLAS_KRYLOV_SOLVER_H
@@ -13,8 +13,8 @@
 #include <dolfin/ublas.h>
 
 #include <dolfin/Parametrized.h>
+#include <dolfin/Preconditioner.h>
 #include <dolfin/uBlasLinearSolver.h>
-
 #include <dolfin/uBlasKrylovMatrix.h>
 #include <dolfin/uBlasMatrix.h>
 #include <dolfin/uBlasVector.h>
@@ -43,13 +43,13 @@ namespace dolfin
     uBlasKrylovSolver(Type solver = default_solver);
 
     /// Create Krylov solver for a particular preconditioner (set by name)
-    uBlasKrylovSolver(uBlasPreconditioner::Type preconditioner);
+    uBlasKrylovSolver(Preconditioner pc);
 
     /// Create Krylov solver for a particular preconditioner
     uBlasKrylovSolver(uBlasPreconditioner& pc);
 
     /// Create Krylov solver for a particular method and preconditioner
-    uBlasKrylovSolver(Type solver, uBlasPreconditioner::Type preconditioner);
+    uBlasKrylovSolver(Type solver, Preconditioner pc);
 
     /// Create Krylov solver for a particular method and preconditioner
     uBlasKrylovSolver(Type solver, uBlasPreconditioner& preconditioner);

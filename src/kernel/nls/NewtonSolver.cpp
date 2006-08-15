@@ -42,9 +42,9 @@ NewtonSolver::NewtonSolver(KrylovSolver::Type linear_solver) : Parametrized()
 //-----------------------------------------------------------------------------
 #ifdef HAVE_PETSC_H
 NewtonSolver::NewtonSolver(KrylovSolver::Type linear_solver, 
-    PETScPreconditioner::Type preconditioner) : Parametrized()
+			   Preconditioner pc) : Parametrized()
 {
-  solver = new KrylovSolver(linear_solver, preconditioner);
+  solver = new KrylovSolver(linear_solver, pc);
   A = new Matrix;
 }
 #endif

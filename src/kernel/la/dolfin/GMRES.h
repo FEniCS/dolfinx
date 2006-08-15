@@ -4,7 +4,7 @@
 // Modified by Anders Logg 2006.
 // 
 // First added:  2005-12-02
-// Last changed: 2006-05-07
+// Last changed: 2006-08-15
 
 #ifndef __GMRES_H
 #define __GMRES_H
@@ -26,7 +26,7 @@ namespace dolfin
 #ifdef HAVE_PETSC_H
 
     /// Create GMRES solver with a particular preconditioner
-    GMRES(PETScPreconditioner::Type preconditioner);
+    GMRES(Preconditioner pc);
 
     /// Create GMRES solver with a particular preconditioner
     GMRES(PETScPreconditioner& preconditioner);

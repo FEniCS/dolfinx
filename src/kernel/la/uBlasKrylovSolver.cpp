@@ -4,12 +4,11 @@
 // Modified by Anders Logg 2006.
 //
 // First added:  2006-05-31
-// Last changed: 2006-08-08
-
-#include <dolfin/uBlasKrylovSolver.h>
+// Last changed: 2006-08-15
 
 #include <dolfin/uBlasILUPreconditioner.h>
 #include <dolfin/uBlasDummyPreconditioner.h>
+#include <dolfin/uBlasKrylovSolver.h>
 
 using namespace dolfin;
 
@@ -19,16 +18,16 @@ uBlasKrylovSolver::uBlasKrylovSolver(Type solver)
     type(solver), pc_user(false), report(false), parameters_read(false)
 {
   // Create default predefined preconditioner
-  pc = new uBlasILUPreconditioner;
+  pc = new uBlasILUPreconditioner();
 }
 //-----------------------------------------------------------------------------
-uBlasKrylovSolver::uBlasKrylovSolver(uBlasPreconditioner::Type preconditioner)
+uBlasKrylovSolver::uBlasKrylovSolver(Preconditioner pc)
   : Parametrized(),
     type(default_solver), pc_user(false), report(false), parameters_read(false)
 {
   // Create predefined preconditioner
   // FIXME: need  to choose appropriate preconditioner here
-  pc = new uBlasDummyPreconditioner;
+  this->pc = new uBlasDummyPreconditioner();
 }
 //-----------------------------------------------------------------------------
 uBlasKrylovSolver::uBlasKrylovSolver(uBlasPreconditioner& pc)
@@ -38,13 +37,13 @@ uBlasKrylovSolver::uBlasKrylovSolver(uBlasPreconditioner& pc)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-uBlasKrylovSolver::uBlasKrylovSolver(Type solver, uBlasPreconditioner::Type preconditioner)
+uBlasKrylovSolver::uBlasKrylovSolver(Type solver, Preconditioner pc)
   : Parametrized(),
     type(solver), pc_user(false), report(false), parameters_read(false)
 {
   // Create predefined preconditioner
   // FIXME: need  to choose appropriate preconditioner here
-  pc = new uBlasDummyPreconditioner;
+  this->pc = new uBlasDummyPreconditioner();
 }
 //-----------------------------------------------------------------------------
 uBlasKrylovSolver::uBlasKrylovSolver(Type solver, uBlasPreconditioner& pc)

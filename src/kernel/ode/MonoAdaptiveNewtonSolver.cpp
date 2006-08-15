@@ -249,7 +249,7 @@ void MonoAdaptiveNewtonSolver::chooseLinearSolver()
     const real ktol = get("ODE discrete Krylov tolerance factor");
 
     // FIXME: Check choice of tolerances
-    krylov = new uBlasKrylovSolver(uBlasPreconditioner::none);
+    krylov = new uBlasKrylovSolver(none);
     krylov->set("Krylov report", monitor);
     krylov->set("Krylov relative tolerance", ktol);
     krylov->set("Krylov absolute tolerance", ktol*tol);

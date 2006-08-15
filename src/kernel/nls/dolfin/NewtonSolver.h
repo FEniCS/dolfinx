@@ -43,7 +43,7 @@ namespace dolfin
 
 #ifdef HAVE_PETSC_H
     /// Initialise nonlinear solver and choose Krylov solver
-    NewtonSolver(KrylovSolver::Type linear_solver, PETScPreconditioner::Type preconditioner);
+    NewtonSolver(KrylovSolver::Type linear_solver, Preconditioner pc);
 #endif
 
     /// Destructor

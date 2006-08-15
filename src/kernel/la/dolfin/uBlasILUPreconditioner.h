@@ -12,6 +12,7 @@
 #include <dolfin/ublas.h>
 #include <dolfin/Array.h>
 #include <dolfin/uBlasPreconditioner.h>
+#include <dolfin/uBlasMatrix.h>
 
 namespace dolfin
 {

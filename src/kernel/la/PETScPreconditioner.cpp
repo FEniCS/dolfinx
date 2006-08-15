@@ -5,7 +5,7 @@
 // Modified by Anders Logg 2006.
 //
 // First added:  2005
-// Last changed: 2006-05-07
+// Last changed: 2006-08-15
 
 #ifdef HAVE_PETSC_H
 
@@ -79,13 +79,13 @@ int PETScPreconditioner::PCCreate(PC pc)
   return 0;
 }
 //-----------------------------------------------------------------------------
-PCType PETScPreconditioner::getType(const Type type)
+PCType PETScPreconditioner::getType(Preconditioner pc)
 {
-  switch (type)
+  switch (pc)
   {
   case default_pc:
     return "default";
-  case hypre_amg:
+  case amg:
     return PCHYPRE;
   case icc:
     return PCICC;

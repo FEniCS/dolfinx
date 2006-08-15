@@ -5,13 +5,14 @@
 // Modified Garth N. Wells 2005
 //
 // First added:  2005
-// Last changed: 2006-05-15
+// Last changed: 2006-08-15
 
 #ifndef __PETSC_PRECONDITIONER_H
 #define __PETSC_PRECONDITIONER_H
 
 #ifdef HAVE_PETSC_H
 
+#include <dolfin/Preconditioner.h>
 #include <dolfin/PETScManager.h>
 
 namespace dolfin
@@ -27,18 +28,6 @@ namespace dolfin
   class PETScPreconditioner
   {
   public:
-
-    // PETSC preconditioners
-    enum Type
-    { 
-      default_pc, // Default PETSc PETScPreconditioner (use when setting solver from command line)
-      hypre_amg,  // Hypre algerbraic multigrid
-      icc,        // Incomplete Cholesky
-      ilu,        // Incomplete LU
-      jacobi,     // Jacobi
-      sor,        // SOR (successive over relaxation)
-      none        // No preconditioning
-    };
 
     /// Constructor
     PETScPreconditioner();
@@ -64,7 +53,7 @@ namespace dolfin
     static int PCCreate(PC pc);
 
     /// Return PETSc PETScPreconditioner type
-    static PCType getType(const Type type);
+    static PCType getType(Preconditioner pc);
 
   };
 

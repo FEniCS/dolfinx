@@ -4,8 +4,7 @@
 // Modified by Anders Logg 2006.
 //
 // First added:  2005-12-02
-// Last changed: 2006-05-07
-
+// Last changed: 2006-08-15
 
 #include <dolfin/GMRES.h>
 
@@ -18,7 +17,7 @@ GMRES::GMRES() : KrylovSolver(gmres)
 }
 //-----------------------------------------------------------------------------
 #ifdef HAVE_PETSC_H
-GMRES::GMRES(PETScPreconditioner::Type preconditioner) : KrylovSolver(gmres, preconditioner)
+GMRES::GMRES(Preconditioner pc) : KrylovSolver(gmres, pc)
 {
   // Do nothing.
 }

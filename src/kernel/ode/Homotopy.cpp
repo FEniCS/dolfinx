@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2006.
 //
 // First added:  2005
-// Last changed: 2006-07-07
+// Last changed: 2006-08-15
 
 #include <stdio.h>
 #include <limits>
@@ -21,7 +21,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 Homotopy::Homotopy(uint n)
   : tol(0), n(n), M(0), maxiter(0), maxpaths(0), maxdegree(0),
-    divtol(0), monitor(false), random(false), solver(uBlasPreconditioner::none), 
+    divtol(0), monitor(false), random(false), solver(none), 
     filename(""), mi(0), ci(0), tmp(0), x(2*n),
     degree_adjusted("Adjusting degree of equation, maximum reached.")
 {

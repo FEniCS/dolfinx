@@ -514,7 +514,7 @@ class GMRES(_object):
     def __init__(self, *args):
         """
         __init__(self) -> GMRES
-        __init__(self, PETScPreconditioner::Type preconditioner) -> GMRES
+        __init__(self, Preconditioner pc) -> GMRES
         __init__(self, PETScPreconditioner preconditioner) -> GMRES
         """
         _swig_setattr(self, GMRES, 'this', _dolfin.new_GMRES(*args))
@@ -599,9 +599,9 @@ class PETScKrylovSolver(_object):
         """
         __init__(self) -> PETScKrylovSolver
         __init__(self, Type solver) -> PETScKrylovSolver
-        __init__(self, PETScPreconditioner::Type PETScPreconditioner) -> PETScKrylovSolver
+        __init__(self, Preconditioner pc) -> PETScKrylovSolver
         __init__(self, PETScPreconditioner PETScPreconditioner) -> PETScKrylovSolver
-        __init__(self, Type solver, PETScPreconditioner::Type PETScPreconditioner) -> PETScKrylovSolver
+        __init__(self, Type solver, Preconditioner pc) -> PETScKrylovSolver
         __init__(self, Type solver, PETScPreconditioner PETScPreconditioner) -> PETScKrylovSolver
         """
         _swig_setattr(self, PETScKrylovSolver, 'this', _dolfin.new_PETScKrylovSolver(*args))
@@ -916,13 +916,6 @@ class PETScPreconditioner(_object):
     def __init__(self): raise RuntimeError, "No constructor defined"
     def __repr__(self):
         return "<%s.%s; proxy of C++ dolfin::PETScPreconditioner instance at %s>" % (self.__class__.__module__, self.__class__.__name__, self.this,)
-    default_pc = _dolfin.PETScPreconditioner_default_pc
-    hypre_amg = _dolfin.PETScPreconditioner_hypre_amg
-    icc = _dolfin.PETScPreconditioner_icc
-    ilu = _dolfin.PETScPreconditioner_ilu
-    jacobi = _dolfin.PETScPreconditioner_jacobi
-    sor = _dolfin.PETScPreconditioner_sor
-    none = _dolfin.PETScPreconditioner_none
     def __del__(self, destroy=_dolfin.delete_PETScPreconditioner):
         """__del__(self)"""
         try:
@@ -1277,9 +1270,9 @@ class uBlasKrylovSolver(_object):
         """
         __init__(self, Type solver=default_solver) -> uBlasKrylovSolver
         __init__(self) -> uBlasKrylovSolver
-        __init__(self, uBlasPreconditioner::Type preconditioner) -> uBlasKrylovSolver
+        __init__(self, Preconditioner pc) -> uBlasKrylovSolver
         __init__(self, uBlasPreconditioner pc) -> uBlasKrylovSolver
-        __init__(self, Type solver, uBlasPreconditioner::Type preconditioner) -> uBlasKrylovSolver
+        __init__(self, Type solver, Preconditioner pc) -> uBlasKrylovSolver
         __init__(self, Type solver, uBlasPreconditioner preconditioner) -> uBlasKrylovSolver
         """
         _swig_setattr(self, uBlasKrylovSolver, 'this', _dolfin.new_uBlasKrylovSolver(*args))
@@ -1419,9 +1412,6 @@ class uBlasPreconditioner(_object):
     def __init__(self): raise RuntimeError, "No constructor defined"
     def __repr__(self):
         return "<%s.%s; proxy of C++ dolfin::uBlasPreconditioner instance at %s>" % (self.__class__.__module__, self.__class__.__name__, self.this,)
-    default_pc = _dolfin.uBlasPreconditioner_default_pc
-    ilu = _dolfin.uBlasPreconditioner_ilu
-    none = _dolfin.uBlasPreconditioner_none
     def __del__(self, destroy=_dolfin.delete_uBlasPreconditioner):
         """__del__(self)"""
         try:

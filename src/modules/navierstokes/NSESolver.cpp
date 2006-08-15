@@ -72,7 +72,7 @@ void NSESolver::solve()
 
   // Initialize algebraic solvers 
 #ifdef HAVE_PETSC_H
-  GMRES solver_con(PETScPreconditioner::hypre_amg);
+  GMRES solver_con(amg);
 #else
   GMRES solver_con;
 #endif

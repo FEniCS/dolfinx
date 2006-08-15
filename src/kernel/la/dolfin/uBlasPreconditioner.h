@@ -4,11 +4,12 @@
 // Modified by Anders Logg 2006.
 //
 // First added:  2006-06-23
-// Last changed: 2006-07-04
+// Last changed: 2006-08-15
 
 #ifndef __UBLAS_PRECONDITIONER_H
 #define __UBLAS_PRECONDITIONER_H
 
+#include <dolfin/Preconditioner.h>
 #include <dolfin/Parametrized.h>
 
 namespace dolfin
@@ -24,14 +25,6 @@ namespace dolfin
   class uBlasPreconditioner : public Parametrized
   {
   public:
-
-    // uBlas preconditioners
-    enum Type
-    { 
-      default_pc,   // Default
-      ilu,          // Incomplete LU
-      none          // None
-    };
 
     /// Constructor
     uBlasPreconditioner() {};

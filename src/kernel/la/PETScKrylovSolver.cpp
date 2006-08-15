@@ -24,7 +24,6 @@
 #include <dolfin/PETScVector.h>
 #include <dolfin/PETScKrylovMatrix.h>
 
-
 using namespace dolfin;
 
 // Monitor function
@@ -40,7 +39,7 @@ namespace dolfin
 //-----------------------------------------------------------------------------
 PETScKrylovSolver::PETScKrylovSolver()
   : PETScLinearSolver(),
-    type(default_solver), pc_petsc(PETScPreconditioner::default_pc), pc_dolfin(0), 
+    type(default_solver), pc_petsc(default_pc), pc_dolfin(0), 
     ksp(0), M(0), N(0), parameters_read(false)
 {
   // Initialize PETSc
@@ -49,16 +48,16 @@ PETScKrylovSolver::PETScKrylovSolver()
 //-----------------------------------------------------------------------------
 PETScKrylovSolver::PETScKrylovSolver(Type solver)
   : PETScLinearSolver(),
-    type(solver), pc_petsc(PETScPreconditioner::default_pc), pc_dolfin(0), 
+    type(solver), pc_petsc(default_pc), pc_dolfin(0), 
     ksp(0), M(0), N(0), parameters_read(false)
 {
   // Initialize PETSc
   PETScManager::init();
 }
 //-----------------------------------------------------------------------------
-PETScKrylovSolver::PETScKrylovSolver(PETScPreconditioner::Type preconditioner)
+PETScKrylovSolver::PETScKrylovSolver(Preconditioner pc)
   : PETScLinearSolver(),
-    type(default_solver), pc_petsc(preconditioner), pc_dolfin(0),
+    type(default_solver), pc_petsc(pc), pc_dolfin(0),
     ksp(0), M(0), N(0), parameters_read(false)
 {
   // Initialize PETSc
@@ -67,16 +66,16 @@ PETScKrylovSolver::PETScKrylovSolver(PETScPreconditioner::Type preconditioner)
 //-----------------------------------------------------------------------------
 PETScKrylovSolver::PETScKrylovSolver(PETScPreconditioner& preconditioner)
   : PETScLinearSolver(),
-    type(default_solver), pc_petsc(PETScPreconditioner::default_pc), pc_dolfin(&preconditioner),
+    type(default_solver), pc_petsc(default_pc), pc_dolfin(&preconditioner),
     ksp(0), M(0), N(0), parameters_read(false)
 {
   // Initialize PETSc
   PETScManager::init();
 }
 //-----------------------------------------------------------------------------
-PETScKrylovSolver::PETScKrylovSolver(Type solver, PETScPreconditioner::Type preconditioner)
+PETScKrylovSolver::PETScKrylovSolver(Type solver, Preconditioner pc)
   : PETScLinearSolver(),
-    type(solver), pc_petsc(preconditioner), pc_dolfin(0),
+    type(solver), pc_petsc(pc), pc_dolfin(0),
     ksp(0), M(0), N(0), parameters_read(false)
 {
   // Initialize PETSc
@@ -85,7 +84,7 @@ PETScKrylovSolver::PETScKrylovSolver(Type solver, PETScPreconditioner::Type prec
 //-----------------------------------------------------------------------------
 PETScKrylovSolver::PETScKrylovSolver(Type solver, PETScPreconditioner& preconditioner)
   : PETScLinearSolver(),
-    type(solver), pc_petsc(PETScPreconditioner::default_pc), pc_dolfin(&preconditioner),
+    type(solver), pc_petsc(default_pc), pc_dolfin(&preconditioner),
     ksp(0), M(0), N(0), parameters_read(false)
 {
   // Initialize PETSc
@@ -272,7 +271,7 @@ void PETScKrylovSolver::setPETScPreconditioner()
   }
 
   // Treat special case default preconditioner (do nothing)
-  if ( pc_petsc == PETScPreconditioner::default_pc )
+  if ( pc_petsc == default_pc )
     return;
 
   // Get PETSc PC pointer
@@ -280,7 +279,7 @@ void PETScKrylovSolver::setPETScPreconditioner()
   KSPGetPC(ksp, &pc);
 
   // Treat special case Hypre AMG preconditioner
-  if ( pc_petsc == PETScPreconditioner::hypre_amg )
+  if ( pc_petsc == amg )
   {  
 #if PETSC_HAVE_HYPRE
     PCSetType(pc, PCHYPRE);
