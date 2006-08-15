@@ -31,6 +31,9 @@ class MyBC : public BoundaryCondition
 
 int main()
 {
+
+#ifdef HAVE_PETSC_H
+
   // Set up problem
   UnitSquare mesh(16, 16);
   MyFunction f;
@@ -53,5 +56,10 @@ int main()
 
   HeatSolver::solve(mesh, f, bc, T);
 
+#else
+
+  cout << "DOLFIN must be configured with PETSc to run this demo" << endl; 
+
+#endif
   return 0;
 }

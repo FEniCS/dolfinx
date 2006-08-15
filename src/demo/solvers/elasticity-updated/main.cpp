@@ -59,6 +59,8 @@ int main(int argc, char **argv)
 {
   dolfin_output("plain text");
 
+#ifdef HAVE_PETSC_H
+
   real T = 5.0;  // final time
   real k = 1.0e-3; // time step
 
@@ -86,8 +88,14 @@ int main(int argc, char **argv)
   real nuv = 0.0 * 1.0e2; // viscosity
   real nuplast = 0.0; // plastic viscosity
 
+
   ElasticityUpdatedSolver::solve(mesh, f, v0, rho, E, nu, nuv,
 				 nuplast, bc, k, T);
+#else
+
+  cout << "DOLFIN must be configured with PETSc to run this demo" << endl; 
+
+#endif
 
   return 0;
 }
