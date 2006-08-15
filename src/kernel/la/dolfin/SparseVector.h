@@ -4,7 +4,7 @@
 // Modified by Anders Logg 2006.
 //
 // First added:  2006-05-29
-// Last changed: 2006-08-09
+// Last changed: 2006-08-15
 
 #ifndef __SPARSE_VECTOR_H
 #define __SPARSE_VECTOR_H
@@ -19,8 +19,8 @@ namespace dolfin
 {
 
   /// SparseVector is a synonym PETScVector if PETSc is enabled, otherwise 
-  /// it's uBlasVector.
-
+  /// it's uBlasSparseVector.
+  
 #ifdef HAVE_PETSC_H
   typedef PETScVector SparseVector;
 #else

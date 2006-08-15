@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005
-// Last changed: 2006-05-15
+// Last changed: 2006-08-15
 
 #ifdef HAVE_PETSC_H
 
@@ -16,7 +16,8 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-PETScLUSolver::PETScLUSolver() : LinearSolver(), ksp(0), B(0), idxm(0), idxn(0)
+PETScLUSolver::PETScLUSolver()
+  : PETScLinearSolver(), ksp(0), B(0), idxm(0), idxn(0)
 {
   // Initialize PETSc
   PETScManager::init();
