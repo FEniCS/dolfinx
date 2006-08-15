@@ -7,6 +7,7 @@ EXTRA_DIST = dolfin_la.h \
              KrylovSolver.h \
              LinearSolver.h \
              LU.h \
+             LUSolver.h \
              Matrix.h \
              PETScEigenvalueSolver.h \
              PETScLinearSolver.h \

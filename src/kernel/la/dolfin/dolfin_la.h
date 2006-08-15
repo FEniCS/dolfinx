@@ -15,6 +15,7 @@
 #include <dolfin/KrylovSolver.h>
 #include <dolfin/GMRES.h>
 #include <dolfin/LU.h>
+#include <dolfin/LUSolver.h>
 #include <dolfin/PETScEigenvalueSolver.h>
 #include <dolfin/PETScKrylovMatrix.h>
 #include <dolfin/PETScKrylovSolver.h>
