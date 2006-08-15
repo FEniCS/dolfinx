@@ -27,7 +27,7 @@ void ConvectionDiffusionSolver::solve()
 
   Matrix A;              // matrix defining linear system
   Vector x0, x1, b;      // vectors 
-  KrylovSolver solver(KrylovSolver::bicgstab); // linear solver
+  KrylovSolver solver(bicgstab); // linear solver
   Function u0(x0, mesh); // function at previous time step
 
   // File for saving solution

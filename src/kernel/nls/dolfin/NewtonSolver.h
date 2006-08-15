@@ -1,8 +1,10 @@
 // Copyright (C) 2005-2006 Garth N. Wells.
 // Licensed under the GNU GPL Version 2.
 //
+// Modified by Anders Logg 2006.
+//
 // First added:  2005-10-23
-// Last changed: 2006-03-22
+// Last changed: 2006-08-15
 
 #ifndef __NEWTON_SOLVER_H
 #define __NEWTON_SOLVER_H
@@ -39,11 +41,11 @@ namespace dolfin
 #endif
 
     /// Initialise nonlinear solver and choose Krylov solver
-    NewtonSolver(KrylovSolver::Type linear_solver);
+    NewtonSolver(KrylovMethod method);
 
 #ifdef HAVE_PETSC_H
     /// Initialise nonlinear solver and choose Krylov solver
-    NewtonSolver(KrylovSolver::Type linear_solver, Preconditioner pc);
+    NewtonSolver(KrylovMethod method, Preconditioner pc);
 #endif
 
     /// Destructor

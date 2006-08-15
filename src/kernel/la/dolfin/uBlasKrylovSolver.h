@@ -14,6 +14,7 @@
 
 #include <dolfin/Parametrized.h>
 #include <dolfin/Preconditioner.h>
+#include <dolfin/KrylovMethod.h>
 #include <dolfin/uBlasLinearSolver.h>
 #include <dolfin/uBlasKrylovMatrix.h>
 #include <dolfin/uBlasMatrix.h>
@@ -30,17 +31,8 @@ namespace dolfin
   {
   public:
 
-    /// Krylov methods
-    enum Type
-    { 
-      bicgstab,       // Stabilised biconjugate gradient squared method 
-      cg,             // Conjugate gradient method (no yet implemented)
-      default_solver, // Default PETSc solver (use when setting solver from command line)
-      gmres           // GMRES method
-    };
-
     /// Create Krylov solver for a particular method and default preconditioner
-    uBlasKrylovSolver(Type solver = default_solver);
+    uBlasKrylovSolver(KrylovMethod method = default_method);
 
     /// Create Krylov solver for a particular preconditioner (set by name)
     uBlasKrylovSolver(Preconditioner pc);
@@ -49,10 +41,10 @@ namespace dolfin
     uBlasKrylovSolver(uBlasPreconditioner& pc);
 
     /// Create Krylov solver for a particular method and preconditioner
-    uBlasKrylovSolver(Type solver, Preconditioner pc);
+    uBlasKrylovSolver(KrylovMethod method, Preconditioner pc);
 
     /// Create Krylov solver for a particular method and preconditioner
-    uBlasKrylovSolver(Type solver, uBlasPreconditioner& preconditioner);
+    uBlasKrylovSolver(KrylovMethod method, uBlasPreconditioner& preconditioner);
 
     /// Destructor
     ~uBlasKrylovSolver();
@@ -83,8 +75,8 @@ namespace dolfin
     /// Read solver parameters
     void readParameters();
 
-    /// Krylov solver type
-    Type type;
+    /// Krylov method
+    KrylovMethod method;
 
     /// Preconditioner
     uBlasPreconditioner* pc;
@@ -132,7 +124,7 @@ namespace dolfin
     // Choose solver
     bool converged;
     uint iterations;
-    switch (type)
+    switch (method)
     { 
     case gmres:
       iterations = solveGMRES(A, x, b, converged);
@@ -140,11 +132,11 @@ namespace dolfin
     case bicgstab:
       iterations = solveBiCGStab(A, x, b, converged);
       break;
-    case default_solver:
+    case default_method:
       iterations = solveBiCGStab(A, x, b, converged);
       break;
     default:
-      dolfin_warning("Requested solver type unknown. Using BiCGStab.");
+      dolfin_warning("Requested Krylov method unknown. Using BiCGStab.");
       iterations = solveBiCGStab(A, x, b, converged);
     }
   

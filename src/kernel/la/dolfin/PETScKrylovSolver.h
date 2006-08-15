@@ -17,6 +17,7 @@
 #include <dolfin/constants.h>
 #include <dolfin/Parametrized.h>
 #include <dolfin/Preconditioner.h>
+#include <dolfin/KrylovMethod.h>
 #include <dolfin/PETScPreconditioner.h>
 #include <dolfin/PETScLinearSolver.h>
 #include <dolfin/PETScManager.h>
@@ -37,20 +38,11 @@ namespace dolfin
   {
   public:
 
-    /// Krylov methods
-    enum Type
-    { 
-      bicgstab,       // Stabilised biconjugate gradient squared method 
-      cg,             // Conjugate gradient method
-      default_solver, // Default PETSc solver (use when setting solver from command line)
-      gmres           // GMRES method
-    };
-
     /// Create Krylov solver with PETSc default method and PETScPreconditioner
     PETScKrylovSolver();
 
     /// Create Krylov solver for a particular method with default PETSc PETScPreconditioner
-    PETScKrylovSolver(Type solver);
+    PETScKrylovSolver(KrylovMethod method);
 
     /// Create Krylov solver with default PETSc method and a particular PETScPreconditioner
     PETScKrylovSolver(Preconditioner pc);
@@ -59,10 +51,10 @@ namespace dolfin
     PETScKrylovSolver(PETScPreconditioner& PETScPreconditioner);
 
     /// Create Krylov solver for a particular method and PETScPreconditioner
-    PETScKrylovSolver(Type solver, Preconditioner pc);
+    PETScKrylovSolver(KrylovMethod method, Preconditioner pc);
 
     /// Create Krylov solver for a particular method and PETScPreconditioner
-    PETScKrylovSolver(Type solver, PETScPreconditioner& PETScPreconditioner);
+    PETScKrylovSolver(KrylovMethod method, PETScPreconditioner& PETScPreconditioner);
 
     /// Destructor
     ~PETScKrylovSolver();
@@ -94,10 +86,10 @@ namespace dolfin
     void writeReport(int num_iterations);
 
     /// Get PETSc method identifier 
-    KSPType getType(const Type type) const;
+    KSPType getType(KrylovMethod method) const;
 
-    /// PETSc solver type
-    Type type;
+    /// Krylov method
+    KrylovMethod method;
 
     /// PETSc PETScPreconditioner
     Preconditioner pc_petsc;

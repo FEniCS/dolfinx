@@ -4,6 +4,7 @@ EXTRA_DIST = dolfin_la.h \
              GenericMatrix.h \
              GenericVector.h \
              GMRES.h \
+             KrylovMethod.h \
              KrylovSolver.h \
              LinearSolver.h \
              LU.h \
@@ -18,6 +19,7 @@ EXTRA_DIST = dolfin_la.h \
              PETScMatrix.h \
              PETScPreconditioner.h \
              PETScVector.h \
+             Preconditioner.h \
              SparseMatrix.h \
              SparseVector.h \
              ublas.h \

@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells 2005-2006.
 //
 // First added:  2005-12-02
-// Last changed: 2006-05-07
+// Last changed: 2006-08-15
 
 #ifdef HAVE_PETSC_H
 
@@ -39,16 +39,16 @@ namespace dolfin
 //-----------------------------------------------------------------------------
 PETScKrylovSolver::PETScKrylovSolver()
   : PETScLinearSolver(),
-    type(default_solver), pc_petsc(default_pc), pc_dolfin(0), 
+    method(default_method), pc_petsc(default_pc), pc_dolfin(0), 
     ksp(0), M(0), N(0), parameters_read(false)
 {
   // Initialize PETSc
   PETScManager::init();
 }
 //-----------------------------------------------------------------------------
-PETScKrylovSolver::PETScKrylovSolver(Type solver)
+PETScKrylovSolver::PETScKrylovSolver(KrylovMethod method)
   : PETScLinearSolver(),
-    type(solver), pc_petsc(default_pc), pc_dolfin(0), 
+    method(method), pc_petsc(default_pc), pc_dolfin(0), 
     ksp(0), M(0), N(0), parameters_read(false)
 {
   // Initialize PETSc
@@ -57,7 +57,7 @@ PETScKrylovSolver::PETScKrylovSolver(Type solver)
 //-----------------------------------------------------------------------------
 PETScKrylovSolver::PETScKrylovSolver(Preconditioner pc)
   : PETScLinearSolver(),
-    type(default_solver), pc_petsc(pc), pc_dolfin(0),
+    method(default_method), pc_petsc(pc), pc_dolfin(0),
     ksp(0), M(0), N(0), parameters_read(false)
 {
   // Initialize PETSc
@@ -66,25 +66,26 @@ PETScKrylovSolver::PETScKrylovSolver(Preconditioner pc)
 //-----------------------------------------------------------------------------
 PETScKrylovSolver::PETScKrylovSolver(PETScPreconditioner& preconditioner)
   : PETScLinearSolver(),
-    type(default_solver), pc_petsc(default_pc), pc_dolfin(&preconditioner),
+    method(default_method), pc_petsc(default_pc), pc_dolfin(&preconditioner),
     ksp(0), M(0), N(0), parameters_read(false)
 {
   // Initialize PETSc
   PETScManager::init();
 }
 //-----------------------------------------------------------------------------
-PETScKrylovSolver::PETScKrylovSolver(Type solver, Preconditioner pc)
+PETScKrylovSolver::PETScKrylovSolver(KrylovMethod method, Preconditioner pc)
   : PETScLinearSolver(),
-    type(solver), pc_petsc(pc), pc_dolfin(0),
+    method(method), pc_petsc(pc), pc_dolfin(0),
     ksp(0), M(0), N(0), parameters_read(false)
 {
   // Initialize PETSc
   PETScManager::init();
 }
 //-----------------------------------------------------------------------------
-PETScKrylovSolver::PETScKrylovSolver(Type solver, PETScPreconditioner& preconditioner)
+PETScKrylovSolver::PETScKrylovSolver(KrylovMethod method,
+				     PETScPreconditioner& preconditioner)
   : PETScLinearSolver(),
-    type(solver), pc_petsc(default_pc), pc_dolfin(&preconditioner),
+    method(method), pc_petsc(default_pc), pc_dolfin(&preconditioner),
     ksp(0), M(0), N(0), parameters_read(false)
 {
   // Initialize PETSc
@@ -253,11 +254,11 @@ void PETScKrylovSolver::readParameters()
 void PETScKrylovSolver::setSolver()
 {
   // Don't do anything for default method
-  if ( type == PETScKrylovSolver::default_solver )
+  if ( method == default_method )
     return;
   
   // Set PETSc Krylov solver
-  KSPType ksp_type = getType(type);
+  KSPType ksp_type = getType(method);
   KSPSetType(ksp, ksp_type);
 }
 //-----------------------------------------------------------------------------
@@ -319,15 +320,15 @@ void PETScKrylovSolver::writeReport(int num_iterations)
 	      ksp_type, pc_type, num_iterations);
 }
 //-----------------------------------------------------------------------------
-KSPType PETScKrylovSolver::getType(const Type type) const
+KSPType PETScKrylovSolver::getType(KrylovMethod method) const
 {
-  switch (type)
+  switch (method)
   {
   case bicgstab:
     return KSPBCGS;
   case cg:
     return KSPCG;
-  case default_solver:
+  case default_method:
     return "default";
   case gmres:
     return KSPGMRES;

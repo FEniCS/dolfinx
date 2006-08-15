@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2005-2006.
 //
 // First added:  2005-10-23
-// Last changed: 2006-06-06
+// Last changed: 2006-06-15
 
 #include <dolfin/FEM.h>
 #include <dolfin/BilinearForm.h>
@@ -34,17 +34,17 @@ NewtonSolver::NewtonSolver(Matrix::Type matrix_type) : Parametrized()
 }
 #endif
 //-----------------------------------------------------------------------------
-NewtonSolver::NewtonSolver(KrylovSolver::Type linear_solver) : Parametrized()
+NewtonSolver::NewtonSolver(KrylovMethod method) : Parametrized()
 {
-  solver = new KrylovSolver(linear_solver);
+  solver = new KrylovSolver(method);
   A = new Matrix;
 }
 //-----------------------------------------------------------------------------
 #ifdef HAVE_PETSC_H
-NewtonSolver::NewtonSolver(KrylovSolver::Type linear_solver, 
-			   Preconditioner pc) : Parametrized()
+NewtonSolver::NewtonSolver(KrylovMethod method, Preconditioner pc)
+  : Parametrized()
 {
-  solver = new KrylovSolver(linear_solver, pc);
+  solver = new KrylovSolver(method, pc);
   A = new Matrix;
 }
 #endif

@@ -591,18 +591,14 @@ class PETScKrylovSolver(_object):
     __getattr__ = lambda self, name: _swig_getattr(self, PETScKrylovSolver, name)
     def __repr__(self):
         return "<%s.%s; proxy of C++ dolfin::PETScKrylovSolver instance at %s>" % (self.__class__.__module__, self.__class__.__name__, self.this,)
-    bicgstab = _dolfin.PETScKrylovSolver_bicgstab
-    cg = _dolfin.PETScKrylovSolver_cg
-    default_solver = _dolfin.PETScKrylovSolver_default_solver
-    gmres = _dolfin.PETScKrylovSolver_gmres
     def __init__(self, *args):
         """
         __init__(self) -> PETScKrylovSolver
-        __init__(self, Type solver) -> PETScKrylovSolver
+        __init__(self, KrylovMethod method) -> PETScKrylovSolver
         __init__(self, Preconditioner pc) -> PETScKrylovSolver
         __init__(self, PETScPreconditioner PETScPreconditioner) -> PETScKrylovSolver
-        __init__(self, Type solver, Preconditioner pc) -> PETScKrylovSolver
-        __init__(self, Type solver, PETScPreconditioner PETScPreconditioner) -> PETScKrylovSolver
+        __init__(self, KrylovMethod method, Preconditioner pc) -> PETScKrylovSolver
+        __init__(self, KrylovMethod method, PETScPreconditioner PETScPreconditioner) -> PETScKrylovSolver
         """
         _swig_setattr(self, PETScKrylovSolver, 'this', _dolfin.new_PETScKrylovSolver(*args))
         _swig_setattr(self, PETScKrylovSolver, 'thisown', 1)
@@ -1262,18 +1258,14 @@ class uBlasKrylovSolver(_object):
     __getattr__ = lambda self, name: _swig_getattr(self, uBlasKrylovSolver, name)
     def __repr__(self):
         return "<%s.%s; proxy of C++ dolfin::uBlasKrylovSolver instance at %s>" % (self.__class__.__module__, self.__class__.__name__, self.this,)
-    bicgstab = _dolfin.uBlasKrylovSolver_bicgstab
-    cg = _dolfin.uBlasKrylovSolver_cg
-    default_solver = _dolfin.uBlasKrylovSolver_default_solver
-    gmres = _dolfin.uBlasKrylovSolver_gmres
     def __init__(self, *args):
         """
-        __init__(self, Type solver=default_solver) -> uBlasKrylovSolver
+        __init__(self, KrylovMethod method=default_method) -> uBlasKrylovSolver
         __init__(self) -> uBlasKrylovSolver
         __init__(self, Preconditioner pc) -> uBlasKrylovSolver
         __init__(self, uBlasPreconditioner pc) -> uBlasKrylovSolver
-        __init__(self, Type solver, Preconditioner pc) -> uBlasKrylovSolver
-        __init__(self, Type solver, uBlasPreconditioner preconditioner) -> uBlasKrylovSolver
+        __init__(self, KrylovMethod method, Preconditioner pc) -> uBlasKrylovSolver
+        __init__(self, KrylovMethod method, uBlasPreconditioner preconditioner) -> uBlasKrylovSolver
         """
         _swig_setattr(self, uBlasKrylovSolver, 'this', _dolfin.new_uBlasKrylovSolver(*args))
         _swig_setattr(self, uBlasKrylovSolver, 'thisown', 1)

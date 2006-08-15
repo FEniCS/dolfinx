@@ -2,6 +2,7 @@ SUBDIRS                 = dolfin
 nobase_include_HEADERS  = dolfin/dolfin_la.h \
                           dolfin/DenseMatrix.h \
                           dolfin/DenseVector.h \
+                          dolfin/KrylovMethod.h \
                           dolfin/KrylovSolver.h \
                           dolfin/GenericMatrix.h \
                           dolfin/GenericVector.h \
@@ -19,6 +20,7 @@ nobase_include_HEADERS  = dolfin/dolfin_la.h \
                           dolfin/PETScMatrix.h \
                           dolfin/PETScPreconditioner.h \
                           dolfin/PETScVector.h \
+                          dolfin/Preconditioner.h \
                           dolfin/SparseMatrix.h \
                           dolfin/SparseVector.h \
                           dolfin/ublas.h \
