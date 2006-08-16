@@ -509,22 +509,41 @@ class GMRES(_object):
     __setattr__ = lambda self, name, value: _swig_setattr(self, GMRES, name, value)
     __swig_getmethods__ = {}
     __getattr__ = lambda self, name: _swig_getattr(self, GMRES, name)
+    def __init__(self): raise RuntimeError, "No constructor defined"
     def __repr__(self):
         return "<%s.%s; proxy of C++ dolfin::GMRES instance at %s>" % (self.__class__.__module__, self.__class__.__name__, self.this,)
-    def __init__(self, *args):
+    def solve(*args):
         """
-        __init__(self) -> GMRES
-        __init__(self, Preconditioner pc) -> GMRES
-        __init__(self, PETScPreconditioner preconditioner) -> GMRES
+        solve(PETScMatrix A, PETScVector x, PETScVector b, Preconditioner pc=default_pc) -> uint
+        solve(PETScMatrix A, PETScVector x, PETScVector b) -> uint
+        solve(PETScKrylovMatrix A, PETScVector x, PETScVector b, 
+            Preconditioner pc=default_pc) -> uint
+        solve(PETScKrylovMatrix A, PETScVector x, PETScVector b) -> uint
+        solve(PETScMatrix A, PETScVector x, PETScVector b, PETScPreconditioner pc) -> uint
+        solve(PETScKrylovMatrix A, PETScVector x, PETScVector b, 
+            PETScPreconditioner pc) -> uint
+        solve(uBlasMatrix<(dolfin::ublas_dense_matrix)> A, uBlasVector x, 
+            uBlasVector b, Preconditioner pc=default_pc) -> uint
+        solve(uBlasMatrix<(dolfin::ublas_dense_matrix)> A, uBlasVector x, 
+            uBlasVector b) -> uint
+        solve(uBlasMatrix<(dolfin::ublas_sparse_matrix)> A, uBlasVector x, 
+            uBlasVector b, Preconditioner pc=default_pc) -> uint
+        solve(uBlasMatrix<(dolfin::ublas_sparse_matrix)> A, uBlasVector x, 
+            uBlasVector b) -> uint
+        solve(uBlasKrylovMatrix A, uBlasVector x, uBlasVector b, 
+            Preconditioner pc=default_pc) -> uint
+        solve(uBlasKrylovMatrix A, uBlasVector x, uBlasVector b) -> uint
+        solve(uBlasMatrix<(dolfin::ublas_dense_matrix)> A, uBlasVector x, 
+            uBlasVector b, uBlasPreconditioner pc) -> uint
+        solve(uBlasMatrix<(dolfin::ublas_sparse_matrix)> A, uBlasVector x, 
+            uBlasVector b, uBlasPreconditioner pc) -> uint
+        solve(uBlasKrylovMatrix A, uBlasVector x, uBlasVector b, 
+            uBlasPreconditioner pc) -> uint
         """
-        _swig_setattr(self, GMRES, 'this', _dolfin.new_GMRES(*args))
-        _swig_setattr(self, GMRES, 'thisown', 1)
-    def __del__(self, destroy=_dolfin.delete_GMRES):
-        """__del__(self)"""
-        try:
-            if self.thisown: destroy(self)
-        except: pass
+        return _dolfin.GMRES_solve(*args)
 
+    if _newclass:solve = staticmethod(solve)
+    __swig_getmethods__["solve"] = lambda x: solve
 
 class GMRESPtr(GMRES):
     def __init__(self, this):
@@ -532,6 +551,36 @@ class GMRESPtr(GMRES):
         if not hasattr(self,"thisown"): _swig_setattr(self, GMRES, 'thisown', 0)
         self.__class__ = GMRES
 _dolfin.GMRES_swigregister(GMRESPtr)
+
+def GMRES_solve(*args):
+    """
+    solve(PETScMatrix A, PETScVector x, PETScVector b, Preconditioner pc=default_pc) -> uint
+    solve(PETScMatrix A, PETScVector x, PETScVector b) -> uint
+    solve(PETScKrylovMatrix A, PETScVector x, PETScVector b, 
+        Preconditioner pc=default_pc) -> uint
+    solve(PETScKrylovMatrix A, PETScVector x, PETScVector b) -> uint
+    solve(PETScMatrix A, PETScVector x, PETScVector b, PETScPreconditioner pc) -> uint
+    solve(PETScKrylovMatrix A, PETScVector x, PETScVector b, 
+        PETScPreconditioner pc) -> uint
+    solve(uBlasMatrix<(dolfin::ublas_dense_matrix)> A, uBlasVector x, 
+        uBlasVector b, Preconditioner pc=default_pc) -> uint
+    solve(uBlasMatrix<(dolfin::ublas_dense_matrix)> A, uBlasVector x, 
+        uBlasVector b) -> uint
+    solve(uBlasMatrix<(dolfin::ublas_sparse_matrix)> A, uBlasVector x, 
+        uBlasVector b, Preconditioner pc=default_pc) -> uint
+    solve(uBlasMatrix<(dolfin::ublas_sparse_matrix)> A, uBlasVector x, 
+        uBlasVector b) -> uint
+    solve(uBlasKrylovMatrix A, uBlasVector x, uBlasVector b, 
+        Preconditioner pc=default_pc) -> uint
+    solve(uBlasKrylovMatrix A, uBlasVector x, uBlasVector b) -> uint
+    solve(uBlasMatrix<(dolfin::ublas_dense_matrix)> A, uBlasVector x, 
+        uBlasVector b, uBlasPreconditioner pc) -> uint
+    solve(uBlasMatrix<(dolfin::ublas_sparse_matrix)> A, uBlasVector x, 
+        uBlasVector b, uBlasPreconditioner pc) -> uint
+    GMRES_solve(uBlasKrylovMatrix A, uBlasVector x, uBlasVector b, 
+        uBlasPreconditioner pc) -> uint
+    """
+    return _dolfin.GMRES_solve(*args)
 
 class PETScKrylovMatrix(_object):
     """Proxy of C++ PETScKrylovMatrix class"""

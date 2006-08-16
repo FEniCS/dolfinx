@@ -10,7 +10,7 @@
 #include <dolfin/FEM.h>
 #include <dolfin/Matrix.h>
 #include <dolfin/Vector.h>
-#include <dolfin/GMRES.h>
+#include <dolfin/KrylovSolver.h>
 #include <dolfin/LU.h>
 #include <dolfin/BilinearForm.h>
 #include <dolfin/LinearForm.h>
@@ -82,7 +82,7 @@ dolfin::uint LinearPDE::solve(Function& u)
   }
   else if ( solver_type == "iterative" || solver_type == "default" )
   {
-    GMRES solver;
+    KrylovSolver solver(gmres);
     solver.set("parent", *this);
     solver.solve(*A, x, b);
   }

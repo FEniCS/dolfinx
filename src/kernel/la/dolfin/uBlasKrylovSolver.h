@@ -55,7 +55,7 @@ namespace dolfin
     /// Solve linear system Ax = b and return number of iterations (sparse matrix)
     uint solve(const uBlasMatrix<ublas_sparse_matrix>& A, uBlasVector& x, const uBlasVector& b);
     
-    /// Solver linear system Ax = b and return number of iterations (virtutal matrix)
+    /// Solve linear system Ax = b and return number of iterations (virtual matrix)
     uint solve(const uBlasKrylovMatrix& A, uBlasVector& x, const uBlasVector& b);
 
   private:

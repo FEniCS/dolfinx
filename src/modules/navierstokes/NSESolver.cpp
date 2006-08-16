@@ -72,11 +72,11 @@ void NSESolver::solve()
 
   // Initialize algebraic solvers 
 #ifdef HAVE_PETSC_H
-  GMRES solver_con(amg);
+  KrylovSolver solver_con(gmres, amg);
 #else
-  GMRES solver_con;
+  KrylovSolver solver_con(gmres);
 #endif
-  GMRES solver_mom;
+  KrylovSolver solver_mom(gmres);
  
   // Create functions for the velocity and pressure 
   // (needed for the initialization of the forms)
