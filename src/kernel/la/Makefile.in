@@ -60,7 +60,7 @@ am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(includedir)"
 libLTLIBRARIES_INSTALL = $(INSTALL)
 LTLIBRARIES = $(lib_LTLIBRARIES)
 libdolfin_la_la_LIBADD =
-am_libdolfin_la_la_OBJECTS = GMRES.lo PETScEigenvalueSolver.lo \
+am_libdolfin_la_la_OBJECTS = GMRES.lo LU.lo PETScEigenvalueSolver.lo \
 	PETScKrylovMatrix.lo PETScKrylovSolver.lo PETScLUSolver.lo \
 	PETScManager.lo PETScMatrix.lo PETScPreconditioner.lo \
 	PETScVector.lo uBlasKrylovMatrix.lo uBlasKrylovSolver.lo \
@@ -263,6 +263,7 @@ nobase_include_HEADERS = dolfin/dolfin_la.h \
 INCLUDES = @KERNEL_CFLAGS@
 lib_LTLIBRARIES = libdolfin-la.la
 libdolfin_la_la_SOURCES = GMRES.cpp \
+                          LU.cpp \
                           PETScEigenvalueSolver.cpp \
                           PETScKrylovMatrix.cpp \
                           PETScKrylovSolver.cpp \
@@ -349,6 +350,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/GMRES.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LU.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PETScEigenvalueSolver.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PETScKrylovMatrix.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PETScKrylovSolver.Plo@am__quote@

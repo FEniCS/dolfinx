@@ -582,6 +582,47 @@ def GMRES_solve(*args):
     """
     return _dolfin.GMRES_solve(*args)
 
+class LU(_object):
+    """Proxy of C++ LU class"""
+    __swig_setmethods__ = {}
+    __setattr__ = lambda self, name, value: _swig_setattr(self, LU, name, value)
+    __swig_getmethods__ = {}
+    __getattr__ = lambda self, name: _swig_getattr(self, LU, name)
+    def __init__(self): raise RuntimeError, "No constructor defined"
+    def __repr__(self):
+        return "<%s.%s; proxy of C++ dolfin::LU instance at %s>" % (self.__class__.__module__, self.__class__.__name__, self.this,)
+    def solve(*args):
+        """
+        solve(PETScMatrix A, PETScVector x, PETScVector b)
+        solve(PETScKrylovMatrix A, PETScVector x, PETScVector b)
+        solve(uBlasMatrix<(dolfin::ublas_dense_matrix)> A, uBlasVector x, 
+            uBlasVector b)
+        solve(uBlasMatrix<(dolfin::ublas_sparse_matrix)> A, uBlasVector x, 
+            uBlasVector b)
+        """
+        return _dolfin.LU_solve(*args)
+
+    if _newclass:solve = staticmethod(solve)
+    __swig_getmethods__["solve"] = lambda x: solve
+
+class LUPtr(LU):
+    def __init__(self, this):
+        _swig_setattr(self, LU, 'this', this)
+        if not hasattr(self,"thisown"): _swig_setattr(self, LU, 'thisown', 0)
+        self.__class__ = LU
+_dolfin.LU_swigregister(LUPtr)
+
+def LU_solve(*args):
+    """
+    solve(PETScMatrix A, PETScVector x, PETScVector b)
+    solve(PETScKrylovMatrix A, PETScVector x, PETScVector b)
+    solve(uBlasMatrix<(dolfin::ublas_dense_matrix)> A, uBlasVector x, 
+        uBlasVector b)
+    LU_solve(uBlasMatrix<(dolfin::ublas_sparse_matrix)> A, uBlasVector x, 
+        uBlasVector b)
+    """
+    return _dolfin.LU_solve(*args)
+
 class PETScKrylovMatrix(_object):
     """Proxy of C++ PETScKrylovMatrix class"""
     __swig_setmethods__ = {}

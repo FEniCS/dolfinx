@@ -35,7 +35,7 @@ void solveConvectionDiffusion(Mesh& mesh, Function& velocity)
   // Linear system and solver
   Matrix A;
   Vector x, b;
-  LU solver;
+  LUSolver solver;
   
   // Create functions
   ConvectionDiffusion::BilinearForm::TrialElement element;

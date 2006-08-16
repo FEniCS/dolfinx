@@ -4,13 +4,13 @@
 // Modified by Anders Logg, 2005-2006.
 //
 // First added:  2005-10-23
-// Last changed: 2006-06-15
+// Last changed: 2006-08-16
 
 #include <dolfin/FEM.h>
 #include <dolfin/BilinearForm.h>
 #include <dolfin/LinearForm.h>
 #include <dolfin/NewtonSolver.h>
-#include <dolfin/LU.h>
+#include <dolfin/LUSolver.h>
 #include <iostream>
 
 using namespace dolfin;
@@ -18,7 +18,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 NewtonSolver::NewtonSolver() : Parametrized()
 {
-  solver = new LU;
+  solver = new LUSolver();
 #ifdef HAVE_PETSC_H
   A = new Matrix(Matrix::umfpack);
 #else
@@ -29,7 +29,7 @@ NewtonSolver::NewtonSolver() : Parametrized()
 #ifdef HAVE_PETSC_H
 NewtonSolver::NewtonSolver(Matrix::Type matrix_type) : Parametrized()
 {
-  solver = new LU;
+  solver = new LUSolver();
   A = new Matrix(matrix_type);
 }
 #endif
