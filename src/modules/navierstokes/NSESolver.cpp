@@ -71,11 +71,7 @@ void NSESolver::solve()
   residual_con = 1.0e3;
 
   // Initialize algebraic solvers 
-#ifdef HAVE_PETSC_H
   KrylovSolver solver_con(gmres, amg);
-#else
-  KrylovSolver solver_con(gmres);
-#endif
   KrylovSolver solver_mom(gmres);
  
   // Create functions for the velocity and pressure 
