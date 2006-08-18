@@ -492,6 +492,6 @@ if test x$enable_pydolfin = xyes; then
    echo ''
    echo 'for bash or, alternatively,'
    echo ''
-   echo "  setenv PATH $prefix/lib/python2.4/site-packages:\${PYTHONPATH}"
+   echo "  setenv PYTHONPATH $prefix/lib/python2.4/site-packages:\${PYTHONPATH}"
    echo ''
 fi
