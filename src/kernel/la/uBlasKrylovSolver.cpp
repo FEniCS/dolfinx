@@ -17,17 +17,16 @@ uBlasKrylovSolver::uBlasKrylovSolver(KrylovMethod method)
   : Parametrized(),
     method(method), pc_user(false), report(false), parameters_read(false)
 {
-  // Create default predefined preconditioner
-  pc = new uBlasILUPreconditioner();
+  // Select and create default preconditioner
+  selectPreconditioner(default_pc);
 }
 //-----------------------------------------------------------------------------
 uBlasKrylovSolver::uBlasKrylovSolver(Preconditioner pc)
   : Parametrized(),
     method(default_method), pc_user(false), report(false), parameters_read(false)
 {
-  // Create predefined preconditioner
-  // FIXME: need  to choose appropriate preconditioner here
-  this->pc = new uBlasDummyPreconditioner();
+  // Select and create default preconditioner
+  selectPreconditioner(pc);
 }
 //-----------------------------------------------------------------------------
 uBlasKrylovSolver::uBlasKrylovSolver(uBlasPreconditioner& pc)
@@ -41,9 +40,8 @@ uBlasKrylovSolver::uBlasKrylovSolver(KrylovMethod method, Preconditioner pc)
   : Parametrized(),
     method(method), pc_user(false), report(false), parameters_read(false)
 {
-  // Create predefined preconditioner
-  // FIXME: need  to choose appropriate preconditioner here
-  this->pc = new uBlasDummyPreconditioner();
+  // Select and create default preconditioner
+  selectPreconditioner(pc);
 }
 //-----------------------------------------------------------------------------
 uBlasKrylovSolver::uBlasKrylovSolver(KrylovMethod method, uBlasPreconditioner& pc)
@@ -76,6 +74,25 @@ dolfin::uint uBlasKrylovSolver::solve(const uBlasKrylovMatrix& A, uBlasVector& x
     const uBlasVector& b)
 { 
   return solveKrylov(A, x, b); 
+}
+//-----------------------------------------------------------------------------
+void uBlasKrylovSolver::selectPreconditioner(const Preconditioner preconditioner)
+{
+  switch(preconditioner)
+  { 
+    case none:
+      pc = new uBlasDummyPreconditioner();
+      break;
+    case ilu:
+      pc = new uBlasILUPreconditioner();
+      break;
+    case default_pc:
+      pc = new uBlasILUPreconditioner();
+      break;
+    default:
+      dolfin_warning("Requested preconditioner is not available for uBlas Krylov solver. Using ILU.");
+      pc = new uBlasILUPreconditioner();
+  }
 }
 //-----------------------------------------------------------------------------
 void uBlasKrylovSolver::readParameters()

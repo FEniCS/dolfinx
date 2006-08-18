@@ -50,10 +50,12 @@ namespace dolfin
     ~uBlasKrylovSolver();
 
     /// Solve linear system Ax = b and return number of iterations (dense matrix)
-    uint solve(const uBlasMatrix<ublas_dense_matrix>& A, uBlasVector& x, const uBlasVector& b);
+    uint solve(const uBlasMatrix<ublas_dense_matrix>& A, uBlasVector& x, 
+               const uBlasVector& b);
 
     /// Solve linear system Ax = b and return number of iterations (sparse matrix)
-    uint solve(const uBlasMatrix<ublas_sparse_matrix>& A, uBlasVector& x, const uBlasVector& b);
+    uint solve(const uBlasMatrix<ublas_sparse_matrix>& A, uBlasVector& x, 
+               const uBlasVector& b);
     
     /// Solve linear system Ax = b and return number of iterations (virtual matrix)
     uint solve(const uBlasKrylovMatrix& A, uBlasVector& x, const uBlasVector& b);
@@ -66,12 +68,17 @@ namespace dolfin
 
     /// Solve linear system Ax = b using restarted GMRES
     template<class Mat>    
-    uint solveGMRES(const Mat& A, uBlasVector& x, const uBlasVector& b, bool& converged) const;
+    uint solveGMRES(const Mat& A, uBlasVector& x, const uBlasVector& b, 
+                        bool& converged) const;
 
     /// Solve linear system Ax = b using BiCGStab
     template<class Mat>    
-    uint solveBiCGStab(const Mat& A, uBlasVector& x, const uBlasVector& b, bool& converged) const;
+    uint solveBiCGStab(const Mat& A, uBlasVector& x, const uBlasVector& b, 
+                        bool& converged) const;
     
+    /// Select and create named preconditioner
+    void selectPreconditioner(const Preconditioner preconditioner);
+
     /// Read solver parameters
     void readParameters();
 
