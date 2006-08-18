@@ -4,7 +4,7 @@
 // Modified by Anders Logg 2006.
 //
 // First added:  2006-05-31
-// Last changed: 2006-08-15
+// Last changed: 2006-08-18
 
 #ifndef __UBLAS_KRYLOV_SOLVER_H
 #define __UBLAS_KRYLOV_SOLVER_H
@@ -31,19 +31,16 @@ namespace dolfin
   {
   public:
 
-    /// Create Krylov solver for a particular method and default preconditioner
-    uBlasKrylovSolver(KrylovMethod method = default_method);
+    /// Create Krylov solver for a particular method and preconditioner
+    uBlasKrylovSolver(KrylovMethod method = default_method, Preconditioner pc = default_pc);
 
     /// Create Krylov solver for a particular preconditioner (set by name)
     uBlasKrylovSolver(Preconditioner pc);
 
-    /// Create Krylov solver for a particular preconditioner
+    /// Create Krylov solver for a particular uBlasPreconditioner
     uBlasKrylovSolver(uBlasPreconditioner& pc);
 
-    /// Create Krylov solver for a particular method and preconditioner
-    uBlasKrylovSolver(KrylovMethod method, Preconditioner pc);
-
-    /// Create Krylov solver for a particular method and preconditioner
+    /// Create Krylov solver for a particular method and uBlasPreconditioner
     uBlasKrylovSolver(KrylovMethod method, uBlasPreconditioner& preconditioner);
 
     /// Destructor

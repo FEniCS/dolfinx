@@ -7,7 +7,7 @@
 // Modified by Garth N. Wells 2005-2006.
 //
 // First added:  2005-12-02
-// Last changed: 2006-08-15
+// Last changed: 2006-08-18
 
 #ifndef __PETSC_KRYLOV_SOLVER_H
 #define __PETSC_KRYLOV_SOLVER_H
@@ -38,20 +38,14 @@ namespace dolfin
   {
   public:
 
-    /// Create Krylov solver with PETSc default method and PETScPreconditioner
-    PETScKrylovSolver();
+    /// Create Krylov solver for a particular method and preconditioner
+    PETScKrylovSolver(KrylovMethod method = default_method, Preconditioner pc = default_pc);
 
-    /// Create Krylov solver for a particular method with default PETSc PETScPreconditioner
-    PETScKrylovSolver(KrylovMethod method);
-
-    /// Create Krylov solver with default PETSc method and a particular PETScPreconditioner
+    /// Create Krylov solver with default PETSc method and a particular preconditioner
     PETScKrylovSolver(Preconditioner pc);
 
     /// Create Krylov solver with default PETSc method and a particular PETScPreconditioner
     PETScKrylovSolver(PETScPreconditioner& PETScPreconditioner);
-
-    /// Create Krylov solver for a particular method and PETScPreconditioner
-    PETScKrylovSolver(KrylovMethod method, Preconditioner pc);
 
     /// Create Krylov solver for a particular method and PETScPreconditioner
     PETScKrylovSolver(KrylovMethod method, PETScPreconditioner& PETScPreconditioner);

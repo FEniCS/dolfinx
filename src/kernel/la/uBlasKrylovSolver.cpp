@@ -4,7 +4,7 @@
 // Modified by Anders Logg 2006.
 //
 // First added:  2006-05-31
-// Last changed: 2006-08-15
+// Last changed: 2006-08-18
 
 #include <dolfin/uBlasILUPreconditioner.h>
 #include <dolfin/uBlasDummyPreconditioner.h>
@@ -13,12 +13,12 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-uBlasKrylovSolver::uBlasKrylovSolver(KrylovMethod method)
+uBlasKrylovSolver::uBlasKrylovSolver(KrylovMethod method, Preconditioner pc)
   : Parametrized(),
     method(method), pc_user(false), report(false), parameters_read(false)
 {
   // Select and create default preconditioner
-  selectPreconditioner(default_pc);
+  selectPreconditioner(pc);
 }
 //-----------------------------------------------------------------------------
 uBlasKrylovSolver::uBlasKrylovSolver(Preconditioner pc)
@@ -34,14 +34,6 @@ uBlasKrylovSolver::uBlasKrylovSolver(uBlasPreconditioner& pc)
     method(default_method), pc(&pc), pc_user(true), report(false), parameters_read(false)
 {
   // Do nothing
-}
-//-----------------------------------------------------------------------------
-uBlasKrylovSolver::uBlasKrylovSolver(KrylovMethod method, Preconditioner pc)
-  : Parametrized(),
-    method(method), pc_user(false), report(false), parameters_read(false)
-{
-  // Select and create default preconditioner
-  selectPreconditioner(pc);
 }
 //-----------------------------------------------------------------------------
 uBlasKrylovSolver::uBlasKrylovSolver(KrylovMethod method, uBlasPreconditioner& pc)
