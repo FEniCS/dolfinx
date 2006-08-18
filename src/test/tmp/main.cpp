@@ -9,6 +9,10 @@
 // changing. Anything can be thrown into this file at any time. Use
 // this for simple tests that are not suitable to be implemented as
 // demos in src/demo.
+//
+// This file has grown quite large lately. Tests should be moved from
+// this file to the unit test framework. Benchmarks should be moved
+// to src/bench/. (Need to set up a benchmarking framework.)
 
 #include <dolfin.h>
 #include <dolfin/Poisson2D.h>
@@ -316,7 +320,7 @@ void testuBlasSparseMatrix()
 
 #ifdef HAVE_PETSC_H
 
-  PETScSparseMatrix As;
+  PETScMatrix As;
   PETScVector bs;
   PETScVector xs;
 
@@ -326,7 +330,7 @@ void testuBlasSparseMatrix()
   dolfin_log(true);
 
 //  PETScKrylovSolver solver(PETScKrylovSolver::bicgstab);
-  PETScKrylovSolver solver(PETScKrylovSolver::gmres);
+  PETScKrylovSolver solver(gmres);
   tic();
   solver.solve(As, xs, bs);
   real t_petsc = toc();  
@@ -342,13 +346,13 @@ void testuBlasSparseMatrix()
   cout << "uBlas assembly time = " << toc() << endl;  
 
   //uBlasKrylovSolver ublas_solver(uBlasKrylovSolver::bicgstab);
-  uBlasKrylovSolver ublas_solver(uBlasKrylovSolver::gmres);
   uBlasILUPreconditioner pc(A);
+  uBlasKrylovSolver ublas_solver(gmres, pc);
 
   x = b;
   x = 0.0;  
   tic();
-  ublas_solver.solve(A, x, b, pc);
+  ublas_solver.solve(A, x, b);
   real t_ublas = toc();  
   cout << "norm(x) " << x.norm() << endl;  
   cout << "uBlas Krylov solve time = " << t_ublas << endl;  
@@ -367,7 +371,7 @@ void testuBlasSparseMatrix()
   dolfin_log(true);
 
   cout << "Testing direct solve " << endl;
-  const dolfin::uint repeat = 500000;
+  const dolfin::uint repeat = 50000;
 
   uBlasLUSolver lu;
   tic();
