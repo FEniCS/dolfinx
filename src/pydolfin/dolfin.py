@@ -683,11 +683,11 @@ class PETScKrylovSolver(_object):
         return "<%s.%s; proxy of C++ dolfin::PETScKrylovSolver instance at %s>" % (self.__class__.__module__, self.__class__.__name__, self.this,)
     def __init__(self, *args):
         """
+        __init__(self, KrylovMethod method=default_method, Preconditioner pc=default_pc) -> PETScKrylovSolver
+        __init__(self, KrylovMethod method=default_method) -> PETScKrylovSolver
         __init__(self) -> PETScKrylovSolver
-        __init__(self, KrylovMethod method) -> PETScKrylovSolver
         __init__(self, Preconditioner pc) -> PETScKrylovSolver
         __init__(self, PETScPreconditioner PETScPreconditioner) -> PETScKrylovSolver
-        __init__(self, KrylovMethod method, Preconditioner pc) -> PETScKrylovSolver
         __init__(self, KrylovMethod method, PETScPreconditioner PETScPreconditioner) -> PETScKrylovSolver
         """
         _swig_setattr(self, PETScKrylovSolver, 'this', _dolfin.new_PETScKrylovSolver(*args))
@@ -1350,11 +1350,11 @@ class uBlasKrylovSolver(_object):
         return "<%s.%s; proxy of C++ dolfin::uBlasKrylovSolver instance at %s>" % (self.__class__.__module__, self.__class__.__name__, self.this,)
     def __init__(self, *args):
         """
+        __init__(self, KrylovMethod method=default_method, Preconditioner pc=default_pc) -> uBlasKrylovSolver
         __init__(self, KrylovMethod method=default_method) -> uBlasKrylovSolver
         __init__(self) -> uBlasKrylovSolver
         __init__(self, Preconditioner pc) -> uBlasKrylovSolver
         __init__(self, uBlasPreconditioner pc) -> uBlasKrylovSolver
-        __init__(self, KrylovMethod method, Preconditioner pc) -> uBlasKrylovSolver
         __init__(self, KrylovMethod method, uBlasPreconditioner preconditioner) -> uBlasKrylovSolver
         """
         _swig_setattr(self, uBlasKrylovSolver, 'this', _dolfin.new_uBlasKrylovSolver(*args))

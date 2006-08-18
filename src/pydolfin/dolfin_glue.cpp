@@ -10,6 +10,14 @@ extern "C"
   int MAIN__()  { return(0); }
 }
 
+// These functions are a fix to avoid undefined symbol errors
+extern "C"
+{
+  int umfpack_di_transpose()  { return(0); }
+  int umfpack_di_solve()  { return(0); }
+}
+
+
 void glueset(std::string name, dolfin::real val)
 {
   dolfin::set(name, val);
