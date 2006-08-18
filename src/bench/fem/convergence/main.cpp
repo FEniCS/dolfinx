@@ -95,7 +95,7 @@ real solve2D(int q, int n)
   FEM::assemble(*a, *L, A, b, mesh, bc);
 
   // Solve the linear system
-  GMRES solver;
+  KrylovSolver solver(gmres);
   solver.set("Krylov relative tolerance", 1e-14); 
   solver.solve(A, x, b);
 
@@ -167,7 +167,7 @@ real solve3D(int q, int n)
   cout << "Maximum number of nonzeros: " << A.nzmax() << endl;
   
   // Solve the linear system
-  GMRES solver;
+  KrylovSolver solver(gmres);
   solver.set("Krylov relative tolerance", 1e-14); 
   solver.solve(A, x, b);
 
