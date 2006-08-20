@@ -42,7 +42,6 @@ PETScKrylovSolver::PETScKrylovSolver(KrylovMethod method, Preconditioner pc)
     method(method), pc_petsc(pc), pc_dolfin(0),
     ksp(0), M(0), N(0), parameters_read(false)
 {
-  cout << "Constructor 1" << endl;
   // Initialize PETSc
   PETScManager::init();
 }
@@ -52,7 +51,6 @@ PETScKrylovSolver::PETScKrylovSolver(Preconditioner pc)
     method(default_method), pc_petsc(pc), pc_dolfin(0),
     ksp(0), M(0), N(0), parameters_read(false)
 {
-  cout << "Constructor 2" << endl;
   // Initialize PETSc
   PETScManager::init();
 }
