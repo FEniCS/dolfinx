@@ -13,7 +13,6 @@ Manual
 
 * Fix incomplete sections
 * Write section on coding style
-* Put programmer's reference online again
 
 Assembly
 --------
@@ -81,9 +80,6 @@ General
 * Add benchmark again, add old benchmark results and put bench in src/bench/
 
 * Write FAQ and put on web page:
-
-  Q: When to use -DPETSC_USE_EXTERN_CXX?
-  A: When calling PETSc from C (not recommended), recompile PETSc.
 
   Q: Parallel mesh?
   A: Waiting for Matt.
