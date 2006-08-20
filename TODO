@@ -22,7 +22,6 @@ Assembly
 * Use MatSetOption(A, MAT_USE_HASH_TABLE)?
 * Make two forms share the same map and only update the map
 * Compute number of nonzeros before assembly
-* Boundary conditions for other than linear elements
 * Parallel assembly
 
 Mesh
