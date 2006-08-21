@@ -15,8 +15,9 @@
 namespace dolfin
 {
 
-  class PETScVector
-  class PETScMatrix
+  /// Forward declarations
+  class PETScMatrix;
+  class PETScVector;
 
   /// This class computes eigenvalues of a matrix. It is 
 	/// a wrapper for the eigenvalue solver SLEPc.
@@ -32,7 +33,7 @@ namespace dolfin
       default_solver,   // Default SLEPc solver (use when setting method from command line)
       lanczos,          // Lanczos
       lapack,           // LAPACK (all values, exact, only for small systems) 
-      power,             // Power
+      power,            // Power
       subspace          // Subspace
     };
 
@@ -61,13 +62,13 @@ namespace dolfin
     void getEigenvalue(real& xr, real& xc);
 
     /// Get 0th eigenpair  
-    void getEigenpair(real& xr, real& xc, Vector& r, Vector& c);
+    void getEigenpair(real& xr, real& xc, PETScVector& r, PETScVector& c);
 
     /// Get eigenvalue i 
     void getEigenvalue(real& xr, real& xc, const int i);
 
     /// Get eigenpair i 
-    void getEigenpair(real& xr, real& xc, Vector& r, Vector& c, const int i);
+    void getEigenpair(real& xr, real& xc, PETScVector& r, PETScVector& c, const int i);
 
   private:
 

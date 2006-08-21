@@ -9,6 +9,8 @@
 #include <dolfin/dolfin_log.h>
 #include <dolfin/PETScManager.h>
 #include <dolfin/PETScEigenvalueSolver.h>
+#include <dolfin/PETScMatrix.h>
+#include <dolfin/PETScVector.h>
 
 using namespace dolfin;
 
@@ -71,7 +73,7 @@ void PETScEigenvalueSolver::getEigenvalue(real& xr, real& xc)
   getEigenvalue(xr, xc, 0);
 }
 //-----------------------------------------------------------------------------
-void PETScEigenvalueSolver::getEigenpair(real& xr, real& xc, Vector& r,  Vector& c)
+void PETScEigenvalueSolver::getEigenpair(real& xr, real& xc, PETScVector& r,  PETScVector& c)
 {
   getEigenpair(xr, xc, r, c, 0);
 }
@@ -88,7 +90,7 @@ void PETScEigenvalueSolver::getEigenvalue(real& xr, real& xc, const int i)
     dolfin_error("Requested eigenvalue has not been computed");
 }
 //-----------------------------------------------------------------------------
-void PETScEigenvalueSolver::getEigenpair(real& xr, real& xc, Vector& r,  Vector& c, const int i)
+void PETScEigenvalueSolver::getEigenpair(real& xr, real& xc, PETScVector& r, PETScVector& c, const int i)
 {
   // Get number of computed eigenvectors/values
   int num_computed_eigenvalues;

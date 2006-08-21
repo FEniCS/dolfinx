@@ -304,10 +304,10 @@ if test x$disable_petsc = x; then
     AC_CHECK_HEADER([$SLEPC_DIR/include/slepcversion.h], have_slepc=yes, have_slepc=no)
 
     if test $have_slepc = yes; then
-        PETSC_ARCH=`cat $PETSC_DIR/bmake/petscconf | sed -e "s/PETSC_ARCH=//" -e "2d"`
-        SLEPC_CFLAGS="-DHAVE_SLEPC_H=1 -I${SLEPC_DIR} -I${SLEPC_DIR}/include"
-        SLEPC_LIBS="-L${SLEPC_DIR}/lib/${PETSC_ARCH} -lslepc"
-        SLEPC_LIBS="-Wl,-rpath,${SLEPC_DIR}/lib/linux-gnu-cxx-real-debug $SLEPC_LIBS"
+        # Extract SLEPc variables
+        SLEPC_CFLAGS=`make -f slepc.conf get_slepc_include SLEPC_DIR=$SLEPC_DIR`
+        SLEPC_LIBS=`make -f slepc.conf get_slepc_libs SLEPC_DIR=$SLEPC_DIR`
+        SLEPC_CFLAGS="-DHAVE_SLEPC_H=1 $SLEPC_CFLAGS"
     else
         echo "SLEPc not found on your system."
         echo "  SLEPc is a PETSc extension that provides eigenvalue solvers."
