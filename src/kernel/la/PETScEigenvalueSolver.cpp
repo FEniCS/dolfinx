@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-08-31
-// Last changed: 2006-05-29
+// Last changed: 2006-09-21
 
 #ifdef HAVE_SLEPC_H
 
