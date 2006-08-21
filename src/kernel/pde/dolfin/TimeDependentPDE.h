@@ -1,13 +1,13 @@
-// Copyright (C) 2004-2006 Anders Logg.
+// Copyright (C) 2006 Johan Jansson.
 // Licensed under the GNU GPL Version 2.
 //
 // Modified by Garth N. Wells 2006.
 //
-// First added:  2004
-// Last changed: 2006-02-24
+// First added:  2005
+// Last changed: 2006-08-21
 
-#ifndef __TIMEDEPENDENT_PDE_H
-#define __TIMEDEPENDENT_PDE_H
+#ifndef __TIME_DEPENDENT_PDE_H
+#define __TIME_DEPENDENT_PDE_H
 
 #ifdef HAVE_PETSC_H
 
@@ -90,7 +90,7 @@ namespace dolfin
   {
   public:
     TimeDependentODE(TimeDependentPDE& pde, int N, real T);
-    real u0(unsigned int i);
+    void u0(uBlasVector& u);
     virtual real timestep(real t, real k0) const;
     // Evaluate right-hand side (mono-adaptive version)
     using ODE::f;

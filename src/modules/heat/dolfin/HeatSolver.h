@@ -72,7 +72,7 @@ namespace dolfin
   {
   public:
     HeatODE(HeatSolver& solver);
-    real u0(unsigned int i);
+    void u0(uBlasVector& u);
 
     /// Evaluate right-hand side (mono-adaptive version)
     virtual void f(const real u[], real t, real y[]);

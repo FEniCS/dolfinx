@@ -84,9 +84,10 @@ HeatODE::HeatODE(HeatSolver& solver) :
 {
 }
 //-----------------------------------------------------------------------------
-real HeatODE::u0(unsigned int i)
+void HeatODE::u0(uBlasVector& u)
 {
-  return 0.0;
+  // FIXME: ODE solver interface has changed
+  dolfin_error("Not implemented.");
 }
 //-----------------------------------------------------------------------------
 void HeatODE::f(const real u[], real t, real y[])

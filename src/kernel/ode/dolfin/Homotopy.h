@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005
-// Last changed: 2006-07-07
+// Last changed: 2006-08-21
 
 #ifndef __HOMOTOPY_H
 #define __HOMOTOPY_H
@@ -36,7 +36,7 @@ namespace dolfin
     const Array<complex*>& solutions() const;
 
     /// Return initial value (solution of G(z) = 0), optional
-    virtual complex z0(uint i);
+    virtual void z0(complex z[]);
 
     /// Compute y = F(z)
     virtual void F(const complex z[], complex y[]) = 0;

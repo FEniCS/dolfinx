@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-28
-// Last changed: 2006-08-08
+// Last changed: 2006-08-21
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/dolfin_parameter.h>
@@ -51,7 +51,7 @@ real MonoAdaptiveFixedPointSolver::iteration(real tol, uint iter,
 
     // Reset values to initial data
     for (uint i = 0; i < ts.N; i++)
-      ts.x(noffset + i) += alpha*(ts.u0[i] - ts.x(noffset+i));
+      ts.x(noffset + i) += alpha*(ts.u0(i) - ts.x(noffset+i));
 
     // Add weights of right-hand side
     for (uint m = 0; m < method.qsize(); m++)

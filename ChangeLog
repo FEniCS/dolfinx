@@ -1,3 +1,4 @@
+ - Modify ODE solver interface for u0() and f()
  - Add class ConvectionMatrix
  - Readd classes LoadVector, MassMatrix, StiffnessMatrix
  - Add matrix factory for simple creation of standard finite element matrices

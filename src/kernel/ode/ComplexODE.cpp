@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-02-02
-// Last changed: 2006-07-07
+// Last changed: 2006-08-21
 
 #include <dolfin/Array.h>
 #include <dolfin/ComplexODE.h>
@@ -75,11 +75,15 @@ bool ComplexODE::update(const complex z[], real t, bool end)
   return true;
 }
 //-----------------------------------------------------------------------------
-real ComplexODE::u0(uint i)
+void ComplexODE::u0(uBlasVector& u)
 {
   // Translate initial value from complex to real
-  complex z = z0(i / 2);
-  return ( i % 2 == 0 ? z.real() : z.imag() );
+  z0(zvalues);
+  for (uint i = 0; i < N; i++)
+  {
+    complex z = zvalues[i / 2];
+    u(i) = ( i % 2 == 0 ? z.real() : z.imag() );
+  }
 }
 //-----------------------------------------------------------------------------
 real ComplexODE::f(const uBlasVector& u, real t, uint i)

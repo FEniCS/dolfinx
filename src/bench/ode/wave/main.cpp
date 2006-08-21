@@ -67,24 +67,26 @@ public:
   }
 
   // Initial condition: a wave coming in from the right
-  real u0(unsigned int i)
+  void u0(uBlasVector& u)
   {
-    const real x0 = 1.0 - 0.5*w;
-    
-    if ( i < offset )
+    for (unsigned int i = 0; i < N; i++)
     {
-      const Point& p = mesh.vertex(i).coord();
-      if ( fabs(p.x - x0) < 0.5*w )
-	return 0.5*(cos(2.0*DOLFIN_PI*(p.x - x0)/w) + 1.0);
-    }
-    else
-    {
-      const Point& p = mesh.vertex(i - offset).coord();
-      if ( fabs(p.x - x0) < 0.5*w )
-      	return -(DOLFIN_PI/w)*sin(2.0*DOLFIN_PI*(p.x - x0)/w);
-    }
+      const real x0 = 1.0 - 0.5*w;
+      u(i) = 0.0;
 
-    return 0.0;
+      if ( i < offset )
+      {
+	const Point& p = mesh.vertex(i).coord();
+	if ( fabs(p.x - x0) < 0.5*w )
+	  u(i) = 0.5*(cos(2.0*DOLFIN_PI*(p.x - x0)/w) + 1.0);
+      }
+      else
+      {
+	const Point& p = mesh.vertex(i - offset).coord();
+	if ( fabs(p.x - x0) < 0.5*w )
+	  u(i) = -(DOLFIN_PI/w)*sin(2.0*DOLFIN_PI*(p.x - x0)/w);
+      }
+    }
   }
 
   // Global time step

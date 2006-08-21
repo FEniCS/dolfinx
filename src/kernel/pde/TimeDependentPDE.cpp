@@ -156,9 +156,11 @@ TimeDependentODE::TimeDependentODE(TimeDependentPDE& pde, int N, real T) :
 {
 }
 //-----------------------------------------------------------------------------
-real TimeDependentODE::u0(unsigned int i)
+void TimeDependentODE::u0(uBlasVector& u)
 {
-   return pde->x->get(i);
+  // FIXME: ODE solver interface has changed
+  dolfin_error("Not implemented.");
+  //return pde->x->get(i);
 }
 //-----------------------------------------------------------------------------
 void TimeDependentODE::f(const real u[], real t, real y[])

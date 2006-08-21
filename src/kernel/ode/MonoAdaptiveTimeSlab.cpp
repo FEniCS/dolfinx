@@ -41,8 +41,7 @@ MonoAdaptiveTimeSlab::MonoAdaptiveTimeSlab(ODE& ode)
   // Evaluate f at initial data for cG(q)
   if ( method->type() == Method::cG )
   {
-    copy(u0, 0, u, 0, N);
-    ode.f(u, 0.0, f);
+    ode.f(u0, 0.0, f);
     copy(f, 0, fq, 0, N);
   }
 }
@@ -62,7 +61,7 @@ real MonoAdaptiveTimeSlab::build(real a, real b)
   // Copy initial values to solution
   for (uint n = 0; n < method->nsize(); n++)
     for (uint i = 0; i < N; i++)
-      x(n*N + i) = u0[i];
+      x(n*N + i) = u0(i);
 
   // Choose time step
   const real k = adaptivity.timestep();
@@ -78,10 +77,7 @@ real MonoAdaptiveTimeSlab::build(real a, real b)
 
   // Update at t = 0.0
   if ( a < DOLFIN_EPS )
-  {
-    copy(u0, 0, u, 0, N);
-    ode.update(u, a, false);
-  }
+    ode.update(u0, a, false);
 
   return b;
 }
@@ -107,7 +103,7 @@ bool MonoAdaptiveTimeSlab::check(bool first)
   for (uint i = 0; i < N; i++)
   {
     // Prepare data for computation of derivative
-    const real x0 = u0[i];
+    const real x0 = u0(i);
     for (uint n = 0; n < method->nsize(); n++)
       dofs[n] = x(n*N + i);
 
@@ -149,7 +145,7 @@ bool MonoAdaptiveTimeSlab::shift()
 
   // Set initial value to end-time value
   for (uint i = 0; i < N; i++)
-    u0[i] = x(xoffset + i);
+    u0(i) = x(xoffset + i);
 
   // Set f at first quadrature point to f at end-time for cG(q)
   if ( method->type() == Method::cG )
@@ -170,7 +166,7 @@ void MonoAdaptiveTimeSlab::sample(real t)
 real MonoAdaptiveTimeSlab::usample(uint i, real t)
 {
   // Prepare data
-  const real x0 = u0[i];
+  const real x0 = u0(i);
   const real tau = (t - _a) / (_b - _a);  
 
   // Prepare array of values
@@ -193,7 +189,7 @@ real MonoAdaptiveTimeSlab::rsample(uint i, real t)
   // Right-hand side at end-point already computed
 
   // Prepare data for computation of derivative
-  const real x0 = u0[i];
+  const real x0 = u0(i);
   for (uint n = 0; n < method->nsize(); n++)
     dofs[n] = x(n*N + i);
   

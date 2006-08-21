@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-27
-// Last changed: 2006-08-08
+// Last changed: 2006-08-21
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/dolfin_math.h>
@@ -143,7 +143,7 @@ void MultiAdaptiveNewtonSolver::Feval(uBlasVector& F)
 
     // Get initial value for element
     const int ep = ts.ee[e];
-    const real x0 = ( ep != -1 ? ts.jx[ep*method.nsize() + method.nsize() - 1] : ts.u0[i] );
+    const real x0 = ( ep != -1 ? ts.jx[ep*method.nsize() + method.nsize() - 1] : ts.u0(i) );
 
     // Evaluate right-hand side at quadrature points of element
     if ( method.type() == Method::cG )

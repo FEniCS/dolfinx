@@ -2,9 +2,10 @@
 // Licensed under the GNU GPL Version 2.
 //
 // Modified by Garth N. Wells, 2006.
+// Modified by Anders Logg 2006.
 //
 // First added:  2005
-// Last changed: 2006-03-27
+// Last changed: 2006-08-21
 
 #ifndef __ELASTICITYUPDATED_SOLVER_H
 #define __ELASTICITYUPDATED_SOLVER_H
@@ -215,7 +216,7 @@ namespace dolfin
   {
   public:
     ElasticityUpdatedODE(ElasticityUpdatedSolver& solver);
-    real u0(unsigned int i);
+    void u0(uBlasVector& u);
     // Evaluate right-hand side (mono-adaptive version)
 
     // Fix to avoid error with some compilers due to only partially overridden

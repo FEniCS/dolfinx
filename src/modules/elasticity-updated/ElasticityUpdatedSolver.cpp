@@ -1041,9 +1041,11 @@ ElasticityUpdatedODE::ElasticityUpdatedODE(ElasticityUpdatedSolver& solver) :
   N = 2 * solver.Nv + solver.Nsigma;
 }
 //-----------------------------------------------------------------------------
-real ElasticityUpdatedODE::u0(unsigned int i)
+void ElasticityUpdatedODE::u0(uBlasVector& u)
 {
-   return solver.dotu(i);
+  // FIXME: ODE solver interface has changed.
+  dolfin_error("Not implemented.");
+  //  return solver.dotu(i);
 }
 //-----------------------------------------------------------------------------
 void ElasticityUpdatedODE::f(const uBlasVector& u, real t, uBlasVector &y)

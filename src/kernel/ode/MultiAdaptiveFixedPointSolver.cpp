@@ -78,9 +78,8 @@ void MultiAdaptiveFixedPointSolver::start()
   // Update diagonal of Jacobian if used
   if ( diagonal_newton_damping )
   {
-    ts.copy(ts.u0, 0, ts.u, 0, ts.N);
     for (uint i = 0; i < ts.N; i++)
-      dfdu[i] = ts.ode.dfdu(ts.u, ts._a, i, i);
+      dfdu[i] = ts.ode.dfdu(ts.u0, ts._a, i, i);
   }
 }
 //-----------------------------------------------------------------------------
@@ -141,7 +140,7 @@ real MultiAdaptiveFixedPointSolver::iteration(real tol, uint iter,
 	
 	// Get initial value for element
 	const int ep = ts.ee[e];
-	const real x0 = ( ep != -1 ? ts.jx[ep*method.nsize() + method.nsize() - 1] : ts.u0[i] );
+	const real x0 = ( ep != -1 ? ts.jx[ep*method.nsize() + method.nsize() - 1] : ts.u0(i) );
 	
 	// Evaluate right-hand side at quadrature points of element
 	if ( method.type() == Method::cG )

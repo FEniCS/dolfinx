@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-02-02
-// Last changed: 2006-07-07
+// Last changed: 2006-08-21
 
 #ifndef __COMPLEX_ODE_H
 #define __COMPLEX_ODE_H
@@ -43,8 +43,8 @@ namespace dolfin
     /// Destructor
     ~ComplexODE();
     
-    /// Return initial value for given component
-    virtual complex z0(uint i) = 0;
+    /// Set initial values
+    virtual void z0(complex z[]) = 0;
 
     /// Evaluate right-hand side (multi-adaptive version)
     virtual complex f(const complex z[], real t, uint i);
@@ -65,7 +65,7 @@ namespace dolfin
     virtual bool update(const complex z[], real t, bool end);
 
     /// Return initial value for real-valued ODE
-    real u0(uint i);
+    void u0(uBlasVector& u);
 
     /// Return right-hand side for real-valued ODE
     real f(const uBlasVector& u, real t, uint i);

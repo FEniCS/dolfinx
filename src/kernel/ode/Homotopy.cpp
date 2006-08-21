@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2006.
 //
 // First added:  2005
-// Last changed: 2006-08-15
+// Last changed: 2006-08-21
 
 #include <stdio.h>
 #include <limits>
@@ -145,18 +145,19 @@ const Array<complex*>& Homotopy::solutions() const
   return zs;
 }
 //-----------------------------------------------------------------------------
-complex Homotopy::z0(uint i)
+void Homotopy::z0(complex z[])
 {
-  const real pp = static_cast<real>(adjustedDegree(i));
-  const real mm = static_cast<real>(mi[i]);
-  const complex c = ci[i];
-  
-  // Pick root number m of equation z_i^(p + 1) = c_i
-  real r = std::pow(std::abs(c), 1.0/(pp + 1.0));
-  real a = std::arg(c) / (pp + 1.0);
-  complex z = std::polar(r, a + mm/(pp + 1.0)*2.0*DOLFIN_PI);
-  
-  return z;
+  for (uint i = 0; i < n; i++)
+  {
+    const real pp = static_cast<real>(adjustedDegree(i));
+    const real mm = static_cast<real>(mi[i]);
+    const complex c = ci[i];
+    
+    // Pick root number m of equation z_i^(p + 1) = c_i
+    real r = std::pow(std::abs(c), 1.0/(pp + 1.0));
+    real a = std::arg(c) / (pp + 1.0);
+    z[i] = std::polar(r, a + mm/(pp + 1.0)*2.0*DOLFIN_PI);
+  }
 }
 //-----------------------------------------------------------------------------
 void Homotopy::G(const complex z[], complex y[])
