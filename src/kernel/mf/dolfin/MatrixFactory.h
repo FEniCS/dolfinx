@@ -30,8 +30,12 @@ namespace dolfin
     /// Compute stiffness matrix with diffusivity c on a given mesh
     static void computeStiffnessMatrix(GenericMatrix& A, Mesh& mesh, real c = 1.0);
     
+    /// Compute convection matrix with constant velocity c on a given mesh
+    static void computeConvectionMatrix(GenericMatrix& A, Mesh& mesh,
+					real cx = 1.0, real cy = 0.0, real cz = 0.0);
+
     /// Construct load vector with constant load c on a given mesh
-    static void computeLoadVector(GenericVector& x, Mesh& mesh, real c = 1.0);
+    static void computeLoadVector(GenericVector& x, Mesh& mesh,  real c = 1.0);
 
   };
 

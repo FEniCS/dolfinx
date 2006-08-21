@@ -180,6 +180,7 @@ sharedstatedir = @sharedstatedir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 EXTRA_DIST = dolfin_mf.h \
+             ConvectionMatrix.h \
              LoadVector.h \
              MassMatrix.h \
              MatrixFactory.h \

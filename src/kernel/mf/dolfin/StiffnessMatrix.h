@@ -26,7 +26,7 @@ namespace dolfin
   {
   public:
   
-    /// Construct stiffness matrix with diffusivity c on a given mesh
+    /// Construct stiffness matrix with constant diffusivity c on a given mesh
     StiffnessMatrix(Mesh& mesh, real c = 1.0) : Matrix()
     {
       MatrixFactory::computeStiffnessMatrix(*this, mesh, c);
@@ -44,7 +44,7 @@ namespace dolfin
   {
   public:
   
-    /// Construct stiffness matrix with diffusivity c on a given mesh
+    /// Construct stiffness matrix with constant diffusivity c on a given mesh
     PETScStiffnessMatrix(Mesh& mesh, real c = 1.0) : PETScMatrix()
     {
       MatrixFactory::computeStiffnessMatrix(*this, mesh, c);
@@ -62,7 +62,7 @@ namespace dolfin
   {
   public:
   
-    /// Construct stiffness matrix with diffusivity c on a given mesh
+    /// Construct stiffness matrix with constant diffusivity c on a given mesh
     uBlasStiffnessMatrix(Mesh& mesh, real c = 1.0) : uBlasSparseMatrix()
     {
       MatrixFactory::computeStiffnessMatrix(*this, mesh, c);

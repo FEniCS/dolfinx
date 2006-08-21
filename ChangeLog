@@ -1,3 +1,4 @@
+ - Add class ConvectionMatrix
  - Readd classes LoadVector, MassMatrix, StiffnessMatrix
  - Add matrix factory for simple creation of standard finite element matrices
  - Collect static solvers in LU and GMRES

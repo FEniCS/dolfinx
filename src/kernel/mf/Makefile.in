@@ -218,6 +218,7 @@ sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 SUBDIRS = dolfin
 nobase_include_HEADERS = dolfin/dolfin_mf.h \
+                          dolfin/ConvectionMatrix.h \
                           dolfin/LoadVector.h \
                           dolfin/MassMatrix.h \
                           dolfin/MatrixFactory.h \

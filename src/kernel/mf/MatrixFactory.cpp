@@ -14,6 +14,8 @@
 #include "ffc-forms/MassMatrix3D.h"
 #include "ffc-forms/StiffnessMatrix2D.h"
 #include "ffc-forms/StiffnessMatrix3D.h"
+#include "ffc-forms/ConvectionMatrix2D.h"
+#include "ffc-forms/ConvectionMatrix3D.h"
 #include "ffc-forms/LoadVector2D.h"
 #include "ffc-forms/LoadVector3D.h"
 
@@ -38,7 +40,8 @@ void MatrixFactory::computeMassMatrix(GenericMatrix& A, Mesh& mesh)
   }
 }
 //-----------------------------------------------------------------------------
-void MatrixFactory::computeStiffnessMatrix(GenericMatrix& A, Mesh& mesh, real c)
+void MatrixFactory::computeStiffnessMatrix(GenericMatrix& A, Mesh& mesh,
+					   real c)
 {
   if ( mesh.type() == Mesh::triangles )
   {
@@ -54,6 +57,25 @@ void MatrixFactory::computeStiffnessMatrix(GenericMatrix& A, Mesh& mesh, real c)
   {
     dolfin_error("Unknown mesh type.");
   } 
+}
+//-----------------------------------------------------------------------------
+void MatrixFactory::computeConvectionMatrix(GenericMatrix& A, Mesh& mesh,
+					    real cx, real cy, real cz)
+{
+  if ( mesh.type() == Mesh::triangles )
+  {
+    ConvectionMatrix2D::BilinearForm a(cx, cy);
+    FEM::assemble(a, A, mesh);
+  }
+  else if ( mesh.type() == Mesh::tetrahedra )
+  {
+    ConvectionMatrix3D::BilinearForm a(cx, cy, cz);
+    FEM::assemble(a, A, mesh);
+  }
+  else
+  {
+    dolfin_error("Unknown mesh type.");
+  }
 }
 //-----------------------------------------------------------------------------
 void MatrixFactory::computeLoadVector(GenericVector& x, Mesh& mesh, real c)
