@@ -14,7 +14,7 @@ CPU time cG(1):  187.362 s
 CPU time mcG(1): 41.5391 s
 ----------------------------------------
 dolfin 0.6.1
-mån aug 21 16:01:59 CEST 2006
-CPU time cG(1):  720.492 s
-CPU time mcG(1): 127.988 s
+mån aug 21 16:36:57 CEST 2006
+CPU time cG(1):  121.867 s
+CPU time mcG(1): 32.0354 s
 ----------------------------------------
