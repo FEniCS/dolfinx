@@ -61,8 +61,7 @@ libLTLIBRARIES_INSTALL = $(INSTALL)
 LTLIBRARIES = $(lib_LTLIBRARIES)
 libdolfin_fem_la_LIBADD =
 am_libdolfin_fem_la_OBJECTS = AffineMap.lo BoundaryCondition.lo \
-	BoundaryValue.lo FEM.lo FiniteElement.lo FiniteElementSpec.lo \
-	LoadVector.lo MassMatrix.lo StiffnessMatrix.lo
+	BoundaryValue.lo FEM.lo FiniteElement.lo FiniteElementSpec.lo
 libdolfin_fem_la_OBJECTS = $(am_libdolfin_fem_la_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -226,8 +225,6 @@ nobase_include_HEADERS = dolfin/dolfin_fem.h \
                            dolfin/FEM.h \
                            dolfin/FiniteElement.h \
                            dolfin/FiniteElementSpec.h \
-                           dolfin/LoadVector.h \
-                           dolfin/MassMatrix.h \
                            dolfin/P1tet.h \
                            dolfin/P1tri.h \
                            dolfin/P2tet.h \
@@ -237,8 +234,7 @@ nobase_include_HEADERS = dolfin/dolfin_fem.h \
                            dolfin/P4tet.h \
                            dolfin/P4tri.h \
                            dolfin/P5tet.h \
-                           dolfin/P5tri.h \
-                           dolfin/StiffnessMatrix.h
+                           dolfin/P5tri.h
 
 INCLUDES = @KERNEL_CFLAGS@
 lib_LTLIBRARIES = libdolfin-fem.la
@@ -247,10 +243,7 @@ libdolfin_fem_la_SOURCES = AffineMap.cpp \
                            BoundaryValue.cpp \
                            FEM.cpp \
                            FiniteElement.cpp \
-                           FiniteElementSpec.cpp \
-                           LoadVector.cpp \
-                           MassMatrix.cpp \
-                           StiffnessMatrix.cpp
+                           FiniteElementSpec.cpp
 
 libdolfin_fem_la_LDFLAGS = -static
 all: all-recursive
@@ -328,9 +321,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEM.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FiniteElement.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FiniteElementSpec.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LoadVector.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MassMatrix.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/StiffnessMatrix.Plo@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \

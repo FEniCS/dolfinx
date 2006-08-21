@@ -6,8 +6,6 @@ nobase_include_HEADERS   = dolfin/dolfin_fem.h \
                            dolfin/FEM.h \
                            dolfin/FiniteElement.h \
                            dolfin/FiniteElementSpec.h \
-                           dolfin/LoadVector.h \
-                           dolfin/MassMatrix.h \
                            dolfin/P1tet.h \
                            dolfin/P1tri.h \
                            dolfin/P2tet.h \
@@ -17,8 +15,7 @@ nobase_include_HEADERS   = dolfin/dolfin_fem.h \
                            dolfin/P4tet.h \
                            dolfin/P4tri.h \
                            dolfin/P5tet.h \
-                           dolfin/P5tri.h \
-                           dolfin/StiffnessMatrix.h
+                           dolfin/P5tri.h
 INCLUDES                 = @KERNEL_CFLAGS@
 lib_LTLIBRARIES          = libdolfin-fem.la
 libdolfin_fem_la_SOURCES = AffineMap.cpp \
@@ -26,8 +23,5 @@ libdolfin_fem_la_SOURCES = AffineMap.cpp \
                            BoundaryValue.cpp \
                            FEM.cpp \
                            FiniteElement.cpp \
-                           FiniteElementSpec.cpp \
-                           LoadVector.cpp \
-                           MassMatrix.cpp \
-                           StiffnessMatrix.cpp
+                           FiniteElementSpec.cpp
 libdolfin_fem_la_LDFLAGS = -static

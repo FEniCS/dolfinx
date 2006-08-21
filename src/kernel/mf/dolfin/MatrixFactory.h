@@ -7,6 +7,8 @@
 #ifndef __MATRIX_FACTORY_H
 #define __MATRIX_FACTORY_H
 
+#include <dolfin/constants.h>
+
 namespace dolfin
 {
 
@@ -22,10 +24,10 @@ namespace dolfin
   public:
     
     /// Compute mass matrix on a given mesh
-    void computeMassMatrix(GenericMatrix& A, Mesh& mesh);
+    static void computeMassMatrix(GenericMatrix& A, Mesh& mesh);
 
     /// Compute stiffness matrix with diffusivity c on a given mesh
-    void computeStiffnessMatrix(GenericMatrix& A, Mesh& mesh, real c);
+    static void computeStiffnessMatrix(GenericMatrix& A, Mesh& mesh, real c = 1.0);
     
   };
 

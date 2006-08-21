@@ -5,8 +5,6 @@ EXTRA_DIST = dolfin_fem.h \
              FEM.h \
              FiniteElement.h \
              FiniteElementSpec.h \
-             LoadVector.h \
-             MassMatrix.h \
              P1tet.h \
              P1tri.h \
              P2tet.h \
@@ -16,5 +14,4 @@ EXTRA_DIST = dolfin_fem.h \
              P4tet.h \
              P4tri.h \
              P5tet.h \
-             P5tri.h \
-             StiffnessMatrix.h
+             P5tri.h

@@ -180,7 +180,9 @@ sharedstatedir = @sharedstatedir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 EXTRA_DIST = dolfin_mf.h \
-             MatrixFactory.h
+             MassMatrix.h \
+             MatrixFactory.h \
+             StiffnessMatrix.h
 
 all: all-am
 
