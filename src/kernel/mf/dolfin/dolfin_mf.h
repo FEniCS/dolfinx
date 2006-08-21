@@ -9,6 +9,7 @@
 
 // DOLFIN matrix factory
 
+#include <dolfin/LoadVector.h>
 #include <dolfin/MassMatrix.h>
 #include <dolfin/MatrixFactory.h>
 #include <dolfin/StiffnessMatrix.h>

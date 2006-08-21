@@ -13,6 +13,7 @@ namespace dolfin
 {
 
   class GenericMatrix;
+  class GenericVector;
   class Mesh;
 
   /// This class provides functionality for computing a set of
@@ -29,6 +30,9 @@ namespace dolfin
     /// Compute stiffness matrix with diffusivity c on a given mesh
     static void computeStiffnessMatrix(GenericMatrix& A, Mesh& mesh, real c = 1.0);
     
+    /// Construct load vector with constant load c on a given mesh
+    static void computeLoadVector(GenericVector& x, Mesh& mesh, real c = 1.0);
+
   };
 
 }

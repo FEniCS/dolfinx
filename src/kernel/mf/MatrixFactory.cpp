@@ -5,6 +5,7 @@
 // Last changed: 2006-08-21
 
 #include <dolfin/GenericMatrix.h>
+#include <dolfin/GenericVector.h>
 #include <dolfin/Mesh.h>
 #include <dolfin/FEM.h>
 #include <dolfin/MatrixFactory.h>
@@ -13,6 +14,8 @@
 #include "ffc-forms/MassMatrix3D.h"
 #include "ffc-forms/StiffnessMatrix2D.h"
 #include "ffc-forms/StiffnessMatrix3D.h"
+#include "ffc-forms/LoadVector2D.h"
+#include "ffc-forms/LoadVector3D.h"
 
 using namespace dolfin;
 
@@ -46,6 +49,24 @@ void MatrixFactory::computeStiffnessMatrix(GenericMatrix& A, Mesh& mesh, real c)
   {
     StiffnessMatrix3D::BilinearForm a(c);
     FEM::assemble(a, A, mesh);
+  }
+  else
+  {
+    dolfin_error("Unknown mesh type.");
+  } 
+}
+//-----------------------------------------------------------------------------
+void MatrixFactory::computeLoadVector(GenericVector& x, Mesh& mesh, real c)
+{
+  if ( mesh.type() == Mesh::triangles )
+  {
+    LoadVector2D::LinearForm b(c);
+    FEM::assemble(b, x, mesh);
+  }
+  else if ( mesh.type() == Mesh::tetrahedra )
+  {
+    LoadVector3D::LinearForm b(c);
+    FEM::assemble(b, x, mesh);
   }
   else
   {
