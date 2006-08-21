@@ -124,6 +124,11 @@ real ParticleSystem::u0(unsigned int i)
   return 0.0;
 }
 //-----------------------------------------------------------------------------
+void ParticleSystem::u0(uBlasVector& u)
+{
+  dolfin_error("Not implemented, needs to be updated for new ODE solver interface.");
+}
+//-----------------------------------------------------------------------------
 real ParticleSystem::f(const real u[], real t, unsigned int i)
 {
   // Return velocity

@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2004
-// Last changed: 2006-07-05
+// Last changed: 2006-08-21
 
 #include <cmath>
 #include <dolfin.h>
@@ -28,22 +28,14 @@ public:
     H   = 737.0;
   }
 
-  real u0(unsigned int i)
+  void u0(uBlasVector& u)
   {
-    switch (i) {
-    case 0:
-      return 0.444;
-    case 1:
-      return 0.00123;
-    case 2:
-      return 0.0;
-    case 3:
-      return 0.007;
-    case 4:
-      return 0.0;
-    default:
-      return 0.36;
-    }
+    u(0) = 0.444;
+    u(1) = 0.00123;
+    u(2) = 0.0;
+    u(3) = 0.007;
+    u(4) = 0.0;
+    u(5) = 0.36;
   }
 
   void f(const uBlasVector& u, real t, uBlasVector& y)

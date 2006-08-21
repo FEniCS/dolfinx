@@ -71,6 +71,9 @@ namespace dolfin
 
     /// Return time step for particle i
     virtual real k(unsigned int i);
+    
+    /// Set initial value for ODE
+    void u0(uBlasVector& u);
 
     /// Return initial value for ODE
     real u0(unsigned int i);

@@ -5,7 +5,7 @@
 // Modified by Anders Logg 2006.
 //
 // First added:  2006-05-24
-// Last changed: 2006-08-08
+// Last changed: 2006-08-21
 //
 // This demo solves the Courtemanche model for cardiac excitation.
 
@@ -68,47 +68,43 @@ public:
     g_Na      = 7.8;
     ist       = 0.0;
 
-    // Set initial data
-    U0 = new real[N];
-    U0[0]  = -85.0; 
-    U0[1]  = 2.91e-3; 
-    U0[2]  = 9.65e-1;
-    U0[3]  = 9.78e-1;
-    U0[4]  = 3.04e-2;
-    U0[5]  = 9.99e-1;
-    U0[6]  = 4.96e-3;
-    U0[7]  = 9.99e-1;
-    U0[8]  = 3.29e-5;
-    U0[9]  = 1.87e-2;
-    U0[10] = 1.37e-4;
-    U0[11] = 9.99e-1; 
-    U0[12] = 7.75e-1;
-    U0[13] = 0.0;
-    U0[14] = 1.0;
-    U0[15] = 9.99e-1;
-    U0[16] = 11.2;
-    U0[17] = 1.02e-4;
-    U0[18] = 1.49;
-    U0[19] = 1.49;
-    U0[20] = 139.0;
-
-    // Initial kick
-    U0[0] = -25.0;
-
     num_fevals = 0;
     VT = 0.0;
   }
   
   ~Courtemanche()
   {
-    delete [] U0;
     dolfin_info("Function evaluations:  %d", num_fevals);
     dolfin_info("Potential at end time: %.6f", VT);
   }
 
-  real u0(unsigned int i)
+  void u0(uBlasVector& u)
   {
-    return U0[i];
+    // Set initial data
+    u(0)  = -85.0; 
+    u(1)  = 2.91e-3; 
+    u(2)  = 9.65e-1;
+    u(3)  = 9.78e-1;
+    u(4)  = 3.04e-2;
+    u(5)  = 9.99e-1;
+    u(6)  = 4.96e-3;
+    u(7)  = 9.99e-1;
+    u(8)  = 3.29e-5;
+    u(9)  = 1.87e-2;
+    u(10) = 1.37e-4;
+    u(11) = 9.99e-1; 
+    u(12) = 7.75e-1;
+    u(13) = 0.0;
+    u(14) = 1.0;
+    u(15) = 9.99e-1;
+    u(16) = 11.2;
+    u(17) = 1.02e-4;
+    u(18) = 1.49;
+    u(19) = 1.49;
+    u(20) = 139.0;
+
+    // Initial kick
+    u(0) = -25.0;
   }
   
   void f(const uBlasVector& u, real t, uBlasVector& y)
@@ -312,9 +308,6 @@ private:
 
   // Stimulus current
   real ist;
-
-  // Initial data
-  real* U0;
   
   // Number of function evaluations
   unsigned int num_fevals;

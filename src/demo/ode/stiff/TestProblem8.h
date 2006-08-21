@@ -2,6 +2,9 @@
 // Licensed under the GNU GPL Version 2.
 //
 // Modified by Anders Logg 2003-2006.
+//
+// First added:  2003
+// Last changed: 2006-08-21
 
 #include <dolfin.h>
 
@@ -17,12 +20,11 @@ public:
     dolfin_info("Hairer and Wanner, page 3.");
   }
 
-  real u0(unsigned int i)
+  void u0(uBlasVector& u)
   {
-    if ( i == 0 )
-      return 1.0;
-    else
-      return 0.0;
+    u(0) = 1.0;
+    u(1) = 0.0;
+    u(2) = 0.0;
   }
   
   void f(const uBlasVector& u, real t, uBlasVector& y)

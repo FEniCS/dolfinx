@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003-07-02
-// Last changed: 2006-08-08
+// Last changed: 2006-08-21
 
 #include <stdio.h>
 #include <dolfin.h>
@@ -43,17 +43,11 @@ public:
     fclose(fp);
   }
 
-  real u0(unsigned int i)
+  void u0(uBlasVector& u)
   {
-    switch (i)
-    {
-    case 0:
-      return 1.0;
-    case 1:
-      return 0.0;
-    default:
-      return 0.0;
-    }
+    u(0) = 1.0;
+    u(1) = 0.0;
+    u(2) = 0.0;
   }
 
   void f(const uBlasVector& u, real t, uBlasVector& y)
@@ -136,7 +130,6 @@ int main()
   dolfin_output("plain text");
 
   set("ODE number of samples", 500);
-  set("ODE solve dual problem", false);
   set("ODE initial time step", 0.01);
   set("ODE fixed time step", true);
   set("ODE nonlinear solver", "newton");

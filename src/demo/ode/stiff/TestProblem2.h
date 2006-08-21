@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2004
-// Last changed: 2006-07-05
+// Last changed: 2006-08-21
 
 #include <dolfin.h>
 
@@ -20,9 +20,10 @@ public:
     A(1, 1) = -1000.0;
   }
 
-  real u0(unsigned int i)
+  void u0(uBlasVector& u)
   {
-    return 1.0;
+    u(0) = 1.0;
+    u(1) = 1.0;
   }
   
   void f(const uBlasVector& u, real t, uBlasVector& y)
