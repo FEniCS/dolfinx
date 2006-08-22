@@ -5290,7 +5290,7 @@ class Homotopy(_object):
         return _dolfin.Homotopy_solutions(*args)
 
     def z0(*args):
-        """z0(self, uint i) -> complex"""
+        """z0(self, complex z)"""
         return _dolfin.Homotopy_z0(*args)
 
     def F(*args):
@@ -5383,7 +5383,7 @@ class HomotopyODE(_object):
         except: pass
 
     def z0(*args):
-        """z0(self, unsigned int i) -> complex"""
+        """z0(self, complex z)"""
         return _dolfin.HomotopyODE_z0(*args)
 
     def f(*args):
@@ -5914,7 +5914,7 @@ class ODE(_object):
         except: pass
 
     def u0(*args):
-        """u0(self, uint i) -> real"""
+        """u0(self, uBlasVector u)"""
         return _dolfin.ODE_u0(*args)
 
     def f(*args):
@@ -6008,93 +6008,6 @@ _dolfin.ODESolver_swigregister(ODESolverPtr)
 def ODESolver_solve(*args):
     """ODESolver_solve(ODE ode)"""
     return _dolfin.ODESolver_solve(*args)
-
-class ParticleSystem(ODE):
-    """Proxy of C++ ParticleSystem class"""
-    __swig_setmethods__ = {}
-    for _s in [ODE]: __swig_setmethods__.update(_s.__swig_setmethods__)
-    __setattr__ = lambda self, name, value: _swig_setattr(self, ParticleSystem, name, value)
-    __swig_getmethods__ = {}
-    for _s in [ODE]: __swig_getmethods__.update(_s.__swig_getmethods__)
-    __getattr__ = lambda self, name: _swig_getattr(self, ParticleSystem, name)
-    def __repr__(self):
-        return "<%s.%s; proxy of C++ dolfin::ParticleSystem instance at %s>" % (self.__class__.__module__, self.__class__.__name__, self.this,)
-    def __init__(self, *args):
-        """
-        __init__(self, unsigned int n, real T, unsigned int dim=3) -> ParticleSystem
-        __init__(self, unsigned int n, real T) -> ParticleSystem
-        """
-        _swig_setattr(self, ParticleSystem, 'this', _dolfin.new_ParticleSystem(*args))
-        _swig_setattr(self, ParticleSystem, 'thisown', 1)
-    def __del__(self, destroy=_dolfin.delete_ParticleSystem):
-        """__del__(self)"""
-        try:
-            if self.thisown: destroy(self)
-        except: pass
-
-    def x0(*args):
-        """x0(self, unsigned int i) -> real"""
-        return _dolfin.ParticleSystem_x0(*args)
-
-    def y0(*args):
-        """y0(self, unsigned int i) -> real"""
-        return _dolfin.ParticleSystem_y0(*args)
-
-    def z0(*args):
-        """z0(self, unsigned int i) -> real"""
-        return _dolfin.ParticleSystem_z0(*args)
-
-    def vx0(*args):
-        """vx0(self, unsigned int i) -> real"""
-        return _dolfin.ParticleSystem_vx0(*args)
-
-    def vy0(*args):
-        """vy0(self, unsigned int i) -> real"""
-        return _dolfin.ParticleSystem_vy0(*args)
-
-    def vz0(*args):
-        """vz0(self, unsigned int i) -> real"""
-        return _dolfin.ParticleSystem_vz0(*args)
-
-    def Fx(*args):
-        """Fx(self, unsigned int i, real t) -> real"""
-        return _dolfin.ParticleSystem_Fx(*args)
-
-    def Fy(*args):
-        """Fy(self, unsigned int i, real t) -> real"""
-        return _dolfin.ParticleSystem_Fy(*args)
-
-    def Fz(*args):
-        """Fz(self, unsigned int i, real t) -> real"""
-        return _dolfin.ParticleSystem_Fz(*args)
-
-    def mass(*args):
-        """mass(self, unsigned int i, real t) -> real"""
-        return _dolfin.ParticleSystem_mass(*args)
-
-    def k(*args):
-        """k(self, unsigned int i) -> real"""
-        return _dolfin.ParticleSystem_k(*args)
-
-    def u0(*args):
-        """u0(self, unsigned int i) -> real"""
-        return _dolfin.ParticleSystem_u0(*args)
-
-    def f(*args):
-        """f(self, real u, real t, unsigned int i) -> real"""
-        return _dolfin.ParticleSystem_f(*args)
-
-    def timestep(*args):
-        """timestep(self, unsigned int i) -> real"""
-        return _dolfin.ParticleSystem_timestep(*args)
-
-
-class ParticleSystemPtr(ParticleSystem):
-    def __init__(self, this):
-        _swig_setattr(self, ParticleSystem, 'this', this)
-        if not hasattr(self,"thisown"): _swig_setattr(self, ParticleSystem, 'thisown', 0)
-        self.__class__ = ParticleSystem
-_dolfin.ParticleSystem_swigregister(ParticleSystemPtr)
 
 class Partition(_object):
     """Proxy of C++ Partition class"""
@@ -6556,7 +6469,7 @@ class TimeDependentODE(ODE):
         _swig_setattr(self, TimeDependentODE, 'this', _dolfin.new_TimeDependentODE(*args))
         _swig_setattr(self, TimeDependentODE, 'thisown', 1)
     def u0(*args):
-        """u0(self, unsigned int i) -> real"""
+        """u0(self, uBlasVector u)"""
         return _dolfin.TimeDependentODE_u0(*args)
 
     def timestep(*args):

@@ -19,7 +19,7 @@
 %include "dolfin/MultiAdaptivity.h"
 %include "dolfin/ODE.h"
 %include "dolfin/ODESolver.h"
-%include "dolfin/ParticleSystem.h"
+//%include "dolfin/ParticleSystem.h"
 %include "dolfin/Partition.h"
 %include "dolfin/ReducedModel.h"
 %include "dolfin/Sample.h"
