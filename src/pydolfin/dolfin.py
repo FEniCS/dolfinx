@@ -1437,6 +1437,7 @@ class uBlasLUSolver(uBlasLinearSolver):
         """
         solve(self, uBlasDenseMatrix A, uBlasVector x, uBlasVector b) -> uint
         solve(self, uBlasSparseMatrix A, uBlasVector x, uBlasVector b) -> uint
+        solve(self, uBlasKrylovMatrix A, uBlasVector x, uBlasVector b)
         """
         return _dolfin.uBlasLUSolver_solve(*args)
 
