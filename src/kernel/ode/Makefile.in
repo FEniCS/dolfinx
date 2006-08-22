@@ -68,11 +68,10 @@ am_libdolfin_ode_la_OBJECTS = Adaptivity.lo Alloc.lo ComplexODE.lo \
 	MonoAdaptivity.lo MultiAdaptiveFixedPointSolver.lo \
 	MultiAdaptiveJacobian.lo MultiAdaptiveNewtonSolver.lo \
 	MultiAdaptivePreconditioner.lo MultiAdaptiveTimeSlab.lo \
-	MultiAdaptivity.lo Method.lo ODE.lo ODESolver.lo \
-	ParticleSystem.lo Partition.lo ReducedModel.lo Sample.lo \
-	TimeSlab.lo TimeSlabJacobian.lo TimeSlabSolver.lo \
-	TimeStepper.lo UpdatedMultiAdaptiveJacobian.lo cGqMethod.lo \
-	dGqMethod.lo
+	MultiAdaptivity.lo Method.lo ODE.lo ODESolver.lo Partition.lo \
+	ReducedModel.lo Sample.lo TimeSlab.lo TimeSlabJacobian.lo \
+	TimeSlabSolver.lo TimeStepper.lo \
+	UpdatedMultiAdaptiveJacobian.lo cGqMethod.lo dGqMethod.lo
 libdolfin_ode_la_OBJECTS = $(am_libdolfin_ode_la_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -253,7 +252,6 @@ nobase_include_HEADERS = dolfin/dolfin_ode.h \
                           dolfin/Method.h \
                           dolfin/ODE.h \
                           dolfin/ODESolver.h \
-                          dolfin/ParticleSystem.h \
                           dolfin/Partition.h \
                           dolfin/ReducedModel.h \
                           dolfin/Sample.h \
@@ -290,7 +288,6 @@ libdolfin_ode_la_SOURCES = Adaptivity.cpp \
                           Method.cpp \
                           ODE.cpp \
                           ODESolver.cpp \
-                          ParticleSystem.cpp \
                           Partition.cpp \
                           ReducedModel.cpp \
                           Sample.cpp \
@@ -395,7 +392,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MultiAdaptivity.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ODE.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ODESolver.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ParticleSystem.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Partition.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ReducedModel.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Sample.Plo@am__quote@

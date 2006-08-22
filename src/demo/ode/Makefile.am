@@ -4,6 +4,5 @@ SUBDIRS = aliev-panfilov \
           harmonic \
           homotopy \
           lorenz \
-          mechanical \
           method-weights \
           stiff

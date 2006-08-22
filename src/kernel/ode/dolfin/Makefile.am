@@ -22,7 +22,6 @@ EXTRA_DIST = dolfin/dolfin_ode.h \
              dolfin/Method.h \
              dolfin/ODE.h \
              dolfin/ODESolver.h \
-             dolfin/ParticleSystem.h \
              dolfin/Partition.h \
              dolfin/ReducedModel.h \
              dolfin/Sample.h \
