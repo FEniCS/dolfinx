@@ -3,7 +3,7 @@ LIBS    = `dolfin-config --libs`
 CXX     = `dolfin-config --compiler`
 LINK    = `dolfin-config --linker`
 
-DEST    = dolfin-ode-test
+DEST    = dolfin-harmonic
 OBJECTS = main.o
 
 all: $(DEST)

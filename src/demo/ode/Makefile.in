@@ -191,12 +191,12 @@ target_alias = @target_alias@
 SUBDIRS = aliev-panfilov \
           complex \
           courtemanche \
+          harmonic \
           homotopy \
           lorenz \
           mechanical \
           method-weights \
-          stiff \
-          test
+          stiff
 
 all: all-recursive
 
