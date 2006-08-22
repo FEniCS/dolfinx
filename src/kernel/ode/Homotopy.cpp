@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2006.
 //
 // First added:  2005
-// Last changed: 2006-08-21
+// Last changed: 2006-08-22
 
 #include <stdio.h>
 #include <limits>
@@ -21,7 +21,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 Homotopy::Homotopy(uint n)
   : tol(0), n(n), M(0), maxiter(0), maxpaths(0), maxdegree(0),
-    divtol(0), monitor(false), random(false), solver(none), 
+    divtol(0), monitor(false), random(false), 
     filename(""), mi(0), ci(0), tmp(0), x(2*n),
     degree_adjusted("Adjusting degree of equation, maximum reached.")
 {
@@ -291,15 +291,7 @@ bool Homotopy::computeSolution(HomotopyODE& ode)
       x.disp();
       return true;
     }
-    
-    // FIXME: Scaling needed for PETSc Krylov solver, but maybe not for uBlas?
 
-    // Solve linear system
-    r += DOLFIN_EPS;
-    F /= r;
-    solver.solve(J, dx, F);
-    dx *= r;
-    
     // Solve linear system
     solver.solve(J, dx, F);
 

@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005
-// Last changed: 2006-08-21
+// Last changed: 2006-08-22
 
 #ifndef __HOMOTOPY_H
 #define __HOMOTOPY_H
@@ -97,7 +97,8 @@ namespace dolfin
     real divtol;              // Tolerance for divergence of homotopy path
     bool monitor;             // True if we should monitor the homotopy
     bool random;              // True if we should choose random initial data
-    uBlasKrylovSolver solver; // Linear solver
+    //uBlasKrylovSolver solver; // Linear solver
+    uBlasLUSolver solver;     // Linear solver
     std::string filename;     // Filename for saving solutions  
     uint* mi;                 // Array of local path numbers
     complex* ci;              // Array of constants for system G(z) = 0
