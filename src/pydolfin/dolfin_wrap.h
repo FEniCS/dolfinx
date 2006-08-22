@@ -359,12 +359,12 @@ class SwigDirector_ODE : public dolfin::ODE, public Swig::Director {
 
 public:
     SwigDirector_ODE(PyObject *self, dolfin::uint N, dolfin::real T);
-    virtual dolfin::real u0(dolfin::uint i);
     virtual void f(dolfin::uBlasVector const &u, dolfin::real t, dolfin::uBlasVector &y);
     virtual void save(dolfin::Sample &sample);
     virtual ~SwigDirector_ODE();
     virtual dolfin::real timestep(dolfin::real t, dolfin::real k0) const;
     virtual dolfin::real timestep(dolfin::real t, dolfin::uint i, dolfin::real k0) const;
+    virtual void u0(dolfin::uBlasVector &u);
     virtual void M(dolfin::uBlasVector const &x, dolfin::uBlasVector &y, dolfin::uBlasVector const &u, dolfin::real t);
     virtual void J(dolfin::uBlasVector const &x, dolfin::uBlasVector &y, dolfin::uBlasVector const &u, dolfin::real t);
     virtual dolfin::real dfdu(dolfin::uBlasVector const &u, dolfin::real t, dolfin::uint i, dolfin::uint j);
