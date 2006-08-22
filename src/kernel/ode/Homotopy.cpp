@@ -103,7 +103,7 @@ void Homotopy::solve()
     dolfin_info("\nComputing path number %d out of %d.", m + 1, M);
 
     // Change name of output file for each path
-    sprintf(filename, "primal_%u.m", m);
+    sprintf(filename, "solution_%u.py", m);
     set("ODE solution file name", filename);
 
     // Compute the component paths from global path number
@@ -284,7 +284,7 @@ bool Homotopy::computeSolution(HomotopyODE& ode)
 
     // Check convergence
     real r = F.norm(uBlasVector::linf);
-    cout << "r = " << r << ": x = "; x.disp();
+    //cout << "r = " << r << ": x = "; x.disp();
     if ( r < tol )
     {
       cout << "Solution converged: x = ";
