@@ -1,14 +1,16 @@
 // Copyright (C) 2006 Garth N. Wells.
 // Licensed under the GNU GPL Version 2.
 //
+// Modified by Anders Logg 2006.
+// 
 // First added:  2006-06-01
 // Last changed: 2006-08-08
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/uBlasLUSolver.h>
 #include <dolfin/uBlasKrylovSolver.h>
-#include <dolfin/uBlasDenseMatrix.h>
 #include <dolfin/uBlasSparseMatrix.h>
+#include <dolfin/uBlasKrylovMatrix.h>
 #include <dolfin/uBlasVector.h>
 
 extern "C" 
@@ -26,14 +28,16 @@ extern "C"
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-uBlasLUSolver::uBlasLUSolver() : uBlasLinearSolver()
+uBlasLUSolver::uBlasLUSolver() : uBlasLinearSolver(), AA(0), ej(0), Aj(0)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 uBlasLUSolver::~uBlasLUSolver()
 {
-  // Do nothing
+  if ( AA ) delete AA;
+  if ( ej ) delete ej;
+  if ( Aj ) delete Aj;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint uBlasLUSolver::solve(const uBlasMatrix<ublas_dense_matrix>& A, 
@@ -99,9 +103,8 @@ dolfin::uint uBlasLUSolver::solve(const uBlasMatrix<ublas_sparse_matrix>& A, uBl
 
   return 1;
 }
-//-----------------------------------------------------------------------------
+
 #else
-//-----------------------------------------------------------------------------
 
 dolfin::uint uBlasLUSolver::solve(const uBlasMatrix<ublas_sparse_matrix>& A, uBlasVector& x, 
     const uBlasVector& b)
@@ -112,6 +115,53 @@ dolfin::uint uBlasLUSolver::solve(const uBlasMatrix<ublas_sparse_matrix>& A, uBl
   return solver.solve(A, x, b);
 }
 #endif
+//-----------------------------------------------------------------------------
+void uBlasLUSolver::solve(const uBlasKrylovMatrix& A, uBlasVector& x,
+			  const uBlasVector& b)
+{
+  // The linear system is solved by computing a dense copy of the matrix,
+  // obtained through multiplication with unit vectors.
+
+  // Check dimensions
+  const uint M  = A.size(0);
+  const uint N  = A.size(1);
+  dolfin_assert(M == N);
+  dolfin_assert(M == b.size());
+
+  // Initialize temporary data if not already done
+  if ( !AA )
+  {
+    AA = new uBlasMatrix<ublas_dense_matrix>(M, N);
+    ej = new uBlasVector(N);
+    Aj = new uBlasVector(M);
+  }
+  else
+  {
+    AA->init(M, N);
+    ej->init(N);
+    Aj->init(N);
+  }
+
+  // Reset unit vector
+  *ej = 0.0;
+
+  // Compute columns of matrix
+  for (uint j = 0; j < N; j++)
+  {
+    (*ej)(j) = 1.0;
+
+    // Compute product Aj = Aej
+    A.mult(*ej, *Aj);
+    
+    // Set column of A
+    column(*AA, j) = *Aj;
+    
+    (*ej)(j) = 0.0;
+  }
+
+  // Solve linear system
+  solve(*AA, x, b);
+}
 //-----------------------------------------------------------------------------
 dolfin::uint uBlasLUSolver::solveInPlaceUBlas(uBlasMatrix<ublas_dense_matrix>& A, 
                                       uBlasVector& x, const uBlasVector& b) const

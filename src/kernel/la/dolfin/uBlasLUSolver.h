@@ -1,8 +1,10 @@
 // Copyright (C) 2006 Garth N. Wells.
 // Licensed under the GNU GPL Version 2.
 //
+// Modified by Anders Logg 2006.
+// 
 // First added:  2006-05-31
-// Last changed: 2006-08-08
+// Last changed: 2006-08-22
 
 #ifndef __UBLAS_LU_SOLVER_H
 #define __UBLAS_LU_SOLVER_H
@@ -16,6 +18,7 @@ namespace dolfin
 
   /// Forward declarations
   class uBlasVector;
+  class uBlasKrylovMatrix;
   template<class Mat> class uBlasMatrix;
 
   /// This class implements the direct solution (LU factorization) of
@@ -35,11 +38,14 @@ namespace dolfin
     /// Destructor
     ~uBlasLUSolver();
 
-    /// Solve linear system Ax = b (A is dense)
+    /// Solve linear system Ax = b for a dense matrix
     uint solve(const uBlasMatrix<ublas_dense_matrix>& A, uBlasVector& x, const uBlasVector& b);
 
-    /// Solve linear system Ax = b using UMFPACK if installed (A is sparse)
+    /// Solve linear system Ax = b for a sparse matrix using UMFPACK if installed
     uint solve(const uBlasMatrix<ublas_sparse_matrix>& A, uBlasVector& x, const uBlasVector& b);
+
+    /// Solve linear system Ax = b for a Krylov matrix
+    void solve(const uBlasKrylovMatrix& A, uBlasVector& x, const uBlasVector& b);
 
     /// Solve linear system Ax = b in place (A is dense)
     uint solveInPlaceUBlas(uBlasMatrix<ublas_dense_matrix>& A, uBlasVector& x, const uBlasVector& b) const;
@@ -54,6 +60,11 @@ namespace dolfin
     template<class Mat, class B>
     uint solveInPlace(Mat& A, B& X) const;
 
+    // Temporary data for LU factorization of a uBlasKrylovMatrix
+    uBlasMatrix<ublas_dense_matrix>* AA;
+    uBlasVector* ej;
+    uBlasVector* Aj;
+    
   };
   //---------------------------------------------------------------------------
   // Implementation of template functions
@@ -93,8 +104,7 @@ namespace dolfin
 
     return 1;
   }
-//-----------------------------------------------------------------------------
-
+  //-----------------------------------------------------------------------------
 
 }
 

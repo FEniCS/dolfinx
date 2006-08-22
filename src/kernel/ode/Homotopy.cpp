@@ -284,7 +284,7 @@ bool Homotopy::computeSolution(HomotopyODE& ode)
 
     // Check convergence
     real r = F.norm(uBlasVector::linf);
-    //cout << "r = " << r << ": x = "; x.disp();
+    cout << "r = " << r << ": x = "; x.disp();
     if ( r < tol )
     {
       cout << "Solution converged: x = ";
