@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-10-14
-// Last changed: 2006-08-08
+// Last changed: 2006-08-22
 
 #include <dolfin.h>
 
@@ -39,10 +39,13 @@ public:
   }
 
   /// Initial condition
-  real u0(unsigned int i)
+  void u0(uBlasVector& u)
   {
-    const real x = static_cast<real>(i)*h;
-    return 1.0 / (1.0 + exp(lambda*(x - 1.0)));
+    for (unsigned int i = 0; i < N; i++)
+    {
+      const real x = static_cast<real>(i)*h;
+      u(i) = 1.0 / (1.0 + exp(lambda*(x - 1.0)));
+    }
   }
 
   /// Right-hand side, mono-adaptive version

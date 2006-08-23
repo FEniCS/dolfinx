@@ -16,17 +16,12 @@ logfile = "bench-domain.log"
 tols  = [1e-6]
 sizes = [1000, 2000, 4000, 8000, 16000]
 
-# Make backup copy of old log file
-try:
-    move(logfile, logfile + ".bak")
-except IOError:
-    print "No previous log file, don't making backup..."
+# Write version and date to log file
+system("dolfin-config --version >> " + logfile)
+system("date >> " + logfile)
 
 # Run sets of benchmarks
 run_set("cg",  "fixed-point", tols, sizes, logfile)
 run_set("mcg", "fixed-point", tols, sizes, logfile)
 #run_set("cg",  "newton",      tols, sizes, logfile)
 #run_set("mcg", "newton",      tols, sizes, logfile)
-
-# Print results
-system("cat " + logfile)
