@@ -59,7 +59,8 @@ struct MatrixAssemble
       jpos[0] = i+1; jpos[1] = i;   jpos[2] = N+i+1; jpos[3] = N+i;
       A.add(block, ipos, 4, jpos, 4);
     }
-    get<0>(timing) = toc();  
+//    get<0>(timing) = toc();  
+    timing.get<0>() = toc();  
   
     tic();
     A.apply();
