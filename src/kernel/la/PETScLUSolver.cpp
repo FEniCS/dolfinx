@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005
-// Last changed: 2006-08-15
+// Last changed: 2006-08-24
 
 #ifdef HAVE_PETSC_H
 
@@ -57,7 +57,7 @@ dolfin::uint PETScLUSolver::solve(const PETScMatrix& A,
 
   // Write a message
   if ( report )
-    dolfin_info("Solving linear system of size %d x %d (LU solver).",
+    dolfin_info("Solving linear system of size %d x %d (PETSc LU solver).",
 		A.size(0), A.size(1));
 
   // Solve linear system
@@ -85,7 +85,7 @@ dolfin::uint PETScLUSolver::solve(const PETScKrylovMatrix& A,
 
   // Write a message
   if ( report )
-    dolfin_info("Solving linear system of size %d x %d (LU solver).",
+    dolfin_info("Solving linear system of size %d x %d (PETSc LU solver).",
 		A.size(0), A.size(1));
 
   // Solve linear system
