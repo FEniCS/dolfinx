@@ -387,33 +387,6 @@ private:
 };
 
 
-class SwigDirector_TimeDependentPDE : public dolfin::TimeDependentPDE, public Swig::Director {
-
-public:
-    SwigDirector_TimeDependentPDE(PyObject *self, dolfin::BilinearForm &a, dolfin::LinearForm &L, dolfin::Mesh &mesh, dolfin::BoundaryCondition &bc, int N, dolfin::real k, dolfin::real T);
-    virtual dolfin::uint solve(dolfin::Function &u);
-    virtual void init(dolfin::Function &U);
-    virtual void save(dolfin::Function &U, dolfin::real t);
-    virtual void preparestep();
-    virtual void fu(dolfin::Vector const &x, dolfin::Vector &dotx, dolfin::real t);
-    virtual void prepareiteration();
-
-
-/* Internal Director utilities */
-public:
-    bool swig_get_inner(const char* name) const {
-      std::map<std::string, bool>::const_iterator iv = inner.find(name);
-      return (iv != inner.end() ? iv->second : false);
-    }
-
-    void swig_set_inner(const char* name, bool val) const
-    { inner[name] = val;}
-
-private:
-    mutable std::map<std::string, bool> inner;
-};
-
-
 class SwigDirector_BoundaryCondition : public dolfin::BoundaryCondition, public Swig::Director {
 
 public:
