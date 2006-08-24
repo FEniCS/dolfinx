@@ -18,10 +18,16 @@ sizes = [1000, 2000, 4000, 8000, 16000]
 
 # Write version and date to log file
 system("dolfin-config --version >> " + logfile)
-system("date >> " + logfile)
+system("date +'%Y-%m-%d %H:%M:%S' >> " + logfile)
+system("uname -snm >> " + logfile)
+file = open(logfile, "a")
+file.write("\n");
 
 # Run sets of benchmarks
 run_set("cg",  "fixed-point", tols, sizes, logfile)
 run_set("mcg", "fixed-point", tols, sizes, logfile)
 #run_set("cg",  "newton",      tols, sizes, logfile)
 #run_set("mcg", "newton",      tols, sizes, logfile)
+
+file.write("\n");
+file.write("---------------------------------------------------------------------------------------\n")

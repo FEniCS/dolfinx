@@ -23,9 +23,9 @@ def run_set(method, solver, tols, sizes, logfile):
     
     # Write results header
     file.write("\n%s/%s\n" % (method, solver))
-    file.write("---------------------------------\n")
+    file.write("--------------\n")
     file.write("\ntol\tN\tError\t\tCPU time\tSteps\tIterations\tIndex\n")
-    file.write("--------------------------------------------------------------------------------------\n")
+    file.write("---------------------------------------------------------------------------------------\n")
 
     for N in sizes:
         for tol in tols:
