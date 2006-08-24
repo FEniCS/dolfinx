@@ -10,7 +10,7 @@
 //
 // on the unit square with source f given by
 //
-//     f(x, y) = x * sin(y)
+//     f(x, y) = x*sin(y)
 //
 // and boundary conditions given by
 //
@@ -30,17 +30,16 @@ int main()
   {
     real eval(const Point& p, unsigned int i)
     {
-//      return p.x*sin(p.y);
-      return 0.0;  
+      return p.x*sin(p.y);
     }
   };
 
-  // Right-hand side
+  // Boundary Right-hand side
   class BoundaryFlux : public Function
   {
     real eval(const Point& p, unsigned int i)
     {
-      if ( std::abs(p.x) < DOLFIN_EPS)
+      if ( std::abs(p.x) < DOLFIN_EPS )
         return 1.0;
       else
         return 0.0;  
