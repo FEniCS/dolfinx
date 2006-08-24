@@ -1,35 +1,14 @@
 dolfin 0.6.1
-sön apr 23 00:43:43 CDT 2006
+2006-04-23 00:43:43
+Linux gwaihir i686
+
 CPU time cG(1):  188.093 s
 CPU time mcG(1): 45.4958 s
 ----------------------------------------
 dolfin 0.6.1
-mån apr 24 16:32:03 CDT 2006
-CPU time cG(1):  195.291 s
-CPU time mcG(1): 43.8535 s
-----------------------------------------
-dolfin 0.6.1
-ons jun 21 16:26:39 CEST 2006
-CPU time cG(1):  187.362 s
-CPU time mcG(1): 41.5391 s
-----------------------------------------
-dolfin 0.6.1
-mån aug 21 16:36:57 CEST 2006
-CPU time cG(1):  121.867 s
-CPU time mcG(1): 32.0354 s
-----------------------------------------
-dolfin 0.6.1
-mån aug 21 18:08:58 CEST 2006
-CPU time cG(1):  123.2 s
-CPU time mcG(1): 31.6614 s
-----------------------------------------
-dolfin 0.6.1
-Mon Aug 21 16:59:26 CEST 2006
-CPU time cG(1):  167.553 s
-CPU time mcG(1): 40.4687 s
-----------------------------------------
-dolfin 0.6.1
-tis aug 22 20:03:49 CEST 2006
-CPU time cG(1):  122.462 s
-CPU time mcG(1): 31.8798 s
+2006-08-24 09:56:07
+Linux gwaihir i686
+
+CPU time cG(1):  122.586 s
+CPU time mcG(1): 31.7805 s
 ----------------------------------------
