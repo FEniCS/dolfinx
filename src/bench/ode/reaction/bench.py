@@ -18,8 +18,10 @@ toc = time() - tic
 
 # Save timing to log file
 system("dolfin-config --version >> " + logfile)
-system("date >> " + logfile)
+system("date +'%Y-%m-%d %H:%M:%S' >> " + logfile)
+system("uname -snm >> " + logfile)
 file = open(logfile, "a")
+file.write("\n");
 file.write("CPU time: %g\n" % toc)
 file.write("----------------------------------------\n")
 file.close()
