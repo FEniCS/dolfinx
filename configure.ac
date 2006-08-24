@@ -11,38 +11,38 @@ AM_MAINTAINER_MODE
 # Option --enable/disable-debug
 AC_ARG_ENABLE(debug,
               AC_HELP_STRING([--enable-debug],
-                             [Turn on debugging and warnings (this is the default)]),
+                             [Turn on debugging and warnings]),
               enable_debug=$enableval, enable_debug=no)
 
 # Option --enable/disable-optimization
 AC_ARG_ENABLE(optimization,
               AC_HELP_STRING([--enable-optimization],
-                             [Turn on optimization]),
+                             [Turn on optimizations]),
               enable_optimization=$enableval, enable_optimization=no)
 
 # Option --enable/disable-mpi
 AC_ARG_ENABLE(mpi,
               AC_HELP_STRING([--enable-mpi],
-                             [Compile with MPI]),
+                             [Compile with suport for MPI]),
               enable_mpi=$enableval, enable_mpi=no)
 
 # Option --enable/disable-pydolfin
 AC_ARG_ENABLE(pydolfin,
               AC_HELP_STRING([--enable-pydolfin],
-                             [Turn on compilation of PyDOLFIN]),
-              enable_pydolfin=$enableval, enable_pydolfin=no)
+                             [Disable compilation of PyDOLFIN, the DOLFIN Python interface]),
+              enable_pydolfin=$enableval, enable_pydolfin=yes)
 
 # Option --enable/disable-curses
 AC_ARG_ENABLE(curses,
               AC_HELP_STRING([--disable-curses],
-                             [Compile without curses]),
+                             [Disable compilation of the curses interface]),
               enable_curses=$enableval, enable_curses=yes)
 
 # Option --enable/disable-petsc
 AC_ARG_ENABLE(petsc,
-              AC_HELP_STRING([--disable-petsc],
-                             [Compile without PETSc (some demos may not compile)]),
-              disable_petsc=$enableval, enable_petsc=yes)
+              AC_HELP_STRING([--enable-petsc],
+                             [Compile with support for PETSc linear algebra]),
+              disable_petsc=$enableval, enable_petsc=no)
 
 # Option --with-petsc-dir
 AC_ARG_WITH(petsc-dir,
@@ -119,7 +119,6 @@ if test $have_boost = no; then
         exit 1
     fi
 fi
-
 
 # Check for umfpack
 have_umfpack_header=yes
@@ -244,7 +243,6 @@ else
 fi
 echo "curses libs $CURSES_LIBS"
 
-
 # Handle option --enable-pydolfin
 AM_CONDITIONAL(COMPILE_PYDOLFIN, test x$enable_pydolfin = xyes)
 if test x$enable_pydolfin = xyes; then
@@ -273,7 +271,7 @@ else
 fi
 
 # Handle option --disable-petsc
-if test x$disable_petsc = x; then
+if test x$enable_petsc = xyes; then
     
     # Handle option --with-petsc-dir=<path>
     if test x$PETSC_DIR = x; then
