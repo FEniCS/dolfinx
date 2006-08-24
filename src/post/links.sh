@@ -27,7 +27,6 @@ link_plotslab() {
 
 # Create links to Octave scripts
 link_octave src/demo/solvers/elasticity
-link_octave src/demo/solvers/wave
 
 # Create links to meshes
 ln -sf $TOPLEVEL/data/meshes/gear.xml.gz     src/demo/pde/elasticity
