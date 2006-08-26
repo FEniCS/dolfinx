@@ -296,8 +296,7 @@ if test x$enable_petsc = xyes; then
     fi
 
     # Found PETSc, so set HAVE_PETSC_H
-#    PETSC_CFLAGS="-DHAVE_PETSC_H=1 $PETSC_CFLAGS"
-     CXXFLAGS="-DHAVE_PETSC_H=1 $CXXFLAGS"
+    CXXFLAGS="-DHAVE_PETSC_H=1 $CXXFLAGS"
 
     # Check for eigenvalue solver extension SLEPc. Variable SLEPC_DIR must be set.
     AC_CHECK_HEADER([$SLEPC_DIR/include/slepcversion.h], have_slepc=yes, have_slepc=no)
@@ -306,7 +305,7 @@ if test x$enable_petsc = xyes; then
         # Extract SLEPc variables
         SLEPC_CFLAGS=`make -f slepc.conf get_slepc_include SLEPC_DIR=$SLEPC_DIR`
         SLEPC_LIBS=`make -f slepc.conf get_slepc_libs SLEPC_DIR=$SLEPC_DIR`
-        SLEPC_CFLAGS="-DHAVE_SLEPC_H=1 $SLEPC_CFLAGS"
+        CXXLAGS="-DHAVE_SLEPC_H=1 $CXXFLAGS"
     else
         echo "SLEPc not found on your system."
         echo "  SLEPc is a PETSc extension that provides eigenvalue solvers."
