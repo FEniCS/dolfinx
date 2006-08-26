@@ -1,3 +1,4 @@
+ - Finish chapter in manual on linear algebra
  - Enable PyDOLFIN by default, use --disable-pydolfin to disable
  - Disable PETSc by default, use --enable-petsc to enable
  - Modify ODE solver interface for u0() and f()

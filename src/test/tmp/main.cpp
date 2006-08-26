@@ -663,6 +663,22 @@ class Testing
 }
 */
 
+void testSimpleLinearAlgebra()
+{
+  Matrix A(10, 10);
+  Vector x(10);
+
+  Matrix B;
+  Vector b;
+  B.init(10, 10);
+  b.init(10);
+  
+  cout << A << endl;
+  cout << x << endl;
+
+  cout << A(5, 5) + x(3) << endl;
+
+}
 
 int main(int argc, char* argv[])
 {
@@ -686,14 +702,16 @@ int main(int argc, char* argv[])
   testGenericMatrix();
   testGenericMatrix();
 */
-  testuBlasSparseMatrix();
-//  testOutputMatrix();
+  //testuBlasSparseMatrix();
+  //  testOutputMatrix();
 
   //testNewMesh();
   
   //benchOldMesh();
   //benchNewMesh();
   //testVectorAccess();
+
+  testSimpleLinearAlgebra();
 
   return 0;
 }
