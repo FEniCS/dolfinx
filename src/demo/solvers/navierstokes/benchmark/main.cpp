@@ -6,7 +6,7 @@
 // First added:  2002-11-29
 // Last changed: 2005-12-28
 //
-// A solver for the Navier-Stokes equations 
+// A solver for the incompressible Navier-Stokes equations 
 //
 //     du/dt + u * grad u - nu * div grad u + grad p = f 
 //     div u = 0 
