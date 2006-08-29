@@ -87,6 +87,7 @@ ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
 EXEEXT = @EXEEXT@
+EXTERNAL_CFLAGS = @EXTERNAL_CFLAGS@
 F77 = @F77@
 FFLAGS = @FFLAGS@
 INSTALL_DATA = @INSTALL_DATA@
@@ -377,8 +378,8 @@ dolfin-config:
 	rm -f $(TMPFILE)
 	echo "COMPILER=\"libtool --silent --mode=compile --tag CXX $(CXX)\"" >> $(TMPFILE)
 	echo "LINKER=\"libtool --silent --mode=link --tag CXX $(CXX)\"" >> $(TMPFILE)
-	echo "CFLAGS=\"$(CXXFLAGS)\"" >> $(TMPFILE)
-	echo "INCLUDES=\"$(DOLFIN_CFLAGS)\"" >> $(TMPFILE)
+	echo "CFLAGS=\"$(EXTERNAL_CFLAGS) $(CXXFLAGS)\"" >> $(TMPFILE)
+	echo "INCLUDES=\"$(EXTERNAL_CFLAGS)\"" >> $(TMPFILE)
 	echo "LIBS=\"$(DOLFIN_LIBS)\"" >> $(TMPFILE)
 	echo "PACKAGE=\"$(PACKAGE_NAME)\"" >> $(TMPFILE)
 	echo "VERSION=\"$(PACKAGE_VERSION)\"" >> $(TMPFILE)

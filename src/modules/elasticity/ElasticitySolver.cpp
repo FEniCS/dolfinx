@@ -66,7 +66,7 @@ void ElasticitySolver::solve()
   // Synchronize f with time t
   f.sync(t);
   
-  File file("elasticity.m");
+  File file("elasticity.pvd");
 
   // FIXME: Temporary fix
   int N = 3 * mesh.numVertices();
@@ -235,41 +235,44 @@ void ElasticitySolver::save(Mesh& mesh, Function& u, Function& v,
 {
   if(counter % (int)(1.0 / 33.0 / k) == 0)
   {
-    std::ostringstream fileid, filename;
-    fileid.fill('0');
-    fileid.width(6);
+//     std::ostringstream fileid, filename;
+//     fileid.fill('0');
+//     fileid.width(6);
     
-    fileid << counter;
+//     fileid << counter;
     
-    filename << "mesh" << fileid.str() << ".xml.gz";
+//     filename << "mesh" << fileid.str() << ".xml.gz";
     
-    cout << "writing: " << filename.str() << endl;
+//     cout << "writing: " << filename.str() << endl;
     
-    std::string foo = filename.str();
-    const char *fname = foo.c_str();
+//     std::string foo = filename.str();
+//     const char *fname = foo.c_str();
     
-    File meshfile(fname);
+//     File meshfile(fname);
     
-    // Deform the mesh
+//     // Deform the mesh
     
-    for (VertexIterator n(&mesh); !n.end(); ++n)
-    {
-      (*n).coord().x += u(*n, 0);
-      (*n).coord().y += u(*n, 1);
-      (*n).coord().z += u(*n, 2);
-    }
+//     for (VertexIterator n(&mesh); !n.end(); ++n)
+//     {
+//       (*n).coord().x += u(*n, 0);
+//       (*n).coord().y += u(*n, 1);
+//       (*n).coord().z += u(*n, 2);
+//     }
     
     
-    meshfile << mesh;
+//     meshfile << mesh;
     
-    // Undo deformation
+//     // Undo deformation
     
-    for (VertexIterator n(&mesh); !n.end(); ++n)
-    {
-      (*n).coord().x -= u(*n, 0);
-      (*n).coord().y -= u(*n, 1);
-      (*n).coord().z -= u(*n, 2);
-    }
+//     for (VertexIterator n(&mesh); !n.end(); ++n)
+//     {
+//       (*n).coord().x -= u(*n, 0);
+//       (*n).coord().y -= u(*n, 1);
+//       (*n).coord().z -= u(*n, 2);
+//     }
+
+    solutionfile << u;
+
   }
 }
 //-----------------------------------------------------------------------------
@@ -284,3 +287,4 @@ void ElasticitySolver::solve(Mesh& mesh,
   solver.solve();
 }
 //-----------------------------------------------------------------------------
+
