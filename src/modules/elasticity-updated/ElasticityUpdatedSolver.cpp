@@ -1043,9 +1043,7 @@ ElasticityUpdatedODE::ElasticityUpdatedODE(ElasticityUpdatedSolver& solver) :
 //-----------------------------------------------------------------------------
 void ElasticityUpdatedODE::u0(uBlasVector& u)
 {
-  // FIXME: ODE solver interface has changed.
-  dolfin_error("Not implemented.");
-  //  return solver.dotu(i);
+  solver.toDense(u, solver.dotu, 0, solver.dotu.size());
 }
 //-----------------------------------------------------------------------------
 void ElasticityUpdatedODE::f(const uBlasVector& u, real t, uBlasVector &y)
