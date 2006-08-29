@@ -329,12 +329,16 @@ DOLFIN_MODULES="elasticity elasticity-updated convdiff navierstokes poisson stok
 # List of DOLFIN kernel libraries
 DOLFIN_KERNEL="common fem form function io la main math mesh mf nls ode pde quadrature parameter log"
 
+# Generate include path for external libraries
+EXTERNAL_CFLAGS="$CURSES_CFLAGS $PETSC_CFLAGS $SLEPC_CFLAGS $BOOST_CFLAGS $MPI_CFLAGS $XML_CPPFLAGS $UMFPACK_CFLAGS "
+AC_SUBST(EXTERNAL_CFLAGS)
+
 # Generate include path for kernel
 KERNEL_CFLAGS=""
 for f in $DOLFIN_KERNEL; do
     KERNEL_CFLAGS="$KERNEL_CFLAGS -I\$(top_builddir)/src/kernel/$f"
 done
-KERNEL_CFLAGS="$KERNEL_CFLAGS $CURSES_CFLAGS $PETSC_CFLAGS $SLEPC_CFLAGS $BOOST_CFLAGS $MPI_CFLAGS $XML_CPPFLAGS $UMFPACK_CFLAGS "
+KERNEL_CFLAGS="$KERNEL_CFLAGS $EXTERNAL_CFLAGS"
 AC_SUBST(KERNEL_CFLAGS)
 
 # Generate include path for modules
