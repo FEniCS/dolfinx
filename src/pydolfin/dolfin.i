@@ -77,8 +77,6 @@ using namespace dolfin;
 %array_functions(int, intArray);
 
 
-
-
 //%feature("director") GenericVector;
 %feature("director") Function;
 %feature("director") BoundaryCondition;
@@ -162,11 +160,11 @@ using namespace dolfin;
 
 // fem includes 
 
-%include "dolfin/FEM.h"
 %include "dolfin/FiniteElement.h"
 %include "dolfin/AffineMap.h"
 %include "dolfin/BoundaryValue.h"
 %include "dolfin/BoundaryCondition.h"
+%include "dolfin/FEM.h"
 
 // glue 
 

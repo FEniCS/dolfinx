@@ -353,6 +353,16 @@ done
 DOLFIN_CFLAGS="$KERNEL_CFLAGS $MAIN_CFLAGS $MODULE_CFLAGS"
 AC_SUBST(DOLFIN_CFLAGS)
 
+# Extract compiler definitions
+DOLFIN_DEFINITIONS=""
+for i in $CXXFLAGS; do
+    if test $(echo $i | head -c 2) == "-D"; then
+       DOLFIN_DEFINITIONS="$DOLFIN_DEFINITIONS $i"
+    fi
+done
+AC_SUBST(DOLFIN_DEFINITIONS)
+
+
 # External libraries which DOLFIN depends on
 DOLFIN_EXT_LIBS="$CURSES_LIBS $PETSC_LIBS $SLEPC_LIBS $XML_LIBS $UMFPACK_LIBS "
 AC_SUBST(DOLFIN_EXT_LIBS)

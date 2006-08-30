@@ -41,3 +41,18 @@ u = Function(x, mesh, trial_element)
 # Save solution to file in VTK format
 file = File("poisson.pvd")
 file << u
+
+# Plot with Mayavi
+
+# Load mayavi
+from mayavi import *
+
+# Plot solution
+v = mayavi()
+d = v.open_vtk_xml("poisson000000.vtu")
+m = v.load_module("Axes")
+m = v.load_module("BandedSurfaceMap")
+f = v.load_filter('WarpScalar', config=0)
+
+# Wait until window is closed
+v.master.wait_window()
