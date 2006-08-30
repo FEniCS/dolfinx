@@ -18,11 +18,13 @@ namespace dolfin {
 %include "dolfin/GenericMatrix.h"
 %include "dolfin/GenericVector.h"
 %include "dolfin/DenseMatrix.h"
+%include "dolfin/uBlasVector.h"
 %include "dolfin/DenseVector.h"
 %include "dolfin/SparseMatrix.h"
 %include "dolfin/SparseVector.h"
 %include "dolfin/LinearSolver.h"
 %include "dolfin/KrylovSolver.h"
+%include "dolfin/LUSolver.h"
 %include "dolfin/GMRES.h"
 %include "dolfin/LU.h"
 %include "dolfin/PETScEigenvalueSolver.h"
@@ -35,17 +37,17 @@ namespace dolfin {
 %include "dolfin/PETScPreconditioner.h"
 %include "dolfin/PETScVector.h"
 %include "dolfin/ublas.h"
+%include "dolfin/uBlasMatrix.h"
 %include "dolfin/uBlasDenseMatrix.h"
+%include "dolfin/uBlasSparseMatrix.h"
 %include "dolfin/uBlasDummyPreconditioner.h"
 %include "dolfin/uBlasKrylovMatrix.h"
 %include "dolfin/uBlasKrylovSolver.h"
 %include "dolfin/uBlasLinearSolver.h"
 %include "dolfin/uBlasLUSolver.h"
-%include "dolfin/uBlasMatrix.h"
 %include "dolfin/uBlasILUPreconditioner.h"
 %include "dolfin/uBlasPreconditioner.h"
-%include "dolfin/uBlasSparseMatrix.h"
-%include "dolfin/uBlasVector.h"
+%include "dolfin/GMRES.h"
 
 %template(uBlasSparseMatrix) dolfin::uBlasMatrix<dolfin::ublas_sparse_matrix>;
 %template(uBlasDenseMatrix) dolfin::uBlasMatrix<dolfin::ublas_dense_matrix>;
@@ -57,6 +59,7 @@ namespace dolfin {
   Vector = PETScVector
   Matrix = PETScMatrix
   KrylovSolver = PETScKrylovSolver
+  LUSolver = PETScLUSolver
 %}
 #else
 %pythoncode
@@ -65,6 +68,7 @@ namespace dolfin {
   Vector = uBlasVector
   Matrix = uBlasSparseMatrix
   KrylovSolver = uBlasKrylovSolver
+  LUSolver = uBlasLUSolver
 %}
 #endif
 

@@ -73,8 +73,9 @@ FEM_assemble(a, L, A, b, mesh, bc)
 # Linear algebra could in certain cases be handled by Python modules,
 # Numeric for example.
 
-linearsolver = KrylovSolver()
-#linearsolver.setRtol(1.0e-15);
+#linearsolver = KrylovSolver()
+linearsolver = LUSolver()
+
 linearsolver.solve(A, x, b)
 
 #print "x:"
