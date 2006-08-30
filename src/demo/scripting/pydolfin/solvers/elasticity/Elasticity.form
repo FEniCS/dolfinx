@@ -23,8 +23,13 @@ d = element.shapedim()
 def epsilon(u):
     return 0.5 * (grad(u) + transp(grad(u)))
 
+#def E(e, lmbda, mu):
+#    Ee = 2.0 * mult(mu, e) + mult(lmbda, mult(trace(e), Identity(d)))
+#    
+#    return Ee
+
 def E(e, lmbda, mu):
-    Ee = 2.0 * mult(mu, e) + mult(lmbda, mult(trace(e), Identity(d)))
+    Ee = mult(10.0, e)
     
     return Ee
         

@@ -3,34 +3,12 @@ import datetime
 from dolfin import *
 from math import *
 
-def save(mesh, counter, u, k, vtkfile):
+def save(counter, u, k, vtkfile):
 
     savefrequency = 33.0
 
     if(counter % int((1.0 / savefrequency / k)) == 0):
-        filename = "mesh%.6d.xml.gz" % counter
-        meshfile = File(filename)
-        
-        # Deform mesh
-        vi = VertexIterator(mesh)
-        while not vi.end():
-            vertex = vi.__deref__()
-            vertex.coord().x += u(vertex, 0)
-            vertex.coord().y += u(vertex, 1)
-            vertex.coord().z += u(vertex, 2)
-            vi.increment()
-                        
-        meshfile << mesh;
         vtkfile << u
-        
-        # Undo Deformation
-        vi = VertexIterator(mesh)
-        while not vi.end():
-            vertex = vi.__deref__()
-            vertex.coord().x -= u(vertex, 0)
-            vertex.coord().y -= u(vertex, 1)
-            vertex.coord().z -= u(vertex, 2)
-            vi.increment()
 
 class Source(Function):
     def eval(self, point, i):
@@ -72,7 +50,10 @@ mu = E / (2 * (1 + nu))
 
 elast_forms = import_formfile("Elasticity.form")
 
-a = elast_forms.ElasticityBilinearForm(lmbda, mu)
+# FIXME: Need to use Constant to use coefficients with FFC and PyDOLFIN
+
+#a = elast_forms.ElasticityBilinearForm(lmbda, mu)
+a = elast_forms.ElasticityBilinearForm()
 L = elast_forms.ElasticityLinearForm(f)
 Lu0 = elast_forms.ElasticityLinearForm(u0)
 Lv0 = elast_forms.ElasticityLinearForm(v0)
@@ -125,8 +106,8 @@ FEM_assemble(Lv0, xv1, mesh)
 
 # Solve for initial values
 
-xu1.div(m, xu1)
-xv1.div(m, xv1)
+xu1.div(m)
+xv1.div(m)
 
 # Initialize vectors
 
@@ -138,8 +119,8 @@ v = Function(xv1, mesh, element);
 
 vtkfile = File("elasticity.pvd")
 
-# Save mesh
-save(mesh, counter, u, k, vtkfile)
+# Save
+save(counter, u, k, vtkfile)
 
 t1 = datetime.datetime.now()
 
@@ -174,7 +155,7 @@ while(t < T):
         stepresidual.copy(b)
         stepresidual -= xtmp1
         stepresidual *= k
-        stepresidual.div(m, stepresidual)
+        stepresidual.div(m)
         stepresidual.axpy(1.0, xv0)
         stepresidual.axpy(-1.0, xv1)
             
@@ -205,9 +186,38 @@ while(t < T):
     counter += 1
 
     print "t: ", t
-    save(mesh, counter, u, k, vtkfile)
+    save(counter, u, k, vtkfile)
 
 
 t2 = datetime.datetime.now()
 
 print "measured time: ", t2 - t1
+
+
+# Plot with Mayavi
+
+# Load mayavi
+from mayavi import *
+
+# Plot solution
+v = mayavi()
+d = v.open_vtk_xml("elasticity000000.vtu")
+
+f = v.load_filter('WarpVector', config=0) 
+
+m = v.load_module("BandedSurfaceMap")
+m.actor.GetProperty().SetColor((0.8, 0.8, 1.0))
+
+camera = v.renwin.camera
+camera.Zoom(1.0)
+camera.SetPosition(2.5, 1.5, 5.5)
+camera.SetFocalPoint(1.0, 0.0, 0.0)
+camera.SetRoll(0.0)
+
+# Turn on sweeping
+d.sweep_delay.set(0.01)
+d.sweep_var.set(1)
+d.do_sweep()
+
+# Wait until window is closed
+v.master.wait_window()

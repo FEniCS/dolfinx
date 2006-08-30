@@ -105,3 +105,14 @@ l2error = Vector()
 FEM_assemble(l2errorL, l2error, mesh)
 
 print "L2 error for velocity: ", l2error.norm()
+
+# Load mayavi
+from mayavi import *
+
+# Plot solution
+v = mayavi()
+d = v.open_vtk_xml("velocity000000.vtu")
+m = v.load_module("VelocityVector", config=1)
+
+# Wait until window is closed
+v.master.wait_window()

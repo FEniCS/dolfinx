@@ -5931,6 +5931,12 @@ class FEM(_object):
 
     if _newclass:disp = staticmethod(disp)
     __swig_getmethods__["disp"] = lambda x: disp
+    def lump(*args):
+        """lump(PETScMatrix M, PETScVector m)"""
+        return _dolfin.FEM_lump(*args)
+
+    if _newclass:lump = staticmethod(lump)
+    __swig_getmethods__["lump"] = lambda x: lump
 FEM_swigregister = _dolfin.FEM_swigregister
 FEM_swigregister(FEM)
 
@@ -5972,6 +5978,10 @@ def FEM_size(*args):
 def FEM_disp(*args):
   """FEM_disp(Mesh mesh, FiniteElement element)"""
   return _dolfin.FEM_disp(*args)
+
+def FEM_lump(*args):
+  """FEM_lump(PETScMatrix M, PETScVector m)"""
+  return _dolfin.FEM_lump(*args)
 
 
 def get(*args):

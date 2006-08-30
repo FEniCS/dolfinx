@@ -123,7 +123,7 @@ void VTKFile::MeshWrite(const Mesh& mesh) const
 
   // Write vertex positions
   fprintf(fp, "<Points>  \n");
-  fprintf(fp, "<DataArray  type=\"Float32\"  NumberOfComponents=\"3\"  format=\"ascii\">  \n");
+  fprintf(fp, "<DataArray  type=\"Float64\"  NumberOfComponents=\"3\"  format=\"ascii\">  \n");
   for (VertexIterator n(mesh); !n.end(); ++n)
   {
     Point p = n->coord();
@@ -172,7 +172,7 @@ void VTKFile::MeshWrite(NewMesh& mesh) const
 
   // Write vertex positions
   fprintf(fp, "<Points>  \n");
-  fprintf(fp, "<DataArray  type=\"Float32\"  NumberOfComponents=\"3\"  format=\"ascii\">  \n");
+  fprintf(fp, "<DataArray  type=\"Float64\"  NumberOfComponents=\"3\"  format=\"ascii\">  \n");
   for (NewVertexIterator v(mesh); !v.end(); ++v)
   {
     NewPoint p = v->point();
@@ -250,12 +250,12 @@ void VTKFile::ResultsWrite(Function& u) const
     if ( u.vectordim() == 1 )
     {
       fprintf(fp, "<CellData  Scalars=\"U\"> \n");
-      fprintf(fp, "<DataArray  type=\"Float32\"  Name=\"U\"  format=\"ascii\">	 \n");
+      fprintf(fp, "<DataArray  type=\"Float64\"  Name=\"U\"  format=\"ascii\">	 \n");
     }
     else
     {
       fprintf(fp, "<CellData  Vectors=\"U\"> \n");
-      fprintf(fp, "<DataArray  type=\"Float32\"  Name=\"U\"  NumberOfComponents=\"3\" format=\"ascii\">	 \n");	
+      fprintf(fp, "<DataArray  type=\"Float64\"  Name=\"U\"  NumberOfComponents=\"3\" format=\"ascii\">	 \n");	
     }
     if ( u.vectordim() > 3 )
       dolfin_warning("Cannot handle VTK file with number of components > 3. Writing first three components only");
@@ -289,12 +289,12 @@ void VTKFile::ResultsWrite(Function& u) const
     if ( u.vectordim() == 1 )
     {
       fprintf(fp, "<PointData  Scalars=\"U\"> \n");
-      fprintf(fp, "<DataArray  type=\"Float32\"  Name=\"U\"  format=\"ascii\">	 \n");
+      fprintf(fp, "<DataArray  type=\"Float64\"  Name=\"U\"  format=\"ascii\">	 \n");
     }
     else
     {
       fprintf(fp, "<PointData  Vectors=\"U\"> \n");
-      fprintf(fp, "<DataArray  type=\"Float32\"  Name=\"U\"  NumberOfComponents=\"3\" format=\"ascii\">	 \n");	
+      fprintf(fp, "<DataArray  type=\"Float64\"  Name=\"U\"  NumberOfComponents=\"3\" format=\"ascii\">	 \n");	
     }
 
     if ( u.vectordim() > 3 )

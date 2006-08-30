@@ -166,6 +166,8 @@ using namespace dolfin;
 %include "dolfin/BoundaryCondition.h"
 %include "dolfin/FEM.h"
 
+%template(lump) dolfin::FEM::lump<Matrix, Vector>;
+
 // glue 
 
 %include "dolfin_glue.h"
