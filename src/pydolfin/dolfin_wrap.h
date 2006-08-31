@@ -640,6 +640,55 @@ private:
 };
 
 
+class SwigDirector_TimeDependentPDE : public dolfin::TimeDependentPDE, public Swig::Director {
+
+public:
+    SwigDirector_TimeDependentPDE(PyObject *self, dolfin::BilinearForm &a, dolfin::LinearForm &L, dolfin::Mesh &mesh, dolfin::BoundaryCondition &bc, int N, dolfin::real k, dolfin::real T);
+    virtual dolfin::uint solve(dolfin::Function &u);
+    virtual void init(dolfin::Function &U);
+    virtual void save(dolfin::Function &U, dolfin::real t);
+    virtual void preparestep();
+    virtual void fu(dolfin::Vector const &x, dolfin::Vector &dotx, dolfin::real t);
+    virtual void prepareiteration();
+
+
+/* Internal Director utilities */
+public:
+    bool swig_get_inner(const char* name) const {
+      std::map<std::string, bool>::const_iterator iv = inner.find(name);
+      return (iv != inner.end() ? iv->second : false);
+    }
+
+    void swig_set_inner(const char* name, bool val) const
+    { inner[name] = val;}
+
+private:
+    mutable std::map<std::string, bool> inner;
+
+
+#if defined(SWIG_PYTHON_DIRECTOR_VTABLE)
+/* VTable implementation */
+    PyObject *swig_get_method(size_t method_index, const char *method_name) const {
+      PyObject *method = vtable[method_index];
+      if (!method) {
+        swig::PyObject_var name = PyString_FromString(method_name);
+        method = PyObject_GetAttr(swig_get_self(), name);
+        if (method == NULL) {
+          std::string msg = "Method in class TimeDependentPDE doesn't exist, undefined ";
+          msg += method_name;
+          Swig::DirectorMethodException::raise(msg.c_str());
+        }
+        vtable[method_index] = method;
+      };
+      return method;
+    }
+private:
+    mutable swig::PyObject_var vtable[6];
+#endif
+
+};
+
+
 class SwigDirector_BoundaryCondition : public dolfin::BoundaryCondition, public Swig::Director {
 
 public:

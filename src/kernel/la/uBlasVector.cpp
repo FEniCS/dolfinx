@@ -10,6 +10,10 @@
 #include <boost/numeric/ublas/vector.hpp>
 #include <dolfin/uBlasVector.h>
 
+#ifdef HAVE_PETSC_H
+#include <dolfin/PETScVector.h>
+#endif
+
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
@@ -121,5 +125,27 @@ LogStream& dolfin::operator<< (LogStream& stream, const uBlasVector& x)
   stream << "[ uBlasVector of size " << x.size() << " ]";
 
   return stream;
+}
+//-----------------------------------------------------------------------------
+#ifdef HAVE_PETSC_H
+void uBlasVector::copy(const PETScVector& y)
+{
+  // FIXME: Verify if there's a more efficient implementation
+
+  uint s = size();
+  uBlasVector& x = *this;
+  real* vals = 0;
+  vals = y.array();
+  for(uint i = 0; i < s; i++)
+  {
+    x[offset + i] = vals[i];
+  }
+  y.restore(vals);
+}
+#endif
+//-----------------------------------------------------------------------------
+void uBlasVector::copy(const uBlasVector& y)
+{
+  *(this) = y;
 }
 //-----------------------------------------------------------------------------

@@ -9,8 +9,6 @@
 #ifndef __HEAT_SOLVER_H
 #define __HEAT_SOLVER_H
 
-#ifdef HAVE_PETSC_H
-
 #include <dolfin/Solver.h>
 #include <dolfin/ODE.h>
 #include <dolfin/TimeStepper.h>
@@ -75,18 +73,13 @@ namespace dolfin
     void u0(uBlasVector& u);
 
     /// Evaluate right-hand side (mono-adaptive version)
-    virtual void f(const real u[], real t, real y[]);
-    virtual bool update(const real u[], real t, bool end);
-
-    void fromArray(const real u[], Vector& x, uint offset, uint size);
-    void toArray(real y[], Vector&x, uint offset, uint size);
+    virtual void f(const uBlasVector& u, real t, uBlasVector& y);
+    virtual bool update(const uBlasVector& u, real t, bool end);
 
     HeatSolver& solver;
   };
 
 
 }
-
-#endif
 
 #endif

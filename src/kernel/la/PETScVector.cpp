@@ -15,6 +15,7 @@
 #include <dolfin/PETScManager.h>
 #include <dolfin/PETScVector.h>
 #include <cmath>
+#include <dolfin/uBlasVector.h>
 
 using namespace dolfin;
 
@@ -465,6 +466,24 @@ void PETScVector::toArray(real y[], PETScVector& x,
     y[offset + i] = vals[i];
   }
   x.restore(vals);
+}
+//-----------------------------------------------------------------------------
+void PETScVector::copy(const PETScVector& y)
+{
+  *(this) = y;
+}
+//-----------------------------------------------------------------------------
+void PETScVector::copy(const uBlasVector& y)
+{
+  // FIXME: Verify if there's a more efficient implementation
+
+  real* vals = 0;
+  vals = array();
+  for(uint i = 0; i < size; i++)
+  {
+    vals[i] = u[i + offset];
+  }
+  restore(vals);
 }
 //-----------------------------------------------------------------------------
 // PETScVectorElement

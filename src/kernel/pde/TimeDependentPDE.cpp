@@ -6,7 +6,7 @@
 // First added:  2006
 // Last changed: 2006-05-04
 
-#ifdef HAVE_PETSC_H
+//#ifdef HAVE_PETSC_H
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/FEM.h>
@@ -163,18 +163,18 @@ void TimeDependentODE::u0(uBlasVector& u)
   //return pde->x->get(i);
 }
 //-----------------------------------------------------------------------------
-void TimeDependentODE::f(const real u[], real t, real y[])
+void TimeDependentODE::f(const uBlasVector& u, real t, uBlasVector& y)
 {
-  Vector::fromArray(u, *(pde->x), 0, pde->x->size());
+  pde->x->copy(u);
 
   pde->prepareiteration();
 
   pde->fu(*(pde->x), *(pde->dotx), t);
 
-  Vector::toArray(y, *(pde->dotx), 0, pde->dotx->size());
+  y.copy(*(pde->dotx));
 }
 //-----------------------------------------------------------------------------
-bool TimeDependentODE::update(const real u[], real t, bool end)
+bool TimeDependentODE::update(const uBlasVector& u, real t, bool end)
 {
   return true;
 }
@@ -185,4 +185,4 @@ real TimeDependentODE::timestep(real t, real k0) const
 }
 //-----------------------------------------------------------------------------
 
-#endif
+//#endif

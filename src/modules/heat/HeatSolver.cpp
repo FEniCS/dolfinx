@@ -6,8 +6,6 @@
 // First added:  2005-11-01
 // Last changed: 2006-05-07
 
-#ifdef HAVE_PETSC_H
-
 #include <dolfin/HeatSolver.h>
 #include <dolfin/Heat.h>
 
@@ -68,7 +66,7 @@ void HeatSolver::fu()
   dolfin_log(false);
   FEM::assemble(L, dotu, mesh);
   FEM::applyBC(Dummy, dotu, mesh, element, bc);
-  VecPointwiseDivide(dotu.vec(), dotu.vec(), m.vec());
+  //VecPointwiseDivide(dotu.vec(), dotu.vec(), m.vec());
   fevals++;
   dolfin_log(true);
 }
@@ -86,53 +84,23 @@ HeatODE::HeatODE(HeatSolver& solver) :
 //-----------------------------------------------------------------------------
 void HeatODE::u0(uBlasVector& u)
 {
-  // FIXME: ODE solver interface has changed
-  dolfin_error("Not implemented.");
+  u.copy(solver.x);
 }
 //-----------------------------------------------------------------------------
-void HeatODE::f(const real u[], real t, real y[])
+void HeatODE::f(const uBlasVector& u, real t, uBlasVector& y)
 {
   // Copy values from ODE array
-  fromArray(u, solver.x, 0, solver.N);
+  solver.x.copy(u);
 
   // Compute solver RHS (puts result in Vector variables)
   solver.fu();
 
   // Copy values into ODE array
-  toArray(y, solver.dotu, 0, solver.N);
+  y.copy(solver.dotu);
 }
 //-----------------------------------------------------------------------------
-bool HeatODE::update(const real u[], real t, bool end)
+bool HeatODE::update(const uBlasVector& u, real t, bool end)
 {
   return true;
 }
 //-----------------------------------------------------------------------------
-void HeatODE::fromArray(const real u[], Vector& x, uint offset,
-				     uint size)
-{
-  // Workaround to interface Vector and arrays
-
-  real* vals = 0;
-  vals = x.array();
-  for(uint i = 0; i < size; i++)
-  {
-    vals[i] = u[i + offset];
-  }
-  x.restore(vals);
-}
-//-----------------------------------------------------------------------------
-void HeatODE::toArray(real y[], Vector& x, uint offset, uint size)
-{
-  // Workaround to interface Vector and arrays
-
-  real* vals = 0;
-  vals = x.array();
-  for(uint i = 0; i < size; i++)
-  {
-    y[offset + i] = vals[i];
-  }
-  x.restore(vals);
-}
-//-----------------------------------------------------------------------------
-
-#endif

@@ -20,6 +20,7 @@
 namespace dolfin
 {
   
+  class uBlasVector;
   class PETScVectorElement;
 
   /// This class represents a vector of dimension N.
@@ -173,6 +174,10 @@ namespace dolfin
 
     // Copy values from vector into array
     static void toArray(real y[], PETScVector&x, uint offset, uint size);
+
+    // Copy values between different vector representations
+    void copy(const PETScVector& y);
+    void copy(const uBlasVector& y);
 
   private:
 

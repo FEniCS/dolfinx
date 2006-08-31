@@ -32,34 +32,27 @@ class MyBC : public BoundaryCondition
 int main()
 {
 
-#ifdef HAVE_PETSC_H
-
   // Set up problem
   UnitSquare mesh(16, 16);
   MyFunction f;
   MyBC bc;
 
-  set("method", "dg");
-  set("order", 0);
-  set("solver", "newton");
-  set("tolerance", 1e-3);
+  set("ODE method", "dg");
+  set("ODE order", 0);
+  set("ODE linear solver", "newton");
+  set("ODE tolerance", 1e-3);
 
-  set("fixed time step", false);
-  set("initial time step", 1e-1);
-  set("maximum time step", 1e6);
+  set("ODE fixed time step", false);
+  set("ODE initial time step", 1e-1);
+  set("ODE maximum time step", 1e6);
 
-  set("save solution", true);
-  set("ode solution file name", "primal.py");
-  set("number of samples", 400);
+  set("ODE save solution", true);
+  set("ODE solution file name", "primal.py");
+  set("ODE number of samples", 400);
 
   real T = 10.0;
 
   HeatSolver::solve(mesh, f, bc, T);
 
-#else
-
-  cout << "DOLFIN must be configured with PETSc to run this demo" << endl; 
-
-#endif
   return 0;
 }

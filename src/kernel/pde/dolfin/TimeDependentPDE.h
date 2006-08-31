@@ -9,7 +9,7 @@
 #ifndef __TIME_DEPENDENT_PDE_H
 #define __TIME_DEPENDENT_PDE_H
 
-#ifdef HAVE_PETSC_H
+//#ifdef HAVE_PETSC_H
 
 #include <dolfin/GenericPDE.h>
 #include <dolfin/ODE.h>
@@ -94,8 +94,8 @@ namespace dolfin
     virtual real timestep(real t, real k0) const;
     // Evaluate right-hand side (mono-adaptive version)
     using ODE::f;
-    virtual void f(const real u[], real t, real y[]);
-    virtual bool update(const real u[], real t, bool end);
+    virtual void f(const uBlasVector& u, real t, uBlasVector& y);
+    virtual bool update(const uBlasVector& u, real t, bool end);
     
   protected:
     TimeDependentPDE* pde;
@@ -104,6 +104,6 @@ namespace dolfin
 
 }
 
-#endif
+//#endif
 
 #endif

@@ -17,6 +17,8 @@
 namespace dolfin
 {
 
+  class PETScVector;
+
   namespace ublas = boost::numeric::ublas;
   typedef ublas::vector<double> ublas_vector;
 
@@ -105,6 +107,10 @@ namespace dolfin
 
     /// Output
     friend LogStream& operator<< (LogStream& stream, const uBlasVector& x);
+
+    // Copy values between different vector representations
+    void copy(const PETScVector& y);
+    void copy(const uBlasVector& y);
 
   };
 }

@@ -468,10 +468,6 @@ class uBlasVector(GenericVector,Variable):
         """init(self, uint N)"""
         return _dolfin.uBlasVector_init(*args)
 
-    def copy(*args):
-        """copy(self, real a) -> uBlasVector"""
-        return _dolfin.uBlasVector_copy(*args)
-
     def size(*args):
         """size(self) -> uint"""
         return _dolfin.uBlasVector_size(*args)
@@ -529,6 +525,14 @@ class uBlasVector(GenericVector,Variable):
         disp(self)
         """
         return _dolfin.uBlasVector_disp(*args)
+
+    def copy(*args):
+        """
+        copy(self, real a) -> uBlasVector
+        copy(self, PETScVector y)
+        copy(self, uBlasVector y)
+        """
+        return _dolfin.uBlasVector_copy(*args)
 
 uBlasVector_swigregister = _dolfin.uBlasVector_swigregister
 uBlasVector_swigregister(uBlasVector)
@@ -4935,6 +4939,124 @@ class dGqMethod(Method):
 
 dGqMethod_swigregister = _dolfin.dGqMethod_swigregister
 dGqMethod_swigregister(dGqMethod)
+
+class TimeDependentPDE(_object):
+    """Proxy of C++ TimeDependentPDE class"""
+    __swig_setmethods__ = {}
+    __setattr__ = lambda self, name, value: _swig_setattr(self, TimeDependentPDE, name, value)
+    __swig_getmethods__ = {}
+    __getattr__ = lambda self, name: _swig_getattr(self, TimeDependentPDE, name)
+    __repr__ = _swig_repr
+    def __init__(self, *args): 
+        """
+        __init__(self, BilinearForm a, LinearForm L, Mesh mesh, BoundaryCondition bc, 
+            int N, real k, real T) -> TimeDependentPDE
+        """
+        if self.__class__ == TimeDependentPDE:
+            args = (None,) + args
+        else:
+            args = (self,) + args
+        this = _dolfin.new_TimeDependentPDE(*args)
+        try: self.this.append(this)
+        except: self.this = this
+    __swig_destroy__ = _dolfin.delete_TimeDependentPDE
+    __del__ = lambda self : None;
+    def solve(*args):
+        """solve(self, Function u) -> uint"""
+        return _dolfin.TimeDependentPDE_solve(*args)
+
+    def fu(*args):
+        """fu(self, Vector x, Vector dotx, real t)"""
+        return _dolfin.TimeDependentPDE_fu(*args)
+
+    def init(*args):
+        """init(self, Function U)"""
+        return _dolfin.TimeDependentPDE_init(*args)
+
+    def save(*args):
+        """save(self, Function U, real t)"""
+        return _dolfin.TimeDependentPDE_save(*args)
+
+    def preparestep(*args):
+        """preparestep(self)"""
+        return _dolfin.TimeDependentPDE_preparestep(*args)
+
+    def prepareiteration(*args):
+        """prepareiteration(self)"""
+        return _dolfin.TimeDependentPDE_prepareiteration(*args)
+
+    def elementdim(*args):
+        """elementdim(self) -> uint"""
+        return _dolfin.TimeDependentPDE_elementdim(*args)
+
+    def a(*args):
+        """a(self) -> BilinearForm"""
+        return _dolfin.TimeDependentPDE_a(*args)
+
+    def L(*args):
+        """L(self) -> LinearForm"""
+        return _dolfin.TimeDependentPDE_L(*args)
+
+    def mesh(*args):
+        """mesh(self) -> Mesh"""
+        return _dolfin.TimeDependentPDE_mesh(*args)
+
+    def bc(*args):
+        """bc(self) -> BoundaryCondition"""
+        return _dolfin.TimeDependentPDE_bc(*args)
+
+    __swig_setmethods__["x"] = _dolfin.TimeDependentPDE_x_set
+    __swig_getmethods__["x"] = _dolfin.TimeDependentPDE_x_get
+    if _newclass:x = property(_dolfin.TimeDependentPDE_x_get, _dolfin.TimeDependentPDE_x_set)
+    __swig_setmethods__["dotx"] = _dolfin.TimeDependentPDE_dotx_set
+    __swig_getmethods__["dotx"] = _dolfin.TimeDependentPDE_dotx_get
+    if _newclass:dotx = property(_dolfin.TimeDependentPDE_dotx_get, _dolfin.TimeDependentPDE_dotx_set)
+    __swig_setmethods__["k"] = _dolfin.TimeDependentPDE_k_set
+    __swig_getmethods__["k"] = _dolfin.TimeDependentPDE_k_get
+    if _newclass:k = property(_dolfin.TimeDependentPDE_k_get, _dolfin.TimeDependentPDE_k_set)
+    def __disown__(self):
+        self.this.disown()
+        _dolfin.disown_TimeDependentPDE(self)
+        return weakref_proxy(self)
+TimeDependentPDE_swigregister = _dolfin.TimeDependentPDE_swigregister
+TimeDependentPDE_swigregister(TimeDependentPDE)
+
+class TimeDependentODE(ODE):
+    """Proxy of C++ TimeDependentODE class"""
+    __swig_setmethods__ = {}
+    for _s in [ODE]: __swig_setmethods__.update(_s.__swig_setmethods__)
+    __setattr__ = lambda self, name, value: _swig_setattr(self, TimeDependentODE, name, value)
+    __swig_getmethods__ = {}
+    for _s in [ODE]: __swig_getmethods__.update(_s.__swig_getmethods__)
+    __getattr__ = lambda self, name: _swig_getattr(self, TimeDependentODE, name)
+    __repr__ = _swig_repr
+    def __init__(self, *args): 
+        """__init__(self, TimeDependentPDE pde, int N, real T) -> TimeDependentODE"""
+        this = _dolfin.new_TimeDependentODE(*args)
+        try: self.this.append(this)
+        except: self.this = this
+    def u0(*args):
+        """u0(self, uBlasVector u)"""
+        return _dolfin.TimeDependentODE_u0(*args)
+
+    def timestep(*args):
+        """timestep(self, real t, real k0) -> real"""
+        return _dolfin.TimeDependentODE_timestep(*args)
+
+    def f(*args):
+        """
+        f(self, uBlasVector u, real t, uBlasVector y)
+        f(self, uBlasVector u, real t, uint i) -> real
+        f(self, uBlasVector u, real t, uBlasVector y)
+        """
+        return _dolfin.TimeDependentODE_f(*args)
+
+    def update(*args):
+        """update(self, uBlasVector u, real t, bool end) -> bool"""
+        return _dolfin.TimeDependentODE_update(*args)
+
+TimeDependentODE_swigregister = _dolfin.TimeDependentODE_swigregister
+TimeDependentODE_swigregister(TimeDependentODE)
 
 class FiniteElement(_object):
     """Proxy of C++ FiniteElement class"""
