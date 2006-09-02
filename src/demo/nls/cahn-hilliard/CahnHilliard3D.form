@@ -23,12 +23,13 @@ c0         = Function(P1)      # solution from previous converged step
 DcDt0      = Function(P1)      # rate from previous step
 
 lmbda      = Constant()        # surface parameter
+muFactor   = Constant()        # chemical free energy multiplier
 
 dt         = Constant()           # time step
 theta      = Constant()           # time stepping parameter 
 
-mu    = 100.0*(2.0*(1.0-c1)*(1.0-c1) - 8.0*c1*(1.0-c1) + 2.0*c1*c1)
-DmuDc = 100.0*(-12.0 + 24.0*c1)
+mu    = muFactor*(2.0*(1.0-c1)*(1.0-c1) - 8.0*c1*(1.0-c1) + 2.0*c1*c1)
+DmuDc = muFactor*(-12.0 + 24.0*c1)
 
 Mob = 1.0
 dMob = 0.0

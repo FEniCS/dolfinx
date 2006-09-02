@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-03-02
-// Last changed: 2006-03-02
+// Last changed: 2006-09-03
 //
 // This program illustrates the use of the DOLFIN nonlinear solver for solving 
 // the Cahn-Hilliard equation.
@@ -25,24 +25,20 @@ class CahnHilliardEquation : public NonlinearProblem, public Parametrized
 
     // Constructor 
     CahnHilliardEquation(Mesh& mesh, Function& U, Function& rate1, Function& U0, 
-        Function& rate0, real& theta, real& dt) : NonlinearProblem(), 
-        Parametrized(), _mesh(&mesh), _dt(&dt), _theta(&theta)
+          Function& rate0, real& theta, real& dt, real lambda, real muFactor) 
+          : _mesh(&mesh), _dt(&dt), _theta(&theta), _lambda(lambda), 
+            _muFactor(muFactor)
     {
-
-      lambda = 5.0e-2;
-      add("mobility", "nonlinear");
-      add("chemical potential", "logarithmic");
-
       // Create forms
       if(mesh.numSpaceDim() == 2)
       {
-        a = new CahnHilliard2D::BilinearForm(U, lambda, *_dt, *_theta);
-        L = new CahnHilliard2D::LinearForm(U, U0, rate0, lambda, *_dt, *_theta);
+        a = new CahnHilliard2D::BilinearForm(U, _lambda, _muFactor, *_dt, *_theta);
+        L = new CahnHilliard2D::LinearForm(U, U0, rate0, _lambda, _muFactor, *_dt, *_theta);
       }
       else if(mesh.numSpaceDim() == 3)
       {
-        a = new CahnHilliard3D::BilinearForm(U, lambda, *_dt, *_theta);
-        L = new CahnHilliard3D::LinearForm(U, U0, rate0, lambda, *_dt, *_theta);
+        a = new CahnHilliard3D::BilinearForm(U, _lambda, _muFactor, *_dt, *_theta);
+        L = new CahnHilliard3D::LinearForm(U, U0, rate0, _lambda, _muFactor, *_dt, *_theta);
       }
       else
         dolfin_error("Cahn-Hilliard model is programmed for 2D and 3D only");
@@ -72,20 +68,16 @@ class CahnHilliardEquation : public NonlinearProblem, public Parametrized
 
   private:
 
-    // Pointers to forms and  mesh
+    // Pointers to forms and mesh
     BilinearForm *a;
     LinearForm *L;
     Mesh* _mesh;
 
-    // Mobility and its derivative 
-    Function *mobility, *d_mobility;
-
-    // Chemical potential and its derivative 
-    Function *mu, *dmu_dc;
- 
+    // Time stepping parameters
     real *_dt, *_theta;
-    // Surface parameter
-    real lambda;
+
+    // Model parameters
+    real _lambda, _muFactor;
 };
 
 
@@ -93,18 +85,22 @@ int main(int argc, char* argv[])
 {
   dolfin_init(argc, argv);
 
-  // Set up problem
+  // Mesh
   UnitSquare mesh(40, 40);
 
-  // Set time stepping parameters
+  // Time stepping parameters
   real dt = 2.0e-6; real t  = 0.0; real T  = 500*dt;
   real theta = 0.5;
 
-  Function U, U0;
-  Function rate1, rate0;
+  // Model parameters
+  real lambda = 1.0e-2;
+  real muFactor = 100.0;
+
+  // Solution functions
+  Function U, U0, rate1, rate0;
 
   // Create user-defined nonlinear problem
-  CahnHilliardEquation cahn_hilliard(mesh, U, rate1, U0, rate0, theta, dt);
+  CahnHilliardEquation cahn_hilliard(mesh, U, rate1, U0, rate0, theta, dt, lambda, muFactor);
 
   // Create nonlinear solver and set parameters
   NewtonSolver newton_solver;
@@ -144,11 +140,8 @@ int main(int argc, char* argv[])
     // Compute rate
     r = r0;
     r *= -((1.0-theta)/theta);
-
     r += (1.0/(theta*dt))*x;
     r -= (1.0/(theta*dt))*x0;
-//    r.axpy((1.0/(theta*dt)), x);
-//    r.axpy(-(1.0/(theta*dt)), x0);
 
    // Save function to file
     c = U[0];
