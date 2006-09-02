@@ -78,7 +78,7 @@ class MyNonlinearProblem : public NonlinearProblem
     }
  
     // User defined assemble of Jacobian and residual vector 
-    void form(Matrix& A, Vector& b, const Vector& x)
+    void form(GenericMatrix& A, GenericVector& b, const GenericVector& x)
     {
       dolfin_log(false);
       FEM::assemble(*a, *L, A, b, *_mesh);

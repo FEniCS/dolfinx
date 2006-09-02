@@ -31,7 +31,7 @@ NonlinearPDE::~NonlinearPDE()
   // Do nothing 
 }
 //-----------------------------------------------------------------------------
-void NonlinearPDE::form(Matrix& A, Vector& b, const Vector& x)
+void NonlinearPDE::form(GenericMatrix& A, GenericVector& b, const GenericVector& x)
 {
   if(!_a)
   {  
@@ -55,13 +55,13 @@ void NonlinearPDE::form(Matrix& A, Vector& b, const Vector& x)
   
 }
 //-----------------------------------------------------------------------------
-//void NonlinearPDE::F(Vector& b, const Vector& x)
+//void NonlinearPDE::F(GenericVector& b, const GenericVector& x)
 //{
 //  dolfin_error("Nonlinear PDE update for F(u)  has not been supplied by
 //user.");
 //}
 //-----------------------------------------------------------------------------
-//void NonlinearPDE::J(Matrix& A, const Vector& x)
+//void NonlinearPDE::J(GenericMatrix& A, const GenericVector& x)
 //{
 //  dolfin_error("Nonlinear PDE update for Jacobian has not been supplied by
 //user.");

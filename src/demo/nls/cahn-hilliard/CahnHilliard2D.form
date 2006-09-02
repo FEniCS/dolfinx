@@ -22,16 +22,16 @@ ME = P1 + P2
 c0         = Function(P1)      # solution from previous converged step 
 DcDt0      = Function(P1)      # rate from previous step
 
-mu         = Function(P1)      # chemical potential
-DmuDc      = Function(P1)      # derivative of chemical potential wrt concentration 
-
-Mob        = Function(P1)      # mobility
-dMob       = Function(P1)      # dmobility
-
 lmbda      = Constant()        # surface parameter
 
 dt         = Constant()           # time step
 theta      = Constant()           # time stepping parameter 
+
+mu    = 100.0*(2.0*(1.0-c1)*(1.0-c1) - 8.0*c1*(1.0-c1) + 2.0*c1*c1)
+DmuDc = 100.0*(-12.0 + 24.0*c1)
+
+Mob = 1.0
+dMob = 0.0
 
 # Compute current rate (this implies the predictor)
 DcDt = (c1-c0)*(1.0/dt)*(1.0/theta) - (1-theta)*DcDt0*(1/theta)

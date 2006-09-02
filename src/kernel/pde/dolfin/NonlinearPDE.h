@@ -39,17 +39,17 @@ namespace dolfin
     virtual ~NonlinearPDE();
 
      /// User-defined function to compute F(u) its Jacobian
-    virtual void form(Matrix& A, Vector& b, const Vector& x);
+    virtual void form(GenericMatrix& A, GenericVector& b, const GenericVector& x);
 
     /// Solve PDE (in general a mixed system). If the function u has been 
     /// initialised, it is used as a starting value.
     uint solve(Function& u);
 
 //     /// User-defined function to compute F(u)
-//    virtual void F(Vector& b, const Vector& x);
+//    virtual void F(GenericVector& b, const GenericVector& x);
 
 //     /// User-defined function to compute Jacobian matrix
-//    virtual void J(Matrix& A, const Vector& x);
+//    virtual void J(GenericMatrix& A, const GenericVector& x);
 
     /// Return the element dimension
     uint elementdim();
