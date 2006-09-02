@@ -7,14 +7,16 @@
 #ifndef __NONLINEAR_PROBLEM_H
 #define __NONLINEAR_PROBLEM_H
 
-#include <dolfin/Vector.h>
-#include <dolfin/Matrix.h>
+//#include <dolfin/GenericVector.h>
+//#include <dolfin/GenericMatrix.h>
 
 namespace dolfin
 {
 
   class BilinearForm; 
   class BoundaryCondition;
+  class GenericMatrix;
+  class GenericVector;
   class LinearForm;
   class Mesh;
 
@@ -32,13 +34,13 @@ namespace dolfin
     virtual ~NonlinearProblem();
 
      /// User-defined function to compute F(u) its Jacobian
-    virtual void form(Matrix& A, Vector& b, const Vector& x);
+    virtual void form(GenericMatrix& A, GenericVector& b, const GenericVector& x);
 
      /// User-defined function to compute F(u)
-    virtual void F(Vector& b, const Vector& x);
+    virtual void F(GenericVector& b, const GenericVector& x);
 
      /// User-defined function to compute Jacobian matrix
-    virtual void J(Matrix& A, const Vector& x);
+    virtual void J(GenericMatrix& A, const GenericVector& x);
 
   };
 }
