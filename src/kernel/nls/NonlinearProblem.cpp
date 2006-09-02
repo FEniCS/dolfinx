@@ -2,13 +2,14 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-10-24
-// Last changed: 2006-02-23
+// Last changed: 2006-09-02
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/NonlinearProblem.h>
 
 using namespace dolfin;
 
+//-----------------------------------------------------------------------------
 NonlinearProblem::NonlinearProblem()
 {
   // Do nothing
