@@ -23,7 +23,7 @@ using namespace dolfin;
 PETScVector::PETScVector()
   : GenericVector(), 
     Variable("x", "a sparse vector"),
-    x(0), copy(false)
+    x(0), _copy(false)
 {
   // Initialize PETSc
   PETScManager::init();
@@ -32,7 +32,7 @@ PETScVector::PETScVector()
 PETScVector::PETScVector(uint size)
   : GenericVector(), 
     Variable("x", "a sparse vector"), 
-    x(0), copy(false)
+    x(0), _copy(false)
 {
   // Initialize PETSc
   PETScManager::init();
@@ -44,7 +44,7 @@ PETScVector::PETScVector(uint size)
 PETScVector::PETScVector(Vec x)
   : GenericVector(),
     Variable("x", "a vector"),
-    x(x), copy(true)
+    x(x), _copy(true)
 {
   // Initialize PETSc 
   PETScManager::init();
@@ -53,7 +53,7 @@ PETScVector::PETScVector(Vec x)
 PETScVector::PETScVector(const PETScVector& v)
   : GenericVector(), 
     Variable("x", "a vector"),
-    x(0), copy(false)
+    x(0), _copy(false)
 {
   // Initialize PETSc 
   PETScManager::init();
@@ -148,7 +148,7 @@ void PETScVector::zero()
 //-----------------------------------------------------------------------------
 void PETScVector::clear()
 {
-  if ( x && !copy )
+  if ( x && !_copy )
   {
     VecDestroy(x);
   }
@@ -455,13 +455,13 @@ void PETScVector::fromArray(const real u[], PETScVector& x,
 //-----------------------------------------------------------------------------
 void PETScVector::toArray(real y[], PETScVector& x,
 			   unsigned int offset,
-			   unsigned int size)
+			   unsigned int s)
 {
   // Workaround to interface PETScVector and arrays
 
   real* vals = 0;
   vals = x.array();
-  for(unsigned int i = 0; i < size; i++)
+  for(unsigned int i = 0; i < s; i++)
   {
     y[offset + i] = vals[i];
   }
@@ -478,10 +478,11 @@ void PETScVector::copy(const uBlasVector& y)
   // FIXME: Verify if there's a more efficient implementation
 
   real* vals = 0;
+  uint s = size();
   vals = array();
-  for(uint i = 0; i < size; i++)
+  for(uint i = 0; i < s; i++)
   {
-    vals[i] = u[i + offset];
+    vals[i] = y[i];
   }
   restore(vals);
 }

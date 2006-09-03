@@ -15,7 +15,7 @@ class MyFunction : public Function
 {
   real eval(const Point& p, unsigned int i)
   {
-    return p.x*sin(p.y);
+    return 10.0 * p.x*sin(p.y);
   }
 };
 
@@ -39,12 +39,12 @@ int main()
 
   set("ODE method", "dg");
   set("ODE order", 0);
-  set("ODE linear solver", "newton");
+  set("ODE nonlinear solver", "newton");
   set("ODE tolerance", 1e-3);
 
   set("ODE fixed time step", false);
-  set("ODE initial time step", 1e-1);
-  set("ODE maximum time step", 1e6);
+  set("ODE initial time step", 1e-3);
+  set("ODE maximum time step", 1e+0);
 
   set("ODE save solution", true);
   set("ODE solution file name", "primal.py");

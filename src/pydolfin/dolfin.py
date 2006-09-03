@@ -547,6 +547,14 @@ class GMRES(_object):
     __repr__ = _swig_repr
     def solve(*args):
         """
+        solve(PETScMatrix A, PETScVector x, PETScVector b, Preconditioner pc=default_pc) -> uint
+        solve(PETScMatrix A, PETScVector x, PETScVector b) -> uint
+        solve(PETScKrylovMatrix A, PETScVector x, PETScVector b, 
+            Preconditioner pc=default_pc) -> uint
+        solve(PETScKrylovMatrix A, PETScVector x, PETScVector b) -> uint
+        solve(PETScMatrix A, PETScVector x, PETScVector b, PETScPreconditioner pc) -> uint
+        solve(PETScKrylovMatrix A, PETScVector x, PETScVector b, 
+            PETScPreconditioner pc) -> uint
         solve(uBlasMatrix<(dolfin::ublas_dense_matrix)> A, uBlasVector x, 
             uBlasVector b, Preconditioner pc=default_pc) -> uint
         solve(uBlasMatrix<(dolfin::ublas_dense_matrix)> A, uBlasVector x, 
@@ -574,6 +582,14 @@ GMRES_swigregister(GMRES)
 
 def GMRES_solve(*args):
   """
+    solve(PETScMatrix A, PETScVector x, PETScVector b, Preconditioner pc=default_pc) -> uint
+    solve(PETScMatrix A, PETScVector x, PETScVector b) -> uint
+    solve(PETScKrylovMatrix A, PETScVector x, PETScVector b, 
+        Preconditioner pc=default_pc) -> uint
+    solve(PETScKrylovMatrix A, PETScVector x, PETScVector b) -> uint
+    solve(PETScMatrix A, PETScVector x, PETScVector b, PETScPreconditioner pc) -> uint
+    solve(PETScKrylovMatrix A, PETScVector x, PETScVector b, 
+        PETScPreconditioner pc) -> uint
     solve(uBlasMatrix<(dolfin::ublas_dense_matrix)> A, uBlasVector x, 
         uBlasVector b, Preconditioner pc=default_pc) -> uint
     solve(uBlasMatrix<(dolfin::ublas_dense_matrix)> A, uBlasVector x, 
@@ -604,6 +620,8 @@ class LU(_object):
     __repr__ = _swig_repr
     def solve(*args):
         """
+        solve(PETScMatrix A, PETScVector x, PETScVector b)
+        solve(PETScKrylovMatrix A, PETScVector x, PETScVector b)
         solve(uBlasMatrix<(dolfin::ublas_dense_matrix)> A, uBlasVector x, 
             uBlasVector b)
         solve(uBlasMatrix<(dolfin::ublas_sparse_matrix)> A, uBlasVector x, 
@@ -618,12 +636,590 @@ LU_swigregister(LU)
 
 def LU_solve(*args):
   """
+    solve(PETScMatrix A, PETScVector x, PETScVector b)
+    solve(PETScKrylovMatrix A, PETScVector x, PETScVector b)
     solve(uBlasMatrix<(dolfin::ublas_dense_matrix)> A, uBlasVector x, 
         uBlasVector b)
     LU_solve(uBlasMatrix<(dolfin::ublas_sparse_matrix)> A, uBlasVector x, 
         uBlasVector b)
     """
   return _dolfin.LU_solve(*args)
+
+class PETScKrylovMatrix(_object):
+    """Proxy of C++ PETScKrylovMatrix class"""
+    __swig_setmethods__ = {}
+    __setattr__ = lambda self, name, value: _swig_setattr(self, PETScKrylovMatrix, name, value)
+    __swig_getmethods__ = {}
+    __getattr__ = lambda self, name: _swig_getattr(self, PETScKrylovMatrix, name)
+    def __init__(self): raise AttributeError, "No constructor defined"
+    __repr__ = _swig_repr
+    __swig_destroy__ = _dolfin.delete_PETScKrylovMatrix
+    __del__ = lambda self : None;
+    def init(*args):
+        """
+        init(self, PETScVector x, PETScVector y)
+        init(self, int M, int N)
+        """
+        return _dolfin.PETScKrylovMatrix_init(*args)
+
+    def size(*args):
+        """size(self, uint dim) -> uint"""
+        return _dolfin.PETScKrylovMatrix_size(*args)
+
+    def mat(*args):
+        """mat(self) -> Mat"""
+        return _dolfin.PETScKrylovMatrix_mat(*args)
+
+    def mult(*args):
+        """mult(self, PETScVector x, PETScVector y)"""
+        return _dolfin.PETScKrylovMatrix_mult(*args)
+
+    def disp(*args):
+        """
+        disp(self, bool sparse=True, int precision=2)
+        disp(self, bool sparse=True)
+        disp(self)
+        """
+        return _dolfin.PETScKrylovMatrix_disp(*args)
+
+PETScKrylovMatrix_swigregister = _dolfin.PETScKrylovMatrix_swigregister
+PETScKrylovMatrix_swigregister(PETScKrylovMatrix)
+
+class PETScKrylovSolver(_object):
+    """Proxy of C++ PETScKrylovSolver class"""
+    __swig_setmethods__ = {}
+    __setattr__ = lambda self, name, value: _swig_setattr(self, PETScKrylovSolver, name, value)
+    __swig_getmethods__ = {}
+    __getattr__ = lambda self, name: _swig_getattr(self, PETScKrylovSolver, name)
+    __repr__ = _swig_repr
+    def __init__(self, *args): 
+        """
+        __init__(self, KrylovMethod method=default_method, Preconditioner pc=default_pc) -> PETScKrylovSolver
+        __init__(self, KrylovMethod method=default_method) -> PETScKrylovSolver
+        __init__(self) -> PETScKrylovSolver
+        __init__(self, Preconditioner pc) -> PETScKrylovSolver
+        __init__(self, PETScPreconditioner PETScPreconditioner) -> PETScKrylovSolver
+        __init__(self, KrylovMethod method, PETScPreconditioner PETScPreconditioner) -> PETScKrylovSolver
+        """
+        this = _dolfin.new_PETScKrylovSolver(*args)
+        try: self.this.append(this)
+        except: self.this = this
+    __swig_destroy__ = _dolfin.delete_PETScKrylovSolver
+    __del__ = lambda self : None;
+    def solve(*args):
+        """
+        solve(self, PETScMatrix A, PETScVector x, PETScVector b) -> uint
+        solve(self, PETScKrylovMatrix A, PETScVector x, PETScVector b) -> uint
+        """
+        return _dolfin.PETScKrylovSolver_solve(*args)
+
+    def disp(*args):
+        """disp(self)"""
+        return _dolfin.PETScKrylovSolver_disp(*args)
+
+PETScKrylovSolver_swigregister = _dolfin.PETScKrylovSolver_swigregister
+PETScKrylovSolver_swigregister(PETScKrylovSolver)
+
+class PETScLinearSolver(_object):
+    """Proxy of C++ PETScLinearSolver class"""
+    __swig_setmethods__ = {}
+    __setattr__ = lambda self, name, value: _swig_setattr(self, PETScLinearSolver, name, value)
+    __swig_getmethods__ = {}
+    __getattr__ = lambda self, name: _swig_getattr(self, PETScLinearSolver, name)
+    def __init__(self): raise AttributeError, "No constructor defined"
+    __repr__ = _swig_repr
+    __swig_destroy__ = _dolfin.delete_PETScLinearSolver
+    __del__ = lambda self : None;
+    def solve(*args):
+        """solve(self, PETScMatrix A, PETScVector x, PETScVector b) -> uint"""
+        return _dolfin.PETScLinearSolver_solve(*args)
+
+PETScLinearSolver_swigregister = _dolfin.PETScLinearSolver_swigregister
+PETScLinearSolver_swigregister(PETScLinearSolver)
+
+class PETScLUSolver(PETScLinearSolver):
+    """Proxy of C++ PETScLUSolver class"""
+    __swig_setmethods__ = {}
+    for _s in [PETScLinearSolver]: __swig_setmethods__.update(_s.__swig_setmethods__)
+    __setattr__ = lambda self, name, value: _swig_setattr(self, PETScLUSolver, name, value)
+    __swig_getmethods__ = {}
+    for _s in [PETScLinearSolver]: __swig_getmethods__.update(_s.__swig_getmethods__)
+    __getattr__ = lambda self, name: _swig_getattr(self, PETScLUSolver, name)
+    __repr__ = _swig_repr
+    def __init__(self, *args): 
+        """__init__(self) -> PETScLUSolver"""
+        this = _dolfin.new_PETScLUSolver(*args)
+        try: self.this.append(this)
+        except: self.this = this
+    __swig_destroy__ = _dolfin.delete_PETScLUSolver
+    __del__ = lambda self : None;
+    def solve(*args):
+        """
+        solve(self, PETScMatrix A, PETScVector x, PETScVector b) -> uint
+        solve(self, PETScKrylovMatrix A, PETScVector x, PETScVector b) -> uint
+        """
+        return _dolfin.PETScLUSolver_solve(*args)
+
+    def disp(*args):
+        """disp(self)"""
+        return _dolfin.PETScLUSolver_disp(*args)
+
+PETScLUSolver_swigregister = _dolfin.PETScLUSolver_swigregister
+PETScLUSolver_swigregister(PETScLUSolver)
+
+class PETScManager(_object):
+    """Proxy of C++ PETScManager class"""
+    __swig_setmethods__ = {}
+    __setattr__ = lambda self, name, value: _swig_setattr(self, PETScManager, name, value)
+    __swig_getmethods__ = {}
+    __getattr__ = lambda self, name: _swig_getattr(self, PETScManager, name)
+    def __init__(self): raise AttributeError, "No constructor defined"
+    __repr__ = _swig_repr
+    def init(*args):
+        """
+        init()
+        init(int argc, char argv)
+        """
+        return _dolfin.PETScManager_init(*args)
+
+    if _newclass:init = staticmethod(init)
+    __swig_getmethods__["init"] = lambda x: init
+PETScManager_swigregister = _dolfin.PETScManager_swigregister
+PETScManager_swigregister(PETScManager)
+
+def PETScManager_init(*args):
+  """
+    init()
+    PETScManager_init(int argc, char argv)
+    """
+  return _dolfin.PETScManager_init(*args)
+
+class PETScMatrix(GenericMatrix,Variable):
+    """Proxy of C++ PETScMatrix class"""
+    __swig_setmethods__ = {}
+    for _s in [GenericMatrix,Variable]: __swig_setmethods__.update(_s.__swig_setmethods__)
+    __setattr__ = lambda self, name, value: _swig_setattr(self, PETScMatrix, name, value)
+    __swig_getmethods__ = {}
+    for _s in [GenericMatrix,Variable]: __swig_getmethods__.update(_s.__swig_getmethods__)
+    __getattr__ = lambda self, name: _swig_getattr(self, PETScMatrix, name)
+    __repr__ = _swig_repr
+    default_matrix = _dolfin.PETScMatrix_default_matrix
+    spooles = _dolfin.PETScMatrix_spooles
+    superlu = _dolfin.PETScMatrix_superlu
+    umfpack = _dolfin.PETScMatrix_umfpack
+    def __init__(self, *args): 
+        """
+        __init__(self) -> PETScMatrix
+        __init__(self, Type type) -> PETScMatrix
+        __init__(self, Mat A) -> PETScMatrix
+        __init__(self, uint M, uint N) -> PETScMatrix
+        __init__(self, uint M, uint N, Type type) -> PETScMatrix
+        __init__(self, PETScMatrix B) -> PETScMatrix
+        """
+        this = _dolfin.new_PETScMatrix(*args)
+        try: self.this.append(this)
+        except: self.this = this
+    __swig_destroy__ = _dolfin.delete_PETScMatrix
+    __del__ = lambda self : None;
+    def init(*args):
+        """
+        init(self, uint M, uint N)
+        init(self, uint M, uint N, uint nzmax)
+        init(self, uint M, uint N, uint bs, uint nzmax)
+        """
+        return _dolfin.PETScMatrix_init(*args)
+
+    def size(*args):
+        """size(self, uint dim) -> uint"""
+        return _dolfin.PETScMatrix_size(*args)
+
+    def nz(*args):
+        """nz(self, uint row) -> uint"""
+        return _dolfin.PETScMatrix_nz(*args)
+
+    def nzsum(*args):
+        """nzsum(self) -> uint"""
+        return _dolfin.PETScMatrix_nzsum(*args)
+
+    def nzmax(*args):
+        """nzmax(self) -> uint"""
+        return _dolfin.PETScMatrix_nzmax(*args)
+
+    def get(*args):
+        """get(self, uint i, uint j) -> real"""
+        return _dolfin.PETScMatrix_get(*args)
+
+    def set(*args):
+        """
+        set(self, uint i, uint j, real value)
+        set(self, real block, int rows, int m, int cols, int n)
+        """
+        return _dolfin.PETScMatrix_set(*args)
+
+    def add(*args):
+        """
+        add(self, uint i, uint j, real value)
+        add(self, real block, int rows, int m, int cols, int n)
+        """
+        return _dolfin.PETScMatrix_add(*args)
+
+    def getRow(*args):
+        """getRow(self, uint i, int ncols, dolfin::Array<(int)> columns, dolfin::Array<(dolfin::real)> values)"""
+        return _dolfin.PETScMatrix_getRow(*args)
+
+    def ident(*args):
+        """ident(self, int rows, int m)"""
+        return _dolfin.PETScMatrix_ident(*args)
+
+    def mult(*args):
+        """
+        mult(self, PETScVector x, PETScVector Ax)
+        mult(self, PETScVector x, uint row) -> real
+        mult(self, real x, uint row) -> real
+        """
+        return _dolfin.PETScMatrix_mult(*args)
+
+    def lump(*args):
+        """lump(self, PETScVector m)"""
+        return _dolfin.PETScMatrix_lump(*args)
+
+    l1 = _dolfin.PETScMatrix_l1
+    linf = _dolfin.PETScMatrix_linf
+    frobenius = _dolfin.PETScMatrix_frobenius
+    def norm(*args):
+        """
+        norm(self, Norm type=l1) -> real
+        norm(self) -> real
+        """
+        return _dolfin.PETScMatrix_norm(*args)
+
+    def apply(*args):
+        """apply(self)"""
+        return _dolfin.PETScMatrix_apply(*args)
+
+    def zero(*args):
+        """zero(self)"""
+        return _dolfin.PETScMatrix_zero(*args)
+
+    def type(*args):
+        """type(self) -> int"""
+        return _dolfin.PETScMatrix_type(*args)
+
+    def mat(*args):
+        """mat(self) -> Mat"""
+        return _dolfin.PETScMatrix_mat(*args)
+
+    def disp(*args):
+        """
+        disp(self, bool sparse=True, int precision=2)
+        disp(self, bool sparse=True)
+        disp(self)
+        """
+        return _dolfin.PETScMatrix_disp(*args)
+
+    def __call__(*args):
+        """
+        __call__(self, uint i, uint j) -> real
+        __call__(self, uint i, uint j) -> PETScMatrixElement
+        """
+        return _dolfin.PETScMatrix___call__(*args)
+
+PETScMatrix_swigregister = _dolfin.PETScMatrix_swigregister
+PETScMatrix_swigregister(PETScMatrix)
+
+class PETScMatrixElement(_object):
+    """Proxy of C++ PETScMatrixElement class"""
+    __swig_setmethods__ = {}
+    __setattr__ = lambda self, name, value: _swig_setattr(self, PETScMatrixElement, name, value)
+    __swig_getmethods__ = {}
+    __getattr__ = lambda self, name: _swig_getattr(self, PETScMatrixElement, name)
+    __repr__ = _swig_repr
+    def __init__(self, *args): 
+        """
+        __init__(self, uint i, uint j, PETScMatrix A) -> PETScMatrixElement
+        __init__(self, PETScMatrixElement e) -> PETScMatrixElement
+        """
+        this = _dolfin.new_PETScMatrixElement(*args)
+        try: self.this.append(this)
+        except: self.this = this
+    def __iadd__(*args):
+        """__iadd__(self, real a) -> PETScMatrixElement"""
+        return _dolfin.PETScMatrixElement___iadd__(*args)
+
+    def __isub__(*args):
+        """__isub__(self, real a) -> PETScMatrixElement"""
+        return _dolfin.PETScMatrixElement___isub__(*args)
+
+    def __imul__(*args):
+        """__imul__(self, real a) -> PETScMatrixElement"""
+        return _dolfin.PETScMatrixElement___imul__(*args)
+
+PETScMatrixElement_swigregister = _dolfin.PETScMatrixElement_swigregister
+PETScMatrixElement_swigregister(PETScMatrixElement)
+
+class PETScPreconditioner(_object):
+    """Proxy of C++ PETScPreconditioner class"""
+    __swig_setmethods__ = {}
+    __setattr__ = lambda self, name, value: _swig_setattr(self, PETScPreconditioner, name, value)
+    __swig_getmethods__ = {}
+    __getattr__ = lambda self, name: _swig_getattr(self, PETScPreconditioner, name)
+    def __init__(self): raise AttributeError, "No constructor defined"
+    __repr__ = _swig_repr
+    __swig_destroy__ = _dolfin.delete_PETScPreconditioner
+    __del__ = lambda self : None;
+    def setup(*args):
+        """setup(KSP ksp, PETScPreconditioner pc)"""
+        return _dolfin.PETScPreconditioner_setup(*args)
+
+    if _newclass:setup = staticmethod(setup)
+    __swig_getmethods__["setup"] = lambda x: setup
+    def solve(*args):
+        """solve(self, PETScVector x, PETScVector b)"""
+        return _dolfin.PETScPreconditioner_solve(*args)
+
+PETScPreconditioner_swigregister = _dolfin.PETScPreconditioner_swigregister
+PETScPreconditioner_swigregister(PETScPreconditioner)
+
+def PETScPreconditioner_setup(*args):
+  """PETScPreconditioner_setup(KSP ksp, PETScPreconditioner pc)"""
+  return _dolfin.PETScPreconditioner_setup(*args)
+
+class PETScVector(GenericVector,Variable):
+    """Proxy of C++ PETScVector class"""
+    __swig_setmethods__ = {}
+    for _s in [GenericVector,Variable]: __swig_setmethods__.update(_s.__swig_setmethods__)
+    __setattr__ = lambda self, name, value: _swig_setattr(self, PETScVector, name, value)
+    __swig_getmethods__ = {}
+    for _s in [GenericVector,Variable]: __swig_getmethods__.update(_s.__swig_getmethods__)
+    __getattr__ = lambda self, name: _swig_getattr(self, PETScVector, name)
+    __repr__ = _swig_repr
+    def __init__(self, *args): 
+        """
+        __init__(self) -> PETScVector
+        __init__(self, uint size) -> PETScVector
+        __init__(self, Vec x) -> PETScVector
+        __init__(self, PETScVector x) -> PETScVector
+        """
+        this = _dolfin.new_PETScVector(*args)
+        try: self.this.append(this)
+        except: self.this = this
+    __swig_destroy__ = _dolfin.delete_PETScVector
+    __del__ = lambda self : None;
+    def init(*args):
+        """init(self, uint size)"""
+        return _dolfin.PETScVector_init(*args)
+
+    def clear(*args):
+        """clear(self)"""
+        return _dolfin.PETScVector_clear(*args)
+
+    def size(*args):
+        """size(self) -> uint"""
+        return _dolfin.PETScVector_size(*args)
+
+    def vec(*args):
+        """vec(self) -> Vec"""
+        return _dolfin.PETScVector_vec(*args)
+
+    def array(*args):
+        """
+        array(self) -> real
+        array(self) -> real
+        """
+        return _dolfin.PETScVector_array(*args)
+
+    def restore(*args):
+        """
+        restore(self, real data)
+        restore(self, real data)
+        """
+        return _dolfin.PETScVector_restore(*args)
+
+    def axpy(*args):
+        """axpy(self, real a, PETScVector x)"""
+        return _dolfin.PETScVector_axpy(*args)
+
+    def div(*args):
+        """div(self, PETScVector x)"""
+        return _dolfin.PETScVector_div(*args)
+
+    def mult(*args):
+        """mult(self, PETScVector x)"""
+        return _dolfin.PETScVector_mult(*args)
+
+    def set(*args):
+        """
+        set(self, uint i, real value)
+        set(self, real block, int pos, int n)
+        """
+        return _dolfin.PETScVector_set(*args)
+
+    def add(*args):
+        """
+        add(self, uint i, real value)
+        add(self, real block, int pos, int n)
+        """
+        return _dolfin.PETScVector_add(*args)
+
+    def get(*args):
+        """
+        get(self, uint i) -> real
+        get(self, real block, int cols, int n)
+        """
+        return _dolfin.PETScVector_get(*args)
+
+    def apply(*args):
+        """apply(self)"""
+        return _dolfin.PETScVector_apply(*args)
+
+    def zero(*args):
+        """zero(self)"""
+        return _dolfin.PETScVector_zero(*args)
+
+    def __call__(*args):
+        """
+        __call__(self, uint i) -> PETScVectorElement
+        __call__(self, uint i) -> real
+        """
+        return _dolfin.PETScVector___call__(*args)
+
+    def __iadd__(*args):
+        """__iadd__(self, PETScVector x) -> PETScVector"""
+        return _dolfin.PETScVector___iadd__(*args)
+
+    def __isub__(*args):
+        """__isub__(self, PETScVector x) -> PETScVector"""
+        return _dolfin.PETScVector___isub__(*args)
+
+    def __imul__(*args):
+        """__imul__(self, real a) -> PETScVector"""
+        return _dolfin.PETScVector___imul__(*args)
+
+    def __idiv__(*args):
+        """__idiv__(self, real a) -> PETScVector"""
+        return _dolfin.PETScVector___idiv__(*args)
+
+    def __mul__(*args):
+        """__mul__(self, PETScVector x) -> real"""
+        return _dolfin.PETScVector___mul__(*args)
+
+    l1 = _dolfin.PETScVector_l1
+    l2 = _dolfin.PETScVector_l2
+    linf = _dolfin.PETScVector_linf
+    def norm(*args):
+        """
+        norm(self, NormType type=l2) -> real
+        norm(self) -> real
+        """
+        return _dolfin.PETScVector_norm(*args)
+
+    def sum(*args):
+        """sum(self) -> real"""
+        return _dolfin.PETScVector_sum(*args)
+
+    def max(*args):
+        """max(self) -> real"""
+        return _dolfin.PETScVector_max(*args)
+
+    def min(*args):
+        """min(self) -> real"""
+        return _dolfin.PETScVector_min(*args)
+
+    def disp(*args):
+        """disp(self)"""
+        return _dolfin.PETScVector_disp(*args)
+
+    def createScatterer(*args):
+        """createScatterer(PETScVector x1, PETScVector x2, int offset, int size) -> VecScatter"""
+        return _dolfin.PETScVector_createScatterer(*args)
+
+    if _newclass:createScatterer = staticmethod(createScatterer)
+    __swig_getmethods__["createScatterer"] = lambda x: createScatterer
+    def gather(*args):
+        """gather(PETScVector x1, PETScVector x2, VecScatter x1sc)"""
+        return _dolfin.PETScVector_gather(*args)
+
+    if _newclass:gather = staticmethod(gather)
+    __swig_getmethods__["gather"] = lambda x: gather
+    def scatter(*args):
+        """scatter(PETScVector x1, PETScVector x2, VecScatter x1sc)"""
+        return _dolfin.PETScVector_scatter(*args)
+
+    if _newclass:scatter = staticmethod(scatter)
+    __swig_getmethods__["scatter"] = lambda x: scatter
+    def fromArray(*args):
+        """fromArray(real u, PETScVector x, uint offset, uint size)"""
+        return _dolfin.PETScVector_fromArray(*args)
+
+    if _newclass:fromArray = staticmethod(fromArray)
+    __swig_getmethods__["fromArray"] = lambda x: fromArray
+    def toArray(*args):
+        """toArray(real y, PETScVector x, uint offset, uint size)"""
+        return _dolfin.PETScVector_toArray(*args)
+
+    if _newclass:toArray = staticmethod(toArray)
+    __swig_getmethods__["toArray"] = lambda x: toArray
+    def copy(*args):
+        """
+        copy(self, PETScVector x) -> PETScVector
+        copy(self, real a) -> PETScVector
+        copy(self, PETScVector y)
+        copy(self, uBlasVector y)
+        """
+        return _dolfin.PETScVector_copy(*args)
+
+PETScVector_swigregister = _dolfin.PETScVector_swigregister
+PETScVector_swigregister(PETScVector)
+
+def PETScVector_createScatterer(*args):
+  """PETScVector_createScatterer(PETScVector x1, PETScVector x2, int offset, int size) -> VecScatter"""
+  return _dolfin.PETScVector_createScatterer(*args)
+
+def PETScVector_gather(*args):
+  """PETScVector_gather(PETScVector x1, PETScVector x2, VecScatter x1sc)"""
+  return _dolfin.PETScVector_gather(*args)
+
+def PETScVector_scatter(*args):
+  """PETScVector_scatter(PETScVector x1, PETScVector x2, VecScatter x1sc)"""
+  return _dolfin.PETScVector_scatter(*args)
+
+def PETScVector_fromArray(*args):
+  """PETScVector_fromArray(real u, PETScVector x, uint offset, uint size)"""
+  return _dolfin.PETScVector_fromArray(*args)
+
+def PETScVector_toArray(*args):
+  """PETScVector_toArray(real y, PETScVector x, uint offset, uint size)"""
+  return _dolfin.PETScVector_toArray(*args)
+
+class PETScVectorElement(_object):
+    """Proxy of C++ PETScVectorElement class"""
+    __swig_setmethods__ = {}
+    __setattr__ = lambda self, name, value: _swig_setattr(self, PETScVectorElement, name, value)
+    __swig_getmethods__ = {}
+    __getattr__ = lambda self, name: _swig_getattr(self, PETScVectorElement, name)
+    __repr__ = _swig_repr
+    def __init__(self, *args): 
+        """
+        __init__(self, uint i, PETScVector x) -> PETScVectorElement
+        __init__(self, PETScVectorElement e) -> PETScVectorElement
+        """
+        this = _dolfin.new_PETScVectorElement(*args)
+        try: self.this.append(this)
+        except: self.this = this
+    def __iadd__(*args):
+        """__iadd__(self, real a) -> PETScVectorElement"""
+        return _dolfin.PETScVectorElement___iadd__(*args)
+
+    def __isub__(*args):
+        """__isub__(self, real a) -> PETScVectorElement"""
+        return _dolfin.PETScVectorElement___isub__(*args)
+
+    def __imul__(*args):
+        """__imul__(self, real a) -> PETScVectorElement"""
+        return _dolfin.PETScVectorElement___imul__(*args)
+
+PETScVectorElement_swigregister = _dolfin.PETScVectorElement_swigregister
+PETScVectorElement_swigregister(PETScVectorElement)
 
 class uBlasDummyPreconditioner(_object):
     """Proxy of C++ uBlasDummyPreconditioner class"""
@@ -982,10 +1578,10 @@ uBlasDenseMatrix_swigregister = _dolfin.uBlasDenseMatrix_swigregister
 uBlasDenseMatrix_swigregister(uBlasDenseMatrix)
 
 # Explicit typedefs
-Vector = uBlasVector
-Matrix = uBlasSparseMatrix
-KrylovSolver = uBlasKrylovSolver
-LUSolver = uBlasLUSolver
+Vector = PETScVector
+Matrix = PETScMatrix
+KrylovSolver = PETScKrylovSolver
+LUSolver = PETScLUSolver
 
 # Explicit typedefs
 DenseVector = uBlasVector
@@ -5338,7 +5934,7 @@ class FEM(_object):
     if _newclass:disp = staticmethod(disp)
     __swig_getmethods__["disp"] = lambda x: disp
     def lump(*args):
-        """lump(uBlasSparseMatrix M, uBlasVector m)"""
+        """lump(PETScMatrix M, PETScVector m)"""
         return _dolfin.FEM_lump(*args)
 
     if _newclass:lump = staticmethod(lump)
@@ -5386,7 +5982,7 @@ def FEM_disp(*args):
   return _dolfin.FEM_disp(*args)
 
 def FEM_lump(*args):
-  """FEM_lump(uBlasSparseMatrix M, uBlasVector m)"""
+  """FEM_lump(PETScMatrix M, PETScVector m)"""
   return _dolfin.FEM_lump(*args)
 
 

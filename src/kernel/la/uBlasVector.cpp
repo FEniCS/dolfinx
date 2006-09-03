@@ -134,11 +134,11 @@ void uBlasVector::copy(const PETScVector& y)
 
   uint s = size();
   uBlasVector& x = *this;
-  real* vals = 0;
+  const real* vals = 0;
   vals = y.array();
   for(uint i = 0; i < s; i++)
   {
-    x[offset + i] = vals[i];
+    x[i] = vals[i];
   }
   y.restore(vals);
 }

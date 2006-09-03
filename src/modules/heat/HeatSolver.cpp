@@ -48,6 +48,10 @@ void HeatSolver::solve()
   // Save function to file
   file << u;
 
+  int counter = 0;
+  real k = T / 100;
+  real lastsample = 0.0;
+
   real t = 0.0;
   while(t < T)
   {
@@ -55,8 +59,14 @@ void HeatSolver::solve()
     // cout << "t: " << t << endl;
     // Save function to file
     dolfin_log(false);
-    file << u;
+    while(lastsample + k < t)
+    {
+      lastsample = std::min(t, lastsample + k);
+      file << u;
+    }
     dolfin_log(true);
+
+    counter++;
   }
   cout << "total fevals: " << fevals << endl;
 }
@@ -66,7 +76,7 @@ void HeatSolver::fu()
   dolfin_log(false);
   FEM::assemble(L, dotu, mesh);
   FEM::applyBC(Dummy, dotu, mesh, element, bc);
-  //VecPointwiseDivide(dotu.vec(), dotu.vec(), m.vec());
+  VecPointwiseDivide(dotu.vec(), dotu.vec(), m.vec());
   fevals++;
   dolfin_log(true);
 }

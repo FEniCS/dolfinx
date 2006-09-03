@@ -185,7 +185,7 @@ namespace dolfin
     Vec x;
     
     // True if the pointer is a copy of someone else's data
-    bool copy;
+    bool _copy;
 
   };
 
