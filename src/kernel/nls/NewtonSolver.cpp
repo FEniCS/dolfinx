@@ -4,13 +4,15 @@
 // Modified by Anders Logg, 2005-2006.
 //
 // First added:  2005-10-23
-// Last changed: 2006-08-16
+// Last changed: 2006-09-03
 
 #include <dolfin/FEM.h>
 #include <dolfin/BilinearForm.h>
 #include <dolfin/LinearForm.h>
 #include <dolfin/NewtonSolver.h>
+#include <dolfin/NonlinearProblem.h>
 #include <dolfin/LUSolver.h>
+#include <dolfin/KrylovSolver.h>
 #include <iostream>
 
 using namespace dolfin;
@@ -40,14 +42,12 @@ NewtonSolver::NewtonSolver(KrylovMethod method) : Parametrized()
   A = new Matrix;
 }
 //-----------------------------------------------------------------------------
-#ifdef HAVE_PETSC_H
 NewtonSolver::NewtonSolver(KrylovMethod method, Preconditioner pc)
   : Parametrized()
 {
   solver = new KrylovSolver(method, pc);
   A = new Matrix;
 }
-#endif
 //-----------------------------------------------------------------------------
 NewtonSolver::~NewtonSolver()
 {

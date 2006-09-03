@@ -4,27 +4,22 @@
 // Modified by Anders Logg 2006.
 //
 // First added:  2005-10-23
-// Last changed: 2006-08-15
+// Last changed: 2006-09-03
 
 #ifndef __NEWTON_SOLVER_H
 #define __NEWTON_SOLVER_H
 
-#include <dolfin/NonlinearProblem.h>
 #include <dolfin/Matrix.h>
 #include <dolfin/Vector.h>
 #include <dolfin/Parametrized.h>
-#include <dolfin/KrylovSolver.h>
 #include <dolfin/LinearSolver.h>
+#include <dolfin/KrylovMethod.h>
+#include <dolfin/Preconditioner.h>
 
 namespace dolfin
 {
-  class BoundaryCondition;
-  class BilinearForm;
-  class LinearForm;
-#ifdef HAVE_PETSC_H
-  class PETScPreconditioner;
-#endif
   class Mesh;
+  class NonlinearProblem;
 
   /// This class defines a Newton solver for equations of the form F(u) = 0.
   
@@ -43,10 +38,8 @@ namespace dolfin
     /// Initialise nonlinear solver and choose Krylov solver
     NewtonSolver(KrylovMethod method);
 
-#ifdef HAVE_PETSC_H
     /// Initialise nonlinear solver and choose Krylov solver
     NewtonSolver(KrylovMethod method, Preconditioner pc);
-#endif
 
     /// Destructor
     virtual ~NewtonSolver();
