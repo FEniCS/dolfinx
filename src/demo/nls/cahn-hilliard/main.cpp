@@ -138,10 +138,12 @@ int main(int argc, char* argv[])
     newton_solver.solve(cahn_hilliard, x);
 
     // Compute rate
-    r = r0;
-    r *= -((1.0-theta)/theta);
-    r += (1.0/(theta*dt))*x;
-    r -= (1.0/(theta*dt))*x0;
+    r = x;
+    r *= 1.0/(theta*dt);
+    r0 *= -((1.0-theta)/theta);
+    r += r0;
+    x0 *= -(1.0/(theta*dt));
+    r += x0;
 
    // Save function to file
     c = U[0];
