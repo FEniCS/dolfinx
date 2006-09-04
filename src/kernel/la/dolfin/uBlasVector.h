@@ -102,6 +102,9 @@ namespace dolfin
     /// Set all entries to zero
     void zero();
     
+    /// Element-wise division
+    void div(const uBlasVector& x);
+
     /// Display vector
     void disp(uint precision = 2) const;
 

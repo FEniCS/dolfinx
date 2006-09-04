@@ -76,7 +76,8 @@ void HeatSolver::fu()
   dolfin_log(false);
   FEM::assemble(L, dotu, mesh);
   FEM::applyBC(Dummy, dotu, mesh, element, bc);
-  VecPointwiseDivide(dotu.vec(), dotu.vec(), m.vec());
+  dotu.div(m);
+  //VecPointwiseDivide(dotu.vec(), dotu.vec(), m.vec());
   fevals++;
   dolfin_log(true);
 }

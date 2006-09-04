@@ -99,6 +99,17 @@ void uBlasVector::zero()
   clear();
 }
 //-----------------------------------------------------------------------------
+void uBlasVector::div(const uBlasVector& y)
+{
+  uBlasVector& x = *this;
+  uint s = size();
+
+  for(uint i = 0; i < s; i++)
+  {
+    x[i] = x[i] / y[i];
+  }
+}
+//-----------------------------------------------------------------------------
 const uBlasVector& uBlasVector::operator= (real a) 
 { 
   this->assign(ublas::scalar_vector<double> (this->size(), a));
