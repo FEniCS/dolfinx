@@ -177,13 +177,24 @@ fi
 if test x$enable_pydolfin = xyes; then
     AM_PATH_PYTHON(2.3)
     AC_PYTHON_DEVEL
-    AC_PROG_SWIG(1.3.25)
     AC_CHECK_HEADER(python$PYTHON_VERSION/Python.h, have_python_dev=yes, have_python_dev=no)
     if test $have_python_dev = no; then
        echo "*** Cannot find Python development files on your system."
        echo "*** Perhaps you need to install the package python$PYTHON_VERSION-dev?"
        exit 1
     fi
+
+    AC_CHECK_PROG(swig_found, swig, yes, no)
+    if test $swig_found = no; then
+      echo "*** Unable to find SWIG."
+      echo "*** Install SWIG or disable PyDOLFIN with --disable-pydolfin"
+      exit 1	
+    fi    
+
+    echo $swig_found
+
+    AC_PROG_SWIG(1.3.25)
+
     SWIG_ENABLE_CXX
     SWIG_PYTHON
 fi
