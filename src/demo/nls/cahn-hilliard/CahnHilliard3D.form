@@ -1,7 +1,7 @@
 # Copyright (C) 2006 Garth N Wells.
 # Licensed under the GNU GPL Version 2.
 #
-# First added:  2005
+# First added:  2006
 # Last changed: 2006-03-28
 #
 # The linearised bilinear form a(v, U) and linear form L(v) for
@@ -22,19 +22,20 @@ ME = P1 + P2
 c0         = Function(P1)      # solution from previous converged step 
 DcDt0      = Function(P1)      # rate from previous step
 
-mu         = Function(P1)      # chemical potential
-DmuDc      = Function(P1)      # derivative of chemical potential wrt concentration 
-
-Mob        = Function(P1)      # mobility
-dMob       = Function(P1)      # dmobility
-
 lmbda      = Constant()        # surface parameter
+muFactor   = Constant()        # chemical free energy multiplier
 
 dt         = Constant()           # time step
 theta      = Constant()           # time stepping parameter 
 
+mu    = muFactor*(2.0*(1.0-c1)*(1.0-c1) - 8.0*c1*(1.0-c1) + 2.0*c1*c1)
+DmuDc = muFactor*(-12.0 + 24.0*c1)
+
+Mob = 1.0
+dMob = 0.0
+
 # Compute current rate (this implies the predictor)
-DcDt = (c1-c0)*(1.0/dt)*(1.0/theta) - (1-theta)*DcDt0*(1.0/theta)
+DcDt = (c1-c0)*(1.0/dt)*(1.0/theta) - (1-theta)*DcDt0*(1/theta)
 
 a1 = v*c*dx + theta*dt*Mob*mu*dot(grad(v), grad(c))*dx \
             + theta*dt*dMob*mu*dot(grad(v), grad(c1))*c*dx \
