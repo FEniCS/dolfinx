@@ -2,13 +2,14 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-10-24
-// Last changed: 2006-02-23
+// Last changed: 2006-09-02
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/NonlinearProblem.h>
 
 using namespace dolfin;
 
+//-----------------------------------------------------------------------------
 NonlinearProblem::NonlinearProblem()
 {
   // Do nothing
@@ -19,17 +20,17 @@ NonlinearProblem::~NonlinearProblem()
   // Do nothing 
 }
 //-----------------------------------------------------------------------------
-void NonlinearProblem::form(Matrix& A, Vector& b, const Vector& x)
+void NonlinearProblem::form(GenericMatrix& A, GenericVector& b, const GenericVector& x)
 {
   dolfin_error("Nonlinear problem update for F(u) and J  has not been supplied by user.");
 }
 //-----------------------------------------------------------------------------
-void NonlinearProblem::F(Vector& b, const Vector& x)
+void NonlinearProblem::F(GenericVector& b, const GenericVector& x)
 {
   dolfin_error("Nonlinear problem update for F(u)  has not been supplied by user.");
 }
 //-----------------------------------------------------------------------------
-void NonlinearProblem::J(Matrix& A, const Vector& x)
+void NonlinearProblem::J(GenericMatrix& A, const GenericVector& x)
 {
   dolfin_error("Nonlinear problem update for Jacobian has not been supplied by user.");
 }
