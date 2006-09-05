@@ -89,9 +89,9 @@ scp TODO fenics@fenics.org:www.fenics.org/pub/software/dolfin
 
 # Update on web server
 echo '--- Update web pages'
-ssh fenics@fenics.org 'xterm -e emacs -nw www.fenics.org/dolfin/index.cpp'
-ssh fenics@fenics.org 'xterm -e emacs -nw www.fenics.org/download/index.cpp'
-ssh fenics@fenics.org 'xterm -e /home/fenics/local/bin/news'
+ssh -t fenics@fenics.org 'emacs -nw www.fenics.org/dolfin/index.cpp'
+ssh -t fenics@fenics.org 'emacs -nw www.fenics.org/download/index.cpp'
+ssh -t fenics@fenics.org '/home/fenics/local/bin/news'
 
 # Notify dolfin-dev of the new version
 echo '--- Notifying mailing list'
