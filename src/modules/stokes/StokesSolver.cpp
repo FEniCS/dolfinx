@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-09-20
-// Last changed: 2006-05-07
+// Last changed: 2006-09-05
 
 #include <dolfin/StokesSolver.h>
 #include <dolfin/L2Error.h>
@@ -59,9 +59,7 @@ void StokesSolver::solve()
   FEM::assemble(*a, *L, A, b, mesh, bc);
 
   // Solve the linear system
-  GMRES solver;
-  set("Krylov shift nonzero", 1e-10);
-  solver.solve(A, x, b);
+  LU::solve(A, x, b);
   Function w(x, mesh, a->trial());
 
   // Pick the two sub functions of the solution
@@ -77,8 +75,8 @@ void StokesSolver::solve()
   pfile << p;
 
   // Temporary for testing
-  if ( mesh.type() == Mesh::triangles )
-    checkError(mesh, u);
+  //if ( mesh.type() == Mesh::triangles )
+  //checkError(mesh, u);
 
   // Delete forms
   delete a;
