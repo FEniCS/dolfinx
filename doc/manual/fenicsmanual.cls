@@ -97,4 +97,5 @@
 %--- Macros ---
 \newcommand{\dx}{\, \mathrm{d}x}
 \newcommand{\dX}{\, \mathrm{d}X}
+\newcommand{\ds}{\, \mathrm{d}s}
 \newcommand{\R}{\mathbb{R}}

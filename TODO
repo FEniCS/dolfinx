@@ -77,7 +77,7 @@ o Add function to display all parameters
 General
 -------
 
-* Add benchmark again, add old benchmark results and put bench in src/bench/
+* Remove target install from simple makefiles
 
 * Write FAQ and put on web page:
 
