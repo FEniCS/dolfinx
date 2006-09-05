@@ -1,11 +1,11 @@
 #!/bin/sh
 #
-# Copyright (C) 2005-2006 Anders Logg.                                                                                                                     
-# Licensed under the GNU GPL Version 2.       
+# Copyright (C) 2005-2006 Anders Logg.
+# Licensed under the GNU GPL Version 2.
 #
 # Recompile all ffc forms (use when FFC has been updated)
 # This script should be run from the top level directory.
-                                                                                                    
+
 # Simple test to see where we are
 # FIXME: Does not work when typing ./scripts/...
 CHECK=`echo $0 | cut -d'/' -f1`
