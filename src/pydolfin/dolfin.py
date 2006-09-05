@@ -595,7 +595,6 @@ class uBlasVector(GenericVector,Variable):
     def copy(*args):
         """
         copy(self, real a) -> uBlasVector
-        copy(self, PETScVector y)
         copy(self, uBlasVector y)
         """
         return _dolfin.uBlasVector_copy(*args)
