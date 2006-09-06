@@ -76,6 +76,7 @@ export PATH=`pwd`"/local/bin:$PATH"
 ./configure.local --enable-debug >> $MAKELOG
 make all install demo >& $MAKELOG
 make -C src/demo clean
+make -C src/pydolfin maintainer-clean-generic
 make uninstall clean
 ./configure.local --enable-debug --enable-petsc >> $MAKELOG
 make all install demo >& $MAKELOG
