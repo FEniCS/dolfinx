@@ -4,7 +4,7 @@
 // Modified by Anders Logg 2006.
 //
 // First added:  2006-03-04
-// Last changed: 2006-09-05
+// Last changed: 2006-09-06
 
 #ifndef __UBLAS_VECTOR_H
 #define __UBLAS_VECTOR_H
@@ -16,6 +16,10 @@
 
 namespace dolfin
 {
+
+#ifdef HAVE_PETSC_H
+  class PETScVector;
+#endif
 
   namespace ublas = boost::numeric::ublas;
   typedef ublas::vector<double> ublas_vector;
@@ -111,7 +115,6 @@ namespace dolfin
 
     // Copy values between different vector representations
 #ifdef HAVE_PETSC_H
-    class PETScVector;
     void copy(const PETScVector& y);
 #endif
     void copy(const uBlasVector& y);

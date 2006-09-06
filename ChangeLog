@@ -1,3 +1,4 @@
+ - Fix compilation error when using --enable-petsc (dolfin::uBlasVector::PETScVector undefined)
 0.6.2 [2006-09-05]
  - Finish chapter in manual on linear algebra
  - Enable PyDOLFIN by default, use --disable-pydolfin to disable
