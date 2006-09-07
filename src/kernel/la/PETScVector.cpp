@@ -99,7 +99,7 @@ void PETScVector::init(uint size)
   VecSet(x, a);
 }
 //-----------------------------------------------------------------------------
-void PETScVector::axpy(const real a, const PETScVector& x) const
+void PETScVector::axpy(const real a, const PETScVector& x)
 {
   VecAXPY(this->x, a, x.vec());
 }
@@ -114,6 +114,12 @@ void PETScVector::mult(const PETScVector& x)
 {
   VecPointwiseMult(this->x, this->x, x.vec());
   apply();
+}
+//-----------------------------------------------------------------------------
+void PETScVector::mult(const real a)
+{
+  dolfin_assert(x);
+  VecScale(x, a);
 }
 //-----------------------------------------------------------------------------
 void PETScVector::set(const real block[], const int cols[], int n)

@@ -85,13 +85,16 @@ namespace dolfin
     void restore(const real data[]) const;
 
     /// Addition (AXPY)
-    void axpy(const real a, const PETScVector& x) const;
+    void axpy(const real a, const PETScVector& x);
 
     /// Element-wise division
     void div(const PETScVector& x);
 
     /// Element-wise multiplication
     void mult(const PETScVector& x);
+
+    /// Element-wise multiplication
+    void mult(const real a);
 
     /// Set block of values
     void set(const real block[], const int pos[], int n);

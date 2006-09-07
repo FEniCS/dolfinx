@@ -104,6 +104,12 @@ namespace dolfin
     /// Set all entries to zero
     void zero();
     
+    /// Addition (AXPY)
+    void axpy(const real a, const uBlasVector& x);
+
+    /// Scalar multiplication
+    void mult(const real a);
+
     /// Element-wise division
     void div(const uBlasVector& x);
 

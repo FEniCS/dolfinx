@@ -110,6 +110,20 @@ void uBlasVector::div(const uBlasVector& y)
   }
 }
 //-----------------------------------------------------------------------------
+void uBlasVector::axpy(const real a, const uBlasVector& x)
+{
+  uBlasVector& y = *this;
+  
+  y += a * x;
+}
+//-----------------------------------------------------------------------------
+void uBlasVector::mult(const real a)
+{
+  uBlasVector& y = *this;
+  
+  y *= a;
+}
+//-----------------------------------------------------------------------------
 const uBlasVector& uBlasVector::operator= (real a) 
 { 
   this->assign(ublas::scalar_vector<double> (this->size(), a));

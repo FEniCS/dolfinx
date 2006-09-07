@@ -153,8 +153,8 @@ while(t < T):
 
         # Compute residual of time step equation (discrete residual)
         stepresidual.copy(b)
-        stepresidual -= xtmp1
-        stepresidual *= k
+        stepresidual.axpy(-1.0, xtmp1)
+        stepresidual.mult(k)
         stepresidual.div(m)
         stepresidual.axpy(1.0, xv0)
         stepresidual.axpy(-1.0, xv1)
