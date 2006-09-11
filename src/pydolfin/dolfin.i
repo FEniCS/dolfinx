@@ -67,7 +67,7 @@ using namespace dolfin;
 }
 
 
-%include "pointer.i"
+%include "cpointer.i"
 %include "typemaps.i"
 %include "std_string.i"
 
@@ -75,6 +75,9 @@ using namespace dolfin;
 
 %array_functions(dolfin::real, realArray);
 %array_functions(int, intArray);
+
+%pointer_class(int, intp);
+%pointer_class(double, doublep);
 
 
 //%feature("director") GenericVector;
@@ -107,12 +110,28 @@ using namespace dolfin;
 
 // common includes 
 
+%ignore dolfin::TimeDependent::TimeDependent(const real&);
+%ignore dolfin::TimeDependent::sync(const real&);
+
 %include "dolfin/Array.h"
 %include "dolfin/List.h"
 %include "dolfin/TimeDependent.h"
 %include "dolfin/Variable.h"
 %include "dolfin/utils.h"
 %include "dolfin/timing.h"
+
+%extend dolfin::TimeDependent {
+  TimeDependent(double *t)
+  {
+    TimeDependent* td = new TimeDependent();
+    td->sync(*t);
+    return td;
+  }
+  void sync(double* t)
+  {
+    self->sync(*t);
+  }
+}
 
 // log includes 
 
