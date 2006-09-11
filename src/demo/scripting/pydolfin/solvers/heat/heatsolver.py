@@ -5,23 +5,35 @@ from heatpde import *
 # Define right-hand side
 class Source(Function):
     def eval(self, point, i):
-        return 10.0 * point.x * sin(point.y)
+        if(point.x < 0.3 and point.y < 0.3):
+            if(self.time() < 2.0):
+                return 5.0
+            else:
+                return 0.0
+        else:
+            return 0.0
 
 # Define boundary condition
 class SimpleBC(BoundaryCondition):
     def eval(self, value, point, i):
-        if point.x == 1.0:
-            value.set(0.0)
+        #if point.x == 1.0:
+        #    value.set(0.0)
+        #value.set(0.0)
+        return
 
 f = Source()
 bc = SimpleBC()
 
 # Create a mesh of the unit square
-mesh = UnitSquare(16, 16)
+mesh = UnitSquare(20, 20)
 
 
 k = 1e-3
 T = 10.0
+
+t = doublep()
+t.assign(0.0)
+f.sync(t)
 
 
 set("ODE method", "dg");
@@ -37,7 +49,7 @@ set("ODE maximum time step", 1e+0);
 set("ODE solution file name", "primal.py");
 set("ODE number of samples", 400);
 
-pde = HeatPDE(mesh, f, bc, k, T)
+pde = HeatPDE(mesh, f, bc, k, T, t)
 
 pde.solve(pde.U)
 

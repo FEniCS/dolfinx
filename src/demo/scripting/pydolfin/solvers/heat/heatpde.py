@@ -1,8 +1,10 @@
 from dolfin import *
 
 class HeatPDE(TimeDependentPDE):
-    def __init__(self, mesh, f, bc, k, T):
+    def __init__(self, mesh, f, bc, k, T, t):
         
+        self.t = t
+
         self.U = Function(Vector(), mesh)
 
         forms = import_formfile("HeatTD.form")
@@ -16,6 +18,8 @@ class HeatPDE(TimeDependentPDE):
 
         TimeDependentPDE.__init__(self, self.aheat, self.Lheat, mesh,
                                   bc, N, k, T)
+
+        #self.x.copy(0.0)
 
         self.M = Matrix()
         self.m = Vector()
@@ -31,12 +35,18 @@ class HeatPDE(TimeDependentPDE):
 
     def save(self, U, t):
 
+        if(t == 0.0):
+            self.U.vector().copy(self.x)
+            self.solutionfile << U
+
         while(self.lastsample + self.sampleperiod < t):
             self.lastsample = min(t, self.lastsample + self.sampleperiod)
             self.U.vector().copy(self.x)
             self.solutionfile << U
 
     def fu(self, x, dotx, t):
+
+        self.t.assign(t)
 
         self.U.vector().copy(self.x)
 
