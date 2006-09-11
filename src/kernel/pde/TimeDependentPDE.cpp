@@ -159,8 +159,8 @@ TimeDependentODE::TimeDependentODE(TimeDependentPDE& pde, int N, real T) :
 void TimeDependentODE::u0(uBlasVector& u)
 {
   // FIXME: ODE solver interface has changed
-  dolfin_error("Not implemented.");
-  //return pde->x->get(i);
+  //dolfin_error("Not implemented.");
+  u.copy(*(pde->x));
 }
 //-----------------------------------------------------------------------------
 void TimeDependentODE::f(const uBlasVector& u, real t, uBlasVector& y)

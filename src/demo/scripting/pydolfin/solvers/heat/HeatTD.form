@@ -1,0 +1,21 @@
+# Copyright (c) 2005 Johan Jansson
+# Licensed under the GNU GPL Version 2
+#
+# Modified by Anders Logg 2006
+#
+# First added:  2005
+# Last changed: 2006-03-28
+#    
+# The linear form L(v) for the Heat equation in dot(u) = f(u) form.
+#
+# Compile this form with FFC: ffc HeatTD.form
+
+element = FiniteElement("Lagrange", "triangle", 1)
+
+v  = TestFunction(element)
+U1 = TrialFunction(element)
+U0 = Function(element)
+f  = Function(element)
+
+a = v*U1*dx
+L = (-dot(grad(v), grad(U0)) + v*f)*dx

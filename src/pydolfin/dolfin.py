@@ -81,6 +81,84 @@ def intArray_getitem(*args):
 def intArray_setitem(*args):
   """intArray_setitem(int ary, size_t index, int value)"""
   return _dolfin.intArray_setitem(*args)
+class intp(_object):
+    """Proxy of C++ intp class"""
+    __swig_setmethods__ = {}
+    __setattr__ = lambda self, name, value: _swig_setattr(self, intp, name, value)
+    __swig_getmethods__ = {}
+    __getattr__ = lambda self, name: _swig_getattr(self, intp, name)
+    __repr__ = _swig_repr
+    def __init__(self, *args): 
+        """__init__(self) -> intp"""
+        this = _dolfin.new_intp(*args)
+        try: self.this.append(this)
+        except: self.this = this
+    __swig_destroy__ = _dolfin.delete_intp
+    __del__ = lambda self : None;
+    def assign(*args):
+        """assign(self, int value)"""
+        return _dolfin.intp_assign(*args)
+
+    def value(*args):
+        """value(self) -> int"""
+        return _dolfin.intp_value(*args)
+
+    def cast(*args):
+        """cast(self) -> int"""
+        return _dolfin.intp_cast(*args)
+
+    def frompointer(*args):
+        """frompointer(int t) -> intp"""
+        return _dolfin.intp_frompointer(*args)
+
+    if _newclass:frompointer = staticmethod(frompointer)
+    __swig_getmethods__["frompointer"] = lambda x: frompointer
+intp_swigregister = _dolfin.intp_swigregister
+intp_swigregister(intp)
+
+def intp_frompointer(*args):
+  """intp_frompointer(int t) -> intp"""
+  return _dolfin.intp_frompointer(*args)
+
+class doublep(_object):
+    """Proxy of C++ doublep class"""
+    __swig_setmethods__ = {}
+    __setattr__ = lambda self, name, value: _swig_setattr(self, doublep, name, value)
+    __swig_getmethods__ = {}
+    __getattr__ = lambda self, name: _swig_getattr(self, doublep, name)
+    __repr__ = _swig_repr
+    def __init__(self, *args): 
+        """__init__(self) -> doublep"""
+        this = _dolfin.new_doublep(*args)
+        try: self.this.append(this)
+        except: self.this = this
+    __swig_destroy__ = _dolfin.delete_doublep
+    __del__ = lambda self : None;
+    def assign(*args):
+        """assign(self, double value)"""
+        return _dolfin.doublep_assign(*args)
+
+    def value(*args):
+        """value(self) -> double"""
+        return _dolfin.doublep_value(*args)
+
+    def cast(*args):
+        """cast(self) -> double"""
+        return _dolfin.doublep_cast(*args)
+
+    def frompointer(*args):
+        """frompointer(double t) -> doublep"""
+        return _dolfin.doublep_frompointer(*args)
+
+    if _newclass:frompointer = staticmethod(frompointer)
+    __swig_getmethods__["frompointer"] = lambda x: frompointer
+doublep_swigregister = _dolfin.doublep_swigregister
+doublep_swigregister(doublep)
+
+def doublep_frompointer(*args):
+  """doublep_frompointer(double t) -> doublep"""
+  return _dolfin.doublep_frompointer(*args)
+
 
 def dolfin_init(*args):
   """dolfin_init(int argc, char argv)"""
@@ -108,23 +186,23 @@ class TimeDependent(_object):
     __swig_getmethods__ = {}
     __getattr__ = lambda self, name: _swig_getattr(self, TimeDependent, name)
     __repr__ = _swig_repr
+    __swig_destroy__ = _dolfin.delete_TimeDependent
+    __del__ = lambda self : None;
+    def time(*args):
+        """time(self) -> real"""
+        return _dolfin.TimeDependent_time(*args)
+
     def __init__(self, *args): 
         """
         __init__(self) -> TimeDependent
-        __init__(self, real t) -> TimeDependent
+        __init__(self, double t) -> TimeDependent
         """
         this = _dolfin.new_TimeDependent(*args)
         try: self.this.append(this)
         except: self.this = this
-    __swig_destroy__ = _dolfin.delete_TimeDependent
-    __del__ = lambda self : None;
     def sync(*args):
-        """sync(self, real t)"""
+        """sync(self, double t)"""
         return _dolfin.TimeDependent_sync(*args)
-
-    def time(*args):
-        """time(self) -> real"""
-        return _dolfin.TimeDependent_time(*args)
 
 TimeDependent_swigregister = _dolfin.TimeDependent_swigregister
 TimeDependent_swigregister(TimeDependent)
