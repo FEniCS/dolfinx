@@ -17,6 +17,7 @@ dolfin-config:
 	echo "VERSION=\"$(PACKAGE_VERSION)\"" >> $(TMPFILE)
 	echo "PREFIX=\"$(prefix)\"" >> $(TMPFILE)
 	echo "PYTHON_CPPFLAGS=\"@PYTHON_CPPFLAGS@\"" >> $(TMPFILE)
+	echo "DEFS=\"@DOLFIN_DEFINITIONS@\"" >> $(TMPFILE)
 	sh config.sh
 
 dolfin-swig:
