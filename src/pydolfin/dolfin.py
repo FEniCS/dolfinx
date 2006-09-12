@@ -619,6 +619,7 @@ class uBlasVector(GenericVector,Variable):
     def copy(*args):
         """
         copy(self, real a) -> uBlasVector
+        copy(self, PETScVector y)
         copy(self, uBlasVector y)
         """
         return _dolfin.uBlasVector_copy(*args)
@@ -636,6 +637,14 @@ class GMRES(_object):
     __repr__ = _swig_repr
     def solve(*args):
         """
+        solve(PETScMatrix A, PETScVector x, PETScVector b, Preconditioner pc=default_pc) -> uint
+        solve(PETScMatrix A, PETScVector x, PETScVector b) -> uint
+        solve(PETScKrylovMatrix A, PETScVector x, PETScVector b, 
+            Preconditioner pc=default_pc) -> uint
+        solve(PETScKrylovMatrix A, PETScVector x, PETScVector b) -> uint
+        solve(PETScMatrix A, PETScVector x, PETScVector b, PETScPreconditioner pc) -> uint
+        solve(PETScKrylovMatrix A, PETScVector x, PETScVector b, 
+            PETScPreconditioner pc) -> uint
         solve(uBlasMatrix<(dolfin::ublas_dense_matrix)> A, uBlasVector x, 
             uBlasVector b, Preconditioner pc=default_pc) -> uint
         solve(uBlasMatrix<(dolfin::ublas_dense_matrix)> A, uBlasVector x, 
@@ -663,6 +672,14 @@ GMRES_swigregister(GMRES)
 
 def GMRES_solve(*args):
   """
+    solve(PETScMatrix A, PETScVector x, PETScVector b, Preconditioner pc=default_pc) -> uint
+    solve(PETScMatrix A, PETScVector x, PETScVector b) -> uint
+    solve(PETScKrylovMatrix A, PETScVector x, PETScVector b, 
+        Preconditioner pc=default_pc) -> uint
+    solve(PETScKrylovMatrix A, PETScVector x, PETScVector b) -> uint
+    solve(PETScMatrix A, PETScVector x, PETScVector b, PETScPreconditioner pc) -> uint
+    solve(PETScKrylovMatrix A, PETScVector x, PETScVector b, 
+        PETScPreconditioner pc) -> uint
     solve(uBlasMatrix<(dolfin::ublas_dense_matrix)> A, uBlasVector x, 
         uBlasVector b, Preconditioner pc=default_pc) -> uint
     solve(uBlasMatrix<(dolfin::ublas_dense_matrix)> A, uBlasVector x, 
@@ -693,6 +710,8 @@ class LU(_object):
     __repr__ = _swig_repr
     def solve(*args):
         """
+        solve(PETScMatrix A, PETScVector x, PETScVector b)
+        solve(PETScKrylovMatrix A, PETScVector x, PETScVector b)
         solve(uBlasMatrix<(dolfin::ublas_dense_matrix)> A, uBlasVector x, 
             uBlasVector b)
         solve(uBlasMatrix<(dolfin::ublas_sparse_matrix)> A, uBlasVector x, 
@@ -707,12 +726,593 @@ LU_swigregister(LU)
 
 def LU_solve(*args):
   """
+    solve(PETScMatrix A, PETScVector x, PETScVector b)
+    solve(PETScKrylovMatrix A, PETScVector x, PETScVector b)
     solve(uBlasMatrix<(dolfin::ublas_dense_matrix)> A, uBlasVector x, 
         uBlasVector b)
     LU_solve(uBlasMatrix<(dolfin::ublas_sparse_matrix)> A, uBlasVector x, 
         uBlasVector b)
     """
   return _dolfin.LU_solve(*args)
+
+class PETScKrylovMatrix(_object):
+    """Proxy of C++ PETScKrylovMatrix class"""
+    __swig_setmethods__ = {}
+    __setattr__ = lambda self, name, value: _swig_setattr(self, PETScKrylovMatrix, name, value)
+    __swig_getmethods__ = {}
+    __getattr__ = lambda self, name: _swig_getattr(self, PETScKrylovMatrix, name)
+    def __init__(self): raise AttributeError, "No constructor defined"
+    __repr__ = _swig_repr
+    __swig_destroy__ = _dolfin.delete_PETScKrylovMatrix
+    __del__ = lambda self : None;
+    def init(*args):
+        """
+        init(self, PETScVector x, PETScVector y)
+        init(self, int M, int N)
+        """
+        return _dolfin.PETScKrylovMatrix_init(*args)
+
+    def size(*args):
+        """size(self, uint dim) -> uint"""
+        return _dolfin.PETScKrylovMatrix_size(*args)
+
+    def mat(*args):
+        """mat(self) -> Mat"""
+        return _dolfin.PETScKrylovMatrix_mat(*args)
+
+    def mult(*args):
+        """mult(self, PETScVector x, PETScVector y)"""
+        return _dolfin.PETScKrylovMatrix_mult(*args)
+
+    def disp(*args):
+        """
+        disp(self, bool sparse=True, int precision=2)
+        disp(self, bool sparse=True)
+        disp(self)
+        """
+        return _dolfin.PETScKrylovMatrix_disp(*args)
+
+PETScKrylovMatrix_swigregister = _dolfin.PETScKrylovMatrix_swigregister
+PETScKrylovMatrix_swigregister(PETScKrylovMatrix)
+
+class PETScKrylovSolver(_object):
+    """Proxy of C++ PETScKrylovSolver class"""
+    __swig_setmethods__ = {}
+    __setattr__ = lambda self, name, value: _swig_setattr(self, PETScKrylovSolver, name, value)
+    __swig_getmethods__ = {}
+    __getattr__ = lambda self, name: _swig_getattr(self, PETScKrylovSolver, name)
+    __repr__ = _swig_repr
+    def __init__(self, *args): 
+        """
+        __init__(self, KrylovMethod method=default_method, Preconditioner pc=default_pc) -> PETScKrylovSolver
+        __init__(self, KrylovMethod method=default_method) -> PETScKrylovSolver
+        __init__(self) -> PETScKrylovSolver
+        __init__(self, Preconditioner pc) -> PETScKrylovSolver
+        __init__(self, PETScPreconditioner PETScPreconditioner) -> PETScKrylovSolver
+        __init__(self, KrylovMethod method, PETScPreconditioner PETScPreconditioner) -> PETScKrylovSolver
+        """
+        this = _dolfin.new_PETScKrylovSolver(*args)
+        try: self.this.append(this)
+        except: self.this = this
+    __swig_destroy__ = _dolfin.delete_PETScKrylovSolver
+    __del__ = lambda self : None;
+    def solve(*args):
+        """
+        solve(self, PETScMatrix A, PETScVector x, PETScVector b) -> uint
+        solve(self, PETScKrylovMatrix A, PETScVector x, PETScVector b) -> uint
+        """
+        return _dolfin.PETScKrylovSolver_solve(*args)
+
+    def disp(*args):
+        """disp(self)"""
+        return _dolfin.PETScKrylovSolver_disp(*args)
+
+PETScKrylovSolver_swigregister = _dolfin.PETScKrylovSolver_swigregister
+PETScKrylovSolver_swigregister(PETScKrylovSolver)
+
+class PETScLinearSolver(_object):
+    """Proxy of C++ PETScLinearSolver class"""
+    __swig_setmethods__ = {}
+    __setattr__ = lambda self, name, value: _swig_setattr(self, PETScLinearSolver, name, value)
+    __swig_getmethods__ = {}
+    __getattr__ = lambda self, name: _swig_getattr(self, PETScLinearSolver, name)
+    def __init__(self): raise AttributeError, "No constructor defined"
+    __repr__ = _swig_repr
+    __swig_destroy__ = _dolfin.delete_PETScLinearSolver
+    __del__ = lambda self : None;
+    def solve(*args):
+        """solve(self, PETScMatrix A, PETScVector x, PETScVector b) -> uint"""
+        return _dolfin.PETScLinearSolver_solve(*args)
+
+PETScLinearSolver_swigregister = _dolfin.PETScLinearSolver_swigregister
+PETScLinearSolver_swigregister(PETScLinearSolver)
+
+class PETScLUSolver(PETScLinearSolver):
+    """Proxy of C++ PETScLUSolver class"""
+    __swig_setmethods__ = {}
+    for _s in [PETScLinearSolver]: __swig_setmethods__.update(_s.__swig_setmethods__)
+    __setattr__ = lambda self, name, value: _swig_setattr(self, PETScLUSolver, name, value)
+    __swig_getmethods__ = {}
+    for _s in [PETScLinearSolver]: __swig_getmethods__.update(_s.__swig_getmethods__)
+    __getattr__ = lambda self, name: _swig_getattr(self, PETScLUSolver, name)
+    __repr__ = _swig_repr
+    def __init__(self, *args): 
+        """__init__(self) -> PETScLUSolver"""
+        this = _dolfin.new_PETScLUSolver(*args)
+        try: self.this.append(this)
+        except: self.this = this
+    __swig_destroy__ = _dolfin.delete_PETScLUSolver
+    __del__ = lambda self : None;
+    def solve(*args):
+        """
+        solve(self, PETScMatrix A, PETScVector x, PETScVector b) -> uint
+        solve(self, PETScKrylovMatrix A, PETScVector x, PETScVector b) -> uint
+        """
+        return _dolfin.PETScLUSolver_solve(*args)
+
+    def disp(*args):
+        """disp(self)"""
+        return _dolfin.PETScLUSolver_disp(*args)
+
+PETScLUSolver_swigregister = _dolfin.PETScLUSolver_swigregister
+PETScLUSolver_swigregister(PETScLUSolver)
+
+class PETScManager(_object):
+    """Proxy of C++ PETScManager class"""
+    __swig_setmethods__ = {}
+    __setattr__ = lambda self, name, value: _swig_setattr(self, PETScManager, name, value)
+    __swig_getmethods__ = {}
+    __getattr__ = lambda self, name: _swig_getattr(self, PETScManager, name)
+    def __init__(self): raise AttributeError, "No constructor defined"
+    __repr__ = _swig_repr
+    def init(*args):
+        """
+        init()
+        init(int argc, char argv)
+        """
+        return _dolfin.PETScManager_init(*args)
+
+    if _newclass:init = staticmethod(init)
+    __swig_getmethods__["init"] = lambda x: init
+PETScManager_swigregister = _dolfin.PETScManager_swigregister
+PETScManager_swigregister(PETScManager)
+
+def PETScManager_init(*args):
+  """
+    init()
+    PETScManager_init(int argc, char argv)
+    """
+  return _dolfin.PETScManager_init(*args)
+
+class PETScMatrix(GenericMatrix,Variable):
+    """Proxy of C++ PETScMatrix class"""
+    __swig_setmethods__ = {}
+    for _s in [GenericMatrix,Variable]: __swig_setmethods__.update(_s.__swig_setmethods__)
+    __setattr__ = lambda self, name, value: _swig_setattr(self, PETScMatrix, name, value)
+    __swig_getmethods__ = {}
+    for _s in [GenericMatrix,Variable]: __swig_getmethods__.update(_s.__swig_getmethods__)
+    __getattr__ = lambda self, name: _swig_getattr(self, PETScMatrix, name)
+    __repr__ = _swig_repr
+    default_matrix = _dolfin.PETScMatrix_default_matrix
+    spooles = _dolfin.PETScMatrix_spooles
+    superlu = _dolfin.PETScMatrix_superlu
+    umfpack = _dolfin.PETScMatrix_umfpack
+    def __init__(self, *args): 
+        """
+        __init__(self) -> PETScMatrix
+        __init__(self, Type type) -> PETScMatrix
+        __init__(self, Mat A) -> PETScMatrix
+        __init__(self, uint M, uint N) -> PETScMatrix
+        __init__(self, uint M, uint N, Type type) -> PETScMatrix
+        __init__(self, PETScMatrix B) -> PETScMatrix
+        """
+        this = _dolfin.new_PETScMatrix(*args)
+        try: self.this.append(this)
+        except: self.this = this
+    __swig_destroy__ = _dolfin.delete_PETScMatrix
+    __del__ = lambda self : None;
+    def init(*args):
+        """
+        init(self, uint M, uint N)
+        init(self, uint M, uint N, uint nzmax)
+        init(self, uint M, uint N, uint bs, uint nzmax)
+        """
+        return _dolfin.PETScMatrix_init(*args)
+
+    def size(*args):
+        """size(self, uint dim) -> uint"""
+        return _dolfin.PETScMatrix_size(*args)
+
+    def nz(*args):
+        """nz(self, uint row) -> uint"""
+        return _dolfin.PETScMatrix_nz(*args)
+
+    def nzsum(*args):
+        """nzsum(self) -> uint"""
+        return _dolfin.PETScMatrix_nzsum(*args)
+
+    def nzmax(*args):
+        """nzmax(self) -> uint"""
+        return _dolfin.PETScMatrix_nzmax(*args)
+
+    def get(*args):
+        """get(self, uint i, uint j) -> real"""
+        return _dolfin.PETScMatrix_get(*args)
+
+    def set(*args):
+        """
+        set(self, uint i, uint j, real value)
+        set(self, real block, int rows, int m, int cols, int n)
+        """
+        return _dolfin.PETScMatrix_set(*args)
+
+    def add(*args):
+        """
+        add(self, uint i, uint j, real value)
+        add(self, real block, int rows, int m, int cols, int n)
+        """
+        return _dolfin.PETScMatrix_add(*args)
+
+    def getRow(*args):
+        """getRow(self, uint i, int ncols, dolfin::Array<(int)> columns, dolfin::Array<(dolfin::real)> values)"""
+        return _dolfin.PETScMatrix_getRow(*args)
+
+    def ident(*args):
+        """ident(self, int rows, int m)"""
+        return _dolfin.PETScMatrix_ident(*args)
+
+    def mult(*args):
+        """
+        mult(self, PETScVector x, PETScVector Ax)
+        mult(self, PETScVector x, uint row) -> real
+        mult(self, real x, uint row) -> real
+        """
+        return _dolfin.PETScMatrix_mult(*args)
+
+    def lump(*args):
+        """lump(self, PETScVector m)"""
+        return _dolfin.PETScMatrix_lump(*args)
+
+    l1 = _dolfin.PETScMatrix_l1
+    linf = _dolfin.PETScMatrix_linf
+    frobenius = _dolfin.PETScMatrix_frobenius
+    def norm(*args):
+        """
+        norm(self, Norm type=l1) -> real
+        norm(self) -> real
+        """
+        return _dolfin.PETScMatrix_norm(*args)
+
+    def apply(*args):
+        """apply(self)"""
+        return _dolfin.PETScMatrix_apply(*args)
+
+    def zero(*args):
+        """zero(self)"""
+        return _dolfin.PETScMatrix_zero(*args)
+
+    def type(*args):
+        """type(self) -> int"""
+        return _dolfin.PETScMatrix_type(*args)
+
+    def mat(*args):
+        """mat(self) -> Mat"""
+        return _dolfin.PETScMatrix_mat(*args)
+
+    def disp(*args):
+        """
+        disp(self, bool sparse=True, int precision=2)
+        disp(self, bool sparse=True)
+        disp(self)
+        """
+        return _dolfin.PETScMatrix_disp(*args)
+
+    def __call__(*args):
+        """
+        __call__(self, uint i, uint j) -> real
+        __call__(self, uint i, uint j) -> PETScMatrixElement
+        """
+        return _dolfin.PETScMatrix___call__(*args)
+
+PETScMatrix_swigregister = _dolfin.PETScMatrix_swigregister
+PETScMatrix_swigregister(PETScMatrix)
+
+class PETScMatrixElement(_object):
+    """Proxy of C++ PETScMatrixElement class"""
+    __swig_setmethods__ = {}
+    __setattr__ = lambda self, name, value: _swig_setattr(self, PETScMatrixElement, name, value)
+    __swig_getmethods__ = {}
+    __getattr__ = lambda self, name: _swig_getattr(self, PETScMatrixElement, name)
+    __repr__ = _swig_repr
+    def __init__(self, *args): 
+        """
+        __init__(self, uint i, uint j, PETScMatrix A) -> PETScMatrixElement
+        __init__(self, PETScMatrixElement e) -> PETScMatrixElement
+        """
+        this = _dolfin.new_PETScMatrixElement(*args)
+        try: self.this.append(this)
+        except: self.this = this
+    def __iadd__(*args):
+        """__iadd__(self, real a) -> PETScMatrixElement"""
+        return _dolfin.PETScMatrixElement___iadd__(*args)
+
+    def __isub__(*args):
+        """__isub__(self, real a) -> PETScMatrixElement"""
+        return _dolfin.PETScMatrixElement___isub__(*args)
+
+    def __imul__(*args):
+        """__imul__(self, real a) -> PETScMatrixElement"""
+        return _dolfin.PETScMatrixElement___imul__(*args)
+
+PETScMatrixElement_swigregister = _dolfin.PETScMatrixElement_swigregister
+PETScMatrixElement_swigregister(PETScMatrixElement)
+
+class PETScPreconditioner(_object):
+    """Proxy of C++ PETScPreconditioner class"""
+    __swig_setmethods__ = {}
+    __setattr__ = lambda self, name, value: _swig_setattr(self, PETScPreconditioner, name, value)
+    __swig_getmethods__ = {}
+    __getattr__ = lambda self, name: _swig_getattr(self, PETScPreconditioner, name)
+    def __init__(self): raise AttributeError, "No constructor defined"
+    __repr__ = _swig_repr
+    __swig_destroy__ = _dolfin.delete_PETScPreconditioner
+    __del__ = lambda self : None;
+    def setup(*args):
+        """setup(KSP ksp, PETScPreconditioner pc)"""
+        return _dolfin.PETScPreconditioner_setup(*args)
+
+    if _newclass:setup = staticmethod(setup)
+    __swig_getmethods__["setup"] = lambda x: setup
+    def solve(*args):
+        """solve(self, PETScVector x, PETScVector b)"""
+        return _dolfin.PETScPreconditioner_solve(*args)
+
+PETScPreconditioner_swigregister = _dolfin.PETScPreconditioner_swigregister
+PETScPreconditioner_swigregister(PETScPreconditioner)
+
+def PETScPreconditioner_setup(*args):
+  """PETScPreconditioner_setup(KSP ksp, PETScPreconditioner pc)"""
+  return _dolfin.PETScPreconditioner_setup(*args)
+
+class PETScVector(GenericVector,Variable):
+    """Proxy of C++ PETScVector class"""
+    __swig_setmethods__ = {}
+    for _s in [GenericVector,Variable]: __swig_setmethods__.update(_s.__swig_setmethods__)
+    __setattr__ = lambda self, name, value: _swig_setattr(self, PETScVector, name, value)
+    __swig_getmethods__ = {}
+    for _s in [GenericVector,Variable]: __swig_getmethods__.update(_s.__swig_getmethods__)
+    __getattr__ = lambda self, name: _swig_getattr(self, PETScVector, name)
+    __repr__ = _swig_repr
+    def __init__(self, *args): 
+        """
+        __init__(self) -> PETScVector
+        __init__(self, uint size) -> PETScVector
+        __init__(self, Vec x) -> PETScVector
+        __init__(self, PETScVector x) -> PETScVector
+        """
+        this = _dolfin.new_PETScVector(*args)
+        try: self.this.append(this)
+        except: self.this = this
+    __swig_destroy__ = _dolfin.delete_PETScVector
+    __del__ = lambda self : None;
+    def init(*args):
+        """init(self, uint size)"""
+        return _dolfin.PETScVector_init(*args)
+
+    def clear(*args):
+        """clear(self)"""
+        return _dolfin.PETScVector_clear(*args)
+
+    def size(*args):
+        """size(self) -> uint"""
+        return _dolfin.PETScVector_size(*args)
+
+    def vec(*args):
+        """vec(self) -> Vec"""
+        return _dolfin.PETScVector_vec(*args)
+
+    def array(*args):
+        """
+        array(self) -> real
+        array(self) -> real
+        """
+        return _dolfin.PETScVector_array(*args)
+
+    def restore(*args):
+        """
+        restore(self, real data)
+        restore(self, real data)
+        """
+        return _dolfin.PETScVector_restore(*args)
+
+    def axpy(*args):
+        """axpy(self, real a, PETScVector x)"""
+        return _dolfin.PETScVector_axpy(*args)
+
+    def div(*args):
+        """div(self, PETScVector x)"""
+        return _dolfin.PETScVector_div(*args)
+
+    def mult(*args):
+        """
+        mult(self, PETScVector x)
+        mult(self, real a)
+        """
+        return _dolfin.PETScVector_mult(*args)
+
+    def set(*args):
+        """
+        set(self, uint i, real value)
+        set(self, real block, int pos, int n)
+        """
+        return _dolfin.PETScVector_set(*args)
+
+    def add(*args):
+        """
+        add(self, uint i, real value)
+        add(self, real block, int pos, int n)
+        """
+        return _dolfin.PETScVector_add(*args)
+
+    def get(*args):
+        """
+        get(self, uint i) -> real
+        get(self, real block, int cols, int n)
+        """
+        return _dolfin.PETScVector_get(*args)
+
+    def apply(*args):
+        """apply(self)"""
+        return _dolfin.PETScVector_apply(*args)
+
+    def zero(*args):
+        """zero(self)"""
+        return _dolfin.PETScVector_zero(*args)
+
+    def __call__(*args):
+        """
+        __call__(self, uint i) -> PETScVectorElement
+        __call__(self, uint i) -> real
+        """
+        return _dolfin.PETScVector___call__(*args)
+
+    def __iadd__(*args):
+        """__iadd__(self, PETScVector x) -> PETScVector"""
+        return _dolfin.PETScVector___iadd__(*args)
+
+    def __isub__(*args):
+        """__isub__(self, PETScVector x) -> PETScVector"""
+        return _dolfin.PETScVector___isub__(*args)
+
+    def __imul__(*args):
+        """__imul__(self, real a) -> PETScVector"""
+        return _dolfin.PETScVector___imul__(*args)
+
+    def __idiv__(*args):
+        """__idiv__(self, real a) -> PETScVector"""
+        return _dolfin.PETScVector___idiv__(*args)
+
+    def __mul__(*args):
+        """__mul__(self, PETScVector x) -> real"""
+        return _dolfin.PETScVector___mul__(*args)
+
+    l1 = _dolfin.PETScVector_l1
+    l2 = _dolfin.PETScVector_l2
+    linf = _dolfin.PETScVector_linf
+    def norm(*args):
+        """
+        norm(self, NormType type=l2) -> real
+        norm(self) -> real
+        """
+        return _dolfin.PETScVector_norm(*args)
+
+    def sum(*args):
+        """sum(self) -> real"""
+        return _dolfin.PETScVector_sum(*args)
+
+    def max(*args):
+        """max(self) -> real"""
+        return _dolfin.PETScVector_max(*args)
+
+    def min(*args):
+        """min(self) -> real"""
+        return _dolfin.PETScVector_min(*args)
+
+    def disp(*args):
+        """disp(self)"""
+        return _dolfin.PETScVector_disp(*args)
+
+    def createScatterer(*args):
+        """createScatterer(PETScVector x1, PETScVector x2, int offset, int size) -> VecScatter"""
+        return _dolfin.PETScVector_createScatterer(*args)
+
+    if _newclass:createScatterer = staticmethod(createScatterer)
+    __swig_getmethods__["createScatterer"] = lambda x: createScatterer
+    def gather(*args):
+        """gather(PETScVector x1, PETScVector x2, VecScatter x1sc)"""
+        return _dolfin.PETScVector_gather(*args)
+
+    if _newclass:gather = staticmethod(gather)
+    __swig_getmethods__["gather"] = lambda x: gather
+    def scatter(*args):
+        """scatter(PETScVector x1, PETScVector x2, VecScatter x1sc)"""
+        return _dolfin.PETScVector_scatter(*args)
+
+    if _newclass:scatter = staticmethod(scatter)
+    __swig_getmethods__["scatter"] = lambda x: scatter
+    def fromArray(*args):
+        """fromArray(real u, PETScVector x, uint offset, uint size)"""
+        return _dolfin.PETScVector_fromArray(*args)
+
+    if _newclass:fromArray = staticmethod(fromArray)
+    __swig_getmethods__["fromArray"] = lambda x: fromArray
+    def toArray(*args):
+        """toArray(real y, PETScVector x, uint offset, uint size)"""
+        return _dolfin.PETScVector_toArray(*args)
+
+    if _newclass:toArray = staticmethod(toArray)
+    __swig_getmethods__["toArray"] = lambda x: toArray
+    def copy(*args):
+        """
+        copy(self, PETScVector x) -> PETScVector
+        copy(self, real a) -> PETScVector
+        copy(self, PETScVector y)
+        copy(self, uBlasVector y)
+        """
+        return _dolfin.PETScVector_copy(*args)
+
+PETScVector_swigregister = _dolfin.PETScVector_swigregister
+PETScVector_swigregister(PETScVector)
+
+def PETScVector_createScatterer(*args):
+  """PETScVector_createScatterer(PETScVector x1, PETScVector x2, int offset, int size) -> VecScatter"""
+  return _dolfin.PETScVector_createScatterer(*args)
+
+def PETScVector_gather(*args):
+  """PETScVector_gather(PETScVector x1, PETScVector x2, VecScatter x1sc)"""
+  return _dolfin.PETScVector_gather(*args)
+
+def PETScVector_scatter(*args):
+  """PETScVector_scatter(PETScVector x1, PETScVector x2, VecScatter x1sc)"""
+  return _dolfin.PETScVector_scatter(*args)
+
+def PETScVector_fromArray(*args):
+  """PETScVector_fromArray(real u, PETScVector x, uint offset, uint size)"""
+  return _dolfin.PETScVector_fromArray(*args)
+
+def PETScVector_toArray(*args):
+  """PETScVector_toArray(real y, PETScVector x, uint offset, uint size)"""
+  return _dolfin.PETScVector_toArray(*args)
+
+class PETScVectorElement(_object):
+    """Proxy of C++ PETScVectorElement class"""
+    __swig_setmethods__ = {}
+    __setattr__ = lambda self, name, value: _swig_setattr(self, PETScVectorElement, name, value)
+    __swig_getmethods__ = {}
+    __getattr__ = lambda self, name: _swig_getattr(self, PETScVectorElement, name)
+    __repr__ = _swig_repr
+    def __init__(self, *args): 
+        """
+        __init__(self, uint i, PETScVector x) -> PETScVectorElement
+        __init__(self, PETScVectorElement e) -> PETScVectorElement
+        """
+        this = _dolfin.new_PETScVectorElement(*args)
+        try: self.this.append(this)
+        except: self.this = this
+    def __iadd__(*args):
+        """__iadd__(self, real a) -> PETScVectorElement"""
+        return _dolfin.PETScVectorElement___iadd__(*args)
+
+    def __isub__(*args):
+        """__isub__(self, real a) -> PETScVectorElement"""
+        return _dolfin.PETScVectorElement___isub__(*args)
+
+    def __imul__(*args):
+        """__imul__(self, real a) -> PETScVectorElement"""
+        return _dolfin.PETScVectorElement___imul__(*args)
+
+PETScVectorElement_swigregister = _dolfin.PETScVectorElement_swigregister
+PETScVectorElement_swigregister(PETScVectorElement)
 
 class uBlasDummyPreconditioner(_object):
     """Proxy of C++ uBlasDummyPreconditioner class"""
@@ -1071,10 +1671,14 @@ uBlasDenseMatrix_swigregister = _dolfin.uBlasDenseMatrix_swigregister
 uBlasDenseMatrix_swigregister(uBlasDenseMatrix)
 
 # Explicit typedefs
-Vector = uBlasVector
-Matrix = uBlasSparseMatrix
-KrylovSolver = uBlasKrylovSolver
-LUSolver = uBlasLUSolver
+Vector = PETScVector
+Matrix = PETScMatrix
+KrylovSolver = PETScKrylovSolver
+LUSolver = PETScLUSolver
+
+Vector_createScatterer = PETScVector_createScatterer
+Vector_gather = PETScVector_gather
+Vector_scatter = PETScVector_scatter
 
 # Explicit typedefs
 DenseVector = uBlasVector
@@ -5427,7 +6031,7 @@ class FEM(_object):
     if _newclass:disp = staticmethod(disp)
     __swig_getmethods__["disp"] = lambda x: disp
     def lump(*args):
-        """lump(uBlasSparseMatrix M, uBlasVector m)"""
+        """lump(PETScMatrix M, PETScVector m)"""
         return _dolfin.FEM_lump(*args)
 
     if _newclass:lump = staticmethod(lump)
@@ -5475,7 +6079,7 @@ def FEM_disp(*args):
   return _dolfin.FEM_disp(*args)
 
 def FEM_lump(*args):
-  """FEM_lump(uBlasSparseMatrix M, uBlasVector m)"""
+  """FEM_lump(PETScMatrix M, PETScVector m)"""
   return _dolfin.FEM_lump(*args)
 
 
@@ -5486,7 +6090,427 @@ def get(*args):
 def load_parameters(*args):
   """load_parameters(string filename)"""
   return _dolfin.load_parameters(*args)
+class ElasticityUpdatedSolver(_object):
+    """Proxy of C++ ElasticityUpdatedSolver class"""
+    __swig_setmethods__ = {}
+    __setattr__ = lambda self, name, value: _swig_setattr(self, ElasticityUpdatedSolver, name, value)
+    __swig_getmethods__ = {}
+    __getattr__ = lambda self, name: _swig_getattr(self, ElasticityUpdatedSolver, name)
+    __repr__ = _swig_repr
+    def __init__(self, *args): 
+        """
+        __init__(self, Mesh mesh, Function f, Function v0, Function rho, real E, 
+            real nu, real nuv, real nuplast, BoundaryCondition bc, 
+            real k, real T) -> ElasticityUpdatedSolver
+        """
+        this = _dolfin.new_ElasticityUpdatedSolver(*args)
+        try: self.this.append(this)
+        except: self.this = this
+    def init(*args):
+        """init(self)"""
+        return _dolfin.ElasticityUpdatedSolver_init(*args)
 
+    def step(*args):
+        """step(self)"""
+        return _dolfin.ElasticityUpdatedSolver_step(*args)
+
+    def oldstep(*args):
+        """oldstep(self)"""
+        return _dolfin.ElasticityUpdatedSolver_oldstep(*args)
+
+    def fu(*args):
+        """fu(self)"""
+        return _dolfin.ElasticityUpdatedSolver_fu(*args)
+
+    def gather(*args):
+        """gather(Vector x1, Vector x2, VecScatter x1sc)"""
+        return _dolfin.ElasticityUpdatedSolver_gather(*args)
+
+    if _newclass:gather = staticmethod(gather)
+    __swig_getmethods__["gather"] = lambda x: gather
+    def scatter(*args):
+        """scatter(Vector x1, Vector x2, VecScatter x1sc)"""
+        return _dolfin.ElasticityUpdatedSolver_scatter(*args)
+
+    if _newclass:scatter = staticmethod(scatter)
+    __swig_getmethods__["scatter"] = lambda x: scatter
+    def createScatterer(*args):
+        """createScatterer(Vector x1, Vector x2, int offset, int size) -> VecScatter"""
+        return _dolfin.ElasticityUpdatedSolver_createScatterer(*args)
+
+    if _newclass:createScatterer = staticmethod(createScatterer)
+    __swig_getmethods__["createScatterer"] = lambda x: createScatterer
+    def fromArray(*args):
+        """fromArray(real u, Vector x, uint offset, uint size)"""
+        return _dolfin.ElasticityUpdatedSolver_fromArray(*args)
+
+    if _newclass:fromArray = staticmethod(fromArray)
+    __swig_getmethods__["fromArray"] = lambda x: fromArray
+    def toArray(*args):
+        """toArray(real y, Vector x, uint offset, uint size)"""
+        return _dolfin.ElasticityUpdatedSolver_toArray(*args)
+
+    if _newclass:toArray = staticmethod(toArray)
+    __swig_getmethods__["toArray"] = lambda x: toArray
+    def fromDense(*args):
+        """fromDense(uBlasVector u, Vector x, uint offset, uint size)"""
+        return _dolfin.ElasticityUpdatedSolver_fromDense(*args)
+
+    if _newclass:fromDense = staticmethod(fromDense)
+    __swig_getmethods__["fromDense"] = lambda x: fromDense
+    def toDense(*args):
+        """toDense(uBlasVector y, Vector x, uint offset, uint size)"""
+        return _dolfin.ElasticityUpdatedSolver_toDense(*args)
+
+    if _newclass:toDense = staticmethod(toDense)
+    __swig_getmethods__["toDense"] = lambda x: toDense
+    def preparestep(*args):
+        """preparestep(self)"""
+        return _dolfin.ElasticityUpdatedSolver_preparestep(*args)
+
+    def prepareiteration(*args):
+        """prepareiteration(self)"""
+        return _dolfin.ElasticityUpdatedSolver_prepareiteration(*args)
+
+    def save(*args):
+        """save(self, Mesh mesh, File solutionfile, real t)"""
+        return _dolfin.ElasticityUpdatedSolver_save(*args)
+
+    def condsave(*args):
+        """condsave(self, Mesh mesh, File solutionfile, real t)"""
+        return _dolfin.ElasticityUpdatedSolver_condsave(*args)
+
+    def solve(*args):
+        """
+        solve()
+        solve(Mesh mesh, Function f, Function v0, Function rho, real E, 
+            real nu, real nuv, real nuplast, BoundaryCondition bc, 
+            real k, real T)
+        """
+        return _dolfin.ElasticityUpdatedSolver_solve(*args)
+
+    if _newclass:solve = staticmethod(solve)
+    __swig_getmethods__["solve"] = lambda x: solve
+    def finterpolate(*args):
+        """finterpolate(Function f1, Function f2, Mesh mesh)"""
+        return _dolfin.ElasticityUpdatedSolver_finterpolate(*args)
+
+    if _newclass:finterpolate = staticmethod(finterpolate)
+    __swig_getmethods__["finterpolate"] = lambda x: finterpolate
+    def plasticity(*args):
+        """
+        plasticity(Vector xsigma, Vector xsigmanorm, real yield, FiniteElement element2, 
+            Mesh mesh)
+        """
+        return _dolfin.ElasticityUpdatedSolver_plasticity(*args)
+
+    if _newclass:plasticity = staticmethod(plasticity)
+    __swig_getmethods__["plasticity"] = lambda x: plasticity
+    def initmsigma(*args):
+        """initmsigma(Vector msigma, FiniteElement element2, Mesh mesh)"""
+        return _dolfin.ElasticityUpdatedSolver_initmsigma(*args)
+
+    if _newclass:initmsigma = staticmethod(initmsigma)
+    __swig_getmethods__["initmsigma"] = lambda x: initmsigma
+    def initu0(*args):
+        """initu0(Vector x0, FiniteElement element, Mesh mesh)"""
+        return _dolfin.ElasticityUpdatedSolver_initu0(*args)
+
+    if _newclass:initu0 = staticmethod(initu0)
+    __swig_getmethods__["initu0"] = lambda x: initu0
+    def initJ0(*args):
+        """initJ0(Vector xJ0, FiniteElement element, Mesh mesh)"""
+        return _dolfin.ElasticityUpdatedSolver_initJ0(*args)
+
+    if _newclass:initJ0 = staticmethod(initJ0)
+    __swig_getmethods__["initJ0"] = lambda x: initJ0
+    def computeJ(*args):
+        """
+        computeJ(Vector xJ0, Vector xJ, Vector xJinv, FiniteElement element, 
+            Mesh mesh)
+        """
+        return _dolfin.ElasticityUpdatedSolver_computeJ(*args)
+
+    if _newclass:computeJ = staticmethod(computeJ)
+    __swig_getmethods__["computeJ"] = lambda x: computeJ
+    def initF0Green(*args):
+        """initF0Green(Vector xF0, FiniteElement element1, Mesh mesh)"""
+        return _dolfin.ElasticityUpdatedSolver_initF0Green(*args)
+
+    if _newclass:initF0Green = staticmethod(initF0Green)
+    __swig_getmethods__["initF0Green"] = lambda x: initF0Green
+    def computeFGreen(*args):
+        """
+        computeFGreen(Vector xF, Vector xF0, Vector xF1, FiniteElement element1, 
+            Mesh mesh)
+        """
+        return _dolfin.ElasticityUpdatedSolver_computeFGreen(*args)
+
+    if _newclass:computeFGreen = staticmethod(computeFGreen)
+    __swig_getmethods__["computeFGreen"] = lambda x: computeFGreen
+    def initF0Euler(*args):
+        """initF0Euler(Vector xF0, FiniteElement element1, Mesh mesh)"""
+        return _dolfin.ElasticityUpdatedSolver_initF0Euler(*args)
+
+    if _newclass:initF0Euler = staticmethod(initF0Euler)
+    __swig_getmethods__["initF0Euler"] = lambda x: initF0Euler
+    def computeFEuler(*args):
+        """
+        computeFEuler(Vector xF, Vector xF0, Vector xF1, FiniteElement element1, 
+            Mesh mesh)
+        """
+        return _dolfin.ElasticityUpdatedSolver_computeFEuler(*args)
+
+    if _newclass:computeFEuler = staticmethod(computeFEuler)
+    __swig_getmethods__["computeFEuler"] = lambda x: computeFEuler
+    def computeFBEuler(*args):
+        """
+        computeFBEuler(Vector xF, Vector xB, Vector xF0, Vector xF1, FiniteElement element1, 
+            Mesh mesh)
+        """
+        return _dolfin.ElasticityUpdatedSolver_computeFBEuler(*args)
+
+    if _newclass:computeFBEuler = staticmethod(computeFBEuler)
+    __swig_getmethods__["computeFBEuler"] = lambda x: computeFBEuler
+    def computeBEuler(*args):
+        """computeBEuler(Vector xF, Vector xB, FiniteElement element1, Mesh mesh)"""
+        return _dolfin.ElasticityUpdatedSolver_computeBEuler(*args)
+
+    if _newclass:computeBEuler = staticmethod(computeBEuler)
+    __swig_getmethods__["computeBEuler"] = lambda x: computeBEuler
+    def multF(*args):
+        """multF(real F0, real F1, real F)"""
+        return _dolfin.ElasticityUpdatedSolver_multF(*args)
+
+    if _newclass:multF = staticmethod(multF)
+    __swig_getmethods__["multF"] = lambda x: multF
+    def multB(*args):
+        """multB(real F, real B)"""
+        return _dolfin.ElasticityUpdatedSolver_multB(*args)
+
+    if _newclass:multB = staticmethod(multB)
+    __swig_getmethods__["multB"] = lambda x: multB
+    def deform(*args):
+        """deform(Mesh mesh, Function u)"""
+        return _dolfin.ElasticityUpdatedSolver_deform(*args)
+
+    if _newclass:deform = staticmethod(deform)
+    __swig_getmethods__["deform"] = lambda x: deform
+    __swig_setmethods__["mesh"] = _dolfin.ElasticityUpdatedSolver_mesh_set
+    __swig_getmethods__["mesh"] = _dolfin.ElasticityUpdatedSolver_mesh_get
+    if _newclass:mesh = property(_dolfin.ElasticityUpdatedSolver_mesh_get, _dolfin.ElasticityUpdatedSolver_mesh_set)
+    __swig_setmethods__["f"] = _dolfin.ElasticityUpdatedSolver_f_set
+    __swig_getmethods__["f"] = _dolfin.ElasticityUpdatedSolver_f_get
+    if _newclass:f = property(_dolfin.ElasticityUpdatedSolver_f_get, _dolfin.ElasticityUpdatedSolver_f_set)
+    __swig_setmethods__["v0"] = _dolfin.ElasticityUpdatedSolver_v0_set
+    __swig_getmethods__["v0"] = _dolfin.ElasticityUpdatedSolver_v0_get
+    if _newclass:v0 = property(_dolfin.ElasticityUpdatedSolver_v0_get, _dolfin.ElasticityUpdatedSolver_v0_set)
+    __swig_setmethods__["rho"] = _dolfin.ElasticityUpdatedSolver_rho_set
+    __swig_getmethods__["rho"] = _dolfin.ElasticityUpdatedSolver_rho_get
+    if _newclass:rho = property(_dolfin.ElasticityUpdatedSolver_rho_get, _dolfin.ElasticityUpdatedSolver_rho_set)
+    __swig_setmethods__["E"] = _dolfin.ElasticityUpdatedSolver_E_set
+    __swig_getmethods__["E"] = _dolfin.ElasticityUpdatedSolver_E_get
+    if _newclass:E = property(_dolfin.ElasticityUpdatedSolver_E_get, _dolfin.ElasticityUpdatedSolver_E_set)
+    __swig_setmethods__["nu"] = _dolfin.ElasticityUpdatedSolver_nu_set
+    __swig_getmethods__["nu"] = _dolfin.ElasticityUpdatedSolver_nu_get
+    if _newclass:nu = property(_dolfin.ElasticityUpdatedSolver_nu_get, _dolfin.ElasticityUpdatedSolver_nu_set)
+    __swig_setmethods__["nuv"] = _dolfin.ElasticityUpdatedSolver_nuv_set
+    __swig_getmethods__["nuv"] = _dolfin.ElasticityUpdatedSolver_nuv_get
+    if _newclass:nuv = property(_dolfin.ElasticityUpdatedSolver_nuv_get, _dolfin.ElasticityUpdatedSolver_nuv_set)
+    __swig_setmethods__["nuplast"] = _dolfin.ElasticityUpdatedSolver_nuplast_set
+    __swig_getmethods__["nuplast"] = _dolfin.ElasticityUpdatedSolver_nuplast_get
+    if _newclass:nuplast = property(_dolfin.ElasticityUpdatedSolver_nuplast_get, _dolfin.ElasticityUpdatedSolver_nuplast_set)
+    __swig_setmethods__["bc"] = _dolfin.ElasticityUpdatedSolver_bc_set
+    __swig_getmethods__["bc"] = _dolfin.ElasticityUpdatedSolver_bc_get
+    if _newclass:bc = property(_dolfin.ElasticityUpdatedSolver_bc_get, _dolfin.ElasticityUpdatedSolver_bc_set)
+    __swig_setmethods__["k"] = _dolfin.ElasticityUpdatedSolver_k_set
+    __swig_getmethods__["k"] = _dolfin.ElasticityUpdatedSolver_k_get
+    if _newclass:k = property(_dolfin.ElasticityUpdatedSolver_k_get, _dolfin.ElasticityUpdatedSolver_k_set)
+    __swig_setmethods__["T"] = _dolfin.ElasticityUpdatedSolver_T_set
+    __swig_getmethods__["T"] = _dolfin.ElasticityUpdatedSolver_T_get
+    if _newclass:T = property(_dolfin.ElasticityUpdatedSolver_T_get, _dolfin.ElasticityUpdatedSolver_T_set)
+    __swig_setmethods__["counter"] = _dolfin.ElasticityUpdatedSolver_counter_set
+    __swig_getmethods__["counter"] = _dolfin.ElasticityUpdatedSolver_counter_get
+    if _newclass:counter = property(_dolfin.ElasticityUpdatedSolver_counter_get, _dolfin.ElasticityUpdatedSolver_counter_set)
+    __swig_setmethods__["lastsample"] = _dolfin.ElasticityUpdatedSolver_lastsample_set
+    __swig_getmethods__["lastsample"] = _dolfin.ElasticityUpdatedSolver_lastsample_get
+    if _newclass:lastsample = property(_dolfin.ElasticityUpdatedSolver_lastsample_get, _dolfin.ElasticityUpdatedSolver_lastsample_set)
+    __swig_setmethods__["_lambda"] = _dolfin.ElasticityUpdatedSolver__lambda_set
+    __swig_getmethods__["_lambda"] = _dolfin.ElasticityUpdatedSolver__lambda_get
+    if _newclass:_lambda = property(_dolfin.ElasticityUpdatedSolver__lambda_get, _dolfin.ElasticityUpdatedSolver__lambda_set)
+    __swig_setmethods__["mu"] = _dolfin.ElasticityUpdatedSolver_mu_set
+    __swig_getmethods__["mu"] = _dolfin.ElasticityUpdatedSolver_mu_get
+    if _newclass:mu = property(_dolfin.ElasticityUpdatedSolver_mu_get, _dolfin.ElasticityUpdatedSolver_mu_set)
+    __swig_setmethods__["t"] = _dolfin.ElasticityUpdatedSolver_t_set
+    __swig_getmethods__["t"] = _dolfin.ElasticityUpdatedSolver_t_get
+    if _newclass:t = property(_dolfin.ElasticityUpdatedSolver_t_get, _dolfin.ElasticityUpdatedSolver_t_set)
+    __swig_setmethods__["rtol"] = _dolfin.ElasticityUpdatedSolver_rtol_set
+    __swig_getmethods__["rtol"] = _dolfin.ElasticityUpdatedSolver_rtol_get
+    if _newclass:rtol = property(_dolfin.ElasticityUpdatedSolver_rtol_get, _dolfin.ElasticityUpdatedSolver_rtol_set)
+    __swig_setmethods__["maxiters"] = _dolfin.ElasticityUpdatedSolver_maxiters_set
+    __swig_getmethods__["maxiters"] = _dolfin.ElasticityUpdatedSolver_maxiters_get
+    if _newclass:maxiters = property(_dolfin.ElasticityUpdatedSolver_maxiters_get, _dolfin.ElasticityUpdatedSolver_maxiters_set)
+    __swig_setmethods__["do_plasticity"] = _dolfin.ElasticityUpdatedSolver_do_plasticity_set
+    __swig_getmethods__["do_plasticity"] = _dolfin.ElasticityUpdatedSolver_do_plasticity_get
+    if _newclass:do_plasticity = property(_dolfin.ElasticityUpdatedSolver_do_plasticity_get, _dolfin.ElasticityUpdatedSolver_do_plasticity_set)
+    __swig_setmethods__["_yield"] = _dolfin.ElasticityUpdatedSolver__yield_set
+    __swig_getmethods__["_yield"] = _dolfin.ElasticityUpdatedSolver__yield_get
+    if _newclass:_yield = property(_dolfin.ElasticityUpdatedSolver__yield_get, _dolfin.ElasticityUpdatedSolver__yield_set)
+    __swig_setmethods__["savesamplefreq"] = _dolfin.ElasticityUpdatedSolver_savesamplefreq_set
+    __swig_getmethods__["savesamplefreq"] = _dolfin.ElasticityUpdatedSolver_savesamplefreq_get
+    if _newclass:savesamplefreq = property(_dolfin.ElasticityUpdatedSolver_savesamplefreq_get, _dolfin.ElasticityUpdatedSolver_savesamplefreq_set)
+    __swig_setmethods__["fevals"] = _dolfin.ElasticityUpdatedSolver_fevals_set
+    __swig_getmethods__["fevals"] = _dolfin.ElasticityUpdatedSolver_fevals_get
+    if _newclass:fevals = property(_dolfin.ElasticityUpdatedSolver_fevals_get, _dolfin.ElasticityUpdatedSolver_fevals_set)
+    __swig_setmethods__["Nv"] = _dolfin.ElasticityUpdatedSolver_Nv_set
+    __swig_getmethods__["Nv"] = _dolfin.ElasticityUpdatedSolver_Nv_get
+    if _newclass:Nv = property(_dolfin.ElasticityUpdatedSolver_Nv_get, _dolfin.ElasticityUpdatedSolver_Nv_set)
+    __swig_setmethods__["Nsigma"] = _dolfin.ElasticityUpdatedSolver_Nsigma_set
+    __swig_getmethods__["Nsigma"] = _dolfin.ElasticityUpdatedSolver_Nsigma_get
+    if _newclass:Nsigma = property(_dolfin.ElasticityUpdatedSolver_Nsigma_get, _dolfin.ElasticityUpdatedSolver_Nsigma_set)
+    __swig_setmethods__["Nsigmanorm"] = _dolfin.ElasticityUpdatedSolver_Nsigmanorm_set
+    __swig_getmethods__["Nsigmanorm"] = _dolfin.ElasticityUpdatedSolver_Nsigmanorm_get
+    if _newclass:Nsigmanorm = property(_dolfin.ElasticityUpdatedSolver_Nsigmanorm_get, _dolfin.ElasticityUpdatedSolver_Nsigmanorm_set)
+    __swig_setmethods__["ode"] = _dolfin.ElasticityUpdatedSolver_ode_set
+    __swig_getmethods__["ode"] = _dolfin.ElasticityUpdatedSolver_ode_get
+    if _newclass:ode = property(_dolfin.ElasticityUpdatedSolver_ode_get, _dolfin.ElasticityUpdatedSolver_ode_set)
+    __swig_setmethods__["ts"] = _dolfin.ElasticityUpdatedSolver_ts_set
+    __swig_getmethods__["ts"] = _dolfin.ElasticityUpdatedSolver_ts_get
+    if _newclass:ts = property(_dolfin.ElasticityUpdatedSolver_ts_get, _dolfin.ElasticityUpdatedSolver_ts_set)
+    __swig_setmethods__["element1"] = _dolfin.ElasticityUpdatedSolver_element1_set
+    __swig_getmethods__["element1"] = _dolfin.ElasticityUpdatedSolver_element1_get
+    if _newclass:element1 = property(_dolfin.ElasticityUpdatedSolver_element1_get, _dolfin.ElasticityUpdatedSolver_element1_set)
+    __swig_setmethods__["element2"] = _dolfin.ElasticityUpdatedSolver_element2_set
+    __swig_getmethods__["element2"] = _dolfin.ElasticityUpdatedSolver_element2_get
+    if _newclass:element2 = property(_dolfin.ElasticityUpdatedSolver_element2_get, _dolfin.ElasticityUpdatedSolver_element2_set)
+    __swig_setmethods__["element3"] = _dolfin.ElasticityUpdatedSolver_element3_set
+    __swig_getmethods__["element3"] = _dolfin.ElasticityUpdatedSolver_element3_get
+    if _newclass:element3 = property(_dolfin.ElasticityUpdatedSolver_element3_get, _dolfin.ElasticityUpdatedSolver_element3_set)
+    __swig_setmethods__["x1_0"] = _dolfin.ElasticityUpdatedSolver_x1_0_set
+    __swig_getmethods__["x1_0"] = _dolfin.ElasticityUpdatedSolver_x1_0_get
+    if _newclass:x1_0 = property(_dolfin.ElasticityUpdatedSolver_x1_0_get, _dolfin.ElasticityUpdatedSolver_x1_0_set)
+    __swig_setmethods__["x1_1"] = _dolfin.ElasticityUpdatedSolver_x1_1_set
+    __swig_getmethods__["x1_1"] = _dolfin.ElasticityUpdatedSolver_x1_1_get
+    if _newclass:x1_1 = property(_dolfin.ElasticityUpdatedSolver_x1_1_get, _dolfin.ElasticityUpdatedSolver_x1_1_set)
+    __swig_setmethods__["x2_0"] = _dolfin.ElasticityUpdatedSolver_x2_0_set
+    __swig_getmethods__["x2_0"] = _dolfin.ElasticityUpdatedSolver_x2_0_get
+    if _newclass:x2_0 = property(_dolfin.ElasticityUpdatedSolver_x2_0_get, _dolfin.ElasticityUpdatedSolver_x2_0_set)
+    __swig_setmethods__["x2_1"] = _dolfin.ElasticityUpdatedSolver_x2_1_set
+    __swig_getmethods__["x2_1"] = _dolfin.ElasticityUpdatedSolver_x2_1_get
+    if _newclass:x2_1 = property(_dolfin.ElasticityUpdatedSolver_x2_1_get, _dolfin.ElasticityUpdatedSolver_x2_1_set)
+    __swig_setmethods__["b"] = _dolfin.ElasticityUpdatedSolver_b_set
+    __swig_getmethods__["b"] = _dolfin.ElasticityUpdatedSolver_b_get
+    if _newclass:b = property(_dolfin.ElasticityUpdatedSolver_b_get, _dolfin.ElasticityUpdatedSolver_b_set)
+    __swig_setmethods__["m"] = _dolfin.ElasticityUpdatedSolver_m_set
+    __swig_getmethods__["m"] = _dolfin.ElasticityUpdatedSolver_m_get
+    if _newclass:m = property(_dolfin.ElasticityUpdatedSolver_m_get, _dolfin.ElasticityUpdatedSolver_m_set)
+    __swig_setmethods__["msigma"] = _dolfin.ElasticityUpdatedSolver_msigma_set
+    __swig_getmethods__["msigma"] = _dolfin.ElasticityUpdatedSolver_msigma_get
+    if _newclass:msigma = property(_dolfin.ElasticityUpdatedSolver_msigma_get, _dolfin.ElasticityUpdatedSolver_msigma_set)
+    __swig_setmethods__["stepresidual"] = _dolfin.ElasticityUpdatedSolver_stepresidual_set
+    __swig_getmethods__["stepresidual"] = _dolfin.ElasticityUpdatedSolver_stepresidual_get
+    if _newclass:stepresidual = property(_dolfin.ElasticityUpdatedSolver_stepresidual_get, _dolfin.ElasticityUpdatedSolver_stepresidual_set)
+    __swig_setmethods__["xsigma0"] = _dolfin.ElasticityUpdatedSolver_xsigma0_set
+    __swig_getmethods__["xsigma0"] = _dolfin.ElasticityUpdatedSolver_xsigma0_get
+    if _newclass:xsigma0 = property(_dolfin.ElasticityUpdatedSolver_xsigma0_get, _dolfin.ElasticityUpdatedSolver_xsigma0_set)
+    __swig_setmethods__["xsigma1"] = _dolfin.ElasticityUpdatedSolver_xsigma1_set
+    __swig_getmethods__["xsigma1"] = _dolfin.ElasticityUpdatedSolver_xsigma1_get
+    if _newclass:xsigma1 = property(_dolfin.ElasticityUpdatedSolver_xsigma1_get, _dolfin.ElasticityUpdatedSolver_xsigma1_set)
+    __swig_setmethods__["xepsilon1"] = _dolfin.ElasticityUpdatedSolver_xepsilon1_set
+    __swig_getmethods__["xepsilon1"] = _dolfin.ElasticityUpdatedSolver_xepsilon1_get
+    if _newclass:xepsilon1 = property(_dolfin.ElasticityUpdatedSolver_xepsilon1_get, _dolfin.ElasticityUpdatedSolver_xepsilon1_set)
+    __swig_setmethods__["xsigmanorm"] = _dolfin.ElasticityUpdatedSolver_xsigmanorm_set
+    __swig_getmethods__["xsigmanorm"] = _dolfin.ElasticityUpdatedSolver_xsigmanorm_get
+    if _newclass:xsigmanorm = property(_dolfin.ElasticityUpdatedSolver_xsigmanorm_get, _dolfin.ElasticityUpdatedSolver_xsigmanorm_set)
+    __swig_setmethods__["xjaumann1"] = _dolfin.ElasticityUpdatedSolver_xjaumann1_set
+    __swig_getmethods__["xjaumann1"] = _dolfin.ElasticityUpdatedSolver_xjaumann1_get
+    if _newclass:xjaumann1 = property(_dolfin.ElasticityUpdatedSolver_xjaumann1_get, _dolfin.ElasticityUpdatedSolver_xjaumann1_set)
+    __swig_setmethods__["xtmp1"] = _dolfin.ElasticityUpdatedSolver_xtmp1_set
+    __swig_getmethods__["xtmp1"] = _dolfin.ElasticityUpdatedSolver_xtmp1_get
+    if _newclass:xtmp1 = property(_dolfin.ElasticityUpdatedSolver_xtmp1_get, _dolfin.ElasticityUpdatedSolver_xtmp1_set)
+    __swig_setmethods__["xtmp2"] = _dolfin.ElasticityUpdatedSolver_xtmp2_set
+    __swig_getmethods__["xtmp2"] = _dolfin.ElasticityUpdatedSolver_xtmp2_get
+    if _newclass:xtmp2 = property(_dolfin.ElasticityUpdatedSolver_xtmp2_get, _dolfin.ElasticityUpdatedSolver_xtmp2_set)
+    __swig_setmethods__["xsigmatmp1"] = _dolfin.ElasticityUpdatedSolver_xsigmatmp1_set
+    __swig_getmethods__["xsigmatmp1"] = _dolfin.ElasticityUpdatedSolver_xsigmatmp1_get
+    if _newclass:xsigmatmp1 = property(_dolfin.ElasticityUpdatedSolver_xsigmatmp1_get, _dolfin.ElasticityUpdatedSolver_xsigmatmp1_set)
+    __swig_setmethods__["xsigmatmp2"] = _dolfin.ElasticityUpdatedSolver_xsigmatmp2_set
+    __swig_getmethods__["xsigmatmp2"] = _dolfin.ElasticityUpdatedSolver_xsigmatmp2_get
+    if _newclass:xsigmatmp2 = property(_dolfin.ElasticityUpdatedSolver_xsigmatmp2_get, _dolfin.ElasticityUpdatedSolver_xsigmatmp2_set)
+    __swig_setmethods__["fcontact"] = _dolfin.ElasticityUpdatedSolver_fcontact_set
+    __swig_getmethods__["fcontact"] = _dolfin.ElasticityUpdatedSolver_fcontact_get
+    if _newclass:fcontact = property(_dolfin.ElasticityUpdatedSolver_fcontact_get, _dolfin.ElasticityUpdatedSolver_fcontact_set)
+    __swig_setmethods__["Dummy"] = _dolfin.ElasticityUpdatedSolver_Dummy_set
+    __swig_getmethods__["Dummy"] = _dolfin.ElasticityUpdatedSolver_Dummy_get
+    if _newclass:Dummy = property(_dolfin.ElasticityUpdatedSolver_Dummy_get, _dolfin.ElasticityUpdatedSolver_Dummy_set)
+    __swig_setmethods__["dotu_x1"] = _dolfin.ElasticityUpdatedSolver_dotu_x1_set
+    __swig_getmethods__["dotu_x1"] = _dolfin.ElasticityUpdatedSolver_dotu_x1_get
+    if _newclass:dotu_x1 = property(_dolfin.ElasticityUpdatedSolver_dotu_x1_get, _dolfin.ElasticityUpdatedSolver_dotu_x1_set)
+    __swig_setmethods__["dotu_x2"] = _dolfin.ElasticityUpdatedSolver_dotu_x2_set
+    __swig_getmethods__["dotu_x2"] = _dolfin.ElasticityUpdatedSolver_dotu_x2_get
+    if _newclass:dotu_x2 = property(_dolfin.ElasticityUpdatedSolver_dotu_x2_get, _dolfin.ElasticityUpdatedSolver_dotu_x2_set)
+    __swig_setmethods__["dotu_xsigma"] = _dolfin.ElasticityUpdatedSolver_dotu_xsigma_set
+    __swig_getmethods__["dotu_xsigma"] = _dolfin.ElasticityUpdatedSolver_dotu_xsigma_get
+    if _newclass:dotu_xsigma = property(_dolfin.ElasticityUpdatedSolver_dotu_xsigma_get, _dolfin.ElasticityUpdatedSolver_dotu_xsigma_set)
+    __swig_setmethods__["dotu"] = _dolfin.ElasticityUpdatedSolver_dotu_set
+    __swig_getmethods__["dotu"] = _dolfin.ElasticityUpdatedSolver_dotu_get
+    if _newclass:dotu = property(_dolfin.ElasticityUpdatedSolver_dotu_get, _dolfin.ElasticityUpdatedSolver_dotu_set)
+    __swig_setmethods__["dotu_x1sc"] = _dolfin.ElasticityUpdatedSolver_dotu_x1sc_set
+    __swig_getmethods__["dotu_x1sc"] = _dolfin.ElasticityUpdatedSolver_dotu_x1sc_get
+    if _newclass:dotu_x1sc = property(_dolfin.ElasticityUpdatedSolver_dotu_x1sc_get, _dolfin.ElasticityUpdatedSolver_dotu_x1sc_set)
+    __swig_setmethods__["dotu_x2sc"] = _dolfin.ElasticityUpdatedSolver_dotu_x2sc_set
+    __swig_getmethods__["dotu_x2sc"] = _dolfin.ElasticityUpdatedSolver_dotu_x2sc_get
+    if _newclass:dotu_x2sc = property(_dolfin.ElasticityUpdatedSolver_dotu_x2sc_get, _dolfin.ElasticityUpdatedSolver_dotu_x2sc_set)
+    __swig_setmethods__["dotu_xsigmasc"] = _dolfin.ElasticityUpdatedSolver_dotu_xsigmasc_set
+    __swig_getmethods__["dotu_xsigmasc"] = _dolfin.ElasticityUpdatedSolver_dotu_xsigmasc_get
+    if _newclass:dotu_xsigmasc = property(_dolfin.ElasticityUpdatedSolver_dotu_xsigmasc_get, _dolfin.ElasticityUpdatedSolver_dotu_xsigmasc_set)
+    __swig_setmethods__["dotu_x1is"] = _dolfin.ElasticityUpdatedSolver_dotu_x1is_set
+    __swig_getmethods__["dotu_x1is"] = _dolfin.ElasticityUpdatedSolver_dotu_x1is_get
+    if _newclass:dotu_x1is = property(_dolfin.ElasticityUpdatedSolver_dotu_x1is_get, _dolfin.ElasticityUpdatedSolver_dotu_x1is_set)
+    __swig_setmethods__["dotu_x2is"] = _dolfin.ElasticityUpdatedSolver_dotu_x2is_set
+    __swig_getmethods__["dotu_x2is"] = _dolfin.ElasticityUpdatedSolver_dotu_x2is_get
+    if _newclass:dotu_x2is = property(_dolfin.ElasticityUpdatedSolver_dotu_x2is_get, _dolfin.ElasticityUpdatedSolver_dotu_x2is_set)
+    __swig_setmethods__["dotu_xsigmais"] = _dolfin.ElasticityUpdatedSolver_dotu_xsigmais_set
+    __swig_getmethods__["dotu_xsigmais"] = _dolfin.ElasticityUpdatedSolver_dotu_xsigmais_get
+    if _newclass:dotu_xsigmais = property(_dolfin.ElasticityUpdatedSolver_dotu_xsigmais_get, _dolfin.ElasticityUpdatedSolver_dotu_xsigmais_set)
+    __swig_setmethods__["dotu_x1_indices"] = _dolfin.ElasticityUpdatedSolver_dotu_x1_indices_set
+    __swig_getmethods__["dotu_x1_indices"] = _dolfin.ElasticityUpdatedSolver_dotu_x1_indices_get
+    if _newclass:dotu_x1_indices = property(_dolfin.ElasticityUpdatedSolver_dotu_x1_indices_get, _dolfin.ElasticityUpdatedSolver_dotu_x1_indices_set)
+    __swig_setmethods__["dotu_x2_indices"] = _dolfin.ElasticityUpdatedSolver_dotu_x2_indices_set
+    __swig_getmethods__["dotu_x2_indices"] = _dolfin.ElasticityUpdatedSolver_dotu_x2_indices_get
+    if _newclass:dotu_x2_indices = property(_dolfin.ElasticityUpdatedSolver_dotu_x2_indices_get, _dolfin.ElasticityUpdatedSolver_dotu_x2_indices_set)
+    __swig_setmethods__["dotu_xsigma_indices"] = _dolfin.ElasticityUpdatedSolver_dotu_xsigma_indices_set
+    __swig_getmethods__["dotu_xsigma_indices"] = _dolfin.ElasticityUpdatedSolver_dotu_xsigma_indices_get
+    if _newclass:dotu_xsigma_indices = property(_dolfin.ElasticityUpdatedSolver_dotu_xsigma_indices_get, _dolfin.ElasticityUpdatedSolver_dotu_xsigma_indices_set)
+    __swig_setmethods__["v1"] = _dolfin.ElasticityUpdatedSolver_v1_set
+    __swig_getmethods__["v1"] = _dolfin.ElasticityUpdatedSolver_v1_get
+    if _newclass:v1 = property(_dolfin.ElasticityUpdatedSolver_v1_get, _dolfin.ElasticityUpdatedSolver_v1_set)
+    __swig_setmethods__["u0"] = _dolfin.ElasticityUpdatedSolver_u0_set
+    __swig_getmethods__["u0"] = _dolfin.ElasticityUpdatedSolver_u0_get
+    if _newclass:u0 = property(_dolfin.ElasticityUpdatedSolver_u0_get, _dolfin.ElasticityUpdatedSolver_u0_set)
+    __swig_setmethods__["u1"] = _dolfin.ElasticityUpdatedSolver_u1_set
+    __swig_getmethods__["u1"] = _dolfin.ElasticityUpdatedSolver_u1_get
+    if _newclass:u1 = property(_dolfin.ElasticityUpdatedSolver_u1_get, _dolfin.ElasticityUpdatedSolver_u1_set)
+    __swig_setmethods__["sigma0"] = _dolfin.ElasticityUpdatedSolver_sigma0_set
+    __swig_getmethods__["sigma0"] = _dolfin.ElasticityUpdatedSolver_sigma0_get
+    if _newclass:sigma0 = property(_dolfin.ElasticityUpdatedSolver_sigma0_get, _dolfin.ElasticityUpdatedSolver_sigma0_set)
+    __swig_setmethods__["sigma1"] = _dolfin.ElasticityUpdatedSolver_sigma1_set
+    __swig_getmethods__["sigma1"] = _dolfin.ElasticityUpdatedSolver_sigma1_get
+    if _newclass:sigma1 = property(_dolfin.ElasticityUpdatedSolver_sigma1_get, _dolfin.ElasticityUpdatedSolver_sigma1_set)
+    __swig_setmethods__["epsilon1"] = _dolfin.ElasticityUpdatedSolver_epsilon1_set
+    __swig_getmethods__["epsilon1"] = _dolfin.ElasticityUpdatedSolver_epsilon1_get
+    if _newclass:epsilon1 = property(_dolfin.ElasticityUpdatedSolver_epsilon1_get, _dolfin.ElasticityUpdatedSolver_epsilon1_set)
+    __swig_setmethods__["sigmanorm"] = _dolfin.ElasticityUpdatedSolver_sigmanorm_set
+    __swig_getmethods__["sigmanorm"] = _dolfin.ElasticityUpdatedSolver_sigmanorm_get
+    if _newclass:sigmanorm = property(_dolfin.ElasticityUpdatedSolver_sigmanorm_get, _dolfin.ElasticityUpdatedSolver_sigmanorm_set)
+    __swig_setmethods__["Lv"] = _dolfin.ElasticityUpdatedSolver_Lv_set
+    __swig_getmethods__["Lv"] = _dolfin.ElasticityUpdatedSolver_Lv_get
+    if _newclass:Lv = property(_dolfin.ElasticityUpdatedSolver_Lv_get, _dolfin.ElasticityUpdatedSolver_Lv_set)
+    __swig_setmethods__["Lsigma"] = _dolfin.ElasticityUpdatedSolver_Lsigma_set
+    __swig_getmethods__["Lsigma"] = _dolfin.ElasticityUpdatedSolver_Lsigma_get
+    if _newclass:Lsigma = property(_dolfin.ElasticityUpdatedSolver_Lsigma_get, _dolfin.ElasticityUpdatedSolver_Lsigma_set)
+ElasticityUpdatedSolver_swigregister = _dolfin.ElasticityUpdatedSolver_swigregister
+ElasticityUpdatedSolver_swigregister(ElasticityUpdatedSolver)
 
 def set(*args):
   """
@@ -5496,4 +6520,217 @@ def set(*args):
     set(string name, string val)
     """
   return _dolfin.set(*args)
+
+def ElasticityUpdatedSolver_gather(*args):
+  """ElasticityUpdatedSolver_gather(Vector x1, Vector x2, VecScatter x1sc)"""
+  return _dolfin.ElasticityUpdatedSolver_gather(*args)
+
+def ElasticityUpdatedSolver_scatter(*args):
+  """ElasticityUpdatedSolver_scatter(Vector x1, Vector x2, VecScatter x1sc)"""
+  return _dolfin.ElasticityUpdatedSolver_scatter(*args)
+
+def ElasticityUpdatedSolver_createScatterer(*args):
+  """ElasticityUpdatedSolver_createScatterer(Vector x1, Vector x2, int offset, int size) -> VecScatter"""
+  return _dolfin.ElasticityUpdatedSolver_createScatterer(*args)
+
+def ElasticityUpdatedSolver_fromArray(*args):
+  """ElasticityUpdatedSolver_fromArray(real u, Vector x, uint offset, uint size)"""
+  return _dolfin.ElasticityUpdatedSolver_fromArray(*args)
+
+def ElasticityUpdatedSolver_toArray(*args):
+  """ElasticityUpdatedSolver_toArray(real y, Vector x, uint offset, uint size)"""
+  return _dolfin.ElasticityUpdatedSolver_toArray(*args)
+
+def ElasticityUpdatedSolver_fromDense(*args):
+  """ElasticityUpdatedSolver_fromDense(uBlasVector u, Vector x, uint offset, uint size)"""
+  return _dolfin.ElasticityUpdatedSolver_fromDense(*args)
+
+def ElasticityUpdatedSolver_toDense(*args):
+  """ElasticityUpdatedSolver_toDense(uBlasVector y, Vector x, uint offset, uint size)"""
+  return _dolfin.ElasticityUpdatedSolver_toDense(*args)
+
+def ElasticityUpdatedSolver_solve(*args):
+  """
+    solve()
+    ElasticityUpdatedSolver_solve(Mesh mesh, Function f, Function v0, Function rho, real E, 
+        real nu, real nuv, real nuplast, BoundaryCondition bc, 
+        real k, real T)
+    """
+  return _dolfin.ElasticityUpdatedSolver_solve(*args)
+
+def ElasticityUpdatedSolver_finterpolate(*args):
+  """ElasticityUpdatedSolver_finterpolate(Function f1, Function f2, Mesh mesh)"""
+  return _dolfin.ElasticityUpdatedSolver_finterpolate(*args)
+
+def ElasticityUpdatedSolver_plasticity(*args):
+  """
+    ElasticityUpdatedSolver_plasticity(Vector xsigma, Vector xsigmanorm, real yield, FiniteElement element2, 
+        Mesh mesh)
+    """
+  return _dolfin.ElasticityUpdatedSolver_plasticity(*args)
+
+def ElasticityUpdatedSolver_initmsigma(*args):
+  """ElasticityUpdatedSolver_initmsigma(Vector msigma, FiniteElement element2, Mesh mesh)"""
+  return _dolfin.ElasticityUpdatedSolver_initmsigma(*args)
+
+def ElasticityUpdatedSolver_initu0(*args):
+  """ElasticityUpdatedSolver_initu0(Vector x0, FiniteElement element, Mesh mesh)"""
+  return _dolfin.ElasticityUpdatedSolver_initu0(*args)
+
+def ElasticityUpdatedSolver_initJ0(*args):
+  """ElasticityUpdatedSolver_initJ0(Vector xJ0, FiniteElement element, Mesh mesh)"""
+  return _dolfin.ElasticityUpdatedSolver_initJ0(*args)
+
+def ElasticityUpdatedSolver_computeJ(*args):
+  """
+    ElasticityUpdatedSolver_computeJ(Vector xJ0, Vector xJ, Vector xJinv, FiniteElement element, 
+        Mesh mesh)
+    """
+  return _dolfin.ElasticityUpdatedSolver_computeJ(*args)
+
+def ElasticityUpdatedSolver_initF0Green(*args):
+  """ElasticityUpdatedSolver_initF0Green(Vector xF0, FiniteElement element1, Mesh mesh)"""
+  return _dolfin.ElasticityUpdatedSolver_initF0Green(*args)
+
+def ElasticityUpdatedSolver_computeFGreen(*args):
+  """
+    ElasticityUpdatedSolver_computeFGreen(Vector xF, Vector xF0, Vector xF1, FiniteElement element1, 
+        Mesh mesh)
+    """
+  return _dolfin.ElasticityUpdatedSolver_computeFGreen(*args)
+
+def ElasticityUpdatedSolver_initF0Euler(*args):
+  """ElasticityUpdatedSolver_initF0Euler(Vector xF0, FiniteElement element1, Mesh mesh)"""
+  return _dolfin.ElasticityUpdatedSolver_initF0Euler(*args)
+
+def ElasticityUpdatedSolver_computeFEuler(*args):
+  """
+    ElasticityUpdatedSolver_computeFEuler(Vector xF, Vector xF0, Vector xF1, FiniteElement element1, 
+        Mesh mesh)
+    """
+  return _dolfin.ElasticityUpdatedSolver_computeFEuler(*args)
+
+def ElasticityUpdatedSolver_computeFBEuler(*args):
+  """
+    ElasticityUpdatedSolver_computeFBEuler(Vector xF, Vector xB, Vector xF0, Vector xF1, FiniteElement element1, 
+        Mesh mesh)
+    """
+  return _dolfin.ElasticityUpdatedSolver_computeFBEuler(*args)
+
+def ElasticityUpdatedSolver_computeBEuler(*args):
+  """ElasticityUpdatedSolver_computeBEuler(Vector xF, Vector xB, FiniteElement element1, Mesh mesh)"""
+  return _dolfin.ElasticityUpdatedSolver_computeBEuler(*args)
+
+def ElasticityUpdatedSolver_multF(*args):
+  """ElasticityUpdatedSolver_multF(real F0, real F1, real F)"""
+  return _dolfin.ElasticityUpdatedSolver_multF(*args)
+
+def ElasticityUpdatedSolver_multB(*args):
+  """ElasticityUpdatedSolver_multB(real F, real B)"""
+  return _dolfin.ElasticityUpdatedSolver_multB(*args)
+
+def ElasticityUpdatedSolver_deform(*args):
+  """ElasticityUpdatedSolver_deform(Mesh mesh, Function u)"""
+  return _dolfin.ElasticityUpdatedSolver_deform(*args)
+
+class ElasticityUpdatedODE(ODE):
+    """Proxy of C++ ElasticityUpdatedODE class"""
+    __swig_setmethods__ = {}
+    for _s in [ODE]: __swig_setmethods__.update(_s.__swig_setmethods__)
+    __setattr__ = lambda self, name, value: _swig_setattr(self, ElasticityUpdatedODE, name, value)
+    __swig_getmethods__ = {}
+    for _s in [ODE]: __swig_getmethods__.update(_s.__swig_getmethods__)
+    __getattr__ = lambda self, name: _swig_getattr(self, ElasticityUpdatedODE, name)
+    __repr__ = _swig_repr
+    def __init__(self, *args): 
+        """__init__(self, ElasticityUpdatedSolver solver) -> ElasticityUpdatedODE"""
+        this = _dolfin.new_ElasticityUpdatedODE(*args)
+        try: self.this.append(this)
+        except: self.this = this
+    def u0(*args):
+        """u0(self, uBlasVector u)"""
+        return _dolfin.ElasticityUpdatedODE_u0(*args)
+
+    def f(*args):
+        """
+        f(self, uBlasVector u, real t, uBlasVector y)
+        f(self, uBlasVector u, real t, uint i) -> real
+        f(self, uBlasVector u, real t, uBlasVector y)
+        """
+        return _dolfin.ElasticityUpdatedODE_f(*args)
+
+    def update(*args):
+        """update(self, uBlasVector u, real t, bool end) -> bool"""
+        return _dolfin.ElasticityUpdatedODE_update(*args)
+
+    __swig_setmethods__["solver"] = _dolfin.ElasticityUpdatedODE_solver_set
+    __swig_getmethods__["solver"] = _dolfin.ElasticityUpdatedODE_solver_get
+    if _newclass:solver = property(_dolfin.ElasticityUpdatedODE_solver_get, _dolfin.ElasticityUpdatedODE_solver_set)
+ElasticityUpdatedODE_swigregister = _dolfin.ElasticityUpdatedODE_swigregister
+ElasticityUpdatedODE_swigregister(ElasticityUpdatedODE)
+
+class UtilBC1(BoundaryCondition):
+    """Proxy of C++ UtilBC1 class"""
+    __swig_setmethods__ = {}
+    for _s in [BoundaryCondition]: __swig_setmethods__.update(_s.__swig_setmethods__)
+    __setattr__ = lambda self, name, value: _swig_setattr(self, UtilBC1, name, value)
+    __swig_getmethods__ = {}
+    for _s in [BoundaryCondition]: __swig_getmethods__.update(_s.__swig_getmethods__)
+    __getattr__ = lambda self, name: _swig_getattr(self, UtilBC1, name)
+    __repr__ = _swig_repr
+    def __init__(self, *args): 
+        """__init__(self) -> UtilBC1"""
+        this = _dolfin.new_UtilBC1(*args)
+        try: self.this.append(this)
+        except: self.this = this
+    def eval(*args):
+        """eval(self, BoundaryValue value, Point p, unsigned int i)"""
+        return _dolfin.UtilBC1_eval(*args)
+
+UtilBC1_swigregister = _dolfin.UtilBC1_swigregister
+UtilBC1_swigregister(UtilBC1)
+
+class UtilBC2(BoundaryCondition):
+    """Proxy of C++ UtilBC2 class"""
+    __swig_setmethods__ = {}
+    for _s in [BoundaryCondition]: __swig_setmethods__.update(_s.__swig_setmethods__)
+    __setattr__ = lambda self, name, value: _swig_setattr(self, UtilBC2, name, value)
+    __swig_getmethods__ = {}
+    for _s in [BoundaryCondition]: __swig_getmethods__.update(_s.__swig_getmethods__)
+    __getattr__ = lambda self, name: _swig_getattr(self, UtilBC2, name)
+    __repr__ = _swig_repr
+    def __init__(self, *args): 
+        """__init__(self) -> UtilBC2"""
+        this = _dolfin.new_UtilBC2(*args)
+        try: self.this.append(this)
+        except: self.this = this
+    def eval(*args):
+        """eval(self, BoundaryValue value, Point p, unsigned int i)"""
+        return _dolfin.UtilBC2_eval(*args)
+
+UtilBC2_swigregister = _dolfin.UtilBC2_swigregister
+UtilBC2_swigregister(UtilBC2)
+
+class Resistance(Function):
+    """Proxy of C++ Resistance class"""
+    __swig_setmethods__ = {}
+    for _s in [Function]: __swig_setmethods__.update(_s.__swig_setmethods__)
+    __setattr__ = lambda self, name, value: _swig_setattr(self, Resistance, name, value)
+    __swig_getmethods__ = {}
+    for _s in [Function]: __swig_getmethods__.update(_s.__swig_getmethods__)
+    __getattr__ = lambda self, name: _swig_getattr(self, Resistance, name)
+    __repr__ = _swig_repr
+    def __init__(self, *args): 
+        """__init__(self) -> Resistance"""
+        this = _dolfin.new_Resistance(*args)
+        try: self.this.append(this)
+        except: self.this = this
+    def eval(*args):
+        """eval(self, Point p, unsigned int i) -> real"""
+        return _dolfin.Resistance_eval(*args)
+
+Resistance_swigregister = _dolfin.Resistance_swigregister
+Resistance_swigregister(Resistance)
+
+
 

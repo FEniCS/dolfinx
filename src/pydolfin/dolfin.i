@@ -193,5 +193,5 @@ using namespace dolfin;
 
 // modules 
 
-// %include "dolfin/ElasticityUpdatedSolver.h" 
+%include "dolfin/ElasticityUpdatedSolver.h" 
 

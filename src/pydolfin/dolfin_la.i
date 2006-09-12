@@ -60,6 +60,10 @@ namespace dolfin {
   Matrix = PETScMatrix
   KrylovSolver = PETScKrylovSolver
   LUSolver = PETScLUSolver
+
+  Vector_createScatterer = PETScVector_createScatterer
+  Vector_gather = PETScVector_gather
+  Vector_scatter = PETScVector_scatter
 %}
 #else
 %pythoncode
