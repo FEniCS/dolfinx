@@ -91,7 +91,7 @@ namespace dolfin
 
     static void finterpolate(Function& f1, Function& f2, Mesh& mesh);
 
-    static void plasticity(Vector& xsigma, Vector& xsigmanorm, real yield,
+    static void plasticity(Vector& xsigma, Vector& xsigmanorm, real yld,
 			   FiniteElement& element2, Mesh& mesh);
 
     static void initmsigma(Vector& msigma,
@@ -153,7 +153,7 @@ namespace dolfin
     real rtol;
     int maxiters;
     bool do_plasticity;
-    real yield;
+    real yld;
 
     real savesamplefreq;
 

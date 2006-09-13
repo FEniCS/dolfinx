@@ -6199,7 +6199,7 @@ class ElasticityUpdatedSolver(_object):
     __swig_getmethods__["finterpolate"] = lambda x: finterpolate
     def plasticity(*args):
         """
-        plasticity(Vector xsigma, Vector xsigmanorm, real yield, FiniteElement element2, 
+        plasticity(Vector xsigma, Vector xsigmanorm, real yld, FiniteElement element2, 
             Mesh mesh)
         """
         return _dolfin.ElasticityUpdatedSolver_plasticity(*args)
@@ -6353,9 +6353,9 @@ class ElasticityUpdatedSolver(_object):
     __swig_setmethods__["do_plasticity"] = _dolfin.ElasticityUpdatedSolver_do_plasticity_set
     __swig_getmethods__["do_plasticity"] = _dolfin.ElasticityUpdatedSolver_do_plasticity_get
     if _newclass:do_plasticity = property(_dolfin.ElasticityUpdatedSolver_do_plasticity_get, _dolfin.ElasticityUpdatedSolver_do_plasticity_set)
-    __swig_setmethods__["_yield"] = _dolfin.ElasticityUpdatedSolver__yield_set
-    __swig_getmethods__["_yield"] = _dolfin.ElasticityUpdatedSolver__yield_get
-    if _newclass:_yield = property(_dolfin.ElasticityUpdatedSolver__yield_get, _dolfin.ElasticityUpdatedSolver__yield_set)
+    __swig_setmethods__["yld"] = _dolfin.ElasticityUpdatedSolver_yld_set
+    __swig_getmethods__["yld"] = _dolfin.ElasticityUpdatedSolver_yld_get
+    if _newclass:yld = property(_dolfin.ElasticityUpdatedSolver_yld_get, _dolfin.ElasticityUpdatedSolver_yld_set)
     __swig_setmethods__["savesamplefreq"] = _dolfin.ElasticityUpdatedSolver_savesamplefreq_set
     __swig_getmethods__["savesamplefreq"] = _dolfin.ElasticityUpdatedSolver_savesamplefreq_get
     if _newclass:savesamplefreq = property(_dolfin.ElasticityUpdatedSolver_savesamplefreq_get, _dolfin.ElasticityUpdatedSolver_savesamplefreq_set)
@@ -6564,7 +6564,7 @@ def ElasticityUpdatedSolver_finterpolate(*args):
 
 def ElasticityUpdatedSolver_plasticity(*args):
   """
-    ElasticityUpdatedSolver_plasticity(Vector xsigma, Vector xsigmanorm, real yield, FiniteElement element2, 
+    ElasticityUpdatedSolver_plasticity(Vector xsigma, Vector xsigmanorm, real yld, FiniteElement element2, 
         Mesh mesh)
     """
   return _dolfin.ElasticityUpdatedSolver_plasticity(*args)
