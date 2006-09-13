@@ -33,7 +33,7 @@ ElasticityUpdatedSolver::ElasticityUpdatedSolver(Mesh& mesh,
   : mesh(mesh), f(f), v0(v0), rho(rho), E(E), nu(nu), nuv(nuv),
     nuplast(nuplast), bc(bc), k(k),
     T(T), counter(0), lastsample(0),
-    lambda(E * nu / ((1 + nu) * (1 - 2 * nu))),
+    lmbda(E * nu / ((1 + nu) * (1 - 2 * nu))),
     mu(E / (2 * (1 + nu))),
     t(0.0), rtol(get("ODE discrete tolerance")),
     maxiters(get("ODE maximum iterations")), do_plasticity(false),
@@ -52,7 +52,7 @@ ElasticityUpdatedSolver::ElasticityUpdatedSolver(Mesh& mesh,
     epsilon1(xepsilon1, mesh, *element2),
     sigmanorm(xsigmanorm, mesh, *element3)
 //     Lv(f, sigma1, epsilon1, nuv),
-//     Lsigma(v1, sigma1, sigmanorm, lambda, mu, nuplast)
+//     Lsigma(v1, sigma1, sigmanorm, lmbda, mu, nuplast)
 {
   element1 = new ElasticityUpdated::LinearForm::TestElement;
   element2 = new ElasticityUpdatedSigma::LinearForm::TestElement;
@@ -60,10 +60,10 @@ ElasticityUpdatedSolver::ElasticityUpdatedSolver(Mesh& mesh,
 
   Lv = new ElasticityUpdated::LinearForm(f, sigma1, epsilon1, nuv);
   Lsigma = new ElasticityUpdatedSigma::LinearForm(v1, sigma1, sigmanorm,
-						  lambda, mu, nuplast);
+						  lmbda, mu, nuplast);
 
   cout << "nuv: " << nuv << endl;
-  cout << "lambda: " << lambda << endl;
+  cout << "lmbda: " << lmbda << endl;
   cout << "mu: " << mu << endl;
 
   init();
@@ -332,7 +332,7 @@ void ElasticityUpdatedSolver::oldstep()
 //-----------------------------------------------------------------------------
 void ElasticityUpdatedSolver::solve()
 {
-  cout << "lambda: " << lambda << endl;
+  cout << "lmbda: " << lmbda << endl;
   cout << "mu: " << mu << endl;
   
   File         file("elasticity.pvd");
@@ -472,7 +472,7 @@ void ElasticityUpdatedSolver::fu()
   // xepsilon1 (needed for dotu_x2)
 
   xepsilon1 = dotu_xsigma;
-  xepsilon1 *= 1.0 / lambda;
+  xepsilon1 *= 1.0 / lmbda;
 
   // dotu_x1
   dotu_x1 = x2_1;

@@ -147,7 +147,7 @@ namespace dolfin
     real T;
     int counter;
     real lastsample;
-    real lambda;
+    real lmbda;
     real mu;
     real t;
     real rtol;

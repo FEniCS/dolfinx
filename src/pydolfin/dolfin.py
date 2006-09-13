@@ -6335,9 +6335,9 @@ class ElasticityUpdatedSolver(_object):
     __swig_setmethods__["lastsample"] = _dolfin.ElasticityUpdatedSolver_lastsample_set
     __swig_getmethods__["lastsample"] = _dolfin.ElasticityUpdatedSolver_lastsample_get
     if _newclass:lastsample = property(_dolfin.ElasticityUpdatedSolver_lastsample_get, _dolfin.ElasticityUpdatedSolver_lastsample_set)
-    __swig_setmethods__["_lambda"] = _dolfin.ElasticityUpdatedSolver__lambda_set
-    __swig_getmethods__["_lambda"] = _dolfin.ElasticityUpdatedSolver__lambda_get
-    if _newclass:_lambda = property(_dolfin.ElasticityUpdatedSolver__lambda_get, _dolfin.ElasticityUpdatedSolver__lambda_set)
+    __swig_setmethods__["lmbda"] = _dolfin.ElasticityUpdatedSolver_lmbda_set
+    __swig_getmethods__["lmbda"] = _dolfin.ElasticityUpdatedSolver_lmbda_get
+    if _newclass:lmbda = property(_dolfin.ElasticityUpdatedSolver_lmbda_get, _dolfin.ElasticityUpdatedSolver_lmbda_set)
     __swig_setmethods__["mu"] = _dolfin.ElasticityUpdatedSolver_mu_set
     __swig_getmethods__["mu"] = _dolfin.ElasticityUpdatedSolver_mu_get
     if _newclass:mu = property(_dolfin.ElasticityUpdatedSolver_mu_get, _dolfin.ElasticityUpdatedSolver_mu_set)
