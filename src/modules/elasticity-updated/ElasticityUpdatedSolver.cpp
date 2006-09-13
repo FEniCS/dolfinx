@@ -37,7 +37,7 @@ ElasticityUpdatedSolver::ElasticityUpdatedSolver(Mesh& mesh,
     mu(E / (2 * (1 + nu))),
     t(0.0), rtol(get("ODE discrete tolerance")),
     maxiters(get("ODE maximum iterations")), do_plasticity(false),
-    yield(0.0),
+    yld(0.0),
     savesamplefreq(33.0),
     fevals(0),
     ode(0),
@@ -457,7 +457,7 @@ void ElasticityUpdatedSolver::fu()
 	  norm = std::max(norm, fabs(dotu_xsigma(nodes[i])));
 	}
 	
-	if(norm > yield)
+	if(norm > yld)
 	{
 	  cout << "sigmanorm(" << cell.id() << "): " << norm << endl;
 	  proj = 1.0 / norm;
@@ -852,7 +852,7 @@ void ElasticityUpdatedSolver::deform(Mesh& mesh, Function& u)
 }
 //-----------------------------------------------------------------------------
 void ElasticityUpdatedSolver::plasticity(Vector& xsigma, Vector& xsigmanorm,
-				       real yield, FiniteElement& element2,
+				       real yld, FiniteElement& element2,
 				       Mesh& mesh)
 {
   int *nodes = new int[element2.spacedim()];
@@ -869,7 +869,7 @@ void ElasticityUpdatedSolver::plasticity(Vector& xsigma, Vector& xsigmanorm,
       norm = std::max(norm, fabs(xsigma(nodes[i])));
     }
     
-    if(norm > yield)
+    if(norm > yld)
     {
 //       cout << "sigmanorm(" << cell.id() << "): " << norm << endl;
       proj = 1.0 / norm;
