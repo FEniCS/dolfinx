@@ -680,6 +680,16 @@ void testSimpleLinearAlgebra()
 
 }
 
+void testVectorSummation()
+{
+  Vector x;
+  x.init(100);
+  x = 1.0;
+  x.disp();
+  real s = x.sum();
+  cout << "sum = " << s << endl;
+}
+
 int main(int argc, char* argv[])
 {
 /*
@@ -711,7 +721,9 @@ int main(int argc, char* argv[])
   //benchNewMesh();
   //testVectorAccess();
 
-  testSimpleLinearAlgebra();
+  //testSimpleLinearAlgebra();
+
+  testVectorSummation();
 
   return 0;
 }

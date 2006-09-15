@@ -4,7 +4,7 @@
 // Modified by Anders Logg 2006.
 //
 // First added:  2006-04-04
-// Last changed: 2006-08-07
+// Last changed: 2006-09-14
 
 #include <dolfin/dolfin_log.h>
 #include <boost/numeric/ublas/vector.hpp>
@@ -86,7 +86,11 @@ real uBlasVector::norm(NormType type) const
 //-----------------------------------------------------------------------------
 real uBlasVector::sum() const
 {
-  return sum();
+  // FIXME: Find suitable uBlas call to compute sum
+  real s = 0.0;
+  for (uint i = 0; i < size(); i++)
+    s += (*this)(i);
+  return s;
 }
 //-----------------------------------------------------------------------------
 void uBlasVector::apply()
