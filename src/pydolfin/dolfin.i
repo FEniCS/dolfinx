@@ -139,10 +139,22 @@ using namespace dolfin;
 
 // settings includes 
 
-%rename(set) glueset;
+//%rename(set_real) glueset_real;
+//%rename(set_int) glueset_int;
+//%rename(set_bool) glueset_bool;
+//%rename(set_string) glueset_string;
 %rename(get) glueget;
 
 %include "dolfin/Parameter.h"
+
+%pythoncode
+%{
+def set(name, val):
+  if(isinstance(val, bool)):
+    glueset_bool(name, val)
+  else:
+    glueset(name, val)
+%}
 
 // io includes 
 

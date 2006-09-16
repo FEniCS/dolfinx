@@ -39,13 +39,13 @@ f.sync(t)
 set("ODE method", "dg");
 set("ODE order", 0);
 set("ODE nonlinear solver", "newton");
-set("ODE tolerance", 1e-1);
+set("ODE tolerance", 1e0);
 
-#set("ODE fixed time step", True);
-set("ODE initial time step", 1e-3);
+set("ODE fixed time step", True);
+set("ODE initial time step", 1e-2);
 set("ODE maximum time step", 1e+0);
 
-#set("ODE save solution", 1);
+set("ODE save solution", False);
 set("ODE solution file name", "primal.py");
 set("ODE number of samples", 400);
 
