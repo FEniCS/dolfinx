@@ -157,24 +157,25 @@ LogStream& dolfin::operator<< (LogStream& stream, const uBlasVector& x)
 }
 //-----------------------------------------------------------------------------
 #ifdef HAVE_PETSC_H
-void uBlasVector::copy(const PETScVector& y)
+void uBlasVector::copy(const PETScVector& y, int off1, int off2, int len)
 {
   // FIXME: Verify if there's a more efficient implementation
 
-  uint s = size();
   uBlasVector& x = *this;
   const real* vals = 0;
   vals = y.array();
-  for(uint i = 0; i < s; i++)
+  for(uint i = 0; i < len; i++)
   {
-    x[i] = vals[i];
+    x[i + off1] = vals[i + off2];
   }
   y.restore(vals);
 }
 #endif
 //-----------------------------------------------------------------------------
-void uBlasVector::copy(const uBlasVector& y)
+void uBlasVector::copy(const uBlasVector& y, int off1, int off2, int len)
 {
-  *(this) = y;
+  uBlasVector& x = *this;
+
+  subrange(x, off1, off1 + len) = subrange(y, off2, off2 + len);
 }
 //-----------------------------------------------------------------------------

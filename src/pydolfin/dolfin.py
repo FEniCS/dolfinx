@@ -347,7 +347,6 @@ def dolfin_end(*args):
 
 def set(name, val):
   if(isinstance(val, bool)):
-    print "set_bool"
     glueset_bool(name, val)
   else:
     glueset(name, val)
@@ -626,7 +625,7 @@ class uBlasVector(GenericVector,Variable):
     def copy(*args):
         """
         copy(self, real a) -> uBlasVector
-        copy(self, uBlasVector y)
+        copy(self, uBlasVector y, int off1, int off2, int len)
         """
         return _dolfin.uBlasVector_copy(*args)
 

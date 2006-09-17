@@ -10,8 +10,6 @@ void glueset(std::string name, dolfin::real val)
 
 void glueset(std::string name, int val)
 {
-  std::cout << "glueset:int " << name << std::endl;
-
   dolfin::set(name, val);
 }
 
@@ -22,8 +20,6 @@ void glueset(std::string name, std::string val)
 
 void glueset_bool(std::string name, bool val)
 {
-  std::cout << "glueset:bool " << name << std::endl;
-
   dolfin::set(name, val);
 }
 
