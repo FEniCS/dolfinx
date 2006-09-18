@@ -121,9 +121,9 @@ namespace dolfin
 
     // Copy values between different vector representations
 #ifdef HAVE_PETSC_H
-    void copy(const PETScVector& y);
+    void copy(const PETScVector& y, int off1, int off2, int len);
 #endif
-    void copy(const uBlasVector& y);
+    void copy(const uBlasVector& y, int off1, int off2, int len);
 
   };
 }

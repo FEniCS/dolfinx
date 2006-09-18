@@ -95,19 +95,19 @@ HeatODE::HeatODE(HeatSolver& solver) :
 //-----------------------------------------------------------------------------
 void HeatODE::u0(uBlasVector& u)
 {
-  u.copy(solver.x);
+  u.copy(solver.x, 0, 0, u.size());
 }
 //-----------------------------------------------------------------------------
 void HeatODE::f(const uBlasVector& u, real t, uBlasVector& y)
 {
   // Copy values from ODE array
-  solver.x.copy(u);
+  solver.x.copy(u, 0, 0, u.size());
 
   // Compute solver RHS (puts result in Vector variables)
   solver.fu();
 
   // Copy values into ODE array
-  y.copy(solver.dotu);
+  y.copy(solver.dotu, 0, 0, y.size());
 }
 //-----------------------------------------------------------------------------
 bool HeatODE::update(const uBlasVector& u, real t, bool end)

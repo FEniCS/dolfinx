@@ -165,6 +165,12 @@ void Function::interpolate(real coefficients[], AffineMap& map,
   _cell = 0;
 }
 //-----------------------------------------------------------------------------
+void Function::interpolate(Function& ftarget)
+{
+  // Delegate function call
+  f->interpolate(ftarget);
+}
+//-----------------------------------------------------------------------------
 void Function::init(Mesh& mesh, FiniteElement& element)
 {
   if ( _type != discrete )

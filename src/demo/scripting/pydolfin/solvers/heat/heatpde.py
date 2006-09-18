@@ -36,19 +36,19 @@ class HeatPDE(TimeDependentPDE):
     def save(self, U, t):
 
         if(t == 0.0):
-            self.U.vector().copy(self.x)
+            self.U.vector().copy(self.x, 0, 0, self.x.size())
             self.solutionfile << U
 
         while(self.lastsample + self.sampleperiod < t):
             self.lastsample = min(t, self.lastsample + self.sampleperiod)
-            self.U.vector().copy(self.x)
+            self.U.vector().copy(self.x, 0, 0, self.x.size())
             self.solutionfile << U
 
     def fu(self, x, dotx, t):
 
         self.t.assign(t)
 
-        self.U.vector().copy(self.x)
+        self.U.vector().copy(self.x, 0, 0, self.x.size())
 
         #print "x: "
         #x.disp()

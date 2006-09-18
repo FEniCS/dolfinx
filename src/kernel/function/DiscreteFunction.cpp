@@ -203,6 +203,37 @@ void DiscreteFunction::interpolate(real coefficients[], AffineMap& map,
   _x->get(coefficients, local.dofs, _element->spacedim());
 }
 //-----------------------------------------------------------------------------
+void DiscreteFunction::interpolate(Function& fsource)
+{
+  FiniteElement& e = element();
+  Vector& x = vector();
+  Mesh& m = mesh();
+
+  AffineMap map;
+
+  int *nodes = new int[e.spacedim()];
+  real *coefficients = new real[e.spacedim()];
+
+  for(CellIterator c(&m); !c.end(); ++c)
+  {
+    Cell& cell = *c;
+
+    // Use DOLFIN's interpolation
+
+    map.update(cell);
+    fsource.interpolate(coefficients, map, e);
+    e.nodemap(nodes, cell, m);
+
+    for(unsigned int i = 0; i < e.spacedim(); i++)
+    {
+      x(nodes[i]) = coefficients[i];
+    }
+  }
+
+  delete [] nodes;
+  delete [] coefficients;
+}
+//-----------------------------------------------------------------------------
 dolfin::uint DiscreteFunction::vectordim() const
 {
   return _vectordim;

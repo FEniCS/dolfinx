@@ -13,15 +13,16 @@ void glueset(std::string name, int val)
   dolfin::set(name, val);
 }
 
-void glueset(std::string name, bool val)
-{
-  dolfin::set(name, val);
-}
-
 void glueset(std::string name, std::string val)
 {
   dolfin::set(name, val.c_str());
 }
+
+void glueset_bool(std::string name, bool val)
+{
+  dolfin::set(name, val);
+}
+
 
 dolfin::Parameter glueget(std::string name)
 {
