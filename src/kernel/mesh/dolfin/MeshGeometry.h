@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-05-08
-// Last changed: 2006-06-16
+// Last changed: 2006-09-18
 
 #ifndef __MESH_GEOMETRY_H
 #define __MESH_GEOMETRY_H
@@ -43,6 +43,12 @@ namespace dolfin
     /// Return value of coordinate n in direction i
     inline real x(uint n, uint i) const { return coordinates[i*_size + n]; }
 
+    /// Return coordinates as one contiguous array
+    inline real* x() { return coordinates; }
+
+    /// Return coordinates as one contiguous array
+    inline const real* x() const { return coordinates; }
+    
     /// Clear all data
     void clear();
 

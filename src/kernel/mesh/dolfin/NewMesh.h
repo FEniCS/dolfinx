@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-05-08
-// Last changed: 2006-06-22
+// Last changed: 2006-09-18
 
 #ifndef __NEW_MESH_H
 #define __NEW_MESH_H
@@ -57,27 +57,30 @@ namespace dolfin
     /// Assignment
     const NewMesh& operator=(const NewMesh& mesh);
 
-    /// Return topological dimension
-    inline uint dim() const { return data.topology.dim(); }
-    
-    /// Return number of entities of given topological dimension
-    inline uint size(uint dim) const { return data.topology.size(dim); }
-
     /// Return number of vertices
     inline uint numVertices() const { return data.topology.size(0); }
-
-    /// Return number of edges
-    inline uint numEdges() const { return data.topology.size(1); }
-
-    /// Return number of faces
-    inline uint numFaces() const { return data.topology.size(2); }
-
-    /// Return number of facets
-    inline uint numFacets() const { return data.topology.size(data.topology.dim() - 1); }
 
     /// Return number of cells
     inline uint numCells() const { return data.topology.size(data.topology.dim()); }
 
+    /// Return coordinates of all vertices
+    inline real* vertices() { return data.geometry.x(); }
+
+    /// Return coordinates of all vertices
+    inline const real* vertices() const { return data.geometry.x(); }
+
+    /// Return connectivity for all cells
+    inline uint* cells() { return data.topology(data.topology.dim(), 0)(); }
+
+    /// Return connectivity for all cells
+    inline const uint* cells() const { return data.topology(data.topology.dim(), 0)(); }
+
+    /// Return topological dimension
+    inline uint dim() const { return data.topology.dim(); }
+
+    /// Return number of entities of given topological dimension
+    inline uint size(uint dim) const { return data.topology.size(dim); }
+    
     /// Return mesh topology
     inline MeshTopology& topology() { return data.topology; }
 
@@ -108,7 +111,7 @@ namespace dolfin
     /// Refine mesh, either uniformly or according to cells marked for refinement
     void refine();
 
-    /// Display mesh
+    /// Display mesh data
     void disp() const;
     
     /// Output

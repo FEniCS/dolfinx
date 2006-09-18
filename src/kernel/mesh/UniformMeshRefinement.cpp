@@ -46,9 +46,9 @@ void UniformMeshRefinement::refineSimplex(NewMesh& mesh)
 	      mesh.topology().dim(), mesh.geometry().dim());
   
   // Get size of mesh
-  const uint num_vertices = mesh.numVertices();
-  const uint num_edges = mesh.numEdges();
-  const uint num_cells = mesh.numCells();
+  const uint num_vertices = mesh.size(0);
+  const uint num_edges = mesh.size(1);
+  const uint num_cells = mesh.size(mesh.dim());
 
   // Specify number of vertices and cells
   editor.initVertices(num_vertices + num_edges);
