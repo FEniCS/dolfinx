@@ -19,6 +19,7 @@ namespace dolfin
   class Mesh;
   class AffineMap;
   class FiniteElement;
+  class Function;
 
   /// This class serves as a base class/interface for implementations
   /// of specific function representations.
@@ -44,6 +45,10 @@ namespace dolfin
 
     /// Compute interpolation of function onto local finite element space
     virtual void interpolate(real coefficients[], AffineMap& map, FiniteElement& element) = 0;
+
+    /// Compute interpolation of function to finite element space of
+    /// ftarget.
+    virtual void interpolate(Function& ftarget);
 
     /// Return vector dimension of function
     virtual uint vectordim() const = 0;

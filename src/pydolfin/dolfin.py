@@ -1153,7 +1153,10 @@ class Function(Variable,TimeDependent):
         return _dolfin.Function___getitem__(*args)
 
     def interpolate(*args):
-        """interpolate(self, real coefficients, AffineMap map, FiniteElement element)"""
+        """
+        interpolate(self, real coefficients, AffineMap map, FiniteElement element)
+        interpolate(self, Function ftarget)
+        """
         return _dolfin.Function_interpolate(*args)
 
     def vectordim(*args):

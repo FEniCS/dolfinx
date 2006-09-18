@@ -46,8 +46,8 @@ void TimeSlabJacobian::update()
   {
     ej(j) = 1.0;
 
-    cout << ej << endl;
-    cout << Aj << endl;
+    //cout << ej << endl;
+    //cout << Aj << endl;
     
     // Compute product Aj = Aej
     mult(ej, Aj);
