@@ -474,7 +474,7 @@ void PETScVector::toArray(real y[], PETScVector& x,
   x.restore(vals);
 }
 //-----------------------------------------------------------------------------
-void PETScVector::copy(const PETScVector& y, int off1, int off2, int len)
+void PETScVector::copy(const PETScVector& y, uint off1, uint off2, uint len)
 {
   // FIXME: Use gather/scatter for parallel case
 
@@ -490,7 +490,7 @@ void PETScVector::copy(const PETScVector& y, int off1, int off2, int len)
   restore(yvals);
 }
 //-----------------------------------------------------------------------------
-void PETScVector::copy(const uBlasVector& y, int off1, int off2, int len)
+void PETScVector::copy(const uBlasVector& y, uint off1, uint off2, uint len)
 {
   // FIXME: Verify if there's a more efficient implementation
 
