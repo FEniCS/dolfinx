@@ -179,8 +179,8 @@ namespace dolfin
     static void toArray(real y[], PETScVector&x, uint offset, uint size);
 
     // Copy values between different vector representations
-    void copy(const PETScVector& y, int off1, int off2, int len);
-    void copy(const uBlasVector& y, int off1, int off2, int len);
+    void copy(const PETScVector& y, uint off1, uint off2, uint len);
+    void copy(const uBlasVector& y, uint off1, uint off2, uint len);
 
   private:
 

@@ -157,7 +157,7 @@ LogStream& dolfin::operator<< (LogStream& stream, const uBlasVector& x)
 }
 //-----------------------------------------------------------------------------
 #ifdef HAVE_PETSC_H
-void uBlasVector::copy(const PETScVector& y, int off1, int off2, int len)
+void uBlasVector::copy(const PETScVector& y, uint off1, uint off2, uint len)
 {
   // FIXME: Verify if there's a more efficient implementation
 
@@ -172,7 +172,7 @@ void uBlasVector::copy(const PETScVector& y, int off1, int off2, int len)
 }
 #endif
 //-----------------------------------------------------------------------------
-void uBlasVector::copy(const uBlasVector& y, int off1, int off2, int len)
+void uBlasVector::copy(const uBlasVector& y, uint off1, uint off2, uint len)
 {
   uBlasVector& x = *this;
 
