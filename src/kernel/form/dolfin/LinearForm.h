@@ -1,8 +1,8 @@
-// Copyright (C) 2004-2006 Anders Logg.
+// Copyright (C) 2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2004-05-28
-// Last changed: 2006-05-15
+// Last changed: 2006-09-18
 
 #ifndef __LINEAR_FORM_H
 #define __LINEAR_FORM_H
@@ -12,9 +12,13 @@
 namespace dolfin
 {
 
-  /// LinearForm represents a linear form L(v) with argument v (the
-  /// test function) a basis function of the finite element space
-  /// defined by a finite element.
+  /// LinearForm represents a multilinear form of the type
+  ///
+  ///     L = L(v1, w1, w2, ..., wn)
+  ///
+  /// where the first argument v1 is a basis functions (the
+  /// test function) and where w1, w2, ..., wn are any given
+  /// functions.
 
   class LinearForm : public Form
   {
@@ -32,16 +36,25 @@ namespace dolfin
     /// Compute element vector (boundary contribution)
     virtual void eval(real block[], const AffineMap& map, uint segment) const = 0;
 
+    /// Update map to current cell
+    void update(AffineMap& map);
+
     /// Return finite element defining the test space
     FiniteElement& test();
 
     /// Return finite element defining the test space
     const FiniteElement& test() const;
 
+    /// Friends
+    friend class FEM;
+
   protected:
 
     // Finite element defining the test space
     FiniteElement* _test;
+
+    // Local-to-global mapping for test space
+    int* test_nodes;
 
   };
 

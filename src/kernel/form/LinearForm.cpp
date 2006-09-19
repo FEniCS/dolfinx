@@ -2,14 +2,15 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2004-05-28
-// Last changed: 2006-05-15
+// Last changed: 2006-09-19
 
 #include <dolfin/LinearForm.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-LinearForm::LinearForm(uint num_functions) : Form(num_functions), _test(0)
+LinearForm::LinearForm(uint num_functions)
+  : Form(num_functions), _test(0), test_nodes(0)
 {
   // Do nothing
 }
@@ -17,6 +18,24 @@ LinearForm::LinearForm(uint num_functions) : Form(num_functions), _test(0)
 LinearForm::~LinearForm()
 {
   if ( _test ) delete _test;
+  if ( test_nodes ) delete [] test_nodes;
+}
+//-----------------------------------------------------------------------------
+void LinearForm::update(AffineMap& map)
+{
+  // Update coefficients
+  updateCoefficients(map);
+
+  // Initialize block
+  const uint m = _test->spacedim();
+  if ( !block )
+    block = new real[m];
+  for (uint i = 0; i < m; i++)
+    block[i] = 0.0;
+
+  // Initialize nodes
+  if ( !test_nodes )
+    test_nodes = new int[_test->spacedim()];
 }
 //-----------------------------------------------------------------------------
 FiniteElement& LinearForm::test()

@@ -1,8 +1,8 @@
-// Copyright (C) 2004-2005 Anders Logg.
+// Copyright (C) 2004-2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2004-10-21
-// Last changed: 2005-11-29
+// Last changed: 2006-09-19
 
 #include <iostream>
 #include <dolfin/dolfin_log.h>
@@ -13,7 +13,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 Form::Form(uint num_functions)
-  : num_functions(num_functions), c(0)
+  : num_functions(num_functions), c(0), block(0)
 {
   // Initialize list of functions
   if ( num_functions > 0 )
@@ -46,12 +46,10 @@ Form::~Form()
       delete [] c[i];
     delete [] c;
   }
-}
-//-----------------------------------------------------------------------------
-void Form::update(AffineMap& map)
-{
-  // Update coefficients
-  updateCoefficients(map);
+
+  // Delete block
+  if ( block )
+    delete [] block;
 }
 //-----------------------------------------------------------------------------
 void Form::add(Function& f, FiniteElement* element)

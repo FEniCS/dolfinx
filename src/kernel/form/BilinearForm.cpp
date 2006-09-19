@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2004-05-28
-// Last changed: 2005-11-29
+// Last changed: 2006-09-19
 
 #include <dolfin/FiniteElement.h>
 #include <dolfin/BilinearForm.h>
@@ -11,7 +11,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 BilinearForm::BilinearForm(uint num_functions)
-  : Form(num_functions), _test(0), _trial(0)
+  : Form(num_functions), _test(0), _trial(0), test_nodes(0), trial_nodes(0)
 {
   // Do nothing
 }
@@ -20,6 +20,28 @@ BilinearForm::~BilinearForm()
 {
   if ( _test ) delete _test;
   if ( _trial ) delete _trial;
+  if ( test_nodes ) delete [] test_nodes;
+  if ( trial_nodes ) delete [] trial_nodes;
+}
+//-----------------------------------------------------------------------------
+void BilinearForm::update(AffineMap& map)
+{
+  // Update coefficients
+  updateCoefficients(map);
+
+  // Initialize block
+  const uint m = _test->spacedim();
+  const uint n = _trial->spacedim();
+  if ( !block )
+    block = new real[m*n];
+  for (uint i = 0; i < m*n; i++)
+    block[i] = 0.0;
+
+  // Initialize nodes
+  if ( !test_nodes )
+    test_nodes = new int[_test->spacedim()];
+  if ( !trial_nodes )
+    trial_nodes = new int[_trial->spacedim()];
 }
 //-----------------------------------------------------------------------------
 FiniteElement& BilinearForm::test()
