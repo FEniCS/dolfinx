@@ -236,7 +236,7 @@ namespace dolfin
         Cell& cell = facet.cell(0);
 
         // Get local facet ID
-        uint facetID = facet.localID(0);
+	uint facetID = facet.localID(0);
       
         // Update affine map for facet 
         map.update(cell, facetID);
