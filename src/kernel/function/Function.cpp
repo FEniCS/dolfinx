@@ -165,10 +165,10 @@ void Function::interpolate(real coefficients[], AffineMap& map,
   _cell = 0;
 }
 //-----------------------------------------------------------------------------
-void Function::interpolate(Function& ftarget)
+void Function::interpolate(Function& fsource)
 {
   // Delegate function call
-  f->interpolate(ftarget);
+  f->interpolate(fsource);
 }
 //-----------------------------------------------------------------------------
 void Function::init(Mesh& mesh, FiniteElement& element)

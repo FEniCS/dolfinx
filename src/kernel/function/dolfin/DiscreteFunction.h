@@ -56,9 +56,8 @@ namespace dolfin
     /// Compute interpolation of function onto local finite element space
     void interpolate(real coefficients[], AffineMap& map, FiniteElement& element);
 
-    /// Compute interpolation of function to finite element space of
-    /// ftarget.
-    void interpolate(Function& ftarget);
+    /// Compute interpolation of fsource onto local finite element space.
+    void interpolate(Function& fsource);
 
     /// Return vector dimension of function
     uint vectordim() const;

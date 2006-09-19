@@ -479,7 +479,7 @@ void PETScVector::copy(const PETScVector& y, int off1, int off2, int len)
   // FIXME: Use gather/scatter for parallel case
 
   real* xvals = 0;
-  real* yvals = 0;
+  const real* yvals = 0;
   xvals = array();
   yvals = y.array();
   for(uint i = 0; i < len; i++)

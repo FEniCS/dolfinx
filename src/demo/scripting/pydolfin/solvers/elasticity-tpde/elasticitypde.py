@@ -11,8 +11,8 @@ class ElasticityPDE(TimeDependentPDE):
         forms = import_formfile("Elasticity.form")
         #import elasticitytdform as forms
 
-        self.aelast = forms.ElasticityTDBilinearForm()
-        self.Lelast = forms.ElasticityTDLinearForm(self.U, f)
+        self.aelast = forms.ElasticityBilinearForm()
+        self.Lelast = forms.ElasticityLinearForm(self.U, f)
 
         self.U.init(mesh, self.aelast.trial())
         self.V.init(mesh, self.aelast.trial())
