@@ -1,7 +1,8 @@
-// Copyright (C) 2005 Johan Hoffman.
+// Copyright (C) 2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
-// First added:  2005-11-02
+// First added:  2006-09-18
+// Last changed: 2006-09-19
 
 #ifndef __FUNCTIONAL_H
 #define __FUNCTIONAL_H
@@ -11,7 +12,11 @@
 namespace dolfin
 {
 
-  /// Functional represents a functional F(u) 
+  /// Functional represents a multilinear form of the type
+  ///
+  ///     M = M(w1, w2, ..., wn)
+  ///
+  /// where w1, w2, ..., wn are any given functions.
 
   class Functional : public Form
   {
@@ -24,18 +29,13 @@ namespace dolfin
     virtual ~Functional();
 
     /// Compute element vector (interior contribution)
-    virtual void eval(real block[], const AffineMap& map) const;
+    virtual void eval(real block[], const AffineMap& map) const = 0;
 
     /// Compute element vector (boundary contribution)
-    virtual void eval(real block[], const AffineMap& map, uint segment) const;
+    virtual void eval(real block[], const AffineMap& map, uint segment) const = 0;
 
-    /// Return finite element defining the test space
-    const FiniteElement& test() const;
-
-  protected:
-
-    // Finite element defining the test space
-    FiniteElement* _test;
+    /// Update map to current cell
+    void update(AffineMap& map);
 
   };
 

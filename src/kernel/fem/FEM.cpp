@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells 2005, 2006.
 //
 // First added:  2004-05-19
-// Last changed: 2006-05-24
+// Last changed: 2006-09-18
 
 #include <dolfin/FEM.h>
 
@@ -16,25 +16,32 @@ void FEM::assemble(BilinearForm& a, LinearForm& L,
 		   GenericMatrix& A, GenericVector& b,
 		   Mesh& mesh)
 {
-  assembleCommon(&a, &L, &A, &b, mesh);
+  assembleCommon(&a, &L, 0, &A, &b, 0, mesh);
 }
 //-----------------------------------------------------------------------------
 void FEM::assemble(BilinearForm& a, LinearForm& L,
 		   GenericMatrix& A, GenericVector& b,
 		   Mesh& mesh, BoundaryCondition& bc)
 {
-  assembleCommon(&a, &L, &A, &b, mesh);
+  assembleCommon(&a, &L, 0, &A, &b, 0, mesh);
   applyBC(A, b, mesh, a.trial(), bc);
 }
 //-----------------------------------------------------------------------------
 void FEM::assemble(BilinearForm& a, GenericMatrix& A, Mesh& mesh)
 {
-  assembleCommon(&a, 0, &A, 0, mesh);
+  assembleCommon(&a, 0, 0, &A, 0, 0, mesh);
 }
 //-----------------------------------------------------------------------------
 void FEM::assemble(LinearForm& L, GenericVector& b, Mesh& mesh)
 {
-  assembleCommon(0, &L, (DenseMatrix*) 0, &b, mesh);
+  assembleCommon(0, &L, 0, (DenseMatrix*) 0, &b, 0, mesh);
+}
+//-----------------------------------------------------------------------------
+real FEM::assemble(Functional& M, Mesh& mesh)
+{
+  real val = 0.0;
+  assembleCommon(0, 0, &M, 0, 0, &val, mesh);
+  return val;
 }
 //-----------------------------------------------------------------------------
 void FEM::applyBC(GenericMatrix& A, GenericVector& b,
@@ -144,8 +151,9 @@ void FEM::disp(const Mesh& mesh, const FiniteElement& element)
   delete [] points;
 }
 //-----------------------------------------------------------------------------
-void FEM::assembleCommon(BilinearForm* a, LinearForm* L,
-			 GenericMatrix* A, GenericVector* b, Mesh& mesh)
+void FEM::assembleCommon(BilinearForm* a, LinearForm* L, Functional* M,
+			 GenericMatrix* A, GenericVector* b, real* val,
+			 Mesh& mesh)
 {
   // Create boundary
   Boundary boundary(mesh);
@@ -154,12 +162,12 @@ void FEM::assembleCommon(BilinearForm* a, LinearForm* L,
   if ( mesh.type() == Mesh::triangles )
   {
     BoundaryFacetIterator<EdgeIterator, Edge> facet(boundary);
-    assembleCommon(a, L, A, b, mesh, facet);
+    assembleCommon(a, L, M, A, b, val, mesh, facet);
   }
   else if ( mesh.type() == Mesh::tetrahedra )
   {
     BoundaryFacetIterator<FaceIterator, Face> facet(boundary);
-    assembleCommon(a, L, A, b, mesh, facet);
+    assembleCommon(a, L, M, A, b, val, mesh, facet);
   }
   else
   {

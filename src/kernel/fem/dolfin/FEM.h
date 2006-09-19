@@ -5,7 +5,7 @@
 // Modified by Kristian Oelgaard 2006.
 //
 // First added:  2004-05-19
-// Last changed: 2006-05-30
+// Last changed: 2006-09-19
 
 #ifndef __FEM_H
 #define __FEM_H
@@ -29,6 +29,7 @@
 #include <dolfin/FiniteElement.h>
 #include <dolfin/BilinearForm.h>
 #include <dolfin/LinearForm.h>
+#include <dolfin/Functional.h>
 
 // FIXME: Ensure constness where appropriate
 
@@ -61,6 +62,9 @@ namespace dolfin
     
     /// Assemble linear form
     static void assemble(LinearForm& L, GenericVector& b, Mesh& mesh);
+
+    /// Assemble functional
+    static real assemble(Functional& M, Mesh& mesh);
    
     /// Apply boundary conditions to matrix and vector
     static void applyBC(GenericMatrix& A, GenericVector& b, Mesh& mesh,
@@ -100,8 +104,8 @@ namespace dolfin
   private:
 
     /// Common assembly for bilinear and linear forms
-    static void assembleCommon(BilinearForm* a, LinearForm* L,
-			       GenericMatrix* A, GenericVector* b, Mesh& mesh);
+    static void assembleCommon(BilinearForm* a, LinearForm* L, Functional* M,
+			       GenericMatrix* A, GenericVector* b, real* val, Mesh& mesh);
 
     /// Create iterator and call function to apply boundary conditions
     static void applyCommonBC(GenericMatrix* A, GenericVector* b, const GenericVector* x,
@@ -119,73 +123,51 @@ namespace dolfin
     /// Check actual number of nonzeros in each row
     static void countNonZeros(const GenericMatrix& A, uint nz);
 
-
     // Since the current mesh interface is dimension-dependent, the functions
     // assembleCommon() and applyCommonBC() need to be templated. They won't
     // have to be when the new mesh interface is in place.
 
     //-----------------------------------------------------------------------------
     template<class V, class W>
-    static void assembleCommon(BilinearForm* a, LinearForm* L,
-			       GenericMatrix* A, GenericVector* b, 
+    static void assembleCommon(BilinearForm* a, LinearForm* L, Functional* M,
+			       GenericMatrix* A, GenericVector* b, real* val,
 			       Mesh& mesh, BoundaryFacetIterator<V, W>& facet)
     {
       // Check that the mesh matches the forms
-      if( a )
+      if ( a )
         checkDimensions(*a, mesh);
-      if( L )
+      if ( L )
         checkDimensions(*L, mesh);
+      // FIXME: Add dimension check for M
  
-      // Get finite elements
-      FiniteElement* test_element  = 0;
-      FiniteElement* trial_element = 0;
-      if( a )
-      {
-        test_element  = &(a->test());
-        trial_element = &(a->trial());
-      }
-      else if( L ) 
-        test_element = &(L->test());
-
       // Create affine map
       AffineMap map;
 
       // Initialize element matrix/vector data block
-      real* block_A = 0;
-      real* block_b = 0;
-      int* test_nodes = 0;
-      int* trial_nodes = 0;
-      uint n  = 0;
-      uint N  = 0;
       uint nz = 0;
-
-      const uint m = test_element->spacedim();
-      const uint M = size(mesh, *test_element);
-      test_nodes = new int[m];
-
-      if( a )
-      {
-        n = trial_element->spacedim();
-        N = size(mesh, *trial_element);
-        block_A = new real[m*n];
-        trial_nodes = new int[m];
-        nz = estimateNonZeros(mesh, *trial_element);
+      if ( a )
+      { 
+	const uint M = size(mesh, a->test());
+	const uint N = size(mesh, a->trial());
+        nz = estimateNonZeros(mesh, a->trial());
         A->init(M, N, nz);
         A->zero();
+	dolfin_info("Assembling system (matrix and vector) of size %d x %d.", M, N);
       }
-      if( L )
+      if ( L )
       {
-        block_b = new real[m];  
+	const uint M = size(mesh, L->test());
         b->init(M);
         b->zero();
-      }
-      // Start a progress session
-      if( a && L)
-        dolfin_info("Assembling system (matrix and vector) of size %d x %d.", M, N);
-      if( a && !L)
-        dolfin_info("Assembling matrix of size %d x %d.", M, N);
-      if( !a && L)
         dolfin_info("Assembling vector of size %d.", M);
+      }
+      if ( M )
+      {
+	*val = 0.0;
+	dolfin_info("Assembling functional.");
+      }
+
+      // Start a progress session
       Progress p("Assembling interior contributions", mesh.numCells());
    
       // Iterate over all cells in the mesh
@@ -194,41 +176,55 @@ namespace dolfin
         // Update affine map
         map.update(*cell);
   
-        // Compute map from local to global degrees of freedom (test functions)
-        test_element->nodemap(test_nodes, *cell, mesh);
-  
-        if( a )
+	// Assemble bilinear form
+        if ( a )
         {
-          // Update forms
+          // Update form
           a->update(map);
-          // Compute maps from local to global degrees of freedom (trial functions)
-          trial_element->nodemap(trial_nodes, *cell, mesh);
+	  
+          // Compute maps from local to global degrees of freedom
+          a->test().nodemap(a->test_nodes, *cell, mesh);
+	  a->trial().nodemap(a->trial_nodes, *cell, mesh);
+	  
           // Compute element matrix 
-          a->eval(block_A, map);
+          a->eval(a->block, map);
+	  
           // Add element matrix to global matrix
-          A->add(block_A, test_nodes, m, trial_nodes, n);
+          A->add(a->block, a->test_nodes, a->test().spacedim(), a->trial_nodes, a->trial().spacedim());
         }
-        if( L )
+	
+	// Assemble linear form
+        if ( L )
         {
-          // Update forms
-          L->update(map);    
+          // Update form
+          L->update(map);
+
+          // Compute map from local to global degrees of freedom
+          L->test().nodemap(L->test_nodes, *cell, mesh);
+
           // Compute element vector 
-          L->eval(block_b, map);
+          L->eval(L->block, map);
+
           // Add element vector to global vector
-          b->add(block_b, test_nodes, m);
+          b->add(L->block, L->test_nodes, L->test().spacedim());
         }
+
+	// Assemble functional
+	if ( M )
+	{
+	  // Update form
+          M->update(map);
+	  
+          // Compute element entry
+          M->eval(M->block, map);
+	  
+          // Add element entry to global value
+	  *val += M->block[0];
+	}
 
         // Update progress
         p++;
       }
-
-      //FIXME: need to reinitiliase block_A and block_b in case no boundary terms are provided
-      if( a )
-        for (uint i = 0; i < m*n; ++i)
-          block_A[i] = 0.0;
-        if( L )
-          for (uint i = 0; i < m; ++i)
-            block_b[i] = 0.0;
 
       // Iterate over all facets on the boundary
       Boundary boundary(mesh);
@@ -244,52 +240,65 @@ namespace dolfin
       
         // Update affine map for facet 
         map.update(cell, facetID);
-  
-        // Compute map from local to global degrees of freedom (test functions)
-        test_element->nodemap(test_nodes, cell, mesh);
-  
-        if( a )
+
+	// Assemble bilinear form
+        if ( a )
         {
-          // Update forms
+          // Update form
           a->update(map);  
-          // Compute maps from local to global degrees of freedom (trial functions)
-          trial_element->nodemap(trial_nodes, cell, mesh);
+
+          // Compute maps from local to global degrees of freedom
+	  a->test().nodemap(a->test_nodes, cell, mesh);
+          a->trial().nodemap(a->trial_nodes, cell, mesh);
 
           // Compute element matrix 
-          a->eval(block_A, map, facetID);
+          a->eval(a->block, map, facetID);
 
           // Add element matrix to global matrix
-          A->add(block_A, test_nodes, m, trial_nodes, n);
+          A->add(a->block, a->test_nodes, a->test().spacedim(), a->trial_nodes, a->trial().spacedim());
         }
-        if( L )
+
+	// Assemble linear form
+        if ( L )
         {
-          // Update forms
-          L->update(map);    
-          // Compute element vector 
-          L->eval(block_b, map, facetID);
- 
-          // Add element vector to global vector
-          b->add(block_b, test_nodes, m);
+          // Update form
+          L->update(map);
+
+          // Compute map from local to global degrees of freedom
+	  L->test().nodemap(L->test_nodes, cell, mesh);
+          
+	  // Compute element vector
+          L->eval(L->block, map, facetID);
+          
+	  // Add element vector to global vector
+          b->add(L->block, L->test_nodes, a->test().spacedim());
         }
+
+	// Assemble functional
+        if ( M )
+        {
+          // Update form
+          M->update(map);
+
+	  // Compute element entry
+          M->eval(M->block, map, facetID);
+          
+	  // Add element entry to global value
+	  *val += M->block[0];
+        }
+	
         // Update progress
         p_boundary++;
       }
 
       // Complete assembly
-      if( L )
-        b->apply();
       if ( a )
       {
         A->apply();
-        // Check the number of nonzeros
-        countNonZeros(*A, nz);
+	countNonZeros(*A, nz);
       }
-      
-      // Delete data
-      delete [] block_A;
-      delete [] block_b;
-      delete [] trial_nodes;
-      delete [] test_nodes;
+      if ( L )
+        b->apply();
     }
     //-----------------------------------------------------------------------------
     template <class V, class W>

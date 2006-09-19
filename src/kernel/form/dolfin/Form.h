@@ -1,8 +1,8 @@
-// Copyright (C) 2004-2005 Anders Logg.
+// Copyright (C) 2004-2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2004-05-28
-// Last changed: 2005-11-29
+// Last changed: 2006-09-19
 
 #ifndef __FORM_H
 #define __FORM_H
@@ -28,7 +28,7 @@ namespace dolfin
     virtual ~Form();
 
     /// Update map to current cell
-    void update(AffineMap& map);
+    virtual void update(AffineMap& map) = 0;
 
     Function* function(uint i);
     FiniteElement* element(uint i);
@@ -58,6 +58,9 @@ namespace dolfin
 
     // BLAS form data
     BLASFormData blas;
+    
+    // Block of values used during assembly
+    real* block;
 
   };
 

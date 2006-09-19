@@ -191,7 +191,7 @@ sharedstatedir = @sharedstatedir@
 swig_found = @swig_found@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
-SUBDIRS = bidomain convection-diffusion elasticity poisson nonlinear stokes
+SUBDIRS = bidomain convection-diffusion elasticity functional nonlinear poisson stokes
 all: all-recursive
 
 .SUFFIXES:
