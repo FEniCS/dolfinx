@@ -2,6 +2,34 @@
 %rename(increment) dolfin::CellIterator::operator++;
 %rename(increment) dolfin::EdgeIterator::operator++;
 
+%extend dolfin::NewMesh {
+
+PyObject * cells() {
+    PyArrayObject *arr;
+    int n[2];
+    n[0] = self->numCells();
+    n[1] = self->type().numVertices(self->dim());
+    arr = (PyArrayObject *) PyArray_FromDimsAndData(2, n, PyArray_INT, (char *) self->cells());
+    arr->flags |= OWN_DATA;
+    Py_INCREF((PyObject *)arr);
+    return (PyObject *)arr;
+}
+
+PyObject * vertices() {
+    PyArrayObject *arr;
+    int n[2];
+    n[0] = self->numVertices();
+    n[1] = self->geometry().dim();
+    arr = (PyArrayObject *) PyArray_FromDimsAndData(2, n, PyArray_DOUBLE, (char *) self->vertices());
+    arr->flags |= OWN_DATA;
+    Py_INCREF((PyObject *)arr);
+    return (PyObject *)arr;
+}
+};
+ 
+%ignore dolfin::NewMesh::cells;
+%ignore dolfin::NewMesh::vertices;
+
 %include "dolfin/Mesh.h"
 %include "dolfin/Boundary.h"
 %include "dolfin/Point.h"
@@ -46,3 +74,5 @@
 %include "dolfin/NewUnitCube.h"
 %include "dolfin/NewUnitSquare.h"
 
+
+   

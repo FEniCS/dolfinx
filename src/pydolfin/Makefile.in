@@ -101,7 +101,9 @@ CPPFLAGS = @CPPFLAGS@
 CXX = @CXX@
 CXXCPP = @CXXCPP@
 CXXDEPMODE = @CXXDEPMODE@
-CXXFLAGS = @CXXFLAGS@
+
+# Temporary fix: don't include -Werr to get around problem with Numeric/arrayobject.h
+CXXFLAGS = -DDEBUG=1 -g -O2 -Wall -ansi
 CYGPATH_W = @CYGPATH_W@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
@@ -545,6 +547,8 @@ uninstall-am: uninstall-info-am uninstall-pkgpyexecLTLIBRARIES \
 
 
 dolfin_wrap.cpp : $(SWIG_SOURCES)
+	echo $(SWIG_PYTHON_CPPFLAGS)
+	echo $(DOLFIN_CFLAGS)
 	$(SWIG) $(SWIG_PYTHON_OPT) -nodefault -dirprot @DOLFIN_CFLAGS@ @DOLFIN_DEFINITIONS@ -o $@ $<
 
 dolfin.py: $(SWIG_SOURCES)

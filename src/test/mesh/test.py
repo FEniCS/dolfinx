@@ -1,7 +1,7 @@
 """Unit test for the mesh library"""
 
 __author__ = "Anders Logg (logg@simula.no)"
-__date__ = "2006-08-08 -- 2006-08-09"
+__date__ = "2006-08-08 -- 2006-09-20"
 __copyright__ = "Copyright (C) 2006 Anders Logg"
 __license__  = "GNU GPL Version 2"
 
@@ -37,6 +37,23 @@ class MeshRefinement(unittest.TestCase):
         mesh.refine()
         self.assertEqual(mesh.numVertices(), 3135)
         self.assertEqual(mesh.numCells(), 15120)
+
+class PyCCInterface(unittest.TestCase):
+
+    def testGetGeometricalDimension(self):
+        """Get geometrical dimension of mesh"""
+        mesh = NewUnitSquare(5, 5)
+        self.assertEqual(mesh.geometry().dim(), 2)
+
+    def testGetVertices(self):
+        """Get vertices of mesh"""
+        mesh = NewUnitSquare(5, 5)
+        self.assertEqual(len(mesh.vertices()), 36)
+
+    def testGetCells(self):
+        """Get cells of mesh"""
+        mesh = NewUnitSquare(5, 5)
+        self.assertEqual(len(mesh.cells()), 50)
 
 if __name__ == "__main__":
     unittest.main()
