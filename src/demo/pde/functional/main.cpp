@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-09-19
-// Last changed: 2006-09-19
+// Last changed: 2006-09-21
 //
 // This demo program computes the value of the functional
 //
@@ -30,14 +30,12 @@ int main()
     }
   };
 
-  // Set up the functional
-  MyFunction v;
-  EnergyNorm::Functional M(v);
+  // Compute approximate value
   UnitSquare mesh(16, 16);
+  EnergyNorm::Functional M;
+  MyFunction v;
+  real value = M(v, mesh);
 
-  // Evaluate the functional
-  real value = FEM::assemble(M, mesh);
-  
   // Compute exact value
   real exact_value = 2.0 + 2.0*sin(1.0)*(1.0 - cos(1.0));
 

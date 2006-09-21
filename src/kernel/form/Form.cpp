@@ -21,10 +21,14 @@ Form::Form(uint num_functions)
     // Reserve list of functions
     functions.clear();
     functions.reserve(num_functions);
+    for (uint i = 0; i < num_functions; i++)
+      functions.push_back(0);
 
     // Reserve list of elements
     elements.clear();
     elements.reserve(num_functions);
+    for (uint i = 0; i < num_functions; i++)
+      elements.push_back(0);
 
     // Initialize coefficients
     c = new real* [num_functions];
@@ -52,23 +56,23 @@ Form::~Form()
     delete [] block;
 }
 //-----------------------------------------------------------------------------
-void Form::add(Function& f, FiniteElement* element)
+void Form::initFunction(uint i, Function& f, FiniteElement* element)
 {
-  if ( functions.size() == num_functions )
-    dolfin_error("All functions already added.");
-  
-  // Get number of new function
-  uint i = functions.size();
-
   // Set finite element for function, but only for discrete functions
   if ( f.type() == Function::discrete )
     f.attach(*element);
 
-  // Add function and element
-  functions.push_back(&f);
-  elements.push_back(element);
+  // Add function
+  functions[i] = &f;
 
-  // Initialize coefficients
+  // Add element (and delete old if any)
+  if ( elements[i] )
+    delete elements[i];
+  elements[i] = element;
+
+  // Initialize coefficients (and delete old if any)
+  if ( c[i] )
+    delete c[i];
   c[i] = new real[element->spacedim()];
   for (uint j = 0; j < element->spacedim(); j++)
     c[i][j] = 0.0;

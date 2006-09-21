@@ -1,3 +1,4 @@
+ - Add support for evaluation of functionals
  - Fix bug in Vector::sum() for uBlas vectors
 0.6.2-1 [2006-09-06]
  - Fix compilation error when using --enable-petsc (dolfin::uBlasVector::PETScVector undefined)

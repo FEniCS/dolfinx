@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2004-05-28
-// Last changed: 2006-09-19
+// Last changed: 2006-09-21
 
 #ifndef __FORM_H
 #define __FORM_H
@@ -41,8 +41,11 @@ namespace dolfin
 
   protected:
 
-    // Add function
+    // Initialize function
     void add(Function& f, FiniteElement* element);
+
+    // Initialize function
+    void initFunction(uint i, Function& f, FiniteElement* element);
 
     // Update coefficients
     void updateCoefficients(AffineMap& map);
