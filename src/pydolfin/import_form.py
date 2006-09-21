@@ -7,7 +7,7 @@ def import_formfile(filename):
     print "Compiling form: " + filename
 
     options = FFC_OPTIONS
-    language = "dolfin-swig"
+    language = "dolfin"
         
     outname = simple.parse(filename, language, options)
         
@@ -24,7 +24,7 @@ def import_form(formlist, formname):
     from ffc.common.constants import FFC_OPTIONS
 
     options = FFC_OPTIONS
-    language = "dolfin-swig"
+    language = "dolfin"
         
     compile(formlist, formname, language, FFC_OPTIONS)
 

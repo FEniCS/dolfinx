@@ -271,7 +271,7 @@ namespace dolfin
           L->eval(L->block, map, facetID);
           
 	  // Add element vector to global vector
-          b->add(L->block, L->test_nodes, a->test().spacedim());
+          b->add(L->block, L->test_nodes, L->test().spacedim());
         }
 
 	// Assemble functional
