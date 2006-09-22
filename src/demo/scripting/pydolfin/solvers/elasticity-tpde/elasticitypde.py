@@ -1,7 +1,7 @@
 from dolfin import *
 
 class ElasticityPDE(TimeDependentPDE):
-    def __init__(self, mesh, f, u0, v0, bc, k, T, t):
+    def __init__(self, mesh, f, lmbda, mu, u0, v0, bc, k, T, t):
         
         self.t = t
 
@@ -12,7 +12,7 @@ class ElasticityPDE(TimeDependentPDE):
         #import elasticitytdform as forms
 
         self.aelast = forms.ElasticityBilinearForm()
-        self.Lelast = forms.ElasticityLinearForm(self.U, f)
+        self.Lelast = forms.ElasticityLinearForm(self.U, lmbda, mu, f)
 
         self.U.init(mesh, self.aelast.trial())
         self.V.init(mesh, self.aelast.trial())

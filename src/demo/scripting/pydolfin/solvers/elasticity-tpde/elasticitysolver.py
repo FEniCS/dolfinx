@@ -38,8 +38,11 @@ mesh = Mesh("tetmesh-4.xml.gz")
 E = 20.0 # Young's modulus
 nu = 0.3 # Poisson's ratio
 
-lmbda = E * nu / ((1 + nu) * (1 - 2 * nu))
-mu = E / (2 * (1 + nu))
+lmbdaval = E * nu / ((1 + nu) * (1 - 2 * nu))
+muval = E / (2 * (1 + nu))
+
+lmbda = Function(lmbdaval)
+mu = Function(muval)
 
 k = 1e-3
 T = 5.0
@@ -63,7 +66,7 @@ set("ODE save solution", False);
 set("ODE solution file name", "primal.py");
 set("ODE number of samples", 100);
 
-pde = ElasticityPDE(mesh, f, u0, v0, bc, k, T, t)
+pde = ElasticityPDE(mesh, f, lmbda, mu, u0, v0, bc, k, T, t)
 
 pde.solve(pde.U)
 

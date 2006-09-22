@@ -45,15 +45,17 @@ mesh = Mesh("tetmesh-4.xml.gz")
 E = 20.0 # Young's modulus
 nu = 0.3 # Poisson's ratio
 
-lmbda = E * nu / ((1 + nu) * (1 - 2 * nu))
-mu = E / (2 * (1 + nu))
+lmbdaval = E * nu / ((1 + nu) * (1 - 2 * nu))
+muval = E / (2 * (1 + nu))
+
+lmbda = Function(lmbdaval)
+mu = Function(muval)
 
 elast_forms = import_formfile("Elasticity.form")
 
 # FIXME: Need to use Constant to use coefficients with FFC and PyDOLFIN
 
-#a = elast_forms.ElasticityBilinearForm(lmbda, mu)
-a = elast_forms.ElasticityBilinearForm()
+a = elast_forms.ElasticityBilinearForm(lmbda, mu)
 L = elast_forms.ElasticityLinearForm(f)
 Lu0 = elast_forms.ElasticityLinearForm(u0)
 Lv0 = elast_forms.ElasticityLinearForm(v0)

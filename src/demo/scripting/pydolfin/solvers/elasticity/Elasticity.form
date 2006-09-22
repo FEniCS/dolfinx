@@ -7,33 +7,29 @@
 # The bilinear form for classical linear elasticity (Navier)
 # Compile this form with FFC: ffc Elasticity.form.
 
-element = FiniteElement("Vector Lagrange", "tetrahedron", 1)
+element1 = FiniteElement("Vector Lagrange", "tetrahedron", 1)
+element2 = FiniteElement("Lagrange", "tetrahedron", 1)
 
-v = TestFunction(element)
-u = TrialFunction(element)
+v = TestFunction(element1)
+u = TrialFunction(element1)
 
-lmbda = Constant() # Lame coefficient
-mu    = Constant() # Lame coefficient
+lmbda = Function(element2) # Lame coefficient
+mu    = Function(element2) # Lame coefficient
 
-f = Function(element) # Source
+f = Function(element1) # Source
 
 # Dimension of domain
-d = element.shapedim()
+d = element1.shapedim()
 
 def epsilon(u):
     return 0.5 * (grad(u) + transp(grad(u)))
 
-#def E(e, lmbda, mu):
-#    Ee = 2.0 * mult(mu, e) + mult(lmbda, mult(trace(e), Identity(d)))
-#    
-#    return Ee
-
 def E(e, lmbda, mu):
-    Ee = mult(10.0, e)
+    Ee = 2.0 * mult(mu, e) + mult(lmbda, mult(trace(e), Identity(d)))
     
     return Ee
-        
+
 sigma = E(epsilon(u), lmbda, mu)
 
 a = dot(sigma, epsilon(v)) * dx
-L = f[i] * v[i] * dx
+L = dot(f, v) * dx
