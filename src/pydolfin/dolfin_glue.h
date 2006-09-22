@@ -1,4 +1,4 @@
-#include <dolfin.h>
+#include <dolfin/Parameter.h>
 
 void glueset(std::string name, dolfin::real val);
 void glueset(std::string name, int val);

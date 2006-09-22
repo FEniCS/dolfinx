@@ -103,7 +103,7 @@ CXXCPP = @CXXCPP@
 CXXDEPMODE = @CXXDEPMODE@
 
 # Temporary fix: don't include -Werr to get around problem with Numeric/arrayobject.h
-CXXFLAGS = -DDEBUG=1 -g -O2 -Wall -ansi
+CXXFLAGS = @DOLFIN_DEFINITIONS@ -g -O2 -Wall -ansi
 CYGPATH_W = @CYGPATH_W@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@

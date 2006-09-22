@@ -1,7 +1,8 @@
 #include <iostream>
 
-#include <dolfin.h>
-#include "dolfin_glue.h"
+#include <dolfin_glue.h>
+#include <dolfin/ParameterSystem.h>
+#include <dolfin/File.h>
 
 void glueset(std::string name, dolfin::real val)
 {
