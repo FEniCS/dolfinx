@@ -11,7 +11,7 @@ _dolfin_la_LDFLAGS = -module @DOLFIN_EXT_LIBS@
 _dolfin_la_LIBADD = $(top_builddir)/src/lib/libdolfin.la
 
 # Temporary fix: don't include -Werr to get around problem with Numeric/arrayobject.h
-CXXFLAGS = @DOLFIN_DEFINITIONS@ -g -O2 -Wall -ansi
+AM_CXXFLAGS = @DOLFIN_DEFINITIONS@ -g -O2 -Wall -ansi
 
 dolfin_wrap.cpp : $(SWIG_SOURCES)
 	echo $(SWIG_PYTHON_CPPFLAGS)

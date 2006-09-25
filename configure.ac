@@ -50,12 +50,6 @@ AC_ARG_WITH(petsc-dir,
                            [Specify path to PETSc]),
             [PETSC_DIR=$with_petsc_dir],)
 
-# Option --with-boost-include
-AC_ARG_WITH(boost-include,
-            AC_HELP_STRING([--with-boost-include=<path>],
-                           [Specify path to Boost include files]),
-            [BOOST_DIR=$with_boost_include],)
-
 # Option --with-umfpack-include
 AC_ARG_WITH(umfpack-include,
             AC_HELP_STRING([--with-umfpack-include=<path>],
@@ -107,18 +101,7 @@ fi
 # Use C++ compiler for performing configure tests
 AC_LANG(C++)
 
-# Check for Boost FIXME: Check first user provided location, then default
-AC_CHECK_HEADER([boost/version.hpp], have_boost=yes, have_boost=no)
-if test $have_boost = no; then
-    AC_CHECK_HEADER([$BOOST_DIR/boost/version.hpp], have_boost=yes)
-    if test $have_boost = yes; then
-        BOOST_CFLAGS="-I$BOOST_DIR"
-    else
-        echo "*** Unable to find Boost."
-        echo "*** Perhaps you need set the include path --with-boost-include=<path> or to install the package libboost-dev?"
-        exit 1
-    fi
-fi
+AX_BOOST_BASE([1.33.1])
 
 # Check for umfpack
 have_umfpack_header=yes
@@ -341,7 +324,7 @@ DOLFIN_MODULES="elasticity elasticity-updated convdiff navierstokes poisson stok
 DOLFIN_KERNEL="common fem form function io la main math mesh mf nls ode pde quadrature parameter log"
 
 # Generate include path for external libraries
-EXTERNAL_CFLAGS="$CURSES_CFLAGS $PETSC_CFLAGS $SLEPC_CFLAGS $BOOST_CFLAGS $MPI_CFLAGS $XML_CPPFLAGS $UMFPACK_CFLAGS "
+EXTERNAL_CFLAGS="$CURSES_CFLAGS $PETSC_CFLAGS $SLEPC_CFLAGS $BOOST_CPPFLAGS $MPI_CFLAGS $XML_CPPFLAGS $UMFPACK_CFLAGS "
 AC_SUBST(EXTERNAL_CFLAGS)
 
 # Generate include path for kernel
