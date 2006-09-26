@@ -4,7 +4,7 @@
 // Modified by Anders Logg 2006.
 //
 // First added:  2006-04-25
-// Last changed: 2006-08-14
+// Last changed: 2006-09-26
 
 #ifndef __GENERIC_VECTOR_H
 #define __GENERIC_VECTOR_H
@@ -50,6 +50,9 @@ namespace dolfin
     /// Set all entries to zero
     virtual void zero() = 0;
     
+    /// Compute sum of vector
+    virtual real sum() const = 0;
+
   };  
 
 }

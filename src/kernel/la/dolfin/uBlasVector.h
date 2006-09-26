@@ -4,7 +4,7 @@
 // Modified by Anders Logg 2006.
 //
 // First added:  2006-03-04
-// Last changed: 2006-09-06
+// Last changed: 2006-09-26
 
 #ifndef __UBLAS_VECTOR_H
 #define __UBLAS_VECTOR_H
@@ -22,7 +22,6 @@ namespace dolfin
 #endif
 
   namespace ublas = boost::numeric::ublas;
-  typedef ublas::vector<double> ublas_vector;
 
   /// This class represents a dense vector of dimension N.
   /// It is a simple wrapper for a Boost ublas vector.
@@ -36,7 +35,7 @@ namespace dolfin
 		      public ublas_vector
   {
   public:
-    
+
     /// Constructor
     uBlasVector();
     
@@ -77,10 +76,12 @@ namespace dolfin
     { return ublas::vector<real>::operator() (i); };
 
     /// Access element value
-    inline real get(uint i) const { return (*this)(i); }
+    inline real get(uint i) const 
+    { return (*this)(i); }
 
     /// Set element value
-    inline void set(uint i, real value) { (*this)(i) = value; }
+    inline void set(uint i, real value) 
+    { (*this)(i) = value; }
 
     /// Set block of values
     void set(const real block[], const int pos[], int n);
@@ -96,7 +97,8 @@ namespace dolfin
     real norm(NormType type = l2) const;
 
     /// Compute sum of vector
-    real sum() const;
+    real sum() const
+    { return ublas::sum(*this); } 
 
     /// Apply changes to vector (dummy function for compatibility)
     void apply();
