@@ -1,33 +1,32 @@
 from dolfin import *
 
 class ElasticityPDE(TimeDependentPDE):
-    def __init__(self, mesh, f, lmbda, mu, u0, v0, bc, k, T, t):
+    def __init__(self, mesh, f, bc, k, T, t):
         
         self.t = t
 
         self.U = Function(Vector(), mesh)
-        self.V = Function(Vector(), mesh)
+        #self.V = Function(Vector(), mesh)
 
         forms = import_formfile("Elasticity.form")
         #import elasticityform as forms
 
         self.aelast = forms.ElasticityBilinearForm()
-        self.Lelast = forms.ElasticityLinearForm(self.U, f, mu, lmbda)
+        self.Lelast = forms.ElasticityLinearForm(self.U, f)
 
         self.U.init(mesh, self.aelast.trial())
-        self.V.init(mesh, self.aelast.trial())
 
-        self.N = self.U.vector().size() + self.V.vector().size()
+        self.N = self.U.vector().size()
 
         TimeDependentPDE.__init__(self, self.aelast, self.Lelast, mesh,
                                   bc, self.N, k, T)
 
-        self.xtmp = Vector(self.V.vector().size())
+        self.xtmp = Vector(self.U.vector().size())
 
         # Initial values
 
-        self.U.interpolate(u0)
-        self.V.interpolate(v0)
+        #self.U.interpolate(u0)
+        #self.V.interpolate(v0)
 
 
         self.M = Matrix()
@@ -47,15 +46,18 @@ class ElasticityPDE(TimeDependentPDE):
         #print "step"
 
     def save(self, U, t):
+        1
+
+        U_0 = U[0]
 
         if(t == 0.0):
-            self.U.vector().copy(self.x, 0, 0, self.U.vector().size())
-            self.solutionfile << U
+            U.vector().copy(self.x, 0, 0, self.U.vector().size())
+            self.solutionfile << U_0
 
         while(self.lastsample + self.sampleperiod < t):
             self.lastsample = min(t, self.lastsample + self.sampleperiod)
             self.U.vector().copy(self.x, 0, 0, self.U.vector().size())
-            self.solutionfile << U
+            self.solutionfile << U_0
 
     def fu(self, x, dotx, t):
 
@@ -65,12 +67,12 @@ class ElasticityPDE(TimeDependentPDE):
         self.t.assign(t)
 
         self.U.vector().copy(x, 0, 0, self.U.vector().size())
-        self.V.vector().copy(x, 0, self.U.vector().size(),
-                             self.V.vector().size())
+        #self.V.vector().copy(x, 0, self.U.vector().size(),
+        #                     self.V.vector().size())
 
         # U
 
-        dotx.copy(x, 0, self.V.vector().size(), self.U.vector().size())
+        #dotx.copy(x, 0, self.V.vector().size(), self.U.vector().size())
 
         # V
 
@@ -81,7 +83,7 @@ class ElasticityPDE(TimeDependentPDE):
 
         self.xtmp.div(self.m)
 
-        dotx.copy(self.xtmp, self.xtmp.size(), 0, self.xtmp.size())
+        dotx.copy(self.xtmp, 0, 0, self.xtmp.size())
 
         #print "dotx: "
         #dotx.disp()
