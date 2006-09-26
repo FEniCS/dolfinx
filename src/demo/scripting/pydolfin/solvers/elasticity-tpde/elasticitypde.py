@@ -9,10 +9,10 @@ class ElasticityPDE(TimeDependentPDE):
         self.V = Function(Vector(), mesh)
 
         forms = import_formfile("Elasticity.form")
-        #import elasticitytdform as forms
+        #import elasticityform as forms
 
         self.aelast = forms.ElasticityBilinearForm()
-        self.Lelast = forms.ElasticityLinearForm(self.U, lmbda, mu, f)
+        self.Lelast = forms.ElasticityLinearForm(self.U, f, mu, lmbda)
 
         self.U.init(mesh, self.aelast.trial())
         self.V.init(mesh, self.aelast.trial())
@@ -41,6 +41,10 @@ class ElasticityPDE(TimeDependentPDE):
         self.solutionfile = File("solution.pvd")
         self.sampleperiod = T / 100.0
         self.lastsample = 0.0
+
+    def preparestep(self):
+        1
+        #print "step"
 
     def save(self, U, t):
 

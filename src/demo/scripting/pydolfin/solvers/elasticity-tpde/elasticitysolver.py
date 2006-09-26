@@ -56,15 +56,18 @@ set("ODE method", "dg");
 set("ODE order", 0);
 set("ODE nonlinear solver", "fixed-point");
 set("ODE linear solver", "direct");
-set("ODE tolerance", 1.0e0);
+set("ODE tolerance", 1.0e3);
+set("ODE discrete tolerance", 1.0e3);
 
 set("ODE fixed time step", True);
-set("ODE initial time step", 1.0e-2);
-set("ODE maximum time step", 1.0e-2);
+set("ODE initial time step", 2.0e-2);
+set("ODE maximum time step", 2.0e-2);
 
 set("ODE save solution", False);
 set("ODE solution file name", "primal.py");
 set("ODE number of samples", 100);
+
+k = get("ODE initial time step")
 
 pde = ElasticityPDE(mesh, f, lmbda, mu, u0, v0, bc, k, T, t)
 
