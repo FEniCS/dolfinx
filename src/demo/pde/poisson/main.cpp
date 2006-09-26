@@ -62,7 +62,7 @@ int main()
   Source f;
   DirichletBC bc;
   NeumannBC g;
-  UnitSquare mesh(16, 16);
+  UnitSquare mesh(256, 256);
   Poisson::BilinearForm a;
   Poisson::LinearForm L(f, g);
   PDE pde(a, L, mesh, bc);

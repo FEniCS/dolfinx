@@ -1,7 +1,5 @@
-%rename(increment) dolfin::VertexIterator::operator++;
-%rename(increment) dolfin::CellIterator::operator++;
-%rename(increment) dolfin::EdgeIterator::operator++;
-
+// Return Numeric arrays for Mesh::cells() and Mesh::vertices().
+// This is used in the PyCC mesh interface.
 %extend dolfin::NewMesh {
 
 PyObject * cells() {
@@ -25,28 +23,33 @@ PyObject * vertices() {
     Py_INCREF((PyObject *)arr);
     return (PyObject *)arr;
 }
-};
- 
+
+}
+
 %ignore dolfin::NewMesh::cells;
 %ignore dolfin::NewMesh::vertices;
 
-%include "dolfin/Mesh.h"
-%include "dolfin/Boundary.h"
-%include "dolfin/Point.h"
-%include "dolfin/Vertex.h"
-%include "dolfin/Edge.h"
-%include "dolfin/Triangle.h"
-%include "dolfin/Tetrahedron.h"
-%include "dolfin/Cell.h"
-%include "dolfin/Edge.h"
-%include "dolfin/Face.h"
-%include "dolfin/VertexIterator.h"
-%include "dolfin/CellIterator.h"
-%include "dolfin/EdgeIterator.h"
-%include "dolfin/FaceIterator.h"
-%include "dolfin/MeshIterator.h"
-%include "dolfin/UnitSquare.h"
-%include "dolfin/UnitCube.h"
+// Map increment operator and dereference operators for iterators
+%rename(increment) dolfin::MeshEntityIterator::operator++;
+%rename(dereference) dolfin::MeshEntityIterator::operator*;
+
+// Extend iterator to work as a Python iterator
+%extend dolfin::MeshEntityIterator {
+%pythoncode
+%{
+def __iter__(self):
+  self.first = True
+  return self
+
+def next(self):
+  if self.end():
+    raise StopIteration
+  if not self.first:  
+    self.increment()
+  self.first = False
+  return self.dereference()
+%}
+}
 
 %include "dolfin/MeshConnectivity.h"
 %include "dolfin/MeshEditor.h"
@@ -74,5 +77,26 @@ PyObject * vertices() {
 %include "dolfin/NewUnitCube.h"
 %include "dolfin/NewUnitSquare.h"
 
-
+// Interface for old mesh library below
    
+%include "dolfin/Mesh.h"
+%include "dolfin/Boundary.h"
+%include "dolfin/Point.h"
+%include "dolfin/Vertex.h"
+%include "dolfin/Edge.h"
+%include "dolfin/Triangle.h"
+%include "dolfin/Tetrahedron.h"
+%include "dolfin/Cell.h"
+%include "dolfin/Edge.h"
+%include "dolfin/Face.h"
+%include "dolfin/VertexIterator.h"
+%include "dolfin/CellIterator.h"
+%include "dolfin/EdgeIterator.h"
+%include "dolfin/FaceIterator.h"
+%include "dolfin/MeshIterator.h"
+%include "dolfin/UnitSquare.h"
+%include "dolfin/UnitCube.h"
+
+%rename(increment) dolfin::VertexIterator::operator++;
+%rename(increment) dolfin::CellIterator::operator++;
+%rename(increment) dolfin::EdgeIterator::operator++;

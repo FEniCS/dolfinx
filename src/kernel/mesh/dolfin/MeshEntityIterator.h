@@ -106,12 +106,12 @@ namespace dolfin
     /// Destructor
     virtual ~MeshEntityIterator() {}
     
-    /// Step to next mesh entity
+    /// Step to next mesh entity (prefix increment)
     MeshEntityIterator& operator++() { ++pos; return *this; }
 
     /// Check if iterator has reached the end
     inline bool end() const { return pos >= pos_end; }
-    
+
     /// Dereference operator
     inline MeshEntity& operator*() { entity._index = (index ? index[pos] : pos); return entity; }
 
