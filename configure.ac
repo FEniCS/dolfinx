@@ -2,7 +2,7 @@
 AC_INIT(DOLFIN, 0.6.2-1-dev, http://www.fenics.org/bugzilla/)
 
 # Init automake
-AM_INIT_AUTOMAKE($PACKAGE, $VERSION, no-define)
+AM_INIT_AUTOMAKE($PACKAGE_NAME, $PACKAGE_VERSION, no-define)
 
 # Tell automake not to generate Makefile.in unless asked to.
 # This way the code can be installed on systems without automake installed.
@@ -379,9 +379,7 @@ AC_SUBST(DOLFIN_LTLIBOBJS)
 AC_SUBST(PACKAGE_VERSION)
 AC_SUBST(PACKAGE_NAME)
 
-# Create Makefiles, seems like automake cannot handle a variable
-# containing the list of files, so this cannot be done
-# automatically. We have to list all the files.
+# List output to be generated: Makefiles and pkgconfig configuration
 AC_OUTPUT( Makefile \
            src/Makefile \
            src/pre/Makefile \
@@ -456,7 +454,8 @@ AC_OUTPUT( Makefile \
            src/utils/Makefile \
            src/utils/inp2dx/Makefile \
            src/utils/convert/Makefile \
-           src/greeting/Makefile )
+           src/greeting/Makefile \
+           dolfin.pc )
 
 # Display some configuration options
 echo "---------------------------------------------------------"

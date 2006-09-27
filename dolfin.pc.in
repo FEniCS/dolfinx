@@ -1,0 +1,13 @@
+# pkg-config configuration for DOLFIN
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: DOLFIN
+Description: Dynamic Object-oriented Library for FINite element computation
+Version: @PACKAGE_VERSION@
+Requires:
+Conflicts:
+Libs: -L${libdir} @DOLFIN_LIBS@
+Cflags: -I${includedir} @EXTERNAL_CFLAGS@ @CXXFLAGS@

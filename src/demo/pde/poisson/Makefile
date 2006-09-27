@@ -1,7 +1,7 @@
-CFLAGS  = `dolfin-config --cflags`
-LIBS    = `dolfin-config --libs`
-CXX     = `dolfin-config --compiler`
-LINK    = `dolfin-config --linker`
+CFLAGS  = `pkg-config dolfin --cflags`
+LIBS    = `pkg-config dolfin --libs`
+CXX     = g++
+LINK    = g++
 
 DEST    = dolfin-poisson
 OBJECTS = main.o
