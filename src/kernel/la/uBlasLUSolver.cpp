@@ -4,7 +4,7 @@
 // Modified by Anders Logg 2006.
 // 
 // First added:  2006-06-01
-// Last changed: 2006-08-08
+// Last changed: 2006-09-27
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/uBlasLUSolver.h>
@@ -69,11 +69,14 @@ dolfin::uint uBlasLUSolver::solve(const uBlasMatrix<ublas_sparse_matrix>& A, uBl
   dolfin_info("Solving linear system of size %d x %d (UMFPACK LU solver).", 
       M, N);
 
+  //FIXME: From UMFPACK v.5.0 onwards, UF_long is introduced and should be used 
+  //       in place of long int.
+
   double* dnull = (double *) NULL;
-  int*    inull = (int *) NULL;
+  long int*    inull = (long int *) NULL;
   void *Symbolic, *Numeric;
-  const unsigned int* Ap = &(A.index1_data() [0]);
-  const unsigned int* Ai = &(A.index2_data() [0]);
+  const std::size_t* Ap = &(A.index1_data() [0]);
+  const std::size_t* Ai = &(A.index2_data() [0]);
   const double* Ax = &(A.value_data() [0]);
   double* xx = &(x.data() [0]);
   const double* bb = &(b.data() [0]);
@@ -82,19 +85,19 @@ dolfin::uint uBlasLUSolver::solve(const uBlasMatrix<ublas_sparse_matrix>& A, uBl
   // Solve for transpose since we use compressed row format, and UMFPACK 
   // expects compressed column format
 
-  int* Rp = new int[M+1];
-  int* Ri = new int[nz];
-  double* Rx = new double[nz];
+  long int* Rp = new long int[M+1];
+  long int* Ri = new long int[nz];
+  double* Rx   = new double[nz];
 
   // Compute transpose
-  umfpack_di_transpose(M, M, (const int*) Ap, (const int*) Ai, Ax, inull, inull, Rp, Ri, Rx);
+  umfpack_dl_transpose(M, M, (const long int*) Ap, (const long int*) Ai, Ax, inull, inull, Rp, Ri, Rx);
 
   // Solve procedure
-  umfpack_di_symbolic(M, M, (const int*) Rp, (const int*) Ri, Rx, &Symbolic, dnull, dnull);
-  umfpack_di_numeric( (const int*) Rp, (const int*) Ri, Rx, Symbolic, &Numeric, dnull, dnull);
-  umfpack_di_free_symbolic(&Symbolic);
-  umfpack_di_solve(UMFPACK_A, (const int*) Rp, (const int*) Ri, Rx, xx, bb, Numeric, dnull, dnull);
-  umfpack_di_free_numeric(&Numeric);
+  umfpack_dl_symbolic(M, M, (const long int*) Rp, (const long int*) Ri, Rx, &Symbolic, dnull, dnull);
+  umfpack_dl_numeric( (const long int*) Rp, (const long int*) Ri, Rx, Symbolic, &Numeric, dnull, dnull);
+  umfpack_dl_free_symbolic(&Symbolic);
+  umfpack_dl_solve(UMFPACK_A, (const long int*) Rp, (const long int*) Ri, Rx, xx, bb, Numeric, dnull, dnull);
+  umfpack_dl_free_numeric(&Numeric);
 
   // Clean up
   delete [] Rp;
