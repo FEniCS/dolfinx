@@ -104,9 +104,7 @@ CPPFLAGS = @CPPFLAGS@
 CXX = @CXX@
 CXXCPP = @CXXCPP@
 CXXDEPMODE = @CXXDEPMODE@
-
-# Temporary fix: don't include -Werr to get around problem with Numeric/arrayobject.h
-CXXFLAGS = @DOLFIN_DEFINITIONS@ -g -O2 -Wall -ansi
+CXXFLAGS = @CXXFLAGS@
 CYGPATH_W = @CYGPATH_W@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
@@ -227,6 +225,9 @@ _dolfin_la_SOURCES = dolfin_wrap.cpp dolfin_glue.cpp $(SWIG_SOURCES)
 _dolfin_la_CPPFLAGS = @SWIG_PYTHON_CPPFLAGS@ @DOLFIN_CFLAGS@ -I$(top_builddir)/src/pydolfin
 _dolfin_la_LDFLAGS = -module @DOLFIN_EXT_LIBS@
 _dolfin_la_LIBADD = $(top_builddir)/src/lib/libdolfin.la
+
+# Temporary fix: don't include -Werr to get around problem with Numeric/arrayobject.h
+AM_CXXFLAGS = @DOLFIN_DEFINITIONS@ -g -O2 -Wall -ansi
 all: $(BUILT_SOURCES)
 	$(MAKE) $(AM_MAKEFLAGS) all-am
 
