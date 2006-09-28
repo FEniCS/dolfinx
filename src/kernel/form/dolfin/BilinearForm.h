@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2004-05-28
-// Last changed: 2006-09-19
+// Last changed: 2006-09-28
 
 #ifndef __BILINEAR_FORM_H
 #define __BILINEAR_FORM_H
@@ -29,10 +29,16 @@ namespace dolfin
     
     /// Destructor
     virtual ~BilinearForm();
+
+    /// Check if there is a contribution from the interior
+    virtual bool interior_contribution() const = 0;
     
     /// Compute element matrix (interior contribution)
     virtual void eval(real block[], const AffineMap& map) const = 0;
     
+    /// Check if there is a contribution from the boundary
+    virtual bool boundary_contribution() const = 0;
+
     /// Compute element matrix (boundary contribution)
     virtual void eval(real block[], const AffineMap& map, uint segment) const = 0;
 

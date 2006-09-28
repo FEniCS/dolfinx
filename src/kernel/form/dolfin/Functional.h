@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-09-18
-// Last changed: 2006-09-19
+// Last changed: 2006-09-28
 
 #ifndef __FUNCTIONAL_H
 #define __FUNCTIONAL_H
@@ -28,8 +28,14 @@ namespace dolfin
     /// Destructor
     virtual ~Functional();
 
+    /// Check if there is a contribution from the interior
+    virtual bool interior_contribution() const = 0;
+
     /// Compute element vector (interior contribution)
     virtual void eval(real block[], const AffineMap& map) const = 0;
+
+    /// Check if there is a contribution from the boundary
+    virtual bool boundary_contribution() const = 0;
 
     /// Compute element vector (boundary contribution)
     virtual void eval(real block[], const AffineMap& map, uint segment) const = 0;

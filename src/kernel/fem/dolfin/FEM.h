@@ -5,7 +5,7 @@
 // Modified by Kristian Oelgaard 2006.
 //
 // First added:  2004-05-19
-// Last changed: 2006-09-19
+// Last changed: 2006-09-28
 
 #ifndef __FEM_H
 #define __FEM_H
@@ -145,6 +145,8 @@ namespace dolfin
 
       // Initialize element matrix/vector data block
       uint nz = 0;
+      bool interior_contribution = false;
+      bool boundary_contribution = false;
       if ( a )
       { 
 	const uint M = size(mesh, a->test());
@@ -152,6 +154,8 @@ namespace dolfin
         nz = estimateNonZeros(mesh, a->trial());
         A->init(M, N, nz);
         A->zero();
+	interior_contribution = interior_contribution || a->interior_contribution();
+	boundary_contribution = boundary_contribution || a->boundary_contribution();
 	dolfin_info("Assembling system (matrix and vector) of size %d x %d.", M, N);
       }
       if ( L )
@@ -159,136 +163,166 @@ namespace dolfin
 	const uint M = size(mesh, L->test());
         b->init(M);
         b->zero();
+	interior_contribution = interior_contribution || L->interior_contribution();
+	boundary_contribution = boundary_contribution || L->boundary_contribution();
         dolfin_info("Assembling vector of size %d.", M);
       }
       if ( M )
       {
 	*val = 0.0;
+	interior_contribution = interior_contribution || M->interior_contribution();
+	boundary_contribution = boundary_contribution || M->boundary_contribution();
 	dolfin_info("Assembling functional.");
       }
 
-      // Start a progress session
-      Progress p("Assembling interior contributions", mesh.numCells());
-   
-      // Iterate over all cells in the mesh
-      for (CellIterator cell(mesh); !cell.end(); ++cell)
+      // Assemble interior contribution
+      if ( interior_contribution )
       {
-        // Update affine map
-        map.update(*cell);
-  
-	// Assemble bilinear form
-        if ( a )
-        {
-          // Update form
-          a->update(map);
-	  
-          // Compute maps from local to global degrees of freedom
-          a->test().nodemap(a->test_nodes, *cell, mesh);
-	  a->trial().nodemap(a->trial_nodes, *cell, mesh);
-	  
-          // Compute element matrix 
-          a->eval(a->block, map);
-	  
-          // Add element matrix to global matrix
-          A->add(a->block, a->test_nodes, a->test().spacedim(), a->trial_nodes, a->trial().spacedim());
-        }
+	// Start a progress session
+	Progress p("Assembling interior contributions", mesh.numCells());
 	
-	// Assemble linear form
-        if ( L )
-        {
-          // Update form
-          L->update(map);
-
-          // Compute map from local to global degrees of freedom
-          L->test().nodemap(L->test_nodes, *cell, mesh);
-
-          // Compute element vector 
-          L->eval(L->block, map);
-
-          // Add element vector to global vector
-          b->add(L->block, L->test_nodes, L->test().spacedim());
-        }
-
-	// Assemble functional
-	if ( M )
+	// Iterate over all cells in the mesh
+	for (CellIterator cell(mesh); !cell.end(); ++cell)
 	{
-	  // Update form
-          M->update(map);
+	  // Update affine map
+	  map.update(*cell);
 	  
-          // Compute element entry
-          M->eval(M->block, map);
+	  // Assemble bilinear form
+	  if ( a )
+	  {
+	    if ( a->interior_contribution() )
+	    {
+	      // Update form
+	      a->update(map);
+	      
+	      // Compute maps from local to global degrees of freedom
+	      a->test().nodemap(a->test_nodes, *cell, mesh);
+	      a->trial().nodemap(a->trial_nodes, *cell, mesh);
+	      
+	      // Compute element matrix 
+	      a->eval(a->block, map);
+	      
+	      // Add element matrix to global matrix
+	      A->add(a->block, a->test_nodes, a->test().spacedim(), a->trial_nodes, a->trial().spacedim());
+	    }
+	  }
 	  
-          // Add element entry to global value
-	  *val += M->block[0];
-	}
+	  // Assemble linear form
+	  if ( L )
+	  {
+	    if ( L->interior_contribution() )
+	    {
+	      // Update form
+	      L->update(map);
+	      
+	      // Compute map from local to global degrees of freedom
+	      L->test().nodemap(L->test_nodes, *cell, mesh);
+	      
+	      // Compute element vector 
+	      L->eval(L->block, map);
+	      
+	      // Add element vector to global vector
+	      b->add(L->block, L->test_nodes, L->test().spacedim());
+	    }
+	  }
 
-        // Update progress
-        p++;
+	  // Assemble functional
+	  if ( M )
+	  {
+	    if ( M->interior_contribution() )
+	    {
+	      // Update form
+	      M->update(map);
+	      
+	      // Compute element entry
+	      M->eval(M->block, map);
+	      
+	      // Add element entry to global value
+	      *val += M->block[0];
+	    }
+	    
+	    // Update progress
+	    p++;
+	  }
+	}
       }
 
-      // Iterate over all facets on the boundary
-      Boundary boundary(mesh);
-      Progress p_boundary("Assembling boundary contributions", boundary.numFacets());
-      for ( ; !facet.end(); ++facet)
+      // Assemble boundary contribution
+      if ( boundary_contribution )
       {
-        // Get cell containing the edge (pick first, should only be one)
-        dolfin_assert(facet.numCellNeighbors() == 1);
-        Cell& cell = facet.cell(0);
-
-        // Get local facet ID
-	uint facetID = facet.localID(0);
-      
-        // Update affine map for facet 
-        map.update(cell, facetID);
-
-	// Assemble bilinear form
-        if ( a )
-        {
-          // Update form
-          a->update(map);  
-
-          // Compute maps from local to global degrees of freedom
-	  a->test().nodemap(a->test_nodes, cell, mesh);
-          a->trial().nodemap(a->trial_nodes, cell, mesh);
-
-          // Compute element matrix 
-          a->eval(a->block, map, facetID);
-
-          // Add element matrix to global matrix
-          A->add(a->block, a->test_nodes, a->test().spacedim(), a->trial_nodes, a->trial().spacedim());
-        }
-
-	// Assemble linear form
-        if ( L )
-        {
-          // Update form
-          L->update(map);
-
-          // Compute map from local to global degrees of freedom
-	  L->test().nodemap(L->test_nodes, cell, mesh);
-          
-	  // Compute element vector
-          L->eval(L->block, map, facetID);
-          
-	  // Add element vector to global vector
-          b->add(L->block, L->test_nodes, L->test().spacedim());
-        }
-
-	// Assemble functional
-        if ( M )
-        {
-          // Update form
-          M->update(map);
-
-	  // Compute element entry
-          M->eval(M->block, map, facetID);
-          
-	  // Add element entry to global value
-	  *val += M->block[0];
-        }
-	
-        // Update progress
-        p_boundary++;
+	// Iterate over all facets on the boundary
+	Boundary boundary(mesh);
+	Progress p_boundary("Assembling boundary contributions", boundary.numFacets());
+	for ( ; !facet.end(); ++facet)
+	{
+	  // Get cell containing the edge (pick first, should only be one)
+	  dolfin_assert(facet.numCellNeighbors() == 1);
+	  Cell& cell = facet.cell(0);
+	  
+	  // Get local facet ID
+	  uint facetID = facet.localID(0);
+	  
+	  // Update affine map for facet 
+	  map.update(cell, facetID);
+	  
+	  // Assemble bilinear form
+	  if ( a )
+	  {
+	    if ( a->boundary_contribution() )
+	    {
+	      // Update form
+	      a->update(map);  
+	      
+	      // Compute maps from local to global degrees of freedom
+	      a->test().nodemap(a->test_nodes, cell, mesh);
+	      a->trial().nodemap(a->trial_nodes, cell, mesh);
+	      
+	      // Compute element matrix 
+	      a->eval(a->block, map, facetID);
+	      
+	      // Add element matrix to global matrix
+	      A->add(a->block, a->test_nodes, a->test().spacedim(), a->trial_nodes, a->trial().spacedim());
+	    }
+	  }
+	    
+	  // Assemble linear form
+	  if ( L )
+	  {
+	    if ( L->boundary_contribution() )
+	    {
+	      // Update form
+	      L->update(map);
+	      
+	      // Compute map from local to global degrees of freedom
+	      L->test().nodemap(L->test_nodes, cell, mesh);
+	      
+	      // Compute element vector
+	      L->eval(L->block, map, facetID);
+	      
+	      // Add element vector to global vector
+	      b->add(L->block, L->test_nodes, L->test().spacedim());
+	    }
+	  }
+	    
+	  // Assemble functional
+	  if ( M )
+	  {
+	    if ( M->boundary_contribution() )
+	    {
+	      // Update form
+	      M->update(map);
+	      
+	      // Compute element entry
+	      M->eval(M->block, map, facetID);
+	      
+	      // Add element entry to global value
+	      *val += M->block[0];
+	    }
+	  }
+	  
+	  // Update progress
+	  p_boundary++;
+	}
       }
 
       // Complete assembly
