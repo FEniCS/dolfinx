@@ -1,7 +1,7 @@
 from dolfin import *
 
 class ElasticityPDE(TimeDependentPDE):
-    def __init__(self, mesh, f, bc, k, T, t):
+    def __init__(self, mesh, f, bc, T, t):
         
         self.t = t
 
@@ -19,7 +19,7 @@ class ElasticityPDE(TimeDependentPDE):
         self.N = self.U.vector().size()
 
         TimeDependentPDE.__init__(self, self.aelast, self.Lelast, mesh,
-                                  bc, self.N, k, T)
+                                  bc, self.N, T)
 
         self.xtmp = Vector(self.U.vector().size())
 
@@ -61,20 +61,9 @@ class ElasticityPDE(TimeDependentPDE):
 
     def fu(self, x, dotx, t):
 
-        #print "x: "
-        #x.disp()
-
         self.t.assign(t)
 
         self.U.vector().copy(x, 0, 0, self.U.vector().size())
-        #self.V.vector().copy(x, 0, self.U.vector().size(),
-        #                     self.V.vector().size())
-
-        # U
-
-        #dotx.copy(x, 0, self.V.vector().size(), self.U.vector().size())
-
-        # V
 
         dolfin_log(False)
         FEM_assemble(self.L(), self.xtmp, self.mesh())

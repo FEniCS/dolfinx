@@ -26,10 +26,10 @@
 using namespace dolfin;
 
 TimeDependentPDE::TimeDependentPDE(BilinearForm& a, LinearForm& L, Mesh& mesh, 
-  BoundaryCondition& bc, int N, real k, real T) : GenericPDE(), x(0), k(k),
-						  _a(&a), _Lf(&L),
-						  _mesh(&mesh), _bc(&bc),
-						  N(N), t(0), T(T)
+  BoundaryCondition& bc, int N, real T) : GenericPDE(), x(0),
+					  _a(&a), _Lf(&L),
+					  _mesh(&mesh), _bc(&bc),
+					  N(N), t(0), T(T)
 {
   x = new Vector(N);
   dotx = new Vector(N);
@@ -177,11 +177,6 @@ void TimeDependentODE::f(const uBlasVector& u, real t, uBlasVector& y)
 bool TimeDependentODE::update(const uBlasVector& u, real t, bool end)
 {
   return true;
-}
-//-----------------------------------------------------------------------------
-real TimeDependentODE::timestep(real t, real k0) const
-{
-  return pde->k;
 }
 //-----------------------------------------------------------------------------
 
