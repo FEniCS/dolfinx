@@ -12,7 +12,6 @@
 #include <dolfin/Solver.h>
 #include <dolfin/ODE.h>
 #include <dolfin/TimeStepper.h>
-#include <dolfin/Heat.h>
 
 namespace dolfin
 {
@@ -39,6 +38,8 @@ namespace dolfin
     /// Solve Heat's equation (static version)
     static void solve(Mesh& mesh, Function& f, BoundaryCondition& bc, real& T);
   
+    FiniteElement* element;
+
     Mesh& mesh;
     Function& f;
     BoundaryCondition& bc;
@@ -46,12 +47,10 @@ namespace dolfin
     Matrix Dummy;
     Vector x, dotu, m;
 
-    Heat::LinearForm::TestElement element;
-
     Function u;
 
-    Heat::BilinearForm a;
-    Heat::LinearForm L;
+    BilinearForm* a;
+    LinearForm* L;
 
     uint N, fevals;
 

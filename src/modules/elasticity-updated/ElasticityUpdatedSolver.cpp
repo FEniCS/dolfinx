@@ -7,8 +7,6 @@
 // First added:  2005
 // Last changed: 2006-02-20
 
-#ifdef HAVE_PETSC_H
-
 //#include <iostream>
 #include <sstream>
 #include <iomanip>
@@ -66,15 +64,21 @@ ElasticityUpdatedSolver::ElasticityUpdatedSolver(Mesh& mesh,
   cout << "lmbda: " << lmbda << endl;
   cout << "mu: " << mu << endl;
 
+#ifdef HAVE_PETSC_H
+
   init();
   ode = new ElasticityUpdatedODE(*this);
   ts = new TimeStepper(*ode);
+
+#endif
 }
 //-----------------------------------------------------------------------------
 ElasticityUpdatedSolver& ElasticityUpdatedSolver::operator=(const ElasticityUpdatedSolver& solver)
 {
   return *this;
 }
+//-----------------------------------------------------------------------------
+#ifdef HAVE_PETSC_H
 //-----------------------------------------------------------------------------
 void ElasticityUpdatedSolver::init()
 {
@@ -537,6 +541,64 @@ VecScatter* ElasticityUpdatedSolver::createScatterer(Vector& x1, Vector& x2,
   return sc;
 }
 //-----------------------------------------------------------------------------
+void ElasticityUpdatedSolver::fromArray(const real u[], Vector& x, uint offset,
+				     uint size)
+{
+  // Workaround to interface Vector and arrays
+
+  real* vals = 0;
+  vals = x.array();
+  for(uint i = 0; i < size; i++)
+  {
+    vals[i] = u[i + offset];
+  }
+  x.restore(vals);
+}
+//-----------------------------------------------------------------------------
+void ElasticityUpdatedSolver::toArray(real y[], Vector& x, uint offset,
+				      uint size)
+{
+  // Workaround to interface Vector and arrays
+
+  real* vals = 0;
+  vals = x.array();
+  for(uint i = 0; i < size; i++)
+  {
+    y[offset + i] = vals[i];
+  }
+  x.restore(vals);
+}
+//-----------------------------------------------------------------------------
+void ElasticityUpdatedSolver::fromDense(const uBlasVector& u, Vector& x,
+					uint offset, uint size)
+{
+  // Workaround to interface Vector and uBlasVector
+
+  real* vals = 0;
+  vals = x.array();
+  for(uint i = 0; i < size; i++)
+  {
+    vals[i] = u[i + offset];
+  }
+  x.restore(vals);
+}
+//-----------------------------------------------------------------------------
+void ElasticityUpdatedSolver::toDense(uBlasVector& y, Vector& x, uint offset,
+				      uint size)
+{
+  // Workaround to interface Vector and uBlasVector
+
+  real* vals = 0;
+  vals = x.array();
+  for(uint i = 0; i < size; i++)
+  {
+    y[offset + i] = vals[i];
+  }
+  x.restore(vals);
+}
+//-----------------------------------------------------------------------------
+#endif
+//-----------------------------------------------------------------------------
 void ElasticityUpdatedSolver::computeFGreen(Vector& xF, Vector& xF0, Vector& xF1,
 					  FiniteElement& element1, Mesh& mesh)
 {
@@ -978,61 +1040,6 @@ void ElasticityUpdatedSolver::initJ0(Vector& xJ0,
   }
 }
 //-----------------------------------------------------------------------------
-void ElasticityUpdatedSolver::fromArray(const real u[], Vector& x, uint offset,
-				     uint size)
-{
-  // Workaround to interface Vector and arrays
-
-  real* vals = 0;
-  vals = x.array();
-  for(uint i = 0; i < size; i++)
-  {
-    vals[i] = u[i + offset];
-  }
-  x.restore(vals);
-}
-//-----------------------------------------------------------------------------
-void ElasticityUpdatedSolver::toArray(real y[], Vector& x, uint offset,
-				      uint size)
-{
-  // Workaround to interface Vector and arrays
-
-  real* vals = 0;
-  vals = x.array();
-  for(uint i = 0; i < size; i++)
-  {
-    y[offset + i] = vals[i];
-  }
-  x.restore(vals);
-}
-//-----------------------------------------------------------------------------
-void ElasticityUpdatedSolver::fromDense(const uBlasVector& u, Vector& x,
-					uint offset, uint size)
-{
-  // Workaround to interface Vector and uBlasVector
-
-  real* vals = 0;
-  vals = x.array();
-  for(uint i = 0; i < size; i++)
-  {
-    vals[i] = u[i + offset];
-  }
-  x.restore(vals);
-}
-//-----------------------------------------------------------------------------
-void ElasticityUpdatedSolver::toDense(uBlasVector& y, Vector& x, uint offset,
-				      uint size)
-{
-  // Workaround to interface Vector and uBlasVector
-
-  real* vals = 0;
-  vals = x.array();
-  for(uint i = 0; i < size; i++)
-  {
-    y[offset + i] = vals[i];
-  }
-  x.restore(vals);
-}
 //-----------------------------------------------------------------------------
 ElasticityUpdatedODE::ElasticityUpdatedODE(ElasticityUpdatedSolver& solver) :
   ODE(1, 1.0), solver(solver)
@@ -1043,11 +1050,14 @@ ElasticityUpdatedODE::ElasticityUpdatedODE(ElasticityUpdatedSolver& solver) :
 //-----------------------------------------------------------------------------
 void ElasticityUpdatedODE::u0(uBlasVector& u)
 {
+#ifdef HAVE_PETSC_H
   solver.toDense(u, solver.dotu, 0, solver.dotu.size());
+#endif
 }
 //-----------------------------------------------------------------------------
 void ElasticityUpdatedODE::f(const uBlasVector& u, real t, uBlasVector &y)
 {
+#ifdef HAVE_PETSC_H
   // Copy values from ODE array
   solver.fromDense(u, solver.x1_1, 0, solver.Nv);
   solver.fromDense(u, solver.x2_1, solver.Nv, solver.Nv);
@@ -1060,16 +1070,18 @@ void ElasticityUpdatedODE::f(const uBlasVector& u, real t, uBlasVector &y)
 
   // Copy values into ODE array
   solver.toDense(y, solver.dotu, 0, 2 * solver.Nv + solver.Nsigma);
+#endif
 }
 //-----------------------------------------------------------------------------
 bool ElasticityUpdatedODE::update(const uBlasVector& u, real t, bool end)
 {
+#ifdef HAVE_PETSC_H
   solver.fromDense(u, solver.x1_1, 0, solver.Nv);
   solver.fromDense(u, solver.x2_1, solver.Nv, solver.Nv);
   solver.fromDense(u, solver.xsigma1, 2 * solver.Nv, solver.Nsigma);
+#endif
 
   return true;
 }
 //-----------------------------------------------------------------------------
 
-#endif

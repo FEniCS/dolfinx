@@ -51,6 +51,10 @@ def next(self):
 %}
 }
 
+%rename(increment) dolfin::VertexIterator::operator++;
+%rename(increment) dolfin::CellIterator::operator++;
+%rename(increment) dolfin::EdgeIterator::operator++;
+
 %include "dolfin/MeshConnectivity.h"
 %include "dolfin/MeshEditor.h"
 %include "dolfin/MeshEntity.h"
@@ -97,6 +101,3 @@ def next(self):
 %include "dolfin/UnitSquare.h"
 %include "dolfin/UnitCube.h"
 
-%rename(increment) dolfin::VertexIterator::operator++;
-%rename(increment) dolfin::CellIterator::operator++;
-%rename(increment) dolfin::EdgeIterator::operator++;
