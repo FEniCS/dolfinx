@@ -1,5 +1,7 @@
-CFLAGS  = `pkg-config dolfin --cflags`
-LIBS    = `pkg-config dolfin --libs`
+#CFLAGS  = `pkg-config dolfin --cflags`
+#LIBS    = `pkg-config dolfin --libs`
+CFLAGS  = `dolfin-config --cflags`
+LIBS    = `dolfin-config --libs`
 CXX     = g++
 LINK    = libtool --silent --mode=link --tag CXX g++
 
