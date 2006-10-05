@@ -6,7 +6,7 @@
 // First added:  2002-11-29
 // Last changed: 2005-12-28
 //
-// A cG(1)cG(1) solver for the incompressible Navier-Stokes equations 
+// A cG(1)cG(1) FEM solver for the incompressible Navier-Stokes equations 
 //
 //     du/dt + u * grad u - nu * div grad u + grad p = f 
 //     div u = 0 
