@@ -212,21 +212,21 @@ namespace dolfin
         // Update affine map
         map.update(*cell);
 	  
-	      // Assemble bilinear form
-	      if ( a )
+        // Assemble bilinear form
+        if ( a )
           if ( a->interior_contribution() )
             assembleElement(*a, *A, mesh, *cell, map, -1);              
-	  
+        
         // Assemble linear form
         if ( L )
           if ( L->interior_contribution() )
             assembleElement(*L, *b, mesh, *cell, map, -1);              
-
+        
         // Assemble functional
         if ( M )
           if ( M->interior_contribution() )
             assembleElement(*M, *val, map, -1);              
-
+        
         // Update progress
         p++;
       }
@@ -408,7 +408,7 @@ namespace dolfin
     // Compute element matrix 
     if( facetID < 0 )
       a.eval(a.block, map);
-          else
+    else
       a.eval(a.block, map, facetID);
 
     // Add element matrix to global matrix
@@ -427,7 +427,7 @@ namespace dolfin
     // Compute element vector 
     if( facetID < 0 )
       L.eval(L.block, map);
-          else
+    else
       L.eval(L.block, map, facetID);
 
     // Add element vector to global vector
@@ -443,9 +443,9 @@ namespace dolfin
     // Compute element entry
     if( facetID < 0 )
       M.eval(M.block, map);
-          else
+    else
       M.eval(M.block, map, facetID);
-
+    
     // Add element entry to global value
     val += M.block[0];
   }
