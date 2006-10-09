@@ -4,7 +4,7 @@
 // Modified by Anders Logg 2004-2006.
 //
 // First added:  2004
-// Last changed: 2006-02-20
+// Last changed: 2006-10-09
 
 #include <dolfin/Mesh.h>
 #include <dolfin/Function.h>
@@ -82,10 +82,10 @@ void TecplotFile::operator<<(Function& u)
     fprintf(fp, "\n");	  
     if ( u.mesh().type() == Mesh::tetrahedra )
 	     fprintf(fp, "ZONE T = \"%6d\" N = %8d, E = %8d, DATAPACKING = POINT, ZONETYPE=FETETRAHEDRON \n", 
-	         u.number()+1, u.mesh().numVertices(), u.mesh().numCells());
+	         counter+1, u.mesh().numVertices(), u.mesh().numCells());
     if ( u.mesh().type() == Mesh::triangles )
        fprintf(fp, "ZONE T = \"%6d\"  N = %8d, E = %8d, DATAPACKING = POINT, ZONETYPE=FETRIANGLE \n",
-            u.number()+1, u.mesh().numVertices(), u.mesh().numCells());
+           counter+1, u.mesh().numVertices(), u.mesh().numCells());
 
 
     // Write vertex locations and results
@@ -115,10 +115,10 @@ void TecplotFile::operator<<(Function& u)
       // Write header
 	  if ( u.mesh().type() == Mesh::tetrahedra )
       	   fprintf(fp, "ZONE T = \"%6d\" N = %8d, E = %8d,  DATAPACKING = POINT, ZONETYPE=FETETRAHEDRON, VARSHARELIST = ([1-3]=1) CONNECTIVITYSHAREZONE=1 \n", 
-      	     u.number()+1, u.mesh().numVertices(), u.mesh().numCells());
+      	     counter+1, u.mesh().numVertices(), u.mesh().numCells());
      if ( u.mesh().type() == Mesh::triangles )
            fprintf(fp, "ZONE T = \"%6d\"  N = %8d, E = %8d, DATAPACKING = POINT, ZONETYPE=FETRIANGLE, VARSHARELIST = ([1,2]=1) CONNECTIVITYSHAREZONE=1 \n", 
-              u.number()+1, u.mesh().numVertices(), u.mesh().numCells());
+             counter+1, u.mesh().numVertices(), u.mesh().numCells());
 
       // Write vertex locations and results
       for (VertexIterator n(u.mesh()); !n.end(); ++n)
