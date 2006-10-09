@@ -5,7 +5,7 @@
 // Modified by Kristian Oelgaard 2006.
 //
 // First added:  2005-07-05
-// Last changed: 2006-06-12
+// Last changed: 2006-10-09
 
 #include <dolfin/Mesh.h>
 #include <dolfin/NewMesh.h>
@@ -51,7 +51,7 @@ void VTKFile::operator<<(Mesh& mesh)
   // Increase the number of times we have saved the mesh
   counter++;
 
-  cout << "saved mesh " << mesh.number() << " times." << endl;
+  cout << "saved mesh " << counter << " times." << endl;
 
   cout << "Saved mesh " << mesh.name() << " (" << mesh.label()
        << ") to file " << filename << " in VTK format." << endl;
@@ -79,7 +79,7 @@ void VTKFile::operator<<(NewMesh& mesh)
   // Increase the number of times we have saved the mesh
   counter++;
 
-  cout << "saved mesh " << mesh.number() << " times." << endl;
+  cout << "saved mesh " << counter << " times." << endl;
 
   cout << "Saved mesh " << mesh.name() << " (" << mesh.label()
        << ") to file " << filename << " in VTK format." << endl;
