@@ -9,7 +9,7 @@
 
 #include <dolfin/constants.h>
 #include <dolfin/dolfin_log.h>
-#include <dolfin/NewMesh.h>
+#include <dolfin/Mesh.h>
 
 namespace dolfin
 {
@@ -22,16 +22,16 @@ namespace dolfin
   public:
 
     /// Constructor
-    MeshEntity(NewMesh& mesh, uint dim, uint index) : _mesh(mesh), _dim(dim), _index(index) {}
+    MeshEntity(Mesh& mesh, uint dim, uint index) : _mesh(mesh), _dim(dim), _index(index) {}
 
     /// Destructor
     ~MeshEntity() {}
 
     /// Return mesh associated with mesh entity
-    inline NewMesh& mesh() { return _mesh; }
+    inline Mesh& mesh() { return _mesh; }
 
     /// Return mesh associated with mesh entity
-    inline const NewMesh& mesh() const { return _mesh; }
+    inline const Mesh& mesh() const { return _mesh; }
 
     /// Return topological dimension
     inline uint dim() const { return _dim; }
@@ -57,7 +57,7 @@ namespace dolfin
     friend class MeshEntityIterator;
 
     // The mesh
-    NewMesh& _mesh;
+    Mesh& _mesh;
 
     // Topological dimension
     uint _dim;

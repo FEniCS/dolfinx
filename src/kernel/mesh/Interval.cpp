@@ -5,7 +5,7 @@
 // Last changed: 2006-06-16
 
 #include <dolfin/dolfin_log.h>
-#include <dolfin/NewCell.h>
+#include <dolfin/Cell.h>
 #include <dolfin/MeshEditor.h>
 #include <dolfin/Interval.h>
 
@@ -48,7 +48,7 @@ void Interval::createEntities(uint** e, uint dim, const uint v[]) const
   dolfin_error1("Don't know how to create entities of topological dimension %d.", dim);
 }
 //-----------------------------------------------------------------------------
-void Interval::refineCell(NewCell& cell, MeshEditor& editor,
+void Interval::refineCell(Cell& cell, MeshEditor& editor,
 			  uint& current_cell) const
 {
   // Get vertices and edges

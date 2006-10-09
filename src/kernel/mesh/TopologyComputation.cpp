@@ -8,7 +8,7 @@
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Array.h>
 #include <dolfin/CellType.h>
-#include <dolfin/NewMesh.h>
+#include <dolfin/Mesh.h>
 #include <dolfin/MeshTopology.h>
 #include <dolfin/MeshConnectivity.h>
 #include <dolfin/MeshEntity.h>
@@ -18,7 +18,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-dolfin::uint TopologyComputation::computeEntities(NewMesh& mesh, uint dim)
+dolfin::uint TopologyComputation::computeEntities(Mesh& mesh, uint dim)
 {
   // Generating an entity of topological dimension dim is equivalent
   // to generating the connectivity dim - 0 (connections to vertices)
@@ -119,7 +119,7 @@ dolfin::uint TopologyComputation::computeEntities(NewMesh& mesh, uint dim)
   return num_entities;
 }
 //-----------------------------------------------------------------------------
-void TopologyComputation::computeConnectivity(NewMesh& mesh, uint d0, uint d1)
+void TopologyComputation::computeConnectivity(Mesh& mesh, uint d0, uint d1)
 {
   // This is where all the logic takes place to find a stragety for
   // the connectivity computation. For any given pair (d0, d1), the
@@ -177,7 +177,7 @@ void TopologyComputation::computeConnectivity(NewMesh& mesh, uint d0, uint d1)
   }
 }
 //----------------------------------------------------------------------------
-void TopologyComputation::computeFromTranspose(NewMesh& mesh, uint d0, uint d1)
+void TopologyComputation::computeFromTranspose(Mesh& mesh, uint d0, uint d1)
 {
   // The transpose is computed in three steps:
   //
@@ -223,7 +223,7 @@ void TopologyComputation::computeFromTranspose(NewMesh& mesh, uint d0, uint d1)
       connectivity.set(e0->index(), e1->index(), tmp[e0->index()]++);
 }
 //----------------------------------------------------------------------------
-void TopologyComputation::computeFromIntersection(NewMesh& mesh,
+void TopologyComputation::computeFromIntersection(Mesh& mesh,
 					     uint d0, uint d1, uint d)
 {
   // The intersection is computed in three steps:
@@ -328,7 +328,7 @@ void TopologyComputation::computeFromIntersection(NewMesh& mesh,
   }
 }
 //----------------------------------------------------------------------------
-dolfin::uint TopologyComputation::countEntities(NewMesh& mesh, MeshEntity& cell,
+dolfin::uint TopologyComputation::countEntities(Mesh& mesh, MeshEntity& cell,
 					   uint** entities, uint m, uint n,
 					   uint dim)
 {
@@ -365,7 +365,7 @@ dolfin::uint TopologyComputation::countEntities(NewMesh& mesh, MeshEntity& cell,
   return num_entities;
 }
 //----------------------------------------------------------------------------
-void TopologyComputation::addEntities(NewMesh& mesh, MeshEntity& cell,
+void TopologyComputation::addEntities(Mesh& mesh, MeshEntity& cell,
 				 uint** entities, uint m, uint n, uint dim,
 				 MeshConnectivity& ce,
 				 MeshConnectivity& ev,

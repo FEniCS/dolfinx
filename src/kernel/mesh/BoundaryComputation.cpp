@@ -6,9 +6,9 @@
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Array.h>
-#include <dolfin/NewMesh.h>
-#include <dolfin/NewFacet.h>
-#include <dolfin/NewVertex.h>
+#include <dolfin/Mesh.h>
+#include <dolfin/Facet.h>
+#include <dolfin/Vertex.h>
 #include <dolfin/MeshEditor.h>
 #include <dolfin/MeshTopology.h>
 #include <dolfin/MeshGeometry.h>
@@ -18,7 +18,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void BoundaryComputation::computeBoundary(NewMesh& mesh,
+void BoundaryComputation::computeBoundary(Mesh& mesh,
 					  BoundaryMesh& boundary)
 {
   // We iterate over all facets in the mesh and check if they are on
@@ -43,13 +43,13 @@ void BoundaryComputation::computeBoundary(NewMesh& mesh,
   // Count boundary vertices and facets, and assign vertex indices
   uint num_boundary_vertices = 0;
   uint num_boundary_facets = 0;
-  for (NewFacetIterator f(mesh); !f.end(); ++f)
+  for (FacetIterator f(mesh); !f.end(); ++f)
   {
     // Boundary facets are connected to exactly one cell
     if ( f->numConnections(mesh.dim()) == 1 )
     {
       // Count boundary vertices and assign indices
-      for (NewVertexIterator v(f); !v.end(); ++v)
+      for (VertexIterator v(f); !v.end(); ++v)
       {
 	const uint vertex_index = v->index();
 	if ( boundary_vertices[vertex_index] == num_vertices )
@@ -66,7 +66,7 @@ void BoundaryComputation::computeBoundary(NewMesh& mesh,
   editor.initCells(num_boundary_facets);
   
   // Create vertices
-  for (NewVertexIterator v(mesh); !v.end(); ++v)
+  for (VertexIterator v(mesh); !v.end(); ++v)
   {
     const uint vertex_index = boundary_vertices[v->index()];
     if ( vertex_index != mesh.numVertices() )
@@ -76,7 +76,7 @@ void BoundaryComputation::computeBoundary(NewMesh& mesh,
   // Create cells (facets)
   Array<uint> cell(boundary.type().numVertices(boundary.dim()));
   uint current_cell = 0;
-  for (NewFacetIterator f(mesh); !f.end(); ++f)
+  for (FacetIterator f(mesh); !f.end(); ++f)
   {
     // Boundary facets are connected to exactly one cell
     if ( f->numConnections(mesh.dim()) == 1 )

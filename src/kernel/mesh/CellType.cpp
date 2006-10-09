@@ -6,8 +6,8 @@
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Interval.h>
-#include <dolfin/NewTriangle.h>
-#include <dolfin/NewTetrahedron.h>
+#include <dolfin/Triangle.h>
+#include <dolfin/Tetrahedron.h>
 #include <dolfin/CellType.h>
 
 using namespace dolfin;
@@ -31,9 +31,9 @@ CellType* CellType::create(Type type)
   case interval:
     return new Interval();
   case triangle:
-    return new NewTriangle();
+    return new Triangle();
   case tetrahedron:
-    return new NewTetrahedron();
+    return new Tetrahedron();
   default:
     dolfin_error("Unknown cell type.");
   }

@@ -5,8 +5,8 @@
 // Last changed: 2006-06-22
 
 #include <dolfin/dolfin_log.h>
-#include <dolfin/NewMesh.h>
-#include <dolfin/NewPoint.h>
+#include <dolfin/Mesh.h>
+#include <dolfin/Point.h>
 #include <dolfin/MeshEditor.h>
 
 using namespace dolfin;
@@ -26,7 +26,7 @@ MeshEditor::~MeshEditor()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void MeshEditor::open(NewMesh& mesh, CellType::Type type, uint tdim, uint gdim)
+void MeshEditor::open(Mesh& mesh, CellType::Type type, uint tdim, uint gdim)
 {
   // Clear old mesh data
   mesh.data.clear();
@@ -73,7 +73,7 @@ void MeshEditor::initCells(uint num_cells)
   mesh->data.topology(tdim, 0).init(num_cells, mesh->type().numVertices(tdim));
 }
 //-----------------------------------------------------------------------------
-void MeshEditor::addVertex(uint v, const NewPoint& p)
+void MeshEditor::addVertex(uint v, const Point& p)
 {
   // Add vertex
   addVertexCommon(v, mesh->geometry().dim());

@@ -8,14 +8,14 @@
 #define __BOUNDARY_MESH_H
 
 #include <dolfin/constants.h>
-#include <dolfin/NewMesh.h>
+#include <dolfin/Mesh.h>
 
 namespace dolfin
 {
 
   /// A BoundaryMesh is a mesh over the boundary of some given mesh.
 
-  class BoundaryMesh : public NewMesh
+  class BoundaryMesh : public Mesh
   {
   public:
 
@@ -23,13 +23,13 @@ namespace dolfin
     BoundaryMesh();
 
     /// Create boundary mesh from given mesh
-    BoundaryMesh(NewMesh& mesh);
+    BoundaryMesh(Mesh& mesh);
 
     /// Destructor
     ~BoundaryMesh();
 
     /// Initialize boundary mesh from given mesh
-    void init(NewMesh& mesh);
+    void init(Mesh& mesh);
 
   };
 

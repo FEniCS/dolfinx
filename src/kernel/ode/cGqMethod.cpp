@@ -126,11 +126,11 @@ void cGqMethod::computeQuadrature()
 
   // Get quadrature points and rescale from [-1,1] to [0,1]
   for (unsigned int i = 0; i < nq; i++)
-    qpoints[i] = (quadrature.point(i).x + 1.0) / 2.0;
+    qpoints[i] = (quadrature.point(i).x() + 1.0) / 2.0;
 
   // Get nodal points and rescale from [-1,1] to [0,1]
   for (unsigned int i = 0; i < nn; i++)
-    npoints[i] = (quadrature.point(i + 1).x + 1.0) / 2.0;
+    npoints[i] = (quadrature.point(i + 1).x() + 1.0) / 2.0;
 
   // Get quadrature weights and rescale from [-1,1] to [0,1]
   for (unsigned int i = 0; i < nq; i++)
@@ -153,7 +153,7 @@ void cGqMethod::computeBasis()
   {
     LobattoQuadrature lobatto(nq - 1);
     for (unsigned int i = 0; i < (nq - 1); i++)
-      test->set(i, (lobatto.point(i).x + 1.0) / 2.0);
+      test->set(i, (lobatto.point(i).x() + 1.0) / 2.0);
   }
   else
     test->set(0, 1.0);

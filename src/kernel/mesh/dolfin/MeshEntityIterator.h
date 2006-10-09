@@ -9,7 +9,7 @@
 
 #include <dolfin/constants.h>
 #include <dolfin/dolfin_log.h>
-#include <dolfin/NewMesh.h>
+#include <dolfin/Mesh.h>
 #include <dolfin/MeshEntity.h>
 
 namespace dolfin
@@ -44,7 +44,7 @@ namespace dolfin
   public:
 
     /// Create iterator for mesh entities over given topological dimension
-    MeshEntityIterator(NewMesh& mesh, uint dim) 
+    MeshEntityIterator(Mesh& mesh, uint dim) 
       : entity(mesh, dim, 0), pos(0), pos_end(mesh.size(dim)), index(0)
     {
       // Compute entities if empty

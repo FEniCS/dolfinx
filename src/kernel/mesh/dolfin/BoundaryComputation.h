@@ -12,7 +12,7 @@
 namespace dolfin
 {
 
-  class NewMesh;
+  class Mesh;
   class BoundaryMesh;
 
   /// This class implements provides a set of basic algorithms for
@@ -23,7 +23,7 @@ namespace dolfin
   public:
     
     /// Compute the boundary of a given mesh
-    static void computeBoundary(NewMesh& mesh, BoundaryMesh& boundary);
+    static void computeBoundary(Mesh& mesh, BoundaryMesh& boundary);
 
   private:
 

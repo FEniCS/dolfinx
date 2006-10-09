@@ -14,7 +14,7 @@
 namespace dolfin
 {
 
-  class NewCell;
+  class Cell;
   class MeshEditor;
 
   /// This class provides a common interface for different cell types.
@@ -56,7 +56,7 @@ namespace dolfin
     virtual void createEntities(uint** e, uint dim, const uint v[]) const = 0;
 
     /// Refine cell uniformly
-    virtual void refineCell(NewCell& cell, MeshEditor& editor, uint& current_cell) const = 0;
+    virtual void refineCell(Cell& cell, MeshEditor& editor, uint& current_cell) const = 0;
 
     /// Return description of cell type
     virtual std::string description() const = 0;

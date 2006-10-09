@@ -1,11 +1,11 @@
-// Copyright (C) 2002-2005 Johan Hoffman and Anders Logg.
+// Copyright (C) 2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
-// First added:  2002
-// Last changed: 2005-11-28
+// First added:  2006-06-12
+// Last changed: 2006-06-12
 
-#ifndef __POINT_H
-#define __POINT_H
+#ifndef __NEW_POINT_H
+#define __NEW_POINT_H
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/constants.h>
@@ -13,70 +13,57 @@
 namespace dolfin
 {
 
+  /// A Point represents a point in R^3 with coordinates x, y, z, or,
+  /// alternatively, a vector in R^3, supporting standard operations
+  /// like the norm, distances, scalar and vector products etc.
+
   class Point
   {
   public:
-    
-    Point();
-    Point(real x);
-    Point(real x, real y);
-    Point(real x, real y, real z);
-    Point(const Point& p);
 
-    ~Point();
+    /// Create a point at (0, 0, 0)
+    Point() { _x[0] = 0.0; _x[1] = 0.0; _x[2] = 0.0; }
 
-    /// Return distance to given point p
-    real dist(Point p) const;
+    /// Create a point at (x, 0, 0)
+    Point(real x) { _x[0] = x; _x[1] = 0.0; _x[2] = 0.0; }
 
-    /// Return distance to given point (x,y,z)
-    real dist(real x, real y = 0.0, real z = 0.0) const;
+    /// Create a point at (x, y, 0)
+    Point(real x, real y) { _x[0] = x; _x[1] = y; _x[2] = 0.0; }
 
-    /// Return norm of vector represented by point
-    real norm() const;
-    
-    /// Return midpoint on line to given point p
-    Point midpoint(Point p) const;
+    /// Create a point at (x, y, z)
+    Point(real x, real y, real z) { _x[0] = x; _x[1] = y; _x[2] = z; }
+
+    /// Destructor
+    ~Point() {};
+
+    /// Return coordinate in direction i
+    inline real operator[] (uint i) const { dolfin_assert(i < 3); return _x[i]; }
+
+    /// Return x-coordinate
+    inline real x() const { return _x[0]; }
+
+    /// Return y-coordinate
+    inline real y() const { return _x[1]; }
+
+    /// Return z-coordinate
+    inline real z() const { return _x[2]; }
 
     /// Cast to real, returning x
-    operator real() const;
+    operator real() const { return _x[0]; }
 
     /// Assignment from real, giving p = (x,0,0)
-    const Point& operator= (real x);
+    const Point& operator= (real x)
+    {
+      _x[0] = x; _x[1] = 0.0; _x[2] = 0.0;
+      return *this;
+    }
 
-    /// Add two points
-    Point operator+ (const Point& p) const;
-    
-    /// Subtract two points
-    Point operator- (const Point& p) const;
+  private:
 
-    /// Scalar product
-    real operator* (const Point& p) const;
-    
-    /// Add point
-    const Point& operator+= (const Point& p);
+    real _x[3];
 
-    /// Subtract point
-    const Point& operator-= (const Point& p);
-
-    /// Multiply by scalar
-    const Point& operator*= (real a);
-
-    /// Divide by scalar
-    const Point& operator/= (real a);
-
-    /// Cross product
-    Point cross(const Point& p) const;
-
-    /// The three coordinates
-    real x;
-    real y;
-    real z;
-    
-    /// Output
-    friend LogStream& operator<<(LogStream& stream, const Point& p);
-    
   };
 
 }
-  
+
 #endif

@@ -10,12 +10,12 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-BoundaryMesh::BoundaryMesh() : NewMesh()
+BoundaryMesh::BoundaryMesh() : Mesh()
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-BoundaryMesh::BoundaryMesh(NewMesh& mesh) : NewMesh()
+BoundaryMesh::BoundaryMesh(Mesh& mesh) : Mesh()
 {
   init(mesh);
 }
@@ -25,7 +25,7 @@ BoundaryMesh::~BoundaryMesh()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void BoundaryMesh::init(NewMesh& mesh)
+void BoundaryMesh::init(Mesh& mesh)
 {
   BoundaryComputation::computeBoundary(mesh, *this);
 }

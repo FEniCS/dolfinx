@@ -31,7 +31,7 @@ namespace dolfin
     void createEntities(uint** e, uint dim, const uint v[]) const;
 
     /// Refine cell uniformly
-    void refineCell(NewCell& cell, MeshEditor& editor, uint& current_cell) const;
+    void refineCell(Cell& cell, MeshEditor& editor, uint& current_cell) const;
 
     /// Return description of cell type
     std::string description() const;

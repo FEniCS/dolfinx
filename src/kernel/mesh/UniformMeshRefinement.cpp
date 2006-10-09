@@ -6,27 +6,26 @@
 
 #include <dolfin/dolfin_math.h>
 #include <dolfin/dolfin_log.h>
-#include <dolfin/NewMesh.h>
-#include <dolfin/MeshData.h>
+#include <dolfin/Mesh.h>
 #include <dolfin/MeshTopology.h>
 #include <dolfin/MeshGeometry.h>
 #include <dolfin/MeshConnectivity.h>
 #include <dolfin/MeshEditor.h>
-#include <dolfin/NewVertex.h>
-#include <dolfin/NewEdge.h>
-#include <dolfin/NewCell.h>
+#include <dolfin/Vertex.h>
+#include <dolfin/Edge.h>
+#include <dolfin/Cell.h>
 #include <dolfin/UniformMeshRefinement.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void UniformMeshRefinement::refine(NewMesh& mesh)
+void UniformMeshRefinement::refine(Mesh& mesh)
 {
   // Only know how to refine simplicial meshes
   refineSimplex(mesh);
 }
 //-----------------------------------------------------------------------------
-void UniformMeshRefinement::refineSimplex(NewMesh& mesh)
+void UniformMeshRefinement::refineSimplex(Mesh& mesh)
 {
   dolfin_info("Refining simplicial mesh uniformly.");
   
@@ -40,7 +39,7 @@ void UniformMeshRefinement::refineSimplex(NewMesh& mesh)
   const CellType& cell_type = mesh.type();
   
   // Create new mesh and open for editing
-  NewMesh refined_mesh;
+  Mesh refined_mesh;
   MeshEditor editor;
   editor.open(refined_mesh, cell_type.cellType(),
 	      mesh.topology().dim(), mesh.geometry().dim());
@@ -56,16 +55,16 @@ void UniformMeshRefinement::refineSimplex(NewMesh& mesh)
 
   // Add old vertices
   uint vertex = 0;
-  for (NewVertexIterator v(mesh); !v.end(); ++v)
+  for (VertexIterator v(mesh); !v.end(); ++v)
     editor.addVertex(vertex++, v->point());
 
   // Add new vertices
-  for (NewEdgeIterator e(mesh); !e.end(); ++e)
+  for (EdgeIterator e(mesh); !e.end(); ++e)
     editor.addVertex(vertex++, e->midpoint());
 
   // Add cells
   uint current_cell = 0;
-  for (NewCellIterator c(mesh); !c.end(); ++c)
+  for (CellIterator c(mesh); !c.end(); ++c)
     cell_type.refineCell(*c, editor, current_cell);
 
   // Overwrite old mesh with refined mesh

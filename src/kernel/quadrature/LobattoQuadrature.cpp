@@ -34,7 +34,7 @@ void LobattoQuadrature::disp() const
   cout << "-----------------------------------------------------" << endl;
 
   for (unsigned int i = 0; i < n; i++)
-    dolfin_info("%2d   % .16e   %.16e", i, points[i].x, weights[i]);
+    dolfin_info("%2d   % .16e   %.16e", i, points[i].x(), weights[i]);
 }
 //----------------------------------------------------------------------------
 void LobattoQuadrature::computePoints()
