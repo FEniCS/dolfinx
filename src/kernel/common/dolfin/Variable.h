@@ -25,11 +25,6 @@ namespace dolfin
     const std::string& name()  const;
     const std::string& label() const;
 
-    // FIXME: Remove these
-    void operator++() { _number++; }
-    int number() const { return _number; }
-    int _number;
-
   private:
     
     std::string _name;
