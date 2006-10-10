@@ -51,6 +51,10 @@ namespace dolfin
     /// Constructor
     uBlasMatrix(const uint M, const uint N);
 
+    /// Constructor from a uBlas matrix_expression
+    template <class E>
+    uBlasMatrix(const ublas::matrix_expression<E>& A) : Mat(A) {}
+
     /// Destructor
     ~uBlasMatrix();
 
