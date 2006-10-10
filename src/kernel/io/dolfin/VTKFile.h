@@ -25,17 +25,14 @@ namespace dolfin
     ~VTKFile();
     
     void operator<< (Mesh& mesh);
-    void operator<< (NewMesh& mesh);
     void operator<< (Function& u);
     
   private:
 
-    void MeshWrite(const Mesh& mesh) const;
-    void MeshWrite(NewMesh& mesh) const;
+    void MeshWrite(Mesh& mesh) const;
     void ResultsWrite(Function& u) const;
     void pvdFileWrite(int u);
-    void VTKHeaderOpen(const Mesh& mesh) const;
-    void VTKHeaderOpen(NewMesh& mesh) const;
+    void VTKHeaderOpen(Mesh& mesh) const;
     void VTKHeaderClose() const;
     void vtuNameUpdate(const int counter);
     

@@ -14,7 +14,6 @@
 #include <dolfin/Vector.h>
 #include <dolfin/Matrix.h>
 #include <dolfin/Mesh.h>
-#include <dolfin/NewMesh.h>
 #include <dolfin/Function.h>
 #include <dolfin/FiniteElement.h>
 #include <dolfin/FiniteElementSpec.h>
@@ -25,7 +24,6 @@
 #include <dolfin/XMLVector.h>
 #include <dolfin/XMLMatrix.h>
 #include <dolfin/XMLMesh.h>
-#include <dolfin/NewXMLMesh.h>
 #include <dolfin/XMLFunction.h>
 #include <dolfin/XMLFiniteElementSpec.h>
 #include <dolfin/XMLParameterList.h>
@@ -70,14 +68,6 @@ void XMLFile::operator>>(Mesh& mesh)
   if ( xmlObject )
     delete xmlObject;
   xmlObject = new XMLMesh(mesh);
-  parseFile();
-}
-//-----------------------------------------------------------------------------
-void XMLFile::operator>>(NewMesh& mesh)
-{
-  if ( xmlObject )
-    delete xmlObject;
-  xmlObject = new NewXMLMesh(mesh);
   parseFile();
 }
 //-----------------------------------------------------------------------------
@@ -201,56 +191,6 @@ void XMLFile::operator<<(Matrix& A)
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator<<(Mesh& mesh)
-{
-  // Open file
-  FILE *fp = openFile();
-  
-  // Write mesh in XML format
-  fprintf(fp, "  <mesh> \n");
-
-  fprintf(fp, "    <vertices size=\" %i \"> \n", mesh.numVertices());
-  
-  for(VertexIterator n(&mesh); !n.end(); ++n)
-  {
-    Vertex &vertex = *n;
-
-    fprintf(fp, "    <vertex name=\"%i\" x=\"%f\" y=\"%f\" z=\"%f\" />\n",
-	    vertex.id(), vertex.coord().x, vertex.coord().y, vertex.coord().z);
-  }
-
-  fprintf(fp, "    </vertices>\n");
-
-  fprintf(fp, "    <cells size=\" %i \"> \n", mesh.numCells());
-
-  for (CellIterator c(mesh); !c.end(); ++c)
-  {
-    Cell &cell = *c;
-
-    if ( mesh.type() == Mesh::tetrahedra )
-    {
-      fprintf(fp, "    <tetrahedron name=\"%i\" n0=\"%i\" n1=\"%i\" n2=\"%i\" n3=\"%i\" />\n",
-	      cell.id(), cell.vertex(0).id(), cell.vertex(1).id(), cell.vertex(2).id(), cell.vertex(3).id());
-    }
-    else
-    {
-      fprintf(fp, "    <triangle name=\"%i\" n0=\"%i\" n1=\"%i\" n2=\"%i\" />\n",
-	      cell.id(), cell.vertex(0).id(), cell.vertex(1).id(),
-	      cell.vertex(2).id());
-    }
-  }
-
-  fprintf(fp, "    </cells>\n");
-  
-  fprintf(fp, "  </mesh>\n");
- 
-  // Close file
-  closeFile(fp);
-
-  cout << "Saved mesh " << mesh.name() << " (" << mesh.label()
-       << ") to file " << filename << " in XML format." << endl;
-}
-//-----------------------------------------------------------------------------
-void XMLFile::operator<<(NewMesh& mesh)
 {
   dolfin_error("Not implemented.");
   /*

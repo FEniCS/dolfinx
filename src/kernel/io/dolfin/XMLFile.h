@@ -35,7 +35,6 @@ namespace dolfin
     void operator>> (Vector& x);
     void operator>> (Matrix& A);
     void operator>> (Mesh& mesh);
-    void operator>> (NewMesh& mesh);
     void operator>> (Function& f);
     void operator>> (FiniteElementSpec& spec);
     void operator>> (ParameterList& parameters);
@@ -48,7 +47,6 @@ namespace dolfin
     void operator<< (Vector& x);
     void operator<< (Matrix& A);
     void operator<< (Mesh& mesh);
-    void operator<< (NewMesh& mesh);
     void operator<< (Function& f);
     void operator<< (FiniteElementSpec& spec);
     void operator<< (ParameterList& parameters);

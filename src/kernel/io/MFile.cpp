@@ -85,19 +85,19 @@ void MFile::operator<<(Mesh& mesh)
     fprintf(fp,"points{%u} = [", counter + 1);
   for (VertexIterator n(mesh); !n.end(); ++n) {
     
-    p = n->coord();
+    p = n->point();
     
-    if ( mesh.type() == Mesh::triangles ) {
-      if ( n.last() )
-	fprintf(fp,"%.15f %.15f]';\n", p.x, p.y);
+    if ( mesh.type().cellType() == CellType::triangle ) {
+      if ( n.end() )
+	fprintf(fp,"%.15f %.15f]';\n", p.x(), p.y());
       else
-	fprintf(fp,"%.15f %.15f\n", p.x, p.y );
+	fprintf(fp,"%.15f %.15f\n", p.x(), p.y() );
     }
     else {
-      if ( n.last() )
-	fprintf(fp,"%.15f %.15f %.15f]';\n", p.x, p.y, p.z);
+      if ( n.end() )
+	fprintf(fp,"%.15f %.15f %.15f]';\n", p.x(), p.y(), p.z());
       else
-	fprintf(fp,"%.15f %.15f %.15f\n", p.x, p.y, p.z);
+	fprintf(fp,"%.15f %.15f %.15f\n", p.x(), p.y(), p.z());
     }
     
   }
@@ -111,9 +111,9 @@ void MFile::operator<<(Mesh& mesh)
   for (CellIterator c(mesh); !c.end(); ++c)
   {
     for (VertexIterator n(c); !n.end(); ++n)
-      fprintf(fp, "%d ", n->id() + 1);
+      fprintf(fp, "%d ", n->index() + 1);
     
-    if ( c.last() )
+    if ( c.end() )
       fprintf(fp, "]';\n");
     else
       fprintf(fp, "\n");

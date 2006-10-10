@@ -7,6 +7,8 @@
 #include <stdio.h>
 #include <dolfin/ParameterSystem.h>
 #include <dolfin/Mesh.h>
+#include <dolfin/Vertex.h>
+#include <dolfin/Cell.h>
 #include <dolfin/Function.h>
 #include <dolfin/dolfin_log.h>
 #include <dolfin/OpenDXFile.h>
@@ -88,7 +90,7 @@ void OpenDXFile::writeHeader(FILE* fp)
 void OpenDXFile::writeMesh(FILE* fp, Mesh& mesh)
 {
   // Check that we have a tetrahedral mesh
-  if ( mesh.type() != Mesh::tetrahedra )
+  if ( mesh.type().cellType() != CellType::tetrahedron )
     dolfin_error("Mesh must be a 3D tetrahedral mesh for OpenDX file format.");
 
   // Write vertices
@@ -98,11 +100,11 @@ void OpenDXFile::writeMesh(FILE* fp, Mesh& mesh)
 
   for (VertexIterator n(mesh); !n.end(); ++n)
   {
-    Point p = n->coord();
+    Point p = n->point();
     
-    float x = (float) p.x;
-    float y = (float) p.y;
-    float z = (float) p.z;
+    float x = (float) p.x();
+    float y = (float) p.y();
+    float z = (float) p.z();
     
     fwrite(&x, sizeof(float), 1, fp);
     fwrite(&y, sizeof(float), 1, fp);
@@ -119,7 +121,7 @@ void OpenDXFile::writeMesh(FILE* fp, Mesh& mesh)
   {  
     for (VertexIterator n(c); !n.end(); ++n)
     {
-      int id  = n->id();
+      int id  = n->index();
       fwrite(&id, sizeof(int), 1, fp);
     }
   }

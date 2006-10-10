@@ -48,6 +48,13 @@ namespace dolfin
     /// Return array of connections to entities of given topological dimension
     inline const uint* connections(uint dim) const { return _mesh.topology()(_dim, dim)(_index); }
 
+    /// 
+    inline real diameter() const
+    {
+      dolfin_error("diameter() not implemented");
+      return 0.0;
+    }
+
     /// Output
     friend LogStream& operator<< (LogStream& stream, const MeshEntity& entity);
 

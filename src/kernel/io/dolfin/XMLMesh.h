@@ -2,51 +2,49 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003-10-21
-// Last changed: 2005-12-01
+// Last changed: 2006-05-23
 
-#ifndef __XML_MESH_H
-#define __XML_MESH_H
+#ifndef __NEW_XML_MESH_H
+#define __NEW_XML_MESH_H
 
+#include <dolfin/MeshEditor.h>
 #include <dolfin/XMLObject.h>
 
 namespace dolfin
 {
+  
   class Mesh;
   
   class XMLMesh : public XMLObject
   {
   public:
 
-    XMLMesh(Mesh& mesh_);
+    XMLMesh(Mesh& mesh);
+    ~XMLMesh();
     
-    void startElement (const xmlChar *name, const xmlChar **attrs);
-    void endElement   (const xmlChar *name);
+    void startElement (const xmlChar* name, const xmlChar** attrs);
+    void endElement   (const xmlChar* name);
     
-    void reading(std::string filename);
-    void done();
+    void open(std::string filename);
+    bool close();
     
   private:
     
-    enum ParserState { OUTSIDE, INSIDE_MESH, INSIDE_VERTICES, INSIDE_VERTEX, INSIDE_CELLS, DONE };
+    enum ParserState { OUTSIDE, INSIDE_MESH, INSIDE_VERTICES, INSIDE_CELLS, DONE };
     
-    void readMesh        (const xmlChar *name, const xmlChar **attrs);
-    void readVertices    (const xmlChar *name, const xmlChar **attrs);
-    void readCells       (const xmlChar *name, const xmlChar **attrs);
-    void readVertex      (const xmlChar *name, const xmlChar **attrs);
-    void readBoundaryID  (const xmlChar *name, const xmlChar **attrs);
-    void readTriangle    (const xmlChar *name, const xmlChar **attrs);
-    void readTetrahedron (const xmlChar *name, const xmlChar **attrs);
+    void readMesh        (const xmlChar* name, const xmlChar** attrs);
+    void readVertices    (const xmlChar* name, const xmlChar** attrs);
+    void readCells       (const xmlChar* name, const xmlChar** attrs);
+    void readVertex      (const xmlChar* name, const xmlChar** attrs);
+    void readInterval    (const xmlChar* name, const xmlChar** attrs);
+    void readTriangle    (const xmlChar* name, const xmlChar** attrs);
+    void readTetrahedron (const xmlChar* name, const xmlChar** attrs);
     
-    void initMesh();
+    void closeMesh();
 
-    Mesh& mesh;
-    int vertices;
-    int cells;
-    Vertex *vertex;
-    
-    bool _create_edges;
-    
+    Mesh& _mesh;
     ParserState state;
+    MeshEditor editor;
     
   };
   

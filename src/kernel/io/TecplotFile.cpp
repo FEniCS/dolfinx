@@ -34,12 +34,12 @@ void TecplotFile::operator<<(Mesh& mesh)
 	// Write header
   fprintf(fp, "TITLE = \"Dolfin output\"  \n");
   fprintf(fp, "VARIABLES = ");
-  if ( mesh.type() == Mesh::tetrahedra ){
+  if ( mesh.type().cellType() == CellType::tetrahedron ){
 	  fprintf(fp, " X1  X2  X3 \n");
 	  fprintf(fp, "ZONE T = \" - \" N = %8d, E = %8d, DATAPACKING = POINT, ZONETYPE=FETETRAHEDRON \n", 
 	     mesh.numVertices(), mesh.numCells());
   }
-	if ( mesh.type() == Mesh::triangles ){    
+	if ( mesh.type().cellType() == CellType::triangle ){    
 	  fprintf(fp, " X1  X2  X3 \n");
     fprintf(fp, "ZONE T = \" - \"  N = %8d, E = %8d,  DATAPACKING = POINT, ZONETYPE=FETRIANGLE \n",   
         mesh.numVertices(), mesh.numCells());
@@ -48,10 +48,10 @@ void TecplotFile::operator<<(Mesh& mesh)
   // Write vertex locations
   for (VertexIterator n(mesh); !n.end(); ++n)
   {
-    Point   p = n->coord();
+    Point   p = n->point();
 
-    if ( mesh.type() == Mesh::tetrahedra )  fprintf(fp," %e %e %e \n",p.x, p.y, p.z);
-    if ( mesh.type() == Mesh::triangles )     fprintf(fp," %e %e  ",p.x, p.y);
+    if ( mesh.type().cellType() == CellType::tetrahedron )  fprintf(fp," %e %e %e \n", p.x(), p.y(), p.z());
+    if ( mesh.type().cellType() == CellType::triangle )     fprintf(fp," %e %e  ", p.x(), p.y());
     fprintf(fp,"\n");
 
   }
@@ -59,7 +59,7 @@ void TecplotFile::operator<<(Mesh& mesh)
   // Write cell connectivity
   for (CellIterator c(mesh); !c.end(); ++c)
   {
-    for (VertexIterator n(c); !n.end(); ++n) fprintf(fp," %8d ",n->id()+1);
+    for (VertexIterator n(c); !n.end(); ++n) fprintf(fp," %8d ",n->index()+1);
     fprintf(fp," \n");
   }  
 
@@ -80,10 +80,10 @@ void TecplotFile::operator<<(Function& u)
     for (uint i = 0; i < u.element().shapedim(); ++i)   fprintf(fp, " X%u  ", i+1);	  
     for (uint i = 0; i < u.vectordim(); ++i)  fprintf(fp, " U%u  ", i+1);	  
     fprintf(fp, "\n");	  
-    if ( u.mesh().type() == Mesh::tetrahedra )
+    if ( u.mesh().type().cellType() == CellType::tetrahedron )
 	     fprintf(fp, "ZONE T = \"%6d\" N = %8d, E = %8d, DATAPACKING = POINT, ZONETYPE=FETETRAHEDRON \n", 
 	         u.number()+1, u.mesh().numVertices(), u.mesh().numCells());
-    if ( u.mesh().type() == Mesh::triangles )
+    if ( u.mesh().type().cellType() == CellType::triangle )
        fprintf(fp, "ZONE T = \"%6d\"  N = %8d, E = %8d, DATAPACKING = POINT, ZONETYPE=FETRIANGLE \n",
             u.number()+1, u.mesh().numVertices(), u.mesh().numCells());
 
@@ -91,10 +91,10 @@ void TecplotFile::operator<<(Function& u)
     // Write vertex locations and results
     for (VertexIterator n(u.mesh()); !n.end(); ++n)
     {
-      Point p = n->coord();
+      Point p = n->point();
 
-      if ( u.mesh().type() == Mesh::tetrahedra )  fprintf(fp," %e %e %e \n", p.x, p.y, p.z);
-      if ( u.mesh().type() == Mesh::triangles )     fprintf(fp," %e %e  ", p.x, p.y);
+      if ( u.mesh().type().cellType() == CellType::tetrahedron )  fprintf(fp," %e %e %e \n", p.x(), p.y(), p.z());
+      if ( u.mesh().type().cellType() == CellType::triangle )     fprintf(fp," %e %e  ", p.x(), p.y());
       for (uint i=0; i < u.vectordim(); ++i) fprintf(fp,"%e ", u(*n,i) );
       fprintf(fp,"\n");
 
@@ -103,7 +103,7 @@ void TecplotFile::operator<<(Function& u)
       // Write cell connectivity
      for (CellIterator c(u.mesh()); !c.end(); ++c)
      {
-       for (VertexIterator n(c); !n.end(); ++n) fprintf(fp," %8d ",n->id()+1);
+       for (VertexIterator n(c); !n.end(); ++n) fprintf(fp," %8d ",n->index()+1);
        fprintf(fp," \n");
      }  
 
@@ -113,10 +113,10 @@ void TecplotFile::operator<<(Function& u)
   if ( counter != 0 )
   {
       // Write header
-	  if ( u.mesh().type() == Mesh::tetrahedra )
+	  if ( u.mesh().type().cellType() == CellType::tetrahedron )
       	   fprintf(fp, "ZONE T = \"%6d\" N = %8d, E = %8d,  DATAPACKING = POINT, ZONETYPE=FETETRAHEDRON, VARSHARELIST = ([1-3]=1) CONNECTIVITYSHAREZONE=1 \n", 
       	     u.number()+1, u.mesh().numVertices(), u.mesh().numCells());
-     if ( u.mesh().type() == Mesh::triangles )
+     if ( u.mesh().type().cellType() == CellType::triangle )
            fprintf(fp, "ZONE T = \"%6d\"  N = %8d, E = %8d, DATAPACKING = POINT, ZONETYPE=FETRIANGLE, VARSHARELIST = ([1,2]=1) CONNECTIVITYSHAREZONE=1 \n", 
               u.number()+1, u.mesh().numVertices(), u.mesh().numCells());
 
