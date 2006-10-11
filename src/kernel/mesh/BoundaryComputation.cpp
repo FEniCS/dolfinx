@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-06-21
-// Last changed: 2006-06-22
+// Last changed: 2006-10-11
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Array.h>
@@ -33,7 +33,7 @@ void BoundaryComputation::computeBoundary(NewMesh& mesh,
 	      mesh.topology().dim() - 1, mesh.geometry().dim());
 
   // Generate facet - cell connectivity if not generated
-  mesh.init(mesh.dim() - 1, mesh.dim());
+  mesh.init(mesh.topology().dim() - 1, mesh.topology().dim());
 
   // Temporary array for assignment of indices to vertices on the boundary
   const uint num_vertices = mesh.numVertices();
@@ -46,7 +46,7 @@ void BoundaryComputation::computeBoundary(NewMesh& mesh,
   for (NewFacetIterator f(mesh); !f.end(); ++f)
   {
     // Boundary facets are connected to exactly one cell
-    if ( f->numConnections(mesh.dim()) == 1 )
+    if ( f->numConnections(mesh.topology().dim()) == 1 )
     {
       // Count boundary vertices and assign indices
       for (NewVertexIterator v(f); !v.end(); ++v)
@@ -74,12 +74,12 @@ void BoundaryComputation::computeBoundary(NewMesh& mesh,
   }
 
   // Create cells (facets)
-  Array<uint> cell(boundary.type().numVertices(boundary.dim()));
+  Array<uint> cell(boundary.type().numVertices(boundary.topology().dim()));
   uint current_cell = 0;
   for (NewFacetIterator f(mesh); !f.end(); ++f)
   {
     // Boundary facets are connected to exactly one cell
-    if ( f->numConnections(mesh.dim()) == 1 )
+    if ( f->numConnections(mesh.topology().dim()) == 1 )
     {
       // Compute new vertex numbers for cell
       uint* vertices = f->connections(0);

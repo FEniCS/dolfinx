@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-06-02
-// Last changed: 2006-06-02
+// Last changed: 2006-10-11
 
 #ifndef __NEW_FACET_H
 #define __NEW_FACET_H
@@ -20,7 +20,7 @@ namespace dolfin
   public:
 
     /// Constructor
-    NewFacet(NewMesh& mesh, uint index) : MeshEntity(mesh, mesh.dim() - 1, index) {}
+    NewFacet(NewMesh& mesh, uint index) : MeshEntity(mesh, mesh.topology().dim() - 1, index) {}
 
     /// Destructor
     ~NewFacet() {}
@@ -33,9 +33,9 @@ namespace dolfin
   {
   public:
     
-    NewFacetIterator(NewMesh& mesh) : MeshEntityIterator(mesh, mesh.dim() - 1) {}
-    NewFacetIterator(MeshEntity& entity) : MeshEntityIterator(entity, entity.mesh().dim() - 1) {}
-    NewFacetIterator(MeshEntityIterator& it) : MeshEntityIterator(it, it->mesh().dim() - 1) {}
+    NewFacetIterator(NewMesh& mesh) : MeshEntityIterator(mesh, mesh.topology().dim() - 1) {}
+    NewFacetIterator(MeshEntity& entity) : MeshEntityIterator(entity, entity.mesh().topology().dim() - 1) {}
+    NewFacetIterator(MeshEntityIterator& it) : MeshEntityIterator(it, it->mesh().topology().dim() - 1) {}
 
     inline NewFacet& operator*()
     { return static_cast<NewFacet&>(*static_cast<MeshEntityIterator>(*this)); }

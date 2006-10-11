@@ -6,7 +6,7 @@ PyObject * cells() {
     PyArrayObject *arr;
     int n[2];
     n[0] = self->numCells();
-    n[1] = self->type().numVertices(self->dim());
+    n[1] = self->type().numVertices(self->topology().dim());
     arr = (PyArrayObject *) PyArray_FromDimsAndData(2, n, PyArray_INT, (char *) self->cells());
     arr->flags |= OWN_DATA;
     Py_INCREF((PyObject *)arr);

@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-06-01
-// Last changed: 2006-06-01
+// Last changed: 2006-10-11
 
 #ifndef __NEW_CELL_H
 #define __NEW_CELL_H
@@ -20,7 +20,7 @@ namespace dolfin
   public:
 
     /// Constructor
-    NewCell(NewMesh& mesh, uint index) : MeshEntity(mesh, mesh.dim(), index) {}
+    NewCell(NewMesh& mesh, uint index) : MeshEntity(mesh, mesh.topology().dim(), index) {}
 
     /// Destructor
     ~NewCell() {}
@@ -33,9 +33,9 @@ namespace dolfin
   {
   public:
     
-    NewCellIterator(NewMesh& mesh) : MeshEntityIterator(mesh, mesh.dim()) {}
-    NewCellIterator(MeshEntity& entity) : MeshEntityIterator(entity, entity.mesh().dim()) {}
-    NewCellIterator(MeshEntityIterator& it) : MeshEntityIterator(it, it->mesh().dim()) {}
+    NewCellIterator(NewMesh& mesh) : MeshEntityIterator(mesh, mesh.topology().dim()) {}
+    NewCellIterator(MeshEntity& entity) : MeshEntityIterator(entity, entity.mesh().topology().dim()) {}
+    NewCellIterator(MeshEntityIterator& it) : MeshEntityIterator(it, it->mesh().topology().dim()) {}
 
     inline NewCell& operator*()
     { return static_cast<NewCell&>(*static_cast<MeshEntityIterator>(*this)); }
