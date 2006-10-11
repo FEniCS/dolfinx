@@ -5,7 +5,7 @@
 // Modified by Kristian Oelgaard 2006.
 //
 // First added:  2005-07-05
-// Last changed: 2006-10-09
+// Last changed: 2006-10-11
 
 #include <dolfin/Mesh.h>
 #include <dolfin/NewMesh.h>

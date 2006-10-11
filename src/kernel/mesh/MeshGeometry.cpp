@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-05-19
-// Last changed: 2006-06-12
+// Last changed: 2006-10-11
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/MeshGeometry.h>
@@ -42,6 +42,23 @@ const MeshGeometry& MeshGeometry::operator= (const MeshGeometry& geometry)
     coordinates[i] = geometry.coordinates[i];
 
   return *this;
+}
+//-----------------------------------------------------------------------------
+NewPoint MeshGeometry::point(uint n) const
+{
+  real _x = 0.0;
+  real _y = 0.0;
+  real _z = 0.0;
+  
+  if ( _dim > 0 )
+    _x = x(n, 0);
+  if ( _dim > 1 )
+    _y = x(n, 1);
+  if ( _dim > 2 )
+    _z = x(n, 2);
+
+  NewPoint p(_x, _y, _z);
+  return p;
 }
 //-----------------------------------------------------------------------------
 void MeshGeometry::clear()
