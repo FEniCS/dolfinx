@@ -28,7 +28,7 @@ class MyFunction : public Function
 {
   real eval(const Point& p, unsigned int i)
   {
-    return DOLFIN_PI*DOLFIN_PI*sin(DOLFIN_PI*p.x);
+    return DOLFIN_PI*DOLFIN_PI*sin(DOLFIN_PI*p.x());
   }
 };
 
@@ -37,15 +37,16 @@ class MyBC : public BoundaryCondition
 {
   void eval(BoundaryValue& value, const Point& p, unsigned int i)
   {
-    if ( (std::abs(p.x - 0.0) < DOLFIN_EPS) || (std::abs(p.x - 1.0) < DOLFIN_EPS ) )
+    if ( (std::abs(p.x() - 0.0) < DOLFIN_EPS) || (std::abs(p.x() - 1.0) < DOLFIN_EPS ) )
       value = 0.0;
   }
 };
 
 int main()
 {
-  Mesh mesh("mesh.xml.gz");
-  mesh.refineUniformly(2);
+  UnitSquare mesh(1, 1);
+//   Mesh mesh("mesh.xml.gz");
+//   mesh.refineUniformly(2);
   
   MyFunction f;
   MyBC bc;

@@ -16,9 +16,9 @@ class ExactSolution : public Function
   real eval(const Point& p, unsigned int i)
   {
     if ( i == 0 )
-      return - sin(DOLFIN_PI*p.x) * cos(DOLFIN_PI*p.y);
+      return -sin(DOLFIN_PI*p.x()) * cos(DOLFIN_PI*p.y());
     else
-      return cos(DOLFIN_PI*p.x) * sin(DOLFIN_PI*p.y);
+      return cos(DOLFIN_PI*p.x()) * sin(DOLFIN_PI*p.y());
   }
 };
 
@@ -36,13 +36,13 @@ void StokesSolver::solve()
   // Define the bilinear and linear forms
   BilinearForm* a = 0;
   LinearForm* L = 0;
-  if ( mesh.type() == Mesh::triangles )
+  if ( mesh.type().cellType() == CellType::triangle )
   {
     dolfin_info("Solving the Stokes equations (2D).");
     a = new Stokes2D::BilinearForm();
     L = new Stokes2D::LinearForm(f);
   } 
-  else if ( mesh.type() == Mesh::tetrahedra )
+  else if ( mesh.type().cellType() == CellType::tetrahedron )
   {
     dolfin_info("Solving the Stokes equations (3D).");
     a = new Stokes3D::BilinearForm();

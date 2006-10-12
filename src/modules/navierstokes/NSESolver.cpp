@@ -42,7 +42,7 @@ void NSESolver::solve()
   Vector bmom, bcon;
 
   // Get the number of space dimensions of the problem 
-  int nsd = mesh.numSpaceDim();
+  int nsd = mesh.dim();
 
   dolfin_info("Number of space dimensions: %d",nsd);
 
@@ -264,7 +264,7 @@ void NSESolver::ComputeCellSize(Mesh& mesh, Vector& hvector)
   hvector.init(mesh.numCells());	
   for (CellIterator cell(mesh); !cell.end(); ++cell)
     {
-      hvector((*cell).id()) = (*cell).diameter();
+      hvector((*cell).index()) = (*cell).diameter();
     }
 }
 //-----------------------------------------------------------------------------
@@ -302,14 +302,14 @@ void NSESolver::ComputeStabilization(Mesh& mesh, Function& w, real nu, real k,
   {
     normw = 0.0;
     for (VertexIterator n(cell); !n.end(); ++n)
-      normw += sqrt( sqr((w.vector())((*n).id()*2)) + sqr((w.vector())((*n).id()*2+1)) );
-    normw /= (*cell).numVertices();
+      normw += sqrt( sqr((w.vector())((*n).index()*2)) + sqr((w.vector())((*n).index()*2+1)) );
+    normw /= (*cell).numConnections(0);
     if ( (((*cell).diameter()/nu) > 1.0) || (nu < 1.0e-10) ){
-      d1vector((*cell).id()) = C1 * (0.5 / sqrt( 1.0/sqr(k) + sqr(normw/(*cell).diameter()) ) );
-      d2vector((*cell).id()) = C2 * (*cell).diameter();
+      d1vector((*cell).index()) = C1 * (0.5 / sqrt( 1.0/sqr(k) + sqr(normw/(*cell).diameter()) ) );
+      d2vector((*cell).index()) = C2 * (*cell).diameter();
     } else{
-      d1vector((*cell).id()) = C1 * sqr((*cell).diameter());
-      d2vector((*cell).id()) = C2 * sqr((*cell).diameter());
+      d1vector((*cell).index()) = C1 * sqr((*cell).diameter());
+      d2vector((*cell).index()) = C2 * sqr((*cell).diameter());
     }	
   }
 }
@@ -336,9 +336,9 @@ void NSESolver::SetInitialVelocity(Vector& xvel)
     //
     // Example: 
     // 
-    // xvel((*vertex).id()) = sin(x)*cos(y)*sqrt(z);
+    // xvel((*vertex).index()) = sin(x)*cos(y)*sqrt(z);
     
-    xvel((*vertex).id()) = 0.0;
+    xvel((*vertex).index()) = 0.0;
   }
 }
 //-----------------------------------------------------------------------------
