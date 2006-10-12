@@ -81,7 +81,7 @@ void FEM::assembleResidualBC(GenericVector& b,
   applyCommonBC((DenseMatrix*) 0, &b, &x, mesh, element, bc);
 }
 //-----------------------------------------------------------------------------
-dolfin::uint FEM::size(const Mesh& mesh, const FiniteElement& element)
+dolfin::uint FEM::size(Mesh& mesh, const FiniteElement& element)
 {
   // FIXME: This could be much more efficient. FFC could generate a
   // FIXME: function that calculates the total number of degrees of
@@ -105,7 +105,7 @@ dolfin::uint FEM::size(const Mesh& mesh, const FiniteElement& element)
   return static_cast<uint>(nodemax + 1);
 }
 //-----------------------------------------------------------------------------
-void FEM::disp(const Mesh& mesh, const FiniteElement& element)
+void FEM::disp(Mesh& mesh, const FiniteElement& element)
 {
   dolfin_info("Assembly data:");
   dolfin_info("--------------");
@@ -156,23 +156,10 @@ void FEM::assembleCommon(BilinearForm* a, LinearForm* L, Functional* M,
 			 Mesh& mesh)
 {
   // Create boundary
-  Boundary boundary(mesh);
+  BoundaryMesh boundary(mesh);
   
-  // Choose type of mesh
-  if ( mesh.type() == Mesh::triangles )
-  {
-    BoundaryFacetIterator<EdgeIterator, Edge> facet(boundary);
-    assembleCommon(a, L, M, A, b, val, mesh, facet);
-  }
-  else if ( mesh.type() == Mesh::tetrahedra )
-  {
-    BoundaryFacetIterator<FaceIterator, Face> facet(boundary);
-    assembleCommon(a, L, M, A, b, val, mesh, facet);
-  }
-  else
-  {
-    dolfin_error("Unknown mesh type.");  
-  }
+  assembleCommon(a, L, M, A, b, val, mesh);
+
 }
 //-----------------------------------------------------------------------------
 void FEM::applyCommonBC(GenericMatrix* A, GenericVector* b, 
@@ -180,34 +167,20 @@ void FEM::applyCommonBC(GenericMatrix* A, GenericVector* b,
 			FiniteElement& element, BoundaryCondition& bc)
 {
   // Create boundary
-  Boundary boundary(mesh);
+  BoundaryMesh boundary(mesh);
   
-  // Choose type of mesh
-  if ( mesh.type() == Mesh::triangles)
-  {
-    BoundaryFacetIterator<EdgeIterator, Edge> facet(boundary);
-    applyCommonBC(A, b, x, mesh, element, bc, facet);
-  }
-  else if ( mesh.type() == Mesh::tetrahedra )
-  {
-    BoundaryFacetIterator<FaceIterator, Face> facet(boundary);
-    applyCommonBC(A, b, x, mesh, element, bc, facet);
-  }
-  else
-  {
-    dolfin_error("Unknown mesh type.");  
-  }
+  applyCommonBC(A, b, x, mesh, element, bc);
 }
 //-----------------------------------------------------------------------------
 void FEM::checkDimensions(const BilinearForm& a, const Mesh& mesh)
 {
-  switch ( mesh.type() )
+  switch ( mesh.dim() )
   {
-  case Mesh::triangles:
+  case 2:
     if ( a.test().shapedim() != 2 || a.trial().shapedim() != 2 )
       dolfin_error("Given mesh (triangular 2D) does not match shape dimension for form.");
     break;
-  case Mesh::tetrahedra:
+  case 3:
     if ( a.test().shapedim() != 3 || a.trial().shapedim() != 3 )
       dolfin_error("Given mesh (tetrahedral 3D) does not match shape dimension for form.");
     break;
@@ -218,13 +191,13 @@ void FEM::checkDimensions(const BilinearForm& a, const Mesh& mesh)
 //-----------------------------------------------------------------------------
 void FEM::checkDimensions(const LinearForm& L, const Mesh& mesh)
 {
-  switch ( mesh.type() )
+  switch ( mesh.dim() )
   {
-  case Mesh::triangles:
+  case 2:
     if ( L.test().shapedim() != 2 )
       dolfin_error("Given mesh (triangular 2D) does not match shape dimension for form.");
     break;
-  case Mesh::tetrahedra:
+  case 3:
     if ( L.test().shapedim() != 3 )
       dolfin_error("Given mesh (tetrahedral 3D) does not match shape dimension for form.");
     break;
@@ -233,12 +206,12 @@ void FEM::checkDimensions(const LinearForm& L, const Mesh& mesh)
   }
 }
 //-----------------------------------------------------------------------------
-dolfin::uint FEM::estimateNonZeros(const Mesh& mesh,
+dolfin::uint FEM::estimateNonZeros(Mesh& mesh,
 				   const FiniteElement& element)
 {
   uint nzmax = 0;
   for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
-    nzmax = std::max(nzmax, vertex->numVertexNeighbors()*element.spacedim());
+    nzmax = std::max(nzmax, vertex->numConnections(0)*element.spacedim());
 
   return nzmax;
 }

@@ -53,7 +53,7 @@ real UserFunction::operator()(const Point& p, uint i)
 real UserFunction::operator() (const Vertex& vertex, uint i)
 {
   // Call overloaded eval function at given vertex
-  return f->eval(vertex.coord(), component + i);
+  return f->eval(vertex.point(), component + i);
 }
 //-----------------------------------------------------------------------------
 void UserFunction::sub(uint i)

@@ -21,10 +21,9 @@
 #include <dolfin/Vector.h>
 
 #include <dolfin/Mesh.h>
-#include <dolfin/Boundary.h>
+#include <dolfin/BoundaryMesh.h>
 #include <dolfin/BoundaryValue.h>
 #include <dolfin/BoundaryCondition.h>
-#include <dolfin/BoundaryFacetIterator.h>
 
 #include <dolfin/FiniteElement.h>
 #include <dolfin/BilinearForm.h>
@@ -96,10 +95,10 @@ namespace dolfin
       { M.lump(m); }
 
     /// Count the degrees of freedom
-    static uint size(const Mesh& mesh, const FiniteElement& element);
+    static uint size(Mesh& mesh, const FiniteElement& element);
 
     /// Display assembly data (useful for debugging)
-    static void disp(const Mesh& mesh, const FiniteElement& element);
+    static void disp(Mesh& mesh, const FiniteElement& element);
       
   private:
 
@@ -118,7 +117,7 @@ namespace dolfin
     static void checkDimensions(const LinearForm& L, const Mesh& mesh);
 
     /// Estimate the maximum number of nonzeros in each row
-    static uint estimateNonZeros(const Mesh& mesh, const FiniteElement& element);
+    static uint estimateNonZeros(Mesh& mesh, const FiniteElement& element);
 
     /// Check actual number of nonzeros in each row
     static void countNonZeros(const GenericMatrix& A, uint nz);
@@ -130,13 +129,12 @@ namespace dolfin
     template<class V, class W>
     static void assembleCommon(BilinearForm* a, LinearForm* L, Functional* M,
 			       GenericMatrix* A, GenericVector* b, real* val,
-			       Mesh& mesh, BoundaryFacetIterator<V, W>& facet);
+			       Mesh& mesh);
 
     template <class V, class W>
     static void applyCommonBC(GenericMatrix* A, GenericVector* b, 
 			      const GenericVector* x, Mesh& mesh,
-			      FiniteElement& element, BoundaryCondition& bc, 
-			      BoundaryFacetIterator<V, W>& facet);
+			      FiniteElement& element, BoundaryCondition& bc);
 
     /// Assemble bilinear form for an element
     static void assembleElement(BilinearForm& a, GenericMatrix& A, 
@@ -156,7 +154,7 @@ namespace dolfin
   template<class V, class W>
   void FEM::assembleCommon(BilinearForm* a, LinearForm* L, Functional* M,
 	       GenericMatrix* A, GenericVector* b, real* val,
-	       Mesh& mesh, BoundaryFacetIterator<V, W>& facet)
+	       Mesh& mesh)
   {
     // Check that the mesh matches the forms
     if ( a )
@@ -235,17 +233,21 @@ namespace dolfin
     // Assemble boundary contribution
     if ( boundary_contribution )
     {
-      // Iterate over all facets on the boundary
-      Boundary boundary(mesh);
-      Progress p_boundary("Assembling boundary contributions", boundary.numFacets());
-      for ( ; !facet.end(); ++facet)
+      // Iterate over all cells in the boundary mesh
+      BoundaryMesh boundary(mesh);
+      Progress p_boundary("Assembling boundary contributions",
+			  boundary.numCells());
+      for (CellIterator facet(boundary); !facet.end(); ++facet)
       {
         // Get cell containing the edge (pick first, should only be one)
-        dolfin_assert(facet.numCellNeighbors() == 1);
-        Cell& cell = facet.cell(0);
+        dolfin_assert(facet.numConnections(mesh.dim()) == 1);
+        Cell& cell = Cell(mesh, (*facet).connections(mesh.dim())[0]);
 	  
+	dolfin_error("localID not implemented");
+
         // Get local facet ID
-        uint facetID = facet.localID(0);
+//         uint facetID = facet.localID(0);
+	uint facetID = 0;
 	  
         // Update affine map for facet 
         map.update(cell, facetID);
@@ -283,8 +285,7 @@ namespace dolfin
   template <class V, class W>
   void FEM::applyCommonBC(GenericMatrix* A, GenericVector* b, 
                             const GenericVector* x, Mesh& mesh,
-                            FiniteElement& element, BoundaryCondition& bc, 
-                            BoundaryFacetIterator<V, W>& facet)
+                            FiniteElement& element, BoundaryCondition& bc)
   {
     // Create boundary value
     BoundaryValue bv;
@@ -323,14 +324,18 @@ namespace dolfin
       node_list = new int[n];  
     }
     
-    // Iterate over all edges/faces on the boundary
-    for ( ; !facet.end(); ++facet)
+    // FIXME: Creating a new BoundaryMesh is likely inefficient
+    // Iterate over all cells in the boundary mesh
+    BoundaryMesh boundary(mesh);
+
+    // Iterate over all cells in the boundary mesh
+    for (CellIterator facet(boundary); !facet.end(); ++facet)
     {
       uint k = 0;
 
       // Get cell containing the edge (pick first, should only be one)
-      dolfin_assert(facet.numCellNeighbors() == 1);
-      Cell& cell = facet.cell(0);
+      dolfin_assert(facet.numConnections(mesh.dim()) == 1);
+      Cell& cell = Cell(mesh, (*facet).connections(mesh.dim())[0]);
 
       // Update affine map
       map.update(cell);
@@ -342,10 +347,12 @@ namespace dolfin
       // Set boundary conditions for nodes on the boundary
       for (uint i = 0; i < n; i++)
       {
+	dolfin_error("contains() not implemented");
+
         // Skip points that are not contained in edge
-        const Point& point = points[i];
-        if ( !(facet.contains(point)) )
-          continue;
+	const Point& point = points[i];
+//         if ( !(facet.contains(point)) )
+//           continue;
 
         // Get boundary condition
         bv.reset();

@@ -106,7 +106,7 @@ real DiscreteFunction::operator() (const Vertex& vertex, uint i)
   local.init(*_element);
 
   // Get vertex nodes for all components
-  _element->vertexeval(local.vertex_nodes, vertex.id(), *_mesh);
+  _element->vertexeval(local.vertex_nodes, vertex.index(), *_mesh);
 
   // Pick value
   return (*_x)(mixed_offset + local.vertex_nodes[component + i]);
@@ -214,7 +214,7 @@ void DiscreteFunction::interpolate(Function& fsource)
   int *nodes = new int[e.spacedim()];
   real *coefficients = new real[e.spacedim()];
 
-  for(CellIterator c(&m); !c.end(); ++c)
+  for(CellIterator c(m); !c.end(); ++c)
   {
     Cell& cell = *c;
 
