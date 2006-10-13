@@ -3,6 +3,7 @@ prefix=@prefix@
 exec_prefix=@exec_prefix@
 libdir=@libdir@
 includedir=@includedir@
+compiler=@CXX@
 
 Name: DOLFIN
 Description: Dynamic Object-oriented Library for FINite element computation
