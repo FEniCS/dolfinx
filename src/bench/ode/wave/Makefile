@@ -1,7 +1,7 @@
-CFLAGS  = `dolfin-config --cflags`
-LIBS    = `dolfin-config --libs`
-CXX     = `dolfin-config --compiler`
-LINK    = `dolfin-config --linker`
+CFLAGS  = `pkg-config --cflags dolfin`
+LIBS    = `pkg-config --libs dolfin`
+CXX     = g++
+LINK    = libtool --silent --mode=link --tag CXX g++
 
 DEST    = dolfin-ode-wave
 OBJECTS = main.o
