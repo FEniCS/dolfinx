@@ -1,8 +1,10 @@
 // Copyright (C) 2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
+// Modified by Garth N. Wells, 2006.
+//
 // First added:  2006-06-02
-// Last changed: 2006-06-12
+// Last changed: 2006-10-14
 
 #include <dolfin/NewVertex.h>
 #include <dolfin/NewEdge.h>
@@ -21,9 +23,9 @@ NewPoint NewEdge::midpoint()
   const NewPoint p0 = v0.point();
   const NewPoint p1 = v1.point();
 
-  NewPoint p(0.5*(p0.x() + p0.x()),
-	     0.5*(p0.y() + p0.y()),
-	     0.5*(p0.z() + p0.z()));
+  NewPoint p(0.5*(p0.x() + p1.x()),
+	     0.5*(p0.y() + p1.y()),
+	     0.5*(p0.z() + p1.z()));
 
   return p;
 }
