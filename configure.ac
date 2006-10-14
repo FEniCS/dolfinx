@@ -205,12 +205,12 @@ case "${ax_cv_cxx_compiler_vendor}" in
         CXXFLAGS="$CXXFLAGS -pedantic -Wno-long-long -std=c++98"
         ;;
    intel)
-        echo 'WARNING: Intel C++ compiler version <= 9.0 is incompatible with' 
+        echo 'WARNING: Intel C++ compiler versions <= 9.0 are incompatible with' 
         echo 'header files gcc version <= 4.0. You can specify the version of' 
         echo 'gcc header files to be used by setting the compiler option' 
         echo '-gcc-name=<name> through the environment variables'
-        echo 'e.g. export INTEL_CXXFLAGS=" -gcc-name=gcc-3.4"'
-        CXXFLAGS="$CXXFLAGS -wd383 -wd810 -wd869 -wd981 -wd1418 -wd1419 -wd1572 -wd1599 $INTEL_CXXFLAGS"
+        echo 'e.g. export INTEL_CXXFLAGS="-gcc-name=gcc-3.4"'
+        CXXFLAGS="$CXXFLAGS -wd383 -wd654 -wd810 -wd869 -wd981 -wd1125 -wd1418 -wd1419 -wd1572 -wd1599 $INTEL_CXXFLAGS"
         ;;
 esac
 

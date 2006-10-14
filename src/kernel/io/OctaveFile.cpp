@@ -40,9 +40,9 @@ void OctaveFile::operator<<(Matrix& A)
   real* row = new real[N];
   
   FILE *fp = fopen(filename.c_str(), "a");
-  fprintf(fp, "%s = zeros(%d, %d);\n", A.name().c_str(), M, N);
+  fprintf(fp, "%s = zeros(%u, %u);\n", A.name().c_str(), M, N);
   
-  for (uint i = 0; i < M; i++)
+  for (int i = 0; i < M; i++)
   {
     // Get nonzero entries
     int ncols = 0;

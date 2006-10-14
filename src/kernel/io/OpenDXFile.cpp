@@ -181,7 +181,7 @@ void OpenDXFile::writeFunction(FILE* fp, Function& u)
 {
   // Write header for object
   fprintf(fp,"# Values for [%s] at nodal points, frame %d\n", u.label().c_str(), (int)frames.size());
-  fprintf(fp,"object \"data %d\" class array type float rank 1 shape %d items %d lsb binary data follows\n",
+  fprintf(fp,"object \"data %d\" class array type float rank 1 shape %u items %d lsb binary data follows\n",
 	  (int)frames.size(), u.vectordim(), u.mesh().numVertices());
   
   // Write data

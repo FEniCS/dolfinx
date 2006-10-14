@@ -187,7 +187,7 @@ void VTKFile::MeshWrite(NewMesh& mesh) const
   for (NewCellIterator c(mesh); !c.end(); ++c)
   {
     for (NewVertexIterator v(c); !v.end(); ++v)
-      fprintf(fp," %8d ",v->index());
+      fprintf(fp," %8u ",v->index());
     fprintf(fp," \n");
   }  
   fprintf(fp, "</DataArray> \n");
@@ -197,9 +197,9 @@ void VTKFile::MeshWrite(NewMesh& mesh) const
   for (uint offsets = 1; offsets <= mesh.numCells(); offsets++)
   {
     if ( mesh.topology().dim() == 3 )
-      fprintf(fp, " %8d \n",  offsets*4);
+      fprintf(fp, " %8u \n",  offsets*4);
     if ( mesh.topology().dim() == 2 )
-      fprintf(fp, " %8d \n", offsets*3);
+      fprintf(fp, " %8u \n", offsets*3);
   }
   fprintf(fp, "</DataArray> \n");
   
@@ -384,7 +384,7 @@ void VTKFile::VTKHeaderOpen(NewMesh& mesh) const
   // Write headers
   fprintf(fp, "<VTKFile type=\"UnstructuredGrid\"  version=\"0.1\"   >\n");
   fprintf(fp, "<UnstructuredGrid>  \n");
-  fprintf(fp, "<Piece  NumberOfPoints=\" %8d\"  NumberOfCells=\" %8d\">  \n",
+  fprintf(fp, "<Piece  NumberOfPoints=\" %8u\"  NumberOfCells=\" %8u\">  \n",
 	  mesh.numVertices(), mesh.numCells());
   
   // Close file
