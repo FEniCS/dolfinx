@@ -68,6 +68,9 @@ AC_ARG_WITH(amd-lib,
                            [Specify path to amd library (part of umfpack)]),
             [AMD_LIB_DIR=$with_amd_lib],)
 
+# Use C++ compiler for performing configure tests
+AC_LANG(C++)
+
 # Standard tests
 AC_PROG_CXX
 AC_PROG_CC
@@ -97,9 +100,6 @@ if test $libxml2_found = no; then
     echo "*** Perhaps you need to install the packages libxml2 and libxml2-dev?"
     exit 1
 fi
-
-# Use C++ compiler for performing configure tests
-AC_LANG(C++)
 
 AX_BOOST_BASE([1.33.1])
 
@@ -200,16 +200,16 @@ if test x$enable_optimization = xyes; then
 fi
 
 # Add compiler specific flags
-case "${ax_cv_c_compiler_vendor}" in
+case "${ax_cv_cxx_compiler_vendor}" in
    gnu) 
         CXXFLAGS="$CXXFLAGS -pedantic -Wno-long-long -std=c++98"
         ;;
    intel)
-        echo "WARNING: Intel C++ compiler version <= 9.0 is incompatible with 
-        echo "header files gcc version <= 4.0". You can specify the version of 
-        echo "gcc header files to be used by setting the compiler option 
-        echo "-gcc-name=<name> through the environment variables"
-        echo "e.g. setenv INTEL_CXXFLAGS -gcc-name=gcc-3.4"
+        echo 'WARNING: Intel C++ compiler version <= 9.0 is incompatible with' 
+        echo 'header files gcc version <= 4.0. You can specify the version of' 
+        echo 'gcc header files to be used by setting the compiler option' 
+        echo '-gcc-name=<name> through the environment variables'
+        echo 'e.g. export INTEL_CXXFLAGS=" -gcc-name=gcc-3.4"'
         CXXFLAGS="$CXXFLAGS -wd383 -wd810 -wd869 -wd981 -wd1418 -wd1419 -wd1572 -wd1599 $INTEL_CXXFLAGS"
         ;;
 esac
