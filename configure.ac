@@ -196,7 +196,7 @@ fi
 # Handle option --enable-optimization
 if test x$enable_optimization = xyes; then
     echo "enabling optimizing compiler flags"
-    CXXFLAGS="-O2  -Wall -ansi -DNDEBUG"
+    CXXFLAGS="-O3  -Wall -ansi -DNDEBUG"
 fi
 
 # Add compiler specific flags
