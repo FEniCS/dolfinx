@@ -336,6 +336,10 @@ void FEM::applyCommonBC(GenericMatrix* A, GenericVector* b,
   // FIXME: Creating a new BoundaryMesh is likely inefficient
   // Iterate over all cells in the boundary mesh
   BoundaryMesh boundary(mesh);
+
+  // FIXME: Boundary mesh needs to include connected cells in the
+  // interior.
+  dolfin_error("Boundary conditions not implemented.");
   
   // Iterate over all cells in the boundary mesh
   for (CellIterator facet(boundary); !facet.end(); ++facet)
@@ -460,15 +464,11 @@ dolfin::uint FEM::estimateNonZeros(Mesh& mesh,
 {
   uint nzmax = 0;
 
-  MeshConnectivity& connectivity = mesh.topology()(0, 1);
-  cout << "size: " << connectivity.size() << endl;
+  mesh.init(0, 0);
 
   for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
   {
-    cout << "id: " << (*vertex).index() << endl;
-    cout << "connections: " << (*vertex).numConnections(0) << endl;
-
-    nzmax = std::max(nzmax, (*vertex).numConnections(1)*element.spacedim());
+    nzmax = std::max(nzmax, vertex->numConnections(0)*element.spacedim());
   }
 
   return nzmax;

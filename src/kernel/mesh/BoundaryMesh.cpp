@@ -6,6 +6,7 @@
 
 #include <dolfin/BoundaryComputation.h>
 #include <dolfin/BoundaryMesh.h>
+#include <dolfin/Cell.h>
 
 using namespace dolfin;
 
@@ -27,6 +28,6 @@ BoundaryMesh::~BoundaryMesh()
 //-----------------------------------------------------------------------------
 void BoundaryMesh::init(Mesh& mesh)
 {
-  BoundaryComputation::computeBoundary(mesh, *this);
+  BoundaryComputation::computeBoundary(mesh, *this, icell);
 }
 //-----------------------------------------------------------------------------

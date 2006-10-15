@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-06-01
-// Last changed: 2006-06-22
+// Last changed: 2006-10-11
 
 #ifndef __NEW_VERTEX_H
 #define __NEW_VERTEX_H
@@ -29,21 +29,12 @@ namespace dolfin
     /// Destructor
     ~Vertex() {}
 
-    /// Return x-coordinate of vertex
-    inline real x() const { return _mesh.geometry().x(_index, 0); }
+    /// Return value of vertex coordinate in direction i
+    inline real x(uint i) const { return _mesh.geometry().x(_index, i); }
 
-    /// Return y-coordinate of vertex
-    inline real y() const { return (_dim >= 1 ? _mesh.geometry().x(_index, 1) : 0.0); }
-
-    /// Return z-coordinate of vertex
-    inline real z() const { return (_dim >= 2 ? _mesh.geometry().x(_index, 2) : 0.0); }
-
-    /// Return value of coordinate in given direction
-    inline real x(uint i) const { return (_dim >= i ? _mesh.geometry().x(_index, i) : 0.0); }
-
-    /// Return coordinates of the vertex
-    inline Point point() const { return Point(x(), y(), z()); }
-
+    /// Return vertex coordinates as a 3D point value
+    inline Point point() const { return _mesh.geometry().point(_index); }
+    
   };
 
   /// A VertexIterator is a MeshEntityIterator of topological dimension 0.

@@ -31,6 +31,8 @@ namespace dolfin
     /// Initialize boundary mesh from given mesh
     void init(Mesh& mesh);
 
+    /// Map from boundary cell to incident interior cell
+    Array<uint> icell;
   };
 
 }

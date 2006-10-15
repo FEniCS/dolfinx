@@ -2,11 +2,12 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-05-08
-// Last changed: 2006-09-18
+// Last changed: 2006-10-11
 
 #ifndef __MESH_GEOMETRY_H
 #define __MESH_GEOMETRY_H
 
+#include <dolfin/Point.h>
 #include <dolfin/constants.h>
 
 namespace dolfin
@@ -38,16 +39,19 @@ namespace dolfin
     inline uint size() const { return _size; }
     
     /// Return value of coordinate n in direction i
-    inline real& x(uint n, uint i) { return coordinates[i*_size + n]; }
+    inline real& x(uint n, uint i) { dolfin_assert(n < _size && i < _dim); return coordinates[i*_size + n]; }
 
     /// Return value of coordinate n in direction i
-    inline real x(uint n, uint i) const { return coordinates[i*_size + n]; }
+    inline real x(uint n, uint i) const { dolfin_assert(n < _size && i < _dim); return coordinates[i*_size + n]; }
 
     /// Return coordinates as one contiguous array
     inline real* x() { return coordinates; }
 
     /// Return coordinates as one contiguous array
     inline const real* x() const { return coordinates; }
+
+    /// Return coordinate n as a 3D point value
+    Point point(uint n) const;
     
     /// Clear all data
     void clear();

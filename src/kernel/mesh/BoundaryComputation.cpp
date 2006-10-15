@@ -9,6 +9,7 @@
 #include <dolfin/Mesh.h>
 #include <dolfin/Facet.h>
 #include <dolfin/Vertex.h>
+#include <dolfin/Cell.h>
 #include <dolfin/MeshEditor.h>
 #include <dolfin/MeshTopology.h>
 #include <dolfin/MeshGeometry.h>
@@ -19,7 +20,8 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 void BoundaryComputation::computeBoundary(Mesh& mesh,
-					  BoundaryMesh& boundary)
+					  BoundaryMesh& boundary,
+					  Array<uint>& icell)
 {
   // We iterate over all facets in the mesh and check if they are on
   // the boundary. A facet is on the boundary if it is connected to
@@ -73,6 +75,8 @@ void BoundaryComputation::computeBoundary(Mesh& mesh,
       editor.addVertex(vertex_index, v->point());
   }
 
+  icell.resize(num_boundary_facets);
+
   // Create cells (facets)
   Array<uint> cell(boundary.type().numVertices(boundary.dim()));
   uint current_cell = 0;
@@ -88,12 +92,32 @@ void BoundaryComputation::computeBoundary(Mesh& mesh,
 
       // Add cell
       editor.addCell(current_cell++, cell);
+
+      // Add cell to interior map
+      icell[current_cell - 1] = f->connections(mesh.dim())[0];
     }
   }
-  
+
   // Close mesh editor
   editor.close();
 
+//   editor.open(boundary, mesh.type().cellType(),
+// 	      mesh.topology().dim(), mesh.geometry().dim());
+
+//   // Create interior cells touching boundary
+//   Array<bool> icells(mesh.numCells());
+//   for(uint i = 0; i < icells.size(); i++)
+//   {
+//     icells[i] = false;
+//   }
+
+//   for(CellIterator c(boundary); !c.end(); ++c)
+//   {
+//     cout << "bcell: " << c->index() << endl;
+//   }
+
+//   editor.close();
+  
   cout << "Created boundary: " << boundary << endl;
 }
 //-----------------------------------------------------------------------------

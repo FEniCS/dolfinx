@@ -8,6 +8,7 @@
 #define __BOUNDARY_COMPUTATION_H
 
 #include <dolfin/constants.h>
+#include <dolfin/Array.h>
 
 namespace dolfin
 {
@@ -23,7 +24,8 @@ namespace dolfin
   public:
     
     /// Compute the boundary of a given mesh
-    static void computeBoundary(Mesh& mesh, BoundaryMesh& boundary);
+    static void computeBoundary(Mesh& mesh, BoundaryMesh& boundary,
+				Array<uint>& icell);
 
   private:
 

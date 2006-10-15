@@ -101,9 +101,22 @@ void AffineMap::updateTriangle(Cell& cell)
   dolfin_assert(cell.dim() == 2);
   
   // Get coordinates
+  int i0 = Vertex(cell.mesh(), cell.connections(0)[0]).index();
+  int i1 = Vertex(cell.mesh(), cell.connections(0)[1]).index();
+  int i2 = Vertex(cell.mesh(), cell.connections(0)[2]).index();
+
+
   p0 = Vertex(cell.mesh(), cell.connections(0)[0]).point();
   p1 = Vertex(cell.mesh(), cell.connections(0)[1]).point();
   p2 = Vertex(cell.mesh(), cell.connections(0)[2]).point();
+
+  cout << "i0: " << i0 << endl;
+  cout << "i1: " << i1 << endl;
+  cout << "i2: " << i2 << endl;
+
+  cout << "p0: " << p0.x() << " " << p0.y() << " " << p0.z() << endl;
+  cout << "p1: " << p1.x() << " " << p1.y() << " " << p1.z() << endl;
+  cout << "p2: " << p2.x() << " " << p2.y() << " " << p2.z() << endl;
 
   // Compute Jacobian of map
   f00 = p1.x() - p0.x(); f01 = p2.x() - p0.x();
