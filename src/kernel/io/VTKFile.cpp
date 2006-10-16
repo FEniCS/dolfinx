@@ -5,7 +5,7 @@
 // Modified by Kristian Oelgaard 2006.
 //
 // First added:  2005-07-05
-// Last changed: 2006-10-11
+// Last changed: 2006-10-16
 
 #include <dolfin/Mesh.h>
 #include <dolfin/Vertex.h>
@@ -116,7 +116,7 @@ void VTKFile::MeshWrite(Mesh& mesh) const
 
   // Write offset into connectivity array for the end of each cell
   fprintf(fp, "<DataArray  type=\"Int32\"  Name=\"offsets\"  format=\"ascii\">  \n");
-  for (int offsets = 1; offsets <= mesh.numCells(); offsets++)
+  for (uint offsets = 1; offsets <= mesh.numCells(); offsets++)
   {
     if (mesh.type().cellType() == CellType::tetrahedron )
       fprintf(fp, " %8d \n",  offsets*4);
@@ -127,7 +127,7 @@ void VTKFile::MeshWrite(Mesh& mesh) const
   
   //Write cell type
   fprintf(fp, "<DataArray  type=\"UInt8\"  Name=\"types\"  format=\"ascii\">  \n");
-  for (int types = 1; types <= mesh.numCells(); types++)
+  for (uint types = 1; types <= mesh.numCells(); types++)
   {
     if (mesh.type().cellType() == CellType::tetrahedron )
       fprintf(fp, " 10 \n");

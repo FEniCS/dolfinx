@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells 2005.
 //
 // First added:  2005
-// Last changed: 2006-02-20
+// Last changed: 2006-10-16
 
 //#include <iostream>
 #include <sstream>
@@ -905,7 +905,7 @@ void ElasticityUpdatedSolver::deform(Mesh& mesh, Function& u)
   // Update the mesh
   for (VertexIterator n(mesh); !n.end(); ++n)
   {
-    Vertex& vertex = *n;
+    //Vertex& vertex = *n;
     
     dolfin_error("vertex update not implemented");
 //     vertex.point().x() = u(vertex, 0);

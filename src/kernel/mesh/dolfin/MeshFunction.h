@@ -2,67 +2,99 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-05-22
-// Last changed: 2006-05-22
+// Last changed: 2006-10-16
 
 #ifndef __MESH_FUNCTION_H
 #define __MESH_FUNCTION_H
 
 #include <dolfin/constants.h>
+#include <dolfin/MeshEntity.h>
 
 namespace dolfin
 {
 
-  /// A MeshFunction is a discrete function that can be evaluated at
-  /// a set of mesh entities. Note that a MeshFunction is discrete and
-  /// only defined at the set of mesh entities of a fixed topological
-  /// dimension. A MeshFunction may for example be used to store a
-  /// global numbering scheme for the entities for a (parallel) mesh,
-  /// marking sub domains or boolean markers for mesh refinement.
+  /// A MeshFunction is a function that can be evaluated at a set of
+  /// mesh entities. A MeshFunction is discrete and is only defined
+  /// at the set of mesh entities of a fixed topological dimension.
+  /// A MeshFunction may for example be used to store a global
+  /// numbering scheme for the entities for a (parallel) mesh, marking
+  /// sub domains or boolean markers for mesh refinement.
 
   template <class T> class MeshFunction
   {
   public:
 
-    /// Create empty mesh function on given mesh
-    MeshFunction() : values(0), size(0) {}
+    /// Create empty mesh function
+    MeshFunction() :  _values(0), _mesh(0), _dim(0), _size(0) {}
 
     /// Destructor
     ~MeshFunction()
     {
-      if ( values )
-	delete [] values;
+      if ( _values )
+	delete [] _values;
     }
 
-    /// Evaluate mesh function at given entity
-    inline T& operator() (uint e)
+    /// Return topological dimension
+    inline uint dim() const { return _dim; }
+
+    /// Return size (number of entities)
+    inline uint size() const { return _size; }
+
+    /// Return array of values
+    inline const T* values() const { return _values; }
+
+    /// Return value at given entity
+    inline T& operator() (MeshEntity& entity)
     {
-      dolfin_assert(values && e < size);
-      return values[e];
+      dolfin_assert(_values);
+      dolfin_assert(&entity.mesh() == _mesh);
+      dolfin_assert(entity.dim() == _dim);
+      dolfin_assert(entity.index() < _size);
+      return _values[entity.index()];
     }
 
-    /// Evaluate mesh function at given entity
-    inline const T& operator() (uint e) const
+    /// Return value at given entity
+    inline const T& operator() (MeshEntity& entity) const
     {
-      dolfin_assert(values && e < size);
-      return values[e];
+      dolfin_assert(_values);
+      dolfin_assert(&entity.mesh() == _mesh);
+      dolfin_assert(entity.dim() == _dim);
+      dolfin_assert(entity.index() < _size);
+      return _values[entity.index()];
     }
 
-    /// Initialize mesh function to given size
-    void init(uint size)
+    /// Initialize mesh function for given topological dimension and size
+    void init(const Mesh& mesh, uint dim, uint size)
     {
-      this->size = size;
-      if ( values )
-	delete [] values;
-      values = new T[size];
+      _mesh = &mesh;
+      _dim = dim;
+      _size = size;
+      if ( _values )
+	delete [] _values;
+      _values = new T[size];
+    }
+
+    /// Set value at given entity
+    inline void set(uint index, const T& value)
+    {
+      dolfin_assert(_values);
+      dolfin_assert(index < _size);
+      _values[index] = value;
     }
     
   private:
 
     /// Values at the set of mesh entities
-    T* values;
+    T* _values;
+
+    /// The mesh
+    const Mesh* _mesh;
+
+    /// Topological dimension
+    uint _dim;
 
     /// Number of mesh entities
-    uint size;
+    uint _size;
 
   };
 

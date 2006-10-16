@@ -1,8 +1,11 @@
 // Copyright (C) 2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
+// Modified by Johan Jansson 2006.
+// Modified by Ola Skavhaug 2006.
+//
 // First added:  2006-06-21
-// Last changed: 2006-10-11
+// Last changed: 2006-10-16
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Array.h>
@@ -19,9 +22,22 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void BoundaryComputation::computeBoundary(Mesh& mesh,
-					  BoundaryMesh& boundary,
-					  Array<uint>& icell)
+void BoundaryComputation::computeBoundary(Mesh& mesh, BoundaryMesh& boundary)
+{
+  computeBoundaryCommon(mesh, boundary, 0, 0);
+}
+//-----------------------------------------------------------------------------
+void BoundaryComputation::computeBoundary(Mesh& mesh, BoundaryMesh& boundary,
+                                          MeshFunction<uint>& vertex_map,
+                                          MeshFunction<uint>& cell_map)
+{
+  computeBoundaryCommon(mesh, boundary, &vertex_map, &cell_map);
+}
+//-----------------------------------------------------------------------------
+void BoundaryComputation::computeBoundaryCommon(Mesh& mesh,
+                                                BoundaryMesh& boundary,
+                                                MeshFunction<uint>* vertex_map,
+                                                MeshFunction<uint>* cell_map)
 {
   // We iterate over all facets in the mesh and check if they are on
   // the boundary. A facet is on the boundary if it is connected to
@@ -44,7 +60,7 @@ void BoundaryComputation::computeBoundary(Mesh& mesh,
 
   // Count boundary vertices and facets, and assign vertex indices
   uint num_boundary_vertices = 0;
-  uint num_boundary_facets = 0;
+  uint num_boundary_cells = 0;
   for (FacetIterator f(mesh); !f.end(); ++f)
   {
     // Boundary facets are connected to exactly one cell
@@ -58,24 +74,35 @@ void BoundaryComputation::computeBoundary(Mesh& mesh,
 	  boundary_vertices[vertex_index] = num_boundary_vertices++;
       }
 
-      // Count boundary facets
-      num_boundary_facets++;
+      // Count boundary cells (facets of the mesh)
+      num_boundary_cells++;
     }
   }
   
   // Specify number of vertices and cells
   editor.initVertices(num_boundary_vertices);
-  editor.initCells(num_boundary_facets);
-  
+  editor.initCells(num_boundary_cells);
+
+  // Initialize the mappings from boundary to mesh if requested
+  if ( vertex_map )
+    vertex_map->init(boundary, 0, num_boundary_vertices);
+  if ( cell_map )
+    cell_map->init(boundary, mesh.topology().dim() - 1, num_boundary_cells);
+    
   // Create vertices
   for (VertexIterator v(mesh); !v.end(); ++v)
   {
     const uint vertex_index = boundary_vertices[v->index()];
     if ( vertex_index != mesh.numVertices() )
+    {
+      // Create mapping from boundary vertex to mesh vertex if requested
+      if ( vertex_map )
+        vertex_map->set(vertex_index, v->index());
+      
+      // Add vertex
       editor.addVertex(vertex_index, v->point());
+    }
   }
-
-  icell.resize(num_boundary_facets);
 
   // Create cells (facets)
   Array<uint> cell(boundary.type().numVertices(boundary.topology().dim()));
@@ -90,34 +117,18 @@ void BoundaryComputation::computeBoundary(Mesh& mesh,
       for (uint i = 0; i < cell.size(); i++)
 	cell[i] = boundary_vertices[vertices[i]];
 
+      // Create mapping from boundary cell to mesh facet if requested
+      if ( cell_map )
+        cell_map->set(current_cell, f->index());
+
       // Add cell
       editor.addCell(current_cell++, cell);
-
-      // Add cell to interior map
-      icell[current_cell - 1] = f->connections(mesh.topology().dim())[0];
     }
   }
 
   // Close mesh editor
   editor.close();
 
-//   editor.open(boundary, mesh.type().cellType(),
-// 	      mesh.topology().topology().dim(), mesh.geometry().topology().dim());
-
-//   // Create interior cells touching boundary
-//   Array<bool> icells(mesh.numCells());
-//   for(uint i = 0; i < icells.size(); i++)
-//   {
-//     icells[i] = false;
-//   }
-
-//   for(CellIterator c(boundary); !c.end(); ++c)
-//   {
-//     cout << "bcell: " << c->index() << endl;
-//   }
-
-//   editor.close();
-  
-  cout << "Created boundary: " << boundary << endl;
+  cout << "Created boundary mesh: " << boundary << endl;
 }
 //-----------------------------------------------------------------------------

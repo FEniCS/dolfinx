@@ -29,6 +29,18 @@ int main()
   File file("outtest.xml");
   file << mesh;
 
+  MeshFunction<unsigned int> vertex_map;
+  MeshFunction<unsigned int> cell_map;
+  BoundaryMesh boundary(mesh, vertex_map, cell_map);
+  
+  for (CellIterator cell(boundary); !cell.end(); ++cell)
+  {
+    Facet facet(mesh, cell_map(*cell));
+    cout << cell->numConnections(0) << endl;
+    //cout << cell->numConnections(1) << endl;
+    //cout << cell->numConnections(2) << endl;
+  }
+
   //UnitCube mesh(3, 3, 3);
   //File file("mesh.xml.gz");
   //file << mesh;

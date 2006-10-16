@@ -2,13 +2,14 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-06-21
-// Last changed: 2006-06-22
+// Last changed: 2006-10-16
 
 #ifndef __BOUNDARY_MESH_H
 #define __BOUNDARY_MESH_H
 
 #include <dolfin/constants.h>
 #include <dolfin/Mesh.h>
+#include <dolfin/MeshFunction.h>
 
 namespace dolfin
 {
@@ -25,14 +26,26 @@ namespace dolfin
     /// Create boundary mesh from given mesh
     BoundaryMesh(Mesh& mesh);
 
+    /// Create boundary mesh from given mesh and compute a pair
+    /// of mappings from the vertices and cells of the boundary to
+    /// the corresponding mesh entities in the original mesh
+    BoundaryMesh(Mesh& mesh,
+                 MeshFunction<uint>& vertex_map,
+                 MeshFunction<uint>& cell_map);
+
     /// Destructor
     ~BoundaryMesh();
 
     /// Initialize boundary mesh from given mesh
     void init(Mesh& mesh);
 
-    /// Map from boundary cell to incident interior cell
-    Array<uint> icell;
+    /// Initialize boundary mesh from given mesh, including a pair
+    /// of mappings from the vertices and cells of the boundary to
+    /// the corresponding mesh entities in the original mesh
+    void init(Mesh& mesh,
+              MeshFunction<uint>& vertex_map,
+              MeshFunction<uint>& cell_map);
+
   };
 
 }

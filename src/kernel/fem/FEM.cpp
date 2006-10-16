@@ -7,6 +7,7 @@
 // First added:  2004-05-19
 // Last changed: 2006-09-18
 
+#include <dolfin/Facet.h>
 #include <dolfin/FEM.h>
 
 using namespace dolfin;
@@ -233,14 +234,17 @@ void FEM::assembleCommon(BilinearForm* a, LinearForm* L, Functional* M,
   if ( boundary_contribution )
   {
     // Iterate over all cells in the boundary mesh
-    BoundaryMesh boundary(mesh);
+    MeshFunction<uint> vertex_map;
+    MeshFunction<uint> cell_map;
+    BoundaryMesh boundary(mesh, vertex_map, cell_map);
     Progress p_boundary("Assembling boundary contributions",
 			boundary.numCells());
-    for (CellIterator facet(boundary); !facet.end(); ++facet)
+    for (CellIterator cell(boundary); !cell.end(); ++cell)
     {
-      // Get cell containing the edge (pick first, should only be one)
+      // Get mesh cell containing the boundary cell (pick first, should only be one)
+      Facet facet(mesh, cell_map(*cell));
       dolfin_assert(facet.numConnections(mesh.topology().dim()) == 1);
-      Cell cell(mesh, (*facet).connections(mesh.topology().dim())[0]);
+      Cell mesh_cell(mesh, facet.connections(mesh.topology().dim())[0]);
       
       dolfin_error("localID not implemented");
       
@@ -249,17 +253,17 @@ void FEM::assembleCommon(BilinearForm* a, LinearForm* L, Functional* M,
       uint facetID = 0;
       
       // Update affine map for facet 
-      map.update(cell, facetID);
+      map.update(mesh_cell, facetID);
       
       // Assemble bilinear form
       if ( a )
 	if ( a->boundary_contribution() )
-	  assembleElement(*a, *A, mesh, cell, map, facetID);              
+	  assembleElement(*a, *A, mesh, mesh_cell, map, facetID);              
       
       // Assemble linear form
       if ( L )
 	if ( L->boundary_contribution() )
-	  assembleElement(*L, *b, mesh, cell, map, facetID);              
+	  assembleElement(*L, *b, mesh, mesh_cell, map, facetID);              
       
       // Assemble functional
       if ( M )
@@ -335,7 +339,9 @@ void FEM::applyCommonBC(GenericMatrix* A, GenericVector* b,
   
   // FIXME: Creating a new BoundaryMesh is likely inefficient
   // Iterate over all cells in the boundary mesh
-  BoundaryMesh boundary(mesh);
+  MeshFunction<uint> vertex_map;
+  MeshFunction<uint> cell_map;
+  BoundaryMesh boundary(mesh, vertex_map, cell_map);
 
   // FIXME: Boundary mesh needs to include connected cells in the
   // interior.
@@ -347,10 +353,9 @@ void FEM::applyCommonBC(GenericMatrix* A, GenericVector* b,
     uint k = 0;
     
     // Get cell containing the edge (pick first, should only be one)
-//     dolfin_assert(facet.numConnections(mesh.topology().dim()) == 1);
-//     Cell cell(mesh, (*facet).connections(mesh.topology().dim())[0]);
-
-    Cell cell(mesh, boundary.icell[facet->index()]);
+    //     dolfin_assert(facet.numConnections(mesh.topology().dim()) == 1);
+    //     Cell cell(mesh, (*facet).connections(mesh.topology().dim())[0]);
+    Cell cell(mesh, cell_map(*facet));
     
     // Update affine map
     map.update(cell);
