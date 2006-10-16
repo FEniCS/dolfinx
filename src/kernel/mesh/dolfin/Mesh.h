@@ -4,8 +4,8 @@
 // First added:  2006-05-08
 // Last changed: 2006-09-18
 
-#ifndef __NEW_MESH_H
-#define __NEW_MESH_H
+#ifndef __MESH_H
+#define __MESH_H
 
 #include <string>
 #include <dolfin/constants.h>

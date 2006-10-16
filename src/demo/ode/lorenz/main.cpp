@@ -21,9 +21,9 @@ public:
     r = 28.0;
 
     // Fixed points
-    p0 = (6.0*sqrt(2.0), p0.x(), 27.0); 
-    p1 = (-p0.x(), -p0.y(), p0.z());  
-
+    p0.x() = 6.0*sqrt(2.0); p0.y() = p0.x(); p0.z() = 27.0; 
+    p1.x() = -p0.x(); p1.y() = -p0.y(); p1.z() =  p0.z();
+  
     // Distance between fixed points
     v = p1 - p0;
     

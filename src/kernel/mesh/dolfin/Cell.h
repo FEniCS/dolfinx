@@ -4,8 +4,8 @@
 // First added:  2006-06-01
 // Last changed: 2006-06-01
 
-#ifndef __NEW_CELL_H
-#define __NEW_CELL_H
+#ifndef __CELL_H
+#define __CELL_H
 
 #include <dolfin/MeshEntity.h>
 #include <dolfin/MeshEntityIterator.h>

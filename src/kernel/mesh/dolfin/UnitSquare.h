@@ -4,8 +4,8 @@
 // First added:  2005-12-02
 // Last changed: 2006-08-07
 
-#ifndef __NEW_UNIT_SQUARE_H
-#define __NEW_UNIT_SQUARE_H
+#ifndef __UNIT_SQUARE_H
+#define __UNIT_SQUARE_H
 
 #include <dolfin/Mesh.h>
 

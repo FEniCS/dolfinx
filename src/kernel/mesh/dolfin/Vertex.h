@@ -4,8 +4,8 @@
 // First added:  2006-06-01
 // Last changed: 2006-10-11
 
-#ifndef __NEW_VERTEX_H
-#define __NEW_VERTEX_H
+#ifndef __VERTEX_H
+#define __VERTEX_H
 
 #include <dolfin/Point.h>
 #include <dolfin/MeshEntity.h>

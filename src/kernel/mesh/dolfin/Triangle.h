@@ -4,8 +4,8 @@
 // First added:  2006-06-05
 // Last changed: 2006-10-16
 
-#ifndef __NEW_TRIANGLE_H
-#define __NEW_TRIANGLE_H
+#ifndef __TRIANGLE_H
+#define __TRIANGLE_H
 
 #include <dolfin/CellType.h>
 

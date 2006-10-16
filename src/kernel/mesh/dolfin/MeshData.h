@@ -4,8 +4,8 @@
 // First added:  2006-05-08
 // Last changed: 2006-06-12
 
-#ifndef __NEW_MESH_DATA_H
-#define __NEW_MESH_DATA_H
+#ifndef __MESH_DATA_H
+#define __MESH_DATA_H
 
 #include <dolfin/MeshTopology.h>
 #include <dolfin/MeshGeometry.h>

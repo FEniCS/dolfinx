@@ -4,8 +4,8 @@
 // First added:  2006-06-02
 // Last changed: 2006-06-12
 
-#ifndef __NEW_EDGE_H
-#define __NEW_EDGE_H
+#ifndef __EDGE_H
+#define __EDGE_H
 
 #include <dolfin/Point.h>
 #include <dolfin/MeshEntity.h>
