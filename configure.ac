@@ -440,7 +440,6 @@ AC_OUTPUT( Makefile \
            src/modules/stokes/dolfin/Makefile \
            src/lib/Makefile \
            src/pydolfin/Makefile \
-           src/config/Makefile \
            src/post/Makefile \
            src/demo/Makefile \
            src/demo/fem/Makefile \

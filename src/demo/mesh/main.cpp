@@ -15,14 +15,21 @@ void refine3D(int refinements);
 
 int main()
 {
-  int refinements = 3;
+  //int refinements = 3;
 
   // Refine 2D mesh
-  refine2D(refinements);
-
-  // Refine 3D mesh
-  refine3D(refinements);
+  //refine2D(refinements);
   
+  // Refine 3D mesh
+  //refine3D(refinements);
+  
+  // Temporary test until the adaptive mesh refinement is in place again
+  Mesh mesh("intest.xml");
+  
+  //UnitCube mesh(3, 3, 3);
+  //File file("mesh.xml.gz");
+  //file << mesh;
+
   return 0;
 }
 
