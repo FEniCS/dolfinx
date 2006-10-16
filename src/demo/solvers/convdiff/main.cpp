@@ -54,9 +54,9 @@ class MyBC : public BoundaryCondition
 {
   void eval(BoundaryValue& value, const Point& p, unsigned int i)
   {
-    if ( p.x == 1.0 )
+    if ( p.x() == 1.0 )
       value.set(0.0);
-    else if ( p.x != 0.0 && p.x != 1.0 && p.y != 0.0 && p.y != 1.0 )
+    else if ( p.x() != 0.0 && p.x() != 1.0 && p.y() != 0.0 && p.y() != 1.0 )
       value.set(1.0);
   }
 };

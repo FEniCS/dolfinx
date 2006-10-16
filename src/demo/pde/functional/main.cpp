@@ -26,7 +26,7 @@ int main()
   {
     real eval(const Point& p, unsigned int i)
     {
-      return sin(p.x) + cos(p.y);
+      return sin(p.x()) + cos(p.y());
     }
   };
 

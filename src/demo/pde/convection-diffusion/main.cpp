@@ -23,10 +23,10 @@ void solveConvectionDiffusion(Mesh& mesh, Function& velocity)
   {
     void eval(BoundaryValue& value, const Point& p, unsigned int i)
     {
-      if ( p.x == 1.0 )
-	value = 1.0;
-      else if ( p.x != 0.0 && p.x != 1.0 && p.y != 0.0 && p.y != 1.0 )
-	value = 1.0;
+      if ( p.x() == 1.0 )
+        value = 1.0;
+      else if ( p.x() != 0.0 && p.x() != 1.0 && p.y() != 0.0 && p.y() != 1.0 )
+        value = 1.0;
     }
   };
 
@@ -91,7 +91,7 @@ int main()
       // Pressure boundary condition, zero pressure at one point
       if ( i == 2 )
       {
-        if ( p.x < DOLFIN_EPS && p.y < DOLFIN_EPS )
+        if ( p.x() < DOLFIN_EPS && p.y() < DOLFIN_EPS )
         {
           value = 0.0;
         }
@@ -99,7 +99,7 @@ int main()
       }
       
       // Velocity boundary condition at inflow
-      if ( p.x > (1.0 - DOLFIN_EPS) )
+      if ( p.x() > (1.0 - DOLFIN_EPS) )
       {
         if ( i == 0 )
           value = -1.0;
@@ -109,7 +109,7 @@ int main()
       }
       
       // Velocity boundary condition at remaining boundary (excluding outflow)
-      if ( p.x > DOLFIN_EPS )
+      if ( p.x() > DOLFIN_EPS )
         value = 0.0;
     }
   };

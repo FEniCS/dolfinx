@@ -19,26 +19,24 @@ int main()
       // Pressure boundary condition, zero pressure at one point
       if ( i == 2 )
       {
-	if ( p.x < DOLFIN_EPS && p.y < DOLFIN_EPS )
-	{
-	  value = 0.0;
-	}
-	return;
+        if ( p.x() < DOLFIN_EPS && p.y() < DOLFIN_EPS )
+	        value = 0.0;
+        return;
       }
       
       // Velocity boundary condition at inflow
-      if ( p.x > (1.0 - DOLFIN_EPS) )
+      if ( p.x() > (1.0 - DOLFIN_EPS) )
       {
-	if ( i == 0 )
-	  value = -1.0;
-	else
-	  value = 0.0;
-	return;
+        if ( i == 0 )
+          value = -1.0;
+        else
+          value = 0.0;
+        return;
       }
       
       // Velocity boundary condition at remaining boundary (excluding outflow)
-      if ( p.x > DOLFIN_EPS )
-	value = 0.0;
+      if ( p.x() > DOLFIN_EPS )
+        value = 0.0;
     }
   };
 
