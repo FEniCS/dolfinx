@@ -20,7 +20,7 @@ namespace dolfin
   public:
 
     /// Constructor
-    Facet(Mesh& mesh, uint index) : MeshEntity(mesh, mesh.dim() - 1, index) {}
+    Facet(Mesh& mesh, uint index) : MeshEntity(mesh, mesh.topology().dim() - 1, index) {}
 
     /// Destructor
     ~Facet() {}
@@ -33,9 +33,9 @@ namespace dolfin
   {
   public:
     
-    FacetIterator(Mesh& mesh) : MeshEntityIterator(mesh, mesh.dim() - 1) {}
-    FacetIterator(MeshEntity& entity) : MeshEntityIterator(entity, entity.mesh().dim() - 1) {}
-    FacetIterator(MeshEntityIterator& it) : MeshEntityIterator(it, it->mesh().dim() - 1) {}
+    FacetIterator(Mesh& mesh) : MeshEntityIterator(mesh, mesh.topology().dim() - 1) {}
+    FacetIterator(MeshEntity& entity) : MeshEntityIterator(entity, entity.mesh().topology().dim() - 1) {}
+    FacetIterator(MeshEntityIterator& it) : MeshEntityIterator(it, it->mesh().topology().dim() - 1) {}
 
     inline Facet& operator*()
     { return static_cast<Facet&>(*static_cast<MeshEntityIterator>(*this)); }

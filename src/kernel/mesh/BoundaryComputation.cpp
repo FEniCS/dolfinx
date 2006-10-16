@@ -35,7 +35,7 @@ void BoundaryComputation::computeBoundary(Mesh& mesh,
 	      mesh.topology().dim() - 1, mesh.geometry().dim());
 
   // Generate facet - cell connectivity if not generated
-  mesh.init(mesh.dim() - 1, mesh.dim());
+  mesh.init(mesh.topology().dim() - 1, mesh.topology().dim());
 
   // Temporary array for assignment of indices to vertices on the boundary
   const uint num_vertices = mesh.numVertices();
@@ -48,7 +48,7 @@ void BoundaryComputation::computeBoundary(Mesh& mesh,
   for (FacetIterator f(mesh); !f.end(); ++f)
   {
     // Boundary facets are connected to exactly one cell
-    if ( f->numConnections(mesh.dim()) == 1 )
+    if ( f->numConnections(mesh.topology().dim()) == 1 )
     {
       // Count boundary vertices and assign indices
       for (VertexIterator v(f); !v.end(); ++v)
@@ -78,12 +78,12 @@ void BoundaryComputation::computeBoundary(Mesh& mesh,
   icell.resize(num_boundary_facets);
 
   // Create cells (facets)
-  Array<uint> cell(boundary.type().numVertices(boundary.dim()));
+  Array<uint> cell(boundary.type().numVertices(boundary.topology().dim()));
   uint current_cell = 0;
   for (FacetIterator f(mesh); !f.end(); ++f)
   {
     // Boundary facets are connected to exactly one cell
-    if ( f->numConnections(mesh.dim()) == 1 )
+    if ( f->numConnections(mesh.topology().dim()) == 1 )
     {
       // Compute new vertex numbers for cell
       uint* vertices = f->connections(0);
@@ -94,7 +94,7 @@ void BoundaryComputation::computeBoundary(Mesh& mesh,
       editor.addCell(current_cell++, cell);
 
       // Add cell to interior map
-      icell[current_cell - 1] = f->connections(mesh.dim())[0];
+      icell[current_cell - 1] = f->connections(mesh.topology().dim())[0];
     }
   }
 
@@ -102,7 +102,7 @@ void BoundaryComputation::computeBoundary(Mesh& mesh,
   editor.close();
 
 //   editor.open(boundary, mesh.type().cellType(),
-// 	      mesh.topology().dim(), mesh.geometry().dim());
+// 	      mesh.topology().topology().dim(), mesh.geometry().topology().dim());
 
 //   // Create interior cells touching boundary
 //   Array<bool> icells(mesh.numCells());

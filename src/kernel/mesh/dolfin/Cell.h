@@ -20,7 +20,7 @@ namespace dolfin
   public:
 
     /// Constructor
-    Cell(Mesh& mesh, uint index) : MeshEntity(mesh, mesh.dim(), index) {}
+    Cell(Mesh& mesh, uint index) : MeshEntity(mesh, mesh.topology().dim(), index) {}
 
     /// Destructor
     ~Cell() {}
@@ -33,9 +33,9 @@ namespace dolfin
   {
   public:
     
-    CellIterator(Mesh& mesh) : MeshEntityIterator(mesh, mesh.dim()) {}
-    CellIterator(MeshEntity& entity) : MeshEntityIterator(entity, entity.mesh().dim()) {}
-    CellIterator(MeshEntityIterator& it) : MeshEntityIterator(it, it->mesh().dim()) {}
+    CellIterator(Mesh& mesh) : MeshEntityIterator(mesh, mesh.topology().dim()) {}
+    CellIterator(MeshEntity& entity) : MeshEntityIterator(entity, entity.mesh().topology().dim()) {}
+    CellIterator(MeshEntityIterator& it) : MeshEntityIterator(it, it->mesh().topology().dim()) {}
 
     inline Cell& operator*()
     { return static_cast<Cell&>(*static_cast<MeshEntityIterator>(*this)); }

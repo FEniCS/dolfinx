@@ -118,9 +118,9 @@ void VTKFile::MeshWrite(Mesh& mesh) const
   fprintf(fp, "<DataArray  type=\"Int32\"  Name=\"offsets\"  format=\"ascii\">  \n");
   for (uint offsets = 1; offsets <= mesh.numCells(); offsets++)
   {
-    if ( mesh.dim() == 3 )
+    if ( mesh.topology().dim() == 3 )
       fprintf(fp, " %8d \n",  offsets*4);
-    if ( mesh.dim() == 2 )
+    if ( mesh.topology().dim() == 2 )
       fprintf(fp, " %8d \n", offsets*3);
   }
   fprintf(fp, "</DataArray> \n");
@@ -129,9 +129,9 @@ void VTKFile::MeshWrite(Mesh& mesh) const
   fprintf(fp, "<DataArray  type=\"UInt8\"  Name=\"types\"  format=\"ascii\">  \n");
   for (uint types = 1; types <= mesh.numCells(); types++)
   {
-    if ( mesh.dim() == 3 )
+    if ( mesh.topology().dim() == 3 )
       fprintf(fp, " 10\n");
-    if ( mesh.dim() == 2 )
+    if ( mesh.topology().dim() == 2 )
       fprintf(fp, " 5\n");
   }
   fprintf(fp, "</DataArray> \n");

@@ -75,9 +75,6 @@ namespace dolfin
     /// Return connectivity for all cells
     inline const uint* cells() const { return data.topology(data.topology.dim(), 0)(); }
 
-    /// Return topological dimension
-    inline uint dim() const { return data.topology.dim(); }
-
     /// Return number of entities of given topological dimension
     inline uint size(uint dim) const { return data.topology.size(dim); }
     

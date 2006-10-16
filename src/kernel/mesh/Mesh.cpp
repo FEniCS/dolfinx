@@ -52,12 +52,12 @@ void Mesh::init(uint d0, uint d1)
 void Mesh::init()
 {
   // Compute all entities
-  for (uint d = 0; d <= dim(); d++)
+  for (uint d = 0; d <= topology().dim(); d++)
     init(d);
 
   // Compute all connectivity
-  for (uint d0 = 0; d0 <= dim(); d0++)
-    for (uint d1 = 0; d1 <= dim(); d1++)
+  for (uint d0 = 0; d0 <= topology().dim(); d0++)
+    for (uint d1 = 0; d1 <= topology().dim(); d1++)
       init(d0, d1);
 }
 //-----------------------------------------------------------------------------
@@ -75,7 +75,7 @@ void Mesh::refine()
 dolfin::LogStream& dolfin::operator<< (LogStream& stream, const Mesh& mesh)
 {
   stream << "[ Mesh of topological dimension "
-	 << mesh.dim()
+	 << mesh.topology().dim()
 	 << " with "
 	 << mesh.numVertices()
 	 << " vertices and "

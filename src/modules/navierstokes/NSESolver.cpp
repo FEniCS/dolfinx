@@ -42,7 +42,7 @@ void NSESolver::solve()
   Vector bmom, bcon;
 
   // Get the number of space dimensions of the problem 
-  int nsd = mesh.dim();
+  int nsd = mesh.topology().dim();
 
   dolfin_info("Number of space dimensions: %d",nsd);
 

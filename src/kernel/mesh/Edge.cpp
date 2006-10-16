@@ -21,9 +21,9 @@ Point Edge::midpoint()
   const Point p0 = v0.point();
   const Point p1 = v1.point();
 
-  Point p(0.5*(p0.x() + p0.x()),
-	  0.5*(p0.y() + p0.y()),
-	  0.5*(p0.z() + p0.z()));
+  Point p(0.5*(p0.x() + p1.x()),
+	  0.5*(p0.y() + p1.y()),
+	  0.5*(p0.z() + p1.z()));
 
   return p;
 }

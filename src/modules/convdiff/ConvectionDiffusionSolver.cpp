@@ -34,7 +34,7 @@ void ConvectionDiffusionSolver::solve()
   File file(get("solution file name"));
   
   // Get the number of space dimensions of the problem 
-  uint nsd = mesh.dim();
+  uint nsd = mesh.topology().dim();
   dolfin_info("Number of space dimensions: %d",nsd);
 
   // Vectors for functions for element size and inverse of velocity norm

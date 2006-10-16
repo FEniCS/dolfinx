@@ -239,8 +239,8 @@ void FEM::assembleCommon(BilinearForm* a, LinearForm* L, Functional* M,
     for (CellIterator facet(boundary); !facet.end(); ++facet)
     {
       // Get cell containing the edge (pick first, should only be one)
-      dolfin_assert(facet.numConnections(mesh.dim()) == 1);
-      Cell cell(mesh, (*facet).connections(mesh.dim())[0]);
+      dolfin_assert(facet.numConnections(mesh.topology().dim()) == 1);
+      Cell cell(mesh, (*facet).connections(mesh.topology().dim())[0]);
       
       dolfin_error("localID not implemented");
       
@@ -347,8 +347,8 @@ void FEM::applyCommonBC(GenericMatrix* A, GenericVector* b,
     uint k = 0;
     
     // Get cell containing the edge (pick first, should only be one)
-//     dolfin_assert(facet.numConnections(mesh.dim()) == 1);
-//     Cell cell(mesh, (*facet).connections(mesh.dim())[0]);
+//     dolfin_assert(facet.numConnections(mesh.topology().dim()) == 1);
+//     Cell cell(mesh, (*facet).connections(mesh.topology().dim())[0]);
 
     Cell cell(mesh, boundary.icell[facet->index()]);
     
@@ -429,7 +429,7 @@ void FEM::applyCommonBCOld(GenericMatrix* A, GenericVector* b,
 //-----------------------------------------------------------------------------
 void FEM::checkDimensions(const BilinearForm& a, const Mesh& mesh)
 {
-  switch ( mesh.dim() )
+  switch ( mesh.topology().dim() )
   {
   case 2:
     if ( a.test().shapedim() != 2 || a.trial().shapedim() != 2 )
@@ -446,7 +446,7 @@ void FEM::checkDimensions(const BilinearForm& a, const Mesh& mesh)
 //-----------------------------------------------------------------------------
 void FEM::checkDimensions(const LinearForm& L, const Mesh& mesh)
 {
-  switch ( mesh.dim() )
+  switch ( mesh.topology().dim() )
   {
   case 2:
     if ( L.test().shapedim() != 2 )

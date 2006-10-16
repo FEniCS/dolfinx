@@ -155,7 +155,7 @@ void XMLMesh::readVertex(const xmlChar *name, const xmlChar **attrs)
   uint v = parseUnsignedInt(name, attrs, "index");
   
   // Handle differently depending on dimension
-  switch ( _mesh.dim() )
+  switch ( _mesh.topology().dim() )
   {
   case 1:
     {
@@ -186,9 +186,9 @@ void XMLMesh::readVertex(const xmlChar *name, const xmlChar **attrs)
 void XMLMesh::readInterval(const xmlChar *name, const xmlChar **attrs)
 {
   // Check dimension
-  if ( _mesh.dim() != 1 )
+  if ( _mesh.topology().dim() != 1 )
     dolfin_error1("Mesh entity (interval) does not match dimension of mesh (%d).",
-		 _mesh.dim());
+		 _mesh.topology().dim());
 
   // Parse values
   uint c  = parseUnsignedInt(name, attrs, "index");
@@ -202,9 +202,9 @@ void XMLMesh::readInterval(const xmlChar *name, const xmlChar **attrs)
 void XMLMesh::readTriangle(const xmlChar *name, const xmlChar **attrs)
 {
   // Check dimension
-  if ( _mesh.dim() != 2 )
+  if ( _mesh.topology().dim() != 2 )
     dolfin_error1("Mesh entity (triangle) does not match dimension of mesh (%d).",
-		 _mesh.dim());
+		 _mesh.topology().dim());
 
   // Parse values
   uint c  = parseUnsignedInt(name, attrs, "index");
@@ -219,9 +219,9 @@ void XMLMesh::readTriangle(const xmlChar *name, const xmlChar **attrs)
 void XMLMesh::readTetrahedron(const xmlChar *name, const xmlChar **attrs)
 {
   // Check dimension
-  if ( _mesh.dim() != 3 )
+  if ( _mesh.topology().dim() != 3 )
     dolfin_error1("Mesh entity (tetrahedron) does not match dimension of mesh (%d).",
-		 _mesh.dim());
+		 _mesh.topology().dim());
 
   // Parse values
   uint c  = parseUnsignedInt(name, attrs, "index");

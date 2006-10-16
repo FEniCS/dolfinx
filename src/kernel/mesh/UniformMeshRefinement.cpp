@@ -30,7 +30,7 @@ void UniformMeshRefinement::refineSimplex(Mesh& mesh)
   dolfin_info("Refining simplicial mesh uniformly.");
   
   // Generate cell - edge connectivity if not generated
-  mesh.init(mesh.dim(), 1);
+  mesh.init(mesh.topology().dim(), 1);
   
   // Generate edge - vertex connectivity if not generated
   mesh.init(1, 0);
@@ -47,11 +47,11 @@ void UniformMeshRefinement::refineSimplex(Mesh& mesh)
   // Get size of mesh
   const uint num_vertices = mesh.size(0);
   const uint num_edges = mesh.size(1);
-  const uint num_cells = mesh.size(mesh.dim());
+  const uint num_cells = mesh.size(mesh.topology().dim());
 
   // Specify number of vertices and cells
   editor.initVertices(num_vertices + num_edges);
-  editor.initCells(ipow(2, mesh.dim())*num_cells);
+  editor.initCells(ipow(2, mesh.topology().dim())*num_cells);
 
   // Add old vertices
   uint vertex = 0;
