@@ -1,4 +1,4 @@
-// Copyright (C) 2003-2005 Anders Logg.
+// Copyright (C) 2003-2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
 #ifndef __DOLFIN_COMMON_H
@@ -8,10 +8,6 @@
 
 #include <dolfin/Array.h>
 #include <dolfin/List.h>
-#include <dolfin/PArray.h>
-#include <dolfin/PList.h>
-#include <dolfin/Table.h>
-#include <dolfin/Tensor.h>
 
 #include <dolfin/utils.h>
 #include <dolfin/timing.h>
