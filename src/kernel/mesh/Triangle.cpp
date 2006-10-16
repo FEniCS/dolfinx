@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-06-05
-// Last changed: 2006-08-07
+// Last changed: 2006-10-16
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Cell.h>
@@ -11,6 +11,11 @@
 
 using namespace dolfin;
 
+//-----------------------------------------------------------------------------
+dolfin::uint Triangle::dim() const
+{
+  return 2;
+}
 //-----------------------------------------------------------------------------
 dolfin::uint Triangle::numEntities(uint dim) const
 {

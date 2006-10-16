@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-06-05
-// Last changed: 2006-08-07
+// Last changed: 2006-10-16
 
 #ifndef __CELL_TYPE_H
 #define __CELL_TYPE_H
@@ -46,6 +46,9 @@ namespace dolfin
     /// Return type of cell for facets
     inline Type facetType() const { return facet_type; }
 
+    /// Return topological dimension of cell
+    virtual uint dim() const = 0;
+    
     /// Return number of entitites of given topological dimension
     virtual uint numEntities(uint dim) const = 0;
 

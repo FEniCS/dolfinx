@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-06-05
-// Last changed: 2006-08-08
+// Last changed: 2006-10-16
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Cell.h>
@@ -11,6 +11,11 @@
 
 using namespace dolfin;
 
+//-----------------------------------------------------------------------------
+dolfin::uint Tetrahedron::dim() const
+{
+  return 3;
+}
 //-----------------------------------------------------------------------------
 dolfin::uint Tetrahedron::numEntities(uint dim) const
 {

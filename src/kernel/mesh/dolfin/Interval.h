@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-06-05
-// Last changed: 2006-08-07
+// Last changed: 2006-10-16
 
 #ifndef __INTERVAL_H
 #define __INTERVAL_H
@@ -20,6 +20,9 @@ namespace dolfin
 
     /// Specify cell type and facet type
     Interval() : CellType(interval, point) {}
+
+    /// Return topological dimension of cell
+    uint dim() const;
 
     /// Return number of entitites of given topological dimension
     uint numEntities(uint dim) const;
