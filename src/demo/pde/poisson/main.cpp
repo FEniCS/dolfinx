@@ -30,8 +30,8 @@ int main()
   {
     real eval(const Point& p, unsigned int i)
     {
-      real dx = p.x - 0.5;
-      real dy = p.y - 0.5;
+      real dx = p.x() - 0.5;
+      real dy = p.y() - 0.5;
       return 500.0*exp(-(dx*dx + dy*dy)/0.02);
     }
   };
@@ -41,7 +41,7 @@ int main()
   {
     void eval(BoundaryValue& value, const Point& p, unsigned int i)
     {
-      if ( std::abs(p.x - 0.0) < DOLFIN_EPS )
+      if ( std::abs(p.x() - 0.0) < DOLFIN_EPS )
         value = 0.0;
     }
   };
@@ -51,7 +51,7 @@ int main()
   {
     real eval(const Point& p, unsigned int i)
     {
-      if ( std::abs(p.x - 1.0) < DOLFIN_EPS )
+      if ( std::abs(p.x() - 1.0) < DOLFIN_EPS )
         return 1.0;
       else
         return 0.0;  
