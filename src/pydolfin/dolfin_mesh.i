@@ -1,6 +1,6 @@
 // Return Numeric arrays for Mesh::cells() and Mesh::vertices().
 // This is used in the PyCC mesh interface.
-%extend dolfin::NewMesh {
+%extend dolfin::Mesh {
 
 PyObject * cells() {
     PyArrayObject *arr;
@@ -26,8 +26,8 @@ PyObject * vertices() {
 
 }
 
-%ignore dolfin::NewMesh::cells;
-%ignore dolfin::NewMesh::vertices;
+%ignore dolfin::Mesh::cells;
+%ignore dolfin::Mesh::vertices;
 
 // Map increment operator and dereference operators for iterators
 %rename(increment) dolfin::MeshEntityIterator::operator++;

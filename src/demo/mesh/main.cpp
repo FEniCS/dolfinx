@@ -31,6 +31,10 @@ void refine2D(int refinements)
   dolfin::cout << "Refining 2D mesh" << dolfin::endl;
   dolfin::cout << "----------------" << dolfin::endl;  
 
+  dolfin_error("Adaptive mesh refinement is currently broken.");
+  
+  /*
+
   // Load mesh
   Mesh mesh("mesh2D.xml.gz");
   
@@ -62,6 +66,8 @@ void refine2D(int refinements)
   for (MeshIterator m(meshes); !m.end(); ++m)
     file << *m;
 
+  */
+
   dolfin::cout << dolfin::endl;
 }
 
@@ -69,6 +75,10 @@ void refine3D(int refinements)
 {
   dolfin::cout << "Refining 3D mesh" << dolfin::endl;
   dolfin::cout << "----------------" << dolfin::endl;  
+
+  dolfin_error("Adaptive mesh refinement is currently broken.");
+
+  /*
 
   // Load mesh
   Mesh mesh("mesh3D.xml.gz");
@@ -90,4 +100,6 @@ void refine3D(int refinements)
   MeshHierarchy meshes(mesh);
   for (MeshIterator m(meshes); !m.end(); ++m)
     file << *m;
+
+  */
 }
