@@ -105,7 +105,7 @@ swigoutput.close()
 
 print "Building the Python module"
 
-debugout = getoutput("swig -python -c++ -nodefault -dirprot `dolfin-config --includes` -o %s_wrap.cpp %s" % (modulename, swigfile))
+debugout = getoutput("swig -python -c++ -nodefault -dirprot `pkg-config dolfin --cflags-only-I` `pkg-config dolfin --definitions` -o %s_wrap.cpp %s" % (modulename, swigfile))
 
 print debugout
 
@@ -131,7 +131,7 @@ debugout = getoutput("mv tmp.cpp %s_wrap.cpp" % modulename)
 # FIXME:
 # Compilation still not compiler-independent
 
-debugout = getoutput("`dolfin-config --compiler` `dolfin-config --swigcflags` `dolfin-config --cflags` -I. -g -fPIC  -c -o %s_wrap.o %s_wrap.cpp" % (modulename, modulename))
+debugout = getoutput("`pkg-config --variable=compiler dolfin` `pkg-config --cflags dolfin` `pkg-config --variable=swigcflags dolfin` -I. -g -fPIC  -c -o %s_wrap.o %s_wrap.cpp" % (modulename, modulename))
 
 print debugout
 
@@ -139,6 +139,6 @@ print debugout
 # Generating shared library still not compiler-independent (syntax likely
 # only works for GCC)
 
-debugout = getoutput("`dolfin-config --linker` -g -shared %s_wrap.o -o _%s.so `dolfin-config --libs`" % (modulename, modulename))
+debugout = getoutput("`pkg-config --variable=compiler dolfin` -g -shared %s_wrap.o -o _%s.so `pkg-config --libs dolfin`" % (modulename, modulename))
 
 print debugout

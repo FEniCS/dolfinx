@@ -46,7 +46,8 @@ int main()
 {
   UnitSquare mesh(5, 5);
 //   Mesh mesh("cell.xml");
-//   mesh.refineUniformly(2);
+  mesh.refine();
+  mesh.refine();
   
   MyFunction f;
   MyBC bc;

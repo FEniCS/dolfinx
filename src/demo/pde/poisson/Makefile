@@ -1,9 +1,6 @@
-#CFLAGS  = `pkg-config dolfin --cflags`
-#LIBS    = `pkg-config dolfin --libs`
-CFLAGS  = `dolfin-config --cflags`
-LIBS    = `dolfin-config --libs`
-CXX     = g++
-LINK    = libtool --silent --mode=link --tag CXX g++
+CFLAGS  = `pkg-config --cflags dolfin`
+LIBS    = `pkg-config --libs dolfin`
+CXX     = `pkg-config --variable=compiler dolfin`
 
 DEST    = dolfin-poisson
 OBJECTS = main.o
@@ -16,7 +13,7 @@ clean:
 	-rm -f *.o core *.core $(OBJECTS) $(DEST)
 
 $(DEST): $(OBJECTS)
-	 $(LINK) -o $@ $(OBJECTS) $(CFLAGS) $(LIBS)
+	 $(CXX) -o $@ $(OBJECTS) $(CFLAGS) $(LIBS)
 
 .cpp.o:
 	$(CXX) $(CFLAGS) -c $<

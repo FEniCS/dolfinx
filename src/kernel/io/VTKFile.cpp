@@ -5,7 +5,7 @@
 // Modified by Kristian Oelgaard 2006.
 //
 // First added:  2005-07-05
-// Last changed: 2006-06-12
+// Last changed: 2006-10-11
 
 #include <dolfin/Mesh.h>
 #include <dolfin/Vertex.h>
@@ -50,7 +50,7 @@ void VTKFile::operator<<(Mesh& mesh)
   // Increase the number of times we have saved the mesh
   counter++;
 
-  cout << "saved mesh " << mesh.number() << " times." << endl;
+  cout << "saved mesh " << counter << " times." << endl;
 
   cout << "Saved mesh " << mesh.name() << " (" << mesh.label()
        << ") to file " << filename << " in VTK format." << endl;
@@ -109,30 +109,30 @@ void VTKFile::MeshWrite(Mesh& mesh) const
   for (CellIterator c(mesh); !c.end(); ++c)
   {
     for (VertexIterator v(c); !v.end(); ++v)
-      fprintf(fp," %8d ",v->index());
+      fprintf(fp," %8u ",v->index());
     fprintf(fp," \n");
   }  
   fprintf(fp, "</DataArray> \n");
 
   // Write offset into connectivity array for the end of each cell
   fprintf(fp, "<DataArray  type=\"Int32\"  Name=\"offsets\"  format=\"ascii\">  \n");
-  for (uint offsets = 1; offsets <= mesh.numCells(); offsets++)
+  for (int offsets = 1; offsets <= mesh.numCells(); offsets++)
   {
-    if ( mesh.topology().dim() == 3 )
+    if (mesh.type().cellType() == CellType::tetrahedron )
       fprintf(fp, " %8d \n",  offsets*4);
-    if ( mesh.topology().dim() == 2 )
+    if (mesh.type().cellType() == CellType::triangle )
       fprintf(fp, " %8d \n", offsets*3);
   }
   fprintf(fp, "</DataArray> \n");
   
-  // Write cell type
+  //Write cell type
   fprintf(fp, "<DataArray  type=\"UInt8\"  Name=\"types\"  format=\"ascii\">  \n");
-  for (uint types = 1; types <= mesh.numCells(); types++)
+  for (int types = 1; types <= mesh.numCells(); types++)
   {
-    if ( mesh.topology().dim() == 3 )
-      fprintf(fp, " 10\n");
-    if ( mesh.topology().dim() == 2 )
-      fprintf(fp, " 5\n");
+    if (mesh.type().cellType() == CellType::tetrahedron )
+      fprintf(fp, " 10 \n");
+    if (mesh.type().cellType() == CellType::triangle )
+      fprintf(fp, " 5 \n");
   }
   fprintf(fp, "</DataArray> \n");
   fprintf(fp, "</Cells> \n"); 
@@ -291,7 +291,7 @@ void VTKFile::VTKHeaderOpen(Mesh& mesh) const
   // Write headers
   fprintf(fp, "<VTKFile type=\"UnstructuredGrid\"  version=\"0.1\"   >\n");
   fprintf(fp, "<UnstructuredGrid>  \n");
-  fprintf(fp, "<Piece  NumberOfPoints=\" %8d\"  NumberOfCells=\" %8d\">  \n",
+  fprintf(fp, "<Piece  NumberOfPoints=\" %8u\"  NumberOfCells=\" %8u\">  \n",
 	  mesh.numVertices(), mesh.numCells());
   
   // Close file

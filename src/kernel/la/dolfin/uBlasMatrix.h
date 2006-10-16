@@ -4,7 +4,7 @@
 // Modified by Anders Logg 2006.
 //
 // First added:  2006-07-05
-// Last changed: 2006-07-07
+// Last changed: 2006-10-10
 
 #ifndef __UBLAS_MATRIX_H
 #define __UBLAS_MATRIX_H
@@ -51,12 +51,16 @@ namespace dolfin
     /// Constructor
     uBlasMatrix(const uint M, const uint N);
 
+    /// Constructor from a uBlas matrix_expression
+    template <class E>
+    uBlasMatrix(const ublas::matrix_expression<E>& A) : Mat(A) {}
+
     /// Destructor
     ~uBlasMatrix();
 
     /// Assignment from a matrix_expression
     template <class E>
-    uBlasMatrix<Mat>& operator=(const ublas::matrix_expression<E>& A) const
+    uBlasMatrix<Mat>& operator=(const ublas::matrix_expression<E>& A)
     { 
       Mat::operator=(A); 
       return *this;
@@ -236,7 +240,7 @@ namespace dolfin
       assembled = true;
 
       // Free memory
-      Assembly_matrix.resize(0,0, false);
+      Assembly_matrix.resize(0, 0, false);
     } 
   }
   //---------------------------------------------------------------------------

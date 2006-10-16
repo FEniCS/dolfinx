@@ -4,7 +4,7 @@
 // Modified by Anders Logg 2006.
 //
 // First added:  2006-03-04
-// Last changed: 2006-09-26
+// Last changed: 2006-10-10
 
 #ifndef __UBLAS_VECTOR_H
 #define __UBLAS_VECTOR_H
@@ -59,7 +59,7 @@ namespace dolfin
     template <class E>
     uBlasVector& operator=(const ublas::vector_expression<E>& A)
     { 
-      ublas::vector<double>::operator=(A); 
+      ublas_vector::operator=(A); 
       return *this;
     } 
     

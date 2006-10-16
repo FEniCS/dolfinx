@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-06-02
-// Last changed: 2006-06-22
+// Last changed: 2006-10-11
 
 #include <set>
 #include <dolfin/dolfin_log.h>
@@ -37,7 +37,8 @@ dolfin::uint TopologyComputation::computeEntities(Mesh& mesh, uint dim)
   
   // Get mesh topology and connectivity
   MeshTopology& topology = mesh.topology();
-  MeshConnectivity& ce = topology(mesh.topology().dim(), dim);
+
+  MeshConnectivity& ce = topology(topology.dim(), dim);
   MeshConnectivity& ev = topology(dim, 0);
 
   // Check if entities have already been computed
