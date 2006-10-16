@@ -52,7 +52,7 @@ class InitialVelocity : public Function
 {
   real eval(const Point& p, unsigned int i)
   {
-    if(i == 1 && p.x > 0.0 )
+    if(i == 1 && p.x() > 0.0 )
       return 1.0;
     else
       return 0.0;
@@ -64,7 +64,7 @@ class MyBC : public BoundaryCondition
 {
   void eval(BoundaryValue& value, const Point& p, unsigned int i)
   {
-    if ( p.x == 0.0 )
+    if ( p.x() == 0.0 )
       value = 0.0;
   }
 };
@@ -73,7 +73,8 @@ int main(int argc, char **argv)
 {
   dolfin_output("text");
 
-  Mesh mesh("tetmesh-4.xml.gz");
+//   Mesh mesh("tetmesh-4.xml.gz");
+  UnitCube mesh(5, 5, 5);
 
   Source f;
   InitialDisplacement u0;

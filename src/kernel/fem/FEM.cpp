@@ -339,7 +339,7 @@ void FEM::applyCommonBC(GenericMatrix* A, GenericVector* b,
 
   // FIXME: Boundary mesh needs to include connected cells in the
   // interior.
-  dolfin_error("Boundary conditions not implemented.");
+//   dolfin_error("Boundary conditions not implemented.");
   
   // Iterate over all cells in the boundary mesh
   for (CellIterator facet(boundary); !facet.end(); ++facet)
@@ -347,8 +347,10 @@ void FEM::applyCommonBC(GenericMatrix* A, GenericVector* b,
     uint k = 0;
     
     // Get cell containing the edge (pick first, should only be one)
-    dolfin_assert(facet.numConnections(mesh.dim()) == 1);
-    Cell cell(mesh, (*facet).connections(mesh.dim())[0]);
+//     dolfin_assert(facet.numConnections(mesh.dim()) == 1);
+//     Cell cell(mesh, (*facet).connections(mesh.dim())[0]);
+
+    Cell cell(mesh, boundary.icell[facet->index()]);
     
     // Update affine map
     map.update(cell);
@@ -360,9 +362,9 @@ void FEM::applyCommonBC(GenericMatrix* A, GenericVector* b,
     // Set boundary conditions for nodes on the boundary
     for (uint i = 0; i < n; i++)
     {
-      dolfin_error("contains() not implemented");
+      dolfin_warning("contains() not implemented");
       
-      // Skip points that are not contained in edge
+      // Skip points that are not contained in facet
       const Point& point = points[i];
       //         if ( !(facet.contains(point)) )
       //           continue;

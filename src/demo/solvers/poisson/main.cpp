@@ -44,8 +44,8 @@ class MyBC : public BoundaryCondition
 
 int main()
 {
-//   UnitSquare mesh(1, 1);
-  Mesh mesh("cell.xml");
+  UnitSquare mesh(5, 5);
+//   Mesh mesh("cell.xml");
 //   mesh.refineUniformly(2);
   
   MyFunction f;
