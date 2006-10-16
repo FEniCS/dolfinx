@@ -37,8 +37,14 @@ namespace dolfin
     /// Create cell type from type (factory function)
     static CellType* create(Type type);
 
-    /// Return type corresponding to given string
-    static Type type(std::string type);
+    /// Create cell type from string (factory function)
+    static CellType* create(std::string type);
+
+    /// Convert from string to cell type
+    static Type string2type(std::string type);
+
+    /// Convert from cell type to string
+    static std::string type2string(Type type);
 
     /// Return type of cell
     inline Type cellType() const { return cell_type; }

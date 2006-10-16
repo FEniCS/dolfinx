@@ -25,7 +25,10 @@ int main()
   
   // Temporary test until the adaptive mesh refinement is in place again
   Mesh mesh("intest.xml");
-  
+
+  File file("outtest.xml");
+  file << mesh;
+
   //UnitCube mesh(3, 3, 3);
   //File file("mesh.xml.gz");
   //file << mesh;

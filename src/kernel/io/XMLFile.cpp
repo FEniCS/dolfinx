@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells, 2006.
 //
 // First added:  2002-12-03
-// Last changed: 2006-05-23
+// Last changed: 2006-10-16
 
 #include <stdarg.h>
 
@@ -192,56 +192,74 @@ void XMLFile::operator<<(Matrix& A)
 //-----------------------------------------------------------------------------
 void XMLFile::operator<<(Mesh& mesh)
 {
-  dolfin_error("Not implemented.");
-  /*
   // Open file
   FILE *fp = openFile();
   
+  // Get cell type
+  CellType::Type cell_type = mesh.type().cellType();
+
   // Write mesh in XML format
-  fprintf(fp, "  <mesh> \n");
+  fprintf(fp, "  <mesh celltype=\"%s\" dim=\"%d\">\n",
+          CellType::type2string(cell_type).c_str(), mesh.geometry().dim());
 
-  fprintf(fp, "    <vertices size=\" %i \"> \n", mesh.numVertices());
+  fprintf(fp, "    <vertices size=\"%d\">\n", mesh.numVertices());
   
-  for(VertexIterator n(&mesh); !n.end(); ++n)
+  for(VertexIterator v(mesh); !v.end(); ++v)
   {
-    Vertex &vertex = *n;
+    Point p = v->point();
 
-    fprintf(fp, "    <vertex name=\"%i\" x=\"%f\" y=\"%f\" z=\"%f\" />\n",
-	    vertex.id(), vertex.coord().x, vertex.coord().y, vertex.coord().z);
+    switch ( mesh.geometry().dim() ) {
+    case 1:
+      fprintf(fp, "      <vertex index=\"%d\" x=\"%g\"/>\n",
+              v->index(), p.x());
+      break;
+    case 2:
+      fprintf(fp, "      <vertex index=\"%d\" x=\"%g\" y=\"%g\"/>\n",
+              v->index(), p.x(), p.y());
+      break;
+    case 3:
+      fprintf(fp, "      <vertex index=\"%d\" x=\"%g\" y=\"%g\" z=\"%g\" />\n",
+              v->index(), p.x(), p.y(), p.z());
+      break;
+    default:
+      dolfin_error("The XML mesh file format only supports 1D, 2D and 3D meshes.");
+    }
   }
 
   fprintf(fp, "    </vertices>\n");
-
-  fprintf(fp, "    <cells size=\" %i \"> \n", mesh.numCells());
+  fprintf(fp, "    <cells size=\"%d\">\n", mesh.numCells());
 
   for (CellIterator c(mesh); !c.end(); ++c)
   {
-    Cell &cell = *c;
+    uint* vertices = c->connections(0);
+    dolfin_assert(vertices);
 
-    if ( mesh.type() == Mesh::tetrahedra )
+    switch ( cell_type )
     {
-      fprintf(fp, "    <tetrahedron name=\"%i\" n0=\"%i\" n1=\"%i\" n2=\"%i\" n3=\"%i\" />\n",
-	      cell.id(), cell.vertex(0).id(), cell.vertex(1).id(), cell.vertex(2).id(), cell.vertex(3).id());
-    }
-    else
-    {
-      fprintf(fp, "    <triangle name=\"%i\" n0=\"%i\" n1=\"%i\" n2=\"%i\" />\n",
-	      cell.id(), cell.vertex(0).id(), cell.vertex(1).id(),
-	      cell.vertex(2).id());
+    case CellType::interval:
+      fprintf(fp, "      <interval index=\"%d\" v0=\"%i\" v1=\"%i\"/>\n",
+	      c->index(), vertices[0], vertices[1]);
+      break;
+    case CellType::triangle:
+      fprintf(fp, "      <triangle index=\"%d\" v0=\"%i\" v1=\"%i\" v2=\"%i\"/>\n",
+	      c->index(), vertices[0], vertices[1], vertices[2]);
+      break;
+    case CellType::tetrahedron:
+      fprintf(fp, "      <tetrahedron index=\"%d\" v0=\"%i\" v1=\"%i\" v2=\"%i\" v3=\"%i\"/>\n",
+              c->index(), vertices[0], vertices[1], vertices[2], vertices[3]);
+      break;
+    default:
+      dolfin_error1("Unknown cell type: %d.", cell_type);
     }
   }
 
   fprintf(fp, "    </cells>\n");
-  
   fprintf(fp, "  </mesh>\n");
  
   // Close file
   closeFile(fp);
 
-  cout << "Saved mesh " << mesh.name() << " (" << mesh.label()
-       << ") to file " << filename << " in XML format." << endl;
-  */
-       
+  cout << "Saved mesh to file " << filename << " in XML format." << endl;
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator<<(Function& f)
@@ -352,15 +370,15 @@ FILE* XMLFile::openFile()
   FILE *fp = fopen(filename.c_str(), "r+");
 
   // Step to position before previously written footer
-  printf("Stepping to position: %ld\n", mark);
+  //printf("Stepping to position: %ld\n", mark);
   fseek(fp, mark, SEEK_SET);
   fflush(fp);
   
   // Write DOLFIN XML format header
   if ( !header_written )
   {
-    fprintf(fp, "<?xml version=\"1.0\" encoding=\"UTF-8\"?> \n\n" );
-    fprintf(fp, "<dolfin xmlns:dolfin=\"http://www.fenics.org/dolfin/\"> \n" );
+    fprintf(fp, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n\n" );
+    fprintf(fp, "<dolfin xmlns:dolfin=\"http://www.fenics.org/dolfin/\">\n" );
     
     header_written = true;
   }
@@ -372,7 +390,7 @@ void XMLFile::closeFile(FILE* fp)
 {
   // Get position in file before writing footer
   mark = ftell(fp);
-  printf("Position in file before writing footer: %ld\n", mark);
+  //printf("Position in file before writing footer: %ld\n", mark);
 
   // Write DOLFIN XML format footer
   if ( header_written )

@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-05-09
-// Last changed: 2006-06-22
+// Last changed: 2006-10-16
 
 #include <dolfin/File.h>
 #include <dolfin/UniformMeshRefinement.h>
@@ -12,17 +12,17 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Mesh::Mesh()
+Mesh::Mesh() : Variable("mesh", "DOLFIN mesh")
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-Mesh::Mesh(const Mesh& mesh)
+Mesh::Mesh(const Mesh& mesh) : Variable("mesh", "DOLFIN mesh")
 {
   *this = mesh;
 }
 //-----------------------------------------------------------------------------
-Mesh::Mesh(std::string filename)
+Mesh::Mesh(std::string filename) : Variable("mesh", "DOLFIN mesh")
 {
   File file(filename);
   file >> *this;
@@ -36,6 +36,7 @@ Mesh::~Mesh()
 const Mesh& Mesh::operator=(const Mesh& mesh)
 {
   data = mesh.data;
+  rename(mesh.name(), mesh.label());
   return *this;
 }
 //-----------------------------------------------------------------------------

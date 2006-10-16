@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-06-05
-// Last changed: 2006-08-07
+// Last changed: 2006-10-16
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Interval.h>
@@ -35,13 +35,18 @@ CellType* CellType::create(Type type)
   case tetrahedron:
     return new Tetrahedron();
   default:
-    dolfin_error("Unknown cell type.");
+    dolfin_error1("Unknown cell type: %d.", type);
   }
   
   return 0;
 }
 //-----------------------------------------------------------------------------
-CellType::Type CellType::type(std::string type)
+CellType* CellType::create(std::string type)
+{
+  return create(string2type(type));
+}
+//-----------------------------------------------------------------------------
+CellType::Type CellType::string2type(std::string type)
 {
   if ( type == "interval" )
     return interval;
@@ -53,5 +58,22 @@ CellType::Type CellType::type(std::string type)
     dolfin_error1("Unknown cell type: \"%s\".", type.c_str());
   
   return interval;
+}
+//-----------------------------------------------------------------------------
+std::string CellType::type2string(Type type)
+{
+  switch ( type )
+  {
+  case interval:
+    return "interval";
+  case triangle:
+    return "triangle";
+  case tetrahedron:
+    return "tetrahedron";
+  default:
+    dolfin_error1("Unknown cell type: %d.", type);
+  }
+
+  return "";
 }
 //-----------------------------------------------------------------------------

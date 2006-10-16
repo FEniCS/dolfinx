@@ -109,7 +109,7 @@ void XMLMesh::endElement(const xmlChar *name)
 //-----------------------------------------------------------------------------
 void XMLMesh::open(std::string filename)
 {
-  cout << "Reading mesh from file \"" << filename << "\"." << endl;
+  cout << "Reading mesh from file " << filename << "." << endl;
 }
 //-----------------------------------------------------------------------------
 bool XMLMesh::close()
@@ -120,11 +120,16 @@ bool XMLMesh::close()
 void XMLMesh::readMesh(const xmlChar *name, const xmlChar **attrs)
 {
   // Parse values
-  uint dim = parseUnsignedInt(name, attrs, "dim");
-  std::string cell_type = parseString(name, attrs, "celltype");
+  std::string type = parseString(name, attrs, "celltype");
+  uint gdim = parseUnsignedInt(name, attrs, "dim");
   
+  // Create cell type to get topological dimension
+  CellType* cell_type = CellType::create(type);
+  uint tdim = cell_type->dim();
+  delete cell_type;
+
   // Open mesh for editing
-  editor.open(_mesh, CellType::type(cell_type), dim, dim);
+  editor.open(_mesh, CellType::string2type(type), tdim, gdim);
 }
 //-----------------------------------------------------------------------------
 void XMLMesh::readVertices(const xmlChar *name, const xmlChar **attrs)
@@ -150,8 +155,8 @@ void XMLMesh::readVertex(const xmlChar *name, const xmlChar **attrs)
   // Read index
   uint v = parseUnsignedInt(name, attrs, "index");
   
-  // Handle differently depending on dimension
-  switch ( _mesh.topology().dim() )
+  // Handle differently depending on geometric dimension
+  switch ( _mesh.geometry().dim() )
   {
   case 1:
     {
