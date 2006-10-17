@@ -26,7 +26,6 @@ def main(argv):
     input_format = ""
     output_format = ""
     for opt, arg in opts:
-        print opt, arg
         if opt in ("-h", "--help"):
             usage()
             sys.exit()
