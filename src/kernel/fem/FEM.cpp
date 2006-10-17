@@ -212,18 +212,18 @@ void FEM::assembleCommon(BilinearForm* a, LinearForm* L, Functional* M,
       
       // Assemble bilinear form
       if ( a )
-	if ( a->interior_contribution() )
-	  assembleElement(*a, *A, mesh, *cell, map, -1);              
+        if ( a->interior_contribution() )
+          assembleElement(*a, *A, mesh, *cell, map, -1);              
       
       // Assemble linear form
       if ( L )
-	if ( L->interior_contribution() )
-	  assembleElement(*L, *b, mesh, *cell, map, -1);              
+        if ( L->interior_contribution() )
+          assembleElement(*L, *b, mesh, *cell, map, -1);              
       
       // Assemble functional
       if ( M )
-	if ( M->interior_contribution() )
-	  assembleElement(*M, *val, map, -1);              
+        if ( M->interior_contribution() )
+          assembleElement(*M, *val, map, -1);              
       
       // Update progress
       p++;
@@ -237,38 +237,49 @@ void FEM::assembleCommon(BilinearForm* a, LinearForm* L, Functional* M,
     MeshFunction<uint> vertex_map;
     MeshFunction<uint> cell_map;
     BoundaryMesh boundary(mesh, vertex_map, cell_map);
-    Progress p_boundary("Assembling boundary contributions",
-			boundary.numCells());
-    for (CellIterator cell(boundary); !cell.end(); ++cell)
+    Progress p_boundary("Assembling boundary contributions", boundary.numCells());
+    for (CellIterator boundary_cell(boundary); !boundary_cell.end(); ++boundary_cell)
     {
-      // Get mesh cell containing the boundary cell (pick first, should only be one)
-      Facet facet(mesh, cell_map(*cell));
+      // Create mesh facet corresponding to boundary cell
+      Facet facet(mesh, cell_map(*boundary_cell));
+
+      // Check that facet really is on the boundary 
+      // (should have only one neighbour one topological dimension higher)
       dolfin_assert(facet.numConnections(mesh.topology().dim()) == 1);
+
+      // Get cell to which facet belongs 
       Cell mesh_cell(mesh, facet.connections(mesh.topology().dim())[0]);
-      
-      dolfin_error("localID not implemented");
-      
-      // Get local facet ID
-      //         uint facetID = facet.localID(0);
-      uint facetID = 0;
+
+      // Get facet index
+      const uint facet_index = facet.index();
+
+      // FIXME: should this be computed by the mehs?
+      // Find local facet index
+      uint local_facet_index = 0;
+      for(FacetIterator cell_facet(mesh_cell); !cell_facet.end(); ++cell_facet)
+      {
+        local_facet_index = cell_facet->index();
+        if(local_facet_index == facet_index)
+          break;
+      }
       
       // Update affine map for facet 
-      map.update(mesh_cell, facetID);
+      map.update(mesh_cell, local_facet_index);
       
       // Assemble bilinear form
       if ( a )
-	if ( a->boundary_contribution() )
-	  assembleElement(*a, *A, mesh, mesh_cell, map, facetID);              
+        if ( a->boundary_contribution() )
+          assembleElement(*a, *A, mesh, mesh_cell, map, local_facet_index);              
       
       // Assemble linear form
       if ( L )
-	if ( L->boundary_contribution() )
-	  assembleElement(*L, *b, mesh, mesh_cell, map, facetID);              
+        if ( L->boundary_contribution() )
+          assembleElement(*L, *b, mesh, mesh_cell, map, local_facet_index);              
       
       // Assemble functional
       if ( M )
-	if ( M->boundary_contribution() )
-	  assembleElement(*M, *val, map, facetID);              
+        if ( M->boundary_contribution() )
+          assembleElement(*M, *val, map, local_facet_index);              
       
       // Update progress  
       p_boundary++;
