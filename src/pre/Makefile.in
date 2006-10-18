@@ -349,9 +349,6 @@ uninstall-am: uninstall-info-am
 	uninstall-info-am
 
 
-all:
-	rm -f ../config/dolfin-config
-
 install:
 	make -C ../lib clean
 	mkdir -p $(prefix)/include/dolfin

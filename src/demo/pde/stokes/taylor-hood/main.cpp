@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-02-09
-// Last changed: 2006-03-24
+// Last changed: 2006-10-18
 
 #include <dolfin.h>
 #include "Stokes.h"
@@ -41,7 +41,7 @@ int main()
   };
 
   // Set up problem
-  Mesh mesh("dolfin-2.xml.gz");
+  Mesh mesh("../../../../../data/meshes/dolfin-2.xml.gz");
   Function f = 0.0;
   MyBC bc;
   Stokes::BilinearForm a;

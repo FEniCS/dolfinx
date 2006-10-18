@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-02-09
-// Last changed: 2006-03-24
+// Last changed: 2006-10-18
 //
 // This demo first computes the flow around a dolphin by solving
 // the Stokes equations using a mixed formulation with Taylor-Hood
@@ -117,7 +117,7 @@ int main()
   MyBC bc;
 
   // Set up problem
-  Mesh mesh("dolfin-2.xml.gz");
+  Mesh mesh("../../../../data/meshes/dolfin-2.xml.gz");
   Function f = 0.0;
   Stokes::BilinearForm a;
   Stokes::LinearForm L(f);

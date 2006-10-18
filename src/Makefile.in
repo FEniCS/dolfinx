@@ -58,7 +58,7 @@ RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	uninstall-recursive
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = pre kernel modules lib pydolfin post utils greeting
+DIST_SUBDIRS = pre kernel modules lib pydolfin utils greeting
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 AMDEP_FALSE = @AMDEP_FALSE@
@@ -196,7 +196,7 @@ sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 @COMPILE_PYDOLFIN_FALSE@PYDOLFIN = 
 @COMPILE_PYDOLFIN_TRUE@PYDOLFIN = pydolfin
-SUBDIRS = pre kernel modules lib $(PYDOLFIN) post utils greeting
+SUBDIRS = pre kernel modules lib $(PYDOLFIN) utils greeting
 all: all-recursive
 
 .SUFFIXES:

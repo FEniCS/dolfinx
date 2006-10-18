@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-02-07
-// Last changed: 2006-03-24
+// Last changed: 2006-10-18
 //
 // This demo program solves the equations of static
 // linear elasticity for a gear clamped at two of its
@@ -53,7 +53,7 @@ int main()
   MyBC bc;
 
   // Set up problem
-  Mesh mesh("gear.xml.gz");
+  Mesh mesh("../../../../data/meshes/gear.xml.gz");
   Function f = 0.0;
   Elasticity::BilinearForm a;
   Elasticity::LinearForm L(f);
