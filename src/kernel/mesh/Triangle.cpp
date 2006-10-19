@@ -51,6 +51,25 @@ dolfin::uint Triangle::numVertices(uint dim) const
   return 0;
 }
 //-----------------------------------------------------------------------------
+dolfin::uint Triangle::alignment(Cell& cell, uint dim, uint e) const
+{
+  // Create mesh entity for local entity e of dimension dim for cell
+  MeshEntity entity(cell.mesh(), dim, cell.entities(dim)[e]);
+
+  // Compute alignment according the convention in the DOLFIN manual
+  if ( dim == 1 )
+  {
+    // Compute alignment of given edge by checking first vertex
+    uint v0 = entity.entities(0)[0];
+    uint* vertices = cell.entities(0);
+    return ( v0 == vertices[(e + 1) % 3] ? 0 : 1 );
+  }
+  else
+    dolfin_error("Unable to compute alignment for entity of dimension %d for triangle.");
+
+  return 0;
+}
+//-----------------------------------------------------------------------------
 void Triangle::createEntities(uint** e, uint dim, const uint v[]) const
 {
   // We only need to know how to create edges

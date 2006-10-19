@@ -11,6 +11,17 @@
 
 using namespace dolfin;
 
+// Alignment convention for edges according to the DOLFIN manual (first vertex)
+static int edge_alignment[6] = {1, 2, 0, 0, 1, 2};
+
+// Alignment convention for faces according to the DOLFIN manual
+static int face_alignment_00[4] = {5, 3, 2, 0}; // Edge 0 for alignment 0
+static int face_alignment_01[4] = {0, 1, 3, 1}; // Edge 1 for alignment 0 (otherwise 1)
+static int face_alignment_10[4] = {0, 1, 3, 1}; // Edge 0 for alignment 2
+static int face_alignment_11[4] = {4, 5, 4, 2}; // Edge 1 for alignment 2 (otherwise 3)
+static int face_alignment_20[4] = {4, 5, 4, 2}; // Edge 0 for alignment 4
+static int face_alignment_21[4] = {5, 3, 2, 0}; // Edge 1 for alignment 4 (otherwise 5)
+
 //-----------------------------------------------------------------------------
 dolfin::uint Tetrahedron::dim() const
 {
@@ -52,6 +63,39 @@ dolfin::uint Tetrahedron::numVertices(uint dim) const
     dolfin_error1("Illegal topological dimension %d for tetrahedron.", dim);
   }
 
+  return 0;
+}
+//-----------------------------------------------------------------------------
+dolfin::uint Tetrahedron::alignment(Cell& cell, uint dim, uint e) const
+{
+  // Create mesh entity for local entity e of dimension dim for cell
+  MeshEntity entity(cell.mesh(), dim, cell.entities(dim)[e]);
+
+  // Compute alignment according the convention in the DOLFIN manual
+  if ( dim == 1 )
+  {
+    // Compute alignment of given edge by checking first vertex
+    uint v0 = entity.entities(0)[0];
+    uint* vertices = cell.entities(0);
+    return ( v0 == vertices[edge_alignment[e]] ? 0 : 1 );
+  }
+  else if ( dim == 2 )
+  {
+    // Compute alignment of given face by checking the first two edges
+    uint e0 = entity.entities(1)[0];
+    uint e1 = entity.entities(1)[1];
+    uint* edges = cell.entities(1);
+    if ( e0 == edges[face_alignment_00[e]] )
+      return ( e1 == edges[face_alignment_01[e]] ? 0 : 1 );
+    else if ( e0 == edges[face_alignment_10[e]] )
+      return ( e1 == edges[face_alignment_11[e]] ? 2 : 3 );
+    else if ( e0 == edges[face_alignment_20[e]] )
+      return ( e1 == edges[face_alignment_21[e]] ? 4 : 5 );
+    dolfin_error("Unable to compute alignment of tetrahedron.");
+  }
+  else
+    dolfin_error("Unable to compute alignment for entity of dimension %d for tetrehdron.");
+  
   return 0;
 }
 //-----------------------------------------------------------------------------

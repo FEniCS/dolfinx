@@ -47,6 +47,12 @@ dolfin::uint Interval::numVertices(uint dim) const
   return 0;
 }
 //-----------------------------------------------------------------------------
+dolfin::uint Interval::alignment(Cell& cell, uint dim, uint e) const
+{
+  dolfin_error("Unable to compute alignment for entity of dimension %d for interval.");
+  return 0;
+}
+//-----------------------------------------------------------------------------
 void Interval::createEntities(uint** e, uint dim, const uint v[]) const
 {
   // We don't need to create any entities

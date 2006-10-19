@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-06-05
-// Last changed: 2006-10-16
+// Last changed: 2006-10-19
 
 #ifndef __TRIANGLE_H
 #define __TRIANGLE_H
@@ -29,6 +29,9 @@ namespace dolfin
 
     /// Return number of vertices for entity of given topological dimension
     uint numVertices(uint dim) const;
+
+    /// Return alignment of given entity with respect to the cell
+    uint alignment(Cell& cell, uint dim, uint e) const;
 
     /// Create entities e of given topological dimension from vertices v
     void createEntities(uint** e, uint dim, const uint v[]) const;
