@@ -69,14 +69,14 @@ public:
     nodes[0] = cell.entities(0)[0];
     nodes[1] = cell.entities(0)[1];
     nodes[2] = cell.entities(0)[2];
-    int alignment = cell.edgeAlignment(0);
+    int alignment = cell.alignment(1, 0);
     int offset = mesh.topology().size(0);
     nodes[3] = offset + 2*cell.entities(1)[0] + edge_reordering_0[alignment][0];
     nodes[4] = offset + 2*cell.entities(1)[0] + edge_reordering_0[alignment][1];
-    alignment = cell.edgeAlignment(1);
+    alignment = cell.alignment(1, 1);
     nodes[5] = offset + 2*cell.entities(1)[1] + edge_reordering_0[alignment][0];
     nodes[6] = offset + 2*cell.entities(1)[1] + edge_reordering_0[alignment][1];
-    alignment = cell.edgeAlignment(2);
+    alignment = cell.alignment(1, 2);
     nodes[7] = offset + 2*cell.entities(1)[2] + edge_reordering_0[alignment][0];
     nodes[8] = offset + 2*cell.entities(1)[2] + edge_reordering_0[alignment][1];
     offset = offset + 2*mesh.topology().size(1);

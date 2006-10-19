@@ -31,7 +31,7 @@ namespace dolfin
     uint numVertices(uint dim) const;
 
     /// Return alignment of given entity with respect to the cell
-    uint alignment(Cell& cell, uint dim, uint e) const;
+    uint alignment(const Cell& cell, uint dim, uint e) const;
 
     /// Create entities e of given topological dimension from vertices v
     void createEntities(uint** e, uint dim, const uint v[]) const;

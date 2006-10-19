@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-06-01
-// Last changed: 2006-06-01
+// Last changed: 2006-10-19
 
 #ifndef __CELL_H
 #define __CELL_H
@@ -24,6 +24,9 @@ namespace dolfin
 
     /// Destructor
     ~Cell() {}
+    
+    /// Return alignment of given entity with respect to the cell
+    inline uint alignment(uint dim, uint e) const { return _mesh.type().alignment(*this, dim, e); }
 
   };
 
