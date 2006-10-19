@@ -29,11 +29,15 @@ namespace dolfin
     /// Destructor
     ~Vertex() {}
 
-    /// Return value of vertex coordinate in direction i
+    /// Return value of vertex coordinate i
     inline real x(uint i) const { return _mesh.geometry().x(_index, i); }
 
     /// Return vertex coordinates as a 3D point value
     inline Point point() const { return _mesh.geometry().point(_index); }
+
+    /// Return array of vertex coordinates
+    inline 
+    
     
   };
 

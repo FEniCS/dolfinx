@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-05-11
-// Last changed: 2006-06-22
+// Last changed: 2006-10-19
 
 #ifndef __MESH_ENTITY_H
 #define __MESH_ENTITY_H
@@ -39,14 +39,14 @@ namespace dolfin
     /// Return index of mesh entity
     inline uint index() const { return _index; }
 
-    /// Return number of connections
-    inline uint numConnections(uint dim) const { return _mesh.topology()(_dim, dim).size(_index); }
+    /// Return number of incident entities of given topological dimension
+    inline uint numEntities(uint dim) const { return _mesh.topology()(_dim, dim).size(_index); }
 
-    /// Return array of connections to entities of given topological dimension
-    inline uint* connections(uint dim) { return _mesh.topology()(_dim, dim)(_index); }
+    /// Return array of indices for incident entitites of given topological dimension
+    inline uint* entities(uint dim) { return _mesh.topology()(_dim, dim)(_index); }
 
-    /// Return array of connections to entities of given topological dimension
-    inline const uint* connections(uint dim) const { return _mesh.topology()(_dim, dim)(_index); }
+    /// Return array of indices for incident entitites of given topological dimension
+    inline const uint* entities(uint dim) const { return _mesh.topology()(_dim, dim)(_index); }
 
     /// 
     inline real diameter() const

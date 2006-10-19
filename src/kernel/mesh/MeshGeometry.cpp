@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-05-19
-// Last changed: 2006-10-11
+// Last changed: 2006-10-19
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/MeshGeometry.h>
@@ -83,9 +83,9 @@ void MeshGeometry::init(uint dim, uint size)
   _size = size;
 }
 //-----------------------------------------------------------------------------
-void MeshGeometry::set(uint n, uint d, real x)
+void MeshGeometry::set(uint n, uint i, real x)
 {
-  coordinates[d*_size + n] = x;
+  coordinates[n*_dim + i] = x;
 }
 //-----------------------------------------------------------------------------
 void MeshGeometry::disp() const

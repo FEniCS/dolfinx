@@ -24,6 +24,7 @@ int main()
   //refine3D(refinements);
   
   // Temporary test until the adaptive mesh refinement is in place again
+  /*
   Mesh mesh("intest.xml");
 
   File file("outtest.xml");
@@ -40,8 +41,15 @@ int main()
     //cout << cell->numConnections(1) << endl;
     //cout << cell->numConnections(2) << endl;
   }
+  */
 
-  //UnitCube mesh(3, 3, 3);
+  UnitCube mesh(1, 1, 1);
+  BoundaryMesh b1(mesh);
+  BoundaryMesh b2(b1);
+
+  b1.disp();
+  b2.disp();
+  
   //File file("mesh.xml.gz");
   //file << mesh;
 
