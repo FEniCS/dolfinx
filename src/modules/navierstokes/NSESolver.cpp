@@ -5,7 +5,7 @@
 // Modified by Anders Logg 2005-2006.
 //
 // First added:  2005
-// Last changed: 2006-08-08
+// Last changed: 2006-10-19
 
 #include <dolfin/timing.h>
 #include <dolfin/NSESolver.h>
@@ -303,7 +303,7 @@ void NSESolver::ComputeStabilization(Mesh& mesh, Function& w, real nu, real k,
     normw = 0.0;
     for (VertexIterator n(cell); !n.end(); ++n)
       normw += sqrt( sqr((w.vector())((*n).index()*2)) + sqr((w.vector())((*n).index()*2+1)) );
-    normw /= (*cell).numConnections(0);
+    normw /= (*cell).numEntities(0);
     if ( (((*cell).diameter()/nu) > 1.0) || (nu < 1.0e-10) ){
       d1vector((*cell).index()) = C1 * (0.5 / sqrt( 1.0/sqr(k) + sqr(normw/(*cell).diameter()) ) );
       d2vector((*cell).index()) = C2 * (*cell).diameter();

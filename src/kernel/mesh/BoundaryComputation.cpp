@@ -5,7 +5,7 @@
 // Modified by Ola Skavhaug 2006.
 //
 // First added:  2006-06-21
-// Last changed: 2006-10-16
+// Last changed: 2006-10-19
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Array.h>
@@ -64,7 +64,7 @@ void BoundaryComputation::computeBoundaryCommon(Mesh& mesh,
   for (FacetIterator f(mesh); !f.end(); ++f)
   {
     // Boundary facets are connected to exactly one cell
-    if ( f->numConnections(mesh.topology().dim()) == 1 )
+    if ( f->numEntities(mesh.topology().dim()) == 1 )
     {
       // Count boundary vertices and assign indices
       for (VertexIterator v(f); !v.end(); ++v)
@@ -110,10 +110,10 @@ void BoundaryComputation::computeBoundaryCommon(Mesh& mesh,
   for (FacetIterator f(mesh); !f.end(); ++f)
   {
     // Boundary facets are connected to exactly one cell
-    if ( f->numConnections(mesh.topology().dim()) == 1 )
+    if ( f->numEntities(mesh.topology().dim()) == 1 )
     {
       // Compute new vertex numbers for cell
-      uint* vertices = f->connections(0);
+      uint* vertices = f->entities(0);
       for (uint i = 0; i < cell.size(); i++)
 	cell[i] = boundary_vertices[vertices[i]];
 

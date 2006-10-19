@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells 2005, 2006.
 //
 // First added:  2004-05-19
-// Last changed: 2006-09-18
+// Last changed: 2006-10-19
 
 #include <dolfin/Facet.h>
 #include <dolfin/FEM.h>
@@ -245,10 +245,10 @@ void FEM::assembleCommon(BilinearForm* a, LinearForm* L, Functional* M,
 
       // Check that facet really is on the boundary 
       // (should have only one neighbour one topological dimension higher)
-      dolfin_assert(facet.numConnections(mesh.topology().dim()) == 1);
+      dolfin_assert(facet.numEntities(mesh.topology().dim()) == 1);
 
       // Get cell to which facet belongs 
-      Cell mesh_cell(mesh, facet.connections(mesh.topology().dim())[0]);
+      Cell mesh_cell(mesh, facet.entities(mesh.topology().dim())[0]);
 
       // Get facet index
       const uint facet_index = facet.index();
@@ -486,7 +486,7 @@ dolfin::uint FEM::estimateNonZeros(Mesh& mesh,
 
   for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
   {
-    nzmax = std::max(nzmax, vertex->numConnections(0)*element.spacedim());
+    nzmax = std::max(nzmax, vertex->numEntities(0)*element.spacedim());
   }
 
   return nzmax;

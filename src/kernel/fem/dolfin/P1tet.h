@@ -65,10 +65,10 @@ public:
 
   void nodemap(int nodes[], const Cell& cell, const Mesh& mesh) const
   {
-    nodes[0] = cell.connections(0)[0];
-    nodes[1] = cell.connections(0)[1];
-    nodes[2] = cell.connections(0)[2];
-    nodes[3] = cell.connections(0)[3];
+    nodes[0] = cell.entities(0)[0];
+    nodes[1] = cell.entities(0)[1];
+    nodes[2] = cell.entities(0)[2];
+    nodes[3] = cell.entities(0)[3];
   }
 
   void pointmap(Point points[], unsigned int components[], const AffineMap& map) const

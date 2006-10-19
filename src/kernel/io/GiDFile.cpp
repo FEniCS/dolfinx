@@ -4,7 +4,7 @@
 // Modified by Anders Logg 2004-2006.
 //
 // First added:  2004-03-30
-// Last changed: 2006-02-20
+// Last changed: 2006-10-19
 
 #include <stdio.h>
 #include <dolfin/Mesh.h>
@@ -60,7 +60,7 @@ void GiDFile::operator<<(Mesh& mesh)
   for (CellIterator c(mesh); !c.end(); ++c)
   {
     int cid,nid[4];
-    if ( c->numConnections(0) == 4 )
+    if ( c->numEntities(0) == 4 )
     {
       cid = c->index();
       int i = 0;
@@ -84,7 +84,7 @@ void GiDFile::operator<<(Mesh& mesh)
   for (CellIterator c(mesh); !c.end(); ++c)
   {
     int cid,nid[3];
-    if ( c->numConnections(0) == 3 )
+    if ( c->numEntities(0) == 3 )
     {
       cid = c->index();
       int i = 0;

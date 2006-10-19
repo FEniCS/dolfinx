@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-06-05
-// Last changed: 2006-10-16
+// Last changed: 2006-10-19
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Cell.h>
@@ -85,8 +85,8 @@ void Tetrahedron::refineCell(Cell& cell, MeshEditor& editor,
 				uint& current_cell) const
 {
   // Get vertices and edges
-  const uint* v = cell.connections(0);
-  const uint* e = cell.connections(1);
+  const uint* v = cell.entities(0);
+  const uint* e = cell.entities(1);
   dolfin_assert(v);
   dolfin_assert(e);
 

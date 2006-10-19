@@ -65,13 +65,13 @@ public:
 
   void nodemap(int nodes[], const Cell& cell, const Mesh& mesh) const
   {
-    nodes[0] = cell.connections(0)[0];
-    nodes[1] = cell.connections(0)[1];
-    nodes[2] = cell.connections(0)[2];
-    int offset = mesh.numVertices();
-    nodes[3] = offset + cell.connections(1)[0];
-    nodes[4] = offset + cell.connections(1)[1];
-    nodes[5] = offset + cell.connections(1)[2];
+    nodes[0] = cell.entities(0)[0];
+    nodes[1] = cell.entities(0)[1];
+    nodes[2] = cell.entities(0)[2];
+    int offset = mesh.topology().size(0);
+    nodes[3] = offset + cell.entities(1)[0];
+    nodes[4] = offset + cell.entities(1)[1];
+    nodes[5] = offset + cell.entities(1)[2];
   }
 
   void pointmap(Point points[], unsigned int components[], const AffineMap& map) const

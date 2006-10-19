@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-06-01
-// Last changed: 2006-10-11
+// Last changed: 2006-10-19
 
 #ifndef __VERTEX_H
 #define __VERTEX_H
@@ -36,8 +36,10 @@ namespace dolfin
     inline Point point() const { return _mesh.geometry().point(_index); }
 
     /// Return array of vertex coordinates
-    inline 
-    
+    inline real* coordinates() { return _mesh.geometry().x(_index); }
+
+    /// Return array of vertex coordinates
+    inline const real* coordinates() const { return _mesh.geometry().x(_index); }
     
   };
 

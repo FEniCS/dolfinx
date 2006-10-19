@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-06-02
-// Last changed: 2006-06-12
+// Last changed: 2006-10-19
 
 #include <dolfin/Vertex.h>
 #include <dolfin/Edge.h>
@@ -12,7 +12,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 Point Edge::midpoint()
 {
-  uint* vertices = connections(0);
+  uint* vertices = entities(0);
   dolfin_assert(vertices);
 
   const Vertex v0(_mesh, vertices[0]);

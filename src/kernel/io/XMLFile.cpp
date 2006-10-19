@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells, 2006.
 //
 // First added:  2002-12-03
-// Last changed: 2006-10-16
+// Last changed: 2006-10-19
 
 #include <stdarg.h>
 
@@ -231,7 +231,7 @@ void XMLFile::operator<<(Mesh& mesh)
 
   for (CellIterator c(mesh); !c.end(); ++c)
   {
-    uint* vertices = c->connections(0);
+    uint* vertices = c->entities(0);
     dolfin_assert(vertices);
 
     switch ( cell_type )

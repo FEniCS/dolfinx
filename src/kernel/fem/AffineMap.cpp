@@ -1,10 +1,10 @@
-// Copyright (C) 2005 Anders Logg.
+// Copyright (C) 2005-2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // Modified by Garth N. Wells, 2006.
 //
 // First added:  2005-05-17
-// Last changed: 2006-05-03
+// Last changed: 2006-10-19
 
 #include <dolfin/Vertex.h>
 #include <dolfin/Cell.h>
@@ -101,9 +101,9 @@ void AffineMap::updateTriangle(Cell& cell)
   dolfin_assert(cell.dim() == 2);
   
   // Get coordinates
-  p0 = Vertex(cell.mesh(), cell.connections(0)[0]).point();
-  p1 = Vertex(cell.mesh(), cell.connections(0)[1]).point();
-  p2 = Vertex(cell.mesh(), cell.connections(0)[2]).point();
+  p0 = Vertex(cell.mesh(), cell.entities(0)[0]).point();
+  p1 = Vertex(cell.mesh(), cell.entities(0)[1]).point();
+  p2 = Vertex(cell.mesh(), cell.entities(0)[2]).point();
 
   // Compute Jacobian of map
   f00 = p1.x() - p0.x(); f01 = p2.x() - p0.x();
@@ -133,10 +133,10 @@ void AffineMap::updateTetrahedron(Cell& cell)
   dolfin_assert(cell.dim() == 3);
   
   // Get coordinates
-  p0 = Vertex(cell.mesh(), cell.connections(0)[0]).point();
-  p1 = Vertex(cell.mesh(), cell.connections(0)[1]).point();
-  p2 = Vertex(cell.mesh(), cell.connections(0)[2]).point();
-  p3 = Vertex(cell.mesh(), cell.connections(0)[3]).point();
+  p0 = Vertex(cell.mesh(), cell.entities(0)[0]).point();
+  p1 = Vertex(cell.mesh(), cell.entities(0)[1]).point();
+  p2 = Vertex(cell.mesh(), cell.entities(0)[2]).point();
+  p3 = Vertex(cell.mesh(), cell.entities(0)[3]).point();
   
   // Compute Jacobian of map
   f00 = p1.x() - p0.x(); f01 = p2.x() - p0.x(); f02 = p3.x() - p0.x();

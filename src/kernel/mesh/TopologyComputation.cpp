@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-06-02
-// Last changed: 2006-10-11
+// Last changed: 2006-10-19
 
 #include <set>
 #include <dolfin/dolfin_log.h>
@@ -80,7 +80,7 @@ dolfin::uint TopologyComputation::computeEntities(Mesh& mesh, uint dim)
   for (MeshEntityIterator c(mesh, mesh.topology().dim()); !c.end(); ++c)
   {
     // Get vertices from cell
-    const uint* vertices = c->connections(0);
+    const uint* vertices = c->entities(0);
     dolfin_assert(vertices);
     
     // Create entities
@@ -100,7 +100,7 @@ dolfin::uint TopologyComputation::computeEntities(Mesh& mesh, uint dim)
   for (MeshEntityIterator c(mesh, mesh.topology().dim()); !c.end(); ++c)
   {
     // Get vertices from cell
-    const uint* vertices = c->connections(0);
+    const uint* vertices = c->entities(0);
     dolfin_assert(vertices);
     
     // Create entities
@@ -351,7 +351,7 @@ dolfin::uint TopologyComputation::countEntities(Mesh& mesh, MeshEntity& cell,
 	continue;
 
       // Check for vertices
-      if ( contains(c->connections(0), c->numConnections(0), entities[i], n) )
+      if ( contains(c->entities(0), c->numEntities(0), entities[i], n) )
 	goto found;
     }
     
@@ -389,13 +389,13 @@ void TopologyComputation::addEntities(Mesh& mesh, MeshEntity& cell,
 	continue;
       
       // Check all entities of dimension dim in connected cell
-      uint num_other_entities = c->numConnections(dim);
-      uint* other_entities = c->connections(dim);
+      uint num_other_entities = c->numEntities(dim);
+      uint* other_entities = c->entities(dim);
       for (uint j = 0; j < num_other_entities; j++)
       {
 	// Can't use iterators since connectivity has not been computed
 	MeshEntity e(mesh, dim, other_entities[j]);
-	if ( contains(e.connections(0), e.numConnections(0), entities[i], n) )
+	if ( contains(e.entities(0), e.numEntities(0), entities[i], n) )
 	{
 	  // Entity already exists, so pick the index
 	  ce.set(cell.index(), e.index(), i);
@@ -420,8 +420,8 @@ void TopologyComputation::addEntities(Mesh& mesh, MeshEntity& cell,
 bool TopologyComputation::contains(MeshEntity& e0, MeshEntity& e1)
 {
   // Check vertices
-  return contains(e0.connections(0), e0.numConnections(0),
-		  e1.connections(0), e1.numConnections(0));
+  return contains(e0.entities(0), e0.numEntities(0),
+		  e1.entities(0), e1.numEntities(0));
 }
 //----------------------------------------------------------------------------
 bool TopologyComputation::contains(uint* v0, uint n0, uint* v1, uint n1)
