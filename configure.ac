@@ -388,7 +388,6 @@ AC_SUBST(PACKAGE_NAME)
 # List output to be generated: Makefiles and pkgconfig configuration
 AC_OUTPUT( Makefile \
            src/Makefile \
-           src/pre/Makefile \
            src/kernel/Makefile \
            src/kernel/common/Makefile \
            src/kernel/common/dolfin/Makefile \
