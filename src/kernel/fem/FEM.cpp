@@ -69,7 +69,7 @@ void FEM::applyBC(GenericMatrix& A, Mesh& mesh,
 		  FiniteElement& element, BoundaryCondition& bc)
 {
   dolfin_info("Applying Dirichlet boundary conditions to matrix.");
-  applyCommonBC(&A, (Vector*) 0, 0, mesh, element, bc);
+  applyCommonBC(&A, 0, 0, mesh, element, bc);
 }
 //-----------------------------------------------------------------------------
 void FEM::applyBC(GenericVector& b, Mesh& mesh,
@@ -83,7 +83,7 @@ void FEM::assembleResidualBC(GenericMatrix& A, GenericVector& b,
 			     const GenericVector& x, Mesh& mesh,
 			     FiniteElement& element, BoundaryCondition& bc)
 {
-  dolfin_info("Assembling boundary condtions into residual vector.");
+  dolfin_info("Applying boundary conditions to residual vector.");
   applyCommonBC(&A, &b, &x, mesh, element, bc);
 }
 //-----------------------------------------------------------------------------
@@ -91,7 +91,7 @@ void FEM::assembleResidualBC(GenericVector& b,
 			     const GenericVector& x, Mesh& mesh,
 			     FiniteElement& element, BoundaryCondition& bc)
 {
-  dolfin_info("Assembling boundary condtions into residual vector.");
+  dolfin_info("Assembling boundary conditions to residual vector.");
   applyCommonBC(0, &b, &x, mesh, element, bc);
 }
 //-----------------------------------------------------------------------------
@@ -310,16 +310,6 @@ void FEM::assembleCommon(BilinearForm* a, LinearForm* L, Functional* M,
   
 }
 //-----------------------------------------------------------------------------
-void FEM::assembleCommonOld(BilinearForm* a, LinearForm* L, Functional* M,
-			 GenericMatrix* A, GenericVector* b, real* val,
-			 Mesh& mesh)
-{
-  // Create boundary
-  BoundaryMesh boundary(mesh);
-  
-  assembleCommon(a, L, M, A, b, val, mesh);
-}
-//-----------------------------------------------------------------------------
 void FEM::applyCommonBC(GenericMatrix* A, GenericVector* b, 
 			const GenericVector* x, Mesh& mesh,
 			FiniteElement& element, BoundaryCondition& bc)
@@ -444,16 +434,6 @@ void FEM::applyCommonBC(GenericMatrix* A, GenericVector* b,
   delete [] row_set;
   delete [] block_b;
   delete [] node_list;
-}
-//-----------------------------------------------------------------------------
-void FEM::applyCommonBCOld(GenericMatrix* A, GenericVector* b, 
-			const GenericVector* x, Mesh& mesh,
-			FiniteElement& element, BoundaryCondition& bc)
-{
-  // Create boundary
-  BoundaryMesh boundary(mesh);
-  
-  applyCommonBC(A, b, x, mesh, element, bc);
 }
 //-----------------------------------------------------------------------------
 void FEM::checkDimensions(const BilinearForm& a, const Mesh& mesh)

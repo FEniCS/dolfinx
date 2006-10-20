@@ -94,14 +94,6 @@ namespace dolfin
       
   private:
 
-    /// Common assembly for bilinear and linear forms
-    static void assembleCommonOld(BilinearForm* a, LinearForm* L, Functional* M,
-			       GenericMatrix* A, GenericVector* b, real* val, Mesh& mesh);
-
-    /// Create iterator and call function to apply boundary conditions
-    static void applyCommonBCOld(GenericMatrix* A, GenericVector* b, const GenericVector* x,
-			      Mesh& mesh, FiniteElement& element, BoundaryCondition& bc);
-
     /// Check that dimension of the mesh matches the form
     static void checkDimensions(const BilinearForm& a, const Mesh& mesh);
 
