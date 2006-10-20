@@ -79,7 +79,7 @@ void FEM::applyBC(GenericVector& b, Mesh& mesh,
   applyCommonBC(0, &b, 0, mesh, element, bc);
 }
 //-----------------------------------------------------------------------------
-void FEM::assembleResidualBC(GenericMatrix& A, GenericVector& b,
+void FEM::applyResidualBC(GenericMatrix& A, GenericVector& b,
 			     const GenericVector& x, Mesh& mesh,
 			     FiniteElement& element, BoundaryCondition& bc)
 {
@@ -87,7 +87,7 @@ void FEM::assembleResidualBC(GenericMatrix& A, GenericVector& b,
   applyCommonBC(&A, &b, &x, mesh, element, bc);
 }
 //-----------------------------------------------------------------------------
-void FEM::assembleResidualBC(GenericVector& b,
+void FEM::applyResidualBC(GenericVector& b,
 			     const GenericVector& x, Mesh& mesh,
 			     FiniteElement& element, BoundaryCondition& bc)
 {
@@ -170,16 +170,14 @@ void FEM::assembleCommon(BilinearForm* a, LinearForm* L, Functional* M,
 			 Mesh& mesh)
 {
   // Check that the mesh matches the forms
-  if ( a )
-    checkDimensions(*a, mesh);
-  if ( L )
-    checkDimensions(*L, mesh);
+  if ( a ) checkDimensions(*a, mesh);
+  if ( L ) checkDimensions(*L, mesh);
   // FIXME: Add dimension check for M
   
   // Create affine map
   AffineMap map;
   
-  // Initialize element matrix/vector data block
+  // Initialize global data
   uint nz = 0;
   bool interior_contribution = false;
   bool boundary_contribution = false;
@@ -224,19 +222,16 @@ void FEM::assembleCommon(BilinearForm* a, LinearForm* L, Functional* M,
       map.update(*cell);
       
       // Assemble bilinear form
-      if ( a )
-        if ( a->interior_contribution() )
-          assembleElement(*a, *A, mesh, *cell, map, -1);              
+      if ( a ) if ( a->interior_contribution() )
+        assembleElement(*a, *A, mesh, *cell, map, -1);              
       
       // Assemble linear form
-      if ( L )
-        if ( L->interior_contribution() )
-          assembleElement(*L, *b, mesh, *cell, map, -1);              
+      if ( L ) if ( L->interior_contribution() )
+        assembleElement(*L, *b, mesh, *cell, map, -1);              
       
       // Assemble functional
-      if ( M )
-        if ( M->interior_contribution() )
-          assembleElement(*M, *val, map, -1);              
+      if ( M ) if ( M->interior_contribution() )
+        assembleElement(*M, *val, map, -1);              
       
       // Update progress
       p++;
@@ -254,17 +249,14 @@ void FEM::assembleCommon(BilinearForm* a, LinearForm* L, Functional* M,
     for (CellIterator boundary_cell(boundary); !boundary_cell.end(); ++boundary_cell)
     {
       // Create mesh facet corresponding to boundary cell
-      Facet facet(mesh, cell_map(*boundary_cell));
+      Facet mesh_facet(mesh, cell_map(*boundary_cell));
+      dolfin_assert(mesh_facet.numEntities(mesh.topology().dim()) == 1);
 
-      // Check that facet really is on the boundary 
-      // (should have only one neighbour one topological dimension higher)
-      dolfin_assert(facet.numEntities(mesh.topology().dim()) == 1);
+      // Get cell to which facet belongs (pick first, there is only one)
+      Cell mesh_cell(mesh, mesh_facet.entities(mesh.topology().dim())[0]);
 
-      // Get cell to which facet belongs 
-      Cell mesh_cell(mesh, facet.entities(mesh.topology().dim())[0]);
-
-      // Get facet index
-      const uint facet_index = facet.index();
+      // Get local index of facet with respect to the cell
+      const uint facet_index = mesh_facet.index();
 
       // FIXME: should this be computed by the mehs?
       // Find local facet index

@@ -70,21 +70,18 @@ namespace dolfin
     static void applyBC(GenericVector& b, Mesh& mesh,
 			FiniteElement& element, BoundaryCondition& bc);
 
-    /// Assemble boundary conditions into residual vector, with b = x - bc
-    /// for Dirichlet and b = x - bc for Neumann boundary conditions
-    static void assembleResidualBC(GenericMatrix& A, GenericVector& b,
-				   const GenericVector& x, Mesh& mesh,
-				   FiniteElement& element, BoundaryCondition& bc);
-    
-    /// Assemble boundary conditions into residual vector, with b = x - bc
-    /// for Dirichlet and b = x - bc for Neumann boundary conditions
-    static void assembleResidualBC(GenericVector& b,
-				   const GenericVector& x, Mesh& mesh,
-				   FiniteElement& element, BoundaryCondition& bc);
+    /// Apply boundary conditions with b = bc - x at Dirichlet nodes
+    static void applyResidualBC(GenericMatrix& A, GenericVector& b,
+                                const GenericVector& x, Mesh& mesh,
+                                FiniteElement& element, BoundaryCondition& bc);
+
+    /// Apply boundary conditions with b = bc - x at Dirichlet nodes
+    static void applyResidualBC(GenericVector& b,
+                                const GenericVector& x, Mesh& mesh,
+                                FiniteElement& element, BoundaryCondition& bc);
 
     /// Lump matrix (cannot mix matrix vector and matrix types when lumping)
-    template < class A, class X > 
-    static void lump(const A& M, X& m) { M.lump(m); }
+    template < class A, class X > static void lump(const A& M, X& m) { M.lump(m); }
 
     /// Count the degrees of freedom
     static uint size(Mesh& mesh, const FiniteElement& element);
@@ -93,6 +90,17 @@ namespace dolfin
     static void disp(Mesh& mesh, const FiniteElement& element);
       
   private:
+
+    /// Common assembly handles all cases
+    static void assembleCommon(BilinearForm* a, LinearForm* L, Functional* M,
+			       GenericMatrix* A, GenericVector* b, real* val,
+			       Mesh& mesh);
+
+    /// Common application of boundary conditions handles all cases
+    static void applyCommonBC(GenericMatrix* A, GenericVector* b, 
+			      const GenericVector* x, Mesh& mesh,
+			      FiniteElement& element, BoundaryCondition& bc);
+
 
     /// Check that dimension of the mesh matches the form
     static void checkDimensions(const BilinearForm& a, const Mesh& mesh);
@@ -105,19 +113,7 @@ namespace dolfin
 
     /// Check actual number of nonzeros in each row
     static void countNonZeros(const GenericMatrix& A, uint nz);
-
-    // Since the current mesh interface is dimension-dependent, the functions
-    // assembleCommon() and applyCommonBC() need to be templated. They won't
-    // have to be when the new mesh interface is in place.
-
-    static void assembleCommon(BilinearForm* a, LinearForm* L, Functional* M,
-			       GenericMatrix* A, GenericVector* b, real* val,
-			       Mesh& mesh);
-
-    static void applyCommonBC(GenericMatrix* A, GenericVector* b, 
-			      const GenericVector* x, Mesh& mesh,
-			      FiniteElement& element, BoundaryCondition& bc);
-
+    
     /// Assemble bilinear form for an element
     static void assembleElement(BilinearForm& a, GenericMatrix& A, 
       const Mesh& mesh, const Cell& cell, AffineMap& map, const int facetID);
