@@ -42,16 +42,35 @@ int main()
     //cout << cell->numConnections(2) << endl;
   }
   */
+  
+  //UnitCube mesh(1, 1, 1);
+  //BoundaryMesh b1(mesh);
+  //BoundaryMesh b2(b1);
 
-  UnitCube mesh(1, 1, 1);
-  BoundaryMesh b1(mesh);
-  BoundaryMesh b2(b1);
-
-  b1.disp();
-  b2.disp();
+  //b1.disp();
+  //b2.disp();
   
   //File file("mesh.xml.gz");
   //file << mesh;
+
+  Mesh mesh("kent.xml.gz");
+  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  {
+    cout << "cell " << *cell << endl;
+    
+    unsigned int* vertices = cell->entities(0);
+
+    int  ig0 = vertices[0];
+    int  ig1 = vertices[1];
+    int  ig2 = vertices[2];
+    
+    double* p0 = mesh.geometry().x(ig0);
+    double* p1 = mesh.geometry().x(ig1);
+    double* p2 = mesh.geometry().x(ig2);
+
+    cout << p0[0] + p1[1] + p2[0] << endl;
+  }
+
 
   return 0;
 }
