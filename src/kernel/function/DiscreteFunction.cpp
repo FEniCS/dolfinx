@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2006.
 //
 // First added:  2005-11-26
-// Last changed: 2006-05-30
+// Last changed: 2006-10-19
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Point.h>
@@ -15,6 +15,7 @@
 #include <dolfin/Vector.h>
 #include <dolfin/AffineMap.h>
 #include <dolfin/FiniteElement.h>
+#include <dolfin/Function.h>
 #include <dolfin/DiscreteFunction.h>
 
 using namespace dolfin;

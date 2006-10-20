@@ -5,35 +5,28 @@
 // Modified by Kristian Oelgaard 2006.
 //
 // First added:  2004-05-19
-// Last changed: 2006-09-29
+// Last changed: 2006-10-19
 
 #ifndef __FEM_H
 #define __FEM_H
 
 #include <dolfin/constants.h>
-#include <dolfin/AffineMap.h>
-
-#include <dolfin/GenericMatrix.h>
-#include <dolfin/GenericVector.h>
-#include <dolfin/DenseMatrix.h>
-#include <dolfin/Vector.h>
-#include <dolfin/SparseMatrix.h>
-#include <dolfin/Vector.h>
-
-#include <dolfin/Mesh.h>
-#include <dolfin/BoundaryMesh.h>
-#include <dolfin/BoundaryValue.h>
-#include <dolfin/BoundaryCondition.h>
-
-#include <dolfin/FiniteElement.h>
-#include <dolfin/BilinearForm.h>
-#include <dolfin/LinearForm.h>
-#include <dolfin/Functional.h>
 
 // FIXME: Ensure constness where appropriate
 
 namespace dolfin
 {
+  
+  class BilinearForm;
+  class LinearForm;
+  class Functional;
+  class Mesh;
+  class Cell;
+  class GenericMatrix;
+  class GenericVector;
+  class FiniteElement;
+  class BoundaryCondition;
+  class AffineMap;
 
   /// Automated assembly of a linear system from a given partial differential
   /// equation, specified as a variational problem: Find U in V such that
@@ -145,64 +138,6 @@ namespace dolfin
     static void assembleElement(Functional& M, real& val, AffineMap& map,
                                    const int facetID);
   };
-  //-------------------------------------------------------------------------------
-  // Template and inline function definitions  
-  //-------------------------------------------------------------------------------
-  inline void FEM::assembleElement(BilinearForm& a, GenericMatrix& A, 
-      const Mesh& mesh, const Cell& cell, AffineMap& map, const int facetID)
-  {
-    // Update form
-    a.update(map);
-            
-    // Compute maps from local to global degrees of freedom
-    a.test().nodemap(a.test_nodes, cell, mesh);
-    a.trial().nodemap(a.trial_nodes, cell, mesh);
-            
-    // Compute element matrix 
-    if( facetID < 0 )
-      a.eval(a.block, map);
-    else
-      a.eval(a.block, map, facetID);
-
-    // Add element matrix to global matrix
-    A.add(a.block, a.test_nodes, a.test().spacedim(), a.trial_nodes, a.trial().spacedim());
-  }
-  //-----------------------------------------------------------------------------
-  inline void FEM::assembleElement(LinearForm& L, GenericVector& b, 
-    const Mesh& mesh, const Cell& cell, AffineMap& map, const int facetID)
-  {
-    // Update form
-    L.update(map);
-            
-    // Compute map from local to global degrees of freedom
-    L.test().nodemap(L.test_nodes, cell, mesh);
-            
-    // Compute element vector 
-    if( facetID < 0 )
-      L.eval(L.block, map);
-    else
-      L.eval(L.block, map, facetID);
-
-    // Add element vector to global vector
-    b.add(L.block, L.test_nodes, L.test().spacedim());
-  }
-  //-----------------------------------------------------------------------------
-  inline void FEM::assembleElement(Functional& M, real& val, AffineMap& map,
-                                        const int facetID)
-  {
-    // Update form
-    M.update(map);
-            
-    // Compute element entry
-    if( facetID < 0 )
-      M.eval(M.block, map);
-    else
-      M.eval(M.block, map, facetID);
-    
-    // Add element entry to global value
-    val += M.block[0];
-  }
-  //-----------------------------------------------------------------------------
 
 }
 

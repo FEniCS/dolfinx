@@ -7,7 +7,20 @@
 // First added:  2004-05-19
 // Last changed: 2006-10-19
 
+#include <dolfin/BilinearForm.h>
+#include <dolfin/LinearForm.h>
+#include <dolfin/Functional.h>
+#include <dolfin/Mesh.h>
+#include <dolfin/Cell.h>
 #include <dolfin/Facet.h>
+#include <dolfin/MeshFunction.h>
+#include <dolfin/BoundaryMesh.h>
+#include <dolfin/GenericMatrix.h>
+#include <dolfin/GenericVector.h>
+#include <dolfin/FiniteElement.h>
+#include <dolfin/BoundaryCondition.h>
+#include <dolfin/BoundaryValue.h>
+#include <dolfin/AffineMap.h>
 #include <dolfin/FEM.h>
 
 using namespace dolfin;
@@ -35,7 +48,7 @@ void FEM::assemble(BilinearForm& a, GenericMatrix& A, Mesh& mesh)
 //-----------------------------------------------------------------------------
 void FEM::assemble(LinearForm& L, GenericVector& b, Mesh& mesh)
 {
-  assembleCommon(0, &L, 0, (DenseMatrix*) 0, &b, 0, mesh);
+  assembleCommon(0, &L, 0, 0, &b, 0, mesh);
 }
 //-----------------------------------------------------------------------------
 real FEM::assemble(Functional& M, Mesh& mesh)
@@ -79,7 +92,7 @@ void FEM::assembleResidualBC(GenericVector& b,
 			     FiniteElement& element, BoundaryCondition& bc)
 {
   dolfin_info("Assembling boundary condtions into residual vector.");
-  applyCommonBC((DenseMatrix*) 0, &b, &x, mesh, element, bc);
+  applyCommonBC(0, &b, &x, mesh, element, bc);
 }
 //-----------------------------------------------------------------------------
 dolfin::uint FEM::size(Mesh& mesh, const FiniteElement& element)
@@ -500,5 +513,62 @@ void FEM::countNonZeros(const GenericMatrix& A, uint nz)
   else
     dolfin_info("Maximum number of nonzeros in each row is %d (estimated %d).",
 		nz_actual, nz);
+}
+//-----------------------------------------------------------------------------
+void FEM::assembleElement(BilinearForm& a, GenericMatrix& A, 
+                          const Mesh& mesh, const Cell& cell, AffineMap& map,
+                          const int facetID)
+{
+  // Update form
+  a.update(map);
+  
+  // Compute maps from local to global degrees of freedom
+  a.test().nodemap(a.test_nodes, cell, mesh);
+  a.trial().nodemap(a.trial_nodes, cell, mesh);
+  
+  // Compute element matrix 
+  if ( facetID < 0 )
+    a.eval(a.block, map);
+  else
+    a.eval(a.block, map, facetID);
+  
+  // Add element matrix to global matrix
+  A.add(a.block, a.test_nodes, a.test().spacedim(), a.trial_nodes, a.trial().spacedim());
+}
+//-----------------------------------------------------------------------------
+void FEM::assembleElement(LinearForm& L, GenericVector& b, 
+                          const Mesh& mesh, const Cell& cell, AffineMap& map,
+                          const int facetID)
+{
+  // Update form
+  L.update(map);
+  
+  // Compute map from local to global degrees of freedom
+  L.test().nodemap(L.test_nodes, cell, mesh);
+  
+  // Compute element vector 
+  if( facetID < 0 )
+    L.eval(L.block, map);
+  else
+    L.eval(L.block, map, facetID);
+  
+  // Add element vector to global vector
+  b.add(L.block, L.test_nodes, L.test().spacedim());
+}
+//-----------------------------------------------------------------------------
+void FEM::assembleElement(Functional& M, real& val, AffineMap& map,
+                          const int facetID)
+{
+  // Update form
+  M.update(map);
+  
+  // Compute element entry
+  if( facetID < 0 )
+    M.eval(M.block, map);
+  else
+    M.eval(M.block, map, facetID);
+  
+  // Add element entry to global value
+  val += M.block[0];
 }
 //-----------------------------------------------------------------------------
