@@ -222,15 +222,15 @@ void FEM::assembleCommon(BilinearForm* a, LinearForm* L, Functional* M,
       map.update(*cell);
       
       // Assemble bilinear form
-      if ( a ) if ( a->interior_contribution() )
+      if ( a && a->interior_contribution() )
         assembleElement(*a, *A, mesh, *cell, map, -1);              
       
       // Assemble linear form
-      if ( L ) if ( L->interior_contribution() )
+      if ( L && L->interior_contribution() )
         assembleElement(*L, *b, mesh, *cell, map, -1);              
       
       // Assemble functional
-      if ( M ) if ( M->interior_contribution() )
+      if ( M && M->interior_contribution() )
         assembleElement(*M, *val, map, -1);              
       
       // Update progress
@@ -256,35 +256,22 @@ void FEM::assembleCommon(BilinearForm* a, LinearForm* L, Functional* M,
       Cell mesh_cell(mesh, mesh_facet.entities(mesh.topology().dim())[0]);
 
       // Get local index of facet with respect to the cell
-      const uint facet_index = mesh_facet.index();
-
-      // FIXME: should this be computed by the mehs?
-      // Find local facet index
-      uint local_facet_index = 0;
-      for(FacetIterator cell_facet(mesh_cell); !cell_facet.end(); ++cell_facet)
-      {
-        local_facet_index = cell_facet->index();
-        if(local_facet_index == facet_index)
-          break;
-      }
+      uint local_facet_index = mesh_cell.index(mesh_facet);
       
       // Update affine map for facet 
       map.update(mesh_cell, local_facet_index);
       
       // Assemble bilinear form
-      if ( a )
-        if ( a->boundary_contribution() )
-          assembleElement(*a, *A, mesh, mesh_cell, map, local_facet_index);              
+      if ( a && a->boundary_contribution() )
+        assembleElement(*a, *A, mesh, mesh_cell, map, local_facet_index);              
       
       // Assemble linear form
-      if ( L )
-        if ( L->boundary_contribution() )
-          assembleElement(*L, *b, mesh, mesh_cell, map, local_facet_index);              
+      if ( L && L->boundary_contribution() )
+        assembleElement(*L, *b, mesh, mesh_cell, map, local_facet_index);              
       
       // Assemble functional
-      if ( M )
-        if ( M->boundary_contribution() )
-          assembleElement(*M, *val, map, local_facet_index);              
+      if ( M && M->boundary_contribution() )
+        assembleElement(*M, *val, map, local_facet_index);              
       
       // Update progress  
       p_boundary++;
@@ -299,7 +286,6 @@ void FEM::assembleCommon(BilinearForm* a, LinearForm* L, Functional* M,
   }
   if ( L )
     b->apply();
-  
 }
 //-----------------------------------------------------------------------------
 void FEM::applyCommonBC(GenericMatrix* A, GenericVector* b, 
