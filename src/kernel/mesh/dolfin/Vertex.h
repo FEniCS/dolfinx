@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-06-01
-// Last changed: 2006-10-19
+// Last changed: 2006-10-23
 
 #ifndef __VERTEX_H
 #define __VERTEX_H
@@ -53,11 +53,8 @@ namespace dolfin
     VertexIterator(MeshEntity& entity) : MeshEntityIterator(entity, 0) {}
     VertexIterator(MeshEntityIterator& it) : MeshEntityIterator(it, 0) {}
 
-    inline Vertex& operator*()
-    { return static_cast<Vertex&>(*static_cast<MeshEntityIterator>(*this)); }
-
-    inline Vertex* operator->()
-    { return &static_cast<Vertex&>(*static_cast<MeshEntityIterator>(*this)); }
+    inline Vertex& operator*() { return *operator->(); }
+    inline Vertex* operator->() { return static_cast<Vertex*>(MeshEntityIterator::operator->()); }
 
   };
 

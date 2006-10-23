@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-06-01
-// Last changed: 2006-10-19
+// Last changed: 2006-10-23
 
 #ifndef __CELL_H
 #define __CELL_H
@@ -46,11 +46,8 @@ namespace dolfin
     CellIterator(MeshEntity& entity) : MeshEntityIterator(entity, entity.mesh().topology().dim()) {}
     CellIterator(MeshEntityIterator& it) : MeshEntityIterator(it, it->mesh().topology().dim()) {}
 
-    inline Cell& operator*()
-    { return static_cast<Cell&>(*static_cast<MeshEntityIterator>(*this)); }
-
-    inline Cell* operator->()
-    { return &static_cast<Cell&>(*static_cast<MeshEntityIterator>(*this)); }
+    inline Cell& operator*() { return *operator->(); }
+    inline Cell* operator->() { return static_cast<Cell*>(MeshEntityIterator::operator->()); }
 
   };    
 

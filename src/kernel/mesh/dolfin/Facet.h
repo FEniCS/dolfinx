@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-06-02
-// Last changed: 2006-06-02
+// Last changed: 2006-10-23
 
 #ifndef __FACET_H
 #define __FACET_H
@@ -37,11 +37,8 @@ namespace dolfin
     FacetIterator(MeshEntity& entity) : MeshEntityIterator(entity, entity.mesh().topology().dim() - 1) {}
     FacetIterator(MeshEntityIterator& it) : MeshEntityIterator(it, it->mesh().topology().dim() - 1) {}
 
-    inline Facet& operator*()
-    { return static_cast<Facet&>(*static_cast<MeshEntityIterator>(*this)); }
-
-    inline Facet* operator->()
-    { return &static_cast<Facet&>(*static_cast<MeshEntityIterator>(*this)); }
+    inline Facet& operator*() { return *operator->(); }
+    inline Facet* operator->() { return static_cast<Facet*>(MeshEntityIterator::operator->()); }
 
   };    
 

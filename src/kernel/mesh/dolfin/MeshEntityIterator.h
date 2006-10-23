@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-05-09
-// Last changed: 2006-06-22
+// Last changed: 2006-10-23
 
 #ifndef __MESH_ENTITY_ITERATOR_H
 #define __MESH_ENTITY_ITERATOR_H
@@ -113,7 +113,7 @@ namespace dolfin
     inline bool end() const { return pos >= pos_end; }
 
     /// Dereference operator
-    inline MeshEntity& operator*() { entity._index = (index ? index[pos] : pos); return entity; }
+    inline MeshEntity& operator*() { return *operator->(); }
 
     /// Member access operator
     inline MeshEntity* operator->() { entity._index = (index ? index[pos] : pos); return &entity; }
