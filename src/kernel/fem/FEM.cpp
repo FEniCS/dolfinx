@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells 2005, 2006.
 //
 // First added:  2004-05-19
-// Last changed: 2006-10-19
+// Last changed: 2006-10-23
 
 #include <dolfin/BilinearForm.h>
 #include <dolfin/LinearForm.h>
@@ -13,6 +13,7 @@
 #include <dolfin/Mesh.h>
 #include <dolfin/Cell.h>
 #include <dolfin/Facet.h>
+#include <dolfin/Point.h>
 #include <dolfin/MeshFunction.h>
 #include <dolfin/BoundaryMesh.h>
 #include <dolfin/GenericMatrix.h>
@@ -300,14 +301,14 @@ void FEM::applyCommonBC(GenericMatrix* A, GenericVector* b,
   
   // Compute problem size
   uint size = 0;
-  if( A )
+  if ( A )
     size = A->size(0);
   else
     size = b->size();
   
   // Allocate list of rows
   uint m = 0;
-  int*  rows = 0;
+  int* rows = 0;
   if ( A )
     rows = new int[size];
   
@@ -329,42 +330,43 @@ void FEM::applyCommonBC(GenericMatrix* A, GenericVector* b,
     node_list = new int[n];  
   }
   
-  // FIXME: Creating a new BoundaryMesh is likely inefficient
+  // FIXME: Creating a new BoundaryMesh every time is likely inefficient
+  
   // Iterate over all cells in the boundary mesh
   MeshFunction<uint> vertex_map;
   MeshFunction<uint> cell_map;
   BoundaryMesh boundary(mesh, vertex_map, cell_map);
 
-  // FIXME: Boundary mesh needs to include connected cells in the
-  // interior.
-  //   dolfin_error("Boundary conditions not implemented.");
+  // FIXME: Boundary mesh needs to include connected cells in the interior.
   
   // Iterate over all cells in the boundary mesh
-  for (CellIterator facet(boundary); !facet.end(); ++facet)
+  for (CellIterator boundary_cell(boundary); !boundary_cell.end(); ++boundary_cell)
   {
     uint k = 0;
+
+    // Create mesh facet corresponding to boundary cell
+    Facet mesh_facet(mesh, cell_map(*boundary_cell));
+    dolfin_assert(mesh_facet.numEntities(mesh.topology().dim()) == 1);
     
-    // Get cell containing the edge (pick first, should only be one)
-    //     dolfin_assert(facet.numConnections(mesh.topology().dim()) == 1);
-    //     Cell cell(mesh, (*facet).connections(mesh.topology().dim())[0]);
-    Cell cell(mesh, cell_map(*facet));
+    // Get cell to which facet belongs (pick first, there is only one)
+    Cell mesh_cell(mesh, mesh_facet.entities(mesh.topology().dim())[0]);
     
     // Update affine map
-    map.update(cell);
+    map.update(mesh_cell);
+    
     // Compute map from local to global degrees of freedom
-    element.nodemap(nodes, cell, mesh);
+    element.nodemap(nodes, mesh_cell, mesh);
+    
     // Compute map from local to global coordinates
     element.pointmap(points, components, map);
     
     // Set boundary conditions for nodes on the boundary
     for (uint i = 0; i < n; i++)
     {
-      dolfin_warning("contains() not implemented");
-      
-      // Skip points that are not contained in facet
+      // Skip interior points
       const Point& point = points[i];
-      //         if ( !(facet.contains(point)) )
-      //           continue;
+      if ( onFacet(point, *boundary_cell) )
+        continue;
       
       // Get boundary condition
       bv.reset();
@@ -528,5 +530,37 @@ void FEM::assembleElement(Functional& M, real& val, AffineMap& map,
   
   // Add element entry to global value
   val += M.block[0];
+}
+//-----------------------------------------------------------------------------
+bool FEM::onFacet(const Point& p, Cell& facet)
+{
+  // Get mesh geometry and vertices of facet
+  const MeshGeometry& geometry = facet.mesh().geometry();
+  const uint* vertices = facet.entities(0);
+
+  if ( facet.dim() == 1 )
+  {
+    // Check if point is on the same line as the line segment
+    Point v0  = geometry.point(vertices[0]);
+    Point v1  = geometry.point(vertices[1]);
+    Point v01 = v1 - v0;
+    Point v0p = p - v0;
+    return v01.cross(v0p).norm() < DOLFIN_EPS;
+  }
+  else if ( facet.dim() == 2 )
+  {
+    // Check if point is in the same plane as the triangular facet
+    Point v0  = geometry.point(vertices[0]);
+    Point v1  = geometry.point(vertices[1]);
+    Point v2  = geometry.point(vertices[2]);
+    Point v01 = v1 - v0;
+    Point v02 = v2 - v0;
+    Point v0p = p - v0;
+    Point n   = v01.cross(v02);
+    return std::abs(n.dot(v0)) < DOLFIN_EPS;
+  }
+  
+  dolfin_error("Unable to determine if given point is on facet.");
+  return false;
 }
 //-----------------------------------------------------------------------------

@@ -75,9 +75,7 @@ namespace dolfin
 
     /// Compute diameter of cell
     virtual real diameter(const Cell& cell) const = 0;
-
-    /// Compute diam
-
+    
     /// Return description of cell type
     virtual std::string description() const = 0;
 

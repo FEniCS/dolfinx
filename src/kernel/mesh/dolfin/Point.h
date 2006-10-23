@@ -51,15 +51,30 @@ namespace dolfin
     /// Return z-coordinate
     inline real z() const { return _x[2]; }
 
-    /// Cast to real, returning x
-    //operator real() const { return _x[0]; }
-
-    /// Assignment from real, giving p = (x, 0, 0)
-    // const Point& operator= (const real x) { _x[0] = x; _x[1] = 0.0; _x[2] = 0.0; return *this; }
+    /// Compute sum of two points
+    Point operator+ (const Point& p) const { Point q(_x[0] + p._x[0], _x[1] + p._x[1], _x[2] + p._x[2]); return q; }
     
+    /// Compute difference of two points
+    Point operator- (const Point& p) const { Point q(_x[0] - p._x[0], _x[1] - p._x[1], _x[2] - p._x[2]); return q; }
+
+    /// Add given point
+    const Point& operator+= (const Point& p) { _x[0] += p._x[0]; _x[1] += p._x[1]; _x[2] += p._x[2]; return *this; }
+
+    /// Subtract given point
+    const Point& operator-= (const Point& p) { _x[0] -= p._x[0]; _x[1] -= p._x[1]; _x[2] -= p._x[2]; return *this; }
+
     /// Compute distance to given point
     real distance(const Point& p) const;
-    
+
+    /// Compute norm of point representing a vector from the origin
+    real norm() const;
+
+    /// Compute cross product with given vector
+    const Point cross(const Point& p) const;
+
+    /// Compute dot product with given vector
+    real dot(const Point& p) const;
+
     /// Output
     friend LogStream& operator<< (LogStream& stream, const Point& p);
 

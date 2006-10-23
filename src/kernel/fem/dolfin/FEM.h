@@ -5,7 +5,7 @@
 // Modified by Kristian Oelgaard 2006.
 //
 // First added:  2004-05-19
-// Last changed: 2006-10-19
+// Last changed: 2006-10-23
 
 #ifndef __FEM_H
 #define __FEM_H
@@ -22,6 +22,7 @@ namespace dolfin
   class Functional;
   class Mesh;
   class Cell;
+  class Point;
   class GenericMatrix;
   class GenericVector;
   class FiniteElement;
@@ -116,15 +117,19 @@ namespace dolfin
     
     /// Assemble bilinear form for an element
     static void assembleElement(BilinearForm& a, GenericMatrix& A, 
-      const Mesh& mesh, const Cell& cell, AffineMap& map, const int facetID);
+                                const Mesh& mesh, const Cell& cell, AffineMap& map, const int facetID);
 
     /// Assemble linear form for an element
     static void assembleElement(LinearForm& L, GenericVector& b, const Mesh& mesh, 
-                      const Cell& cell, AffineMap& map, const int facetID);
+                                const Cell& cell, AffineMap& map, const int facetID);
 
     /// Assemble fucntional for an element
     static void assembleElement(Functional& M, real& val, AffineMap& map,
-                                   const int facetID);
+                                const int facetID);
+    
+    /// Check if the point is in the same plane as the given facet
+    static bool onFacet(const Point& p, Cell& facet);
+    
   };
 
 }

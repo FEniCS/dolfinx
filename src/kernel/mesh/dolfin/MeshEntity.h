@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-05-11
-// Last changed: 2006-10-20
+// Last changed: 2006-10-23
 
 #ifndef __MESH_ENTITY_H
 #define __MESH_ENTITY_H
@@ -53,13 +53,6 @@ namespace dolfin
 
     /// Compute local index of given incident entity (error if not found)
     uint index(const MeshEntity& entity) const;
-
-    /// 
-    inline real diameter() const
-    {
-      dolfin_error("diameter() not implemented");
-      return 0.0;
-    }
 
     /// Output
     friend LogStream& operator<< (LogStream& stream, const MeshEntity& entity);
