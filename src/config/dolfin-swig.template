@@ -3,13 +3,14 @@
 import os, sys
 from commands import getoutput
 
-# Simple tool to automatically convert a compiled FFC form (in DOLFIN-SWIG
-# format) into a Python module.
+# Simple tool to automatically convert a header file (with
+# implementation) including DOLFIN classes or functions to a Python
+# module.
 
 usage = """
-Usage: %s [form source file]
+Usage: %s sourcefile [modulename]
 
-Example: dolfin-swig Poisson3D.h
+Example: dolfin-swig Poisson3D.h poisson3dform
 """ % os.path.basename(sys.argv[0])
 
 if len(sys.argv) < 2:
@@ -17,17 +18,16 @@ if len(sys.argv) < 2:
 
 name = sys.argv[1]
 name = name.rstrip(".h")
-lowername = name.lower()
-modulename = lowername + "form"
+
+if(len(sys.argv) > 2):
+    modulename = sys.argv[2]
+else:
+    lowername = name.lower()
+    modulename = lowername
 
 swigfile = modulename + ".i"
 
-#if ! test -e $1; then
-#    echo "Cannot find $1."
-#    exit 1
-#fi
-
-print "Generating the SWIG interface file for the %s form" % name
+print "Generating the SWIG interface file for the %s module" % name
 
 swigsource = """%%module %s
 

@@ -4,8 +4,11 @@ from elasticitypde import *
 
 class Source(Function):
     def eval(self, point, i):
-        if(i == 1):
-            return -2.0
+        if(i == 0):
+            if(self.time() > 2.0):
+                return 2.0
+            else:
+                return 0.0
         else:
             return 0.0
 
@@ -26,7 +29,10 @@ class SimpleBC(BoundaryCondition):
             value.set(0.0)
         return value
 
-f = Source()
+coeffs = import_header("MySource.h")
+
+#f = Source()
+f = coeffs.MySource()
 #u0 = InitialDisplacement()
 #v0 = InitialVelocity()
 
@@ -46,11 +52,6 @@ mu = Function(muval)
 
 T = 5.0
 
-t = doublep()
-t.assign(0.0)
-f.sync(t)
-
-
 set("ODE method", "dg");
 set("ODE order", 0);
 set("ODE nonlinear solver", "fixed-point");
@@ -66,7 +67,7 @@ set("ODE save solution", False);
 set("ODE solution file name", "primal.py");
 set("ODE number of samples", 100);
 
-pde = ElasticityPDE(mesh, f, bc, T, t)
+pde = ElasticityPDE(mesh, f, bc, T)
 
 pde.solve(pde.U)
 
