@@ -4,7 +4,10 @@ from diffpde import *
 class Source(Function):
     def eval(self, point, i):
         if(i == 1):
-            return -10.0 * 1.0e1
+            if(self.time() < 3.0):
+                return -10.0 * 1.0e1
+            else:
+                return 0.0
         else:
             return 0.0
 
@@ -46,9 +49,13 @@ nuv = 1.0e2 # Viscosity
 #yld = 4.0e3 * 1.0e-3 * 1.0e5 # Yield strength
 #nuplast = 1.0e-4 * 1.0e3 * 4.0e-1 # Plastic viscosity
 
-yld = 30.0 # Yield strength
+#yld = 30.0 # Yield strength
+##nuplast = 1.0e0  # Plastic viscosity
+#nuplast = 5.0e-2 * 0.0  # Plastic viscosity
+
+yld = 50.0 # Yield strength
 #nuplast = 1.0e0  # Plastic viscosity
-nuplast = 5.0e-2  # Plastic viscosity
+nuplast = 5.0e-2 # Plastic viscosity
 
 import geometry
 
@@ -61,9 +68,12 @@ k = 3.333e-3 * 3
 
 #load_parameters("parameters.xml")
 
+coeffs = import_header("MySource.h")
+
 # Coefficients
 
-f = Source()
+#f = Source()
+f = coeffs.MySource()
 rho = Density()
 v0 = InitialVelocity()
 bc = UtilBC1()

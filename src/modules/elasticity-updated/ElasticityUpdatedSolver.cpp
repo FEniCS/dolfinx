@@ -934,7 +934,7 @@ void ElasticityUpdatedSolver::plasticity(Vector& xsigma, Vector& xsigmanorm,
     if(norm > yld)
     {
 //       cout << "sigmanorm(" << cell.id() << "): " << norm << endl;
-      proj = 1.0 / norm;
+      proj = yld / norm;
     }
     
     xsigmanorm(nodes[0]) = proj;

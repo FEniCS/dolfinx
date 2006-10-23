@@ -23,34 +23,30 @@ class DiffPDE(TimeDependentPDE):
         self.yld = yld
 
         diff_forms = import_formfile("ElasticityUpdatedEq.form")
-        #import elasticityupdatedeqform as diff_forms
+        #import elasticityupdatedeq as diff_forms
 
         stress_forms = import_formfile("ElasticityUpdatedStress.form")
-        #import elasticityupdatedstressform as stress_forms
-
-        load_forms = import_formfile("ElasticityLoad.form")
-        #import elasticityloadform as load_forms
+        #import elasticityupdatedstress as stress_forms
 
         self.amass = diff_forms.ElasticityUpdatedEqBilinearForm(rho)
 
         #self.Ldiff = diff_forms.ElasticityUpdatedEqLinearForm(self.S, self.V,
         #                                                      self.nuv)
         self.Ldiff = diff_forms.ElasticityUpdatedEqLinearForm(self.S, self.V,
-                                                              self.nuv)
+                                                              f, self.nuv)
 
 
         self.Lstress = \
         stress_forms.ElasticityUpdatedStressLinearForm(self.V,
                                                        self.S,
                                                        self.Snorm,
+                                                       #self.lmbda,
                                                        self.mu,
                                                        self.nuplast)
 
 
         self.amassstress = \
             stress_forms.ElasticityUpdatedStressBilinearForm()
-
-        Lload = load_forms.ElasticityLoadLinearForm(f)
 
         self.U.init(mesh, self.amass.trial())
         self.V.init(mesh, self.amass.trial())
@@ -87,7 +83,6 @@ class DiffPDE(TimeDependentPDE):
         self.Msigma = Matrix()
         self.msigma = Vector()
         
-        self.bload = Vector()
         self.xtmp = Vector(self.xu.size())
     
         # Initialize and compute coefficients
@@ -119,20 +114,11 @@ class DiffPDE(TimeDependentPDE):
         #print "xv:"
         #self.xv.disp()
 
-        dolfin_log(False)
-        FEM_assemble(Lload, self.bload, self.mesh())
-        FEM_applyBC(self.bload, self.mesh(), self.a().trial(), self.bc())
-        dolfin_log(True)
-
-
         ElasticityUpdatedSolver_plasticity(self.xS,
                                            self.xSnorm, self.yld,
                                            self.Lstress.element(3),
                                            self.mesh())
         
-
-        #print "bload:"
-        #self.bload.disp()
 
         # Initial values for ODE
         # Gather into x
@@ -176,7 +162,6 @@ class DiffPDE(TimeDependentPDE):
         FEM_applyBC(self.dotxv, self.mesh(), self.V.element(), self.bc())
         dolfin_log(True)
     
-        self.dotxv.axpy(1.0, self.bload)
         self.dotxv.div(self.m)
 
         # S

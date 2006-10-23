@@ -3,9 +3,9 @@ import LinearAlgebra
 from dolfin import *
 import transform
 
-#mesh = Mesh("cell.xml.gz")
+mesh = Mesh("tetmesh-1c.xml.gz")
 
-mesh = UnitCube(2, 2, 2)
+#mesh = UnitCube(3, 3, 3)
 
 # Transform meshes
 A = Numeric.zeros([3, 3], 'd')
