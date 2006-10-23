@@ -41,6 +41,12 @@ namespace dolfin
     /// Refine cell uniformly
     void refineCell(Cell& cell, MeshEditor& editor, uint& current_cell) const;
 
+    /// Compute (generalized) volume of cell
+    real volume(const Cell& cell) const;
+
+    /// Compute diameter of cell
+    real diameter(const Cell& cell) const;
+
     /// Return description of cell type
     std::string description() const;
 

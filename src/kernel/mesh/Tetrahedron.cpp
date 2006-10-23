@@ -7,6 +7,7 @@
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Cell.h>
 #include <dolfin/MeshEditor.h>
+#include <dolfin/MeshGeometry.h>
 #include <dolfin/Tetrahedron.h>
 
 using namespace dolfin;
@@ -154,6 +155,66 @@ void Tetrahedron::refineCell(Cell& cell, MeshEditor& editor,
   editor.addCell(current_cell++, e1, e5, e3, e4);
   editor.addCell(current_cell++, e2, e3, e4, e1);
   editor.addCell(current_cell++, e0, e1, e2, e4);
+}
+//-----------------------------------------------------------------------------
+real Tetrahedron::volume(const Cell& cell) const
+{
+  // Get mesh geometry
+  const MeshGeometry& geometry = cell.mesh().geometry();
+
+  // Only know how to compute the volume when embedded in R^3
+  if ( geometry.dim() != 3 )
+    dolfin_error("Only know how to compute the volume of a tetrahedron when embedded in R^3.");
+
+  // Get the coordinates of the four vertices
+  const uint* vertices = cell.entities(0);
+  const real* x0 = geometry.x(vertices[0]);
+  const real* x1 = geometry.x(vertices[1]);
+  const real* x2 = geometry.x(vertices[2]);
+  const real* x3 = geometry.x(vertices[3]);
+
+  // Formula for volume from http://mathworld.wolfram.com
+  real v = ( x0[0] * ( x1[1]*x2[2] + x3[1]*x1[2] + x2[1]*x3[2] - x2[1]*x1[2] - x1[1]*x3[2] - x3[1]*x2[2] ) -
+             x1[0] * ( x0[1]*x2[2] + x3[1]*x0[2] + x2[1]*x3[2] - x2[1]*x0[2] - x0[1]*x3[2] - x3[1]*x2[2] ) +
+             x2[0] * ( x0[1]*x1[2] + x3[1]*x0[2] + x1[1]*x3[2] - x1[1]*x0[2] - x0[1]*x3[2] - x3[1]*x1[2] ) -
+             x3[0] * ( x0[1]*x1[2] + x1[1]*x2[2] + x2[1]*x0[2] - x1[1]*x0[2] - x2[1]*x1[2] - x0[1]*x2[2] ) );
+  
+  return std::abs(v) / 6.0;
+}
+//-----------------------------------------------------------------------------
+real Tetrahedron::diameter(const Cell& cell) const
+{
+  // Get mesh geometry
+  const MeshGeometry& geometry = cell.mesh().geometry();
+
+  // Only know how to compute the volume when embedded in R^3
+  if ( geometry.dim() != 3 )
+    dolfin_error("Only know how to compute the diameter of a tetrahedron when embedded in R^3.");
+  
+  // Get the coordinates of the four vertices
+  const uint* vertices = cell.entities(0);
+  Point p0 = geometry.point(vertices[0]);
+  Point p1 = geometry.point(vertices[1]);
+  Point p2 = geometry.point(vertices[2]);
+  Point p3 = geometry.point(vertices[3]);
+
+  // Compute side lengths
+  real a  = p1.distance(p2);
+  real b  = p0.distance(p2);
+  real c  = p0.distance(p1);
+  real aa = p0.distance(p3);
+  real bb = p1.distance(p3);
+  real cc = p2.distance(p3);
+                                
+  // Compute "area" of triangle with strange side lengths
+  real la   = a*aa;
+  real lb   = b*bb;
+  real lc   = c*cc;
+  real s    = 0.5*(la+lb+lc);
+  real area = sqrt(s*(s-la)*(s-lb)*(s-lc));
+                                
+  // Formula for diameter (2*circumradius) from http://mathworld.wolfram.com
+  return area / ( 3.0*volume(cell) );
 }
 //-----------------------------------------------------------------------------
 std::string Tetrahedron::description() const

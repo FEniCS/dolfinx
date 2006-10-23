@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-06-05
-// Last changed: 2006-10-19
+// Last changed: 2006-10-23
 
 #ifndef __INTERVAL_H
 #define __INTERVAL_H
@@ -38,6 +38,12 @@ namespace dolfin
 
     /// Refine cell uniformly
     void refineCell(Cell& cell, MeshEditor& editor, uint& current_cell) const;
+
+    /// Compute (generalized) volume of cell
+    real volume(const Cell& cell) const;
+
+    /// Compute diameter of cell
+    real diameter(const Cell& cell) const;
 
     /// Return description of cell type
     std::string description() const;

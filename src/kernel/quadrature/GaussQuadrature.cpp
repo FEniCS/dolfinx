@@ -1,8 +1,8 @@
-// Copyright (C) 2003-2005 Anders Logg.
+// Copyright (C) 2003-2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003-06-03
-// Last changed: 2005-12-09
+// Last changed: 2006-10-23
 
 #include <stdio.h>
 #include <cmath>
@@ -32,7 +32,7 @@ void GaussQuadrature::disp() const
   cout << "-----------------------------------------------------" << endl;
   
   for (unsigned int i = 0; i < n; i++)
-    dolfin_info("%2d   % .16e   %.16e", i, points[i].x(), weights[i]);
+    dolfin_info("%2d   %.16e   %.16e", i, points[i], weights[i]);
 }
 //-----------------------------------------------------------------------------
 void GaussQuadrature::computePoints()
@@ -41,7 +41,8 @@ void GaussQuadrature::computePoints()
   // as the zeroes of the Legendre polynomials using Newton's method
   
   // Special case n = 1
-  if ( n == 1 ) {
+  if ( n == 1 )
+  {
     points[0] = 0.0;
     return;
   }

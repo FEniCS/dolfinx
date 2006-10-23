@@ -13,9 +13,10 @@
 namespace dolfin
 {
   
-  /// MeshGeometry stores a set of coordinates associated with the vertices
-  /// of a mesh.
-
+  /// MeshGeometry stores the geometry imposed on a mesh. Currently,
+  /// the geometry is represented by the set of coordinates for the
+  /// vertices of a mesh, but other representations are possible.
+  
   class MeshGeometry
   {
   public:
@@ -70,7 +71,7 @@ namespace dolfin
 
     /// Display data
     void disp() const;
-    
+
   private:
     
     // Euclidean dimension

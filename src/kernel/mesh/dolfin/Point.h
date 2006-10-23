@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2006.
 //
 // First added:  2006-06-12
-// Last changed: 2006-10-16
+// Last changed: 2006-10-23
 
 #ifndef __POINT_H
 #define __POINT_H
@@ -52,15 +52,14 @@ namespace dolfin
     inline real z() const { return _x[2]; }
 
     /// Cast to real, returning x
-    operator real() const { return _x[0]; }
+    //operator real() const { return _x[0]; }
 
-    /// Assignment from real, giving p = (x,0,0)
-    const Point& operator= (const real x)
-    {
-      _x[0] = x; _x[1] = 0.0; _x[2] = 0.0;
-      return *this;
-    }
-
+    /// Assignment from real, giving p = (x, 0, 0)
+    // const Point& operator= (const real x) { _x[0] = x; _x[1] = 0.0; _x[2] = 0.0; return *this; }
+    
+    /// Compute distance to given point
+    real distance(const Point& p) const;
+    
     /// Output
     friend LogStream& operator<< (LogStream& stream, const Point& p);
 

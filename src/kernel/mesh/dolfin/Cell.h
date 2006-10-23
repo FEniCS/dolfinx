@@ -28,6 +28,12 @@ namespace dolfin
     /// Return alignment of given entity with respect to the cell
     inline uint alignment(uint dim, uint e) const { return _mesh.type().alignment(*this, dim, e); }
 
+    /// Compute (generalized) volume of cell
+    inline real volume() const { return _mesh.type().volume(*this); }
+
+    /// Compute diameter of cell
+    inline real diameter() const { return _mesh.type().volume(*this); }
+
   };
 
   /// A CellIterator is a MeshEntityIterator of topological codimension 0.

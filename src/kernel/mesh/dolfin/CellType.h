@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-06-05
-// Last changed: 2006-10-16
+// Last changed: 2006-10-23
 
 #ifndef __CELL_TYPE_H
 #define __CELL_TYPE_H
@@ -69,6 +69,14 @@ namespace dolfin
 
     /// Refine cell uniformly
     virtual void refineCell(Cell& cell, MeshEditor& editor, uint& current_cell) const = 0;
+
+    /// Compute (generalized) volume of cell
+    virtual real volume(const Cell& cell) const = 0;
+
+    /// Compute diameter of cell
+    virtual real diameter(const Cell& cell) const = 0;
+
+    /// Compute diam
 
     /// Return description of cell type
     virtual std::string description() const = 0;

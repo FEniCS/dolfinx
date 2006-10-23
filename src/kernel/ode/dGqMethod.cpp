@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-05-02
-// Last changed: 2006-07-07
+// Last changed: 2006-10-23
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/dolfin_math.h>
@@ -136,7 +136,7 @@ void dGqMethod::computeQuadrature()
   // Get points, rescale from [-1,1] to [0,1], and reverse the points
   for (unsigned int i = 0; i < nq; i++)
   {
-    qpoints[i] = 1.0 - (quadrature.point(nq - 1 - i).x() + 1.0) / 2.0;
+    qpoints[i] = 1.0 - (quadrature.point(nq - 1 - i) + 1.0) / 2.0;
     npoints[i] = qpoints[i];
   }
 

@@ -4,6 +4,7 @@
 // First added:  2006-06-02
 // Last changed: 2006-10-19
 
+#include <cmath>
 #include <dolfin/Vertex.h>
 #include <dolfin/Edge.h>
 

@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-06-02
-// Last changed: 2006-06-12
+// Last changed: 2006-10-23
 
 #ifndef __EDGE_H
 #define __EDGE_H
@@ -29,7 +29,7 @@ namespace dolfin
     /// Destructor
     ~Edge() {}
 
-    /// Return coordinates of edge midpoint
+    /// Compute coordinates of edge midpoint as a 3D point value
     Point midpoint();
 
   };

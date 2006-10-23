@@ -1,8 +1,8 @@
-// Copyright (C) 2003-2005 Anders Logg.
+// Copyright (C) 2003-2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003-06-03
-// Last changed: 2005-12-09
+// Last changed: 2006-10-23
 
 #include <cmath>
 #include <dolfin/dolfin_log.h>
@@ -31,7 +31,7 @@ void RadauQuadrature::disp() const
   cout << "-----------------------------------------------------" << endl;
 
   for (unsigned int i = 0; i < n; i++)
-    dolfin_info("%2d   % .16e   %.16e", i, points[i].x(), weights[i]);
+    dolfin_info("%2d   %.16e   %.16e", i, points[i], weights[i]);
 }
 //-----------------------------------------------------------------------------
 void RadauQuadrature::computePoints()
@@ -43,7 +43,8 @@ void RadauQuadrature::computePoints()
   // approximation for the Newton iterations.
   
   // Special case n = 1
-  if ( n == 1 ) {
+  if ( n == 1 )
+  {
     points[0] = -1.0;
     return;
   }

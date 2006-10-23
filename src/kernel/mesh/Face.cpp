@@ -7,4 +7,3 @@
 #include <dolfin/Face.h>
 
 using namespace dolfin;
-

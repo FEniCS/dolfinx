@@ -2,11 +2,13 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-06-05
-// Last changed: 2006-10-19
+// Last changed: 2006-10-23
 
+#include <cmath>
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Cell.h>
 #include <dolfin/MeshEditor.h>
+#include <dolfin/MeshGeometry.h>
 #include <dolfin/Interval.h>
 
 using namespace dolfin;
@@ -79,6 +81,33 @@ void Interval::refineCell(Cell& cell, MeshEditor& editor,
   // Add the two new cells
   editor.addCell(current_cell++, v0, e0);
   editor.addCell(current_cell++, e0, v1);
+}
+//-----------------------------------------------------------------------------
+real Interval::volume(const Cell& cell) const
+{
+  // Get mesh geometry
+  const MeshGeometry& geometry = cell.mesh().geometry();
+
+  // Get the coordinates of the two vertices
+  const uint* vertices = cell.entities(0);
+  const real* x0 = geometry.x(vertices[0]);
+  const real* x1 = geometry.x(vertices[1]);
+  
+  // Compute length of interval (line segment)
+  real sum = 0.0;
+  for (uint i = 0; i < geometry.dim(); ++i)
+  {
+    const real dx = x1[i] - x0[i];
+    sum += dx*dx;
+  }
+
+  return std::sqrt(sum);
+}
+//-----------------------------------------------------------------------------
+real Interval::diameter(const Cell& cell) const
+{
+  // Diameter is same as volume for interval (line segment)
+  return volume(cell);
 }
 //-----------------------------------------------------------------------------
 std::string Interval::description() const
