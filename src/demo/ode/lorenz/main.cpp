@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003-07-02
-// Last changed: 2006-08-21
+// Last changed: 2006-10-23
 
 #include <stdio.h>
 #include <dolfin.h>
@@ -69,7 +69,7 @@ public:
     // Check in which region the point is
     Point p(u(0), u(1), u(2));
 
-    if ( (p - p0) * v < 0 )
+    if ( v.dot(p - p0) < 0 )
     {
       if ( pos != 0 )
       {
@@ -81,7 +81,7 @@ public:
 	fprintf(fp, "%.12e 0 %d %d %.16e\n", t, n0, n1, alpha);
       }
     }
-    else if ( (p - p1) * v > 0 )
+    else if ( v.dot(p - p1) > 0 )
     {
       if ( pos != 1 )
       {
