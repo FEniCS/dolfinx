@@ -365,7 +365,7 @@ void FEM::applyCommonBC(GenericMatrix* A, GenericVector* b,
     {
       // Skip interior points
       const Point& point = points[i];
-      if ( onFacet(point, *boundary_cell) )
+      if ( !onFacet(point, *boundary_cell) )
         continue;
       
       // Get boundary condition
@@ -456,7 +456,7 @@ dolfin::uint FEM::estimateNonZeros(Mesh& mesh,
   uint nzmax = 0;
 
   mesh.init(0, 0);
-
+  
   for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
   {
     nzmax = std::max(nzmax, vertex->numEntities(0)*element.spacedim());
