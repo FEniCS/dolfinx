@@ -259,7 +259,7 @@ void FEM::assembleCommon(BilinearForm* a, LinearForm* L, Functional* M,
       uint local_facet_index = mesh_cell.index(mesh_facet);
       
       // Update affine map for facet 
-      map.update(mesh_cell, local_facet_index);
+      map.update(mesh_cell, *boundary_cell);
       
       // Assemble bilinear form
       if ( a && a->boundary_contribution() )
@@ -337,7 +337,7 @@ void FEM::applyCommonBC(GenericMatrix* A, GenericVector* b,
 
   // FIXME: Boundary mesh needs to include connected cells in the
   // interior.
-//   dolfin_error("Boundary conditions not implemented.");
+  //   dolfin_error("Boundary conditions not implemented.");
   
   // Iterate over all cells in the boundary mesh
   for (CellIterator facet(boundary); !facet.end(); ++facet)
