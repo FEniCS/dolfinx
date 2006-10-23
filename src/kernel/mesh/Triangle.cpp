@@ -1,8 +1,10 @@
 // Copyright (C) 2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
+// Modified by Garth N. Wells, 2006.
+//
 // First added:  2006-06-05
-// Last changed: 2006-10-19
+// Last changed: 2006-10-23
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Cell.h>
@@ -111,33 +113,34 @@ real Triangle::volume(const Cell& cell) const
   // Get mesh geometry
   const MeshGeometry& geometry = cell.mesh().geometry();
 
-  // Only know how to compute the volume when embedded in R^2 or R^3
-  if ( geometry.dim() != 3 )
-    dolfin_error("Only know how to volume (area) of a triangle when embedded in R^2 or R^3.");
-
   // Get the coordinates of the three vertices
   const uint* vertices = cell.entities(0);
   const real* x0 = geometry.x(vertices[0]);
   const real* x1 = geometry.x(vertices[1]);
   const real* x2 = geometry.x(vertices[2]);
   
-  // Compute area of triangle embedded in R^2
   if ( geometry.dim() == 2 )
   {
-    // Compute area of triangle embedded in R^3
+    // Compute area of triangle embedded in R^2
     real v2 = (x0[0]*x1[1] + x0[1]*x2[0] + x1[0]*x2[1]) - (x2[0]*x1[1] + x2[1]*x0[0] + x1[0]*x0[1]);
     
     // Formula for volume from http://mathworld.wolfram.com 
     return v2 = 0.5 * std::abs(v2);
   }
-
-  // Compute area of triangle embedded in R^3
-  real v0 = (x0[1]*x1[2] + x0[2]*x2[1] + x1[1]*x2[2]) - (x2[1]*x1[2] + x2[2]*x0[1] + x1[1]*x0[2]);
-  real v1 = (x0[2]*x1[0] + x0[0]*x2[2] + x1[2]*x2[0]) - (x2[2]*x1[0] + x2[0]*x0[2] + x1[2]*x0[0]);
-  real v2 = (x0[0]*x1[1] + x0[1]*x2[0] + x1[0]*x2[1]) - (x2[0]*x1[1] + x2[1]*x0[0] + x1[0]*x0[1]);
+  else if ( geometry.dim() == 3 )
+  { 
+   // Compute area of triangle embedded in R^3
+    real v0 = (x0[1]*x1[2] + x0[2]*x2[1] + x1[1]*x2[2]) - (x2[1]*x1[2] + x2[2]*x0[1] + x1[1]*x0[2]);
+    real v1 = (x0[2]*x1[0] + x0[0]*x2[2] + x1[2]*x2[0]) - (x2[2]*x1[0] + x2[0]*x0[2] + x1[2]*x0[0]);
+    real v2 = (x0[0]*x1[1] + x0[1]*x2[0] + x1[0]*x2[1]) - (x2[0]*x1[1] + x2[1]*x0[0] + x1[0]*x0[1]);
   
-  // Formula for volume from http://mathworld.wolfram.com 
-  return  0.5 * sqrt(v0*v0 + v1*v1 + v2*v2);
+    // Formula for volume from http://mathworld.wolfram.com 
+    return  0.5 * sqrt(v0*v0 + v1*v1 + v2*v2);
+  }
+  else
+    dolfin_error("Only know how to volume (area) of a triangle when embedded in R^2 or R^3.");
+
+  return 0.0;
 }
 //-----------------------------------------------------------------------------
 real Triangle::diameter(const Cell& cell) const
