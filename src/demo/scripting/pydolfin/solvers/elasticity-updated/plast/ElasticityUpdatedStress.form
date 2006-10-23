@@ -1,0 +1,43 @@
+# Form representing the stress equation in elastoplasticity
+
+name = "ElasticityUpdatedStress"
+element1 = FiniteElement("Vector Lagrange", "tetrahedron", 1)
+element2 = FiniteElement("Discontinuous vector Lagrange", "tetrahedron", 0, 9)
+element3 = FiniteElement("Discontinuous Lagrange", "tetrahedron", 0)
+
+sigmadot = TrialFunction(element2)
+q = TestFunction(element2)
+vel = Function(element1)
+sigma = Function(element2)
+sigmanorm = Function(element3)
+
+lmbda   = Function(element3) # Lame coefficient
+mu      = Function(element3) # Lame coefficient
+nuplast = Function(element3) # Plastic viscosity
+
+
+# Dimension
+d = len(vel)
+
+def epsilon(u):
+    return 0.5 * (grad(u) + transp(grad(u)))
+
+def E(e, lmbda, mu):
+    Ee = mult(mu, e)
+    return Ee
+
+def tomatrix(q):
+    return [ [q[3 * j + i] for i in range(3)] for j in range(3) ]
+
+qmatrix = tomatrix(q)
+sigmamatrix = tomatrix(sigma)
+
+Lelast = 2.0 * dot(E(epsilon(vel), lmbda, mu) - \
+	mult(sigmamatrix, grad(vel)) - \
+	mult(transp(grad(vel)), sigmamatrix), qmatrix)
+
+Lplast = -dot(mult(nuplast, mult(1 - sigmanorm, E(sigmamatrix, lmbda, mu))), \
+             qmatrix)
+
+L = (Lelast + Lplast) * dx
+a = dot(sigmadot, q) * dx

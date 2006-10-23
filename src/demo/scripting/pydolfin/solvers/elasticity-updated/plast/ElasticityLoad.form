@@ -1,0 +1,9 @@
+# Test form for updated elasticity
+
+name = "ElasticityLoad"
+element2 = FiniteElement("Vector Lagrange", "tetrahedron", 1)
+
+v = BasisFunction(element2)
+f = Function(element2)
+
+L = (dot(f, v)) * dx
