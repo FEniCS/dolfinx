@@ -32,7 +32,7 @@ namespace dolfin
     inline real volume() const { return _mesh.type().volume(*this); }
 
     /// Compute diameter of cell
-    inline real diameter() const { return _mesh.type().volume(*this); }
+    inline real diameter() const { return _mesh.type().diameter(*this); }
 
   };
 
