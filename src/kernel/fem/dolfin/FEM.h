@@ -128,7 +128,7 @@ namespace dolfin
                                 const int facetID);
 
     /// Initialize mesh connectivity for use in node map
-    static bool initConnectivity(Mesh& mesh);
+    static void initConnectivity(Mesh& mesh);
     
     /// Check if the point is in the same plane as the given facet
     static bool onFacet(const Point& p, Cell& facet);

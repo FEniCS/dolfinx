@@ -543,7 +543,7 @@ void FEM::assembleElement(Functional& M, real& val, AffineMap& map,
   val += M.block[0];
 }
 //-----------------------------------------------------------------------------
-bool FEM::initConnectivity(Mesh& mesh)
+void FEM::initConnectivity(Mesh& mesh)
 {
   // This is a temporary fix. We need to get information from FFC about
   // which connectivity is needed for the mapping of nodes.
