@@ -59,7 +59,7 @@ nuplast = 5.0e-2 # Plastic viscosity
 
 import geometry
 
-T = 10.0
+T = 3.0
 #T = 1.0e-4 / 1.0
 #k = 1.0e-3 / 4.0
 #k = 1.0e-3 * 3.333

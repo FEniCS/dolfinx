@@ -13,7 +13,7 @@ m.actor.GetProperty().SetColor((0.8, 0.8, 1.0))
 
 camera = v.renwin.camera
 camera.Zoom(1.0)
-camera.SetPosition(13.0, 5.0, 22.0)
+camera.SetPosition(13.0, 5.0, 30.0)
 camera.SetFocalPoint(4.0, 0.0, 0.0)
 camera.SetRoll(0.0)
 
