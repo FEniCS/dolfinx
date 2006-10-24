@@ -209,9 +209,7 @@ void ElasticityUpdatedSolver::init()
 
     (*element2).nodemap(nodes, cell, mesh);
 
-    dolfin_error("cell volume not implemented");
-    real factor = 1.0;
-//    real factor = 1.0 / cell.volume(); 
+    real factor = 1.0 / cell.volume(); 
 
     for(uint i = 0; i < (*element2).spacedim(); i++)
       msigma(nodes[i]) = factor;
@@ -991,9 +989,7 @@ void ElasticityUpdatedSolver::initmsigma(Vector& msigma,
 
     element2.nodemap(nodes, cell, mesh);
 
-    dolfin_error("cell volume not implemented");
-//     real factor = cell.volume(); 
-    real factor = 0.0;
+    real factor = cell.volume(); 
 
     for(unsigned int i = 0; i < element2.spacedim(); i++)
 //       msigma(nodes[i]) = factor;
