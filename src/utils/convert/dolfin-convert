@@ -408,6 +408,8 @@ def xml_old2xml(ifilename, ofilename):
             line = line.replace(" z=\"0.0\"", "")
         if " name=" in line:
             line = line.replace(" name=", " index=")
+        if " name =" in line:
+            line = line.replace(" name =", " index=")
         if "n0" in line:
             line = line.replace("n0", "v0")
         if "n1" in line:
