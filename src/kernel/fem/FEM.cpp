@@ -375,23 +375,23 @@ void FEM::applyCommonBC(GenericMatrix* A, GenericVector* b,
       // Set boundary condition if Dirichlet
       if ( bv.fixed )
       {
-	int node = nodes[i];
-	if ( !row_set[node] )
-	{
-	  if ( x ) // Compute "residual" 
-	    block_b[k] = bv.value - x->get(node);
-	  else if ( b ) 
-	    block_b[k] = bv.value;
+        int node = nodes[i];
+        if ( !row_set[node] )
+        {
+          if ( x ) // Compute "residual" 
+            block_b[k] = bv.value - x->get(node);
+          else if ( b ) 
+            block_b[k] = bv.value;
 	  
-	  row_set[node] = true;
+          row_set[node] = true;
 	  
-	  if ( b )
-	    node_list[k++] = node;
-	  if ( A )
-	    rows[m] = node;
+          if ( b )
+            node_list[k++] = node;
+          if ( A )
+            rows[m] = node;
 	  
-	  m++;
-	}
+          m++;
+        }
       }
     }
     if( b )
