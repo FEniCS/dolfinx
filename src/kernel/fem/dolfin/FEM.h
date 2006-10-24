@@ -5,7 +5,7 @@
 // Modified by Kristian Oelgaard 2006.
 //
 // First added:  2004-05-19
-// Last changed: 2006-10-23
+// Last changed: 2006-10-24
 
 #ifndef __FEM_H
 #define __FEM_H
@@ -126,6 +126,9 @@ namespace dolfin
     /// Assemble fucntional for an element
     static void assembleElement(Functional& M, real& val, AffineMap& map,
                                 const int facetID);
+
+    /// Initialize mesh connectivity for use in node map
+    static bool initConnectivity(Mesh& mesh);
     
     /// Check if the point is in the same plane as the given facet
     static bool onFacet(const Point& p, Cell& facet);

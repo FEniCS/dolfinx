@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells 2005, 2006.
 //
 // First added:  2004-05-19
-// Last changed: 2006-10-23
+// Last changed: 2006-10-24
 
 #include <dolfin/BilinearForm.h>
 #include <dolfin/LinearForm.h>
@@ -102,8 +102,10 @@ dolfin::uint FEM::size(Mesh& mesh, const FiniteElement& element)
   // FIXME: function that calculates the total number of degrees of
   // FIXME: freedom in just a few operations.
 
+  // Initialize connectivity
+  initConnectivity(mesh);
+
   // Count the degrees of freedom (check maximum index)
-  
   int* nodes = new int[element.spacedim()];
   int nodemax = 0;
   for (CellIterator cell(mesh); !cell.end(); ++cell)
@@ -125,6 +127,9 @@ void FEM::disp(Mesh& mesh, const FiniteElement& element)
   dolfin_info("Assembly data:");
   dolfin_info("--------------");
   dolfin_info("");
+
+  // Initialize connectivity
+  initConnectivity(mesh);
 
   // Total number of nodes
   uint N = size(mesh, element);
@@ -174,7 +179,10 @@ void FEM::assembleCommon(BilinearForm* a, LinearForm* L, Functional* M,
   if ( a ) checkDimensions(*a, mesh);
   if ( L ) checkDimensions(*L, mesh);
   // FIXME: Add dimension check for M
-  
+
+  // Initialize connectivity
+  initConnectivity(mesh);
+
   // Create affine map
   AffineMap map;
   
@@ -293,6 +301,9 @@ void FEM::applyCommonBC(GenericMatrix* A, GenericVector* b,
 			const GenericVector* x, Mesh& mesh,
 			FiniteElement& element, BoundaryCondition& bc)
 {
+  // Initialize connectivity
+  initConnectivity(mesh);
+
   // Create boundary value
   BoundaryValue bv;
   
@@ -530,6 +541,15 @@ void FEM::assembleElement(Functional& M, real& val, AffineMap& map,
   
   // Add element entry to global value
   val += M.block[0];
+}
+//-----------------------------------------------------------------------------
+bool FEM::initConnectivity(Mesh& mesh)
+{
+  // This is a temporary fix. We need to get information from FFC about
+  // which connectivity is needed for the mapping of nodes.
+
+  for (uint i = 0; i < mesh.topology().dim(); i++)
+    mesh.init(i);
 }
 //-----------------------------------------------------------------------------
 bool FEM::onFacet(const Point& p, Cell& facet)
