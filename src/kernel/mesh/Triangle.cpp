@@ -149,7 +149,7 @@ real Triangle::diameter(const Cell& cell) const
   const MeshGeometry& geometry = cell.mesh().geometry();
 
   // Only know how to compute the diameter when embedded in R^2 or R^3
-  if ( geometry.dim() != 3 )
+  if ( geometry.dim() != 2 || geometry.dim() != 3 )
     dolfin_error("Only know how to volume (area) of a triangle when embedded in R^2 or R^3.");
 
   // Get the coordinates of the three vertices
