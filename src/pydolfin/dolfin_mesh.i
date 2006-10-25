@@ -33,7 +33,7 @@ PyObject * vertices() {
 %rename(increment) dolfin::MeshEntityIterator::operator++;
 %rename(dereference) dolfin::MeshEntityIterator::operator*;
 
-// Extend iterator to work as a Python iterator
+// Extend mesh entity iterators to work as a Python iterators
 %extend dolfin::MeshEntityIterator {
 %pythoncode
 %{
@@ -42,18 +42,22 @@ def __iter__(self):
   return self
 
 def next(self):
+  if not self.first:
+    self.increment()
   if self.end():
     raise StopIteration
-  if not self.first:  
-    self.increment()
   self.first = False
   return self.dereference()
 %}
 }
 
-%rename(increment) dolfin::VertexIterator::operator++;
-%rename(increment) dolfin::CellIterator::operator++;
-%rename(increment) dolfin::EdgeIterator::operator++;
+// Rename the iterators to better match the Python syntax
+%rename(vertices) dolfin::VertexIterator;
+%rename(edges) dolfin::EdgeIterator;
+%rename(faces) dolfin::FaceIterator;
+%rename(facets) dolfin::FacetIterator;
+%rename(cells) dolfin::CellIterator;
+%rename(entities) dolfin::MeshEntityIterator;
 
 %include "dolfin/MeshConnectivity.h"
 %include "dolfin/MeshEditor.h"

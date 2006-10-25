@@ -38,6 +38,62 @@ class MeshRefinement(unittest.TestCase):
         self.assertEqual(mesh.numVertices(), 3135)
         self.assertEqual(mesh.numCells(), 15120)
 
+class MeshIterators(unittest.TestCase):
+
+    def testVertexIterators(self):
+        """Iterate over vertices"""
+        mesh = UnitCube(5, 5, 5)
+        n = 0
+        for v in vertices(mesh):
+            n += 1
+        self.assertEqual(n, mesh.numVertices())
+
+    def testEdgeIterators(self):
+        """Iterate over edges"""
+        mesh = UnitCube(5, 5, 5)
+        mesh.init(1);
+        n = 0
+        for e in edges(mesh):
+            n += 1
+        self.assertEqual(n, mesh.numEdges())
+
+    def testFaceIterators(self):
+        """Iterate over faces"""
+        mesh = UnitCube(5, 5, 5)
+        mesh.init(2);
+        n = 0
+        for f in faces(mesh):
+            n += 1
+        self.assertEqual(n, mesh.numFaces())
+
+    def testFacetIterators(self):
+        """Iterate over facets"""
+        mesh = UnitCube(5, 5, 5)
+        mesh.init(2);
+        n = 0
+        for f in facets(mesh):
+            n += 1
+        self.assertEqual(n, mesh.numFacets())
+
+    def testCellIterators(self):
+        """Iterate over cells"""
+        mesh = UnitCube(1, 1, 1)
+        n = 0
+        for c in cells(mesh):
+            n += 1
+        print "should be: " + str(mesh.numCells())
+        self.assertEqual(n, mesh.numCells())
+        
+    def testMixedIterators(self):
+        """Iterate over vertices of cells"""
+        mesh = UnitCube(5, 5, 5)
+        n = 0
+        for c in cells(mesh):
+            for v in vertices(c):
+                n += 1
+        self.assertEqual(n, 4*mesh.numCells())
+
+
 class PyCCInterface(unittest.TestCase):
 
     def testGetGeometricalDimension(self):

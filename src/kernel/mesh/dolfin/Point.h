@@ -63,6 +63,18 @@ namespace dolfin
     /// Subtract given point
     const Point& operator-= (const Point& p) { _x[0] -= p._x[0]; _x[1] -= p._x[1]; _x[2] -= p._x[2]; return *this; }
 
+    /// Multiplication with scalar
+    Point operator* (real a) const { Point p(a*_x[0], a*_x[1], a*_x[2]); return p; }
+
+    /// Incremental multiplication with scalar
+    const Point& operator*= (real a) { _x[0] *= a; _x[1] *= a; _x[2] *= a; return *this; }
+    
+    /// Division by scalar
+    Point operator/ (real a) const { Point p(_x[0]/a, _x[1]/a, _x[2]/a); return p; }
+
+    /// Incremental division by scalar
+    const Point& operator/= (real a) { _x[0] /= a; _x[1] /= a; _x[2] /= a; return *this; }
+
     /// Compute distance to given point
     real distance(const Point& p) const;
 
@@ -83,6 +95,9 @@ namespace dolfin
     real _x[3];
 
   };
+
+  /// Multiplication with scalar
+  inline Point operator*(real a, const Point& p) { return p*a; }
 
 }
 

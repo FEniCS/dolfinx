@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-05-08
-// Last changed: 2006-09-18
+// Last changed: 2006-10-25
 
 #ifndef __MESH_H
 #define __MESH_H
@@ -59,6 +59,15 @@ namespace dolfin
 
     /// Return number of vertices
     inline uint numVertices() const { return data.topology.size(0); }
+
+    /// Return number of edges
+    inline uint numEdges() const { return data.topology.size(1); }
+
+    /// Return number of faces
+    inline uint numFaces() const { return data.topology.size(2); }
+
+    /// Return number of facets
+    inline uint numFacets() const { return data.topology.size(data.topology.dim() - 1); }
 
     /// Return number of cells
     inline uint numCells() const { return data.topology.size(data.topology.dim()); }
