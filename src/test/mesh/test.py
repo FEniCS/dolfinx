@@ -51,7 +51,6 @@ class MeshIterators(unittest.TestCase):
     def testEdgeIterators(self):
         """Iterate over edges"""
         mesh = UnitCube(5, 5, 5)
-        mesh.init(1);
         n = 0
         for e in edges(mesh):
             n += 1
@@ -60,7 +59,6 @@ class MeshIterators(unittest.TestCase):
     def testFaceIterators(self):
         """Iterate over faces"""
         mesh = UnitCube(5, 5, 5)
-        mesh.init(2);
         n = 0
         for f in faces(mesh):
             n += 1
@@ -69,7 +67,6 @@ class MeshIterators(unittest.TestCase):
     def testFacetIterators(self):
         """Iterate over facets"""
         mesh = UnitCube(5, 5, 5)
-        mesh.init(2);
         n = 0
         for f in facets(mesh):
             n += 1
