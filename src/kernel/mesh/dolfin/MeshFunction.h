@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-05-22
-// Last changed: 2006-10-16
+// Last changed: 2006-10-25
 
 #ifndef __MESH_FUNCTION_H
 #define __MESH_FUNCTION_H
@@ -17,7 +17,7 @@ namespace dolfin
   /// mesh entities. A MeshFunction is discrete and is only defined
   /// at the set of mesh entities of a fixed topological dimension.
   /// A MeshFunction may for example be used to store a global
-  /// numbering scheme for the entities for a (parallel) mesh, marking
+  /// numbering scheme for the entities of a (parallel) mesh, marking
   /// sub domains or boolean markers for mesh refinement.
 
   template <class T> class MeshFunction
