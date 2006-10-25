@@ -24,4 +24,19 @@ namespace dolfin
     }
   };
 
+  class MyBC : public BoundaryCondition
+  {
+  public:
+    MyBC()
+    {
+    }
+    
+    void eval(BoundaryValue& value, const Point& p, unsigned int i)
+    {
+      if(p.x == 0.0)
+	value = 0.0;
+    }
+  };
+
+
 }

@@ -86,6 +86,7 @@ using namespace dolfin;
 
 /* fem imports */
 
+%%include \"dolfin/BoundaryCondition.h\"
 %%include \"dolfin/FiniteElement.h\"
 
 /* form imports */
