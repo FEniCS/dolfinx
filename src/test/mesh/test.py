@@ -78,7 +78,6 @@ class MeshIterators(unittest.TestCase):
         n = 0
         for c in cells(mesh):
             n += 1
-        print "should be: " + str(mesh.numCells())
         self.assertEqual(n, mesh.numCells())
         
     def testMixedIterators(self):
