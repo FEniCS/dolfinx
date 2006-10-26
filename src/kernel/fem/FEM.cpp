@@ -575,7 +575,6 @@ bool FEM::onFacet(const Point& p, Cell& facet)
     Point v2  = geometry.point(vertices[2]);
     Point v01 = v1 - v0;
     Point v02 = v2 - v0;
-    Point v0p = p - v0;
     Point n   = v01.cross(v02);
     return std::abs(n.dot(v0)) < DOLFIN_EPS;
   }
