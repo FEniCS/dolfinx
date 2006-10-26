@@ -85,4 +85,26 @@ def next(self):
 %include "dolfin/UnitCube.h"
 %include "dolfin/UnitSquare.h"
 
+// Extend Point interface with Python selectors
+%extend dolfin::Point {
+  real get(int i)
+  {
+    return (*self)[i];
+  }
 
+  void set(int i, real val)
+  {
+    (*self)[i] = val;
+  }
+}
+
+%pythoncode
+%{
+  def __getitem__(self, i):
+      return self.get(i)
+  def __setitem__(self, i, val):
+      self.set(i, val)
+
+  Point.__getitem__ = __getitem__
+  Point.__setitem__ = __setitem__
+%}

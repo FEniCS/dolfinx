@@ -30,6 +30,9 @@ namespace dolfin
     /// Destructor
     ~Point() {};
 
+    /// Return address of coordinate in direction i
+    inline real& operator[] (uint i) { dolfin_assert(i < 3); return _x[i]; }
+
     /// Return coordinate in direction i
     inline real operator[] (uint i) const { dolfin_assert(i < 3); return _x[i]; }
 

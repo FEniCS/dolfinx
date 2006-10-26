@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells 2005
 //
 // First added:  2005
-// Last changed: 2006-08-21
+// Last changed: 2006-10-26
 
 #include <dolfin.h>
 
@@ -58,7 +58,7 @@ public:
 	if ( d < dmin )
 	  dmin = d;
       }
-      h[v->id()] = dmin;
+      h[v->index()] = dmin;
       if ( dmin < hmin )
 	hmin = dmin;
     }
@@ -76,15 +76,15 @@ public:
 
       if ( i < offset )
       {
-	const Point& p = mesh.vertex(i).coord();
-	if ( fabs(p.x - x0) < 0.5*w )
-	  u(i) = 0.5*(cos(2.0*DOLFIN_PI*(p.x - x0)/w) + 1.0);
+	const Point p = mesh.geometry().point(i);
+	if ( std::abs(p.x() - x0) < 0.5*w )
+	  u(i) = 0.5*(cos(2.0*DOLFIN_PI*(p.x() - x0)/w) + 1.0);
       }
       else
       {
-	const Point& p = mesh.vertex(i - offset).coord();
-	if ( fabs(p.x - x0) < 0.5*w )
-	  u(i) = -(DOLFIN_PI/w)*sin(2.0*DOLFIN_PI*(p.x - x0)/w);
+	const Point p = mesh.geometry().point(i);
+	if ( std::abs(p.x() - x0) < 0.5*w )
+	  u(i) = -(DOLFIN_PI/w)*sin(2.0*DOLFIN_PI*(p.x() - x0)/w);
       }
     }
   }
