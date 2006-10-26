@@ -1,10 +1,8 @@
 from dolfin import *
 
 class ElasticityPDE(TimeDependentPDE):
-    def __init__(self, mesh, f, bc, T, t):
+    def __init__(self, mesh, f, bc, T):
         
-        self.t = t
-
         self.U = Function(Vector(), mesh)
         #self.V = Function(Vector(), mesh)
 
@@ -60,8 +58,6 @@ class ElasticityPDE(TimeDependentPDE):
             self.solutionfile << U_0
 
     def fu(self, x, dotx, t):
-
-        self.t.assign(t)
 
         self.U.vector().copy(x, 0, 0, self.U.vector().size())
 

@@ -902,15 +902,16 @@ void ElasticityUpdatedSolver::multB(real* F, real *B)
 //-----------------------------------------------------------------------------
 void ElasticityUpdatedSolver::deform(Mesh& mesh, Function& u)
 {
+  MeshGeometry& geometry = mesh.geometry();
+
   // Update the mesh
   for (VertexIterator n(mesh); !n.end(); ++n)
   {
-    //Vertex& vertex = *n;
+    Vertex& vertex = *n;
     
-    dolfin_error("vertex update not implemented");
-//     vertex.point().x() = u(vertex, 0);
-//     vertex.point().y() = u(vertex, 1);
-//     vertex.point().z() = u(vertex, 2);
+    geometry.x(vertex.index(), 0) = u(vertex, 0);
+    geometry.x(vertex.index(), 1) = u(vertex, 1);
+    geometry.x(vertex.index(), 2) = u(vertex, 2);
   }
 }
 //-----------------------------------------------------------------------------
@@ -934,8 +935,8 @@ void ElasticityUpdatedSolver::plasticity(Vector& xsigma, Vector& xsigmanorm,
     
     if(norm > yld)
     {
-//       cout << "sigmanorm(" << cell.index() << "): " << norm << endl;
-      proj = 1.0 / norm;
+//       cout << "sigmanorm(" << cell.id() << "): " << norm << endl;
+      proj = yld / norm;
     }
     
     xsigmanorm(nodes[0]) = proj;
