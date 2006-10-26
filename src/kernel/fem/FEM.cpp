@@ -416,7 +416,7 @@ void FEM::applyCommonBC(GenericMatrix* A, GenericVector* b,
   
   if( b )
     b->apply();
-  
+
   // Delete data
   delete [] nodes;
   delete [] components;
