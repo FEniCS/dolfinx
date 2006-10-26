@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells 2005, 2006.
 //
 // First added:  2004-05-19
-// Last changed: 2006-10-24
+// Last changed: 2006-10-26
 
 #include <dolfin/BilinearForm.h>
 #include <dolfin/LinearForm.h>
@@ -575,8 +575,9 @@ bool FEM::onFacet(const Point& p, Cell& facet)
     Point v2  = geometry.point(vertices[2]);
     Point v01 = v1 - v0;
     Point v02 = v2 - v0;
+    Point v0p = p - v0;
     Point n   = v01.cross(v02);
-    return std::abs(n.dot(v0)) < DOLFIN_EPS;
+    return std::abs(n.dot(v0p)) < DOLFIN_EPS;
   }
   
   dolfin_error("Unable to determine if given point is on facet.");
