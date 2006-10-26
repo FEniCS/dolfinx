@@ -548,8 +548,14 @@ void FEM::initConnectivity(Mesh& mesh)
   // This is a temporary fix. We need to get information from FFC about
   // which connectivity is needed for the mapping of nodes.
 
+  // This is needed to for the mapping of nodes
   for (uint i = 0; i < mesh.topology().dim(); i++)
     mesh.init(i);
+
+  // This is needed for higher order Lagrange elements (degree >= 4)
+  // to compute the alignment of faces
+  if ( mesh.topology().dim() == 3 )
+    mesh.init(3, 1);
 }
 //-----------------------------------------------------------------------------
 bool FEM::onFacet(const Point& p, Cell& facet)

@@ -14,6 +14,12 @@ AC_ARG_ENABLE(debug,
                              [Turn on debugging and warnings]),
               enable_debug=$enableval, enable_debug=no)
 
+# Option --enable/disable-debug-ublas
+AC_ARG_ENABLE(debug-ublas,
+              AC_HELP_STRING([--enable-debug-ublas],
+                             [Turn on extra debugging for uBlas, only works with --enable-debug]),
+              enable_debug_ublas=$enableval, enable_debug_ublas=no)
+
 # Option --enable/disable-optimization
 AC_ARG_ENABLE(optimization,
               AC_HELP_STRING([--enable-optimization],
@@ -190,7 +196,12 @@ CXXFLAGS="$CXXFLAGS -DNDEBUG"
 # Handle option --enable-debug
 if test x$enable_debug = xyes; then
     echo "enabling debugging compiler flags"
-    CXXFLAGS="-DDEBUG=1 -g -O2 -Wall -Werror -ansi"
+    if test x$enable_debug_ublas = xyes; then
+       echo "enabling extra uBlas debugging compiler flags"
+       CXXFLAGS="-DDEBUG -g -O2 -Wall -Werror -ansi"
+    else
+       CXXFLAGS="-DDEBUG -g -O2 -Wall -Werror -ansi -DNDEBUG"
+    fi
 fi 
 
 # Handle option --enable-optimization
@@ -198,6 +209,9 @@ if test x$enable_optimization = xyes; then
     echo "enabling optimizing compiler flags"
     CXXFLAGS="-O3  -Wall -ansi -DNDEBUG"
 fi
+
+# Handle option --enable-debug-ublas
+
 
 # Add compiler specific flags
 case "${ax_cv_cxx_compiler_vendor}" in
