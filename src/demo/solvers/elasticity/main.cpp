@@ -71,10 +71,7 @@ class MyBC : public BoundaryCondition
 
 int main(int argc, char **argv)
 {
-  dolfin_output("text");
-
-//   Mesh mesh("tetmesh-4.xml.gz");
-  UnitCube mesh(5, 5, 5);
+  Mesh mesh("tetmesh-4.xml.gz");
 
   Source f;
   InitialDisplacement u0;
