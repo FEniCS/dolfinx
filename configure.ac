@@ -457,7 +457,6 @@ AC_OUTPUT( Makefile \
            src/utils/Makefile \
            src/utils/inp2dx/Makefile \
            src/utils/convert/Makefile \
-           src/utils/swig/Makefile \
            src/greeting/Makefile \
            dolfin.pc )
 

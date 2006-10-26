@@ -1,1 +1,1 @@
-SUBDIRS = inp2dx convert swig
+SUBDIRS = inp2dx convert
