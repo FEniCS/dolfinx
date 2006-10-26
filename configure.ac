@@ -68,6 +68,9 @@ AC_ARG_WITH(amd-lib,
                            [Specify path to amd library (part of umfpack)]),
             [AMD_LIB_DIR=$with_amd_lib],)
 
+# Use C++ compiler for performing configure tests
+AC_LANG(C++)
+
 # Standard tests
 AC_PROG_CXX
 AC_PROG_CC
@@ -97,9 +100,6 @@ if test $libxml2_found = no; then
     echo "*** Perhaps you need to install the packages libxml2 and libxml2-dev?"
     exit 1
 fi
-
-# Use C++ compiler for performing configure tests
-AC_LANG(C++)
 
 AX_BOOST_BASE([1.33.1])
 
@@ -174,8 +174,6 @@ if test x$enable_pydolfin = xyes; then
       exit 1	
     fi    
 
-    echo $swig_found
-
     AC_PROG_SWIG(1.3.25)
 
     SWIG_ENABLE_CXX
@@ -198,21 +196,21 @@ fi
 # Handle option --enable-optimization
 if test x$enable_optimization = xyes; then
     echo "enabling optimizing compiler flags"
-    CXXFLAGS="-O2  -Wall -ansi -DNDEBUG"
+    CXXFLAGS="-O3  -Wall -ansi -DNDEBUG"
 fi
 
 # Add compiler specific flags
-case "${ax_cv_c_compiler_vendor}" in
+case "${ax_cv_cxx_compiler_vendor}" in
    gnu) 
         CXXFLAGS="$CXXFLAGS -pedantic -Wno-long-long -std=c++98"
         ;;
    intel)
-        echo "WARNING: Intel C++ compiler version <= 9.0 is incompatible with 
-        echo "header files gcc version <= 4.0". You can specify the version of 
-        echo "gcc header files to be used by setting the compiler option 
-        echo "-gcc-name=<name> through the environment variables"
-        echo "e.g. setenv INTEL_CXXFLAGS -gcc-name=gcc-3.4"
-        CXXFLAGS="$CXXFLAGS -wd383 -wd810 -wd869 -wd981 -wd1418 -wd1419 -wd1572 -wd1599 $INTEL_CXXFLAGS"
+        echo 'WARNING: Intel C++ compiler versions <= 9.0 are incompatible with' 
+        echo 'header files gcc version <= 4.0. You can specify the version of' 
+        echo 'gcc header files to be used by setting the compiler option' 
+        echo '-gcc-name=<name> through the environment variables'
+        echo 'e.g. export INTEL_CXXFLAGS="-gcc-name=gcc-3.4"'
+        CXXFLAGS="$CXXFLAGS -wd383 -wd654 -wd810 -wd869 -wd981 -wd1125 -wd1418 -wd1419 -wd1572 -wd1599 $INTEL_CXXFLAGS"
         ;;
 esac
 
@@ -375,6 +373,14 @@ for f in $DOLFIN_KERNEL; do
 done
 AC_SUBST(DOLFIN_LTLIBOBJS)
 
+# Generate standard environment variables for installation
+CONFIG='dolfin.conf'
+rm -f $CONFIG
+echo 'export PATH="'$prefix'/bin:$PATH"' >> $CONFIG
+echo 'export LD_LIBRARY_PATH="'$prefix'/lib:$LD_LIBRARY_PATH"' >> $CONFIG
+echo 'export PKG_CONFIG_PATH="'$prefix'/lib/pkgconfig:$PKG_CONFIG_PATH"' >> $CONFIG
+echo 'export PYTHONPATH="'$prefix'/lib/python'$PYTHON_VERSION'/site-packages:$PYTHONPATH"' >> $CONFIG
+
 # Export variables to makefiles
 AC_SUBST(PACKAGE_VERSION)
 AC_SUBST(PACKAGE_NAME)
@@ -382,7 +388,6 @@ AC_SUBST(PACKAGE_NAME)
 # List output to be generated: Makefiles and pkgconfig configuration
 AC_OUTPUT( Makefile \
            src/Makefile \
-           src/pre/Makefile \
            src/kernel/Makefile \
            src/kernel/common/Makefile \
            src/kernel/common/dolfin/Makefile \
@@ -434,8 +439,6 @@ AC_OUTPUT( Makefile \
            src/modules/stokes/dolfin/Makefile \
            src/lib/Makefile \
            src/pydolfin/Makefile \
-           src/config/Makefile \
-           src/post/Makefile \
            src/demo/Makefile \
            src/demo/fem/Makefile \
            src/demo/nls/Makefile \
@@ -454,10 +457,11 @@ AC_OUTPUT( Makefile \
            src/utils/Makefile \
            src/utils/inp2dx/Makefile \
            src/utils/convert/Makefile \
+           src/utils/swig/Makefile \
            src/greeting/Makefile \
            dolfin.pc )
 
-# Display some configuration options
+# Display help text
 echo "---------------------------------------------------------"
 echo "Configuration of DOLFIN finished. Now type"
 echo ""
@@ -481,29 +485,16 @@ echo "---------------------------------------------------------"
 __BINDIR=`echo $prefix/bin | sed -e 's/\//-/g'`
 __PATH=`echo $PATH | sed -e 's/\//-/g'`
 if test "$__PATH" = "`echo $__PATH | sed s/$__BINDIR//`"; then
-   echo 'Warning: installation directory is not in PATH.'
-   echo ''
-   echo 'To compile a program against DOLFIN (including the demos)'
-   echo 'you need to add the bin subdirectory of the installation'
-   echo 'diretory to your PATH which you can do with the command'
-   echo ''
-   echo "  export PATH=\"$prefix/bin:\$PATH\""
-   echo ''
-   echo 'for bash or, alternatively,'
-   echo ''
-   echo "  setenv PATH $prefix/bin:\${PATH}"
-   echo ''
-fi
-
-# Hint for PyDOLFIN when installed locally
-if test x$enable_pydolfin = xyes; then
-   echo 'To use the DOLFIN Python interface (PyDOLFIN), you may need'
-   echo 'set your PYTHONPATH which you can do with the command'
-   echo ''
-   echo "  export PYTHONPATH=\"$prefix/lib/python2.4/site-packages:\$PYTHONPATH\""
-   echo ''
-   echo 'for bash or, alternatively,'
-   echo ''
-   echo "  setenv PYTHONPATH $prefix/lib/python2.4/site-packages:\${PYTHONPATH}"
-   echo ''
+    echo 'Warning: Installation directory is not in PATH.'
+    echo ''
+    echo 'To compile a program against DOLFIN (including the demos)'
+    echo 'you need to update your environment variables to reflect'
+    echo 'the installation directory you have chosen for DOLFIN.'
+    echo 'A simple way to do this if you are using Bash-like shell'
+    echo 'is to source the file dolfin.conf:'
+    echo ''
+    echo '  source dolfin.conf'
+    echo ''
+    echo 'This will update the values for the environment variables'
+    echo 'PATH, LD_LIBRARY_PATH, PKG_CONFIG_PATH and PYTHONPATH.'
 fi

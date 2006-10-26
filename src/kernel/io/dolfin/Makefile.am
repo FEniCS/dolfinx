@@ -14,7 +14,6 @@ EXTRA_DIST = dolfin_io.h \
              XMLFiniteElementSpec.h \
              XMLMatrix.h \
              XMLMesh.h \
-             NewXMLMesh.h \
              XMLObject.h \
              XMLParameterList.h \
              XMLVector.h

@@ -17,7 +17,7 @@ class Density(Function):
 
 class SimpleBC(BoundaryCondition):
     def eval(self, value, point, i):
-        if point.x == 0.0:
+        if point[0] == 0.0:
             value.set(0.0)
 
 class InitialVelocity(Function):

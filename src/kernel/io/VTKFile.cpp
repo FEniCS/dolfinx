@@ -5,12 +5,11 @@
 // Modified by Kristian Oelgaard 2006.
 //
 // First added:  2005-07-05
-// Last changed: 2006-06-12
+// Last changed: 2006-10-16
 
 #include <dolfin/Mesh.h>
-#include <dolfin/NewMesh.h>
-#include <dolfin/NewVertex.h>
-#include <dolfin/NewCell.h>
+#include <dolfin/Vertex.h>
+#include <dolfin/Cell.h>
 #include <dolfin/Function.h>
 #include <dolfin/FiniteElement.h>
 #include <dolfin/Vector.h>
@@ -51,35 +50,7 @@ void VTKFile::operator<<(Mesh& mesh)
   // Increase the number of times we have saved the mesh
   counter++;
 
-  cout << "saved mesh " << mesh.number() << " times." << endl;
-
-  cout << "Saved mesh " << mesh.name() << " (" << mesh.label()
-       << ") to file " << filename << " in VTK format." << endl;
-}
-//----------------------------------------------------------------------------
-void VTKFile::operator<<(NewMesh& mesh)
-{
-  //dolfin_info("Saving mesh to VTK file.");
-  
-  // Update vtu file name and clear file
-  vtuNameUpdate(counter);
-
-  // Write pvd file
-  pvdFileWrite(counter);
-
-  // Write headers
-  VTKHeaderOpen(mesh);
-
-  // Write mesh
-  MeshWrite(mesh);
-  
-  // Close headers
-  VTKHeaderClose();
-
-  // Increase the number of times we have saved the mesh
-  counter++;
-
-  cout << "saved mesh " << mesh.number() << " times." << endl;
+  cout << "saved mesh " << counter << " times." << endl;
 
   cout << "Saved mesh " << mesh.name() << " (" << mesh.label()
        << ") to file " << filename << " in VTK format." << endl;
@@ -95,7 +66,7 @@ void VTKFile::operator<<(Function& u)
   // Write pvd file
   pvdFileWrite(counter);
     
-  const Mesh& mesh = u.mesh(); 
+  Mesh& mesh = u.mesh(); 
 
   // Write headers
   VTKHeaderOpen(mesh);
@@ -116,7 +87,7 @@ void VTKFile::operator<<(Function& u)
        << ") to file " << filename << " in VTK format." << endl;
 }
 //----------------------------------------------------------------------------
-void VTKFile::MeshWrite(const Mesh& mesh) const
+void VTKFile::MeshWrite(Mesh& mesh) const
 {
   // Open file
   FILE* fp = fopen(vtu_filename.c_str(), "a");
@@ -124,10 +95,10 @@ void VTKFile::MeshWrite(const Mesh& mesh) const
   // Write vertex positions
   fprintf(fp, "<Points>  \n");
   fprintf(fp, "<DataArray  type=\"Float64\"  NumberOfComponents=\"3\"  format=\"ascii\">  \n");
-  for (VertexIterator n(mesh); !n.end(); ++n)
+  for (VertexIterator v(mesh); !v.end(); ++v)
   {
-    Point p = n->coord();
-    fprintf(fp," %f %f %f \n", p.x, p.y, p.z);
+    Point p = v->point();
+    fprintf(fp," %f %f %f \n", p.x(), p.y(), p.z());
   }
   fprintf(fp, "</DataArray>  \n");
   fprintf(fp, "</Points>  \n");
@@ -137,57 +108,8 @@ void VTKFile::MeshWrite(const Mesh& mesh) const
   fprintf(fp, "<DataArray  type=\"Int32\"  Name=\"connectivity\"  format=\"ascii\">  \n");
   for (CellIterator c(mesh); !c.end(); ++c)
   {
-    for (VertexIterator n(c); !n.end(); ++n) fprintf(fp," %8d ",n->id());
-    fprintf(fp," \n");
-  }  
-  fprintf(fp, "</DataArray> \n");
-
-  // Write offset into connectivity array for the end of each cell
-  fprintf(fp, "<DataArray  type=\"Int32\"  Name=\"offsets\"  format=\"ascii\">  \n");
-  for (int offsets = 1; offsets <= mesh.numCells(); offsets++)
-  {
-    if (mesh.type() == Mesh::tetrahedra )   fprintf(fp, " %8d \n",  offsets*4);
-    if (mesh.type() == Mesh::triangles )    fprintf(fp, " %8d \n", offsets*3);
-  }
-  fprintf(fp, "</DataArray> \n");
-  
-  //Write cell type
-  fprintf(fp, "<DataArray  type=\"UInt8\"  Name=\"types\"  format=\"ascii\">  \n");
-  for (int types = 1; types <= mesh.numCells(); types++)
-  {
-    if (mesh.type() == Mesh::tetrahedra )   fprintf(fp, " 10 \n");
-    if (mesh.type() == Mesh::triangles )    fprintf(fp, " 5 \n");
-  }
-  fprintf(fp, "</DataArray> \n");
-  fprintf(fp, "</Cells> \n"); 
-  
-  // Close file
-  fclose(fp);
-}
-//----------------------------------------------------------------------------
-void VTKFile::MeshWrite(NewMesh& mesh) const
-{
-  // Open file
-  FILE* fp = fopen(vtu_filename.c_str(), "a");
-
-  // Write vertex positions
-  fprintf(fp, "<Points>  \n");
-  fprintf(fp, "<DataArray  type=\"Float64\"  NumberOfComponents=\"3\"  format=\"ascii\">  \n");
-  for (NewVertexIterator v(mesh); !v.end(); ++v)
-  {
-    NewPoint p = v->point();
-    fprintf(fp," %f %f %f \n", p.x(), p.y(), p.z());
-  }
-  fprintf(fp, "</DataArray>  \n");
-  fprintf(fp, "</Points>  \n");
-  
-  // Write cell connectivity
-  fprintf(fp, "<Cells>  \n");
-  fprintf(fp, "<DataArray  type=\"Int32\"  Name=\"connectivity\"  format=\"ascii\">  \n");
-  for (NewCellIterator c(mesh); !c.end(); ++c)
-  {
-    for (NewVertexIterator v(c); !v.end(); ++v)
-      fprintf(fp," %8d ",v->index());
+    for (VertexIterator v(c); !v.end(); ++v)
+      fprintf(fp," %8u ",v->index());
     fprintf(fp," \n");
   }  
   fprintf(fp, "</DataArray> \n");
@@ -196,21 +118,21 @@ void VTKFile::MeshWrite(NewMesh& mesh) const
   fprintf(fp, "<DataArray  type=\"Int32\"  Name=\"offsets\"  format=\"ascii\">  \n");
   for (uint offsets = 1; offsets <= mesh.numCells(); offsets++)
   {
-    if ( mesh.dim() == 3 )
-      fprintf(fp, " %8d \n",  offsets*4);
-    if ( mesh.dim() == 2 )
-      fprintf(fp, " %8d \n", offsets*3);
+    if (mesh.type().cellType() == CellType::tetrahedron )
+      fprintf(fp, " %8u \n",  offsets*4);
+    if (mesh.type().cellType() == CellType::triangle )
+      fprintf(fp, " %8u \n", offsets*3);
   }
   fprintf(fp, "</DataArray> \n");
   
-  // Write cell type
+  //Write cell type
   fprintf(fp, "<DataArray  type=\"UInt8\"  Name=\"types\"  format=\"ascii\">  \n");
   for (uint types = 1; types <= mesh.numCells(); types++)
   {
-    if ( mesh.dim() == 3 )
-      fprintf(fp, " 10\n");
-    if ( mesh.dim() == 2 )
-      fprintf(fp, " 5\n");
+    if (mesh.type().cellType() == CellType::tetrahedron )
+      fprintf(fp, " 10 \n");
+    if (mesh.type().cellType() == CellType::triangle )
+      fprintf(fp, " 5 \n");
   }
   fprintf(fp, "</DataArray> \n");
   fprintf(fp, "</Cells> \n"); 
@@ -225,7 +147,7 @@ void VTKFile::ResultsWrite(Function& u) const
   FILE *fp = fopen(vtu_filename.c_str(), "a");
   
   const FiniteElement& finite_element = u.element();
-  const Mesh& mesh = u.mesh();
+  Mesh& mesh = u.mesh();
 
   // Determine whether data is cell based (constant on cells) or vertex based
   bool cell_data = false;
@@ -361,7 +283,7 @@ void VTKFile::pvdFileWrite(int num)
 
 }
 //----------------------------------------------------------------------------
-void VTKFile::VTKHeaderOpen(const Mesh& mesh) const
+void VTKFile::VTKHeaderOpen(Mesh& mesh) const
 {
   // Open file
   FILE *fp = fopen(vtu_filename.c_str(), "a");
@@ -369,22 +291,7 @@ void VTKFile::VTKHeaderOpen(const Mesh& mesh) const
   // Write headers
   fprintf(fp, "<VTKFile type=\"UnstructuredGrid\"  version=\"0.1\"   >\n");
   fprintf(fp, "<UnstructuredGrid>  \n");
-  fprintf(fp, "<Piece  NumberOfPoints=\" %8d\"  NumberOfCells=\" %8d\">  \n",
-	  mesh.numVertices(), mesh.numCells());
-  
-  // Close file
-  fclose(fp);
-}
-//----------------------------------------------------------------------------
-void VTKFile::VTKHeaderOpen(NewMesh& mesh) const
-{
-  // Open file
-  FILE *fp = fopen(vtu_filename.c_str(), "a");
-  
-  // Write headers
-  fprintf(fp, "<VTKFile type=\"UnstructuredGrid\"  version=\"0.1\"   >\n");
-  fprintf(fp, "<UnstructuredGrid>  \n");
-  fprintf(fp, "<Piece  NumberOfPoints=\" %8d\"  NumberOfCells=\" %8d\">  \n",
+  fprintf(fp, "<Piece  NumberOfPoints=\" %8u\"  NumberOfCells=\" %8u\">  \n",
 	  mesh.numVertices(), mesh.numCells());
   
   // Close file

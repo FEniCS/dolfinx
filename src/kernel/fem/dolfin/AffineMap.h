@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2006.
 //
 // First added:  2005-05-17
-// Last changed: 2006-05-03
+// Last changed: 2006-10-23
 
 #ifndef __AFFINE_MAP_H
 #define __AFFINE_MAP_H
@@ -39,7 +39,7 @@ namespace dolfin
     void update(Cell& cell);
 
     /// Update map for facet of current element
-    void update(Cell& cell, uint facet);
+    void update(Cell& cell, Cell& facet);
 
     /// Map given point from the reference element (2D)
     Point operator() (real X, real Y) const;

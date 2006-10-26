@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells 2005.
 //
 // First added:  2005
-// Last changed: 2006-02-20
+// Last changed: 2006-10-16
 
 //#include <iostream>
 #include <sstream>
@@ -154,7 +154,7 @@ void ElasticityUpdatedSolver::init()
   int *nodes = new int[(*element1).spacedim()];
   real *coefficients = new real[(*element1).spacedim()];
 
-  for(CellIterator c(&mesh); !c.end(); ++c)
+  for(CellIterator c(mesh); !c.end(); ++c)
   {
     Cell& cell = *c;
 
@@ -219,14 +219,14 @@ void ElasticityUpdatedSolver::init()
 
   // The mesh points are the initial values of u
   int offset = mesh.numVertices();
-  for (VertexIterator n(&mesh); !n.end(); ++n)
+  for (VertexIterator n(mesh); !n.end(); ++n)
   {
     Vertex& vertex = *n;
-    int nid = vertex.id();
+    int nid = vertex.index();
 
-    x1_1(0 * offset + nid) = vertex.coord().x;
-    x1_1(1 * offset + nid) = vertex.coord().y;
-    x1_1(2 * offset + nid) = vertex.coord().z;
+    x1_1(0 * offset + nid) = vertex.point().x();
+    x1_1(1 * offset + nid) = vertex.point().y();
+    x1_1(2 * offset + nid) = vertex.point().z();
   }
 
   int dotu_x1offset = 0;
@@ -434,13 +434,13 @@ void ElasticityUpdatedSolver::fu()
   // Ultimately compute dotu = f(u, t)
 
   // Update the mesh
-  for (VertexIterator n(&mesh); !n.end(); ++n)
+  for (VertexIterator n(mesh); !n.end(); ++n)
   {
     Vertex& vertex = *n;
     
-    vertex.coord().x = u1(vertex, 0);
-    vertex.coord().y = u1(vertex, 1);
-    vertex.coord().z = u1(vertex, 2);
+    vertex.point().x() = u1(vertex, 0);
+    vertex.point().y() = u1(vertex, 1);
+    vertex.point().z() = u1(vertex, 2);
   }
 
   // Compute norm of stress (sigmanorm)
@@ -463,7 +463,7 @@ void ElasticityUpdatedSolver::fu()
 	
 	if(norm > yld)
 	{
-	  cout << "sigmanorm(" << cell.id() << "): " << norm << endl;
+	  cout << "sigmanorm(" << cell.index() << "): " << norm << endl;
 	  proj = 1.0 / norm;
 	}
 	
@@ -902,14 +902,16 @@ void ElasticityUpdatedSolver::multB(real* F, real *B)
 //-----------------------------------------------------------------------------
 void ElasticityUpdatedSolver::deform(Mesh& mesh, Function& u)
 {
+  MeshGeometry& geometry = mesh.geometry();
+
   // Update the mesh
-  for (VertexIterator n(&mesh); !n.end(); ++n)
+  for (VertexIterator n(mesh); !n.end(); ++n)
   {
     Vertex& vertex = *n;
     
-    vertex.coord().x = u(vertex, 0);
-    vertex.coord().y = u(vertex, 1);
-    vertex.coord().z = u(vertex, 2);
+    geometry.x(vertex.index(), 0) = u(vertex, 0);
+    geometry.x(vertex.index(), 1) = u(vertex, 1);
+    geometry.x(vertex.index(), 2) = u(vertex, 2);
   }
 }
 //-----------------------------------------------------------------------------
@@ -953,7 +955,7 @@ void ElasticityUpdatedSolver::finterpolate(Function& f1, Function& f2,
   int *nodes = new int[element.spacedim()];
   real *coefficients = new real[element.spacedim()];
 
-  for(CellIterator c(&mesh); !c.end(); ++c)
+  for(CellIterator c(mesh); !c.end(); ++c)
   {
     Cell& cell = *c;
 
@@ -1007,14 +1009,14 @@ void ElasticityUpdatedSolver::initu0(Vector& x0,
 {
   // The mesh points are the initial values of u
   int offset = mesh.numVertices();
-  for (VertexIterator n(&mesh); !n.end(); ++n)
+  for (VertexIterator n(mesh); !n.end(); ++n)
   {
     Vertex& vertex = *n;
-    int nid = vertex.id();
+    int nid = vertex.index();
 
-    x0(0 * offset + nid) = vertex.coord().x;
-    x0(1 * offset + nid) = vertex.coord().y;
-    x0(2 * offset + nid) = vertex.coord().z;
+    x0(0 * offset + nid) = vertex.point().x();
+    x0(1 * offset + nid) = vertex.point().y();
+    x0(2 * offset + nid) = vertex.point().z();
   }
 }
 //-----------------------------------------------------------------------------

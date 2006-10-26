@@ -1,12 +1,16 @@
 // Copyright (C) 2003-2006 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
+// Modified by Minh Do-Quang 2006
+//
 // First added:  2003-07-15
-// Last changed: 2006-02-20
+// Last changed: 2006-09-15
 
 #include <stdio.h>
 #include <dolfin/ParameterSystem.h>
 #include <dolfin/Mesh.h>
+#include <dolfin/Vertex.h>
+#include <dolfin/Cell.h>
 #include <dolfin/Function.h>
 #include <dolfin/dolfin_log.h>
 #include <dolfin/OpenDXFile.h>
@@ -63,6 +67,10 @@ void OpenDXFile::operator<<(Function& u)
   if ( frames.size() > 0 )
     removeSeries(fp);
 
+  // Write header first time
+  if ( ftell(fp) == 0 )
+    writeHeader(fp);
+
   // Write mesh
   if ( frames.size() == 0 || save_each_mesh )
     writeMesh(fp, u.mesh());
@@ -87,44 +95,53 @@ void OpenDXFile::writeHeader(FILE* fp)
 //-­---------------------------------------------------------------------------
 void OpenDXFile::writeMesh(FILE* fp, Mesh& mesh)
 {
-  // Check that we have a tetrahedral mesh
-  if ( mesh.type() != Mesh::tetrahedra )
-    dolfin_error("Mesh must be a 3D tetrahedral mesh for OpenDX file format.");
+  int meshdim, celldim;
+  if( mesh.type().cellType() == CellType::tetrahedron ) {
+    meshdim = 3;
+    celldim = 4;
+  } else {
+    meshdim = 2;
+    celldim = 3;
+  }
 
   // Write vertices
   fprintf(fp, "# A list of all vertex positions\n");
-  fprintf(fp, "object \"vertices %d\" class array type float rank 1 shape 3 items %d lsb binary data follows\n", 
-	  (int)frames.size(), mesh.numVertices());
+  fprintf(fp, "object \"vertices %d\" class array type float rank 1 shape %d items %u lsb binary data follows\n", 
+	    (int)frames.size(), meshdim, mesh.numVertices());
 
   for (VertexIterator n(mesh); !n.end(); ++n)
   {
-    Point p = n->coord();
+    Point p = n->point();
     
-    float x = (float) p.x;
-    float y = (float) p.y;
-    float z = (float) p.z;
+    float x = (float) p.x();
+    float y = (float) p.y();
+    float z = (float) p.z();
     
     fwrite(&x, sizeof(float), 1, fp);
     fwrite(&y, sizeof(float), 1, fp);
-    fwrite(&z, sizeof(float), 1, fp);
+    if ( mesh.type().cellType() == CellType::tetrahedron )
+      fwrite(&z, sizeof(float), 1, fp);
   }
   fprintf(fp,"\n\n");
 
   // Write cells
   fprintf(fp, "# A list of all cells (connections)\n");
-  fprintf(fp, "object \"cells %d\" class array type int rank 1 shape 4 items %d lsb binary data follows\n",
-	  (int)frames.size(), mesh.numCells());
+  fprintf(fp, "object \"cells %d\" class array type int rank 1 shape %d items %u lsb binary data follows\n",
+	  (int)frames.size(), celldim, mesh.numCells());
 
   for (CellIterator c(mesh); !c.end(); ++c)
   {  
     for (VertexIterator n(c); !n.end(); ++n)
     {
-      int id  = n->id();
+      int id  = n->index();
       fwrite(&id, sizeof(int), 1, fp);
     }
   }
   fprintf(fp, "\n");
-  fprintf(fp, "attribute \"element type\" string \"tetrahedra\"\n");
+  if ( mesh.type().cellType() == CellType::tetrahedron )
+    fprintf(fp, "attribute \"element type\" string \"tetrahedra\"\n");
+  else if ( mesh.type().cellType() == CellType::triangle )
+    fprintf(fp, "attribute \"element type\" string \"triangles\"\n");
   fprintf(fp, "attribute \"ref\" string \"positions\"\n");
   fprintf(fp, "\n");
 }
@@ -142,7 +159,7 @@ void OpenDXFile::writeMeshData(FILE* fp, Mesh& mesh)
 
   // Write data (cell diameter)
   fprintf(fp,"# Cell diameter\n");
-  fprintf(fp,"object \"diameter\" class array type float rank 0 items %d lsb binary data follows\n",
+  fprintf(fp,"object \"diameter\" class array type float rank 0 items %u lsb binary data follows\n",
 	  mesh.numCells());
   
   for (CellIterator c(mesh); !c.end(); ++c)
@@ -166,14 +183,16 @@ void OpenDXFile::writeFunction(FILE* fp, Function& u)
 {
   // Write header for object
   fprintf(fp,"# Values for [%s] at nodal points, frame %d\n", u.label().c_str(), (int)frames.size());
-  fprintf(fp,"object \"data %d\" class array type float rank 1 shape 1 items %d lsb binary data follows\n",
-	  (int)frames.size(), u.mesh().numVertices());
+  fprintf(fp,"object \"data %d\" class array type float rank 1 shape %u items %u lsb binary data follows\n",
+	  (int)frames.size(), u.vectordim(), u.mesh().numVertices());
   
   // Write data
   for (VertexIterator n(u.mesh()); !n.end(); ++n)
   {
-    float value = static_cast<float>(u(*n));
-    fwrite(&value, sizeof(float), 1, fp);
+    for(unsigned int i=0; i<u.vectordim(); i++) {
+      float value = static_cast<float>(u(*n, i));
+      fwrite(&value, sizeof(float), 1, fp);
+    }
   }
   fprintf(fp,"\n");
   fprintf(fp,"attribute \"dep\" string \"positions\"\n\n");

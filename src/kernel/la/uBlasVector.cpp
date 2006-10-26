@@ -84,17 +84,6 @@ real uBlasVector::norm(NormType type) const
   return norm_inf(*this);
 }
 //-----------------------------------------------------------------------------
-/*
-real uBlasVector::sum() const
-{
-  // FIXME: Find suitable uBlas call to compute sum
-  real s = 0.0;
-  for (uint i = 0; i < size(); i++)
-    s += (*this)(i);
-  return s;
-}
-*/
-//-----------------------------------------------------------------------------
 void uBlasVector::apply()
 {
   // Do nothing

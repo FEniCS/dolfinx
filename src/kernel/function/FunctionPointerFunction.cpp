@@ -50,7 +50,7 @@ real FunctionPointerFunction::operator()(const Point& p, uint i)
 real FunctionPointerFunction::operator() (const Vertex& vertex, uint i)
 {
   // Call function at given vertex
-  return (*f)(vertex.coord(), component + i);
+  return (*f)(vertex.point(), component + i);
 }
 //-----------------------------------------------------------------------------
 void FunctionPointerFunction::sub(uint i)

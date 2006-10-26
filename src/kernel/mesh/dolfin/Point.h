@@ -1,8 +1,10 @@
-// Copyright (C) 2002-2005 Johan Hoffman and Anders Logg.
+// Copyright (C) 2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
-// First added:  2002
-// Last changed: 2005-11-28
+// Modified by Garth N. Wells, 2006.
+//
+// First added:  2006-06-12
+// Last changed: 2006-10-23
 
 #ifndef __POINT_H
 #define __POINT_H
@@ -13,70 +15,93 @@
 namespace dolfin
 {
 
+  /// A Point represents a point in R^3 with coordinates x, y, z, or,
+  /// alternatively, a vector in R^3, supporting standard operations
+  /// like the norm, distances, scalar and vector products etc.
+
   class Point
   {
   public:
+
+    /// Create a point at (x, y, z)
+    Point(const real x = 0.0, const real y = 0.0, const real z =0.0) 
+      { _x[0] = x; _x[1] = y; _x[2] = z; }
+
+    /// Destructor
+    ~Point() {};
+
+    /// Return address of coordinate in direction i
+    inline real& operator[] (uint i) { dolfin_assert(i < 3); return _x[i]; }
+
+    /// Return coordinate in direction i
+    inline real operator[] (uint i) const { dolfin_assert(i < 3); return _x[i]; }
+
+    /// Return address of x-coordinate
+    inline real& x() { return _x[0]; }
+
+    /// Return address of y-coordinate
+    inline real& y() { return _x[1]; }
+
+    /// Return address of z-coordinate
+    inline real& z() { return _x[2]; }
+
+    /// Return x-coordinate
+    inline real x() const { return _x[0]; }
+
+    /// Return y-coordinate
+    inline real y() const { return _x[1]; }
+
+    /// Return z-coordinate
+    inline real z() const { return _x[2]; }
+
+    /// Compute sum of two points
+    Point operator+ (const Point& p) const { Point q(_x[0] + p._x[0], _x[1] + p._x[1], _x[2] + p._x[2]); return q; }
     
-    Point();
-    Point(real x);
-    Point(real x, real y);
-    Point(real x, real y, real z);
-    Point(const Point& p);
+    /// Compute difference of two points
+    Point operator- (const Point& p) const { Point q(_x[0] - p._x[0], _x[1] - p._x[1], _x[2] - p._x[2]); return q; }
 
-    ~Point();
+    /// Add given point
+    const Point& operator+= (const Point& p) { _x[0] += p._x[0]; _x[1] += p._x[1]; _x[2] += p._x[2]; return *this; }
 
-    /// Return distance to given point p
-    real dist(Point p) const;
+    /// Subtract given point
+    const Point& operator-= (const Point& p) { _x[0] -= p._x[0]; _x[1] -= p._x[1]; _x[2] -= p._x[2]; return *this; }
 
-    /// Return distance to given point (x,y,z)
-    real dist(real x, real y = 0.0, real z = 0.0) const;
+    /// Multiplication with scalar
+    Point operator* (real a) const { Point p(a*_x[0], a*_x[1], a*_x[2]); return p; }
 
-    /// Return norm of vector represented by point
+    /// Incremental multiplication with scalar
+    const Point& operator*= (real a) { _x[0] *= a; _x[1] *= a; _x[2] *= a; return *this; }
+    
+    /// Division by scalar
+    Point operator/ (real a) const { Point p(_x[0]/a, _x[1]/a, _x[2]/a); return p; }
+
+    /// Incremental division by scalar
+    const Point& operator/= (real a) { _x[0] /= a; _x[1] /= a; _x[2] /= a; return *this; }
+
+    /// Compute distance to given point
+    real distance(const Point& p) const;
+
+    /// Compute norm of point representing a vector from the origin
     real norm() const;
-    
-    /// Return midpoint on line to given point p
-    Point midpoint(Point p) const;
 
-    /// Cast to real, returning x
-    operator real() const;
+    /// Compute cross product with given vector
+    const Point cross(const Point& p) const;
 
-    /// Assignment from real, giving p = (x,0,0)
-    const Point& operator= (real x);
+    /// Compute dot product with given vector
+    real dot(const Point& p) const;
 
-    /// Add two points
-    Point operator+ (const Point& p) const;
-    
-    /// Subtract two points
-    Point operator- (const Point& p) const;
-
-    /// Scalar product
-    real operator* (const Point& p) const;
-    
-    /// Add point
-    const Point& operator+= (const Point& p);
-
-    /// Subtract point
-    const Point& operator-= (const Point& p);
-
-    /// Multiply by scalar
-    const Point& operator*= (real a);
-
-    /// Divide by scalar
-    const Point& operator/= (real a);
-
-    /// Cross product
-    Point cross(const Point& p) const;
-
-    /// The three coordinates
-    real x;
-    real y;
-    real z;
-    
     /// Output
-    friend LogStream& operator<<(LogStream& stream, const Point& p);
-    
+    friend LogStream& operator<< (LogStream& stream, const Point& p);
+
+  private:
+
+    real _x[3];
+
   };
 
+  /// Multiplication with scalar
+  inline Point operator*(real a, const Point& p) { return p*a; }
+
 }
-  
+
 #endif

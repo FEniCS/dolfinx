@@ -22,13 +22,13 @@ void PoissonSolver::solve()
   // Define the bilinear and linear forms
   BilinearForm* a = 0;
   LinearForm* L = 0;
-  if ( mesh.type() == Mesh::triangles )
+  if ( mesh.type().cellType() == CellType::triangle )
   {
     dolfin_info("Solving Poisson's equation (2D).");
     a = new Poisson2D::BilinearForm();
     L = new Poisson2D::LinearForm(f);
   } 
-  else if ( mesh.type() == Mesh::tetrahedra )
+  else if ( mesh.type().cellType() == CellType::tetrahedron )
   {
     dolfin_info("Solving Poisson's equation (3D).");
     a = new Poisson3D::BilinearForm();

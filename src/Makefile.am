@@ -4,4 +4,4 @@ else
 PYDOLFIN =
 endif
 
-SUBDIRS = pre kernel modules lib config $(PYDOLFIN) post utils greeting
+SUBDIRS = kernel modules lib $(PYDOLFIN) utils greeting

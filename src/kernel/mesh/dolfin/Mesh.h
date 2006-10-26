@@ -1,203 +1,138 @@
-// Copyright (C) 2002-2006 Johan Hoffman and Anders Logg.
+// Copyright (C) 2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
-// First added:  2002
-// Last changed: 2006-02-20
+// First added:  2006-05-08
+// Last changed: 2006-10-25
 
 #ifndef __MESH_H
 #define __MESH_H
 
-#include <dolfin/dolfin_log.h>
-#include <dolfin/Variable.h>
+#include <string>
 #include <dolfin/constants.h>
-#include <dolfin/PList.h>
-#include <dolfin/Point.h>
-#include <dolfin/Vertex.h>
-#include <dolfin/Cell.h>
-#include <dolfin/Edge.h>
-#include <dolfin/Face.h>
-#include <dolfin/BoundaryData.h>
+#include <dolfin/Variable.h>
 #include <dolfin/MeshData.h>
 
 namespace dolfin
 {
+  
+  class MeshTopology;
+  class MeshGeometry;
+  class CellType;
 
-  class MeshData;
-
-  /// A Mesh consists of Vertices, Cells, Edges, and Faces.
-  /// The data of a Mesh is accessed through iterators:
+  /// A Mesh consists of a set of connected and numbered mesh entities.
   ///
-  /// The Vertices of a Mesh is accessed through the class VertexIterator.
-  /// The Cells of a Mesh is accessed through the class CellIterator.
-  /// The Edges of a Mesh is accessed through the class EdgeIterator.
-  /// The Faces of a Mesh is accessed through the class FaceIterator.
+  /// Both the representation and the interface are dimension-independent,
+  /// but a concrete interface is also provided for standard named mesh
+  /// entities:
   ///
-  /// A Cell can represent either a Triangle or a Tetrahedron depending
-  /// on the type of the Mesh.
+  ///     Entity  Dimension  Codimension
+  ///
+  ///     Vertex      0           -
+  ///     Edge        1           -
+  ///     Face        2           -
+  ///
+  ///     Facet       -           1
+  ///     Cell        -           0
+  ///
+  /// When working with mesh iterators, all entities and connectivity
+  /// are precomputed automatically the first time an iterator is
+  /// created over any given topological dimension or connectivity.
   
   class Mesh : public Variable
   {
   public:
     
-    enum Type { triangles, tetrahedra };
-    
-    /// Create an empty mesh
+    /// Create empty mesh
     Mesh();
-
-    /// Create mesh from given file
-    Mesh(const char *filename);
 
     /// Copy constructor
     Mesh(const Mesh& mesh);
 
+    /// Create mesh from given file
+    Mesh(std::string filename);
+    
     /// Destructor
     ~Mesh();
 
-    ///--- Basic functions
+    /// Assignment
+    const Mesh& operator=(const Mesh& mesh);
 
-    /// Merge in another mesh. The two meshes are not connected by the
-    /// operation.
-    void merge(Mesh& mesh2);
+    /// Return number of vertices
+    inline uint numVertices() const { return data.topology.size(0); }
 
-    /// Compute connectivity
+    /// Return number of edges
+    inline uint numEdges() const { return data.topology.size(1); }
+
+    /// Return number of faces
+    inline uint numFaces() const { return data.topology.size(2); }
+
+    /// Return number of facets
+    inline uint numFacets() const { return data.topology.size(data.topology.dim() - 1); }
+
+    /// Return number of cells
+    inline uint numCells() const { return data.topology.size(data.topology.dim()); }
+
+    /// Return coordinates of all vertices
+    inline real* vertices() { return data.geometry.x(); }
+
+    /// Return coordinates of all vertices
+    inline const real* vertices() const { return data.geometry.x(); }
+
+    /// Return connectivity for all cells
+    inline uint* cells() { return data.topology(data.topology.dim(), 0)(); }
+
+    /// Return connectivity for all cells
+    inline const uint* cells() const { return data.topology(data.topology.dim(), 0)(); }
+
+    /// Return number of entities of given topological dimension
+    inline uint size(uint dim) const { return data.topology.size(dim); }
+    
+    /// Return mesh topology
+    inline MeshTopology& topology() { return data.topology; }
+
+    /// Return mesh topology
+    inline const MeshTopology& topology() const { return data.topology; }
+
+    /// Return mesh geometry
+    inline MeshGeometry& geometry() { return data.geometry; }
+
+    /// Return mesh geometry
+    inline const MeshGeometry& geometry() const { return data.geometry; }
+
+    /// Return mesh cell type
+    inline CellType& type() { dolfin_assert(data.cell_type); return *data.cell_type; }
+
+    /// Return mesh cell type
+    inline const CellType& type() const { dolfin_assert(data.cell_type); return *data.cell_type; }
+
+    /// Compute entities of given topological dimension and return number of entities
+    uint init(uint dim);
+
+    /// Compute connectivity between given pair of dimensions
+    void init(uint d0, uint d1);
+
+    /// Compute all entities and connectivity
     void init();
 
-    /// Clear mesh
-    void clear();
-
-    /// Return number of space dimensions of the mesh 
-    int numSpaceDim() const;
-
-    /// Return number of vertices in the mesh
-    int numVertices() const;
-
-    /// Return number of cells in the mesh
-    int numCells() const;
-
-    /// Return number of edges in the mesh
-    int numEdges() const;
-
-    /// Return number of faces in the mesh
-    int numFaces() const;
-
-    // Create a new vertex at given position
-    Vertex& createVertex(Point p);
-    Vertex& createVertex(real x, real y, real z);
-
-    // Create a new cell from the given vertices
-    Cell& createCell(int n0, int n1, int n2);
-    Cell& createCell(int n0, int n1, int n2, int n3);
-    Cell& createCell(Vertex& n0, Vertex& n1, Vertex& n2);
-    Cell& createCell(Vertex& n0, Vertex& n1, Vertex& n2, Vertex& n3);
-
-    // Create a new edge from the given vertices
-    Edge& createEdge(int n0, int n1);
-    Edge& createEdge(Vertex& n0, Vertex& n1);
-
-    // Create a new face from the given edges
-    Face& createFace(int e0, int e1, int e2);
-    Face& createFace(Edge& e0, Edge& e1, Edge& e2);
-    
-    // Remove vertex, cell, edge, face (use with care)
-    void remove(Vertex& vertex);
-    void remove(Cell& cell);
-    void remove(Edge& edge);
-    void remove(Face& face);
-
-    /// Return type of mesh
-    Type type() const;
-
-    /// Return given vertex (can also use a vertex iterator)
-    Vertex& vertex(uint id);
-
-    /// Return given cell (can also use a cell iterator)
-    Cell& cell(uint id);
-
-    /// Return given edge (can also use an edge iterator)
-    Edge& edge(uint id);
-
-    /// Return given face (can also use a face iterator)
-    Face& face(uint id);
-
-    /// Return boundary 
-    Boundary boundary();
-
-    ///--- Mesh refinement ---
-
-    /// Refine mesh
+    /// Refine mesh, either uniformly or according to cells marked for refinement
     void refine();
-
-    /// Refine uniformly (all cells marked)
-    void refineUniformly();
-    void refineUniformly(int i);
-
-    /// Return parent mesh
-    Mesh& parent();
-
-    /// Return child mesh
-    Mesh& child();
-
-    /// Comparison of two meshs
-    bool operator==(const Mesh& mesh) const;
-
-    /// Comparison of two meshs
-    bool operator!=(const Mesh& mesh) const;
-    
-    ///--- Output ---
 
     /// Display mesh data
     void disp() const;
-
-    /// Display condensed mesh data
-    friend LogStream& operator<< (LogStream& stream, const Mesh& mesh);
     
-    /// Friends
-    friend class GenericCell;
-    friend class Edge;
-    friend class XMLMesh;
-    friend class MeshInit;
-    friend class MeshRefinement;
-    friend class TriMeshRefinement;
-    friend class TetMeshRefinement;
-    friend class MeshHierarchy;
-    friend class Boundary;
-    friend class BoundaryInit;
-    friend class VertexIterator::MeshVertexIterator;
-    friend class VertexIterator::BoundaryVertexIterator;
-    friend class CellIterator::MeshCellIterator;
-    friend class EdgeIterator::MeshEdgeIterator;
-    friend class EdgeIterator::BoundaryEdgeIterator;
-    friend class FaceIterator::MeshFaceIterator;
-    friend class FaceIterator::BoundaryFaceIterator;
+    /// Output
+    friend LogStream& operator<< (LogStream& stream, const Mesh& mesh);
     
   private:
 
-    // Create a new mesh as a child to this mesh
-    Mesh& createChild();
-    
-
-    /// Swap data with given mesh
-    void swap(Mesh& mesh);
-
-    //--- Mesh data ---
+    // Friends
+    friend class MeshEditor;
 
     // Mesh data
-    MeshData* md;
-
-    // Boundary data
-    BoundaryData* bd;
-
-    // Parent mesh
-    Mesh* _parent;
-
-    // Child mesh
-    Mesh* _child;
+    MeshData data;
     
-    // Mesh type
-    Type _type;
-
   };
-  
+
 }
 
 #endif

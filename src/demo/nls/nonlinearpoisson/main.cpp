@@ -39,7 +39,7 @@ class MyFunction : public Function
 {
   real eval(const Point& p, unsigned int i)
   {
-    return time()*p.x*sin(p.y);
+    return time()*p.x()*sin(p.y());
   }
 };
 
@@ -48,7 +48,7 @@ class MyBC : public BoundaryCondition
 {
   void eval(BoundaryValue& value, const Point& p, unsigned int i)
   {
-    if ( std::abs(p.x - 1.0) < DOLFIN_EPS )
+    if ( std::abs(p.x() - 1.0) < DOLFIN_EPS )
       value = 1.0*time();
   }
 };
@@ -83,7 +83,7 @@ class MyNonlinearProblem : public NonlinearProblem
       dolfin_log(false);
       FEM::assemble(*a, *L, A, b, *_mesh);
       FEM::applyBC(A, *_mesh, a->test(), *_bc);
-      FEM::assembleResidualBC(b, x, *_mesh, a->test(), *_bc);
+      FEM::applyResidualBC(b, x, *_mesh, a->test(), *_bc);
       dolfin_log(true);
     }
 

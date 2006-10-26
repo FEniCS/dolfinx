@@ -15,7 +15,7 @@ class Density : public Function
 {
   real eval(const Point& p, unsigned int i)
   {
-    if(p.x < 0.01 && p.y > 0.0)
+    if(p.x() < 0.01 && p.y() > 0.0)
       return 1.0e3;
     else
       return 1.0e3;
@@ -50,7 +50,7 @@ class MyBC : public BoundaryCondition
 {
   void eval(BoundaryValue& value, const Point& p, unsigned int i)
   {
-    if(p.x == 0.0)
+    if(p.x() == 0.0)
       value = 0.0;
   }
 };

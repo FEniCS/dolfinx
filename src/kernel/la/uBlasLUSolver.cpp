@@ -81,7 +81,6 @@ dolfin::uint uBlasLUSolver::solve(const uBlasMatrix<ublas_sparse_matrix>& A, uBl
   double* xx = &(x.data() [0]);
   const double* bb = &(b.data() [0]);
 
-
   // Solve for transpose since we use compressed row format, and UMFPACK 
   // expects compressed column format
 

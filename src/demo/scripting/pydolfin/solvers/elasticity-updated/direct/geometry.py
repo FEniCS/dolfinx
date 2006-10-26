@@ -4,6 +4,7 @@ from dolfin import *
 import transform
 
 mesh = Mesh("tetmesh-1c.xml.gz")
+#mesh = Mesh("cell.xml")
 
 # Transform meshes
 A = Numeric.zeros([3, 3], 'd')

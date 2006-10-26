@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2006.
 //
 // First added:  2005-11-26
-// Last changed: 2006-05-30
+// Last changed: 2006-10-19
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Point.h>
@@ -15,6 +15,7 @@
 #include <dolfin/Vector.h>
 #include <dolfin/AffineMap.h>
 #include <dolfin/FiniteElement.h>
+#include <dolfin/Function.h>
 #include <dolfin/DiscreteFunction.h>
 
 using namespace dolfin;
@@ -106,7 +107,7 @@ real DiscreteFunction::operator() (const Vertex& vertex, uint i)
   local.init(*_element);
 
   // Get vertex nodes for all components
-  _element->vertexeval(local.vertex_nodes, vertex.id(), *_mesh);
+  _element->vertexeval(local.vertex_nodes, vertex.index(), *_mesh);
 
   // Pick value
   return (*_x)(mixed_offset + local.vertex_nodes[component + i]);
@@ -214,7 +215,7 @@ void DiscreteFunction::interpolate(Function& fsource)
   int *nodes = new int[e.spacedim()];
   real *coefficients = new real[e.spacedim()];
 
-  for(CellIterator c(&m); !c.end(); ++c)
+  for(CellIterator c(m); !c.end(); ++c)
   {
     Cell& cell = *c;
 

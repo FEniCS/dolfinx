@@ -1,3 +1,4 @@
+#include <iostream>
 #include <dolfin.h>
 
 namespace dolfin
@@ -14,8 +15,10 @@ namespace dolfin
     {
       if(time() > 1.0 && time() < 1.2)
       {
-	if(i == 0 && p.y > 1.0 && p.y <= 2.0)
+	if(i == 0 && p[1] > 1.0 && p[1] <= 2.0)
+        {
 	  return -800.0;
+        }
       }
       else
       {
@@ -33,7 +36,7 @@ namespace dolfin
     
     void eval(BoundaryValue& value, const Point& p, unsigned int i)
     {
-      if(p.x == 0.0)
+      if(p[0] == 0.0)
 	value = 0.0;
     }
   };

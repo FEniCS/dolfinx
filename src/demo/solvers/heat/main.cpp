@@ -15,7 +15,7 @@ class MyFunction : public Function
 {
   real eval(const Point& p, unsigned int i)
   {
-    return 10.0 * p.x*sin(p.y);
+    return 10.0 * p.x()*sin(p.y());
   }
 };
 
@@ -24,7 +24,7 @@ class MyBC : public BoundaryCondition
 {
   void eval(BoundaryValue& value, const Point& p, unsigned int i)
   {
-    if ( std::abs(p.x - 1.0) < DOLFIN_EPS )
+    if ( std::abs(p.x() - 1.0) < DOLFIN_EPS )
       value = 0.0;
   }
 };

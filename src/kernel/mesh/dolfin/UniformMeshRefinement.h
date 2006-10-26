@@ -12,7 +12,7 @@
 namespace dolfin
 {
 
-  class NewMesh;
+  class Mesh;
 
   /// This class implements uniform mesh refinement for different mesh types.
 
@@ -21,10 +21,10 @@ namespace dolfin
   public:
 
     /// Refine mesh uniformly according to mesh type
-    static void refine(NewMesh& mesh);
+    static void refine(Mesh& mesh);
 
     /// Refine simplicial mesh uniformly
-    static void refineSimplex(NewMesh& mesh);
+    static void refineSimplex(Mesh& mesh);
 
   };
 

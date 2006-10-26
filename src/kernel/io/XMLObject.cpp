@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2002-12-06
-// Last changed: 2006-05-23
+// Last changed: 2006-10-16
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/XMLObject.h>
@@ -25,7 +25,8 @@ int XMLObject::parseInt(const xmlChar* name, const xmlChar** attrs,
 {
   // Check that we got the data
   if ( !attrs )
-    dolfin_error1("Missing attributes for <%s> in XML file.", name);
+    dolfin_error2("Missing attribute \"%s\" for <%s> in XML file.",
+                  attribute, name);
   
   // Parse data
   for (uint i = 0; attrs[i]; i++)
@@ -55,7 +56,8 @@ dolfin::uint XMLObject::parseUnsignedInt(const xmlChar* name,
 {
   // Check that we got the data
   if ( !attrs )
-    dolfin_error1("Missing attributes for <%s> in XML file.", name);
+    dolfin_error2("Missing attribute \"%s\" for <%s> in XML file.",
+                  attribute, name);
   
   // Parse data
   for (uint i = 0; attrs[i]; i++)
@@ -89,7 +91,8 @@ real XMLObject::parseReal(const xmlChar* name, const xmlChar** attrs,
 {
   // Check that we got the data
   if ( !attrs )
-    dolfin_error1("Missing attributes for <%s> in XML file.", name);
+    dolfin_error2("Missing attribute \"%s\" for <%s> in XML file.",
+                  attribute, name);
   
   // Parse data
   for (uint i = 0; attrs[i]; i++)
@@ -118,7 +121,8 @@ std::string XMLObject::parseString(const xmlChar* name, const xmlChar** attrs,
 {
   // Check that we got the data
   if ( !attrs )
-    dolfin_error1("Missing attributes for <%s> in XML file.", name);
+    dolfin_error2("Missing attribute \"%s\" for <%s> in XML file.",
+                  attribute, name);
   
   // Parse data
   for (uint i = 0; attrs[i]; i++)

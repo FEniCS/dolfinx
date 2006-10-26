@@ -66,26 +66,26 @@ public:
   void nodemap(int nodes[], const Cell& cell, const Mesh& mesh) const
   {
     static unsigned int edge_reordering_0[2][3] = {{0, 1, 2}, {2, 1, 0}};
-    nodes[0] = cell.vertexID(0);
-    nodes[1] = cell.vertexID(1);
-    nodes[2] = cell.vertexID(2);
-    int alignment = cell.edgeAlignment(0);
-    int offset = mesh.numVertices();
-    nodes[3] = offset + 3*cell.edgeID(0) + edge_reordering_0[alignment][0];
-    nodes[4] = offset + 3*cell.edgeID(0) + edge_reordering_0[alignment][1];
-    nodes[5] = offset + 3*cell.edgeID(0) + edge_reordering_0[alignment][2];
-    alignment = cell.edgeAlignment(1);
-    nodes[6] = offset + 3*cell.edgeID(1) + edge_reordering_0[alignment][0];
-    nodes[7] = offset + 3*cell.edgeID(1) + edge_reordering_0[alignment][1];
-    nodes[8] = offset + 3*cell.edgeID(1) + edge_reordering_0[alignment][2];
-    alignment = cell.edgeAlignment(2);
-    nodes[9] = offset + 3*cell.edgeID(2) + edge_reordering_0[alignment][0];
-    nodes[10] = offset + 3*cell.edgeID(2) + edge_reordering_0[alignment][1];
-    nodes[11] = offset + 3*cell.edgeID(2) + edge_reordering_0[alignment][2];
-    offset = offset + 3*mesh.numEdges();
-    nodes[12] = offset + 3*cell.id() + 0;
-    nodes[13] = offset + 3*cell.id() + 1;
-    nodes[14] = offset + 3*cell.id() + 2;
+    nodes[0] = cell.entities(0)[0];
+    nodes[1] = cell.entities(0)[1];
+    nodes[2] = cell.entities(0)[2];
+    int alignment = cell.alignment(1, 0);
+    int offset = mesh.topology().size(0);
+    nodes[3] = offset + 3*cell.entities(1)[0] + edge_reordering_0[alignment][0];
+    nodes[4] = offset + 3*cell.entities(1)[0] + edge_reordering_0[alignment][1];
+    nodes[5] = offset + 3*cell.entities(1)[0] + edge_reordering_0[alignment][2];
+    alignment = cell.alignment(1, 1);
+    nodes[6] = offset + 3*cell.entities(1)[1] + edge_reordering_0[alignment][0];
+    nodes[7] = offset + 3*cell.entities(1)[1] + edge_reordering_0[alignment][1];
+    nodes[8] = offset + 3*cell.entities(1)[1] + edge_reordering_0[alignment][2];
+    alignment = cell.alignment(1, 2);
+    nodes[9] = offset + 3*cell.entities(1)[2] + edge_reordering_0[alignment][0];
+    nodes[10] = offset + 3*cell.entities(1)[2] + edge_reordering_0[alignment][1];
+    nodes[11] = offset + 3*cell.entities(1)[2] + edge_reordering_0[alignment][2];
+    offset = offset + 3*mesh.topology().size(1);
+    nodes[12] = offset + 3*cell.index() + 0;
+    nodes[13] = offset + 3*cell.index() + 1;
+    nodes[14] = offset + 3*cell.index() + 2;
   }
 
   void pointmap(Point points[], unsigned int components[], const AffineMap& map) const

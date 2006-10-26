@@ -152,7 +152,13 @@ class DirectPDE(TimeDependentPDE):
         FEM_assemble(self.L(), self.dotxv, self.mesh())
         FEM_applyBC(self.dotxv, self.mesh(), self.V.element(), self.bc())
         dolfin_log(True)
-    
+
+        #print "dotxv: "
+        #self.dotxv.disp()
+
+        #print "mesh: "
+        #self.mesh().disp()
+
         self.dotxv.axpy(1.0, self.xtmp)
 
         self.dotxv.axpy(1.0, self.bload)

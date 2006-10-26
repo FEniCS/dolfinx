@@ -3,17 +3,17 @@ import Numeric
 
 def transform(mesh, A, b):
 
-    vi = VertexIterator(mesh)
+    vi = vertices(mesh)
     while not vi.end():
 
-        v = Numeric.array([vi.coord().x,
-                           vi.coord().y,
-                           vi.coord().z])
+        v = Numeric.array([vi.point()[0],
+                           vi.point()[1],
+                           vi.point()[2]])
 
         v = Numeric.matrixmultiply(A, v) + b
 
-        vi.coord().x = v[0]
-        vi.coord().y = v[1]
-        vi.coord().z = v[2]
+        vi.point()[0] = v[0]
+        vi.point()[1] = v[1]
+        vi.point()[2] = v[2]
 
         vi.increment()

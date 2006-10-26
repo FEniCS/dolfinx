@@ -2,14 +2,14 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-05-11
-// Last changed: 2006-06-22
+// Last changed: 2006-10-23
 
 #ifndef __MESH_ENTITY_H
 #define __MESH_ENTITY_H
 
 #include <dolfin/constants.h>
 #include <dolfin/dolfin_log.h>
-#include <dolfin/NewMesh.h>
+#include <dolfin/Mesh.h>
 
 namespace dolfin
 {
@@ -22,16 +22,16 @@ namespace dolfin
   public:
 
     /// Constructor
-    MeshEntity(NewMesh& mesh, uint dim, uint index) : _mesh(mesh), _dim(dim), _index(index) {}
+    MeshEntity(Mesh& mesh, uint dim, uint index) : _mesh(mesh), _dim(dim), _index(index) {}
 
     /// Destructor
     ~MeshEntity() {}
 
     /// Return mesh associated with mesh entity
-    inline NewMesh& mesh() { return _mesh; }
+    inline Mesh& mesh() { return _mesh; }
 
     /// Return mesh associated with mesh entity
-    inline const NewMesh& mesh() const { return _mesh; }
+    inline const Mesh& mesh() const { return _mesh; }
 
     /// Return topological dimension
     inline uint dim() const { return _dim; }
@@ -39,14 +39,20 @@ namespace dolfin
     /// Return index of mesh entity
     inline uint index() const { return _index; }
 
-    /// Return number of connections
-    inline uint numConnections(uint dim) const { return _mesh.topology()(_dim, dim).size(_index); }
+    /// Return number of incident mesh entities of given topological dimension
+    inline uint numEntities(uint dim) const { return _mesh.topology()(_dim, dim).size(_index); }
 
-    /// Return array of connections to entities of given topological dimension
-    inline uint* connections(uint dim) { return _mesh.topology()(_dim, dim)(_index); }
+    /// Return array of indices for incident mesh entitites of given topological dimension
+    inline uint* entities(uint dim) { return _mesh.topology()(_dim, dim)(_index); }
 
-    /// Return array of connections to entities of given topological dimension
-    inline const uint* connections(uint dim) const { return _mesh.topology()(_dim, dim)(_index); }
+    /// Return array of indices for incident mesh entitites of given topological dimension
+    inline const uint* entities(uint dim) const { return _mesh.topology()(_dim, dim)(_index); }
+
+    /// Check if given entity is indicent
+    bool incident(const MeshEntity& entity) const;
+
+    /// Compute local index of given incident entity (error if not found)
+    uint index(const MeshEntity& entity) const;
 
     /// Output
     friend LogStream& operator<< (LogStream& stream, const MeshEntity& entity);
@@ -57,7 +63,7 @@ namespace dolfin
     friend class MeshEntityIterator;
 
     // The mesh
-    NewMesh& _mesh;
+    Mesh& _mesh;
 
     // Topological dimension
     uint _dim;

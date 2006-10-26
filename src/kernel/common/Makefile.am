@@ -3,10 +3,6 @@ SUBDIRS = dolfin
 nobase_include_HEADERS = dolfin/dolfin_common.h \
                          dolfin/Array.h \
                          dolfin/List.h \
-                         dolfin/PArray.h \
-                         dolfin/PList.h \
-                         dolfin/Table.h \
-                         dolfin/Tensor.h \
                          dolfin/TimeDependent.h \
                          dolfin/Variable.h \
                          dolfin/timing.h \
@@ -17,7 +13,7 @@ INCLUDES = @KERNEL_CFLAGS@
 lib_LTLIBRARIES = libdolfin-common.la
 
 libdolfin_common_la_SOURCES = TimeDependent.cpp \
-			     Variable.cpp \
-                             timing.cpp \
-                             utils.cpp
+			      Variable.cpp \
+                              timing.cpp \
+                              utils.cpp
 libdolfin_common_la_LDFLAGS = -static

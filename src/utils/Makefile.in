@@ -194,7 +194,7 @@ sharedstatedir = @sharedstatedir@
 swig_found = @swig_found@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
-SUBDIRS = inp2dx convert
+SUBDIRS = inp2dx convert swig
 all: all-recursive
 
 .SUFFIXES:

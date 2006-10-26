@@ -3,6 +3,9 @@ prefix=@prefix@
 exec_prefix=@exec_prefix@
 libdir=@libdir@
 includedir=@includedir@
+compiler=@CXX@
+definitions=@DOLFIN_DEFINITIONS@
+swigcflags=@PYTHON_CPPFLAGS@ 
 
 Name: DOLFIN
 Description: Dynamic Object-oriented Library for FINite element computation

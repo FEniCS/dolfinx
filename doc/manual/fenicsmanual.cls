@@ -30,6 +30,7 @@
 \setlength{\parskip}{12pt}
 \allsectionsfont{\sffamily}
 \makeindex
+\sloppy
 
 %--- Remove header and footer from blank pages  ---
 \let\origdoublepage\cleardoublepage

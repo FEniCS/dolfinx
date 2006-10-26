@@ -5,36 +5,29 @@
 // Modified by Kristian Oelgaard 2006.
 //
 // First added:  2004-05-19
-// Last changed: 2006-09-29
+// Last changed: 2006-10-24
 
 #ifndef __FEM_H
 #define __FEM_H
 
 #include <dolfin/constants.h>
-#include <dolfin/AffineMap.h>
-
-#include <dolfin/GenericMatrix.h>
-#include <dolfin/GenericVector.h>
-#include <dolfin/DenseMatrix.h>
-#include <dolfin/Vector.h>
-#include <dolfin/SparseMatrix.h>
-#include <dolfin/Vector.h>
-
-#include <dolfin/Mesh.h>
-#include <dolfin/Boundary.h>
-#include <dolfin/BoundaryValue.h>
-#include <dolfin/BoundaryCondition.h>
-#include <dolfin/BoundaryFacetIterator.h>
-
-#include <dolfin/FiniteElement.h>
-#include <dolfin/BilinearForm.h>
-#include <dolfin/LinearForm.h>
-#include <dolfin/Functional.h>
 
 // FIXME: Ensure constness where appropriate
 
 namespace dolfin
 {
+  
+  class BilinearForm;
+  class LinearForm;
+  class Functional;
+  class Mesh;
+  class Cell;
+  class Point;
+  class GenericMatrix;
+  class GenericVector;
+  class FiniteElement;
+  class BoundaryCondition;
+  class AffineMap;
 
   /// Automated assembly of a linear system from a given partial differential
   /// equation, specified as a variational problem: Find U in V such that
@@ -78,38 +71,37 @@ namespace dolfin
     static void applyBC(GenericVector& b, Mesh& mesh,
 			FiniteElement& element, BoundaryCondition& bc);
 
-    /// Assemble boundary conditions into residual vector, with b = x - bc
-    /// for Dirichlet and b = x - bc for Neumann boundary conditions
-    static void assembleResidualBC(GenericMatrix& A, GenericVector& b,
-				   const GenericVector& x, Mesh& mesh,
-				   FiniteElement& element, BoundaryCondition& bc);
-    
-    /// Assemble boundary conditions into residual vector, with b = x - bc
-    /// for Dirichlet and b = x - bc for Neumann boundary conditions
-    static void assembleResidualBC(GenericVector& b,
-				   const GenericVector& x, Mesh& mesh,
-				   FiniteElement& element, BoundaryCondition& bc);
+    /// Apply boundary conditions with b = bc - x at Dirichlet nodes
+    static void applyResidualBC(GenericMatrix& A, GenericVector& b,
+                                const GenericVector& x, Mesh& mesh,
+                                FiniteElement& element, BoundaryCondition& bc);
+
+    /// Apply boundary conditions with b = bc - x at Dirichlet nodes
+    static void applyResidualBC(GenericVector& b,
+                                const GenericVector& x, Mesh& mesh,
+                                FiniteElement& element, BoundaryCondition& bc);
 
     /// Lump matrix (cannot mix matrix vector and matrix types when lumping)
-    template < class A, class X > 
-    static void lump(const A& M, X& m)
-      { M.lump(m); }
+    template < class A, class X > static void lump(const A& M, X& m) { M.lump(m); }
 
     /// Count the degrees of freedom
-    static uint size(const Mesh& mesh, const FiniteElement& element);
+    static uint size(Mesh& mesh, const FiniteElement& element);
 
     /// Display assembly data (useful for debugging)
-    static void disp(const Mesh& mesh, const FiniteElement& element);
+    static void disp(Mesh& mesh, const FiniteElement& element);
       
   private:
 
-    /// Common assembly for bilinear and linear forms
+    /// Common assembly handles all cases
     static void assembleCommon(BilinearForm* a, LinearForm* L, Functional* M,
-			       GenericMatrix* A, GenericVector* b, real* val, Mesh& mesh);
+			       GenericMatrix* A, GenericVector* b, real* val,
+			       Mesh& mesh);
 
-    /// Create iterator and call function to apply boundary conditions
-    static void applyCommonBC(GenericMatrix* A, GenericVector* b, const GenericVector* x,
-			      Mesh& mesh, FiniteElement& element, BoundaryCondition& bc);
+    /// Common application of boundary conditions handles all cases
+    static void applyCommonBC(GenericMatrix* A, GenericVector* b, 
+			      const GenericVector* x, Mesh& mesh,
+			      FiniteElement& element, BoundaryCondition& bc);
+
 
     /// Check that dimension of the mesh matches the form
     static void checkDimensions(const BilinearForm& a, const Mesh& mesh);
@@ -118,338 +110,30 @@ namespace dolfin
     static void checkDimensions(const LinearForm& L, const Mesh& mesh);
 
     /// Estimate the maximum number of nonzeros in each row
-    static uint estimateNonZeros(const Mesh& mesh, const FiniteElement& element);
+    static uint estimateNonZeros(Mesh& mesh, const FiniteElement& element);
 
     /// Check actual number of nonzeros in each row
     static void countNonZeros(const GenericMatrix& A, uint nz);
-
-    // Since the current mesh interface is dimension-dependent, the functions
-    // assembleCommon() and applyCommonBC() need to be templated. They won't
-    // have to be when the new mesh interface is in place.
-
-    template<class V, class W>
-    static void assembleCommon(BilinearForm* a, LinearForm* L, Functional* M,
-			       GenericMatrix* A, GenericVector* b, real* val,
-			       Mesh& mesh, BoundaryFacetIterator<V, W>& facet);
-
-    template <class V, class W>
-    static void applyCommonBC(GenericMatrix* A, GenericVector* b, 
-			      const GenericVector* x, Mesh& mesh,
-			      FiniteElement& element, BoundaryCondition& bc, 
-			      BoundaryFacetIterator<V, W>& facet);
-
+    
     /// Assemble bilinear form for an element
     static void assembleElement(BilinearForm& a, GenericMatrix& A, 
-      const Mesh& mesh, const Cell& cell, AffineMap& map, const int facetID);
+                                const Mesh& mesh, const Cell& cell, AffineMap& map, const int facetID);
 
     /// Assemble linear form for an element
     static void assembleElement(LinearForm& L, GenericVector& b, const Mesh& mesh, 
-                      const Cell& cell, AffineMap& map, const int facetID);
+                                const Cell& cell, AffineMap& map, const int facetID);
 
     /// Assemble fucntional for an element
     static void assembleElement(Functional& M, real& val, AffineMap& map,
-                                   const int facetID);
+                                const int facetID);
+
+    /// Initialize mesh connectivity for use in node map
+    static void initConnectivity(Mesh& mesh);
+    
+    /// Check if the point is in the same plane as the given facet
+    static bool onFacet(const Point& p, Cell& facet);
+    
   };
-  //-------------------------------------------------------------------------------
-  // Template and inline function definitions  
-  //-------------------------------------------------------------------------------
-  template<class V, class W>
-  void FEM::assembleCommon(BilinearForm* a, LinearForm* L, Functional* M,
-	       GenericMatrix* A, GenericVector* b, real* val,
-	       Mesh& mesh, BoundaryFacetIterator<V, W>& facet)
-  {
-    // Check that the mesh matches the forms
-    if ( a )
-      checkDimensions(*a, mesh);
-    if ( L )
-      checkDimensions(*L, mesh);
-    // FIXME: Add dimension check for M
- 
-    // Create affine map
-    AffineMap map;
-
-    // Initialize element matrix/vector data block
-    uint nz = 0;
-    bool interior_contribution = false;
-    bool boundary_contribution = false;
-    if ( a )
-    { 
-      const uint M = size(mesh, a->test());
-      const uint N = size(mesh, a->trial());
-      nz = estimateNonZeros(mesh, a->trial());
-      A->init(M, N, nz);
-      A->zero();
-      interior_contribution = interior_contribution || a->interior_contribution();
-      boundary_contribution = boundary_contribution || a->boundary_contribution();
-      dolfin_info("Assembling system (matrix and vector) of size %d x %d.", M, N);
-    }
-    if ( L )
-    {
-      const uint M = size(mesh, L->test());
-      b->init(M);
-      b->zero();
-      interior_contribution = interior_contribution || L->interior_contribution();
-      boundary_contribution = boundary_contribution || L->boundary_contribution();
-      dolfin_info("Assembling vector of size %d.", M);
-    }
-    if ( M )
-    {
-      *val = 0.0;
-      interior_contribution = interior_contribution || M->interior_contribution();
-      boundary_contribution = boundary_contribution || M->boundary_contribution();
-      dolfin_info("Assembling functional.");
-    }
-
-    // Assemble interior contribution
-    if ( interior_contribution )
-    {
-      // Start a progress session
-      Progress p("Assembling interior contributions", mesh.numCells());
-	
-      // Iterate over all cells in the mesh
-      for (CellIterator cell(mesh); !cell.end(); ++cell)
-      {
-        // Update affine map
-        map.update(*cell);
-	  
-        // Assemble bilinear form
-        if ( a )
-          if ( a->interior_contribution() )
-            assembleElement(*a, *A, mesh, *cell, map, -1);              
-        
-        // Assemble linear form
-        if ( L )
-          if ( L->interior_contribution() )
-            assembleElement(*L, *b, mesh, *cell, map, -1);              
-        
-        // Assemble functional
-        if ( M )
-          if ( M->interior_contribution() )
-            assembleElement(*M, *val, map, -1);              
-        
-        // Update progress
-        p++;
-      }
-    }
-
-    // Assemble boundary contribution
-    if ( boundary_contribution )
-    {
-      // Iterate over all facets on the boundary
-      Boundary boundary(mesh);
-      Progress p_boundary("Assembling boundary contributions", boundary.numFacets());
-      for ( ; !facet.end(); ++facet)
-      {
-        // Get cell containing the edge (pick first, should only be one)
-        dolfin_assert(facet.numCellNeighbors() == 1);
-        Cell& cell = facet.cell(0);
-	  
-        // Get local facet ID
-        uint facetID = facet.localID(0);
-	  
-        // Update affine map for facet 
-        map.update(cell, facetID);
-	  
-        // Assemble bilinear form
-        if ( a )
-          if ( a->boundary_contribution() )
-            assembleElement(*a, *A, mesh, cell, map, facetID);              
-
-        // Assemble linear form
-        if ( L )
-          if ( L->boundary_contribution() )
-            assembleElement(*L, *b, mesh, cell, map, facetID);              
-	    
-        // Assemble functional
-        if ( M )
-          if ( M->boundary_contribution() )
-            assembleElement(*M, *val, map, facetID);              
-	  
-        // Update progress  
-        p_boundary++;
-      }
-    }
-
-    // Complete assembly
-    if ( a )
-    {
-      A->apply();
-      countNonZeros(*A, nz);
-    }
-    if ( L )
-      b->apply();
-  }
-  //-------------------------------------------------------------------------------
-  template <class V, class W>
-  void FEM::applyCommonBC(GenericMatrix* A, GenericVector* b, 
-                            const GenericVector* x, Mesh& mesh,
-                            FiniteElement& element, BoundaryCondition& bc, 
-                            BoundaryFacetIterator<V, W>& facet)
-  {
-    // Create boundary value
-    BoundaryValue bv;
-    
-    // Create affine map
-    AffineMap map;
-    
-    // Compute problem size
-    uint size = 0;
-    if( A )
-      size = A->size(0);
-    else
-      size = b->size();
-    
-    // Allocate list of rows
-    uint m = 0;
-    int*  rows = 0;
-    if ( A )
-      rows = new int[size];
-    
-    bool* row_set = new bool[size];
-    for (unsigned int i = 0; i < size; i++)
-      row_set[i] = false;
-    
-    // Allocate local data
-    uint n = element.spacedim();
-    int* nodes = new int[n];
-    uint* components = new uint[n];
-    Point* points = new Point[n];
-    
-    real* block_b = 0;
-    int* node_list = 0;
-    if( b )
-    {
-      block_b   = new real[n];  
-      node_list = new int[n];  
-    }
-    
-    // Iterate over all edges/faces on the boundary
-    for ( ; !facet.end(); ++facet)
-    {
-      uint k = 0;
-
-      // Get cell containing the edge (pick first, should only be one)
-      dolfin_assert(facet.numCellNeighbors() == 1);
-      Cell& cell = facet.cell(0);
-
-      // Update affine map
-      map.update(cell);
-      // Compute map from local to global degrees of freedom
-      element.nodemap(nodes, cell, mesh);
-      // Compute map from local to global coordinates
-      element.pointmap(points, components, map);
-
-      // Set boundary conditions for nodes on the boundary
-      for (uint i = 0; i < n; i++)
-      {
-        // Skip points that are not contained in edge
-        const Point& point = points[i];
-        if ( !(facet.contains(point)) )
-          continue;
-
-        // Get boundary condition
-        bv.reset();
-        bc.eval(bv, point, components[i]);
-
-        // Set boundary condition if Dirichlet
-        if ( bv.fixed )
-        {
-          int node = nodes[i];
-          if ( !row_set[node] )
-          {
-            if ( x ) // Compute "residual" 
-              block_b[k] = bv.value - x->get(node);
-            else if ( b ) 
-              block_b[k] = bv.value;
-
-            row_set[node] = true;
-
-            if ( b )
-              node_list[k++] = node;
-            if ( A )
-              rows[m] = node;
-
-            m++;
-          }
-        }
-      }
-      if( b )
-        b->set(block_b, node_list, k);
-    }
-    dolfin_info("Boundary condition applied to %d degrees of freedom on the boundary.", m);
-
-    // Set rows of matrix to the identity matrix
-    if( A )
-      A->ident(rows, m);
-
-    if( b )
-      b->apply();
-
-    // Delete data
-    delete [] nodes;
-    delete [] components;
-    delete [] points;
-    delete [] rows;
-    delete [] row_set;
-    delete [] block_b;
-    delete [] node_list;
-  }
-  //-------------------------------------------------------------------------------
-  inline void FEM::assembleElement(BilinearForm& a, GenericMatrix& A, 
-      const Mesh& mesh, const Cell& cell, AffineMap& map, const int facetID)
-  {
-    // Update form
-    a.update(map);
-            
-    // Compute maps from local to global degrees of freedom
-    a.test().nodemap(a.test_nodes, cell, mesh);
-    a.trial().nodemap(a.trial_nodes, cell, mesh);
-            
-    // Compute element matrix 
-    if( facetID < 0 )
-      a.eval(a.block, map);
-    else
-      a.eval(a.block, map, facetID);
-
-    // Add element matrix to global matrix
-    A.add(a.block, a.test_nodes, a.test().spacedim(), a.trial_nodes, a.trial().spacedim());
-  }
-  //-----------------------------------------------------------------------------
-  inline void FEM::assembleElement(LinearForm& L, GenericVector& b, 
-    const Mesh& mesh, const Cell& cell, AffineMap& map, const int facetID)
-  {
-    // Update form
-    L.update(map);
-            
-    // Compute map from local to global degrees of freedom
-    L.test().nodemap(L.test_nodes, cell, mesh);
-            
-    // Compute element vector 
-    if( facetID < 0 )
-      L.eval(L.block, map);
-    else
-      L.eval(L.block, map, facetID);
-
-    // Add element vector to global vector
-    b.add(L.block, L.test_nodes, L.test().spacedim());
-  }
-  //-----------------------------------------------------------------------------
-  inline void FEM::assembleElement(Functional& M, real& val, AffineMap& map,
-                                        const int facetID)
-  {
-    // Update form
-    M.update(map);
-            
-    // Compute element entry
-    if( facetID < 0 )
-      M.eval(M.block, map);
-    else
-      M.eval(M.block, map, facetID);
-    
-    // Add element entry to global value
-    val += M.block[0];
-  }
-  //-----------------------------------------------------------------------------
 
 }
 
