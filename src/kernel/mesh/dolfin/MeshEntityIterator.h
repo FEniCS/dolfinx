@@ -49,7 +49,7 @@ namespace dolfin
     {
       // Compute entities if empty
       if ( pos_end == 0 )
-	pos_end = mesh.init(dim);
+        pos_end = mesh.init(dim);
     }
 
     /// Create iterator for entities of given dimension connected to given entity    
@@ -61,18 +61,18 @@ namespace dolfin
       
       // Compute connectivity if empty
       if ( c.size() == 0 )
-	entity.mesh().init(entity.dim(), dim);
+        entity.mesh().init(entity.dim(), dim);
       
       // Get size and index map
       if ( c.size() == 0 )
       {
-	pos_end = 0;
-	index = 0;
+        pos_end = 0;
+        index = 0;
       }
       else
       {
-	pos_end = c.size(entity.index());
-	index = c(entity.index());
+        pos_end = c.size(entity.index());
+        index = c(entity.index());
       }
     }
 
@@ -88,18 +88,18 @@ namespace dolfin
       
       // Compute connectivity if empty
       if ( c.size() == 0 )
-	entity.mesh().init(entity.dim(), dim);
+        entity.mesh().init(entity.dim(), dim);
       
       // Get size and index map
       if ( c.size() == 0 )
       {
-	pos_end = 0;
-	index = 0;
+        pos_end = 0;
+        index = 0;
       }
       else
       {
-	pos_end = c.size(entity.index());
-	index = c(entity.index());
+        pos_end = c.size(entity.index());
+        index = c(entity.index());
       }
     }
 

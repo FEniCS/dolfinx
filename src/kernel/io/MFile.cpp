@@ -111,7 +111,7 @@ void MFile::operator<<(Mesh& mesh)
   for (CellIterator c(mesh); !c.end(); ++c)
   {
     for (VertexIterator n(c); !n.end(); ++n)
-      fprintf(fp, "%d ", n->index() + 1);
+      fprintf(fp, "%u ", (n->index()) + 1 );
     
     if ( c.end() )
       fprintf(fp, "]';\n");

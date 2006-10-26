@@ -119,9 +119,9 @@ void VTKFile::MeshWrite(Mesh& mesh) const
   for (uint offsets = 1; offsets <= mesh.numCells(); offsets++)
   {
     if (mesh.type().cellType() == CellType::tetrahedron )
-      fprintf(fp, " %8d \n",  offsets*4);
+      fprintf(fp, " %8u \n",  offsets*4);
     if (mesh.type().cellType() == CellType::triangle )
-      fprintf(fp, " %8d \n", offsets*3);
+      fprintf(fp, " %8u \n", offsets*3);
   }
   fprintf(fp, "</DataArray> \n");
   

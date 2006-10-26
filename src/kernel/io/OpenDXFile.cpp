@@ -106,7 +106,7 @@ void OpenDXFile::writeMesh(FILE* fp, Mesh& mesh)
 
   // Write vertices
   fprintf(fp, "# A list of all vertex positions\n");
-  fprintf(fp, "object \"vertices %d\" class array type float rank 1 shape %d items %d lsb binary data follows\n", 
+  fprintf(fp, "object \"vertices %d\" class array type float rank 1 shape %d items %u lsb binary data follows\n", 
 	    (int)frames.size(), meshdim, mesh.numVertices());
 
   for (VertexIterator n(mesh); !n.end(); ++n)
@@ -126,7 +126,7 @@ void OpenDXFile::writeMesh(FILE* fp, Mesh& mesh)
 
   // Write cells
   fprintf(fp, "# A list of all cells (connections)\n");
-  fprintf(fp, "object \"cells %d\" class array type int rank 1 shape %d items %d lsb binary data follows\n",
+  fprintf(fp, "object \"cells %d\" class array type int rank 1 shape %d items %u lsb binary data follows\n",
 	  (int)frames.size(), celldim, mesh.numCells());
 
   for (CellIterator c(mesh); !c.end(); ++c)
@@ -159,7 +159,7 @@ void OpenDXFile::writeMeshData(FILE* fp, Mesh& mesh)
 
   // Write data (cell diameter)
   fprintf(fp,"# Cell diameter\n");
-  fprintf(fp,"object \"diameter\" class array type float rank 0 items %d lsb binary data follows\n",
+  fprintf(fp,"object \"diameter\" class array type float rank 0 items %u lsb binary data follows\n",
 	  mesh.numCells());
   
   for (CellIterator c(mesh); !c.end(); ++c)
@@ -183,7 +183,7 @@ void OpenDXFile::writeFunction(FILE* fp, Function& u)
 {
   // Write header for object
   fprintf(fp,"# Values for [%s] at nodal points, frame %d\n", u.label().c_str(), (int)frames.size());
-  fprintf(fp,"object \"data %d\" class array type float rank 1 shape %u items %d lsb binary data follows\n",
+  fprintf(fp,"object \"data %d\" class array type float rank 1 shape %u items %u lsb binary data follows\n",
 	  (int)frames.size(), u.vectordim(), u.mesh().numVertices());
   
   // Write data

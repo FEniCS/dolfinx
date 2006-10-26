@@ -36,12 +36,12 @@ void TecplotFile::operator<<(Mesh& mesh)
   fprintf(fp, "VARIABLES = ");
   if ( mesh.type().cellType() == CellType::tetrahedron ){
 	  fprintf(fp, " X1  X2  X3 \n");
-	  fprintf(fp, "ZONE T = \" - \" N = %8d, E = %8d, DATAPACKING = POINT, ZONETYPE=FETETRAHEDRON \n", 
+	  fprintf(fp, "ZONE T = \" - \" N = %8u, E = %8u, DATAPACKING = POINT, ZONETYPE=FETETRAHEDRON \n", 
 	     mesh.numVertices(), mesh.numCells());
   }
 	if ( mesh.type().cellType() == CellType::triangle ){    
 	  fprintf(fp, " X1  X2  X3 \n");
-    fprintf(fp, "ZONE T = \" - \"  N = %8d, E = %8d,  DATAPACKING = POINT, ZONETYPE=FETRIANGLE \n",   
+    fprintf(fp, "ZONE T = \" - \"  N = %8u, E = %8u,  DATAPACKING = POINT, ZONETYPE=FETRIANGLE \n",   
         mesh.numVertices(), mesh.numCells());
    }
 
@@ -59,7 +59,7 @@ void TecplotFile::operator<<(Mesh& mesh)
   // Write cell connectivity
   for (CellIterator c(mesh); !c.end(); ++c)
   {
-    for (VertexIterator n(c); !n.end(); ++n) fprintf(fp," %8d ",n->index()+1);
+    for (VertexIterator n(c); !n.end(); ++n) fprintf(fp," %u ",n->index()+1);
     fprintf(fp," \n");
   }  
 
@@ -82,10 +82,10 @@ void TecplotFile::operator<<(Function& u)
     fprintf(fp, "\n");	  
 
     if ( u.mesh().type().cellType() == CellType::tetrahedron )
-	     fprintf(fp, "ZONE T = \"%6u\" N = %8d, E = %8d, DATAPACKING = POINT, ZONETYPE=FETETRAHEDRON \n", 
+	     fprintf(fp, "ZONE T = \"%6u\" N = %8u, E = %8u, DATAPACKING = POINT, ZONETYPE=FETETRAHEDRON \n", 
 	         counter+1, u.mesh().numVertices(), u.mesh().numCells());
     if ( u.mesh().type().cellType() == CellType::triangle )
-       fprintf(fp, "ZONE T = \"%6u\"  N = %8d, E = %8d, DATAPACKING = POINT, ZONETYPE=FETRIANGLE \n",
+       fprintf(fp, "ZONE T = \"%6u\"  N = %8u, E = %8u, DATAPACKING = POINT, ZONETYPE=FETRIANGLE \n",
             counter+1, u.mesh().numVertices(), u.mesh().numCells());
 
 
@@ -104,7 +104,7 @@ void TecplotFile::operator<<(Function& u)
       // Write cell connectivity
      for (CellIterator c(u.mesh()); !c.end(); ++c)
      {
-       for (VertexIterator n(c); !n.end(); ++n) fprintf(fp," %8d ",n->index()+1);
+       for (VertexIterator n(c); !n.end(); ++n) fprintf(fp," %8u ",(n->index())+1);
        fprintf(fp," \n");
      }  
 
@@ -116,10 +116,10 @@ void TecplotFile::operator<<(Function& u)
       // Write header
 
     if ( u.mesh().type().cellType() == CellType::tetrahedron )
-      fprintf(fp, "ZONE T = \"%6u\" N = %8d, E = %8d,  DATAPACKING = POINT, ZONETYPE=FETETRAHEDRON, VARSHARELIST = ([1-3]=1) CONNECTIVITYSHAREZONE=1 \n", 
+      fprintf(fp, "ZONE T = \"%6u\" N = %8u, E = %8u,  DATAPACKING = POINT, ZONETYPE=FETETRAHEDRON, VARSHARELIST = ([1-3]=1) CONNECTIVITYSHAREZONE=1 \n", 
 	      counter+1, u.mesh().numVertices(), u.mesh().numCells());
     if ( u.mesh().type().cellType() == CellType::triangle )
-      fprintf(fp, "ZONE T = \"%6u\"  N = %8d, E = %8d, DATAPACKING = POINT, ZONETYPE=FETRIANGLE, VARSHARELIST = ([1,2]=1) CONNECTIVITYSHAREZONE=1 \n", 
+      fprintf(fp, "ZONE T = \"%6u\"  N = %8u, E = %8u, DATAPACKING = POINT, ZONETYPE=FETRIANGLE, VARSHARELIST = ([1,2]=1) CONNECTIVITYSHAREZONE=1 \n", 
               counter+1, u.mesh().numVertices(), u.mesh().numCells());
     
     // Write vertex locations and results

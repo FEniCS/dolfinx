@@ -199,10 +199,10 @@ void XMLFile::operator<<(Mesh& mesh)
   CellType::Type cell_type = mesh.type().cellType();
 
   // Write mesh in XML format
-  fprintf(fp, "  <mesh celltype=\"%s\" dim=\"%d\">\n",
+  fprintf(fp, "  <mesh celltype=\"%s\" dim=\"%u\">\n",
           CellType::type2string(cell_type).c_str(), mesh.geometry().dim());
 
-  fprintf(fp, "    <vertices size=\"%d\">\n", mesh.numVertices());
+  fprintf(fp, "    <vertices size=\"%u\">\n", mesh.numVertices());
   
   for(VertexIterator v(mesh); !v.end(); ++v)
   {
@@ -210,15 +210,15 @@ void XMLFile::operator<<(Mesh& mesh)
 
     switch ( mesh.geometry().dim() ) {
     case 1:
-      fprintf(fp, "      <vertex index=\"%d\" x=\"%g\"/>\n",
+      fprintf(fp, "      <vertex index=\"%u\" x=\"%g\"/>\n",
               v->index(), p.x());
       break;
     case 2:
-      fprintf(fp, "      <vertex index=\"%d\" x=\"%g\" y=\"%g\"/>\n",
+      fprintf(fp, "      <vertex index=\"%u\" x=\"%g\" y=\"%g\"/>\n",
               v->index(), p.x(), p.y());
       break;
     case 3:
-      fprintf(fp, "      <vertex index=\"%d\" x=\"%g\" y=\"%g\" z=\"%g\" />\n",
+      fprintf(fp, "      <vertex index=\"%u\" x=\"%g\" y=\"%g\" z=\"%g\" />\n",
               v->index(), p.x(), p.y(), p.z());
       break;
     default:
@@ -227,7 +227,7 @@ void XMLFile::operator<<(Mesh& mesh)
   }
 
   fprintf(fp, "    </vertices>\n");
-  fprintf(fp, "    <cells size=\"%d\">\n", mesh.numCells());
+  fprintf(fp, "    <cells size=\"%u\">\n", mesh.numCells());
 
   for (CellIterator c(mesh); !c.end(); ++c)
   {
@@ -237,19 +237,19 @@ void XMLFile::operator<<(Mesh& mesh)
     switch ( cell_type )
     {
     case CellType::interval:
-      fprintf(fp, "      <interval index=\"%d\" v0=\"%i\" v1=\"%i\"/>\n",
+      fprintf(fp, "      <interval index=\"%u\" v0=\"%u\" v1=\"%u\"/>\n",
 	      c->index(), vertices[0], vertices[1]);
       break;
     case CellType::triangle:
-      fprintf(fp, "      <triangle index=\"%d\" v0=\"%i\" v1=\"%i\" v2=\"%i\"/>\n",
+      fprintf(fp, "      <triangle index=\"%u\" v0=\"%u\" v1=\"%u\" v2=\"%u\"/>\n",
 	      c->index(), vertices[0], vertices[1], vertices[2]);
       break;
     case CellType::tetrahedron:
-      fprintf(fp, "      <tetrahedron index=\"%d\" v0=\"%i\" v1=\"%i\" v2=\"%i\" v3=\"%i\"/>\n",
+      fprintf(fp, "      <tetrahedron index=\"%u\" v0=\"%u\" v1=\"%u\" v2=\"%u\" v3=\"%u\"/>\n",
               c->index(), vertices[0], vertices[1], vertices[2], vertices[3]);
       break;
     default:
-      dolfin_error1("Unknown cell type: %d.", cell_type);
+      dolfin_error1("Unknown cell type: %u.", cell_type);
     }
   }
 
