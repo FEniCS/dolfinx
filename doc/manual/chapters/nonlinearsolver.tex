@@ -7,11 +7,10 @@
 \begin{equation}
   F(u) = 0
 \end{equation}
-where $F: \mathbb{R}^{n} \rightarrow \mathbb{R}^{n}$. The nonlinear solvers are
-based on Newton's method and utilise functions from PETSc \cite{www:petsc}.    
-
-To use the nonlinear solver, a nonlinear function must be defined. The nonlinear
-solver is then initialised with this function and a solution computed.
+where $F: \mathbb{R}^{n} \rightarrow \mathbb{R}^{n}$. 
+To use the nonlinear solver, a nonlinear function must be defined. 
+The nonlinear solver is then initialised with this function and a 
+solution computed.
 
 
 
@@ -23,7 +22,7 @@ should be derived from the \dolfin class \texttt{NonlinearFunction}. The class
 should contain the necessary functions to form the function $F(u)$ and the 
 Jacobian matrix  $J = \partial F / \partial u$. The precise form of the user 
 defined class will depend on the PDE being solved and the numerical method.
-The structu of a user defined class \texttt{MyNonlinearFunction} is shown below.
+The structure of a user defined class \texttt{MyNonlinearFunction} is shown below.
 \begin{code}
 class MyNonlinearFunction : public NonlinearFunction
 \{
@@ -68,7 +67,7 @@ class MyNonlinearFunction : public NonlinearFunction
 
 \subsection{Application of Dirichlet boundary conditions}
 
-The application of inhomogenuous Dirichlet boundary conditions in the context
+The application of inhomogeneous Dirichlet boundary conditions in the context
 of a Newton solver requires particular attention.
 
 
