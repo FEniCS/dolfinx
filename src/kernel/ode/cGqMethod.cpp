@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-05-02
-// Last changed: 2006-10-23
+// Last changed: 2006-10-26
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/dolfin_math.h>
@@ -17,7 +17,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 cGqMethod::cGqMethod(unsigned int q) : Method(q, q + 1, q)
 {
-  dolfin_info("Initializing continous Galerkin method cG(%d).", q);
+  dolfin_info("Initializing continuous Galerkin method cG(%d).", q);
 
   init();
 
