@@ -17,7 +17,7 @@ system("./dolfin-ode-reaction mcg fixed-point 1e-3 2000 1.0 parameters-bench.xml
 toc = time() - tic
 
 # Save timing to log file
-system("dolfin-config --version >> " + logfile)
+system("pkg-config --modversion dolfin >> " + logfile)
 system("date +'%Y-%m-%d %H:%M:%S' >> " + logfile)
 system("uname -snm >> " + logfile)
 file = open(logfile, "a")
