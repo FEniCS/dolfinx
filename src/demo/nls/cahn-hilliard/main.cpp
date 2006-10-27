@@ -86,7 +86,7 @@ int main(int argc, char* argv[])
   dolfin_init(argc, argv);
 
   // Mesh
-  UnitSquare mesh(40, 40);
+  UnitSquare mesh(100, 100);
 
   // Time stepping parameters
   real dt = 2.0e-6; real t  = 0.0; real T  = 500*dt;
