@@ -1,6 +1,7 @@
- - Remove unused classes PArray, PList, Table, Tensor
+0.6.3 [2006-10-27]
  - Move to new mesh library
  - Remove dolfin-config and move to pkg-config
+ - Remove unused classes PArray, PList, Table, Tensor	
  - Visualization of 2D solutions in OpenDX is now supported (3D supported before)
  - Add support for evaluation of functionals
  - Fix bug in Vector::sum() for uBlas vectors
