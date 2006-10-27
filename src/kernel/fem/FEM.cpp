@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells 2005, 2006.
 //
 // First added:  2004-05-19
-// Last changed: 2006-10-26
+// Last changed: 2006-10-27
 
 #include <dolfin/BilinearForm.h>
 #include <dolfin/LinearForm.h>
@@ -555,7 +555,7 @@ void FEM::initConnectivity(Mesh& mesh)
   // This is needed for higher order Lagrange elements (degree >= 4)
   // to compute the alignment of faces
   if ( mesh.topology().dim() == 3 )
-    mesh.init(3, 1);
+    mesh.init(2, 1);
 }
 //-----------------------------------------------------------------------------
 bool FEM::onFacet(const Point& p, Cell& facet)
