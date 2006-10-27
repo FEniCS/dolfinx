@@ -1,0 +1,145 @@
+#!/usr/bin/env python
+
+import os, sys
+from commands import getoutput
+
+# Simple tool to automatically convert a header file (with
+# implementation) including DOLFIN classes or functions to a Python
+# module.
+
+usage = """
+Usage: %s sourcefile [modulename]
+
+Example: dolfin-swig Poisson3D.h poisson3dform
+""" % os.path.basename(sys.argv[0])
+
+if len(sys.argv) < 2:
+    print usage
+
+name = sys.argv[1]
+name = name.rstrip(".h")
+
+if(len(sys.argv) > 2):
+    modulename = sys.argv[2]
+else:
+    lowername = name.lower()
+    modulename = lowername
+
+swigfile = modulename + ".i"
+
+print "Generating the SWIG interface file for the %s module" % name
+
+swigsource = """%%module %s
+
+%%{
+#include <dolfin.h>
+#include <string>
+
+#include \"%s.h\"
+
+using namespace dolfin;
+%%}
+
+%%typemap(python,in) real = double; 
+%%typemap(python,out) real = double; 
+%%typemap(python,in) uint = int; 
+%%typemap(python,out) uint = int; 
+
+// Typemaps for dolfin::real array arguments in virtual methods
+// probably not very safe
+%%typemap(directorin) dolfin::real [] {
+  {
+    // Custom typemap
+    $input = SWIG_NewPointerObj((void *) $1_name, $1_descriptor, $owner);
+  }
+}
+
+%%typemap(directorin) dolfin::real const [] {
+  {
+    // Custom typemap
+    $input = SWIG_NewPointerObj((void *) $1_name, $1_descriptor, $owner);
+  }
+}
+
+%%include \"typemaps.i\"
+%%include \"std_string.i\"
+
+%%include \"carrays.i\"
+
+%%include \"%s.i\"
+
+%%array_functions(dolfin::real, realArray);
+
+%%feature(\"director\") Function;
+%%feature(\"director\") BoundaryCondition;
+%%feature(\"director\") ODE;
+
+%%ignore dolfin::dolfin_set;
+%%ignore dolfin::dolfin_set_aptr;
+
+%%import \"dolfin.h\"
+%%import \"dolfin/constants.h\"
+
+/* function imports */
+
+%%import \"dolfin/Function.h\"
+
+/* fem imports */
+
+%%include \"dolfin/BoundaryCondition.h\"
+%%include \"dolfin/FiniteElement.h\"
+
+/* form imports */
+
+%%include \"dolfin/Form.h\"
+%%include \"dolfin/BilinearForm.h\"
+%%include \"dolfin/LinearForm.h\"
+
+/* form include */
+
+%%include \"%s.h\"
+""" % (modulename, name, name, name)
+
+swigoutput = open(swigfile, 'w')
+swigoutput.write(swigsource)
+swigoutput.close()
+
+print "Building the Python module"
+
+debugout = getoutput("swig -python -c++ -nodefault -dirprot `dolfin-config --includes` -o %s_wrap.cpp %s" % (modulename, swigfile))
+
+print debugout
+
+# FIXME: Workaround for apparent bug in SWIG, try to fix the bug.
+
+interfacefile = open("%s_wrap.cpp" % modulename)
+
+tmpfile = open("tmp.cpp", 'w')
+
+stext = "dolfin::%s::dolfin::" % name
+rtext = "dolfin::"
+
+for s in interfacefile.xreadlines():
+    tmpfile.write(s.replace(stext, rtext))
+
+interfacefile.close()
+tmpfile.close()
+
+debugout = getoutput("mv tmp.cpp %s_wrap.cpp" % modulename)
+
+
+
+# FIXME:
+# Compilation still not compiler-independent
+
+debugout = getoutput("`dolfin-config --compiler` `dolfin-config --swigcflags` `dolfin-config --cflags` -I. -g -fPIC  -c -o %s_wrap.o %s_wrap.cpp" % (modulename, modulename))
+
+print debugout
+
+# FIXME:
+# Generating shared library still not compiler-independent (syntax likely
+# only works for GCC)
+
+debugout = getoutput("`dolfin-config --linker` -g -shared %s_wrap.o -o _%s.so `dolfin-config --libs`" % (modulename, modulename))
+
+print debugout
