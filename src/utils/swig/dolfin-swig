@@ -3,6 +3,8 @@
 import os, sys
 from commands import getoutput
 
+debug = False
+
 # Simple tool to automatically convert a header file (with
 # implementation) including DOLFIN classes or functions to a Python
 # module.
@@ -104,11 +106,12 @@ swigoutput = open(swigfile, 'w')
 swigoutput.write(swigsource)
 swigoutput.close()
 
-print "Building the Python module"
+#print "Building the Python module"
 
 debugout = getoutput("swig -python -c++ -nodefault -dirprot `pkg-config --cflags-only-I dolfin` -o %s_wrap.cpp %s" % (modulename, swigfile))
 
-print debugout
+if debug:
+    print debugout
 
 # FIXME: Workaround for apparent bug in SWIG, try to fix the bug.
 
@@ -127,23 +130,26 @@ tmpfile.close()
 
 debugout = getoutput("mv tmp.cpp %s_wrap.cpp" % modulename)
 
-
+if debug:
+    print debugout
 
 # FIXME:
 # Compilation still not compiler-independent
 
-print "Compiling generated code"
+#print "Compiling generated code"
 
 debugout = getoutput("`pkg-config --variable=compiler dolfin` `pkg-config --variable=swigcflags dolfin` `pkg-config --cflags-only-I dolfin` -I. -g -fPIC  -c -o %s_wrap.o %s_wrap.cpp" % (modulename, modulename))
 
-print debugout
+if debug:
+    print debugout
 
 # FIXME:
 # Generating shared library still not compiler-independent (syntax likely
 # only works for GCC)
 
-print "Linking generated code"
+#print "Linking generated code"
 
 debugout = getoutput("`pkg-config --variable=compiler dolfin` -g -shared %s_wrap.o -o _%s.so `pkg-config --libs dolfin`" % (modulename, modulename))
 
-print debugout
+if debug:
+    print debugout
