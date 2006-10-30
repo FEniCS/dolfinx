@@ -4,3 +4,4 @@ print "Importing DOLFIN"
 
 from dolfin import *
 from import_form import *
+from assemble import *
