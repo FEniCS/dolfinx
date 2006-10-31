@@ -30,7 +30,6 @@
 \setlength{\parskip}{12pt}
 \allsectionsfont{\sffamily}
 \makeindex
-\sloppy
 
 %--- Remove header and footer from blank pages  ---
 \let\origdoublepage\cleardoublepage
@@ -93,10 +92,11 @@
 \newcommand{\devnote}[1]{$\blacktriangleright$ \emph{Developer's note:} #1}
 
 %--- Environments ---
-\DefineVerbatimEnvironment{code}{Verbatim}{commandchars=\\\{\}}
+\DefineVerbatimEnvironment{code}{Verbatim}{commandchars=\\\{\},frame=single,rulecolor=\color{blue}}
 
 %--- Macros ---
 \newcommand{\dx}{\, \mathrm{d}x}
 \newcommand{\dX}{\, \mathrm{d}X}
 \newcommand{\ds}{\, \mathrm{d}s}
+\newcommand{\dS}{\, \mathrm{d}S}
 \newcommand{\R}{\mathbb{R}}
