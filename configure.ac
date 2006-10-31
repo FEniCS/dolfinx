@@ -34,7 +34,7 @@ AC_ARG_ENABLE(mpi,
 
 # Option --enable/disable-pydolfin
 AC_ARG_ENABLE(pydolfin,
-              AC_HELP_STRING([--enable-pydolfin],
+              AC_HELP_STRING([--disable-pydolfin],
                              [Disable compilation of PyDOLFIN, the DOLFIN Python interface]),
               enable_pydolfin=$enableval, enable_pydolfin=yes)
 
@@ -241,7 +241,7 @@ if test `uname -m` = x86_64; then
 fi
 
 # Handle option --disable-curses
-if test x$disable_curses = x; then
+if test x$enable_curses = xyes; then
     echo "enabling curses, use --disable-curses to disable"
     AC_SEARCH_LIBS(wbkgdset, ncurses,,
                    echo "*** Unable to find ncurses on your system. "
@@ -253,7 +253,6 @@ else
     CURSES_CFLAGS="-DNO_CURSES=1"
     CURSES_LIBS=""
 fi
-echo "curses libs $CURSES_LIBS"
 
 # Handle option --enable-pydolfin
 AM_CONDITIONAL(COMPILE_PYDOLFIN, test x$enable_pydolfin = xyes)
