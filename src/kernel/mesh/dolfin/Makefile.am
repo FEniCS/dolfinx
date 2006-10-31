@@ -21,6 +21,8 @@ EXTRA_DIST = dolfin_mesh.h \
              Triangle.h \
              Tetrahedron.h \
              UniformMeshRefinement.h \
+             LocalMeshRefinement.h \
+             LocalMeshCoarsening.h \
              Point.h \
              BoundaryComputation.h \
              MeshBoundary.h

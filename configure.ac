@@ -107,7 +107,7 @@ if test $libxml2_found = no; then
     exit 1
 fi
 
-AX_BOOST_BASE([1.33.1])
+AX_BOOST_BASE([1.33])
 
 # Check for umfpack
 have_umfpack_header=yes

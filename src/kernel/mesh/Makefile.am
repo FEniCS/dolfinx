@@ -48,6 +48,8 @@ libdolfin_mesh_la_SOURCES = UnitCube.cpp \
                             Tetrahedron.cpp \
                             CellType.cpp \
                             UniformMeshRefinement.cpp \
+                            LocalMeshRefinement.cpp \
+                            LocalMeshCoarsening.cpp \
                             Point.cpp \
                             BoundaryComputation.cpp \
                             BoundaryMesh.cpp
