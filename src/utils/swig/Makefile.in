@@ -195,7 +195,6 @@ swig_found = @swig_found@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 bin_SCRIPTS = dolfin-swig
-CLEANFILES = $(bin_SCRIPTS)
 EXTRA_DIST = $(bin_SCRIPTS)
 all: all-am
 
@@ -316,7 +315,6 @@ install-strip:
 mostlyclean-generic:
 
 clean-generic:
-	-test -z "$(CLEANFILES)" || rm -f $(CLEANFILES)
 
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
