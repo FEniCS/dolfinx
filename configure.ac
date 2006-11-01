@@ -1,5 +1,5 @@
 # Init autoconf
-AC_INIT(DOLFIN, 0.6.3, http://www.fenics.org/bugzilla/)
+AC_INIT(DOLFIN, 0.6.3-dev, http://www.fenics.org/bugzilla/)
 
 # Init automake
 AM_INIT_AUTOMAKE($PACKAGE_NAME, $PACKAGE_VERSION, no-define)
@@ -34,7 +34,7 @@ AC_ARG_ENABLE(mpi,
 
 # Option --enable/disable-pydolfin
 AC_ARG_ENABLE(pydolfin,
-              AC_HELP_STRING([--enable-pydolfin],
+              AC_HELP_STRING([--disable-pydolfin],
                              [Disable compilation of PyDOLFIN, the DOLFIN Python interface]),
               enable_pydolfin=$enableval, enable_pydolfin=yes)
 
@@ -224,7 +224,7 @@ case "${ax_cv_cxx_compiler_vendor}" in
         echo 'gcc header files to be used by setting the compiler option' 
         echo '-gcc-name=<name> through the environment variables'
         echo 'e.g. export INTEL_CXXFLAGS="-gcc-name=gcc-3.4"'
-        CXXFLAGS="$CXXFLAGS -wd383 -wd654 -wd810 -wd869 -wd981 -wd1125 -wd1418 -wd1419 -wd1572 -wd1599 $INTEL_CXXFLAGS"
+        CXXFLAGS="$CXXFLAGS -wd111 -wd383 -wd654 -wd810 -wd869 -wd981 -wd1125 -wd1418 -wd1419 -wd1572 -wd1599 $INTEL_CXXFLAGS"
         ;;
 esac
 
@@ -241,7 +241,7 @@ if test `uname -m` = x86_64; then
 fi
 
 # Handle option --disable-curses
-if test x$disable_curses = x; then
+if test x$enable_curses = xyes; then
     echo "enabling curses, use --disable-curses to disable"
     AC_SEARCH_LIBS(wbkgdset, ncurses,,
                    echo "*** Unable to find ncurses on your system. "
@@ -253,7 +253,6 @@ else
     CURSES_CFLAGS="-DNO_CURSES=1"
     CURSES_LIBS=""
 fi
-echo "curses libs $CURSES_LIBS"
 
 # Handle option --enable-pydolfin
 AM_CONDITIONAL(COMPILE_PYDOLFIN, test x$enable_pydolfin = xyes)

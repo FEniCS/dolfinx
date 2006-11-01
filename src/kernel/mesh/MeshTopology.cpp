@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-05-08
-// Last changed: 2006-06-12
+// Last changed: 2006-11-01
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/MeshConnectivity.h>
@@ -56,9 +56,6 @@ const MeshTopology& MeshTopology::operator= (const MeshTopology& topology)
 //-----------------------------------------------------------------------------
 void MeshTopology::clear()
 {
-  // Reset dimension
-  _dim = 0;
-
   // Delete number of mesh entities
   if ( num_entities )
     delete [] num_entities;
@@ -72,6 +69,9 @@ void MeshTopology::clear()
     delete [] connectivity;
   }
   connectivity = 0;
+
+  // Reset dimension
+  _dim = 0;
 }
 //-----------------------------------------------------------------------------
 void MeshTopology::init(uint dim)

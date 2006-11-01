@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-12-02
-// Last changed: 2006-08-07
+// Last changed: 2006-11-01
 
 #include <dolfin/MeshEditor.h>
 #include <dolfin/UnitCube.h>
@@ -12,6 +12,9 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 UnitCube::UnitCube(uint nx, uint ny, uint nz) : Mesh()
 {
+  if ( nx < 1 || ny < 1 || nz < 1 )
+    dolfin_error("Size of unit cube must be at least 1 in each dimension.");
+
   rename("mesh", "Mesh of the unit cube (0,1) x (0,1) x (0,1)");
 
   // Open mesh for editing
