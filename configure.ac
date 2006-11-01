@@ -387,6 +387,10 @@ done
 AC_SUBST(DOLFIN_LTLIBOBJS)
 
 # Generate standard environment variables for installation
+echo "creating dolfin.conf"
+if test $prefix = NONE; then
+   prefix="/usr/local"
+fi
 CONFIG='dolfin.conf'
 rm -f $CONFIG
 echo 'export PATH="'$prefix'/bin:$PATH"' >> $CONFIG
