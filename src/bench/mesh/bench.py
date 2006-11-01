@@ -3,7 +3,7 @@
 # Copyright (C) 2006 Anders Logg.
 # Licensed under the GNU GPL Version 2.
 #
-# Run benchmark for fem assemble and solve test problem.
+# Run benchmark for mesh
 
 from os import system
 from time import time
@@ -13,7 +13,7 @@ logfile = "bench.log"
 
 # Run benchmark
 tic = time()
-system("./dolfin-fem-convergence")
+system("./dolfin-bench-mesh")
 toc = time() - tic
 
 # Save timing to log file
