@@ -8,6 +8,7 @@
 
 using namespace dolfin;
 
+// Run a few simple tests
 void bench(unsigned int n, unsigned int M)
 {
   real t = 0.0;
@@ -26,29 +27,16 @@ void bench(unsigned int n, unsigned int M)
   dolfin_info("  Create unit cube mesh: %.3e", t);
 
   // Iterate over entities
-  real sum = 0.0;
+  unsigned int sum = 0;
   tic();
   for (unsigned int i = 0; i < M; ++i)
   {
     for (CellIterator c(mesh); !c.end(); ++c)
       for (VertexIterator v(c); !v.end(); ++v)
-        sum += sqrt(2.0);
+        sum += v->index();
   }
   t = toc() / MM;
-  dolfin_info("  Iterate over entities: %.3e (sum = %g)", t, sum);
-  
-  // Iterate over integers
-  unsigned int num_cells = mesh.numCells();
-  sum = 0.0;
-  tic();
-  for (unsigned int i = 0; i < M; ++i)
-  {
-    for (unsigned int c = 0; c < num_cells; ++c)
-      for (unsigned int v = 0; v < 4; ++v)
-        sum += sqrt(2.0);
-  }
-  t = toc() / MM;
-  dolfin_info("  Iterate over integers: %.3e (sum = %g)", t, sum);
+  dolfin_info("  Iterate over entities: %.3e (sum = %u)", t, sum);
   
   // Uniform refinement
   dolfin_log(false);
@@ -59,10 +47,29 @@ void bench(unsigned int n, unsigned int M)
   dolfin_info("  Uniform refinement:    %.3e", t);
 }
 
-int main()
+// Just create a single mesh (useful for memory benchmarking)
+void bench(unsigned int n)
 {
-  for (unsigned int n = 1; n < 5; n++)
+  UnitCube mesh(n, n, n);
+  cout << mesh << endl;
+  dolfin_info("Mesh created, sleeping for 5 seconds...");
+  sleep(5);
+}
+
+int main(int argc, char** argv)
+{
+  if ( argc > 1 )
   {
+    // Create a single mesh of size n x n x n
+    unsigned int n = static_cast<unsigned int>(atoi(argv[1]));
+    bench(n);
+  }
+  else
+  for (unsigned int n = 1; n <= 32; n++)
+  {
+    // Run a series of benchmarks
     bench(n, 100);
   }
+
+  return 0;
 }
