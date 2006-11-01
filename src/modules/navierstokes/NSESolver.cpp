@@ -95,14 +95,14 @@ void NSESolver::solve()
     amom = new NSEMomentum3D::BilinearForm(uc,delta1,delta2,k,nu);
     Lmom = new NSEMomentum3D::LinearForm(uc,u0,f,p,delta1,delta2,k,nu);
     acon = new NSEContinuity3D::BilinearForm(delta1);
-    Lcon = new NSEContinuity3D::LinearForm(uc,f,delta1);
+    Lcon = new NSEContinuity3D::LinearForm(uc);
   } 
   else if ( nsd == 2 )
   {
     amom = new NSEMomentum2D::BilinearForm(uc,delta1,delta2,k,nu);
     Lmom = new NSEMomentum2D::LinearForm(uc,u0,f,p,delta1,delta2,k,nu);
     acon = new NSEContinuity2D::BilinearForm(delta1);
-    Lcon = new NSEContinuity2D::LinearForm(uc,f,delta1);
+    Lcon = new NSEContinuity2D::LinearForm(uc);
   }
   else
   {
