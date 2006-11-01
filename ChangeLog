@@ -1,3 +1,5 @@
+ - Fix detection of curses libraries
+ - Remove Tecplot output format
 0.6.3 [2006-10-27]
  - Move to new mesh library
  - Remove dolfin-config and move to pkg-config

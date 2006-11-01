@@ -1,10 +1,10 @@
 // Copyright (C) 2002-2006 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
-// Modified by Garth N. Wells, 2005
+// Modified by Garth N. Wells, 2005, 2006.
 //
 // First added:  2002-11-12
-// Last changed: 2006-05-23
+// Last changed: 2006-11-01
 
 #ifndef __FILE_H
 #define __FILE_H
@@ -36,7 +36,7 @@ namespace dolfin
   public:
     
     /// File formats
-    enum Type { xml, matlab, matrixmarket, octave, opendx, gid, tecplot, vtk, python };
+    enum Type { xml, matlab, matrixmarket, octave, opendx, gid, vtk, python };
     
     /// Create a file with given name
     File(const std::string& filename);
