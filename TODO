@@ -26,7 +26,6 @@ Assembly
 Mesh
 ----
 
-o Port to new mesh library
 o [jj] Schema for mesh XML format
 * Geometry representation, including boundaries
 * Mesh generation using triangle or tetgen?
