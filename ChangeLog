@@ -1,3 +1,4 @@
+ - Add mesh benchmark
  - Fix memory leak in mesh (data not deleted correctly in MeshTopology)
  - Fix detection of curses libraries
  - Remove Tecplot output format
