@@ -52,7 +52,7 @@ v = mayavi()
 d = v.open_vtk_xml("poisson000000.vtu")
 m = v.load_module("Axes")
 m = v.load_module("BandedSurfaceMap")
-f = v.load_filter('WarpScalar', config=0)
+fi = v.load_filter('WarpScalar', config=0)
 
 # Wait until window is closed
 v.master.wait_window()

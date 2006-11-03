@@ -3,7 +3,7 @@ SWIG_SOURCES = dolfin.i
 
 pkgpyexecdir = $(pyexecdir)/dolfin
 pkgpythondir = $(pyexecdir)/dolfin
-pkgpython_PYTHON = dolfin.py import_form.py assemble.py __init__.py
+pkgpython_PYTHON = dolfin.py import_form.py assemble.py projection.py __init__.py
 pkgpyexec_LTLIBRARIES = _dolfin.la
 _dolfin_la_SOURCES = dolfin_wrap.cpp dolfin_glue.cpp $(SWIG_SOURCES)
 _dolfin_la_CPPFLAGS = @SWIG_PYTHON_CPPFLAGS@ @DOLFIN_CFLAGS@ -I$(top_builddir)/src/pydolfin

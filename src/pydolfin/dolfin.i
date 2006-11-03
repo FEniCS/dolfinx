@@ -192,6 +192,7 @@ def set(name, val):
 
 // fem includes 
 
+%include "dolfin/FiniteElementSpec.h"
 %include "dolfin/FiniteElement.h"
 %include "dolfin/AffineMap.h"
 %include "dolfin/BoundaryValue.h"
