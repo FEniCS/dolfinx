@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-06-02
-// Last changed: 2006-10-19
+// Last changed: 2006-11-05
 
 #include <set>
 #include <dolfin/dolfin_log.h>

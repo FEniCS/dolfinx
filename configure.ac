@@ -166,7 +166,9 @@ fi
 if test x$enable_pydolfin = xyes; then
     AM_PATH_PYTHON(2.3)
     AC_PYTHON_DEVEL
-    AC_CHECK_HEADER(python$PYTHON_VERSION/Python.h, have_python_dev=yes, have_python_dev=no)
+    CPPFLAGS="$CPPFLAGS $PYTHON_CPPFLAGS"
+    LDFLAGS="$LDFLAGS $PYTHON_LDFLAGS $PYTHON_EXTRA_LIBS"
+    AC_CHECK_HEADER(Python.h, have_python_dev=yes, have_python_dev=no)
     if test $have_python_dev = no; then
        echo "*** Cannot find Python development files on your system."
        echo "*** Perhaps you need to install the package python$PYTHON_VERSION-dev?"
@@ -229,7 +231,8 @@ case "${ax_cv_cxx_compiler_vendor}" in
 esac
 
 # Add '-Wno-uninitialized' due to a Cygwin gcc 3.4 bug.
-if test `uname -o` = Cygwin; then
+# At least on Darwin, -o is not an allowed option!
+if ! test `uname -s` = Darwin && test `uname -o` = Cygwin; then
     echo "adding compiler flags for cygwin"
     CXXFLAGS="$CXXFLAGS -Wno-uninitialized"
 fi
@@ -361,7 +364,7 @@ AC_SUBST(DOLFIN_CFLAGS)
 # Extract compiler definitions
 DOLFIN_DEFINITIONS=""
 for i in $CXXFLAGS; do
-    if test $(echo $i | head -c 2) == "-D"; then
+    if test $(echo $i | sed 's/^\(..\).*/\1/') == "-D"; then
        DOLFIN_DEFINITIONS="$DOLFIN_DEFINITIONS $i"
     fi
 done
