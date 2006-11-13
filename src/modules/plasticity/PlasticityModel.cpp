@@ -12,8 +12,12 @@ PlasticityModel::PlasticityModel() : _hardening_parameter(0.0)
 {
   initialise();
 }
-
-// Initialise variables
+//-----------------------------------------------------------------------------
+PlasticityModel::~PlasticityModel()
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
 void PlasticityModel::initialise()
 {
   R.resize(6, 6, false);
@@ -34,130 +38,124 @@ void PlasticityModel::initialise()
   delta_lambda = 0.0;
   lambda_dot = 0.0;
 }
-
-// If no hardening law is defined
-double PlasticityModel::hardening_parameter(double &eps_eq)
+//-----------------------------------------------------------------------------
+real PlasticityModel::hardening_parameter(real& eps_eq)
 {
   return _hardening_parameter;
 }
-
-// If dg is not supplied by user, associative flow is assumed
-void PlasticityModel::dg(ublas::vector <double> &dg_dsigma, ublas::vector <double> &sigma)
+//-----------------------------------------------------------------------------
+void PlasticityModel::dg(uBlasVector &dg_dsigma, uBlasVector& sigma)
 {
   df(dg_dsigma, sigma);
 }
-
-// Equivalent plastic strain is as default equal to the plastic multiplier
-void PlasticityModel::kappa(double &equivalent_plastic_strain, ublas::vector<double> &sigma, double &lambda_dot)
+//-----------------------------------------------------------------------------
+void PlasticityModel::kappa(real& equivalent_plastic_strain, 
+                uBlasVector &sigma, real& lambda_dot)
 {
   equivalent_plastic_strain += lambda_dot;
 }
-
-// Return mapping algorithm
-void PlasticityModel::return_mapping(ublas::matrix <double> &consistent_tangent, ublas::matrix <double> &elastic_tangent, ublas::vector <double> &sigma_trial, ublas::vector <double> &plastic_strain, double &equivalent_plastic_strain)
+//-----------------------------------------------------------------------------
+void PlasticityModel::return_mapping(uBlasDenseMatrix& consistent_tangent, 
+                                     uBlasDenseMatrix& elastic_tangent, 
+                                     uBlasVector& sigma_trial, 
+                                     uBlasVector& plastic_strain, 
+                                     real& equivalent_plastic_strain)
 {
-  // initialising variables
+  // Initialise variables
   delta_lambda = 0.0;
   sigma_residual.clear();
   sigma_current.assign(sigma_trial);
 
-  // computing hardening parameter
+  // Compute hardening parameter
   _hardening_parameter = hardening_parameter(equivalent_plastic_strain);
 
-  // value of yield function (trial stresses)
+  // Evaluate yield function (trial stresses)
   f(residual_f, sigma_current, equivalent_plastic_strain);
 
-  // check if yielding occurs
+  // Check for yielding
   if (residual_f/norm_2(sigma_current) > 1.0e-12)
   {
     // compute normal vectors to yield surface and plastic potential
     df(df_dsigma, sigma_current);
     dg(dg_dsigma, sigma_current);
 
-    int iterations(0);
+    uint iterations(0);
 
-    // iterate
+    // Newton iterations to project stress onto yield surface
     while ( std::abs(residual_f)/norm_2(sigma_current) > 1.0e-12)
     {
       iterations++;
 
-      if (iterations>10)
-      {
-        cout << "return mapping iterations > 10" << endl;
-        break;
-      }
+      if (iterations > 50)
+        dolfin_error("Plasticity return mapping iterations > 50.");
 
-      // compute second derivative (with respect to stresses) of plastic potential
+      // Compute second derivative (with respect to stresses) of plastic potential
       ddg(ddg_ddsigma, sigma_current);
   
-      // computing auxiliary matrix Q 
+      // Compute auxiliary matrix Q 
       inverse_Q.assign(I + delta_lambda*prod(elastic_tangent,ddg_ddsigma));
 
-      // inverting Q
+      // Invert Q
       inverse_Q.invert();
 
-      // compute auxiliary matrix R
+      // Compute auxiliary matrix R
       R.assign(prod(inverse_Q, elastic_tangent));
 
       // lambda_dot, increase of plastic multiplier
-      lambda_dot = ( residual_f - inner_prod(sigma_residual, prod(inverse_Q, df_dsigma) ) ) / (inner_prod( df_dsigma, prod( R, dg_dsigma) ) + _hardening_parameter);
+      lambda_dot = ( residual_f - inner_prod(sigma_residual, prod(inverse_Q, df_dsigma) ) ) / 
+                        (inner_prod( df_dsigma, prod( R, dg_dsigma) ) + _hardening_parameter);
 
-      // stress increment            
+      // Compute stress increment            
       sigma_dot.assign(prod( (-lambda_dot*prod(elastic_tangent, dg_dsigma) -sigma_residual), inverse_Q ));
 
-      // incrementing plastic multiplier
+      // Increment plastic multiplier
       delta_lambda += lambda_dot;
 
-      // update current stress state
+      // Update current stress state
       sigma_current += sigma_dot;
 
-      // update equivalent plastic strain
+      // Update equivalent plastic strain
       kappa(equivalent_plastic_strain, sigma_current, lambda_dot);
 
-      // compute hardening parameter
+      // Compute hardening parameter
       _hardening_parameter = hardening_parameter(equivalent_plastic_strain);
 
-      // value of yield function at new stress state
+      // Evaluate yield function at new stress state
       f(residual_f, sigma_current, equivalent_plastic_strain);
 
-      // normal vector to yield surface at new stress state
+      // Normal to yield surface at new stress state
       df(df_dsigma, sigma_current);
 
-      // normal vector to plastic potential at new stress state
+      // Normal to plastic potential at new stress state
       dg(dg_dsigma, sigma_current);
 
-      // compute residual vector
+      // Compute residual vector
       sigma_residual.assign(sigma_current - (sigma_trial - delta_lambda*prod(elastic_tangent,dg_dsigma) ) );
+    } 
 
-    } // end while
-
-    // updating matrices
+    // Update matrices
     ddg(ddg_ddsigma, sigma_current);
 
-    // computing auxiliary matrix Q
+    // Compute auxiliary matrix Q
     inverse_Q.assign(I + delta_lambda*prod(elastic_tangent,ddg_ddsigma));
 
-    // inverting Q
+    // Invert Q
     inverse_Q.invert();
 
-    // compute auxiliary matrix R and vector Rn
+    // Compute auxiliary matrix R and vector Rn
     R.assign(prod(inverse_Q, elastic_tangent));
     Rn.assign(prod(R,df_dsigma));
       
-    // compute consistent tangent operator
-    consistent_tangent.assign(R - prod( R, outer_prod(dg_dsigma, Rn) )/(inner_prod(df_dsigma, prod(R, dg_dsigma) ) + _hardening_parameter) );
+    // Compute consistent tangent operator
+    consistent_tangent.assign(R - prod( R, outer_prod(dg_dsigma, Rn) ) / 
+              (inner_prod(df_dsigma, prod(R, dg_dsigma) ) + _hardening_parameter) );
 
-    // stresses for next Newton iteration, trial stresses are overwritten by current stresses
+    // Stresses for next Newton iteration, trial stresses are overwritten by current stresses
     sigma_trial.assign(sigma_current);
 
-    // update plastic strains
+    // Update plastic strains
     plastic_strain += delta_lambda * dg_dsigma;
 
   } // end if plastic
-}
-//-----------------------------------------------------------------------------
-PlasticityModel::~PlasticityModel()
-{
-  // Do nothing
 }
 //-----------------------------------------------------------------------------

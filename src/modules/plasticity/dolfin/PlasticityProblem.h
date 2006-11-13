@@ -8,6 +8,8 @@
 
 #include <dolfin/Solver.h>
 #include <dolfin/NonlinearProblem.h>
+#include <dolfin/uBlasDenseMatrix.h>
+#include <dolfin/uBlasVector.h>
 
 #include <fstream>
 
@@ -18,7 +20,10 @@ class PlasticityProblem : public NonlinearProblem
 {
   public:
       //constructor
-       PlasticityProblem(Function& u, Function& b, Matrix& A_strain, Mesh& mesh, BoundaryCondition& bc, bool& elastic_tangent, PlasticityModel& plas, ublas::matrix<double>& D) : NonlinearProblem(), _A_strain(&A_strain), _mesh(&mesh), _bc(&bc), _elastic_tangent(&elastic_tangent), _plas(&plas), _D(&D)
+       PlasticityProblem(Function& u, Function& b, Matrix& A_strain, Mesh& mesh, 
+          BoundaryCondition& bc, bool& elastic_tangent, PlasticityModel& plas, 
+          uBlasDenseMatrix& D) : NonlinearProblem(), _A_strain(&A_strain), 
+          _mesh(&mesh), _bc(&bc), _elastic_tangent(&elastic_tangent), _plas(&plas), _D(&D)
     {
       // Create functions
       strain = new Function; stress = new Function;
@@ -94,8 +99,8 @@ class PlasticityProblem : public NonlinearProblem
 
       int N(strain->vector().size()/strain->vectordim()), n(6), ntan(0);
       double eps_eq(0);
-      ublas::vector<double> t_sig(6), eps_p(6), eps_e(6), eps_t(6);
-      ublas::matrix<double> cons_t(6,6);
+      uBlasVector t_sig(6), eps_p(6), eps_e(6), eps_t(6);
+      uBlasDenseMatrix cons_t(6,6);
       cons_t.clear();
       eps_p.clear();
       eps_e.clear();
@@ -165,7 +170,8 @@ class PlasticityProblem : public NonlinearProblem
         // trial stresses
         t_sig.assign(prod(*_D, eps_e));
 
-        // testing trial stresses, if yielding occurs the stresses are mapped back onto the yield surface, and the updated parameters are returned.
+        // testing trial stresses, if yielding occurs the stresses are mapped 
+        // back onto the yield surface, and the updated parameters are returned.
         _plas->return_mapping(cons_t, *_D, t_sig, eps_p, eps_eq);
 
         // updating plastic strain 
@@ -244,7 +250,7 @@ class PlasticityProblem : public NonlinearProblem
     Function* strain;
     bool* _elastic_tangent;
     PlasticityModel* _plas;
-    ublas::matrix<double>* _D;
+    uBlasDenseMatrix* _D;
 };
 
 }  // end dolfin namespace

@@ -9,6 +9,8 @@
 #include <dolfin/Solver.h>
 #include <dolfin/NewtonSolver.h>
 #include <dolfin/PDE.h>
+#include <dolfin/uBlasDenseMatrix.h>
+#include <dolfin/uBlasVector.h>
 
 #include "PlasticityModel.h"
 
@@ -35,7 +37,7 @@ namespace dolfin
   private:
 
     // constitutive matrix
-    ublas::matrix<double> C_m(double &lam, double &mu);
+    uBlasDenseMatrix C_m(double &lam, double &mu);
     
     Mesh& mesh;
     BoundaryCondition& bc;

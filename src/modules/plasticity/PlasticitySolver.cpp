@@ -37,7 +37,7 @@ void PlasticitySolver::solve()
   double mu = E/(2*(1+nu));
 
   // elastic tangent
-  ublas::matrix<double> D = C_m(lam, mu);
+  uBlasDenseMatrix D = C_m(lam, mu);
 
   bool elastic_tangent = false;
 
@@ -139,9 +139,9 @@ void PlasticitySolver::solve(Mesh& mesh,
 //-----------------------------------------------------------------------------
 
 // constitutive relation (elastic tangent)
-ublas::matrix<double> PlasticitySolver::C_m(double &lam, double &mu)
+uBlasDenseMatrix PlasticitySolver::C_m(double &lam, double &mu)
 {
-  ublas::matrix<double> B(6,6);
+  uBlasDenseMatrix B(6,6);
   B.clear();
 
   B(0,0)=lam+2*mu, B(1,1)=lam+2*mu, B(2,2)=lam+2*mu;

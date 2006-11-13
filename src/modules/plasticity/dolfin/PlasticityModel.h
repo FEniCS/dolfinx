@@ -6,15 +6,13 @@
 #ifndef __PLASTICITY_MODEL_H
 #define __PLASTICITY_MODEL_H
 
-#include <dolfin/DenseMatrix.h>
-#include <boost/numeric/ublas/matrix.hpp>
-#include <boost/numeric/ublas/matrix_proxy.hpp>
-#include <boost/numeric/ublas/vector.hpp>
-#include <boost/numeric/ublas/operation.hpp>
-#include <boost/numeric/ublas/io.hpp>
+#include <dolfin/uBlasDenseMatrix.h>
+#include <dolfin/uBlasVector.h>
+#include <dolfin/ublas.h>
 
 namespace dolfin
 {
+
   class PlasticityModel
   {
   public:
@@ -25,40 +23,42 @@ namespace dolfin
     /// Destructor
     virtual ~PlasticityModel();
 
-    /// Initialising variables
+    /// Initialise variables
     void initialise();    
 
-    /// Hardening parameter A
-    virtual double hardening_parameter(double &eps_eq);
+    /// Hardening parameter
+    virtual real hardening_parameter(real& eps_eq);
 
-    /// Value of yield function, f
-    virtual void f(double &f0, ublas::vector<double> &sig, double &eps_eq) = 0;
+    /// Value of yield function f
+    virtual void f(real& f0, uBlasVector& sig, real& eps_eq) = 0;
 
-    /// first derivative of f with respect to sigma, a
-    virtual void df(ublas::vector <double> &a, ublas::vector <double> &sig) = 0;
+    /// First derivative of f with respect to sigma
+    virtual void df(uBlasVector& a, uBlasVector& sig) = 0;
 
-    /// first derivative of g with respect to sigma, b
-    virtual void dg(ublas::vector <double> &b, ublas::vector <double> &sig);
+    /// First derivative of g with respect to sigma
+    virtual void dg(uBlasVector& b, uBlasVector& sig);
     
-    /// Second derivative of g with respect to sigma, db_dsig
-    virtual void ddg(ublas::matrix <double> &dm_dsig, ublas::vector <double> &sig) = 0;
+    /// Second derivative of g with respect to sigma
+    virtual void ddg(uBlasDenseMatrix& dm_dsig, uBlasVector& sig) = 0;
 
-    /// Equivalent plastic strain, kappa
-    virtual void kappa(double &eps_eq, ublas::vector<double> &sig, double &lambda);
+    /// Equivalent plastic strain
+    virtual void kappa(real& eps_eq, uBlasVector& sig, real& lambda);
     
-    /// Backward Euler return mapping
-    void return_mapping(ublas::matrix <double> &cons_t, ublas::matrix <double> &D, ublas::vector <double> &t_sig, ublas::vector <double> &eps_p, double &eps_eq);
+    /// Closest point projection return mapping
+    void return_mapping(uBlasDenseMatrix& cons_t, uBlasDenseMatrix& D, 
+        uBlasVector& t_sig, uBlasVector& eps_p, real& eps_eq);
 
   private:
-    ublas::matrix<double> R;
-    ublas::matrix<double> ddg_ddsigma;
 
-    DenseMatrix inverse_Q;
-    ublas::identity_matrix <double> I;
+    uBlasDenseMatrix R;
+    uBlasDenseMatrix ddg_ddsigma;
 
-    ublas::vector<double> df_dsigma, dg_dsigma, sigma_current, sigma_dot, sigma_residual, Rm, Rn, RinvQ;
+    uBlasDenseMatrix inverse_Q;
+    ublas::identity_matrix<real> I;
 
-    double residual_f, _hardening_parameter, delta_lambda, lambda_dot;
+    uBlasVector df_dsigma, dg_dsigma, sigma_current, sigma_dot, sigma_residual, Rm, Rn, RinvQ;
+
+    real residual_f, _hardening_parameter, delta_lambda, lambda_dot;
   
   };
 }
