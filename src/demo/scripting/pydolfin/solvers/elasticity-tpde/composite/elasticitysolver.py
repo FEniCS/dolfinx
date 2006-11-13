@@ -12,30 +12,30 @@ class Source(Function):
         else:
             return 0.0
 
-class InitialDisplacement(Function):
+class InitialValue(Function):
     def eval(self, point, i):
-        return 0.0
-
-class InitialVelocity(Function):
-    def eval(self, point, i):
-        if(i == 1 and point[0] > 0.0):
-            return 1.0
-        else:
+        if(i < 3):
+            # Initial displacement
             return 0.0
+        if(i >= 3):
+            # Initial velocity
+            if(i == 4 and point[0] > 0.0):
+                return 1.0
+            else:
+                return 0.0
         
 class SimpleBC(BoundaryCondition):
     def eval(self, value, point, i):
         if point[0] == 0.0:
             value.set(0.0)
 
-coeffs = import_header("MySource.h")
+coeffs = import_header("Coefficients.h")
 
 #f = Source()
 f = coeffs.MySource()
-#u0 = InitialDisplacement()
-#v0 = InitialVelocity()
+u0 = InitialValue()
 
-bc = SimpleBC()
+bc = coeffs.MyBC()
 
 mesh = Mesh("tetmesh-4.xml.gz")
 #mesh = Mesh("cell.xml.gz")
@@ -66,7 +66,7 @@ set("ODE save solution", False);
 set("ODE solution file name", "primal.py");
 set("ODE number of samples", 100);
 
-pde = ElasticityPDE(mesh, f, bc, T)
+pde = ElasticityPDE(mesh, u0, f, bc, T)
 
 pde.solve(pde.U)
 

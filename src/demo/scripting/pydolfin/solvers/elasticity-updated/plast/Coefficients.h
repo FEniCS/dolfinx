@@ -13,11 +13,15 @@ namespace dolfin
 
     real eval(const Point& p, unsigned int i)
     {
-      if(time() > 1.0 && time() < 1.2)
+      if(time() > 0.1 && time() < 0.3)
       {
 	if(i == 0 && p[1] > 1.0 && p[1] <= 2.0)
         {
-	  return -800.0;
+	  return -200.0;
+        }
+        else
+        {
+          return 0.0;
         }
       }
       else

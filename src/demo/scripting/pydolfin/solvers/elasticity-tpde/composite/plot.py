@@ -12,8 +12,8 @@ m.actor.GetProperty().SetColor((0.8, 0.8, 1.0))
 
 camera = v.renwin.camera
 camera.Zoom(1.0)
-camera.SetPosition(2.5, 1.5, 5.5)
-camera.SetFocalPoint(1.0, 0.0, 0.0)
+camera.SetPosition(0.5, 1.5, 5.5)
+camera.SetFocalPoint(0.5, 0.0, 0.0)
 camera.SetRoll(0.0)
 
 # Turn on sweeping
