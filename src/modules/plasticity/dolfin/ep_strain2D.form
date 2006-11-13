@@ -1,0 +1,11 @@
+# Copyright (C) 2006 Kristian Oelgaard and Garth N. Wells.
+# Licensed under the GNU GPL Version 2.
+#
+# First added:  2006-11-13
+
+element = FiniteElement("Discontinuous vector Lagrange", "triangle", 0, 1)
+
+v = TestFunction(element)
+w = TrialFunction(element)
+
+a = dot(v, w)*dx
