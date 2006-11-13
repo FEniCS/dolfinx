@@ -1,3 +1,4 @@
+ - Add plasticty module (experimental)
  - Fix configure test for Python dev (patch from Åsmund Ødegård)
  - Add mesh benchmark
  - Fix memory leak in mesh (data not deleted correctly in MeshTopology)
