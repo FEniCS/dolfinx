@@ -1,16 +1,23 @@
 from dolfin import *
 
 class ElasticityPDE(TimeDependentPDE):
-    def __init__(self, mesh, f, bc, T):
+    def __init__(self, mesh, u0val, f, bc, T):
         
         self.U = Function(Vector(), mesh)
-        #self.V = Function(Vector(), mesh)
 
-        forms = import_formfile("Elasticity.form")
+        self.u0val = u0val
+
+        #forms = import_formfile("Elasticity.form")
         #import elasticityform as forms
 
-        self.aelast = forms.ElasticityBilinearForm()
-        self.Lelast = forms.ElasticityLinearForm(self.U, f)
+        import elasticityform as forms
+
+        self.K = forms.K
+
+        cforms = import_form([forms.a, forms.L, None], "Elasticity")
+
+        self.aelast = cforms.ElasticityBilinearForm()
+        self.Lelast = cforms.ElasticityLinearForm(self.U, f)
 
         self.U.init(mesh, self.aelast.trial())
 
@@ -18,6 +25,8 @@ class ElasticityPDE(TimeDependentPDE):
 
         TimeDependentPDE.__init__(self, self.aelast, self.Lelast, mesh,
                                   bc, self.N, T)
+
+        self.U.attach(self.x)
 
         self.xtmp = Vector(self.U.vector().size())
 
@@ -44,22 +53,31 @@ class ElasticityPDE(TimeDependentPDE):
         #print "step"
 
     def save(self, U, t):
-        1
-
         U_0 = U[0]
 
         if(t == 0.0):
-            U.vector().copy(self.x, 0, 0, self.U.vector().size())
+            #U.vector().copy(self.x, 0, 0, self.U.vector().size())
             self.solutionfile << U_0
 
         while(self.lastsample + self.sampleperiod < t):
             self.lastsample = min(t, self.lastsample + self.sampleperiod)
-            self.U.vector().copy(self.x, 0, 0, self.U.vector().size())
+            #self.U.vector().copy(self.x, 0, 0, self.U.vector().size())
             self.solutionfile << U_0
+
+    def u0(self, x):
+
+        # Compute initial value
+
+        Pf = project(self.u0val, self.K, self.mesh())
+        x.copy(Pf.vector(), 0, 0, x.size())
+
+        print "x0: "
+        x.disp()
+
 
     def fu(self, x, dotx, t):
 
-        self.U.vector().copy(x, 0, 0, self.U.vector().size())
+        #self.U.vector().copy(x, 0, 0, self.U.vector().size())
 
         dolfin_log(False)
         FEM_assemble(self.L(), self.xtmp, self.mesh())

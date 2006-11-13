@@ -41,6 +41,9 @@ namespace dolfin
     /// Solve PDE (in general a mixed system)
     virtual uint solve(Function& u);
 
+    /// Compute initial value
+    virtual void u0(uBlasVector& u);
+
     /// Compute right hand side dotu = f(u)
     virtual void fu(const Vector& x, Vector& dotx, real t);
 

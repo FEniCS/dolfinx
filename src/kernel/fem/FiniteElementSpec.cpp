@@ -19,7 +19,7 @@ FiniteElementSpec::FiniteElementSpec()
 //-----------------------------------------------------------------------------
 FiniteElementSpec::FiniteElementSpec(std::string type)
 {
-  init("type", "unspecified", 0, 0);
+  init(type, "unspecified", 0, 0);
 }
 //-----------------------------------------------------------------------------
 FiniteElementSpec::FiniteElementSpec(std::string type, std::string shape,
