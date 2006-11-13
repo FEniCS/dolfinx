@@ -27,7 +27,7 @@ PlasticitySolver::PlasticitySolver(Mesh& mesh,
          real dt, real T, PlasticityModel& plas, std::string output_dir)
   : mesh(mesh), bc(bc), f(f), E(E), nu(nu), dt(dt), T(T), plas(plas), output_dir(output_dir)
 {
-  // Do nothing
+  dolfin_warning("The plasticity solver is experimental.");
 }
 //-----------------------------------------------------------------------------
 void PlasticitySolver::solve()

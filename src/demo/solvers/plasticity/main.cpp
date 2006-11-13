@@ -58,7 +58,7 @@ int main()
   Von_Mise J2(sig_o, H);
 
   // output directory
-  std::string output_dir("output/");
+  std::string output_dir("");
 
   // solve problem
   PlasticitySolver::solve(mesh, bc, f, E, nu, dt, T, J2, output_dir);
