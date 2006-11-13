@@ -25,7 +25,8 @@ def epsilon(u):
     return 0.5 * (grad(u) + transp(grad(u)))
 
 def E(e):
-    Ee = mult(10.0, e)
+    Ee = mult(7.7, e) + mult(11.5, mult(trace(e), Identity(d)))
+    #Ee = mult(7.7, e)
     
     return Ee
         

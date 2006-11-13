@@ -33,8 +33,8 @@ set("ODE tolerance", 1.0e3);
 set("ODE discrete tolerance", 1.0e+3);
 
 set("ODE fixed time step", True);
-set("ODE initial time step", 1.0e-3);
-set("ODE maximum time step", 1.0e-3);
+set("ODE initial time step", 1.0e-2);
+set("ODE maximum time step", 1.0e-2);
 
 set("ODE save solution", False);
 set("ODE solution file name", "primal.py");
@@ -42,10 +42,10 @@ set("ODE number of samples", 100);
 
 
 nu  = 0.3 # Poisson's ratio
-E   = 500.0 * 0.7 * 1.0 * 3.0 # Young's modulus
-nuv = 1.0e2 # Viscosity
+E   = 500.0 * 0.7 * 1.0 # Young's modulus
+nuv = 1.0e1 # Viscosity
 
-yld = 50.0 # Yield strength
+yld = 10.0 # Yield strength
 nuplast = 5.0e-2 # Plastic viscosity
 
 import geometry
@@ -55,6 +55,7 @@ T = 3.0
 #load_parameters("parameters.xml")
 
 coeffs = import_header("Coefficients.h")
+#import coefficients as coeffs
 
 # Coefficients
 

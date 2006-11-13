@@ -40,7 +40,7 @@ class DiffPDE(TimeDependentPDE):
         stress_forms.ElasticityUpdatedStressLinearForm(self.V,
                                                        self.S,
                                                        self.Snorm,
-                                                       #self.lmbda,
+                                                       self.lmbda,
                                                        self.mu,
                                                        self.nuplast)
 
@@ -186,7 +186,7 @@ class DiffPDE(TimeDependentPDE):
 
     def save(self, U, t):
 
-        if((self.counter % (33)) == 0):
+        if((self.counter % (3)) == 0):
             print "t: ", t
             self.solutionfile << U
             self.filecounter += 1

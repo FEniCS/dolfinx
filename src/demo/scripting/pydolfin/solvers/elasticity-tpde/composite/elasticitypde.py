@@ -1,10 +1,11 @@
 from dolfin import *
 
 class ElasticityPDE(TimeDependentPDE):
-    def __init__(self, mesh, f, bc, T):
+    def __init__(self, mesh, u0val, f, bc, T):
         
         self.U = Function(Vector(), mesh)
-        #self.V = Function(Vector(), mesh)
+
+        self.u0val = u0val
 
         forms = import_formfile("Elasticity.form")
         #import elasticityform as forms
@@ -38,6 +39,9 @@ class ElasticityPDE(TimeDependentPDE):
         self.solutionfile = File("solution.pvd")
         self.sampleperiod = T / 100.0
         self.lastsample = 0.0
+
+        print "x0: "
+        self.x.disp()
 
     def preparestep(self):
         1
