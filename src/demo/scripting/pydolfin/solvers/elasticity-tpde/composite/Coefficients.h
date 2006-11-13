@@ -13,7 +13,7 @@ namespace dolfin
     real eval(const Point& p, unsigned int i)
     {
       if(i == 1)
-        return -2;
+        return -2.0;
       else
         return 0.0;
     }

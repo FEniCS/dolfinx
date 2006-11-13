@@ -20,7 +20,7 @@ class InitialValue(Function):
         if(i >= 3):
             # Initial velocity
             if(i == 4 and point[0] > 0.0):
-                return 1.0
+                return 0.3
             else:
                 return 0.0
         
