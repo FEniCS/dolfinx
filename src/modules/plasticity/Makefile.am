@@ -8,5 +8,7 @@ nobase_include_HEADERS         = dolfin/dolfin_plasticity.h \
 INCLUDES                       = @MODULE_CFLAGS@
 lib_LTLIBRARIES                  = libdolfin-plasticity.la
 libdolfin_plasticity_la_SOURCES = PlasticitySolver.cpp \
-                                  PlasticityModel.cpp
+                                  PlasticityModel.cpp \
+                                  DruckerPrager.cpp \
+                                  VonMises.cpp
 libdolfin_plasticity_la_LDFLAGS = -static

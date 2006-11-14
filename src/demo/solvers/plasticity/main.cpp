@@ -55,7 +55,7 @@ int main()
   real sig_o = 200.0;
 
   // object of class von Mise
-  Von_Mise J2(sig_o, H);
+  VonMises J2(sig_o, H);
 
   // solve problem
   PlasticitySolver::solve(mesh, bc, f, E, nu, dt, T, J2);

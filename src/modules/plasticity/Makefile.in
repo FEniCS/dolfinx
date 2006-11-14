@@ -62,7 +62,7 @@ libLTLIBRARIES_INSTALL = $(INSTALL)
 LTLIBRARIES = $(lib_LTLIBRARIES)
 libdolfin_plasticity_la_LIBADD =
 am_libdolfin_plasticity_la_OBJECTS = PlasticitySolver.lo \
-	PlasticityModel.lo
+	PlasticityModel.lo DruckerPrager.lo VonMises.lo
 libdolfin_plasticity_la_OBJECTS =  \
 	$(am_libdolfin_plasticity_la_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir)
@@ -234,7 +234,9 @@ nobase_include_HEADERS = dolfin/dolfin_plasticity.h \
 INCLUDES = @MODULE_CFLAGS@
 lib_LTLIBRARIES = libdolfin-plasticity.la
 libdolfin_plasticity_la_SOURCES = PlasticitySolver.cpp \
-                                  PlasticityModel.cpp
+                                  PlasticityModel.cpp \
+                                  DruckerPrager.cpp \
+                                  VonMises.cpp
 
 libdolfin_plasticity_la_LDFLAGS = -static
 all: all-recursive
@@ -306,8 +308,10 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DruckerPrager.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PlasticityModel.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PlasticitySolver.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/VonMises.Plo@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
