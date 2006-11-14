@@ -1,7 +1,7 @@
 """Unit test for the mesh library"""
 
 __author__ = "Anders Logg (logg@simula.no)"
-__date__ = "2006-08-08 -- 2006-09-20"
+__date__ = "2006-08-08 -- 2006-11-14"
 __copyright__ = "Copyright (C) 2006 Anders Logg"
 __license__  = "GNU GPL Version 2"
 
@@ -123,10 +123,10 @@ class PyCCInterface(unittest.TestCase):
         mesh = UnitSquare(5, 5)
         self.assertEqual(mesh.geometry().dim(), 2)
 
-    def testGetVertices(self):
-        """Get vertices of mesh"""
+    def testGetCoordinates(self):
+        """Get coordinates of vertices"""
         mesh = UnitSquare(5, 5)
-        self.assertEqual(len(mesh.vertices()), 36)
+        self.assertEqual(len(mesh.coordinates()), 36)
 
     def testGetCells(self):
         """Get cells of mesh"""
