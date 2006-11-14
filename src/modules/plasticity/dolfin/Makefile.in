@@ -185,7 +185,7 @@ sharedstatedir = @sharedstatedir@
 swig_found = @swig_found@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
-EXTRA_DIST = dolfin_plasticity.h PlasticityModel.h VonMises.h DruckerPrager.h PlasticitySolver.h
+EXTRA_DIST = dolfin_plasticity.h PlasticityModel.h VonMises.h DruckerPrager.h PlasticityProblem.h PlasticitySolver.h
 all: all-am
 
 .SUFFIXES:

@@ -12,6 +12,7 @@
 #include <dolfin/uBlasDenseMatrix.h>
 #include <dolfin/uBlasVector.h>
 
+
 #include "PlasticityModel.h"
 
 namespace dolfin
@@ -37,7 +38,7 @@ namespace dolfin
   private:
 
     // constitutive matrix
-    uBlasDenseMatrix C_m(double &lam, double &mu);
+    uBlasDenseMatrix C_m(real &lam, real &mu);
     
     Mesh& mesh;
     BoundaryCondition& bc;
@@ -47,7 +48,6 @@ namespace dolfin
     real dt;
     real T;
     PlasticityModel& plas;
-    std::string output_dir;
   };
 }
 

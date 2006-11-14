@@ -4,18 +4,8 @@
 // First added:  2006-11-13
 
 #include "dolfin/PlasticitySolver.h"
-#include "dolfin/Plas2D.h"
-#include "dolfin/Strain2D.h"
-#include "dolfin/Tangent2D.h"
 #include "dolfin/Output2D.h"
-#include "dolfin/p_strain2D.h"
-#include "dolfin/ep_strain2D.h"
-#include "dolfin/Plas3D.h"
-#include "dolfin/Strain3D.h"
-#include "dolfin/Tangent3D.h"
 #include "dolfin/Output3D.h"
-#include "dolfin/p_strain3D.h"
-#include "dolfin/ep_strain3D.h"
 #include "dolfin/PlasticityModel.h"
 #include "dolfin/PlasticityProblem.h"
 
@@ -33,8 +23,8 @@ PlasticitySolver::PlasticitySolver(Mesh& mesh,
 void PlasticitySolver::solve()
 {
   //  stiffness parameters
-  double lam = nu*E/((1+nu)*(1-2*nu));
-  double mu = E/(2*(1+nu));
+  real lam = nu*E/((1+nu)*(1-2*nu));
+  real mu = E/(2*(1+nu));
 
   // elastic tangent
   uBlasDenseMatrix D = C_m(lam, mu);
@@ -44,17 +34,8 @@ void PlasticitySolver::solve()
   // solution function
   Function u;
 
-  // assemple matrix for strain computation, since it is constant it can be pre computed
-  BilinearForm *a_strain = 0;
-  if(mesh.topology().dim() == 2)
-    a_strain = new Strain2D::BilinearForm;
-  else if(mesh.topology().dim() == 3)
-    a_strain = new Strain3D::BilinearForm;
-  Matrix A_strain;
-  FEM::assemble(*a_strain, A_strain, mesh);
-
   // create object of type PlasticityProblem
-  PlasticityProblem nonlinear_problem(u, f, A_strain, mesh, bc, elastic_tangent, plas, D);  
+  PlasticityProblem nonlinear_problem(u, f, mesh, bc, elastic_tangent, plas, D);  
 
   // Create nonlinear solver and set parameters
   NewtonSolver nonlinear_solver;
@@ -80,13 +61,13 @@ void PlasticitySolver::solve()
 
   // setup pde to project strains onto a continuous basis
   PDE pde(*eq_strain_a, *eq_strain_L, mesh);
-   pde.set("PDE linear solver", "iterative");
+  pde.set("PDE linear solver", "iterative");
 
   // Function to hold continuous equivalent plastic strain
   Function eq_strain;
 
   // time
-  double t  = 0.0;
+  real t  = 0.0;
 
   f.sync(t);      // Associate time with source term
   bc.sync(t);     // Associate time with boundary conditions
@@ -139,7 +120,7 @@ void PlasticitySolver::solve(Mesh& mesh,
 //-----------------------------------------------------------------------------
 
 // constitutive relation (elastic tangent)
-uBlasDenseMatrix PlasticitySolver::C_m(double &lam, double &mu)
+uBlasDenseMatrix PlasticitySolver::C_m(real &lam, real &mu)
 {
   uBlasDenseMatrix B(6,6);
   B.clear();
