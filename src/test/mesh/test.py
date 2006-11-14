@@ -89,6 +89,32 @@ class MeshIterators(unittest.TestCase):
                 n += 1
         self.assertEqual(n, 4*mesh.numCells())
 
+class InputOutput(unittest.TestCase):
+
+    def testOutputXML2D(self):
+        """Write and read 2D mesh from/to file"""
+        mesh_out = UnitSquare(3, 3)
+        mesh_in  = Mesh()
+        file = File("unitsquare.xml")
+        file << mesh_out
+        file >> mesh_in
+        self.assertEqual(mesh_in.numVertices(), 16)
+
+    def testOutputXML3D(self):
+        """Write and read 3D mesh from/to file"""
+        mesh_out = UnitCube(3, 3, 3)
+        mesh_in  = Mesh()
+        file = File("unitcube.xml")
+        file << mesh_out
+        file >> mesh_in
+        self.assertEqual(mesh_in.numVertices(), 64)
+
+    def testOutputMatlab2D(self):
+        """Write matlab format (no real test)"""
+        mesh = UnitSquare(5, 5)
+        file = File("unitsquare.m")
+        file << mesh
+        self.assertEqual(0, 0)
 
 class PyCCInterface(unittest.TestCase):
 
