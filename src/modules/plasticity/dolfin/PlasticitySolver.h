@@ -24,7 +24,7 @@ namespace dolfin
     // Create plasticity solver
     PlasticitySolver(Mesh& mesh,
          BoundaryCondition& bc, Function& f, real E, real nu,
-         real dt, real T, PlasticityModel& plas, std::string output_dir);
+         real dt, real T, PlasticityModel& plas);
     
     // Solve plasticity
     void solve();
@@ -32,7 +32,7 @@ namespace dolfin
     // Solve plasticity (static version)
     static void solve(Mesh& mesh,
           BoundaryCondition& bc, Function& f, real E, real nu,
-          real dt, real T, PlasticityModel& plas, std::string output_dir);
+          real dt, real T, PlasticityModel& plas);
     
   private:
 

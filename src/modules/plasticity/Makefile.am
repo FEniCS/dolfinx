@@ -1,8 +1,8 @@
 SUBDIRS                        = dolfin
 nobase_include_HEADERS         = dolfin/dolfin_plasticity.h \
                                  dolfin/PlasticityModel.h \
-                                 dolfin/Von_Mise.h \
-                                 dolfin/Drucker_Prager.h \
+                                 dolfin/VonMises.h \
+                                 dolfin/DruckerPrager.h \
                                  dolfin/PlasticitySolver.h
 
 INCLUDES                       = @MODULE_CFLAGS@

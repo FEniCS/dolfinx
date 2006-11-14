@@ -24,8 +24,8 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 PlasticitySolver::PlasticitySolver(Mesh& mesh,
          BoundaryCondition& bc, Function& f, real E, real nu,
-         real dt, real T, PlasticityModel& plas, std::string output_dir)
-  : mesh(mesh), bc(bc), f(f), E(E), nu(nu), dt(dt), T(T), plas(plas), output_dir(output_dir)
+         real dt, real T, PlasticityModel& plas)
+  : mesh(mesh), bc(bc), f(f), E(E), nu(nu), dt(dt), T(T), plas(plas)
 {
   dolfin_warning("The plasticity solver is experimental.");
 }
@@ -95,8 +95,8 @@ void PlasticitySolver::solve()
   Vector& x = u.vector();
 
   // file names for output
-  File file1(output_dir + "disp.pvd");
-  File file2(output_dir + "eq_plas_strain.pvd");
+  File file1("disp.pvd");
+  File file2("eq_plas_strain.pvd");
 
   while( t < T)
   {
@@ -131,9 +131,9 @@ void PlasticitySolver::solve()
 //-----------------------------------------------------------------------------
 void PlasticitySolver::solve(Mesh& mesh,
          BoundaryCondition& bc, Function& f, real E, real nu,
-         real dt, real T, PlasticityModel& plas, std::string output_dir)
+         real dt, real T, PlasticityModel& plas)
 {
-  PlasticitySolver solver(mesh, bc, f, E, nu, dt, T, plas, output_dir);
+  PlasticitySolver solver(mesh, bc, f, E, nu, dt, T, plas);
   solver.solve();
 }
 //-----------------------------------------------------------------------------
