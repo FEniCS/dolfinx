@@ -4,7 +4,7 @@
 // First added:  2006-11-13
 
 #include <dolfin.h>
-#include <dolfin/Von_Mise.h>
+#include <dolfin/VonMises.h>
 
 using namespace dolfin;
 
@@ -48,20 +48,17 @@ int main()
   real dt = 0.1; // time step
 
   // hardening
-  double E_t(0.1 * E); // slope of hardening (linear)
-  double H = E_t/(1-E_t/E); // hardening parameter (linear)
+  real E_t(0.1 * E); // slope of hardening (linear)
+  real H = E_t/(1-E_t/E); // hardening parameter (linear)
 
-  // yield stress, J2
-  double sig_o = 200.0;
+  // yield stress
+  real sig_o = 200.0;
 
   // object of class von Mise
-  Von_Mise J2(sig_o, H);
-
-  // output directory
-  std::string output_dir("");
+  VonMises J2(sig_o, H);
 
   // solve problem
-  PlasticitySolver::solve(mesh, bc, f, E, nu, dt, T, J2, output_dir);
+  PlasticitySolver::solve(mesh, bc, f, E, nu, dt, T, J2);
 
   return 0;
 }
