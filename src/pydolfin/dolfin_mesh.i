@@ -1,30 +1,53 @@
-// Return Numeric arrays for Mesh::cells() and Mesh::coordinates().
+// Return NumPy arrays for Mesh::cells() and Mesh::coordinates().
 // This is used in the PyCC mesh interface.
-%extend dolfin::Mesh {
 
-PyObject * cells() {
-    PyArrayObject *arr;
-    int n[2];
-    n[0] = self->numCells();
-    n[1] = self->type().numVertices(self->topology().dim());
-    arr = (PyArrayObject *) PyArray_FromDimsAndData(2, n, PyArray_INT, (char *) self->cells());
-    arr->flags |= OWN_DATA;
-    Py_INCREF((PyObject *)arr);
-    return (PyObject *)arr;
-}
+%define ALL_COORDINATES(name)
+%extend name {
+    PyObject* coordinates() {
+        // Get coordinates for all vertices in structure.
+        // returns a 3xnoVertices Numeric array, x in array[0], y in array[1]
+        // and z in array[2]
+        int noVert = self->numVertices();
+        int dim = self->geometry().dim();
+        int nadims = 2;
+        npy_intp adims[nadims];
 
-PyObject * coordinates() {
-    PyArrayObject *arr;
-    int n[2];
-    n[0] = self->numVertices();
-    n[1] = self->geometry().dim();
-    arr = (PyArrayObject *) PyArray_FromDimsAndData(2, n, PyArray_DOUBLE, (char *) self->coordinates());
-    arr->flags |= OWN_DATA;
-    Py_INCREF((PyObject *)arr);
-    return (PyObject *)arr;
-}
+        adims[0] = noVert;
+        adims[1] = dim;
 
+        PyArrayObject* arr = (PyArrayObject *)PyArray_SimpleNewFromData(nadims, adims, PyArray_DOUBLE, (char *)(self->coordinates()));
+        if ( arr == NULL ) return NULL;
+        PyArray_INCREF(arr);
+        return (PyObject *)arr;
+    }
+// End brace extend:
 }
+%enddef
+
+%define ALL_CELLS(name)
+%extend name {
+    PyObject* cells() {
+       // Get the node-id for all vertices.
+        int  nadims = 2;
+        npy_intp adims[nadims];
+        int no_cells = self->numCells();
+        int npe = (self->geometry().dim() == 2) ? 3 : 4;
+
+        adims[0] = no_cells;
+        adims[1] = npe;
+
+
+        // the std. way of creating a Numeric array
+        PyArrayObject* arr = (PyArrayObject *)PyArray_SimpleNewFromData(nadims, adims, PyArray_INT, (char *)(self->cells()));
+        if (arr == NULL) return NULL;
+        PyArray_INCREF(arr);
+        return (PyObject *)arr;
+    }
+}
+%enddef
+
+ALL_COORDINATES(dolfin::Mesh)
+ALL_CELLS(dolfin::Mesh)
 
 %ignore dolfin::Mesh::cells;
 %ignore dolfin::Mesh::coordinates;
