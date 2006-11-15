@@ -1,4 +1,4 @@
-// Return Numeric arrays for Mesh::cells() and Mesh::vertices().
+// Return Numeric arrays for Mesh::cells() and Mesh::coordinates().
 // This is used in the PyCC mesh interface.
 %extend dolfin::Mesh {
 
@@ -13,12 +13,12 @@ PyObject * cells() {
     return (PyObject *)arr;
 }
 
-PyObject * vertices() {
+PyObject * coordinates() {
     PyArrayObject *arr;
     int n[2];
     n[0] = self->numVertices();
     n[1] = self->geometry().dim();
-    arr = (PyArrayObject *) PyArray_FromDimsAndData(2, n, PyArray_DOUBLE, (char *) self->vertices());
+    arr = (PyArrayObject *) PyArray_FromDimsAndData(2, n, PyArray_DOUBLE, (char *) self->coordinates());
     arr->flags |= OWN_DATA;
     Py_INCREF((PyObject *)arr);
     return (PyObject *)arr;
@@ -27,7 +27,7 @@ PyObject * vertices() {
 }
 
 %ignore dolfin::Mesh::cells;
-%ignore dolfin::Mesh::vertices;
+%ignore dolfin::Mesh::coordinates;
 
 // Map increment operator and dereference operators for iterators
 %rename(increment) dolfin::MeshEntityIterator::operator++;

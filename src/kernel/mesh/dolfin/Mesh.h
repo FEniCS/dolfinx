@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-05-08
-// Last changed: 2006-10-25
+// Last changed: 2006-11-14
 
 #ifndef __MESH_H
 #define __MESH_H
@@ -73,10 +73,10 @@ namespace dolfin
     inline uint numCells() const { return data.topology.size(data.topology.dim()); }
 
     /// Return coordinates of all vertices
-    inline real* vertices() { return data.geometry.x(); }
+    inline real* coordinates() { return data.geometry.x(); }
 
     /// Return coordinates of all vertices
-    inline const real* vertices() const { return data.geometry.x(); }
+    inline const real* coordinates() const { return data.geometry.x(); }
 
     /// Return connectivity for all cells
     inline uint* cells() { return data.topology(data.topology.dim(), 0)(); }

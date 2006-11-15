@@ -1,7 +1,7 @@
 """Unit test for the mesh library"""
 
 __author__ = "Anders Logg (logg@simula.no)"
-__date__ = "2006-08-08 -- 2006-09-20"
+__date__ = "2006-08-08 -- 2006-11-14"
 __copyright__ = "Copyright (C) 2006 Anders Logg"
 __license__  = "GNU GPL Version 2"
 
@@ -89,6 +89,32 @@ class MeshIterators(unittest.TestCase):
                 n += 1
         self.assertEqual(n, 4*mesh.numCells())
 
+class InputOutput(unittest.TestCase):
+
+    def testOutputXML2D(self):
+        """Write and read 2D mesh from/to file"""
+        mesh_out = UnitSquare(3, 3)
+        mesh_in  = Mesh()
+        file = File("unitsquare.xml")
+        file << mesh_out
+        file >> mesh_in
+        self.assertEqual(mesh_in.numVertices(), 16)
+
+    def testOutputXML3D(self):
+        """Write and read 3D mesh from/to file"""
+        mesh_out = UnitCube(3, 3, 3)
+        mesh_in  = Mesh()
+        file = File("unitcube.xml")
+        file << mesh_out
+        file >> mesh_in
+        self.assertEqual(mesh_in.numVertices(), 64)
+
+    def testOutputMatlab2D(self):
+        """Write matlab format (no real test)"""
+        mesh = UnitSquare(5, 5)
+        file = File("unitsquare.m")
+        file << mesh
+        self.assertEqual(0, 0)
 
 class PyCCInterface(unittest.TestCase):
 
@@ -97,10 +123,10 @@ class PyCCInterface(unittest.TestCase):
         mesh = UnitSquare(5, 5)
         self.assertEqual(mesh.geometry().dim(), 2)
 
-    def testGetVertices(self):
-        """Get vertices of mesh"""
+    def testGetCoordinates(self):
+        """Get coordinates of vertices"""
         mesh = UnitSquare(5, 5)
-        self.assertEqual(len(mesh.vertices()), 36)
+        self.assertEqual(len(mesh.coordinates()), 36)
 
     def testGetCells(self):
         """Get cells of mesh"""

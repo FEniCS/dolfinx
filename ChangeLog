@@ -1,3 +1,5 @@
+ - Change Mesh::vertices() --> Mesh::coordinates()
+ - Fix bug in output of mesh to MATLAB format
  - Add plasticty module (experimental)
  - Fix configure test for Python dev (patch from Åsmund Ødegård)
  - Add mesh benchmark
