@@ -92,7 +92,8 @@
 \newcommand{\devnote}[1]{$\blacktriangleright$ \emph{Developer's note:} #1}
 
 %--- Environments ---
-\DefineVerbatimEnvironment{code}{Verbatim}{commandchars=\\\{\},frame=single,rulecolor=\color{blue}}
+\DefineVerbatimEnvironment{code}{Verbatim}{frame=single,rulecolor=\color{blue}}
+\DefineVerbatimEnvironment{macrocode}{Verbatim}{commandchars=\\\{\},frame=single,rulecolor=\color{blue}}
 
 %--- Macros ---
 \newcommand{\dx}{\, \mathrm{d}x}

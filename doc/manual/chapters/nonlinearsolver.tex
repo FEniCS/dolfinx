@@ -10,8 +10,6 @@ To use the nonlinear solver, a nonlinear function must be defined.
 The nonlinear solver is then initialised with this function and a 
 solution computed.
 
-
-
 \section{Nonlinear functions}
 \index{NonlinearFunction}
 
@@ -25,29 +23,27 @@ The structure of a user defined class \texttt{MyNonlinearFunction} is shown belo
 %
 \begin{code}
 class MyNonlinearFunction : public NonlinearFunction
-\{
-  public: 
+{
+public: 
   
-    // Constructor 
-    MyNonlinearFunction() : NonlinearFunction()\{\}
+ // Constructor 
+ MyNonlinearFunction() : NonlinearFunction() {}
   
-    // Compute F(u) and J 
-    void form(GenericMatrix& A, GenericVector& b, 
-              const GenericVector& u)
-    \{
-      // Insert F(u) into the vector b and J into the matrix A 
-    \}
+ // Compute F(u) and J 
+ void form(GenericMatrix& A, GenericVector& b, 
+           const GenericVector& u)
+ {
+   // Insert F(u) into the vector b and J into the matrix A 
+ }
 
-  private:
-    // Functions and pointers to objects with which F(u) is defined
-\};
+private:
+ // Functions and pointers to objects with which F(u) is defined
+};
 \end{code}
 %
 The above class computes the function $F(u)$ and its Jacobian $J$
 concurrently. In the future, it will be possible to compute 
 $F(u)$ and $J$ either concurrently or separately.
-
-
 
 \section{Newton solver}
 \index{Newton's method}
@@ -72,10 +68,10 @@ system, along with the relative and absolute
 tolerances the residual. This is illustrated below.
 %
 \begin{code}
-  NewtonSolver nonlinear_solver;
-  nonlinear_solver.set("Newton maximum iterations", 50);
-  nonlinear_solver.set("Newton relative tolerance", 1e-10);
-  nonlinear_solver.set("Newton absolute tolerance", 1e-10);
+NewtonSolver nonlinear_solver;
+nonlinear_solver.set("Newton maximum iterations", 50);
+nonlinear_solver.set("Newton relative tolerance", 1e-10);
+nonlinear_solver.set("Newton absolute tolerance", 1e-10);
 \end{code}
 
 The Newton procedure is considered to have converged when
@@ -159,27 +155,26 @@ appropriate manner.
 %
 \begin{code}
 class MyNonlinearFunction : public NonlinearFunction
-\{
-  public: 
+{
+public: 
   
-    // Constructor 
-    MyNonlinearFunction(. . . ) : NonlinearFunction(. . . )\{\}
+  // Constructor 
+  MyNonlinearFunction(. . . ) : NonlinearFunction(. . . ) {}
   
-    // Compute F(u) and J 
-    void form(GenericMatrix& A, GenericVector& b, 
-              const GenericVector& u)
-    \{
-      // Insert F(u) into the vector b and J into the matrix A 
-      FEM::assemble(*a, *L, A, b, *_mesh);
-      FEM::applyBC(A, *_mesh, a->test(), *_bc);
-      FEM::applyResidualBC(b, x, *_mesh, a->test(), *_bc);
-    \}
+  // Compute F(u) and J 
+  void form(GenericMatrix& A, GenericVector& b, 
+            const GenericVector& u)
+  {
+    // Insert F(u) into the vector b and J into the matrix A 
+    FEM::assemble(*a, *L, A, b, *_mesh);
+    FEM::applyBC(A, *_mesh, a->test(), *_bc);
+    FEM::applyResidualBC(b, x, *_mesh, a->test(), *_bc);
+  }
 
-  private:
-    // Functions and pointers to objects with which F(u) is defined
-\};
+private:
+  // Functions and pointers to objects with which F(u) is defined
+};
 \end{code}
-
 
 \section{Incremental Newton solver}
 %
@@ -196,15 +191,11 @@ Vector& x = U.vector();
 // Solve nonlinear problem in a series of steps
 real dt = 1.0; real t  = 0.0; real T  = 3.0;
 while( t < T)
-\{
+{
   t += dt;
   nonlinear_solver.solve(F, x);
-\}
+}
 \end{code}
 %
 Typically, the boundary conditions and/or source terms will be dependent 
 on~\texttt{t}.
- 
-
-
-
