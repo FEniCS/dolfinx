@@ -186,6 +186,18 @@ if test x$enable_pydolfin = xyes; then
 
     SWIG_ENABLE_CXX
     SWIG_PYTHON
+
+fi
+
+if test x$enable_pydolfin = xyes; then
+    echo "checking for NumPy..."
+    NUMPY_CFLAGS=`python numpy.conf`
+    if test $NUMPY_CFLAGS == none; then
+       echo "*** Cannot find NumPy on your system."
+       echo "*** Perhaps you need to install the package python-numpy?"
+       exit 1
+    fi
+    CPPFLAGS="$CPPFLAGS -I$NUMPY_CFLAGS"
 fi
 
 # Make debug option default so developers don't forget it

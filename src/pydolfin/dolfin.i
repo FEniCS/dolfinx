@@ -2,14 +2,12 @@
 
 %feature("autodoc", "1");
 
-// FIXME: Don't use absolute path to arrayobject.h
-
 %{
 #include <dolfin.h>
 
 #include "dolfin_glue.h"
 
-#include "/usr/lib/python2.4/site-packages/numpy/core/include/numpy/arrayobject.h"
+#include <numpy/arrayobject.h>
 #include <string>
   
 using namespace dolfin;
