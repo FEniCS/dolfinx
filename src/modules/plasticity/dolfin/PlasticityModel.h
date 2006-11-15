@@ -27,10 +27,13 @@ namespace dolfin
     void initialise();    
 
     /// Hardening parameter
-    virtual real hardening_parameter(real& eps_eq);
+    virtual real hardening_parameter(real eps_eq);
+
+    /// Equivalent plastic strain
+    virtual real kappa(real eps_eq, uBlasVector& sig, real lambda);
 
     /// Value of yield function f
-    virtual void f(real& f0, uBlasVector& sig, real& eps_eq) = 0;
+    virtual real f(uBlasVector& sig, real eps_eq) = 0;
 
     /// First derivative of f with respect to sigma
     virtual void df(uBlasVector& a, uBlasVector& sig) = 0;
@@ -40,13 +43,8 @@ namespace dolfin
     
     /// Second derivative of g with respect to sigma
     virtual void ddg(uBlasDenseMatrix& dm_dsig, uBlasVector& sig) = 0;
-
-    /// Equivalent plastic strain
-    virtual void kappa(real& eps_eq, uBlasVector& sig, real& lambda);
     
-    /// Closest point projection return mapping
-    void return_mapping(uBlasDenseMatrix& cons_t, uBlasDenseMatrix& D, 
-        uBlasVector& t_sig, uBlasVector& eps_p, real& eps_eq);
+    friend class ReturnMapping;
 
   private:
 
@@ -58,8 +56,8 @@ namespace dolfin
 
     uBlasVector df_dsigma, dg_dsigma, sigma_current, sigma_dot, sigma_residual, Rm, Rn, RinvQ;
 
-    real residual_f, _hardening_parameter, delta_lambda, lambda_dot;
-  
+    real _hardening_parameter;
+
   };
 }
 

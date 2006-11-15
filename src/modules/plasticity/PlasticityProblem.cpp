@@ -3,18 +3,18 @@
 //
 // First added:  2006-11-13
 
-#include "dolfin/PlasticityProblem.h"
-
-#include "dolfin/Plas2D.h"
-#include "dolfin/Strain2D.h"
-#include "dolfin/Tangent2D.h"
-#include "dolfin/p_strain2D.h"
-#include "dolfin/ep_strain2D.h"
-#include "dolfin/Plas3D.h"
-#include "dolfin/Strain3D.h"
-#include "dolfin/Tangent3D.h"
-#include "dolfin/p_strain3D.h"
-#include "dolfin/ep_strain3D.h"
+#include <dolfin/PlasticityProblem.h>
+#include <dolfin/ReturnMapping.h>
+#include <dolfin/Plas2D.h>
+#include <dolfin/Strain2D.h>
+#include <dolfin/Tangent2D.h>
+#include <dolfin/p_strain2D.h>
+#include <dolfin/ep_strain2D.h>
+#include <dolfin/Plas3D.h>
+#include <dolfin/Strain3D.h>
+#include <dolfin/Tangent3D.h>
+#include <dolfin/p_strain3D.h>
+#include <dolfin/ep_strain3D.h>
 
 using namespace dolfin;
 
@@ -169,7 +169,7 @@ void PlasticityProblem::form(GenericMatrix& A, GenericVector& b, const GenericVe
 
     // testing trial stresses, if yielding occurs the stresses are mapped 
     // back onto the yield surface, and the updated parameters are returned.
-    _plas->return_mapping(cons_t, *_D, t_sig, eps_p, eps_eq);
+    ReturnMapping::ClosestPoint(_plas, cons_t, *_D, t_sig, eps_p, eps_eq);
 
     // updating plastic strain 
     for (int i = 0; i!=n; ++i)
@@ -182,7 +182,7 @@ void PlasticityProblem::form(GenericMatrix& A, GenericVector& b, const GenericVe
     // and coefficients for consistent tangent matrix 2D or 3D
     if(_mesh->topology().dim() == 2)
     {
-      sig(m)        =  t_sig(0);
+      sig(m)        = t_sig(0);
       sig(m + N)    = t_sig(1);
       sig(m + 2*N)  = t_sig(3);
 

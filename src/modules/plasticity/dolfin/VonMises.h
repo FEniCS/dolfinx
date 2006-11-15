@@ -6,10 +6,9 @@
 #ifndef __VON_MISES_H
 #define __VON_MISES_H
 
-#include "dolfin/uBlasDenseMatrix.h"
-#include "dolfin/uBlasVector.h"
-
-#include "PlasticityModel.h"
+#include <dolfin/uBlasDenseMatrix.h>
+#include <dolfin/uBlasVector.h>
+#include <dolfin/PlasticityModel.h>
 
 
 namespace dolfin
@@ -21,19 +20,17 @@ namespace dolfin
 
     VonMises(real& yield_stress, real& hardening_parameter);
 
-    void effective_stress(real& sig_e, uBlasVector& sig);
+    real hardening_parameter(real eps_eq);
 
-    real effective_stress();
+    real f(uBlasVector& sig, real eps_eq);
 
     void df(uBlasVector& a, uBlasVector& sig);
 
-    uBlasDenseMatrix A_m();
-
     void ddg(uBlasDenseMatrix& ddg_ddsigma, uBlasVector& sig);
 
-    void f(real& f0, uBlasVector& sig, real& eps_eq);
+    real effective_stress(uBlasVector& sig);
 
-    real hardening_parameter(real& eps_eq);
+    uBlasDenseMatrix A_m();
 
   private:
 

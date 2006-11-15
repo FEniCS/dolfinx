@@ -3,11 +3,11 @@
 //
 // First added:  2006-11-13
 
-#include "dolfin/PlasticitySolver.h"
-#include "dolfin/Output2D.h"
-#include "dolfin/Output3D.h"
-#include "dolfin/PlasticityModel.h"
-#include "dolfin/PlasticityProblem.h"
+#include <dolfin/PlasticitySolver.h>
+#include <dolfin/Output2D.h>
+#include <dolfin/Output3D.h>
+#include <dolfin/PlasticityModel.h>
+#include <dolfin/PlasticityProblem.h>
 
 using namespace dolfin;
 
@@ -120,7 +120,7 @@ void PlasticitySolver::solve(Mesh& mesh,
 //-----------------------------------------------------------------------------
 
 // constitutive relation (elastic tangent)
-uBlasDenseMatrix PlasticitySolver::C_m(real &lam, real &mu)
+uBlasDenseMatrix PlasticitySolver::C_m(real lam, real mu)
 {
   uBlasDenseMatrix B(6,6);
   B.clear();

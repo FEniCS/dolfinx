@@ -10,8 +10,7 @@
 #include <dolfin/NonlinearProblem.h>
 #include <dolfin/uBlasDenseMatrix.h>
 #include <dolfin/uBlasVector.h>
-#include "PlasticityModel.h"
-#include <fstream>
+#include <dolfin/PlasticityModel.h>
 
 namespace dolfin
 {

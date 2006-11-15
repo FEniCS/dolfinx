@@ -6,10 +6,9 @@
 #ifndef __Drucker_Prager_H
 #define __Drucker_Prager_H
 
-#include "dolfin/uBlasDenseMatrix.h"
-#include "dolfin/uBlasVector.h"
-
-#include "PlasticityModel.h"
+#include <dolfin/uBlasDenseMatrix.h>
+#include <dolfin/uBlasVector.h>
+#include <dolfin/PlasticityModel.h>
 
 namespace dolfin
 {
@@ -19,25 +18,23 @@ namespace dolfin
 
   public:
 
-    DruckerPrager(real& _phi, real& _psi, real& _c, real _H);
+    DruckerPrager(real _phi, real _psi, real _c, real _H);
 
-    void f(real& f0, uBlasVector& sig, real& eps_eq);
+    real hardening_parameter(real eps_eq);
 
-    real effective_stress(uBlasVector& sig);
-
-    real hardening_parameter(real& eps_eq);
-
-    real effective_stress();
+    real f(uBlasVector& sig, real eps_eq);
 
     void df(uBlasVector& a, uBlasVector& sig);
 
     void dg(uBlasVector& b, uBlasVector& sig);
 
+    void ddg(uBlasDenseMatrix& ddg_ddsigma, uBlasVector& sig);
+
+    real effective_stress(uBlasVector& sig);
+
     void dg_mod(uBlasVector& b_mod, uBlasVector& sig, real sig_e);
 
     uBlasDenseMatrix A_m();
-
-    void ddg(uBlasDenseMatrix& ddg_ddsigma, uBlasVector& sig);
 
   private:
 

@@ -11,9 +11,7 @@
 #include <dolfin/PDE.h>
 #include <dolfin/uBlasDenseMatrix.h>
 #include <dolfin/uBlasVector.h>
-
-
-#include "PlasticityModel.h"
+#include <dolfin/PlasticityModel.h>
 
 namespace dolfin
 {
@@ -38,7 +36,7 @@ namespace dolfin
   private:
 
     // constitutive matrix
-    uBlasDenseMatrix C_m(real &lam, real &mu);
+    uBlasDenseMatrix C_m(real lam, real mu);
     
     Mesh& mesh;
     BoundaryCondition& bc;
