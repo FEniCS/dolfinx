@@ -78,19 +78,19 @@ as the specialized mesh iterators
 The following code illustrates how to iterate over all incident
 (connected) vertices of all vertices of all cells of a given mesh:
 \begin{code}
-  for (CellIterator c(mesh); !c.end(); ++c)
-    for (VertexIterator v0(c); !v0.end(); ++v0)
-      for (VertexIterator v1(v0); !v1.end(); ++v1)
-        cout << *v1 << endl;
+for (CellIterator c(mesh); !c.end(); ++c)
+  for (VertexIterator v0(c); !v0.end(); ++v0)
+    for (VertexIterator v1(v0); !v1.end(); ++v1)
+      cout << *v1 << endl;
 \end{code}
 This may alternatively be implemented using the general iterator
 \texttt{MeshEntityIterator} as follows:
 \begin{code}
-  unsigned int dim = mesh.topology().dim();
-  for (MeshEntityIterator c(mesh, dim); !c.end(); ++c)
-    for (MeshEntityIterator v0(c, 0); !v0.end(); ++v0)
-      for (MeshEntityIterator v1(v0, 0); !v1.end(); ++v1)
-        cout << *v1 << endl;
+unsigned int dim = mesh.topology().dim();
+for (MeshEntityIterator c(mesh, dim); !c.end(); ++c)
+  for (MeshEntityIterator v0(c, 0); !v0.end(); ++v0)
+    for (MeshEntityIterator v1(v0, 0); !v1.end(); ++v1)
+      cout << *v1 << endl;
 \end{code}
 
 \section{Mesh functions}
@@ -105,7 +105,7 @@ sub domains or boolean markers for mesh refinement.
 
 A mesh may be refined uniformly as follows:
 \begin{code}
-  mesh.refine();
+mesh.refine();
 \end{code}
 \dolfin{} does currently not support adaptive mesh refinement, but
 this will be supported in future versions.
@@ -117,20 +117,20 @@ this will be supported in future versions.
 A mesh may be loaded from a file, either by specifying the file name
 to the constructor of the class \texttt{Mesh}:
 \begin{code}
-  Mesh mesh(''mesh.xml'');
+Mesh mesh(''mesh.xml'');
 \end{code}
 or by creating a \texttt{File} object and streaming to a
 \texttt{Mesh}:
 \begin{code}
-  File file(''mesh.xml'');
-  Mesh mesh;
-  file >> mesh;
+File file(''mesh.xml'');
+Mesh mesh;
+file >> mesh;
 \end{code}
 A mesh may be stored to file as follows:
 \begin{code}
-  File file(''mesh.xml'');
-  Mesh mesh;
-  file << mesh;
+File file(''mesh.xml'');
+Mesh mesh;
+file << mesh;
 \end{code}
 
 The \dolfin{} mesh XML format has changed in \dolfin{} version
@@ -144,7 +144,7 @@ distribution of \dolfin{}. For instructions, type
 For any given mesh, a mesh of the boundary of the mesh (if any) may be
 created as follows:
 \begin{code}
-  BoundaryMesh boundary(mesh);
+BoundaryMesh boundary(mesh);
 \end{code}
 A \texttt{BoundaryMesh} is itself a \texttt{Mesh} of the same
 geometrical dimension and has the topological dimension of the mesh
@@ -155,9 +155,9 @@ vertices of the boundary mesh to the corresponding vertices in the
 original mesh, and from the cells of the boundary mesh to the
 corresponding facets of the original mesh:
 \begin{code}
-  MeshFunction<unsigned int> vertex_map,
-  MeshFunction<unsigned int> cell_map;
-  BoundaryMesh boundary(mesh, vertex_map, cell_map);
+MeshFunction<unsigned int> vertex_map,
+MeshFunction<unsigned int> cell_map;
+BoundaryMesh boundary(mesh, vertex_map, cell_map);
 \end{code}
 
 \subsection{Built-in meshes}
@@ -169,8 +169,8 @@ demonstrates how to create a $16\times 16$ triangular mesh of the unit square
 $16\times 16\times 16$ tetrahedral mesh of the unit cube (consisting
 of $6\times 16\times 16\times 16 = 24576$ tetrahedra):
 \begin{code}
-  UnitSquare mesh2D(16, 16);
-  UnitCube mesh3D(16, 16, 16);
+UnitSquare mesh2D(16, 16);
+UnitCube mesh3D(16, 16, 16);
 \end{code}
 
 \devnote{We could easily add other built-in meshes, like the unit
@@ -186,17 +186,17 @@ simplicial meshes is provided by the class \texttt{MeshEditor}.
 The following code demonstrates how to create a very simple mesh
 consisting of two triangles covering the unit square:
 \begin{code}
-  Mesh mesh;
-  MeshEditor editor(mesh, CellType::triangle, 2, 2);
-  editor.initVertices(4);
-  editor.initCells(2);
-  editor.addVertex(0, 0.0, 0.0);
-  editor.addVertex(1, 1.0, 0.0);
-  editor.addVertex(2, 1.0, 1.0);
-  editor.addVertex(3, 0.0, 1.0);
-  editor.addCell(0, 0, 1, 2);
-  editor.addCell(1, 0, 2, 3);
-  editor.close();
+Mesh mesh;
+MeshEditor editor(mesh, CellType::triangle, 2, 2);
+editor.initVertices(4);
+editor.initCells(2);
+editor.addVertex(0, 0.0, 0.0);
+editor.addVertex(1, 1.0, 0.0);
+editor.addVertex(2, 1.0, 1.0);
+editor.addVertex(3, 0.0, 1.0);
+editor.addCell(0, 0, 1, 2);
+editor.addCell(1, 0, 2, 3);
+editor.close();
 \end{code}
 Note that the \dolfin{} mesh library is not specialized to simplicial
 meshes, but supports general collections of mesh entities. However,

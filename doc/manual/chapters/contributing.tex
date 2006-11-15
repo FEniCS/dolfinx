@@ -31,31 +31,31 @@ other users.
   Clean up your modified directory structure to remove temporary and binary
   files which will be rebuilt anyway:
   \begin{code}
-    # make clean
+# make clean
   \end{code}
 \item
   From the parent directory, rename the \package{} directory to something else:
-  \begin{code}
-    # mv \packagett{}-0.1.0 \packagett{}-0.1.0-mod
-  \end{code}
+  \begin{macrocode}
+# mv \packagett{}-0.1.0 \packagett{}-0.1.0-mod
+  \end{macrocode}
 \item
   Unpack the version of \package{} that you started from:
-  \begin{code}
-    # tar zxfv \packagett{}-0.1.0.tar.gz
-  \end{code}
+  \begin{macrocode}
+# tar zxfv \packagett{}-0.1.0.tar.gz
+  \end{macrocode}
 \item
   You should now have two \package{} directory structures in your current directory:
-  \begin{code}
-    # ls
-    \packagett{}-0.1.0
-    \packagett{}-0.1.0-mod
-  \end{code}
+  \begin{macrocode}
+# ls
+\packagett{}-0.1.0
+\packagett{}-0.1.0-mod
+  \end{macrocode}
 \item
   Now use the \texttt{diff} tool to create the patch:
-  \begin{code}
-    # diff -u --new-file --recursive \packagett{}-0.1.0
-      \packagett{}-0.1.0-mod > \packagett{}-<identifier>-<date>.patch
-  \end{code}
+  \begin{macrocode}
+# diff -u --new-file --recursive \packagett{}-0.1.0
+ \packagett{}-0.1.0-mod > \packagett{}-<identifier>-<date>.patch
+  \end{macrocode}
   written as one line, where \texttt{<identifier>} is a keyword that
   can be used to identify the patch as coming from you (your username,
   last name, first name, a nickname etc) and \texttt{<date>} is
@@ -66,9 +66,9 @@ other users.
   \texttt{\packagett{}-0.1.0} to easily create your modified version. If the
   patch is large, compressing it with for example \texttt{gzip} is
   advisable:
-  \begin{code}
-    # gzip \packagett{}-<identifier>-<date>.patch
-  \end{code}
+  \begin{macrocode}
+# gzip \packagett{}-<identifier>-<date>.patch
+  \end{macrocode}
 \end{enumerate}
 
 %------------------------------------------------------------------------------
@@ -76,9 +76,9 @@ other users.
 \index{patch}
 
 Patch files should be sent to the \package{} mailing list at the address
-\begin{code}
-  \packagett{}-dev@fenics.org
-\end{code}
+\begin{macrocode}
+\packagett{}-dev@fenics.org
+\end{macrocode}
 Include a short description of what your patch accomplishes. Small
 patches have a better chance of being accepted, so if you are making a
 major contribution, please consider breaking your changes up into
@@ -95,28 +95,28 @@ version of release 0.1.0.
 \begin{enumerate}
 \item
   Unpack the version of \package{} which the patch is built relative to:
-  \begin{code}
-    # tar zxfv \packagett{}-0.1.0.tar.gz
-  \end{code}
+  \begin{macrocode}
+# tar zxfv \packagett{}-0.1.0.tar.gz
+  \end{macrocode}
 \item
   Check that you have the patch \texttt{\packagett{}-<identifier>-<date>.patch} and the \package{}
   directory structure in the current directory:
-  \begin{code}
-    # ls
-    \packagett{}-0.1.0
-    \packagett{}-<identifier>-<date>.patch
-  \end{code}
+  \begin{macrocode}
+# ls
+\packagett{}-0.1.0
+\packagett{}-<identifier>-<date>.patch
+  \end{macrocode}
   Unpack the patch file using \texttt{gunzip} if necessary.
 \item
   Enter the \package{} directory structure:
-  \begin{code}
-    # cd \packagett{}-0.1.0
-  \end{code}
+  \begin{macrocode}
+# cd \packagett{}-0.1.0
+  \end{macrocode}
 \item
   Apply the patch:
-  \begin{code}
-    # patch -p1 < ../\packagett{}-<identifier>-<date>.patch
-  \end{code}
+  \begin{macrocode}
+# patch -p1 < ../\packagett{}-<identifier>-<date>.patch
+  \end{macrocode}
   The option \texttt{-p1} strips the leading directory from the filename
   references in the patch, to match the fact that we are applying the
   patch from inside the directory. Another useful option to
