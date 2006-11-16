@@ -8,16 +8,15 @@
 
 using namespace dolfin;
 
-// Right-hand side
-class MyFunction : public Function //this function controls the body force
+// Right-hand side (body force)
+class MyFunction : public Function
 {
   real eval(const Point& p, unsigned int i)
   {
-    if (i==1)  // bodyforce in y-dir
-      return 0.0*time();  // 
-
+    if (i==1)
+      return 0.0*time(); 
     else
-      return 0.0;  // remaining directions
+      return 0.0;
   }
 };
 
@@ -41,24 +40,26 @@ int main()
   MyFunction f;
   MyBC bc;
 
-  real E = 200000.0; // Young's modulus
-  real nu = 0.3; // Poisson's ratio
-  
-  real T = 1.0;  // final time
-  real dt = 0.1; // time step
+  // Young's modulus and Poisson's ratio
+  real E = 200000.0;
+  real nu = 0.3;
 
-  // hardening
-  real E_t(0.1 * E); // slope of hardening (linear)
-  real H = E_t/(1-E_t/E); // hardening parameter (linear)
+  // Final time and time step
+  real T = 1.0;
+  real dt = 0.1;
 
-  // yield stress
-  real sig_o = 200.0;
+  // Slope of hardening (linear) and hardening parameter
+  real E_t(0.1 * E);
+  real hardening_parameter = E_t/(1-E_t/E);
 
-  // object of class von Mise
-  VonMises J2(sig_o, H);
+  // Yield stress
+  real yield_stress = 200.0;
 
-  // solve problem
-  PlasticitySolver::solve(mesh, bc, f, E, nu, dt, T, J2);
+  // Object of class von Mise
+  VonMises J2(E, nu, yield_stress, hardening_parameter);
+
+  // Solve problem
+  PlasticitySolver::solve(mesh, bc, f, dt, T, J2);
 
   return 0;
 }
