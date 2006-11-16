@@ -18,7 +18,7 @@ namespace dolfin
   public:
 
     /// Constructor
-    PlasticityModel(real E, real nu);
+    PlasticityModel(const real E, const real nu);
     
     /// Destructor
     virtual ~PlasticityModel();
@@ -27,7 +27,8 @@ namespace dolfin
     virtual real hardening_parameter(real const equivalent_plastic_strain) const;
 
     /// Equivalent plastic strain
-    virtual real kappa(real equivalent_plastic_strain, const uBlasVector& current_stress, const real lambda_dot);
+    virtual real kappa(real equivalent_plastic_strain, 
+                       const uBlasVector& current_stress, const real lambda_dot);
 
     /// Value of yield function f
     virtual real f(const uBlasVector& current_stress, const real equivalent_plastic_strain) = 0;

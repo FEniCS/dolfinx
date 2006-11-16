@@ -3,36 +3,37 @@
 //
 // First added:  2006-11-13
 
+#include <dolfin/PDE.h>
+#include <dolfin/NewtonSolver.h>
 #include <dolfin/PlasticitySolver.h>
-#include <dolfin/Output2D.h>
-#include <dolfin/Output3D.h>
 #include <dolfin/PlasticityModel.h>
 #include <dolfin/PlasticityProblem.h>
+#include <dolfin/Output2D.h>
+#include <dolfin/Output3D.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-PlasticitySolver::PlasticitySolver(Mesh& mesh,
-         BoundaryCondition& bc, Function& f, real dt, real T, PlasticityModel& plastic_model)
-  : mesh(mesh), bc(bc), f(f), dt(dt), T(T), plastic_model(plastic_model)
+PlasticitySolver::PlasticitySolver(Mesh& mesh, BoundaryCondition& bc, 
+                  Function& f, const real dt, const real T, 
+                  PlasticityModel& plasticity_model) : mesh(mesh), bc(bc), f(f), 
+                  dt(dt), T(T), plasticity_model(plasticity_model)
 {
   dolfin_warning("The plasticity solver is experimental.");
 }
 //-----------------------------------------------------------------------------
 void PlasticitySolver::solve()
 {
-
   bool elastic_tangent = false;
 
   // Solution function
   Function u;
 
-  // Create object of type PlasticityProblem
-  PlasticityProblem nonlinear_problem(u, f, mesh, bc, elastic_tangent, plastic_model);  
+  // Create PlasticityProblem
+  PlasticityProblem nonlinear_problem(u, f, mesh, bc, elastic_tangent, plasticity_model);  
 
   // Create nonlinear solver and set parameters
   NewtonSolver nonlinear_solver;
-
   nonlinear_solver.set("Newton convergence criterion", "incremental");
   nonlinear_solver.set("Newton maximum iterations", 50);
   nonlinear_solver.set("Newton relative tolerance", 1e-6);
@@ -40,16 +41,19 @@ void PlasticitySolver::solve()
 
   // Bilinear and linear forms for continuous output of equivalent plastic strain
   BilinearForm *a_cont_equivalent_plastic_strain = 0;
-  LinearForm *L_cont_equivalent_plastic_strain = 0;
+  LinearForm   *L_cont_equivalent_plastic_strain = 0;
+
   if(mesh.topology().dim() == 2)
   {
     a_cont_equivalent_plastic_strain = new Output2D::BilinearForm;
-    L_cont_equivalent_plastic_strain = new Output2D::LinearForm(*nonlinear_problem.equivalent_plastic_strain_old_function);
+    L_cont_equivalent_plastic_strain 
+       = new Output2D::LinearForm(*(nonlinear_problem.equivalent_plastic_strain_old_function));
   }
   else if(mesh.topology().dim() == 3)
   {
     a_cont_equivalent_plastic_strain = new Output3D::BilinearForm;
-    L_cont_equivalent_plastic_strain = new Output3D::LinearForm(*nonlinear_problem.equivalent_plastic_strain_old_function);
+    L_cont_equivalent_plastic_strain 
+      = new Output3D::LinearForm(*(nonlinear_problem.equivalent_plastic_strain_old_function));
   }
 
   // Setup pde to project strains onto a continuous basis
@@ -62,7 +66,7 @@ void PlasticitySolver::solve()
   // Time
   real t  = 0.0;
 
-  // Associate time with source term and boundary conditions
+  // Associate source term and boundary conditions with time
   f.sync(t);
   bc.sync(t);
   
@@ -87,11 +91,14 @@ void PlasticitySolver::solve()
     nonlinear_solver.solve(nonlinear_problem, x);
 
     // Update variables
-    *nonlinear_problem.plastic_strain_old_function = *nonlinear_problem.plastic_strain_new_function;
-    *nonlinear_problem.equivalent_plastic_strain_old_function = *nonlinear_problem.equivalent_plastic_strain_new_function;
-    *nonlinear_problem.consistent_tangent_old_function = *nonlinear_problem.consistent_tangent_new_function;
+    *(nonlinear_problem.plastic_strain_old_function) 
+        = *(nonlinear_problem.plastic_strain_new_function);
+    *(nonlinear_problem.equivalent_plastic_strain_old_function) 
+        = *(nonlinear_problem.equivalent_plastic_strain_new_function);
+    *(nonlinear_problem.consistent_tangent_old_function) 
+        = *(nonlinear_problem.consistent_tangent_new_function);
 
-    // Project strain onto continuous basis
+    // Project equivalent strain onto continuous basis for postprocessing
     dolfin_log(false);
     pde.solve(cont_equivalent_plastic_strain);
     dolfin_log(true);
@@ -104,10 +111,11 @@ void PlasticitySolver::solve()
   }
 }
 //-----------------------------------------------------------------------------
-void PlasticitySolver::solve(Mesh& mesh,
-         BoundaryCondition& bc, Function& f, real dt, real T, PlasticityModel& plastic_model)
+void PlasticitySolver::solve(Mesh& mesh, BoundaryCondition& bc, Function& f, 
+                             const real dt, const real T, 
+                             PlasticityModel& plasticity_model)
 {
-  PlasticitySolver solver(mesh, bc, f, dt, T, plastic_model);
+  PlasticitySolver solver(mesh, bc, f, dt, T, plasticity_model);
   solver.solve();
 }
 //-----------------------------------------------------------------------------

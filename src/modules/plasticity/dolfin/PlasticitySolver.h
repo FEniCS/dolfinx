@@ -7,8 +7,6 @@
 #define __PLASTICITY_SOLVER_H
 
 #include <dolfin/Solver.h>
-#include <dolfin/NewtonSolver.h>
-#include <dolfin/PDE.h>
 #include <dolfin/uBlasDenseMatrix.h>
 #include <dolfin/uBlasVector.h>
 #include <dolfin/PlasticityModel.h>
@@ -21,25 +19,24 @@ namespace dolfin
   public:
     
     /// Constructor
-    PlasticitySolver(Mesh& mesh,
-         BoundaryCondition& bc, Function& f, real dt, real T, PlasticityModel& plastic_model);
+    PlasticitySolver(Mesh& mesh, BoundaryCondition& bc, Function& f, 
+                     const real dt, const real T, PlasticityModel& plastic_model);
     
-    /// Solve plasticity
+    /// Solve plasticity problem
     void solve();
     
     /// Solve plasticity (static version)
-    static void solve(Mesh& mesh,
-          BoundaryCondition& bc, Function& f, real dt, real T, PlasticityModel& plastic_model);
+    static void solve(Mesh& mesh, BoundaryCondition& bc, Function& f, 
+                      const real dt, const real T, PlasticityModel& plastic_model);
     
   private:
 
-    /// Class variables
     Mesh& mesh;
     BoundaryCondition& bc;
     Function& f;
     real dt;
     real T;
-    PlasticityModel& plastic_model;
+    PlasticityModel& plasticity_model;
   };
 }
 

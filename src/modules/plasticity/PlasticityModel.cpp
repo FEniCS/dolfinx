@@ -8,13 +8,13 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-PlasticityModel::PlasticityModel(real E, real nu) : _hardening_parameter(0.0)
+PlasticityModel::PlasticityModel(const real E, const real nu) : _hardening_parameter(0.0)
 {
-  //  Lame coefficients
+  // Lame coefficients
   real lam = nu*E/((1+nu)*(1-2*nu));
   real mu = E/(2*(1+nu));
 
-  // Elastic tangent
+  // Create elastic tangent
   elastic_tangent = C_m(lam, mu);
 }
 //-----------------------------------------------------------------------------
@@ -31,14 +31,12 @@ real PlasticityModel::hardening_parameter(real const equivalent_plastic_strain) 
 real PlasticityModel::kappa(real equivalent_plastic_strain, 
                 const uBlasVector& current_stress, const real lambda_dot)
 {
-  equivalent_plastic_strain += lambda_dot;
-
-  return equivalent_plastic_strain;
+  return equivalent_plastic_strain += lambda_dot;
 }
 //-----------------------------------------------------------------------------
 void PlasticityModel::dg(uBlasVector &dg_dsigma, const uBlasVector& current_stress)
 {
-  // If dg is not overloaded associative flow is assumed (dg/dsigma = df/dsigma)
+  // If dg is not overloaded, associative flow is assumed (dg/dsigma = df/dsigma)
   df(dg_dsigma, current_stress);
 }
 //-----------------------------------------------------------------------------
