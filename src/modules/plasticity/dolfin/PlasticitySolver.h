@@ -20,32 +20,26 @@ namespace dolfin
   {
   public:
     
-    // Create plasticity solver
+    /// Constructor
     PlasticitySolver(Mesh& mesh,
-         BoundaryCondition& bc, Function& f, real E, real nu,
-         real dt, real T, PlasticityModel& plas);
+         BoundaryCondition& bc, Function& f, real dt, real T, PlasticityModel& plastic_model);
     
-    // Solve plasticity
+    /// Solve plasticity
     void solve();
     
-    // Solve plasticity (static version)
+    /// Solve plasticity (static version)
     static void solve(Mesh& mesh,
-          BoundaryCondition& bc, Function& f, real E, real nu,
-          real dt, real T, PlasticityModel& plas);
+          BoundaryCondition& bc, Function& f, real dt, real T, PlasticityModel& plastic_model);
     
   private:
 
-    // constitutive matrix
-    uBlasDenseMatrix C_m(real lam, real mu);
-    
+    /// Class variables
     Mesh& mesh;
     BoundaryCondition& bc;
     Function& f;
-    real E;
-    real nu;
     real dt;
     real T;
-    PlasticityModel& plas;
+    PlasticityModel& plastic_model;
   };
 }
 

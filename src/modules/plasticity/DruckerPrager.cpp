@@ -7,74 +7,75 @@
 
 using namespace dolfin;
 
-DruckerPrager::DruckerPrager(real _phi, real _psi, real _c, real _H) 
-            : PlasticityModel(), phi(_phi), psi(_psi), c(_c), sig_e(0.0), H(_H)
+DruckerPrager::DruckerPrager(real E, real nu, real friction_angle, real dilatancy_angle, real cohesion, real hardening_parameter) 
+            : PlasticityModel(E, nu), _effective_stress(0.0), _hardening_parameter(hardening_parameter)
 {
   Am = A_m();
   dg_dsigma_mod.resize(6, false);
 
-  alpha_f = (6.0*sin(phi))/(3-sin(phi));
-  k_f = (6.0*c*cos(phi))/(3-sin(phi));
-  alpha_g = (6.0*sin(psi))/(3-sin(psi));
+  alpha_friction = (6.0*sin(friction_angle))/(3-sin(friction_angle));
+  k_friction = (6.0*cohesion*cos(friction_angle))/(3-sin(friction_angle));
+  alpha_dilatancy = (6.0*sin(dilatancy_angle))/(3-sin(dilatancy_angle));
 }
 //-----------------------------------------------------------------------------
-real DruckerPrager::hardening_parameter(real eps_eq)
+real DruckerPrager::hardening_parameter(real const equivalent_plastic_strain) const
 {
-  return H;
+  return _hardening_parameter;
 }
 //-----------------------------------------------------------------------------
-real DruckerPrager::f(uBlasVector& sig, real eps_eq)
+real DruckerPrager::f(const uBlasVector& current_stress, const real equivalent_plastic_strain)
 {
-  sig_e = effective_stress(sig);
+  _effective_stress = effective_stress(current_stress);
 
-  return sig_e + alpha_f/3.0*(sig(0) + sig(1) + sig(2)) -k_f- H*eps_eq ;
+  return _effective_stress + alpha_friction/3.0*(current_stress(0) + current_stress(1) + current_stress(2))
+         - k_friction - _hardening_parameter * equivalent_plastic_strain;
 }
 //-----------------------------------------------------------------------------
-void DruckerPrager::df(uBlasVector& a, uBlasVector& sig)
+void DruckerPrager::df(uBlasVector& df_dsigma, const uBlasVector& current_stress)
 {
-  sig_e = effective_stress(sig);
-  a(0) = (2*sig(0)-sig(1)-sig(2))/(2*sig_e) + alpha_f/3.0;
-  a(1) = (2*sig(1)-sig(0)-sig(2))/(2*sig_e) + alpha_f/3.0;
-  a(2) = (2*sig(2)-sig(0)-sig(1))/(2*sig_e) + alpha_f/3.0;
-  a(3) = 6*sig(3)/(2*sig_e); 
-  a(4) = 6*sig(4)/(2*sig_e); 
-  a(5) = 6*sig(5)/(2*sig_e);
+  _effective_stress = effective_stress(current_stress);
+  df_dsigma(0) = (2*current_stress(0)-current_stress(1)-current_stress(2))/(2*_effective_stress) + alpha_friction/3.0;
+  df_dsigma(1) = (2*current_stress(1)-current_stress(0)-current_stress(2))/(2*_effective_stress) + alpha_friction/3.0;
+  df_dsigma(2) = (2*current_stress(2)-current_stress(0)-current_stress(1))/(2*_effective_stress) + alpha_friction/3.0;
+  df_dsigma(3) = 6*current_stress(3)/(2*_effective_stress); 
+  df_dsigma(4) = 6*current_stress(4)/(2*_effective_stress); 
+  df_dsigma(5) = 6*current_stress(5)/(2*_effective_stress);
 }
 //-----------------------------------------------------------------------------
-void DruckerPrager::dg(uBlasVector& b, uBlasVector& sig)
+void DruckerPrager::dg(uBlasVector& dg_dsigma, const uBlasVector& current_stress)
 {
-  sig_e = effective_stress(sig);
-  b(0) = (2*sig(0)-sig(1)-sig(2))/(2*sig_e) + alpha_g/3.0;
-  b(1) = (2*sig(1)-sig(0)-sig(2))/(2*sig_e) + alpha_g/3.0;
-  b(2) = (2*sig(2)-sig(0)-sig(1))/(2*sig_e) + alpha_g/3.0;
-  b(3) = 6*sig(3)/(2*sig_e);
-  b(4) = 6*sig(4)/(2*sig_e); 
-  b(5) = 6*sig(5)/(2*sig_e);
+  _effective_stress = effective_stress(current_stress);
+  dg_dsigma(0) = (2*current_stress(0)-current_stress(1)-current_stress(2))/(2*_effective_stress) + alpha_dilatancy/3.0;
+  dg_dsigma(1) = (2*current_stress(1)-current_stress(0)-current_stress(2))/(2*_effective_stress) + alpha_dilatancy/3.0;
+  dg_dsigma(2) = (2*current_stress(2)-current_stress(0)-current_stress(1))/(2*_effective_stress) + alpha_dilatancy/3.0;
+  dg_dsigma(3) = 6*current_stress(3)/(2*_effective_stress);
+  dg_dsigma(4) = 6*current_stress(4)/(2*_effective_stress); 
+  dg_dsigma(5) = 6*current_stress(5)/(2*_effective_stress);
 }
 //-----------------------------------------------------------------------------
-void DruckerPrager::ddg(uBlasDenseMatrix& ddg_ddsigma, uBlasVector& sig)
+void DruckerPrager::ddg(uBlasDenseMatrix& ddg_ddsigma, const uBlasVector& current_stress)
 {
-  sig_e = effective_stress(sig);
-  dg_mod(dg_dsigma_mod, sig, sig_e);
-  ddg_ddsigma.assign(Am/(2*sig_e) - outer_prod(dg_dsigma_mod,dg_dsigma_mod)/sig_e);
+  _effective_stress = effective_stress(current_stress);
+  dg_mod(dg_dsigma_mod, current_stress);
+  ddg_ddsigma.assign(Am/(2*_effective_stress) - outer_prod(dg_dsigma_mod, dg_dsigma_mod)/_effective_stress);
 }
 //-----------------------------------------------------------------------------
-real DruckerPrager::effective_stress(uBlasVector& sig)
+real DruckerPrager::effective_stress(const uBlasVector& current_stress)
 {
-  return sqrt(pow((sig(0) + sig(1) + sig(2)),2)-3*(sig(0) * sig(1) 
-              + sig(0) * sig(2) + sig(1) * sig(2) -pow(sig(3),2) 
-              -pow(sig(4),2) -pow(sig(5),2)));
+  return sqrt(pow((current_stress(0) + current_stress(1) + current_stress(2)),2)-3*(current_stress(0) * current_stress(1) 
+          + current_stress(0) * current_stress(2) + current_stress(1) * current_stress(2) -pow  (current_stress(3),2) 
+          - pow(current_stress(4),2) -pow(current_stress(5),2)));
 }
 //-----------------------------------------------------------------------------
-void DruckerPrager::dg_mod(uBlasVector& b_mod, uBlasVector& sig, real sig_e)
+void DruckerPrager::dg_mod(uBlasVector& dg_dsigma_mod, const uBlasVector& current_stress)
 {
-  sig_e = effective_stress(sig);
-  b_mod(0) = (2*sig(0)-sig(1)-sig(2))/(2*sig_e);
-  b_mod(1) = (2*sig(1)-sig(0)-sig(2))/(2*sig_e);
-  b_mod(2) = (2*sig(2)-sig(0)-sig(1))/(2*sig_e);
-  b_mod(3) = 6*sig(3)/(2*sig_e);
-  b_mod(4) = 6*sig(4)/(2*sig_e); 
-  b_mod(5) = 6*sig(5)/(2*sig_e);
+  _effective_stress = effective_stress(current_stress);
+  dg_dsigma_mod(0) = (2*current_stress(0)-current_stress(1)-current_stress(2))/(2*_effective_stress);
+  dg_dsigma_mod(1) = (2*current_stress(1)-current_stress(0)-current_stress(2))/(2*_effective_stress);
+  dg_dsigma_mod(2) = (2*current_stress(2)-current_stress(0)-current_stress(1))/(2*_effective_stress);
+  dg_dsigma_mod(3) = 6*current_stress(3)/(2*_effective_stress);
+  dg_dsigma_mod(4) = 6*current_stress(4)/(2*_effective_stress); 
+  dg_dsigma_mod(5) = 6*current_stress(5)/(2*_effective_stress);
 }
 //-----------------------------------------------------------------------------
 uBlasDenseMatrix DruckerPrager::A_m()
