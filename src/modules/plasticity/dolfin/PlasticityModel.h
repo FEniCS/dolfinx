@@ -8,7 +8,6 @@
 
 #include <dolfin/uBlasDenseMatrix.h>
 #include <dolfin/uBlasVector.h>
-#include <dolfin/ublas.h>
 
 namespace dolfin
 {
@@ -18,46 +17,38 @@ namespace dolfin
   public:
 
     /// Constructor
-    PlasticityModel();
+    PlasticityModel(const real E, const real nu);
     
     /// Destructor
     virtual ~PlasticityModel();
 
-    /// Initialise variables
-    void initialise();    
-
     /// Hardening parameter
-    virtual real hardening_parameter(real eps_eq);
+    virtual real hardening_parameter(real const equivalent_plastic_strain) const;
 
     /// Equivalent plastic strain
-    virtual real kappa(real eps_eq, uBlasVector& sig, real lambda);
+    virtual real kappa(real equivalent_plastic_strain, 
+                       const uBlasVector& current_stress, const real lambda_dot) const;
 
     /// Value of yield function f
-    virtual real f(uBlasVector& sig, real eps_eq) = 0;
+    virtual real f(const uBlasVector& current_stress, const real equivalent_plastic_strain) = 0;
 
     /// First derivative of f with respect to sigma
-    virtual void df(uBlasVector& a, uBlasVector& sig) = 0;
+    virtual void df(uBlasVector& df_dsigma, const uBlasVector& current_stress) = 0;
 
     /// First derivative of g with respect to sigma
-    virtual void dg(uBlasVector& b, uBlasVector& sig);
+    virtual void dg(uBlasVector& dg_dsigma, const uBlasVector& current_stress);
     
     /// Second derivative of g with respect to sigma
-    virtual void ddg(uBlasDenseMatrix& dm_dsig, uBlasVector& sig) = 0;
+    virtual void ddg(uBlasDenseMatrix& ddg_ddsigma, const uBlasVector& current_stress) = 0;
     
     friend class ReturnMapping;
+    friend class PlasticityProblem;
 
   private:
 
-    uBlasDenseMatrix R;
-    uBlasDenseMatrix ddg_ddsigma;
-
-    uBlasDenseMatrix inverse_Q;
-    ublas::identity_matrix<real> I;
-
-    uBlasVector df_dsigma, dg_dsigma, sigma_current, sigma_dot, sigma_residual, Rm, Rn, RinvQ;
-
+    /// Model parameters
     real _hardening_parameter;
-
+    uBlasDenseMatrix elastic_tangent;
   };
 }
 

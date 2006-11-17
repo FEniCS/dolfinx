@@ -8,16 +8,15 @@
 
 using namespace dolfin;
 
-// Right-hand side
-class MyFunction : public Function //this function controls the body force
+// Right-hand side (body force)
+class MyFunction : public Function
 {
   real eval(const Point& p, unsigned int i)
   {
-    if (i==1)  // bodyforce in y-dir
-      return 0.0*time();  // 
-
+    if (i==1)
+      return -100.0*time(); 
     else
-      return 0.0;  // remaining directions
+      return 0.0;
   }
 };
 
@@ -26,39 +25,39 @@ class MyBC : public BoundaryCondition
 {
   void eval(BoundaryValue& value, const Point& p, unsigned int i)
   {
-    if ( (std::abs(p.y()) < DOLFIN_EPS && i ==1) || ( (std::abs(p.y()) < DOLFIN_EPS) && ( (p.x()-0.24) > DOLFIN_EPS) && ( (p.x()-0.76) < DOLFIN_EPS)  && i==0) )
+    if ( (std::abs(p.y()) < DOLFIN_EPS && i ==1) || ( p.x() < DOLFIN_EPS && i==0) )
       value = 0.0;
-
-     if (std::abs(p.y() - 1.0) < DOLFIN_EPS && i==1)
-      value = -0.002*time();
   }
 };
 
 int main()
 {
-  UnitSquare mesh(20, 20);
+//  UnitSquare mesh(20, 20);
+  Mesh mesh("../../../../data/meshes/dolfin-1.xml.gz");
 
   MyFunction f;
   MyBC bc;
 
-  real E = 200000.0; // Young's modulus
-  real nu = 0.3; // Poisson's ratio
-  
-  real T = 1.0;  // final time
-  real dt = 0.1; // time step
+  // Young's modulus and Poisson's ratio
+  real E = 200000.0;
+  real nu = 0.3;
 
-  // hardening
-  real E_t(0.1 * E); // slope of hardening (linear)
-  real H = E_t/(1-E_t/E); // hardening parameter (linear)
+  // Final time and time step
+  real T = 2.0;
+  real dt = 0.2;
 
-  // yield stress
-  real sig_o = 200.0;
+  // Slope of hardening (linear) and hardening parameter
+  real E_t(0.1 * E);
+  real hardening_parameter = E_t/(1-E_t/E);
 
-  // object of class von Mise
-  VonMises J2(sig_o, H);
+  // Yield stress
+  real yield_stress = 200.0;
 
-  // solve problem
-  PlasticitySolver::solve(mesh, bc, f, E, nu, dt, T, J2);
+  // Object of class von Mise
+  VonMises J2(E, nu, yield_stress, hardening_parameter);
+
+  // Solve problem
+  PlasticitySolver::solve(mesh, bc, f, dt, T, J2);
 
   return 0;
 }

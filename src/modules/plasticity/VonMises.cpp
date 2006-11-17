@@ -5,61 +5,57 @@
 
 #include <dolfin/VonMises.h>
 
-
 using namespace dolfin;
 
-VonMises::VonMises(real& yield_stress, real& hardening_parameter) 
-          : PlasticityModel(), sig_o(yield_stress),  H(hardening_parameter)
+VonMises::VonMises(real E, real nu, real yield_stress, real hardening_parameter) 
+                 : PlasticityModel(E, nu), _yield_stress(yield_stress), 
+                   _effective_stress(0.0), _hardening_parameter(hardening_parameter)
 {
-  Am = A_m();
   dg_dsigma.resize(6, false);
-}
-//-----------------------------------------------------------------------------
-real VonMises::hardening_parameter(real eps_eq)
-{
-  return H;
-}
-//-----------------------------------------------------------------------------
-real VonMises::f(uBlasVector& sig, real eps_eq)
-{
-  sig_e = effective_stress(sig);
 
-  return sig_e - sig_o - H * eps_eq;
-}
-//-----------------------------------------------------------------------------
-void VonMises::df(uBlasVector& a, uBlasVector& sig)
-{
-  sig_e = effective_stress(sig);
-
-  a(0) = (2*sig(0)-sig(1)-sig(2))/(2*sig_e);
-  a(1) = (2*sig(1)-sig(0)-sig(2))/(2*sig_e);
-  a(2) = (2*sig(2)-sig(0)-sig(1))/(2*sig_e);
-  a(3) = 6*sig(3)/(2*sig_e);
-  a(4) = 6*sig(4)/(2*sig_e);
-  a(5) = 6*sig(5)/(2*sig_e);
-}
-//-----------------------------------------------------------------------------
-void VonMises::ddg(uBlasDenseMatrix& ddg_ddsigma, uBlasVector& sig)
-{
-  sig_e = effective_stress(sig);
-  df(dg_dsigma,sig);
-  ddg_ddsigma.assign(Am/(2*sig_e) - outer_prod(dg_dsigma,dg_dsigma)/sig_e);
-}
-//-----------------------------------------------------------------------------
-real VonMises::effective_stress(uBlasVector& sig)
-{
-  return sqrt(pow((sig(0) + sig(1) + sig(2)),2)-3*(sig(0) * sig(1) 
-          + sig(0) * sig(2) + sig(1) * sig(2) -pow  (sig(3),2) 
-          - pow(sig(4),2) -pow(sig(5),2)));
-}
-//-----------------------------------------------------------------------------
-uBlasDenseMatrix VonMises::A_m()
-{
   uBlasDenseMatrix A(6,6);
   A.clear(); 
-  A(0,0)=2, A(1,1)=2, A(2,2)=2, A(3,3)=6, A(4,4)=6, A(5,5)=6;
-  A(0,1)=-1, A(0,2)=-1, A(1,0)=-1, A(1,2)=-1, A(2,0)=-1, A(2,1)=-1;    
+  A(0,0) = 2, A(1,1) = 2, A(2,2) = 2, A(3,3) = 6, A(4,4) = 6, A(5,5) = 6;
+  A(0,1) = -1, A(0,2) = -1, A(1,0) = -1, A(1,2) = -1, A(2,0) = -1, A(2,1)=-1;    
+}
+//-----------------------------------------------------------------------------
+real VonMises::hardening_parameter(const real equivalent_plastic_strain) const
+{
+  return _hardening_parameter;
+}
+//-----------------------------------------------------------------------------
+real VonMises::f(const uBlasVector& current_stress, const real equivalent_plastic_strain)
+{
+  _effective_stress = effective_stress(current_stress);
 
-  return A;
+  return _effective_stress - _yield_stress - _hardening_parameter*equivalent_plastic_strain;
+}
+//-----------------------------------------------------------------------------
+void VonMises::df(uBlasVector& df_dsigma, const uBlasVector& current_stress)
+{
+  _effective_stress = effective_stress(current_stress);
+
+  df_dsigma(0) = (2*current_stress(0)-current_stress(1)-current_stress(2))/(2*_effective_stress);
+  df_dsigma(1) = (2*current_stress(1)-current_stress(0)-current_stress(2))/(2*_effective_stress);
+  df_dsigma(2) = (2*current_stress(2)-current_stress(0)-current_stress(1))/(2*_effective_stress);
+  df_dsigma(3) = 6*current_stress(3)/(2*_effective_stress);
+  df_dsigma(4) = 6*current_stress(4)/(2*_effective_stress);
+  df_dsigma(5) = 6*current_stress(5)/(2*_effective_stress);
+}
+//-----------------------------------------------------------------------------
+void VonMises::ddg(uBlasDenseMatrix& ddg_ddsigma, const uBlasVector& current_stress)
+{
+  _effective_stress = effective_stress(current_stress);
+  df(dg_dsigma, current_stress);
+  ddg_ddsigma.assign(Am/(2*_effective_stress) - outer_prod(dg_dsigma,dg_dsigma)/_effective_stress);
+}
+//-----------------------------------------------------------------------------
+real VonMises::effective_stress(const uBlasVector& current_stress)
+{
+  return sqrt(pow((current_stress(0) + current_stress(1) 
+          + current_stress(2)),2) - 3*(current_stress(0)*current_stress(1) 
+          + current_stress(0)*current_stress(2) 
+          + current_stress(1)*current_stress(2) -pow(current_stress(3),2) 
+          - pow(current_stress(4),2) -pow(current_stress(5),2)));
 }
 //-----------------------------------------------------------------------------

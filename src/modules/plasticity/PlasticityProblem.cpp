@@ -4,7 +4,6 @@
 // First added:  2006-11-13
 
 #include <dolfin/PlasticityProblem.h>
-#include <dolfin/ReturnMapping.h>
 #include <dolfin/Plas2D.h>
 #include <dolfin/Strain2D.h>
 #include <dolfin/Tangent2D.h>
@@ -19,205 +18,207 @@
 using namespace dolfin;
 
 PlasticityProblem::PlasticityProblem(Function& u, Function& b, Mesh& mesh, 
-          BoundaryCondition& bc, bool& elastic_tangent, PlasticityModel& plas, 
-          uBlasDenseMatrix& D) : NonlinearProblem(),
-          _mesh(&mesh), _bc(&bc), _elastic_tangent(&elastic_tangent), _plas(&plas), _D(&D)
+          BoundaryCondition& bc, bool& elastic_tangent, PlasticityModel& plastic_model):
+          NonlinearProblem(), _mesh(&mesh), _bc(&bc), _elastic_tangent(&elastic_tangent), _plastic_model(&plastic_model)
 {
   // Create functions
-  strain = new Function; stress = new Function;
-  tangent_old = new Function;  tangent_new = new Function;
-  eq_strain_old = new Function; eq_strain_new = new Function;
-  p_strain_old = new Function; p_strain_new = new Function;
+  plastic_strain_old_function = new Function;
+  plastic_strain_new_function = new Function;
+  equivalent_plastic_strain_old_function = new Function;
+  equivalent_plastic_strain_new_function = new Function;
+  consistent_tangent_old_function = new Function;
+  consistent_tangent_new_function = new Function;
+  strain_function = new Function;
+  stress_function = new Function;
 
   // Create forms 2D or 3D
   if(mesh.topology().dim() == 2)
   {
-    a = new Plas2D::BilinearForm(*tangent_new);
-    L = new Plas2D::LinearForm(b, *stress);
+    a = new Plas2D::BilinearForm(*consistent_tangent_new_function);
     a_strain = new Strain2D::BilinearForm;
+    a_tangent = new Tangent2D::BilinearForm;
+    a_plastic_strain = new p_strain2D::BilinearForm;
+    a_equivalent_plastic_strain = new ep_strain2D::BilinearForm;
+    L = new Plas2D::LinearForm(b, *stress_function);
     L_strain = new Strain2D::LinearForm(u);
-    a_tan = new Tangent2D::BilinearForm;
-    ap_strain = new p_strain2D::BilinearForm;
-    aep_strain = new ep_strain2D::BilinearForm;
   }
   else if(mesh.topology().dim() == 3)
   {
-    a = new Plas3D::BilinearForm(*tangent_new);
-    L = new Plas3D::LinearForm(b, *stress);
+    a = new Plas3D::BilinearForm(*consistent_tangent_new_function);
     a_strain = new Strain3D::BilinearForm;
+    a_tangent = new Tangent3D::BilinearForm;
+    a_plastic_strain = new p_strain3D::BilinearForm;
+    a_equivalent_plastic_strain = new ep_strain3D::BilinearForm;
+    L = new Plas3D::LinearForm(b, *stress_function);
     L_strain = new Strain3D::LinearForm(u);
-    a_tan = new Tangent3D::BilinearForm;
-    ap_strain = new p_strain3D::BilinearForm;
-    aep_strain = new ep_strain3D::BilinearForm;
   }
 
-  // assemple matrix for strain computation, since it is constant it can be pre computed
+  // Assemple matrix for strain computation, since it is constant it can be pre computed
   FEM::assemble(*a_strain, A_strain, mesh);
 
-  // initialise functions
+  // Initialise functions
   u.init(mesh, a->trial());
-  strain->init(mesh, L_strain->test());
-  stress->init(mesh, L_strain->test());
-  tangent_old->init(mesh, a_tan->trial());
-  tangent_new->init(mesh, a_tan->trial());
-  eq_strain_old->init(mesh, aep_strain->test());
-  eq_strain_new->init(mesh, aep_strain->test());
-  p_strain_old->init(mesh, ap_strain->trial());
-  p_strain_new->init(mesh, ap_strain->trial());
+  plastic_strain_old_function->init(mesh, a_plastic_strain->trial());
+  plastic_strain_new_function->init(mesh, a_plastic_strain->trial());
+  consistent_tangent_old_function->init(mesh, a_tangent->trial());
+  consistent_tangent_new_function->init(mesh, a_tangent->trial());
+  equivalent_plastic_strain_old_function->init(mesh, a_equivalent_plastic_strain->test());
+  equivalent_plastic_strain_new_function->init(mesh, a_equivalent_plastic_strain->test());
+  strain_function->init(mesh, L_strain->test());
+  stress_function->init(mesh, L_strain->test());
+
+  return_mapping = new ReturnMapping;
 }
 //-----------------------------------------------------------------------------
 PlasticityProblem::~PlasticityProblem()
 {
-  delete strain; delete stress;
-  delete tangent_old;  delete tangent_new;
-  delete eq_strain_old; delete eq_strain_new;
-  delete p_strain_old; delete p_strain_new;
-  delete a; delete L;
-  delete a_strain; delete L_strain; delete a_tan;
+  delete strain_function; delete stress_function;
+  delete consistent_tangent_old_function;  delete consistent_tangent_new_function;
+  delete equivalent_plastic_strain_old_function; delete equivalent_plastic_strain_new_function;
+  delete plastic_strain_old_function; delete plastic_strain_new_function;
+  delete a; delete a_strain; delete a_tangent; delete a_plastic_strain; delete a_equivalent_plastic_strain;
+  delete L; delete L_strain; delete return_mapping;
 }
 //-----------------------------------------------------------------------------
 void PlasticityProblem::form(GenericMatrix& A, GenericVector& b, const GenericVector& x)
 {
   // Get vectors from functions
-  Vector& eps = strain->vector();
-  Vector& sig = stress->vector();
-  Vector& eq_eps_old = eq_strain_old->vector();
-  Vector& eq_eps_new = eq_strain_new->vector();
-  Vector& Tan_old = tangent_old->vector();
-  Vector& Tan_new = tangent_new->vector();
-  Vector& eps_p_old = p_strain_old->vector();
-  Vector& eps_p_new = p_strain_new->vector();
+  Vector& plastic_strain_old = plastic_strain_old_function->vector();
+  Vector& plastic_strain_new = plastic_strain_new_function->vector();
+  Vector& equivalent_plastic_strain_old = equivalent_plastic_strain_old_function->vector();
+  Vector& equivalent_plastic_strain_new = equivalent_plastic_strain_new_function->vector();
+  Vector& consistent_tangent_old = consistent_tangent_old_function->vector();
+  Vector& consistent_tangent_new = consistent_tangent_new_function->vector();
+  Vector& strain = strain_function->vector();
+  Vector& stress = stress_function->vector();
 
-  // compute strains
+  // Compute strains
   LU solver;
   Vector b_strain;
   FEM::assemble(*L_strain, b_strain, *_mesh);
-  solver.solve(A_strain, eps, b_strain);
+  solver.solve(A_strain, strain, b_strain);
 
-  int N(strain->vector().size()/strain->vectordim()), n(6), ntan(0);
-  real eps_eq(0);
-  uBlasVector t_sig(6), eps_p(6), eps_e(6), eps_t(6);
-  uBlasDenseMatrix cons_t(6,6);
-  cons_t.clear();
-  eps_p.clear();
-  eps_e.clear();
-  eps_t.clear();
+  uint N(strain_function->vector().size()/strain_function->vectordim()), tangent_entry(0);
+  real equivalent_plastic_strain(0.0);
+  uBlasVector trial_stress(6), plastic_strain(6), elastic_strain(6), total_strain(6);
+  uBlasDenseMatrix consistent_tangent(6,6);
+  consistent_tangent.clear();
+  plastic_strain.clear();
+  elastic_strain.clear();
+  total_strain.clear();
 
-  for (int m = 0; m != N; ++m)
+  for (uint m = 0; m != N; ++m)
   {
-    // elastic tangent is used in the first timestep
+    // Elastic tangent is used in the first timestep
     if (*_elastic_tangent == true)
-      cons_t.assign(*_D);
+      consistent_tangent.assign(_plastic_model->elastic_tangent);
 
-    // consistent tangent from previous converged time step solution is used
+    // Consistent tangent from previous converged time step solution is used
     // as and initial guess.
-    if (*_elastic_tangent != true )
+    // 2D 
+    if (*_elastic_tangent != true && _mesh->topology().dim() == 2)
     {
-      // 2D 
-      if(_mesh->topology().dim() == 2)
-      {
-        cons_t(0,0) = Tan_old(m);                
-        cons_t(0,1) = Tan_old(m + N);
-        cons_t(0,3) = Tan_old(m + 2*N);                
-        cons_t(1,0) = Tan_old(m + 3*N);
-        cons_t(1,1) = Tan_old(m + 4*N);                
-        cons_t(1,3) = Tan_old(m + 5*N);
-        cons_t(3,0) = Tan_old(m + 6*N);
-        cons_t(3,1) = Tan_old(m + 7*N);                
-        cons_t(3,3) = Tan_old(m + 8*N);
-      }
-      // 3D
-      else if(_mesh->topology().dim() == 3)
-      {
-        ntan = 0;
-        for (int i = 0; i!=n; ++i)
+      consistent_tangent(0,0) = consistent_tangent_old(m);                
+      consistent_tangent(0,1) = consistent_tangent_old(m + N);
+      consistent_tangent(0,3) = consistent_tangent_old(m + 2*N);                
+      consistent_tangent(1,0) = consistent_tangent_old(m + 3*N);
+      consistent_tangent(1,1) = consistent_tangent_old(m + 4*N);                
+      consistent_tangent(1,3) = consistent_tangent_old(m + 5*N);
+      consistent_tangent(3,0) = consistent_tangent_old(m + 6*N);
+      consistent_tangent(3,1) = consistent_tangent_old(m + 7*N);                
+      consistent_tangent(3,3) = consistent_tangent_old(m + 8*N);
+    }
+    // 3D
+    else if(*_elastic_tangent != true && _mesh->topology().dim() == 3)
+    {
+      tangent_entry = 0;
+      for (int i = 0; i!=6; ++i)
+        for (int j = 0; j!=6; ++j)
         {
-          for (int j = 0; j!=n; ++j)
-          {
-            cons_t(i,j) = Tan_old(m + ntan*N);
-            ntan++;
-          }
+          consistent_tangent(i,j) = consistent_tangent_old(m + tangent_entry*N);
+          tangent_entry++;
         }
-      }
     }
 
-    // get plastic strain from previous converged time step
-    for (int i = 0; i!=n; ++i)
-      eps_p(i) = eps_p_old(m + i*N);
+    // Get plastic strain from previous converged time step
+    for (int i = 0; i!=6; ++i)
+      plastic_strain(i) = plastic_strain_old(m + i*N);
 
-    // get strains 2D or 3D
+    // Get strains 2D or 3D
     if(_mesh->topology().dim() == 2)
     {
-      eps_t(0) = eps(m);
-      eps_t(1) = eps(m + N);
-      eps_t(3) = eps(m + 2*N);
+      total_strain(0) = strain(m);
+      total_strain(1) = strain(m + N);
+      total_strain(3) = strain(m + 2*N);
     }
     else if(_mesh->topology().dim() == 3)
-    {
-      for (int i = 0; i!=n; ++i)
-        eps_t(i) = eps(m + i*N);
-    }
+      for (int i = 0; i!=6; ++i)
+        total_strain(i) = strain(m + i*N);
 
-    // compute elastic strains        
-    eps_e.assign(eps_t-eps_p);
+    // Compute elastic strains        
+    elastic_strain.assign(total_strain-plastic_strain);
 
-    // get equivalent plastic strain from previous converged time step
-    eps_eq = eq_eps_old(m);
+    // Get equivalent plastic strain from previous converged time step
+    equivalent_plastic_strain = equivalent_plastic_strain_old(m);
       
-    // trial stresses
-    t_sig.assign(prod(*_D, eps_e));
+    // Trial stresses
+    trial_stress.assign(prod(_plastic_model->elastic_tangent, elastic_strain));
 
-    // testing trial stresses, if yielding occurs the stresses are mapped 
+    // Testing trial stresses, if yielding occurs the stresses are mapped 
     // back onto the yield surface, and the updated parameters are returned.
-    ReturnMapping::ClosestPoint(_plas, cons_t, *_D, t_sig, eps_p, eps_eq);
+    return_mapping->ClosestPoint(*_plastic_model, consistent_tangent, trial_stress, plastic_strain, equivalent_plastic_strain);
 
-    // updating plastic strain 
-    for (int i = 0; i!=n; ++i)
-      eps_p_new(m + i*N) =  eps_p(i);
+    // Updating plastic strain 
+    for (int i = 0; i!=6; ++i)
+      plastic_strain_new(m + i*N) =  plastic_strain(i);
 
-    // updating equivalent plastic strain 
-    eq_eps_new(m) = eps_eq;
+    // Updating equivalent plastic strain 
+    equivalent_plastic_strain_new(m) = equivalent_plastic_strain;
 
-    // update stresses for next Newton iteration (trial stresses if elastic, otherwise current stress sig_c)
+    // Update stresses for next Newton iteration (trial stresses if elastic, otherwise current stress sig_c)
     // and coefficients for consistent tangent matrix 2D or 3D
     if(_mesh->topology().dim() == 2)
     {
-      sig(m)        = t_sig(0);
-      sig(m + N)    = t_sig(1);
-      sig(m + 2*N)  = t_sig(3);
+      stress(m)        = trial_stress(0);
+      stress(m + N)    = trial_stress(1);
+      stress(m + 2*N)  = trial_stress(3);
 
-      Tan_new(m)        = cons_t(0,0);                
-      Tan_new(m + N)    = cons_t(0,1);
-      Tan_new(m + 2*N)  = cons_t(0,3);                
-      Tan_new(m + 3*N)  = cons_t(1,0);
-      Tan_new(m + 4*N)  = cons_t(1,1);                
-      Tan_new(m + 5*N)  = cons_t(1,3);
-      Tan_new(m + 6*N)  = cons_t(3,0);
-      Tan_new(m + 7*N)  = cons_t(3,1);                
-      Tan_new(m + 8*N)  = cons_t(3,3);
+      consistent_tangent_new(m)        = consistent_tangent(0,0);                
+      consistent_tangent_new(m + N)    = consistent_tangent(0,1);
+      consistent_tangent_new(m + 2*N)  = consistent_tangent(0,3);                
+      consistent_tangent_new(m + 3*N)  = consistent_tangent(1,0);
+      consistent_tangent_new(m + 4*N)  = consistent_tangent(1,1);                
+      consistent_tangent_new(m + 5*N)  = consistent_tangent(1,3);
+      consistent_tangent_new(m + 6*N)  = consistent_tangent(3,0);
+      consistent_tangent_new(m + 7*N)  = consistent_tangent(3,1);                
+      consistent_tangent_new(m + 8*N)  = consistent_tangent(3,3);
     }
     else if(_mesh->topology().dim() == 3)
     {
-      for (int i = 0; i!=n; ++i)
-        sig(m + i*N) = t_sig(i); 
+      for (int i = 0; i!=6; ++i)
+        stress(m + i*N) = trial_stress(i); 
 
-      ntan = 0;
-      for (int i = 0; i!=n; ++i)
-      {
-        for (int j = 0; j!=n; ++j)
+      tangent_entry = 0;
+      for (int i = 0; i!=6; ++i)
+        for (int j = 0; j!=6; ++j)
         {
-          Tan_new(m + ntan*N) = cons_t(i,j);
-          ntan++;
+          consistent_tangent_new(m + tangent_entry*N) = consistent_tangent(i,j);
+          tangent_entry++;
         }
-      }
     }
-
   }
 
-  // assemble
+  // Assemble
   FEM::assemble(*a, *L, A, b, *_mesh);
   FEM::applyBC(A, *_mesh, a->test(), *_bc);
   FEM::applyResidualBC(b, x, *_mesh, a->test(), *_bc);
 
 }
 //-----------------------------------------------------------------------------    
+void PlasticityProblem::update_variables()
+{
+  *plastic_strain_old_function = *plastic_strain_new_function;
+  *equivalent_plastic_strain_old_function = *equivalent_plastic_strain_new_function;
+  *consistent_tangent_old_function = *consistent_tangent_new_function;
+}
+//-----------------------------------------------------------------------------

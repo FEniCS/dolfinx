@@ -11,6 +11,7 @@
 #include <dolfin/uBlasDenseMatrix.h>
 #include <dolfin/uBlasVector.h>
 #include <dolfin/PlasticityModel.h>
+#include <dolfin/ReturnMapping.h>
 
 namespace dolfin
 {
@@ -18,47 +19,47 @@ namespace dolfin
   class PlasticityProblem : public NonlinearProblem
   {
   public:
-    //constructor
-    PlasticityProblem(Function& u, Function& b, Mesh& mesh, 
-          BoundaryCondition& bc, bool& elastic_tangent, PlasticityModel& plas, 
-          uBlasDenseMatrix& D);
 
-    // Destructor 
+    /// Constructor
+    PlasticityProblem(Function& u, Function& b, Mesh& mesh, 
+          BoundaryCondition& bc, bool& elastic_tangent, PlasticityModel& plastic_model);
+
+    /// Destructor 
     ~PlasticityProblem();
 
-    // Assemble Jacobian and residual vector 
+    /// Assemble Jacobian and residual vector 
     void form(GenericMatrix& A, GenericVector& b, const GenericVector& x);
     
-    Function* p_strain_old;
-    Function* p_strain_new;
-
-    Function* eq_strain_old;
-    Function* eq_strain_new;
-
-    Function* tangent_old;
-    Function* tangent_new;
-
-    Function* stress;
+    friend class PlasticitySolver;
 
   private:
 
-    // Pointers to forms, mesh data and boundary conditions
+    /// Update variables (equivalent_plastic_strain, plastic_strain, consistent_tangent)
+    void update_variables();
+
+    /// Class variables
     BilinearForm* a;
-    LinearForm* L;
-    Matrix A_strain;
-    LinearForm* L_strain;
     BilinearForm* a_strain;
-    BilinearForm* a_tan;
-    BilinearForm* ap_strain;
-    BilinearForm* aep_strain;
+    BilinearForm* a_tangent;
+    BilinearForm* a_plastic_strain;
+    BilinearForm* a_equivalent_plastic_strain;
+    LinearForm* L;
+    LinearForm* L_strain;
+    Function* plastic_strain_old_function;
+    Function* plastic_strain_new_function;
+    Function* equivalent_plastic_strain_old_function;
+    Function* equivalent_plastic_strain_new_function;
+    Function* consistent_tangent_old_function;
+    Function* consistent_tangent_new_function;
+    Function* strain_function;
+    Function* stress_function;
     Mesh* _mesh;
     BoundaryCondition* _bc;
-    Function* strain;
     bool* _elastic_tangent;
-    PlasticityModel* _plas;
-    uBlasDenseMatrix* _D;
+    PlasticityModel* _plastic_model;
+    ReturnMapping* return_mapping;
+    Matrix A_strain;
   };
-
-}  // end dolfin namespace
+}
 
 #endif

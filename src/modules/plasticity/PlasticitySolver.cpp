@@ -3,79 +3,82 @@
 //
 // First added:  2006-11-13
 
+#include <dolfin/PDE.h>
+#include <dolfin/NewtonSolver.h>
 #include <dolfin/PlasticitySolver.h>
-#include <dolfin/Output2D.h>
-#include <dolfin/Output3D.h>
 #include <dolfin/PlasticityModel.h>
 #include <dolfin/PlasticityProblem.h>
+#include <dolfin/Output2D.h>
+#include <dolfin/Output3D.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-PlasticitySolver::PlasticitySolver(Mesh& mesh,
-         BoundaryCondition& bc, Function& f, real E, real nu,
-         real dt, real T, PlasticityModel& plas)
-  : mesh(mesh), bc(bc), f(f), E(E), nu(nu), dt(dt), T(T), plas(plas)
+PlasticitySolver::PlasticitySolver(Mesh& mesh, BoundaryCondition& bc, 
+                  Function& f, const real dt, const real T, 
+                  PlasticityModel& plasticity_model) : mesh(mesh), bc(bc), f(f), 
+                  dt(dt), T(T), plasticity_model(plasticity_model)
 {
   dolfin_warning("The plasticity solver is experimental.");
 }
 //-----------------------------------------------------------------------------
+PlasticitySolver::~PlasticitySolver()
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
 void PlasticitySolver::solve()
 {
-  //  stiffness parameters
-  real lam = nu*E/((1+nu)*(1-2*nu));
-  real mu = E/(2*(1+nu));
-
-  // elastic tangent
-  uBlasDenseMatrix D = C_m(lam, mu);
-
   bool elastic_tangent = false;
 
-  // solution function
+  // Solution function
   Function u;
 
-  // create object of type PlasticityProblem
-  PlasticityProblem nonlinear_problem(u, f, mesh, bc, elastic_tangent, plas, D);  
+  // Create PlasticityProblem
+  PlasticityProblem nonlinear_problem(u, f, mesh, bc, elastic_tangent, plasticity_model);  
 
   // Create nonlinear solver and set parameters
   NewtonSolver nonlinear_solver;
-
   nonlinear_solver.set("Newton convergence criterion", "incremental");
   nonlinear_solver.set("Newton maximum iterations", 50);
   nonlinear_solver.set("Newton relative tolerance", 1e-6);
   nonlinear_solver.set("Newton absolute tolerance", 1e-10);
 
-  // bilinear and linear forms for continuous output of equivalent plastic strain
-  BilinearForm *eq_strain_a = 0;
-  LinearForm *eq_strain_L = 0;
+  // Bilinear and linear forms for continuous output of equivalent plastic strain
+  BilinearForm *a_cont_equivalent_plastic_strain = 0;
+  LinearForm   *L_cont_equivalent_plastic_strain = 0;
+
   if(mesh.topology().dim() == 2)
   {
-    eq_strain_a = new Output2D::BilinearForm;
-    eq_strain_L = new Output2D::LinearForm(*nonlinear_problem.eq_strain_old);
+    a_cont_equivalent_plastic_strain = new Output2D::BilinearForm;
+    L_cont_equivalent_plastic_strain 
+       = new Output2D::LinearForm(*(nonlinear_problem.equivalent_plastic_strain_old_function));
   }
   else if(mesh.topology().dim() == 3)
   {
-    eq_strain_a = new Output3D::BilinearForm;
-    eq_strain_L = new Output3D::LinearForm(*nonlinear_problem.eq_strain_old);
+    a_cont_equivalent_plastic_strain = new Output3D::BilinearForm;
+    L_cont_equivalent_plastic_strain 
+      = new Output3D::LinearForm(*(nonlinear_problem.equivalent_plastic_strain_old_function));
   }
 
-  // setup pde to project strains onto a continuous basis
-  PDE pde(*eq_strain_a, *eq_strain_L, mesh);
+  // Setup pde to project strains onto a continuous basis
+  PDE pde(*a_cont_equivalent_plastic_strain, *L_cont_equivalent_plastic_strain, mesh);
   pde.set("PDE linear solver", "iterative");
 
   // Function to hold continuous equivalent plastic strain
-  Function eq_strain;
+  Function cont_equivalent_plastic_strain;
 
-  // time
+  // Time
   real t  = 0.0;
 
-  f.sync(t);      // Associate time with source term
-  bc.sync(t);     // Associate time with boundary conditions
+  // Associate source term and boundary conditions with time
+  f.sync(t);
+  bc.sync(t);
   
-  // solution vector
+  // Solution vector
   Vector& x = u.vector();
 
-  // file names for output
+  // File names for output
   File file1("disp.pvd");
   File file2("eq_plas_strain.pvd");
 
@@ -83,52 +86,38 @@ void PlasticitySolver::solve()
   {
     elastic_tangent = false;
 
-    // use elastic tangent in first time step
+    // Use elastic tangent in first time step
     if (t==0.0)
       elastic_tangent = true;
 
     t += dt;
 
-    // solve non-linear problem
+    // Solve non-linear problem
     nonlinear_solver.solve(nonlinear_problem, x);
 
-    // update variables
-    *nonlinear_problem.p_strain_old = *nonlinear_problem.p_strain_new;
-    *nonlinear_problem.eq_strain_old = *nonlinear_problem.eq_strain_new;
-    *nonlinear_problem.tangent_old = *nonlinear_problem.tangent_new;
+    // Update variables
+    nonlinear_problem.update_variables();
 
+    // Project equivalent strain onto continuous basis for postprocessing
     dolfin_log(false);
-    // project strain onto continuous basis
-    pde.solve(eq_strain);
+    pde.solve(cont_equivalent_plastic_strain);
     dolfin_log(true);
 
-    // write output to files
+    // Write output to files
     file1 << u;
-    file2 << eq_strain;
+    file2 << cont_equivalent_plastic_strain;
 
     cout << "Time: t = " << t <<endl;
   }
+
+  delete a_cont_equivalent_plastic_strain; delete L_cont_equivalent_plastic_strain;
 }
 //-----------------------------------------------------------------------------
-void PlasticitySolver::solve(Mesh& mesh,
-         BoundaryCondition& bc, Function& f, real E, real nu,
-         real dt, real T, PlasticityModel& plas)
+void PlasticitySolver::solve(Mesh& mesh, BoundaryCondition& bc, Function& f, 
+                             const real dt, const real T, 
+                             PlasticityModel& plasticity_model)
 {
-  PlasticitySolver solver(mesh, bc, f, E, nu, dt, T, plas);
+  PlasticitySolver solver(mesh, bc, f, dt, T, plasticity_model);
   solver.solve();
 }
 //-----------------------------------------------------------------------------
-
-// constitutive relation (elastic tangent)
-uBlasDenseMatrix PlasticitySolver::C_m(real lam, real mu)
-{
-  uBlasDenseMatrix B(6,6);
-  B.clear();
-
-  B(0,0)=lam+2*mu, B(1,1)=lam+2*mu, B(2,2)=lam+2*mu;
-  B(3,3)=mu, B(4,4)=mu, B(5,5)=mu;
-  B(0,1)=lam, B(0,2)=lam, B(1,0)=lam;
-  B(1,2)=lam, B(2,0)=lam, B(2,1)=lam;
-
-  return B;
-}
