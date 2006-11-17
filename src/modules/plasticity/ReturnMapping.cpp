@@ -13,6 +13,11 @@ ReturnMapping::ReturnMapping()
   initialise();
 }
 //-----------------------------------------------------------------------------
+ReturnMapping::~ReturnMapping()
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
 void ReturnMapping::initialise()
 {
   R.resize(6, 6, false);

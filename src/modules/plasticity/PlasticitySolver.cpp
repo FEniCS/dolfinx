@@ -22,6 +22,11 @@ PlasticitySolver::PlasticitySolver(Mesh& mesh, BoundaryCondition& bc,
   dolfin_warning("The plasticity solver is experimental.");
 }
 //-----------------------------------------------------------------------------
+PlasticitySolver::~PlasticitySolver()
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
 void PlasticitySolver::solve()
 {
   bool elastic_tangent = false;
@@ -91,12 +96,7 @@ void PlasticitySolver::solve()
     nonlinear_solver.solve(nonlinear_problem, x);
 
     // Update variables
-    *(nonlinear_problem.plastic_strain_old_function) 
-        = *(nonlinear_problem.plastic_strain_new_function);
-    *(nonlinear_problem.equivalent_plastic_strain_old_function) 
-        = *(nonlinear_problem.equivalent_plastic_strain_new_function);
-    *(nonlinear_problem.consistent_tangent_old_function) 
-        = *(nonlinear_problem.consistent_tangent_new_function);
+    nonlinear_problem.update_variables();
 
     // Project equivalent strain onto continuous basis for postprocessing
     dolfin_log(false);
@@ -109,6 +109,8 @@ void PlasticitySolver::solve()
 
     cout << "Time: t = " << t <<endl;
   }
+
+  delete a_cont_equivalent_plastic_strain; delete L_cont_equivalent_plastic_strain;
 }
 //-----------------------------------------------------------------------------
 void PlasticitySolver::solve(Mesh& mesh, BoundaryCondition& bc, Function& f, 

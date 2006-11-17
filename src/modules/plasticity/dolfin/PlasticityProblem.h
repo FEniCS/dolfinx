@@ -34,6 +34,9 @@ namespace dolfin
 
   private:
 
+    /// Update variables (equivalent_plastic_strain, plastic_strain, consistent_tangent)
+    void update_variables();
+
     /// Class variables
     BilinearForm* a;
     BilinearForm* a_strain;

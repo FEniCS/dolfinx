@@ -215,3 +215,10 @@ void PlasticityProblem::form(GenericMatrix& A, GenericVector& b, const GenericVe
 
 }
 //-----------------------------------------------------------------------------    
+void PlasticityProblem::update_variables()
+{
+  *plastic_strain_old_function = *plastic_strain_new_function;
+  *equivalent_plastic_strain_old_function = *equivalent_plastic_strain_new_function;
+  *consistent_tangent_old_function = *consistent_tangent_new_function;
+}
+//-----------------------------------------------------------------------------

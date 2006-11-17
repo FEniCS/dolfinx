@@ -14,7 +14,7 @@ class MyFunction : public Function
   real eval(const Point& p, unsigned int i)
   {
     if (i==1)
-      return 0.0*time(); 
+      return -100.0*time(); 
     else
       return 0.0;
   }
@@ -25,17 +25,15 @@ class MyBC : public BoundaryCondition
 {
   void eval(BoundaryValue& value, const Point& p, unsigned int i)
   {
-    if ( (std::abs(p.y()) < DOLFIN_EPS && i ==1) || ( (std::abs(p.y()) < DOLFIN_EPS) && ( (p.x()-0.24) > DOLFIN_EPS) && ( (p.x()-0.76) < DOLFIN_EPS)  && i==0) )
+    if ( (std::abs(p.y()) < DOLFIN_EPS && i ==1) || ( p.x() < DOLFIN_EPS && i==0) )
       value = 0.0;
-
-     if (std::abs(p.y() - 1.0) < DOLFIN_EPS && i==1)
-      value = -0.002*time();
   }
 };
 
 int main()
 {
-  UnitSquare mesh(20, 20);
+//  UnitSquare mesh(20, 20);
+  Mesh mesh("../../../../data/meshes/dolfin-1.xml.gz");
 
   MyFunction f;
   MyBC bc;
@@ -45,8 +43,8 @@ int main()
   real nu = 0.3;
 
   // Final time and time step
-  real T = 1.0;
-  real dt = 0.1;
+  real T = 2.0;
+  real dt = 0.2;
 
   // Slope of hardening (linear) and hardening parameter
   real E_t(0.1 * E);

@@ -21,6 +21,9 @@ namespace dolfin
     /// Constructor
     PlasticitySolver(Mesh& mesh, BoundaryCondition& bc, Function& f, 
                      const real dt, const real T, PlasticityModel& plastic_model);
+
+    /// Destructor
+    ~PlasticitySolver();
     
     /// Solve plasticity problem
     void solve();

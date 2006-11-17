@@ -21,6 +21,9 @@ namespace dolfin
     /// Constructor
     ReturnMapping();
 
+    /// Destructor
+    ~ReturnMapping();
+
     /// Initialise variables
     void initialise();    
 
