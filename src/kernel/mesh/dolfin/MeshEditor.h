@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-05-16
-// Last changed: 2006-06-22
+// Last changed: 2006-11-17
 
 #ifndef __MESH_EDITOR_H
 #define __MESH_EDITOR_H
@@ -31,6 +31,9 @@ namespace dolfin
 
     /// Open mesh of given cell type, topological and geometrical dimension
     void open(Mesh& mesh, CellType::Type type, uint tdim, uint gdim);
+
+    /// Open mesh of given cell type, topological and geometrical dimension
+    void open(Mesh& mesh, std::string type, uint tdim, uint gdim);
 
     /// Specify number of vertices
     void initVertices(uint num_vertices);

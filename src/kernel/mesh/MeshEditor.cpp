@@ -49,6 +49,20 @@ void MeshEditor::open(Mesh& mesh, CellType::Type type, uint tdim, uint gdim)
     vertices.push_back(0);
 }
 //-----------------------------------------------------------------------------
+void MeshEditor::open(Mesh& mesh, std::string type, uint tdim, uint gdim)
+{
+  if ( type == "point" )
+    open(mesh, CellType::point, tdim, gdim);
+  else if ( type == "interval" )
+    open(mesh, CellType::interval, tdim, gdim);
+  else if ( type == "triangle" )
+    open(mesh, CellType::triangle, tdim, gdim);
+  else if ( type == "tetrahedron" )
+    open(mesh, CellType::tetrahedron, tdim, gdim);
+  else
+    dolfin_error1("Unknown cell type \"%s\".", type.c_str());
+}
+//-----------------------------------------------------------------------------
 void MeshEditor::initVertices(uint num_vertices)
 {
   // Check if we are currently editing a mesh
