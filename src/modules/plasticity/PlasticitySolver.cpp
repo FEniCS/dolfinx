@@ -22,6 +22,11 @@ PlasticitySolver::PlasticitySolver(Mesh& mesh, BoundaryCondition& bc,
   dolfin_warning("The plasticity solver is experimental.");
 }
 //-----------------------------------------------------------------------------
+PlasticitySolver::~PlasticitySolver()
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
 void PlasticitySolver::solve()
 {
   bool elastic_tangent = false;
@@ -109,6 +114,8 @@ void PlasticitySolver::solve()
 
     cout << "Time: t = " << t <<endl;
   }
+
+  delete a_cont_equivalent_plastic_strain; delete L_cont_equivalent_plastic_strain;
 }
 //-----------------------------------------------------------------------------
 void PlasticitySolver::solve(Mesh& mesh, BoundaryCondition& bc, Function& f, 
