@@ -15,7 +15,7 @@ PlasticityModel::PlasticityModel(const real E, const real nu) : _hardening_param
   real mu = E/(2*(1+nu));
 
   // Create elastic tangent
-  uBlasDenseMatrix elastic_tangent(6,6);
+  elastic_tangent.resize(6,6, false);
   elastic_tangent.clear();
   elastic_tangent(0,0) = lambda+2*mu;
   elastic_tangent(1,1) = lambda+2*mu; 
@@ -36,14 +36,14 @@ real PlasticityModel::hardening_parameter(real const equivalent_plastic_strain) 
 }
 //-----------------------------------------------------------------------------
 real PlasticityModel::kappa(real equivalent_plastic_strain, 
-                const uBlasVector& current_stress, const real lambda_dot) const
+                const uBlasVector& stress, const real lambda_dot) const
 {
   return equivalent_plastic_strain += lambda_dot;
 }
 //-----------------------------------------------------------------------------
-void PlasticityModel::dg(uBlasVector &dg_dsigma, const uBlasVector& current_stress)
+void PlasticityModel::dg(uBlasVector &dg_dsigma, const uBlasVector& stress)
 {
   // Assume associative flow (dg/dsigma = df/dsigma)
-  df(dg_dsigma, current_stress);
+  df(dg_dsigma, stress);
 }
 //-----------------------------------------------------------------------------

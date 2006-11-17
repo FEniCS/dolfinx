@@ -27,19 +27,19 @@ namespace dolfin
 
     /// Equivalent plastic strain
     virtual real kappa(real equivalent_plastic_strain, 
-                       const uBlasVector& current_stress, const real lambda_dot) const;
+                       const uBlasVector& stress, const real lambda_dot) const;
 
     /// Value of yield function f
-    virtual real f(const uBlasVector& current_stress, const real equivalent_plastic_strain) = 0;
+    virtual real f(const uBlasVector& stress, const real equivalent_plastic_strain) = 0;
 
     /// First derivative of f with respect to sigma
-    virtual void df(uBlasVector& df_dsigma, const uBlasVector& current_stress) = 0;
+    virtual void df(uBlasVector& df_dsigma, const uBlasVector& stress) = 0;
 
     /// First derivative of g with respect to sigma
-    virtual void dg(uBlasVector& dg_dsigma, const uBlasVector& current_stress);
+    virtual void dg(uBlasVector& dg_dsigma, const uBlasVector& stress);
     
     /// Second derivative of g with respect to sigma
-    virtual void ddg(uBlasDenseMatrix& ddg_ddsigma, const uBlasVector& current_stress) = 0;
+    virtual void ddg(uBlasDenseMatrix& ddg_ddsigma, const uBlasVector& stress) = 0;
     
     friend class ReturnMapping;
     friend class PlasticityProblem;
