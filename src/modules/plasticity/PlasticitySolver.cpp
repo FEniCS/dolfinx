@@ -96,12 +96,7 @@ void PlasticitySolver::solve()
     nonlinear_solver.solve(nonlinear_problem, x);
 
     // Update variables
-    *(nonlinear_problem.plastic_strain_old_function) 
-        = *(nonlinear_problem.plastic_strain_new_function);
-    *(nonlinear_problem.equivalent_plastic_strain_old_function) 
-        = *(nonlinear_problem.equivalent_plastic_strain_new_function);
-    *(nonlinear_problem.consistent_tangent_old_function) 
-        = *(nonlinear_problem.consistent_tangent_new_function);
+    nonlinear_problem.update_variables();
 
     // Project equivalent strain onto continuous basis for postprocessing
     dolfin_log(false);
