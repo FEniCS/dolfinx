@@ -38,9 +38,6 @@ namespace dolfin
     /// Computes effective stresses
     real effective_stress(const uBlasVector& current_stress);
 
-    /// Returns auxiliary matrix Am
-    uBlasDenseMatrix A_m();
-
     /// Model parameters
     real _yield_stress, _effective_stress, _hardening_parameter;
 

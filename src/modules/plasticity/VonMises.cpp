@@ -5,14 +5,18 @@
 
 #include <dolfin/VonMises.h>
 
-
 using namespace dolfin;
 
 VonMises::VonMises(real E, real nu, real yield_stress, real hardening_parameter) 
-          : PlasticityModel(E, nu), _yield_stress(yield_stress), _effective_stress(0.0), _hardening_parameter(hardening_parameter)
+                 : PlasticityModel(E, nu), _yield_stress(yield_stress), 
+                   _effective_stress(0.0), _hardening_parameter(hardening_parameter)
 {
-  Am = A_m();
   dg_dsigma.resize(6, false);
+
+  uBlasDenseMatrix A(6,6);
+  A.clear(); 
+  A(0,0) = 2, A(1,1) = 2, A(2,2) = 2, A(3,3) = 6, A(4,4) = 6, A(5,5) = 6;
+  A(0,1) = -1, A(0,2) = -1, A(1,0) = -1, A(1,2) = -1, A(2,0) = -1, A(2,1)=-1;    
 }
 //-----------------------------------------------------------------------------
 real VonMises::hardening_parameter(const real equivalent_plastic_strain) const
@@ -24,7 +28,7 @@ real VonMises::f(const uBlasVector& current_stress, const real equivalent_plasti
 {
   _effective_stress = effective_stress(current_stress);
 
-  return _effective_stress - _yield_stress - _hardening_parameter * equivalent_plastic_strain;
+  return _effective_stress - _yield_stress - _hardening_parameter*equivalent_plastic_strain;
 }
 //-----------------------------------------------------------------------------
 void VonMises::df(uBlasVector& df_dsigma, const uBlasVector& current_stress)
@@ -48,18 +52,10 @@ void VonMises::ddg(uBlasDenseMatrix& ddg_ddsigma, const uBlasVector& current_str
 //-----------------------------------------------------------------------------
 real VonMises::effective_stress(const uBlasVector& current_stress)
 {
-  return sqrt(pow((current_stress(0) + current_stress(1) + current_stress(2)),2)-3*(current_stress(0) * current_stress(1) 
-          + current_stress(0) * current_stress(2) + current_stress(1) * current_stress(2) -pow  (current_stress(3),2) 
+  return sqrt(pow((current_stress(0) + current_stress(1) 
+          + current_stress(2)),2) - 3*(current_stress(0)*current_stress(1) 
+          + current_stress(0)*current_stress(2) 
+          + current_stress(1)*current_stress(2) -pow(current_stress(3),2) 
           - pow(current_stress(4),2) -pow(current_stress(5),2)));
-}
-//-----------------------------------------------------------------------------
-uBlasDenseMatrix VonMises::A_m()
-{
-  uBlasDenseMatrix A(6,6);
-  A.clear(); 
-  A(0,0)=2, A(1,1)=2, A(2,2)=2, A(3,3)=6, A(4,4)=6, A(5,5)=6;
-  A(0,1)=-1, A(0,2)=-1, A(1,0)=-1, A(1,2)=-1, A(2,0)=-1, A(2,1)=-1;    
-
-  return A;
 }
 //-----------------------------------------------------------------------------

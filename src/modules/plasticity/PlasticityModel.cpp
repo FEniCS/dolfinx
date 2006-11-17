@@ -11,11 +11,18 @@ using namespace dolfin;
 PlasticityModel::PlasticityModel(const real E, const real nu) : _hardening_parameter(0.0)
 {
   // Lame coefficients
-  real lam = nu*E/((1+nu)*(1-2*nu));
+  real lambda = nu*E/((1+nu)*(1-2*nu));
   real mu = E/(2*(1+nu));
 
   // Create elastic tangent
-  elastic_tangent = C_m(lam, mu);
+  uBlasDenseMatrix elastic_tangent(6,6);
+  elastic_tangent.clear();
+  elastic_tangent(0,0) = lambda+2*mu;
+  elastic_tangent(1,1) = lambda+2*mu; 
+  elastic_tangent(2,2) = lambda+2*mu;
+  elastic_tangent(3,3) = mu, elastic_tangent(4,4) = mu, elastic_tangent(5,5) = mu;
+  elastic_tangent(0,1) = lambda, elastic_tangent(0,2) = lambda, elastic_tangent(1,0) = lambda;
+  elastic_tangent(1,2) = lambda, elastic_tangent(2,0) = lambda, elastic_tangent(2,1) = lambda;
 }
 //-----------------------------------------------------------------------------
 PlasticityModel::~PlasticityModel()
@@ -29,27 +36,14 @@ real PlasticityModel::hardening_parameter(real const equivalent_plastic_strain) 
 }
 //-----------------------------------------------------------------------------
 real PlasticityModel::kappa(real equivalent_plastic_strain, 
-                const uBlasVector& current_stress, const real lambda_dot)
+                const uBlasVector& current_stress, const real lambda_dot) const
 {
   return equivalent_plastic_strain += lambda_dot;
 }
 //-----------------------------------------------------------------------------
 void PlasticityModel::dg(uBlasVector &dg_dsigma, const uBlasVector& current_stress)
 {
-  // If dg is not overloaded, associative flow is assumed (dg/dsigma = df/dsigma)
+  // Assume associative flow (dg/dsigma = df/dsigma)
   df(dg_dsigma, current_stress);
-}
-//-----------------------------------------------------------------------------
-uBlasDenseMatrix PlasticityModel::C_m(real lam, real mu)
-{
-  uBlasDenseMatrix B(6,6);
-  B.clear();
-
-  B(0,0)=lam+2*mu, B(1,1)=lam+2*mu, B(2,2)=lam+2*mu;
-  B(3,3)=mu, B(4,4)=mu, B(5,5)=mu;
-  B(0,1)=lam, B(0,2)=lam, B(1,0)=lam;
-  B(1,2)=lam, B(2,0)=lam, B(2,1)=lam;
-
-  return B;
 }
 //-----------------------------------------------------------------------------

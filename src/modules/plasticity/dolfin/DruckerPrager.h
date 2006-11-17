@@ -19,7 +19,8 @@ namespace dolfin
   public:
 
     /// Constructor
-    DruckerPrager(real E, real nu, real friction_angle, real dilatancy_angle, real cohesion, real hardening_parameter);
+    DruckerPrager(real E, real nu, real friction_angle, real dilatancy_angle, 
+                  real cohesion, real hardening_parameter);
 
     /// Hardening parameter
     real hardening_parameter(real const equivalent_plastic_strain) const;
@@ -44,11 +45,9 @@ namespace dolfin
     /// First derivative of g with respect to sigma, excluding (+ alpha_dilatancy/3.0) on diagonal terms
     void dg_mod(uBlasVector& dg_dsigma_mod, const uBlasVector& current_stress);
 
-    /// Returns auxiliary matrix Am 
-    uBlasDenseMatrix A_m();
-
     /// Model parameters
-    real _effective_stress, _hardening_parameter, alpha_friction, k_friction, alpha_dilatancy;
+    real _effective_stress, _hardening_parameter;
+    real alpha_friction, k_friction, alpha_dilatancy;
 
     /// Auxiliary variables
     uBlasDenseMatrix Am;

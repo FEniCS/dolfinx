@@ -8,7 +8,6 @@
 
 #include <dolfin/uBlasDenseMatrix.h>
 #include <dolfin/uBlasVector.h>
-#include <dolfin/ublas.h>
 
 namespace dolfin
 {
@@ -28,7 +27,7 @@ namespace dolfin
 
     /// Equivalent plastic strain
     virtual real kappa(real equivalent_plastic_strain, 
-                       const uBlasVector& current_stress, const real lambda_dot);
+                       const uBlasVector& current_stress, const real lambda_dot) const;
 
     /// Value of yield function f
     virtual real f(const uBlasVector& current_stress, const real equivalent_plastic_strain) = 0;
@@ -46,9 +45,6 @@ namespace dolfin
     friend class PlasticityProblem;
 
   private:
-
-    /// Returns elastic tangent from the Lame coefficients
-    uBlasDenseMatrix C_m(real lam, real mu);
 
     /// Model parameters
     real _hardening_parameter;
