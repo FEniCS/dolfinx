@@ -236,14 +236,14 @@ void PETScMatrix::set(const real block[],
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::add(const real block[],
-		       const int rows[], int m,
-		       const int cols[], int n)
+                      const int rows[], int m,
+                      const int cols[], int n)
 {
   MatSetValues(A, m, rows, n, cols, block, ADD_VALUES);
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::getRow(const uint i, int& ncols, Array<int>& columns, 
-    Array<real>& values) const
+                         Array<real>& values) const
 {
   const int *cols = 0;
   const double *vals = 0;
