@@ -25,22 +25,32 @@ class InitialVelocity(Function):
 set("ODE method", "dg");
 set("ODE order", 0);
 set("ODE nonlinear solver", "fixed-point");
-set("ODE linear solver", "direct");
-set("ODE tolerance", 1.0e3);
-set("ODE discrete tolerance", 1.0e3);
+#set("ODE nonlinear solver", "newton");
+#set("ODE linear solver", "direct");
+set("ODE tolerance", 0.1);
+set("ODE discrete tolerance", 1.0e-4);
 
 set("ODE fixed time step", True);
-set("ODE initial time step", 1.0e-2);
-set("ODE maximum time step", 1.0e-2);
+set("ODE initial time step", 3.33e-1);
+set("ODE maximum time step", 3.33e-1);
+set("ODE maximum iterations", 100000);
 
 set("ODE save solution", False);
 set("ODE solution file name", "primal.py");
 set("ODE number of samples", 100);
 
+set("ODE monitor convergence", True);
+
+set("ODE fixed-point damping", 2.0e-3);
+#set("ODE fixed-point stabilize", True);
+set("ODE fixed-point stabilization m", 30);
+set("ODE fixed-point stabilization l", 7);
+set("ODE fixed-point stabilization ramp", 2.1);
+
 
 nu  = 0.3 # Poisson's ratio
 E   = 500.0 * 0.7 * 1.0 * 3.0 # Young's modulus
-nuv = 1.0 * 1.0e2 * 1.0e-3 * 100.0 # Viscosity
+nuv = 1.0 * 1.0e2 * 1.0e-3 * 100.0 * 10.0 # Viscosity
 
 yld = 4.0e3 * 1.0e-3 # Yield strength
 nuplast = 1.0e-4 * 1.0e3 * 4.0e-1 # Plastic viscosity
