@@ -106,13 +106,14 @@ void PlasticityProblem::form(GenericMatrix& A, GenericVector& b, const GenericVe
   plastic_strain.clear();
   elastic_strain.clear();
   total_strain.clear();
-
+//dolfin_log(true);
   for (uint m = 0; m != N; ++m)
   {
     // Elastic tangent is used in the first timestep
     if (*_elastic_tangent == true)
       consistent_tangent.assign(_plastic_model->elastic_tangent);
 
+//consistent_tangent.disp();
     // Consistent tangent from previous converged time step solution is used
     // as and initial guess.
     // 2D 
@@ -144,6 +145,8 @@ void PlasticityProblem::form(GenericMatrix& A, GenericVector& b, const GenericVe
     for (int i = 0; i!=6; ++i)
       plastic_strain(i) = plastic_strain_old(m + i*N);
 
+//plastic_strain.disp();
+
     // Get strains 2D or 3D
     if(_mesh->topology().dim() == 2)
     {
@@ -155,8 +158,10 @@ void PlasticityProblem::form(GenericMatrix& A, GenericVector& b, const GenericVe
       for (int i = 0; i!=6; ++i)
         total_strain(i) = strain(m + i*N);
 
+//total_strain.disp();
+//dolfin_log(true);
     // Compute elastic strains        
-    elastic_strain.assign(total_strain-plastic_strain);
+    elastic_strain.assign(total_strain - plastic_strain);
 
     // Get equivalent plastic strain from previous converged time step
     equivalent_plastic_strain = equivalent_plastic_strain_old(m);

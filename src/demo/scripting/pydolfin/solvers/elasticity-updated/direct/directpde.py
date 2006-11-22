@@ -20,10 +20,10 @@ class DirectPDE(TimeDependentPDE):
         self.nuv = Function(nuvval)
 
         direct_forms = import_formfile("ElasticityDirect.form")
-        #import elasticitydirectform as direct_forms
+        #import elasticitydirect as direct_forms
 
         load_forms = import_formfile("ElasticityLoad.form")
-        #import elasticityloadform as load_forms
+        #import elasticityload as load_forms
 
         self.amass = direct_forms.ElasticityDirectBilinearForm(rho)
 
@@ -173,7 +173,7 @@ class DirectPDE(TimeDependentPDE):
 
     def save(self, U, t):
 
-        if((self.counter % (33)) == 0):
+        if((self.counter % (1)) == 0):
             print "t: ", t
             self.solutionfile << U
             self.filecounter += 1

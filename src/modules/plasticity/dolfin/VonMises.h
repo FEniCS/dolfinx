@@ -25,24 +25,24 @@ namespace dolfin
     real hardening_parameter(const real equivalent_plastic_strain) const;
 
     /// Value of yield function f
-    real f(const uBlasVector& current_stress, const real equivalent_plastic_strain);
+    real f(const uBlasVector& stress, const real equivalent_plastic_strain);
 
     /// First derivative of f with respect to sigma
-    void df(uBlasVector& df_dsigma, const uBlasVector& current_stress);
+    void df(uBlasVector& df_dsigma, const uBlasVector& stress);
 
     /// Second derivative of g with respect to sigma
-    void ddg(uBlasDenseMatrix& ddg_ddsigma, const uBlasVector& current_stress);
+    void ddg(uBlasDenseMatrix& ddg_ddsigma, const uBlasVector& stress);
 
   private:
 
     /// Computes effective stresses
-    real effective_stress(const uBlasVector& current_stress);
+    real effective_stress(const uBlasVector& stress);
 
     /// Model parameters
     real _yield_stress, _effective_stress, _hardening_parameter;
 
     /// Auxiliary variables
-    uBlasDenseMatrix Am;
+    uBlasDenseMatrix A;
     uBlasVector dg_dsigma;
   };
 }
