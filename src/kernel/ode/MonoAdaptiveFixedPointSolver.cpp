@@ -35,7 +35,7 @@ MonoAdaptiveFixedPointSolver::~MonoAdaptiveFixedPointSolver()
 real MonoAdaptiveFixedPointSolver::iteration(real tol, uint iter,
 					     real d0, real d1)
 {
-  real K = ts.endtime() - ts.starttime();
+//   real K = ts.endtime() - ts.starttime();
 
   real alpha_orig = alpha;
 
