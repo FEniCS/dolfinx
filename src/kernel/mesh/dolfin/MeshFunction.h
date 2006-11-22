@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-05-22
-// Last changed: 2006-10-25
+// Last changed: 2006-11-22
 
 #ifndef __MESH_FUNCTION_H
 #define __MESH_FUNCTION_H
@@ -63,7 +63,13 @@ namespace dolfin
       return _values[entity.index()];
     }
 
-    /// Initialize mesh function for given topological dimension and size
+    /// Initialize mesh function for given topological dimension
+    void init(const Mesh& mesh, uint dim)
+    {
+      init(mesh, dim, mesh.size(dim));
+    }
+
+    /// Initialize mesh function for given topological dimension of given size
     void init(const Mesh& mesh, uint dim, uint size)
     {
       _mesh = &mesh;
