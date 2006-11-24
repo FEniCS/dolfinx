@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-05-22
-// Last changed: 2006-11-22
+// Last changed: 2006-11-24
 
 #ifndef __MESH_FUNCTION_H
 #define __MESH_FUNCTION_H
@@ -78,6 +78,16 @@ namespace dolfin
       if ( _values )
 	delete [] _values;
       _values = new T[size];
+    }
+
+    /// Get value at given entity
+    inline T get(const MeshEntity& entity) const
+    {
+      dolfin_assert(_values);
+      dolfin_assert(&entity.mesh() == _mesh);
+      dolfin_assert(entity.dim() == _dim);
+      dolfin_assert(entity.index() < _size);
+      return _values[entity.index()];
     }
 
     /// Set value at given entity

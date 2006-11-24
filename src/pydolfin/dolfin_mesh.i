@@ -58,15 +58,8 @@ def next(self):
 
 //--- Extend Point interface with Python selectors ---
 %extend dolfin::Point {
-  real get(int i)
-  {
-    return (*self)[i];
-  }
-
-  void set(int i, real val)
-  {
-    (*self)[i] = val;
-  }
+  real get(int i) { return (*self)[i]; }
+  void set(int i, real val) { (*self)[i] = val; }
 }
 
 %pythoncode
@@ -80,11 +73,11 @@ def next(self):
   Point.__setitem__ = __setitem__
 %}
 
+//--- Map MeshFunction template to Python ---
+
 %template(MeshFunctionInt) dolfin::MeshFunction<int>;
 %template(MeshFunctionFloat) dolfin::MeshFunction<double>;
 %template(MeshFunctionBool) dolfin::MeshFunction<bool>;
-
-//--- Map MeshFunction template to Python ---
 
 %pythoncode
 %{
@@ -98,6 +91,11 @@ class MeshFunction(object):
             return MeshFunctionBool()
         else:
             raise RuntimeError, "Cannot create a MeshFunction of %s" % (tp,)
+
+MeshFunctionInt.__call__   = MeshFunctionInt.get
+MeshFunctionFloat.__call__ = MeshFunctionFloat.get
+MeshFunctionBool.__call__  = MeshFunctionBool.get
+
 %}
 
 // --- Return NumPy arrays for Mesh::cells() and Mesh::coordinates() ---
