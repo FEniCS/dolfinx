@@ -1,8 +1,8 @@
-import dolfin
-import ffc
-from commands import getoutput
-
 def assemble(form, mesh, bc):
+
+    import dolfin
+    import ffc
+    from commands import getoutput
 
     formname = "MyForm"
     options = ffc.FFC_OPTIONS
