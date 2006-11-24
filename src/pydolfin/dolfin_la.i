@@ -1,17 +1,4 @@
-%ignore dolfin::uBlasLUSolver::invert;
-
-%rename(copy) dolfin::GenericVector::operator=;
-
-// Declare dummy uBlas classes
-
-%inline %{
-  namespace boost{ namespace numeric{ namespace ublas{}}}
-%}
-
-namespace dolfin {
-  class ublas_dense_matrix {};
-  class ublas_sparse_matrix {};
-}
+//--- DOLFIN linear algebra interface ---
 
 %include "dolfin/Matrix.h"
 %include "dolfin/Vector.h"
@@ -48,6 +35,21 @@ namespace dolfin {
 %include "dolfin/uBlasILUPreconditioner.h"
 %include "dolfin/uBlasPreconditioner.h"
 %include "dolfin/GMRES.h"
+
+%ignore dolfin::uBlasLUSolver::invert;
+
+%rename(copy) dolfin::GenericVector::operator=;
+
+// Declare dummy uBlas classes
+
+%inline %{
+  namespace boost{ namespace numeric{ namespace ublas{}}}
+%}
+
+namespace dolfin {
+  class ublas_dense_matrix {};
+  class ublas_sparse_matrix {};
+}
 
 %template(uBlasSparseMatrix) dolfin::uBlasMatrix<dolfin::ublas_sparse_matrix>;
 %template(uBlasDenseMatrix) dolfin::uBlasMatrix<dolfin::ublas_dense_matrix>;
@@ -96,4 +98,5 @@ namespace dolfin {
 
   GenericMatrix.__getitem__ = __getitem__
   GenericMatrix.__setitem__ = __setitem__
-%}
+%
+}
