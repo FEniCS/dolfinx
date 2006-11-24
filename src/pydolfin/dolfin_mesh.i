@@ -31,11 +31,10 @@
         int  nadims = 2;
         npy_intp adims[nadims];
         int no_cells = self->numCells();
-        int npe = (self->geometry().dim() == 2) ? 3 : 4;
+        int vertices_per_cell = (self->topology().dim() == 2) ? 3 : 4;
 
         adims[0] = no_cells;
-        adims[1] = npe;
-
+        adims[1] = vertices_per_cell;
 
         // the std. way of creating a Numeric array
         PyArrayObject* arr = (PyArrayObject *)PyArray_SimpleNewFromData(nadims, adims, PyArray_INT, (char *)(self->cells()));
