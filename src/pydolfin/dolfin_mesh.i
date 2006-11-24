@@ -130,3 +130,21 @@ def next(self):
   Point.__getitem__ = __getitem__
   Point.__setitem__ = __setitem__
 %}
+
+%template(MeshFunctionInt) dolfin::MeshFunction<int>;
+%template(MeshFunctionFloat) dolfin::MeshFunction<double>;
+%template(MeshFunctionBool) dolfin::MeshFunction<bool>;
+
+%pythoncode
+%{
+class MeshFunction(object):
+    def __new__(self, tp):
+        if tp == int:
+            return MeshFunctionInt()
+        elif tp == float:
+            return MeshFunctionFloat()
+        elif tp == bool:
+            return MeshFunctionBool()
+        else:
+            raise RuntimeError, "Cannot create a MeshFunction of %s" % (tp,)
+%}
