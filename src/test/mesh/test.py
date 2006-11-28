@@ -1,7 +1,7 @@
 """Unit test for the mesh library"""
 
 __author__ = "Anders Logg (logg@simula.no)"
-__date__ = "2006-08-08 -- 2006-11-14"
+__date__ = "2006-08-08 -- 2006-11-28"
 __copyright__ = "Copyright (C) 2006 Anders Logg"
 __license__  = "GNU GPL Version 2"
 
@@ -98,6 +98,14 @@ class Boundary(unittest.TestCase):
         self.assertEqual(boundary.numVertices(), 26)
         self.assertEqual(boundary.numCells(), 48)
 
+    def testBoundaryBoundary(self):
+        """Compute boundary of boundary"""
+        mesh = UnitCube(2, 2, 2)
+        b0 = BoundaryMesh(mesh)
+        b1 = BoundaryMesh(b0)
+        self.assertEqual(b1.numVertices(), 0)
+        self.assertEqual(b1.numCells(), 0)
+       
 class InputOutput(unittest.TestCase):
 
     def testOutputXML2D(self):
