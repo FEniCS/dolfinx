@@ -1,3 +1,15 @@
+// Map increment operator and dereference operators for iterators
+%rename(increment) dolfin::MeshEntityIterator::operator++;
+%rename(dereference) dolfin::MeshEntityIterator::operator*;
+
+// Rename the iterators to better match the Python syntax
+%rename(vertices) dolfin::VertexIterator;
+%rename(edges) dolfin::EdgeIterator;
+%rename(faces) dolfin::FaceIterator;
+%rename(facets) dolfin::FacetIterator;
+%rename(cells) dolfin::CellIterator;
+%rename(entities) dolfin::MeshEntityIterator;
+
 //--- DOLFIN mesh interface ---
 
 %include "dolfin/BoundaryComputation.h"
@@ -26,10 +38,6 @@
 
 //--- Mesh iterators ---
 
-// Map increment operator and dereference operators for iterators
-%rename(increment) dolfin::MeshEntityIterator::operator++;
-%rename(dereference) dolfin::MeshEntityIterator::operator*;
-
 // Extend mesh entity iterators to work as a Python iterators
 %extend dolfin::MeshEntityIterator {
 %pythoncode
@@ -47,14 +55,6 @@ def next(self):
   return self.dereference()
 %}
 }
-
-// Rename the iterators to better match the Python syntax
-%rename(vertices) dolfin::VertexIterator;
-%rename(edges) dolfin::EdgeIterator;
-%rename(faces) dolfin::FaceIterator;
-%rename(facets) dolfin::FacetIterator;
-%rename(cells) dolfin::CellIterator;
-%rename(entities) dolfin::MeshEntityIterator;
 
 //--- Extend Point interface with Python selectors ---
 %extend dolfin::Point {
