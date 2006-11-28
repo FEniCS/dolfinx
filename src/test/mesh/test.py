@@ -95,8 +95,8 @@ class Boundary(unittest.TestCase):
         """Compute boundary of mesh"""
         mesh = UnitCube(2, 2, 2)
         boundary = BoundaryMesh(mesh)
-        self.assertEqual(boundary.numVertices(), 27)
-        self.assertEqual(boundary.numCells(), 49)
+        self.assertEqual(boundary.numVertices(), 26)
+        self.assertEqual(boundary.numCells(), 48)
 
 class InputOutput(unittest.TestCase):
 
