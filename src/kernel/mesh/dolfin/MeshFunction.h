@@ -25,7 +25,10 @@ namespace dolfin
   public:
 
     /// Create empty mesh function
-    MeshFunction() :  _values(0), _mesh(0), _dim(0), _size(0) {}
+    MeshFunction() : _values(0), _mesh(0), _dim(0), _size(0) {}
+
+    /// Create empty mesh function on given mesh
+    MeshFunction(const Mesh& mesh) : _values(0), _mesh(&mesh), _dim(0), _size(0) {}
 
     /// Destructor
     ~MeshFunction()
@@ -33,6 +36,9 @@ namespace dolfin
       if ( _values )
 	delete [] _values;
     }
+
+    /// Return mesh associated with mesh function
+    inline const Mesh& mesh() const { dolfin_assert(_mesh); return *_mesh; }
 
     /// Return topological dimension
     inline uint dim() const { return _dim; }
@@ -61,6 +67,22 @@ namespace dolfin
       dolfin_assert(entity.dim() == _dim);
       dolfin_assert(entity.index() < _size);
       return _values[entity.index()];
+    }
+
+    /// Initialize mesh function for given topological dimension
+    void init(uint dim)
+    {
+      if ( !_mesh )
+        dolfin_error("Mesh has not been specified, unable to initialize mesh function.");
+      init(*_mesh, dim, _mesh->size(dim));
+    }
+
+    /// Initialize mesh function for given topological dimension of given size
+    void init(uint dim, uint size)
+    {
+      if ( !_mesh )
+        dolfin_error("Mesh has not been specified, unable to initialize mesh function.");
+      init(*_mesh, dim, _mesh->size(dim));
     }
 
     /// Initialize mesh function for given topological dimension

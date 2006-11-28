@@ -6,4 +6,4 @@ U = BasisFunction(P1)
 c = Function(P0)
 i = Index()
 
-a = v*c[i]*u.dx(i)*dx
+a = v*c[i]*U.dx(i)*dx
