@@ -89,6 +89,15 @@ class MeshIterators(unittest.TestCase):
                 n += 1
         self.assertEqual(n, 4*mesh.numCells())
 
+class Boundary(unittest.TestCase):
+
+    def testBoundaryComputation(self):
+        """Compute boundary of mesh"""
+        mesh = UnitCube(2, 2, 2)
+        boundary = BoundaryMesh(mesh)
+        self.assertEqual(boundary.numVertices(), 27)
+        self.assertEqual(boundary.numCells(), 49)
+
 class InputOutput(unittest.TestCase):
 
     def testOutputXML2D(self):
