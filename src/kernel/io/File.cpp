@@ -118,6 +118,27 @@ void File::operator>>(Mesh& mesh)
   *file >> mesh;
 }
 //-----------------------------------------------------------------------------
+void File::operator>>(MeshFunction<int>& meshfunction)
+{
+  file->read();
+  
+  *file >> meshfunction;
+}
+//-----------------------------------------------------------------------------
+void File::operator>>(MeshFunction<double>& meshfunction)
+{
+  file->read();
+  
+  *file >> meshfunction;
+}
+//-----------------------------------------------------------------------------
+void File::operator>>(MeshFunction<bool>& meshfunction)
+{
+  file->read();
+  
+  *file >> meshfunction;
+}
+//-----------------------------------------------------------------------------
 void File::operator>>(NewMesh& mesh)
 {
   file->read();
@@ -179,6 +200,27 @@ void File::operator<<(Mesh& mesh)
   file->write();
   
   *file << mesh;
+}
+//-----------------------------------------------------------------------------
+void File::operator<<(MeshFunction<int>& meshfunction)
+{
+  file->write();
+  
+  *file << meshfunction;
+}
+//-----------------------------------------------------------------------------
+void File::operator<<(MeshFunction<double>& meshfunction)
+{
+  file->write();
+  
+  *file << meshfunction;
+}
+//-----------------------------------------------------------------------------
+void File::operator<<(MeshFunction<bool>& meshfunction)
+{
+  file->write();
+  
+  *file << meshfunction;
 }
 //-----------------------------------------------------------------------------
 void File::operator<<(NewMesh& mesh)

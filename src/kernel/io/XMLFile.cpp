@@ -2,10 +2,11 @@
 // Licensed under the GNU GPL Version 2.
 //
 // Modified by Erik Svensson 2003.
-// Modified by Garth N. Wells, 2006.
+// Modified by Garth N. Wells 2006.
+// Modified by Ola Skavhaug 2006.
 //
 // First added:  2002-12-03
-// Last changed: 2006-10-19
+// Last changed: 2006-11-29
 
 #include <stdarg.h>
 
@@ -14,6 +15,7 @@
 #include <dolfin/Vector.h>
 #include <dolfin/Matrix.h>
 #include <dolfin/Mesh.h>
+#include <dolfin/MeshFunction.h>
 #include <dolfin/Function.h>
 #include <dolfin/FiniteElement.h>
 #include <dolfin/FiniteElementSpec.h>
@@ -24,6 +26,7 @@
 #include <dolfin/XMLVector.h>
 #include <dolfin/XMLMatrix.h>
 #include <dolfin/XMLMesh.h>
+#include <dolfin/XMLMeshFunction.h>
 #include <dolfin/XMLFunction.h>
 #include <dolfin/XMLFiniteElementSpec.h>
 #include <dolfin/XMLParameterList.h>
@@ -68,6 +71,28 @@ void XMLFile::operator>>(Mesh& mesh)
   if ( xmlObject )
     delete xmlObject;
   xmlObject = new XMLMesh(mesh);
+  parseFile();
+}
+//-----------------------------------------------------------------------------
+void XMLFile::operator>>(MeshFunction<int>& meshfunction)
+{
+  if ( xmlObject )
+    delete xmlObject;
+  xmlObject = new XMLMeshFunction(meshfunction);
+  parseFile();
+}//-----------------------------------------------------------------------------
+void XMLFile::operator>>(MeshFunction<double>& meshfunction)
+{
+  if ( xmlObject )
+    delete xmlObject;
+  xmlObject = new XMLMeshFunction(meshfunction);
+  parseFile();
+}//-----------------------------------------------------------------------------
+void XMLFile::operator>>(MeshFunction<bool>& meshfunction)
+{
+  if ( xmlObject )
+    delete xmlObject;
+  xmlObject = new XMLMeshFunction(meshfunction);
   parseFile();
 }
 //-----------------------------------------------------------------------------
@@ -260,6 +285,84 @@ void XMLFile::operator<<(Mesh& mesh)
   closeFile(fp);
 
   cout << "Saved mesh to file " << filename << " in XML format." << endl;
+}
+//-----------------------------------------------------------------------------
+void XMLFile::operator<<(MeshFunction<int>& meshfunction)
+{
+  // Open file
+  FILE *fp = openFile();
+  
+  // Write mesh in XML format
+  fprintf(fp, "  <meshfunction type=\"int\" dim=\"%u\" size=\"%u\">\n",
+          meshfunction.dim(), meshfunction.size());
+
+  Mesh m = meshfunction.mesh();
+  for(MeshEntityIterator e(m, meshfunction.dim()); !e.end(); ++e)
+  {
+      fprintf(fp, "    <entity index=\"%u\" value=\"%d\"/>\n",
+              e->index(), meshfunction(*e));
+  }
+
+  fprintf(fp, "  </meshfunction>\n");
+ 
+  // Close file
+  closeFile(fp);
+
+  
+  cout << "Saved mesh function to file " << filename << " in XML format." << endl;
+}
+//-----------------------------------------------------------------------------
+void XMLFile::operator<<(MeshFunction<double>& meshfunction)
+{
+  // Open file
+  FILE *fp = openFile();
+  
+  // Write mesh in XML format
+  fprintf(fp, "  <meshfunction type=\"double\" dim=\"%u\" size=\"%u\">\n",
+          meshfunction.dim(), meshfunction.size());
+
+  Mesh m = meshfunction.mesh();
+  for(MeshEntityIterator e(m, meshfunction.dim()); !e.end(); ++e)
+  {
+      fprintf(fp, "    <entity index=\"%u\" value=\"%g\"/>\n",
+              e->index(), meshfunction(*e));
+  }
+
+  fprintf(fp, "  </meshfunction>\n");
+ 
+  // Close file
+  closeFile(fp);
+
+  
+  cout << "Saved mesh function to file " << filename << " in XML format." << endl;
+}
+//-----------------------------------------------------------------------------
+
+void XMLFile::operator<<(MeshFunction<bool>& meshfunction)
+{
+  // Open file
+  FILE *fp = openFile();
+  
+  // Write mesh in XML format
+  fprintf(fp, "  <meshfunction type=\"bool\" dim=\"%u\" size=\"%u\">\n",
+          meshfunction.dim(), meshfunction.size());
+
+  Mesh m = meshfunction.mesh();
+  std::string value;
+  for(MeshEntityIterator e(m, meshfunction.dim()); !e.end(); ++e)
+  {
+    value = meshfunction(*e) ? "true" : "false";
+    fprintf(fp, "    <entity index=\"%u\" value=\"%s\"/>\n",
+              e->index(), value.c_str());
+  }
+
+  fprintf(fp, "  </meshfunction>\n");
+ 
+  // Close file
+  closeFile(fp);
+
+  
+  cout << "Saved mesh function to file " << filename << " in XML format." << endl;
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator<<(Function& f)

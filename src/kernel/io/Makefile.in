@@ -64,8 +64,9 @@ libdolfin_io_la_LIBADD =
 am_libdolfin_io_la_OBJECTS = File.lo GenericFile.lo GiDFile.lo \
 	MatlabFile.lo MFile.lo MTXFile.lo OctaveFile.lo OpenDXFile.lo \
 	PythonFile.lo VTKFile.lo XMLBLASFormData.lo XMLFile.lo \
-	XMLFiniteElementSpec.lo XMLMesh.lo XMLMatrix.lo XMLObject.lo \
-	XMLParameterList.lo XMLFunction.lo XMLVector.lo
+	XMLFiniteElementSpec.lo XMLMesh.lo XMLMeshFunction.lo \
+	XMLMatrix.lo XMLObject.lo XMLParameterList.lo XMLFunction.lo \
+	XMLVector.lo
 libdolfin_io_la_OBJECTS = $(am_libdolfin_io_la_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -247,6 +248,7 @@ nobase_include_HEADERS = dolfin/dolfin_io.h \
                           dolfin/XMLFile.h \
                           dolfin/XMLFiniteElementSpec.h \
                           dolfin/XMLMesh.h \
+                          dolfin/XMLMeshFunction.h \
                           dolfin/XMLMatrix.h \
                           dolfin/XMLObject.h \
                           dolfin/XMLParameterList.h \
@@ -269,6 +271,7 @@ libdolfin_io_la_SOURCES = File.cpp \
                           XMLFile.cpp \
                           XMLFiniteElementSpec.cpp \
                           XMLMesh.cpp \
+                          XMLMeshFunction.cpp \
                           XMLMatrix.cpp \
                           XMLObject.cpp \
                           XMLParameterList.cpp \
@@ -361,6 +364,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/XMLFunction.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/XMLMatrix.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/XMLMesh.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/XMLMeshFunction.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/XMLObject.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/XMLParameterList.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/XMLVector.Plo@am__quote@

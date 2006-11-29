@@ -18,6 +18,7 @@ namespace dolfin
 {
 
   class Mesh;
+  template <class T> class MeshFunction;
   class NewMesh;
   class Function;
   class Sample;
@@ -58,6 +59,11 @@ namespace dolfin
     /// Read mesh from file
     void operator>> (Mesh& mesh);
 
+    /// Read mesh function from file
+    void operator>> (MeshFunction<int>& meshfunction);
+    void operator>> (MeshFunction<double>& meshfunction);
+    void operator>> (MeshFunction<bool>& meshfunction);
+
     /// Read mesh from file
     void operator>> (NewMesh& mesh);
 
@@ -86,6 +92,11 @@ namespace dolfin
 
     /// Write mesh to file
     void operator<< (Mesh& mesh);
+
+    /// Write mesh function to file
+    void operator<< (MeshFunction<int>& meshfunction);
+    void operator<< (MeshFunction<double>& meshfunction);
+    void operator<< (MeshFunction<bool>& meshfunction);
 
     /// Write mesh to file
     void operator<< (NewMesh& mesh);
