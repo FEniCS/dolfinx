@@ -1,5 +1,6 @@
 from dolfin import *
 from math import *
+import ffc.compiler.compiler as ffc
 
 # Define right-hand side
 class MyFunction(Function):
@@ -11,10 +12,7 @@ f = MyFunction()
 # Create a mesh of the unit square
 mesh = UnitSquare(60, 60)
 
-# Import forms (compiled just-in-time with FFC)
-Kforms = import_formfile("MyElement.form")
-
-K = Kforms.MyElement()
+K = ffc.FiniteElement("Lagrange", "triangle", 1)
 
 Pforms = projection(K, "Projection")
 
@@ -35,7 +33,7 @@ x.copy(b, 0, 0, x.size())
 x.div(m)
 
 # Define a function from computed degrees of freedom
-u = Function(x, mesh, K)
+u = Function(x, mesh, a.trial())
 
 # Save solution to file in VTK format
 file = File("projection.pvd")

@@ -24,13 +24,15 @@ class Harmonic(ODE):
         else:
             return -realArray_getitem(u, 0)
 
-set("method", "mcg")
-set("order", 1)
+# FIXME: ODE interface needs to be updated for uBlas
 
-set("ode solution file name", "primal.py")
-set("number of samples", 1000)
+set("ODE method", "mcg")
+set("ODE order", 1)
 
-set("tolerance", 1e-4)
+set("ODE solution file name", "primal.py")
+set("ODE number of samples", 1000)
+
+set("ODE tolerance", 1e-4)
 #set("tolerance", 1e-8)
 
 ode = Harmonic()
