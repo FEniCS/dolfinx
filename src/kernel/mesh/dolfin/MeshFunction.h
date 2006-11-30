@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-05-22
-// Last changed: 2006-11-24
+// Last changed: 2006-11-30
 
 #ifndef __MESH_FUNCTION_H
 #define __MESH_FUNCTION_H
@@ -28,7 +28,7 @@ namespace dolfin
     MeshFunction() : _values(0), _mesh(0), _dim(0), _size(0) {}
 
     /// Create empty mesh function on given mesh
-    MeshFunction(const Mesh& mesh) : _values(0), _mesh(&mesh), _dim(0), _size(0) {}
+    MeshFunction(Mesh& mesh) : _values(0), _mesh(&mesh), _dim(0), _size(0) {}
 
     /// Destructor
     ~MeshFunction()
@@ -38,7 +38,7 @@ namespace dolfin
     }
 
     /// Return mesh associated with mesh function
-    inline const Mesh& mesh() const { dolfin_assert(_mesh); return *_mesh; }
+    inline Mesh& mesh() { dolfin_assert(_mesh); return *_mesh; }
 
     /// Return topological dimension
     inline uint dim() const { return _dim; }
@@ -86,13 +86,13 @@ namespace dolfin
     }
 
     /// Initialize mesh function for given topological dimension
-    void init(const Mesh& mesh, uint dim)
+    void init(Mesh& mesh, uint dim)
     {
       init(mesh, dim, mesh.size(dim));
     }
 
     /// Initialize mesh function for given topological dimension of given size
-    void init(const Mesh& mesh, uint dim, uint size)
+    void init(Mesh& mesh, uint dim, uint size)
     {
       _mesh = &mesh;
       _dim = dim;
@@ -126,7 +126,7 @@ namespace dolfin
     T* _values;
 
     /// The mesh
-    const Mesh* _mesh;
+    Mesh* _mesh;
 
     /// Topological dimension
     uint _dim;
