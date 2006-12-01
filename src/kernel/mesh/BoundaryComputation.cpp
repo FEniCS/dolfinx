@@ -5,7 +5,7 @@
 // Modified by Ola Skavhaug 2006.
 //
 // First added:  2006-06-21
-// Last changed: 2006-10-19
+// Last changed: 2006-12-01
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Array.h>
@@ -43,7 +43,7 @@ void BoundaryComputation::computeBoundaryCommon(Mesh& mesh,
   // the boundary. A facet is on the boundary if it is connected to
   // exactly one cell.
 
-  dolfin_info("Computing boundary mesh.");
+  //dolfin_info("Computing boundary mesh.");
 
   // Open boundary mesh for editing
   MeshEditor editor;
