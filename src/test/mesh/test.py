@@ -89,7 +89,7 @@ class MeshIterators(unittest.TestCase):
                 n += 1
         self.assertEqual(n, 4*mesh.numCells())
 
-class Boundary(unittest.TestCase):
+class BoundaryExtraction(unittest.TestCase):
 
     def testBoundaryComputation(self):
         """Compute boundary of mesh"""
@@ -105,11 +105,21 @@ class Boundary(unittest.TestCase):
         b1 = BoundaryMesh(b0)
         self.assertEqual(b1.numVertices(), 0)
         self.assertEqual(b1.numCells(), 0)
+
+class MeshFunctions(unittest.TestCase):
+
+    def testAssign(self):
+        mesh = UnitSquare(3, 3)
+        f = MeshFunction(int)
+        f.init(mesh, 0)
+        f.set(3, 10)
+        v = Vertex(mesh, 3)
+        self.assertEqual(f(v), 10)
        
 class InputOutput(unittest.TestCase):
 
-    def testOutputXML2D(self):
-        """Write and read 2D mesh from/to file"""
+    def testMeshXML2D(self):
+        """Write and read 2D mesh to/from file"""
         mesh_out = UnitSquare(3, 3)
         mesh_in  = Mesh()
         file = File("unitsquare.xml")
@@ -117,8 +127,8 @@ class InputOutput(unittest.TestCase):
         file >> mesh_in
         self.assertEqual(mesh_in.numVertices(), 16)
 
-    def testOutputXML3D(self):
-        """Write and read 3D mesh from/to file"""
+    def testMeshXML3D(self):
+        """Write and read 3D mesh to/from file"""
         mesh_out = UnitCube(3, 3, 3)
         mesh_in  = Mesh()
         file = File("unitcube.xml")
@@ -126,12 +136,29 @@ class InputOutput(unittest.TestCase):
         file >> mesh_in
         self.assertEqual(mesh_in.numVertices(), 64)
 
-    def testOutputMatlab2D(self):
+    def testMeshMatlab2D(self):
         """Write matlab format (no real test)"""
         mesh = UnitSquare(5, 5)
         file = File("unitsquare.m")
         file << mesh
         self.assertEqual(0, 0)
+
+    def testMeshFunction(self):
+        """Write and read mesh function to/from file"""
+        mesh = UnitSquare(1, 1)
+        f = MeshFunction(int)
+        f.init(mesh, 0)
+        f.set(0, 2)
+        f.set(1, 4)
+        f.set(2, 6)
+        f.set(3, 8)
+        file = File("meshfunction.xml")
+        file << f
+        g = MeshFunction(int)
+        g.init(mesh, 0)
+        file >> g
+        for v in vertices(mesh):
+            self.assertEqual(f(v), g(v))
 
 class PyCCInterface(unittest.TestCase):
 
