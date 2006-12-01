@@ -1,3 +1,7 @@
+0.6.4 [2006-12-01]
+ - Switch from Python Numeric to Python NumPy
+ - Improved mesh Python bindings
+ - Add input/output support for MeshFunction
  - Change Mesh::vertices() --> Mesh::coordinates()
  - Fix bug in output of mesh to MATLAB format
  - Add plasticty module (experimental)
