@@ -80,12 +80,14 @@ int main(int argc, char* argv[])
   PETScManager::init();
 
   // Get number of processes
-  int num_processes;
-  MPI_Comm_size(PETSC_COMM_WORLD, &num_processes);
+  int num_processes_int;
+  MPI_Comm_size(PETSC_COMM_WORLD, &num_processes_int);
+  unsigned int num_processes = num_processes_int;
 
   // Get this process number
-  int process;
-  MPI_Comm_rank(PETSC_COMM_WORLD, &process);
+  int process_int;
+  MPI_Comm_rank(PETSC_COMM_WORLD, &process_int);
+  unsigned int process = process_int;
 
   // Create mesh
   UnitSquare mesh(2,2);
@@ -100,7 +102,7 @@ int main(int argc, char* argv[])
   Poisson2D::LinearForm L(f); 
   
 
-  if(num_processes < 2 )
+  if ( num_processes < 2 )
     dolfin_error("Cannot create single partition. You need to run woth mpirun -np X . . . ");
 
   // Partition mesh (number of partitions = number of processes)
@@ -118,14 +120,14 @@ int main(int argc, char* argv[])
 
   // Compute number of vertices belonging to this processor 
   int local_num_vertices = 0;
-  for(VertexIterator vertex(mesh); !vertex.end(); ++vertex)
-    if(vertex_partition_function.get(*vertex) == process)
+  for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
+    if ( vertex_partition_function.get(*vertex) == process )
       ++local_num_vertices;
 
   cout << "Proc " << process << ", local num nodes  " << local_num_vertices 
           << "  " << mesh.numVertices() << endl;
 
-  int n = local_num_vertices;
+  //int n = local_num_vertices;
 
   // Create PETSc vector
   Vec b;
@@ -169,7 +171,7 @@ int main(int argc, char* argv[])
   // Assemble if cell belongs to this process's partition
   for(CellIterator cell(mesh); !cell.end(); ++cell)
   {
-    if(cell_partition_function.get(*cell) == process )
+    if(cell_partition_function.get(*cell) == static_cast<unsigned int>(process) )
     {
       map.update(*cell);
 
