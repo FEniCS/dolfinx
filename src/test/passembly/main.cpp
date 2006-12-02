@@ -17,7 +17,8 @@ extern "C"
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-MeshFunction<dolfin::uint> testMeshPartition(Mesh& mesh, int num_partitions)
+void testMeshPartition(Mesh& mesh, MeshFunction<dolfin::uint>& cell_partition_function,
+          MeshFunction<dolfin::uint>& vertex_partition_function, int num_partitions)
 {
   int num_cells     = mesh.numCells() ;
   int num_vertices  = mesh.numVertices();
@@ -50,29 +51,27 @@ MeshFunction<dolfin::uint> testMeshPartition(Mesh& mesh, int num_partitions)
     for (VertexIterator vertex(cell); !vertex.end(); ++vertex)
       mesh_data[i++] = vertex->index();
 
-
   // Use METIS to partition mesh
   METIS_PartMeshNodal(&num_cells, &num_vertices, mesh_data, &cell_type, &index_base, 
                       &num_partitions, &edges_cut, cell_partition, vertex_partition);
 
-  cout << "Output partition data " << endl;
-  cout << "  Edges cut " << edges_cut << endl;
+  cell_partition_function.init(mesh, mesh.topology().dim());
+  vertex_partition_function.init(mesh, 0);
 
-  // Create mesh function for partition numbers
-  MeshFunction<dolfin::uint> partition(mesh);
-  partition.init(mesh.topology().dim());
-
-  // Set partition numbers
+  // Set partition numbers on cells
   i = 0;
   for (CellIterator cell(mesh); !cell.end(); ++cell)
-    partition.set(cell->index(), cell_partition[i++]);
+    cell_partition_function.set(cell->index(), cell_partition[i++]);
+
+  // Set partition numbers on vertexes
+  i = 0;
+  for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
+    vertex_partition_function.set(vertex->index(), vertex_partition[i++]);
 
   // Clean up
   delete [] cell_partition;
   delete [] vertex_partition;
   delete [] mesh_data;
-
-  return partition;
 }
 //-----------------------------------------------------------------------------
 int main(int argc, char* argv[])
@@ -89,37 +88,66 @@ int main(int argc, char* argv[])
   MPI_Comm_rank(PETSC_COMM_WORLD, &process);
 
   // Create mesh
-  UnitSquare mesh(30,30);
+  UnitSquare mesh(2,2);
 
-  // Create bilinear form
+  // Initialize connectivity
+  for(dolfin::uint i = 0; i < mesh.topology().dim(); i++)
+    mesh.init(i);
+
+  // Create linear and bilinear form
+  Function f = 1.0;
   Poisson2D::BilinearForm a; 
+  Poisson2D::LinearForm L(f); 
+  
 
   if(num_processes < 2 )
     dolfin_error("Cannot create single partition. You need to run woth mpirun -np X . . . ");
 
   // Partition mesh (number of partitions = number of processes)
-  MeshFunction<dolfin::uint> partition = testMeshPartition(mesh, num_processes);
+  // Create mesh functions for partition numbers
+  MeshFunction<dolfin::uint> cell_partition_function;
+  MeshFunction<dolfin::uint> vertex_partition_function;
+  testMeshPartition(mesh, cell_partition_function, vertex_partition_function,
+                    num_processes);
 
-  // Start assembly
+  // FIXME: Need to regenerate degree of freedom mapping here which
+  //        is appropriate.
   
-  // Initialize connectivity
-  for(dolfin::uint i = 0; i < mesh.topology().dim(); i++)
-    mesh.init(i);
-
-  // Create affine map
-  AffineMap map;
-
   // Global matrix size
   const int N = FEM::size(mesh, a.test());
+
+  // Compute number of vertices belonging to this processor 
+  int local_num_vertices = 0;
+  for(VertexIterator vertex(mesh); !vertex.end(); ++vertex)
+    if(vertex_partition_function.get(*vertex) == process)
+      ++local_num_vertices;
+
+  cout << "Proc " << process << ", local num nodes  " << local_num_vertices 
+          << "  " << mesh.numVertices() << endl;
+
+  int n = local_num_vertices;
+
+  // Create PETSc vector
+  Vec b;
+  VecCreateMPI(PETSC_COMM_WORLD, PETSC_DECIDE, N, &b);
 
   // Create PETSc matrix
   Mat A;
   MatCreate(PETSC_COMM_WORLD, &A);
+//  MatSetSizes(A, n, PETSC_DECIDE, N, N);   
   MatSetSizes(A, PETSC_DECIDE, PETSC_DECIDE, N, N);   
   MatSetType(A, MATMPIAIJ);
+ 
+//  int m_range;
+//  int n_range;
+//  MatGetOwnershipRange(A, &m_range, &n_range);
+//  cout << "Proc " << process << "  " << m_range << "  " << n_range << endl;
 
-  real* block = 0;
-  int*  pos  = 0;
+  /// Start assembly
+ 
+  // Create affine map
+  AffineMap map;
+
   int vertices_per_cell = 0;
   if(mesh.type().cellType() == CellType::triangle)
     vertices_per_cell = 3;
@@ -128,62 +156,68 @@ int main(int argc, char* argv[])
   else
     dolfin_error("Do not know how to work with meshes of this type");
 
-  block = new real[vertices_per_cell*vertices_per_cell];
-  pos   = new int[vertices_per_cell];
-
-  for(int i =0; i<vertices_per_cell*vertices_per_cell; ++i)
-      block[i] = 1.0; 
+  real* A_block = new real[vertices_per_cell*vertices_per_cell];
+  real* b_block = new real[vertices_per_cell];
+  int*  pos     = new int[vertices_per_cell];
 
   // Zero matrix
   MatZeroEntries(A);
+  VecZeroEntries(b);
 
   // Assemble if cell belongs to this process's partition
   for(CellIterator cell(mesh); !cell.end(); ++cell)
   {
-    if(partition.get(*cell) == process )
+    if(cell_partition_function.get(*cell) == process )
     {
-//      cout << "Assembling cell " << cell->index() << " on process " << process << endl;
       map.update(*cell);
 
       // Update form
       a.update(map);
+      L.update(map);
 
       // Create mapping for cell
       int i = 0;
       for(VertexIterator vertex(cell); !vertex.end(); ++vertex)
         pos[i++] = vertex->index();
 
-      // Evaluate element matrix
-      a.eval(block, map);
+      // Evaluate element matrix and vector
+      a.eval(A_block, map);
+      L.eval(b_block, map);
 
-      MatSetValues(A, vertices_per_cell, pos, vertices_per_cell, pos, block, ADD_VALUES);
+      MatSetValues(A, vertices_per_cell, pos, vertices_per_cell, pos, A_block, ADD_VALUES);
+      VecSetValues(b, vertices_per_cell, pos, b_block, ADD_VALUES);
     }
   }  
   
-  // Finalise
+  // Finalise assembly
+  VecAssemblyBegin(b);
+  VecAssemblyEnd(b);
   MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
   MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
 
-  delete [] block;
-  delete [] pos;
+  cout << "Parallel vector " << endl;
+  VecView(b, PETSC_VIEWER_STDOUT_WORLD);
+  cout << "Parallel matrix " << endl;
+  MatView(A, PETSC_VIEWER_STDOUT_WORLD);
 
-  // Verify assembly.
-  real matrix_norm;
-  MatNorm(A, NORM_FROBENIUS, &matrix_norm);
+  delete [] A_block;
+  delete [] b_block;
+  delete [] pos;
 
   if(process == 0)
   {
-    // Compute Frobenius norm of paralle matrix and reference matrix
-    std::cout << "Norm (parallel assembly) " << matrix_norm << std::endl;
-
-  // Compute reference norm
     dolfin_log(false);
-    PETScMatrix Aref; 
-    FEM::assemble(a, Aref, mesh);
+    PETScMatrix Aref;
+    PETScVector bref;
+    FEM::assemble(a, L, Aref, bref, mesh); 
     dolfin_log(true);
-    std::cout << "Norm (reference matrix) " << Aref.norm(PETScMatrix::frobenius) << std::endl;
 
-  }  
+  cout << "Single process reference vector " << endl;
+  VecView(bref.vec(), PETSC_VIEWER_STDOUT_SELF);
+  cout << "Single process reference matrix " << endl;
+  MatView(Aref.mat(), PETSC_VIEWER_STDOUT_SELF);
+  }
+
 
   return 0;
 }
