@@ -15,7 +15,6 @@ extern "C"
 }
 
 using namespace dolfin;
-
 //-----------------------------------------------------------------------------
 void testMeshPartition(Mesh& mesh, MeshFunction<dolfin::uint>& cell_partition_function,
           MeshFunction<dolfin::uint>& vertex_partition_function, int num_partitions)
@@ -76,8 +75,10 @@ void testMeshPartition(Mesh& mesh, MeshFunction<dolfin::uint>& cell_partition_fu
 //-----------------------------------------------------------------------------
 int main(int argc, char* argv[])
 {
+  cout << "Starting parallel assemble/solve test." << endl;    
+
   // Initialise PETSc  
-  PETScManager::init();
+  PETScManager::init(argc, argv);
 
   // Get number of processes
   int num_processes_int;
@@ -90,20 +91,16 @@ int main(int argc, char* argv[])
   unsigned int process = process_int;
 
   // Create mesh
-  UnitSquare mesh(2,2);
-
-  // Initialize connectivity
-  for(dolfin::uint i = 0; i < mesh.topology().dim(); i++)
-    mesh.init(i);
+  UnitSquare mesh(4,4);
 
   // Create linear and bilinear form
   Function f = 1.0;
   Poisson2D::BilinearForm a; 
   Poisson2D::LinearForm L(f); 
   
-
   if ( num_processes < 2 )
-    dolfin_error("Cannot create single partition. You need to run woth mpirun -np X . . . ");
+    dolfin_error("Cannot create single partition. You need to run with \"mpirun -np num_proc ./dolfin-parallel-test\"\
+ (num_proc > 1)");
 
   // Partition mesh (number of partitions = number of processes)
   // Create mesh functions for partition numbers
@@ -112,46 +109,31 @@ int main(int argc, char* argv[])
   testMeshPartition(mesh, cell_partition_function, vertex_partition_function,
                     num_processes);
 
-  // FIXME: Need to regenerate degree of freedom mapping here which
-  //        is appropriate.
+  // Need to regenerate degree of freedom mapping here so that matrix/vector entries
+  // generated on a given processor also reside on the processor. DOFs for partition 0
+  // should run 0 -> m-1, for partition 1 run m -> m+n-1, etc. 
   
   // Global matrix size
   const int N = FEM::size(mesh, a.test());
 
   // Compute number of vertices belonging to this processor 
-  int local_num_vertices = 0;
+  int num_local_vertices = 0;
   for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
     if ( vertex_partition_function.get(*vertex) == process )
-      ++local_num_vertices;
+      ++num_local_vertices;
 
-  cout << "Proc " << process << ", local num nodes  " << local_num_vertices 
-          << "  " << mesh.numVertices() << endl;
+  // Create PETSc parallel vectors
+  Vec b, x;
+  VecCreateMPI(PETSC_COMM_WORLD, num_local_vertices, N, &b);
+  VecCreateMPI(PETSC_COMM_WORLD, num_local_vertices, N, &x);
 
-  //int n = local_num_vertices;
-
-  // Create PETSc vector
-  Vec b;
-  VecCreateMPI(PETSC_COMM_WORLD, PETSC_DECIDE, N, &b);
-  Vec x;
-  VecCreateMPI(PETSC_COMM_WORLD, PETSC_DECIDE, N, &x);
-
-  // Create PETSc matrix
+  // Create PETSc parallel  matrix (with guess at number of non-zeroes)
   Mat A;
-  MatCreate(PETSC_COMM_WORLD, &A);
-//  MatSetSizes(A, n, PETSC_DECIDE, N, N);   
-  MatSetSizes(A, PETSC_DECIDE, PETSC_DECIDE, N, N);   
-  MatSetType(A, MATMPIAIJ);
+  MatCreateMPIAIJ(PETSC_COMM_WORLD, num_local_vertices, num_local_vertices, N, N, 
+                    20, PETSC_NULL, 20, PETSC_NULL, &A); 
  
-//  int m_range;
-//  int n_range;
-//  MatGetOwnershipRange(A, &m_range, &n_range);
-//  cout << "Proc " << process << "  " << m_range << "  " << n_range << endl;
-
   /// Start assembly
  
-  // Create affine map
-  AffineMap map;
-
   int vertices_per_cell = 0;
   if(mesh.type().cellType() == CellType::triangle)
     vertices_per_cell = 3;
@@ -168,14 +150,15 @@ int main(int argc, char* argv[])
   MatZeroEntries(A);
   VecZeroEntries(b);
 
+  // Create affine map
+  AffineMap map;
+
   // Assemble if cell belongs to this process's partition
   for(CellIterator cell(mesh); !cell.end(); ++cell)
   {
     if(cell_partition_function.get(*cell) == static_cast<unsigned int>(process) )
     {
       map.update(*cell);
-
-      // Update form
       a.update(map);
       L.update(map);
 
@@ -188,6 +171,7 @@ int main(int argc, char* argv[])
       a.eval(A_block, map);
       L.eval(b_block, map);
 
+      // Add values
       MatSetValues(A, vertices_per_cell, pos, vertices_per_cell, pos, A_block, ADD_VALUES);
       VecSetValues(b, vertices_per_cell, pos, b_block, ADD_VALUES);
     }
@@ -200,7 +184,7 @@ int main(int argc, char* argv[])
   MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
 
   // Apply some boundary conditions so that the system can be solved
-  // Just apply homogeneous Dirichlet bc to first three vertices
+  // Just apply homogeneous Dirichlet bc to the first three vertices
   IS is = 0;
   int nrows = 3;
   int rows[3] = {0, 1, 2};
@@ -209,24 +193,27 @@ int main(int argc, char* argv[])
   MatZeroRowsIS(A, is, one);
   ISDestroy(is);
 
+
   real bc_values[3] = {0, 0, 0};
   VecSetValues(b, nrows, rows, bc_values, INSERT_VALUES);
   VecAssemblyBegin(b);
   VecAssemblyEnd(b);
 
-  // Solve system
+  // Solve linear system system
   KSP ksp;
   KSPCreate(PETSC_COMM_WORLD, &ksp);
   KSPSetFromOptions(ksp);
   KSPSetOperators(ksp, A, A, SAME_NONZERO_PATTERN);
   KSPSolve(ksp, b, x);
 
-
+  // Print parallel  results
 //  cout << "Parallel RHS vector " << endl;
 //  VecView(b, PETSC_VIEWER_STDOUT_WORLD);
 //  cout << "Parallel matrix " << endl;
 //  MatView(A, PETSC_VIEWER_STDOUT_WORLD);
-  cout << "Parallel solution vector " << endl;
+
+  if(process == 0)
+    cout << "*** Parallel solution vector " << endl;
   VecView(x, PETSC_VIEWER_STDOUT_WORLD);
 
   delete [] A_block;
@@ -237,25 +224,24 @@ int main(int argc, char* argv[])
   {
     dolfin_log(false);
     PETScMatrix Aref;
-    PETScVector bref;
-    PETScVector xref;
+    PETScVector bref, xref;
     FEM::assemble(a, L, Aref, bref, mesh); 
     Aref.ident(rows, nrows);
-    bref(0) = 0.0;
-    bref(1) = 0.0;
-    bref(2) = 0.0;
-    dolfin_log(true);
+    bref(0) = 0.0; bref(1) = 0.0; bref(2) = 0.0;
+
     KrylovSolver solver;
     solver.solve(Aref, xref, bref);
+    dolfin_log(true);
 
+  // Print reference results
 //    cout << "Single process reference vector " << endl;
 //    VecView(bref.vec(), PETSC_VIEWER_STDOUT_SELF);
 //    cout << "Single process reference matrix " << endl;
 //    MatView(Aref.mat(), PETSC_VIEWER_STDOUT_SELF);
-    cout << "Single process solution vector " << endl;
+    cout << "*** Single process solution vector " << endl;
     VecView(xref.vec(), PETSC_VIEWER_STDOUT_SELF);
+
+    cout << "Finsished parallel assemble/solve test." << endl;    
   }
-
-
   return 0;
 }

@@ -1,5 +1,5 @@
-#PARMETIS = /usr/local/garth/software/ParMetis-3.1
-PARMETIS = /usr/src/ParMetis-3.1
+PARMETIS = /usr/local/garth/software/ParMetis-3.1
+#PARMETIS = /usr/src/ParMetis-3.1
 
 CFLAGS  = `pkg-config dolfin --cflags` -I$(PARMETIS) -I$(PARMETIS)/METISLib -DMPICH_IGNORE_CXX_SEEK
 LIBS    = `pkg-config dolfin --libs` -L$(PARMETIS) -lparmetis -lmetis 
