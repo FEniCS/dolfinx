@@ -130,6 +130,8 @@ int main(int argc, char* argv[])
   // Create PETSc vector
   Vec b;
   VecCreateMPI(PETSC_COMM_WORLD, PETSC_DECIDE, N, &b);
+  Vec x;
+  VecCreateMPI(PETSC_COMM_WORLD, PETSC_DECIDE, N, &x);
 
   // Create PETSc matrix
   Mat A;
@@ -195,10 +197,35 @@ int main(int argc, char* argv[])
   MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
   MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
 
-  cout << "Parallel vector " << endl;
-  VecView(b, PETSC_VIEWER_STDOUT_WORLD);
-  cout << "Parallel matrix " << endl;
-  MatView(A, PETSC_VIEWER_STDOUT_WORLD);
+  // Apply some boundary conditions so that the system can be solved
+  // Just apply homogeneous Dirichlet bc to first three vertices
+  IS is = 0;
+  int nrows = 3;
+  int rows[3] = {0, 1, 2};
+  ISCreateGeneral(PETSC_COMM_WORLD, nrows, rows, &is);
+  PetscScalar one = 1.0;
+  MatZeroRowsIS(A, is, one);
+  ISDestroy(is);
+
+  real bc_values[3] = {0, 0, 0};
+  VecSetValues(b, nrows, rows, bc_values, INSERT_VALUES);
+  VecAssemblyBegin(b);
+  VecAssemblyEnd(b);
+
+  // Solve system
+  KSP ksp;
+  KSPCreate(PETSC_COMM_WORLD, &ksp);
+  KSPSetFromOptions(ksp);
+  KSPSetOperators(ksp, A, A, SAME_NONZERO_PATTERN);
+  KSPSolve(ksp, b, x);
+
+
+//  cout << "Parallel RHS vector " << endl;
+//  VecView(b, PETSC_VIEWER_STDOUT_WORLD);
+//  cout << "Parallel matrix " << endl;
+//  MatView(A, PETSC_VIEWER_STDOUT_WORLD);
+  cout << "Parallel solution vector " << endl;
+  VecView(x, PETSC_VIEWER_STDOUT_WORLD);
 
   delete [] A_block;
   delete [] b_block;
@@ -209,13 +236,22 @@ int main(int argc, char* argv[])
     dolfin_log(false);
     PETScMatrix Aref;
     PETScVector bref;
+    PETScVector xref;
     FEM::assemble(a, L, Aref, bref, mesh); 
+    Aref.ident(rows, nrows);
+    bref(0) = 0.0;
+    bref(1) = 0.0;
+    bref(2) = 0.0;
     dolfin_log(true);
+    KrylovSolver solver;
+    solver.solve(Aref, xref, bref);
 
-  cout << "Single process reference vector " << endl;
-  VecView(bref.vec(), PETSC_VIEWER_STDOUT_SELF);
-  cout << "Single process reference matrix " << endl;
-  MatView(Aref.mat(), PETSC_VIEWER_STDOUT_SELF);
+//    cout << "Single process reference vector " << endl;
+//    VecView(bref.vec(), PETSC_VIEWER_STDOUT_SELF);
+//    cout << "Single process reference matrix " << endl;
+//    MatView(Aref.mat(), PETSC_VIEWER_STDOUT_SELF);
+    cout << "Single process solution vector " << endl;
+    VecView(xref.vec(), PETSC_VIEWER_STDOUT_SELF);
   }
 
 
