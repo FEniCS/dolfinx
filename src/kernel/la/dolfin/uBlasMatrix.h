@@ -109,7 +109,10 @@ namespace dolfin
     void init(uint M, uint N);
 
     /// Initialize M x N matrix with given maximum number of nonzeros in each row
-    void init(uint M, uint N, uint nzmax);
+    void init(const uint M, const uint N, const uint nzmax);
+
+    /// Initialize M x N matrix with given number of nonzeros per row
+    void init(const uint M, const uint N, const int nz[]);
 
     /// Set block of values. The function apply() must be called to commit changes.
     void set(const real block[], const int rows[], int m, 
@@ -335,6 +338,25 @@ namespace dolfin
     // Reserve space for non-zeroes
     const uint total_nz = nzmax*size(0);
     this->reserve(total_nz);
+  }
+  //---------------------------------------------------------------------------
+  template <> 
+  inline void uBlasMatrix<ublas_dense_matrix>::init(const uint M, const uint N, 
+                                                    const int nz[])
+  {
+    init(M, N);
+  }
+  //---------------------------------------------------------------------------
+  template <class Mat> 
+  inline void uBlasMatrix<Mat>::init(const uint M, const uint N, const int nz[])
+  {
+    init(M, N);
+
+    // FIXME: Can set up fast assmebly into CSR matrix with sparsity pattern
+
+    // Reserve space for non-zeroes
+//    const uint total_nz = nzmax*size(0);
+//    this->reserve(total_nz);
   }
   //---------------------------------------------------------------------------
   template <>  

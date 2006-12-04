@@ -75,6 +75,9 @@ namespace dolfin
     /// Initialize M x N matrix with given maximum number of nonzeros in each row
     void init(uint M, uint N, uint nzmax);
 
+    /// Initialize M x N matrix with a given number of nonzeros per row
+    void init(uint M, uint N, const int nz[]);
+
     /// Initialize M x N matrix with given block size and maximum number of nonzeros in each row
     void init(uint M, uint N, uint bs, uint nzmax);
 
