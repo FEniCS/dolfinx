@@ -22,11 +22,11 @@ using namespace dolfin;
 
 void testDofMapping()
 {
-  UnitSquare mesh(1000,1000);
+  UnitSquare mesh(100,100);
   Poisson2D::BilinearForm a;
 
-  DofMapping dof_map0(mesh, &a.test());
-  DofMapping dof_map1(mesh, &a.test(), &a.test());
+  DofMap dof_map0(mesh, &a.test());
+  DofMap dof_map1(mesh, &a.test(), &a.test());
   
   // Compute system size
   int size0 = dof_map0.size();

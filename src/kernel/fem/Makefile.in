@@ -62,7 +62,7 @@ libLTLIBRARIES_INSTALL = $(INSTALL)
 LTLIBRARIES = $(lib_LTLIBRARIES)
 libdolfin_fem_la_LIBADD =
 am_libdolfin_fem_la_OBJECTS = AffineMap.lo BoundaryCondition.lo \
-	BoundaryValue.lo DofMapping.lo FEM.lo FiniteElement.lo \
+	BoundaryValue.lo DofMap.lo FEM.lo FiniteElement.lo \
 	FiniteElementSpec.lo
 libdolfin_fem_la_OBJECTS = $(am_libdolfin_fem_la_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir)
@@ -234,7 +234,7 @@ nobase_include_HEADERS = dolfin/dolfin_fem.h \
                            dolfin/AffineMap.h \
                            dolfin/BoundaryCondition.h \
                            dolfin/BoundaryValue.h \
-                           dolfin/DofMapping.h \
+                           dolfin/DofMap.h \
                            dolfin/FEM.h \
                            dolfin/FiniteElement.h \
                            dolfin/FiniteElementSpec.h \
@@ -254,7 +254,7 @@ lib_LTLIBRARIES = libdolfin-fem.la
 libdolfin_fem_la_SOURCES = AffineMap.cpp \
                            BoundaryCondition.cpp \
                            BoundaryValue.cpp \
-                           DofMapping.cpp \
+                           DofMap.cpp \
                            FEM.cpp \
                            FiniteElement.cpp \
                            FiniteElementSpec.cpp
@@ -332,7 +332,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/AffineMap.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BoundaryCondition.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BoundaryValue.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DofMapping.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DofMap.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEM.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FiniteElement.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FiniteElementSpec.Plo@am__quote@
