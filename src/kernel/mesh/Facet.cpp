@@ -8,3 +8,10 @@
 
 using namespace dolfin;
 
+
+int Facet::normal()
+{
+ 
+  
+  return 100;
+}
