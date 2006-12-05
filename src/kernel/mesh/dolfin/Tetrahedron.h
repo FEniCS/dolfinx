@@ -47,6 +47,9 @@ namespace dolfin
     /// Compute diameter of cell
     real diameter(const Cell& cell) const;
 
+    /// Compute component i of normal of given facet with respect to the cell
+    real normal(const Cell& cell, uint facet, uint i) const;
+
     /// Return description of cell type
     std::string description() const;
 

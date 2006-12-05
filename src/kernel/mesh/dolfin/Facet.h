@@ -22,8 +22,6 @@ namespace dolfin
     /// Constructor
     Facet(Mesh& mesh, uint index) : MeshEntity(mesh, mesh.topology().dim() - 1, index) {}
 
-    int normal();
-
     /// Destructor
     ~Facet() {}
 

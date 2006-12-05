@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-06-05
-// Last changed: 2006-10-23
+// Last changed: 2006-12-05
 
 #ifndef __INTERVAL_H
 #define __INTERVAL_H
@@ -44,6 +44,9 @@ namespace dolfin
 
     /// Compute diameter of cell
     real diameter(const Cell& cell) const;
+
+    /// Compute component i of normal of given facet with respect to the cell
+    real normal(const Cell& cell, uint facet, uint i) const;
 
     /// Return description of cell type
     std::string description() const;

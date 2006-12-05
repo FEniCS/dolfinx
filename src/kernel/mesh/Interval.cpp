@@ -110,6 +110,12 @@ real Interval::diameter(const Cell& cell) const
   return volume(cell);
 }
 //-----------------------------------------------------------------------------
+real Interval::normal(const Cell& cell, uint facet, uint i) const
+{
+  dolfin_error("Not implemented. Please fix this Kristian. ;-)");
+  return 0.0;
+}
+//-----------------------------------------------------------------------------
 std::string Interval::description() const
 {
   std::string s = "interval (simplex of topological dimension 1)";

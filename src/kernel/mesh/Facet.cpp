@@ -7,11 +7,3 @@
 #include <dolfin/Facet.h>
 
 using namespace dolfin;
-
-
-int Facet::normal()
-{
- 
-  
-  return 100;
-}

@@ -76,6 +76,9 @@ namespace dolfin
     /// Compute diameter of cell
     virtual real diameter(const Cell& cell) const = 0;
     
+    /// Compute component i of normal of given facet with respect to the cell
+    virtual real normal(const Cell& cell, uint facet, uint i) const = 0;
+
     /// Return description of cell type
     virtual std::string description() const = 0;
 

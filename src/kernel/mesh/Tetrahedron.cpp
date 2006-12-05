@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-06-05
-// Last changed: 2006-10-19
+// Last changed: 2006-12-05
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Cell.h>
@@ -215,6 +215,12 @@ real Tetrahedron::diameter(const Cell& cell) const
                                 
   // Formula for diameter (2*circumradius) from http://mathworld.wolfram.com
   return area / ( 3.0*volume(cell) );
+}
+//-----------------------------------------------------------------------------
+real Tetrahedron::normal(const Cell& cell, uint facet, uint i) const
+{
+  dolfin_error("Not implemented. Please fix this Kristian. ;-)");
+  return 0.0;
 }
 //-----------------------------------------------------------------------------
 std::string Tetrahedron::description() const
