@@ -5,7 +5,7 @@
 // Modified by Kristian Oelgaard 2006.
 //
 // First added:  2004-05-19
-// Last changed: 2006-10-24
+// Last changed: 2006-12-05
 
 #ifndef __FEM_H
 #define __FEM_H
@@ -115,17 +115,30 @@ namespace dolfin
     /// Check actual number of nonzeros in each row
     static void countNonZeros(const GenericMatrix& A, uint nz);
     
-    /// Assemble bilinear form for an element
-    static void assembleElement(BilinearForm& a, GenericMatrix& A, 
-                                const Mesh& mesh, const Cell& cell, AffineMap& map, const int facetID);
+    /// Assemble element tensor for a bilinear form
+    static void assembleElementTensor(BilinearForm& a, GenericMatrix& A, 
+                                      const Mesh& mesh, const Cell& cell, AffineMap& map);
 
-    /// Assemble linear form for an element
-    static void assembleElement(LinearForm& L, GenericVector& b, const Mesh& mesh, 
-                                const Cell& cell, AffineMap& map, const int facetID);
+    /// Assemble element tensor for a linear form
+    static void assembleElementTensor(LinearForm& L, GenericVector& b, const Mesh& mesh, 
+                                      const Cell& cell, AffineMap& map);
 
-    /// Assemble fucntional for an element
-    static void assembleElement(Functional& M, real& val, AffineMap& map,
-                                const int facetID);
+    /// Assemble element tensor for a functional
+    static void assembleElementTensor(Functional& M, real& val, AffineMap& map);
+
+    /// Assemble exterior facet tensor for a bilinear form
+    static void assembleExteriorFacetTensor(BilinearForm& a, GenericMatrix& A, 
+                                            const Mesh& mesh, const Cell& cell,
+                                            AffineMap& map, uint facet);
+
+    /// Assemble exterior facet tensor for a linear form
+    static void assembleExteriorFacetTensor(LinearForm& L, GenericVector& b,
+                                            const Mesh& mesh, const Cell& cell,
+                                            AffineMap& map, uint facet);
+
+    /// Assemble exterior facet tensor for a functional
+    static void assembleExteriorFacetTensor(Functional& M, real& val,
+                                            AffineMap& map, uint facet);
 
     /// Initialize mesh connectivity for use in node map
     static void initConnectivity(Mesh& mesh);
