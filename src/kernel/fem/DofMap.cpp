@@ -7,12 +7,12 @@
 #include <algorithm>  
 #include <dolfin/Cell.h>
 #include <dolfin/FiniteElement.h>
-#include <dolfin/DofMapping.h>
+#include <dolfin/DofMap.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-DofMapping::DofMapping( Mesh& mesh, FiniteElement* element_0, FiniteElement* element_1) 
+DofMap::DofMap( Mesh& mesh, FiniteElement* element_0, FiniteElement* element_1) 
                     : mesh(&mesh), matrix_sparsity_pattern(0)
 {  
   // Initialise data
@@ -33,36 +33,36 @@ DofMapping::DofMapping( Mesh& mesh, FiniteElement* element_0, FiniteElement* ele
     mesh.init(2, 1);
 }
 //-----------------------------------------------------------------------------
-DofMapping::~DofMapping()
+DofMap::~DofMap()
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void DofMapping::attach(const FiniteElement* element_0, const FiniteElement* element_1)
+void DofMap::attach(const FiniteElement* element_0, const FiniteElement* element_1)
 {
   element[0]= element_0;
   element[1]= element_1;
 }
 //-----------------------------------------------------------------------------
-void DofMapping::dofmap(int dof_map[], const Cell& cell, const uint e) const
+void DofMap::dofmap(int dof_map[], const Cell& cell, const uint e) const
 {
   dolfin_assert( e < 2 );
   if ( !element[e] )
-    dolfin_error("No FiniteElement associated with DofMapping.");
+    dolfin_error("No FiniteElement associated with DofMap.");
 
   element[e]->nodemap(dof_map, cell, *mesh);
 }
 //-----------------------------------------------------------------------------
-//const Array< Array<int> >& DofMapping::getMap() const
+//const Array< Array<int> >& DofMap::getMap() const
 //{
 //  return _map;
 //}
 //-----------------------------------------------------------------------------
-const dolfin::uint DofMapping::size(const uint e)
+const dolfin::uint DofMap::size(const uint e)
 {
   dolfin_assert( e < 2);
   if ( !element[e] )
-    dolfin_error("No FiniteElement associated with DofMapping.");
+    dolfin_error("No FiniteElement associated with DofMap.");
   
   int* dof_map_array = new int[ element[e]->spacedim() ];
   int num_dof = 0;
@@ -78,7 +78,7 @@ const dolfin::uint DofMapping::size(const uint e)
   return _size[e];
 }
 //-----------------------------------------------------------------------------
-dolfin::uint DofMapping::numNonZeroes()
+dolfin::uint DofMap::numNonZeroes()
 {
   // Compute matrix sparsity pattern 
   computeMatrixSparsityPattern();  
@@ -90,7 +90,7 @@ dolfin::uint DofMapping::numNonZeroes()
   return nzmax;
 }
 //-----------------------------------------------------------------------------
-void DofMapping::numNonZeroesRow(int nz_row[])
+void DofMap::numNonZeroesRow(int nz_row[])
 {
   // Compute matrix sparsity pattern 
   computeMatrixSparsityPattern();  
@@ -100,11 +100,11 @@ void DofMapping::numNonZeroesRow(int nz_row[])
     nz_row[i] = matrix_sparsity_pattern[i].size();
 }
 //-----------------------------------------------------------------------------
-void DofMapping::build(const uint e)
+void DofMap::build(const uint e)
 {
   dolfin_assert( e < 2 );
   if ( !element[e] )
-    dolfin_error("No FiniteElement associated with DofMapping.");
+    dolfin_error("No FiniteElement associated with DofMap.");
 
   int* dof_map_array = new int[ element[e]->spacedim() ];
   Array<int> dof_map_cell( element[e]->spacedim());
@@ -129,11 +129,11 @@ void DofMapping::build(const uint e)
   delete [] dof_map_array;
 }
 //-----------------------------------------------------------------------------
-void DofMapping::computeVectorSparsityPattern(const uint e)
+void DofMap::computeVectorSparsityPattern(const uint e)
 {
   dolfin_assert(e < 2);
   if ( !element[e] )
-    dolfin_error("No FiniteElement associated with DofMapping.");
+    dolfin_error("No FiniteElement associated with DofMap.");
 
   // Initialise sparsity pattern
   vector_sparsity_pattern.clear();
@@ -148,10 +148,10 @@ void DofMapping::computeVectorSparsityPattern(const uint e)
   delete [] dof;
 }
 //-----------------------------------------------------------------------------
-void DofMapping::computeMatrixSparsityPattern()
+void DofMap::computeMatrixSparsityPattern()
 {
   if( !element[0] && !element[1] ) 
-    dolfin_error("Two finite elements must be associated with DofMapping object to build matrix sparsity pattern.");
+    dolfin_error("Two finite elements must be associated with DofMap object to build matrix sparsity pattern.");
 
   // Initialise sparsity pattern
   matrix_sparsity_pattern.resize(_size[0]);    

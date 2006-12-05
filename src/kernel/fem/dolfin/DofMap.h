@@ -4,8 +4,8 @@
 // First added:  2006-12-05
 // Last changed: 2006-
 
-#ifndef __DOF_MAPPING_H
-#define __DOF_MAPPING_H
+#ifndef __DOF_MAP_H
+#define __DOF_MAP_H
 
 #include <set>  
 #include <dolfin/constants.h>
@@ -24,15 +24,15 @@ namespace dolfin
   /// Two finite elements are required to generate the sparsity pattern for 
   /// matrix assembly.
 
-  class DofMapping
+  class DofMap
   {
   public:
     
     /// Constructor
-    DofMapping(Mesh& mesh, FiniteElement* element_0 = 0, FiniteElement* element_1 = 0);
+    DofMap(Mesh& mesh, FiniteElement* element_0 = 0, FiniteElement* element_1 = 0);
 
     /// Destructor
-    ~DofMapping();
+    ~DofMap();
 
     /// Attach finite elements
     void attach(const FiniteElement* element_0, const FiniteElement* element_1 = 0);
