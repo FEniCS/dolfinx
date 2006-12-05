@@ -29,7 +29,7 @@ namespace dolfin
   public:
     
     /// Constructor
-    DofMap(Mesh& mesh, FiniteElement* element_0 = 0, FiniteElement* element_1 = 0);
+    DofMap(Mesh& mesh, const FiniteElement* element_0 = 0, const FiniteElement* element_1 = 0);
 
     /// Destructor
     ~DofMap();
@@ -40,8 +40,8 @@ namespace dolfin
     /// Get dof map for a cell for element e (e=0 or e=1)
     void dofmap(int dof_map[], const Cell& cell, const uint e = 0) const;
 
-//    /// Return global dof  map
-//    const Array< Array<int> >& getMap() const;
+//    /// Return global dof map for element e (e=0 or e=1)
+//    const Array< Array<int> >& getMap(const uint e = 0) const;
 
     /// Return total number of degrees of freedom associated with element e (e=0 or e=1)
     const uint size(const uint e = 0);
@@ -75,7 +75,7 @@ namespace dolfin
     int _size[2];
 
     // Degree of freedom map
-    Array< Array<int> > _map;    
+    Array< Array<int> > map[2];    
 
     // Vector sparsity pattern represented as a set of nonzero positions
     std::set<int> vector_sparsity_pattern;    

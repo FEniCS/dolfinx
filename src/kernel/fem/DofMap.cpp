@@ -12,8 +12,8 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-DofMap::DofMap( Mesh& mesh, FiniteElement* element_0, FiniteElement* element_1) 
-                    : mesh(&mesh), matrix_sparsity_pattern(0)
+DofMap::DofMap(Mesh& mesh, const FiniteElement* element_0, 
+               const FiniteElement* element_1) : mesh(&mesh)
 {  
   // Initialise data
   element[0] = element_0;
@@ -21,8 +21,13 @@ DofMap::DofMap( Mesh& mesh, FiniteElement* element_0, FiniteElement* element_1)
 
   _size[0] = 0;
   _size[1] = 0;
+
+  map[0].clear();
+  map[1].clear();
+
   vector_sparsity_pattern.clear();
-  
+  matrix_sparsity_pattern.clear();
+
   // Intialise mesh connectivity if not already done
   for (uint i = 0; i < mesh.topology().dim(); i++)
     mesh.init(i);
@@ -53,19 +58,20 @@ void DofMap::dofmap(int dof_map[], const Cell& cell, const uint e) const
   element[e]->nodemap(dof_map, cell, *mesh);
 }
 //-----------------------------------------------------------------------------
-//const Array< Array<int> >& DofMap::getMap() const
+//const Array< Array<int> >& DofMap::getMap(const uint e) const
 //{
-//  return _map;
+//  return map[e];
 //}
 //-----------------------------------------------------------------------------
 const dolfin::uint DofMap::size(const uint e)
 {
   dolfin_assert( e < 2);
+
   if ( !element[e] )
     dolfin_error("No FiniteElement associated with DofMap.");
   
-  int* dof_map_array = new int[ element[e]->spacedim() ];
   int num_dof = 0;
+  int* dof_map_array = new int[ element[e]->spacedim() ];
   for (CellIterator cell(*mesh); !cell.end(); ++cell)
   {
     element[e]->nodemap(dof_map_array, *cell, *mesh);
@@ -83,7 +89,7 @@ dolfin::uint DofMap::numNonZeroes()
   // Compute matrix sparsity pattern 
   computeMatrixSparsityPattern();  
 
-  uint nzmax;
+  uint nzmax = 0;
   for(int i = 0; i < _size[0]; ++i)
     nzmax = std::max(matrix_sparsity_pattern[i].size(), nzmax);
 
@@ -95,16 +101,21 @@ void DofMap::numNonZeroesRow(int nz_row[])
   // Compute matrix sparsity pattern 
   computeMatrixSparsityPattern();  
 
+  const int nrow = size(0);
   // Insert number of non-zeroes per row into integer array 
-  for(int i = 0; i < _size[0]; ++i)
+  for(int i = 0; i < nrow; ++i)
     nz_row[i] = matrix_sparsity_pattern[i].size();
 }
 //-----------------------------------------------------------------------------
 void DofMap::build(const uint e)
 {
   dolfin_assert( e < 2 );
+
   if ( !element[e] )
     dolfin_error("No FiniteElement associated with DofMap.");
+
+  map[e].clear();
+  map[e].reserve( mesh->numCells() );
 
   int* dof_map_array = new int[ element[e]->spacedim() ];
   Array<int> dof_map_cell( element[e]->spacedim());
@@ -123,7 +134,7 @@ void DofMap::build(const uint e)
     }
 
     // Add dof_map_cell to global map
-    _map.push_back(dof_map_cell);
+    map[e].push_back(dof_map_cell);
   }
   _size[e] = num_dof + 1;
   delete [] dof_map_array;
@@ -132,6 +143,7 @@ void DofMap::build(const uint e)
 void DofMap::computeVectorSparsityPattern(const uint e)
 {
   dolfin_assert(e < 2);
+
   if ( !element[e] )
     dolfin_error("No FiniteElement associated with DofMap.");
 
@@ -154,8 +166,8 @@ void DofMap::computeMatrixSparsityPattern()
     dolfin_error("Two finite elements must be associated with DofMap object to build matrix sparsity pattern.");
 
   // Initialise sparsity pattern
-  matrix_sparsity_pattern.resize(_size[0]);    
   matrix_sparsity_pattern.clear();
+  matrix_sparsity_pattern.resize( size(0) );
 
   int* row_dof    = new int[ element[0]->spacedim()];
   int* column_dof = new int[ element[1]->spacedim()];
