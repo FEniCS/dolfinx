@@ -28,6 +28,7 @@ namespace dolfin
   class FiniteElement;
   class BoundaryCondition;
   class AffineMap;
+  class DofMap;
 
   /// Automated assembly of a linear system from a given partial differential
   /// equation, specified as a variational problem: Find U in V such that
@@ -84,7 +85,9 @@ namespace dolfin
     /// Lump matrix (cannot mix matrix vector and matrix types when lumping)
     template < class A, class X > static void lump(const A& M, X& m) { M.lump(m); }
 
-    /// Count the degrees of freedom
+    /// Count the degrees of freedom. 
+    /// FIXME: This function is used by Functions, but the size should be computed
+    /// via DofMap 
     static uint size(Mesh& mesh, const FiniteElement& element);
 
     /// Display assembly data (useful for debugging)
@@ -112,16 +115,15 @@ namespace dolfin
     /// Estimate the maximum number of nonzeros in each row
     static uint estimateNonZeros(Mesh& mesh, const FiniteElement& element);
 
-    /// Check actual number of nonzeros in each row
-    static void countNonZeros(const GenericMatrix& A, uint nz);
-    
     /// Assemble element tensor for a bilinear form
     static void assembleElementTensor(BilinearForm& a, GenericMatrix& A, 
-                                      const Mesh& mesh, const Cell& cell, AffineMap& map);
+                                      const Mesh& mesh, const Cell& cell, 
+                                      AffineMap& map, const DofMap& dofmap);
 
     /// Assemble element tensor for a linear form
-    static void assembleElementTensor(LinearForm& L, GenericVector& b, const Mesh& mesh, 
-                                      const Cell& cell, AffineMap& map);
+    static void assembleElementTensor(LinearForm& L, GenericVector& b, 
+                                      const Mesh& mesh, const Cell& cell, 
+                                      AffineMap& map, const DofMap& dofmap);
 
     /// Assemble element tensor for a functional
     static void assembleElementTensor(Functional& M, real& val, AffineMap& map);

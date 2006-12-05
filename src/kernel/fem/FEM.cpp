@@ -22,6 +22,7 @@
 #include <dolfin/BoundaryCondition.h>
 #include <dolfin/BoundaryValue.h>
 #include <dolfin/AffineMap.h>
+#include <dolfin/DofMap.h>
 #include <dolfin/FEM.h>
 
 using namespace dolfin;
@@ -102,24 +103,24 @@ dolfin::uint FEM::size(Mesh& mesh, const FiniteElement& element)
   // FIXME: function that calculates the total number of degrees of
   // FIXME: freedom in just a few operations.
 
+  /// FIXME: This function is used by Functions, but the size should be computed
+  /// via DofMap. It might be removed. 
+
   // Initialize connectivity
   initConnectivity(mesh);
 
   // Count the degrees of freedom (check maximum index)
-  int* nodes = new int[element.spacedim()];
-  int nodemax = 0;
+  int* dofs = new int[element.spacedim()];
+  int dofmax = 0;
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
-    element.nodemap(nodes, *cell, mesh);
+    element.nodemap(dofs, *cell, mesh);
     for (uint i = 0; i < element.spacedim(); i++)
-    {
-      if ( nodes[i] > nodemax )
-        nodemax = nodes[i];
-    }
+      dofmax = std::max(dofs[i], dofmax);
   }
-  delete [] nodes;
+  delete [] dofs;
 
-  return static_cast<uint>(nodemax + 1);
+  return static_cast<uint>(dofmax + 1);
 }
 //-----------------------------------------------------------------------------
 void FEM::disp(Mesh& mesh, const FiniteElement& element)
@@ -131,8 +132,9 @@ void FEM::disp(Mesh& mesh, const FiniteElement& element)
   // Initialize connectivity
   initConnectivity(mesh);
 
-  // Total number of nodes
-  uint N = size(mesh, element);
+  // Total number of degrees of freedom
+  DofMap dofmap(mesh, &element);  
+  uint N = dofmap.size();
   dolfin_info("  Total number of degrees of freedom: %d.", N);
   dolfin_info("");
 
@@ -186,19 +188,27 @@ void FEM::assembleCommon(BilinearForm* a, LinearForm* L, Functional* M,
   // Create affine map
   AffineMap map;
   
+  // Create degree of freedom maps
+  // FIXME: DofMap should be computed only once unless mesh/element changes
+  DofMap dofmap_a(mesh);
+  DofMap dofmap_L(mesh);
+
   // Initialize global data
-  uint nz = 0;
   bool interior_contribution = false;
   bool boundary_contribution = false;
   bool interior_boundary_contribution = false;
   
   if ( a )
   { 
-    const uint M = size(mesh, a->test());
-    const uint N = size(mesh, a->trial());
-    nz = estimateNonZeros(mesh, a->trial());
-    A->init(M, N, nz);
+    dofmap_a.attach(&(a->test()), &(a->trial()));
+    const uint M = dofmap_a.size(0);
+    const uint N = dofmap_a.size(1);;
+    int* nzrow = new int[M];
+    dofmap_a.numNonZeroesRow(nzrow);
+    A->init(M, N, nzrow);
     A->zero();
+    delete [] nzrow;    
+
     interior_contribution = interior_contribution || a->interior_contribution();
     boundary_contribution = boundary_contribution || a->boundary_contribution();
     interior_boundary_contribution = interior_boundary_contribution || a->interior_boundary_contribution();
@@ -206,9 +216,11 @@ void FEM::assembleCommon(BilinearForm* a, LinearForm* L, Functional* M,
   }
   if ( L )
   {
-    const uint M = size(mesh, L->test());
+    dofmap_L.attach(&(L->test()));
+    const uint M = dofmap_L.size();
     b->init(M);
     b->zero();
+
     interior_contribution = interior_contribution || L->interior_contribution();
     boundary_contribution = boundary_contribution || L->boundary_contribution();
     //interior_boundary_contribution = interior_boundary_contribution || L->interior_boundary_contribution();
@@ -235,11 +247,11 @@ void FEM::assembleCommon(BilinearForm* a, LinearForm* L, Functional* M,
       
       // Assemble bilinear form
       if ( a && a->interior_contribution() )
-        assembleElementTensor(*a, *A, mesh, *cell, map);
+        assembleElementTensor(*a, *A, mesh, *cell, map, dofmap_a);
       
       // Assemble linear form
       if ( L && L->interior_contribution() )
-        assembleElementTensor(*L, *b, mesh, *cell, map);
+        assembleElementTensor(*L, *b, mesh, *cell, map, dofmap_L);
       
       // Assemble functional
       if ( M && M->interior_contribution() )
@@ -346,10 +358,7 @@ void FEM::assembleCommon(BilinearForm* a, LinearForm* L, Functional* M,
   
   // Complete assembly
   if ( a )
-  {
     A->apply();
-    countNonZeros(*A, nz);
-  }
   if ( L )
     b->apply();
 }
@@ -534,27 +543,17 @@ dolfin::uint FEM::estimateNonZeros(Mesh& mesh,
   return nzmax;
 }
 //-----------------------------------------------------------------------------
-void FEM::countNonZeros(const GenericMatrix& A, uint nz)
-{
-  uint nz_actual = A.nzmax();
-  if ( nz_actual > nz )
-    dolfin_warning("Actual number of nonzero entries exceeds estimated number of nonzero entries.");
-  else
-    dolfin_info("Maximum number of nonzeros in each row is %d (estimated %d).",
-		nz_actual, nz);
-}
-//-----------------------------------------------------------------------------
 void FEM::assembleElementTensor(BilinearForm& a, GenericMatrix& A, 
                                 const Mesh& mesh, const Cell& cell,
-                                AffineMap& map)
+                                AffineMap& map, const DofMap& dofmap)
 {
   // Update form
   a.update(map);
   
   // Compute maps from local to global degrees of freedom
-  a.test().nodemap(a.test_nodes, cell, mesh);
-  a.trial().nodemap(a.trial_nodes, cell, mesh);
-  
+  dofmap.dofmap(a.test_nodes, cell, 0);
+  dofmap.dofmap(a.trial_nodes, cell, 1);
+
   // Compute element tensor
   a.eval(a.block, map);
   
@@ -564,13 +563,13 @@ void FEM::assembleElementTensor(BilinearForm& a, GenericMatrix& A,
 //-----------------------------------------------------------------------------
 void FEM::assembleElementTensor(LinearForm& L, GenericVector& b, 
                                 const Mesh& mesh, const Cell& cell,
-                                AffineMap& map)
+                                AffineMap& map, const DofMap& dofmap)
 {
   // Update form
   L.update(map);
   
   // Compute map from local to global degrees of freedom
-  L.test().nodemap(L.test_nodes, cell, mesh);
+  dofmap.dofmap(L.test_nodes, cell);
   
   // Compute element tensor
   L.eval(L.block, map);
