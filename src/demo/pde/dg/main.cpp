@@ -18,14 +18,8 @@
 //     du/dn(x, y) = 1  for x = 1
 //     du/dn(x, y) = 0  otherwise
 
-#include "FEM.h"
-#include "BilinearForm.h"
-#include "LinearForm.h"
-#include "Functional.h"
 #include <dolfin.h>
-#include "DG.h"
-#include "EL.h"
-
+#include "Poisson.h"
   
 using namespace dolfin;
 
@@ -36,7 +30,9 @@ int main()
   {
     real eval(const Point& p, unsigned int i)
     {
-      return 1;
+      real dx = p.x() - 0.5;
+      real dy = p.y() - 0.5;
+      return 500.0*exp(-(dx*dx + dy*dy)/0.02);
     }
   };
 
@@ -50,55 +46,33 @@ int main()
     }
   };
   
+  // Neumann boundary condition
+  class NeumannBC : public Function
+  {
+    real eval(const Point& p, unsigned int i)
+    {
+      if ( std::abs(p.x() - 1.0) < DOLFIN_EPS )
+        return 1.0;
+      else
+        return 0.0;  
+    }
+  };
+
   // Set up problem
   Source f;
   DirichletBC bc;
-
-  UnitSquare mesh(2, 2);
-//  Mesh mesh("mesh_dg.xml");
-
-  mesh.init();
-  mesh.disp();
-
-  DG::BilinearForm a;
-  DG::LinearForm L(f);
-
-  Matrix A;
-  Vector b;
-
-  Function U;
-  U.init(mesh, a.trial());
-
-  FEM::assemble(a, A, mesh);
-  A.disp();
-
-  FEM::assemble(L, b, mesh);
-  b.disp();
-
-//cout << mesh.numVertices() << endl;
-//cout << mesh.numEdges() << endl;
-//cout << mesh.numFacets() << endl;
-
-//  FEM::disp(mesh, a.trial());
-  EL el; 
-//  FEM::applyBC(A, b, mesh, a.trial(), bc);
-  FEM::applyBC(A, b, mesh, el, bc);
-//  PDE pde(a, L, mesh, bc);
+  NeumannBC g;
+  UnitSquare mesh(16, 16);
+  Poisson::BilinearForm a;
+  Poisson::LinearForm L(f, g);
+  PDE pde(a, L, mesh, bc);
 
   // Compute solution
-//  Function U = pde.solve();
-
-  LU solver;
-  solver.solve(A, U.vector(), b);
-
-
+  Function U = pde.solve();
 
   // Save solution to file
   File file("poisson.pvd");
   file << U;
-
-//  File file_mesh("mesh_dg.xml");
-//  file_mesh << mesh;
-
+  
   return 0;
 }
