@@ -1,0 +1,27 @@
+# Copyright (C) 2005-2006 Anders Logg.
+# Licensed under the GNU GPL Version 2.
+#
+# First added:  2005
+# Last changed: 2006-09-05
+#
+# The bilinear form a(v, U) and linear form L(v) for
+# Poisson's equation.
+#
+# Compile this form with FFC: ffc poisson.form.
+
+
+element = FiniteElement("Discontinuous Lagrange", "triangle", 1)
+
+r = Index("primary")
+v = TestFunction(element)
+print next_primary_index()
+
+u = TrialFunction(element)
+f = Function(element)
+print next_primary_index()
+
+#a = dot(grad(v),grad(u))*dx -v*u*dS
+a = v*u*ds
+print a
+L = v*f*dx
+print L
