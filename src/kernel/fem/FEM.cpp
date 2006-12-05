@@ -581,6 +581,59 @@ void FEM::assembleExteriorFacetTensor(Functional& M, real& val,
   val += M.block[0];
 }
 //-----------------------------------------------------------------------------
+void FEM::assembleInteriorFacetTensor(BilinearForm& a, GenericMatrix& A, 
+                                      const Mesh& mesh,
+                                      const Cell& cell0, const Cell& cell1,
+                                      AffineMap& map0, AffineMap& map1,
+                                      uint facet0, uint facet1)
+{
+  // Update form
+  a.update(map0);
+  
+  // Compute maps from local to global degrees of freedom
+  a.test().nodemap(a.test_nodes, cell0, mesh);
+  a.trial().nodemap(a.trial_nodes, cell0, mesh);
+  
+  // Compute exterior facet tensor
+  a.eval(a.block, map0, facet0);
+  
+  // Add exterior facet tensor to to global tensor
+  A.add(a.block, a.test_nodes, a.test().spacedim(), a.trial_nodes, a.trial().spacedim());
+}
+//-----------------------------------------------------------------------------
+void FEM::assembleInteriorFacetTensor(LinearForm& L, GenericVector& b, 
+                                      const Mesh& mesh,
+                                      const Cell& cell0, const Cell& cell1,
+                                      AffineMap& map0, AffineMap& map1,
+                                      uint facet0, uint facet1)
+{
+  // Update form
+  L.update(map0);
+  
+  // Compute map from local to global degrees of freedom
+  L.test().nodemap(L.test_nodes, cell0, mesh);
+  
+  // Compute exterior facet tensor
+  L.eval(L.block, map0, facet0);
+  
+  // Add exterior facet tensor to global tensor
+  b.add(L.block, L.test_nodes, L.test().spacedim());
+}
+//-----------------------------------------------------------------------------
+void FEM::assembleInteriorFacetTensor(Functional& M, real& val,
+                                      AffineMap& map0, AffineMap& map1,
+                                      uint facet0, uint facet1)
+{
+  // Update form
+  M.update(map0);
+  
+  // Compute exterior facet tensor
+  M.eval(M.block, map0, facet0);
+  
+  // Add exterior facet tensor to global tensor
+  val += M.block[0];
+}
+//-----------------------------------------------------------------------------
 void FEM::initConnectivity(Mesh& mesh)
 {
   // This is a temporary fix. We need to get information from FFC about

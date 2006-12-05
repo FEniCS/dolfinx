@@ -140,6 +140,25 @@ namespace dolfin
     static void assembleExteriorFacetTensor(Functional& M, real& val,
                                             AffineMap& map, uint facet);
 
+    /// Assemble interior facet tensor for a bilinear form
+    static void assembleInteriorFacetTensor(BilinearForm& a, GenericMatrix& A, 
+                                            const Mesh& mesh,
+                                            const Cell& cell0, const Cell& cell1,
+                                            AffineMap& map0, AffineMap& map1,
+                                            uint facet0, uint facet1);
+
+    /// Assemble interior facet tensor for a linear form
+    static void assembleInteriorFacetTensor(LinearForm& L, GenericVector& b,
+                                            const Mesh& mesh,
+                                            const Cell& cell0, const Cell& cell1,
+                                            AffineMap& map0, AffineMap& map1,
+                                            uint facet0, uint facet1);
+
+    /// Assemble interior facet tensor for a functional
+    static void assembleInteriorFacetTensor(Functional& M, real& val,
+                                            AffineMap& map0, AffineMap& map1,
+                                            uint facet0, uint facet1);
+
     /// Initialize mesh connectivity for use in node map
     static void initConnectivity(Mesh& mesh);
     
