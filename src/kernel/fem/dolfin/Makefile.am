@@ -2,7 +2,6 @@ EXTRA_DIST = dolfin_fem.h \
              AffineMap.h \
              BoundaryCondition.h \
              BoundaryValue.h \
-             DofMapping.h \
              FEM.h \
              FiniteElement.h \
              FiniteElementSpec.h \

@@ -139,26 +139,6 @@ void PETScMatrix::init(uint M, uint N, uint nz)
   MatSetOption(A, MAT_KEEP_ZEROED_ROWS);
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::init(uint M, uint N, const int nz[])
-{
-  // Free previously allocated memory if necessary
-  if ( A )
-  {
-    if ( M == size(0) && N == size(1) )
-      return;
-    else
-      MatDestroy(A);
-  }
-
-  // Create a sparse matrix in compressed row format
-  MatCreate(PETSC_COMM_SELF, &A);
-  MatSetSizes(A,  PETSC_DECIDE,  PETSC_DECIDE, M, N);
-  setType();
-  MatSeqAIJSetPreallocation(A, PETSC_DEFAULT, nz);
-  MatSetFromOptions(A);
-  MatSetOption(A, MAT_KEEP_ZEROED_ROWS);
-}
-//-----------------------------------------------------------------------------
 void PETScMatrix::init(uint M, uint N, uint bs, uint nz)
 {
   // Free previously allocated memory if necessary

@@ -33,9 +33,6 @@ namespace dolfin
     /// Initialize M x N matrix with given maximum number of nonzeros in each row
     virtual void init(uint M, uint N, uint nzmax) = 0;
     
-    /// Initialize M x N matrix with given number of nonzeros per row
-    virtual void init(uint M, uint N, const int nz[]) = 0;
-
     /// Return number of rows (dim = 0) or columns (dim = 1) along dimension dim
     virtual uint size(uint dim) const = 0;
 
