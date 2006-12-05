@@ -587,6 +587,7 @@ void FEM::assembleInteriorFacetTensor(BilinearForm& a, GenericMatrix& A,
                                       AffineMap& map0, AffineMap& map1,
                                       uint facet0, uint facet1)
 {
+  /*
   // Update form
   a.update(map0);
   
@@ -599,6 +600,82 @@ void FEM::assembleInteriorFacetTensor(BilinearForm& a, GenericMatrix& A,
   
   // Add exterior facet tensor to to global tensor
   A.add(a.block, a.test_nodes, a.test().spacedim(), a.trial_nodes, a.trial().spacedim());
+  */
+
+
+
+
+   const uint m = a.test().spacedim();
+  const uint n = a.trial().spacedim();
+
+//  const uint M = m*2;
+//  const uint N = n*2;
+
+  real* block;
+  int* test_nodes01;
+  int* trial_nodes01;
+
+  block = new real[m*n*4];
+  test_nodes01 = new int[m*2];
+  trial_nodes01 = new int[n*2];
+
+  // Update form
+  a.update(map0);
+  
+  // Compute maps from local to global degrees of freedom
+  a.test().nodemap(a.test_nodes, cell0, mesh);
+  a.trial().nodemap(a.trial_nodes, cell0, mesh);
+
+  for(uint i(0); i<m; i++)
+    test_nodes01[i] = a.test_nodes[i];
+
+  for(uint i(0); i<n; i++)
+    trial_nodes01[i] = a.trial_nodes[i];
+
+  // Update form
+  a.update(map1);
+  
+  // Compute maps from local to global degrees of freedom
+  a.test().nodemap(a.test_nodes, cell1, mesh);
+  a.trial().nodemap(a.trial_nodes, cell1, mesh);
+
+  for(uint i(0); i<m; i++)
+    test_nodes01[m+i] = a.test_nodes[i];
+
+  for(uint i(0); i<n; i++)
+    trial_nodes01[n+i] = a.trial_nodes[i];
+
+
+
+  unsigned int alignment = 0;
+
+  a.eval(block, map0, map1, facet0, facet1, alignment);
+
+
+  for(uint i(0); i<m*2; i++)
+    cout << test_nodes01[i] << " ";
+  cout << endl;
+  
+  for(uint i(0); i<n*2; i++)
+    cout << trial_nodes01[i] << " ";
+  cout << endl;
+
+  for(uint i(0); i<m*2; i++)
+  {
+    for(uint j(0); j<n*2; j++)
+      cout << block[i*m*2+j] << " ";
+    cout << "\n";
+  }
+  cout << endl;
+  
+  // Add element matrix to global matrix
+//  A.add(a.block, a.test_nodes, a.test().spacedim(), a.trial_nodes, a.trial().spacedim())
+;
+  A.add(block, test_nodes01, m*2, trial_nodes01, n*2);
+
+  delete block;
+  delete test_nodes01;
+  delete trial_nodes01;
 }
 //-----------------------------------------------------------------------------
 void FEM::assembleInteriorFacetTensor(LinearForm& L, GenericVector& b, 
@@ -607,31 +684,14 @@ void FEM::assembleInteriorFacetTensor(LinearForm& L, GenericVector& b,
                                       AffineMap& map0, AffineMap& map1,
                                       uint facet0, uint facet1)
 {
-  // Update form
-  L.update(map0);
-  
-  // Compute map from local to global degrees of freedom
-  L.test().nodemap(L.test_nodes, cell0, mesh);
-  
-  // Compute exterior facet tensor
-  L.eval(L.block, map0, facet0);
-  
-  // Add exterior facet tensor to global tensor
-  b.add(L.block, L.test_nodes, L.test().spacedim());
+  dolfin_error("Not implemented.");
 }
 //-----------------------------------------------------------------------------
 void FEM::assembleInteriorFacetTensor(Functional& M, real& val,
                                       AffineMap& map0, AffineMap& map1,
                                       uint facet0, uint facet1)
 {
-  // Update form
-  M.update(map0);
-  
-  // Compute exterior facet tensor
-  M.eval(M.block, map0, facet0);
-  
-  // Add exterior facet tensor to global tensor
-  val += M.block[0];
+  dolfin_error("Not implemented.");
 }
 //-----------------------------------------------------------------------------
 void FEM::initConnectivity(Mesh& mesh)

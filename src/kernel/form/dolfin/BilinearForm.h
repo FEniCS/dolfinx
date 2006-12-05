@@ -42,6 +42,11 @@ namespace dolfin
     /// Compute element matrix (boundary contribution)
     virtual void eval(real block[], const AffineMap& map, uint segment) const = 0;
 
+    /// Compute exterior facet tensor
+    virtual void eval(real block[],
+                      const AffineMap& map0, const AffineMap& map1,
+                      uint facet0, uint facet1, uint alignment) const = 0;
+
     /// Update map to current cell
     void update(AffineMap& map);
 
