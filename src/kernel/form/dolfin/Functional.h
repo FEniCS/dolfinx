@@ -40,6 +40,9 @@ namespace dolfin
     /// Compute element vector (boundary contribution)
     virtual void eval(real block[], const AffineMap& map, uint segment) const = 0;
 
+    /// Check if there is a contribution from the interior boundary
+    virtual bool interior_boundary_contribution() const = 0;
+
     /// Update map to current cell
     void update(AffineMap& map);
 

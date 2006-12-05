@@ -190,6 +190,8 @@ void FEM::assembleCommon(BilinearForm* a, LinearForm* L, Functional* M,
   uint nz = 0;
   bool interior_contribution = false;
   bool boundary_contribution = false;
+  bool interior_boundary_contribution = false;
+  
   if ( a )
   { 
     const uint M = size(mesh, a->test());
@@ -199,6 +201,7 @@ void FEM::assembleCommon(BilinearForm* a, LinearForm* L, Functional* M,
     A->zero();
     interior_contribution = interior_contribution || a->interior_contribution();
     boundary_contribution = boundary_contribution || a->boundary_contribution();
+    interior_boundary_contribution = interior_boundary_contribution || a->interior_boundary_contribution();
     dolfin_info("Assembling system (matrix and vector) of size %d x %d.", M, N);
   }
   if ( L )
@@ -208,6 +211,7 @@ void FEM::assembleCommon(BilinearForm* a, LinearForm* L, Functional* M,
     b->zero();
     interior_contribution = interior_contribution || L->interior_contribution();
     boundary_contribution = boundary_contribution || L->boundary_contribution();
+    //interior_boundary_contribution = interior_boundary_contribution || L->interior_boundary_contribution();
     dolfin_info("Assembling vector of size %d.", M);
   }
   if ( M )
@@ -215,16 +219,15 @@ void FEM::assembleCommon(BilinearForm* a, LinearForm* L, Functional* M,
     *val = 0.0;
     interior_contribution = interior_contribution || M->interior_contribution();
     boundary_contribution = boundary_contribution || M->boundary_contribution();
+    //interior_boundary_contribution = interior_boundary_contribution || M->interior_boundary_contribution();
     dolfin_info("Assembling functional.");
   }
   
   // Assemble interior contribution
   if ( interior_contribution )
   {
-    // Start a progress session
-    Progress p("Assembling interior contributions", mesh.numCells());
-    
     // Iterate over all cells in the mesh
+    Progress p("Assembling interior contributions", mesh.numCells());
     for (CellIterator cell(mesh); !cell.end(); ++cell)
     {
       // Update affine map
@@ -254,7 +257,7 @@ void FEM::assembleCommon(BilinearForm* a, LinearForm* L, Functional* M,
     MeshFunction<uint> vertex_map;
     MeshFunction<uint> cell_map;
     BoundaryMesh boundary(mesh, vertex_map, cell_map);
-    Progress p_boundary("Assembling boundary contributions", boundary.numCells());
+    Progress p("Assembling boundary contributions", boundary.numCells());
     for (CellIterator boundary_cell(boundary); !boundary_cell.end(); ++boundary_cell)
     {
       // Create mesh facet corresponding to boundary cell
@@ -265,25 +268,79 @@ void FEM::assembleCommon(BilinearForm* a, LinearForm* L, Functional* M,
       Cell mesh_cell(mesh, mesh_facet.entities(mesh.topology().dim())[0]);
 
       // Get local index of facet with respect to the cell
-      uint facet = mesh_cell.index(mesh_facet);
+      uint local_facet = mesh_cell.index(mesh_facet);
       
       // Update affine map for facet 
       map.update(mesh_cell, *boundary_cell);
       
       // Assemble bilinear form
       if ( a && a->boundary_contribution() )
-        assembleExteriorFacetTensor(*a, *A, mesh, mesh_cell, map, facet);
+        assembleExteriorFacetTensor(*a, *A, mesh, mesh_cell, map, local_facet);
       
       // Assemble linear form
       if ( L && L->boundary_contribution() )
-        assembleExteriorFacetTensor(*L, *b, mesh, mesh_cell, map, facet);
+        assembleExteriorFacetTensor(*L, *b, mesh, mesh_cell, map, local_facet);
       
       // Assemble functional
       if ( M && M->boundary_contribution() )
-        assembleExteriorFacetTensor(*M, *val, map, facet);
+        assembleExteriorFacetTensor(*M, *val, map, local_facet);
       
       // Update progress  
-      p_boundary++;
+      p++;
+    }
+  }
+
+ // Assemble interior boundary contribution
+  if ( interior_boundary_contribution )
+  {
+    // Make sure the connectivity facet - cell is computed
+    mesh.init(mesh.topology().dim() - 1, mesh.topology().dim());
+
+    // We need two affine maps
+    AffineMap map0, map1;
+
+    // Iterate over all facets in the mesh
+    Progress p("Assembling interior boundary contributions", mesh.numFacets());
+    for (FacetIterator facet(mesh); !facet.end(); ++facet)
+    {
+      // Check if we have an interior facet
+      if ( facet->numEntities(mesh.topology().dim()) != 2 )
+      {
+        p++;
+        continue;
+      }
+
+      // Get cells associated with facet
+      Cell cell0(mesh, facet->entities(mesh.topology().dim())[0]);
+      Cell cell1(mesh, facet->entities(mesh.topology().dim())[1]);
+      
+      // Get local index of facet with respect to each cell
+      uint facet0 = cell0.index(*facet);
+      uint facet1 = cell1.index(*facet);
+
+      // Compute alignment FIXME: Not implemented
+      uint alignment = 0;
+    
+      // FIXME: use different update function, facet number should be argument
+      
+      // Update affine maps for cells
+      map0.update(cell0);
+      map1.update(cell1);
+      
+      // Assemble bilinear form
+      if ( a && a->interior_boundary_contribution() )
+        assembleInteriorFacetTensor(*a, *A, mesh, cell0, cell1, map0, map1, facet0, facet1, alignment);
+      
+      // Assemble linear form
+      if ( L && L->interior_boundary_contribution() )
+        assembleInteriorFacetTensor(*L, *b, mesh, cell0, cell1, map0, map1, facet0, facet1, alignment);
+      
+      // Assemble functional
+      if ( M && M->interior_boundary_contribution() )
+        assembleInteriorFacetTensor(*M, *val, map0, map1, facet0, facet1, alignment);
+      
+      // Update progress  
+      p++;
     }
   }
   
@@ -348,6 +405,7 @@ void FEM::applyCommonBC(GenericMatrix* A, GenericVector* b,
   MeshFunction<uint> cell_map;
   BoundaryMesh boundary(mesh, vertex_map, cell_map);
 
+  // FIXME: What does this comment mean? I put it here but don't remember why.
   // FIXME: Boundary mesh needs to include connected cells in the interior.
   
   // Iterate over all cells in the boundary mesh
@@ -585,7 +643,7 @@ void FEM::assembleInteriorFacetTensor(BilinearForm& a, GenericMatrix& A,
                                       const Mesh& mesh,
                                       const Cell& cell0, const Cell& cell1,
                                       AffineMap& map0, AffineMap& map1,
-                                      uint facet0, uint facet1)
+                                      uint facet0, uint facet1, uint alignment)
 {
   // Update form
   a.update(map0, map1);
@@ -617,9 +675,6 @@ void FEM::assembleInteriorFacetTensor(BilinearForm& a, GenericMatrix& A,
   for (uint i = 0; i < n; i++)
     trial_nodes[n+i] = a.trial_nodes[i];
 
-  // Compute alignment of cells
-  unsigned int alignment = 0;
-  
   // Compute interior facet tensor
   a.eval(block, map0, map1, facet0, facet1, alignment);
 
@@ -636,14 +691,14 @@ void FEM::assembleInteriorFacetTensor(LinearForm& L, GenericVector& b,
                                       const Mesh& mesh,
                                       const Cell& cell0, const Cell& cell1,
                                       AffineMap& map0, AffineMap& map1,
-                                      uint facet0, uint facet1)
+                                      uint facet0, uint facet1, uint alignment)
 {
   dolfin_error("Not implemented.");
 }
 //-----------------------------------------------------------------------------
 void FEM::assembleInteriorFacetTensor(Functional& M, real& val,
                                       AffineMap& map0, AffineMap& map1,
-                                      uint facet0, uint facet1)
+                                      uint facet0, uint facet1, uint alignment)
 {
   dolfin_error("Not implemented.");
 }
