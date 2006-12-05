@@ -90,6 +90,21 @@ void Form::updateCoefficients(AffineMap& map)
   }
 }
 //-----------------------------------------------------------------------------
+void Form::updateCoefficients(AffineMap& map0, AffineMap& map1)
+{
+  // FIXME: Not implemented correctly yet, need to double the size of
+  // FIXME: the coefficient list and update on both cells
+
+  dolfin_assert(num_functions == functions.size());
+  
+  // Interpolate all functions to the current element
+  for (uint i = 0; i < num_functions; i++)
+  {
+    dolfin_assert(functions[i]);
+    functions[i]->interpolate(c[i], map0, *elements[i]);
+  }
+}
+//-----------------------------------------------------------------------------
 Function* Form::function(uint i)
 {
   return functions[i];

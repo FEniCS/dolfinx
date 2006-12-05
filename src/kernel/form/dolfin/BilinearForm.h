@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2004-05-28
-// Last changed: 2006-09-28
+// Last changed: 2006-12-05
 
 #ifndef __BILINEAR_FORM_H
 #define __BILINEAR_FORM_H
@@ -49,6 +49,9 @@ namespace dolfin
 
     /// Update map to current cell
     void update(AffineMap& map);
+
+    /// Update map to current pair of cells for interior facet
+    void update(AffineMap& map0, AffineMap& map1);
 
     /// Return finite element defining the test space
     FiniteElement& test();

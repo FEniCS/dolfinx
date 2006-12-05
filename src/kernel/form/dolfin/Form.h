@@ -50,6 +50,9 @@ namespace dolfin
     // Update coefficients
     void updateCoefficients(AffineMap& map);
 
+    // Update coefficients
+    void updateCoefficients(AffineMap& map0, AffineMap& map1);
+
     // List of finite elements for functions (coefficients)
     Array<FiniteElement*> elements;
 

@@ -587,95 +587,49 @@ void FEM::assembleInteriorFacetTensor(BilinearForm& a, GenericMatrix& A,
                                       AffineMap& map0, AffineMap& map1,
                                       uint facet0, uint facet1)
 {
-  /*
   // Update form
-  a.update(map0);
-  
-  // Compute maps from local to global degrees of freedom
-  a.test().nodemap(a.test_nodes, cell0, mesh);
-  a.trial().nodemap(a.trial_nodes, cell0, mesh);
-  
-  // Compute exterior facet tensor
-  a.eval(a.block, map0, facet0);
-  
-  // Add exterior facet tensor to to global tensor
-  A.add(a.block, a.test_nodes, a.test().spacedim(), a.trial_nodes, a.trial().spacedim());
-  */
+  a.update(map0, map1);
 
-
-
-
-   const uint m = a.test().spacedim();
+  // Initialize local data structures (FIXME: reuse)
+  const uint m = a.test().spacedim();
   const uint n = a.trial().spacedim();
-
-//  const uint M = m*2;
-//  const uint N = n*2;
-
-  real* block;
-  int* test_nodes01;
-  int* trial_nodes01;
-
-  block = new real[m*n*4];
-  test_nodes01 = new int[m*2];
-  trial_nodes01 = new int[n*2];
-
-  // Update form
-  a.update(map0);
+  real* block = new real[4*m*n];
+  int* test_nodes = new int[2*m];
+  int* trial_nodes = new int[2*n];
   
-  // Compute maps from local to global degrees of freedom
+  // Compute dof map for cell 0 (+ side)
   a.test().nodemap(a.test_nodes, cell0, mesh);
   a.trial().nodemap(a.trial_nodes, cell0, mesh);
 
-  for(uint i(0); i<m; i++)
-    test_nodes01[i] = a.test_nodes[i];
+  // Copy dofs to common array
+  for (uint i = 0; i < m; i++)
+    test_nodes[i] = a.test_nodes[i];
+  for (uint i = 0; i < n; i++)
+    trial_nodes[i] = a.trial_nodes[i];
 
-  for(uint i(0); i<n; i++)
-    trial_nodes01[i] = a.trial_nodes[i];
-
-  // Update form
-  a.update(map1);
-  
-  // Compute maps from local to global degrees of freedom
+  // Compute dof map for cell 1 (- side)
   a.test().nodemap(a.test_nodes, cell1, mesh);
   a.trial().nodemap(a.trial_nodes, cell1, mesh);
 
-  for(uint i(0); i<m; i++)
-    test_nodes01[m+i] = a.test_nodes[i];
+  // Copy dofs to common array
+  for (uint i = 0; i < m; i++)
+    test_nodes[m+i] = a.test_nodes[i];
+  for (uint i = 0; i < n; i++)
+    trial_nodes[n+i] = a.trial_nodes[i];
 
-  for(uint i(0); i<n; i++)
-    trial_nodes01[n+i] = a.trial_nodes[i];
-
-
-
+  // Compute alignment of cells
   unsigned int alignment = 0;
-
+  
+  // Compute interior facet tensor
   a.eval(block, map0, map1, facet0, facet1, alignment);
 
+  // Add exterior facet tensor to global tensor
+  A.add(block, test_nodes, 2*m, trial_nodes, 2*n);
 
-  for(uint i(0); i<m*2; i++)
-    cout << test_nodes01[i] << " ";
-  cout << endl;
-  
-  for(uint i(0); i<n*2; i++)
-    cout << trial_nodes01[i] << " ";
-  cout << endl;
-
-  for(uint i(0); i<m*2; i++)
-  {
-    for(uint j(0); j<n*2; j++)
-      cout << block[i*m*2+j] << " ";
-    cout << "\n";
-  }
-  cout << endl;
-  
-  // Add element matrix to global matrix
-//  A.add(a.block, a.test_nodes, a.test().spacedim(), a.trial_nodes, a.trial().spacedim())
-;
-  A.add(block, test_nodes01, m*2, trial_nodes01, n*2);
-
+  // Delete local data structures
   delete block;
-  delete test_nodes01;
-  delete trial_nodes01;
+  delete test_nodes;
+  delete trial_nodes;
 }
 //-----------------------------------------------------------------------------
 void FEM::assembleInteriorFacetTensor(LinearForm& L, GenericVector& b, 
