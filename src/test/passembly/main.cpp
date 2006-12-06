@@ -44,29 +44,44 @@ void testMeshPartition(Mesh& mesh, MeshFunction<dolfin::uint>& cell_partition_fu
   else
     dolfin_error("Do not know how to partition mesh of this type");
   
-  // Create mesh structure for METIS
-  dolfin::uint i = 0;
-  for (CellIterator cell(mesh); !cell.end(); ++cell)
-    for (VertexIterator vertex(cell); !vertex.end(); ++vertex)
-      mesh_data[i++] = vertex->index();
-
-  // Use METIS to partition mesh
-  METIS_PartMeshNodal(&num_cells, &num_vertices, mesh_data, &cell_type, &index_base, 
-                      &num_partitions, &edges_cut, cell_partition, vertex_partition);
-
   cell_partition_function.init(mesh, mesh.topology().dim());
   vertex_partition_function.init(mesh, 0);
 
-  // Set partition numbers on cells
-  i = 0;
-  for (CellIterator cell(mesh); !cell.end(); ++cell)
-    cell_partition_function.set(cell->index(), cell_partition[i++]);
+  if(num_partitions > 1)
+  {
+    // Create mesh structure for METIS
+    dolfin::uint i = 0;
+    for (CellIterator cell(mesh); !cell.end(); ++cell)
+      for (VertexIterator vertex(cell); !vertex.end(); ++vertex)
+        mesh_data[i++] = vertex->index();
 
-  // Set partition numbers on vertexes
-  i = 0;
-  for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
-    vertex_partition_function.set(vertex->index(), vertex_partition[i++]);
+      // Use METIS to partition mesh
+    METIS_PartMeshNodal(&num_cells, &num_vertices, mesh_data, &cell_type, &index_base, 
+                        &num_partitions, &edges_cut, cell_partition, vertex_partition);
+  
+    // Set partition numbers on cells
+    i = 0;
+    for (CellIterator cell(mesh); !cell.end(); ++cell)
+      cell_partition_function.set(cell->index(), cell_partition[i++]);
 
+    // Set partition numbers on vertexes
+    i = 0;
+    for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
+      vertex_partition_function.set(vertex->index(), vertex_partition[i++]);
+  }
+  else
+  {
+    // Set partition numbers on cells
+    dolfin::uint i = 0;
+    for (CellIterator cell(mesh); !cell.end(); ++cell)
+      cell_partition_function.set(cell->index(), 0);
+
+    // Set partition numbers on vertexes
+    i = 0;
+    for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
+      vertex_partition_function.set(vertex->index(), 0);
+  
+  }
   // Clean up
   delete [] cell_partition;
   delete [] vertex_partition;
@@ -91,23 +106,26 @@ int main(int argc, char* argv[])
   unsigned int process = process_int;
 
   // Create mesh
-  UnitSquare mesh(40,40);
+  UnitSquare mesh(2000,2000);
 
   // Create linear and bilinear form
   Function f = 1.0;
   Poisson2D::BilinearForm a; 
   Poisson2D::LinearForm L(f); 
-  
+
+/*  
   if ( num_processes < 2 )
     dolfin_error("Cannot create single partition. You need to run with \"mpirun -np num_proc ./dolfin-parallel-test\"\
  (num_proc > 1)");
-
+*/
   // Partition mesh (number of partitions = number of processes)
   // Create mesh functions for partition numbers
   MeshFunction<dolfin::uint> cell_partition_function;
   MeshFunction<dolfin::uint> vertex_partition_function;
+  cout << "Partitioning mesh " << process << endl;
   testMeshPartition(mesh, cell_partition_function, vertex_partition_function,
                     num_processes);
+  cout << "Finished partitioning mesh " << process << endl;
 
   // Need to regenerate degree of freedom mapping here so that matrix/vector entries
   // generated on a given processor also reside on the processor. DOFs for partition 0
@@ -121,40 +139,50 @@ int main(int argc, char* argv[])
   else
     dolfin_error("Do not know how to work with meshes of this type");
 
-  const int M = mesh.numVertices(); 
-  int*  new_map = new int[M];
-
   // Renumber degrees of freedom. Starting at process 0, go through all cells
   // on given process, then the vertices of the cell and number sequentially 
   // if they have not already been renumbered.
+  const int M = mesh.numVertices(); 
+  int*  new_map = new int[M];
+
+
+  cout << "Renumbering dofs " << process << endl;
+/*
   int i = 0;
-  std::set<int> reampped_dof;
+  std::set<int> remapped_dof;
   std::pair<std::set<int>::const_iterator, bool> set_return;
   for(dolfin::uint process = 0; process < num_processes; ++process)
     for(CellIterator cell(mesh); !cell.end(); ++cell)
       if(cell_partition_function.get(*cell) == static_cast<unsigned int>(process) )
         for(VertexIterator vertex(cell); !vertex.end(); ++vertex)
         {  
-          set_return = reampped_dof.insert(vertex->index());
+          set_return = remapped_dof.insert(vertex->index());
           if(set_return.second) // If insertion is successful, renumber. Otherwise dof has already been renumbered
             new_map[ vertex->index() ] = i++;
         }
-
-/*
+  remapped_dof.clear();
+*/
   // No renumbering
   for(VertexIterator vertex(mesh); !vertex.end(); ++vertex)
     new_map[ vertex->index() ] = vertex->index();
-*/  
+  
+  cout << "Finished renumbering dofs " << process << endl;
 
   // Global matrix size
-  const int N = FEM::size(mesh, a.test());
+  cout << "Computing global matrix size " << process << endl;
+//  const int N = FEM::size(mesh, a.test());
+  const int N = mesh.numVertices();
+  cout << "Finsihed computing global matrix size " << N << "  " << process << endl;
 
+  cout << "Computing local matrix size " << process << endl;
   // Compute number of vertices belonging to this processor 
   int num_local_vertices = 0;
   for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
     if ( vertex_partition_function.get(*vertex) == process )
       ++num_local_vertices;
+  cout << "Finished computing local matrix size " << process << endl;
 
+  cout << "Creating and intialising parallel vectors/matrices " << process << endl;
   // Create PETSc parallel vectors
   Vec b, x;
   VecCreateMPI(PETSC_COMM_WORLD, num_local_vertices, N, &b);
@@ -163,21 +191,26 @@ int main(int argc, char* argv[])
   // Create PETSc parallel  matrix (with guess at number of non-zeroes)
   Mat A;
   MatCreateMPIAIJ(PETSC_COMM_WORLD, num_local_vertices, num_local_vertices, N, N, 
-                    20, PETSC_NULL, 20, PETSC_NULL, &A); 
+                    10, PETSC_NULL, 10, PETSC_NULL, &A); 
+  cout << "Finished creating and intialising parallel vectors/matrices " << process << endl;
  
-  /// Start assembly
+  // Zero matrix
+  cout << "Zeroing parallel vectors/matrices " << process << endl;
+  MatZeroEntries(A);
+  VecZeroEntries(b);
+  cout << "Finished zeroing parallel vectors/matrices " << process << endl;
 
+
+  /// Start assembly
   real* A_block = new real[vertices_per_cell*vertices_per_cell];
   real* b_block = new real[vertices_per_cell];
   int*  pos     = new int[vertices_per_cell];
 
-  // Zero matrix
-  MatZeroEntries(A);
-  VecZeroEntries(b);
-
   // Create affine map
   AffineMap map;
 
+  cout << "Starting assembly " << process << endl;
+  tic();
   // Assemble if cell belongs to this process's partition
   for(CellIterator cell(mesh); !cell.end(); ++cell)
   {
@@ -185,7 +218,7 @@ int main(int argc, char* argv[])
     {
       map.update(*cell);
       a.update(map);
-      L.update(map);
+//      L.update(map);
 
       // Create mapping for cell
       int i = 0;
@@ -194,29 +227,36 @@ int main(int argc, char* argv[])
 
       // Evaluate element matrix and vector
       a.eval(A_block, map);
-      L.eval(b_block, map);
+//      L.eval(b_block, map);
 
       // Add values
       MatSetValues(A, vertices_per_cell, pos, vertices_per_cell, pos, A_block, ADD_VALUES);
-      VecSetValues(b, vertices_per_cell, pos, b_block, ADD_VALUES);
+//      VecSetValues(b, vertices_per_cell, pos, b_block, ADD_VALUES);
     }
   }  
+  cout << "Finished assembly " << process << "  " << toc() << endl;
   
   // Finalise assembly
-  VecAssemblyBegin(b);
-  VecAssemblyEnd(b);
+  cout << "Starting finalise assmebly " << process << endl;
+  tic();
+//  VecAssemblyBegin(b);
+//  VecAssemblyEnd(b);
   MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
   MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
+  cout << "Finished finalise assembly " << process << "  " << toc() << endl;
 
   // Apply some boundary conditions so that the system can be solved
   // Just apply homogeneous Dirichlet bc to the first three vertices
+/*
   IS is = 0;
   int nrows = 3;
-  int rows[3] = {0, 1, 2};
+//  int rows[3] = {0, 1, 2};
+  int rows[3] = {new_map[0], new_map[1], new_map[2]};
   ISCreateGeneral(PETSC_COMM_WORLD, nrows, rows, &is);
   PetscScalar one = 1.0;
   MatZeroRowsIS(A, is, one);
   ISDestroy(is);
+
 
   real bc_values[3] = {0, 0, 0};
   VecSetValues(b, nrows, rows, bc_values, INSERT_VALUES);
@@ -228,8 +268,11 @@ int main(int argc, char* argv[])
   KSPCreate(PETSC_COMM_WORLD, &ksp);
   KSPSetFromOptions(ksp);
   KSPSetOperators(ksp, A, A, SAME_NONZERO_PATTERN);
-  KSPSolve(ksp, b, x);
 
+  cout << "Starting solve " << process << endl;
+  KSPSolve(ksp, b, x);
+  cout << "Finished solve " << process << endl;
+*/
   // Print parallel  results
 //  cout << "Parallel RHS vector " << endl;
 //  VecView(b, PETSC_VIEWER_STDOUT_WORLD);
