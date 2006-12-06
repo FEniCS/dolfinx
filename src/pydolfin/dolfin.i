@@ -208,4 +208,5 @@ def set(name, val):
 // modules 
 
 %include "dolfin/ElasticityUpdatedSolver.h" 
+%include "dolfin/NSESolver.h" 
 

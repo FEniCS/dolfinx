@@ -1,0 +1,22 @@
+# Copyright (c) 2005 Johan Jansson (johanjan@math.chalmers.se)
+# Licensed under the GNU GPL Version 2
+#
+# First added:  2005
+# Last changed: 2006-03-28
+#
+# The bilinear form for the incompressible Navier-Stokes equations
+# Compile this form with FFC: ffc Elasticity.form.
+
+d = 2
+
+K1 = FiniteElement("Vector Lagrange", "triangle", 1)
+K2 = FiniteElement("Lagrange", "triangle", 1)
+K3 = FiniteElement("Discontinuous Lagrange", "triangle", 0)
+
+q = TestFunction(K2)
+P = TrialFunction(K2)
+U = Function(K1)
+d1 = Function(K3)
+
+a = (mult(1.0e-2, mult(d1, dot(P, q))) + mult(d1, dot(grad(P), grad(q)))) * dx
+L = dot(div(U), q) * dx
