@@ -30,6 +30,6 @@ void LocalMeshRefinement::refineSimplexByNodeInsertion(Mesh& mesh, Edge& edge)
   // (2) Delete old cell (2d: n1,n2,n3, 3d:n1,n2,n3,n4)
   // (3) Add new cells: (2d: n_new,n1,n3; n_new,n2,n3, 3d: n_new,n1,n3,n4; n_new,n2,n3,n4)
   // (4) Reset connectivity  
-  
 }
 //-----------------------------------------------------------------------------
+

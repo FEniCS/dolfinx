@@ -1,6 +1,8 @@
 // Copyright (C) 2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
+// Modified by Johan Hoffman 2006.
+//
 // First added:  2006-06-05
 // Last changed: 2006-12-06
 
@@ -123,7 +125,7 @@ void Tetrahedron::createEntities(uint** e, uint dim, const uint v[]) const
 }
 //-----------------------------------------------------------------------------
 void Tetrahedron::refineCell(Cell& cell, MeshEditor& editor,
-                             uint& current_cell) const
+			     uint& current_cell) const
 {
   // Get vertices and edges
   const uint* v = cell.entities(0);
@@ -145,8 +147,8 @@ void Tetrahedron::refineCell(Cell& cell, MeshEditor& editor,
   const uint e3 = offset + e[3];
   const uint e4 = offset + e[4];
   const uint e5 = offset + e[5];
-  
-  // Add the eight new cells
+
+  // Regular refinement: 8 new cells
   editor.addCell(current_cell++, v0, e1, e3, e2);
   editor.addCell(current_cell++, v1, e2, e4, e0);
   editor.addCell(current_cell++, v2, e0, e5, e1);
@@ -157,21 +159,81 @@ void Tetrahedron::refineCell(Cell& cell, MeshEditor& editor,
   editor.addCell(current_cell++, e0, e1, e2, e4);
 }
 //-----------------------------------------------------------------------------
-real Tetrahedron::volume(const MeshEntity& tetrahedron) const
+void Tetrahedron::refineCellIrregular(Cell& cell, MeshEditor& editor, 
+				      uint& current_cell, uint refinement_rule, 
+				      uint* marked_edges) const
 {
-  // Check that we get a tetrahedron
-  if ( tetrahedron.dim() != 3 )
-    dolfin_error("Illegal mesh entity for computation of tetrahedron volume. Not a tetrahedron.");
+  dolfin_warning("Not implemented yet.");
 
+  /*
+  // Get vertices and edges
+  const uint* v = cell.entities(0);
+  const uint* e = cell.entities(1);
+  dolfin_assert(v);
+  dolfin_assert(e);
+
+  // Get offset for new vertex indices
+  const uint offset = cell.mesh().numVertices();
+
+  // Compute indices for the ten new vertices
+  const uint v0 = v[0];
+  const uint v1 = v[1];
+  const uint v2 = v[2];
+  const uint v3 = v[3];
+  const uint e0 = offset + e[0];
+  const uint e1 = offset + e[1];
+  const uint e2 = offset + e[2];
+  const uint e3 = offset + e[3];
+  const uint e4 = offset + e[4];
+  const uint e5 = offset + e[5];
+
+  // Refine according to refinement rule
+  // The rules are numbered according to the paper: 
+  // J. Bey, "Tetrahedral Grid Refinement", 1995.   
+  switch ( refinement_rule )
+  {
+  case 1:
+    // Rule 1: 4 new cells
+    editor.addCell(current_cell++, v0, e1, e3, e2);
+    editor.addCell(current_cell++, v1, e2, e4, e0);
+    editor.addCell(current_cell++, v2, e0, e5, e1);
+    editor.addCell(current_cell++, v3, e5, e4, e3);
+    break;
+  case 2:
+    // Rule 2: 2 new cells
+    editor.addCell(current_cell++, v0, e1, e3, e2);
+    editor.addCell(current_cell++, v1, e2, e4, e0);
+    break;
+  case 3:
+    // Rule 3: 3 new cells
+    editor.addCell(current_cell++, v0, e1, e3, e2);
+    editor.addCell(current_cell++, v1, e2, e4, e0);
+    editor.addCell(current_cell++, v2, e0, e5, e1);
+    break;
+  case 4:
+    // Rule 4: 4 new cells
+    editor.addCell(current_cell++, v0, e1, e3, e2);
+    editor.addCell(current_cell++, v1, e2, e4, e0);
+    editor.addCell(current_cell++, v2, e0, e5, e1);
+    editor.addCell(current_cell++, v3, e5, e4, e3);
+    break;
+  default:
+    dolfin_error1("Illegal rule for irregular refinement of tetrahedron.");
+  }
+  */
+}
+//-----------------------------------------------------------------------------
+real Tetrahedron::volume(const Cell& cell) const
+{
   // Get mesh geometry
-  const MeshGeometry& geometry = tetrahedron.mesh().geometry();
+  const MeshGeometry& geometry = cell.mesh().geometry();
 
   // Only know how to compute the volume when embedded in R^3
   if ( geometry.dim() != 3 )
     dolfin_error("Only know how to compute the volume of a tetrahedron when embedded in R^3.");
 
   // Get the coordinates of the four vertices
-  const uint* vertices = tetrahedron.entities(0);
+  const uint* vertices = cell.entities(0);
   const real* x0 = geometry.x(vertices[0]);
   const real* x1 = geometry.x(vertices[1]);
   const real* x2 = geometry.x(vertices[2]);
@@ -186,21 +248,17 @@ real Tetrahedron::volume(const MeshEntity& tetrahedron) const
   return std::abs(v) / 6.0;
 }
 //-----------------------------------------------------------------------------
-real Tetrahedron::diameter(const MeshEntity& tetrahedron) const
+real Tetrahedron::diameter(const Cell& cell) const
 {
-  // Check that we get a tetrahedron
-  if ( tetrahedron.dim() != 3 )
-    dolfin_error("Illegal mesh entity for computation of tetrahedron diameter. Not a tetrahedron.");
-
   // Get mesh geometry
-  const MeshGeometry& geometry = tetrahedron.mesh().geometry();
+  const MeshGeometry& geometry = cell.mesh().geometry();
 
   // Only know how to compute the volume when embedded in R^3
   if ( geometry.dim() != 3 )
     dolfin_error("Only know how to compute the diameter of a tetrahedron when embedded in R^3.");
   
   // Get the coordinates of the four vertices
-  const uint* vertices = tetrahedron.entities(0);
+  const uint* vertices = cell.entities(0);
   Point p0 = geometry.point(vertices[0]);
   Point p1 = geometry.point(vertices[1]);
   Point p2 = geometry.point(vertices[2]);
@@ -222,7 +280,7 @@ real Tetrahedron::diameter(const MeshEntity& tetrahedron) const
   real area = sqrt(s*(s-la)*(s-lb)*(s-lc));
                                 
   // Formula for diameter (2*circumradius) from http://mathworld.wolfram.com
-  return area / ( 3.0*volume(tetrahedron) );
+  return area / ( 3.0*volume(cell) );
 }
 //-----------------------------------------------------------------------------
 real Tetrahedron::normal(const Cell& cell, uint facet, uint i) const
