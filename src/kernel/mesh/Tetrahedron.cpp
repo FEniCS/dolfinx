@@ -2,6 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // Modified by Johan Hoffman 2006.
+// Modified by Garth N. Wells 2006.
 //
 // First added:  2006-06-05
 // Last changed: 2006-12-06
@@ -223,17 +224,17 @@ void Tetrahedron::refineCellIrregular(Cell& cell, MeshEditor& editor,
   */
 }
 //-----------------------------------------------------------------------------
-real Tetrahedron::volume(const Cell& cell) const
+real Tetrahedron::volume(const MeshEntity& tetrahedron) const
 {
   // Get mesh geometry
-  const MeshGeometry& geometry = cell.mesh().geometry();
+  const MeshGeometry& geometry = tetrahedron.mesh().geometry();
 
   // Only know how to compute the volume when embedded in R^3
   if ( geometry.dim() != 3 )
     dolfin_error("Only know how to compute the volume of a tetrahedron when embedded in R^3.");
 
   // Get the coordinates of the four vertices
-  const uint* vertices = cell.entities(0);
+  const uint* vertices = tetrahedron.entities(0);
   const real* x0 = geometry.x(vertices[0]);
   const real* x1 = geometry.x(vertices[1]);
   const real* x2 = geometry.x(vertices[2]);
@@ -248,17 +249,17 @@ real Tetrahedron::volume(const Cell& cell) const
   return std::abs(v) / 6.0;
 }
 //-----------------------------------------------------------------------------
-real Tetrahedron::diameter(const Cell& cell) const
+real Tetrahedron::diameter(const MeshEntity& tetrahedron) const
 {
   // Get mesh geometry
-  const MeshGeometry& geometry = cell.mesh().geometry();
+  const MeshGeometry& geometry = tetrahedron.mesh().geometry();
 
   // Only know how to compute the volume when embedded in R^3
   if ( geometry.dim() != 3 )
     dolfin_error("Only know how to compute the diameter of a tetrahedron when embedded in R^3.");
   
   // Get the coordinates of the four vertices
-  const uint* vertices = cell.entities(0);
+  const uint* vertices = tetrahedron.entities(0);
   Point p0 = geometry.point(vertices[0]);
   Point p1 = geometry.point(vertices[1]);
   Point p2 = geometry.point(vertices[2]);
@@ -280,7 +281,7 @@ real Tetrahedron::diameter(const Cell& cell) const
   real area = sqrt(s*(s-la)*(s-lb)*(s-lc));
                                 
   // Formula for diameter (2*circumradius) from http://mathworld.wolfram.com
-  return area / ( 3.0*volume(cell) );
+  return area / ( 3.0*volume(tetrahedron) );
 }
 //-----------------------------------------------------------------------------
 real Tetrahedron::normal(const Cell& cell, uint facet, uint i) const

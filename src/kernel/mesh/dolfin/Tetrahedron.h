@@ -2,6 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // Modified by Johan Hoffman 2006.
+// Modified by Garth N. Wells 2006.
 //
 // First added:  2006-06-05
 // Last changed: 2006-12-06
@@ -47,12 +48,11 @@ namespace dolfin
     void refineCellIrregular(Cell& cell, MeshEditor& editor, uint& current_cell, 
 			     uint refinement_rule, uint* marked_edges) const;
 
+    /// Compute volume of tetrahedron
+    real volume(const MeshEntity& tetrahedron) const;
 
-    /// Compute (generalized) volume of cell
-    real volume(const Cell& cell) const;
-
-    /// Compute diameter of cell
-    real diameter(const Cell& cell) const;
+    /// Compute diameter of tetrahedron
+    real diameter(const MeshEntity& tetrahedron) const;
 
     /// Compute component i of normal of given facet with respect to the cell
     real normal(const Cell& cell, uint facet, uint i) const;
