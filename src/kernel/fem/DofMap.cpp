@@ -86,10 +86,30 @@ const dolfin::uint DofMap::size(const uint e)
 //-----------------------------------------------------------------------------
 dolfin::uint DofMap::numNonZeroes()
 {
-  // Compute matrix sparsity pattern 
-  computeMatrixSparsityPattern();  
+  if( matrix_sparsity_pattern.size() == 0 )
+    computeMatrixSparsityPattern();
 
-  uint nzmax = 0;
+  if( _size[0] == 0 )
+    size(0);
+
+  uint num_nonzero = 0;
+  for(int i = 0; i < _size[0]; ++i)
+    num_nonzero += matrix_sparsity_pattern[i].size();
+
+  return num_nonzero;
+}
+//-----------------------------------------------------------------------------
+dolfin::uint DofMap::numNonZeroesRowMax()
+{
+  if( matrix_sparsity_pattern.size() == 0 )
+    computeMatrixSparsityPattern();
+
+  if( _size[0] == 0 )
+    size(0);
+
+  // nzmax needs to of type size_t since matrix_sparsity_pattern[i].size()
+  // is of type size_t, otherwise std::max might complain.
+  size_t nzmax = 0;
   for(int i = 0; i < _size[0]; ++i)
     nzmax = std::max(matrix_sparsity_pattern[i].size(), nzmax);
 
@@ -98,12 +118,14 @@ dolfin::uint DofMap::numNonZeroes()
 //-----------------------------------------------------------------------------
 void DofMap::numNonZeroesRow(int nz_row[])
 {
-  // Compute matrix sparsity pattern 
-  computeMatrixSparsityPattern();  
+  if( matrix_sparsity_pattern.size() == 0 )
+    computeMatrixSparsityPattern();
 
-  const int nrow = size(0);
-  // Insert number of non-zeroes per row into integer array 
-  for(int i = 0; i < nrow; ++i)
+  if( _size[0] == 0 )
+    size(0);
+
+  const int num_rows = _size[0];
+  for(int i = 0; i < num_rows; ++i)
     nz_row[i] = matrix_sparsity_pattern[i].size();
 }
 //-----------------------------------------------------------------------------
@@ -162,7 +184,7 @@ void DofMap::computeVectorSparsityPattern(const uint e)
 //-----------------------------------------------------------------------------
 void DofMap::computeMatrixSparsityPattern()
 {
-  if( !element[0] && !element[1] ) 
+  if( !element[0] || !element[1] ) 
     dolfin_error("Two finite elements must be associated with DofMap object to build matrix sparsity pattern.");
 
   // Initialise sparsity pattern
@@ -185,5 +207,29 @@ void DofMap::computeMatrixSparsityPattern()
   }
   delete [] row_dof;
   delete [] column_dof;
+}
+//-----------------------------------------------------------------------------
+void DofMap::createCSRLayout()
+{
+  if( matrix_sparsity_pattern.size() == 0 )
+    computeMatrixSparsityPattern();
+
+  Array<int> row_pointer( size(0) +1 );
+
+  Array<int> column_index;
+  column_index.clear();
+  column_index.reserve( numNonZeroes() );
+
+  std::set<int>::iterator column;
+
+  row_pointer[ 0 ] = 0; 
+  for(uint row = 0; row < size(0); ++row)
+  {
+    const std::set<int>& row_set = matrix_sparsity_pattern[ row ];
+    for(column = row_set.begin(); column != row_set.end(); ++column )
+      column_index.push_back(*column);
+
+    row_pointer[ row + 1 ] = row_pointer[ row ] + row_set.size(); 
+  }
 }
 //-----------------------------------------------------------------------------
