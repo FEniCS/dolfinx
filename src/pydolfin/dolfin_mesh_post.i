@@ -20,25 +20,29 @@ def next(self):
 //--- Map MeshFunction template to Python ---
 
 %template(MeshFunctionInt) dolfin::MeshFunction<int>;
-%template(MeshFunctionFloat) dolfin::MeshFunction<double>;
+%template(MeshFunctionUInt) dolfin::MeshFunction<unsigned int>;
+%template(MeshFunctionReal) dolfin::MeshFunction<real>;
 %template(MeshFunctionBool) dolfin::MeshFunction<bool>;
 
 %pythoncode
 %{
 class MeshFunction(object):
     def __new__(self, tp):
-        if tp == int:
+        if tp == "int":
             return MeshFunctionInt()
-        elif tp == float:
-            return MeshFunctionFloat()
-        elif tp == bool:
+        if tp == "uint":
+            return MeshFunctionUInt()
+        elif tp == "real":
+            return MeshFunctionReal()
+        elif tp == "bool":
             return MeshFunctionBool()
         else:
             raise RuntimeError, "Cannot create a MeshFunction of %s" % (tp,)
 
-MeshFunctionInt.__call__   = MeshFunctionInt.get
-MeshFunctionFloat.__call__ = MeshFunctionFloat.get
-MeshFunctionBool.__call__  = MeshFunctionBool.get
+MeshFunctionInt.__call__  = MeshFunctionInt.get
+MeshFunctionUInt.__call__ = MeshFunctionUInt.get
+MeshFunctionReal.__call__ = MeshFunctionReal.get
+MeshFunctionBool.__call__ = MeshFunctionBool.get
 
 %}
 
