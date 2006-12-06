@@ -91,7 +91,7 @@ int main(int argc, char* argv[])
   unsigned int process = process_int;
 
   // Create mesh
-  UnitSquare mesh(4,4);
+  UnitSquare mesh(40,40);
 
   // Create linear and bilinear form
   Function f = 1.0;
@@ -113,6 +113,39 @@ int main(int argc, char* argv[])
   // generated on a given processor also reside on the processor. DOFs for partition 0
   // should run 0 -> m-1, for partition 1 run m -> m+n-1, etc. 
   
+  int vertices_per_cell = 0;
+  if(mesh.type().cellType() == CellType::triangle)
+    vertices_per_cell = 3;
+  else if(mesh.type().cellType() == CellType::tetrahedron) 
+    vertices_per_cell = 4;
+  else
+    dolfin_error("Do not know how to work with meshes of this type");
+
+  const int M = mesh.numVertices(); 
+  int*  new_map = new int[M];
+
+  // Renumber degrees of freedom. Starting at process 0, go through all cells
+  // on given process, then the vertices of the cell and number sequentially 
+  // if they have not already been renumbered.
+  int i = 0;
+  std::set<int> reampped_dof;
+  std::pair<std::set<int>::const_iterator, bool> set_return;
+  for(dolfin::uint process = 0; process < num_processes; ++process)
+    for(CellIterator cell(mesh); !cell.end(); ++cell)
+      if(cell_partition_function.get(*cell) == static_cast<unsigned int>(process) )
+        for(VertexIterator vertex(cell); !vertex.end(); ++vertex)
+        {  
+          set_return = reampped_dof.insert(vertex->index());
+          if(set_return.second) // If insertion is successful, renumber. Otherwise dof has already been renumbered
+            new_map[ vertex->index() ] = i++;
+        }
+
+/*
+  // No renumbering
+  for(VertexIterator vertex(mesh); !vertex.end(); ++vertex)
+    new_map[ vertex->index() ] = vertex->index();
+*/  
+
   // Global matrix size
   const int N = FEM::size(mesh, a.test());
 
@@ -133,14 +166,6 @@ int main(int argc, char* argv[])
                     20, PETSC_NULL, 20, PETSC_NULL, &A); 
  
   /// Start assembly
- 
-  int vertices_per_cell = 0;
-  if(mesh.type().cellType() == CellType::triangle)
-    vertices_per_cell = 3;
-  else if(mesh.type().cellType() == CellType::tetrahedron) 
-    vertices_per_cell = 4;
-  else
-    dolfin_error("Do not know how to work with meshes of this type");
 
   real* A_block = new real[vertices_per_cell*vertices_per_cell];
   real* b_block = new real[vertices_per_cell];
@@ -165,7 +190,7 @@ int main(int argc, char* argv[])
       // Create mapping for cell
       int i = 0;
       for(VertexIterator vertex(cell); !vertex.end(); ++vertex)
-        pos[i++] = vertex->index();
+        pos[i++] = new_map[ vertex->index() ];
 
       // Evaluate element matrix and vector
       a.eval(A_block, map);
@@ -193,7 +218,6 @@ int main(int argc, char* argv[])
   MatZeroRowsIS(A, is, one);
   ISDestroy(is);
 
-
   real bc_values[3] = {0, 0, 0};
   VecSetValues(b, nrows, rows, bc_values, INSERT_VALUES);
   VecAssemblyBegin(b);
@@ -212,14 +236,18 @@ int main(int argc, char* argv[])
 //  cout << "Parallel matrix " << endl;
 //  MatView(A, PETSC_VIEWER_STDOUT_WORLD);
 
+/*
   if(process == 0)
     cout << "*** Parallel solution vector " << endl;
   VecView(x, PETSC_VIEWER_STDOUT_WORLD);
+*/
 
   delete [] A_block;
   delete [] b_block;
   delete [] pos;
+  delete [] new_map;
 
+/*
   if(process == 0)
   {
     dolfin_log(false);
@@ -243,5 +271,6 @@ int main(int argc, char* argv[])
 
     cout << "Finsished parallel assemble/solve test." << endl;    
   }
+*/
   return 0;
 }
