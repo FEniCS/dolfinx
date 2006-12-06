@@ -48,8 +48,11 @@ namespace dolfin
     /// Return total number of degrees of freedom associated with element e (e=0 or e=1)
     const uint size(const uint e = 0);
 
-    /// Compute maximum number of non-zeroes for a row of sparse matrix
+    /// Compute number of non-zeroes for a sparse matrix
     uint numNonZeroes();
+
+    /// Compute maximum number of non-zeroes for a row of sparse matrix
+    uint numNonZeroesRowMax();
 
     /// Compute number of non-zeroes for each row in a sparse matrix
     void numNonZeroesRow(int nz_row[]);
@@ -64,8 +67,11 @@ namespace dolfin
 
     /// Compute sparsity pattern for a matrix where element_0 map to rows 
     /// (usually the test element) and element_1 maps to columns (usually
-    //  the trial element)
+    //.  the trial element)
     void computeMatrixSparsityPattern();    
+
+    /// Create data layout for compressed storage (CSR) 
+    void createCSRLayout();    
 
     // Mesh associated with dof mapping
     Mesh* mesh;
