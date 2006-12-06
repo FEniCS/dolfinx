@@ -5,6 +5,7 @@
 #
 # Modified by Garth N. Wells (gmsh function)
 # Modified by Alexander H. Jarosch (gmsh fix)
+# Modified by Angelo Simone (Gmsh and Medit fix)
 #
 # Script for converting between various data formats
 
@@ -53,14 +54,23 @@ def main(argv):
 
     # Choose conversion
     if input_format == "mesh" and output_format == "xml":
-        mesh2xml(ifilename, ofilename)
+        # Determine cell type
+        mesh2xml(ifilename, ofilename, 0)
+	# Convert to xml format
+        mesh2xml(ifilename, ofilename, 1)
     elif input_format == "gmsh" and output_format == "xml":
-        gmsh2xml(ifilename, ofilename)
+        # Determine cell type
+        gmsh2xml(ifilename, ofilename, 0)
+	# Convert to xml format
+        gmsh2xml(ifilename, ofilename, 1)
     elif input_format == "xml-old" and output_format == "xml":
-        xml_old2xml(ifilename, ofilename)
+        # Determine cell type
+        xml_old2xml(ifilename, ofilename, 0)
+	# Convert to xml format
+        xml_old2xml(ifilename, ofilename, 1)
     else:
         error("Sorry, cannot convert between .%s and .%s file formats." % (isuffix, osuffix))
-        
+
 def usage():
     "Display usage"
     print """\
@@ -113,7 +123,7 @@ def error(message):
         print "*** %s" % line
     sys.exit(2)
 
-def mesh2xml(ifilename, ofilename):
+def mesh2xml(ifilename, ofilename, write_output):
     """Convert between .mesh and .xml, parser implemented as a
     state machine:
     
@@ -129,14 +139,18 @@ def mesh2xml(ifilename, ofilename):
        
     """
     
-    print "Converting from Medit format (.mesh) to DOLFIN XML format"
+    if write_output == 0: print "Converting from Medit format (.mesh) to DOLFIN XML format"
+
+    global cell_type
+    
+    if write_output == 0: cell_type = 0
 
     # Open files
     ifile = open(ifilename, "r")
-    ofile = open(ofilename, "w")
+    if write_output == 1: ofile = open(ofilename, "w")
 
     # Write header
-    write_header(ofile)
+    if write_output == 1: write_header(ofile)
 
     # Current state
     state = 0
@@ -144,6 +158,9 @@ def mesh2xml(ifilename, ofilename):
     # Write data
     num_vertices_read = 0
     num_cells_read = 0
+    
+    got_cell = 0
+    
     while 1:
 
         # Read next line
@@ -169,7 +186,7 @@ def mesh2xml(ifilename, ofilename):
                 state += 1
         elif state == 3:
             num_vertices = int(line)
-            write_header_vertices(ofile, num_vertices)
+            if write_output == 1: write_header_vertices(ofile, num_vertices)
             state +=1
         elif state == 4:
             if num_dims == 2:
@@ -182,58 +199,60 @@ def mesh2xml(ifilename, ofilename):
                 x = float(x)
                 y = float(y)
                 z = float(z)
-            write_vertex(ofile, num_vertices_read, x, y, z)
+            if write_output == 1: write_vertex(ofile, num_vertices_read, x, y, z)
             num_vertices_read +=1
             if num_vertices == num_vertices_read:
-                write_footer_vertices(ofile)
+                if write_output == 1: write_footer_vertices(ofile)
                 state += 1
         elif state == 5:
             if line == "Triangles" and num_dims == 2:
                 state += 1
+		cell_type = 2
             if line == "Tetrahedra" and num_dims == 3:
                 state += 1
+		cell_type = 4
         elif state == 6:
             num_cells = int(line)
-            write_header_cells(ofile, num_cells)
+            if write_output == 1: write_header_cells(ofile, num_cells)
             state +=1
-            min_vertex = 1000000
         elif state == 7:
             if num_dims == 2:
                 (n0, n1, n2, tmp) = line.split()
                 n0 = int(n0) - 1
                 n1 = int(n1) - 1
                 n2 = int(n2) - 1
-                write_cell_triangle(ofile, num_cells_read, n0, n1, n2)
+		if write_output == 0: got_cell = 1
+                if write_output == 1: write_cell_triangle(ofile, num_cells_read, n0, n1, n2)
             elif num_dims == 3:
                 (n0, n1, n2, n3, tmp) = line.split()
                 n0 = int(n0) - 1
                 n1 = int(n1) - 1
                 n2 = int(n2) - 1
                 n3 = int(n3) - 1
-                write_cell_tetrahedron(ofile, num_cells_read, n0, n1, n2, n3)
+		if write_output == 0: got_cell = 1
+                if write_output == 1: write_cell_tetrahedron(ofile, num_cells_read, n0, n1, n2, n3)
+            if got_cell == 1: state = 8
             num_cells_read +=1
             if num_cells == num_cells_read:
-                write_footer_cells(ofile)                
+                if write_output == 1: write_footer_cells(ofile)                
                 state += 1
         elif state == 8:
             break
 
-        #print line
-
     # Check that we got all data
     if state == 8:
-        print "Conversion done"
+        if write_output == 1: print "Conversion done"
     else:
         error("Missing data, unable to convert")
 
     # Write footer
-    write_footer(ofile)
+    if write_output == 1: write_footer(ofile)
 
     # Close files
     ifile.close()
-    ofile.close()
+    if write_output == 1: ofile.close()
 
-def gmsh2xml(ifilename, ofilename):
+def gmsh2xml(ifilename, ofilename, write_output):
     """Convert between .gmsh v2.0 format (http://www.geuz.org/gmsh/) and .xml, 
     parser implemented as a state machine:
     
@@ -250,15 +269,19 @@ def gmsh2xml(ifilename, ofilename):
         10 = done
        
     """
+
+    if write_output == 0: print "Converting from Gmsh format (.msh, .gmsh) to DOLFIN XML format"
+
+    global cell_type
     
-    print "Converting from Gmsh format (.msh, .gmsh) to DOLFIN XML format"
+    if write_output == 0: cell_type = 0
 
     # Open files
     ifile = open(ifilename, "r")
-    ofile = open(ofilename, "w")
+    if write_output == 1: ofile = open(ofilename, "w")
 
     # Write header
-    write_header(ofile)
+    if write_output == 1: write_header(ofile)
     
     # Initialise node list (gmsh does not export all vertexes in order)
     nodelist = {}
@@ -269,6 +292,8 @@ def gmsh2xml(ifilename, ofilename):
     # Write data
     num_vertices_read = 0
     num_cells_read = 0
+    
+    got_cell = 0
     
     while 1:
 
@@ -298,7 +323,7 @@ def gmsh2xml(ifilename, ofilename):
                 state += 1
         elif state == 4:
             num_vertices = int(line)
-            write_header_vertices(ofile, num_vertices)
+            if write_output == 1: write_header_vertices(ofile, num_vertices)
             state +=1
         elif state == 5:
             (node_no, x, y, z) = line.split()
@@ -306,11 +331,11 @@ def gmsh2xml(ifilename, ofilename):
             x = float(x)
             y = float(y)
             z = float(z)
-            write_vertex(ofile, num_vertices_read, x, y, z)
+            if write_output == 1: write_vertex(ofile, num_vertices_read, x, y, z)
             num_vertices_read +=1
             
             if num_vertices == num_vertices_read:
-                write_footer_vertices(ofile)                
+                if write_output == 1: write_footer_vertices(ofile)                
                 state += 1
         elif state == 6:
             if line == "$EndNodes":
@@ -321,10 +346,9 @@ def gmsh2xml(ifilename, ofilename):
         elif state == 8:
             num_cells  = int(line)
             if num_cells == 0:
-                print "No cells found in gmsh file."
-                break
+                error("No cells found in gmsh file.")
             else:
-                write_header_cells(ofile, num_cells)   
+                if write_output == 1: write_header_cells(ofile, num_cells)   
                 state += 1
         elif state == 9:
             element = line.split()
@@ -335,65 +359,72 @@ def gmsh2xml(ifilename, ofilename):
                 for node in nn:
                     if not node in nodelist:
                         error("Vertex %d of triangle %d not previously defined." % (node, num_cells_read))
-                n0 = nodelist[nn[0]]
+		if write_output == 0: got_cell = 1
+		n0 = nodelist[nn[0]]
                 n1 = nodelist[nn[1]]
                 n2 = nodelist[nn[2]]
-                write_cell_triangle(ofile, num_cells_read, n0, n1, n2)
+                if write_output == 1: write_cell_triangle(ofile, num_cells_read, n0, n1, n2)
             elif cell_type == 4:
                 nn = [int(node) for node in element[3 + num_tags:9]]
                 for node in nn:
                     if not node in nodelist:
                         error("Vertex %d of tetrahedron %d not previously defined." % (node, num_cells_read))
+		if write_output == 0: got_cell = 1
                 n0 = nodelist[nn[0]]
                 n1 = nodelist[nn[1]]
                 n2 = nodelist[nn[2]]
                 n3 = nodelist[nn[3]]
-                write_cell_tetrahedron(ofile, num_cells_read, n0, n1, n2, n3)
+                if write_output == 1: write_cell_tetrahedron(ofile, num_cells_read, n0, n1, n2, n3)
             else:
                 error("Unknown element type. Did you define a physical surface/volume? \n\
 If you didn't, gmsh exports edges as cells. \nSee http://www.geuz.org/gmsh/doc/texinfo/gmsh.html")
 
-            num_cells_read +=1 
+            if got_cell == 1: state = 10
+	    num_cells_read +=1 
             if num_cells == num_cells_read:
-              write_footer_cells(ofile)                
+              if write_output == 1: write_footer_cells(ofile)                
               state += 1
         elif state == 10:
             break
 
     # Check that we got all data
     if state == 10:
-        print "Conversion done"
+        if write_output == 1: print "Conversion done"
     else:
-        print "*** Missing data, unable to convert"
-        print "*** Did you use version 2.0 of the gmsh file format?"
-    
+        error("Missing data, unable to convert \n\ Did you use version 2.0 of the gmsh file format?")
+   
     # Write footer
-    write_footer(ofile)  
+    if write_output == 1: write_footer(ofile)  
 
     # Close files
     ifile.close()
-    ofile.close()
+    if write_output == 1: ofile.close()
 
-def xml_old2xml(ifilename, ofilename):
+def xml_old2xml(ifilename, ofilename, write_output):
     "Convert from old DOLFIN XML format to new."
 
-    print "Converting from old to new DOLFIN XML format..."
+    if write_output == 0: print "Converting from old ( < DOLFIN 0.6.2) to new DOLFIN XML format..."
 
+    global cell_type
+    
+    if write_output == 0: cell_type = 0
+    
+    got_cell = 0
+    
     # Get dimension
-    tris = len(getoutput("grep triangle " + ifilename))
-    tets = len(getoutput("grep tetrahedron " + ifilename))
-    if tris > 0 and tets == 0:
-        dim = 2
-        celltype = "triangle"
-    elif tris == 0 and tets > 0:
-        dim = 3
-        celltype = "tetrahedron"
-    else:
-        error("Inconsistent mesh file, not exactly one type of cells.")
+    if write_output == 1:
+        if cell_type == 2:
+            dim = 2
+            celltype = "triangle"
+        elif cell_type == 4:
+            dim = 3
+            celltype = "tetrahedron"
+        else:
+            error("Cell type not recognised.")
 
     # Open files
     ifile = open(ifilename, "r")
-    ofile = open(ofilename, "w")
+    if write_output == 1: ofile = open(ofilename, "w")
 
     # Read lines and make changes
     while 1:
@@ -401,44 +432,68 @@ def xml_old2xml(ifilename, ofilename):
         # Read next line
         line = ifile.readline()
         if not line: break
-
-        # Modify line
-        if "xmlns" in line:
-            line = "<dolfin xmlns:dolfin=\"http://www.fenics.org/dolfin/\">\n"
-        if "<mesh>" in line:
-            line = "  <mesh celltype=\"%s\" dim=\"%d\">\n" % (celltype, dim)
-        if dim == 2 and " z=\"0.0\"" in line:
-            line = line.replace(" z=\"0.0\"", "")
-        if " name=" in line:
-            line = line.replace(" name=", " index=")
-        if " name =" in line:
-            line = line.replace(" name =", " index=")
-        if "n0" in line:
-            line = line.replace("n0", "v0")
-        if "n1" in line:
-            line = line.replace("n1", "v1")
-        if "n2" in line:
-            line = line.replace("n2", "v2")
-        if "n3" in line:
-            line = line.replace("n3", "v3")
-            
-        # Write line
-        ofile.write(line)
-
-    ofile.write("\n")
+	
+	# Determine cell type
+	
+	if write_output == 0:
+	    if "triangle" in line:
+                cell_type = 2
+	        got_cell = 1
+            if "tetrahedron" in line:
+                cell_type = 4
+	        got_cell = 1
+	
+	if write_output == 0 and got_cell == 1: break
+	
+	if write_output == 1:
+            # Modify line
+            if "xmlns" in line:
+            	line = "<dolfin xmlns:dolfin=\"http://www.fenics.org/dolfin/\">\n"
+            if "<mesh>" in line:
+            	line = "  <mesh celltype=\"%s\" dim=\"%d\">\n" % (celltype, dim)
+            if dim == 2 and " z=\"0.0\"" in line:
+            	line = line.replace(" z=\"0.0\"", "")
+            if " name=" in line:
+            	line = line.replace(" name=", " index=")
+            if " name =" in line:
+            	line = line.replace(" name =", " index=")
+            if "n0" in line:
+            	line = line.replace("n0", "v0")
+            if "n1" in line:
+            	line = line.replace("n1", "v1")
+            if "n2" in line:
+            	line = line.replace("n2", "v2")
+            if "n3" in line:
+            	line = line.replace("n3", "v3")
+            # Write line
+            ofile.write(line)
+	    
+    if write_output == 1: ofile.write("\n")
 
     # Close files
     ifile.close();
-    ofile.close();
+    if write_output == 1: ofile.close();
+    if write_output == 1: print "Conversion done"
 
 # Write mesh header
 def write_header(ofile):
-    ofile.write("""\
+
+    if cell_type == 2:
+        ofile.write("""\
 <?xml version=\"1.0\" encoding=\"UTF-8\"?>
 
 <dolfin xmlns:dolfin=\"http://www.fenics.org/dolfin/\">
-  <mesh>
+  <mesh celltype="triangle" dim="2">
 """)
+    elif cell_type == 4:
+        ofile.write("""\
+<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+
+<dolfin xmlns:dolfin=\"http://www.fenics.org/dolfin/\">
+  <mesh celltype="tetrahedron" dim="3">
+""")
+    else:
+        error("Only triangle and tetrahedron are recognised.")
 
 # Write mesh footer
 def write_footer(ofile):
@@ -459,7 +514,7 @@ def write_footer_vertices(ofile):
 
 def write_vertex(ofile, vertex, x, y, z):
     "Write vertex"
-    ofile.write("      <vertex name=\"%d\" x=\"%g\" y=\"%g\" z=\"%g\"/>\n" % \
+    ofile.write("      <vertex index=\"%d\" x=\"%g\" y=\"%g\" z=\"%g\"/>\n" % \
         (vertex, x, y, z))
 
 def write_header_cells(ofile, num_cells):
@@ -474,12 +529,12 @@ def write_footer_cells(ofile):
 
 def write_cell_triangle(ofile, cell, n0, n1, n2):
     "Write cell (triangle)"
-    ofile.write("      <triangle name=\"%d\" n0=\"%d\" n1=\"%d\" n2=\"%d\"/>\n" % \
+    ofile.write("      <triangle index=\"%d\" v0=\"%d\" v1=\"%d\" v2=\"%d\"/>\n" % \
         (cell, n0, n1, n2))
 
 def write_cell_tetrahedron(ofile, cell, n0, n1, n2, n3):
     "Write cell (tetrahedron)"
-    ofile.write("      <tetrahedron name=\"%d\" n0=\"%d\" n1=\"%d\" n2=\"%d\" n3=\"%d\"/>\n" % \
+    ofile.write("      <tetrahedron index=\"%d\" v0=\"%d\" v1=\"%d\" v2=\"%d\" v3=\"%d\"/>\n" % \
         (cell, n0, n1, n2, n3))
 
 if __name__ == "__main__":
