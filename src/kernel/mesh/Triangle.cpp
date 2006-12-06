@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2006.
 //
 // First added:  2006-06-05
-// Last changed: 2006-12-05
+// Last changed: 2006-12-06
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Cell.h>
@@ -108,13 +108,17 @@ void Triangle::refineCell(Cell& cell, MeshEditor& editor,
   editor.addCell(current_cell++, e0, e1, e2);
 }
 //-----------------------------------------------------------------------------
-real Triangle::volume(const Cell& cell) const
+real Triangle::volume(const MeshEntity& triangle) const
 {
+  // Check that we get a triangle
+  if ( triangle.dim() != 2 )
+    dolfin_error("Illegal mesh entity for computation of triangle volume (area). Not a triangle.");
+
   // Get mesh geometry
-  const MeshGeometry& geometry = cell.mesh().geometry();
+  const MeshGeometry& geometry = triangle.mesh().geometry();
 
   // Get the coordinates of the three vertices
-  const uint* vertices = cell.entities(0);
+  const uint* vertices = triangle.entities(0);
   const real* x0 = geometry.x(vertices[0]);
   const real* x1 = geometry.x(vertices[1]);
   const real* x2 = geometry.x(vertices[2]);
@@ -143,17 +147,21 @@ real Triangle::volume(const Cell& cell) const
   return 0.0;
 }
 //-----------------------------------------------------------------------------
-real Triangle::diameter(const Cell& cell) const
+real Triangle::diameter(const MeshEntity& triangle) const
 {
+  // Check that we get a triangle
+  if ( triangle.dim() != 2 )
+    dolfin_error("Illegal mesh entity for computation of triangle diameter. Not a triangle.");
+
   // Get mesh geometry
-  const MeshGeometry& geometry = cell.mesh().geometry();
+  const MeshGeometry& geometry = triangle.mesh().geometry();
 
   // Only know how to compute the diameter when embedded in R^2 or R^3
   if ( geometry.dim() != 2 && geometry.dim() != 3 )
     dolfin_error("Only know how to volume (area) of a triangle when embedded in R^2 or R^3.");
 
   // Get the coordinates of the three vertices
-  const uint* vertices = cell.entities(0);
+  const uint* vertices = triangle.entities(0);
   Point p0 = geometry.point(vertices[0]);
   Point p1 = geometry.point(vertices[1]);
   Point p2 = geometry.point(vertices[2]);
@@ -167,7 +175,7 @@ real Triangle::diameter(const Cell& cell) const
   real c  = p0.distance(p1);
 
   // Formula for diameter (2*circumradius) from http://mathworld.wolfram.com
-  return 0.5 * a*b*c / volume(cell);
+  return 0.5 * a*b*c / volume(triangle);
 }
 //-----------------------------------------------------------------------------
 real Triangle::normal(const Cell& cell, uint facet, uint i) const

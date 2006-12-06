@@ -37,6 +37,8 @@ namespace dolfin
     /// Attach finite elements
     void attach(const FiniteElement* element_0, const FiniteElement* element_1 = 0);
 
+    // FIXME: I suggest we rename this function to just map() /Anders
+
     /// Get dof map for a cell for element e (e=0 or e=1)
     void dofmap(int dof_map[], const Cell& cell, const uint e = 0) const;
 

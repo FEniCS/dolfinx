@@ -53,7 +53,7 @@ namespace dolfin
 
     /// Compute local index of given incident entity (error if not found)
     uint index(const MeshEntity& entity) const;
-
+    
     /// Output
     friend LogStream& operator<< (LogStream& stream, const MeshEntity& entity);
 

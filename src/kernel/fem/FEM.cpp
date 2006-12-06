@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells 2005, 2006.
 //
 // First added:  2004-05-19
-// Last changed: 2006-12-05
+// Last changed: 2006-12-06
 
 #include <dolfin/BilinearForm.h>
 #include <dolfin/LinearForm.h>
@@ -22,6 +22,9 @@
 #include <dolfin/BoundaryCondition.h>
 #include <dolfin/BoundaryValue.h>
 #include <dolfin/AffineMap.h>
+#include <dolfin/Interval.h>
+#include <dolfin/Triangle.h>
+#include <dolfin/Tetrahedron.h>
 #include <dolfin/DofMap.h>
 #include <dolfin/FEM.h>
 
@@ -244,18 +247,21 @@ void FEM::assembleCommon(BilinearForm* a, LinearForm* L, Functional* M,
     {
       // Update affine map
       map.update(*cell);
+
+      // Get determinant for integral volume change
+      real det = map.det;
       
       // Assemble bilinear form
       if ( a && a->interior_contribution() )
-        assembleElementTensor(*a, *A, mesh, *cell, map, dofmap_a);
+        assembleElementTensor(*a, *A, mesh, *cell, map, det, dofmap_a);
       
       // Assemble linear form
       if ( L && L->interior_contribution() )
-        assembleElementTensor(*L, *b, mesh, *cell, map, dofmap_L);
+        assembleElementTensor(*L, *b, mesh, *cell, map, det, dofmap_L);
       
       // Assemble functional
       if ( M && M->interior_contribution() )
-        assembleElementTensor(*M, *val, map);
+        assembleElementTensor(*M, *val, map, det);
       
       // Update progress
       p++;
@@ -283,26 +289,29 @@ void FEM::assembleCommon(BilinearForm* a, LinearForm* L, Functional* M,
       uint local_facet = mesh_cell.index(mesh_facet);
       
       // Update affine map for facet 
-      map.update(mesh_cell, *boundary_cell);
+      map.update(mesh_cell);
+      
+      // Compute determinant for integral volume change
+      real det = computeDeterminant(*boundary_cell);
       
       // Assemble bilinear form
       if ( a && a->boundary_contribution() )
-        assembleExteriorFacetTensor(*a, *A, mesh, mesh_cell, map, local_facet);
+        assembleExteriorFacetTensor(*a, *A, mesh, mesh_cell, map, det, local_facet);
       
       // Assemble linear form
       if ( L && L->boundary_contribution() )
-        assembleExteriorFacetTensor(*L, *b, mesh, mesh_cell, map, local_facet);
+        assembleExteriorFacetTensor(*L, *b, mesh, mesh_cell, map, det, local_facet);
       
       // Assemble functional
       if ( M && M->boundary_contribution() )
-        assembleExteriorFacetTensor(*M, *val, map, local_facet);
+        assembleExteriorFacetTensor(*M, *val, map, det, local_facet);
       
       // Update progress  
       p++;
     }
   }
 
- // Assemble interior boundary contribution
+  // Assemble interior boundary contribution
   if ( interior_boundary_contribution )
   {
     // Make sure the connectivity facet - cell is computed
@@ -331,25 +340,28 @@ void FEM::assembleCommon(BilinearForm* a, LinearForm* L, Functional* M,
       uint facet1 = cell1.index(*facet);
 
       // Compute alignment FIXME: Not implemented
-      uint alignment = 0;
+      uint alignment = computeAlignment();
     
       // FIXME: use different update function, facet number should be argument
       
       // Update affine maps for cells
       map0.update(cell0);
       map1.update(cell1);
+
+      // Compute determinant for integral volume change
+      real det = computeDeterminant(*facet);
       
       // Assemble bilinear form
       if ( a && a->interior_boundary_contribution() )
-        assembleInteriorFacetTensor(*a, *A, mesh, cell0, cell1, map0, map1, facet0, facet1, alignment);
+        assembleInteriorFacetTensor(*a, *A, mesh, cell0, cell1, map0, map1, det, facet0, facet1, alignment);
       
       // Assemble linear form
       if ( L && L->interior_boundary_contribution() )
-        assembleInteriorFacetTensor(*L, *b, mesh, cell0, cell1, map0, map1, facet0, facet1, alignment);
+        assembleInteriorFacetTensor(*L, *b, mesh, cell0, cell1, map0, map1, det, facet0, facet1, alignment);
       
       // Assemble functional
       if ( M && M->interior_boundary_contribution() )
-        assembleInteriorFacetTensor(*M, *val, map0, map1, facet0, facet1, alignment);
+        assembleInteriorFacetTensor(*M, *val, map0, map1, det, facet0, facet1, alignment);
       
       // Update progress  
       p++;
@@ -545,7 +557,7 @@ dolfin::uint FEM::estimateNonZeros(Mesh& mesh,
 //-----------------------------------------------------------------------------
 void FEM::assembleElementTensor(BilinearForm& a, GenericMatrix& A, 
                                 const Mesh& mesh, const Cell& cell,
-                                AffineMap& map, const DofMap& dofmap)
+                                AffineMap& map, real det, const DofMap& dofmap)
 {
   // Update form
   a.update(map);
@@ -555,7 +567,7 @@ void FEM::assembleElementTensor(BilinearForm& a, GenericMatrix& A,
   dofmap.dofmap(a.trial_nodes, cell, 1);
 
   // Compute element tensor
-  a.eval(a.block, map);
+  a.eval(a.block, map, det);
   
   // Add element tensor to global tensor
   A.add(a.block, a.test_nodes, a.test().spacedim(), a.trial_nodes, a.trial().spacedim());
@@ -563,7 +575,7 @@ void FEM::assembleElementTensor(BilinearForm& a, GenericMatrix& A,
 //-----------------------------------------------------------------------------
 void FEM::assembleElementTensor(LinearForm& L, GenericVector& b, 
                                 const Mesh& mesh, const Cell& cell,
-                                AffineMap& map, const DofMap& dofmap)
+                                AffineMap& map, real det, const DofMap& dofmap)
 {
   // Update form
   L.update(map);
@@ -572,19 +584,19 @@ void FEM::assembleElementTensor(LinearForm& L, GenericVector& b,
   dofmap.dofmap(L.test_nodes, cell);
   
   // Compute element tensor
-  L.eval(L.block, map);
+  L.eval(L.block, map, det);
   
   // Add element tensor to global tensor
   b.add(L.block, L.test_nodes, L.test().spacedim());
 }
 //-----------------------------------------------------------------------------
-void FEM::assembleElementTensor(Functional& M, real& val, AffineMap& map)
+void FEM::assembleElementTensor(Functional& M, real& val, AffineMap& map, real det)
 {
   // Update form
   M.update(map);
   
   // Compute element tensor
-  M.eval(M.block, map);
+  M.eval(M.block, map, det);
   
   // Add element tensor to global tensor
   val += M.block[0];
@@ -592,7 +604,7 @@ void FEM::assembleElementTensor(Functional& M, real& val, AffineMap& map)
 //-----------------------------------------------------------------------------
 void FEM::assembleExteriorFacetTensor(BilinearForm& a, GenericMatrix& A, 
                                       const Mesh& mesh, const Cell& cell,
-                                      AffineMap& map, uint facet)
+                                      AffineMap& map, real det, uint facet)
 {
   // Update form
   a.update(map);
@@ -602,7 +614,7 @@ void FEM::assembleExteriorFacetTensor(BilinearForm& a, GenericMatrix& A,
   a.trial().nodemap(a.trial_nodes, cell, mesh);
   
   // Compute exterior facet tensor
-  a.eval(a.block, map, facet);
+  a.eval(a.block, map, det, facet);
   
   // Add exterior facet tensor to to global tensor
   A.add(a.block, a.test_nodes, a.test().spacedim(), a.trial_nodes, a.trial().spacedim());
@@ -610,7 +622,7 @@ void FEM::assembleExteriorFacetTensor(BilinearForm& a, GenericMatrix& A,
 //-----------------------------------------------------------------------------
 void FEM::assembleExteriorFacetTensor(LinearForm& L, GenericVector& b, 
                                       const Mesh& mesh, const Cell& cell,
-                                      AffineMap& map, uint facet)
+                                      AffineMap& map, real det, uint facet)
 {
   // Update form
   L.update(map);
@@ -619,20 +631,20 @@ void FEM::assembleExteriorFacetTensor(LinearForm& L, GenericVector& b,
   L.test().nodemap(L.test_nodes, cell, mesh);
   
   // Compute exterior facet tensor
-  L.eval(L.block, map, facet);
+  L.eval(L.block, map, det, facet);
   
   // Add exterior facet tensor to global tensor
   b.add(L.block, L.test_nodes, L.test().spacedim());
 }
 //-----------------------------------------------------------------------------
 void FEM::assembleExteriorFacetTensor(Functional& M, real& val,
-                                      AffineMap& map, uint facet)
+                                      AffineMap& map, real det, uint facet)
 {
   // Update form
   M.update(map);
   
   // Compute exterior facet tensor
-  M.eval(M.block, map, facet);
+  M.eval(M.block, map, det, facet);
   
   // Add exterior facet tensor to global tensor
   val += M.block[0];
@@ -641,7 +653,7 @@ void FEM::assembleExteriorFacetTensor(Functional& M, real& val,
 void FEM::assembleInteriorFacetTensor(BilinearForm& a, GenericMatrix& A, 
                                       const Mesh& mesh,
                                       const Cell& cell0, const Cell& cell1,
-                                      AffineMap& map0, AffineMap& map1,
+                                      AffineMap& map0, AffineMap& map1, real det,
                                       uint facet0, uint facet1, uint alignment)
 {
   // Update form
@@ -675,7 +687,7 @@ void FEM::assembleInteriorFacetTensor(BilinearForm& a, GenericMatrix& A,
     trial_nodes[n+i] = a.trial_nodes[i];
 
   // Compute interior facet tensor
-  a.eval(block, map0, map1, facet0, facet1, alignment);
+  a.eval(block, map0, map1, det, facet0, facet1, alignment);
 
   // Add exterior facet tensor to global tensor
   A.add(block, test_nodes, 2*m, trial_nodes, 2*n);
@@ -689,14 +701,14 @@ void FEM::assembleInteriorFacetTensor(BilinearForm& a, GenericMatrix& A,
 void FEM::assembleInteriorFacetTensor(LinearForm& L, GenericVector& b, 
                                       const Mesh& mesh,
                                       const Cell& cell0, const Cell& cell1,
-                                      AffineMap& map0, AffineMap& map1,
+                                      AffineMap& map0, AffineMap& map1, real det,
                                       uint facet0, uint facet1, uint alignment)
 {
   dolfin_error("Not implemented.");
 }
 //-----------------------------------------------------------------------------
 void FEM::assembleInteriorFacetTensor(Functional& M, real& val,
-                                      AffineMap& map0, AffineMap& map1,
+                                      AffineMap& map0, AffineMap& map1, real det,
                                       uint facet0, uint facet1, uint alignment)
 {
   dolfin_error("Not implemented.");
@@ -747,5 +759,36 @@ bool FEM::onFacet(const Point& p, Cell& facet)
   
   dolfin_error("Unable to determine if given point is on facet.");
   return false;
+}
+//-----------------------------------------------------------------------------
+real FEM::computeDeterminant(MeshEntity& facet)
+{
+  // FIXME: Not sure the scaling is correct, need to check
+  // FIXME: on the FFC side
+
+  Interval interval;
+  Triangle triangle;
+
+  switch ( facet.dim() )
+  {
+  case 1:
+    // Length of reference interval is 1
+    return interval.volume(facet);
+    break;
+  case 2:
+    // Area of reference triangle is 0.5
+    return triangle.volume(facet) / 0.5;
+    break;
+  default:
+    dolfin_error("Unknown cell type for facet determinant.");
+  }
+
+  return 0.0;
+}
+//-----------------------------------------------------------------------------
+dolfin::uint FEM::computeAlignment()
+{
+  // Not implemented
+  return 0;
 }
 //-----------------------------------------------------------------------------

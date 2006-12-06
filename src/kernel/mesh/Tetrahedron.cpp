@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-06-05
-// Last changed: 2006-12-05
+// Last changed: 2006-12-06
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Cell.h>
@@ -123,7 +123,7 @@ void Tetrahedron::createEntities(uint** e, uint dim, const uint v[]) const
 }
 //-----------------------------------------------------------------------------
 void Tetrahedron::refineCell(Cell& cell, MeshEditor& editor,
-				uint& current_cell) const
+                             uint& current_cell) const
 {
   // Get vertices and edges
   const uint* v = cell.entities(0);
@@ -157,17 +157,21 @@ void Tetrahedron::refineCell(Cell& cell, MeshEditor& editor,
   editor.addCell(current_cell++, e0, e1, e2, e4);
 }
 //-----------------------------------------------------------------------------
-real Tetrahedron::volume(const Cell& cell) const
+real Tetrahedron::volume(const MeshEntity& tetrahedron) const
 {
+  // Check that we get a tetrahedron
+  if ( tetrahedron.dim() != 3 )
+    dolfin_error("Illegal mesh entity for computation of tetrahedron volume. Not a tetrahedron.");
+
   // Get mesh geometry
-  const MeshGeometry& geometry = cell.mesh().geometry();
+  const MeshGeometry& geometry = tetrahedron.mesh().geometry();
 
   // Only know how to compute the volume when embedded in R^3
   if ( geometry.dim() != 3 )
     dolfin_error("Only know how to compute the volume of a tetrahedron when embedded in R^3.");
 
   // Get the coordinates of the four vertices
-  const uint* vertices = cell.entities(0);
+  const uint* vertices = tetrahedron.entities(0);
   const real* x0 = geometry.x(vertices[0]);
   const real* x1 = geometry.x(vertices[1]);
   const real* x2 = geometry.x(vertices[2]);
@@ -182,17 +186,21 @@ real Tetrahedron::volume(const Cell& cell) const
   return std::abs(v) / 6.0;
 }
 //-----------------------------------------------------------------------------
-real Tetrahedron::diameter(const Cell& cell) const
+real Tetrahedron::diameter(const MeshEntity& tetrahedron) const
 {
+  // Check that we get a tetrahedron
+  if ( tetrahedron.dim() != 3 )
+    dolfin_error("Illegal mesh entity for computation of tetrahedron diameter. Not a tetrahedron.");
+
   // Get mesh geometry
-  const MeshGeometry& geometry = cell.mesh().geometry();
+  const MeshGeometry& geometry = tetrahedron.mesh().geometry();
 
   // Only know how to compute the volume when embedded in R^3
   if ( geometry.dim() != 3 )
     dolfin_error("Only know how to compute the diameter of a tetrahedron when embedded in R^3.");
   
   // Get the coordinates of the four vertices
-  const uint* vertices = cell.entities(0);
+  const uint* vertices = tetrahedron.entities(0);
   Point p0 = geometry.point(vertices[0]);
   Point p1 = geometry.point(vertices[1]);
   Point p2 = geometry.point(vertices[2]);
@@ -214,7 +222,7 @@ real Tetrahedron::diameter(const Cell& cell) const
   real area = sqrt(s*(s-la)*(s-lb)*(s-lc));
                                 
   // Formula for diameter (2*circumradius) from http://mathworld.wolfram.com
-  return area / ( 3.0*volume(cell) );
+  return area / ( 3.0*volume(tetrahedron) );
 }
 //-----------------------------------------------------------------------------
 real Tetrahedron::normal(const Cell& cell, uint facet, uint i) const
