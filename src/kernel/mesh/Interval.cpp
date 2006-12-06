@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-06-05
-// Last changed: 2006-10-23
+// Last changed: 2006-12-06
 
 #include <cmath>
 #include <dolfin/dolfin_log.h>
@@ -83,13 +83,17 @@ void Interval::refineCell(Cell& cell, MeshEditor& editor,
   editor.addCell(current_cell++, e0, v1);
 }
 //-----------------------------------------------------------------------------
-real Interval::volume(const Cell& cell) const
+real Interval::volume(const MeshEntity& interval) const
 {
+  // Check that we get an interval
+  if ( interval.dim() != 1 )
+    dolfin_error("Illegal mesh entity for computation of interval volume (length). Not an interval.");
+
   // Get mesh geometry
-  const MeshGeometry& geometry = cell.mesh().geometry();
+  const MeshGeometry& geometry = interval.mesh().geometry();
 
   // Get the coordinates of the two vertices
-  const uint* vertices = cell.entities(0);
+  const uint* vertices = interval.entities(0);
   const real* x0 = geometry.x(vertices[0]);
   const real* x1 = geometry.x(vertices[1]);
   
@@ -104,10 +108,14 @@ real Interval::volume(const Cell& cell) const
   return std::sqrt(sum);
 }
 //-----------------------------------------------------------------------------
-real Interval::diameter(const Cell& cell) const
+real Interval::diameter(const MeshEntity& interval) const
 {
+  // Check that we get an interval
+  if ( interval.dim() != 1 )
+    dolfin_error("Illegal mesh entity for computation of interval diameter. Not an interval.");
+
   // Diameter is same as volume for interval (line segment)
-  return volume(cell);
+  return volume(interval);
 }
 //-----------------------------------------------------------------------------
 real Interval::normal(const Cell& cell, uint facet, uint i) const

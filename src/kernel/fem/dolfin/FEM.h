@@ -5,7 +5,7 @@
 // Modified by Kristian Oelgaard 2006.
 //
 // First added:  2004-05-19
-// Last changed: 2006-12-05
+// Last changed: 2006-12-06
 
 #ifndef __FEM_H
 #define __FEM_H
@@ -22,6 +22,7 @@ namespace dolfin
   class Functional;
   class Mesh;
   class Cell;
+  class MeshEntity;
   class Point;
   class GenericMatrix;
   class GenericVector;
@@ -118,47 +119,47 @@ namespace dolfin
     /// Assemble element tensor for a bilinear form
     static void assembleElementTensor(BilinearForm& a, GenericMatrix& A, 
                                       const Mesh& mesh, const Cell& cell, 
-                                      AffineMap& map, const DofMap& dofmap);
+                                      AffineMap& map, real det, const DofMap& dofmap);
 
     /// Assemble element tensor for a linear form
     static void assembleElementTensor(LinearForm& L, GenericVector& b, 
                                       const Mesh& mesh, const Cell& cell, 
-                                      AffineMap& map, const DofMap& dofmap);
+                                      AffineMap& map, real det, const DofMap& dofmap);
 
     /// Assemble element tensor for a functional
-    static void assembleElementTensor(Functional& M, real& val, AffineMap& map);
+    static void assembleElementTensor(Functional& M, real& val, AffineMap& map, real det);
 
     /// Assemble exterior facet tensor for a bilinear form
     static void assembleExteriorFacetTensor(BilinearForm& a, GenericMatrix& A, 
                                             const Mesh& mesh, const Cell& cell,
-                                            AffineMap& map, uint facet);
+                                            AffineMap& map, real det, uint facet);
 
     /// Assemble exterior facet tensor for a linear form
     static void assembleExteriorFacetTensor(LinearForm& L, GenericVector& b,
                                             const Mesh& mesh, const Cell& cell,
-                                            AffineMap& map, uint facet);
+                                            AffineMap& map, real det, uint facet);
 
     /// Assemble exterior facet tensor for a functional
     static void assembleExteriorFacetTensor(Functional& M, real& val,
-                                            AffineMap& map, uint facet);
+                                            AffineMap& map, real det, uint facet);
 
     /// Assemble interior facet tensor for a bilinear form
     static void assembleInteriorFacetTensor(BilinearForm& a, GenericMatrix& A, 
                                             const Mesh& mesh,
                                             const Cell& cell0, const Cell& cell1,
-                                            AffineMap& map0, AffineMap& map1,
+                                            AffineMap& map0, AffineMap& map1, real det,
                                             uint facet0, uint facet1, uint alignment);
 
     /// Assemble interior facet tensor for a linear form
     static void assembleInteriorFacetTensor(LinearForm& L, GenericVector& b,
                                             const Mesh& mesh,
                                             const Cell& cell0, const Cell& cell1,
-                                            AffineMap& map0, AffineMap& map1,
+                                            AffineMap& map0, AffineMap& map1, real det,
                                             uint facet0, uint facet1, uint alignment);
 
     /// Assemble interior facet tensor for a functional
     static void assembleInteriorFacetTensor(Functional& M, real& val,
-                                            AffineMap& map0, AffineMap& map1,
+                                            AffineMap& map0, AffineMap& map1, real det,
                                             uint facet0, uint facet1, uint alignment);
 
     /// Initialize mesh connectivity for use in node map
@@ -166,6 +167,12 @@ namespace dolfin
     
     /// Check if the point is in the same plane as the given facet
     static bool onFacet(const Point& p, Cell& facet);
+
+    /// Compute determinant of mapping of parametrized facet
+    static real computeDeterminant(MeshEntity& facet);
+
+    /// Compute alignment (not implemented)
+    static uint computeAlignment();
     
   };
 

@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2004-05-28
-// Last changed: 2006-12-05
+// Last changed: 2006-12-06
 
 #ifndef __LINEAR_FORM_H
 #define __LINEAR_FORM_H
@@ -34,13 +34,13 @@ namespace dolfin
     virtual bool interior_contribution() const = 0;
 
     /// Compute element vector (interior contribution)
-    virtual void eval(real block[], const AffineMap& map) const = 0;
+    virtual void eval(real block[], const AffineMap& map, real det) const = 0;
 
     /// Check if there is a contribution from the boundary
     virtual bool boundary_contribution() const = 0;
 
     /// Compute element vector (boundary contribution)
-    virtual void eval(real block[], const AffineMap& map, uint segment) const = 0;
+    virtual void eval(real block[], const AffineMap& map, real det, uint segment) const = 0;
 
     /// Check if there is a contribution from the interior boundary
     virtual bool interior_boundary_contribution() const = 0;

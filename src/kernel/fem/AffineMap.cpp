@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2006.
 //
 // First added:  2005-05-17
-// Last changed: 2006-10-23
+// Last changed: 2006-12-06
 
 #include <dolfin/Vertex.h>
 #include <dolfin/Cell.h>
@@ -41,34 +41,9 @@ void AffineMap::update(Cell& cell)
   {
   case 2:
     updateTriangle(cell);
-    scaling = det;
     break;
   case 3:
     updateTetrahedron(cell);
-    scaling = det;
-    break;
-  default:
-    dolfin_error("Unknown cell type for affine map.");
-  }
-  
-  _cell = &cell;
-}
-//-----------------------------------------------------------------------------
-void AffineMap::update(Cell& cell, Cell& facet)
-{
-  switch ( cell.dim() )
-  {
-  case 2:
-    updateTriangle(cell);
-    scaling = facet.volume();
-    //FIXME: Make change at FFC side
-    det = scaling;
-    break;
-  case 3:
-    updateTetrahedron(cell);
-    scaling = facet.volume();
-    //FIXME: Make change at FFC side
-    det = scaling;
     break;
   default:
     dolfin_error("Unknown cell type for affine map.");

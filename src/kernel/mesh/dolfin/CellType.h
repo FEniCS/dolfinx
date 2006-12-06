@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-06-05
-// Last changed: 2006-10-23
+// Last changed: 2006-12-06
 
 #ifndef __CELL_TYPE_H
 #define __CELL_TYPE_H
@@ -16,6 +16,7 @@ namespace dolfin
 
   class Cell;
   class MeshEditor;
+  class MeshEntity;
 
   /// This class provides a common interface for different cell types.
   /// Each cell type implements mesh functionality that is specific to
@@ -70,11 +71,11 @@ namespace dolfin
     /// Refine cell uniformly
     virtual void refineCell(Cell& cell, MeshEditor& editor, uint& current_cell) const = 0;
 
-    /// Compute (generalized) volume of cell
-    virtual real volume(const Cell& cell) const = 0;
+    /// Compute (generalized) volume of mesh entity
+    virtual real volume(const MeshEntity& entity) const = 0;
 
-    /// Compute diameter of cell
-    virtual real diameter(const Cell& cell) const = 0;
+    /// Compute diameter of mesh entity
+    virtual real diameter(const MeshEntity& entity) const = 0;
     
     /// Compute component i of normal of given facet with respect to the cell
     virtual real normal(const Cell& cell, uint facet, uint i) const = 0;

@@ -1,8 +1,10 @@
 // Copyright (C) 2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
+// Modified by Johan Hoffman 2006.
+//
 // First added:  2006-06-05
-// Last changed: 2006-10-19
+// Last changed: 2006-12-06
 
 #ifndef __TETRAHEDRON_H
 #define __TETRAHEDRON_H
@@ -38,8 +40,13 @@ namespace dolfin
     /// Create entities e of given topological dimension from vertices v
     void createEntities(uint** e, uint dim, const uint v[]) const;
 
-    /// Refine cell uniformly
+    /// Regular refinement of cell 
     void refineCell(Cell& cell, MeshEditor& editor, uint& current_cell) const;
+
+    /// Irregular refinement of cell 
+    void refineCellIrregular(Cell& cell, MeshEditor& editor, uint& current_cell, 
+			     uint refinement_rule, uint* marked_edges) const;
+
 
     /// Compute (generalized) volume of cell
     real volume(const Cell& cell) const;
