@@ -83,6 +83,9 @@ namespace dolfin
 
     /// Compute interpolation of function onto local finite element space
     void interpolate(real coefficients[], AffineMap& map, FiniteElement& element);
+    
+    /// Compute interpolation of function onto local finite element space
+    void interpolate(real coefficients[], AffineMap& map, FiniteElement& element, uint facet);
 
     /// Compute interpolation of fsource to local finite element space
     void interpolate(Function& fsource);
@@ -128,7 +131,6 @@ namespace dolfin
   private:
     
     // Pointer to current implementation (letter base class)
-
     GenericFunction* f;
 
     // Current function type

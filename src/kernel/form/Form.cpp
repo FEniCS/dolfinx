@@ -90,19 +90,92 @@ void Form::updateCoefficients(AffineMap& map)
   }
 }
 //-----------------------------------------------------------------------------
-void Form::updateCoefficients(AffineMap& map0, AffineMap& map1)
+void Form::updateCoefficients(AffineMap& map, uint facet)
 {
-  // FIXME: Not implemented correctly yet, need to double the size of
-  // FIXME: the coefficient list and update on both cells
-
   dolfin_assert(num_functions == functions.size());
-  
+
   // Interpolate all functions to the current element
   for (uint i = 0; i < num_functions; i++)
   {
     dolfin_assert(functions[i]);
-    functions[i]->interpolate(c[i], map0, *elements[i]);
+    functions[i]->interpolate(c[i], map, *elements[i], facet);
   }
+}
+//-----------------------------------------------------------------------------
+void Form::updateCoefficients(AffineMap& map0, AffineMap& map1,
+                              uint facet0, uint facet1)
+{
+  // FIXME: This is a temporary solution. We need to double the size
+  // FIXME: of the coefficient arrays. When we move to UFC, the coefficients
+  // FIXME: are given as an argument so this will be simpler to solve then.
+  
+  dolfin_assert(num_functions == functions.size());
+
+  // Temporary coefficient arrays
+  real** c0 = new real* [num_functions];
+  real** c1 = new real* [num_functions];
+  for (uint i = 0; i < num_functions; i++)
+  {
+    uint n = elements[i]->spacedim();
+    c0[i] = new real[n];
+    c1[i] = new real[n];
+    for (uint j = 0; j < n; j++)
+    {
+      c0[i][j] = 0.0;
+      c1[i][j] = 0.0;
+    }
+  }
+
+  // Resize standard coefficient array
+  if ( c )
+  {
+    for (uint i = 0; i < num_functions; i++)
+      delete [] c[i];
+    delete [] c;
+  }
+  c = new real* [num_functions];
+  for (uint i = 0; i < num_functions; i++)
+  {
+    delete [] c[i];
+    uint n = elements[i]->spacedim();
+    c[i] = new real[2*n];
+    for (uint j = 0; j < 2*n; j++)
+      c[i][j] = 0.0;
+  }
+  
+  // Interpolate on cell 0
+  for (uint i = 0; i < num_functions; i++)
+  {
+    dolfin_assert(functions[i]);
+    functions[i]->interpolate(c0[i], map0, *elements[i], facet0);
+  }
+
+  // Interpolate on cell 1
+  for (uint i = 0; i < num_functions; i++)
+  {
+    dolfin_assert(functions[i]);
+    functions[i]->interpolate(c1[i], map1, *elements[i], facet1);
+  }
+
+  // Copy values to large array
+  for (uint i = 0; i < num_functions; i++)
+  {
+    uint n = elements[i]->spacedim();
+    for (uint j = 0; j < n; j++)
+    {
+      c[i][j] = c0[i][j];
+      c[i][j + n] = c1[i][j];
+    }
+  }
+  
+  // Delete temporary storage
+  for (uint i = 0; i < num_functions; i++)
+  {
+    delete [] c0[i];
+    delete [] c1[i];
+  }
+  delete [] c0;
+  delete [] c1;
 }
 //-----------------------------------------------------------------------------
 Function* Form::function(uint i)

@@ -33,12 +33,22 @@ void BilinearForm::update(AffineMap& map)
   updateLocalData();
 }
 //-----------------------------------------------------------------------------
-void BilinearForm::update(AffineMap& map0, AffineMap& map1)
+void BilinearForm::update(AffineMap& map, uint facet)
+{
+  // Update coefficients
+  updateCoefficients(map, facet);
+
+  // Update local data structures
+  updateLocalData();
+}
+//-----------------------------------------------------------------------------
+void BilinearForm::update(AffineMap& map0, AffineMap& map1,
+                          uint facet0, uint facet1)
 {
   // FIXME: Temporary fix, only implemented for BilinearForm
   
   // Update coefficients
-  updateCoefficients(map0, map1);
+  updateCoefficients(map0, map1, facet0, facet1);
 
   // Update local data structures
   updateLocalData();

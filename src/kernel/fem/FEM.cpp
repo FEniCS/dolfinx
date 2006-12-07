@@ -592,7 +592,7 @@ void FEM::assembleExteriorFacetTensor(BilinearForm& a, GenericMatrix& A,
                                       AffineMap& map, real det, uint facet)
 {
   // Update form
-  a.update(map);
+  a.update(map, facet);
   
   // Compute maps from local to global degrees of freedom
   a.test().nodemap(a.test_nodes, cell, mesh);
@@ -642,7 +642,7 @@ void FEM::assembleInteriorFacetTensor(BilinearForm& a, GenericMatrix& A,
                                       uint facet0, uint facet1, uint alignment)
 {
   // Update form
-  a.update(map0, map1);
+  a.update(map0, map1, facet0, facet1);
 
   // Initialize local data structures (FIXME: reuse)
   const uint m = a.test().spacedim();

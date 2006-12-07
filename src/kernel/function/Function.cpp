@@ -168,6 +168,25 @@ void Function::interpolate(real coefficients[], AffineMap& map,
   _facet = -1;
 }
 //-----------------------------------------------------------------------------
+void Function::interpolate(real coefficients[], AffineMap& map,
+			   FiniteElement& element, uint facet)
+{
+  // Save cell so it can be used by user-defined function
+  _cell = &map.cell();
+
+  // Save facet so it can be used by user-defined function
+  _facet = facet;
+  
+  // Delegate function call
+  f->interpolate(coefficients, map, element);
+
+  // Reset cell since it is no longer current
+  _cell = 0;
+
+  // Reset facet since it is no longer current
+  _facet = -1;
+}
+//-----------------------------------------------------------------------------
 void Function::interpolate(Function& fsource)
 {
   // Delegate function call
