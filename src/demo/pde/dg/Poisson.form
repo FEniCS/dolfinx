@@ -18,6 +18,7 @@ f = Function(element)
 
 # Not working yet, still testing out basic DG functionality
 a = v('+')*U('-')*dS
-print a
 L = v*f*dx
+
+print a
 print L

@@ -2,13 +2,15 @@
 // Licensed under the GNU GPL Version 2.
 //
 // Modified by Garth N. Wells, 2006.
-//
+// Modified by Kristian Oelgaard, 2006.
+// 
 // First added:  2006-06-05
 // Last changed: 2006-12-06
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Cell.h>
 #include <dolfin/MeshEditor.h>
+#include <dolfin/Facet.h>
 #include <dolfin/Triangle.h>
 
 using namespace dolfin;
@@ -180,7 +182,51 @@ real Triangle::diameter(const MeshEntity& triangle) const
 //-----------------------------------------------------------------------------
 real Triangle::normal(const Cell& cell, uint facet, uint i) const
 {
-  dolfin_error("Not implemented. Please fix this Kristian. ;-)");
+  // This is a trick to be allowed to initialize a facet from the cell mesh.
+  Cell& c = const_cast<Cell&>(cell);
+
+  // Create facet from the mesh and facet number.
+  Facet f(c.mesh(), facet);
+
+  // The normal vector is currently only defined for a triangle in R^2
+  if (c.mesh().geometry().dim() == 2)
+  {
+    // Get local index of the vertex NOT located on the facet.
+    // This index is equal to the local index of facet with respect to cell. 
+    const uint V0 = cell.index(f);
+    
+    // Get global index from local
+    const uint v0 = cell.entities(0)[V0];
+
+    // Get global index of vertices on the facet
+    uint v1 = f.entities(0)[0];
+    uint v2 = f.entities(0)[1];
+
+    // Get mesh geometry
+    const MeshGeometry& geometry = cell.mesh().geometry();
+
+    // Get the coordinates of the three vertices
+    const real* p0 = geometry.x(v0);
+    const real* p1 = geometry.x(v1);
+    const real* p2 = geometry.x(v2);
+
+    // Vector normal to facet
+    real n[2];
+    n[0] = (p2[1]-p1[1]);
+    n[1] = -(p2[0]-p1[0]);
+
+    // Compute length of facet
+    const real l = std::sqrt(n[0]*n[0] + n[1]*n[1]);
+
+    // Check if the computed normal is directed outward with respect to the cell
+    // and return appropriate normalised component
+    if ( (n[0]*(p0[0]-p1[0]) + n[1]*(p0[1]-p1[1])) < 0)
+      return n[i]/l;
+    else
+      return -n[i]/l;
+  }
+  else
+    dolfin_error("The normal vector is only defined when the triangle is in R^2");
   return 0.0;
 }
 //-----------------------------------------------------------------------------
