@@ -3,7 +3,7 @@ LIBS    = `pkg-config --libs dolfin`
 CXX     = `pkg-config --variable=compiler dolfin`
 
 DEST    = dolfin-dg
-OBJECTS = main.o FEM.o Tetrahedron.o
+OBJECTS = main.o
 
 all: $(DEST)
 

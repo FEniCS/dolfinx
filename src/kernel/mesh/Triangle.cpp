@@ -63,7 +63,7 @@ dolfin::uint Triangle::alignment(const Cell& cell, uint dim, uint e) const
     // Compute alignment of given edge by checking first vertex
     const uint* edge_vertices = cell.mesh().topology()(dim, 0)(cell.entities(dim)[e]);
     const uint* cell_vertices = cell.entities(0);
-    return ( edge_vertices[0] == cell_vertices[(e + 1) % 3] ? 0 : 1 );
+        return ( edge_vertices[0] == cell_vertices[(e + 1) % 3] ? 0 : 1 );
   }
   else
     dolfin_error("Unable to compute alignment for entity of dimension %d for triangle.");

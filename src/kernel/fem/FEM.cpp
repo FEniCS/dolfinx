@@ -339,11 +339,10 @@ void FEM::assembleCommon(BilinearForm* a, LinearForm* L, Functional* M,
       uint facet0 = cell0.index(*facet);
       uint facet1 = cell1.index(*facet);
 
-      // Compute alignment FIXME: Not implemented
-      uint alignment = computeAlignment();
-    
+      // Compute alignment
+      uint alignment = computeAlignment(cell0, cell1, facet->index());
+
       // FIXME: use different update function, facet number should be argument
-      
       // Update affine maps for cells
       map0.update(cell0);
       map1.update(cell1);
@@ -771,9 +770,44 @@ real FEM::computeDeterminant(MeshEntity& facet)
   return 0.0;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint FEM::computeAlignment()
+dolfin::uint FEM::computeAlignment(Cell& cell0, Cell& cell1, uint facet)
 {
-  // Not implemented
-  return 0;
+  // Create facet.
+  Facet f(cell0.mesh(), facet);
+
+  // Currently only the alignment of a line with respect to a triangle is implemented
+  if ( f.dim() != 1 )
+    dolfin_error("Alignment is currently only defined for a line");
+
+  // Get local index of facet with respect to each cell.
+  uint facet0 = cell0.index(f);
+  uint facet1 = cell1.index(f);
+
+  // Get alignment of each local facet with the local cell.
+  uint alignment0 = cell0.alignment(f.dim(), facet0);
+  uint alignment1 = cell1.alignment(f.dim(), facet1);
+
+  // In principle there are four combinations of alignments:
+  // a0 = 0 a1 = 0 ; a0 = 1 a1 = 0 ; a0 = 1 a1 = 0 ; a0 = 1 a1 = 1
+  // But only two are not the same.
+  // Return a unique alignment for the facet with respect to both cells.
+  if (alignment0 == alignment1)
+    return 0;
+  else
+    return 1;
 }
 //-----------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
