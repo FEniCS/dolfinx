@@ -73,6 +73,7 @@ int main()
   dolfin_log(true);
   // Compute solution
   Function U = pde.solve();
+//  FEM::disp(mesh, a.trial());
 
   // Save solution to file
   File file("poisson.pvd");

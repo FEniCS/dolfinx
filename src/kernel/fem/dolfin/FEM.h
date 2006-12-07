@@ -168,8 +168,8 @@ namespace dolfin
     /// Compute determinant of mapping of parametrized facet
     static real computeDeterminant(MeshEntity& facet);
 
-    /// Compute alignment (not implemented)
-    static uint computeAlignment();
+    /// Compute alignment of a facet with respect to its two cells (not implemented)
+    static uint computeAlignment(Cell& cell0, Cell& cell1, uint facet);
     
   };
 
