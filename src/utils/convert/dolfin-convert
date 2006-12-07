@@ -62,10 +62,8 @@ def main(argv):
 	# Convert to xml format
         gmsh2xml(ifilename, ofilename, 1)
     elif input_format == "xml-old" and output_format == "xml":
-        # Determine cell type
-        xml_old2xml(ifilename, ofilename, 0)
-	# Convert to xml format
-        xml_old2xml(ifilename, ofilename, 1)
+	# Convert to old to new xml format
+        xml_old2xml(ifilename, ofilename)
     else:
         error("Sorry, cannot convert between .%s and .%s file formats." % (isuffix, osuffix))
 
@@ -143,7 +141,7 @@ def mesh2xml(ifilename, ofilename):
     ifile = open(ifilename, "r")
     ofile = open(ofilename, "w")
 
-    # Scan file for cell type (assuming there is just one)
+    # Scan file for cell type
     cell_type = None
     dim = 0
     while 1:
@@ -423,31 +421,36 @@ If you didn't, gmsh exports edges as cells. \nSee http://www.geuz.org/gmsh/doc/t
     ifile.close()
     if write_output == 1: ofile.close()
 
-def xml_old2xml(ifilename, ofilename, write_output):
+def xml_old2xml(ifilename, ofilename):
     "Convert from old DOLFIN XML format to new."
 
-    if write_output == 0: print "Converting from old ( < DOLFIN 0.6.2) to new DOLFIN XML format..."
-
-    global cell_type
+    print "Converting from old (pre DOLFIN 0.6.2) to new DOLFIN XML format..."
     
-    if write_output == 0: cell_type = 0
-    
-    got_cell = 0
-    
-    # Get dimension
-    if write_output == 1:
-        if cell_type == 2:
-            dim = 2
-            celltype = "triangle"
-        elif cell_type == 4:
-            dim = 3
-            celltype = "tetrahedron"
-        else:
-            error("Cell type not recognised.")
-
     # Open files
     ifile = open(ifilename, "r")
-    if write_output == 1: ofile = open(ofilename, "w")
+    ofile = open(ofilename, "w")
+
+    # Scan file for cell type (assuming there is just one)
+    cell_type = None
+    dim = 0
+    while 1:
+
+        # Read next line
+        line = ifile.readline()
+        if not line: break
+
+        # Read dimension
+        if "<triangle" in line:
+            cell_type = "triangle"
+            dim = 2
+            break
+        elif "<tetrahedron" in line:
+            cell_type = "tetrahedron"
+            dim = 3
+            break
+
+    # Step to beginning of file
+    ifile.seek(0)
 
     # Read lines and make changes
     while 1:
@@ -456,47 +459,33 @@ def xml_old2xml(ifilename, ofilename, write_output):
         line = ifile.readline()
         if not line: break
 	
-	# Determine cell type
-	
-	if write_output == 0:
-	    if "triangle" in line:
-                cell_type = 2
-	        got_cell = 1
-            if "tetrahedron" in line:
-                cell_type = 4
-	        got_cell = 1
-	
-	if write_output == 0 and got_cell == 1: break
-	
-	if write_output == 1:
-            # Modify line
-            if "xmlns" in line:
-            	line = "<dolfin xmlns:dolfin=\"http://www.fenics.org/dolfin/\">\n"
-            if "<mesh>" in line:
-            	line = "  <mesh celltype=\"%s\" dim=\"%d\">\n" % (celltype, dim)
-            if dim == 2 and " z=\"0.0\"" in line:
-            	line = line.replace(" z=\"0.0\"", "")
-            if " name=" in line:
-            	line = line.replace(" name=", " index=")
-            if " name =" in line:
-            	line = line.replace(" name =", " index=")
-            if "n0" in line:
-            	line = line.replace("n0", "v0")
-            if "n1" in line:
-            	line = line.replace("n1", "v1")
-            if "n2" in line:
-            	line = line.replace("n2", "v2")
-            if "n3" in line:
-            	line = line.replace("n3", "v3")
-            # Write line
-            ofile.write(line)
-	    
-    if write_output == 1: ofile.write("\n")
+        # Modify line
+        if "xmlns" in line:
+            line = "<dolfin xmlns:dolfin=\"http://www.fenics.org/dolfin/\">\n"
+        if "<mesh>" in line:
+            line = "  <mesh celltype=\"%s\" dim=\"%d\">\n" % (cell_type, dim)
+        if dim == 2 and " z=\"0.0\"" in line:
+            line = line.replace(" z=\"0.0\"", "")
+        if " name=" in line:
+            line = line.replace(" name=", " index=")
+        if " name =" in line:
+            line = line.replace(" name =", " index=")
+        if "n0" in line:
+            line = line.replace("n0", "v0")
+        if "n1" in line:
+            line = line.replace("n1", "v1")
+        if "n2" in line:
+            line = line.replace("n2", "v2")
+        if "n3" in line:
+            line = line.replace("n3", "v3")
+
+        # Write line
+        ofile.write(line)
 
     # Close files
     ifile.close();
-    if write_output == 1: ofile.close();
-    if write_output == 1: print "Conversion done"
+    ofile.close();
+    print "Conversion done"
 
 # Write mesh header
 def write_header_mesh(ofile, cell_type, dim):
