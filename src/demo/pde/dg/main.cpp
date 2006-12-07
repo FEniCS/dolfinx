@@ -18,6 +18,10 @@
 //     du/dn(x, y) = 1  for x = 1
 //     du/dn(x, y) = 0  otherwise
 
+//#include "FEM.h"
+//#include "BilinearForm.h"
+//#include "LinearForm.h"
+//#include "Functional.h"
 #include <dolfin.h>
 #include "Poisson.h"
   
@@ -62,11 +66,11 @@ int main()
   Source f;
   DirichletBC bc;
   NeumannBC g;
-  UnitSquare mesh(16, 16);
+  UnitSquare mesh(1, 1);
   Poisson::BilinearForm a;
-  Poisson::LinearForm L(f, g);
+  Poisson::LinearForm L(f);
   PDE pde(a, L, mesh, bc);
-
+  dolfin_log(true);
   // Compute solution
   Function U = pde.solve();
 

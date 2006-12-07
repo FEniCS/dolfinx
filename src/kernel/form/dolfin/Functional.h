@@ -46,6 +46,11 @@ namespace dolfin
     /// Update map to current cell
     void update(AffineMap& map);
 
+  private:
+
+    // Update local data structures
+    void updateLocalData();
+
   };
 
 }

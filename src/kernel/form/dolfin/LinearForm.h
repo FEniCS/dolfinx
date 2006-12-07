@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2004-05-28
-// Last changed: 2006-12-06
+// Last changed: 2006-12-07
 
 #ifndef __LINEAR_FORM_H
 #define __LINEAR_FORM_H
@@ -58,6 +58,9 @@ namespace dolfin
     friend class FEM;
 
   protected:
+
+    // Update local data structures
+    void updateLocalData();
 
     // Finite element defining the test space
     FiniteElement* _test;
