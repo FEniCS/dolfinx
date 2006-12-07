@@ -540,21 +540,6 @@ void FEM::checkDimensions(const LinearForm& L, const Mesh& mesh)
   }
 }
 //-----------------------------------------------------------------------------
-dolfin::uint FEM::estimateNonZeros(Mesh& mesh,
-				   const FiniteElement& element)
-{
-  uint nzmax = 0;
-
-  mesh.init(0, 0);
-  
-  for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
-  {
-    nzmax = std::max(nzmax, vertex->numEntities(0)*element.spacedim());
-  }
-
-  return nzmax;
-}
-//-----------------------------------------------------------------------------
 void FEM::assembleElementTensor(BilinearForm& a, GenericMatrix& A, 
                                 const Mesh& mesh, const Cell& cell,
                                 AffineMap& map, real det, const DofMap& dofmap)
