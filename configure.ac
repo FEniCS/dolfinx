@@ -343,8 +343,8 @@ else
     PETSC_CFLAGS=""
 fi
 
-# List of DOLFIN module libraries
-DOLFIN_MODULES="elasticity elasticity-updated convdiff navierstokes plasticity poisson stokes heat"
+# List of DOLFIN solver libraries
+DOLFIN_SOLVERS="elasticity-updated navierstokes plasticity"
 
 # List of DOLFIN kernel libraries
 DOLFIN_KERNEL="common fem form function io la main math mesh mf nls ode pde quadrature parameter log"
@@ -361,16 +361,16 @@ done
 KERNEL_CFLAGS="$KERNEL_CFLAGS $EXTERNAL_CFLAGS"
 AC_SUBST(KERNEL_CFLAGS)
 
-# Generate include path for modules
-MODULE_CFLAGS="$KERNEL_CFLAGS -I\$(top_builddir)/src/modules/"
-AC_SUBST(MODULE_CFLAGS)
+# Generate include path for solvers
+SOLVER_CFLAGS="$KERNEL_CFLAGS -I\$(top_builddir)/src/modules/solvers"
+AC_SUBST(SOLVER_CFLAGS)
 
 # Generate include path for main (including also module code)
 MAIN_CFLAGS=""
-for f in $DOLFIN_MODULES; do
-    MAIN_CFLAGS="$MAIN_CFLAGS -I\$(top_builddir)/src/modules/$f "
+for f in $DOLFIN_SOLVERS; do
+    MAIN_CFLAGS="$MAIN_CFLAGS -I\$(top_builddir)/src/modules/solvers/$f "
 done
-DOLFIN_CFLAGS="$KERNEL_CFLAGS $MAIN_CFLAGS $MODULE_CFLAGS"
+DOLFIN_CFLAGS="$KERNEL_CFLAGS $MAIN_CFLAGS $SOLVER_CFLAGS"
 AC_SUBST(DOLFIN_CFLAGS)
 
 # Extract compiler definitions
@@ -391,10 +391,10 @@ DOLFIN_LIBS="-ldolfin"
 DOLFIN_LIBS="$DOLFIN_LIBS $DOLFIN_EXT_LIBS"
 AC_SUBST(DOLFIN_LIBS)
 
-# Generate libtool library list (including also module code)
+# Generate libtool library list (including also solver code)
 DOLFIN_LTLIBOBJS=""
-for f in $DOLFIN_MODULES; do
-    DOLFIN_LTLIBOBJS="$DOLFIN_LTLIBOBJS \$(top_builddir)/src/modules/$f/*.lo "
+for f in $DOLFIN_SOLVERS; do
+    DOLFIN_LTLIBOBJS="$DOLFIN_LTLIBOBJS \$(top_builddir)/src/modules/solvers/$f/*.lo "
 done
 for f in $DOLFIN_KERNEL; do
     DOLFIN_LTLIBOBJS="$DOLFIN_LTLIBOBJS \$(top_builddir)/src/kernel/$f/*.lo "
@@ -454,23 +454,14 @@ AC_OUTPUT( Makefile \
            src/kernel/log/Makefile \
            src/kernel/log/dolfin/Makefile \
            src/modules/Makefile \
-           src/modules/dolfin/Makefile \
-           src/modules/convdiff/Makefile \
-           src/modules/convdiff/dolfin/Makefile \
-           src/modules/elasticity/Makefile \
-           src/modules/elasticity/dolfin/Makefile \
-           src/modules/elasticity-updated/Makefile \
-           src/modules/elasticity-updated/dolfin/Makefile \
-           src/modules/navierstokes/Makefile \
-           src/modules/navierstokes/dolfin/Makefile \
-           src/modules/plasticity/Makefile \
-           src/modules/plasticity/dolfin/Makefile \
-           src/modules/poisson/Makefile \
-           src/modules/poisson/dolfin/Makefile \
-           src/modules/heat/Makefile \
-           src/modules/heat/dolfin/Makefile \
-           src/modules/stokes/Makefile \
-           src/modules/stokes/dolfin/Makefile \
+           src/modules/solvers/Makefile \
+           src/modules/solvers/dolfin/Makefile \
+           src/modules/solvers/elasticity-updated/Makefile \
+           src/modules/solvers/elasticity-updated/dolfin/Makefile \
+           src/modules/solvers/navierstokes/Makefile \
+           src/modules/solvers/navierstokes/dolfin/Makefile \
+           src/modules/solvers/plasticity/Makefile \
+           src/modules/solvers/plasticity/dolfin/Makefile \
            src/lib/Makefile \
            src/pydolfin/Makefile \
            src/demo/Makefile \
