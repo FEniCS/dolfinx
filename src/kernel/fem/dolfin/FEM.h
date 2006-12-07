@@ -113,9 +113,6 @@ namespace dolfin
     /// Check that dimension of the mesh matches the form
     static void checkDimensions(const LinearForm& L, const Mesh& mesh);
 
-    /// Estimate the maximum number of nonzeros in each row
-    static uint estimateNonZeros(Mesh& mesh, const FiniteElement& element);
-
     /// Assemble element tensor for a bilinear form
     static void assembleElementTensor(BilinearForm& a, GenericMatrix& A, 
                                       const Mesh& mesh, const Cell& cell, 
