@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2004-05-28
-// Last changed: 2006-12-05
+// Last changed: 2006-12-07
 
 #include <dolfin/FiniteElement.h>
 #include <dolfin/BilinearForm.h>
@@ -29,19 +29,8 @@ void BilinearForm::update(AffineMap& map)
   // Update coefficients
   updateCoefficients(map);
 
-  // Initialize block
-  const uint m = _test->spacedim();
-  const uint n = _trial->spacedim();
-  if ( !block )
-    block = new real[m*n];
-  for (uint i = 0; i < m*n; i++)
-    block[i] = 0.0;
-
-  // Initialize nodes
-  if ( !test_nodes )
-    test_nodes = new int[_test->spacedim()];
-  if ( !trial_nodes )
-    trial_nodes = new int[_trial->spacedim()];
+  // Update local data structures
+  updateLocalData();
 }
 //-----------------------------------------------------------------------------
 void BilinearForm::update(AffineMap& map0, AffineMap& map1)
@@ -51,19 +40,8 @@ void BilinearForm::update(AffineMap& map0, AffineMap& map1)
   // Update coefficients
   updateCoefficients(map0, map1);
 
-  // Initialize block
-  const uint m = _test->spacedim();
-  const uint n = _trial->spacedim();
-  if ( !block )
-    block = new real[m*n];
-  for (uint i = 0; i < m*n; i++)
-    block[i] = 0.0;
-
-  // Initialize nodes
-  if ( !test_nodes )
-    test_nodes = new int[_test->spacedim()];
-  if ( !trial_nodes )
-    trial_nodes = new int[_trial->spacedim()];
+  // Update local data structures
+  updateLocalData();
 }
 //-----------------------------------------------------------------------------
 FiniteElement& BilinearForm::test()
@@ -88,5 +66,22 @@ const FiniteElement& BilinearForm::trial() const
 {
   dolfin_assert(_trial); // Should be created by child class
   return *_trial;
+}
+//-----------------------------------------------------------------------------
+void BilinearForm::updateLocalData()
+{
+  // Initialize block
+  const uint m = _test->spacedim();
+  const uint n = _trial->spacedim();
+  if ( !block )
+    block = new real[m*n];
+  for (uint i = 0; i < m*n; i++)
+    block[i] = 0.0;
+
+  // Initialize nodes
+  if ( !test_nodes )
+    test_nodes = new int[_test->spacedim()];
+  if ( !trial_nodes )
+    trial_nodes = new int[_trial->spacedim()];
 }
 //-----------------------------------------------------------------------------

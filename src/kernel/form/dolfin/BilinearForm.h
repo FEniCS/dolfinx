@@ -73,6 +73,9 @@ namespace dolfin
 
   protected:
 
+    // Update local data structures
+    void updateLocalData();
+
     // Finite element defining the test space
     FiniteElement* _test;
 

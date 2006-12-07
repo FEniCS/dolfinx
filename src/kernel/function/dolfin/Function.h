@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells 2005.
 //
 // First added:  2003-11-28
-// Last changed: 2006-05-07
+// Last changed: 2006-12-07
 
 #ifndef __FUNCTION_H
 #define __FUNCTION_H
@@ -122,9 +122,12 @@ namespace dolfin
     /// Return current cell (can be called by user-defined function during assembly)
     Cell& cell();
 
+    /// Return current facet (can be called by user-defined function during assembly on facets)
+    uint facet();
+
   private:
     
-    // Pointer to current implementation (letter base class)L = v*f*dx
+    // Pointer to current implementation (letter base class)
 
     GenericFunction* f;
 
@@ -133,6 +136,9 @@ namespace dolfin
 
     // Pointer to current cell
     Cell* _cell;
+
+    // Current facet
+    int _facet;
 
   };
 
