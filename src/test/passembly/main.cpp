@@ -226,7 +226,7 @@ int main(int argc, char* argv[])
         pos[i++] = new_map[ vertex->index() ];
 
       // Evaluate element matrix and vector
-      a.eval(A_block, map);
+      a.eval(A_block, map, map.det);
 //      L.eval(b_block, map);
 
       // Add values
