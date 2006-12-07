@@ -57,7 +57,7 @@ def main(argv):
         # Convert from mesh to xml format
         mesh2xml(ifilename, ofilename)
     elif input_format == "gmsh" and output_format == "xml":
-        # Convert to xml format
+        # Convert from gmsh to xml format
         gmsh2xml(ifilename, ofilename)
     elif input_format == "xml-old" and output_format == "xml":
         # Convert from old to new xml format
