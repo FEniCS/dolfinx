@@ -1,8 +1,10 @@
 from dolfin import *
 
 class NSPDE(TimeDependentPDE):
-    def __init__(self, mesh, f, nuval, d1val, d2val, bc, T):
+    def __init__(self, mesh, f, nuval, d1val, d2val, vbc, pbc, T):
         
+        self.pbc = pbc
+
         self.U = Function(Vector(), mesh)
         self.P = Function(Vector(), mesh)
 
@@ -31,7 +33,7 @@ class NSPDE(TimeDependentPDE):
         self.N = self.U.vector().size()
 
         TimeDependentPDE.__init__(self, self.ans, self.Lns, mesh,
-                                  bc, self.N, T)
+                                  vbc, self.N, T)
 
         self.U.attach(self.x)
 
@@ -61,8 +63,11 @@ class NSPDE(TimeDependentPDE):
         #print "step"
 
     def save(self, U, t):
-        print "save x: "
+        print "t: ", t
+        print "x: "
         self.x.disp()
+        print "p: "
+        self.P.vector().disp()
 
         if(t == 0.0):
             self.solutionfile << U
@@ -96,9 +101,11 @@ class NSPDE(TimeDependentPDE):
         dolfin_log(False)
         FEM_assemble(self.ap, self.Ap, self.mesh())
         FEM_assemble(self.Lp, self.bp, self.mesh())
+        FEM_applyBC(self.Ap, self.mesh(), self.P.element(), self.pbc)
+        FEM_applyBC(self.bp, self.mesh(), self.P.element(), self.pbc)
         dolfin_log(True)
 
-        #self.linsolver.solve(self.AP, self.P.vector(), self.bP)
+        self.linsolver.solve(self.Ap, self.P.vector(), self.bp)
 
         # U
 
