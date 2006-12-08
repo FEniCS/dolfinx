@@ -18,5 +18,6 @@ P = TrialFunction(K2)
 U = Function(K1)
 d1 = Function(K3)
 
-a = (mult(1.0e-2, mult(d1, dot(P, q))) + mult(d1, dot(grad(P), grad(q)))) * dx
-L = dot(div(U), q) * dx
+#a = (mult(1.0e-2, mult(d1, dot(P, q))) + mult(d1, dot(grad(P), grad(q)))) * dx
+a = (mult(d1, dot(grad(P), grad(q)))) * dx
+L = -dot(div(U), q) * dx
