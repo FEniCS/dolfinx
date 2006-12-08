@@ -5,7 +5,7 @@ nobase_include_HEADERS   = dolfin.h \
                            dolfin/init.h 
 #                  dolfin/Problem.h \
 #                  dolfin/Solver.h
-INCLUDES                 = @KERNEL_CFLAGS@ @SOLVER_CFLAGS@
+INCLUDES                 = @KERNEL_CFLAGS@ @MODULE_CFLAGS@
 lib_LTLIBRARIES            = libdolfin-main.la
 libdolfin_main_la_SOURCES = dolfin.h \
                            init.cpp 
