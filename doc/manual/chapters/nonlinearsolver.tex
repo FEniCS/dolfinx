@@ -21,6 +21,7 @@ Jacobian matrix  $J = \partial F / \partial u$. The precise form of the user
 defined class will depend on the problem being solved.
 The structure of a user defined class \texttt{MyNonlinearFunction} is shown below.
 %
+\small
 \begin{code}
 class MyNonlinearFunction : public NonlinearFunction
 {
@@ -40,6 +41,7 @@ private:
  // Functions and pointers to objects with which F(u) is defined
 };
 \end{code}
+\normalsize
 %
 The above class computes the function $F(u)$ and its Jacobian $J$
 concurrently. In the future, it will be possible to compute 
@@ -109,12 +111,13 @@ criterion for convergence, the `residual' is defined as
 %
 Computation of the incremental residual can be set by
 %
+\small
 \begin{code}
 NewtonSolver newton_solver;
 newton_solver.set("Newton convergence criterion", "incremental");
 \end{code}
+\normalsize
 %
-
 
 \subsection{Linear solver}
 The solution to the nonlinear problems is returned in the vector~\texttt{x}.
@@ -153,6 +156,7 @@ finite element problem, the below code assembles the function $F(u)$
 and its Jacobian, and applied Dirichlet boundary conditions in the
 appropriate manner.
 %
+\small
 \begin{code}
 class MyNonlinearFunction : public NonlinearFunction
 {
@@ -175,6 +179,7 @@ private:
   // Functions and pointers to objects with which F(u) is defined
 };
 \end{code}
+\normalsize
 
 \section{Incremental Newton solver}
 %
