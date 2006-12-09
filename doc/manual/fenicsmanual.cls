@@ -86,6 +86,7 @@
 
 \newcommand{\fenics}{\textbf{\textsf{\normalsize{FE}\Large{ni}\normalsize{CS}}}}
 \newcommand{\dolfin}{\textbf{\textsf{DOLFIN}}}
+\newcommand{\pydolfin}{\textbf{\textsf{PyDOLFIN}}}
 \newcommand{\ffc}{\textbf{\textsf{FFC}}}
 \newcommand{\fiat}{\textbf{\textsf{FIAT}}}
 \newcommand{\fixme}[1]{\ \\ \begin{tabular}{||p{\textwidth}||}\hline\rm\textbf{FIXME:}\rm #1 \\ \hline\end{tabular} \\}
