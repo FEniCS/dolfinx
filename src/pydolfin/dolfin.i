@@ -178,7 +178,7 @@ def set(name, val):
 %include "dolfin/BilinearForm.h"
 %include "dolfin/LinearForm.h"
 
-// mesh includes
+// DOLFIN mesh interface
 
 %include "dolfin_mesh.i"
 
@@ -190,16 +190,9 @@ def set(name, val):
 
 %include "dolfin/TimeDependentPDE.h"
 
-// fem includes 
+// DOLFIN FEM interface
 
-%include "dolfin/FiniteElementSpec.h"
-%include "dolfin/FiniteElement.h"
-%include "dolfin/AffineMap.h"
-%include "dolfin/BoundaryValue.h"
-%include "dolfin/BoundaryCondition.h"
-%include "dolfin/FEM.h"
-
-%template(lump) dolfin::FEM::lump<Matrix, Vector>;
+%include "dolfin_fem.i"
 
 // glue 
 

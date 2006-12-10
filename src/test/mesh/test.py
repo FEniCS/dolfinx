@@ -110,7 +110,7 @@ class MeshFunctions(unittest.TestCase):
 
     def testAssign(self):
         mesh = UnitSquare(3, 3)
-        f = MeshFunction(int)
+        f = MeshFunction('int')
         f.init(mesh, 0)
         f.set(3, 10)
         v = Vertex(mesh, 3)
@@ -146,7 +146,7 @@ class InputOutput(unittest.TestCase):
     def testMeshFunction(self):
         """Write and read mesh function to/from file"""
         mesh = UnitSquare(1, 1)
-        f = MeshFunction(int)
+        f = MeshFunction('int')
         f.init(mesh, 0)
         f.set(0, 2)
         f.set(1, 4)
@@ -154,7 +154,7 @@ class InputOutput(unittest.TestCase):
         f.set(3, 8)
         file = File("meshfunction.xml")
         file << f
-        g = MeshFunction(int)
+        g = MeshFunction('int')
         g.init(mesh, 0)
         file >> g
         for v in vertices(mesh):
