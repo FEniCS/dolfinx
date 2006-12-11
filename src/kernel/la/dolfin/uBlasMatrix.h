@@ -49,9 +49,9 @@ namespace dolfin
     uBlasMatrix();
     
     /// Constructor
-    uBlasMatrix(const uint M, const uint N);
+    uBlasMatrix(uint M, uint N);
 
-    /// Constructor from a uBlas matrix_expression
+   /// Constructor from a uBlas matrix_expression
     template <class E>
     uBlasMatrix(const ublas::matrix_expression<E>& A) : Mat(A) {}
 
@@ -109,10 +109,10 @@ namespace dolfin
     void init(uint M, uint N);
 
     /// Initialize M x N matrix with given maximum number of nonzeros in each row
-    void init(const uint M, const uint N, const uint nzmax);
+    void init(uint M, uint N, uint nzmax);
 
     /// Initialize M x N matrix with given number of nonzeros per row
-    void init(const uint M, const uint N, const int nz[]);
+    void init(uint M, uint N, const int nz[]);
 
     /// Set block of values. The function apply() must be called to commit changes.
     void set(const real block[], const int rows[], int m, 
@@ -147,7 +147,7 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <class Mat> 
-  uBlasMatrix<Mat>::uBlasMatrix(const uint M, const uint N) : assembled(true)
+  uBlasMatrix<Mat>::uBlasMatrix(uint M, uint N) : assembled(true)
   { 
     init(M,N); 
   }
@@ -304,7 +304,7 @@ namespace dolfin
   // Specialised member functions (must be inlined to avoid link errors)
   //-----------------------------------------------------------------------------
   template <> 
-  inline void uBlasMatrix< ublas_dense_matrix >::init(const uint M, const uint N)
+  inline void uBlasMatrix< ublas_dense_matrix >::init(uint M, uint N)
   {
     // Resize matrix
     if( size(0) != M || size(1) != N )
@@ -312,7 +312,7 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <class Mat> 
-  inline void uBlasMatrix<Mat>::init(const uint M, const uint N)
+  inline void uBlasMatrix<Mat>::init(uint M, uint N)
   {
     // Resize matrix
     if( size(0) != M || size(1) != N )
@@ -324,14 +324,14 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <> 
-  inline void uBlasMatrix<ublas_dense_matrix>::init(const uint M, const uint N, 
-                                                    const uint nzmax)
+  inline void uBlasMatrix<ublas_dense_matrix>::init(uint M, uint N, 
+                                                    uint nzmax)
   {
     init(M, N);
   }
   //---------------------------------------------------------------------------
   template <class Mat> 
-  inline void uBlasMatrix<Mat>::init(const uint M, const uint N, const uint nzmax)
+  inline void uBlasMatrix<Mat>::init(uint M, uint N, uint nzmax)
   {
     init(M, N);
 
@@ -341,22 +341,17 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <> 
-  inline void uBlasMatrix<ublas_dense_matrix>::init(const uint M, const uint N, 
+  inline void uBlasMatrix<ublas_dense_matrix>::init(uint M, uint N, 
                                                     const int nz[])
   {
     init(M, N);
   }
   //---------------------------------------------------------------------------
   template <class Mat> 
-  inline void uBlasMatrix<Mat>::init(const uint M, const uint N, const int nz[])
+  inline void uBlasMatrix<Mat>::init(uint M, uint N, const int nz[])
   {
+    //FIXME: allocate storage. Could also use sparsity pattern to improve assembly.
     init(M, N);
-
-    // FIXME: Can set up fast assmebly into CSR matrix with sparsity pattern
-
-    // Reserve space for non-zeroes
-//    const uint total_nz = nzmax*size(0);
-//    this->reserve(total_nz);
   }
   //---------------------------------------------------------------------------
   template <>  
