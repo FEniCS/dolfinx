@@ -5,7 +5,7 @@
 // Modified by Andy R. Terrel 2005.
 //
 // First added:  2004
-// Last changed: 2006-08-14
+// Last changed: 2006-12-11
 
 #ifdef HAVE_PETSC_H
 
@@ -21,16 +21,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-PETScMatrix::PETScMatrix()
-  : GenericMatrix(),
-    Variable("A", "a sparse matrix"),
-    A(0), _type(default_matrix)
-{
-  // Initialize PETSc
-  PETScManager::init();
-}
-//-----------------------------------------------------------------------------
-PETScMatrix::PETScMatrix(Type type)
+PETScMatrix::PETScMatrix(const Type type)
   : GenericMatrix(), 
     Variable("A", "a sparse matrix"),
     A(0), _type(type)
@@ -54,7 +45,7 @@ PETScMatrix::PETScMatrix(Mat A)
   _type = default_matrix;
 }
 //-----------------------------------------------------------------------------
-PETScMatrix::PETScMatrix(uint M, uint N)
+PETScMatrix::PETScMatrix(const uint M, const uint N)
   : GenericMatrix(), 
     Variable("A", "a sparse matrix"),
     A(0), _type(default_matrix)
@@ -66,7 +57,7 @@ PETScMatrix::PETScMatrix(uint M, uint N)
   init(M, N);
 }
 //-----------------------------------------------------------------------------
-PETScMatrix::PETScMatrix(uint M, uint N, Type type)
+PETScMatrix::PETScMatrix(const uint M, const uint N, const Type type)
   : GenericMatrix(), 
     Variable("A", "a sparse matrix"),
     A(0),  _type(type)
@@ -99,7 +90,7 @@ PETScMatrix::~PETScMatrix()
   if ( A ) MatDestroy(A);
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::init(uint M, uint N)
+void PETScMatrix::init(const uint M, const uint N)
 {
   // Free previously allocated memory if necessary
   if ( A )
@@ -119,7 +110,7 @@ void PETScMatrix::init(uint M, uint N)
   MatSetOption(A, MAT_KEEP_ZEROED_ROWS);
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::init(uint M, uint N, uint nz)
+void PETScMatrix::init(const uint M, const uint N, const uint nz)
 {
   // Free previously allocated memory if necessary
   if ( A )
@@ -139,7 +130,7 @@ void PETScMatrix::init(uint M, uint N, uint nz)
   MatSetOption(A, MAT_KEEP_ZEROED_ROWS);
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::init(uint M, uint N, const int nz[])
+void PETScMatrix::init(const uint M, const uint N, const int nz[])
 {
   // Free previously allocated memory if necessary
   if ( A )
@@ -159,7 +150,7 @@ void PETScMatrix::init(uint M, uint N, const int nz[])
   MatSetOption(A, MAT_KEEP_ZEROED_ROWS);
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::init(uint M, uint N, uint bs, uint nz)
+void PETScMatrix::init(const uint M, const uint N, const uint bs, const uint nz)
 {
   // Free previously allocated memory if necessary
   if ( A )
@@ -177,7 +168,7 @@ void PETScMatrix::init(uint M, uint N, uint bs, uint nz)
   MatSetOption(A, MAT_KEEP_ZEROED_ROWS);
 }
 //-----------------------------------------------------------------------------
-dolfin::uint PETScMatrix::size(uint dim) const
+dolfin::uint PETScMatrix::size(const uint dim) const
 {
   int M = 0;
   int N = 0;
@@ -185,7 +176,7 @@ dolfin::uint PETScMatrix::size(uint dim) const
   return (dim == 0 ? M : N);
 }
 //-----------------------------------------------------------------------------
-dolfin::uint PETScMatrix::nz(uint row) const
+dolfin::uint PETScMatrix::nz(const uint row) const
 {
   // FIXME: this can probably be done better
   int ncols = 0;
@@ -217,7 +208,7 @@ dolfin::uint PETScMatrix::nzmax() const
   return max;
 }
 //-----------------------------------------------------------------------------
-real PETScMatrix::get(uint i, uint j) const
+real PETScMatrix::get(const uint i, const uint j) const
 {
   const int ii = static_cast<int>(i);
   const int jj = static_cast<int>(j);
@@ -229,7 +220,7 @@ real PETScMatrix::get(uint i, uint j) const
   return val;
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::set(uint i, uint j, real value)
+void PETScMatrix::set(const uint i, const uint j, const real value)
 {
   const int ii = static_cast<int>(i);
   const int jj = static_cast<int>(j);
@@ -240,7 +231,7 @@ void PETScMatrix::set(uint i, uint j, real value)
   MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::add(uint i, uint j, const real value)
+void PETScMatrix::add(const uint i, const uint j, const real value)
 {
   MatSetValue(A, i, j, value, ADD_VALUES);
 
@@ -249,15 +240,15 @@ void PETScMatrix::add(uint i, uint j, const real value)
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::set(const real block[],
-		      const int rows[], int m,
-		      const int cols[], int n)
+		      const int rows[], const int m,
+		      const int cols[], const int n)
 {
   MatSetValues(A, m, rows, n, cols, block, INSERT_VALUES);
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::add(const real block[],
-                      const int rows[], int m,
-                      const int cols[], int n)
+                      const int rows[], const int m,
+                      const int cols[], const int n)
 {
   MatSetValues(A, m, rows, n, cols, block, ADD_VALUES);
 }
@@ -276,7 +267,7 @@ void PETScMatrix::getRow(const uint i, int& ncols, Array<int>& columns,
   MatRestoreRow(A, i, &ncols, &cols, &vals);
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::ident(const int rows[], int m)
+void PETScMatrix::ident(const int rows[], const int m)
 {
   IS is = 0;
   ISCreateGeneral(PETSC_COMM_SELF, m, rows, &is);
@@ -290,7 +281,7 @@ void PETScMatrix::mult(const PETScVector& x, PETScVector& Ax) const
   MatMult(A, x.vec(), Ax.vec());
 }
 //-----------------------------------------------------------------------------
-real PETScMatrix::mult(const PETScVector& x, uint row) const
+real PETScMatrix::mult(const PETScVector& x, const uint row) const
 {
   // FIXME: Temporary fix (assumes uniprocessor case)
 
@@ -311,7 +302,7 @@ real PETScMatrix::mult(const PETScVector& x, uint row) const
   return sum;
 }
 //-----------------------------------------------------------------------------
-real PETScMatrix::mult(const real x[], uint row) const
+real PETScMatrix::mult(const real x[], const uint row) const
 {
   // FIXME: Temporary fix (assumes uniprocessor case)
 
@@ -337,7 +328,7 @@ void PETScMatrix::lump(PETScVector& m) const
   mult(one, m);   
 }
 //-----------------------------------------------------------------------------
-real PETScMatrix::norm(Norm type) const
+real PETScMatrix::norm(const Norm type) const
 {
   real value = 0.0;
 
@@ -380,7 +371,7 @@ Mat PETScMatrix::mat() const
   return A;
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::disp(bool sparse, int precision) const
+void PETScMatrix::disp(const bool sparse, const int precision) const
 {
   // FIXME: Maybe this could be an option?
   //MatView(A, PETSC_VIEWER_STDOUT_SELF);
@@ -444,14 +435,14 @@ LogStream& dolfin::operator<< (LogStream& stream, const PETScMatrix& A)
   return stream;
 }
 //-----------------------------------------------------------------------------
-PETScMatrixElement PETScMatrix::operator()(uint i, uint j)
+PETScMatrixElement PETScMatrix::operator()(const uint i, const uint j)
 {
   PETScMatrixElement element(i, j, *this);
 
   return element;
 }
 //-----------------------------------------------------------------------------
-real PETScMatrix::operator() (uint i, uint j) const
+real PETScMatrix::operator() (const uint i, const uint j) const
 {
   return get(i, j);
 }
@@ -509,7 +500,7 @@ MatType PETScMatrix::getPETScType() const
 //-----------------------------------------------------------------------------
 // PETScMatrixElement
 //-----------------------------------------------------------------------------
-PETScMatrixElement::PETScMatrixElement(uint i, uint j, 
+PETScMatrixElement::PETScMatrixElement(const uint i, const uint j, 
       PETScMatrix& A) : i(i), j(j), A(A)
 {
   // Do nothing
