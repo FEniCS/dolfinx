@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2004-05-28
-// Last changed: 2006-12-07
+// Last changed: 2006-12-12
 
 #include <dolfin/FiniteElement.h>
 #include <dolfin/BilinearForm.h>
@@ -22,36 +22,6 @@ BilinearForm::~BilinearForm()
   if ( _trial ) delete _trial;
   if ( test_nodes ) delete [] test_nodes;
   if ( trial_nodes ) delete [] trial_nodes;
-}
-//-----------------------------------------------------------------------------
-void BilinearForm::update(AffineMap& map)
-{
-  // Update coefficients
-  updateCoefficients(map);
-
-  // Update local data structures
-  updateLocalData();
-}
-//-----------------------------------------------------------------------------
-void BilinearForm::update(AffineMap& map, uint facet)
-{
-  // Update coefficients
-  updateCoefficients(map, facet);
-
-  // Update local data structures
-  updateLocalData();
-}
-//-----------------------------------------------------------------------------
-void BilinearForm::update(AffineMap& map0, AffineMap& map1,
-                          uint facet0, uint facet1)
-{
-  // FIXME: Temporary fix, only implemented for BilinearForm
-  
-  // Update coefficients
-  updateCoefficients(map0, map1, facet0, facet1);
-
-  // Update local data structures
-  updateLocalData();
 }
 //-----------------------------------------------------------------------------
 FiniteElement& BilinearForm::test()

@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2004-10-21
-// Last changed: 2006-09-19
+// Last changed: 2006-12-12
 
 #include <iostream>
 #include <dolfin/dolfin_log.h>
@@ -76,6 +76,34 @@ void Form::initFunction(uint i, Function& f, FiniteElement* element)
   c[i] = new real[element->spacedim()];
   for (uint j = 0; j < element->spacedim(); j++)
     c[i][j] = 0.0;
+}
+//-----------------------------------------------------------------------------
+void Form::update(AffineMap& map)
+{
+  // Update coefficients
+  updateCoefficients(map);
+
+  // Update local data structures
+  updateLocalData();
+}
+//-----------------------------------------------------------------------------
+void Form::update(AffineMap& map, uint facet)
+{
+  // Update coefficients
+  updateCoefficients(map, facet);
+
+  // Update local data structures
+  updateLocalData();
+}
+//-----------------------------------------------------------------------------
+void Form::update(AffineMap& map0, AffineMap& map1,
+                  uint facet0, uint facet1)
+{
+  // Update coefficients
+  updateCoefficients(map0, map1, facet0, facet1);
+
+  // Update local data structures
+  updateLocalData();
 }
 //-----------------------------------------------------------------------------
 void Form::updateCoefficients(AffineMap& map)

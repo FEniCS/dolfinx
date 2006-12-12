@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-09-18
-// Last changed: 2006-12-06
+// Last changed: 2006-12-12
 
 #ifndef __FUNCTIONAL_H
 #define __FUNCTIONAL_H
@@ -43,11 +43,13 @@ namespace dolfin
     /// Check if there is a contribution from the interior boundary
     virtual bool interior_boundary_contribution() const = 0;
 
-    /// Update map to current cell
-    void update(AffineMap& map);
+    /// Compute exterior facet tensor
+    virtual void eval(real block[],
+                      const AffineMap& map0, const AffineMap& map1, real det,
+                      uint facet0, uint facet1, uint alignment) const = 0;
 
-  private:
-
+  protected:
+    
     // Update local data structures
     void updateLocalData();
 

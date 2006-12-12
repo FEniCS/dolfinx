@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2004-05-28
-// Last changed: 2006-12-07
+// Last changed: 2006-12-12
 
 #include <dolfin/LinearForm.h>
 
@@ -19,15 +19,6 @@ LinearForm::~LinearForm()
 {
   if ( _test ) delete _test;
   if ( test_nodes ) delete [] test_nodes;
-}
-//-----------------------------------------------------------------------------
-void LinearForm::update(AffineMap& map)
-{
-  // Update coefficients
-  updateCoefficients(map);
-
-  // Update local data structures
-  updateLocalData();
 }
 //-----------------------------------------------------------------------------
 FiniteElement& LinearForm::test()

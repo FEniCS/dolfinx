@@ -688,14 +688,51 @@ void FEM::assembleInteriorFacetTensor(LinearForm& L, GenericVector& b,
                                       AffineMap& map0, AffineMap& map1, real det,
                                       uint facet0, uint facet1, uint alignment)
 {
-  dolfin_error("Not implemented.");
+  // Update form
+  L.update(map0, map1, facet0, facet1);
+
+  // Initialize local data structures (FIXME: reuse)
+  const uint m = L.test().spacedim();
+  real* block = new real[2*m];
+  int* test_nodes = new int[2*m];
+  
+  // Compute dof map for cell 0 (+ side)
+  L.test().nodemap(L.test_nodes, cell0, mesh);
+
+  // Copy dofs to common array
+  for (uint i = 0; i < m; i++)
+    test_nodes[i] = L.test_nodes[i];
+
+  // Compute dof map for cell 1 (- side)
+  L.test().nodemap(L.test_nodes, cell1, mesh);
+
+  // Copy dofs to common array
+  for (uint i = 0; i < m; i++)
+    test_nodes[m+i] = L.test_nodes[i];
+
+  // Compute interior facet tensor
+  L.eval(block, map0, map1, det, facet0, facet1, alignment);
+
+  // Add exterior facet tensor to global tensor
+  b.add(block, test_nodes, 2*m);
+
+  // Delete local data structures
+  delete block;
+  delete test_nodes;
 }
 //-----------------------------------------------------------------------------
 void FEM::assembleInteriorFacetTensor(Functional& M, real& val,
                                       AffineMap& map0, AffineMap& map1, real det,
                                       uint facet0, uint facet1, uint alignment)
 {
-  dolfin_error("Not implemented.");
+  // Update form
+  M.update(map0, map1, facet0, facet1);
+  
+  // Compute interior facet tensor
+  M.eval(M.block, map0, map1, det, facet0, facet1, alignment);
+
+  // Add exterior facet tensor to global tensor
+  val += M.block[0];
 }
 //-----------------------------------------------------------------------------
 void FEM::initConnectivity(Mesh& mesh)
@@ -797,17 +834,3 @@ dolfin::uint FEM::computeAlignment(Cell& cell0, Cell& cell1, uint facet)
     return 1;
 }
 //-----------------------------------------------------------------------------
-
-
-
-
-
-
-
-
-
-
-
-
-
-
