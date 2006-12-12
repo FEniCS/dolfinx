@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2006.
 //
 // First added:  2005-11-26
-// Last changed: 2006-10-19
+// Last changed: 2006-12-12
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Point.h>
@@ -183,18 +183,18 @@ void DiscreteFunction::copy(const DiscreteFunction& f)
   _element = f._element;
 }
 //-----------------------------------------------------------------------------
-void DiscreteFunction::interpolate(real coefficients[], AffineMap& map,
-				   FiniteElement& element)
+void DiscreteFunction::interpolate(real coefficients[], Cell& cell,
+                                   AffineMap& map, FiniteElement& element)
 {
   // Save mesh and element (overwriting any previously attached values)
-  _mesh = &map.cell().mesh();
+  _mesh = &cell.mesh();
   _element = &element;
   
   // Initialize local data (if not already initialized correctly)
   local.init(*_element);
   
   // Compute mapping to global degrees of freedom
-  _element->nodemap(local.dofs, map.cell(), *_mesh);
+  _element->nodemap(local.dofs, cell, *_mesh);
 
   // Compute positions in global vector by adding offsets
   for (uint i = 0; i < _element->spacedim(); i++)
@@ -222,7 +222,7 @@ void DiscreteFunction::interpolate(Function& fsource)
     // Use DOLFIN's interpolation
 
     map.update(cell);
-    fsource.interpolate(coefficients, map, e);
+    fsource.interpolate(coefficients, cell, map, e);
     e.nodemap(nodes, cell, m);
 
     for(unsigned int i = 0; i < e.spacedim(); i++)

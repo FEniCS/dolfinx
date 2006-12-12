@@ -11,6 +11,7 @@
 
 #include <dolfin/constants.h>
 #include <dolfin/Point.h>
+#include <dolfin/Cell.h>
 
 namespace dolfin
 {
@@ -44,9 +45,6 @@ namespace dolfin
     /// Map given point from the reference element (3D)
     Point operator() (real X, real Y, real Z) const;
 
-    /// Return cell of current element
-    inline Cell& cell() const { return *_cell; }
-    
     // Determinant of Jacobian of map
     real det;
 
@@ -66,9 +64,6 @@ namespace dolfin
 
     // Vertices of current cell
     Point p0, p1, p2, p3;
-
-    // Current cell
-    Cell* _cell;
 
   };
 

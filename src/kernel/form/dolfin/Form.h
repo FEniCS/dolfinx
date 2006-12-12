@@ -28,13 +28,13 @@ namespace dolfin
     virtual ~Form();
 
     /// Update map to current cell
-    void update(AffineMap& map);
+    void update(Cell& cell, AffineMap& map);
 
     /// Update form to current cell for exterior facet
-    void update(AffineMap& map, uint facet);
+    void update(Cell& cell, AffineMap& map, uint facet);
 
     /// Update map to current pair of cells for interior facet
-    void update(AffineMap& map0, AffineMap& map1, uint facet0, uint facet1);
+    void update(Cell& cell0, Cell& cell1, AffineMap& map0, AffineMap& map1, uint facet0, uint facet1);
 
     Function* function(uint i);
     FiniteElement* element(uint i);
@@ -54,13 +54,13 @@ namespace dolfin
     void initFunction(uint i, Function& f, FiniteElement* element);
 
     // Update coefficients
-    void updateCoefficients(AffineMap& map);
+    void updateCoefficients(Cell& cell, AffineMap& map);
 
     // Update coefficients
-    void updateCoefficients(AffineMap& map, uint facet);
+    void updateCoefficients(Cell& cell, AffineMap& map, uint facet);
 
     // Update coefficients
-    void updateCoefficients(AffineMap& map0, AffineMap& map1, uint facet0, uint facet1);
+    void updateCoefficients(Cell& cell0, Cell& cell1, AffineMap& map0, AffineMap& map1, uint facet0, uint facet1);
 
     // Update local data for form
     virtual void updateLocalData() = 0;

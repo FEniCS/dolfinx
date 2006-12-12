@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells 2005.
 //
 // First added:  2005
-// Last changed: 2006-10-16
+// Last changed: 2006-12-12
 
 //#include <iostream>
 #include <sstream>
@@ -161,7 +161,7 @@ void ElasticityUpdatedSolver::init()
     // Use DOLFIN's interpolation
 
     map.update(cell);
-    v0.interpolate(coefficients, map, *element1);
+    v0.interpolate(coefficients, cell, map, *element1);
     (*element1).nodemap(nodes, cell, mesh);
 
     for(uint i = 0; i < (*element1).spacedim(); i++)
@@ -962,7 +962,7 @@ void ElasticityUpdatedSolver::finterpolate(Function& f1, Function& f2,
     // Use DOLFIN's interpolation
 
     map.update(cell);
-    f1.interpolate(coefficients, map, element);
+    f1.interpolate(coefficients, cell, map, element);
     element.nodemap(nodes, cell, mesh);
 
     for(unsigned int i = 0; i < element.spacedim(); i++)

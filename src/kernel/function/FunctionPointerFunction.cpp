@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-11-28
-// Last changed: 2006-05-07
+// Last changed: 2006-12-12
 
 #include <dolfin/Vertex.h>
 #include <dolfin/Vector.h>
@@ -69,9 +69,8 @@ void FunctionPointerFunction::sub(uint i)
   _vectordim = 1;
 }
 //-----------------------------------------------------------------------------
-void FunctionPointerFunction::interpolate(real coefficients[],
-					  AffineMap& map,
-					  FiniteElement& element)
+void FunctionPointerFunction::interpolate(real coefficients[], Cell& cell,
+					  AffineMap& map, FiniteElement& element)
 {
   // Initialize local data (if not already initialized correctly)
   local.init(element);

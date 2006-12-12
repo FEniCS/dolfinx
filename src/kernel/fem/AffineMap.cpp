@@ -12,8 +12,6 @@
 #include <dolfin/Face.h>
 #include <dolfin/AffineMap.h>
 
-#include <iostream>
-
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
@@ -28,8 +26,6 @@ AffineMap::AffineMap()
   g00 = 0.0; g01 = 0.0; g02 = 0.0;
   g10 = 0.0; g11 = 0.0; g12 = 0.0;
   g20 = 0.0; g21 = 0.0; g22 = 0.0;
-
-  _cell = 0;
 }
 //-----------------------------------------------------------------------------
 AffineMap::~AffineMap()
@@ -39,8 +35,6 @@ AffineMap::~AffineMap()
 //-----------------------------------------------------------------------------
 void AffineMap::update(Cell& cell)
 {
-  //cout << "updating cell" << endl;
-
   switch ( cell.dim() )
   {
   case 2:
@@ -52,13 +46,6 @@ void AffineMap::update(Cell& cell)
   default:
     dolfin_error("Unknown cell type for affine map.");
   }
-
-  //cout << "Setting cell: " << cell.index() << endl;
-  //std::cout << "pointer = " << &cell << std::endl;
-  
-  _cell = &cell;
-
-  //std::cout << "pointer = " << _cell << std::endl;
 }
 //-----------------------------------------------------------------------------
 Point AffineMap::operator() (real X, real Y) const

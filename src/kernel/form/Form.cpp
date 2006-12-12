@@ -78,35 +78,38 @@ void Form::initFunction(uint i, Function& f, FiniteElement* element)
     c[i][j] = 0.0;
 }
 //-----------------------------------------------------------------------------
-void Form::update(AffineMap& map)
+void Form::update(Cell& cell, AffineMap& map)
 {
   // Update coefficients
-  updateCoefficients(map);
+  updateCoefficients(cell, map);
 
   // Update local data structures
   updateLocalData();
 }
 //-----------------------------------------------------------------------------
-void Form::update(AffineMap& map, uint facet)
+void Form::update(Cell& cell, AffineMap& map, uint facet)
 {
   // Update coefficients
-  updateCoefficients(map, facet);
+  updateCoefficients(cell, map, facet);
 
   // Update local data structures
   updateLocalData();
 }
 //-----------------------------------------------------------------------------
-void Form::update(AffineMap& map0, AffineMap& map1,
+void Form::update(Cell& cell0, Cell& cell1,
+                  AffineMap& map0, AffineMap& map1,
                   uint facet0, uint facet1)
 {
+  cout << "Updating form in Form" << endl;
+
   // Update coefficients
-  updateCoefficients(map0, map1, facet0, facet1);
+  updateCoefficients(cell0, cell1, map0, map1, facet0, facet1);
 
   // Update local data structures
   updateLocalData();
 }
 //-----------------------------------------------------------------------------
-void Form::updateCoefficients(AffineMap& map)
+void Form::updateCoefficients(Cell& cell, AffineMap& map)
 {
   dolfin_assert(num_functions == functions.size());
 
@@ -114,11 +117,11 @@ void Form::updateCoefficients(AffineMap& map)
   for (uint i = 0; i < num_functions; i++)
   {
     dolfin_assert(functions[i]);
-    functions[i]->interpolate(c[i], map, *elements[i]);
+    functions[i]->interpolate(c[i], cell, map, *elements[i]);
   }
 }
 //-----------------------------------------------------------------------------
-void Form::updateCoefficients(AffineMap& map, uint facet)
+void Form::updateCoefficients(Cell& cell, AffineMap& map, uint facet)
 {
   dolfin_assert(num_functions == functions.size());
 
@@ -126,18 +129,23 @@ void Form::updateCoefficients(AffineMap& map, uint facet)
   for (uint i = 0; i < num_functions; i++)
   {
     dolfin_assert(functions[i]);
-    functions[i]->interpolate(c[i], map, *elements[i], facet);
+    functions[i]->interpolate(c[i], cell, map, *elements[i], facet);
   }
 }
 //-----------------------------------------------------------------------------
-void Form::updateCoefficients(AffineMap& map0, AffineMap& map1,
+void Form::updateCoefficients(Cell& cell0, Cell& cell1,
+                              AffineMap& map0, AffineMap& map1,
                               uint facet0, uint facet1)
 {
   // FIXME: This is a temporary solution. We need to double the size
   // FIXME: of the coefficient arrays. When we move to UFC, the coefficients
   // FIXME: are given as an argument so this will be simpler to solve then.
-  
+
   dolfin_assert(num_functions == functions.size());
+
+  cout << "Interpolating function on interior facet" << endl;
+  cout << "    cell0.index() = " << cell0.index() << "  facet0 = " << facet0 << endl;
+  cout << "    cell1.index() = " << cell1.index() << "  facet1 = " << facet1 << endl;
 
   // Temporary coefficient arrays
   real** c0 = new real* [num_functions];
@@ -174,14 +182,14 @@ void Form::updateCoefficients(AffineMap& map0, AffineMap& map1,
   for (uint i = 0; i < num_functions; i++)
   {
     dolfin_assert(functions[i]);
-    functions[i]->interpolate(c0[i], map0, *elements[i], facet0);
+    functions[i]->interpolate(c0[i], cell0, map0, *elements[i], facet0);
   }
 
   // Interpolate on cell 1
   for (uint i = 0; i < num_functions; i++)
   {
     dolfin_assert(functions[i]);
-    functions[i]->interpolate(c1[i], map1, *elements[i], facet1);
+    functions[i]->interpolate(c1[i], cell1, map1, *elements[i], facet1);
   }
 
   // Copy values to large array

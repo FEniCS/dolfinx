@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-11-26
-// Last changed: 2006-02-20
+// Last changed: 2006-12-12
 //
 // Note: this breaks the standard envelope-letter idiom slightly,
 // since we call the envelope class from one of the letter classes.
@@ -72,8 +72,8 @@ void UserFunction::sub(uint i)
   _vectordim = 1;
 }
 //-----------------------------------------------------------------------------
-void UserFunction::interpolate(real coefficients[], AffineMap& map,
-			       FiniteElement& element)
+void UserFunction::interpolate(real coefficients[], Cell& cell,
+                               AffineMap& map, FiniteElement& element)
 {
   // Initialize local data (if not already initialized correctly)
   local.init(element);

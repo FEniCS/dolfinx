@@ -5,7 +5,7 @@
 // Modified by Kristian Oelgaard 2006.
 //
 // First added:  2004-05-19
-// Last changed: 2006-12-06
+// Last changed: 2006-12-12
 
 #ifndef __FEM_H
 #define __FEM_H
@@ -115,47 +115,48 @@ namespace dolfin
 
     /// Assemble element tensor for a bilinear form
     static void assembleElementTensor(BilinearForm& a, GenericMatrix& A, 
-                                      const Mesh& mesh, const Cell& cell, 
+                                      const Mesh& mesh, Cell& cell, 
                                       AffineMap& map, real det, const DofMap& dofmap);
 
     /// Assemble element tensor for a linear form
     static void assembleElementTensor(LinearForm& L, GenericVector& b, 
-                                      const Mesh& mesh, const Cell& cell, 
+                                      const Mesh& mesh, Cell& cell, 
                                       AffineMap& map, real det, const DofMap& dofmap);
 
     /// Assemble element tensor for a functional
-    static void assembleElementTensor(Functional& M, real& val, AffineMap& map, real det);
+    static void assembleElementTensor(Functional& M, real& val, Cell& cell, AffineMap& map, real det);
 
     /// Assemble exterior facet tensor for a bilinear form
     static void assembleExteriorFacetTensor(BilinearForm& a, GenericMatrix& A, 
-                                            const Mesh& mesh, const Cell& cell,
+                                            const Mesh& mesh, Cell& cell,
                                             AffineMap& map, real det, uint facet);
 
     /// Assemble exterior facet tensor for a linear form
     static void assembleExteriorFacetTensor(LinearForm& L, GenericVector& b,
-                                            const Mesh& mesh, const Cell& cell,
+                                            const Mesh& mesh, Cell& cell,
                                             AffineMap& map, real det, uint facet);
 
     /// Assemble exterior facet tensor for a functional
     static void assembleExteriorFacetTensor(Functional& M, real& val,
-                                            AffineMap& map, real det, uint facet);
+                                            Cell& cell, AffineMap& map, real det, uint facet);
 
     /// Assemble interior facet tensor for a bilinear form
     static void assembleInteriorFacetTensor(BilinearForm& a, GenericMatrix& A, 
                                             const Mesh& mesh,
-                                            const Cell& cell0, const Cell& cell1,
+                                            Cell& cell0, Cell& cell1,
                                             AffineMap& map0, AffineMap& map1, real det,
                                             uint facet0, uint facet1, uint alignment);
 
     /// Assemble interior facet tensor for a linear form
     static void assembleInteriorFacetTensor(LinearForm& L, GenericVector& b,
                                             const Mesh& mesh,
-                                            const Cell& cell0, const Cell& cell1,
+                                            Cell& cell0, Cell& cell1,
                                             AffineMap& map0, AffineMap& map1, real det,
                                             uint facet0, uint facet1, uint alignment);
 
     /// Assemble interior facet tensor for a functional
     static void assembleInteriorFacetTensor(Functional& M, real& val,
+                                            Cell& cell0, Cell& cell1,
                                             AffineMap& map0, AffineMap& map1, real det,
                                             uint facet0, uint facet1, uint alignment);
 

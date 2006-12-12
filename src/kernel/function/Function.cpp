@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells 2005
 //
 // First added:  2003-11-28
-// Last changed: 2006-12-07
+// Last changed: 2006-12-12
 //
 // The class Function serves as the envelope class and holds a pointer
 // to a letter class that is a subclass of GenericFunction. All the
@@ -152,14 +152,14 @@ const Function& Function::operator= (const Function& f)
   return *this;
 }
 //-----------------------------------------------------------------------------
-void Function::interpolate(real coefficients[], AffineMap& map,
-			   FiniteElement& element)
+void Function::interpolate(real coefficients[], Cell& cell,
+                           AffineMap& map, FiniteElement& element)
 {
   // Save cell so it can be used by user-defined function
-  _cell = &map.cell();
+  _cell = &cell;
   
   // Delegate function call
-  f->interpolate(coefficients, map, element);
+  f->interpolate(coefficients, cell, map, element);
 
   // Reset cell since it is no longer current
   _cell = 0;
@@ -168,17 +168,17 @@ void Function::interpolate(real coefficients[], AffineMap& map,
   _facet = -1;
 }
 //-----------------------------------------------------------------------------
-void Function::interpolate(real coefficients[], AffineMap& map,
-			   FiniteElement& element, uint facet)
+void Function::interpolate(real coefficients[], Cell& cell,
+                           AffineMap& map, FiniteElement& element, uint facet)
 {
   // Save cell so it can be used by user-defined function
-  _cell = &map.cell();
+  _cell = &cell;
 
   // Save facet so it can be used by user-defined function
   _facet = facet;
   
   // Delegate function call
-  f->interpolate(coefficients, map, element);
+  f->interpolate(coefficients, cell, map, element);
 
   // Reset cell since it is no longer current
   _cell = 0;
