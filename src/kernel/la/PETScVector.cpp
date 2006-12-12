@@ -442,8 +442,6 @@ void PETScVector::fromArray(const real u[], PETScVector& x,
 {
   // Workaround to interface PETScVector and arrays
 
-  dolfin_assert(x);
-
   real* vals = x.array();
   for(uint i = 0; i < size; i++)
     vals[i] = u[i + offset];
