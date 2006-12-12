@@ -27,7 +27,7 @@ namespace dolfin
   /// It is a simple wrapper for a PETSc vector pointer (Vec).
   ///
   /// The interface is intentionally simple. For advanced usage,
-  /// access the PETSc Mat pointer using the function mat() and
+  /// access the PETSc Vec pointer using the function vec() and
   /// use the standard PETSc interface.
 
   class PETScVector : public GenericVector, public Variable
@@ -177,7 +177,7 @@ namespace dolfin
 
     // Copy values from vector into array
     static void toArray(real y[], const PETScVector&x, const uint offset, 
-                  const uint size) const;
+                  const uint size);
 
     // Copy values between different vector representations
     void copy(const PETScVector& y, const uint off1, const uint off2, const uint len);

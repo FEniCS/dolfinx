@@ -86,7 +86,7 @@ void PETScVector::init(const uint N)
 
   // Create vector
   VecCreate(PETSC_COMM_SELF, &x);
-  VecSetSizes(x, PETSC_DECIDE, size);
+  VecSetSizes(x, PETSC_DECIDE, N);
   VecSetFromOptions(x);
 
   // Set all entries to zero
@@ -351,9 +351,7 @@ real PETScVector::norm(const NormType type) const
 real PETScVector::sum() const
 {
   dolfin_assert(x);
-
   real value = 0.0;
-  
   VecSum(x, &value);
   
   return value;
@@ -444,20 +442,20 @@ void PETScVector::fromArray(const real u[], PETScVector& x,
 {
   // Workaround to interface PETScVector and arrays
 
-  real* vals = 0;
-  vals = x.array();
+  dolfin_assert(x);
+
+  real* vals = x.array();
   for(uint i = 0; i < size; i++)
     vals[i] = u[i + offset];
   x.restore(vals);
 }
 //-----------------------------------------------------------------------------
-void PETScVector::toArray(real y[], PETScVector& x,
+void PETScVector::toArray(real y[], const PETScVector& x,
 			                    const uint offset, const uint s)
 {
   // Workaround to interface PETScVector and arrays
 
-  real* vals = 0;
-  vals = x.array();
+  const real* vals = x.array();
   for(uint i = 0; i < s; i++)
     y[offset + i] = vals[i];
   x.restore(vals);
@@ -468,10 +466,8 @@ void PETScVector::copy(const PETScVector& y, const uint off1, const uint off2,
 {
   // FIXME: Use gather/scatter for parallel case
 
-  real* xvals = 0;
-  const real* yvals = 0;
-  xvals = array();
-  yvals = y.array();
+  real* xvals = array();
+  const real* yvals = y.array();
   for(uint i = 0; i < len; i++)
     xvals[i + off1] = yvals[i + off2];
   restore(xvals);
@@ -483,8 +479,7 @@ void PETScVector::copy(const uBlasVector& y, const uint off1, const uint off2,
 {
   // FIXME: Verify if there's a more efficient implementation
 
-  real* vals = 0;
-  vals = array();
+  real* vals = array();
   for(uint i = 0; i < len; i++)
     vals[i + off1] = y[i + off2];
   restore(vals);
