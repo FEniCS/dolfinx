@@ -18,10 +18,6 @@
 //     du/dn(x, y) = 1  for x = 1
 //     du/dn(x, y) = 0  otherwise
 
-//#include "FEM.h"
-//#include "BilinearForm.h"
-//#include "LinearForm.h"
-//#include "Functional.h"
 #include <dolfin.h>
 #include "Poisson.h"
   
@@ -62,6 +58,15 @@ int main()
     }
   };
 
+  FacetNormal n;
+  Poisson::BilinearForm a(n);
+  Matrix A;
+  UnitSquare mesh(1, 1);
+  FEM::assemble(a, A, mesh);
+  A.disp(false);
+
+  /*
+
   // Set up problem
   Source f;
   DirichletBC bc;
@@ -73,11 +78,12 @@ int main()
   dolfin_log(true);
   // Compute solution
   Function U = pde.solve();
-//  FEM::disp(mesh, a.trial());
 
   // Save solution to file
   File file("poisson.pvd");
   file << U;
   
+  */
+
   return 0;
 }

@@ -164,7 +164,6 @@ void Form::updateCoefficients(AffineMap& map0, AffineMap& map1,
   c = new real* [num_functions];
   for (uint i = 0; i < num_functions; i++)
   {
-    delete [] c[i];
     uint n = elements[i]->spacedim();
     c[i] = new real[2*n];
     for (uint j = 0; j < 2*n; j++)

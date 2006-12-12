@@ -344,8 +344,21 @@ void FEM::assembleCommon(BilinearForm* a, LinearForm* L, Functional* M,
 
       // FIXME: use different update function, facet number should be argument
       // Update affine maps for cells
+
+      cout<< "cell0.index() = " << cell0.index() << endl;
+      cout<< "cell1.index() = " << cell1.index() << endl;
+
       map0.update(cell0);
       map1.update(cell1);
+
+      
+      cout<< "cell0.index() = " << cell0.index() << endl;
+      cout<< "cell1.index() = " << cell1.index() << endl;
+
+      cout<< "map0.cell().index() = " << map0.cell().index() << endl;
+      cout<< "map1.cell().index() = " << map0.cell().index() << endl;
+
+
 
       // Compute determinant for integral volume change
       real det = computeDeterminant(*facet);
@@ -677,9 +690,9 @@ void FEM::assembleInteriorFacetTensor(BilinearForm& a, GenericMatrix& A,
   A.add(block, test_nodes, 2*m, trial_nodes, 2*n);
 
   // Delete local data structures
-  delete block;
-  delete test_nodes;
-  delete trial_nodes;
+  delete [] block;
+  delete [] test_nodes;
+  delete [] trial_nodes;
 }
 //-----------------------------------------------------------------------------
 void FEM::assembleInteriorFacetTensor(LinearForm& L, GenericVector& b, 
@@ -717,8 +730,8 @@ void FEM::assembleInteriorFacetTensor(LinearForm& L, GenericVector& b,
   b.add(block, test_nodes, 2*m);
 
   // Delete local data structures
-  delete block;
-  delete test_nodes;
+  delete [] block;
+  delete [] test_nodes;
 }
 //-----------------------------------------------------------------------------
 void FEM::assembleInteriorFacetTensor(Functional& M, real& val,
