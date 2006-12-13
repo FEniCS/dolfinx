@@ -62,6 +62,8 @@ int main()
   Poisson::BilinearForm a(n);
   Matrix A;
   UnitSquare mesh(1, 1);
+  mesh.init();
+  mesh.disp();
   FEM::assemble(a, A, mesh);
   A.disp(false);
 

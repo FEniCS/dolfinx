@@ -185,8 +185,8 @@ real Triangle::normal(const Cell& cell, uint facet, uint i) const
   // This is a trick to be allowed to initialize a facet from the cell mesh
   Cell& c = const_cast<Cell&>(cell);
 
-  // Create facet from the mesh and facet number
-  Facet f(c.mesh(), facet);
+  // Create facet from the mesh and local facet number
+  Facet f(c.mesh(), c.entities(1)[facet]);
 
   // The normal vector is currently only defined for a triangle in R^2
   if ( c.mesh().geometry().dim() != 2 )

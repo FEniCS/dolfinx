@@ -42,6 +42,11 @@ namespace dolfin
   {
     real eval(const Point& p, unsigned int i)
     {
+      cout << "    Evaluating facet normal at p = " << p << endl;
+      cout << "      cell      = " << cell().index() << endl;
+      cout << "      facet     = " << facet() << endl;
+      cout << "      component = " << i << endl;
+      cout << "      value     = " << cell().normal(facet(), i) << endl;
       return cell().normal(facet(), i);
     }
   };

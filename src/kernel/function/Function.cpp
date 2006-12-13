@@ -177,6 +177,8 @@ void Function::interpolate(real coefficients[], Cell& cell,
   // Save facet so it can be used by user-defined function
   _facet = facet;
   
+  dolfin_info("Interpolating function on cell = %d and facet = %d", cell.index(), facet);
+
   // Delegate function call
   f->interpolate(coefficients, cell, map, element);
 

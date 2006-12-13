@@ -178,19 +178,31 @@ void Form::updateCoefficients(Cell& cell0, Cell& cell1,
       c[i][j] = 0.0;
   }
   
+  cout << endl;
+
   // Interpolate on cell 0
   for (uint i = 0; i < num_functions; i++)
   {
     dolfin_assert(functions[i]);
     functions[i]->interpolate(c0[i], cell0, map0, *elements[i], facet0);
+
+    for (uint j = 0; j < elements[0]->spacedim(); j++)
+      dolfin_info("  c0[%d][%d] = %g", i, j, c0[i][j]);
   }
+
+  cout << endl;
 
   // Interpolate on cell 1
   for (uint i = 0; i < num_functions; i++)
   {
     dolfin_assert(functions[i]);
     functions[i]->interpolate(c1[i], cell1, map1, *elements[i], facet1);
+
+    for (uint j = 0; j < elements[0]->spacedim(); j++)
+      dolfin_info("  c1[%d][%d] = %g", i, j, c1[i][j]);
   }
+
+  cout << endl;
 
   // Copy values to large array
   for (uint i = 0; i < num_functions; i++)
@@ -201,6 +213,11 @@ void Form::updateCoefficients(Cell& cell0, Cell& cell1,
       c[i][j] = c0[i][j];
       c[i][j + n] = c1[i][j];
     }
+  }
+
+  for (uint i = 0; i < 2*elements[0]->spacedim(); i++)
+  {
+    dolfin_info("  c[0][%d] = %g", i, c[0][i]);
   }
   
   // Delete temporary storage
