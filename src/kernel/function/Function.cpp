@@ -223,8 +223,11 @@ Cell& Function::cell()
 dolfin::uint Function::facet()
 {
   if ( !(_facet >= 0) )
-    dolfin_error("Current facet is unknown (only available during assembly over facets).");
-
+  {
+    dolfin_warning("Current facet is unknown (only available during assembly over facets), returning 0");
+    return 0;
+  }
+//    dolfin_error("Current facet is unknown (only available during assembly over facets).");
   return static_cast<uint>(_facet);
 }
 //-----------------------------------------------------------------------------

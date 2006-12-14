@@ -10,24 +10,17 @@
 #
 # Compile this form with FFC: ffc Poisson.form
 
-#element = FiniteElement("Discontinuous Lagrange", "triangle", 1)
-
-#v = TestFunction(element)
-#U = TrialFunction(element)
-#f = Function(element)
-
-# Not working yet, still testing out basic DG functionality
-#a = v('+')*U('-')*dS
-#L = v*f*dx
-
-#print a
-#print L
 
 element = FiniteElement("Discontinuous Lagrange", "triangle", 1)
-normal_element = FiniteElement("Discontinuous vector Lagrange", "triangle", 1)
+normal_element = FiniteElement("Discontinuous vector Lagrange", "triangle", 0)
 
 v = TestFunction(element)
 u = TrialFunction(element)
 n = Function(normal_element)
+f = Function(element)
+g = Function(element)
+a = Constant()
 
-a = dot( jump(v,n), jump(u,n) )*dS
+a = dot(grad(v),grad(u))*dx -dot( avg(grad(v)), jump(u,n) )*dS -dot( jump(v,n), avg(grad(u)) )*dS -a*dot( jump(v,n), jump(u,n) )*dS
+
+L = v*f*dx + v*g*ds 

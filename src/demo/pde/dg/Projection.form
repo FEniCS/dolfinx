@@ -1,0 +1,19 @@
+# Copyright (C) 2006 Kristiand Oelgaard and Anders Logg.
+# Licensed under the GNU GPL Version 2.
+#
+# First added:  2006-12-14
+# Last changed: 2006-12-14
+#
+# Compile this form with FFC: ffc Projection.form
+
+disc_elem =  FiniteElement("Discontinuous Lagrange", "triangle", 1)
+const_elem = FiniteElement("Lagrange", "triangle", 1)
+
+v = TestFunction(const_elem)
+u = TrialFunction(const_elem)
+
+f = Function(disc_elem)
+
+a = v*u*dx
+
+L = v*f*dx

@@ -62,14 +62,17 @@ int main()
   Source f;
   DirichletBC bc;
   NeumannBC g;
+
   UnitSquare mesh(16, 16);
+
   Poisson::BilinearForm a;
   Poisson::LinearForm L(f, g);
   PDE pde(a, L, mesh, bc);
 
+
   // Compute solution
   Function U = pde.solve();
-
+//  U.vector().disp();
   // Save solution to file
   File file("poisson.pvd");
   file << U;
