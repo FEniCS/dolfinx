@@ -12,17 +12,19 @@
 
 DG1 = FiniteElement("Discontinuous Lagrange", "triangle", 1)
 DG0 = FiniteElement("Discontinuous vector Lagrange", "triangle", 0)
+DGh = FiniteElement("Discontinuous Lagrange", "triangle", 0)
 
 v = TestFunction(DG1)
 u = TrialFunction(DG1)
 f = Function(DG1)
 g = Function(DG1)
 n = Function(DG0)
+h = Function(DGh)
 alpha = Constant()
 
 a =  dot(grad(v), grad(u))*dx \
    - dot(avg(grad(v)), jump(u, n))*dS \
    - dot(jump(v, n), avg(grad(u)))*dS \
-   - alpha*dot(jump(v, n), jump(u, n))*dS
+   + alpha*avg(h)*dot(jump(v, n), jump(u, n))*dS
 
-L = v*f*dx + v*g*ds 
+L = v*f*dx + v*g*ds

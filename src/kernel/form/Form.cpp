@@ -215,10 +215,10 @@ void Form::updateCoefficients(Cell& cell0, Cell& cell1,
     }
   }
 
-  for (uint i = 0; i < 2*elements[0]->spacedim(); i++)
-  {
-    dolfin_info("  c[0][%d] = %g", i, c[0][i]);
-  }
+//  for (uint i = 0; i < 2*elements[0]->spacedim(); i++)
+//  {
+//    dolfin_info("  c[0][%d] = %g", i, c[0][i]);
+//  }
   
   // Delete temporary storage
   for (uint i = 0; i < num_functions; i++)

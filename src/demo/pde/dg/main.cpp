@@ -66,13 +66,19 @@ int main()
   DirichletBC bc;
   NeumannBC g;
   FacetNormal n;
+  InvMeshSize h;
   UnitSquare mesh(16, 16);
   real alpha = 2.0;
 
-  Poisson::BilinearForm a(n, alpha);
+  Poisson::BilinearForm a(n, h, alpha);
+//  Poisson::BilinearForm a;
   Poisson::LinearForm L(f, g);
+
   PDE pde(a, L, mesh, bc);
 
+//Matrix A;
+//FEM::assemble(a, A, mesh);
+//A.disp();
   // Compute solution
   Function U = pde.solve();
 

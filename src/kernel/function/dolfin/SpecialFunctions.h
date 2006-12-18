@@ -37,6 +37,15 @@ namespace dolfin
     }
   };
 
+  /// This function represents the inverse of the local mesh size on a given mesh.
+  class InvMeshSize : public Function
+  {
+    real eval(const Point& p, unsigned int i)
+    {
+      return 1.0/cell().diameter();
+    }
+  };
+
   /// This function represents the outward unit normal on mesh facets.
   class FacetNormal : public Function
   {
