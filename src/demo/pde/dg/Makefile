@@ -3,11 +3,9 @@ LIBS    = `pkg-config --libs dolfin`
 CXX     = `pkg-config --variable=compiler dolfin`
 
 DEST    = dolfin-dg
-OBJECTS = main.o FEM.o
+OBJECTS = main.o
 
 all: $(DEST)
-
-install:
 
 clean:
 	-rm -f *.o core *.core $(OBJECTS) $(DEST)

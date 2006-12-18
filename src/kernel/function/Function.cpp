@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells 2005
 //
 // First added:  2003-11-28
-// Last changed: 2006-12-12
+// Last changed: 2006-12-18
 //
 // The class Function serves as the envelope class and holds a pointer
 // to a letter class that is a subclass of GenericFunction. All the
@@ -227,7 +227,7 @@ dolfin::uint Function::facet()
     dolfin_warning("Current facet is unknown (only available during assembly over facets), returning 0");
     return 0;
   }
-//    dolfin_error("Current facet is unknown (only available during assembly over facets).");
+
   return static_cast<uint>(_facet);
 }
 //-----------------------------------------------------------------------------

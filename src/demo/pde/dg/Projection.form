@@ -6,14 +6,12 @@
 #
 # Compile this form with FFC: ffc Projection.form
 
-disc_elem =  FiniteElement("Discontinuous Lagrange", "triangle", 1)
-const_elem = FiniteElement("Lagrange", "triangle", 1)
+CG1 = FiniteElement("Lagrange", "triangle", 1)
+DG1 =  FiniteElement("Discontinuous Lagrange", "triangle", 1)
 
-v = TestFunction(const_elem)
-u = TrialFunction(const_elem)
-
-f = Function(disc_elem)
+v = TestFunction(CG1)
+u = TrialFunction(CG1)
+f = Function(DG1)
 
 a = v*u*dx
-
 L = v*f*dx
