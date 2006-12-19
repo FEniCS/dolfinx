@@ -849,6 +849,15 @@ dolfin::uint FEM::computeAlignment(Cell& cell0, Cell& cell1, uint facet)
   }
   else
   {
+    // Mapping from pair of global alignments to alignment of facet pair
+    static unsigned int pair_alignments[6][6] = {{0, 1, 4, 3, 2, 5},
+                                                {1, 0, 5, 2, 3, 4},
+                                                {2, 5, 0, 1, 4, 3},
+                                                {3, 4, 1, 0, 5, 2},
+                                                {4, 3, 2, 5, 0, 1},
+                                                {5, 2, 3, 4, 1, 0}};
+
+
     // Get local index of facet with respect to each cell.
     uint facet0 = cell0.index(f);
     uint facet1 = cell1.index(f);
@@ -857,39 +866,8 @@ dolfin::uint FEM::computeAlignment(Cell& cell0, Cell& cell1, uint facet)
     uint alignment0 = cell0.alignment(f.dim(), facet0);
     uint alignment1 = cell1.alignment(f.dim(), facet1);
 
-    uint alignment = 0;
-    bool found_alignment = false;
-    
-    if ( alignment1 == 0 || alignment1 == 2 || alignment1 == 4 )
-    {
-      for (alignment = 0; alignment < 6; alignment++)
-      {
-        if ( (alignment1 + alignment)%6 == alignment0 )
-        {
-          found_alignment = true;
-          break;
-        }
-      }
-    }
-    if ( alignment1 == 1 || alignment1 == 3 || alignment1 == 5 )
-    {
-      for (alignment = 0; alignment < 6; alignment++)
-      {
-        if ( (alignment0 + alignment)%6 == alignment1 )
-        {
-          found_alignment = true;
-          break;
-        }
-      }
-    }
-    if ( !alignment )
-      dolfin_error("No alignment was found.");
-
-    //      cout << "alignment = " << align << endl;
-    //    else
-    //      cout << "no alignment was found!!" << endl;
-
-    return alignment;
+    // Get alignment of facet pair from global alignments
+    return pair_alignments[alignment0][alignment1];
   }
 }
 //-----------------------------------------------------------------------------
