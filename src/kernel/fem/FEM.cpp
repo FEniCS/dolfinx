@@ -342,23 +342,9 @@ void FEM::assembleCommon(BilinearForm* a, LinearForm* L, Functional* M,
       // Compute alignment
       uint alignment = computeAlignment(cell0, cell1, facet->index());
 
-      // FIXME: use different update function, facet number should be argument
       // Update affine maps for cells
-
-//      cout<< "cell0.index() = " << cell0.index() << endl;
-//      cout<< "cell1.index() = " << cell1.index() << endl;
-
       map0.update(cell0);
       map1.update(cell1);
-
-      
-//      cout<< "cell0.index() = " << cell0.index() << endl;
-//      cout<< "cell1.index() = " << cell1.index() << endl;
-
-      //cout<< "map0.cell().index() = " << map0.cell().index() << endl;
-      //cout<< "map1.cell().index() = " << map0.cell().index() << endl;
-
-
 
       // Compute determinant for integral volume change
       real det = computeDeterminant(*facet);
@@ -655,11 +641,9 @@ void FEM::assembleInteriorFacetTensor(BilinearForm& a, GenericMatrix& A,
                                       uint facet0, uint facet1, uint alignment)
 {
   // Update form
-//  cout << "Updating form" << endl;
   a.update(cell0, cell1, map0, map1, facet0, facet1);
-
+  
   cout << "(facet0, facet1, alignment, det)" << "("<<facet0<<", "<<facet1<<", "<<alignment<<", "<<det<< ")"<<endl;
-
 
   // Initialize local data structures (FIXME: reuse)
   const uint m = a.test().spacedim();
@@ -697,7 +681,7 @@ void FEM::assembleInteriorFacetTensor(BilinearForm& a, GenericMatrix& A,
       cout << block[i*8+j] << " ";
     cout <<"\n";
   }
-cout << endl;
+  cout << endl;
 
   // Add exterior facet tensor to global tensor
   A.add(block, test_nodes, 2*m, trial_nodes, 2*n);
@@ -865,7 +849,6 @@ dolfin::uint FEM::computeAlignment(Cell& cell0, Cell& cell1, uint facet)
   }
   else
   {
-//    uint alignment(0);    
     // Get local index of facet with respect to each cell.
     uint facet0 = cell0.index(f);
     uint facet1 = cell1.index(f);
@@ -874,52 +857,39 @@ dolfin::uint FEM::computeAlignment(Cell& cell0, Cell& cell1, uint facet)
     uint alignment0 = cell0.alignment(f.dim(), facet0);
     uint alignment1 = cell1.alignment(f.dim(), facet1);
 
-//cout << "facet0 = " << facet0<< endl;
-//cout << "facet1 = " << facet1<< endl;
-//cout << "alignment0 = " << alignment0<< endl;
-//cout << "alignment1 = " << alignment1<< endl;
+    uint alignment = 0;
+    bool found_alignment = false;
     
-    uint align = 0;
-    bool alignment = false;
-
-    if(alignment1 == 0 || alignment1 == 2 || alignment1 == 4)
+    if ( alignment1 == 0 || alignment1 == 2 || alignment1 == 4 )
     {
-      for (align = 0; align < 6; align++)      
+      for (alignment = 0; alignment < 6; alignment++)
       {
-        if ( (alignment1 + align)%6 == alignment0)
+        if ( (alignment1 + alignment)%6 == alignment0 )
         {
-          alignment = true;
+          found_alignment = true;
           break;
         }
       }
     }
-    if(alignment1 == 1 || alignment1 == 3 || alignment1 == 5)
+    if ( alignment1 == 1 || alignment1 == 3 || alignment1 == 5 )
     {
-      for (align = 0; align < 6; align++)      
+      for (alignment = 0; alignment < 6; alignment++)
       {
-        if ( (alignment0 + align)%6 == alignment1)
+        if ( (alignment0 + alignment)%6 == alignment1 )
         {
-          alignment = true;
+          found_alignment = true;
           break;
         }
       }
     }
-    if (!alignment)
+    if ( !alignment )
       dolfin_error("No alignment was found.");
 
-//      cout << "alignment = " << align << endl;
-//    else
-//      cout << "no alignment was found!!" << endl;
+    //      cout << "alignment = " << align << endl;
+    //    else
+    //      cout << "no alignment was found!!" << endl;
 
-    return align;  
+    return alignment;
   }
 }
 //-----------------------------------------------------------------------------
-
-
-
-
-
-
-
-
