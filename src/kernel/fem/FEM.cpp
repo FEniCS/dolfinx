@@ -345,15 +345,15 @@ void FEM::assembleCommon(BilinearForm* a, LinearForm* L, Functional* M,
       // FIXME: use different update function, facet number should be argument
       // Update affine maps for cells
 
-      cout<< "cell0.index() = " << cell0.index() << endl;
-      cout<< "cell1.index() = " << cell1.index() << endl;
+//      cout<< "cell0.index() = " << cell0.index() << endl;
+//      cout<< "cell1.index() = " << cell1.index() << endl;
 
       map0.update(cell0);
       map1.update(cell1);
 
       
-      cout<< "cell0.index() = " << cell0.index() << endl;
-      cout<< "cell1.index() = " << cell1.index() << endl;
+//      cout<< "cell0.index() = " << cell0.index() << endl;
+//      cout<< "cell1.index() = " << cell1.index() << endl;
 
       //cout<< "map0.cell().index() = " << map0.cell().index() << endl;
       //cout<< "map1.cell().index() = " << map0.cell().index() << endl;
@@ -655,8 +655,11 @@ void FEM::assembleInteriorFacetTensor(BilinearForm& a, GenericMatrix& A,
                                       uint facet0, uint facet1, uint alignment)
 {
   // Update form
-  cout << "Updating form" << endl;
+//  cout << "Updating form" << endl;
   a.update(cell0, cell1, map0, map1, facet0, facet1);
+
+  cout << "(facet0, facet1, alignment, det)" << "("<<facet0<<", "<<facet1<<", "<<alignment<<", "<<det<< ")"<<endl;
+
 
   // Initialize local data structures (FIXME: reuse)
   const uint m = a.test().spacedim();
@@ -687,6 +690,14 @@ void FEM::assembleInteriorFacetTensor(BilinearForm& a, GenericMatrix& A,
 
   // Compute interior facet tensor
   a.eval(block, map0, map1, det, facet0, facet1, alignment);
+
+  for (int i(0); i<8; i++)
+  {
+    for (int j(0); j<8; j++)
+      cout << block[i*8+j] << " ";
+    cout <<"\n";
+  }
+cout << endl;
 
   // Add exterior facet tensor to global tensor
   A.add(block, test_nodes, 2*m, trial_nodes, 2*n);
@@ -828,25 +839,87 @@ dolfin::uint FEM::computeAlignment(Cell& cell0, Cell& cell1, uint facet)
   // Create facet.
   Facet f(cell0.mesh(), facet);
 
+
+  if (f.dim() != 1 && f.dim() != 2)
+    dolfin_error("Alignment is currently only defined for a line or triangle");
+
   // Currently only the alignment of a line with respect to a triangle is implemented
-  if ( f.dim() != 1 )
-    dolfin_error("Alignment is currently only defined for a line");
+  if ( f.dim() == 1 )
+  {
+    // Get local index of facet with respect to each cell.
+    uint facet0 = cell0.index(f);
+    uint facet1 = cell1.index(f);
 
-  // Get local index of facet with respect to each cell.
-  uint facet0 = cell0.index(f);
-  uint facet1 = cell1.index(f);
+    // Get alignment of each local facet with the local cell.
+    uint alignment0 = cell0.alignment(f.dim(), facet0);
+    uint alignment1 = cell1.alignment(f.dim(), facet1);
 
-  // Get alignment of each local facet with the local cell.
-  uint alignment0 = cell0.alignment(f.dim(), facet0);
-  uint alignment1 = cell1.alignment(f.dim(), facet1);
-
-  // In principle there are four combinations of alignments:
-  // a0 = 0 a1 = 0 ; a0 = 1 a1 = 0 ; a0 = 1 a1 = 0 ; a0 = 1 a1 = 1
-  // But only two are not the same.
-  // Return a unique alignment for the facet with respect to both cells.
-  if (alignment0 == alignment1)
-    return 0;
+    // In principle there are four combinations of alignments:
+    // a0 = 0 a1 = 0 ; a0 = 1 a1 = 0 ; a0 = 1 a1 = 0 ; a0 = 1 a1 = 1
+    // But only two are not the same.
+    // Return a unique alignment for the facet with respect to both cells.
+    if (alignment0 == alignment1)
+      return 0;
+    else
+      return 1;
+  }
   else
-    return 1;
+  {
+//    uint alignment(0);    
+    // Get local index of facet with respect to each cell.
+    uint facet0 = cell0.index(f);
+    uint facet1 = cell1.index(f);
+
+    // Get alignment of each local facet with the local cell.
+    uint alignment0 = cell0.alignment(f.dim(), facet0);
+    uint alignment1 = cell1.alignment(f.dim(), facet1);
+
+//cout << "facet0 = " << facet0<< endl;
+//cout << "facet1 = " << facet1<< endl;
+//cout << "alignment0 = " << alignment0<< endl;
+//cout << "alignment1 = " << alignment1<< endl;
+    
+    uint align = 0;
+    bool alignment = false;
+
+    if(alignment1 == 0 || alignment1 == 2 || alignment1 == 4)
+    {
+      for (align = 0; align < 6; align++)      
+      {
+        if ( (alignment1 + align)%6 == alignment0)
+        {
+          alignment = true;
+          break;
+        }
+      }
+    }
+    if(alignment1 == 1 || alignment1 == 3 || alignment1 == 5)
+    {
+      for (align = 0; align < 6; align++)      
+      {
+        if ( (alignment0 + align)%6 == alignment1)
+        {
+          alignment = true;
+          break;
+        }
+      }
+    }
+    if (!alignment)
+      dolfin_error("No alignment was found.");
+
+//      cout << "alignment = " << align << endl;
+//    else
+//      cout << "no alignment was found!!" << endl;
+
+    return align;  
+  }
 }
 //-----------------------------------------------------------------------------
+
+
+
+
+
+
+
+

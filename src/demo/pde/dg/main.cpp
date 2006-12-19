@@ -67,20 +67,21 @@ int main()
   NeumannBC g;
   FacetNormal n;
   InvMeshSize h;
-  UnitSquare mesh(16, 16);
-  real alpha = 2.0;
+//  UnitSquare mesh(1, 1);
+  UnitCube mesh(1, 1, 1);
+//  real alpha = 2.0;
 
-  Poisson::BilinearForm a(n, h, alpha);
-//  Poisson::BilinearForm a;
-  Poisson::LinearForm L(f, g);
+//  Poisson::BilinearForm a(n, h, alpha);
+  Poisson::BilinearForm a;
+//  Poisson::LinearForm L(f, g);
 
-  PDE pde(a, L, mesh, bc);
+//  PDE pde(a, L, mesh, bc);
 
-//Matrix A;
-//FEM::assemble(a, A, mesh);
-//A.disp();
+Matrix A;
+FEM::assemble(a, A, mesh);
+A.disp();
   // Compute solution
-  Function U = pde.solve();
+/*  Function U = pde.solve();
 
   // Project solution onto a continuous basis
   Projection::BilinearForm a_p;
@@ -91,6 +92,6 @@ int main()
   // Save projected solution to file
   File file("poisson_projected.pvd");
   file << U_p;
-
+*/
   return 0;
 }
