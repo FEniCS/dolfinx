@@ -22,11 +22,15 @@ MeshHierarchy::~MeshHierarchy()
 Mesh MeshHierarchy::operator[](uint k) const 
 {
   dolfin_error("not implemented.");
+  Mesh mesh;
+  return mesh;
 }
 //-----------------------------------------------------------------------------
 Mesh MeshHierarchy::operator()(uint k) const 
 {
   dolfin_error("not implemented.");
+  Mesh mesh;
+  return mesh;
 }
 //-----------------------------------------------------------------------------
 
