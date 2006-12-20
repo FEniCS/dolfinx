@@ -830,6 +830,10 @@ dolfin::uint FEM::computeAlignment(Cell& cell0, Cell& cell1, uint facet)
   // Currently only the alignment of a line with respect to a triangle is implemented
   if ( f.dim() == 1 )
   {
+    // Mapping from pair of global alignments to alignment of facet pair
+    static unsigned int pair_alignments[2][2] = {{0, 1},
+                                                  {1, 0}};
+
     // Get local index of facet with respect to each cell.
     uint facet0 = cell0.index(f);
     uint facet1 = cell1.index(f);
@@ -842,10 +846,7 @@ dolfin::uint FEM::computeAlignment(Cell& cell0, Cell& cell1, uint facet)
     // a0 = 0 a1 = 0 ; a0 = 1 a1 = 0 ; a0 = 1 a1 = 0 ; a0 = 1 a1 = 1
     // But only two are not the same.
     // Return a unique alignment for the facet with respect to both cells.
-    if (alignment0 == alignment1)
-      return 0;
-    else
-      return 1;
+    return pair_alignments[alignment0][alignment1];
   }
   else
   {

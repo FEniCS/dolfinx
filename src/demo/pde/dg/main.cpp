@@ -80,6 +80,7 @@ int main()
 Matrix A;
 FEM::assemble(a, A, mesh);
 A.disp();
+
   // Compute solution
 /*  Function U = pde.solve();
 
