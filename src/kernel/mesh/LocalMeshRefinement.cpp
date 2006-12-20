@@ -10,6 +10,7 @@
 #include <dolfin/MeshGeometry.h>
 #include <dolfin/MeshConnectivity.h>
 #include <dolfin/MeshEditor.h>
+#include <dolfin/MeshFunction.h>
 #include <dolfin/Vertex.h>
 #include <dolfin/Edge.h>
 #include <dolfin/Cell.h>
@@ -18,7 +19,27 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void LocalMeshRefinement::refineSimplexByNodeInsertion(Mesh& mesh, Edge& edge)
+void LocalMeshRefinement::refineTetMesh(Mesh& mesh)
+{
+  MeshFunction<uint> cell_marker(mesh); 
+  MeshFunction<uint> cell_state(mesh); 
+  cell_marker.init(2);
+  cell_state.init(2);
+
+  MeshFunction<uint> edge_marker(mesh); 
+  MeshFunction<uint> edge_state(mesh); 
+  edge_marker.init(1);
+  edge_state.init(1);
+  
+  
+  
+
+  
+
+
+}
+//-----------------------------------------------------------------------------
+void LocalMeshRefinement::refineSimplexByNodeInsertion(Mesh& mesh)
 {
   dolfin_info("Refining edge in simplicial mesh by node insertion.");
 
