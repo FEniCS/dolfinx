@@ -65,10 +65,11 @@ LTLIBRARIES = $(lib_LTLIBRARIES)
 libdolfin_mesh_la_LIBADD =
 am_libdolfin_mesh_la_OBJECTS = UnitCube.lo UnitSquare.lo \
 	MeshConnectivity.lo MeshEditor.lo MeshEntity.lo \
-	MeshEntityIterator.lo MeshGeometry.lo MeshTopology.lo Mesh.lo \
-	MeshData.lo Vertex.lo Edge.lo Face.lo Facet.lo Cell.lo \
-	TopologyComputation.lo Interval.lo Triangle.lo Tetrahedron.lo \
-	CellType.lo UniformMeshRefinement.lo LocalMeshRefinement.lo \
+	MeshEntityIterator.lo MeshGeometry.lo MeshHierarchy.lo \
+	MeshTopology.lo Mesh.lo MeshData.lo Vertex.lo Edge.lo Face.lo \
+	Facet.lo Cell.lo TopologyComputation.lo Interval.lo \
+	Triangle.lo Tetrahedron.lo CellType.lo \
+	UniformMeshRefinement.lo LocalMeshRefinement.lo \
 	LocalMeshCoarsening.lo Point.lo BoundaryComputation.lo \
 	BoundaryMesh.lo
 libdolfin_mesh_la_OBJECTS = $(am_libdolfin_mesh_la_OBJECTS)
@@ -241,6 +242,7 @@ nobase_include_HEADERS = dolfin/dolfin_mesh.h \
                             dolfin/MeshEntityIterator.h \
                             dolfin/MeshFunction.h \
                             dolfin/MeshGeometry.h \
+                            dolfin/MeshHierarchy.h \
                             dolfin/MeshTopology.h \
                             dolfin/Mesh.h \
                             dolfin/MeshData.h \
@@ -268,6 +270,7 @@ libdolfin_mesh_la_SOURCES = UnitCube.cpp \
                             MeshEntity.cpp \
                             MeshEntityIterator.cpp \
                             MeshGeometry.cpp \
+                            MeshHierarchy.cpp \
                             MeshTopology.cpp \
                             Mesh.cpp \
                             MeshData.cpp \
@@ -375,6 +378,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MeshEntity.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MeshEntityIterator.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MeshGeometry.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MeshHierarchy.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MeshTopology.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Point.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Tetrahedron.Plo@am__quote@

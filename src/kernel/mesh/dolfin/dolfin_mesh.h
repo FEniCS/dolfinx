@@ -18,6 +18,7 @@
 #include <dolfin/MeshEntityIterator.h>
 #include <dolfin/MeshFunction.h>
 #include <dolfin/MeshGeometry.h>
+#include <dolfin/MeshHierarchy.h>
 #include <dolfin/Mesh.h>
 #include <dolfin/MeshTopology.h>
 #include <dolfin/Point.h>

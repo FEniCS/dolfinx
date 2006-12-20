@@ -7,6 +7,7 @@ EXTRA_DIST = dolfin_mesh.h \
              MeshEntityIterator.h \
              MeshFunction.h \
              MeshGeometry.h \
+             MeshHierarchy.h \
              MeshTopology.h \
              Mesh.h \
              MeshData.h \

@@ -20,8 +20,11 @@ namespace dolfin
   {
   public:
 
+    /// Refine tetrahedral mesh by Bey algorithm 
+    static void refineTetMesh(Mesh& mesh);
+
     /// Refine simplicial mesh locally by node insertion 
-    static void refineSimplexByNodeInsertion(Mesh& mesh, Edge& edge);
+    static void refineSimplexByNodeInsertion(Mesh& mesh);
 
   };
 
