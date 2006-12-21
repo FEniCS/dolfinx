@@ -5,6 +5,7 @@
 // Last changed: 2006-12-20
 
 #include <dolfin/MeshHierarchy.h>
+#include <dolfin/Mesh.h>
 
 using namespace dolfin;
 
@@ -46,11 +47,18 @@ void MeshHierarchy::init(const Mesh& mesh)
 //-----------------------------------------------------------------------------
 void MeshHierarchy::clear()
 {
+  // Clear data 
   num_meshes = 0;
 
   if ( meshes )
     delete [] meshes;
   meshes = 0;
+}
+//-----------------------------------------------------------------------------
+int MeshHierarchy::size()
+{
+  // Return number of meshes 
+  return int(num_meshes);
 }
 //-----------------------------------------------------------------------------
 void MeshHierarchy::add(const Mesh& mesh) 
@@ -116,18 +124,17 @@ void MeshHierarchy::remove()
   }
 }
 //-----------------------------------------------------------------------------
-Mesh MeshHierarchy::operator[](uint k) const 
+Mesh& MeshHierarchy::operator()(uint k) const 
 {
-  dolfin_error("not implemented.");
-  Mesh mesh;
-  return mesh;
+  // Return reduced mesh object on level k 
+  return meshes[k];
 }
 //-----------------------------------------------------------------------------
-Mesh MeshHierarchy::operator()(uint k) const 
+Mesh& MeshHierarchy::operator[](uint k) const 
 {
+  // Return full (reconstructed) mesh object on level k 
   dolfin_error("not implemented.");
-  Mesh mesh;
-  return mesh;
+  return meshes[k];
 }
 //-----------------------------------------------------------------------------
 

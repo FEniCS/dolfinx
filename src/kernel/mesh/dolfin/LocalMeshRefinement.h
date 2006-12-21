@@ -11,8 +11,9 @@
 namespace dolfin
 {
 
+  class Cell;
   class Mesh;
-  class Edge;
+  class MeshHierarchy;
 
   /// This class implements local mesh refinement for different mesh types.
 
@@ -21,10 +22,27 @@ namespace dolfin
   public:
 
     /// Refine tetrahedral mesh by Bey algorithm 
-    static void refineTetMesh(Mesh& mesh);
-
+    static void refineTetMesh(MeshHierarchy& mesh_hierarcy);
+    
     /// Refine simplicial mesh locally by node insertion 
     static void refineSimplexByNodeInsertion(Mesh& mesh);
+
+  private:
+
+    /// This function implements the "EvaluateMarks" subroutine by Bey 
+    void evaluateMarks(Mesh& mesh); 
+      
+    /// This function implements the "CloseGrid" subroutine by Bey 
+    void closeMesh(Mesh& mesh); 
+
+    /// This function implements the "CloseElement" subroutine by Bey 
+    void closeCell(Cell& cell); 
+
+    /// This function implements the "UnrefineGrid" subroutine by Bey 
+    void unrefineMesh(MeshHierarchy& mesh, uint k);
+
+    /// This function implements the "RefineGrid" subroutine by Bey 
+    void refineMesh(MeshHierarchy& mesh, uint k);
 
   };
 

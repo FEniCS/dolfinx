@@ -7,10 +7,12 @@
 #ifndef __MESHHIERARCHY_H
 #define __MESHHIERARCHY_H
 
-#include <dolfin/Mesh.h>
+#include <dolfin/constants.h>
 
 namespace dolfin
 {
+
+  class Mesh;
 
   /// A MeshHierarchy is a set of Mesh objects M_k, each corresponding to 
   /// a refinement level k, for k=0,1,...,k_{max}. 
@@ -43,17 +45,20 @@ namespace dolfin
     /// Clear mesh hierarchy 
     void clear(); 
 
+    /// Return number of meshes in hierarchy 
+    int size();
+
     /// Add (finest) mesh to mesh hierarchy 
     void add(const Mesh& mesh); 
 
     /// Remove (finest) mesh from mesh hierarchy 
     void remove(); 
 
-    /// Return full mesh object corresponding to mesh hierarchy level k 
-    Mesh operator[] (uint k) const; 
+    /// Return reduced mesh object corresponding to level k 
+    Mesh& operator() (uint k) const; 
 
-    /// Return reduced mesh object corresponding to mesh hierarchy level k 
-    Mesh operator() (uint k) const; 
+    /// Return full mesh object corresponding to level k 
+    Mesh& operator[] (uint k) const; 
 
   private: 
 
