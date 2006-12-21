@@ -3,6 +3,7 @@
 //
 // Modified by Johan Hoffman 2006.
 // Modified by Garth N. Wells 2006.
+// Modified by Kristian Oelgaard 2006.
 //
 // First added:  2006-06-05
 // Last changed: 2006-12-06
@@ -11,6 +12,7 @@
 #include <dolfin/Cell.h>
 #include <dolfin/MeshEditor.h>
 #include <dolfin/MeshGeometry.h>
+#include <dolfin/Facet.h>
 #include <dolfin/Tetrahedron.h>
 
 using namespace dolfin;
@@ -286,7 +288,49 @@ real Tetrahedron::diameter(const MeshEntity& tetrahedron) const
 //-----------------------------------------------------------------------------
 real Tetrahedron::normal(const Cell& cell, uint facet, uint i) const
 {
-  dolfin_error("Not implemented. Please fix this Kristian. ;-)");
+  // This is a trick to be allowed to initialize a facet from the cell mesh
+  Cell& c = const_cast<Cell&>(cell);
+
+  // Create facet from the mesh and local facet number
+  Facet f(c.mesh(), c.entities(2)[facet]);
+
+  // Get global index of opposite vertex
+  const uint v0 = cell.entities(0)[facet];
+  
+  // Get global index of vertices on the facet
+  uint v1 = f.entities(0)[0];
+  uint v2 = f.entities(0)[1];
+  uint v3 = f.entities(0)[2];
+
+  // Get mesh geometry
+  const MeshGeometry& geometry = cell.mesh().geometry();
+  
+  // Get the coordinates of the four vertices
+  const real* p0 = geometry.x(v0);
+  const real* p1 = geometry.x(v1);
+  const real* p2 = geometry.x(v2);
+  const real* p3 = geometry.x(v3);
+
+  // Create points from vertex coordinates
+  Point P0(p0[0], p0[1], p0[2]);
+  Point P1(p1[0], p1[1], p1[2]);
+  Point P2(p2[0], p2[1], p2[2]);
+  Point P3(p3[0], p3[1], p3[2]);
+
+  // Create vectors
+  Point V0 = P0 - P1;
+  Point V1 = P2 - P1;
+  Point V2 = P3 - P1;
+
+  // Compute normal vector
+  Point n = V1.cross(V2);
+
+  // Flip direction of normal so it points outward
+  if (n.dot(V0) < 0)
+    return n[i] / n.norm();
+  else
+    return -n[i] / n.norm();
+
   return 0.0;
 }
 //-----------------------------------------------------------------------------
