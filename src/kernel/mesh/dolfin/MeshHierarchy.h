@@ -16,7 +16,7 @@ namespace dolfin
   /// a refinement level k, for k=0,1,...,k_{max}. 
   /// M_k for k>0 contains mesh entities of codimension 0 that are not 
   /// contained in M_{k-1}, together with associated mesh entities of 
-  /// codimension > 0.  
+  /// codimension >0.  
   /// 
   /// For example, the MeshHierarchy may correspond to a set of successively 
   /// refined finite element meshes T_k, k=0,1,...,k_{max}, where M_0 
@@ -28,17 +28,40 @@ namespace dolfin
   {
   public:
     
-    /// Create empty MeshHierarcy
+    /// Create mesh hierarcy with initial mesh 
+    MeshHierarchy(const Mesh& mesh);
+
+    /// Create empty mesh hierarcy
     MeshHierarchy();
 
     /// Destructor
     ~MeshHierarchy();
 
-    /// Return full Mesh object corresponding to MeshHierarchy level k.  
+    /// Initialize mesh hierarchy 
+    void init(const Mesh& mesh); 
+
+    /// Clear mesh hierarchy 
+    void clear(); 
+
+    /// Add (finest) mesh to mesh hierarchy 
+    void add(const Mesh& mesh); 
+
+    /// Remove (finest) mesh from mesh hierarchy 
+    void remove(); 
+
+    /// Return full mesh object corresponding to mesh hierarchy level k 
     Mesh operator[] (uint k) const; 
 
-    /// Return reduced Mesh object corresponding to MeshHierarchy level k.  
+    /// Return reduced mesh object corresponding to mesh hierarchy level k 
     Mesh operator() (uint k) const; 
+
+  private: 
+
+    /// Array of meshes 
+    Mesh* meshes;
+
+    /// Number of meshes in mesh hierarchy 
+    uint num_meshes; 
 
   };
 
