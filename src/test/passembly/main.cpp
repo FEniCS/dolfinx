@@ -217,8 +217,8 @@ int main(int argc, char* argv[])
     if(cell_partition_function.get(*cell) == static_cast<unsigned int>(process) )
     {
       map.update(*cell);
-      a.update(map);
-//      L.update(map);
+      a.update(*cell, map);
+//      L.update(*cell, map);
 
       // Create mapping for cell
       int i = 0;
