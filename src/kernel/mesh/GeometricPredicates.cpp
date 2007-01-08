@@ -1,6 +1,7 @@
-// Copyright (C) 2006 Jonathan Richard Shewchuk, Johan Jansson.
+// Copyright (C) 1999 Jonathan Richard Shewchuk
 // Licensed under the GNU GPL Version 2.
 //
+// Modified by Johan Jansson, 2006.
 
 #include <stdio.h>
 #include <stdlib.h>

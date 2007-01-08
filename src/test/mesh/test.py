@@ -196,20 +196,28 @@ class Predicates(unittest.TestCase):
         print "p2: ", p2[0], " ", p2[1], " ", p2[2]
 
         # Test at centroid
-        p = Point(1.0 / 3.0 * (p0[0] + p1[0] + p2[0]),
-                  1.0 / 3.0 * (p0[1] + p1[1] + p2[1]),
-                  1.0 / 3.0 * (p0[2] + p1[2] + p2[2]))
+        pinside = Point(1.0 / 3.0 * (p0[0] + p1[0] + p2[0]),
+                        1.0 / 3.0 * (p0[1] + p1[1] + p2[1]),
+                        1.0 / 3.0 * (p0[2] + p1[2] + p2[2]))
 
-        print "p:  ", p[0], " ", p[1], " ", p[2]
+        print "pinside:  ", pinside[0], " ", pinside[1], " ", pinside[2]
+
+        # Test at sum of vertex points
+        poutside = p0 + p1 + p2
+
+        print "poutside:  ", poutside[0], " ", poutside[1], " ", poutside[2]
 
         t = mesh.type()
 
         cell = c.__deref__()
-        inside = t.intersects(cell, p)
+        inside = t.intersects(cell, pinside)
+        outside = t.intersects(cell, poutside)
 
-        print "intersects: ", inside
+        print "pinside: ", inside
+        print "poutside: ", outside
         
         self.assertEqual(inside, True)
+        self.assertEqual(outside, False)
 
     def testTetrahedronIntersection(self):
         """Test point intersection"""
@@ -231,20 +239,28 @@ class Predicates(unittest.TestCase):
         print "p3: ", p3[0], " ", p3[1], " ", p3[2]
 
         # Test at centroid
-        p = Point(1.0 / 4.0 * (p0[0] + p1[0] + p2[0] + p3[0]),
-                  1.0 / 4.0 * (p0[1] + p1[1] + p2[1] + p3[1]),
-                  1.0 / 4.0 * (p0[2] + p1[2] + p2[2] + p3[2]))
+        pinside = Point(1.0 / 4.0 * (p0[0] + p1[0] + p2[0] + p3[0]),
+                        1.0 / 4.0 * (p0[1] + p1[1] + p2[1] + p3[1]),
+                        1.0 / 4.0 * (p0[2] + p1[2] + p2[2] + p3[2]))
 
-        print "p:  ", p[0], " ", p[1], " ", p[2]
+        print "pinside:  ", pinside[0], " ", pinside[1], " ", pinside[2]
+
+        # Test at sum of vertex points
+        poutside = p0 + p1 + p2 + p3
+
+        print "poutside:  ", poutside[0], " ", poutside[1], " ", poutside[2]
 
         t = mesh.type()
 
         cell = c.__deref__()
-        inside = t.intersects(cell, p)
+        inside = t.intersects(cell, pinside)
+        outside = t.intersects(cell, poutside)
 
-        print "intersects: ", inside
+        print "pinside: ", inside
+        print "poutside: ", outside
         
         self.assertEqual(inside, True)
+        self.assertEqual(outside, False)
 
 if __name__ == "__main__":
     unittest.main()

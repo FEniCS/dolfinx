@@ -1,6 +1,8 @@
-// Copyright (C) 1999 Jonathan Richard Shewchuk, Stéphane Popinet,
-// Johan Jansson
+// Copyright (C) 1999 Jonathan Richard Shewchuk
 // Licensed under the GNU GPL Version 2.
+// 
+// Modified by Johan Jansson, 2006.
+
 
 #ifndef __GEOMETRIC_PREDICATES_H
 #define __GEOMETRIC_PREDICATES_H
@@ -30,22 +32,22 @@ namespace dolfin
  */
 /* Header file for robust predicates by Jonathan Richard Shewchuk */
 
-double orient2d            (double * pa,
-			    double * pb,
-			    double * pc);
-double orient3d            (double * pa,
-			    double * pb,
-			    double * pc,
-			    double * pd);
-double incircle            (double * pa,
-			    double * pb,
-			    double * pc,
-			    double * pd);
-double insphere            (double * pa,
-			    double * pb,
-			    double * pc,
-			    double * pd,
-			    double * pe);
+double orient2d            (double* pa,
+			    double* pb,
+			    double* pc);
+double orient3d            (double* pa,
+			    double* pb,
+			    double* pc,
+			    double* pd);
+double incircle            (double* pa,
+			    double* pb,
+			    double* pc,
+			    double* pd);
+double insphere            (double* pa,
+			    double* pb,
+			    double* pc,
+			    double* pd,
+			    double* pe);
 
 }
 
