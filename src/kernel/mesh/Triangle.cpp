@@ -233,7 +233,7 @@ bool Triangle::intersects(const MeshEntity& triangle, const Point& p) const
   // Get mesh geometry
   const MeshGeometry& geometry = triangle.mesh().geometry();
 
-  // Get global index of vertices on the facet
+  // Get global index of vertices of the triangle
   uint v0 = triangle.entities(0)[0];
   uint v1 = triangle.entities(0)[1];
   uint v2 = triangle.entities(0)[2];
@@ -252,6 +252,7 @@ bool Triangle::intersects(const MeshEntity& triangle, const Point& p) const
 
   real d1, d2, d3;
 
+  // Test orientation of p w.r.t. each edge
   d1 = orient2d((double *)x0, (double *)x1, x);
   if(d1 < 0.0)
     return false;

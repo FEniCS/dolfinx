@@ -127,6 +127,8 @@ real Interval::normal(const Cell& cell, uint facet, uint i) const
 bool Interval::intersects(const MeshEntity& interval, const Point& p) const
 {
   // FIXME: Not implemented
+  dolfin_error("Interval::intersects() not implemented");
+
   return false;
 }
 //-----------------------------------------------------------------------------

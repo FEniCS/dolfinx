@@ -14,6 +14,7 @@
 #include <dolfin/MeshGeometry.h>
 #include <dolfin/Facet.h>
 #include <dolfin/Tetrahedron.h>
+#include <dolfin/GeometricPredicates.h>
 
 using namespace dolfin;
 
@@ -337,8 +338,52 @@ real Tetrahedron::normal(const Cell& cell, uint facet, uint i) const
 bool Tetrahedron::intersects(const MeshEntity& tetrahedron,
                              const Point& p) const
 {
-  // FIXME: Not implemented
-  return false;
+  // Get mesh geometry
+  const MeshGeometry& geometry = tetrahedron.mesh().geometry();
+
+  // Get global index of vertices of the tetrahedron
+  uint v0 = tetrahedron.entities(0)[0];
+  uint v1 = tetrahedron.entities(0)[1];
+  uint v2 = tetrahedron.entities(0)[2];
+  uint v3 = tetrahedron.entities(0)[3];
+
+  // Get the coordinates of the four vertices
+  const real* x0 = geometry.x(v0);
+  const real* x1 = geometry.x(v1);
+  const real* x2 = geometry.x(v2);
+  const real* x3 = geometry.x(v3);
+
+  real xcoordinates[3];
+  real* x = xcoordinates;
+
+  x[0] = p[0];
+  x[1] = p[1];
+  x[2] = p[2];
+
+  real d1, d2, d3, d4;
+
+  // Test orientation of p w.r.t. each face
+  d1 = orient3d((double *)x2, (double *)x1, (double *)x0, x);
+  //cout << "d1: " << d1 << endl;
+  if(d1 < 0.0)
+    return false;
+  d2 = orient3d((double *)x0, (double *)x3, (double *)x2, x);
+  //cout << "d2: " << d2 << endl;
+  if(d2 < 0.0)
+    return false;
+  d3 = orient3d((double *)x0, (double *)x1, (double *)x3, x);
+  //cout << "d3: " << d3 << endl;
+  if(d3 < 0.0)
+    return false;
+  d4 = orient3d((double *)x1, (double *)x2, (double *)x3, x);
+  //cout << "d4: " << d4 << endl;
+  if(d4 < 0.0)
+    return false;
+
+  if(d1 == 0.0 || d2 == 0.0 || d3 == 0.0 || d4 == 0.0)
+    return true;
+
+  return true;
 }
 //-----------------------------------------------------------------------------
 std::string Tetrahedron::description() const
