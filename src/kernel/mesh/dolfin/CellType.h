@@ -17,6 +17,7 @@ namespace dolfin
   class Cell;
   class MeshEditor;
   class MeshEntity;
+  class Point;
 
   /// This class provides a common interface for different cell types.
   /// Each cell type implements mesh functionality that is specific to
@@ -79,6 +80,9 @@ namespace dolfin
     
     /// Compute component i of normal of given facet with respect to the cell
     virtual real normal(const Cell& cell, uint facet, uint i) const = 0;
+
+    /// Check if point p intersects the cell
+    virtual bool intersects(const MeshEntity& entity, const Point& p) const = 0;
 
     /// Return description of cell type
     virtual std::string description() const = 0;

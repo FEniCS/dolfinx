@@ -26,4 +26,5 @@ EXTRA_DIST = dolfin_mesh.h \
              LocalMeshCoarsening.h \
              Point.h \
              BoundaryComputation.h \
-             MeshBoundary.h
+             MeshBoundary.h \
+             GeometricPredicates.h

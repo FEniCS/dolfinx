@@ -12,6 +12,8 @@
 #include <dolfin/MeshEditor.h>
 #include <dolfin/Facet.h>
 #include <dolfin/Triangle.h>
+#include <dolfin/Vertex.h>
+#include <dolfin/GeometricPredicates.h>
 
 using namespace dolfin;
 
@@ -222,6 +224,48 @@ real Triangle::normal(const Cell& cell, uint facet, uint i) const
     return -n[i] / l;
 
   return 0.0;
+}
+//-----------------------------------------------------------------------------
+bool Triangle::intersects(const MeshEntity& triangle, const Point& p) const
+{
+  // Assume triangle vertices are ordered counter-clockwise
+
+  // Get mesh geometry
+  const MeshGeometry& geometry = triangle.mesh().geometry();
+
+  // Get global index of vertices on the facet
+  uint v0 = triangle.entities(0)[0];
+  uint v1 = triangle.entities(0)[1];
+  uint v2 = triangle.entities(0)[2];
+
+  // Get the coordinates of the three vertices
+  const real* x0 = geometry.x(v0);
+  const real* x1 = geometry.x(v1);
+  const real* x2 = geometry.x(v2);
+
+  real xcoordinates[3];
+  real* x = xcoordinates;
+
+  x[0] = p[0];
+  x[1] = p[1];
+  x[2] = p[2];
+
+  real d1, d2, d3;
+
+  d1 = orient2d((double *)x0, (double *)x1, x);
+  if(d1 < 0.0)
+    return false;
+  d2 = orient2d((double *)x1, (double *)x2, x);
+  if(d2 < 0.0)
+    return false;
+  d3 = orient2d((double *)x2, (double *)x0, x);
+  if(d3 < 0.0)
+    return false;
+
+  if(d1 == 0.0 || d2 == 0.0 || d3 == 0.0)
+    return true;
+
+  return true;
 }
 //-----------------------------------------------------------------------------
 std::string Triangle::description() const

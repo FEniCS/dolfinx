@@ -124,6 +124,12 @@ real Interval::normal(const Cell& cell, uint facet, uint i) const
   return 0.0;
 }
 //-----------------------------------------------------------------------------
+bool Interval::intersects(const MeshEntity& interval, const Point& p) const
+{
+  // FIXME: Not implemented
+  return false;
+}
+//-----------------------------------------------------------------------------
 std::string Interval::description() const
 {
   std::string s = "interval (simplex of topological dimension 1)";

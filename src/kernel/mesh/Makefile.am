@@ -25,7 +25,8 @@ nobase_include_HEADERS    = dolfin/dolfin_mesh.h \
                             dolfin/UniformMeshRefinement.h \
                             dolfin/Point.h \
                             dolfin/BoundaryComputation.h \
-                            dolfin/BoundaryMesh.h
+                            dolfin/BoundaryMesh.h \
+                            dolfin/GeometricPredicates.h
 INCLUDES                  = @KERNEL_CFLAGS@
 lib_LTLIBRARIES           = libdolfin-mesh.la
 libdolfin_mesh_la_SOURCES = UnitCube.cpp \
@@ -54,5 +55,6 @@ libdolfin_mesh_la_SOURCES = UnitCube.cpp \
                             LocalMeshCoarsening.cpp \
                             Point.cpp \
                             BoundaryComputation.cpp \
-                            BoundaryMesh.cpp
+                            BoundaryMesh.cpp \
+                            GeometricPredicates.cpp
 libdolfin_mesh_la_LDFLAGS = -static

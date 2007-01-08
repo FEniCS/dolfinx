@@ -22,7 +22,7 @@ namespace dolfin
 
     /// Create vertex on given mesh
     Vertex(Mesh& mesh, uint index) : MeshEntity(mesh, 0, index) {}
-    
+
     /// Create vertex from mesh entity
     Vertex(MeshEntity& entity) : MeshEntity(entity.mesh(), 0, entity.index()) {}
 

@@ -177,5 +177,37 @@ class PyCCInterface(unittest.TestCase):
         mesh = UnitSquare(5, 5)
         self.assertEqual(len(mesh.cells()), 50)
 
+class Predicates(unittest.TestCase):
+
+    def testGetGeometricPredicates(self):
+        """Test point intersection"""
+        mesh = UnitSquare(1, 1)
+        c = cells(mesh)
+        v = vertices(c)
+        p0 = v.point()
+        v.increment()
+        p1 = v.point()
+        v.increment()
+        p2 = v.point()
+
+        print ""
+        print "p0: ", p0[0], " ", p0[1], " ", p0[2]
+        print "p1: ", p1[0], " ", p1[1], " ", p1[2]
+        print "p2: ", p2[0], " ", p2[1], " ", p2[2]
+
+        p = Point(0.6, 0.3, 0.0)
+
+        print "p:  ", p[0], " ", p[1], " ", p[2]
+
+        t = mesh.type()
+
+        cell = c.__deref__()
+        inside = t.intersects(cell, p)
+
+        print "intersects: ", inside
+        
+
+        self.assertEqual(1, 1)
+
 if __name__ == "__main__":
     unittest.main()

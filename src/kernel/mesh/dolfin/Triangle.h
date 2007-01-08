@@ -48,6 +48,9 @@ namespace dolfin
     /// Compute component i of normal of given facet with respect to the cell
     real normal(const Cell& cell, uint facet, uint i) const;
 
+    /// Check if point p intersects the cell
+    bool intersects(const MeshEntity& entity, const Point& p) const;
+
     /// Return description of cell type
     std::string description() const;
 

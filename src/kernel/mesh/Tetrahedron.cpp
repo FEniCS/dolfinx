@@ -334,6 +334,13 @@ real Tetrahedron::normal(const Cell& cell, uint facet, uint i) const
   return 0.0;
 }
 //-----------------------------------------------------------------------------
+bool Tetrahedron::intersects(const MeshEntity& tetrahedron,
+                             const Point& p) const
+{
+  // FIXME: Not implemented
+  return false;
+}
+//-----------------------------------------------------------------------------
 std::string Tetrahedron::description() const
 {
   std::string s = "tetrahedron (simplex of topological dimension 3)";
