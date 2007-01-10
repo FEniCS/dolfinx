@@ -1,35 +1,13 @@
 Contents
 
-    1. Dependencies
-    2. Installation
-    3. Compabitility
-    4. License
-    5. Feedback
-    6. About
+    1. Installation
+    2. Compabitility
+    3. License
+    4. Feedback
+    5. About
 
 -------------------------------------------------------------------------------
-1. Dependencies
-
-DOLFIN depends on PETSc, version 2.3.1. PETSc can be downloaded from
-
-    http://www-unix.mcs.anl.gov/petsc/petsc-2/
-
-Follow the installation instructions on the PETSc web page. Normally,
-you should only have to perform the following simple steps in the PETSc
-source directory:
-
-    export PETSC_DIR=`pwd`
-    ./config/configure.py --with-clanguage=cxx --with-shared=1
-    make all
-
-Replace export PETSC_DIR=`pwd` with setenv PETSC_DIR `pwd` if you're using
-tcsh. Add --download-hypre=yes to configure.py if you want to install Hypre.
-
-DOLFIN assumes that PETSC_DIR is /usr/local/lib/petsc/ but this can be
-controlled using the flag --with-petsc-dir=<path> when configuring DOLFIN.
-
--------------------------------------------------------------------------------
-2. Installation
+1. Installation
 
 DOLFIN follows GNU standard, so the installation procedure is simple:
 
@@ -56,7 +34,7 @@ Note that you need to add the directory `pwd`/local/bin/ to your
 path. (You will be reminded of this when running ./configure.local.)
 
 ------------------------------------------------------------------------------
-3. Compatibility
+2. Compatibility
 
  - When compiling on non-Linux systems, you may need to use gmake
    instead of make.
@@ -64,19 +42,19 @@ path. (You will be reminded of this when running ./configure.local.)
  - When compiling with g++ (gcc), you may need version 3.4 or higher.
 
 ------------------------------------------------------------------------------
-4. License
+3. License
 
 DOLFIN is licensed under the GNU GPL Version 2, see http://www.gnu.org.
 
 -------------------------------------------------------------------------------
-5. Feed back
+4. Feed back
 
 Feed back, patches, and comments should be sent to
 
     dolfin-dev@fenics.org
 
 ------------------------------------------------------------------------------
-6. About
+5. About
 
 A hopefully complete list of authors is given in the file AUTHORS.
 
@@ -86,4 +64,4 @@ For more information about DOLFIN, visit
 
 -------------------------------------------------------------------------------
 Oslo
-June 2006
+November 2006

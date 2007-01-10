@@ -49,7 +49,7 @@ int main(int argc, const char* argv[])
   set("ODE tolerance", 1e-3);
   set("ODE discrete tolerance", 1e-10);
   set("ODE initial time step", 0.001);
-  set("ODE linear solver", "direct");
+  //set("ODE linear solver", "direct");
   set("ODE adaptive samples", false);
   set("homotopy monitoring", false);
   set("homotopy divergence tolerance", 10.0);

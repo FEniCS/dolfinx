@@ -43,6 +43,7 @@ DIST_COMMON = $(nobase_include_HEADERS) $(srcdir)/Makefile.am \
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/ac_pkg_swig.m4 \
 	$(top_srcdir)/m4/ac_python_devel.m4 \
+	$(top_srcdir)/m4/ax_boost_base.m4 \
 	$(top_srcdir)/m4/ax_compiler_vendor.m4 \
 	$(top_srcdir)/m4/libtool.m4 $(top_srcdir)/m4/libxml.m4 \
 	$(top_srcdir)/configure.ac
@@ -60,20 +61,15 @@ am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(includedir)"
 libLTLIBRARIES_INSTALL = $(INSTALL)
 LTLIBRARIES = $(lib_LTLIBRARIES)
 libdolfin_mesh_la_LIBADD =
-am_libdolfin_mesh_la_OBJECTS = Boundary.lo BoundaryData.lo \
-	BoundaryInit.lo Cell.lo CellIterator.lo Edge.lo \
-	EdgeIterator.lo EdgeRefData.lo Face.lo FaceIterator.lo \
-	GenericCell.lo Mesh.lo MeshData.lo MeshHierarchy.lo \
-	MeshInit.lo MeshIterator.lo MeshRefinement.lo Point.lo \
-	TetMeshRefinement.lo Tetrahedron.lo TriMeshRefinement.lo \
-	Triangle.lo UnitCube.lo UnitSquare.lo Vertex.lo \
-	VertexIterator.lo MeshConnectivity.lo MeshEditor.lo \
-	MeshEntity.lo MeshEntityIterator.lo MeshGeometry.lo \
-	MeshTopology.lo NewMesh.lo NewMeshData.lo NewVertex.lo \
-	NewEdge.lo NewFace.lo NewFacet.lo NewCell.lo \
-	TopologyComputation.lo Interval.lo NewTriangle.lo \
-	NewTetrahedron.lo CellType.lo UniformMeshRefinement.lo \
-	NewPoint.lo BoundaryComputation.lo BoundaryMesh.lo
+am_libdolfin_mesh_la_OBJECTS = UnitCube.lo UnitSquare.lo \
+	MeshConnectivity.lo MeshEditor.lo MeshEntity.lo \
+	MeshEntityIterator.lo MeshGeometry.lo MeshHierarchy.lo \
+	MeshTopology.lo Mesh.lo MeshData.lo Vertex.lo Edge.lo Face.lo \
+	Facet.lo Cell.lo TopologyComputation.lo Interval.lo \
+	Triangle.lo Tetrahedron.lo CellType.lo \
+	UniformMeshRefinement.lo LocalMeshRefinement.lo \
+	LocalMeshCoarsening.lo Point.lo BoundaryComputation.lo \
+	BoundaryMesh.lo GeometricPredicates.lo
 libdolfin_mesh_la_OBJECTS = $(am_libdolfin_mesh_la_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -109,6 +105,8 @@ AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
 AWK = @AWK@
+BOOST_CPPFLAGS = @BOOST_CPPFLAGS@
+BOOST_LDFLAGS = @BOOST_LDFLAGS@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
@@ -124,6 +122,7 @@ CYGPATH_W = @CYGPATH_W@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
 DOLFIN_CFLAGS = @DOLFIN_CFLAGS@
+DOLFIN_DEFINITIONS = @DOLFIN_DEFINITIONS@
 DOLFIN_EXT_LIBS = @DOLFIN_EXT_LIBS@
 DOLFIN_LIBS = @DOLFIN_LIBS@
 DOLFIN_LTLIBOBJS = @DOLFIN_LTLIBOBJS@
@@ -133,6 +132,7 @@ ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
 EXEEXT = @EXEEXT@
+EXTERNAL_CFLAGS = @EXTERNAL_CFLAGS@
 F77 = @F77@
 FFLAGS = @FFLAGS@
 INSTALL_DATA = @INSTALL_DATA@
@@ -227,112 +227,69 @@ pyexecdir = @pyexecdir@
 pythondir = @pythondir@
 sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
+swig_found = @swig_found@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 SUBDIRS = dolfin
 nobase_include_HEADERS = dolfin/dolfin_mesh.h \
-                            dolfin/Boundary.h \
-                            dolfin/BoundaryData.h \
-                            dolfin/BoundaryFacetIterator.h \
-                            dolfin/BoundaryInit.h \
-                            dolfin/Cell.h \
-                            dolfin/CellIterator.h \
-                            dolfin/CellRefData.h \
-                            dolfin/Edge.h \
-                            dolfin/EdgeIterator.h \
-                            dolfin/EdgeRefData.h \
-                            dolfin/Face.h \
-                            dolfin/FaceIterator.h \
-                            dolfin/GenericCell.h \
-                            dolfin/Mesh.h \
-                            dolfin/MeshData.h \
-                            dolfin/MeshHierarchy.h \
-                            dolfin/MeshInit.h \
-                            dolfin/MeshIterator.h \
-                            dolfin/MeshRefinement.h \
-                            dolfin/Point.h \
-                            dolfin/TetMeshRefinement.h \
-                            dolfin/Tetrahedron.h \
-                            dolfin/TriMeshRefinement.h \
-                            dolfin/Triangle.h \
                             dolfin/UnitCube.h \
                             dolfin/UnitSquare.h \
-                            dolfin/Vertex.h \
-                            dolfin/VertexIterator.h \
                             dolfin/MeshConnectivity.h \
                             dolfin/MeshEditor.h \
                             dolfin/MeshEntity.h \
                             dolfin/MeshEntityIterator.h \
                             dolfin/MeshFunction.h \
                             dolfin/MeshGeometry.h \
+                            dolfin/MeshHierarchy.h \
                             dolfin/MeshTopology.h \
-                            dolfin/NewMesh.h \
-                            dolfin/NewMeshData.h \
-                            dolfin/NewVertex.h \
-                            dolfin/NewEdge.h \
-                            dolfin/NewFace.h \
-                            dolfin/NewFacet.h \
-                            dolfin/NewCell.h \
+                            dolfin/Mesh.h \
+                            dolfin/MeshData.h \
+                            dolfin/Vertex.h \
+                            dolfin/Edge.h \
+                            dolfin/Face.h \
+                            dolfin/Facet.h \
+                            dolfin/Cell.h \
                             dolfin/TopologyComputation.h \
                             dolfin/CellType.h \
                             dolfin/Interval.h \
-                            dolfin/NewTriangle.h \
-                            dolfin/NewTetrahedron.h \
+                            dolfin/Triangle.h \
+                            dolfin/Tetrahedron.h \
                             dolfin/UniformMeshRefinement.h \
-                            dolfin/NewPoint.h \
+                            dolfin/Point.h \
                             dolfin/BoundaryComputation.h \
-                            dolfin/BoundaryMesh.h
+                            dolfin/BoundaryMesh.h \
+                            dolfin/GeometricPredicates.h
 
 INCLUDES = @KERNEL_CFLAGS@
 lib_LTLIBRARIES = libdolfin-mesh.la
-libdolfin_mesh_la_SOURCES = Boundary.cpp \
-                            BoundaryData.cpp \
-                            BoundaryInit.cpp \
-                            Cell.cpp \
-                            CellIterator.cpp \
-                            Edge.cpp \
-                            EdgeIterator.cpp \
-                            EdgeRefData.cpp \
-                            Face.cpp \
-                            FaceIterator.cpp \
-                            GenericCell.cpp \
-                            Mesh.cpp \
-                            MeshData.cpp \
-                            MeshHierarchy.cpp \
-                            MeshInit.cpp \
-                            MeshIterator.cpp \
-                            MeshRefinement.cpp \
-                            Point.cpp \
-                            TetMeshRefinement.cpp \
-                            Tetrahedron.cpp \
-                            TriMeshRefinement.cpp \
-                            Triangle.cpp \
-                            UnitCube.cpp \
+libdolfin_mesh_la_SOURCES = UnitCube.cpp \
                             UnitSquare.cpp \
-                            Vertex.cpp \
-                            VertexIterator.cpp \
                             MeshConnectivity.cpp \
                             MeshEditor.cpp \
                             MeshEntity.cpp \
                             MeshEntityIterator.cpp \
                             MeshGeometry.cpp \
+                            MeshHierarchy.cpp \
                             MeshTopology.cpp \
-                            NewMesh.cpp \
-                            NewMeshData.cpp \
-                            NewVertex.cpp \
-                            NewEdge.cpp \
-                            NewFace.cpp \
-                            NewFacet.cpp \
-                            NewCell.cpp \
+                            Mesh.cpp \
+                            MeshData.cpp \
+                            Vertex.cpp \
+                            Edge.cpp \
+                            Face.cpp \
+                            Facet.cpp \
+                            Cell.cpp \
                             TopologyComputation.cpp \
                             Interval.cpp \
-                            NewTriangle.cpp \
-                            NewTetrahedron.cpp \
+                            Triangle.cpp \
+                            Tetrahedron.cpp \
                             CellType.cpp \
                             UniformMeshRefinement.cpp \
-                            NewPoint.cpp \
+                            LocalMeshRefinement.cpp \
+                            LocalMeshCoarsening.cpp \
+                            Point.cpp \
                             BoundaryComputation.cpp \
-                            BoundaryMesh.cpp
+                            BoundaryMesh.cpp \
+                            GeometricPredicates.cpp
 
 libdolfin_mesh_la_LDFLAGS = -static
 all: all-recursive
@@ -404,21 +361,17 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Boundary.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BoundaryComputation.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BoundaryData.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BoundaryInit.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BoundaryMesh.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Cell.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/CellIterator.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/CellType.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Edge.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EdgeIterator.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EdgeRefData.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Face.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FaceIterator.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/GenericCell.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Facet.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/GeometricPredicates.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Interval.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LocalMeshCoarsening.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LocalMeshRefinement.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Mesh.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MeshConnectivity.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MeshData.Plo@am__quote@
@@ -427,31 +380,15 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MeshEntityIterator.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MeshGeometry.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MeshHierarchy.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MeshInit.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MeshIterator.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MeshRefinement.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MeshTopology.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NewCell.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NewEdge.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NewFace.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NewFacet.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NewMesh.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NewMeshData.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NewPoint.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NewTetrahedron.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NewTriangle.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NewVertex.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Point.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TetMeshRefinement.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Tetrahedron.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TopologyComputation.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TriMeshRefinement.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Triangle.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/UniformMeshRefinement.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/UnitCube.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/UnitSquare.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Vertex.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/VertexIterator.Plo@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \

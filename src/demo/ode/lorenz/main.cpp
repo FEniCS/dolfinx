@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003-07-02
-// Last changed: 2006-07-05
+// Last changed: 2006-10-23
 
 #include <stdio.h>
 #include <dolfin.h>
@@ -21,9 +21,9 @@ public:
     r = 28.0;
 
     // Fixed points
-    p0.x = 6.0*sqrt(2.0); p0.y = p0.x; p0.z = 27.0;
-    p1.x = -p0.x; p1.y = -p0.y; p1.z = p0.z;
-
+    p0.x() = 6.0*sqrt(2.0); p0.y() = p0.x(); p0.z() = 27.0; 
+    p1.x() = -p0.x(); p1.y() = -p0.y(); p1.z() =  p0.z();
+  
     // Distance between fixed points
     v = p1 - p0;
     
@@ -43,39 +43,33 @@ public:
     fclose(fp);
   }
 
-  real u0(unsigned int i)
+  void u0(uBlasVector& u)
   {
-    switch (i)
-    {
-    case 0:
-      return 1.0;
-    case 1:
-      return 0.0;
-    default:
-      return 0.0;
-    }
+    u(0) = 1.0;
+    u(1) = 0.0;
+    u(2) = 0.0;
   }
 
-  void f(const DenseVector& u, real t, DenseVector& y)
+  void f(const uBlasVector& u, real t, uBlasVector& y)
   {
     y(0) = s*(u(1) - u(0));
     y(1) = r*u(0) - u(1) - u(0)*u(2);
     y(2) = u(0)*u(1) - b*u(2);
   }
 
-  void J(const DenseVector& x, DenseVector& y, const DenseVector& u, real t)
+  void J(const uBlasVector& x, uBlasVector& y, const uBlasVector& u, real t)
   {
     y(0) = s*(x(1) - x(0));
     y(1) = (r - u(2))*x(0) - x(1) - u(0)*x(2);
     y(2) = u(1)*x(0) + u(0)*x(1) - b*x(2);
   }
 
-  bool update(const DenseVector& u, real t, bool end)
+  bool update(const uBlasVector& u, real t, bool end)
   {
     // Check in which region the point is
     Point p(u(0), u(1), u(2));
 
-    if ( (p - p0) * v < 0 )
+    if ( v.dot(p - p0) < 0 )
     {
       if ( pos != 0 )
       {
@@ -87,7 +81,7 @@ public:
 	fprintf(fp, "%.12e 0 %d %d %.16e\n", t, n0, n1, alpha);
       }
     }
-    else if ( (p - p1) * v > 0 )
+    else if ( v.dot(p - p1) > 0 )
     {
       if ( pos != 1 )
       {
@@ -136,7 +130,6 @@ int main()
   dolfin_output("plain text");
 
   set("ODE number of samples", 500);
-  set("ODE solve dual problem", false);
   set("ODE initial time step", 0.01);
   set("ODE fixed time step", true);
   set("ODE nonlinear solver", "newton");

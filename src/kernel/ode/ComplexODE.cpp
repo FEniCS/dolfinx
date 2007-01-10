@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-02-02
-// Last changed: 2006-07-07
+// Last changed: 2006-08-21
 
 #include <dolfin/Array.h>
 #include <dolfin/ComplexODE.h>
@@ -75,14 +75,18 @@ bool ComplexODE::update(const complex z[], real t, bool end)
   return true;
 }
 //-----------------------------------------------------------------------------
-real ComplexODE::u0(uint i)
+void ComplexODE::u0(uBlasVector& u)
 {
   // Translate initial value from complex to real
-  complex z = z0(i / 2);
-  return ( i % 2 == 0 ? z.real() : z.imag() );
+  z0(zvalues);
+  for (uint i = 0; i < N; i++)
+  {
+    complex z = zvalues[i / 2];
+    u(i) = ( i % 2 == 0 ? z.real() : z.imag() );
+  }
 }
 //-----------------------------------------------------------------------------
-real ComplexODE::f(const DenseVector& u, real t, uint i)
+real ComplexODE::f(const uBlasVector& u, real t, uint i)
 {
   // Translate right-hand side from complex to real, assuming that if
   // u_i depends on u_j, then u_i depends on both the real and
@@ -110,7 +114,7 @@ real ComplexODE::f(const DenseVector& u, real t, uint i)
   return ( i % 2 == 0 ? fvalue.real() : fvalue.imag() );
 }
 //-----------------------------------------------------------------------------
-void ComplexODE::f(const DenseVector& u, real t, DenseVector& y)
+void ComplexODE::f(const uBlasVector& u, real t, uBlasVector& y)
 {
   // Update zvalues for all components
   for (uint i = 0; i < n; i++)
@@ -131,8 +135,8 @@ void ComplexODE::f(const DenseVector& u, real t, DenseVector& y)
   }
 }
 //-----------------------------------------------------------------------------
-void ComplexODE::M(const DenseVector& x, DenseVector& y,
-		   const DenseVector& u, real t)
+void ComplexODE::M(const uBlasVector& x, uBlasVector& y,
+		   const uBlasVector& u, real t)
 {
   // Update zvalues and fvalues for all components
   for (uint i = 0; i < n; i++)
@@ -163,8 +167,8 @@ void ComplexODE::M(const DenseVector& x, DenseVector& y,
   }
 }
 //-----------------------------------------------------------------------------
-void ComplexODE::J(const DenseVector& x, DenseVector& y,
-		   const DenseVector& u, real t)
+void ComplexODE::J(const uBlasVector& x, uBlasVector& y,
+		   const uBlasVector& u, real t)
 {
   // Update zvalues and fvalues for all components
   for (uint i = 0; i < n; i++)
@@ -201,7 +205,7 @@ real ComplexODE::timestep(uint i)
   return k(i / 2);
 }
 //-----------------------------------------------------------------------------
-bool ComplexODE::update(const DenseVector& u, real t, bool end)
+bool ComplexODE::update(const uBlasVector& u, real t, bool end)
 {
   // Update zvalues for all components
   for (uint i = 0; i < n; i++)

@@ -26,7 +26,7 @@ namespace dolfin
     ~uBlasDummyPreconditioner();
 
     /// Solve linear system Ax = b approximately
-    void solve(DenseVector& x, const DenseVector& b) const;
+    void solve(uBlasVector& x, const uBlasVector& b) const;
 
   };
 

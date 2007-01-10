@@ -1,1 +1,1 @@
-SUBDIRS = convection-diffusion elasticity poisson nonlinear stokes
+SUBDIRS = bidomain convection-diffusion elasticity functional nonlinear poisson stokes

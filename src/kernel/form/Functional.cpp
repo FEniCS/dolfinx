@@ -1,36 +1,29 @@
-// Copyright (C) 2005 Johan Hoffman. 
+// Copyright (C) 2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
-// First added:  2005-11-02
+// First added:  2006-09-18
+// Last changed: 2006-12-12
 
 #include <dolfin/Functional.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Functional::Functional(uint num_functions) : Form(num_functions), _test(0)
+Functional::Functional(uint num_functions) : Form(num_functions)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 Functional::~Functional()
 {
-  if ( _test ) delete _test;
-}
-//-----------------------------------------------------------------------------
-void Functional::eval(real block[], const AffineMap& map) const
-{
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void Functional::eval(real block[], const AffineMap& map, uint segment) const
+void Functional::updateLocalData()
 {
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-const FiniteElement& Functional::test() const
-{
-  dolfin_assert(_test); // Should be created by child class
-  return *_test;
+  // Initialize block
+  if ( !block )
+    block = new real[1];
+  block[0] = 0.0;
 }
 //-----------------------------------------------------------------------------

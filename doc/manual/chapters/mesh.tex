@@ -1,78 +1,204 @@
 \chapter{The mesh}
 
-\devnote{This chapter is currently being written\ldots}
+\devnote{The \dolfin{} mesh library has recently been reimplemented
+  from scratch and replaces the old mesh library starting at \dolfin{}
+  version 0.6.3.  The new mesh is simpler, faster and more general
+  than the old mesh library, but adaptive mesh refinement is still
+  missing from the old feature set. This will be added in the near
+  future.}
 
-% FIXME: Triangular, tetrahedral, include some images,
-% FIXME: mesh refinement, connectivity, iterators, file formats, local
-% FIXME: ordering
+\devnote{This chapter is just a quick write-up of the most basic
+  functionality of the mesh library and will be expanded.}
 
-The concept of a \emph{mesh} is central in the implementation of
-adaptive Galerkin finite element methods for partial differential equations.
-Related important concepts include \emph{vertices}, \emph{cells},
-\emph{edges}, \emph{faces}, \emph{boundaries}, and \emph{mesh hierarchies}. These 
-concepts are all implemented as C++ classes in \dolfin{}, as shown in Figure \ref{fig:meshclasses}.
+\newpage
 
-\begin{figure}[htbp]
+\section{Basic concepts}
+
+\subsection{Mesh}
+
+A \emph{mesh} consists of \emph{mesh topology} and \emph{mesh geometry}.
+These concepts are implemented by the classes \texttt{Mesh},
+\texttt{MeshTopology} and \texttt{MeshGeometry}.
+
+\subsection{Mesh entities}
+
+A \emph{mesh entity} is a pair $(d, i)$, where $d$ is the topological
+dimension of the mesh entity and $i$ is a unique index of the mesh
+entity. Mesh entities are numbered within each topological dimension
+from $0$ to $n_d-1$, where $n_d$ is the number of mesh entities of
+topological dimension $d$.
+
+For convenience, mesh entities of topological dimension $0$ are
+referred to as \emph{vertices}, entities of dimension $1$
+\emph{edges}, entities of dimension $2$ \emph{faces}, entities of
+\emph{codimension} $1$ \emph{facets} and entities of codimension $0$
+\emph{cells}. These concepts are summarized in
+Table~\ref{tab:entities}.
+
+\begin{table}[htbp]
   \begin{center}
-    \includegraphics[width=10cm]{eps/mesh-components.eps}
-    \caption{Class diagram of the basic mesh classes in \dolfin{}.}
-    \label{fig:meshclasses}
+    \begin{tabular}{|l|c|c|}
+      \hline
+      Entity & Dimension & Codimension \\
+      \hline
+      Vertex & $0$       & -- \\
+      Edge   & $1$       & -- \\
+      Face   & $2$       & -- \\
+      & & \\
+      Facet  & --      &  $1$ \\
+      Cell   & --      &  $0$ \\
+      \hline
+    \end{tabular}
+    \caption{Named mesh entities.}
+    \label{tab:entities}
   \end{center}
-\end{figure}
+\end{table}
+
+These concepts are implemented by the classes
+\texttt{MeshEntity},
+\texttt{Vertex},
+\texttt{Edge},
+\texttt{Face},
+\texttt{Facet},
+\texttt{Cell}.
 
 \section{Mesh iterators}
 
-Algorithms operating on a mesh, including adaptive mesh refinement,
+Algorithms operating on a mesh
 can often be expressed in terms of
-\emph{iterators}, i.e., objects used for the traversal of aggregate
-structures, such as the list of vertices contained in a mesh. Iterators
-implemented in \dolfin{} include a \texttt{VertexIterator},
-\texttt{CellIterator}, \texttt{Edge}\-\texttt{Iterator}, \texttt{FaceIterator},
-and a \texttt{MeshIterator}. The following code illustrates how to
-iterate over all vertex neighbors of all vertices of all cells within a
-given mesh:
+\emph{iterators}. The mesh library provides the general iterator
+\texttt{MeshEntityIterator} for iteration over mesh entities, as well
+as the specialized mesh iterators
+\texttt{VertexIterator},
+\texttt{EdgeIterator},
+\texttt{FaceIterator},
+\texttt{FacetIterator} and
+\texttt{CellIterator}.
+
+The following code illustrates how to iterate over all incident
+(connected) vertices of all vertices of all cells of a given mesh:
 \begin{code}
-  for (CellIterator c(m); !c.end(); ++c)
-    for (VertexIterator v1(c); !v1.end(); ++v1)
-      for (VertexIterator v2(n1); !v2.end(); ++v2)
-        cout << *v2 << endl;
+for (CellIterator c(mesh); !c.end(); ++c)
+  for (VertexIterator v0(c); !v0.end(); ++v0)
+    for (VertexIterator v1(v0); !v1.end(); ++v1)
+      cout << *v1 << endl;
 \end{code}
+This may alternatively be implemented using the general iterator
+\texttt{MeshEntityIterator} as follows:
+\begin{code}
+unsigned int dim = mesh.topology().dim();
+for (MeshEntityIterator c(mesh, dim); !c.end(); ++c)
+  for (MeshEntityIterator v0(c, 0); !v0.end(); ++v0)
+    for (MeshEntityIterator v1(v0, 0); !v1.end(); ++v1)
+      cout << *v1 << endl;
+\end{code}
+
+\section{Mesh functions}
+
+A \texttt{MeshFunction} represents a discrete function that takes a
+value on each mesh entity of a given topological dimension.
+A \texttt{MeshFunction} may for example be used to store a global
+numbering scheme for the entities of a (parallel) mesh, marking
+sub domains or boolean markers for mesh refinement.
 
 \section{Mesh refinement}
 
-Adaptive mesh refinement is implemented in \dolfin{} for triangular
-meshes (in 2D) and tetrahedral meshes (in 3D), see Figure
-\ref{fig:refinedmeshes}, based on the algorithm given in \cite{Bey95}.
-To refine a mesh, the cells (triangles or tetrahedrons) are first
-marked according to some criterion for refinement, before the mesh is
-refined. A hierarchy of meshes, that can be used for example in a
-multigrid computation, is automatically created.
-
-\begin{figure}
-  \begin{center}
-    \includegraphics[width=6cm]{eps/mesh2d.eps}
-    \includegraphics[width=6cm]{eps/mesh3d.eps}
-    \caption{Adaptive mesh refinement of triangular and tetrahedral meshes in \dolfin{}.}
-    \label{fig:refinedmeshes} 
-  \end{center}
-\end{figure}
-
-The following example illustrates how to iterate over the \texttt{Cell}s of
-a \texttt{Mesh} to mark some \texttt{Cell}s for refinement, before refining
-the \texttt{Mesh}:
+A mesh may be refined uniformly as follows:
 \begin{code}
-  // Mark cells for refinement
-  for (CellIterator cell(mesh); !cell.end(); ++cell)
-    if ( ... )
-      cell->mark();
+mesh.refine();
+\end{code}
+\dolfin{} does currently not support adaptive mesh refinement, but
+this will be supported in future versions.
 
-  // Refine mesh
-  mesh.refine();
+\section{Working with meshes}
+
+\subsection{Reading a mesh from file}
+
+A mesh may be loaded from a file, either by specifying the file name
+to the constructor of the class \texttt{Mesh}:
+\begin{code}
+Mesh mesh(''mesh.xml'');
+\end{code}
+or by creating a \texttt{File} object and streaming to a
+\texttt{Mesh}:
+\begin{code}
+File file(''mesh.xml'');
+Mesh mesh;
+file >> mesh;
+\end{code}
+A mesh may be stored to file as follows:
+\begin{code}
+File file(''mesh.xml'');
+Mesh mesh;
+file << mesh;
 \end{code}
 
-It is also possible to directly mark all \texttt{Cell}s for refinement
-to refine the \texttt{Mesh} uniformly:
+The \dolfin{} mesh XML format has changed in \dolfin{} version
+0.6.3. Meshes in the old XML format may be converted to the new XML
+format using the script \texttt{dolfin-convert} included in the
+distribution of \dolfin{}. For instructions, type
+\texttt{dolfin-convert --help}.
+
+\subsection{Extracting a boundary mesh}
+
+For any given mesh, a mesh of the boundary of the mesh (if any) may be
+created as follows:
 \begin{code}
-  // Refine all cells
-  mesh.refineUniformly();
+BoundaryMesh boundary(mesh);
 \end{code}
+A \texttt{BoundaryMesh} is itself a \texttt{Mesh} of the same
+geometrical dimension and has the topological dimension of the mesh
+minus one.
+
+The computation of a boundary mesh may also provide mappings from the
+vertices of the boundary mesh to the corresponding vertices in the
+original mesh, and from the cells of the boundary mesh to the
+corresponding facets of the original mesh:
+\begin{code}
+MeshFunction<unsigned int> vertex_map,
+MeshFunction<unsigned int> cell_map;
+BoundaryMesh boundary(mesh, vertex_map, cell_map);
+\end{code}
+
+\subsection{Built-in meshes}
+
+\dolfin{} provides functionality for creating simple meshes, such as
+the mesh of the unit square and the unit cube. The following code
+demonstrates how to create a $16\times 16$ triangular mesh of the unit square
+(consisting of $2\times 16\times 16 = 512$ triangles) and a
+$16\times 16\times 16$ tetrahedral mesh of the unit cube (consisting
+of $6\times 16\times 16\times 16 = 24576$ tetrahedra):
+\begin{code}
+UnitSquare mesh2D(16, 16);
+UnitCube mesh3D(16, 16, 16);
+\end{code}
+
+\devnote{We could easily add other built-in meshes, like the unit
+  interval, the unit disc, the unit sphere, rectangles, blocks etc.
+  Any contributions are welcome.}
+
+\subsection{Creating meshes}
+
+Simplicial meshes (meshes consisting of intervals, triangles or
+tetrahedra) may be constructed explicitly by specifying the
+cells and vertices of the mesh. A specialized interface for creating
+simplicial meshes is provided by the class \texttt{MeshEditor}.
+The following code demonstrates how to create a very simple mesh
+consisting of two triangles covering the unit square:
+\begin{code}
+Mesh mesh;
+MeshEditor editor(mesh, CellType::triangle, 2, 2);
+editor.initVertices(4);
+editor.initCells(2);
+editor.addVertex(0, 0.0, 0.0);
+editor.addVertex(1, 1.0, 0.0);
+editor.addVertex(2, 1.0, 1.0);
+editor.addVertex(3, 0.0, 1.0);
+editor.addCell(0, 0, 1, 2);
+editor.addCell(1, 0, 2, 3);
+editor.close();
+\end{code}
+Note that the \dolfin{} mesh library is not specialized to simplicial
+meshes, but supports general collections of mesh entities. However,
+tools like mesh refinement and mesh editors are currently only
+available for simplicial meshes.

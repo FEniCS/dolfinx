@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2004
-// Last changed: 2006-07-05
+// Last changed: 2006-08-21
 
 #include <cmath>
 #include <dolfin.h>
@@ -20,17 +20,13 @@ public:
     mu = 10.0;
   }
 
-  real u0(unsigned int i)
+  void u0(uBlasVector& u)
   {
-    switch (i) {
-    case 0:
-      return 2.0;
-    default:
-      return 0.0;
-    }
+    u(0) = 2.0;
+    u(1) = 0.0;
   }
 
-  void f(const DenseVector& u, real t, DenseVector& y)
+  void f(const uBlasVector& u, real t, uBlasVector& y)
   {
     y(0) = u(1);
     y(1) = mu*(1.0 - u(0)*u(0))*u(1) - u(0);

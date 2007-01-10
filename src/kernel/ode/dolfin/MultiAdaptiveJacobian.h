@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-27
-// Last changed: 2006-07-06
+// Last changed: 2006-08-08
 
 #ifndef __MULTI_ADAPTIVE_JACOBIAN_H
 #define __MULTI_ADAPTIVE_JACOBIAN_H
@@ -33,10 +33,10 @@ namespace dolfin
     uint size(const uint dim) const;
 
     /// Compute product y = Ax
-    void mult(const DenseVector& x, DenseVector& y) const;
+    void mult(const uBlasVector& x, uBlasVector& y) const;
 
-    /// Recompute Jacobian if necessary
-    void update();
+    /// (Re-)initialize computation of Jacobian
+    void init();
 
     /// Friends
     friend class MultiAdaptivePreconditioner;
@@ -44,10 +44,10 @@ namespace dolfin
   private:
 
     // Compute product for mcG(q)
-    void cGmult(const DenseVector& x, DenseVector& y) const;
+    void cGmult(const uBlasVector& x, uBlasVector& y) const;
 
     // Compute product for mdG(q)
-    void dGmult(const DenseVector& x, DenseVector& y) const;
+    void dGmult(const uBlasVector& x, uBlasVector& y) const;
 
     // The Newton solver
     MultiAdaptiveNewtonSolver& newton;

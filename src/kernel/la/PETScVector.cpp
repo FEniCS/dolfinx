@@ -4,17 +4,18 @@
 // Modified by Garth N. Wells 2005.
 //
 // First added:  2004
-// Last changed: 2006-05-31
+// Last changed: 2006-12-12
 
 // FIXME: Insert dolfin_assert() where appropriate
 
 #ifdef HAVE_PETSC_H
 
+#include <cmath>
 #include <dolfin/dolfin_math.h>
 #include <dolfin/dolfin_log.h>
 #include <dolfin/PETScManager.h>
 #include <dolfin/PETScVector.h>
-#include <cmath>
+#include <dolfin/uBlasVector.h>
 
 using namespace dolfin;
 
@@ -22,28 +23,28 @@ using namespace dolfin;
 PETScVector::PETScVector()
   : GenericVector(), 
     Variable("x", "a sparse vector"),
-    x(0), copy(false)
+    x(0), _copy(false)
 {
   // Initialize PETSc
   PETScManager::init();
 }
 //-----------------------------------------------------------------------------
-PETScVector::PETScVector(uint size)
+PETScVector::PETScVector(const uint N)
   : GenericVector(), 
     Variable("x", "a sparse vector"), 
-    x(0), copy(false)
+    x(0), _copy(false)
 {
   // Initialize PETSc
   PETScManager::init();
 
   // Create PETSc vector
-  init(size);
+  init(N);
 }
 //-----------------------------------------------------------------------------
 PETScVector::PETScVector(Vec x)
   : GenericVector(),
     Variable("x", "a vector"),
-    x(x), copy(true)
+    x(x), _copy(true)
 {
   // Initialize PETSc 
   PETScManager::init();
@@ -52,7 +53,7 @@ PETScVector::PETScVector(Vec x)
 PETScVector::PETScVector(const PETScVector& v)
   : GenericVector(), 
     Variable("x", "a vector"),
-    x(0), copy(false)
+    x(0), _copy(false)
 {
   // Initialize PETSc 
   PETScManager::init();
@@ -65,7 +66,7 @@ PETScVector::~PETScVector()
   clear();
 }
 //-----------------------------------------------------------------------------
-void PETScVector::init(uint size)
+void PETScVector::init(const uint N)
 {
   // Two cases:
   //
@@ -77,20 +78,15 @@ void PETScVector::init(uint size)
   if (x)
   {
     const uint n = this->size();
-
-    if (n == size)
-    {
+    if (n == N)
       return;      
-    }
   }
   else
-  {
     clear();
-  }
 
   // Create vector
   VecCreate(PETSC_COMM_SELF, &x);
-  VecSetSizes(x, PETSC_DECIDE, size);
+  VecSetSizes(x, PETSC_DECIDE, N);
   VecSetFromOptions(x);
 
   // Set all entries to zero
@@ -98,7 +94,7 @@ void PETScVector::init(uint size)
   VecSet(x, a);
 }
 //-----------------------------------------------------------------------------
-void PETScVector::axpy(const real a, const PETScVector& x) const
+void PETScVector::axpy(const real a, const PETScVector& x)
 {
   VecAXPY(this->x, a, x.vec());
 }
@@ -115,18 +111,24 @@ void PETScVector::mult(const PETScVector& x)
   apply();
 }
 //-----------------------------------------------------------------------------
-void PETScVector::set(const real block[], const int cols[], int n)
+void PETScVector::mult(const real a)
+{
+  dolfin_assert(x);
+  VecScale(x, a);
+}
+//-----------------------------------------------------------------------------
+void PETScVector::set(const real block[], const int cols[], const int n)
 {
   VecSetValues(x, n, cols, block, INSERT_VALUES); 
 }
 //-----------------------------------------------------------------------------
-void PETScVector::add(const real block[], const int cols[], int n)
+void PETScVector::add(const real block[], const int cols[], const int n)
 {
   dolfin_assert(x);
   VecSetValues(x, n, cols, block, ADD_VALUES); 
 }
 //-----------------------------------------------------------------------------
-void PETScVector::get(real block[], const int cols[], int n) const
+void PETScVector::get(real block[], const int cols[], const int n) const
 {
   dolfin_assert(x);
   VecGetValues(x, n, cols, block); 
@@ -147,7 +149,7 @@ void PETScVector::zero()
 //-----------------------------------------------------------------------------
 void PETScVector::clear()
 {
-  if ( x && !copy )
+  if ( x && !_copy )
   {
     VecDestroy(x);
   }
@@ -161,6 +163,42 @@ dolfin::uint PETScVector::size() const
   VecGetSize(x, &n);
 
   return static_cast<uint>(n);
+}
+//-----------------------------------------------------------------------------
+real PETScVector::get(const uint i) const
+{
+  dolfin_assert(x);
+
+  // FIXME: Assumes uniprocessor case
+
+  real val = 0.0;
+
+  PetscScalar *array = 0;
+  VecGetArray(x, &array);
+  val = array[i];
+  VecRestoreArray(x, &array);
+
+  return val;
+}
+//-----------------------------------------------------------------------------
+void PETScVector::set(const uint i, const real value)
+{
+  dolfin_assert(x);
+
+  VecSetValue(x, static_cast<int>(i), value, INSERT_VALUES);
+
+  VecAssemblyBegin(x);
+  VecAssemblyEnd(x);
+}
+//-----------------------------------------------------------------------------
+void PETScVector::add(const uint i, const real value)
+{
+  dolfin_assert(x);
+
+  VecSetValue(x, static_cast<int>(i), value, ADD_VALUES);
+
+  VecAssemblyBegin(x);
+  VecAssemblyEnd(x);
 }
 //-----------------------------------------------------------------------------
 Vec PETScVector::vec() const
@@ -205,15 +243,15 @@ void PETScVector::restore(const real data[]) const
   VecRestoreArray(x, &tmp);
 }
 //-----------------------------------------------------------------------------
-PETScVectorElement PETScVector::operator() (uint i)
+PETScVectorElement PETScVector::operator() (const uint i)
 {
   PETScVectorElement index(i, *this);
   return index;
 }
 //-----------------------------------------------------------------------------
-real PETScVector::operator() (uint i) const
+real PETScVector::operator() (const uint i) const
 {
-  return getval(i);
+  return get(i);
 }
 //-----------------------------------------------------------------------------
 const PETScVector& PETScVector::operator= (const PETScVector& x)
@@ -230,7 +268,7 @@ const PETScVector& PETScVector::operator= (const PETScVector& x)
   return *this;
 }
 //-----------------------------------------------------------------------------
-const PETScVector& PETScVector::operator= (real a)
+const PETScVector& PETScVector::operator= (const real a)
 {
   dolfin_assert(x);
   VecSet(x, a);
@@ -260,7 +298,7 @@ const PETScVector& PETScVector::operator-= (const PETScVector& x)
   return *this;
 }
 //-----------------------------------------------------------------------------
-const PETScVector& PETScVector::operator*= (real a)
+const PETScVector& PETScVector::operator*= (const real a)
 {
   dolfin_assert(x);
   VecScale(x, a);
@@ -268,7 +306,7 @@ const PETScVector& PETScVector::operator*= (real a)
   return *this;
 }
 //-----------------------------------------------------------------------------
-const PETScVector& PETScVector::operator/= (real a)
+const PETScVector& PETScVector::operator/= (const real a)
 {
   dolfin_assert(x);
   dolfin_assert(a != 0.0);
@@ -290,7 +328,7 @@ real PETScVector::operator*(const PETScVector& x)
   return a;
 }
 //-----------------------------------------------------------------------------
-real PETScVector::norm(NormType type) const
+real PETScVector::norm(const NormType type) const
 {
   dolfin_assert(x);
 
@@ -313,9 +351,7 @@ real PETScVector::norm(NormType type) const
 real PETScVector::sum() const
 {
   dolfin_assert(x);
-
   real value = 0.0;
-  
   VecSum(x, &value);
   
   return value;
@@ -353,7 +389,7 @@ void PETScVector::disp() const
   const uint M = size();
   cout << "[ ";
   for (uint i = 0; i < M; i++)
-    cout << getval(i) << " ";
+    cout << get(i) << " ";
   cout << "]" << endl;
 }
 //-----------------------------------------------------------------------------
@@ -369,42 +405,6 @@ LogStream& dolfin::operator<< (LogStream& stream, const PETScVector& x)
   stream << "[ PETSc vector of size " << x.size() << " ]";
 
   return stream;
-}
-//-----------------------------------------------------------------------------
-real PETScVector::getval(uint i) const
-{
-  dolfin_assert(x);
-
-  // Assumes uniprocessor case
-
-  real val = 0.0;
-
-  PetscScalar *array = 0;
-  VecGetArray(x, &array);
-  val = array[i];
-  VecRestoreArray(x, &array);
-
-  return val;
-}
-//-----------------------------------------------------------------------------
-void PETScVector::setval(uint i, const real a)
-{
-  dolfin_assert(x);
-
-  VecSetValue(x, static_cast<int>(i), a, INSERT_VALUES);
-
-  VecAssemblyBegin(x);
-  VecAssemblyEnd(x);
-}
-//-----------------------------------------------------------------------------
-void PETScVector::addval(uint i, const real a)
-{
-  dolfin_assert(x);
-
-  VecSetValue(x, static_cast<int>(i), a, ADD_VALUES);
-
-  VecAssemblyBegin(x);
-  VecAssemblyEnd(x);
 }
 //-----------------------------------------------------------------------------
 void PETScVector::gather(PETScVector& x1, PETScVector& x2, VecScatter& x1sc)
@@ -425,7 +425,7 @@ void PETScVector::scatter(PETScVector& x1, PETScVector& x2,
 }
 //-----------------------------------------------------------------------------
 VecScatter* PETScVector::createScatterer(PETScVector& x1, PETScVector& x2,
-					  int offset, int size)
+					  const int offset, const int size)
 {
   VecScatter* sc = new VecScatter;
   IS* is = new IS;
@@ -438,38 +438,54 @@ VecScatter* PETScVector::createScatterer(PETScVector& x1, PETScVector& x2,
 }
 //-----------------------------------------------------------------------------
 void PETScVector::fromArray(const real u[], PETScVector& x,
-			     unsigned int offset,
-			     unsigned int size)
+			                      const uint offset, const uint size)
 {
   // Workaround to interface PETScVector and arrays
 
-  real* vals = 0;
-  vals = x.array();
-  for(unsigned int i = 0; i < size; i++)
-  {
+  real* vals = x.array();
+  for(uint i = 0; i < size; i++)
     vals[i] = u[i + offset];
-  }
   x.restore(vals);
 }
 //-----------------------------------------------------------------------------
-void PETScVector::toArray(real y[], PETScVector& x,
-			   unsigned int offset,
-			   unsigned int size)
+void PETScVector::toArray(real y[], const PETScVector& x,
+			                    const uint offset, const uint s)
 {
   // Workaround to interface PETScVector and arrays
 
-  real* vals = 0;
-  vals = x.array();
-  for(unsigned int i = 0; i < size; i++)
-  {
+  const real* vals = x.array();
+  for(uint i = 0; i < s; i++)
     y[offset + i] = vals[i];
-  }
   x.restore(vals);
+}
+//-----------------------------------------------------------------------------
+void PETScVector::copy(const PETScVector& y, const uint off1, const uint off2, 
+                       const uint len)
+{
+  // FIXME: Use gather/scatter for parallel case
+
+  real* xvals = array();
+  const real* yvals = y.array();
+  for(uint i = 0; i < len; i++)
+    xvals[i + off1] = yvals[i + off2];
+  restore(xvals);
+  restore(yvals);
+}
+//-----------------------------------------------------------------------------
+void PETScVector::copy(const uBlasVector& y, const uint off1, const uint off2, 
+                       const uint len)
+{
+  // FIXME: Verify if there's a more efficient implementation
+
+  real* vals = array();
+  for(uint i = 0; i < len; i++)
+    vals[i + off1] = y[i + off2];
+  restore(vals);
 }
 //-----------------------------------------------------------------------------
 // PETScVectorElement
 //-----------------------------------------------------------------------------
-PETScVectorElement::PETScVectorElement(uint i, PETScVector& x) : i(i), x(x)
+PETScVectorElement::PETScVectorElement(const uint i, PETScVector& x) : i(i), x(x)
 {
   // Do nothing
 }
@@ -481,41 +497,41 @@ PETScVectorElement::PETScVectorElement(const PETScVectorElement& e) : i(i), x(x)
 //-----------------------------------------------------------------------------
 PETScVectorElement::operator real() const
 {
-  return x.getval(i);
+  return x.get(i);
 }
 //-----------------------------------------------------------------------------
 const PETScVectorElement& PETScVectorElement::operator=(const PETScVectorElement& e)
 {
-  x.setval(i, e.x.getval(i));
+  x.set(i, e.x.get(i));
 
   return *this;
 }
 //-----------------------------------------------------------------------------
 const PETScVectorElement& PETScVectorElement::operator=(const real a)
 {
-  x.setval(i, a);
+  x.set(i, a);
 
   return *this;
 }
 //-----------------------------------------------------------------------------
 const PETScVectorElement& PETScVectorElement::operator+=(const real a)
 {
-  x.addval(i, a);
+  x.add(i, a);
 
   return *this;
 }
 //-----------------------------------------------------------------------------
 const PETScVectorElement& PETScVectorElement::operator-=(const real a)
 {
-  x.addval(i, -a);
+  x.add(i, -a);
 
   return *this;
 }
 //-----------------------------------------------------------------------------
 const PETScVectorElement& PETScVectorElement::operator*=(const real a)
 {
-  const real val = x.getval(i) * a;
-  x.setval(i, val);
+  const real val = x.get(i) * a;
+  x.set(i, val);
 
   return *this;
 }

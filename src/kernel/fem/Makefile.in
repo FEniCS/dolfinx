@@ -43,6 +43,7 @@ DIST_COMMON = $(nobase_include_HEADERS) $(srcdir)/Makefile.am \
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/ac_pkg_swig.m4 \
 	$(top_srcdir)/m4/ac_python_devel.m4 \
+	$(top_srcdir)/m4/ax_boost_base.m4 \
 	$(top_srcdir)/m4/ax_compiler_vendor.m4 \
 	$(top_srcdir)/m4/libtool.m4 $(top_srcdir)/m4/libxml.m4 \
 	$(top_srcdir)/configure.ac
@@ -61,8 +62,8 @@ libLTLIBRARIES_INSTALL = $(INSTALL)
 LTLIBRARIES = $(lib_LTLIBRARIES)
 libdolfin_fem_la_LIBADD =
 am_libdolfin_fem_la_OBJECTS = AffineMap.lo BoundaryCondition.lo \
-	BoundaryValue.lo FEM.lo FiniteElement.lo FiniteElementSpec.lo \
-	LoadVector.lo MassMatrix.lo StiffnessMatrix.lo
+	BoundaryValue.lo DofMap.lo FEM.lo FiniteElement.lo \
+	FiniteElementSpec.lo
 libdolfin_fem_la_OBJECTS = $(am_libdolfin_fem_la_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -98,6 +99,8 @@ AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
 AWK = @AWK@
+BOOST_CPPFLAGS = @BOOST_CPPFLAGS@
+BOOST_LDFLAGS = @BOOST_LDFLAGS@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
@@ -113,6 +116,7 @@ CYGPATH_W = @CYGPATH_W@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
 DOLFIN_CFLAGS = @DOLFIN_CFLAGS@
+DOLFIN_DEFINITIONS = @DOLFIN_DEFINITIONS@
 DOLFIN_EXT_LIBS = @DOLFIN_EXT_LIBS@
 DOLFIN_LIBS = @DOLFIN_LIBS@
 DOLFIN_LTLIBOBJS = @DOLFIN_LTLIBOBJS@
@@ -122,6 +126,7 @@ ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
 EXEEXT = @EXEEXT@
+EXTERNAL_CFLAGS = @EXTERNAL_CFLAGS@
 F77 = @F77@
 FFLAGS = @FFLAGS@
 INSTALL_DATA = @INSTALL_DATA@
@@ -216,6 +221,7 @@ pyexecdir = @pyexecdir@
 pythondir = @pythondir@
 sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
+swig_found = @swig_found@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 SUBDIRS = dolfin
@@ -223,11 +229,10 @@ nobase_include_HEADERS = dolfin/dolfin_fem.h \
                            dolfin/AffineMap.h \
                            dolfin/BoundaryCondition.h \
                            dolfin/BoundaryValue.h \
+                           dolfin/DofMap.h \
                            dolfin/FEM.h \
                            dolfin/FiniteElement.h \
                            dolfin/FiniteElementSpec.h \
-                           dolfin/LoadVector.h \
-                           dolfin/MassMatrix.h \
                            dolfin/P1tet.h \
                            dolfin/P1tri.h \
                            dolfin/P2tet.h \
@@ -237,20 +242,17 @@ nobase_include_HEADERS = dolfin/dolfin_fem.h \
                            dolfin/P4tet.h \
                            dolfin/P4tri.h \
                            dolfin/P5tet.h \
-                           dolfin/P5tri.h \
-                           dolfin/StiffnessMatrix.h
+                           dolfin/P5tri.h
 
 INCLUDES = @KERNEL_CFLAGS@
 lib_LTLIBRARIES = libdolfin-fem.la
 libdolfin_fem_la_SOURCES = AffineMap.cpp \
                            BoundaryCondition.cpp \
                            BoundaryValue.cpp \
+                           DofMap.cpp \
                            FEM.cpp \
                            FiniteElement.cpp \
-                           FiniteElementSpec.cpp \
-                           LoadVector.cpp \
-                           MassMatrix.cpp \
-                           StiffnessMatrix.cpp
+                           FiniteElementSpec.cpp
 
 libdolfin_fem_la_LDFLAGS = -static
 all: all-recursive
@@ -325,12 +327,10 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/AffineMap.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BoundaryCondition.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BoundaryValue.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DofMap.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEM.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FiniteElement.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FiniteElementSpec.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LoadVector.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MassMatrix.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/StiffnessMatrix.Plo@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \

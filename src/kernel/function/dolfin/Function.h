@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells 2005.
 //
 // First added:  2003-11-28
-// Last changed: 2006-05-07
+// Last changed: 2007-01-09
 
 #ifndef __FUNCTION_H
 #define __FUNCTION_H
@@ -82,7 +82,16 @@ namespace dolfin
     const Function& operator= (const Function& f);
 
     /// Compute interpolation of function onto local finite element space
-    void interpolate(real coefficients[], AffineMap& map, FiniteElement& element);
+    void interpolate(real coefficients[], Cell& cell, AffineMap& map, FiniteElement& element);
+    
+    /// Compute interpolation of function onto local finite element space
+    void interpolate(real coefficients[], Cell& cell, AffineMap& map, FiniteElement& element, uint facet);
+
+    /// Compute interpolation of fsource to local finite element space
+    void interpolate(Function& fsource);
+
+    /// Compute interpolation of function onto the vertices of the mesh (vector-values interleaved)
+    void interpolate(real values[]);
     
     /// Return vector dimension of function
     inline uint vectordim() const { return f->vectordim(); }
@@ -119,10 +128,12 @@ namespace dolfin
     /// Return current cell (can be called by user-defined function during assembly)
     Cell& cell();
 
+    /// Return current facet (can be called by user-defined function during assembly on facets)
+    uint facet();
+
   private:
     
-    // Pointer to current implementation (letter base class)L = v*f*dx
-
+    // Pointer to current implementation (letter base class)
     GenericFunction* f;
 
     // Current function type
@@ -130,6 +141,9 @@ namespace dolfin
 
     // Pointer to current cell
     Cell* _cell;
+
+    // Current facet
+    int _facet;
 
   };
 

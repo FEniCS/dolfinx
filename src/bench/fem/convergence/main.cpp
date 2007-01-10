@@ -1,8 +1,8 @@
-// Copyright (C) 2005 Anders Logg.
+// Copyright (C) 2005-2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005
-// Last changed: 2005-12-28
+// Last changed: 2006-10-20
 
 #include <stdio.h>
 #include <dolfin.h>
@@ -33,7 +33,7 @@ class Source2D : public Function
 {
   real eval(const Point& p, unsigned int i)
   {
-    return 2.0*DOLFIN_PI*DOLFIN_PI*sin(DOLFIN_PI*p.x)*sin(DOLFIN_PI*p.y);
+    return 2.0*DOLFIN_PI*DOLFIN_PI*sin(DOLFIN_PI*p.x())*sin(DOLFIN_PI*p.y());
   }
 };
 
@@ -42,7 +42,7 @@ class Source3D : public Function
 {
   real eval(const Point& p, unsigned int i)
   {
-    return 3.0*DOLFIN_PI*DOLFIN_PI*sin(DOLFIN_PI*p.x)*sin(DOLFIN_PI*p.y)*sin(DOLFIN_PI*p.z);
+    return 3.0*DOLFIN_PI*DOLFIN_PI*sin(DOLFIN_PI*p.x())*sin(DOLFIN_PI*p.y())*sin(DOLFIN_PI*p.z());
   }
 };
 
@@ -95,17 +95,17 @@ real solve2D(int q, int n)
   FEM::assemble(*a, *L, A, b, mesh, bc);
 
   // Solve the linear system
-  GMRES solver;
+  KrylovSolver solver(gmres);
   solver.set("Krylov relative tolerance", 1e-14); 
   solver.solve(A, x, b);
 
   // Compute maximum norm of error
   real emax = 0.0;
-  for (VertexIterator n(mesh); !n.end(); ++n)
+  for (VertexIterator v(mesh); !v.end(); ++v)
   {
-    const Point& p = n->coord();
-    const real U = x(n->id());
-    const real u = sin(DOLFIN_PI*p.x)*sin(DOLFIN_PI*p.y);
+    const Point p = v->point();
+    const real U = x(v->index());
+    const real u = sin(DOLFIN_PI*p.x())*sin(DOLFIN_PI*p.y());
     const real e = std::abs(U - u);
     emax = std::max(emax, e);
   }
@@ -167,17 +167,17 @@ real solve3D(int q, int n)
   cout << "Maximum number of nonzeros: " << A.nzmax() << endl;
   
   // Solve the linear system
-  GMRES solver;
+  KrylovSolver solver(gmres);
   solver.set("Krylov relative tolerance", 1e-14); 
   solver.solve(A, x, b);
 
   // Compute maximum norm of error
   real emax = 0.0;
-  for (VertexIterator n(mesh); !n.end(); ++n)
+  for (VertexIterator v(mesh); !v.end(); ++v)
   {
-    const Point& p = n->coord();
-    const real U = x(n->id());
-    const real u = sin(DOLFIN_PI*p.x)*sin(DOLFIN_PI*p.y)*sin(DOLFIN_PI*p.z);
+    const Point p = v->point();
+    const real U = x(v->index());
+    const real u = sin(DOLFIN_PI*p.x())*sin(DOLFIN_PI*p.y())*sin(DOLFIN_PI*p.z());
     const real e = std::abs(U - u);
     emax = std::max(emax, e);
   }

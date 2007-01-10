@@ -40,7 +40,7 @@ void OctaveFile::operator<<(Matrix& A)
   real* row = new real[N];
   
   FILE *fp = fopen(filename.c_str(), "a");
-  fprintf(fp, "%s = zeros(%d, %d);\n", A.name().c_str(), M, N);
+  fprintf(fp, "%s = zeros(%u, %u);\n", A.name().c_str(), M, N);
   
   for (uint i = 0; i < M; i++)
   {
@@ -53,7 +53,7 @@ void OctaveFile::operator<<(Matrix& A)
     // Write nonzero entries
     for (int pos = 0; pos < ncols; pos++)
       fprintf(fp, "%s(%d, %d) = %.16e;\n",
-	      A.name().c_str(), i + 1, columns[pos] + 1, values[pos]);
+	      A.name().c_str(), (int)i + 1, columns[pos] + 1, values[pos]);
   }
   
   fclose(fp);

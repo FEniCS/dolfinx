@@ -5,8 +5,8 @@
 // Last changed: 2006-06-22
 
 #include <dolfin/dolfin_log.h>
-#include <dolfin/NewMesh.h>
-#include <dolfin/NewPoint.h>
+#include <dolfin/Mesh.h>
+#include <dolfin/Point.h>
 #include <dolfin/MeshEditor.h>
 
 using namespace dolfin;
@@ -26,7 +26,7 @@ MeshEditor::~MeshEditor()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void MeshEditor::open(NewMesh& mesh, CellType::Type type, uint tdim, uint gdim)
+void MeshEditor::open(Mesh& mesh, CellType::Type type, uint tdim, uint gdim)
 {
   // Clear old mesh data
   mesh.data.clear();
@@ -47,6 +47,20 @@ void MeshEditor::open(NewMesh& mesh, CellType::Type type, uint tdim, uint gdim)
   vertices.reserve(mesh.type().numVertices(tdim));
   for (uint i = 0; i < mesh.type().numVertices(tdim); i++)
     vertices.push_back(0);
+}
+//-----------------------------------------------------------------------------
+void MeshEditor::open(Mesh& mesh, std::string type, uint tdim, uint gdim)
+{
+  if ( type == "point" )
+    open(mesh, CellType::point, tdim, gdim);
+  else if ( type == "interval" )
+    open(mesh, CellType::interval, tdim, gdim);
+  else if ( type == "triangle" )
+    open(mesh, CellType::triangle, tdim, gdim);
+  else if ( type == "tetrahedron" )
+    open(mesh, CellType::tetrahedron, tdim, gdim);
+  else
+    dolfin_error1("Unknown cell type \"%s\".", type.c_str());
 }
 //-----------------------------------------------------------------------------
 void MeshEditor::initVertices(uint num_vertices)
@@ -73,7 +87,7 @@ void MeshEditor::initCells(uint num_cells)
   mesh->data.topology(tdim, 0).init(num_cells, mesh->type().numVertices(tdim));
 }
 //-----------------------------------------------------------------------------
-void MeshEditor::addVertex(uint v, const NewPoint& p)
+void MeshEditor::addVertex(uint v, const Point& p)
 {
   // Add vertex
   addVertexCommon(v, mesh->geometry().dim());

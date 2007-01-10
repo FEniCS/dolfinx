@@ -43,6 +43,7 @@ DIST_COMMON = $(nobase_include_HEADERS) $(srcdir)/Makefile.am \
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/ac_pkg_swig.m4 \
 	$(top_srcdir)/m4/ac_python_devel.m4 \
+	$(top_srcdir)/m4/ax_boost_base.m4 \
 	$(top_srcdir)/m4/ax_compiler_vendor.m4 \
 	$(top_srcdir)/m4/libtool.m4 $(top_srcdir)/m4/libxml.m4 \
 	$(top_srcdir)/configure.ac
@@ -60,12 +61,12 @@ am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(includedir)"
 libLTLIBRARIES_INSTALL = $(INSTALL)
 LTLIBRARIES = $(lib_LTLIBRARIES)
 libdolfin_la_la_LIBADD =
-am_libdolfin_la_la_OBJECTS = DenseVector.lo EigenvalueSolver.lo \
-	GMRES.lo LinearSolver.lo PETScKrylovSolver.lo PETScLU.lo \
-	PETScManager.lo PETScSparseMatrix.lo PETScVector.lo \
-	Preconditioner.lo uBlasKrylovMatrix.lo uBlasKrylovSolver.lo \
+am_libdolfin_la_la_OBJECTS = GMRES.lo LU.lo PETScEigenvalueSolver.lo \
+	PETScKrylovMatrix.lo PETScKrylovSolver.lo PETScLUSolver.lo \
+	PETScManager.lo PETScMatrix.lo PETScPreconditioner.lo \
+	PETScVector.lo uBlasKrylovMatrix.lo uBlasKrylovSolver.lo \
 	uBlasLUSolver.lo uBlasDummyPreconditioner.lo \
-	uBlasILUPreconditioner.lo VirtualMatrix.lo
+	uBlasILUPreconditioner.lo uBlasVector.lo
 libdolfin_la_la_OBJECTS = $(am_libdolfin_la_la_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -101,6 +102,8 @@ AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
 AWK = @AWK@
+BOOST_CPPFLAGS = @BOOST_CPPFLAGS@
+BOOST_LDFLAGS = @BOOST_LDFLAGS@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
@@ -116,6 +119,7 @@ CYGPATH_W = @CYGPATH_W@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
 DOLFIN_CFLAGS = @DOLFIN_CFLAGS@
+DOLFIN_DEFINITIONS = @DOLFIN_DEFINITIONS@
 DOLFIN_EXT_LIBS = @DOLFIN_EXT_LIBS@
 DOLFIN_LIBS = @DOLFIN_LIBS@
 DOLFIN_LTLIBOBJS = @DOLFIN_LTLIBOBJS@
@@ -125,6 +129,7 @@ ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
 EXEEXT = @EXEEXT@
+EXTERNAL_CFLAGS = @EXTERNAL_CFLAGS@
 F77 = @F77@
 FFLAGS = @FFLAGS@
 INSTALL_DATA = @INSTALL_DATA@
@@ -219,58 +224,66 @@ pyexecdir = @pyexecdir@
 pythondir = @pythondir@
 sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
+swig_found = @swig_found@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 SUBDIRS = dolfin
 nobase_include_HEADERS = dolfin/dolfin_la.h \
                           dolfin/DenseMatrix.h \
                           dolfin/DenseVector.h \
-                          dolfin/EigenvalueSolver.h \
+                          dolfin/KrylovMethod.h \
                           dolfin/KrylovSolver.h \
                           dolfin/GenericMatrix.h \
                           dolfin/GenericVector.h \
                           dolfin/GMRES.h \
                           dolfin/LinearSolver.h \
                           dolfin/LU.h \
+                          dolfin/LUSolver.h \
                           dolfin/Matrix.h \
+                          dolfin/PETScEigenvalueSolver.h \
+                          dolfin/PETScKrylovMatrix.h \
                           dolfin/PETScKrylovSolver.h \
-                          dolfin/PETScLU.h \
+                          dolfin/PETScLinearSolver.h \
+                          dolfin/PETScLUSolver.h \
                           dolfin/PETScManager.h \
-                          dolfin/PETScSparseMatrix.h \
+                          dolfin/PETScMatrix.h \
+                          dolfin/PETScPreconditioner.h \
                           dolfin/PETScVector.h \
                           dolfin/Preconditioner.h \
                           dolfin/SparseMatrix.h \
+                          dolfin/SparseVector.h \
                           dolfin/ublas.h \
                           dolfin/uBlasDenseMatrix.h \
                           dolfin/uBlasKrylovMatrix.h \
                           dolfin/uBlasKrylovSolver.h \
+                          dolfin/uBlasLinearSolver.h \
                           dolfin/uBlasLUSolver.h \
                           dolfin/uBlasMatrix.h \
                           dolfin/uBlasDummyPreconditioner.h \
                           dolfin/uBlasILUPreconditioner.h \
                           dolfin/uBlasPreconditioner.h \
                           dolfin/uBlasSparseMatrix.h \
-                          dolfin/Vector.h \
-                          dolfin/VirtualMatrix.h 
+                          dolfin/uBlasVector.h \
+                          dolfin/Vector.h
 
 INCLUDES = @KERNEL_CFLAGS@
 lib_LTLIBRARIES = libdolfin-la.la
-libdolfin_la_la_SOURCES = DenseVector.cpp \
-                          EigenvalueSolver.cpp \
-                          GMRES.cpp \
-                          LinearSolver.cpp \
+libdolfin_la_la_SOURCES = GMRES.cpp \
+                          LU.cpp \
+                          PETScEigenvalueSolver.cpp \
+                          PETScKrylovMatrix.cpp \
                           PETScKrylovSolver.cpp \
-                          PETScLU.cpp \
+                          PETScLUSolver.cpp \
                           PETScManager.cpp \
-                          PETScSparseMatrix.cpp \
+                          PETScMatrix.cpp \
+                          PETScPreconditioner.cpp \
                           PETScVector.cpp \
-                          Preconditioner.cpp \
                           uBlasKrylovMatrix.cpp \
                           uBlasKrylovSolver.cpp \
                           uBlasLUSolver.cpp \
                           uBlasDummyPreconditioner.cpp \
                           uBlasILUPreconditioner.cpp \
-                          VirtualMatrix.cpp 
+                          uBlasVector.cpp
 
 libdolfin_la_la_LDFLAGS = -static
 all: all-recursive
@@ -342,22 +355,22 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DenseVector.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EigenvalueSolver.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/GMRES.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LinearSolver.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LU.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PETScEigenvalueSolver.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PETScKrylovMatrix.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PETScKrylovSolver.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PETScLU.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PETScLUSolver.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PETScManager.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PETScSparseMatrix.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PETScMatrix.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PETScPreconditioner.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PETScVector.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Preconditioner.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/VirtualMatrix.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/uBlasDummyPreconditioner.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/uBlasILUPreconditioner.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/uBlasKrylovMatrix.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/uBlasKrylovSolver.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/uBlasLUSolver.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/uBlasVector.Plo@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \

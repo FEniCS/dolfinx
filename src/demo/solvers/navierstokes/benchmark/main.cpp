@@ -6,7 +6,7 @@
 // First added:  2002-11-29
 // Last changed: 2005-12-28
 //
-// A solver for the Navier-Stokes equations 
+// A cG(1)cG(1) FEM solver for the incompressible Navier-Stokes equations 
 //
 //     du/dt + u * grad u - nu * div grad u + grad p = f 
 //     div u = 0 
@@ -58,36 +58,33 @@ class BC_Momentum_3D : public BoundaryCondition
   {
     real bmarg = 1.0e-3;
 
-    if (i==0){
-      if ( p.x < (bmarg + DOLFIN_EPS)){
-	value.set(1.0);
-      }      
-      if ( sqrt(sqr(p.x - 0.5) + sqr(p.y - 0.7)) < (0.05 + (bmarg + DOLFIN_EPS))){
-	value.set(0.0);
-      }       
-    } else if (i==1){
-      if ( (p.y < (bmarg + DOLFIN_EPS)) || (p.y > (1.4 - (bmarg + DOLFIN_EPS))) ){
-	value.set(0.0);
-      }
-      if ( p.x < (bmarg + DOLFIN_EPS)){
-	value.set(0.0);
-      }
-      if ( sqrt(sqr(p.x - 0.5) + sqr(p.y - 0.7)) < (0.05 + (bmarg + DOLFIN_EPS))){
-	value.set(0.0);
-      }       
-    } else if (i==2){
-      if ( sqrt(sqr(p.x - 0.5) + sqr(p.y - 0.7)) < (0.05 + (bmarg + DOLFIN_EPS))){
-	value.set(0.0);
-      } 
-      if (p.x < (bmarg + DOLFIN_EPS)){
-	value.set(0.0);
-      }
-      if ( (p.z < (bmarg + DOLFIN_EPS)) || (p.z > (0.4 - (bmarg + DOLFIN_EPS))) ){
-	value.set(0.0);
-      }
-    } else{
+    if (i==0)
+    {
+      if ( p.x() < (bmarg + DOLFIN_EPS))
+        value.set(1.0);
+      if ( sqrt(sqr(p.x() - 0.5) + sqr(p.y() - 0.7)) < (0.05 + (bmarg + DOLFIN_EPS)))
+        value.set(0.0);
+    } 
+    else if (i==1)
+    {
+      if ( (p.y() < (bmarg + DOLFIN_EPS)) || (p.y() > (1.4 - (bmarg + DOLFIN_EPS))) )
+        value.set(0.0);
+      if ( p.x() < (bmarg + DOLFIN_EPS))
+        value.set(0.0);
+      if ( sqrt(sqr(p.x() - 0.5) + sqr(p.y() - 0.7)) < (0.05 + (bmarg + DOLFIN_EPS)))
+        value.set(0.0);
+    } 
+    else if (i==2)
+    {
+      if ( sqrt(sqr(p.x() - 0.5) + sqr(p.y() - 0.7)) < (0.05 + (bmarg + DOLFIN_EPS)))
+        value.set(0.0);
+      if (p.x() < (bmarg + DOLFIN_EPS))
+        value.set(0.0);
+      if ( (p.z() < (bmarg + DOLFIN_EPS)) || (p.z() > (0.4 - (bmarg + DOLFIN_EPS))) )
+        value.set(0.0);
+    } 
+    else
       dolfin_error("Wrong vector component index");
-    }
   }
 };
 
@@ -105,7 +102,7 @@ class BC_Continuity_3D : public BoundaryCondition
   {
     real bmarg = 1.0e-3;
 
-    if (p.x > (2.1 - (bmarg + DOLFIN_EPS)))
+    if (p.x() > (2.1 - (bmarg + DOLFIN_EPS)))
       value = 0.0;
   }
 };
@@ -122,35 +119,30 @@ class BC_Momentum_2D : public BoundaryCondition
   {
     real bmarg = 1.0e-3;
 
-    if (i==0){
-      if ( p.x < (0.0 + DOLFIN_EPS + bmarg)){
-	value.set( (1.0/sqr(0.41)) * sin(DOLFIN_PI*time()*0.125) * 6.0*p.y*(0.41-p.y) );
-      } 
-      if ( p.y < (0.0 + DOLFIN_EPS + bmarg)){
-	value.set(0.0);
-      } 
-      if ( p.y > 0.41 - DOLFIN_EPS - bmarg){
-	value.set(0.0);
-      } 
-      if ( sqrt(sqr(p.x - 0.2) + sqr(p.y - 0.2)) < (0.05 + DOLFIN_EPS + bmarg)){
-	value.set(0.0);
-      }       
-    } else if (i==1){
-      if ( p.x < (0.0 + DOLFIN_EPS + bmarg)){
-	value.set(0.0);
-      } 
-      if ( p.y < (0.0 + DOLFIN_EPS + bmarg)){
-	value.set(0.0);
-      } 
-      if ( p.y > 0.41 - DOLFIN_EPS - bmarg){
-	value.set(0.0);
-      } 
-      if ( sqrt(sqr(p.x - 0.2) + sqr(p.y - 0.2)) < (0.05 + DOLFIN_EPS + bmarg)){
-	value.set(0.0);
-      }       
-    } else{
+    if (i==0)
+    {
+      if ( p.x() < (0.0 + DOLFIN_EPS + bmarg))
+        value.set( (1.0/sqr(0.41)) * sin(DOLFIN_PI*time()*0.125) * 6.0*p.y()*(0.41-p.y()) );
+      if ( p.y() < (0.0 + DOLFIN_EPS + bmarg))
+        value.set(0.0);
+      if ( p.y() > 0.41 - DOLFIN_EPS - bmarg)
+        value.set(0.0);
+      if ( sqrt(sqr(p.x() - 0.2) + sqr(p.y() - 0.2)) < (0.05 + DOLFIN_EPS + bmarg))
+        value.set(0.0);
+    } 
+    else if (i==1)
+    {
+      if ( p.x() < (0.0 + DOLFIN_EPS + bmarg))
+        value.set(0.0);
+      if ( p.y() < (0.0 + DOLFIN_EPS + bmarg))
+        value.set(0.0);
+      if ( p.y() > 0.41 - DOLFIN_EPS - bmarg)
+        value.set(0.0);
+      if ( sqrt(sqr(p.x() - 0.2) + sqr(p.y() - 0.2)) < (0.05 + DOLFIN_EPS + bmarg))
+        value.set(0.0);
+    } 
+    else
       dolfin_error("Wrong vector component index");
-    }
   }
 };
 
@@ -168,7 +160,7 @@ class BC_Continuity_2D : public BoundaryCondition
   {
     real bmarg = 1.0e-3;
 
-    if (p.x > (2.2 - DOLFIN_EPS - bmarg))
+    if (p.x() > (2.2 - DOLFIN_EPS - bmarg))
       value = 0.0;
   }
 };

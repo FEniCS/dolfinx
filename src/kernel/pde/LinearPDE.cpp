@@ -10,8 +10,8 @@
 #include <dolfin/FEM.h>
 #include <dolfin/Matrix.h>
 #include <dolfin/Vector.h>
-#include <dolfin/GMRES.h>
-#include <dolfin/LU.h>
+#include <dolfin/KrylovSolver.h>
+#include <dolfin/LUSolver.h>
 #include <dolfin/BilinearForm.h>
 #include <dolfin/LinearForm.h>
 #include <dolfin/Mesh.h>
@@ -76,13 +76,13 @@ dolfin::uint LinearPDE::solve(Function& u)
   // Solve the linear system
   if ( solver_type == "direct" )
   {
-    LU solver;
+    LUSolver solver;
     solver.set("parent", *this);
     solver.solve(*A, x, b);
   }
   else if ( solver_type == "iterative" || solver_type == "default" )
   {
-    GMRES solver;
+    KrylovSolver solver(gmres);
     solver.set("parent", *this);
     solver.solve(*A, x, b);
   }

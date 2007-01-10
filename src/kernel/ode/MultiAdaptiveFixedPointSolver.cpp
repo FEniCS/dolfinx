@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-27
-// Last changed: 2006-07-07
+// Last changed: 2006-08-08
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/ParameterSystem.h>
@@ -78,9 +78,8 @@ void MultiAdaptiveFixedPointSolver::start()
   // Update diagonal of Jacobian if used
   if ( diagonal_newton_damping )
   {
-    ts.copy(ts.u0, 0, ts.u, 0, ts.N);
     for (uint i = 0; i < ts.N; i++)
-      dfdu[i] = ts.ode.dfdu(ts.u, ts._a, i, i);
+      dfdu[i] = ts.ode.dfdu(ts.u0, ts._a, i, i);
   }
 }
 //-----------------------------------------------------------------------------
@@ -91,7 +90,8 @@ void MultiAdaptiveFixedPointSolver::end()
   num_elements_mono += ts.length() / ts.kmin * static_cast<real>(ts.ode.size());
 }
 //-----------------------------------------------------------------------------
-real MultiAdaptiveFixedPointSolver::iteration(uint iter, real tol)
+real MultiAdaptiveFixedPointSolver::iteration(real tol, uint iter,
+					      real d0, real d1)
 {
   // Reset dof
   uint j = 0;
@@ -140,7 +140,7 @@ real MultiAdaptiveFixedPointSolver::iteration(uint iter, real tol)
 	
 	// Get initial value for element
 	const int ep = ts.ee[e];
-	const real x0 = ( ep != -1 ? ts.jx[ep*method.nsize() + method.nsize() - 1] : ts.u0[i] );
+	const real x0 = ( ep != -1 ? ts.jx[ep*method.nsize() + method.nsize() - 1] : ts.u0(i) );
 	
 	// Evaluate right-hand side at quadrature points of element
 	if ( method.type() == Method::cG )

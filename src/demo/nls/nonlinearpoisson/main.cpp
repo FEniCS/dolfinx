@@ -39,7 +39,7 @@ class MyFunction : public Function
 {
   real eval(const Point& p, unsigned int i)
   {
-    return time()*p.x*sin(p.y);
+    return time()*p.x()*sin(p.y());
   }
 };
 
@@ -48,7 +48,7 @@ class MyBC : public BoundaryCondition
 {
   void eval(BoundaryValue& value, const Point& p, unsigned int i)
   {
-    if ( std::abs(p.x - 1.0) < DOLFIN_EPS )
+    if ( std::abs(p.x() - 1.0) < DOLFIN_EPS )
       value = 1.0*time();
   }
 };
@@ -78,12 +78,12 @@ class MyNonlinearProblem : public NonlinearProblem
     }
  
     // User defined assemble of Jacobian and residual vector 
-    void form(Matrix& A, Vector& b, const Vector& x)
+    void form(GenericMatrix& A, GenericVector& b, const GenericVector& x)
     {
       dolfin_log(false);
       FEM::assemble(*a, *L, A, b, *_mesh);
       FEM::applyBC(A, *_mesh, a->test(), *_bc);
-      FEM::assembleResidualBC(b, x, *_mesh, a->test(), *_bc);
+      FEM::applyResidualBC(b, x, *_mesh, a->test(), *_bc);
       dolfin_log(true);
     }
 
@@ -112,9 +112,8 @@ int main(int argc, char* argv[])
   // Create user-defined nonlinear problem
   MyNonlinearProblem nonlinear_problem(mesh, bc, U, f);
 
-  // Create nonlinear solver (using BICGSTAB linear solver) and set parameters
-//  NewtonSolver nonlinear_solver(KrylovSolver::bicgstab, Preconditioner::hypre_amg);
-  NewtonSolver nonlinear_solver(KrylovSolver::bicgstab);
+  // Create nonlinear solver (using GMRES linear solver) and set parameters
+  NewtonSolver nonlinear_solver(gmres);
   nonlinear_solver.set("Newton maximum iterations", 50);
   nonlinear_solver.set("Newton relative tolerance", 1e-10);
   nonlinear_solver.set("Newton absolute tolerance", 1e-10);

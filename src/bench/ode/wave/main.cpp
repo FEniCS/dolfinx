@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells 2005
 //
 // First added:  2005
-// Last changed: 2006-02-20
+// Last changed: 2006-10-26
 
 #include <dolfin.h>
 
@@ -27,7 +27,7 @@ public:
     w = 0.25;
 
     // Lump mass matrix
-    MassMatrix M(mesh);
+    uBlasMassMatrix M(mesh);
     FEM::lump(M, m);
 
     // Set dependencies
@@ -39,13 +39,12 @@ public:
 
       // Dependencies for second half of system
       int ncols = 0;
-      const int* cols = 0;
-      const real* vals = 0;
-      MatGetRow(A.mat(), static_cast<int>(i), &ncols, &cols, &vals);
+      Array<int> columns;
+      Array<real> values;
+      A.getRow(i, ncols, columns, values);
       dependencies.setsize(i + offset, ncols);
       for (int j = 0; j < ncols; j++)
-	dependencies.set(i + offset, cols[j]);
-      MatRestoreRow(A.mat(), static_cast<int>(i), &ncols, &cols, &vals);
+	dependencies.set(i + offset, columns[j]);
     }
 
     // Get local mesh size (check smallest neighboring triangle)
@@ -59,7 +58,7 @@ public:
 	if ( d < dmin )
 	  dmin = d;
       }
-      h[v->id()] = dmin;
+      h[v->index()] = dmin;
       if ( dmin < hmin )
 	hmin = dmin;
     }
@@ -68,24 +67,26 @@ public:
   }
 
   // Initial condition: a wave coming in from the right
-  real u0(unsigned int i)
+  void u0(uBlasVector& u)
   {
-    const real x0 = 1.0 - 0.5*w;
-    
-    if ( i < offset )
+    for (unsigned int i = 0; i < N; i++)
     {
-      const Point& p = mesh.vertex(i).coord();
-      if ( fabs(p.x - x0) < 0.5*w )
-	return 0.5*(cos(2.0*DOLFIN_PI*(p.x - x0)/w) + 1.0);
-    }
-    else
-    {
-      const Point& p = mesh.vertex(i - offset).coord();
-      if ( fabs(p.x - x0) < 0.5*w )
-      	return -(DOLFIN_PI/w)*sin(2.0*DOLFIN_PI*(p.x - x0)/w);
-    }
+      const real x0 = 1.0 - 0.5*w;
+      u(i) = 0.0;
 
-    return 0.0;
+      if ( i < offset )
+      {
+	const Point p = mesh.geometry().point(i);
+	if ( std::abs(p.x() - x0) < 0.5*w )
+	  u(i) = 0.5*(cos(2.0*DOLFIN_PI*(p.x() - x0)/w) + 1.0);
+      }
+      else
+      {
+	const Point p = mesh.geometry().point(i);
+	if ( std::abs(p.x() - x0) < 0.5*w )
+	  u(i) = -(DOLFIN_PI/w)*sin(2.0*DOLFIN_PI*(p.x() - x0)/w);
+      }
+    }
   }
 
   // Global time step
@@ -101,33 +102,33 @@ public:
   }
 
   // Right-hand side, mono-adaptive version
-  void f(const real u[], real t, real y[])
+  void f(const uBlasVector& u, real t, uBlasVector& y)
   {
     // First half of system
     for (unsigned int i = 0; i < offset; i++)
     {
-      y[i] = u[i + offset];
+      y(i) = u(i + offset);
     }
     
     // Second half of system
     for (unsigned int i = offset; i < N; i++)
     {
       const unsigned int j = i - offset;
-      y[i] = -A.mult(u, j) / m(j);
+      y(i) = - inner_prod(row(A, j), u) / m(j);
     }
   }
 
   // Right-hand side, multi-adaptive version
-  real f(const real u[], real t, unsigned int i)
+  real f(const uBlasVector& u, real t, unsigned int i)
   {
     // First half of system
     if ( i < offset )
-      return u[i + offset];
+      return u(i + offset);
     
     // Second half of system
     const unsigned int j = i - offset;
 
-    return -A.mult(u, j) / m(j);
+    return - inner_prod(row(A, j), u) / m(j);
   }
   
   void save(Sample& sample)
@@ -176,13 +177,13 @@ public:
 
 private:
 
-  Mesh& mesh;          // The mesh
-  StiffnessMatrix A;   // Stiffness matrix
-  Vector m;            // Lumped mass matrix
-  unsigned int offset; // N/2, number of vertices
-  Array<real> h;       // Local mesh size
-  real hmin;           // Minimum mesh size
-  real w;              // Width of initial wave
+  Mesh& mesh;             // The mesh
+  uBlasStiffnessMatrix A; // Stiffness matrix
+  uBlasVector m;          // Lumped mass matrix
+  unsigned int offset;    // N/2, number of vertices
+  Array<real> h;          // Local mesh size
+  real hmin;              // Minimum mesh size
+  real w;                 // Width of initial wave
 
 };
 

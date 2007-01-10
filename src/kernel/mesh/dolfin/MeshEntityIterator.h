@@ -2,14 +2,14 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-05-09
-// Last changed: 2006-06-22
+// Last changed: 2006-10-23
 
 #ifndef __MESH_ENTITY_ITERATOR_H
 #define __MESH_ENTITY_ITERATOR_H
 
 #include <dolfin/constants.h>
 #include <dolfin/dolfin_log.h>
-#include <dolfin/NewMesh.h>
+#include <dolfin/Mesh.h>
 #include <dolfin/MeshEntity.h>
 
 namespace dolfin
@@ -44,12 +44,12 @@ namespace dolfin
   public:
 
     /// Create iterator for mesh entities over given topological dimension
-    MeshEntityIterator(NewMesh& mesh, uint dim) 
+    MeshEntityIterator(Mesh& mesh, uint dim) 
       : entity(mesh, dim, 0), pos(0), pos_end(mesh.size(dim)), index(0)
     {
       // Compute entities if empty
       if ( pos_end == 0 )
-	pos_end = mesh.init(dim);
+        pos_end = mesh.init(dim);
     }
 
     /// Create iterator for entities of given dimension connected to given entity    
@@ -61,18 +61,18 @@ namespace dolfin
       
       // Compute connectivity if empty
       if ( c.size() == 0 )
-	entity.mesh().init(entity.dim(), dim);
+        entity.mesh().init(entity.dim(), dim);
       
       // Get size and index map
       if ( c.size() == 0 )
       {
-	pos_end = 0;
-	index = 0;
+        pos_end = 0;
+        index = 0;
       }
       else
       {
-	pos_end = c.size(entity.index());
-	index = c(entity.index());
+        pos_end = c.size(entity.index());
+        index = c(entity.index());
       }
     }
 
@@ -88,32 +88,32 @@ namespace dolfin
       
       // Compute connectivity if empty
       if ( c.size() == 0 )
-	entity.mesh().init(entity.dim(), dim);
+        entity.mesh().init(entity.dim(), dim);
       
       // Get size and index map
       if ( c.size() == 0 )
       {
-	pos_end = 0;
-	index = 0;
+        pos_end = 0;
+        index = 0;
       }
       else
       {
-	pos_end = c.size(entity.index());
-	index = c(entity.index());
+        pos_end = c.size(entity.index());
+        index = c(entity.index());
       }
     }
 
     /// Destructor
     virtual ~MeshEntityIterator() {}
     
-    /// Step to next mesh entity
+    /// Step to next mesh entity (prefix increment)
     MeshEntityIterator& operator++() { ++pos; return *this; }
 
     /// Check if iterator has reached the end
     inline bool end() const { return pos >= pos_end; }
-    
+
     /// Dereference operator
-    inline MeshEntity& operator*() { entity._index = (index ? index[pos] : pos); return entity; }
+    inline MeshEntity& operator*() { return *operator->(); }
 
     /// Member access operator
     inline MeshEntity* operator->() { entity._index = (index ? index[pos] : pos); return &entity; }

@@ -1,10 +1,12 @@
 // Copyright (C) 2006 Johan Jansson.
 // Licensed under the GNU GPL Version 2.
 //
+// Modified by Anders Logg 2006.
+//
 // First added:  2006
 // Last changed: 2006-05-04
 
-#ifdef HAVE_PETSC_H
+//#ifdef HAVE_PETSC_H
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/FEM.h>
@@ -24,10 +26,10 @@
 using namespace dolfin;
 
 TimeDependentPDE::TimeDependentPDE(BilinearForm& a, LinearForm& L, Mesh& mesh, 
-  BoundaryCondition& bc, int N, real k, real T) : GenericPDE(), x(0), k(k),
-						  _a(&a), _Lf(&L),
-						  _mesh(&mesh), _bc(&bc),
-						  N(N), t(0), T(T)
+  BoundaryCondition& bc, int N, real T) : GenericPDE(), x(0),
+					  _a(&a), _Lf(&L),
+					  _mesh(&mesh), _bc(&bc),
+					  N(N), t(0), T(T)
 {
   x = new Vector(N);
   dotx = new Vector(N);
@@ -100,6 +102,13 @@ dolfin::uint TimeDependentPDE::solve(Function& U)
   return 0;
 }
 //-----------------------------------------------------------------------------
+void TimeDependentPDE::u0(uBlasVector& u)
+{
+  cout << "TimeDependentPDE::u0" << endl;
+
+  u.copy(*x, 0, 0, u.size());
+}
+//-----------------------------------------------------------------------------
 void TimeDependentPDE::fu(const Vector& x, Vector& dotx, real t)
 {
 }
@@ -154,31 +163,27 @@ TimeDependentODE::TimeDependentODE(TimeDependentPDE& pde, int N, real T) :
 {
 }
 //-----------------------------------------------------------------------------
-real TimeDependentODE::u0(unsigned int i)
+void TimeDependentODE::u0(uBlasVector& u)
 {
-   return pde->x->getval(i);
+  cout << "TimeDependentODE::u0" << endl;
+  pde->u0(u);
 }
 //-----------------------------------------------------------------------------
-void TimeDependentODE::f(const real u[], real t, real y[])
+void TimeDependentODE::f(const uBlasVector& u, real t, uBlasVector& y)
 {
-  Vector::fromArray(u, *(pde->x), 0, pde->x->size());
+  pde->x->copy(u, 0, 0, u.size());
 
   pde->prepareiteration();
 
   pde->fu(*(pde->x), *(pde->dotx), t);
 
-  Vector::toArray(y, *(pde->dotx), 0, pde->dotx->size());
+  y.copy(*(pde->dotx), 0, 0, u.size());
 }
 //-----------------------------------------------------------------------------
-bool TimeDependentODE::update(const real u[], real t, bool end)
+bool TimeDependentODE::update(const uBlasVector& u, real t, bool end)
 {
   return true;
 }
 //-----------------------------------------------------------------------------
-real TimeDependentODE::timestep(real t, real k0) const
-{
-  return pde->k;
-}
-//-----------------------------------------------------------------------------
 
-#endif
+//#endif

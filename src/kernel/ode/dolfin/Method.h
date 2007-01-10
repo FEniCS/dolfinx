@@ -14,7 +14,7 @@ namespace dolfin
 {
 
   class Lagrange;
-  class DenseVector;
+  class uBlasVector;
   
   /// Base class for cGqMethod and dGqMethod, which contain all numeric constants,
   /// such as nodal points and nodal weights, needed for the method.
@@ -74,7 +74,7 @@ namespace dolfin
     virtual real ueval(real x0, real values[], real tau) const = 0;
 
     /// Evaluate solution at given point
-    virtual real ueval(real x0, DenseVector& values, uint offset, real tau) const = 0;
+    virtual real ueval(real x0, uBlasVector& values, uint offset, real tau) const = 0;
 
     /// Evaluate solution at given node
     virtual real ueval(real x0, real values[], uint i) const = 0;
@@ -83,7 +83,7 @@ namespace dolfin
     virtual real residual(real x0, real values[], real f, real k) const = 0;
 
     /// Compute residual at right end-point
-    virtual real residual(real x0, DenseVector& values, uint offset, real f, real k) const = 0;
+    virtual real residual(real x0, uBlasVector& values, uint offset, real f, real k) const = 0;
   
     /// Compute new time step based on the given residual
     virtual real timestep(real r, real tol, real k0, real kmax) const = 0;

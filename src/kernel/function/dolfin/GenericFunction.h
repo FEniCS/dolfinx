@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-11-28
-// Last changed: 2006-05-07
+// Last changed: 2006-12-12
 
 #ifndef __GENERIC_FUNCTION_H
 #define __GENERIC_FUNCTION_H
@@ -15,10 +15,12 @@ namespace dolfin
 {
   
   class Point;
+  class Cell;
   class Vertex;
   class Mesh;
   class AffineMap;
   class FiniteElement;
+  class Function;
 
   /// This class serves as a base class/interface for implementations
   /// of specific function representations.
@@ -43,7 +45,10 @@ namespace dolfin
     virtual void sub(uint i) = 0;
 
     /// Compute interpolation of function onto local finite element space
-    virtual void interpolate(real coefficients[], AffineMap& map, FiniteElement& element) = 0;
+    virtual void interpolate(real coefficients[], Cell& cell, AffineMap& map, FiniteElement& element) = 0;
+
+    /// Compute interpolation of fsource to local finite element space
+    virtual void interpolate(Function& fsource);
 
     /// Return vector dimension of function
     virtual uint vectordim() const = 0;

@@ -4,10 +4,15 @@
 // Modified by Anders Logg, 2005-2006.
 //
 // First added:  2005-10-23
-// Last changed: 2006-06-06
+// Last changed: 2006-09-03
 
 #include <dolfin/FEM.h>
+#include <dolfin/BilinearForm.h>
+#include <dolfin/LinearForm.h>
 #include <dolfin/NewtonSolver.h>
+#include <dolfin/NonlinearProblem.h>
+#include <dolfin/LUSolver.h>
+#include <dolfin/KrylovSolver.h>
 #include <iostream>
 
 using namespace dolfin;
@@ -15,7 +20,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 NewtonSolver::NewtonSolver() : Parametrized()
 {
-  solver = new LU;
+  solver = new LUSolver();
 #ifdef HAVE_PETSC_H
   A = new Matrix(Matrix::umfpack);
 #else
@@ -26,25 +31,23 @@ NewtonSolver::NewtonSolver() : Parametrized()
 #ifdef HAVE_PETSC_H
 NewtonSolver::NewtonSolver(Matrix::Type matrix_type) : Parametrized()
 {
-  solver = new LU;
+  solver = new LUSolver();
   A = new Matrix(matrix_type);
 }
 #endif
 //-----------------------------------------------------------------------------
-NewtonSolver::NewtonSolver(KrylovSolver::Type linear_solver) : Parametrized()
+NewtonSolver::NewtonSolver(KrylovMethod method) : Parametrized()
 {
-  solver = new KrylovSolver(linear_solver);
+  solver = new KrylovSolver(method);
   A = new Matrix;
 }
 //-----------------------------------------------------------------------------
-#ifdef HAVE_PETSC_H
-NewtonSolver::NewtonSolver(KrylovSolver::Type linear_solver, 
-    Preconditioner::Type preconditioner) : Parametrized()
+NewtonSolver::NewtonSolver(KrylovMethod method, Preconditioner pc)
+  : Parametrized()
 {
-  solver = new KrylovSolver(linear_solver, preconditioner);
+  solver = new KrylovSolver(method, pc);
   A = new Matrix;
 }
-#endif
 //-----------------------------------------------------------------------------
 NewtonSolver::~NewtonSolver()
 {

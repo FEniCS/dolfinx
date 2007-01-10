@@ -9,8 +9,6 @@
 #ifndef __NSE_SOLVER_H
 #define __NSE_SOLVER_H
 
-#ifdef HAVE_PETSC_H
-
 #include <dolfin/Solver.h>
 
 namespace dolfin
@@ -56,7 +54,5 @@ namespace dolfin
   };
 
 }
-
-#endif
 
 #endif

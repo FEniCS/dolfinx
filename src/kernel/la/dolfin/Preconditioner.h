@@ -1,75 +1,28 @@
-// Copyright (C) 2005 Johan Jansson.
+// Copyright (C) 2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
-// Modified by Anders Logg 2005-2006.
-// Modified Garth N. Wells 2005
-//
-// First added:  2005
-// Last changed: 2006-05-15
+// First added:  2006-08-15
+// Last changed: 2006-08-15
 
 #ifndef __PRECONDITIONER_H
 #define __PRECONDITIONER_H
 
-#ifdef HAVE_PETSC_H
-
-#include <dolfin/PETScManager.h>
-
 namespace dolfin
 {
 
-  class PETScVector;
+  // List of predefined preconditioners.
 
-  /// This class specifies the interface for user-defined Krylov
-  /// method preconditioners. A user wishing to implement her own
-  /// preconditioner needs only supply a function that approximately
-  /// solves the linear system given a right-hand side.
-
-  class Preconditioner
+  enum Preconditioner
   {
-  public:
-
-    // PETSC preconditioners
-    enum Type
-    { 
-      default_pc, // Default PETSc preconditioner (use when setting solver from command line)
-      hypre_amg,  // Hypre algerbraic multigrid
-      icc,        // Incomplete Cholesky
-      ilu,        // Incomplete LU
-      jacobi,     // Jacobi
-      sor,        // SOR (successive over relaxation)
-      none        // No preconditioning
-    };
-
-    /// Constructor
-    Preconditioner();
-
-    /// Destructor
-    virtual ~Preconditioner();
-
-    static void setup(const KSP ksp, Preconditioner &pc);
-
-    /// Solve linear system approximately for given right-hand side b
-    virtual void solve(PETScVector& x, const PETScVector& b) = 0;
-
-    /// Friends
-    friend class PETScKrylovSolver;
-
-  protected:
-
-    PC petscpc;
-
-  private:
-
-    static int PCApply(PC pc, Vec x, Vec y);
-    static int PCCreate(PC pc);
-
-    /// Return PETSc preconditioner type
-    static PCType getType(const Type type);
-
+    none,      // No preconditioning
+    jacobi,    // Jacobi
+    sor,       // SOR (successive over relaxation)
+    ilu,       // Incomplete LU factorization
+    icc,       // Incomplete Cholesky factorization
+    amg,       // Algebraic multigrid (through Hypre when available)
+    default_pc // Default choice of preconditioner
   };
 
 }
-
-#endif
 
 #endif

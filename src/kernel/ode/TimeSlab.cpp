@@ -2,11 +2,10 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-05-02
-// Last changed: 2006-07-05
+// Last changed: 2006-08-21
 
 #include <stdio.h>
 #include <string>
-#include <dolfin/DenseVector.h>
 #include <dolfin/ParameterSystem.h>
 #include <dolfin/ODE.h>
 #include <dolfin/cGqMethod.h>
@@ -17,7 +16,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 TimeSlab::TimeSlab(ODE& ode) : 
-  N(ode.size()), _a(0.0), _b(0.0), ode(ode), method(0), u0(0),
+  N(ode.size()), _a(0.0), _b(0.0), ode(ode), method(0), u0(ode.size()),
   save_final(get("ODE save final solution"))
 {
   // Choose method
@@ -38,21 +37,14 @@ TimeSlab::TimeSlab(ODE& ode) :
   else
     dolfin_error1("Unknown ODE method: %s", m.c_str());
 
-  // Initialize initial data
-  u0 = new real[N];
-
   // Get initial data
-  for (uint i = 0; i < N; i++)
-  {
-    u0[i] = ode.u0(i);
-    //cout << "u0[" << i << "] = " << u0[i] << endl;
-  }
+  u0 = 0.0;
+  ode.u0(u0);
 }
 //-----------------------------------------------------------------------------
 TimeSlab::~TimeSlab()
 {
   if ( method ) delete method;
-  if ( u0 ) delete [] u0;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint TimeSlab::size() const
@@ -85,7 +77,7 @@ dolfin::LogStream& dolfin::operator<<(LogStream& stream,
   return stream;
 }
 //-----------------------------------------------------------------------------
-void TimeSlab::write(const DenseVector& u)
+void TimeSlab::write(const uBlasVector& u)
 {
   // FIXME: Make this a parameter?
   std::string filename = "solution.data";
@@ -107,19 +99,19 @@ void TimeSlab::copy(const real x[], uint xoffset, real y[], uint yoffset, uint n
     y[yoffset + i] = x[xoffset + i];
 }
 //-----------------------------------------------------------------------------
-void TimeSlab::copy(const DenseVector& x, uint xoffset, real y[], uint yoffset, uint n)
+void TimeSlab::copy(const uBlasVector& x, uint xoffset, real y[], uint yoffset, uint n)
 {
   for (uint i = 0; i < n; i++)
     y[yoffset + i] = x(xoffset + i);
 }
 //-----------------------------------------------------------------------------
-void TimeSlab::copy(const real x[], uint xoffset, DenseVector& y, uint yoffset, uint n)
+void TimeSlab::copy(const real x[], uint xoffset, uBlasVector& y, uint yoffset, uint n)
 {
   for (uint i = 0; i < n; i++)
     y(yoffset + i) = x[xoffset + i];
 }
 //-----------------------------------------------------------------------------
-void TimeSlab::copy(const DenseVector& x, uint xoffset, DenseVector& y, uint yoffset, uint n)
+void TimeSlab::copy(const uBlasVector& x, uint xoffset, uBlasVector& y, uint yoffset, uint n)
 {
   for (uint i = 0; i < n; i++)
     y(yoffset + i) = x(xoffset + i);

@@ -1,17 +1,17 @@
-import dolfin
+from dolfin import *
 
-mesh = dolfin.Mesh("cow05b.xml.gz")
+mesh = Mesh("cow05b.xml.gz")
 
-vertex = dolfin.VertexIterator(mesh)
+vertex = vertices(mesh)
 while not vertex.end():
-    print "vertex(" + str(vertex.id()) + "): ",
-    print "x: " + str(vertex.coord().x),
-    print "y: " + str(vertex.coord().y),
-    print "z: " + str(vertex.coord().z)
+    print "vertex(" + str(vertex.index()) + "): ",
+    print "x: " + str(vertex.point()[0]),
+    print "y: " + str(vertex.point()[1]),
+    print "z: " + str(vertex.point()[2])
     vertex.increment()
 
-cell = dolfin.CellIterator(mesh)
+cell = cells(mesh)
 while not cell.end():
-    print "cell(" + str(cell) + "): ",
+    print "cell(" + str(cell.index()) + "): ",
     print "h: " + str(cell.diameter())
     cell.increment()

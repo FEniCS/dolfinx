@@ -43,6 +43,7 @@ DIST_COMMON = $(nobase_include_HEADERS) $(srcdir)/Makefile.am \
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/ac_pkg_swig.m4 \
 	$(top_srcdir)/m4/ac_python_devel.m4 \
+	$(top_srcdir)/m4/ax_boost_base.m4 \
 	$(top_srcdir)/m4/ax_compiler_vendor.m4 \
 	$(top_srcdir)/m4/libtool.m4 $(top_srcdir)/m4/libxml.m4 \
 	$(top_srcdir)/configure.ac
@@ -62,8 +63,8 @@ LTLIBRARIES = $(lib_LTLIBRARIES)
 libdolfin_io_la_LIBADD =
 am_libdolfin_io_la_OBJECTS = File.lo GenericFile.lo GiDFile.lo \
 	MatlabFile.lo MFile.lo MTXFile.lo OctaveFile.lo OpenDXFile.lo \
-	PythonFile.lo TecplotFile.lo VTKFile.lo XMLBLASFormData.lo \
-	XMLFile.lo XMLFiniteElementSpec.lo XMLMesh.lo NewXMLMesh.lo \
+	PythonFile.lo VTKFile.lo XMLBLASFormData.lo XMLFile.lo \
+	XMLFiniteElementSpec.lo XMLMesh.lo XMLMeshFunction.lo \
 	XMLMatrix.lo XMLObject.lo XMLParameterList.lo XMLFunction.lo \
 	XMLVector.lo
 libdolfin_io_la_OBJECTS = $(am_libdolfin_io_la_OBJECTS)
@@ -101,6 +102,8 @@ AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
 AWK = @AWK@
+BOOST_CPPFLAGS = @BOOST_CPPFLAGS@
+BOOST_LDFLAGS = @BOOST_LDFLAGS@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
@@ -116,6 +119,7 @@ CYGPATH_W = @CYGPATH_W@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
 DOLFIN_CFLAGS = @DOLFIN_CFLAGS@
+DOLFIN_DEFINITIONS = @DOLFIN_DEFINITIONS@
 DOLFIN_EXT_LIBS = @DOLFIN_EXT_LIBS@
 DOLFIN_LIBS = @DOLFIN_LIBS@
 DOLFIN_LTLIBOBJS = @DOLFIN_LTLIBOBJS@
@@ -125,6 +129,7 @@ ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
 EXEEXT = @EXEEXT@
+EXTERNAL_CFLAGS = @EXTERNAL_CFLAGS@
 F77 = @F77@
 FFLAGS = @FFLAGS@
 INSTALL_DATA = @INSTALL_DATA@
@@ -219,6 +224,7 @@ pyexecdir = @pyexecdir@
 pythondir = @pythondir@
 sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
+swig_found = @swig_found@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 SUBDIRS = dolfin
@@ -229,16 +235,15 @@ nobase_include_HEADERS = dolfin/dolfin_io.h \
                           dolfin/MatlabFile.h \
                           dolfin/MFile.h \
                           dolfin/MTXFile.h \
-	                  dolfin/OctaveFile.h \
+                          dolfin/OctaveFile.h \
                           dolfin/OpenDXFile.h \
                           dolfin/PythonFile.h \
-                          dolfin/TecplotFile.h \
                           dolfin/VTKFile.h \
                           dolfin/XMLBLASFormData.h \
                           dolfin/XMLFile.h \
                           dolfin/XMLFiniteElementSpec.h \
                           dolfin/XMLMesh.h \
-                          dolfin/NewXMLMesh.h \
+                          dolfin/XMLMeshFunction.h \
                           dolfin/XMLMatrix.h \
                           dolfin/XMLObject.h \
                           dolfin/XMLParameterList.h \
@@ -256,13 +261,12 @@ libdolfin_io_la_SOURCES = File.cpp \
                           OctaveFile.cpp \
                           OpenDXFile.cpp \
                           PythonFile.cpp \
-                          TecplotFile.cpp \
                           VTKFile.cpp \
                           XMLBLASFormData.cpp \
                           XMLFile.cpp \
                           XMLFiniteElementSpec.cpp \
                           XMLMesh.cpp \
-                          NewXMLMesh.cpp \
+                          XMLMeshFunction.cpp \
                           XMLMatrix.cpp \
                           XMLObject.cpp \
                           XMLParameterList.cpp \
@@ -345,11 +349,9 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MFile.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MTXFile.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MatlabFile.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NewXMLMesh.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/OctaveFile.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/OpenDXFile.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PythonFile.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TecplotFile.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/VTKFile.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/XMLBLASFormData.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/XMLFile.Plo@am__quote@
@@ -357,6 +359,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/XMLFunction.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/XMLMatrix.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/XMLMesh.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/XMLMeshFunction.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/XMLObject.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/XMLParameterList.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/XMLVector.Plo@am__quote@

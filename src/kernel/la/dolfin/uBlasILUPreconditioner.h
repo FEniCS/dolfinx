@@ -12,20 +12,23 @@
 #include <dolfin/ublas.h>
 #include <dolfin/Array.h>
 #include <dolfin/uBlasPreconditioner.h>
+#include <dolfin/uBlasMatrix.h>
 
 namespace dolfin
 {
   
   template<class Mat> class uBlasMatrix;
+  class uBlasVector;
 
   /// This class implements an incomplete LU factorization (ILU)
   /// preconditioner for the uBlas Krylov solver.
 
-  class DenseVector;
-
   class uBlasILUPreconditioner : public uBlasPreconditioner
   {
   public:
+
+    /// Constructor
+    uBlasILUPreconditioner();
 
     /// Constructor
     uBlasILUPreconditioner(const uBlasMatrix<ublas_sparse_matrix>& A);
@@ -34,7 +37,7 @@ namespace dolfin
     ~uBlasILUPreconditioner();
 
     /// Solve linear system Ax = b approximately
-    void solve(DenseVector& x, const DenseVector& b) const;
+    void solve(uBlasVector& x, const uBlasVector& b) const;
 
   private:
 

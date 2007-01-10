@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2004
-// Last changed: 2006-07-05
+// Last changed: 2006-08-21
 
 #include <cmath>
 #include <dolfin.h>
@@ -28,25 +28,17 @@ public:
     H   = 737.0;
   }
 
-  real u0(unsigned int i)
+  void u0(uBlasVector& u)
   {
-    switch (i) {
-    case 0:
-      return 0.444;
-    case 1:
-      return 0.00123;
-    case 2:
-      return 0.0;
-    case 3:
-      return 0.007;
-    case 4:
-      return 0.0;
-    default:
-      return 0.36;
-    }
+    u(0) = 0.444;
+    u(1) = 0.00123;
+    u(2) = 0.0;
+    u(3) = 0.007;
+    u(4) = 0.0;
+    u(5) = 0.36;
   }
 
-  void f(const DenseVector& u, real t, DenseVector& y)
+  void f(const uBlasVector& u, real t, uBlasVector& y)
   {
     y(0) = -2.0*r1(u) + r2(u) - r3(u) - r4(u);
     y(1) = -0.5*r1(u) - r4(u) - 0.5*r5(u) + F(u);
@@ -58,32 +50,32 @@ public:
 
 private:
 
-  real r1(const DenseVector& u)
+  real r1(const uBlasVector& u)
   {
     return k1*pow(u(0), 4.0)*sqrt(u(1));
   }
   
-  real r2(const DenseVector& u)
+  real r2(const uBlasVector& u)
   {
     return k2*u(2)*u(3);
   }
 
-  real r3(const DenseVector& u)
+  real r3(const uBlasVector& u)
   {
     return (k2/K)*u(0)*u(4);
   }
 
-  real r4(const DenseVector& u)
+  real r4(const uBlasVector& u)
   {
     return k3*u(0)*pow(u(3), 2.0);
   }
 
-  real r5(const DenseVector& u)
+  real r5(const uBlasVector& u)
   {
     return k4*pow(u(5), 2.0)*sqrt(u(1));
   }
 
-  real F(const DenseVector& u)
+  real F(const uBlasVector& u)
   {
     return klA * (p/H - u(1));
   }

@@ -40,6 +40,7 @@ DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/ac_pkg_swig.m4 \
 	$(top_srcdir)/m4/ac_python_devel.m4 \
+	$(top_srcdir)/m4/ax_boost_base.m4 \
 	$(top_srcdir)/m4/ax_compiler_vendor.m4 \
 	$(top_srcdir)/m4/libtool.m4 $(top_srcdir)/m4/libxml.m4 \
 	$(top_srcdir)/configure.ac
@@ -59,6 +60,8 @@ AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
 AWK = @AWK@
+BOOST_CPPFLAGS = @BOOST_CPPFLAGS@
+BOOST_LDFLAGS = @BOOST_LDFLAGS@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
@@ -74,6 +77,7 @@ CYGPATH_W = @CYGPATH_W@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
 DOLFIN_CFLAGS = @DOLFIN_CFLAGS@
+DOLFIN_DEFINITIONS = @DOLFIN_DEFINITIONS@
 DOLFIN_EXT_LIBS = @DOLFIN_EXT_LIBS@
 DOLFIN_LIBS = @DOLFIN_LIBS@
 DOLFIN_LTLIBOBJS = @DOLFIN_LTLIBOBJS@
@@ -83,6 +87,7 @@ ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
 EXEEXT = @EXEEXT@
+EXTERNAL_CFLAGS = @EXTERNAL_CFLAGS@
 F77 = @F77@
 FFLAGS = @FFLAGS@
 INSTALL_DATA = @INSTALL_DATA@
@@ -177,58 +182,36 @@ pyexecdir = @pyexecdir@
 pythondir = @pythondir@
 sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
+swig_found = @swig_found@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 EXTRA_DIST = dolfin_mesh.h \
-             Boundary.h \
-             BoundaryData.h \
-             BoundaryFacetIterator.h \
-             BoundaryInit.h \
-             Cell.h \
-             CellIterator.h \
-             CellRefData.h \
-             Edge.h \
-             EdgeIterator.h \
-             EdgeRefData.h \
-             Face.h \
-             FaceIterator.h \
-             GenericCell.h \
-             Mesh.h \
-             MeshData.h \
-             MeshHierarchy.h \
-             MeshInit.h \
-             MeshIterator.h \
-             MeshRefinement.h \
-             Point. h\
-             TetMeshRefinement.h \
-             Tetrahedron.h \
-             TriMeshRefinement.h \
-             Triangle.h \
              UnitCube.h \
              UnitSquare.h \
-             Vertex.h \
-             VertexIterator.h \
              MeshConnectivity.h \
              MeshEditor.h \
              MeshEntity.h \
              MeshEntityIterator.h \
              MeshFunction.h \
              MeshGeometry.h \
+             MeshHierarchy.h \
              MeshTopology.h \
-             NewMesh.h \
-             NewMeshData.h \
-             NewVertex.h \
-             NewEdge.h \
-             NewFace.h \
-             NewFacet.h \
-             NewCell.h \
+             Mesh.h \
+             MeshData.h \
+             Vertex.h \
+             Edge.h \
+             Face.h \
+             Facet.h \
+             Cell.h \
              TopologyComputation.h \
              CellType.h \
              Interval.h \
-             NewTriangle.h \
-             NewTetrahedron.h \
+             Triangle.h \
+             Tetrahedron.h \
              UniformMeshRefinement.h \
-             NewPoint.h \
+             LocalMeshRefinement.h \
+             LocalMeshCoarsening.h \
+             Point.h \
              BoundaryComputation.h \
              MeshBoundary.h
 

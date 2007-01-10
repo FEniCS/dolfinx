@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2006.
 //
 // First added:  2005
-// Last changed: 2006-07-07
+// Last changed: 2006-08-22
 
 #include <stdio.h>
 #include <limits>
@@ -21,8 +21,8 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 Homotopy::Homotopy(uint n)
   : tol(0), n(n), M(0), maxiter(0), maxpaths(0), maxdegree(0),
-    divtol(0), monitor(false), random(false), filename(""),
-    mi(0), ci(0), tmp(0), x(2*n),
+    divtol(0), monitor(false), random(false), 
+    filename(""), mi(0), ci(0), tmp(0), x(2*n),
     degree_adjusted("Adjusting degree of equation, maximum reached.")
 {
   dolfin_info("Creating homotopy for system of size %d.", n);
@@ -103,7 +103,7 @@ void Homotopy::solve()
     dolfin_info("\nComputing path number %d out of %d.", m + 1, M);
 
     // Change name of output file for each path
-    sprintf(filename, "primal_%u.m", m);
+    sprintf(filename, "solution_%u.py", m);
     set("ODE solution file name", filename);
 
     // Compute the component paths from global path number
@@ -145,18 +145,19 @@ const Array<complex*>& Homotopy::solutions() const
   return zs;
 }
 //-----------------------------------------------------------------------------
-complex Homotopy::z0(uint i)
+void Homotopy::z0(complex z[])
 {
-  const real pp = static_cast<real>(adjustedDegree(i));
-  const real mm = static_cast<real>(mi[i]);
-  const complex c = ci[i];
-  
-  // Pick root number m of equation z_i^(p + 1) = c_i
-  real r = std::pow(std::abs(c), 1.0/(pp + 1.0));
-  real a = std::arg(c) / (pp + 1.0);
-  complex z = std::polar(r, a + mm/(pp + 1.0)*2.0*DOLFIN_PI);
-  
-  return z;
+  for (uint i = 0; i < n; i++)
+  {
+    const real pp = static_cast<real>(adjustedDegree(i));
+    const real mm = static_cast<real>(mi[i]);
+    const complex c = ci[i];
+    
+    // Pick root number m of equation z_i^(p + 1) = c_i
+    real r = std::pow(std::abs(c), 1.0/(pp + 1.0));
+    real a = std::arg(c) / (pp + 1.0);
+    z[i] = std::polar(r, a + mm/(pp + 1.0)*2.0*DOLFIN_PI);
+  }
 }
 //-----------------------------------------------------------------------------
 void Homotopy::G(const complex z[], complex y[])
@@ -267,7 +268,7 @@ void Homotopy::computePath(uint m)
 bool Homotopy::computeSolution(HomotopyODE& ode)
 {
   // Create right-hand side and increment vector
-  DenseVector F(2*n), dx(2*n);
+  uBlasVector F(2*n), dx(2*n);
 
   // Create matrix-free Jacobian
   HomotopyJacobian J(ode, x);
@@ -282,7 +283,7 @@ bool Homotopy::computeSolution(HomotopyODE& ode)
     feval(F, ode);
 
     // Check convergence
-    real r = F.norm(DenseVector::linf);
+    real r = F.norm(uBlasVector::linf);
     //cout << "r = " << r << ": x = "; x.disp();
     if ( r < tol )
     {
@@ -290,17 +291,9 @@ bool Homotopy::computeSolution(HomotopyODE& ode)
       x.disp();
       return true;
     }
-    
-    // FIXME: Scaling needed for PETSc Krylov solver, but maybe not for uBlas?
 
     // Solve linear system
-    r += DOLFIN_EPS;
-    F /= r;
-    solver.solve(J, dx, F, pc);
-    dx *= r;
-    
-    // Solve linear system
-    solver.solve(J, dx, F, pc);
+    solver.solve(J, dx, F);
 
     // Subtract increment
     x -= dx;
@@ -372,7 +365,7 @@ void Homotopy::randomize()
   fclose(fp);
 }
 //-----------------------------------------------------------------------------
-void Homotopy::feval(DenseVector& F, ComplexODE& ode)
+void Homotopy::feval(uBlasVector& F, ComplexODE& ode)
 {
   // Reuse the right-hand side of the ODE so we don't have to reimplement
   // the mapping from complex to real numbers

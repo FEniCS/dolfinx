@@ -1,202 +1,31 @@
-// Copyright (C) 2003-2006 Johan Hoffman and Anders Logg.
+// Copyright (C) 2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
-// Modified by Garth N. Wells, 2006.
-//
-// First added:  2003  
-// Last changed: 2006-05-03
+// First added:  2006-06-02
+// Last changed: 2006-10-19
 
-#include <dolfin/dolfin_log.h>
-#include <dolfin/constants.h>
-#include <dolfin/Mesh.h>
+#include <cmath>
 #include <dolfin/Vertex.h>
-#include <dolfin/EdgeRefData.h>
 #include <dolfin/Edge.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Edge::Edge()
+Point Edge::midpoint()
 {
-  rd = 0;
-  clear();
-}
-//-----------------------------------------------------------------------------
-Edge::Edge(Vertex& n0, Vertex& n1)
-{
-  rd = 0;
-  clear();
-}
-//-----------------------------------------------------------------------------
-Edge::~Edge()
-{
-  clear();
-}
-//-----------------------------------------------------------------------------
-void Edge::clear()
-{
-  _mesh = 0;
-  _id = -1;
-  n0 = 0;
-  n1 = 0;
+  uint* vertices = entities(0);
+  dolfin_assert(vertices);
 
-  if ( rd )
-    delete rd;
-  rd = 0;
-}
-//-----------------------------------------------------------------------------
-int Edge::id() const
-{
-  return _id;
-}
-//-----------------------------------------------------------------------------
-unsigned int Edge::numCellNeighbors() const
-{
-  return ec.size();
-}
-//-----------------------------------------------------------------------------
-Vertex& Edge::vertex(int i) const
-{
-  if ( i == 0 )
-    return *n0;
+  const Vertex v0(_mesh, vertices[0]);
+  const Vertex v1(_mesh, vertices[1]);
+  
+  const Point p0 = v0.point();
+  const Point p1 = v1.point();
 
-  if ( i == 1 )
-    return *n1;
-
-  dolfin_error("Vertex number must 0 or 1.");
-  return *n0;
-}
-//-----------------------------------------------------------------------------
-Cell& Edge::cell(int i) const
-{
-  return *ec(i);
-}
-//-----------------------------------------------------------------------------
-int Edge::localID(int i) const
-{
-  return e_local_id(i);
-}
-//-----------------------------------------------------------------------------
-Mesh& Edge::mesh()
-{
-  return *_mesh;
-}
-//-----------------------------------------------------------------------------
-const Mesh& Edge::mesh() const
-{
-  return *_mesh;
-}
-//-----------------------------------------------------------------------------
-Point& Edge::coord(int i) const
-{
-  if ( i == 0 )
-    return n0->coord();
-
-  if ( i == 1 )
-    return n1->coord();
-
-  dolfin_error("Vertex number must 0 or 1.");
-  return n0->coord();
-}
-//-----------------------------------------------------------------------------
-real Edge::length() const
-{
-  return n0->dist(*n1);
-}
-//-----------------------------------------------------------------------------
-Point Edge::midpoint() const
-{
-  Point p = n0->coord();
-  p += n1->coord();
-  p /= 2.0;
+  Point p(0.5*(p0.x() + p1.x()),
+	  0.5*(p0.y() + p1.y()),
+	  0.5*(p0.z() + p1.z()));
 
   return p;
-}
-//-----------------------------------------------------------------------------
-bool Edge::equals(const Vertex& n0, const Vertex& n1) const
-{
-  if ( this->n0 == &n0 && this->n1 == &n1 )
-    return true;
-
-  if ( this->n0 == &n1 && this->n1 == &n0 )
-    return true;
-
-  return false;
-}
-//-----------------------------------------------------------------------------
-bool Edge::contains(const Vertex& n) const
-{
-  if ( this->n0 == &n || this->n1 == &n )
-    return true;
-
-  return false;
-}
-//-----------------------------------------------------------------------------
-bool Edge::contains(const Point& point) const
-{
-  // Quick check: return true if the point is on the same line by
-  // checking the size of the cross product (should be zero)
-  
-  Point v01 = n1->coord() - n0->coord();
-  Point v0p = point - n0->coord();
-  
-  return (v01.cross(v0p)).norm() < DOLFIN_EPS;
-}
-//-----------------------------------------------------------------------------
-dolfin::LogStream& dolfin::operator<<(LogStream& stream, const Edge& edge)
-{
-  stream << "[ Edge: id = " << edge.id()
-	 << " n0 = " << edge.vertex(0).id()
-	 << " n1 = " << edge.vertex(1).id() << " ]";
-  
-  return stream;
-}
-//-----------------------------------------------------------------------------
-int Edge::setID(int id, Mesh& mesh)
-{
-  _mesh = &mesh;
-  return _id = id;
-}
-//-----------------------------------------------------------------------------
-void Edge::setMesh(Mesh& mesh)
-{
-  _mesh = &mesh;
-}
-//-----------------------------------------------------------------------------
-void Edge::set(Vertex& n0, Vertex& n1)
-{
-  this->n0 = &n0;
-  this->n1 = &n1;
-}
-//-----------------------------------------------------------------------------
-void Edge::initMarker()
-{
-  if ( !rd )
-    rd = new EdgeRefData();
-  dolfin_assert(rd);
-}
-//-----------------------------------------------------------------------------
-void Edge::mark(Cell& cell)
-{
-  initMarker();
-  rd->mark(cell);
-}
-//-----------------------------------------------------------------------------
-bool Edge::marked()
-{
-  initMarker();
-  return rd->marked();
-}
-//-----------------------------------------------------------------------------
-bool Edge::marked(Cell& cell)
-{
-  initMarker();
-  return rd->marked(cell);
-}
-//-----------------------------------------------------------------------------
-void Edge::clearMarks()
-{
-  initMarker();
-  rd->clear();
 }
 //-----------------------------------------------------------------------------

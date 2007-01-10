@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-03-02
-// Last changed: 2006-03-02
+// Last changed: 2006-09-03
 //
 // This program illustrates the use of the DOLFIN nonlinear solver for solving 
 // the Cahn-Hilliard equation.
@@ -11,27 +11,12 @@
 // time step. It also requires fines meshes, and is often not well-suited to
 // iterative linear solvers.
 //
-// To see some interesting results, for a unit mesh, some recommned parameters are provided.
-//   For quartic chemical free-energy:
-//     lambda = 5.0e02
-//     factor = 100
-//     dt     = 1.0e-6 
-//
-//   For logarithmic chemical free-energy:
-//     lambda = 1.0
-//     g1 = 0, g2 = 0, g3 = 1000, g4 = 1000, g5 = 3000
-//     dt = 2.0e-7 
-//
 
 #include <dolfin.h>
-
-
 #include "CahnHilliard2D.h"
 #include "CahnHilliard3D.h"
 
 using namespace dolfin;
-
-#ifdef HAVE_PETSC_H 
 
 // User defined nonlinear problem 
 class CahnHilliardEquation : public NonlinearProblem, public Parametrized
@@ -40,29 +25,20 @@ class CahnHilliardEquation : public NonlinearProblem, public Parametrized
 
     // Constructor 
     CahnHilliardEquation(Mesh& mesh, Function& U, Function& rate1, Function& U0, 
-        Function& rate0, real& theta, real& dt) : NonlinearProblem(), 
-        Parametrized(), _mesh(&mesh), _dt(&dt), _theta(&theta)
+          Function& rate0, real& theta, real& dt, real lambda, real muFactor) 
+          : _mesh(&mesh), _dt(&dt), _theta(&theta), _lambda(lambda), 
+            _muFactor(muFactor)
     {
-
-      lambda = 1.0;
-      add("mobility", "nonlinear");
-      add("chemical potential", "logarithmic");
-
-
-      // Create functions
-      mobility = new Function; d_mobility = new Function;
-      mu = new Function; dmu_dc = new Function;
-
       // Create forms
-      if(mesh.numSpaceDim() == 2)
+      if(mesh.topology().dim() == 2)
       {
-        a = new CahnHilliard2D::BilinearForm(U, *mu, *dmu_dc, *mobility, *d_mobility, lambda, *_dt, *_theta);
-        L = new CahnHilliard2D::LinearForm(U, U0, rate0, *mu, *mobility, lambda, *_dt, *_theta);
+        a = new CahnHilliard2D::BilinearForm(U, _lambda, _muFactor, *_dt, *_theta);
+        L = new CahnHilliard2D::LinearForm(U, U0, rate0, _lambda, _muFactor, *_dt, *_theta);
       }
-      else if(mesh.numSpaceDim() == 3)
+      else if(mesh.topology().dim() == 3)
       {
-        a = new CahnHilliard3D::BilinearForm(U, *mu, *dmu_dc, *mobility, *d_mobility, lambda, *_dt, *_theta);
-        L = new CahnHilliard3D::LinearForm(U, U0, rate0, *mu, *mobility, lambda, *_dt, *_theta);
+        a = new CahnHilliard3D::BilinearForm(U, _lambda, _muFactor, *_dt, *_theta);
+        L = new CahnHilliard3D::LinearForm(U, U0, rate0, _lambda, _muFactor, *_dt, *_theta);
       }
       else
         dolfin_error("Cahn-Hilliard model is programmed for 2D and 3D only");
@@ -72,119 +48,18 @@ class CahnHilliardEquation : public NonlinearProblem, public Parametrized
       rate1.init(mesh, a->trial());
       U0.init(mesh, a->trial());
       rate0.init(mesh, a->trial());
-
-      // Initialise chemical potential and mobility functions
-      mu->init(mesh, a->trial()[0]);
-      dmu_dc->init(mesh, a->trial()[0]);
-      mobility->init(mesh, a->trial()[0]);
-      d_mobility->init(mesh, a->trial()[0]);
     }
 
     // Destructor 
     ~CahnHilliardEquation()
     {
-      delete mobility; delete d_mobility;
-      delete mu; delete dmu_dc;
-      delete a; delete L;
+      delete a; 
+      delete L;
     }
  
-    // Compute chemical potential mu = df/dc (f =chemical free-energy)
-    void computeMu(Function& mu, Function& dmu, const Vector& x)
-    {
-      // parameters for the logarithmic free energy
-      real g3 = 1000.0; real g4 = 1000.0; real g5 = 3000.0;
-      // factor on quartic free energy
-      real factor = 100.0;
-
-      // Get vectors
-      Vector& mu_vector  = mu.vector();
-      Vector& dmu_vector = dmu.vector();
-
-      // Get pointer to relavnt ararys
-      real* mu_array  = mu_vector.array();
-      real* dmu_array = dmu_vector.array();
-      const real* x_array = x.array();
-
-      dolfin::uint m = mu_vector.size();
-      real c;
-
-      const std::string type = get("chemical potential");
-      if(type == "logarithmic")
-      {
-        for(dolfin::uint j=0; j < m; ++j)
-        {
-          c = *(x_array+j);
-          if( c < 0 || c > 1)
-            dolfin_error("Concentration outside of allowable bounds");
-          *(mu_array+j)  =  g3/c + g4/(1-c) - 2*g5;
-          *(dmu_array+j) = -g3/(c*c)  + g4/( (1-c)*(1-c) );
-        }
-      }
-      else if(type == "quartic")  // f(c) = c^2*(1-c)^2
-      {
-        for(dolfin::uint j=0; j < m; ++j)
-        {
-          c = *(x_array+j);
-          *(mu_array+j)  = factor*( 2*(1-c)*(1-c) - 8*c*(1-c) + 2*c*c);
-          *(dmu_array+j) = factor*(-12 + 24*c);
-        }
-      }
-      else
-        dolfin_error("Unknown chemical potential type");
-
-      // Finalise
-      mu_vector.restore(mu_array);
-      dmu_vector.restore(dmu_array);
-      x.restore(x_array);
-    }
-
-    // Compute mobility
-    void computeMobility(Function& mob, Function& dmob, const Vector& x)
-    {
-      // Get vectors
-      Vector& m_vector  = mob.vector();
-      Vector& dm_vector = dmob.vector();
-
-      const std::string type = get("mobility");
-
-      if( type == "nonlinear") // M = c(1-c)
-      {
-        // Get pointer to ararys
-        real* m_array  = m_vector.array(); 
-        real* dm_array = dm_vector.array();
-        const real* x_array = x.array();
-
-        real c;
-        dolfin::uint m = m_vector.size();
-        for(dolfin::uint j=0; j < m; ++j)
-        {
-          c = *(x_array+j);
-          *(m_array+j)  = c*(1-c);
-          *(dm_array+j) = 1.0 - 2.0*c;
-        }  
-        // Finalise
-        m_vector.restore(m_array);
-        dm_vector.restore(dm_array);
-        x.restore(x_array);
-      }
-      else if( type == "constant") // Constant mobility M = 1
-      {
-        m_vector  = 1.0;
-        dm_vector = 0.0;
-      }
-      else
-        dolfin_error("Unknown mobility type");
-    }
-
     // User defined assemble of Jacobian and residual vector 
-    void form(Matrix& A, Vector& b, const Vector& x)
+    void form(GenericMatrix& A, GenericVector& b, const GenericVector& x)
     {
-      // Compute chemical potential
-      computeMu(*mu, *dmu_dc, x);
-
-      // Compute Mobility
-      computeMobility(*mobility, *d_mobility, x);
-
       // Assemble system and RHS (Neumann boundary conditions)
       dolfin_log(false);
       FEM::assemble(*a, *L, A, b, *_mesh);
@@ -193,20 +68,16 @@ class CahnHilliardEquation : public NonlinearProblem, public Parametrized
 
   private:
 
-    // Pointers to forms and  mesh
+    // Pointers to forms and mesh
     BilinearForm *a;
     LinearForm *L;
     Mesh* _mesh;
 
-    // Mobility and its derivative 
-    Function *mobility, *d_mobility;
-
-    // Chemical potential and its derivative 
-    Function *mu, *dmu_dc;
- 
+    // Time stepping parameters
     real *_dt, *_theta;
-    // Surface parameter
-    real lambda;
+
+    // Model parameters
+    real _lambda, _muFactor;
 };
 
 
@@ -214,18 +85,22 @@ int main(int argc, char* argv[])
 {
   dolfin_init(argc, argv);
 
-  // Set up problem
-  UnitSquare mesh(40, 40);
+  // Mesh
+  UnitSquare mesh(100, 100);
 
-  // Set time stepping parameters
-  real dt = 2.0e-7; real t  = 0.0; real T  = 500*dt;
+  // Time stepping parameters
+  real dt = 2.0e-6; real t  = 0.0; real T  = 500*dt;
   real theta = 0.5;
 
-  Function U, U0;
-  Function rate1, rate0;
+  // Model parameters
+  real lambda = 1.0e-2;
+  real muFactor = 100.0;
+
+  // Solution functions
+  Function U, U0, rate1, rate0;
 
   // Create user-defined nonlinear problem
-  CahnHilliardEquation cahn_hilliard(mesh, U, rate1, U0, rate0, theta, dt);
+  CahnHilliardEquation cahn_hilliard(mesh, U, rate1, U0, rate0, theta, dt, lambda, muFactor);
 
   // Create nonlinear solver and set parameters
   NewtonSolver newton_solver;
@@ -263,10 +138,12 @@ int main(int argc, char* argv[])
     newton_solver.solve(cahn_hilliard, x);
 
     // Compute rate
-    r = r0;
-    r *= -((1.0-theta)/theta);
-    r.axpy((1.0/(theta*dt)), x);
-    r.axpy(-(1.0/(theta*dt)), x0);
+    r = x;
+    r *= 1.0/(theta*dt);
+    r0 *= -((1.0-theta)/theta);
+    r += r0;
+    x0 *= -(1.0/(theta*dt));
+    r += x0;
 
    // Save function to file
     c = U[0];
@@ -276,12 +153,3 @@ int main(int argc, char* argv[])
   return 0;
 }
 
-#else
-
-int main()
-{
-  cout << "This demo requires DOLFIN to be configured with PETSc. " << endl; 
-  return 0;
-}
-
-#endif

@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-02-07
-// Last changed: 2006-03-24
+// Last changed: 2006-10-18
 //
 // This demo program solves the equations of static
 // linear elasticity for a gear clamped at two of its
@@ -32,20 +32,20 @@ int main()
       real theta = 0.5236;
       
       // New coordinates
-      real y = y0 + (p.y - y0)*cos(theta) - (p.z - z0)*sin(theta);
-      real z = z0 + (p.y - y0)*sin(theta) + (p.z - z0)*cos(theta);
+      real y = y0 + (p.y() - y0)*cos(theta) - (p.z() - z0)*sin(theta);
+      real z = z0 + (p.y() - y0)*sin(theta) + (p.z() - z0)*cos(theta);
       
       // Clamp at left end
-      if ( p.x < w )
+      if ( p.x() < w )
 	      value = 0.0;
       
       // Clamp at right end
-      if ( p.x > (1.0 - w) )
+      if ( p.x() > (1.0 - w) )
       {
 	    if ( i == 1 )
-	      value = y - p.y;
+	      value = y - p.y();
 	    else if ( i == 2 )
-	      value = z - p.z;
+	      value = z - p.z();
       }
     }
   };
@@ -53,7 +53,7 @@ int main()
   MyBC bc;
 
   // Set up problem
-  Mesh mesh("gear.xml.gz");
+  Mesh mesh("../../../../data/meshes/gear.xml.gz");
   Function f = 0.0;
   Elasticity::BilinearForm a;
   Elasticity::LinearForm L(f);

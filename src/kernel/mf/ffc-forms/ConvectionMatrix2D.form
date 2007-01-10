@@ -1,0 +1,16 @@
+# Copyright (C) 2006 Anders Logg (logg@tti-c.org)
+# Licensed under the GNU GPL Version 2
+#
+# First added:  2006-08-21
+# Last changed: 2006-08-21
+#
+# The bilinear form for a convection matrix
+
+element = FiniteElement("Lagrange", "triangle", 1)
+
+v  = TestFunction(element)
+U  = TrialFunction(element)
+cx = Constant()
+cy = Constant()
+
+a = v*(cx*U.dx(0) + cy*U.dx(1))*dx

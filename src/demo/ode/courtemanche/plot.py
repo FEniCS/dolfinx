@@ -1,8 +1,8 @@
-# Import solution
-from solution import *
-
 # Import matplotlib
 from pylab import *
+
+# Import solution
+from solution import *
 
 # Plot first component of solution
 subplot(211)
@@ -22,5 +22,4 @@ ylabel('k(t)')
 # Display value at end time
 print "V(T) = " + str(u[len(u) - 1, 0])
 
-# Show plot
 show()

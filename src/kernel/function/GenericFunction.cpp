@@ -19,3 +19,8 @@ GenericFunction::~GenericFunction()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
+void GenericFunction::interpolate(Function& fsource)
+{
+  dolfin_error("Cannot interpolate to this type of function.");
+}
+//-----------------------------------------------------------------------------

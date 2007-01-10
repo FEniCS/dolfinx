@@ -4,14 +4,19 @@
 // Modified by Anders Logg 2006.
 //
 // First added:  2006-06-23
-// Last changed: 2006-07-04
+// Last changed: 2006-08-08
 
-#include <dolfin/DenseVector.h>
+#include <dolfin/uBlasVector.h>
 #include <dolfin/uBlasSparseMatrix.h>
 #include <dolfin/uBlasILUPreconditioner.h>
 
 using namespace dolfin;
 
+//-----------------------------------------------------------------------------
+uBlasILUPreconditioner::uBlasILUPreconditioner() : uBlasPreconditioner()
+{
+  // Do nothing
+}
 //-----------------------------------------------------------------------------
 uBlasILUPreconditioner::uBlasILUPreconditioner(const uBlasMatrix<ublas_sparse_matrix>& A)
   : uBlasPreconditioner()
@@ -25,7 +30,7 @@ uBlasILUPreconditioner::~uBlasILUPreconditioner()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void uBlasILUPreconditioner::solve(DenseVector& x, const DenseVector& b) const
+void uBlasILUPreconditioner::solve(uBlasVector& x, const uBlasVector& b) const
 {
   dolfin_assert( x.size() == M.size1() );
   dolfin_assert( x.size() == b.size());

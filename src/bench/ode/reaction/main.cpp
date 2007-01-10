@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-10-14
-// Last changed: 2006-04-22
+// Last changed: 2006-08-22
 
 #include <dolfin.h>
 
@@ -39,14 +39,17 @@ public:
   }
 
   /// Initial condition
-  real u0(unsigned int i)
+  void u0(uBlasVector& u)
   {
-    const real x = static_cast<real>(i)*h;
-    return 1.0 / (1.0 + exp(lambda*(x - 1.0)));
+    for (unsigned int i = 0; i < N; i++)
+    {
+      const real x = static_cast<real>(i)*h;
+      u(i) = 1.0 / (1.0 + exp(lambda*(x - 1.0)));
+    }
   }
 
   /// Right-hand side, mono-adaptive version
-  void f(const DenseVector& u, real t, DenseVector& y)
+  void f(const uBlasVector& u, real t, uBlasVector& y)
   {
     for (unsigned int i = 0; i < N; i++)
     {
@@ -65,7 +68,7 @@ public:
   }
 
   /// Right-hand side, multi-adaptive version
-  real f(const DenseVector& u, real t, unsigned int i)
+  real f(const uBlasVector& u, real t, unsigned int i)
   {
     const real ui = u(i);
     

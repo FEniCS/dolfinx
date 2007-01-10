@@ -24,7 +24,3 @@ x.div(y)
 print "x:"
 x.disp()
 
-x *= 3
-
-print "x:"
-x.disp()

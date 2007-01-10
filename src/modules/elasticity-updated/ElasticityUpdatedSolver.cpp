@@ -5,9 +5,7 @@
 // Modified by Garth N. Wells 2005.
 //
 // First added:  2005
-// Last changed: 2006-02-20
-
-#ifdef HAVE_PETSC_H
+// Last changed: 2006-12-12
 
 //#include <iostream>
 #include <sstream>
@@ -33,11 +31,11 @@ ElasticityUpdatedSolver::ElasticityUpdatedSolver(Mesh& mesh,
   : mesh(mesh), f(f), v0(v0), rho(rho), E(E), nu(nu), nuv(nuv),
     nuplast(nuplast), bc(bc), k(k),
     T(T), counter(0), lastsample(0),
-    lambda(E * nu / ((1 + nu) * (1 - 2 * nu))),
+    lmbda(E * nu / ((1 + nu) * (1 - 2 * nu))),
     mu(E / (2 * (1 + nu))),
     t(0.0), rtol(get("ODE discrete tolerance")),
     maxiters(get("ODE maximum iterations")), do_plasticity(false),
-    yield(0.0),
+    yld(0.0),
     savesamplefreq(33.0),
     fevals(0),
     ode(0),
@@ -52,7 +50,7 @@ ElasticityUpdatedSolver::ElasticityUpdatedSolver(Mesh& mesh,
     epsilon1(xepsilon1, mesh, *element2),
     sigmanorm(xsigmanorm, mesh, *element3)
 //     Lv(f, sigma1, epsilon1, nuv),
-//     Lsigma(v1, sigma1, sigmanorm, lambda, mu, nuplast)
+//     Lsigma(v1, sigma1, sigmanorm, lmbda, mu, nuplast)
 {
   element1 = new ElasticityUpdated::LinearForm::TestElement;
   element2 = new ElasticityUpdatedSigma::LinearForm::TestElement;
@@ -60,21 +58,27 @@ ElasticityUpdatedSolver::ElasticityUpdatedSolver(Mesh& mesh,
 
   Lv = new ElasticityUpdated::LinearForm(f, sigma1, epsilon1, nuv);
   Lsigma = new ElasticityUpdatedSigma::LinearForm(v1, sigma1, sigmanorm,
-						  lambda, mu, nuplast);
+						  lmbda, mu, nuplast);
 
   cout << "nuv: " << nuv << endl;
-  cout << "lambda: " << lambda << endl;
+  cout << "lmbda: " << lmbda << endl;
   cout << "mu: " << mu << endl;
+
+#ifdef HAVE_PETSC_H
 
   init();
   ode = new ElasticityUpdatedODE(*this);
   ts = new TimeStepper(*ode);
+
+#endif
 }
 //-----------------------------------------------------------------------------
 ElasticityUpdatedSolver& ElasticityUpdatedSolver::operator=(const ElasticityUpdatedSolver& solver)
 {
   return *this;
 }
+//-----------------------------------------------------------------------------
+#ifdef HAVE_PETSC_H
 //-----------------------------------------------------------------------------
 void ElasticityUpdatedSolver::init()
 {
@@ -150,14 +154,14 @@ void ElasticityUpdatedSolver::init()
   int *nodes = new int[(*element1).spacedim()];
   real *coefficients = new real[(*element1).spacedim()];
 
-  for(CellIterator c(&mesh); !c.end(); ++c)
+  for(CellIterator c(mesh); !c.end(); ++c)
   {
     Cell& cell = *c;
 
     // Use DOLFIN's interpolation
 
     map.update(cell);
-    v0.interpolate(coefficients, map, *element1);
+    v0.interpolate(coefficients, cell, map, *element1);
     (*element1).nodemap(nodes, cell, mesh);
 
     for(uint i = 0; i < (*element1).spacedim(); i++)
@@ -215,14 +219,14 @@ void ElasticityUpdatedSolver::init()
 
   // The mesh points are the initial values of u
   int offset = mesh.numVertices();
-  for (VertexIterator n(&mesh); !n.end(); ++n)
+  for (VertexIterator n(mesh); !n.end(); ++n)
   {
     Vertex& vertex = *n;
-    int nid = vertex.id();
+    int nid = vertex.index();
 
-    x1_1(0 * offset + nid) = vertex.coord().x;
-    x1_1(1 * offset + nid) = vertex.coord().y;
-    x1_1(2 * offset + nid) = vertex.coord().z;
+    x1_1(0 * offset + nid) = vertex.point().x();
+    x1_1(1 * offset + nid) = vertex.point().y();
+    x1_1(2 * offset + nid) = vertex.point().z();
   }
 
   int dotu_x1offset = 0;
@@ -332,7 +336,7 @@ void ElasticityUpdatedSolver::oldstep()
 //-----------------------------------------------------------------------------
 void ElasticityUpdatedSolver::solve()
 {
-  cout << "lambda: " << lambda << endl;
+  cout << "lmbda: " << lmbda << endl;
   cout << "mu: " << mu << endl;
   
   File         file("elasticity.pvd");
@@ -430,13 +434,13 @@ void ElasticityUpdatedSolver::fu()
   // Ultimately compute dotu = f(u, t)
 
   // Update the mesh
-  for (VertexIterator n(&mesh); !n.end(); ++n)
+  for (VertexIterator n(mesh); !n.end(); ++n)
   {
     Vertex& vertex = *n;
     
-    vertex.coord().x = u1(vertex, 0);
-    vertex.coord().y = u1(vertex, 1);
-    vertex.coord().z = u1(vertex, 2);
+    vertex.point().x() = u1(vertex, 0);
+    vertex.point().y() = u1(vertex, 1);
+    vertex.point().z() = u1(vertex, 2);
   }
 
   // Compute norm of stress (sigmanorm)
@@ -457,9 +461,9 @@ void ElasticityUpdatedSolver::fu()
 	  norm = std::max(norm, fabs(dotu_xsigma(nodes[i])));
 	}
 	
-	if(norm > yield)
+	if(norm > yld)
 	{
-	  cout << "sigmanorm(" << cell.id() << "): " << norm << endl;
+	  cout << "sigmanorm(" << cell.index() << "): " << norm << endl;
 	  proj = 1.0 / norm;
 	}
 	
@@ -472,7 +476,7 @@ void ElasticityUpdatedSolver::fu()
   // xepsilon1 (needed for dotu_x2)
 
   xepsilon1 = dotu_xsigma;
-  xepsilon1 *= 1.0 / lambda;
+  xepsilon1 *= 1.0 / lmbda;
 
   // dotu_x1
   dotu_x1 = x2_1;
@@ -536,6 +540,64 @@ VecScatter* ElasticityUpdatedSolver::createScatterer(Vector& x1, Vector& x2,
 
   return sc;
 }
+//-----------------------------------------------------------------------------
+void ElasticityUpdatedSolver::fromArray(const real u[], Vector& x, uint offset,
+				     uint size)
+{
+  // Workaround to interface Vector and arrays
+
+  real* vals = 0;
+  vals = x.array();
+  for(uint i = 0; i < size; i++)
+  {
+    vals[i] = u[i + offset];
+  }
+  x.restore(vals);
+}
+//-----------------------------------------------------------------------------
+void ElasticityUpdatedSolver::toArray(real y[], Vector& x, uint offset,
+				      uint size)
+{
+  // Workaround to interface Vector and arrays
+
+  real* vals = 0;
+  vals = x.array();
+  for(uint i = 0; i < size; i++)
+  {
+    y[offset + i] = vals[i];
+  }
+  x.restore(vals);
+}
+//-----------------------------------------------------------------------------
+void ElasticityUpdatedSolver::fromDense(const uBlasVector& u, Vector& x,
+					uint offset, uint size)
+{
+  // Workaround to interface Vector and uBlasVector
+
+  real* vals = 0;
+  vals = x.array();
+  for(uint i = 0; i < size; i++)
+  {
+    vals[i] = u[i + offset];
+  }
+  x.restore(vals);
+}
+//-----------------------------------------------------------------------------
+void ElasticityUpdatedSolver::toDense(uBlasVector& y, Vector& x, uint offset,
+				      uint size)
+{
+  // Workaround to interface Vector and uBlasVector
+
+  real* vals = 0;
+  vals = x.array();
+  for(uint i = 0; i < size; i++)
+  {
+    y[offset + i] = vals[i];
+  }
+  x.restore(vals);
+}
+//-----------------------------------------------------------------------------
+#endif
 //-----------------------------------------------------------------------------
 void ElasticityUpdatedSolver::computeFGreen(Vector& xF, Vector& xF0, Vector& xF1,
 					  FiniteElement& element1, Mesh& mesh)
@@ -840,19 +902,21 @@ void ElasticityUpdatedSolver::multB(real* F, real *B)
 //-----------------------------------------------------------------------------
 void ElasticityUpdatedSolver::deform(Mesh& mesh, Function& u)
 {
+  MeshGeometry& geometry = mesh.geometry();
+
   // Update the mesh
-  for (VertexIterator n(&mesh); !n.end(); ++n)
+  for (VertexIterator n(mesh); !n.end(); ++n)
   {
     Vertex& vertex = *n;
     
-    vertex.coord().x = u(vertex, 0);
-    vertex.coord().y = u(vertex, 1);
-    vertex.coord().z = u(vertex, 2);
+    geometry.x(vertex.index(), 0) = u(vertex, 0);
+    geometry.x(vertex.index(), 1) = u(vertex, 1);
+    geometry.x(vertex.index(), 2) = u(vertex, 2);
   }
 }
 //-----------------------------------------------------------------------------
 void ElasticityUpdatedSolver::plasticity(Vector& xsigma, Vector& xsigmanorm,
-				       real yield, FiniteElement& element2,
+				       real yld, FiniteElement& element2,
 				       Mesh& mesh)
 {
   int *nodes = new int[element2.spacedim()];
@@ -869,10 +933,10 @@ void ElasticityUpdatedSolver::plasticity(Vector& xsigma, Vector& xsigmanorm,
       norm = std::max(norm, fabs(xsigma(nodes[i])));
     }
     
-    if(norm > yield)
+    if(norm > yld)
     {
 //       cout << "sigmanorm(" << cell.id() << "): " << norm << endl;
-      proj = 1.0 / norm;
+      proj = yld / norm;
     }
     
     xsigmanorm(nodes[0]) = proj;
@@ -891,14 +955,14 @@ void ElasticityUpdatedSolver::finterpolate(Function& f1, Function& f2,
   int *nodes = new int[element.spacedim()];
   real *coefficients = new real[element.spacedim()];
 
-  for(CellIterator c(&mesh); !c.end(); ++c)
+  for(CellIterator c(mesh); !c.end(); ++c)
   {
     Cell& cell = *c;
 
     // Use DOLFIN's interpolation
 
     map.update(cell);
-    f1.interpolate(coefficients, map, element);
+    f1.interpolate(coefficients, cell, map, element);
     element.nodemap(nodes, cell, mesh);
 
     for(unsigned int i = 0; i < element.spacedim(); i++)
@@ -945,14 +1009,14 @@ void ElasticityUpdatedSolver::initu0(Vector& x0,
 {
   // The mesh points are the initial values of u
   int offset = mesh.numVertices();
-  for (VertexIterator n(&mesh); !n.end(); ++n)
+  for (VertexIterator n(mesh); !n.end(); ++n)
   {
     Vertex& vertex = *n;
-    int nid = vertex.id();
+    int nid = vertex.index();
 
-    x0(0 * offset + nid) = vertex.coord().x;
-    x0(1 * offset + nid) = vertex.coord().y;
-    x0(2 * offset + nid) = vertex.coord().z;
+    x0(0 * offset + nid) = vertex.point().x();
+    x0(1 * offset + nid) = vertex.point().y();
+    x0(2 * offset + nid) = vertex.point().z();
   }
 }
 //-----------------------------------------------------------------------------
@@ -978,61 +1042,6 @@ void ElasticityUpdatedSolver::initJ0(Vector& xJ0,
   }
 }
 //-----------------------------------------------------------------------------
-void ElasticityUpdatedSolver::fromArray(const real u[], Vector& x, uint offset,
-				     uint size)
-{
-  // Workaround to interface Vector and arrays
-
-  real* vals = 0;
-  vals = x.array();
-  for(uint i = 0; i < size; i++)
-  {
-    vals[i] = u[i + offset];
-  }
-  x.restore(vals);
-}
-//-----------------------------------------------------------------------------
-void ElasticityUpdatedSolver::toArray(real y[], Vector& x, uint offset,
-				      uint size)
-{
-  // Workaround to interface Vector and arrays
-
-  real* vals = 0;
-  vals = x.array();
-  for(uint i = 0; i < size; i++)
-  {
-    y[offset + i] = vals[i];
-  }
-  x.restore(vals);
-}
-//-----------------------------------------------------------------------------
-void ElasticityUpdatedSolver::fromDense(const DenseVector& u, Vector& x,
-					uint offset, uint size)
-{
-  // Workaround to interface Vector and DenseVector
-
-  real* vals = 0;
-  vals = x.array();
-  for(uint i = 0; i < size; i++)
-  {
-    vals[i] = u[i + offset];
-  }
-  x.restore(vals);
-}
-//-----------------------------------------------------------------------------
-void ElasticityUpdatedSolver::toDense(DenseVector& y, Vector& x, uint offset,
-				      uint size)
-{
-  // Workaround to interface Vector and DenseVector
-
-  real* vals = 0;
-  vals = x.array();
-  for(uint i = 0; i < size; i++)
-  {
-    y[offset + i] = vals[i];
-  }
-  x.restore(vals);
-}
 //-----------------------------------------------------------------------------
 ElasticityUpdatedODE::ElasticityUpdatedODE(ElasticityUpdatedSolver& solver) :
   ODE(1, 1.0), solver(solver)
@@ -1041,13 +1050,16 @@ ElasticityUpdatedODE::ElasticityUpdatedODE(ElasticityUpdatedSolver& solver) :
   N = 2 * solver.Nv + solver.Nsigma;
 }
 //-----------------------------------------------------------------------------
-real ElasticityUpdatedODE::u0(unsigned int i)
+void ElasticityUpdatedODE::u0(uBlasVector& u)
 {
-   return solver.dotu(i);
+#ifdef HAVE_PETSC_H
+  solver.toDense(u, solver.dotu, 0, solver.dotu.size());
+#endif
 }
 //-----------------------------------------------------------------------------
-void ElasticityUpdatedODE::f(const DenseVector& u, real t, DenseVector &y)
+void ElasticityUpdatedODE::f(const uBlasVector& u, real t, uBlasVector &y)
 {
+#ifdef HAVE_PETSC_H
   // Copy values from ODE array
   solver.fromDense(u, solver.x1_1, 0, solver.Nv);
   solver.fromDense(u, solver.x2_1, solver.Nv, solver.Nv);
@@ -1060,16 +1072,18 @@ void ElasticityUpdatedODE::f(const DenseVector& u, real t, DenseVector &y)
 
   // Copy values into ODE array
   solver.toDense(y, solver.dotu, 0, 2 * solver.Nv + solver.Nsigma);
+#endif
 }
 //-----------------------------------------------------------------------------
-bool ElasticityUpdatedODE::update(const DenseVector& u, real t, bool end)
+bool ElasticityUpdatedODE::update(const uBlasVector& u, real t, bool end)
 {
+#ifdef HAVE_PETSC_H
   solver.fromDense(u, solver.x1_1, 0, solver.Nv);
   solver.fromDense(u, solver.x2_1, solver.Nv, solver.Nv);
   solver.fromDense(u, solver.xsigma1, 2 * solver.Nv, solver.Nsigma);
+#endif
 
   return true;
 }
 //-----------------------------------------------------------------------------
 
-#endif

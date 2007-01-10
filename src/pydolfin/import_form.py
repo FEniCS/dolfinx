@@ -7,14 +7,14 @@ def import_formfile(filename):
     print "Compiling form: " + filename
 
     options = FFC_OPTIONS
-    language = "dolfin-swig"
+    language = "dolfin"
         
     outname = simple.parse(filename, language, options)
         
     formname = filename.split(".")[0]
     __import__(formname)
 
-    return generate_form_module(formname)
+    return import_header(formname + ".h")
 
 def import_form(formlist, formname):
     """Generates and imports a module corresponding to the FFC form.
@@ -24,22 +24,23 @@ def import_form(formlist, formname):
     from ffc.common.constants import FFC_OPTIONS
 
     options = FFC_OPTIONS
-    language = "dolfin-swig"
+    language = "dolfin"
         
     compile(formlist, formname, language, FFC_OPTIONS)
 
-    return generate_form_module(formname)
+    return import_header(formname + ".h")
 
-def generate_form_module(formname):
-    """Generates and imports a module corresponding to the FFC/DOLFIN header
-    file. Returns the module."""
+def import_header(headername):
+    """Generates and imports a module corresponding to the DOLFIN header
+    file (with implementation). Returns the module."""
 
     from os import system
     from commands import getoutput
 
-    output = getoutput("dolfin-swig " + formname + ".h")
+    lowername = (headername.split(".")[0]).lower()
+    modulename = lowername
+
+    output = getoutput("dolfin-swig " + headername + " " + modulename)
     print output
 
-    formmodulename = formname.lower() + "form"
-
-    return __import__(formmodulename)
+    return __import__(modulename)

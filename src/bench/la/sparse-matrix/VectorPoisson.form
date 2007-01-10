@@ -1,0 +1,22 @@
+# Copyright (C) 2006 Garth N. Wells.
+# Licensed under the GNU GPL Version 2.
+#
+# First added:  2006-08-18
+# Last changed:
+#
+# Bilinear form a(v, U) for vector-valued Poisson equation
+#
+
+element = FiniteElement("Vector Lagrange", "triangle", 1)
+
+v = TestFunction(element)
+U = TrialFunction(element)
+
+
+# Use symmetric gradient to increase coupling which is more demanding
+# for matrix assembly
+
+def symgrad(v):
+    return 0.5 * (grad(v) + transp(grad(v)))
+
+a = dot(symgrad(v), symgrad(U))*dx

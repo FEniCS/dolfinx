@@ -1,67 +1,10 @@
-This benchmark problem is out-of-date. Waiting for the Navier-Stokes
-module to come alive once again...
+This test program solves 2 benchmark problems of incompressible 
+flow modelled by the Navier-Stokes equations: 
 
-This test program solves the benchmark problem a 8x8x8 mesh
-and is intended for examining the speed of the code, including
+- 3d benchmark problem with Re = 3900, described in 
+  http://www.nada.kth.se/~jhoffman/archive/papers/cc.pdf
 
-	- optimization of the code
-	- different compiler flags
-	- different compilers
-	- different computers
-
-To run the benchmark, type
-
-	time ./ns-benchmark
-
-The test run should end with something like
-
-	      UP residual: 2.9976e-05
-        Assemble vector b
-        Assemble matrix A
-        Assemble vector b
-      Non linear residual: 2.9976e-05
-  Write data to file
-  Solution has been computed to endtime T = 0.108253
-  Closing DOLFIN.
-
-Version 0.2.10
---------------
-
-About the same as version 0.2.9
+- Benchmark problem: 2D-3, defined in
+  http://www.mathematik.uni-dortmund.de/~featflow/ture/paper/benchmark_results.ps.gz
 
 
-System:   Linux -.-.chalmers.se 2.4.19-pre4-ac4 #1 tor apr 4 14:57:21 DST 2002 i686 unknown
-CPU:      Amd Athlon 1400MHz
-Compiler: gcc 2.96 20000731 (Red Hat Linux 7.1 2.96-98)
-Flags:    -O2 -march=athlon
-Time:     13.860u 0.010s 0:14.78 93.8%    0+0k 0+0io 214pf+0w
-Date:     2002-04-17 (Thomas Svedberg)
-
-System:   Linux bamse 2.4.18pre2 #2 SMP ons jan 9 09:37:33 MET 2002 i686 unknown
-CPU:      Intel Pentium III (Coppermine) 1000MHz
-Compiler: gcc 2.95.4
-Flags:    -O2
-Time:     23.640u 0.070s 0:24.76 95.7%    0+0k 0+0io 215pf+0w
-Date:     2002-03-05
-
-Version 0.2.9
--------------
-
-9 times faster!
-
-System:   Linux bamse 2.4.18pre2 #2 SMP ons jan 9 09:37:33 MET 2002 i686 unknown
-CPU:      Intel Pentium III (Coppermine) 1000MHz
-Compiler: gcc 2.95.4
-Flags:    -O2
-Time:     22.810u 0.080s 0:27.15 84.3%    0+0k 0+0io 217pf+0w
-Date:     2002-03-05
-
-Version 0.2.8
--------------
-
-System:   Linux bamse 2.4.18pre2 #2 SMP ons jan 9 09:37:33 MET 2002 i686 unknown
-CPU:      Intel Pentium III (Coppermine) 1000MHz
-Compiler: gcc 2.95.4
-Flags:    -O2
-Time:     215.360u 1.230s 5:18.85 67.9%   0+0k 0+0io 219pf+0w
-Date:     2002-03-05

@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells 2005
 //
 // First added:  2003-05-06
-// Last changed: 2006-05-07
+// Last changed: 2006-11-14
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Vector.h>
@@ -83,23 +83,24 @@ void MFile::operator<<(Mesh& mesh)
     fprintf(fp,"points = [");
   else
     fprintf(fp,"points{%u} = [", counter + 1);
-  for (VertexIterator n(mesh); !n.end(); ++n) {
+  for (VertexIterator v(mesh); !v.end();)
+  {
+    p = v->point();
     
-    p = n->coord();
-    
-    if ( mesh.type() == Mesh::triangles ) {
-      if ( n.last() )
-	fprintf(fp,"%.15f %.15f]';\n", p.x, p.y);
+    ++v;
+    if ( mesh.type().cellType() == CellType::triangle )
+    {
+      if ( v.end() )
+	fprintf(fp,"%.15f %.15f]';\n", p.x(), p.y());
       else
-	fprintf(fp,"%.15f %.15f\n", p.x, p.y );
+	fprintf(fp,"%.15f %.15f\n", p.x(), p.y() );
     }
     else {
-      if ( n.last() )
-	fprintf(fp,"%.15f %.15f %.15f]';\n", p.x, p.y, p.z);
+      if ( v.end() )
+	fprintf(fp,"%.15f %.15f %.15f]';\n", p.x(), p.y(), p.z());
       else
-	fprintf(fp,"%.15f %.15f %.15f\n", p.x, p.y, p.z);
+	fprintf(fp,"%.15f %.15f %.15f\n", p.x(), p.y(), p.z());
     }
-    
   }
   fprintf(fp,"\n");
   
@@ -108,12 +109,13 @@ void MFile::operator<<(Mesh& mesh)
     fprintf(fp,"cells = [");
   else
     fprintf(fp,"cells{%u} = [", counter + 1);
-  for (CellIterator c(mesh); !c.end(); ++c)
+  for (CellIterator c(mesh); !c.end();)
   {
-    for (VertexIterator n(c); !n.end(); ++n)
-      fprintf(fp, "%d ", n->id() + 1);
+    for (VertexIterator v(c); !v.end(); ++v)
+      fprintf(fp, "%u ", (v->index()) + 1 );
     
-    if ( c.last() )
+    ++c;
+    if ( c.end() )
       fprintf(fp, "]';\n");
     else
       fprintf(fp, "\n");
@@ -166,8 +168,8 @@ void MFile::operator<<(Function& u)
     fprintf(fp, "%s = [", u.name().c_str());
     for (unsigned int i = 0; i < u.vectordim(); i++)
     { 
-      for (VertexIterator n(u.mesh()); !n.end(); ++n)
-        fprintf(fp, " %.15f", u(*n, i));
+      for (VertexIterator v(u.mesh()); !v.end(); ++v)
+        fprintf(fp, " %.15f", u(*v, i));
         fprintf(fp, ";");
     }
     fprintf(fp, " ]';\n\n");
@@ -177,8 +179,8 @@ void MFile::operator<<(Function& u)
     fprintf(fp, "%s{%u} = [", u.name().c_str(), counter1 + 1);
     for (unsigned int i = 0; i < u.vectordim(); i++)
     { 
-      for (VertexIterator n(u.mesh()); !n.end(); ++n)
-        fprintf(fp, " %.15f", u(*n, i));
+      for (VertexIterator v(u.mesh()); !v.end(); ++v)
+        fprintf(fp, " %.15f", u(*v, i));
         fprintf(fp, ";");
     }
     fprintf(fp, " ]';\n\n");

@@ -4,7 +4,7 @@
 // First added:  2005-01-27
 // Last changed: 2006-07-07
 
-#include <dolfin/DenseVector.h>
+#include <dolfin/uBlasVector.h>
 #include <dolfin/Method.h>
 #include <dolfin/MultiAdaptiveTimeSlab.h>
 #include <dolfin/MultiAdaptivePreconditioner.h>
@@ -23,8 +23,8 @@ MultiAdaptivePreconditioner::~MultiAdaptivePreconditioner()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void MultiAdaptivePreconditioner::solve(DenseVector& x,
-					const DenseVector& b) const
+void MultiAdaptivePreconditioner::solve(uBlasVector& x,
+					const uBlasVector& b) const
 {
   // Reset dof
   uint j = 0;

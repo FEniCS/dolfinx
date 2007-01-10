@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003
-// Last changed: 2006-07-05
+// Last changed: 2006-08-21
 
 #include <dolfin.h>
 
@@ -19,18 +19,14 @@ public:
     lambda = 1000.0;
   }
 
-  real u0(unsigned int i)
+  void u0(uBlasVector& u)
   {
-    if ( i == 0 )
-      return 0.0;
-
-    if ( i == 1 )
-      return 1.0;
-
-    return 1.0;
+    u(0) = 0.0;
+    u(1) = 1.0;
+    u(2) = 1.0;
   }
   
-  void f(const DenseVector& u, real t, DenseVector& y)
+  void f(const uBlasVector& u, real t, uBlasVector& y)
   {
     y(0) = u(1);
     y(1) = -(1.0 - u(2))*u(0);

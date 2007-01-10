@@ -9,8 +9,6 @@
 #ifndef __ELASTICITY_SOLVER_H
 #define __ELASTICITY_SOLVER_H
 
-#ifdef HAVE_PETSC_H
-
 #include <dolfin/Solver.h>
 
 namespace dolfin
@@ -53,7 +51,5 @@ namespace dolfin
   };
   
 }
-
-#endif
 
 #endif

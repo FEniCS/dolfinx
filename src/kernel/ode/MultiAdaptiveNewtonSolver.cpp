@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-27
-// Last changed: 2006-05-07
+// Last changed: 2006-08-21
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/dolfin_math.h>
@@ -22,7 +22,7 @@ using namespace dolfin;
 MultiAdaptiveNewtonSolver::MultiAdaptiveNewtonSolver
 (MultiAdaptiveTimeSlab& timeslab)
   : TimeSlabSolver(timeslab), ts(timeslab), A(0),
-    mpc(timeslab, method), f(0), u(0), num_elements(0), num_elements_mono(0),
+    mpc(timeslab, method), solver(mpc), f(0), u(0), num_elements(0), num_elements_mono(0),
     updated_jacobian(get("ODE updated jacobian"))
 {
   // Initialize local arrays
@@ -76,13 +76,14 @@ void MultiAdaptiveNewtonSolver::start()
   b.init(nj);
   
   // Recompute Jacobian on each time slab
-  A->update();
+  A->init();
 
   //debug();
   //A->disp(true, 10);
 }
 //-----------------------------------------------------------------------------
-real MultiAdaptiveNewtonSolver::iteration(uint iter, real tol)
+real MultiAdaptiveNewtonSolver::iteration(real tol, uint iter,
+					  real d0, real d1)
 {
   // Evaluate b = -F(x) at current x
   Feval(b);
@@ -90,9 +91,9 @@ real MultiAdaptiveNewtonSolver::iteration(uint iter, real tol)
   // FIXME: Scaling needed for PETSc Krylov solver, but maybe not for uBlas?
   
   // Solve linear system
-  const real r = b.norm(DenseVector::linf) + DOLFIN_EPS;
+  const real r = b.norm(uBlasVector::linf) + DOLFIN_EPS;
   b /= r;
-  num_local_iterations += solver.solve(*A, dx, b, mpc);
+  num_local_iterations += solver.solve(*A, dx, b);
   dx *= r;
 
   // Update solution x -> x + dx (note: b = -F)
@@ -116,7 +117,7 @@ dolfin::uint MultiAdaptiveNewtonSolver::size() const
   return ts.nj;
 }
 //-----------------------------------------------------------------------------
-void MultiAdaptiveNewtonSolver::Feval(DenseVector& F)
+void MultiAdaptiveNewtonSolver::Feval(uBlasVector& F)
 {
   // Reset dof
   uint j = 0;
@@ -142,7 +143,7 @@ void MultiAdaptiveNewtonSolver::Feval(DenseVector& F)
 
     // Get initial value for element
     const int ep = ts.ee[e];
-    const real x0 = ( ep != -1 ? ts.jx[ep*method.nsize() + method.nsize() - 1] : ts.u0[i] );
+    const real x0 = ( ep != -1 ? ts.jx[ep*method.nsize() + method.nsize() - 1] : ts.u0(i) );
 
     // Evaluate right-hand side at quadrature points of element
     if ( method.type() == Method::cG )
@@ -167,7 +168,7 @@ void MultiAdaptiveNewtonSolver::debug()
 {
   const uint n = ts.nj;
   uBlasSparseMatrix B(n, n);
-  DenseVector F1(n), F2(n);
+  uBlasVector F1(n), F2(n);
 
   // Iterate over the columns of B
   for (uint j = 0; j < n; j++)

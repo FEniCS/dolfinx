@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003
-// Last changed: 2006-07-05
+// Last changed: 2006-08-21
 
 #include <dolfin.h>
 
@@ -18,12 +18,12 @@ public:
     dolfin_info("The heat equation on [0,1] with h = %f", h);
   }
   
-  real u0(unsigned int i)
+  void u0(uBlasVector& u)
   {
-    return 0.0;
+    u = 0.0;
   }
 
-  void f(const DenseVector& u, real t, DenseVector& y)
+  void f(const uBlasVector& u, real t, uBlasVector& y)
   {
     // Boundary values
     y(0)   = 0.0;

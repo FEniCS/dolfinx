@@ -15,7 +15,7 @@ class MyFunction : public Function
 {
   real eval(const Point& p, unsigned int i)
   {
-    return p.x*sin(p.y);
+    return 10.0 * p.x()*sin(p.y());
   }
 };
 
@@ -24,30 +24,31 @@ class MyBC : public BoundaryCondition
 {
   void eval(BoundaryValue& value, const Point& p, unsigned int i)
   {
-    if ( std::abs(p.x - 1.0) < DOLFIN_EPS )
+    if ( std::abs(p.x() - 1.0) < DOLFIN_EPS )
       value = 0.0;
   }
 };
 
 int main()
 {
+
   // Set up problem
   UnitSquare mesh(16, 16);
   MyFunction f;
   MyBC bc;
 
-  set("method", "dg");
-  set("order", 0);
-  set("solver", "newton");
-  set("tolerance", 1e-3);
+  set("ODE method", "dg");
+  set("ODE order", 0);
+  set("ODE nonlinear solver", "newton");
+  set("ODE tolerance", 1e-3);
 
-  set("fixed time step", false);
-  set("initial time step", 1e-1);
-  set("maximum time step", 1e6);
+  set("ODE fixed time step", false);
+  set("ODE initial time step", 1e-3);
+  set("ODE maximum time step", 1e+0);
 
-  set("save solution", true);
-  set("ode solution file name", "primal.py");
-  set("number of samples", 400);
+  set("ODE save solution", true);
+  set("ODE solution file name", "primal.py");
+  set("ODE number of samples", 400);
 
   real T = 10.0;
 

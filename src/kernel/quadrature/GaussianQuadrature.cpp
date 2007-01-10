@@ -6,7 +6,7 @@
 
 #include <cmath>
 #include <dolfin/dolfin_log.h>
-#include <dolfin/DenseVector.h>
+#include <dolfin/uBlasVector.h>
 #include <dolfin/DenseMatrix.h>
 #include <dolfin/Legendre.h>
 #include <dolfin/GaussianQuadrature.h>
@@ -44,7 +44,7 @@ void GaussianQuadrature::computeWeights()
   }
 
   DenseMatrix A(n, n);
-  DenseVector x(n), b(n);
+  uBlasVector x(n), b(n);
 
   // Compute the matrix coefficients
   for (unsigned int i = 0; i < n; i++)

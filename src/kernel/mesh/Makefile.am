@@ -1,104 +1,60 @@
 SUBDIRS                   = dolfin
 nobase_include_HEADERS    = dolfin/dolfin_mesh.h \
-                            dolfin/Boundary.h \
-                            dolfin/BoundaryData.h \
-                            dolfin/BoundaryFacetIterator.h \
-                            dolfin/BoundaryInit.h \
-                            dolfin/Cell.h \
-                            dolfin/CellIterator.h \
-                            dolfin/CellRefData.h \
-                            dolfin/Edge.h \
-                            dolfin/EdgeIterator.h \
-                            dolfin/EdgeRefData.h \
-                            dolfin/Face.h \
-                            dolfin/FaceIterator.h \
-                            dolfin/GenericCell.h \
-                            dolfin/Mesh.h \
-                            dolfin/MeshData.h \
-                            dolfin/MeshHierarchy.h \
-                            dolfin/MeshInit.h \
-                            dolfin/MeshIterator.h \
-                            dolfin/MeshRefinement.h \
-                            dolfin/Point.h \
-                            dolfin/TetMeshRefinement.h \
-                            dolfin/Tetrahedron.h \
-                            dolfin/TriMeshRefinement.h \
-                            dolfin/Triangle.h \
                             dolfin/UnitCube.h \
                             dolfin/UnitSquare.h \
-                            dolfin/Vertex.h \
-                            dolfin/VertexIterator.h \
                             dolfin/MeshConnectivity.h \
                             dolfin/MeshEditor.h \
                             dolfin/MeshEntity.h \
                             dolfin/MeshEntityIterator.h \
                             dolfin/MeshFunction.h \
                             dolfin/MeshGeometry.h \
+                            dolfin/MeshHierarchy.h \
                             dolfin/MeshTopology.h \
-                            dolfin/NewMesh.h \
-                            dolfin/NewMeshData.h \
-                            dolfin/NewVertex.h \
-                            dolfin/NewEdge.h \
-                            dolfin/NewFace.h \
-                            dolfin/NewFacet.h \
-                            dolfin/NewCell.h \
+                            dolfin/Mesh.h \
+                            dolfin/MeshData.h \
+                            dolfin/Vertex.h \
+                            dolfin/Edge.h \
+                            dolfin/Face.h \
+                            dolfin/Facet.h \
+                            dolfin/Cell.h \
                             dolfin/TopologyComputation.h \
                             dolfin/CellType.h \
                             dolfin/Interval.h \
-                            dolfin/NewTriangle.h \
-                            dolfin/NewTetrahedron.h \
+                            dolfin/Triangle.h \
+                            dolfin/Tetrahedron.h \
                             dolfin/UniformMeshRefinement.h \
-                            dolfin/NewPoint.h \
+                            dolfin/Point.h \
                             dolfin/BoundaryComputation.h \
-                            dolfin/BoundaryMesh.h
+                            dolfin/BoundaryMesh.h \
+                            dolfin/GeometricPredicates.h
 INCLUDES                  = @KERNEL_CFLAGS@
 lib_LTLIBRARIES           = libdolfin-mesh.la
-libdolfin_mesh_la_SOURCES = Boundary.cpp \
-                            BoundaryData.cpp \
-                            BoundaryInit.cpp \
-                            Cell.cpp \
-                            CellIterator.cpp \
-                            Edge.cpp \
-                            EdgeIterator.cpp \
-                            EdgeRefData.cpp \
-                            Face.cpp \
-                            FaceIterator.cpp \
-                            GenericCell.cpp \
-                            Mesh.cpp \
-                            MeshData.cpp \
-                            MeshHierarchy.cpp \
-                            MeshInit.cpp \
-                            MeshIterator.cpp \
-                            MeshRefinement.cpp \
-                            Point.cpp \
-                            TetMeshRefinement.cpp \
-                            Tetrahedron.cpp \
-                            TriMeshRefinement.cpp \
-                            Triangle.cpp \
-                            UnitCube.cpp \
+libdolfin_mesh_la_SOURCES = UnitCube.cpp \
                             UnitSquare.cpp \
-                            Vertex.cpp \
-                            VertexIterator.cpp \
                             MeshConnectivity.cpp \
                             MeshEditor.cpp \
                             MeshEntity.cpp \
                             MeshEntityIterator.cpp \
                             MeshGeometry.cpp \
+                            MeshHierarchy.cpp \
                             MeshTopology.cpp \
-                            NewMesh.cpp \
-                            NewMeshData.cpp \
-                            NewVertex.cpp \
-                            NewEdge.cpp \
-                            NewFace.cpp \
-                            NewFacet.cpp \
-                            NewCell.cpp \
+                            Mesh.cpp \
+                            MeshData.cpp \
+                            Vertex.cpp \
+                            Edge.cpp \
+                            Face.cpp \
+                            Facet.cpp \
+                            Cell.cpp \
                             TopologyComputation.cpp \
                             Interval.cpp \
-                            NewTriangle.cpp \
-                            NewTetrahedron.cpp \
+                            Triangle.cpp \
+                            Tetrahedron.cpp \
                             CellType.cpp \
                             UniformMeshRefinement.cpp \
-                            NewPoint.cpp \
+                            LocalMeshRefinement.cpp \
+                            LocalMeshCoarsening.cpp \
+                            Point.cpp \
                             BoundaryComputation.cpp \
-                            BoundaryMesh.cpp
+                            BoundaryMesh.cpp \
+                            GeometricPredicates.cpp
 libdolfin_mesh_la_LDFLAGS = -static

@@ -1,0 +1,14 @@
+# Copyright (C) 2006 Anders Logg (logg@tti-c.org)
+# Licensed under the GNU GPL Version 2
+#
+# First added:  2006-08-21
+# Last changed: 2006-08-21
+#
+# The linear form for a load vector
+
+element = FiniteElement("Lagrange", "triangle", 1)
+
+v = TestFunction(element)
+c = Constant()
+
+L = c*v*dx

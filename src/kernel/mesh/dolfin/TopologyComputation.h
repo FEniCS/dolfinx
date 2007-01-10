@@ -12,7 +12,7 @@
 namespace dolfin
 {
 
-  class NewMesh;
+  class Mesh;
   class MeshEntity;
   class MeshConnectivity;
 
@@ -24,25 +24,25 @@ namespace dolfin
   public:
 
     /// Compute mesh entities of given topological dimension
-    static uint computeEntities(NewMesh& mesh, uint dim);
+    static uint computeEntities(Mesh& mesh, uint dim);
 
     /// Compute connectivity for given pair of topological dimensions
-    static void computeConnectivity(NewMesh& mesh, uint d0, uint d1);
+    static void computeConnectivity(Mesh& mesh, uint d0, uint d1);
 
   private:
 
     /// Compute connectivity from transpose
-    static void computeFromTranspose(NewMesh& mesh, uint d0, uint d1);
+    static void computeFromTranspose(Mesh& mesh, uint d0, uint d1);
 
     /// Compute connectivity from intersection
-    static void computeFromIntersection(NewMesh& mesh, uint d0, uint d1, uint d);
+    static void computeFromIntersection(Mesh& mesh, uint d0, uint d1, uint d);
 
     /// Count how many of the given entities that are new
-    static uint countEntities(NewMesh& mesh, MeshEntity& cell, 
+    static uint countEntities(Mesh& mesh, MeshEntity& cell, 
 			      uint** vertices, uint m, uint n, uint dim);
 
     /// Add entities that are new
-    static void addEntities(NewMesh& mesh, MeshEntity& cell,
+    static void addEntities(Mesh& mesh, MeshEntity& cell,
 			    uint** vertices, uint m, uint n, uint dim,
 			    MeshConnectivity& ce, MeshConnectivity& ev,
 			    uint& current_entity);

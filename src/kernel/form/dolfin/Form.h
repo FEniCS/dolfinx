@@ -1,8 +1,8 @@
-// Copyright (C) 2004-2005 Anders Logg.
+// Copyright (C) 2004-2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2004-05-28
-// Last changed: 2005-11-29
+// Last changed: 2006-12-12
 
 #ifndef __FORM_H
 #define __FORM_H
@@ -28,7 +28,13 @@ namespace dolfin
     virtual ~Form();
 
     /// Update map to current cell
-    void update(AffineMap& map);
+    void update(Cell& cell, AffineMap& map);
+
+    /// Update form to current cell for exterior facet
+    void update(Cell& cell, AffineMap& map, uint facet);
+
+    /// Update map to current pair of cells for interior facet
+    void update(Cell& cell0, Cell& cell1, AffineMap& map0, AffineMap& map1, uint facet0, uint facet1);
 
     Function* function(uint i);
     FiniteElement* element(uint i);
@@ -41,11 +47,23 @@ namespace dolfin
 
   protected:
 
-    // Add function
+    // Initialize function
     void add(Function& f, FiniteElement* element);
 
+    // Initialize function
+    void initFunction(uint i, Function& f, FiniteElement* element);
+
     // Update coefficients
-    void updateCoefficients(AffineMap& map);
+    void updateCoefficients(Cell& cell, AffineMap& map);
+
+    // Update coefficients
+    void updateCoefficients(Cell& cell, AffineMap& map, uint facet);
+
+    // Update coefficients
+    void updateCoefficients(Cell& cell0, Cell& cell1, AffineMap& map0, AffineMap& map1, uint facet0, uint facet1);
+
+    // Update local data for form
+    virtual void updateLocalData() = 0;
 
     // List of finite elements for functions (coefficients)
     Array<FiniteElement*> elements;
@@ -58,6 +76,9 @@ namespace dolfin
 
     // BLAS form data
     BLASFormData blas;
+    
+    // Block of values used during assembly
+    real* block;
 
   };
 

@@ -16,7 +16,7 @@ done
 for f in *.xml; do
 	echo "Converting $f..."
 	mv $f $f.old
-	./dolfin-convert $f.old $f
+	dolfin-convert -i xml-old $f.old $f
 done
 
 # Pack all .xml files

@@ -2,11 +2,14 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-28
-// Last changed: 2006-07-07
+// Last changed: 2006-08-08
 
 #ifndef __TIME_SLAB_JACOBIAN_H
 #define __TIME_SLAB_JACOBIAN_H
 
+#include <dolfin/dolfin_log.h>
+#include <dolfin/uBlasDenseMatrix.h>
+#include <dolfin/uBlasVector.h>
 #include <dolfin/uBlasKrylovMatrix.h>
 
 namespace dolfin
@@ -33,11 +36,21 @@ namespace dolfin
     virtual uint size(const uint dim) const = 0;
     
     /// Compute product y = Ax
-    virtual void mult(const DenseVector& x, DenseVector& y) const = 0;
+    virtual void mult(const uBlasVector& x, uBlasVector& y) const = 0;
 
-    /// Recompute Jacobian if necessary
-    virtual void update();
+    /// (Re-)initialize computation of Jacobian
+    virtual void init();
 
+    /// Update dense copy of Jacobian
+    void update();
+
+    /// Return dense copy of Jacobian
+    inline const uBlasDenseMatrix& matrix() const
+    {
+      dolfin_assert(A.size(0) == ode.size());
+      return A;
+    }
+    
   protected:
     
     // The ODE
@@ -45,6 +58,12 @@ namespace dolfin
 
     // Method, mcG(q) or mdG(q)
     const Method& method;
+
+    // Dense copy of the Jacobian
+    uBlasDenseMatrix A;
+
+    // Vectors used to compute dense copy of the Jacobian
+    uBlasVector ej, Aj;
 
   };
 

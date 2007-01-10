@@ -4,7 +4,7 @@
 // Modified by Anders Logg 2006.
 //
 // First added:  2005-10-24
-// Last changed: 2006-05-07
+// Last changed: 2006-10-20
 
 #include <dolfin/FEM.h>
 #include <dolfin/NonlinearPDE.h>
@@ -31,7 +31,7 @@ NonlinearPDE::~NonlinearPDE()
   // Do nothing 
 }
 //-----------------------------------------------------------------------------
-void NonlinearPDE::form(Matrix& A, Vector& b, const Vector& x)
+void NonlinearPDE::form(GenericMatrix& A, GenericVector& b, const GenericVector& x)
 {
   if(!_a)
   {  
@@ -43,7 +43,7 @@ void NonlinearPDE::form(Matrix& A, Vector& b, const Vector& x)
     if(_bc) 
     { 
       FEM::applyBC(A, *_mesh, _a->test(), *_bc);
-      FEM::assembleResidualBC(b, x, *_mesh, _Lf->test(), *_bc);
+      FEM::applyResidualBC(b, x, *_mesh, _Lf->test(), *_bc);
     }
     else
     {
@@ -55,13 +55,13 @@ void NonlinearPDE::form(Matrix& A, Vector& b, const Vector& x)
   
 }
 //-----------------------------------------------------------------------------
-//void NonlinearPDE::F(Vector& b, const Vector& x)
+//void NonlinearPDE::F(GenericVector& b, const GenericVector& x)
 //{
 //  dolfin_error("Nonlinear PDE update for F(u)  has not been supplied by
 //user.");
 //}
 //-----------------------------------------------------------------------------
-//void NonlinearPDE::J(Matrix& A, const Vector& x)
+//void NonlinearPDE::J(GenericMatrix& A, const GenericVector& x)
 //{
 //  dolfin_error("Nonlinear PDE update for Jacobian has not been supplied by
 //user.");

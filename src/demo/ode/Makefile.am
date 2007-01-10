@@ -1,10 +1,8 @@
 SUBDIRS = aliev-panfilov \
-          bistable \
           complex \
           courtemanche \
+          harmonic \
           homotopy \
           lorenz \
-          mechanical \
           method-weights \
-          stiff \
-          test
+          stiff

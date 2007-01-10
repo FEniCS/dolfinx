@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 # Copyright (C) Anders Logg 2002-2006
 # Licensed under the GNU GPL Version 2
@@ -72,8 +72,13 @@ echo "--- Compiling in directory release/$DISTDIR (see make-'$VERSION'.log)"
 cd $DISTDIR
 MAKELOG="../make-$VERSION.log"
 rm -f $MAKELOG
-./configure.local --enable-debug >> $MAKELOG
 export PATH=`pwd`"/local/bin:$PATH"
+./configure.local --enable-debug >> $MAKELOG
+make all install demo >& $MAKELOG
+make -C src/demo clean
+make -C src/pydolfin maintainer-clean-generic
+make uninstall clean
+./configure.local --enable-debug --enable-petsc >> $MAKELOG
 make all install demo >& $MAKELOG
 
 # Show log
@@ -89,9 +94,9 @@ scp TODO fenics@fenics.org:www.fenics.org/pub/software/dolfin
 
 # Update on web server
 echo '--- Update web pages'
-ssh fenics@fenics.org 'xterm -e emacs -nw www.fenics.org/dolfin/index.cpp'
-ssh fenics@fenics.org 'xterm -e emacs -nw www.fenics.org/download/index.cpp'
-ssh fenics@fenics.org 'xterm -e /home/fenics/local/bin/news'
+ssh -t fenics@fenics.org 'emacs -nw www.fenics.org/dolfin/index.cpp'
+ssh -t fenics@fenics.org 'emacs -nw www.fenics.org/download/index.cpp'
+ssh -t fenics@fenics.org '/home/fenics/local/bin/news'
 
 # Notify dolfin-dev of the new version
 echo '--- Notifying mailing list'

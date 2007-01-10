@@ -2,17 +2,17 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003-10-21
-// Last changed: 2006-07-05
+// Last changed: 2006-08-21
 
 #ifndef __ODE_H
 #define __ODE_H
 
 #include <dolfin/constants.h>
 #include <dolfin/Event.h>
-#include <dolfin/DenseVector.h>
+#include <dolfin/uBlasVector.h>
+#include <dolfin/uBlasSparseMatrix.h>
 #include <dolfin/Dependencies.h>
 #include <dolfin/Sample.h>
-#include <dolfin/uBlasSparseMatrix.h>
 
 namespace dolfin
 {
@@ -25,12 +25,20 @@ namespace dolfin
   ///
   /// where u(t) is a vector of length N.
   ///
-  /// To define an ODE, a user must create a subclass of ODE
-  /// and define the function u0() containing the initial
-  /// condition, as well the function f() containing the
-  /// right-hand side.
+  /// To define an ODE, a user must create a subclass of ODE and
+  /// create the function u0() defining the initial condition, as well
+  /// the function f() defining the right-hand side.
   ///
-  /// 
+  /// DOLFIN provides two types of ODE solvers: a set of standard
+  /// mono-adaptive solvers with equal adaptive time steps for all
+  /// components as well as a set of multi-adaptive solvers with
+  /// individual and adaptive time steps for the different
+  /// components. The right-hand side f() is defined differently for
+  /// the two sets of methods, with the multi-adaptive solvers
+  /// requiring a component-wise evaluation of the right-hand
+  /// side. Only one right-hand side function f() needs to be defined
+  /// for use of any particular solver.
+  ///
   /// It is also possible to solve implicit systems of the form
   ///
   ///     M(u(t), t) u'(t) = f(u(t),t) on (0,T],
@@ -44,38 +52,38 @@ namespace dolfin
   {
   public:
 
-    /// Constructor
+    /// Create an ODE of size N with final time T
     ODE(uint N, real T);
     
     /// Destructor
     virtual ~ODE();
 
-    /// Return initial value for given component
-    virtual real u0(uint i) = 0;
+    /// Set initial values
+    virtual void u0(uBlasVector& u) = 0;
 
-    /// Evaluate right-hand side y = f(u, t), mono-adaptive version
-    virtual void f(const DenseVector& u, real t, DenseVector& y);
+    /// Evaluate right-hand side y = f(u, t), mono-adaptive version (default, optional)
+    virtual void f(const uBlasVector& u, real t, uBlasVector& y);
 
-    /// Evaluate right-hand side f_i(u, t), multi-adaptive version
-    virtual real f(const DenseVector& u, real t, uint i);
+    /// Evaluate right-hand side f_i(u, t), multi-adaptive version (optional)
+    virtual real f(const uBlasVector& u, real t, uint i);
 
     /// Compute product y = Mx for implicit system (optional)
-    virtual void M(const DenseVector& x, DenseVector& y, const DenseVector& u, real t);
+    virtual void M(const uBlasVector& x, uBlasVector& y, const uBlasVector& u, real t);
 
     /// Compute product y = Jx for Jacobian J (optional)
-    virtual void J(const DenseVector& x, DenseVector& y, const DenseVector& u, real t);
+    virtual void J(const uBlasVector& x, uBlasVector& y, const uBlasVector& u, real t);
 
     /// Compute entry of Jacobian (optional)
-    virtual real dfdu(const DenseVector& u, real t, uint i, uint j);
+    virtual real dfdu(const uBlasVector& u, real t, uint i, uint j);
 
-    /// Time step to use for whole system (optional)
+    /// Time step to use for the whole system at a given time t (optional)
     virtual real timestep(real t, real k0) const;
     
-    /// Time step to use for given component (optional)
+    /// Time step to use for a given component at a given time t (optional)
     virtual real timestep(real t, uint i, real k0) const;
 
     /// Update ODE, return false to stop (optional)
-    virtual bool update(const DenseVector& u, real t, bool end);
+    virtual bool update(const uBlasVector& u, real t, bool end);
 
     /// Save sample (optional)
     virtual void save(Sample& sample);
@@ -130,7 +138,7 @@ namespace dolfin
   private:
 
     // Temporary vector used for computing Jacobian
-    DenseVector tmp;
+    uBlasVector tmp;
 
     // Events
     Event not_impl_f;

@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-05-24
-// Last changed: 2006-05-24
+// Last changed: 2006-08-21
 //
 // This demo solves a simple model for cardiac excitation,
 // proposed in a 1995 paper by Aliev and Panfilov.
@@ -25,20 +25,18 @@ public:
     mu2  = 0.3;
   }
   
-  real u0(unsigned int i)
+  void u0(uBlasVector& u)
   {
-    if ( i == 0 )
-      return 0.2;
-    else
-      return 0.0;
+    u(0) = 0.2;
+    u(1) = 0.0;
   }
   
-  void f(const real u[], real t, real y[])
+  void f(const uBlasVector& u, real t, uBlasVector& y)
   {
-    const real eps = eps0 + mu1*u[1] / (u[0] + mu2);
+    const real eps = eps0 + mu1*u(1) / (u(0) + mu2);
 
-    y[0] = -k*u[0]*(u[0] - a)*(u[0] - 1.0) - u[0]*u[1];
-    y[1] = eps*(-u[1] - k*u[0]*(u[0] - a - 1.0));
+    y(0) = -k*u(0)*(u(0) - a)*(u(0) - 1.0) - u(0)*u(1);
+    y(1) = eps*(-u(1) - k*u(0)*(u(0) - a - 1.0));
   }
   
 private:

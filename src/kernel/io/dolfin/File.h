@@ -1,10 +1,10 @@
 // Copyright (C) 2002-2006 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
-// Modified by Garth N. Wells, 2005
+// Modified by Garth N. Wells, 2005, 2006.
 //
 // First added:  2002-11-12
-// Last changed: 2006-05-23
+// Last changed: 2006-11-01
 
 #ifndef __FILE_H
 #define __FILE_H
@@ -18,6 +18,7 @@ namespace dolfin
 {
 
   class Mesh;
+  template <class T> class MeshFunction;
   class NewMesh;
   class Function;
   class Sample;
@@ -36,7 +37,7 @@ namespace dolfin
   public:
     
     /// File formats
-    enum Type { xml, matlab, matrixmarket, octave, opendx, gid, tecplot, vtk, python };
+    enum Type { xml, matlab, matrixmarket, octave, opendx, gid, vtk, python };
     
     /// Create a file with given name
     File(const std::string& filename);
@@ -57,6 +58,11 @@ namespace dolfin
 
     /// Read mesh from file
     void operator>> (Mesh& mesh);
+
+    /// Read mesh function from file
+    void operator>> (MeshFunction<int>& meshfunction);
+    void operator>> (MeshFunction<double>& meshfunction);
+    void operator>> (MeshFunction<bool>& meshfunction);
 
     /// Read mesh from file
     void operator>> (NewMesh& mesh);
@@ -86,6 +92,11 @@ namespace dolfin
 
     /// Write mesh to file
     void operator<< (Mesh& mesh);
+
+    /// Write mesh function to file
+    void operator<< (MeshFunction<int>& meshfunction);
+    void operator<< (MeshFunction<double>& meshfunction);
+    void operator<< (MeshFunction<bool>& meshfunction);
 
     /// Write mesh to file
     void operator<< (NewMesh& mesh);

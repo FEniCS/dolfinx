@@ -1,19 +1,29 @@
-// Copyright (C) 2005 Anders Logg.
+// Copyright (C) 2005-2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
-// First added:  2005
-// Last changed: 2005-12-01
+// First added:  2005-12-02
+// Last changed: 2006-11-01
 
+#include <dolfin/MeshEditor.h>
 #include <dolfin/UnitCube.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-UnitCube::UnitCube(uint nx, uint ny, uint nz)
+UnitCube::UnitCube(uint nx, uint ny, uint nz) : Mesh()
 {
+  if ( nx < 1 || ny < 1 || nz < 1 )
+    dolfin_error("Size of unit cube must be at least 1 in each dimension.");
+
   rename("mesh", "Mesh of the unit cube (0,1) x (0,1) x (0,1)");
 
+  // Open mesh for editing
+  MeshEditor editor;
+  editor.open(*this, CellType::tetrahedron, 3, 3);
+
   // Create vertices
+  editor.initVertices((nx+1)*(ny+1)*(nz+1));
+  uint vertex = 0;
   for (uint iz = 0; iz <= nz; iz++)
   {
     const real z = static_cast<real>(iz) / static_cast<real>(nz);
@@ -23,39 +33,40 @@ UnitCube::UnitCube(uint nx, uint ny, uint nz)
       for (uint ix = 0; ix <= nx; ix++)
       {
 	const real x = static_cast<real>(ix) / static_cast<real>(nx);
-	const Point p(x, y, z);
-	createVertex(p);
+	editor.addVertex(vertex++, x, y, z);
       }
     }
   }
 
   // Create tetrahedra
+  editor.initCells(6*nx*ny*nz);
+  uint cell = 0;
   for (uint iz = 0; iz < nz; iz++)
   {
     for (uint iy = 0; iy < ny; iy++)
     {
       for (uint ix = 0; ix < nx; ix++)
       {
-	const uint n0 = iz*(nx + 1)*(ny + 1) + iy*(nx + 1) + ix;
-	const uint n1 = n0 + 1;
-	const uint n2 = n0 + (nx + 1);
-	const uint n3 = n1 + (nx + 1);
-	const uint n4 = n0 + (nx + 1)*(ny + 1);
-	const uint n5 = n1 + (nx + 1)*(ny + 1);
-	const uint n6 = n2 + (nx + 1)*(ny + 1);
-	const uint n7 = n3 + (nx + 1)*(ny + 1);
+	const uint v0 = iz*(nx + 1)*(ny + 1) + iy*(nx + 1) + ix;
+	const uint v1 = v0 + 1;
+	const uint v2 = v0 + (nx + 1);
+	const uint v3 = v1 + (nx + 1);
+	const uint v4 = v0 + (nx + 1)*(ny + 1);
+	const uint v5 = v1 + (nx + 1)*(ny + 1);
+	const uint v6 = v2 + (nx + 1)*(ny + 1);
+	const uint v7 = v3 + (nx + 1)*(ny + 1);
 
-	createCell(n0, n1, n3, n7);
-	createCell(n0, n1, n5, n7); // Not right-oriented, but will be sorted
-	createCell(n0, n5, n4, n7); // Not right-oriented, but will be sorted
-	createCell(n0, n3, n2, n7);
-	createCell(n0, n6, n4, n7);
-	createCell(n0, n2, n6, n7);
+	editor.addCell(cell++, v0, v1, v3, v7);
+	editor.addCell(cell++, v0, v1, v7, v5);
+	editor.addCell(cell++, v0, v5, v7, v4);
+	editor.addCell(cell++, v0, v3, v2, v7);
+	editor.addCell(cell++, v0, v6, v4, v7);
+	editor.addCell(cell++, v0, v2, v6, v7);
       }
     }
   }
 
-  // Compute connectivity
-  init();
+  // Close mesh editor
+  editor.close();
 }
 //-----------------------------------------------------------------------------

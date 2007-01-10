@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005
-// Last changed: 2006-05-07
+// Last changed: 2006-08-21
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Homotopy.h>
@@ -24,13 +24,9 @@ HomotopyODE::~HomotopyODE()
   if ( tmp ) delete [] tmp;
 }
 //-----------------------------------------------------------------------------
-complex HomotopyODE::z0(unsigned int i)
+void HomotopyODE::z0(complex z[])
 {
-  const complex z = homotopy.z0(i);
-
-  //cout << "Starting point: z = " << z << endl;
-
-  return z;
+  homotopy.z0(z);
 }
 //-----------------------------------------------------------------------------  
 void HomotopyODE::f(const complex z[], real t, complex y[])

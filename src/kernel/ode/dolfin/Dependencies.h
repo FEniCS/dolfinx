@@ -15,7 +15,7 @@ namespace dolfin
 {
 
   class ODE;
-  class DenseVector;
+  class uBlasVector;
 
   /// This class keeps track of the dependencies between different
   /// components of an ODE system. For a large ODE, it is important
@@ -63,7 +63,7 @@ namespace dolfin
   private:
     
     // Check given dependency
-    bool checkDependency(ODE& ode, DenseVector& u, real f0, uint i, uint j);
+    bool checkDependency(ODE& ode, uBlasVector& u, real f0, uint i, uint j);
 
     // Make pattern sparse
     void makeSparse();

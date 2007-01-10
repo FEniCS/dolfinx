@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-05-30
-// Last changed: 2006-05-30
+// Last changed: 2006-08-24
 //
 // At this point, all this demo does is to assemble
 // the tensor-weighted Poisson matrix.
@@ -43,6 +43,8 @@ int main()
   Bidomain::BilinearForm mi(M00, M01, M02, M10, M11, M12, M20, M21, M22);
   Matrix Mi;
   FEM::assemble(mi, Mi, mesh);
+
+  dolfin_info("\nThis demo just assembles the tensor-weighted Poisson matrix. It does not (yet) solve the bidomain equations.");
     
   return 0;
 }

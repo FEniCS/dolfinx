@@ -43,6 +43,7 @@ DIST_COMMON = README $(nobase_include_HEADERS) $(srcdir)/Makefile.am \
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/ac_pkg_swig.m4 \
 	$(top_srcdir)/m4/ac_python_devel.m4 \
+	$(top_srcdir)/m4/ax_boost_base.m4 \
 	$(top_srcdir)/m4/ax_compiler_vendor.m4 \
 	$(top_srcdir)/m4/libtool.m4 $(top_srcdir)/m4/libxml.m4 \
 	$(top_srcdir)/configure.ac
@@ -68,11 +69,10 @@ am_libdolfin_ode_la_OBJECTS = Adaptivity.lo Alloc.lo ComplexODE.lo \
 	MonoAdaptivity.lo MultiAdaptiveFixedPointSolver.lo \
 	MultiAdaptiveJacobian.lo MultiAdaptiveNewtonSolver.lo \
 	MultiAdaptivePreconditioner.lo MultiAdaptiveTimeSlab.lo \
-	MultiAdaptivity.lo Method.lo ODE.lo ODESolver.lo \
-	ParticleSystem.lo Partition.lo ReducedModel.lo Sample.lo \
-	TimeSlab.lo TimeSlabJacobian.lo TimeSlabSolver.lo \
-	TimeStepper.lo UpdatedMultiAdaptiveJacobian.lo cGqMethod.lo \
-	dGqMethod.lo
+	MultiAdaptivity.lo Method.lo ODE.lo ODESolver.lo Partition.lo \
+	ReducedModel.lo Sample.lo TimeSlab.lo TimeSlabJacobian.lo \
+	TimeSlabSolver.lo TimeStepper.lo \
+	UpdatedMultiAdaptiveJacobian.lo cGqMethod.lo dGqMethod.lo
 libdolfin_ode_la_OBJECTS = $(am_libdolfin_ode_la_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -108,6 +108,8 @@ AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
 AWK = @AWK@
+BOOST_CPPFLAGS = @BOOST_CPPFLAGS@
+BOOST_LDFLAGS = @BOOST_LDFLAGS@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
@@ -123,6 +125,7 @@ CYGPATH_W = @CYGPATH_W@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
 DOLFIN_CFLAGS = @DOLFIN_CFLAGS@
+DOLFIN_DEFINITIONS = @DOLFIN_DEFINITIONS@
 DOLFIN_EXT_LIBS = @DOLFIN_EXT_LIBS@
 DOLFIN_LIBS = @DOLFIN_LIBS@
 DOLFIN_LTLIBOBJS = @DOLFIN_LTLIBOBJS@
@@ -132,6 +135,7 @@ ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
 EXEEXT = @EXEEXT@
+EXTERNAL_CFLAGS = @EXTERNAL_CFLAGS@
 F77 = @F77@
 FFLAGS = @FFLAGS@
 INSTALL_DATA = @INSTALL_DATA@
@@ -226,6 +230,7 @@ pyexecdir = @pyexecdir@
 pythondir = @pythondir@
 sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
+swig_found = @swig_found@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 SUBDIRS = dolfin
@@ -253,7 +258,6 @@ nobase_include_HEADERS = dolfin/dolfin_ode.h \
                           dolfin/Method.h \
                           dolfin/ODE.h \
                           dolfin/ODESolver.h \
-                          dolfin/ParticleSystem.h \
                           dolfin/Partition.h \
                           dolfin/ReducedModel.h \
                           dolfin/Sample.h \
@@ -290,7 +294,6 @@ libdolfin_ode_la_SOURCES = Adaptivity.cpp \
                           Method.cpp \
                           ODE.cpp \
                           ODESolver.cpp \
-                          ParticleSystem.cpp \
                           Partition.cpp \
                           ReducedModel.cpp \
                           Sample.cpp \
@@ -395,7 +398,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MultiAdaptivity.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ODE.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ODESolver.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ParticleSystem.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Partition.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ReducedModel.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Sample.Plo@am__quote@

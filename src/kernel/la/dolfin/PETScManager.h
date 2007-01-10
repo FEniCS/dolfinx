@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2004-12-09
-// Last changed: 2006-05-15
+// Last changed: 2006-08-15
 
 #ifndef __PETSC_MANAGER_H
 #define __PETSC_MANAGER_H
@@ -10,7 +10,7 @@
 #ifdef HAVE_PETSC_H
 
 // Due to a bug in PETSC, the Boost headers must be included
-// before including pescerror.h.
+// before including petscerror.h.
 
 #include <boost/numeric/ublas/vector.hpp>
 #include <boost/numeric/ublas/matrix.hpp>

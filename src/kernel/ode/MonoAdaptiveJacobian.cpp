@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-28
-// Last changed: 2006-07-06
+// Last changed: 2006-08-21
 
 #include <dolfin/dolfin_math.h>
 #include <dolfin/ODE.h>
@@ -31,7 +31,7 @@ dolfin::uint MonoAdaptiveJacobian::size(const uint dim) const
   return ts.x.size();
 }
 //-----------------------------------------------------------------------------
-void MonoAdaptiveJacobian::mult(const DenseVector& x, DenseVector& y) const
+void MonoAdaptiveJacobian::mult(const uBlasVector& x, uBlasVector& y) const
 {
   // Start with y = x, accounting for the derivative dF_j/dx_j = 1
   if ( !implicit )
@@ -55,8 +55,7 @@ void MonoAdaptiveJacobian::mult(const DenseVector& x, DenseVector& y) const
       // Do multiplication
       if ( piecewise )
       {
-	ts.copy(ts.u0, 0, ts.u, 0, ts.N);
-	ode.M(xx, yy, ts.u, a);
+	ode.M(xx, yy, ts.u0, a);
       }
       else
       {
