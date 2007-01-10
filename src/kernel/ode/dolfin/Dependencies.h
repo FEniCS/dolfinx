@@ -1,20 +1,21 @@
-// Copyright (C) 2003-2005 Anders Logg.
+// Copyright (C) 2003-2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-06
-// Last changed: 2005
+// Last changed: 2006-07-05
 
 #ifndef __DEPENDENCIES_H
 #define __DEPENDENCIES_H
 
 #include <dolfin/constants.h>
 #include <dolfin/Array.h>
+#include <dolfin/uBlasSparseMatrix.h>
 
 namespace dolfin
 {
 
   class ODE;
-  class Matrix;
+  class uBlasVector;
 
   /// This class keeps track of the dependencies between different
   /// components of an ODE system. For a large ODE, it is important
@@ -39,7 +40,7 @@ namespace dolfin
     void set(uint i, uint j, bool checknew = false);
     
     /// Set dependencies according to given sparse matrix
-    void set(const Matrix& A);
+    void set(const uBlasSparseMatrix& A);
 
     /// Set dependencies to transpose of given dependencies
     void transp(const Dependencies& dependencies);
@@ -53,8 +54,8 @@ namespace dolfin
     /// Get dependencies for given component (inline optimized)
     inline Array<uint>& operator[] (uint i) { return ( _sparse ? sdep[i] : ddep ); }
 
-    /// Get dependencies for given component
-    const Array<uint>& operator[] (uint i) const;
+    /// Get dependencies for given component (inline optimized)
+    inline const Array<uint>& operator[] (uint i) const { return ( _sparse ? sdep[i] : ddep ); }
 
     /// Display dependencies
     void disp() const;
@@ -62,7 +63,7 @@ namespace dolfin
   private:
     
     // Check given dependency
-    bool checkDependency(ODE& ode, real u[], real f0, uint i, uint j);
+    bool checkDependency(ODE& ode, uBlasVector& u, real f0, uint i, uint j);
 
     // Make pattern sparse
     void makeSparse();

@@ -1,8 +1,10 @@
-// Copyright (C) 2002-2005 Johan Hoffman and Anders Logg.
+// Copyright (C) 2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
-// First added:  2002
-// Last changed: 2005-12-01
+// Modified by Garth N. Wells, 2006.
+//
+// First added:  2006-06-12
+// Last changed: 2006-10-23
 
 #include <cmath>
 #include <dolfin/Point.h>
@@ -10,144 +12,39 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Point::Point() : x(0.0), y(0.0), z(0.0)
+real Point::distance(const Point& p) const
 {
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-Point::Point(real x) : x(x), y(0.0), z(0.0)
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-Point::Point(real x, real y) : x(x), y(y), z(0.0)
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-Point::Point(real x, real y, real z) : x(x), y(y), z(z)
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-Point::Point(const Point& p) : x(p.x), y(p.y), z(p.z)
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-real Point::dist(Point p) const
-{
-  return dist(p.x, p.y, p.z);
-}
-//-----------------------------------------------------------------------------
-real Point::dist(real x, real y, real z) const
-{
-  real dx = x - this->x;
-  real dy = y - this->y;
-  real dz = z - this->z;
+  const real dx = p._x[0] - _x[0];
+  const real dy = p._x[1] - _x[1];
+  const real dz = p._x[2] - _x[2];
 
-  return sqrt(dx*dx + dy*dy + dz*dz);
+  return std::sqrt(dx*dx + dy*dy + dz*dz);
 }
 //-----------------------------------------------------------------------------
 real Point::norm() const
 {
-  return sqrt(x*x + y*y + z*z);
+  return std::sqrt(_x[0]*_x[0] + _x[1]*_x[1] + _x[2]*_x[2]);
 }
 //-----------------------------------------------------------------------------
-Point Point::midpoint(Point p) const
-{
-  real mx = 0.5*(x + p.x);
-  real my = 0.5*(y + p.y);
-  real mz = 0.5*(z + p.z);
-
-  Point mp(mx,my,mz);
-
-  return mp;
-}
-//-----------------------------------------------------------------------------
-Point::operator real() const
-{
-  return x;
-}
-//-----------------------------------------------------------------------------
-const Point& Point::operator= (real x)
-{
-  this->x = x;
-  this->y = 0.0;
-  this->z = 0.0;
-
-  return *this;
-}
-//-----------------------------------------------------------------------------
-Point Point::operator+ (const Point& p) const
-{
-  Point q(*this);
-  q += p;  
-  return q;
-}
-//-----------------------------------------------------------------------------
-Point Point::operator- (const Point& p) const
-{
-  Point q(*this);
-  q -= p;
-  return q;
-}
-//-----------------------------------------------------------------------------
-real Point::operator* (const Point& p) const
-{
-  return x*p.x + y*p.y + z*p.z;
-}
-//-----------------------------------------------------------------------------
-const Point& Point::operator+= (const Point& p)
-{
-  x += p.x;
-  y += p.y;
-  z += p.z;
-
-  return *this;
-}
-//-----------------------------------------------------------------------------
-const Point& Point::operator-= (const Point& p)
-{
-  x -= p.x;
-  y -= p.y;
-  z -= p.z;
-
-  return *this;
-}
-//-----------------------------------------------------------------------------
-const Point& Point::operator*= (real a)
-{
-  x *= a;
-  y *= a;
-  z *= a;
-
-  return *this;
-}
-//-----------------------------------------------------------------------------
-const Point& Point::operator/= (real a)
-{
-  x /= a;
-  y /= a;
-  z /= a;
-
-  return *this;
-}
-//-----------------------------------------------------------------------------
-Point Point::cross(const Point& p) const
+const Point Point::cross(const Point& p) const
 {
   Point q;
 
-  q.x = y*p.z - z*p.y;
-  q.y = z*p.x - x*p.z;
-  q.z = x*p.y - y*p.x;
+  q._x[0] = _x[1]*p._x[2] - _x[2]*p._x[1];
+  q._x[1] = _x[2]*p._x[0] - _x[0]*p._x[2];
+  q._x[2] = _x[0]*p._x[1] - _x[1]*p._x[0];
 
   return q;
 }
 //-----------------------------------------------------------------------------
-dolfin::LogStream& dolfin::operator<<(LogStream& stream, const Point& p)
+real Point::dot(const Point& p) const
 {
-  stream << "[ Point x = " << p.x << " y = " << p.y << " z = " << p.z << " ]";
-  return stream;
+  return _x[0]*p._x[0] + _x[1]*p._x[1] + _x[2]*p._x[2];
+}
+//-----------------------------------------------------------------------------
+dolfin::LogStream& dolfin::operator<< (LogStream& stream, const Point& p)
+{
+   stream << "[ Point x = " << p.x() << " y = " << p.y() << " z = " << p.z() << " ]";
+   return stream;
 }
 //-----------------------------------------------------------------------------

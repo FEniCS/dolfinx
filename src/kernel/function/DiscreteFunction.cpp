@@ -1,18 +1,21 @@
 // Copyright (C) 2005-2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
+// Modified by Garth N. Wells, 2006.
+//
 // First added:  2005-11-26
-// Last changed: 2006-02-20
+// Last changed: 2006-12-12
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Point.h>
 #include <dolfin/Vertex.h>
 #include <dolfin/Cell.h>
+#include <dolfin/FEM.h>
 #include <dolfin/Mesh.h>
 #include <dolfin/Vector.h>
-#include <dolfin/FEM.h>
 #include <dolfin/AffineMap.h>
 #include <dolfin/FiniteElement.h>
+#include <dolfin/Function.h>
 #include <dolfin/DiscreteFunction.h>
 
 using namespace dolfin;
@@ -97,19 +100,17 @@ real DiscreteFunction::operator() (const Vertex& vertex, uint i)
 {
   dolfin_assert(_x && _mesh && _element);
 
+  // This is a special hack for Lagrange elements, need to compute
+  // the L2 projection in general
+
   // Initialize local data (if not already initialized correctly)
   local.init(*_element);
 
-  // Get array of values (assumes uniprocessor case)
-  real* xx = _x->array();
+  // Get vertex nodes for all components
+  _element->vertexeval(local.vertex_nodes, vertex.index(), *_mesh);
 
-  // Evaluate all components at given vertex and pick given component
-  _element->vertexeval(local.values, vertex.id(), xx + mixed_offset, *_mesh);
-
-  // Restore array
-  _x->restore(xx);
-
-  return local.values[component + i];
+  // Pick value
+  return (*_x)(mixed_offset + local.vertex_nodes[component + i]);
 }
 //-----------------------------------------------------------------------------
 void DiscreteFunction::sub(uint i)
@@ -182,28 +183,56 @@ void DiscreteFunction::copy(const DiscreteFunction& f)
   _element = f._element;
 }
 //-----------------------------------------------------------------------------
-void DiscreteFunction::interpolate(real coefficients[], AffineMap& map,
-				   FiniteElement& element)
+void DiscreteFunction::interpolate(real coefficients[], Cell& cell,
+                                   AffineMap& map, FiniteElement& element)
 {
   // Save mesh and element (overwriting any previously attached values)
-  _mesh = &map.cell().mesh();
+  _mesh = &cell.mesh();
   _element = &element;
   
   // Initialize local data (if not already initialized correctly)
   local.init(*_element);
   
-  // Get array of values (assumes uniprocessor case)
-  real* xx = _x->array();
-  
   // Compute mapping to global degrees of freedom
-  _element->nodemap(local.dofs, map.cell(), *_mesh);
+  _element->nodemap(local.dofs, cell, *_mesh);
 
-  // Pick values
+  // Compute positions in global vector by adding offsets
   for (uint i = 0; i < _element->spacedim(); i++)
-    coefficients[i] = xx[mixed_offset + component_offset + local.dofs[i]];
+    local.dofs[i] = local.dofs[i] + mixed_offset + component_offset;
 
-  // Restore array
-  _x->restore(xx);
+  // Get values
+  _x->get(coefficients, local.dofs, _element->spacedim());
+}
+//-----------------------------------------------------------------------------
+void DiscreteFunction::interpolate(Function& fsource)
+{
+  FiniteElement& e = element();
+  Vector& x = vector();
+  Mesh& m = mesh();
+
+  AffineMap map;
+
+  int *nodes = new int[e.spacedim()];
+  real *coefficients = new real[e.spacedim()];
+
+  for(CellIterator c(m); !c.end(); ++c)
+  {
+    Cell& cell = *c;
+
+    // Use DOLFIN's interpolation
+
+    map.update(cell);
+    fsource.interpolate(coefficients, cell, map, e);
+    e.nodemap(nodes, cell, m);
+
+    for(unsigned int i = 0; i < e.spacedim(); i++)
+    {
+      x(nodes[i]) = coefficients[i];
+    }
+  }
+
+  delete [] nodes;
+  delete [] coefficients;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint DiscreteFunction::vectordim() const

@@ -2,21 +2,23 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-05-02
-// Last changed: 2005-12-19
+// Last changed: 2006-08-21
 
 #ifndef __TIME_SLAB_H
 #define __TIME_SLAB_H
 
 #include <dolfin/constants.h>
+#include <dolfin/uBlasVector.h>
 
 namespace dolfin
 {
+
   class ODE;
   class Method;
 
-  /// This is the base class for time slabs, i.e., the collection of
-  /// the degrees of freedom for the solution of an ODE between to
-  /// time levels a and b.
+  /// This is the base class for time slabs, the collections of
+  /// degrees of freedom for the solution of an ODE between two
+  /// synchronized time levels a and b.
 
   class TimeSlab
   {
@@ -75,6 +77,21 @@ namespace dolfin
     friend class TimeSlabSolver;
 
   protected:
+
+    // Write given solution to file
+    static void write(const uBlasVector& u);
+
+    // Copy data of given size between vectors with given offsets
+    static void copy(const real x[], uint xoffset, real y[], uint yoffset, uint n);
+
+    // Copy data of given size between vectors with given offsets
+    static void copy(const uBlasVector& x, uint xoffset, real y[], uint yoffset, uint n);
+
+    // Copy data of given size between vectors with given offsets
+    static void copy(const real x[], uint xoffset, uBlasVector& y, uint yoffset, uint n);
+
+    // Copy data of given size between vectors with given offsets
+    static void copy(const uBlasVector& x, uint xoffset, uBlasVector& y, uint yoffset, uint n);
     
     uint N;  // Size of system
     real _a; // Start time of time slab
@@ -82,12 +99,9 @@ namespace dolfin
     
     ODE& ode;             // The ODE
     const Method* method; // Method, mcG(q) or mdG(q)  
-    real* u0;             // Initial values
-
+    uBlasVector u0;       // Initial values
+    
     bool save_final; // True if we should save the solution at final time
-
-    // Write given solution to file
-    void write(const real u[]);
 
   };
 

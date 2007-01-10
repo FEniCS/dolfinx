@@ -1,55 +1,40 @@
-// Copyright (C) 2005 Anders Logg.
+// Copyright (C) 2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
-//
-// First added:  2005
-// Last changed: 2005-10-24
+// 
+// First added:  2006-08-16
+// Last changed: 2006-08-16
 
 #ifndef __LU_H
 #define __LU_H
 
-#include <petscksp.h>
-#include <petscmat.h>
-
-#include <dolfin/LinearSolver.h>
+#include <dolfin/PETScLUSolver.h>
+#include <dolfin/uBlasLUSolver.h>
 
 namespace dolfin
 {
-  /// This class implements the direct solution (LU factorization) for
-  /// linear systems of the form Ax = b. It is a wrapper for the LU
-  /// solver of PETSc.
+
+  /// This class provides methods for solving a linear system by
+  /// LU factorization.
   
-  class LU : public LinearSolver
+  class LU
   {
   public:
-    
-    /// Constructor
-    LU();
 
-    /// Destructor
-    ~LU();
+#ifdef HAVE_PETSC_H
+    
+    /// Solve linear system Ax = b
+    static void solve(const PETScMatrix& A, PETScVector& x, const PETScVector& b);
 
     /// Solve linear system Ax = b
-    uint solve(const Matrix& A, Vector& x, const Vector& b);
+    static void solve(const PETScKrylovMatrix& A, PETScVector& x, const PETScVector& b);
 
-    /// Solve linear system Ax = b
-    uint solve(const VirtualMatrix& A, Vector& x, const Vector& b);
-
-    /// Display LU solver data
-    void disp() const;
-
-  private:
+#endif
     
-    // Create dense copy of virtual matrix
-    real copyToDense(const VirtualMatrix& A);
-
-    KSP ksp;
-
-    Mat B;
-    int* idxm;
-    int* idxn;
-
-    Vector e;
-    Vector y;
+    /// Solve linear system Ax = b
+    static void solve(const uBlasMatrix<ublas_dense_matrix>& A, uBlasVector& x, const uBlasVector& b);
+    
+    /// Solve linear system Ax = b
+    static void solve(const uBlasMatrix<ublas_sparse_matrix>& A, uBlasVector& x, const uBlasVector& b);
 
   };
 

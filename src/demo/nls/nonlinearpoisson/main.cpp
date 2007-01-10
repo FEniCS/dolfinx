@@ -1,10 +1,10 @@
-// Copyright (C) 2005 Garth N. Wells.
+// Copyright (C) 2005-2006 Garth N. Wells.
 // Licensed under the GNU GPL Version 2.
 //
 // Modified by Anders Logg, 2005
 //
 // First added:  2005
-// Last changed: 2005-12-28
+// Last changed: 2006-03-02
 //
 // This program illustrates the use of the DOLFIN nonlinear solver for solving 
 // problems of the form F(u) = 0. The user must provide functions for the 
@@ -39,7 +39,7 @@ class MyFunction : public Function
 {
   real eval(const Point& p, unsigned int i)
   {
-    return time()*p.x*sin(p.y);
+    return time()*p.x()*sin(p.y());
   }
 };
 
@@ -48,7 +48,7 @@ class MyBC : public BoundaryCondition
 {
   void eval(BoundaryValue& value, const Point& p, unsigned int i)
   {
-    if ( std::abs(p.x - 1.0) < DOLFIN_EPS )
+    if ( std::abs(p.x() - 1.0) < DOLFIN_EPS )
       value = 1.0*time();
   }
 };
@@ -59,53 +59,61 @@ class MyNonlinearProblem : public NonlinearProblem
   public:
 
     // Constructor 
-    MyNonlinearProblem(BilinearForm& a, LinearForm& L, Mesh& mesh,
-      BoundaryCondition& bc) : NonlinearProblem(),
-      _a(&a), _Lf(&L), _mesh(&mesh), _bc(&bc) {}
- 
-
-    // User defined assemble of Jacobian and residual vector 
-    void form(Matrix&A, Vector& b, const Vector& x)
+    MyNonlinearProblem(Mesh& mesh, BoundaryCondition& bc, Function& U, Function& f) 
+        : NonlinearProblem(), _mesh(&mesh), _bc(&bc)
     {
-      BilinearForm& a = *_a;
-      LinearForm& L   = *_Lf;
-      BoundaryCondition& bc = *_bc;
-      Mesh& mesh = *_mesh;
+      // Create forms
+      a = new NonlinearPoisson::BilinearForm(U);
+      L = new NonlinearPoisson::LinearForm(U, f);
 
+      // Initialise solution vector u
+      U.init(mesh, a->trial());
+    }
+
+    // Destructor 
+    ~MyNonlinearProblem()
+    {
+      delete a;
+      delete L;
+    }
+ 
+    // User defined assemble of Jacobian and residual vector 
+    void form(GenericMatrix& A, GenericVector& b, const GenericVector& x)
+    {
       dolfin_log(false);
-      FEM::assemble(a, L, A, b, mesh);
-      FEM::applyBC(A, mesh, a.test(), bc);
-      FEM::assembleBCresidual(b, x, mesh, a.test(), bc);
+      FEM::assemble(*a, *L, A, b, *_mesh);
+      FEM::applyBC(A, *_mesh, a->test(), *_bc);
+      FEM::applyResidualBC(b, x, *_mesh, a->test(), *_bc);
       dolfin_log(true);
     }
-    
+
   private:
 
-    // Pointers to forms, mesh data and boundary conditions
-    BilinearForm* _a;
-    LinearForm* _Lf;
+    // Pointers to forms, mesh and boundary conditions
+    BilinearForm *a;
+    LinearForm *L;
     Mesh* _mesh;
     BoundaryCondition* _bc;
 };
+
+
+
 
 int main(int argc, char* argv[])
 {
   dolfin_init(argc, argv);
  
   // Set up problem
-  UnitSquare mesh(16, 16);
+  UnitSquare mesh(64, 64);
   MyFunction f;
   MyBC bc;
-  Function u;
+  Function U;
 
-  // Create forms and user-defined nonlinear problem
-  NonlinearPoisson::BilinearForm a(u);
-  NonlinearPoisson::LinearForm L(u, f);
-  MyNonlinearProblem nonlinear_problem(a, L, mesh, bc);
+  // Create user-defined nonlinear problem
+  MyNonlinearProblem nonlinear_problem(mesh, bc, U, f);
 
-
-  // Create nonlinear solver and set parameters
-  NewtonSolver nonlinear_solver;
+  // Create nonlinear solver (using GMRES linear solver) and set parameters
+  NewtonSolver nonlinear_solver(gmres);
   nonlinear_solver.set("Newton maximum iterations", 50);
   nonlinear_solver.set("Newton relative tolerance", 1e-10);
   nonlinear_solver.set("Newton absolute tolerance", 1e-10);
@@ -115,8 +123,7 @@ int main(int argc, char* argv[])
   f.sync(t);
   bc.sync(t);
 
-  u.init(mesh, a.trial());
-  Vector& x = u.vector();
+  Vector& x = U.vector();
   while( t < T)
   {
     t += dt;
@@ -125,7 +132,7 @@ int main(int argc, char* argv[])
 
   // Save function to file
   File file("nonlinear_poisson.pvd");
-  file << u;
+  file << U;
 
   return 0;
 }

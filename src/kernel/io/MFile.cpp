@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells 2005
 //
 // First added:  2003-05-06
-// Last changed: 2006-02-13
+// Last changed: 2006-11-14
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Vector.h>
@@ -34,18 +34,17 @@ void MFile::operator<<(Vector& x)
   // Open file
   FILE *fp = fopen(filename.c_str(), "a");
   
-  // Get array (assumes uniprocessor case)
-  real* xx = x.array();
-
   // Write vector
   fprintf(fp, "%s = [", x.name().c_str());
   for (unsigned int i = 0; i < x.size(); i++)
-    fprintf(fp, " %.15g", xx[i]);
+  {
+    // FIXME: This is a slow way to access PETSc vectors. Need a fast way 
+    //        which is consistent for different vector types.
+    real temp = x(i);
+    fprintf(fp, " %.15g", temp);
+  }
   fprintf(fp, " ];\n");
   
-  // Restore array
-  x.restore(xx);
-
   // Close file
   fclose(fp);
 
@@ -83,24 +82,25 @@ void MFile::operator<<(Mesh& mesh)
   if ( counter == 0 )
     fprintf(fp,"points = [");
   else
-    fprintf(fp,"points{%d} = [", counter + 1);
-  for (VertexIterator n(mesh); !n.end(); ++n) {
+    fprintf(fp,"points{%u} = [", counter + 1);
+  for (VertexIterator v(mesh); !v.end();)
+  {
+    p = v->point();
     
-    p = n->coord();
-    
-    if ( mesh.type() == Mesh::triangles ) {
-      if ( n.last() )
-	fprintf(fp,"%.15f %.15f]';\n", p.x, p.y);
+    ++v;
+    if ( mesh.type().cellType() == CellType::triangle )
+    {
+      if ( v.end() )
+	fprintf(fp,"%.15f %.15f]';\n", p.x(), p.y());
       else
-	fprintf(fp,"%.15f %.15f\n", p.x, p.y );
+	fprintf(fp,"%.15f %.15f\n", p.x(), p.y() );
     }
     else {
-      if ( n.last() )
-	fprintf(fp,"%.15f %.15f %.15f]';\n", p.x, p.y, p.z);
+      if ( v.end() )
+	fprintf(fp,"%.15f %.15f %.15f]';\n", p.x(), p.y(), p.z());
       else
-	fprintf(fp,"%.15f %.15f %.15f\n", p.x, p.y, p.z);
+	fprintf(fp,"%.15f %.15f %.15f\n", p.x(), p.y(), p.z());
     }
-    
   }
   fprintf(fp,"\n");
   
@@ -108,13 +108,14 @@ void MFile::operator<<(Mesh& mesh)
   if ( counter == 0 )
     fprintf(fp,"cells = [");
   else
-    fprintf(fp,"cells{%d} = [", counter + 1);
-  for (CellIterator c(mesh); !c.end(); ++c)
+    fprintf(fp,"cells{%u} = [", counter + 1);
+  for (CellIterator c(mesh); !c.end();)
   {
-    for (VertexIterator n(c); !n.end(); ++n)
-      fprintf(fp, "%d ", n->id() + 1);
+    for (VertexIterator v(c); !v.end(); ++v)
+      fprintf(fp, "%u ", (v->index()) + 1 );
     
-    if ( c.last() )
+    ++c;
+    if ( c.end() )
       fprintf(fp, "]';\n");
     else
       fprintf(fp, "\n");
@@ -126,7 +127,7 @@ void MFile::operator<<(Mesh& mesh)
   if ( counter == 0 )
     fprintf(fp,"edges = [1;2;0;0;0;0;0];\n\n");
   else
-    fprintf(fp,"edges{%d} = [1;2;0;0;0;0;0];\n\n", counter + 1);
+    fprintf(fp,"edges{%u} = [1;2;0;0;0;0;0];\n\n", counter + 1);
   
   // Close file
   fclose(fp);
@@ -167,19 +168,19 @@ void MFile::operator<<(Function& u)
     fprintf(fp, "%s = [", u.name().c_str());
     for (unsigned int i = 0; i < u.vectordim(); i++)
     { 
-      for (VertexIterator n(u.mesh()); !n.end(); ++n)
-        fprintf(fp, " %.15f", u(*n, i));
+      for (VertexIterator v(u.mesh()); !v.end(); ++v)
+        fprintf(fp, " %.15f", u(*v, i));
         fprintf(fp, ";");
     }
     fprintf(fp, " ]';\n\n");
   }
   else
   {
-    fprintf(fp, "%s{%d} = [", u.name().c_str(), counter1 + 1);
+    fprintf(fp, "%s{%u} = [", u.name().c_str(), counter1 + 1);
     for (unsigned int i = 0; i < u.vectordim(); i++)
     { 
-      for (VertexIterator n(u.mesh()); !n.end(); ++n)
-        fprintf(fp, " %.15f", u(*n, i));
+      for (VertexIterator v(u.mesh()); !v.end(); ++v)
+        fprintf(fp, " %.15f", u(*v, i));
         fprintf(fp, ";");
     }
     fprintf(fp, " ]';\n\n");

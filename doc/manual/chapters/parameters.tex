@@ -19,7 +19,7 @@ parameters and adding new parameters to the database.
 To retrieve the value of a parameter, use the function \texttt{get()}
 available in the \texttt{dolfin} namespace:
 \begin{code}
-  Parameter get(std::string key);
+Parameter get(std::string key);
 \end{code}
 This function accepts as argument a string \texttt{key} and returns
 the value of the parameter matching the given key. An error message is
@@ -30,10 +30,10 @@ The value of the parameter is automatically cast to the correct type
 when assigning the value of \texttt{get()} to a variable, as
 illustrated by the following examples:
 \begin{code}
-  real TOL = get(``tolerance'');
-  int num_samples = get(``number of samples'');
-  bool solve_dual = get(``solve dual problem'');
-  std::string filename = get(``file name'');
+real TOL = get(``tolerance'');
+int num_samples = get(``number of samples'');
+bool solve_dual = get(``solve dual problem'');
+std::string filename = get(``file name'');
 \end{code}
 
 Note that there is a small cost associated with accessing the value of
@@ -41,11 +41,11 @@ a parameter, so if the value of a parameter is to be used multiple
 times, then it should be retrieved once and stored in a local variable
 as illustrated by the following example:
 \begin{code}
-  int num_samples = get(``number of samples'');
-  for (int i = 0; i < num_samples; i++)
-  \{
-    ...
-  \}
+int num_samples = get(``number of samples'');
+for (int i = 0; i < num_samples; i++)
+{
+  ...
+}
 \end{code}
 
 %------------------------------------------------------------------------------
@@ -55,7 +55,7 @@ as illustrated by the following example:
 To modify the value of a parameter, use the function \texttt{set()}
 available in the \texttt{dolfin} namespace:
 \begin{code}
-  void set(std::string key, Parameter value);
+void set(std::string key, Parameter value);
 \end{code}
 This function accepts as arguments a string \texttt{key} together with
 the corresponding value. The value type should match the type of
@@ -66,10 +66,10 @@ key in the database.
 The following examples illustrate
 the use of \texttt{set()}:
 \begin{code}
-  set(``tolerance'', 0.01);
-  set(``number of samples'', 10);
-  set(``solve dual problem'', true);
-  set(``file name'', ``solution.xml'');
+set(``tolerance'', 0.01);
+set(``number of samples'', 10);
+set(``solve dual problem'', true);
+set(``file name'', ``solution.xml'');
 \end{code}
 
 Note that changing the values of parameters using
@@ -86,7 +86,7 @@ To add a parameter to the database, use the function
 \texttt{add()} available in the \texttt{dolfin}
 namespace:
 \begin{code}
-  void add(std::string key, Parameter value);
+void add(std::string key, Parameter value);
 \end{code}
 This function accepts two arguments:
 a unique key identifying the new parameter and the value of the new
@@ -95,10 +95,10 @@ parameter.
 The following examples illustrate the use of
 \texttt{add()}:
 \begin{code}
-  add(``tolerance'', 0.01);
-  add(``number of samples'', 10);
-  add(``solve dual problem'', true);
-  add(``file name'', ``solution.xml'');
+add(``tolerance'', 0.01);
+add(``number of samples'', 10);
+add(``solve dual problem'', true);
+add(``file name'', ``solution.xml'');
 \end{code}
 
 %------------------------------------------------------------------------------
@@ -108,8 +108,8 @@ The following examples illustrate the use of
 The following code illustrates how to save the current database of
 parameters to a file in \dolfin{} XML format:
 \begin{code}
-  File file(``parameters.xml'');
-  file << ParameterSystem::parameters;
+File file(``parameters.xml'');
+file << ParameterSystem::parameters;
 \end{code}
 When running a simulation in \dolfin{}, saving the parameter database
 to a file is an easy way to document the set of parameters used in the
@@ -122,8 +122,8 @@ simulation.
 The following code illustrates how to load a set of parameters into
 the current database of parameters from a file in \dolfin{} XML format:
 \begin{code}
-  File file(``parameters.xml'');
-  file >> ParameterSystem::parameters;
+File file(``parameters.xml'');
+file >> ParameterSystem::parameters;
 \end{code}
 The following example illustrates how to specify a list of parameters
 in the \dolfin{} XML format

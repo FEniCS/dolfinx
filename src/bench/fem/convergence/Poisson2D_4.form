@@ -1,0 +1,16 @@
+# Copyright (C) 2005-2006 Anders Logg.
+# Licensed under the GNU GPL Version 2.
+#
+# First added:  2005
+# Last changed: 2006-03-28
+#
+# Poisson's equation in 2D for q = 4
+
+element = FiniteElement("Lagrange", "triangle", 4)
+
+v = TestFunction(element)
+U = TrialFunction(element)
+f = Function(element)
+
+a = v.dx(i)*U.dx(i)*dx
+L = v*f*dx

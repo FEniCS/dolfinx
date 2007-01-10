@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003-05-06
-// Last changed: 2005-12-20
+// Last changed: 2005-03-24
 
 #ifndef __PARAMETER_H
 #define __PARAMETER_H
@@ -74,7 +74,7 @@ namespace dolfin
 
     /// Cast parameter to real
     operator real() const;
-
+    
     /// Cast parameter to bool
     operator bool() const;
 
@@ -85,7 +85,7 @@ namespace dolfin
     Type type() const;
 
     /// Output
-    friend LogStream& dolfin::operator<<(LogStream& stream, const Parameter& parameter);
+    friend LogStream& operator<< (LogStream& stream, const Parameter& parameter);
 
     /// Friends
     friend class XMLFile;

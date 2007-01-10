@@ -1,8 +1,8 @@
-// Copyright (C) 2005 Anders Logg.
+// Copyright (C) 2005-2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-02-02
-// Last changed: 2005
+// Last changed: 2006-08-21
 
 #ifndef __COMPLEX_ODE_H
 #define __COMPLEX_ODE_H
@@ -43,8 +43,8 @@ namespace dolfin
     /// Destructor
     ~ComplexODE();
     
-    /// Return initial value for given component
-    virtual complex z0(uint i) = 0;
+    /// Set initial values
+    virtual void z0(complex z[]) = 0;
 
     /// Evaluate right-hand side (multi-adaptive version)
     virtual complex f(const complex z[], real t, uint i);
@@ -65,25 +65,25 @@ namespace dolfin
     virtual bool update(const complex z[], real t, bool end);
 
     /// Return initial value for real-valued ODE
-    real u0(uint i);
+    void u0(uBlasVector& u);
 
     /// Return right-hand side for real-valued ODE
-    real f(const real u[], real t, uint i);
+    real f(const uBlasVector& u, real t, uint i);
 
     /// Evaluate right-hand side for real-valued ODE
-    void f(const real u[], real t, real y[]);
+    void f(const uBlasVector& u, real t, uBlasVector& y);
 
     /// Compute product y = Mx for real-valued ODE
-    void M(const real x[], real y[], const real u[], real t);
+    void M(const uBlasVector& x, uBlasVector& y, const uBlasVector& u, real t);
 
     /// Compute product y = Jx for real-valued ODE
-    void J(const real x[], real y[], const real u[], real t);
+    void J(const uBlasVector& x, uBlasVector& y, const uBlasVector& u, real t);
 
     /// Return time step for real-valued ODE
     real timestep(uint i);
 
     /// Update for real-valued ODE
-    bool update(const real u[], real t, bool end);
+    bool update(const uBlasVector& u, real t, bool end);
 
   protected:
 

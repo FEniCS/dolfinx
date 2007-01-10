@@ -1,82 +1,206 @@
 \chapter{Nonlinear solver}
 \index{nonlinear solver}
 
-\devnote{This chapter is currently being written\ldots}
-
 \dolfin{} provides tools for solving nonlinear equations of the form
 \begin{equation}
-  F(u) = 0
+  F(u) = 0, 
 \end{equation}
-where $F: \mathbb{R}^{n} \rightarrow \mathbb{R}^{n}$. The nonlinear solvers are
-based on Newton's method and utilise functions from PETSc \cite{www:petsc}.    
-
-To use the nonlinear solver, a nonlinear function must be defined. The nonlinear
-solver is then initialised with this function and a solution computed.
-
-
+where $F: \mathbb{R}^{n} \rightarrow \mathbb{R}^{n}$. 
+To use the nonlinear solver, a nonlinear function must be defined. 
+The nonlinear solver is then initialised with this function and a 
+solution computed.
 
 \section{Nonlinear functions}
 \index{NonlinearFunction}
 
-To solve a nonlinear problem, the user must defined a class which . The class 
-should be derived from the \dolfin class \texttt{NonlinearFunction}. The class 
-should contain the necessary functions to form the function $F(u)$ and the 
+To solve a nonlinear problem, the user must defined a class which 
+represents the nonlinear function $F(u)$. The class 
+should be derived from the \dolfin{}  class \texttt{NonlinearFunction}. It
+contains the necessary functions to form the function $F(u)$ and the 
 Jacobian matrix  $J = \partial F / \partial u$. The precise form of the user 
-defined class will depend on the PDE being solved and the numerical method.
-The structu of a user defined class \texttt{MyNonlinearFunction} is shown below.
+defined class will depend on the problem being solved.
+The structure of a user defined class \texttt{MyNonlinearFunction} is shown below.
+%
+\small
 \begin{code}
 class MyNonlinearFunction : public NonlinearFunction
-\{
-  public: 
+{
+public: 
   
-    // Constructor 
-    MyNonlinearFunction() : NonlinearFunction()\{\}
+ // Constructor 
+ MyNonlinearFunction() : NonlinearFunction() {}
   
-    // Compute F(u) 
-    void F(Vector\& b, const Vector\& x)
-    \{
-      // Insert F(u) into the vector b 
-    \}
+ // Compute F(u) and J 
+ void form(GenericMatrix& A, GenericVector& b, 
+           const GenericVector& u)
+ {
+   // Insert F(u) into the vector b and J into the matrix A 
+ }
 
-    // Compute J
-    void J(Matrix\& A, const Vector\& x)
-    \{
-      // Insert the Jacobian into the matrix A 
-    \}
-
-    dolfin::uint size()
-    \{      
-      // Return the dimension of the Jacobian matrix 
-    \}
-
-    dolfin::uint nzsize()
-    \{      
-      // Return the maximum number of zeroes per row of the Jacobian
-    \}
-
-  private:
-    // Pointers to objects with which F(u) is defined
-\};
+private:
+ // Functions and pointers to objects with which F(u) is defined
+};
 \end{code}
-
+\normalsize
+%
+The above class computes the function $F(u)$ and its Jacobian $J$
+concurrently. In the future, it will be possible to compute 
+$F(u)$ and $J$ either concurrently or separately.
 
 \section{Newton solver}
 \index{Newton's method}
 \index{NewtonSolver}
+%
+\dolfin{} provides tools to solve nonlinear systems using Newton's method
+and variants of it. The following code solves a nonlinear problem, defined by 
+\texttt{MyNonlinearFunction} using Newton's method.
+%
+\begin{code}
+Vector u;
+MyNonlinearFunction F;
+NewtonSolver newton_solver;
+
+nonlinear_solver.solve(F, x);
+\end{code}
+%
+
+The maximum number of iterations before the Newton 
+procedure is exited can be set through the \dolfin{} parameter
+system, along with the relative and absolute 
+tolerances the residual. This is illustrated below.
+%
+\begin{code}
+NewtonSolver nonlinear_solver;
+nonlinear_solver.set("Newton maximum iterations", 50);
+nonlinear_solver.set("Newton relative tolerance", 1e-10);
+nonlinear_solver.set("Newton absolute tolerance", 1e-10);
+\end{code}
+
+The Newton procedure is considered to have converged when
+the residual $r_{n}$ at iteration $n$ is less than the 
+absolute tolerance or the relative residual
+$r_{n}/r_{0}$ is less than the relative tolerance.
+By default, the residual at iteration $n$ is given
+by
+%
+\begin{equation}
+  r_{n} = \| F(u_{n}) \|.
+\end{equation} 
+%
+Computation of the residual in this way can be set by
+%
+\begin{code}
+NewtonSolver newton_solver;
+newton_solver.set("Newton convergence criterion", "residual");
+\end{code}
+
+For some problems, it is more appropriate to consider changes in
+the solution~$u$ in testing for convergence. At iteration $n$,
+the solution is updated via
+%
+\begin{equation}
+  u_{n} = u_{n-1} + du_{n} 
+\end{equation}
+%
+where $du_{n}$ is the increment. When using an incremental
+criterion for convergence, the `residual' is defined as
+%
+\begin{equation}
+  r_{n} = \| du_{n} \|.
+\end{equation} 
+%
+Computation of the incremental residual can be set by
+%
+\small
+\begin{code}
+NewtonSolver newton_solver;
+newton_solver.set("Newton convergence criterion", "incremental");
+\end{code}
+\normalsize
+%
 
 \subsection{Linear solver}
+The solution to the nonlinear problems is returned in the vector~\texttt{x}.
+By default, the \texttt{NewtonSolver} used a direct solver to solve systems
+of linear equations. It is possible to set the type linear solver to be used 
+when creating a \texttt{NewtonSolver}. For example, 
+%
+\begin{code}
+NewtonSolver newton_solver(gmres);
+\end{code}
+%
+creates a solver which will use GMRES to solve linear systems. For iterative
+solvers, the preconditioner can also be selected,
+\begin{code}
+NewtonSolver newton_solver(gmres, ilu);
+\end{code}
+%
+The above Newton solver will use GMRES in combination with incomplete LU 
+factorisation.
 
 \subsection{Application of Dirichlet boundary conditions}
+%
+The application of Dirichlet boundary conditions to finite element
+problems in the context of a Newton solver requires particular 
+attention. The `residual' $F(u)$ at nodes where Dirichlet boundary
+conditions are applied is the equal to difference between the 
+imposed boundary condition value and the current solution~$u$.
+The function 
+\begin{code}
+void FEM::applyResidualBC(GenericVector& b, 
+           const GenericVector& x, Mesh& mesh,
+           FiniteElement& element, BoundaryCondition& bc)
+\end{code}
+applies Dirichlet boundary conditions correctly. For a nonlinear
+finite element problem, the below code assembles the function $F(u)$
+and its Jacobian, and applied Dirichlet boundary conditions in the
+appropriate manner.
+%
+\small
+\begin{code}
+class MyNonlinearFunction : public NonlinearFunction
+{
+public: 
+  
+  // Constructor 
+  MyNonlinearFunction(. . . ) : NonlinearFunction(. . . ) {}
+  
+  // Compute F(u) and J 
+  void form(GenericMatrix& A, GenericVector& b, 
+            const GenericVector& u)
+  {
+    // Insert F(u) into the vector b and J into the matrix A 
+    FEM::assemble(*a, *L, A, b, *_mesh);
+    FEM::applyBC(A, *_mesh, a->test(), *_bc);
+    FEM::applyResidualBC(b, x, *_mesh, a->test(), *_bc);
+  }
 
-The application of inhomogenuous Dirichlet boundary conditions in the context
-of a Newton solver requires particular attention.
-
-
-
-\subsection{Newton solver parameters}
-
-\subsection{Application of Dirichlet boundary conditions}
-
+private:
+  // Functions and pointers to objects with which F(u) is defined
+};
+\end{code}
+\normalsize
 
 \section{Incremental Newton solver}
+%
+Newton solvers are commonly used to solve nonlinear equations in a series 
+of steps. This can be done by building a simple loop around a Newton solver,
+and is shown in the following code.
+%
+\begin{code}
+MyNonlinearProblem F(U);
+NewtonSolver nonlinear_solver;
 
+Vector& x = U.vector();
+
+// Solve nonlinear problem in a series of steps
+real dt = 1.0; real t  = 0.0; real T  = 3.0;
+while( t < T)
+{
+  t += dt;
+  nonlinear_solver.solve(F, x);
+}
+\end{code}
+%
+Typically, the boundary conditions and/or source terms will be dependent 
+on~\texttt{t}.

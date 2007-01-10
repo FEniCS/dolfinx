@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003-06-03
-// Last changed: 2005-12-09
+// Last changed: 2006-10-23
 
 #ifndef __GAUSSIAN_QUADRATURE_H
 #define __GAUSSIAN_QUADRATURE_H
@@ -18,7 +18,8 @@ namespace dolfin {
   /// of DOLFIN_EPS. Comparing with known exact values for n <= 3 shows
   /// that we obtain full precision (16 digits, error less than 2e-16).
 
-  class GaussianQuadrature : public Quadrature {
+  class GaussianQuadrature : public Quadrature
+  {
   public:
     
     GaussianQuadrature(unsigned int n);

@@ -1,8 +1,8 @@
-// Copyright (C) 2005 Anders Logg.
+// Copyright (C) 2005-2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005
-// Last changed: 2005-12-19
+// Last changed: 2006-08-21
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Homotopy.h>
@@ -24,13 +24,9 @@ HomotopyODE::~HomotopyODE()
   if ( tmp ) delete [] tmp;
 }
 //-----------------------------------------------------------------------------
-complex HomotopyODE::z0(unsigned int i)
+void HomotopyODE::z0(complex z[])
 {
-  const complex z = homotopy.z0(i);
-
-  //cout << "Starting point: z = " << z << endl;
-
-  return z;
+  homotopy.z0(z);
 }
 //-----------------------------------------------------------------------------  
 void HomotopyODE::f(const complex z[], real t, complex y[])
@@ -115,14 +111,12 @@ bool HomotopyODE::update(const complex z[], real t, bool end)
     dolfin_info("Reached end of integration, saving solution.");
     _state = endgame;
     
-    real* xx = homotopy.x.array();
     for (uint i = 0; i < n; i++)
     {
       const complex zi = z[i];
-      xx[2*i] = zi.real();
-      xx[2*i + 1] = zi.imag();
+      homotopy.x(2*i) = zi.real();
+      homotopy.x(2*i + 1) = zi.imag();
     }
-    homotopy.x.restore(xx);
   }
   
   return true;

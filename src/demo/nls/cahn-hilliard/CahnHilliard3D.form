@@ -1,0 +1,55 @@
+# Copyright (C) 2006 Garth N Wells.
+# Licensed under the GNU GPL Version 2.
+#
+# First added:  2006
+# Last changed: 2006-03-28
+#
+# The linearised bilinear form a(v, U) and linear form L(v) for
+# the Cahn-Hilliard equation.
+#
+# Compile this form with FFC: ffc CahnHilliard.form.
+
+P1 = FiniteElement("Lagrange", "tetrahedron", 1)
+P2 = FiniteElement("Lagrange", "tetrahedron", 1)
+
+ME = P1 + P2
+
+(v, q)   = TestFunctions(ME)
+(c, k)   = TrialFunctions(ME)  # concentration, potential
+
+(c1, k1) = Functions(ME)      # current solution 
+
+c0         = Function(P1)      # solution from previous converged step 
+DcDt0      = Function(P1)      # rate from previous step
+
+lmbda      = Constant()        # surface parameter
+muFactor   = Constant()        # chemical free energy multiplier
+
+dt         = Constant()           # time step
+theta      = Constant()           # time stepping parameter 
+
+mu    = muFactor*(2.0*(1.0-c1)*(1.0-c1) - 8.0*c1*(1.0-c1) + 2.0*c1*c1)
+DmuDc = muFactor*(-12.0 + 24.0*c1)
+
+Mob = 1.0
+dMob = 0.0
+
+# Compute current rate (this implies the predictor)
+DcDt = (c1-c0)*(1.0/dt)*(1.0/theta) - (1-theta)*DcDt0*(1/theta)
+
+a1 = v*c*dx + theta*dt*Mob*mu*dot(grad(v), grad(c))*dx \
+            + theta*dt*dMob*mu*dot(grad(v), grad(c1))*c*dx \
+            + theta*dt*Mob*DmuDc*dot(grad(v), grad(c1))*c*dx \
+            - theta*dt*Mob*dot(grad(v), grad(k))*dx
+
+a2 = q*k*dx + lmbda*dot(grad(q), grad(c))*dx
+
+L1int =  theta*dt*Mob*mu*dot(grad(v), grad(c1))*dx  \
+       - theta*dt*Mob*dot(grad(v), grad(k1))*dx
+L1dyn =  theta*dt*v*DcDt*dx
+
+L2int =  q*k1*dx +   lmbda*dot(grad(q), grad(c1))*dx
+
+
+a = a1 + a2
+L =  - L1int - L1dyn - L2int 

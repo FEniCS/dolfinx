@@ -1,50 +1,39 @@
-// Copyright (C) 2005 Anders Logg.
+// Copyright (C) 2005-2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-27
-// Last changed: 2005-12-19
+// Last changed: 2006-08-21
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/dolfin_math.h>
 #include <dolfin/ParameterSystem.h>
+#include <dolfin/uBlasSparseMatrix.h>
 #include <dolfin/Alloc.h>
 #include <dolfin/ODE.h>
-#include <dolfin/Matrix.h>
 #include <dolfin/Method.h>
 #include <dolfin/MultiAdaptiveTimeSlab.h>
 #include <dolfin/MultiAdaptiveJacobian.h>
 #include <dolfin/UpdatedMultiAdaptiveJacobian.h>
 #include <dolfin/MultiAdaptiveNewtonSolver.h>
 
-#include <petscpc.h>
-#if PETSC_VERSION_MAJOR==2 && PETSC_VERSION_MINOR==3 && PETSC_VERSION_SUBMINOR==0
-  #include <src/ksp/pc/pcimpl.h>
-#else
-  #include <private/pcimpl.h>
-#endif
-
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 MultiAdaptiveNewtonSolver::MultiAdaptiveNewtonSolver
 (MultiAdaptiveTimeSlab& timeslab)
-  : TimeSlabSolver(timeslab), ts(timeslab), A(0), mpc(timeslab, method),
-    f(0), num_elements(0), num_elements_mono(0),
-    updated_jacobian(get("updated jacobian"))
+  : TimeSlabSolver(timeslab), ts(timeslab), A(0),
+    mpc(timeslab, method), solver(mpc), f(0), u(0), num_elements(0), num_elements_mono(0),
+    updated_jacobian(get("ODE updated jacobian"))
 {
-  // Initialize local array
+  // Initialize local arrays
   f = new real[method.qsize()];
+  u = new real[method.nsize()];
   
   // Don't report number of GMRES iteration if not asked to
-  if ( !monitor )
-    solver.setReport(false);
-
-  solver.setRtol(0.01);
-  solver.setAtol(0.01*tol);
+  solver.set("Krylov report", monitor);
+  solver.set("Krylov absolute tolerance", 0.01);
+  solver.set("Krylov relative tolerance", 0.01*tol);
   
-  // Set preconditioner
-  solver.setPreconditioner(mpc);
-
   // Initialize Jacobian
   if ( updated_jacobian )
     A = new UpdatedMultiAdaptiveJacobian(*this, timeslab);
@@ -61,8 +50,9 @@ MultiAdaptiveNewtonSolver::~MultiAdaptiveNewtonSolver()
     dolfin_info("Multi-adaptive efficiency index: %.3f", alpha);
   }
   
-  // Delete local array
+  // Delete local arrays
   if ( f ) delete [] f;
+  if ( u ) delete [] u;
 
   // Delete Jacobian
   delete A;
@@ -84,54 +74,40 @@ void MultiAdaptiveNewtonSolver::start()
 
   // Initialize right-hand side
   b.init(nj);
-
-  // Initialize Jacobian matrix
-  A->init(dx, dx);
   
   // Recompute Jacobian on each time slab
-  A->update();
+  A->init();
 
   //debug();
   //A->disp(true, 10);
 }
 //-----------------------------------------------------------------------------
-real MultiAdaptiveNewtonSolver::iteration(uint iter, real tol)
+real MultiAdaptiveNewtonSolver::iteration(real tol, uint iter,
+					  real d0, real d1)
 {
   // Evaluate b = -F(x) at current x
-  real* bb = b.array(); // Assumes uniprocessor case
-  Feval(bb);
-  b.restore(bb);
+  Feval(b);
+ 
+  // FIXME: Scaling needed for PETSc Krylov solver, but maybe not for uBlas?
   
-  // Solve linear system, seems like we need to scale the right-hand
-  // side to make it work with the PETSc GMRES solver
-  
-  //const real r = b.norm(Vector::linf) + DOLFIN_EPS;
-  //b /= r;
+  // Solve linear system
+  const real r = b.norm(uBlasVector::linf) + DOLFIN_EPS;
+  b /= r;
   num_local_iterations += solver.solve(*A, dx, b);
-  //dx *= r;
+  dx *= r;
 
-  //cout << "A = "; A.disp(true, 10);
-  //cout << "dx = "; dx.disp();
-  //cout << "b = "; b.disp();
-   
-  // Get array containing the increments (assumes uniprocessor case)
-  real* dxx = dx.array();
-
-  // Update solution x -> x + dx
+  // Update solution x -> x + dx (note: b = -F)
   for (uint j = 0; j < ts.nj; j++)
-    ts.jx[j] += dxx[j];
+    ts.jx[j] += dx(j);
 
   // Compute maximum increment
   real max_increment = 0.0;
   for (uint j = 0; j < ts.nj; j++)
   {
-    const real increment = fabs(dxx[j]);
+    const real increment = fabs(dx(j));
     if ( increment > max_increment )
       max_increment = increment;
   }
-
-  // Restore array
-  dx.restore(dxx);
 
   return max_increment;
 }
@@ -141,7 +117,7 @@ dolfin::uint MultiAdaptiveNewtonSolver::size() const
   return ts.nj;
 }
 //-----------------------------------------------------------------------------
-void MultiAdaptiveNewtonSolver::Feval(real F[])
+void MultiAdaptiveNewtonSolver::Feval(uBlasVector& F)
 {
   // Reset dof
   uint j = 0;
@@ -167,7 +143,7 @@ void MultiAdaptiveNewtonSolver::Feval(real F[])
 
     // Get initial value for element
     const int ep = ts.ee[e];
-    const real x0 = ( ep != -1 ? ts.jx[ep*method.nsize() + method.nsize() - 1] : ts.u0[i] );
+    const real x0 = ( ep != -1 ? ts.jx[ep*method.nsize() + method.nsize() - 1] : ts.u0(i) );
 
     // Evaluate right-hand side at quadrature points of element
     if ( method.type() == Method::cG )
@@ -177,11 +153,11 @@ void MultiAdaptiveNewtonSolver::Feval(real F[])
     //cout << "f = "; Alloc::disp(f, method.qsize());
 
     // Update values on element using fixed-point iteration
-    method.update(x0, f, k, F + j);
+    method.update(x0, f, k, u);
     
     // Subtract current values
     for (uint n = 0; n < method.nsize(); n++)
-      F[j + n] -= ts.jx[j + n];
+      F(j + n) = u[j] - ts.jx[j + n];
 
     // Update dof
     j += method.nsize();
@@ -191,8 +167,8 @@ void MultiAdaptiveNewtonSolver::Feval(real F[])
 void MultiAdaptiveNewtonSolver::debug()
 {
   const uint n = ts.nj;
-  Matrix B(n, n);
-  Vector F1(n), F2(n);
+  uBlasSparseMatrix B(n, n);
+  uBlasVector F1(n), F2(n);
 
   // Iterate over the columns of B
   for (uint j = 0; j < n; j++)
@@ -201,16 +177,10 @@ void MultiAdaptiveNewtonSolver::debug()
     real dx = std::max(DOLFIN_SQRT_EPS, DOLFIN_SQRT_EPS * std::abs(xj));
 		  
     ts.jx[j] -= 0.5*dx;
-    real* F = b.array();
-    Feval(F);
-    b.restore(F);
-    F1 = b; // Should be -b
+    Feval(F1);
 
     ts.jx[j] = xj + 0.5*dx;
-    F = b.array();
-    Feval(F);
-    b.restore(F);
-    F2 = b; // Should be -b
+    Feval(F2);
 
     ts.jx[j] = xj;
 

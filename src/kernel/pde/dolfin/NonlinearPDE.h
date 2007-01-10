@@ -1,13 +1,14 @@
-// Copyright (C) 2005 Garth N. Wells.
+// Copyright (C) 2005-2006 Garth N. Wells.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-10-24
-// Last changed: 2005-02-24
+// Last changed: 2006-05-07
 
 #ifndef __NONLINEAR_PDE_H
 #define __NONLINEAR_PDE_H
 
-
+#include <dolfin/Vector.h>
+#include <dolfin/Matrix.h>
 #include <dolfin/GenericPDE.h>
 #include <dolfin/NonlinearProblem.h>
 #include <dolfin/NewtonSolver.h>
@@ -18,9 +19,7 @@ namespace dolfin
   class BoundaryCondition;
   class Function;
   class LinearForm;
-  class Matrix;
   class Mesh;
-  class Vector;
 
   /// This class acts as a base class for nonlinear PDE's and 
   /// the nonlinear function F(u) and its Jacobian J = dF(u)/du.
@@ -40,17 +39,17 @@ namespace dolfin
     virtual ~NonlinearPDE();
 
      /// User-defined function to compute F(u) its Jacobian
-    virtual void form(Matrix& A, Vector& b, const Vector& x);
+    virtual void form(GenericMatrix& A, GenericVector& b, const GenericVector& x);
 
     /// Solve PDE (in general a mixed system). If the function u has been 
     /// initialised, it is used as a starting value.
     uint solve(Function& u);
 
 //     /// User-defined function to compute F(u)
-//    virtual void F(Vector& b, const Vector& x);
+//    virtual void F(GenericVector& b, const GenericVector& x);
 
 //     /// User-defined function to compute Jacobian matrix
-//    virtual void J(Matrix& A, const Vector& x);
+//    virtual void J(GenericMatrix& A, const GenericVector& x);
 
     /// Return the element dimension
     uint elementdim();

@@ -9,6 +9,7 @@
 // First added:  2005-10-18
 // Last changed: 2005-10-26
 
+
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Vector.h>
 #include <dolfin/Matrix.h>
@@ -36,7 +37,7 @@ void MTXFile::operator>>(Vector& x)
   FILE* f;
   int M,N;
   int i;
-  real* val;
+//  real* val;
 
   if ((f = fopen(filename.c_str(), "r")) == NULL)
     dolfin_error("Unable to open Matrix Market inputfile.");
@@ -65,15 +66,16 @@ void MTXFile::operator>>(Vector& x)
   // resize x
   x.init(M);
 
-  // set pointer to array of Vector
-  val=x.array();
-
   // read from File and store into the Matrix
+  real *temp = 0;
   for (i=0; i<M; i++)
   {
-    fscanf(f, "%lg\n", &val[i]);
+    // FIXME: This is a slow way to set PETSc vectors. Need a fast way 
+    //        which is consistent for different vector types.
+    fscanf(f, "%lg\n", temp);
+    x(i) = *temp;
   }
-  x.restore(val);
+//  x.restore(val);
 
   if (f !=stdin) fclose(f);
 }

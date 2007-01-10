@@ -1,11 +1,8 @@
-SUBDIRS = bistable \
+SUBDIRS = aliev-panfilov \
           complex \
+          courtemanche \
+          harmonic \
           homotopy \
           lorenz \
-          mechanical \
           method-weights \
-          modeling \
-          reaction \
-          stiff \
-          wave \
-          test
+          stiff

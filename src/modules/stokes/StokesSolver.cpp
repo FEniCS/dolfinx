@@ -2,12 +2,12 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-09-20
-// Last changed: 2006-01-09
+// Last changed: 2006-09-05
 
+#include <dolfin/StokesSolver.h>
 #include <dolfin/L2Error.h>
 #include <dolfin/Stokes2D.h>
 #include <dolfin/Stokes3D.h>
-#include <dolfin/StokesSolver.h>
 
 using namespace dolfin;
 
@@ -16,9 +16,9 @@ class ExactSolution : public Function
   real eval(const Point& p, unsigned int i)
   {
     if ( i == 0 )
-      return - sin(DOLFIN_PI*p.x) * cos(DOLFIN_PI*p.y);
+      return -sin(DOLFIN_PI*p.x()) * cos(DOLFIN_PI*p.y());
     else
-      return cos(DOLFIN_PI*p.x) * sin(DOLFIN_PI*p.y);
+      return cos(DOLFIN_PI*p.x()) * sin(DOLFIN_PI*p.y());
   }
 };
 
@@ -36,13 +36,13 @@ void StokesSolver::solve()
   // Define the bilinear and linear forms
   BilinearForm* a = 0;
   LinearForm* L = 0;
-  if ( mesh.type() == Mesh::triangles )
+  if ( mesh.type().cellType() == CellType::triangle )
   {
     dolfin_info("Solving the Stokes equations (2D).");
     a = new Stokes2D::BilinearForm();
     L = new Stokes2D::LinearForm(f);
   } 
-  else if ( mesh.type() == Mesh::tetrahedra )
+  else if ( mesh.type().cellType() == CellType::tetrahedron )
   {
     dolfin_info("Solving the Stokes equations (3D).");
     a = new Stokes3D::BilinearForm();
@@ -59,9 +59,7 @@ void StokesSolver::solve()
   FEM::assemble(*a, *L, A, b, mesh, bc);
 
   // Solve the linear system
-  GMRES solver;
-  solver.setRtol(1.0e-15);
-  solver.solve(A, x, b);
+  LU::solve(A, x, b);
   Function w(x, mesh, a->trial());
 
   // Pick the two sub functions of the solution
@@ -77,8 +75,8 @@ void StokesSolver::solve()
   pfile << p;
 
   // Temporary for testing
-  if ( mesh.type() == Mesh::triangles )
-    checkError(mesh, u);
+  //if ( mesh.type() == Mesh::triangles )
+  //checkError(mesh, u);
 
   // Delete forms
   delete a;

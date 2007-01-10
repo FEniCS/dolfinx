@@ -1,0 +1,12 @@
+# Copyright (C) 2005-2006 Anders Logg (logg@simula.no)
+# Licensed under the GNU GPL Version 2
+#
+# This example demonstrates how to define a functional, here
+# the energy norm (squared) for a reaction-diffusion problem.
+#
+# Compile this form with FFC: ffc EnergyNorm.form
+
+element = FiniteElement("Lagrange", "triangle", 2)
+
+v = Function(element)
+M = (v*v + dot(grad(v), grad(v)))*dx

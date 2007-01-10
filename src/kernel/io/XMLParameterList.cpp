@@ -1,8 +1,8 @@
-// Copyright (C) 2004-2005 Anders Logg.
+// Copyright (C) 2004-2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2004-03-31
-// Last changed: 2005-12-19
+// Last changed: 2006-05-23
 
 #include <stdlib.h>
 #include <dolfin/dolfin_log.h>
@@ -20,7 +20,8 @@ XMLParameterList::XMLParameterList(ParameterList& parameters)
 //-----------------------------------------------------------------------------
 void XMLParameterList::startElement(const xmlChar *name, const xmlChar **attrs)
 {
-  switch ( state ) {
+  switch ( state )
+  {
   case OUTSIDE:
     
     if ( xmlStrcasecmp(name,(xmlChar *) "parameters") == 0 )
@@ -42,12 +43,12 @@ void XMLParameterList::startElement(const xmlChar *name, const xmlChar **attrs)
 //-----------------------------------------------------------------------------
 void XMLParameterList::endElement(const xmlChar *name)
 {
-  switch ( state ) {
+  switch ( state )
+  {
   case INSIDE_PARAMETERS:
     
     if ( xmlStrcasecmp(name,(xmlChar *) "parameters") == 0 )
     {
-      ok = true;
       state = DONE;
     }
     
@@ -58,27 +59,22 @@ void XMLParameterList::endElement(const xmlChar *name)
   }
 }
 //-----------------------------------------------------------------------------
-void XMLParameterList::reading(std::string filename)
+void XMLParameterList::open(std::string filename)
 {
   cout << "Loading parameters from file \"" << filename << "\"." << endl;
 }
 //-----------------------------------------------------------------------------
-void XMLParameterList::done()
+bool XMLParameterList::close()
 {
-  // Do nothing
+  return state == DONE;
 }
 //-----------------------------------------------------------------------------
 void XMLParameterList::readParameter(const xmlChar *name, const xmlChar **attrs)
 {
-  // Parameter data
-  std::string pname;
-  std::string ptype;
-  std::string pvalue;
-
   // Parse values
-  parseStringRequired(name, attrs, "name",  pname);
-  parseStringRequired(name, attrs, "type",  ptype);
-  parseStringRequired(name, attrs, "value", pvalue);
+  std::string pname  = parseString(name, attrs, "name");
+  std::string ptype  = parseString(name, attrs, "type");
+  std::string pvalue = parseString(name, attrs, "value");
 
   // Set parameter
   if ( ptype == "real" )

@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-02-03
-// Last changed: 2005-12-19
+// Last changed: 2006-07-04
 //
 // This example demonstrates the homotopy for finding
 // all solutions of a system of polynomial equations
@@ -68,9 +68,9 @@ int main(int argc, char* argv[])
 {
   dolfin_init(argc, argv);
 
-  set("method", "cg");
-  set("order", 1);
-  set("tolerance", 0.05);
+  set("ODE method", "cg");
+  set("ODE order", 1);
+  set("ODE tolerance", 0.05);
   set("homotopy monitoring", true);
   set("homotopy randomize", false);
 

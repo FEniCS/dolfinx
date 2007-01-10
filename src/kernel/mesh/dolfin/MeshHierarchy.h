@@ -1,66 +1,77 @@
-// Copyright (C) 2002-2005 Johan Hoffman and Anders Logg.
+// Copyright (C) 2006 Johan Hoffman.
 // Licensed under the GNU GPL Version 2.
 //
-// First added:  2002
-// Last changed: 2005
+// First added:  2006-12-20
+// Last changed: 2006-12-20
 
-#ifndef __MESH_HIERARCHY
-#define __MESH_HIERARCHY
+#ifndef __MESHHIERARCHY_H
+#define __MESHHIERARCHY_H
 
-#include <dolfin/PArray.h>
+#include <dolfin/constants.h>
 
 namespace dolfin
 {
 
   class Mesh;
 
-  class MeshHierarchy
+  /// A MeshHierarchy is a set of Mesh objects M_k, each corresponding to 
+  /// a refinement level k, for k=0,1,...,k_{max}. 
+  /// M_k for k>0 contains mesh entities of codimension 0 that are not 
+  /// contained in M_{k-1}, together with associated mesh entities of 
+  /// codimension >0.  
+  /// 
+  /// For example, the MeshHierarchy may correspond to a set of successively 
+  /// refined finite element meshes T_k, k=0,1,...,k_{max}, where M_0 
+  /// corresponds to cells, nodes and edges of an unrefined initial mesh T_0, 
+  /// and M_k corresponds to the cells of the mesh T_k not contained in T_{k-1}, 
+  /// together with its nodes and edges. 
+
+  class MeshHierarchy 
   {
   public:
+    
+    /// Create mesh hierarcy with initial mesh 
+    MeshHierarchy(const Mesh& mesh);
 
-    /// Create empty mesh hierarchy
+    /// Create empty mesh hierarcy
     MeshHierarchy();
-
-    /// Create a mesh hierarchy from a given mesh
-    MeshHierarchy(Mesh& mesh);
 
     /// Destructor
     ~MeshHierarchy();
 
-    /// Compute mesh hierarchy from a given mesh
-    void init(Mesh& mesh);
+    /// Initialize mesh hierarchy 
+    void init(const Mesh& mesh); 
 
-    /// Clear mesh hierarchy
-    void clear();
+    /// Clear mesh hierarchy 
+    void clear(); 
 
-    /// Add a mesh to the mesh hierarchy
-    void add(Mesh& mesh);
+    /// Return number of meshes in hierarchy 
+    int size();
 
-    /// Return mesh at given level
-    Mesh& operator() (int level) const;
+    /// Add (finest) mesh to mesh hierarchy 
+    void add(const Mesh& mesh); 
 
-    /// Return coarsest mesh (level 0)
-    Mesh& coarse() const;
+    /// Remove (finest) mesh from mesh hierarchy 
+    void remove(); 
 
-    /// Return finest mesh (highest level)
-    Mesh& fine() const;
+    /// Return reduced mesh object corresponding to level k 
+    Mesh& operator() (uint k) const; 
 
-    /// Return number of levels
-    int size() const;
+    /// Return full mesh object corresponding to level k 
+    Mesh& operator[] (uint k) const; 
 
-    /// Check if mesh hierarchy is empty
-    bool empty() const;
+  private: 
 
-    /// Friends
-    friend class MeshIterator;
+    /// Array of meshes 
+    Mesh* meshes;
 
-  private:
-
-    // An array of mesh pointers
-    PArray<Mesh*> meshes;
+    /// Number of meshes in mesh hierarchy 
+    uint num_meshes; 
 
   };
 
 }
 
 #endif
+
+

@@ -1,8 +1,8 @@
-// Copyright (C) 2005 Anders Logg.
+// Copyright (C) 2005-2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-28
-// Last changed: 2005
+// Last changed: 2006-07-06
 
 #ifndef __MONO_ADAPTIVE_JACOBIAN_H
 #define __MONO_ADAPTIVE_JACOBIAN_H
@@ -28,16 +28,16 @@ namespace dolfin
     /// Destructor
     ~MonoAdaptiveJacobian();
 
+    /// Return number of rows (dim = 0) or columns (dim = 1)
+    uint size(const uint dim) const;
+
     /// Compute product y = Ax
-    void mult(const Vector& x, Vector& y) const;
+    void mult(const uBlasVector& x, uBlasVector& y) const;
 
   private:
 
-    // Compute product for mcG(q)
-    void cGmult(const real x[], real y[]) const;
-
-    // Compute product for mdG(q)
-    void dGmult(const real x[], real y[]) const;
+    /// Friends
+    friend class MonoAdaptiveNewtonSolver;
 
     // The time slab
     MonoAdaptiveTimeSlab& ts;
@@ -47,6 +47,12 @@ namespace dolfin
 
     // True if M is piecewise constant
     bool piecewise;
+
+    // FIXME: Maybe we can reuse some other vectors?
+
+    // Temporary vectors for storing multiplication
+    mutable uBlasVector xx;
+    mutable uBlasVector yy;
 
   };
 

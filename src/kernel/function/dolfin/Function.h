@@ -4,12 +4,13 @@
 // Modified by Garth N. Wells 2005.
 //
 // First added:  2003-11-28
-// Last changed: 2006-02-20
+// Last changed: 2007-01-09
 
 #ifndef __FUNCTION_H
 #define __FUNCTION_H
 
 #include <dolfin/constants.h>
+#include <dolfin/Vector.h>
 #include <dolfin/Variable.h>
 #include <dolfin/TimeDependent.h>
 #include <dolfin/FunctionPointer.h>
@@ -21,7 +22,6 @@ namespace dolfin
   class Vertex;
   class Cell;
   class Mesh;
-  class Vector;
   class AffineMap;
   class FiniteElement;
 
@@ -47,7 +47,7 @@ namespace dolfin
 
     /// Create user-defined function from the given function pointer
     Function(FunctionPointer fp, uint vectordim = 1);
-    
+
     /// Create discrete function (mesh and finite element chosen automatically)
     Function(Vector& x);
 
@@ -82,7 +82,16 @@ namespace dolfin
     const Function& operator= (const Function& f);
 
     /// Compute interpolation of function onto local finite element space
-    void interpolate(real coefficients[], AffineMap& map, FiniteElement& element);
+    void interpolate(real coefficients[], Cell& cell, AffineMap& map, FiniteElement& element);
+    
+    /// Compute interpolation of function onto local finite element space
+    void interpolate(real coefficients[], Cell& cell, AffineMap& map, FiniteElement& element, uint facet);
+
+    /// Compute interpolation of fsource to local finite element space
+    void interpolate(Function& fsource);
+
+    /// Compute interpolation of function onto the vertices of the mesh (vector-values interleaved)
+    void interpolate(real values[]);
     
     /// Return vector dimension of function
     inline uint vectordim() const { return f->vectordim(); }
@@ -119,6 +128,9 @@ namespace dolfin
     /// Return current cell (can be called by user-defined function during assembly)
     Cell& cell();
 
+    /// Return current facet (can be called by user-defined function during assembly on facets)
+    uint facet();
+
   private:
     
     // Pointer to current implementation (letter base class)
@@ -129,6 +141,9 @@ namespace dolfin
 
     // Pointer to current cell
     Cell* _cell;
+
+    // Current facet
+    int _facet;
 
   };
 

@@ -1,36 +1,54 @@
 # Init autoconf
-AC_INIT(dolfin, 0.5.12, dolfin@fenics.org)
+AC_INIT(DOLFIN, 0.6.4, http://www.fenics.org/bugzilla/)
 
 # Init automake
-AM_INIT_AUTOMAKE($PACKAGE, $VERSION, no-define)
+AM_INIT_AUTOMAKE($PACKAGE_NAME, $PACKAGE_VERSION, no-define)
 
 # Tell automake not to generate Makefile.in unless asked to.
 # This way the code can be installed on systems without automake installed.
 AM_MAINTAINER_MODE
 
-# Option --enable-debug
+# Option --enable/disable-debug
 AC_ARG_ENABLE(debug,
               AC_HELP_STRING([--enable-debug],
-                             [Turn on debugging and warnings (this is the default)]),
-              enable_debug=yes)
+                             [Turn on debugging and warnings]),
+              enable_debug=$enableval, enable_debug=no)
 
-# Option --enable-optimization
+# Option --enable/disable-debug-ublas
+AC_ARG_ENABLE(debug-ublas,
+              AC_HELP_STRING([--enable-debug-ublas],
+                             [Turn on extra debugging for uBlas, only works with --enable-debug]),
+              enable_debug_ublas=$enableval, enable_debug_ublas=no)
+
+# Option --enable/disable-optimization
 AC_ARG_ENABLE(optimization,
               AC_HELP_STRING([--enable-optimization],
-                             [Turn on optimization]),
-              enable_optimization=yes)
+                             [Turn on optimizations]),
+              enable_optimization=$enableval, enable_optimization=no)
 
-# Option --disable-curses
+# Option --enable/disable-mpi
+AC_ARG_ENABLE(mpi,
+              AC_HELP_STRING([--enable-mpi],
+                             [Compile with suport for MPI]),
+              enable_mpi=$enableval, enable_mpi=no)
+
+# Option --enable/disable-pydolfin
+AC_ARG_ENABLE(pydolfin,
+              AC_HELP_STRING([--disable-pydolfin],
+                             [Disable compilation of PyDOLFIN, the DOLFIN Python interface]),
+              enable_pydolfin=$enableval, enable_pydolfin=yes)
+
+# Option --enable/disable-curses
 AC_ARG_ENABLE(curses,
               AC_HELP_STRING([--disable-curses],
-                             [Compile without curses]),
-              disable_curses=yes)
+                             [Disable compilation of the curses interface]),
+              enable_curses=$enableval, enable_curses=yes)
 
-# Option --disable-mpi
-AC_ARG_ENABLE(mpi,
-              AC_HELP_STRING([--disable-mpi],
-                             [Compile without MPI (assuming PETSc does not use MPI)]),
-              disable_mpi=yes)
+# Option --enable/disable-petsc
+AC_ARG_ENABLE(petsc,
+              AC_HELP_STRING([--enable-petsc],
+                             [Compile with support for PETSc linear algebra]),
+              disable_petsc=$enableval, enable_petsc=no)
 
 # Option --with-petsc-dir
 AC_ARG_WITH(petsc-dir,
@@ -38,15 +56,31 @@ AC_ARG_WITH(petsc-dir,
                            [Specify path to PETSc]),
             [PETSC_DIR=$with_petsc_dir],)
 
-# Option --enable-pydolfin
-AC_ARG_ENABLE(pydolfin,
-              AC_HELP_STRING([--enable-pydolfin],
-                             [Turn on compilation of PyDOLFIN]),
-              enable_pydolfin=yes)
+# Option --with-umfpack-include
+AC_ARG_WITH(umfpack-include,
+            AC_HELP_STRING([--with-umfpack-include=<path>],
+                           [Specify path to umfpack include files]),
+            [UMFPACK_INCLUDE_DIR=$with_umfpack_include],)
+
+# Option --with-umfpack-lib
+AC_ARG_WITH(umfpack-lib,
+            AC_HELP_STRING([--with-umfpack-lib=<path>],
+                           [Specify path to umfpack library]),
+            [UMFPACK_LIB_DIR=$with_umfpack_lib],)
+
+# Option --with-amd-lib
+AC_ARG_WITH(amd-lib,
+            AC_HELP_STRING([--with-amd-lib=<path>],
+                           [Specify path to amd library (part of umfpack)]),
+            [AMD_LIB_DIR=$with_amd_lib],)
+
+# Use C++ compiler for performing configure tests
+AC_LANG(C++)
 
 # Standard tests
-AC_PROG_CC
 AC_PROG_CXX
+AC_PROG_CC
+AX_COMPILER_VENDOR
 AC_PROG_AWK
 AC_PROG_INSTALL
 AC_PROG_LN_S
@@ -54,68 +88,185 @@ AC_C_CONST
 AC_C_INLINE
 AC_TYPE_SIZE_T
 
-# libtool
+# Test that the libtool executable is installed
+AC_CHECK_PROG(libtool_found, libtool, yes, no)
+if test $libtool_found = no; then
+    echo "*** Unable to find libtool."
+    echo "*** Perhaps you need to install the package libtool?"
+    exit 1	
+fi    
+
+# Configure libtool
 AC_PROG_LIBTOOL
+
+# Check for libxml2
+AM_PATH_XML2( ,libxml2_found=yes, libxml2_found=no)
+if test $libxml2_found = no; then
+    echo "*** Unable to find libxml2 development files on your system."
+    echo "*** Perhaps you need to install the packages libxml2 and libxml2-dev?"
+    exit 1
+fi
+
+AX_BOOST_BASE([1.33])
+
+# Check for umfpack
+have_umfpack_header=yes
+have_amd_lib=no
+have_umfpack_and_amd_lib=no
+# Check for amd library
+if test x$AMD_LIB_DIR != x; then
+    UMFPACK_LIBS="-L$AMD_LIB_DIR -lamd"
+    have_amd_lib=yes
+else
+   AC_CHECK_LIB(amd, amd_info, UMFPACK_LIBS="-lamd" have_amd_lib=yes)
+    if test $have_amd_lib != yes; then
+        echo "Cannot find amd library (part of umfpack). Umfpack will be disabled"
+    fi
+fi
+# Check for umfpack library if amd library has been found
+if test $have_amd_lib = yes; then
+    if test x$UMFPACK_LIB_DIR != x; then
+        UMFPACK_LIBS="$UMFPACK_LIBS -L$UMFPACK_LIB_DIR -lumfpack"
+        have_umfpack_and_amd_lib=yes
+    else
+        AC_CHECK_LIB(umfpack,umf_i_malloc, UMFPACK_LIBS="$UMFPACK_LIBS -lumfpack" have_umfpack_and_amd_lib=yes,,$UMFPACK_LIBS)
+        if test $have_umfpack_and_amd_lib != yes; then
+            echo "Cannot find umfpack library. Umfpack will be disabled"
+        fi
+    fi
+fi
+# Check for umfpack header files if umfpack and amd libraries have been found
+if test $have_umfpack_and_amd_lib = yes; then
+    if test x$UMFPACK_INCLUDE_DIR != x; then
+        UMFPACK_CFLAGS="-I$UMFPACK_INCLUDE_DIR"
+        AC_DEFINE(HAVE_UMFPACK_H,1)
+        have_umfpack_header=yes
+    else
+        # Check various default locations  
+        AC_CHECK_HEADER(umfpack.h, have_umfpack_header=yes, have_umfpack_header=no)
+        if test $have_umfpack_header = yes; then
+            AC_DEFINE(HAVE_UMFPACK_H,1)
+        else
+            AC_CHECK_HEADER(umfpack/umfpack.h, have_umfpack_header=yes, have_umfpack_header=no)
+            if test $have_umfpack_header = yes; then
+                AC_DEFINE(HAVE_UMFPACK_UMFPACK_H,1)
+            else
+                AC_CHECK_HEADER(ufsparse/umfpack.h, have_umfpack_header=yes, have_umfpack_header=no)
+                if test $have_umfpack_header = yes; then
+                    AC_DEFINE(HAVE_UFSPARSE_UMFPACK_H,1)    
+                else
+                    echo "Cannot find umfpack header files. Umfpack will be disabled"
+                fi
+            fi
+       fi
+    fi
+fi
 
 # Test for PyDOLFIN
 if test x$enable_pydolfin = xyes; then
     AM_PATH_PYTHON(2.3)
     AC_PYTHON_DEVEL
+    CPPFLAGS="$CPPFLAGS $PYTHON_CPPFLAGS"
+    LDFLAGS="$LDFLAGS $PYTHON_LDFLAGS $PYTHON_EXTRA_LIBS"
+    AC_CHECK_HEADER(Python.h, have_python_dev=yes, have_python_dev=no)
+    if test $have_python_dev = no; then
+       echo "*** Cannot find Python development files on your system."
+       echo "*** Perhaps you need to install the package python$PYTHON_VERSION-dev?"
+       exit 1
+    fi
+
+    AC_CHECK_PROG(swig_found, swig, yes, no)
+    if test $swig_found = no; then
+      echo "*** Unable to find SWIG."
+      echo "*** Install SWIG or disable PyDOLFIN with --disable-pydolfin"
+      exit 1	
+    fi    
+
     AC_PROG_SWIG(1.3.25)
+
     SWIG_ENABLE_CXX
     SWIG_PYTHON
+
+fi
+
+if test x$enable_pydolfin = xyes; then
+    echo "checking for NumPy..."
+    NUMPY_CFLAGS=`python numpy.conf`
+    if test $NUMPY_CFLAGS == none; then
+       echo "*** Cannot find NumPy on your system."
+       echo "*** Perhaps you need to install the package python-numpy?"
+       exit 1
+    fi
+    CPPFLAGS="$CPPFLAGS -I$NUMPY_CFLAGS"
 fi
 
 # Make debug option default so developers don't forget it
-echo "turning on debugging and warnings (use --enable-optimization to avoid this)."
-enable_debug="yes"
+#echo "turning on debugging and warnings (use --enable-optimization to avoid this)."
+#enable_debug="yes"
+
+# Disable Boost debug mode for configure without debug/optimize options
+CXXFLAGS="$CXXFLAGS -DNDEBUG"
 
 # Handle option --enable-debug
 if test x$enable_debug = xyes; then
     echo "enabling debugging compiler flags"
-    CXXFLAGS='-DDEBUG=1 -g -O2 -Wall -Werror -ansi -std=c++98'
-    # We should also add -pedantic, but then we get an error when we try
-    # to include mpio.h (long long not supported by ISO C++)
-fi
+    if test x$enable_debug_ublas = xyes; then
+       echo "enabling extra uBlas debugging compiler flags"
+       CXXFLAGS="-DDEBUG -g -O2 -Wall -Werror -ansi"
+    else
+       CXXFLAGS="-DDEBUG -g -O2 -Wall -Werror -ansi -DNDEBUG"
+    fi
+fi 
 
 # Handle option --enable-optimization
 if test x$enable_optimization = xyes; then
     echo "enabling optimizing compiler flags"
-    CXXFLAGS='-O3 -Wall -Werror -ansi -std=c++98'
+    CXXFLAGS="-O3  -Wall -ansi -DNDEBUG"
 fi
 
+# Handle option --enable-debug-ublas
+
+
+# Add compiler specific flags
+case "${ax_cv_cxx_compiler_vendor}" in
+   gnu) 
+        CXXFLAGS="$CXXFLAGS -pedantic -Wno-long-long -std=c++98"
+        ;;
+   intel)
+        echo 'WARNING: Intel C++ compiler versions <= 9.0 are incompatible with' 
+        echo 'header files gcc version <= 4.0. You can specify the version of' 
+        echo 'gcc header files to be used by setting the compiler option' 
+        echo '-gcc-name=<name> through the environment variables'
+        echo 'e.g. export INTEL_CXXFLAGS="-gcc-name=gcc-3.4"'
+        CXXFLAGS="$CXXFLAGS -wd111 -wd383 -wd654 -wd810 -wd869 -wd981 -wd1125 -wd1418 -wd1419 -wd1572 -wd1599 $INTEL_CXXFLAGS"
+        ;;
+esac
+
 # Add '-Wno-uninitialized' due to a Cygwin gcc 3.4 bug.
-if test `uname -o` = Cygwin; then
+# At least on Darwin, -o is not an allowed option!
+if ! test `uname -s` = Darwin && test `uname -o` = Cygwin; then
     echo "adding compiler flags for cygwin"
-    CXXFLAGS=$CXXFLAGS' -Wno-uninitialized '
+    CXXFLAGS="$CXXFLAGS -Wno-uninitialized"
 fi
 
 # Add '-fPIC' for AMD 64 bit system
 if test `uname -m` = x86_64; then
     echo "adding -fPIC to compiler flags"
-    CXXFLAGS=$CXXFLAGS' -fPIC'
+    CXXFLAGS="$CXXFLAGS -fPIC"
 fi
 
 # Handle option --disable-curses
-if test x$disable_curses = x; then
+if test x$enable_curses = xyes; then
     echo "enabling curses, use --disable-curses to disable"
     AC_SEARCH_LIBS(wbkgdset, ncurses,,
                    echo "*** Unable to find ncurses on your system. "
                    echo "*** Try ./configure --disable-curses or install ncurses." ; exit 1)
-    CURSES_CFLAGS=''
-    CURSES_LIBS='-lncurses'
+    CURSES_CFLAGS=""
+    CURSES_LIBS="-lncurses"
 else
     echo "disabling curses"
-    CURSES_CFLAGS='-DNO_CURSES=1'
-    CURSES_LIBS=''
-fi
-
-# Handle option --with-petsc-dir=<path>
-if test x$PETSC_DIR = x; then
-    echo "assuming path to PETSc is /usr/local/lib/petsc"
-    PETSC_DIR="/usr/local/lib/petsc/"
-else
-    echo "using PETSC_DIR=$PETSC_DIR"
+    CURSES_CFLAGS="-DNO_CURSES=1"
+    CURSES_LIBS=""
 fi
 
 # Handle option --enable-pydolfin
@@ -126,62 +277,88 @@ else
     echo "disabling compilation of PyDOLFIN"
 fi
 
-# Check for PETSc
-AC_CHECK_PROG(petsc_found, configarch, yes, no, $PATH:$PETSC_DIR/bin)
-if test $petsc_found = yes; then
-    # Extract PETSc variables from PETSC_DIR/bmake/common/variables
-    PETSC_CFLAGS=`make -s -C $PETSC_DIR getincludedirs PETSC_DIR=$PETSC_DIR`
-    PETSC_LIBS=`make -s -C $PETSC_DIR getlinklibs PETSC_DIR=$PETSC_DIR`
-else
-    echo "*** Unable to find PETSc 2.3.0 on your system."
-    echo "*** Use --with-petsc-dir=<path> to specify the correct path for PETSc,"
-    echo "*** or set the environment variable PETSC_DIR to the correct path."
-    echo "*** PETSc is available at http://www-unix.mcs.anl.gov/petsc/petsc-2/"
-    exit 1
-fi
-
-# Check for MPI (needed by PETSc)
-if test x$disable_mpi = x; then
+# Handle option --enable-mpi
+if test x$enable_mpi = xyes; then
     AC_CHECK_PROG(mpi_found, mpirun, yes, no)
     if test $mpi_found = yes; then
         DIR=`which mpirun | sed 's/bin\/mpirun/include/'`
         if [ test -d $DIR/mpi ]; then
             MPI_CFLAGS="-I$DIR/mpi"
         else
-	    MPI_CFLAGS="-I$DIR"
+            MPI_CFLAGS="-I$DIR"
         fi
     else
         echo "*** Unable to find MPI on your system."
-        echo "*** Perhaps you need to install the package mpich?"
+        echo "*** Perhaps you need to install the packages libmpich1.0-dev and mpich-bin?"
         exit 1
     fi
 else
     echo "disabling MPI (might not work if PETSc uses MPI)"
 fi
 
-# Check for libxml2
-AC_CHECK_PROG(libxml2_found, xml2-config, yes, no)
-if test $libxml2_found = yes; then	  
-    XML2_CFLAGS=`xml2-config --cflags`
-    XML2_LIBS=`xml2-config --libs`
+# Handle option --disable-petsc
+if test x$enable_petsc = xyes; then
+    
+    # Handle option --with-petsc-dir=<path>
+    if test x$PETSC_DIR = x; then
+        PETSC_DIR="/usr/local/lib/petsc/"
+        echo "assuming path to PETSc is $PETSC_DIR"
+    else
+        echo "using PETSC_DIR=$PETSC_DIR"
+    fi
+
+    # Check for PETSc
+    MKFILE=$PETSC_DIR/bmake/common/base
+    if test -f $MKFILE; then
+        # Extract PETSc variables
+        PETSC_CFLAGS=`make -f petsc.conf get_petsc_include PETSC_DIR=$PETSC_DIR`
+        PETSC_LIBS=`make -f petsc.conf get_petsc_libs PETSC_DIR=$PETSC_DIR`
+    else
+        echo "*** Unable to find PETSc on your system."
+        echo "*** Use --with-petsc-dir=<path> to specify the correct path for PETSc,"
+        echo "*** or set the environment variable PETSC_DIR to the correct path."
+        echo "*** PETSc is available at http://www-unix.mcs.anl.gov/petsc/petsc-2/"
+        exit 1
+    fi
+
+    # Found PETSc, so set HAVE_PETSC_H
+    CXXFLAGS="-DHAVE_PETSC_H=1 $CXXFLAGS"
+
+    # Check for eigenvalue solver extension SLEPc. Variable SLEPC_DIR must be set.
+    AC_CHECK_HEADER([$SLEPC_DIR/include/slepcversion.h], have_slepc=yes, have_slepc=no)
+
+    if test $have_slepc = yes; then
+        # Extract SLEPc variables
+        SLEPC_CFLAGS=`make -f slepc.conf get_slepc_include SLEPC_DIR=$SLEPC_DIR`
+        SLEPC_LIBS=`make -f slepc.conf get_slepc_libs SLEPC_DIR=$SLEPC_DIR`
+        CXXLAGS="-DHAVE_SLEPC_H=1 $CXXFLAGS"
+    else
+        echo "SLEPc not found on your system."
+        echo "  SLEPc is a PETSc extension that provides eigenvalue solvers."
+        echo "  It is available at http://www.grycap.upv.es/slepc."
+    fi
 else
-    echo "*** Unable to find libxml2 development files on your system."
-    echo "*** Perhaps you need to install the package libxml2-dev?"
-    exit 1
+    # Compile without PETSc
+    echo "disabling PETSc (some demos may not compile)"
+    PETSC_CFLAGS=""
 fi
 
 # List of DOLFIN module libraries
-DOLFIN_MODULES="elasticity elasticity-updated convdiff navierstokes poisson stokes heat"
+DOLFIN_MODULES="elasticity elasticity-updated convdiff navierstokes plasticity poisson stokes heat"
 
 # List of DOLFIN kernel libraries
-DOLFIN_KERNEL="common fem form function io la main math mesh nls ode pde quadrature parameter log"
+DOLFIN_KERNEL="common fem form function io la main math mesh mf nls ode pde quadrature parameter log"
+
+# Generate include path for external libraries
+EXTERNAL_CFLAGS="$CURSES_CFLAGS $PETSC_CFLAGS $SLEPC_CFLAGS $BOOST_CPPFLAGS $MPI_CFLAGS $XML_CPPFLAGS $UMFPACK_CFLAGS "
+AC_SUBST(EXTERNAL_CFLAGS)
 
 # Generate include path for kernel
 KERNEL_CFLAGS=""
 for f in $DOLFIN_KERNEL; do
     KERNEL_CFLAGS="$KERNEL_CFLAGS -I\$(top_builddir)/src/kernel/$f"
 done
-KERNEL_CFLAGS="$KERNEL_CFLAGS $CURSES_CFLAGS $PETSC_CFLAGS $MPI_CFLAGS $XML2_CFLAGS"
+KERNEL_CFLAGS="$KERNEL_CFLAGS $EXTERNAL_CFLAGS"
 AC_SUBST(KERNEL_CFLAGS)
 
 # Generate include path for modules
@@ -196,8 +373,17 @@ done
 DOLFIN_CFLAGS="$KERNEL_CFLAGS $MAIN_CFLAGS $MODULE_CFLAGS"
 AC_SUBST(DOLFIN_CFLAGS)
 
+# Extract compiler definitions
+DOLFIN_DEFINITIONS=""
+for i in $CXXFLAGS; do
+    if test $(echo $i | sed 's/^\(..\).*/\1/') == "-D"; then
+       DOLFIN_DEFINITIONS="$DOLFIN_DEFINITIONS $i"
+    fi
+done
+AC_SUBST(DOLFIN_DEFINITIONS)
+
 # External libraries which DOLFIN depends on
-DOLFIN_EXT_LIBS="$CURSES_LIBS $PETSC_LIBS $XML2_LIBS"
+DOLFIN_EXT_LIBS="$CURSES_LIBS $PETSC_LIBS $SLEPC_LIBS $XML_LIBS $UMFPACK_LIBS "
 AC_SUBST(DOLFIN_EXT_LIBS)
 
 # Library list which DOLFIN applications need to link against
@@ -215,16 +401,25 @@ for f in $DOLFIN_KERNEL; do
 done
 AC_SUBST(DOLFIN_LTLIBOBJS)
 
+# Generate standard environment variables for installation
+echo "creating dolfin.conf"
+if test $prefix = NONE; then
+   prefix="/usr/local"
+fi
+CONFIG='dolfin.conf'
+rm -f $CONFIG
+echo 'export PATH="'$prefix'/bin:$PATH"' >> $CONFIG
+echo 'export LD_LIBRARY_PATH="'$prefix'/lib:$LD_LIBRARY_PATH"' >> $CONFIG
+echo 'export PKG_CONFIG_PATH="'$prefix'/lib/pkgconfig:$PKG_CONFIG_PATH"' >> $CONFIG
+echo 'export PYTHONPATH="'$prefix'/lib/python'$PYTHON_VERSION'/site-packages:$PYTHONPATH"' >> $CONFIG
+
 # Export variables to makefiles
 AC_SUBST(PACKAGE_VERSION)
 AC_SUBST(PACKAGE_NAME)
 
-# Create Makefiles, seems like automake cannot handle a variable
-# containing the list of files, so this cannot be done
-# automatically. We have to list all the files.
+# List output to be generated: Makefiles and pkgconfig configuration
 AC_OUTPUT( Makefile \
            src/Makefile \
-           src/pre/Makefile \
            src/kernel/Makefile \
            src/kernel/common/Makefile \
            src/kernel/common/dolfin/Makefile \
@@ -244,6 +439,8 @@ AC_OUTPUT( Makefile \
            src/kernel/math/dolfin/Makefile \
            src/kernel/mesh/Makefile \
            src/kernel/mesh/dolfin/Makefile \
+           src/kernel/mf/Makefile \
+           src/kernel/mf/dolfin/Makefile \
            src/kernel/nls/Makefile \
            src/kernel/nls/dolfin/Makefile \
            src/kernel/ode/Makefile \
@@ -266,6 +463,8 @@ AC_OUTPUT( Makefile \
            src/modules/elasticity-updated/dolfin/Makefile \
            src/modules/navierstokes/Makefile \
            src/modules/navierstokes/dolfin/Makefile \
+           src/modules/plasticity/Makefile \
+           src/modules/plasticity/dolfin/Makefile \
            src/modules/poisson/Makefile \
            src/modules/poisson/dolfin/Makefile \
            src/modules/heat/Makefile \
@@ -274,13 +473,10 @@ AC_OUTPUT( Makefile \
            src/modules/stokes/dolfin/Makefile \
            src/lib/Makefile \
            src/pydolfin/Makefile \
-           src/config/Makefile \
-           src/post/Makefile \
            src/demo/Makefile \
            src/demo/fem/Makefile \
            src/demo/nls/Makefile \
            src/demo/ode/Makefile \
-           src/demo/ode/modeling/Makefile \
            src/demo/ode/homotopy/Makefile \
            src/demo/pde/Makefile \
            src/demo/pde/nonlinear/Makefile \
@@ -288,45 +484,51 @@ AC_OUTPUT( Makefile \
            src/demo/solvers/Makefile \
            src/demo/solvers/navierstokes/Makefile \
            src/demo/scripting/Makefile \
+           src/bench/Makefile \
+           src/bench/fem/Makefile \
+           src/bench/la/Makefile \
+           src/bench/ode/Makefile \
            src/utils/Makefile \
            src/utils/inp2dx/Makefile \
            src/utils/convert/Makefile \
-           src/greeting/Makefile )
+           src/utils/swig/Makefile \
+           src/greeting/Makefile \
+           dolfin.pc )
 
-# Display some configuration options
-echo '---------------------------------------------------------'
-echo 'Configuration of DOLFIN finished. Now type'
-echo ''
-echo '   make'
-echo '   make install'
-echo ''
-echo 'to install DOLFIN on your system. After DOLFIN has been'
-echo 'installed, you can compile all the demo programs in the'
-echo 'subdirectory src/demo by running'
-echo ''
-echo '   make demo'
-echo ''
-echo 'Note that you may need to be root in order to install.'
-echo 'To specify an alternative installation directory, rerun'
-echo 'configure with option --prefix=<path>. You may also run'
-echo './configure.local to configure for a local installation'
-echo 'in the DOLFIN source tree.'
-echo '---------------------------------------------------------'
+# Display help text
+echo "---------------------------------------------------------"
+echo "Configuration of DOLFIN finished. Now type"
+echo ""
+echo "   make"
+echo "   make install"
+echo ""
+echo "to install DOLFIN on your system. After DOLFIN has been"
+echo "installed, you can compile all the demo programs in the"
+echo "subdirectory src/demo by running"
+echo ""
+echo "   make demo"
+echo ""
+echo "Note that you may need to be root in order to install."
+echo "To specify an alternative installation directory, rerun"
+echo "configure with option --prefix=<path>. You may also run"
+echo "./configure.local to configure for a local installation"
+echo "in the DOLFIN source tree."
+echo "---------------------------------------------------------"
 
 # Check that the installation directory is set up correctly
 __BINDIR=`echo $prefix/bin | sed -e 's/\//-/g'`
 __PATH=`echo $PATH | sed -e 's/\//-/g'`
 if test "$__PATH" = "`echo $__PATH | sed s/$__BINDIR//`"; then
-   echo 'Warning: installation directory is not in PATH.'
-   echo ''
-   echo 'To compile a program against DOLFIN (including the demos)'
-   echo 'you need to add the bin subdirectory of the installation'
-   echo 'diretory to your PATH which you can do with the commands'
-   echo ''
-   echo "  export PATH=\"$prefix/bin:\$PATH\""
-   echo ''
-   echo 'for bash or, alternatively,'
-   echo ''
-   echo "  setenv PATH $prefix/bin:\${PATH}"
-   echo ''
+    echo 'Warning: Installation directory is not in PATH.'
+    echo ''
+    echo 'To compile a program against DOLFIN (including the demos)'
+    echo 'you need to update your environment variables to reflect'
+    echo 'the installation directory you have chosen for DOLFIN.'
+    echo 'A simple way to do this if you are using Bash-like shell'
+    echo 'is to source the file dolfin.conf:'
+    echo ''
+    echo '  source dolfin.conf'
+    echo ''
+    echo 'This will update the values for the environment variables'
+    echo 'PATH, LD_LIBRARY_PATH, PKG_CONFIG_PATH and PYTHONPATH.'
 fi

@@ -2,21 +2,23 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003-07-15
-// Last changed: 2006-02-19
+// Last changed: 2006-05-23
 
 #ifndef __XML_FILE_H
 #define __XML_FILE_H
 
 #include <libxml/parser.h>
+
 #include <dolfin/constants.h>
+#include <dolfin/Vector.h>
+#include <dolfin/Matrix.h>
 #include <dolfin/GenericFile.h>
 
 namespace dolfin
 {
   
-  class Vector;
-  class Matrix;
   class Mesh;
+  template <class T> class MeshFunction;
   class ParameterList;
   class BLASFormData;
 
@@ -30,10 +32,13 @@ namespace dolfin
     ~XMLFile();
     
     // Input
-    
+
     void operator>> (Vector& x);
     void operator>> (Matrix& A);
     void operator>> (Mesh& mesh);
+    void operator>> (MeshFunction<int>& meshfunction);
+    void operator>> (MeshFunction<double>& meshfunction);
+    void operator>> (MeshFunction<bool>& meshfunction);
     void operator>> (Function& f);
     void operator>> (FiniteElementSpec& spec);
     void operator>> (ParameterList& parameters);
@@ -46,6 +51,10 @@ namespace dolfin
     void operator<< (Vector& x);
     void operator<< (Matrix& A);
     void operator<< (Mesh& mesh);
+// Todo:
+    void operator<< (MeshFunction<int>& mesh);
+    void operator<< (MeshFunction<double>& mesh);
+    void operator<< (MeshFunction<bool>& mesh);
     void operator<< (Function& f);
     void operator<< (FiniteElementSpec& spec);
     void operator<< (ParameterList& parameters);
@@ -59,13 +68,19 @@ namespace dolfin
     
     void parseFile();
     void parseSAX();
-    void writeHeader();
-    void writeFooter();
+
+    FILE* openFile();
+    void  closeFile(FILE* fp);
     
-    // Data
+    // Implementation for specific class (output)
     XMLObject* xmlObject;
+
+    // True if header is written (need to close)
     bool header_written;
-    
+
+    // Most recent position in file
+    long mark;
+
   };
   
   // Callback functions for the SAX interface

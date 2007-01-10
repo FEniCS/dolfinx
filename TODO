@@ -1,20 +1,18 @@
-This list functions as a project plan for the development of DOLFIN.
+This is the old TODO list for DOLFIN.
 
-It works as follows: Pick something from the list, notify one of the
-maintainers that you're working on it. When a task is done, it will
-be deleted from this list and moved to the ChangeLog.
+Items on the TODO list is currently being moved to the FEniCS Bugzilla
+database and should be flagged as "enhancement" if they are not bugs.
 
-Ideally, each task should be assigned to a developer, including an
-estimate of when the task should be ready.
+When this file is empty, we should remove it.
 
-Send suggestions, comments, and corrections to dolfin@fenics.org.
+----------------------------------------------------------------------
+
 
 Manual
 ------
 
 * Fix incomplete sections
 * Write section on coding style
-* Put programmer's reference online again
 
 Assembly
 --------
@@ -23,27 +21,19 @@ Assembly
 * Use MatSetOption(A, MAT_USE_HASH_TABLE)?
 * Make two forms share the same map and only update the map
 * Compute number of nonzeros before assembly
-* Boundary conditions for other than linear elements
 * Parallel assembly
 
 Mesh
 ----
 
-* Move to Sieve
-* Speed up uniform mesh refinement
-* Optimize mesh refinement
 o [jj] Schema for mesh XML format
-* Connectivity, automate computation of all 16 connections
 * Geometry representation, including boundaries
 * Mesh generation using triangle or tetgen?
-* Clean up iterators?
 * Seems to be something wrong with trimesh-32.xml.gz
 * Compute normals of edges
 
 Linear Algebra
 --------------
-
-* Cleanups and testing
 
 Function
 --------
@@ -59,9 +49,10 @@ Input/Output
 Solvers
 -------
 
-Multi-adaptive solver
----------------------
+ODE solvers
+-----------
 
+o [jj, logg] Enable use of direct solver for linear system
 o [jj, logg] Is Newton working correctly for high-order methods?
 o [jj, logg] Save solution for new solver
 o [jj, logg] Save dual solution backwards
@@ -83,15 +74,9 @@ o Add function to display all parameters
 General
 -------
 
-* Add benchmark again, add old benchmark results and put bench in src/bench/
+* Remove target install from simple makefiles
 
 * Write FAQ and put on web page:
-
-  Q: When to use -DPETSC_USE_EXTERN_CXX?
-  A: When calling PETSc from C (not recommended), recompile PETSc.
-
-  Q: Parallel mesh?
-  A: Waiting for Matt.
 
   Q: What does DOLFIN mean?
   A: Dynamic Object-oriented Library for FINite element computation.
@@ -103,9 +88,7 @@ General
   A: Yes.
 
 * New repository dolfin-contrib?
-* Don't use cut in src/config script
 * Replace unsigned int and int with uint when possible
-* Replace Array and List with NewArray and NewList everywhere
 * Replace stdio with iostream and fstream
 * Fix setprecision() for cout
 * Use symbolic links for meshes, see example src/demo/fem
@@ -120,11 +103,20 @@ users of PETSc to declare functions with that name.
 Dependencies
 ------------
 
-* SciPy
-* ParaView
-* MayaVi
+Required
+* Boost
+* libxml2
+* pkg-config
+
+Optional
 * PETSc
 * FFC
 * FIAT
-* libxml2
-* Hypre?
+* Hypre (through PETSc)
+* UMFPACK
+* curses
+
+Postprocessing
+* SciPy
+* ParaView
+* MayaVi

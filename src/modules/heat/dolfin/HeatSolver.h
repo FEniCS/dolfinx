@@ -1,10 +1,10 @@
-// Copyright (C) 2002-2005 Johan Hoffman and Anders Logg.
+// Copyright (C) 2002-2006 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // Modified by Johan Jansson 2005.
 //
 // First added:  2002
-// Last changed: 2005-09-21
+// Last changed: 2006-05-07
 
 #ifndef __HEAT_SOLVER_H
 #define __HEAT_SOLVER_H
@@ -12,7 +12,6 @@
 #include <dolfin/Solver.h>
 #include <dolfin/ODE.h>
 #include <dolfin/TimeStepper.h>
-#include <dolfin/Heat.h>
 
 namespace dolfin
 {
@@ -39,6 +38,8 @@ namespace dolfin
     /// Solve Heat's equation (static version)
     static void solve(Mesh& mesh, Function& f, BoundaryCondition& bc, real& T);
   
+    FiniteElement* element;
+
     Mesh& mesh;
     Function& f;
     BoundaryCondition& bc;
@@ -46,12 +47,10 @@ namespace dolfin
     Matrix Dummy;
     Vector x, dotu, m;
 
-    Heat::LinearForm::TestElement element;
-
     Function u;
 
-    Heat::BilinearForm a;
-    Heat::LinearForm L;
+    BilinearForm* a;
+    LinearForm* L;
 
     uint N, fevals;
 
@@ -70,14 +69,11 @@ namespace dolfin
   {
   public:
     HeatODE(HeatSolver& solver);
-    real u0(unsigned int i);
+    void u0(uBlasVector& u);
 
     /// Evaluate right-hand side (mono-adaptive version)
-    virtual void f(const real u[], real t, real y[]);
-    virtual bool update(const real u[], real t, bool end);
-
-    void fromArray(const real u[], Vector& x, uint offset, uint size);
-    void toArray(real y[], Vector&x, uint offset, uint size);
+    virtual void f(const uBlasVector& u, real t, uBlasVector& y);
+    virtual bool update(const uBlasVector& u, real t, bool end);
 
     HeatSolver& solver;
   };

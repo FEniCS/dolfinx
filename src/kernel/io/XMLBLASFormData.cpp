@@ -1,8 +1,8 @@
-// Copyright (C) 2005 Anders Logg.
+// Copyright (C) 2005-2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-10-02
-// Last changed: 2005-10-04
+// Last changed: 2006-05-23
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/BLASFormData.h>
@@ -134,7 +134,6 @@ void XMLBLASFormData::endElement(const xmlChar *name)
     if ( xmlStrcasecmp(name,(xmlChar *) "form") == 0 )
     {
       initForm();
-      ok = true;
       data_interior.clear();
       data_interior.clear();
       state = DONE;
@@ -204,14 +203,14 @@ void XMLBLASFormData::endElement(const xmlChar *name)
   
 }
 //-----------------------------------------------------------------------------
-void XMLBLASFormData::reading(std::string filename)
+void XMLBLASFormData::open(std::string filename)
 {
   cout << "Reading form data from file \"" << filename << "\"." << endl;
 }
 //-----------------------------------------------------------------------------
-void XMLBLASFormData::done()
+bool XMLBLASFormData::close()
 {
-  // Do nothing
+  return true;
 }
 //-----------------------------------------------------------------------------
 void XMLBLASFormData::readForm(const xmlChar *name, const xmlChar **attrs)
@@ -240,11 +239,11 @@ void XMLBLASFormData::readTerm(const xmlChar *name, const xmlChar **attrs)
   {
   case INSIDE_INTERIOR:
     data_interior.push_back(tensor);
-    parseIntegerRequired(name, attrs, "size", mi);
+    mi = parseInt(name, attrs, "size");
     break;
   case INSIDE_BOUNDARY:
     data_boundary.push_back(tensor);
-    parseIntegerRequired(name, attrs, "size", mb);
+    mb = parseInt(name, attrs, "size");
     break;
   default:
     cout << state << endl;
@@ -259,10 +258,10 @@ void XMLBLASFormData::readGeoTensor(const xmlChar *name, const xmlChar **attrs)
   switch ( state )
   {
   case INSIDE_INTERIOR_TERM:
-    parseIntegerRequired(name, attrs, "size", ni);
+    ni = parseInt(name, attrs, "size");
     break;
   case INSIDE_BOUNDARY_TERM:
-    parseIntegerRequired(name, attrs, "size", nb);
+    nb = parseInt(name, attrs, "size");
     break;
   default:
     dolfin_error("Inconsistent state while reading XML form data.");
@@ -277,8 +276,7 @@ void XMLBLASFormData::readRefTensor(const xmlChar *name, const xmlChar **attrs)
 void XMLBLASFormData::readEntry(const xmlChar *name, const xmlChar **attrs)
 {
   // Read value
-  real value = 0.0;
-  parseRealRequired(name, attrs, "value", value);
+  real value = parseReal(name, attrs, "value");
 
   // Append value to tensor
   switch ( state )

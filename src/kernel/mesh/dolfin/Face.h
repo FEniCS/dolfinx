@@ -1,110 +1,46 @@
-// Copyright (C) 2003-2005 Johan Hoffman and Anders Logg.
+// Copyright (C) 2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
-// First added:  2003
-// Last changed: 2005-12-01
+// First added:  2006-06-02
+// Last changed: 2006-10-23
 
 #ifndef __FACE_H
 #define __FACE_H
 
-#include <dolfin/PArray.h>
-#include <set>
+#include <dolfin/MeshEntity.h>
+#include <dolfin/MeshEntityIterator.h>
 
 namespace dolfin
 {
-  
-  class Edge;
 
-  /// A Face consists of a list of edges.
-  ///
-  /// A triangle has no faces.
-  /// A face has three edges for a tetrahedron.
+  /// A Face is a MeshEntity of topological dimension 2.
 
-  class Face
+  class Face : public MeshEntity
   {
   public:
 
-    /// Create an empty face
-    Face();
+    /// Constructor
+    Face(Mesh& mesh, uint index) : MeshEntity(mesh, 2, index) {}
 
     /// Destructor
-    ~Face();
+    ~Face() {}
 
-    /// Clear face data
-    void clear();
-   
-    /// Return id of face
-    int id() const;
-
-    /// Return number of edges
-    unsigned int noEdges() const;
-
-    /// Return number of cell neighbors
-    unsigned int noCellNeighbors() const;
-
-    /// Return edge number i
-    Edge& edge(int i) const;
-
-    /// Return cell neighbor number i
-    Cell& cell(int i) const;
-
-    /// Return the mesh containing the face
-    Mesh& mesh();
-    
-    /// Return the mesh containing the face (const version)
-    const Mesh& mesh() const;
-
-    /// Check if face consists of the given edges
-    bool equals(const Edge& e0, const Edge& e1, const  Edge& e2) const;
-    
-    /// Check if face consists of the given edges
-    bool equals(const Edge& e0, const Edge& e1) const;
-
-    /// Check if face contains the vertex
-    bool contains(const Vertex& n) const;
-
-    /// Check if face contains the point (point in the same plane)
-    bool contains(const Point& point) const;
-
-    ///--- Output ---
-   
-    /// Display condensed face data
-    friend LogStream& operator<<(LogStream& stream, const Face& face);
-
-    /// Friends
-    friend class MeshData;
-    friend class MeshInit;
-    friend class EdgeIterator::FaceEdgeIterator;
-    friend class CellIterator::FaceCellIterator;
-    friend class Tetrahedron;
-
-    // Boundary information
-    std::set<int> fbids;
-
-  private:
-
-    // Specify global face number
-    int setID(int id, Mesh& mesh);
-
-    // Set the mesh pointer
-    void setMesh(Mesh& mesh);
-
-    /// Specify three edges
-    void set(Edge& e0, Edge& e1, Edge& e2);
-    
-    // The mesh containing this face
-    Mesh* _mesh;
-
-    // Global face number
-    int _id;
-
-    // The list of edges
-    PArray<Edge*> fe;
-    
-    // Connectivity
-    PArray<Cell*> fc;
-    
   };
+
+  /// A FaceIterator is a MeshEntityIterator of topological dimension 2.
+  
+  class FaceIterator : public MeshEntityIterator
+  {
+  public:
+    
+    FaceIterator(Mesh& mesh) : MeshEntityIterator(mesh, 2) {}
+    FaceIterator(MeshEntity& entity) : MeshEntityIterator(entity, 2) {}
+    FaceIterator(MeshEntityIterator& it) : MeshEntityIterator(it, 2) {}
+
+    inline Face& operator*() { return *operator->(); }
+    inline Face* operator->() { return static_cast<Face*>(MeshEntityIterator::operator->()); }
+
+  };    
 
 }
 

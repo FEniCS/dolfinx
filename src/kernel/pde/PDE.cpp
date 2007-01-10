@@ -4,7 +4,7 @@
 // Modified by Anders Logg 2006
 //
 // First added:  2006-02-21
-// Last changed: 2006-02-24
+// Last changed: 2006-05-07
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Function.h>

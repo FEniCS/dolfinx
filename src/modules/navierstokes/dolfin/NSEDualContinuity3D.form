@@ -1,0 +1,28 @@
+# Copyright (c) 2006 Johan Hoffman 
+# Licensed under the GNU GPL Version 2
+#
+# First added:  2006-11-01
+#
+# The dual contiuity equation for the incompressible 
+# Navier-Stokes equations using cG(1)cG(1)
+#
+# Compile this form with FFC: ffc NSEDualContinuity3D.form.
+
+name = "NSEDualContinuity3D"
+scalar = FiniteElement("Lagrange", "tetrahedron", 1)
+vector = FiniteElement("Vector Lagrange", "tetrahedron", 1)
+constant_scalar = FiniteElement("Discontinuous Lagrange", "tetrahedron", 0)
+
+q  = TestFunction(scalar)  # test basis function
+P  = TrialFunction(scalar) # trial basis function
+uc = Function(vector)      # linearized velocity
+
+delta1 = Function(constant_scalar) # stabilization parameter
+
+i0 = Index() # index for tensor notation
+i1 = Index() # index for tensor notation
+
+# Bilinear and linear forms
+a = delta1*dot(grad(q), grad(P))*dx;
+L = - q*div(uc)*dx  
+

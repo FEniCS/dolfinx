@@ -1,3 +1,86 @@
+ - Add support for discontinuous Galerkin (DG) methods
+ - Fix Python interface for vertex and cell maps in boundary computation
+0.6.4 [2006-12-01]
+ - Switch from Python Numeric to Python NumPy
+ - Improved mesh Python bindings
+ - Add input/output support for MeshFunction
+ - Change Mesh::vertices() --> Mesh::coordinates()
+ - Fix bug in output of mesh to MATLAB format
+ - Add plasticty module (experimental)
+ - Fix configure test for Python dev (patch from Åsmund Ødegård)
+ - Add mesh benchmark
+ - Fix memory leak in mesh (data not deleted correctly in MeshTopology)
+ - Fix detection of curses libraries
+ - Remove Tecplot output format
+0.6.3 [2006-10-27]
+ - Move to new mesh library
+ - Remove dolfin-config and move to pkg-config
+ - Remove unused classes PArray, PList, Table, Tensor	
+ - Visualization of 2D solutions in OpenDX is now supported (3D supported before)
+ - Add support for evaluation of functionals
+ - Fix bug in Vector::sum() for uBlas vectors
+0.6.2-1 [2006-09-06]
+ - Fix compilation error when using --enable-petsc (dolfin::uBlasVector::PETScVector undefined)
+0.6.2 [2006-09-05]
+ - Finish chapter in manual on linear algebra
+ - Enable PyDOLFIN by default, use --disable-pydolfin to disable
+ - Disable PETSc by default, use --enable-petsc to enable
+ - Modify ODE solver interface for u0() and f()
+ - Add class ConvectionMatrix
+ - Readd classes LoadVector, MassMatrix, StiffnessMatrix
+ - Add matrix factory for simple creation of standard finite element matrices
+ - Collect static solvers in LU and GMRES
+ - Bug fixes for Python interface PyDOLFIN
+ - Enable use of direct solver for ODE solver (experimental)
+ - Remove demo bistable
+ - Restructure and cleanup linear algebra
+ - Use UMFPACK for LU solver with uBlas matrix types
+ - Add templated wrapper class for different uBlas matrix types
+ - Add ILU preconditioning for uBlas matrices
+ - Add Krylov solver for uBlas sparse matrices (GMRES and BICGSTAB)
+ - Add first version of new mesh library (NewMesh, experimental)
+ - Add Parametrized::readParameters() to trigger reading of values on set()
+ - Remove output of zeros in Octave matrix file format
+ - Use uBlas-based vector for Vector if PETSc disabled
+ - Add wrappers for uBlas compressed_matrix class
+ - Compute eigenvalues using SLEPc (an extension of PETSc)
+ - Clean up assembly and linear algebra
+ - Add function to solve Ax = b for dense matrices and dense vectors
+ - Make it possible to compile without PETSc (--disable-petsc)
+ - Much improved ODE solvers
+ - Complete multi-adaptive benchmarks reaction and wave
+ - Assemble boundary integrals
+ - FEM class cleaned up.
+ - Fix multi-adaptive benchmark problem reaction
+ - Small fixes for Intel C++ compiler version 9.1
+ - Test for Intel C++ compiler and configure appropriately
+ - Add new classes DenseMatrix and DenseVector (wrappers for ublas)
+ - Fix bug in conversion from Gmsh format
+0.6.1 [2006-03-28]
+ - Regenerate build system in makedist script
+ - Update for new FFC syntax: BasisFunction --> TestFunction, TrialFunction
+ - Fixes for conversion script dolfin-convert
+ - Initial cleanups and fixes for ODE solvers
+ - Numerous small fixes to improve portability
+ - Remove dolfin:: qualifier on output << in Parameter.h
+ - Don't use anonymous classes in demos, gives errors with some compilers
+ - Remove KrylovSolver::solver()
+ - Fix bug in convection-diffusion demo (boundary condition for pressure), use direct solver
+ - LinearPDE and NewonSolver use umfpack LU solver by default (if available) when doing direct solve
+ - Set PETSc matrix type through Matrix constructor 
+ - Allow linear solver and preconditioner type to be passed to NewtonSolver 
+ - Fix bug in Stokes demos (wrong boundary conditions)
+ - Cleanup Krylov solver
+ - Remove KrylovSolver::setPreconditioner() etc. and move to constructors
+ - Remove KrylovSolver::setRtol() etc. and replace with parameters
+ - Fix remaining name changes: noFoo() --> numFoo()
+ - Add Cahn-Hilliard equation demo
+ - NewtonSolver option to use residual or incremental convergence criterion
+ - Add separate function to nls to test for convergence of Newton iterations
+ - Fix bug in dolfin-config (wrong version number)
+0.6.0 [2006-03-01]
+ - Fix bug in XML output format (writing multiple objects)
+ - Fix bug in XML matrix output format (handle zero rows)
  - Add new nonlinear PDE demo 
  - Restructure PDE class to use envelope-letter design
  - Add precompiled finite elements for q <= 5

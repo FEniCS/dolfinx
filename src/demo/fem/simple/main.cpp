@@ -47,6 +47,6 @@ int main()
   cout << "Reference mass matrix:" << endl;
   M0.disp();
   cout << endl;
-
+  
   return 0;
 }

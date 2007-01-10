@@ -1,8 +1,8 @@
-// Copyright (C) 2005 Anders Logg.
+// Copyright (C) 2005-2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-27
-// Last changed: 2005-11-11
+// Last changed: 2006-08-08
 
 #ifndef __MULTI_ADAPTIVE_FIXED_POINT_SOLVER_H
 #define __MULTI_ADAPTIVE_FIXED_POINT_SOLVER_H
@@ -43,7 +43,7 @@ namespace dolfin
     void end();
 
     // Make an iteration
-    real iteration(uint iter, real tol);
+    real iteration(real tol, uint iter, real d0, real d1);
 
     /// Size of system
     uint size() const;

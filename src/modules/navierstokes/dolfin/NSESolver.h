@@ -1,8 +1,10 @@
 // Copyright (C) 2005 Johan Hoffman.
 // Licensed under the GNU GPL Version 2.
 //
+// Modified by Anders Logg 2006.
+//
 // First added:  2005
-// Last changed: 2005-12-22
+// Last changed: 2006-05-07
 
 #ifndef __NSE_SOLVER_H
 #define __NSE_SOLVER_H

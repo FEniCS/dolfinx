@@ -17,7 +17,7 @@ MonoAdaptivity::MonoAdaptivity(const ODE& ode, const Method& method)
   : Adaptivity(ode, method), k(0)
 {
   // Specify initial time step
-  real k0 = get("initial time step");
+  real k0 = get("ODE initial time step");
   if ( kfixed )
   {
     k = ode.timestep(0.0, k0);

@@ -1,22 +1,22 @@
-// Copyright (C) 2003-2005 Anders Logg.
+// Copyright (C) 2003-2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-06
-// Last changed: 2005-12-19
+// Last changed: 2006-07-05
 
 #include <cmath>
 #include <dolfin/dolfin_log.h>
 #include <dolfin/dolfin_math.h>
 #include <dolfin/ParameterSystem.h>
+#include <dolfin/uBlasVector.h>
 #include <dolfin/ODE.h>
-#include <dolfin/Matrix.h>
 #include <dolfin/Dependencies.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 Dependencies::Dependencies(uint N) :
-  N(N), increment(get("sparsity check increment")), _sparse(false)
+  N(N), increment(get("ODE sparsity check increment")), _sparse(false)
 {
   // Use dense dependency pattern by default
   ddep.reserve(N);
@@ -60,7 +60,7 @@ void Dependencies::set(uint i, uint j, bool checknew)
   sdep[i].push_back(j);
 }
 //-----------------------------------------------------------------------------
-void Dependencies::set(const Matrix& A)
+void Dependencies::set(const uBlasSparseMatrix& A)
 {
   // Prepare sparse pattern if necessary
   makeSparse();
@@ -69,17 +69,17 @@ void Dependencies::set(const Matrix& A)
   if ( A.size(0) != N )
     dolfin_error("Incorrect matrix dimensions for dependency pattern.");
 
-  // Get data from PETSc
+  // Get data from matrix
   for (uint i = 0; i < N; i++)
   {
+    // FIXME: Could add function to return sparsity pattern
+    Array<int> columns;
+    Array<real> values;
     int ncols = 0;
-    const int* cols = 0;
-    const real* vals = 0;
-    MatGetRow(A.mat(), static_cast<int>(i), &ncols, &cols, &vals);
+    A.getRow(i, ncols, columns, values); 
     setsize(i, ncols);
     for (uint j = 0; j < static_cast<uint>(ncols); j++)
-      set(i, cols[j]);
-    MatRestoreRow(A.mat(), static_cast<int>(i), &ncols, &cols, &vals);
+      set(i, columns[j]);
   }
 }
 //-----------------------------------------------------------------------------
@@ -91,7 +91,7 @@ void Dependencies::transp(const Dependencies& dependencies)
     if ( _sparse )
     {
       for (uint i = 0; i < N; i++)
-	sdep[i].clear();
+        sdep[i].clear();
       sdep.clear();
       
       _sparse = false;
@@ -132,9 +132,9 @@ void Dependencies::detect(ODE& ode)
   makeSparse();
 
   // Randomize solution vector
-  real* u = new real[N];
+  uBlasVector u(N);
   for (uint i = 0; i < N; i++)
-    u[i] = rand();
+    u(i) = rand();
   
   // Check dependencies for all components
   Progress p("Computing sparsity", N);
@@ -146,7 +146,7 @@ void Dependencies::detect(ODE& ode)
     real f0 = ode.f(u, 0.0, i);
     for (uint j = 0; j < N; j++)
       if ( checkDependency(ode, u, f0, i, j) )
-	size++;
+        size++;
     
     // Compute total number of dependencies
     sum += size;
@@ -171,11 +171,6 @@ bool Dependencies::sparse() const
   return _sparse;
 }
 //-----------------------------------------------------------------------------
-const Array<dolfin::uint>& Dependencies::operator[] (uint i) const
-{
-  return ( _sparse ? sdep[i] : ddep );
-}
-//-----------------------------------------------------------------------------
 void Dependencies::disp() const
 {
   if ( _sparse )
@@ -185,7 +180,7 @@ void Dependencies::disp() const
     {
       cout << i << ":";
       for (uint pos = 0; pos < sdep[i].size(); ++pos)
-	cout << " " << sdep[i][pos];
+        cout << " " << sdep[i][pos];
       cout << endl;
     }
   }
@@ -193,18 +188,18 @@ void Dependencies::disp() const
     dolfin_info("Dependency pattern: dense");
 }
 //-----------------------------------------------------------------------------
-bool Dependencies::checkDependency(ODE& ode, real u[], real f0,
+bool Dependencies::checkDependency(ODE& ode, uBlasVector& u, real f0,
 				   uint i, uint j)
 {
   // Save original value
-  real uj = u[j];
+  real uj = u(j);
 
   // Change value and compute new value for f_i
-  u[j] += increment;
+  u(j) += increment;
   real f = ode.f(u, 0.0, i);
 
   // Restore the value
-  u[j] = uj;
+  u(j) = uj;
 
   // Compare function values
   return fabs(f - f0) > DOLFIN_EPS;

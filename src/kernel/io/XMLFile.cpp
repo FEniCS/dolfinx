@@ -2,16 +2,20 @@
 // Licensed under the GNU GPL Version 2.
 //
 // Modified by Erik Svensson 2003.
+// Modified by Garth N. Wells 2006.
+// Modified by Ola Skavhaug 2006.
 //
 // First added:  2002-12-03
-// Last changed: 2006-02-20
+// Last changed: 2006-11-30
 
 #include <stdarg.h>
 
 #include <dolfin/dolfin_log.h>
+#include <dolfin/Array.h>
 #include <dolfin/Vector.h>
 #include <dolfin/Matrix.h>
 #include <dolfin/Mesh.h>
+#include <dolfin/MeshFunction.h>
 #include <dolfin/Function.h>
 #include <dolfin/FiniteElement.h>
 #include <dolfin/FiniteElementSpec.h>
@@ -22,6 +26,7 @@
 #include <dolfin/XMLVector.h>
 #include <dolfin/XMLMatrix.h>
 #include <dolfin/XMLMesh.h>
+#include <dolfin/XMLMeshFunction.h>
 #include <dolfin/XMLFunction.h>
 #include <dolfin/XMLFiniteElementSpec.h>
 #include <dolfin/XMLParameterList.h>
@@ -32,7 +37,8 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 XMLFile::XMLFile(const std::string filename) : GenericFile(filename),
-					       header_written(false)
+					       header_written(false),
+					       mark(0)
 {
   type = "XML";
   xmlObject = 0;
@@ -40,8 +46,6 @@ XMLFile::XMLFile(const std::string filename) : GenericFile(filename),
 //-----------------------------------------------------------------------------
 XMLFile::~XMLFile()
 {
-  writeFooter();
-
   if ( xmlObject )
     delete xmlObject;
 }
@@ -67,6 +71,30 @@ void XMLFile::operator>>(Mesh& mesh)
   if ( xmlObject )
     delete xmlObject;
   xmlObject = new XMLMesh(mesh);
+  parseFile();
+}
+//-----------------------------------------------------------------------------
+void XMLFile::operator>>(MeshFunction<int>& meshfunction)
+{
+  if ( xmlObject )
+    delete xmlObject;
+  xmlObject = new XMLMeshFunction(meshfunction);
+  parseFile();
+}
+//-----------------------------------------------------------------------------
+void XMLFile::operator>>(MeshFunction<double>& meshfunction)
+{
+  if ( xmlObject )
+    delete xmlObject;
+  xmlObject = new XMLMeshFunction(meshfunction);
+  parseFile();
+}
+//-----------------------------------------------------------------------------
+void XMLFile::operator>>(MeshFunction<bool>& meshfunction)
+{
+  if ( xmlObject )
+    delete xmlObject;
+  xmlObject = new XMLMeshFunction(meshfunction);
   parseFile();
 }
 //-----------------------------------------------------------------------------
@@ -131,29 +159,24 @@ void XMLFile::operator>>(BLASFormData& blas)
 //-----------------------------------------------------------------------------
 void XMLFile::operator<<(Vector& x)
 {
-  // Write header if not already written
-  writeHeader();
-
   // Open file
-  FILE *fp = fopen(filename.c_str(), "a");
+  FILE* fp = openFile();
   
-  // Get array (assumes uniprocessor case)
-  real* xx = x.array();
-
   // Write vector in XML format
-  fprintf(fp, "  <vector size=\" %i \"> \n", x.size() );
+  fprintf(fp, "  <vector size=\" %u \"> \n", x.size() );
   
-  for (unsigned int i = 0; i < x.size(); i++) {
-    fprintf(fp, "    <entry row=\"%i\" value=\"%.15g\"/>\n", i, xx[i]);
+  for (unsigned int i = 0; i < x.size(); i++) 
+  {
+    // FIXME: This is a slow way to acces PETSc vectors. Need a fast way 
+    //        which is consistent for different vector types.
+    real temp = x(i);
+    fprintf(fp, "    <entry row=\"%u\" value=\"%.15g\"/>\n", i, temp);
     if ( i == (x.size() - 1))
       fprintf(fp, "  </vector>\n");
   }
   
-  // Restore array
-  x.restore(xx);
-  
   // Close file
-  fclose(fp);
+  closeFile(fp);
   
   dolfin_info("Saved vector %s (%s) to file %s in DOLFIN XML format.",
 	      x.name().c_str(), x.label().c_str(), filename.c_str());
@@ -161,41 +184,34 @@ void XMLFile::operator<<(Vector& x)
 //-----------------------------------------------------------------------------
 void XMLFile::operator<<(Matrix& A)
 {
-  // Write header if not already written
-  writeHeader();
-
   // Open file
-  FILE *fp = fopen(filename.c_str(), "a");
+  FILE *fp = openFile();
   
   // Write matrix in XML format
-  fprintf(fp, "  <matrix rows=\"%i\" columns=\"%i\">\n", A.size(0), A.size(1));
+  fprintf(fp, "  <matrix rows=\"%u\" columns=\"%u\">\n", A.size(0), A.size(1));
         
-  // Get PETSc Mat pointer
-  Mat A_mat = A.mat();
   int ncols = 0;
-  const int *cols = 0;
-  const double *vals = 0;                                                                                                                     
+  Array<int> columns;
+  Array<real> values;
+
   for (unsigned int i = 0; i < A.size(0); i++)
   {
-    MatGetRow(A_mat, i, &ncols, &cols, &vals);
-    fprintf(fp, "    <row row=\"%i\" size=\"%i\">\n", i, ncols);
+    A.getRow(i, ncols, columns, values);
+    if ( ncols > 0 )
+      fprintf(fp, "    <row row=\"%u\" size=\"%i\">\n", i, ncols);
     for (int pos = 0; pos < ncols; pos++)
     {
-      unsigned int j = cols[pos];
-      real aij = vals[pos];
-      fprintf(fp, "      <entry column=\"%i\" value=\"%.15g\"/>\n", j, aij);
-      if ( i == (A.size(0) - 1) && pos == (ncols - 1) )
-      {
-	fprintf(fp, "    </row>\n");
-	fprintf(fp, "  </matrix>\n");
-      }
-      else if ( pos == (ncols - 1) )
-	fprintf(fp, "    </row>\n");
+      unsigned int j = columns[pos];
+      real aij = values[pos];
+      fprintf(fp, "      <entry column=\"%u\" value=\"%.15g\"/>\n", j, aij);
     }
+    if ( ncols > 0 )
+      fprintf(fp, "    </row>\n");
   }
+  fprintf(fp, "  </matrix>\n");
 
   // Close file
-  fclose(fp);
+  closeFile(fp);
 
   dolfin_info("Saved vector %s (%s) to file %s in DOLFIN XML format.",
 	      A.name().c_str(), A.label().c_str(), filename.c_str());
@@ -203,55 +219,148 @@ void XMLFile::operator<<(Matrix& A)
 //-----------------------------------------------------------------------------
 void XMLFile::operator<<(Mesh& mesh)
 {
-  // Write header if not already written
-  writeHeader();
-
   // Open file
-  FILE *fp = fopen(filename.c_str(), "a");
+  FILE *fp = openFile();
   
+  // Get cell type
+  CellType::Type cell_type = mesh.type().cellType();
+
   // Write mesh in XML format
-  fprintf(fp, "  <mesh> \n");
+  fprintf(fp, "  <mesh celltype=\"%s\" dim=\"%u\">\n",
+          CellType::type2string(cell_type).c_str(), mesh.geometry().dim());
 
-  fprintf(fp, "    <vertices size=\" %i \"> \n", mesh.numVertices());
+  fprintf(fp, "    <vertices size=\"%u\">\n", mesh.numVertices());
   
-  for(VertexIterator n(&mesh); !n.end(); ++n)
+  for(VertexIterator v(mesh); !v.end(); ++v)
   {
-    Vertex &vertex = *n;
+    Point p = v->point();
 
-    fprintf(fp, "    <vertex name=\"%i\" x=\"%f\" y=\"%f\" z=\"%f\" />\n",
-	    vertex.id(), vertex.coord().x, vertex.coord().y, vertex.coord().z);
+    switch ( mesh.geometry().dim() ) {
+    case 1:
+      fprintf(fp, "      <vertex index=\"%u\" x=\"%g\"/>\n",
+              v->index(), p.x());
+      break;
+    case 2:
+      fprintf(fp, "      <vertex index=\"%u\" x=\"%g\" y=\"%g\"/>\n",
+              v->index(), p.x(), p.y());
+      break;
+    case 3:
+      fprintf(fp, "      <vertex index=\"%u\" x=\"%g\" y=\"%g\" z=\"%g\" />\n",
+              v->index(), p.x(), p.y(), p.z());
+      break;
+    default:
+      dolfin_error("The XML mesh file format only supports 1D, 2D and 3D meshes.");
+    }
   }
 
   fprintf(fp, "    </vertices>\n");
-
-  fprintf(fp, "    <cells size=\" %i \"> \n", mesh.numCells());
+  fprintf(fp, "    <cells size=\"%u\">\n", mesh.numCells());
 
   for (CellIterator c(mesh); !c.end(); ++c)
   {
-    Cell &cell = *c;
+    uint* vertices = c->entities(0);
+    dolfin_assert(vertices);
 
-    if ( mesh.type() == Mesh::tetrahedra )
+    switch ( cell_type )
     {
-      fprintf(fp, "    <tetrahedron name=\"%i\" n0=\"%i\" n1=\"%i\" n2=\"%i\" n3=\"%i\" />\n",
-	      cell.id(), cell.vertex(0).id(), cell.vertex(1).id(), cell.vertex(2).id(), cell.vertex(3).id());
-    }
-    else
-    {
-      fprintf(fp, "    <triangle name=\"%i\" n0=\"%i\" n1=\"%i\" n2=\"%i\" />\n",
-	      cell.id(), cell.vertex(0).id(), cell.vertex(1).id(),
-	      cell.vertex(2).id());
+    case CellType::interval:
+      fprintf(fp, "      <interval index=\"%u\" v0=\"%u\" v1=\"%u\"/>\n",
+	      c->index(), vertices[0], vertices[1]);
+      break;
+    case CellType::triangle:
+      fprintf(fp, "      <triangle index=\"%u\" v0=\"%u\" v1=\"%u\" v2=\"%u\"/>\n",
+	      c->index(), vertices[0], vertices[1], vertices[2]);
+      break;
+    case CellType::tetrahedron:
+      fprintf(fp, "      <tetrahedron index=\"%u\" v0=\"%u\" v1=\"%u\" v2=\"%u\" v3=\"%u\"/>\n",
+              c->index(), vertices[0], vertices[1], vertices[2], vertices[3]);
+      break;
+    default:
+      dolfin_error1("Unknown cell type: %u.", cell_type);
     }
   }
 
   fprintf(fp, "    </cells>\n");
-  
   fprintf(fp, "  </mesh>\n");
-  
+ 
   // Close file
-  fclose(fp);
+  closeFile(fp);
+
+  cout << "Saved mesh to file " << filename << " in XML format." << endl;
+}
+//-----------------------------------------------------------------------------
+void XMLFile::operator<<(MeshFunction<int>& meshfunction)
+{
+  // Open file
+  FILE *fp = openFile();
   
-  cout << "Saved mesh " << mesh.name() << " (" << mesh.label()
-       << ") to file " << filename << " in XML format." << endl;
+  // Write mesh in XML format
+  fprintf(fp, "  <meshfunction type=\"int\" dim=\"%u\" size=\"%u\">\n",
+          meshfunction.dim(), meshfunction.size());
+  
+  Mesh& mesh = meshfunction.mesh();
+  for(MeshEntityIterator e(mesh, meshfunction.dim()); !e.end(); ++e)
+  {
+      fprintf(fp, "    <entity index=\"%u\" value=\"%d\"/>\n",
+              e->index(), meshfunction(*e));
+  }
+
+  fprintf(fp, "  </meshfunction>\n");
+ 
+  // Close file
+  closeFile(fp);
+  
+  cout << "Saved mesh function to file " << filename << " in XML format." << endl;
+}
+//-----------------------------------------------------------------------------
+void XMLFile::operator<<(MeshFunction<double>& meshfunction)
+{
+  // Open file
+  FILE *fp = openFile();
+  
+  // Write mesh in XML format
+  fprintf(fp, "  <meshfunction type=\"double\" dim=\"%u\" size=\"%u\">\n",
+          meshfunction.dim(), meshfunction.size());
+
+  Mesh& mesh = meshfunction.mesh();
+  for(MeshEntityIterator e(mesh, meshfunction.dim()); !e.end(); ++e)
+  {
+      fprintf(fp, "    <entity index=\"%u\" value=\"%g\"/>\n",
+              e->index(), meshfunction(*e));
+  }
+
+  fprintf(fp, "  </meshfunction>\n");
+ 
+  // Close file
+  closeFile(fp);
+  
+  cout << "Saved mesh function to file " << filename << " in XML format." << endl;
+}
+//-----------------------------------------------------------------------------
+void XMLFile::operator<<(MeshFunction<bool>& meshfunction)
+{
+  // Open file
+  FILE *fp = openFile();
+  
+  // Write mesh in XML format
+  fprintf(fp, "  <meshfunction type=\"bool\" dim=\"%u\" size=\"%u\">\n",
+          meshfunction.dim(), meshfunction.size());
+
+  Mesh& mesh = meshfunction.mesh();
+  std::string value;
+  for (MeshEntityIterator e(mesh, meshfunction.dim()); !e.end(); ++e)
+  {
+    value = (meshfunction(*e) ? "true" : "false");
+    fprintf(fp, "    <entity index=\"%u\" value=\"%s\"/>\n",
+              e->index(), value.c_str());
+  }
+
+  fprintf(fp, "  </meshfunction>\n");
+ 
+  // Close file
+  closeFile(fp);
+  
+  cout << "Saved mesh function to file " << filename << " in XML format." << endl;
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator<<(Function& f)
@@ -260,17 +369,14 @@ void XMLFile::operator<<(Function& f)
   if ( f.type() != Function::discrete )
     dolfin_error("Only discrete functions can be saved to file.");
 
-  // Write header if not already written
-  writeHeader();
-
   // Open file
-  FILE *fp = fopen(filename.c_str(), "a");
+  FILE *fp = openFile();
   
   // Begin function
   fprintf(fp, "  <function> \n");
 
   // Close file
-  fclose(fp);
+  closeFile(fp);
   
   // Write the vector
   *this << f.vector();
@@ -283,44 +389,38 @@ void XMLFile::operator<<(Function& f)
   *this << spec;
 
   // Open file
-  fp = fopen(filename.c_str(), "a");
+  fp = openFile();
 
   // End function
   fprintf(fp, "  </function> \n");
-  
+
   // Close file
-  fclose(fp);
-  
+  closeFile(fp);
+
   cout << "Saved function " << f.name() << " (" << f.label()
        << ") to file " << filename << " in XML format." << endl;
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator<<(FiniteElementSpec& spec)
 {
-  // Write header if not already written
-  writeHeader();
-
   // Open file
-  FILE *fp = fopen(filename.c_str(), "a");
+  FILE *fp = openFile();
   
   // Write element in XML format
-  fprintf(fp, "  <finiteelement type=\"%s\" shape=\"%s\" degree=\"%d\" vectordim=\"%d\"/>\n",
+  fprintf(fp, "  <finiteelement type=\"%s\" shape=\"%s\" degree=\"%u\" vectordim=\"%u\"/>\n",
   	  spec.type().c_str(), spec.shape().c_str(), spec.degree(), spec.vectordim());
   
   // Close file
-  fclose(fp);
-  
+  closeFile(fp);
+
   cout << "Saved finite element specification" << spec
        << " to file " << filename << " in XML format." << endl;
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator<<(ParameterList& parameters)
 {
-  // Write header if not already written
-  writeHeader();
-
   // Open file
-  FILE *fp = fopen(filename.c_str(), "a");
+  FILE *fp = openFile();
 
   // Write parameter list in XML format
   fprintf(fp, "  <parameters>\n" );
@@ -360,43 +460,42 @@ void XMLFile::operator<<(ParameterList& parameters)
   fprintf(fp, "  </parameters>\n" );
 
   // Close file
-  fclose(fp);
+  closeFile(fp);
 
   cout << "Saved parameters to file " << filename << " in XML format." << endl;
 }
 //-----------------------------------------------------------------------------
-void XMLFile::writeHeader()
+FILE* XMLFile::openFile()
 {
-  if ( header_written )
-  {
-    return;
-  }
-
   // Open file
-  FILE *fp = fopen(filename.c_str(), "a");
+  FILE *fp = fopen(filename.c_str(), "r+");
+
+  // Step to position before previously written footer
+  //printf("Stepping to position: %ld\n", mark);
+  fseek(fp, mark, SEEK_SET);
+  fflush(fp);
   
   // Write DOLFIN XML format header
-  fprintf(fp, "<?xml version=\"1.0\" encoding=\"UTF-8\"?> \n\n" );
-  fprintf(fp, "<dolfin xmlns:dolfin=\"http://www.fenics.org/dolfin/\"> \n" );
-  
-  // Close file
-  fclose(fp);
-
-  header_written = true;
-}
-//-----------------------------------------------------------------------------
-void XMLFile::writeFooter()
-{
   if ( !header_written )
   {
-    return;
+    fprintf(fp, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n\n" );
+    fprintf(fp, "<dolfin xmlns:dolfin=\"http://www.fenics.org/dolfin/\">\n" );
+    
+    header_written = true;
   }
 
-  // Open file
-  FILE *fp = fopen(filename.c_str(), "a");
+  return fp;
+}
+//-----------------------------------------------------------------------------
+void XMLFile::closeFile(FILE* fp)
+{
+  // Get position in file before writing footer
+  mark = ftell(fp);
+  //printf("Position in file before writing footer: %ld\n", mark);
 
   // Write DOLFIN XML format footer
-  fprintf(fp, "</dolfin>\n");
+  if ( header_written )
+    fprintf(fp, "</dolfin>\n");
 
   // Close file
   fclose(fp);
@@ -404,18 +503,15 @@ void XMLFile::writeFooter()
 //-----------------------------------------------------------------------------
 void XMLFile::parseFile()
 {
-  // Write a message
-  xmlObject->reading(filename);
+  // Notify that file is being opened
+  xmlObject->open(filename);
 
   // Parse file using the SAX interface
   parseSAX();
   
-  // Check that we got the data
-  if ( !xmlObject->dataOK() )
+  // Notify that file is being closed
+  if ( !xmlObject->close() )
     dolfin_error("Unable to find data in XML file.");
-  
-  // Write a message
-  xmlObject->done();
 }
 //-----------------------------------------------------------------------------
 void XMLFile::parseSAX()

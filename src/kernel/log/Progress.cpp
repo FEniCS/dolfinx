@@ -3,8 +3,10 @@
 //
 // Thanks to Jim Tilander for many helpful hints.
 //
+// Modifies by Garth N. Wells, 2006.
+//
 // First added:  2003-03-14
-// Last changed: 2005-12-12
+// Last changed: 2006-03-27
 
 #include <stdio.h>
 
@@ -186,8 +188,6 @@ const char* Progress::label()
 //-----------------------------------------------------------------------------
 real Progress::checkBounds(unsigned int i)
 {
-  if ( i < 0 )
-    return 0.0;
   if ( i >= (n-1) )
     return 1.0;
   return ((real) i) / ((real) n);

@@ -1,14 +1,13 @@
-// Copyright (C) 2003-2005 Anders Logg.
+// Copyright (C) 2003-2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003-06-03
-// Last changed: 2005
+// Last changed: 2006-06-07
 
 #include <cmath>
 #include <dolfin/dolfin_log.h>
-#include <dolfin/Vector.h>
-#include <dolfin/Matrix.h>
-#include <dolfin/LU.h>
+#include <dolfin/uBlasVector.h>
+#include <dolfin/DenseMatrix.h>
 #include <dolfin/Legendre.h>
 #include <dolfin/GaussianQuadrature.h>
 
@@ -38,27 +37,31 @@ void GaussianQuadrature::computeWeights()
   // polynomials of degree n-1.
 
   // Special case n = 0
-  if ( n == 0 ) {
+  if ( n == 0 )
+  {
     weights[0] = 2.0;
     return;
   }
- 
-  Matrix A(n, n);
-  Vector x(n), b(n);
+
+  DenseMatrix A(n, n);
+  uBlasVector x(n), b(n);
 
   // Compute the matrix coefficients
-  for (unsigned int i = 0; i < n; i++) {
+  for (unsigned int i = 0; i < n; i++)
+  {
     Legendre p(i);
     for (unsigned int j = 0; j < n; j++)
       A(i, j) = p(points[j]);
     b(i) = 0.0;
   }
   b(0) = 2.0;
-    
+
   // Solve the system of equations
   // FIXME: Do we get high enough precision?
-  LU lu;
-  lu.solve(A, x, b);
+  //LU lu;
+  //lu.set("LU report", false);
+  //lu.solve(A, x, b);
+  A.solve(x, b);
 
   // Save the weights
   for (unsigned int i = 0; i < n; i++)

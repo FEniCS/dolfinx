@@ -1,8 +1,8 @@
-// Copyright (C) 2003-2005 Anders Logg.
+// Copyright (C) 2003-2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003
-// Last changed: 2005
+// Last changed: 2006-08-21
 
 #include <dolfin.h>
 
@@ -17,28 +17,25 @@ public:
     dolfin_info("A non-normal test problem, critically damped oscillation");
     dolfin_info("with eigenvalues l1 = l2 = 100.");
 
-    // The matrix A
     A(0,0) = 0.0;    
-    A(0,1) = -1.0;
-    A(1,0) = 1e4;
-    A(1,1) = 200;
-
-    // Compute sparsity
-    sparse();
+    A(0,1) = 1.0;
+    A(1,0) = -1e4;
+    A(1,1) = -200.0;
   }
 
-  real u0(unsigned int i)
+  void u0(uBlasVector& u)
   {
-    return 1.0;
+    u(0) = 1.0;
+    u(1) = 1.0;
   }
 
-  real f(const real u[], real t, unsigned int i)
+  void f(const uBlasVector& u, real t, uBlasVector& y)
   {
-    return -A.mult(u, i);
+    A.mult(u, y);
   }
 
 private:
   
-  Matrix A;
+  DenseMatrix A;
 
 };

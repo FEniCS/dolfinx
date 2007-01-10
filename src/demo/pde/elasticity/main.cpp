@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-02-07
-// Last changed: 2006-02-07
+// Last changed: 2006-10-18
 //
 // This demo program solves the equations of static
 // linear elasticity for a gear clamped at two of its
@@ -17,7 +17,7 @@ using namespace dolfin;
 int main()
 {
   // Boundary condition
-  class : public BoundaryCondition
+  class MyBC : public BoundaryCondition
   {
     void eval(BoundaryValue& value, const Point& p, unsigned int i)
     {
@@ -32,47 +32,48 @@ int main()
       real theta = 0.5236;
       
       // New coordinates
-      real y = y0 + (p.y - y0)*cos(theta) - (p.z - z0)*sin(theta);
-      real z = z0 + (p.y - y0)*sin(theta) + (p.z - z0)*cos(theta);
+      real y = y0 + (p.y() - y0)*cos(theta) - (p.z() - z0)*sin(theta);
+      real z = z0 + (p.y() - y0)*sin(theta) + (p.z() - z0)*cos(theta);
       
       // Clamp at left end
-      if ( p.x < w )
-	value = 0.0;
+      if ( p.x() < w )
+	      value = 0.0;
       
       // Clamp at right end
-      if ( p.x > (1.0 - w) )
+      if ( p.x() > (1.0 - w) )
       {
-	if ( i == 1 )
-	  value = y - p.y;
-	else if ( i == 2 )
-	  value = z - p.z;
+	    if ( i == 1 )
+	      value = y - p.y();
+	    else if ( i == 2 )
+	      value = z - p.z();
       }
     }
-  } bc;
+  };
+
+  MyBC bc;
 
   // Set up problem
-  Mesh mesh("gear.xml.gz");
+  Mesh mesh("../../../../data/meshes/gear.xml.gz");
   Function f = 0.0;
   Elasticity::BilinearForm a;
   Elasticity::LinearForm L(f);
   PDE pde(a, L, mesh, bc);
 
   // Compute solution (using direct solver)
-  pde.set("solver", "direct");
-  Function u = pde.solve();
+  Function U = pde.solve();
 
   // Save solution (displacement) to file
   File file("elasticity.pvd");
-  file << u;
+  file << U;
 
   // Set up post-processing problem to compute strain
   ElasticityStrain::BilinearForm a_strain;
-  ElasticityStrain::LinearForm L_strain(u);
+  ElasticityStrain::LinearForm L_strain(U);
   PDE pde_strain(a_strain, L_strain, mesh);
   Function normal_strain, shear_strain;
 
   // Compute solution (using GMRES solver)
-  pde_strain.set("solver", "iterative");
+  pde_strain.set("PDE linear solver", "iterative");
   pde_strain.solve(normal_strain, shear_strain);
 
   // Save solution (strain) to files

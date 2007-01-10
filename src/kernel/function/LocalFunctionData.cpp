@@ -1,8 +1,8 @@
-// Copyright (C) 2005 Anders Logg.
+// Copyright (C) 2005-2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-11-28
-// Last changed: 2005-11-28
+// Last changed: 2006-05-30
 
 #include <dolfin/FiniteElement.h>
 #include <dolfin/Point.h>
@@ -12,7 +12,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 LocalFunctionData::LocalFunctionData() 
-  : dofs(0), components(0), points(0), values(0), n(0)
+  : dofs(0), components(0), points(0), vertex_nodes(0), n(0)
 {
   // Do nothing
 }
@@ -41,11 +41,11 @@ void LocalFunctionData::init(const FiniteElement& element)
   // Initialize local nodal points
   points = new Point[element.spacedim()];
 
-  // Initialize local vertex values
+  // Initialize local vertex nodes
   if ( element.rank() == 0 )
-    values = new real[1];
+    vertex_nodes = new uint[1];
   else
-    values = new real[element.tensordim(0)];
+    vertex_nodes = new uint[element.tensordim(0)];
 
   // Save dimension of local function space
   n = element.spacedim();
@@ -65,8 +65,8 @@ void LocalFunctionData::clear()
     delete [] points;
   points = 0;
   
-  if ( values )
-    delete [] values;
-  values = 0;
+  if ( vertex_nodes )
+    delete [] vertex_nodes;
+  vertex_nodes = 0;
 }
 //-----------------------------------------------------------------------------

@@ -2,17 +2,16 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003-07-15
-// Last changed: 2006-02-13
+// Last changed: 2006-05-07
 
 #ifndef __XML_MATRIX_H
 #define __XML_MATRIX_H
 
-#include "XMLObject.h"
+#include <dolfin/Matrix.h>
+#include <dolfin/XMLObject.h>
 
 namespace dolfin
 {
-
-  class Matrix;
   
   class XMLMatrix : public XMLObject
   {

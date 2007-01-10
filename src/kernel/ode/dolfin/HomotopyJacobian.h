@@ -1,38 +1,40 @@
-// Copyright (C) 2005 Anders Logg.
+// Copyright (C) 2005-2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005
-// Last changed: 2005
+// Last changed: 2006-07-07
 
 #ifndef __HOMOTOPY_JACOBIAN_H
 #define __HOMOTOPY_JACOBIAN_H
 
 #include <dolfin/constants.h>
-#include <dolfin/VirtualMatrix.h>
+#include <dolfin/uBlasKrylovMatrix.h>
 
 namespace dolfin
 {
 
   class ComplexODE;
-  class Vector;
 
   /// This class implements a matrix-free Jacobian for a homotopy
   /// system. It uses the fact that the Jacobian is already
   /// implemented for the ODE system so we don't have to worry about
   /// the translation between real and complex vectors.
 
-  class HomotopyJacobian : public VirtualMatrix
+  class HomotopyJacobian : public uBlasKrylovMatrix
   {
   public:
 
     /// Constructor
-    HomotopyJacobian(ComplexODE& ode, Vector& u);
+    HomotopyJacobian(ComplexODE& ode, uBlasVector& u);
 
     /// Destructor
     ~HomotopyJacobian();
 
+    /// Return number of rows (dim = 0) or columns (dim = 1)
+    uint size(const uint dim) const;
+
     /// Compute product y = Ax
-    void mult(const Vector& x, Vector& y) const;
+    void mult(const uBlasVector& x, uBlasVector& y) const;
 
   private:
     
@@ -40,7 +42,7 @@ namespace dolfin
     ComplexODE& ode;
 
     // Current solution to linearize around
-    Vector& u;
+    uBlasVector& u;
 
   };
 

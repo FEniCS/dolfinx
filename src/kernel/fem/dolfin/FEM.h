@@ -1,30 +1,40 @@
-// Copyright (C) 2004-2005 Johan Hoffman, Johan Jansson and Anders Logg.
+// Copyright (C) 2004-2006 Johan Hoffman, Johan Jansson and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
-// Modified by Garth N. Wells
+// Modified by Garth N. Wells 2006.
+// Modified by Kristian Oelgaard 2006.
 //
 // First added:  2004-05-19
-// Last changed: 2005-12-01
+// Last changed: 2006-12-12
 
 #ifndef __FEM_H
 #define __FEM_H
 
 #include <dolfin/constants.h>
 
+// FIXME: Ensure constness where appropriate
+
 namespace dolfin
 {
+  
   class BilinearForm;
   class LinearForm;
+  class Functional;
   class Mesh;
-  class Matrix;
-  class Vector;
+  class Cell;
+  class MeshEntity;
+  class Point;
+  class GenericMatrix;
+  class GenericVector;
   class FiniteElement;
   class BoundaryCondition;
+  class AffineMap;
+  class DofMap;
 
   /// Automated assembly of a linear system from a given partial differential
-  /// equation, specified as a variational problem: Find u in V such that
+  /// equation, specified as a variational problem: Find U in V such that
   ///
-  ///     a(v, u) = L(v) for all v in V,
+  ///     a(v, U) = L(v) for all v in V,
   ///
   /// where a(.,.) is a given bilinear form and L(.) is a given linear form.
 
@@ -32,94 +42,136 @@ namespace dolfin
   {
   public:
 
-    /// Assemble bilinear form
-    static void assemble(BilinearForm& a, Matrix& A, Mesh& mesh);
-
-    /// Assemble linear form
-    static void assemble(LinearForm& L, Vector& b, Mesh& mesh);
-
     /// Assemble bilinear and linear forms
-    static void assemble(BilinearForm& a, LinearForm& L, 
-			 Matrix& A, Vector& b, Mesh& mesh);
+    static void assemble(BilinearForm& a, LinearForm& L,
+			 GenericMatrix& A, GenericVector& b,
+			 Mesh& mesh);
+
+    /// Assemble bilinear and linear forms including boundary conditions
+    static void assemble(BilinearForm& a, LinearForm& L,
+			 GenericMatrix& A, GenericVector& b,
+			 Mesh& mesh, BoundaryCondition& bc);
+
+    /// Assemble bilinear form
+    static void assemble(BilinearForm& a, GenericMatrix& A, Mesh& mesh);
     
-    /// Assemble bilinear and linear forms (including Dirichlet boundary conditions)
-    static void assemble(BilinearForm& a, LinearForm& L, 
-			 Matrix& A, Vector& b, Mesh& mesh,
-			 BoundaryCondition& bc);
-    
-    /// Apply boundary conditions to matrix and vector 
-    static void applyBC(Matrix& A, Vector& b, Mesh& mesh,
+    /// Assemble linear form
+    static void assemble(LinearForm& L, GenericVector& b, Mesh& mesh);
+
+    /// Assemble functional
+    static real assemble(Functional& M, Mesh& mesh);
+   
+    /// Apply boundary conditions to matrix and vector
+    static void applyBC(GenericMatrix& A, GenericVector& b, Mesh& mesh,
 			FiniteElement& element, BoundaryCondition& bc);
     
-    /// Apply boundary conditions to matrix 
-    static void applyBC(Matrix& A, Mesh& mesh, FiniteElement& element, 
-			BoundaryCondition& bc);
+    /// Apply boundary conditions to matrix
+    static void applyBC(GenericMatrix& A, Mesh& mesh,
+			FiniteElement& element, BoundaryCondition& bc);
 
-    /// Apply boundary conditions to vector. 
-    static void applyBC(Vector& b, Mesh& mesh, FiniteElement& element,
-			BoundaryCondition& bc);
+    /// Apply boundary conditions to vector
+    static void applyBC(GenericVector& b, Mesh& mesh,
+			FiniteElement& element, BoundaryCondition& bc);
 
-    /// Assemble boundary conditions into residual vector.  For Dirichlet 
-    /// boundary conditions, b = x - bc, and for Neumann boundary 
-    /// conditions, b = b - bc. 
-    static void assembleBCresidual(Vector& b, const Vector& x, Mesh& mesh, 
-      FiniteElement& element, BoundaryCondition& bc);
+    /// Apply boundary conditions with b = bc - x at Dirichlet nodes
+    static void applyResidualBC(GenericMatrix& A, GenericVector& b,
+                                const GenericVector& x, Mesh& mesh,
+                                FiniteElement& element, BoundaryCondition& bc);
 
-    /// Count the degrees of freedom
-    static uint size(const Mesh& mesh, const FiniteElement& element);
+    /// Apply boundary conditions with b = bc - x at Dirichlet nodes
+    static void applyResidualBC(GenericVector& b,
+                                const GenericVector& x, Mesh& mesh,
+                                FiniteElement& element, BoundaryCondition& bc);
 
-    /// Lump matrix
-    static void lump(const Matrix& M, Vector& m);
+    /// Lump matrix (cannot mix matrix vector and matrix types when lumping)
+    template < class A, class X > static void lump(const A& M, X& m) { M.lump(m); }
+
+    /// Count the degrees of freedom. 
+    /// FIXME: This function is used by Functions, but the size should be computed
+    /// via DofMap 
+    static uint size(Mesh& mesh, const FiniteElement& element);
 
     /// Display assembly data (useful for debugging)
-    static void disp(const Mesh& mesh, const FiniteElement& element);
+    static void disp(Mesh& mesh, const FiniteElement& element);
       
   private:
 
-    /// Apply boundary conditions on triangular mesh
-    static void applyBC_2D(Matrix& A, Vector& b, Mesh& mesh,
-			   FiniteElement& element, BoundaryCondition& bc);
+    /// Common assembly handles all cases
+    static void assembleCommon(BilinearForm* a, LinearForm* L, Functional* M,
+			       GenericMatrix* A, GenericVector* b, real* val,
+			       Mesh& mesh);
 
-    /// Apply boundary conditions to matrix on triangular mesh
-    static void applyBC_2D(Matrix& A, Mesh& mesh, FiniteElement& element,
-			   BoundaryCondition& bc);
+    /// Common application of boundary conditions handles all cases
+    static void applyCommonBC(GenericMatrix* A, GenericVector* b, 
+			      const GenericVector* x, Mesh& mesh,
+			      FiniteElement& element, BoundaryCondition& bc);
 
-    /// Apply boundary conditions to vector on triangular mesh
-    static void applyBC_2D(Vector& b, Mesh& mesh, FiniteElement& element,
-			   BoundaryCondition& bc);
-
-    /// Apply boundary conditions on tetrahedral mesh
-    static void applyBC_3D(Matrix& A, Vector& b, Mesh& mesh,
-			   FiniteElement& element, BoundaryCondition& bc);
-
-    /// Apply boundary conditions to matrix on tetrahedral mesh
-    static void applyBC_3D(Matrix& A, Mesh& mesh, FiniteElement& element,
-			   BoundaryCondition& bc);
-
-    /// Apply boundary conditions to vector on tetrahedral mesh
-    static void applyBC_3D(Vector& b, Mesh& mesh, FiniteElement& element,
-			   BoundaryCondition& bc);
-
-    /// Assemble boundary conditions into residual vector on triangular mesh. 
-    static void assembleBCresidual_2D(Vector& b, const Vector& x, Mesh& mesh, 
-         FiniteElement& element, BoundaryCondition& bc);
-
-    /// Assemble boundary conditions into residual vector on tetrahedral mesh. 
-    static void assembleBCresidual_3D(Vector& b, const Vector& x, Mesh& mesh, 
-        FiniteElement& element, BoundaryCondition& bc);
-
-    /// Estimate the maximum number of nonzeros in each row
-    static uint nzsize(const Mesh& mesh, const FiniteElement& element);
 
     /// Check that dimension of the mesh matches the form
-    static void checkdims(BilinearForm& a, const Mesh& mesh);
+    static void checkDimensions(const BilinearForm& a, const Mesh& mesh);
 
     /// Check that dimension of the mesh matches the form
-    static void checkdims(LinearForm& L, const Mesh& mesh);
+    static void checkDimensions(const LinearForm& L, const Mesh& mesh);
 
-    /// Check number of nonzeros in each row
-    static void checknz(const Matrix& A, uint nz);
+    /// Assemble element tensor for a bilinear form
+    static void assembleElementTensor(BilinearForm& a, GenericMatrix& A, 
+                                      const Mesh& mesh, Cell& cell, 
+                                      AffineMap& map, real det, const DofMap& dofmap);
 
+    /// Assemble element tensor for a linear form
+    static void assembleElementTensor(LinearForm& L, GenericVector& b, 
+                                      const Mesh& mesh, Cell& cell, 
+                                      AffineMap& map, real det, const DofMap& dofmap);
+
+    /// Assemble element tensor for a functional
+    static void assembleElementTensor(Functional& M, real& val, Cell& cell, AffineMap& map, real det);
+
+    /// Assemble exterior facet tensor for a bilinear form
+    static void assembleExteriorFacetTensor(BilinearForm& a, GenericMatrix& A, 
+                                            const Mesh& mesh, Cell& cell,
+                                            AffineMap& map, real det, uint facet);
+
+    /// Assemble exterior facet tensor for a linear form
+    static void assembleExteriorFacetTensor(LinearForm& L, GenericVector& b,
+                                            const Mesh& mesh, Cell& cell,
+                                            AffineMap& map, real det, uint facet);
+
+    /// Assemble exterior facet tensor for a functional
+    static void assembleExteriorFacetTensor(Functional& M, real& val,
+                                            Cell& cell, AffineMap& map, real det, uint facet);
+
+    /// Assemble interior facet tensor for a bilinear form
+    static void assembleInteriorFacetTensor(BilinearForm& a, GenericMatrix& A, 
+                                            const Mesh& mesh,
+                                            Cell& cell0, Cell& cell1,
+                                            AffineMap& map0, AffineMap& map1, real det,
+                                            uint facet0, uint facet1, uint alignment);
+
+    /// Assemble interior facet tensor for a linear form
+    static void assembleInteriorFacetTensor(LinearForm& L, GenericVector& b,
+                                            const Mesh& mesh,
+                                            Cell& cell0, Cell& cell1,
+                                            AffineMap& map0, AffineMap& map1, real det,
+                                            uint facet0, uint facet1, uint alignment);
+
+    /// Assemble interior facet tensor for a functional
+    static void assembleInteriorFacetTensor(Functional& M, real& val,
+                                            Cell& cell0, Cell& cell1,
+                                            AffineMap& map0, AffineMap& map1, real det,
+                                            uint facet0, uint facet1, uint alignment);
+
+    /// Initialize mesh connectivity for use in node map
+    static void initConnectivity(Mesh& mesh);
+    
+    /// Check if the point is in the same plane as the given facet
+    static bool onFacet(const Point& p, Cell& facet);
+
+    /// Compute determinant of mapping of parametrized facet
+    static real computeDeterminant(MeshEntity& facet);
+
+    /// Compute alignment of a facet with respect to its two cells (not implemented)
+    static uint computeAlignment(Cell& cell0, Cell& cell1, uint facet);
+    
   };
 
 }

@@ -1,15 +1,16 @@
-// Copyright (C) 2005 Anders Logg.
+// Copyright (C) 2005-2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
+// Modified by Garth N. Wells, 2006.
+//
 // First added:  2005
-// Last changed: 2005-12-20
+// Last changed: 2006-08-22
 
 #include <stdio.h>
+#include <limits>
 #include <dolfin/dolfin_log.h>
 #include <dolfin/dolfin_math.h>
 #include <dolfin/ParameterSystem.h>
-#include <dolfin/LU.h>
-#include <dolfin/GMRES.h>
 #include <dolfin/ComplexODE.h>
 #include <dolfin/HomotopyJacobian.h>
 #include <dolfin/HomotopyODE.h>
@@ -20,17 +21,17 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 Homotopy::Homotopy(uint n)
   : tol(0), n(n), M(0), maxiter(0), maxpaths(0), maxdegree(0),
-    divtol(0), monitor(false), random(false), solver(0), filename(""),
-    mi(0), ci(0), tmp(0), x(2*n),
+    divtol(0), monitor(false), random(false), 
+    filename(""), mi(0), ci(0), tmp(0), x(2*n),
     degree_adjusted("Adjusting degree of equation, maximum reached.")
 {
   dolfin_info("Creating homotopy for system of size %d.", n);
   
   // We should not solve the dual problem
-  set("solve dual problem", false);
+  set("ODE solve dual problem", false);
 
   // System is implicit
-  set("implicit", true);
+  set("ODE implicit", true);
 
   // Get divergence tolerance
   divtol = get("homotopy divergence tolerance");
@@ -44,7 +45,7 @@ Homotopy::Homotopy(uint n)
     dolfin_info("Using random initial system for homotopy.");
 
   // Get maximum number of iterations
-  maxiter = get("maximum iterations");
+  maxiter = get("ODE maximum iterations");
 
   // Get maximum number of paths
   maxpaths = get("homotopy maximum size");
@@ -62,12 +63,6 @@ Homotopy::Homotopy(uint n)
   // FIXME: Maybe this should be a parameter?
   tol = get("homotopy solution tolerance");
   
-  // Choose solver
-  //solver = new GMRES();
-  //((GMRES *) solver)->setAtol(0.1*tol);
-  //((GMRES *) solver)->setReport(false);
-  solver = new LU();
-
   // Initialize array mi
   mi = new uint[n];
   for (uint i = 0; i < n; i++)
@@ -87,7 +82,6 @@ Homotopy::~Homotopy()
   if ( mi ) delete [] mi;
   if ( ci ) delete [] ci;
   if ( tmp ) delete [] tmp;
-  if ( solver ) delete solver;
   
   for (unsigned int i = 0; i < zs.size(); i++)
     delete [] zs[i];
@@ -109,8 +103,8 @@ void Homotopy::solve()
     dolfin_info("\nComputing path number %d out of %d.", m + 1, M);
 
     // Change name of output file for each path
-    sprintf(filename, "primal_%d.m", m);
-    set("ode solution file name", filename);
+    sprintf(filename, "solution_%u.py", m);
+    set("ODE solution file name", filename);
 
     // Compute the component paths from global path number
     computePath(m);
@@ -151,18 +145,19 @@ const Array<complex*>& Homotopy::solutions() const
   return zs;
 }
 //-----------------------------------------------------------------------------
-complex Homotopy::z0(uint i)
+void Homotopy::z0(complex z[])
 {
-  const real pp = static_cast<real>(adjustedDegree(i));
-  const real mm = static_cast<real>(mi[i]);
-  const complex c = ci[i];
-  
-  // Pick root number m of equation z_i^(p + 1) = c_i
-  real r = std::pow(std::abs(c), 1.0/(pp + 1.0));
-  real a = std::arg(c) / (pp + 1.0);
-  complex z = std::polar(r, a + mm/(pp + 1.0)*2.0*DOLFIN_PI);
-  
-  return z;
+  for (uint i = 0; i < n; i++)
+  {
+    const real pp = static_cast<real>(adjustedDegree(i));
+    const real mm = static_cast<real>(mi[i]);
+    const complex c = ci[i];
+    
+    // Pick root number m of equation z_i^(p + 1) = c_i
+    real r = std::pow(std::abs(c), 1.0/(pp + 1.0));
+    real a = std::arg(c) / (pp + 1.0);
+    z[i] = std::polar(r, a + mm/(pp + 1.0)*2.0*DOLFIN_PI);
+  }
 }
 //-----------------------------------------------------------------------------
 void Homotopy::G(const complex z[], complex y[])
@@ -273,11 +268,10 @@ void Homotopy::computePath(uint m)
 bool Homotopy::computeSolution(HomotopyODE& ode)
 {
   // Create right-hand side and increment vector
-  Vector F(2*n), dx(2*n);
+  uBlasVector F(2*n), dx(2*n);
 
   // Create matrix-free Jacobian
   HomotopyJacobian J(ode, x);
-  J.init(dx, dx);
   
   cout << "Starting point:     x = ";
   x.disp();
@@ -289,7 +283,7 @@ bool Homotopy::computeSolution(HomotopyODE& ode)
     feval(F, ode);
 
     // Check convergence
-    real r = F.norm(Vector::linf);
+    real r = F.norm(uBlasVector::linf);
     //cout << "r = " << r << ": x = "; x.disp();
     if ( r < tol )
     {
@@ -297,26 +291,12 @@ bool Homotopy::computeSolution(HomotopyODE& ode)
       x.disp();
       return true;
     }
-    
-    //cout << "x = "; x.disp();
-    //cout << "F = "; F.disp();
-    //cout << "dx = "; dx.disp();
-    //cout << "J = "; J.disp(false);
-    //cout << endl;
 
-    // Solve linear system, seems like we need to scale the right-hand
-    // side to make it work with the PETSc GMRES solver
-    //r += DOLFIN_EPS;
-    //F /= r;
-    //solver->solve(J, dx, F);
-    //dx *= r;
-    
-    // Solve linear system using LU factorization
-    solver->solve(J, dx, F);
+    // Solve linear system
+    solver.solve(J, dx, F);
 
     // Subtract increment
     x -= dx;
-    //x.disp();
   }
 
   dolfin_warning("Solution did not converge.");
@@ -326,11 +306,9 @@ bool Homotopy::computeSolution(HomotopyODE& ode)
 void Homotopy::saveSolution()
 {
   // Copy values to complex array
-  real* xx = x.array();
   complex* z = new complex[n];
   for (uint i = 0; i < n; i++)
-    z[i] = complex(xx[2*i], xx[2*i + 1]);
-  x.restore(xx);
+    z[i] = complex(x(2*i), x(2*i + 1));
 
   // Allow user to modify solution
   modify(z);
@@ -387,20 +365,12 @@ void Homotopy::randomize()
   fclose(fp);
 }
 //-----------------------------------------------------------------------------
-void Homotopy::feval(Vector& F, ComplexODE& ode)
+void Homotopy::feval(uBlasVector& F, ComplexODE& ode)
 {
   // Reuse the right-hand side of the ODE so we don't have to reimplement
   // the mapping from complex to real numbers
 
-  // Get arrays
-  const real* xx = x.array();
-  real* FF = F.array();
-  
   // Evaluate F at current x
-  ode.f(xx, 0.0, FF);
-
-  // Restore arrays
-  x.restore(xx);
-  F.restore(FF);
+  ode.f(x, 0.0, F);
 }
 //-----------------------------------------------------------------------------

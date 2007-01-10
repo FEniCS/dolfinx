@@ -23,7 +23,6 @@ nobase_include_HEADERS  = dolfin/dolfin_ode.h \
                           dolfin/Method.h \
                           dolfin/ODE.h \
                           dolfin/ODESolver.h \
-                          dolfin/ParticleSystem.h \
                           dolfin/Partition.h \
                           dolfin/ReducedModel.h \
                           dolfin/Sample.h \
@@ -59,7 +58,6 @@ libdolfin_ode_la_SOURCES = Adaptivity.cpp \
                           Method.cpp \
                           ODE.cpp \
                           ODESolver.cpp \
-                          ParticleSystem.cpp \
                           Partition.cpp \
                           ReducedModel.cpp \
                           Sample.cpp \

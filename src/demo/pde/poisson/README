@@ -15,7 +15,10 @@ Poisson.form which can be compiled using the command
 to create the file Poisson.h included in the main program.
 
 The simple test program saves the solution in VTK format to the file
-poisson.pvd, which can be visualized in ParaView or MayaVi.
+poisson.pvd, which can be visualized in ParaView or MayaVi. A simple
+way to visualize the solution is provided by the plot.py script:
+
+    python plot.py
 
 Note that there is also a ready-made Poisson solver module in DOLFIN.
 A simple demo program for this solver is available in the subdirectory

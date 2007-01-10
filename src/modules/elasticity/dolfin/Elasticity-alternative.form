@@ -10,8 +10,8 @@ from math import *
 
 element = FiniteElement("Vector Lagrange", "tetrahedron", 1)
 
-v = BasisFunction(element)
-u = BasisFunction(element)
+v = TestFunction(element)
+u = TrialFunction(element)
 
 lmbda = Constant() # Lame coefficient
 mu    = Constant() # Lame coefficient

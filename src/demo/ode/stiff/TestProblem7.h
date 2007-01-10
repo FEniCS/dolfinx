@@ -1,8 +1,8 @@
-// Copyright (C) 2003-2005 Anders Logg.
+// Copyright (C) 2003-2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003
-// Last changed: 2005
+// Last changed: 2006-08-21
 
 #include <dolfin.h>
 
@@ -14,32 +14,31 @@ public:
   
   TestProblem7() : ODE(101, 1.0)
   {
-    // Mesh size
     h = 1.0 / (static_cast<real>(N) - 1);
-
     dolfin_info("The heat equation on [0,1] with h = %f", h);
-    
-    // Compute sparsity
-    sparse();
   }
   
-  real u0(unsigned int i)
+  void u0(uBlasVector& u)
   {
-    return 0.0;
+    u = 0.0;
   }
 
-  real f(const real u[], real t, unsigned int i)
+  void f(const uBlasVector& u, real t, uBlasVector& y)
   {
     // Boundary values
-    if ( i == 0 || i == (N-1) )
-      return 0.0;
-    
-    // Heat source
-    real source = 0.0;
-    if ( i == N/2 )
-      source = 100.0;
+    y(0)   = 0.0;
+    y(N-1) = 0.0;
 
-    return (u[i-1] - 2.0*u[i] + u[i+1]) / (h*h) + source;
+    // Interior values
+    for (unsigned int i = 1; i < N - 1; i++)
+    {
+      // Heat source
+      real source = 0.0;
+      if ( i == N/2 )
+	source = 100.0;
+      
+      y[i] = (u[i-1] - 2.0*u[i] + u[i+1]) / (h*h) + source;
+    }
   }
   
 private:

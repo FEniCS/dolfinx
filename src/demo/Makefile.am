@@ -1,1 +1,1 @@
-SUBDIRS = fem mesh nls ode pde quadrature solvers
+SUBDIRS = fem mesh meshfunction nls ode pde quadrature solvers

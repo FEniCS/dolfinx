@@ -1,10 +1,13 @@
-// Copyright (C) 2005 Anders Logg.
+// Copyright (C) 2005-2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
+// Modified by Garth N. Wells
+//
 // First added:  2005-01-27
-// Last changed: 2005-12-19
+// Last changed: 2006-07-05
 
 #include <string>
+#include <algorithm>
 #include <dolfin/dolfin_log.h>
 #include <dolfin/ParameterSystem.h>
 #include <dolfin/ODE.h>
@@ -21,7 +24,7 @@ MultiAdaptiveTimeSlab::MultiAdaptiveTimeSlab(ODE& ode) :
   TimeSlab(ode),
   sa(0), sb(0), ei(0), es(0), ee(0), ed(0), jx(0), de(0),
   ns(0), ne(0), nj(0), nd(0), solver(0), adaptivity(ode, *method), partition(N),
-  elast(0), u(0), f0(0), emax(0), kmin(0), f0tmp(0)
+  elast(0), f0(0), emax(0), kmin(0)
 {
   // Choose solver
   solver = chooseSolver();
@@ -31,29 +34,13 @@ MultiAdaptiveTimeSlab::MultiAdaptiveTimeSlab(ODE& ode) :
   for (uint i = 0; i < N; i++)
     elast[i] = -1;
 
-  // Initialize solution vector
-  u = new real[N];
-  for (uint i = 0; i < N; i++)
-    u[i] = 0.0;
-
   // Initialize f at left end-point for cG
   if ( method->type() == Method::cG )
-  {
     f0 = new real[N];
-    f0tmp = new real[N];
-    for (uint i = 0; i < N; i++)
-      f0[i] = ode.f(u0, 0.0, i);
-  }
 
-  // Initialize kmax, rmax
-  kmax = new real[N];
-  rmax = new real[N];
-  krmax = new real[N];
-
-  // Initialize local array for quadrature
-  ftmp = new real[method->qsize()];
-  for (unsigned int i = 0; i < method->qsize(); i++)
-    ftmp[i] = 0.0;
+  // Initialize vector for u
+  u.init(N);
+  u = 0.0;
 
   // Initialize transpose of dependencies if necessary
   dolfin_info("Computing transpose (inverse) of dependency pattern.");
@@ -75,9 +62,7 @@ MultiAdaptiveTimeSlab::~MultiAdaptiveTimeSlab()
   if ( solver ) delete solver;
 
   if ( elast ) delete [] elast;
-  if ( u ) delete [] u;
   if ( f0 ) delete [] f0;
-  if ( f0tmp ) delete [] f0tmp;
 }
 //-----------------------------------------------------------------------------
 real MultiAdaptiveTimeSlab::build(real a, real b)
@@ -119,7 +104,14 @@ bool MultiAdaptiveTimeSlab::solve()
   // Copy u0 to u. This happens automatically in feval if user has set
   // dependencies correctly, but you never know...
   for (unsigned int i = 0; i < N; i++)
-    u[i] = u0[i];
+    u(i) = u0(i);
+
+  // Compute f at left end-point for cG
+  if ( method->type() == Method::cG )
+  {
+    for (uint i = 0; i < N; i++)
+      f0[i] = ode.f(u0, _a, i);
+  }
 
   // Solve system
   return solver->solve();
@@ -133,13 +125,17 @@ bool MultiAdaptiveTimeSlab::solve()
 //-----------------------------------------------------------------------------
 bool MultiAdaptiveTimeSlab::check(bool first)
 {
-  // Pre-compute maximum of residuals
-  computeMaxResiduals();
+  // Compute new time steps
+  adaptivity.update(*this, _b, first);
 
-  // Maximum residual over all components
-  real rmaxall = 0;
-  rmaxall = *std::max_element(rmax, rmax + N);
-
+  // Check if current solution can be accepted
+  return adaptivity.accept();
+}
+//-----------------------------------------------------------------------------
+bool MultiAdaptiveTimeSlab::shift()
+{
+  // Check if we reached the end time
+  const bool end = (_b + DOLFIN_EPS) > ode.T;
 
   // Cover end time
   coverTime(_b);
@@ -154,62 +150,9 @@ bool MultiAdaptiveTimeSlab::check(bool first)
     
     // Get end-time value of component
     const int j = e * method->nsize();
-    u[i] = jx[j + method->nsize() - 1];
+    u(i) = jx[j + method->nsize() - 1];
   }
 
-  // Start time step update for system
-  adaptivity.updateStart();
-  
-  // Compute residual and new time step for each component
-  for (uint i = 0; i < N; i++)
-  {
-    // Get last element of component
-    const int e = elast[i];
-    dolfin_assert(e != -1);
-    
-    // Get element data
-    const uint s = es[e];
-    const uint j = e * method->nsize();
-    const real a = sa[s];
-    const real b = sb[s];
-    const real k = b - a;
-    
-    // Get initial value for element (only necessary for cG)
-    const int ep = ee[e];
-    const uint jp = ep * method->nsize();
-    const real x0 = ( ep != -1 ? jx[jp + method->nsize() - 1] : u0[i] );
-    
-    // Evaluate right-hand side at end-point (u is already updated)
-    const real f = ode.f(u, b, i);
-
-    // Compute residual
-    real r = method->residual(x0, jx + j, f, k);
-    
-    // FIXME: r is not needed anymore
-    r = rmax[i];
-
-    // Update adaptivity
-    adaptivity.updateComponent(i, kmax[i], kmin, rmax[i], rmaxall, krmax[i],
-			       *method, _b);
-
-    // Save right-hand side at end-point for cG
-    // We don't know if slab is acceptable, so don't overwrite f0
-    if ( method->type() == Method::cG )
-      f0tmp[i] = f;
-  }
-  
-  // End time step update for system
-  adaptivity.updateEnd(first);
-
-  // Check if current solution can be accepted
-  return adaptivity.accept();
-}
-//-----------------------------------------------------------------------------
-bool MultiAdaptiveTimeSlab::shift()
-{
-  // Check if we reached the end time
-  const bool end = (_b + DOLFIN_EPS) > ode.T;
-  
   // Write solution at final time if we should
   if ( save_final && end )
     write(u);
@@ -218,14 +161,9 @@ bool MultiAdaptiveTimeSlab::shift()
   if ( !ode.update(u, _b, end) )
     return false;
 
-  // Set initial value to end-time value (needs to be done last)
-  // Copy right-hand side at end-point for cG (the slab is accepted now)
+  // Set initial value to end-time value
   for (uint i = 0; i < N; i++)
-  {
-    u0[i] = u[i];
-    if ( method->type() == Method::cG )
-      f0[i] = f0tmp[i];
-  }
+    u0(i) = u(i);
 
   return true;
 }
@@ -241,7 +179,7 @@ void MultiAdaptiveTimeSlab::reset()
 
     // Iterate over degrees of freedom on element
     for (uint n = 0; n < method->nsize(); n++)
-      jx[j + n] = u0[i];
+      jx[j + n] = u0(i);
 
     // Step to next element
     j += method->nsize();
@@ -275,7 +213,7 @@ real MultiAdaptiveTimeSlab::usample(uint i, real t)
   // Get initial value for element (only necessary for cG)
   const int ep = ee[e];
   const uint jp = ep * method->nsize();
-  const real x0 = ( ep != -1 ? jx[jp + method->nsize() - 1] : u0[i] );
+  const real x0 = ( ep != -1 ? jx[jp + method->nsize() - 1] : u0(i) );
   
   // Evaluate solution
   const real tau = (t - a) / k;
@@ -303,56 +241,57 @@ real MultiAdaptiveTimeSlab::ksample(uint i, real t)
 //-----------------------------------------------------------------------------
 real MultiAdaptiveTimeSlab::rsample(uint i, real t)
 {
-//   // Note that the residual is always sampled at the end-time
-
-//   // Cover end time
-//   coverTime(_b);
+  /*
+  // Note that the residual is always sampled at the end-time
   
-//   // Update the solution vector at the end time for each dependent component
-
-//   // Get list of dependencies for component
-//   const Array<uint>& deps = ode.dependencies[i];
-
-//   // Iterate over dependencies
-//   for (uint pos = 0; pos < deps.size(); pos++)
-//   {
-//     // Get last element of component
-//     const int e = elast[pos];
-//     dolfin_assert(e != -1);
-//     dolfin_assert(sb[es[e]] == _b);
+  // Cover end time
+  coverTime(_b);
+  
+  // Update the solution vector at the end time for each dependent component
+  
+  // Get list of dependencies for component
+  const Array<uint>& deps = ode.dependencies[i];
+  
+  // Iterate over dependencies
+  for (uint pos = 0; pos < deps.size(); pos++)
+  {
+    // Get last element of component
+    const int e = elast[pos];
+    dolfin_assert(e != -1);
+    dolfin_assert(sb[es[e]] == _b);
     
-//     // Get end-time value of component
-//     const int j = e * method->nsize();
-//     u[pos] = jx[j + method->nsize() - 1];
-//   }
+    // Get end-time value of component
+    const int j = e * method->nsize();
+    u[pos] = jx[j + method->nsize() - 1];
+  }
+  
+  // Compute residual
+  
+  // Get last element of component
+  const int e = elast[i];
+  dolfin_assert(e != -1);
+  
+  // Get element data
+  const uint s = es[e];
+  const uint j = e * method->nsize();
+  const real a = sa[s];
+  const real b = sb[s];
+  const real k = b - a;
+  
+  // Get initial value for element (only necessary for cG)
+  const int ep = ee[e];
+  const uint jp = ep * method->nsize();
+  const real x0 = ( ep != -1 ? jx[jp + method->nsize() - 1] : u0(i) );
+  
+  // Evaluate right-hand side at end-point (u is already updated)
+  const real f = ode.f(u, b, i);
+  
+  // Compute residual
+  const real r = method->residual(x0, jx + j, f, k);
+  */
 
-//   // Compute residual
-
-//   // Get last element of component
-//   const int e = elast[i];
-//   dolfin_assert(e != -1);
-    
-//   // Get element data
-//   const uint s = es[e];
-//   const uint j = e * method->nsize();
-//   const real a = sa[s];
-//   const real b = sb[s];
-//   const real k = b - a;
-    
-//   // Get initial value for element (only necessary for cG)
-//   const int ep = ee[e];
-//   const uint jp = ep * method->nsize();
-//   const real x0 = ( ep != -1 ? jx[jp + method->nsize() - 1] : u0[i] );
-    
-//   // Evaluate right-hand side at end-point (u is already updated)
-//   const real f = ode.f(u, b, i);
-
-//   // Compute residual
-//   const real r = method->residual(x0, jx + j, f, k);
-
-//   return r;
-
-  return rmax[i];
+  // Just return previously computed maximum in time slab for component
+  return adaptivity.residual(i);
 }
 //-----------------------------------------------------------------------------
 void MultiAdaptiveTimeSlab::disp() const
@@ -387,7 +326,7 @@ void MultiAdaptiveTimeSlab::allocData(real a, real b)
 { 
   // Use u to keep track of the latest time value for each component here
   for (uint i = 0; i < N; i++)
-    u[i] = a;
+    u(i) = a;
   
   // Recursively compute data size
   ns = ne = nj = nd = 0;
@@ -493,7 +432,7 @@ void MultiAdaptiveTimeSlab::create_j(uint index)
 
   // Create dofs
   for (uint n = 0; n < method->nsize(); n++)
-    jx[pos + n] = u0[index];
+    jx[pos + n] = u0(index);
 }
 //-----------------------------------------------------------------------------
 void MultiAdaptiveTimeSlab::create_d(uint i0, uint e0, uint s0, real a0, real b0)
@@ -652,7 +591,7 @@ real MultiAdaptiveTimeSlab::computeDataSize(real a, real b, uint offset)
 
   // Use u to keep track of the latest time value for each component here
   for (uint n = offset; n < end; n++)
-    u[partition.index(n)] = b;
+    u(partition.index(n)) = b;
 
   // Add contribution from this sub slab
   ns += 1;
@@ -688,7 +627,7 @@ dolfin::uint MultiAdaptiveTimeSlab::countDependencies(uint i0)
     const uint i1 = deps[pos];
     
     // Use u to keep track of the latest time value for each component here
-    if ( u[i0] > (u[i1] + DOLFIN_EPS) )
+    if ( u(i0) > (u(i1) + DOLFIN_EPS) )
       n += method->nsize();
   }
   
@@ -892,7 +831,7 @@ void MultiAdaptiveTimeSlab::cGfeval(real* f, uint s0, uint e0, uint i0,
       // Special case, component has no latest element
       if ( e1 == -1 )
       {
-	u[i1] = u0[i1];
+	u(i1) = u0(i1);
 	continue;
       }
       
@@ -903,7 +842,7 @@ void MultiAdaptiveTimeSlab::cGfeval(real* f, uint s0, uint e0, uint i0,
 	// k1 = k0 (same sub slab)
 	const int ep = ee[e1];
 	const uint jp = ep * nn;
-	u[i1] = ( ep != -1 ? jx[jp + last] : u0[i1] );
+	u(i1) = ( ep != -1 ? jx[jp + last] : u0(i1) );
       }
       else
       {
@@ -911,7 +850,7 @@ void MultiAdaptiveTimeSlab::cGfeval(real* f, uint s0, uint e0, uint i0,
 	if ( b1 < (a0 + DOLFIN_EPS) )
 	{
 	  // k1 < k0 (smaller time step)
-	  u[i1] = jx[e1 * nn + last];
+	  u(i1) = jx[e1 * nn + last];
 	}
 	else
 	{
@@ -922,8 +861,8 @@ void MultiAdaptiveTimeSlab::cGfeval(real* f, uint s0, uint e0, uint i0,
 	  const int ep = ee[e1];
 	  const uint jp = ep * nn;
 	  const uint j1 = e1 * nn;
-	  const real x0 = ( ep != -1 ? jx[jp + last] : u0[i1] );
-	  u[i1] = method->ueval(x0, jx + j1, tau);
+	  const real x0 = ( ep != -1 ? jx[jp + last] : u0(i1) );
+	  u(i1) = method->ueval(x0, jx + j1, tau);
 	}
       }
     }
@@ -962,7 +901,7 @@ void MultiAdaptiveTimeSlab::cGfeval(real* f, uint s0, uint e0, uint i0,
       const uint j1 = e1 * nn;
       if ( s0 == s1 )
       {
-	u[i1] = jx[j1 + m - 1];
+	u(i1) = jx[j1 + m - 1];
 	continue;
       }
 
@@ -977,8 +916,8 @@ void MultiAdaptiveTimeSlab::cGfeval(real* f, uint s0, uint e0, uint i0,
       const real tau = (t - a1) / k1;
       const int ep = ee[e1];
       const uint jp = ep * nn;
-      const real x0 = ( ep != -1 ? jx[jp + last] : u0[i1] );
-      u[i1] = method->ueval(x0, jx + j1, tau);
+      const real x0 = ( ep != -1 ? jx[jp + last] : u0(i1) );
+      u(i1) = method->ueval(x0, jx + j1, tau);
     }
 
     // Update values for components with smaller time steps
@@ -992,7 +931,7 @@ void MultiAdaptiveTimeSlab::cGfeval(real* f, uint s0, uint e0, uint i0,
       const int ep = ee[e1];
       const uint i1 = ei[e1];
       const uint jp = ep * nn;
-      const real x0 = ( ep != -1 ? jx[jp + last] : u0[i1] );
+      const real x0 = ( ep != -1 ? jx[jp + last] : u0(i1) );
       
       // Interpolate value from smaller element
       const uint s1 = es[e1];
@@ -1001,7 +940,7 @@ void MultiAdaptiveTimeSlab::cGfeval(real* f, uint s0, uint e0, uint i0,
       const real k1 = b1 - a1;
       const real tau = (t - a1) / k1;
       const uint j1 = e1 * nn;
-      u[i1] = method->ueval(x0, jx + j1, tau);
+      u(i1) = method->ueval(x0, jx + j1, tau);
     }
     
     // Evaluate right-hand side
@@ -1047,7 +986,7 @@ void MultiAdaptiveTimeSlab::dGfeval(real* f, uint s0, uint e0, uint i0,
       const uint j1 = e1 * nn;
       if ( s0 == s1 )
       {
-	u[i1] = jx[j1 + m];
+	u(i1) = jx[j1 + m];
 	continue;
       }
 
@@ -1060,7 +999,7 @@ void MultiAdaptiveTimeSlab::dGfeval(real* f, uint s0, uint e0, uint i0,
       const real a1 = sa[s1];
       const real k1 = b1 - a1;
       const real tau = (t - a1) / k1;
-      u[i1] = method->ueval(0.0, jx + j1, tau);
+      u(i1) = method->ueval(0.0, jx + j1, tau);
     }
 
     // Update values for components with smaller time steps
@@ -1078,7 +1017,7 @@ void MultiAdaptiveTimeSlab::dGfeval(real* f, uint s0, uint e0, uint i0,
       const real k1 = b1 - a1;
       const real tau = (t - a1) / k1;
       const uint j1 = e1 * nn;
-      u[i1] = method->ueval(0.0, jx + j1, tau);
+      u(i1) = method->ueval(0.0, jx + j1, tau);
     }
     
     // Evaluate right-hand side
@@ -1088,8 +1027,8 @@ void MultiAdaptiveTimeSlab::dGfeval(real* f, uint s0, uint e0, uint i0,
 //-----------------------------------------------------------------------------
 TimeSlabSolver* MultiAdaptiveTimeSlab::chooseSolver()
 {
-  bool implicit = get("implicit");
-  std::string solver = get("solver");
+  bool implicit = get("ODE implicit");
+  std::string solver = get("ODE nonlinear solver");
 
   if ( implicit )
     dolfin_error("Multi-adaptive solver cannot solver implicit ODEs. Use cG(q) or dG(q) instead.");
@@ -1115,78 +1054,5 @@ TimeSlabSolver* MultiAdaptiveTimeSlab::chooseSolver()
   }
 
   return 0;
-}
-//-----------------------------------------------------------------------------
-void MultiAdaptiveTimeSlab::computeMaxResiduals()
-{
-  // The time slab
-  MultiAdaptiveTimeSlab& ts = *this;
-
-  // Reset dof
-  uint j = 0;
-
-  // Reset elast
-  for (uint i = 0; i < ts.N; i++)
-    ts.elast[i] = -1;
-
-  // Reset kmax, rmax, krmax
-  for (uint i = 0; i < N; i++)
-  {
-    kmax[i] = 0.0;
-    rmax[i] = 0.0;
-    krmax[i] = 0.0;
-  }
-
-  // Iterate over all sub slabs
-  uint e0 = 0;
-  uint e1 = 0;
-  for (uint s = 0; s < ts.ns; s++)
-  {
-    // Cover all elements in current sub slab
-    e1 = ts.coverSlab(s, e0);
-    
-    // Get data for sub slab
-    const real a = ts.sa[s];
-    const real b = ts.sb[s];
-    const real k = b - a;
-
-    // Save current dof
-    uint j0 = j;
-
-    // Reset current dof
-    j = j0;
-
-    // Iterate over all elements in current sub slab
-    for (uint e = e0; e < e1; e++)
-    {
-      // Get element data
-      const uint i = ts.ei[e];
-
-      // Get initial value for element
-      const int ep = ts.ee[e];
-      const real x0 = ( ep != -1 ? ts.jx[ep*method->nsize() + method->nsize() - 1] : ts.u0[i] );
-      
-      // Evaluate right-hand side at quadrature points of element
-      if ( method->type() == Method::cG )
-	ts.cGfeval(ftmp, s, e, i, a, b, k);
-      else
-	ts.dGfeval(ftmp, s, e, i, a, b, k);
-
-      const real r = method->residual(x0, ts.jx + j, ftmp[method->nsize()], k);
-
-      real rmaxprev = rmax[i];
-      rmax[i] = std::max(rmax[i], fabs(r));
-      if(rmaxprev != rmax[i])
-        kmax[i] = std::max(kmax[i], k);
-      krmax[i] = std::max(krmax[i], method->error(k, r));
-      
-      // Update dof
-      j += method->nsize();
-    }
-
-    // Step to next sub slab
-    e0 = e1;
-
-  }
 }
 //-----------------------------------------------------------------------------

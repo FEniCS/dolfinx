@@ -1,1 +1,1 @@
-SUBDIRS = convergence simple
+SUBDIRS = simple

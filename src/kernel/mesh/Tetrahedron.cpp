@@ -1,26 +1,27 @@
-// Copyright (C) 2002-2006 Johan Hoffman and Anders Logg.
+// Copyright (C) 2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
-// First added:  2002
-// Last changed: 2006-02-20
-
-#include <cmath>
+// Modified by Johan Hoffman 2006.
+// Modified by Garth N. Wells 2006.
+// Modified by Kristian Oelgaard 2006.
+//
+// First added:  2006-06-05
+// Last changed: 2006-12-06
 
 #include <dolfin/dolfin_log.h>
-#include <dolfin/Array.h>
-#include <dolfin/Vertex.h>
-#include <dolfin/Edge.h>
-#include <dolfin/Face.h>
-#include <dolfin/Point.h>
 #include <dolfin/Cell.h>
+#include <dolfin/MeshEditor.h>
+#include <dolfin/MeshGeometry.h>
+#include <dolfin/Facet.h>
 #include <dolfin/Tetrahedron.h>
+#include <dolfin/GeometricPredicates.h>
 
 using namespace dolfin;
 
-// Alignment convention for edges (first vertex)
+// Alignment convention for edges according to the DOLFIN manual (first vertex)
 static int edge_alignment[6] = {1, 2, 0, 0, 1, 2};
 
-// Alignment convention for faces
+// Alignment convention for faces according to the DOLFIN manual
 static int face_alignment_00[4] = {5, 3, 2, 0}; // Edge 0 for alignment 0
 static int face_alignment_01[4] = {0, 1, 3, 1}; // Edge 1 for alignment 0 (otherwise 1)
 static int face_alignment_10[4] = {0, 1, 3, 1}; // Edge 0 for alignment 2
@@ -29,200 +30,365 @@ static int face_alignment_20[4] = {4, 5, 4, 2}; // Edge 0 for alignment 4
 static int face_alignment_21[4] = {5, 3, 2, 0}; // Edge 1 for alignment 4 (otherwise 5)
 
 //-----------------------------------------------------------------------------
-Tetrahedron::Tetrahedron(Vertex& n0, Vertex& n1, Vertex& n2, Vertex& n3) : GenericCell()
+dolfin::uint Tetrahedron::dim() const
 {
-  cn.init(numVertices());
+  return 3;
+}
+//-----------------------------------------------------------------------------
+dolfin::uint Tetrahedron::numEntities(uint dim) const
+{
+  switch ( dim )
+  {
+  case 0:
+    return 4; // vertices
+  case 1:
+    return 6; // edges
+  case 2:
+    return 4; // faces
+  case 3:
+    return 1; // cells
+  default:
+    dolfin_error1("Illegal topological dimension %d for tetrahedron.", dim);
+  }
 
-  cn(0) = &n0;
-  cn(1) = &n1;
-  cn(2) = &n2;
-  cn(3) = &n3;
+  return 0;
 }
 //-----------------------------------------------------------------------------
-int Tetrahedron::numVertices() const
+dolfin::uint Tetrahedron::numVertices(uint dim) const
 {
-  return 4;
-}
-//-----------------------------------------------------------------------------
-int Tetrahedron::numEdges() const
-{
-  return 6;
-}
-//-----------------------------------------------------------------------------
-int Tetrahedron::numFaces() const
-{
-  return 4;
-}
-//-----------------------------------------------------------------------------
-int Tetrahedron::numBoundaries() const
-{
-  return numFaces();
-}
-//-----------------------------------------------------------------------------
-Cell::Type Tetrahedron::type() const
-{
-  return Cell::tetrahedron;
-}
-//-----------------------------------------------------------------------------
-Cell::Orientation Tetrahedron::orientation() const
-{
-  Point v01 = cn(1)->coord() - cn(0)->coord();
-  Point v02 = cn(2)->coord() - cn(0)->coord();
-  Point v03 = cn(3)->coord() - cn(0)->coord();
-  Point n = v01.cross(v02);
+  switch ( dim )
+  {
+  case 0:
+    return 1; // vertices
+  case 1:
+    return 2; // edges
+  case 2:
+    return 3; // faces
+  case 3:
+    return 4; // cells
+  default:
+    dolfin_error1("Illegal topological dimension %d for tetrahedron.", dim);
+  }
 
-  return ( n * v03 < 0.0 ? Cell::left : Cell::right );
+  return 0;
 }
 //-----------------------------------------------------------------------------
-real Tetrahedron::volume() const
+dolfin::uint Tetrahedron::alignment(const Cell& cell, uint dim, uint e) const
 {
-  // Get the coordinates
-  real x1 = coord(0).x; real y1 = coord(0).y; real z1 = coord(0).z;
-  real x2 = coord(1).x; real y2 = coord(1).y; real z2 = coord(1).z;
-  real x3 = coord(2).x; real y3 = coord(2).y; real z3 = coord(2).z;
-  real x4 = coord(3).x; real y4 = coord(3).y; real z4 = coord(3).z;
+  // Compute alignment according the convention in the DOLFIN manual
+  if ( dim == 1 )
+  {
+    // Compute alignment of given edge by checking first vertex
+    const uint* edge_vertices = cell.mesh().topology()(dim, 0)(cell.entities(dim)[e]);
+    const uint* cell_vertices = cell.entities(0);
+    return ( edge_vertices[0] == cell_vertices[edge_alignment[e]] ? 0 : 1 );
+  }
+  else if ( dim == 2 )
+  {
+    // Compute alignment of given face by checking the first two edges
+    const uint* face_edges = cell.mesh().topology()(dim, 1)(cell.entities(dim)[e]);
+    const uint* cell_edges = cell.entities(1);
+    if ( face_edges[0] == cell_edges[face_alignment_00[e]] )
+      return ( face_edges[1] == cell_edges[face_alignment_01[e]] ? 0 : 1 );
+    else if ( face_edges[0] == cell_edges[face_alignment_10[e]] )
+      return ( face_edges[1] == cell_edges[face_alignment_11[e]] ? 2 : 3 );
+    else if ( face_edges[0] == cell_edges[face_alignment_20[e]] )
+      return ( face_edges[1] == cell_edges[face_alignment_21[e]] ? 4 : 5 );
+    dolfin_error("Unable to compute alignment of tetrahedron.");
+  }
+  else
+    dolfin_error("Unable to compute alignment for entity of dimension %d for tetrehdron.");
+  
+  return 0;
+}
+//-----------------------------------------------------------------------------
+void Tetrahedron::createEntities(uint** e, uint dim, const uint v[]) const
+{
+  // We only need to know how to create edges and faces
+  switch ( dim )
+  {
+  case 1:
+    // Create the six edges
+    e[0][0] = v[1]; e[0][1] = v[2];
+    e[1][0] = v[2]; e[1][1] = v[0];
+    e[2][0] = v[0]; e[2][1] = v[1];
+    e[3][0] = v[0]; e[3][1] = v[3];
+    e[4][0] = v[1]; e[4][1] = v[3];
+    e[5][0] = v[2]; e[5][1] = v[3];
+    break;
+  case 2:
+    // Create the four faces
+    e[0][0] = v[1]; e[0][1] = v[3]; e[0][2] = v[2];
+    e[1][0] = v[2]; e[1][1] = v[3]; e[1][2] = v[0];
+    e[2][0] = v[3]; e[2][1] = v[1]; e[2][2] = v[0];
+    e[3][0] = v[0]; e[3][1] = v[1]; e[3][2] = v[2];
+    break;
+  default:
+    dolfin_error1("Don't know how to create entities of topological dimension %d.", dim);
+  }
+}
+//-----------------------------------------------------------------------------
+void Tetrahedron::refineCell(Cell& cell, MeshEditor& editor,
+			     uint& current_cell) const
+{
+  // Get vertices and edges
+  const uint* v = cell.entities(0);
+  const uint* e = cell.entities(1);
+  dolfin_assert(v);
+  dolfin_assert(e);
+
+  // Get offset for new vertex indices
+  const uint offset = cell.mesh().numVertices();
+
+  // Compute indices for the ten new vertices
+  const uint v0 = v[0];
+  const uint v1 = v[1];
+  const uint v2 = v[2];
+  const uint v3 = v[3];
+  const uint e0 = offset + e[0];
+  const uint e1 = offset + e[1];
+  const uint e2 = offset + e[2];
+  const uint e3 = offset + e[3];
+  const uint e4 = offset + e[4];
+  const uint e5 = offset + e[5];
+
+  // Regular refinement: 8 new cells
+  editor.addCell(current_cell++, v0, e1, e3, e2);
+  editor.addCell(current_cell++, v1, e2, e4, e0);
+  editor.addCell(current_cell++, v2, e0, e5, e1);
+  editor.addCell(current_cell++, v3, e5, e4, e3);
+  editor.addCell(current_cell++, e0, e4, e5, e1);
+  editor.addCell(current_cell++, e1, e5, e3, e4);
+  editor.addCell(current_cell++, e2, e3, e4, e1);
+  editor.addCell(current_cell++, e0, e1, e2, e4);
+}
+//-----------------------------------------------------------------------------
+void Tetrahedron::refineCellIrregular(Cell& cell, MeshEditor& editor, 
+				      uint& current_cell, uint refinement_rule, 
+				      uint* marked_edges) const
+{
+  dolfin_warning("Not implemented yet.");
+
+  /*
+  // Get vertices and edges
+  const uint* v = cell.entities(0);
+  const uint* e = cell.entities(1);
+  dolfin_assert(v);
+  dolfin_assert(e);
+
+  // Get offset for new vertex indices
+  const uint offset = cell.mesh().numVertices();
+
+  // Compute indices for the ten new vertices
+  const uint v0 = v[0];
+  const uint v1 = v[1];
+  const uint v2 = v[2];
+  const uint v3 = v[3];
+  const uint e0 = offset + e[0];
+  const uint e1 = offset + e[1];
+  const uint e2 = offset + e[2];
+  const uint e3 = offset + e[3];
+  const uint e4 = offset + e[4];
+  const uint e5 = offset + e[5];
+
+  // Refine according to refinement rule
+  // The rules are numbered according to the paper: 
+  // J. Bey, "Tetrahedral Grid Refinement", 1995.   
+  switch ( refinement_rule )
+  {
+  case 1:
+    // Rule 1: 4 new cells
+    editor.addCell(current_cell++, v0, e1, e3, e2);
+    editor.addCell(current_cell++, v1, e2, e4, e0);
+    editor.addCell(current_cell++, v2, e0, e5, e1);
+    editor.addCell(current_cell++, v3, e5, e4, e3);
+    break;
+  case 2:
+    // Rule 2: 2 new cells
+    editor.addCell(current_cell++, v0, e1, e3, e2);
+    editor.addCell(current_cell++, v1, e2, e4, e0);
+    break;
+  case 3:
+    // Rule 3: 3 new cells
+    editor.addCell(current_cell++, v0, e1, e3, e2);
+    editor.addCell(current_cell++, v1, e2, e4, e0);
+    editor.addCell(current_cell++, v2, e0, e5, e1);
+    break;
+  case 4:
+    // Rule 4: 4 new cells
+    editor.addCell(current_cell++, v0, e1, e3, e2);
+    editor.addCell(current_cell++, v1, e2, e4, e0);
+    editor.addCell(current_cell++, v2, e0, e5, e1);
+    editor.addCell(current_cell++, v3, e5, e4, e3);
+    break;
+  default:
+    dolfin_error1("Illegal rule for irregular refinement of tetrahedron.");
+  }
+  */
+}
+//-----------------------------------------------------------------------------
+real Tetrahedron::volume(const MeshEntity& tetrahedron) const
+{
+  // Get mesh geometry
+  const MeshGeometry& geometry = tetrahedron.mesh().geometry();
+
+  // Only know how to compute the volume when embedded in R^3
+  if ( geometry.dim() != 3 )
+    dolfin_error("Only know how to compute the volume of a tetrahedron when embedded in R^3.");
+
+  // Get the coordinates of the four vertices
+  const uint* vertices = tetrahedron.entities(0);
+  const real* x0 = geometry.x(vertices[0]);
+  const real* x1 = geometry.x(vertices[1]);
+  const real* x2 = geometry.x(vertices[2]);
+  const real* x3 = geometry.x(vertices[3]);
 
   // Formula for volume from http://mathworld.wolfram.com
-  real v = ( x1 * ( y2*z3 + y4*z2 + y3*z4 - y3*z2 - y2*z4 - y4*z3 ) -
-	     x2 * ( y1*z3 + y4*z1 + y3*z4 - y3*z1 - y1*z4 - y4*z3 ) +
-	     x3 * ( y1*z2 + y4*z1 + y2*z4 - y2*z1 - y1*z4 - y4*z2 ) -
-	     x4 * ( y1*z2 + y2*z3 + y3*z1 - y2*z1 - y3*z2 - y1*z3 ) );
-
-  return fabs(v) / 6.0;
-}
-//-----------------------------------------------------------------------------
-real Tetrahedron::diameter() const
-{
-  // Compute side lengths
-  real a  = coord(1).dist(coord(2));
-  real b  = coord(0).dist(coord(2));
-  real c  = coord(0).dist(coord(1));
-  real aa = coord(0).dist(coord(3));
-  real bb = coord(1).dist(coord(3));
-  real cc = coord(2).dist(coord(3));
-                                                                                                                          
-  // Compute "area" of triangle with strange side lengths
-  real l1   = a*aa;
-  real l2   = b*bb;
-  real l3   = c*cc;
-  real s    = 0.5*(l1+l2+l3);
-  real area = sqrt(s*(s-l1)*(s-l2)*(s-l3));
-                                                                                                                          
-  // Formula for diameter (2*circumradius) from http://mathworld.wolfram.com
-  real d = area / ( 3.0*volume() );
-                                                                                                                          
-  return d;
-}
-//-----------------------------------------------------------------------------
-dolfin::uint Tetrahedron::edgeAlignment(uint i) const
-{
-  // Check alignment with convention in FFC manual  
-  return ( ce(i)->n0 == cn(edge_alignment[i]) ? 0 : 1 );
-}
-//-----------------------------------------------------------------------------
-dolfin::uint Tetrahedron::faceAlignment(uint i) const
-{
-  // Check alignment with convention in FFC manual
-  Edge* e0 = cf(i)->fe(0);
-  Edge* e1 = cf(i)->fe(1);
-
-  if ( e0 == ce(face_alignment_00[i]) )
-    return ( e1 == ce(face_alignment_01[i]) ? 0 : 1 );
-  else if ( e0 == ce(face_alignment_10[i]) )
-    return ( e1 == ce(face_alignment_11[i]) ? 2 : 3 );
-  else if ( e0 == ce(face_alignment_20[i]) )
-    return ( e1 == ce(face_alignment_21[i]) ? 4 : 5 );
+  real v = ( x0[0] * ( x1[1]*x2[2] + x3[1]*x1[2] + x2[1]*x3[2] - x2[1]*x1[2] - x1[1]*x3[2] - x3[1]*x2[2] ) -
+             x1[0] * ( x0[1]*x2[2] + x3[1]*x0[2] + x2[1]*x3[2] - x2[1]*x0[2] - x0[1]*x3[2] - x3[1]*x2[2] ) +
+             x2[0] * ( x0[1]*x1[2] + x3[1]*x0[2] + x1[1]*x3[2] - x1[1]*x0[2] - x0[1]*x3[2] - x3[1]*x1[2] ) -
+             x3[0] * ( x0[1]*x1[2] + x1[1]*x2[2] + x2[1]*x0[2] - x1[1]*x0[2] - x2[1]*x1[2] - x0[1]*x2[2] ) );
   
-  dolfin_error("Unable to compute alignment of tetrahedron.");
-  return 0;
+  return std::abs(v) / 6.0;
 }
 //-----------------------------------------------------------------------------
-void Tetrahedron::createEdges()
+real Tetrahedron::diameter(const MeshEntity& tetrahedron) const
 {
-  ce.init(6);
-  ce.reset();
+  // Get mesh geometry
+  const MeshGeometry& geometry = tetrahedron.mesh().geometry();
 
-  createEdge(*cn(1), *cn(2));
-  createEdge(*cn(2), *cn(0));
-  createEdge(*cn(0), *cn(1));
-  createEdge(*cn(0), *cn(3));
-  createEdge(*cn(1), *cn(3));
-  createEdge(*cn(2), *cn(3));
+  // Only know how to compute the volume when embedded in R^3
+  if ( geometry.dim() != 3 )
+    dolfin_error("Only know how to compute the diameter of a tetrahedron when embedded in R^3.");
+  
+  // Get the coordinates of the four vertices
+  const uint* vertices = tetrahedron.entities(0);
+  Point p0 = geometry.point(vertices[0]);
+  Point p1 = geometry.point(vertices[1]);
+  Point p2 = geometry.point(vertices[2]);
+  Point p3 = geometry.point(vertices[3]);
+
+  // Compute side lengths
+  real a  = p1.distance(p2);
+  real b  = p0.distance(p2);
+  real c  = p0.distance(p1);
+  real aa = p0.distance(p3);
+  real bb = p1.distance(p3);
+  real cc = p2.distance(p3);
+                                
+  // Compute "area" of triangle with strange side lengths
+  real la   = a*aa;
+  real lb   = b*bb;
+  real lc   = c*cc;
+  real s    = 0.5*(la+lb+lc);
+  real area = sqrt(s*(s-la)*(s-lb)*(s-lc));
+                                
+  // Formula for diameter (2*circumradius) from http://mathworld.wolfram.com
+  return area / ( 3.0*volume(tetrahedron) );
 }
 //-----------------------------------------------------------------------------
-void Tetrahedron::createFaces()
+real Tetrahedron::normal(const Cell& cell, uint facet, uint i) const
 {
-  cf.init(4);
-  cf.reset();
+  // This is a trick to be allowed to initialize a facet from the cell mesh
+  Cell& c = const_cast<Cell&>(cell);
 
-  createFace(*ce(5), *ce(4), *ce(0));
-  createFace(*ce(3), *ce(1), *ce(5));
-  createFace(*ce(2), *ce(4), *ce(3));
-  createFace(*ce(0), *ce(1), *ce(2));
+  // Create facet from the mesh and local facet number
+  Facet f(c.mesh(), c.entities(2)[facet]);
+
+  // Get global index of opposite vertex
+  const uint v0 = cell.entities(0)[facet];
+  
+  // Get global index of vertices on the facet
+  uint v1 = f.entities(0)[0];
+  uint v2 = f.entities(0)[1];
+  uint v3 = f.entities(0)[2];
+
+  // Get mesh geometry
+  const MeshGeometry& geometry = cell.mesh().geometry();
+  
+  // Get the coordinates of the four vertices
+  const real* p0 = geometry.x(v0);
+  const real* p1 = geometry.x(v1);
+  const real* p2 = geometry.x(v2);
+  const real* p3 = geometry.x(v3);
+
+  // Create points from vertex coordinates
+  Point P0(p0[0], p0[1], p0[2]);
+  Point P1(p1[0], p1[1], p1[2]);
+  Point P2(p2[0], p2[1], p2[2]);
+  Point P3(p3[0], p3[1], p3[2]);
+
+  // Create vectors
+  Point V0 = P0 - P1;
+  Point V1 = P2 - P1;
+  Point V2 = P3 - P1;
+
+  // Compute normal vector
+  Point n = V1.cross(V2);
+
+  // Flip direction of normal so it points outward
+  if (n.dot(V0) < 0)
+    return n[i] / n.norm();
+  else
+    return -n[i] / n.norm();
+
+  return 0.0;
 }
 //-----------------------------------------------------------------------------
-void Tetrahedron::sort()
+bool Tetrahedron::intersects(const MeshEntity& tetrahedron,
+                             const Point& p) const
 {
-  // Sort local mesh entities according to ordering in FFC manual
+  // Get mesh geometry
+  const MeshGeometry& geometry = tetrahedron.mesh().geometry();
 
-  // Soft the vertices to be right-oriented
-  if ( orientation() == Cell::left )
-  {
-    Vertex* tmp = cn(2);
-    cn(2) = cn(3);
-    cn(3) = tmp;
-  }
- 
-  // Sort the edges according to the ordering in FFC manual
-  Array<Edge*> edges(6);
-  edges[0] = findEdge(1, 2);
-  edges[1] = findEdge(2, 0);
-  edges[2] = findEdge(0, 1);
-  edges[3] = findEdge(0, 3);
-  edges[4] = findEdge(1, 3);
-  edges[5] = findEdge(2, 3);
-  for (uint i = 0; i < 6; i++)
-    ce(i) = edges[i];
+  // Get global index of vertices of the tetrahedron
+  uint v0 = tetrahedron.entities(0)[0];
+  uint v1 = tetrahedron.entities(0)[1];
+  uint v2 = tetrahedron.entities(0)[2];
+  uint v3 = tetrahedron.entities(0)[3];
 
-  // Sort the faces according to the ordering in FFC manual
-  Array<Face*> faces(4);
-  faces[0] = findFace(0);
-  faces[1] = findFace(1);
-  faces[2] = findFace(2);
-  faces[3] = findFace(3);
-  for (uint i = 0; i < 4; i++)
-    cf(i) = faces[i];
+  // Get the coordinates of the four vertices
+  const real* x0 = geometry.x(v0);
+  const real* x1 = geometry.x(v1);
+  const real* x2 = geometry.x(v2);
+  const real* x3 = geometry.x(v3);
+
+  real xcoordinates[3];
+  real* x = xcoordinates;
+
+  x[0] = p[0];
+  x[1] = p[1];
+  x[2] = p[2];
+
+  real d1, d2, d3, d4;
+
+  // Test orientation of p w.r.t. each face
+  d1 = orient3d((double *)x2, (double *)x1, (double *)x0, x);
+  //cout << "d1: " << d1 << endl;
+  if(d1 < 0.0)
+    return false;
+  d2 = orient3d((double *)x0, (double *)x3, (double *)x2, x);
+  //cout << "d2: " << d2 << endl;
+  if(d2 < 0.0)
+    return false;
+  d3 = orient3d((double *)x0, (double *)x1, (double *)x3, x);
+  //cout << "d3: " << d3 << endl;
+  if(d3 < 0.0)
+    return false;
+  d4 = orient3d((double *)x1, (double *)x2, (double *)x3, x);
+  //cout << "d4: " << d4 << endl;
+  if(d4 < 0.0)
+    return false;
+
+  if(d1 == 0.0 || d2 == 0.0 || d3 == 0.0 || d4 == 0.0)
+    return true;
+
+  return true;
 }
 //-----------------------------------------------------------------------------
-Edge* Tetrahedron::findEdge(uint n0, uint n1) const
+std::string Tetrahedron::description() const
 {
-  // Find the edge containing both vertices n0 and n1
-  const Vertex* vertex0 = cn(n0);
-  const Vertex* vertex1 = cn(n1);
-  for (uint i = 0; i < 6; i++)
-  {
-    Edge* edge = ce(i);
-    if ( (edge->n0 == vertex0 && edge->n1 == vertex1) ||
-	 (edge->n0 == vertex1 && edge->n1 == vertex0) )
-      return edge;
-  }
-
-  dolfin_error2("Unable to find edge between vertices %d and %d.\n", n0, n1);
-  return 0;
-}
-//-----------------------------------------------------------------------------
-Face* Tetrahedron::findFace(uint n) const
-{
-  // Find the face not containing vertex n
-  Vertex* vertex = cn(n);
-  for (uint i = 0; i < 4; i++)
-  {
-    Face* face = cf(i);
-    if ( !(face->contains(*vertex)) )
-      return face;
-  }
-
-  dolfin_error1("Unable to find face opposite to vertex %d.", n);
-  return 0;
+  std::string s = "tetrahedron (simplex of topological dimension 3)";
+  return s;
 }
 //-----------------------------------------------------------------------------

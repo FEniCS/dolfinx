@@ -3,3 +3,10 @@
 ^tailor.log$
 ^tailor.state$
 ^tailor.state.journal$
+.*\.o
+.*\.Plo
+.*\.Po
+.*\.lo
+.*\.la
+.*\.a
+.*~

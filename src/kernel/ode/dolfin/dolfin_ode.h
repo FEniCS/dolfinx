@@ -1,13 +1,13 @@
-// Copyright (C) 2003-2005 Johan Jansson and Anders Logg.
+// Copyright (C) 2003-2006 Johan Jansson and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003
-// Last changed: 2005-11-04
+// Last changed: 2006-08-21
 
 #ifndef __DOLFIN_ODE_H
 #define __DOLFIN_ODE_H
 
-// Multi-adaptivity
+// DOLFIN ODE solvers
 
 #include <dolfin/Alloc.h>
 #include <dolfin/ComplexODE.h>
@@ -31,7 +31,6 @@
 #include <dolfin/Method.h>
 #include <dolfin/ODE.h>
 #include <dolfin/ODESolver.h>
-#include <dolfin/ParticleSystem.h>
 #include <dolfin/Partition.h>
 #include <dolfin/ReducedModel.h>
 #include <dolfin/Sample.h>

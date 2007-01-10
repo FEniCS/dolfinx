@@ -1,20 +1,21 @@
-// Copyright (C) 2005 Anders Logg.
+// Copyright (C) 2005-2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-28
-// Last changed: 2005-11-11
+// Last changed: 2006-07-06
 
 #ifndef __MONO_ADAPTIVE_TIME_SLAB_H
 #define __MONO_ADAPTIVE_TIME_SLAB_H
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/constants.h>
-#include <dolfin/Vector.h>
+#include <dolfin/uBlasVector.h>
 #include <dolfin/MonoAdaptivity.h>
 #include <dolfin/TimeSlab.h>
 
 namespace dolfin
 {  
+
   class ODE;
   class Method;
   class TimeSlabSolver;
@@ -80,9 +81,12 @@ namespace dolfin
     MonoAdaptivity adaptivity; // Adaptive time step regulation
     uint nj;                   // Number of dofs
     real* dofs;                // Local dofs for an element used for interpolation
-    real* f;                   // Values of right-hand side at all quadrature points
-    Vector x;                  // Degrees of freedom for the solution
+    real* fq;                  // Values of right-hand side at all quadrature points
     real rmax;                 // Previously computed maximum norm of residual
+
+    uBlasVector x; // Degrees of freedom for the solution on the time slab
+    uBlasVector u; // The solution at a given stage
+    uBlasVector f; // The right-hand side at a given stage
     
   };
 

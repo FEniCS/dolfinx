@@ -20,23 +20,21 @@ AC_DEFUN([AC_PYTHON_DEVEL],[
 
 	# Check for Python include path
 	AC_MSG_CHECKING([for Python include path])
-	python_path=`echo $PYTHON | sed "s,/bin.*$,,"`
-	for i in "$python_path/include/python$PYTHON_VERSION/" "$python_path/include/python/" "$python_path/" ; do
-		python_path=`find $i -type f -name Python.h -print | sed "1q"`
-		if test -n "$python_path" ; then
-			break
-		fi
-	done
-	python_path=`echo $python_path | sed "s,/Python.h$,,"`
+   python_path=`$PYTHON -c 'from distutils import sysconfig; print sysconfig.get_python_inc();'`
+   f_python_path=`find $python_path -type f -name Python.h -print | sed "1q"`
+   if test -n "$f_python_path" ; then
+      python_path=`dirname $f_python_path`
+   fi
 	AC_MSG_RESULT([$python_path])
 	if test -z "$python_path" ; then
 		AC_MSG_ERROR([cannot find Python include path])
 	fi
 	AC_SUBST([PYTHON_CPPFLAGS],[-I$python_path])
 
-	# Check for Python library path
+	# Check for Python library path - python exec_prefix changed above, need to
+	# reset
 	AC_MSG_CHECKING([for Python library path])
-	python_path=`echo $PYTHON | sed "s,/bin.*$,,"`
+   python_path=`$PYTHON -c 'import sys; print sys.exec_prefix;'`
 	for i in "$python_path/lib/python$PYTHON_VERSION/config/" "$python_path/lib/python$PYTHON_VERSION/" "$python_path/lib/python/config/" "$python_path/lib/python/" "$python_path/" ; do
 		python_path=`find $i -type f -name libpython$PYTHON_VERSION.* -print | sed "1q"`
 		if test -n "$python_path" ; then

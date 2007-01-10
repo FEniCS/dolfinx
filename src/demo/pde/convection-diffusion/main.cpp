@@ -1,14 +1,14 @@
 // Copyright (C) 2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
+// First added:  2006-02-09
+// Last changed: 2006-10-18
+//
 // This demo first computes the flow around a dolphin by solving
 // the Stokes equations using a mixed formulation with Taylor-Hood
 // elements. The temperature around the dolphin is then computed
 // by solving the time-dependent convection-diffusion equation by
 // a least-squares stabilized cG(1)cG(1) method.
-
-// First added:  2006-02-09
-// Last changed: 2006-02-09
 
 #include <dolfin.h>
 #include "Stokes.h"
@@ -16,42 +16,36 @@
 
 using namespace dolfin;
 
-void solveConvDiff(Mesh& mesh, Function& velocity)
+void solveConvectionDiffusion(Mesh& mesh, Function& velocity)
 {
   // Boundary condition
-  class : public BoundaryCondition
+  class MyBC : public BoundaryCondition
   {
     void eval(BoundaryValue& value, const Point& p, unsigned int i)
     {
-      if ( p.x == 1.0 )
-	value = 1.0;
-      else if ( p.x != 0.0 && p.x != 1.0 && p.y != 0.0 && p.y != 1.0 )
-	value = 1.0;
+      if ( p.x() == 1.0 )
+        value = 1.0;
+      else if ( p.x() != 0.0 && p.x() != 1.0 && p.y() != 0.0 && p.y() != 1.0 )
+        value = 1.0;
     }
-  } bc;
+  };
 
-  // Source term
-  class : public Function
-  {
-    real eval(const Point& p, unsigned int i)
-    {
-      return 0.0;
-    }
-  } f;
+  MyBC bc;
 
   // Linear system and solver
   Matrix A;
   Vector x, b;
-  LU solver;
+  LUSolver solver;
   
   // Create functions
   ConvectionDiffusion::BilinearForm::TrialElement element;
-  Function u0 = 0.0;
-  Function u1(x, mesh, element);
+  Function U0 = 0.0;
+  Function U1(x, mesh, element);
 
   // Create forms
+  Function f = 0.0;
   ConvectionDiffusion::BilinearForm a(velocity);
-  ConvectionDiffusion::LinearForm L(u0, velocity, f);
+  ConvectionDiffusion::LinearForm L(U0, velocity, f);
 
   // Assemble left-hand side
   FEM::assemble(a, A, mesh);
@@ -76,65 +70,72 @@ void solveConvDiff(Mesh& mesh, Function& velocity)
     solver.solve(A, x, b);
     
     // Save the solution to file
-    file << u1;
+    file << U1;
 
     // Update progress
     p = t / T;
 
     // Move to next interval
     t += k;
-    u0 = u1;
+    U0 = U1;
   }
 }
 
 int main()
 {
   // Boundary condition
-  class : public BoundaryCondition
+  class MyBC : public BoundaryCondition
   {
     void eval(BoundaryValue& value, const Point& p, unsigned int i)
     {
       // Pressure boundary condition, zero pressure at one point
-      if ( i == 2 && p.x < DOLFIN_EPS && p.y < DOLFIN_EPS )
+      if ( i == 2 )
       {
-	value = 0.0;
-	return;
+        if ( p.x() < DOLFIN_EPS && p.y() < DOLFIN_EPS )
+        {
+          value = 0.0;
+        }
+        return;
       }
       
       // Velocity boundary condition at inflow
-      if ( p.x > (1.0 - DOLFIN_EPS) )
+      if ( p.x() > (1.0 - DOLFIN_EPS) )
       {
-	if ( i == 0 )
-	  value = -1.0;
-	else
-	  value = 0.0;
-	return;
+        if ( i == 0 )
+          value = -1.0;
+        else
+          value = 0.0;
+        return;
       }
       
       // Velocity boundary condition at remaining boundary (excluding outflow)
-      if ( p.x > DOLFIN_EPS )
-	value = 0.0;
+      if ( p.x() > DOLFIN_EPS )
+        value = 0.0;
     }
-  } bc;
+  };
+
+  MyBC bc;
 
   // Set up problem
-  Mesh mesh("dolfin-2.xml.gz");
+  Mesh mesh("../../../../data/meshes/dolfin-2.xml.gz");
   Function f = 0.0;
   Stokes::BilinearForm a;
   Stokes::LinearForm L(f);
   PDE pde(a, L, mesh, bc);
 
   // Compute solution
-  Function u;
-  Function p;
-  pde.solve(u, p);
+  Function U;
+  Function P;
+  set("Krylov shift nonzero", 1e-10);  
+  pde.solve(U, P);
 
   // Save solution to file
   File ufile("velocity.pvd");
   File pfile("pressure.pvd");
-  ufile << u;
-  pfile << p;
+  ufile << U;
+  pfile << P;
 
   // Solve convection-diffusion with computed velocity field
-  solveConvDiff(mesh, u);
+  set("Krylov shift nonzero", 0.0);
+  solveConvectionDiffusion(mesh, U);
 }

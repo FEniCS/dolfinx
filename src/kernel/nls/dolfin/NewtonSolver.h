@@ -1,26 +1,25 @@
-// Copyright (C) 2005 Garth N. Wells.
+// Copyright (C) 2005-2006 Garth N. Wells.
 // Licensed under the GNU GPL Version 2.
 //
+// Modified by Anders Logg 2006.
+//
 // First added:  2005-10-23
-// Last changed: 2006-02-24
+// Last changed: 2006-09-03
 
 #ifndef __NEWTON_SOLVER_H
 #define __NEWTON_SOLVER_H
 
-#include <dolfin/NonlinearProblem.h>
 #include <dolfin/Matrix.h>
 #include <dolfin/Vector.h>
-#include <dolfin/BilinearForm.h>
 #include <dolfin/Parametrized.h>
-#include <dolfin/KrylovSolver.h>
+#include <dolfin/LinearSolver.h>
+#include <dolfin/KrylovMethod.h>
+#include <dolfin/Preconditioner.h>
 
 namespace dolfin
 {
-  class BoundaryCondition;
-  class LinearForm;
-  class Matrix;
   class Mesh;
-  class Vector;
+  class NonlinearProblem;
 
   /// This class defines a Newton solver for equations of the form F(u) = 0.
   
@@ -28,11 +27,22 @@ namespace dolfin
   {
   public:
 
-    /// Initialise nonlinear solver
+    /// Initialise nonlinear solver and choose LU solver
     NewtonSolver();
 
+#ifdef HAVE_PETSC_H
+    /// Initialise nonlinear solver and choose matrix type which defines LU solver
+    NewtonSolver(Matrix::Type matrix_type);
+#endif
+
+    /// Initialise nonlinear solver and choose Krylov solver
+    NewtonSolver(KrylovMethod method);
+
+    /// Initialise nonlinear solver and choose Krylov solver
+    NewtonSolver(KrylovMethod method, Preconditioner pc);
+
     /// Destructor
-    ~NewtonSolver();
+    virtual ~NewtonSolver();
 
     /// Solve abstract nonlinear problem F(x) = 0 for given vector F and 
     /// Jacobian dF/dx
@@ -43,26 +53,30 @@ namespace dolfin
 
   private:
 
-    // Current number of Newton iterations
+    /// Convergence test 
+    virtual bool converged(const Vector& b, const Vector& dx, 
+        const NonlinearProblem& nonlinear_problem);
+
+    /// Current number of Newton iterations
     uint newton_iteration;
 
-    // Residuals
-    real residual, relative_residual;
+    /// Residual
+    real residual0;
 
-    // Solver
-    KrylovSolver solver;
+    /// Solver
+    LinearSolver* solver;
 
-    // Jacobian matrix
-    Matrix A;
+    /// Jacobian matrix
+    Matrix* A;
 
-    // Resdiual vector
+    /// Resdiual vector
     Vector b;
 
-    // Solution vector
+    /// Solution vector
     Vector dx;
-
   };
 
 }
 
 #endif
+

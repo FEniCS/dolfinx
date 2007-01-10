@@ -4,14 +4,14 @@
 // Modified by Garth N. Wells, 2006
 //
 // First added:  2004
-// Last changed: 2006-02-22
+// Last changed: 2006-05-07
 
 #include <dolfin/dolfin_log.h>
+#include <dolfin/FEM.h>
 #include <dolfin/Matrix.h>
 #include <dolfin/Vector.h>
-#include <dolfin/FEM.h>
-#include <dolfin/GMRES.h>
-#include <dolfin/LU.h>
+#include <dolfin/KrylovSolver.h>
+#include <dolfin/LUSolver.h>
 #include <dolfin/BilinearForm.h>
 #include <dolfin/LinearForm.h>
 #include <dolfin/Mesh.h>
@@ -53,28 +53,43 @@ dolfin::uint LinearPDE::solve(Function& u)
   u.init(*_mesh, _a->trial());
   Vector& x = u.vector();
 
+  // Get solver type
+  const std::string solver_type = get("PDE linear solver");
+
   // Assemble linear system
-  Matrix A;
   Vector b;
-  if ( _bc )
-    FEM::assemble(*_a, *_Lf, A, b, *_mesh, *_bc);
+  Matrix* A;
+  if ( solver_type == "direct" )
+#ifdef HAVE_PETSC_H
+    A = new Matrix(Matrix::umfpack);
+#else
+    A = new Matrix;
+#endif
   else
-    FEM::assemble(*_a, *_Lf, A, b, *_mesh);
+    A = new Matrix;
+
+  if ( _bc )
+    FEM::assemble(*_a, *_Lf, *A, b, *_mesh, *_bc);
+  else
+    FEM::assemble(*_a, *_Lf, *A, b, *_mesh);
   
   // Solve the linear system
-  const std::string solver_type = get("solver");
   if ( solver_type == "direct" )
   {
-    LU solver;
-    solver.solve(A, x, b);
+    LUSolver solver;
+    solver.set("parent", *this);
+    solver.solve(*A, x, b);
   }
   else if ( solver_type == "iterative" || solver_type == "default" )
   {
-    GMRES solver;
-    solver.solve(A, x, b);
+    KrylovSolver solver(gmres);
+    solver.set("parent", *this);
+    solver.solve(*A, x, b);
   }
   else
     dolfin_error1("Unknown solver type \"%s\".", solver_type.c_str());
+
+  delete A;
 
   return 0;
 }

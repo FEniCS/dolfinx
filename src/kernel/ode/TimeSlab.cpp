@@ -1,8 +1,8 @@
-// Copyright (C) 2005 Anders Logg.
+// Copyright (C) 2005-2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-05-02
-// Last changed: 2005-12-19
+// Last changed: 2006-08-21
 
 #include <stdio.h>
 #include <string>
@@ -16,12 +16,12 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 TimeSlab::TimeSlab(ODE& ode) : 
-  N(ode.size()), _a(0.0), _b(0.0), ode(ode), method(0), u0(0),
-  save_final(get("save final solution"))
+  N(ode.size()), _a(0.0), _b(0.0), ode(ode), method(0), u0(ode.size()),
+  save_final(get("ODE save final solution"))
 {
   // Choose method
-  std::string m = get("method");
-  int q = get("order");
+  std::string m = get("ODE method");
+  int q = get("ODE order");
   if ( m == "cg" || m == "mcg" )
   {
     if ( q < 1 )
@@ -37,21 +37,14 @@ TimeSlab::TimeSlab(ODE& ode) :
   else
     dolfin_error1("Unknown ODE method: %s", m.c_str());
 
-  // Initialize initial data
-  u0 = new real[N];
-
   // Get initial data
-  for (uint i = 0; i < N; i++)
-  {
-    u0[i] = ode.u0(i);
-    //cout << "u0[" << i << "] = " << u0[i] << endl;
-  }
+  u0 = 0.0;
+  ode.u0(u0);
 }
 //-----------------------------------------------------------------------------
 TimeSlab::~TimeSlab()
 {
   if ( method ) delete method;
-  if ( u0 ) delete [] u0;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint TimeSlab::size() const
@@ -84,7 +77,7 @@ dolfin::LogStream& dolfin::operator<<(LogStream& stream,
   return stream;
 }
 //-----------------------------------------------------------------------------
-void TimeSlab::write(const real u[])
+void TimeSlab::write(const uBlasVector& u)
 {
   // FIXME: Make this a parameter?
   std::string filename = "solution.data";
@@ -92,11 +85,35 @@ void TimeSlab::write(const real u[])
 	      filename.c_str());
 
   FILE* fp = fopen(filename.c_str(), "w");
-  for (uint i = 0; i < N; i++)
+  for (uint i = 0; i < u.size(); i++)
   {
-    fprintf(fp, "%.15e ", u[i]);
+    fprintf(fp, "%.15e ", u(i));
   }
   fprintf(fp, "\n");
   fclose(fp);
+}
+//-----------------------------------------------------------------------------
+void TimeSlab::copy(const real x[], uint xoffset, real y[], uint yoffset, uint n)
+{
+  for (uint i = 0; i < n; i++)
+    y[yoffset + i] = x[xoffset + i];
+}
+//-----------------------------------------------------------------------------
+void TimeSlab::copy(const uBlasVector& x, uint xoffset, real y[], uint yoffset, uint n)
+{
+  for (uint i = 0; i < n; i++)
+    y[yoffset + i] = x(xoffset + i);
+}
+//-----------------------------------------------------------------------------
+void TimeSlab::copy(const real x[], uint xoffset, uBlasVector& y, uint yoffset, uint n)
+{
+  for (uint i = 0; i < n; i++)
+    y(yoffset + i) = x[xoffset + i];
+}
+//-----------------------------------------------------------------------------
+void TimeSlab::copy(const uBlasVector& x, uint xoffset, uBlasVector& y, uint yoffset, uint n)
+{
+  for (uint i = 0; i < n; i++)
+    y(yoffset + i) = x(xoffset + i);
 }
 //-----------------------------------------------------------------------------

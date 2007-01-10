@@ -5,14 +5,14 @@
 // Modified by Anders Logg 2005-2006.
 //
 // First added:  2005
-// Last changed: 2006-02-20
+// Last changed: 2006-10-19
 
 #include <dolfin/timing.h>
+#include <dolfin/NSESolver.h>
 #include <dolfin/NSEMomentum3D.h>
 #include <dolfin/NSEMomentum2D.h>
 #include <dolfin/NSEContinuity3D.h>
 #include <dolfin/NSEContinuity2D.h>
-#include <dolfin/NSESolver.h>
 
 using namespace dolfin;
 
@@ -42,7 +42,7 @@ void NSESolver::solve()
   Vector bmom, bcon;
 
   // Get the number of space dimensions of the problem 
-  int nsd = mesh.numSpaceDim();
+  int nsd = mesh.topology().dim();
 
   dolfin_info("Number of space dimensions: %d",nsd);
 
@@ -71,8 +71,8 @@ void NSESolver::solve()
   residual_con = 1.0e3;
 
   // Initialize algebraic solvers 
-  GMRES solver_con(Preconditioner::hypre_amg);
-  GMRES solver_mom;
+  KrylovSolver solver_con(gmres, amg);
+  KrylovSolver solver_mom(gmres);
  
   // Create functions for the velocity and pressure 
   // (needed for the initialization of the forms)
@@ -95,14 +95,14 @@ void NSESolver::solve()
     amom = new NSEMomentum3D::BilinearForm(uc,delta1,delta2,k,nu);
     Lmom = new NSEMomentum3D::LinearForm(uc,u0,f,p,delta1,delta2,k,nu);
     acon = new NSEContinuity3D::BilinearForm(delta1);
-    Lcon = new NSEContinuity3D::LinearForm(uc,f,delta1);
+    Lcon = new NSEContinuity3D::LinearForm(uc);
   } 
   else if ( nsd == 2 )
   {
     amom = new NSEMomentum2D::BilinearForm(uc,delta1,delta2,k,nu);
     Lmom = new NSEMomentum2D::LinearForm(uc,u0,f,p,delta1,delta2,k,nu);
     acon = new NSEContinuity2D::BilinearForm(delta1);
-    Lcon = new NSEContinuity2D::LinearForm(uc,f,delta1);
+    Lcon = new NSEContinuity2D::LinearForm(uc);
   }
   else
   {
@@ -264,7 +264,7 @@ void NSESolver::ComputeCellSize(Mesh& mesh, Vector& hvector)
   hvector.init(mesh.numCells());	
   for (CellIterator cell(mesh); !cell.end(); ++cell)
     {
-      hvector((*cell).id()) = (*cell).diameter();
+      hvector((*cell).index()) = (*cell).diameter();
     }
 }
 //-----------------------------------------------------------------------------
@@ -302,14 +302,14 @@ void NSESolver::ComputeStabilization(Mesh& mesh, Function& w, real nu, real k,
   {
     normw = 0.0;
     for (VertexIterator n(cell); !n.end(); ++n)
-      normw += sqrt( sqr((w.vector())((*n).id()*2)) + sqr((w.vector())((*n).id()*2+1)) );
-    normw /= (*cell).numVertices();
+      normw += sqrt( sqr((w.vector())((*n).index()*2)) + sqr((w.vector())((*n).index()*2+1)) );
+    normw /= (*cell).numEntities(0);
     if ( (((*cell).diameter()/nu) > 1.0) || (nu < 1.0e-10) ){
-      d1vector((*cell).id()) = C1 * (0.5 / sqrt( 1.0/sqr(k) + sqr(normw/(*cell).diameter()) ) );
-      d2vector((*cell).id()) = C2 * (*cell).diameter();
+      d1vector((*cell).index()) = C1 * (0.5 / sqrt( 1.0/sqr(k) + sqr(normw/(*cell).diameter()) ) );
+      d2vector((*cell).index()) = C2 * (*cell).diameter();
     } else{
-      d1vector((*cell).id()) = C1 * sqr((*cell).diameter());
-      d2vector((*cell).id()) = C2 * sqr((*cell).diameter());
+      d1vector((*cell).index()) = C1 * sqr((*cell).diameter());
+      d2vector((*cell).index()) = C2 * sqr((*cell).diameter());
     }	
   }
 }
@@ -322,23 +322,23 @@ void NSESolver::SetInitialVelocity(Vector& xvel)
   // This function is only temporary: initial velocity 
   // should be possible to set in the main-file. 
 
-  real x,y,z;
+
+//  real x,y,z;
 
   for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
   {
     // Get coordinates of the vertex 
-    x = (*vertex).coord().x;
-    y = (*vertex).coord().y;
-    z = (*vertex).coord().z;
+//    real x = (*vertex).coord().x;
+//    real y = (*vertex).coord().y;
+//    real z = (*vertex).coord().z;
     
     // Specify the initial velocity using (x,y,z) 
     //
     // Example: 
     // 
-    // xvel((*vertex).id()) = sin(x)*cos(y)*sqrt(z);
+    // xvel((*vertex).index()) = sin(x)*cos(y)*sqrt(z);
     
-    xvel((*vertex).id()) = 0.0;
+    xvel((*vertex).index()) = 0.0;
   }
 }
 //-----------------------------------------------------------------------------
-

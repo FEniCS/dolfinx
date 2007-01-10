@@ -1,8 +1,8 @@
-// Copyright (C) 2005 Anders Logg.
+// Copyright (C) 2005-2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005
-// Last changed: 2005
+// Last changed: 2006-08-21
 
 #ifndef __HOMOTOPY_ODE_H
 #define __HOMOTOPY_ODE_H
@@ -32,7 +32,7 @@ namespace dolfin
     ~HomotopyODE();
 
     /// Return initial value for given component
-    complex z0(unsigned int i);
+    void z0(complex z[]);
 
     /// Evaluate right-hand side
     void f(const complex z[], real t, complex y[]);

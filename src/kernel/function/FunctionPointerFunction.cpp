@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-11-28
-// Last changed: 2006-02-20
+// Last changed: 2006-12-12
 
 #include <dolfin/Vertex.h>
 #include <dolfin/Vector.h>
@@ -50,7 +50,7 @@ real FunctionPointerFunction::operator()(const Point& p, uint i)
 real FunctionPointerFunction::operator() (const Vertex& vertex, uint i)
 {
   // Call function at given vertex
-  return (*f)(vertex.coord(), component + i);
+  return (*f)(vertex.point(), component + i);
 }
 //-----------------------------------------------------------------------------
 void FunctionPointerFunction::sub(uint i)
@@ -69,9 +69,8 @@ void FunctionPointerFunction::sub(uint i)
   _vectordim = 1;
 }
 //-----------------------------------------------------------------------------
-void FunctionPointerFunction::interpolate(real coefficients[],
-					  AffineMap& map,
-					  FiniteElement& element)
+void FunctionPointerFunction::interpolate(real coefficients[], Cell& cell,
+					  AffineMap& map, FiniteElement& element)
 {
   // Initialize local data (if not already initialized correctly)
   local.init(element);

@@ -1,31 +1,68 @@
-// Copyright (C) 2004-2005 Garth N. Wells.
+// Copyright (C) 2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
-//
-// First added:  2005-12-02
-// Last changed:
+// 
+// First added:  2006-08-15
+// Last changed: 2006-08-16
 
 #ifndef __GMRES_H
 #define __GMRES_H
 
-#include <dolfin/KrylovSolver.h>
+#include <dolfin/PETScKrylovSolver.h>
+#include <dolfin/uBlasKrylovSolver.h>
 
 namespace dolfin
 {
-  /// This class initialises the GMRES version of the Krylov solver for linear 
-  /// systems.
+
+  /// This class provides methods for solving a linear system with
+  /// the GMRES method, with an optional preconditioner.
   
-  class GMRES : public KrylovSolver
+  class GMRES
   {
   public:
 
-    /// Create GMRES solver
-    GMRES();
+#ifdef HAVE_PETSC_H
+    
+    /// Solve linear system Ax = b and return number of iterations
+    static uint solve(const PETScMatrix& A, PETScVector& x, const PETScVector& b,
+		      Preconditioner pc = default_pc);
 
-    /// Create GMRES solver with given PETSc preconditioner
-    GMRES(Preconditioner::Type preconditioner_type);
+    /// Solve linear system Ax = b and return number of iterations
+    static uint solve(const PETScKrylovMatrix& A, PETScVector& x, const PETScVector& b,
+		      Preconditioner pc = default_pc);
 
-    /// Destructor
-    ~GMRES();
+    /// Solve linear system Ax = b and return number of iterations
+    static uint solve(const PETScMatrix& A, PETScVector& x, const PETScVector& b,
+		      PETScPreconditioner& pc);
+         
+    /// Solve linear system Ax = b and return number of iterations
+    static uint solve(const PETScKrylovMatrix& A, PETScVector& x, const PETScVector& b,
+		      PETScPreconditioner& pc);
+    
+#endif
+
+    /// Solve linear system Ax = b and return number of iterations
+    static uint solve(const uBlasMatrix<ublas_dense_matrix>& A, uBlasVector& x, const uBlasVector& b,
+		      Preconditioner pc = default_pc);
+    
+    /// Solve linear system Ax = b and return number of iterations
+    static uint solve(const uBlasMatrix<ublas_sparse_matrix>& A, uBlasVector& x, const uBlasVector& b,
+		      Preconditioner pc = default_pc);
+
+    /// Solve linear system Ax = b and return number of iterations
+    static uint solve(const uBlasKrylovMatrix& A, uBlasVector& x, const uBlasVector& b,
+		      Preconditioner pc = default_pc);
+    
+    /// Solve linear system Ax = b and return number of iterations
+    static uint solve(const uBlasMatrix<ublas_dense_matrix>& A, uBlasVector& x, const uBlasVector& b,
+		      uBlasPreconditioner& pc);
+    
+    /// Solve linear system Ax = b and return number of iterations
+    static uint solve(const uBlasMatrix<ublas_sparse_matrix>& A, uBlasVector& x, const uBlasVector& b,
+		      uBlasPreconditioner& pc);
+
+    /// Solve linear system Ax = b and return number of iterations
+    static uint solve(const uBlasKrylovMatrix& A, uBlasVector& x, const uBlasVector& b,
+		      uBlasPreconditioner& pc);
     
   };
 

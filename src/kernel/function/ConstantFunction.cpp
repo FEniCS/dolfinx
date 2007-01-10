@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-02-09
-// Last changed: 2006-02-20
+// Last changed: 2006-12-12
 
 #include <dolfin/Vector.h>
 #include <dolfin/P1tri.h>
@@ -48,9 +48,8 @@ void ConstantFunction::sub(uint i)
   // Do nothing (value same for all components anyway)
 }
 //-----------------------------------------------------------------------------
-void ConstantFunction::interpolate(real coefficients[],
-				   AffineMap& map,
-				   FiniteElement& element)
+void ConstantFunction::interpolate(real coefficients[], Cell& cell,
+				   AffineMap& map, FiniteElement& element)
 {
   // Evaluate function at interpolation points
   for (uint i = 0; i < element.spacedim(); i++)

@@ -1,17 +1,19 @@
-// Copyright (C) 2003-2005 Johan Hoffman and Anders Logg.
+// Copyright (C) 2003-2006 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // Modified by Erik Svensson, 2003.
 // Modified by Andy R. Terrel, 2005.
+// Modified by Garth N. Wells, 2006.
 //
 // First added:  2003-02-17
-// Last changed: 2005-12-30
+// Last changed: 2006-05-30
 
 #include <stdio.h>
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Matrix.h>
 #include <dolfin/MatlabFile.h>
+#include <dolfin/Array.h>
 
 using namespace dolfin;
 
@@ -31,34 +33,34 @@ void MatlabFile::operator<<(Matrix& A)
   // Open file
   FILE *fp = fopen(filename.c_str(), "a");
 
-  // Get PETSc Mat pointer
-  Mat A_mat = A.mat();
-
   // Write matrix in sparse format
   fprintf(fp, "%s = [", A.name().c_str());
+
   int ncols = 0;
-  const int *cols = 0;
-  const double *vals = 0;
+  Array<int> columns;
+  Array<real> values;
+  
   for (uint i = 0; i < A.size(0); i++)
   {
-    MatGetRow(A_mat, i, &ncols, &cols, &vals);
+    A.getRow(i, ncols, columns, values);
     for (int pos = 0; pos < ncols; pos++)
     {
-      fprintf(fp, " %i %i %.15g", i + 1, cols[pos] + 1, vals[pos]);
+      fprintf(fp, " %u %i %.15g", i + 1, columns[pos] + 1, values[pos]);
       if ( i == (A.size(0) - 1) && (pos + 1 == ncols) )
-	fprintf(fp, "];\n");
+        fprintf(fp, "];\n");
       else {
-	fprintf(fp, "\n");
+        fprintf(fp, "\n");
       }
     }
-    MatRestoreRow(A_mat, i, &ncols, &cols, &vals);
   }
   fprintf(fp, "%s = spconvert(%s);\n", A.name().c_str(), A.name().c_str());
   
   // Close file
   fclose(fp);
 
+
   cout << "Saved matrix " << A.name() << " (" << A.label()
        << ") to file " << filename << " in sparse MATLAB format." << endl;
 }
 //-----------------------------------------------------------------------------
+

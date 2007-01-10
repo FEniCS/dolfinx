@@ -1,8 +1,10 @@
 // Copyright (C) 2005 Garth N. Wells.
 // Licensed under the GNU GPL Version 2.
 //
+// Modified by Anders Logg 2006.
+//
 // First added:  2005-10-24
-// Last changed: 2006-02-24
+// Last changed: 2006-10-20
 
 #include <dolfin/FEM.h>
 #include <dolfin/NonlinearPDE.h>
@@ -29,7 +31,7 @@ NonlinearPDE::~NonlinearPDE()
   // Do nothing 
 }
 //-----------------------------------------------------------------------------
-void NonlinearPDE::form(Matrix& A, Vector& b, const Vector& x)
+void NonlinearPDE::form(GenericMatrix& A, GenericVector& b, const GenericVector& x)
 {
   if(!_a)
   {  
@@ -41,25 +43,25 @@ void NonlinearPDE::form(Matrix& A, Vector& b, const Vector& x)
     if(_bc) 
     { 
       FEM::applyBC(A, *_mesh, _a->test(), *_bc);
-      FEM::assembleBCresidual(b, x, *_mesh, _Lf->test(), *_bc);
+      FEM::applyResidualBC(b, x, *_mesh, _Lf->test(), *_bc);
     }
     else
     {
-      //FIXME: Deal with zero Neumann condition on entire boundary her. Need to fix FEM::assembleBCresidual 
-      // FEM::assembleBCresidual(b, x, *_mesh, _Lf->test());
+      //FIXME: Deal with zero Neumann condition on entire boundary here. Need to
+      //fix FEM::assembleResidualFEM::assembleResidualBC(b, x, *_mesh, _Lf->test());
       dolfin_error("Pure zero Neumann boundary conditions not yet implemented for nonlinear PDE.");
     }
   }
   
 }
 //-----------------------------------------------------------------------------
-//void NonlinearPDE::F(Vector& b, const Vector& x)
+//void NonlinearPDE::F(GenericVector& b, const GenericVector& x)
 //{
 //  dolfin_error("Nonlinear PDE update for F(u)  has not been supplied by
 //user.");
 //}
 //-----------------------------------------------------------------------------
-//void NonlinearPDE::J(Matrix& A, const Vector& x)
+//void NonlinearPDE::J(GenericMatrix& A, const GenericVector& x)
 //{
 //  dolfin_error("Nonlinear PDE update for Jacobian has not been supplied by
 //user.");

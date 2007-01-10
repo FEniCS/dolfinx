@@ -1,35 +1,31 @@
-# Copyright (c) 2005 Johan Hoffman (hoffman@cims.nyu.edu)
+# Copyright (c) 2005 Johan Hoffman 
 # Licensed under the GNU GPL Version 2
+#
+# Modified by Anders Logg 2006
+#
+# First added:  2005
+# Last changed: 2006-03-28
 #
 # The contiuity equation for the incompressible 
 # Navier-Stokes equations using cG(1)cG(1)
 #
-# Compile this form with FFC: ffc NSEContinuity.form.
+# Compile this form with FFC: ffc NSEContinuity2D.form.
 
 name = "NSEContinuity2D"
 scalar = FiniteElement("Lagrange", "triangle", 1)
 vector = FiniteElement("Vector Lagrange", "triangle", 1)
 constant_scalar = FiniteElement("Discontinuous Lagrange", "triangle", 0)
 
-q            = BasisFunction(scalar)		# test basis function 
-p            = BasisFunction(scalar)		# trial basis function 
-uc           = Function(vector)			# linearized velocity 
-f            = Function(vector)			# force term 
+q  = TestFunction(scalar)  # test basis function
+P  = TrialFunction(scalar) # trial basis function
+uc = Function(vector)      # linearized velocity
 
-delta1       = Function(constant_scalar)        # stabilization parameter 
+delta1 = Function(constant_scalar) # stabilization parameter
 
-um = mean(uc);					# cell mean value of linearized velocity 
-
-i0 = Index()					# index for tensor notation 
-i1 = Index()					# index for tensor notation 
+i0 = Index() # index for tensor notation
+i1 = Index() # index for tensor notation
 
 # Bilinear and linear forms
-a = delta1*dot(grad(q), grad(p))*dx;
-L = delta1*dot(grad(q), f)*dx - q*uc[i0].dx(i0)*dx - delta1*q.dx(i0)*um[i1]*uc[i0].dx(i1)*dx 
-
-
-
-
-
-
+a = delta1*dot(grad(q), grad(P))*dx;
+L = - q*div(uc)*dx  
 

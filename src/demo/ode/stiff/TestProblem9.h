@@ -1,8 +1,8 @@
-// Copyright (C) 2003-2005 Anders Logg.
+// Copyright (C) 2003-2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003
-// Last changed: 2005
+// Last changed: 2006-08-21
 
 #include <dolfin.h>
 
@@ -16,33 +16,21 @@ public:
   {
     dolfin_info("A mixed stiff/nonstiff test problem.");
 
-    // Parameters
     lambda = 1000.0;
-
-    // Compute sparsity
-    sparse();
   }
 
-  real u0(unsigned int i)
+  void u0(uBlasVector& u)
   {
-    if ( i == 0 )
-      return 0.0;
-
-    if ( i == 1 )
-      return 1.0;
-
-    return 1.0;
+    u(0) = 0.0;
+    u(1) = 1.0;
+    u(2) = 1.0;
   }
-
-  real f(const real u[], real t, unsigned int i)
+  
+  void f(const uBlasVector& u, real t, uBlasVector& y)
   {
-    if ( i == 0 )
-      return u[1];
-
-    if ( i == 1 )
-      return -(1.0 - u[2])*u[0];
-
-    return -lambda * (u[0]*u[0] + u[1]*u[1]) * u[2];
+    y(0) = u(1);
+    y(1) = -(1.0 - u(2))*u(0);
+    y(2) = -lambda * (u(0)*u(0) + u(1)*u(1)) * u(2);
   }
 
 private:

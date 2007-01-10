@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-12-19
-// Last changed: 2006-02-08
+// Last changed: 2006-06-02
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/ParameterSystem.h>
@@ -32,6 +32,8 @@ void Parametrized::set(std::string key, Parameter value)
     parameters.add(key, value);
   else
     parameters.set(key, value);
+
+  readParameters();
 }
 //-----------------------------------------------------------------------------
 void Parametrized::set(std::string key, const Parametrized& parent)
@@ -69,5 +71,10 @@ Parameter Parametrized::get(std::string key) const
 bool Parametrized::defined(std::string key) const
 {
   return parameters.defined(key);
+}
+//-----------------------------------------------------------------------------
+void Parametrized::readParameters()
+{
+  // Do nothing
 }
 //-----------------------------------------------------------------------------

@@ -1,250 +1,251 @@
 \chapter{Solvers}
 
-\devnote{This chapter is currently being written\ldots}
+\devnote{This chapter needs to be written. In the meantime, look at the demos
+  in \texttt{src/demo/solvers/}.}
 
-\dolfin{} provides a number of pre-defined PDE solvers (called
-``modules'' in the source structure) by default. The solver interface
-is intentionally very simple to facilitate users writing their own
-solvers. These are the pre-defined solvers:
+%% \dolfin{} provides a number of pre-defined PDE solvers (called
+%% ``modules'' in the source structure) by default. The solver interface
+%% is intentionally very simple to facilitate users writing their own
+%% solvers. These are the pre-defined solvers:
 
-\begin{enumerate}
-\item
-Poisson
-\item
-Convection-Diffusion
-\item
-Navier-Stokes
-\item
-Elasticity
-\end{enumerate}
+%% \begin{enumerate}
+%% \item
+%% Poisson
+%% \item
+%% Convection-Diffusion
+%% \item
+%% Navier-Stokes
+%% \item
+%% Elasticity
+%% \end{enumerate}
 
-A solver for a PDE should provide the following interface:
+%% A solver for a PDE should provide the following interface:
 
-\begin{enumerate}
-\item
-a constructor which takes a mesh, equation coefficients and possibly
-additional data.
-\item
-a \texttt{solve()} method which solves the equation given the
-specified data.
-\item
-a static \texttt{solve()} function which constructs and solves the
-equation.
-\end{enumerate}
+%% \begin{enumerate}
+%% \item
+%% a constructor which takes a mesh, equation coefficients and possibly
+%% additional data.
+%% \item
+%% a \texttt{solve()} method which solves the equation given the
+%% specified data.
+%% \item
+%% a static \texttt{solve()} function which constructs and solves the
+%% equation.
+%% \end{enumerate}
 
 
-\fixme{List solvers, then present in detail, include lots of nice images with
-solver output}
+%% \fixme{List solvers, then present in detail, include lots of nice images with
+%% solver output}
 
-%------------------------------------------------------------------------------
-\section{Poisson's equation}
-\index{Poisson's equation}
+%% %------------------------------------------------------------------------------
+%% \section{Poisson's equation}
+%% \index{Poisson's equation}
 
-Poisson's equation with Dirichlet and homogeneous Neumann boundary
-conditions:
+%% Poisson's equation with Dirichlet and homogeneous Neumann boundary
+%% conditions:
 
-\begin{equation} \label{eq:poisson}
-  \begin{array}{rcl}
-    - \Delta u &=& f \quad \mbox{in } \Omega, \\
-    u &=& g_D \quad \mbox{on } \Gamma_1, \\
-    - \partial_n u &=& 0 \quad \mbox{on } \Gamma_2
-  \end{array}
-\end{equation}
+%% \begin{equation} \label{eq:poisson}
+%%   \begin{array}{rcl}
+%%     - \Delta u &=& f \quad \mbox{in } \Omega, \\
+%%     u &=& g_D \quad \mbox{on } \Gamma_1, \\
+%%     - \partial_n u &=& 0 \quad \mbox{on } \Gamma_2
+%%   \end{array}
+%% \end{equation}
 
-The variational formulation is given by
+%% The variational formulation is given by
 
-\begin{equation} \label{eq:poisson-varform}
-\begin{array}{rcl}
-  \int_{\Omega} \nabla u \cdot \nabla v \, dx &=&
-  \int_{\Omega} fv \, dx 
-  \quad \forall v.
-\end{array}
-\end{equation}
+%% \begin{equation} \label{eq:poisson-varform}
+%% \begin{array}{rcl}
+%%   \int_{\Omega} \nabla u \cdot \nabla v \, dx &=&
+%%   \int_{\Omega} fv \, dx 
+%%   \quad \forall v.
+%% \end{array}
+%% \end{equation}
 
-The boundary conditions are enforced strongly and thus don't appear in
-the variational formulation.
+%% The boundary conditions are enforced strongly and thus don't appear in
+%% the variational formulation.
 
-\subsection{Usage}
+%% \subsection{Usage}
 
-The API for the Poisson solver:
+%% The API for the Poisson solver:
 
-\begin{verbatim}
-// Create Poisson solver
-PoissonSolver(Mesh& mesh, Function& f, BoundaryCondition& bc);
+%% \begin{verbatim}
+%% // Create Poisson solver
+%% PoissonSolver(Mesh& mesh, Function& f, BoundaryCondition& bc);
     
-// Solve Poisson's equation
-void solve();
+%% // Solve Poisson's equation
+%% void solve();
 
-// Solve Poisson's equation (static version)
-static void solve(Mesh& mesh, Function& f, BoundaryCondition& bc);
-\end{verbatim}
+%% // Solve Poisson's equation (static version)
+%% static void solve(Mesh& mesh, Function& f, BoundaryCondition& bc);
+%% \end{verbatim}
 
-A simple example of using the solver:
+%% A simple example of using the solver:
 
-\begin{verbatim}
-int main()
-{
-  Mesh mesh("mesh.xml.gz");
-  MyFunction f;
-  MyBC bc;
+%% \begin{verbatim}
+%% int main()
+%% {
+%%   Mesh mesh("mesh.xml.gz");
+%%   MyFunction f;
+%%   MyBC bc;
   
-  PoissonSolver::solve(mesh, f, bc);
+%%   PoissonSolver::solve(mesh, f, bc);
   
-  return 0;
-}
-\end{verbatim}
+%%   return 0;
+%% }
+%% \end{verbatim}
 
-Where ``f'' is a Function specifying the right-hand side of the
-equation and ``bc'' is a BoundaryCondition.
+%% Where ``f'' is a Function specifying the right-hand side of the
+%% equation and ``bc'' is a BoundaryCondition.
 
-\subsection{Performance}
+%% \subsection{Performance}
 
-The solver is an illustrative example and performance has not been a
-goal. It uses a GMRES linear solver, where a multi-grid linear solver
-would give optimal performance.
+%% The solver is an illustrative example and performance has not been a
+%% goal. It uses a GMRES linear solver, where a multi-grid linear solver
+%% would give optimal performance.
 
-\subsection{Limitations}
+%% \subsection{Limitations}
 
-The solver is meant to be the simplest example solver, and therefore
-some simplifications have been made. Typically the general form of
-Poisson's equation includes a diffusion coefficient which has been
-omitted here.
+%% The solver is meant to be the simplest example solver, and therefore
+%% some simplifications have been made. Typically the general form of
+%% Poisson's equation includes a diffusion coefficient which has been
+%% omitted here.
 
-%------------------------------------------------------------------------------
-\section{Convection--diffusion}
-\index{convection--diffusion}
+%% %------------------------------------------------------------------------------
+%% \section{Convection--diffusion}
+%% \index{convection--diffusion}
 
-The convection-diffusion equation with Dirichlet and homogeneous
-Neumann boundary conditions is given by:
+%% The convection-diffusion equation with Dirichlet and homogeneous
+%% Neumann boundary conditions is given by:
 
-\begin{equation} \label{eq:convdiff}
-  \begin{array}{rcl}
-    \dot{u} + b \cdot \nabla u - \nabla \cdot (a \nabla u) &=& f \quad \mbox{in } \Omega \times (0,T], \\
-    u &=& g_D \quad \mbox{on } \Gamma_1 \times (0,T], \\
-    - \partial_n u &=& 0 \quad \mbox{on } \Gamma_2 \times (0,T], \\
-    u(\cdot,0) &=& u_0 \quad \mbox{in } \Omega,
-  \end{array}
-\end{equation}
+%% \begin{equation} \label{eq:convdiff}
+%%   \begin{array}{rcl}
+%%     \dot{u} + b \cdot \nabla u - \nabla \cdot (a \nabla u) &=& f \quad \mbox{in } \Omega \times (0,T], \\
+%%     u &=& g_D \quad \mbox{on } \Gamma_1 \times (0,T], \\
+%%     - \partial_n u &=& 0 \quad \mbox{on } \Gamma_2 \times (0,T], \\
+%%     u(\cdot,0) &=& u_0 \quad \mbox{in } \Omega,
+%%   \end{array}
+%% \end{equation}
 
-where the convection is given by the vector $b = b(x,t)$ and the
-diffusion is given by $a = a(x,t)$.
+%% where the convection is given by the vector $b = b(x,t)$ and the
+%% diffusion is given by $a = a(x,t)$.
 
-The variational formulation is:
+%% The variational formulation is:
 
-\fixme{Stabilized convection-diffusion}
+%% \fixme{Stabilized convection-diffusion}
 
-This is a stabilized FEM-formulation, so the solver can handle
-convection-dominated problems.
+%% This is a stabilized FEM-formulation, so the solver can handle
+%% convection-dominated problems.
 
-The time integration is done using cG(1) (Crank-Nicolson).
+%% The time integration is done using cG(1) (Crank-Nicolson).
 
-\subsection{Usage}
+%% \subsection{Usage}
 
-The API for the convection-diffusion solver:
+%% The API for the convection-diffusion solver:
 
-\begin{verbatim}
-// Create convection-diffusion solver
-ConvectionDiffusionSolver(Mesh& mesh, Function& w, Function& f,
-  BoundaryCondition& bc);
+%% \begin{verbatim}
+%% // Create convection-diffusion solver
+%% ConvectionDiffusionSolver(Mesh& mesh, Function& w, Function& f,
+%%   BoundaryCondition& bc);
     
-// Solve convection-diffusion
-void solve();
+%% // Solve convection-diffusion
+%% void solve();
     
-// Solve convection-diffusion (static version)
-static void solve(Mesh& mesh, Function& w, Function& f,
-  BoundaryCondition& bc);
-\end{verbatim}
+%% // Solve convection-diffusion (static version)
+%% static void solve(Mesh& mesh, Function& w, Function& f,
+%%   BoundaryCondition& bc);
+%% \end{verbatim}
 
-A simple example of using the solver:
+%% A simple example of using the solver:
 
-\begin{verbatim}
-int main()
-{
-  dolfin_output("curses");
+%% \begin{verbatim}
+%% int main()
+%% {
+%%   dolfin_output("curses");
 
-  Mesh mesh("dolfin.xml.gz");
-  Convection w;
-  Source f;
-  MyBC bc;
+%%   Mesh mesh("dolfin.xml.gz");
+%%   Convection w;
+%%   Source f;
+%%   MyBC bc;
 
-  ConvectionDiffusionSolver::solve(mesh, w, f, bc);
+%%   ConvectionDiffusionSolver::solve(mesh, w, f, bc);
   
-  return 0;
-}
-\end{verbatim}
+%%   return 0;
+%% }
+%% \end{verbatim}
 
 
-\subsection{Performance}
+%% \subsection{Performance}
 
-There are no particular performance issues with the solver. GMRES is
-used for solving the linear system.
+%% There are no particular performance issues with the solver. GMRES is
+%% used for solving the linear system.
 
-\subsection{Limitations}
+%% \subsection{Limitations}
 
-Currently many coefficients (such as diffusivity) are not
-user-definable, they need to be exposed by the interface.
+%% Currently many coefficients (such as diffusivity) are not
+%% user-definable, they need to be exposed by the interface.
 
-%------------------------------------------------------------------------------
-\section{Incompressible Navier--Stokes}
-\index{Navier--Stokes}
-\index{incompressible Navier--Stokes}
+%% %------------------------------------------------------------------------------
+%% \section{Incompressible Navier--Stokes}
+%% \index{Navier--Stokes}
+%% \index{incompressible Navier--Stokes}
 
-Write introduction here, equations etc.
+%% Write introduction here, equations etc.
 
-\subsection{Usage}
+%% \subsection{Usage}
 
-Present API of solver and give an example.
+%% Present API of solver and give an example.
 
-\subsection{Performance}
+%% \subsection{Performance}
 
-Write something about the performance of the solver.
+%% Write something about the performance of the solver.
 
-\subsection{Limitations}
+%% \subsection{Limitations}
 
-Write something about the limitations of the solver.
+%% Write something about the limitations of the solver.
 
-%------------------------------------------------------------------------------
-\section{Elasticity}
+%% %------------------------------------------------------------------------------
+%% \section{Elasticity}
 
-Navier's equations of elasticity with Dirichlet and homogeneous Neumann
-boundary conditions:
+%% Navier's equations of elasticity with Dirichlet and homogeneous Neumann
+%% boundary conditions:
 
-\begin{equation*}
-\label{classicalelast}
-\begin{split}
-u &= x - X,\\
-\dot{u}-v &= 0\quad\mbox{in } \Omega^0,\\
-\dot{v} - \nabla \cdot \sigma& =f \quad\mbox{in } \Omega^0,\\
-\sigma &= E\epsilon (u) = E(\nabla u^\top +\nabla u)\\
-E\epsilon &= \lambda tr(\epsilon) I + 2\mu \epsilon,\\
-v(0,\cdot ) &= v^0,\quad u(0,\cdot ) = u^0\quad\mbox{in } \Omega^0, \\
-u &= g_D \quad \mbox{on } \Gamma_1 \times (0,T], \\
-- \partial_n u &= 0 \quad \mbox{on } \Gamma_2 \times (0,T]
-\end{split}
-\end{equation*}
+%% \begin{equation*}
+%% \label{classicalelast}
+%% \begin{split}
+%% u &= x - X,\\
+%% \dot{u}-v &= 0\quad\mbox{in } \Omega^0,\\
+%% \dot{v} - \nabla \cdot \sigma& =f \quad\mbox{in } \Omega^0,\\
+%% \sigma &= E\epsilon (u) = E(\nabla u^\top +\nabla u)\\
+%% E\epsilon &= \lambda tr(\epsilon) I + 2\mu \epsilon,\\
+%% v(0,\cdot ) &= v^0,\quad u(0,\cdot ) = u^0\quad\mbox{in } \Omega^0, \\
+%% u &= g_D \quad \mbox{on } \Gamma_1 \times (0,T], \\
+%% - \partial_n u &= 0 \quad \mbox{on } \Gamma_2 \times (0,T]
+%% \end{split}
+%% \end{equation*}
 
-The variational form:
+%% The variational form:
 
-\begin{equation} \label{eq:elasticity-varform}
-\begin{array}{rcl}
-  \int_{\Omega} \dot{v} w \, dx = \int_{\Omega} -\sigma(u) \epsilon(v) + f w \, dx,
-  \quad \forall w.
-\end{array}
-\end{equation}
+%% \begin{equation} \label{eq:elasticity-varform}
+%% \begin{array}{rcl}
+%%   \int_{\Omega} \dot{v} w \, dx = \int_{\Omega} -\sigma(u) \epsilon(v) + f w \, dx,
+%%   \quad \forall w.
+%% \end{array}
+%% \end{equation}
 
-The time integration is done using dG(0) (backward Euler).
+%% The time integration is done using dG(0) (backward Euler).
 
-The mass matrix appearing from $\int_{\Omega} \dot{v} w dx$ is lumped
-(equivalent to computing it using nodal quadrature).
+%% The mass matrix appearing from $\int_{\Omega} \dot{v} w dx$ is lumped
+%% (equivalent to computing it using nodal quadrature).
 
-\subsection{Usage}
+%% \subsection{Usage}
 
-Present API of solver and give an example.
+%% Present API of solver and give an example.
 
-\subsection{Performance}
+%% \subsection{Performance}
 
-Write something about the performance of the solver.
+%% Write something about the performance of the solver.
 
-\subsection{Limitations}
+%% \subsection{Limitations}
 
-Write something about the limitations of the solver.
+%% Write something about the limitations of the solver.

@@ -4,10 +4,12 @@
 // Modified by Anders Logg 2004-2006.
 //
 // First added:  2004-03-30
-// Last changed: 2006-02-20
+// Last changed: 2006-10-19
 
 #include <stdio.h>
 #include <dolfin/Mesh.h>
+#include <dolfin/Vertex.h>
+#include <dolfin/Cell.h>
 #include <dolfin/dolfin_log.h>
 #include <dolfin/GiDFile.h>
 
@@ -39,12 +41,12 @@ void GiDFile::operator<<(Mesh& mesh)
   for (VertexIterator n(mesh); !n.end(); ++n)
   {
 
-    Point   p = n->coord();
-    int     nid = n->id();
+    Point   p = n->point();
+    int     nid = n->index();
 
-    float x1 = (float) p.x;
-    float x2 = (float) p.y;
-    float x3 = (float) p.z;
+    float x1 = (float) p.x();
+    float x2 = (float) p.y();
+    float x3 = (float) p.z();
 
     fprintf(fp," %6d %.12f %.12f %.12f \n",nid,x1,x2,x3);
 
@@ -58,13 +60,13 @@ void GiDFile::operator<<(Mesh& mesh)
   for (CellIterator c(mesh); !c.end(); ++c)
   {
     int cid,nid[4];
-    if ( c->numVertices() == 4 )
+    if ( c->numEntities(0) == 4 )
     {
-      cid = c->id();
+      cid = c->index();
       int i = 0;
       for (VertexIterator n(c); !n.end(); ++n)
       {
-        nid[i]  = n->id();
+        nid[i]  = n->index();
         i = i + 1;
       }
       fprintf(fp," %6d %8d %8d %8d %8d \n",cid,nid[0],nid[1],nid[2],nid[3]);
@@ -82,13 +84,13 @@ void GiDFile::operator<<(Mesh& mesh)
   for (CellIterator c(mesh); !c.end(); ++c)
   {
     int cid,nid[3];
-    if ( c->numVertices() == 3 )
+    if ( c->numEntities(0) == 3 )
     {
-      cid = c->id();
+      cid = c->index();
       int i = 0;
       for (VertexIterator n(c); !n.end(); ++n)
       {
-        nid[i]  = n->id();
+        nid[i]  = n->index();
         i = i + 1;
       }
       fprintf(fp," %6d %8d %8d %8d \n",cid,nid[0],nid[1],nid[2]);

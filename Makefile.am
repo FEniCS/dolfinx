@@ -1,7 +1,7 @@
-SUBDIRS = src
+pkgconfigdir = $(libdir)/pkgconfig
+pkgconfig_DATA = dolfin.pc
 
-test:
-	make -C src/test
+SUBDIRS = src
 
 demo:
 	make -C src/demo/

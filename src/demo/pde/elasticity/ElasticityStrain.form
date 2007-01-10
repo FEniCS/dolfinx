@@ -5,14 +5,19 @@
 # Compile this form with FFC: ffc Elasticity.form.
 
 elementU = FiniteElement("Vector Lagrange", "tetrahedron", 1)
+
+# Project strains onto a continuous basis
 elementE = FiniteElement("Vector Lagrange", "tetrahedron", 1)
+
+# Project strains onto a discontinuous basis
+#elementE = FiniteElement("Discontinuous vector Lagrange", "tetrahedron", 0)
 
 strain_element = elementE + elementE 
 
-(vn, vs) = BasisFunctions(strain_element) # test function
-(en, es) = BasisFunctions(strain_element) # trial function
+(vn, vs) = TestFunctions(strain_element)  # test function
+(en, es) = TrialFunctions(strain_element) # trial function
 
-u = Function(elementU)                    # displacemnt
+u = Function(elementU)                    # displacement
 
 def normal_strain(u):
   return [u[0].dx(0), u[1].dx(1), u[2].dx(2)]

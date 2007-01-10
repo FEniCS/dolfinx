@@ -1,8 +1,8 @@
-// Copyright (C) 2004-2005 Anders Logg.
+// Copyright (C) 2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2004-05-28
-// Last changed: 2005-11-29
+// Last changed: 2006-12-12
 
 #ifndef __LINEAR_FORM_H
 #define __LINEAR_FORM_H
@@ -12,9 +12,13 @@
 namespace dolfin
 {
 
-  /// LinearForm represents a linear form L(v) with argument v (the
-  /// test function) a basis function of the finite element space
-  /// defined by a finite element.
+  /// LinearForm represents a multilinear form of the type
+  ///
+  ///     L = L(v1, w1, w2, ..., wn)
+  ///
+  /// where the first argument v1 is a basis functions (the
+  /// test function) and where w1, w2, ..., wn are any given
+  /// functions.
 
   class LinearForm : public Form
   {
@@ -26,19 +30,45 @@ namespace dolfin
     /// Destructor
     virtual ~LinearForm();
 
+    /// Check if there is a contribution from the interior
+    virtual bool interior_contribution() const = 0;
+
     /// Compute element vector (interior contribution)
-    virtual void eval(real block[], const AffineMap& map) const;
+    virtual void eval(real block[], const AffineMap& map, real det) const = 0;
+
+    /// Check if there is a contribution from the boundary
+    virtual bool boundary_contribution() const = 0;
 
     /// Compute element vector (boundary contribution)
-    virtual void eval(real block[], const AffineMap& map, uint segment) const;
+    virtual void eval(real block[], const AffineMap& map, real det, uint facet) const = 0;
+
+    /// Check if there is a contribution from the interior boundary
+    virtual bool interior_boundary_contribution() const = 0;
+
+    /// Compute exterior facet tensor
+    virtual void eval(real block[],
+                      const AffineMap& map0, const AffineMap& map1, real det,
+                      uint facet0, uint facet1, uint alignment) const = 0;
 
     /// Return finite element defining the test space
     FiniteElement& test();
 
+    /// Return finite element defining the test space
+    const FiniteElement& test() const;
+
+    /// Friends
+    friend class FEM;
+
   protected:
+
+    // Update local data structures
+    void updateLocalData();
 
     // Finite element defining the test space
     FiniteElement* _test;
+
+    // Local-to-global mapping for test space
+    int* test_nodes;
 
   };
 

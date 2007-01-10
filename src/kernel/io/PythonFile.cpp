@@ -1,10 +1,10 @@
 // Copyright (C) 2003-2005 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
-// Modified by Garth N. Wells 2005
+// Modified by Garth N. Wells 2005.
 //
 // First added:  2003-05-06
-// Last changed: 2005-12-09
+// Last changed: 2006-05-29
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Vector.h>
@@ -18,15 +18,15 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-PythonFile::PythonFile(const std::string filename) : 
-  GenericFile(filename)
+PythonFile::PythonFile(const std::string filename) : GenericFile(filename)
 {
   type = "Python";
 
-  filename_t = filename + ".t";
-  filename_u = filename + ".u";
-  filename_k = filename + ".k";
-  filename_r = filename + ".r";
+  std::string prefix = filename.substr(0, filename.rfind("."));
+  filename_t = prefix + "_t.data";
+  filename_u = prefix + "_u.data";
+  filename_k = prefix + "_k.data";
+  filename_r = prefix + "_r.data";
 }
 //-----------------------------------------------------------------------------
 PythonFile::~PythonFile()
@@ -65,13 +65,12 @@ void PythonFile::operator<<(Sample& sample)
   // Python wrapper file
   if ( counter2 == 0 )
   {
-    fprintf(fp, "from Numeric import *\n");
-    fprintf(fp, "from Scientific.IO.ArrayIO import *\n");
+    fprintf(fp, "from scipy.io.array_import import *\n");
     fprintf(fp, "\n");
-    fprintf(fp, "t = readFloatArray(\"%s.t\")\n", filename.c_str());
-    fprintf(fp, "u = readFloatArray(\"%s.u\")\n", filename.c_str());
-    fprintf(fp, "k = readFloatArray(\"%s.k\")\n", filename.c_str());
-    fprintf(fp, "r = readFloatArray(\"%s.r\")\n", filename.c_str());
+    fprintf(fp, "t = read_array(\"%s\")\n", filename_t.c_str());
+    fprintf(fp, "u = read_array(\"%s\")\n", filename_u.c_str());
+    fprintf(fp, "k = read_array(\"%s\")\n", filename_k.c_str());
+    fprintf(fp, "r = read_array(\"%s\")\n", filename_r.c_str());
   }
 
   // Save time

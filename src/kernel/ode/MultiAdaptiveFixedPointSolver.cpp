@@ -1,8 +1,8 @@
-// Copyright (C) 2005 Anders Logg.
+// Copyright (C) 2005-2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-27
-// Last changed: 2005-11-11
+// Last changed: 2006-08-08
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/ParameterSystem.h>
@@ -11,7 +11,6 @@
 #include <dolfin/Method.h>
 #include <dolfin/MultiAdaptiveTimeSlab.h>
 #include <dolfin/MultiAdaptiveFixedPointSolver.h>
-#include <dolfin/Vector.h>
 
 using namespace dolfin;
 
@@ -20,8 +19,8 @@ MultiAdaptiveFixedPointSolver::MultiAdaptiveFixedPointSolver
 (MultiAdaptiveTimeSlab& timeslab)
   : TimeSlabSolver(timeslab), ts(timeslab), f(0),
     num_elements(0), num_elements_mono(0), 
-    maxiter_local(get("maximum local iterations")),
-    diagonal_newton_damping(get("diagonal newton damping")), dfdu(0)
+    maxiter_local(get("ODE maximum local iterations")),
+    diagonal_newton_damping(get("ODE diagonal newton damping")), dfdu(0)
 {
   // Initialize local array for quadrature
   f = new real[method.qsize()];
@@ -91,7 +90,8 @@ void MultiAdaptiveFixedPointSolver::end()
   num_elements_mono += ts.length() / ts.kmin * static_cast<real>(ts.ode.size());
 }
 //-----------------------------------------------------------------------------
-real MultiAdaptiveFixedPointSolver::iteration(uint iter, real tol)
+real MultiAdaptiveFixedPointSolver::iteration(real tol, uint iter,
+					      real d0, real d1)
 {
   // Reset dof
   uint j = 0;
@@ -140,7 +140,7 @@ real MultiAdaptiveFixedPointSolver::iteration(uint iter, real tol)
 	
 	// Get initial value for element
 	const int ep = ts.ee[e];
-	const real x0 = ( ep != -1 ? ts.jx[ep*method.nsize() + method.nsize() - 1] : ts.u0[i] );
+	const real x0 = ( ep != -1 ? ts.jx[ep*method.nsize() + method.nsize() - 1] : ts.u0(i) );
 	
 	// Evaluate right-hand side at quadrature points of element
 	if ( method.type() == Method::cG )
@@ -201,42 +201,3 @@ dolfin::uint MultiAdaptiveFixedPointSolver::size() const
   return ts.nj;
 }
 //-----------------------------------------------------------------------------
-// DEBUG
-//
-//   Vector Rd(ts.ne), Rdprev(ts.ne);
-//
-//   Vector Rho(ts.ne), krecommend(ts.ne), comp(ts.ne);
-//   real rho;
-//
-//   rho = Rd.norm() / Rdprev.norm();
-//
-//   cout << "rho: " << rho << endl;
-//
-//   // Compute Rho
-//   for (uint e = 0; e < ts.ne; e++)
-//   {
-//     Rho(e) = fabs(Rd(e)) / Rdprev.norm(Vector::linf);
-//     //krecommend(e) = 1.0 / (2.0 * Rho(e));
-//     if(Rho(e) < 0.01)
-//     {
-//       krecommend(e) = 1;
-//     }
-//     else if(Rho(e) >= 0.01 && Rho(e) < 0.5)
-//     {
-//       krecommend(e) = 0;
-//     }
-//     else
-//     {
-//       krecommend(e) = -1;
-//     }
-//     comp(e) = ts.ei[e];
-//   }
-//  
-//   cout << "comp: " << endl;
-//   comp.disp();
-//
-//   cout << "Rho: " << endl;
-//   Rho.disp();
-//
-//   cout << "krecommend: " << endl;
-//   krecommend.disp();

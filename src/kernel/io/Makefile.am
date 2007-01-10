@@ -6,15 +6,15 @@ nobase_include_HEADERS  = dolfin/dolfin_io.h \
                           dolfin/MatlabFile.h \
                           dolfin/MFile.h \
                           dolfin/MTXFile.h \
-	                  dolfin/OctaveFile.h \
+                          dolfin/OctaveFile.h \
                           dolfin/OpenDXFile.h \
                           dolfin/PythonFile.h \
-                          dolfin/TecplotFile.h \
                           dolfin/VTKFile.h \
                           dolfin/XMLBLASFormData.h \
                           dolfin/XMLFile.h \
                           dolfin/XMLFiniteElementSpec.h \
                           dolfin/XMLMesh.h \
+                          dolfin/XMLMeshFunction.h \
                           dolfin/XMLMatrix.h \
                           dolfin/XMLObject.h \
                           dolfin/XMLParameterList.h \
@@ -31,12 +31,12 @@ libdolfin_io_la_SOURCES = File.cpp \
                           OctaveFile.cpp \
                           OpenDXFile.cpp \
                           PythonFile.cpp \
-                          TecplotFile.cpp \
                           VTKFile.cpp \
                           XMLBLASFormData.cpp \
                           XMLFile.cpp \
                           XMLFiniteElementSpec.cpp \
                           XMLMesh.cpp \
+                          XMLMeshFunction.cpp \
                           XMLMatrix.cpp \
                           XMLObject.cpp \
                           XMLParameterList.cpp \

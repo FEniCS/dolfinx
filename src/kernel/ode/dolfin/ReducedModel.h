@@ -7,13 +7,17 @@
 #ifndef __REDUCED_MODEL_H
 #define __REDUCED_MODEL_H
 
+/*
+
+// FIXME: BROKEN
+
 #include <dolfin/constants.h>
 #include <dolfin/Array.h>
 #include <dolfin/ODE.h>
 
 namespace dolfin
 {
-  class Vector;
+
   class Function;
 
   /// ReducedModel represents an averaged ODE of the form
@@ -49,20 +53,14 @@ namespace dolfin
     /// Map initial data
     real u0(unsigned int i);
 
-    /*
-    
     /// Map update function
     void update(RHS& f, Function& u, real t);
 
     /// Map update function
     void update(Solution& u, Adaptivity& adaptivity, real t);
 
-    */
-
-    /*
     /// Map the save function
     void save(Sample& sample);
-    */
 
   private:
 
@@ -86,16 +84,9 @@ namespace dolfin
       /// Inactivate component
       void inactivate();
 
-      // FIXME: BROKEN
-
-      /*
-
       /// Compute model
       void computeModel(Vector& ubar, Vector& fbar, unsigned int i, 
 			real tau, ODE& ode);
-
-      */
-
     private:
 
       real g;
@@ -103,12 +94,8 @@ namespace dolfin
 
     };
 
-    /*
-
     // Compute averages
     void computeAverages(RHS& f, Function& u, Vector& fbar, Vector& ubar);
-    
-    */
 
     // The given model
     ODE& ode;
@@ -135,5 +122,7 @@ namespace dolfin
   };
 
 }
+
+*/
 
 #endif

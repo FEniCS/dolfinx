@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-02-15
-// Last changed: 2006-02-16
+// Last changed: 2006-05-23
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Function.h>
@@ -43,7 +43,6 @@ void XMLFunction::endElement(const xmlChar* name)
     
     if ( xmlStrcasecmp(name, (xmlChar *) "function") == 0 )
     {
-      ok = true;
       state = DONE;
     }
     

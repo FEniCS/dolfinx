@@ -1,34 +1,34 @@
 from dolfin import *
 
-tol = get("tolerance")
+tol = get("ODE tolerance")
 print "tolerance:",
 print tol
-method = get("method")
+method = get("ODE method")
 print "method:",
 print method
-order = get("order")
+order = get("ODE order")
 print "order:",
 print order
-fixed = get("fixed time step")
+fixed = get("ODE fixed time step")
 print "fixed time step:",
 print fixed
 print
 
-set("tolerance", 0.0001)
-set("method", "dg")
-set("order", 0)
-set("fixed time step", True)
+set("ODE tolerance", 0.0001)
+set("ODE method", "dg")
+set("ODE order", 0)
+set("ODE fixed time step", True)
 
-tol = get("tolerance")
+tol = get("ODE tolerance")
 print "tolerance:",
 print tol
-method = get("method")
+method = get("ODE method")
 print "method:",
 print method
-order = get("order")
+order = get("ODE order")
 print "order:",
 print order
-fixed = get("fixed time step")
+fixed = get("ODE fixed time step")
 print "fixed time step:",
 print fixed
 print

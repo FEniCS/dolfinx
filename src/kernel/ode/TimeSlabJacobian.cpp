@@ -1,8 +1,8 @@
-// Copyright (C) 2005 Anders Logg.
+// Copyright (C) 2005-2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-28
-// Last changed: 2005
+// Last changed: 2006-08-08
 
 #include <dolfin/ODE.h>
 #include <dolfin/Method.h>
@@ -23,8 +23,39 @@ TimeSlabJacobian::~TimeSlabJacobian()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void TimeSlabJacobian::update()
+void TimeSlabJacobian::init()
 {
   // Do nothing
+}
+//-----------------------------------------------------------------------------
+void TimeSlabJacobian::update()
+{
+  cout << "Recomputing Jacobian" << endl;
+
+  // Initialize matrix if not already done
+  const uint N = ode.size();
+  A.init(N, N);
+  ej.init(N);
+  Aj.init(N);
+
+  // Reset unit vector
+  ej = 0.0;
+
+  // Compute columns of Jacobian
+  for (uint j = 0; j < ode.size(); j++)
+  {
+    ej(j) = 1.0;
+
+    //cout << ej << endl;
+    //cout << Aj << endl;
+    
+    // Compute product Aj = Aej
+    mult(ej, Aj);
+    
+    // Set column of A
+    column(A, j) = Aj;
+    
+    ej(j) = 0.0;
+  }
 }
 //-----------------------------------------------------------------------------

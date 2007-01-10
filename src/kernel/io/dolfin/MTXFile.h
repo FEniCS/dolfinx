@@ -4,21 +4,22 @@
 // Uses code from http://math.nist.gov/MatrixMarket/mmio/c/mmio.c
 // which is in the public domain.
 //
-// Modified by Anders Logg 2005.
+// Modified by Anders Logg 2005-2006.
 //
 // First added:  2005-10-18
-// Last changed: 2005-10-28
+// Last changed: 2006-05-07
 
 #ifndef __MTX_FILE_H
 #define __MTX_FILE_H
 
 #include <dolfin/constants.h>
+#include <dolfin/Vector.h>
+#include <dolfin/Matrix.h>
 #include <dolfin/GenericFile.h>
 
 namespace dolfin
 {
-  class Vector;
-  class Matrix;
+
   class Mesh;
   class ParameterList;
   

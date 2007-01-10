@@ -44,13 +44,13 @@ int main(int argc, const char* argv[])
   const unsigned int a = static_cast<unsigned int>(atoi(argv[3]));
   const unsigned int b = static_cast<unsigned int>(atoi(argv[4]));
 
-  set("method", "cg");
-  set("order", 1);
-  set("tolerance", 1e-3);
-  set("discrete tolerance", 1e-10);
-  set("initial time step", 0.001);
-  set("linear solver", "direct");
-  set("adaptive samples", false);
+  set("ODE method", "cg");
+  set("ODE order", 1);
+  set("ODE tolerance", 1e-3);
+  set("ODE discrete tolerance", 1e-10);
+  set("ODE initial time step", 0.001);
+  //set("ODE linear solver", "direct");
+  set("ODE adaptive samples", false);
   set("homotopy monitoring", false);
   set("homotopy divergence tolerance", 10.0);
   set("homotopy randomize", false);

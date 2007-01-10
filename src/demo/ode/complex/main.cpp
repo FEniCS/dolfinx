@@ -1,8 +1,8 @@
-// Copyright (C) 2005 Anders Logg.
+// Copyright (C) 2005-2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-02-03
-// Last changed: 2005-12-19
+// Last changed: 2006-08-21
 //
 // This example demonstrates the solution of a complex-valued ODE:
 // 
@@ -26,24 +26,20 @@ public:
   {
   }
   
-  complex z0(unsigned int i)
+  void z0(complex z[])
   {
-    return 1.0;
+    z[0] = 1.0;
   }
 
-  complex f(const complex z[], real t, unsigned int i)
+  void f(const complex z[], real t, complex y[])
   {
-    return j*z[0];
+    y[0] = j*z[0];
   }
 
 };
 
 int main()
 {
-  set("solve dual problem", false);
-  set("method", "cg");
-  set("order", 1);
-
   Exponential exponential;
   exponential.solve();
 

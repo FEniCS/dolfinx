@@ -1,51 +1,58 @@
 from dolfin import *
-from math import *
 
+# Define right-hand side
 class Source(Function):
     def eval(self, point, i):
-        return point.y + 1.0
+        return point[1] + 1.0
 
+# Define boundary condition
 class SimpleBC(BoundaryCondition):
     def eval(self, value, point, i):
-        if point.x == 0.0 or point.x == 1.0:
+        if point[0] == 0.0 or point[0] == 1.0:
             value.set(0.0)
-        return value
-    
+
 f = Source()
 bc = SimpleBC()
+
+# Create a mesh of the unit square
 mesh = UnitSquare(10, 10)
 
-forms = import_formfile("Poisson2D.form")
+# Import forms (compiled just-in-time with FFC)
+forms = import_formfile("Poisson.form")
 
-a = forms.Poisson2DBilinearForm()
-L = forms.Poisson2DLinearForm(f)
+a = forms.PoissonBilinearForm()
+L = forms.PoissonLinearForm(f)
 
+# Assemble linear system
 A = Matrix()
-x = Vector()
 b = Vector()
-
 FEM_assemble(a, L, A, b, mesh, bc)
 
-#print "A:"
-#A.disp(False)
+# Solve linear system
+x = Vector()
+solver = KrylovSolver()
 
-#print "b:"
-#b.disp()
+solver.solve(A, x, b)
 
-# Linear algebra could in certain cases be handled by Python modules,
-# Numeric for example.
+# Define a function from computed degrees of freedom
+trial_element = forms.PoissonBilinearFormTrialElement()
+u = Function(x, mesh, trial_element)
 
-linearsolver = KrylovSolver()
-linearsolver.solve(A, x, b)
+# Save solution to file in VTK format
+file = File("poisson.pvd")
+file << u
 
-#print "x:"
-#x.disp()
+# Plot with Mayavi
 
-trialelement = forms.Poisson2DBilinearFormTrialElement()
-u = Function(x, mesh, trialelement)
+# Load mayavi
+from mayavi import *
 
-vtkfile = File("poisson.vtk", File.vtk)
-vtkfile << u
+# Plot solution
+v = mayavi()
+d = v.open_vtk_xml("poisson000000.vtu")
+m = v.load_module("Axes")
+m = v.load_module("BandedSurfaceMap")
+fi = v.load_filter('WarpScalar', config=0)
 
-# Plotting can also be handled by Python modules (Mayavi for example)
-
+# Wait until window is closed
+v.master.wait_window()

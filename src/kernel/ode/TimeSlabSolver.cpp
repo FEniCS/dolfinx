@@ -1,8 +1,8 @@
-// Copyright (C) 2005 Anders Logg.
+// Copyright (C) 2005-2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-05
-// Last changed: 2005-12-19
+// Last changed: 2006-04-20
 
 #include <cmath>
 #include <dolfin/ParameterSystem.h>
@@ -14,18 +14,14 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 TimeSlabSolver::TimeSlabSolver(TimeSlab& timeslab)
   : ode(timeslab.ode), method(*timeslab.method), tol(0.0), maxiter(0),
-    monitor(get("monitor convergence")),
+    monitor(get("ODE monitor convergence")),
     num_timeslabs(0), num_global_iterations(0), num_local_iterations(0)
 {
-  // Get tolerance
-  const real TOL = get("tolerance");
-  const real alpha = get("discrete tolerance factor");
-  tol = get("discrete tolerance");
-  tol = std::min(tol, alpha*TOL);
-  cout << "Using discrete tolerance tol = " << tol << "." << endl;
+  // Choose tolerance
+  chooseTolerance();
 
   // Get maximum number of iterations
-  maxiter = get("maximum iterations");
+  maxiter = get("ODE maximum iterations");
 }
 //-----------------------------------------------------------------------------
 TimeSlabSolver::~TimeSlabSolver()
@@ -66,15 +62,16 @@ bool TimeSlabSolver::solve(uint attempt)
   start();
 
   real d0 = 0.0;
+  real d1 = 0.0;
   for (uint iter = 0; iter < maxiter; iter++)
   {
     // Do one iteration
-    real d1 = iteration(iter, tol);
+    real d2 = iteration(tol, iter, d0, d1);
     if ( monitor )
-      dolfin_info("--- iter = %d: increment = %.3e", iter, d1);
+      dolfin_info("--- iter = %d: increment = %.3e", iter, d2);
     
     // Check convergenge
-    if ( d1 < tol )
+    if ( d2 < tol )
     {
       end();
       num_timeslabs += 1;
@@ -86,13 +83,14 @@ bool TimeSlabSolver::solve(uint attempt)
 
     // Check divergence
     // FIXME: implement better check and make this a parameter
-    if ( (iter > 0 && d1 > 1000.0 * d0) || !std::isnormal(d1) )
+    if ( (iter > 0 && d2 > 1000.0 * d1) || !std::isnormal(d2) )
     {
       dolfin_warning("Time slab system seems to be diverging.");
       return false;
     }
     
     d0 = d1;
+    d1 = d2;
   }
 
   dolfin_warning("Time slab system did not converge.");
@@ -113,5 +111,16 @@ void TimeSlabSolver::start()
 void TimeSlabSolver::end()
 {
   // Do nothing
+}
+//-----------------------------------------------------------------------------
+void TimeSlabSolver::chooseTolerance()
+{
+  const real TOL   = get("ODE tolerance");
+  const real alpha = get("ODE discrete tolerance factor");
+
+  tol = get("ODE discrete tolerance");
+  if ( !get("ODE fixed time step") )
+    tol = std::min(tol, alpha*TOL);
+  cout << "Using discrete tolerance tol = " << tol << "." << endl;
 }
 //-----------------------------------------------------------------------------

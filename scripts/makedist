@@ -1,81 +1,108 @@
-#!/bin/sh
+#!/bin/bash
+#
+# Copyright (C) Anders Logg 2002-2006
+# Licensed under the GNU GPL Version 2
+#
+# This script creates a new release of DOLFIN
 
-# This script prepares and creates a .tar.gz package of
-# the source tree. This should really be done with 'make dist'
-# but until we get that working, this script does the job.
+# Make sure we have the current version
+echo '--- Synchronizing repository'
+sleep 1
+hg pull
+hg update
+hg commit
+hg push default
+echo '--- Repository synchronized, press return to continue'
+read
 
-# Simple test to see where we are
-# FIXME: Does not work when typing ./scripts/...
-CHECK=`echo $0 | cut -d'/' -f1`
-if [ "$CHECK" != "scripts" ]; then
-    echo "This script must be run from the top level directory."
-    exit 1
-fi
+# Update version number in ChangeLog
+echo '--- Update version number in ChangeLog'
+sleep 1
+emacs -nw ChangeLog
+
+# Update version number in configure.ac
+echo '--- Update version number in configure.ac'
+sleep 1
+emacs -nw configure.ac
+
+# Regenerate build system
+echo '--- Regenerating build system'
+scripts/preconfigure
 
 # Get the version number
 VERSION=`cat ./configure.ac | grep AC_INIT | cut -d ',' -f2 | cut -d' ' -f2`
+echo "--- Version number is $VERSION"
+sleep 1
+
+# Commit changes to hg
+echo '--- Pushing changes to parent repository'
+hg commit
+hg push default
+echo '--- Changes pushed, press return to continue'
+read
 
 # Write a message
-echo Creating release $VERSION of DOLFIN, assuming this is a clean CVS version
+echo "--- Creating release $VERSION of DOLFIN"
 
 # Create the directory
 DISTDIR=dolfin-$VERSION
-mkdir $DISTDIR
-
-# Copy files
-FILES=`ls | grep -v $DISTDIR`
-cp -R $FILES $DISTDIR
-
-# Remove unecessary files
-REMOVE1=`find $DISTDIR | grep CVS`
-REMOVE2=`find $DISTDIR -name '*~'`
-REMOVE3=`find $DISTDIR -name '*.a'`
-REMOVE4=$DISTDIR'/config.cache '$DISTDIR'/config.status '$DISTDIR'/config.log'
-REMOVE5=`find $DISTDIR | grep '\.deps'`
-REMOVE=$REMOVE1' '$REMOVE2' '$REMOVE3' '$REMOVE4' '$REMOVE5
-rm -rf $REMOVE
+echo "--- Creating directory release/$DISTDIR"
+mkdir -p release
+cd release
+rm -rf $DISTDIR
+hg clone .. $DISTDIR
+rm -rf $DISTDIR/.hg
+rm -f $DISTDIR/.hgignore
 
 # Create the archive
-TARBALL='dolfin-'$VERSION'.tar.gz'
-echo 'Creating arhive: '$TARBALL
+TARBALL="dolfin-$VERSION.tar.gz"
+echo "--- Creating arhive $TARBALL"
 tar zcf $TARBALL $DISTDIR
 
 # Remove the directory
+echo '--- Removing directory'
 rm -rf $DISTDIR
 
 # Unpack the tarball
-echo 'Unpacking tarball to check if it compiles'
+echo '--- Unpacking tarball to check if it compiles'
 tar zxf $TARBALL
 
 # Compile
-echo 'Compiling in directory '$DISTDIR' (see make-'$VERSION'.log)'
-MAKELOG='../make-'$VERSION'.log'
+echo "--- Compiling in directory release/$DISTDIR (see make-'$VERSION'.log)"
 cd $DISTDIR
+MAKELOG="../make-$VERSION.log"
 rm -f $MAKELOG
-./configure.local --enable-debug >> $MAKELOG
 export PATH=`pwd`"/local/bin:$PATH"
+./configure.local --enable-debug >> $MAKELOG
+make all install demo >& $MAKELOG
+make -C src/demo clean
+make -C src/pydolfin maintainer-clean-generic
+make uninstall clean
+./configure.local --enable-debug --enable-petsc >> $MAKELOG
 make all install demo >& $MAKELOG
 
 # Show log
+echo '--- Compilation finished, check log'
 less $MAKELOG
+cd ../../
 
 # Copy files to web server
-cd ..
-echo 'Copying ChangeLog to web server'
+echo '--- Copying files to web server'
+scp release/$TARBALL fenics@fenics.org:www.fenics.org/pub/software/dolfin/v0.6
 scp ChangeLog fenics@fenics.org:www.fenics.org/pub/software/dolfin
-echo 'Copying TODO list to web server'
 scp TODO fenics@fenics.org:www.fenics.org/pub/software/dolfin
-echo 'Copying tarball to web server'
-scp $TARBALL fenics@fenics.org:www.fenics.org/pub/software/dolfin/v0.5
 
 # Update on web server
-ssh fenics@fenics.org 'xterm -e emacs -nw www.fenics.org/dolfin/index.cpp'
-ssh fenics@fenics.org 'xterm -e /home/fenics/local/bin/news'
+echo '--- Update web pages'
+ssh -t fenics@fenics.org 'emacs -nw www.fenics.org/dolfin/index.cpp'
+ssh -t fenics@fenics.org 'emacs -nw www.fenics.org/download/index.cpp'
+ssh -t fenics@fenics.org '/home/fenics/local/bin/news'
 
 # Notify dolfin-dev of the new version
+echo '--- Notifying mailing list'
 SUBJECT="Version "$VERSION" of DOLFIN released"
 cat ChangeLog | mail -s "$SUBJECT" dolfin-dev@fenics.org
 
 # Write a message
 echo ' '
-echo 'Now update at freshmeat.'
+echo '--- Now update at freshmeat'

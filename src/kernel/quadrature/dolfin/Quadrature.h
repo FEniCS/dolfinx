@@ -1,13 +1,13 @@
-// Copyright (C) 2003-2005 Anders Logg.
+// Copyright (C) 2003-2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003-02-06
-// Last changed: 2005-12-09
+// Last changed: 2006-10-23
 
 #ifndef __QUADRATURE_H
 #define __QUADRATURE_H
 
-#include <dolfin/Point.h>
+#include <dolfin/constants.h>
 
 namespace dolfin
 {
@@ -16,14 +16,17 @@ namespace dolfin
   {
   public:
     
+    /// Constructor
     Quadrature(unsigned int n);
+
+    /// Destructor
     virtual ~Quadrature();
     
     /// Return number of quadrature points
     int size() const;
 
     /// Return quadrature point
-    const Point& point(unsigned int i) const;
+    real point(unsigned int i) const;
 
     /// Return quadrature weight
     real weight(unsigned int i) const;
@@ -36,10 +39,10 @@ namespace dolfin
 
   protected:
     
-    unsigned int n; // Number of quadrature points
-    Point* points;  // Quadrature points
-    real* weights;  // Quadrature weights
-    real m;         // Sum of weights
+    uint n;        // Number of quadrature points
+    real* points;  // Quadrature points
+    real* weights; // Quadrature weights
+    real m;        // Sum of weights
     
   };
   

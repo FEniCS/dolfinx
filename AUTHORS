@@ -1,37 +1,43 @@
 DOLFIN is written and maintained by:
 
-  Johan Hoffman   email: jhoffman@csc.kth.se
-      www:  http://www.csc.kth.se/~jhoffman/
+  Johan Hoffman <hoffman@csc.kth.se>
+  http://www.csc.kth.se/~jhoffman/
 
-  Johan Jansson   email: johanjan@math.chalmers.se
-      www:  http://www.math.chalmers.se/~johanjan/
+  Johan Jansson <johanjan@math.chalmers.se>
+  http://www.math.chalmers.se/~johanjan/
 
-  Anders Logg	    email: logg@tti-c.org
-      www:  http://www.tti-c.org/logg/
+  Anders Logg <logg@simula.no>
+  http://home.simula.no/~logg/
 
-  Garth N. Wells  email: g.n.wells@tudelft.nl
-      www:  http://www.mechanics.citg.tudelft.nl/~garth/
+  Garth N. Wells <g.n.wells@tudelft.nl>
+  http://www.mechanics.citg.tudelft.nl/~garth/
 
 Contributors in alphabetical order:
 
   Fredrik Bengzon       <bengzon@math.chalmers.se>
   Niklas Ericsson       <nen@math.chalmers.se>
   Haiko Etzel           <hetzel.devel@web.de>
-  Georgios Foufas       <foufas@math.chalmers.se> foufas
+  Georgios Foufas       <foufas@math.chalmers.se>
   Rasmus Hemph          <PDE project course 2001/2002>
   David Heintz          <david.heintz@comhem.se>
   Par Ingelstrom        <pi@elmagn.chalmers.se>
+  Alexander Jarosch     <alexanj@hi.is>
   Aleksandra Krusper    <PDE project course 2001/2002>
   Karin Kraft           <kakr@math.chalmers.se>
+  Glenn Terje Lines     <glennli@simula.no>
   Andreas Mark          <f00anma@dd.chalmers.se>	
   Andreas Nilsson       <f99anni@dd.chalmers.se>
   Kristian Oelgaard     <k.oelgaard@tudelft.nl>
+  Minh Do-Quang         <minh@mech.kth.se>
+  Angelo Simone         <a.simone@tudelft.nl>
+  Ola Skavhaug          <skavhaug@simula.no>
   Thomas Svedberg       <thsv@am.chalmers.se>
-  Erik Svensson         <eriksv@math.chalmers.se>	erik
-  Harald Svensson       <harald.s@home.se>  harald
+  Erik Svensson         <eriksv@math.chalmers.se>
+  Harald Svensson       <harald.s@home.se>
   Andy Terrel           <aterrel@uchicago.edu>
   Jim Tilander          <jt@dd.chalmers.se>
   Walter Villanueva     <PDE project course 2001/2002>
+  Åsmund Ødegård        <aasmund@simula.no>
 
 Missing credits? Tell us and we will fix it.
 Send an email to dolfin@fenics.org.

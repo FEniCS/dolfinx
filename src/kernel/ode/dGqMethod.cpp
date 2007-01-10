@@ -1,16 +1,15 @@
-// Copyright (C) 2003-2005 Anders Logg.
+// Copyright (C) 2003-2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-05-02
-// Last changed: 2005-11-02
+// Last changed: 2006-10-23
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/dolfin_math.h>
 #include <dolfin/Lagrange.h>
 #include <dolfin/RadauQuadrature.h>
-#include <dolfin/Vector.h>
-#include <dolfin/Matrix.h>
-#include <dolfin/LU.h>
+#include <dolfin/uBlasVector.h>
+#include <dolfin/DenseMatrix.h>
 #include <dolfin/dGqMethod.h>
 
 using namespace dolfin;
@@ -18,8 +17,8 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 dGqMethod::dGqMethod(unsigned int q) : Method(q, q + 1, q + 1)
 {
-  dolfin_info("Initializing discontinous Galerkin method dG(%d).", q);
-  
+  dolfin_info("Initializing discontinuous Galerkin method dG(%d).", q);
+
   init();
 
   _type = Method::dG;
@@ -38,12 +37,33 @@ real dGqMethod::ueval(real x0, real values[], real tau) const
   return sum;
 }
 //-----------------------------------------------------------------------------
+real dGqMethod::ueval(real x0, uBlasVector& values, uint offset, real tau) const
+{
+  // Note: x0 is not used, maybe this can be done differently
+
+  real sum = 0.0;
+  for (unsigned int i = 0; i < nn; i++)
+    sum += values[offset + i] * trial->eval(i, tau);
+  
+  return sum;
+}
+//-----------------------------------------------------------------------------
 real dGqMethod::residual(real x0, real values[], real f, real k) const
 {
   // FIXME: Include jump term in residual
   real sum = 0.0;
   for (uint i = 0; i < nn; i++)
     sum += values[i] * derivatives[i];
+
+  return sum / k - f;
+}
+//-----------------------------------------------------------------------------
+real dGqMethod::residual(real x0, uBlasVector& values, uint offset, real f, real k) const
+{
+  // FIXME: Include jump term in residual
+  real sum = 0.0;
+  for (uint i = 0; i < nn; i++)
+    sum += values[offset + i] * derivatives[i];
 
   return sum / k - f;
 }
@@ -116,7 +136,7 @@ void dGqMethod::computeQuadrature()
   // Get points, rescale from [-1,1] to [0,1], and reverse the points
   for (unsigned int i = 0; i < nq; i++)
   {
-    qpoints[i] = 1.0 - (quadrature.point(nq - 1 - i).x + 1.0) / 2.0;
+    qpoints[i] = 1.0 - (quadrature.point(nq - 1 - i) + 1.0) / 2.0;
     npoints[i] = qpoints[i];
   }
 
@@ -143,7 +163,7 @@ void dGqMethod::computeBasis()
 //-----------------------------------------------------------------------------
 void dGqMethod::computeWeights()
 {
-  Matrix A(nn, nn);
+  DenseMatrix A(nn, nn);
   
   // Compute matrix coefficients
   for (unsigned int i = 0; i < nn; i++)
@@ -162,8 +182,8 @@ void dGqMethod::computeWeights()
     }
   }
 
-  Vector b(nn);
-  Vector w(nn);
+  uBlasVector b(nn);
+  uBlasVector w(nn);
 
   // Compute nodal weights for each degree of freedom (loop over points)
   for (unsigned int i = 0; i < nq; i++)
@@ -177,8 +197,7 @@ void dGqMethod::computeWeights()
 
     // Solve for the weight functions at the nodal point
     // FIXME: Do we get high enough precision?
-    LU lu;
-    lu.solve(A, w, b);
+    A.solve(w, b);
 
     // Save weights including quadrature
     for (unsigned int j = 0; j < nn; j++)

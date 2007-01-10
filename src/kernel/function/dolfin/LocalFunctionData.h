@@ -1,8 +1,8 @@
-// Copyright (C) 2005 Anders Logg.
+// Copyright (C) 2005-2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-11-26
-// Last changed: 2005-11-26
+// Last changed: 2006-05-30
 
 #ifndef __LOCAL_FUNCTION_DATA_H
 #define __LOCAL_FUNCTION_DATA_H
@@ -42,8 +42,8 @@ namespace dolfin
     /// Interpolation points for local degrees of freedom
     Point* points;
 
-    /// Values (of vector-valued function) at current vertex
-    real* values;
+    /// Vertex nodes for components of function
+    uint* vertex_nodes;
 
   private:
     

@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-11-26
-// Last changed: 2006-02-20
+// Last changed: 2006-12-12
 
 #ifndef __USER_FUNCTION_H
 #define __USER_FUNCTION_H
@@ -41,7 +41,7 @@ namespace dolfin
     void sub(uint i);
 
     /// Compute interpolation of function onto local finite element space
-    void interpolate(real coefficients[], AffineMap& map, FiniteElement& element);
+    void interpolate(real coefficients[], Cell& cell, AffineMap& map, FiniteElement& element);
 
     /// Return vector dimension of function
     uint vectordim() const;

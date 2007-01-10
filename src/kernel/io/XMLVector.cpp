@@ -2,7 +2,8 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2002-12-06
-// Last changed: 2006-02-13
+// Last changed: 2006-05-23
+
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Vector.h>
@@ -50,7 +51,6 @@ void XMLVector::endElement(const xmlChar *name)
     
     if ( xmlStrcasecmp(name, (xmlChar *) "vector") == 0 )
     {
-      ok = true;
       state = DONE;
     }
     
@@ -63,33 +63,23 @@ void XMLVector::endElement(const xmlChar *name)
 //-----------------------------------------------------------------------------
 void XMLVector::readVector(const xmlChar *name, const xmlChar **attrs)
 {
-  // Set default values
-  int size = 0;
-
   // Parse values
-  parseIntegerRequired(name, attrs, "size", size);
+  uint size = parseInt(name, attrs, "size");
   
-  // Check values
-  if ( size < 0 )
-    dolfin_error("Illegal XML data for Vector: size of vector must be positive.");
-  
-  // Initialise
+  // Initialize vector
   x.init(size);	 
 }
 //-----------------------------------------------------------------------------
 void XMLVector::readEntry(const xmlChar *name, const xmlChar **attrs)
 {
-  // Set default values
-  int row = 0;
-  real value = 0.0;
-  
   // Parse values
-  parseIntegerRequired(name, attrs, "row", row);
-  parseRealRequired(name, attrs, "value",  value);   
+  uint row   = parseUnsignedInt(name, attrs, "row");
+  real value = parseReal(name, attrs, "value");
   
   // Check values
-  if ( row < 0 || row >= static_cast<int>(x.size()) )
-    dolfin_error2("Illegal XML data for Vector: row index %d out of range (0 - %d)", row, x.size() - 1);
+  if ( row >= x.size() )
+    dolfin_error2("Illegal XML data for Vector: row index %d out of range (0 - %d)",
+		  row, x.size() - 1);
   
   // Set value
   x(row) = value;

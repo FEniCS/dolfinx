@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2005
 //
 // First added:  2005
-// Last changed: 2006-02-24
+// Last changed: 2006-03-01
 //
 // This program illustrates the use of the DOLFIN for solving a nonlinear PDE
 // by solving the nonlinear variant of Poisson's equation
@@ -36,7 +36,7 @@ class MyFunction : public Function
 {
   real eval(const Point& p, unsigned int i)
   {
-    return time()*p.x*sin(p.y);
+    return time()*p.x()*sin(p.y());
   }
 };
 
@@ -45,11 +45,10 @@ class MyBC : public BoundaryCondition
 {
   void eval(BoundaryValue& value, const Point& p, unsigned int i)
   {
-    if ( std::abs(p.x - 1.0) < DOLFIN_EPS )
+    if ( std::abs(p.x() - 1.0) < DOLFIN_EPS )
       value = time();
   }
 };
-
 
 int main(int argc, char* argv[])
 {
@@ -59,13 +58,12 @@ int main(int argc, char* argv[])
   UnitSquare mesh(16, 16);
   MyFunction f;
   MyBC bc;
-  Function u;
+  Function U;
 
   // Create forms and nonlinear PDE
-  NonlinearPoisson::BilinearForm a(u);
-  NonlinearPoisson::LinearForm L(u, f);
+  NonlinearPoisson::BilinearForm a(U);
+  NonlinearPoisson::LinearForm L(U, f);
   PDE pde(a, L, mesh, bc, PDE::nonlinear);
-
 
   // Solve nonlinear problem in a series of steps
   real dt = 1.0; real t  = 0.0; real T  = 3.0;
@@ -73,15 +71,17 @@ int main(int argc, char* argv[])
   bc.sync(t);
 
   pde.set("Newton relative tolerance", 1e-6); 
+  pde.set("Newton convergence criterion", "incremental"); 
+//  pde.set("Newton convergence criterion", "residual"); 
   while( t < T)
   {
     t += dt;
-    pde.solve(u);
+    pde.solve(U);
   }
 
   // Save function to file
   File file("nonlinear_poisson.pvd");
-  file << u;
+  file << U;
 
   return 0;
 }

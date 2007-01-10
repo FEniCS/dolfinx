@@ -16,15 +16,15 @@ formatting of the output from an entire program, including the
 Log messages can be generated using the function
 \texttt{dolfin\_info()} available in the \texttt{dolfin} namespace:
 \begin{code}
-  void dolfin_info(const char *message, ...);
+void dolfin_info(const char *message, ...);
 \end{code}
 which works similarly to the standard C library function \texttt{printf}.
 The following examples illustrate the usage of
 \texttt{dolfin\_info()}:
 \begin{code}
-  dolfin_info(``Solving linear system.'');
-  dolfin_info(``Size of vector: \%d.'', x.size());
-  dolfin_info(``R = \%.3e (TOL = \%.3e)'', R, TOL);
+dolfin_info(``Solving linear system.'');
+dolfin_info(``Size of vector: \%d.'', x.size());
+dolfin_info(``R = \%.3e (TOL = \%.3e)'', R, TOL);
 \end{code}
 
 As an alternative to \texttt{dolfin\_info()}, \dolfin{} provides a C++
@@ -32,9 +32,9 @@ style interface to generating log messages. Thus, the above examples
 can also be implemented as follows:
 \footnotesize
 \begin{code}
-  cout << ``Solving linear system.'' << endl;
-  cout << ``Size of vector: `` << x.size() << ``.'' << endl;
-  cout << ``R = `` << R << `` (TOL = `` << TOL << ``)'' << endl;
+cout << ``Solving linear system.'' << endl;
+cout << ``Size of vector: `` << x.size() << ``.'' << endl;
+cout << ``R = `` << R << `` (TOL = `` << TOL << ``)'' << endl;
 \end{code}
 \normalsize
 Note the use of \texttt{dolfin::cout} and
@@ -48,14 +48,14 @@ Most classes provided by \dolfin{} can be used together with
 \texttt{dolfin::cout} and \texttt{dolfin::endl} to display short
 informative messages about objects:
 \begin{code}
-  Matrix A(10, 10);
-  cout << A << endl;
+Matrix A(10, 10);
+cout << A << endl;
 \end{code}
 To display detailed information for an object,  use the member function
 \texttt{disp()}:
 \begin{code}
-  Matrix A(10, 10);
-  A.disp();
+Matrix A(10, 10);
+A.disp();
 \end{code}
 Use with caution for large objects. For a \texttt{Matrix}, calling
 \texttt{disp()} will displays all matrix entries.
@@ -69,8 +69,8 @@ Use with caution for large objects. For a \texttt{Matrix}, calling
 
 Warnings and error messages can be generated using the macros
 \begin{code}
-  dolfin_warning(message);
-  dolfin_error(message);
+dolfin_warning(message);
+dolfin_error(message);
 \end{code}
 
 In addition to displaying the given string message, the macro
@@ -84,9 +84,9 @@ to warnings or errors, the variations \texttt{dolfin\_error1()},
 the following examples:
 \footnotesize
 \begin{code}
-  dolfin_error(``GMRES solver did not converge.'');
-  dolfin_error1(``Unable to find face opposite to node %d.'', n);
-  dolfin_error2(``Unable to find edge between nodes %d and %d.'', n0, n1);
+dolfin_error(``GMRES solver did not converge.'');
+dolfin_error1(``Unable to find face opposite to node %d.'', n);
+dolfin_error2(``Unable to find edge between nodes %d and %d.'', n0, n1);
 \end{code}
 \normalsize
 
@@ -100,7 +100,7 @@ the following examples:
 The macro \texttt{dolfin\_debug()} works similarly to
 \texttt{dolfin\_info()}:
 \begin{code}
-  dolfin_debug(message);
+dolfin_debug(message);
 \end{code}
 but in addition to displaying the given message, information is printed about
 the location of the code that generated the debug message (file,
@@ -116,7 +116,7 @@ whenever you assume something about about a variable in your code,
 such as assuming that given input to a function is valid. \dolfin{}
 provides the macro \texttt{dolfin\_assert()} for creating assertions:
 \begin{code}
-  dolfin\_assert(check);
+dolfin_assert(check);
 \end{code}
 This macro accepts a boolean expression and if the expression
 evaluates to false, an error message is displayed, including the
@@ -125,10 +125,10 @@ segmentation fault is raised (to enable easy attachment to a
 debugger). The following examples illustrate the use of
 \texttt{dolfin\_assert()}:
 \begin{code}
-  dolfin_assert(i >= 0);
-  dolfin_assert(i < n);
-  dolfin_assert(cell.type() == Cell::triangle);
-  dolfin_assert(cell.type() == Cell::tetrahedron);
+dolfin_assert(i >= 0);
+dolfin_assert(i < n);
+dolfin_assert(cell.type() == Cell::triangle);
+dolfin_assert(cell.type() == Cell::tetrahedron);
 \end{code}
 Note that assertions are only active when compiling
 \dolfin{} and your program with \texttt{DEBUG} defined (configure
@@ -148,14 +148,14 @@ The two functions \texttt{dolfin\_begin()} and \texttt{dolfin\_end()}
 available in the \texttt{dolfin} name space can be used to notify the
 \dolfin{} log system about the beginning and end of a task:
 \begin{code}
-  void dolfin_begin();
-  void dolfin_end();
+void dolfin_begin();
+void dolfin_end();
 \end{code}
 Alternatively, a string message (or a formatting string with optional
 arguments) can be supplied:
 \begin{code}
-  void dolfin_begin(const char* message, ...);
-  void dolfin_end(const char* message, ...);
+void dolfin_begin(const char* message, ...);
+void dolfin_end(const char* message, ...);
 \end{code}
 
 These functions enable the \dolfin{} log system to display messages,
@@ -177,33 +177,33 @@ If the number of steps of a computation is known, a progress session
 should  be defined in terms of the number of steps and updated in each
 step of the computation as illustrated by the following example:
 \begin{code}
-  Progress p(``Assembling'', mesh.noCells());  
-  for (CellIterator c(mesh); !c.end(); ++c)
-  \{
-    ...
-    p++;
-  \}
+Progress p(``Assembling'', mesh.noCells());  
+for (CellIterator c(mesh); !c.end(); ++c)
+{
+  ...
+  p++;
+}
 \end{code}
 It is also possible to specify the step number explicitly by assigning
 an integer to the progress session:
 \begin{code}
-  Progress p(``Iterating over vector'', x.size())
-  for (uint i = 0; i < x.size(); i++)
-  \{
-    ...
-    p = i;
-  \}
+Progress p(``Iterating over vector'', x.size())
+for (uint i = 0; i < x.size(); i++)
+{
+  ...
+  p = i;
+}
 \end{code}
 
 Alternatively, if the number of steps is unknown, the progress session
 needs to be updated with the current percentage of the progress:
 \begin{code}
-  Progress p(``Time-stepping'');
-  while ( t < T )
-  \{
-    ...
-    p = t / T;
-  \}
+Progress p(``Time-stepping'');
+while ( t < T )
+{
+  ...
+  p = t / T;
+}
 \end{code}
 
 The progress bar created by the progress session will only be updated
@@ -212,7 +212,7 @@ default at least $10\%$). The
 amount of change needed for an update can be controlled using the
 parameter \texttt{``progress step''}:
 \begin{code}
-  dolfin_set(``progress step'', 0.01);
+dolfin_set(``progress step'', 0.01);
 \end{code}
 
 Note that several progress sessions may be created simultaneously, or
@@ -231,7 +231,7 @@ curses interface or turning of messages completely. To specify the
 output destination, use the function \texttt{dolfin\_output()}
 available in the \texttt{dolfin} namespace:
 \begin{code}
-  void dolfin_output(const char* destination);
+void dolfin_output(const char* destination);
 \end{code}
 where \texttt{destination} is one of
 \texttt{``plain text''} (standard output),
@@ -252,13 +252,13 @@ or not messages should be directed to the current output destination.
 This function can be useful to suppress excessive logging, for example
 when calling a function that generates log messages multiple times:
 \begin{code}
-  GMRES gmres;
-  while ( ... )
-  \{
-    ...
-    dolfin_log(false);
-    gmres.solve(A, x, b);
-    dolfin_log(true);
-    ...
-  \}
+GMRES gmres;
+while ( ... )
+{
+  ...
+  dolfin_log(false);
+  gmres.solve(A, x, b);
+  dolfin_log(true);
+  ...
+}
 \end{code}

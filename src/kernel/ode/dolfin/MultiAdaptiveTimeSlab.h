@@ -1,14 +1,15 @@
-// Copyright (C) 2005 Anders Logg.
+// Copyright (C) 2005-2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-27
-// Last changed: 2005-11-11
+// Last changed: 2006-07-05
 
 #ifndef __MULTI_ADAPTIVE_TIME_SLAB_H
 #define __MULTI_ADAPTIVE_TIME_SLAB_H
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/constants.h>
+#include <dolfin/uBlasVector.h>
 #include <dolfin/Alloc.h>
 #include <dolfin/Partition.h>
 #include <dolfin/MultiAdaptivity.h>
@@ -71,6 +72,7 @@ namespace dolfin
     friend class MultiAdaptiveJacobian;
     friend class UpdatedMultiAdaptiveJacobian;
     friend class MultiAdaptivePreconditioner;
+    friend class MultiAdaptivity;
 
   private:
 
@@ -120,7 +122,7 @@ namespace dolfin
     void coverTime(real t);
 
     // Compute maximum of all element residuals
-    void computeMaxResiduals();
+    real computeMaxResiduals();
 
     // Evaluate right-hand side at quadrature points of given element (cG)
     void cGfeval(real* f, uint s0, uint e0, uint i0, real a0, real b0, real k0);
@@ -145,37 +147,31 @@ namespace dolfin
     
     int* de;  // Mapping d --> element e of dependency d
         
-    //--- Auxiliary data ---
+    //--- Size of time slab data ---
     
     Alloc size_s; // Allocation data for sub slabs s
     Alloc size_e; // Allocation data for elements e
     Alloc size_j; // Allocation data for dofs j
     Alloc size_d; // Allocation data for dependencies d
-    uint size_r;  // Allocation data for increments r
 
     uint ns; // Number of sub slabs
     uint ne; // Number of elements
     uint nj; // Number of dofs
     uint nd; // Number of dependencies
 
-    TimeSlabSolver* solver;     // The solver
-    MultiAdaptivity adaptivity; // Adaptive time step regulation
-    Partition partition;        // Time step partitioning 
-    int* elast;                 // Last element for each component
-    real* u;                    // Interpolated solution vector
-    real* f0;                   // Right-hand side at left end-point for cG
+    //--- Auxiliary data, size N ---
+
+    TimeSlabSolver* solver;     // The solver (size N if diagonally damped)
+    MultiAdaptivity adaptivity; // Adaptive time step regulation (size 3N)
+    Partition partition;        // Time step partitioning (size N)
+    int* elast;                 // Last element for each component (size N)
+    real* f0;                   // Right-hand side at left end-point for cG (size N)
+
+    //--- Auxiliary data ---
     uint emax;                  // Last covered element for sample
     real kmin;                  // Minimum time step (exluding threshold modified)
 
-    // FIXME: Not needed, do propagation in shift(), fix later when working
-    real* f0tmp;                // Temporary storage for f0 when copying
-
-    real* kmax;                 // Maximum time steps in the time slab
-    real* rmax;                 // Maximum residuals in the time slab
-    real* krmax;                // Maximum local error (k*r) in the time slab
-
-    // Values of right-hand side at quadrature points
-    real* ftmp; 
+    uBlasVector u; // The interpolated solution at a given time
 
   };
 
