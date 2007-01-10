@@ -15,89 +15,91 @@
 #include <dolfin/Edge.h>
 #include <dolfin/Cell.h>
 #include <dolfin/LocalMeshRefinement.h>
-#include <dolfin/MeshHierarchy.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void LocalMeshRefinement::refineTetMesh(MeshHierarchy& mesh_hierarchy) 
+void LocalMeshRefinement::refineSimplexMeshByBisection(Mesh& mesh, 
+						       MeshFunction<bool>& cell_marker)
 {
-  // This function implements the "GlobalRefinement" algorithm by Bey 
+  dolfin_info("Refining simplicial mesh by bisection of edges.");
 
-  uint num_meshes = uint(mesh_hierarchy.size());
+  // Check cell marker 
+  // ...
 
-  for (uint k = num_meshes-1; k >= 0; k--)
-  {
-    /*
-    evaluateMarks(mesh_hierarchy(k));
-    closeMesh(mesh_hierarchy(k));
-    */
-  }
+  /*
+  // Generate cell - edge connectivity if not generated
+  mesh.init(mesh.topology().dim(), 1);
+  
+  // Generate edge - vertex connectivity if not generated
+  mesh.init(1, 0);
 
-  for (uint k = 0; k < num_meshes; k++)
-  {
-    if ( mesh_hierarchy(k).numCells() > 0 )
-    {
-      /*
-      if ( k > 0 ) closeMesh(mesh_hierarchy(k));
-      unrefineMesh(mesh_hierarchy,k);
-      refineMesh(mesh_hierarchy,k);
-      */
+  // Get cell type
+  const CellType& cell_type = mesh.type();
+  
+  // Create new mesh and open for editing
+  Mesh refined_mesh;
+  MeshEditor editor;
+  editor.open(refined_mesh, cell_type.cellType(),
+	      mesh.topology().dim(), mesh.geometry().dim());
+  
+  // Get size of old mesh
+  const uint num_vertices = mesh.size(0);
+  const uint num_edges = mesh.size(1);
+  const uint num_cells = mesh.size(mesh.topology().dim());
+
+  // Compute number of vertices and cells 
+  for (CellIterator c(mesh); !c.end(); ++c){
+    if (cell_marker.get(c) == true){
+      
+
+
+
+
+
+
+  for ( uint i < cell_marker.size() ){
+      
+
     }
   }
 
-  /*
-  if      ( mesh_hierarchy(num_meshes-1).numCells() == 0 ) num_meshes--;
-  else if ( mesh_hierarchy(num_meshes).numCells()   != 0 ) num_meshes++;
-  */
-}
-//-----------------------------------------------------------------------------
-void LocalMeshRefinement::evaluateMarks(Mesh& mesh) 
-{
-  // This function implements the "EvaluateMarks" subroutine by Bey 
-  dolfin_warning("Not implemented yet.");
 
-  /*
-  MeshFunction<uint> cell_marker(mesh); 
-  MeshFunction<uint> cell_state(mesh); 
-  cell_marker.init(2);
-  cell_state.init(2);
 
-  MeshFunction<uint> edge_marker(mesh); 
-  MeshFunction<uint> edge_state(mesh); 
-  edge_marker.init(1);
-  edge_state.init(1);
+
+
+
+
+
+
+
+  // Specify number of vertices and cells
+  editor.initVertices(num_vertices + num_edges);
+  editor.initCells(ipow(2, mesh.topology().dim())*num_cells);
+
+  // Add old vertices
+  uint vertex = 0;
+  for (VertexIterator v(mesh); !v.end(); ++v)
+    editor.addVertex(vertex++, v->point());
+
+  // Add new vertices
+  for (EdgeIterator e(mesh); !e.end(); ++e)
+    editor.addVertex(vertex++, e->midpoint());
+
+  // Add cells
+  uint current_cell = 0;
+  for (CellIterator c(mesh); !c.end(); ++c)
+    cell_type.refineCell(*c, editor, current_cell);
+
+  // Overwrite old mesh with refined mesh
+  editor.close();
+  mesh = refined_mesh;
+
+  cout << "Refined mesh: " << mesh << endl;
+
+
+
   */
-  
-}
-//-----------------------------------------------------------------------------
-void LocalMeshRefinement::closeMesh(Mesh& mesh) 
-{
-  // This function implements the "CloseGrid" subroutine by Bey 
-  dolfin_warning("Not implemented yet.");
-}
-//-----------------------------------------------------------------------------
-void LocalMeshRefinement::closeCell(Cell& cell) 
-{
-  // This function implements the "CloseElement" subroutine by Bey 
-  dolfin_warning("Not implemented yet.");
-}
-//-----------------------------------------------------------------------------
-void LocalMeshRefinement::unrefineMesh(MeshHierarchy& mesh, uint k)
-{
-  // This function implements the "UnrefineGrid" subroutine by Bey 
-  dolfin_warning("Not implemented yet.");
-}
-//-----------------------------------------------------------------------------
-void LocalMeshRefinement::refineMesh(MeshHierarchy& mesh, uint k)
-{
-  // This function implements the "RefineGrid" subroutine by Bey 
-  dolfin_warning("Not implemented yet.");
-}
-//-----------------------------------------------------------------------------
-void LocalMeshRefinement::refineSimplexByNodeInsertion(Mesh& mesh)
-{
-  dolfin_info("Refining edge in simplicial mesh by node insertion.");
 
   dolfin_warning("Not implemented yet.");
 

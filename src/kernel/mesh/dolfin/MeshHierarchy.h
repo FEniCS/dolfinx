@@ -8,6 +8,7 @@
 #define __MESHHIERARCHY_H
 
 #include <dolfin/constants.h>
+#include <dolfin/MeshFunction.h>
 
 namespace dolfin
 {

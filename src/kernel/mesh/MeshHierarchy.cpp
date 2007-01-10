@@ -16,7 +16,7 @@ MeshHierarchy::MeshHierarchy(const Mesh& mesh)
   // Allocate data
   num_meshes = 1;
   meshes = new Mesh[num_meshes];
-  
+
   // Initialize mesh hierarchy 
   meshes[0] = mesh; 
 }
@@ -50,9 +50,10 @@ void MeshHierarchy::clear()
   // Clear data 
   num_meshes = 0;
 
-  if ( meshes )
+  if ( meshes ){
     delete [] meshes;
-  meshes = 0;
+    meshes = 0;
+  }
 }
 //-----------------------------------------------------------------------------
 int MeshHierarchy::size()
@@ -91,6 +92,7 @@ void MeshHierarchy::add(const Mesh& mesh)
   {
     init(mesh);
   }
+
 }
 //-----------------------------------------------------------------------------
 void MeshHierarchy::remove() 
@@ -122,6 +124,7 @@ void MeshHierarchy::remove()
   {
     dolfin_error("Cannot remove mesh from empty mesh hierarcy");
   }
+
 }
 //-----------------------------------------------------------------------------
 Mesh& MeshHierarchy::operator()(uint k) const 
