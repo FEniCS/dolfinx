@@ -4,7 +4,7 @@
 // Modified by Anders Logg 2006.
 //
 // First added:  2006-04-25
-// Last changed: 2006-09-26
+// Last changed: 2006-12-12
 
 #ifndef __GENERIC_VECTOR_H
 #define __GENERIC_VECTOR_H
@@ -27,22 +27,22 @@ namespace dolfin
     virtual ~GenericVector() {}
     
     /// Initialize vector of size N
-    virtual void init(uint N) = 0;
+    virtual void init(const uint N) = 0;
 
     /// Return size
     virtual uint size() const = 0;
 
     /// Access element value
-    virtual real get(uint i) const = 0;
+    virtual real get(const uint i) const = 0;
 
     /// Set element value
-    virtual void set(uint i, real value) = 0;
+    virtual void set(const uint i, const real value) = 0;
 
     /// Set block of values
-    virtual void set(const real block[], const int pos[], int n) = 0;
+    virtual void set(const real block[], const int pos[], const int n) = 0;
 
     /// Add block of values
-    virtual void add(const real block[], const int pos[], int n) = 0;
+    virtual void add(const real block[], const int pos[], const int n) = 0;
 
     /// Apply changes to vector (only needed for PETSc vectors)
     virtual void apply() = 0;

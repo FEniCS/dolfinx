@@ -28,25 +28,28 @@ namespace dolfin
     virtual ~GenericMatrix() {}
 
     /// Initialize M x N matrix
-    virtual void init(uint M, uint N) = 0;
+    virtual void init(const uint M, const uint N) = 0;
 
     /// Initialize M x N matrix with given maximum number of nonzeros in each row
-    virtual void init(uint M, uint N, uint nzmax) = 0;
+    virtual void init(const uint M, const uint N, const uint nzmax) = 0;
     
+    /// Initialize M x N matrix with given number of nonzeros per row
+    virtual void init(const uint M, const uint N, const int nz[]) = 0;
+
     /// Return number of rows (dim = 0) or columns (dim = 1) along dimension dim
-    virtual uint size(uint dim) const = 0;
+    virtual uint size(const uint dim) const = 0;
 
     /// Access element value
-    virtual real get(uint i, uint j) const = 0;
+    virtual real get(const uint i, const uint j) const = 0;
 
     /// Set element value
-    virtual void set(uint i, uint j, real value) = 0;
+    virtual void set(const uint i, const uint j, const real value) = 0;
 
     /// Set block of values
-    virtual void set(const real block[], const int rows[], int m, const int cols[], int n) = 0;
+    virtual void set(const real block[], const int rows[], const int m, const int cols[], const int n) = 0;
 
     /// Add block of values
-    virtual void add(const real block[], const int rows[], int m, const int cols[], int n) = 0;
+    virtual void add(const real block[], const int rows[], const  int m, const int cols[], const int n) = 0;
 
     /// Apply changes to matrix (only needed for sparse matrices)
     virtual void apply() = 0;
@@ -55,7 +58,7 @@ namespace dolfin
     virtual void zero() = 0;
 
     /// Set given rows to identity matrix
-    virtual void ident(const int rows[], int m) = 0;
+    virtual void ident(const int rows[], const int m) = 0;
 
     /// Return maximum number of nonzero entries in all rows
     virtual uint nzmax() const = 0;

@@ -19,7 +19,7 @@ class CreateMatrices(unittest.TestCase):
 
     def testUBlasDenseMatrix(self):
         """Create uBlas dense matrix"""
-        A = uBlasSparseMatrix(10,20)
+        A = uBlasDenseMatrix(10,20)
         self.assertEqual(A.size(0), 10)
         self.assertEqual(A.size(1), 20)
 

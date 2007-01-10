@@ -6,16 +6,16 @@ eps = 1e-16
 class ExactSolution(Function):
     def eval(self, point, i):
         if(i == 0):
-            return -sin(pi * point.x) * cos(pi * point.y)
+            return -sin(pi * point[0]) * cos(pi * point[1])
         else:
-            return cos(pi * point.x) * sin(pi * point.y)
+            return cos(pi * point[0]) * sin(pi * point[1])
 
 class Source(Function):
     def eval(self, point, i):
         if(i == 0):
-            return -2.0 * pi * pi * sin(pi * point.x) * cos(pi * point.y)
+            return -2.0 * pi * pi * sin(pi * point[0]) * cos(pi * point[1])
         else:
-            return 2.0 * pi * pi * cos(pi * point.x) * sin(pi * point.y)
+            return 2.0 * pi * pi * cos(pi * point[0]) * sin(pi * point[1])
 
 class MyBC(BoundaryCondition):
     def eval(self, value, point, i):
@@ -25,24 +25,24 @@ class MyBC(BoundaryCondition):
             return
 
         # Boundary condition for velocity
-        if(abs(point.x - 0.0) < eps):
+        if(abs(point[0] - 0.0) < eps):
             if(i == 0):
                 value.set(0.0)
             else:
-                value.set(sin(pi*point.y))
-        elif(abs(point.x - 1.0) < eps):
+                value.set(sin(pi*point[1]))
+        elif(abs(point[0] - 1.0) < eps):
             if(i == 0):
                 value.set(0.0)
             else:
-                value.set(-sin(pi*point.y))
-        elif(abs(point.y - 0.0) < eps):
+                value.set(-sin(pi*point[1]))
+        elif(abs(point[1] - 0.0) < eps):
             if(i == 0):
-                value.set(-sin(pi*point.x))
+                value.set(-sin(pi*point[0]))
             else:
                 value.set(0.0)
-        elif(abs(point.y - 1.0) < eps):
+        elif(abs(point[1] - 1.0) < eps):
             if(i == 0):
-                value.set(sin(pi*point.x))
+                value.set(sin(pi*point[0]))
             else:
                 value.set(0.0)
 

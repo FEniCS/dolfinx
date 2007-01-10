@@ -50,6 +50,23 @@ namespace dolfin
     // Damping (alpha = 1.0 for no damping)
     real alpha;
 
+    // Stabilization
+    bool stabilize;
+
+    // Stabilization parameters
+
+    // Number of stabilizing iterations
+    uint mi;
+
+    // Number of ramping iterations
+    uint li;
+
+    // Ramping coefficient
+    real ramp;
+
+    // Ramping factor
+    real rampfactor;
+
   };
 
 }

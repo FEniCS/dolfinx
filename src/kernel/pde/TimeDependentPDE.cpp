@@ -26,10 +26,10 @@
 using namespace dolfin;
 
 TimeDependentPDE::TimeDependentPDE(BilinearForm& a, LinearForm& L, Mesh& mesh, 
-  BoundaryCondition& bc, int N, real k, real T) : GenericPDE(), x(0), k(k),
-						  _a(&a), _Lf(&L),
-						  _mesh(&mesh), _bc(&bc),
-						  N(N), t(0), T(T)
+  BoundaryCondition& bc, int N, real T) : GenericPDE(), x(0),
+					  _a(&a), _Lf(&L),
+					  _mesh(&mesh), _bc(&bc),
+					  N(N), t(0), T(T)
 {
   x = new Vector(N);
   dotx = new Vector(N);
@@ -102,6 +102,13 @@ dolfin::uint TimeDependentPDE::solve(Function& U)
   return 0;
 }
 //-----------------------------------------------------------------------------
+void TimeDependentPDE::u0(uBlasVector& u)
+{
+  cout << "TimeDependentPDE::u0" << endl;
+
+  u.copy(*x, 0, 0, u.size());
+}
+//-----------------------------------------------------------------------------
 void TimeDependentPDE::fu(const Vector& x, Vector& dotx, real t)
 {
 }
@@ -158,9 +165,8 @@ TimeDependentODE::TimeDependentODE(TimeDependentPDE& pde, int N, real T) :
 //-----------------------------------------------------------------------------
 void TimeDependentODE::u0(uBlasVector& u)
 {
-  // FIXME: ODE solver interface has changed
-  //dolfin_error("Not implemented.");
-  u.copy(*(pde->x), 0, 0, u.size());
+  cout << "TimeDependentODE::u0" << endl;
+  pde->u0(u);
 }
 //-----------------------------------------------------------------------------
 void TimeDependentODE::f(const uBlasVector& u, real t, uBlasVector& y)
@@ -177,11 +183,6 @@ void TimeDependentODE::f(const uBlasVector& u, real t, uBlasVector& y)
 bool TimeDependentODE::update(const uBlasVector& u, real t, bool end)
 {
   return true;
-}
-//-----------------------------------------------------------------------------
-real TimeDependentODE::timestep(real t, real k0) const
-{
-  return pde->k;
 }
 //-----------------------------------------------------------------------------
 

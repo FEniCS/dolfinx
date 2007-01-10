@@ -3,5 +3,6 @@ SUBDIRS = convdiff \
           elasticity-updated \
           heat \
           navierstokes \
+          plasticity \
           poisson \
           stokes

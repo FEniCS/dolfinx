@@ -24,7 +24,7 @@ dnl @license AllPermissive
 AC_DEFUN([AX_BOOST_BASE],
 [
 AC_ARG_WITH([boost],
-	AS_HELP_STRING([--with-boost@<:@=DIR@:>@], [use boost (default is No) - it is possible to specify the root directory for boost (optional)]),
+	AS_HELP_STRING([--with-boost@<:@=DIR@:>@], [it is possible to specify the root directory for boost (optional)]),
 	[
     if test "$withval" = "no"; then
 		want_boost="no"

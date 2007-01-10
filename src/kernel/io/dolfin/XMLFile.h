@@ -18,6 +18,7 @@ namespace dolfin
 {
   
   class Mesh;
+  template <class T> class MeshFunction;
   class ParameterList;
   class BLASFormData;
 
@@ -35,7 +36,9 @@ namespace dolfin
     void operator>> (Vector& x);
     void operator>> (Matrix& A);
     void operator>> (Mesh& mesh);
-    void operator>> (NewMesh& mesh);
+    void operator>> (MeshFunction<int>& meshfunction);
+    void operator>> (MeshFunction<double>& meshfunction);
+    void operator>> (MeshFunction<bool>& meshfunction);
     void operator>> (Function& f);
     void operator>> (FiniteElementSpec& spec);
     void operator>> (ParameterList& parameters);
@@ -48,7 +51,10 @@ namespace dolfin
     void operator<< (Vector& x);
     void operator<< (Matrix& A);
     void operator<< (Mesh& mesh);
-    void operator<< (NewMesh& mesh);
+// Todo:
+    void operator<< (MeshFunction<int>& mesh);
+    void operator<< (MeshFunction<double>& mesh);
+    void operator<< (MeshFunction<bool>& mesh);
     void operator<< (Function& f);
     void operator<< (FiniteElementSpec& spec);
     void operator<< (ParameterList& parameters);

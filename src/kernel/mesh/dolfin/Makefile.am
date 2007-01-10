@@ -1,54 +1,30 @@
 EXTRA_DIST = dolfin_mesh.h \
-             Boundary.h \
-             BoundaryData.h \
-             BoundaryFacetIterator.h \
-             BoundaryInit.h \
-             Cell.h \
-             CellIterator.h \
-             CellRefData.h \
-             Edge.h \
-             EdgeIterator.h \
-             EdgeRefData.h \
-             Face.h \
-             FaceIterator.h \
-             GenericCell.h \
-             Mesh.h \
-             MeshData.h \
-             MeshHierarchy.h \
-             MeshInit.h \
-             MeshIterator.h \
-             MeshRefinement.h \
-             Point. h\
-             TetMeshRefinement.h \
-             Tetrahedron.h \
-             TriMeshRefinement.h \
-             Triangle.h \
              UnitCube.h \
              UnitSquare.h \
-             NewUnitCube.h \
-             NewUnitSquare.h \
-             Vertex.h \
-             VertexIterator.h \
              MeshConnectivity.h \
              MeshEditor.h \
              MeshEntity.h \
              MeshEntityIterator.h \
              MeshFunction.h \
              MeshGeometry.h \
+             MeshHierarchy.h \
              MeshTopology.h \
-             NewMesh.h \
-             NewMeshData.h \
-             NewVertex.h \
-             NewEdge.h \
-             NewFace.h \
-             NewFacet.h \
-             NewCell.h \
+             Mesh.h \
+             MeshData.h \
+             Vertex.h \
+             Edge.h \
+             Face.h \
+             Facet.h \
+             Cell.h \
              TopologyComputation.h \
              CellType.h \
              Interval.h \
-             NewTriangle.h \
-             NewTetrahedron.h \
+             Triangle.h \
+             Tetrahedron.h \
              UniformMeshRefinement.h \
-             NewPoint.h \
+             LocalMeshRefinement.h \
+             LocalMeshCoarsening.h \
+             Point.h \
              BoundaryComputation.h \
-             MeshBoundary.h
+             MeshBoundary.h \
+             GeometricPredicates.h

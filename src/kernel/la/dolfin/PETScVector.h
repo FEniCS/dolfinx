@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells 2005, 2006.
 //
 // First added:  2004
-// Last changed: 2006-05-31
+// Last changed: 2006-12-12
 
 #ifndef __PETSC_VECTOR_H
 #define __PETSC_VECTOR_H
@@ -27,7 +27,7 @@ namespace dolfin
   /// It is a simple wrapper for a PETSc vector pointer (Vec).
   ///
   /// The interface is intentionally simple. For advanced usage,
-  /// access the PETSc Mat pointer using the function mat() and
+  /// access the PETSc Vec pointer using the function vec() and
   /// use the standard PETSc interface.
 
   class PETScVector : public GenericVector, public Variable
@@ -38,7 +38,7 @@ namespace dolfin
     PETScVector();
 
     /// Create vector of given size
-    PETScVector(uint size);
+    PETScVector(const uint N);
 
     /// Create vector from given PETSc Vec pointer
     PETScVector(Vec x);
@@ -50,7 +50,7 @@ namespace dolfin
     ~PETScVector ();
 
     /// Initialize vector data
-    void init(uint size);
+    void init(const uint N);
 
     /// Clear vector data
     void clear();
@@ -59,13 +59,13 @@ namespace dolfin
     uint size() const;
 
     /// Access element value
-    real get(uint i) const;
+    real get(const uint i) const;
 
     /// Set element value
-    void set(uint i, real value);
+    void set(const uint i, const real value);
     
     // Add value to element
-    void add(uint i, const real value);
+    void add(const uint i, const real value);
 
     /// Return PETSc Vec pointer
     Vec vec() const;
@@ -97,13 +97,13 @@ namespace dolfin
     void mult(const real a);
 
     /// Set block of values
-    void set(const real block[], const int pos[], int n);
+    void set(const real block[], const int pos[], const int n);
 
     /// Add block of values
-    void add(const real block[], const int pos[], int n);
+    void add(const real block[], const int pos[], const int n);
 
     /// Get block of values from vector
-    void get(real block[], const int cols[], int n) const;
+    void get(real block[], const int cols[], const int n) const;
 
     /// Apply changes to vector
     void apply();
@@ -112,16 +112,16 @@ namespace dolfin
     void zero();
 
     /// Element assignment/access operator
-    PETScVectorElement operator() (uint i);
+    PETScVectorElement operator() (const uint i);
 
     /// Element access operator for a const PETScVector
-    real operator() (uint i) const;
+    real operator() (const uint i) const;
 
     /// Assignment of vector
     const PETScVector& operator= (const PETScVector& x);
 
     /// Assignment of all elements to a single scalar value
-    const PETScVector& operator= (real a);
+    const PETScVector& operator= (const real a);
 
     /// Add vector x
     const PETScVector& operator+= (const PETScVector& x);
@@ -130,17 +130,17 @@ namespace dolfin
     const PETScVector& operator-= (const PETScVector& x);
 
     /// Multiply vector with scalar
-    const PETScVector& operator*= (real a);
+    const PETScVector& operator*= (const real a);
 
     /// Divide vector by scalar
-    const PETScVector& operator/= (real a);
+    const PETScVector& operator/= (const real a);
 
     /// Scalar product
     real operator*(const PETScVector& x);
 
     /// Compute norm of vector
     enum NormType { l1, l2, linf };
-    real norm(NormType type = l2) const;
+    real norm(const NormType type = l2) const;
 
     /// Compute sum of vector
     real sum() const;
@@ -163,7 +163,7 @@ namespace dolfin
 
     // Create Scatterer
     static VecScatter* createScatterer(PETScVector& x1, PETScVector& x2,
-				       int offset, int size);
+				       const int offset, const int size);
 
     // Gather x1 (subvector) into x2
     static void gather(PETScVector& x1, PETScVector& x2, VecScatter& x1sc);
@@ -172,15 +172,16 @@ namespace dolfin
     static void scatter(PETScVector& x1, PETScVector& x2, VecScatter& x1sc);
 
     // Copy values from array into vector
-    static void fromArray(const real u[], PETScVector& x, uint offset,
-			  uint size);
+    static void fromArray(const real u[], PETScVector& x, const uint offset,
+			  const uint size);
 
     // Copy values from vector into array
-    static void toArray(real y[], PETScVector&x, uint offset, uint size);
+    static void toArray(real y[], const PETScVector&x, const uint offset, 
+                  const uint size);
 
     // Copy values between different vector representations
-    void copy(const PETScVector& y, uint off1, uint off2, uint len);
-    void copy(const uBlasVector& y, uint off1, uint off2, uint len);
+    void copy(const PETScVector& y, const uint off1, const uint off2, const uint len);
+    void copy(const uBlasVector& y, const uint off1, const uint off2, const uint len);
 
   private:
 
@@ -197,7 +198,7 @@ namespace dolfin
   class PETScVectorElement
   {
   public:
-    PETScVectorElement(uint i, PETScVector& x);
+    PETScVectorElement(const uint i, PETScVector& x);
     PETScVectorElement(const PETScVectorElement& e);
     operator real() const;
     const PETScVectorElement& operator=(const PETScVectorElement& e);

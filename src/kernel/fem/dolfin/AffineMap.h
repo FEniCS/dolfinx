@@ -1,16 +1,17 @@
-// Copyright (C) 2005 Anders Logg.
+// Copyright (C) 2005-2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // Modified by Garth N. Wells, 2006.
 //
 // First added:  2005-05-17
-// Last changed: 2006-05-03
+// Last changed: 2006-12-06
 
 #ifndef __AFFINE_MAP_H
 #define __AFFINE_MAP_H
 
 #include <dolfin/constants.h>
 #include <dolfin/Point.h>
+#include <dolfin/Cell.h>
 
 namespace dolfin
 {
@@ -38,23 +39,14 @@ namespace dolfin
     /// Update map for current element
     void update(Cell& cell);
 
-    /// Update map for facet of current element
-    void update(Cell& cell, uint facet);
-
     /// Map given point from the reference element (2D)
     Point operator() (real X, real Y) const;
 
     /// Map given point from the reference element (3D)
     Point operator() (real X, real Y, real Z) const;
 
-    /// Return cell of current element
-    inline Cell& cell() const { return *_cell; }
-    
     // Determinant of Jacobian of map
     real det;
-
-    // Scaling factor for mapping
-    real scaling;
 
     // Jacobian of map
     real f00, f01, f02, f10, f11, f12, f20, f21, f22;
@@ -72,9 +64,6 @@ namespace dolfin
 
     // Vertices of current cell
     Point p0, p1, p2, p3;
-
-    // Current cell
-    Cell* _cell;
 
   };
 

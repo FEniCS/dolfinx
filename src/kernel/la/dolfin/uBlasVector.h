@@ -4,7 +4,7 @@
 // Modified by Anders Logg 2006.
 //
 // First added:  2006-03-04
-// Last changed: 2006-09-26
+// Last changed: 2006-10-10
 
 #ifndef __UBLAS_VECTOR_H
 #define __UBLAS_VECTOR_H
@@ -40,7 +40,7 @@ namespace dolfin
     uBlasVector();
     
     /// Constructor
-    uBlasVector(uint N);
+    uBlasVector(const uint N);
     
     /// Constructor from a uBlas vector_expression
     template <class E>
@@ -50,16 +50,16 @@ namespace dolfin
     ~uBlasVector();
 
     /// Initialize a vector of length N
-    void init(uint N);
+    void init(const uint N);
 
     /// Set all entries to a single scalar value
-    const uBlasVector& operator= (real a);
+    const uBlasVector& operator= (const real a);
 
     /// Assignment from a vector_expression
     template <class E>
     uBlasVector& operator=(const ublas::vector_expression<E>& A)
     { 
-      ublas::vector<double>::operator=(A); 
+      ublas_vector::operator=(A); 
       return *this;
     } 
     
@@ -68,33 +68,33 @@ namespace dolfin
     { return ublas::vector<real>::size(); }
 
     /// Access given entry
-    inline real& operator() (uint i)
+    inline real& operator() (const uint i)
     { return ublas::vector<real>::operator() (i); };
 
     /// Access value of given entry
-    inline real operator() (uint i) const
+    inline real operator() (const uint i) const
     { return ublas::vector<real>::operator() (i); };
 
     /// Access element value
-    inline real get(uint i) const 
+    inline real get(const uint i) const 
     { return (*this)(i); }
 
     /// Set element value
-    inline void set(uint i, real value) 
+    inline void set(const uint i, const real value) 
     { (*this)(i) = value; }
 
     /// Set block of values
-    void set(const real block[], const int pos[], int n);
+    void set(const real block[], const int pos[], const int n);
 
     /// Add block of values
-    void add(const real block[], const int pos[], int n);
+    void add(const real block[], const int pos[], const int n);
 
     /// Get block of values
-    void get(real block[], const int pos[], int n) const;
+    void get(real block[], const int pos[], const int n) const;
 
     /// Compute norm of vector
     enum NormType { l1, l2, linf };
-    real norm(NormType type = l2) const;
+    real norm(const NormType type = l2) const;
 
     /// Compute sum of vector
     real sum() const
@@ -116,16 +116,16 @@ namespace dolfin
     void div(const uBlasVector& x);
 
     /// Display vector
-    void disp(uint precision = 2) const;
+    void disp(const uint precision = 2) const;
 
     /// Output
     friend LogStream& operator<< (LogStream& stream, const uBlasVector& x);
 
     // Copy values between different vector representations
 #ifdef HAVE_PETSC_H
-    void copy(const PETScVector& y, uint off1, uint off2, uint len);
+    void copy(const PETScVector& y, const uint off1, const uint off2, const uint len);
 #endif
-    void copy(const uBlasVector& y, uint off1, uint off2, uint len);
+    void copy(const uBlasVector& y, const uint off1, const uint off2, const uint len);
 
   };
 }

@@ -22,7 +22,7 @@ system("./sparse-matrix/dolfin-sparse-matrix | tee -a bench.tmp")
 toc = time() - tic
 
 # Save results to log file
-system("dolfin-config --version >> " + logfile)
+system("pkg-config --modversion dolfin >> " + logfile)
 system("date >> " + logfile)
 file = open(logfile, "a")
 tempfile = open('./bench.tmp', 'r')

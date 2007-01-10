@@ -16,6 +16,7 @@ namespace dolfin
 {
   
   class Mesh;
+  template <class T> class MeshFunction;
   class NewMesh;
   class Function;
   class Sample;
@@ -37,6 +38,9 @@ namespace dolfin
     virtual void operator>> (Vector& x);
     virtual void operator>> (Matrix& A);
     virtual void operator>> (Mesh& mesh);
+    virtual void operator>> (MeshFunction<int>& meshfunction);
+    virtual void operator>> (MeshFunction<double>& meshfunction);
+    virtual void operator>> (MeshFunction<bool>& meshfunction);
     virtual void operator>> (NewMesh& mesh);
     virtual void operator>> (Function& mesh);
     virtual void operator>> (Sample& sample);
@@ -49,6 +53,9 @@ namespace dolfin
     virtual void operator<< (Vector& x);
     virtual void operator<< (Matrix& A);
     virtual void operator<< (Mesh& mesh);
+    virtual void operator<< (MeshFunction<int>& meshfunction);
+    virtual void operator<< (MeshFunction<double>& meshfunction);
+    virtual void operator<< (MeshFunction<bool>& meshfunction);
     virtual void operator<< (NewMesh& mesh);
     virtual void operator<< (Function& u);
     virtual void operator<< (Sample& sample);

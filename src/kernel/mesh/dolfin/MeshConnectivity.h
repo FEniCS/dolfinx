@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-05-09
-// Last changed: 2006-09-18
+// Last changed: 2006-10-27
 
 #ifndef __MESH_CONNECTIVITY_H
 #define __MESH_CONNECTIVITY_H
@@ -48,6 +48,9 @@ namespace dolfin
     /// Return array of connections for given entity
     inline uint* operator() (uint entity)
     { dolfin_assert(entity < num_entities); return connections + offsets[entity]; }
+
+    /// Return array of connections for given entity
+    inline const uint* operator() (uint entity) const { dolfin_assert(entity < num_entities); return connections + offsets[entity]; }
 
     /// Return contiguous array of connections for all entities
     inline uint* operator() () { return connections; }

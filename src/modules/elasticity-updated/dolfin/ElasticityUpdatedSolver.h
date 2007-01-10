@@ -10,8 +10,6 @@
 #ifndef __ELASTICITYUPDATED_SOLVER_H
 #define __ELASTICITYUPDATED_SOLVER_H
 
-#ifdef HAVE_PETSC_H
-
 #include <dolfin/Vector.h>
 #include <dolfin/ODE.h>
 #include <dolfin/TimeStepper.h>
@@ -35,6 +33,8 @@ namespace dolfin
 			    BoundaryCondition& bc, real k, real T);
     
     ElasticityUpdatedSolver& operator=(const ElasticityUpdatedSolver& solver);
+
+#ifdef HAVE_PETSC_H
 
     // Initialize data
     void init();
@@ -87,52 +87,11 @@ namespace dolfin
 		      BoundaryCondition& bc, real k, real T);
     
 
-    // Utility functions
-
-    static void finterpolate(Function& f1, Function& f2, Mesh& mesh);
-
-    static void plasticity(Vector& xsigma, Vector& xsigmanorm, real yld,
-			   FiniteElement& element2, Mesh& mesh);
-
-    static void initmsigma(Vector& msigma,
-			   FiniteElement& element2, Mesh& mesh);
-
-    static void initu0(Vector& x0,
-		       FiniteElement& element, Mesh& mesh);
-
-
-    static void initJ0(Vector& xJ0,
-		       FiniteElement& element, Mesh& mesh);
-
-    static void computeJ(Vector& xJ0, Vector& xJ, Vector& xJinv,
-			 FiniteElement& element, Mesh& mesh);
-
-    static void initF0Green(Vector& xF0,
-			    FiniteElement& element1, Mesh& mesh);
-
-    static void computeFGreen(Vector& xF, Vector& xF0, Vector& xF1,
-			      FiniteElement& element1, Mesh& mesh);
-
-    static void initF0Euler(Vector& xF0,
-			    FiniteElement& element1, Mesh& mesh);
-
-    static void computeFEuler(Vector& xF, Vector& xF0, Vector& xF1,
-			      FiniteElement& element1, Mesh& mesh);
-
-    static void computeFBEuler(Vector& xF, Vector& xB, Vector& xF0,
-			       Vector& xF1,
-			       FiniteElement& element1, Mesh& mesh);
-
-    static void computeBEuler(Vector& xF, Vector& xB, 
-			      FiniteElement& element1, Mesh& mesh);
-
-    static void multF(real* F0, real *F1, real* F);
-    
-    static void multB(real* F, real* B);
-    
-    static void deform(Mesh& mesh, Function& u);
-    
     // Data
+    VecScatter dotu_x1sc, dotu_x2sc, dotu_xsigmasc;
+    IS dotu_x1is, dotu_x2is, dotu_xsigmais;
+
+#endif
 
     Mesh& mesh;
     Function& f;
@@ -184,11 +143,6 @@ namespace dolfin
 
     Vector dotu_x1, dotu_x2, dotu_xsigma, dotu;
 
-    VecScatter dotu_x1sc, dotu_x2sc, dotu_xsigmasc;
-    IS dotu_x1is, dotu_x2is, dotu_xsigmais;
-    
-
-
     int* dotu_x1_indices;
     int* dotu_x2_indices;
     int* dotu_xsigma_indices;
@@ -210,6 +164,52 @@ namespace dolfin
 
     LinearForm* Lv;
     LinearForm* Lsigma;
+
+    // Utility functions
+
+    static void finterpolate(Function& f1, Function& f2, Mesh& mesh);
+
+    static void plasticity(Vector& xsigma, Vector& xsigmanorm, real yld,
+			   FiniteElement& element2, Mesh& mesh);
+
+    static void initmsigma(Vector& msigma,
+			   FiniteElement& element2, Mesh& mesh);
+
+    static void initu0(Vector& x0,
+		       FiniteElement& element, Mesh& mesh);
+
+
+    static void initJ0(Vector& xJ0,
+		       FiniteElement& element, Mesh& mesh);
+
+    static void computeJ(Vector& xJ0, Vector& xJ, Vector& xJinv,
+			 FiniteElement& element, Mesh& mesh);
+
+    static void initF0Green(Vector& xF0,
+			    FiniteElement& element1, Mesh& mesh);
+
+    static void computeFGreen(Vector& xF, Vector& xF0, Vector& xF1,
+			      FiniteElement& element1, Mesh& mesh);
+
+    static void initF0Euler(Vector& xF0,
+			    FiniteElement& element1, Mesh& mesh);
+
+    static void computeFEuler(Vector& xF, Vector& xF0, Vector& xF1,
+			      FiniteElement& element1, Mesh& mesh);
+
+    static void computeFBEuler(Vector& xF, Vector& xB, Vector& xF0,
+			       Vector& xF1,
+			       FiniteElement& element1, Mesh& mesh);
+
+    static void computeBEuler(Vector& xF, Vector& xB, 
+			      FiniteElement& element1, Mesh& mesh);
+
+    static void multF(real* F0, real *F1, real* F);
+    
+    static void multB(real* F, real* B);
+    
+    static void deform(Mesh& mesh, Function& u);
+    
   };
 
   class ElasticityUpdatedODE : public ODE
@@ -240,10 +240,8 @@ namespace dolfin
     
     void eval(BoundaryValue& value, const Point& p, unsigned int i)
     {
-      if(p.x == 0.0)
+      if(p.x() == 0.0)
 	value = 0.0;
-//       if(p.x < -0.8)
-// 	value = 0.0;
     }
   };
 
@@ -258,7 +256,7 @@ namespace dolfin
     {
 //       if(p.x == 0.0)
 // 	value = 0.0;
-      if(p.x < -0.8)
+      if(p.x() < -0.8)
 	value = 0.0;
     }
   };
@@ -285,7 +283,5 @@ namespace dolfin
 
 
 }
-
-#endif
 
 #endif

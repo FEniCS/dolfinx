@@ -13,11 +13,15 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 HeatSolver::HeatSolver(Mesh& mesh, Function& f, BoundaryCondition& bc, real& T)
-  : Solver(), mesh(mesh), f(f), bc(bc), u(x, mesh, element),
-    L(u, f), fevals(0),
+  : Solver(), element(new Heat::LinearForm::TestElement()),
+    mesh(mesh), f(f), bc(bc), u(x, mesh, *element),
+    fevals(0),
     ode(0), ts(0), T(T)
 {
-  N = FEM::size(mesh, element);
+  a = new Heat::BilinearForm();
+  L = new Heat::LinearForm(u, f);
+
+  N = FEM::size(mesh, *element);
 
   x.init(N);
   x = 0.0;
@@ -26,7 +30,7 @@ HeatSolver::HeatSolver(Mesh& mesh, Function& f, BoundaryCondition& bc, real& T)
   Matrix M;
 
   // Assemble mass matrix
-  FEM::assemble(a, M, mesh);
+  FEM::assemble(*a, M, mesh);
 
   // Lump mass matrix
   FEM::lump(M, m);
@@ -74,8 +78,8 @@ void HeatSolver::solve()
 void HeatSolver::fu()
 {
   dolfin_log(false);
-  FEM::assemble(L, dotu, mesh);
-  FEM::applyBC(Dummy, dotu, mesh, element, bc);
+  FEM::assemble(*L, dotu, mesh);
+  FEM::applyBC(Dummy, dotu, mesh, *element, bc);
   dotu.div(m);
   //VecPointwiseDivide(dotu.vec(), dotu.vec(), m.vec());
   fevals++;
@@ -115,3 +119,4 @@ bool HeatODE::update(const uBlasVector& u, real t, bool end)
   return true;
 }
 //-----------------------------------------------------------------------------
+

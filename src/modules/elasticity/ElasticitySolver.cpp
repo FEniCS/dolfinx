@@ -147,11 +147,11 @@ void ElasticitySolver::solve()
   // Start time-stepping
   while ( t < T ) {
   
-     cout << "x11: " << endl;
-     x11.disp();
+//      cout << "x11: " << endl;
+//      x11.disp();
 
-     cout << "x21: " << endl;
-     x21.disp();
+//      cout << "x21: " << endl;
+//      x21.disp();
 
 
     // Make time step

@@ -4,7 +4,7 @@
 // Modified by Anders Logg 2006.
 //
 // First added:  2005-10-24
-// Last changed: 2006-05-07
+// Last changed: 2006-10-20
 
 #include <dolfin/FEM.h>
 #include <dolfin/NonlinearPDE.h>
@@ -43,7 +43,7 @@ void NonlinearPDE::form(GenericMatrix& A, GenericVector& b, const GenericVector&
     if(_bc) 
     { 
       FEM::applyBC(A, *_mesh, _a->test(), *_bc);
-      FEM::assembleResidualBC(b, x, *_mesh, _Lf->test(), *_bc);
+      FEM::applyResidualBC(b, x, *_mesh, _Lf->test(), *_bc);
     }
     else
     {

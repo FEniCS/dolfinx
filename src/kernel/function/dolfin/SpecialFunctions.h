@@ -1,20 +1,14 @@
 // Copyright (C) 2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
+//
+// First added:  2006-02-09
+// Last changed: 2006-12-07
 
 #ifndef __SPECIAL_FUNCTIONS_H
 #define __SPECIAL_FUNCTIONS_H
 
 namespace dolfin
 {
-
-  /// This function represents the local mesh size on a given mesh.
-  class MeshSize : public Function
-  {
-    real eval(const Point& p, unsigned int i)
-    {
-      return cell().diameter();
-    }
-  };
 
   /// This is the zero function.
   class Zero : public Function
@@ -31,6 +25,38 @@ namespace dolfin
     real eval(const Point& p, unsigned int i)
     {
       return 1.0;
+    }
+  };
+
+  /// This function represents the local mesh size on a given mesh.
+  class MeshSize : public Function
+  {
+    real eval(const Point& p, unsigned int i)
+    {
+      return cell().diameter();
+    }
+  };
+
+  /// This function represents the inverse of the local mesh size on a given mesh.
+  class InvMeshSize : public Function
+  {
+    real eval(const Point& p, unsigned int i)
+    {
+      return 1.0/cell().diameter();
+    }
+  };
+
+  /// This function represents the outward unit normal on mesh facets.
+  class FacetNormal : public Function
+  {
+    real eval(const Point& p, unsigned int i)
+    {
+      cout << "    Evaluating facet normal at p = " << p << endl;
+      cout << "      cell      = " << cell().index() << endl;
+      cout << "      facet     = " << facet() << endl;
+      cout << "      component = " << i << endl;
+      cout << "      value     = " << cell().normal(facet(), i) << endl;
+      return cell().normal(facet(), i);
     }
   };
 

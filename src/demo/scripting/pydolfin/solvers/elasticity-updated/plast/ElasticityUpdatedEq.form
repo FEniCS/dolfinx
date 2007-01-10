@@ -1,0 +1,29 @@
+# Form representing the equilibrium equation in elastoplasticity
+
+name = "ElasticityUpdatedEq"
+element1 = FiniteElement("Discontinuous vector Lagrange", "tetrahedron", 0, 9)
+element2 = FiniteElement("Vector Lagrange", "tetrahedron", 1)
+element3 = FiniteElement("Lagrange", "tetrahedron", 1)
+
+u =     TrialFunction(element2)
+v =     TestFunction(element2)
+sigma = Function(element1)
+vel =   Function(element2)
+f =     Function(element2)
+rho =   Function(element3)
+nuv =   Function(element3)
+
+def epsilon(u):
+    return 0.5 * (grad(u) + transp(grad(u)))
+
+def tomatrix(q):
+    return [ [q[3 * i + j] for i in range(3)] for j in range(3) ]
+
+sigmamatrix = tomatrix(sigma)
+
+Lelast = -dot(sigmamatrix, grad(v))
+Lvisc = -nuv * dot(epsilon(vel), grad(v))
+Lload = dot(f, v)
+
+L = (Lelast + Lvisc + Lload) * dx
+a = (rho * dot(u, v)) * dx

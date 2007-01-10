@@ -2,12 +2,12 @@
 # Licensed under the GNU GPL Version 2.
 #
 # First added:  2005
-# Last changed: 2006-09-05
+# Last changed: 2006-12-05
 #
 # The bilinear form a(v, U) and linear form L(v) for
 # Poisson's equation.
 #
-# Compile this form with FFC: ffc poisson.form.
+# Compile this form with FFC: ffc p2~Poisson.form.
 
 element = FiniteElement("Lagrange", "triangle", 1)
 

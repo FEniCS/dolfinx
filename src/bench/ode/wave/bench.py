@@ -22,7 +22,7 @@ system("./dolfin-ode-wave mcg")
 tmcg = time() - tic
 
 # Save timing to log file
-system("dolfin-config --version >> " + logfile)
+system("pkg-config --modversion dolfin >> " + logfile)
 system("date +'%Y-%m-%d %H:%M:%S' >> " + logfile)
 system("uname -snm >> " + logfile)
 file = open(logfile, "a")

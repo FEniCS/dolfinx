@@ -12,19 +12,20 @@ class Simple(ODE):
 
     def fmono(self, u, t, y):
         print "Evaluating Python fmono function: "
-        print "u: " + str(realArray_getitem(u,0))
-        realArray_setitem(y, 0, 1.0)
+        print "u: " + str(u[0])
+        y[0] = 1.0
 
     def fmulti(self, u, t, i):
         print "Evaluating Python fmulti function: "
-        print "u: " + str(realArray_getitem(u,0))
+        print "u: " + str(u[0])
         print "i: " + str(i)
         return 1.0
+
+# FIXME: ODE interface needs to be updated for uBlas
         
-        
-set("method", "dg")
-set("order", 0)
-set("ode solution file name", "primal.py")
+set("ODE method", "dg")
+set("ODE order", 0)
+set("ODE solution file name", "primal.py")
 
 ode = Simple()
 print "ODE size: " + str(ode.size())

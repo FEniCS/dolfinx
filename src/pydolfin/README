@@ -24,8 +24,6 @@ Usage:
 PyDOLFIN is used just like any Python module:
 
 >>> from dolfin import *
->>> dolfin_get("tolerance")
-0.10000000000000001
->>> 
+>>> mesh = UnitSquare(2, 2)
 
-See the included demos for usage examples, for example "settingsdemo.py".
+See the included demos for usage examples.

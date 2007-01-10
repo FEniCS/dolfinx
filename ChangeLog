@@ -1,3 +1,22 @@
+ - Add support for discontinuous Galerkin (DG) methods
+ - Fix Python interface for vertex and cell maps in boundary computation
+0.6.4 [2006-12-01]
+ - Switch from Python Numeric to Python NumPy
+ - Improved mesh Python bindings
+ - Add input/output support for MeshFunction
+ - Change Mesh::vertices() --> Mesh::coordinates()
+ - Fix bug in output of mesh to MATLAB format
+ - Add plasticty module (experimental)
+ - Fix configure test for Python dev (patch from Åsmund Ødegård)
+ - Add mesh benchmark
+ - Fix memory leak in mesh (data not deleted correctly in MeshTopology)
+ - Fix detection of curses libraries
+ - Remove Tecplot output format
+0.6.3 [2006-10-27]
+ - Move to new mesh library
+ - Remove dolfin-config and move to pkg-config
+ - Remove unused classes PArray, PList, Table, Tensor	
+ - Visualization of 2D solutions in OpenDX is now supported (3D supported before)
  - Add support for evaluation of functionals
  - Fix bug in Vector::sum() for uBlas vectors
 0.6.2-1 [2006-09-06]

@@ -1,4 +1,4 @@
-# Copyright (c) 2005 Johan Hoffman (hoffman@cims.nyu.edu)
+# Copyright (c) 2005 Johan Hoffman 
 # Licensed under the GNU GPL Version 2
 #
 # Modified by Anders Logg 2006
@@ -35,15 +35,16 @@ i1 = Index()    # index for tensor notation
 i2 = Index()    # index for tensor notation
 
 # Galerkin discretization of bilinear form  
-G_a  = v[i0]*U[i0]*dx + k*nu*0.5*v[i0].dx(i1)*U[i0].dx(i1)*dx + 0.5*k*v[i0]*uc[i1]*U[i0].dx(i1)*dx
-# Galerkin discretization of linear form  
-SD_a = delta1*k*0.5*um[i1]*v[i0].dx(i1)*um[i2]*U[i0].dx(i2)*dx + delta2*k*0.5*v[i0].dx(i0)*U[i1].dx(i1)*dx
-
+G_a  = (dot(v, U) + k*nu*0.5*dot(grad(v), grad(U)) + 0.5*k*v[i0]*uc[i1]*U[i0].dx(i1))*dx
 # Least squares stabilization of bilinear form  
-G_L  = v[i0]*u0[i0]*dx + k*v[i0]*f[i0]*dx + k*v[i0].dx(i0)*p*dx - k*nu*0.5*v[i0].dx(i1)*u0[i0].dx(i1)*dx - 0.5*k*v[i0]*uc[i1]*u0[i0].dx(i1)*dx
+SD_a = (delta1*k*0.5*um[i1]*v[i0].dx(i1)*um[i2]*U[i0].dx(i2) + delta2*k*0.5*div(v)*div(U))*dx
+
+# Galerkin discretization of linear form  
+G_L  = (dot(v, u0) + k*dot(v, f) + k*div(v)*p - k*nu*0.5*dot(grad(v), grad(u0)) - 0.5*k*v[i0]*uc[i1]*u0[i0].dx(i1))*dx
 # Least squares stabilization of linear form
-SD_L = delta1*k*um[i1]*v[i0].dx(i1)*f[i0]*dx - delta1*k*0.5*um[i1]*v[i0].dx(i1)*um[i2]*u0[i0].dx(i2)*dx - delta1*k*um[i1]*v[i0].dx(i1)*p.dx(i0)*dx - delta2*k*0.5*v[i0].dx(i0)*u0[i1].dx(i1)*dx
+SD_L = (- delta1*k*0.5*um[i1]*v[i0].dx(i1)*um[i2]*u0[i0].dx(i2) - delta2*k*0.5*div(v)*div(u0))*dx
 
 # Bilinear and linear forms
 a = G_a + SD_a
 L = G_L + SD_L
+

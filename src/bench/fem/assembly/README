@@ -1,0 +1,42 @@
+Timing of the evaluation of the local element tensor and the
+assembly of the global matrix for the advection operator:
+
+    a = v*c[i]*u.dx(i)*dx
+
+where c is a piecewise constant convection.
+
+Results 2006-11-22 (changeset 2448:de52acef02c0):
+
+  AdvectionOperator_3D_3_FFC, local tensor: 3.003e-06 s
+  AdvectionOperator_3D_3_FER, local tensor: 9.830e-07 s
+
+  AdvectionOperator_3D_3_FFC, global assembly: 1.961e-01 s
+  AdvectionOperator_3D_3_FER, global assembly: 1.856e-01 s
+
+  Speedup, local tensor:    3.05
+  Speedup, global assembly: 1.06
+
+Results from callgrind (valgrind --tool=callgrind):
+
+  relative time (global time)
+
+  assembleCommon()   100.0%  (97.85%)
+
+    PETScMatrix::add()      79.5%  (77.78%)
+    BilinearForm::eval()     7.6%  ( 7.47%)
+    other                   12.9%
+
+  "other" includes initialization of assembly data structures,
+  iteration over the mesh, computing the affine map and interpolating
+  the coefficients (the advection velocity) on each element
+
+Sanity check:
+
+  The evaluation of the element tensor accounts for 7.6% of the assembly
+  and the speedup of this evaluation by FErari compared to plain FFC is a
+  factor 3.05. This means the global speedup should be a factor
+
+      1 / (1 - 0.076 + 0.076/3.05) = 1.06
+
+  Should thus give about 5% speedup. Measured speedup is 6% (varying
+  between 5% and 9%).

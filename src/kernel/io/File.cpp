@@ -1,11 +1,11 @@
 // Copyright (C) 2002-2006 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
-// Modified by Garth N. Wells 2005.
+// Modified by Garth N. Wells 2005, 2006.
 // Modified by Haiko Etzel 2005.
 //
 // First added:  2002-11-12
-// Last changed: 2006-05-07
+// Last changed: 2006-11-01
 
 #include <string>
 #include <dolfin/dolfin_log.h>
@@ -18,7 +18,6 @@
 #include <dolfin/OpenDXFile.h>
 #include <dolfin/PythonFile.h>
 #include <dolfin/GiDFile.h>
-#include <dolfin/TecplotFile.h>
 #include <dolfin/VTKFile.h>
 
 using namespace dolfin;
@@ -49,8 +48,6 @@ File::File(const std::string& filename)
     file = new OpenDXFile(filename);
   else if ( filename.rfind(".py") != filename.npos )
     file = new PythonFile(filename);
-  else if ( filename.rfind(".tec") != filename.npos )
-    file = new TecplotFile(filename);
   else if ( filename.rfind(".pvd") != filename.npos )
     file = new VTKFile(filename);
   else
@@ -80,9 +77,6 @@ File::File(const std::string& filename, Type type)
     break;
   case gid:
     file = new GiDFile(filename);
-    break;
-  case tecplot:
-    file = new TecplotFile(filename);
     break;
   case vtk:
     file = new VTKFile(filename);
@@ -122,6 +116,27 @@ void File::operator>>(Mesh& mesh)
   file->read();
   
   *file >> mesh;
+}
+//-----------------------------------------------------------------------------
+void File::operator>>(MeshFunction<int>& meshfunction)
+{
+  file->read();
+  
+  *file >> meshfunction;
+}
+//-----------------------------------------------------------------------------
+void File::operator>>(MeshFunction<double>& meshfunction)
+{
+  file->read();
+  
+  *file >> meshfunction;
+}
+//-----------------------------------------------------------------------------
+void File::operator>>(MeshFunction<bool>& meshfunction)
+{
+  file->read();
+  
+  *file >> meshfunction;
 }
 //-----------------------------------------------------------------------------
 void File::operator>>(NewMesh& mesh)
@@ -185,6 +200,27 @@ void File::operator<<(Mesh& mesh)
   file->write();
   
   *file << mesh;
+}
+//-----------------------------------------------------------------------------
+void File::operator<<(MeshFunction<int>& meshfunction)
+{
+  file->write();
+  
+  *file << meshfunction;
+}
+//-----------------------------------------------------------------------------
+void File::operator<<(MeshFunction<double>& meshfunction)
+{
+  file->write();
+  
+  *file << meshfunction;
+}
+//-----------------------------------------------------------------------------
+void File::operator<<(MeshFunction<bool>& meshfunction)
+{
+  file->write();
+  
+  *file << meshfunction;
 }
 //-----------------------------------------------------------------------------
 void File::operator<<(NewMesh& mesh)

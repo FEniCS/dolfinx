@@ -3,12 +3,12 @@ from dolfin import *
 # Define right-hand side
 class Source(Function):
     def eval(self, point, i):
-        return point.y + 1.0
+        return point[1] + 1.0
 
 # Define boundary condition
 class SimpleBC(BoundaryCondition):
     def eval(self, value, point, i):
-        if point.x == 0.0 or point.x == 1.0:
+        if point[0] == 0.0 or point[0] == 1.0:
             value.set(0.0)
 
 f = Source()
@@ -52,7 +52,7 @@ v = mayavi()
 d = v.open_vtk_xml("poisson000000.vtu")
 m = v.load_module("Axes")
 m = v.load_module("BandedSurfaceMap")
-f = v.load_filter('WarpScalar', config=0)
+fi = v.load_filter('WarpScalar', config=0)
 
 # Wait until window is closed
 v.master.wait_window()

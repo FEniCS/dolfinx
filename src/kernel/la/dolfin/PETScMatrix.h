@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells, 2006.
 //
 // First added:  2004
-// Last changed: 2006-08-14
+// Last changed: 2006-12-11
 
 #ifndef __PETSC_MATRIX_H
 #define __PETSC_MATRIX_H
@@ -49,19 +49,16 @@ namespace dolfin
     };
 
     /// Constructor
-    PETScMatrix();
-
-    /// Constructor (setting PETSc matrix type)
-    PETScMatrix(Type type);
+    PETScMatrix(const Type type = default_matrix);
 
     /// Constructor
     PETScMatrix(Mat A);
 
     /// Constructor
-    PETScMatrix(uint M, uint N);
+    PETScMatrix(const uint M, const uint N);
 
     /// Constructor (setting PETSc matrix type)
-    PETScMatrix(uint M, uint N, Type type);
+    PETScMatrix(const uint M, const uint N, const Type type);
 
     /// Constructor (just for testing, will be removed)
     PETScMatrix(const PETScMatrix &B);
@@ -70,19 +67,22 @@ namespace dolfin
     ~PETScMatrix();
 
     /// Initialize M x N matrix
-    void init(uint M, uint N);
+    void init(const uint M, const uint N);
 
     /// Initialize M x N matrix with given maximum number of nonzeros in each row
-    void init(uint M, uint N, uint nzmax);
+    void init(const uint M, const uint N, const uint nzmax);
+
+    /// Initialize M x N matrix with a given number of nonzeros per row
+    void init(const uint M, const uint N, const int nz[]);
 
     /// Initialize M x N matrix with given block size and maximum number of nonzeros in each row
-    void init(uint M, uint N, uint bs, uint nzmax);
+    void init(const uint M, const uint N, const uint bs, const uint nzmax);
 
     /// Return number of rows (dim = 0) or columns (dim = 1) along dimension dim
-    uint size(uint dim) const;
+    uint size(const uint dim) const;
 
     /// Return number of nonzero entries in given row
-    uint nz(uint row) const;
+    uint nz(const uint row) const;
 
     /// Return total number of nonzero entries
     uint nzsum() const;
@@ -91,41 +91,41 @@ namespace dolfin
     uint nzmax() const;
    
     /// Access element value
-    real get(uint i, uint j) const;
+    real get(const uint i, const uint j) const;
 
     /// Set element value
-    void set(uint i, uint j, real value);
+    void set(const uint i, const uint j, const real value);
 
     // Add value to element
-    void add(uint i, uint j, const real value);
+    void add(const uint i, const uint j, const real value);
     
     /// Set block of values
-    void set(const real block[], const int rows[], int m, const int cols[], int n);
+    void set(const real block[], const int rows[], const int m, const int cols[], const int n);
 
     /// Add block of values
-    void add(const real block[], const int rows[], int m, const int cols[], int n);
+    void add(const real block[], const int rows[], const int m, const int cols[], const int n);
 
     /// Get non-zero values of row i
     void getRow(const uint i, int& ncols, Array<int>& columns, Array<real>& values) const;
 
     /// Set given rows to identity matrix
-    void ident(const int rows[], int m);
+    void ident(const int rows[], const int m);
     
     /// Matrix-vector multiplication
     void mult(const PETScVector& x, PETScVector& Ax) const;
 
     /// Matrix-vector multiplication with given row (temporary fix, assumes uniprocessor case)
-    real mult(const PETScVector& x, uint row) const;
+    real mult(const PETScVector& x, const uint row) const;
 
     /// Matrix-vector multiplication with given row (temporary fix, assumes uniprocessor case)
-    real mult(const real x[], uint row) const;
+    real mult(const real x[], const uint row) const;
 
     /// Lump matrix into vector m
     void lump(PETScVector& m) const;
 
     /// Compute given norm of matrix
     enum Norm { l1, linf, frobenius };
-    real norm(Norm type = l1) const;
+    real norm(const Norm type = l1) const;
 
     /// Apply changes to matrix
     void apply();
@@ -140,16 +140,16 @@ namespace dolfin
     Mat mat() const;
 
     /// Display matrix (sparse output is default)
-    void disp(bool sparse = true, int precision = 2) const;
+    void disp(const bool sparse = true, const int precision = 2) const;
 
     /// Output
     friend LogStream& operator<< (LogStream& stream, const PETScMatrix& A);
     
     /// SparseMatrixElement access operator (needed for const objects)
-    real operator() (uint i, uint j) const;
+    real operator() (const uint i, const uint j) const;
 
     /// SparseMatrixElement assignment operator
-    PETScMatrixElement operator()(uint i, uint j);
+    PETScMatrixElement operator()(const uint i, const uint j);
 
     // Friends
     friend class PETScMatrixElement;
@@ -178,7 +178,7 @@ namespace dolfin
   class PETScMatrixElement
   {
   public:
-    PETScMatrixElement(uint i, uint j, PETScMatrix& A);
+    PETScMatrixElement(const uint i, const uint j, PETScMatrix& A);
     PETScMatrixElement(const PETScMatrixElement& e);
     operator real() const;
     const PETScMatrixElement& operator=(const real a);

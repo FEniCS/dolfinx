@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells 2005-2006.
 //
 // First added:  2005-12-02
-// Last changed: 2006-08-18
+// Last changed: 2006-11-24
 
 #ifdef HAVE_PETSC_H
 
@@ -40,7 +40,7 @@ namespace dolfin
 PETScKrylovSolver::PETScKrylovSolver(KrylovMethod method, Preconditioner pc)
   : PETScLinearSolver(),
     method(method), pc_petsc(pc), pc_dolfin(0),
-    ksp(0), M(0), N(0), parameters_read(false)
+    ksp(0), M(0), N(0), parameters_read(false), pc_set(false)
 {
   // Initialize PETSc
   PETScManager::init();
@@ -49,7 +49,7 @@ PETScKrylovSolver::PETScKrylovSolver(KrylovMethod method, Preconditioner pc)
 PETScKrylovSolver::PETScKrylovSolver(Preconditioner pc)
   : PETScLinearSolver(),
     method(default_method), pc_petsc(pc), pc_dolfin(0),
-    ksp(0), M(0), N(0), parameters_read(false)
+    ksp(0), M(0), N(0), parameters_read(false), pc_set(false)
 {
   // Initialize PETSc
   PETScManager::init();
@@ -58,7 +58,7 @@ PETScKrylovSolver::PETScKrylovSolver(Preconditioner pc)
 PETScKrylovSolver::PETScKrylovSolver(PETScPreconditioner& preconditioner)
   : PETScLinearSolver(),
     method(default_method), pc_petsc(default_pc), pc_dolfin(&preconditioner),
-    ksp(0), M(0), N(0), parameters_read(false)
+    ksp(0), M(0), N(0), parameters_read(false), pc_set(false)
 {
   // Initialize PETSc
   PETScManager::init();
@@ -68,7 +68,7 @@ PETScKrylovSolver::PETScKrylovSolver(KrylovMethod method,
 				     PETScPreconditioner& preconditioner)
   : PETScLinearSolver(),
     method(method), pc_petsc(default_pc), pc_dolfin(&preconditioner),
-    ksp(0), M(0), N(0), parameters_read(false)
+    ksp(0), M(0), N(0), parameters_read(false), pc_set(false)
 {
   // Initialize PETSc
   PETScManager::init();
@@ -104,6 +104,15 @@ dolfin::uint PETScKrylovSolver::solve(const PETScMatrix& A, PETScVector& x, cons
 
   // Solve linear system
   KSPSetOperators(ksp, A.mat(), A.mat(), SAME_NONZERO_PATTERN);
+
+  // FIXME: Preconditioner being set here to avoid PETSc bug with Hypre.
+  //        See explanation inside PETScKrylovSolver:init().
+  if( !pc_set )
+  { 
+    setPETScPreconditioner();
+    pc_set = true;   
+  }
+
   KSPSolve(ksp, b.vec(), x.vec());
 
   // Check if the solution converged
@@ -156,7 +165,6 @@ dolfin::uint PETScKrylovSolver::solve(const PETScKrylovMatrix& A, PETScVector& x
   KSPSetOperators(ksp, A.mat(), A.mat(), DIFFERENT_NONZERO_PATTERN);
   KSPSolve(ksp, b.vec(), x.vec());  
 
-
   // Check if the solution converged
   KSPConvergedReason reason;
   KSPGetConvergedReason(ksp, &reason);
@@ -200,8 +208,12 @@ void PETScKrylovSolver::init(uint M, uint N)
   // Set solver
   setSolver();
 
+  // FIXME: The preconditioner is being set in solve() due to a PETSc bug
+  //        when using Hypre preconditioner. The problem can be avoided by
+  //        setting the preconditioner after KSPSetOperators(). This will be
+  //        fixed in PETSc, the the preconditioner can be set here again.
   // Set preconditioner
-  setPETScPreconditioner();
+//  setPETScPreconditioner();
 }
 //-----------------------------------------------------------------------------
 void PETScKrylovSolver::readParameters()

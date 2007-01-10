@@ -22,9 +22,9 @@ class MyFunction : public Function
   real eval(const Point& p, unsigned int i)
   {
     if ( i == 0 )
-      return - 2.0 * DOLFIN_PI * DOLFIN_PI * sin(DOLFIN_PI*p.x) * cos(DOLFIN_PI*p.y);
+      return - 2.0 * DOLFIN_PI * DOLFIN_PI * sin(DOLFIN_PI*p.x()) * cos(DOLFIN_PI*p.y());
     else
-      return 2.0 * DOLFIN_PI * DOLFIN_PI * cos(DOLFIN_PI*p.x) * sin(DOLFIN_PI*p.y);
+      return 2.0 * DOLFIN_PI * DOLFIN_PI * cos(DOLFIN_PI*p.x()) * sin(DOLFIN_PI*p.y());
   }
 };
 
@@ -41,33 +41,33 @@ class MyBC : public BoundaryCondition
     }
 
     // Boundary condition for velocity
-    if ( std::abs(p.x - 0.0) < DOLFIN_EPS )
+    if ( std::abs(p.x() - 0.0) < DOLFIN_EPS )
     {
       if ( i == 0 )
-	value = 0.0;
+        value = 0.0;
       else
-	value = sin(DOLFIN_PI*p.y);
+        value = sin(DOLFIN_PI*p.y());
     }
-    else if ( std::abs(p.x - 1.0) < DOLFIN_EPS )
+    else if ( std::abs(p.x() - 1.0) < DOLFIN_EPS )
     {
       if ( i == 0 )
-	value = 0.0;
+        value = 0.0;
       else
-	value = - sin(DOLFIN_PI*p.y);
+        value = - sin(DOLFIN_PI*p.y());
     }
-    else if ( std::abs(p.y - 0.0) < DOLFIN_EPS )
+    else if ( std::abs(p.y() - 0.0) < DOLFIN_EPS )
     {
       if ( i == 0 )
-	value = - sin(DOLFIN_PI*p.x);
+        value = - sin(DOLFIN_PI*p.x());
       else
-	value = 0.0;
+        value = 0.0;
     }
-    else if ( std::abs(p.y - 1.0) < DOLFIN_EPS )
+    else if ( std::abs(p.y() - 1.0) < DOLFIN_EPS )
     {
       if ( i == 0 )
-	value = sin(DOLFIN_PI*p.x);
+        value = sin(DOLFIN_PI*p.x());
       else
-	value = 0.0;
+        value = 0.0;
     }
   }
 };

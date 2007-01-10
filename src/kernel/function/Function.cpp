@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells 2005
 //
 // First added:  2003-11-28
-// Last changed: 2006-05-07
+// Last changed: 2007-01-09
 //
 // The class Function serves as the envelope class and holds a pointer
 // to a letter class that is a subclass of GenericFunction. All the
@@ -21,56 +21,56 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 Function::Function(real value)
   : Variable("u", "no description"), TimeDependent(),
-    f(0), _type(constant), _cell(0)
+    f(0), _type(constant), _cell(0), _facet(-1)
 {
   f = new ConstantFunction(value);
 }
 //-----------------------------------------------------------------------------
 Function::Function(uint vectordim)
   : Variable("u", "no description"), TimeDependent(),
-    f(0), _type(user), _cell(0)
+    f(0), _type(user), _cell(0), _facet(-1)
 {
   f = new UserFunction(this, vectordim);
 }
 //-----------------------------------------------------------------------------
 Function::Function(FunctionPointer fp, uint vectordim)
   : Variable("u", "no description"), TimeDependent(),
-    f(0), _type(functionpointer), _cell(0)
+    f(0), _type(functionpointer), _cell(0), _facet(-1)
 {
   f = new FunctionPointerFunction(fp, vectordim);
 }
 //-----------------------------------------------------------------------------
 Function::Function(Vector& x)
   : Variable("u", "no description"), TimeDependent(),
-    f(0), _type(discrete), _cell(0)
+    f(0), _type(discrete), _cell(0), _facet(-1)
 {
   f = new DiscreteFunction(x);
 }
 //-----------------------------------------------------------------------------
 Function::Function(Vector& x, Mesh& mesh)
   : Variable("u", "no description"), TimeDependent(),
-    f(0), _type(discrete), _cell(0)
+    f(0), _type(discrete), _cell(0), _facet(-1)
 {
   f = new DiscreteFunction(x, mesh);
 }
 //-----------------------------------------------------------------------------
 Function::Function(Vector& x, Mesh& mesh, FiniteElement& element)
   : Variable("u", "no description"), TimeDependent(),
-    f(0), _type(discrete), _cell(0)
+    f(0), _type(discrete), _cell(0), _facet(-1)
 {
   f = new DiscreteFunction(x, mesh, element);
 }
 //-----------------------------------------------------------------------------
 Function::Function(Mesh& mesh, FiniteElement& element)
   : Variable("u", "no description"), TimeDependent(),
-    f(0), _type(discrete), _cell(0)
+    f(0), _type(discrete), _cell(0), _facet(-1)
 {
   f = new DiscreteFunction(mesh, element);
 }
 //-----------------------------------------------------------------------------
 Function::Function(const Function& f)
   : Variable("u", "no description"), TimeDependent(),
-    f(0), _type(f._type), _cell(0)
+    f(0), _type(f._type), _cell(0), _facet(-1)
 {
   switch ( f._type )
   {
@@ -152,23 +152,66 @@ const Function& Function::operator= (const Function& f)
   return *this;
 }
 //-----------------------------------------------------------------------------
-void Function::interpolate(real coefficients[], AffineMap& map,
-			   FiniteElement& element)
+void Function::interpolate(real coefficients[], Cell& cell,
+                           AffineMap& map, FiniteElement& element)
 {
   // Save cell so it can be used by user-defined function
-  _cell = &map.cell();
+  _cell = &cell;
   
   // Delegate function call
-  f->interpolate(coefficients, map, element);
+  f->interpolate(coefficients, cell, map, element);
 
   // Reset cell since it is no longer current
   _cell = 0;
+
+  // Reset facet since it is no longer current
+  _facet = -1;
+}
+//-----------------------------------------------------------------------------
+void Function::interpolate(real coefficients[], Cell& cell,
+                           AffineMap& map, FiniteElement& element, uint facet)
+{
+  // Save cell so it can be used by user-defined function
+  _cell = &cell;
+
+  // Save facet so it can be used by user-defined function
+  _facet = facet;
+  
+  dolfin_info("Interpolating function on cell = %d and facet = %d", cell.index(), facet);
+
+  // Delegate function call
+  f->interpolate(coefficients, cell, map, element);
+
+  // Reset cell since it is no longer current
+  _cell = 0;
+
+  // Reset facet since it is no longer current
+  _facet = -1;
 }
 //-----------------------------------------------------------------------------
 void Function::interpolate(Function& fsource)
 {
   // Delegate function call
   f->interpolate(fsource);
+}
+//-----------------------------------------------------------------------------
+void Function::interpolate(real values[])
+{
+  Mesh& mesh = this->mesh();
+  FiniteElement& element = this->element();
+
+  // Get vector dimension of finite element space
+  uint vectordim = 1;
+  if ( element.rank() > 0 )
+    vectordim = element.tensordim(0);
+  
+  // Compute values at all vertices with vector values interleaved
+  uint pos = 0;
+  for (VertexIterator v(mesh); !v.end(); ++v)
+  {
+    for (uint i = 0; i < vectordim; ++i)
+      values[pos++] = (*this)(*v, i);
+  }
 }
 //-----------------------------------------------------------------------------
 void Function::init(Mesh& mesh, FiniteElement& element)
@@ -185,6 +228,7 @@ void Function::init(Mesh& mesh, FiniteElement& element)
 
   _type = discrete;
   _cell = 0;
+  _facet = -1;
 }
 //-----------------------------------------------------------------------------
 Cell& Function::cell()
@@ -193,5 +237,16 @@ Cell& Function::cell()
     dolfin_error("Current cell is unknown (only available during assembly).");
   
   return *_cell;
+}
+//-----------------------------------------------------------------------------
+dolfin::uint Function::facet()
+{
+  if ( !(_facet >= 0) )
+  {
+    dolfin_warning("Current facet is unknown (only available during assembly over facets), returning 0");
+    return 0;
+  }
+
+  return static_cast<uint>(_facet);
 }
 //-----------------------------------------------------------------------------

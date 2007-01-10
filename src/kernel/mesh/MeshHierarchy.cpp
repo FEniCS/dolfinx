@@ -1,24 +1,30 @@
-// Copyright (C) 2002-2005 Johan Hoffman and Anders Logg.
+// Copyright (C) 2006 Johan Hoffman.
 // Licensed under the GNU GPL Version 2.
 //
-// First added:  2002
-// Last changed: 2005
+// First added:  2006-12-20
+// Last changed: 2006-12-20
 
-#include <dolfin/Mesh.h>
 #include <dolfin/MeshHierarchy.h>
+#include <dolfin/Mesh.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-MeshHierarchy::MeshHierarchy()
+MeshHierarchy::MeshHierarchy(const Mesh& mesh) 
+  : meshes(0), num_meshes(0)
 {
-  clear();
+  // Allocate data
+  num_meshes = 1;
+  meshes = new Mesh[num_meshes];
+  
+  // Initialize mesh hierarchy 
+  meshes[0] = mesh; 
 }
 //-----------------------------------------------------------------------------
-MeshHierarchy::MeshHierarchy(Mesh& mesh)
+MeshHierarchy::MeshHierarchy() 
+  : meshes(0), num_meshes(0)
 {
-  clear();
-  init(mesh);
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 MeshHierarchy::~MeshHierarchy()
@@ -26,77 +32,110 @@ MeshHierarchy::~MeshHierarchy()
   clear();
 }
 //-----------------------------------------------------------------------------
-void MeshHierarchy::init(Mesh& mesh)
+void MeshHierarchy::init(const Mesh& mesh) 
 {
-  // Clear previous mesh hierarchy
+  // Clear old data if any
   clear();
 
-  // Find top mesh (level 0)
-  Mesh* top = &mesh;
-  for (; top->_parent; top = top->_parent);
+  // Allocate data 
+  num_meshes = 1;
+  meshes = new Mesh[num_meshes];
   
-  // Count the number of meshes
-  int count = 0;
-  for (Mesh* g = top; g; g = g->_child)
-    count++;
-
-  // Allocate memory for the meshes
-  meshes.init(count);
-
-  // Put the meshes in the list
-  int pos = 0;
-  for (Mesh* g = top; g; g = g->_child)
-    meshes(pos++) = g;
-
-  // Write a message
-  cout << "Creating mesh hierarchy: found " << count << " mesh(s)." << endl;
+  // Initialize mesh hierarchy 
+  meshes[0] = mesh; 
 }
 //-----------------------------------------------------------------------------
 void MeshHierarchy::clear()
 {
-  meshes.clear();
-}
-//-----------------------------------------------------------------------------
-void MeshHierarchy::add(Mesh& mesh)
-{
-  
+  // Clear data 
+  num_meshes = 0;
 
+  if ( meshes )
+    delete [] meshes;
+  meshes = 0;
 }
 //-----------------------------------------------------------------------------
-Mesh& MeshHierarchy::operator() (int level) const
+int MeshHierarchy::size()
 {
-  if ( empty() )
-    dolfin_error("Mesh hierarchy is empty.");
-  
-  if ( level < 0 || level >= meshes.size() )
-    dolfin_error1("No mesh at level %d.", level);
-  
-  return *(meshes(level));
+  // Return number of meshes 
+  return int(num_meshes);
 }
 //-----------------------------------------------------------------------------
-Mesh& MeshHierarchy::coarse() const
+void MeshHierarchy::add(const Mesh& mesh) 
 {
-  if ( empty() )
-    dolfin_error("Mesh hierarchy is empty.");
-  
-  return *(meshes(0));
-}
-//-----------------------------------------------------------------------------
-Mesh& MeshHierarchy::fine() const
-{
-  if ( empty() )
-    dolfin_error("Mesh hierarchy is empty.");
+  // Add mesh to mesh hierarchy if non empty 
+  if ( num_meshes > 0 )
+  {
+    // Create temporary array 
+    Mesh* tmp_array; 
+    tmp_array = new Mesh[num_meshes];
 
-  return *(meshes(meshes.size() - 1));
+    // Copy data
+    for (uint i = 0; i < num_meshes; i++)
+      tmp_array[i] = meshes[i];
+    
+    // Clear old mesh hierarchy 
+    delete [] meshes;
+    
+    // Add new mesh to mesh hierarchy 
+    num_meshes++;
+    meshes = new Mesh[num_meshes];
+    for (uint i = 0; i < num_meshes-1; i++)
+      meshes[i] = tmp_array[i];
+    meshes[num_meshes-1] = mesh; 
+  
+    // Clear temporary array 
+    delete [] tmp_array;
+  }
+  else
+  {
+    init(mesh);
+  }
 }
 //-----------------------------------------------------------------------------
-int MeshHierarchy::size() const
+void MeshHierarchy::remove() 
 {
-  return meshes.size();
+  // Remove finest mesh from mesh hierarchy if non empty 
+  if ( num_meshes > 0 )
+  {
+    // Create temporary array 
+    Mesh* tmp_array; 
+    tmp_array = new Mesh[num_meshes-1];
+
+    // Copy data
+    for (uint i = 0; i < num_meshes-1; i++)
+      tmp_array[i] = meshes[i];
+    
+    // Clear old mesh hierarchy 
+    delete [] meshes;
+    
+    // Remove finest mesh from mesh hierarchy 
+    num_meshes--;
+    meshes = new Mesh[num_meshes];
+    for (uint i = 0; i < num_meshes; i++)
+      meshes[i] = tmp_array[i];
+
+    // Clear temporary array 
+    delete [] tmp_array;
+  }
+  else
+  {
+    dolfin_error("Cannot remove mesh from empty mesh hierarcy");
+  }
 }
 //-----------------------------------------------------------------------------
-bool MeshHierarchy::empty() const
+Mesh& MeshHierarchy::operator()(uint k) const 
 {
-  return meshes.empty();
+  // Return reduced mesh object on level k 
+  return meshes[k];
 }
 //-----------------------------------------------------------------------------
+Mesh& MeshHierarchy::operator[](uint k) const 
+{
+  // Return full (reconstructed) mesh object on level k 
+  dolfin_error("not implemented.");
+  return meshes[k];
+}
+//-----------------------------------------------------------------------------
+
+

@@ -194,7 +194,7 @@ sharedstatedir = @sharedstatedir@
 swig_found = @swig_found@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
-SUBDIRS = fem mesh nls ode pde quadrature solvers
+SUBDIRS = fem mesh meshfunction nls ode pde quadrature solvers
 all: all-recursive
 
 .SUFFIXES:

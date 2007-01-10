@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-08-21
-// Last changed: 2006-08-21
+// Last changed: 2006-10-26
 
 #include <dolfin/GenericMatrix.h>
 #include <dolfin/GenericVector.h>
@@ -24,12 +24,12 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 void MatrixFactory::computeMassMatrix(GenericMatrix& A, Mesh& mesh)
 {
-  if ( mesh.type() == Mesh::triangles )
+  if ( mesh.type().cellType() == CellType::triangle )
   {
     MassMatrix2D::BilinearForm a;
     FEM::assemble(a, A, mesh);
   }
-  else if ( mesh.type() == Mesh::tetrahedra )
+  else if ( mesh.type().cellType() == CellType::tetrahedron )
   {
     MassMatrix3D::BilinearForm a;
     FEM::assemble(a, A, mesh);
@@ -43,12 +43,12 @@ void MatrixFactory::computeMassMatrix(GenericMatrix& A, Mesh& mesh)
 void MatrixFactory::computeStiffnessMatrix(GenericMatrix& A, Mesh& mesh,
 					   real c)
 {
-  if ( mesh.type() == Mesh::triangles )
+  if ( mesh.type().cellType() == CellType::triangle )
   {
     StiffnessMatrix2D::BilinearForm a(c);
     FEM::assemble(a, A, mesh);
   }
-  else if ( mesh.type() == Mesh::tetrahedra )
+  else if ( mesh.type().cellType() == CellType::tetrahedron )
   {
     StiffnessMatrix3D::BilinearForm a(c);
     FEM::assemble(a, A, mesh);
@@ -62,12 +62,12 @@ void MatrixFactory::computeStiffnessMatrix(GenericMatrix& A, Mesh& mesh,
 void MatrixFactory::computeConvectionMatrix(GenericMatrix& A, Mesh& mesh,
 					    real cx, real cy, real cz)
 {
-  if ( mesh.type() == Mesh::triangles )
+  if ( mesh.type().cellType() == CellType::triangle )
   {
     ConvectionMatrix2D::BilinearForm a(cx, cy);
     FEM::assemble(a, A, mesh);
   }
-  else if ( mesh.type() == Mesh::tetrahedra )
+  else if ( mesh.type().cellType() == CellType::tetrahedron )
   {
     ConvectionMatrix3D::BilinearForm a(cx, cy, cz);
     FEM::assemble(a, A, mesh);
@@ -80,12 +80,13 @@ void MatrixFactory::computeConvectionMatrix(GenericMatrix& A, Mesh& mesh,
 //-----------------------------------------------------------------------------
 void MatrixFactory::computeLoadVector(GenericVector& x, Mesh& mesh, real c)
 {
-  if ( mesh.type() == Mesh::triangles )
+  dolfin_error("MF forms need to be updated to new mesh format.");
+  if ( mesh.type().cellType() == CellType::triangle )
   {
     LoadVector2D::LinearForm b(c);
     FEM::assemble(b, x, mesh);
   }
-  else if ( mesh.type() == Mesh::tetrahedra )
+  else if ( mesh.type().cellType() == CellType::tetrahedron )
   {
     LoadVector3D::LinearForm b(c);
     FEM::assemble(b, x, mesh);

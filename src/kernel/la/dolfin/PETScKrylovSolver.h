@@ -7,7 +7,7 @@
 // Modified by Garth N. Wells 2005-2006.
 //
 // First added:  2005-12-02
-// Last changed: 2006-08-18
+// Last changed: 2006-11-24
 
 #ifndef __PETSC_KRYLOV_SOLVER_H
 #define __PETSC_KRYLOV_SOLVER_H
@@ -101,6 +101,9 @@ namespace dolfin
     /// True if we have read parameters
     bool parameters_read;
     
+    // FIXME: Required to avoid PETSc bug with Hypre. See explanation inside 
+    //        PETScKrylovSolver:init(). Can be removed when PETSc is patched.
+    bool pc_set;
   };
 
 }

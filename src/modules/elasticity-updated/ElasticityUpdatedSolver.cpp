@@ -5,9 +5,7 @@
 // Modified by Garth N. Wells 2005.
 //
 // First added:  2005
-// Last changed: 2006-02-20
-
-#ifdef HAVE_PETSC_H
+// Last changed: 2006-12-12
 
 //#include <iostream>
 #include <sstream>
@@ -66,15 +64,21 @@ ElasticityUpdatedSolver::ElasticityUpdatedSolver(Mesh& mesh,
   cout << "lmbda: " << lmbda << endl;
   cout << "mu: " << mu << endl;
 
+#ifdef HAVE_PETSC_H
+
   init();
   ode = new ElasticityUpdatedODE(*this);
   ts = new TimeStepper(*ode);
+
+#endif
 }
 //-----------------------------------------------------------------------------
 ElasticityUpdatedSolver& ElasticityUpdatedSolver::operator=(const ElasticityUpdatedSolver& solver)
 {
   return *this;
 }
+//-----------------------------------------------------------------------------
+#ifdef HAVE_PETSC_H
 //-----------------------------------------------------------------------------
 void ElasticityUpdatedSolver::init()
 {
@@ -150,14 +154,14 @@ void ElasticityUpdatedSolver::init()
   int *nodes = new int[(*element1).spacedim()];
   real *coefficients = new real[(*element1).spacedim()];
 
-  for(CellIterator c(&mesh); !c.end(); ++c)
+  for(CellIterator c(mesh); !c.end(); ++c)
   {
     Cell& cell = *c;
 
     // Use DOLFIN's interpolation
 
     map.update(cell);
-    v0.interpolate(coefficients, map, *element1);
+    v0.interpolate(coefficients, cell, map, *element1);
     (*element1).nodemap(nodes, cell, mesh);
 
     for(uint i = 0; i < (*element1).spacedim(); i++)
@@ -215,14 +219,14 @@ void ElasticityUpdatedSolver::init()
 
   // The mesh points are the initial values of u
   int offset = mesh.numVertices();
-  for (VertexIterator n(&mesh); !n.end(); ++n)
+  for (VertexIterator n(mesh); !n.end(); ++n)
   {
     Vertex& vertex = *n;
-    int nid = vertex.id();
+    int nid = vertex.index();
 
-    x1_1(0 * offset + nid) = vertex.coord().x;
-    x1_1(1 * offset + nid) = vertex.coord().y;
-    x1_1(2 * offset + nid) = vertex.coord().z;
+    x1_1(0 * offset + nid) = vertex.point().x();
+    x1_1(1 * offset + nid) = vertex.point().y();
+    x1_1(2 * offset + nid) = vertex.point().z();
   }
 
   int dotu_x1offset = 0;
@@ -430,13 +434,13 @@ void ElasticityUpdatedSolver::fu()
   // Ultimately compute dotu = f(u, t)
 
   // Update the mesh
-  for (VertexIterator n(&mesh); !n.end(); ++n)
+  for (VertexIterator n(mesh); !n.end(); ++n)
   {
     Vertex& vertex = *n;
     
-    vertex.coord().x = u1(vertex, 0);
-    vertex.coord().y = u1(vertex, 1);
-    vertex.coord().z = u1(vertex, 2);
+    vertex.point().x() = u1(vertex, 0);
+    vertex.point().y() = u1(vertex, 1);
+    vertex.point().z() = u1(vertex, 2);
   }
 
   // Compute norm of stress (sigmanorm)
@@ -459,7 +463,7 @@ void ElasticityUpdatedSolver::fu()
 	
 	if(norm > yld)
 	{
-	  cout << "sigmanorm(" << cell.id() << "): " << norm << endl;
+	  cout << "sigmanorm(" << cell.index() << "): " << norm << endl;
 	  proj = 1.0 / norm;
 	}
 	
@@ -536,6 +540,64 @@ VecScatter* ElasticityUpdatedSolver::createScatterer(Vector& x1, Vector& x2,
 
   return sc;
 }
+//-----------------------------------------------------------------------------
+void ElasticityUpdatedSolver::fromArray(const real u[], Vector& x, uint offset,
+				     uint size)
+{
+  // Workaround to interface Vector and arrays
+
+  real* vals = 0;
+  vals = x.array();
+  for(uint i = 0; i < size; i++)
+  {
+    vals[i] = u[i + offset];
+  }
+  x.restore(vals);
+}
+//-----------------------------------------------------------------------------
+void ElasticityUpdatedSolver::toArray(real y[], Vector& x, uint offset,
+				      uint size)
+{
+  // Workaround to interface Vector and arrays
+
+  real* vals = 0;
+  vals = x.array();
+  for(uint i = 0; i < size; i++)
+  {
+    y[offset + i] = vals[i];
+  }
+  x.restore(vals);
+}
+//-----------------------------------------------------------------------------
+void ElasticityUpdatedSolver::fromDense(const uBlasVector& u, Vector& x,
+					uint offset, uint size)
+{
+  // Workaround to interface Vector and uBlasVector
+
+  real* vals = 0;
+  vals = x.array();
+  for(uint i = 0; i < size; i++)
+  {
+    vals[i] = u[i + offset];
+  }
+  x.restore(vals);
+}
+//-----------------------------------------------------------------------------
+void ElasticityUpdatedSolver::toDense(uBlasVector& y, Vector& x, uint offset,
+				      uint size)
+{
+  // Workaround to interface Vector and uBlasVector
+
+  real* vals = 0;
+  vals = x.array();
+  for(uint i = 0; i < size; i++)
+  {
+    y[offset + i] = vals[i];
+  }
+  x.restore(vals);
+}
+//-----------------------------------------------------------------------------
+#endif
 //-----------------------------------------------------------------------------
 void ElasticityUpdatedSolver::computeFGreen(Vector& xF, Vector& xF0, Vector& xF1,
 					  FiniteElement& element1, Mesh& mesh)
@@ -840,14 +902,16 @@ void ElasticityUpdatedSolver::multB(real* F, real *B)
 //-----------------------------------------------------------------------------
 void ElasticityUpdatedSolver::deform(Mesh& mesh, Function& u)
 {
+  MeshGeometry& geometry = mesh.geometry();
+
   // Update the mesh
-  for (VertexIterator n(&mesh); !n.end(); ++n)
+  for (VertexIterator n(mesh); !n.end(); ++n)
   {
     Vertex& vertex = *n;
     
-    vertex.coord().x = u(vertex, 0);
-    vertex.coord().y = u(vertex, 1);
-    vertex.coord().z = u(vertex, 2);
+    geometry.x(vertex.index(), 0) = u(vertex, 0);
+    geometry.x(vertex.index(), 1) = u(vertex, 1);
+    geometry.x(vertex.index(), 2) = u(vertex, 2);
   }
 }
 //-----------------------------------------------------------------------------
@@ -872,7 +936,7 @@ void ElasticityUpdatedSolver::plasticity(Vector& xsigma, Vector& xsigmanorm,
     if(norm > yld)
     {
 //       cout << "sigmanorm(" << cell.id() << "): " << norm << endl;
-      proj = 1.0 / norm;
+      proj = yld / norm;
     }
     
     xsigmanorm(nodes[0]) = proj;
@@ -891,14 +955,14 @@ void ElasticityUpdatedSolver::finterpolate(Function& f1, Function& f2,
   int *nodes = new int[element.spacedim()];
   real *coefficients = new real[element.spacedim()];
 
-  for(CellIterator c(&mesh); !c.end(); ++c)
+  for(CellIterator c(mesh); !c.end(); ++c)
   {
     Cell& cell = *c;
 
     // Use DOLFIN's interpolation
 
     map.update(cell);
-    f1.interpolate(coefficients, map, element);
+    f1.interpolate(coefficients, cell, map, element);
     element.nodemap(nodes, cell, mesh);
 
     for(unsigned int i = 0; i < element.spacedim(); i++)
@@ -945,14 +1009,14 @@ void ElasticityUpdatedSolver::initu0(Vector& x0,
 {
   // The mesh points are the initial values of u
   int offset = mesh.numVertices();
-  for (VertexIterator n(&mesh); !n.end(); ++n)
+  for (VertexIterator n(mesh); !n.end(); ++n)
   {
     Vertex& vertex = *n;
-    int nid = vertex.id();
+    int nid = vertex.index();
 
-    x0(0 * offset + nid) = vertex.coord().x;
-    x0(1 * offset + nid) = vertex.coord().y;
-    x0(2 * offset + nid) = vertex.coord().z;
+    x0(0 * offset + nid) = vertex.point().x();
+    x0(1 * offset + nid) = vertex.point().y();
+    x0(2 * offset + nid) = vertex.point().z();
   }
 }
 //-----------------------------------------------------------------------------
@@ -978,61 +1042,6 @@ void ElasticityUpdatedSolver::initJ0(Vector& xJ0,
   }
 }
 //-----------------------------------------------------------------------------
-void ElasticityUpdatedSolver::fromArray(const real u[], Vector& x, uint offset,
-				     uint size)
-{
-  // Workaround to interface Vector and arrays
-
-  real* vals = 0;
-  vals = x.array();
-  for(uint i = 0; i < size; i++)
-  {
-    vals[i] = u[i + offset];
-  }
-  x.restore(vals);
-}
-//-----------------------------------------------------------------------------
-void ElasticityUpdatedSolver::toArray(real y[], Vector& x, uint offset,
-				      uint size)
-{
-  // Workaround to interface Vector and arrays
-
-  real* vals = 0;
-  vals = x.array();
-  for(uint i = 0; i < size; i++)
-  {
-    y[offset + i] = vals[i];
-  }
-  x.restore(vals);
-}
-//-----------------------------------------------------------------------------
-void ElasticityUpdatedSolver::fromDense(const uBlasVector& u, Vector& x,
-					uint offset, uint size)
-{
-  // Workaround to interface Vector and uBlasVector
-
-  real* vals = 0;
-  vals = x.array();
-  for(uint i = 0; i < size; i++)
-  {
-    vals[i] = u[i + offset];
-  }
-  x.restore(vals);
-}
-//-----------------------------------------------------------------------------
-void ElasticityUpdatedSolver::toDense(uBlasVector& y, Vector& x, uint offset,
-				      uint size)
-{
-  // Workaround to interface Vector and uBlasVector
-
-  real* vals = 0;
-  vals = x.array();
-  for(uint i = 0; i < size; i++)
-  {
-    y[offset + i] = vals[i];
-  }
-  x.restore(vals);
-}
 //-----------------------------------------------------------------------------
 ElasticityUpdatedODE::ElasticityUpdatedODE(ElasticityUpdatedSolver& solver) :
   ODE(1, 1.0), solver(solver)
@@ -1043,11 +1052,14 @@ ElasticityUpdatedODE::ElasticityUpdatedODE(ElasticityUpdatedSolver& solver) :
 //-----------------------------------------------------------------------------
 void ElasticityUpdatedODE::u0(uBlasVector& u)
 {
+#ifdef HAVE_PETSC_H
   solver.toDense(u, solver.dotu, 0, solver.dotu.size());
+#endif
 }
 //-----------------------------------------------------------------------------
 void ElasticityUpdatedODE::f(const uBlasVector& u, real t, uBlasVector &y)
 {
+#ifdef HAVE_PETSC_H
   // Copy values from ODE array
   solver.fromDense(u, solver.x1_1, 0, solver.Nv);
   solver.fromDense(u, solver.x2_1, solver.Nv, solver.Nv);
@@ -1060,16 +1072,18 @@ void ElasticityUpdatedODE::f(const uBlasVector& u, real t, uBlasVector &y)
 
   // Copy values into ODE array
   solver.toDense(y, solver.dotu, 0, 2 * solver.Nv + solver.Nsigma);
+#endif
 }
 //-----------------------------------------------------------------------------
 bool ElasticityUpdatedODE::update(const uBlasVector& u, real t, bool end)
 {
+#ifdef HAVE_PETSC_H
   solver.fromDense(u, solver.x1_1, 0, solver.Nv);
   solver.fromDense(u, solver.x2_1, solver.Nv, solver.Nv);
   solver.fromDense(u, solver.xsigma1, 2 * solver.Nv, solver.Nsigma);
+#endif
 
   return true;
 }
 //-----------------------------------------------------------------------------
 
-#endif

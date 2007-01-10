@@ -2,10 +2,11 @@
 // Licensed under the GNU GPL Version 2.
 //
 // Modified by Erik Svensson 2003.
-// Modified by Garth N. Wells, 2006.
+// Modified by Garth N. Wells 2006.
+// Modified by Ola Skavhaug 2006.
 //
 // First added:  2002-12-03
-// Last changed: 2006-05-23
+// Last changed: 2006-11-30
 
 #include <stdarg.h>
 
@@ -14,7 +15,7 @@
 #include <dolfin/Vector.h>
 #include <dolfin/Matrix.h>
 #include <dolfin/Mesh.h>
-#include <dolfin/NewMesh.h>
+#include <dolfin/MeshFunction.h>
 #include <dolfin/Function.h>
 #include <dolfin/FiniteElement.h>
 #include <dolfin/FiniteElementSpec.h>
@@ -25,7 +26,7 @@
 #include <dolfin/XMLVector.h>
 #include <dolfin/XMLMatrix.h>
 #include <dolfin/XMLMesh.h>
-#include <dolfin/NewXMLMesh.h>
+#include <dolfin/XMLMeshFunction.h>
 #include <dolfin/XMLFunction.h>
 #include <dolfin/XMLFiniteElementSpec.h>
 #include <dolfin/XMLParameterList.h>
@@ -73,11 +74,27 @@ void XMLFile::operator>>(Mesh& mesh)
   parseFile();
 }
 //-----------------------------------------------------------------------------
-void XMLFile::operator>>(NewMesh& mesh)
+void XMLFile::operator>>(MeshFunction<int>& meshfunction)
 {
   if ( xmlObject )
     delete xmlObject;
-  xmlObject = new NewXMLMesh(mesh);
+  xmlObject = new XMLMeshFunction(meshfunction);
+  parseFile();
+}
+//-----------------------------------------------------------------------------
+void XMLFile::operator>>(MeshFunction<double>& meshfunction)
+{
+  if ( xmlObject )
+    delete xmlObject;
+  xmlObject = new XMLMeshFunction(meshfunction);
+  parseFile();
+}
+//-----------------------------------------------------------------------------
+void XMLFile::operator>>(MeshFunction<bool>& meshfunction)
+{
+  if ( xmlObject )
+    delete xmlObject;
+  xmlObject = new XMLMeshFunction(meshfunction);
   parseFile();
 }
 //-----------------------------------------------------------------------------
@@ -205,103 +222,145 @@ void XMLFile::operator<<(Mesh& mesh)
   // Open file
   FILE *fp = openFile();
   
+  // Get cell type
+  CellType::Type cell_type = mesh.type().cellType();
+
   // Write mesh in XML format
-  fprintf(fp, "  <mesh> \n");
+  fprintf(fp, "  <mesh celltype=\"%s\" dim=\"%u\">\n",
+          CellType::type2string(cell_type).c_str(), mesh.geometry().dim());
 
-  fprintf(fp, "    <vertices size=\" %i \"> \n", mesh.numVertices());
+  fprintf(fp, "    <vertices size=\"%u\">\n", mesh.numVertices());
   
-  for(VertexIterator n(&mesh); !n.end(); ++n)
+  for(VertexIterator v(mesh); !v.end(); ++v)
   {
-    Vertex &vertex = *n;
+    Point p = v->point();
 
-    fprintf(fp, "    <vertex name=\"%i\" x=\"%f\" y=\"%f\" z=\"%f\" />\n",
-	    vertex.id(), vertex.coord().x, vertex.coord().y, vertex.coord().z);
+    switch ( mesh.geometry().dim() ) {
+    case 1:
+      fprintf(fp, "      <vertex index=\"%u\" x=\"%g\"/>\n",
+              v->index(), p.x());
+      break;
+    case 2:
+      fprintf(fp, "      <vertex index=\"%u\" x=\"%g\" y=\"%g\"/>\n",
+              v->index(), p.x(), p.y());
+      break;
+    case 3:
+      fprintf(fp, "      <vertex index=\"%u\" x=\"%g\" y=\"%g\" z=\"%g\" />\n",
+              v->index(), p.x(), p.y(), p.z());
+      break;
+    default:
+      dolfin_error("The XML mesh file format only supports 1D, 2D and 3D meshes.");
+    }
   }
 
   fprintf(fp, "    </vertices>\n");
-
-  fprintf(fp, "    <cells size=\" %i \"> \n", mesh.numCells());
+  fprintf(fp, "    <cells size=\"%u\">\n", mesh.numCells());
 
   for (CellIterator c(mesh); !c.end(); ++c)
   {
-    Cell &cell = *c;
+    uint* vertices = c->entities(0);
+    dolfin_assert(vertices);
 
-    if ( mesh.type() == Mesh::tetrahedra )
+    switch ( cell_type )
     {
-      fprintf(fp, "    <tetrahedron name=\"%i\" n0=\"%i\" n1=\"%i\" n2=\"%i\" n3=\"%i\" />\n",
-	      cell.id(), cell.vertex(0).id(), cell.vertex(1).id(), cell.vertex(2).id(), cell.vertex(3).id());
-    }
-    else
-    {
-      fprintf(fp, "    <triangle name=\"%i\" n0=\"%i\" n1=\"%i\" n2=\"%i\" />\n",
-	      cell.id(), cell.vertex(0).id(), cell.vertex(1).id(),
-	      cell.vertex(2).id());
+    case CellType::interval:
+      fprintf(fp, "      <interval index=\"%u\" v0=\"%u\" v1=\"%u\"/>\n",
+	      c->index(), vertices[0], vertices[1]);
+      break;
+    case CellType::triangle:
+      fprintf(fp, "      <triangle index=\"%u\" v0=\"%u\" v1=\"%u\" v2=\"%u\"/>\n",
+	      c->index(), vertices[0], vertices[1], vertices[2]);
+      break;
+    case CellType::tetrahedron:
+      fprintf(fp, "      <tetrahedron index=\"%u\" v0=\"%u\" v1=\"%u\" v2=\"%u\" v3=\"%u\"/>\n",
+              c->index(), vertices[0], vertices[1], vertices[2], vertices[3]);
+      break;
+    default:
+      dolfin_error1("Unknown cell type: %u.", cell_type);
     }
   }
 
   fprintf(fp, "    </cells>\n");
-  
   fprintf(fp, "  </mesh>\n");
  
   // Close file
   closeFile(fp);
 
-  cout << "Saved mesh " << mesh.name() << " (" << mesh.label()
-       << ") to file " << filename << " in XML format." << endl;
+  cout << "Saved mesh to file " << filename << " in XML format." << endl;
 }
 //-----------------------------------------------------------------------------
-void XMLFile::operator<<(NewMesh& mesh)
+void XMLFile::operator<<(MeshFunction<int>& meshfunction)
 {
-  dolfin_error("Not implemented.");
-  /*
   // Open file
   FILE *fp = openFile();
   
   // Write mesh in XML format
-  fprintf(fp, "  <mesh> \n");
-
-  fprintf(fp, "    <vertices size=\" %i \"> \n", mesh.numVertices());
+  fprintf(fp, "  <meshfunction type=\"int\" dim=\"%u\" size=\"%u\">\n",
+          meshfunction.dim(), meshfunction.size());
   
-  for(VertexIterator n(&mesh); !n.end(); ++n)
+  Mesh& mesh = meshfunction.mesh();
+  for(MeshEntityIterator e(mesh, meshfunction.dim()); !e.end(); ++e)
   {
-    Vertex &vertex = *n;
-
-    fprintf(fp, "    <vertex name=\"%i\" x=\"%f\" y=\"%f\" z=\"%f\" />\n",
-	    vertex.id(), vertex.coord().x, vertex.coord().y, vertex.coord().z);
+      fprintf(fp, "    <entity index=\"%u\" value=\"%d\"/>\n",
+              e->index(), meshfunction(*e));
   }
 
-  fprintf(fp, "    </vertices>\n");
-
-  fprintf(fp, "    <cells size=\" %i \"> \n", mesh.numCells());
-
-  for (CellIterator c(mesh); !c.end(); ++c)
-  {
-    Cell &cell = *c;
-
-    if ( mesh.type() == Mesh::tetrahedra )
-    {
-      fprintf(fp, "    <tetrahedron name=\"%i\" n0=\"%i\" n1=\"%i\" n2=\"%i\" n3=\"%i\" />\n",
-	      cell.id(), cell.vertex(0).id(), cell.vertex(1).id(), cell.vertex(2).id(), cell.vertex(3).id());
-    }
-    else
-    {
-      fprintf(fp, "    <triangle name=\"%i\" n0=\"%i\" n1=\"%i\" n2=\"%i\" />\n",
-	      cell.id(), cell.vertex(0).id(), cell.vertex(1).id(),
-	      cell.vertex(2).id());
-    }
-  }
-
-  fprintf(fp, "    </cells>\n");
-  
-  fprintf(fp, "  </mesh>\n");
+  fprintf(fp, "  </meshfunction>\n");
  
   // Close file
   closeFile(fp);
+  
+  cout << "Saved mesh function to file " << filename << " in XML format." << endl;
+}
+//-----------------------------------------------------------------------------
+void XMLFile::operator<<(MeshFunction<double>& meshfunction)
+{
+  // Open file
+  FILE *fp = openFile();
+  
+  // Write mesh in XML format
+  fprintf(fp, "  <meshfunction type=\"double\" dim=\"%u\" size=\"%u\">\n",
+          meshfunction.dim(), meshfunction.size());
 
-  cout << "Saved mesh " << mesh.name() << " (" << mesh.label()
-       << ") to file " << filename << " in XML format." << endl;
-  */
-       
+  Mesh& mesh = meshfunction.mesh();
+  for(MeshEntityIterator e(mesh, meshfunction.dim()); !e.end(); ++e)
+  {
+      fprintf(fp, "    <entity index=\"%u\" value=\"%g\"/>\n",
+              e->index(), meshfunction(*e));
+  }
+
+  fprintf(fp, "  </meshfunction>\n");
+ 
+  // Close file
+  closeFile(fp);
+  
+  cout << "Saved mesh function to file " << filename << " in XML format." << endl;
+}
+//-----------------------------------------------------------------------------
+void XMLFile::operator<<(MeshFunction<bool>& meshfunction)
+{
+  // Open file
+  FILE *fp = openFile();
+  
+  // Write mesh in XML format
+  fprintf(fp, "  <meshfunction type=\"bool\" dim=\"%u\" size=\"%u\">\n",
+          meshfunction.dim(), meshfunction.size());
+
+  Mesh& mesh = meshfunction.mesh();
+  std::string value;
+  for (MeshEntityIterator e(mesh, meshfunction.dim()); !e.end(); ++e)
+  {
+    value = (meshfunction(*e) ? "true" : "false");
+    fprintf(fp, "    <entity index=\"%u\" value=\"%s\"/>\n",
+              e->index(), value.c_str());
+  }
+
+  fprintf(fp, "  </meshfunction>\n");
+ 
+  // Close file
+  closeFile(fp);
+  
+  cout << "Saved mesh function to file " << filename << " in XML format." << endl;
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator<<(Function& f)
@@ -412,15 +471,15 @@ FILE* XMLFile::openFile()
   FILE *fp = fopen(filename.c_str(), "r+");
 
   // Step to position before previously written footer
-  printf("Stepping to position: %ld\n", mark);
+  //printf("Stepping to position: %ld\n", mark);
   fseek(fp, mark, SEEK_SET);
   fflush(fp);
   
   // Write DOLFIN XML format header
   if ( !header_written )
   {
-    fprintf(fp, "<?xml version=\"1.0\" encoding=\"UTF-8\"?> \n\n" );
-    fprintf(fp, "<dolfin xmlns:dolfin=\"http://www.fenics.org/dolfin/\"> \n" );
+    fprintf(fp, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n\n" );
+    fprintf(fp, "<dolfin xmlns:dolfin=\"http://www.fenics.org/dolfin/\">\n" );
     
     header_written = true;
   }
@@ -432,7 +491,7 @@ void XMLFile::closeFile(FILE* fp)
 {
   // Get position in file before writing footer
   mark = ftell(fp);
-  printf("Position in file before writing footer: %ld\n", mark);
+  //printf("Position in file before writing footer: %ld\n", mark);
 
   // Write DOLFIN XML format footer
   if ( header_written )

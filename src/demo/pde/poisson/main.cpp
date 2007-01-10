@@ -30,8 +30,8 @@ int main()
   {
     real eval(const Point& p, unsigned int i)
     {
-      real dx = p.x - 0.5;
-      real dy = p.y - 0.5;
+      real dx = p.x() - 0.5;
+      real dy = p.y() - 0.5;
       return 500.0*exp(-(dx*dx + dy*dy)/0.02);
     }
   };
@@ -41,7 +41,7 @@ int main()
   {
     void eval(BoundaryValue& value, const Point& p, unsigned int i)
     {
-      if ( std::abs(p.x - 0.0) < DOLFIN_EPS )
+      if ( std::abs(p.x() - 0.0) < DOLFIN_EPS )
         value = 0.0;
     }
   };
@@ -51,7 +51,7 @@ int main()
   {
     real eval(const Point& p, unsigned int i)
     {
-      if ( std::abs(p.x - 1.0) < DOLFIN_EPS )
+      if ( std::abs(p.x() - 1.0) < DOLFIN_EPS )
         return 1.0;
       else
         return 0.0;  
@@ -62,14 +62,17 @@ int main()
   Source f;
   DirichletBC bc;
   NeumannBC g;
-  UnitSquare mesh(256, 256);
+
+  UnitSquare mesh(16, 16);
+
   Poisson::BilinearForm a;
   Poisson::LinearForm L(f, g);
   PDE pde(a, L, mesh, bc);
 
+
   // Compute solution
   Function U = pde.solve();
-
+//  U.vector().disp();
   // Save solution to file
   File file("poisson.pvd");
   file << U;

@@ -33,13 +33,16 @@ namespace dolfin
 
     /// Define a time dependent PDE with boundary conditions
     TimeDependentPDE(BilinearForm& a, LinearForm& L, Mesh& mesh,
-		     BoundaryCondition& bc, int N, real k, real T);
+		     BoundaryCondition& bc, int N, real T);
 
     /// Destructor
     ~TimeDependentPDE();
 
     /// Solve PDE (in general a mixed system)
     virtual uint solve(Function& u);
+
+    /// Compute initial value
+    virtual void u0(uBlasVector& u);
 
     /// Compute right hand side dotu = f(u)
     virtual void fu(const Vector& x, Vector& dotx, real t);
@@ -68,7 +71,6 @@ namespace dolfin
 
     Vector* x;
     Vector* dotx;
-    real k;
 
   protected:
 
@@ -91,7 +93,7 @@ namespace dolfin
   public:
     TimeDependentODE(TimeDependentPDE& pde, int N, real T);
     void u0(uBlasVector& u);
-    virtual real timestep(real t, real k0) const;
+
     // Evaluate right-hand side (mono-adaptive version)
     using ODE::f;
     virtual void f(const uBlasVector& u, real t, uBlasVector& y);

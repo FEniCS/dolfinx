@@ -30,12 +30,12 @@ class CahnHilliardEquation : public NonlinearProblem, public Parametrized
             _muFactor(muFactor)
     {
       // Create forms
-      if(mesh.numSpaceDim() == 2)
+      if(mesh.topology().dim() == 2)
       {
         a = new CahnHilliard2D::BilinearForm(U, _lambda, _muFactor, *_dt, *_theta);
         L = new CahnHilliard2D::LinearForm(U, U0, rate0, _lambda, _muFactor, *_dt, *_theta);
       }
-      else if(mesh.numSpaceDim() == 3)
+      else if(mesh.topology().dim() == 3)
       {
         a = new CahnHilliard3D::BilinearForm(U, _lambda, _muFactor, *_dt, *_theta);
         L = new CahnHilliard3D::LinearForm(U, U0, rate0, _lambda, _muFactor, *_dt, *_theta);
@@ -86,7 +86,7 @@ int main(int argc, char* argv[])
   dolfin_init(argc, argv);
 
   // Mesh
-  UnitSquare mesh(40, 40);
+  UnitSquare mesh(100, 100);
 
   // Time stepping parameters
   real dt = 2.0e-6; real t  = 0.0; real T  = 500*dt;

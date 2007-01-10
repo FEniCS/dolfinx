@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<dolfin xmlns:dolfin="http://www.fenics.org/dolfin/">
+  <meshfunction type="double" dim="2" size="8">
+    <entity index="0" value="1.5"/>
+    <entity index="1" value="3.5"/>
+    <entity index="2" value="6.5"/>
+    <entity index="3" value="1.5"/>
+    <entity index="4" value="10.5"/>
+    <entity index="5" value="-10.5"/>
+    <entity index="6" value="10.5"/>
+    <entity index="7" value="10.5"/>
+  </meshfunction>
+</dolfin>

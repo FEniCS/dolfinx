@@ -1,7 +1,7 @@
 from dolfin import *
 
 class ElasticityPDE(TimeDependentPDE):
-    def __init__(self, mesh, f, lmbda, mu, u0, v0, bc, k, T, t):
+    def __init__(self, mesh, f, lmbda, mu, bc, T, t):
         
         self.t = t
 
@@ -12,7 +12,7 @@ class ElasticityPDE(TimeDependentPDE):
         #import elasticityform as forms
 
         self.aelast = forms.ElasticityBilinearForm()
-        self.Lelast = forms.ElasticityLinearForm(self.U, f, mu, lmbda)
+        self.Lelast = forms.ElasticityLinearForm(self.U, f, mu)
 
         self.U.init(mesh, self.aelast.trial())
         self.V.init(mesh, self.aelast.trial())
@@ -20,14 +20,14 @@ class ElasticityPDE(TimeDependentPDE):
         self.N = self.U.vector().size() + self.V.vector().size()
 
         TimeDependentPDE.__init__(self, self.aelast, self.Lelast, mesh,
-                                  bc, self.N, k, T)
+                                  bc, self.N, T)
 
         self.xtmp = Vector(self.V.vector().size())
 
         # Initial values
 
-        self.U.interpolate(u0)
-        self.V.interpolate(v0)
+        #self.U.interpolate(u0)
+        #self.V.interpolate(v0)
 
 
         self.M = Matrix()
@@ -41,10 +41,6 @@ class ElasticityPDE(TimeDependentPDE):
         self.solutionfile = File("solution.pvd")
         self.sampleperiod = T / 100.0
         self.lastsample = 0.0
-
-    def preparestep(self):
-        1
-        #print "step"
 
     def save(self, U, t):
 
@@ -83,5 +79,5 @@ class ElasticityPDE(TimeDependentPDE):
 
         dotx.copy(self.xtmp, self.xtmp.size(), 0, self.xtmp.size())
 
-        print "dotx: "
-        dotx.disp()
+        #print "dotx: "
+        #dotx.disp()
