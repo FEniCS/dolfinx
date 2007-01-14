@@ -44,48 +44,55 @@ void LocalMeshRefinement::refineSimplexMeshByBisection(Mesh& mesh,
   
   // Get size of old mesh
   const uint num_vertices = mesh.size(0);
-  const uint num_edges = mesh.size(1);
+//  const uint num_edges = mesh.size(1);
   const uint num_cells = mesh.size(mesh.topology().dim());
 
   // Init new vertices and cells
-  uint num_new_vertices = 0.0;
-  uint num_new_cells = 0.0;
+  uint num_new_vertices = 0;
+  uint num_new_cells = 0;
 
-  // Init forbidden edges 
+  // Initialise forbidden edges 
   MeshFunction<bool> edge_forbidden(mesh);  
   edge_forbidden.init(1);
   for (EdgeIterator e(mesh); !e.end(); ++e)
     edge_forbidden.set(e->index(),false);
 
-  // Init data for finding longest edge   
-  Edge* longest_edge;  real lmax,l;
+  // Initialise data for finding longest edge   
+  Edge* longest_edge = 0;  
+  real lmax, l;
 
   // Compute number of vertices and cells 
   for (CellIterator c(mesh); !c.end(); ++c){
-    if (cell_marker.get(*c) == true){
-      // find longest edge of cell c
+    if (cell_marker.get(*c) == true)
+    {
+      // Find longest edge of cell c
       lmax = 0.0;
-      for (EdgeIterator e(*c); !e.end(); ++e){
-	if ( edge_forbidden.get(*e) == false ){
-	  l = e->length();
-	  if ( lmax < l ){
-	    lmax = l;
-	    longest_edge = &(*e); 
-	  }
-	}
+      for (EdgeIterator e(*c); !e.end(); ++e)
+      {
+	      if ( edge_forbidden.get(*e) == false )
+        {
+	        l = e->length();
+	        if ( lmax < l )
+          {
+	          lmax = l;
+	          longest_edge = &(*e); 
+	        }
+	      }
       }
 
       // If at least one edge should be bisected
-      if ( lmax > 0.0 ){
-	num_new_vertices++;
-	num_new_cells++;
-	for (CellIterator cn(*longest_edge); !cn.end(); ++cn){
-	  // set markers of all cell neighbors of longest edge to false 
-	  cell_marker.set(cn->index(),false);
-	  // set all neighbors edges to forbidden
-	  for (EdgeIterator en(*cn); !en.end(); ++en)
-	    edge_forbidden.set(en->index(),true);
-	}
+      if ( lmax > 0.0 )
+      {
+        num_new_vertices++;
+        num_new_cells++;
+	      for (CellIterator cn(*longest_edge); !cn.end(); ++cn)
+        {
+	        // set markers of all cell neighbors of longest edge to false 
+	        cell_marker.set(cn->index(),false);
+	        // set all neighbors edges to forbidden
+	        for (EdgeIterator en(*cn); !en.end(); ++en)
+	          edge_forbidden.set(en->index(),true);
+	      }
       }
 
     }
