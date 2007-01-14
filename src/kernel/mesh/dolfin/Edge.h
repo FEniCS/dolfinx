@@ -1,12 +1,15 @@
 // Copyright (C) 2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
+// Modified by Johan Hoffman 2006.
+//
 // First added:  2006-06-02
-// Last changed: 2006-10-23
+// Last changed: 2007-01-10
 
 #ifndef __EDGE_H
 #define __EDGE_H
 
+#include <dolfin/constants.h>
 #include <dolfin/Point.h>
 #include <dolfin/MeshEntity.h>
 #include <dolfin/MeshEntityIterator.h>
@@ -28,6 +31,9 @@ namespace dolfin
 
     /// Destructor
     ~Edge() {}
+
+    /// Compute Euclidian length of edge 
+    real length();
 
     /// Compute coordinates of edge midpoint as a 3D point value
     Point midpoint();
