@@ -14,6 +14,7 @@
 #include <dolfin/Vertex.h>
 #include <dolfin/Cell.h>
 #include <dolfin/GTSInterface.h>
+
 #if defined(HAVE_GTS_H)
 #include <gts.h>
 #endif
@@ -23,6 +24,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 void GTSInterface::test()
 {
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 GtsBBox* GTSInterface::bboxCell(Cell& c)
@@ -48,11 +50,11 @@ GtsBBox* GTSInterface::bboxCell(Cell& c)
     if (p.z() > bbox->z2) bbox->z2 = p.z();
     if (p.z() < bbox->z1) bbox->z1 = p.z();
   }
-
   return bbox;
+
 #else
   dolfin_error("missing GTS");
-  return 0
+  return 0;
 #endif
 }
 //-----------------------------------------------------------------------------
@@ -74,9 +76,10 @@ GNode* GTSInterface::buildCellTree(Mesh& mesh)
   g_slist_free(bboxes);
 
   return tree;
+
 #else
   dolfin_error("missing GTS");
-  return 0
+  return 0;
 #endif
 }
 //-----------------------------------------------------------------------------
@@ -109,6 +112,7 @@ void GTSInterface::overlap(Cell& c, GNode* tree, Mesh& mesh,
     }
     overlaps = overlaps->next;
   }
+
 #else
   dolfin_error("missing GTS");
 #endif
