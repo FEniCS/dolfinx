@@ -262,5 +262,102 @@ class Predicates(unittest.TestCase):
         self.assertEqual(inside, True)
         self.assertEqual(outside, False)
 
+    def testTriangleCellIntersection(self):
+        """Test cell intersection"""
+        mesh1 = UnitSquare(1, 1)
+        mesh2 = UnitSquare(2, 2)
+        ci1 = cells(mesh1)
+        ci2 = cells(mesh2)
+
+        t = mesh1.type()
+
+        cell1 = ci1.__deref__()
+        cell2 = ci2.__deref__()
+
+        v = vertices(cell1)
+        p0 = v.point()
+        v.increment()
+        p1 = v.point()
+        v.increment()
+        p2 = v.point()
+
+        print ""
+        print "c1 p0: ", p0[0], " ", p0[1], " ", p0[2]
+        print "c1 p1: ", p1[0], " ", p1[1], " ", p1[2]
+        print "c1 p2: ", p2[0], " ", p2[1], " ", p2[2]
+
+        v = vertices(cell2)
+        p0 = v.point()
+        v.increment()
+        p1 = v.point()
+        v.increment()
+        p2 = v.point()
+
+        print ""
+        print "c2 p0: ", p0[0], " ", p0[1], " ", p0[2]
+        print "c2 p1: ", p1[0], " ", p1[1], " ", p1[2]
+        print "c2 p2: ", p2[0], " ", p2[1], " ", p2[2]
+
+        intersects = t.intersects(cell1, cell2)
+
+        print "intersects: ", intersects
+
+class GTSInterface(unittest.TestCase):
+
+    def testbuildTree(self):
+        
+        mesh = UnitSquare(10, 10)
+
+        tree = GTSInterface_buildCellTree(mesh)
+
+        self.assertEqual(True, True)
+
+class IntersectionDetect(unittest.TestCase):
+
+    def testTriangle(self):
+        
+        mesh = UnitSquare(2, 2)
+
+        print "mesh size: ", mesh.size(2)
+
+        mesh2 = Mesh()
+        editor = MeshEditor()
+        editor.open(mesh2, "triangle", 2, 2)
+        editor.initVertices(3)
+        editor.addVertex(0, 0.4, 0.4)
+        editor.addVertex(1, 0.7, 0.4)
+        editor.addVertex(2, 0.4, 0.7)
+        editor.initCells(1)
+        editor.addCell(0, 0, 1, 2)
+        editor.close()
+
+        probecell = Cell(mesh2, 0)
+
+        idetector = IntersectionDetector(mesh)
+
+        overlaps = ArrayUInt()
+
+        idetector.overlap(probecell, overlaps)
+
+        for i in range(0, overlaps.size()):
+            print "overlap: ", overlaps[i]
+
+            cell = Cell(mesh, overlaps[i])
+
+            v = vertices(cell)
+            p0 = v.point()
+            v.increment()
+            p1 = v.point()
+            v.increment()
+            p2 = v.point()
+
+            print ""
+            print "p0: ", p0[0], " ", p0[1], " ", p0[2]
+            print "p1: ", p1[0], " ", p1[1], " ", p1[2]
+            print "p2: ", p2[0], " ", p2[1], " ", p2[2]
+
+        self.assertEqual(overlaps.size(), 6)
+
+
 if __name__ == "__main__":
     unittest.main()

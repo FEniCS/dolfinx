@@ -109,6 +109,20 @@ fi
 
 AX_BOOST_BASE([1.33])
 
+# Configure glib
+PKG_CHECK_MODULES(GLIB, glib-2.0)
+
+
+PKG_CHECK_MODULES(GTS, gts, have_gts=yes, have_gts=no)
+
+if test $have_gts = yes; then
+    CXXFLAGS="-DHAVE_GTS_H=1 $CXXFLAGS"
+else
+    echo "Missing GTS"
+fi
+
+#PKG_CHECK_MODULES(GLIB, glib-1.0, have_glib=yes, have_glib=no)
+
 # Check for umfpack
 have_umfpack_header=yes
 have_amd_lib=no
@@ -350,7 +364,7 @@ DOLFIN_MODULES="elasticity elasticity-updated convdiff navierstokes plasticity p
 DOLFIN_KERNEL="common fem form function io la main math mesh mf nls ode pde quadrature parameter log"
 
 # Generate include path for external libraries
-EXTERNAL_CFLAGS="$CURSES_CFLAGS $PETSC_CFLAGS $SLEPC_CFLAGS $BOOST_CPPFLAGS $MPI_CFLAGS $XML_CPPFLAGS $UMFPACK_CFLAGS "
+EXTERNAL_CFLAGS="$CURSES_CFLAGS $PETSC_CFLAGS $SLEPC_CFLAGS $BOOST_CPPFLAGS $MPI_CFLAGS $XML_CPPFLAGS $UMFPACK_CFLAGS $GLIB_CFLAGS $GTS_CFLAGS"
 AC_SUBST(EXTERNAL_CFLAGS)
 
 # Generate include path for kernel
@@ -380,10 +394,15 @@ for i in $CXXFLAGS; do
        DOLFIN_DEFINITIONS="$DOLFIN_DEFINITIONS $i"
     fi
 done
+for i in $DOLFIN_CFLAGS; do
+    if test $(echo $i | sed 's/^\(..\).*/\1/') == "-I"; then
+       DOLFIN_DEFINITIONS="$DOLFIN_DEFINITIONS $i"
+    fi
+done
 AC_SUBST(DOLFIN_DEFINITIONS)
 
 # External libraries which DOLFIN depends on
-DOLFIN_EXT_LIBS="$CURSES_LIBS $PETSC_LIBS $SLEPC_LIBS $XML_LIBS $UMFPACK_LIBS "
+DOLFIN_EXT_LIBS="$CURSES_LIBS $PETSC_LIBS $SLEPC_LIBS $XML_LIBS $UMFPACK_LIBS $GLIB_LIBS $GTS_LIBS"
 AC_SUBST(DOLFIN_EXT_LIBS)
 
 # Library list which DOLFIN applications need to link against

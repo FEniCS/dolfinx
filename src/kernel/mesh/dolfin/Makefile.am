@@ -27,4 +27,7 @@ EXTRA_DIST = dolfin_mesh.h \
              Point.h \
              BoundaryComputation.h \
              MeshBoundary.h \
-             GeometricPredicates.h
+             GeometricPredicates.h \
+             GTSInterface.h \
+             IntersectionDetector.h
+

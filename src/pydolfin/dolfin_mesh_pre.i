@@ -49,6 +49,8 @@ ALL_CELLS(dolfin::Mesh)
 %ignore dolfin::Mesh::cells;
 %ignore dolfin::Mesh::coordinates;
 
+%ignore dolfin::MeshEditor::open(Mesh&, CellType::Type, uint, uint);
+
 //--- Mesh iterators ---
 
 // Map increment operator and dereference operators for iterators

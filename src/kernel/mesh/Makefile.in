@@ -69,7 +69,8 @@ am_libdolfin_mesh_la_OBJECTS = UnitCube.lo UnitSquare.lo \
 	Triangle.lo Tetrahedron.lo CellType.lo \
 	UniformMeshRefinement.lo LocalMeshRefinement.lo \
 	LocalMeshCoarsening.lo Point.lo BoundaryComputation.lo \
-	BoundaryMesh.lo GeometricPredicates.lo
+	BoundaryMesh.lo GeometricPredicates.lo GTSInterface.lo \
+	IntersectionDetector.lo
 libdolfin_mesh_la_OBJECTS = $(am_libdolfin_mesh_la_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -135,6 +136,10 @@ EXEEXT = @EXEEXT@
 EXTERNAL_CFLAGS = @EXTERNAL_CFLAGS@
 F77 = @F77@
 FFLAGS = @FFLAGS@
+GLIB_CFLAGS = @GLIB_CFLAGS@
+GLIB_LIBS = @GLIB_LIBS@
+GTS_CFLAGS = @GTS_CFLAGS@
+GTS_LIBS = @GTS_LIBS@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
@@ -159,6 +164,7 @@ PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
+PKG_CONFIG = @PKG_CONFIG@
 PYTHON = @PYTHON@
 PYTHON_CPPFLAGS = @PYTHON_CPPFLAGS@
 PYTHON_EXEC_PREFIX = @PYTHON_EXEC_PREFIX@
@@ -186,6 +192,7 @@ ac_ct_CXX = @ac_ct_CXX@
 ac_ct_F77 = @ac_ct_F77@
 ac_ct_RANLIB = @ac_ct_RANLIB@
 ac_ct_STRIP = @ac_ct_STRIP@
+ac_pt_PKG_CONFIG = @ac_pt_PKG_CONFIG@
 am__fastdepCC_FALSE = @am__fastdepCC_FALSE@
 am__fastdepCC_TRUE = @am__fastdepCC_TRUE@
 am__fastdepCXX_FALSE = @am__fastdepCXX_FALSE@
@@ -258,7 +265,9 @@ nobase_include_HEADERS = dolfin/dolfin_mesh.h \
                             dolfin/Point.h \
                             dolfin/BoundaryComputation.h \
                             dolfin/BoundaryMesh.h \
-                            dolfin/GeometricPredicates.h
+                            dolfin/GeometricPredicates.h \
+                            dolfin/GTSInterface.h \
+                            dolfin/IntersectionDetector.h 
 
 INCLUDES = @KERNEL_CFLAGS@
 lib_LTLIBRARIES = libdolfin-mesh.la
@@ -289,7 +298,9 @@ libdolfin_mesh_la_SOURCES = UnitCube.cpp \
                             Point.cpp \
                             BoundaryComputation.cpp \
                             BoundaryMesh.cpp \
-                            GeometricPredicates.cpp
+                            GeometricPredicates.cpp \
+                            GTSInterface.cpp \
+                            IntersectionDetector.cpp
 
 libdolfin_mesh_la_LDFLAGS = -static
 all: all-recursive
@@ -368,7 +379,9 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Edge.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Face.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Facet.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/GTSInterface.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/GeometricPredicates.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/IntersectionDetector.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Interval.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LocalMeshCoarsening.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LocalMeshRefinement.Plo@am__quote@
