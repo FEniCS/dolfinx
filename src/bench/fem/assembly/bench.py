@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 #
-# Copyright (C) 2006 Anders Logg.
+# Copyright (C) 2007 Anders Logg.
 # Licensed under the GNU GPL Version 2.
 #
-# Run benchmark for fem assemble and solve test problem.
+# Run benchmark for fem assembly.
 
 from os import system
 from time import time
@@ -13,7 +13,7 @@ logfile = "bench.log"
 
 # Run benchmark
 tic = time()
-system("./dolfin-fem-convergence")
+system("./dolfin-bench-fem-assembly")
 toc = time() - tic
 
 # Save timing to log file

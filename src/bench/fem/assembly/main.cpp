@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-11-19
-// Last changed: 2006-11-19
+// Last changed: 2007-01-15
 
 #include <dolfin.h>
 
@@ -55,7 +55,7 @@ double timeElementTensor(BilinearForm& a, double* block, AffineMap& map, std::st
   tic();
   for (unsigned int i = 0; i < M; i++)
   {
-    a.eval(block, map);
+    a.eval(block, map, 1.0);
   }
   double t = toc();
 
