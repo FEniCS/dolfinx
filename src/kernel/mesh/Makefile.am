@@ -27,7 +27,9 @@ nobase_include_HEADERS    = dolfin/dolfin_mesh.h \
                             dolfin/Point.h \
                             dolfin/BoundaryComputation.h \
                             dolfin/BoundaryMesh.h \
-                            dolfin/GeometricPredicates.h
+                            dolfin/GeometricPredicates.h \
+                            dolfin/GTSInterface.h \
+                            dolfin/IntersectionDetector.h 
 INCLUDES                  = @KERNEL_CFLAGS@
 lib_LTLIBRARIES           = libdolfin-mesh.la
 libdolfin_mesh_la_SOURCES = UnitCube.cpp \
@@ -58,5 +60,7 @@ libdolfin_mesh_la_SOURCES = UnitCube.cpp \
                             Point.cpp \
                             BoundaryComputation.cpp \
                             BoundaryMesh.cpp \
-                            GeometricPredicates.cpp
+                            GeometricPredicates.cpp \
+                            GTSInterface.cpp \
+                            IntersectionDetector.cpp
 libdolfin_mesh_la_LDFLAGS = -static

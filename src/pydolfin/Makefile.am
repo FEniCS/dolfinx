@@ -16,6 +16,6 @@ CXXFLAGS = @DOLFIN_DEFINITIONS@ -g -O2 -Wall -ansi
 dolfin_wrap.cpp : $(SWIG_SOURCES)
 	echo $(SWIG_PYTHON_CPPFLAGS)
 	echo $(DOLFIN_CFLAGS)
-	$(SWIG) $(SWIG_PYTHON_OPT) -nodefault -dirprot @DOLFIN_CFLAGS@ @DOLFIN_DEFINITIONS@ -o $@ $<
+	$(SWIG) $(SWIG_PYTHON_OPT) -nodefault -dirprot @DOLFIN_DEFINITIONS@ -o $@ $<
 
 dolfin.py: $(SWIG_SOURCES)

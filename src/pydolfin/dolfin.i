@@ -75,6 +75,8 @@ using namespace dolfin;
 %include "cpointer.i"
 %include "typemaps.i"
 %include "std_string.i"
+%include "std_vector.i"
+%include "stl.i"
 
 %include "carrays.i"
 
@@ -124,6 +126,9 @@ using namespace dolfin;
 %include "dolfin/Variable.h"
 %include "dolfin/utils.h"
 %include "dolfin/timing.h"
+
+%template(STLVectorUInt) std::vector<unsigned int>;
+%template(ArrayUInt) dolfin::Array<unsigned int>;
 
 %extend dolfin::TimeDependent {
   TimeDependent(double *t)

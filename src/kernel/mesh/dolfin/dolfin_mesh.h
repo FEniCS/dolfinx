@@ -10,7 +10,9 @@
 #include <dolfin/Edge.h>
 #include <dolfin/Face.h>
 #include <dolfin/Facet.h>
+#include <dolfin/GTSInterface.h>
 #include <dolfin/Interval.h>
+#include <dolfin/IntersectionDetector.h>
 #include <dolfin/MeshConnectivity.h>
 #include <dolfin/MeshData.h>
 #include <dolfin/MeshEditor.h>

@@ -8,7 +8,10 @@
 #include <dolfin/Interval.h>
 #include <dolfin/Triangle.h>
 #include <dolfin/Tetrahedron.h>
+#include <dolfin/Vertex.h>
 #include <dolfin/CellType.h>
+#include <dolfin/Cell.h>
+#include <dolfin/Point.h>
 
 using namespace dolfin;
 
@@ -58,6 +61,27 @@ CellType::Type CellType::string2type(std::string type)
     dolfin_error1("Unknown cell type: \"%s\".", type.c_str());
   
   return interval;
+}
+//-----------------------------------------------------------------------------
+bool CellType::intersects(MeshEntity& entity, Cell& c) const
+{
+  for(VertexIterator vi(entity); !vi.end(); ++vi)
+  {
+    Point p = vi->point();
+
+    if(intersects(c, p))
+      return true;
+  }
+
+  for(VertexIterator vi(c); !vi.end(); ++vi)
+  {
+    Point p = vi->point();
+
+    if(intersects(entity, p))
+      return true;
+  }
+
+  return false;
 }
 //-----------------------------------------------------------------------------
 std::string CellType::type2string(Type type)

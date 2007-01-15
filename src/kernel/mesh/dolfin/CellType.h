@@ -84,6 +84,9 @@ namespace dolfin
     /// Check if point p intersects the cell
     virtual bool intersects(const MeshEntity& entity, const Point& p) const = 0;
 
+    /// Check if cell c intersects the cell
+    virtual bool intersects(MeshEntity& entity, Cell& c) const;
+
     /// Return description of cell type
     virtual std::string description() const = 0;
 
