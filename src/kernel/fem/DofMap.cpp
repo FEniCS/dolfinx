@@ -45,8 +45,9 @@ DofMap::~DofMap()
 //-----------------------------------------------------------------------------
 void DofMap::attach(const FiniteElement* element_0, const FiniteElement* element_1)
 {
-  element[0]= element_0;
-  element[1]= element_1;
+  // FIXME: Remove this function and require elements in constructor
+  element[0] = element_0;
+  element[1] = element_1;
 }
 //-----------------------------------------------------------------------------
 void DofMap::dofmap(int dof_map[], const Cell& cell, const uint e) const
@@ -65,6 +66,10 @@ void DofMap::dofmap(int dof_map[], const Cell& cell, const uint e) const
 //-----------------------------------------------------------------------------
 const dolfin::uint DofMap::size(const uint e)
 {
+  // FIXME: Here the size is computed my checking the maximum index of
+  // FIXME: global dofs mapped to by the FFC-generated nodemap.
+  // FIXME: This will be replaced ufc::dof_map::global_dimension()
+  
   dolfin_assert( e < 2);
 
   if ( !element[e] )
@@ -86,14 +91,14 @@ const dolfin::uint DofMap::size(const uint e)
 //-----------------------------------------------------------------------------
 dolfin::uint DofMap::numNonZeroes()
 {
-  if( matrix_sparsity_pattern.size() == 0 )
+  if ( matrix_sparsity_pattern.size() == 0 )
     computeMatrixSparsityPattern();
 
-  if( _size[0] == 0 )
+  if ( _size[0] == 0 )
     size(0);
 
   uint num_nonzero = 0;
-  for(int i = 0; i < _size[0]; ++i)
+  for (int i = 0; i < _size[0]; ++i)
     num_nonzero += matrix_sparsity_pattern[i].size();
 
   return num_nonzero;
@@ -101,16 +106,16 @@ dolfin::uint DofMap::numNonZeroes()
 //-----------------------------------------------------------------------------
 dolfin::uint DofMap::numNonZeroesRowMax()
 {
-  if( matrix_sparsity_pattern.size() == 0 )
+  if ( matrix_sparsity_pattern.size() == 0 )
     computeMatrixSparsityPattern();
 
-  if( _size[0] == 0 )
+  if ( _size[0] == 0 )
     size(0);
 
   // nzmax needs to of type size_t since matrix_sparsity_pattern[i].size()
   // is of type size_t, otherwise std::max might complain.
   size_t nzmax = 0;
-  for(int i = 0; i < _size[0]; ++i)
+  for (int i = 0; i < _size[0]; ++i)
     nzmax = std::max(matrix_sparsity_pattern[i].size(), nzmax);
 
   return nzmax;
@@ -118,14 +123,14 @@ dolfin::uint DofMap::numNonZeroesRowMax()
 //-----------------------------------------------------------------------------
 void DofMap::numNonZeroesRow(int nz_row[])
 {
-  if( matrix_sparsity_pattern.size() == 0 )
+  if ( matrix_sparsity_pattern.size() == 0 )
     computeMatrixSparsityPattern();
 
   if( _size[0] == 0 )
     size(0);
 
   const int num_rows = _size[0];
-  for(int i = 0; i < num_rows; ++i)
+  for (int i = 0; i < num_rows; ++i)
     nz_row[i] = matrix_sparsity_pattern[i].size();
 }
 //-----------------------------------------------------------------------------
@@ -184,7 +189,7 @@ void DofMap::computeVectorSparsityPattern(const uint e)
 //-----------------------------------------------------------------------------
 void DofMap::computeMatrixSparsityPattern()
 {
-  if( !element[0] || !element[1] ) 
+  if ( !element[0] || !element[1] ) 
     dolfin_error("Two finite elements must be associated with DofMap object to build matrix sparsity pattern.");
 
   // Initialise sparsity pattern

@@ -109,14 +109,15 @@ fi
 
 AX_BOOST_BASE([1.33])
 
-# Configure glib
+# Check for Glib
 PKG_CHECK_MODULES(GLIB, glib-2.0)
 
-
+# Checlk for GTS
 PKG_CHECK_MODULES(GTS, gts, have_gts=yes, have_gts=no)
-
+echo "GTS test: $have_gts"
 if test $have_gts = yes; then
-    CXXFLAGS="-DHAVE_GTS_H=1 $CXXFLAGS"
+    echo hej       
+    GTS_CFLAGS="-DHAVE_GTS_H=1"
 else
     echo "Missing GTS"
 fi
