@@ -1,10 +1,13 @@
 // Copyright (C) 2006 Garth N. Wells.
 // Licensed under the GNU GPL Version 2.
 //
+// Modified by Anders Logg 2007.
+//
 // First added:  2006-12-05
-// Last changed: 2006
+// Last changed: 2007-01-16
 
-#include <algorithm>  
+#include <algorithm>
+
 #include <dolfin/Cell.h>
 #include <dolfin/FiniteElement.h>
 #include <dolfin/DofMap.h>
@@ -18,6 +21,9 @@ DofMap::DofMap(Mesh& mesh, const FiniteElement* element_0,
   // Initialise data
   element[0] = element_0;
   element[1] = element_1;
+
+  // Only one element, Cuthill-McKee needs symmetric adjacency matrix
+  finite_element = element_0;
 
   _size[0] = 0;
   _size[1] = 0;
@@ -40,7 +46,8 @@ DofMap::DofMap(Mesh& mesh, const FiniteElement* element_0,
 //-----------------------------------------------------------------------------
 DofMap::~DofMap()
 {
-  // Do nothing
+  if ( adjacency_graph )
+    delete adjacency_graph;
 }
 //-----------------------------------------------------------------------------
 void DofMap::attach(const FiniteElement* element_0, const FiniteElement* element_1)
@@ -48,6 +55,8 @@ void DofMap::attach(const FiniteElement* element_0, const FiniteElement* element
   // FIXME: Remove this function and require elements in constructor
   element[0] = element_0;
   element[1] = element_1;
+
+  finite_element = element_0;
 }
 //-----------------------------------------------------------------------------
 void DofMap::dofmap(int dof_map[], const Cell& cell, const uint e) const
@@ -93,6 +102,8 @@ dolfin::uint DofMap::numNonZeroes()
 {
   if ( matrix_sparsity_pattern.size() == 0 )
     computeMatrixSparsityPattern();
+
+  
 
   if ( _size[0] == 0 )
     size(0);
@@ -236,5 +247,34 @@ void DofMap::createCSRLayout()
 
     row_pointer[ row + 1 ] = row_pointer[ row ] + row_set.size(); 
   }
+}
+//-----------------------------------------------------------------------------
+void DofMap::computeAdjacencyGraph()
+{
+  cout << "Computing adjacency graph..." << endl;
+  
+  // Delete old graph if previously computed
+  if ( adjacency_graph )
+    delete adjacency_graph;
+
+  // Create new adjacency graph with given number of vertices
+  adjacency_graph = new AdjacencyGraph(size(0));
+
+  // Iterate over the cells and build the graph
+  uint n = finite_element->spacedim();
+  int* row_dofs = new int[n];
+  int* col_dofs = new int[n];
+  for (CellIterator cell(*mesh); !cell.end(); ++cell)
+  {
+    finite_element->nodemap(row_dofs, *cell, *mesh);
+    for (uint i = 0; i < n; ++i)
+    {
+      finite_element->nodemap(col_dofs, *cell, *mesh);
+      for (uint j = 0; j < element[1]->spacedim(); ++j)
+        boost::add_edge(row_dofs[i], row_dofs[j], *adjacency_graph);
+    }
+  }
+  delete [] row_dofs;
+  delete [] col_dofs;
 }
 //-----------------------------------------------------------------------------

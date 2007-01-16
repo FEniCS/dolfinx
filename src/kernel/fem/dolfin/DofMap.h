@@ -1,13 +1,17 @@
 // Copyright (C) 2006 Garth N. Wels.
 // Licensed under the GNU GPL Version 2.
 //
+// Modified by Anders Logg 2007.
+
 // First added:  2006-12-05
-// Last changed: 2006-
+// Last changed: 2007-01-16
 
 #ifndef __DOF_MAP_H
 #define __DOF_MAP_H
 
-#include <set>  
+#include <set>
+#include <dolfin/AdjacencyGraph.h>
+
 #include <dolfin/constants.h>
 #include <dolfin/Array.h>
 #include <dolfin/FiniteElement.h>
@@ -15,9 +19,10 @@
 
 namespace dolfin
 {
+
   // Forward declarations
   class Cell;
-
+  
   /// This class handles degree of freedom mappings. Its constructor takes
   /// the mesh and one or two finite elements. element_0 maps to a vector
   /// or a matrix row, and element_1 maps to the columns of a matrix
@@ -78,11 +83,17 @@ namespace dolfin
     /// Create data layout for compressed storage (CSR) 
     void createCSRLayout();    
 
+    /// Compute adjacency graph
+    void computeAdjacencyGraph();    
+
     // Mesh associated with dof mapping
     Mesh* mesh;
 
     // Finite elements associated with dof mapping
     const FiniteElement* element[2];
+
+    // Finite element associated with dof mapping (will be ufc::dof_map)
+    const FiniteElement* finite_element;
 
     // Number of degrees of freedom associated with each element
     int _size[2];
@@ -96,6 +107,9 @@ namespace dolfin
     // Matrix sparsity pattern represented as an Array of set of nonzero 
     // positions. Each set corresponds to a matrix row
     Array< std::set<int> > matrix_sparsity_pattern;    
+
+    // Adjacency graph
+    AdjacencyGraph* adjacency_graph;
 
   };
 
