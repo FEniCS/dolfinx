@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-11-19
-// Last changed: 2006-11-19
+// Last changed: 2007-01-15
 
 #include <dolfin.h>
 
@@ -50,12 +50,13 @@ void initConnectivity(Mesh& mesh)
 double timeElementTensor(BilinearForm& a, double* block, AffineMap& map, std::string s)
 {
   cout << "Timing evaluation of element tensor for " << s << endl;
-  unsigned int M = 10000000;
+  //unsigned int M = 10000000;
+  unsigned int M = 1000000;
 
   tic();
   for (unsigned int i = 0; i < M; i++)
   {
-    a.eval(block, map);
+    a.eval(block, map, 1.0);
   }
   double t = toc();
 
@@ -66,7 +67,8 @@ double timeElementTensor(BilinearForm& a, double* block, AffineMap& map, std::st
 double timeAssembly(BilinearForm& a, double* block, AffineMap& map, std::string s)
 {
   cout << "Timing global assembly for " << s << endl;
-  unsigned int M = 100;
+  //unsigned int M = 100;
+  unsigned int M = 10;
 
   UnitCube mesh(8, 8, 8);
   initConnectivity(mesh);
@@ -79,6 +81,7 @@ double timeAssembly(BilinearForm& a, double* block, AffineMap& map, std::string 
   for (unsigned int i = 0; i < M; i++)
   {
     FEM::assemble(a, A, mesh);
+    //FEM::assembleOld(a, A, mesh);
   }
   double t = toc();
   dolfin_log(true);

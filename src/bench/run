@@ -1,0 +1,53 @@
+#!/usr/bin/env python
+#
+# Copyright (C) 2007 Anders Logg.
+# Licensed under the GNU GPL Version 2.
+#
+# Utilities for running benchmarks
+
+from commands import getoutput
+from time import time, localtime
+from os import uname
+from getopt import getopt
+from sys import argv
+
+def bench(argv, logfile):
+    "Run benchmark program and append results to logfile"
+
+    # Run benchmark
+    program = " ".join(argv[1:])
+    print "Running benchmark: %s" % program
+    tic = time()
+    getoutput(program)
+    toc = time() - tic
+    print "Elapsed time: " + str(toc)
+
+    # Get system variables
+    system_time = "%d-%02d-%02d %02d:%02d:%02d" % localtime()[0:6]
+    system_host = "%s (running %s)" % (uname()[1], uname()[0])
+
+    # Get DOLFIN version
+    dolfin_version = getoutput("pkg-config --modversion dolfin")
+    dolfin_changeset = getoutput("hg log -r tip | grep changeset:").split(":")[2]
+
+    # Write log file
+    file = open(logfile, "a")
+    file.write("Date:      %s\n" % system_time)
+    file.write("Host:      %s\n" % system_host)
+    file.write("Version:   %s\n" % dolfin_version)
+    file.write("Changeset: %s\n" % dolfin_changeset)
+    file.write("\n")
+    file.write("CPU time: %g\n" % toc)
+    file.write("----------------------------------------\n")
+    file.close()
+
+    print "Logfile written to %s" % logfile
+
+def main(argv):
+    "Parse arguments and run benchmark"
+    print argv
+    #opts, args = getopt(argv[1:])
+    #print opts, args
+
+if __name__ == "__main__":
+    bench(argv, "bench.log")

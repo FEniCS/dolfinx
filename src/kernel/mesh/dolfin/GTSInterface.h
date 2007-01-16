@@ -10,14 +10,15 @@
 #include <dolfin/constants.h>
 
 // Forward declarations
-struct _GtsBBox;
+struct  _GtsBBox;
 typedef _GtsBBox GtsBBox;
-struct _GNode;
+struct  _GNode;
 typedef _GNode GNode;
 
 namespace dolfin
 {
 
+  // Forward declarations
   class Cell;
   class Mesh;
   template <class T> class Array;
