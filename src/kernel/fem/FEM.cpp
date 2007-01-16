@@ -1,11 +1,11 @@
-// Copyright (C) 2004-2006 Johan Hoffman, Johan Jansson and Anders Logg.
+// Copyright (C) 2004-2007 Johan Hoffman, Johan Jansson and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // Modified by Andy Terrel 2005.
 // Modified by Garth N. Wells 2005, 2006.
 //
 // First added:  2004-05-19
-// Last changed: 2006-12-06
+// Last changed: 2007-01-16
 
 #include <dolfin/BilinearForm.h>
 #include <dolfin/LinearForm.h>
@@ -870,5 +870,186 @@ dolfin::uint FEM::computeAlignment(Cell& cell0, Cell& cell1, uint facet)
     // Get alignment of facet pair from global alignments
     return pair_alignments[alignment0][alignment1];
   }
+}
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// Temporary for benchmarking against old assembly without DofMap
+//-----------------------------------------------------------------------------
+void FEM::assembleOld(BilinearForm& a, GenericMatrix& A, Mesh& mesh)
+{
+  assembleCommonOld(&a, 0, 0, &A, 0, 0, mesh);
+}
+//-----------------------------------------------------------------------------
+void FEM::assembleCommonOld(BilinearForm* a, LinearForm* L, Functional* M,
+                            GenericMatrix* A, GenericVector* b, real* val,
+                            Mesh& mesh)
+{
+  // Check that the mesh matches the forms
+  if ( a ) checkDimensions(*a, mesh);
+  if ( L ) checkDimensions(*L, mesh);
+  // FIXME: Add dimension check for M
+
+  // Initialize connectivity
+  initConnectivity(mesh);
+
+  // Create affine map
+  AffineMap map;
+  
+  // Initialize global data
+  uint nz = 0;
+  bool interior_contribution = false;
+  bool boundary_contribution = false;
+  if ( a )
+  { 
+    const uint M = size(mesh, a->test());
+    const uint N = size(mesh, a->trial());
+    nz = estimateNonZerosOld(mesh, a->trial());
+    A->init(M, N, nz);
+    A->zero();
+    interior_contribution = interior_contribution || a->interior_contribution();
+    boundary_contribution = boundary_contribution || a->boundary_contribution();
+    dolfin_info("Assembling system (matrix and vector) of size %d x %d.", M, N);
+  }
+  if ( L )
+  {
+    const uint M = size(mesh, L->test());
+    b->init(M);
+    b->zero();
+    interior_contribution = interior_contribution || L->interior_contribution();
+    boundary_contribution = boundary_contribution || L->boundary_contribution();
+    dolfin_info("Assembling vector of size %d.", M);
+  }
+  if ( M )
+  {
+    *val = 0.0;
+    interior_contribution = interior_contribution || M->interior_contribution();
+    boundary_contribution = boundary_contribution || M->boundary_contribution();
+    dolfin_info("Assembling functional.");
+  }
+  
+  // Assemble interior contribution
+  if ( interior_contribution )
+  {
+    // Start a progress session
+    Progress p("Assembling interior contributions", mesh.numCells());
+    
+    // Iterate over all cells in the mesh
+    for (CellIterator cell(mesh); !cell.end(); ++cell)
+    {
+      // Update affine map
+      map.update(*cell);
+      
+      // Assemble bilinear form
+      if ( a && a->interior_contribution() )
+        assembleElementOld(*a, *A, mesh, *cell, map, -1);
+      
+      // Assemble linear form
+      //if ( L && L->interior_contribution() )
+      //  assembleElement(*L, *b, mesh, *cell, map, -1);              
+      
+      // Assemble functional
+      //if ( M && M->interior_contribution() )
+      //  assembleElement(*M, *val, map, -1);              
+      
+      // Update progress
+      p++;
+    }
+  }
+  
+  // Assemble boundary contribution
+  if ( boundary_contribution )
+  {
+    // Iterate over all cells in the boundary mesh
+    MeshFunction<uint> vertex_map;
+    MeshFunction<uint> cell_map;
+    BoundaryMesh boundary(mesh, vertex_map, cell_map);
+    Progress p_boundary("Assembling boundary contributions", boundary.numCells());
+    for (CellIterator boundary_cell(boundary); !boundary_cell.end(); ++boundary_cell)
+    {
+      // Create mesh facet corresponding to boundary cell
+      Facet mesh_facet(mesh, cell_map(*boundary_cell));
+      dolfin_assert(mesh_facet.numEntities(mesh.topology().dim()) == 1);
+
+      // Get cell to which facet belongs (pick first, there is only one)
+      Cell mesh_cell(mesh, mesh_facet.entities(mesh.topology().dim())[0]);
+
+      // Get local index of facet with respect to the cell
+      uint local_facet_index = mesh_cell.index(mesh_facet);
+      
+      // Update affine map for facet 
+      map.update(mesh_cell);
+      
+      // Assemble bilinear form
+      if ( a && a->boundary_contribution() )
+        assembleElementOld(*a, *A, mesh, mesh_cell, map, local_facet_index);              
+      
+      // Assemble linear form
+      //if ( L && L->boundary_contribution() )
+      //  assembleElement(*L, *b, mesh, mesh_cell, map, local_facet_index);              
+      
+      // Assemble functional
+      //if ( M && M->boundary_contribution() )
+      //  assembleElement(*M, *val, map, local_facet_index);              
+      
+      // Update progress  
+      p_boundary++;
+    }
+  }
+  
+  // Complete assembly
+  if ( a )
+  {
+    A->apply();
+    countNonZerosOld(*A, nz);
+  }
+  if ( L )
+    b->apply();
+}
+//-----------------------------------------------------------------------------
+void FEM::assembleElementOld(BilinearForm& a, GenericMatrix& A, 
+                             const Mesh& mesh, Cell& cell, AffineMap& map,
+                             const int facetID)
+{
+  // Update form
+  a.update(cell, map);
+  
+  // Compute maps from local to global degrees of freedom
+  a.test().nodemap(a.test_nodes, cell, mesh);
+  a.trial().nodemap(a.trial_nodes, cell, mesh);
+  
+  // Compute element matrix 
+  if ( facetID < 0 )
+    a.eval(a.block, map, map.det);
+  else
+    a.eval(a.block, map, map.det, facetID);
+  
+  // Add element matrix to global matrix
+  A.add(a.block, a.test_nodes, a.test().spacedim(), a.trial_nodes, a.trial().spacedim());
+}
+//-----------------------------------------------------------------------------
+dolfin::uint FEM::estimateNonZerosOld(Mesh& mesh,
+                                      const FiniteElement& element)
+{
+  uint nzmax = 0;
+
+  mesh.init(0, 0);
+  
+  for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
+  {
+    nzmax = std::max(nzmax, vertex->numEntities(0)*element.spacedim());
+  }
+
+  return nzmax;
+}
+//-----------------------------------------------------------------------------
+void FEM::countNonZerosOld(const GenericMatrix& A, uint nz)
+{
+  uint nz_actual = A.nzmax();
+  if ( nz_actual > nz )
+    dolfin_warning("Actual number of nonzero entries exceeds estimated number of nonzero entries.");
+  else
+    dolfin_info("Maximum number of nonzeros in each row is %d (estimated %d).",
+		nz_actual, nz);
 }
 //-----------------------------------------------------------------------------

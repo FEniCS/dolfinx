@@ -78,7 +78,8 @@ double timeAssembly(BilinearForm& a, double* block, AffineMap& map, std::string 
   tic();
   for (unsigned int i = 0; i < M; i++)
   {
-    FEM::assemble(a, A, mesh);
+    //FEM::assemble(a, A, mesh);
+    FEM::assembleOld(a, A, mesh);
   }
   double t = toc();
   dolfin_log(true);

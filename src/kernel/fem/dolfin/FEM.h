@@ -1,11 +1,11 @@
-// Copyright (C) 2004-2006 Johan Hoffman, Johan Jansson and Anders Logg.
+// Copyright (C) 2004-2007 Johan Hoffman, Johan Jansson and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // Modified by Garth N. Wells 2006.
 // Modified by Kristian Oelgaard 2006.
 //
 // First added:  2004-05-19
-// Last changed: 2006-12-12
+// Last changed: 2007-01-16
 
 #ifndef __FEM_H
 #define __FEM_H
@@ -93,7 +93,21 @@ namespace dolfin
 
     /// Display assembly data (useful for debugging)
     static void disp(Mesh& mesh, const FiniteElement& element);
-      
+
+    //-------------------------------------------------------------------------
+    // Temporary for benchmarking against old assembly without DofMap
+    static void assembleOld(BilinearForm& a, GenericMatrix& A, Mesh& mesh);
+    static void assembleCommonOld(BilinearForm* a, LinearForm* L, Functional* M,
+                                  GenericMatrix* A, GenericVector* b, real* val,
+                                  Mesh& mesh);      
+    static void assembleElementOld(BilinearForm& a, GenericMatrix& A, 
+                                   const Mesh& mesh, Cell& cell, AffineMap& map,
+                                   const int facetID);
+    static uint estimateNonZerosOld(Mesh& mesh,
+                                    const FiniteElement& element);
+    static void countNonZerosOld(const GenericMatrix& A, uint nz);
+    //-------------------------------------------------------------------------
+
   private:
 
     /// Common assembly handles all cases
