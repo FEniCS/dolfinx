@@ -7,6 +7,7 @@ nobase_include_HEADERS   = dolfin/dolfin_fem.h \
                            dolfin/FEM.h \
                            dolfin/FiniteElement.h \
                            dolfin/FiniteElementSpec.h \
+                           dolfin/NewAffineMap.h \
                            dolfin/P1tet.h \
                            dolfin/P1tri.h \
                            dolfin/P2tet.h \
@@ -25,5 +26,6 @@ libdolfin_fem_la_SOURCES = AffineMap.cpp \
                            DofMap.cpp \
                            FEM.cpp \
                            FiniteElement.cpp \
-                           FiniteElementSpec.cpp
+                           FiniteElementSpec.cpp \
+                           NewAffineMap.cpp
 libdolfin_fem_la_LDFLAGS = -static

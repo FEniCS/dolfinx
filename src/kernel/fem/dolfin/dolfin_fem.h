@@ -16,6 +16,7 @@
 #include <dolfin/FEM.h>
 #include <dolfin/FiniteElement.h>
 #include <dolfin/FiniteElementSpec.h>
+#include <dolfin/NewAffineMap.h>
 #include <dolfin/P1tet.h>
 #include <dolfin/P1tri.h>
 // #include <dolfin/P2tet.h>

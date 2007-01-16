@@ -6,6 +6,7 @@ EXTRA_DIST = dolfin_fem.h \
              FEM.h \
              FiniteElement.h \
              FiniteElementSpec.h \
+             NewAffineMap.h \
              P1tet.h \
              P1tri.h \
              P2tet.h \

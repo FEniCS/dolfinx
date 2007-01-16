@@ -63,7 +63,7 @@ LTLIBRARIES = $(lib_LTLIBRARIES)
 libdolfin_fem_la_LIBADD =
 am_libdolfin_fem_la_OBJECTS = AffineMap.lo BoundaryCondition.lo \
 	BoundaryValue.lo DofMap.lo FEM.lo FiniteElement.lo \
-	FiniteElementSpec.lo
+	FiniteElementSpec.lo NewAffineMap.lo
 libdolfin_fem_la_OBJECTS = $(am_libdolfin_fem_la_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -239,6 +239,7 @@ nobase_include_HEADERS = dolfin/dolfin_fem.h \
                            dolfin/FEM.h \
                            dolfin/FiniteElement.h \
                            dolfin/FiniteElementSpec.h \
+                           dolfin/NewAffineMap.h \
                            dolfin/P1tet.h \
                            dolfin/P1tri.h \
                            dolfin/P2tet.h \
@@ -258,7 +259,8 @@ libdolfin_fem_la_SOURCES = AffineMap.cpp \
                            DofMap.cpp \
                            FEM.cpp \
                            FiniteElement.cpp \
-                           FiniteElementSpec.cpp
+                           FiniteElementSpec.cpp \
+                           NewAffineMap.cpp
 
 libdolfin_fem_la_LDFLAGS = -static
 all: all-recursive
@@ -337,6 +339,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEM.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FiniteElement.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FiniteElementSpec.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NewAffineMap.Plo@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \

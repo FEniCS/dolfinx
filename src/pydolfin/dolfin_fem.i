@@ -3,6 +3,7 @@
 %include "dolfin/FiniteElementSpec.h"
 %include "dolfin/FiniteElement.h"
 %include "dolfin/AffineMap.h"
+%include "dolfin/NewAffineMap.h"
 %include "dolfin/BoundaryValue.h"
 %include "dolfin/BoundaryCondition.h"
 %include "dolfin/FEM.h"
