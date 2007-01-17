@@ -44,6 +44,12 @@ DofMap::DofMap(Mesh& mesh, const FiniteElement* element_0,
     mesh.init(2, 1);
 }
 //-----------------------------------------------------------------------------
+DofMap::DofMap(Mesh& mesh, const ufc::dof_map& dof_map)
+{
+  // Not implemented
+
+}
+//-----------------------------------------------------------------------------
 DofMap::~DofMap()
 {
   if ( adjacency_graph )

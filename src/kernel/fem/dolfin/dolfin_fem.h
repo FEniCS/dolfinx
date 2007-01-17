@@ -15,6 +15,7 @@
 #include <dolfin/BoundaryCondition.h>
 #include <dolfin/BoundaryValue.h>
 #include <dolfin/DofMap.h>
+#include <dolfin/DofMaps.h>
 #include <dolfin/FEM.h>
 #include <dolfin/FiniteElement.h>
 #include <dolfin/FiniteElementSpec.h>

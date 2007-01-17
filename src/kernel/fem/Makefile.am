@@ -7,6 +7,7 @@ nobase_include_HEADERS   = dolfin/dolfin_fem.h \
                            dolfin/BoundaryCondition.h \
                            dolfin/BoundaryValue.h \
                            dolfin/DofMap.h \
+                           dolfin/DofMaps.h \
                            dolfin/FEM.h \
                            dolfin/FiniteElement.h \
                            dolfin/FiniteElementSpec.h \
@@ -30,6 +31,7 @@ libdolfin_fem_la_SOURCES = assemble.cpp \
                            BoundaryCondition.cpp \
                            BoundaryValue.cpp \
                            DofMap.cpp \
+                           DofMaps.cpp \
                            FEM.cpp \
                            FiniteElement.cpp \
                            FiniteElementSpec.cpp \

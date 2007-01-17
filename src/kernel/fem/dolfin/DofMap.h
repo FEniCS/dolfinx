@@ -4,13 +4,14 @@
 // Modified by Anders Logg 2007.
 
 // First added:  2006-12-05
-// Last changed: 2007-01-16
+// Last changed: 2007-01-17
 
 #ifndef __DOF_MAP_H
 #define __DOF_MAP_H
 
 #include <set>
 #include <dolfin/AdjacencyGraph.h>
+#include <ufc.h>
 
 #include <dolfin/constants.h>
 #include <dolfin/Array.h>
@@ -36,8 +37,12 @@ namespace dolfin
     // FIXME: When UFC is in place, the DofMap constructor should takes as arguments
     // FIXME: one or more ufc::dof_map
     
+    // FIXME: This should be removed
     /// Constructor
     DofMap(Mesh& mesh, const FiniteElement* element_0 = 0, const FiniteElement* element_1 = 0);
+
+    /// Constructor
+    DofMap(Mesh& mesh, const ufc::dof_map& dof_map);
 
     /// Destructor
     ~DofMap();

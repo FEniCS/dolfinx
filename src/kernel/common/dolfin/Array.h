@@ -1,13 +1,12 @@
 // Copyright (C) 2003 Johan Jansson.
 // Licensed under the GNU GPL Version 2.
 //
-// Modified by Anders Logg, 2003-2005.
+// Modified by Anders Logg, 2003-2007.
 
 #ifndef __ARRAY_H
 #define __ARRAY_H
 
 #include <dolfin/constants.h>
-#include <dolfin/dolfin_log.h>
 #include <vector>
 
 namespace dolfin

@@ -7,7 +7,11 @@
 #ifndef __ASSEMBLER_H
 #define __ASSEMBLER_H
 
+#include <map>
+#include <string>
 #include <ufc.h>
+
+#include <dolfin/DofMaps.h>
 
 namespace dolfin
 {
@@ -33,6 +37,9 @@ namespace dolfin
     void assemble(GenericTensor& A, const ufc::form& form, Mesh& mesh);
 
   private:
+    
+    // Storage for precomputed dof maps
+    DofMaps dof_maps;
 
   };
 
