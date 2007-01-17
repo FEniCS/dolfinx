@@ -1,12 +1,13 @@
-// Copyright (C) 2006 Anders Logg.
+// Copyright (C) 2006-2007 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-05-09
-// Last changed: 2006-10-27
+// Last changed: 2007-01-17
 
 #ifndef __MESH_CONNECTIVITY_H
 #define __MESH_CONNECTIVITY_H
 
+#include <dolfin/dolfin_log.h>
 #include <dolfin/constants.h>
 #include <dolfin/Array.h>
 
