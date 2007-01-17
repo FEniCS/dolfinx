@@ -1,8 +1,10 @@
 EXTRA_DIST = dolfin_la.h \
+             Assembler.h \
              DenseMatrix.h \
              DenseVector.h \
              GenericMatrix.h \
              GenericVector.h \
+             GenericTensor.h \
              GMRES.h \
              KrylovMethod.h \
              KrylovSolver.h \

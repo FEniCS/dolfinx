@@ -1,15 +1,17 @@
-// Copyright (C) 2003-2006 Johan Hoffman, Johan Jansson and Anders Logg.
+// Copyright (C) 2003-2007 Johan Hoffman, Johan Jansson and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003-01-16
-// Last changed: 2006-12-10
+// Last changed: 2007-01-17
 
 #ifndef __DOLFIN_FEM_H
 #define __DOLFIN_FEM_H
 
 // Assembly
 
+#include <dolfin/assemble.h>
 #include <dolfin/AffineMap.h>
+#include <dolfin/Assembler.h>
 #include <dolfin/BoundaryCondition.h>
 #include <dolfin/BoundaryValue.h>
 #include <dolfin/DofMap.h>

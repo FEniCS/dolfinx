@@ -7,6 +7,7 @@
 #include <dolfin/Vector.h>
 #include <dolfin/GenericMatrix.h>
 #include <dolfin/GenericVector.h>
+#include <dolfin/GenericTensor.h>
 #include <dolfin/DenseMatrix.h>
 #include <dolfin/DenseVector.h>
 #include <dolfin/SparseMatrix.h>

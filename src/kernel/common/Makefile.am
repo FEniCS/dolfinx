@@ -1,6 +1,7 @@
 SUBDIRS = dolfin
 
 nobase_include_HEADERS = dolfin/dolfin_common.h \
+                         dolfin/AdjacencyGraph.h \
                          dolfin/Array.h \
                          dolfin/List.h \
                          dolfin/TimeDependent.h \

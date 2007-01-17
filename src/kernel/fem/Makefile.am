@@ -1,6 +1,9 @@
 SUBDIRS                  = dolfin
 nobase_include_HEADERS   = dolfin/dolfin_fem.h \
+                           dolfin/assemble.h \
                            dolfin/AffineMap.h \
+                           dolfin/Assembler.h \
+                           dolfin/AssemblyData.h \
                            dolfin/BoundaryCondition.h \
                            dolfin/BoundaryValue.h \
                            dolfin/DofMap.h \
@@ -20,7 +23,10 @@ nobase_include_HEADERS   = dolfin/dolfin_fem.h \
                            dolfin/P5tri.h
 INCLUDES                 = @KERNEL_CFLAGS@
 lib_LTLIBRARIES          = libdolfin-fem.la
-libdolfin_fem_la_SOURCES = AffineMap.cpp \
+libdolfin_fem_la_SOURCES = assemble.cpp \
+                           AffineMap.cpp \
+                           Assembler.cpp \
+                           AssemblyData.cpp \
                            BoundaryCondition.cpp \
                            BoundaryValue.cpp \
                            DofMap.cpp \

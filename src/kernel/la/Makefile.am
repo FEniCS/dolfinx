@@ -6,6 +6,7 @@ nobase_include_HEADERS  = dolfin/dolfin_la.h \
                           dolfin/KrylovSolver.h \
                           dolfin/GenericMatrix.h \
                           dolfin/GenericVector.h \
+                          dolfin/GenericTensor.h \
                           dolfin/GMRES.h \
                           dolfin/LinearSolver.h \
                           dolfin/LU.h \

@@ -1,4 +1,5 @@
 EXTRA_DIST = dolfin_common.h \
+             AdjacencyGraph.h \
              Array.h \
              List.h \
              TimeDependent.h \

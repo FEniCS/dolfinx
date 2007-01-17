@@ -6,9 +6,9 @@
 
 // DOLFIN common classes
 
+#include <dolfin/AdjacencyGraph.h>
 #include <dolfin/Array.h>
 #include <dolfin/List.h>
-#include <dolfin/AdjacencyGraph.h>
 
 #include <dolfin/utils.h>
 #include <dolfin/timing.h>
