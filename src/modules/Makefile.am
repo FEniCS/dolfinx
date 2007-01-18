@@ -6,7 +6,9 @@ SUBDIRS = dolfin \
 	  navierstokes \
           plasticity \
           poisson \
-          stokes
+          stokes \
+	  ale \
+	  fsi
 
 INCLUDES = @KERNEL_CFLAGS@
 

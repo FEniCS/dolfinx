@@ -16,5 +16,7 @@
 #include <dolfin/dolfin_poisson.h>
 #include <dolfin/dolfin_navierstokes.h>
 #include <dolfin/dolfin_stokes.h>
+#include <dolfin/dolfin_ale.h>
+#include <dolfin/dolfin_fsi.h>
 
 #endif
