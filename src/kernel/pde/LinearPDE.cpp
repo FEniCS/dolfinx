@@ -72,7 +72,7 @@ dolfin::uint LinearPDE::solve(Function& u)
     FEM::assemble(*_a, *_Lf, *A, b, *_mesh, *_bc);
   else
     FEM::assemble(*_a, *_Lf, *A, b, *_mesh);
-  
+
   // Solve the linear system
   if ( solver_type == "direct" )
   {

@@ -1053,3 +1053,110 @@ void FEM::countNonZerosOld(const GenericMatrix& A, uint nz)
 		nz_actual, nz);
 }
 //-----------------------------------------------------------------------------
+void FEM::assembleSimple(BilinearForm& a,
+                         std::vector<std::map<int, real> >& A,
+                         Mesh& mesh)
+{
+  // Check that the mesh matches the form
+  checkDimensions(a, mesh);
+
+  // Initialize connectivity
+  initConnectivity(mesh);
+
+  // Create affine map
+  AffineMap map;
+  
+  // Initialize global data
+  const uint M = size(mesh, a.test());
+  const uint N = size(mesh, a.trial());
+  A.resize(M);
+  
+  // Initialize A with zeros
+  for (uint i = 0; i < M; i++)
+  {
+    for (std::map<int, real>::iterator it = A[i].begin(); it != A[i].end(); it++)
+    {
+      it->second = 0.0;
+    }
+  }
+
+  dolfin_info("Assembling matrix of size %d x %d.", M, N);
+  
+  // Iterate over all cells in the mesh
+  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  {
+    // Update affine map
+    map.update(*cell);
+    
+    // Update form
+    a.update(*cell, map);
+    
+    // Compute maps from local to global degrees of freedom
+    a.test().nodemap(a.test_nodes, *cell, mesh);
+    a.trial().nodemap(a.trial_nodes, *cell, mesh);
+    
+    // Compute element matrix
+    a.eval(a.block, map, map.det);
+  
+    // Add element matrix to global matrix
+    uint pos = 0;
+    for (uint i = 0; i < a.test().spacedim(); i++)
+    {
+      std::map<int, real>& row = A[a.test_nodes[i]];
+      for (uint j = 0; j < a.trial().spacedim(); j++)
+      {
+        const uint J = a.trial_nodes[j];
+        const std::map<int, real>::iterator it = row.find(J);
+        if ( it == row.end() )
+          row.insert(it, std::map<int, real>::value_type(J, a.block[pos++]));
+        else
+          it->second += a.block[pos++];
+      }
+    }
+  }
+}
+//-----------------------------------------------------------------------------
+void FEM::assembleSimple(LinearForm& L,
+                         std::vector<real>& b,
+                         Mesh& mesh)
+{
+  // Check that the mesh matches the form
+  checkDimensions(L, mesh);
+
+  // Initialize connectivity
+  initConnectivity(mesh);
+
+  // Create affine map
+  AffineMap map;
+  
+  // Initialize global data
+  const uint M = size(mesh, L.test());
+  b.resize(M);
+  
+  // Initialize b with zeros
+  for (uint i = 0; i < M; i++)
+    b[i] = 0.0;
+
+  dolfin_info("Assembling vector of size %d.", M);
+  
+  // Iterate over all cells in the mesh
+  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  {
+    // Update affine map
+    map.update(*cell);
+    
+    // Update form
+    L.update(*cell, map);
+    
+    // Compute map from local to global degrees of freedom
+    L.test().nodemap(L.test_nodes, *cell, mesh);
+    
+    // Compute element vector
+    L.eval(L.block, map, map.det);
+  
+    // Add element vector to global vector
+    for (uint i = 0; i < L.test().spacedim(); i++)
+      b[L.test_nodes[i]] += L.block[i];
+  }
+}
+//-----------------------------------------------------------------------------

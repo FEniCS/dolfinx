@@ -5,11 +5,13 @@
 // Modified by Kristian Oelgaard 2006.
 //
 // First added:  2004-05-19
-// Last changed: 2007-01-16
+// Last changed: 2007-01-18
 
 #ifndef __FEM_H
 #define __FEM_H
 
+#include <vector>
+#include <map>
 #include <dolfin/constants.h>
 
 // FIXME: Ensure constness where appropriate
@@ -106,6 +108,14 @@ namespace dolfin
     static uint estimateNonZerosOld(Mesh& mesh,
                                     const FiniteElement& element);
     static void countNonZerosOld(const GenericMatrix& A, uint nz);
+    //-------------------------------------------------------------------------
+    // Temporary for benchmarking against simple assembly with STL
+    static void assembleSimple(BilinearForm& a,
+                               std::vector<std::map<int, real> >& A,
+                               Mesh& mesh);
+    static void assembleSimple(LinearForm& L,
+                               std::vector<real>& b,
+                               Mesh& mesh);
     //-------------------------------------------------------------------------
 
   private:

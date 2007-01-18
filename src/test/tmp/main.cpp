@@ -60,7 +60,11 @@ void testDofMapping()
 
 int main(int argc, char* argv[])
 {
-  testDofMapping();
+  //testDofMapping();
+
+  UnitSquare mesh(3, 3);
+  File file("mesh.pvd");
+  file << mesh;
 
   return 0;
 }

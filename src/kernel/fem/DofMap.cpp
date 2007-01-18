@@ -42,10 +42,14 @@ DofMap::DofMap(Mesh& mesh, const FiniteElement* element_0,
   // to compute the alignment of faces
   if ( mesh.topology().dim() == 3 )
     mesh.init(2, 1);
+
+  adjacency_graph = 0;
 }
 //-----------------------------------------------------------------------------
 DofMap::DofMap(Mesh& mesh, const ufc::dof_map& dof_map)
 {
+  adjacency_graph = 0;
+
   // Not implemented
 
 }
