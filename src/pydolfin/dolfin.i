@@ -171,9 +171,24 @@ def set(name, val):
 %include "dolfin_la.i"
 
 // function includes 
-
+%include exception.i
 %rename(__call__) dolfin::Function::operator();
 %rename(__getitem__) dolfin::Function::operator[];
+
+%typecheck(SWIG_TYPECHECK_DOUBLE_ARRAY) dolfin::real values [] {
+    $1 = PyArray_Check($input) ? 1 : 0;
+}
+
+%typemap(in) dolfin::real values [] {
+    if PyArray_Check($input) {
+        PyArrayObject *xa = (PyArrayObject*)($input);
+        if (xa->descr->type == 'd')
+            $1 = (double *)(*xa).data;
+        else
+            SWIG_exception(SWIG_ValueError, "numpy array of doubles expected");
+    } else 
+        SWIG_exception(SWIG_ValueError, "numpy array expected");
+}
 
 %include "dolfin/Function.h"
 
