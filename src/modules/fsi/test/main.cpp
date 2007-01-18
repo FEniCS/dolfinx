@@ -40,7 +40,7 @@ class BC_Momentum_2D : public ALEBoundaryCondition
      real bmarg = 1.0e-3;
 
      if (i==0) {
-       if (r.y() < 0.5 || (r.x() > 0.3 && r.x() < 0.6)) {   //fluid
+       if (r.y() < 0.5) {   //fluid
 
 	 if (r.x() < (2.0 - DOLFIN_EPS - bmarg))
 	   value.set(0.0);
@@ -53,16 +53,8 @@ class BC_Momentum_2D : public ALEBoundaryCondition
        }
      } else if (i==1) {
        
-       if (r.y() < 0.5 || (r.x() < 0.3 && r.x() < 0.6)) {   //fluid
-	 value.set(0.0);
-       }
-       else // structure
-       {
-	 value.set(0.0);
-       }
+       value.set(0.0);
      }
-
-     cout << "time: " << time() << endl;
      
   }
 };
@@ -74,8 +66,7 @@ class BC_Continuity_2D : public ALEBoundaryCondition
   {
     real bmarg = 1.0e-3;
 
-    if (r.y() < 0.5 || (r.x() > 0.3 && r.x() < 0.6))   //fluid
-      //if (r.y() < 0.5)   //fluid
+    if (r.y() < 0.5)   //fluid
       if (p.x() > (2.0 - DOLFIN_EPS - bmarg))
 	value.set(0.0);
   }
@@ -85,7 +76,7 @@ class BisectionFunction : public Function
 {
   real eval(const Point& p, unsigned int i)
   {
-    if (p.y() > (0.5) && (p.x() < 0.3) && (p.x() > 0.6)) return 0; // structure
+    if (p.y() > (0.5)) return 0; // structure
     return 1;                                 // fluid
   }
 };

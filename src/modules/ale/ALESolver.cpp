@@ -28,7 +28,7 @@ class ALETools
 public:
 
   ALETools(Mesh& mesh, Function& w, ALEFunction& e, real& k)
-    : mesh(mesh), w(w), e(e), mvel(w.vector()), nsd(mesh.topology().dim()), k(k)
+    : mesh(mesh), w(w), e(e), mvel(w.vector()), k(k), nsd(mesh.topology().dim())
   { 
     boundary = new BoundaryMesh(mesh, vertex_map, cell_map);
   }
