@@ -267,6 +267,8 @@ nobase_include_HEADERS = dolfin/dolfin_mesh.h \
                             dolfin/Triangle.h \
                             dolfin/Tetrahedron.h \
                             dolfin/UniformMeshRefinement.h \
+                            dolfin/LocalMeshRefinement.h \
+                            dolfin/LocalMeshCoarsening.h \
                             dolfin/Point.h \
                             dolfin/BoundaryComputation.h \
                             dolfin/BoundaryMesh.h \

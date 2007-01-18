@@ -24,6 +24,12 @@ namespace dolfin
     static void refineSimplexMeshByBisection(Mesh& mesh, 
 					     MeshFunction<bool>& cell_marker);
 
+  private: 
+
+    /// Bisect edge of simplex cell
+    static void bisectSimplexCell(Cell& cell, Edge& edge, uint& new_vertex,  
+				  MeshEditor& editor, 
+				  uint& current_cell); 
 
   };
 
