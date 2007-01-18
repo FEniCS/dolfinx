@@ -1,8 +1,10 @@
 // Copyright (C) 2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
+// Modified by Johan Hoffman 2006.
+//
 // First added:  2006-06-01
-// Last changed: 2006-12-05
+// Last changed: 2007-01-10
 
 #ifndef __CELL_H
 #define __CELL_H
@@ -34,6 +36,9 @@ namespace dolfin
 
     /// Compute diameter of cell
     inline real diameter() const { return _mesh.type().diameter(*this); }
+
+    /// Return midpoint of cell
+    Point midpoint(); 
 
     /// Compute component i of normal of given facet with respect to the cell
     inline real normal(uint facet, uint i) const { return _mesh.type().normal(*this, facet, i); }

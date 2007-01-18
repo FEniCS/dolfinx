@@ -12,6 +12,8 @@
 #include <dolfin/Facet.h>
 #include <dolfin/GTSInterface.h>
 #include <dolfin/Interval.h>
+#include <dolfin/LocalMeshRefinement.h>
+#include <dolfin/LocalMeshCoarsening.h>
 #include <dolfin/IntersectionDetector.h>
 #include <dolfin/MeshConnectivity.h>
 #include <dolfin/MeshData.h>

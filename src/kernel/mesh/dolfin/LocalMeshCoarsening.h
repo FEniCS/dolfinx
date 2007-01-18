@@ -23,6 +23,16 @@ namespace dolfin
     /// Coarsen simplicial mesh locally by node deletion 
     static void coarsenSimplexByNodeDeletion(Mesh& mesh, Edge& edge);
 
+  private:
+
+    /*
+    /// Collapse edge by node deletion 
+    void collapseEdgeByNodeDeletion(Edge& edge, 
+                                    uint& vertex_to_remove, 
+                                    MeshEditor& editor, 
+                                    uint& current_cell); 
+    */
+
   };
 
 }
