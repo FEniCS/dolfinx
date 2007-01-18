@@ -120,7 +120,7 @@ else
     echo "Missing GTS"
 fi
 
-#PKG_CHECK_MODULES(GLIB, glib-1.0, have_glib=yes, have_glib=no)
+PKG_CHECK_MODULES(UFC, ufc-1)
 
 # Check for umfpack
 have_umfpack_header=yes
@@ -363,7 +363,7 @@ DOLFIN_MODULES="elasticity elasticity-updated convdiff navierstokes plasticity p
 DOLFIN_KERNEL="common fem form function io la main math mesh mf nls ode pde quadrature parameter log"
 
 # Generate include path for external libraries
-EXTERNAL_CFLAGS="$CURSES_CFLAGS $PETSC_CFLAGS $SLEPC_CFLAGS $BOOST_CPPFLAGS $MPI_CFLAGS $XML_CPPFLAGS $UMFPACK_CFLAGS $GLIB_CFLAGS $GTS_CFLAGS"
+EXTERNAL_CFLAGS="$CURSES_CFLAGS $PETSC_CFLAGS $SLEPC_CFLAGS $BOOST_CPPFLAGS $MPI_CFLAGS $XML_CPPFLAGS $UMFPACK_CFLAGS $GLIB_CFLAGS $GTS_CFLAGS $UFC_CFLAGS"
 AC_SUBST(EXTERNAL_CFLAGS)
 
 # Generate include path for kernel
