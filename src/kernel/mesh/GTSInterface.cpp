@@ -102,7 +102,7 @@ void GTSInterface::overlap(Cell& c, GNode* tree, Mesh& mesh,
   while(overlaps)
   {
     bb = (GtsBBox *)overlaps->data;
-    boundedcell = (uint)bb->bounded;
+    boundedcell = (uint)(long)bb->bounded;
 
     Cell close(mesh, boundedcell);
 

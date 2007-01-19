@@ -1,23 +1,30 @@
 // --- Return NumPy arrays for Mesh::cells() and Mesh::coordinates() ---
 
+%define MAKE_ARRAY(dim_size, m, n, dataptr, TYPE)
+        npy_intp adims[dim_size];
+
+        adims[0] = m;
+        if (dim_size == 2)
+            adims[1] = n;
+
+        PyArrayObject* array = (PyArrayObject *)PyArray_SimpleNewFromData(dim_size, adims, TYPE, (char *)(dataptr));
+        if ( array == NULL ) return NULL;
+        PyArray_INCREF(array);
+%enddef
+
+
 %define ALL_COORDINATES(name)
 %extend name {
     PyObject* coordinates() {
         // Get coordinates for all vertices in structure.
-        // returns a 3xnoVertices Numeric array, x in array[0], y in array[1]
+        // returns a 3xnumVertices numpy array, x in array[0], y in array[1]
         // and z in array[2]
-        int noVert = self->numVertices();
-        int dim = self->geometry().dim();
-        int nadims = 2;
-        npy_intp adims[nadims];
+        int m = self->numVertices();
+        int n = self->geometry().dim();
 
-        adims[0] = noVert;
-        adims[1] = dim;
+        MAKE_ARRAY(2, m, n, self->coordinates(), NPY_DOUBLE)
 
-        PyArrayObject* arr = (PyArrayObject *)PyArray_SimpleNewFromData(nadims, adims, PyArray_DOUBLE, (char *)(self->coordinates()));
-        if ( arr == NULL ) return NULL;
-        PyArray_INCREF(arr);
-        return (PyObject *)arr;
+        return (PyObject *)array;
     }
 }
 %enddef
@@ -26,28 +33,39 @@
 %extend name {
     PyObject* cells() {
        // Get the node-id for all vertices.
-        int  nadims = 2;
-        npy_intp adims[nadims];
-        int no_cells = self->numCells();
-        int vertices_per_cell = (self->topology().dim() == 2) ? 3 : 4;
+        int m = self->numCells();
+        int n = (self->topology().dim() == 2) ? 3 : 4;
 
-        adims[0] = no_cells;
-        adims[1] = vertices_per_cell;
+        MAKE_ARRAY(2, m, n, self->cells(), NPY_INT)
 
-        // the std. way of creating a Numeric array
-        PyArrayObject* arr = (PyArrayObject *)PyArray_SimpleNewFromData(nadims, adims, PyArray_INT, (char *)(self->cells()));
-        if (arr == NULL) return NULL;
-        PyArray_INCREF(arr);
-        return (PyObject *)arr;
+        return (PyObject *)array;
+    }
+}
+%enddef
+
+%define ALL_VALUES(name, TYPE)
+%extend name {
+    PyObject* values() {
+        int m = self->size();
+        int n = 0;
+
+        MAKE_ARRAY(1, m, n, self->values(), TYPE)
+
+        return (PyObject *)array;
     }
 }
 %enddef
 
 ALL_COORDINATES(dolfin::Mesh)
 ALL_CELLS(dolfin::Mesh)
+ALL_VALUES(dolfin::MeshFunction<real>, NPY_DOUBLE)
+ALL_VALUES(dolfin::MeshFunction<int>, NPY_INT)
+ALL_VALUES(dolfin::MeshFunction<bool>, NPY_BOOL)
+ALL_VALUES(dolfin::MeshFunction<unsigned int>, NPY_UINT)
 
 %ignore dolfin::Mesh::cells;
 %ignore dolfin::Mesh::coordinates;
+%ignore dolfin::MeshFunction::values;
 
 %ignore dolfin::MeshEditor::open(Mesh&, CellType::Type, uint, uint);
 
