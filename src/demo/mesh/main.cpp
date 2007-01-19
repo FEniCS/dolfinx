@@ -15,9 +15,9 @@ int main()
   Mesh mesh("mesh2D.xml.gz");
   //Mesh mesh("mesh3D.xml.gz");
 
-  mesh.refine();
+  //mesh.refine();
 
-  /*
+
 
   MeshFunction<bool> cell_marker(mesh);
   cell_marker.init(mesh.topology().dim());
@@ -33,6 +33,28 @@ int main()
     cout << "cell " << cell->index() << ": " << cell_marker.get(*cell) << endl;
 
   LocalMeshRefinement::refineSimplexMeshByBisection(mesh,cell_marker);
+
+  File mesh_file_fine("mesh-fine.pvd"); 
+  mesh_file_fine << mesh; 
+
+  MeshFunction<bool> cell_marker_coarsen(mesh);
+  cell_marker_coarsen.init(mesh.topology().dim());
+  for (CellIterator c(mesh); !c.end(); ++c)
+  {
+    if ( fabs(c->midpoint().x()-0.75) < 0.2 ) cell_marker_coarsen.set(c->index(),true);
+    else                                      cell_marker_coarsen.set(c->index(),false);
+  }
+  
+  for (CellIterator cell(mesh); !cell.end(); ++cell)
+    cout << "cell " << cell->index() << ": " << cell_marker_coarsen.get(*cell) << endl;
+
+  LocalMeshCoarsening::coarsenSimplexMeshByEdgeCollapse(mesh,cell_marker_coarsen);
+
+  File mesh_file_coarse("mesh-coarse.pvd"); 
+  mesh_file_coarse << mesh; 
+  
+
+  /*
 
   MeshFunction<bool> cell_marker_2(mesh);
   cell_marker_2.init(mesh.topology().dim());
@@ -69,8 +91,8 @@ int main()
 
 
   LocalMeshRefinement::refineSimplexMeshByBisection(mesh,cell_marker_4);
-
   */
+
 
   cout << "Iterating over the cells in the mesh..." << endl;
   for (CellIterator cell(mesh); !cell.end(); ++cell)
