@@ -23,7 +23,7 @@ ParameterList::~ParameterList()
 //-----------------------------------------------------------------------------
 void ParameterList::add(std::string key, Parameter value)
 {
-  if ( defined(key) )
+  if ( def(key) )
     dolfin_error1("Unable to add parameter \"%s\" (already defined).",
 		  key.c_str());
 
@@ -50,7 +50,7 @@ Parameter ParameterList::get(std::string key) const
   return p->second;
 }
 //-----------------------------------------------------------------------------
-bool ParameterList::defined(std::string key) const
+bool ParameterList::def(std::string key) const
 {
   return parameters.find(key) != parameters.end();
 }

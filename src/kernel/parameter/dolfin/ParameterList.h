@@ -36,7 +36,7 @@ namespace dolfin
     Parameter get(std::string key) const;
 
     /// Check if parameter with given key has been defined
-    bool defined(std::string key) const;
+    bool def(std::string key) const;
 
     /// Friends
     friend class XMLFile;

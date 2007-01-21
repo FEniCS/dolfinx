@@ -28,7 +28,7 @@ void Parametrized::add(std::string key, Parameter value)
 //-----------------------------------------------------------------------------
 void Parametrized::set(std::string key, Parameter value)
 {
-  if ( !defined(key) )
+  if ( !def(key) )
     parameters.add(key, value);
   else
     parameters.set(key, value);
@@ -57,7 +57,7 @@ void Parametrized::set(std::string key, const Parametrized& parent)
 Parameter Parametrized::get(std::string key) const
 {
   // First check local database
-  if ( defined(key) )
+  if ( def(key) )
     return parameters.get(key);
 
   // Check parent if any
@@ -68,9 +68,9 @@ Parameter Parametrized::get(std::string key) const
   return dolfin::get(key);
 }
 //-----------------------------------------------------------------------------
-bool Parametrized::defined(std::string key) const
+bool Parametrized::def(std::string key) const
 {
-  return parameters.defined(key);
+  return parameters.def(key);
 }
 //-----------------------------------------------------------------------------
 void Parametrized::readParameters()

@@ -75,7 +75,7 @@ namespace dolfin
     Mesh& mesh();
 
     /// Return type of PDE
-    inline Type type() const;
+    Type type() const;
 
   private:
 

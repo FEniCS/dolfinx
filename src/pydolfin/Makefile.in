@@ -133,6 +133,7 @@ INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
 KERNEL_CFLAGS = @KERNEL_CFLAGS@
+KERNEL_INCLUDE = @KERNEL_INCLUDE@
 LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
@@ -144,6 +145,7 @@ MAINTAINER_MODE_FALSE = @MAINTAINER_MODE_FALSE@
 MAINTAINER_MODE_TRUE = @MAINTAINER_MODE_TRUE@
 MAKEINFO = @MAKEINFO@
 MODULE_CFLAGS = @MODULE_CFLAGS@
+MODULE_INCLUDE = @MODULE_INCLUDE@
 OBJEXT = @OBJEXT@
 PACKAGE = @PACKAGE@
 PACKAGE_BUGREPORT = @PACKAGE_BUGREPORT@
@@ -557,10 +559,9 @@ uninstall-am: uninstall-info-am uninstall-pkgpyexecLTLIBRARIES \
 	uninstall-pkgpythonPYTHON
 
 
+# Temporary fix: add elasticity-updated to include path manually
 dolfin_wrap.cpp : $(SWIG_SOURCES)
-	echo $(SWIG_PYTHON_CPPFLAGS)
-	echo $(DOLFIN_CFLAGS)
-	$(SWIG) $(SWIG_PYTHON_OPT) -nodefault -dirprot @DOLFIN_DEFINITIONS@ -o $@ $<
+	$(SWIG) $(SWIG_PYTHON_OPT) -includeall -ignoremissing -nodefault -dirprot @KERNEL_INCLUDE@ -I../../src/modules -I../../src/modules/elasticity-updated @DOLFIN_DEFINITIONS@ -o $@ $<
 
 dolfin.py: $(SWIG_SOURCES)
 # Tell versions [3.59,3.63) of GNU make to not export all variables.

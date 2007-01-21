@@ -87,7 +87,6 @@ using namespace dolfin;
 %pointer_class(double, doublep);
 
 
-//%feature("director") GenericVector;
 %feature("director") Function;
 %feature("director") BoundaryCondition;
 %feature("director") ODE;
@@ -98,79 +97,21 @@ using namespace dolfin;
 %ignore dolfin::dolfin_info_aptr;
 
 
-%import "dolfin.h"
-%import "dolfin/constants.h"
-
-
-// DOLFIN public interface 
-
-// FIXME: Order matters, why? 
-
-// main includes 
-
-%include "dolfin/constants.h"
-%include "dolfin/init.h"
-
-// math includes 
-
-%include "dolfin/basic.h"
-
-// common includes 
+// common pre
 
 %ignore dolfin::TimeDependent::TimeDependent(const real&);
 %ignore dolfin::TimeDependent::sync(const real&);
 
-%include "dolfin/Array.h"
-%include "dolfin/List.h"
-%include "dolfin/TimeDependent.h"
-%include "dolfin/Variable.h"
-%include "dolfin/utils.h"
-%include "dolfin/timing.h"
+// settings pre
 
-%template(STLVectorUInt) std::vector<unsigned int>;
-%template(ArrayUInt) dolfin::Array<unsigned int>;
+%rename(oldget) dolfin::get;
 
-%extend dolfin::TimeDependent {
-  TimeDependent(double *t)
-  {
-    TimeDependent* td = new TimeDependent();
-    td->sync(*t);
-    return td;
-  }
-  void sync(double* t)
-  {
-    self->sync(*t);
-  }
-}
+// la pre
 
-// log includes 
+%include "dolfin_la_pre.i"
 
-%include "dolfin/LoggerMacros.h"
+// function pre
 
-// settings includes 
-
-%rename(get) glueget;
-
-%include "dolfin/Parameter.h"
-
-%pythoncode
-%{
-def set(name, val):
-  if(isinstance(val, bool)):
-    glueset_bool(name, val)
-  else:
-    glueset(name, val)
-%}
-
-// io includes 
-
-%include "dolfin/File.h"
-
-// la includes 
-
-%include "dolfin_la.i"
-
-// function includes 
 %include exception.i
 %rename(__call__) dolfin::Function::operator();
 %rename(__getitem__) dolfin::Function::operator[];
@@ -190,35 +131,64 @@ def set(name, val):
         SWIG_exception(SWIG_ValueError, "numpy array expected");
 }
 
-%include "dolfin/Function.h"
+// mesh pre
 
-// form includes
+%include "dolfin_mesh_pre.i"
 
-%include "dolfin/Form.h"
-%include "dolfin/BilinearForm.h"
-%include "dolfin/LinearForm.h"
+// ode pre
 
-// DOLFIN mesh interface
+%include "dolfin_ode_pre.i"
 
-%include "dolfin_mesh.i"
+// DOLFIN interface
 
-// ode includes
+%import "dolfin/constants.h"
+%include "dolfin.h"
 
-%include "dolfin_ode.i"
+// settings post
 
-// pde 
+%pythoncode
+%{
+def set(name, val):
+  if(isinstance(val, bool)):
+    glueset_bool(name, val)
+  else:
+    glueset(name, val)
+%}
 
-%include "dolfin/TimeDependentPDE.h"
+
+// common post
+
+%template(STLVectorUInt) std::vector<unsigned int>;
+%template(ArrayUInt) dolfin::Array<unsigned int>;
+
+%extend dolfin::TimeDependent {
+  TimeDependent(double *t)
+  {
+    TimeDependent* td = new TimeDependent();
+    td->sync(*t);
+    return td;
+  }
+  void sync(double* t)
+  {
+    self->sync(*t);
+  }
+}
+
+
+// la post
+
+%include "dolfin_la_post.i"
+
+// mesh post
+
+%include "dolfin_mesh_post.i"
+
 
 // DOLFIN FEM interface
 
-%include "dolfin_fem.i"
+%include "dolfin_fem_post.i"
 
 // glue 
 
 %include "dolfin_glue.h"
-
-// modules 
-
-%include "dolfin/ElasticityUpdatedSolver.h" 
 

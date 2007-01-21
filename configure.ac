@@ -366,35 +366,36 @@ DOLFIN_KERNEL="common fem form function io la main math mesh mf nls ode pde quad
 EXTERNAL_CFLAGS="$CURSES_CFLAGS $PETSC_CFLAGS $SLEPC_CFLAGS $BOOST_CPPFLAGS $MPI_CFLAGS $XML_CPPFLAGS $UMFPACK_CFLAGS $GLIB_CFLAGS $GTS_CFLAGS $UFC_CFLAGS"
 AC_SUBST(EXTERNAL_CFLAGS)
 
-# Generate include path for kernel
 KERNEL_CFLAGS=""
 for f in $DOLFIN_KERNEL; do
-    KERNEL_CFLAGS="$KERNEL_CFLAGS -I\$(top_builddir)/src/kernel/$f"
+    KERNEL_INCLUDE="$KERNEL_INCLUDE -I\$(top_builddir)/src/kernel/$f"
 done
-KERNEL_CFLAGS="$KERNEL_CFLAGS $EXTERNAL_CFLAGS"
+AC_SUBST(KERNEL_INCLUDE)
+
+# Generate flags for kernel
+KERNEL_CFLAGS="$KERNEL_INCLUDE $EXTERNAL_CFLAGS"
 AC_SUBST(KERNEL_CFLAGS)
 
 # Generate include path for modules
-MODULE_CFLAGS="$KERNEL_CFLAGS -I\$(top_builddir)/src/modules/"
+MAIN_CFLAGS=""
+for f in $DOLFIN_MODULES; do
+    MODULE_INCLUDE="$MODULE_INCLUDE -I\$(top_builddir)/src/modules/$f "
+done
+MODULE_INCLUDE="$MODULE_INCLUDE -I\$(top_builddir)/src/modules/ "
+AC_SUBST(MODULE_INCLUDE)
+
+# Generate flags for modules
+MODULE_CFLAGS="$MODULE_INCLUDE $KERNEL_CFLAGS"
 AC_SUBST(MODULE_CFLAGS)
 
 # Generate include path for main (including also module code)
-MAIN_CFLAGS=""
-for f in $DOLFIN_MODULES; do
-    MAIN_CFLAGS="$MAIN_CFLAGS -I\$(top_builddir)/src/modules/$f "
-done
-DOLFIN_CFLAGS="$KERNEL_CFLAGS $MAIN_CFLAGS $MODULE_CFLAGS"
+DOLFIN_CFLAGS="$KERNEL_INCLUDE $MODULE_INCLUDE $EXTERNAL_CFLAGS"
 AC_SUBST(DOLFIN_CFLAGS)
 
 # Extract compiler definitions
 DOLFIN_DEFINITIONS=""
 for i in $CXXFLAGS; do
     if test $(echo $i | sed 's/^\(..\).*/\1/') == "-D"; then
-       DOLFIN_DEFINITIONS="$DOLFIN_DEFINITIONS $i"
-    fi
-done
-for i in $DOLFIN_CFLAGS; do
-    if test $(echo $i | sed 's/^\(..\).*/\1/') == "-I"; then
        DOLFIN_DEFINITIONS="$DOLFIN_DEFINITIONS $i"
     fi
 done
