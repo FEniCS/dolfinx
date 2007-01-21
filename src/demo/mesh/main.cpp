@@ -12,66 +12,52 @@ using namespace dolfin;
 
 int main()
 {
-  Mesh mesh("mesh2D.xml.gz");
+  //UnitCube mesh(1,1,1);
+  //UnitSquare mesh(1,1);
+  //Mesh mesh("mesh2D.xml.gz");
   //Mesh mesh("mesh3D.xml.gz");
+ Mesh mesh("dolfin.xml.gz");
 
-  mesh.refine();
+  // Uniform refinement
+  //mesh.refine();
 
-  /*
+  //mesh.disp();
 
-  MeshFunction<bool> cell_marker(mesh);
-  cell_marker.init(mesh.topology().dim());
-  for (CellIterator c(mesh); !c.end(); ++c)
+  File mesh_file_0("mesh-0.pvd"); 
+  mesh_file_0 << mesh; 
+
+  unsigned int num_refinements = 3;
+  for (unsigned int i = 0; i < num_refinements; i++)  
   {
-    cout << "cell " << c->index() << ": midpoint (" << c->midpoint().x() << 
-      "," << c->midpoint().y() << "," << c->midpoint().z() << ")" << endl;
-    if ( fabs(c->midpoint().x()-0.75) < 0.2 ) cell_marker.set(c->index(),true);
-    else                                 cell_marker.set(c->index(),false);
+    MeshFunction<bool> cell_marker(mesh);
+    cell_marker.init(mesh.topology().dim());
+    for (CellIterator c(mesh); !c.end(); ++c)
+    {
+      if ( fabs(c->midpoint().x()-0.75) < 0.9 ) cell_marker.set(c->index(),true);
+      else                                      cell_marker.set(c->index(),false);
+    }
+    LocalMeshRefinement::refineMeshByEdgeBisection(mesh,cell_marker);
   }
-  
-  for (CellIterator cell(mesh); !cell.end(); ++cell)
-    cout << "cell " << cell->index() << ": " << cell_marker.get(*cell) << endl;
 
-  LocalMeshRefinement::refineSimplexMeshByBisection(mesh,cell_marker);
+  File mesh_file_fine("mesh-fine.pvd"); 
+  mesh_file_fine << mesh; 
 
-  MeshFunction<bool> cell_marker_2(mesh);
-  cell_marker_2.init(mesh.topology().dim());
-  for (CellIterator c(mesh); !c.end(); ++c)
+  unsigned int num_unrefinements = 3;
+  for (unsigned int i = 0; i < num_unrefinements; i++)  
   {
-    if ( fabs(c->midpoint().x()-0.75) < 0.2 ) cell_marker_2.set(c->index(),true);
-    else                                 cell_marker_2.set(c->index(),false);
+    MeshFunction<bool> cell_marker(mesh);
+    cell_marker.init(mesh.topology().dim());
+    for (CellIterator c(mesh); !c.end(); ++c)
+    {
+      if ( fabs(c->midpoint().x()-0.75) < 0.9 ) cell_marker.set(c->index(),true);
+      else                                      cell_marker.set(c->index(),false);
+    }
+    LocalMeshCoarsening::coarsenMeshByEdgeCollapse(mesh,cell_marker);
   }
+
+  File mesh_file_coarse("mesh-coarse.pvd"); 
+  mesh_file_coarse << mesh; 
   
-
-
-  LocalMeshRefinement::refineSimplexMeshByBisection(mesh,cell_marker_2);
-
-  MeshFunction<bool> cell_marker_3(mesh);
-  cell_marker_3.init(mesh.topology().dim());
-  for (CellIterator c(mesh); !c.end(); ++c)
-  {
-    if ( fabs(c->midpoint().x()-0.75) < 0.2 ) cell_marker_3.set(c->index(),true);
-    else                                 cell_marker_3.set(c->index(),false);
-  }
-  
-
-
-  LocalMeshRefinement::refineSimplexMeshByBisection(mesh,cell_marker_3);
-
-  MeshFunction<bool> cell_marker_4(mesh);
-  cell_marker_4.init(mesh.topology().dim());
-  for (CellIterator c(mesh); !c.end(); ++c)
-  {
-    if ( fabs(c->midpoint().x()-0.75) < 0.2 ) cell_marker_4.set(c->index(),true);
-    else                                 cell_marker_4.set(c->index(),false);
-  }
-  
-
-
-  LocalMeshRefinement::refineSimplexMeshByBisection(mesh,cell_marker_4);
-
-  */
-
   cout << "Iterating over the cells in the mesh..." << endl;
   for (CellIterator cell(mesh); !cell.end(); ++cell)
     cout << *cell << endl;
