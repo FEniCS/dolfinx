@@ -1,8 +1,10 @@
 // Copyright (C) 2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
+// Modified by Johan Hoffman 2007.
+//
 // First added:  2006-05-22
-// Last changed: 2006-11-30
+// Last changed: 2007-01-21
 
 #ifndef __MESH_FUNCTION_H
 #define __MESH_FUNCTION_H
@@ -112,6 +114,24 @@ namespace dolfin
       return _values[entity.index()];
     }
 
+    /// Get value at given entity
+    inline T get(uint index) const
+    {
+      dolfin_assert(_values);
+      dolfin_assert(index < _size);
+      return _values[index];
+    }
+
+    /// Set value at given entity
+    inline void set(const MeshEntity& entity, const T& value)
+    {
+      dolfin_assert(_values);
+      dolfin_assert(&entity.mesh() == _mesh);
+      dolfin_assert(entity.dim() == _dim);
+      dolfin_assert(entity.index() < _size);
+      _values[entity.index()] = value;
+    }
+    
     /// Set value at given entity
     inline void set(uint index, const T& value)
     {
