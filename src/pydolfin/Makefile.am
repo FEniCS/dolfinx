@@ -15,6 +15,6 @@ CXXFLAGS = @DOLFIN_DEFINITIONS@ -g -O2 -Wall -ansi
 
 # Temporary fix: add elasticity-updated to include path manually
 dolfin_wrap.cpp : $(SWIG_SOURCES)
-	$(SWIG) $(SWIG_PYTHON_OPT) -includeall -ignoremissing -nodefault -dirprot @KERNEL_INCLUDE@ -I../../src/modules -I../../src/modules/elasticity-updated @DOLFIN_DEFINITIONS@ -o $@ $<
+	$(SWIG) $(SWIG_PYTHON_OPT) -includeall -ignoremissing -nodefault -dirprot @KERNEL_INCLUDE@ @DOLFIN_DEFINITIONS@ -o $@ $<
 
 dolfin.py: $(SWIG_SOURCES)
