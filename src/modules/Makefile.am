@@ -6,7 +6,9 @@ SUBDIRS = dolfin \
 	  navierstokes \
           plasticity \
           poisson \
-          stokes
+          stokes \
+          lib \
+          python
 
 INCLUDES = @KERNEL_CFLAGS@
 
