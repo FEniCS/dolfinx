@@ -1,11 +1,9 @@
-%module(directors="1") dolfin
+%module(directors="1") dolfinmodules
 
 %feature("autodoc", "1");
 
 %{
 #include <dolfin.h>
-
-#include "dolfin_glue.h"
 
 #include <numpy/arrayobject.h>
 #include <string>
@@ -21,56 +19,6 @@ using namespace dolfin;
 %typemap(out) real = double; 
 %typemap(in) uint = int; 
 %typemap(out) uint = int; 
-
-%typemap(out) dolfin::Parameter {
-  {
-    // Custom typemap
-
-    switch ( $1.type() )
-    {
-    case Parameter::type_real:
-      
-      $result = SWIG_From_double(*&($1));
-      break;
-
-    case Parameter::type_int:
-      
-      $result = SWIG_From_int((int)*&($1));
-      break;
-      
-    case Parameter::type_bool:
-      
-      $result = SWIG_From_bool(*&($1));
-      break;
-      
-    case Parameter::type_string:
-      
-      $result = SWIG_From_std_string(*&($1));
-      break;
-      
-    default:
-      dolfin_error("Unknown type for parameter.");
-    }
-  }
-}
-
-
-// Typemaps for dolfin::real array arguments in virtual methods
-// probably not very safe
-%typemap(directorin) dolfin::real [] {
-  {
-    // Custom typemap
-    $input = SWIG_NewPointerObj((void *) $1_name, $1_descriptor, $owner);
-  }
-}
-
-%typemap(directorin) dolfin::real const [] {
-  {
-    // Custom typemap
-    $input = SWIG_NewPointerObj((void *) $1_name, $1_descriptor, $owner);
-  }
-}
-
 
 %include "cpointer.i"
 %include "typemaps.i"
@@ -142,52 +90,8 @@ using namespace dolfin;
 // DOLFIN interface
 
 %import "dolfin/constants.h"
-%include "dolfin.h"
+%import "dolfin.h"
 
-// settings post
+// DOLFIN modules
 
-%pythoncode
-%{
-def set(name, val):
-  if(isinstance(val, bool)):
-    glueset_bool(name, val)
-  else:
-    glueset(name, val)
-%}
-
-
-// common post
-
-%template(STLVectorUInt) std::vector<unsigned int>;
-%template(ArrayUInt) dolfin::Array<unsigned int>;
-
-%extend dolfin::TimeDependent {
-  TimeDependent(double *t)
-  {
-    TimeDependent* td = new TimeDependent();
-    td->sync(*t);
-    return td;
-  }
-  void sync(double* t)
-  {
-    self->sync(*t);
-  }
-}
-
-
-// la post
-
-%include "dolfin_la_post.i"
-
-// mesh post
-
-%include "dolfin_mesh_post.i"
-
-
-// DOLFIN FEM interface
-
-%include "dolfin_fem_post.i"
-
-// glue 
-
-%include "dolfin_glue.h"
+%include "../elasticity-updated/dolfin/ElasticityUpdatedSolver.h"

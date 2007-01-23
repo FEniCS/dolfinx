@@ -115,7 +115,7 @@ PKG_CHECK_MODULES(GLIB, glib-2.0, have_glib=yes, have_glib=no)
 # Check for GTS
 PKG_CHECK_MODULES(GTS, gts, have_gts=yes, have_gts=no)
 if test $have_gts = yes && test $have_glib = yes; then
-    GTS_CFLAGS="-DHAVE_GTS_H=1"
+    GTS_CFLAGS="$GTS_CFLAGS -DHAVE_GTS_H=1"
 else
     echo "Missing GTS"
 fi
@@ -493,6 +493,7 @@ AC_OUTPUT( Makefile \
            src/modules/stokes/Makefile \
            src/modules/stokes/dolfin/Makefile \
            src/modules/lib/Makefile \
+           src/modules/python/Makefile \
            src/lib/Makefile \
            src/pydolfin/Makefile \
            src/demo/Makefile \
