@@ -86,58 +86,58 @@ py_compile = $(top_srcdir)/py-compile
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
-ACLOCAL = ${SHELL} /NOBACKUP/jjan/data/src/swig/dolfin/missing --run aclocal-1.9
+ACLOCAL = ${SHELL} /home/johan/data/src/swig/dolfin/missing --run aclocal-1.9
 AMDEP_FALSE = #
 AMDEP_TRUE = 
-AMTAR = ${SHELL} /NOBACKUP/jjan/data/src/swig/dolfin/missing --run tar
+AMTAR = ${SHELL} /home/johan/data/src/swig/dolfin/missing --run tar
 AR = ar
-AUTOCONF = ${SHELL} /NOBACKUP/jjan/data/src/swig/dolfin/missing --run autoconf
-AUTOHEADER = ${SHELL} /NOBACKUP/jjan/data/src/swig/dolfin/missing --run autoheader
-AUTOMAKE = ${SHELL} /NOBACKUP/jjan/data/src/swig/dolfin/missing --run automake-1.9
+AUTOCONF = ${SHELL} /home/johan/data/src/swig/dolfin/missing --run autoconf
+AUTOHEADER = ${SHELL} /home/johan/data/src/swig/dolfin/missing --run autoheader
+AUTOMAKE = ${SHELL} /home/johan/data/src/swig/dolfin/missing --run automake-1.9
 AWK = gawk
-BOOST_CPPFLAGS = -I/afs/nada.kth.se/dept/na/hacks/pkg/boost/1.33.1/include
-BOOST_LDFLAGS = -L/afs/nada.kth.se/dept/na/hacks/pkg/boost/1.33.1/lib
+BOOST_CPPFLAGS = -I/usr/include
+BOOST_LDFLAGS = -L/usr/lib
 CC = gcc
 CCDEPMODE = depmode=gcc3
 CFLAGS = -g -O2
 COMPILE_PYDOLFIN_FALSE = #
 COMPILE_PYDOLFIN_TRUE = 
 CPP = gcc -E
-CPPFLAGS =  -I/usr/include/python2.3 -I/afs/nada.kth.se/dept/na/hacks/pkg/numpy/1.0/lib/python2.3/site-packages/numpy/core/include
+CPPFLAGS =  -I/usr/include/python2.4 -I/usr/lib/python2.4/site-packages/numpy/core/include
 CXX = g++
 CXXCPP = g++ -E
 CXXDEPMODE = depmode=gcc3
 
 # Temporary fix: don't include -Werr to get around problem with Numeric/arrayobject.h
-CXXFLAGS =  -DDEBUG -DNDEBUG -g -O2 -Wall -ansi
+CXXFLAGS =  -DNDEBUG -g -O2 -Wall -ansi
 CYGPATH_W = echo
 DEFS = -DPACKAGE_NAME=\"DOLFIN\" -DPACKAGE_TARNAME=\"dolfin\" -DPACKAGE_VERSION=\"0.6.4\" -DPACKAGE_STRING=\"DOLFIN\ 0.6.4\" -DPACKAGE_BUGREPORT=\"http://www.fenics.org/bugzilla/\" -DSTDC_HEADERS=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_SYS_STAT_H=1 -DHAVE_STDLIB_H=1 -DHAVE_STRING_H=1 -DHAVE_MEMORY_H=1 -DHAVE_STRINGS_H=1 -DHAVE_INTTYPES_H=1 -DHAVE_STDINT_H=1 -DHAVE_UNISTD_H=1 -DHAVE_DLFCN_H=1 -DHAVE_BOOST= 
 DEPDIR = .deps
-DOLFIN_CFLAGS =  -I$(top_builddir)/src/kernel/common -I$(top_builddir)/src/kernel/fem -I$(top_builddir)/src/kernel/form -I$(top_builddir)/src/kernel/function -I$(top_builddir)/src/kernel/io -I$(top_builddir)/src/kernel/la -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/math -I$(top_builddir)/src/kernel/mesh -I$(top_builddir)/src/kernel/mf -I$(top_builddir)/src/kernel/nls -I$(top_builddir)/src/kernel/ode -I$(top_builddir)/src/kernel/pde -I$(top_builddir)/src/kernel/quadrature -I$(top_builddir)/src/kernel/parameter -I$(top_builddir)/src/kernel/log    -I/afs/nada.kth.se/dept/na/hacks/pkg/boost/1.33.1/include  -I/usr/include/libxml2  -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include   -pthread -I/afs/nada.kth.se/dept/na/hacks/pkg/gts/0.7.6/i386_linux26/include -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include   -DHAVE_GTS_H=1 -I/afs/nada.kth.se/home/o/u1mb1o3o/usr/include  
-DOLFIN_DEFINITIONS =  -DDEBUG -DNDEBUG
-DOLFIN_EXT_LIBS = -lncurses   -L/usr/lib -lxml2 -lz -lpthread -lm  -lglib-2.0   -pthread -Wl,--export-dynamic -L/afs/nada.kth.se/dept/na/hacks/pkg/gts/0.7.6/i386_linux26/lib -lgts -lgthread-2.0 -lgmodule-2.0 -ldl -lglib-2.0  
-DOLFIN_LIBS = -ldolfin -lncurses   -L/usr/lib -lxml2 -lz -lpthread -lm  -lglib-2.0   -pthread -Wl,--export-dynamic -L/afs/nada.kth.se/dept/na/hacks/pkg/gts/0.7.6/i386_linux26/lib -lgts -lgthread-2.0 -lgmodule-2.0 -ldl -lglib-2.0  
+DOLFIN_CFLAGS =  -I$(top_builddir)/src/kernel/common -I$(top_builddir)/src/kernel/fem -I$(top_builddir)/src/kernel/form -I$(top_builddir)/src/kernel/function -I$(top_builddir)/src/kernel/io -I$(top_builddir)/src/kernel/la -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/math -I$(top_builddir)/src/kernel/mesh -I$(top_builddir)/src/kernel/mf -I$(top_builddir)/src/kernel/nls -I$(top_builddir)/src/kernel/ode -I$(top_builddir)/src/kernel/pde -I$(top_builddir)/src/kernel/quadrature -I$(top_builddir)/src/kernel/parameter -I$(top_builddir)/src/kernel/log    -I/usr/include  -I/usr/include/libxml2  -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include   -pthread -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include   -DHAVE_GTS_H=1 -I/home/johan/usr/include  
+DOLFIN_DEFINITIONS =  -DNDEBUG
+DOLFIN_EXT_LIBS = -lncurses   -L/usr/lib -lxml2  -lglib-2.0   -pthread -Wl,--export-dynamic -lgts -lgthread-2.0 -lgmodule-2.0 -ldl -lglib-2.0  
+DOLFIN_LIBS = -ldolfin -lncurses   -L/usr/lib -lxml2  -lglib-2.0   -pthread -Wl,--export-dynamic -lgts -lgthread-2.0 -lgmodule-2.0 -ldl -lglib-2.0  
 ECHO = echo
 ECHO_C = 
 ECHO_N = -n
 ECHO_T = 
 EGREP = grep -E
 EXEEXT = 
-EXTERNAL_CFLAGS =    -I/afs/nada.kth.se/dept/na/hacks/pkg/boost/1.33.1/include  -I/usr/include/libxml2  -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include   -pthread -I/afs/nada.kth.se/dept/na/hacks/pkg/gts/0.7.6/i386_linux26/include -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include   -DHAVE_GTS_H=1 -I/afs/nada.kth.se/home/o/u1mb1o3o/usr/include  
+EXTERNAL_CFLAGS =    -I/usr/include  -I/usr/include/libxml2  -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include   -pthread -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include   -DHAVE_GTS_H=1 -I/home/johan/usr/include  
 F77 = g77
 FFLAGS = -g -O2
 GLIB_CFLAGS = -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include  
 GLIB_LIBS = -lglib-2.0  
-GTS_CFLAGS = -pthread -I/afs/nada.kth.se/dept/na/hacks/pkg/gts/0.7.6/i386_linux26/include -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include   -DHAVE_GTS_H=1
-GTS_LIBS = -pthread -Wl,--export-dynamic -L/afs/nada.kth.se/dept/na/hacks/pkg/gts/0.7.6/i386_linux26/lib -lgts -lgthread-2.0 -lgmodule-2.0 -ldl -lglib-2.0  
+GTS_CFLAGS = -pthread -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include   -DHAVE_GTS_H=1
+GTS_LIBS = -pthread -Wl,--export-dynamic -lgts -lgthread-2.0 -lgmodule-2.0 -ldl -lglib-2.0  
 INSTALL_DATA = ${INSTALL} -m 644
 INSTALL_PROGRAM = ${INSTALL}
 INSTALL_SCRIPT = ${INSTALL}
 INSTALL_STRIP_PROGRAM = ${SHELL} $(install_sh) -c -s
-KERNEL_CFLAGS =  -I$(top_builddir)/src/kernel/common -I$(top_builddir)/src/kernel/fem -I$(top_builddir)/src/kernel/form -I$(top_builddir)/src/kernel/function -I$(top_builddir)/src/kernel/io -I$(top_builddir)/src/kernel/la -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/math -I$(top_builddir)/src/kernel/mesh -I$(top_builddir)/src/kernel/mf -I$(top_builddir)/src/kernel/nls -I$(top_builddir)/src/kernel/ode -I$(top_builddir)/src/kernel/pde -I$(top_builddir)/src/kernel/quadrature -I$(top_builddir)/src/kernel/parameter -I$(top_builddir)/src/kernel/log    -I/afs/nada.kth.se/dept/na/hacks/pkg/boost/1.33.1/include  -I/usr/include/libxml2  -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include   -pthread -I/afs/nada.kth.se/dept/na/hacks/pkg/gts/0.7.6/i386_linux26/include -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include   -DHAVE_GTS_H=1 -I/afs/nada.kth.se/home/o/u1mb1o3o/usr/include  
+KERNEL_CFLAGS =  -I$(top_builddir)/src/kernel/common -I$(top_builddir)/src/kernel/fem -I$(top_builddir)/src/kernel/form -I$(top_builddir)/src/kernel/function -I$(top_builddir)/src/kernel/io -I$(top_builddir)/src/kernel/la -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/math -I$(top_builddir)/src/kernel/mesh -I$(top_builddir)/src/kernel/mf -I$(top_builddir)/src/kernel/nls -I$(top_builddir)/src/kernel/ode -I$(top_builddir)/src/kernel/pde -I$(top_builddir)/src/kernel/quadrature -I$(top_builddir)/src/kernel/parameter -I$(top_builddir)/src/kernel/log    -I/usr/include  -I/usr/include/libxml2  -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include   -pthread -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include   -DHAVE_GTS_H=1 -I/home/johan/usr/include  
 KERNEL_INCLUDE =  -I$(top_builddir)/src/kernel/common -I$(top_builddir)/src/kernel/fem -I$(top_builddir)/src/kernel/form -I$(top_builddir)/src/kernel/function -I$(top_builddir)/src/kernel/io -I$(top_builddir)/src/kernel/la -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/math -I$(top_builddir)/src/kernel/mesh -I$(top_builddir)/src/kernel/mf -I$(top_builddir)/src/kernel/nls -I$(top_builddir)/src/kernel/ode -I$(top_builddir)/src/kernel/pde -I$(top_builddir)/src/kernel/quadrature -I$(top_builddir)/src/kernel/parameter -I$(top_builddir)/src/kernel/log
 KERNEL_LIBOBJS =  $(top_builddir)/src/kernel/common/*.lo  $(top_builddir)/src/kernel/fem/*.lo  $(top_builddir)/src/kernel/form/*.lo  $(top_builddir)/src/kernel/function/*.lo  $(top_builddir)/src/kernel/io/*.lo  $(top_builddir)/src/kernel/la/*.lo  $(top_builddir)/src/kernel/main/*.lo  $(top_builddir)/src/kernel/math/*.lo  $(top_builddir)/src/kernel/mesh/*.lo  $(top_builddir)/src/kernel/mf/*.lo  $(top_builddir)/src/kernel/nls/*.lo  $(top_builddir)/src/kernel/ode/*.lo  $(top_builddir)/src/kernel/pde/*.lo  $(top_builddir)/src/kernel/quadrature/*.lo  $(top_builddir)/src/kernel/parameter/*.lo  $(top_builddir)/src/kernel/log/*.lo 
-LDFLAGS =  -L/usr/lib/python2.3/config -lpython2.3  -lpthread -ldl  -lutil
+LDFLAGS =  -L/usr/lib/python2.4/config -lpython2.4  -lpthread -ldl  -lutil
 LIBOBJS = 
 LIBS = -lncurses 
 LIBTOOL = $(SHELL) $(top_builddir)/libtool
@@ -146,9 +146,9 @@ LTLIBOBJS =
 MAINT = #
 MAINTAINER_MODE_FALSE = 
 MAINTAINER_MODE_TRUE = #
-MAKEINFO = ${SHELL} /NOBACKUP/jjan/data/src/swig/dolfin/missing --run makeinfo
+MAKEINFO = ${SHELL} /home/johan/data/src/swig/dolfin/missing --run makeinfo
 MODULES_LIBOBJS =  $(top_builddir)/src/modules/elasticity/*.lo  $(top_builddir)/src/modules/elasticity-updated/*.lo  $(top_builddir)/src/modules/convdiff/*.lo  $(top_builddir)/src/modules/navierstokes/*.lo  $(top_builddir)/src/modules/plasticity/*.lo  $(top_builddir)/src/modules/poisson/*.lo  $(top_builddir)/src/modules/stokes/*.lo  $(top_builddir)/src/modules/heat/*.lo 
-MODULE_CFLAGS =  -I$(top_builddir)/src/modules/elasticity  -I$(top_builddir)/src/modules/elasticity-updated  -I$(top_builddir)/src/modules/convdiff  -I$(top_builddir)/src/modules/navierstokes  -I$(top_builddir)/src/modules/plasticity  -I$(top_builddir)/src/modules/poisson  -I$(top_builddir)/src/modules/stokes  -I$(top_builddir)/src/modules/heat  -I$(top_builddir)/src/modules/   -I$(top_builddir)/src/kernel/common -I$(top_builddir)/src/kernel/fem -I$(top_builddir)/src/kernel/form -I$(top_builddir)/src/kernel/function -I$(top_builddir)/src/kernel/io -I$(top_builddir)/src/kernel/la -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/math -I$(top_builddir)/src/kernel/mesh -I$(top_builddir)/src/kernel/mf -I$(top_builddir)/src/kernel/nls -I$(top_builddir)/src/kernel/ode -I$(top_builddir)/src/kernel/pde -I$(top_builddir)/src/kernel/quadrature -I$(top_builddir)/src/kernel/parameter -I$(top_builddir)/src/kernel/log    -I/afs/nada.kth.se/dept/na/hacks/pkg/boost/1.33.1/include  -I/usr/include/libxml2  -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include   -pthread -I/afs/nada.kth.se/dept/na/hacks/pkg/gts/0.7.6/i386_linux26/include -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include   -DHAVE_GTS_H=1 -I/afs/nada.kth.se/home/o/u1mb1o3o/usr/include  
+MODULE_CFLAGS =  -I$(top_builddir)/src/modules/elasticity  -I$(top_builddir)/src/modules/elasticity-updated  -I$(top_builddir)/src/modules/convdiff  -I$(top_builddir)/src/modules/navierstokes  -I$(top_builddir)/src/modules/plasticity  -I$(top_builddir)/src/modules/poisson  -I$(top_builddir)/src/modules/stokes  -I$(top_builddir)/src/modules/heat  -I$(top_builddir)/src/modules/   -I$(top_builddir)/src/kernel/common -I$(top_builddir)/src/kernel/fem -I$(top_builddir)/src/kernel/form -I$(top_builddir)/src/kernel/function -I$(top_builddir)/src/kernel/io -I$(top_builddir)/src/kernel/la -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/math -I$(top_builddir)/src/kernel/mesh -I$(top_builddir)/src/kernel/mf -I$(top_builddir)/src/kernel/nls -I$(top_builddir)/src/kernel/ode -I$(top_builddir)/src/kernel/pde -I$(top_builddir)/src/kernel/quadrature -I$(top_builddir)/src/kernel/parameter -I$(top_builddir)/src/kernel/log    -I/usr/include  -I/usr/include/libxml2  -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include   -pthread -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include   -DHAVE_GTS_H=1 -I/home/johan/usr/include  
 MODULE_INCLUDE =  -I$(top_builddir)/src/modules/elasticity  -I$(top_builddir)/src/modules/elasticity-updated  -I$(top_builddir)/src/modules/convdiff  -I$(top_builddir)/src/modules/navierstokes  -I$(top_builddir)/src/modules/plasticity  -I$(top_builddir)/src/modules/poisson  -I$(top_builddir)/src/modules/stokes  -I$(top_builddir)/src/modules/heat  -I$(top_builddir)/src/modules/ 
 OBJEXT = o
 PACKAGE = DOLFIN
@@ -160,28 +160,28 @@ PACKAGE_VERSION = 0.6.4
 PATH_SEPARATOR = :
 PKG_CONFIG = /usr/bin/pkg-config
 PYTHON = /usr/bin/python
-PYTHON_CPPFLAGS = -I/usr/include/python2.3
+PYTHON_CPPFLAGS = -I/usr/include/python2.4
 PYTHON_EXEC_PREFIX = ${exec_prefix}
 PYTHON_EXTRA_LIBS =  -lpthread -ldl  -lutil
-PYTHON_LDFLAGS = -L/usr/lib/python2.3/config -lpython2.3
+PYTHON_LDFLAGS = -L/usr/lib/python2.4/config -lpython2.4
 PYTHON_PLATFORM = linux2
 PYTHON_PREFIX = ${prefix}
-PYTHON_SITE_PKG = /usr/lib/python2.3/site-packages
-PYTHON_VERSION = 2.3
+PYTHON_SITE_PKG = /usr/lib/python2.4/site-packages
+PYTHON_VERSION = 2.4
 RANLIB = ranlib
 SET_MAKE = 
 SHELL = /bin/sh
 STRIP = strip
-SWIG = /afs/nada.kth.se/dept/na/hacks/pkg/swig/1.3.29/bin/swig -c++
-SWIG_LIB = /afs/nada.kth.se/home/o/u1mb1o3o/usr/share/swig/1.3.29
-SWIG_PYTHON_CPPFLAGS = -I/usr/include/python2.3
+SWIG = /usr/bin/swig -c++
+SWIG_LIB = /usr/share/swig1.3
+SWIG_PYTHON_CPPFLAGS = -I/usr/include/python2.4
 SWIG_PYTHON_OPT = -python
-UFC_CFLAGS = -I/afs/nada.kth.se/home/o/u1mb1o3o/usr/include  
+UFC_CFLAGS = -I/home/johan/usr/include  
 UFC_LIBS =  
 VERSION = 0.6.4
 XML2_CONFIG = /usr/bin/xml2-config
 XML_CPPFLAGS = -I/usr/include/libxml2
-XML_LIBS = -L/usr/lib -lxml2 -lz -lpthread -lm
+XML_LIBS = -L/usr/lib -lxml2
 ac_ct_AR = ar
 ac_ct_CC = gcc
 ac_ct_CXX = g++
@@ -212,7 +212,7 @@ host_os = linux-gnu
 host_vendor = pc
 includedir = ${prefix}/include
 infodir = ${prefix}/info
-install_sh = /NOBACKUP/jjan/data/src/swig/dolfin/install-sh
+install_sh = /home/johan/data/src/swig/dolfin/install-sh
 libdir = ${exec_prefix}/lib
 libexecdir = ${exec_prefix}/libexec
 libtool_found = yes
@@ -223,10 +223,10 @@ mpi_found =
 oldincludedir = /usr/include
 pkgpyexecdir = $(pyexecdir)/dolfinmodules
 pkgpythondir = $(pyexecdir)/dolfinmodules
-prefix = /afs/nada.kth.se/home/o/u1mb1o3o/usr
+prefix = /home/johan/usr
 program_transform_name = s,x,x,
-pyexecdir = ${exec_prefix}/lib/python2.3/site-packages
-pythondir = ${prefix}/lib/python2.3/site-packages
+pyexecdir = ${exec_prefix}/lib/python2.4/site-packages
+pythondir = ${prefix}/lib/python2.4/site-packages
 sbindir = ${exec_prefix}/sbin
 sharedstatedir = ${prefix}/com
 swig_found = yes
@@ -237,8 +237,8 @@ SWIG_SOURCES = dolfinmodules.i
 pkgpython_PYTHON = dolfinmodules.py __init__.py
 pkgpyexec_LTLIBRARIES = _dolfinmodules.la
 _dolfinmodules_la_SOURCES = dolfinmodules_wrap.cpp $(SWIG_SOURCES)
-_dolfinmodules_la_CPPFLAGS = -I/usr/include/python2.3  -I$(top_builddir)/src/kernel/common -I$(top_builddir)/src/kernel/fem -I$(top_builddir)/src/kernel/form -I$(top_builddir)/src/kernel/function -I$(top_builddir)/src/kernel/io -I$(top_builddir)/src/kernel/la -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/math -I$(top_builddir)/src/kernel/mesh -I$(top_builddir)/src/kernel/mf -I$(top_builddir)/src/kernel/nls -I$(top_builddir)/src/kernel/ode -I$(top_builddir)/src/kernel/pde -I$(top_builddir)/src/kernel/quadrature -I$(top_builddir)/src/kernel/parameter -I$(top_builddir)/src/kernel/log    -I/afs/nada.kth.se/dept/na/hacks/pkg/boost/1.33.1/include  -I/usr/include/libxml2  -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include   -pthread -I/afs/nada.kth.se/dept/na/hacks/pkg/gts/0.7.6/i386_linux26/include -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include   -DHAVE_GTS_H=1 -I/afs/nada.kth.se/home/o/u1mb1o3o/usr/include    -I$(top_builddir)/src/modules/elasticity  -I$(top_builddir)/src/modules/elasticity-updated  -I$(top_builddir)/src/modules/convdiff  -I$(top_builddir)/src/modules/navierstokes  -I$(top_builddir)/src/modules/plasticity  -I$(top_builddir)/src/modules/poisson  -I$(top_builddir)/src/modules/stokes  -I$(top_builddir)/src/modules/heat  -I$(top_builddir)/src/modules/   -I$(top_builddir)/src/kernel/common -I$(top_builddir)/src/kernel/fem -I$(top_builddir)/src/kernel/form -I$(top_builddir)/src/kernel/function -I$(top_builddir)/src/kernel/io -I$(top_builddir)/src/kernel/la -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/math -I$(top_builddir)/src/kernel/mesh -I$(top_builddir)/src/kernel/mf -I$(top_builddir)/src/kernel/nls -I$(top_builddir)/src/kernel/ode -I$(top_builddir)/src/kernel/pde -I$(top_builddir)/src/kernel/quadrature -I$(top_builddir)/src/kernel/parameter -I$(top_builddir)/src/kernel/log    -I/afs/nada.kth.se/dept/na/hacks/pkg/boost/1.33.1/include  -I/usr/include/libxml2  -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include   -pthread -I/afs/nada.kth.se/dept/na/hacks/pkg/gts/0.7.6/i386_linux26/include -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include   -DHAVE_GTS_H=1 -I/afs/nada.kth.se/home/o/u1mb1o3o/usr/include   -I$(top_builddir)/src/modules/python
-_dolfinmodules_la_LDFLAGS = -module -lncurses   -L/usr/lib -lxml2 -lz -lpthread -lm  -lglib-2.0   -pthread -Wl,--export-dynamic -L/afs/nada.kth.se/dept/na/hacks/pkg/gts/0.7.6/i386_linux26/lib -lgts -lgthread-2.0 -lgmodule-2.0 -ldl -lglib-2.0  
+_dolfinmodules_la_CPPFLAGS = -I/usr/include/python2.4  -I$(top_builddir)/src/kernel/common -I$(top_builddir)/src/kernel/fem -I$(top_builddir)/src/kernel/form -I$(top_builddir)/src/kernel/function -I$(top_builddir)/src/kernel/io -I$(top_builddir)/src/kernel/la -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/math -I$(top_builddir)/src/kernel/mesh -I$(top_builddir)/src/kernel/mf -I$(top_builddir)/src/kernel/nls -I$(top_builddir)/src/kernel/ode -I$(top_builddir)/src/kernel/pde -I$(top_builddir)/src/kernel/quadrature -I$(top_builddir)/src/kernel/parameter -I$(top_builddir)/src/kernel/log    -I/usr/include  -I/usr/include/libxml2  -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include   -pthread -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include   -DHAVE_GTS_H=1 -I/home/johan/usr/include    -I$(top_builddir)/src/modules/elasticity  -I$(top_builddir)/src/modules/elasticity-updated  -I$(top_builddir)/src/modules/convdiff  -I$(top_builddir)/src/modules/navierstokes  -I$(top_builddir)/src/modules/plasticity  -I$(top_builddir)/src/modules/poisson  -I$(top_builddir)/src/modules/stokes  -I$(top_builddir)/src/modules/heat  -I$(top_builddir)/src/modules/   -I$(top_builddir)/src/kernel/common -I$(top_builddir)/src/kernel/fem -I$(top_builddir)/src/kernel/form -I$(top_builddir)/src/kernel/function -I$(top_builddir)/src/kernel/io -I$(top_builddir)/src/kernel/la -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/math -I$(top_builddir)/src/kernel/mesh -I$(top_builddir)/src/kernel/mf -I$(top_builddir)/src/kernel/nls -I$(top_builddir)/src/kernel/ode -I$(top_builddir)/src/kernel/pde -I$(top_builddir)/src/kernel/quadrature -I$(top_builddir)/src/kernel/parameter -I$(top_builddir)/src/kernel/log    -I/usr/include  -I/usr/include/libxml2  -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include   -pthread -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include   -DHAVE_GTS_H=1 -I/home/johan/usr/include   -I$(top_builddir)/src/modules/python
+_dolfinmodules_la_LDFLAGS = -module -lncurses   -L/usr/lib -lxml2  -lglib-2.0   -pthread -Wl,--export-dynamic -lgts -lgthread-2.0 -lgmodule-2.0 -ldl -lglib-2.0  
 _dolfinmodules_la_LIBADD = $(top_builddir)/src/lib/libdolfin.la $(top_builddir)/src/modules/lib/libdolfin-modules.la
 all: $(BUILT_SOURCES)
 	$(MAKE) $(AM_MAKEFLAGS) all-am
@@ -551,7 +551,7 @@ uninstall-am: uninstall-info-am uninstall-pkgpyexecLTLIBRARIES \
 
 # Temporary fix: add elasticity-updated to include path manually
 dolfinmodules_wrap.cpp : $(SWIG_SOURCES)
-	$(SWIG) $(SWIG_PYTHON_OPT) -importall -ignoremissing -nodefault -dirprot  -I$(top_builddir)/src/kernel/common -I$(top_builddir)/src/kernel/fem -I$(top_builddir)/src/kernel/form -I$(top_builddir)/src/kernel/function -I$(top_builddir)/src/kernel/io -I$(top_builddir)/src/kernel/la -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/math -I$(top_builddir)/src/kernel/mesh -I$(top_builddir)/src/kernel/mf -I$(top_builddir)/src/kernel/nls -I$(top_builddir)/src/kernel/ode -I$(top_builddir)/src/kernel/pde -I$(top_builddir)/src/kernel/quadrature -I$(top_builddir)/src/kernel/parameter -I$(top_builddir)/src/kernel/log  -DDEBUG -DNDEBUG -o $@ $<
+	$(SWIG) $(SWIG_PYTHON_OPT) -importall -ignoremissing -nodefault -dirprot  -I$(top_builddir)/src/kernel/common -I$(top_builddir)/src/kernel/fem -I$(top_builddir)/src/kernel/form -I$(top_builddir)/src/kernel/function -I$(top_builddir)/src/kernel/io -I$(top_builddir)/src/kernel/la -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/math -I$(top_builddir)/src/kernel/mesh -I$(top_builddir)/src/kernel/mf -I$(top_builddir)/src/kernel/nls -I$(top_builddir)/src/kernel/ode -I$(top_builddir)/src/kernel/pde -I$(top_builddir)/src/kernel/quadrature -I$(top_builddir)/src/kernel/parameter -I$(top_builddir)/src/kernel/log  -DNDEBUG -o $@ $<
 
 dolfinmodules.py: $(SWIG_SOURCES)
 # Tell versions [3.59,3.63) of GNU make to not export all variables.

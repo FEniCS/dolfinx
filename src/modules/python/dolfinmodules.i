@@ -4,6 +4,7 @@
 
 %{
 #include <dolfin.h>
+#include <dolfin/dolfin_modules.h>
 
 #include <numpy/arrayobject.h>
 #include <string>
