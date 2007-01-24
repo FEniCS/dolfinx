@@ -3,6 +3,7 @@ import datetime
 import Numeric
 import LinearAlgebra
 from dolfin import *
+from dolfinmodules import *
 import transform
 
 class DiffPDE(TimeDependentPDE):

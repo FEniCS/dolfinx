@@ -115,7 +115,7 @@ PKG_CHECK_MODULES(GLIB, glib-2.0, have_glib=yes, have_glib=no)
 # Check for GTS
 PKG_CHECK_MODULES(GTS, gts, have_gts=yes, have_gts=no)
 if test $have_gts = yes && test $have_glib = yes; then
-    GTS_CFLAGS="-DHAVE_GTS_H=1"
+    GTS_CFLAGS="$GTS_CFLAGS -DHAVE_GTS_H=1"
 else
     echo "Missing GTS"
 fi
@@ -389,7 +389,7 @@ MODULE_CFLAGS="$MODULE_INCLUDE $KERNEL_CFLAGS"
 AC_SUBST(MODULE_CFLAGS)
 
 # Generate include path for main (including also module code)
-DOLFIN_CFLAGS="$KERNEL_INCLUDE $MODULE_INCLUDE $EXTERNAL_CFLAGS"
+DOLFIN_CFLAGS="$KERNEL_INCLUDE $EXTERNAL_CFLAGS"
 AC_SUBST(DOLFIN_CFLAGS)
 
 # Extract compiler definitions
@@ -411,14 +411,16 @@ DOLFIN_LIBS="$DOLFIN_LIBS $DOLFIN_EXT_LIBS"
 AC_SUBST(DOLFIN_LIBS)
 
 # Generate libtool library list (including also module code)
-DOLFIN_LTLIBOBJS=""
+MODULES_LIBOBJS=""
 for f in $DOLFIN_MODULES; do
-    DOLFIN_LTLIBOBJS="$DOLFIN_LTLIBOBJS \$(top_builddir)/src/modules/$f/*.lo "
+    MODULES_LIBOBJS="$MODULES_LIBOBJS \$(top_builddir)/src/modules/$f/*.lo "
 done
+AC_SUBST(MODULES_LIBOBJS)
+KERNEL_LIBOBJS=""
 for f in $DOLFIN_KERNEL; do
-    DOLFIN_LTLIBOBJS="$DOLFIN_LTLIBOBJS \$(top_builddir)/src/kernel/$f/*.lo "
+    KERNEL_LIBOBJS="$KERNEL_LIBOBJS \$(top_builddir)/src/kernel/$f/*.lo "
 done
-AC_SUBST(DOLFIN_LTLIBOBJS)
+AC_SUBST(KERNEL_LIBOBJS)
 
 # Generate standard environment variables for installation
 echo "creating dolfin.conf"
@@ -490,6 +492,8 @@ AC_OUTPUT( Makefile \
            src/modules/heat/dolfin/Makefile \
            src/modules/stokes/Makefile \
            src/modules/stokes/dolfin/Makefile \
+           src/modules/lib/Makefile \
+           src/modules/python/Makefile \
            src/lib/Makefile \
            src/pydolfin/Makefile \
            src/demo/Makefile \

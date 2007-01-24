@@ -191,4 +191,3 @@ def set(name, val):
 // glue 
 
 %include "dolfin_glue.h"
-

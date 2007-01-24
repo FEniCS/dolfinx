@@ -1,4 +1,5 @@
 from dolfin import *
+from dolfinmodules import *
 from diffpde import *
 
 class Source(Function):

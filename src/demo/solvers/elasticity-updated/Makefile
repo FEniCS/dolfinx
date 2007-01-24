@@ -1,5 +1,5 @@
 CFLAGS  = `pkg-config --cflags dolfin`
-LIBS    = `pkg-config --libs dolfin`
+LIBS    = `pkg-config --libs dolfin` -ldolfin-modules
 CXX     = `pkg-config --variable=compiler dolfin`
 
 DEST    = dolfin-elasticity-updated
