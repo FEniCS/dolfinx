@@ -72,16 +72,22 @@ void LocalMeshCoarsening::coarsenMeshByEdgeCollapse(Mesh& mesh,
   // If coarsen boundary is forbidden
   if ( coarsen_boundary == false )
   {
-    BoundaryMesh boundary(mesh);
+    MeshFunction<uint> bnd_vertex_map; 
+    MeshFunction<uint> bnd_cell_map; 
+    BoundaryMesh boundary(mesh,bnd_vertex_map,bnd_cell_map);
     for (VertexIterator v(boundary); !v.end(); ++v)
-      vertex_forbidden.set(v->index(),true);
+      vertex_forbidden.set(bnd_vertex_map.get(v->index()),true);
   }
+  for (VertexIterator v(mesh); !v.end(); ++v)
+    cout << "Vertex " << v->index() << ": " << vertex_forbidden.get(v->index()) << endl;
 
+  /*
   // Initialise forbidden edges 
   MeshFunction<bool> edge_forbidden(mesh);  
   edge_forbidden.init(1);
   for (EdgeIterator e(mesh); !e.end(); ++e)
     edge_forbidden.set(e->index(),false);
+  */
 
   // Initialise forbidden cells 
   MeshFunction<bool> cell_forbidden(mesh);  
@@ -90,6 +96,7 @@ void LocalMeshCoarsening::coarsenMeshByEdgeCollapse(Mesh& mesh,
     cell_forbidden.set(c->index(),false);
   
   // Initialise data for finding which vertex to remove   
+  bool collapse_edge = false;
   uint* edge_vertex;
   uint shortest_edge_index = 0;
   real lmin, l;
@@ -102,29 +109,35 @@ void LocalMeshCoarsening::coarsenMeshByEdgeCollapse(Mesh& mesh,
     {
 
       // Find shortest edge of cell c
+      collapse_edge = false;
       lmin = 1.0e10 * c->diameter();
       for (EdgeIterator e(*c); !e.end(); ++e)
       {
-        if ( edge_forbidden.get(*e) == true ) break;
-
-        l = e->length();
-        if ( lmin > l )
+        /*
+        if ( edge_forbidden.get(*e) == false )
         {
-          lmin = l;
-          shortest_edge_index = e->index(); 
+        */
+        edge_vertex = e->entities(0);
+        if ( (vertex_forbidden.get(edge_vertex[0]) == false) || 
+             (vertex_forbidden.get(edge_vertex[1]) == false) )
+        {
+          l = e->length();
+          if ( lmin > l )
+          {
+            lmin = l;
+            shortest_edge_index = e->index(); 
+            collapse_edge = true;
+          }
         }
       }
 
       // If at least one vertex should be removed 
-      if ( lmin < 0.5e10 * c->diameter() )
+      if ( collapse_edge == true )
       {
         Edge shortest_edge(mesh,shortest_edge_index);
 
         uint vert2remove_idx = 0;
         edge_vertex = shortest_edge.entities(0);
-        if ( (vertex_forbidden.get(edge_vertex[0]) == true) && 
-             (vertex_forbidden.get(edge_vertex[1]) == true) ) 
-          break;
         if ( vertex_forbidden.get(edge_vertex[0]) == true )
         {
           vert2remove_idx = edge_vertex[1];
@@ -150,25 +163,34 @@ void LocalMeshCoarsening::coarsenMeshByEdgeCollapse(Mesh& mesh,
 	// Remove vertex 
 	num_vertices_to_remove++;
 
-        // Set cells of vertex to remove to forbidden 
-        for (CellIterator cn(vertex_to_remove); !cn.end(); ++cn)
-          cell_forbidden.set(cn->index(),true);
-
+        for (VertexIterator ve(shortest_edge); !ve.end(); ++ve)
+          for (VertexIterator v(ve); !v.end(); ++v)
+            vertex_forbidden.set(v->index(),true);
+        
 	for (CellIterator cn(shortest_edge); !cn.end(); ++cn)
 	{
           // remove cell
-          cell_to_remove.set(cn->index(),true);
-	  num_cells_to_remove++;
+          if ( cell_forbidden.get(cn->index()) == false )
+          {          
+            cell_to_remove.set(cn->index(),true);
+            num_cells_to_remove++;
+          }
 
           /*
           // Set cells of edge to remove to forbidden 
           cell_forbidden.set(cn->index(),true);
           */
 
+          /*
 	  // set all the edges of the neighbor cells to forbidden
 	  for (EdgeIterator e(*cn); !e.end(); ++e)
 	    edge_forbidden.set(e->index(),true);
+          */
 	}
+
+        // Set cells of vertex to remove to forbidden 
+        for (CellIterator cn(vertex_to_remove); !cn.end(); ++cn)
+          cell_forbidden.set(cn->index(),true);
       }
     }
   }
@@ -181,11 +203,20 @@ void LocalMeshCoarsening::coarsenMeshByEdgeCollapse(Mesh& mesh,
   cout << "no old vert: " << num_vertices << ", vertices to remove: " << num_vertices_to_remove << endl;
   
   // Add old vertices
+  Array<int> old2new_vertex(num_vertices);
   uint vertex = 0;
   for (VertexIterator v(mesh); !v.end(); ++v)
   {
+    cout << "vertex " << v->index() << " : " << vertex_to_remove_index.get(*v) << endl;
     if ( vertex_to_remove_index.get(*v) == false ) 
+    {
+      old2new_vertex[v->index()] = vertex;
       editor.addVertex(vertex++, v->point());
+    }
+    else
+    {
+      old2new_vertex[v->index()] = -1;
+    }
   }
 
   // Add old unrefined cells 
@@ -194,8 +225,15 @@ void LocalMeshCoarsening::coarsenMeshByEdgeCollapse(Mesh& mesh,
   Array<uint> cell_vertices(cell_type.numEntities(0));
   for (CellIterator c(mesh); !c.end(); ++c)
   {
+    cout << "Cell " << c->index() << " :"; 
+      for (VertexIterator v(c); !v.end(); ++v)
+        cout << " " << v->index();
+      cout << ", remove = " << cell_to_remove.get(*c) 
+           << ", forbidden = " << cell_forbidden.get(*c) << endl;
     //if ( (cell_marker.get(*c) == false) && (cell_forbidden.get(*c) == false) )
+    //if ( cell_to_remove.get(*c) == false )
     if ( cell_forbidden.get(*c) == false )
+      //if ( cell_forbidden.get(*c) == false )
     {
       cv_idx = 0;
       for (VertexIterator v(c); !v.end(); ++v)
@@ -204,9 +242,25 @@ void LocalMeshCoarsening::coarsenMeshByEdgeCollapse(Mesh& mesh,
     }
   }
   
+  // Reset forbidden verticies 
+  for (VertexIterator v(mesh); !v.end(); ++v)
+    vertex_forbidden.set(v->index(),false);
+
+  // If coarsen boundary is forbidden
+  if ( coarsen_boundary == false )
+  {
+    MeshFunction<uint> bnd_vertex_map; 
+    MeshFunction<uint> bnd_cell_map; 
+    BoundaryMesh boundary(mesh,bnd_vertex_map,bnd_cell_map);
+    for (VertexIterator v(boundary); !v.end(); ++v)
+      vertex_forbidden.set(bnd_vertex_map.get(v->index()),true);
+  }
+
+  /*
   // Reset forbidden edges 
   for (EdgeIterator e(mesh); !e.end(); ++e)
     edge_forbidden.set(e->index(),false);
+  */
 
   // Reset forbidden cells 
   for (CellIterator c(mesh); !c.end(); ++c)
@@ -221,29 +275,35 @@ void LocalMeshCoarsening::coarsenMeshByEdgeCollapse(Mesh& mesh,
     {
 
       // Find shortest edge of cell c
+      collapse_edge = false;
       lmin = 1.0e10 * c->diameter();
       for (EdgeIterator e(*c); !e.end(); ++e)
       {
-        if ( edge_forbidden.get(*e) == true ) break;
-
-        l = e->length();
-        if ( lmin > l )
+        /*
+        if ( edge_forbidden.get(*e) == false )
         {
-          lmin = l;
-          shortest_edge_index = e->index(); 
+        */
+        edge_vertex = e->entities(0);
+        if ( (vertex_forbidden.get(edge_vertex[0]) == false) || 
+             (vertex_forbidden.get(edge_vertex[1]) == false) )
+        {
+          l = e->length();
+          if ( lmin > l )
+          {
+            lmin = l;
+            shortest_edge_index = e->index(); 
+            collapse_edge = true;
+          }
         }
       }
 
       // If at least one vertex should be removed 
-      if ( lmin < 0.5e10 * c->diameter() )
+      if ( collapse_edge == true )
       {
         Edge shortest_edge(mesh,shortest_edge_index);
 
         uint vert2remove_idx = 0;
         edge_vertex = shortest_edge.entities(0);
-        if ( (vertex_forbidden.get(edge_vertex[0]) == true) && 
-             (vertex_forbidden.get(edge_vertex[1]) == true) ) 
-          break;
         if ( vertex_forbidden.get(edge_vertex[0]) == true )
         {
           vert2remove_idx = edge_vertex[1];
@@ -265,9 +325,17 @@ void LocalMeshCoarsening::coarsenMeshByEdgeCollapse(Mesh& mesh,
           vertex_to_remove_index.set(edge_vertex[1],true);
         }       
         Vertex vertex_to_remove(mesh,vert2remove_idx);
-        
+
+        cout << "1. current cell = " << current_cell << endl;
+
 	// Remove vertex 
-        collapseEdge(mesh, shortest_edge, vertex_to_remove, cell_to_remove, editor, current_cell);
+        collapseEdge(mesh, shortest_edge, vertex_to_remove, cell_to_remove, old2new_vertex, editor, current_cell);
+
+        for (VertexIterator ve(shortest_edge); !ve.end(); ++ve)
+          for (VertexIterator v(ve); !v.end(); ++v)
+            vertex_forbidden.set(v->index(),true);
+        
+        cout << "2. current cell = " << current_cell << endl;
 
         // Set cells of vertex to remove to forbidden 
         for (CellIterator cn(vertex_to_remove); !cn.end(); ++cn)
@@ -280,9 +348,11 @@ void LocalMeshCoarsening::coarsenMeshByEdgeCollapse(Mesh& mesh,
           cell_forbidden.set(cn->index(),true);
           */
 
+          /*
           // set all the edges of the neighbor cells to forbidden
           for (EdgeIterator e(*cn); !e.end(); ++e)
 	    edge_forbidden.set(e->index(),true);
+          */
 	}
       }
     }
@@ -297,10 +367,10 @@ void LocalMeshCoarsening::coarsenMeshByEdgeCollapse(Mesh& mesh,
 void LocalMeshCoarsening::collapseEdge(Mesh& mesh, Edge& edge, 
                                        Vertex& vertex_to_remove, 
                                        MeshFunction<bool>& cell_to_remove, 
+                                       Array<int>& old2new_vertex, 
                                        MeshEditor& editor, 
                                        uint& current_cell) 
 {
-
   const CellType& cell_type = mesh.type();
   Array<uint> cell_vertices(cell_type.numEntities(0));
 
@@ -312,6 +382,9 @@ void LocalMeshCoarsening::collapseEdge(Mesh& mesh, Edge& edge,
   else
     vert_master = edge_vertex[0]; 
 
+  cout << "Vertex to remove: " << vertex_to_remove << "; Edge : " 
+       << edge_vertex[0] << " " << edge_vertex[1] << endl;
+
   uint cv_idx;
   for (CellIterator c(vertex_to_remove); !c.end(); ++c)
   {
@@ -320,9 +393,11 @@ void LocalMeshCoarsening::collapseEdge(Mesh& mesh, Edge& edge,
       cv_idx = 0;
       for (VertexIterator v(*c); !v.end(); ++v)
       {  
-        if ( v->index() == vert_slave ) cell_vertices[cv_idx++] = vert_master; 
-        else                            cell_vertices[cv_idx++] = v->index();
+        if ( v->index() == vert_slave ) cell_vertices[cv_idx++] = old2new_vertex[vert_master]; 
+        else                            cell_vertices[cv_idx++] = old2new_vertex[v->index()];
       }
+      cout << "add cell: " << cell_vertices[0] << " " << cell_vertices[1] 
+           << " " << cell_vertices[2] << " " << "; current_cell = " << current_cell << endl;
       editor.addCell(current_cell++, cell_vertices);
     }    
   }

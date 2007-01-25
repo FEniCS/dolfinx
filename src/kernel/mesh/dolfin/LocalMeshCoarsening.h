@@ -31,6 +31,7 @@ namespace dolfin
     static void collapseEdge(Mesh& mesh, Edge& edge, 
                              Vertex& vertex_to_remove, 
                              MeshFunction<bool>& cell_to_remove, 
+                             Array<int>& old2new_vertex, 
                              MeshEditor& editor, 
                              uint& current_cell); 
 
