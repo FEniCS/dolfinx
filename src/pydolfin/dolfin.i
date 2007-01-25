@@ -110,6 +110,10 @@ using namespace dolfin;
 
 %include "dolfin_la_pre.i"
 
+// log pre
+
+%ignore dolfin::Logger;
+
 // function pre
 
 %include exception.i
