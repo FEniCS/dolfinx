@@ -1,10 +1,10 @@
-// Copyright (C) 2005-2006 Anders Logg.
+// Copyright (C) 2005-2007 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // Modified by Garth N. Wells, 2006.
 //
 // First added:  2005-11-26
-// Last changed: 2006-12-12
+// Last changed: 2007-01-29
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Point.h>
@@ -282,11 +282,11 @@ void DiscreteFunction::attach(Mesh& mesh, bool local)
 //-----------------------------------------------------------------------------
 void DiscreteFunction::attach(FiniteElement& element, bool local)
 {
-  // Delete old mesh if local
+  // Delete old element if local
   if ( element_local )
     delete _element;
 
-  // Attach new mesh
+  // Attach new element
   _element = &element;
   element_local = local;
 

@@ -66,7 +66,6 @@ ALL_VALUES(dolfin::MeshFunction<unsigned int>, NPY_UINT)
 %ignore dolfin::Mesh::cells;
 %ignore dolfin::Mesh::coordinates;
 %ignore dolfin::MeshFunction::values;
-
 %ignore dolfin::MeshEditor::open(Mesh&, CellType::Type, uint, uint);
 
 //--- Mesh iterators ---

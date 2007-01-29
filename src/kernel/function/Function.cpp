@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells 2005
 //
 // First added:  2003-11-28
-// Last changed: 2007-01-09
+// Last changed: 2007-01-29
 //
 // The class Function serves as the envelope class and holds a pointer
 // to a letter class that is a subclass of GenericFunction. All the
@@ -198,18 +198,12 @@ void Function::interpolate(Function& fsource)
 void Function::interpolate(real values[])
 {
   Mesh& mesh = this->mesh();
-  FiniteElement& element = this->element();
 
-  // Get vector dimension of finite element space
-  uint vectordim = 1;
-  if ( element.rank() > 0 )
-    vectordim = element.tensordim(0);
-  
   // Compute values at all vertices with vector values interleaved
   uint pos = 0;
   for (VertexIterator v(mesh); !v.end(); ++v)
   {
-    for (uint i = 0; i < vectordim; ++i)
+    for (uint i = 0; i < vectordim(); ++i)
       values[pos++] = (*this)(*v, i);
   }
 }
