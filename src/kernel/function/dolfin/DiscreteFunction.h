@@ -9,6 +9,8 @@
 
 #include <dolfin/GenericFunction.h>
 #include <dolfin/Vector.h>
+#include <dolfin/FEBasis.h>
+#include <dolfin/IntersectionDetector.h>
 
 namespace dolfin
 {
@@ -88,6 +90,9 @@ namespace dolfin
     // Update vector dimension from current element
     void updateVectorDimension();
 
+    // Update vector dimension from current element
+    void constructBasis();
+
     // Pointer to degrees of freedom
     Vector* _x;
 
@@ -97,6 +102,12 @@ namespace dolfin
     // Pointer to finite element
     FiniteElement* _element;
     
+    // Basis for FE space
+    FEBasis basis;
+
+    // Intersection detector for finding cells
+    IntersectionDetector idector;
+
     // Number of vector dimensions
     uint _vectordim;
 
@@ -118,6 +129,8 @@ namespace dolfin
     // True if element is local (not a reference to another element)
     bool element_local;
 
+    // True if element basis functions are available
+    bool have_basis;
   };
 
 }

@@ -30,7 +30,7 @@ namespace dolfin
     /// Destructor
     ~FEBasis();
 
-    void construct(FiniteElement& element);
+    bool construct(FiniteElement& element);
 
     real evalPhysical(Function& f, Point& p, NewAffineMap& map,
 		      dolfin::uint i);

@@ -46,6 +46,7 @@ DiscreteFunction::DiscreteFunction(Vector& x, Mesh& mesh, FiniteElement& element
 {
   // Update vector dimension from element
   updateVectorDimension();
+  constructBasis();
 }
 //-----------------------------------------------------------------------------
 DiscreteFunction::DiscreteFunction(Mesh& mesh, FiniteElement& element)
@@ -55,6 +56,7 @@ DiscreteFunction::DiscreteFunction(Mesh& mesh, FiniteElement& element)
 {
   // Update vector dimension from element
   updateVectorDimension();
+  constructBasis();
 
   // Allocate local storage
   uint size = FEM::size(mesh, element);
@@ -92,8 +94,29 @@ DiscreteFunction::~DiscreteFunction()
 //-----------------------------------------------------------------------------
 real DiscreteFunction::operator()(const Point& p, uint i)
 {
-  dolfin_error("Discrete functions cannot be evaluated at arbitrary points.");
-  return 0.0;
+  if(have_basis)
+  {
+    dolfin_info("Evaluating discrete function.");
+
+    /*
+    // Initialize local data (if not already initialized correctly)
+    local.init(*_element);
+  
+    // Compute mapping to global degrees of freedom
+    _element->nodemap(local.dofs, cell, *_mesh);
+
+    // Get values
+    _x->get(local.coefficients, local.dofs, _element->spacedim());
+
+    */
+
+    return 0.0;
+  }
+  else
+  {
+    dolfin_error("Discrete functions cannot be evaluated at arbitrary points.");
+    return 0.0;
+  }
 }
 //-----------------------------------------------------------------------------
 real DiscreteFunction::operator() (const Vertex& vertex, uint i)
@@ -139,6 +162,8 @@ void DiscreteFunction::sub(uint i)
     // Pick sub element and update vector dimension
     _element = &((*_element)[i]);
     updateVectorDimension();
+    constructBasis();
+
 
     // Make sure component and component offset are zero
     component = 0;
@@ -292,6 +317,7 @@ void DiscreteFunction::attach(FiniteElement& element, bool local)
 
   // Recompute vector dimension
   updateVectorDimension();
+  constructBasis();
 }
 //-----------------------------------------------------------------------------
 void DiscreteFunction::init(Mesh& mesh, FiniteElement& element)
@@ -307,6 +333,8 @@ void DiscreteFunction::init(Mesh& mesh, FiniteElement& element)
   
   // Update vector dimension from element
   updateVectorDimension();
+  constructBasis();
+
 
   // Reinitialize local storage
   uint size = FEM::size(mesh, element);
@@ -338,5 +366,10 @@ void DiscreteFunction::updateVectorDimension()
   {
     dolfin_error("Cannot handle tensor-valued functions.");
   }
+}
+//-----------------------------------------------------------------------------
+void DiscreteFunction::constructBasis()
+{
+  have_basis = basis.construct(*_element);
 }
 //-----------------------------------------------------------------------------

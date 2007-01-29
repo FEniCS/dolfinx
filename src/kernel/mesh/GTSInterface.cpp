@@ -58,6 +58,24 @@ GtsBBox* GTSInterface::bboxCell(Cell& c)
 #endif
 }
 //-----------------------------------------------------------------------------
+GtsBBox* GTSInterface::bboxPoint(Point& p)
+{
+#if defined(HAVE_GTS_H)
+
+  GtsBBox* bbox;
+
+  bbox = gts_bbox_new(gts_bbox_class(), (void *)0,
+		      p.x(), p.y(), p.z(),
+		      p.x(), p.y(), p.z());
+  
+  return bbox;
+
+#else
+  dolfin_error("missing GTS");
+  return 0;
+#endif
+}
+//-----------------------------------------------------------------------------
 GNode* GTSInterface::buildCellTree(Mesh& mesh)
 {
 #if defined(HAVE_GTS_H)
@@ -107,6 +125,41 @@ void GTSInterface::overlap(Cell& c, GNode* tree, Mesh& mesh,
     Cell close(mesh, boundedcell);
 
     if(type.intersects(c, close))
+    {
+      cells.push_back(boundedcell);
+    }
+    overlaps = overlaps->next;
+  }
+
+#else
+  dolfin_error("missing GTS");
+#endif
+}
+//-----------------------------------------------------------------------------
+void GTSInterface::overlap(Point& p, GNode* tree, Mesh& mesh, 
+			   Array<uint>& cells)
+{
+#if defined(HAVE_GTS_H)
+  GtsBBox* bbprobe;
+  GtsBBox* bb;
+  GSList* overlaps = 0;
+  uint boundedcell;
+
+  CellType& type = mesh.type();
+
+  bbprobe = bboxPoint(p);
+
+  overlaps = gts_bb_tree_overlap(tree, bbprobe);
+
+  cells.clear();
+  while(overlaps)
+  {
+    bb = (GtsBBox *)overlaps->data;
+    boundedcell = (uint)(long)bb->bounded;
+
+    Cell close(mesh, boundedcell);
+
+    if(type.intersects(close, p))
     {
       cells.push_back(boundedcell);
     }

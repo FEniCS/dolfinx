@@ -19,8 +19,13 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-IntersectionDetector::IntersectionDetector(Mesh& mesh) : mesh(&mesh)
+IntersectionDetector::IntersectionDetector()
 {
+}
+//-----------------------------------------------------------------------------
+void IntersectionDetector::init(Mesh& mesh)
+{
+  this->mesh = &mesh;
   tree = GTSInterface::buildCellTree(mesh);
 }
 //-----------------------------------------------------------------------------
@@ -31,5 +36,6 @@ void IntersectionDetector::overlap(Cell& c, Array<uint>& cells)
 //-----------------------------------------------------------------------------
 void IntersectionDetector::overlap(Point& p, Array<uint>& cells)
 {
+  GTSInterface::overlap(p, tree, *mesh, cells);
 }
 //-----------------------------------------------------------------------------

@@ -36,11 +36,17 @@ namespace dolfin
     /// Construct bounding box of cell
     static GtsBBox* bboxCell(Cell& c);
 
+    /// Construct bounding box of a single point
+    static GtsBBox* bboxPoint(Point& p);
+
     /// Construct hierarchical space partition tree of mesh
     static GNode* buildCellTree(Mesh& mesh);
 
     /// Compute cells overlapping c
     static void overlap(Cell& c, GNode* tree, Mesh& mesh, Array<uint>& cells);
+
+    /// Compute cells overlapping p
+    static void overlap(Point& p, GNode* tree, Mesh& mesh, Array<uint>& cells);
   };
 
 }

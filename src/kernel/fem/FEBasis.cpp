@@ -25,23 +25,28 @@ FEBasis::~FEBasis()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void FEBasis::construct(FiniteElement& element)
+bool FEBasis::construct(FiniteElement& element)
 {
   spec = element.spec();
   std::string repr = spec.repr();
 
   if ( repr == "[ Lagrange finite element of degree 1 on a triangle ]" )
   {
-    dolfin_info("Creating basis for: %s.", repr.c_str());
+    dolfin_info("Constructing basis for: %s.", repr.c_str());
     
     functions.resize(3);
     functions[0] = new ScalarLagrange(0);
     functions[1] = new ScalarLagrange(1);
     functions[2] = new ScalarLagrange(2);
   }
+  else
+  {
+    dolfin_info("Unable to construct basis functions for: %s.", repr.c_str());
 
+    return false;
+  }
   
-
+  return true;
 }
 //-----------------------------------------------------------------------------
 real FEBasis::evalPhysical(Function& f, Point& p, NewAffineMap& map,

@@ -45,6 +45,9 @@ namespace dolfin
     /// Vertex nodes for components of function
     uint* vertex_nodes;
 
+    /// Local storage for coefficients on a cell 
+    real* coefficients;
+
   private:
     
     // Dimension of local function space
