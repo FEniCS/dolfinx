@@ -148,6 +148,14 @@ using namespace dolfin;
 %import "dolfin/constants.h"
 %include "dolfin.h"
 
+// common post
+
+%template(STLVectorFunctionPtr) std::vector<dolfin::Function *>;
+%template(ArrayFunctionPtr) dolfin::Array<dolfin::Function *>;
+%template(STLVectorUInt) std::vector<unsigned int>;
+%template(ArrayUInt) dolfin::Array<unsigned int>;
+
+
 // settings post
 
 %pythoncode
@@ -160,11 +168,7 @@ def set(name, val):
 %}
 
 
-// common post
-
-%template(STLVectorUInt) std::vector<unsigned int>;
-%template(ArrayUInt) dolfin::Array<unsigned int>;
-
+/*
 %extend dolfin::TimeDependent {
   TimeDependent(double *t)
   {
@@ -177,6 +181,7 @@ def set(name, val):
     self->sync(*t);
   }
 }
+*/
 
 
 // la post
@@ -195,3 +200,4 @@ def set(name, val):
 // glue 
 
 %include "dolfin_glue.h"
+

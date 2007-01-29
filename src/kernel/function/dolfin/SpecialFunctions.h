@@ -60,6 +60,38 @@ namespace dolfin
     }
   };
 
+
+  /// Temporary manually implemented common basis functions
+  class ScalarLagrange : public Function
+  {
+  public:
+    ScalarLagrange(int num) : num(num) {}
+    
+    real eval(const Point& p, unsigned int i)
+    {
+      switch(num)
+      {
+      case 0:
+	return 1 - p.x() - p.y() - p.z();
+	break;
+      case 1:
+	return p.x();
+	break;
+      case 2:
+	return p.y();
+	break;
+      case 3:
+	return p.z();
+	break;
+      default:
+	return 0.0;
+      }
+    }
+    
+  private:
+    int num;
+  };
+
 }
 
 #endif
