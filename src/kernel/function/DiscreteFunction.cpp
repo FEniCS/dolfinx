@@ -94,23 +94,51 @@ DiscreteFunction::~DiscreteFunction()
 //-----------------------------------------------------------------------------
 real DiscreteFunction::operator()(const Point& p, uint i)
 {
+  // Note, this is a very expensive operation compared to evaluating at
+  // vertices
+
   if(have_basis)
   {
-    dolfin_info("Evaluating discrete function.");
+    dolfin_assert(_x && _mesh && _element);
 
-    /*
+    // FIXME: create const versions of IntersectionDetector function
+    Point pprobe = p;
+
+    // Find cell(s) intersecting p
+    Array<uint> cells;
+    idetector.overlap(pprobe, cells);
+
+    // Always pick first cell. If there are more than one cell, the
+    // result is undefined.
+
+    Cell cell(*_mesh, cells[0]);
+    
     // Initialize local data (if not already initialized correctly)
     local.init(*_element);
   
     // Compute mapping to global degrees of freedom
     _element->nodemap(local.dofs, cell, *_mesh);
 
+    // Compute positions in global vector by adding offsets
+    for (uint j = 0; j < _element->spacedim(); j++)
+      local.dofs[j] = local.dofs[j] + mixed_offset + component_offset;
+
     // Get values
     _x->get(local.coefficients, local.dofs, _element->spacedim());
 
-    */
+    // Compute map
+    NewAffineMap map;
+    map.update(cell);
 
-    return 0.0;
+    // Compute finite element sum
+    real sum = 0.0;
+    for(uint j = 0; j < _element->spacedim(); j++)
+    {
+      sum += local.coefficients[j] * basis.evalPhysical(*(basis.functions[j]),
+							pprobe, map, i);
+    }
+
+    return sum;
   }
   else
   {
@@ -370,6 +398,10 @@ void DiscreteFunction::updateVectorDimension()
 //-----------------------------------------------------------------------------
 void DiscreteFunction::constructBasis()
 {
+  dolfin_assert(_element);
+  dolfin_assert(_mesh);
+
   have_basis = basis.construct(*_element);
+  idetector.init(*_mesh);
 }
 //-----------------------------------------------------------------------------
