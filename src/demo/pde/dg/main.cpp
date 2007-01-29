@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-12-05
-// Last changed: 2006-12-18
+// Last changed: 2007-01-29
 //
 // This demo program solves Poisson's equation
 //
@@ -67,32 +67,24 @@ int main()
   NeumannBC g;
   FacetNormal n;
   InvMeshSize h;
-//  UnitSquare mesh(1, 1);
-  UnitCube mesh(1, 1, 1);
-//  real alpha = 2.0;
-
-//  Poisson::BilinearForm a(n, h, alpha);
-  Poisson::BilinearForm a;
-//  Poisson::LinearForm L(f, g);
-
-//  PDE pde(a, L, mesh, bc);
-
-Matrix A;
-FEM::assemble(a, A, mesh);
-A.disp();
+  UnitSquare mesh(16, 16);
+  real alpha = 2.0;
+  Poisson::BilinearForm a(n, h, alpha);
+  Poisson::LinearForm L(f, g);
 
   // Compute solution
-/*  Function U = pde.solve();
+  PDE pde(a, L, mesh, bc);
+  Function U = pde.solve();
 
   // Project solution onto a continuous basis
-  Projection::BilinearForm a_p;
-  Projection::LinearForm L_p(U);
-  PDE pde_p(a_p, L_p, mesh, bc);
-  Function U_p = pde_p.solve();
-
+  Projection::BilinearForm ap;
+  Projection::LinearForm Lp(U);
+  PDE projection(ap, Lp, mesh, bc);
+  Function Up = projection.solve();
+  
   // Save projected solution to file
   File file("poisson_projected.pvd");
-  file << U_p;
-*/
+  file << Up;
+
   return 0;
 }
