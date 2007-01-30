@@ -2,13 +2,15 @@
 
 from dolfin import *
 
-from numpy import zeros
+# Temporary until plot is in place
+def plot(*args):
+    print "Plotting..."
 
 # Example of a user-defined scalar function
 class ScalarFunction(Function):
 
     def eval(self, p, i):
-        return sin(5*p.x())*cos(3*p.x()*p.y())
+        return sin(5*p.x[0])*cos(3*p.x[0])*p.x[0]
 
 f = ScalarFunction()
 
@@ -20,9 +22,9 @@ class VectorFunction(Function):
     
     def eval(self, p, i):
         if i == 0:
-            return -p.y()
+            return -p.x[1]
         else:
-            return p.x()
+            return p.x[0]
 
 g = VectorFunction()
 
@@ -39,3 +41,6 @@ plot(f)
 
 # Plot vector function
 plot(g)
+
+# Plot mesh displaced by vector function
+plot(mesh, g)
