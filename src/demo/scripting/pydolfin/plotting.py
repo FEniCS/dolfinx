@@ -9,8 +9,8 @@ def plot(*args):
 # Example of a user-defined scalar function
 class ScalarFunction(Function):
 
-    def eval(self, p, i):
-        return sin(5*p.x[0])*cos(3*p.x[0])*p.x[0]
+    def eval(self, x, i):
+        return x[0]*x[1] + 1.0 / (x[0] + 0.1)
 
 f = ScalarFunction()
 
@@ -20,11 +20,11 @@ class VectorFunction(Function):
     def __init__(self):
         Function.__init__(self, 2)
     
-    def eval(self, p, i):
+    def eval(self, x, i):
         if i == 0:
-            return -p.x[1]
+            return -x[1]
         else:
-            return p.x[0]
+            return x[0]
 
 g = VectorFunction()
 
