@@ -12,7 +12,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 LocalFunctionData::LocalFunctionData() 
-  : dofs(0), components(0), points(0), vertex_nodes(0), n(0)
+  : dofs(0), components(0), points(0), vertex_nodes(0), coefficients(0), n(0)
 {
   // Do nothing
 }
@@ -47,6 +47,9 @@ void LocalFunctionData::init(const FiniteElement& element)
   else
     vertex_nodes = new uint[element.tensordim(0)];
 
+  // Initialize coefficients
+  coefficients = new real[element.spacedim()];
+
   // Save dimension of local function space
   n = element.spacedim();
 }
@@ -68,5 +71,9 @@ void LocalFunctionData::clear()
   if ( vertex_nodes )
     delete [] vertex_nodes;
   vertex_nodes = 0;
+
+  if ( coefficients )
+    delete [] coefficients;
+  coefficients = 0;
 }
 //-----------------------------------------------------------------------------

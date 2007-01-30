@@ -29,7 +29,9 @@ namespace dolfin
   {
   public:
     
-    IntersectionDetector(Mesh& mesh);
+    IntersectionDetector();
+
+    void init(Mesh& mesh);
 
     void overlap(Cell& c, Array<uint>& overlap);
     void overlap(Point& p, Array<uint>& overlap);

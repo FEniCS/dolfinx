@@ -46,6 +46,7 @@ DiscreteFunction::DiscreteFunction(Vector& x, Mesh& mesh, FiniteElement& element
 {
   // Update vector dimension from element
   updateVectorDimension();
+  constructBasis();
 }
 //-----------------------------------------------------------------------------
 DiscreteFunction::DiscreteFunction(Mesh& mesh, FiniteElement& element)
@@ -55,6 +56,7 @@ DiscreteFunction::DiscreteFunction(Mesh& mesh, FiniteElement& element)
 {
   // Update vector dimension from element
   updateVectorDimension();
+  constructBasis();
 
   // Allocate local storage
   uint size = FEM::size(mesh, element);
@@ -92,8 +94,57 @@ DiscreteFunction::~DiscreteFunction()
 //-----------------------------------------------------------------------------
 real DiscreteFunction::operator()(const Point& p, uint i)
 {
-  dolfin_error("Discrete functions cannot be evaluated at arbitrary points.");
-  return 0.0;
+  // Note, this is a very expensive operation compared to evaluating at
+  // vertices
+
+  if(have_basis)
+  {
+    dolfin_assert(_x && _mesh && _element);
+
+    // FIXME: create const versions of IntersectionDetector function
+    Point pprobe = p;
+
+    // Find cell(s) intersecting p
+    Array<uint> cells;
+    idetector.overlap(pprobe, cells);
+
+    // Always pick first cell. If there are more than one cell, the
+    // result is undefined.
+
+    Cell cell(*_mesh, cells[0]);
+    
+    // Initialize local data (if not already initialized correctly)
+    local.init(*_element);
+  
+    // Compute mapping to global degrees of freedom
+    _element->nodemap(local.dofs, cell, *_mesh);
+
+    // Compute positions in global vector by adding offsets
+    for (uint j = 0; j < _element->spacedim(); j++)
+      local.dofs[j] = local.dofs[j] + mixed_offset + component_offset;
+
+    // Get values
+    _x->get(local.coefficients, local.dofs, _element->spacedim());
+
+    // Compute map
+    NewAffineMap map;
+    map.update(cell);
+
+    // Compute finite element sum
+    real sum = 0.0;
+    for(uint j = 0; j < _element->spacedim(); j++)
+    {
+      sum += local.coefficients[j] * basis.evalPhysical(*(basis.functions[j]),
+							pprobe, map, i);
+    }
+
+    return sum;
+  }
+  else
+  {
+    dolfin_error("Discrete functions cannot be evaluated at arbitrary points.");
+    return 0.0;
+  }
 }
 //-----------------------------------------------------------------------------
 real DiscreteFunction::operator() (const Vertex& vertex, uint i)
@@ -139,6 +190,8 @@ void DiscreteFunction::sub(uint i)
     // Pick sub element and update vector dimension
     _element = &((*_element)[i]);
     updateVectorDimension();
+    constructBasis();
+
 
     // Make sure component and component offset are zero
     component = 0;
@@ -292,6 +345,7 @@ void DiscreteFunction::attach(FiniteElement& element, bool local)
 
   // Recompute vector dimension
   updateVectorDimension();
+  constructBasis();
 }
 //-----------------------------------------------------------------------------
 void DiscreteFunction::init(Mesh& mesh, FiniteElement& element)
@@ -307,6 +361,8 @@ void DiscreteFunction::init(Mesh& mesh, FiniteElement& element)
   
   // Update vector dimension from element
   updateVectorDimension();
+  constructBasis();
+
 
   // Reinitialize local storage
   uint size = FEM::size(mesh, element);
@@ -338,5 +394,14 @@ void DiscreteFunction::updateVectorDimension()
   {
     dolfin_error("Cannot handle tensor-valued functions.");
   }
+}
+//-----------------------------------------------------------------------------
+void DiscreteFunction::constructBasis()
+{
+  dolfin_assert(_element);
+  dolfin_assert(_mesh);
+
+  have_basis = basis.construct(*_element);
+  idetector.init(*_mesh);
 }
 //-----------------------------------------------------------------------------

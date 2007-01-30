@@ -314,7 +314,7 @@ class GTSInterface(unittest.TestCase):
 
 class IntersectionDetect(unittest.TestCase):
 
-    def testTriangle(self):
+    def testTriangleTriangle(self):
         
         mesh = UnitSquare(2, 2)
 
@@ -333,7 +333,8 @@ class IntersectionDetect(unittest.TestCase):
 
         probecell = Cell(mesh2, 0)
 
-        idetector = IntersectionDetector(mesh)
+        idetector = IntersectionDetector()
+        idetector.init(mesh)
 
         overlaps = ArrayUInt()
 
@@ -357,6 +358,47 @@ class IntersectionDetect(unittest.TestCase):
             print "p2: ", p2[0], " ", p2[1], " ", p2[2]
 
         self.assertEqual(overlaps.size(), 6)
+
+
+    def testPointTriangle(self):
+        
+        print "PointTriangle test"
+
+        mesh = UnitSquare(2, 2)
+
+        print "mesh size: ", mesh.size(2)
+
+        pprobe = Point(0.66, 0.833)
+
+        print "pprobe: ", pprobe[0], " ", pprobe[1], " ", pprobe[2]
+
+        idetector = IntersectionDetector()
+        idetector.init(mesh)
+
+        overlaps = ArrayUInt()
+
+        idetector.overlap(pprobe, overlaps)
+
+        print "overlaps: ", overlaps.size()
+
+        for i in range(0, overlaps.size()):
+            print "overlap: ", overlaps[i]
+
+            cell = Cell(mesh, overlaps[i])
+
+            v = vertices(cell)
+            p0 = v.point()
+            v.increment()
+            p1 = v.point()
+            v.increment()
+            p2 = v.point()
+
+            print ""
+            print "p0: ", p0[0], " ", p0[1], " ", p0[2]
+            print "p1: ", p1[0], " ", p1[1], " ", p1[2]
+            print "p2: ", p2[0], " ", p2[1], " ", p2[2]
+
+        #self.assertEqual(overlaps.size(), 1)
 
 
 if __name__ == "__main__":
