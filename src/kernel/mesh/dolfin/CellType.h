@@ -1,8 +1,8 @@
-// Copyright (C) 2006 Anders Logg.
+// Copyright (C) 2006-2007 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-06-05
-// Last changed: 2006-12-06
+// Last changed: 2007-01-30
 
 #ifndef __CELL_TYPE_H
 #define __CELL_TYPE_H
@@ -71,6 +71,9 @@ namespace dolfin
 
     /// Refine cell uniformly
     virtual void refineCell(Cell& cell, MeshEditor& editor, uint& current_cell) const = 0;
+
+    /// Order entities locally
+    virtual void orderEntities(Cell& cell) const = 0;
 
     /// Compute (generalized) volume of mesh entity
     virtual real volume(const MeshEntity& entity) const = 0;

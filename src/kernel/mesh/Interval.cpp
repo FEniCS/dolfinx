@@ -61,6 +61,12 @@ void Interval::createEntities(uint** e, uint dim, const uint v[]) const
   dolfin_error1("Don't know how to create entities of topological dimension %d.", dim);
 }
 //-----------------------------------------------------------------------------
+void Interval::orderEntities(Cell& cell) const
+{
+  // FIXME: Implement
+  dolfin_error("Not implemented.");
+}
+//-----------------------------------------------------------------------------
 void Interval::refineCell(Cell& cell, MeshEditor& editor,
 			  uint& current_cell) const
 {
