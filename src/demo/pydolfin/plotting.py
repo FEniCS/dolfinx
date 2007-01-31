@@ -2,7 +2,6 @@
 
 from dolfin import *
 
-
 # Example of a user-defined scalar function
 class ScalarFunction(Function):
 
@@ -12,7 +11,7 @@ class ScalarFunction(Function):
 f = ScalarFunction()
 
 # Example of a user-defined vector function
-class VectorFunction(Function):
+class VectorFunction2D(Function):
 
     def __init__(self):
         Function.__init__(self, 2)
@@ -23,7 +22,11 @@ class VectorFunction(Function):
         else:
             return x[0]
 
+g = VectorFunction2D()
+
+# Example of a user-defined vector function
 class VectorFunction3D(Function):
+    
     def __init__(self):
         Function.__init__(self, 3)
 
@@ -35,11 +38,9 @@ class VectorFunction3D(Function):
         else:
             return x[0]**2
 
+h = VectorFunction3D()
 
-g = VectorFunction()
-
-
-# Attach a mesh to the functions
+# Attach mesh for 2D plots
 mesh = UnitSquare(16, 16)
 f.attach(mesh)
 g.attach(mesh)
@@ -56,10 +57,10 @@ plot(g)
 # Plot mesh displaced by vector function
 plot(mesh, g)
 
+# Attach mesh for 3D plots
 mesh = UnitCube(16,16,16)
 f.attach(mesh)
-g = VectorFunction3D()
-g.attach(mesh)
+h.attach(mesh)
 
 # Plot mesh
 plot(mesh)
@@ -68,9 +69,7 @@ plot(mesh)
 plot(f)
 
 # Plot vector function
-plot(g)
+plot(h)
 
 # Plot mesh displaced by vector function
-plot(mesh, g)
-
-
+plot(mesh, h)

@@ -1,4 +1,6 @@
+ - Add support for plotting from within DOLFIN in Python
  - Add support for discontinuous Galerkin (DG) methods
+ - Move PyDOLFIN demos to src/demo/pydolfin
  - Fix Python interface for vertex and cell maps in boundary computation
 0.6.4 [2006-12-01]
  - Switch from Python Numeric to Python NumPy
