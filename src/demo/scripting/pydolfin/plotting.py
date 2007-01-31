@@ -4,7 +4,7 @@ from dolfin import *
 
 # Temporary until plot is in place
 def plot(*args):
-    print "Plotting..."
+    viper.plot(*args)
 
 # Example of a user-defined scalar function
 class ScalarFunction(Function):
@@ -22,7 +22,7 @@ class VectorFunction(Function):
     
     def eval(self, x, i):
         if i == 0:
-            return -x[1]
+            return -x[1]**2
         else:
             return x[0]
 

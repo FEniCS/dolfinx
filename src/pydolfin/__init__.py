@@ -4,3 +4,4 @@ from dolfin import *
 from import_form import *
 from projection import *
 from assemble import *
+from plot import *
