@@ -46,7 +46,7 @@ AC_DEFUN([AC_PYTHON_DEVEL],[
 	if test -z "$python_path" ; then
 		AC_MSG_ERROR([cannot find Python library path])
 	fi
-	AC_SUBST([PYTHON_LDFLAGS],["-L$python_path -lpython$PYTHON_VERSION"])
+	AC_SUBST([PYTHON_LDFLAGS],["-L$python_path"])
 	#
 	python_site=`echo $python_path | sed "s/config/site-packages/"`
 	AC_SUBST([PYTHON_SITE_PKG],[$python_site])
