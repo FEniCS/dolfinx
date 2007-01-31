@@ -1,11 +1,11 @@
-// Copyright (C) 2006 Anders Logg.
+// Copyright (C) 2006-2007 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // Modified by Garth N. Wells, 2006.
 // Modified by Kristian Oelgaard, 2006.
 // 
 // First added:  2006-06-05
-// Last changed: 2006-12-07
+// Last changed: 2007-01-30
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Cell.h>
@@ -83,6 +83,12 @@ void Triangle::createEntities(uint** e, uint dim, const uint v[]) const
   e[0][0] = v[1]; e[0][1] = v[2];
   e[1][0] = v[2]; e[1][1] = v[0];
   e[2][0] = v[0]; e[2][1] = v[1];
+}
+//-----------------------------------------------------------------------------
+void Triangle::orderEntities(Cell& cell) const
+{
+  // FIXME: Implement
+  dolfin_error("Not implemented.");
 }
 //-----------------------------------------------------------------------------
 void Triangle::refineCell(Cell& cell, MeshEditor& editor,

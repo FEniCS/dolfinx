@@ -24,6 +24,7 @@
 #include <dolfin/MeshGeometry.h>
 #include <dolfin/MeshHierarchy.h>
 #include <dolfin/MeshHierarchyAlgorithms.h>
+#include <dolfin/MeshOrdering.h>
 #include <dolfin/Mesh.h>
 #include <dolfin/MeshTopology.h>
 #include <dolfin/Point.h>

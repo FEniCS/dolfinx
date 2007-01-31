@@ -1,4 +1,4 @@
-// Copyright (C) 2006 Anders Logg.
+// Copyright (C) 2006-2007 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // Modified by Johan Hoffman 2006.
@@ -6,7 +6,7 @@
 // Modified by Kristian Oelgaard 2006.
 //
 // First added:  2006-06-05
-// Last changed: 2006-12-06
+// Last changed: 2007-01-30
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Cell.h>
@@ -126,6 +126,12 @@ void Tetrahedron::createEntities(uint** e, uint dim, const uint v[]) const
   default:
     dolfin_error1("Don't know how to create entities of topological dimension %d.", dim);
   }
+}
+//-----------------------------------------------------------------------------
+void Tetrahedron::orderEntities(Cell& cell) const
+{
+  // FIXME: Implement
+  dolfin_error("Not implemented.");
 }
 //-----------------------------------------------------------------------------
 void Tetrahedron::refineCell(Cell& cell, MeshEditor& editor,

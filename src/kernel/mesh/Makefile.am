@@ -10,6 +10,7 @@ nobase_include_HEADERS    = dolfin/dolfin_mesh.h \
                             dolfin/MeshGeometry.h \
                             dolfin/MeshHierarchy.h \
                             dolfin/MeshHierarchyAlgorithms.h \
+                            dolfin/MeshOrdering.h \
                             dolfin/MeshTopology.h \
                             dolfin/Mesh.h \
                             dolfin/MeshData.h \
@@ -43,6 +44,7 @@ libdolfin_mesh_la_SOURCES = UnitCube.cpp \
                             MeshGeometry.cpp \
                             MeshHierarchy.cpp \
                             MeshHierarchyAlgorithms.cpp \
+                            MeshOrdering.cpp \
                             MeshTopology.cpp \
                             Mesh.cpp \
                             MeshData.cpp \
