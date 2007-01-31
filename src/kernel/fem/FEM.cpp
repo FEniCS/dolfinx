@@ -1160,3 +1160,18 @@ void FEM::assembleSimple(LinearForm& L,
   }
 }
 //-----------------------------------------------------------------------------
+#ifdef HAVE_PETSC_H
+void FEM::assemblSimpleAndCopy(BilinearForm& a,
+                               std::vector<std::map<int, real> >& A,
+                               PETScMatrix& B,
+                               Mesh& mesh)
+{
+  // First assemble into A
+  assembleSimple(a, A, mesh);
+
+  // Then copy from A into B, knowing that the rows are sorted
+  
+
+}
+#endif
+//-----------------------------------------------------------------------------
