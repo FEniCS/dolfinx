@@ -117,6 +117,14 @@ namespace dolfin
                                std::vector<real>& b,
                                Mesh& mesh);
     //-------------------------------------------------------------------------
+#ifdef HAVE_PETSC_H
+    // Temporary for benchmarking STL and then copy A --> B
+    static void assemblSimpleAndCopy(BilinearForm& a,
+                                     std::vector<std::map<int, real> >& A,
+                                     PETScMatrix& B,
+                                     Mesh& mesh);
+#endif
+    //-------------------------------------------------------------------------
 
   private:
 
