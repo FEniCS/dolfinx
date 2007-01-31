@@ -2,10 +2,6 @@
 
 from dolfin import *
 
-# Temporary until plot is in place
-def plot(*args):
-    viper.plot(*args)
-
 # Example of a user-defined scalar function
 class ScalarFunction(Function):
 
