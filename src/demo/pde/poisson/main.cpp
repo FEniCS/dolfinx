@@ -1,7 +1,7 @@
-// Copyright (C) 2005-2006 Anders Logg.
+// Copyright (C) 2006-2007 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
-// First added:  2005
+// First added:  2006-02-07
 // Last changed: 2006-09-05
 //
 // This demo program solves Poisson's equation
@@ -69,13 +69,14 @@ int main()
   Poisson::LinearForm L(f, g);
   PDE pde(a, L, mesh, bc);
 
-
   // Compute solution
   Function U = pde.solve();
-//  U.vector().disp();
+
   // Save solution to file
-  File file("poisson.pvd");
+  File file("poisson.xml");
   file << U;
+
+
   
   return 0;
 }

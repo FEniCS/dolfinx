@@ -1,10 +1,4 @@
-# Load mayavi
-from mayavi import *
+from dolfin import *
 
-# Plot solution
-v = mayavi()
-d = v.open_vtk_xml("poisson000000.vtu")
-m = v.load_module("BandedSurfaceMap")
-
-# Wait until window is closed
-v.master.wait_window()
+f = Function("poisson.xml")
+plot(f)

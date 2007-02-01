@@ -4,12 +4,13 @@
 // Modified by Garth N. Wells 2005
 //
 // First added:  2003-11-28
-// Last changed: 2007-01-29
+// Last changed: 2007-02-01
 //
 // The class Function serves as the envelope class and holds a pointer
 // to a letter class that is a subclass of GenericFunction. All the
 // functionality is handled by the specific implementation (subclass).
 
+#include <dolfin/File.h>
 #include <dolfin/ConstantFunction.h>
 #include <dolfin/UserFunction.h>
 #include <dolfin/FunctionPointerFunction.h>
@@ -68,6 +69,18 @@ Function::Function(Mesh& mesh, FiniteElement& element)
   f = new DiscreteFunction(mesh, element);
 }
 //-----------------------------------------------------------------------------
+Function::Function(std::string filename)
+  : Variable("u", "no description"), TimeDependent(),
+    f(0), _type(user), _cell(0), _facet(-1)
+{
+  f = new UserFunction(this, 1);
+
+  // Read from file
+  File file(filename);
+  file >> *this;
+}
+//-----------------------------------------------------------------------------
+
 Function::Function(const Function& f)
   : Variable("u", "no description"), TimeDependent(),
     f(0), _type(f._type), _cell(0), _facet(-1)
