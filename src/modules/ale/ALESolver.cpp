@@ -28,16 +28,29 @@ class ALETools
 public:
 
   ALETools(Mesh& mesh, Function& w, ALEFunction& e, real& k)
-    : mesh(mesh), w(w), e(e), mvel(w.vector()), k(k), nsd(mesh.topology().dim())
+    : mesh(mesh), w(w), e(e), mvel(w.vector()), nsd(mesh.topology().dim()), k(k)
   { 
-    boundary = new BoundaryMesh(mesh, vertex_map, cell_map);
-  }
 
+
+    boundary = new BoundaryMesh(mesh, vertex_map, cell_map);
+    
+    vertex_is_interior.init(mesh, 0);
+
+    for (VertexIterator v(mesh); ! v.end(); ++v) {  
+      
+      vertex_is_interior.set(v->index(), true);
+    }
+
+    for (VertexIterator bv(*boundary); !bv.end(); ++bv) {  
+      
+      vertex_is_interior.set(vertex_map(*bv), false);
+    }
+  }
+  //-----------------------------------------------------------------------------
   ~ALETools() 
   {
-    delete boundary;
   }
-
+  //-----------------------------------------------------------------------------
   // execute external function, smooth the mesh and from this
   // update the mesh velocity.
   void updateMesh()
@@ -50,30 +63,24 @@ public:
     
     mvel /= k;
   }
-
- 
-
   // add more things, maybe.
 
 private:
 
-  bool isInterior(const Vertex& vertex)
+  bool isInterior(Vertex& vertex)
   {
-    for (VertexIterator boundary_vertex(*boundary); ! boundary_vertex.end(); ++boundary_vertex) {  
-      
-      if (vertex_map(*boundary_vertex) == vertex.index()) return false;
-    }
-    
-    return true;
+    return (vertex_is_interior(vertex));
   }
-
+  //-----------------------------------------------------------------------------
   void smoothMesh(void) 
   {
+    unsigned int ndx;
+    
     for (VertexIterator v(mesh); ! v.end(); ++v) {  
       
       if (!isInterior(*v)) continue;
       
-      for (unsigned int ndx = 0; ndx < nsd; ndx++) {
+      for (ndx = 0; ndx < nsd; ndx++) {
 	
 	real mass = 1;
 	
@@ -98,16 +105,17 @@ private:
       }	
     }
   }
-  
-
-
+  //-----------------------------------------------------------------------------
   void touchBoundary()
   {   
+
+    unsigned int ndx;
+
     for (VertexIterator boundary_vertex(*boundary); !boundary_vertex.end(); ++boundary_vertex) {  
       
       Vertex v(mesh, vertex_map(*boundary_vertex));
   
-      for (unsigned int ndx = 0; ndx < nsd; ndx++) {
+      for (ndx = 0; ndx < nsd; ndx++) {
 	  
 	// move boundary point
 	mesh.geometry().x(vertex_map(*boundary_vertex), ndx) 
@@ -119,9 +127,7 @@ private:
       }    
     }
   }
-
-
-
+  //-----------------------------------------------------------------------------
   real& mvel_cpt(unsigned int j, unsigned int i)
   {
     return mvel[i + nsd*j];
@@ -134,9 +140,10 @@ private:
   Vector&       mvel;
   real&         k;
 
+  MeshFunction<bool>         vertex_is_interior;
   MeshFunction<unsigned int> vertex_map;
   MeshFunction<unsigned int> cell_map;
-
+  
   unsigned int  nsd;
 
   real old_coord[3];

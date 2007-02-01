@@ -33,6 +33,8 @@ namespace dolfin
 	      real& rhos, 
 	      real& E, 
 	      real& elnu, 
+	      real& nu,
+	      real& T,
 	      real& k);
 
     /// FSI solver destructor
@@ -50,7 +52,9 @@ namespace dolfin
 		      real& rhof, 
 		      real& rhos, 
 		      real& E, 
-		      real& elnu, 
+		      real& elnu,
+		      real& nu,
+		      real& T,
 		      real& k);
 
     /// Compute cell diameter
@@ -113,10 +117,13 @@ namespace dolfin
     real& rhos;
     real& E;
     real& elnu;
+    real& nu;
+    real& T;
     real& k;
 
     MeshFunction<unsigned int> boundary_vertex_map;
     MeshFunction<unsigned int> boundary_cell_map;
+    MeshFunction<bool>         vertex_is_interior;
     BoundaryMesh*              boundary;
    
 
@@ -125,7 +132,7 @@ namespace dolfin
   // INLINE: Function definitions - these functions are here because
   //                                they are used in every time step
   //-----------------------------------------------------------------------------
- inline bool FSISolver::isFluid(Vertex& vertex, const Vector& phi_vec) const
+  inline bool FSISolver::isFluid(Vertex& vertex, const Vector& phi_vec) const
   {
     for (CellIterator cell(vertex); !cell.end(); ++cell) 
       if (phi_vec(cell->index()) == 0) return false;
@@ -134,13 +141,8 @@ namespace dolfin
   }
   //-----------------------------------------------------------------------------
   inline bool FSISolver::isInterior(Vertex& vertex) const
-  {    
-    for (VertexIterator boundary_vertex(*boundary); !boundary_vertex.end(); ++boundary_vertex) {  
-      
-      if (boundary_vertex_map(*boundary_vertex) == vertex.index()) return false;
-    }
-    
-    return true;
+  {  
+    return (vertex_is_interior(vertex));
   }
   //-----------------------------------------------------------------------------
   inline real& FSISolver::getij(Vector& v, unsigned int j, unsigned int i) const
@@ -150,11 +152,13 @@ namespace dolfin
   //-----------------------------------------------------------------------------
   inline void FSISolver::UpdateStructure(Vector& mvel_vec, const Vector& phi_vec, Function& u) 
   {
+    unsigned int ndx;
+
     for (VertexIterator v(mesh); !v.end(); ++v) {
 
       if (isFluid(*v, phi_vec)) continue;
 
-      for (unsigned int ndx = 0; ndx < mesh.topology().dim(); ndx++) {
+      for (ndx = 0; ndx < mesh.topology().dim(); ndx++) {
 
 	v->coordinates()[ndx]            += k * u(*v, ndx);
 	getij(mvel_vec, v->index(), ndx) += k * u(*v, ndx);
@@ -165,13 +169,14 @@ namespace dolfin
   inline void FSISolver::UpdateFluid(Vector& mvel_vec, const Vector& phi_vec)
   {
     real old_coord[3];
+    unsigned int ndx;
 
     for (VertexIterator v(mesh); ! v.end(); ++v) {  
       
       if (!isFluid(*v, phi_vec)) continue;
       if (!isInterior(*v))       continue;
       
-      for (unsigned int ndx = 0; ndx < mesh.topology().dim(); ndx++) {
+      for (ndx = 0; ndx < mesh.topology().dim(); ndx++) {
 	
 	real mass = 1;
 	

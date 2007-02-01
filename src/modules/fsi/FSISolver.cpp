@@ -23,16 +23,14 @@ using namespace dolfin;
 void FSISolver::ComputePhi(Vector& phi)
 {
   phi.init(mesh.numCells());
-
+  phi = 0.0;
+  
   for (CellIterator cell(mesh); !cell.end(); ++cell) {
-   
-    phi(cell->index()) = 0;
-    
     for (VertexIterator n(cell); !n.end(); ++n) {
-      if ((phi(cell->index()) = bisect(n->point(), 0)) > 0) {
-	phi(cell->index()) = 1;
-	continue;
-      }
+      
+      phi(cell->index()) += bisect(n->point(), 0);
+      
+      if (phi(cell->index()) > 0) break;
     }
   }
 }
@@ -62,15 +60,26 @@ FSISolver::FSISolver(Mesh& mesh,
 		     real& rhos, 
 		     real& E, 
 		     real& elnu, 
+		     real& nu,
+		     real& T,
 		     real& k)
   : mesh(mesh), f(f), bc_mom(bc_mom), bc_con(bc_con), 
-    bisect(bisect), rhof(rhof), rhos(rhos), E(E), elnu(elnu), k(k)
+    bisect(bisect), rhof(rhof), rhos(rhos), E(E), elnu(elnu), nu(nu), T(T),  k(k)
 {
   // Declare parameters
   add("velocity file name", "velocity.pvd");
   add("pressure file name", "pressure.pvd");
 
   boundary = new BoundaryMesh(mesh, boundary_vertex_map, boundary_cell_map);
+  
+  vertex_is_interior.init(mesh, 0);
+  
+  for (VertexIterator v(mesh); !v.end(); ++v)
+    vertex_is_interior.set(v->index(), true);
+  
+  for (VertexIterator bv(*boundary); !bv.end(); ++bv)   
+    vertex_is_interior.set(boundary_vertex_map(*bv), false);
+  
 }
 //-----------------------------------------------------------------------------
 FSISolver::~FSISolver() 
@@ -82,8 +91,6 @@ void FSISolver::solve()
 {
   real T0 = 0.0;        // start time 
   real t  = 0.0;        // current time
-  real T  = 8.0;        // final time
-  real nu = 1.0/3900.0; // viscosity 
  
   // Lamé variable - lambda is not required
   real mu = E / (2 * (1 + elnu));
@@ -231,13 +238,13 @@ void FSISolver::solve()
   File file_p(get("pressure file name"));  // file for saving pressure
 
   // Compute stabilization parameters
-  ComputeStabilization(mesh,u0,nu,k,d1vector,d2vector);
+  //duplicated ComputeStabilization(mesh,u0,nu,k,d1vector,d2vector);
 
   dolfin_info("Assembling matrix: continuity");
 
   // Assembling matrices 
-  FEM::assemble(*amom, Amom, mesh);
-  FEM::assemble(*acon, Acon, mesh);
+  //duplicated  FEM::assemble(*amom, Amom, mesh);
+  //duplicated  FEM::assemble(*acon, Acon, mesh);
 
   // Initialize time-stepping parameters
   int time_step  = 0;
@@ -298,12 +305,16 @@ void FSISolver::solve()
       dolfin_info("Assemble vector: momentum");
 
       // Assemble momentum matrix
-      FEM::assemble(*amom, Amom, mesh);
+      //combined FEM::assemble(*amom, Amom, mesh);
      			
       // Assemble momentum vector 
-      tic();
-      FEM::assemble(*Lmom, bmom, mesh);
-      dolfin_info("Assemble took %g seconds",toc());
+      //combined tic();
+      //combined FEM::assemble(*Lmom, bmom, mesh);
+      //combined dolfin_info("Assemble took %g seconds",toc());
+
+      tic(); // into this 
+      FEM::assemble(*amom, *Lmom, Amom, bmom, mesh, bc_mom); // into this
+      dolfin_info("Assemble took %g seconds",toc()); // into this
 			
       // Set boundary conditions for the momentum equation 
       FEM::applyBC(Amom, bmom, mesh, amom->trial(), bc_mom);
@@ -403,9 +414,11 @@ void FSISolver::solve(Mesh& mesh,
 		      real& rhos, 
 		      real& E, 
 		      real& elnu, 
+		      real& nu,
+		      real& T,		      
 		      real& k)
 {
-  FSISolver solver(mesh, f, bc_mom, bc_con, bisect, rhof, rhos, E, elnu, k);
+  FSISolver solver(mesh, f, bc_mom, bc_con, bisect, rhof, rhos, E, elnu, nu, T, k);
   solver.solve();
 }
 //-----------------------------------------------------------------------------
