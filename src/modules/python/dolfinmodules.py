@@ -1,4 +1,4 @@
-# This file was created automatically by SWIG 1.3.29.
+# This file was created automatically by SWIG 1.3.28.
 # Don't modify this file, modify the SWIG interface instead.
 # This file is compatible with both classic and new-style classes.
 
@@ -27,11 +27,6 @@ def _swig_getattr(self,class_type,name):
     if method: return method(self)
     raise AttributeError,name
 
-def _swig_repr(self):
-    try: strthis = "proxy of " + self.this.__repr__()
-    except: strthis = ""
-    return "<%s.%s; %s >" % (self.__class__.__module__, self.__class__.__name__, strthis,)
-
 import types
 try:
     _object = types.ObjectType
@@ -56,7 +51,10 @@ class PySwigIterator(_object):
     __swig_getmethods__ = {}
     __getattr__ = lambda self, name: _swig_getattr(self, PySwigIterator, name)
     def __init__(self): raise AttributeError, "No constructor defined"
-    __repr__ = _swig_repr
+    def __repr__(self):
+        try: strthis = "at 0x%x" %( self.this, ) 
+        except: strthis = "" 
+        return "<%s.%s; proxy of C++ swig::PySwigIterator instance %s>" % (self.__class__.__module__, self.__class__.__name__, strthis,)
     __swig_destroy__ = _dolfinmodules.delete_PySwigIterator
     __del__ = lambda self : None;
     def value(*args):
@@ -128,50 +126,54 @@ class PySwigIterator(_object):
         """
         return _dolfinmodules.PySwigIterator___sub__(*args)
 
-    def __iter__(self): return self
-PySwigIterator_swigregister = _dolfinmodules.PySwigIterator_swigregister
-PySwigIterator_swigregister(PySwigIterator)
+    def __iter__(self):
+      return self
+
+_dolfinmodules.PySwigIterator_swigregister(PySwigIterator)
 
 
 def new_realArray(*args):
-  """new_realArray(size_t nelements) -> real"""
-  return _dolfinmodules.new_realArray(*args)
+    """new_realArray(size_t nelements) -> real"""
+    return _dolfinmodules.new_realArray(*args)
 
 def delete_realArray(*args):
-  """delete_realArray(real ary)"""
-  return _dolfinmodules.delete_realArray(*args)
+    """delete_realArray(real ary)"""
+    return _dolfinmodules.delete_realArray(*args)
 
 def realArray_getitem(*args):
-  """realArray_getitem(real ary, size_t index) -> real"""
-  return _dolfinmodules.realArray_getitem(*args)
+    """realArray_getitem(real ary, size_t index) -> real"""
+    return _dolfinmodules.realArray_getitem(*args)
 
 def realArray_setitem(*args):
-  """realArray_setitem(real ary, size_t index, real value)"""
-  return _dolfinmodules.realArray_setitem(*args)
+    """realArray_setitem(real ary, size_t index, real value)"""
+    return _dolfinmodules.realArray_setitem(*args)
 
 def new_intArray(*args):
-  """new_intArray(size_t nelements) -> int"""
-  return _dolfinmodules.new_intArray(*args)
+    """new_intArray(size_t nelements) -> int"""
+    return _dolfinmodules.new_intArray(*args)
 
 def delete_intArray(*args):
-  """delete_intArray(int ary)"""
-  return _dolfinmodules.delete_intArray(*args)
+    """delete_intArray(int ary)"""
+    return _dolfinmodules.delete_intArray(*args)
 
 def intArray_getitem(*args):
-  """intArray_getitem(int ary, size_t index) -> int"""
-  return _dolfinmodules.intArray_getitem(*args)
+    """intArray_getitem(int ary, size_t index) -> int"""
+    return _dolfinmodules.intArray_getitem(*args)
 
 def intArray_setitem(*args):
-  """intArray_setitem(int ary, size_t index, int value)"""
-  return _dolfinmodules.intArray_setitem(*args)
+    """intArray_setitem(int ary, size_t index, int value)"""
+    return _dolfinmodules.intArray_setitem(*args)
 class intp(_object):
     """Proxy of C++ intp class"""
     __swig_setmethods__ = {}
     __setattr__ = lambda self, name, value: _swig_setattr(self, intp, name, value)
     __swig_getmethods__ = {}
     __getattr__ = lambda self, name: _swig_getattr(self, intp, name)
-    __repr__ = _swig_repr
-    def __init__(self, *args): 
+    def __repr__(self):
+        try: strthis = "at 0x%x" %( self.this, ) 
+        except: strthis = "" 
+        return "<%s.%s; proxy of C++ intp instance %s>" % (self.__class__.__module__, self.__class__.__name__, strthis,)
+    def __init__(self, *args):
         """__init__(self) -> intp"""
         this = _dolfinmodules.new_intp(*args)
         try: self.this.append(this)
@@ -196,12 +198,11 @@ class intp(_object):
 
     if _newclass:frompointer = staticmethod(frompointer)
     __swig_getmethods__["frompointer"] = lambda x: frompointer
-intp_swigregister = _dolfinmodules.intp_swigregister
-intp_swigregister(intp)
+_dolfinmodules.intp_swigregister(intp)
 
 def intp_frompointer(*args):
-  """intp_frompointer(int t) -> intp"""
-  return _dolfinmodules.intp_frompointer(*args)
+    """intp_frompointer(int t) -> intp"""
+    return _dolfinmodules.intp_frompointer(*args)
 
 class doublep(_object):
     """Proxy of C++ doublep class"""
@@ -209,8 +210,11 @@ class doublep(_object):
     __setattr__ = lambda self, name, value: _swig_setattr(self, doublep, name, value)
     __swig_getmethods__ = {}
     __getattr__ = lambda self, name: _swig_getattr(self, doublep, name)
-    __repr__ = _swig_repr
-    def __init__(self, *args): 
+    def __repr__(self):
+        try: strthis = "at 0x%x" %( self.this, ) 
+        except: strthis = "" 
+        return "<%s.%s; proxy of C++ doublep instance %s>" % (self.__class__.__module__, self.__class__.__name__, strthis,)
+    def __init__(self, *args):
         """__init__(self) -> doublep"""
         this = _dolfinmodules.new_doublep(*args)
         try: self.this.append(this)
@@ -235,12 +239,11 @@ class doublep(_object):
 
     if _newclass:frompointer = staticmethod(frompointer)
     __swig_getmethods__["frompointer"] = lambda x: frompointer
-doublep_swigregister = _dolfinmodules.doublep_swigregister
-doublep_swigregister(doublep)
+_dolfinmodules.doublep_swigregister(doublep)
 
 def doublep_frompointer(*args):
-  """doublep_frompointer(double t) -> doublep"""
-  return _dolfinmodules.doublep_frompointer(*args)
+    """doublep_frompointer(double t) -> doublep"""
+    return _dolfinmodules.doublep_frompointer(*args)
 
 class ublas_dense_matrix(_object):
     """Proxy of C++ ublas_dense_matrix class"""
@@ -249,9 +252,11 @@ class ublas_dense_matrix(_object):
     __swig_getmethods__ = {}
     __getattr__ = lambda self, name: _swig_getattr(self, ublas_dense_matrix, name)
     def __init__(self): raise AttributeError, "No constructor defined"
-    __repr__ = _swig_repr
-ublas_dense_matrix_swigregister = _dolfinmodules.ublas_dense_matrix_swigregister
-ublas_dense_matrix_swigregister(ublas_dense_matrix)
+    def __repr__(self):
+        try: strthis = "at 0x%x" %( self.this, ) 
+        except: strthis = "" 
+        return "<%s.%s; proxy of C++ dolfin::ublas_dense_matrix instance %s>" % (self.__class__.__module__, self.__class__.__name__, strthis,)
+_dolfinmodules.ublas_dense_matrix_swigregister(ublas_dense_matrix)
 
 class ublas_sparse_matrix(_object):
     """Proxy of C++ ublas_sparse_matrix class"""
@@ -260,9 +265,11 @@ class ublas_sparse_matrix(_object):
     __swig_getmethods__ = {}
     __getattr__ = lambda self, name: _swig_getattr(self, ublas_sparse_matrix, name)
     def __init__(self): raise AttributeError, "No constructor defined"
-    __repr__ = _swig_repr
-ublas_sparse_matrix_swigregister = _dolfinmodules.ublas_sparse_matrix_swigregister
-ublas_sparse_matrix_swigregister(ublas_sparse_matrix)
+    def __repr__(self):
+        try: strthis = "at 0x%x" %( self.this, ) 
+        except: strthis = "" 
+        return "<%s.%s; proxy of C++ dolfin::ublas_sparse_matrix instance %s>" % (self.__class__.__module__, self.__class__.__name__, strthis,)
+_dolfinmodules.ublas_sparse_matrix_swigregister(ublas_sparse_matrix)
 
 class ElasticityUpdatedSolver(_object):
     """Proxy of C++ ElasticityUpdatedSolver class"""
@@ -270,8 +277,11 @@ class ElasticityUpdatedSolver(_object):
     __setattr__ = lambda self, name, value: _swig_setattr(self, ElasticityUpdatedSolver, name, value)
     __swig_getmethods__ = {}
     __getattr__ = lambda self, name: _swig_getattr(self, ElasticityUpdatedSolver, name)
-    __repr__ = _swig_repr
-    def __init__(self, *args): 
+    def __repr__(self):
+        try: strthis = "at 0x%x" %( self.this, ) 
+        except: strthis = "" 
+        return "<%s.%s; proxy of C++ dolfin::ElasticityUpdatedSolver instance %s>" % (self.__class__.__module__, self.__class__.__name__, strthis,)
+    def __init__(self, *args):
         """
         __init__(self, Mesh mesh, Function f, Function v0, Function rho, real E, 
             real nu, real nuv, real nuplast, BoundaryCondition bc, 
@@ -580,83 +590,82 @@ class ElasticityUpdatedSolver(_object):
 
     if _newclass:deform = staticmethod(deform)
     __swig_getmethods__["deform"] = lambda x: deform
-ElasticityUpdatedSolver_swigregister = _dolfinmodules.ElasticityUpdatedSolver_swigregister
-ElasticityUpdatedSolver_swigregister(ElasticityUpdatedSolver)
+_dolfinmodules.ElasticityUpdatedSolver_swigregister(ElasticityUpdatedSolver)
 
 def ElasticityUpdatedSolver_finterpolate(*args):
-  """ElasticityUpdatedSolver_finterpolate(Function f1, Function f2, Mesh mesh)"""
-  return _dolfinmodules.ElasticityUpdatedSolver_finterpolate(*args)
+    """ElasticityUpdatedSolver_finterpolate(Function f1, Function f2, Mesh mesh)"""
+    return _dolfinmodules.ElasticityUpdatedSolver_finterpolate(*args)
 
 def ElasticityUpdatedSolver_plasticity(*args):
-  """
+    """
     ElasticityUpdatedSolver_plasticity(Vector xsigma, Vector xsigmanorm, real yld, FiniteElement element2, 
         Mesh mesh)
     """
-  return _dolfinmodules.ElasticityUpdatedSolver_plasticity(*args)
+    return _dolfinmodules.ElasticityUpdatedSolver_plasticity(*args)
 
 def ElasticityUpdatedSolver_initmsigma(*args):
-  """ElasticityUpdatedSolver_initmsigma(Vector msigma, FiniteElement element2, Mesh mesh)"""
-  return _dolfinmodules.ElasticityUpdatedSolver_initmsigma(*args)
+    """ElasticityUpdatedSolver_initmsigma(Vector msigma, FiniteElement element2, Mesh mesh)"""
+    return _dolfinmodules.ElasticityUpdatedSolver_initmsigma(*args)
 
 def ElasticityUpdatedSolver_initu0(*args):
-  """ElasticityUpdatedSolver_initu0(Vector x0, FiniteElement element, Mesh mesh)"""
-  return _dolfinmodules.ElasticityUpdatedSolver_initu0(*args)
+    """ElasticityUpdatedSolver_initu0(Vector x0, FiniteElement element, Mesh mesh)"""
+    return _dolfinmodules.ElasticityUpdatedSolver_initu0(*args)
 
 def ElasticityUpdatedSolver_initJ0(*args):
-  """ElasticityUpdatedSolver_initJ0(Vector xJ0, FiniteElement element, Mesh mesh)"""
-  return _dolfinmodules.ElasticityUpdatedSolver_initJ0(*args)
+    """ElasticityUpdatedSolver_initJ0(Vector xJ0, FiniteElement element, Mesh mesh)"""
+    return _dolfinmodules.ElasticityUpdatedSolver_initJ0(*args)
 
 def ElasticityUpdatedSolver_computeJ(*args):
-  """
+    """
     ElasticityUpdatedSolver_computeJ(Vector xJ0, Vector xJ, Vector xJinv, FiniteElement element, 
         Mesh mesh)
     """
-  return _dolfinmodules.ElasticityUpdatedSolver_computeJ(*args)
+    return _dolfinmodules.ElasticityUpdatedSolver_computeJ(*args)
 
 def ElasticityUpdatedSolver_initF0Green(*args):
-  """ElasticityUpdatedSolver_initF0Green(Vector xF0, FiniteElement element1, Mesh mesh)"""
-  return _dolfinmodules.ElasticityUpdatedSolver_initF0Green(*args)
+    """ElasticityUpdatedSolver_initF0Green(Vector xF0, FiniteElement element1, Mesh mesh)"""
+    return _dolfinmodules.ElasticityUpdatedSolver_initF0Green(*args)
 
 def ElasticityUpdatedSolver_computeFGreen(*args):
-  """
+    """
     ElasticityUpdatedSolver_computeFGreen(Vector xF, Vector xF0, Vector xF1, FiniteElement element1, 
         Mesh mesh)
     """
-  return _dolfinmodules.ElasticityUpdatedSolver_computeFGreen(*args)
+    return _dolfinmodules.ElasticityUpdatedSolver_computeFGreen(*args)
 
 def ElasticityUpdatedSolver_initF0Euler(*args):
-  """ElasticityUpdatedSolver_initF0Euler(Vector xF0, FiniteElement element1, Mesh mesh)"""
-  return _dolfinmodules.ElasticityUpdatedSolver_initF0Euler(*args)
+    """ElasticityUpdatedSolver_initF0Euler(Vector xF0, FiniteElement element1, Mesh mesh)"""
+    return _dolfinmodules.ElasticityUpdatedSolver_initF0Euler(*args)
 
 def ElasticityUpdatedSolver_computeFEuler(*args):
-  """
+    """
     ElasticityUpdatedSolver_computeFEuler(Vector xF, Vector xF0, Vector xF1, FiniteElement element1, 
         Mesh mesh)
     """
-  return _dolfinmodules.ElasticityUpdatedSolver_computeFEuler(*args)
+    return _dolfinmodules.ElasticityUpdatedSolver_computeFEuler(*args)
 
 def ElasticityUpdatedSolver_computeFBEuler(*args):
-  """
+    """
     ElasticityUpdatedSolver_computeFBEuler(Vector xF, Vector xB, Vector xF0, Vector xF1, FiniteElement element1, 
         Mesh mesh)
     """
-  return _dolfinmodules.ElasticityUpdatedSolver_computeFBEuler(*args)
+    return _dolfinmodules.ElasticityUpdatedSolver_computeFBEuler(*args)
 
 def ElasticityUpdatedSolver_computeBEuler(*args):
-  """ElasticityUpdatedSolver_computeBEuler(Vector xF, Vector xB, FiniteElement element1, Mesh mesh)"""
-  return _dolfinmodules.ElasticityUpdatedSolver_computeBEuler(*args)
+    """ElasticityUpdatedSolver_computeBEuler(Vector xF, Vector xB, FiniteElement element1, Mesh mesh)"""
+    return _dolfinmodules.ElasticityUpdatedSolver_computeBEuler(*args)
 
 def ElasticityUpdatedSolver_multF(*args):
-  """ElasticityUpdatedSolver_multF(real F0, real F1, real F)"""
-  return _dolfinmodules.ElasticityUpdatedSolver_multF(*args)
+    """ElasticityUpdatedSolver_multF(real F0, real F1, real F)"""
+    return _dolfinmodules.ElasticityUpdatedSolver_multF(*args)
 
 def ElasticityUpdatedSolver_multB(*args):
-  """ElasticityUpdatedSolver_multB(real F, real B)"""
-  return _dolfinmodules.ElasticityUpdatedSolver_multB(*args)
+    """ElasticityUpdatedSolver_multB(real F, real B)"""
+    return _dolfinmodules.ElasticityUpdatedSolver_multB(*args)
 
 def ElasticityUpdatedSolver_deform(*args):
-  """ElasticityUpdatedSolver_deform(Mesh mesh, Function u)"""
-  return _dolfinmodules.ElasticityUpdatedSolver_deform(*args)
+    """ElasticityUpdatedSolver_deform(Mesh mesh, Function u)"""
+    return _dolfinmodules.ElasticityUpdatedSolver_deform(*args)
 
 class ElasticityUpdatedODE(_object):
     """Proxy of C++ ElasticityUpdatedODE class"""
@@ -664,8 +673,11 @@ class ElasticityUpdatedODE(_object):
     __setattr__ = lambda self, name, value: _swig_setattr(self, ElasticityUpdatedODE, name, value)
     __swig_getmethods__ = {}
     __getattr__ = lambda self, name: _swig_getattr(self, ElasticityUpdatedODE, name)
-    __repr__ = _swig_repr
-    def __init__(self, *args): 
+    def __repr__(self):
+        try: strthis = "at 0x%x" %( self.this, ) 
+        except: strthis = "" 
+        return "<%s.%s; proxy of C++ dolfin::ElasticityUpdatedODE instance %s>" % (self.__class__.__module__, self.__class__.__name__, strthis,)
+    def __init__(self, *args):
         """__init__(self, ElasticityUpdatedSolver solver) -> ElasticityUpdatedODE"""
         this = _dolfinmodules.new_ElasticityUpdatedODE(*args)
         try: self.this.append(this)
@@ -689,8 +701,7 @@ class ElasticityUpdatedODE(_object):
     __swig_setmethods__["solver"] = _dolfinmodules.ElasticityUpdatedODE_solver_set
     __swig_getmethods__["solver"] = _dolfinmodules.ElasticityUpdatedODE_solver_get
     if _newclass:solver = property(_dolfinmodules.ElasticityUpdatedODE_solver_get, _dolfinmodules.ElasticityUpdatedODE_solver_set)
-ElasticityUpdatedODE_swigregister = _dolfinmodules.ElasticityUpdatedODE_swigregister
-ElasticityUpdatedODE_swigregister(ElasticityUpdatedODE)
+_dolfinmodules.ElasticityUpdatedODE_swigregister(ElasticityUpdatedODE)
 
 class UtilBC1(_object):
     """Proxy of C++ UtilBC1 class"""
@@ -698,8 +709,11 @@ class UtilBC1(_object):
     __setattr__ = lambda self, name, value: _swig_setattr(self, UtilBC1, name, value)
     __swig_getmethods__ = {}
     __getattr__ = lambda self, name: _swig_getattr(self, UtilBC1, name)
-    __repr__ = _swig_repr
-    def __init__(self, *args): 
+    def __repr__(self):
+        try: strthis = "at 0x%x" %( self.this, ) 
+        except: strthis = "" 
+        return "<%s.%s; proxy of C++ dolfin::UtilBC1 instance %s>" % (self.__class__.__module__, self.__class__.__name__, strthis,)
+    def __init__(self, *args):
         """__init__(self) -> UtilBC1"""
         this = _dolfinmodules.new_UtilBC1(*args)
         try: self.this.append(this)
@@ -708,8 +722,7 @@ class UtilBC1(_object):
         """eval(self, BoundaryValue value, Point p, unsigned int i)"""
         return _dolfinmodules.UtilBC1_eval(*args)
 
-UtilBC1_swigregister = _dolfinmodules.UtilBC1_swigregister
-UtilBC1_swigregister(UtilBC1)
+_dolfinmodules.UtilBC1_swigregister(UtilBC1)
 
 class UtilBC2(_object):
     """Proxy of C++ UtilBC2 class"""
@@ -717,8 +730,11 @@ class UtilBC2(_object):
     __setattr__ = lambda self, name, value: _swig_setattr(self, UtilBC2, name, value)
     __swig_getmethods__ = {}
     __getattr__ = lambda self, name: _swig_getattr(self, UtilBC2, name)
-    __repr__ = _swig_repr
-    def __init__(self, *args): 
+    def __repr__(self):
+        try: strthis = "at 0x%x" %( self.this, ) 
+        except: strthis = "" 
+        return "<%s.%s; proxy of C++ dolfin::UtilBC2 instance %s>" % (self.__class__.__module__, self.__class__.__name__, strthis,)
+    def __init__(self, *args):
         """__init__(self) -> UtilBC2"""
         this = _dolfinmodules.new_UtilBC2(*args)
         try: self.this.append(this)
@@ -727,8 +743,7 @@ class UtilBC2(_object):
         """eval(self, BoundaryValue value, Point p, unsigned int i)"""
         return _dolfinmodules.UtilBC2_eval(*args)
 
-UtilBC2_swigregister = _dolfinmodules.UtilBC2_swigregister
-UtilBC2_swigregister(UtilBC2)
+_dolfinmodules.UtilBC2_swigregister(UtilBC2)
 
 class Resistance(_object):
     """Proxy of C++ Resistance class"""
@@ -736,8 +751,11 @@ class Resistance(_object):
     __setattr__ = lambda self, name, value: _swig_setattr(self, Resistance, name, value)
     __swig_getmethods__ = {}
     __getattr__ = lambda self, name: _swig_getattr(self, Resistance, name)
-    __repr__ = _swig_repr
-    def __init__(self, *args): 
+    def __repr__(self):
+        try: strthis = "at 0x%x" %( self.this, ) 
+        except: strthis = "" 
+        return "<%s.%s; proxy of C++ dolfin::Resistance instance %s>" % (self.__class__.__module__, self.__class__.__name__, strthis,)
+    def __init__(self, *args):
         """__init__(self) -> Resistance"""
         this = _dolfinmodules.new_Resistance(*args)
         try: self.this.append(this)
@@ -746,8 +764,7 @@ class Resistance(_object):
         """eval(self, Point p, unsigned int i) -> real"""
         return _dolfinmodules.Resistance_eval(*args)
 
-Resistance_swigregister = _dolfinmodules.Resistance_swigregister
-Resistance_swigregister(Resistance)
+_dolfinmodules.Resistance_swigregister(Resistance)
 
 
 

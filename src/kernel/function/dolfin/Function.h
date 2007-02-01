@@ -4,11 +4,12 @@
 // Modified by Garth N. Wells 2005.
 //
 // First added:  2003-11-28
-// Last changed: 2007-01-09
+// Last changed: 2007-02-01
 
 #ifndef __FUNCTION_H
 #define __FUNCTION_H
 
+#include <string>
 #include <dolfin/constants.h>
 #include <dolfin/Vector.h>
 #include <dolfin/Variable.h>
@@ -59,6 +60,9 @@ namespace dolfin
 
     /// Create discrete function (vector created automatically)
     Function(Mesh& mesh, FiniteElement& element);
+
+    /// Create mesh from given file
+    Function(std::string filename);
 
     /// Copy constructor
     Function(const Function& f);

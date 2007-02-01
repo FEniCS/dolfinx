@@ -17,11 +17,11 @@
 
 using namespace dolfin;
 
-#if defined(HAVE_GTS_H)
-
 #ifdef HAVE_GTS_H
+
 #include <gts.h>
 
+#endif
 //-----------------------------------------------------------------------------
 void GTSInterface::test()
 {
@@ -30,6 +30,7 @@ void GTSInterface::test()
 //-----------------------------------------------------------------------------
 GtsBBox* GTSInterface::bboxCell(Cell& c)
 {
+#ifdef HAVE_GTS_H
   GtsBBox* bbox;
   Point p;
 
@@ -60,7 +61,7 @@ GtsBBox* GTSInterface::bboxCell(Cell& c)
 //-----------------------------------------------------------------------------
 GtsBBox* GTSInterface::bboxPoint(Point& p)
 {
-#if defined(HAVE_GTS_H)
+#ifdef HAVE_GTS_H
 
   GtsBBox* bbox;
 
@@ -78,7 +79,7 @@ GtsBBox* GTSInterface::bboxPoint(Point& p)
 //-----------------------------------------------------------------------------
 GNode* GTSInterface::buildCellTree(Mesh& mesh)
 {
-#if defined(HAVE_GTS_H)
+#ifdef HAVE_GTS_H
   GNode* tree;
   GSList* bboxes = 0;
   //GtsBBox* bbox;
@@ -104,7 +105,7 @@ GNode* GTSInterface::buildCellTree(Mesh& mesh)
 void GTSInterface::overlap(Cell& c, GNode* tree, Mesh& mesh, 
 			   Array<uint>& cells)
 {
-#if defined(HAVE_GTS_H)
+#ifdef HAVE_GTS_H
   GtsBBox* bbprobe;
   GtsBBox* bb;
   GSList* overlaps = 0;
@@ -139,7 +140,7 @@ void GTSInterface::overlap(Cell& c, GNode* tree, Mesh& mesh,
 void GTSInterface::overlap(Point& p, GNode* tree, Mesh& mesh, 
 			   Array<uint>& cells)
 {
-#if defined(HAVE_GTS_H)
+#ifdef HAVE_GTS_H
   GtsBBox* bbprobe;
   GtsBBox* bb;
   GSList* overlaps = 0;
@@ -171,27 +172,3 @@ void GTSInterface::overlap(Point& p, GNode* tree, Mesh& mesh,
 #endif
 }
 //-----------------------------------------------------------------------------
-
-#else
-
-//-----------------------------------------------------------------------------
-GtsBBox* GTSInterface::bboxCell(Cell& c)
-{
-  dolfin_error("missing GTS");
-  return 0;
-}
-//-----------------------------------------------------------------------------
-GNode* GTSInterface::buildCellTree(Mesh& mesh)
-{
-  dolfin_error("missing GTS");
-  return 0;
-}
-//-----------------------------------------------------------------------------
-void GTSInterface::overlap(Cell& c, GNode* tree, Mesh& mesh, 
-			   Array<uint>& cells)
-{
-  dolfin_error("missing GTS");
-}
-//-----------------------------------------------------------------------------
-
-#endif

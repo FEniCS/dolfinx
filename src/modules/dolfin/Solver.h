@@ -10,6 +10,7 @@
 #include <dolfin/FEM.h>
 #include <dolfin/dolfin_log.h>
 #include <dolfin/dolfin_math.h>
+#include <dolfin/dolfin_main.h>
 #include <dolfin/ParameterSystem.h>
 #include <dolfin/Parametrized.h>
 #include <dolfin/File.h>

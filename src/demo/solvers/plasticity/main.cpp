@@ -3,7 +3,7 @@
 //
 // First added:  2006-11-13
 
-#include <dolfin.h>
+#include <dolfin/PlasticitySolver.h>
 #include <dolfin/VonMises.h>
 
 using namespace dolfin;

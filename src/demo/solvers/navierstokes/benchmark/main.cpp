@@ -11,7 +11,8 @@
 //     du/dt + u * grad u - nu * div grad u + grad p = f 
 //     div u = 0 
 
-#include <dolfin.h>
+//#include <dolfin.h>
+#include <dolfin/NSESolver.h>
 
 using namespace dolfin;
 
@@ -168,7 +169,6 @@ class BC_Continuity_2D : public BoundaryCondition
 int main(int argc, char* argv[])
 {
   dolfin_init(argc, argv);
-
 
   /*  
   // This is the 2d benchmark problem: 2D-3, defined in  
