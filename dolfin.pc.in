@@ -1,8 +1,8 @@
 # pkg-config configuration for DOLFIN
 prefix=@prefix@
 exec_prefix=@exec_prefix@
-libdir=@libdir@
-includedir=@includedir@
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
 compiler=@CXX@
 definitions=@DOLFIN_DEFINITIONS@
 swigcflags=@PYTHON_CPPFLAGS@ 
@@ -10,7 +10,7 @@ swigcflags=@PYTHON_CPPFLAGS@
 Name: DOLFIN
 Description: Dynamic Object-oriented Library for FINite element computation
 Version: @PACKAGE_VERSION@
-Requires:
+Requires: ufc-1
 Conflicts:
-Libs: -L${libdir} @DOLFIN_LIBS@
-Cflags: -I${includedir} @EXTERNAL_CFLAGS@ @CXXFLAGS@
+Libs: -L${libdir} -ldolfin
+Cflags: -I${includedir} @CXXFLAGS@
