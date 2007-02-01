@@ -25,6 +25,7 @@
 // to see some quite large oscillations.
 
 #include <dolfin.h>
+#include <dolfin/ConvectionDiffusionSolver.h>
 
 using namespace dolfin;
 

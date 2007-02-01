@@ -7,6 +7,7 @@
 // Last changed: 2005-12-28
 
 #include <dolfin.h>
+#include <dolfin/ElasticitySolver.h>
 
 using namespace dolfin;
 
