@@ -11,7 +11,7 @@
 //     du/dt + u * grad u - nu * div grad u + grad p = f 
 //     div u = 0 
 
-//#include <dolfin.h>
+#include <dolfin.h>
 #include <dolfin/NSESolver.h>
 
 using namespace dolfin;
