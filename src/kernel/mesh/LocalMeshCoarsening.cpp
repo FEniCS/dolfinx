@@ -15,6 +15,7 @@
 #include <dolfin/Edge.h>
 #include <dolfin/Cell.h>
 #include <dolfin/BoundaryMesh.h>
+#include <dolfin/MeshGeometry.h>
 #include <dolfin/LocalMeshCoarsening.h>
 
 using namespace dolfin;
@@ -78,8 +79,11 @@ void LocalMeshCoarsening::coarsenMeshByEdgeCollapse(Mesh& mesh,
     for (VertexIterator v(boundary); !v.end(); ++v)
       vertex_forbidden.set(bnd_vertex_map.get(v->index()),true);
   }
+
+  /*
   for (VertexIterator v(mesh); !v.end(); ++v)
     cout << "Vertex " << v->index() << ": " << vertex_forbidden.get(v->index()) << endl;
+  */
 
   /*
   // Initialise forbidden edges 
@@ -124,9 +128,12 @@ void LocalMeshCoarsening::coarsenMeshByEdgeCollapse(Mesh& mesh,
           l = e->length();
           if ( lmin > l )
           {
-            lmin = l;
-            shortest_edge_index = e->index(); 
-            collapse_edge = true;
+            if ( collapseEdgeOk(mesh,e->index(),edge_vertex,vertex_forbidden) ) 
+            {
+              lmin = l;
+              shortest_edge_index = e->index(); 
+              collapse_edge = true;
+            }
           }
         }
       }
@@ -163,9 +170,14 @@ void LocalMeshCoarsening::coarsenMeshByEdgeCollapse(Mesh& mesh,
 	// Remove vertex 
 	num_vertices_to_remove++;
 
+        /*
         for (VertexIterator ve(shortest_edge); !ve.end(); ++ve)
           for (VertexIterator v(ve); !v.end(); ++v)
             vertex_forbidden.set(v->index(),true);
+        */
+        
+        for (VertexIterator v(vertex_to_remove); !v.end(); ++v)
+          vertex_forbidden.set(v->index(),true);
         
 	for (CellIterator cn(shortest_edge); !cn.end(); ++cn)
 	{
@@ -207,7 +219,7 @@ void LocalMeshCoarsening::coarsenMeshByEdgeCollapse(Mesh& mesh,
   uint vertex = 0;
   for (VertexIterator v(mesh); !v.end(); ++v)
   {
-    cout << "vertex " << v->index() << " : " << vertex_to_remove_index.get(*v) << endl;
+    //    cout << "vertex " << v->index() << " : " << vertex_to_remove_index.get(*v) << endl;
     if ( vertex_to_remove_index.get(*v) == false ) 
     {
       old2new_vertex[v->index()] = vertex;
@@ -225,19 +237,21 @@ void LocalMeshCoarsening::coarsenMeshByEdgeCollapse(Mesh& mesh,
   Array<uint> cell_vertices(cell_type.numEntities(0));
   for (CellIterator c(mesh); !c.end(); ++c)
   {
+    /*
     cout << "Cell " << c->index() << " :"; 
       for (VertexIterator v(c); !v.end(); ++v)
         cout << " " << v->index();
       cout << ", remove = " << cell_to_remove.get(*c) 
            << ", forbidden = " << cell_forbidden.get(*c) << endl;
+    */
     //if ( (cell_marker.get(*c) == false) && (cell_forbidden.get(*c) == false) )
     //if ( cell_to_remove.get(*c) == false )
-    if ( cell_forbidden.get(*c) == false )
+      if ( cell_forbidden.get(*c) == false )
       //if ( cell_forbidden.get(*c) == false )
     {
       cv_idx = 0;
       for (VertexIterator v(c); !v.end(); ++v)
-        cell_vertices[cv_idx++] = v->index(); 
+        cell_vertices[cv_idx++] = old2new_vertex[v->index()]; 
       editor.addCell(current_cell++, cell_vertices);
     }
   }
@@ -290,9 +304,12 @@ void LocalMeshCoarsening::coarsenMeshByEdgeCollapse(Mesh& mesh,
           l = e->length();
           if ( lmin > l )
           {
-            lmin = l;
-            shortest_edge_index = e->index(); 
-            collapse_edge = true;
+            if ( collapseEdgeOk(mesh,e->index(),edge_vertex,vertex_forbidden) ) 
+            {
+              lmin = l;
+              shortest_edge_index = e->index(); 
+              collapse_edge = true;
+            }
           }
         }
       }
@@ -326,16 +343,21 @@ void LocalMeshCoarsening::coarsenMeshByEdgeCollapse(Mesh& mesh,
         }       
         Vertex vertex_to_remove(mesh,vert2remove_idx);
 
-        cout << "1. current cell = " << current_cell << endl;
+        //cout << "1. current cell = " << current_cell << endl;
 
 	// Remove vertex 
         collapseEdge(mesh, shortest_edge, vertex_to_remove, cell_to_remove, old2new_vertex, editor, current_cell);
 
+        /*
         for (VertexIterator ve(shortest_edge); !ve.end(); ++ve)
           for (VertexIterator v(ve); !v.end(); ++v)
             vertex_forbidden.set(v->index(),true);
-        
-        cout << "2. current cell = " << current_cell << endl;
+        */
+
+        for (VertexIterator v(vertex_to_remove); !v.end(); ++v)
+          vertex_forbidden.set(v->index(),true);
+
+        //cout << "2. current cell = " << current_cell << endl;
 
         // Set cells of vertex to remove to forbidden 
         for (CellIterator cn(vertex_to_remove); !cn.end(); ++cn)
@@ -358,9 +380,30 @@ void LocalMeshCoarsening::coarsenMeshByEdgeCollapse(Mesh& mesh,
     }
   }
 
+  /*
+  for (CellIterator c(mesh); !c.end(); ++c)
+  {
+    cout << "Cell " << c->index() << " :"; 
+    for (VertexIterator v(c); !v.end(); ++v)
+      cout << " " << v->index();
+    cout << ": volume = " << c->volume() << endl;
+  }
+  */
+
   // Overwrite old mesh with refined mesh
   editor.close();
   mesh = coarse_mesh;
+
+  /*
+  for (CellIterator c(mesh); !c.end(); ++c)
+  {
+    cout << "Cell " << c->index() << " :"; 
+    for (VertexIterator v(c); !v.end(); ++v)
+      cout << " " << v->index();
+    cout << ": volume = " << c->volume() << endl;
+  }
+  */
+
 
 }
 //-----------------------------------------------------------------------------
@@ -382,8 +425,10 @@ void LocalMeshCoarsening::collapseEdge(Mesh& mesh, Edge& edge,
   else
     vert_master = edge_vertex[0]; 
 
+  /*
   cout << "Vertex to remove: " << vertex_to_remove << "; Edge : " 
-       << edge_vertex[0] << " " << edge_vertex[1] << endl;
+       << edge_vertex[0] << " " << edge_vertex[1] << " (master = " << vert_master << ")" << endl;
+  */
 
   uint cv_idx;
   for (CellIterator c(vertex_to_remove); !c.end(); ++c)
@@ -395,15 +440,151 @@ void LocalMeshCoarsening::collapseEdge(Mesh& mesh, Edge& edge,
       {  
         if ( v->index() == vert_slave ) cell_vertices[cv_idx++] = old2new_vertex[vert_master]; 
         else                            cell_vertices[cv_idx++] = old2new_vertex[v->index()];
+        /*
+        cout << "vindex = " << v->index() << ": " << old2new_vertex[vert_master] << ", " 
+             << old2new_vertex[v->index()] << endl;  
+        */
       }
+      /*
       cout << "add cell: " << cell_vertices[0] << " " << cell_vertices[1] 
            << " " << cell_vertices[2] << " " << "; current_cell = " << current_cell << endl;
+      */
       editor.addCell(current_cell++, cell_vertices);
     }    
   }
   
 }
 //-----------------------------------------------------------------------------
+bool LocalMeshCoarsening::collapseEdgeOk(Mesh& mesh, 
+                                         uint edge_index,
+                                         uint* edge_vertex,
+                                         MeshFunction<bool>& vertex_forbidden)  
+{
+  // Create vertices 
+  Vertex v0(mesh,edge_vertex[0]);
+  Vertex v1(mesh,edge_vertex[1]);
 
+  Edge edge(mesh,edge_index);
 
+  // FIXME: This part depends on the space dimension!! 
+
+  /*
+  if ( !(mesh.type().type2string() == "tetrahedron") ) 
+    dolfin_error("only implemented for tetrahedrons");
+  */
+
+  // Get mesh geometry
+  MeshGeometry& geometry = mesh.geometry(); 
+  
+  // Set volume tolerance
+  real vol_tol_wt = 0.1; 
+  
+  if ( !vertex_forbidden(v0) ) 
+  {
+    for (CellIterator c(v0); !c.end(); ++c)
+    {  
+      real vol_tol = vol_tol_wt * c->volume();
+      
+      uint* vertices = c->entities(0);
+
+      real* x0 = geometry.x(vertices[0]);
+      real* x1 = geometry.x(vertices[1]);
+      real* x2 = geometry.x(vertices[2]);
+      //real* x3 = geometry.x(vertices[3]);
+
+      if ( v0.index() == vertices[0] ) x0 = geometry.x(v1.index());
+      if ( v0.index() == vertices[1] ) x1 = geometry.x(v1.index());
+      if ( v0.index() == vertices[2] ) x2 = geometry.x(v1.index());
+      //if ( v0.index() == vertices[3] ) x3 = geometry.x(v1.index());
+
+      // Formula for triangle area
+      /*
+      real v = ( (x0[0]*x1[1] +  x2[0]*x0[1] +  x1[0]*x2[1]) - 
+                 (x1[0]*x0[1] +  x0[0]*x2[1] +  x2[0]*x1[1]) );  
+      */     
+      real v = ( (x1[0]-x0[0])*(x2[1]-x0[1]) - (x1[1]-x0[1])*(x2[0]-x0[0]) );
+      v /= 2.0;
+
+      /*
+      // Formula for tetrahedron volume from http://mathworld.wolfram.com
+      real v = ( x0[0] * ( x1[1]*x2[2] + x3[1]*x1[2] + x2[1]*x3[2] - x2[1]*x1[2] - x1[1]*x3[2] - x3[1]*x2[2] ) -
+                 x1[0] * ( x0[1]*x2[2] + x3[1]*x0[2] + x2[1]*x3[2] - x2[1]*x0[2] - x0[1]*x3[2] - x3[1]*x2[2] ) +
+                 x2[0] * ( x0[1]*x1[2] + x3[1]*x0[2] + x1[1]*x3[2] - x1[1]*x0[2] - x0[1]*x3[2] - x3[1]*x1[2] ) -
+                 x3[0] * ( x0[1]*x1[2] + x1[1]*x2[2] + x2[1]*x0[2] - x1[1]*x0[2] - x2[1]*x1[2] - x0[1]*x2[2] ) );      
+      v /= 6.0;
+      */
+
+      bool collapse_cell = false;
+      for ( CellIterator ce(edge); !ce.end(); ++ce )
+        if ( c->index() == ce->index() ) 
+          collapse_cell = true;
+
+      //      cout << "Cell " << c->index() << ": v = " << v << ", vol_tol = " << vol_tol << endl;
+
+      if ( (fabs(v) < vol_tol) && (!collapse_cell) ) vertex_forbidden(v0) = true;
+
+    }
+  }
+
+  if ( !vertex_forbidden(v1) ) 
+  {
+    for (CellIterator c(v1); !c.end(); ++c)
+    {  
+      real vol_tol = vol_tol_wt * c->volume();
+      
+      uint* vertices = c->entities(0);
+
+      real* x0 = geometry.x(vertices[0]);
+      real* x1 = geometry.x(vertices[1]);
+      real* x2 = geometry.x(vertices[2]);
+      //real* x3 = geometry.x(vertices[3]);
+
+      if ( v0.index() == vertices[0] ) x0 = geometry.x(v1.index());
+      if ( v0.index() == vertices[1] ) x1 = geometry.x(v1.index());
+      if ( v0.index() == vertices[2] ) x2 = geometry.x(v1.index());
+      //if ( v0.index() == vertices[3] ) x3 = geometry.x(v1.index());
+
+      // Formula for triangle area
+      /*
+      real v = ( (x0[0]*x1[1] +  x2[0]*x0[1] +  x1[0]*x2[1]) - 
+                 (x1[0]*x0[1] +  x0[0]*x2[1] +  x2[0]*x1[1]) );  
+      */     
+      real v = ( (x1[0]-x0[0])*(x2[1]-x0[1]) - (x1[1]-x0[1])*(x2[0]-x0[0]) );
+      v /= 2.0;
+
+      /*
+      // Formula for tetrahedron volume from http://mathworld.wolfram.com
+      real v = ( x0[0] * ( x1[1]*x2[2] + x3[1]*x1[2] + x2[1]*x3[2] - x2[1]*x1[2] - x1[1]*x3[2] - x3[1]*x2[2] ) -
+                 x1[0] * ( x0[1]*x2[2] + x3[1]*x0[2] + x2[1]*x3[2] - x2[1]*x0[2] - x0[1]*x3[2] - x3[1]*x2[2] ) +
+                 x2[0] * ( x0[1]*x1[2] + x3[1]*x0[2] + x1[1]*x3[2] - x1[1]*x0[2] - x0[1]*x3[2] - x3[1]*x1[2] ) -
+                 x3[0] * ( x0[1]*x1[2] + x1[1]*x2[2] + x2[1]*x0[2] - x1[1]*x0[2] - x2[1]*x1[2] - x0[1]*x2[2] ) );      
+      v /= 6.0;
+      */
+
+      bool collapse_cell = false;
+      for ( CellIterator ce(edge); !ce.end(); ++ce )
+        if ( c->index() == ce->index() ) 
+          collapse_cell = true;
+
+      //      cout << "Cell " << c->index() << ": v = " << v << ", vol_tol = " << vol_tol << endl;
+
+      if ( (fabs(v) < vol_tol) && (!collapse_cell) ) vertex_forbidden(v1) = true;
+
+    }
+  }
+
+  /*
+  if ( (vertex_forbidden(v0) == false) || (vertex_forbidden(v1) == false) ) 
+    cout << "collapse ok!" << endl;
+  else
+    cout << "collapse not ok!" << endl;
+  */
+
+  if ( (vertex_forbidden(v0) == false) || (vertex_forbidden(v1) == false) ) 
+    return true;
+  else 
+    return false; 
+  
+}
+//-----------------------------------------------------------------------------
 

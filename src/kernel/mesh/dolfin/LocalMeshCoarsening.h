@@ -30,6 +30,10 @@ namespace dolfin
                                           bool coarsen_boundary = false); 
 
   private:
+    
+    /// Check that edge collapse is ok  
+    static bool collapseEdgeOk(Mesh& mesh, uint edge_index, uint* edge_vertex, 
+                               MeshFunction<bool>& vertex_forbidden);  
 
     /// Collapse edge by node deletion 
     static void collapseEdge(Mesh& mesh, Edge& edge, 
