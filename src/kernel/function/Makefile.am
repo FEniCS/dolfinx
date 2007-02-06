@@ -7,6 +7,7 @@ nobase_include_HEADERS        = dolfin/dolfin_function.h \
                                 dolfin/FunctionPointerFunction.h \
                                 dolfin/GenericFunction.h \
                                 dolfin/LocalFunctionData.h \
+                                dolfin/NonMatchingFunction.h \
                                 dolfin/SpecialFunctions.h \
                                 dolfin/UserFunction.h
 INCLUDES                      = @KERNEL_CFLAGS@
@@ -17,5 +18,6 @@ libdolfin_function_la_SOURCES = ConstantFunction.cpp \
                                 FunctionPointerFunction.cpp \
                                 GenericFunction.cpp \
                                 LocalFunctionData.cpp \
+                                NonMatchingFunction.cpp \
                                 UserFunction.cpp
 libdolfin_function_la_LDFLAGS = -static

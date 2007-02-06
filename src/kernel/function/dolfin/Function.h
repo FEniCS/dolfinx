@@ -55,6 +55,9 @@ namespace dolfin
     /// Create discrete function (finite element chosen automatically)
     Function(Vector& x, Mesh& mesh);
 
+    /// Create discrete function (finite element chosen automatically)
+    Function(Function& f, Mesh& mesh);
+
     /// Create discrete function
     Function(Vector& x, Mesh& mesh, FiniteElement& element);
 
@@ -124,7 +127,7 @@ namespace dolfin
     void init(Mesh& mesh, FiniteElement& element);
 
     /// Return current type of function
-    enum Type { constant, user, functionpointer, discrete };
+    enum Type { constant, user, functionpointer, discrete, nonmatching };
     inline Type type() const { return _type; } 
 
   protected:

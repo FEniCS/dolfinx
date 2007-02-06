@@ -106,7 +106,7 @@ namespace dolfin
     FEBasis basis;
 
     // Intersection detector for finding cells
-    IntersectionDetector idetector;
+    IntersectionDetector* _idetector;
 
     // Number of vector dimensions
     uint _vectordim;

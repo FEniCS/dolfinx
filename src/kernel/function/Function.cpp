@@ -15,6 +15,7 @@
 #include <dolfin/UserFunction.h>
 #include <dolfin/FunctionPointerFunction.h>
 #include <dolfin/DiscreteFunction.h>
+#include <dolfin/NonMatchingFunction.h>
 #include <dolfin/Function.h>
 
 using namespace dolfin;
@@ -53,6 +54,20 @@ Function::Function(Vector& x, Mesh& mesh)
     f(0), _type(discrete), _cell(0), _facet(-1)
 {
   f = new DiscreteFunction(x, mesh);
+}
+//-----------------------------------------------------------------------------
+Function::Function(Function& F, Mesh& mesh)
+  : Variable("u", "no description"), TimeDependent(),
+    f(0), _type(nonmatching), _cell(0), _facet(-1)
+{
+  if(F._type == discrete)
+  {
+    f = new NonMatchingFunction(*((DiscreteFunction *)F.f));
+  }
+  else
+  {
+    dolfin_error("Cannot create non-matching function.");
+  }
 }
 //-----------------------------------------------------------------------------
 Function::Function(Vector& x, Mesh& mesh, FiniteElement& element)

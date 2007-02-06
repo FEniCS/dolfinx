@@ -63,7 +63,8 @@ LTLIBRARIES = $(lib_LTLIBRARIES)
 libdolfin_function_la_LIBADD =
 am_libdolfin_function_la_OBJECTS = ConstantFunction.lo \
 	DiscreteFunction.lo Function.lo FunctionPointerFunction.lo \
-	GenericFunction.lo LocalFunctionData.lo UserFunction.lo
+	GenericFunction.lo LocalFunctionData.lo NonMatchingFunction.lo \
+	UserFunction.lo
 libdolfin_function_la_OBJECTS = $(am_libdolfin_function_la_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -248,6 +249,7 @@ nobase_include_HEADERS = dolfin/dolfin_function.h \
                                 dolfin/FunctionPointerFunction.h \
                                 dolfin/GenericFunction.h \
                                 dolfin/LocalFunctionData.h \
+                                dolfin/NonMatchingFunction.h \
                                 dolfin/SpecialFunctions.h \
                                 dolfin/UserFunction.h
 
@@ -259,6 +261,7 @@ libdolfin_function_la_SOURCES = ConstantFunction.cpp \
                                 FunctionPointerFunction.cpp \
                                 GenericFunction.cpp \
                                 LocalFunctionData.cpp \
+                                NonMatchingFunction.cpp \
                                 UserFunction.cpp
 
 libdolfin_function_la_LDFLAGS = -static
@@ -337,6 +340,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FunctionPointerFunction.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/GenericFunction.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LocalFunctionData.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NonMatchingFunction.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/UserFunction.Plo@am__quote@
 
 .cpp.o:
