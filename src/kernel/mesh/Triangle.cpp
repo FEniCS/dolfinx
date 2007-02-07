@@ -14,6 +14,7 @@
 #include <dolfin/Triangle.h>
 #include <dolfin/Vertex.h>
 #include <dolfin/GeometricPredicates.h>
+#include <algorithm>
 
 using namespace dolfin;
 
@@ -79,16 +80,53 @@ void Triangle::createEntities(uint** e, uint dim, const uint v[]) const
   if ( dim != 1 )
     dolfin_error1("Don't know how to create entities of topological dimension %d.", dim);
 
-  // Create the three edges
+  // Create the three edges, lexicographical
   e[0][0] = v[1]; e[0][1] = v[2];
-  e[1][0] = v[2]; e[1][1] = v[0];
+  e[1][0] = v[0]; e[1][1] = v[2];
   e[2][0] = v[0]; e[2][1] = v[1];
+
+  // Create the three edges, counter clockwise
+//  e[0][0] = v[1]; e[0][1] = v[2];
+//  e[1][0] = v[2]; e[1][1] = v[0];
+//  e[2][0] = v[0]; e[2][1] = v[1];
 }
 //-----------------------------------------------------------------------------
 void Triangle::orderEntities(Cell& cell) const
 {
-  // FIXME: Implement
-  dolfin_error("Not implemented.");
+  // Sort local vertices in ascending order, connectivity 2 - 0
+  uint* cell_vertices = cell.entities(0);
+  std::sort(cell_vertices, cell_vertices+3);
+
+  // Sort local edges after non-incident vertex, connectivity 2 - 1 
+  // Check if connectivity has been created
+  if (cell.mesh().size(1) > 0)
+  {
+    uint* cell_vertices = cell.entities(0);
+    uint* edge_numbers = cell.entities(1);
+    uint tmp(0);
+    for (uint i(0); i < 3; i++)
+    {
+      const uint* edge_vertices = cell.mesh().topology()(1, 0)(edge_numbers[i]);
+      for (uint j(i); j < 3; j++)
+        // Check if the jth vertex is non-incident on edge i
+        if (cell_vertices[j] != edge_vertices[0] && cell_vertices[j] != edge_vertices[1])
+        {
+          // Swap edge numbers
+          tmp = edge_numbers[i];
+          edge_numbers[i] = edge_numbers[j];
+          edge_numbers[j] = tmp;
+        }
+    }
+    // Sort vertices on edges in ascending order, connectivity 1 - 0
+    for (uint i(0); i < 3; i++)
+    {
+      // For each edge number get the global vertex numbers
+      uint* edge_vertices = cell.mesh().topology()(1, 0)(edge_numbers[i]);
+      std::sort(edge_vertices, edge_vertices+2);
+    }
+  }
+  else
+    dolfin_warning("Connectivity 2-1 and 1-0, could not be reordered, is connectivity initialised?");
 }
 //-----------------------------------------------------------------------------
 void Triangle::refineCell(Cell& cell, MeshEditor& editor,
