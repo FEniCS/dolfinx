@@ -6,13 +6,15 @@
 #ifndef __LOCAL_MESH_REFINEMENT_H
 #define __LOCAL_MESH_REFINEMENT_H
 
-#include <dolfin/constants.h>
+#include <dolfin/MeshFunction.h>
 
 namespace dolfin
 {
 
   class Cell;
+  class Edge;
   class Mesh;
+  class MeshEditor;
 
   /// This class implements local mesh refinement for different mesh types.
 

@@ -6,7 +6,6 @@
 #ifndef __LOCAL_MESH_COARSENING_H
 #define __LOCAL_MESH_COARSENING_H
 
-//#include <dolfin/constants.h>
 #include <dolfin/MeshFunction.h>
 
 namespace dolfin
@@ -16,7 +15,6 @@ namespace dolfin
   class Edge;
   class Vertex;
   class MeshEditor;
-  //class MeshFunction<bool>;
 
   /// This class implements local mesh coarsening for different mesh types.
 
@@ -24,12 +22,16 @@ namespace dolfin
   {
   public:
 
-    /// Coarsen simplicial mesh locally by node deletion 
+    /// Coarsen simplicial mesh locally by edge collapse 
     static void coarsenMeshByEdgeCollapse(Mesh& mesh, 
                                           MeshFunction<bool>& cell_marker,
                                           bool coarsen_boundary = false); 
 
   private:
+    
+    /// Check that edge collapse is ok  
+    static bool collapseEdgeOk(Mesh& mesh, uint edge_index, uint* edge_vertex, 
+                               MeshFunction<bool>& vertex_forbidden);  
 
     /// Collapse edge by node deletion 
     static void collapseEdge(Mesh& mesh, Edge& edge, 

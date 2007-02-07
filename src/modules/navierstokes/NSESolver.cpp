@@ -298,11 +298,15 @@ void NSESolver::ComputeStabilization(Mesh& mesh, Function& w, real nu, real k,
 
   real normw; 
 
+  int nsd = w.vectordim(); 
+
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     normw = 0.0;
     for (VertexIterator n(cell); !n.end(); ++n)
-      normw += sqrt( sqr((w.vector())((*n).index()*2)) + sqr((w.vector())((*n).index()*2+1)) );
+      for ( int i = 0; i < nsd; i++ )
+        normw += sqrt( sqr((w.vector())(i*mesh.numVertices() + (*n).index())) ); 
+    
     normw /= (*cell).numEntities(0);
     if ( (((*cell).diameter()/nu) > 1.0) || (nu < 1.0e-10) ){
       d1vector((*cell).index()) = C1 * (0.5 / sqrt( 1.0/sqr(k) + sqr(normw/(*cell).diameter()) ) );

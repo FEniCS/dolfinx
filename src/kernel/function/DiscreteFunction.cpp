@@ -22,7 +22,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 DiscreteFunction::DiscreteFunction(Vector& x)
-  : GenericFunction(), _x(&x), _mesh(0), _element(0),
+  : GenericFunction(), _x(&x), _mesh(0), _element(0), _idetector(0),
     _vectordim(1), component(0), mixed_offset(0), component_offset(0),
     vector_local(false), mesh_local(false), element_local(false)
 {
@@ -31,7 +31,7 @@ DiscreteFunction::DiscreteFunction(Vector& x)
 }
 //-----------------------------------------------------------------------------
 DiscreteFunction::DiscreteFunction(Vector& x, Mesh& mesh)
-  : GenericFunction(), _x(&x), _mesh(&mesh), _element(0),
+  : GenericFunction(), _x(&x), _mesh(&mesh), _element(0), _idetector(0),
     _vectordim(1), component(0), mixed_offset(0), component_offset(0),
     vector_local(false), mesh_local(false), element_local(false)
 {
@@ -40,23 +40,23 @@ DiscreteFunction::DiscreteFunction(Vector& x, Mesh& mesh)
 }
 //-----------------------------------------------------------------------------
 DiscreteFunction::DiscreteFunction(Vector& x, Mesh& mesh, FiniteElement& element)
-  : GenericFunction(), _x(&x), _mesh(&mesh), _element(&element),
+  : GenericFunction(), _x(&x), _mesh(&mesh), _element(&element), _idetector(0),
     _vectordim(1), component(0), mixed_offset(0), component_offset(0),
     vector_local(false), mesh_local(false), element_local(false)
 {
   // Update vector dimension from element
   updateVectorDimension();
-  constructBasis();
+  //constructBasis();
 }
 //-----------------------------------------------------------------------------
 DiscreteFunction::DiscreteFunction(Mesh& mesh, FiniteElement& element)
-  : GenericFunction(), _x(0), _mesh(&mesh), _element(&element),
+  : GenericFunction(), _x(0), _mesh(&mesh), _element(&element), _idetector(0),
     _vectordim(1), component(0), mixed_offset(0), component_offset(0),
     vector_local(false), mesh_local(false), element_local(false)
 {
   // Update vector dimension from element
   updateVectorDimension();
-  constructBasis();
+  //constructBasis();
 
   // Allocate local storage
   uint size = FEM::size(mesh, element);
@@ -66,7 +66,7 @@ DiscreteFunction::DiscreteFunction(Mesh& mesh, FiniteElement& element)
 //-----------------------------------------------------------------------------
 DiscreteFunction::DiscreteFunction(const DiscreteFunction& f)
   : GenericFunction(), _x(0), _mesh(f._mesh), _element(f._element),
-    _vectordim(f._vectordim), component(f.component),
+    _idetector(0), _vectordim(f._vectordim), component(f.component),
     mixed_offset(f.mixed_offset), component_offset(f.component_offset),
     vector_local(false), mesh_local(false), element_local(false)
 {
@@ -97,6 +97,11 @@ real DiscreteFunction::operator()(const Point& p, uint i)
   // Note, this is a very expensive operation compared to evaluating at
   // vertices
 
+  if(!_idetector)
+  {
+    constructBasis();
+  }
+
   if(have_basis)
   {
     dolfin_assert(_x && _mesh && _element);
@@ -106,7 +111,7 @@ real DiscreteFunction::operator()(const Point& p, uint i)
 
     // Find cell(s) intersecting p
     Array<uint> cells;
-    idetector.overlap(pprobe, cells);
+    _idetector->overlap(pprobe, cells);
 
     // Always pick first cell. If there are more than one cell, the
     // result is undefined.
@@ -190,7 +195,7 @@ void DiscreteFunction::sub(uint i)
     // Pick sub element and update vector dimension
     _element = &((*_element)[i]);
     updateVectorDimension();
-    constructBasis();
+    //constructBasis();
 
 
     // Make sure component and component offset are zero
@@ -345,7 +350,7 @@ void DiscreteFunction::attach(FiniteElement& element, bool local)
 
   // Recompute vector dimension
   updateVectorDimension();
-  constructBasis();
+  //constructBasis();
 }
 //-----------------------------------------------------------------------------
 void DiscreteFunction::init(Mesh& mesh, FiniteElement& element)
@@ -361,7 +366,7 @@ void DiscreteFunction::init(Mesh& mesh, FiniteElement& element)
   
   // Update vector dimension from element
   updateVectorDimension();
-  constructBasis();
+  //constructBasis();
 
 
   // Reinitialize local storage
@@ -402,6 +407,8 @@ void DiscreteFunction::constructBasis()
   dolfin_assert(_mesh);
 
   have_basis = basis.construct(*_element);
-  idetector.init(*_mesh);
+  //idetector.init(*_mesh);
+  _idetector = new IntersectionDetector();
+  _idetector->init(*_mesh);
 }
 //-----------------------------------------------------------------------------
