@@ -462,11 +462,15 @@ void FSISolver::ComputeStabilization(Mesh& mesh, Function& w, real nu, real k,
 
   real normw; 
 
+  int nsd = w.vectordim(); 
+
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     normw = 0.0;
     for (VertexIterator n(cell); !n.end(); ++n)
-      normw += sqrt( sqr((w.vector())((*n).index()*2)) + sqr((w.vector())((*n).index()*2+1)) );
+      for ( int i = 0; i < nsd; i++ )
+        normw += sqrt( sqr((w.vector())(i*mesh.numVertices() + (*n).index())) ); 
+    
     normw /= (*cell).numEntities(0);
     if ( (((*cell).diameter()/nu) > 1.0) || (nu < 1.0e-10) ){
       d1vector((*cell).index()) = C1 * (0.5 / sqrt( 1.0/sqr(k) + sqr(normw/(*cell).diameter()) ) );
@@ -477,6 +481,44 @@ void FSISolver::ComputeStabilization(Mesh& mesh, Function& w, real nu, real k,
     }	
   }
 }
+//-----------------------------------------------------------------------------
+
+
+// void FSISolver::ComputeStabilization(Mesh& mesh, Function& w, real nu, real k, 
+// 				     Vector& d1vector, Vector& d2vector)
+// {
+//   // Compute least-squares stabilizing terms: 
+//   //
+//   // if  h/nu > 1 or ny < 10^-10
+//   //   d1 = C1 * ( 0.5 / sqrt( 1/k^2 + |U|^2/h^2 ) )   
+//   //   d2 = C2 * h 
+//   // else 
+//   //   d1 = C1 * h^2  
+//   //   d2 = C2 * h^2  
+
+//   real C1 = 4.0;   
+//   real C2 = 2.0;   
+
+//   d1vector.init(mesh.numCells());	
+//   d2vector.init(mesh.numCells());	
+
+//   real normw; 
+
+//   for (CellIterator cell(mesh); !cell.end(); ++cell)
+//   {
+//     normw = 0.0;
+//     for (VertexIterator n(cell); !n.end(); ++n)
+//       normw += sqrt( sqr((w.vector())((*n).index()*2)) + sqr((w.vector())((*n).index()*2+1)) );
+//     normw /= (*cell).numEntities(0);
+//     if ( (((*cell).diameter()/nu) > 1.0) || (nu < 1.0e-10) ){
+//       d1vector((*cell).index()) = C1 * (0.5 / sqrt( 1.0/sqr(k) + sqr(normw/(*cell).diameter()) ) );
+//       d2vector((*cell).index()) = C2 * (*cell).diameter();
+//     } else{
+//       d1vector((*cell).index()) = C1 * sqr((*cell).diameter());
+//       d2vector((*cell).index()) = C2 * sqr((*cell).diameter());
+//     }	
+//   }
+// }
 //-----------------------------------------------------------------------------
 void FSISolver::SetInitialVelocity(Vector& xvel)
 {
