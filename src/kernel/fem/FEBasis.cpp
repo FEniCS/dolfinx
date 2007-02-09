@@ -39,6 +39,13 @@ bool FEBasis::construct(FiniteElement& element)
     functions[1] = new ScalarLagrange(1);
     functions[2] = new ScalarLagrange(2);
   }
+  else if ( repr == "[ Discontinuous Lagrange finite element of degree 0 on a triangle ]" )
+  {
+    dolfin_info("Constructing basis for: %s.", repr.c_str());
+    
+    functions.resize(1);
+    functions[0] = new ScalarDiscontinousLagrange(0);
+  }
   else
   {
     dolfin_info("Unable to construct basis functions for: %s.", repr.c_str());

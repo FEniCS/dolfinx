@@ -13,4 +13,4 @@ Version: @PACKAGE_VERSION@
 Requires: ufc-1
 Conflicts:
 Libs: -L${libdir} -ldolfin
-Cflags: -I${includedir} @CXXFLAGS@
+Cflags: -I${includedir} @EXTERNAL_CFLAGS@ @CXXFLAGS@

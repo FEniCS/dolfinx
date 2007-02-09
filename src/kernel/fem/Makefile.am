@@ -15,6 +15,7 @@ nobase_include_HEADERS   = dolfin/dolfin_fem.h \
                            dolfin/NewAffineMap.h \
                            dolfin/P1tet.h \
                            dolfin/P1tri.h \
+                           dolfin/DP0tri.h \
                            dolfin/P2tet.h \
                            dolfin/P2tri.h \
                            dolfin/P3tet.h \

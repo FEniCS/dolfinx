@@ -23,6 +23,7 @@
 #include <dolfin/NewAffineMap.h>
 #include <dolfin/P1tet.h>
 #include <dolfin/P1tri.h>
+#include <dolfin/DP0tri.h>
 // #include <dolfin/P2tet.h>
 // #include <dolfin/P2tri.h>
 // #include <dolfin/P3tet.h>

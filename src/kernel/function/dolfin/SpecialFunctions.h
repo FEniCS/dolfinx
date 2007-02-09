@@ -92,6 +92,27 @@ namespace dolfin
     int num;
   };
 
+  class ScalarDiscontinousLagrange : public Function
+  {
+  public:
+    ScalarDiscontinousLagrange(int num) : num(num) {}
+    
+    real eval(const Point& p, unsigned int i)
+    {
+      switch(num)
+      {
+      case 0:
+	return 1;
+	break;
+      default:
+	return 0.0;
+      }
+    }
+    
+  private:
+    int num;
+  };
+
 }
 
 #endif

@@ -94,6 +94,8 @@ DiscreteFunction::~DiscreteFunction()
 //-----------------------------------------------------------------------------
 real DiscreteFunction::operator()(const Point& p, uint i)
 {
+//   cout << "DiscreteFunction evaluation" << endl;
+
   // Note, this is a very expensive operation compared to evaluating at
   // vertices
 
@@ -113,35 +115,45 @@ real DiscreteFunction::operator()(const Point& p, uint i)
     Array<uint> cells;
     _idetector->overlap(pprobe, cells);
 
-    // Always pick first cell. If there are more than one cell, the
-    // result is undefined.
+    // If there are more than one cell, compute the average value of
+    // the cells
 
-    Cell cell(*_mesh, cells[0]);
-    
-    // Initialize local data (if not already initialized correctly)
-    local.init(*_element);
-  
-    // Compute mapping to global degrees of freedom
-    _element->nodemap(local.dofs, cell, *_mesh);
+//     if(cells.size() > 1)
+//       cout << "cells.size(): " << cells.size() << endl;
 
-    // Compute positions in global vector by adding offsets
-    for (uint j = 0; j < _element->spacedim(); j++)
-      local.dofs[j] = local.dofs[j] + mixed_offset + component_offset;
-
-    // Get values
-    _x->get(local.coefficients, local.dofs, _element->spacedim());
-
-    // Compute map
-    NewAffineMap map;
-    map.update(cell);
-
-    // Compute finite element sum
     real sum = 0.0;
-    for(uint j = 0; j < _element->spacedim(); j++)
+    for(uint i = 0; i < cells.size(); i++)
     {
-      sum += local.coefficients[j] * basis.evalPhysical(*(basis.functions[j]),
-							pprobe, map, i);
+      Cell cell(*_mesh, cells[i]);
+      
+      // Initialize local data (if not already initialized correctly)
+      local.init(*_element);
+      
+      // Compute mapping to global degrees of freedom
+      _element->nodemap(local.dofs, cell, *_mesh);
+      
+      // Compute positions in global vector by adding offsets
+      for (uint j = 0; j < _element->spacedim(); j++)
+	local.dofs[j] = local.dofs[j] + mixed_offset + component_offset;
+      
+      // Get values
+      _x->get(local.coefficients, local.dofs, _element->spacedim());
+      
+      // Compute map
+      NewAffineMap map;
+      map.update(cell);
+
+      // Compute finite element sum
+      real cellsum = 0.0;
+      for(uint j = 0; j < _element->spacedim(); j++)
+      {
+	cellsum += local.coefficients[j] *
+	  basis.evalPhysical(*(basis.functions[j]), pprobe, map, i);
+      }
+      sum += cellsum;
     }
+
+    sum /= cells.size();
 
     return sum;
   }

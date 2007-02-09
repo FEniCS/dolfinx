@@ -40,12 +40,18 @@ NonMatchingFunction::~NonMatchingFunction()
 //-----------------------------------------------------------------------------
 real NonMatchingFunction::operator()(const Point& p, uint i)
 {
+//   cout << "Evaluating NonMatchingFunction at:" << endl;
+//   cout << p << endl;
+
   // Evaluate discrete function
   return F->operator()(p, component + i);
 }
 //-----------------------------------------------------------------------------
 real NonMatchingFunction::operator() (const Vertex& vertex, uint i)
 {
+  cout << "Evaluating NonMatchingFunction vertex at:" << endl;
+  cout << vertex << endl;
+
   // Evaluate discrete function
   return F->operator()(vertex, component + i);
 }
@@ -69,6 +75,8 @@ void NonMatchingFunction::sub(uint i)
 void NonMatchingFunction::interpolate(real coefficients[], Cell& cell,
                                AffineMap& map, FiniteElement& element)
 {
+//   cout << "Interpolating NonMatchingFunction" << endl;
+
   // Initialize local data (if not already initialized correctly)
   local.init(element);
   
@@ -78,7 +86,12 @@ void NonMatchingFunction::interpolate(real coefficients[], Cell& cell,
   // FIXME: We can exploit knowledge of the cell to speed this up
   // Evaluate function at interpolation points
   for (uint i = 0; i < element.spacedim(); i++)
+  {
+    //cout << "point:" << endl;
+//     cout << local.points[i] << endl;
     coefficients[i] = F->operator()(local.points[i], component + local.components[i]);
+//     cout << "coeff: " << coefficients[i] << endl;
+  }
 }
 //-----------------------------------------------------------------------------
 dolfin::uint NonMatchingFunction::vectordim() const

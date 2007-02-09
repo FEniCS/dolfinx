@@ -13,6 +13,7 @@ EXTRA_DIST = dolfin_fem.h \
              NewAffineMap.h \
              P1tet.h \
              P1tri.h \
+             DP0tri.h \
              P2tet.h \
              P2tri.h \
              P3tet.h \

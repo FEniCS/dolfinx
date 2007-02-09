@@ -1,0 +1,12 @@
+# Compile this form with FFC: ffc Projection.form.
+
+element = FiniteElement("Discontinuous Lagrange", "triangle", 0)
+#element2 = FiniteElement("Discontinuous Lagrange", "triangle", 4)
+element2 = FiniteElement("Lagrange", "triangle", 1)
+
+v = TestFunction(element)
+U = TrialFunction(element)
+f = Function(element2)
+
+a = v * U * dx
+L = v * f * dx
