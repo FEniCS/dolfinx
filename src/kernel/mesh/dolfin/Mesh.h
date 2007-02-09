@@ -1,8 +1,10 @@
 // Copyright (C) 2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
+// Modified by Johan Hoffman 2007.
+//
 // First added:  2006-05-08
-// Last changed: 2006-11-14
+// Last changed: 2007-02-06
 
 #ifndef __MESH_H
 #define __MESH_H
@@ -18,6 +20,7 @@ namespace dolfin
   class MeshTopology;
   class MeshGeometry;
   class CellType;
+  template <class T> class MeshFunction;
 
   /// A Mesh consists of a set of connected and numbered mesh entities.
   ///
@@ -116,6 +119,14 @@ namespace dolfin
 
     /// Refine mesh, either uniformly or according to cells marked for refinement
     void refine();
+    void refine(MeshFunction<bool>& cell_marker, bool refine_boundary = true);
+
+    /// Coarsen mesh, either uniformly or according to cells marked for coarsening
+    void coarsen();
+    void coarsen(MeshFunction<bool>& cell_marker, bool coarsen_boundary = false);
+
+    /// Smooth mesh using Lagrangian mesh smoothing 
+    void smooth();
 
     /// Display mesh data
     void disp() const;

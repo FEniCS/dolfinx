@@ -25,7 +25,7 @@ void LocalMeshRefinement::refineMeshByEdgeBisection(Mesh& mesh,
                                                     MeshFunction<bool>& cell_marker,
                                                     bool refine_boundary)
 {
-  dolfin_info("Refining simplicial mesh by bisection of edges.");
+  dolfin_info("Refining simplicial mesh by edge bisection.");
   
   // Get size of old mesh
   const uint num_vertices = mesh.size(0);
@@ -110,7 +110,7 @@ void LocalMeshRefinement::refineMeshByEdgeBisection(Mesh& mesh,
 	{
           if ( cell_forbidden.get(*cn) == false )
           {
-            // Add new cell
+            // Count new cells
             num_new_cells++;
             // set markers of all cell neighbors of longest edge to false 
             //if ( cn->index() != c->index() ) 
@@ -128,8 +128,8 @@ void LocalMeshRefinement::refineMeshByEdgeBisection(Mesh& mesh,
   editor.initVertices(num_vertices + num_new_vertices);
   editor.initCells(num_cells + num_new_cells);
 
-  cout << "no old cells: " << num_cells << ", new cells: " << num_new_cells << endl;
-  cout << "no old vert: " << num_vertices << ", new vert: " << num_new_vertices << endl;
+  cout << "Number of cells in old mesh: " << num_cells << "; to add: " << num_new_cells << endl;
+  cout << "Number of vertices in old mesh: " << num_vertices << "; to add: " << num_new_vertices << endl;
   
   // Add old vertices
   uint current_vertex = 0;
