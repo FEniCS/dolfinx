@@ -32,6 +32,7 @@ namespace dolfin
   class BoundaryCondition;
   class AffineMap;
   class DofMap;
+  class PETScMatrix;
 
   /// Automated assembly of a linear system from a given partial differential
   /// equation, specified as a variational problem: Find U in V such that

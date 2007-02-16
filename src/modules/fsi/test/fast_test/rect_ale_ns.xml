@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<dolfin xmlns:dolfin="http://www.phi.chalmers.se/dolfin/">
+  <mesh celltype="triangle" dim="2">
+    <vertices size="6">
+      <vertex index="0" x="1.000000" y="0.000000" z="0.000000"/>
+      <vertex index="1" x="0.000000" y="1.000000" z="0.000000"/>
+      <vertex index="2" x="0.000000" y="0.000000" z="0.000000"/>
+      <vertex index="3" x="1.000000" y="1.000000" z="0.000000"/>
+      <vertex index="4" x="2.000000" y="0.000000" z="0.000000"/>
+      <vertex index="5" x="2.000000" y="1.000000" z="0.000000"/>
+    </vertices>
+    <cells size="4">
+      <triangle index="0" v0="0" v1="1" v2="2"/>
+      <triangle index="1" v0="1" v1="0" v2="3"/>
+      <triangle index="2" v0="0" v1="3" v2="4"/>
+      <triangle index="3" v0="3" v1="4" v2="5"/>
+    </cells>
+  </mesh>
+</dolfin>

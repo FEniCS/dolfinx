@@ -1,32 +1,175 @@
 // Copyright (C) 2005 Johan Hoffman.
-// Licensed under the GNU GPL Version 2.
+// LiceALEd under the GNU GPL Version 2.
 //
 // Modified by Garth N. Wells 2005.
 // Modified by Anders Logg 2005-2006.
 //
 // First added:  2005
-// Last changed: 2006-10-19
+// Last changed: 2006-08-08
 
 #include <dolfin/timing.h>
-#include <dolfin/NSESolver.h>
-#include <dolfin/NSEMomentum3D.h>
-#include <dolfin/NSEMomentum2D.h>
-#include <dolfin/NSEContinuity3D.h>
-#include <dolfin/NSEContinuity2D.h>
+#include <dolfin/ALESolver.h>
+#include <dolfin/ALEMomentum3D.h>
+#include <dolfin/ALEMomentum2D.h>
+#include <dolfin/ALEContinuity3D.h>
+#include <dolfin/ALEContinuity2D.h>
+
+#include <dolfin/ALEBoundaryCondition.h>
+#include <dolfin/ALEFunction.h>
+
 
 using namespace dolfin;
 
+// ALE: This class combines the mesh smooting and the 
+// external force function to calculate the discrete
+// mesh velocity function w.
+class ALETools
+{
+public:
+
+  ALETools(Mesh& mesh, Function& w, ALEFunction& e, real& k)
+    : mesh(mesh), w(w), e(e), mvel(w.vector()), nsd(mesh.topology().dim()), k(k)
+  { 
+
+
+    boundary = new BoundaryMesh(mesh, vertex_map, cell_map);
+    
+    vertex_is_interior.init(mesh, 0);
+
+    for (VertexIterator v(mesh); ! v.end(); ++v) {  
+      
+      vertex_is_interior.set(v->index(), true);
+    }
+
+    for (VertexIterator bv(*boundary); !bv.end(); ++bv) {  
+      
+      vertex_is_interior.set(vertex_map(*bv), false);
+    }
+  }
+  //-----------------------------------------------------------------------------
+  ~ALETools() 
+  {
+  }
+  //-----------------------------------------------------------------------------
+  // execute external function, smooth the mesh and from this
+  // update the mesh velocity.
+  void updateMesh()
+  {
+    mvel = 0.0;
+    
+    touchBoundary();  // let the external function touch the boundary
+    
+    smoothMesh();     // smooth the mesh
+    
+    mvel /= k;
+  }
+  // add more things, maybe.
+
+private:
+
+  bool isInterior(Vertex& vertex)
+  {
+    return (vertex_is_interior(vertex));
+  }
+  //-----------------------------------------------------------------------------
+  void smoothMesh(void) 
+  {
+    unsigned int ndx;
+    
+    for (VertexIterator v(mesh); ! v.end(); ++v) {  
+      
+      if (!isInterior(*v)) continue;
+      
+      for (ndx = 0; ndx < nsd; ndx++) {
+	
+	real mass = 1;
+	
+	// move boundary point
+	old_coord[ndx] = v->coordinates()[ndx]; 
+	
+	// iterate over the neighboring vertices
+	VertexIterator vn(*v); 
+
+	v->coordinates()[ndx] = vn->coordinates()[ndx];
+	
+	for (++vn; !vn.end(); ++vn) {
+	  v->coordinates()[ndx] += vn->coordinates()[ndx];
+	  mass += 1;
+	}
+	
+	// divide by the number of neighbors
+	v->coordinates()[ndx] /= mass;
+	
+	// mesh velocity contribution
+	mvel_cpt(v->index(), ndx) += v->coordinates()[ndx] - old_coord[ndx]; 
+      }	
+    }
+  }
+  //-----------------------------------------------------------------------------
+  void touchBoundary()
+  {   
+
+    unsigned int ndx;
+
+    for (VertexIterator boundary_vertex(*boundary); !boundary_vertex.end(); ++boundary_vertex) {  
+      
+      Vertex v(mesh, vertex_map(*boundary_vertex));
+  
+      for (ndx = 0; ndx < nsd; ndx++) {
+	  
+	// move boundary point
+	mesh.geometry().x(vertex_map(*boundary_vertex), ndx) 
+	  += k * e.eval(v.point(), boundary_vertex->point(), ndx);
+	
+	// add mesh velocity contribution
+	mvel_cpt(vertex_map(*boundary_vertex), ndx) 
+	  += k * e.eval(v.point(), boundary_vertex->point(), ndx);
+      }    
+    }
+  }
+  //-----------------------------------------------------------------------------
+  real& mvel_cpt(unsigned int j, unsigned int i)
+  {
+    // FIXME: Fix syntax for PETSc
+    //return mvel[i + nsd*j];
+    dolfin_error("Fix mvel_cpt()");
+    // Make compiler happy
+    return k;
+  }
+
+  Mesh&         mesh;
+  BoundaryMesh* boundary;
+  Function&     w;
+  ALEFunction&  e;
+  Vector&       mvel;
+  unsigned int  nsd;
+  real&         k;
+
+  MeshFunction<bool>         vertex_is_interior;
+  MeshFunction<unsigned int> vertex_map;
+  MeshFunction<unsigned int> cell_map;
+  
+
+  real old_coord[3];
+};
 //-----------------------------------------------------------------------------
-NSESolver::NSESolver(Mesh& mesh, Function& f, BoundaryCondition& bc_mom, 
-		     BoundaryCondition& bc_con)
-  : mesh(mesh), f(f), bc_mom(bc_mom), bc_con(bc_con) 
+
+
+
+//-----------------------------------------------------------------------------
+ALESolver::ALESolver(Mesh& mesh, 
+		     Function& f, 
+		     ALEBoundaryCondition& bc_mom, 
+		     ALEBoundaryCondition& bc_con, 
+		     ALEFunction& e)
+  : mesh(mesh), f(f), bc_mom(bc_mom), bc_con(bc_con), e(e)
 {
   // Declare parameters
   add("velocity file name", "velocity.pvd");
   add("pressure file name", "pressure.pvd");
 }
 //-----------------------------------------------------------------------------
-void NSESolver::solve()
+void ALESolver::solve()
 {
   real T0 = 0.0;        // start time 
   real t  = 0.0;        // current time
@@ -37,7 +180,6 @@ void NSESolver::solve()
   real hmin;
   GetMinimumCellSize(mesh, hmin);  
   real k = 0.25*hmin; 
-  //real k = 0.05*hmin; 
   // Create matrices and vectors 
   Matrix Amom, Acon;
   Vector bmom, bcon;
@@ -61,6 +203,11 @@ void NSESolver::solve()
   xvel = 0.0;
   xpre = 0.0;
 
+  // ALE: Mesh velocity vector ========================================
+  Vector mvel(nsd*mesh.numVertices());
+  mvel = 0.0;
+  // ==================================================================
+
   // Set initial velocity
   SetInitialVelocity(xvel);
 
@@ -81,6 +228,11 @@ void NSESolver::solve()
   Function uc(xcvel, mesh); // velocity linearized convection 
   Function p(xpre, mesh);   // current pressure
 
+  // ALE: Move mesh velocity function =================================
+  Function w(mvel, mesh);
+  // ==================================================================
+
+  
   // Initialize stabilization parameters 
   Vector d1vector, d2vector;
   Function delta1(d1vector), delta2(d2vector);
@@ -91,19 +243,21 @@ void NSESolver::solve()
   LinearForm* Lmom = 0;
   LinearForm* Lcon = 0;
 
-  if ( nsd == 3 )
-  {
-    amom = new NSEMomentum3D::BilinearForm(uc,delta1,delta2,k,nu);
-    Lmom = new NSEMomentum3D::LinearForm(uc,u0,f,p,delta1,delta2,k,nu);
-    acon = new NSEContinuity3D::BilinearForm(delta1);
-    Lcon = new NSEContinuity3D::LinearForm(uc);
+  if ( nsd == 3 ) {
+
+    // ALE: some need w = mesh_velocity ===============================
+    amom = new ALEMomentum3D::BilinearForm(uc,delta1,delta2,w,k,nu);
+    Lmom = new ALEMomentum3D::LinearForm(uc,u0,f,p,delta1,delta2,w,k,nu);
+    acon = new ALEContinuity3D::BilinearForm(delta1);
+    Lcon = new ALEContinuity3D::LinearForm(uc,f,delta1);
   } 
-  else if ( nsd == 2 )
-  {
-    amom = new NSEMomentum2D::BilinearForm(uc,delta1,delta2,k,nu);
-    Lmom = new NSEMomentum2D::LinearForm(uc,u0,f,p,delta1,delta2,k,nu);
-    acon = new NSEContinuity2D::BilinearForm(delta1);
-    Lcon = new NSEContinuity2D::LinearForm(uc);
+  else if ( nsd == 2 ) {
+
+    // ALE: some need w = mesh_velocity ===============================
+    amom = new ALEMomentum2D::BilinearForm(uc,delta1,delta2,w,k,nu);
+    Lmom = new ALEMomentum2D::LinearForm(uc,u0,f,p,delta1,delta2,w,k,nu);
+    acon = new ALEContinuity2D::BilinearForm(delta1);
+    Lcon = new ALEContinuity2D::LinearForm(uc,f,delta1);
   }
   else
   {
@@ -119,6 +273,11 @@ void NSESolver::solve()
   p.sync(t);
   bc_con.sync(t);
   bc_mom.sync(t);
+
+  // ALE: =============================================================
+  w.sync(t);   // mesh velocity function
+  e.sync(t);   // external force function
+  // ==================================================================
     
   // Initialize output files 
   File file_u(get("velocity file name"));  // file for saving velocity 
@@ -130,8 +289,8 @@ void NSESolver::solve()
   dolfin_info("Assembling matrix: continuity");
 
   // Assembling matrices 
-  FEM::assemble(*acon, Acon, mesh);
   FEM::assemble(*amom, Amom, mesh);
+  FEM::assemble(*acon, Acon, mesh);
 
   // Initialize time-stepping parameters
   int time_step = 0;
@@ -144,11 +303,19 @@ void NSESolver::solve()
   int iteration;
   int max_iteration = 50;
 
+  // ALE: manipulation tools ==========================================
+  ALETools ale(mesh, w, e, k);
+
+  // passes boundary velocity function to bc
+  bc_mom.setBoundaryVelocity(e);
+  // ==================================================================
+
   // Start time-stepping
   Progress prog("Time-stepping");
+
   while (t<T) 
   {
-
+		
     time_step++;
     dolfin_info("Time step %d",time_step);
 
@@ -161,7 +328,12 @@ void NSESolver::solve()
     // Initialize residual 
     residual = 2*rtol;
     iteration = 0;
-
+		
+    // ALE: move continuity assembly inside ===========================
+    // time incr. since mesh changes.
+    FEM::assemble(*acon, Acon, mesh);
+    // ================================================================
+		
     // Fix-point iteration for non-linear problem 
     while (residual > rtol && iteration < max_iteration){
       
@@ -173,6 +345,10 @@ void NSESolver::solve()
       // Set boundary conditions for continuity equation 
       FEM::applyBC(Acon, bcon, mesh, acon->trial(), bc_con);
 
+      // ALE: =========================================================
+      bc_con.endRecording();
+      // ==============================================================
+			
       dolfin_info("Solve linear system: continuity");
 
       // Solve the linear system for the continuity equation 
@@ -182,16 +358,24 @@ void NSESolver::solve()
 
       dolfin_info("Assemble vector: momentum");
 
+      // ALE: =========================================================
+      FEM::assemble(*amom, Amom, mesh);
+      // ==============================================================
+			
       // Assemble momentum vector 
       tic();
       FEM::assemble(*Lmom, bmom, mesh);
       dolfin_info("Assemble took %g seconds",toc());
-
+			
       // Set boundary conditions for the momentum equation 
-      FEM::applyBC(Amom, bmom, mesh, amom->trial(),bc_mom);
+      FEM::applyBC(Amom, bmom, mesh, amom->trial(), bc_mom);
 
+      // ALE: =========================================================
+      bc_mom.endRecording();
+      // ==============================================================
+      
       dolfin_info("Solve linear system: momentum");
-
+			
       // Solve the linear system for the momentum equation 
       tic();
       solver_mom.solve(Amom, xvel, bmom);
@@ -218,22 +402,27 @@ void NSESolver::solve()
       
       dolfin_info("Momentum residual  : l2 norm = %e",residual_mom.norm());
       dolfin_info("continuity residual: l2 norm = %e",residual_con.norm());
-      dolfin_info("Total NSE residual : l2 norm = %e",sqrt(sqr(residual_mom.norm()) + sqr(residual_con.norm())));
+      dolfin_info("Total ALE residual : l2 norm = %e",sqrt(sqr(residual_mom.norm()) + sqr(residual_con.norm())));
 
       residual = sqrt(sqr(residual_mom.norm()) + sqr(residual_con.norm()));
       iteration++;
     }
 
+    // ALE: Apply external boundary force and smooth mesh =============
+    // and reconstruct the mesh velocity function. 
+    ale.updateMesh();
+    // ================================================================
+    
     if(residual > rtol)
-      dolfin_warning("NSE fixed point iteration did not converge"); 
-
-    if ( (time_step == 1) || (t > (T-T0)*(real(sample)/real(no_samples))) ){
+      dolfin_warning("ALE fixed point iteration did not converge"); 
+		
+    if ( (time_step == 1) || (t > (T-T0)*(real(sample)/real(no_samples))) ) {
       dolfin_info("save solution to file");
       file_p << p;
       file_u << u;
       sample++;
     }
-
+    
     // Increase time with timestep
     t = t + k;
 
@@ -241,25 +430,28 @@ void NSESolver::solve()
     prog = t / T;
   }
 
-    dolfin_info("save solution to file");
-    file_p << p;
-    file_u << u;
-
+  dolfin_info("save solution to file");
+  file_p << p;
+  file_u << u;
 
   delete amom;
   delete Lmom;
   delete acon;
   delete Lcon;
+
 }
 //-----------------------------------------------------------------------------
-void NSESolver::solve(Mesh& mesh, Function& f, BoundaryCondition& bc_mom, 
-		      BoundaryCondition& bc_con)
+void ALESolver::solve(Mesh& mesh, 
+		      Function& f, 
+		      ALEBoundaryCondition& bc_mom, 
+		      ALEBoundaryCondition& bc_con, 
+		      ALEFunction& e)
 {
-  NSESolver solver(mesh, f, bc_mom, bc_con);
+  ALESolver solver(mesh, f, bc_mom, bc_con, e);
   solver.solve();
 }
 //-----------------------------------------------------------------------------
-void NSESolver::ComputeCellSize(Mesh& mesh, Vector& hvector)
+void ALESolver::ComputeCellSize(Mesh& mesh, Vector& hvector)
 {
   // Compute cell size h
   hvector.init(mesh.numCells());	
@@ -269,7 +461,7 @@ void NSESolver::ComputeCellSize(Mesh& mesh, Vector& hvector)
     }
 }
 //-----------------------------------------------------------------------------
-void NSESolver::GetMinimumCellSize(Mesh& mesh, real& hmin)
+void ALESolver::GetMinimumCellSize(Mesh& mesh, real& hmin)
 {
   // Get minimum cell diameter
   hmin = 1.0e6;
@@ -279,7 +471,7 @@ void NSESolver::GetMinimumCellSize(Mesh& mesh, real& hmin)
     }
 }
 //-----------------------------------------------------------------------------
-void NSESolver::ComputeStabilization(Mesh& mesh, Function& w, real nu, real k, 
+void ALESolver::ComputeStabilization(Mesh& mesh, Function& w, real nu, real k, 
 				     Vector& d1vector, Vector& d2vector)
 {
   // Compute least-squares stabilizing terms: 
@@ -299,15 +491,11 @@ void NSESolver::ComputeStabilization(Mesh& mesh, Function& w, real nu, real k,
 
   real normw; 
 
-  int nsd = w.vectordim(); 
-
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     normw = 0.0;
     for (VertexIterator n(cell); !n.end(); ++n)
-      for ( int i = 0; i < nsd; i++ )
-        normw += sqrt( sqr((w.vector())(i*mesh.numVertices() + (*n).index())) ); 
-    
+      normw += sqrt( sqr((w.vector())((*n).index()*2)) + sqr((w.vector())((*n).index()*2+1)) );
     normw /= (*cell).numEntities(0);
     if ( (((*cell).diameter()/nu) > 1.0) || (nu < 1.0e-10) ){
       d1vector((*cell).index()) = C1 * (0.5 / sqrt( 1.0/sqr(k) + sqr(normw/(*cell).diameter()) ) );
@@ -319,7 +507,7 @@ void NSESolver::ComputeStabilization(Mesh& mesh, Function& w, real nu, real k,
   }
 }
 //-----------------------------------------------------------------------------
-void NSESolver::SetInitialVelocity(Vector& xvel)
+void ALESolver::SetInitialVelocity(Vector& xvel)
 {
   // Function for setting initial velocity, 
   // given as a function of the coordinates (x,y,z).
@@ -333,9 +521,9 @@ void NSESolver::SetInitialVelocity(Vector& xvel)
   for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
   {
     // Get coordinates of the vertex 
-//    real x = (*vertex).coord().x;
-//    real y = (*vertex).coord().y;
-//    real z = (*vertex).coord().z;
+//    real x = (*vertex).point().x();
+//    real y = (*vertex).point().y;
+//    real z = (*vertex).point().z;
     
     // Specify the initial velocity using (x,y,z) 
     //

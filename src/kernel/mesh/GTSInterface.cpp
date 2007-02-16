@@ -160,9 +160,18 @@ void GTSInterface::overlap(Point& p, GNode* tree, Mesh& mesh,
 
     Cell close(mesh, boundedcell);
 
+    cout << "test:" << endl;
+    cout << close << endl;
+    cout << p << endl;
+
     if(type.intersects(close, p))
     {
+      cout << "intersects" << endl;
       cells.push_back(boundedcell);
+    }
+    else
+    {
+      cout << "doesn't intersect" << endl;
     }
     overlaps = overlaps->next;
   }

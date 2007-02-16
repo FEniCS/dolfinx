@@ -32,14 +32,14 @@ namespace dolfin
 		      BoundaryCondition& bc_con);
 
     // Compute cell diameter
-    void ComputeCellSize(Mesh& mesh, Vector& hvector);
+    static void ComputeCellSize(Mesh& mesh, Vector& hvector);
       
     // Get minimum cell diameter
-    void GetMinimumCellSize(Mesh& mesh, real& hmin);
+    static void GetMinimumCellSize(Mesh& mesh, real& hmin);
 
     // Compute stabilization 
-    void ComputeStabilization(Mesh& mesh, Function& w, real nu, real k, 
-			      Vector& d1vector, Vector& d2vector);
+    static void ComputeStabilization(Mesh& mesh, Function& w, real nu, real k, 
+				     Vector& d1vector, Vector& d2vector);
     
     // Set initial velocity 
     void SetInitialVelocity(Vector& xvel);

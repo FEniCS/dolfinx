@@ -61,6 +61,16 @@ real FEBasis::evalPhysical(Function& f, Point& p, NewAffineMap& map,
 {
   Point pref = map.mapinv(p.x(), p.y(), p.z());
 
-  return f(pref, i);
+  cout << "pref: " << endl;
+  cout << pref << endl;
+
+  real val = 0.0;
+
+  val = f(pref, i);
+
+  cout << "val: " << endl;
+  cout << val << endl;
+
+  return val;
 }
 //-----------------------------------------------------------------------------

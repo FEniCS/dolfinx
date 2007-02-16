@@ -1,0 +1,103 @@
+# Copyright (c) 2005 Johan Hoffman (hoffman@cims.nyu.edu)
+# Licensed under the GNU GPL Version 2
+#
+# Modified by Anders Logg 2006
+#
+# First added:  2005
+# Last changed: 2006-03-28
+#
+# The momentum equation for the incompressible 
+# Navier-Stokes equations using cG(1)cG(1)
+#
+# Compile this form with FFC: ffc FSIMomentum2D.ale.form.
+##########################################################
+
+name = "FSIMomentum3D"
+
+##########################################################
+
+scalar          = FiniteElement("Lagrange", "tetrahedron", 1)
+vector          = FiniteElement("Vector Lagrange", "tetrahedron", 1)
+constant_scalar = FiniteElement("Discontinuous Lagrange", "tetrahedron", 0)
+constant_tensor = FiniteElement("Discontinuous vector Lagrange", "tetrahedron", 0, 9)
+
+##########################################################
+
+v      = TestFunction(vector)      # test basis function
+U      = TrialFunction(vector)     # trial basis function
+uc     = Function(vector)          # linearized velocity
+u0     = Function(vector)          # velocity from previous time step
+f      = Function(vector)          # force term
+p      = Function(scalar)          # pressure
+delta1 = Function(constant_scalar) # stabilization parameter
+delta2 = Function(constant_scalar) # stabilization parameter
+
+w      = Function(vector)          # mesh velocity
+
+phi    = Function(constant_scalar) # marker function
+rho    = Function(constant_scalar) # density
+alpha  = Function(constant_scalar) # composite stress
+sigma0 = Function(constant_tensor) # stress deviatoric from previous time step
+
+k      = Constant()	# time step
+
+##########################################################
+
+um = mean(uc)   # cell mean value of linearized velocity
+wm = mean(w)    # cell mean value of mesh velocity
+
+i0 = Index()    # index for tensor notation
+i1 = Index()    # index for tensor notation
+i2 = Index()    # index for tensor notation
+
+##########################################################
+
+def epsilon(u):
+    return 0.5 * (grad(u) + transp(grad(u)))
+
+def tomatrix(q):
+    return [ [q[3 * i + j] for i in range(3)] for j in range(3) ]
+
+##########################################################
+
+epsUmat = epsilon(U)
+epsvmat = epsilon(v)
+
+sigma0mat = tomatrix(sigma0)
+
+##########################################################
+
+a0 = rho*U[i0]*v[i0]*dx
+a1 = k*rho*phi*(uc[i1]-w[i1])*U[i0].dx(i1)*v[i0]*dx
+a2 = k*alpha*dot(epsUmat, epsvmat)*dx
+
+G_a  = a0 + a1 + a2
+
+##########################################################
+
+# Galerkin discretization of linear form
+SD_a = k*delta1*0.5*(um[i1]-wm[i1])*v[i0].dx(i1)*(um[i2]-wm[i2])*U[i0].dx(i2)*dx + \
+       k*delta2*0.5*v[i0].dx(i0)*U[i1].dx(i1)*dx
+
+##########################################################
+
+L0 = rho*u0[i0]*v[i0]*dx
+L1 = k*f[i0]*v[i0]*dx
+L2 = k*(1-phi)*dot(sigma0mat, grad(v))*dx 
+L3 = k*p*v[i0].dx(i0)*dx
+
+G_L  = L0 + L1 - L2 + L3
+
+##########################################################
+
+# Least squares stabilization of linear form
+SD_L = k*delta1*(um[i1]-wm[i1])*v[i0].dx(i1)*f[i0]*dx - \
+       k*delta1*0.5*(um[i1]-wm[i1])*v[i0].dx(i1)*(um[i2]-wm[i2])*u0[i0].dx(i2)*dx - \
+       k*delta1*(um[i1]-wm[i1])*v[i0].dx(i1)*p.dx(i0)*dx - \
+       k*delta2*0.5*v[i0].dx(i0)*u0[i1].dx(i1)*dx
+
+##########################################################
+
+# Bilinear and linear forms
+a = G_a + SD_a
+L = G_L + SD_L

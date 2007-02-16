@@ -70,6 +70,14 @@ Point NewAffineMap::mapinv(real X, real Y, real Z) const
   p(0) = X - p0.x(); p(1) = Y - p0.y(); p(2) = Z - p0.z();
   C.mult(p, P);
 
+//   cout << "mapinv: " << endl;
+//   cout << "p" << endl;
+//   p.disp();
+//   cout << "P" << endl;
+//   P.disp();
+//   cout << "C" << endl;
+//   C.disp();
+
   return Point(P(0), P(1), P(2));
 }
 //-----------------------------------------------------------------------------

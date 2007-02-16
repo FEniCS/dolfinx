@@ -7,6 +7,8 @@ SUBDIRS = dolfin \
           plasticity \
           poisson \
           stokes \
+	  ale \
+	  fsi \
           lib \
           python
 

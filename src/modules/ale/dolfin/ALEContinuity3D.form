@@ -1,0 +1,42 @@
+# Copyright (c) 2005 Johan Hoffman (hoffman@cims.nyu.edu)
+# Licensed under the GNU GPL Version 2
+#
+# Modified by Anders Logg 2006
+#
+# First added:  2005
+# Last changed: 2006-03-28
+#
+# The contiuity equation for the incompressible 
+# Navier-Stokes equations using cG(1)cG(1)
+#
+# Compile this form with FFC: ffc ALEContinuity3D.ale.form.
+
+name = "ALEContinuity3D"
+scalar = FiniteElement("Lagrange", "tetrahedron", 1)
+vector = FiniteElement("Vector Lagrange", "tetrahedron", 1)
+constant_scalar = FiniteElement("Discontinuous Lagrange", "tetrahedron", 0)
+
+q  = TestFunction(scalar)  # test basis function
+P  = TrialFunction(scalar) # trial basis function
+uc = Function(vector)      # linearized velocity
+f  = Function(vector)      # force term
+
+delta1 = Function(constant_scalar) # stabilization parameter
+
+w = Function(vector)
+
+um = mean(uc) # cell mean value of linearized velocity
+wm = mean(w)
+
+i0 = Index() # index for tensor notation
+i1 = Index() # index for tensor notation
+
+# Bilinear and linear forms
+a = delta1*dot(grad(q), grad(P))*dx;
+L = delta1*dot(grad(q), f)*dx - q*uc[i0].dx(i0)*dx - delta1*q.dx(i0)*um[i1]*uc[i0].dx(i1)*dx 
+
+
+
+
+
+

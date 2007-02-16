@@ -35,6 +35,8 @@ o [jj] Schema for mesh XML format
 Linear Algebra
 --------------
 
+* Cleanups and testing
+
 Function
 --------
 
@@ -78,6 +80,9 @@ General
 
 * Write FAQ and put on web page:
 
+  Q: Parallel mesh?
+  A: Waiting for Matt.
+
   Q: What does DOLFIN mean?
   A: Dynamic Object-oriented Library for FINite element computation.
 
@@ -88,7 +93,9 @@ General
   A: Yes.
 
 * New repository dolfin-contrib?
+* Don't use cut in src/config script
 * Replace unsigned int and int with uint when possible
+* Replace Array and List with NewArray and NewList everywhere
 * Replace stdio with iostream and fstream
 * Fix setprecision() for cout
 * Use symbolic links for meshes, see example src/demo/fem
@@ -106,13 +113,12 @@ Dependencies
 Required
 * Boost
 * libxml2
-* pkg-config
 
 Optional
 * PETSc
 * FFC
 * FIAT
-* Hypre (through PETSc)
+* Hypre?
 * UMFPACK
 * curses
 
