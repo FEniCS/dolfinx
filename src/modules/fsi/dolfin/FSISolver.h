@@ -6,6 +6,9 @@
 // First added:  2005
 // Last changed: 2006-05-07
 
+
+// PETSc friendly version
+
 #ifndef __FSI_SOLVER_H
 #define __FSI_SOLVER_H
 
@@ -100,7 +103,7 @@ namespace dolfin
     bool isInterior(Vertex& vertex) const;
    
     /// Returns vector component (i,j)
-    real& getij(Vector& v, unsigned int j, unsigned int i) const;
+    unsigned int getij(unsigned int j, unsigned int i) const;
 
     /// Move the structure part of the mesh according to velocity u
     void UpdateStructure(Vector& mvel_vec, const Vector& phi_vec, Function& u);
@@ -145,14 +148,9 @@ namespace dolfin
     return (vertex_is_interior(vertex));
   }
   //-----------------------------------------------------------------------------
-  inline real& FSISolver::getij(Vector& v, unsigned int j, unsigned int i) const
+  inline unsigned int FSISolver::getij(unsigned int j, unsigned int i) const
   {
-    // FIXME: Fix syntax for PETSc
-
-    dolfin_error("Fix mvel_cpt()");
-    // Make compiler happy
-    return k;
-    //return v[i + mesh.topology().dim()*j];
+    return (i + mesh.topology().dim()*j);
   }
   //-----------------------------------------------------------------------------
   inline void FSISolver::UpdateStructure(Vector& mvel_vec, const Vector& phi_vec, Function& u) 
@@ -165,8 +163,8 @@ namespace dolfin
 
       for (ndx = 0; ndx < mesh.topology().dim(); ndx++) {
 
-	v->coordinates()[ndx]            += k * u(*v, ndx);
-	getij(mvel_vec, v->index(), ndx) += k * u(*v, ndx);
+	v->coordinates()[ndx] += k * u(*v, ndx);
+	mvel_vec.set(getij(v->index(), ndx), mvel_vec.get(getij(v->index(), ndx)) + k * u(*v, ndx));
       }
     }
   }
@@ -202,17 +200,17 @@ namespace dolfin
 	v->coordinates()[ndx] /= mass;
 	
 	// mesh velocity contribution
-	getij(mvel_vec, v->index(), ndx) += v->coordinates()[ndx] - old_coord[ndx]; 
+	mvel_vec.set(getij(v->index(), ndx), mvel_vec.get(getij(v->index(), ndx)) + (v->coordinates()[ndx] - old_coord[ndx]));	
       }	
     }
   }
   //-----------------------------------------------------------------------------
   inline void FSISolver::UpdateDotSigma(Vector& dsig, BilinearForm& a, LinearForm& L, Matrix& A_tmp, Vector& m_tmp)
   {
+    
     FEM::assemble(a, A_tmp, mesh);
     FEM::assemble(L, dsig, mesh);
     FEM::lump(A_tmp, m_tmp);
-    
     dsig.div(m_tmp); 
   }
   

@@ -101,7 +101,7 @@ private:
 	v->coordinates()[ndx] /= mass;
 	
 	// mesh velocity contribution
-	mvel_cpt(v->index(), ndx) += v->coordinates()[ndx] - old_coord[ndx]; 
+	mvel.set(mvel_cpt(v->index(), ndx), mvel.get(mvel_cpt(v->index(), ndx)) + (v->coordinates()[ndx] - old_coord[ndx]));
       }	
     }
   }
@@ -122,19 +122,16 @@ private:
 	  += k * e.eval(v.point(), boundary_vertex->point(), ndx);
 	
 	// add mesh velocity contribution
-	mvel_cpt(vertex_map(*boundary_vertex), ndx) 
-	  += k * e.eval(v.point(), boundary_vertex->point(), ndx);
+	mvel.set(mvel_cpt(vertex_map(*boundary_vertex), ndx), 
+		 mvel.get(mvel_cpt(vertex_map(*boundary_vertex), ndx)) + 
+		 k * e.eval(v.point(), boundary_vertex->point(), ndx));
       }    
     }
   }
   //-----------------------------------------------------------------------------
-  real& mvel_cpt(unsigned int j, unsigned int i)
+  unsigned int mvel_cpt(unsigned int j, unsigned int i)
   {
-    // FIXME: Fix syntax for PETSc
-    //return mvel[i + nsd*j];
-    dolfin_error("Fix mvel_cpt()");
-    // Make compiler happy
-    return k;
+    return (i + nsd*j);
   }
 
   Mesh&         mesh;
@@ -142,13 +139,13 @@ private:
   Function&     w;
   ALEFunction&  e;
   Vector&       mvel;
-  unsigned int  nsd;
   real&         k;
 
   MeshFunction<bool>         vertex_is_interior;
   MeshFunction<unsigned int> vertex_map;
   MeshFunction<unsigned int> cell_map;
   
+  unsigned int  nsd;
 
   real old_coord[3];
 };

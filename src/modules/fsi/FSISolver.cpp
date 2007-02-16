@@ -8,6 +8,9 @@
 // Last changed: 2006-08-08
 
 
+// PETSc friendly version
+
+
 #include <dolfin/timing.h>
 #include <dolfin/FSISolver.h>
 #include <dolfin/FSIMomentum3D.h>
@@ -66,7 +69,7 @@ FSISolver::FSISolver(Mesh& mesh,
   : mesh(mesh), f(f), bc_mom(bc_mom), bc_con(bc_con), 
     bisect(bisect), rhof(rhof), rhos(rhos), E(E), elnu(elnu), nu(nu), T(T),  k(k)
 {
-  // Declare parameters
+  // Declare parameters for parameter study
   add("velocity file name", "velocity.pvd");
   add("pressure file name", "pressure.pvd");
 
@@ -89,6 +92,7 @@ FSISolver::~FSISolver()
 //-----------------------------------------------------------------------------
 void FSISolver::solve()
 {
+
   real T0 = 0.0;        // start time 
   real t  = 0.0;        // current time
  
@@ -101,7 +105,22 @@ void FSISolver::solve()
 
   if (k == 0) k = 0.25*hmin;
 
-  dolfin_info("FSIc: time step size k: %e", k);
+  cout << "FSIc: FSI Solver has started =======================" << endl;
+  cout << "FSIc: ==============================================" << endl;
+
+
+  cout << "FSIc: time step size k:  " << k << endl;
+  cout << "FSIc: minimum cell size: " << hmin << endl;
+  cout << "FSIc: nr. of cells:      " << mesh.numCells() << endl;
+  cout << "FSIc: nr. of vertices:   " << mesh.numVertices() << endl;
+  cout << "FSIc: nr. of space dims: " << mesh.topology().dim() << endl;
+  cout << "FSIc: Youngs modulus:    " << E << endl;
+  cout << "FSIc: Poissons ratio:    " << elnu << endl;
+  cout << "FSIc: Fluid density:     " << rhof << endl;
+  cout << "FSIc: Structure density: " << rhos << endl;
+  cout << "FSIc: Fluid viscosity:   " << nu << endl;
+
+  cout << "FSIc: ==============================================" << endl;
 
   // Create matrices and vectors 
   Matrix Amom, Acon;
@@ -109,7 +128,6 @@ void FSISolver::solve()
 
   // Get the number of space dimensions of the problem 
   int nsd = mesh.topology().dim();
-  dolfin_info("Number of space dimensions: %d",nsd);
 
   // Initialize vectors for velocity and pressure 
   Vector x0vel(nsd*mesh.numVertices()); // x0vel: velocity from previous time step 
@@ -124,7 +142,7 @@ void FSISolver::solve()
   // Initialize mesh velocity vector 
   Vector mvel_vec(nsd*mesh.numVertices());
   mvel_vec = 0.0;
-  
+
   // Set initial velocity
   SetInitialVelocity(xvel);
 
@@ -138,7 +156,7 @@ void FSISolver::solve()
   // Initialize algebraic solvers 
   KrylovSolver solver_con(gmres, amg);
   KrylovSolver solver_mom(gmres);
- 
+
   // Create functions for the velocity and pressure 
   // (needed for the initialization of the forms)
   Function u0(x0vel, mesh);   // velocity from previous time step 
@@ -197,7 +215,7 @@ void FSISolver::solve()
   } else {
     dolfin_error("FSI solver only implemented for 2 and 3 space dimensions.");
   }
-
+  
   UpdateDotSigma(dsig, *adsig, *Ldsig, A_tmp, m_tmp);
 
   Vector   sigma_vec(dsig.size());
@@ -237,15 +255,6 @@ void FSISolver::solve()
   File file_u(get("velocity file name"));  // file for saving velocity 
   File file_p(get("pressure file name"));  // file for saving pressure
 
-  // Compute stabilization parameters
-  //duplicated ComputeStabilization(mesh,u0,nu,k,d1vector,d2vector);
-
-  dolfin_info("Assembling matrix: continuity");
-
-  // Assembling matrices 
-  //duplicated  FEM::assemble(*amom, Amom, mesh);
-  //duplicated  FEM::assemble(*acon, Acon, mesh);
-
   // Initialize time-stepping parameters
   int time_step  = 0;
   int sample     = 0;
@@ -258,15 +267,13 @@ void FSISolver::solve()
   real residual;
   real rtol = 1.0e-2;
 
-  // Start time-stepping
-  Progress prog("Time-stepping");
+  printf("FSIc: time\t itn\t mom.res\t con.res\t tot.res\t el.time \n");
   
-  cout << "FSIc: time \t itn \t mom_res \t con_res \t tot_res" << endl;
-  
-  while (t < T) 
-  {		
+  while (t < T) {
+    
+    tic();
+	
     time_step++;
-    dolfin_info("Time step %d",time_step);
 
     // Set current velocity to velocity at previous time step 
     x0vel = xvel;
@@ -284,8 +291,6 @@ void FSISolver::solve()
     // Fix-point iteration for non-linear problem 
     while (residual > rtol && iteration < max_iteration) {
       
-      dolfin_info("Assemble vector: continuity");
-
       // Assemble continuity vector 
       FEM::assemble(*Lcon, bcon, mesh);
 
@@ -295,52 +300,28 @@ void FSISolver::solve()
       // Stop recording boundary points for reference frame
       bc_con.endRecording();
 
-      dolfin_info("Solve linear system: continuity");
-
       // Solve the linear system for the continuity equation 
-      tic();
       solver_con.solve(Acon, xpre, bcon);
-      dolfin_info("Linear solve took %g seconds",toc());
 
-      dolfin_info("Assemble vector: momentum");
-
-      // Assemble momentum matrix
-      //combined FEM::assemble(*amom, Amom, mesh);
-     			
-      // Assemble momentum vector 
-      //combined tic();
-      //combined FEM::assemble(*Lmom, bmom, mesh);
-      //combined dolfin_info("Assemble took %g seconds",toc());
-
-      tic(); // into this 
-      FEM::assemble(*amom, *Lmom, Amom, bmom, mesh, bc_mom); // into this
-      dolfin_info("Assemble took %g seconds",toc()); // into this
-			
-      // Set boundary conditions for the momentum equation 
+      FEM::assemble(*amom, *Lmom, Amom, bmom, mesh, bc_mom); 
       FEM::applyBC(Amom, bmom, mesh, amom->trial(), bc_mom);
 
       // Stop recording boundary points for reference frame
       bc_mom.endRecording();
-      
-      dolfin_info("Solve linear system: momentum");
 			
       // Solve the linear system for the momentum equation 
-      tic();
       solver_mom.solve(Amom, xvel, bmom);
-      dolfin_info("Linear solve took %g seconds",toc());
       
       // Set linearized velocity to current velocity 
       xcvel = xvel;
     
-      dolfin_info("Assemble matrix and vector: momentum");
       FEM::assemble(*amom, *Lmom, Amom, bmom, mesh, bc_mom);
-      FEM::applyBC(Amom, bmom, mesh, amom->trial(),bc_mom);
+      FEM::applyBC(Amom, bmom, mesh, amom->trial(), bc_mom);
 
       // Compute residual for momentum equation 
       Amom.mult(xvel,residual_mom);
       residual_mom -= bmom;
       
-      dolfin_info("Assemble vector: continuity");
       FEM::assemble(*Lcon, bcon, mesh);
       FEM::applyBC(Acon, bcon, mesh, acon->trial(),bc_con);
 
@@ -350,21 +331,11 @@ void FSISolver::solve()
 
       residual = sqrt(sqr(residual_mom.norm()) + sqr(residual_con.norm()));
 
-      cout << "FSIc: " << t << " \t " << (iteration+1) << " \t " 
-	   << residual_mom.norm() << " \t " 
-	   << residual_con.norm() << " \t " 
-	   << residual
-	   << endl;
-      
-      dolfin_info("FSI: Momentum residual  : l2 norm = %e",residual_mom.norm());
-      dolfin_info("FSI: continuity residual: l2 norm = %e",residual_con.norm());
-      dolfin_info("FSI: Total FSI residual : l2 norm = %e",residual);
-
-      dolfin_info("FSI: iterations completed: %d", (iteration+1));
-      dolfin_info("FSI: time now: %g", t);
-
       iteration++;
     }
+    
+    printf("FSIc: %3.6f\t %d\t %2.9f\t %2.9f\t %2.9f\t %6.5f \n",
+	   t, iteration, residual_mom.norm(), residual_con.norm(), residual, toc());
 
     // Move the structure and smooth the fluid mesh
     mvel_vec = 0.0;
@@ -373,10 +344,10 @@ void FSISolver::solve()
     mvel_vec /= k;
    
     if (residual > rtol)
-      dolfin_warning("FSI fixed point iteration did not converge"); 
+      dolfin_warning("FSIc: fixed point iteration did not converge"); 
 		
     if ( (time_step == 1) || (t > (T-T0)*(real(sample)/real(no_samples))) ) {
-      dolfin_info("FSI: save solution to file");
+      dolfin_info("saving solution to file");
       file_p << p;
       file_u << u;
       sample++;
@@ -386,15 +357,15 @@ void FSISolver::solve()
     t += k;
 
     // Update stress deviatoric
-//     sigma_vec += k * dsig;
-    sigma_vec.axpy(k, dsig);
+    dsig.mult(k);
+    sigma_vec += dsig;
     UpdateDotSigma(dsig, *adsig, *Ldsig, A_tmp, m_tmp);
         
     // Update progress
-    prog = t / T;    
+    //    prog = t / T;    
   }
 
-  dolfin_info("save solution to file");
+  dolfin_info("saving solution to file");
   file_p << p;
   file_u << u;
 
