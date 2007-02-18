@@ -39,9 +39,7 @@ host_triplet = @host@
 DIST_COMMON = README $(am__configure_deps) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in $(srcdir)/dolfin.pc.in \
 	$(top_srcdir)/configure \
-	$(top_srcdir)/src/modules/ale/Makefile.in \
 	$(top_srcdir)/src/modules/ale/dolfin/Makefile.in \
-	$(top_srcdir)/src/modules/fsi/Makefile.in \
 	$(top_srcdir)/src/modules/fsi/dolfin/Makefile.in \
 	$(top_srcdir)/src/modules/python/Makefile.in AUTHORS COPYING \
 	ChangeLog INSTALL NEWS TODO config.guess config.sub depcomp \
@@ -59,8 +57,7 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 am__CONFIG_DISTCLEAN_FILES = config.status config.cache config.log \
  configure.lineno configure.status.lineno
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
-CONFIG_CLEAN_FILES = src/modules/ale/Makefile \
-	src/modules/ale/dolfin/Makefile src/modules/fsi/Makefile \
+CONFIG_CLEAN_FILES = src/modules/ale/dolfin/Makefile \
 	src/modules/fsi/dolfin/Makefile src/modules/python/Makefile \
 	dolfin.pc
 SOURCES =
@@ -277,11 +274,7 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 	cd $(srcdir) && $(AUTOCONF)
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(srcdir) && $(ACLOCAL) $(ACLOCAL_AMFLAGS)
-src/modules/ale/Makefile: $(top_builddir)/config.status $(top_srcdir)/src/modules/ale/Makefile.in
-	cd $(top_builddir) && $(SHELL) ./config.status $@
 src/modules/ale/dolfin/Makefile: $(top_builddir)/config.status $(top_srcdir)/src/modules/ale/dolfin/Makefile.in
-	cd $(top_builddir) && $(SHELL) ./config.status $@
-src/modules/fsi/Makefile: $(top_builddir)/config.status $(top_srcdir)/src/modules/fsi/Makefile.in
 	cd $(top_builddir) && $(SHELL) ./config.status $@
 src/modules/fsi/dolfin/Makefile: $(top_builddir)/config.status $(top_srcdir)/src/modules/fsi/dolfin/Makefile.in
 	cd $(top_builddir) && $(SHELL) ./config.status $@
@@ -440,7 +433,7 @@ distclean-tags:
 distdir: $(DISTFILES)
 	$(am__remove_distdir)
 	mkdir $(distdir)
-	$(mkdir_p) $(distdir)/. $(distdir)/m4 $(distdir)/src/modules/ale $(distdir)/src/modules/ale/dolfin $(distdir)/src/modules/fsi $(distdir)/src/modules/fsi/dolfin $(distdir)/src/modules/python
+	$(mkdir_p) $(distdir)/. $(distdir)/m4 $(distdir)/src/modules/ale/dolfin $(distdir)/src/modules/fsi/dolfin $(distdir)/src/modules/python
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \

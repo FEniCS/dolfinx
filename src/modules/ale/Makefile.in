@@ -119,7 +119,6 @@ DOLFIN_CFLAGS = @DOLFIN_CFLAGS@
 DOLFIN_DEFINITIONS = @DOLFIN_DEFINITIONS@
 DOLFIN_EXT_LIBS = @DOLFIN_EXT_LIBS@
 DOLFIN_LIBS = @DOLFIN_LIBS@
-DOLFIN_LTLIBOBJS = @DOLFIN_LTLIBOBJS@
 ECHO = @ECHO@
 ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
@@ -129,11 +128,17 @@ EXEEXT = @EXEEXT@
 EXTERNAL_CFLAGS = @EXTERNAL_CFLAGS@
 F77 = @F77@
 FFLAGS = @FFLAGS@
+GLIB_CFLAGS = @GLIB_CFLAGS@
+GLIB_LIBS = @GLIB_LIBS@
+GTS_CFLAGS = @GTS_CFLAGS@
+GTS_LIBS = @GTS_LIBS@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
 KERNEL_CFLAGS = @KERNEL_CFLAGS@
+KERNEL_INCLUDE = @KERNEL_INCLUDE@
+KERNEL_LIBOBJS = @KERNEL_LIBOBJS@
 LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
@@ -144,7 +149,9 @@ MAINT = @MAINT@
 MAINTAINER_MODE_FALSE = @MAINTAINER_MODE_FALSE@
 MAINTAINER_MODE_TRUE = @MAINTAINER_MODE_TRUE@
 MAKEINFO = @MAKEINFO@
+MODULES_LIBOBJS = @MODULES_LIBOBJS@
 MODULE_CFLAGS = @MODULE_CFLAGS@
+MODULE_INCLUDE = @MODULE_INCLUDE@
 OBJEXT = @OBJEXT@
 PACKAGE = @PACKAGE@
 PACKAGE_BUGREPORT = @PACKAGE_BUGREPORT@
@@ -153,6 +160,7 @@ PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
+PKG_CONFIG = @PKG_CONFIG@
 PYTHON = @PYTHON@
 PYTHON_CPPFLAGS = @PYTHON_CPPFLAGS@
 PYTHON_EXEC_PREFIX = @PYTHON_EXEC_PREFIX@
@@ -170,6 +178,8 @@ SWIG = @SWIG@
 SWIG_LIB = @SWIG_LIB@
 SWIG_PYTHON_CPPFLAGS = @SWIG_PYTHON_CPPFLAGS@
 SWIG_PYTHON_OPT = @SWIG_PYTHON_OPT@
+UFC_CFLAGS = @UFC_CFLAGS@
+UFC_LIBS = @UFC_LIBS@
 VERSION = @VERSION@
 XML2_CONFIG = @XML2_CONFIG@
 XML_CPPFLAGS = @XML_CPPFLAGS@
@@ -226,15 +236,15 @@ sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 SUBDIRS = dolfin
 nobase_include_HEADERS = dolfin/dolfin_ale.h \
-                                   dolfin/ALEMomentum2D.h \
-                                   dolfin/ALEContinuity2D.h \
-                                   dolfin/ALEMomentum3D.h \
-                                   dolfin/ALEContinuity3D.h \
-                                   dolfin/ALESolver.h \
-                                   dolfin/ALEBoundaryCondition.h \
-                                   dolfin/ALEFunction.h
+                              dolfin/ALEBoundaryCondition.h \
+                              dolfin/ALEContinuity2D.h \
+                              dolfin/ALEContinuity3D.h \
+                              dolfin/ALEFunction.h \
+                              dolfin/ALEMomentum2D.h \
+                              dolfin/ALEMomentum3D.h \
+                              dolfin/ALESolver.h
 
-INCLUDES = @DOLFIN_CFLAGS@
+INCLUDES = @MODULE_CFLAGS@
 lib_LTLIBRARIES = libdolfin-ale.la
 libdolfin_ale_la_SOURCES = ALESolver.cpp ALEBoundaryCondition.cpp
 libdolfin_ale_la_LDFLAGS = -static
@@ -625,9 +635,6 @@ uninstall-info: uninstall-info-recursive
 	tags tags-recursive uninstall uninstall-am uninstall-info-am \
 	uninstall-libLTLIBRARIES uninstall-nobase_includeHEADERS
 
-
-# Temporary fix to speed up compilation of form
-#CXXFLAGS = '-DDEBUG=1 -g -O0 -Wall -Werror -ansi -std=c++98 -fPIC'
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

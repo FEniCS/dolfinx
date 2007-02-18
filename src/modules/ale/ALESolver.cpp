@@ -139,13 +139,13 @@ private:
   Function&     w;
   ALEFunction&  e;
   Vector&       mvel;
+  unsigned int  nsd;
   real&         k;
 
   MeshFunction<bool>         vertex_is_interior;
   MeshFunction<unsigned int> vertex_map;
   MeshFunction<unsigned int> cell_map;
   
-  unsigned int  nsd;
 
   real old_coord[3];
 };
