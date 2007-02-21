@@ -1,3 +1,9 @@
+if COMPILE_PYDOLFIN
+PYDOLFIN = python
+else
+PYDOLFIN =
+endif
+
 SUBDIRS = dolfin \
           convdiff \
           elasticity \
@@ -9,8 +15,7 @@ SUBDIRS = dolfin \
           stokes \
 	  ale \
 	  fsi \
-          lib \
-          python
+          lib $(PYDOLFIN)
 
 INCLUDES = @KERNEL_CFLAGS@
 

@@ -69,7 +69,8 @@ nobase_includeHEADERS_INSTALL = $(install_sh_DATA)
 HEADERS = $(nobase_include_HEADERS)
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = $(SUBDIRS)
+DIST_SUBDIRS = dolfin convdiff elasticity elasticity-updated heat \
+	navierstokes plasticity poisson stokes ale fsi lib python
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 AMDEP_FALSE = @AMDEP_FALSE@
@@ -215,6 +216,8 @@ sharedstatedir = @sharedstatedir@
 swig_found = @swig_found@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
+@COMPILE_PYDOLFIN_FALSE@PYDOLFIN = 
+@COMPILE_PYDOLFIN_TRUE@PYDOLFIN = python
 SUBDIRS = dolfin \
           convdiff \
           elasticity \
@@ -226,8 +229,7 @@ SUBDIRS = dolfin \
           stokes \
 	  ale \
 	  fsi \
-          lib \
-          python
+          lib $(PYDOLFIN)
 
 INCLUDES = @KERNEL_CFLAGS@
 nobase_include_HEADERS = dolfin/dolfin_modules.h \
