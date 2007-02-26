@@ -2,7 +2,7 @@
 % Licensed under the GNU GPL Version 2.
 %
 % First added:  2004-09-03
-% Last changed: 2005-09-30
+% Last changed: 2007-01-30
 %
 % LaTeX document class for FEniCS manuals.
 
@@ -22,8 +22,10 @@
 \RequirePackage{amssymb}
 \RequirePackage{makeidx}
 \RequirePackage{url}
+\RequirePackage{here}
 \RequirePackage[latin1]{inputenc}
 \RequirePackage[colorlinks]{hyperref}
+\RequirePackage[small]{caption}
 
 %--- Misc options ---
 \setlength{\parindent}{0pt}
