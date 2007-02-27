@@ -6,7 +6,7 @@
 // Modified by Kristian Oelgaard 2006.
 //
 // First added:  2006-06-05
-// Last changed: 2007-01-30
+// Last changed: 2007-02-27
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Cell.h>
@@ -130,72 +130,79 @@ void Tetrahedron::createEntities(uint** e, uint dim, const uint v[]) const
 //-----------------------------------------------------------------------------
 void Tetrahedron::orderEntities(Cell& cell) const
 {
-  // Sort local vertices on edges in ascending order, connectivity 1-0
-  if ( cell.mesh().topology()(1, 0).size() > 0 && cell.mesh().topology()(3, 1).size() > 0)
-  {
-    // Get edge numbers
-    uint* edge_numbers = cell.entities(1);
+  // Sort i - j for i > j: 1 - 0, 2 - 0, 2 - 1, 3 - 0, 3 - 1, 3 - 2
 
-    // Loop edges
-    for (uint i(0); i < 6; i++)
+  // Get mesh topology
+  MeshTopology& topology = cell.mesh().topology();
+
+  // Sort local vertices on edges in ascending order, connectivity 1 - 0
+  if ( topology(1, 0).size() > 0 )
+  {
+    dolfin_assert(topology(3, 1).size() > 0);
+
+    // Get edges
+    uint* cell_edges = cell.entities(1);
+
+    // Sort vertices on each edge
+    for (uint i = 0; i < 6; i++)
     {
-      // For each edge number get the global vertex numbers
-      uint* edge_vertices = cell.mesh().topology()(1, 0)(edge_numbers[i]);
-      std::sort(edge_vertices, edge_vertices+2);
+      uint* edge_vertices = topology(1, 0)(cell_edges[i]);
+      std::sort(edge_vertices, edge_vertices + 2);
     }
   }
-  else
-    dolfin_warning("Connectivity 1-0 or 3-1 not initialised, reordering (1-0) skipped");
 
-  // Sort local vertices on facets in ascending order, connectivity 2-0
-  if ( cell.mesh().topology()(2, 0).size() > 0 && cell.mesh().topology()(3, 2).size() > 0)
+  // Sort local vertices on facets in ascending order, connectivity 2 - 0
+  if ( topology(2, 0).size() > 0 )
   {
-    // Get facet numbers
-    uint* facet_numbers = cell.entities(2);
+    dolfin_assert(topology(3, 2).size() > 0);
 
-    // Loop facets on cell
-    for (uint i(0); i < 4; i++)
+    // Get facets
+    uint* cell_facets = cell.entities(2);
+
+    // Sort vertices on each facet
+    for (uint i = 0; i < 4; i++)
     {
-      // For each facet number get the global vertex numbers
-      uint* facet_vertices = cell.mesh().topology()(2, 0)(facet_numbers[i]);
-      std::sort(facet_vertices, facet_vertices+3);
+      uint* facet_vertices = topology(2, 0)(cell_facets[i]);
+      std::sort(facet_vertices, facet_vertices + 3);
     }
   }
-  else
-    dolfin_warning("Connectivity 2-0 or 3-2 not initialised, reordering (2-0) skipped");
 
   // Sort local edges on local facets after non-incident vertex, connectivity 2 - 1
-  if (cell.mesh().topology()(2, 1).size() > 0 && cell.mesh().topology()(3, 2).size() > 0 &&
-      cell.mesh().topology()(2, 0).size() > 0 && cell.mesh().topology()(1, 0).size() > 0)
+  if ( topology(2, 1).size() > 0 )
   {
-    // Get facet numbers
-    uint* facet_numbers = cell.entities(2);
+    dolfin_assert(topology(3, 2).size() > 0);
+    dolfin_assert(topology(2, 0).size() > 0);
+    dolfin_assert(topology(1, 0).size() > 0);
 
-    // Loop facets on cell
-    for (uint i(0); i < 4; i++)
+    // Get facet numbers
+    uint* cell_facets = cell.entities(2);
+
+    // Loop over facets on cell
+    for (uint i = 0; i < 4; i++)
     {
       // For each facet number get the global vertex numbers
-      uint* facet_vertices = cell.mesh().topology()(2, 0)(facet_numbers[i]);
-      // For each facet number get the global edge number
-      uint* edge_numbers = cell.mesh().topology()(2, 1)(facet_numbers[i]);
+      uint* facet_vertices = topology(2, 0)(cell_facets[i]);
 
-      uint m(0);
-      // Loop vertices on facet
-      for (uint j(0); j < 3; j++)
+      // For each facet number get the global edge number
+      uint* cell_edges = topology(2, 1)(cell_facets[i]);
+
+      // Loop over vertices on facet
+      uint m = 0;
+      for (uint j = 0; j < 3; j++)
       {
         // Loop edges on facet
         for (uint k(m); k < 3; k++)
         {
           // For each edge number get the global vertex numbers
-          uint* edge_vertices = cell.mesh().topology()(1, 0)(edge_numbers[k]);
+          uint* edge_vertices = topology(1, 0)(cell_edges[k]);
 
           // Check if the jth vertex of facet i is non-incident on edge k
           if (!std::count(edge_vertices, edge_vertices+2, facet_vertices[j]))
           {
             // Swap facet numbers
-            uint tmp = edge_numbers[m];
-            edge_numbers[m] = edge_numbers[k];
-            edge_numbers[k] = tmp;
+            uint tmp = cell_edges[m];
+            cell_edges[m] = cell_edges[k];
+            cell_edges[k] = tmp;
             m++;
             break;
           }
@@ -203,47 +210,44 @@ void Tetrahedron::orderEntities(Cell& cell) const
       }
     }
   }
-  else
-    dolfin_warning("Connectivity 2-1, 3-2, 2-0 or 1-0 not initialised, reordering (2-1) skipped");
 
-  // Sort local vertices on cell in ascending order, connectivity 3-0
-  if ( cell.mesh().topology()(3, 0).size() > 0)
+  // Sort local vertices on cell in ascending order, connectivity 3 - 0
+  if ( topology(3, 0).size() > 0 )
   {
     uint* cell_vertices = cell.entities(0);
     std::sort(cell_vertices, cell_vertices+4);
   }
-  else
-    dolfin_warning("Connectivity 3-0 not initialised, reordering (3-0) skipped");
 
   // Sort local edges on cell after non-incident vertex tuble, connectivity 3-1
-  if (cell.mesh().topology()(3, 1).size() > 0 && cell.mesh().topology()(1, 0).size() > 0)
+  if ( topology(3, 1).size() > 0 )
   {
+    dolfin_assert(topology(1, 0).size() > 0);
+
     // Get cell vertices and edge numbers
     uint* cell_vertices = cell.entities(0);
-    uint* edge_numbers = cell.entities(1);
+    uint* cell_edges = cell.entities(1);
 
-    uint m(0);
-    // Loop two vertices on cell as a lexicographical tuble
+    // Loop two vertices on cell as a lexicographical tuple
     // (i, j): (0,1) (0,2) (0,3) (1,2) (1,3) (2,3)
-    for (uint i(0); i < 3; i++)
+    uint m = 0;
+    for (uint i = 0; i < 3; i++)
     {
-      for (uint j(i+1); j < 4; j++)
+      for (uint j = i+1; j < 4; j++)
       {
         // Loop edge numbers
-        for (uint k(m); k < 6; k++)
+        for (uint k = m; k < 6; k++)
         {
           // Get local vertices on edge
-          uint* edge_vertices = cell.mesh().topology()(1, 0)(edge_numbers[k]);
+          uint* edge_vertices = topology(1, 0)(cell_edges[k]);
 
           // Check if the ith and jth vertex of the cell are non-incident on edge k
           if (!std::count(edge_vertices, edge_vertices+2, cell_vertices[i]) && \
               !std::count(edge_vertices, edge_vertices+2, cell_vertices[j]) )
           {
             // Swap edge numbers
-            uint tmp(0);
-            tmp = edge_numbers[m];
-            edge_numbers[m] = edge_numbers[k];
-            edge_numbers[k] = tmp;
+            uint tmp = cell_edges[m];
+            cell_edges[m] = cell_edges[k];
+            cell_edges[k] = tmp;
             m++;
             break;
           }
@@ -251,38 +255,36 @@ void Tetrahedron::orderEntities(Cell& cell) const
       }
     }
   }
-  else
-    dolfin_warning("Connectivity 3-1, 3-0 or 1-0 not initialised, reordering (3-1) skipped");
 
   // Sort local facets on cell after non-incident vertex, connectivity 3 - 2
-  if (cell.mesh().topology()(3, 2).size() > 0 && cell.mesh().topology()(2, 0).size() > 0)
+  if ( topology(3, 2).size() > 0 )
   {
+    dolfin_assert(topology(2, 0).size() > 0);
+
     // Get cell vertices and facet numbers
     uint* cell_vertices = cell.entities(0);
-    uint* facet_numbers = cell.entities(2);
+    uint* cell_facets = cell.entities(2);
 
     // Loop vertices on cell
-    for (uint i(0); i < 4; i++)
+    for (uint i = 0; i < 4; i++)
     {
       // Loop facets on cell
-      for (uint j(i); j < 4; j++)
+      for (uint j = i; j < 4; j++)
       {
-        uint* facet_vertices = cell.mesh().topology()(2, 0)(facet_numbers[j]);
+        uint* facet_vertices = topology(2, 0)(cell_facets[j]);
 
         // Check if the ith vertex of the cell is non-incident on facet j
         if (!std::count(facet_vertices, facet_vertices+3, cell_vertices[i]))
         {
           // Swap facet numbers
-          uint tmp = facet_numbers[i];
-          facet_numbers[i] = facet_numbers[j];
-          facet_numbers[j] = tmp;
+          uint tmp = cell_facets[i];
+          cell_facets[i] = cell_facets[j];
+          cell_facets[j] = tmp;
           break;
         }
       }
     }
   }
-  else
-    dolfin_warning("Connectivity 3-2, 3-0 or 2-0 not initialised, reordering (3-2) skipped");
 }
 //-----------------------------------------------------------------------------
 void Tetrahedron::refineCell(Cell& cell, MeshEditor& editor,

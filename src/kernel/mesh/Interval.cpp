@@ -2,7 +2,9 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-06-05
-// Last changed: 2006-12-06
+// Last changed: 2007-02-27
+//
+// Modified by Kristian Oelgaard 2007.
 
 #include <cmath>
 #include <dolfin/dolfin_log.h>
@@ -63,11 +65,16 @@ void Interval::createEntities(uint** e, uint dim, const uint v[]) const
 //-----------------------------------------------------------------------------
 void Interval::orderEntities(Cell& cell) const
 {
+  // Sort i - j for i > j: 1 - 0
+
+  // Get mesh topology
+  MeshTopology& topology = cell.mesh().topology();
+
   // Sort local vertices in ascending order, connectivity 1 - 0
-  if ( cell.mesh().topology()(1, 0).size() > 0 )
+  if ( topology(1, 0).size() > 0 )
   {
     uint* cell_vertices = cell.entities(0);
-    std::sort(cell_vertices, cell_vertices+2);
+    std::sort(cell_vertices, cell_vertices + 2);
   }
 }
 //-----------------------------------------------------------------------------
