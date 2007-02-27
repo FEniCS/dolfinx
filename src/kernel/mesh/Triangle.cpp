@@ -5,7 +5,9 @@
 // Modified by Kristian Oelgaard, 2006.
 // 
 // First added:  2006-06-05
-// Last changed: 2007-01-30
+// Last changed: 2007-02-27
+
+#include <algorithm>
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Cell.h>
@@ -14,7 +16,6 @@
 #include <dolfin/Triangle.h>
 #include <dolfin/Vertex.h>
 #include <dolfin/GeometricPredicates.h>
-#include <algorithm>
 
 using namespace dolfin;
 
@@ -93,41 +94,50 @@ void Triangle::createEntities(uint** e, uint dim, const uint v[]) const
 //-----------------------------------------------------------------------------
 void Triangle::orderEntities(Cell& cell) const
 {
-  // Sort local vertices in ascending order, connectivity 2 - 0
-  uint* cell_vertices = cell.entities(0);
-  std::sort(cell_vertices, cell_vertices+3);
+  // Get mesh topology
+  MeshTopology& topology = cell.mesh().topology();
 
-  // Sort local edges after non-incident vertex, connectivity 2 - 1 
-  // Check if connectivity has been created
-  if (cell.mesh().size(1) > 0)
+  // Sort local vertices in ascending order, connectivity 2 - 0
+  if ( topology(2, 0).size() > 0 )
   {
     uint* cell_vertices = cell.entities(0);
-    uint* edge_numbers = cell.entities(1);
-    uint tmp(0);
-    for (uint i(0); i < 3; i++)
+    std::sort(cell_vertices, cell_vertices + 3);
+  }
+
+  // Sort local edges after non-incident vertex, connectivity 2 - 1
+  if ( topology(2, 1).size() > 0 )
+  {
+    uint* cell_vertices = cell.entities(0);
+    uint* edge_indices = cell.entities(1);
+    uint tmp = 0;
+    for (uint i = 0; i < 3; i++)
     {
-      const uint* edge_vertices = cell.mesh().topology()(1, 0)(edge_numbers[i]);
-      for (uint j(i); j < 3; j++)
+      const uint* edge_vertices = cell.mesh().topology()(1, 0)(edge_indices[i]);
+      for (uint j = i; j < 3; j++)
+      {
         // Check if the jth vertex is non-incident on edge i
         if (cell_vertices[j] != edge_vertices[0] && cell_vertices[j] != edge_vertices[1])
         {
           // Swap edge numbers
-          tmp = edge_numbers[i];
-          edge_numbers[i] = edge_numbers[j];
-          edge_numbers[j] = tmp;
+          tmp = edge_indices[i];
+          edge_indices[i] = edge_indices[j];
+          edge_indices[j] = tmp;
         }
-    }
-
-    // Sort vertices on edges in ascending order, connectivity 1 - 0
-    for (uint i(0); i < 3; i++)
-    {
-      // For each edge number get the global vertex numbers
-      uint* edge_vertices = cell.mesh().topology()(1, 0)(edge_numbers[i]);
-      std::sort(edge_vertices, edge_vertices+2);
+      }
     }
   }
-  else
-    dolfin_warning("Connectivity 2-1 and 1-0, could not be reordered, is connectivity initialised?");
+  
+  // Sort vertices on edges in ascending order, connectivity 1 - 0
+  if ( topology(1, 0).size() > 0 )
+  {
+    uint* edge_indices = cell.entities(1);
+    for (uint i = 0; i < 3; i++)
+    {
+      // For each edge number get the global vertex numbers
+      uint* edge_vertices = topology(1, 0)(edge_indices[i]);
+      std::sort(edge_vertices, edge_vertices + 2);
+    }
+  }
 }
 //-----------------------------------------------------------------------------
 void Triangle::refineCell(Cell& cell, MeshEditor& editor,
