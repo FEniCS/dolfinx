@@ -4,7 +4,7 @@
 // Modified by Johan Hoffman 2007.
 //
 // First added:  2006-05-08
-// Last changed: 2007-02-06
+// Last changed: 2007-02-27
 
 #ifndef __MESH_H
 #define __MESH_H
@@ -117,14 +117,21 @@ namespace dolfin
     /// Compute all entities and connectivity
     void init();
 
-    /// Refine mesh, either uniformly or according to cells marked for refinement
+    /// Order all mesh entities (not needed if "mesh order entities" is set)
+    void order();
+
+    /// Refine mesh uniformly
     void refine();
+
+    /// Refine mesh according to cells marked for refinement
     void refine(MeshFunction<bool>& cell_marker, bool refine_boundary = true);
 
-    /// Coarsen mesh, either uniformly or according to cells marked for coarsening
+    /// Coarsen mesh uniformly
     void coarsen();
-    void coarsen(MeshFunction<bool>& cell_marker, bool coarsen_boundary = false);
 
+    /// Coarsen mesh according to cells marked for coarsening
+    void coarsen(MeshFunction<bool>& cell_marker, bool coarsen_boundary = false);
+    
     /// Smooth mesh using Lagrangian mesh smoothing 
     void smooth();
 

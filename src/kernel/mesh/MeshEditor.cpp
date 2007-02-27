@@ -1,10 +1,11 @@
-// Copyright (C) 2006 Anders Logg.
+// Copyright (C) 2006-2007 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-05-16
-// Last changed: 2006-06-22
+// Last changed: 2007-02-27
 
 #include <dolfin/dolfin_log.h>
+#include <dolfin/dolfin_parameter.h>
 #include <dolfin/Mesh.h>
 #include <dolfin/Point.h>
 #include <dolfin/MeshEditor.h>
