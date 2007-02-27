@@ -63,9 +63,12 @@ void Interval::createEntities(uint** e, uint dim, const uint v[]) const
 //-----------------------------------------------------------------------------
 void Interval::orderEntities(Cell& cell) const
 {
-  // Sort local vertices in ascending order, connectivity 1 - 0 
-  uint* cell_vertices = cell.entities(0);
-  std::sort(cell_vertices, cell_vertices+2);
+  // Sort local vertices in ascending order, connectivity 1 - 0
+  if ( cell.mesh().topology()(1, 0).size() > 0 )
+  {
+    uint* cell_vertices = cell.entities(0);
+    std::sort(cell_vertices, cell_vertices+2);
+  }
 }
 //-----------------------------------------------------------------------------
 void Interval::refineCell(Cell& cell, MeshEditor& editor,

@@ -5,9 +5,7 @@
 // Modified by Kristian Oelgaard, 2006.
 // 
 // First added:  2006-06-05
-// Last changed: 2007-02-27
-
-#include <algorithm>
+// Last changed: 2007-01-30
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Cell.h>
@@ -81,63 +79,71 @@ void Triangle::createEntities(uint** e, uint dim, const uint v[]) const
   if ( dim != 1 )
     dolfin_error1("Don't know how to create entities of topological dimension %d.", dim);
 
-  // Create the three edges, lexicographical
+  // Create the three edges
   e[0][0] = v[1]; e[0][1] = v[2];
   e[1][0] = v[0]; e[1][1] = v[2];
   e[2][0] = v[0]; e[2][1] = v[1];
-
-  // Create the three edges, counter clockwise
-//  e[0][0] = v[1]; e[0][1] = v[2];
-//  e[1][0] = v[2]; e[1][1] = v[0];
-//  e[2][0] = v[0]; e[2][1] = v[1];
 }
 //-----------------------------------------------------------------------------
 void Triangle::orderEntities(Cell& cell) const
 {
-  // Get mesh topology
-  MeshTopology& topology = cell.mesh().topology();
-
-  // Sort local vertices in ascending order, connectivity 2 - 0
-  if ( topology(2, 0).size() > 0 )
+  // Sort local vertices on edges in ascending order, connectivity 1-0
+  if ( cell.mesh().topology()(1, 0).size() > 0 && cell.mesh().topology()(2, 1).size() > 0)
   {
-    uint* cell_vertices = cell.entities(0);
-    std::sort(cell_vertices, cell_vertices + 3);
-  }
+    // Get edge numbers
+    uint* edge_numbers = cell.entities(1);
 
-  // Sort local edges after non-incident vertex, connectivity 2 - 1
-  if ( topology(2, 1).size() > 0 )
-  {
-    uint* cell_vertices = cell.entities(0);
-    uint* edge_indices = cell.entities(1);
-    uint tmp = 0;
-    for (uint i = 0; i < 3; i++)
+    // Sort vertices on edges in ascending order, connectivity 1 - 0
+    for (uint i(0); i < 3; i++)
     {
-      const uint* edge_vertices = cell.mesh().topology()(1, 0)(edge_indices[i]);
-      for (uint j = i; j < 3; j++)
+      // For each edge number get the global vertex numbers
+      uint* edge_vertices = cell.mesh().topology()(1, 0)(edge_numbers[i]);
+      std::sort(edge_vertices, edge_vertices+2);
+    }
+  }
+  else
+    dolfin_warning("Connectivity 1-0 or 2-1 not initialised, reordering (1-0) skipped");
+
+  // Sort local vertices on cell in ascending order, connectivity 2-0
+  if ( cell.mesh().topology()(2, 0).size() > 0 )
+  {
+    uint* cell_vertices = cell.entities(0);
+    std::sort(cell_vertices, cell_vertices+3);
+  }
+  else
+    dolfin_warning("Connectivity 2-0 not initialised, reordering (2-0) skipped");
+
+  // Sort local edges on cell after non-incident vertex, connectivity 2-1
+  if ( cell.mesh().topology()(1, 0).size() > 0 && cell.mesh().topology()(2, 0).size() > 0 &&
+       cell.mesh().topology()(2, 1).size() > 0 )
+  {
+    // Get cell vertices and edge numbers
+    uint* cell_vertices = cell.entities(0);
+    uint* edge_numbers = cell.entities(1);
+
+    // Loop vertices on cell
+    for (uint i(0); i < 3; i++)
+    {
+      // Loop edges on cell
+      for (uint j(i); j < 3; j++)
       {
-        // Check if the jth vertex is non-incident on edge i
-        if (cell_vertices[j] != edge_vertices[0] && cell_vertices[j] != edge_vertices[1])
+        uint* edge_vertices = cell.mesh().topology()(1, 0)(edge_numbers[j]);
+
+        // Check if the ith vertex of the cell is non-incident on edge j
+        if (!std::count(edge_vertices, edge_vertices+2, cell_vertices[i]))
         {
           // Swap edge numbers
-          tmp = edge_indices[i];
-          edge_indices[i] = edge_indices[j];
-          edge_indices[j] = tmp;
+          uint tmp(0);
+          tmp = edge_numbers[i];
+          edge_numbers[i] = edge_numbers[j];
+          edge_numbers[j] = tmp;
+          break;
         }
       }
     }
   }
-  
-  // Sort vertices on edges in ascending order, connectivity 1 - 0
-  if ( topology(1, 0).size() > 0 )
-  {
-    uint* edge_indices = cell.entities(1);
-    for (uint i = 0; i < 3; i++)
-    {
-      // For each edge number get the global vertex numbers
-      uint* edge_vertices = topology(1, 0)(edge_indices[i]);
-      std::sort(edge_vertices, edge_vertices + 2);
-    }
-  }
+  else
+    dolfin_warning("Connectivity 1-0, 2-0 or 2-1 not initialised, reordering (2-1) skipped");
 }
 //-----------------------------------------------------------------------------
 void Triangle::refineCell(Cell& cell, MeshEditor& editor,
