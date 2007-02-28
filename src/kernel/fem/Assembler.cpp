@@ -8,7 +8,6 @@
 #include <dolfin/GenericTensor.h>
 #include <dolfin/Mesh.h>
 #include <dolfin/Cell.h>
-#include <dolfin/DofMap.h>
 #include <dolfin/AssemblyData.h>
 #include <dolfin/Assembler.h>
 
@@ -33,7 +32,7 @@ void Assembler::assemble(GenericTensor& A, const ufc::form& form, Mesh& mesh)
   // Create data structure for local assembly data
   AssemblyData data(form);
 
-  // Update set of dof maps for form
+  // Update dof map storage for current form
   dof_maps.update(form, mesh);
   
   // Iterate over the cells of the mesh

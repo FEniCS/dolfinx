@@ -2,13 +2,11 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2007-01-17
-// Last changed: 2007-01-17
+// Last changed: 2007-02-28
 
 #ifndef __ASSEMBLER_H
 #define __ASSEMBLER_H
 
-#include <map>
-#include <string>
 #include <ufc.h>
 
 #include <dolfin/DofMaps.h>
