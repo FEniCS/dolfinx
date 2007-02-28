@@ -24,8 +24,15 @@ namespace dolfin
 
     /// Destructor
     ~AssemblyData();
-
     
+    // Cell integral
+    ufc::cell_integral* cell_integral;
+
+    // Exterior facet integral
+    ufc::exterior_facet_integral* exterior_facet_integral;
+
+    // Interior facet integral
+    ufc::interior_facet_integral* interior_facet_integral;
 
   };
 
