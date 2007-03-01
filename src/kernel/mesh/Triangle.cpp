@@ -244,6 +244,24 @@ bool Triangle::intersects(const MeshEntity& triangle, const Point& p) const
   uint v1 = triangle.entities(0)[1];
   uint v2 = triangle.entities(0)[2];
 
+  // Compute orientation
+  Vertex vx0((Mesh&)triangle.mesh(), v0);
+  Vertex vx1((Mesh&)triangle.mesh(), v1);
+  Vertex vx2((Mesh&)triangle.mesh(), v2);
+
+  Point e0 = (vx1.point() - vx0.point());
+  Point e1 = (vx2.point() - vx0.point());
+  Point cross = e0.cross(e1);
+
+  uint vtmp;
+
+  if(cross.z() < 0.0)
+  {
+    vtmp = v2;
+    v2 = v1;
+    v1 = vtmp;
+  }
+
   // Get the coordinates of the three vertices
   const real* x0 = geometry.x(v0);
   const real* x1 = geometry.x(v1);
@@ -256,21 +274,54 @@ bool Triangle::intersects(const MeshEntity& triangle, const Point& p) const
   x[1] = p[1];
   x[2] = p[2];
 
+//   cout << "p0: " << vx0.point() << endl;
+//   cout << "p1: " << vx1.point() << endl;
+//   cout << "p2: " << vx2.point() << endl;
+
+//   cout << "p: " << p << endl;
+
   real d1, d2, d3;
+
+//   // Test orientation of p w.r.t. each edge
+//   d1 = orient2d((double *)x0, (double *)x1, x);
+//   if(d1 < 0.0)
+//     return false;
+//   d2 = orient2d((double *)x1, (double *)x2, x);
+//   if(d2 < 0.0)
+//     return false;
+//   d3 = orient2d((double *)x2, (double *)x0, x);
+//   if(d3 < 0.0)
+//     return false;
+
+//   if(d1 == 0.0 || d2 == 0.0 || d3 == 0.0)
+//     return true;
 
   // Test orientation of p w.r.t. each edge
   d1 = orient2d((double *)x0, (double *)x1, x);
+  //cout << "d1: " << d1 << endl;
+  d2 = orient2d((double *)x1, (double *)x2, x);
+  //cout << "d2: " << d2 << endl;
+  d3 = orient2d((double *)x2, (double *)x0, x);
+  //cout << "d3: " << d3 << endl;
+
+  // FIXME: Need to check the predicates for correctness
+  // Temporary fix: introduce threshold
+  //   if(d1 == 0.0 || d2 == 0.0 || d3 == 0.0)
+  //     return true;
+  if(fabs(d1) <= DOLFIN_EPS ||
+     fabs(d2) <= DOLFIN_EPS ||
+     fabs(d3) <= DOLFIN_EPS)
+  {
+    return true;
+  }
+  
   if(d1 < 0.0)
     return false;
-  d2 = orient2d((double *)x1, (double *)x2, x);
   if(d2 < 0.0)
     return false;
-  d3 = orient2d((double *)x2, (double *)x0, x);
   if(d3 < 0.0)
     return false;
 
-  if(d1 == 0.0 || d2 == 0.0 || d3 == 0.0)
-    return true;
 
   return true;
 }
