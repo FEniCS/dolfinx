@@ -51,6 +51,9 @@ namespace dolfin
     // Array of dof maps for current form
     std::vector<DofMap*> dof_maps;
 
+    // Iterator for map
+    typedef std::map<const std::string, std::pair<ufc::dof_map*, DofMap*> >::iterator map_iterator;
+
   };
 
 }

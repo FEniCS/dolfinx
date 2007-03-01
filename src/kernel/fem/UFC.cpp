@@ -5,25 +5,27 @@
 // Last changed: 2007-03-01
 
 #include <dolfin/constants.h>
-#include <dolfin/Cell.h>
-#include <dolfin/UFCData.h>
+#include <dolfin/DofMaps.h>
+#include <dolfin/DofMap.h>
+#include <dolfin/UFC.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-UFCData::UFCData(const ufc::form& form) : form(form)
+UFC::UFC(const ufc::form& form, DofMaps& dof_maps) : form(form)
 {
+  // Compute the number of arguments
   num_arguments = form.rank() + form.num_coefficients();
 
   // Create finite elements
-  finite_elements = new ufc::finite_element* [num_arguments];
+  finite_elements = new ufc::finite_element*[num_arguments];
   for (uint i = 0; i < num_arguments; i++)
     finite_elements[i] = form.create_finite_element(i);
 
-  // Create dof maps
-  dof_maps = new ufc::dof_map* [num_arguments];
+  // Create dof maps (reuse from dof map storage)
+  this->dof_maps = new ufc::dof_map*[num_arguments];
   for (uint i = 0; i < num_arguments; i++)
-    dof_maps[i] = form.create_dof_map(i);
+    this->dof_maps[i] = &dof_maps[i].ufc_dof_map;
 
   // FIXME: Assume for now there is only one sub domain
 
@@ -33,16 +35,14 @@ UFCData::UFCData(const ufc::form& form) : form(form)
   interior_facet_integral = form.create_interior_facet_integral(0);
 }
 //-----------------------------------------------------------------------------
-UFCData::~UFCData()
+UFC::~UFC()
 {
   // Delete finite elements
   for (uint i = 0; i < num_arguments; i++)
     delete finite_elements[i];
   delete [] finite_elements;
 
-  // Delete dof maps
-  for (uint i = 0; i < num_arguments; i++)
-    delete dof_maps[i];
+  // Delete dof maps (don't touch reused dof maps)
   delete [] dof_maps;
 
   // Delete integrals

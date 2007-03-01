@@ -19,8 +19,7 @@ DofMaps::DofMaps()
 DofMaps::~DofMaps()
 {
   // Delete all dof maps in the cache
-  std::map<const std::string, std::pair<ufc::dof_map*, DofMap*> >::iterator it;
-  for (it = dof_map_cache.begin(); it != dof_map_cache.end(); it++)
+  for (map_iterator it = dof_map_cache.begin(); it != dof_map_cache.end(); it++)
   {
     // Delete UFC dof map
     delete it->second.first;
@@ -43,7 +42,8 @@ void DofMaps::update(const ufc::form& form, Mesh& mesh)
     ufc::dof_map* ufc_dof_map = form.create_dof_map(i);
 
     // Check if dof map is in cache
-    if ( dof_map_cache.find(ufc_dof_map->signature()) == dof_map_cache.end() )
+    map_iterator it = dof_map_cache.find(ufc_dof_map->signature());
+    if ( it == dof_map_cache.end() )
     {
       cout << "Creating dof map (not in cache): " << ufc_dof_map->signature() << endl;
 
@@ -60,6 +60,11 @@ void DofMaps::update(const ufc::form& form, Mesh& mesh)
     else
     {
       cout << "Reusing dof map (already in cache): " << ufc_dof_map->signature() << endl;
+      
+      // Set dof map for argument i
+      dof_maps[i] = it->second.second;
+     
+      // Delete UFC dof map (not used)
       delete ufc_dof_map;
     }
   }

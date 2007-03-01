@@ -8,8 +8,8 @@ nobase_include_HEADERS   = dolfin/dolfin_fem.h \
                            dolfin/OldDofMap.h \
                            dolfin/DofMap.h \
                            dolfin/DofMaps.h \
+                           dolfin/UFC.h \
                            dolfin/UFCCell.h \
-                           dolfin/UFCData.h \
                            dolfin/UFCMesh.h \
 			   dolfin/FEBasis.h \
                            dolfin/FEM.h \
@@ -37,7 +37,7 @@ libdolfin_fem_la_SOURCES = assemble.cpp \
                            OldDofMap.cpp \
                            DofMap.cpp \
                            DofMaps.cpp \
-                           UFCData.cpp \
+                           UFC.cpp \
 			   FEBasis.cpp \
                            FEM.cpp \
                            FiniteElement.cpp \

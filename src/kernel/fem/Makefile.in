@@ -63,7 +63,7 @@ LTLIBRARIES = $(lib_LTLIBRARIES)
 libdolfin_fem_la_LIBADD =
 am_libdolfin_fem_la_OBJECTS = assemble.lo AffineMap.lo Assembler.lo \
 	BoundaryCondition.lo BoundaryValue.lo OldDofMap.lo DofMap.lo \
-	DofMaps.lo UFCData.lo FEBasis.lo FEM.lo FiniteElement.lo \
+	DofMaps.lo UFC.lo FEBasis.lo FEM.lo FiniteElement.lo \
 	FiniteElementSpec.lo NewAffineMap.lo
 libdolfin_fem_la_OBJECTS = $(am_libdolfin_fem_la_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir)
@@ -250,8 +250,8 @@ nobase_include_HEADERS = dolfin/dolfin_fem.h \
                            dolfin/OldDofMap.h \
                            dolfin/DofMap.h \
                            dolfin/DofMaps.h \
+                           dolfin/UFC.h \
                            dolfin/UFCCell.h \
-                           dolfin/UFCData.h \
                            dolfin/UFCMesh.h \
 			   dolfin/FEBasis.h \
                            dolfin/FEM.h \
@@ -280,7 +280,7 @@ libdolfin_fem_la_SOURCES = assemble.cpp \
                            OldDofMap.cpp \
                            DofMap.cpp \
                            DofMaps.cpp \
-                           UFCData.cpp \
+                           UFC.cpp \
 			   FEBasis.cpp \
                            FEM.cpp \
                            FiniteElement.cpp \
@@ -369,7 +369,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FiniteElementSpec.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NewAffineMap.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/OldDofMap.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/UFCData.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/UFC.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/assemble.Plo@am__quote@
 
 .cpp.o:

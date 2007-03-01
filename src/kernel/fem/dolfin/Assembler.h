@@ -16,7 +16,7 @@ namespace dolfin
 
   class GenericTensor;
   class Mesh;
-  class UFCData;
+  class UFC;
 
   /// This class provides automated assembly of linear systems, or
   /// more generally, assembly of a sparse tensor from a given
@@ -38,19 +38,19 @@ namespace dolfin
   private:
  
     // Assemble over cells
-    void assembleCells(GenericTensor& A, Mesh& mesh, UFCData& data) const;
+    void assembleCells(GenericTensor& A, Mesh& mesh, UFC& data) const;
 
     // Assemble over exterior facets
-    void assembleExteriorFacets(GenericTensor& A, Mesh& mesh, UFCData& data) const;
+    void assembleExteriorFacets(GenericTensor& A, Mesh& mesh, UFC& data) const;
 
     // Assemble over interior facets
-    void assembleInteriorFacets(GenericTensor& A, Mesh& mesh, UFCData& data) const;
+    void assembleInteriorFacets(GenericTensor& A, Mesh& mesh, UFC& data) const;
 
     // Initialize mesh entities used by dof maps
-    void initMeshEntities(Mesh& mesh, UFCData& data) const;
+    void initMeshEntities(Mesh& mesh, UFC& data) const;
 
     // Initialize global tensor
-    void initGlobalTensor(GenericTensor& A, Mesh& mesh, UFCData& data) const;
+    void initGlobalTensor(GenericTensor& A, Mesh& mesh, UFC& data, DofMaps& dof_maps) const;
 
     // Storage for dof maps
     DofMaps dof_maps;

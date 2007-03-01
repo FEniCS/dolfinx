@@ -7,8 +7,8 @@ EXTRA_DIST = dolfin_fem.h \
              OldDofMap.h \
              DofMap.h \
              DofMaps.h \
+             UFC.h \
              UFCCell.h \
-             UFCData.h \
              UFCMesh.h \
              FEM.h \
              FiniteElement.h \

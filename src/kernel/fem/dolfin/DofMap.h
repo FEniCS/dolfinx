@@ -29,6 +29,9 @@ namespace dolfin
     /// Destructor
     ~DofMap();
 
+    /// Friends
+    friend class UFC;
+    
   private:
 
     // UFC dof map

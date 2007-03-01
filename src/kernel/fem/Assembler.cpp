@@ -12,7 +12,7 @@
 #include <dolfin/Facet.h>
 #include <dolfin/BoundaryMesh.h>
 #include <dolfin/MeshFunction.h>
-#include <dolfin/UFCData.h>
+#include <dolfin/UFC.h>
 #include <dolfin/Assembler.h>
 
 using namespace dolfin;
@@ -36,26 +36,25 @@ void Assembler::assemble(GenericTensor& A, const ufc::form& form, Mesh& mesh)
   dof_maps.update(form, mesh);
 
   // Create data structure for local assembly data
-  UFCData data(form);
+  UFC ufc(form, dof_maps);
 
   // Initialize global tensor
-  initGlobalTensor(A, mesh, data);
+  initGlobalTensor(A, mesh, ufc, dof_maps);
 
   // Assemble over cells
-  assembleCells(A, mesh, data);
+  assembleCells(A, mesh, ufc);
 
   // Assemble over exterior facets
-  assembleExteriorFacets(A, mesh, data);
+  assembleExteriorFacets(A, mesh, ufc);
 
   // Assemble over interior facets
-  assembleInteriorFacets(A, mesh, data);
+  assembleInteriorFacets(A, mesh, ufc);
 }
 //-----------------------------------------------------------------------------
-void Assembler::assembleCells(GenericTensor& A,
-                              Mesh& mesh, UFCData& data) const
+void Assembler::assembleCells(GenericTensor& A, Mesh& mesh, UFC& ufc) const
 {
   // Skip assembly if there is no cell integral
-  if ( !data.cell_integral )
+  if ( !ufc.cell_integral )
     return;
 
   // Assemble over cells
@@ -68,10 +67,10 @@ void Assembler::assembleCells(GenericTensor& A,
 }
 //-----------------------------------------------------------------------------
 void Assembler::assembleExteriorFacets(GenericTensor& A,
-                                       Mesh& mesh, UFCData& data) const
+                                       Mesh& mesh, UFC& ufc) const
 {
   // Skip assembly if there is no exterior facet integral
-  if ( !data.exterior_facet_integral )
+  if ( !ufc.exterior_facet_integral )
     return;
 
   // Create boundary mesh
@@ -89,10 +88,10 @@ void Assembler::assembleExteriorFacets(GenericTensor& A,
 }
 //-----------------------------------------------------------------------------
 void Assembler::assembleInteriorFacets(GenericTensor& A,
-                                       Mesh& mesh, UFCData& data) const
+                                       Mesh& mesh, UFC& ufc) const
 {
   // Skip assembly if there is no interior facet integral
-  if ( !data.interior_facet_integral )
+  if ( !ufc.interior_facet_integral )
     return;
 
   // Assemble over interior facets
@@ -105,11 +104,15 @@ void Assembler::assembleInteriorFacets(GenericTensor& A,
 }
 //-----------------------------------------------------------------------------
 void Assembler::initGlobalTensor(GenericTensor& A, Mesh& mesh,
-                                 UFCData& data) const
+                                 UFC& ufc, DofMaps& dof_maps) const
 {
   dolfin_info("Initializing global tensor.");
-
   
+  // Get rank of tensor
+  //const uint rank = ufc.form.rank();
+
+  // Create array of tensor dimensions
+  //const uint* dimensions = new uint[rank];
 
 }
 //-----------------------------------------------------------------------------

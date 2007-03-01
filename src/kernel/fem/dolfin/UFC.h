@@ -8,27 +8,29 @@
 #define __UFC_DATA_H
 
 #include <ufc.h>
+#include <dolfin/UFCCell.h>
 
 namespace dolfin
 {
 
   class Cell;
+  class DofMaps;
 
   /// This class is a simple data structure that holds data used
   /// during assembly of a given UFC form.
 
-  class UFCData
+  class UFC
   {
   public:
 
     /// Constructor
-    UFCData(const ufc::form& form);
+    UFC(const ufc::form& form, DofMaps& dof_maps);
 
     /// Destructor
-    ~UFCData();
+    ~UFC();
     
     /// Update current cell
-    void update(const Cell& cell);
+    inline void update(Cell& cell) { this->cell.update(cell); }
 
     // UFC form
     const ufc::form& form;
@@ -37,7 +39,7 @@ namespace dolfin
     unsigned int num_arguments;
 
     // Current cell
-    ufc::cell cell;
+    UFCCell cell;
 
     // Finite elements
     ufc::finite_element** finite_elements;
