@@ -12,7 +12,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-UFC::UFC(const ufc::form& form, DofMaps& dof_maps) : form(form)
+UFC::UFC(const ufc::form& form, Mesh& mesh, DofMaps& dof_maps) : form(form)
 {
   // Compute the number of arguments
   num_arguments = form.rank() + form.num_coefficients();
@@ -33,6 +33,13 @@ UFC::UFC(const ufc::form& form, DofMaps& dof_maps) : form(form)
   cell_integral = form.create_cell_integral(0);
   exterior_facet_integral = form.create_exterior_facet_integral(0);
   interior_facet_integral = form.create_interior_facet_integral(0);
+
+  // Initialize mesh
+  this->mesh.init(mesh);
+
+  // Initialize cell with first cell in mesh
+  CellIterator cell(mesh);
+  this->cell.init(*cell);
 }
 //-----------------------------------------------------------------------------
 UFC::~UFC()

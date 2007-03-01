@@ -7,6 +7,7 @@
 #ifndef __MESH_TOPOLOGY_H
 #define __MESH_TOPOLOGY_H
 
+#include <dolfin/dolfin_log.h>
 #include <dolfin/constants.h>
 #include <dolfin/Array.h>
 #include <dolfin/MeshConnectivity.h>

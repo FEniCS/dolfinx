@@ -2,12 +2,11 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-05-09
-// Last changed: 2007-01-17
+// Last changed: 2007-03-01
 
 #ifndef __MESH_CONNECTIVITY_H
 #define __MESH_CONNECTIVITY_H
 
-#include <dolfin/dolfin_log.h>
 #include <dolfin/constants.h>
 #include <dolfin/Array.h>
 
@@ -44,14 +43,15 @@ namespace dolfin
 
     /// Return number of connections for given entity
     inline uint size(uint entity) const
-    { dolfin_assert(entity < num_entities); return offsets[entity + 1] - offsets[entity]; }
+    { return (entity < num_entities ? offsets[entity + 1] - offsets[entity] : 0); }
 
     /// Return array of connections for given entity
     inline uint* operator() (uint entity)
-    { dolfin_assert(entity < num_entities); return connections + offsets[entity]; }
+    { return (entity < num_entities ? connections + offsets[entity] : 0); }
 
     /// Return array of connections for given entity
-    inline const uint* operator() (uint entity) const { dolfin_assert(entity < num_entities); return connections + offsets[entity]; }
+    inline const uint* operator() (uint entity) const
+    { return (entity < num_entities ? connections + offsets[entity] : 0); }
 
     /// Return contiguous array of connections for all entities
     inline uint* operator() () { return connections; }

@@ -36,7 +36,7 @@ void Assembler::assemble(GenericTensor& A, const ufc::form& form, Mesh& mesh)
   dof_maps.update(form, mesh);
 
   // Create data structure for local assembly data
-  UFC ufc(form, dof_maps);
+  UFC ufc(form, mesh, dof_maps);
 
   // Initialize global tensor
   initGlobalTensor(A, mesh, ufc, dof_maps);
@@ -109,10 +109,17 @@ void Assembler::initGlobalTensor(GenericTensor& A, Mesh& mesh,
   dolfin_info("Initializing global tensor.");
   
   // Get rank of tensor
-  //const uint rank = ufc.form.rank();
+  const uint rank = ufc.form.rank();
 
   // Create array of tensor dimensions
-  //const uint* dimensions = new uint[rank];
+  uint* dimensions = new uint[rank];
+  for (uint i = 0; i < rank; i++)
+    dimensions[i] = ufc.dof_maps[i]->global_dimension();
 
+  // Initialize tensor
+  A.init(rank, dimensions);
+
+  // Delete temporary data
+  delete [] dimensions;
 }
 //-----------------------------------------------------------------------------

@@ -8,11 +8,13 @@
 #define __UFC_DATA_H
 
 #include <ufc.h>
+#include <dolfin/UFCMesh.h>
 #include <dolfin/UFCCell.h>
 
 namespace dolfin
 {
 
+  class Mesh;
   class Cell;
   class DofMaps;
 
@@ -24,22 +26,13 @@ namespace dolfin
   public:
 
     /// Constructor
-    UFC(const ufc::form& form, DofMaps& dof_maps);
+    UFC(const ufc::form& form, Mesh& mesh, DofMaps& dof_maps);
 
     /// Destructor
     ~UFC();
     
     /// Update current cell
     inline void update(Cell& cell) { this->cell.update(cell); }
-
-    // UFC form
-    const ufc::form& form;
-
-    // FIXME: Not needed if num_arguments is in ufc::form
-    unsigned int num_arguments;
-
-    // Current cell
-    UFCCell cell;
 
     // Finite elements
     ufc::finite_element** finite_elements;
@@ -55,6 +48,18 @@ namespace dolfin
 
     // Interior facet integral
     ufc::interior_facet_integral* interior_facet_integral;
+
+    // Form
+    const ufc::form& form;
+
+    // Mesh
+    UFCMesh mesh;
+    
+    // Current cell
+    UFCCell cell;
+
+    // Number of arguments in form
+    unsigned int num_arguments;
 
   };
 

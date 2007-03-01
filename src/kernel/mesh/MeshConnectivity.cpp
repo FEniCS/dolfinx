@@ -1,9 +1,10 @@
-// Copyright (C) 2006 Anders Logg.
+// Copyright (C) 2006-2007 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-05-09
-// Last changed: 2006-06-22
+// Last changed: 2007-03-01
 
+#include <dolfin/dolfin_log.h>
 #include <dolfin/MeshConnectivity.h>
 
 using namespace dolfin;

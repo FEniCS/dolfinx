@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2007-01-17
-// Last changed: 2007-01-17
+// Last changed: 2007-03-01
 
 #ifndef __GENERIC_TENSOR_H
 #define __GENERIC_TENSOR_H
@@ -23,6 +23,12 @@ namespace dolfin
 
     /// Destructor
     virtual ~GenericTensor() {}
+
+    /// Initialize zero tensor of given rank and dimensions
+    virtual void init(uint rank, uint* dims) = 0;
+
+    /// Return size of given dimension
+    virtual uint size(const uint dim) const = 0;
 
   };
 
