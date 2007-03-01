@@ -44,8 +44,11 @@ namespace dolfin
     // Assemble over interior facets
     void assembleInteriorFacets(GenericTensor& A, Mesh& mesh, AssemblyData& data) const;
 
-    // Compute mesh entities used by dof maps
-    void computeMeshEntities(Mesh& mesh, AssemblyData& data) const;
+    // Initialize mesh entities used by dof maps
+    void initMeshEntities(Mesh& mesh, AssemblyData& data) const;
+
+    // Initialize global tensor
+    void initGlobalTensor(GenericTensor& A, Mesh& mesh, AssemblyData& data) const;
 
   };
 

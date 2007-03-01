@@ -35,8 +35,11 @@ void Assembler::assemble(GenericTensor& A, const ufc::form& form, Mesh& mesh)
   // Create data structure for local assembly data
   AssemblyData data(form);
 
-  // Compute mesh entities used by dof maps
-  computeMeshEntities(mesh, data);
+  // Initialize mesh entities used by dof maps
+  initMeshEntities(mesh, data);
+
+  // Initialize global tensor
+  initGlobalTensor(A, mesh, data);
 
   // Assemble over cells
   assembleCells(A, mesh, data);
@@ -101,9 +104,9 @@ void Assembler::assembleInteriorFacets(GenericTensor& A,
   }
 }
 //-----------------------------------------------------------------------------
-void Assembler::computeMeshEntities(Mesh& mesh, AssemblyData& data) const
+void Assembler::initMeshEntities(Mesh& mesh, AssemblyData& data) const
 {
-  dolfin_info("Computing mesh entities");
+  dolfin_info("Initializing mesh entities.");
   
   // Array of mesh entities used by dof maps
   Array<bool> entities(mesh.topology().dim() + 1);
@@ -126,5 +129,14 @@ void Assembler::computeMeshEntities(Mesh& mesh, AssemblyData& data) const
     if ( entities[d] )
       mesh.init(d);
   }
+}
+//-----------------------------------------------------------------------------
+void Assembler::initGlobalTensor(GenericTensor& A, Mesh& mesh,
+                                 AssemblyData& data) const
+{
+  dolfin_info("Initializing global tensor.");
+
+  
+
 }
 //-----------------------------------------------------------------------------

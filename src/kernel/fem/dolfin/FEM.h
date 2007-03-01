@@ -31,7 +31,7 @@ namespace dolfin
   class FiniteElement;
   class BoundaryCondition;
   class AffineMap;
-  class DofMap;
+  class OldDofMap;
 
   /// Automated assembly of a linear system from a given partial differential
   /// equation, specified as a variational problem: Find U in V such that
@@ -90,14 +90,14 @@ namespace dolfin
 
     /// Count the degrees of freedom. 
     /// FIXME: This function is used by Functions, but the size should be computed
-    /// via DofMap 
+    /// via OldDofMap 
     static uint size(Mesh& mesh, const FiniteElement& element);
 
     /// Display assembly data (useful for debugging)
     static void disp(Mesh& mesh, const FiniteElement& element);
 
     //-------------------------------------------------------------------------
-    // Temporary for benchmarking against old assembly without DofMap
+    // Temporary for benchmarking against old assembly without OldDofMap
     static void assembleOld(BilinearForm& a, GenericMatrix& A, Mesh& mesh);
     static void assembleCommonOld(BilinearForm* a, LinearForm* L, Functional* M,
                                   GenericMatrix* A, GenericVector* b, real* val,
@@ -148,12 +148,12 @@ namespace dolfin
     /// Assemble element tensor for a bilinear form
     static void assembleElementTensor(BilinearForm& a, GenericMatrix& A, 
                                       const Mesh& mesh, Cell& cell, 
-                                      AffineMap& map, real det, const DofMap& dofmap);
+                                      AffineMap& map, real det, const OldDofMap& dofmap);
 
     /// Assemble element tensor for a linear form
     static void assembleElementTensor(LinearForm& L, GenericVector& b, 
                                       const Mesh& mesh, Cell& cell, 
-                                      AffineMap& map, real det, const DofMap& dofmap);
+                                      AffineMap& map, real det, const OldDofMap& dofmap);
 
     /// Assemble element tensor for a functional
     static void assembleElementTensor(Functional& M, real& val, Cell& cell, AffineMap& map, real det);

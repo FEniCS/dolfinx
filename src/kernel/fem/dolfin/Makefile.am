@@ -5,6 +5,7 @@ EXTRA_DIST = dolfin_fem.h \
              AssemblyData.h \
              BoundaryCondition.h \
              BoundaryValue.h \
+             OldDofMap.h \
              DofMap.h \
              DofMaps.h \
              FEM.h \

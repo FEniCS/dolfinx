@@ -25,7 +25,7 @@
 #include <dolfin/Interval.h>
 #include <dolfin/Triangle.h>
 #include <dolfin/Tetrahedron.h>
-#include <dolfin/DofMap.h>
+#include <dolfin/OldDofMap.h>
 #include <dolfin/FEM.h>
 
 using namespace dolfin;
@@ -107,7 +107,7 @@ dolfin::uint FEM::size(Mesh& mesh, const FiniteElement& element)
   // FIXME: freedom in just a few operations.
 
   /// FIXME: This function is used by Functions, but the size should be computed
-  /// via DofMap. It might be removed. 
+  /// via OldDofMap. It might be removed. 
 
   // Initialize connectivity
   initConnectivity(mesh);
@@ -136,7 +136,7 @@ void FEM::disp(Mesh& mesh, const FiniteElement& element)
   initConnectivity(mesh);
 
   // Total number of degrees of freedom
-  DofMap dofmap(mesh, &element);  
+  OldDofMap dofmap(mesh, &element);  
   uint N = dofmap.size();
   dolfin_info("  Total number of degrees of freedom: %d.", N);
   dolfin_info("");
@@ -192,9 +192,9 @@ void FEM::assembleCommon(BilinearForm* a, LinearForm* L, Functional* M,
   AffineMap map;
   
   // Create degree of freedom maps
-  // FIXME: DofMap should be computed only once unless mesh/element changes
-  DofMap dofmap_a(mesh);
-  DofMap dofmap_L(mesh);
+  // FIXME: OldDofMap should be computed only once unless mesh/element changes
+  OldDofMap dofmap_a(mesh);
+  OldDofMap dofmap_L(mesh);
 
   // Initialize global data
   bool interior_contribution = false;
@@ -540,7 +540,7 @@ void FEM::checkDimensions(const LinearForm& L, const Mesh& mesh)
 //-----------------------------------------------------------------------------
 void FEM::assembleElementTensor(BilinearForm& a, GenericMatrix& A, 
                                 const Mesh& mesh, Cell& cell,
-                                AffineMap& map, real det, const DofMap& dofmap)
+                                AffineMap& map, real det, const OldDofMap& dofmap)
 {
   // Update form
   a.update(cell, map);
@@ -558,7 +558,7 @@ void FEM::assembleElementTensor(BilinearForm& a, GenericMatrix& A,
 //-----------------------------------------------------------------------------
 void FEM::assembleElementTensor(LinearForm& L, GenericVector& b, 
                                 const Mesh& mesh, Cell& cell,
-                                AffineMap& map, real det, const DofMap& dofmap)
+                                AffineMap& map, real det, const OldDofMap& dofmap)
 {
   // Update form
   L.update(cell, map);
@@ -874,7 +874,7 @@ dolfin::uint FEM::computeAlignment(Cell& cell0, Cell& cell1, uint facet)
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// Temporary for benchmarking against old assembly without DofMap
+// Temporary for benchmarking against old assembly without OldDofMap
 //-----------------------------------------------------------------------------
 void FEM::assembleOld(BilinearForm& a, GenericMatrix& A, Mesh& mesh)
 {
