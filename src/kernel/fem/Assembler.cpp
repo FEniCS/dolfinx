@@ -2,9 +2,10 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2007-01-17
-// Last changed: 2007-01-17
+// Last changed: 2007-03-01
 
 #include <dolfin/dolfin_log.h>
+#include <dolfin/Array.h>
 #include <dolfin/GenericTensor.h>
 #include <dolfin/Mesh.h>
 #include <dolfin/Cell.h>
@@ -34,22 +35,21 @@ void Assembler::assemble(GenericTensor& A, const ufc::form& form, Mesh& mesh)
   // Create data structure for local assembly data
   AssemblyData data(form);
 
-  // Update dof map storage for current form
-  dof_maps.update(form, mesh);
+  // Compute mesh entities used by dof maps
+  computeMeshEntities(mesh, data);
 
   // Assemble over cells
-  assembleCells(A, data, mesh);
+  assembleCells(A, mesh, data);
 
   // Assemble over exterior facets
-  assembleExteriorFacets(A, data, mesh);
+  assembleExteriorFacets(A, mesh, data);
 
   // Assemble over interior facets
-  assembleInteriorFacets(A, data, mesh);
+  assembleInteriorFacets(A, mesh, data);
 }
 //-----------------------------------------------------------------------------
 void Assembler::assembleCells(GenericTensor& A,
-                              AssemblyData& data,
-                              Mesh& mesh)
+                              Mesh& mesh, AssemblyData& data) const
 {
   // Skip assembly if there is no cell integral
   if ( !data.cell_integral )
@@ -65,8 +65,7 @@ void Assembler::assembleCells(GenericTensor& A,
 }
 //-----------------------------------------------------------------------------
 void Assembler::assembleExteriorFacets(GenericTensor& A,
-                                       AssemblyData& data,
-                                       Mesh& mesh)
+                                       Mesh& mesh, AssemblyData& data) const
 {
   // Skip assembly if there is no exterior facet integral
   if ( !data.exterior_facet_integral )
@@ -87,8 +86,7 @@ void Assembler::assembleExteriorFacets(GenericTensor& A,
 }
 //-----------------------------------------------------------------------------
 void Assembler::assembleInteriorFacets(GenericTensor& A,
-                                       AssemblyData& data,
-                                       Mesh& mesh)
+                                       Mesh& mesh, AssemblyData& data) const
 {
   // Skip assembly if there is no interior facet integral
   if ( !data.interior_facet_integral )
@@ -100,6 +98,33 @@ void Assembler::assembleInteriorFacets(GenericTensor& A,
   {
     cout << *facet << endl;
     p++;
+  }
+}
+//-----------------------------------------------------------------------------
+void Assembler::computeMeshEntities(Mesh& mesh, AssemblyData& data) const
+{
+  dolfin_info("Computing mesh entities");
+  
+  // Array of mesh entities used by dof maps
+  Array<bool> entities(mesh.topology().dim() + 1);
+  entities = false;
+
+  // Iterate over all dof maps and mark entities
+  for (uint i = 0; i < data.num_arguments; i++)
+  {
+    // Iterate over topological dimensions
+    for (uint d = 0; d <= mesh.topology().dim(); d++)
+    {
+      if ( data.dof_maps[i]->needs_mesh_entities(d) )
+        entities[d] = true;
+    }
+  }
+
+  // Compute mesh entitites
+  for (uint d = 0; d <= mesh.topology().dim(); d++)
+  {
+    if ( entities[d] )
+      mesh.init(d);
   }
 }
 //-----------------------------------------------------------------------------

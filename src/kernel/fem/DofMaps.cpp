@@ -56,6 +56,11 @@ void DofMaps::update(const ufc::form& form, Mesh& mesh)
   }
 }
 //-----------------------------------------------------------------------------
+dolfin::uint DofMaps::size() const
+{
+  return dof_maps.size();
+}
+//-----------------------------------------------------------------------------
 const DofMap& DofMaps::operator[] (uint i) const
 {
   dolfin_assert(i < dof_maps.size());

@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2007-01-17
-// Last changed: 2007-01-17
+// Last changed: 2007-03-01
 
 #ifndef __DOF_MAPS_H
 #define __DOF_MAPS_H
@@ -34,6 +34,9 @@ namespace dolfin
 
     /// Update set of dof maps for given form
     void update(const ufc::form& form, Mesh& mesh);
+    
+    /// Return number of dof maps
+    uint size() const;
     
     /// Return dof map for argument function i
     const DofMap& operator[] (uint i) const;

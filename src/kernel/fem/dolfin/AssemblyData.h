@@ -2,10 +2,13 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2007-01-17
-// Last changed: 2007-01-17
+// Last changed: 2007-03-01
 
 #ifndef __ASSEMBLY_DATA_H
 #define __ASSEMBLY_DATA_H
+
+// FIXME: Not needed if num_arguments is in ufc::form
+#include <dolfin/constants.h>
 
 #include <ufc.h>
 
@@ -13,7 +16,7 @@ namespace dolfin
 {
 
   /// This class is a simple data structure that holds local data used
-  /// during assembly.
+  /// during assembly of a given UFC form.
 
   class AssemblyData
   {
@@ -25,6 +28,18 @@ namespace dolfin
     /// Destructor
     ~AssemblyData();
     
+    // UFC form
+    const ufc::form& form;
+
+    // FIXME: Not needed if num_arguments is in ufc::form
+    uint num_arguments;
+    
+    // Finite elements
+    ufc::finite_element** finite_elements;
+
+    // Dof maps
+    ufc::dof_map** dof_maps;
+
     // Cell integral
     ufc::cell_integral* cell_integral;
 
