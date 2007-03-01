@@ -20,7 +20,9 @@ namespace dolfin
   class DofMap;
   class Mesh;
 
-  /// Storage for (precomputed) dof maps
+  /// This class provides storage and caching of (precomputed) dof
+  /// maps and enables reuse of already computed dof maps with equal
+  /// signatures.
 
   class DofMaps
   {
@@ -44,7 +46,7 @@ namespace dolfin
   private:
 
     // Cached precomputed dof maps
-    std::map<const std::string, DofMap*> dof_map_cache;
+    std::map<const std::string, std::pair<ufc::dof_map*, DofMap*> > dof_map_cache;
 
     // Array of dof maps for current form
     std::vector<DofMap*> dof_maps;

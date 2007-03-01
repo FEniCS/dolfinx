@@ -9,6 +9,8 @@
 
 #include <ufc.h>
 
+#include <dolfin/DofMaps.h>
+
 namespace dolfin
 {
 
@@ -49,6 +51,9 @@ namespace dolfin
 
     // Initialize global tensor
     void initGlobalTensor(GenericTensor& A, Mesh& mesh, AssemblyData& data) const;
+
+    // Storage for dof maps
+    DofMaps dof_maps;
 
   };
 

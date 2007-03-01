@@ -32,9 +32,12 @@ void Assembler::assemble(GenericTensor& A, const ufc::form& form, Mesh& mesh)
 {
   cout << "Assembling form " << form.signature() << endl;
 
+  // Update dof maps
+  dof_maps.update(form, mesh);
+
   // Create data structure for local assembly data
   AssemblyData data(form);
-
+  
   // Initialize mesh entities used by dof maps
   initMeshEntities(mesh, data);
 
