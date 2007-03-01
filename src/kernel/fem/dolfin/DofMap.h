@@ -24,7 +24,7 @@ namespace dolfin
   public:
 
     /// Create dof map on mesh
-    DofMap(const ufc::dof_map& dof_map, Mesh& mesh);
+    DofMap(ufc::dof_map& dof_map, Mesh& mesh);
 
     /// Destructor
     ~DofMap();
@@ -32,7 +32,7 @@ namespace dolfin
   private:
 
     // UFC dof map
-    const ufc::dof_map& ufc_dof_map;
+    ufc::dof_map& ufc_dof_map;
 
     // UFC mesh
     UFCMesh ufc_mesh;
