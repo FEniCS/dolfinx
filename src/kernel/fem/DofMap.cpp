@@ -11,7 +11,16 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 DofMap::DofMap(const ufc::dof_map& dof_map, Mesh& mesh) : dof_map(dof_map)
 {
+  // Initialize mesh entities used by dof map
+  for (uint d = 0; d <= mesh.topology().dim(); d++)
+  {
+    if ( dof_maps.needs_mesh_entities(d) )
+      mesh.init(d);
+  }
   
+  // Initialize dof map
+  bool init_cells = 
+ 
 
 }
 //-----------------------------------------------------------------------------

@@ -15,7 +15,7 @@
 namespace dolfin
 {
 
-  /// This class is a simple data structure that holds local data used
+  /// This class is a simple data structure that holds data used
   /// during assembly of a given UFC form.
 
   class AssemblyData
@@ -33,7 +33,13 @@ namespace dolfin
 
     // FIXME: Not needed if num_arguments is in ufc::form
     uint num_arguments;
-    
+
+    // Current mesh
+    ufc::mesh mesh;
+
+    // Current cell
+    ufc::cell cell;
+
     // Finite elements
     ufc::finite_element** finite_elements;
 
