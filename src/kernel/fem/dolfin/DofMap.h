@@ -8,6 +8,7 @@
 #define __DOF_MAP_H
 
 #include <ufc.h>
+#include <dolfin/UFCMesh.h>
 
 namespace dolfin
 {
@@ -30,7 +31,11 @@ namespace dolfin
 
   private:
 
-    const ufc::dof_map& dof_map;
+    // UFC dof map
+    const ufc::dof_map& ufc_dof_map;
+
+    // UFC mesh
+    UFCMesh ufc_mesh;
 
   };
 

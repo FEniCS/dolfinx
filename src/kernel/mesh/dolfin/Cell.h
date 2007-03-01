@@ -1,15 +1,16 @@
-// Copyright (C) 2006 Anders Logg.
+// Copyright (C) 2006-2007 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // Modified by Johan Hoffman 2006.
 //
 // First added:  2006-06-01
-// Last changed: 2007-01-10
+// Last changed: 2007-03-01
 
 #ifndef __CELL_H
 #define __CELL_H
 
 #include <dolfin/Point.h>
+#include <dolfin/CellType.h>
 #include <dolfin/MeshEntity.h>
 #include <dolfin/MeshEntityIterator.h>
 
@@ -28,6 +29,9 @@ namespace dolfin
     /// Destructor
     ~Cell() {}
     
+    /// Return type of cell
+    inline CellType::Type type() const { return _mesh.type().cellType(); }
+    
     /// Return alignment of given entity with respect to the cell
     inline uint alignment(uint dim, uint e) const { return _mesh.type().alignment(*this, dim, e); }
 
@@ -37,7 +41,7 @@ namespace dolfin
     /// Compute diameter of cell
     inline real diameter() const { return _mesh.type().diameter(*this); }
 
-    /// Return midpoint of cell
+    /// Compute midpoint of cell
     Point midpoint(); 
 
     /// Compute component i of normal of given facet with respect to the cell

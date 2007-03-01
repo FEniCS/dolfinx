@@ -5,12 +5,13 @@
 // Last changed: 2007-03-01
 
 #include <dolfin/constants.h>
-#include <dolfin/AssemblyData.h>
+#include <dolfin/Cell.h>
+#include <dolfin/UFCData.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-AssemblyData::AssemblyData(const ufc::form& form) : form(form)
+UFCData::UFCData(const ufc::form& form) : form(form)
 {
   num_arguments = form.rank() + form.num_coefficients();
 
@@ -32,7 +33,7 @@ AssemblyData::AssemblyData(const ufc::form& form) : form(form)
   interior_facet_integral = form.create_interior_facet_integral(0);
 }
 //-----------------------------------------------------------------------------
-AssemblyData::~AssemblyData()
+UFCData::~UFCData()
 {
   // Delete finite elements
   for (uint i = 0; i < num_arguments; i++)

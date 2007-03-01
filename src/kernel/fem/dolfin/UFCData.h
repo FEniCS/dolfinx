@@ -4,38 +4,37 @@
 // First added:  2007-01-17
 // Last changed: 2007-03-01
 
-#ifndef __ASSEMBLY_DATA_H
-#define __ASSEMBLY_DATA_H
-
-// FIXME: Not needed if num_arguments is in ufc::form
-#include <dolfin/constants.h>
+#ifndef __UFC_DATA_H
+#define __UFC_DATA_H
 
 #include <ufc.h>
 
 namespace dolfin
 {
 
+  class Cell;
+
   /// This class is a simple data structure that holds data used
   /// during assembly of a given UFC form.
 
-  class AssemblyData
+  class UFCData
   {
   public:
 
     /// Constructor
-    AssemblyData(const ufc::form& form);
+    UFCData(const ufc::form& form);
 
     /// Destructor
-    ~AssemblyData();
+    ~UFCData();
     
+    /// Update current cell
+    void update(const Cell& cell);
+
     // UFC form
     const ufc::form& form;
 
     // FIXME: Not needed if num_arguments is in ufc::form
-    uint num_arguments;
-
-    // Current mesh
-    ufc::mesh mesh;
+    unsigned int num_arguments;
 
     // Current cell
     ufc::cell cell;

@@ -12,7 +12,7 @@
 #include <dolfin/Facet.h>
 #include <dolfin/BoundaryMesh.h>
 #include <dolfin/MeshFunction.h>
-#include <dolfin/AssemblyData.h>
+#include <dolfin/UFCData.h>
 #include <dolfin/Assembler.h>
 
 using namespace dolfin;
@@ -36,10 +36,7 @@ void Assembler::assemble(GenericTensor& A, const ufc::form& form, Mesh& mesh)
   dof_maps.update(form, mesh);
 
   // Create data structure for local assembly data
-  AssemblyData data(form);
-  
-  // Initialize mesh entities used by dof maps
-  initMeshEntities(mesh, data);
+  UFCData data(form);
 
   // Initialize global tensor
   initGlobalTensor(A, mesh, data);
@@ -55,7 +52,7 @@ void Assembler::assemble(GenericTensor& A, const ufc::form& form, Mesh& mesh)
 }
 //-----------------------------------------------------------------------------
 void Assembler::assembleCells(GenericTensor& A,
-                              Mesh& mesh, AssemblyData& data) const
+                              Mesh& mesh, UFCData& data) const
 {
   // Skip assembly if there is no cell integral
   if ( !data.cell_integral )
@@ -71,7 +68,7 @@ void Assembler::assembleCells(GenericTensor& A,
 }
 //-----------------------------------------------------------------------------
 void Assembler::assembleExteriorFacets(GenericTensor& A,
-                                       Mesh& mesh, AssemblyData& data) const
+                                       Mesh& mesh, UFCData& data) const
 {
   // Skip assembly if there is no exterior facet integral
   if ( !data.exterior_facet_integral )
@@ -92,7 +89,7 @@ void Assembler::assembleExteriorFacets(GenericTensor& A,
 }
 //-----------------------------------------------------------------------------
 void Assembler::assembleInteriorFacets(GenericTensor& A,
-                                       Mesh& mesh, AssemblyData& data) const
+                                       Mesh& mesh, UFCData& data) const
 {
   // Skip assembly if there is no interior facet integral
   if ( !data.interior_facet_integral )
@@ -107,35 +104,8 @@ void Assembler::assembleInteriorFacets(GenericTensor& A,
   }
 }
 //-----------------------------------------------------------------------------
-void Assembler::initMeshEntities(Mesh& mesh, AssemblyData& data) const
-{
-  dolfin_info("Initializing mesh entities.");
-  
-  // Array of mesh entities used by dof maps
-  Array<bool> entities(mesh.topology().dim() + 1);
-  entities = false;
-
-  // Iterate over all dof maps and mark entities
-  for (uint i = 0; i < data.num_arguments; i++)
-  {
-    // Iterate over topological dimensions
-    for (uint d = 0; d <= mesh.topology().dim(); d++)
-    {
-      if ( data.dof_maps[i]->needs_mesh_entities(d) )
-        entities[d] = true;
-    }
-  }
-
-  // Compute mesh entitites
-  for (uint d = 0; d <= mesh.topology().dim(); d++)
-  {
-    if ( entities[d] )
-      mesh.init(d);
-  }
-}
-//-----------------------------------------------------------------------------
 void Assembler::initGlobalTensor(GenericTensor& A, Mesh& mesh,
-                                 AssemblyData& data) const
+                                 UFCData& data) const
 {
   dolfin_info("Initializing global tensor.");
 

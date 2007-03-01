@@ -3,12 +3,14 @@ nobase_include_HEADERS   = dolfin/dolfin_fem.h \
                            dolfin/assemble.h \
                            dolfin/AffineMap.h \
                            dolfin/Assembler.h \
-                           dolfin/AssemblyData.h \
                            dolfin/BoundaryCondition.h \
                            dolfin/BoundaryValue.h \
                            dolfin/OldDofMap.h \
                            dolfin/DofMap.h \
                            dolfin/DofMaps.h \
+                           dolfin/UFCCell.h \
+                           dolfin/UFCData.h \
+                           dolfin/UFCMesh.h \
 			   dolfin/FEBasis.h \
                            dolfin/FEM.h \
                            dolfin/FiniteElement.h \
@@ -30,12 +32,12 @@ lib_LTLIBRARIES          = libdolfin-fem.la
 libdolfin_fem_la_SOURCES = assemble.cpp \
                            AffineMap.cpp \
                            Assembler.cpp \
-                           AssemblyData.cpp \
                            BoundaryCondition.cpp \
                            BoundaryValue.cpp \
                            OldDofMap.cpp \
                            DofMap.cpp \
                            DofMaps.cpp \
+                           UFCData.cpp \
 			   FEBasis.cpp \
                            FEM.cpp \
                            FiniteElement.cpp \

@@ -62,9 +62,9 @@ libLTLIBRARIES_INSTALL = $(INSTALL)
 LTLIBRARIES = $(lib_LTLIBRARIES)
 libdolfin_fem_la_LIBADD =
 am_libdolfin_fem_la_OBJECTS = assemble.lo AffineMap.lo Assembler.lo \
-	AssemblyData.lo BoundaryCondition.lo BoundaryValue.lo \
-	OldDofMap.lo DofMap.lo DofMaps.lo FEBasis.lo FEM.lo \
-	FiniteElement.lo FiniteElementSpec.lo NewAffineMap.lo
+	BoundaryCondition.lo BoundaryValue.lo OldDofMap.lo DofMap.lo \
+	DofMaps.lo UFCData.lo FEBasis.lo FEM.lo FiniteElement.lo \
+	FiniteElementSpec.lo NewAffineMap.lo
 libdolfin_fem_la_OBJECTS = $(am_libdolfin_fem_la_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -245,12 +245,14 @@ nobase_include_HEADERS = dolfin/dolfin_fem.h \
                            dolfin/assemble.h \
                            dolfin/AffineMap.h \
                            dolfin/Assembler.h \
-                           dolfin/AssemblyData.h \
                            dolfin/BoundaryCondition.h \
                            dolfin/BoundaryValue.h \
                            dolfin/OldDofMap.h \
                            dolfin/DofMap.h \
                            dolfin/DofMaps.h \
+                           dolfin/UFCCell.h \
+                           dolfin/UFCData.h \
+                           dolfin/UFCMesh.h \
 			   dolfin/FEBasis.h \
                            dolfin/FEM.h \
                            dolfin/FiniteElement.h \
@@ -273,12 +275,12 @@ lib_LTLIBRARIES = libdolfin-fem.la
 libdolfin_fem_la_SOURCES = assemble.cpp \
                            AffineMap.cpp \
                            Assembler.cpp \
-                           AssemblyData.cpp \
                            BoundaryCondition.cpp \
                            BoundaryValue.cpp \
                            OldDofMap.cpp \
                            DofMap.cpp \
                            DofMaps.cpp \
+                           UFCData.cpp \
 			   FEBasis.cpp \
                            FEM.cpp \
                            FiniteElement.cpp \
@@ -357,7 +359,6 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/AffineMap.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Assembler.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/AssemblyData.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BoundaryCondition.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BoundaryValue.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DofMap.Plo@am__quote@
@@ -368,6 +369,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FiniteElementSpec.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NewAffineMap.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/OldDofMap.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/UFCData.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/assemble.Plo@am__quote@
 
 .cpp.o:

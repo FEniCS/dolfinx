@@ -2,12 +2,14 @@ EXTRA_DIST = dolfin_fem.h \
              assemble.h \
              AffineMap.h \
              Assembler.h \
-             AssemblyData.h \
              BoundaryCondition.h \
              BoundaryValue.h \
              OldDofMap.h \
              DofMap.h \
              DofMaps.h \
+             UFCCell.h \
+             UFCData.h \
+             UFCMesh.h \
              FEM.h \
              FiniteElement.h \
              FiniteElementSpec.h \
