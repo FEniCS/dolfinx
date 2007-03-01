@@ -30,6 +30,9 @@ namespace dolfin
     /// Return size of given dimension
     virtual uint size(const uint dim) const = 0;
 
+    /// Add entries to tensor
+    virtual void add(real* block, uint* size, uint** entries) = 0;
+
   };
 
 }

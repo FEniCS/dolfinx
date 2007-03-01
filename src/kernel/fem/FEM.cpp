@@ -1112,7 +1112,7 @@ void FEM::assembleSimple(BilinearForm& a,
         else
           it->second += a.block[pos++];
       }
-    }
+    } 
   }
 }
 //-----------------------------------------------------------------------------

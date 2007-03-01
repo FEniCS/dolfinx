@@ -40,6 +40,28 @@ UFC::UFC(const ufc::form& form, Mesh& mesh, DofMaps& dof_maps) : form(form)
   // Initialize cell with first cell in mesh
   CellIterator cell(mesh);
   this->cell.init(*cell);
+
+  // Initialize local tensor
+  uint num_entries = 1;
+  for (uint i = 0; i < form.rank(); i++)
+    num_entries *= this->dof_maps[i]->local_dimension();
+  A = new real[num_entries];
+  for (uint i = 0; i < num_entries; i++)
+    A[i] = 0.0;
+
+  // Initialize local dimensions
+  local_dims = new uint[num_arguments];
+  for (uint i = 0; i < num_arguments; i++)
+    local_dims[i] = this->dof_maps[i]->local_dimension();
+
+  // Initialize dofs
+  dofs = new uint*[form.rank()];
+  for (uint i = 0; i < form.rank(); i++)
+  {
+    dofs[i] = new uint[local_dims[i]];
+    for (uint j = 0; j < local_dims[i]; j++)
+      dofs[i][j] = 0;
+  }
 }
 //-----------------------------------------------------------------------------
 UFC::~UFC()
@@ -59,5 +81,13 @@ UFC::~UFC()
     delete exterior_facet_integral;
   if ( interior_facet_integral )
     delete interior_facet_integral;
+
+  // Delete local tensor
+  delete [] A;
+
+  // Delete dofs
+  for (uint i = 0; i < form.rank(); i++)
+    delete [] dofs[i];
+  delete [] dofs;
 }
 //-----------------------------------------------------------------------------

@@ -34,10 +34,13 @@ namespace dolfin
     /// Update current cell
     inline void update(Cell& cell) { this->cell.update(cell); }
 
-    // Finite elements
+    // Number of arguments in form
+    unsigned int num_arguments;
+
+    // Array of finite elements for each argument
     ufc::finite_element** finite_elements;
 
-    // Dof maps
+    // Array of dof maps for each argument
     ufc::dof_map** dof_maps;
 
     // Cell integral
@@ -58,8 +61,14 @@ namespace dolfin
     // Current cell
     UFCCell cell;
 
-    // Number of arguments in form
-    unsigned int num_arguments;
+    // Local tensor
+    real* A;
+
+    // Array of local dimensions for each argument
+    uint* local_dims;
+
+    // Array of mapped dofs for each argument
+    uint** dofs;
 
   };
 

@@ -61,7 +61,19 @@ void Assembler::assembleCells(GenericTensor& A, Mesh& mesh, UFC& ufc) const
   Progress p("Assembling over cells", mesh.numCells());
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
-    cout << *cell << endl;
+    // Update to current cell
+    ufc.update(*cell);
+
+    // Compute local-to-global map for each dimension
+    for (uint i = 0; i < ufc.form.rank(); i++)
+      ufc.dof_maps[i]->tabulate_dofs(ufc.dofs[i], ufc.mesh, ufc.cell);
+
+    // Tabulate cell tensor
+    ufc.cell_integral->tabulate_tensor(ufc.A, 0, ufc.cell);
+
+    // Add entries to global tensor
+    A.add(ufc.A, ufc.local_dims, ufc.dofs);
+
     p++;
   }
 }
@@ -112,14 +124,14 @@ void Assembler::initGlobalTensor(GenericTensor& A, Mesh& mesh,
   const uint rank = ufc.form.rank();
 
   // Create array of tensor dimensions
-  uint* dimensions = new uint[rank];
+  uint* dims = new uint[rank];
   for (uint i = 0; i < rank; i++)
-    dimensions[i] = ufc.dof_maps[i]->global_dimension();
+    dims[i] = ufc.dof_maps[i]->global_dimension();
 
   // Initialize tensor
-  A.init(rank, dimensions);
+  A.init(rank, dims);
 
   // Delete temporary data
-  delete [] dimensions;
+  delete [] dims;
 }
 //-----------------------------------------------------------------------------
