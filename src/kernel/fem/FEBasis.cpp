@@ -46,6 +46,18 @@ bool FEBasis::construct(FiniteElement& element)
     functions.resize(1);
     functions[0] = new ScalarDiscontinousLagrange(0);
   }
+  else if ( repr == "[ Vector Lagrange finite element of degree 1 on a triangle with 2 ]" )
+  {
+    dolfin_info("Constructing basis for: %s.", repr.c_str());
+    
+    functions.resize(6);
+    functions[0] = new VectorLagrange(0, 2);
+    functions[1] = new VectorLagrange(1, 2);
+    functions[2] = new VectorLagrange(2, 2);
+    functions[3] = new VectorLagrange(3, 2);
+    functions[4] = new VectorLagrange(4, 2);
+    functions[5] = new VectorLagrange(5, 2);
+  }
   else
   {
     dolfin_info("Unable to construct basis functions for: %s.", repr.c_str());
