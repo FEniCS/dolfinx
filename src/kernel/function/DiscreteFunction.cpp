@@ -122,9 +122,9 @@ real DiscreteFunction::operator()(const Point& p, uint i)
 //       cout << "cells.size(): " << cells.size() << endl;
 
     real sum = 0.0;
-    for(uint i = 0; i < cells.size(); i++)
+    for(uint k = 0; k < cells.size(); k++)
     {
-      Cell cell(*_mesh, cells[i]);
+      Cell cell(*_mesh, cells[k]);
       
       // Initialize local data (if not already initialized correctly)
       local.init(*_element);
