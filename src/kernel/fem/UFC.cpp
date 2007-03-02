@@ -54,6 +54,11 @@ UFC::UFC(const ufc::form& form, Mesh& mesh, DofMaps& dof_maps) : form(form)
   for (uint i = 0; i < num_arguments; i++)
     local_dims[i] = this->dof_maps[i]->local_dimension();
 
+  // Initialize global dimensions
+  global_dims = new uint[num_arguments];
+  for (uint i = 0; i < num_arguments; i++)
+    global_dims[i] = this->dof_maps[i]->global_dimension();
+
   // Initialize dofs
   dofs = new uint*[form.rank()];
   for (uint i = 0; i < form.rank(); i++)
@@ -84,6 +89,12 @@ UFC::~UFC()
 
   // Delete local tensor
   delete [] A;
+
+  // Delete local dimensions
+  delete [] local_dims;
+
+  // Delete global dimensions
+  delete [] global_dims;
 
   // Delete dofs
   for (uint i = 0; i < form.rank(); i++)

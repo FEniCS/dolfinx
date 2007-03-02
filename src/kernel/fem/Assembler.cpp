@@ -1,8 +1,8 @@
-// Copyright (C) 2007 Anders Logg and ...
+// Copyright (C) 2007 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2007-01-17
-// Last changed: 2007-03-01
+// Last changed: 2007-03-02
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Array.h>
@@ -39,7 +39,7 @@ void Assembler::assemble(GenericTensor& A, const ufc::form& form, Mesh& mesh)
   UFC ufc(form, mesh, dof_maps);
 
   // Initialize global tensor
-  initGlobalTensor(A, mesh, ufc, dof_maps);
+  A.init(ufc.form.rank(), ufc.global_dims);
 
   // Assemble over cells
   assembleCells(A, mesh, ufc);
@@ -113,25 +113,5 @@ void Assembler::assembleInteriorFacets(GenericTensor& A,
     cout << *facet << endl;
     p++;
   }
-}
-//-----------------------------------------------------------------------------
-void Assembler::initGlobalTensor(GenericTensor& A, Mesh& mesh,
-                                 UFC& ufc, DofMaps& dof_maps) const
-{
-  dolfin_info("Initializing global tensor.");
-  
-  // Get rank of tensor
-  const uint rank = ufc.form.rank();
-
-  // Create array of tensor dimensions
-  uint* dims = new uint[rank];
-  for (uint i = 0; i < rank; i++)
-    dims[i] = ufc.dof_maps[i]->global_dimension();
-
-  // Initialize tensor
-  A.init(rank, dims);
-
-  // Delete temporary data
-  delete [] dims;
 }
 //-----------------------------------------------------------------------------

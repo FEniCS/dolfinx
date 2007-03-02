@@ -1,8 +1,8 @@
-// Copyright (C) 2007 Anders Logg and ...
+// Copyright (C) 2007 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2007-01-17
-// Last changed: 2007-03-01
+// Last changed: 2007-03-02
 
 #ifndef __ASSEMBLER_H
 #define __ASSEMBLER_H
@@ -45,12 +45,6 @@ namespace dolfin
 
     // Assemble over interior facets
     void assembleInteriorFacets(GenericTensor& A, Mesh& mesh, UFC& data) const;
-
-    // Initialize mesh entities used by dof maps
-    void initMeshEntities(Mesh& mesh, UFC& data) const;
-
-    // Initialize global tensor
-    void initGlobalTensor(GenericTensor& A, Mesh& mesh, UFC& data, DofMaps& dof_maps) const;
 
     // Storage for dof maps
     DofMaps dof_maps;

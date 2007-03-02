@@ -67,6 +67,9 @@ namespace dolfin
     // Array of local dimensions for each argument
     uint* local_dims;
 
+    // Array of global dimensions for each argument
+    uint* global_dims;
+
     // Array of mapped dofs for each argument
     uint** dofs;
 
