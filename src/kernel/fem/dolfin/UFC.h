@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2007-01-17
-// Last changed: 2007-03-01
+// Last changed: 2007-03-03
 
 #ifndef __UFC_DATA_H
 #define __UFC_DATA_H
@@ -32,7 +32,7 @@ namespace dolfin
     ~UFC();
     
     /// Update current cell
-    inline void update(Cell& cell) { this->cell.update(cell); }
+    void update(Cell& cell);
 
     // Number of arguments in form
     unsigned int num_arguments;
@@ -65,13 +65,16 @@ namespace dolfin
     real* A;
 
     // Array of local dimensions for each argument
-    uint* local_dims;
+    uint* local_dimensions;
 
     // Array of global dimensions for each argument
-    uint* global_dims;
+    uint* global_dimensions;
 
     // Array of mapped dofs for each argument
     uint** dofs;
+
+    // Array of coefficients
+    real** w;
 
   };
 

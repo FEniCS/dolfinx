@@ -39,7 +39,7 @@ void Assembler::assemble(GenericTensor& A, const ufc::form& form, Mesh& mesh)
   UFC ufc(form, mesh, dof_maps);
 
   // Initialize global tensor
-  A.init(ufc.form.rank(), ufc.global_dims);
+  A.init(ufc.form.rank(), ufc.global_dimensions);
 
   // Assemble over cells
   assembleCells(A, mesh, ufc);
@@ -69,10 +69,10 @@ void Assembler::assembleCells(GenericTensor& A, Mesh& mesh, UFC& ufc) const
       ufc.dof_maps[i]->tabulate_dofs(ufc.dofs[i], ufc.mesh, ufc.cell);
 
     // Tabulate cell tensor
-    ufc.cell_integral->tabulate_tensor(ufc.A, 0, ufc.cell);
+    ufc.cell_integral->tabulate_tensor(ufc.A, ufc.w, ufc.cell);
 
     // Add entries to global tensor
-    A.add(ufc.A, ufc.local_dims, ufc.dofs);
+    A.add(ufc.A, ufc.local_dimensions, ufc.dofs);
 
     p++;
   }

@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2007-01-17
-// Last changed: 2007-03-01
+// Last changed: 2007-03-03
 
 #include <dolfin/constants.h>
 #include <dolfin/DofMaps.h>
@@ -50,22 +50,32 @@ UFC::UFC(const ufc::form& form, Mesh& mesh, DofMaps& dof_maps) : form(form)
     A[i] = 0.0;
 
   // Initialize local dimensions
-  local_dims = new uint[num_arguments];
+  local_dimensions = new uint[num_arguments];
   for (uint i = 0; i < num_arguments; i++)
-    local_dims[i] = this->dof_maps[i]->local_dimension();
+    local_dimensions[i] = this->dof_maps[i]->local_dimension();
 
   // Initialize global dimensions
-  global_dims = new uint[num_arguments];
+  global_dimensions = new uint[num_arguments];
   for (uint i = 0; i < num_arguments; i++)
-    global_dims[i] = this->dof_maps[i]->global_dimension();
+    global_dimensions[i] = this->dof_maps[i]->global_dimension();
 
   // Initialize dofs
   dofs = new uint*[form.rank()];
   for (uint i = 0; i < form.rank(); i++)
   {
-    dofs[i] = new uint[local_dims[i]];
-    for (uint j = 0; j < local_dims[i]; j++)
+    dofs[i] = new uint[local_dimensions[i]];
+    for (uint j = 0; j < local_dimensions[i]; j++)
       dofs[i][j] = 0;
+  }
+
+  // Initialize coefficients
+  w = new real*[form.num_coefficients()];
+  for (uint i = 0; i < form.num_coefficients(); i++)
+  {
+    const uint n = local_dimensions[form.rank() + i];
+    w[i] = new real[n];
+    for (uint j = 0; j < n; j++)
+      w[i][j] = 0.0;
   }
 }
 //-----------------------------------------------------------------------------
@@ -91,14 +101,27 @@ UFC::~UFC()
   delete [] A;
 
   // Delete local dimensions
-  delete [] local_dims;
+  delete [] local_dimensions;
 
   // Delete global dimensions
-  delete [] global_dims;
+  delete [] global_dimensions;
 
   // Delete dofs
   for (uint i = 0; i < form.rank(); i++)
     delete [] dofs[i];
   delete [] dofs;
+
+  // Delete coefficients
+  for (uint i = 0; i < form.num_coefficients(); i++)
+    delete [] w[i];
+  delete [] w;
+}
+//-----------------------------------------------------------------------------
+void UFC::update(Cell& cell)
+{
+  // Update UFC cell
+  this->cell.update(cell);
+
+  // FIXME: Update coefficients
 }
 //-----------------------------------------------------------------------------
