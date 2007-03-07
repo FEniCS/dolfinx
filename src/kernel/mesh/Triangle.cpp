@@ -73,6 +73,15 @@ dolfin::uint Triangle::alignment(const Cell& cell, uint dim, uint e) const
   return 0;
 }
 //-----------------------------------------------------------------------------
+dolfin::uint Triangle::orientation(const Cell& cell) const
+{
+  Point v01 = Point(cell.entities(0)[1]) - Point(cell.entities(0)[0]);
+  Point v02 = Point(cell.entities(0)[2]) - Point(cell.entities(0)[0]);
+  Point n(-v01.y(), v01.x());
+
+  return ( n.dot(v02) < 0.0 ? 1 : 0 );
+}
+//-----------------------------------------------------------------------------
 void Triangle::createEntities(uint** e, uint dim, const uint v[]) const
 {
   // We only need to know how to create edges
@@ -234,8 +243,6 @@ real Triangle::normal(const Cell& cell, uint facet, uint i) const
 //-----------------------------------------------------------------------------
 bool Triangle::intersects(const MeshEntity& triangle, const Point& p) const
 {
-  // Assume triangle vertices are ordered counter-clockwise
-
   // Get mesh geometry
   const MeshGeometry& geometry = triangle.mesh().geometry();
 
@@ -244,18 +251,9 @@ bool Triangle::intersects(const MeshEntity& triangle, const Point& p) const
   uint v1 = triangle.entities(0)[1];
   uint v2 = triangle.entities(0)[2];
 
-  // Compute orientation
-  Vertex vx0((Mesh&)triangle.mesh(), v0);
-  Vertex vx1((Mesh&)triangle.mesh(), v1);
-  Vertex vx2((Mesh&)triangle.mesh(), v2);
-
-  Point e0 = (vx1.point() - vx0.point());
-  Point e1 = (vx2.point() - vx0.point());
-  Point cross = e0.cross(e1);
-
-  uint vtmp;
-
-  if(cross.z() < 0.0)
+  // Check orientation
+  dolfin::uint vtmp;
+  if(orientation((Cell&)triangle) == 1)
   {
     vtmp = v2;
     v2 = v1;
