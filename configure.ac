@@ -498,6 +498,7 @@ AC_OUTPUT( Makefile \
            src/pydolfin/Makefile \
            src/demo/Makefile \
            src/demo/fem/Makefile \
+           src/demo/la/Makefile \
            src/demo/nls/Makefile \
            src/demo/ode/Makefile \
            src/demo/ode/homotopy/Makefile \
