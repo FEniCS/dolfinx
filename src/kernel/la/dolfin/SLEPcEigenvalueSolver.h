@@ -22,7 +22,7 @@ namespace dolfin
   /// This class computes eigenvalues of a matrix. It is 
 	/// a wrapper for the eigenvalue solver SLEPc.
   
-  class PETScEigenvalueSolver: public Parametrized
+  class SLEPcEigenvalueSolver: public Parametrized
   {
   public:
 
@@ -38,13 +38,13 @@ namespace dolfin
     };
 
     /// Create eigenvalue solver (use default solver type)
-    PETScEigenvalueSolver();
+    SLEPcEigenvalueSolver();
 
     /// Create eigenvalue solver (specify solver type)
-    PETScEigenvalueSolver(Type solver);
+    SLEPcEigenvalueSolver(Type solver);
 
     /// Destructor
-    ~PETScEigenvalueSolver();
+    ~SLEPcEigenvalueSolver();
 
     /// Compute all eigenpairs of the matrix A (solve Ax = \lambda x)
     void solve(const PETScMatrix& A);

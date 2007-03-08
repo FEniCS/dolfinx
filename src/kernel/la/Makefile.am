@@ -13,7 +13,7 @@ nobase_include_HEADERS  = dolfin/dolfin_la.h \
                           dolfin/LU.h \
                           dolfin/LUSolver.h \
                           dolfin/Matrix.h \
-                          dolfin/PETScEigenvalueSolver.h \
+                          dolfin/SLEPcEigenvalueSolver.h \
                           dolfin/PETScKrylovMatrix.h \
                           dolfin/PETScKrylovSolver.h \
                           dolfin/PETScLinearSolver.h \
@@ -42,7 +42,7 @@ INCLUDES                = @KERNEL_CFLAGS@
 lib_LTLIBRARIES         = libdolfin-la.la
 libdolfin_la_la_SOURCES = GMRES.cpp \
                           LU.cpp \
-                          PETScEigenvalueSolver.cpp \
+                          SLEPcEigenvalueSolver.cpp \
                           PETScKrylovMatrix.cpp \
                           PETScKrylovSolver.cpp \
                           PETScLUSolver.cpp \
