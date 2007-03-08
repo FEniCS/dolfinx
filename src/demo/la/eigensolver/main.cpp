@@ -34,7 +34,7 @@ int main()
   B.disp();
 
   // Create eigensolver of type LAPACK
-  SLEPcEigenvalueSolver esolver(PETScEigenvalueSolver::lapack);
+  SLEPcEigenvalueSolver esolver(SLEPcEigenvalueSolver::lapack);
 
   // Compute all eigenpairs of the generalised problem Ax = \lambda Bx
   esolver.solve(A, B);
