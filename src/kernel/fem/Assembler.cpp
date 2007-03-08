@@ -90,11 +90,33 @@ void Assembler::assembleExteriorFacets(GenericTensor& A,
   MeshFunction<uint> cell_map;
   BoundaryMesh boundary(mesh, vertex_map, cell_map);
   
-  // Assemble over exterior facets
+  // Assemble over exterior facets (the cells of the boundary)
   Progress p("Assembling over exterior facets", boundary.numCells());
   for (CellIterator boundary_cell(boundary); !boundary_cell.end(); ++boundary_cell)
   {
-    cout << *boundary_cell << endl;
+    // Get mesh facet corresponding to boundary cell
+    Facet mesh_facet(mesh, cell_map(*boundary_cell));
+
+    // Get mesh cell to which mesh facet belongs (pick first, there is only one)
+    dolfin_assert(mesh_facet.numEntities(mesh.topology().dim()) == 1);
+    Cell mesh_cell(mesh, mesh_facet.entities(mesh.topology().dim())[0]);
+
+    // Get local index of facet with respect to the cell
+    uint local_facet = mesh_cell.index(mesh_facet);
+      
+    // Update to current cell
+    ufc.update(mesh_cell);
+
+    // Compute local-to-global map for each dimension
+    for (uint i = 0; i < ufc.form.rank(); i++)
+      ufc.dof_maps[i]->tabulate_dofs(ufc.dofs[i], ufc.mesh, ufc.cell);
+
+    // Tabulate exterior facet tensor
+    ufc.exterior_facet_integral->tabulate_tensor(ufc.A, ufc.w, ufc.cell, local_facet);
+
+    // Add entries to global tensor
+    A.add(ufc.A, ufc.local_dimensions, ufc.dofs);
+
     p++;  
   }
 }
