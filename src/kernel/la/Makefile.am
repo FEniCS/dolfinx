@@ -1,5 +1,6 @@
 SUBDIRS                 = dolfin
 nobase_include_HEADERS  = dolfin/dolfin_la.h \
+                          dolfin/AssemblyMatrix.h \
                           dolfin/DenseMatrix.h \
                           dolfin/DenseVector.h \
                           dolfin/KrylovMethod.h \

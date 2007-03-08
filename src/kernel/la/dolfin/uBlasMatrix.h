@@ -4,13 +4,14 @@
 // Modified by Anders Logg 2006.
 //
 // First added:  2006-07-05
-// Last changed: 2006-10-10
+// Last changed: 2007-03-07
 
 #ifndef __UBLAS_MATRIX_H
 #define __UBLAS_MATRIX_H
 
 #include <sstream>
 #include <iomanip>
+
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Array.h>
 #include <dolfin/Variable.h>

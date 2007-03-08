@@ -3,6 +3,7 @@
 
 // DOLFIN linear algebra
 
+#include <dolfin/AssemblyMatrix.h>
 #include <dolfin/Matrix.h>
 #include <dolfin/Vector.h>
 #include <dolfin/GenericMatrix.h>

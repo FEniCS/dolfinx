@@ -40,7 +40,8 @@ void DofMaps::update(const ufc::form& form, Mesh& mesh)
   {
     // Create UFC dof map
     ufc::dof_map* ufc_dof_map = form.create_dof_map(i);
-
+    dolfin_assert(ufc_dof_map);
+    
     // Check if dof map is in cache
     map_iterator it = dof_map_cache.find(ufc_dof_map->signature());
     if ( it == dof_map_cache.end() )
@@ -49,6 +50,7 @@ void DofMaps::update(const ufc::form& form, Mesh& mesh)
 
       // Create DOLFIN dof map
       DofMap* dolfin_dof_map = new DofMap(*ufc_dof_map, mesh);
+      dolfin_assert(dolfin_dof_map);
 
       // Save pair of UFC and DOLFIN dof maps in cache
       std::pair<ufc::dof_map*, DofMap*> dof_map_pair(ufc_dof_map, dolfin_dof_map);
