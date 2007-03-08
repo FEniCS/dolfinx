@@ -290,6 +290,109 @@ class ElasticityUpdatedSolver(_object):
         this = _dolfinmodules.new_ElasticityUpdatedSolver(*args)
         try: self.this.append(this)
         except: self.this = this
+    def init(*args):
+        """init(self)"""
+        return _dolfinmodules.ElasticityUpdatedSolver_init(*args)
+
+    def step(*args):
+        """step(self)"""
+        return _dolfinmodules.ElasticityUpdatedSolver_step(*args)
+
+    def oldstep(*args):
+        """oldstep(self)"""
+        return _dolfinmodules.ElasticityUpdatedSolver_oldstep(*args)
+
+    def fu(*args):
+        """fu(self)"""
+        return _dolfinmodules.ElasticityUpdatedSolver_fu(*args)
+
+    def gather(*args):
+        """gather(Vector x1, Vector x2, VecScatter x1sc)"""
+        return _dolfinmodules.ElasticityUpdatedSolver_gather(*args)
+
+    if _newclass:gather = staticmethod(gather)
+    __swig_getmethods__["gather"] = lambda x: gather
+    def scatter(*args):
+        """scatter(Vector x1, Vector x2, VecScatter x1sc)"""
+        return _dolfinmodules.ElasticityUpdatedSolver_scatter(*args)
+
+    if _newclass:scatter = staticmethod(scatter)
+    __swig_getmethods__["scatter"] = lambda x: scatter
+    def createScatterer(*args):
+        """createScatterer(Vector x1, Vector x2, int offset, int size) -> VecScatter"""
+        return _dolfinmodules.ElasticityUpdatedSolver_createScatterer(*args)
+
+    if _newclass:createScatterer = staticmethod(createScatterer)
+    __swig_getmethods__["createScatterer"] = lambda x: createScatterer
+    def fromArray(*args):
+        """fromArray(real u, Vector x, uint offset, uint size)"""
+        return _dolfinmodules.ElasticityUpdatedSolver_fromArray(*args)
+
+    if _newclass:fromArray = staticmethod(fromArray)
+    __swig_getmethods__["fromArray"] = lambda x: fromArray
+    def toArray(*args):
+        """toArray(real y, Vector x, uint offset, uint size)"""
+        return _dolfinmodules.ElasticityUpdatedSolver_toArray(*args)
+
+    if _newclass:toArray = staticmethod(toArray)
+    __swig_getmethods__["toArray"] = lambda x: toArray
+    def fromDense(*args):
+        """fromDense(uBlasVector u, Vector x, uint offset, uint size)"""
+        return _dolfinmodules.ElasticityUpdatedSolver_fromDense(*args)
+
+    if _newclass:fromDense = staticmethod(fromDense)
+    __swig_getmethods__["fromDense"] = lambda x: fromDense
+    def toDense(*args):
+        """toDense(uBlasVector y, Vector x, uint offset, uint size)"""
+        return _dolfinmodules.ElasticityUpdatedSolver_toDense(*args)
+
+    if _newclass:toDense = staticmethod(toDense)
+    __swig_getmethods__["toDense"] = lambda x: toDense
+    def preparestep(*args):
+        """preparestep(self)"""
+        return _dolfinmodules.ElasticityUpdatedSolver_preparestep(*args)
+
+    def prepareiteration(*args):
+        """prepareiteration(self)"""
+        return _dolfinmodules.ElasticityUpdatedSolver_prepareiteration(*args)
+
+    def save(*args):
+        """save(self, Mesh mesh, File solutionfile, real t)"""
+        return _dolfinmodules.ElasticityUpdatedSolver_save(*args)
+
+    def condsave(*args):
+        """condsave(self, Mesh mesh, File solutionfile, real t)"""
+        return _dolfinmodules.ElasticityUpdatedSolver_condsave(*args)
+
+    def solve(*args):
+        """
+        solve()
+        solve(Mesh mesh, Function f, Function v0, Function rho, real E, 
+            real nu, real nuv, real nuplast, BoundaryCondition bc, 
+            real k, real T)
+        """
+        return _dolfinmodules.ElasticityUpdatedSolver_solve(*args)
+
+    if _newclass:solve = staticmethod(solve)
+    __swig_getmethods__["solve"] = lambda x: solve
+    __swig_setmethods__["dotu_x1sc"] = _dolfinmodules.ElasticityUpdatedSolver_dotu_x1sc_set
+    __swig_getmethods__["dotu_x1sc"] = _dolfinmodules.ElasticityUpdatedSolver_dotu_x1sc_get
+    if _newclass:dotu_x1sc = property(_dolfinmodules.ElasticityUpdatedSolver_dotu_x1sc_get, _dolfinmodules.ElasticityUpdatedSolver_dotu_x1sc_set)
+    __swig_setmethods__["dotu_x2sc"] = _dolfinmodules.ElasticityUpdatedSolver_dotu_x2sc_set
+    __swig_getmethods__["dotu_x2sc"] = _dolfinmodules.ElasticityUpdatedSolver_dotu_x2sc_get
+    if _newclass:dotu_x2sc = property(_dolfinmodules.ElasticityUpdatedSolver_dotu_x2sc_get, _dolfinmodules.ElasticityUpdatedSolver_dotu_x2sc_set)
+    __swig_setmethods__["dotu_xsigmasc"] = _dolfinmodules.ElasticityUpdatedSolver_dotu_xsigmasc_set
+    __swig_getmethods__["dotu_xsigmasc"] = _dolfinmodules.ElasticityUpdatedSolver_dotu_xsigmasc_get
+    if _newclass:dotu_xsigmasc = property(_dolfinmodules.ElasticityUpdatedSolver_dotu_xsigmasc_get, _dolfinmodules.ElasticityUpdatedSolver_dotu_xsigmasc_set)
+    __swig_setmethods__["dotu_x1is"] = _dolfinmodules.ElasticityUpdatedSolver_dotu_x1is_set
+    __swig_getmethods__["dotu_x1is"] = _dolfinmodules.ElasticityUpdatedSolver_dotu_x1is_get
+    if _newclass:dotu_x1is = property(_dolfinmodules.ElasticityUpdatedSolver_dotu_x1is_get, _dolfinmodules.ElasticityUpdatedSolver_dotu_x1is_set)
+    __swig_setmethods__["dotu_x2is"] = _dolfinmodules.ElasticityUpdatedSolver_dotu_x2is_set
+    __swig_getmethods__["dotu_x2is"] = _dolfinmodules.ElasticityUpdatedSolver_dotu_x2is_get
+    if _newclass:dotu_x2is = property(_dolfinmodules.ElasticityUpdatedSolver_dotu_x2is_get, _dolfinmodules.ElasticityUpdatedSolver_dotu_x2is_set)
+    __swig_setmethods__["dotu_xsigmais"] = _dolfinmodules.ElasticityUpdatedSolver_dotu_xsigmais_set
+    __swig_getmethods__["dotu_xsigmais"] = _dolfinmodules.ElasticityUpdatedSolver_dotu_xsigmais_get
+    if _newclass:dotu_xsigmais = property(_dolfinmodules.ElasticityUpdatedSolver_dotu_xsigmais_get, _dolfinmodules.ElasticityUpdatedSolver_dotu_xsigmais_set)
     __swig_setmethods__["mesh"] = _dolfinmodules.ElasticityUpdatedSolver_mesh_set
     __swig_getmethods__["mesh"] = _dolfinmodules.ElasticityUpdatedSolver_mesh_get
     if _newclass:mesh = property(_dolfinmodules.ElasticityUpdatedSolver_mesh_get, _dolfinmodules.ElasticityUpdatedSolver_mesh_set)
@@ -591,6 +694,43 @@ class ElasticityUpdatedSolver(_object):
     if _newclass:deform = staticmethod(deform)
     __swig_getmethods__["deform"] = lambda x: deform
 _dolfinmodules.ElasticityUpdatedSolver_swigregister(ElasticityUpdatedSolver)
+
+def ElasticityUpdatedSolver_gather(*args):
+    """ElasticityUpdatedSolver_gather(Vector x1, Vector x2, VecScatter x1sc)"""
+    return _dolfinmodules.ElasticityUpdatedSolver_gather(*args)
+
+def ElasticityUpdatedSolver_scatter(*args):
+    """ElasticityUpdatedSolver_scatter(Vector x1, Vector x2, VecScatter x1sc)"""
+    return _dolfinmodules.ElasticityUpdatedSolver_scatter(*args)
+
+def ElasticityUpdatedSolver_createScatterer(*args):
+    """ElasticityUpdatedSolver_createScatterer(Vector x1, Vector x2, int offset, int size) -> VecScatter"""
+    return _dolfinmodules.ElasticityUpdatedSolver_createScatterer(*args)
+
+def ElasticityUpdatedSolver_fromArray(*args):
+    """ElasticityUpdatedSolver_fromArray(real u, Vector x, uint offset, uint size)"""
+    return _dolfinmodules.ElasticityUpdatedSolver_fromArray(*args)
+
+def ElasticityUpdatedSolver_toArray(*args):
+    """ElasticityUpdatedSolver_toArray(real y, Vector x, uint offset, uint size)"""
+    return _dolfinmodules.ElasticityUpdatedSolver_toArray(*args)
+
+def ElasticityUpdatedSolver_fromDense(*args):
+    """ElasticityUpdatedSolver_fromDense(uBlasVector u, Vector x, uint offset, uint size)"""
+    return _dolfinmodules.ElasticityUpdatedSolver_fromDense(*args)
+
+def ElasticityUpdatedSolver_toDense(*args):
+    """ElasticityUpdatedSolver_toDense(uBlasVector y, Vector x, uint offset, uint size)"""
+    return _dolfinmodules.ElasticityUpdatedSolver_toDense(*args)
+
+def ElasticityUpdatedSolver_solve(*args):
+    """
+    solve()
+    ElasticityUpdatedSolver_solve(Mesh mesh, Function f, Function v0, Function rho, real E, 
+        real nu, real nuv, real nuplast, BoundaryCondition bc, 
+        real k, real T)
+    """
+    return _dolfinmodules.ElasticityUpdatedSolver_solve(*args)
 
 def ElasticityUpdatedSolver_finterpolate(*args):
     """ElasticityUpdatedSolver_finterpolate(Function f1, Function f2, Mesh mesh)"""
