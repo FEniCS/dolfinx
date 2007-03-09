@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2007-01-17
-// Last changed: 2007-03-03
+// Last changed: 2007-03-09
 
 #ifndef __UFC_DATA_H
 #define __UFC_DATA_H
@@ -34,6 +34,9 @@ namespace dolfin
     /// Update current cell
     void update(Cell& cell);
 
+    /// Update current pair of cells for macro element
+    void update(Cell& cell0, Cell& cell1);
+
     // Number of arguments in form
     unsigned int num_arguments;
 
@@ -61,17 +64,30 @@ namespace dolfin
     // Current cell
     UFCCell cell;
 
+    // Current pair of cells of macro element
+    UFCCell cell0;
+    UFCCell cell1;
+
     // Local tensor
     real* A;
+
+    // Local tensor for macro element
+    real* macro_A;
 
     // Array of local dimensions for each argument
     uint* local_dimensions;
 
+    // Array of local dimensions of macro element for each argument
+    uint* macro_local_dimensions;
+
     // Array of global dimensions for each argument
     uint* global_dimensions;
-
+    
     // Array of mapped dofs for each argument
     uint** dofs;
+
+    // Array of mapped dofs for each argument on macro element
+    uint** macro_dofs;
 
     // Array of coefficients
     real** w;

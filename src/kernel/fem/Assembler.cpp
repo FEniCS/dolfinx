@@ -128,11 +128,46 @@ void Assembler::assembleInteriorFacets(GenericTensor& A,
   if ( !ufc.interior_facet_integral )
     return;
 
-  // Assemble over interior facets
+  // Compute facets and facet - cell connectivity if not already computed
+  mesh.init(mesh.topology().dim() - 1);
+  mesh.init(mesh.topology().dim() - 1, mesh.topology().dim());
+
+  // Assemble over interior facets (the facets of the mesh)
   Progress p("Assembling over interior facets", mesh.numFacets());
   for (FacetIterator facet(mesh); !facet.end(); ++facet)
   {
-    cout << *facet << endl;
+    // Check if we have an interior facet
+    if ( facet->numEntities(mesh.topology().dim()) != 2 )
+    {
+      p++;
+      continue;
+    }
+
+    // Get cells incident with facet
+    Cell cell0(mesh, facet->entities(mesh.topology().dim())[0]);
+    Cell cell1(mesh, facet->entities(mesh.topology().dim())[1]);
+      
+    // Get local index of facet with respect to each cell
+    uint facet0 = cell0.index(*facet);
+    uint facet1 = cell1.index(*facet);
+
+    // Update to current pair of cells
+    ufc.update(cell0, cell1);
+
+    // Compute local-to-global map for each dimension on macro element
+    for (uint i = 0; i < ufc.form.rank(); i++)
+    {
+      const uint offset = ufc.local_dimensions[i];
+      ufc.dof_maps[i]->tabulate_dofs(ufc.macro_dofs[i], ufc.mesh, ufc.cell0);
+      ufc.dof_maps[i]->tabulate_dofs(ufc.macro_dofs[i] + offset*0, ufc.mesh, ufc.cell1);
+    }
+
+    // Tabulate exterior interior facet tensor on macro element
+    ufc.interior_facet_integral->tabulate_tensor(ufc.macro_A, ufc.w, ufc.cell0, ufc.cell1, facet0, facet1);
+
+    // Add entries to global tensor
+    A.add(ufc.macro_A, ufc.macro_local_dimensions, ufc.macro_dofs);
+
     p++;
   }
 }
