@@ -31,6 +31,9 @@ namespace dolfin
   class FiniteElement;
   class BoundaryCondition;
   class AffineMap;
+#ifdef HAVE_PETSC_H
+  class PETScMatrix;
+#endif
   class OldDofMap;
 
   /// Automated assembly of a linear system from a given partial differential
@@ -156,7 +159,8 @@ namespace dolfin
                                       AffineMap& map, real det, const OldDofMap& dofmap);
 
     /// Assemble element tensor for a functional
-    static void assembleElementTensor(Functional& M, real& val, Cell& cell, AffineMap& map, real det);
+    static void assembleElementTensor(Functional& M, real& val, Cell& cell, 
+                                      AffineMap& map, real det);
 
     /// Assemble exterior facet tensor for a bilinear form
     static void assembleExteriorFacetTensor(BilinearForm& a, GenericMatrix& A, 

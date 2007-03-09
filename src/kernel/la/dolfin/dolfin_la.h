@@ -19,7 +19,6 @@
 #include <dolfin/GMRES.h>
 #include <dolfin/LU.h>
 #include <dolfin/LUSolver.h>
-#include <dolfin/PETScEigenvalueSolver.h>
 #include <dolfin/PETScKrylovMatrix.h>
 #include <dolfin/PETScKrylovSolver.h>
 #include <dolfin/PETScLinearSolver.h>
@@ -29,6 +28,7 @@
 #include <dolfin/PETScPreconditioner.h>
 #include <dolfin/PETScVector.h>
 #include <dolfin/Preconditioner.h>
+#include <dolfin/SLEPcEigenvalueSolver.h>
 #include <dolfin/ublas.h>
 #include <dolfin/uBlasDenseMatrix.h>
 #include <dolfin/uBlasDummyPreconditioner.h>

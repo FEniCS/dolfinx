@@ -12,7 +12,7 @@ EXTRA_DIST = dolfin_la.h \
              LU.h \
              LUSolver.h \
              Matrix.h \
-             PETScEigenvalueSolver.h \
+             SLEPcEigenvalueSolver.h \
              PETScLinearSolver.h \
              PETScKrylovMatrix.h \
              PETScKrylovSolver.h \

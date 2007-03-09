@@ -61,7 +61,7 @@ am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(includedir)"
 libLTLIBRARIES_INSTALL = $(INSTALL)
 LTLIBRARIES = $(lib_LTLIBRARIES)
 libdolfin_la_la_LIBADD =
-am_libdolfin_la_la_OBJECTS = GMRES.lo LU.lo PETScEigenvalueSolver.lo \
+am_libdolfin_la_la_OBJECTS = GMRES.lo LU.lo SLEPcEigenvalueSolver.lo \
 	PETScKrylovMatrix.lo PETScKrylovSolver.lo PETScLUSolver.lo \
 	PETScManager.lo PETScMatrix.lo PETScPreconditioner.lo \
 	PETScVector.lo uBlasKrylovMatrix.lo uBlasKrylovSolver.lo \
@@ -257,7 +257,7 @@ nobase_include_HEADERS = dolfin/dolfin_la.h \
                           dolfin/LU.h \
                           dolfin/LUSolver.h \
                           dolfin/Matrix.h \
-                          dolfin/PETScEigenvalueSolver.h \
+                          dolfin/SLEPcEigenvalueSolver.h \
                           dolfin/PETScKrylovMatrix.h \
                           dolfin/PETScKrylovSolver.h \
                           dolfin/PETScLinearSolver.h \
@@ -287,7 +287,7 @@ INCLUDES = @KERNEL_CFLAGS@
 lib_LTLIBRARIES = libdolfin-la.la
 libdolfin_la_la_SOURCES = GMRES.cpp \
                           LU.cpp \
-                          PETScEigenvalueSolver.cpp \
+                          SLEPcEigenvalueSolver.cpp \
                           PETScKrylovMatrix.cpp \
                           PETScKrylovSolver.cpp \
                           PETScLUSolver.cpp \
@@ -374,7 +374,6 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/GMRES.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LU.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PETScEigenvalueSolver.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PETScKrylovMatrix.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PETScKrylovSolver.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PETScLUSolver.Plo@am__quote@
@@ -382,6 +381,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PETScMatrix.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PETScPreconditioner.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PETScVector.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SLEPcEigenvalueSolver.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/uBlasDummyPreconditioner.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/uBlasILUPreconditioner.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/uBlasKrylovMatrix.Plo@am__quote@
