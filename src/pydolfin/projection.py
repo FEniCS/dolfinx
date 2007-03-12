@@ -42,13 +42,12 @@ def project(f, K, mesh):
     x.div(m)
 
     # Define a function from computed degrees of freedom
-    Pf = Function()
-    Pf.init(mesh, a.trial())
-    Pf.vector().copy(x, 0, 0, x.size())
+    Pf = Function(x, mesh, a.trial())
 
     # Indicate memory ownership
     Pf.thisown = False
     Pforms.thisown = False
     a.thisown = False
+    x.thisown = False
 
     return Pf

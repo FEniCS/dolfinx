@@ -1,0 +1,26 @@
+# Copyright (c) 2005 Johan Hoffman (hoffman@cims.nyu.edu)
+# Licensed under the GNU GPL Version 2
+
+name = "CNSResEnergy"
+scalar = FiniteElement("Lagrange", "triangle", 1)
+vector = FiniteElement("Vector Lagrange", "triangle", 1)
+constant_scalar = FiniteElement("Discontinuous Lagrange", "triangle", 0)
+
+
+v    =  TestFunction(constant_scalar)    # constant scalar test basis function
+P    =  Function(scalar)                 # energy from previous timestep
+u    =  Function(vector)                 # velocity
+e    =  Function(scalar)                 # energy
+e0   =  Function(scalar)                 # energy from previous timestep
+
+
+
+vol_inv = Function(constant_scalar)     # the inverse of volume of the element
+
+k  = Constant()         		# time step
+
+# the linear form of the energy residual:
+#L = ((rho-rho0) / k + div(mult(u, rho))) * vol_inv * v * dx 
+
+L = ((e-e0) / k + dot(u, grad(e)) + dot(e, grad(u)) + dot(u, grad(P)) + dot(P, grad(u)) ) * vol_inv * v * dx 
+
