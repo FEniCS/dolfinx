@@ -57,7 +57,7 @@ int main()
 
   #else
 
-    cout << "SLEPc must be installed to run this demo."
+    cout << "SLEPc must be installed to run this demo." << endl;
 
   #endif
 
