@@ -9,7 +9,7 @@ ALEBoundaryCondition::ALEBoundaryCondition()
 //-----------------------------------------------------------------------------
 ALEBoundaryCondition::~ALEBoundaryCondition()
 {
-  delete w;
+//  delete w;
 }
 //-----------------------------------------------------------------------------
 void ALEBoundaryCondition::setBoundaryVelocity(ALEFunction& mesh_vel) { 
