@@ -1,8 +1,8 @@
-// Copyright (C) 2006 Anders Logg.
+// Copyright (C) 2006-2007 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-06-02
-// Last changed: 2006-12-01
+// Last changed: 2007-03-13
 
 #include <set>
 #include <dolfin/dolfin_log.h>
@@ -45,7 +45,7 @@ dolfin::uint TopologyComputation::computeEntities(Mesh& mesh, uint dim)
   if ( topology.size(dim) > 0 )
   {
     // Make sure we really have the connectivity
-    if ( ce.size() == 0 || (ev.size() == 0 && dim != 0) )
+    if ( (ce.size() == 0 && dim != topology.dim()) || (ev.size() == 0 && dim != 0) )
       dolfin_error1("Entities of topological dimension %d exist but connectivity is missing.", dim);
     return topology.size(dim);
   }

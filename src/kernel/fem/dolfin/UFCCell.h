@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2007-03-01
-// Last changed: 2007-03-02
+// Last changed: 2007-03-13
 
 #ifndef __UFC_CELL_H
 #define __UFC_CELL_H
@@ -69,10 +69,12 @@ namespace dolfin
       // Set geometric dimension
       geometric_dimension = cell.mesh().geometry().dim();
 
-      // Set entity indices and coordinates
+      // Set entity indices
       entity_indices = new uint*[topological_dimension + 1];
-      for (uint d = 0; d <= topological_dimension; d++)
+      entity_indices[topological_dimension] = new uint[1];
+      for (uint d = 0; d < topological_dimension; d++)
         entity_indices[d] = cell.entities(d);
+      entity_indices[topological_dimension][0] = cell.index();
 
       /// Set vertex coordinates
       uint* vertices = cell.entities(0);
@@ -84,26 +86,29 @@ namespace dolfin
     // Clear UFC cell data
     void clear()
     {
-      cell_shape = ufc::interval;
-      
-      topological_dimension = 0;
-      geometric_dimension = 0;
-
       if ( entity_indices )
+      {
+        delete [] entity_indices[topological_dimension];
         delete [] entity_indices;
+      }
       entity_indices = 0;
 
       if ( coordinates )
         delete [] coordinates;
       coordinates = 0;
+
+      cell_shape = ufc::interval;
+      topological_dimension = 0;
+      geometric_dimension = 0;
     }
 
     // Update cell entities and coordinates
     inline void update(Cell& cell)
     {
       // Set entity indices
-      for (uint d = 0; d <= topological_dimension; d++)
+      for (uint d = 0; d < topological_dimension; d++)
         entity_indices[d] = cell.entities(d);
+      entity_indices[topological_dimension][0] = cell.index();
 
       /// Set vertex coordinates
       const uint* vertices = cell.entities(0);
@@ -115,7 +120,7 @@ namespace dolfin
     
     // Number of cell vertices
     uint num_vertices;
-    
+
   };
 
 }
