@@ -1,0 +1,99 @@
+# Copyright (c) 2005 Johan Hoffman (hoffman@cims.nyu.edu)
+# Licensed under the GNU GPL Version 2
+
+name = "CNSmix3D"
+scalar = FiniteElement("Lagrange", "tetrahedron", 1)
+vector = FiniteElement("Vector Lagrange", "tetrahedron", 1)
+constant_scalar = FiniteElement("Discontinuous Lagrange", "tetrahedron", 0)
+
+TH = scalar + vector + scalar
+
+
+(v1, v2, v3) = TestFunctions(TH)  # test basis function
+(rho, m, e) = TrialFunctions(TH)  # trial basis function
+(rho0, m0, e0) = Functions(TH)    # solution from previous time step
+
+P  = Function(scalar)             # pressure
+u  = Function(vector)             # velocity to be computed in the solver
+U = mean(u)
+delta = Function(constant_scalar) # stabilization parameter
+
+k  = Constant()	# time step
+nu = Constant() # viscosity
+
+
+
+#_____________________________
+# Galerkin discretization of bilinear form for the density
+a1_a = v1*rho*dx - k*0.5*dot(grad(v1),U)*rho*dx + k*0.5*nu*dot(grad(v1),grad(rho))*dx
+
+# Stabilization of bilinear form for the density
+S1_a = k*0.5*delta*dot(grad(v1),U)*dot(U, grad(rho))*dx
+
+# Galerkin discretization of linear form for the density
+a1_L = v1*rho0*dx + k*0.5*dot(grad(v1),U)*rho0*dx - k*0.5*nu*dot(grad(v1),grad(rho0))*dx
+
+# Stabilization of linear form for the density
+S1_L = - k*0.5*delta*dot(grad(v1),U)*dot(U, grad(rho0))*dx
+
+
+#_____________________________
+# Galerkin discretization of bilinear form for the momentum m1
+a2_a1 = v2[0]*m[0]*dx - k*0.5*dot(grad(v2[0]),U)*m[0]*dx + k*0.5*nu*dot(grad(v2[0]),grad(m[0]))*dx
+
+# Stabilization of bilinear form for the momentum
+S2_a1 = k*0.5*delta*dot(grad(v2[0]),U)*dot(U, grad(m[0]))*dx
+
+# Galerkin discretization of linear form for the momentum
+a2_L1 = v2[0]*m0[0]*dx + k*0.5*dot(grad(v2[0]),U)*m0[0]*dx - k*0.5*nu*dot(grad(v2[0]),grad(m0[0]))*dx + k*0.5*v2[0].dx(1)*P*dx
+
+# Stabilization of linear form for the momentum
+S2_L1 = k*0.5*delta*dot(grad(v2[0]),U)*dot(U, grad(m0[0]))*dx
+
+#_____
+# Galerkin discretization of bilinear form for the momentum m2
+a2_a2 = v2[1]*m[1]*dx - k*0.5*dot(grad(v2[1]),U)*m[1]*dx + k*0.5*nu*dot(grad(v2[1]),grad(m[1]))*dx
+
+# Stabilization of bilinear form for the momentum
+S2_a2 = k*0.5*delta*dot(grad(v2[1]),U)*dot(U, grad(m[1]))*dx
+
+# Galerkin discretization of linear form for the momentum
+a2_L2 = v2[1]*m0[1]*dx + k*0.5*dot(grad(v2[1]),U)*m0[1]*dx - k*0.5*nu*dot(grad(v2[1]),grad(m0[1]))*dx + k*0.5*v2[1].dx(2)*P*dx
+
+# Stabilization of linear form for the momentum
+S2_L2 = k*0.5*delta*dot(grad(v2[1]),U)*dot(U, grad(m0[1]))*dx
+
+#_____
+# Galerkin discretization of bilinear form for the momentum m3
+a2_a3 = v2[2]*m[2]*dx - k*0.5*dot(grad(v2[2]),U)*m[2]*dx + k*0.5*nu*dot(grad(v2[2]),grad(m[2]))*dx
+
+# Stabilization of bilinear form for the momentum
+S2_a3 = k*0.5*delta*dot(grad(v2[2]),U)*dot(U, grad(m[2]))*dx
+
+# Galerkin discretization of linear form for the momentum
+a2_L3 = v2[2]*m0[2]*dx + k*0.5*dot(grad(v2[2]),U)*m0[2]*dx - k*0.5*nu*dot(grad(v2[2]),grad(m0[2]))*dx + k*0.5*v2[2].dx(3)*P*dx
+
+# Stabilization of linear form for the momentum
+S2_L3 = k*0.5*delta*dot(grad(v2[2]),U)*dot(U, grad(m0[2]))*dx
+
+#_____________________________
+# Galerkin discretization of bilinear form for the density
+a3_a = v3*e*dx - k*0.5*dot(grad(v3),U)*e*dx + k*0.5*nu*dot(grad(v3),grad(e))*dx
+
+# Stabilization of bilinear form
+S3_a = k*0.5*delta*dot(grad(v3),U)*dot(U, grad(e))*dx
+
+# Galerkin discretization of linear form for the density
+a3_L = v3*e0*dx + k*0.5*dot(grad(v3),U)*e0*dx - k*0.5*nu*dot(grad(v3),grad(e0))*dx + k*0.5*dot(grad(v3),U)*P*dx
+#a3_L = dot(grad(v3),U)*P*dx
+
+# Stabilization of linear form
+S3_L = - k*0.5*delta*dot(grad(v3),U)*dot(U,grad(e0))*dx
+
+#_____________________________
+# Weak form to the Euler equations:
+#a = a1_a + S1_a + a2_a1 + S2_a1 + a2_a2 + S2_a2 + a2_a3 + S2_a3 + a3_a + S3_a 
+#L = a1_L + S1_L + a2_L1 + S2_L1 + a2_L2 + S2_L2 + a2_L3 + S2_L3 + a3_L + S3_L 
+
+a = a1_a
+L = a1_L

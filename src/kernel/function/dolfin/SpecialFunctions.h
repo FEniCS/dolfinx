@@ -113,6 +113,35 @@ namespace dolfin
     int num;
   };
 
+  class VectorLagrange : public Function
+  {
+  public:
+    VectorLagrange(int num, int dim) : num(num), dim(dim),
+      fcomponent(num % (dim + 1))
+      {
+      }
+    
+    real eval(const Point& p, unsigned int i)
+    {
+      real val = 0.0;
+      
+      // Function is only non-zero when num / (dim + 1) == i
+      if((num / (dim + 1) == (int)i))
+      {
+	val = fcomponent(p, i);
+      }
+      
+      return val;
+    }
+    
+  private:
+    int num;
+    int dim;
+
+    ScalarLagrange fcomponent;
+  };
+
+
 }
 
 #endif

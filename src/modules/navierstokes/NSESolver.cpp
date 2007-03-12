@@ -37,6 +37,7 @@ void NSESolver::solve()
   real hmin;
   GetMinimumCellSize(mesh, hmin);  
   real k = 0.25*hmin; 
+  //real k = 0.05*hmin; 
   // Create matrices and vectors 
   Matrix Amom, Acon;
   Vector bmom, bcon;

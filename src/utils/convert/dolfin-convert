@@ -419,9 +419,6 @@ def gmsh2xml(ifilename, ofilename):
                 n2 = nodelist[nn[2]]
                 n3 = nodelist[nn[3]]
                 write_cell_tetrahedron(ofile, num_cells_read, n0, n1, n2, n3)
-            else:
-                error("Unknown element type. Did you define a physical surface/volume? \n\
-If you didn't, gmsh exports edges as cells. \nSee http://www.geuz.org/gmsh/doc/texinfo/gmsh.html")
 
             num_cells_read +=1 
             if num_cells == num_cells_read:

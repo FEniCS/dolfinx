@@ -45,7 +45,9 @@ def project(f, K, mesh):
     Pf = Function(x, mesh, a.trial())
 
     # Indicate memory ownership
-    x.thisown = False
     Pf.thisown = False
+    Pforms.thisown = False
+    a.thisown = False
+    x.thisown = False
 
     return Pf

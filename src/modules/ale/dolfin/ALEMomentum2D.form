@@ -1,0 +1,53 @@
+# Copyright (c) 2005 Johan Hoffman (hoffman@cims.nyu.edu)
+# Licensed under the GNU GPL Version 2
+#
+# Modified by Anders Logg 2006
+#
+# First added:  2005
+# Last changed: 2006-03-28
+#
+# The momentum equation for the incompressible 
+# Navier-Stokes equations using cG(1)cG(1)
+#
+# Compile this form with FFC: ffc ALEMomentum2D.ale.form.
+
+name = "ALEMomentum2D"
+scalar = FiniteElement("Lagrange", "triangle", 1)
+vector = FiniteElement("Vector Lagrange", "triangle", 1)
+constant_scalar = FiniteElement("Discontinuous Lagrange", "triangle", 0)
+
+v      = TestFunction(vector)      # test basis function
+U      = TrialFunction(vector)     # trial basis function
+uc     = Function(vector)          # linearized velocity
+u0     = Function(vector)          # velocity from previous time step
+f      = Function(vector)          # force term
+p      = Function(scalar)          # pressure
+delta1 = Function(constant_scalar) # stabilization parameter
+delta2 = Function(constant_scalar) # stabilization parameter
+
+w  = Function(vector)  # mesh velocity
+
+k  = Constant()	# time step
+nu = Constant() # viscosity
+
+um = mean(uc)   # cell mean value of linearized velocity
+wm = mean(w)    # cell mean value of mesh velocity
+
+
+i0 = Index()    # index for tensor notation
+i1 = Index()    # index for tensor notation
+i2 = Index()    # index for tensor notation
+
+# Galerkin discretization of bilinear form
+G_a  = v[i0]*U[i0]*dx + k*nu*0.5*v[i0].dx(i1)*U[i0].dx(i1)*dx + 0.5*k*v[i0]*(uc[i1]-w[i1])*U[i0].dx(i1)*dx
+# Galerkin discretization of linear form
+SD_a = delta1*k*0.5*(um[i1]-wm[i1])*v[i0].dx(i1)*(um[i2]-wm[i2])*U[i0].dx(i2)*dx + delta2*k*0.5*v[i0].dx(i0)*U[i1].dx(i1)*dx
+
+# Least squares stabilization of bilinear form
+G_L  = v[i0]*u0[i0]*dx + k*v[i0]*f[i0]*dx + k*v[i0].dx(i0)*p*dx - k*nu*0.5*v[i0].dx(i1)*u0[i0].dx(i1)*dx - 0.5*k*v[i0]*(uc[i1]-w[i1])*u0[i0].dx(i1)*dx
+# Least squares stabilization of linear form
+SD_L = delta1*k*(um[i1]-wm[i1])*v[i0].dx(i1)*f[i0]*dx - delta1*k*0.5*(um[i1]-wm[i1])*v[i0].dx(i1)*(um[i2]-wm[i2])*u0[i0].dx(i2)*dx - delta1*k*(um[i1]-wm[i1])*v[i0].dx(i1)*p.dx(i0)*dx - delta2*k*0.5*v[i0].dx(i0)*u0[i1].dx(i1)*dx
+
+# Bilinear and linear forms
+a = G_a + SD_a
+L = G_L + SD_L

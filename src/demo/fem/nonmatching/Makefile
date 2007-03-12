@@ -2,10 +2,12 @@ CFLAGS  = `pkg-config --cflags dolfin`
 LIBS    = `pkg-config --libs dolfin`
 CXX     = `pkg-config --variable=compiler dolfin`
 
-DEST    = dolfin-dg
+DEST    = dolfin-nonmatching
 OBJECTS = main.o
 
 all: $(DEST)
+
+install:
 
 clean:
 	-rm -f *.o core *.core $(OBJECTS) $(DEST)
