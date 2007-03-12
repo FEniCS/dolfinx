@@ -19,7 +19,7 @@ def projection(K, name):
     
     return form
 
-def project(f, K, mesh, Pf):
+def project(f, K, mesh):
 
     from dolfin import *
     
@@ -42,9 +42,13 @@ def project(f, K, mesh, Pf):
     x.div(m)
 
     # Define a function from computed degrees of freedom
+    Pf = Function()
     Pf.init(mesh, a.trial())
     Pf.vector().copy(x, 0, 0, x.size())
 
     # Indicate memory ownership
+    Pf.thisown = False
     Pforms.thisown = False
     a.thisown = False
+
+    return Pf
