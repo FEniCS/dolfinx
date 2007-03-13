@@ -1,11 +1,11 @@
-// Copyright (C) 2006 Garth N. Wells.
+// Copyright (C) 2006-2007 Garth N. Wells.
 // Licensed under the GNU GPL Version 2.
 //
 // Modified by Johan Jansson 2006.
 // Modified by Anders Logg 2006.
 //
 // First added:  2006-04-24
-// Last changed: 2006-08-14
+// Last changed: 2007-03-13
 
 #ifndef __GENERIC_MATRIX_H
 #define __GENERIC_MATRIX_H
@@ -14,6 +14,7 @@
 
 namespace dolfin
 {
+  class SparsityPattern;
 
   /// This class defines a common interface for sparse and dense matrices.
 
@@ -35,6 +36,9 @@ namespace dolfin
     
     /// Initialize M x N matrix with given number of nonzeros per row
     virtual void init(const uint M, const uint N, const int nz[]) = 0;
+
+    /// Initialize a matrix from the sparsity pattern
+    virtual void init(const SparsityPattern& sparsity_pattern) = 0;
 
     /// Return number of rows (dim = 0) or columns (dim = 1) along dimension dim
     virtual uint size(const uint dim) const = 0;

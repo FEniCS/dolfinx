@@ -24,6 +24,7 @@ namespace dolfin
   /// Forward declarations
   class PETScVector;
   class PETScMatrixElement;
+  class SparsityPattern;
   
   template<class M>
   class Array;
@@ -77,6 +78,9 @@ namespace dolfin
 
     /// Initialize M x N matrix with given block size and maximum number of nonzeros in each row
     void init(const uint M, const uint N, const uint bs, const uint nzmax);
+
+    /// Initialize a matrix from the sparsity pattern
+    void init(const SparsityPattern& sparsity_pattern);
 
     /// Return number of rows (dim = 0) or columns (dim = 1) along dimension dim
     uint size(const uint dim) const;

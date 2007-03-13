@@ -16,6 +16,7 @@
 #include <dolfin/Array.h>
 #include <dolfin/Variable.h>
 #include <dolfin/GenericMatrix.h>
+#include <dolfin/SparsityPattern.h>
 #include <dolfin/ublas.h>
 #include <dolfin/uBlasVector.h>
 #include <dolfin/uBlasLUSolver.h>
@@ -114,6 +115,9 @@ namespace dolfin
 
     /// Initialize M x N matrix with given number of nonzeros per row
     void init(const uint M, const uint N, const int nz[]);
+
+    /// Initialize a matrix from the sparsity pattern
+    void init(const SparsityPattern& sparsity_pattern);
 
     /// Set block of values. The function apply() must be called to commit changes.
     void set(const real block[], const int rows[], const int m, 
@@ -353,6 +357,18 @@ namespace dolfin
   {
     //FIXME: allocate storage. Could also use sparsity pattern to improve assembly.
     init(M, N);
+  }
+  //---------------------------------------------------------------------------
+  template <> 
+  inline void uBlasMatrix<ublas_dense_matrix>::init(const SparsityPattern& sparsity_pattern)
+  {
+    dolfin_error("Do not yet know how to initialise dense uBlas matrices from SparsityPattern.");
+  }
+  //---------------------------------------------------------------------------
+  template <class Mat> 
+  inline void uBlasMatrix<Mat>::init(const SparsityPattern& sparsity_pattern)
+  {
+    dolfin_error("Do not yet know how to initialise generic uBlas matrices from SparsityPattern.");
   }
   //---------------------------------------------------------------------------
   template <>  
