@@ -17,6 +17,9 @@ def projection(K, name):
 
     form = import_form([a, L, None], name)
     
+    # Indicate memory ownership
+    form.thisown = False
+
     return form
 
 def project(f, K, mesh):
@@ -33,13 +36,18 @@ def project(f, K, mesh):
     b = Vector()
     FEM_assemble(a, L, M, b, mesh)
 
-    # Solve linear system
-    m = Vector()
-    FEM_lump(M, m)
-
     x = Vector(b.size())
-    x.copy(b, 0, 0, x.size())
-    x.div(m)
+
+    # Solve linear system
+    solver = KrylovSolver()
+    solver.solve(M, x, b)
+
+    # Lump
+    #m = Vector()
+    #FEM_lump(M, m)
+
+    #x.copy(b, 0, 0, x.size())
+    #x.div(m)
 
     # Define a function from computed degrees of freedom
     Pf = Function(x, mesh, a.trial())
@@ -48,6 +56,7 @@ def project(f, K, mesh):
     Pf.thisown = False
     Pforms.thisown = False
     a.thisown = False
+    L.thisown = False
     x.thisown = False
 
     return Pf

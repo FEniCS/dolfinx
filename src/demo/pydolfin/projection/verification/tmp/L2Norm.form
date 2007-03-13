@@ -1,0 +1,4 @@
+element = FiniteElement("Lagrange", "triangle", 1)
+
+f = Function(element)
+M = (f*f)*dx
