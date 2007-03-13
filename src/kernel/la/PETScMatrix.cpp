@@ -17,6 +17,7 @@
 #include <dolfin/PETScManager.h>
 #include <dolfin/PETScVector.h>
 #include <dolfin/PETScMatrix.h>
+#include <dolfin/SparsityPattern.h>
 
 using namespace dolfin;
 
@@ -166,6 +167,11 @@ void PETScMatrix::init(const uint M, const uint N, const uint bs, const uint nz)
   MatCreateSeqBAIJ(PETSC_COMM_SELF, bs, bs*M, bs*N, nz, PETSC_NULL, &A);
   MatSetFromOptions(A);
   MatSetOption(A, MAT_KEEP_ZEROED_ROWS);
+}
+//-----------------------------------------------------------------------------
+void PETScMatrix::init(const SparsityPattern& sparsity_pattern)
+{
+  dolfin_error("Do not yet know how to initialise a PETSc matrix from SparsityPattern.");
 }
 //-----------------------------------------------------------------------------
 dolfin::uint PETScMatrix::size(const uint dim) const
