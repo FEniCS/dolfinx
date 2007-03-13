@@ -162,11 +162,6 @@ void Assembler::assembleInteriorFacets(GenericTensor& A,
       ufc.dof_maps[i]->tabulate_dofs(ufc.macro_dofs[i] + offset, ufc.mesh, ufc.cell1);
     }
 
-    for (uint j = 0; j < 6; j++)
-    {
-      cout << "(i, j) = (" << ufc.macro_dofs[0][j] << ", " << ufc.macro_dofs[1][j] << ")" << endl;
-    }
-
     // Tabulate exterior interior facet tensor on macro element
     ufc.interior_facet_integral->tabulate_tensor(ufc.macro_A, ufc.w, ufc.cell0, ufc.cell1, facet0, facet1);
 
