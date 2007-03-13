@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2007-01-17
-// Last changed: 2007-03-02
+// Last changed: 2007-03-13
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Array.h>
@@ -159,7 +159,12 @@ void Assembler::assembleInteriorFacets(GenericTensor& A,
     {
       const uint offset = ufc.local_dimensions[i];
       ufc.dof_maps[i]->tabulate_dofs(ufc.macro_dofs[i], ufc.mesh, ufc.cell0);
-      ufc.dof_maps[i]->tabulate_dofs(ufc.macro_dofs[i] + offset*0, ufc.mesh, ufc.cell1);
+      ufc.dof_maps[i]->tabulate_dofs(ufc.macro_dofs[i] + offset, ufc.mesh, ufc.cell1);
+    }
+
+    for (uint j = 0; j < 6; j++)
+    {
+      cout << "(i, j) = (" << ufc.macro_dofs[0][j] << ", " << ufc.macro_dofs[1][j] << ")" << endl;
     }
 
     // Tabulate exterior interior facet tensor on macro element
