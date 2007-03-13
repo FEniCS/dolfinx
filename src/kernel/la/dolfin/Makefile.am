@@ -24,6 +24,7 @@ EXTRA_DIST = dolfin_la.h \
              Preconditioner.h \
              SparseMatrix.h \
              SparseVector.h \
+             SparsityPattern.h \
              ublas.h \
              uBlasDenseMatrix.h \
              uBlasKrylovMatrix.h \

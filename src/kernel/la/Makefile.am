@@ -25,6 +25,7 @@ nobase_include_HEADERS  = dolfin/dolfin_la.h \
                           dolfin/Preconditioner.h \
                           dolfin/SparseMatrix.h \
                           dolfin/SparseVector.h \
+                          dolfin/SparsityPattern.h \
                           dolfin/ublas.h \
                           dolfin/uBlasDenseMatrix.h \
                           dolfin/uBlasKrylovMatrix.h \
@@ -50,6 +51,7 @@ libdolfin_la_la_SOURCES = GMRES.cpp \
                           PETScMatrix.cpp \
                           PETScPreconditioner.cpp \
                           PETScVector.cpp \
+                          SparsityPattern.cpp \
                           uBlasKrylovMatrix.cpp \
                           uBlasKrylovSolver.cpp \
                           uBlasLUSolver.cpp \

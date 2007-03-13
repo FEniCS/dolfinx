@@ -29,6 +29,7 @@
 #include <dolfin/PETScVector.h>
 #include <dolfin/Preconditioner.h>
 #include <dolfin/SLEPcEigenvalueSolver.h>
+#include <dolfin/SparsityPattern.h>
 #include <dolfin/ublas.h>
 #include <dolfin/uBlasDenseMatrix.h>
 #include <dolfin/uBlasDummyPreconditioner.h>

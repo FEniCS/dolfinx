@@ -64,9 +64,10 @@ libdolfin_la_la_LIBADD =
 am_libdolfin_la_la_OBJECTS = GMRES.lo LU.lo SLEPcEigenvalueSolver.lo \
 	PETScKrylovMatrix.lo PETScKrylovSolver.lo PETScLUSolver.lo \
 	PETScManager.lo PETScMatrix.lo PETScPreconditioner.lo \
-	PETScVector.lo uBlasKrylovMatrix.lo uBlasKrylovSolver.lo \
-	uBlasLUSolver.lo uBlasDummyPreconditioner.lo \
-	uBlasILUPreconditioner.lo uBlasVector.lo
+	PETScVector.lo SparsityPattern.lo uBlasKrylovMatrix.lo \
+	uBlasKrylovSolver.lo uBlasLUSolver.lo \
+	uBlasDummyPreconditioner.lo uBlasILUPreconditioner.lo \
+	uBlasVector.lo
 libdolfin_la_la_OBJECTS = $(am_libdolfin_la_la_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -269,6 +270,7 @@ nobase_include_HEADERS = dolfin/dolfin_la.h \
                           dolfin/Preconditioner.h \
                           dolfin/SparseMatrix.h \
                           dolfin/SparseVector.h \
+                          dolfin/SparsityPattern.h \
                           dolfin/ublas.h \
                           dolfin/uBlasDenseMatrix.h \
                           dolfin/uBlasKrylovMatrix.h \
@@ -295,6 +297,7 @@ libdolfin_la_la_SOURCES = GMRES.cpp \
                           PETScMatrix.cpp \
                           PETScPreconditioner.cpp \
                           PETScVector.cpp \
+                          SparsityPattern.cpp \
                           uBlasKrylovMatrix.cpp \
                           uBlasKrylovSolver.cpp \
                           uBlasLUSolver.cpp \
@@ -382,6 +385,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PETScPreconditioner.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PETScVector.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SLEPcEigenvalueSolver.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SparsityPattern.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/uBlasDummyPreconditioner.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/uBlasILUPreconditioner.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/uBlasKrylovMatrix.Plo@am__quote@
