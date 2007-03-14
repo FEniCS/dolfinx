@@ -171,7 +171,10 @@ void PETScMatrix::init(const uint M, const uint N, const uint bs, const uint nz)
 //-----------------------------------------------------------------------------
 void PETScMatrix::init(const SparsityPattern& sparsity_pattern)
 {
-  dolfin_error("Do not yet know how to initialise a PETSc matrix from SparsityPattern.");
+  int* nzrow = new int[sparsity_pattern.size(0)]  
+  sparsity_pattern.numNonZeroPerRow(nzrow);
+  init(sparsity_pattern.size(0), sparsity_pattern.size(1), nzrow);
+  delete [] nzrow;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint PETScMatrix::size(const uint dim) const

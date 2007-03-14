@@ -105,7 +105,7 @@ void DofMaps::sparsityPattern(SparsityPattern& sparsity_pattern, Mesh& mesh) con
   const uint dim1 = dof_map1->local_dimension();
 
   // Initialise sparsity pattern 
-  sparsity_pattern.init(dof_map0->global_dimension());
+  sparsity_pattern.init(dof_map0->global_dimension(), dof_map1->global_dimension());  
 
   uint* dof0 = new uint[dim0];
   uint* dof1 = new uint[dim1];
