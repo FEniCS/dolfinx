@@ -101,14 +101,14 @@ void DofMaps::sparsityPattern(SparsityPattern& sparsity_pattern, Mesh& mesh) con
   DofMap* dof_map1 = dof_maps[1];
 
   // Get local dimensions 
-  const unsigned int dim0 = dof_map0->local_dimension();
-  const unsigned int dim1 = dof_map1->local_dimension();
+  const uint dim0 = dof_map0->local_dimension();
+  const uint dim1 = dof_map1->local_dimension();
 
   // Initialise sparsity pattern 
   sparsity_pattern.init(dof_map0->global_dimension());
 
-  unsigned int* dof0 = new unsigned int[dim0];
-  unsigned int* dof1 = new unsigned int[dim1];
+  uint* dof0 = new uint[dim0];
+  uint* dof1 = new uint[dim1];
 
   // Create UFC cell
   CellIterator cell(mesh);

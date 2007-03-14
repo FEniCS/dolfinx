@@ -31,19 +31,19 @@ namespace dolfin
     ~DofMap();
 
     /// Return local dimension of dof map
-    unsigned int local_dimension() const
+    uint local_dimension() const
     {
       return ufc_dof_map.local_dimension();
     }
 
     /// Return global dimension of dof map
-    unsigned int global_dimension() const
+    uint global_dimension() const
     {
       return ufc_dof_map.global_dimension();
     }
 
     /// 
-    void dof_map(unsigned int* dofs, const UFCCell& ufc_cell) const
+    void dof_map(uint* dofs, const UFCCell& ufc_cell) const
     {
       ufc_dof_map.tabulate_dofs(dofs, ufc_mesh, ufc_cell);
     };
