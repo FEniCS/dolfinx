@@ -2,10 +2,9 @@
 // Licensed under the GNU GPL Version 2.
 
 // First added:  2007-03-01
-// Last changed: 2007-03-13
+// Last changed: 2007-03-15
 
 #include <dolfin/constants.h>
-#include <dolfin/Mesh.h>
 #include <dolfin/Cell.h>
 #include <dolfin/UFCCell.h>
 #include <dolfin/DofMap.h>
@@ -13,7 +12,8 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-DofMap::DofMap(ufc::dof_map& dof_map, Mesh& mesh) : ufc_dof_map(dof_map)
+DofMap::DofMap(ufc::dof_map& dof_map, Mesh& mesh) : ufc_dof_map(dof_map), 
+               dolfin_mesh(mesh)
 {
   // Initialize mesh entities used by dof map
   for (uint d = 0; d <= mesh.topology().dim(); d++)

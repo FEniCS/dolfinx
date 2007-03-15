@@ -92,13 +92,17 @@ const DofMap& DofMaps::operator[] (uint i) const
   return *dof_maps[i];
 }
 //-----------------------------------------------------------------------------
-void DofMaps::sparsityPattern(SparsityPattern& sparsity_pattern, Mesh& mesh) const
+void DofMaps::sparsityPattern(SparsityPattern& sparsity_pattern) const
 {
   if( size() != 2)
     dolfin_error("Number of DOF maps in not equal to 2. Do not know how to build sparsity pattern.");
  
+  // Get maps
   DofMap* dof_map0 = dof_maps[0];
   DofMap* dof_map1 = dof_maps[1];
+
+  // Get mesh associated with first map
+  Mesh& mesh = dof_map0->mesh();
 
   // Get local dimensions 
   const uint dim0 = dof_map0->local_dimension();
