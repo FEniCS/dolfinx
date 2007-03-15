@@ -114,7 +114,7 @@ namespace dolfin
     void init(const uint M, const uint N, const uint nzmax);
 
     /// Initialize M x N matrix with given number of nonzeros per row
-    void init(const uint M, const uint N, const int nz[]);
+    void init(const uint M, const uint N, const uint nz[]);
 
     /// Initialize a matrix from the sparsity pattern
     void init(const SparsityPattern& sparsity_pattern);
@@ -347,13 +347,13 @@ namespace dolfin
   //---------------------------------------------------------------------------
   template <> 
   inline void uBlasMatrix<ublas_dense_matrix>::init(const uint M, const uint N, 
-                                                    const int nz[])
+                                                    const uint nz[])
   {
     init(M, N);
   }
   //---------------------------------------------------------------------------
   template <class Mat> 
-  inline void uBlasMatrix<Mat>::init(const uint M, const uint N, const int nz[])
+  inline void uBlasMatrix<Mat>::init(const uint M, const uint N, const uint nz[])
   {
     //FIXME: allocate storage. Could also use sparsity pattern to improve assembly.
     init(M, N);

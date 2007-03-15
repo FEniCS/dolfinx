@@ -206,7 +206,7 @@ void FEM::assembleCommon(BilinearForm* a, LinearForm* L, Functional* M,
     dofmap_a.attach(&(a->test()), &(a->trial()));
     const uint M = dofmap_a.size(0);
     const uint N = dofmap_a.size(1);;
-    int* nzrow = new int[M];
+    uint* nzrow = new uint[M];
     dofmap_a.numNonZeroesRow(nzrow);
     A->init(M, N, nzrow);
     A->zero();

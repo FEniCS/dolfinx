@@ -35,7 +35,7 @@ namespace dolfin
     virtual void init(const uint M, const uint N, const uint nzmax) = 0;
     
     /// Initialize M x N matrix with given number of nonzeros per row
-    virtual void init(const uint M, const uint N, const int nz[]) = 0;
+    virtual void init(const uint M, const uint N, const uint nz[]) = 0;
 
     /// Initialize a matrix from the sparsity pattern
     virtual void init(const SparsityPattern& sparsity_pattern) = 0;

@@ -70,7 +70,7 @@ namespace dolfin
     uint numNonZeroesRowMax();
 
     /// Compute number of non-zeroes for each row in a sparse matrix
-    void numNonZeroesRow(int nz_row[]);
+    void numNonZeroesRow(uint nz_row[]);
 
   private:
 

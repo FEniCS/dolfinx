@@ -131,7 +131,7 @@ void PETScMatrix::init(const uint M, const uint N, const uint nz)
   MatSetOption(A, MAT_KEEP_ZEROED_ROWS);
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::init(const uint M, const uint N, const int nz[])
+void PETScMatrix::init(const uint M, const uint N, const uint nz[])
 {
   // Free previously allocated memory if necessary
   if ( A )
@@ -146,7 +146,7 @@ void PETScMatrix::init(const uint M, const uint N, const int nz[])
   MatCreate(PETSC_COMM_SELF, &A);
   MatSetSizes(A,  PETSC_DECIDE,  PETSC_DECIDE, M, N);
   setType();
-  MatSeqAIJSetPreallocation(A, PETSC_DEFAULT, nz);
+  MatSeqAIJSetPreallocation(A, PETSC_DEFAULT, (int*)nz);
   MatSetFromOptions(A);
   MatSetOption(A, MAT_KEEP_ZEROED_ROWS);
 }
@@ -171,7 +171,7 @@ void PETScMatrix::init(const uint M, const uint N, const uint bs, const uint nz)
 //-----------------------------------------------------------------------------
 void PETScMatrix::init(const SparsityPattern& sparsity_pattern)
 {
-  int* nzrow = new int[sparsity_pattern.size(0)]  
+  uint* nzrow = new uint[sparsity_pattern.size(0)];  
   sparsity_pattern.numNonZeroPerRow(nzrow);
   init(sparsity_pattern.size(0), sparsity_pattern.size(1), nzrow);
   delete [] nzrow;

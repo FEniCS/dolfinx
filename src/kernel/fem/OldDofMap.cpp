@@ -142,7 +142,7 @@ dolfin::uint OldDofMap::numNonZeroesRowMax()
   return nzmax;
 }
 //-----------------------------------------------------------------------------
-void OldDofMap::numNonZeroesRow(int nz_row[])
+void OldDofMap::numNonZeroesRow(uint nz_row[])
 {
   if ( matrix_sparsity_pattern.size() == 0 )
     computeMatrixSparsityPattern();
