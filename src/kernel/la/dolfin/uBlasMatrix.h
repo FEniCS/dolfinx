@@ -362,13 +362,26 @@ namespace dolfin
   template <> 
   inline void uBlasMatrix<ublas_dense_matrix>::init(const SparsityPattern& sparsity_pattern)
   {
-    dolfin_error("Do not yet know how to initialise dense uBlas matrices from SparsityPattern.");
+    init(sparsity_pattern.size(0), sparsity_pattern.size(1));
   }
   //---------------------------------------------------------------------------
   template <class Mat> 
   inline void uBlasMatrix<Mat>::init(const SparsityPattern& sparsity_pattern)
   {
-    dolfin_error("Do not yet know how to initialise generic uBlas matrices from SparsityPattern.");
+    //FIXME: Initialising in a really dumbn way. Don't know yet how to initialise
+    //       compressed layout
+    init(sparsity_pattern.size(0), sparsity_pattern.size(1));
+
+    // Reserve space for non-zeroes
+    this->reserve(sparsity_pattern.numNonZero());
+
+    const std::vector< std::set<int> >& pattern = sparsity_pattern.pattern();
+
+    std::vector< std::set<int> >::const_iterator set;
+    std::set<int>::const_iterator element;
+    for(set = pattern.begin(); set != pattern.end(); ++set)
+      for(element = set->begin(); element != set->end(); ++element)
+        (*this)(set-pattern.begin(), *element) = 0.0;
   }
   //---------------------------------------------------------------------------
   template <>  
