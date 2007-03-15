@@ -31,7 +31,7 @@ namespace dolfin
     virtual uint size(const uint dim) const = 0;
 
     /// Add block of values
-    virtual void add(real* block, uint* size, uint** entries) = 0;
+    virtual void add(real* block, uint* num_rows, uint** rows) = 0;
 
   };
 

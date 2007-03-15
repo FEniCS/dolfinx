@@ -64,10 +64,10 @@ namespace dolfin
       return dims[dim];
     }
 
-    /// Add entries to tensor
-    void add(real* block, uint* size, uint** entries)
+    /// Add block of values
+    void add(real* block, uint* num_rows, uint** rows)
     {
-      add(block, size[0], entries[0], size[1], entries[1]);
+      add(block, num_rows[0], rows[0], num_rows[1], rows[
     }
 
     ///--- Specialized matrix functions ---
