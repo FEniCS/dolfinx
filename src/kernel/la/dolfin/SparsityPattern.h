@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2007-03-13
-// Last changed:
+// Last changed: 2007-03-15
 
 #ifndef __SPARSITY_PATTERN_H
 #define __SPARSITY_PATTERN_H
@@ -13,8 +13,6 @@
 
 namespace dolfin
 {
-
-  class DofMap;
 
   /// This class represents the sparsity pattern of a matrix. It will be used
   /// to initalise sparse matrices.

@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2007-01-17
-// Last changed: 2007-03-01
+// Last changed: 2007-03-15
 
 #ifndef __GENERIC_TENSOR_H
 #define __GENERIC_TENSOR_H
@@ -30,7 +30,7 @@ namespace dolfin
     /// Return size of given dimension
     virtual uint size(const uint dim) const = 0;
 
-    /// Add entries to tensor
+    /// Add block of values
     virtual void add(real* block, uint* size, uint** entries) = 0;
 
   };

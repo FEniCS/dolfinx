@@ -76,11 +76,6 @@ void Mesh::order()
   MeshOrdering::order(*this);
 }
 //-----------------------------------------------------------------------------
-void Mesh::disp() const
-{
-  data.disp();
-}
-//-----------------------------------------------------------------------------
 void Mesh::refine()
 {
   dolfin_info("No cells marked for refinement, assuming uniform mesh refinement.");
@@ -150,6 +145,11 @@ void Mesh::smooth()
         this->geometry().set(v->index(), sd, midpoint[sd]);
     }
   }
+}
+//-----------------------------------------------------------------------------
+void Mesh::disp() const
+{
+  data.disp();
 }
 //-----------------------------------------------------------------------------
 dolfin::LogStream& dolfin::operator<< (LogStream& stream, const Mesh& mesh)
