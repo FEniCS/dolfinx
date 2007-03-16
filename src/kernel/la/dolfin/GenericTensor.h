@@ -13,6 +13,7 @@
 
 namespace dolfin
 {
+  class SparsityPattern;
 
   /// This class defines a common interface for general tensors.
 
@@ -28,6 +29,9 @@ namespace dolfin
 
     /// Initialize zero tensor of given rank and dimensions
     virtual void init(uint rank, uint* dims) = 0;
+
+    /// Initialize zero tensor using sparsity pattern
+    virtual void init(const SparsityPattern& sparsity_pattern) = 0;
 
     /// Return size of given dimension
     virtual uint size(const uint dim) const = 0;

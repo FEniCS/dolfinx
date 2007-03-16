@@ -51,6 +51,11 @@ void uBlasVector::init(const uint N)
   clear();
 }
 //-----------------------------------------------------------------------------
+void uBlasVector::init(const SparsityPattern& sparsity_pattern)
+{
+  dolfin_error("Cannot initialise a uBLAS vector using a sparsity pattern.");
+}
+//-----------------------------------------------------------------------------
 void uBlasVector::set(const real block[], const int pos[], const int n)
 {
   for(int i = 0; i < n; ++i)

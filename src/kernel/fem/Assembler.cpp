@@ -14,6 +14,7 @@
 #include <dolfin/MeshFunction.h>
 #include <dolfin/UFC.h>
 #include <dolfin/Assembler.h>
+#include <dolfin/SparsityPattern.h>
 
 using namespace dolfin;
 
@@ -40,6 +41,9 @@ void Assembler::assemble(GenericTensor& A, const ufc::form& form, Mesh& mesh)
 
   // Initialize global tensor
   A.init(ufc.form.rank(), ufc.global_dimensions);
+//  SparsityPattern sparsity_pattern; 
+//  dof_maps.sparsityPattern(sparsity_pattern);
+//  A.init(sparsity_pattern);
 
   // Assemble over cells
   assembleCells(A, mesh, ufc);

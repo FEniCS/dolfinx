@@ -17,6 +17,7 @@
 namespace dolfin
 {
 
+  class SparsityPattern;
 #ifdef HAVE_PETSC_H
   class PETScVector;
 #endif
@@ -51,6 +52,9 @@ namespace dolfin
 
     /// Initialize a vector of length N
     void init(const uint N);
+
+    /// Initialize a vector using sparsity pattern
+    void init(const SparsityPattern& sparsity_pattern);
 
     /// Set all entries to a single scalar value
     const uBlasVector& operator= (const real a);
