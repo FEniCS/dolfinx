@@ -2,9 +2,10 @@
 // Licensed under the GNU GPL Version 2.
 //
 // Modified by Ola Skavhaug, 2007.
+// Modified by Garth N. Wells, 2007.
 //
 // First added:  2007-01-17
-// Last changed: 2007-03-01
+// Last changed: 2007-03-16
 
 #ifndef __ASSEMBLY_MATRIX_H
 #define __ASSEMBLY_MATRIX_H
@@ -17,6 +18,7 @@
 #include <dolfin/constants.h>
 #include <dolfin/dolfin_log.h>
 #include <dolfin/GenericTensor.h>
+#include <dolfin/SparsityPattern.h>
 
 namespace dolfin
 {
@@ -82,6 +84,11 @@ namespace dolfin
       for (uint i = 0; i < M; i++)
         for (std::map<uint, real>::iterator it = A[i].begin(); it != A[i].end(); it++)
           it->second = 0.0;
+    }
+
+    void init(const SparsityPattern& sparsity_pattern)
+    {
+      init(sparsity_pattern.size(0), sparsity_pattern.size(1));
     }
 
     /// Add entries to matrix
