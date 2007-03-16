@@ -1,8 +1,10 @@
 // Copyright (C) 2007 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
+// Modified by Garth N. Wells, 2007.
+//
 // First added:  2007-01-17
-// Last changed: 2007-03-15
+// Last changed: 2007-03-16
 
 #ifndef __GENERIC_TENSOR_H
 #define __GENERIC_TENSOR_H
@@ -32,6 +34,9 @@ namespace dolfin
 
     /// Add block of values
     virtual void add(real* block, uint* num_rows, uint** rows) = 0;
+
+    /// Finalise assembly of tensor
+    virtual void apply() = 0;
 
   };
 
