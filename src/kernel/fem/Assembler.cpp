@@ -49,6 +49,9 @@ void Assembler::assemble(GenericTensor& A, const ufc::form& form, Mesh& mesh)
 
   // Assemble over interior facets
   assembleInteriorFacets(A, mesh, ufc);
+
+  // Finalise assembly of global tensor
+  A.apply();
 }
 //-----------------------------------------------------------------------------
 void Assembler::assembleCells(GenericTensor& A, Mesh& mesh, UFC& ufc) const
