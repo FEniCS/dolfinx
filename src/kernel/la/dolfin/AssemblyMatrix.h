@@ -67,7 +67,7 @@ namespace dolfin
     /// Add block of values
     void add(real* block, uint* num_rows, uint** rows)
     {
-      add(block, num_rows[0], rows[0], num_rows[1], rows[
+      add(block, num_rows[0], rows[0], num_rows[1], rows[1]);
     }
 
     ///--- Specialized matrix functions ---
