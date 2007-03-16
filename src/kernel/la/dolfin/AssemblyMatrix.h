@@ -103,6 +103,9 @@ namespace dolfin
       }
     }
 
+    /// Finalise assembly
+    void apply() {}
+
     /// Display matrix
     void disp(uint precision = 2)
     {
