@@ -12,6 +12,7 @@
 //     div u = 0 
 
 #include <dolfin.h>
+#include <dolfin/dolfin_modules.h>
 
 
 using namespace dolfin;
@@ -25,9 +26,12 @@ class ALEExtFunction : public ALEFunction
   real eval(const Point& p, const Point& r, unsigned int i)
   {
 
-    if (i == 1 && r.x() > 1.0 && r.y() < 0.5)
-      return 0.01;
-
+    if (i == 1) {
+      if (p.y() > 0.5)
+	return 0.08*sin(3*time())*(p.x()*(2-p.x()));
+      else 
+	return (-1)*0.08*sin(3*time())*(p.x()*(2-p.x()));
+    }
     return 0;
       
   }	

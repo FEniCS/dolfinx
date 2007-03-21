@@ -12,8 +12,7 @@
 //     div u = 0 
 
 #include <dolfin.h>
-#include <dolfin/dolfin_fsi.h>
-#include <dolfin/dolfin_ale.h>
+#include <dolfin/dolfin_modules.h>
 
 using namespace dolfin;
 
@@ -104,8 +103,10 @@ int main(int argc, char* argv[])
   real k    = 1e-2;
   real E    = 20;
   real elnu = 0.3;
+  real nu   = 1.0/3900.0; // fluid:     viscosity
+  real T    = 2.0;        // final time
   
-  dolfin_error("wrong number of arguments to FSISolver::solve()");
-  FSISolver::solve(mesh, f, bc_mom, bc_con, bisect, rhof, rhos, E, elnu, elnu, elnu, k); 
+  
+  FSISolver::solve(mesh, f, bc_mom, bc_con, bisect, rhof, rhos, E, elnu, nu, T, k); 
   return 0;
 }
