@@ -12,7 +12,7 @@
 //     div u = 0 
 
 #include <dolfin.h>
-
+#include <dolfin/ALESolver.h>
 
 using namespace dolfin;
 
