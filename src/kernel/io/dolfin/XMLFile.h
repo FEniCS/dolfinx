@@ -1,8 +1,10 @@
 // Copyright (C) 2003-2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
+// Modified by Magnus Vikstrom 2007.
+//
 // First added:  2003-07-15
-// Last changed: 2006-05-23
+// Last changed: 2007-03-21
 
 #ifndef __XML_FILE_H
 #define __XML_FILE_H
@@ -18,6 +20,7 @@ namespace dolfin
 {
   
   class Mesh;
+  class Graph;
   template <class T> class MeshFunction;
   class ParameterList;
   class BLASFormData;
@@ -43,6 +46,7 @@ namespace dolfin
     void operator>> (FiniteElementSpec& spec);
     void operator>> (ParameterList& parameters);
     void operator>> (BLASFormData& blas);
+    void operator>> (Graph& graph);
     
     void parse(Function& f, FiniteElement& element);
     
@@ -51,6 +55,7 @@ namespace dolfin
     void operator<< (Vector& x);
     void operator<< (Matrix& A);
     void operator<< (Mesh& mesh);
+    void operator<< (Graph& graph);
 // Todo:
     void operator<< (MeshFunction<int>& mesh);
     void operator<< (MeshFunction<double>& mesh);

@@ -66,7 +66,7 @@ am_libdolfin_io_la_OBJECTS = File.lo GenericFile.lo GiDFile.lo \
 	PythonFile.lo VTKFile.lo XMLBLASFormData.lo XMLFile.lo \
 	XMLFiniteElementSpec.lo XMLMesh.lo XMLMeshFunction.lo \
 	XMLMatrix.lo XMLObject.lo XMLParameterList.lo XMLFunction.lo \
-	XMLVector.lo
+	XMLVector.lo XMLGraph.lo
 libdolfin_io_la_OBJECTS = $(am_libdolfin_io_la_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -263,7 +263,8 @@ nobase_include_HEADERS = dolfin/dolfin_io.h \
                           dolfin/XMLObject.h \
                           dolfin/XMLParameterList.h \
                           dolfin/XMLFunction.h \
-                          dolfin/XMLVector.h
+                          dolfin/XMLVector.h \
+                          dolfin/XMLGraph.h
 
 INCLUDES = @KERNEL_CFLAGS@
 lib_LTLIBRARIES = libdolfin-io.la
@@ -286,7 +287,8 @@ libdolfin_io_la_SOURCES = File.cpp \
                           XMLObject.cpp \
                           XMLParameterList.cpp \
                           XMLFunction.cpp \
-                          XMLVector.cpp
+                          XMLVector.cpp \
+                          XMLGraph.cpp
 
 libdolfin_io_la_LDFLAGS = -static
 all: all-recursive
@@ -372,6 +374,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/XMLFile.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/XMLFiniteElementSpec.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/XMLFunction.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/XMLGraph.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/XMLMatrix.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/XMLMesh.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/XMLMeshFunction.Plo@am__quote@

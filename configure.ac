@@ -360,7 +360,7 @@ fi
 DOLFIN_MODULES="elasticity elasticity-updated convdiff navierstokes plasticity poisson stokes heat ale fsi"
 
 # List of DOLFIN kernel libraries
-DOLFIN_KERNEL="common fem form function io la main math mesh mf nls ode pde quadrature parameter log"
+DOLFIN_KERNEL="common fem form function graph io la main math mesh mf nls ode pde quadrature parameter log"
 
 # Generate include path for external libraries
 EXTERNAL_CFLAGS="$CURSES_CFLAGS $PETSC_CFLAGS $SLEPC_CFLAGS $BOOST_CPPFLAGS $MPI_CFLAGS $XML_CPPFLAGS $UMFPACK_CFLAGS $GLIB_CFLAGS $GTS_CFLAGS $UFC_CFLAGS"
@@ -450,6 +450,8 @@ AC_OUTPUT( Makefile \
            src/kernel/function/dolfin/Makefile \
            src/kernel/form/Makefile \
            src/kernel/form/dolfin/Makefile \
+           src/kernel/graph/Makefile \
+           src/kernel/graph/dolfin/Makefile \
            src/kernel/io/Makefile \
            src/kernel/io/dolfin/Makefile \
            src/kernel/la/Makefile \

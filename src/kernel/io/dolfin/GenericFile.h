@@ -16,6 +16,7 @@ namespace dolfin
 {
   
   class Mesh;
+  class Graph;
   template <class T> class MeshFunction;
   class NewMesh;
   class Function;
@@ -47,6 +48,7 @@ namespace dolfin
     virtual void operator>> (FiniteElementSpec& spec);
     virtual void operator>> (ParameterList& parameters);
     virtual void operator>> (BLASFormData& blas);
+    virtual void operator>> (Graph& graph);
     
     // Output
     
@@ -62,6 +64,7 @@ namespace dolfin
     virtual void operator<< (FiniteElementSpec& spec);
     virtual void operator<< (ParameterList& parameters);
     virtual void operator<< (BLASFormData& blas);
+    virtual void operator<< (Graph& graph);
     
     void read();
     void write();

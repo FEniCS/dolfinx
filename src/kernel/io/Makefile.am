@@ -19,7 +19,8 @@ nobase_include_HEADERS  = dolfin/dolfin_io.h \
                           dolfin/XMLObject.h \
                           dolfin/XMLParameterList.h \
                           dolfin/XMLFunction.h \
-                          dolfin/XMLVector.h
+                          dolfin/XMLVector.h \
+                          dolfin/XMLGraph.h
 INCLUDES                = @KERNEL_CFLAGS@
 lib_LTLIBRARIES         = libdolfin-io.la
 libdolfin_io_la_SOURCES = File.cpp \
@@ -41,5 +42,6 @@ libdolfin_io_la_SOURCES = File.cpp \
                           XMLObject.cpp \
                           XMLParameterList.cpp \
                           XMLFunction.cpp \
-                          XMLVector.cpp
+                          XMLVector.cpp \
+                          XMLGraph.cpp
 libdolfin_io_la_LDFLAGS  = -static

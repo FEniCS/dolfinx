@@ -2,9 +2,10 @@
 // Licensed under the GNU GPL Version 2.
 //
 // Modified by Garth N. Wells, 2005, 2006.
+// Modified by Magnus Vikstrom 2007
 //
 // First added:  2002-11-12
-// Last changed: 2006-11-01
+// Last changed: 2007-03-21
 
 #ifndef __FILE_H
 #define __FILE_H
@@ -18,6 +19,7 @@ namespace dolfin
 {
 
   class Mesh;
+  class Graph;
   template <class T> class MeshFunction;
   class NewMesh;
   class Function;
@@ -81,6 +83,9 @@ namespace dolfin
 
     /// Read FFC BLAS data from file
     void operator>> (BLASFormData& blas);
+	 
+    /// Read graph from file
+    void operator>> (Graph& graph);
 
     //--- Output ---
 
@@ -115,6 +120,9 @@ namespace dolfin
 
     /// Write FFC BLAS data to file
     void operator<< (BLASFormData& blas);
+	 
+    /// Write graph to file
+    void operator<< (Graph& graph);
     
   private:
     

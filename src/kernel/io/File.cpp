@@ -3,9 +3,10 @@
 //
 // Modified by Garth N. Wells 2005, 2006.
 // Modified by Haiko Etzel 2005.
+// Modified by Magnus Vikstrom 2007.
 //
 // First added:  2002-11-12
-// Last changed: 2006-11-01
+// Last changed: 2007-03-21
 
 #include <string>
 #include <dolfin/dolfin_log.h>
@@ -181,6 +182,13 @@ void File::operator>>(BLASFormData& blas)
   *file >> blas;
 }
 //-----------------------------------------------------------------------------
+void File::operator>>(Graph& graph)
+{
+  file->read();
+  
+  *file >> graph;
+}
+//-----------------------------------------------------------------------------
 void File::operator<<(Vector& x)
 {
   file->write();
@@ -263,5 +271,12 @@ void File::operator<<(BLASFormData& blas)
   file->write();
   
   *file << blas;
+}
+//-----------------------------------------------------------------------------
+void File::operator<<(Graph& graph)
+{
+  file->write();
+  
+  *file << graph;
 }
 //-----------------------------------------------------------------------------

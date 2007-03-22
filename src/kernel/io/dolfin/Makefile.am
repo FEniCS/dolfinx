@@ -16,4 +16,5 @@ EXTRA_DIST = dolfin_io.h \
              XMLMeshFunction.h \
              XMLObject.h \
              XMLParameterList.h \
-             XMLVector.h
+             XMLVector.h \
+             XMLGraph.h
