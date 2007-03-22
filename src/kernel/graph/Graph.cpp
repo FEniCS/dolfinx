@@ -53,7 +53,6 @@ Graph::Graph(Mesh& mesh) : Variable("graph", "Graph")
       edges[i++] = entities[k];
     }
   }
-
 }
 //-----------------------------------------------------------------------------
 Graph::~Graph()
@@ -126,3 +125,4 @@ void Graph::clear()
   if ( vertices )
     delete [] vertices;
 }
+//-----------------------------------------------------------------------------

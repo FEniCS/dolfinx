@@ -5,7 +5,7 @@
 // Last changed: 2007-03-19
 
 #ifndef __UNDIRECTED_CLIQUE_H
-#define  __UNDIRECTED_CLIQUE_H
+#define __UNDIRECTED_CLIQUE_H
 
 #include <dolfin/Graph.h>
 
