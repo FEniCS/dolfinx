@@ -18,6 +18,7 @@ namespace dolfin
   public:
 
     XMLMeshFunction(MeshFunction<int>& meshfunction);
+    XMLMeshFunction(MeshFunction<unsigned int>& meshfunction);
     XMLMeshFunction(MeshFunction<double>& meshfunction);
     XMLMeshFunction(MeshFunction<bool>& meshfunction);
     ~XMLMeshFunction();
@@ -31,7 +32,7 @@ namespace dolfin
   private:
     
     enum ParserState { OUTSIDE, INSIDE_MESHFUNCTION, INSIDE_ENTITY, DONE };
-    enum MeshFunctionType { INT, DOUBLE, BOOL, UNSET };
+    enum MeshFunctionType { INT, UINT, DOUBLE, BOOL, UNSET };
     
     void readMeshFunction(const xmlChar* name, const xmlChar** attrs);
     void readEntities    (const xmlChar* name, const xmlChar** attrs);
@@ -39,6 +40,7 @@ namespace dolfin
     ParserState state;
     MeshFunctionType mf_type;
     MeshFunction<int>* _imeshfunction;
+    MeshFunction<unsigned int>* _uimeshfunction;
     MeshFunction<double>* _dmeshfunction;
     MeshFunction<bool>* _bmeshfunction;
 

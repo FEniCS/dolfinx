@@ -63,6 +63,7 @@ namespace dolfin
 
     /// Read mesh function from file
     void operator>> (MeshFunction<int>& meshfunction);
+    void operator>> (MeshFunction<unsigned int>& meshfunction);
     void operator>> (MeshFunction<double>& meshfunction);
     void operator>> (MeshFunction<bool>& meshfunction);
 
@@ -100,6 +101,7 @@ namespace dolfin
 
     /// Write mesh function to file
     void operator<< (MeshFunction<int>& meshfunction);
+    void operator<< (MeshFunction<unsigned int>& meshfunction);
     void operator<< (MeshFunction<double>& meshfunction);
     void operator<< (MeshFunction<bool>& meshfunction);
 

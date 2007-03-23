@@ -40,6 +40,7 @@ namespace dolfin
     void operator>> (Matrix& A);
     void operator>> (Mesh& mesh);
     void operator>> (MeshFunction<int>& meshfunction);
+    void operator>> (MeshFunction<unsigned int>& meshfunction);
     void operator>> (MeshFunction<double>& meshfunction);
     void operator>> (MeshFunction<bool>& meshfunction);
     void operator>> (Function& f);
@@ -58,6 +59,7 @@ namespace dolfin
     void operator<< (Graph& graph);
 // Todo:
     void operator<< (MeshFunction<int>& mesh);
+    void operator<< (MeshFunction<unsigned int>& mesh);
     void operator<< (MeshFunction<double>& mesh);
     void operator<< (MeshFunction<bool>& mesh);
     void operator<< (Function& f);

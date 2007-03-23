@@ -18,6 +18,19 @@ XMLMeshFunction::XMLMeshFunction(MeshFunction<int>& meshfunction)
   state(OUTSIDE), 
   mf_type(UNSET), 
   _imeshfunction(&meshfunction),
+  _uimeshfunction(0),
+  _dmeshfunction(0),
+  _bmeshfunction(0)
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+XMLMeshFunction::XMLMeshFunction(MeshFunction<unsigned int>& meshfunction) 
+: XMLObject(), 
+  state(OUTSIDE), 
+  mf_type(UNSET), 
+  _imeshfunction(0),
+  _uimeshfunction(&meshfunction),
   _dmeshfunction(0),
   _bmeshfunction(0)
 {
@@ -29,6 +42,7 @@ XMLMeshFunction::XMLMeshFunction(MeshFunction<double>& meshfunction)
   state(OUTSIDE),
   mf_type(UNSET), 
   _imeshfunction(0),
+  _uimeshfunction(0),
   _dmeshfunction(&meshfunction),
   _bmeshfunction(0)
 {
@@ -40,6 +54,7 @@ XMLMeshFunction::XMLMeshFunction(MeshFunction<bool>& meshfunction)
   state(OUTSIDE),
   mf_type(UNSET), 
   _imeshfunction(0),
+  _uimeshfunction(0),
   _dmeshfunction(0),
   _bmeshfunction(&meshfunction)
 {
@@ -127,6 +142,15 @@ void XMLMeshFunction::readMeshFunction(const xmlChar *name, const xmlChar **attr
     _imeshfunction->init(tdim, size);
     mf_type = INT;
   }
+  else if (strcmp(type.c_str(), "uint") == 0 ) 
+  {
+    if (_uimeshfunction == 0) 
+      dolfin_error("MeshFunction file of type \"uint\", but MeshFunction<uint> not initialized");
+    if ( _uimeshfunction->mesh().size(tdim) != size)
+      dolfin_error4("In file: Size %d MeshEntities of dimension %d does not match underlying Mesh having size %d MeshEntities of dimension %d", size, tdim, _uimeshfunction->mesh().size(tdim), tdim);
+    _uimeshfunction->init(tdim, size);
+    mf_type = UINT;
+  }
   else if (strcmp(type.c_str(), "double") == 0 ) 
   {
     if (_dmeshfunction == 0) 
@@ -155,6 +179,10 @@ void XMLMeshFunction::readEntities(const xmlChar *name, const xmlChar **attrs)
   {
   case INT:
     _imeshfunction->set(i, parseInt(name, attrs, "value"));
+    break;
+
+  case UINT:
+    _uimeshfunction->set(i, parseInt(name, attrs, "value"));
     break;
 
   case DOUBLE:

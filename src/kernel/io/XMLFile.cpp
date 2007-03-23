@@ -85,6 +85,14 @@ void XMLFile::operator>>(MeshFunction<int>& meshfunction)
   parseFile();
 }
 //-----------------------------------------------------------------------------
+void XMLFile::operator>>(MeshFunction<unsigned int>& meshfunction)
+{
+  if ( xmlObject )
+    delete xmlObject;
+  xmlObject = new XMLMeshFunction(meshfunction);
+  parseFile();
+}
+//-----------------------------------------------------------------------------
 void XMLFile::operator>>(MeshFunction<double>& meshfunction)
 {
   if ( xmlObject )
@@ -307,6 +315,30 @@ void XMLFile::operator<<(MeshFunction<int>& meshfunction)
   
   // Write mesh in XML format
   fprintf(fp, "  <meshfunction type=\"int\" dim=\"%u\" size=\"%u\">\n",
+          meshfunction.dim(), meshfunction.size());
+  
+  Mesh& mesh = meshfunction.mesh();
+  for(MeshEntityIterator e(mesh, meshfunction.dim()); !e.end(); ++e)
+  {
+      fprintf(fp, "    <entity index=\"%u\" value=\"%d\"/>\n",
+              e->index(), meshfunction(*e));
+  }
+
+  fprintf(fp, "  </meshfunction>\n");
+ 
+  // Close file
+  closeFile(fp);
+  
+  cout << "Saved mesh function to file " << filename << " in XML format." << endl;
+}
+//-----------------------------------------------------------------------------
+void XMLFile::operator<<(MeshFunction<unsigned int>& meshfunction)
+{
+  // Open file
+  FILE *fp = openFile();
+  
+  // Write mesh in XML format
+  fprintf(fp, "  <meshfunction type=\"uint\" dim=\"%u\" size=\"%u\">\n",
           meshfunction.dim(), meshfunction.size());
   
   Mesh& mesh = meshfunction.mesh();
