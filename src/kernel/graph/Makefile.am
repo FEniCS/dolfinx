@@ -1,5 +1,6 @@
 SUBDIRS                   = dolfin
-nobase_include_HEADERS    = dolfin/GraphEditor.h \
+nobase_include_HEADERS    = dolfin/dolfin_graph.h \
+                            dolfin/GraphEditor.h \
                             dolfin/Graph.h \
                             dolfin/UndirectedClique.h \
                             dolfin/DirectedClique.h

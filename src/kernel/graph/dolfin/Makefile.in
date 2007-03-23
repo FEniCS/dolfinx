@@ -200,7 +200,8 @@ sharedstatedir = @sharedstatedir@
 swig_found = @swig_found@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
-EXTRA_DIST = GraphEditor.h \
+EXTRA_DIST = dolfin_graph.h \
+             GraphEditor.h \
              Graph.h \
              UndirectedClique.h \
              DirectedClique.h
