@@ -15,6 +15,11 @@
 #include <dolfin/BoundaryMesh.h>
 #include <dolfin/Cell.h>
 #include <dolfin/Facet.h>
+#include <dolfin/Vertex.h>
+
+#include <dolfin/UFCMesh.h>
+#include <dolfin/UFCCell.h>
+#include <ufc.h>
 
 using namespace dolfin;
 
@@ -48,7 +53,8 @@ void BoundaryCondition::applyBC(GenericVector& b, Mesh& mesh,
 }
 //-----------------------------------------------------------------------------
 void BoundaryCondition::apply(GenericMatrix* A, GenericVector* b, 
-                    const GenericVector* x, Mesh& mesh, FiniteElement& element)
+            const GenericVector* x, Mesh& mesh,  ufc::finite_element& element, 
+            ufc::dof_map& dof_map)
 {
   cout << "Applying boundary conditions " << endl;
 
@@ -59,6 +65,19 @@ void BoundaryCondition::apply(GenericMatrix* A, GenericVector* b,
   MeshFunction<uint> vertex_map;
   MeshFunction<uint> cell_map;
   BoundaryMesh boundary(mesh, vertex_map, cell_map);
+
+  // FIXME: Should iterate over all nodes, but don't know how to do this yet
+  //        Curently limited to scalar linear elements only.
+  const ufc::shape cell_shape = element.cell_shape();
+  const uint space_dimension = element.space_dimension();
+  if(cell_shape == ufc::triangle)
+    dolfin_assert(space_dimension == 3);
+  if(cell_shape == ufc::tetrahedron)
+    dolfin_assert(space_dimension == 4);
+
+  UFCMesh ufc_mesh(mesh);
+  uint* dofs = new uint[dof_map.local_dimension()];
+
 
   // Iterate over all cells in the boundary mesh
   Progress p("Applying Dirichlet boundary conditions", boundary.numCells());
@@ -71,11 +90,22 @@ void BoundaryCondition::apply(GenericMatrix* A, GenericVector* b,
     dolfin_assert(mesh_facet.numEntities(mesh.topology().dim()) == 1);
     Cell mesh_cell(mesh, mesh_facet.entities(mesh.topology().dim())[0]);
 
+    // Compute local-to-global map
+    UFCCell ufc_cell(mesh_cell);
+    dof_map.tabulate_dofs(dofs, ufc_mesh, ufc_cell);
+
+    // Iterate over cell vertexes
+    for (VertexIterator vertex(mesh_cell); !vertex.end(); ++vertex)
+    {
+      cout << "Point " << vertex->point() << endl; 
+      dolfin_error("Work on applying boundary conditions not complete");
+    }
 
     // Apply boundary condtions here
 
     p++;
   }
+  delete [] dofs;
 }
 //-----------------------------------------------------------------------------
 
