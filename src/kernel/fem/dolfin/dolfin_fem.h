@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003-01-16
-// Last changed: 2007-01-17
+// Last changed: 2007-03-24
 
 #ifndef __DOLFIN_FEM_H
 #define __DOLFIN_FEM_H
@@ -18,6 +18,7 @@
 #include <dolfin/DofMaps.h>
 #include <dolfin/FEBasis.h>
 #include <dolfin/FEM.h>
+#include <dolfin/NewForm.h>
 #include <dolfin/FiniteElement.h>
 #include <dolfin/FiniteElementSpec.h>
 #include <dolfin/NewAffineMap.h>

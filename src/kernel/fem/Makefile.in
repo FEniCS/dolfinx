@@ -255,6 +255,7 @@ nobase_include_HEADERS = dolfin/dolfin_fem.h \
                            dolfin/UFCMesh.h \
 			   dolfin/FEBasis.h \
                            dolfin/FEM.h \
+                           dolfin/NewForm.h \
                            dolfin/FiniteElement.h \
                            dolfin/FiniteElementSpec.h \
                            dolfin/NewAffineMap.h \

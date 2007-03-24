@@ -11,6 +11,7 @@ EXTRA_DIST = dolfin_fem.h \
              UFCCell.h \
              UFCMesh.h \
              FEM.h \
+             NewForm.h \
              FiniteElement.h \
              FiniteElementSpec.h \
              NewAffineMap.h \
