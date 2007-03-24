@@ -35,19 +35,20 @@ BoundaryCondition::~BoundaryCondition()
 }
 //-----------------------------------------------------------------------------
 void BoundaryCondition::applyBC(GenericMatrix& A, GenericVector& b, Mesh& mesh, 
-                                FiniteElement& element)
-{
-  dolfin_error("Application of boundary conditions not yet implemented.");
-}
-//-----------------------------------------------------------------------------
-void BoundaryCondition::applyBC(GenericMatrix& A, Mesh& mesh, 
-                                FiniteElement& element)
+                           ufc::finite_element& element)
 {
   dolfin_error("Application of boundary conditions to a matrix is not yet implemented.");
 }
 //-----------------------------------------------------------------------------
+void BoundaryCondition::applyBC(GenericMatrix& A, Mesh& mesh, 
+                                ufc::finite_element& element, ufc::dof_map& dof_map)
+{
+  dolfin_warning("Application of boundary conditions not yet implemented.");
+  apply(&A, 0, 0, mesh, element, dof_map);
+}
+//-----------------------------------------------------------------------------
 void BoundaryCondition::applyBC(GenericVector& b, Mesh& mesh, 
-                                FiniteElement& element)
+                                ufc::finite_element& element)
 {
   dolfin_error("Application of boundary conditions to a vector is not yet implemented.");
 }
@@ -66,18 +67,13 @@ void BoundaryCondition::apply(GenericMatrix* A, GenericVector* b,
   MeshFunction<uint> cell_map;
   BoundaryMesh boundary(mesh, vertex_map, cell_map);
 
-  // FIXME: Should iterate over all nodes, but don't know how to do this yet
-  //        Curently limited to scalar linear elements only.
-  const ufc::shape cell_shape = element.cell_shape();
-  const uint space_dimension = element.space_dimension();
-  if(cell_shape == ufc::triangle)
-    dolfin_assert(space_dimension == 3);
-  if(cell_shape == ufc::tetrahedron)
-    dolfin_assert(space_dimension == 4);
+  // Get number of dofs per facet
+  const uint num_facet_dofs = dof_map.num_facet_dofs();
+
+  // Create array for dof mapping
+  uint* dofs = new uint[num_facet_dofs];
 
   UFCMesh ufc_mesh(mesh);
-  uint* dofs = new uint[dof_map.local_dimension()];
-
 
   // Iterate over all cells in the boundary mesh
   Progress p("Applying Dirichlet boundary conditions", boundary.numCells());
@@ -90,16 +86,21 @@ void BoundaryCondition::apply(GenericMatrix* A, GenericVector* b,
     dolfin_assert(mesh_facet.numEntities(mesh.topology().dim()) == 1);
     Cell mesh_cell(mesh, mesh_facet.entities(mesh.topology().dim())[0]);
 
-    // Compute local-to-global map
-    UFCCell ufc_cell(mesh_cell);
-    dof_map.tabulate_dofs(dofs, ufc_mesh, ufc_cell);
+    // Get local index of facet with respect to the cell
+    uint local_facet = mesh_cell.index(mesh_facet);
 
-    // Iterate over cell vertexes
-    for (VertexIterator vertex(mesh_cell); !vertex.end(); ++vertex)
-    {
-      cout << "Point " << vertex->point() << endl; 
-      dolfin_error("Work on applying boundary conditions not complete");
-    }
+    // Tabulate dof mapping for facet (this should really come from DofMap)
+    UFCCell ufc_cell(mesh_cell);
+    dof_map.tabulate_facet_dofs(dofs, ufc_mesh, ufc_cell, local_facet);
+
+    // FIXME: Waiting on FFC to generate the necessary UFC functions and the see
+    //        what the UFC/DOLFIN function interface looks like.  
+
+    // Evaluate boundary condition function at facet nodes
+    //real evaluate_dof(unsigned int i, const ufc::function& f, const ufc::cell& c) const
+//    real value = evaluate_dof(i, f, ufc_cell)
+
+    dolfin_error("Work on applying boundary conditions not complete");
 
     // Apply boundary condtions here
 

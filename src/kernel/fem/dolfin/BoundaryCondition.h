@@ -18,11 +18,11 @@ namespace dolfin
 
   class BoundaryValue;
   class Point;
-  class FiniteElement;
   class GenericMatrix;
   class GenericVector;
   class Mesh;
   class ufc::finite_element;
+  class ufc::dof_map;
 
   /// This class specifies the interface for boundary conditions for
   /// partial differential equations. To specify a boundary condition,
@@ -45,13 +45,14 @@ namespace dolfin
 
     /// Apply boundary conditions to a matrix and a vector
     void applyBC(GenericMatrix& A, GenericVector& b, Mesh& mesh, 
-                  FiniteElement& element);
+                  ufc::finite_element& element);
 
     /// Apply boundary conditions to a matrix
-    void applyBC(GenericMatrix& A, Mesh& mesh, FiniteElement& element);
+    void applyBC(GenericMatrix& A, Mesh& mesh, ufc::finite_element& element,
+                 ufc::dof_map& dof_map);
 
     /// Apply boundary conditions to vector
-    void applyBC(GenericVector& b, Mesh& mesh, FiniteElement& element);
+    void applyBC(GenericVector& b, Mesh& mesh, ufc::finite_element& element);
 
   private:
 
