@@ -93,7 +93,7 @@ void BoundaryCondition::apply(GenericMatrix* A, GenericVector* b,
     UFCCell ufc_cell(mesh_cell);
     dof_map.tabulate_facet_dofs(dofs, ufc_mesh, ufc_cell, local_facet);
 
-    // FIXME: Waiting on FFC to genrate the necessary UFC functions and the see
+    // FIXME: Waiting on FFC to generate the necessary UFC functions and the see
     //        what the UFC/DOLFIN function interface looks like.  
 
     // Evaluate boundary condition function at facet nodes
