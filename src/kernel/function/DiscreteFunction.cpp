@@ -121,6 +121,8 @@ real DiscreteFunction::operator()(const Point& p, uint i)
 //     if(cells.size() > 1)
 //       cout << "cells.size(): " << cells.size() << endl;
 
+    dolfin_assert(cells.size() > 0);
+
     real sum = 0.0;
     for(uint k = 0; k < cells.size(); k++)
     {
@@ -251,6 +253,8 @@ void DiscreteFunction::copy(const DiscreteFunction& f)
   // Copy pointers to mesh and element
   _mesh = f._mesh;
   _element = f._element;
+
+  invalidateMesh();
 }
 //-----------------------------------------------------------------------------
 void DiscreteFunction::interpolate(real coefficients[], Cell& cell,
@@ -348,6 +352,8 @@ void DiscreteFunction::attach(Mesh& mesh, bool local)
   // Attach new mesh
   _mesh = &mesh;
   mesh_local = local;
+
+  invalidateMesh();
 }
 //-----------------------------------------------------------------------------
 void DiscreteFunction::attach(FiniteElement& element, bool local)
@@ -375,9 +381,10 @@ void DiscreteFunction::init(Mesh& mesh, FiniteElement& element)
   component = 0;
   mixed_offset = 0;
   component_offset = 0;
-  
+
   // Update vector dimension from element
   updateVectorDimension();
+  invalidateMesh();
   //constructBasis();
 
 
@@ -411,6 +418,7 @@ void DiscreteFunction::updateVectorDimension()
   {
     dolfin_error("Cannot handle tensor-valued functions.");
   }
+
 }
 //-----------------------------------------------------------------------------
 void DiscreteFunction::constructBasis()
@@ -422,5 +430,14 @@ void DiscreteFunction::constructBasis()
   //idetector.init(*_mesh);
   _idetector = new IntersectionDetector();
   _idetector->init(*_mesh);
+}
+//-----------------------------------------------------------------------------
+void DiscreteFunction::invalidateMesh()
+{
+  if(_idetector)
+  {
+    delete _idetector;
+    _idetector = 0;
+  }
 }
 //-----------------------------------------------------------------------------
