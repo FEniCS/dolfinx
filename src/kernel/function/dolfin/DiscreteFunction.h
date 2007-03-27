@@ -93,6 +93,9 @@ namespace dolfin
     // Update vector dimension from current element
     void constructBasis();
 
+    // Recompute data that depends on the mesh
+    void invalidateMesh();
+
     // Pointer to degrees of freedom
     Vector* _x;
 

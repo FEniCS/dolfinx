@@ -46,7 +46,6 @@ DiscreteFunction::DiscreteFunction(Vector& x, Mesh& mesh, FiniteElement& element
 {
   // Update vector dimension from element
   updateVectorDimension();
-  //constructBasis();
 }
 //-----------------------------------------------------------------------------
 DiscreteFunction::DiscreteFunction(Mesh& mesh, FiniteElement& element)
@@ -56,7 +55,6 @@ DiscreteFunction::DiscreteFunction(Mesh& mesh, FiniteElement& element)
 {
   // Update vector dimension from element
   updateVectorDimension();
-  //constructBasis();
 
   // Allocate local storage
   uint size = FEM::size(mesh, element);
@@ -207,8 +205,6 @@ void DiscreteFunction::sub(uint i)
     // Pick sub element and update vector dimension
     _element = &((*_element)[i]);
     updateVectorDimension();
-    //constructBasis();
-
 
     // Make sure component and component offset are zero
     component = 0;
@@ -251,6 +247,8 @@ void DiscreteFunction::copy(const DiscreteFunction& f)
   // Copy pointers to mesh and element
   _mesh = f._mesh;
   _element = f._element;
+
+  invalidateMesh();
 }
 //-----------------------------------------------------------------------------
 void DiscreteFunction::interpolate(real coefficients[], Cell& cell,
@@ -337,6 +335,8 @@ void DiscreteFunction::attach(Vector& x, bool local)
   // Attach new vector
   _x = &x;
   vector_local = local;
+
+  invalidateMesh();
 }
 //-----------------------------------------------------------------------------
 void DiscreteFunction::attach(Mesh& mesh, bool local)
@@ -362,7 +362,6 @@ void DiscreteFunction::attach(FiniteElement& element, bool local)
 
   // Recompute vector dimension
   updateVectorDimension();
-  //constructBasis();
 }
 //-----------------------------------------------------------------------------
 void DiscreteFunction::init(Mesh& mesh, FiniteElement& element)
@@ -378,8 +377,7 @@ void DiscreteFunction::init(Mesh& mesh, FiniteElement& element)
   
   // Update vector dimension from element
   updateVectorDimension();
-  //constructBasis();
-
+  invalidateMesh();
 
   // Reinitialize local storage
   uint size = FEM::size(mesh, element);
@@ -419,7 +417,7 @@ void DiscreteFunction::constructBasis()
   dolfin_assert(_mesh);
 
   have_basis = basis.construct(*_element);
-  //idetector.init(*_mesh);
+
   _idetector = new IntersectionDetector();
   _idetector->init(*_mesh);
 }
