@@ -46,6 +46,7 @@ DiscreteFunction::DiscreteFunction(Vector& x, Mesh& mesh, FiniteElement& element
 {
   // Update vector dimension from element
   updateVectorDimension();
+  //constructBasis();
 }
 //-----------------------------------------------------------------------------
 DiscreteFunction::DiscreteFunction(Mesh& mesh, FiniteElement& element)
@@ -55,6 +56,7 @@ DiscreteFunction::DiscreteFunction(Mesh& mesh, FiniteElement& element)
 {
   // Update vector dimension from element
   updateVectorDimension();
+  //constructBasis();
 
   // Allocate local storage
   uint size = FEM::size(mesh, element);
@@ -118,6 +120,8 @@ real DiscreteFunction::operator()(const Point& p, uint i)
 
 //     if(cells.size() > 1)
 //       cout << "cells.size(): " << cells.size() << endl;
+
+    dolfin_assert(cells.size() > 0);
 
     real sum = 0.0;
     for(uint k = 0; k < cells.size(); k++)
@@ -205,6 +209,8 @@ void DiscreteFunction::sub(uint i)
     // Pick sub element and update vector dimension
     _element = &((*_element)[i]);
     updateVectorDimension();
+    //constructBasis();
+
 
     // Make sure component and component offset are zero
     component = 0;
@@ -335,8 +341,6 @@ void DiscreteFunction::attach(Vector& x, bool local)
   // Attach new vector
   _x = &x;
   vector_local = local;
-
-  invalidateMesh();
 }
 //-----------------------------------------------------------------------------
 void DiscreteFunction::attach(Mesh& mesh, bool local)
@@ -348,6 +352,8 @@ void DiscreteFunction::attach(Mesh& mesh, bool local)
   // Attach new mesh
   _mesh = &mesh;
   mesh_local = local;
+
+  invalidateMesh();
 }
 //-----------------------------------------------------------------------------
 void DiscreteFunction::attach(FiniteElement& element, bool local)
@@ -362,6 +368,7 @@ void DiscreteFunction::attach(FiniteElement& element, bool local)
 
   // Recompute vector dimension
   updateVectorDimension();
+  //constructBasis();
 }
 //-----------------------------------------------------------------------------
 void DiscreteFunction::init(Mesh& mesh, FiniteElement& element)
@@ -374,10 +381,12 @@ void DiscreteFunction::init(Mesh& mesh, FiniteElement& element)
   component = 0;
   mixed_offset = 0;
   component_offset = 0;
-  
+
   // Update vector dimension from element
   updateVectorDimension();
   invalidateMesh();
+  //constructBasis();
+
 
   // Reinitialize local storage
   uint size = FEM::size(mesh, element);
@@ -409,6 +418,7 @@ void DiscreteFunction::updateVectorDimension()
   {
     dolfin_error("Cannot handle tensor-valued functions.");
   }
+
 }
 //-----------------------------------------------------------------------------
 void DiscreteFunction::constructBasis()
@@ -417,8 +427,17 @@ void DiscreteFunction::constructBasis()
   dolfin_assert(_mesh);
 
   have_basis = basis.construct(*_element);
-
+  //idetector.init(*_mesh);
   _idetector = new IntersectionDetector();
   _idetector->init(*_mesh);
+}
+//-----------------------------------------------------------------------------
+void DiscreteFunction::invalidateMesh()
+{
+  if(_idetector)
+  {
+    delete _idetector;
+    _idetector = 0;
+  }
 }
 //-----------------------------------------------------------------------------
