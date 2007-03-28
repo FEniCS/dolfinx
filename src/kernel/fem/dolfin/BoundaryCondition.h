@@ -13,16 +13,19 @@
 #include <dolfin/TimeDependent.h>
 #include <ufc.h>
 
+// Forward declarations
+class ufc::finite_element;
+class ufc::dof_map;
+
 namespace dolfin
 {
 
+  // Forward declarations
   class BoundaryValue;
   class Point;
   class GenericMatrix;
   class GenericVector;
   class Mesh;
-  class ufc::finite_element;
-  class ufc::dof_map;
 
   /// This class specifies the interface for boundary conditions for
   /// partial differential equations. To specify a boundary condition,
