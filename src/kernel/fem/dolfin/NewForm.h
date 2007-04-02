@@ -1,11 +1,13 @@
 // Copyright (C) 2007 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
-// First added:  2007-01-01
-// Last changed: 2007-01-01
+// First added:  2007-04-02
+// Last changed: 2007-04-02
 
 #ifndef __NEW_FORM_H
 #define __NEW_FORM_H
+
+#include <ufc.h>
 
 #include <dolfin/Array.h>
 #include <dolfin/Function.h>
@@ -21,8 +23,14 @@ namespace dolfin
   {
   public:
 
-    /// Array of coefficients
-    Array<Function*> coefficients;
+    /// Destructor
+    virtual ~NewForm() {}
+
+    /// Return UFC form
+    virtual const ufc::form& form() const = 0;
+
+    /// Return array of coefficients
+    virtual const Array<Function*>& coefficients() const = 0;
 
   };
 

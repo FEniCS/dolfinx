@@ -10,9 +10,22 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
+void dolfin::assemble(GenericTensor& A, const NewForm& form, Mesh& mesh)
+{
+  Assembler assembler;
+  assembler.assemble(A, form, mesh);
+}
+//-----------------------------------------------------------------------------
 void dolfin::assemble(GenericTensor& A, const ufc::form& form, Mesh& mesh)
 {
   Assembler assembler;
   assembler.assemble(A, form, mesh);
+}
+//-----------------------------------------------------------------------------
+void dolfin::assemble(GenericTensor& A, const ufc::form& form, Mesh& mesh,
+                      Array<Function*> coefficients)
+{
+  Assembler assembler;
+  assembler.assemble(A, form, mesh, coefficients);
 }
 //-----------------------------------------------------------------------------

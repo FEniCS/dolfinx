@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2007-01-17
-// Last changed: 2007-03-13
+// Last changed: 2007-04-02
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Array.h>
@@ -12,6 +12,8 @@
 #include <dolfin/Facet.h>
 #include <dolfin/BoundaryMesh.h>
 #include <dolfin/MeshFunction.h>
+#include <dolfin/Function.h>
+#include <dolfin/NewForm.h>
 #include <dolfin/UFC.h>
 #include <dolfin/Assembler.h>
 #include <dolfin/SparsityPattern.h>
@@ -29,7 +31,21 @@ Assembler::~Assembler()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
+void Assembler::assemble(GenericTensor& A, const NewForm& form, Mesh& mesh)
+{
+  // Extract form and coefficients
+  assemble(A, form.form(), mesh, form.coefficients());
+}
+//-----------------------------------------------------------------------------
 void Assembler::assemble(GenericTensor& A, const ufc::form& form, Mesh& mesh)
+{
+  // Create empty array of coefficients
+  Array<Function*> coefficients;
+  assemble(A, form, mesh, coefficients);
+}
+//-----------------------------------------------------------------------------
+void Assembler::assemble(GenericTensor& A, const ufc::form& form, Mesh& mesh,
+                         Array<Function*> coefficients)
 {
   cout << "Assembling form " << form.signature() << endl;
 

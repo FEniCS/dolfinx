@@ -2,19 +2,22 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2007-01-17
-// Last changed: 2007-03-02
+// Last changed: 2007-04-02
 
 #ifndef __ASSEMBLER_H
 #define __ASSEMBLER_H
 
 #include <ufc.h>
 
+#include <dolfin/Array.h>
 #include <dolfin/DofMaps.h>
 
 namespace dolfin
 {
 
   class GenericTensor;
+  class Function;
+  class NewForm;
   class Mesh;
   class UFC;
 
@@ -33,7 +36,13 @@ namespace dolfin
     ~Assembler();
 
     /// Assemble tensor from given variational form and mesh
+    void assemble(GenericTensor& A, const NewForm& form, Mesh& mesh);
+
+    /// Assemble tensor from given variational form and mesh
     void assemble(GenericTensor& A, const ufc::form& form, Mesh& mesh);
+
+    /// Assemble tensor from given variational form, mesh and coefficients
+    void assemble(GenericTensor& A, const ufc::form& form, Mesh& mesh, Array<Function*> coefficients);
 
   private:
  
