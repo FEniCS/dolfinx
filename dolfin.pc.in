@@ -6,6 +6,7 @@ includedir=${prefix}/include
 compiler=@CXX@
 definitions=@DOLFIN_DEFINITIONS@
 swigcflags=@PYTHON_CPPFLAGS@ 
+extlibs=@DOLFIN_EXT_LIBS@ 
 
 Name: DOLFIN
 Description: Dynamic Object-oriented Library for FINite element computation

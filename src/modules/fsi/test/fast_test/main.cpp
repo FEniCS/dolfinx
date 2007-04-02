@@ -12,6 +12,7 @@
 //     div u = 0 
 
 #include <dolfin.h>
+#include <dolfin/dolfin_modules.h>
 
 using namespace dolfin;
 
