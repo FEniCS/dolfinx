@@ -32,7 +32,7 @@ namespace dolfin
   void assemble(GenericTensor& A, const ufc::form& form, Mesh& mesh);
   
   /// Assemble tensor from given variational form, mesh and coefficients
-  void assemble(GenericTensor& A, const ufc::form& form, Mesh& mesh, Array<Function*> coefficients);
+  void assemble(GenericTensor& A, const ufc::form& form, Mesh& mesh, const Array<Function*> coefficients);
 
 }
 

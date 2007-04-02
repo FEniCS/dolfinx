@@ -42,21 +42,29 @@ namespace dolfin
     void assemble(GenericTensor& A, const ufc::form& form, Mesh& mesh);
 
     /// Assemble tensor from given variational form, mesh and coefficients
-    void assemble(GenericTensor& A, const ufc::form& form, Mesh& mesh, Array<Function*> coefficients);
+    void assemble(GenericTensor& A, const ufc::form& form, Mesh& mesh,
+                  const Array<Function*> coefficients);
 
   private:
  
     // Assemble over cells
-    void assembleCells(GenericTensor& A, Mesh& mesh, UFC& data) const;
+    void assembleCells(GenericTensor& A, Mesh& mesh,
+                       const Array<Function*>& coefficients,
+                       UFC& data) const;
 
     // Assemble over exterior facets
-    void assembleExteriorFacets(GenericTensor& A, Mesh& mesh, UFC& data) const;
+    void assembleExteriorFacets(GenericTensor& A, Mesh& mesh,
+                                const Array<Function*>& coefficients,
+                                UFC& data) const;
 
     // Assemble over interior facets
-    void assembleInteriorFacets(GenericTensor& A, Mesh& mesh, UFC& data) const;
+    void assembleInteriorFacets(GenericTensor& A, Mesh& mesh,
+                                const Array<Function*>& coefficients,
+                                UFC& data) const;
 
     // Check arguments
-    void check(const ufc::form& form, const Mesh& mesh, const Array<Function*>& coefficients) const;
+    void check(const ufc::form& form, const Mesh& mesh,
+               const Array<Function*>& coefficients) const;
 
     // Storage for dof maps
     DofMaps dof_maps;

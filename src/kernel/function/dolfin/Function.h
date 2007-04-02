@@ -4,12 +4,14 @@
 // Modified by Garth N. Wells 2005.
 //
 // First added:  2003-11-28
-// Last changed: 2007-02-01
+// Last changed: 2007-04-02
 
 #ifndef __FUNCTION_H
 #define __FUNCTION_H
 
 #include <string>
+#include <ufc.h>
+
 #include <dolfin/constants.h>
 #include <dolfin/Vector.h>
 #include <dolfin/Variable.h>
@@ -87,6 +89,9 @@ namespace dolfin
 
     /// Assignment operator
     const Function& operator= (const Function& f);
+
+    /// Interpolate function to finite element basis
+    void interpolate(real coefficients[], const ufc::cell& cell, const ufc::finite_element& finite_element) const;
 
     /// Compute interpolation of function onto local finite element space
     void interpolate(real coefficients[], Cell& cell, AffineMap& map, FiniteElement& element);

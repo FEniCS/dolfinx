@@ -45,7 +45,7 @@ void Assembler::assemble(GenericTensor& A, const ufc::form& form, Mesh& mesh)
 }
 //-----------------------------------------------------------------------------
 void Assembler::assemble(GenericTensor& A, const ufc::form& form, Mesh& mesh,
-                         Array<Function*> coefficients)
+                         const Array<Function*> coefficients)
 {
   cout << "Assembling form " << form.signature() << endl;
   // Check arguments
@@ -59,24 +59,26 @@ void Assembler::assemble(GenericTensor& A, const ufc::form& form, Mesh& mesh,
 
   // Initialize global tensor
   A.init(ufc.form.rank(), ufc.global_dimensions);
-//  SparsityPattern sparsity_pattern; 
-//  dof_maps.sparsityPattern(sparsity_pattern);
-//  A.init(sparsity_pattern);
-
+  //SparsityPattern sparsity_pattern; 
+  //dof_maps.sparsityPattern(sparsity_pattern);
+  //A.init(sparsity_pattern);
+  
   // Assemble over cells
-  assembleCells(A, mesh, ufc);
+  assembleCells(A, mesh, coefficients, ufc);
 
   // Assemble over exterior facets
-  assembleExteriorFacets(A, mesh, ufc);
+  assembleExteriorFacets(A, mesh, coefficients, ufc);
 
   // Assemble over interior facets
-  assembleInteriorFacets(A, mesh, ufc);
+  assembleInteriorFacets(A, mesh, coefficients, ufc);
 
   // Finalise assembly of global tensor
   A.apply();
 }
 //-----------------------------------------------------------------------------
-void Assembler::assembleCells(GenericTensor& A, Mesh& mesh, UFC& ufc) const
+void Assembler::assembleCells(GenericTensor& A, Mesh& mesh,
+                              const Array<Function*>& coefficients,
+                              UFC& ufc) const
 {
   // Skip assembly if there is no cell integral
   if ( !ufc.cell_integral )
@@ -89,6 +91,10 @@ void Assembler::assembleCells(GenericTensor& A, Mesh& mesh, UFC& ufc) const
     // Update to current cell
     ufc.update(*cell);
 
+    // Interpolate coefficients to finite element basis
+    for (uint i = 0; i < ufc.form.num_coefficients(); i++)
+      coefficients[i]->interpolate(ufc.w[i], ufc.cell, *ufc.finite_elements[i]);
+    
     // Compute local-to-global map for each dimension
     for (uint i = 0; i < ufc.form.rank(); i++)
       ufc.dof_maps[i]->tabulate_dofs(ufc.dofs[i], ufc.mesh, ufc.cell);
@@ -103,8 +109,9 @@ void Assembler::assembleCells(GenericTensor& A, Mesh& mesh, UFC& ufc) const
   }
 }
 //-----------------------------------------------------------------------------
-void Assembler::assembleExteriorFacets(GenericTensor& A,
-                                       Mesh& mesh, UFC& ufc) const
+void Assembler::assembleExteriorFacets(GenericTensor& A, Mesh& mesh,
+                                       const Array<Function*>& coefficients,
+                                       UFC& ufc) const
 {
   // Skip assembly if there is no exterior facet integral
   if ( !ufc.exterior_facet_integral )
@@ -146,8 +153,9 @@ void Assembler::assembleExteriorFacets(GenericTensor& A,
   }
 }
 //-----------------------------------------------------------------------------
-void Assembler::assembleInteriorFacets(GenericTensor& A,
-                                       Mesh& mesh, UFC& ufc) const
+void Assembler::assembleInteriorFacets(GenericTensor& A,Mesh& mesh,
+                                       const Array<Function*>& coefficients,
+                                       UFC& ufc) const
 {
   // Skip assembly if there is no interior facet integral
   if ( !ufc.interior_facet_integral )
@@ -207,5 +215,6 @@ void Assembler::check(const ufc::form& form,
     dolfin_error2("Incorrect number of coefficients for form: %d given but %d required.",
                   coefficients.size(), form.num_coefficients());
   }
+
 }
 //-----------------------------------------------------------------------------

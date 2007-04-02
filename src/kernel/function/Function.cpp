@@ -180,6 +180,13 @@ const Function& Function::operator= (const Function& f)
   return *this;
 }
 //-----------------------------------------------------------------------------
+void Function::interpolate(real coefficients[],
+                           const ufc::cell& cell,
+                           const ufc::finite_element& finite_element) const
+{
+  cout << "Interpolating function, but not implemented..." << endl;
+}
+//-----------------------------------------------------------------------------
 void Function::interpolate(real coefficients[], Cell& cell,
                            AffineMap& map, FiniteElement& element)
 {
