@@ -91,10 +91,8 @@ namespace dolfin
 
     /// Reassemble Dot Sigma
     void UpdateDotSigma(Vector& dsig, 
-			BilinearForm& a, 
-			LinearForm& L, 
-			Matrix& A_tmp, 
-			Vector& m_tmp);
+			Vector& icell_vol,
+			LinearForm& L);
 
     /// Returns true if vertex neighboring cells are all fluid
     bool isFluid(Vertex& vertex, const Vector& phi_vec) const;
@@ -107,9 +105,11 @@ namespace dolfin
 
     /// Move the structure part of the mesh according to velocity u
     void UpdateStructure(Vector& mvel_vec, const Vector& phi_vec, Function& u);
-    
     /// Smooth the fluid mesh
     void UpdateFluid(Vector& mvel_vec, const Vector& phi_vec);
+    
+    /// Compute cell volume
+    void ComputeCellVolume(Vector& icell_vol);
     
     Mesh& mesh;
     Function& f;
@@ -205,14 +205,20 @@ namespace dolfin
     }
   }
   //-----------------------------------------------------------------------------
-  inline void FSISolver::UpdateDotSigma(Vector& dsig, BilinearForm& a, LinearForm& L, Matrix& A_tmp, Vector& m_tmp)
+  inline void FSISolver::UpdateDotSigma(Vector& dsig, Vector& cell_vol, LinearForm& L)
   {
-    
-    FEM::assemble(a, A_tmp, mesh);
+    ComputeCellVolume(cell_vol);    // remember that we use cell volume in L-form
     FEM::assemble(L, dsig, mesh);
-    FEM::lump(A_tmp, m_tmp);
-    dsig.div(m_tmp); 
   }
+  //-----------------------------------------------------------------------------
+  inline void FSISolver::ComputeCellVolume(Vector& icell_vol)
+  {
+    icell_vol.init(mesh.numCells());
+
+    for (CellIterator cell(mesh); !cell.end(); ++cell) 
+      icell_vol(cell->index()) = 1.0/cell->volume();
+  }
+    
   
 }
 

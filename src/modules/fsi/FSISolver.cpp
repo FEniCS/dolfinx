@@ -181,15 +181,13 @@ void FSISolver::solve()
   Vector rho_vec;      // density of material 
   Vector alpha_vec;    // stress component
   Vector dsig;         // dot sigma, change of stress deviatoric
-
-  // Define temporary variables
-  Matrix A_tmp;        // temp matrix for dsig updating
-  Vector m_tmp;        // temp vector for dsig updating
+  Vector icell_vol;     // store the inverse cell volume
 
   // Create functions corresponding to FSI variables
   Function phi(phi_vec);
   Function rho(rho_vec);
   Function alpha(alpha_vec);
+  Function icv(icell_vol);
 
   // Initialization of variables
   ComputePhi(phi_vec);
@@ -204,19 +202,17 @@ void FSISolver::solve()
   // Create forms for dotsigma updating
   if (nsd == 3) {
     
-    adsig = new FSIDotSigma3D::BilinearForm(dummy);
-    Ldsig = new FSIDotSigma3D::LinearForm(uc, mu);
+    Ldsig = new FSIDotSigma3D::LinearForm(uc, icv, mu);
     
   } else if (nsd == 2) {
 
-    adsig = new FSIDotSigma2D::BilinearForm(dummy);
-    Ldsig = new FSIDotSigma2D::LinearForm(uc, mu);
+    Ldsig = new FSIDotSigma2D::LinearForm(uc, icv, mu);
   
   } else {
     dolfin_error("FSI solver only implemented for 2 and 3 space dimensions.");
   }
   
-  UpdateDotSigma(dsig, *adsig, *Ldsig, A_tmp, m_tmp);
+  UpdateDotSigma(dsig, icell_vol, *Ldsig);
 
   Vector   sigma_vec(dsig.size());
   Function sigma(sigma_vec);
@@ -359,7 +355,7 @@ void FSISolver::solve()
     // Update stress deviatoric
     dsig.mult(k);
     sigma_vec += dsig;
-    UpdateDotSigma(dsig, *adsig, *Ldsig, A_tmp, m_tmp);
+    UpdateDotSigma(dsig, icell_vol, *Ldsig);
         
     // Update progress
     //    prog = t / T;    
