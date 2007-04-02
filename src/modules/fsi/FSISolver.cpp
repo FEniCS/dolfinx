@@ -194,7 +194,7 @@ void FSISolver::solve()
   ComputeAlpha(alpha_vec, phi_vec, nu);
   ComputeDensity(rho_vec, phi_vec);
 
-  real dummy = 1;      // required for Bilinear form, Bug??
+  //real dummy = 1;      // required for Bilinear form, Bug??
   
   BilinearForm* adsig = 0;
   LinearForm*   Ldsig = 0;
