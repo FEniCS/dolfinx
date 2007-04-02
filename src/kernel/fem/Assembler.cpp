@@ -48,6 +48,8 @@ void Assembler::assemble(GenericTensor& A, const ufc::form& form, Mesh& mesh,
                          Array<Function*> coefficients)
 {
   cout << "Assembling form " << form.signature() << endl;
+  // Check arguments
+  check(form, mesh, coefficients);
 
   // Update dof maps
   dof_maps.update(form, mesh);
@@ -192,6 +194,18 @@ void Assembler::assembleInteriorFacets(GenericTensor& A,
     A.add(ufc.macro_A, ufc.macro_local_dimensions, ufc.macro_dofs);
 
     p++;
+  }
+}
+//-----------------------------------------------------------------------------
+void Assembler::check(const ufc::form& form,
+                      const Mesh& mesh,
+                      const Array<Function*>& coefficients) const
+{
+  // Check that we get the correct number of coefficients
+  if ( coefficients.size() != form.num_coefficients() )
+  {
+    dolfin_error2("Incorrect number of coefficients for form: %d given but %d required.",
+                  coefficients.size(), form.num_coefficients());
   }
 }
 //-----------------------------------------------------------------------------

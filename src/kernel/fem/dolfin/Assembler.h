@@ -55,6 +55,9 @@ namespace dolfin
     // Assemble over interior facets
     void assembleInteriorFacets(GenericTensor& A, Mesh& mesh, UFC& data) const;
 
+    // Check arguments
+    void check(const ufc::form& form, const Mesh& mesh, const Array<Function*>& coefficients) const;
+
     // Storage for dof maps
     DofMaps dof_maps;
 
