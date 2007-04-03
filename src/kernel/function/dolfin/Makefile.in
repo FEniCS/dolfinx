@@ -203,6 +203,7 @@ target_alias = @target_alias@
 EXTRA_DIST = dolfin_function.h \
              ConstantFunction.h \
              DiscreteFunction.h \
+             NewDiscreteFunction.h \
              Function.h \
              FunctionPointer.h \
              FunctionPointerFunction.h \

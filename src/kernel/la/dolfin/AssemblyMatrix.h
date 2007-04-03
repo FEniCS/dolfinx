@@ -46,7 +46,7 @@ namespace dolfin
     ///--- Functions overloaded from GenericTensor ---
 
     /// Initialize zero tensor of given rank and dimensions
-    void init(uint rank, uint* dims)
+    void init(uint rank, const uint* dims)
     {
       // Check that the rank is 2
       if ( rank != 2 )
@@ -66,8 +66,20 @@ namespace dolfin
       return dims[dim];
     }
 
+    /// Get block of values
+    void get(real* block, const uint* num_rows, const uint * const * rows) const
+    {
+      get(block, num_rows[0], rows[0], num_rows[1], rows[1]);
+    }
+
+    /// Set block of values
+    void set(const real* block, const uint* num_rows, const uint * const * rows)
+    {
+      set(block, num_rows[0], rows[0], num_rows[1], rows[1]);
+    }
+
     /// Add block of values
-    void add(real* block, uint* num_rows, uint** rows)
+    void add(const real* block, const uint* num_rows, const uint * const * rows)
     {
       add(block, num_rows[0], rows[0], num_rows[1], rows[1]);
     }
@@ -92,7 +104,7 @@ namespace dolfin
     }
 
     /// Add entries to matrix
-    void add(real* block, uint m, uint* rows, uint n, uint* cols)
+    void add(const real* block, uint m, const uint* rows, uint n, const uint* cols)
     {
       uint pos = 0;
       for (uint i = 0; i < m; i++)
@@ -108,6 +120,17 @@ namespace dolfin
             it->second += block[pos++];
         }
       }
+    }
+
+    
+    void get(real* block, uint m, const uint* rows, uint n, const uint* cols) const
+    {
+      dolfin_error("Not implemented");
+    }
+
+    void set(const real* block, uint m, const uint* rows, uint n, const uint* cols)
+    {
+      dolfin_error("Not implemented");
     }
 
     /// Finalise assembly

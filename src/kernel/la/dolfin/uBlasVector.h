@@ -1,10 +1,10 @@
 // Copyright (C) 2006 Garth N. Wells
 // Licensed under the GNU GPL Version 2.
 //
-// Modified by Anders Logg 2006.
+// Modified by Anders Logg 2006-2007.
 //
 // First added:  2006-03-04
-// Last changed: 2006-10-10
+// Last changed: 2007-04-03
 
 #ifndef __UBLAS_VECTOR_H
 #define __UBLAS_VECTOR_H
@@ -87,14 +87,20 @@ namespace dolfin
     inline void set(const uint i, const real value) 
     { (*this)(i) = value; }
 
+    /// Get block of values
+    void get(real* block, uint m, const uint* rows) const;
+
     /// Set block of values
-    void set(const real block[], const int pos[], const int n);
+    void set(const real* block, uint m, const uint* rows);
 
     /// Add block of values
-    void add(const real block[], const int pos[], const int n);
+    void add(const real* block, uint m, const uint* rows);
 
-    /// Get block of values
-    void get(real block[], const int pos[], const int n) const;
+    /// Apply changes to vector (dummy function for compatibility)
+    void apply();
+
+    /// Set all entries to zero
+    void zero();
 
     /// Compute norm of vector
     enum NormType { l1, l2, linf };
@@ -102,13 +108,7 @@ namespace dolfin
 
     /// Compute sum of vector
     real sum() const
-    { return ublas::sum(*this); } 
-
-    /// Apply changes to vector (dummy function for compatibility)
-    void apply();
-
-    /// Set all entries to zero
-    void zero();
+    { return ublas::sum(*this); }
     
     /// Addition (AXPY)
     void axpy(const real a, const uBlasVector& x);

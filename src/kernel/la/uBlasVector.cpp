@@ -1,10 +1,10 @@
 // Copyright (C) 2006 Garth N. Wells.
 // Licensed under the GNU GPL Version 2.
 //
-// Modified by Anders Logg 2006.
+// Modified by Anders Logg 2006-2007.
 //
 // First added:  2006-04-04
-// Last changed: 2006-12-12
+// Last changed: 2007-04-03
 
 #include <dolfin/dolfin_log.h>
 #include <boost/numeric/ublas/vector.hpp>
@@ -56,22 +56,32 @@ void uBlasVector::init(const SparsityPattern& sparsity_pattern)
   dolfin_error("Cannot initialise a uBLAS vector using a sparsity pattern.");
 }
 //-----------------------------------------------------------------------------
-void uBlasVector::set(const real block[], const int pos[], const int n)
+void uBlasVector::get(real* block, uint m, const uint* rows) const
 {
-  for(int i = 0; i < n; ++i)
-    (*this)(pos[i]) = block[i];
+  for (uint i = 0; i < m; i++)
+    block[i] = (*this)(rows[i]);
 }
 //-----------------------------------------------------------------------------
-void uBlasVector::add(const real block[], const int pos[], const int n)
+void uBlasVector::set(const real* block, uint m, const uint* rows)
 {
-  for(int i = 0; i < n; ++i)
-    (*this)(pos[i]) += block[i];
+  for (uint i = 0; i < m; i++)
+    (*this)(rows[i]) = block[i];
 }
 //-----------------------------------------------------------------------------
-void uBlasVector::get(real block[], const int pos[], const int n) const
+void uBlasVector::add(const real* block, uint m, const uint* rows)
 {
-  for(int i = 0; i < n; ++i)
-    block[i] = (*this)(pos[i]);
+  for (uint i = 0; i < m; i++)
+    (*this)(rows[i]) += block[i];
+}
+//-----------------------------------------------------------------------------
+void uBlasVector::apply()
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+void uBlasVector::zero()
+{
+  clear();
 }
 //-----------------------------------------------------------------------------
 real uBlasVector::norm(const NormType type) const
@@ -88,17 +98,6 @@ real uBlasVector::norm(const NormType type) const
   }
   return norm_inf(*this);
 }
-//-----------------------------------------------------------------------------
-void uBlasVector::apply()
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-void uBlasVector::zero()
-{
-  clear();
-}
-//-----------------------------------------------------------------------------
 void uBlasVector::div(const uBlasVector& y)
 {
   uBlasVector& x = *this;

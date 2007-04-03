@@ -1,8 +1,8 @@
-// Copyright (C) 2005-2006 Anders Logg.
+// Copyright (C) 2005-2007 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-11-26
-// Last changed: 2006-05-30
+// Last changed: 2007-04-03
 
 #ifndef __LOCAL_FUNCTION_DATA_H
 #define __LOCAL_FUNCTION_DATA_H
@@ -34,7 +34,7 @@ namespace dolfin
     void clear();
     
     /// Global numbers for local degrees of freedom
-    int* dofs;
+    uint* dofs;
 
     /// Component indices for local degrees of freedom
     uint* components;

@@ -1,14 +1,18 @@
 // Copyright (C) 2007 Garth N. Wells
 // Licensed under the GNU GPL Version 2.
 //
+// Modified by Anders Logg 2007.
+//
 // First added:  2007-03-13
-// Last changed: 2007-03-15
+// Last changed: 2007-04-03
 
 #ifndef __SPARSITY_PATTERN_H
 #define __SPARSITY_PATTERN_H
 
 #include <set>
 #include <vector>
+
+#include <dolfin/dolfin_log.h>
 #include <dolfin/constants.h>
 
 namespace dolfin

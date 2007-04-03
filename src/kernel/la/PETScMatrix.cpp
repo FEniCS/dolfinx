@@ -1,11 +1,11 @@
-// Copyright (C) 2004-2006 Johan Hoffman, Johan Jansson and Anders Logg.
+// Copyright (C) 2004-2007 Johan Hoffman, Johan Jansson and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // Modified by Garth N. Wells 2005,2006.
 // Modified by Andy R. Terrel 2005.
 //
 // First added:  2004
-// Last changed: 2006-12-11
+// Last changed: 2007-04-03
 
 #ifdef HAVE_PETSC_H
 
@@ -248,18 +248,37 @@ void PETScMatrix::add(const uint i, const uint j, const real value)
   MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::set(const real block[],
-		      const int rows[], const int m,
-		      const int cols[], const int n)
+void PETScMatrix::get(real* block,
+                      const uint m, const uint* rows,
+                      const uint n, const uint* cols) const
 {
-  MatSetValues(A, m, rows, n, cols, block, INSERT_VALUES);
+  dolfin_assert(A);
+  MatGetValues(A,
+               static_cast<int>(m), reinterpret_cast<int*>(rows),
+               static_cast<int>(n), reinterpret_cast<int*>(cols),
+               block);
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::add(const real block[],
-                      const int rows[], const int m,
-                      const int cols[], const int n)
+void PETScMatrix::set(const real* block,
+                      const uint m, const uint* rows,
+                      const uint n, const uint* cols)
 {
-  MatSetValues(A, m, rows, n, cols, block, ADD_VALUES);
+  dolfin_assert(A);
+  MatSetValues(A,
+               static_cast<int>(m), reinterpret_cast<int*>(rows),
+               static_cast<int>(n), reinterpret_cast<int*>(cols),
+               block, INSERT_VALUES);
+}
+//-----------------------------------------------------------------------------
+void PETScMatrix::add(const real* block,
+                      const uint m, const uint* rows,
+                      const uint n, const uint* cols)
+{
+  dolfin_assert(A);
+  MatSetValues(A,
+               static_cast<int>(m), reinterpret_cast<int*>(rows),
+               static_cast<int>(n), reinterpret_cast<int*>(cols),
+               block, ADD_VALUES);
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::getRow(const uint i, int& ncols, Array<int>& columns, 

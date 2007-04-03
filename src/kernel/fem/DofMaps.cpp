@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2007.
 //
 // First added:  2007-01-17
-// Last changed: 2007-03-14
+// Last changed: 2007-04-03
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Cell.h>
@@ -41,11 +41,10 @@ DofMaps::~DofMaps()
 void DofMaps::update(const ufc::form& form, Mesh& mesh)
 {
   // Resize array of dof maps
-  const uint num_arguments = form.rank() + form.num_coefficients();
-  dof_maps.resize(num_arguments);
+  dof_maps.resize(form.rank());
 
   // Create dof maps and reuse previously computed dof maps
-  for (uint i = 0; i < num_arguments; i++)
+  for (uint i = 0; i < form.rank(); i++)
   {
     // Create UFC dof map
     ufc::dof_map* ufc_dof_map = form.create_dof_map(i);
@@ -123,8 +122,8 @@ void DofMaps::sparsityPattern(SparsityPattern& sparsity_pattern) const
   {
     ufc_cell.update(*cell);
 
-    dof_map0->dof_map(dof0, ufc_cell);
-    dof_map1->dof_map(dof1, ufc_cell);
+    dof_map0->tabulate_dofs(dof0, ufc_cell);
+    dof_map1->tabulate_dofs(dof1, ufc_cell);
 
     // Building sparsity
     for (uint i = 0; i < dim0; ++i)

@@ -1,10 +1,10 @@
-// Copyright (C) 2004-2006 Johan Hoffman, Johan Jansson and Anders Logg.
+// Copyright (C) 2004-2007 Johan Hoffman, Johan Jansson and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // Modified by Garth N. Wells 2005.
 //
 // First added:  2004
-// Last changed: 2006-12-12
+// Last changed: 2007-04-03
 
 // FIXME: Insert dolfin_assert() where appropriate
 
@@ -122,21 +122,24 @@ void PETScVector::mult(const real a)
   VecScale(x, a);
 }
 //-----------------------------------------------------------------------------
-void PETScVector::set(const real block[], const int cols[], const int n)
-{
-  VecSetValues(x, n, cols, block, INSERT_VALUES); 
-}
-//-----------------------------------------------------------------------------
-void PETScVector::add(const real block[], const int cols[], const int n)
+void PETScVector::get(real* block, uint m, const uint* rows) const
 {
   dolfin_assert(x);
-  VecSetValues(x, n, cols, block, ADD_VALUES); 
+  VecGetValues(x, static_cast<int>(m), reinterpret_cast<int*>(rows), block);
 }
 //-----------------------------------------------------------------------------
-void PETScVector::get(real block[], const int cols[], const int n) const
+void PETScVector::set(const real* block, uint m, const uint* rows)
 {
   dolfin_assert(x);
-  VecGetValues(x, n, cols, block); 
+  VecSetValues(x, static_cast<int>(m), reinterpret_cast<int*>(rows), block,
+               INSERT_VALUES);
+}
+//-----------------------------------------------------------------------------
+void PETScVector::add(const real* block, uint m, const uint* rows)
+{
+  dolfin_assert(x);
+  VecSetValues(x, static_cast<int>(m), reinterpret_cast<int*>(rows), block,
+               ADD_VALUES);
 }
 //-----------------------------------------------------------------------------
 void PETScVector::apply()

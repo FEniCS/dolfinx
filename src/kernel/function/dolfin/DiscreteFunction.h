@@ -1,8 +1,8 @@
-// Copyright (C) 2005-2006 Anders Logg.
+// Copyright (C) 2005-2007 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-11-26
-// Last changed: 2006-12-12
+// Last changed: 2007-04-02
 
 #ifndef __DISCRETE_FUNCTION_H
 #define __DISCRETE_FUNCTION_H
@@ -14,6 +14,8 @@
 
 namespace dolfin
 {
+
+  // THIS CLASS IS BEING REPLACED BY NewDiscreteFunction
 
   class Mesh;
   
@@ -49,7 +51,7 @@ namespace dolfin
     /// Evaluate function at given vertex
     real operator() (const Vertex& vertex, uint i);
 
-    // Restrict to sub function or component (if possible)
+    /// Restrict to sub function or component (if possible)
     void sub(uint i);
 
     // Copy data from given function
@@ -84,6 +86,18 @@ namespace dolfin
 
     /// Reinitialize to given data (automatically create vector)
     void init(Mesh& mesh, FiniteElement& element);
+
+    //--- New functions for UFC-based assembly, others may be removed ---
+
+    /// Interpolate function on cell
+    void interpolate(real* coefficients,
+                     const ufc::cell& cell,
+                     const ufc::finite_element& finite_element);
+
+    /// Evaluate function at given point in cell (UFC function interface)
+    void evaluate(real* values,
+                  const real* coordinates,
+                  const ufc::cell& cell) const;
 
   private:
 

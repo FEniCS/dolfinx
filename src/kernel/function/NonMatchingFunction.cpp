@@ -1,8 +1,8 @@
-// Copyright (C) 2005-2006 Anders Logg.
+// Copyright (C) 2005-2007 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-11-26
-// Last changed: 2006-12-12
+// Last changed: 2007-04-02
 //
 // Note: this breaks the standard envelope-letter idiom slightly,
 // since we call the envelope class from one of the letter classes.
@@ -73,7 +73,7 @@ void NonMatchingFunction::sub(uint i)
 }
 //-----------------------------------------------------------------------------
 void NonMatchingFunction::interpolate(real coefficients[], Cell& cell,
-                               AffineMap& map, FiniteElement& element)
+                                      AffineMap& map, FiniteElement& element)
 {
 //   cout << "Interpolating NonMatchingFunction" << endl;
 
@@ -138,5 +138,19 @@ void NonMatchingFunction::attach(Mesh& mesh, bool local)
 void NonMatchingFunction::attach(FiniteElement& element, bool local)
 {
   dolfin_error("Cannot attach finite elements to non-matching functions.");
+}
+//-----------------------------------------------------------------------------
+void NonMatchingFunction::interpolate(real* coefficients,
+                                      const ufc::cell& cell,
+                                      const ufc::finite_element& finite_element)
+{
+  dolfin_error("Not implemented");
+}
+//-----------------------------------------------------------------------------
+void NonMatchingFunction::evaluate(real* values,
+                                   const real* coordinates,
+                                   const ufc::cell& cell) const
+{
+  dolfin_error("Not implemented");
 }
 //-----------------------------------------------------------------------------

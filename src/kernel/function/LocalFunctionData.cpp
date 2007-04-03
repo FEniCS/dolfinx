@@ -33,7 +33,7 @@ void LocalFunctionData::init(const FiniteElement& element)
   clear();
 
   // Initialize local degrees of freedom
-  dofs = new int[element.spacedim()];
+  dofs = new uint[element.spacedim()];
 
   // Initialize local components
   components = new uint[element.spacedim()];

@@ -72,6 +72,18 @@ void UserFunction::sub(uint i)
   _vectordim = 1;
 }
 //-----------------------------------------------------------------------------
+/*
+void UserFunction::interpolate(real coefficients[],
+                               const ufc::mesh& mesh,
+                               const ufc::cell& cell,
+                               const ufc::finite_element& finite_element) const
+{
+// Evaluate each dof to get coefficients for nodal basis expansion
+  for (uint i = 0; i < finite_element.space_dimension(); i++)
+    coefficients[i] = finite_element.evaluate_dof(i, *this, cell);
+}
+*/
+//-----------------------------------------------------------------------------
 void UserFunction::interpolate(real coefficients[], Cell& cell,
                                AffineMap& map, FiniteElement& element)
 {
@@ -130,5 +142,21 @@ void UserFunction::attach(Mesh& mesh, bool local)
 void UserFunction::attach(FiniteElement& element, bool local)
 {
   dolfin_error("Cannot attach finite elements to user-defined functions.");
+}
+//-----------------------------------------------------------------------------
+void UserFunction::interpolate(real* coefficients,
+                               const ufc::cell& cell,
+                               const ufc::finite_element& finite_element)
+{
+  // Evaluate each dof to get coefficients for nodal basis expansion
+  for (uint i = 0; i < finite_element.space_dimension(); i++)
+    coefficients[i] = finite_element.evaluate_dof(i, *this, cell);
+}
+//-----------------------------------------------------------------------------
+void UserFunction::evaluate(real* values,
+                                const real* coordinates,
+                                const ufc::cell& cell) const
+{
+  dolfin_error("Not implemented");
 }
 //-----------------------------------------------------------------------------

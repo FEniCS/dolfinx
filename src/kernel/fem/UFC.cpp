@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2007-01-17
-// Last changed: 2007-03-09
+// Last changed: 2007-04-04
 
 #include <dolfin/constants.h>
 #include <dolfin/DofMaps.h>
@@ -14,17 +14,19 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 UFC::UFC(const ufc::form& form, Mesh& mesh, DofMaps& dof_maps) : form(form)
 {
-  // Compute the number of arguments
-  num_arguments = form.rank() + form.num_coefficients();
-
   // Create finite elements
-  finite_elements = new ufc::finite_element*[num_arguments];
-  for (uint i = 0; i < num_arguments; i++)
+  finite_elements = new ufc::finite_element*[form.rank()];
+  for (uint i = 0; i < form.rank(); i++)
     finite_elements[i] = form.create_finite_element(i);
 
+  // Create finite elements for coefficients
+  coefficient_elements = new ufc::finite_element*[form.num_coefficients()];
+  for (uint i = 0; i < form.num_coefficients(); i++)
+    coefficient_elements[i] = form.create_finite_element(form.rank() + i);
+
   // Create dof maps (reuse from dof map storage)
-  this->dof_maps = new ufc::dof_map*[num_arguments];
-  for (uint i = 0; i < num_arguments; i++)
+  this->dof_maps = new ufc::dof_map*[form.rank()];
+  for (uint i = 0; i < form.rank(); i++)
     this->dof_maps[i] = &dof_maps[i].ufc_dof_map;
 
   // FIXME: Assume for now there is only one sub domain
@@ -60,18 +62,18 @@ UFC::UFC(const ufc::form& form, Mesh& mesh, DofMaps& dof_maps) : form(form)
     macro_A[i] = 0.0;  
 
   // Initialize local dimensions
-  local_dimensions = new uint[num_arguments];
-  for (uint i = 0; i < num_arguments; i++)
+  local_dimensions = new uint[form.rank()];
+  for (uint i = 0; i < form.rank(); i++)
     local_dimensions[i] = this->dof_maps[i]->local_dimension();
 
   // Initialize local dimensions for macro element
-  macro_local_dimensions = new uint[num_arguments];
-  for (uint i = 0; i < num_arguments; i++)
+  macro_local_dimensions = new uint[form.rank()];
+  for (uint i = 0; i < form.rank(); i++)
     macro_local_dimensions[i] = 2*this->dof_maps[i]->local_dimension();
 
   // Initialize global dimensions
-  global_dimensions = new uint[num_arguments];
-  for (uint i = 0; i < num_arguments; i++)
+  global_dimensions = new uint[form.rank()];
+  for (uint i = 0; i < form.rank(); i++)
     global_dimensions[i] = this->dof_maps[i]->global_dimension();
 
   // Initialize dofs
@@ -96,7 +98,7 @@ UFC::UFC(const ufc::form& form, Mesh& mesh, DofMaps& dof_maps) : form(form)
   w = new real*[form.num_coefficients()];
   for (uint i = 0; i < form.num_coefficients(); i++)
   {
-    const uint n = local_dimensions[form.rank() + i];
+    const uint n = coefficient_elements[i]->space_dimension();
     w[i] = new real[n];
     for (uint j = 0; j < n; j++)
       w[i][j] = 0.0;
@@ -106,9 +108,14 @@ UFC::UFC(const ufc::form& form, Mesh& mesh, DofMaps& dof_maps) : form(form)
 UFC::~UFC()
 {
   // Delete finite elements
-  for (uint i = 0; i < num_arguments; i++)
+  for (uint i = 0; i < form.rank(); i++)
     delete finite_elements[i];
   delete [] finite_elements;
+
+  // Delete coefficient finite elements
+  for (uint i = 0; i < form.num_coefficients(); i++)
+    delete coefficient_elements[i];
+  delete [] coefficient_elements;
 
   // Delete dof maps (don't touch reused dof maps)
   delete [] dof_maps;

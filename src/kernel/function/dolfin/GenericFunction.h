@@ -1,11 +1,13 @@
-// Copyright (C) 2005 Anders Logg.
+// Copyright (C) 2005-2007 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-11-28
-// Last changed: 2006-12-12
+// Last changed: 2007-04-03
 
 #ifndef __GENERIC_FUNCTION_H
 #define __GENERIC_FUNCTION_H
+
+#include <ufc.h>
 
 #include <dolfin/constants.h>
 #include <dolfin/Vector.h>
@@ -25,7 +27,7 @@ namespace dolfin
   /// This class serves as a base class/interface for implementations
   /// of specific function representations.
 
-  class GenericFunction
+  class GenericFunction : public ufc::function
   {
   public:
 
@@ -41,7 +43,7 @@ namespace dolfin
     /// Evaluate function at given vertex
     virtual real operator() (const Vertex& vertex, uint i) = 0;
 
-    // Restrict to sub function or component (if possible)
+    /// Restrict to sub function or component (if possible)
     virtual void sub(uint i) = 0;
 
     /// Compute interpolation of function onto local finite element space
@@ -70,6 +72,13 @@ namespace dolfin
 
     /// Attach finite element to function
     virtual void attach(FiniteElement& element, bool local) = 0;
+
+    //--- New functions for UFC-based assembly, others may be removed ---
+    
+    /// Interpolate function on cell
+    virtual void interpolate(real* coefficients,
+                             const ufc::cell& cell,
+                             const ufc::finite_element& finite_element) = 0;
 
   protected:
 

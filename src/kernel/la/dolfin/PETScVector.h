@@ -1,10 +1,10 @@
-// Copyright (C) 2004-2006 Johan Hoffman, Johan Jansson and Anders Logg.
+// Copyright (C) 2004-2007 Johan Hoffman, Johan Jansson and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // Modified by Garth N. Wells 2005, 2006.
 //
 // First added:  2004
-// Last changed: 2006-12-12
+// Last changed: 2007-04-03
 
 #ifndef __PETSC_VECTOR_H
 #define __PETSC_VECTOR_H
@@ -99,14 +99,14 @@ namespace dolfin
     /// Element-wise multiplication
     void mult(const real a);
 
+    /// Get block of values
+    void get(real* block, uint m, const uint* rows) const;
+
     /// Set block of values
-    void set(const real block[], const int pos[], const int n);
+    void set(const real* block, uint m, const uint* rows);
 
     /// Add block of values
-    void add(const real block[], const int pos[], const int n);
-
-    /// Get block of values from vector
-    void get(real block[], const int cols[], const int n) const;
+    void add(const real* block, uint m, const uint* rows);
 
     /// Apply changes to vector
     void apply();

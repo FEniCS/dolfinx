@@ -410,11 +410,11 @@ void FEM::applyCommonBC(GenericMatrix* A, GenericVector* b,
   Point* points = new Point[n];
   
   real* block_b = 0;
-  int* node_list = 0;
+  uint* node_list = 0;
   if( b )
   {
     block_b   = new real[n];  
-    node_list = new int[n];  
+    node_list = new uint[n];  
   }
   
   // FIXME: Creating a new BoundaryMesh every time is likely inefficient
@@ -463,7 +463,7 @@ void FEM::applyCommonBC(GenericMatrix* A, GenericVector* b,
       // Set boundary condition if Dirichlet
       if ( bv.fixed )
       {
-        int node = nodes[i];
+        uint node = static_cast<uint>(nodes[i]);
         if ( !row_set[node] )
         {
           if ( x ) // Compute "residual" 
@@ -483,7 +483,7 @@ void FEM::applyCommonBC(GenericMatrix* A, GenericVector* b,
       }
     }
     if( b )
-      b->set(block_b, node_list, k);
+      b->set(block_b, k, node_list);
   }
   dolfin_info("Boundary condition applied to %d degrees of freedom on the boundary.", m);
   
@@ -553,7 +553,9 @@ void FEM::assembleElementTensor(BilinearForm& a, GenericMatrix& A,
   a.eval(a.block, map, det);
   
   // Add element tensor to global tensor
-  A.add(a.block, a.test_nodes, a.test().spacedim(), a.trial_nodes, a.trial().spacedim());
+  A.add(a.block,
+        a.test().spacedim(),  reinterpret_cast<uint*>(a.test_nodes),
+        a.trial().spacedim(), reinterpret_cast<uint*>(a.trial_nodes));
 }
 //-----------------------------------------------------------------------------
 void FEM::assembleElementTensor(LinearForm& L, GenericVector& b, 
@@ -570,7 +572,7 @@ void FEM::assembleElementTensor(LinearForm& L, GenericVector& b,
   L.eval(L.block, map, det);
   
   // Add element tensor to global tensor
-  b.add(L.block, L.test_nodes, L.test().spacedim());
+  b.add(L.block, L.test().spacedim(), reinterpret_cast<uint*>(L.test_nodes));
 }
 //-----------------------------------------------------------------------------
 void FEM::assembleElementTensor(Functional& M, real& val, Cell& cell,
@@ -601,7 +603,9 @@ void FEM::assembleExteriorFacetTensor(BilinearForm& a, GenericMatrix& A,
   a.eval(a.block, map, det, facet);
   
   // Add exterior facet tensor to to global tensor
-  A.add(a.block, a.test_nodes, a.test().spacedim(), a.trial_nodes, a.trial().spacedim());
+  A.add(a.block,
+        a.test().spacedim(),  reinterpret_cast<uint*>(a.test_nodes),
+        a.trial().spacedim(), reinterpret_cast<uint*>(a.trial_nodes));
 }
 //-----------------------------------------------------------------------------
 void FEM::assembleExteriorFacetTensor(LinearForm& L, GenericVector& b, 
@@ -618,7 +622,7 @@ void FEM::assembleExteriorFacetTensor(LinearForm& L, GenericVector& b,
   L.eval(L.block, map, det, facet);
   
   // Add exterior facet tensor to global tensor
-  b.add(L.block, L.test_nodes, L.test().spacedim());
+  b.add(L.block, L.test().spacedim(), reinterpret_cast<uint*>(L.test_nodes));
 }
 //-----------------------------------------------------------------------------
 void FEM::assembleExteriorFacetTensor(Functional& M, real& val, Cell& cell,
@@ -684,7 +688,7 @@ void FEM::assembleInteriorFacetTensor(BilinearForm& a, GenericMatrix& A,
   cout << endl;
 
   // Add exterior facet tensor to global tensor
-  A.add(block, test_nodes, 2*m, trial_nodes, 2*n);
+  A.add(block, 2*m, reinterpret_cast<uint*>(test_nodes), 2*n, reinterpret_cast<uint*>(trial_nodes));
 
   // Delete local data structures
   delete [] block;
@@ -724,7 +728,7 @@ void FEM::assembleInteriorFacetTensor(LinearForm& L, GenericVector& b,
   L.eval(block, map0, map1, det, facet0, facet1, alignment);
 
   // Add exterior facet tensor to global tensor
-  b.add(block, test_nodes, 2*m);
+  b.add(block, 2*m, reinterpret_cast<uint*>(test_nodes));
 
   // Delete local data structures
   delete [] block;
@@ -1025,7 +1029,9 @@ void FEM::assembleElementOld(BilinearForm& a, GenericMatrix& A,
     a.eval(a.block, map, map.det, facetID);
   
   // Add element matrix to global matrix
-  A.add(a.block, a.test_nodes, a.test().spacedim(), a.trial_nodes, a.trial().spacedim());
+  A.add(a.block,
+        a.test().spacedim(),  reinterpret_cast<uint*>(a.test_nodes),
+        a.trial().spacedim(), reinterpret_cast<uint*>(a.trial_nodes));
 }
 //-----------------------------------------------------------------------------
 dolfin::uint FEM::estimateNonZerosOld(Mesh& mesh,

@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells 2005.
 //
 // First added:  2003-11-28
-// Last changed: 2007-04-02
+// Last changed: 2007-04-03
 
 #ifndef __FUNCTION_H
 #define __FUNCTION_H
@@ -90,9 +90,6 @@ namespace dolfin
     /// Assignment operator
     const Function& operator= (const Function& f);
 
-    /// Interpolate function to finite element basis
-    void interpolate(real coefficients[], const ufc::cell& cell, const ufc::finite_element& finite_element) const;
-
     /// Compute interpolation of function onto local finite element space
     void interpolate(real coefficients[], Cell& cell, AffineMap& map, FiniteElement& element);
     
@@ -134,6 +131,14 @@ namespace dolfin
     /// Return current type of function
     enum Type { constant, user, functionpointer, discrete, nonmatching };
     inline Type type() const { return _type; } 
+
+    
+    //--- New functions for UFC-based assembly, others may be removed ---
+    
+    /// Interpolate function on cell
+    void interpolate(real* coefficients,
+                     const ufc::cell& cell,
+                     const ufc::finite_element& finite_element);
 
   protected:
 

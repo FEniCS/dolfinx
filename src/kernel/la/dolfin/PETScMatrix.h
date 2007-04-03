@@ -1,11 +1,11 @@
-// Copyright (C) 2004-2005 Johan Hoffman, Johan Jansson and Anders Logg.
+// Copyright (C) 2004-2007 Johan Hoffman, Johan Jansson and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // Modified by Andy R. Terrel, 2005.
 // Modified by Garth N. Wells, 2006.
 //
 // First added:  2004
-// Last changed: 2006-12-11
+// Last changed: 2007-04-03
 
 #ifndef __PETSC_MATRIX_H
 #define __PETSC_MATRIX_H
@@ -103,11 +103,14 @@ namespace dolfin
     // Add value to element
     void add(const uint i, const uint j, const real value);
     
+    /// Get block of values
+    void get(real* block, const uint m, const uint* rows, const uint n, const uint* cols) const;
+
     /// Set block of values
-    void set(const real block[], const int rows[], const int m, const int cols[], const int n);
+    void set(const real* block, const uint m, const uint* rows, const uint n, const uint* cols);
 
     /// Add block of values
-    void add(const real block[], const int rows[], const int m, const int cols[], const int n);
+    void add(const real* block, const uint m, const uint* rows, const uint n, const uint* cols);
 
     /// Get non-zero values of row i
     void getRow(const uint i, int& ncols, Array<int>& columns, Array<real>& values) const;

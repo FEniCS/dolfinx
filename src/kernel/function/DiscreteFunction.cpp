@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2006.
 //
 // First added:  2005-11-26
-// Last changed: 2007-01-29
+// Last changed: 2007-04-02
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Point.h>
@@ -132,14 +132,14 @@ real DiscreteFunction::operator()(const Point& p, uint i)
       local.init(*_element);
       
       // Compute mapping to global degrees of freedom
-      _element->nodemap(local.dofs, cell, *_mesh);
+      _element->nodemap(reinterpret_cast<int*>(local.dofs), cell, *_mesh);
       
       // Compute positions in global vector by adding offsets
       for (uint j = 0; j < _element->spacedim(); j++)
 	local.dofs[j] = local.dofs[j] + mixed_offset + component_offset;
       
       // Get values
-      _x->get(local.coefficients, local.dofs, _element->spacedim());
+      _x->get(local.coefficients, _element->spacedim(), local.dofs);
       
       // Compute map
       NewAffineMap map;
@@ -268,14 +268,14 @@ void DiscreteFunction::interpolate(real coefficients[], Cell& cell,
   local.init(*_element);
   
   // Compute mapping to global degrees of freedom
-  _element->nodemap(local.dofs, cell, *_mesh);
+  _element->nodemap(reinterpret_cast<int*>(local.dofs), cell, *_mesh);
 
   // Compute positions in global vector by adding offsets
   for (uint i = 0; i < _element->spacedim(); i++)
     local.dofs[i] = local.dofs[i] + mixed_offset + component_offset;
 
   // Get values
-  _x->get(coefficients, local.dofs, _element->spacedim());
+  _x->get(coefficients, _element->spacedim(), local.dofs);
 }
 //-----------------------------------------------------------------------------
 void DiscreteFunction::interpolate(Function& fsource)
@@ -439,5 +439,19 @@ void DiscreteFunction::invalidateMesh()
     delete _idetector;
     _idetector = 0;
   }
+}
+//-----------------------------------------------------------------------------
+void DiscreteFunction::interpolate(real* coefficients,
+                                   const ufc::cell& cell,
+                                   const ufc::finite_element& finite_element)
+{
+  dolfin_error("Not implemented");
+}
+//-----------------------------------------------------------------------------
+void DiscreteFunction::evaluate(real* values,
+                                const real* coordinates,
+                                const ufc::cell& cell) const
+{
+  dolfin_error("Not implemented");
 }
 //-----------------------------------------------------------------------------

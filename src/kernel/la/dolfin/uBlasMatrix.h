@@ -121,11 +121,20 @@ namespace dolfin
 
     /// Set block of values. The function apply() must be called to commit changes.
     void set(const real block[], const int rows[], const int m, 
-                            const int cols[], const int n);
-
+             const int cols[], const int n);
+    
     /// Add block of values. The function apply() must be called to commit changes.
     void add(const real block[], const int rows[], const int m, 
-                            const int cols[], const int n);
+             const int cols[], const int n);
+    
+    /// Get block of values
+    void get(real* block, uint m, const uint* rows, uint n, const uint* cols) const;
+
+    /// Set block of values
+    void set(const real* block, uint m, const uint* rows, uint n, const uint* cols);
+
+    /// Add block of values
+    void add(const real* block, uint m, const uint* rows, uint n, const uint* cols);
 
     /// Return average number of non-zeros per row
     uint nzmax() const;
@@ -385,49 +394,70 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <>  
-  inline void uBlasMatrix<ublas_dense_matrix>::set(const real block[], 
-                 const int rows[], const int m, const int cols[], const int n)
+  inline void uBlasMatrix<ublas_dense_matrix>::get(real* block,
+                                                   uint m, const uint* rows,
+                                                   uint n, const uint* cols) const
   {
-   for (int i = 0; i < m; ++i)
-      for (int j = 0; j < n; ++j)
-        (*this)(rows[i] , cols[j]) = block[i*n + j];
+    // Garth, please look at this
+  }
+  //---------------------------------------------------------------------------
+  template <class Mat>
+  inline void uBlasMatrix<Mat>::get(real* block,
+                                    uint m, const uint* rows,
+                                    uint n, const uint* cols) const
+  {
+    // Garth, please look at this
   }
   //---------------------------------------------------------------------------
   template <>  
-  inline void uBlasMatrix<ublas_dense_matrix>::add(const real block[], 
-                 const int rows[], const int m, const int cols[], const int n)
+  inline void uBlasMatrix<ublas_dense_matrix>::set(const real* block,
+                                                   uint m, const uint* rows,
+                                                   uint n, const uint* cols)
   {
-    for (int i = 0; i < m; ++i)
-      for (int j = 0; j < n; ++j)
+    for (uint i = 0; i < m; i++)
+      for (uint j = 0; j < n; j++)
+        (*this)(rows[i] , cols[j]) = block[i*n + j];
+  }
+  //---------------------------------------------------------------------------
+  template <class Mat>
+  inline void uBlasMatrix<Mat>::set(const real* block,
+                                    uint m, const uint* rows,
+                                    uint n, const uint* cols)
+  {
+    if ( assembled )
+    {
+      Assembly_matrix.assign(*this);
+      assembled = false; 
+    }
+    for (uint i = 0; i < m; i++)
+      for (uint j = 0; j < n; j++)
+        Assembly_matrix(rows[i] , cols[j]) = block[i*n + j];
+  }
+  //---------------------------------------------------------------------------
+  template <>
+  inline void uBlasMatrix<ublas_dense_matrix>::add(const real* block,
+                                                   uint m, const uint* rows,
+                                                   uint n, const uint* cols)
+  {
+    for (uint i = 0; i < m; i++)
+      for (uint j = 0; j < n; j++)
         (*this)(rows[i] , cols[j]) += block[i*n + j];
   }
   //---------------------------------------------------------------------------
   template <class Mat>  
-  inline void uBlasMatrix<Mat>::add(const real block[], const int rows[], 
-                                    const int m, const int cols[], const int n)
+  inline void uBlasMatrix<Mat>::add(const real* block,
+                                    uint m, const uint* rows,
+                                    uint n, const uint* cols)
   {
-    if( assembled )
+    if ( assembled )
     {
       Assembly_matrix.assign(*this);
       assembled = false; 
     }
-    for (int i = 0; i < m; ++i)
-      for (int j = 0; j < n; ++j)
+
+    for (uint i = 0; i < m; i++)
+      for (uint j = 0; j < n; j++)
         Assembly_matrix(rows[i] , cols[j]) += block[i*n + j];
-  }
-  //---------------------------------------------------------------------------
-  template <class Mat>  
-  inline void uBlasMatrix<Mat>::set(const real block[], const int rows[], 
-                                    const int m, const int cols[], const int n)
-  {
-    if( assembled )
-    {
-      Assembly_matrix.assign(*this);
-      assembled = false; 
-    }
-    for (int i = 0; i < m; ++i)
-      for (int j = 0; j < n; ++j)
-        Assembly_matrix(rows[i] , cols[j]) = block[i*n + j];
   }
   //---------------------------------------------------------------------------
   template <>  

@@ -180,13 +180,6 @@ const Function& Function::operator= (const Function& f)
   return *this;
 }
 //-----------------------------------------------------------------------------
-void Function::interpolate(real coefficients[],
-                           const ufc::cell& cell,
-                           const ufc::finite_element& finite_element) const
-{
-  cout << "Interpolating function, but not implemented..." << endl;
-}
-//-----------------------------------------------------------------------------
 void Function::interpolate(real coefficients[], Cell& cell,
                            AffineMap& map, FiniteElement& element)
 {
@@ -277,5 +270,17 @@ dolfin::uint Function::facet()
   }
 
   return static_cast<uint>(_facet);
+}
+//-----------------------------------------------------------------------------
+
+//--- New functions for UFC-based assembly, others may be removed ---
+
+//-----------------------------------------------------------------------------
+void Function::interpolate(real* coefficients,
+                           const ufc::cell& cell,
+                           const ufc::finite_element& finite_element)
+{
+  cout << "Interpolating Function" << endl;
+  f->interpolate(coefficients, cell, finite_element);
 }
 //-----------------------------------------------------------------------------

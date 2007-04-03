@@ -1,8 +1,8 @@
-// Copyright (C) 2006 Anders Logg.
+// Copyright (C) 2006-2007 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-02-09
-// Last changed: 2006-12-12
+// Last changed: 2007-04-02
 
 #ifndef __CONSTANT_FUNCTION_H
 #define __CONSTANT_FUNCTION_H
@@ -36,6 +36,11 @@ namespace dolfin
     // Restrict to sub function or component (if possible)
     void sub(uint i);
 
+    /// Interpolate function to finite element basis
+    void interpolate(real coefficients[],
+                     const ufc::cell& cell,
+                     const ufc::finite_element& finite_element) const;
+
     /// Compute interpolation of function onto local finite element space
     void interpolate(real coefficients[], Cell& cell, AffineMap& map, FiniteElement& element);
 
@@ -59,6 +64,18 @@ namespace dolfin
 
     /// Calling this function generates an error (no element can be attached)
     void attach(FiniteElement& element, bool local);
+
+    //--- New functions for UFC-based assembly, others may be removed ---
+    
+    /// Interpolate function on cell
+    void interpolate(real* coefficients,
+                     const ufc::cell& cell,
+                     const ufc::finite_element& finite_element);
+
+    /// Evaluate function at given point in cell (UFC function interface)
+    void evaluate(real* values,
+                  const real* coordinates,
+                  const ufc::cell& cell) const;
 
   private:
     

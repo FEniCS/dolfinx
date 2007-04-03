@@ -1,6 +1,7 @@
 EXTRA_DIST = dolfin_function.h \
              ConstantFunction.h \
              DiscreteFunction.h \
+             NewDiscreteFunction.h \
              Function.h \
              FunctionPointer.h \
              FunctionPointerFunction.h \

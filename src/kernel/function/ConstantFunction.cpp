@@ -1,8 +1,8 @@
-// Copyright (C) 2006 Anders Logg.
+// Copyright (C) 2006-2007 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-02-09
-// Last changed: 2006-12-12
+// Last changed: 2007-04-02
 
 #include <dolfin/Vector.h>
 #include <dolfin/P1tri.h>
@@ -16,6 +16,8 @@ ConstantFunction::ConstantFunction(real value)
   : GenericFunction(),
     value(value), _mesh(0), mesh_local(false)
 {
+  cout << "Creating constant function" << endl;
+
   // Do nothing
 }
 //-----------------------------------------------------------------------------
@@ -100,5 +102,23 @@ void ConstantFunction::attach(Mesh& mesh, bool local)
 void ConstantFunction::attach(FiniteElement& element, bool local)
 {
   dolfin_error("Cannot attach finite elements to constant functions.");
+}
+//-----------------------------------------------------------------------------
+void ConstantFunction::interpolate(real* coefficients,
+                                   const ufc::cell& cell,
+                                   const ufc::finite_element& finite_element)
+{
+  cout << "Interpolating ConstantFunction" << endl;
+
+  // Evaluate each dof to get coefficients for nodal basis expansion
+  for (uint i = 0; i < finite_element.space_dimension(); i++)
+    coefficients[i] = finite_element.evaluate_dof(i, *this, cell);
+}
+//-----------------------------------------------------------------------------
+void ConstantFunction::evaluate(real* values,
+                                const real* coordinates,
+                                const ufc::cell& cell) const
+{
+  dolfin_error("Not implemented");
 }
 //-----------------------------------------------------------------------------

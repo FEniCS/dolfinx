@@ -69,6 +69,16 @@ void FunctionPointerFunction::sub(uint i)
   _vectordim = 1;
 }
 //-----------------------------------------------------------------------------
+/*void FunctionPointerFunction::interpolate(real coefficients[],
+                                          const ufc::cell& cell,
+                                          const ufc::finite_element& finite_element) const
+{
+  // Evaluate each dof to get coefficients for nodal basis expansion
+  for (uint i = 0; i < finite_element.space_dimension(); i++)
+    coefficients[i] = finite_element.evaluate_dof(i, *this, cell);
+}
+*/
+//-----------------------------------------------------------------------------
 void FunctionPointerFunction::interpolate(real coefficients[], Cell& cell,
 					  AffineMap& map, FiniteElement& element)
 {
@@ -127,5 +137,19 @@ void FunctionPointerFunction::attach(Mesh& mesh, bool local)
 void FunctionPointerFunction::attach(FiniteElement& element, bool local)
 {
   dolfin_error("Cannot attach finite elements to user-defined functions.");
+}
+//-----------------------------------------------------------------------------
+void FunctionPointerFunction::interpolate(real* coefficients,
+                                          const ufc::cell& cell,
+                                          const ufc::finite_element& finite_element)
+{
+  dolfin_error("Not implemented");
+}
+//-----------------------------------------------------------------------------
+void FunctionPointerFunction::evaluate(real* values,
+                                const real* coordinates,
+                                const ufc::cell& cell) const
+{
+  dolfin_error("Not implemented");
 }
 //-----------------------------------------------------------------------------
