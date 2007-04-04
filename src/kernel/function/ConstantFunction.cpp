@@ -14,7 +14,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 ConstantFunction::ConstantFunction(real value)
   : GenericFunction(),
-    value(value), _mesh(0), mesh_local(false)
+    value(value), _mesh(0), mesh_local(false), size(1)
 {
   cout << "Creating constant function" << endl;
 
@@ -23,7 +23,7 @@ ConstantFunction::ConstantFunction(real value)
 //-----------------------------------------------------------------------------
 ConstantFunction::ConstantFunction(const ConstantFunction& f)
   : GenericFunction(),
-    value(f.value), _mesh(f._mesh), mesh_local(false)
+    value(f.value), _mesh(f._mesh), mesh_local(false), size(1)
 {
   // Do nothing
 }
@@ -113,12 +113,19 @@ void ConstantFunction::interpolate(real* coefficients,
   // Evaluate each dof to get coefficients for nodal basis expansion
   for (uint i = 0; i < finite_element.space_dimension(); i++)
     coefficients[i] = finite_element.evaluate_dof(i, *this, cell);
+
+  // Compute size of value (number of entries in tensor value)
+  size = 1;
+  for (uint i = 0; i < finite_element.value_rank(); i++)
+    size *= finite_element.value_dimension(i);
 }
 //-----------------------------------------------------------------------------
 void ConstantFunction::evaluate(real* values,
                                 const real* coordinates,
                                 const ufc::cell& cell) const
 {
-  dolfin_error("Not implemented");
+  // Set all values to the constant value
+  for (uint i = 0; i < size; i++)
+    values[i] = value;
 }
 //-----------------------------------------------------------------------------

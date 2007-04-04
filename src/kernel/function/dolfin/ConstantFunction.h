@@ -12,8 +12,9 @@
 
 namespace dolfin
 {
-  /// This class implements the functionality for a function
-  /// with a constant value.
+
+  /// A ConstantFunction represents a constant scalar- or vector-valued
+  /// function.
 
   class ConstantFunction : public GenericFunction, public ufc::function
   {
@@ -88,6 +89,9 @@ namespace dolfin
     
     // True if mesh is local (not a reference to another mesh)
     bool mesh_local;
+
+    // Size of value (number of entries in tensor value)
+    uint size;
 
   };
 

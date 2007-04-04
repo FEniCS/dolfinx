@@ -14,6 +14,9 @@
 
 namespace dolfin
 {
+  
+  // FIXME: This class needs to be modified for new UFC interface
+
   /// This class implements the functionality for a user-defined
   /// function given by a function pointer.
 

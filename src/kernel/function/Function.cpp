@@ -284,3 +284,9 @@ void Function::interpolate(real* coefficients,
   f->interpolate(coefficients, cell, finite_element);
 }
 //-----------------------------------------------------------------------------
+void Function::eval(real* values, const real* coordinates)
+{
+  dolfin_info("User-defined functions must overload real Function::eval().");
+  dolfin_error("Missing eval() for user-defined function.");
+}
+//-----------------------------------------------------------------------------
