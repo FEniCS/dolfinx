@@ -209,7 +209,7 @@ sharedstatedir = @sharedstatedir@
 swig_found = @swig_found@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
-SUBDIRS = common fem form function graph io log la math main mesh mf nls ode parameter pde quadrature
+SUBDIRS = common fem function graph io log la math main mesh mf nls ode parameter pde quadrature
 all: all-recursive
 
 .SUFFIXES:

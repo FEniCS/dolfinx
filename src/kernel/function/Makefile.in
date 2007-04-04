@@ -61,10 +61,9 @@ am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(includedir)"
 libLTLIBRARIES_INSTALL = $(INSTALL)
 LTLIBRARIES = $(lib_LTLIBRARIES)
 libdolfin_function_la_LIBADD =
-am_libdolfin_function_la_OBJECTS = ConstantFunction.lo \
-	DiscreteFunction.lo NewDiscreteFunction.lo Function.lo \
-	FunctionPointerFunction.lo GenericFunction.lo \
-	LocalFunctionData.lo NonMatchingFunction.lo UserFunction.lo
+am_libdolfin_function_la_OBJECTS = ConstantFunction.lo Function.lo \
+	FunctionPointerFunction.lo NewDiscreteFunction.lo \
+	UserFunction.lo
 libdolfin_function_la_OBJECTS = $(am_libdolfin_function_la_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -243,30 +242,23 @@ target_alias = @target_alias@
 SUBDIRS = dolfin
 nobase_include_HEADERS = dolfin/dolfin_function.h \
                                 dolfin/ConstantFunction.h \
-                                dolfin/DiscreteFunction.h \
-                                dolfin/NewDiscreteFunction.h \
                                 dolfin/Function.h \
-                                dolfin/FunctionPointer.h \
                                 dolfin/FunctionPointerFunction.h \
+                                dolfin/FunctionPointer.h \
                                 dolfin/GenericFunction.h \
-                                dolfin/LocalFunctionData.h \
-                                dolfin/NonMatchingFunction.h \
+                                dolfin/NewDiscreteFunction.h \
                                 dolfin/SpecialFunctions.h \
                                 dolfin/UserFunction.h
 
 INCLUDES = @KERNEL_CFLAGS@
 lib_LTLIBRARIES = libdolfin-function.la
 libdolfin_function_la_SOURCES = ConstantFunction.cpp \
-                                DiscreteFunction.cpp \
-                                NewDiscreteFunction.cpp \
                                 Function.cpp \
                                 FunctionPointerFunction.cpp \
-                                GenericFunction.cpp \
-                                LocalFunctionData.cpp \
-                                NonMatchingFunction.cpp \
-                                UserFunction.cpp
-
+                                NewDiscreteFunction.cpp \
+                                UserFunction.cpp \
 libdolfin_function_la_LDFLAGS = -static
+
 all: all-recursive
 
 .SUFFIXES:
@@ -337,13 +329,9 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ConstantFunction.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DiscreteFunction.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Function.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FunctionPointerFunction.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/GenericFunction.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LocalFunctionData.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NewDiscreteFunction.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NonMatchingFunction.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/UserFunction.Plo@am__quote@
 
 .cpp.o:
