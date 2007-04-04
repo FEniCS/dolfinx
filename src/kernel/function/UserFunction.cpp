@@ -154,9 +154,9 @@ void UserFunction::interpolate(real* coefficients,
 }
 //-----------------------------------------------------------------------------
 void UserFunction::evaluate(real* values,
-                                const real* coordinates,
-                                const ufc::cell& cell) const
+                            const real* coordinates,
+                            const ufc::cell& cell) const
 {
-  dolfin_error("Not implemented");
+  f->eval(values, coordinates);
 }
 //-----------------------------------------------------------------------------

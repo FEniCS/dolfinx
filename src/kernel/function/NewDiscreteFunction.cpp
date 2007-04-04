@@ -55,7 +55,6 @@ NewDiscreteFunction::~NewDiscreteFunction()
 void NewDiscreteFunction::interpolate(real* coefficients,
                                       const ufc::cell& cell,
                                       const ufc::finite_element& finite_element)
-
 {
   // Check dimension
   if ( finite_element.space_dimension() != dof_map->local_dimension() )

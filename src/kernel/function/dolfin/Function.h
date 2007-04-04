@@ -21,6 +21,7 @@
 
 namespace dolfin
 {
+
   class Point;
   class Vertex;
   class Cell;
@@ -134,6 +135,9 @@ namespace dolfin
 
     
     //--- New functions for UFC-based assembly, others may be removed ---
+
+    /// Evaluate function at given point (must be implemented for user-defined function)
+    virtual void eval(real* values, const real* coordinates);
     
     /// Interpolate function on cell
     void interpolate(real* coefficients,

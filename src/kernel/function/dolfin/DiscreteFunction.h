@@ -15,7 +15,7 @@
 namespace dolfin
 {
 
-  // THIS CLASS IS BEING REPLACED BY NewDiscreteFunction
+  // FIXME: THIS CLASS IS BEING REPLACED BY NewDiscreteFunction
 
   class Mesh;
   
