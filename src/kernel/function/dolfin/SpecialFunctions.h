@@ -1,11 +1,13 @@
-// Copyright (C) 2006 Anders Logg.
+// Copyright (C) 2006-2007 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-02-09
-// Last changed: 2006-12-07
+// Last changed: 2007-04-05
 
 #ifndef __SPECIAL_FUNCTIONS_H
 #define __SPECIAL_FUNCTIONS_H
+
+#include <dolfin/Function.h>
 
 namespace dolfin
 {
@@ -13,134 +15,53 @@ namespace dolfin
   /// This is the zero function.
   class Zero : public Function
   {
-    real eval(const Point& p, unsigned int i)
+    void eval(real* values, const real* coordinates)
     {
-      return 0.0;
+      values[0] = 0.0;
     }
   };
 
   /// This is the unity function.
   class Unity : public Function
   {
-    real eval(const Point& p, unsigned int i)
+    void eval(real* values, const real* coordinates)
     {
-      return 1.0;
+      values[0] = 1.0;
     }
   };
 
   /// This function represents the local mesh size on a given mesh.
   class MeshSize : public Function
   {
-    real eval(const Point& p, unsigned int i)
+    void eval(real* values, const real* coordinates)
     {
-      return cell().diameter();
+      // FIXME: Not implemented
+      dolfin_error("Not implemented");
+      //return cell().diameter();
     }
   };
 
   /// This function represents the inverse of the local mesh size on a given mesh.
   class InvMeshSize : public Function
   {
-    real eval(const Point& p, unsigned int i)
+    void eval(real* values, const real* coordinates)
     {
-      return 1.0/cell().diameter();
+      // FIXME: Not implemented
+      dolfin_error("Not implemented");
+      //return 1.0/cell().diameter();
     }
   };
 
   /// This function represents the outward unit normal on mesh facets.
   class FacetNormal : public Function
   {
-    real eval(const Point& p, unsigned int i)
+    void eval(real* values, const real* coordinates)
     {
-      cout << "    Evaluating facet normal at p = " << p << endl;
-      cout << "      cell      = " << cell().index() << endl;
-      cout << "      facet     = " << facet() << endl;
-      cout << "      component = " << i << endl;
-      cout << "      value     = " << cell().normal(facet(), i) << endl;
-      return cell().normal(facet(), i);
+      // FIXME: Not implemented
+      dolfin_error("Not implemented");
+      //return cell().normal(facet(), i);
     }
   };
-
-
-  /// Temporary manually implemented common basis functions
-  class ScalarLagrange : public Function
-  {
-  public:
-    ScalarLagrange(int num) : num(num) {}
-    
-    real eval(const Point& p, unsigned int i)
-    {
-      switch(num)
-      {
-      case 0:
-	return 1 - p.x() - p.y() - p.z();
-	break;
-      case 1:
-	return p.x();
-	break;
-      case 2:
-	return p.y();
-	break;
-      case 3:
-	return p.z();
-	break;
-      default:
-	return 0.0;
-      }
-    }
-    
-  private:
-    int num;
-  };
-
-  class ScalarDiscontinousLagrange : public Function
-  {
-  public:
-    ScalarDiscontinousLagrange(int num) : num(num) {}
-    
-    real eval(const Point& p, unsigned int i)
-    {
-      switch(num)
-      {
-      case 0:
-	return 1;
-	break;
-      default:
-	return 0.0;
-      }
-    }
-    
-  private:
-    int num;
-  };
-
-  class VectorLagrange : public Function
-  {
-  public:
-    VectorLagrange(int num, int dim) : num(num), dim(dim),
-      fcomponent(num % (dim + 1))
-      {
-      }
-    
-    real eval(const Point& p, unsigned int i)
-    {
-      real val = 0.0;
-      
-      // Function is only non-zero when num / (dim + 1) == i
-      if((num / (dim + 1) == (int)i))
-      {
-	val = fcomponent(p, i);
-      }
-      
-      return val;
-    }
-    
-  private:
-    int num;
-    int dim;
-
-    ScalarLagrange fcomponent;
-  };
-
 
 }
 

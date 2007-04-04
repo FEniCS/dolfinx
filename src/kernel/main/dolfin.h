@@ -1,11 +1,11 @@
-// Copyright (C) 2002-2006 Johan Hoffman, Johan Jansson and Anders Logg.
+// Copyright (C) 2002-2007 Johan Hoffman, Johan Jansson and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // Modified by Garth N. Wells 2005-2006.
 // Modified by Magnus Vikstrom 2007
 //
 // First added:  2002-11-05
-// Last changed: 2007-03-21
+// Last changed: 2007-04-05
 
 #ifndef __DOLFIN_H
 #define __DOLFIN_H
@@ -14,7 +14,6 @@
 #include <dolfin/dolfin_la.h>
 #include <dolfin/dolfin_common.h>
 #include <dolfin/dolfin_fem.h>
-#include <dolfin/dolfin_form.h>
 #include <dolfin/dolfin_function.h>
 #include <dolfin/dolfin_graph.h>
 #include <dolfin/dolfin_io.h>
