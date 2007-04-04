@@ -7,6 +7,8 @@
 #ifndef __FUNCTION_POINTER_FUNCTION_H
 #define __FUNCTION_POINTER_FUNCTION_H
 
+#include <ufc.h>
+
 #include <dolfin/FunctionPointer.h>
 #include <dolfin/GenericFunction.h>
 
@@ -15,7 +17,7 @@ namespace dolfin
   /// This class implements the functionality for a user-defined
   /// function given by a function pointer.
 
-  class FunctionPointerFunction : public GenericFunction
+  class FunctionPointerFunction : public GenericFunction, public ufc::function
   {
   public:
 

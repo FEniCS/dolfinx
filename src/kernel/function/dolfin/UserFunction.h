@@ -7,8 +7,10 @@
 #ifndef __USER_FUNCTION_H
 #define __USER_FUNCTION_H
 
-#include <dolfin/GenericFunction.h>
+#include <ufc.h>
+
 #include <dolfin/FiniteElement.h>
+#include <dolfin/GenericFunction.h>
 
 namespace dolfin
 {
@@ -18,7 +20,7 @@ namespace dolfin
   /// function defined by overloading the evaluation operator in
   /// the class Function.
 
-  class UserFunction : public GenericFunction
+  class UserFunction : public GenericFunction, public ufc::function
   {
   public:
 

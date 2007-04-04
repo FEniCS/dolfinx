@@ -1,8 +1,8 @@
-// Copyright (C) 2005-2006 Anders Logg.
+// Copyright (C) 2005-2007 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-11-28
-// Last changed: 2006-12-12
+// Last changed: 2007-04-04
 
 #include <dolfin/Vertex.h>
 #include <dolfin/Vector.h>
@@ -143,7 +143,9 @@ void FunctionPointerFunction::interpolate(real* coefficients,
                                           const ufc::cell& cell,
                                           const ufc::finite_element& finite_element)
 {
-  dolfin_error("Not implemented");
+  // Evaluate each dof to get coefficients for nodal basis expansion
+  for (uint i = 0; i < finite_element.space_dimension(); i++)
+    coefficients[i] = finite_element.evaluate_dof(i, *this, cell);
 }
 //-----------------------------------------------------------------------------
 void FunctionPointerFunction::evaluate(real* values,

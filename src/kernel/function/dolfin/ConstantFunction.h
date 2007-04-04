@@ -7,6 +7,7 @@
 #ifndef __CONSTANT_FUNCTION_H
 #define __CONSTANT_FUNCTION_H
 
+#include <ufc.h>
 #include <dolfin/GenericFunction.h>
 
 namespace dolfin
@@ -14,7 +15,7 @@ namespace dolfin
   /// This class implements the functionality for a function
   /// with a constant value.
 
-  class ConstantFunction : public GenericFunction
+  class ConstantFunction : public GenericFunction, public ufc::function
   {
   public:
 

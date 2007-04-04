@@ -448,10 +448,3 @@ void DiscreteFunction::interpolate(real* coefficients,
   dolfin_error("Not implemented");
 }
 //-----------------------------------------------------------------------------
-void DiscreteFunction::evaluate(real* values,
-                                const real* coordinates,
-                                const ufc::cell& cell) const
-{
-  dolfin_error("Not implemented");
-}
-//-----------------------------------------------------------------------------

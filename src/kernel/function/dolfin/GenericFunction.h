@@ -27,7 +27,7 @@ namespace dolfin
   /// This class serves as a base class/interface for implementations
   /// of specific function representations.
 
-  class GenericFunction : public ufc::function
+  class GenericFunction
   {
   public:
 

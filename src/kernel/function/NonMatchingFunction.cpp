@@ -147,10 +147,3 @@ void NonMatchingFunction::interpolate(real* coefficients,
   dolfin_error("Not implemented");
 }
 //-----------------------------------------------------------------------------
-void NonMatchingFunction::evaluate(real* values,
-                                   const real* coordinates,
-                                   const ufc::cell& cell) const
-{
-  dolfin_error("Not implemented");
-}
-//-----------------------------------------------------------------------------

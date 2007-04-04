@@ -2,14 +2,14 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-11-26
-// Last changed: 2007-04-02
+// Last changed: 2007-04-04
 
 #ifndef __NON_MATCHING_FUNCTION_H
 #define __NON_MATCHING_FUNCTION_H
 
-#include <dolfin/GenericFunction.h>
-#include <dolfin/DiscreteFunction.h>
 #include <dolfin/FiniteElement.h>
+#include <dolfin/DiscreteFunction.h>
+#include <dolfin/GenericFunction.h>
 
 namespace dolfin
 {
@@ -73,11 +73,6 @@ namespace dolfin
     void interpolate(real* coefficients,
                      const ufc::cell& cell,
                      const ufc::finite_element& finite_element);
-
-    /// Evaluate function at given point in cell (UFC function interface)
-    void evaluate(real* values,
-                  const real* coordinates,
-                  const ufc::cell& cell) const;
 
   private:
 

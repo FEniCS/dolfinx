@@ -68,10 +68,3 @@ void NewDiscreteFunction::interpolate(real* coefficients,
   x.get(coefficients, dof_map->local_dimension(), dofs);
 }
 //-----------------------------------------------------------------------------
-void NewDiscreteFunction::evaluate(real* values,
-                                   const real* coordinates,
-                                   const ufc::cell& cell) const
-{
-  dolfin_error("Discrete functions cannot be evaluated at arbitrary points.");
-}
-//-----------------------------------------------------------------------------

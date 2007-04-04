@@ -94,11 +94,6 @@ namespace dolfin
                      const ufc::cell& cell,
                      const ufc::finite_element& finite_element);
 
-    /// Evaluate function at given point in cell (UFC function interface)
-    void evaluate(real* values,
-                  const real* coordinates,
-                  const ufc::cell& cell) const;
-
   private:
 
     // Update vector dimension from current element
