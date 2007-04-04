@@ -4,7 +4,7 @@
 // Modified by Anders Logg 2006.
 //
 // First added:  2006-07-05
-// Last changed: 2007-03-07
+// Last changed: 2007-04-04
 
 #ifndef __UBLAS_MATRIX_H
 #define __UBLAS_MATRIX_H
@@ -27,12 +27,13 @@ namespace dolfin
   /// This class represents a matrix (dense or sparse) of dimension M x N.
   /// It is a wrapper for a Boost uBLAS matrix of type Mat.
   ///
-  /// The interface is intended to provide uniformily with respect to other
+  /// The interface is intended to provide uniformity with respect to other
   /// matrix data types. For advanced usage, refer to the documentation for 
   /// uBLAS which can be found at 
   /// http://www.boost.org/libs/numeric/ublas/doc/index.htm.
 
   /// Developer note: specialised member functions must be inlined to avoid link errors.
+
   template< class Mat > 
   class uBlasMatrix; 
 
@@ -80,6 +81,9 @@ namespace dolfin
     /// Get non-zero values of row i
     void getRow(const uint i, int& ncols, Array<int>& columns, Array<real>& values) const;
 
+    /// Get block of values
+    void get(real* block, uint m, const uint* rows, uint n, const uint* cols) const;
+
     /// Lump matrix into vector m
     void lump(uBlasVector& m) const;
 
@@ -102,7 +106,7 @@ namespace dolfin
     void mult(const uBlasVector& x, uBlasVector& y) const;
 
     /// Display matrix
-    void disp(const uint precision = 2) const;
+    void disp(uint precision = 2) const;
 
     /// The below functions have specialisations for particular matrix types.
     /// In order to link correctly, they must be made inline functions.
@@ -127,9 +131,6 @@ namespace dolfin
     void add(const real block[], const int rows[], const int m, 
              const int cols[], const int n);
     
-    /// Get block of values
-    void get(real* block, uint m, const uint* rows, uint n, const uint* cols) const;
-
     /// Set block of values
     void set(const real* block, uint m, const uint* rows, uint n, const uint* cols);
 
@@ -214,6 +215,19 @@ namespace dolfin
     ncols = columns.size();
   }
   //-----------------------------------------------------------------------------
+  template <class Mat>
+  void uBlasMatrix<Mat>::get(real* block,
+                                    uint m, const uint* rows,
+                                    uint n, const uint* cols) const
+  {
+    if( !assembled )
+      dolfin_error("Matrix has not been assembled. Did you forget to call A.apply()?"); 
+
+    for(uint i = 0; i < m; ++i)
+      for(uint j = 0; j < n; ++j)
+        block[i*n + j] = (*this)(rows[i], cols[j]);
+  }
+  //---------------------------------------------------------------------------
   template <class Mat>  
   void uBlasMatrix<Mat>::lump(uBlasVector& m) const
   {
@@ -295,7 +309,7 @@ namespace dolfin
   }
   //-----------------------------------------------------------------------------
   template <class Mat>  
-  void uBlasMatrix<Mat>::disp(const uint precision) const
+  void uBlasMatrix<Mat>::disp(uint precision) const
   {
     typename Mat::const_iterator1 it1;  // Iterator over rows
     typename Mat::const_iterator2 it2;  // Iterator over entries
@@ -378,7 +392,7 @@ namespace dolfin
   inline void uBlasMatrix<Mat>::init(const SparsityPattern& sparsity_pattern)
   {
     //FIXME: Initialising in a really dumb way. Don't know yet how to initialise
-    //       compressed layout
+    //       compressed layout efficiently
     init(sparsity_pattern.size(0), sparsity_pattern.size(1));
 
     // Reserve space for non-zeroes
@@ -391,22 +405,6 @@ namespace dolfin
     for(set = pattern.begin(); set != pattern.end(); ++set)
       for(element = set->begin(); element != set->end(); ++element)
         (*this)(set-pattern.begin(), *element) = 0.0;
-  }
-  //---------------------------------------------------------------------------
-  template <>  
-  inline void uBlasMatrix<ublas_dense_matrix>::get(real* block,
-                                                   uint m, const uint* rows,
-                                                   uint n, const uint* cols) const
-  {
-    // Garth, please look at this
-  }
-  //---------------------------------------------------------------------------
-  template <class Mat>
-  inline void uBlasMatrix<Mat>::get(real* block,
-                                    uint m, const uint* rows,
-                                    uint n, const uint* cols) const
-  {
-    // Garth, please look at this
   }
   //---------------------------------------------------------------------------
   template <>  
