@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2007-01-17
-// Last changed: 2007-04-02
+// Last changed: 2007-04-05
 
 #ifndef __ASSEMBLE_H
 #define __ASSEMBLE_H
@@ -16,7 +16,7 @@ namespace dolfin
 
   class GenericTensor;
   class Function;
-  class NewForm;
+  class Form;
   class Mesh;
 
   /// These functions provide automated assembly of linear systems,
@@ -26,7 +26,7 @@ namespace dolfin
   /// performance by reuse of data structures.
 
   /// Assemble tensor from given variational form and mesh
-  void assemble(GenericTensor& A, const NewForm& form, Mesh& mesh);
+  void assemble(GenericTensor& A, const Form& form, Mesh& mesh);
   
   /// Assemble tensor from given variational form and mesh
   void assemble(GenericTensor& A, const ufc::form& form, Mesh& mesh);

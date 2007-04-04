@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2007-01-17
-// Last changed: 2007-04-02
+// Last changed: 2007-04-05
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Array.h>
@@ -13,7 +13,7 @@
 #include <dolfin/BoundaryMesh.h>
 #include <dolfin/MeshFunction.h>
 #include <dolfin/Function.h>
-#include <dolfin/NewForm.h>
+#include <dolfin/Form.h>
 #include <dolfin/UFC.h>
 #include <dolfin/Assembler.h>
 #include <dolfin/SparsityPattern.h>
@@ -31,7 +31,7 @@ Assembler::~Assembler()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void Assembler::assemble(GenericTensor& A, const NewForm& form, Mesh& mesh)
+void Assembler::assemble(GenericTensor& A, const Form& form, Mesh& mesh)
 {
   // Extract form and coefficients
   assemble(A, form.form(), mesh, form.coefficients());

@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2007-01-17
-// Last changed: 2007-04-02
+// Last changed: 2007-04-05
 
 #ifndef __ASSEMBLER_H
 #define __ASSEMBLER_H
@@ -17,7 +17,7 @@ namespace dolfin
 
   class GenericTensor;
   class Function;
-  class NewForm;
+  class Form;
   class Mesh;
   class UFC;
 
@@ -36,7 +36,7 @@ namespace dolfin
     ~Assembler();
 
     /// Assemble tensor from given variational form and mesh
-    void assemble(GenericTensor& A, const NewForm& form, Mesh& mesh);
+    void assemble(GenericTensor& A, const Form& form, Mesh& mesh);
 
     /// Assemble tensor from given variational form and mesh
     void assemble(GenericTensor& A, const ufc::form& form, Mesh& mesh);
