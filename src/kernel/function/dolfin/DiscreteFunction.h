@@ -2,13 +2,12 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2007-04-02
-// Last changed: 2007-04-03
+// Last changed: 2007-04-04
 
-#ifndef __NEW_DISCRETE_FUNCTION_H
-#define __NEW_DISCRETE_FUNCTION_H
+#ifndef __DISCRETE_FUNCTION_H
+#define __DISCRETE_FUNCTION_H
 
-#include <dolfin/constants.h>
-#include <dolfin/NewForm.h>
+#include <dolfin/Form.h>
 #include <dolfin/Vector.h>
 #include <dolfin/UFCMesh.h>
 #include <dolfin/GenericFunction.h>
@@ -19,23 +18,24 @@ namespace dolfin
   class Mesh;
   class DofMap;
 
-  /// A DiscreteFunction is a function defined in terms of a vector
-  /// of degrees of freedom, a finite element and a dof map (including
-  /// the mesh on which the dof map is defined). The finite element
-  /// determines how the function is defined locally on each cell of
-  /// the mesh in terms of the local degrees of freedom, and the dof
-  /// map determines how the degrees of freedom are distributed on the
+  /// This class implements the functionality for discrete functions.
+  /// A discrete function is defined in terms of a vector of degrees
+  /// of freedom, a finite element and a dof map (including the mesh
+  /// on which the dof map is defined). The finite element determines
+  /// how the function is defined locally on each cell of the mesh in
+  /// terms of the local degrees of freedom, and the dof map
+  /// determines how the degrees of freedom are distributed on the
   /// mesh.
 
-  class NewDiscreteFunction
+  class DiscreteFunction : public GenericFunction
   {
   public:
 
     /// Create discrete function for argument function i of form
-    NewDiscreteFunction(Mesh& mesh, const NewForm& form, uint i);
+    DiscreteFunction(Mesh& mesh, const Form& form, uint i);
 
     /// Destructor
-    ~NewDiscreteFunction();
+    ~DiscreteFunction();
 
     /// Interpolate function on cell
     void interpolate(real* coefficients,

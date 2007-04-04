@@ -2,18 +2,18 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2007-04-02
-// Last changed: 2007-04-03
+// Last changed: 2007-04-05
 
 #include <dolfin/dolfin_log.h>
+#include <dolfin/Form.h>
 #include <dolfin/DofMap.h>
-#include <dolfin/NewDiscreteFunction.h>
+#include <dolfin/DiscreteFunction.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-NewDiscreteFunction::NewDiscreteFunction(Mesh& mesh,
-                                         const NewForm& form, uint i)
-  : finite_element(0), dof_map(0), dofs(0)
+DiscreteFunction::DiscreteFunction(Mesh& mesh, const Form& form, uint i)
+  : GenericFunction(), finite_element(0), dof_map(0), dofs(0)
 {
   // Check argument
   const uint num_arguments = form.form().rank() + form.form().num_coefficients();
@@ -40,7 +40,7 @@ NewDiscreteFunction::NewDiscreteFunction(Mesh& mesh,
     dofs[i] = 0;
 }
 //-----------------------------------------------------------------------------
-NewDiscreteFunction::~NewDiscreteFunction()
+DiscreteFunction::~DiscreteFunction()
 {
   if ( finite_element )
     delete finite_element;
@@ -52,10 +52,12 @@ NewDiscreteFunction::~NewDiscreteFunction()
     delete [] dofs;
 }
 //-----------------------------------------------------------------------------
-void NewDiscreteFunction::interpolate(real* coefficients,
-                                      const ufc::cell& cell,
-                                      const ufc::finite_element& finite_element)
+void DiscreteFunction::interpolate(real* coefficients,
+                                   const ufc::cell& cell,
+                                   const ufc::finite_element& finite_element)
 {
+  // FIXME: Better test here, compare against the local element
+  
   // Check dimension
   if ( finite_element.space_dimension() != dof_map->local_dimension() )
     dolfin_error("Finite element does not match for interpolation of discrete function.");
