@@ -19,13 +19,13 @@
 //     du/dn(x, y) = 0  otherwise
 
 #include <dolfin.h>
-//#include "Poisson.h"
+#include "Poisson.h"
   
 using namespace dolfin;
 
 int main()
 {
-/*
+
   // Right-hand side
   class Source : public Function
   {
@@ -58,16 +58,28 @@ int main()
         return 0.0;  
     }
   };
-*/
+
   // Set up problem
 //  Source f;
-//  DirichletBC bc;
+  Function f = 1.0;
 //  NeumannBC g;
+//  DirichletBC bc;
 
-  UnitSquare mesh(16, 16);
+  UnitSquare mesh(3, 3);
 
-//  PoissonBilinearForm a;
-//  PoissonLinearForm L(f, g);
+  PoissonBilinearForm a;
+  PoissonLinearForm L(f);
+
+  Matrix A;
+  assemble(A, a, mesh);
+  cout << "Stiffness matrix " << endl;
+  A.disp();
+
+  Vector b;
+  assemble(b, L, mesh);
+  cout << "RHS vector " << endl;
+  b.disp();
+
 /*
   PDE pde(a, L, mesh, bc);
 
