@@ -9,13 +9,10 @@
 //#ifdef HAVE_PETSC_H
 
 #include <dolfin/dolfin_log.h>
-#include <dolfin/FEM.h>
 #include <dolfin/Matrix.h>
 #include <dolfin/Vector.h>
 #include <dolfin/GMRES.h>
 #include <dolfin/LU.h>
-#include <dolfin/BilinearForm.h>
-#include <dolfin/LinearForm.h>
 #include <dolfin/Mesh.h>
 #include <dolfin/BoundaryCondition.h>
 #include <dolfin/Function.h>
@@ -26,11 +23,11 @@
 using namespace dolfin;
 
 TimeDependentPDE::TimeDependentPDE(BilinearForm& a, LinearForm& L, Mesh& mesh, 
-  BoundaryCondition& bc, int N, real T) : GenericPDE(), x(0),
-					  _a(&a), _Lf(&L),
-					  _mesh(&mesh), _bc(&bc),
-					  N(N), t(0), T(T)
+              BoundaryCondition& bc, int N, real T) : GenericPDE(), x(0),
+					    _a(&a), _Lf(&L), _mesh(&mesh), _bc(&bc), N(N), t(0), T(T)
 {
+  dolfin_error("TimeDependentPDE has not yet been updated for new UFC structure.");
+/*
   x = new Vector(N);
   dotx = new Vector(N);
 
@@ -39,6 +36,7 @@ TimeDependentPDE::TimeDependentPDE(BilinearForm& a, LinearForm& L, Mesh& mesh,
     Function* f = this->L().function(i);
     f->sync(t);
   }
+*/
 }
 //-----------------------------------------------------------------------------
 TimeDependentPDE::~TimeDependentPDE()
@@ -115,8 +113,12 @@ void TimeDependentPDE::fu(const Vector& x, Vector& dotx, real t)
 //-----------------------------------------------------------------------------
 dolfin::uint TimeDependentPDE::elementdim()
 {
+  dolfin_error("TimeDependentPDE has not yet been updated for new UFC structure.");
+  return 0;
+/*
   dolfin_assert(_a);
   return _a->trial().elementdim();
+*/
 }
 //-----------------------------------------------------------------------------
 BilinearForm& TimeDependentPDE::a()

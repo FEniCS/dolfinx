@@ -9,9 +9,7 @@
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Function.h>
 #include <dolfin/PDE.h>
-#include <dolfin/LinearPDE.h>
 #include <dolfin/NonlinearPDE.h>
-#include <dolfin/BilinearForm.h>
 
 using namespace dolfin;
 
@@ -19,20 +17,28 @@ using namespace dolfin;
 PDE::PDE(BilinearForm& a, LinearForm& L, Mesh& mesh)
   : Parametrized(), pde(0), _type(linear)
 {
+  dolfin_error("PDE has not yet been updated for new UFC structure.");
+/*
   pde = new LinearPDE(a, L, mesh);
   pde->set("parent", *this);
+*/
 }
 //-----------------------------------------------------------------------------
 PDE::PDE(BilinearForm& a, LinearForm& L, Mesh& mesh, BoundaryCondition& bc)
   : Parametrized(), pde(0), _type(linear)
 {
+  dolfin_error("PDE has not yet been updated for new UFC structure.");
+/*
   pde = new LinearPDE(a, L, mesh, bc);
   pde->set("parent", *this);
+*/
 }
 //-----------------------------------------------------------------------------
 PDE::PDE(BilinearForm& a, LinearForm& L, Mesh& mesh, Type pde_type) 
   : Parametrized(), pde(0), _type(pde_type)
 {
+  dolfin_error("PDE has not yet been updated for new UFC structure.");
+/*
   switch(pde_type)
   {
   case linear:
@@ -46,11 +52,14 @@ PDE::PDE(BilinearForm& a, LinearForm& L, Mesh& mesh, Type pde_type)
   }
   
   pde->set("parent", *this);
+*/
 }
 //-----------------------------------------------------------------------------
 PDE::PDE(BilinearForm& a, LinearForm& L, Mesh& mesh, BoundaryCondition& bc, 
     Type pde_type) : Parametrized(), pde(0), _type(pde_type)
 {
+  dolfin_error("PDE has not yet been updated for new UFC structure.");
+/*
   switch(pde_type)
   {
   case linear:
@@ -64,6 +73,7 @@ PDE::PDE(BilinearForm& a, LinearForm& L, Mesh& mesh, BoundaryCondition& bc,
   }
   
   pde->set("parent", *this);
+*/
 }
 //-----------------------------------------------------------------------------
 PDE::~PDE()
@@ -85,6 +95,8 @@ void PDE::solve(Function& u)
 //-----------------------------------------------------------------------------
 void PDE::solve(Function& u0, Function& u1)
 {
+  dolfin_error("PDE has not yet been updated for new UFC structure.");
+/*
   // Check size of mixed system
   if ( pde->elementdim() != 2 )
   {
@@ -100,10 +112,13 @@ void PDE::solve(Function& u0, Function& u1)
   dolfin_info("Extracting sub functions from mixed system.");
   u0 = u[0];
   u1 = u[1];
+*/
 }
 //-----------------------------------------------------------------------------
 void PDE::solve(Function& u0, Function& u1, Function& u2)
 {
+  dolfin_error("PDE has not yet been updated for new UFC structure.");
+/*
   // Check size of mixed system
   if ( pde->elementdim() != 3 )
   {
@@ -120,10 +135,13 @@ void PDE::solve(Function& u0, Function& u1, Function& u2)
   u0 = u[0];
   u1 = u[1];
   u2 = u[2];
+*/
 }
 //-----------------------------------------------------------------------------
 void PDE::solve(Function& u0, Function& u1, Function& u2, Function& u3)
 {
+  dolfin_error("PDE has not yet been updated for new UFC structure.");
+/*
   // Check size of mixed system
   if ( pde->elementdim() != 4 )
   {
@@ -141,6 +159,7 @@ void PDE::solve(Function& u0, Function& u1, Function& u2, Function& u3)
   u1 = u[1];
   u2 = u[2];
   u3 = u[3];
+*/
 }
 //-----------------------------------------------------------------------------
 BilinearForm& PDE::a()

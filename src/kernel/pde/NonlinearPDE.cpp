@@ -6,10 +6,7 @@
 // First added:  2005-10-24
 // Last changed: 2006-10-20
 
-#include <dolfin/FEM.h>
 #include <dolfin/NonlinearPDE.h>
-#include <dolfin/BilinearForm.h>
-#include <dolfin/LinearForm.h>
 
 using namespace dolfin;
 
@@ -33,6 +30,8 @@ NonlinearPDE::~NonlinearPDE()
 //-----------------------------------------------------------------------------
 void NonlinearPDE::form(GenericMatrix& A, GenericVector& b, const GenericVector& x)
 {
+  dolfin_error("NonLinearPDE has not yet been updated for new UFC structure.");
+/*
   if(!_a)
   {  
     dolfin_error("Nonlinear function update for F(u) and Jacobian has not been supplied by user.");
@@ -52,7 +51,7 @@ void NonlinearPDE::form(GenericMatrix& A, GenericVector& b, const GenericVector&
       dolfin_error("Pure zero Neumann boundary conditions not yet implemented for nonlinear PDE.");
     }
   }
-  
+*/  
 }
 //-----------------------------------------------------------------------------
 //void NonlinearPDE::F(GenericVector& b, const GenericVector& x)
@@ -69,6 +68,9 @@ void NonlinearPDE::form(GenericMatrix& A, GenericVector& b, const GenericVector&
 //-----------------------------------------------------------------------------
 dolfin::uint NonlinearPDE::solve(Function& u)
 {
+  dolfin_error("NonLinearPDE has not yet been updated for new UFC structure.");
+  return 0;
+/*
   // Initialise function if necessary
   if (u.type() != Function::discrete)
     u.init(*_mesh, _a->trial());
@@ -77,12 +79,17 @@ dolfin::uint NonlinearPDE::solve(Function& u)
 
   // Solve nonlinear problem using u as start value
   return newton_solver.solve(*this, x);
+*/
 }
 //-----------------------------------------------------------------------------
 dolfin::uint NonlinearPDE::elementdim()
 {
+  dolfin_error("NonLinearPDE has not yet been updated for new UFC structure.");
+  return 0;
+/*
   dolfin_assert(_a);
   return _a->trial().elementdim();
+*/
 }
 //-----------------------------------------------------------------------------
 BilinearForm& NonlinearPDE::a()

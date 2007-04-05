@@ -7,13 +7,11 @@
 // Last changed: 2006-05-07
 
 #include <dolfin/dolfin_log.h>
-#include <dolfin/FEM.h>
+#include <dolfin/Assembler.h>
 #include <dolfin/Matrix.h>
 #include <dolfin/Vector.h>
 #include <dolfin/KrylovSolver.h>
 #include <dolfin/LUSolver.h>
-#include <dolfin/BilinearForm.h>
-#include <dolfin/LinearForm.h>
 #include <dolfin/Mesh.h>
 #include <dolfin/BoundaryCondition.h>
 #include <dolfin/Function.h>
@@ -42,6 +40,8 @@ LinearPDE::~LinearPDE()
 //-----------------------------------------------------------------------------
 dolfin::uint LinearPDE::solve(Function& u)
 {
+  dolfin_error("LinearPDE has not yet been updated for new UFC structure.");
+/*
   dolfin_assert(_a);
   dolfin_assert(_Lf);
   dolfin_assert(_mesh);
@@ -91,13 +91,18 @@ dolfin::uint LinearPDE::solve(Function& u)
 
   delete A;
 
+*/
   return 0;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint LinearPDE::elementdim()
 {
+  dolfin_error("LinearPDE has not yet been updated for new UFC structure.");
+  return 0;
+/*
   dolfin_assert(_a);
   return _a->trial().elementdim();
+*/
 }
 //-----------------------------------------------------------------------------
 BilinearForm& LinearPDE::a()
