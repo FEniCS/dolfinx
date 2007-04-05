@@ -16,11 +16,11 @@
 #include <dolfin/Vector.h>
 #include <dolfin/Matrix.h>
 #include <dolfin/Mesh.h>
+#include <dolfin/Vertex.h>
+#include <dolfin/Cell.h>
 #include <dolfin/Graph.h>
 #include <dolfin/MeshFunction.h>
 #include <dolfin/Function.h>
-#include <dolfin/FiniteElement.h>
-#include <dolfin/FiniteElementSpec.h>
 #include <dolfin/Parameter.h>
 #include <dolfin/ParameterList.h>
 
@@ -111,6 +111,9 @@ void XMLFile::operator>>(MeshFunction<bool>& meshfunction)
 //-----------------------------------------------------------------------------
 void XMLFile::operator>>(Function& f)
 {
+  dolfin_error("Function input in XML format not implemented for new Function.");
+
+/*
   // We are cheating here. Instead of actually parsing the XML for
   // Function data nested inside <function></function>, we just ignore
   // the nesting and look for the first occurence of the data which
@@ -142,6 +145,7 @@ void XMLFile::operator>>(Function& f)
   f.attach(*x, true);
   f.attach(*mesh, true);
   f.attach(*element, true);
+*/
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator>>(FiniteElementSpec& spec)
@@ -408,6 +412,8 @@ void XMLFile::operator<<(MeshFunction<bool>& meshfunction)
 //-----------------------------------------------------------------------------
 void XMLFile::operator<<(Function& f)
 {
+  dolfin_error("Function output in XML format not implemented for new Function.");
+/*
   // Can only write discrete functions
   if ( f.type() != Function::discrete )
     dolfin_error("Only discrete functions can be saved to file.");
@@ -442,10 +448,13 @@ void XMLFile::operator<<(Function& f)
 
   cout << "Saved function " << f.name() << " (" << f.label()
        << ") to file " << filename << " in XML format." << endl;
+*/
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator<<(FiniteElementSpec& spec)
 {
+  dolfin_error("Output of finite element spec in XML format not implemented for new UFC structure.");
+/*
   // Open file
   FILE *fp = openFile();
   
@@ -458,6 +467,7 @@ void XMLFile::operator<<(FiniteElementSpec& spec)
 
   cout << "Saved finite element specification" << spec
        << " to file " << filename << " in XML format." << endl;
+*/
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator<<(ParameterList& parameters)

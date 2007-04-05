@@ -7,12 +7,12 @@
 // Last changed: 2006-09-15
 
 #include <stdio.h>
-#include <dolfin/ParameterSystem.h>
-#include <dolfin/Mesh.h>
-#include <dolfin/Vertex.h>
+#include <dolfin/dolfin_log.h>
 #include <dolfin/Cell.h>
 #include <dolfin/Function.h>
-#include <dolfin/dolfin_log.h>
+#include <dolfin/Mesh.h>
+#include <dolfin/ParameterSystem.h>
+#include <dolfin/Vertex.h>
 #include <dolfin/OpenDXFile.h>
 
 using namespace dolfin;
@@ -57,6 +57,9 @@ void OpenDXFile::operator<<(Mesh& mesh)
 //-­---------------------------------------------------------------------------
 void OpenDXFile::operator<<(Function& u)
 {
+  dolfin_error("Function output in OpenDX format not implemented for new Function.");
+
+/*
   event_saving_function();
 
   // Open file
@@ -83,6 +86,7 @@ void OpenDXFile::operator<<(Function& u)
 
   // Close file
   fclose(fp);
+*/
 }
 //-­---------------------------------------------------------------------------
 void OpenDXFile::writeHeader(FILE* fp)
@@ -181,6 +185,8 @@ void OpenDXFile::writeMeshData(FILE* fp, Mesh& mesh)
 //-­---------------------------------------------------------------------------
 void OpenDXFile::writeFunction(FILE* fp, Function& u)
 {
+  dolfin_error("Function output in OpenDX format not implemented for new Function.");
+/*
   // Write header for object
   fprintf(fp,"# Values for [%s] at nodal points, frame %d\n", u.label().c_str(), (int)frames.size());
   fprintf(fp,"object \"data %d\" class array type float rank 1 shape %u items %u lsb binary data follows\n",
@@ -213,6 +219,7 @@ void OpenDXFile::writeFunction(FILE* fp, Function& u)
   // Add the new frame
   Frame frame(u.time());
   frames.push_back(frame);
+*/
 }
 //-­---------------------------------------------------------------------------
 void OpenDXFile::writeSeries(FILE* fp, Function& u)

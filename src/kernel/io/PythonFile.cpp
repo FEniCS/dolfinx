@@ -12,7 +12,6 @@
 #include <dolfin/Mesh.h>
 #include <dolfin/Function.h>
 #include <dolfin/Sample.h>
-#include <dolfin/FiniteElement.h>
 #include <dolfin/PythonFile.h>
 
 using namespace dolfin;

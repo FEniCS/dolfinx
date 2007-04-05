@@ -5,7 +5,7 @@
 // Last changed: 2006-05-23
 
 #include <dolfin/dolfin_log.h>
-#include <dolfin/BLASFormData.h>
+//#include <dolfin/BLASFormData.h>
 #include <dolfin/XMLBLASFormData.h>
 
 using namespace dolfin;
@@ -294,7 +294,10 @@ void XMLBLASFormData::readEntry(const xmlChar *name, const xmlChar **attrs)
 //-----------------------------------------------------------------------------
 void XMLBLASFormData::initForm()
 {
+  dolfin_error("XMLBLASFormData not implemented for new UFC strcuture.");
+/*
   // Give data to form
   blas.init(mi, ni, data_interior, mb, nb, data_boundary);
+*/
 }
 //-----------------------------------------------------------------------------

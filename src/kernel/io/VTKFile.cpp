@@ -11,7 +11,6 @@
 #include <dolfin/Vertex.h>
 #include <dolfin/Cell.h>
 #include <dolfin/Function.h>
-#include <dolfin/FiniteElement.h>
 #include <dolfin/Vector.h>
 #include <dolfin/VTKFile.h>
 
@@ -58,6 +57,8 @@ void VTKFile::operator<<(Mesh& mesh)
 //----------------------------------------------------------------------------
 void VTKFile::operator<<(Function& u)
 {
+  dolfin_error("Function output in VTK format not implemented for new Function.");
+/*
   //dolfin_info("Writing Function to VTK file.");
 
   // Update vtu file name and clear file
@@ -85,6 +86,7 @@ void VTKFile::operator<<(Function& u)
   
   cout << "Saved function " << u.name() << " (" << u.label()
        << ") to file " << filename << " in VTK format." << endl;
+*/
 }
 //----------------------------------------------------------------------------
 void VTKFile::MeshWrite(Mesh& mesh) const
@@ -143,6 +145,8 @@ void VTKFile::MeshWrite(Mesh& mesh) const
 //----------------------------------------------------------------------------
 void VTKFile::ResultsWrite(Function& u) const
 {
+  dolfin_error("Function output in VTK format not implemented for new Function.");
+/*
   // Open file
   FILE *fp = fopen(vtu_filename.c_str(), "a");
   
@@ -244,9 +248,10 @@ void VTKFile::ResultsWrite(Function& u) const
   
   // Close file
   fclose(fp);
+*/
 }
 //----------------------------------------------------------------------------
-void VTKFile::pvdFileWrite(int num)
+void VTKFile::pvdFileWrite(uint num)
 {
   std::fstream pvdFile;
 

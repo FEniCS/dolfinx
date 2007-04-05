@@ -5,7 +5,6 @@
 // Last changed: 2006-05-23
 
 #include <dolfin/dolfin_log.h>
-#include <dolfin/FiniteElementSpec.h>
 #include <dolfin/XMLFiniteElementSpec.h>
 
 using namespace dolfin;
@@ -57,6 +56,8 @@ void XMLFiniteElementSpec::endElement(const xmlChar* name)
 void XMLFiniteElementSpec::readFiniteElementSpec(const xmlChar* name,
 						 const xmlChar** attrs)
 {
+  dolfin_error("Reading finite element spec in XML format not implemented for new UFC structure.");
+/*
   // Parse values
   std::string type  = parseString(name, attrs, "type");
   std::string shape = parseString(name, attrs, "shape");
@@ -67,5 +68,6 @@ void XMLFiniteElementSpec::readFiniteElementSpec(const xmlChar* name,
 
   // Don't know what to do here, maybe we need to make an envelope-letter
   spec.init(type, shape, degree, vectordim);
+*/
 }
 //-----------------------------------------------------------------------------

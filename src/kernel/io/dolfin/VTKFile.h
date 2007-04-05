@@ -31,7 +31,7 @@ namespace dolfin
 
     void MeshWrite(Mesh& mesh) const;
     void ResultsWrite(Function& u) const;
-    void pvdFileWrite(int u);
+    void pvdFileWrite(uint u);
     void VTKHeaderOpen(Mesh& mesh) const;
     void VTKHeaderClose() const;
     void vtuNameUpdate(const int counter);
