@@ -18,6 +18,11 @@ ConstantFunction::ConstantFunction(real value)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
+ConstantFunction::~ConstantFunction()
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
 void ConstantFunction::interpolate(real* coefficients,
                                    const ufc::cell& cell,
                                    const ufc::finite_element& finite_element)

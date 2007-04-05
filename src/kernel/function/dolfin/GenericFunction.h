@@ -21,10 +21,10 @@ namespace dolfin
   public:
 
     /// Constructor
-    GenericFunction();
+    GenericFunction() {};
 
     /// Destructor
-    virtual ~GenericFunction();
+    virtual ~GenericFunction() {};
 
     /// Interpolate function on cell
     virtual void interpolate(real* coefficients,

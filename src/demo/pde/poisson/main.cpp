@@ -19,12 +19,13 @@
 //     du/dn(x, y) = 0  otherwise
 
 #include <dolfin.h>
-#include "Poisson.h"
+//#include "Poisson.h"
   
 using namespace dolfin;
 
 int main()
 {
+/*
   // Right-hand side
   class Source : public Function
   {
@@ -57,16 +58,17 @@ int main()
         return 0.0;  
     }
   };
-
+*/
   // Set up problem
-  Source f;
-  DirichletBC bc;
-  NeumannBC g;
+//  Source f;
+//  DirichletBC bc;
+//  NeumannBC g;
 
   UnitSquare mesh(16, 16);
 
-  Poisson::BilinearForm a;
-  Poisson::LinearForm L(f, g);
+//  PoissonBilinearForm a;
+//  PoissonLinearForm L(f, g);
+/*
   PDE pde(a, L, mesh, bc);
 
   // Compute solution
@@ -76,7 +78,7 @@ int main()
   File file("poisson.xml");
   file << U;
 
-
+*/
   
   return 0;
 }
