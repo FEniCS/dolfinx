@@ -29,11 +29,11 @@ int main()
   // Right-hand side
   class Source : public Function
   {
-    real eval(const Point& p, unsigned int i)
+    void eval(real* values, const real* x)
     {
-      real dx = p.x() - 0.5;
-      real dy = p.y() - 0.5;
-      return 500.0*exp(-(dx*dx + dy*dy)/0.02);
+      real dx = x[0] - 0.5;
+      real dy = x[1] - 0.5;
+      values[0] = 500.0*exp(-(dx*dx + dy*dy)/0.02);
     }
   };
 
@@ -50,35 +50,39 @@ int main()
   // Neumann boundary condition
   class NeumannBC : public Function
   {
-    real eval(const Point& p, unsigned int i)
+    void eval(real* values, const real* x)
     {
-      if ( std::abs(p.x() - 1.0) < DOLFIN_EPS )
-        return 1.0;
+      if ( std::abs(x[0] - 1.0) < DOLFIN_EPS )
+        values[0] = 1.0;
       else
-        return 0.0;  
+        values[0] = 0.0;
     }
   };
 
   // Set up problem
-//  Source f;
-  Function f = 1.0;
-//  NeumannBC g;
-//  DirichletBC bc;
+  Source f;
+  //  DirichletBC bc;
+
+  NeumannBC g;
+  //Function g = 1.0;
 
   UnitSquare mesh(3, 3);
 
-  PoissonBilinearForm a;
-  PoissonLinearForm L(f);
+  //PoissonBilinearForm a;
+  PoissonLinearForm L(f, g);
 
+  /*
   Matrix A;
   assemble(A, a, mesh);
   cout << "Stiffness matrix " << endl;
   A.disp();
+  */
 
   Vector b;
   assemble(b, L, mesh);
   cout << "RHS vector " << endl;
   b.disp();
+
 
 /*
   PDE pde(a, L, mesh, bc);

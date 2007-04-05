@@ -52,7 +52,7 @@ namespace dolfin
     virtual ~Function();
 
     /// Evaluate function at given point (must be implemented for user-defined function)
-    virtual void eval(real* values, const real* coordinates);
+    virtual void eval(real* values, const real* x);
     
     /// Interpolate function on cell
     void interpolate(real* coefficients,
