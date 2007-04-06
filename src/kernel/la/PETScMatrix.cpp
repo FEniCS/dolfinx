@@ -295,7 +295,7 @@ void PETScMatrix::getRow(const uint i, int& ncols, Array<int>& columns,
   MatRestoreRow(A, i, &ncols, &cols, &vals);
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::ident(const int rows[], const int m)
+void PETScMatrix::ident(const uint rows[], uint m)
 {
   IS is = 0;
   ISCreateGeneral(PETSC_COMM_SELF, m, rows, &is);

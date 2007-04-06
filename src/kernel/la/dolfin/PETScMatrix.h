@@ -116,7 +116,7 @@ namespace dolfin
     void getRow(const uint i, int& ncols, Array<int>& columns, Array<real>& values) const;
 
     /// Set given rows to identity matrix
-    void ident(const int rows[], const int m);
+    void ident(const uint rows[], uint m);
     
     /// Matrix-vector multiplication
     void mult(const PETScVector& x, PETScVector& Ax) const;

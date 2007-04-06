@@ -100,7 +100,7 @@ namespace dolfin
     void zero();
 
     /// Set given rows to identity matrix
-    void ident(const int rows[], const  int m);
+    void ident(const uint rows[], uint m);
 
     /// Compute product y = Ax
     void mult(const uBlasVector& x, uBlasVector& y) const;
@@ -289,13 +289,13 @@ namespace dolfin
   }
   //-----------------------------------------------------------------------------
   template <class Mat>  
-  void uBlasMatrix<Mat>::ident(const int rows[], const int m) 
+  void uBlasMatrix<Mat>::ident(const uint rows[], uint m) 
   {
     if( !assembled )
       dolfin_error("Matrix has not been assembled. Did you forget to call A.apply()?"); 
 
     const uint n = this->size(1);
-    for(int i = 0; i < m; ++i)
+    for(uint i = 0; i < m; ++i)
       ublas::row(*this, rows[i]) = ublas::unit_vector<double> (n, rows[i]);
   }
   //---------------------------------------------------------------------------

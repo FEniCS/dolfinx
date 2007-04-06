@@ -89,7 +89,7 @@ namespace dolfin
     virtual void zero() = 0;
 
     /// Set given rows to identity matrix
-    virtual void ident(const int rows[], const int m) = 0;
+    virtual void ident(const uint rows[], uint m) = 0;
 
     /// Return maximum number of nonzero entries in all rows
     virtual uint nzmax() const = 0;

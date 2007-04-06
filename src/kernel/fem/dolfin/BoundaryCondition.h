@@ -11,11 +11,6 @@
 
 #include <dolfin/constants.h>
 #include <dolfin/TimeDependent.h>
-#include <ufc.h>
-
-// Forward declarations
-class ufc::finite_element;
-class ufc::dof_map;
 
 namespace dolfin
 {
@@ -26,6 +21,7 @@ namespace dolfin
   class GenericMatrix;
   class GenericVector;
   class Mesh;
+  class Form;
 
   /// This class specifies the interface for boundary conditions for
   /// partial differential equations. To specify a boundary condition,
@@ -48,20 +44,19 @@ namespace dolfin
 
     /// Apply boundary conditions to a matrix and a vector
     void applyBC(GenericMatrix& A, GenericVector& b, Mesh& mesh, 
-                  ufc::finite_element& element);
+                 const Form& form);
 
     /// Apply boundary conditions to a matrix
-    void applyBC(GenericMatrix& A, Mesh& mesh, ufc::finite_element& element,
-                 ufc::dof_map& dof_map);
+    void applyBC(GenericMatrix& A, Mesh& mesh, const Form& form);
 
     /// Apply boundary conditions to vector
-    void applyBC(GenericVector& b, Mesh& mesh, ufc::finite_element& element);
+    void applyBC(GenericVector& b, Mesh& mesh, const Form& form);
 
   private:
 
     /// Apply boundary conditions
     void apply(GenericMatrix* A, GenericVector* b, const GenericVector* x, 
-             Mesh& mesh, ufc::finite_element& element, ufc::dof_map& dof_map);
+             Mesh& mesh, const Form& form);
 
   };
   

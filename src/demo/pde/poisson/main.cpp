@@ -61,28 +61,29 @@ int main()
 
   // Set up problem
   Source f;
-  //  DirichletBC bc;
+  DirichletBC bc;
 
   NeumannBC g;
   //Function g = 1.0;
 
   UnitSquare mesh(3, 3);
 
-  //PoissonBilinearForm a;
+  PoissonBilinearForm a;
   PoissonLinearForm L(f, g);
 
-  /*
   Matrix A;
   assemble(A, a, mesh);
-  cout << "Stiffness matrix " << endl;
-  A.disp();
-  */
+  bc.applyBC(A, mesh, a);
 
+  //cout << "Stiffness matrix " << endl;
+  //A.disp();
+
+/*
   Vector b;
   assemble(b, L, mesh);
   cout << "RHS vector " << endl;
   b.disp();
-
+*/
 
 /*
   PDE pde(a, L, mesh, bc);

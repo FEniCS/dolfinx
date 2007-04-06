@@ -16,6 +16,7 @@
 #include <dolfin/Cell.h>
 #include <dolfin/Facet.h>
 #include <dolfin/Vertex.h>
+#include <dolfin/Form.h>
 
 #include <dolfin/UFCMesh.h>
 #include <dolfin/UFCCell.h>
@@ -35,29 +36,36 @@ BoundaryCondition::~BoundaryCondition()
 }
 //-----------------------------------------------------------------------------
 void BoundaryCondition::applyBC(GenericMatrix& A, GenericVector& b, Mesh& mesh, 
-                           ufc::finite_element& element)
+                                const Form& form)
 {
   dolfin_error("Application of boundary conditions to a matrix is not yet implemented.");
 }
 //-----------------------------------------------------------------------------
-void BoundaryCondition::applyBC(GenericMatrix& A, Mesh& mesh, 
-                                ufc::finite_element& element, ufc::dof_map& dof_map)
+void BoundaryCondition::applyBC(GenericMatrix& A, Mesh& mesh, const Form& form)
 {
   dolfin_warning("Application of boundary conditions not yet implemented.");
-  apply(&A, 0, 0, mesh, element, dof_map);
+  apply(&A, 0, 0, mesh, form);
 }
 //-----------------------------------------------------------------------------
-void BoundaryCondition::applyBC(GenericVector& b, Mesh& mesh, 
-                                ufc::finite_element& element)
+void BoundaryCondition::applyBC(GenericVector& b, Mesh& mesh, const Form& form)
 {
   dolfin_error("Application of boundary conditions to a vector is not yet implemented.");
 }
 //-----------------------------------------------------------------------------
 void BoundaryCondition::apply(GenericMatrix* A, GenericVector* b, 
-            const GenericVector* x, Mesh& mesh,  ufc::finite_element& element, 
-            ufc::dof_map& dof_map)
+                         const GenericVector* x, Mesh& mesh,  const Form& form)
 {
-  cout << "Applying boundary conditions " << endl;
+  cout << "Applying boundary conditions " << form.form().rank() << endl;
+
+  // Create finite elements
+  ufc::finite_element** finite_elements = new ufc::finite_element*[form.form().rank()];
+  for (uint i = 0; i < form.form().rank(); i++)
+    finite_elements[i] = form.form().create_finite_element(i);
+
+  // Create dof maps
+  ufc::dof_map** dof_maps = new ufc::dof_map*[form.form().rank()];
+  for (uint i = 0; i < form.form().rank(); i++)
+    dof_maps[i] = form.form().create_dof_map(i);
 
   // Create boundary value
   BoundaryValue bv;
@@ -68,10 +76,15 @@ void BoundaryCondition::apply(GenericMatrix* A, GenericVector* b,
   BoundaryMesh boundary(mesh, vertex_map, cell_map);
 
   // Get number of dofs per facet
-  const uint num_facet_dofs = dof_map.num_facet_dofs();
+  uint* num_facet_dofs = new uint[form.form().rank()];
+  for (uint i = 0; i < form.form().rank(); i++)
+    num_facet_dofs[i] = dof_maps[i]->num_facet_dofs();
 
   // Create array for dof mapping
-  uint* dofs = new uint[num_facet_dofs];
+  uint** dofs = new uint*[form.form().rank()];
+  for (uint i = 0; i < form.form().rank(); i++)
+    dofs[i] = new uint[dof_maps[i]->num_facet_dofs()];
+
 
   UFCMesh ufc_mesh(mesh);
 
@@ -91,7 +104,23 @@ void BoundaryCondition::apply(GenericMatrix* A, GenericVector* b,
 
     // Tabulate dof mapping for facet (this should really come from DofMap)
     UFCCell ufc_cell(mesh_cell);
-    dof_map.tabulate_facet_dofs(dofs, ufc_mesh, ufc_cell, local_facet);
+    for (uint i = 0; i < form.form().rank(); i++)
+      dof_maps[i]->tabulate_facet_dofs(dofs[i], ufc_mesh, ufc_cell, local_facet);
+
+    // FIXME
+    // Set homogeneous Dirichlet boundary condition on entire boundary (for testing)
+    // Waiting for tabulate_facet_dofs() to be implemented by FFC
+    // Still need to figiure out how to set supplied boundary conditions.
+    if( A )
+      A->ident(dofs[0], num_facet_dofs[0]);
+    if( b )
+    {
+      real* values = new real[form.form().rank()];
+      for(uint i = 0; i < form.form().rank(); ++i)
+        values[i] = 0.0;      
+      b->set(values, num_facet_dofs, dofs); 
+    }
+
 
     // FIXME: Waiting on FFC to generate the necessary UFC functions and the see
     //        what the UFC/DOLFIN function interface looks like.  
@@ -102,11 +131,21 @@ void BoundaryCondition::apply(GenericMatrix* A, GenericVector* b,
 
     dolfin_error("Work on applying boundary conditions not complete");
 
-    // Apply boundary condtions here
-
     p++;
   }
+//  delete [] dofs;
+
+  // Delete finite elements and dof maps
+  for (uint i = 0; i < form.form().rank(); i++)
+  {
+    delete finite_elements[i];
+    delete dof_maps[i];
+    delete dofs[i];
+  }
+  delete [] finite_elements;
+  delete [] dof_maps;
   delete [] dofs;
+  delete [] num_facet_dofs;
 }
 //-----------------------------------------------------------------------------
 
