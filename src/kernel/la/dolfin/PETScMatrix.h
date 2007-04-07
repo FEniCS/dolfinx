@@ -104,10 +104,10 @@ namespace dolfin
     void add(const uint i, const uint j, const real value);
     
     /// Get block of values
-    void get(real* block, const uint m, const uint* rows, const uint n, const uint* cols) const;
+    void get(real* block, uint m, const uint* rows, uint n, const uint* cols) const;
 
     /// Set block of values
-    void set(const real* block, const uint m, const uint* rows, const uint n, const uint* cols);
+    void set(const real* block, uint m, const uint* rows, uint n, const uint* cols);
 
     /// Add block of values
     void add(const real* block, const uint m, const uint* rows, const uint n, const uint* cols);

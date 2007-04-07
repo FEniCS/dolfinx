@@ -249,35 +249,35 @@ void PETScMatrix::add(const uint i, const uint j, const real value)
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::get(real* block,
-                      const uint m, const uint* rows,
-                      const uint n, const uint* cols) const
+                      uint m, const uint* rows,
+                      uint n, const uint* cols) const
 {
   dolfin_assert(A);
   MatGetValues(A,
-               static_cast<int>(m), reinterpret_cast<int*>(rows),
-               static_cast<int>(n), reinterpret_cast<int*>(cols),
+               static_cast<int>(m), reinterpret_cast<int*>(const_cast<uint*>(rows)),
+               static_cast<int>(n), reinterpret_cast<int*>(const_cast<uint*>(cols)),
                block);
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::set(const real* block,
-                      const uint m, const uint* rows,
-                      const uint n, const uint* cols)
+                      uint m, const uint* rows,
+                      uint n, const uint* cols)
 {
   dolfin_assert(A);
   MatSetValues(A,
-               static_cast<int>(m), reinterpret_cast<int*>(rows),
-               static_cast<int>(n), reinterpret_cast<int*>(cols),
+               static_cast<int>(m), reinterpret_cast<int*>(const_cast<uint*>(rows)),
+               static_cast<int>(n), reinterpret_cast<int*>(const_cast<uint*>(cols)),
                block, INSERT_VALUES);
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::add(const real* block,
-                      const uint m, const uint* rows,
-                      const uint n, const uint* cols)
+                      uint m, const uint* rows,
+                      uint n, const uint* cols)
 {
   dolfin_assert(A);
   MatSetValues(A,
-               static_cast<int>(m), reinterpret_cast<int*>(rows),
-               static_cast<int>(n), reinterpret_cast<int*>(cols),
+               static_cast<int>(m), reinterpret_cast<int*>(const_cast<uint*>(rows)),
+               static_cast<int>(n), reinterpret_cast<int*>(const_cast<uint*>(cols)),
                block, ADD_VALUES);
 }
 //-----------------------------------------------------------------------------
@@ -298,7 +298,7 @@ void PETScMatrix::getRow(const uint i, int& ncols, Array<int>& columns,
 void PETScMatrix::ident(const uint rows[], uint m)
 {
   IS is = 0;
-  ISCreateGeneral(PETSC_COMM_SELF, m, rows, &is);
+  ISCreateGeneral(PETSC_COMM_SELF, static_cast<int>(m), reinterpret_cast<int*>(const_cast<uint*>(rows)), &is);
   PetscScalar one = 1.0;
   MatZeroRowsIS(A, is, one);
   ISDestroy(is);
@@ -485,6 +485,8 @@ void PETScMatrix::checkType()
 {
   switch ( _type )
   {
+  case default_matrix:
+    return;
   case spooles:
     #if !PETSC_HAVE_SPOOLES
       dolfin_warning("PETSc has not been complied with Spooles. Using default matrix type");

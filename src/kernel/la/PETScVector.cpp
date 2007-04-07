@@ -125,20 +125,20 @@ void PETScVector::mult(const real a)
 void PETScVector::get(real* block, uint m, const uint* rows) const
 {
   dolfin_assert(x);
-  VecGetValues(x, static_cast<int>(m), reinterpret_cast<int*>(rows), block);
+  VecGetValues(x, static_cast<int>(m), reinterpret_cast<int*>(const_cast<uint*>(rows)), block);
 }
 //-----------------------------------------------------------------------------
 void PETScVector::set(const real* block, uint m, const uint* rows)
 {
   dolfin_assert(x);
-  VecSetValues(x, static_cast<int>(m), reinterpret_cast<int*>(rows), block,
+  VecSetValues(x, static_cast<int>(m), reinterpret_cast<int*>(const_cast<uint*>(rows)), block,
                INSERT_VALUES);
 }
 //-----------------------------------------------------------------------------
 void PETScVector::add(const real* block, uint m, const uint* rows)
 {
   dolfin_assert(x);
-  VecSetValues(x, static_cast<int>(m), reinterpret_cast<int*>(rows), block,
+  VecSetValues(x, static_cast<int>(m), reinterpret_cast<int*>(const_cast<uint*>(rows)), block,
                ADD_VALUES);
 }
 //-----------------------------------------------------------------------------
