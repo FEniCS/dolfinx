@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2007-01-17
-// Last changed: 2007-04-05
+// Last changed: 2007-04-10
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Array.h>
@@ -135,7 +135,7 @@ void Assembler::assembleExteriorFacets(GenericTensor& A, Mesh& mesh,
     Cell mesh_cell(mesh, mesh_facet.entities(mesh.topology().dim())[0]);
 
     // Get local index of facet with respect to the cell
-    uint local_facet = mesh_cell.index(mesh_facet);
+    const uint local_facet = mesh_cell.index(mesh_facet);
       
     // Update to current cell
     ufc.update(mesh_cell);

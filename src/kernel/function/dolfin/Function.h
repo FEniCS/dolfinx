@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells 2005.
 //
 // First added:  2003-11-28
-// Last changed: 2007-04-04
+// Last changed: 2007-04-10
 
 #ifndef __FUNCTION_H
 #define __FUNCTION_H
@@ -51,8 +51,11 @@ namespace dolfin
     /// Destructor
     virtual ~Function();
 
-    /// Evaluate function at given point (must be implemented for user-defined function)
+    /// Evaluate function at given point (overload for user-defined function)
     virtual void eval(real* values, const real* x);
+
+    /// Evaluate scalar function at given point (overload for scalar user-defined function)
+    virtual real eval(const real* x);
     
     /// Interpolate function on cell
     void interpolate(real* coefficients,

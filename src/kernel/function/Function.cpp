@@ -59,6 +59,13 @@ void Function::interpolate(real* coefficients,
 //-----------------------------------------------------------------------------
 void Function::eval(real* values, const real* x)
 {
+  // Try scalar function if not overloaded
+  values[0] = eval(x);
+}
+//-----------------------------------------------------------------------------
+dolfin::real Function::eval(const real* x)
+{
   dolfin_error("Missing eval() for user-defined function (must be overloaded).");
+  return 0.0;
 }
 //-----------------------------------------------------------------------------

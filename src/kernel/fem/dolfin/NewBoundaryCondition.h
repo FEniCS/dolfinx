@@ -17,6 +17,8 @@ namespace dolfin
 
   class Function;
   class Mesh;
+  class SubDomain;
+  class Form;
   class GenericMatrix;
   class GenericVector;
 
@@ -38,7 +40,10 @@ namespace dolfin
   {
   public:
 
-    /// Create boundary condition
+    /// Create boundary condition from sub domain
+    NewBoundaryCondition(Function& g, Mesh& mesh, SubDomain& sub_domain);
+
+    /// Create boundary condition from sub domain markers and sub domain index
     NewBoundaryCondition(Function& g, Mesh& mesh, MeshFunction<uint>& sub_domains, uint sub_domain);
 
     /// Destructor
@@ -63,6 +68,9 @@ namespace dolfin
 
     // The sub domain
     uint sub_domain;
+
+    // True if sub domain markers are created locally
+    bool sub_domains_local;
 
   };
 

@@ -29,40 +29,57 @@ int main()
   // Right-hand side
   class Source : public Function
   {
-    void eval(real* values, const real* x)
+    real eval(const real* x)
     {
       real dx = x[0] - 0.5;
       real dy = x[1] - 0.5;
-      values[0] = 500.0*exp(-(dx*dx + dy*dy)/0.02);
+      return 500.0*exp(-(dx*dx + dy*dy)/0.02);
     }
   };
 
   // Dirichlet boundary condition
   class DirichletBC : public Function
   {
-    void eval(real* values, const real* x)
+    real eval(const real* x)
     {
-      values[0] = 0.0;
+      return 0.0;
     }
   };
   
   // Neumann boundary condition
   class NeumannBC : public Function
   {
-    void eval(real* values, const real* x)
+    real eval(const real* x)
     {
       if ( std::abs(x[0] - 1.0) < DOLFIN_EPS )
-        values[0] = 1.0;
+        return 1.0;
       else
-        values[0] = 0.0;
+        return 0.0;
     }
   };
 
+  // Sub domains
+  class DirichletBoundary : public SubDomain
+  {
+    bool inside(const real* x, bool on_boundary)
+    {
+      return x[0] < DOLFIN_EPS && on_boundary;
+    }
+  };
+
+  // Sub domains
+  class NeumannBoundary : public SubDomain
+  {
+    bool inside(const real* x, bool on_boundary)
+    {
+      return x[0] > 1.0 - DOLFIN_EPS && on_boundary;
+    }
+  };
+  
   // Set up problem
   Source f;
   DirichletBC gd;
   NeumannBC gn;
-
 
   UnitSquare mesh(3, 3);
 
@@ -74,29 +91,24 @@ int main()
   assemble(A, a, mesh);
   assemble(b, L, mesh);
 
-  // Define sub domains
-  MeshFunction<unsigned int> sub_domains(mesh, 1);
-  for (FacetIterator facet(mesh); !facet.end(); ++facet)
-  {
-    sub_domains(*facet) = 0;
-    for (VertexIterator vertex(facet); !vertex.end(); ++vertex)
-    {
-      if ( vertex->x(0) > DOLFIN_EPS )
-        sub_domains(*facet) = 1;
-    }
-  }
-  sub_domains.disp();
-
   // Define boundary condition
-  NewBoundaryCondition bc(gd, mesh, sub_domains, 0);
+  DirichletBoundary GD;
+  NeumannBoundary GN;
+  NewBoundaryCondition bc(gd, mesh, GD);
 
   // Apply boundary condition
   bc.apply(A, b, a);
 
-  cout << "Stiffness matrix " << endl;
+  cout << "Stiffness matrix" << endl;
   A.disp();
-  cout << "RHS vector " << endl;
+  cout << "RHS vector" << endl;
   b.disp();
+
+  Vector x;
+  GMRES::solve(A, x, b);
+
+  cout << "Solution vector" << endl;
+  x.disp();
 
 /*
   PDE pde(a, L, mesh, bc);

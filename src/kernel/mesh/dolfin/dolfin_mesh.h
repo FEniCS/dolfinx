@@ -28,6 +28,7 @@
 #include <dolfin/Mesh.h>
 #include <dolfin/MeshTopology.h>
 #include <dolfin/Point.h>
+#include <dolfin/SubDomain.h>
 #include <dolfin/Tetrahedron.h>
 #include <dolfin/TopologyComputation.h>
 #include <dolfin/Triangle.h>

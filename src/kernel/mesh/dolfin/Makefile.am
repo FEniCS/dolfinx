@@ -21,6 +21,7 @@ EXTRA_DIST = dolfin_mesh.h \
              TopologyComputation.h \
              CellType.h \
              Interval.h \
+             SubDomain.h \
              Triangle.h \
              Tetrahedron.h \
              UniformMeshRefinement.h \
@@ -28,8 +29,6 @@ EXTRA_DIST = dolfin_mesh.h \
              LocalMeshCoarsening.h \
              Point.h \
              BoundaryComputation.h \
-             MeshBoundary.h \
              GeometricPredicates.h \
              GTSInterface.h \
              IntersectionDetector.h
-
