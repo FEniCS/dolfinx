@@ -140,6 +140,10 @@ void Assembler::assembleExteriorFacets(GenericTensor& A, Mesh& mesh,
     // Update to current cell
     ufc.update(mesh_cell);
 
+    // Interpolate coefficients on cell
+    for (uint i = 0; i < coefficients.size(); i++)
+      coefficients[i]->interpolate(ufc.w[i], ufc.cell, *ufc.coefficient_elements[i]);
+
     // Tabulate dofs for each dimension
     for (uint i = 0; i < ufc.form.rank(); i++)
       ufc.dof_maps[i]->tabulate_dofs(ufc.dofs[i], ufc.mesh, ufc.cell);
@@ -187,6 +191,11 @@ void Assembler::assembleInteriorFacets(GenericTensor& A,Mesh& mesh,
 
     // Update to current pair of cells
     ufc.update(cell0, cell1);
+    
+    // FIXME: Implement this, need to interpolate on both cells
+    // Interpolate coefficients on cell
+    //for (uint i = 0; i < coefficients.size(); i++)
+    //  coefficients[i]->interpolate(ufc.w[i], ufc.cell, *ufc.coefficient_elements[i]);
 
     // Tabulate dofs for each dimension on macro element
     for (uint i = 0; i < ufc.form.rank(); i++)
