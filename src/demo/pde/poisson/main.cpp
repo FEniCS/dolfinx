@@ -38,12 +38,11 @@ int main()
   };
 
   // Dirichlet boundary condition
-  class DirichletBC : public BoundaryCondition
+  class DirichletBC : public Function
   {
-    void eval(BoundaryValue& value, const Point& p, unsigned int i)
+    void eval(real* values, const real* x)
     {
-      if ( std::abs(p.x() - 0.0) < DOLFIN_EPS )
-        value = 0.0;
+      values[0] = 0.0;
     }
   };
   
@@ -61,29 +60,43 @@ int main()
 
   // Set up problem
   Source f;
-  DirichletBC bc;
+  DirichletBC gd;
+  NeumannBC gn;
 
-  NeumannBC g;
-  //Function g = 1.0;
 
   UnitSquare mesh(3, 3);
 
   PoissonBilinearForm a;
-  PoissonLinearForm L(f, g);
+  PoissonLinearForm L(f, gn);
 
   Matrix A;
-  assemble(A, a, mesh);
-  bc.applyBC(A, mesh, a);
-
-  //cout << "Stiffness matrix " << endl;
-  //A.disp();
-
-/*
   Vector b;
+  assemble(A, a, mesh);
   assemble(b, L, mesh);
+
+  // Define sub domains
+  MeshFunction<unsigned int> sub_domains(mesh, 1);
+  for (FacetIterator facet(mesh); !facet.end(); ++facet)
+  {
+    sub_domains(*facet) = 0;
+    for (VertexIterator vertex(facet); !vertex.end(); ++vertex)
+    {
+      if ( vertex->x(0) > DOLFIN_EPS )
+        sub_domains(*facet) = 1;
+    }
+  }
+  sub_domains.disp();
+
+  // Define boundary condition
+  NewBoundaryCondition bc(gd, mesh, sub_domains, 0);
+
+  // Apply boundary condition
+  bc.apply(A, b, a);
+
+  cout << "Stiffness matrix " << endl;
+  A.disp();
   cout << "RHS vector " << endl;
   b.disp();
-*/
 
 /*
   PDE pde(a, L, mesh, bc);

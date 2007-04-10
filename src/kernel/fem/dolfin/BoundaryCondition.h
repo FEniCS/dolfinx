@@ -58,6 +58,7 @@ namespace dolfin
     void apply(GenericMatrix* A, GenericVector* b, const GenericVector* x, 
              Mesh& mesh, const Form& form);
 
+
   };
   
 }
