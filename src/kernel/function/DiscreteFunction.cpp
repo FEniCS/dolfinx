@@ -15,7 +15,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 DiscreteFunction::DiscreteFunction(Mesh& mesh, const Form& form, uint i)
-  : GenericFunction(), finite_element(0), dof_map(0), dofs(0)
+  : GenericFunction(mesh), finite_element(0), dof_map(0), dofs(0)
 {
   // Check argument
   const uint num_arguments = form.form().rank() + form.form().num_coefficients();
@@ -66,7 +66,7 @@ dolfin::uint DiscreteFunction::dim(uint i) const
   return finite_element->value_dimension(i);
 }
 //-----------------------------------------------------------------------------
-void DiscreteFunction::interpolate(real* values, Mesh& mesh)
+void DiscreteFunction::interpolate(real* values)
 {
   dolfin_assert(values);
   dolfin_assert(finite_element);

@@ -18,16 +18,16 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Function::Function()
+Function::Function(Mesh& mesh)
   : Variable("u", "user-defined function"), f(0)
 {
-  f = new UserFunction(this);
+  f = new UserFunction(mesh, this);
 }
 //-----------------------------------------------------------------------------
-Function::Function(real value)
+Function::Function(Mesh& mesh, real value)
   : Variable("u", "constant function"), f(0)
 {
-  f = new ConstantFunction(value);
+  f = new ConstantFunction(mesh, value);
 }
 //-----------------------------------------------------------------------------
 Function::Function(Mesh& mesh, const Form& form, uint i)
@@ -54,10 +54,16 @@ dolfin::uint Function::dim(unsigned int i) const
   return f->dim(i);
 }
 //-----------------------------------------------------------------------------
-void Function::interpolate(real* values, Mesh& mesh)
+Mesh& Function::mesh()
 {
   dolfin_assert(f);
-  f->interpolate(values, mesh);
+  return f->mesh;
+}
+//-----------------------------------------------------------------------------
+void Function::interpolate(real* values)
+{
+  dolfin_assert(f);
+  f->interpolate(values);
 }
 //-----------------------------------------------------------------------------
 void Function::interpolate(real* coefficients,

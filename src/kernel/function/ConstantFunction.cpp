@@ -11,8 +11,8 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-ConstantFunction::ConstantFunction(real value)
-  : GenericFunction(), ufc::function(), value(value), size(1)
+ConstantFunction::ConstantFunction(Mesh& mesh, real value)
+  : GenericFunction(mesh), ufc::function(), value(value), size(1)
 {
   cout << "Creating ConstantFunction" << endl;
 
@@ -36,7 +36,7 @@ dolfin::uint ConstantFunction::dim(uint i) const
   return 1;
 }
 //-----------------------------------------------------------------------------
-void ConstantFunction::interpolate(real* values, Mesh& mesh)
+void ConstantFunction::interpolate(real* values)
 {
   dolfin_assert(values);
 

@@ -16,8 +16,8 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-UserFunction::UserFunction(Function* f)
-  : GenericFunction(), ufc::function(), f(f), size(1)
+UserFunction::UserFunction(Mesh& mesh, Function* f)
+  : GenericFunction(mesh), ufc::function(), f(f), size(1)
 {
   // Do nothing
 }
@@ -39,7 +39,7 @@ dolfin::uint UserFunction::dim(uint i) const
   return 1;
 }
 //-----------------------------------------------------------------------------
-void UserFunction::interpolate(real* values, Mesh& mesh)
+void UserFunction::interpolate(real* values)
 {
   dolfin_assert(values);
   dolfin_assert(f);

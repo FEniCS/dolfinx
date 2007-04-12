@@ -36,10 +36,10 @@ namespace dolfin
   public:
 
     /// Create user-defined function (evaluation operator must be overloaded)
-    Function();
+    Function(Mesh& mesh);
 
     /// Create constant function from given value
-    Function(real value);
+    Function(Mesh& mesh, real value);
 
     /// Create discrete function for argument function i of form
     Function(Mesh& mesh, const Form& form, uint i);
@@ -53,8 +53,11 @@ namespace dolfin
     /// Return the dimension of the value space for axis i
     uint dim(unsigned int i) const;
     
+    /// Return the mesh
+    Mesh& mesh();
+
     /// Interpolate function to vertices of mesh
-    void interpolate(real* values, Mesh& mesh);
+    void interpolate(real* values);
 
     /// Interpolate function to finite element space on cell
     void interpolate(real* coefficients,

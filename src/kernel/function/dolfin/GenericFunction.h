@@ -23,7 +23,7 @@ namespace dolfin
   public:
 
     /// Constructor
-    GenericFunction() {};
+    GenericFunction(Mesh& mesh) : mesh(mesh) {};
 
     /// Destructor
     virtual ~GenericFunction() {};
@@ -35,12 +35,15 @@ namespace dolfin
     virtual uint dim(uint i) const = 0;
 
     /// Interpolate function to vertices of mesh
-    virtual void interpolate(real* values, Mesh& mesh) = 0;
+    virtual void interpolate(real* values) = 0;
 
     /// Interpolate function to finite element space on cell
     virtual void interpolate(real* coefficients,
                              const ufc::cell& cell,
                              const ufc::finite_element& finite_element) = 0;
+
+    /// The mesh
+    Mesh& mesh;
 
   };
 

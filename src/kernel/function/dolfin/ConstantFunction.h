@@ -20,7 +20,7 @@ namespace dolfin
   public:
 
     /// Create constant function from given value
-    ConstantFunction(real value);
+    ConstantFunction(Mesh& mesh, real value);
 
     /// Destructor
     ~ConstantFunction();
@@ -32,7 +32,7 @@ namespace dolfin
     uint dim(uint i) const;
 
     /// Interpolate function to vertices of mesh
-    void interpolate(real* values, Mesh& mesh);
+    void interpolate(real* values);
 
     /// Interpolate function to finite element space on cell
     void interpolate(real* coefficients,
