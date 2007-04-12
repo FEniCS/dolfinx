@@ -1,4 +1,4 @@
-// Copyright (C) 2002-2006 Anders Logg.
+// Copyright (C) 2002-2007 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // Modified by Erik Svensson 2003.
@@ -7,7 +7,7 @@
 // Modified by Magnus Vikstrom 2007.
 //
 // First added:  2002-12-03
-// Last changed: 2007-03-21
+// Last changed: 2007-04-12
 
 #include <stdarg.h>
 
@@ -21,6 +21,8 @@
 #include <dolfin/Graph.h>
 #include <dolfin/MeshFunction.h>
 #include <dolfin/Function.h>
+#include <dolfin/DiscreteFunction.h>
+#include <dolfin/DofMap.h>
 #include <dolfin/Parameter.h>
 #include <dolfin/ParameterList.h>
 
@@ -148,14 +150,6 @@ void XMLFile::operator>>(Function& f)
 */
 }
 //-----------------------------------------------------------------------------
-void XMLFile::operator>>(FiniteElementSpec& spec)
-{
-  if ( xmlObject )
-    delete xmlObject;
-  xmlObject = new XMLFiniteElementSpec(spec);
-  parseFile();
-}
-//-----------------------------------------------------------------------------
 void XMLFile::operator>>(ParameterList& parameters)
 {
   if ( xmlObject )
@@ -186,7 +180,7 @@ void XMLFile::operator<<(Vector& x)
   FILE* fp = openFile();
   
   // Write vector in XML format
-  fprintf(fp, "  <vector size=\" %u \"> \n", x.size() );
+  fprintf(fp, "  <vector size=\"%u\"> \n", x.size() );
   
   for (unsigned int i = 0; i < x.size(); i++) 
   {
@@ -412,62 +406,43 @@ void XMLFile::operator<<(MeshFunction<bool>& meshfunction)
 //-----------------------------------------------------------------------------
 void XMLFile::operator<<(Function& f)
 {
-  dolfin_error("Function output in XML format not implemented for new Function.");
-/*
-  // Can only write discrete functions
+  // Can only save discrete functions
   if ( f.type() != Function::discrete )
-    dolfin_error("Only discrete functions can be saved to file.");
+    dolfin_error("Only discrete functions can be saved in XML format.");
 
-  // Open file
-  FILE *fp = openFile();
+  // Get discrete function (we're all friends here)
+  DiscreteFunction* df = static_cast<DiscreteFunction*>(f.f);
   
   // Begin function
+  FILE *fp = openFile();
   fprintf(fp, "  <function> \n");
-
-  // Close file
   closeFile(fp);
-  
-  // Write the vector
-  *this << f.vector();
 
   // Write the mesh
-  *this << f.mesh();
+  *this << df->mesh;
+  
+  // Write the vector
+  *this << df->x;
 
-  // Write the finite element specification
-  FiniteElementSpec spec = f.element().spec();
-  *this << spec;
-
-  // Open file
+  // Write the finite element
   fp = openFile();
+  fprintf(fp, "  <finiteelement signature=\"%s\"/>\n",
+          df->finite_element->signature());
+  closeFile(fp);
+
+  // Write the dof map
+  fp = openFile();
+  fprintf(fp, "  <dofmap signature=\"%s\"/>\n",
+          df->dof_map->signature());
+  closeFile(fp);
 
   // End function
+  fp = openFile();
   fprintf(fp, "  </function> \n");
-
-  // Close file
   closeFile(fp);
 
   cout << "Saved function " << f.name() << " (" << f.label()
        << ") to file " << filename << " in XML format." << endl;
-*/
-}
-//-----------------------------------------------------------------------------
-void XMLFile::operator<<(FiniteElementSpec& spec)
-{
-  dolfin_error("Output of finite element spec in XML format not implemented for new UFC structure.");
-/*
-  // Open file
-  FILE *fp = openFile();
-  
-  // Write element in XML format
-  fprintf(fp, "  <finiteelement type=\"%s\" shape=\"%s\" degree=\"%u\" vectordim=\"%u\"/>\n",
-  	  spec.type().c_str(), spec.shape().c_str(), spec.degree(), spec.vectordim());
-  
-  // Close file
-  closeFile(fp);
-
-  cout << "Saved finite element specification" << spec
-       << " to file " << filename << " in XML format." << endl;
-*/
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator<<(ParameterList& parameters)

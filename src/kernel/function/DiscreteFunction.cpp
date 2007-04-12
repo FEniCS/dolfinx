@@ -7,6 +7,7 @@
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Mesh.h>
 #include <dolfin/Form.h>
+#include <dolfin/DofMap.h>
 #include <dolfin/Vertex.h>
 #include <dolfin/Cell.h>
 #include <dolfin/UFCMesh.h>
@@ -31,10 +32,12 @@ DiscreteFunction::DiscreteFunction(Mesh& mesh, Vector& x, const Form& form, uint
   finite_element = form.form().create_finite_element(i);
 
   // Create dof map
-  dof_map = form.form().create_dof_map(i);
+  ufc_dof_map = form.form().create_dof_map(i);
+  dof_map = new DofMap(*ufc_dof_map, mesh);
 
   // Initialize vector
-  x.init(dof_map->global_dimension());
+  if ( x.size() != dof_map->global_dimension() )
+    x.init(dof_map->global_dimension());
 
   // Initialize local array for mapping of dofs
   dofs = new uint[dof_map->local_dimension()];
@@ -49,6 +52,9 @@ DiscreteFunction::~DiscreteFunction()
       
   if ( dof_map )
     delete dof_map;
+
+  if ( ufc_dof_map )
+    delete ufc_dof_map;
 
   if ( dofs )
     delete [] dofs;
@@ -80,7 +86,6 @@ void DiscreteFunction::interpolate(real* values)
   // Local data for interpolation on each cell
   CellIterator cell(mesh);
   UFCCell ufc_cell(*cell);
-  UFCMesh ufc_mesh(mesh);
   const uint num_cell_vertices = mesh.type().numVertices(mesh.topology().dim());
   real* vertex_values = new real[size*num_cell_vertices];
   real* dof_values = new real[finite_element->space_dimension()];
@@ -93,7 +98,7 @@ void DiscreteFunction::interpolate(real* values)
     ufc_cell.update(*cell);
 
     // Tabulate dofs
-    dof_map->tabulate_dofs(dofs, ufc_mesh, ufc_cell);
+    dof_map->tabulate_dofs(dofs, ufc_cell);
     
     // Pick values from global vector
     x.get(dof_values, dof_map->local_dimension(), dofs);
@@ -128,8 +133,7 @@ void DiscreteFunction::interpolate(real* coefficients,
     dolfin_error("Finite element does not match for interpolation of discrete function.");
 
   // Tabulate dofs
-  UFCMesh ufc_mesh(mesh);
-  dof_map->tabulate_dofs(dofs, ufc_mesh, cell);
+  dof_map->tabulate_dofs(dofs, cell);
   
   // Pick values from global vector
   x.get(coefficients, dof_map->local_dimension(), dofs);

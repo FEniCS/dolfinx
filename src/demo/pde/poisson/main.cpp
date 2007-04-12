@@ -131,8 +131,8 @@ int main()
 */
 
   // Save solution to file
-  //File file("poisson.xml");
-  //file << U;
+  File file("poisson.xml");
+  file << u;
   
   return 0;
 }

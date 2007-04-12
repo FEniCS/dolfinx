@@ -29,6 +29,12 @@ namespace dolfin
     /// Destructor
     ~DofMap();
 
+    /// Return a string identifying the dof map
+    const char* signature() const
+    {
+      return ufc_dof_map.signature();
+    }
+
     /// Return the dimension of the global finite element function space
     unsigned int global_dimension() const
     {

@@ -15,6 +15,7 @@ namespace dolfin
 
   class Mesh;
   class Form;
+  class DofMap;
 
   /// This class implements the functionality for discrete functions.
   /// A discrete function is defined in terms of a mesh, a vector of
@@ -48,6 +49,9 @@ namespace dolfin
                      const ufc::cell& cell,
                      const ufc::finite_element& finite_element);
 
+    /// Friends
+    friend class XMLFile;
+
   private:
 
     // The vector of dofs
@@ -57,7 +61,10 @@ namespace dolfin
     ufc::finite_element* finite_element;
 
     // The dof map
-    ufc::dof_map* dof_map;
+    DofMap* dof_map;
+
+    // The UFC dof map
+    ufc::dof_map* ufc_dof_map;
 
     // Local array for mapping of dofs
     uint* dofs;

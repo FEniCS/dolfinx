@@ -35,6 +35,9 @@ namespace dolfin
   {
   public:
 
+    /// Function types
+    enum Type {user, constant, discrete};
+
     /// Create user-defined function (evaluation operator must be overloaded)
     Function(Mesh& mesh);
 
@@ -46,6 +49,9 @@ namespace dolfin
 
     /// Destructor
     virtual ~Function();
+
+    /// Return the type of function
+    Type type() const;
 
     /// Return the rank of the value space
     uint rank() const;
@@ -70,10 +76,16 @@ namespace dolfin
     /// Evaluate scalar function at given point (overload for scalar user-defined function)
     virtual real eval(const real* x);
 
+    /// Friends
+    friend class XMLFile;
+
   private:
     
     // Pointer to current implementation (letter base class)
     GenericFunction* f;
+
+    // Type of function
+    Type _type;
 
   };
 

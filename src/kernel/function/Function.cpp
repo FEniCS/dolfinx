@@ -19,19 +19,19 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 Function::Function(Mesh& mesh)
-  : Variable("u", "user-defined function"), f(0)
+  : Variable("u", "user-defined function"), f(0), _type(user)
 {
   f = new UserFunction(mesh, this);
 }
 //-----------------------------------------------------------------------------
 Function::Function(Mesh& mesh, real value)
-  : Variable("u", "constant function"), f(0)
+  : Variable("u", "constant function"), f(0), _type(constant)
 {
   f = new ConstantFunction(mesh, value);
 }
 //-----------------------------------------------------------------------------
 Function::Function(Mesh& mesh, Vector& x, const Form& form, uint i)
-  : Variable("u", "discrete function"), f(0)
+  : Variable("u", "discrete function"), f(0), _type(discrete)
 {
   f = new DiscreteFunction(mesh, x, form, i);
 }
@@ -40,6 +40,11 @@ Function::~Function()
 {
   if ( f )
     delete f;
+}
+//-----------------------------------------------------------------------------
+Function::Type Function::type() const
+{
+  return _type;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint Function::rank() const
