@@ -33,7 +33,10 @@ namespace dolfin
     /// Return the dimension of the value space for axis i
     uint dim(uint i) const;
 
-    /// Interpolate function on cell
+    /// Interpolate function to vertices of mesh
+    void interpolate(real* values, Mesh& mesh);
+
+    /// Interpolate function to finite element space on cell
     void interpolate(real coefficients[],
                      const ufc::cell& cell,
                      const ufc::finite_element& finite_element);
@@ -47,6 +50,9 @@ namespace dolfin
 
     // Pointer to Function with overloaded evaluation operator
     Function* f;
+
+    // Size of value (number of entries in tensor value)
+    uint size;
 
   };
 

@@ -64,10 +64,36 @@ dolfin::uint DiscreteFunction::dim(uint i) const
   return finite_element->value_dimension(i);
 }
 //-----------------------------------------------------------------------------
+void DiscreteFunction::interpolate(real* values, Mesh& mesh)
+{
+  dolfin_assert(values);
+  dolfin_assert(finite_element);
+  
+  // Interpolate vertex values on each cell and pick the last value
+  // if two or more cells disagree on the vertex values
+  CellIterator cell(mesh);
+  UFCCell ufc_cell(*cell);
+  for (; !cell.end(); ++cell)
+  {
+    // Update to current cell
+    ufc_cell.update(*cell);
+
+    // Interpolate values at the vertices
+    //finite_element->interpolate_vertex_values(vertex_values,
+    //                                         dof_values,
+    //                                         ufc_cell);
+
+    // Copy values to array
+
+    // FIXME: In preparation...
+  }
+}
+//-----------------------------------------------------------------------------
 void DiscreteFunction::interpolate(real* coefficients,
                                    const ufc::cell& cell,
                                    const ufc::finite_element& finite_element)
 {
+  dolfin_assert(coefficients);
   dolfin_assert(this->finite_element);
   dolfin_assert(this->dof_map);
   dolfin_assert(this->dofs);

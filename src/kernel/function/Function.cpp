@@ -61,6 +61,12 @@ dolfin::uint Function::dim(unsigned int i) const
   return f->dim(i);
 }
 //-----------------------------------------------------------------------------
+void Function::interpolate(real* values, Mesh& mesh)
+{
+  dolfin_assert(f);
+  f->interpolate(values, mesh);
+}
+//-----------------------------------------------------------------------------
 void Function::interpolate(real* coefficients,
                            const ufc::cell& cell,
                            const ufc::finite_element& finite_element)

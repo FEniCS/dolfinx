@@ -12,6 +12,8 @@
 
 namespace dolfin
 {
+
+  class Mesh;
   
   /// This class serves as a base class/interface for implementations
   /// of specific function representations.
@@ -32,7 +34,10 @@ namespace dolfin
     /// Return the dimension of the value space for axis i
     virtual uint dim(uint i) const = 0;
 
-    /// Interpolate function on cell
+    /// Interpolate function to vertices of mesh
+    virtual void interpolate(real* values, Mesh& mesh) = 0;
+
+    /// Interpolate function to finite element space on cell
     virtual void interpolate(real* coefficients,
                              const ufc::cell& cell,
                              const ufc::finite_element& finite_element) = 0;

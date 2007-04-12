@@ -5,6 +5,7 @@
 // Last changed: 2007-04-12
 
 #include <dolfin/dolfin_log.h>
+#include <dolfin/Mesh.h>
 #include <dolfin/ConstantFunction.h>
 
 using namespace dolfin;
@@ -35,11 +36,21 @@ dolfin::uint ConstantFunction::dim(uint i) const
   return 1;
 }
 //-----------------------------------------------------------------------------
+void ConstantFunction::interpolate(real* values, Mesh& mesh)
+{
+  dolfin_assert(values);
+
+  // Set all vertex values to the constant value
+  const uint num_values = size*mesh.numVertices();
+  for (uint i = 0; i < num_values; i++)
+    values[i] = value;
+}
+//-----------------------------------------------------------------------------
 void ConstantFunction::interpolate(real* coefficients,
                                    const ufc::cell& cell,
                                    const ufc::finite_element& finite_element)
 {
-  cout << "Interpolating ConstantFunction" << endl;
+  dolfin_assert(coefficients);
 
   // Evaluate each dof to get coefficients for nodal basis expansion
   for (uint i = 0; i < finite_element.space_dimension(); i++)
@@ -55,7 +66,8 @@ void ConstantFunction::evaluate(real* values,
                                 const real* coordinates,
                                 const ufc::cell& cell) const
 {
-  cout << "Evaluating ConstantFunction" << endl;
+  dolfin_assert(values);
+  dolfin_assert(coordinates);
 
   // Set all values to the constant value
   for (uint i = 0; i < size; i++)

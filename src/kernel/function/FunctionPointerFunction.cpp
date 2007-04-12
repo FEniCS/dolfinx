@@ -32,6 +32,11 @@ dolfin::uint FunctionPointerFunction::dim(uint i) const
   return 1;
 }
 //-----------------------------------------------------------------------------
+void FunctionPointerFunction::interpolate(real* values, Mesh& mesh)
+{
+  // FIXME: Not implemented yet, should we remove this class?
+}
+//-----------------------------------------------------------------------------
 void FunctionPointerFunction::interpolate(real* coefficients,
                                           const ufc::cell& cell,
                                           const ufc::finite_element& finite_element)

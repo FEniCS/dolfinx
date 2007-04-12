@@ -57,7 +57,10 @@ namespace dolfin
     /// Return the dimension of the value space for axis i
     uint dim(unsigned int i) const;
     
-    /// Interpolate function on cell
+    /// Interpolate function to vertices of mesh
+    void interpolate(real* values, Mesh& mesh);
+
+    /// Interpolate function to finite element space on cell
     void interpolate(real* coefficients,
                      const ufc::cell& cell,
                      const ufc::finite_element& finite_element);
