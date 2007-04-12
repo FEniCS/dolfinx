@@ -6,6 +6,10 @@
 // First added:  2006-02-21
 // Last changed: 2006-05-07
 
+// FIXME: Temporary fix
+#include <dolfin/UnitSquare.h>
+
+
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Function.h>
 #include <dolfin/PDE.h>
@@ -83,7 +87,10 @@ PDE::~PDE()
 //-----------------------------------------------------------------------------
 Function PDE::solve()
 {
-  Function u;
+  // FIXME: Temporary fix
+  UnitSquare mesh(1, 1);
+  
+  Function u(mesh);
   solve(u);
   return u;
 }

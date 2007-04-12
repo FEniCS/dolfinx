@@ -30,10 +30,10 @@ Function::Function(Mesh& mesh, real value)
   f = new ConstantFunction(mesh, value);
 }
 //-----------------------------------------------------------------------------
-Function::Function(Mesh& mesh, const Form& form, uint i)
+Function::Function(Mesh& mesh, Vector& x, const Form& form, uint i)
   : Variable("u", "discrete function"), f(0)
 {
-  f = new DiscreteFunction(mesh, form, i);
+  f = new DiscreteFunction(mesh, x, form, i);
 }
 //-----------------------------------------------------------------------------
 Function::~Function()

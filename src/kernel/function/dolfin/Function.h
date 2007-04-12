@@ -10,8 +10,8 @@
 #define __FUNCTION_H
 
 #include <ufc.h>
-
 #include <dolfin/constants.h>
+#include <dolfin/Vector.h>
 #include <dolfin/Variable.h>
 
 namespace dolfin
@@ -42,7 +42,7 @@ namespace dolfin
     Function(Mesh& mesh, real value);
 
     /// Create discrete function for argument function i of form
-    Function(Mesh& mesh, const Form& form, uint i);
+    Function(Mesh& mesh, Vector& x, const Form& form, uint i = 1);
 
     /// Destructor
     virtual ~Function();

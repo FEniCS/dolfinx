@@ -28,6 +28,10 @@ int main()
   // Right-hand side
   class Source : public Function
   {
+  public:
+    
+    Source(Mesh& mesh) : Function(mesh) {}
+
     real eval(const real* x)
     {
       real dx = x[0] - 0.5;
@@ -39,6 +43,10 @@ int main()
   // Dirichlet boundary condition
   class DirichletBC : public Function
   {
+  public:
+
+    DirichletBC(Mesh& mesh) : Function(mesh) {}
+
     real eval(const real* x)
     {
       return 0.0;
@@ -48,6 +56,10 @@ int main()
   // Neumann boundary condition
   class NeumannBC : public Function
   {
+  public:
+
+    NeumannBC(Mesh& mesh) : Function(mesh) {}
+
     real eval(const real* x)
     {
       if ( std::abs(x[0] - 1.0) < DOLFIN_EPS )
@@ -76,11 +88,11 @@ int main()
   };
   
   // Set up problem
-  Source f;
-  DirichletBC gd;
-  NeumannBC gn;
-
   UnitSquare mesh(3, 3);
+
+  Source f(mesh);
+  DirichletBC gd(mesh);
+  NeumannBC gn(mesh);
 
   PoissonBilinearForm a;
   PoissonLinearForm L(f, gn);
@@ -109,7 +121,7 @@ int main()
   cout << "Solution vector" << endl;
   x.disp();
 
-  //Function u(mesh, x, a);
+  Function u(mesh, x, a);
 
 /*
   PDE pde(a, L, mesh, bc);

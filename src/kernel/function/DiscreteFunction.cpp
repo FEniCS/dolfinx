@@ -5,17 +5,19 @@
 // Last changed: 2007-04-12
 
 #include <dolfin/dolfin_log.h>
-#include <dolfin/Form.h>
-#include <dolfin/DofMap.h>
-#include <dolfin/Vertex.h>
 #include <dolfin/Mesh.h>
+#include <dolfin/Form.h>
+#include <dolfin/Vertex.h>
+#include <dolfin/Cell.h>
+#include <dolfin/UFCMesh.h>
+#include <dolfin/UFCCell.h>
 #include <dolfin/DiscreteFunction.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-DiscreteFunction::DiscreteFunction(Mesh& mesh, const Form& form, uint i)
-  : GenericFunction(mesh), finite_element(0), dof_map(0), dofs(0)
+DiscreteFunction::DiscreteFunction(Mesh& mesh, Vector& x, const Form& form, uint i)
+  : GenericFunction(mesh), x(x), finite_element(0), dof_map(0), dofs(0)
 {
   // Check argument
   const uint num_arguments = form.form().rank() + form.form().num_coefficients();
@@ -29,9 +31,7 @@ DiscreteFunction::DiscreteFunction(Mesh& mesh, const Form& form, uint i)
   finite_element = form.form().create_finite_element(i);
 
   // Create dof map
-  ufc::dof_map* ufc_dof_map = form.form().create_dof_map(i);
-  dof_map = new DofMap(*ufc_dof_map, mesh);
-  delete ufc_dof_map;
+  dof_map = form.form().create_dof_map(i);
 
   // Initialize vector
   x.init(dof_map->global_dimension());
@@ -80,6 +80,7 @@ void DiscreteFunction::interpolate(real* values)
   // Local data for interpolation on each cell
   CellIterator cell(mesh);
   UFCCell ufc_cell(*cell);
+  UFCMesh ufc_mesh(mesh);
   const uint num_cell_vertices = mesh.type().numVertices(mesh.topology().dim());
   real* vertex_values = new real[size*num_cell_vertices];
   real* dof_values = new real[finite_element->space_dimension()];
@@ -92,7 +93,7 @@ void DiscreteFunction::interpolate(real* values)
     ufc_cell.update(*cell);
 
     // Tabulate dofs
-    dof_map->tabulate_dofs(dofs, ufc_cell);
+    dof_map->tabulate_dofs(dofs, ufc_mesh, ufc_cell);
     
     // Pick values from global vector
     x.get(dof_values, dof_map->local_dimension(), dofs);
@@ -127,7 +128,8 @@ void DiscreteFunction::interpolate(real* coefficients,
     dolfin_error("Finite element does not match for interpolation of discrete function.");
 
   // Tabulate dofs
-  dof_map->tabulate_dofs(dofs, cell);
+  UFCMesh ufc_mesh(mesh);
+  dof_map->tabulate_dofs(dofs, ufc_mesh, cell);
   
   // Pick values from global vector
   x.get(coefficients, dof_map->local_dimension(), dofs);
