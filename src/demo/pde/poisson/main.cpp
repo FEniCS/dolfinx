@@ -25,7 +25,6 @@ using namespace dolfin;
 
 int main()
 {
-
   // Right-hand side
   class Source : public Function
   {

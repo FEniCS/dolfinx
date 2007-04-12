@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells 2005
 //
 // First added:  2003-11-28
-// Last changed: 2007-04-04
+// Last changed: 2007-04-12
 //
 // The class Function serves as the envelope class and holds a pointer
 // to a letter class that is a subclass of GenericFunction. All the
@@ -49,11 +49,23 @@ Function::~Function()
     delete f;
 }
 //-----------------------------------------------------------------------------
+dolfin::uint Function::rank() const
+{
+  dolfin_assert(f);
+  return f->rank();
+}
+//-----------------------------------------------------------------------------
+dolfin::uint Function::dim(unsigned int i) const
+{
+  dolfin_assert(f);
+  return f->dim(i);
+}
+//-----------------------------------------------------------------------------
 void Function::interpolate(real* coefficients,
                            const ufc::cell& cell,
                            const ufc::finite_element& finite_element)
 {
-  cout << "Interpolating Function" << endl;
+  dolfin_assert(f);
   f->interpolate(coefficients, cell, finite_element);
 }
 //-----------------------------------------------------------------------------

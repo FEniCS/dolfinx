@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-11-26
-// Last changed: 2007-04-05
+// Last changed: 2007-04-12
 //
 // Note: this breaks the standard envelope-letter idiom slightly,
 // since we call the envelope class from one of the letter classes.
@@ -22,6 +22,18 @@ UserFunction::UserFunction(Function* f)
 UserFunction::~UserFunction()
 {
   // Do nothing
+}
+//-----------------------------------------------------------------------------
+dolfin::uint UserFunction::rank() const
+{
+  // Just return 0 for now (might extend to vectors later)
+  return 0;
+}
+//-----------------------------------------------------------------------------
+dolfin::uint UserFunction::dim(uint i) const
+{
+  // Just return 1 for now (might extend to vectors later)
+  return 1;
 }
 //-----------------------------------------------------------------------------
 void UserFunction::interpolate(real* coefficients,

@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-11-28
-// Last changed: 2007-04-04
+// Last changed: 2007-04-12
 
 #ifndef __GENERIC_FUNCTION_H
 #define __GENERIC_FUNCTION_H
@@ -25,6 +25,12 @@ namespace dolfin
 
     /// Destructor
     virtual ~GenericFunction() {};
+
+    /// Return the rank of the value space
+    virtual uint rank() const = 0;
+
+    /// Return the dimension of the value space for axis i
+    virtual uint dim(uint i) const = 0;
 
     /// Interpolate function on cell
     virtual void interpolate(real* coefficients,

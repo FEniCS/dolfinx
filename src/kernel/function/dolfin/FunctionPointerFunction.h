@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-11-26
-// Last changed: 2007-04-05
+// Last changed: 2007-04-12
 
 #ifndef __FUNCTION_POINTER_FUNCTION_H
 #define __FUNCTION_POINTER_FUNCTION_H
@@ -25,6 +25,12 @@ namespace dolfin
 
     /// Destructor
     ~FunctionPointerFunction();
+
+    /// Return the rank of the value space
+    uint rank() const;
+
+    /// Return the dimension of the value space for axis i
+    uint dim(uint i) const;
 
     /// Interpolate function on cell
     void interpolate(real* coefficients,

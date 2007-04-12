@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2007-04-02
-// Last changed: 2007-04-05
+// Last changed: 2007-04-12
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Form.h>
@@ -52,12 +52,28 @@ DiscreteFunction::~DiscreteFunction()
     delete [] dofs;
 }
 //-----------------------------------------------------------------------------
+dolfin::uint DiscreteFunction::rank() const
+{
+  dolfin_assert(finite_element);
+  return finite_element->value_rank();
+}
+//-----------------------------------------------------------------------------
+dolfin::uint DiscreteFunction::dim(uint i) const
+{
+  dolfin_assert(finite_element);
+  return finite_element->value_dimension(i);
+}
+//-----------------------------------------------------------------------------
 void DiscreteFunction::interpolate(real* coefficients,
                                    const ufc::cell& cell,
                                    const ufc::finite_element& finite_element)
 {
+  dolfin_assert(this->finite_element);
+  dolfin_assert(this->dof_map);
+  dolfin_assert(this->dofs);
+
   // FIXME: Better test here, compare against the local element
-  
+
   // Check dimension
   if ( finite_element.space_dimension() != dof_map->local_dimension() )
     dolfin_error("Finite element does not match for interpolation of discrete function.");

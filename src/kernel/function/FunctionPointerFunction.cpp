@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-11-28
-// Last changed: 2007-04-05
+// Last changed: 2007-04-12
 
 #include <dolfin/FunctionPointerFunction.h>
 
@@ -18,6 +18,18 @@ FunctionPointerFunction::FunctionPointerFunction(FunctionPointer f)
 FunctionPointerFunction::~FunctionPointerFunction()
 {
   // Do nothing
+}
+//-----------------------------------------------------------------------------
+dolfin::uint FunctionPointerFunction::rank() const
+{
+  // Just return 0 for now (might extend to vectors later)
+  return 0;
+}
+//-----------------------------------------------------------------------------
+dolfin::uint FunctionPointerFunction::dim(uint i) const
+{
+  // Just return 1 for now (might extend to vectors later)
+  return 1;
 }
 //-----------------------------------------------------------------------------
 void FunctionPointerFunction::interpolate(real* coefficients,

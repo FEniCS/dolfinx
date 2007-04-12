@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-02-09
-// Last changed: 2007-04-04
+// Last changed: 2007-04-12
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/ConstantFunction.h>
@@ -21,6 +21,18 @@ ConstantFunction::ConstantFunction(real value)
 ConstantFunction::~ConstantFunction()
 {
   // Do nothing
+}
+//-----------------------------------------------------------------------------
+dolfin::uint ConstantFunction::rank() const
+{
+  // Just return 0 for now (might extend to vectors later)
+  return 0;
+}
+//-----------------------------------------------------------------------------
+dolfin::uint ConstantFunction::dim(uint i) const
+{
+  // Just return 1 for now (might extend to vectors later)
+  return 1;
 }
 //-----------------------------------------------------------------------------
 void ConstantFunction::interpolate(real* coefficients,
