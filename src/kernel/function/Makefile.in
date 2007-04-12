@@ -61,8 +61,8 @@ am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(includedir)"
 libLTLIBRARIES_INSTALL = $(INSTALL)
 LTLIBRARIES = $(lib_LTLIBRARIES)
 libdolfin_function_la_LIBADD =
-am_libdolfin_function_la_OBJECTS = ConstantFunction.lo Function.lo \
-	FunctionPointerFunction.lo DiscreteFunction.lo UserFunction.lo
+am_libdolfin_function_la_OBJECTS = ConstantFunction.lo \
+	DiscreteFunction.lo Function.lo UserFunction.lo
 libdolfin_function_la_OBJECTS = $(am_libdolfin_function_la_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -241,20 +241,17 @@ target_alias = @target_alias@
 SUBDIRS = dolfin
 nobase_include_HEADERS = dolfin/dolfin_function.h \
                                 dolfin/ConstantFunction.h \
-                                dolfin/Function.h \
-                                dolfin/FunctionPointerFunction.h \
-                                dolfin/FunctionPointer.h \
-                                dolfin/GenericFunction.h \
                                 dolfin/DiscreteFunction.h \
+                                dolfin/Function.h \
+                                dolfin/GenericFunction.h \
                                 dolfin/SpecialFunctions.h \
                                 dolfin/UserFunction.h
 
 INCLUDES = @KERNEL_CFLAGS@
 lib_LTLIBRARIES = libdolfin-function.la
 libdolfin_function_la_SOURCES = ConstantFunction.cpp \
-                                Function.cpp \
-                                FunctionPointerFunction.cpp \
                                 DiscreteFunction.cpp \
+                                Function.cpp \
                                 UserFunction.cpp \
 libdolfin_function_la_LDFLAGS = -static
 
@@ -330,7 +327,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ConstantFunction.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DiscreteFunction.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Function.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FunctionPointerFunction.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/UserFunction.Plo@am__quote@
 
 .cpp.o:

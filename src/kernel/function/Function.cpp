@@ -11,7 +11,6 @@
 // functionality is handled by the specific implementation (subclass).
 
 #include <dolfin/UserFunction.h>
-#include <dolfin/FunctionPointerFunction.h>
 #include <dolfin/ConstantFunction.h>
 #include <dolfin/DiscreteFunction.h>
 #include <dolfin/Function.h>
@@ -23,12 +22,6 @@ Function::Function()
   : Variable("u", "user-defined function"), f(0)
 {
   f = new UserFunction(this);
-}
-//-----------------------------------------------------------------------------
-Function::Function(FunctionPointer fp)
-  : Variable("u", "user-defined function (by function pointer)"), f(0)
-{
-  f = new FunctionPointerFunction(fp);
 }
 //-----------------------------------------------------------------------------
 Function::Function(real value)
