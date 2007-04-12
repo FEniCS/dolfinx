@@ -1,4 +1,5 @@
 SUBDIRS = common \
+          elements \
           fem \
           function \
           graph \
