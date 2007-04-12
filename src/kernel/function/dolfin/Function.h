@@ -13,7 +13,6 @@
 
 #include <dolfin/constants.h>
 #include <dolfin/Variable.h>
-#include <dolfin/FunctionPointer.h>
 
 namespace dolfin
 {
@@ -38,9 +37,6 @@ namespace dolfin
 
     /// Create user-defined function (evaluation operator must be overloaded)
     Function();
-
-    /// Create function from function pointer
-    Function(FunctionPointer fp);
 
     /// Create constant function from given value
     Function(real value);

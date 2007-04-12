@@ -109,17 +109,18 @@ int main()
   cout << "Solution vector" << endl;
   x.disp();
 
+  //Function u(mesh, x, a);
+
 /*
   PDE pde(a, L, mesh, bc);
 
   // Compute solution
   Function U = pde.solve();
+*/
 
   // Save solution to file
-  File file("poisson.xml");
-  file << U;
-
-*/
+  //File file("poisson.xml");
+  //file << U;
   
   return 0;
 }
