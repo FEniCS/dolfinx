@@ -51,7 +51,7 @@ void UserFunction::interpolate(real* values, Mesh& mesh)
     // Evaluate at function at vertex
     f->eval(local_values, vertex->x());
 
-    // Copy values to array
+    // Copy values to array of vertex values
     for (uint i = 0; i < size; i++)
       values[i*mesh.numVertices() + vertex->index()] = local_values[i];
   }

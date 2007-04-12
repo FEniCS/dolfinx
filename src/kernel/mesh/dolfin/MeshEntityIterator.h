@@ -1,8 +1,8 @@
-// Copyright (C) 2006 Anders Logg.
+// Copyright (C) 2006-2007 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-05-09
-// Last changed: 2006-10-23
+// Last changed: 2007-04-12
 
 #ifndef __MESH_ENTITY_ITERATOR_H
 #define __MESH_ENTITY_ITERATOR_H
@@ -45,7 +45,7 @@ namespace dolfin
 
     /// Create iterator for mesh entities over given topological dimension
     MeshEntityIterator(Mesh& mesh, uint dim) 
-      : entity(mesh, dim, 0), pos(0), pos_end(mesh.size(dim)), index(0)
+      : entity(mesh, dim, 0), _pos(0), pos_end(mesh.size(dim)), index(0)
     {
       // Compute entities if empty
       if ( pos_end == 0 )
@@ -54,7 +54,7 @@ namespace dolfin
 
     /// Create iterator for entities of given dimension connected to given entity    
     MeshEntityIterator(MeshEntity& entity, uint dim)
-      : entity(entity.mesh(), dim, 0), pos(0)
+      : entity(entity.mesh(), dim, 0), _pos(0)
     {
       // Get connectivity
       MeshConnectivity& c = entity.mesh().topology()(entity.dim(), dim);
@@ -78,7 +78,7 @@ namespace dolfin
 
     /// Create iterator for entities of given dimension connected to given entity
     MeshEntityIterator(MeshEntityIterator& it, uint dim)
-      : entity(it.entity.mesh(), dim, 0), pos(0)
+      : entity(it.entity.mesh(), dim, 0), _pos(0)
     {
       // Get entity
       MeshEntity& entity = *it;
@@ -107,16 +107,19 @@ namespace dolfin
     virtual ~MeshEntityIterator() {}
     
     /// Step to next mesh entity (prefix increment)
-    MeshEntityIterator& operator++() { ++pos; return *this; }
+    MeshEntityIterator& operator++() { ++_pos; return *this; }
+
+    /// Return current position
+    inline uint pos() const { return _pos; }
 
     /// Check if iterator has reached the end
-    inline bool end() const { return pos >= pos_end; }
+    inline bool end() const { return _pos >= pos_end; }
 
     /// Dereference operator
     inline MeshEntity& operator*() { return *operator->(); }
 
     /// Member access operator
-    inline MeshEntity* operator->() { entity._index = (index ? index[pos] : pos); return &entity; }
+    inline MeshEntity* operator->() { entity._index = (index ? index[_pos] : _pos); return &entity; }
 
     /// Output
     friend LogStream& operator<< (LogStream& stream, const MeshEntityIterator& it);
@@ -127,7 +130,7 @@ namespace dolfin
     MeshEntity entity;
 
     // Current position
-    uint pos;
+    uint _pos;
 
     // End position
     uint pos_end;

@@ -7,6 +7,8 @@
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Form.h>
 #include <dolfin/DofMap.h>
+#include <dolfin/Vertex.h>
+#include <dolfin/Mesh.h>
 #include <dolfin/DiscreteFunction.h>
 
 using namespace dolfin;
@@ -68,25 +70,45 @@ void DiscreteFunction::interpolate(real* values, Mesh& mesh)
 {
   dolfin_assert(values);
   dolfin_assert(finite_element);
+  dolfin_assert(dof_map);
   
-  // Interpolate vertex values on each cell and pick the last value
-  // if two or more cells disagree on the vertex values
+  // Compute size of value (number of entries in tensor value)
+  uint size = 1;
+  for (uint i = 0; i < finite_element->value_rank(); i++)
+    size *= finite_element->value_dimension(i);
+
+  // Local data for interpolation on each cell
   CellIterator cell(mesh);
   UFCCell ufc_cell(*cell);
+  const uint num_cell_vertices = mesh.type().numVertices(mesh.topology().dim());
+  real* vertex_values = new real[size*num_cell_vertices];
+  real* dof_values = new real[finite_element->space_dimension()];
+
+  // Interpolate vertex values on each cell and pick the last value
+  // if two or more cells disagree on the vertex values
   for (; !cell.end(); ++cell)
   {
     // Update to current cell
     ufc_cell.update(*cell);
 
+    // Tabulate dofs
+    dof_map->tabulate_dofs(dofs, ufc_cell);
+    
+    // Pick values from global vector
+    x.get(dof_values, dof_map->local_dimension(), dofs);
+
     // Interpolate values at the vertices
-    //finite_element->interpolate_vertex_values(vertex_values,
-    //                                         dof_values,
-    //                                         ufc_cell);
+    finite_element->interpolate_vertex_values(vertex_values, dof_values, ufc_cell);
 
-    // Copy values to array
-
-    // FIXME: In preparation...
+    // Copy values to array of vertex values
+    for (VertexIterator vertex(cell); !vertex.end(); ++vertex)
+      for (uint i = 0; i < size; i++)
+        values[i*mesh.numVertices() + vertex->index()] = vertex_values[i*size + vertex.pos()];
   }
+
+  // Delete local data
+  delete [] vertex_values;
+  delete [] dof_values;
 }
 //-----------------------------------------------------------------------------
 void DiscreteFunction::interpolate(real* coefficients,
