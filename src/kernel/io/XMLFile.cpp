@@ -7,7 +7,7 @@
 // Modified by Magnus Vikstrom 2007.
 //
 // First added:  2002-12-03
-// Last changed: 2007-04-12
+// Last changed: 2007-04-13
 
 #include <stdarg.h>
 
@@ -31,8 +31,9 @@
 #include <dolfin/XMLMatrix.h>
 #include <dolfin/XMLMesh.h>
 #include <dolfin/XMLMeshFunction.h>
+#include <dolfin/XMLDofMap.h>
 #include <dolfin/XMLFunction.h>
-#include <dolfin/XMLFiniteElementSpec.h>
+#include <dolfin/XMLFiniteElement.h>
 #include <dolfin/XMLParameterList.h>
 #include <dolfin/XMLBLASFormData.h>
 #include <dolfin/XMLGraph.h>
@@ -426,14 +427,12 @@ void XMLFile::operator<<(Function& f)
 
   // Write the finite element
   fp = openFile();
-  fprintf(fp, "  <finiteelement signature=\"%s\"/>\n",
-          df->finite_element->signature());
+  fprintf(fp, "  <finiteelement signature=\"%s\"/>\n", df->finite_element->signature());
   closeFile(fp);
 
   // Write the dof map
   fp = openFile();
-  fprintf(fp, "  <dofmap signature=\"%s\"/>\n",
-          df->dof_map->signature());
+  fprintf(fp, "  <dofmap signature=\"%s\"/>\n", df->dof_map->signature());
   closeFile(fp);
 
   // End function
