@@ -1,8 +1,8 @@
-// Copyright (C) 2003-2005 Anders Logg.
+// Copyright (C) 2003-2007 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003-05-06
-// Last changed: 2005-12-20
+// Last changed: 2007-04-13
 
 #include <string>
 #include <dolfin/dolfin_log.h>
@@ -23,7 +23,7 @@ ParameterList::~ParameterList()
 //-----------------------------------------------------------------------------
 void ParameterList::add(std::string key, Parameter value)
 {
-  if ( def(key) )
+  if ( defined(key) )
     dolfin_error1("Unable to add parameter \"%s\" (already defined).",
 		  key.c_str());
 
@@ -50,7 +50,7 @@ Parameter ParameterList::get(std::string key) const
   return p->second;
 }
 //-----------------------------------------------------------------------------
-bool ParameterList::def(std::string key) const
+bool ParameterList::defined(std::string key) const
 {
   return parameters.find(key) != parameters.end();
 }

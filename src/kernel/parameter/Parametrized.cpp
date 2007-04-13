@@ -1,8 +1,8 @@
-// Copyright (C) 2005-2006 Anders Logg.
+// Copyright (C) 2005-2007 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-12-19
-// Last changed: 2006-06-02
+// Last changed: 2007-04-13
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/ParameterSystem.h>
@@ -28,7 +28,7 @@ void Parametrized::add(std::string key, Parameter value)
 //-----------------------------------------------------------------------------
 void Parametrized::set(std::string key, Parameter value)
 {
-  if ( !def(key) )
+  if ( !defined(key) )
     parameters.add(key, value);
   else
     parameters.set(key, value);
@@ -57,7 +57,7 @@ void Parametrized::set(std::string key, const Parametrized& parent)
 Parameter Parametrized::get(std::string key) const
 {
   // First check local database
-  if ( def(key) )
+  if ( defined(key) )
     return parameters.get(key);
 
   // Check parent if any
@@ -68,9 +68,9 @@ Parameter Parametrized::get(std::string key) const
   return dolfin::get(key);
 }
 //-----------------------------------------------------------------------------
-bool Parametrized::def(std::string key) const
+bool Parametrized::defined(std::string key) const
 {
-  return parameters.def(key);
+  return parameters.defined(key);
 }
 //-----------------------------------------------------------------------------
 void Parametrized::readParameters()

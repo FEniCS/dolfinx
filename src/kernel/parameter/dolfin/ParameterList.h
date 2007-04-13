@@ -1,8 +1,8 @@
-// Copyright (C) 2003-2005 Anders Logg.
+// Copyright (C) 2003-2007 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003-05-06
-// Last changed: 2005-12-20
+// Last changed: 2007-04-13
 
 #ifndef __PARAMETER_LIST_H
 #define __PARAMETER_LIST_H
@@ -36,7 +36,7 @@ namespace dolfin
     Parameter get(std::string key) const;
 
     /// Check if parameter with given key has been defined
-    bool def(std::string key) const;
+    bool defined(std::string key) const;
 
     /// Friends
     friend class XMLFile;
