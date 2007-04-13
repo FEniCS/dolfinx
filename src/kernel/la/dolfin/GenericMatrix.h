@@ -60,7 +60,7 @@ namespace dolfin
     ///--- Matrix interface ---
 
     /// Initialize M x N matrix
-    virtual void init(const uint M, const uint N) = 0;
+    virtual void init(uint M, uint N) = 0;
     
     /// Get block of values
     virtual void get(real* block, uint m, const uint* rows, uint n, const uint* cols) const = 0;
@@ -74,16 +74,16 @@ namespace dolfin
     ///--- FIXME: Which of the functions below do we really need? ---
 
     /// Initialize M x N matrix with given maximum number of nonzeros in each row
-    virtual void init(const uint M, const uint N, const uint nzmax) = 0;
+    virtual void init(uint M, uint N, uint nzmax) = 0;
     
     /// Initialize M x N matrix with given number of nonzeros per row
-    virtual void init(const uint M, const uint N, const uint nz[]) = 0;
+    virtual void init(uint M, uint N, const uint nz[]) = 0;
 
     /// Access element value
-    virtual real get(const uint i, const uint j) const = 0;
+    virtual real get(uint i, uint j) const = 0;
 
     /// Set element value
-    virtual void set(const uint i, const uint j, const real value) = 0;
+    virtual void set(uint i, uint j, real value) = 0;
 
     /// Set all entries to zero
     virtual void zero() = 0;
