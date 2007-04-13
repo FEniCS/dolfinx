@@ -10,8 +10,8 @@ _dolfin_la_CPPFLAGS = @SWIG_PYTHON_CPPFLAGS@ @DOLFIN_CFLAGS@ -I$(top_builddir)/s
 _dolfin_la_LDFLAGS = -module
 _dolfin_la_LIBADD = $(top_builddir)/src/lib/libdolfin.la
 
-# Temporary fix: don't include -Werr to get around problem with Numeric/arrayobject.h
-CXXFLAGS = @DOLFIN_DEFINITIONS@ -g -O2 -Wall -ansi
+# Need -fno-strict-aliasing to avoid "dereferencing type-punned pointer" warning
+CXXFLAGS = @DOLFIN_DEFINITIONS@ -g -O2 -fno-strict-aliasing -Wall -Werror -ansi
 
 # Temporary fix: add elasticity-updated to include path manually
 dolfin_wrap.cpp : $(SWIG_SOURCES)
