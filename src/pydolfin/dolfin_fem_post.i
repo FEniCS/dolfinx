@@ -1,1 +1,1 @@
-%template(lump) dolfin::FEM::lump<Matrix, Vector>;
+//%template(lump) dolfin::FEM::lump<Matrix, Vector>;
