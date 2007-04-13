@@ -106,7 +106,7 @@ void XMLGraph::endElement(const xmlChar *name)
 //-----------------------------------------------------------------------------
 void XMLGraph::open(std::string filename)
 {
-  cout << "Reading graph from file " << filename << "." << endl;
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 bool XMLGraph::close()

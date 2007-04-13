@@ -101,7 +101,7 @@ public:
   /// Interpolate vertex values from dof values
   virtual void interpolate_vertex_values(double* vertex_values,
                                          const double* dof_values,
-                                         const ufc::cell & c) const
+                                         const ufc::cell& c) const
   {
     vertex_values[0] = dof_values[0];
     vertex_values[1] = dof_values[1];

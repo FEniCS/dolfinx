@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells 2005
 //
 // First added:  2003-11-28
-// Last changed: 2007-04-12
+// Last changed: 2007-04-13
 //
 // The class Function serves as the envelope class and holds a pointer
 // to a letter class that is a subclass of GenericFunction. All the
@@ -17,6 +17,12 @@
 
 using namespace dolfin;
 
+//-----------------------------------------------------------------------------
+Function::Function()
+  : Variable("u", "empty function"), f(0), _type(empty)
+{
+  // Do nothing
+}
 //-----------------------------------------------------------------------------
 Function::Function(Mesh& mesh)
   : Variable("u", "user-defined function"), f(0), _type(user)
@@ -49,25 +55,33 @@ Function::Type Function::type() const
 //-----------------------------------------------------------------------------
 dolfin::uint Function::rank() const
 {
-  dolfin_assert(f);
+  if ( !f )
+    dolfin_error("Function contains no data.");
+
   return f->rank();
 }
 //-----------------------------------------------------------------------------
 dolfin::uint Function::dim(unsigned int i) const
 {
-  dolfin_assert(f);
+  if ( !f )
+    dolfin_error("Function contains no data.");
+
   return f->dim(i);
 }
 //-----------------------------------------------------------------------------
 Mesh& Function::mesh()
 {
-  dolfin_assert(f);
+  if ( !f )
+    dolfin_error("Function contains no data.");
+
   return f->mesh;
 }
 //-----------------------------------------------------------------------------
 void Function::interpolate(real* values)
 {
-  dolfin_assert(f);
+  if ( !f )
+    dolfin_error("Function contains no data.");
+
   f->interpolate(values);
 }
 //-----------------------------------------------------------------------------
@@ -75,7 +89,9 @@ void Function::interpolate(real* coefficients,
                            const ufc::cell& cell,
                            const ufc::finite_element& finite_element)
 {
-  dolfin_assert(f);
+  if ( !f )
+    dolfin_error("Function contains no data.");
+
   f->interpolate(coefficients, cell, finite_element);
 }
 //-----------------------------------------------------------------------------

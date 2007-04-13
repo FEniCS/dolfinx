@@ -58,6 +58,8 @@ XMLFile::~XMLFile()
 //-----------------------------------------------------------------------------
 void XMLFile::operator>>(Vector& x)
 {
+  cout << "Reading vector from file " << filename << "." << endl;
+
   if ( xmlObject )
     delete xmlObject;
   xmlObject = new XMLVector(x);
@@ -66,6 +68,8 @@ void XMLFile::operator>>(Vector& x)
 //-----------------------------------------------------------------------------
 void XMLFile::operator>>(Matrix& A)
 {
+  cout << "Reading matrix from file " << filename << "." << endl;
+
   if ( xmlObject )
     delete xmlObject;
   xmlObject = new XMLMatrix(A);
@@ -74,6 +78,8 @@ void XMLFile::operator>>(Matrix& A)
 //-----------------------------------------------------------------------------
 void XMLFile::operator>>(Mesh& mesh)
 {
+  cout << "Reading mesh from file " << filename << "." << endl;
+
   if ( xmlObject )
     delete xmlObject;
   xmlObject = new XMLMesh(mesh);
@@ -82,6 +88,8 @@ void XMLFile::operator>>(Mesh& mesh)
 //-----------------------------------------------------------------------------
 void XMLFile::operator>>(MeshFunction<int>& meshfunction)
 {
+  cout << "Reading int-valued mesh function from file " << filename << "." << endl;
+
   if ( xmlObject )
     delete xmlObject;
   xmlObject = new XMLMeshFunction(meshfunction);
@@ -90,6 +98,8 @@ void XMLFile::operator>>(MeshFunction<int>& meshfunction)
 //-----------------------------------------------------------------------------
 void XMLFile::operator>>(MeshFunction<unsigned int>& meshfunction)
 {
+  cout << "Reading uint-valued mesh function from file " << filename << "." << endl;
+
   if ( xmlObject )
     delete xmlObject;
   xmlObject = new XMLMeshFunction(meshfunction);
@@ -98,6 +108,8 @@ void XMLFile::operator>>(MeshFunction<unsigned int>& meshfunction)
 //-----------------------------------------------------------------------------
 void XMLFile::operator>>(MeshFunction<double>& meshfunction)
 {
+  cout << "Reading real-valued mesh function from file " << filename << "." << endl;
+
   if ( xmlObject )
     delete xmlObject;
   xmlObject = new XMLMeshFunction(meshfunction);
@@ -106,6 +118,8 @@ void XMLFile::operator>>(MeshFunction<double>& meshfunction)
 //-----------------------------------------------------------------------------
 void XMLFile::operator>>(MeshFunction<bool>& meshfunction)
 {
+  cout << "Reading bool-valued mesh function from file " << filename << "." << endl;
+
   if ( xmlObject )
     delete xmlObject;
   xmlObject = new XMLMeshFunction(meshfunction);
@@ -114,13 +128,12 @@ void XMLFile::operator>>(MeshFunction<bool>& meshfunction)
 //-----------------------------------------------------------------------------
 void XMLFile::operator>>(Function& f)
 {
-  dolfin_error("Function input in XML format not implemented for new Function.");
-
-/*
   // We are cheating here. Instead of actually parsing the XML for
   // Function data nested inside <function></function>, we just ignore
   // the nesting and look for the first occurence of the data which
   // might be outide of <function></function>
+
+  cout << "Reading function from " << filename << "." << endl;
 
   // Read the vector
   Vector* x = new Vector();
@@ -131,28 +144,36 @@ void XMLFile::operator>>(Function& f)
   *this >> *mesh;
 
   // Read the finite element specification
-  FiniteElementSpec spec;
-  *this >> spec;
+  std::string finite_element_signature;
+  if ( xmlObject )
+    delete xmlObject;
+  xmlObject = new XMLFiniteElement(finite_element_signature);
+  parseFile(); 
 
-  // Create a finite element
-  FiniteElement* element = FiniteElement::makeElement(spec);
+  // Read the dof map specification
+  std::string dof_map_signature;
+  if ( xmlObject )
+    delete xmlObject;
+  xmlObject = new XMLDofMap(dof_map_signature);
+  parseFile(); 
 
   // Read the function
   if ( xmlObject )
     delete xmlObject;
   xmlObject = new XMLFunction(f);
-  parseFile();
+  parseFile(); 
   
-  // Attach the data
-  f.init(*mesh, *element);
-  f.attach(*x, true);
-  f.attach(*mesh, true);
-  f.attach(*element, true);
-*/
+  // Create the function (we're all friends here)
+  if ( f.f )
+    delete f.f;
+  f.f = new DiscreteFunction(*mesh, *x, finite_element_signature, dof_map_signature);
+  f._type = Function::discrete;
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator>>(ParameterList& parameters)
 {
+  cout << "Reading parameter list from file " << filename << "." << endl;
+
   if ( xmlObject )
     delete xmlObject;
   xmlObject = new XMLParameterList(parameters);
@@ -169,6 +190,8 @@ void XMLFile::operator>>(BLASFormData& blas)
 //-----------------------------------------------------------------------------
 void XMLFile::operator>>(Graph& graph)
 {
+  cout << "Reading graph from file " << filename << "." << endl;
+
   if ( xmlObject )
     delete xmlObject;
   xmlObject = new XMLGraph(graph);
@@ -304,7 +327,7 @@ void XMLFile::operator<<(Mesh& mesh)
   // Close file
   closeFile(fp);
 
-  cout << "Saved mesh to file " << filename << " in XML format." << endl;
+  cout << "Saved mesh to file " << filename << " in DOLFIN XML format." << endl;
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator<<(MeshFunction<int>& meshfunction)
@@ -328,7 +351,7 @@ void XMLFile::operator<<(MeshFunction<int>& meshfunction)
   // Close file
   closeFile(fp);
   
-  cout << "Saved mesh function to file " << filename << " in XML format." << endl;
+  cout << "Saved mesh function to file " << filename << " in DOLFIN XML format." << endl;
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator<<(MeshFunction<unsigned int>& meshfunction)
@@ -352,7 +375,7 @@ void XMLFile::operator<<(MeshFunction<unsigned int>& meshfunction)
   // Close file
   closeFile(fp);
   
-  cout << "Saved mesh function to file " << filename << " in XML format." << endl;
+  cout << "Saved mesh function to file " << filename << " in DOLFIN XML format." << endl;
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator<<(MeshFunction<double>& meshfunction)
@@ -376,7 +399,7 @@ void XMLFile::operator<<(MeshFunction<double>& meshfunction)
   // Close file
   closeFile(fp);
   
-  cout << "Saved mesh function to file " << filename << " in XML format." << endl;
+  cout << "Saved mesh function to file " << filename << " in DOLFIN XML format." << endl;
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator<<(MeshFunction<bool>& meshfunction)
@@ -402,7 +425,7 @@ void XMLFile::operator<<(MeshFunction<bool>& meshfunction)
   // Close file
   closeFile(fp);
   
-  cout << "Saved mesh function to file " << filename << " in XML format." << endl;
+  cout << "Saved mesh function to file " << filename << " in DOLFIN XML format." << endl;
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator<<(Function& f)
@@ -441,7 +464,7 @@ void XMLFile::operator<<(Function& f)
   closeFile(fp);
 
   cout << "Saved function " << f.name() << " (" << f.label()
-       << ") to file " << filename << " in XML format." << endl;
+       << ") to file " << filename << " in DOLFIN XML format." << endl;
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator<<(ParameterList& parameters)
@@ -489,7 +512,7 @@ void XMLFile::operator<<(ParameterList& parameters)
   // Close file
   closeFile(fp);
 
-  cout << "Saved parameters to file " << filename << " in XML format." << endl;
+  cout << "Saved parameters to file " << filename << " in DOLFIN XML format." << endl;
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator<<(Graph& graph)
@@ -547,7 +570,7 @@ void XMLFile::operator<<(Graph& graph)
   // Close file
   closeFile(fp);
 
-  cout << "Saved graph to file " << filename << " in XML format." << endl;
+  cout << "Saved graph to file " << filename << " in DOLFIN XML format." << endl;
 }
 //-----------------------------------------------------------------------------
 FILE* XMLFile::openFile()

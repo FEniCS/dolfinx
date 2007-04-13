@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells 2005.
 //
 // First added:  2003-11-28
-// Last changed: 2007-04-12
+// Last changed: 2007-04-13
 
 #ifndef __FUNCTION_H
 #define __FUNCTION_H
@@ -36,7 +36,10 @@ namespace dolfin
   public:
 
     /// Function types
-    enum Type {user, constant, discrete};
+    enum Type {empty, user, constant, discrete};
+
+    /// Create empty function (read data from file)
+    Function();
 
     /// Create user-defined function (evaluation operator must be overloaded)
     Function(Mesh& mesh);

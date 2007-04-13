@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2007-04-02
-// Last changed: 2007-04-12
+// Last changed: 2007-04-13
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Mesh.h>
@@ -12,13 +12,15 @@
 #include <dolfin/Cell.h>
 #include <dolfin/UFCMesh.h>
 #include <dolfin/UFCCell.h>
+#include <dolfin/ElementLibrary.h>
 #include <dolfin/DiscreteFunction.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 DiscreteFunction::DiscreteFunction(Mesh& mesh, Vector& x, const Form& form, uint i)
-  : GenericFunction(mesh), x(x), finite_element(0), dof_map(0), dofs(0)
+  : GenericFunction(mesh), x(x), finite_element(0), dof_map(0), dofs(0),
+    local_mesh(0), local_vector(0)
 {
   // Check argument
   const uint num_arguments = form.form().rank() + form.form().num_coefficients();
@@ -45,6 +47,43 @@ DiscreteFunction::DiscreteFunction(Mesh& mesh, Vector& x, const Form& form, uint
     dofs[i] = 0;
 }
 //-----------------------------------------------------------------------------
+DiscreteFunction::DiscreteFunction(Mesh& mesh, Vector& x,
+                                   std::string finite_element_signature,
+                                   std::string dof_map_signature)
+  : GenericFunction(mesh), x(x), finite_element(0), dof_map(0), dofs(0),
+    local_mesh(0), local_vector(0)
+{
+  // Create finite element
+  finite_element = ElementLibrary::create_finite_element(finite_element_signature);
+  if ( !finite_element )
+  {
+    dolfin_error1("Unable to find finite element in library: \"%s\".",
+                  finite_element_signature.c_str());
+  }
+
+  // Create dof map
+  ufc_dof_map = ElementLibrary::create_dof_map(dof_map_signature);
+  if ( !ufc_dof_map )
+  {
+    dolfin_error1("Unable to find dof map in library: \"%s\".",
+                  dof_map_signature.c_str());
+  }
+  dof_map = new DofMap(*ufc_dof_map, mesh);
+
+  // Initialize vector
+  if ( x.size() != dof_map->global_dimension() )
+    x.init(dof_map->global_dimension());
+
+  // Initialize local array for mapping of dofs
+  dofs = new uint[dof_map->local_dimension()];
+  for (uint i = 0; i < dof_map->local_dimension(); i++)
+    dofs[i] = 0;
+
+  // Assume responsibility for data
+  local_mesh = &mesh;
+  local_vector = &x;
+}
+//-----------------------------------------------------------------------------
 DiscreteFunction::~DiscreteFunction()
 {
   if ( finite_element )
@@ -58,6 +97,12 @@ DiscreteFunction::~DiscreteFunction()
 
   if ( dofs )
     delete [] dofs;
+
+  if ( local_mesh )
+    delete local_mesh;
+
+  if ( local_vector )
+    delete local_vector;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint DiscreteFunction::rank() const

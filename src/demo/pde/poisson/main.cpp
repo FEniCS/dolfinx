@@ -134,5 +134,13 @@ int main()
   File file("poisson.xml");
   file << u;
   
+  // Read solution from file
+  Function uu;
+  file >> uu;
+
+  // Store it to another file for testing
+  File file2("poisson2.xml");
+  file2 << uu;
+
   return 0;
 }
