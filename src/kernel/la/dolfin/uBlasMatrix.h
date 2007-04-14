@@ -172,6 +172,14 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <class Mat> 
+  void uBlasMatrix< Mat >::init(uint M, uint N)
+  {
+    // Resize matrix
+    if( size(0) != M || size(1) != N )
+      this->resize(M, N, false);  
+  }
+  //---------------------------------------------------------------------------
+  template <class Mat> 
   uint uBlasMatrix<Mat>::size(uint dim) const
   {
     dolfin_assert( dim < 2 );
@@ -265,6 +273,7 @@ namespace dolfin
     if( !assembled )
     {
       // Assign temporary assembly matrix to the matrix
+      dolfin_assert(Assembly_matrix.size1() == size(0) && Assembly_matrix.size2() == size(1));
       this->assign(Assembly_matrix);
       assembled = true;
 
@@ -329,26 +338,6 @@ namespace dolfin
   //-----------------------------------------------------------------------------
   // Specialised member functions (must be inlined to avoid link errors)
   //-----------------------------------------------------------------------------
-  template <> 
-  inline void uBlasMatrix< ublas_dense_matrix >::init(uint M, uint N)
-  {
-    // Resize matrix
-    if( size(0) != M || size(1) != N )
-      this->resize(M, N, false);  
-  }
-  //---------------------------------------------------------------------------
-  template <class Mat> 
-  inline void uBlasMatrix<Mat>::init(uint M, uint N)
-  {
-    // Resize matrix
-    if( size(0) != M || size(1) != N )
-      this->resize(M, N, false);  
-
-    // Resize assembly matrix
-    if(Assembly_matrix.size1() != M && Assembly_matrix.size2() != N )
-      Assembly_matrix.resize(M, N, false);
-  }
-  //---------------------------------------------------------------------------
   template <> 
   inline void uBlasMatrix<ublas_dense_matrix>::init(uint M, uint N, uint nzmax)
   {
@@ -421,6 +410,10 @@ namespace dolfin
   {
     if ( assembled )
     {
+      // Resize assembly matrix
+      if(Assembly_matrix.size1() != size(0) && Assembly_matrix.size2() != size(1))
+        Assembly_matrix.resize(size(0), size(1), false);
+
       Assembly_matrix.assign(*this);
       assembled = false; 
     }
@@ -446,6 +439,10 @@ namespace dolfin
   {
     if ( assembled )
     {
+      // Resize assembly matrix
+      if(Assembly_matrix.size1() != size(0) && Assembly_matrix.size2() != size(1))
+        Assembly_matrix.resize(size(0), size(1), false);
+
       Assembly_matrix.assign(*this);
       assembled = false; 
     }
