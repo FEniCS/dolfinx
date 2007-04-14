@@ -14,8 +14,8 @@ import os
 # Name of SWIG interface file to be generated
 interface_file = "dolfin_headers.h"
 
-# List of headers to exclude (add more here, just one for testing)
-excludes = ["dolfin/Buffer.h"]
+# List of headers to exclude (add more here)
+excludes = ["dolfin/Buffer.h", "dolfin/ParameterList.h", "dolfin/Parametrized.h"]
 
 # Extract header files
 headers = {}
@@ -29,7 +29,6 @@ for root, dirs, files in os.walk("../kernel"):
                 for line in f:
                     if "#include " in line:
                         header = line.split()[1].replace("<", "").replace(">", "")
-                        print header
                         if not header in excludes:
                             headers[file] += [header]
                 f.close()
