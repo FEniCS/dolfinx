@@ -14,7 +14,9 @@ _dolfin_la_LIBADD = $(top_builddir)/src/lib/libdolfin.la
 CXXFLAGS = @DOLFIN_DEFINITIONS@ -g -O2 -fno-strict-aliasing -Wall -Werror -ansi
 
 # Temporary fix: add elasticity-updated to include path manually
+#dolfin_wrap.cpp : $(SWIG_SOURCES)
+#	$(SWIG) $(SWIG_PYTHON_OPT) -includeall -ignoremissing -nodefault -dirprot @KERNEL_INCLUDE@ @DOLFIN_DEFINITIONS@ -o $@ $<
 dolfin_wrap.cpp : $(SWIG_SOURCES)
-	$(SWIG) $(SWIG_PYTHON_OPT) -includeall -ignoremissing -nodefault -dirprot @KERNEL_INCLUDE@ @DOLFIN_DEFINITIONS@ -o $@ $<
+	$(SWIG) $(SWIG_PYTHON_OPT) -ignoremissing -nodefault -dirprot @KERNEL_INCLUDE@ @DOLFIN_DEFINITIONS@ -o $@ $<
 
 dolfin.py: $(SWIG_SOURCES)

@@ -2,14 +2,13 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003-01-16
-// Last changed: 2007-04-10
+// Last changed: 2007-04-15
 
 #ifndef __DOLFIN_FEM_H
 #define __DOLFIN_FEM_H
 
 // Assembly
 
-#include <dolfin/dolfin_fem.h>
 #include <dolfin/assemble.h>
 #include <dolfin/Assembler.h>
 #include <dolfin/BoundaryCondition.h>

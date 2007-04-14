@@ -146,7 +146,8 @@ using namespace dolfin;
 // DOLFIN interface
 
 %import "dolfin/constants.h"
-%include "dolfin.h"
+%include "dolfin_headers.h"
+//%include "dolfin.h"
 
 // common post
 
