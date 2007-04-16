@@ -2,7 +2,6 @@
 
 // DOLFIN headers included from dolfin_parameter.h
 %include "dolfin/Parameter.h"
-%include "dolfin/ParameterSystem.h"
 
 // DOLFIN headers included from dolfin_quadrature.h
 %include "dolfin/Quadrature.h"

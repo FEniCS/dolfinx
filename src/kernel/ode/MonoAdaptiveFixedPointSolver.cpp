@@ -1,11 +1,11 @@
-// Copyright (C) 2005-2006 Anders Logg.
+// Copyright (C) 2005-2007 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-28
-// Last changed: 2006-08-21
+// Last changed: 2007-04-16
 
 #include <dolfin/dolfin_log.h>
-#include <dolfin/dolfin_parameter.h>
+#include <dolfin/ParameterSystem.h>
 #include <dolfin/Alloc.h>
 #include <dolfin/Method.h>
 #include <dolfin/MonoAdaptiveTimeSlab.h>
