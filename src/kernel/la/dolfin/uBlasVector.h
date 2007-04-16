@@ -79,14 +79,6 @@ namespace dolfin
     inline real operator() (uint i) const
     { return ublas::vector<real>::operator() (i); };
 
-    /// Access element value
-    inline real get(uint i) const 
-    { return (*this)(i); }
-
-    /// Set element value
-    inline void set(uint i, real value) 
-    { (*this)(i) = value; }
-
     /// Get block of values
     void get(real* block, uint m, const uint* rows) const;
 

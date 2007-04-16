@@ -76,12 +76,6 @@ namespace dolfin
     
     ///--- FIXME: Which of the functions below do we really need? ---
 
-    /// Access element value
-    virtual real get(const uint i) const = 0;
-
-    /// Set element value
-    virtual void set(const uint i, const real value) = 0;
-
     /// Set all entries to zero
     virtual void zero() = 0;
     

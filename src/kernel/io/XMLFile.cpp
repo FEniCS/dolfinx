@@ -200,6 +200,9 @@ void XMLFile::operator>>(Graph& graph)
 //-----------------------------------------------------------------------------
 void XMLFile::operator<<(Vector& x)
 {
+#ifdef HAVE_PETSC_H
+  dolfin_error("Function output in XML format broken. Need to fix vector element access.");
+#else
   // Open file
   FILE* fp = openFile();
   
@@ -221,6 +224,7 @@ void XMLFile::operator<<(Vector& x)
   
   dolfin_info("Saved vector %s (%s) to file %s in DOLFIN XML format.",
 	      x.name().c_str(), x.label().c_str(), filename.c_str());
+#endif
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator<<(Matrix& A)

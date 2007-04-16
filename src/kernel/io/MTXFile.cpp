@@ -36,7 +36,7 @@ void MTXFile::operator>>(Vector& x)
   MM_typecode matcode;
   FILE* f;
   uint M,N;
-  uint i;
+//  uint i;
 //  real* val;
 
   if ((f = fopen(filename.c_str(), "r")) == NULL)
@@ -66,7 +66,9 @@ void MTXFile::operator>>(Vector& x)
   // resize x
   x.init(M);
 
+  dolfin_error("Reading MTX vectors is broken. Need to fix vector access.");
   // read from File and store into the Matrix
+/*
   real *temp = 0;
   for (i=0; i<M; i++)
   {
@@ -75,6 +77,7 @@ void MTXFile::operator>>(Vector& x)
     fscanf(f, "%lg\n", temp);
     x(i) = *temp;
   }
+*/
 //  x.restore(val);
 
   if (f !=stdin) fclose(f);
@@ -85,7 +88,7 @@ void MTXFile::operator>>(Matrix& A)
   MM_typecode matcode;
   FILE *f;
   uint M, N, nz;
-  uint i;
+//  uint i;
 
   if ((f = fopen(filename.c_str(), "r")) == NULL)
     dolfin_error("Unable to open Matrix Market inputfile.");
@@ -112,15 +115,17 @@ void MTXFile::operator>>(Matrix& A)
   // resize A
   A.init(M, N, nz);
 
+  dolfin_error("Reading MTX matrices is broken. Need to fix matrix access.");
+/*
   // read from File and store into the Matrix A
   uint k, l;
   real value;
   for (i=0; i < nz; i++)
   {
     fscanf(f, "%u %u %lg \n", &k, &l, &value);
-    A(k-1,l-1)=value;
+    A(k-1, l-1)=value;
   }
-
+*/
   if (f !=stdin) fclose(f);
 }
 //-----------------------------------------------------------------------------
@@ -141,12 +146,12 @@ void MTXFile::operator<<(Vector& x)
   fprintf(f,"%% Vector generated with dolfin\n");
   mm_write_mtx_array_size(f, m, 1);
 
+  dolfin_error("Writing MTX vectors is broken. Need to fix element access.");
+
   // NOTE: matrix market files use 1-based indices, i.e. 
   // first element of a vector has index 1, not 0.  
-  for (uint i=0; i<m; i++)
-  {
-    fprintf(f, " %- 20.19g\n", real(x(i)));
-  }
+//  for (uint i=0; i<m; i++)
+//    fprintf(f, " %- 20.19g\n", real(x(i)));
   if (f !=stdout) 
     fclose(f);
 
@@ -160,7 +165,7 @@ void MTXFile::operator<<(Matrix& A)
   int m  = A.size(0);
   int n  = A.size(1);
   int nz = 0;
-  real aij=0;    
+//  real aij=0;
   MM_typecode matcode;
 
   // open file
@@ -171,8 +176,11 @@ void MTXFile::operator<<(Matrix& A)
   mm_set_coordinate(&matcode);
   mm_set_real(&matcode);
 
+  dolfin_error("Writing MTX vectors is broken. Need to fix element access.");
+
   // NOTE: matrix market files use 1-based indices, i.e.
   // first element of a vector has index 1, not 0. 
+/*
   nz=0;
   for (int i=0; i<m; i++)
   {
@@ -184,12 +192,13 @@ void MTXFile::operator<<(Matrix& A)
       }
     }
   }
-
+*/
   // write to file
   mm_write_banner(f, matcode);
   fprintf(f,"%% Matrix generated with dolfin\n");
   mm_write_mtx_crd_size(f, m, n, nz);
 
+/*
   // NOTE: matrix market files use 1-based indices, i.e.
   // first element of a vector/matrix has index 1, not 0.
   for (int i=0; i<m; i++)
@@ -203,7 +212,7 @@ void MTXFile::operator<<(Matrix& A)
       }
     }
   }
-
+*/
   if (f !=stdout) fclose(f);    
 
   dolfin_info("Saved matrix to file %s in Matrix Market format.",

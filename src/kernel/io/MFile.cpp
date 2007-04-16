@@ -32,6 +32,9 @@ MFile::~MFile()
 //-----------------------------------------------------------------------------
 void MFile::operator<<(Vector& x)
 {
+#ifdef HAVE_PETSC_H
+  dolfin_error("Function output in Matlab/Octave format is broken. Need to access PETSc vector elements correctly.");
+#else
   // Open file
   FILE *fp = fopen(filename.c_str(), "a");
   
@@ -51,6 +54,7 @@ void MFile::operator<<(Vector& x)
 
   dolfin_info("Saved vector %s (%s) to file %s in Octave/MATLAB format.",
 	      x.name().c_str(), x.label().c_str(), filename.c_str());
+#endif
 }
 //-----------------------------------------------------------------------------
 void MFile::operator<<(Mesh& mesh)
