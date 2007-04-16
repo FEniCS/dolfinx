@@ -153,10 +153,15 @@ void VTKFile::ResultsWrite(Function& u) const
     dolfin_error("Only scalar and vectors functions can be saved in VTK format.");
 
   // Get number of components
-  const uint size = u.dim(0);
+  const uint dim = u.dim(0);
+
+  // Allocate memory for function values at vertices
+  uint size = mesh.numVertices();
+  for (uint i = 0; i < u.rank(); i++)
+    size *= u.dim(i);
+  real* values = new real[size];
 
   // Get function values at vertices
-  real* values = new real[size*mesh.numVertices()];
   u.interpolate(values);
 
   // Write function data at mesh vertices
@@ -171,18 +176,18 @@ void VTKFile::ResultsWrite(Function& u) const
     fprintf(fp, "<DataArray  type=\"Float64\"  Name=\"U\"  NumberOfComponents=\"3\" format=\"ascii\">	 \n");	
   }
 
-  if ( size > 3 )
+  if ( dim > 3 )
     dolfin_warning("Cannot handle VTK file with number of components > 3. Writing first three components only");
 	
   for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
   {    
     if ( rank == 0 ) 
-      fprintf(fp," %e ", values[size*vertex->index()] );
+      fprintf(fp," %e ", values[ vertex->index() ] );
     else if ( u.dim(0) == 2 ) 
-      fprintf(fp," %e %e  0.0", values[size*vertex->index()], values[size*vertex->index()]+1);
+      fprintf(fp," %e %e  0.0", values[ dim*vertex->index() ], values[ dim*vertex->index()+1 ] );
     else  
-      fprintf(fp," %e %e  %e", values[size*vertex->index()], values[size*vertex->index()+1], 
-                               values[size*vertex->index()+2]);
+      fprintf(fp," %e %e  %e", values[ dim*vertex->index() ], values[ dim*vertex->index()+1 ], 
+                               values[ dim*vertex->index()+2 ] );
 
     fprintf(fp,"\n");
   }	 
