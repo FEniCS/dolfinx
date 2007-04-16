@@ -22,7 +22,7 @@
 #include <dolfin/ublas.h>
 #include <dolfin/uBlasPreconditioner.h>
 #include <dolfin/uBlasILUPreconditioner.h>
-#include <dolfin/uBlasDummyPreconditioner.h
+#include <dolfin/uBlasDummyPreconditioner.h>
 #include <dolfin/uBlasMatrix.h>
 #include <dolfin/uBlasDenseMatrix.h>
 #include <dolfin/uBlasSparseMatrix.h>

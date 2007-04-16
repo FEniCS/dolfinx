@@ -1,10 +1,10 @@
-// Copyright (C) 2006 Anders Logg.
+// Copyright (C) 2006-2007 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // Modified by Garth N. Wells, 2006.
 //
 // First added:  2006-06-12
-// Last changed: 2006-10-23
+// Last changed: 2007-04-16
 
 #ifndef __POINT_H
 #define __POINT_H
@@ -35,15 +35,6 @@ namespace dolfin
 
     /// Return coordinate in direction i
     inline real operator[] (uint i) const { dolfin_assert(i < 3); return _x[i]; }
-
-    /// Return address of x-coordinate
-    inline real& x() { return _x[0]; }
-
-    /// Return address of y-coordinate
-    inline real& y() { return _x[1]; }
-
-    /// Return address of z-coordinate
-    inline real& z() { return _x[2]; }
 
     /// Return x-coordinate
     inline real x() const { return _x[0]; }
