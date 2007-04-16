@@ -3,7 +3,7 @@
 # Generate list of include files for SWIG interface file.
 
 __author__ = "Anders Logg (logg@simula.no)"
-__date__ = "2007-04-12 -- 2007-04-13"
+__date__ = "2007-04-12 -- 2007-04-16"
 __copyright__ = "Copyright (C) 2007 Anders Logg"
 __license__  = "GNU GPL Version 2"
 
@@ -20,7 +20,6 @@ modules = []
 f = open("../kernel/main/dolfin.h")
 for line in f:
     if "#include <dolfin/" in line and line[:17] == "#include <dolfin/":
-        print line.split("/")
         module = line.split("/")[1].split(".")[0].split("_")[1]
         modules += [module]
 f.close()
