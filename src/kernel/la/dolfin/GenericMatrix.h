@@ -79,21 +79,12 @@ namespace dolfin
     /// Initialize M x N matrix with given number of nonzeros per row
     virtual void init(uint M, uint N, const uint nz[]) = 0;
 
-    /// Access element value
-    virtual real get(uint i, uint j) const = 0;
-
-    /// Set element value
-    virtual void set(uint i, uint j, real value) = 0;
-
     /// Set all entries to zero
     virtual void zero() = 0;
 
     /// Set given rows to identity matrix
     virtual void ident(const uint rows[], uint m) = 0;
 
-    /// Return maximum number of nonzero entries in all rows
-    virtual uint nzmax() const = 0;
-    
   };
 
 }

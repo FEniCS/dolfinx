@@ -72,12 +72,6 @@ namespace dolfin
     /// Return number of rows (dim = 0) or columns (dim = 1) 
     uint size(uint dim) const;
 
-    /// Access element value
-    real get(uint i, uint j) const;
-
-    /// Set element value
-    void set(uint i, uint j, real value);
-
     /// Get non-zero values of row i
     void getRow(uint i, int& ncols, Array<int>& columns, Array<real>& values) const;
 
@@ -178,18 +172,6 @@ namespace dolfin
   {
     dolfin_assert( dim < 2 );
     return (dim == 0 ? this->size1() : this->size2());  
-  }
-  //---------------------------------------------------------------------------
-  template <class Mat>  
-  inline real uBlasMatrix<Mat>::get(uint i, uint j) const
-  { 
-    return (*this)(i, j);
-  }
-  //---------------------------------------------------------------------------
-  template <class Mat>  
-  inline void uBlasMatrix<Mat>::set(uint i, uint j, real value) 
-  { 
-    (*this)(i, j) = value;
   }
   //---------------------------------------------------------------------------
   template < class Mat >  
