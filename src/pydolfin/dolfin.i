@@ -13,6 +13,9 @@
 using namespace dolfin;
 %}
 
+// Ignores
+%include "ignores.i"
+
 %init%{
   import_array();
 %}
