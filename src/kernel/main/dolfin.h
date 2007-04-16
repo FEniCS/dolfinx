@@ -10,9 +10,10 @@
 #ifndef __DOLFIN_H
 #define __DOLFIN_H
 
+#include <dolfin/dolfin_common.h>
+#include <dolfin/dolfin_parameter.h>
 #include <dolfin/dolfin_log.h>
 #include <dolfin/dolfin_la.h>
-#include <dolfin/dolfin_common.h>
 #include <dolfin/dolfin_elements.h>
 #include <dolfin/dolfin_fem.h>
 #include <dolfin/dolfin_function.h>
@@ -26,6 +27,5 @@
 #include <dolfin/dolfin_ode.h>
 //#include <dolfin/dolfin_pde.h>
 #include <dolfin/dolfin_quadrature.h>
-#include <dolfin/dolfin_parameter.h>
 
 #endif

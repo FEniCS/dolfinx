@@ -4,5 +4,6 @@
 /// DOLFIN parameter interface
 
 #include <dolfin/Parameter.h>
+#include <dolfin/Parametrized.h>
 
 #endif

@@ -1,15 +1,27 @@
 // Generated list of include files for PyDOLFIN
 
-// DOLFIN headers included from dolfin_parameter.h
+// DOLFIN headers included from common
+%include "dolfin/AdjacencyGraph.h"
+%include "dolfin/Array.h"
+%include "dolfin/List.h"
+%include "dolfin/utils.h"
+%include "dolfin/timing.h"
+
+// DOLFIN headers included from parameter
 %include "dolfin/Parameter.h"
 
-// DOLFIN headers included from dolfin_quadrature.h
-%include "dolfin/Quadrature.h"
-%include "dolfin/GaussQuadrature.h"
-%include "dolfin/RadauQuadrature.h"
-%include "dolfin/LobattoQuadrature.h"
+// DOLFIN headers included from log
+%include "dolfin/CursesLogger.h"
+%include "dolfin/Event.h"
+%include "dolfin/GenericLogger.h"
+%include "dolfin/Logger.h"
+%include "dolfin/LoggerMacros.h"
+%include "dolfin/LogManager.h"
+%include "dolfin/LogStream.h"
+%include "dolfin/Progress.h"
+%include "dolfin/TerminalLogger.h"
 
-// DOLFIN headers included from dolfin_la.h
+// DOLFIN headers included from la
 %include "dolfin/AssemblyMatrix.h"
 %include "dolfin/Matrix.h"
 %include "dolfin/Vector.h"
@@ -50,39 +62,38 @@
 %include "dolfin/uBlasSparseMatrix.h"
 %include "dolfin/uBlasVector.h"
 
-// DOLFIN headers included from dolfin_main.h
-%include "dolfin/init.h"
-%include "dolfin/constants.h"
+// DOLFIN headers included from elements
+%include "dolfin/ElementLibrary.h"
 
-// DOLFIN headers included from dolfin_ode.h
-%include "dolfin/ComplexODE.h"
-%include "dolfin/Homotopy.h"
-%include "dolfin/ODE.h"
-%include "dolfin/Method.h"
-%include "dolfin/cGqMethod.h"
-%include "dolfin/dGqMethod.h"
+// DOLFIN headers included from fem
+%include "dolfin/assemble.h"
+%include "dolfin/NewBoundaryCondition.h"
+%include "dolfin/Form.h"
+%include "dolfin/Assembler.h"
 
-// DOLFIN headers included from dolfin_pde.h
-%include "dolfin/GenericPDE.h"
-%include "dolfin/PDE.h"
-%include "dolfin/LinearPDE.h"
-%include "dolfin/NonlinearPDE.h"
-%include "dolfin/TimeDependentPDE.h"
+// DOLFIN headers included from function
+%include "dolfin/Function.h"
+%include "dolfin/SpecialFunctions.h"
 
-// DOLFIN headers included from dolfin_io.h
-%include "dolfin/File.h"
-
-// DOLFIN headers included from dolfin_graph.h
+// DOLFIN headers included from graph
 %include "dolfin/Graph.h"
 %include "dolfin/GraphEditor.h"
 %include "dolfin/UndirectedClique.h"
 %include "dolfin/DirectedClique.h"
 
-// DOLFIN headers included from dolfin_nls.h
-%include "dolfin/NewtonSolver.h"
-%include "dolfin/NonlinearProblem.h"
+// DOLFIN headers included from io
+%include "dolfin/File.h"
 
-// DOLFIN headers included from dolfin_mesh.h
+// DOLFIN headers included from main
+%include "dolfin/init.h"
+%include "dolfin/constants.h"
+
+// DOLFIN headers included from math
+%include "dolfin/basic.h"
+%include "dolfin/Lagrange.h"
+%include "dolfin/Legendre.h"
+
+// DOLFIN headers included from mesh
 %include "dolfin/BoundaryComputation.h"
 %include "dolfin/BoundaryMesh.h"
 %include "dolfin/Cell.h"
@@ -117,45 +128,20 @@
 %include "dolfin/UnitSquare.h"
 %include "dolfin/Vertex.h"
 
-// DOLFIN headers included from dolfin_math.h
-%include "dolfin/basic.h"
-%include "dolfin/Lagrange.h"
-%include "dolfin/Legendre.h"
+// DOLFIN headers included from nls
+%include "dolfin/NewtonSolver.h"
+%include "dolfin/NonlinearProblem.h"
 
-// DOLFIN headers included from dolfin_common.h
-%include "dolfin/AdjacencyGraph.h"
-%include "dolfin/Array.h"
-%include "dolfin/List.h"
-%include "dolfin/utils.h"
-%include "dolfin/timing.h"
+// DOLFIN headers included from ode
+%include "dolfin/ComplexODE.h"
+%include "dolfin/Homotopy.h"
+%include "dolfin/ODE.h"
+%include "dolfin/Method.h"
+%include "dolfin/cGqMethod.h"
+%include "dolfin/dGqMethod.h"
 
-// DOLFIN headers included from dolfin_elements.h
-%include "dolfin/ElementLibrary.h"
-
-// DOLFIN headers included from dolfin_log.h
-%include "dolfin/CursesLogger.h"
-%include "dolfin/Event.h"
-%include "dolfin/GenericLogger.h"
-%include "dolfin/Logger.h"
-%include "dolfin/LoggerMacros.h"
-%include "dolfin/LogManager.h"
-%include "dolfin/LogStream.h"
-%include "dolfin/Progress.h"
-%include "dolfin/TerminalLogger.h"
-
-// DOLFIN headers included from dolfin_fem.h
-%include "dolfin/assemble.h"
-%include "dolfin/NewBoundaryCondition.h"
-%include "dolfin/Form.h"
-%include "dolfin/Assembler.h"
-
-// DOLFIN headers included from dolfin_function.h
-%include "dolfin/Function.h"
-%include "dolfin/SpecialFunctions.h"
-
-// DOLFIN headers included from dolfin_mf.h
-%include "dolfin/ConvectionMatrix.h"
-%include "dolfin/LoadVector.h"
-%include "dolfin/MassMatrix.h"
-%include "dolfin/MatrixFactory.h"
-%include "dolfin/StiffnessMatrix.h"
+// DOLFIN headers included from quadrature
+%include "dolfin/Quadrature.h"
+%include "dolfin/GaussQuadrature.h"
+%include "dolfin/RadauQuadrature.h"
+%include "dolfin/LobattoQuadrature.h"
