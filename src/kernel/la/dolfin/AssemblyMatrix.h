@@ -46,7 +46,7 @@ namespace dolfin
     ///--- Functions overloaded from GenericTensor ---
 
     /// Initialize zero tensor of given rank and dimensions
-    void init(uint rank, const uint* dims)
+    void init(uint rank, const uint* dims, bool reset = true)
     {
       // Check that the rank is 2
       if ( rank != 2 )
@@ -98,7 +98,7 @@ namespace dolfin
           it->second = 0.0;
     }
 
-    void init(const SparsityPattern& sparsity_pattern)
+    void init(const SparsityPattern& sparsity_pattern, bool reset = true)
     {
       init(sparsity_pattern.size(0), sparsity_pattern.size(1));
     }
