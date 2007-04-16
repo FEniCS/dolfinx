@@ -1,14 +1,7 @@
-// Copyright (C) 2002-2007 Johan Hoffman, Johan Jansson and Anders Logg.
-// Licensed under the GNU GPL Version 2.
-//
-// Modified by Garth N. Wells 2005-2006.
-// Modified by Magnus Vikstrom 2007
-//
-// First added:  2002-11-05
-// Last changed: 2007-04-16
-
 #ifndef __DOLFIN_H
 #define __DOLFIN_H
+
+// DOLFIN interface
 
 #include <dolfin/dolfin_common.h>
 #include <dolfin/dolfin_parameter.h>

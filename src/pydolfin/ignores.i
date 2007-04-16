@@ -1,6 +1,5 @@
-// Things to ignore when building PyDOLFIN
+// Things to ignore for PyDOLFIN
 
 %ignore *::operator=;
 %ignore *::operator[];
 %ignore *::operator++;
-%ignore *::operator<<;
