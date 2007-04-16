@@ -5,7 +5,7 @@
 // Modified by Anders Logg 2006-2007.
 //
 // First added:  2006-04-24
-// Last changed: 2007-04-03
+// Last changed: 2007-04-16
 
 #ifndef __GENERIC_MATRIX_H
 #define __GENERIC_MATRIX_H
@@ -71,6 +71,9 @@ namespace dolfin
     /// Add block of values
     virtual void add(const real* block, uint m, const uint* rows, uint n, const uint* cols) = 0;
 
+    /// Set given rows to identity matrix
+    virtual void ident(const uint rows[], uint m) = 0;
+
     ///--- FIXME: Which of the functions below do we really need? ---
 
     /// Initialize M x N matrix with given maximum number of nonzeros in each row
@@ -81,9 +84,6 @@ namespace dolfin
 
     /// Set all entries to zero
     virtual void zero() = 0;
-
-    /// Set given rows to identity matrix
-    virtual void ident(const uint rows[], uint m) = 0;
 
   };
 

@@ -4,7 +4,7 @@
 // Modified by Anders Logg 2006.
 //
 // First added:  2006-07-05
-// Last changed: 2007-04-13
+// Last changed: 2007-04-16
 
 #ifndef __UBLAS_MATRIX_H
 #define __UBLAS_MATRIX_H
@@ -122,9 +122,6 @@ namespace dolfin
 
     /// Add block of values
     void add(const real* block, uint m, const uint* rows, uint n, const uint* cols);
-
-    /// Return average number of non-zeros per row
-    uint nzmax() const;
 
     friend LogStream& operator<< <Mat> (LogStream&, const uBlasMatrix<Mat>&);
 
@@ -426,18 +423,6 @@ namespace dolfin
     for (uint i = 0; i < m; i++)
       for (uint j = 0; j < n; j++)
         Assembly_matrix(rows[i] , cols[j]) += block[i*n + j];
-  }
-  //---------------------------------------------------------------------------
-  template <>  
-  inline uint uBlasMatrix<ublas_dense_matrix>::nzmax() const 
-  { 
-    return 0; 
-  }
-  //---------------------------------------------------------------------------
-  template <class Mat>  
-  inline uint uBlasMatrix<Mat>::nzmax() const 
-  { 
-    return this->nnz()/size(0); 
   }
   //---------------------------------------------------------------------------
   template <class Mat>  
