@@ -106,7 +106,7 @@ namespace dolfin
     /// In order to link correctly, they must be made inline functions.
 
     /// Initialize M x N matrix
-    void init(uint M, uint N);
+    void init(uint M, uint N, bool reset = true);
 
     /// Initialize M x N matrix with given maximum number of nonzeros in each row
     void init(uint M, uint N, uint nzmax);
@@ -115,7 +115,7 @@ namespace dolfin
     void init(uint M, uint N, const uint nz[]);
 
     /// Initialize a matrix from the sparsity pattern
-    void init(const SparsityPattern& sparsity_pattern);
+    void init(const SparsityPattern& sparsity_pattern, bool reset = true);
 
     /// Set block of values
     void set(const real* block, uint m, const uint* rows, uint n, const uint* cols);
@@ -157,7 +157,7 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <class Mat> 
-  void uBlasMatrix< Mat >::init(uint M, uint N)
+  void uBlasMatrix< Mat >::init(uint M, uint N, bool reset)
   {
     // Resize matrix
     if( size(0) != M || size(1) != N )
@@ -342,13 +342,15 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <> 
-  inline void uBlasMatrix<ublas_dense_matrix>::init(const SparsityPattern& sparsity_pattern)
+  inline void uBlasMatrix<ublas_dense_matrix>::init(const SparsityPattern& sparsity_pattern,
+                                                    bool reset)
   {
     init(sparsity_pattern.size(0), sparsity_pattern.size(1));
   }
   //---------------------------------------------------------------------------
   template <class Mat> 
-  inline void uBlasMatrix<Mat>::init(const SparsityPattern& sparsity_pattern)
+  inline void uBlasMatrix<Mat>::init(const SparsityPattern& sparsity_pattern, 
+                                     bool reset)
   {
     //FIXME: Initialising in a really dumb way. Don't know yet how to initialise
     //       compressed layout efficiently

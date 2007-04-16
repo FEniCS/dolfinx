@@ -1,11 +1,11 @@
 // Copyright (C) 2004-2007 Johan Hoffman, Johan Jansson and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
-// Modified by Garth N. Wells 2005,2006.
+// Modified by Garth N. Wells 2005-2007.
 // Modified by Andy R. Terrel 2005.
 //
 // First added:  2004
-// Last changed: 2007-04-03
+// Last changed: 2007-04-16
 
 #ifdef HAVE_PETSC_H
 
@@ -46,19 +46,7 @@ PETScMatrix::PETScMatrix(Mat A)
   _type = default_matrix;
 }
 //-----------------------------------------------------------------------------
-PETScMatrix::PETScMatrix(const uint M, const uint N)
-  : GenericMatrix(), 
-    Variable("A", "a sparse matrix"),
-    A(0), _type(default_matrix)
-{
-  // Initialize PETSc
-  PETScManager::init();
-
-  // Create PETSc matrix
-  init(M, N);
-}
-//-----------------------------------------------------------------------------
-PETScMatrix::PETScMatrix(const uint M, const uint N, const Type type)
+PETScMatrix::PETScMatrix(uint M, uint N, Type type)
   : GenericMatrix(), 
     Variable("A", "a sparse matrix"),
     A(0),  _type(type)
@@ -91,7 +79,7 @@ PETScMatrix::~PETScMatrix()
   if ( A ) MatDestroy(A);
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::init(const uint M, const uint N)
+void PETScMatrix::init(uint M, uint N, bool reset)
 {
   // Free previously allocated memory if necessary
   if ( A )
@@ -111,7 +99,7 @@ void PETScMatrix::init(const uint M, const uint N)
   MatSetOption(A, MAT_KEEP_ZEROED_ROWS);
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::init(const uint M, const uint N, const uint nz)
+void PETScMatrix::init(uint M, uint N, uint nz)
 {
   // Free previously allocated memory if necessary
   if ( A )
@@ -131,7 +119,7 @@ void PETScMatrix::init(const uint M, const uint N, const uint nz)
   MatSetOption(A, MAT_KEEP_ZEROED_ROWS);
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::init(const uint M, const uint N, const uint nz[])
+void PETScMatrix::init(uint M, uint N, const uint nz[])
 {
   // Free previously allocated memory if necessary
   if ( A )
@@ -169,7 +157,7 @@ void PETScMatrix::init(const uint M, const uint N, const uint bs, const uint nz)
   MatSetOption(A, MAT_KEEP_ZEROED_ROWS);
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::init(const SparsityPattern& sparsity_pattern)
+void PETScMatrix::init(const SparsityPattern& sparsity_pattern, bool reset)
 {
   uint* nzrow = new uint[sparsity_pattern.size(0)];  
   sparsity_pattern.numNonZeroPerRow(nzrow);
@@ -215,37 +203,6 @@ dolfin::uint PETScMatrix::nzmax() const
     max = std::max(max, nz(i));
 
   return max;
-}
-//-----------------------------------------------------------------------------
-real PETScMatrix::get(const uint i, const uint j) const
-{
-  const int ii = static_cast<int>(i);
-  const int jj = static_cast<int>(j);
-
-  dolfin_assert(A);
-  PetscScalar val;
-  MatGetValues(A, 1, &ii, 1, &jj, &val);
-
-  return val;
-}
-//-----------------------------------------------------------------------------
-void PETScMatrix::set(const uint i, const uint j, const real value)
-{
-  const int ii = static_cast<int>(i);
-  const int jj = static_cast<int>(j);
-
-  MatSetValue(A, ii, jj, value, INSERT_VALUES);
-  
-  MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
-  MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
-}
-//-----------------------------------------------------------------------------
-void PETScMatrix::add(const uint i, const uint j, const real value)
-{
-  MatSetValue(A, i, j, value, ADD_VALUES);
-
-  MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
-  MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::get(real* block,
@@ -404,6 +361,8 @@ void PETScMatrix::disp(const bool sparse, const int precision) const
   // FIXME: Maybe this could be an option?
   //MatView(A, PETSC_VIEWER_STDOUT_SELF);
 
+  dolfin_warning("PETScMatrix::disp needs to be fixed.");
+/*
   const uint M = size(0);
   const uint N = size(1);
 
@@ -442,6 +401,7 @@ void PETScMatrix::disp(const bool sparse, const int precision) const
     line << "|";
     cout << line.str().c_str() << endl;
   }
+*/
 }
 //-----------------------------------------------------------------------------
 LogStream& dolfin::operator<< (LogStream& stream, const PETScMatrix& A)
@@ -461,18 +421,6 @@ LogStream& dolfin::operator<< (LogStream& stream, const PETScMatrix& A)
 	 << m << " x " << n << " ]";
 
   return stream;
-}
-//-----------------------------------------------------------------------------
-PETScMatrixElement PETScMatrix::operator()(const uint i, const uint j)
-{
-  PETScMatrixElement element(i, j, *this);
-
-  return element;
-}
-//-----------------------------------------------------------------------------
-real PETScMatrix::operator() (const uint i, const uint j) const
-{
-  return get(i, j);
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::setType() 
@@ -526,55 +474,6 @@ MatType PETScMatrix::getPETScType() const
   default:
     return "default";
   }
-}
-//-----------------------------------------------------------------------------
-// PETScMatrixElement
-//-----------------------------------------------------------------------------
-PETScMatrixElement::PETScMatrixElement(const uint i, const uint j, 
-      PETScMatrix& A) : i(i), j(j), A(A)
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-PETScMatrixElement::PETScMatrixElement(const PETScMatrixElement& e) 
-      : i(i), j(j), A(A)
-{
-}
-//-----------------------------------------------------------------------------
-PETScMatrixElement::operator real() const
-{
-  return A.get(i, j);
-}
-//-----------------------------------------------------------------------------
-const PETScMatrixElement& PETScMatrixElement::operator=(const real a)
-{
-  A.set(i, j, a);
-  return *this;
-}
-//-----------------------------------------------------------------------------
-const PETScMatrixElement& PETScMatrixElement::operator=(const PETScMatrixElement& e)
-{
-  A.set(i, j, e.A.get(e.i, e.j));
-  return *this;
-}
-//-----------------------------------------------------------------------------
-const PETScMatrixElement& PETScMatrixElement::operator+=(const real a)
-{
-  A.add(i, j, a);
-  return *this;
-}
-//-----------------------------------------------------------------------------
-const PETScMatrixElement& PETScMatrixElement::operator-=(const real a)
-{
-  A.add(i, j, -a);
-  return *this;
-}
-//-----------------------------------------------------------------------------
-const PETScMatrixElement& PETScMatrixElement::operator*=(const real a)
-{
-  const real val = A.get(i, j) * a;
-  A.set(i, j, val);
-  return *this;
 }
 //-----------------------------------------------------------------------------
 

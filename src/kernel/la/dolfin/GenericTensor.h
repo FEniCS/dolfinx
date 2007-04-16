@@ -29,10 +29,10 @@ namespace dolfin
     virtual ~GenericTensor() {}
 
     /// Initialize zero tensor of given rank and dimensions
-    virtual void init(uint rank, const uint* dims) = 0;
+    virtual void init(uint rank, const uint* dims, bool reset = true) = 0;
 
     /// Initialize zero tensor using sparsity pattern
-    virtual void init(const SparsityPattern& sparsity_pattern) = 0;
+    virtual void init(const SparsityPattern& sparsity_pattern, bool reset = true) = 0;
 
     /// Return size of given dimension
     virtual uint size(uint dim) const = 0;

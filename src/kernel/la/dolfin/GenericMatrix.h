@@ -33,11 +33,12 @@ namespace dolfin
     ///--- Implementation of GenericTensor interface ---
 
     /// Initialize zero tensor of given rank and dimensions
-    virtual void init(uint rank, const uint* dims)
-    { init(dims[0], dims[1]); }
+    virtual void init(uint rank, const uint* dims, bool reset = true)
+    { init(dims[0], dims[1], reset); }
 
     /// Initialize zero tensor using sparsity pattern (implemented by sub class)
-    virtual void init(const SparsityPattern& sparsity_pattern) = 0;
+    virtual void init(const SparsityPattern& sparsity_pattern, bool reset = true)
+    { init(sparsity_pattern, reset); }
 
     /// Return size of given dimension (implemented by sub class)
     virtual uint size(uint dim) const = 0;
@@ -60,7 +61,7 @@ namespace dolfin
     ///--- Matrix interface ---
 
     /// Initialize M x N matrix
-    virtual void init(uint M, uint N) = 0;
+    virtual void init(uint M, uint N, bool reset = true) = 0;
     
     /// Get block of values
     virtual void get(real* block, uint m, const uint* rows, uint n, const uint* cols) const = 0;

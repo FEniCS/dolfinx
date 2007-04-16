@@ -1,10 +1,10 @@
 // Copyright (C) 2004-2007 Johan Hoffman, Johan Jansson and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
-// Modified by Garth N. Wells 2005.
+// Modified by Garth N. Wells 2005-2007.
 //
 // First added:  2004
-// Last changed: 2007-04-03
+// Last changed: 2007-04-16
 
 // FIXME: Insert dolfin_assert() where appropriate
 
@@ -173,42 +173,6 @@ dolfin::uint PETScVector::size() const
   return static_cast<uint>(n);
 }
 //-----------------------------------------------------------------------------
-real PETScVector::get(const uint i) const
-{
-  dolfin_assert(x);
-
-  // FIXME: Assumes uniprocessor case
-
-  real val = 0.0;
-
-  PetscScalar *array = 0;
-  VecGetArray(x, &array);
-  val = array[i];
-  VecRestoreArray(x, &array);
-
-  return val;
-}
-//-----------------------------------------------------------------------------
-void PETScVector::set(const uint i, const real value)
-{
-  dolfin_assert(x);
-
-  VecSetValue(x, static_cast<int>(i), value, INSERT_VALUES);
-
-  VecAssemblyBegin(x);
-  VecAssemblyEnd(x);
-}
-//-----------------------------------------------------------------------------
-void PETScVector::add(const uint i, const real value)
-{
-  dolfin_assert(x);
-
-  VecSetValue(x, static_cast<int>(i), value, ADD_VALUES);
-
-  VecAssemblyBegin(x);
-  VecAssemblyEnd(x);
-}
-//-----------------------------------------------------------------------------
 Vec PETScVector::vec() const
 {
   return x;
@@ -249,17 +213,6 @@ void PETScVector::restore(const real data[]) const
   // Cast away the constness and trust PETSc to do the right thing
   real* tmp = const_cast<real *>(data);
   VecRestoreArray(x, &tmp);
-}
-//-----------------------------------------------------------------------------
-PETScVectorElement PETScVector::operator() (const uint i)
-{
-  PETScVectorElement index(i, *this);
-  return index;
-}
-//-----------------------------------------------------------------------------
-real PETScVector::operator() (const uint i) const
-{
-  return get(i);
 }
 //-----------------------------------------------------------------------------
 const PETScVector& PETScVector::operator= (const PETScVector& x)
@@ -393,12 +346,14 @@ void PETScVector::disp() const
 {
   // FIXME: Maybe this could be an option?
   //VecView(x, PETSC_VIEWER_STDOUT_SELF);
- 
+  dolfin_warning("PETScVector::disp() needs to be fixed.");
+/* 
   const uint M = size();
   cout << "[ ";
   for (uint i = 0; i < M; i++)
     cout << get(i) << " ";
   cout << "]" << endl;
+*/
 }
 //-----------------------------------------------------------------------------
 LogStream& dolfin::operator<< (LogStream& stream, const PETScVector& x)
@@ -489,59 +444,6 @@ void PETScVector::copy(const uBlasVector& y, const uint off1, const uint off2,
   for(uint i = 0; i < len; i++)
     vals[i + off1] = y[i + off2];
   restore(vals);
-}
-//-----------------------------------------------------------------------------
-// PETScVectorElement
-//-----------------------------------------------------------------------------
-PETScVectorElement::PETScVectorElement(const uint i, PETScVector& x) : i(i), x(x)
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-PETScVectorElement::PETScVectorElement(const PETScVectorElement& e) : i(i), x(x)
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-PETScVectorElement::operator real() const
-{
-  return x.get(i);
-}
-//-----------------------------------------------------------------------------
-const PETScVectorElement& PETScVectorElement::operator=(const PETScVectorElement& e)
-{
-  x.set(i, e.x.get(i));
-
-  return *this;
-}
-//-----------------------------------------------------------------------------
-const PETScVectorElement& PETScVectorElement::operator=(const real a)
-{
-  x.set(i, a);
-
-  return *this;
-}
-//-----------------------------------------------------------------------------
-const PETScVectorElement& PETScVectorElement::operator+=(const real a)
-{
-  x.add(i, a);
-
-  return *this;
-}
-//-----------------------------------------------------------------------------
-const PETScVectorElement& PETScVectorElement::operator-=(const real a)
-{
-  x.add(i, -a);
-
-  return *this;
-}
-//-----------------------------------------------------------------------------
-const PETScVectorElement& PETScVectorElement::operator*=(const real a)
-{
-  const real val = x.get(i) * a;
-  x.set(i, val);
-
-  return *this;
 }
 //-----------------------------------------------------------------------------
 
