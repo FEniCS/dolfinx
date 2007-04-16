@@ -46,7 +46,7 @@ PETScMatrix::PETScMatrix(Mat A)
   _type = default_matrix;
 }
 //-----------------------------------------------------------------------------
-PETScMatrix::PETScMatrix(const uint M, const uint N)
+PETScMatrix::PETScMatrix(uint M, uint N)
   : GenericMatrix(), 
     Variable("A", "a sparse matrix"),
     A(0), _type(default_matrix)
@@ -58,7 +58,7 @@ PETScMatrix::PETScMatrix(const uint M, const uint N)
   init(M, N);
 }
 //-----------------------------------------------------------------------------
-PETScMatrix::PETScMatrix(const uint M, const uint N, const Type type)
+PETScMatrix::PETScMatrix(uint M, uint N, Type type)
   : GenericMatrix(), 
     Variable("A", "a sparse matrix"),
     A(0),  _type(type)
@@ -91,7 +91,7 @@ PETScMatrix::~PETScMatrix()
   if ( A ) MatDestroy(A);
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::init(const uint M, const uint N)
+void PETScMatrix::init(uint M, uint N, bool reset)
 {
   // Free previously allocated memory if necessary
   if ( A )
@@ -111,7 +111,7 @@ void PETScMatrix::init(const uint M, const uint N)
   MatSetOption(A, MAT_KEEP_ZEROED_ROWS);
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::init(const uint M, const uint N, const uint nz)
+void PETScMatrix::init(uint M, uint N, uint nz)
 {
   // Free previously allocated memory if necessary
   if ( A )
@@ -131,7 +131,7 @@ void PETScMatrix::init(const uint M, const uint N, const uint nz)
   MatSetOption(A, MAT_KEEP_ZEROED_ROWS);
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::init(const uint M, const uint N, const uint nz[])
+void PETScMatrix::init(uint M, uint N, const uint nz[])
 {
   // Free previously allocated memory if necessary
   if ( A )

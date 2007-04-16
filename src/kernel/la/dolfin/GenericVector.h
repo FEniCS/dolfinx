@@ -31,11 +31,11 @@ namespace dolfin
     ///--- Implementation of GenericTensor interface ---
 
     /// Initialize zero tensor of given rank and dimensions
-    virtual void init(uint rank, const uint* dims)
+    virtual void init(uint rank, const uint* dims, bool reset)
     { init(dims[0]); }
 
     /// Initialize zero tensor using sparsity pattern
-    virtual void init(const SparsityPattern& sparsity_pattern)
+    virtual void init(const SparsityPattern& sparsity_pattern, bool reset)
     { init(sparsity_pattern.size(0)); }
 
     /// Return size of given dimension

@@ -60,13 +60,13 @@ namespace dolfin
     static const char MM_HERMITIAN  ='H';
   
     // Functions to do the MM operations
-    int  mm_read_banner(FILE *f, MM_typecode *matcode);
-    int  mm_read_mtx_crd_size(FILE *f, int *M, int *N, int *nz);
-    int  mm_read_mtx_array_size(FILE *f, int *M, int *N);
+    int  mm_read_banner(FILE* f, MM_typecode *matcode);
+    int  mm_read_mtx_crd_size(FILE* f, uint* M, uint* N, uint* nz);
+    int  mm_read_mtx_array_size(FILE* f, uint* M, uint* N);
     
-    int  mm_write_banner(FILE *f, MM_typecode matcode);
-    int  mm_write_mtx_crd_size(FILE *f, int M, int N, int nz);
-    int  mm_write_mtx_array_size(FILE *f, int M, int N);
+    int  mm_write_banner(FILE* f, MM_typecode matcode);
+    int  mm_write_mtx_crd_size(FILE* f, uint M, uint N, uint nz);
+    int  mm_write_mtx_array_size(FILE* f, uint M, uint N);
     
     void mm_clear_typecode(MM_typecode *typecode);
     void mm_initialize_typecode(MM_typecode *typecode);

@@ -35,8 +35,8 @@ void MTXFile::operator>>(Vector& x)
 {
   MM_typecode matcode;
   FILE* f;
-  int M,N;
-  int i;
+  uint M,N;
+  uint i;
 //  real* val;
 
   if ((f = fopen(filename.c_str(), "r")) == NULL)
@@ -84,8 +84,8 @@ void MTXFile::operator>>(Matrix& A)
 {
   MM_typecode matcode;
   FILE *f;
-  int M, N, nz;
-  int i;
+  uint M, N, nz;
+  uint i;
 
   if ((f = fopen(filename.c_str(), "r")) == NULL)
     dolfin_error("Unable to open Matrix Market inputfile.");
@@ -110,14 +110,14 @@ void MTXFile::operator>>(Matrix& A)
     dolfin_error("Could not parse matrix size.");
   }
   // resize A
-  A.init(M,N,nz);
+  A.init(M, N, nz);
 
   // read from File and store into the Matrix A
-  int k,l;
+  uint k, l;
   real value;
-  for (i=0; i<nz; i++)
+  for (i=0; i < nz; i++)
   {
-    fscanf(f, "%d %d %lg\n", &k, &l, &value);
+    fscanf(f, "%u %u %lg \n", &k, &l, &value);
     A(k-1,l-1)=value;
   }
 
@@ -127,7 +127,7 @@ void MTXFile::operator>>(Matrix& A)
 void MTXFile::operator<<(Vector& x)
 {
   FILE *f;
-  int m  = x.size();
+  uint m  = x.size();
 
   f = fopen(filename.c_str(), "a") ;
 
@@ -143,7 +143,7 @@ void MTXFile::operator<<(Vector& x)
 
   // NOTE: matrix market files use 1-based indices, i.e. 
   // first element of a vector has index 1, not 0.  
-  for (int i=0; i<m; i++)
+  for (uint i=0; i<m; i++)
   {
     fprintf(f, " %- 20.19g\n", real(x(i)));
   }
@@ -310,18 +310,18 @@ int MTXFile::mm_read_banner(FILE *f, MM_typecode *matcode)
   return 0;
 }
 //-----------------------------------------------------------------------------
-int MTXFile::mm_write_mtx_crd_size(FILE *f, int M, int N, int nz)
+int MTXFile::mm_write_mtx_crd_size(FILE* f, uint M, uint N, uint nz)
 {
-  if (fprintf(f, "%d %d %d\n", M, N, nz) < 3)
+  if (fprintf(f, "%u %u %u\n", M, N, nz) < 3)
   {
-    dolfin_error("Unable to write file");
+    dolfin_error("Unable to write MTX file");
     return 0;
   }
   else
     return 0;
 }
 //-----------------------------------------------------------------------------
-int MTXFile::mm_read_mtx_crd_size(FILE *f, int *M, int *N, int *nz )
+int MTXFile::mm_read_mtx_crd_size(FILE* f, uint* M, uint* N, uint* nz )
 {
   char line[MM_MAX_LINE_LENGTH];
   int num_items_read;
@@ -342,13 +342,13 @@ int MTXFile::mm_read_mtx_crd_size(FILE *f, int *M, int *N, int *nz )
   while (line[0] == '%');
 
   // line[] is either blank or has M,N, nz
-  if (sscanf(line, "%d %d %d", M, N, nz) == 3)
+  if (sscanf(line, "%u %u %u", M, N, nz) == 3)
     return 0;
 
   else
     do
     {
-      num_items_read = fscanf(f, "%d %d %d", M, N, nz);
+      num_items_read = fscanf(f, "%u %u %u", M, N, nz);
       if (num_items_read == EOF)
       {
         dolfin_error("premature EOF");
@@ -360,7 +360,7 @@ int MTXFile::mm_read_mtx_crd_size(FILE *f, int *M, int *N, int *nz )
   return 0;
 }
 //-----------------------------------------------------------------------------
-int MTXFile::mm_read_mtx_array_size(FILE *f, int *M, int *N)
+int MTXFile::mm_read_mtx_array_size(FILE *f, uint *M, uint *N)
 {
   char line[MM_MAX_LINE_LENGTH];
   int num_items_read;
@@ -379,13 +379,13 @@ int MTXFile::mm_read_mtx_array_size(FILE *f, int *M, int *N)
   while (line[0] == '%');
 
   // line[] is either blank or has M,N, nz
-  if (sscanf(line, "%d %d", M, N) == 2)
+  if (sscanf(line, "%u %u", M, N) == 2)
     return 0;
 
   else // we have a blank line
     do
     {
-      num_items_read = fscanf(f, "%d %d", M, N);
+      num_items_read = fscanf(f, "%u %u", M, N);
       if (num_items_read == EOF) 
       {
         dolfin_error("premature EOF");
@@ -398,9 +398,9 @@ int MTXFile::mm_read_mtx_array_size(FILE *f, int *M, int *N)
   return 0;
 }
 //-----------------------------------------------------------------------------
-int MTXFile::mm_write_mtx_array_size(FILE *f, int M, int N)
+int MTXFile::mm_write_mtx_array_size(FILE *f, uint M, uint N)
 {
-  if (fprintf(f, "%d %d\n", M, N) < 0)
+  if (fprintf(f, "%u %u\n", M, N) < 0)
   {
     dolfin_error("Unable to write file");
     return 0;

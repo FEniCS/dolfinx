@@ -56,10 +56,10 @@ namespace dolfin
     PETScMatrix(Mat A);
 
     /// Constructor
-    PETScMatrix(const uint M, const uint N);
+    PETScMatrix(uint M, uint N);
 
     /// Constructor (setting PETSc matrix type)
-    PETScMatrix(const uint M, const uint N, const Type type);
+    PETScMatrix(uint M, uint N, Type type);
 
     /// Constructor (just for testing, will be removed)
     PETScMatrix(const PETScMatrix &B);
@@ -68,19 +68,19 @@ namespace dolfin
     ~PETScMatrix();
 
     /// Initialize M x N matrix
-    void init(const uint M, const uint N);
+    void init(uint M, uint N, bool reset = true);
 
     /// Initialize M x N matrix with given maximum number of nonzeros in each row
-    void init(const uint M, const uint N, const uint nzmax);
+    void init(uint M, uint N, uint nzmax);
 
     /// Initialize M x N matrix with a given number of nonzeros per row
-    void init(const uint M, const uint N, const uint nz[]);
+    void init(uint M, uint N, const uint nz[]);
 
     /// Initialize M x N matrix with given block size and maximum number of nonzeros in each row
     void init(const uint M, const uint N, const uint bs, const uint nzmax);
 
     /// Initialize a matrix from the sparsity pattern
-    void init(const SparsityPattern& sparsity_pattern);
+    void init(const SparsityPattern& sparsity_pattern, bool reset = true);
 
     /// Return number of rows (dim = 0) or columns (dim = 1) along dimension dim
     uint size(const uint dim) const;
