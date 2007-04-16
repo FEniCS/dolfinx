@@ -145,16 +145,9 @@
 
 // DOLFIN headers included from dolfin_fem.h
 %include "dolfin/assemble.h"
-%include "dolfin/Assembler.h"
-%include "dolfin/BoundaryCondition.h"
 %include "dolfin/NewBoundaryCondition.h"
-%include "dolfin/BoundaryValue.h"
-%include "dolfin/DofMap.h"
-%include "dolfin/DofMaps.h"
 %include "dolfin/Form.h"
-%include "dolfin/UFC.h"
-%include "dolfin/UFCCell.h"
-%include "dolfin/UFCMesh.h"
+%include "dolfin/Assembler.h"
 
 // DOLFIN headers included from dolfin_function.h
 %include "dolfin/Function.h"

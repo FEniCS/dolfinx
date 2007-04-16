@@ -12,5 +12,4 @@ SUBDIRS = common \
           nls \
           ode \
           parameter \
-          pde \
           quadrature
