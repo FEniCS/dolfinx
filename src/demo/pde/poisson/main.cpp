@@ -142,5 +142,8 @@ int main()
   File file2("poisson2.xml");
   file2 << uu;
 
+  File file3("poisson.pvd");
+  file3 << u;
+
   return 0;
 }
