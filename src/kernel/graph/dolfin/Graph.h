@@ -9,10 +9,13 @@
 
 #include <dolfin/constants.h>
 #include <dolfin/Variable.h>
-#include <dolfin/Mesh.h>
 
 namespace dolfin
 {
+  
+  class Mesh;
+  class LogStream;
+
   /// A Graph consists of a set of vertices and edges.
   ///
   /// The graph is stored in Compressed Sparse Row (CSR) format. This format

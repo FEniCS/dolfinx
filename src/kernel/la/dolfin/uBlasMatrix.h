@@ -123,12 +123,6 @@ namespace dolfin
     /// Initialize a matrix from the sparsity pattern
     void init(const SparsityPattern& sparsity_pattern);
 
-    /// Set block of values. The function apply() must be called to commit changes.
-    void set(const real block[], const int rows[], int m, const int cols[], int n);
-    
-    /// Add block of values. The function apply() must be called to commit changes.
-    void add(const real block[], const int rows[], int m, const int cols[], int n);
-    
     /// Set block of values
     void set(const real* block, uint m, const uint* rows, uint n, const uint* cols);
 

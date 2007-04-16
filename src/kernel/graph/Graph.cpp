@@ -5,8 +5,8 @@
 // Last changed: 2007-03-19
 
 #include <dolfin/dolfin_log.h>
-#include <dolfin.h>
 #include <dolfin/File.h>
+#include <dolfin/Vertex.h>
 #include <dolfin/Graph.h>
 
 using namespace dolfin;

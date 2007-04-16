@@ -5,7 +5,7 @@
 // Modified by Magnus Vikstrom 2007
 //
 // First added:  2002-11-05
-// Last changed: 2007-04-05
+// Last changed: 2007-04-16
 
 #ifndef __DOLFIN_H
 #define __DOLFIN_H
@@ -13,6 +13,7 @@
 #include <dolfin/dolfin_log.h>
 #include <dolfin/dolfin_la.h>
 #include <dolfin/dolfin_common.h>
+#include <dolfin/dolfin_elements.h>
 #include <dolfin/dolfin_fem.h>
 #include <dolfin/dolfin_function.h>
 #include <dolfin/dolfin_graph.h>
