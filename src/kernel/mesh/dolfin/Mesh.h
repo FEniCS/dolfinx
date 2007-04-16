@@ -1,10 +1,10 @@
-// Copyright (C) 2006 Anders Logg.
+// Copyright (C) 2006-2007 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // Modified by Johan Hoffman 2007.
 //
 // First added:  2006-05-08
-// Last changed: 2007-02-27
+// Last changed: 2007-04-16
 
 #ifndef __MESH_H
 #define __MESH_H
@@ -51,7 +51,7 @@ namespace dolfin
     /// Copy constructor
     Mesh(const Mesh& mesh);
 
-    /// Create mesh from given file
+    /// Create mesh from data file
     Mesh(std::string filename);
     
     /// Destructor

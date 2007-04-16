@@ -50,6 +50,9 @@ namespace dolfin
     /// Create discrete function for argument function i of form
     Function(Mesh& mesh, Vector& x, const Form& form, uint i = 1);
 
+    /// Create function from data file
+    Function(const std::string filename);
+
     /// Destructor
     virtual ~Function();
 
