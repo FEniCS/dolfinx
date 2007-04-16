@@ -17,10 +17,10 @@ using namespace dolfin;
   import_array();
 %}
 
-%typemap(in) real = double; 
-%typemap(out) real = double; 
-%typemap(in) uint = int; 
-%typemap(out) uint = int; 
+%typemap(in) dolfin::real = double; 
+%typemap(out) dolfin::real = double; 
+%typemap(in) dolfin::uint = int; 
+%typemap(out) dolfin::uint = int; 
 
 %typemap(out) dolfin::Parameter {
   {
@@ -120,11 +120,11 @@ using namespace dolfin;
 %rename(__call__) dolfin::Function::operator();
 %rename(__getitem__) dolfin::Function::operator[];
 
-%typecheck(SWIG_TYPECHECK_DOUBLE_ARRAY) dolfin::real values [] {
+%typecheck(SWIG_TYPECHECK_DOUBLE_ARRAY) dolfin::real* values {
     $1 = PyArray_Check($input) ? 1 : 0;
 }
 
-%typemap(in) dolfin::real values [] {
+%typemap(in) dolfin::real* values {
     if PyArray_Check($input) {
         PyArrayObject *xa = (PyArrayObject*)($input);
         if (xa->descr->type == 'd')
