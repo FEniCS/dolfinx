@@ -1,25 +1,19 @@
 // Generated list of include files for PyDOLFIN
 
 // DOLFIN headers included from common
-%include "dolfin/AdjacencyGraph.h"
+%include "dolfin/timing.h"
 %include "dolfin/Array.h"
 %include "dolfin/List.h"
-%include "dolfin/utils.h"
-%include "dolfin/timing.h"
+%include "dolfin/Variable.h"
 
 // DOLFIN headers included from parameter
 %include "dolfin/Parameter.h"
 
 // DOLFIN headers included from log
-%include "dolfin/CursesLogger.h"
 %include "dolfin/Event.h"
-%include "dolfin/GenericLogger.h"
-%include "dolfin/Logger.h"
 %include "dolfin/LoggerMacros.h"
-%include "dolfin/LogManager.h"
 %include "dolfin/LogStream.h"
 %include "dolfin/Progress.h"
-%include "dolfin/TerminalLogger.h"
 
 // DOLFIN headers included from la
 %include "dolfin/AssemblyMatrix.h"
@@ -118,15 +112,16 @@
 %include "dolfin/NonlinearProblem.h"
 
 // DOLFIN headers included from ode
+%include "dolfin/ODE.h"
 %include "dolfin/ComplexODE.h"
 %include "dolfin/Homotopy.h"
-%include "dolfin/ODE.h"
 %include "dolfin/Method.h"
 %include "dolfin/cGqMethod.h"
 %include "dolfin/dGqMethod.h"
 
 // DOLFIN headers included from quadrature
 %include "dolfin/Quadrature.h"
+%include "dolfin/GaussianQuadrature.h"
 %include "dolfin/GaussQuadrature.h"
 %include "dolfin/RadauQuadrature.h"
 %include "dolfin/LobattoQuadrature.h"

@@ -3,9 +3,9 @@
 
 // DOLFIN ode interface
 
+#include <dolfin/ODE.h>
 #include <dolfin/ComplexODE.h>
 #include <dolfin/Homotopy.h>
-#include <dolfin/ODE.h>
 #include <dolfin/Method.h>
 #include <dolfin/cGqMethod.h>
 #include <dolfin/dGqMethod.h>

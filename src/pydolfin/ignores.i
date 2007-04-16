@@ -3,3 +3,4 @@
 %ignore *::operator=;
 %ignore *::operator[];
 %ignore *::operator++;
+%ignore *::operator<<;
