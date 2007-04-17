@@ -4,13 +4,13 @@
 // Modified by Garth N. Wells 2006.
 //
 // First added:  2004
-// Last changed: 2006-05-07
+// Last changed: 2007-04-17
 
 #ifndef __PDE_H
 #define __PDE_H
 
+#include <dolfin/Array.h>
 #include <dolfin/Parametrized.h>
-#include <dolfin/GenericPDE.h>
 
 namespace dolfin
 {
@@ -50,8 +50,11 @@ namespace dolfin
     /// Define a PDE with natural boundary conditions
     PDE(Form& a, Form& L, Mesh& mesh, Type type = linear);
 
-    /// Define a PDE with Dirichlet boundary conditions
+    /// Define a PDE with a single Dirichlet boundary conditions
     PDE(Form& a, Form& L, Mesh& mesh, BoundaryCondition& bc, Type type = linear);
+    
+    /// Define a PDE with a set of Dirichlet boundary conditions
+    PDE(Form& a, Form& L, Mesh& mesh, Array<BoundaryCondition*> bcs, Type type = linear);
 
     /// Destructor
     ~PDE();
@@ -63,6 +66,9 @@ namespace dolfin
     Type type() const;
 
   private:
+    
+    // Initialize
+    void init(Form& a, Form& L, Mesh& mesh, Array<BoundaryCondition*> bcs);
 
     // Pointer to current implementation (letter base class)
     GenericPDE* pde;

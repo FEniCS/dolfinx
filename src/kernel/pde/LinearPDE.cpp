@@ -1,34 +1,21 @@
-// Copyright (C) 2004-2006 Anders Logg.
+// Copyright (C) 2004-2007 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // Modified by Garth N. Wells, 2006
 //
 // First added:  2004
-// Last changed: 2006-05-07
+// Last changed: 2007-04-17
 
-#include <dolfin/dolfin_log.h>
-#include <dolfin/Assembler.h>
-#include <dolfin/Matrix.h>
-#include <dolfin/Vector.h>
-#include <dolfin/KrylovSolver.h>
-#include <dolfin/LUSolver.h>
-#include <dolfin/Mesh.h>
-#include <dolfin/BoundaryCondition.h>
-#include <dolfin/Function.h>
 #include <dolfin/LinearPDE.h>
-#include <dolfin/Parametrized.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-LinearPDE::LinearPDE(BilinearForm& a, LinearForm& L, Mesh& mesh)
-  : GenericPDE(), _a(&a), _Lf(&L), _mesh(&mesh), _bc(0)
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-LinearPDE::LinearPDE(BilinearForm& a, LinearForm& L, Mesh& mesh, 
-  BoundaryCondition& bc) : GenericPDE(), _a(&a), _Lf(&L), _mesh(&mesh), _bc(&bc)
+LinearPDE::LinearPDE(Form& a,
+                     Form& L,
+                     Mesh& mesh,
+                     Array<BoundaryCondition*> bcs)
+  : GenericPDE(a, L, mesh, bcs)
 {
   // Do nothing
 }
@@ -38,22 +25,20 @@ LinearPDE::~LinearPDE()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-dolfin::uint LinearPDE::solve(Function& u)
+void LinearPDE::solve(Function& u)
 {
-  dolfin_error("LinearPDE has not yet been updated for new UFC structure.");
-/*
-  dolfin_assert(_a);
-  dolfin_assert(_Lf);
-  dolfin_assert(_mesh);
+  dolfin_error("Not implemented.");
 
-  // Write a message
   dolfin_info("Solving static linear PDE.");
+    
+  /*
 
-  // Make sure u is a discrete function associated with the trial space
-  u.init(*_mesh, _a->trial());
-  Vector& x = u.vector();
-
-  // Get solver type
+    
+    // Make sure u is a discrete function associated with the trial space
+    u.init(*_mesh, _a->trial());
+    Vector& x = u.vector();
+    
+    // Get solver type
   const std::string solver_type = get("PDE linear solver");
 
   // Assemble linear system
@@ -78,13 +63,13 @@ dolfin::uint LinearPDE::solve(Function& u)
   {
     LUSolver solver;
     solver.set("parent", *this);
-    solver.solve(*A, x, b);
+    solver.solve(A, x, b);
   }
   else if ( solver_type == "iterative" || solver_type == "default" )
   {
     KrylovSolver solver(gmres);
     solver.set("parent", *this);
-    solver.solve(*A, x, b);
+    solver.solve(A, x, b);
   }
   else
     dolfin_error1("Unknown solver type \"%s\".", solver_type.c_str());
@@ -92,40 +77,5 @@ dolfin::uint LinearPDE::solve(Function& u)
   delete A;
 
 */
-  return 0;
-}
-//-----------------------------------------------------------------------------
-dolfin::uint LinearPDE::elementdim()
-{
-  dolfin_error("LinearPDE has not yet been updated for new UFC structure.");
-  return 0;
-/*
-  dolfin_assert(_a);
-  return _a->trial().elementdim();
-*/
-}
-//-----------------------------------------------------------------------------
-BilinearForm& LinearPDE::a()
-{
-  dolfin_assert(_a);
-  return *_a;
-}
-//-----------------------------------------------------------------------------
-LinearForm& LinearPDE::L()
-{
-  dolfin_assert(_Lf);
-  return *_Lf;
-}
-//-----------------------------------------------------------------------------
-Mesh& LinearPDE::mesh()
-{
-  dolfin_assert(_mesh);
-  return *_mesh;
-}
-//-----------------------------------------------------------------------------
-BoundaryCondition& LinearPDE::bc()
-{
-  dolfin_assert(_bc);
-  return *_bc;
 }
 //-----------------------------------------------------------------------------

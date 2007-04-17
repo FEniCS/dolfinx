@@ -1,24 +1,24 @@
 // Copyright (C) 2006 Garth N. Wells.
 // Licensed under the GNU GPL Version 2.
 //
+// Modified by Anders Logg, 2007.
+//
 // First added:  2006-02-21
-// Last changed: 2006-02-24
+// Last changed: 2007-04-17
 
 #ifndef __GENERIC_PDE_H
 #define __GENERIC_PDE_H
 
-#include <dolfin/Vector.h>
-#include <dolfin/Matrix.h>
+#include <dolfin/Array.h>
 #include <dolfin/Parametrized.h>
 
 namespace dolfin
 {
-  
-  class BilinearForm;
+
+  class Form;
+  class Mesh;
   class BoundaryCondition;
   class Function;
-  class LinearForm;
-  class Mesh;
 
   /// This class serves as a base class/interface for specific PDE's.
 
@@ -27,28 +27,24 @@ namespace dolfin
   public:
 
     /// Constructor
-    GenericPDE();
+    GenericPDE(Form& a, Form& L, Mesh& mesh, Array<BoundaryCondition*> bcs);
 
     /// Destructor
     virtual ~GenericPDE();
 
-     /// Solve
-    virtual uint solve(Function& u) = 0;
+    /// Solve PDE
+    virtual void solve(Function& u) = 0;
 
-     /// Return element dimension
-    virtual uint elementdim() = 0;
+  protected:
 
-    /// Return the bilinear form mesh associated with PDE (if any)
-    virtual BilinearForm& a() = 0;
+    // The bilinear form
+    Form& a;
+    
+    // The linear form
+    Form& L;
 
-    /// Return the linear form mesh associated with PDE (if any)
-    virtual LinearForm& L() =0;
-
-    /// Return the mesh associated with PDE (if any)
-    virtual Mesh& mesh() = 0;
-
-    /// Return the boundary conditions associated with PDE (if any)
-    virtual BoundaryCondition& bc() = 0;
+    // The boundary conditions
+    Array<BoundaryCondition*> bcs;
 
   };
 
