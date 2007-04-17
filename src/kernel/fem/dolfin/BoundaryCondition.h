@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2007-04-10
-// Last changed: 2007-04-10
+// Last changed: 2007-04-17
 
 #ifndef __NEW_BOUNDARY_CONDITION_H
 #define __NEW_BOUNDARY_CONDITION_H
@@ -36,18 +36,18 @@ namespace dolfin
   /// an integer sub_domain specifying the sub domain on which
   /// the boundary condition is to be applied.
   
-  class NewBoundaryCondition
+  class BoundaryCondition
   {
   public:
 
     /// Create boundary condition from sub domain
-    NewBoundaryCondition(Function& g, Mesh& mesh, SubDomain& sub_domain);
+    BoundaryCondition(Function& g, Mesh& mesh, SubDomain& sub_domain);
 
     /// Create boundary condition from sub domain markers and sub domain index
-    NewBoundaryCondition(Function& g, Mesh& mesh, MeshFunction<uint>& sub_domains, uint sub_domain);
+    BoundaryCondition(Function& g, Mesh& mesh, MeshFunction<uint>& sub_domains, uint sub_domain);
 
     /// Destructor
-    ~NewBoundaryCondition();
+    ~BoundaryCondition();
 
     /// Apply boundary condition to linear system
     void apply(GenericMatrix& A, GenericVector& b, const Form& form);

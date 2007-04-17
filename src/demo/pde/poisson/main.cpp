@@ -110,7 +110,7 @@ int main()
   // Define boundary condition
   DirichletBoundary GD;
   NeumannBoundary GN;
-  NewBoundaryCondition bc(gd, mesh, GD);
+  BoundaryCondition bc(gd, mesh, GD);
 
   // Apply boundary condition
   bc.apply(A, b, a);

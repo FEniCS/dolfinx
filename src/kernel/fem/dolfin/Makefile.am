@@ -1,7 +1,7 @@
 EXTRA_DIST = dolfin_fem.h \
              assemble.h \
              Assembler.h \
-             NewBoundaryCondition.h \
+             BoundaryCondition.h \
              DofMap.h \
              DofMaps.h \
              Form.h \

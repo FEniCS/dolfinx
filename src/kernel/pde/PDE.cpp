@@ -1,49 +1,24 @@
-// Copyright (C) 2006 Anders Logg and Garth N. Wells.
+// Copyright (C) 2007 Anders Logg and Garth N. Wells.
 // Licensed under the GNU GPL Version 2.
 //
-// Modified by Anders Logg 2006
-//
 // First added:  2006-02-21
-// Last changed: 2006-05-07
-
-// FIXME: Temporary fix
-#include <dolfin/UnitSquare.h>
-
+// Last changed: 2007-04-17
 
 #include <dolfin/dolfin_log.h>
+#include <dolfin/Form.h>
 #include <dolfin/Function.h>
-#include <dolfin/PDE.h>
+#include <dolfin/GenericPDE.h>
+#include <dolfin/LinearPDE.h>
 #include <dolfin/NonlinearPDE.h>
+#include <dolfin/PDE.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-PDE::PDE(BilinearForm& a, LinearForm& L, Mesh& mesh)
-  : Parametrized(), pde(0), _type(linear)
+PDE::PDE(Form& a, Form& L, Mesh& mesh, Type type)
+  : pde(0), _type(type)
 {
-  dolfin_error("PDE has not yet been updated for new UFC structure.");
-/*
-  pde = new LinearPDE(a, L, mesh);
-  pde->set("parent", *this);
-*/
-}
-//-----------------------------------------------------------------------------
-PDE::PDE(BilinearForm& a, LinearForm& L, Mesh& mesh, BoundaryCondition& bc)
-  : Parametrized(), pde(0), _type(linear)
-{
-  dolfin_error("PDE has not yet been updated for new UFC structure.");
-/*
-  pde = new LinearPDE(a, L, mesh, bc);
-  pde->set("parent", *this);
-*/
-}
-//-----------------------------------------------------------------------------
-PDE::PDE(BilinearForm& a, LinearForm& L, Mesh& mesh, Type pde_type) 
-  : Parametrized(), pde(0), _type(pde_type)
-{
-  dolfin_error("PDE has not yet been updated for new UFC structure.");
-/*
-  switch(pde_type)
+  switch ( type )
   {
   case linear:
     pde = new LinearPDE(a, L, mesh);
@@ -54,8 +29,30 @@ PDE::PDE(BilinearForm& a, LinearForm& L, Mesh& mesh, Type pde_type)
   default:
     dolfin_error("Unknown PDE type");
   }
-  
+
   pde->set("parent", *this);
+}
+//-----------------------------------------------------------------------------
+PDE(Form& a, Form& L, Mesh& mesh, BoundaryCondition& bc, Type type)
+  : pde(0), _type(type)
+{
+  switch ( type )
+  {
+  case linear:
+    pde = new LinearPDE(a, L, mesh, bc);
+    break;
+  case nonlinear:
+    pde = new NonlinearPDE(a, L, mesh, bc);
+    break;
+  default:
+    dolfin_error("Unknown PDE type");
+  }
+
+  pde->set("parent", *this);
+}
+//-----------------------------------------------------------------------------
+
+
 */
 }
 //-----------------------------------------------------------------------------
@@ -72,9 +69,7 @@ PDE::PDE(BilinearForm& a, LinearForm& L, Mesh& mesh, BoundaryCondition& bc,
   case nonlinear:
     pde = new NonlinearPDE(a, L, mesh, bc);
     break;
-  default:
-    dolfin_error("Unknown PDE type");
-  }
+
   
   pde->set("parent", *this);
 */

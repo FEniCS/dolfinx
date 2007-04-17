@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2007-04-10
-// Last changed: 2007-04-10
+// Last changed: 2007-04-17
 
 #include <dolfin/Mesh.h>
 #include <dolfin/Vertex.h>
@@ -14,14 +14,14 @@
 #include <dolfin/UFCCell.h>
 #include <dolfin/GenericMatrix.h>
 #include <dolfin/GenericVector.h>
-#include <dolfin/NewBoundaryCondition.h>
+#include <dolfin/BoundaryCondition.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-NewBoundaryCondition::NewBoundaryCondition(Function& g,
-                                           Mesh& mesh,
-                                           SubDomain& sub_domain)
+BoundaryCondition::BoundaryCondition(Function& g,
+                                     Mesh& mesh,
+                                     SubDomain& sub_domain)
   : g(g), mesh(mesh), sub_domains(0), sub_domain(0),
     sub_domains_local(false)
 {
@@ -52,31 +52,31 @@ NewBoundaryCondition::NewBoundaryCondition(Function& g,
   sub_domains->disp();
 }
 //-----------------------------------------------------------------------------
-NewBoundaryCondition::NewBoundaryCondition(Function& g,
-                                           Mesh& mesh,
-                                           MeshFunction<uint>& sub_domains,
-                                           uint sub_domain)
+BoundaryCondition::BoundaryCondition(Function& g,
+                                     Mesh& mesh,
+                                     MeshFunction<uint>& sub_domains,
+                                     uint sub_domain)
   : g(g), mesh(mesh), sub_domains(&sub_domains), sub_domain(sub_domain),
     sub_domains_local(false)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-NewBoundaryCondition::~NewBoundaryCondition()
+BoundaryCondition::~BoundaryCondition()
 {
   // Delete sub domain markers if created locally
   if ( sub_domains_local )
     delete sub_domains;
 }
 //-----------------------------------------------------------------------------
-void NewBoundaryCondition::apply(GenericMatrix& A, GenericVector& b,
-                                 const Form& form)
+void BoundaryCondition::apply(GenericMatrix& A, GenericVector& b,
+                              const Form& form)
 {
   apply(A, b, form.form());
 }
 //-----------------------------------------------------------------------------
-void NewBoundaryCondition::apply(GenericMatrix& A, GenericVector& b,
-                                 const ufc::form& form)
+void BoundaryCondition::apply(GenericMatrix& A, GenericVector& b,
+                              const ufc::form& form)
 {
   cout << "Applying boundary conditions to linear system" << endl;
 
