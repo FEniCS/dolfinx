@@ -7,11 +7,11 @@
 // Last changed: 2007-04-17
 
 #include <dolfin/Matrix.h>
-#include <dolfin/Vector.h>
 #include <dolfin/BoundaryCondition.h>
 #include <dolfin/Assembler.h>
 #include <dolfin/LUSolver.h>
 #include <dolfin/KrylovSolver.h>
+#include <dolfin/Function.h>
 #include <dolfin/LinearPDE.h>
 
 using namespace dolfin;
@@ -46,30 +46,24 @@ void LinearPDE::solve(Function& u)
   for (uint i = 0; i < bcs.size(); i++)
     bcs[i]->apply(A, b, a);
 
-  // Create solution vector
-  Vector* x = new Vector();
-
   // Solve linear system
   const std::string solver_type = get("PDE linear solver");
   if ( solver_type == "direct" )
   {
     LUSolver solver;
     solver.set("parent", *this);
-    solver.solve(A, *x, b);
+    solver.solve(A, x, b);
   }
-  else if ( solver_type == "iterative" || solver_type == "default" )
+  else if ( solver_type == "iterative" )
   {
     KrylovSolver solver(gmres);
     solver.set("parent", *this);
-    solver.solve(A, *x, b);
+    solver.solve(A, x, b);
   }
   else
     dolfin_error1("Unknown solver type \"%s\".", solver_type.c_str());
 
-  x->disp();
-
-  delete x;
-
-  dolfin_end();
+  // Set function data
+  u.init(mesh, x, a, 1);
 }
 //-----------------------------------------------------------------------------

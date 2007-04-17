@@ -99,7 +99,10 @@ void BoundaryCondition::apply(GenericMatrix& A, GenericVector& b,
   {
     // Skip facets not inside the sub domain
     if ( (*sub_domains)(*facet) != sub_domain )
+    {
+      p++;
       continue;
+    }
 
     // Get cell to which facet belongs (there may be two, but pick first)
     Cell cell(mesh, facet->entities(D)[0]);

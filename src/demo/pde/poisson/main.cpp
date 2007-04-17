@@ -115,8 +115,8 @@ int main()
   pde.solve(u);
 
   // Save solution to file
-  //File file("poisson.xml");
-  //file << u;
+  File file("poisson.xml");
+  file << u;
 
   return 0;
 }

@@ -10,6 +10,7 @@
 #define __GENERIC_PDE_H
 
 #include <dolfin/Array.h>
+#include <dolfin/Vector.h>
 #include <dolfin/Parametrized.h>
 
 namespace dolfin
@@ -48,6 +49,9 @@ namespace dolfin
 
     // The boundary conditions
     Array<BoundaryCondition*> bcs;
+
+    // The solution vector
+    Vector x;
 
   };
 
