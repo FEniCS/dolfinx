@@ -52,7 +52,7 @@ namespace dolfin
     Parameter get(std::string key) const;
 
     /// Check if parameter with given key has been defined locally
-    bool defined(std::string key) const;
+    bool has(std::string key) const;
 
     /// Callback for changes in parameter values
     virtual void readParameters();

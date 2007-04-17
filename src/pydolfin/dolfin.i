@@ -19,6 +19,8 @@ using namespace dolfin;
 // Renames
 %include "renames.i"
 
+class Parametrized  {};
+
 %init%{
   import_array();
 %}

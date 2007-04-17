@@ -428,7 +428,7 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <class Mat>  
-  inline LogStream& operator<< (LogStream& stream, const uBlasMatrix< Mat >& A)
+  inline LogStream& operator<< (LogStream& stream, const uBlasMatrix<Mat>& A)
   {
     // Check if matrix has been defined
     if ( A.size(0) == 0 || A.size(1) == 0 )

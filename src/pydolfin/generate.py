@@ -8,9 +8,10 @@ __copyright__ = "Copyright (C) 2007 Anders Logg"
 __license__  = "GNU GPL Version 2"
 
 import os
+import re
 
 # List of headers to exclude (add more here)
-excludes = ["dolfin/Buffer.h", "dolfin/ParameterList.h", "dolfin/Parametrized.h"]
+excludes = []#"dolfin/ParameterList.h", "dolfin/Parametrized.h"]
 
 # Name of SWIG interface file to be generated
 interface_file = "dolfin_headers.h"
@@ -31,7 +32,7 @@ for module in modules:
     print "Processing dolfin_%s.h..." % module
     f = open("../kernel/%s/dolfin/dolfin_%s.h" % (module, module))
     for line in f:
-        if "#include " in line:
+        if re.search("^#include ",line):
             header = line.split()[1].replace("<", "").replace(">", "")
             if not header in excludes:
                 module_headers += [header]
