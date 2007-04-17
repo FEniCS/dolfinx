@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2006 Anders Logg.
+// Copyright (C) 2004-2007 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // Modified by Garth N. Wells 2006.
@@ -15,8 +15,7 @@
 namespace dolfin
 {
 
-  class BilinearForm;
-  class LinearForm;
+  class Form;
   class Mesh;
   class BoundaryCondition;
   class Function;

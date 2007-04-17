@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-02-07
-// Last changed: 2006-09-05
+// Last changed: 2007-04-17
 //
 // This demo program solves Poisson's equation
 //
@@ -25,7 +25,7 @@ using namespace dolfin;
 
 int main()
 {
-  // Right-hand side
+  // Source term
   class Source : public Function
   {
   public:
@@ -38,6 +38,7 @@ int main()
       real dy = x[1] - 0.5;
       return 500.0*exp(-(dx*dx + dy*dy)/0.02);
     }
+
   };
 
   // Dirichlet boundary condition
@@ -51,7 +52,10 @@ int main()
     {
       return 0.0;
     }
+
   };
+
+  // FIXME: Use sub domain, not condition in function
   
   // Neumann boundary condition
   class NeumannBC : public Function
@@ -67,9 +71,10 @@ int main()
       else
         return 0.0;
     }
+
   };
 
-  // Sub domains
+  // Sub domain for Dirichlet boundary condition
   class DirichletBoundary : public SubDomain
   {
     bool inside(const real* x, bool on_boundary)
@@ -78,7 +83,7 @@ int main()
     }
   };
 
-  // Sub domains
+  // Sub domain for Neumann boundary condition
   class NeumannBoundary : public SubDomain
   {
     bool inside(const real* x, bool on_boundary)
