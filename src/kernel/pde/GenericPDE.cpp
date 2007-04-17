@@ -17,7 +17,7 @@ GenericPDE::GenericPDE(Form& a,
                        Form& L,
                        Mesh& mesh,
                        Array<BoundaryCondition*> bcs)
-  : a(a), L(L), bcs(bcs)
+  : a(a), L(L), mesh(mesh), bcs(bcs)
 {
   // Check ranks of forms
   if ( a.form().rank() != 2 )

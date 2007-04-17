@@ -92,63 +92,31 @@ int main()
     }
   };
   
-  // Set up problem
+  // Create mesh
   UnitSquare mesh(3, 3);
 
+  // Create functions
   Source f(mesh);
   DirichletBC gd(mesh);
   NeumannBC gn(mesh);
 
-  PoissonBilinearForm a;
-  PoissonLinearForm L(f, gn);
-
-  Matrix A;
-  Vector b;
-  assemble(A, a, mesh);
-  assemble(b, L, mesh);
-
-  // Define boundary condition
+  // Create sub domains
   DirichletBoundary GD;
   NeumannBoundary GN;
+  
+  // Define PDE
+  PoissonBilinearForm a;
+  PoissonLinearForm L(f, gn);
   BoundaryCondition bc(gd, mesh, GD);
-
-  // Apply boundary condition
-  bc.apply(A, b, a);
-
-  cout << "Stiffness matrix" << endl;
-  A.disp();
-  cout << "RHS vector" << endl;
-  b.disp();
-
-  Vector x;
-  GMRES::solve(A, x, b);
-
-  cout << "Solution vector" << endl;
-  x.disp();
-
-  Function u(mesh, x, a);
-
-/*
   PDE pde(a, L, mesh, bc);
 
-  // Compute solution
-  Function U = pde.solve();
-*/
+  // Solve PDE
+  Function u;
+  pde.solve(u);
 
   // Save solution to file
-  File file("poisson.xml");
-  file << u;
-  
-  // Read solution from file
-  Function uu;
-  file >> uu;
-
-  // Store it to another file for testing
-  File file2("poisson2.xml");
-  file2 << uu;
-
-  File file3("poisson.pvd");
-  file3 << u;
+  //File file("poisson.xml");
+  //file << u;
 
   return 0;
 }

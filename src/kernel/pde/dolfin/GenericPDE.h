@@ -43,6 +43,9 @@ namespace dolfin
     // The linear form
     Form& L;
 
+    // The mesh
+    Mesh& mesh;
+
     // The boundary conditions
     Array<BoundaryCondition*> bcs;
 

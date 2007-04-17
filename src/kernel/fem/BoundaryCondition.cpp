@@ -25,8 +25,6 @@ BoundaryCondition::BoundaryCondition(Function& g,
   : g(g), mesh(mesh), sub_domains(0), sub_domain(0),
     sub_domains_local(false)
 {
-  dolfin_info("Creating sub domain markers");
-
   // Make sure we have the facets and the incident cells
   const uint D = mesh.topology().dim();
   mesh.init(D - 1);
@@ -48,8 +46,6 @@ BoundaryCondition::BoundaryCondition(Function& g,
         (*sub_domains)(*facet) = 1;
     }
   }
-
-  sub_domains->disp();
 }
 //-----------------------------------------------------------------------------
 BoundaryCondition::BoundaryCondition(Function& g,
@@ -103,11 +99,7 @@ void BoundaryCondition::apply(GenericMatrix& A, GenericVector& b,
   {
     // Skip facets not inside the sub domain
     if ( (*sub_domains)(*facet) != sub_domain )
-    {
-      cout << "Skipping facet, not inside sub domain: " << *facet << endl;
       continue;
-    }
-    cout << "Facet inside sub domain, applying boundary conditions: " << *facet << endl;
 
     // Get cell to which facet belongs (there may be two, but pick first)
     Cell cell(mesh, facet->entities(D)[0]);

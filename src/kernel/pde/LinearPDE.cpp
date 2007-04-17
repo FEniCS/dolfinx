@@ -6,6 +6,12 @@
 // First added:  2004
 // Last changed: 2007-04-17
 
+#include <dolfin/Matrix.h>
+#include <dolfin/Vector.h>
+#include <dolfin/BoundaryCondition.h>
+#include <dolfin/Assembler.h>
+#include <dolfin/LUSolver.h>
+#include <dolfin/KrylovSolver.h>
 #include <dolfin/LinearPDE.h>
 
 using namespace dolfin;
@@ -27,55 +33,43 @@ LinearPDE::~LinearPDE()
 //-----------------------------------------------------------------------------
 void LinearPDE::solve(Function& u)
 {
-  dolfin_error("Not implemented.");
-
-  dolfin_info("Solving static linear PDE.");
+  dolfin_begin("Solving static linear PDE.");
     
-  /*
-
-    
-    // Make sure u is a discrete function associated with the trial space
-    u.init(*_mesh, _a->trial());
-    Vector& x = u.vector();
-    
-    // Get solver type
-  const std::string solver_type = get("PDE linear solver");
-
   // Assemble linear system
+  Matrix A;
   Vector b;
-  Matrix* A;
-  if ( solver_type == "direct" )
-#ifdef HAVE_PETSC_H
-    A = new Matrix(Matrix::umfpack);
-#else
-    A = new Matrix;
-#endif
-  else
-    A = new Matrix;
+  Assembler assembler;
+  assembler.assemble(A, a, mesh);
+  assembler.assemble(b, L, mesh);
 
-  if ( _bc )
-    FEM::assemble(*_a, *_Lf, *A, b, *_mesh, *_bc);
-  else
-    FEM::assemble(*_a, *_Lf, *A, b, *_mesh);
+  // Apply boundary conditions
+  for (uint i = 0; i < bcs.size(); i++)
+    bcs[i]->apply(A, b, a);
 
-  // Solve the linear system
+  // Create solution vector
+  Vector* x = new Vector();
+
+  // Solve linear system
+  const std::string solver_type = get("PDE linear solver");
   if ( solver_type == "direct" )
   {
     LUSolver solver;
     solver.set("parent", *this);
-    solver.solve(A, x, b);
+    solver.solve(A, *x, b);
   }
   else if ( solver_type == "iterative" || solver_type == "default" )
   {
     KrylovSolver solver(gmres);
     solver.set("parent", *this);
-    solver.solve(A, x, b);
+    solver.solve(A, *x, b);
   }
   else
     dolfin_error1("Unknown solver type \"%s\".", solver_type.c_str());
 
-  delete A;
+  x->disp();
 
-*/
+  delete x;
+
+  dolfin_end();
 }
 //-----------------------------------------------------------------------------
