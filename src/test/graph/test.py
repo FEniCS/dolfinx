@@ -8,6 +8,7 @@ __license__  = "GNU GPL Version 2"
 import unittest
 import os
 import tempfile
+import numpy
 from dolfin import *
 
 class Editor(unittest.TestCase):
@@ -146,6 +147,20 @@ class InputOutput(unittest.TestCase):
 
         self.assertEqual(graph.numVertices(), 3)
         self.assertEqual(graph.numEdges(), 3)
+
+class Partitioning(unittest.TestCase):
+
+    def testPartition(self):
+        """Create a graph and partition it"""
+
+        graph = UndirectedClique(100)
+        #parts = numpy.array('I')
+        #parts_ptr = parts.c_ptr()
+        #parts = GraphPartition.create(100)
+        parts = numpy.array('I')
+
+        # pydolfin interface to GraphPartion not generated when making src/pydolfin
+        GraphPartition.partition(graph, 10, parts)
 
 if __name__ == "__main__":
     unittest.main()
