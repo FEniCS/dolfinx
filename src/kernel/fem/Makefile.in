@@ -62,8 +62,7 @@ libLTLIBRARIES_INSTALL = $(INSTALL)
 LTLIBRARIES = $(lib_LTLIBRARIES)
 libdolfin_fem_la_LIBADD =
 am_libdolfin_fem_la_OBJECTS = assemble.lo Assembler.lo \
-	BoundaryCondition.lo NewBoundaryCondition.lo BoundaryValue.lo \
-	DofMap.lo DofMaps.lo UFC.lo
+	BoundaryCondition.lo DofMap.lo DofMaps.lo UFC.lo
 libdolfin_fem_la_OBJECTS = $(am_libdolfin_fem_la_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -244,8 +243,6 @@ nobase_include_HEADERS = dolfin/dolfin_fem.h \
                            dolfin/assemble.h \
                            dolfin/Assembler.h \
                            dolfin/BoundaryCondition.h \
-                           dolfin/NewBoundaryCondition.h \
-                           dolfin/BoundaryValue.h \
                            dolfin/DofMap.h \
                            dolfin/DofMaps.h \
                            dolfin/Form.h \
@@ -258,8 +255,6 @@ lib_LTLIBRARIES = libdolfin-fem.la
 libdolfin_fem_la_SOURCES = assemble.cpp \
                            Assembler.cpp \
                            BoundaryCondition.cpp \
-                           NewBoundaryCondition.cpp \
-                           BoundaryValue.cpp \
                            DofMap.cpp \
                            DofMaps.cpp \
                            UFC.cpp
@@ -336,10 +331,8 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Assembler.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BoundaryCondition.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BoundaryValue.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DofMap.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DofMaps.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NewBoundaryCondition.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/UFC.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/assemble.Plo@am__quote@
 

@@ -56,6 +56,18 @@ Function::~Function()
     delete f;
 }
 //-----------------------------------------------------------------------------
+void Function::init(Mesh& mesh, Vector& x, const Form& form, uint i)
+
+{
+  if ( f )
+    delete f;
+
+  f = new DiscreteFunction(mesh, x, form, i);
+  
+  rename("u", "discrete function");
+  _type = discrete;
+}
+//-----------------------------------------------------------------------------
 Function::Type Function::type() const
 {
   return _type;

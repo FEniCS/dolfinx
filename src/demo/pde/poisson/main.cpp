@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-02-07
-// Last changed: 2006-09-05
+// Last changed: 2007-04-17
 //
 // This demo program solves Poisson's equation
 //
@@ -25,7 +25,7 @@ using namespace dolfin;
 
 int main()
 {
-  // Right-hand side
+  // Source term
   class Source : public Function
   {
   public:
@@ -38,6 +38,7 @@ int main()
       real dy = x[1] - 0.5;
       return 500.0*exp(-(dx*dx + dy*dy)/0.02);
     }
+
   };
 
   // Dirichlet boundary condition
@@ -51,7 +52,10 @@ int main()
     {
       return 0.0;
     }
+
   };
+
+  // FIXME: Use sub domain, not condition in function
   
   // Neumann boundary condition
   class NeumannBC : public Function
@@ -67,9 +71,10 @@ int main()
       else
         return 0.0;
     }
+
   };
 
-  // Sub domains
+  // Sub domain for Dirichlet boundary condition
   class DirichletBoundary : public SubDomain
   {
     bool inside(const real* x, bool on_boundary)
@@ -78,7 +83,7 @@ int main()
     }
   };
 
-  // Sub domains
+  // Sub domain for Neumann boundary condition
   class NeumannBoundary : public SubDomain
   {
     bool inside(const real* x, bool on_boundary)
@@ -87,63 +92,31 @@ int main()
     }
   };
   
-  // Set up problem
-  UnitSquare mesh(3, 3);
+  // Create mesh
+  UnitSquare mesh(16, 16);
 
+  // Create functions
   Source f(mesh);
   DirichletBC gd(mesh);
   NeumannBC gn(mesh);
 
-  PoissonBilinearForm a;
-  PoissonLinearForm L(f, gn);
-
-  Matrix A;
-  Vector b;
-  assemble(A, a, mesh);
-  assemble(b, L, mesh);
-
-  // Define boundary condition
+  // Create sub domains
   DirichletBoundary GD;
   NeumannBoundary GN;
-  NewBoundaryCondition bc(gd, mesh, GD);
-
-  // Apply boundary condition
-  bc.apply(A, b, a);
-
-  cout << "Stiffness matrix" << endl;
-  A.disp();
-  cout << "RHS vector" << endl;
-  b.disp();
-
-  Vector x;
-  GMRES::solve(A, x, b);
-
-  cout << "Solution vector" << endl;
-  x.disp();
-
-  Function u(mesh, x, a);
-
-/*
+  
+  // Define PDE
+  PoissonBilinearForm a;
+  PoissonLinearForm L(f, gn);
+  BoundaryCondition bc(gd, mesh, GD);
   PDE pde(a, L, mesh, bc);
 
-  // Compute solution
-  Function U = pde.solve();
-*/
+  // Solve PDE
+  Function u;
+  pde.solve(u);
 
   // Save solution to file
   File file("poisson.xml");
   file << u;
-  
-  // Read solution from file
-  Function uu;
-  file >> uu;
-
-  // Store it to another file for testing
-  File file2("poisson2.xml");
-  file2 << uu;
-
-  File file3("poisson.pvd");
-  file3 << u;
 
   return 0;
 }

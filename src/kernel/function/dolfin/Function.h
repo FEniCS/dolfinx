@@ -56,6 +56,9 @@ namespace dolfin
     /// Destructor
     virtual ~Function();
 
+    /// Create discrete function for argument function i of form
+    void init(Mesh& mesh, Vector& x, const Form& form, uint i = 1);
+
     /// Return the type of function
     Type type() const;
 

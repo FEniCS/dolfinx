@@ -3,8 +3,6 @@ nobase_include_HEADERS   = dolfin/dolfin_fem.h \
                            dolfin/assemble.h \
                            dolfin/Assembler.h \
                            dolfin/BoundaryCondition.h \
-                           dolfin/NewBoundaryCondition.h \
-                           dolfin/BoundaryValue.h \
                            dolfin/DofMap.h \
                            dolfin/DofMaps.h \
                            dolfin/Form.h \
@@ -16,8 +14,6 @@ lib_LTLIBRARIES          = libdolfin-fem.la
 libdolfin_fem_la_SOURCES = assemble.cpp \
                            Assembler.cpp \
                            BoundaryCondition.cpp \
-                           NewBoundaryCondition.cpp \
-                           BoundaryValue.cpp \
                            DofMap.cpp \
                            DofMaps.cpp \
                            UFC.cpp

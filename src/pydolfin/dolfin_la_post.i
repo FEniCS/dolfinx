@@ -1,6 +1,8 @@
+// Map uBlasMatrix template to Python
 %template(uBlasSparseMatrix) dolfin::uBlasMatrix<dolfin::ublas_sparse_matrix>;
 %template(uBlasDenseMatrix) dolfin::uBlasMatrix<dolfin::ublas_dense_matrix>;
 
+// Select matrix types (for PETSc or uBlas)
 #ifdef HAVE_PETSC_H
 %pythoncode
 %{
@@ -25,6 +27,7 @@
 %}
 #endif
 
+// Select matrix types (for both PETSc and uBlas)
 %pythoncode
 %{
   # Explicit typedefs

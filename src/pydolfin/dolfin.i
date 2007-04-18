@@ -29,7 +29,6 @@ using namespace dolfin;
 %include "typemaps.i"
 
 %include "cpointer.i"
-%include "typemaps.i"
 %include "std_string.i"
 %include "std_vector.i"
 %include "stl.i"
