@@ -93,7 +93,7 @@ int main()
   };
   
   // Create mesh
-  UnitSquare mesh(3, 3);
+  UnitSquare mesh(16, 16);
 
   // Create functions
   Source f(mesh);
