@@ -7,7 +7,6 @@
 #ifndef __TIME_DEPENDENT_H
 #define __TIME_DEPENDENT_H 
  
-#include <dolfin/dolfin_log.h>
 
 namespace dolfin
 {

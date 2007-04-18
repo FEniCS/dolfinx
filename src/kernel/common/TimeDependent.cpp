@@ -4,6 +4,7 @@
 // First added:  2005-09-02
 // Last changed: 2005
 
+#include <dolfin/dolfin_log.h>
 #include <dolfin/TimeDependent.h>
 
 using namespace dolfin;

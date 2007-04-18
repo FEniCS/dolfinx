@@ -10,6 +10,7 @@
 %ignore operator std::string;
 %ignore operator bool;
 
+%ignore dolfin::dolfin_info_aptr;
 %ignore operator<< <Mat>;
 %ignore dolfin::Parameter;
 %ignore dolfin::Parametrized;
