@@ -7,6 +7,8 @@
 %include "dolfin/Variable.h"
 
 // DOLFIN headers included from parameter
+%include "dolfin/Parametrized.h"
+%include "dolfin/Parameter.h"
 
 // DOLFIN headers included from log
 %include "dolfin/Event.h"
