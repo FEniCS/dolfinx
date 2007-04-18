@@ -4,10 +4,6 @@
 // First added:  2007-04-03
 // Last changed: 2007-04-18
 
-//#include <cstdlib>
-//#include <ctime>
-//#include <set>
-
 #include <dolfin/GraphPartition.h>
 #include <iostream>
 #include <deque>
@@ -52,6 +48,7 @@ void GraphPartition::partition(Graph& graph, uint num_part, uint* vtx_part)
 
       dolfin_debug1("Checking %d neigbors", graph.numEdges(vertex));
       uint found = 0;
+      // Look for unvisited neigbors of current vertex
       for(uint j=0; j<graph.numEdges(vertex); ++j)
       {
         int edge_index = (int) (graph.offsets()[(int)vertex] + j);
@@ -111,15 +108,36 @@ void GraphPartition::eval(Graph& graph, uint num_part, uint* vtx_part)
   for(uint i=0; i<num_part; ++i)
     part_sizes[i] = 0;
 
+  // Count number of vertices per partition
   for(uint i=0; i<graph.numVertices(); ++i)
   {
     part_sizes[vtx_part[i]]++;
   }
 
+  // Print number of vertices per partition
   std::cout << "partition\tnum_vtx" << std::endl;
   for(uint i=0; i<num_part; ++i)
     std::cout << i << "\t\t" << part_sizes[i] << std::endl;
 
+  // Calculate edge-cut
+  uint edge_cut = 0;
+  for(uint i=0; i<graph.numVertices(); ++i)
+  {
+    for(uint j=0; j<graph.numEdges(i); ++j)
+    {
+      int edge_index = (int) (graph.offsets()[(int) i] + j);
+      uint nvtx = graph.connectivity()[edge_index];
+      // If neighbor not in same partition
+      if(vtx_part[i] == vtx_part[nvtx])
+      {
+        edge_cut++;
+      }
+    }
+  }
+  // Edges visited twice
+  edge_cut /= 2;
+
+  std::cout << "edge-cut: " << edge_cut << std::endl;
 }
 //-----------------------------------------------------------------------------
 void GraphPartition::disp(Graph& graph, uint num_part, uint* vtx_part)
