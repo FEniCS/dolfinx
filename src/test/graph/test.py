@@ -159,6 +159,7 @@ class Partitioning(unittest.TestCase):
         #parts = GraphPartition.create(100)
         parts = numpy.array('I')
 
+        # pydolfin interface to GraphPartion not generated when making src/pydolfin
         GraphPartition.partition(graph, 10, parts)
 
 if __name__ == "__main__":
