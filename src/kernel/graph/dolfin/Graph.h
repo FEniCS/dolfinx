@@ -46,6 +46,10 @@ namespace dolfin
     /// Enum for different graph types
     enum Type { directed, undirected };
     
+    /// Enum for different mesh - graph representations
+    // Put this in class MeshPartitioning ?
+    enum Representation { nodal, dual };
+    
     /// Create empty graph
     Graph();
     
@@ -56,8 +60,11 @@ namespace dolfin
     Graph(std::string filename);
     
     /// Create graph from mesh
-    Graph(Mesh& mesh);
+    Graph(Mesh& mesh, Representation type);
     
+    /// Create graph from mesh
+    Graph(Mesh& mesh, std::string type);
+
     /// Destructor
     ~Graph();
     
@@ -116,6 +123,11 @@ namespace dolfin
     uint* vertex_weights;
     
     Type _type;
+
+    Representation _representation;
+
+    void createNodal(Mesh& mesh);
+    void createDual(Mesh& mesh);
   };
   
 }

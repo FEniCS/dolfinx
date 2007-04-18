@@ -33,26 +33,22 @@ Graph::Graph(std::string filename) : Variable("graph", "DOLFIN graph")
   file >> *this;
 }
 //-----------------------------------------------------------------------------
-Graph::Graph(Mesh& mesh) : Variable("graph", "Graph")
+Graph::Graph(Mesh& mesh, Representation type) : Variable("graph", "Graph")
 {
-  num_vertices = mesh.numVertices();
-  num_edges = mesh.numEdges();
-  num_arches = num_edges * 2;
-
-  edges = new uint[num_arches];
-  vertices = new uint[num_vertices];
-
-  // Iterate over edges from all vertices
-  uint i = 0, j = 0;
-  for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
-  {
-    vertices[j++] = i;
-    uint* entities = vertex->entities(0);
-    for (uint k=0; k<vertex->numEntities(0); k++)
-    {
-      edges[i++] = entities[k];
-    }
-  }
+  if ( type == nodal )
+    createNodal(mesh);
+  else
+    createDual(mesh);
+}
+//-----------------------------------------------------------------------------
+Graph::Graph(Mesh& mesh, std::string type) : Variable("graph", "Graph")
+{
+  if ( type == "nodal" )
+    createNodal(mesh);
+  else if ( type == "dual" )
+    createDual(mesh);
+  else
+    dolfin_error1("Unknown mesh representation \"%s\".", type.c_str());
 }
 //-----------------------------------------------------------------------------
 Graph::~Graph()
@@ -124,5 +120,74 @@ void Graph::clear()
     delete [] edges;
   if ( vertices )
     delete [] vertices;
+}
+//-----------------------------------------------------------------------------
+void Graph::createNodal(Mesh& mesh)
+{
+  mesh.init();
+  num_vertices = mesh.numVertices();
+  num_edges = mesh.numEdges();
+  num_arches = num_edges * 2;
+
+  edges = new uint[num_arches];
+  vertices = new uint[num_vertices];
+
+  // Create nodal graph. Iterate over edges from all vertices
+  uint i = 0, j = 0;
+  for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
+  {
+    vertices[i++] = j;
+    uint* entities = vertex->entities(0);
+    for (uint k=0; k<vertex->numEntities(0); k++)
+    {
+      edges[j++] = entities[k];
+    }
+    // Replace with this?
+    /*
+    for (VertexIterator neighbor(vertex); !neighbor.end(); ++neighbor)
+    {
+      dolfin_debug1("Edge no %d", j);
+      edges[j++] = neighbor->index();
+    }
+    */
+  }
+}
+//-----------------------------------------------------------------------------
+void Graph::createDual(Mesh& mesh)
+{
+  num_vertices = mesh.numCells();
+  dolfin_debug1("createDual() with no cells %d", mesh.numCells());
+
+  num_edges = mesh.numEdges();
+  dolfin_debug1("createDual() with no edges %d", mesh.numEdges());
+  num_arches = num_edges * 2;
+
+  edges = new uint[num_arches];
+  vertices = new uint[num_vertices];
+  dolfin_debug("finished initing arrays and stuff");
+
+  // Create dual graph. Iterate over neighbors from all cells
+  uint i = 0, j = 0;
+  //uint D = mesh.topology().dim();
+  for (CellIterator c0(mesh); !c0.end(); ++c0)
+  {
+    dolfin_debug1("Cell no %d", i);
+    vertices[i++] = j;
+    //uint* facets_0 = c0->entities(D - 1);
+    for (CellIterator c1(c0); !c1.end(); ++c1)
+    {
+      dolfin_debug1("Edge no %d", j);
+      edges[j++] = c1->index();
+
+    }
+
+
+    /*
+    for (uint k=0; k<c1->CellIter(mesh.topology().dim()); k++)
+    {
+      edges[i++] = entities[k];
+    }
+    */
+  }
 }
 //-----------------------------------------------------------------------------

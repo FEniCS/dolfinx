@@ -5,6 +5,7 @@
 
 #include <dolfin/Graph.h>
 #include <dolfin/GraphEditor.h>
+#include <dolfin/GraphPartition.h>
 #include <dolfin/UndirectedClique.h>
 #include <dolfin/DirectedClique.h>
 

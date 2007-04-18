@@ -61,8 +61,8 @@ am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(includedir)"
 libLTLIBRARIES_INSTALL = $(INSTALL)
 LTLIBRARIES = $(lib_LTLIBRARIES)
 libdolfin_graph_la_LIBADD =
-am_libdolfin_graph_la_OBJECTS = GraphEditor.lo Graph.lo \
-	UndirectedClique.lo DirectedClique.lo
+am_libdolfin_graph_la_OBJECTS = GraphEditor.lo GraphPartition.lo \
+	Graph.lo UndirectedClique.lo DirectedClique.lo
 libdolfin_graph_la_OBJECTS = $(am_libdolfin_graph_la_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -241,6 +241,7 @@ target_alias = @target_alias@
 SUBDIRS = dolfin
 nobase_include_HEADERS = dolfin/dolfin_graph.h \
                             dolfin/GraphEditor.h \
+                            dolfin/GraphPartition.h \
                             dolfin/Graph.h \
                             dolfin/UndirectedClique.h \
                             dolfin/DirectedClique.h
@@ -248,6 +249,7 @@ nobase_include_HEADERS = dolfin/dolfin_graph.h \
 INCLUDES = @KERNEL_CFLAGS@
 lib_LTLIBRARIES = libdolfin-graph.la
 libdolfin_graph_la_SOURCES = GraphEditor.cpp \
+                            GraphPartition.cpp \
                             Graph.cpp \
                             UndirectedClique.cpp \
                             DirectedClique.cpp
@@ -325,6 +327,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DirectedClique.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Graph.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/GraphEditor.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/GraphPartition.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/UndirectedClique.Plo@am__quote@
 
 .cpp.o:

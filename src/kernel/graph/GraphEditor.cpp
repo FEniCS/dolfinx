@@ -106,14 +106,14 @@ void GraphEditor::addVertex(uint u, uint num_edges)
     dolfin_error1("Next vertex that can be added is %d.", next_vertex);
   
   // Set offset and step to next vertex
-  dolfin_debug2("addVertex(%d, %d)", u, num_edges);
+  //dolfin_debug2("addVertex(%d, %d)", u, num_edges);
   graph->vertices[next_vertex++] = next_arch;
   next_arch += num_edges;
 }
 //-----------------------------------------------------------------------------
 void GraphEditor::addEdge(uint u, uint v)
 {
-  dolfin_debug2("addEdge(%d, %d)", u, v);
+  //dolfin_debug2("addEdge(%d, %d)", u, v);
   
   // Check value of to vertex index
   if ( v > next_vertex )
@@ -126,7 +126,7 @@ void GraphEditor::addEdge(uint u, uint v)
 //-----------------------------------------------------------------------------
 void GraphEditor::addArch(uint u, uint v)
 {
-  dolfin_debug2("addArch(%d, %d)", u, v);
+  //dolfin_debug2("addArch(%d, %d)", u, v);
 
   // Check if we are currently editing a graph
   if ( !graph )
