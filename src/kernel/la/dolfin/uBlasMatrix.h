@@ -4,7 +4,7 @@
 // Modified by Anders Logg 2006.
 //
 // First added:  2006-07-05
-// Last changed: 2007-04-16
+// Last changed: 2007-04-18
 
 #ifndef __UBLAS_MATRIX_H
 #define __UBLAS_MATRIX_H
@@ -34,17 +34,10 @@ namespace dolfin
 
   /// Developer note: specialised member functions must be inlined to avoid link errors.
 
-  template< class Mat > 
-  class uBlasMatrix; 
-
-  template< class Mat > 
-  LogStream& operator<<  (LogStream&, const uBlasMatrix<Mat>&);
-
-
   template< class Mat >
   class uBlasMatrix : public Variable, 
                       public GenericMatrix,
-		                  public Mat
+                      public Mat
   {
   public:
     
@@ -123,7 +116,7 @@ namespace dolfin
     /// Add block of values
     void add(const real* block, uint m, const uint* rows, uint n, const uint* cols);
 
-    friend LogStream& operator<< <Mat> (LogStream&, const uBlasMatrix<Mat>&);
+    //friend LogStream& operator<< <Mat> (LogStream&, const uBlasMatrix<Mat>&);
 
   private:
 

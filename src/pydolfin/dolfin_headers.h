@@ -59,15 +59,15 @@
 // DOLFIN headers included from elements
 %include "dolfin/ElementLibrary.h"
 
-// DOLFIN headers included from fem
-%include "dolfin/assemble.h"
-%include "dolfin/NewBoundaryCondition.h"
-%include "dolfin/Form.h"
-%include "dolfin/Assembler.h"
-
 // DOLFIN headers included from function
 %include "dolfin/Function.h"
 %include "dolfin/SpecialFunctions.h"
+
+// DOLFIN headers included from fem
+%include "dolfin/assemble.h"
+%include "dolfin/BoundaryCondition.h"
+%include "dolfin/Form.h"
+%include "dolfin/Assembler.h"
 
 // DOLFIN headers included from graph
 %include "dolfin/Graph.h"
@@ -86,6 +86,13 @@
 %include "dolfin/basic.h"
 %include "dolfin/Lagrange.h"
 %include "dolfin/Legendre.h"
+
+// DOLFIN headers included from quadrature
+%include "dolfin/Quadrature.h"
+%include "dolfin/GaussianQuadrature.h"
+%include "dolfin/GaussQuadrature.h"
+%include "dolfin/RadauQuadrature.h"
+%include "dolfin/LobattoQuadrature.h"
 
 // DOLFIN headers included from mesh
 %include "dolfin/Mesh.h"
@@ -119,9 +126,5 @@
 %include "dolfin/cGqMethod.h"
 %include "dolfin/dGqMethod.h"
 
-// DOLFIN headers included from quadrature
-%include "dolfin/Quadrature.h"
-%include "dolfin/GaussianQuadrature.h"
-%include "dolfin/GaussQuadrature.h"
-%include "dolfin/RadauQuadrature.h"
-%include "dolfin/LobattoQuadrature.h"
+// DOLFIN headers included from pde
+%include "dolfin/PDE.h"

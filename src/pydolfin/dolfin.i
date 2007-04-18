@@ -25,6 +25,7 @@ using namespace dolfin;
 %include "directors.i"
 
 // FIXME: what are these doing?
+namespace dolfin { class ublas_vector {}; }
 %include "cpointer.i"
 %include "std_string.i"
 %include "std_vector.i"
