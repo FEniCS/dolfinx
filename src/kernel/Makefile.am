@@ -11,5 +11,6 @@ SUBDIRS = common \
           mesh \
           nls \
           ode \
+          pde \
           parameter \
           quadrature
