@@ -1,8 +1,0 @@
-# Copyright (c) 2006 Anders Logg (logg@tti-c.org)
-# Licensed under the GNU GPL Version 2
-#
-# A fifth degree Lagrange finite element on a tetrahedron
-#
-# Compile this form with FFC: ffc P5tet.form
-
-element = FiniteElement("Lagrange", "tetrahedron", 5)

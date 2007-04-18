@@ -63,8 +63,8 @@ LTLIBRARIES = $(lib_LTLIBRARIES)
 libdolfin_io_la_LIBADD =
 am_libdolfin_io_la_OBJECTS = File.lo GenericFile.lo GiDFile.lo \
 	MatlabFile.lo MFile.lo MTXFile.lo OctaveFile.lo OpenDXFile.lo \
-	PythonFile.lo VTKFile.lo XMLBLASFormData.lo XMLFile.lo \
-	XMLFiniteElementSpec.lo XMLMesh.lo XMLMeshFunction.lo \
+	PythonFile.lo VTKFile.lo XMLBLASFormData.lo XMLDofMap.lo \
+	XMLFile.lo XMLFiniteElement.lo XMLMesh.lo XMLMeshFunction.lo \
 	XMLMatrix.lo XMLObject.lo XMLParameterList.lo XMLFunction.lo \
 	XMLVector.lo XMLGraph.lo
 libdolfin_io_la_OBJECTS = $(am_libdolfin_io_la_OBJECTS)
@@ -255,8 +255,9 @@ nobase_include_HEADERS = dolfin/dolfin_io.h \
                           dolfin/PythonFile.h \
                           dolfin/VTKFile.h \
                           dolfin/XMLBLASFormData.h \
+                          dolfin/XMLDofMap.h \
                           dolfin/XMLFile.h \
-                          dolfin/XMLFiniteElementSpec.h \
+                          dolfin/XMLFiniteElement.h \
                           dolfin/XMLMesh.h \
                           dolfin/XMLMeshFunction.h \
                           dolfin/XMLMatrix.h \
@@ -279,8 +280,9 @@ libdolfin_io_la_SOURCES = File.cpp \
                           PythonFile.cpp \
                           VTKFile.cpp \
                           XMLBLASFormData.cpp \
+                          XMLDofMap.cpp \
                           XMLFile.cpp \
-                          XMLFiniteElementSpec.cpp \
+                          XMLFiniteElement.cpp \
                           XMLMesh.cpp \
                           XMLMeshFunction.cpp \
                           XMLMatrix.cpp \
@@ -371,8 +373,9 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PythonFile.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/VTKFile.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/XMLBLASFormData.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/XMLDofMap.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/XMLFile.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/XMLFiniteElementSpec.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/XMLFiniteElement.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/XMLFunction.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/XMLGraph.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/XMLMatrix.Plo@am__quote@

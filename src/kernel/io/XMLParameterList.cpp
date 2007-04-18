@@ -61,7 +61,7 @@ void XMLParameterList::endElement(const xmlChar *name)
 //-----------------------------------------------------------------------------
 void XMLParameterList::open(std::string filename)
 {
-  cout << "Loading parameters from file \"" << filename << "\"." << endl;
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 bool XMLParameterList::close()

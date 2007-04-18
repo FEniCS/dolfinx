@@ -1,17 +1,29 @@
 // Copyright (C) 2006 Garth N. Wells.
 // Licensed under the GNU GPL Version 2.
 //
+// Modified by Anders Logg, 2007
+//
 // First added:  2006-02-21
-// Last changed: 
+// Last changed: 2007-04-17
 
+#include <dolfin/dolfin_log.h>
+#include <dolfin/Form.h>
 #include <dolfin/GenericPDE.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-GenericPDE::GenericPDE() : Parametrized()
+GenericPDE::GenericPDE(Form& a,
+                       Form& L,
+                       Mesh& mesh,
+                       Array<BoundaryCondition*> bcs)
+  : a(a), L(L), mesh(mesh), bcs(bcs)
 {
-  // Do nothing
+  // Check ranks of forms
+  if ( a.form().rank() != 2 )
+    dolfin_error1("Expected a bilinear form but rank is %d.", a.form().rank());
+  if ( L.form().rank() != 1 )
+    dolfin_error1("Expected a linear form but rank is %d.", L.form().rank());
 }
 //-----------------------------------------------------------------------------
 GenericPDE::~GenericPDE()

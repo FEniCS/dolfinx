@@ -1,10 +1,10 @@
-// Copyright (C) 2004-2006 Johan Hoffman, Johan Jansson and Anders Logg.
+// Copyright (C) 2004-2007 Johan Hoffman, Johan Jansson and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
-// Modified by Garth N. Wells 2005, 2006.
+// Modified by Garth N. Wells 2005-2007.
 //
 // First added:  2004
-// Last changed: 2006-12-12
+// Last changed: 2007-04-16
 
 #ifndef __PETSC_VECTOR_H
 #define __PETSC_VECTOR_H
@@ -21,7 +21,6 @@ namespace dolfin
 {
   
   class uBlasVector;
-  class PETScVectorElement;
 
   /// This class represents a vector of dimension N.
   /// It is a simple wrapper for a PETSc vector pointer (Vec).
@@ -61,15 +60,6 @@ namespace dolfin
     /// Return size of vector
     uint size() const;
 
-    /// Access element value
-    real get(const uint i) const;
-
-    /// Set element value
-    void set(const uint i, const real value);
-    
-    // Add value to element
-    void add(const uint i, const real value);
-
     /// Return PETSc Vec pointer
     Vec vec() const;
 
@@ -99,26 +89,20 @@ namespace dolfin
     /// Element-wise multiplication
     void mult(const real a);
 
+    /// Get block of values
+    void get(real* block, uint m, const uint* rows) const;
+
     /// Set block of values
-    void set(const real block[], const int pos[], const int n);
+    void set(const real* block, uint m, const uint* rows);
 
     /// Add block of values
-    void add(const real block[], const int pos[], const int n);
-
-    /// Get block of values from vector
-    void get(real block[], const int cols[], const int n) const;
+    void add(const real* block, uint m, const uint* rows);
 
     /// Apply changes to vector
     void apply();
 
     /// Set all entries to zero
     void zero();
-
-    /// Element assignment/access operator
-    PETScVectorElement operator() (const uint i);
-
-    /// Element access operator for a const PETScVector
-    real operator() (const uint i) const;
 
     /// Assignment of vector
     const PETScVector& operator= (const PETScVector& x);
@@ -162,7 +146,6 @@ namespace dolfin
 
     // Friends
     friend class PETScMatrix;
-    friend class PETScVectorElement;
 
     // Create Scatterer
     static VecScatter* createScatterer(PETScVector& x1, PETScVector& x2,
@@ -194,24 +177,6 @@ namespace dolfin
     // True if the pointer is a copy of someone else's data
     bool _copy;
 
-  };
-
-  /// Reference to an element of the vector
-  
-  class PETScVectorElement
-  {
-  public:
-    PETScVectorElement(const uint i, PETScVector& x);
-    PETScVectorElement(const PETScVectorElement& e);
-    operator real() const;
-    const PETScVectorElement& operator=(const PETScVectorElement& e);
-    const PETScVectorElement& operator=(const real a);
-    const PETScVectorElement& operator+=(const real a);
-    const PETScVectorElement& operator-=(const real a);
-    const PETScVectorElement& operator*=(const real a);
-  protected:
-    uint i;
-    PETScVector& x;
   };
 
 }

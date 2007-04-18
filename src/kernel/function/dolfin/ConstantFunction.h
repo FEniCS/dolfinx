@@ -1,8 +1,8 @@
-// Copyright (C) 2006 Anders Logg.
+// Copyright (C) 2006-2007 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-02-09
-// Last changed: 2006-12-12
+// Last changed: 2007-04-12
 
 #ifndef __CONSTANT_FUNCTION_H
 #define __CONSTANT_FUNCTION_H
@@ -11,65 +11,46 @@
 
 namespace dolfin
 {
-  /// This class implements the functionality for a function
-  /// with a constant value.
 
-  class ConstantFunction : public GenericFunction
+  /// This class implements the functionality for functions
+  /// that take a single constant value.
+
+  class ConstantFunction : public GenericFunction, public ufc::function
   {
   public:
 
-    /// Create function from given value
-    ConstantFunction(real value);
-
-    /// Copy constructor
-    ConstantFunction(const ConstantFunction& f);
+    /// Create constant function from given value
+    ConstantFunction(Mesh& mesh, real value);
 
     /// Destructor
     ~ConstantFunction();
 
-    /// Evaluate function at given point
-    real operator() (const Point& point, uint i);
+    /// Return the rank of the value space
+    uint rank() const;
 
-    /// Evaluate function at given vertex
-    real operator() (const Vertex& vertex, uint i);
+    /// Return the dimension of the value space for axis i
+    uint dim(uint i) const;
 
-    // Restrict to sub function or component (if possible)
-    void sub(uint i);
+    /// Interpolate function to vertices of mesh
+    void interpolate(real* values);
 
-    /// Compute interpolation of function onto local finite element space
-    void interpolate(real coefficients[], Cell& cell, AffineMap& map, FiniteElement& element);
+    /// Interpolate function to finite element space on cell
+    void interpolate(real* coefficients,
+                     const ufc::cell& cell,
+                     const ufc::finite_element& finite_element);
 
-    /// Return vector dimension of function
-    uint vectordim() const;
-
-    /// Calling this function generates an error (no vector associated)
-    Vector& vector();
-
-    /// Return mesh associated with function (if any)
-    Mesh& mesh();
-
-    /// Calling this function generates an error (no element associated)
-    FiniteElement& element();
-
-    /// Calling this function generates an error (no vector can be attached)
-    void attach(Vector& x, bool local);
-
-    /// Attach mesh to function
-    void attach(Mesh& mesh, bool local);
-
-    /// Calling this function generates an error (no element can be attached)
-    void attach(FiniteElement& element, bool local);
+    /// Evaluate function at given point in cell (UFC function interface)
+    void evaluate(real* values,
+                  const real* coordinates,
+                  const ufc::cell& cell) const;
 
   private:
     
     // Value of constant function
     real value;
 
-    // Pointer to mesh associated with function (null if none)
-    Mesh* _mesh;
-    
-    // True if mesh is local (not a reference to another mesh)
-    bool mesh_local;
+    // Size of value (number of entries in tensor value)
+    uint size;
 
   };
 

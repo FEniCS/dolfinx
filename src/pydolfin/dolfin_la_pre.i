@@ -12,4 +12,3 @@ namespace dolfin {
   class ublas_dense_matrix {};
   class ublas_sparse_matrix {};
 }
-

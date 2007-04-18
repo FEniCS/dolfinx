@@ -19,7 +19,10 @@ namespace dolfin
   class DofMaps;
 
   /// This class is a simple data structure that holds data used
-  /// during assembly of a given UFC form.
+  /// during assembly of a given UFC form. Data is created for each
+  /// primary argument, that is, v_j for j < r. In addition, nodal
+  /// basis expansion coefficients and a finite element are created
+  /// for each coefficient function.
 
   class UFC
   {
@@ -37,13 +40,13 @@ namespace dolfin
     /// Update current pair of cells for macro element
     void update(Cell& cell0, Cell& cell1);
 
-    // Number of arguments in form
-    unsigned int num_arguments;
-
-    // Array of finite elements for each argument
+    // Array of finite elements for primary arguments
     ufc::finite_element** finite_elements;
 
-    // Array of dof maps for each argument
+    // Array of finite elements for coefficients
+    ufc::finite_element** coefficient_elements;
+
+    // Array of dof maps for primary arguments
     ufc::dof_map** dof_maps;
 
     // Cell integral
@@ -77,16 +80,16 @@ namespace dolfin
     // Array of local dimensions for each argument
     uint* local_dimensions;
 
-    // Array of local dimensions of macro element for each argument
+    // Array of local dimensions of macro element for primary arguments
     uint* macro_local_dimensions;
 
-    // Array of global dimensions for each argument
+    // Array of global dimensions for primary arguments
     uint* global_dimensions;
     
-    // Array of mapped dofs for each argument
+    // Array of mapped dofs for primary arguments
     uint** dofs;
 
-    // Array of mapped dofs for each argument on macro element
+    // Array of mapped dofs of macro element for primary arguments
     uint** macro_dofs;
 
     // Array of coefficients

@@ -1,8 +1,0 @@
-# Copyright (c) 2006 Anders Logg (logg@tti-c.org)
-# Licensed under the GNU GPL Version 2
-#
-# A first degree Lagrange finite element on a triangle
-#
-# Compile this form with FFC: ffc VP1tri.form
-
-element = FiniteElement("Vector Lagrange", "triangle", 1)

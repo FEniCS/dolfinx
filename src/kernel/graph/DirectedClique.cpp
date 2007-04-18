@@ -4,6 +4,7 @@
 // First added:  2007-03-19
 // Last changed: 2007-03-21
 
+#include <dolfin/dolfin_log.h>
 #include <dolfin/GraphEditor.h>
 #include <dolfin/Graph.h>
 #include <dolfin/DirectedClique.h>

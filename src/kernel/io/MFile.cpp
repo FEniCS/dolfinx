@@ -12,7 +12,8 @@
 #include <dolfin/Mesh.h>
 #include <dolfin/Function.h>
 #include <dolfin/Sample.h>
-#include <dolfin/FiniteElement.h>
+#include <dolfin/Vertex.h>
+#include <dolfin/Cell.h>
 #include <dolfin/MFile.h>
 
 using namespace dolfin;
@@ -31,6 +32,9 @@ MFile::~MFile()
 //-----------------------------------------------------------------------------
 void MFile::operator<<(Vector& x)
 {
+#ifdef HAVE_PETSC_H
+  dolfin_error("Function output in Matlab/Octave format is broken. Need to access PETSc vector elements correctly.");
+#else
   // Open file
   FILE *fp = fopen(filename.c_str(), "a");
   
@@ -50,6 +54,7 @@ void MFile::operator<<(Vector& x)
 
   dolfin_info("Saved vector %s (%s) to file %s in Octave/MATLAB format.",
 	      x.name().c_str(), x.label().c_str(), filename.c_str());
+#endif
 }
 //-----------------------------------------------------------------------------
 void MFile::operator<<(Mesh& mesh)
@@ -91,15 +96,15 @@ void MFile::operator<<(Mesh& mesh)
     if ( mesh.type().cellType() == CellType::triangle )
     {
       if ( v.end() )
-	fprintf(fp,"%.15f %.15f]';\n", p.x(), p.y());
+        fprintf(fp,"%.15f %.15f]';\n", p.x(), p.y());
       else
-	fprintf(fp,"%.15f %.15f\n", p.x(), p.y() );
+        fprintf(fp,"%.15f %.15f\n", p.x(), p.y() );
     }
     else {
       if ( v.end() )
-	fprintf(fp,"%.15f %.15f %.15f]';\n", p.x(), p.y(), p.z());
+        fprintf(fp,"%.15f %.15f %.15f]';\n", p.x(), p.y(), p.z());
       else
-	fprintf(fp,"%.15f %.15f %.15f\n", p.x(), p.y(), p.z());
+        fprintf(fp,"%.15f %.15f %.15f\n", p.x(), p.y(), p.z());
     }
   }
   fprintf(fp,"\n");
@@ -112,8 +117,7 @@ void MFile::operator<<(Mesh& mesh)
   for (CellIterator c(mesh); !c.end();)
   {
     for (VertexIterator v(c); !v.end(); ++v)
-      fprintf(fp, "%u ", (v->index()) + 1 );
-    
+      fprintf(fp, "%u ", (v->index()) + 1 );    
     ++c;
     if ( c.end() )
       fprintf(fp, "]';\n");
@@ -146,6 +150,8 @@ void MFile::operator<<(Mesh& mesh)
 //-----------------------------------------------------------------------------
 void MFile::operator<<(Function& u)
 {
+  dolfin_error("Function output in Matlab/Octave format not implemented for new Function.");
+/*
   // Write mesh the first time
   if ( counter1 == 0 )
     *this << u.mesh();
@@ -194,6 +200,7 @@ void MFile::operator<<(Function& u)
 
   cout << "Saved function " << u.name() << " (" << u.label()
        << ") to file " << filename << " in Octave/Matlab format." << endl;
+*/
 }
 //-----------------------------------------------------------------------------
 void MFile::operator<<(Sample& sample)
@@ -227,6 +234,7 @@ void MFile::operator<<(Sample& sample)
   fprintf(fp, "tmp = [ ");
   for (unsigned int i = 0; i < sample.size(); i++)
     fprintf(fp, "%.15e ", sample.k(i));
+
   fprintf(fp, "];\n");
   fprintf(fp, "k = [k tmp'];\n");
   //fprintf(fp, "clear tmp;\n");
@@ -235,6 +243,7 @@ void MFile::operator<<(Sample& sample)
   fprintf(fp, "tmp = [ ");
   for (unsigned int i = 0; i < sample.size(); i++)
     fprintf(fp, "%.15e ", sample.r(i));
+
   fprintf(fp, "];\n");
   fprintf(fp, "r = [r tmp'];\n");
   fprintf(fp, "clear tmp;\n");

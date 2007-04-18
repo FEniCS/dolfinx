@@ -129,11 +129,15 @@ void PETScKrylovMatrix::disp(bool sparse, int precision) const
   // Since we don't really have the matrix, we create the matrix by
   // performing multiplication with unit vectors. Used only for debugging.
   
+  dolfin_warning("Display of PETScKrylovMatrix needs to be fixed.");
+
+/*
   uint M = size(0);
   uint N = size(1);
   PETScVector x(N), y(M);
   PETScMatrix A(M, N);
   
+
   x = 0.0;
   for (unsigned int j = 0; j < N; j++)
   {
@@ -143,12 +147,13 @@ void PETScKrylovMatrix::disp(bool sparse, int precision) const
     {
       const real value = y(i);
       if ( fabs(value) > DOLFIN_EPS )
-	A(i, j) = value;
+	      A(i, j) = value;
     }
     x(j) = 0.0;
   }
 
   A.disp(sparse, precision);
+*/
 }
 //-----------------------------------------------------------------------------
 LogStream& dolfin::operator<< (LogStream& stream, const PETScKrylovMatrix& A)

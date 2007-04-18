@@ -9,8 +9,9 @@ EXTRA_DIST = dolfin_io.h \
              OctaveFile.h \
              VTKFile.h \
              XMLBLASFormData.h \
+             XMLDofMap.h \
              XMLFile.h \
-             XMLFiniteElementSpec.h \
+             XMLFiniteElement.h \
              XMLMatrix.h \
              XMLMesh.h \
              XMLMeshFunction.h \

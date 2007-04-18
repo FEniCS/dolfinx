@@ -105,8 +105,8 @@ CXX = @CXX@
 CXXCPP = @CXXCPP@
 CXXDEPMODE = @CXXDEPMODE@
 
-# Temporary fix: don't include -Werr to get around problem with Numeric/arrayobject.h
-CXXFLAGS = @DOLFIN_DEFINITIONS@ -g -O2 -Wall -ansi
+# Need -fno-strict-aliasing to avoid "dereferencing type-punned pointer" warning
+CXXFLAGS = @DOLFIN_DEFINITIONS@ -g -O2 -fno-strict-aliasing -Wall -Werror -ansi
 CYGPATH_W = @CYGPATH_W@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
@@ -565,8 +565,10 @@ uninstall-am: uninstall-info-am uninstall-pkgpyexecLTLIBRARIES \
 
 
 # Temporary fix: add elasticity-updated to include path manually
+#dolfin_wrap.cpp : $(SWIG_SOURCES)
+#	$(SWIG) $(SWIG_PYTHON_OPT) -includeall -ignoremissing -nodefaultctor -nodefaultdtor -dirprot @KERNEL_INCLUDE@ @DOLFIN_DEFINITIONS@ -o $@ $<
 dolfin_wrap.cpp : $(SWIG_SOURCES)
-	$(SWIG) $(SWIG_PYTHON_OPT) -includeall -ignoremissing -nodefault -dirprot @KERNEL_INCLUDE@ @DOLFIN_DEFINITIONS@ -o $@ $<
+	$(SWIG) $(SWIG_PYTHON_OPT) -ignoremissing -nodefaultctor -nodefaultdtor -dirprot @KERNEL_INCLUDE@ @DOLFIN_DEFINITIONS@ -o $@ $<
 
 dolfin.py: $(SWIG_SOURCES)
 # Tell versions [3.59,3.63) of GNU make to not export all variables.

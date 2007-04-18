@@ -1,17 +1,16 @@
-// Copyright (C) 2005-2006 Garth N. Wells.
+// Copyright (C) 2005-2007 Garth N. Wells.
 // Licensed under the GNU GPL Version 2.
 //
 // Modified by Anders Logg 2005-2006.
 // Modified by Kristian Oelgaard 2006.
 //
 // First added:  2005-07-05
-// Last changed: 2006-10-16
+// Last changed: 2007-04-16
 
 #include <dolfin/Mesh.h>
 #include <dolfin/Vertex.h>
 #include <dolfin/Cell.h>
 #include <dolfin/Function.h>
-#include <dolfin/FiniteElement.h>
 #include <dolfin/Vector.h>
 #include <dolfin/VTKFile.h>
 
@@ -30,8 +29,6 @@ VTKFile::~VTKFile()
 //----------------------------------------------------------------------------
 void VTKFile::operator<<(Mesh& mesh)
 {
-  //dolfin_info("Saving mesh to VTK file.");
-  
   // Update vtu file name and clear file
   vtuNameUpdate(counter);
 
@@ -58,7 +55,9 @@ void VTKFile::operator<<(Mesh& mesh)
 //----------------------------------------------------------------------------
 void VTKFile::operator<<(Function& u)
 {
-  //dolfin_info("Writing Function to VTK file.");
+  // Can only save discrete functions
+  if ( u.type() != Function::discrete )
+    dolfin_error("Only discrete functions can be saved in VTK format.");
 
   // Update vtu file name and clear file
   vtuNameUpdate(counter);
@@ -85,6 +84,7 @@ void VTKFile::operator<<(Function& u)
   
   cout << "Saved function " << u.name() << " (" << u.label()
        << ") to file " << filename << " in VTK format." << endl;
+
 }
 //----------------------------------------------------------------------------
 void VTKFile::MeshWrite(Mesh& mesh) const
@@ -146,107 +146,61 @@ void VTKFile::ResultsWrite(Function& u) const
   // Open file
   FILE *fp = fopen(vtu_filename.c_str(), "a");
   
-  const FiniteElement& finite_element = u.element();
   Mesh& mesh = u.mesh();
 
-  // Determine whether data is cell based (constant on cells) or vertex based
-  bool cell_data = false;
-  if ( u.vectordim() == 1 )
+  const uint rank = u.rank();
+  if(rank > 1)
+    dolfin_error("Only scalar and vectors functions can be saved in VTK format.");
+
+  // Get number of components
+  const uint dim = u.dim(0);
+
+  // Allocate memory for function values at vertices
+  uint size = mesh.numVertices();
+  for (uint i = 0; i < u.rank(); i++)
+    size *= u.dim(i);
+  real* values = new real[size];
+
+  // Get function values at vertices
+  u.interpolate(values);
+
+  // Write function data at mesh vertices
+  if ( rank == 0 )
   {
-    if ( finite_element.spacedim() == 1 )
-      cell_data = true;
+    fprintf(fp, "<PointData  Scalars=\"U\"> \n");
+    fprintf(fp, "<DataArray  type=\"Float64\"  Name=\"U\"  format=\"ascii\">	 \n");
   }
   else
   {
-    if ( finite_element.spacedim() == finite_element.tensordim(0) )
-      cell_data = true;
+    fprintf(fp, "<PointData  Vectors=\"U\"> \n");
+    fprintf(fp, "<DataArray  type=\"Float64\"  Name=\"U\"  NumberOfComponents=\"3\" format=\"ascii\">	 \n");	
   }
-  
-  //Write cell data (for constant functions on elements)
-	if ( cell_data )
-  {
-    const uint m = finite_element.spacedim();
-    int* nodes = new int[m];
-    const Vector& x = u.vector();
 
-    if ( u.vectordim() == 1 )
-    {
-      fprintf(fp, "<CellData  Scalars=\"U\"> \n");
-      fprintf(fp, "<DataArray  type=\"Float64\"  Name=\"U\"  format=\"ascii\">	 \n");
-    }
-    else
-    {
-      fprintf(fp, "<CellData  Vectors=\"U\"> \n");
-      fprintf(fp, "<DataArray  type=\"Float64\"  Name=\"U\"  NumberOfComponents=\"3\" format=\"ascii\">	 \n");	
-    }
-    if ( u.vectordim() > 3 )
-      dolfin_warning("Cannot handle VTK file with number of components > 3. Writing first three components only");
-
-  	for (CellIterator cell(mesh); !cell.end(); ++cell)
-  	{    
-      finite_element.nodemap(nodes, *cell, mesh);
-    	if ( u.vectordim() == 1 ) 
-    	{
-        real e0 = x(nodes[0]);
-      	fprintf(fp," %e ", e0);
-    	}
-    	else if ( u.vectordim() == 2 ) 
-    	{
-        real e0 = x(nodes[0]); real e1 = x(nodes[1]);
-      	fprintf(fp," %e %e  0.0", e0, e1);
-    	}
-    	else  
-    	{
-        real e0 = x(nodes[0]); real e1 = x(nodes[1]); real e2 = x(nodes[2]);
-      	fprintf(fp," %e %e %e", e0, e1, e2);
-    	}
-    	fprintf(fp,"\n");
-  	}
-  	fprintf(fp, "</DataArray> \n");
-  	fprintf(fp, "</CellData> \n");
-  }
-  else   
-  //Write point data (at mesh vertexes)
-  {
-    if ( u.vectordim() == 1 )
-    {
-      fprintf(fp, "<PointData  Scalars=\"U\"> \n");
-      fprintf(fp, "<DataArray  type=\"Float64\"  Name=\"U\"  format=\"ascii\">	 \n");
-    }
-    else
-    {
-      fprintf(fp, "<PointData  Vectors=\"U\"> \n");
-      fprintf(fp, "<DataArray  type=\"Float64\"  Name=\"U\"  NumberOfComponents=\"3\" format=\"ascii\">	 \n");	
-    }
-
-    if ( u.vectordim() > 3 )
-      dolfin_warning("Cannot handle VTK file with number of components > 3. Writing first three components only");
+  if ( dim > 3 )
+    dolfin_warning("Cannot handle VTK file with number of components > 3. Writing first three components only");
 	
-    for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
-    {    
-      if ( u.vectordim() == 1 ) 
-      {
-        fprintf(fp," %e ",u(*vertex, 0));
-      }
-      else if ( u.vectordim() == 2 ) 
-      {
-        fprintf(fp," %e %e  0.0",u(*vertex, 0), u(*vertex, 1));
-      }
-      else  
-      {
-        fprintf(fp," %e %e  %e",u(*vertex, 0), u(*vertex, 1), u(*vertex, 2));
-      }
-      fprintf(fp,"\n");
-    }	 
-    fprintf(fp, "</DataArray> \n");
-    fprintf(fp, "</PointData> \n");
-  }
+  for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
+  {    
+    if ( rank == 0 ) 
+      fprintf(fp," %e ", values[ vertex->index() ] );
+    else if ( u.dim(0) == 2 ) 
+      fprintf(fp," %e %e  0.0", values[ dim*vertex->index() ], values[ dim*vertex->index()+1 ] );
+    else  
+      fprintf(fp," %e %e  %e", values[ dim*vertex->index() ], values[ dim*vertex->index()+1 ], 
+                               values[ dim*vertex->index()+2 ] );
+
+    fprintf(fp,"\n");
+  }	 
+  fprintf(fp, "</DataArray> \n");
+  fprintf(fp, "</PointData> \n");
   
   // Close file
   fclose(fp);
+
+  delete [] values;
 }
 //----------------------------------------------------------------------------
-void VTKFile::pvdFileWrite(int num)
+void VTKFile::pvdFileWrite(uint num)
 {
   std::fstream pvdFile;
 

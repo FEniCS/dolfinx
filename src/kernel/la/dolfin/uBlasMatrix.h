@@ -1,10 +1,10 @@
-// Copyright (C) 2006 Garth N. Wells
+// Copyright (C) 2006-2007 Garth N. Wells
 // Licensed under the GNU GPL Version 2.
 //
 // Modified by Anders Logg 2006.
 //
 // First added:  2006-07-05
-// Last changed: 2007-03-07
+// Last changed: 2007-04-18
 
 #ifndef __UBLAS_MATRIX_H
 #define __UBLAS_MATRIX_H
@@ -27,23 +27,17 @@ namespace dolfin
   /// This class represents a matrix (dense or sparse) of dimension M x N.
   /// It is a wrapper for a Boost uBLAS matrix of type Mat.
   ///
-  /// The interface is intended to provide uniformily with respect to other
+  /// The interface is intended to provide uniformity with respect to other
   /// matrix data types. For advanced usage, refer to the documentation for 
   /// uBLAS which can be found at 
   /// http://www.boost.org/libs/numeric/ublas/doc/index.htm.
 
   /// Developer note: specialised member functions must be inlined to avoid link errors.
-  template< class Mat > 
-  class uBlasMatrix; 
-
-  template< class Mat > 
-  LogStream& operator<<  (LogStream&, const uBlasMatrix<Mat>&);
-
 
   template< class Mat >
   class uBlasMatrix : public Variable, 
                       public GenericMatrix,
-		                  public Mat
+                      public Mat
   {
   public:
     
@@ -51,7 +45,7 @@ namespace dolfin
     uBlasMatrix();
     
     /// Constructor
-    uBlasMatrix(const uint M, const uint N);
+    uBlasMatrix(uint M, uint N);
 
    /// Constructor from a uBlas matrix_expression
     template <class E>
@@ -69,16 +63,13 @@ namespace dolfin
     } 
 
     /// Return number of rows (dim = 0) or columns (dim = 1) 
-    uint size(const uint dim) const;
-
-    /// Access element value
-    real get(const uint i, const uint j) const;
-
-    /// Set element value
-    void set(const uint i, const uint j, const real value);
+    uint size(uint dim) const;
 
     /// Get non-zero values of row i
-    void getRow(const uint i, int& ncols, Array<int>& columns, Array<real>& values) const;
+    void getRow(uint i, int& ncols, Array<int>& columns, Array<real>& values) const;
+
+    /// Get block of values
+    void get(real* block, uint m, const uint* rows, uint n, const uint* cols) const;
 
     /// Lump matrix into vector m
     void lump(uBlasVector& m) const;
@@ -96,41 +87,36 @@ namespace dolfin
     void zero();
 
     /// Set given rows to identity matrix
-    void ident(const int rows[], const  int m);
+    void ident(const uint rows[], uint m);
 
     /// Compute product y = Ax
     void mult(const uBlasVector& x, uBlasVector& y) const;
 
     /// Display matrix
-    void disp(const uint precision = 2) const;
+    void disp(uint precision = 2) const;
 
     /// The below functions have specialisations for particular matrix types.
     /// In order to link correctly, they must be made inline functions.
 
     /// Initialize M x N matrix
-    void init(const uint M, const uint N);
+    void init(uint M, uint N, bool reset = true);
 
     /// Initialize M x N matrix with given maximum number of nonzeros in each row
-    void init(const uint M, const uint N, const uint nzmax);
+    void init(uint M, uint N, uint nzmax);
 
     /// Initialize M x N matrix with given number of nonzeros per row
-    void init(const uint M, const uint N, const uint nz[]);
+    void init(uint M, uint N, const uint nz[]);
 
     /// Initialize a matrix from the sparsity pattern
-    void init(const SparsityPattern& sparsity_pattern);
+    void init(const SparsityPattern& sparsity_pattern, bool reset = true);
 
-    /// Set block of values. The function apply() must be called to commit changes.
-    void set(const real block[], const int rows[], const int m, 
-                            const int cols[], const int n);
+    /// Set block of values
+    void set(const real* block, uint m, const uint* rows, uint n, const uint* cols);
 
-    /// Add block of values. The function apply() must be called to commit changes.
-    void add(const real block[], const int rows[], const int m, 
-                            const int cols[], const int n);
+    /// Add block of values
+    void add(const real* block, uint m, const uint* rows, uint n, const uint* cols);
 
-    /// Return average number of non-zeros per row
-    uint nzmax() const;
-
-    friend LogStream& operator<< <Mat> (LogStream&, const uBlasMatrix<Mat>&);
+    //friend LogStream& operator<< <Mat> (LogStream&, const uBlasMatrix<Mat>&);
 
   private:
 
@@ -152,9 +138,9 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <class Mat> 
-  uBlasMatrix<Mat>::uBlasMatrix(const uint M, const uint N) : assembled(true)
+  uBlasMatrix<Mat>::uBlasMatrix(uint M, uint N) : Mat(M,N), assembled(true)
   { 
-    init(M,N); 
+    // Do nothing 
   }
   //---------------------------------------------------------------------------
   template <class Mat> 
@@ -164,26 +150,22 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <class Mat> 
-  uint uBlasMatrix<Mat>::size(const uint dim) const
+  void uBlasMatrix< Mat >::init(uint M, uint N, bool reset)
+  {
+    // Resize matrix
+    if( size(0) != M || size(1) != N )
+      this->resize(M, N, false);  
+  }
+  //---------------------------------------------------------------------------
+  template <class Mat> 
+  uint uBlasMatrix<Mat>::size(uint dim) const
   {
     dolfin_assert( dim < 2 );
     return (dim == 0 ? this->size1() : this->size2());  
   }
   //---------------------------------------------------------------------------
-  template <class Mat>  
-  inline real uBlasMatrix<Mat>::get(const uint i, const uint j) const
-  { 
-    return (*this)(i, j);
-  }
-  //---------------------------------------------------------------------------
-  template <class Mat>  
-  inline void uBlasMatrix<Mat>::set(const uint i, const uint j, const real value) 
-  { 
-    (*this)(i, j) = value;
-  }
-  //---------------------------------------------------------------------------
   template < class Mat >  
-  void uBlasMatrix< Mat >::getRow(const uint i, int& ncols, Array<int>& columns, 
+  void uBlasMatrix< Mat >::getRow(uint i, int& ncols, Array<int>& columns, 
 				  Array<real>& values) const
   {
     if( !assembled )
@@ -205,6 +187,19 @@ namespace dolfin
     ncols = columns.size();
   }
   //-----------------------------------------------------------------------------
+  template <class Mat>
+  void uBlasMatrix<Mat>::get(real* block,
+                                    uint m, const uint* rows,
+                                    uint n, const uint* cols) const
+  {
+    if( !assembled )
+      dolfin_error("Matrix has not been assembled. Did you forget to call A.apply()?"); 
+
+    for(uint i = 0; i < m; ++i)
+      for(uint j = 0; j < n; ++j)
+        block[i*n + j] = (*this)(rows[i], cols[j]);
+  }
+  //---------------------------------------------------------------------------
   template <class Mat>  
   void uBlasMatrix<Mat>::lump(uBlasVector& m) const
   {
@@ -244,6 +239,7 @@ namespace dolfin
     if( !assembled )
     {
       // Assign temporary assembly matrix to the matrix
+      dolfin_assert(Assembly_matrix.size1() == size(0) && Assembly_matrix.size2() == size(1));
       this->assign(Assembly_matrix);
       assembled = true;
 
@@ -266,13 +262,13 @@ namespace dolfin
   }
   //-----------------------------------------------------------------------------
   template <class Mat>  
-  void uBlasMatrix<Mat>::ident(const int rows[], const int m) 
+  void uBlasMatrix<Mat>::ident(const uint rows[], uint m) 
   {
     if( !assembled )
       dolfin_error("Matrix has not been assembled. Did you forget to call A.apply()?"); 
 
     const uint n = this->size(1);
-    for(int i = 0; i < m; ++i)
+    for(uint i = 0; i < m; ++i)
       ublas::row(*this, rows[i]) = ublas::unit_vector<double> (n, rows[i]);
   }
   //---------------------------------------------------------------------------
@@ -286,7 +282,7 @@ namespace dolfin
   }
   //-----------------------------------------------------------------------------
   template <class Mat>  
-  void uBlasMatrix<Mat>::disp(const uint precision) const
+  void uBlasMatrix<Mat>::disp(uint precision) const
   {
     typename Mat::const_iterator1 it1;  // Iterator over rows
     typename Mat::const_iterator2 it2;  // Iterator over entries
@@ -309,34 +305,13 @@ namespace dolfin
   // Specialised member functions (must be inlined to avoid link errors)
   //-----------------------------------------------------------------------------
   template <> 
-  inline void uBlasMatrix< ublas_dense_matrix >::init(const uint M, const uint N)
-  {
-    // Resize matrix
-    if( size(0) != M || size(1) != N )
-      this->resize(M, N, false);  
-  }
-  //---------------------------------------------------------------------------
-  template <class Mat> 
-  inline void uBlasMatrix<Mat>::init(const uint M, const uint N)
-  {
-    // Resize matrix
-    if( size(0) != M || size(1) != N )
-      this->resize(M, N, false);  
-
-    // Resize assembly matrix
-    if(Assembly_matrix.size1() != M && Assembly_matrix.size2() != N )
-      Assembly_matrix.resize(M, N, false);
-  }
-  //---------------------------------------------------------------------------
-  template <> 
-  inline void uBlasMatrix<ublas_dense_matrix>::init(const uint M, const uint N, 
-                                                    const uint nzmax)
+  inline void uBlasMatrix<ublas_dense_matrix>::init(uint M, uint N, uint nzmax)
   {
     init(M, N);
   }
   //---------------------------------------------------------------------------
   template <class Mat> 
-  inline void uBlasMatrix<Mat>::init(const uint M, const uint N, const uint nzmax)
+  inline void uBlasMatrix<Mat>::init(uint M, uint N, uint nzmax)
   {
     init(M, N);
 
@@ -346,30 +321,32 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <> 
-  inline void uBlasMatrix<ublas_dense_matrix>::init(const uint M, const uint N, 
+  inline void uBlasMatrix<ublas_dense_matrix>::init(uint M, uint N, 
                                                     const uint nz[])
   {
     init(M, N);
   }
   //---------------------------------------------------------------------------
   template <class Mat> 
-  inline void uBlasMatrix<Mat>::init(const uint M, const uint N, const uint nz[])
+  inline void uBlasMatrix<Mat>::init(uint M, uint N, const uint nz[])
   {
     //FIXME: allocate storage. Could also use sparsity pattern to improve assembly.
     init(M, N);
   }
   //---------------------------------------------------------------------------
   template <> 
-  inline void uBlasMatrix<ublas_dense_matrix>::init(const SparsityPattern& sparsity_pattern)
+  inline void uBlasMatrix<ublas_dense_matrix>::init(const SparsityPattern& sparsity_pattern,
+                                                    bool reset)
   {
     init(sparsity_pattern.size(0), sparsity_pattern.size(1));
   }
   //---------------------------------------------------------------------------
   template <class Mat> 
-  inline void uBlasMatrix<Mat>::init(const SparsityPattern& sparsity_pattern)
+  inline void uBlasMatrix<Mat>::init(const SparsityPattern& sparsity_pattern, 
+                                     bool reset)
   {
     //FIXME: Initialising in a really dumb way. Don't know yet how to initialise
-    //       compressed layout
+    //       compressed layout efficiently
     init(sparsity_pattern.size(0), sparsity_pattern.size(1));
 
     // Reserve space for non-zeroes
@@ -385,65 +362,66 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <>  
-  inline void uBlasMatrix<ublas_dense_matrix>::set(const real block[], 
-                 const int rows[], const int m, const int cols[], const int n)
+  inline void uBlasMatrix<ublas_dense_matrix>::set(const real* block,
+                                                   uint m, const uint* rows,
+                                                   uint n, const uint* cols)
   {
-   for (int i = 0; i < m; ++i)
-      for (int j = 0; j < n; ++j)
+    for (uint i = 0; i < m; i++)
+      for (uint j = 0; j < n; j++)
         (*this)(rows[i] , cols[j]) = block[i*n + j];
   }
   //---------------------------------------------------------------------------
-  template <>  
-  inline void uBlasMatrix<ublas_dense_matrix>::add(const real block[], 
-                 const int rows[], const int m, const int cols[], const int n)
+  template <class Mat>
+  inline void uBlasMatrix<Mat>::set(const real* block,
+                                    uint m, const uint* rows,
+                                    uint n, const uint* cols)
   {
-    for (int i = 0; i < m; ++i)
-      for (int j = 0; j < n; ++j)
+    if ( assembled )
+    {
+      // Resize assembly matrix
+      if(Assembly_matrix.size1() != size(0) && Assembly_matrix.size2() != size(1))
+        Assembly_matrix.resize(size(0), size(1), false);
+
+      Assembly_matrix.assign(*this);
+      assembled = false; 
+    }
+    for (uint i = 0; i < m; i++)
+      for (uint j = 0; j < n; j++)
+        Assembly_matrix(rows[i] , cols[j]) = block[i*n + j];
+  }
+  //---------------------------------------------------------------------------
+  template <>
+  inline void uBlasMatrix<ublas_dense_matrix>::add(const real* block,
+                                                   uint m, const uint* rows,
+                                                   uint n, const uint* cols)
+  {
+    for (uint i = 0; i < m; i++)
+      for (uint j = 0; j < n; j++)
         (*this)(rows[i] , cols[j]) += block[i*n + j];
   }
   //---------------------------------------------------------------------------
   template <class Mat>  
-  inline void uBlasMatrix<Mat>::add(const real block[], const int rows[], 
-                                    const int m, const int cols[], const int n)
+  inline void uBlasMatrix<Mat>::add(const real* block,
+                                    uint m, const uint* rows,
+                                    uint n, const uint* cols)
   {
-    if( assembled )
+    if ( assembled )
     {
+      // Resize assembly matrix
+      if(Assembly_matrix.size1() != size(0) && Assembly_matrix.size2() != size(1))
+        Assembly_matrix.resize(size(0), size(1), false);
+
       Assembly_matrix.assign(*this);
       assembled = false; 
     }
-    for (int i = 0; i < m; ++i)
-      for (int j = 0; j < n; ++j)
+
+    for (uint i = 0; i < m; i++)
+      for (uint j = 0; j < n; j++)
         Assembly_matrix(rows[i] , cols[j]) += block[i*n + j];
   }
   //---------------------------------------------------------------------------
   template <class Mat>  
-  inline void uBlasMatrix<Mat>::set(const real block[], const int rows[], 
-                                    const int m, const int cols[], const int n)
-  {
-    if( assembled )
-    {
-      Assembly_matrix.assign(*this);
-      assembled = false; 
-    }
-    for (int i = 0; i < m; ++i)
-      for (int j = 0; j < n; ++j)
-        Assembly_matrix(rows[i] , cols[j]) = block[i*n + j];
-  }
-  //---------------------------------------------------------------------------
-  template <>  
-  inline uint uBlasMatrix<ublas_dense_matrix>::nzmax() const 
-  { 
-    return 0; 
-  }
-  //---------------------------------------------------------------------------
-  template <class Mat>  
-  inline uint uBlasMatrix<Mat>::nzmax() const 
-  { 
-    return this->nnz()/size(0); 
-  }
-  //---------------------------------------------------------------------------
-  template <class Mat>  
-  inline LogStream& operator<< (LogStream& stream, const uBlasMatrix< Mat >& A)
+  inline LogStream& operator<< (LogStream& stream, const uBlasMatrix<Mat>& A)
   {
     // Check if matrix has been defined
     if ( A.size(0) == 0 || A.size(1) == 0 )

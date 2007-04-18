@@ -1,8 +1,8 @@
-// Copyright (C) 2006 Anders Logg.
+// Copyright (C) 2006-2007 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-05-12
-// Last changed: 2006-06-21
+// Last changed: 2007-04-12
 
 #include <dolfin/MeshEntityIterator.h>
 
@@ -13,7 +13,7 @@ dolfin::LogStream& dolfin::operator<< (LogStream& stream,
 				       const MeshEntityIterator& it)
 {
   stream << "[ Mesh entity iterator at position "
-	 << it.pos
+	 << it._pos
 	 << " stepping from 0 to "
 	 << it.pos_end - 1
 	 << " ]";

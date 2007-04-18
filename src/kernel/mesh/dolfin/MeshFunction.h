@@ -4,7 +4,7 @@
 // Modified by Johan Hoffman 2007.
 //
 // First added:  2006-05-22
-// Last changed: 2007-01-21
+// Last changed: 2007-04-10
 
 #ifndef __MESH_FUNCTION_H
 #define __MESH_FUNCTION_H
@@ -31,6 +31,12 @@ namespace dolfin
 
     /// Create empty mesh function on given mesh
     MeshFunction(Mesh& mesh) : _values(0), _mesh(&mesh), _dim(0), _size(0) {}
+
+    /// Create mesh function on given mesh of given dimension
+    MeshFunction(Mesh& mesh, uint dim) : _values(0), _mesh(&mesh), _dim(0), _size(0)
+    {
+      init(dim);
+    }
 
     /// Destructor
     ~MeshFunction()
@@ -76,6 +82,7 @@ namespace dolfin
     {
       if ( !_mesh )
         dolfin_error("Mesh has not been specified, unable to initialize mesh function.");
+      _mesh->init(dim);
       init(*_mesh, dim, _mesh->size(dim));
     }
 
@@ -140,6 +147,22 @@ namespace dolfin
       _values[index] = value;
     }
     
+    /// Display mesh function data
+    void disp() const
+    {
+      cout << "Mesh function data" << endl;
+      cout << "------------------" << endl;
+      dolfin_begin();
+      cout << "Topological dimension: " << _dim << endl;
+      cout << "Number of values:      " << _size << endl;
+      cout << endl;
+      for (uint i = 0; i < _size; i++)
+      {
+        cout << "(" << _dim << ", " << i << "): " << _values[i] << endl;
+      }
+      dolfin_end();
+    }
+
   private:
 
     /// Values at the set of mesh entities

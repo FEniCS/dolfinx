@@ -1,443 +1,186 @@
-// Copyright (C) 2005-2007 Anders Logg.
+// Copyright (C) 2007 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
-// Modified by Garth N. Wells, 2006.
-//
-// First added:  2005-11-26
-// Last changed: 2007-01-29
+// First added:  2007-04-02
+// Last changed: 2007-04-13
 
 #include <dolfin/dolfin_log.h>
-#include <dolfin/Point.h>
+#include <dolfin/Mesh.h>
+#include <dolfin/Form.h>
+#include <dolfin/DofMap.h>
 #include <dolfin/Vertex.h>
 #include <dolfin/Cell.h>
-#include <dolfin/FEM.h>
-#include <dolfin/Mesh.h>
-#include <dolfin/Vector.h>
-#include <dolfin/AffineMap.h>
-#include <dolfin/FiniteElement.h>
-#include <dolfin/Function.h>
+#include <dolfin/UFCMesh.h>
+#include <dolfin/UFCCell.h>
+#include <dolfin/ElementLibrary.h>
 #include <dolfin/DiscreteFunction.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-DiscreteFunction::DiscreteFunction(Vector& x)
-  : GenericFunction(), _x(&x), _mesh(0), _element(0), _idetector(0),
-    _vectordim(1), component(0), mixed_offset(0), component_offset(0),
-    vector_local(false), mesh_local(false), element_local(false)
+DiscreteFunction::DiscreteFunction(Mesh& mesh, Vector& x, const Form& form, uint i)
+  : GenericFunction(mesh), x(x), finite_element(0), dof_map(0), dofs(0),
+    local_mesh(0), local_vector(0)
 {
-  // Mesh and element need to be specified later or are automatically
-  // chosen during assembly.
-}
-//-----------------------------------------------------------------------------
-DiscreteFunction::DiscreteFunction(Vector& x, Mesh& mesh)
-  : GenericFunction(), _x(&x), _mesh(&mesh), _element(0), _idetector(0),
-    _vectordim(1), component(0), mixed_offset(0), component_offset(0),
-    vector_local(false), mesh_local(false), element_local(false)
-{
-  // Element needs to be specified later or are automatically
-  // chosen during assembly.
-}
-//-----------------------------------------------------------------------------
-DiscreteFunction::DiscreteFunction(Vector& x, Mesh& mesh, FiniteElement& element)
-  : GenericFunction(), _x(&x), _mesh(&mesh), _element(&element), _idetector(0),
-    _vectordim(1), component(0), mixed_offset(0), component_offset(0),
-    vector_local(false), mesh_local(false), element_local(false)
-{
-  // Update vector dimension from element
-  updateVectorDimension();
-  //constructBasis();
-}
-//-----------------------------------------------------------------------------
-DiscreteFunction::DiscreteFunction(Mesh& mesh, FiniteElement& element)
-  : GenericFunction(), _x(0), _mesh(&mesh), _element(&element), _idetector(0),
-    _vectordim(1), component(0), mixed_offset(0), component_offset(0),
-    vector_local(false), mesh_local(false), element_local(false)
-{
-  // Update vector dimension from element
-  updateVectorDimension();
-  //constructBasis();
+  // Check argument
+  const uint num_arguments = form.form().rank() + form.form().num_coefficients();
+  if ( i >= num_arguments )
+  {
+    dolfin_error2("Illegal function index %d. Form only has %d arguments.",
+                  i, num_arguments);
+  }
 
-  // Allocate local storage
-  uint size = FEM::size(mesh, element);
-  _x = new Vector(size);
-  vector_local = true;
+  // Create finite element
+  finite_element = form.form().create_finite_element(i);
+
+  // Create dof map
+  ufc_dof_map = form.form().create_dof_map(i);
+  dof_map = new DofMap(*ufc_dof_map, mesh);
+
+  // Initialize vector
+  if ( x.size() != dof_map->global_dimension() )
+    x.init(dof_map->global_dimension());
+
+  // Initialize local array for mapping of dofs
+  dofs = new uint[dof_map->local_dimension()];
+  for (uint i = 0; i < dof_map->local_dimension(); i++)
+    dofs[i] = 0;
 }
 //-----------------------------------------------------------------------------
-DiscreteFunction::DiscreteFunction(const DiscreteFunction& f)
-  : GenericFunction(), _x(0), _mesh(f._mesh), _element(f._element),
-    _idetector(0), _vectordim(f._vectordim), component(f.component),
-    mixed_offset(f.mixed_offset), component_offset(f.component_offset),
-    vector_local(false), mesh_local(false), element_local(false)
+DiscreteFunction::DiscreteFunction(Mesh& mesh, Vector& x,
+                                   std::string finite_element_signature,
+                                   std::string dof_map_signature)
+  : GenericFunction(mesh), x(x), finite_element(0), dof_map(0), dofs(0),
+    local_mesh(0), local_vector(0)
 {
-  // Create a new vector and copy the values
-  dolfin_assert(f._x);
-  _x = new Vector();
-  *_x =* f._x;
-  vector_local = true;
+  // Create finite element
+  finite_element = ElementLibrary::create_finite_element(finite_element_signature);
+  if ( !finite_element )
+  {
+    dolfin_error1("Unable to find finite element in library: \"%s\".",
+                  finite_element_signature.c_str());
+  }
+
+  // Create dof map
+  ufc_dof_map = ElementLibrary::create_dof_map(dof_map_signature);
+  if ( !ufc_dof_map )
+  {
+    dolfin_error1("Unable to find dof map in library: \"%s\".",
+                  dof_map_signature.c_str());
+  }
+  dof_map = new DofMap(*ufc_dof_map, mesh);
+
+  // Initialize vector
+  if ( x.size() != dof_map->global_dimension() )
+    x.init(dof_map->global_dimension());
+
+  // Initialize local array for mapping of dofs
+  dofs = new uint[dof_map->local_dimension()];
+  for (uint i = 0; i < dof_map->local_dimension(); i++)
+    dofs[i] = 0;
+
+  // Assume responsibility for data
+  local_mesh = &mesh;
+  local_vector = &x;
 }
 //-----------------------------------------------------------------------------
 DiscreteFunction::~DiscreteFunction()
 {
-  // Delete vector if local
-  if ( vector_local )
-    delete _x;
+  if ( finite_element )
+    delete finite_element;
+      
+  if ( dof_map )
+    delete dof_map;
 
-  // Delete mesh if local
-  if ( mesh_local )
-    delete _mesh;
+  if ( ufc_dof_map )
+    delete ufc_dof_map;
 
-  // Delete element if local
-  if ( element_local )
-    delete _element;
+  if ( dofs )
+    delete [] dofs;
+
+  if ( local_mesh )
+    delete local_mesh;
+
+  if ( local_vector )
+    delete local_vector;
 }
 //-----------------------------------------------------------------------------
-real DiscreteFunction::operator()(const Point& p, uint i)
+dolfin::uint DiscreteFunction::rank() const
 {
-//   cout << "DiscreteFunction evaluation" << endl;
-
-  // Note, this is a very expensive operation compared to evaluating at
-  // vertices
-
-  if(!_idetector)
-  {
-    constructBasis();
-  }
-
-  if(have_basis)
-  {
-    dolfin_assert(_x && _mesh && _element);
-
-    // FIXME: create const versions of IntersectionDetector function
-    Point pprobe = p;
-
-    // Find cell(s) intersecting p
-    Array<uint> cells;
-    _idetector->overlap(pprobe, cells);
-
-    // If there are more than one cell, compute the average value of
-    // the cells
-
-//     if(cells.size() > 1)
-//       cout << "cells.size(): " << cells.size() << endl;
-
-    dolfin_assert(cells.size() > 0);
-
-    real sum = 0.0;
-    for(uint k = 0; k < cells.size(); k++)
-    {
-      Cell cell(*_mesh, cells[k]);
-      
-      // Initialize local data (if not already initialized correctly)
-      local.init(*_element);
-      
-      // Compute mapping to global degrees of freedom
-      _element->nodemap(local.dofs, cell, *_mesh);
-      
-      // Compute positions in global vector by adding offsets
-      for (uint j = 0; j < _element->spacedim(); j++)
-	local.dofs[j] = local.dofs[j] + mixed_offset + component_offset;
-      
-      // Get values
-      _x->get(local.coefficients, local.dofs, _element->spacedim());
-      
-      // Compute map
-      NewAffineMap map;
-      map.update(cell);
-
-      // Compute finite element sum
-      real cellsum = 0.0;
-      for(uint j = 0; j < _element->spacedim(); j++)
-      {
-	cellsum += local.coefficients[j] *
-	  basis.evalPhysical(*(basis.functions[j]), pprobe, map, i);
-      }
-      sum += cellsum;
-    }
-
-    sum /= cells.size();
-
-    return sum;
-  }
-  else
-  {
-    dolfin_error("Discrete functions cannot be evaluated at arbitrary points.");
-    return 0.0;
-  }
+  dolfin_assert(finite_element);
+  return finite_element->value_rank();
 }
 //-----------------------------------------------------------------------------
-real DiscreteFunction::operator() (const Vertex& vertex, uint i)
+dolfin::uint DiscreteFunction::dim(uint i) const
 {
-  dolfin_assert(_x && _mesh && _element);
-
-  // This is a special hack for Lagrange elements, need to compute
-  // the L2 projection in general
-
-  // Initialize local data (if not already initialized correctly)
-  local.init(*_element);
-
-  // Get vertex nodes for all components
-  _element->vertexeval(local.vertex_nodes, vertex.index(), *_mesh);
-
-  // Pick value
-  return (*_x)(mixed_offset + local.vertex_nodes[component + i]);
+  dolfin_assert(finite_element);
+  return finite_element->value_dimension(i);
 }
 //-----------------------------------------------------------------------------
-void DiscreteFunction::sub(uint i)
+void DiscreteFunction::interpolate(real* values)
 {
-  // Check that we have an element
-  if ( !_element )
-    dolfin_error("Unable to pick sub function or component of function since no element has been attached.");
+  dolfin_assert(values);
+  dolfin_assert(finite_element);
+  dolfin_assert(dof_map);
+  
+  // Compute size of value (number of entries in tensor value)
+  uint size = 1;
+  for (uint i = 0; i < finite_element->value_rank(); i++)
+    size *= finite_element->value_dimension(i);
 
-  // Check that we have a mesh
-  if ( !_mesh )
-    dolfin_error("Unable to pick sub function or component of function since no mesh has been attached.");
+  // Local data for interpolation on each cell
+  CellIterator cell(mesh);
+  UFCCell ufc_cell(*cell);
+  const uint num_cell_vertices = mesh.type().numVertices(mesh.topology().dim());
+  real* vertex_values = new real[size*num_cell_vertices];
+  real* dof_values = new real[finite_element->space_dimension()];
 
-  // Check if function is mixed
-  if ( _element->elementdim() > 1 )
+  // Interpolate vertex values on each cell and pick the last value
+  // if two or more cells disagree on the vertex values
+  for (; !cell.end(); ++cell)
   {
-    // Check the dimension
-    if ( i >= _element->elementdim() )
-      dolfin_error2("Illegal sub function index %d for mixed function with %d sub functions.",
-		    i, _element->elementdim());
+    // Update to current cell
+    ufc_cell.update(*cell);
 
-    // Compute offset for mixed sub function
-    mixed_offset = 0;
-    for (uint j = 0; j < i; j++)
-      mixed_offset += FEM::size(*_mesh, (*_element)[j]);
+    // Tabulate dofs
+    dof_map->tabulate_dofs(dofs, ufc_cell);
     
-    // Pick sub element and update vector dimension
-    _element = &((*_element)[i]);
-    updateVectorDimension();
-    //constructBasis();
+    // Pick values from global vector
+    x.get(dof_values, dof_map->local_dimension(), dofs);
 
+    // Interpolate values at the vertices
+    finite_element->interpolate_vertex_values(vertex_values, dof_values, ufc_cell);
 
-    // Make sure component and component offset are zero
-    component = 0;
-    component_offset = 0;
+    // Copy values to array of vertex values
+    for (VertexIterator vertex(cell); !vertex.end(); ++vertex)
+      for (uint i = 0; i < size; i++)
+        values[i*mesh.numVertices() + vertex->index()] = vertex_values[i*size + vertex.pos()];
   }
-  else
-  {
-    // Check if function is vector-valued
-    if ( _vectordim == 1 )
-      dolfin_error("Cannot pick component of scalar function.");
-    
-    // Check the dimension
-    if ( i >= _vectordim )
-      dolfin_error2("Illegal component index %d for function with %d components.",
-		    i, _vectordim);
-    
-    // Compute offset for component
-    component_offset = FEM::size(*_mesh, *_element) / _vectordim;    
 
-    // Save the component and make function scalar
-    component = i;
-    _vectordim = 1;
-  }
+  // Delete local data
+  delete [] vertex_values;
+  delete [] dof_values;
 }
 //-----------------------------------------------------------------------------
-void DiscreteFunction::copy(const DiscreteFunction& f)
+void DiscreteFunction::interpolate(real* coefficients,
+                                   const ufc::cell& cell,
+                                   const ufc::finite_element& finite_element)
 {
-  dolfin_assert(f._x);
+  dolfin_assert(coefficients);
+  dolfin_assert(this->finite_element);
+  dolfin_assert(this->dof_map);
+  dolfin_assert(this->dofs);
 
-  // Initialize local data if not already done
-  if ( !vector_local )
-  {
-    _x = new Vector();
-    vector_local = true;
-  }
+  // FIXME: Better test here, compare against the local element
+
+  // Check dimension
+  if ( finite_element.space_dimension() != dof_map->local_dimension() )
+    dolfin_error("Finite element does not match for interpolation of discrete function.");
+
+  // Tabulate dofs
+  dof_map->tabulate_dofs(dofs, cell);
   
-  // Copy values to vector
-  *_x = *f._x;
-  
-  // Copy pointers to mesh and element
-  _mesh = f._mesh;
-  _element = f._element;
-
-  invalidateMesh();
-}
-//-----------------------------------------------------------------------------
-void DiscreteFunction::interpolate(real coefficients[], Cell& cell,
-                                   AffineMap& map, FiniteElement& element)
-{
-  // Save mesh and element (overwriting any previously attached values)
-  _mesh = &cell.mesh();
-  _element = &element;
-  
-  // Initialize local data (if not already initialized correctly)
-  local.init(*_element);
-  
-  // Compute mapping to global degrees of freedom
-  _element->nodemap(local.dofs, cell, *_mesh);
-
-  // Compute positions in global vector by adding offsets
-  for (uint i = 0; i < _element->spacedim(); i++)
-    local.dofs[i] = local.dofs[i] + mixed_offset + component_offset;
-
-  // Get values
-  _x->get(coefficients, local.dofs, _element->spacedim());
-}
-//-----------------------------------------------------------------------------
-void DiscreteFunction::interpolate(Function& fsource)
-{
-  FiniteElement& e = element();
-  Vector& x = vector();
-  Mesh& m = mesh();
-
-  AffineMap map;
-
-  int *nodes = new int[e.spacedim()];
-  real *coefficients = new real[e.spacedim()];
-
-  for(CellIterator c(m); !c.end(); ++c)
-  {
-    Cell& cell = *c;
-
-    // Use DOLFIN's interpolation
-
-    map.update(cell);
-    fsource.interpolate(coefficients, cell, map, e);
-    e.nodemap(nodes, cell, m);
-
-    for(unsigned int i = 0; i < e.spacedim(); i++)
-    {
-      x(nodes[i]) = coefficients[i];
-    }
-  }
-
-  delete [] nodes;
-  delete [] coefficients;
-}
-//-----------------------------------------------------------------------------
-dolfin::uint DiscreteFunction::vectordim() const
-{
-  return _vectordim;
-}
-//-----------------------------------------------------------------------------
-Vector& DiscreteFunction::vector()
-{
-  dolfin_assert(_x);
-  return *_x;
-}
-//-----------------------------------------------------------------------------
-Mesh& DiscreteFunction::mesh()
-{
-  dolfin_assert(_mesh);
-  return *_mesh;
-}
-//-----------------------------------------------------------------------------
-FiniteElement& DiscreteFunction::element()
-{
-  dolfin_assert(_element);
-  return *_element;
-}
-//-----------------------------------------------------------------------------
-void DiscreteFunction::attach(Vector& x, bool local)
-{
-  // Delete old vector if local
-  if ( vector_local )
-    delete _x;
-
-  // Attach new vector
-  _x = &x;
-  vector_local = local;
-}
-//-----------------------------------------------------------------------------
-void DiscreteFunction::attach(Mesh& mesh, bool local)
-{
-  // Delete old mesh if local
-  if ( mesh_local )
-    delete _mesh;
-
-  // Attach new mesh
-  _mesh = &mesh;
-  mesh_local = local;
-
-  invalidateMesh();
-}
-//-----------------------------------------------------------------------------
-void DiscreteFunction::attach(FiniteElement& element, bool local)
-{
-  // Delete old element if local
-  if ( element_local )
-    delete _element;
-
-  // Attach new element
-  _element = &element;
-  element_local = local;
-
-  // Recompute vector dimension
-  updateVectorDimension();
-  //constructBasis();
-}
-//-----------------------------------------------------------------------------
-void DiscreteFunction::init(Mesh& mesh, FiniteElement& element)
-{
-  cout << "Reinitializing discrete function" << endl;
-
-  // Reset data
-  _mesh = &mesh;
-  _element = &element;
-  component = 0;
-  mixed_offset = 0;
-  component_offset = 0;
-
-  // Update vector dimension from element
-  updateVectorDimension();
-  invalidateMesh();
-  //constructBasis();
-
-
-  // Reinitialize local storage
-  uint size = FEM::size(mesh, element);
-  if ( !vector_local )
-  {
-    _x = new Vector(size);
-    vector_local = true;
-  }
-  else
-  {
-    _x->init(size);
-    *_x = 0.0;
-  }
-}
-//-----------------------------------------------------------------------------
-void DiscreteFunction::updateVectorDimension()
-{
-  dolfin_assert(_element);
-
-  if ( _element->rank() == 0 )
-  {
-    _vectordim = 1;
-  }
-  else if ( _element->rank() == 1 )
-  {
-    _vectordim = _element->tensordim(0);
-  }
-  else
-  {
-    dolfin_error("Cannot handle tensor-valued functions.");
-  }
-
-}
-//-----------------------------------------------------------------------------
-void DiscreteFunction::constructBasis()
-{
-  dolfin_assert(_element);
-  dolfin_assert(_mesh);
-
-  have_basis = basis.construct(*_element);
-  //idetector.init(*_mesh);
-  _idetector = new IntersectionDetector();
-  _idetector->init(*_mesh);
-}
-//-----------------------------------------------------------------------------
-void DiscreteFunction::invalidateMesh()
-{
-  if(_idetector)
-  {
-    delete _idetector;
-    _idetector = 0;
-  }
+  // Pick values from global vector
+  x.get(coefficients, dof_map->local_dimension(), dofs);
 }
 //-----------------------------------------------------------------------------

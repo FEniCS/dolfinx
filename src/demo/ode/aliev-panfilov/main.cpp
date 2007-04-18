@@ -15,7 +15,7 @@ class AlievPanfilov : public ODE
 {
 public:
   
-  AlievPanfilov() : ODE(2, 5.0)
+  AlievPanfilov() : ODE(2, 300.0)
   {
     // Set parameters
     a    = 0.15;

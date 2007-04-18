@@ -11,8 +11,9 @@ nobase_include_HEADERS  = dolfin/dolfin_io.h \
                           dolfin/PythonFile.h \
                           dolfin/VTKFile.h \
                           dolfin/XMLBLASFormData.h \
+                          dolfin/XMLDofMap.h \
                           dolfin/XMLFile.h \
-                          dolfin/XMLFiniteElementSpec.h \
+                          dolfin/XMLFiniteElement.h \
                           dolfin/XMLMesh.h \
                           dolfin/XMLMeshFunction.h \
                           dolfin/XMLMatrix.h \
@@ -34,8 +35,9 @@ libdolfin_io_la_SOURCES = File.cpp \
                           PythonFile.cpp \
                           VTKFile.cpp \
                           XMLBLASFormData.cpp \
+                          XMLDofMap.cpp \
                           XMLFile.cpp \
-                          XMLFiniteElementSpec.cpp \
+                          XMLFiniteElement.cpp \
                           XMLMesh.cpp \
                           XMLMeshFunction.cpp \
                           XMLMatrix.cpp \

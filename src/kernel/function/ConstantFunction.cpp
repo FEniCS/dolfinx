@@ -1,104 +1,76 @@
-// Copyright (C) 2006 Anders Logg.
+// Copyright (C) 2006-2007 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-02-09
-// Last changed: 2006-12-12
+// Last changed: 2007-04-12
 
-#include <dolfin/Vector.h>
-#include <dolfin/P1tri.h>
-#include <dolfin/FiniteElement.h>
+#include <dolfin/dolfin_log.h>
+#include <dolfin/Mesh.h>
 #include <dolfin/ConstantFunction.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-ConstantFunction::ConstantFunction(real value)
-  : GenericFunction(),
-    value(value), _mesh(0), mesh_local(false)
+ConstantFunction::ConstantFunction(Mesh& mesh, real value)
+  : GenericFunction(mesh), ufc::function(), value(value), size(1)
 {
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-ConstantFunction::ConstantFunction(const ConstantFunction& f)
-  : GenericFunction(),
-    value(f.value), _mesh(f._mesh), mesh_local(false)
-{
+  cout << "Creating ConstantFunction" << endl;
+
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 ConstantFunction::~ConstantFunction()
 {
-  // Delete mesh if local
-  if ( mesh_local )
-    delete _mesh;
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
-real ConstantFunction::operator()(const Point& p, uint i)
+dolfin::uint ConstantFunction::rank() const
 {
-  return value;
-}
-//-----------------------------------------------------------------------------
-real ConstantFunction::operator() (const Vertex& vertex, uint i)
-{
-  return value;
-}
-//-----------------------------------------------------------------------------
-void ConstantFunction::sub(uint i)
-{
-  // Do nothing (value same for all components anyway)
-}
-//-----------------------------------------------------------------------------
-void ConstantFunction::interpolate(real coefficients[], Cell& cell,
-				   AffineMap& map, FiniteElement& element)
-{
-  // Evaluate function at interpolation points
-  for (uint i = 0; i < element.spacedim(); i++)
-    coefficients[i] = value;
-}
-//-----------------------------------------------------------------------------
-dolfin::uint ConstantFunction::vectordim() const
-{
-  dolfin_error("Vector dimension unknown for constant function.");
+  // Just return 0 for now (might extend to vectors later)
   return 0;
 }
 //-----------------------------------------------------------------------------
-Vector& ConstantFunction::vector()
+dolfin::uint ConstantFunction::dim(uint i) const
 {
-  dolfin_error("No vector associated with function (and none can be attached).");
-  return *(new Vector()); // Code will not be reached, make compiler happy
+  // Just return 1 for now (might extend to vectors later)
+  return 1;
 }
 //-----------------------------------------------------------------------------
-Mesh& ConstantFunction::mesh()
+void ConstantFunction::interpolate(real* values)
 {
-  if ( !_mesh )
-    dolfin_error("No mesh associated with function (try attaching one).");
-  return *_mesh;
-}
-//-----------------------------------------------------------------------------
-FiniteElement& ConstantFunction::element()
-{
-  dolfin_error("No finite element associated with function (an none can be attached).");
-  return *(new P1tri()); // Code will not be reached, make compiler happy
-}
-//-----------------------------------------------------------------------------
-void ConstantFunction::attach(Vector& x, bool local)
-{
-  dolfin_error("Cannot attach vectors to constant functions.");
-}
-//-----------------------------------------------------------------------------
-void ConstantFunction::attach(Mesh& mesh, bool local)
-{
-  // Delete old mesh if local
-  if ( mesh_local )
-    delete _mesh;
+  dolfin_assert(values);
 
-  // Attach new mesh
-  _mesh = &mesh;
-  mesh_local = local;
+  // Set all vertex values to the constant value
+  const uint num_values = size*mesh.numVertices();
+  for (uint i = 0; i < num_values; i++)
+    values[i] = value;
 }
 //-----------------------------------------------------------------------------
-void ConstantFunction::attach(FiniteElement& element, bool local)
+void ConstantFunction::interpolate(real* coefficients,
+                                   const ufc::cell& cell,
+                                   const ufc::finite_element& finite_element)
 {
-  dolfin_error("Cannot attach finite elements to constant functions.");
+  dolfin_assert(coefficients);
+
+  // Evaluate each dof to get coefficients for nodal basis expansion
+  for (uint i = 0; i < finite_element.space_dimension(); i++)
+    coefficients[i] = finite_element.evaluate_dof(i, *this, cell);
+
+  // Compute size of value (number of entries in tensor value)
+  size = 1;
+  for (uint i = 0; i < finite_element.value_rank(); i++)
+    size *= finite_element.value_dimension(i);
+}
+//-----------------------------------------------------------------------------
+void ConstantFunction::evaluate(real* values,
+                                const real* coordinates,
+                                const ufc::cell& cell) const
+{
+  dolfin_assert(values);
+  dolfin_assert(coordinates);
+
+  // Set all values to the constant value
+  for (uint i = 0; i < size; i++)
+    values[i] = value;
 }
 //-----------------------------------------------------------------------------

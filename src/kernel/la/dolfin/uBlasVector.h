@@ -1,10 +1,10 @@
-// Copyright (C) 2006 Garth N. Wells
+// Copyright (C) 2006-2007 Garth N. Wells
 // Licensed under the GNU GPL Version 2.
 //
-// Modified by Anders Logg 2006.
+// Modified by Anders Logg 2006-2007.
 //
 // First added:  2006-03-04
-// Last changed: 2006-10-10
+// Last changed: 2007-04-16
 
 #ifndef __UBLAS_VECTOR_H
 #define __UBLAS_VECTOR_H
@@ -41,7 +41,7 @@ namespace dolfin
     uBlasVector();
     
     /// Constructor
-    uBlasVector(const uint N);
+    uBlasVector(uint N);
     
     /// Constructor from a uBlas vector_expression
     template <class E>
@@ -51,13 +51,13 @@ namespace dolfin
     ~uBlasVector();
 
     /// Initialize a vector of length N
-    void init(const uint N);
+    void init(uint N);
 
     /// Initialize a vector using sparsity pattern
     void init(const SparsityPattern& sparsity_pattern);
 
     /// Set all entries to a single scalar value
-    const uBlasVector& operator= (const real a);
+    const uBlasVector& operator= (real a);
 
     /// Assignment from a vector_expression
     template <class E>
@@ -72,64 +72,56 @@ namespace dolfin
     { return ublas::vector<real>::size(); }
 
     /// Access given entry
-    inline real& operator() (const uint i)
+    inline real& operator() (uint i)
     { return ublas::vector<real>::operator() (i); };
 
     /// Access value of given entry
-    inline real operator() (const uint i) const
+    inline real operator() (uint i) const
     { return ublas::vector<real>::operator() (i); };
 
-    /// Access element value
-    inline real get(const uint i) const 
-    { return (*this)(i); }
-
-    /// Set element value
-    inline void set(const uint i, const real value) 
-    { (*this)(i) = value; }
+    /// Get block of values
+    void get(real* block, uint m, const uint* rows) const;
 
     /// Set block of values
-    void set(const real block[], const int pos[], const int n);
+    void set(const real* block, uint m, const uint* rows);
 
     /// Add block of values
-    void add(const real block[], const int pos[], const int n);
-
-    /// Get block of values
-    void get(real block[], const int pos[], const int n) const;
-
-    /// Compute norm of vector
-    enum NormType { l1, l2, linf };
-    real norm(const NormType type = l2) const;
-
-    /// Compute sum of vector
-    real sum() const
-    { return ublas::sum(*this); } 
+    void add(const real* block, uint m, const uint* rows);
 
     /// Apply changes to vector (dummy function for compatibility)
     void apply();
 
     /// Set all entries to zero
     void zero();
+
+    /// Compute norm of vector
+    enum NormType { l1, l2, linf };
+    real norm(NormType type = l2) const;
+
+    /// Compute sum of vector
+    real sum() const
+    { return ublas::sum(*this); }
     
     /// Addition (AXPY)
-    void axpy(const real a, const uBlasVector& x);
+    void axpy(real a, const uBlasVector& x);
 
     /// Scalar multiplication
-    void mult(const real a);
+    void mult(real a);
 
     /// Element-wise division
     void div(const uBlasVector& x);
 
     /// Display vector
-    void disp(const uint precision = 2) const;
+    void disp(uint precision = 2) const;
 
     /// Output
     friend LogStream& operator<< (LogStream& stream, const uBlasVector& x);
 
     // Copy values between different vector representations
 #ifdef HAVE_PETSC_H
-    void copy(const PETScVector& y, const uint off1, const uint off2, const uint len);
+    void copy(const PETScVector& y, uint off1, uint off2, uint len);
 #endif
-    void copy(const uBlasVector& y, const uint off1, const uint off2, const uint len);
+    void copy(const uBlasVector& y, uint off1, uint off2, uint len);
 
   };
 }

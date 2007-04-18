@@ -6,9 +6,6 @@
 // First added:  2005-10-23
 // Last changed: 2006-09-03
 
-#include <dolfin/FEM.h>
-#include <dolfin/BilinearForm.h>
-#include <dolfin/LinearForm.h>
 #include <dolfin/NewtonSolver.h>
 #include <dolfin/NonlinearProblem.h>
 #include <dolfin/LUSolver.h>

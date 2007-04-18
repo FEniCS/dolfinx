@@ -1,8 +1,8 @@
-// Copyright (C) 2005 Anders Logg.
+// Copyright (C) 2005-2007 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-12-19
-// Last changed: 2006-06-02
+// Last changed: 2007-04-13
 
 #ifndef __PARAMETRIZED_H
 #define __PARAMETRIZED_H
@@ -52,7 +52,7 @@ namespace dolfin
     Parameter get(std::string key) const;
 
     /// Check if parameter with given key has been defined locally
-    bool def(std::string key) const;
+    bool has(std::string key) const;
 
     /// Callback for changes in parameter values
     virtual void readParameters();

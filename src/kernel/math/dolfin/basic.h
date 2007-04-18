@@ -12,6 +12,7 @@
 
 namespace dolfin
 {
+
   /// Return the square of x
   real sqr(real x);
 
@@ -23,6 +24,7 @@ namespace dolfin
 
   /// Seed random number generator
   void seed(unsigned int s);
+
 }
 
 #endif

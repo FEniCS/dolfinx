@@ -44,7 +44,6 @@ namespace dolfin
     void operator>> (MeshFunction<double>& meshfunction);
     void operator>> (MeshFunction<bool>& meshfunction);
     void operator>> (Function& f);
-    void operator>> (FiniteElementSpec& spec);
     void operator>> (ParameterList& parameters);
     void operator>> (BLASFormData& blas);
     void operator>> (Graph& graph);
@@ -63,7 +62,6 @@ namespace dolfin
     void operator<< (MeshFunction<double>& mesh);
     void operator<< (MeshFunction<bool>& mesh);
     void operator<< (Function& f);
-    void operator<< (FiniteElementSpec& spec);
     void operator<< (ParameterList& parameters);
     
     // Friends

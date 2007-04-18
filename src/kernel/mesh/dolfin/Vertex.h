@@ -1,8 +1,8 @@
-// Copyright (C) 2006 Anders Logg.
+// Copyright (C) 2006-2007 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-06-01
-// Last changed: 2006-10-23
+// Last changed: 2007-04-10
 
 #ifndef __VERTEX_H
 #define __VERTEX_H
@@ -36,10 +36,10 @@ namespace dolfin
     inline Point point() const { return _mesh.geometry().point(_index); }
 
     /// Return array of vertex coordinates
-    inline real* coordinates() { return _mesh.geometry().x(_index); }
+    inline real* x() { return _mesh.geometry().x(_index); }
 
     /// Return array of vertex coordinates
-    inline const real* coordinates() const { return _mesh.geometry().x(_index); }
+    inline const real* x() const { return _mesh.geometry().x(_index); }
     
   };
 

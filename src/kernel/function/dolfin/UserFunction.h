@@ -1,14 +1,13 @@
-// Copyright (C) 2005-2006 Anders Logg.
+// Copyright (C) 2005-2007 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-11-26
-// Last changed: 2006-12-12
+// Last changed: 2007-04-12
 
 #ifndef __USER_FUNCTION_H
 #define __USER_FUNCTION_H
 
 #include <dolfin/GenericFunction.h>
-#include <dolfin/FiniteElement.h>
 
 namespace dolfin
 {
@@ -18,69 +17,43 @@ namespace dolfin
   /// function defined by overloading the evaluation operator in
   /// the class Function.
 
-  class UserFunction : public GenericFunction
+  class UserFunction : public GenericFunction, public ufc::function
   {
   public:
 
     /// Create user-defined function
-    UserFunction(Function* f, uint vectordim);
-
-    /// Copy constructor
-    UserFunction(const UserFunction& f);
+    UserFunction(Mesh& mesh, Function* f);
 
     /// Destructor
     ~UserFunction();
 
-    /// Evaluate function at given point
-    real operator() (const Point& point, uint i);
+    /// Return the rank of the value space
+    uint rank() const;
 
-    /// Evaluate function at given vertex
-    real operator() (const Vertex& vertex, uint i);
+    /// Return the dimension of the value space for axis i
+    uint dim(uint i) const;
 
-    // Restrict to sub function or component (if possible)
-    void sub(uint i);
+    /// Interpolate function to vertices of mesh
+    void interpolate(real* values);
 
-    /// Compute interpolation of function onto local finite element space
-    void interpolate(real coefficients[], Cell& cell, AffineMap& map, FiniteElement& element);
+    /// Interpolate function to finite element space on cell
+    void interpolate(real coefficients[],
+                     const ufc::cell& cell,
+                     const ufc::finite_element& finite_element);
 
-    /// Return vector dimension of function
-    uint vectordim() const;
-
-    /// Calling this function generates an error (no vector associated)
-    Vector& vector();
-
-    /// Return mesh associated with function (if any)
-    Mesh& mesh();
-
-    /// Calling this function generates an error (no element associated)
-    FiniteElement& element();
-
-    /// Calling this function generates an error (no vector can be attached)
-    void attach(Vector& x, bool local);
-
-    /// Attach mesh to function
-    void attach(Mesh& mesh, bool local);
-
-    /// Calling this function generates an error (no element can be attached)
-    void attach(FiniteElement& element, bool local);
+    /// Evaluate function at given point in cell (UFC function interface)
+    void evaluate(real* values,
+                  const real* coordinates,
+                  const ufc::cell& cell) const;
 
   private:
 
     // Pointer to Function with overloaded evaluation operator
     Function* f;
 
-    // Number of vector dimensions
-    uint _vectordim;
+    // Size of value (number of entries in tensor value)
+    uint size;
 
-    // Current component
-    uint component;
-
-    // Pointer to mesh associated with function (null if none)
-    Mesh* _mesh;
-
-    // True if mesh is local (not a reference to another mesh)
-    bool mesh_local;
-    
   };
 
 }

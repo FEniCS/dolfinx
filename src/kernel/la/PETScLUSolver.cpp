@@ -114,6 +114,8 @@ void PETScLUSolver::disp() const
 //-----------------------------------------------------------------------------
 real PETScLUSolver::copyToDense(const PETScKrylovMatrix& A)
 {
+  dolfin_error("PETScLUSolver::copyToDense needs to be fixed");
+/*
   // Get size
   uint M = A.size(0);
   dolfin_assert(M = A.size(1));
@@ -170,6 +172,8 @@ real PETScLUSolver::copyToDense(const PETScKrylovMatrix& A)
   //MatView(B, PETSC_VIEWER_STDOUT_SELF);
 
   return maxcolsum;
+*/
+  return 0;
 }
 //-----------------------------------------------------------------------------
 

@@ -1,11 +1,11 @@
-// Copyright (C) 2004-2005 Johan Hoffman, Johan Jansson and Anders Logg.
+// Copyright (C) 2004-2007 Johan Hoffman, Johan Jansson and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // Modified by Andy R. Terrel, 2005.
-// Modified by Garth N. Wells, 2006.
+// Modified by Garth N. Wells, 2006-2007.
 //
 // First added:  2004
-// Last changed: 2006-12-11
+// Last changed: 2007-04-16
 
 #ifndef __PETSC_MATRIX_H
 #define __PETSC_MATRIX_H
@@ -23,7 +23,6 @@ namespace dolfin
   
   /// Forward declarations
   class PETScVector;
-  class PETScMatrixElement;
   class SparsityPattern;
   
   template<class M>
@@ -50,16 +49,16 @@ namespace dolfin
     };
 
     /// Constructor
-    PETScMatrix(const Type type = default_matrix);
+    PETScMatrix(Type type = default_matrix);
 
     /// Constructor
     PETScMatrix(Mat A);
 
     /// Constructor
-    PETScMatrix(const uint M, const uint N);
+    PETScMatrix(uint M, uint N);
 
     /// Constructor (setting PETSc matrix type)
-    PETScMatrix(const uint M, const uint N, const Type type);
+    PETScMatrix(uint M, uint N, Type type = default_matrix);
 
     /// Constructor (just for testing, will be removed)
     PETScMatrix(const PETScMatrix &B);
@@ -68,19 +67,19 @@ namespace dolfin
     ~PETScMatrix();
 
     /// Initialize M x N matrix
-    void init(const uint M, const uint N);
+    void init(uint M, uint N, bool reset = true);
 
     /// Initialize M x N matrix with given maximum number of nonzeros in each row
-    void init(const uint M, const uint N, const uint nzmax);
+    void init(uint M, uint N, uint nzmax);
 
     /// Initialize M x N matrix with a given number of nonzeros per row
-    void init(const uint M, const uint N, const uint nz[]);
+    void init(uint M, uint N, const uint nz[]);
 
     /// Initialize M x N matrix with given block size and maximum number of nonzeros in each row
     void init(const uint M, const uint N, const uint bs, const uint nzmax);
 
     /// Initialize a matrix from the sparsity pattern
-    void init(const SparsityPattern& sparsity_pattern);
+    void init(const SparsityPattern& sparsity_pattern, bool reset = true);
 
     /// Return number of rows (dim = 0) or columns (dim = 1) along dimension dim
     uint size(const uint dim) const;
@@ -94,26 +93,20 @@ namespace dolfin
     /// Return maximum number of nonzero entries
     uint nzmax() const;
    
-    /// Access element value
-    real get(const uint i, const uint j) const;
+    /// Get block of values
+    void get(real* block, uint m, const uint* rows, uint n, const uint* cols) const;
 
-    /// Set element value
-    void set(const uint i, const uint j, const real value);
-
-    // Add value to element
-    void add(const uint i, const uint j, const real value);
-    
     /// Set block of values
-    void set(const real block[], const int rows[], const int m, const int cols[], const int n);
+    void set(const real* block, uint m, const uint* rows, uint n, const uint* cols);
 
     /// Add block of values
-    void add(const real block[], const int rows[], const int m, const int cols[], const int n);
+    void add(const real* block, const uint m, const uint* rows, const uint n, const uint* cols);
 
     /// Get non-zero values of row i
     void getRow(const uint i, int& ncols, Array<int>& columns, Array<real>& values) const;
 
     /// Set given rows to identity matrix
-    void ident(const int rows[], const int m);
+    void ident(const uint rows[], uint m);
     
     /// Matrix-vector multiplication
     void mult(const PETScVector& x, PETScVector& Ax) const;
@@ -149,15 +142,6 @@ namespace dolfin
     /// Output
     friend LogStream& operator<< (LogStream& stream, const PETScMatrix& A);
     
-    /// SparseMatrixElement access operator (needed for const objects)
-    real operator() (const uint i, const uint j) const;
-
-    /// SparseMatrixElement assignment operator
-    PETScMatrixElement operator()(const uint i, const uint j);
-
-    // Friends
-    friend class PETScMatrixElement;
-
   private:
 
     // PETSc Mat pointer
@@ -175,24 +159,6 @@ namespace dolfin
     // Return PETSc matrix type 
     MatType getPETScType() const;
 
-  };
-
-  /// Reference to an element of the matrix
-
-  class PETScMatrixElement
-  {
-  public:
-    PETScMatrixElement(const uint i, const uint j, PETScMatrix& A);
-    PETScMatrixElement(const PETScMatrixElement& e);
-    operator real() const;
-    const PETScMatrixElement& operator=(const real a);
-    const PETScMatrixElement& operator=(const PETScMatrixElement& e); 
-    const PETScMatrixElement& operator+=(const real a);
-    const PETScMatrixElement& operator-=(const real a);
-    const PETScMatrixElement& operator*=(const real a);
-  protected:
-    uint i, j;
-    PETScMatrix& A;
   };
 
 }

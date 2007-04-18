@@ -1,10 +1,10 @@
 // Copyright (C) 2006 Garth N. Wells.
 // Licensed under the GNU GPL Version 2.
 //
-// Modified by Anders Logg 2006.
+// Modified by Anders Logg 2006-2007.
 //
 // First added:  2006-04-04
-// Last changed: 2006-12-12
+// Last changed: 2007-04-16
 
 #include <dolfin/dolfin_log.h>
 #include <boost/numeric/ublas/vector.hpp>
@@ -25,7 +25,7 @@ uBlasVector::uBlasVector()
   //Do nothing
 }
 //-----------------------------------------------------------------------------
-uBlasVector::uBlasVector(const uint N)
+uBlasVector::uBlasVector(uint N)
   : GenericVector(),
     Variable("x", "a dense vector"),
     ublas_vector(N)
@@ -39,7 +39,7 @@ uBlasVector::~uBlasVector()
   //Do nothing
 }
 //-----------------------------------------------------------------------------
-void uBlasVector::init(const uint N)
+void uBlasVector::init(uint N)
 {
   if( this->size() == N)
   {
@@ -56,25 +56,35 @@ void uBlasVector::init(const SparsityPattern& sparsity_pattern)
   dolfin_error("Cannot initialise a uBLAS vector using a sparsity pattern.");
 }
 //-----------------------------------------------------------------------------
-void uBlasVector::set(const real block[], const int pos[], const int n)
+void uBlasVector::get(real* block, uint m, const uint* rows) const
 {
-  for(int i = 0; i < n; ++i)
-    (*this)(pos[i]) = block[i];
+  for (uint i = 0; i < m; i++)
+    block[i] = (*this)(rows[i]);
 }
 //-----------------------------------------------------------------------------
-void uBlasVector::add(const real block[], const int pos[], const int n)
+void uBlasVector::set(const real* block, uint m, const uint* rows)
 {
-  for(int i = 0; i < n; ++i)
-    (*this)(pos[i]) += block[i];
+  for (uint i = 0; i < m; i++)
+    (*this)(rows[i]) = block[i];
 }
 //-----------------------------------------------------------------------------
-void uBlasVector::get(real block[], const int pos[], const int n) const
+void uBlasVector::add(const real* block, uint m, const uint* rows)
 {
-  for(int i = 0; i < n; ++i)
-    block[i] = (*this)(pos[i]);
+  for (uint i = 0; i < m; i++)
+    (*this)(rows[i]) += block[i];
 }
 //-----------------------------------------------------------------------------
-real uBlasVector::norm(const NormType type) const
+void uBlasVector::apply()
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+void uBlasVector::zero()
+{
+  clear();
+}
+//-----------------------------------------------------------------------------
+real uBlasVector::norm(NormType type) const
 {
   switch (type) {
   case l1:
@@ -88,17 +98,6 @@ real uBlasVector::norm(const NormType type) const
   }
   return norm_inf(*this);
 }
-//-----------------------------------------------------------------------------
-void uBlasVector::apply()
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-void uBlasVector::zero()
-{
-  clear();
-}
-//-----------------------------------------------------------------------------
 void uBlasVector::div(const uBlasVector& y)
 {
   uBlasVector& x = *this;
@@ -110,27 +109,27 @@ void uBlasVector::div(const uBlasVector& y)
   }
 }
 //-----------------------------------------------------------------------------
-void uBlasVector::axpy(const real a, const uBlasVector& x)
+void uBlasVector::axpy(real a, const uBlasVector& x)
 {
   uBlasVector& y = *this;
   
   y += a * x;
 }
 //-----------------------------------------------------------------------------
-void uBlasVector::mult(const real a)
+void uBlasVector::mult(real a)
 {
   uBlasVector& y = *this;
   
   y *= a;
 }
 //-----------------------------------------------------------------------------
-const uBlasVector& uBlasVector::operator= (const real a) 
+const uBlasVector& uBlasVector::operator= (real a) 
 { 
   this->assign(ublas::scalar_vector<double> (this->size(), a));
   return *this;
 }
 //-----------------------------------------------------------------------------
-void uBlasVector::disp(const uint precision) const
+void uBlasVector::disp(uint precision) const
 {
   dolfin::cout << "[ ";
   for (uint i = 0; i < size(); i++)
@@ -153,8 +152,7 @@ LogStream& dolfin::operator<< (LogStream& stream, const uBlasVector& x)
 }
 //-----------------------------------------------------------------------------
 #ifdef HAVE_PETSC_H
-void uBlasVector::copy(const PETScVector& y, const uint off1, const uint off2, 
-                       const uint len)
+void uBlasVector::copy(const PETScVector& y, uint off1, uint off2, uint len)
 {
   // FIXME: Verify if there's a more efficient implementation
 
@@ -169,8 +167,7 @@ void uBlasVector::copy(const PETScVector& y, const uint off1, const uint off2,
 }
 #endif
 //-----------------------------------------------------------------------------
-void uBlasVector::copy(const uBlasVector& y, const uint off1, const uint off2, 
-                       const uint len)
+void uBlasVector::copy(const uBlasVector& y, uint off1, uint off2, uint len)
 {
   uBlasVector& x = *this;
 

@@ -22,6 +22,7 @@ nobase_include_HEADERS    = dolfin/dolfin_mesh.h \
                             dolfin/TopologyComputation.h \
                             dolfin/CellType.h \
                             dolfin/Interval.h \
+                            dolfin/SubDomain.h \
                             dolfin/Triangle.h \
                             dolfin/Tetrahedron.h \
                             dolfin/UniformMeshRefinement.h \
