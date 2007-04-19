@@ -10,20 +10,22 @@
 
 #include <dolfin.h>
 #include "Elasticity.h"
-#include "ElasticityStrain.h"
+//#include "ElasticityStrain.h"
 
 using namespace dolfin;
 
 int main()
 {
-  // Boundary condition
-  class MyBC : public BoundaryCondition
+  // Dirichlet boundary condition for rotation at right end
+  class Rotation : public Function
   {
-    void eval(BoundaryValue& value, const Point& p, unsigned int i)
+  public:
+
+    Rotation(Mesh& mesh) : Function(mesh) {}
+
+    void eval(real* values, real* x)
     {
-      // Width of clamp
-      real w = 0.1;
-      
+      /*
       // Center of rotation
       real y0 = 0.5;
       real z0 = 0.219;
@@ -36,8 +38,7 @@ int main()
       real z = z0 + (p.y() - y0)*sin(theta) + (p.z() - z0)*cos(theta);
       
       // Clamp at left end
-      if ( p.x() < w )
-	      value = 0.0;
+      value = 0.0;
       
       // Clamp at right end
       if ( p.x() > (1.0 - w) )
@@ -47,9 +48,29 @@ int main()
 	    else if ( i == 2 )
 	      value = z - p.z();
       }
+      */
     }
   };
 
+  // Sub domain for clamping at left end
+  class Left : public SubDomain
+  {
+    bool inside(const real* x, bool on_boundary)
+    {
+      return x[0] < 0.1 && on_boundary;
+    }
+  };
+
+  // Sub domain for clamping at right end
+  class Right : public SubDomain
+  {
+    bool inside(const real* x, bool on_boundary)
+    {
+      return x[0] > 0.9 && on_boundary;
+    }
+  };
+
+  /*
   MyBC bc;
 
   // Set up problem
@@ -81,6 +102,7 @@ int main()
   File file_shear_strain("shear_strain.pvd");
   file_normal_strain << normal_strain;
   file_shear_strain  << shear_strain;
+  */
 
   return 0;
 }

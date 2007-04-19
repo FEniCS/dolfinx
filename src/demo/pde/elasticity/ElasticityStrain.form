@@ -1,16 +1,18 @@
 # Copyright (c) 2006 Garth N. Wells (g.n.wells@tudelft.nl) and Kristian Oelgaard
 # Licensed under the GNU GPL Version 2
 #
+# Modified by Anders Logg 2007
+#
 # The bilinear form for postprocessing the strain for classical linear elasticity.
 # Compile this form with FFC: ffc Elasticity.form.
 
-elementU = FiniteElement("Vector Lagrange", "tetrahedron", 1)
+elementU = VectorElement("Lagrange", "tetrahedron", 1)
 
 # Project strains onto a continuous basis
-elementE = FiniteElement("Vector Lagrange", "tetrahedron", 1)
+elementE = VectorElement("Lagrange", "tetrahedron", 1)
 
 # Project strains onto a discontinuous basis
-#elementE = FiniteElement("Discontinuous vector Lagrange", "tetrahedron", 0)
+#elementE = VectorElement("Discontinuous Lagrange", "tetrahedron", 0)
 
 strain_element = elementE + elementE 
 
