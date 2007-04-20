@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-02-09
-// Last changed: 2007-04-12
+// Last changed: 2007-04-21
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Mesh.h>
@@ -14,8 +14,6 @@ using namespace dolfin;
 ConstantFunction::ConstantFunction(Mesh& mesh, real value)
   : GenericFunction(mesh), ufc::function(), value(value), size(1)
 {
-  cout << "Creating ConstantFunction" << endl;
-
   // Do nothing
 }
 //-----------------------------------------------------------------------------

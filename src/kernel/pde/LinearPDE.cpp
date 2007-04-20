@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2006
 //
 // First added:  2004
-// Last changed: 2007-04-17
+// Last changed: 2007-04-19
 
 #include <dolfin/Matrix.h>
 #include <dolfin/BoundaryCondition.h>
@@ -23,7 +23,7 @@ LinearPDE::LinearPDE(Form& a,
                      Array<BoundaryCondition*> bcs)
   : GenericPDE(a, L, mesh, bcs)
 {
-  // Do nothing
+  dolfin_info("Creating linear PDE with %d boundary condition(s).", bcs.size());
 }
 //-----------------------------------------------------------------------------
 LinearPDE::~LinearPDE()
@@ -33,7 +33,7 @@ LinearPDE::~LinearPDE()
 //-----------------------------------------------------------------------------
 void LinearPDE::solve(Function& u)
 {
-  dolfin_begin("Solving static linear PDE.");
+  dolfin_begin("Solving linear PDE.");
     
   // Assemble linear system
   Matrix A;
@@ -50,12 +50,14 @@ void LinearPDE::solve(Function& u)
   const std::string solver_type = get("PDE linear solver");
   if ( solver_type == "direct" )
   {
+    cout << "Using direct solver." << endl;
     LUSolver solver;
     solver.set("parent", *this);
     solver.solve(A, x, b);
   }
   else if ( solver_type == "iterative" )
   {
+    cout << "Using iterative solver (GMRES)." << endl;
     KrylovSolver solver(gmres);
     solver.set("parent", *this);
     solver.solve(A, x, b);

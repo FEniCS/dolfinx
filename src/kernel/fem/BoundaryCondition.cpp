@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2007-04-10
-// Last changed: 2007-04-17
+// Last changed: 2007-04-19
 
 #include <dolfin/Mesh.h>
 #include <dolfin/Vertex.h>
@@ -25,6 +25,8 @@ BoundaryCondition::BoundaryCondition(Function& g,
   : g(g), mesh(mesh), sub_domains(0), sub_domain(0),
     sub_domains_local(false)
 {
+  cout << "Creating sub domain markers for boundary condition." << endl;
+
   // Make sure we have the facets and the incident cells
   const uint D = mesh.topology().dim();
   mesh.init(D - 1);

@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2006-2007.
 //
 // First added:  2005-10-24
-// Last changed: 2007-04-17
+// Last changed: 2007-04-19
 
 #include <dolfin/NonlinearPDE.h>
 
@@ -17,7 +17,7 @@ NonlinearPDE::NonlinearPDE(Form& a,
                            Array<BoundaryCondition*> bcs)
   : GenericPDE(a, L, mesh, bcs)
 {
-  // Do nothing
+  dolfin_info("Creating linear PDE with %d boundary condition(s).", bcs.size());
 }
 //-----------------------------------------------------------------------------
 NonlinearPDE::~NonlinearPDE()
@@ -27,6 +27,8 @@ NonlinearPDE::~NonlinearPDE()
 //-----------------------------------------------------------------------------
 void NonlinearPDE::solve(Function& u)
 {
+  dolfin_begin("Solving nonlinear PDE.");
+
   dolfin_error("Not implemented.");
 }
 //-----------------------------------------------------------------------------

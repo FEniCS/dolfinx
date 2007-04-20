@@ -1,8 +1,8 @@
-// Copyright (C) 2006 Johan Jansson and Anders Logg.
+// Copyright (C) 2006-2007 Johan Jansson and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-02-07
-// Last changed: 2006-10-18
+// Last changed: 2007-04-21
 //
 // This demo program solves the equations of static
 // linear elasticity for a gear clamped at two of its
@@ -16,6 +16,31 @@ using namespace dolfin;
 
 int main()
 {
+  // Dirichlet boundary condition for clamp at left end
+  class Clamp : public Function
+  {
+  public:
+
+    Clamp(Mesh& mesh) : Function(mesh) {}
+
+    void eval(real* values, const real* x)
+    {
+      values[0] = 0.0;
+      values[1] = 0.0;
+      values[2] = 0.0;
+    }
+
+  };
+
+  // Sub domain for clamp at left end
+  class Left : public SubDomain
+  {
+    bool inside(const real* x, bool on_boundary)
+    {
+      return x[0] < 0.1 && on_boundary;
+    }
+  };
+
   // Dirichlet boundary condition for rotation at right end
   class Rotation : public Function
   {
@@ -23,7 +48,7 @@ int main()
 
     Rotation(Mesh& mesh) : Function(mesh) {}
 
-    void eval(real* values, real* x)
+    void eval(real* values, const real* x)
     {
       /*
       // Center of rotation
@@ -52,16 +77,7 @@ int main()
     }
   };
 
-  // Sub domain for clamping at left end
-  class Left : public SubDomain
-  {
-    bool inside(const real* x, bool on_boundary)
-    {
-      return x[0] < 0.1 && on_boundary;
-    }
-  };
-
-  // Sub domain for clamping at right end
+  // Sub domain for rotation at right end
   class Right : public SubDomain
   {
     bool inside(const real* x, bool on_boundary)
@@ -70,23 +86,42 @@ int main()
     }
   };
 
-  /*
-  MyBC bc;
-
-  // Set up problem
+  // Read mesh
   Mesh mesh("../../../../data/meshes/gear.xml.gz");
-  Function f = 0.0;
-  Elasticity::BilinearForm a;
-  Elasticity::LinearForm L(f);
-  PDE pde(a, L, mesh, bc);
+  
+  // Create right-hand side
+  Function f(mesh, 0.0);
 
-  // Compute solution (using direct solver)
-  Function U = pde.solve();
+  // Set up boundary condition at left end
+  Clamp c(mesh);
+  Left left;
+  BoundaryCondition bcl(c, mesh, left);
 
-  // Save solution (displacement) to file
-  File file("elasticity.pvd");
-  file << U;
+  // Set up boundary condition at right end
+  Rotation r(mesh);
+  Right right;
+  BoundaryCondition bcr(r, mesh, right);
 
+  // Set up array of boundary conditions
+  Array<BoundaryCondition*> bcs;
+  bcs.push_back(&bcl);
+  bcs.push_back(&bcr);
+
+  // Set up PDE
+  ElasticityBilinearForm a;
+  ElasticityLinearForm L(f);
+  PDE pde(a, L, mesh, bcs);
+
+  // Solve PDE (using direct solver)
+  Function u;
+  pde.set("PDE linear solver", "direct");
+  pde.solve(u);
+
+  // Save solution
+  File file("elasticity.xml");
+  file << u;
+ 
+  /*
   // Set up post-processing problem to compute strain
   ElasticityStrain::BilinearForm a_strain;
   ElasticityStrain::LinearForm L_strain(U);
