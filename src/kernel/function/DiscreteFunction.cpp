@@ -149,7 +149,6 @@ void DiscreteFunction::interpolate(real* values)
     
     // Pick values from global vector
     x.get(dof_values, dof_map->local_dimension(), dofs);
-    cout << "testing in function " << dof_values[0] << endl;
 
     // Interpolate values at the vertices
     finite_element->interpolate_vertex_values(vertex_values, dof_values, ufc_cell);
