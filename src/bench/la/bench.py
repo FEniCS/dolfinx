@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #
 # Copyright (C) 2006 Garth N. Wells.
-# Licensed under the GNU GPL Version 2.
+# Licensed under the GNU LGPL Version 2.1.
 #
 # Run benchmarks for linear algebra.
 

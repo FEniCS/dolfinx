@@ -38,11 +38,11 @@ keep sort of the same style when writing the code.
 
 	#endif
 
-- Applying the GPL should look something like this at the top
+- Applying the LGPL should look something like this at the top
   of all source files:
 
 	// Copyright (C) 2004-2005 Johan Hoffman and Anders Logg.
-        // Licensed under the GNU GPL Version 2.
+        // Licensed under the GNU LGPL Version 2.1.
 	//
         // First added:  2004-01-01
         // Last changed: 2005-11-15
@@ -50,7 +50,7 @@ keep sort of the same style when writing the code.
   or
 
 	// Copyright (C) 2004-2005 Johan Hoffman and Anders Logg.
-        // Licensed under the GNU GPL Version 2.
+        // Licensed under the GNU LGPL Version 2.1.
         //
         // Modified by Andy R. Terrel, 2005.
         //

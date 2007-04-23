@@ -8,7 +8,7 @@ function index = meshindex(p, t)
 %   t - triangles (exported from PDE Toolbox)
 %	
 % Copyright (C) 2005 Anders Logg.
-% Licensed under the GNU GPL Version 2.
+% Licensed under the GNU LGPL Version 2.1.
 
 hmin = 1.0;
 hlist = hmin*ones(size(p, 2), 1);

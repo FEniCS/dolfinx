@@ -1,5 +1,5 @@
 # Copyright (c) 2005 Johan Hoffman (hoffman@cims.nyu.edu)
-# Licensed under the GNU GPL Version 2
+# Licensed under the GNU LGPL Version 2.1
 
 name = "CNSResDensity"
 scalar = FiniteElement("Lagrange", "triangle", 1)

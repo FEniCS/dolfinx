@@ -1,5 +1,5 @@
 # Copyright (C) 2005-2006 Anders Logg (logg@simula.no)
-# Licensed under the GNU GPL Version 2
+# Licensed under the GNU LGPL Version 2.1
 #
 # This example demonstrates how to define a functional, here
 # the energy norm (squared) for a reaction-diffusion problem.

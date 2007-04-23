@@ -1,5 +1,5 @@
 // Copyright (C) 2006 Ola Skavhaug.
-// Licensed under the GNU GPL Version 2.
+// Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-11-29
 // Last changed: 2006-11-29

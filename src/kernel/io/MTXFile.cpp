@@ -1,5 +1,5 @@
 // Copyright (C) 2005 Haiko Etzel.
-// Licensed under the GNU GPL Version 2.
+// Licensed under the GNU LGPL Version 2.1.
 //
 // Uses code from http://math.nist.gov/MatrixMarket/mmio/c/mmio.c
 // which is in the public domain.

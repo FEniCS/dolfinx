@@ -1,5 +1,5 @@
 // Copyright (C) 2006 Johan Hoffman.
-// Licensed under the GNU GPL Version 2.
+// Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-12-20
 // Last changed: 2006-12-20

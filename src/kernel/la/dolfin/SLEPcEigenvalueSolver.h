@@ -1,5 +1,5 @@
 // Copyright (C) 2005-2006 Garth N. Wells.
-// Licensed under the GNU GPL Version 2.
+// Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005-08-31
 // Last changed: 2006-08-21

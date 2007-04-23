@@ -7,7 +7,7 @@ function xmlvector(filename, x)
 %   x - a vector
 %
 % Copyright (C) 2004 Georgios Foufas.
-% Licensed under the GNU GPL Version 2.
+% Licensed under the GNU LGPL Version 2.1.
 %
 % Modified by Anders Logg 2004-2005.
 %

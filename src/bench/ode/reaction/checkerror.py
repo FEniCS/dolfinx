@@ -1,7 +1,7 @@
 #!/usr/bin/python
 #
 # Copyright (C) 2005-2006 Anders Logg.
-# Licensed under the GNU GPL Version 2.
+# Licensed under the GNU LGPL Version 2.1.
 #
 # Test script for checking the error of the
 # multi-adaptive solution. Good for testing.

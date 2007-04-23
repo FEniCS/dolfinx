@@ -1,5 +1,5 @@
 # Copyright (C) 2005 Garth N. Wells.
-# Licensed under the GNU GPL Version 2.
+# Licensed under the GNU LGPL Version 2.1.
 #
 # The linearised bilinear form a(v, U) and linear form L(v) for
 # the nonlinear equation - div (1+u^2) grad u = f

@@ -4,7 +4,7 @@ function h = pdeplot(p, e, t, p1, u)
 % triangles).
 %
 % Copyright (C) 2004-2005 Johan Jansson.
-% Licensed under the GNU GPL Version 2.
+% Licensed under the GNU LGPL Version 2.1.
 %
 % First added:  2004-01-23
 % Last changed: 2005
