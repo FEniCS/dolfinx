@@ -121,7 +121,7 @@ int main()
   Right right;
   BoundaryCondition bcr(r, mesh, right);
 
-  // Set up array of boundary conditions
+  // Set up boundary conditions
   Array<BoundaryCondition*> bcs;
   bcs.push_back(&bcl);
   bcs.push_back(&bcr);

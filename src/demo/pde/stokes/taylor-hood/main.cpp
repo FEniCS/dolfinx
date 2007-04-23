@@ -11,51 +11,108 @@ using namespace dolfin;
 
 int main()
 {
-  // Boundary condition
-  class MyBC : public BoundaryCondition
+  // No-slip boundary condition for velocity
+  class Noslip : public Function
   {
-    void eval(BoundaryValue& value, const Point& p, unsigned int i)
+  public:
+
+    Noslip(Mesh& mesh) : Function(mesh) {}
+
+    void eval(real* values, const real* x)
     {
-      // Pressure boundary condition, zero pressure at one point
-      if ( i == 2 )
-      {
-        if ( p.x() < DOLFIN_EPS && p.y() < DOLFIN_EPS )
-          value = 0.0;
-        return;
-      }
-      
-      // Velocity boundary condition at inflow
-      if ( p.x() > (1.0 - DOLFIN_EPS) )
-      {
-        if ( i == 0 )
-          value = -1.0;
-        else
-          value = 0.0;
-        return;
-      }
-      
-      // Velocity boundary condition at remaining boundary (excluding outflow)
-      if ( p.x() > DOLFIN_EPS )
-        value = 0.0;
+      values[0] = 0.0;
+      values[1] = 0.0;
+    }
+
+  };
+
+  // Sub domain for no-slip boundary condition (top and bottom)
+  class NoslipDomain : public SubDomain
+  {
+    bool inside(const real* x, bool on_boundary)
+    {
+      return x[0] > DOLFIN_EPS && x[0] < 1.0 && on_boundary;
     }
   };
 
-  // Set up problem
+  // Inflow boundary condition for velocity
+  class Inflow : public Function
+  {
+  public:
+
+    Inflow(Mesh& mesh) : Function(mesh) {}
+
+    void eval(real* values, const real* x)
+    {
+      values[0] = -1.0;
+      values[1] = 0.0;
+    }
+
+  };
+
+  // Sub domain for inflow boundary condition (right)
+  class InflowDomain : public SubDomain
+  {
+    bool inside(const real* x, bool on_boundary)
+    {
+      return x[0] > 1.0 - DOLFIN_EPS;
+    }
+  };
+
+  // Pressure ground level boundary condition
+  class GroundLevel : public Function
+  {
+  public:
+
+    GroundLevel(Mesh& mesh) : Function(mesh) {}
+
+    real eval(const real* x)
+    {
+      return 0.0;
+    }
+  };
+
+  // Sub domain for pressure ground level (x = y = 0)
+  class GroundLevelDomain : public SubDomain
+  {
+    bool inside(const real* x, bool on_boundary)
+    {
+      return x[0] < DOLFIN_EPS && x[1] < DOLFIN_EPS;
+    }
+  };
+
+  // Read mesh
   Mesh mesh("../../../../../data/meshes/dolfin-2.xml.gz");
-  Function f = 0.0;
-  MyBC bc;
-  Stokes::BilinearForm a;
-  Stokes::LinearForm L(f);
-  PDE pde(a, L, mesh, bc);
+  
+  // Set up boundary conditions
+  Noslip g0(mesh); NoslipDomain G0; BoundaryCondition bc0(g0, mesh, G0);
+  Inflow g1(mesh); InflowDomain G1; BoundaryCondition bc1(g1, mesh, G1);
+  GroundLevel g2(mesh); GroundLevelDomain G2; BoundaryCondition bc2(g2, mesh, G2);
+  Array <BoundaryCondition*> bcs;
+  bcs.push_back(&bc0);
+  bcs.push_back(&bc1);
+  bcs.push_back(&bc2);
 
-  // Compute solution
-  Function U;
-  Function P;
-  pde.solve(U, P);
+  // Set up PDE
+  Function f(mesh, 0.0);
+  StokesBilinearForm a;
+  StokesLinearForm L(f);
+  PDE pde(a, L, mesh, bcs);
 
+  // Solve PDE
+  Function w;
+  pde.set("PDE linear solver", "direct");
+  pde.solve(w);
+
+  // Save solution
+  File file("solution.xml");
+  file << w;
+
+  /*
   // Save solution to file
   File ufile("velocity.pvd");
   File pfile("pressure.pvd");
   ufile << U;
   pfile << P;
+  */
 }
