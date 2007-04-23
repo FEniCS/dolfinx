@@ -16,6 +16,21 @@ using namespace dolfin;
 
 int main()
 {
+  class Source : public Function
+  {
+  public:
+
+    Source(Mesh& mesh) : Function(mesh) {}
+
+    void eval(real* values, const real* x)
+    {
+      values[0] = 0.0;
+      values[1] = 0.0;
+      values[2] = -1.0;
+    }
+
+  };
+
   // Dirichlet boundary condition for clamp at left end
   class Clamp : public Function
   {
@@ -37,7 +52,8 @@ int main()
   {
     bool inside(const real* x, bool on_boundary)
     {
-      return x[0] < 0.1 && on_boundary;
+      return x[2] < 0.1 && on_boundary;
+//      return x[0] < 0.5 && on_boundary;
     }
   };
 
@@ -50,6 +66,9 @@ int main()
 
     void eval(real* values, const real* x)
     {
+      values[0] = 0.0;
+      values[1] = 0.0;
+      values[2] = 0.0;
       /*
       // Center of rotation
       real y0 = 0.5;
@@ -87,11 +106,45 @@ int main()
   };
 
   // Read mesh
-  Mesh mesh("../../../../data/meshes/gear.xml.gz");
+//  Mesh mesh("../../../../data/meshes/gear.xml.gz");
+//  UnitCube mesh(1, 1, 1);
+  Mesh mesh("../../../../data/meshes/tetrahedron.xml.gz");
   
   // Create right-hand side
-  Function f(mesh, 0.0);
+  Source f(mesh);
+//  Function f(mesh, 0.0);
 
+  ElasticityBilinearForm a;
+  ElasticityLinearForm L(f);
+
+  Assembler assembler;
+  Matrix A;
+  Vector b;
+  assembler.assemble(A, a, mesh);
+  assembler.assemble(b, L, mesh);
+  A.disp();
+  b.disp();
+
+  Clamp c(mesh);
+  Left left;
+  BoundaryCondition bcl(c, mesh, left);
+  
+  bcl.apply(A, b, a);
+  A.disp();
+  b.disp();
+
+  Vector x;
+  LUSolver lu;
+  lu.solve(A, x, b);
+  x.disp();
+  
+  Function u;  
+  u.init(mesh, x, a, 1);
+
+  File file("elasticity.pvd");
+  file << u;
+
+/*
   // Set up boundary condition at left end
   Clamp c(mesh);
   Left left;
@@ -105,7 +158,7 @@ int main()
   // Set up array of boundary conditions
   Array<BoundaryCondition*> bcs;
   bcs.push_back(&bcl);
-  bcs.push_back(&bcr);
+//  bcs.push_back(&bcr);
 
   // Set up PDE
   ElasticityBilinearForm a;
@@ -118,9 +171,11 @@ int main()
   pde.solve(u);
 
   // Save solution
-  File file("elasticity.xml");
+  File file("elasticity.pvd");
   file << u;
- 
+  File file2("elasticity.xml");
+  file2 << u;
+*/ 
   /*
   // Set up post-processing problem to compute strain
   ElasticityStrain::BilinearForm a_strain;

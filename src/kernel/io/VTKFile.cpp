@@ -184,10 +184,10 @@ void VTKFile::ResultsWrite(Function& u) const
     if ( rank == 0 ) 
       fprintf(fp," %e ", values[ vertex->index() ] );
     else if ( u.dim(0) == 2 ) 
-      fprintf(fp," %e %e  0.0", values[ dim*vertex->index() ], values[ dim*vertex->index()+1 ] );
+      fprintf(fp," %e %e  0.0", values[ dim*vertex->index() ], values[ dim*vertex->index() + mesh.numVertices() ] );
     else  
-      fprintf(fp," %e %e  %e", values[ dim*vertex->index() ], values[ dim*vertex->index()+1 ], 
-                               values[ dim*vertex->index()+2 ] );
+      fprintf(fp," %e %e  %e", values[ dim*vertex->index() ], values[ dim*vertex->index() + mesh.numVertices() ], 
+                               values[ dim*vertex->index() + 2*mesh.numVertices() ] );
 
     fprintf(fp,"\n");
   }	 
