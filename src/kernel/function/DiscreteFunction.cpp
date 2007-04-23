@@ -1,8 +1,10 @@
 // Copyright (C) 2007 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
+// Modified by Garth N. Wells, 2007.
+//
 // First added:  2007-04-02
-// Last changed: 2007-04-13
+// Last changed: 2007-04-23
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Mesh.h>
@@ -147,14 +149,15 @@ void DiscreteFunction::interpolate(real* values)
     
     // Pick values from global vector
     x.get(dof_values, dof_map->local_dimension(), dofs);
+    cout << "testing in function " << dof_values[0] << endl;
 
     // Interpolate values at the vertices
     finite_element->interpolate_vertex_values(vertex_values, dof_values, ufc_cell);
 
     // Copy values to array of vertex values
     for (VertexIterator vertex(cell); !vertex.end(); ++vertex)
-      for (uint i = 0; i < size; i++)
-        values[i*mesh.numVertices() + vertex->index()] = vertex_values[i*size + vertex.pos()];
+      for (uint i = 0; i < size; ++i)
+        values[i*mesh.numVertices() + vertex->index()] = vertex_values[i*num_cell_vertices + vertex.pos()];
   }
 
   // Delete local data
