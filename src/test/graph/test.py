@@ -154,13 +154,9 @@ class Partitioning(unittest.TestCase):
         """Create a graph and partition it"""
 
         graph = UndirectedClique(100)
-        #parts = numpy.array('I')
-        #parts_ptr = parts.c_ptr()
-        #parts = GraphPartition.create(100)
-        parts = numpy.array('I')
-
-        # pydolfin interface to GraphPartion not generated when making src/pydolfin
+        parts = numpy.zeros(graph.numVertices(), "uint")
         GraphPartition.partition(graph, 10, parts)
+        print parts
 
 if __name__ == "__main__":
     unittest.main()

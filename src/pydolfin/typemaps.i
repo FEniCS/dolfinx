@@ -37,34 +37,47 @@
   }
 }
 
-
-// Typemaps for dolfin::real array arguments in virtual methods
-// probably not very safe
-%typemap(directorin) dolfin::real [] {
+%typemap(directorin) dolfin::real* {
   {
     // Custom typemap
     $input = SWIG_NewPointerObj((void *) $1_name, $1_descriptor, $owner);
   }
 }
 
-%typemap(directorin) dolfin::real const [] {
+%typemap(directorin) dolfin::real const * {
   {
     // Custom typemap
     $input = SWIG_NewPointerObj((void *) $1_name, $1_descriptor, $owner);
   }
 }
 
-%typecheck(SWIG_TYPECHECK_DOUBLE_ARRAY) dolfin::real* values {
+%typecheck(SWIG_TYPECHECK_DOUBLE_ARRAY) dolfin::real* {
     $1 = PyArray_Check($input) ? 1 : 0;
 }
 
-%typemap(in) dolfin::real* values {
+%typecheck(SWIG_TYPECHECK_DOUBLE_ARRAY) dolfin::uint* {
+    $1 = PyArray_Check($input) ? 1 : 0;
+}
+
+%typemap(in) dolfin::real* {
     if PyArray_Check($input) {
         PyArrayObject *xa = (PyArrayObject*)($input);
         if (xa->descr->type == 'd')
             $1 = (double *)(*xa).data;
         else
             SWIG_exception(SWIG_ValueError, "numpy array of doubles expected");
+    } else 
+        SWIG_exception(SWIG_ValueError, "numpy array expected");
+}
+
+%typemap(in) dolfin::uint* {
+    if PyArray_Check($input) {
+        PyArrayObject *xa = (PyArrayObject*)($input);
+        printf("*** Checking: xa->descr->type = %c\n", xa->descr->type);
+        if (xa->descr->type == 'L')
+            $1 = (dolfin::uint *)(*xa).data;
+        else
+            SWIG_exception(SWIG_ValueError, "numpy array of unsigned integers expected");
     } else 
         SWIG_exception(SWIG_ValueError, "numpy array expected");
 }
