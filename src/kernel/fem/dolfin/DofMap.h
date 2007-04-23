@@ -1,5 +1,5 @@
 // Copyright (C) 2007 Anders Logg and Garth N. Wells.
-// Licensed under the GNU GPL Version 2.
+// Licensed under the GNU LGPL Version 2.1.
 
 // First added:  2007-03-01
 // Last changed: 2007-04-03

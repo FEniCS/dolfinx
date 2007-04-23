@@ -5,7 +5,7 @@
 __author__ = "Anders Logg (logg@simula.no)"
 __date__ = "2007-04-12 -- 2007-04-16"
 __copyright__ = "Copyright (C) 2007 Anders Logg"
-__license__  = "GNU GPL Version 2"
+__license__  = "GNU LGPL Version 2.1"
 
 import os
 import re

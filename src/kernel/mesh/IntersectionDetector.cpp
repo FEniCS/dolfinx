@@ -1,5 +1,5 @@
 // Copyright (C) 2006 Anders Logg.
-// Licensed under the GNU GPL Version 2.
+// Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Johan Jansson 2006.
 // Modified by Ola Skavhaug 2006.

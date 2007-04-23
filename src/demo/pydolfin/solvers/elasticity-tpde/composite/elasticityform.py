@@ -1,7 +1,7 @@
 from ffc.compiler.compiler import *
 
 # Copyright (c) 2005 Johan Jansson (johanjan@math.chalmers.se)
-# Licensed under the GNU GPL Version 2
+# Licensed under the GNU LGPL Version 2.1
 #
 # First added:  2005
 # Last changed: 2006-03-28

@@ -5,7 +5,7 @@
 # Usage: inp2xml mesh.inp mesh.xml
 #
 # Copyright (C) 2002 Anders Logg.
-# Licensed under the GNU GPL Version 2.
+# Licensed under the GNU LGPL Version 2.1.
 #
 # First added:  2002-12-06
 # Last changed: 2002

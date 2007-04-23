@@ -1,5 +1,5 @@
 // Copyright (C) 2003-2005 Johan Jansson.
-// Licensed under the GNU GPL Version 2.
+// Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Anders Logg 2003-2006.
 //

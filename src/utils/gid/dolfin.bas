@@ -3,7 +3,7 @@
 *# Interface GID-Dolfin 
 *# To export mesh of triangles in 2D and 3D 
 *# Copyright (C) 2004 Harald Svensson.
-*# Licensed under the GNU GPL Version 2.
+*# Licensed under the GNU LGPL Version 2.1.
 <?xml version="1.0" encoding="UTF-8"?>
 <dolfin xmlns:dolfin="http://www.phi.chalmers.se/dolfin/">
  <mesh>

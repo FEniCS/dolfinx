@@ -1,5 +1,5 @@
 % Copyright (C) 2003-2005 Anders Logg.
-% Licensed under the GNU GPL Version 2.
+% Licensed under the GNU LGPL Version 2.1.
 %
 % First added:  2003-11-07
 % Last changed: 2005
@@ -22,7 +22,7 @@ function M = plotslab(debugfile, interval, drawupdates, drawtext, saveps, savepn
 %   savepng     - save a png file for each frame
 %
 % Copyright (C) 2003 Johan Hoffman and Anders Logg.
-% Licensed under the GNU GPL Version 2.
+% Licensed under the GNU LGPL Version 2.1.
 
 % Load the steps
 disp('Loading file...')

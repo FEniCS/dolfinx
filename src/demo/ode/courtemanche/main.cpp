@@ -1,5 +1,5 @@
 // Copyright (C) Glenn Terje Lines, Ola Skavhaug and Simula Research Laboratory.
-// Licensed under the GNU GPL Version 2.
+// Licensed under the GNU LGPL Version 2.1.
 //
 // Original code copied from PyCC.
 // Modified by Anders Logg 2006.
