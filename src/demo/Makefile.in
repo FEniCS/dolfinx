@@ -120,9 +120,6 @@ MAINT = @MAINT@
 MAINTAINER_MODE_FALSE = @MAINTAINER_MODE_FALSE@
 MAINTAINER_MODE_TRUE = @MAINTAINER_MODE_TRUE@
 MAKEINFO = @MAKEINFO@
-MODULES_LIBOBJS = @MODULES_LIBOBJS@
-MODULE_CFLAGS = @MODULE_CFLAGS@
-MODULE_INCLUDE = @MODULE_INCLUDE@
 OBJEXT = @OBJEXT@
 PACKAGE = @PACKAGE@
 PACKAGE_BUGREPORT = @PACKAGE_BUGREPORT@
@@ -209,7 +206,7 @@ sharedstatedir = @sharedstatedir@
 swig_found = @swig_found@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
-SUBDIRS = fem la mesh meshfunction nls ode pde quadrature solvers
+SUBDIRS = fem la mesh meshfunction nls ode pde quadrature
 all: all-recursive
 
 .SUFFIXES:
