@@ -2,6 +2,9 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Anders Logg, 2003-2007.
+//
+// First added:  2003-09-03
+// Last changed: 2007-04-24
 
 #ifndef __ARRAY_H
 #define __ARRAY_H
@@ -29,14 +32,48 @@ namespace dolfin
     /// Create array of given size
     Array(uint n) : std::vector<T>(n) {}
 
+    /// Create array containing two elements
+    Array(const T& t0, const T& t1) : std::vector<T>(2)
+    {
+      push_back(t0);
+      push_back(t1);
+    }
+
+    /// Create array containing three elements
+    Array(const T& t0, const T& t1, const T& t2) : std::vector<T>(3)
+    {
+      push_back(t0);
+      push_back(t1);
+      push_back(t2);
+    }
+
+    /// Create array containing four elements
+    Array(const T& t0, const T& t1, const T& t2, const T& t3) : std::vector<T>(4)
+    {
+      push_back(t0);
+      push_back(t1);
+      push_back(t2);
+      push_back(t3);
+    }
+
+    /// Create array containing five elements
+    Array(const T& t0, const T& t1, const T& t2, const T& t3, const T& t4) : std::vector<T>(5)
+    {
+      push_back(t0);
+      push_back(t1);
+      push_back(t2);
+      push_back(t3);
+      push_back(t4);
+    }
+
     /// Copy constructor
     Array(const Array<T>& x) : std::vector<T>(x) {}
 
     /// Assign to all elements in the array
-    const Array& operator=(const T& element)
+    const Array& operator=(const T& t)
     {
       for (uint i = 0; i < std::vector<T>::size(); i++)
-      (*this)[i] = element;
+      (*this)[i] = t;
       return *this;
     }
 

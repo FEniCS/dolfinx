@@ -54,10 +54,7 @@ int main()
   BoundaryCondition bc0(g0, sub_domains, 0);
   BoundaryCondition bc1(g1, sub_domains, 1);
   BoundaryCondition bc2(g2, sub_domains, 1);
-  Array <BoundaryCondition*> bcs;
-  bcs.push_back(&bc0);
-  bcs.push_back(&bc1);
-  bcs.push_back(&bc2);
+  Array <BoundaryCondition*> bcs(&bc0, &bc1, &bc2);
 
   // Set up PDE
   Function f(mesh, 0.0);
