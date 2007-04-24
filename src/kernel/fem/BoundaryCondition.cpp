@@ -27,27 +27,16 @@ BoundaryCondition::BoundaryCondition(Function& g,
 {
   cout << "Creating sub domain markers for boundary condition." << endl;
 
-  // Make sure we have the facets and the incident cells
-  const uint D = mesh.topology().dim();
-  mesh.init(D - 1);
-  mesh.init(D - 1, D);
-  
-  // Compute sub domain markers
-  sub_domains = new MeshFunction<uint>(mesh, D - 1);
+  // Create mesh function for sub domain markers on facets
+  sub_domains = new MeshFunction<uint>(mesh, mesh.topology().dim() - 1);
   sub_domains_local = true;
-  for (FacetIterator facet(mesh); !facet.end(); ++facet)
-  {
-    // Check if facet is on the boundary
-    const bool on_boundary = facet->numEntities(D) == 1;
 
-    // Mark facets with all vertices inside as sub domain 0, others as 1
-    (*sub_domains)(*facet) = 0;
-    for (VertexIterator vertex(facet); !vertex.end(); ++vertex)
-    {
-      if ( !sub_domain.inside(vertex->x(), on_boundary) )
-        (*sub_domains)(*facet) = 1;
-    }
-  }
+  // Mark everything as sub domain 1
+  for (uint i = 0; i < sub_domains->size(); i++)
+    sub_domains->set(i, 1);
+  
+  // Mark the sub domain as sub domain 0
+  sub_domain.mark(*sub_domains, 0);
 }
 //-----------------------------------------------------------------------------
 BoundaryCondition::BoundaryCondition(Function& g,

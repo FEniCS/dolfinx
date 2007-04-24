@@ -1,34 +1,34 @@
 EXTRA_DIST = dolfin_mesh.h \
-             UnitCube.h \
-             UnitSquare.h \
+             BoundaryComputation.h \
+             Cell.h \
+             CellType.h \
+             Edge.h \
+             Face.h \
+             Facet.h \
+             GeometricPredicates.h \
+             GTSInterface.h \
+             IntersectionDetector.h \
+             Interval.h \
+             LocalMeshCoarsening.h \
+             LocalMeshRefinement.h \
              MeshConnectivity.h \
+             MeshData.h \
              MeshEditor.h \
              MeshEntity.h \
              MeshEntityIterator.h \
              MeshFunction.h \
              MeshGeometry.h \
-             MeshHierarchy.h \
+             Mesh.h \
              MeshHierarchyAlgorithms.h \
+             MeshHierarchy.h \
              MeshOrdering.h \
              MeshTopology.h \
-             Mesh.h \
-             MeshData.h \
-             Vertex.h \
-             Edge.h \
-             Face.h \
-             Facet.h \
-             Cell.h \
-             TopologyComputation.h \
-             CellType.h \
-             Interval.h \
-             SubDomain.h \
-             Triangle.h \
-             Tetrahedron.h \
-             UniformMeshRefinement.h \
-             LocalMeshRefinement.h \
-             LocalMeshCoarsening.h \
              Point.h \
-             BoundaryComputation.h \
-             GeometricPredicates.h \
-             GTSInterface.h \
-             IntersectionDetector.h
+             SubDomain.h \
+             Tetrahedron.h \
+             TopologyComputation.h \
+             Triangle.h \
+             UniformMeshRefinement.h \
+             UnitCube.h \
+             UnitSquare.h \
+             Vertex.h

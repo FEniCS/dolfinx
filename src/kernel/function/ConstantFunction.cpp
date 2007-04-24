@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-02-09
-// Last changed: 2007-04-21
+// Last changed: 2007-04-24
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Mesh.h>
@@ -50,14 +50,14 @@ void ConstantFunction::interpolate(real* coefficients,
 {
   dolfin_assert(coefficients);
 
-  // Evaluate each dof to get coefficients for nodal basis expansion
-  for (uint i = 0; i < finite_element.space_dimension(); i++)
-    coefficients[i] = finite_element.evaluate_dof(i, *this, cell);
-
   // Compute size of value (number of entries in tensor value)
   size = 1;
   for (uint i = 0; i < finite_element.value_rank(); i++)
     size *= finite_element.value_dimension(i);
+
+  // Evaluate each dof to get coefficients for nodal basis expansion
+  for (uint i = 0; i < finite_element.space_dimension(); i++)
+    coefficients[i] = finite_element.evaluate_dof(i, *this, cell);
 }
 //-----------------------------------------------------------------------------
 void ConstantFunction::evaluate(real* values,
