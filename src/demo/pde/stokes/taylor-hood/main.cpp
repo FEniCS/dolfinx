@@ -84,6 +84,11 @@ int main()
   // Read mesh
   Mesh mesh("../../../../../data/meshes/dolfin-2.xml.gz");
   
+  // Read sub domain markers
+  MeshFunction<unsigned int> sub_domains(mesh);
+  File file("subdomains.xml.gz");
+  file >> sub_domains;
+  
   // Set up boundary conditions
   Noslip g0(mesh); NoslipDomain G0; BoundaryCondition bc0(g0, mesh, G0);
   Inflow g1(mesh); InflowDomain G1; BoundaryCondition bc1(g1, mesh, G1);
@@ -105,8 +110,8 @@ int main()
   pde.solve(w);
 
   // Save solution
-  File file("solution.xml");
-  file << w;
+  //File file("solution.xml");
+  //file << w;
 
   /*
   // Save solution to file

@@ -4,7 +4,7 @@
 // Modified by Johan Hoffman 2007.
 //
 // First added:  2006-05-22
-// Last changed: 2007-04-10
+// Last changed: 2007-04-24
 
 #ifndef __MESH_FUNCTION_H
 #define __MESH_FUNCTION_H
@@ -91,7 +91,6 @@ namespace dolfin
     {
       if ( !_mesh )
         dolfin_error("Mesh has not been specified, unable to initialize mesh function.");
-      _mesh->init(dim);
       init(*_mesh, dim, _mesh->size(dim));
     }
 
@@ -100,7 +99,7 @@ namespace dolfin
     {
       if ( !_mesh )
         dolfin_error("Mesh has not been specified, unable to initialize mesh function.");
-      init(*_mesh, dim, _mesh->size(dim));
+      init(*_mesh, dim, size);
     }
 
     /// Initialize mesh function for given topological dimension
@@ -112,6 +111,11 @@ namespace dolfin
     /// Initialize mesh function for given topological dimension of given size
     void init(Mesh& mesh, uint dim, uint size)
     {
+      // Initialize mesh for entities of given dimension
+      mesh.init(dim);
+      dolfin_assert(mesh.size(dim) == size);
+      
+      // Initialize data
       _mesh = &mesh;
       _dim = dim;
       _size = size;

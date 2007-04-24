@@ -1,8 +1,10 @@
 // Copyright (C) 2006 Ola Skavhaug.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Anders Logg, 2007.
+//
 // First added:  2006-11-27
-// Last changed: 2006-11-27
+// Last changed: 2007-04-24
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/CellType.h>
@@ -137,36 +139,36 @@ void XMLMeshFunction::readMeshFunction(const xmlChar *name, const xmlChar **attr
   {
     if (_imeshfunction == 0) 
       dolfin_error("MeshFunction file of type \"int\", but MeshFunction<int> not initialized");
-    if ( _imeshfunction->mesh().size(tdim) != size)
-      dolfin_error4("In file: Size %d MeshEntities of dimension %d does not match underlying Mesh having size %d MeshEntities of dimension %d", size, tdim, _imeshfunction->mesh().size(tdim), tdim);
     _imeshfunction->init(tdim, size);
+    if ( _imeshfunction->mesh().size(tdim) != size)
+      dolfin_error4("Size of mesh function (%d) does not match size of mesh (%d entities of dimension %d)", size, tdim, _imeshfunction->mesh().size(tdim), tdim);
     mf_type = INT;
   }
   else if (strcmp(type.c_str(), "uint") == 0 ) 
   {
     if (_uimeshfunction == 0) 
       dolfin_error("MeshFunction file of type \"uint\", but MeshFunction<uint> not initialized");
-    if ( _uimeshfunction->mesh().size(tdim) != size)
-      dolfin_error4("In file: Size %d MeshEntities of dimension %d does not match underlying Mesh having size %d MeshEntities of dimension %d", size, tdim, _uimeshfunction->mesh().size(tdim), tdim);
     _uimeshfunction->init(tdim, size);
+    if ( _uimeshfunction->mesh().size(tdim) != size)
+      dolfin_error4("Size of mesh function (%d) does not match size of mesh (%d entities of dimension %d)", size, tdim, _uimeshfunction->mesh().size(tdim), tdim);
     mf_type = UINT;
   }
   else if (strcmp(type.c_str(), "double") == 0 ) 
   {
     if (_dmeshfunction == 0) 
       dolfin_error("MeshFunction file of type \"double\", but MeshFunction<double> not initialized");
-    if ( _dmeshfunction->mesh().size(tdim) != size)
-      dolfin_error4("In file: Size %d MeshEntities of dimension %d does not match underlying Mesh having size %d MeshEntities of dimension %d", size, tdim, _dmeshfunction->mesh().size(tdim), tdim);
     _dmeshfunction->init(tdim, size);
+    if ( _dmeshfunction->mesh().size(tdim) != size)
+      dolfin_error4("Size of mesh function (%d) does not match size of mesh (%d entities of dimension %d)", size, tdim, _dmeshfunction->mesh().size(tdim), tdim);
     mf_type = DOUBLE;
   }
   else if (strcmp(type.c_str(), "bool") == 0 ) 
   {
     if (_bmeshfunction == 0) 
       dolfin_error("MeshFunction file of type \"bool\", but MeshFunction<bool> not initialized");
+    _bmeshfunction->init(tdim, size);
     if ( _bmeshfunction->mesh().size(tdim) != size)
       dolfin_error4("In file: Size %d MeshEntities of dimension %d does not match underlying Mesh having size %d MeshEntities of dimension %d", size, tdim, _bmeshfunction->mesh().size(tdim), tdim);
-    _bmeshfunction->init(tdim, size);
     mf_type = BOOL;
   }
 }
@@ -194,7 +196,7 @@ void XMLMeshFunction::readEntities(const xmlChar *name, const xmlChar **attrs)
     break;
 
   default:
-    dolfin_error("Could not determine the type of MeshFunction. Aborting");
+    dolfin_error("Could not determine the type of MeshFunction.");
   }
 }
 //-----------------------------------------------------------------------------
