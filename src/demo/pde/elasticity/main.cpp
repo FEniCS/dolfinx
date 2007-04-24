@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-02-07
-// Last changed: 2007-04-21
+// Last changed: 2007-04-24
 //
 // This demo program solves the equations of static
 // linear elasticity for a gear clamped at two of its
@@ -16,21 +16,6 @@ using namespace dolfin;
 
 int main()
 {
-  class Source : public Function
-  {
-  public:
-
-    Source(Mesh& mesh) : Function(mesh) {}
-
-    void eval(real* values, const real* x)
-    {
-      values[0] = 0.0;
-      values[1] = 0.0;
-      values[2] = -1.0;
-    }
-
-  };
-
   // Dirichlet boundary condition for clamp at left end
   class Clamp : public Function
   {
@@ -65,10 +50,6 @@ int main()
 
     void eval(real* values, const real* x)
     {
-      values[0] = 0.0;
-      values[1] = 0.0;
-      values[2] = 0.0;
-      /*
       // Center of rotation
       real y0 = 0.5;
       real z0 = 0.219;
@@ -77,22 +58,15 @@ int main()
       real theta = 0.5236;
       
       // New coordinates
-      real y = y0 + (p.y() - y0)*cos(theta) - (p.z() - z0)*sin(theta);
-      real z = z0 + (p.y() - y0)*sin(theta) + (p.z() - z0)*cos(theta);
-      
-      // Clamp at left end
-      value = 0.0;
+      real y = y0 + (x[1] - y0)*cos(theta) - (x[2] - z0)*sin(theta);
+      real z = z0 + (x[1] - y0)*sin(theta) + (x[2] - z0)*cos(theta);
       
       // Clamp at right end
-      if ( p.x() > (1.0 - w) )
-      {
-	    if ( i == 1 )
-	      value = y - p.y();
-	    else if ( i == 2 )
-	      value = z - p.z();
-      }
-      */
+      values[0] = 0.0;
+      values[1] = y - x[1];
+      values[2] = z - x[2];
     }
+
   };
 
   // Sub domain for rotation at right end
@@ -108,8 +82,7 @@ int main()
   Mesh mesh("../../../../data/meshes/gear.xml.gz");
   
   // Create right-hand side
-  Source f(mesh);
-//  Function f(mesh, 0.0);
+  Function f(mesh, 0.0);
 
   // Set up boundary condition at left end
   Clamp c(mesh);
@@ -136,9 +109,13 @@ int main()
   pde.set("PDE linear solver", "direct");
   pde.solve(u);
 
-  // Save solution
-  File file("elasticity.pvd");
-  file << u;
+  // Save solution to VTK format
+  File vtk_file("elasticity.pvd");
+  vtk_file << u;
+
+  // Save solution to XML format
+  File xml_file("elasticity.xml");
+  xml_file << u;
  
   /*
   // Set up post-processing problem to compute strain
