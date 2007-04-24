@@ -10,11 +10,11 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-SparsityPattern::SparsityPattern()
+SparsityPattern::SparsityPattern() 
 {
-  sparsity_pattern.clear();
   dim[0] = 0;
   dim[1] = 0;
+  sparsity_pattern.clear();
 }
 //-----------------------------------------------------------------------------
 SparsityPattern::~SparsityPattern()
@@ -22,7 +22,14 @@ SparsityPattern::~SparsityPattern()
   //Do nothing
 }
 //-----------------------------------------------------------------------------
-void SparsityPattern::init(const uint M, const uint N)
+void SparsityPattern::init(uint M)
+{
+  dim[0] = M;
+  dim[1] = 0;
+  sparsity_pattern.clear();
+}
+//-----------------------------------------------------------------------------
+void SparsityPattern::init(uint M, uint N)
 {
   dim[0] = M;
   dim[1] = N;
@@ -32,6 +39,9 @@ void SparsityPattern::init(const uint M, const uint N)
 //-----------------------------------------------------------------------------
 void SparsityPattern::numNonZeroPerRow(uint nzrow[]) const
 {
+  if ( dim[1] == 0 )
+    dolfin_error("Non-zero entries per row can be computed for matrices only.");
+
   if ( sparsity_pattern.size() == 0 )
     dolfin_error("Sparsity pattern has not been computed.");
 
@@ -43,6 +53,9 @@ void SparsityPattern::numNonZeroPerRow(uint nzrow[]) const
 //-----------------------------------------------------------------------------
 dolfin::uint SparsityPattern::numNonZero() const
 {
+  if ( dim[1] == 0 )
+    dolfin_error("Total non-zeros entries can be computed for matrices only.");
+
   if ( sparsity_pattern.size() == 0 )
     dolfin_error("Sparsity pattern has not been computed.");
 
@@ -56,6 +69,9 @@ dolfin::uint SparsityPattern::numNonZero() const
 //-----------------------------------------------------------------------------
 void SparsityPattern::disp() const
 { 
+  if ( dim[1] == 0 )
+    dolfin_warning("Only matrix sparsity patterns can be displayed.");
+
   std::vector< std::set<int> >::const_iterator set;
   std::set<int>::const_iterator element;
   
