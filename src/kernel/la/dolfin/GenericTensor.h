@@ -49,6 +49,9 @@ namespace dolfin
     /// Finalise assembly of tensor
     virtual void apply() = 0;
 
+    /// Display tensor
+    virtual void disp(uint precision = 2) const = 0;
+
   };
 
 }
