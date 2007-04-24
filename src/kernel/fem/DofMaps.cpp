@@ -93,6 +93,25 @@ const DofMap& DofMaps::operator[] (uint i) const
 //-----------------------------------------------------------------------------
 void DofMaps::sparsityPattern(SparsityPattern& sparsity_pattern) const
 {
+  if( size() == 1)
+    vectorSparsityPattern(sparsity_pattern);
+  else if( size() == 2)
+    matrixSparsityPattern(sparsity_pattern);
+  else
+    dolfin_error("Cannot compute sparsity patterm for size > 2.");
+}
+//-----------------------------------------------------------------------------
+void DofMaps::vectorSparsityPattern(SparsityPattern& sparsity_pattern) const
+{
+  // Get map
+  DofMap* dof_map0 = dof_maps[0];
+
+  // Initialise sparsity pattern 
+  sparsity_pattern.init(dof_map0->global_dimension());
+}
+//-----------------------------------------------------------------------------
+void DofMaps::matrixSparsityPattern(SparsityPattern& sparsity_pattern) const
+{
   if( size() != 2)
     dolfin_error("Number of DOF maps in not equal to 2. Do not know how to build sparsity pattern.");
  

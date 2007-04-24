@@ -18,8 +18,9 @@
 namespace dolfin
 {
 
-  /// This class represents the sparsity pattern of a matrix. It will be used
-  /// to initalise sparse matrices.
+  /// This class represents the sparsity pattern of a vector/matrix. It can be 
+  /// used to initalise vectors and sparse matrices. It must be initialised
+  /// before use.
 
   class SparsityPattern
   {
@@ -31,15 +32,18 @@ namespace dolfin
     /// Destructor
     ~SparsityPattern();
 
-    /// Initialise sparsity pattern with total number of rows and columns
-    void init(const uint M, const uint N);
+    /// Initialise sparsity pattern for a vector
+    void init(uint M);
+
+    /// Initialise sparsity pattern for a matrix with total number of rows and columns
+    void init(uint M, uint N);
 
     /// Insert non-zero entry
-    void insert(const uint row, const uint column)
+    void insert(uint row, uint column)
       { sparsity_pattern[row].insert(column); };
 
     /// Return global size 
-    uint size(const uint n) const
+    uint size(uint n) const
     { 
       dolfin_assert(n < 2);
       return dim[n]; 
@@ -65,7 +69,6 @@ namespace dolfin
 
     // Dimensions
     uint dim[2];
-
   };
 }
 #endif
