@@ -13,6 +13,7 @@
 #include <dolfin/KrylovSolver.h>
 #include <dolfin/Function.h>
 #include <dolfin/LinearPDE.h>
+#include <dolfin/dolfin_io.h>
 
 using namespace dolfin;
 
