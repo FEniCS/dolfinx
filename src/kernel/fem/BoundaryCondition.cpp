@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-04-10
-// Last changed: 2007-04-19
+// Last changed: 2007-04-24
 
 #include <dolfin/Mesh.h>
 #include <dolfin/Vertex.h>
@@ -32,8 +32,7 @@ BoundaryCondition::BoundaryCondition(Function& g,
   sub_domains_local = true;
 
   // Mark everything as sub domain 1
-  for (uint i = 0; i < sub_domains->size(); i++)
-    sub_domains->set(i, 1);
+  (*sub_domains) = 1;
   
   // Mark the sub domain as sub domain 0
   sub_domain.mark(*sub_domains, 0);

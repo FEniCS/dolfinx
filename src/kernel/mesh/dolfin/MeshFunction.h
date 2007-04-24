@@ -77,6 +77,15 @@ namespace dolfin
       return _values[entity.index()];
     }
 
+    /// Set all values to given value
+    const MeshFunction<T>& operator= (const T& value)
+    {
+      dolfin_assert(_values);
+      for (uint i = 0; i < _size; i++)
+        _values[i] = value;
+      return *this;
+    }
+
     /// Initialize mesh function for given topological dimension
     void init(uint dim)
     {
