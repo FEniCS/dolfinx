@@ -4,6 +4,7 @@
 #ifndef __DISCONTINUOUS_LAGRANGE_TRIANGLE_2_H
 #define __DISCONTINUOUS_LAGRANGE_TRIANGLE_2_H
 
+#include <cmath>
 #include <ufc.h>
 
 /// This class defines the interface for a finite element.
@@ -60,7 +61,74 @@ public:
                               const double* coordinates,
                               const ufc::cell& c) const
   {
-    // Not implemented
+    // Extract vertex coordinates
+    const double * const * element_coordinates = c.coordinates;
+    
+    // Compute Jacobian of affine map from reference cell
+    const double J_00 = element_coordinates[1][0] - element_coordinates[0][0];
+    const double J_01 = element_coordinates[2][0] - element_coordinates[0][0];
+    const double J_10 = element_coordinates[1][1] - element_coordinates[0][1];
+    const double J_11 = element_coordinates[2][1] - element_coordinates[0][1];
+      
+    // Compute determinant of Jacobian
+    const double detJ = J_00*J_11 - J_01*J_10;
+    
+    // Compute constants
+    const double C0 = element_coordinates[1][0] + element_coordinates[2][0];
+    const double C1 = element_coordinates[1][1] + element_coordinates[2][1];
+    
+    // Get coordinates and map to the reference (FIAT) element
+    double x = (J_01*C1 - J_11*C0 + 2.0*J_11*coordinates[0] - 2.0*J_01*coordinates[1]) / detJ;
+    double y = (J_10*C0 - J_00*C1 - 2.0*J_10*coordinates[0] + 2.0*J_00*coordinates[1]) / detJ;
+    
+    // Map coordinates to the reference square
+    if (std::abs(y - 1.0) < 1e-14)
+      x = -1.0;
+    else
+      x = 2.0 * (1.0 + x)/(1.0 - y) - 1.0;
+    
+    const static unsigned int dof = i;
+    
+    // Table(s) of coefficients
+    const static double coefficients0[6][6] = \
+    {{-2.270232565077e-17, -0.1732050807569, -0.1, 0.12171612389, 0.09428090415821, 0.05443310539518},
+    {0.471404520791, 5.164206433159e-18, -0.2666666666667, -0.2434322477801, 4.216556895879e-18, 0.05443310539518},
+    {1.466211829703e-17, 0.1732050807569, -0.1, 0.12171612389, -0.09428090415821, 0.05443310539518},
+    {0.471404520791, -0.2309401076759, 0.1333333333333, 0, -0.1885618083164, -0.1632993161855},
+    {0.471404520791, 0.2309401076759, 0.1333333333333, 0, 0.1885618083164, -0.1632993161855},
+    {-1.834202249707e-17, 1.249424974616e-17, 0.2, 0, 1.0201512199e-17, 0.1632993161855}};
+    
+    // Generate scalings
+    const double scalings_y_0 = 1.0;
+    const double scalings_y_1 = scalings_y_0*(0.5 - 0.5 * y);
+    const double scalings_y_2 = scalings_y_1*(0.5 - 0.5 * y);
+    
+    // Compute psitilde_a
+    const double psitilde_a_0 = 1.0;
+    const double psitilde_a_1 = 1*x;
+    const double psitilde_a_2 = 1.5*x*psitilde_a_1-0.5*psitilde_a_0;
+    
+    // Compute psitilde_bs
+    const double psitilde_bs_0_0 = 1.0;
+    const double psitilde_bs_0_1 = 0.5 + 1.5*y;
+    const double psitilde_bs_0_2 = 0.1111111111111*psitilde_bs_0_1 + 1.666666666667*y*psitilde_bs_0_1-0.5555555555556*psitilde_bs_0_0;
+    const double psitilde_bs_1_0 = 1.0;
+    const double psitilde_bs_1_1 = 1.5 + 2.5*y;
+    const double psitilde_bs_2_0 = 1.0;
+    
+    // Compute basisvalues
+    const double basisvalues[6] = \
+    {psitilde_a_0*scalings_y_0*psitilde_bs_0_0*0.7071067811865,
+    psitilde_a_1*scalings_y_1*psitilde_bs_1_0*1.732050807569,
+    psitilde_a_0*scalings_y_0*psitilde_bs_0_1*1,
+    psitilde_a_2*scalings_y_2*psitilde_bs_2_0*2.738612787526,
+    psitilde_a_1*scalings_y_1*psitilde_bs_1_1*2.12132034356,
+    psitilde_a_0*scalings_y_0*psitilde_bs_0_2*1.224744871392};
+    
+    // Compute value(s)
+    *values = 0.0;
+    for (unsigned int j = 0; j < 6; j++)
+      *values += coefficients0[dof][j]*basisvalues[j];
   }
 
   /// Evaluate linear functional for dof i on the function f
@@ -68,8 +136,8 @@ public:
                               const ufc::function& f,
                               const ufc::cell& c) const
   {
-    // Not implemented
-    return 0.0;
+    // Not implemented (only for Lagrange elements
+    return 0;
   }
 
   /// Interpolate vertex values from dof values

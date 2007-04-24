@@ -1,4 +1,4 @@
 from dolfin import *
 
-u = Function("poisson.xml")
+u = Function("elasticity.xml")
 plot(u, mode="displacement")

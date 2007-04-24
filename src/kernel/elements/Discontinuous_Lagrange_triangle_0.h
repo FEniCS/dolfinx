@@ -4,6 +4,7 @@
 #ifndef __DISCONTINUOUS_LAGRANGE_TRIANGLE_0_H
 #define __DISCONTINUOUS_LAGRANGE_TRIANGLE_0_H
 
+#include <cmath>
 #include <ufc.h>
 
 /// This class defines the interface for a finite element.
@@ -60,7 +61,55 @@ public:
                               const double* coordinates,
                               const ufc::cell& c) const
   {
-    // Not implemented
+    // Extract vertex coordinates
+    const double * const * element_coordinates = c.coordinates;
+    
+    // Compute Jacobian of affine map from reference cell
+    const double J_00 = element_coordinates[1][0] - element_coordinates[0][0];
+    const double J_01 = element_coordinates[2][0] - element_coordinates[0][0];
+    const double J_10 = element_coordinates[1][1] - element_coordinates[0][1];
+    const double J_11 = element_coordinates[2][1] - element_coordinates[0][1];
+      
+    // Compute determinant of Jacobian
+    const double detJ = J_00*J_11 - J_01*J_10;
+    
+    // Compute constants
+    const double C0 = element_coordinates[1][0] + element_coordinates[2][0];
+    const double C1 = element_coordinates[1][1] + element_coordinates[2][1];
+    
+    // Get coordinates and map to the reference (FIAT) element
+    double x = (J_01*C1 - J_11*C0 + 2.0*J_11*coordinates[0] - 2.0*J_01*coordinates[1]) / detJ;
+    double y = (J_10*C0 - J_00*C1 - 2.0*J_10*coordinates[0] + 2.0*J_00*coordinates[1]) / detJ;
+    
+    // Map coordinates to the reference square
+    if (std::abs(y - 1.0) < 1e-14)
+      x = -1.0;
+    else
+      x = 2.0 * (1.0 + x)/(1.0 - y) - 1.0;
+    
+    const static unsigned int dof = i;
+    
+    // Table(s) of coefficients
+    const static double coefficients0[1][1] = \
+    {{1.414213562373}};
+    
+    // Generate scalings
+    const double scalings_y_0 = 1.0;
+    
+    // Compute psitilde_a
+    const double psitilde_a_0 = 1.0;
+    
+    // Compute psitilde_bs
+    const double psitilde_bs_0_0 = 1.0;
+    
+    // Compute basisvalues
+    const double basisvalues[1] = \
+    {psitilde_a_0*scalings_y_0*psitilde_bs_0_0*0.7071067811865};
+    
+    // Compute value(s)
+    *values = 0.0;
+    for (unsigned int j = 0; j < 1; j++)
+      *values += coefficients0[dof][j]*basisvalues[j];
   }
 
   /// Evaluate linear functional for dof i on the function f
@@ -68,8 +117,8 @@ public:
                               const ufc::function& f,
                               const ufc::cell& c) const
   {
-    // Not implemented
-    return 0.0;
+    // Not implemented (only for Lagrange elements
+    return 0;
   }
 
   /// Interpolate vertex values from dof values

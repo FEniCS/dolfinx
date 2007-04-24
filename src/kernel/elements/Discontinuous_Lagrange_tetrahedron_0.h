@@ -4,6 +4,7 @@
 #ifndef __DISCONTINUOUS_LAGRANGE_TETRAHEDRON_0_H
 #define __DISCONTINUOUS_LAGRANGE_TETRAHEDRON_0_H
 
+#include <cmath>
 #include <ufc.h>
 
 /// This class defines the interface for a finite element.
@@ -60,7 +61,90 @@ public:
                               const double* coordinates,
                               const ufc::cell& c) const
   {
-    // Not implemented
+    // Extract vertex coordinates
+    const double * const * element_coordinates = c.coordinates;
+    
+    // Compute Jacobian of affine map from reference cell
+    const double J_00 = element_coordinates[1][0] - element_coordinates[0][0];
+    const double J_01 = element_coordinates[2][0] - element_coordinates[0][0];
+    const double J_02 = element_coordinates[3][0] - element_coordinates[0][0];
+    const double J_10 = element_coordinates[1][1] - element_coordinates[0][1];
+    const double J_11 = element_coordinates[2][1] - element_coordinates[0][1];
+    const double J_12 = element_coordinates[3][1] - element_coordinates[0][1];
+    const double J_20 = element_coordinates[1][2] - element_coordinates[0][2];
+    const double J_21 = element_coordinates[2][2] - element_coordinates[0][2];
+    const double J_22 = element_coordinates[3][2] - element_coordinates[0][2];
+      
+    // Compute sub determinants
+    const double d00 = J_11*J_22 - J_12*J_21;
+    const double d01 = J_12*J_20 - J_10*J_22;
+    const double d02 = J_10*J_21 - J_11*J_20;
+    
+    const double d10 = J_02*J_21 - J_01*J_22;
+    const double d11 = J_00*J_22 - J_02*J_20;
+    const double d12 = J_01*J_20 - J_00*J_21;
+    
+    const double d20 = J_01*J_12 - J_02*J_11;
+    const double d21 = J_02*J_10 - J_00*J_12;
+    const double d22 = J_00*J_11 - J_01*J_10;
+      
+    // Compute determinant of Jacobian
+    double detJ = J_00*d00 + J_10*d10 + J_20*d20;
+    
+    // Compute constants
+    const double C0 = element_coordinates[3][0] + element_coordinates[2][0] \
+                    + element_coordinates[1][0] - element_coordinates[0][0];
+    const double C1 = element_coordinates[3][1] + element_coordinates[2][1] \
+                    + element_coordinates[1][1] - element_coordinates[0][1];
+    const double C2 = element_coordinates[3][2] + element_coordinates[2][2] \
+                    + element_coordinates[1][2] - element_coordinates[0][2];
+    
+    // Get coordinates and map to the reference (FIAT) element
+    double x = coordinates[0];
+    double y = coordinates[1];
+    double z = coordinates[2];
+    
+    x = (2.0*d00*x + 2.0*d10*y + 2.0*d20*z - d00*C0 - d10*C1 - d20*C2) / detJ;
+    y = (2.0*d01*x + 2.0*d11*y + 2.0*d21*z - d01*C0 - d11*C1 - d21*C2) / detJ;
+    z = (2.0*d02*x + 2.0*d12*y + 2.0*d22*z - d02*C0 - d12*C1 - d22*C2) / detJ;
+    
+    // Map coordinates to the reference cube
+    if (std::abs(y + z) < 1e-14)
+      x = 1.0;
+    else
+      x = -2.0 * (1.0 + x)/(y + z) - 1.0;
+    if (std::abs(z - 1.0) < 1e-14)
+      y = -1.0;
+    else
+      y = 2.0 * (1.0 + y)/(1.0 - z) - 1.0;
+    
+    const static unsigned int dof = i;
+    
+    // Table(s) of coefficients
+    const static double coefficients0[1][1] = \
+    {{1.154700538379}};
+    
+    // Generate scalings
+    const double scalings_y_0 = 1.0;
+    const double scalings_z_0 = 1.0;
+    
+    // Compute psitilde_a
+    const double psitilde_a_0 = 1.0;
+    
+    // Compute psitilde_bs
+    const double psitilde_bs_0_0 = 1.0;
+    
+    // Compute psitilde_cs
+    const double psitilde_cs_00_0 = 1.0;
+    
+    // Compute basisvalues
+    const double basisvalues[1] = \
+    {psitilde_a_0*scalings_y_0*psitilde_bs_0_0*scalings_z_0*psitilde_cs_00_0*0.8660254037844};
+    
+    // Compute value(s)
+    *values = 0.0;
+    for (unsigned int j = 0; j < 1; j++)
+      *values += coefficients0[dof][j]*basisvalues[j];
   }
 
   /// Evaluate linear functional for dof i on the function f
@@ -68,8 +152,8 @@ public:
                               const ufc::function& f,
                               const ufc::cell& c) const
   {
-    // Not implemented
-    return 0.0;
+    // Not implemented (only for Lagrange elements
+    return 0;
   }
 
   /// Interpolate vertex values from dof values
