@@ -50,17 +50,25 @@ int main()
   Inflow g1(mesh);
   Function g2(mesh, 0.0);
   
-  // Create boundary conditions
-  BoundaryCondition bc0(g0, sub_domains, 0);
-  BoundaryCondition bc1(g1, sub_domains, 1);
-  BoundaryCondition bc2(g2, sub_domains, 1);
+  // No-slip boundary condition for velocity
+  BoundaryCondition bc0(g0, sub_domains, 0, 0);
+
+  // Inflow boundary condition for velocity
+  BoundaryCondition bc1(g1, sub_domains, 1, 0);
+
+  // Boundary condition for pressure at inflow
+  BoundaryCondition bc2(g2, sub_domains, 1, 1);
+
+  // Collect boundary conditions
   Array <BoundaryCondition*> bcs(&bc0, &bc1, &bc2);
 
   // Set up PDE
   Function f(mesh, 0.0);
   StokesBilinearForm a;
   StokesLinearForm L(f);
-  PDE pde(a, L, mesh, bcs);
+
+  //PDE pde(a, L, mesh, bcs);
+  PDE pde(a, L, mesh);
 
   // Solve PDE
   Function w;

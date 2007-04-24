@@ -14,6 +14,7 @@
 #include <dolfin/UFCCell.h>
 #include <dolfin/GenericMatrix.h>
 #include <dolfin/GenericVector.h>
+#include <dolfin/SubSystem.h>
 #include <dolfin/BoundaryCondition.h>
 
 using namespace dolfin;
@@ -21,13 +22,16 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 BoundaryCondition::BoundaryCondition(Function& g,
                                      Mesh& mesh,
-                                     SubDomain& sub_domain)
-  : g(g), mesh(mesh), sub_domains(0), sub_domain(0),
-    sub_domains_local(false)
+                                     SubDomain& sub_domain,
+                                     int sub_system, int sub_sub_system)
+  : g(g), mesh(mesh),
+    sub_domains(0), sub_domain(0), sub_domains_local(false),
+    sub_system(sub_system), sub_sub_system(sub_sub_system)
 {
   cout << "Creating sub domain markers for boundary condition." << endl;
 
   // Create mesh function for sub domain markers on facets
+  mesh.init(mesh.topology().dim() - 1);
   sub_domains = new MeshFunction<uint>(mesh, mesh.topology().dim() - 1);
   sub_domains_local = true;
 
@@ -40,9 +44,11 @@ BoundaryCondition::BoundaryCondition(Function& g,
 //-----------------------------------------------------------------------------
 BoundaryCondition::BoundaryCondition(Function& g,
                                      MeshFunction<uint>& sub_domains,
-                                     uint sub_domain)
-  : g(g), mesh(sub_domains.mesh()), sub_domains(&sub_domains), sub_domain(sub_domain),
-    sub_domains_local(false)
+                                     uint sub_domain,
+                                     int sub_system, int sub_sub_system)
+  : g(g), mesh(sub_domains.mesh()),
+    sub_domains(&sub_domains), sub_domain(sub_domain), sub_domains_local(false),
+    sub_system(sub_system), sub_sub_system(sub_sub_system)
 {
   // Do nothing
 }
@@ -67,10 +73,17 @@ void BoundaryCondition::apply(GenericMatrix& A, GenericVector& b,
 
   // FIXME: How do we reuse the dof map for u?
   // FIXME: Perhaps we should make DofMaps a member of Form?
-
-  // Create local data for solution u (second argument of form)
+  
+  // Create local data for application of boundary conditions
+  LocalData data(form, sub_system, sub_sub_system);
+  
+  // Create finite element and dof map for solution (second argument of form)
   ufc::dof_map* dof_map = form.create_dof_map(1);
   ufc::finite_element* finite_element = form.create_finite_element(1);
+
+
+  // Create local data for solution u (second argument of form)
+
   real* w = new real[finite_element->space_dimension()];
   uint* cell_dofs = new uint[finite_element->space_dimension()];
   uint* facet_dofs = new uint[dof_map->num_facet_dofs()];
@@ -131,5 +144,34 @@ void BoundaryCondition::apply(GenericMatrix& A, GenericVector& b,
   delete [] facet_dofs;
   delete [] rows;
   delete [] values;
+}
+//-----------------------------------------------------------------------------
+BoundaryCondition::LocalData::LocalData(const ufc::form& form,
+                                        int sub_system, int sub_sub_system)
+{
+  // Check arity of form
+  if (form.rank() != 2)
+    dolfin_error("Form must be bilinear for application of boundary conditions.");
+
+  // Create array for sub system
+  Array<uint> sub_systems;
+  if (sub_system >= 0)
+    sub_systems.push_back(sub_system);
+  if (sub_sub_system >= 0)
+    sub_systems.push_back(sub_sub_system);
+
+  // Extract sub finite element for sub system
+  //sub_element = SubSystem::extractFiniteElement(finite_element, sub_systems);
+
+
+  // Extract sub dof map for sub system
+  
+  
+}
+//-----------------------------------------------------------------------------
+BoundaryCondition::LocalData::~LocalData()
+{
+
+
 }
 //-----------------------------------------------------------------------------

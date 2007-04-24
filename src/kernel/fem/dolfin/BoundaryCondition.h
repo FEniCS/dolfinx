@@ -35,16 +35,22 @@ namespace dolfin
   /// a MeshFunction<uint> over the facets of the mesh and
   /// an integer sub_domain specifying the sub domain on which
   /// the boundary condition is to be applied.
+  ///
+  /// For mixed systems (vector-valued and mixed elements), an
+  /// optional set of parameters may be used to specify for which sub
+  /// system the boundary condition should be specified.
   
   class BoundaryCondition
   {
   public:
 
     /// Create boundary condition from sub domain
-    BoundaryCondition(Function& g, Mesh& mesh, SubDomain& sub_domain);
+    BoundaryCondition(Function& g, Mesh& mesh, SubDomain& sub_domain,
+                      int sub_system = -1, int sub_sub_system = -1);
 
     /// Create boundary condition from sub domain markers and sub domain index
-    BoundaryCondition(Function& g, MeshFunction<uint>& sub_domains, uint sub_domain);
+    BoundaryCondition(Function& g, MeshFunction<uint>& sub_domains, uint sub_domain,
+                      int sub_system = -1, int sub_sub_system = -1);
 
     /// Destructor
     ~BoundaryCondition();
@@ -56,6 +62,19 @@ namespace dolfin
     void apply(GenericMatrix& A, GenericVector& b, const ufc::form& form);
 
   private:
+
+    // Local data for application of boundary conditions
+    class LocalData
+    {
+    public:
+      
+      // Constructor
+      LocalData(const ufc::form& form, int sub_system, int sub_sub_system);
+      
+      // Destructor
+      ~LocalData();
+
+    };
 
     // The function
     Function& g;
@@ -71,6 +90,12 @@ namespace dolfin
 
     // True if sub domain markers are created locally
     bool sub_domains_local;
+
+    // The sub system
+    int sub_system;
+
+    // The sub system of the sub system
+    int sub_sub_system;
 
   };
 
