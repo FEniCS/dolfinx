@@ -39,10 +39,9 @@ BoundaryCondition::BoundaryCondition(Function& g,
 }
 //-----------------------------------------------------------------------------
 BoundaryCondition::BoundaryCondition(Function& g,
-                                     Mesh& mesh,
                                      MeshFunction<uint>& sub_domains,
                                      uint sub_domain)
-  : g(g), mesh(mesh), sub_domains(&sub_domains), sub_domain(sub_domain),
+  : g(g), mesh(sub_domains.mesh()), sub_domains(&sub_domains), sub_domain(sub_domain),
     sub_domains_local(false)
 {
   // Do nothing

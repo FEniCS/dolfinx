@@ -50,7 +50,7 @@ namespace dolfin
     /// Define a PDE with natural boundary conditions
     PDE(Form& a, Form& L, Mesh& mesh, Type type = linear);
 
-    /// Define a PDE with a single Dirichlet boundary conditions
+    /// Define a PDE with a single Dirichlet boundary condition
     PDE(Form& a, Form& L, Mesh& mesh, BoundaryCondition& bc, Type type = linear);
     
     /// Define a PDE with a set of Dirichlet boundary conditions

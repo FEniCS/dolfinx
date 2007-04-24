@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-04-10
-// Last changed: 2007-04-17
+// Last changed: 2007-04-24
 
 #ifndef __NEW_BOUNDARY_CONDITION_H
 #define __NEW_BOUNDARY_CONDITION_H
@@ -44,7 +44,7 @@ namespace dolfin
     BoundaryCondition(Function& g, Mesh& mesh, SubDomain& sub_domain);
 
     /// Create boundary condition from sub domain markers and sub domain index
-    BoundaryCondition(Function& g, Mesh& mesh, MeshFunction<uint>& sub_domains, uint sub_domain);
+    BoundaryCondition(Function& g, MeshFunction<uint>& sub_domains, uint sub_domain);
 
     /// Destructor
     ~BoundaryCondition();

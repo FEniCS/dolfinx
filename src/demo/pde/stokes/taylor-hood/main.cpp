@@ -26,15 +26,6 @@ int main()
 
   };
 
-  // Sub domain for no-slip boundary condition (top and bottom)
-  class NoslipDomain : public SubDomain
-  {
-    bool inside(const real* x, bool on_boundary)
-    {
-      return x[0] > DOLFIN_EPS && x[0] < 1.0 && on_boundary;
-    }
-  };
-
   // Inflow boundary condition for velocity
   class Inflow : public Function
   {
@@ -50,49 +41,19 @@ int main()
 
   };
 
-  // Sub domain for inflow boundary condition (right)
-  class InflowDomain : public SubDomain
-  {
-    bool inside(const real* x, bool on_boundary)
-    {
-      return x[0] > 1.0 - DOLFIN_EPS;
-    }
-  };
-
-  // Pressure ground level boundary condition
-  class GroundLevel : public Function
-  {
-  public:
-
-    GroundLevel(Mesh& mesh) : Function(mesh) {}
-
-    real eval(const real* x)
-    {
-      return 0.0;
-    }
-  };
-
-  // Sub domain for pressure ground level (x = y = 0)
-  class GroundLevelDomain : public SubDomain
-  {
-    bool inside(const real* x, bool on_boundary)
-    {
-      return x[0] < DOLFIN_EPS && x[1] < DOLFIN_EPS;
-    }
-  };
-
-  // Read mesh
+  // Read mesh and sub domain markers
   Mesh mesh("../../../../../data/meshes/dolfin-2.xml.gz");
+  MeshFunction<unsigned int> sub_domains(mesh, "subdomains.xml.gz");
+
+  // Create functions for boundary conditions
+  Noslip g0(mesh);
+  Inflow g1(mesh);
+  Function g2(mesh, 0.0);
   
-  // Read sub domain markers
-  MeshFunction<unsigned int> sub_domains(mesh);
-  File file("subdomains.xml.gz");
-  file >> sub_domains;
-  
-  // Set up boundary conditions
-  Noslip g0(mesh); NoslipDomain G0; BoundaryCondition bc0(g0, mesh, G0);
-  Inflow g1(mesh); InflowDomain G1; BoundaryCondition bc1(g1, mesh, G1);
-  GroundLevel g2(mesh); GroundLevelDomain G2; BoundaryCondition bc2(g2, mesh, G2);
+  // Create boundary conditions
+  BoundaryCondition bc0(g0, sub_domains, 0);
+  BoundaryCondition bc1(g1, sub_domains, 1);
+  BoundaryCondition bc2(g2, sub_domains, 1);
   Array <BoundaryCondition*> bcs;
   bcs.push_back(&bc0);
   bcs.push_back(&bc1);

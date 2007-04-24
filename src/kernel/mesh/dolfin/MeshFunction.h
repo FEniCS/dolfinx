@@ -10,6 +10,7 @@
 #define __MESH_FUNCTION_H
 
 #include <dolfin/constants.h>
+#include <dolfin/File.h>
 #include <dolfin/MeshEntity.h>
 
 namespace dolfin
@@ -36,6 +37,13 @@ namespace dolfin
     MeshFunction(Mesh& mesh, uint dim) : _values(0), _mesh(&mesh), _dim(0), _size(0)
     {
       init(dim);
+    }
+
+    /// Create function from data file
+    MeshFunction(Mesh& mesh, const std::string filename) : _values(0), _mesh(&mesh), _dim(0), _size(0)
+    {
+      File file(filename);
+      file >> *this;
     }
 
     /// Destructor
