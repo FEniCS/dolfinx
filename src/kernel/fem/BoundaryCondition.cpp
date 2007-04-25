@@ -95,6 +95,10 @@ void BoundaryCondition::apply(GenericMatrix& A, GenericVector& b,
   const uint D = mesh.topology().dim();
   mesh.init(D - 1);   
  
+  // A set to hold dofs to which Dirichlet boundary conidtions are applied
+  std::set<uint> bc_rows;
+  bc_rows.clear();
+
   // Iterate over the facets of the mesh
   Progress p("Applying Dirichlet boundary conditions", mesh.size(D - 1));
   for (FacetIterator facet(mesh); !facet.end(); ++facet)
@@ -127,14 +131,29 @@ void BoundaryCondition::apply(GenericMatrix& A, GenericVector& b,
     {
       rows[i] = cell_dofs[facet_dofs[i]];
       values[i] = w[facet_dofs[i]];
+      bc_rows.insert(cell_dofs[facet_dofs[i]]);
     }    
 
     // Modify linear system for facet dofs (A_ij = delta_ij and b[i] = value)
-    A.ident(rows, dof_map->num_facet_dofs());
+//    A.ident(rows, dof_map->num_facet_dofs());
     b.set(values, dof_map->num_facet_dofs(), rows);
 
     p++;
   }
+
+  // Copy contents of boundary condition set into an array
+  uint i = 0;
+  uint* bc_temp = new uint[bc_rows.size()];
+  for(std::set<uint>::const_iterator bc_dof = bc_rows.begin(); bc_dof != bc_rows.end(); ++bc_dof)
+    bc_temp[i++] = *bc_dof;
+
+  // Modify linear system for facet dofs (A_ij = delta_ij)
+  A.ident(bc_temp, bc_rows.size());
+
+  delete [] bc_temp;
+
+  // Finalise changes to b
+  b.apply();
 
   // Delete dof map data
   delete dof_map;
