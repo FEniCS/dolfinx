@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2007.
 //
 // First added:  2007-04-02
-// Last changed: 2007-04-23
+// Last changed: 2007-04-25
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Mesh.h>
@@ -72,9 +72,9 @@ DiscreteFunction::DiscreteFunction(Mesh& mesh, Vector& x,
   }
   dof_map = new DofMap(*ufc_dof_map, mesh);
 
-  // Initialize vector
+  // Check size of vector
   if ( x.size() != dof_map->global_dimension() )
-    x.init(dof_map->global_dimension());
+    dolfin_error("Size of vector does not match global dimension of finite element space.");
 
   // Initialize local array for mapping of dofs
   dofs = new uint[dof_map->local_dimension()];
