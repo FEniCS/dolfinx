@@ -5,7 +5,7 @@
 // Modified by Anders Logg 2006-2007.
 //
 // First added:  2006-04-24
-// Last changed: 2007-04-16
+// Last changed: 2007-04-25
 
 #ifndef __GENERIC_MATRIX_H
 #define __GENERIC_MATRIX_H
@@ -78,12 +78,6 @@ namespace dolfin
     virtual void ident(const uint rows[], uint m) = 0;
 
     ///--- FIXME: Which of the functions below do we really need? ---
-
-    /// Initialize M x N matrix with given maximum number of nonzeros in each row
-    virtual void init(uint M, uint N, uint nzmax) = 0;
-    
-    /// Initialize M x N matrix with given number of nonzeros per row
-    virtual void init(uint M, uint N, const uint nz[]) = 0;
 
     /// Set all entries to zero
     virtual void zero() = 0;

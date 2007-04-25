@@ -227,11 +227,11 @@ void Assembler::check(const ufc::form& form,
 //-----------------------------------------------------------------------------
 void Assembler::initGlobalTensor(GenericTensor& A, const UFC& ufc) const
 {
-  A.init(ufc.form.rank(), ufc.global_dimensions);
+  //A.init(ufc.form.rank(), ufc.global_dimensions);
 
-  //SparsityPattern sparsity_pattern; 
-  //dof_maps.sparsityPattern(sparsity_pattern);
-  //A.init(sparsity_pattern);
+  SparsityPattern sparsity_pattern; 
+  dof_maps.sparsityPattern(sparsity_pattern);
+  A.init(sparsity_pattern);
 }
 //-----------------------------------------------------------------------------
 void Assembler::initCoefficients(Array<Function*>& coefficients,
