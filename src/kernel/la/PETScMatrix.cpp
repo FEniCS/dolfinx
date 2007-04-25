@@ -356,7 +356,7 @@ Mat PETScMatrix::mat() const
   return A;
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::disp(const bool sparse, const int precision) const
+void PETScMatrix::disp(uint precision) const
 {
   // FIXME: Maybe this could be an option?
   //MatView(A, PETSC_VIEWER_STDOUT_SELF);

@@ -137,7 +137,7 @@ namespace dolfin
     Mat mat() const;
 
     /// Display matrix (sparse output is default)
-    void disp(const bool sparse = true, const int precision = 2) const;
+    void disp(uint precision = 2) const;
 
     /// Output
     friend LogStream& operator<< (LogStream& stream, const PETScMatrix& A);

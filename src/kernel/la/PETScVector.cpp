@@ -342,7 +342,7 @@ real PETScVector::min() const
   return value;
 }
 //-----------------------------------------------------------------------------
-void PETScVector::disp() const
+void PETScVector::disp(uint precision) const
 {
   // FIXME: Maybe this could be an option?
   //VecView(x, PETSC_VIEWER_STDOUT_SELF);

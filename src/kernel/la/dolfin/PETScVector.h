@@ -139,7 +139,7 @@ namespace dolfin
     real min() const;
     
     /// Display vector
-    void disp() const;
+    void disp(uint precision = 2) const;
 
     /// Output
     friend LogStream& operator<< (LogStream& stream, const PETScVector& A);

@@ -58,7 +58,7 @@ namespace dolfin
     virtual void apply() = 0;
 
     /// Display tensor (implemented by sub class)
-    virtual void disp(uint precision =2) const = 0;
+    virtual void disp(uint precision = 2) const = 0;
 
     ///--- Vector interface ---
     
