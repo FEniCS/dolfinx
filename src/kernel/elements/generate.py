@@ -1,7 +1,7 @@
 "Generate finite elements for DOLFIN library of precompiled elements"
 
 __author__ = "Anders Logg (logg@simula.no)"
-__date__ = "2007-04-12 -- 2007-04-24"
+__date__ = "2007-04-12 -- 2007-04-25"
 __copyright__ = "Copyright (C) 2007 Anders Logg"
 __license__  = "GNU LGPL Version 2.1"
 
@@ -14,9 +14,6 @@ elements = [eval(element) for element in elements.split("\n")[1:-1]]
 # Iterate over elements and compile
 signatures = []
 for element in elements:
-
-    shape = "hej"
-    degree = 1
     
     # Set name of element
     name = "%s_%s_%d" % (element.family().replace(" ", "_"),
