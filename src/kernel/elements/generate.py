@@ -13,17 +13,14 @@ elements = [eval(element) for element in elements.split("\n")[1:-1]]
 
 # Iterate over elements and compile
 signatures = []
-for element in elements:
-    
-    # Set name of element
-    name = "%s_%s_%d" % (element.family().replace(" ", "_"),
-                         shape_to_string[element.cell_shape()],
-                         element.degree())
+for i in range(len(elements)):
     
     # Generate code
-    print "Compiling element: " + name
+    print "Compiling element %d out of %d..." % (i, len(elements))
+    element = elements[i]
+    name = "ffc_%.2d" % i
     compile(element, name)
-    
+
     # Save signatures of elements and dof maps
     dof_map = DofMap(element)
     signatures += [(name, element.signature(), dof_map.signature())]
