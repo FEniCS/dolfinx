@@ -4,7 +4,7 @@
 // Modified by Anders Logg 2006-2007.
 //
 // First added:  2006-03-04
-// Last changed: 2007-04-16
+// Last changed: 2007-04-25
 
 #ifndef __UBLAS_VECTOR_H
 #define __UBLAS_VECTOR_H
@@ -52,9 +52,6 @@ namespace dolfin
 
     /// Initialize a vector of length N
     void init(uint N);
-
-    /// Initialize a vector using sparsity pattern
-    void init(const SparsityPattern& sparsity_pattern);
 
     /// Set all entries to a single scalar value
     const uBlasVector& operator= (real a);

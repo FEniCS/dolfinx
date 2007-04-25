@@ -37,8 +37,7 @@ namespace dolfin
     { init(dims[0], dims[1], reset); }
 
     /// Initialize zero tensor using sparsity pattern (implemented by sub class)
-    virtual void init(const SparsityPattern& sparsity_pattern, bool reset = true)
-    { init(sparsity_pattern, reset); }
+    virtual void init(const SparsityPattern& sparsity_pattern, bool reset = true) = 0;
 
     /// Return size of given dimension (implemented by sub class)
     virtual uint size(uint dim) const = 0;

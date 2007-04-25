@@ -1,10 +1,10 @@
-// Copyright (C) 2006 Garth N. Wells.
+// Copyright (C) 2006-2007 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Anders Logg 2006-2007.
 //
 // First added:  2006-04-04
-// Last changed: 2007-04-16
+// Last changed: 2007-04-25
 
 #include <dolfin/dolfin_log.h>
 #include <boost/numeric/ublas/vector.hpp>
@@ -49,11 +49,6 @@ void uBlasVector::init(uint N)
   
   this->resize(N, false);
   clear();
-}
-//-----------------------------------------------------------------------------
-void uBlasVector::init(const SparsityPattern& sparsity_pattern)
-{
-  dolfin_error("Cannot initialise a uBLAS vector using a sparsity pattern.");
 }
 //-----------------------------------------------------------------------------
 void uBlasVector::get(real* block, uint m, const uint* rows) const

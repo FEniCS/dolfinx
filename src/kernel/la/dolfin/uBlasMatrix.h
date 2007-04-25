@@ -345,8 +345,6 @@ namespace dolfin
   inline void uBlasMatrix<Mat>::init(const SparsityPattern& sparsity_pattern, 
                                      bool reset)
   {
-    //FIXME: Initialising in a really dumb way. Don't know yet how to initialise
-    //       compressed layout efficiently
     init(sparsity_pattern.size(0), sparsity_pattern.size(1));
 
     // Reserve space for non-zeroes
@@ -358,7 +356,7 @@ namespace dolfin
     std::set<int>::const_iterator element;
     for(set = pattern.begin(); set != pattern.end(); ++set)
       for(element = set->begin(); element != set->end(); ++element)
-        (*this)(set-pattern.begin(), *element) = 0.0;
+        this->push_back(set - pattern.begin(), *element, 0.0);
   }
   //---------------------------------------------------------------------------
   template <>  
