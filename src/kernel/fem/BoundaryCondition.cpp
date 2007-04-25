@@ -135,7 +135,7 @@ void BoundaryCondition::apply(GenericMatrix& A, GenericVector& b,
     }    
 
     // Modify linear system for facet dofs (A_ij = delta_ij and b[i] = value)
-//    A.ident(rows, dof_map->num_facet_dofs());
+    A.ident(rows, dof_map->num_facet_dofs());
     b.set(values, dof_map->num_facet_dofs(), rows);
 
     p++;
@@ -148,7 +148,7 @@ void BoundaryCondition::apply(GenericMatrix& A, GenericVector& b,
     bc_temp[i++] = *bc_dof;
 
   // Modify linear system for facet dofs (A_ij = delta_ij)
-  A.ident(bc_temp, bc_rows.size());
+//  A.ident(bc_temp, bc_rows.size());
 
   delete [] bc_temp;
 
