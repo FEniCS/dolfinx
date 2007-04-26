@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-04-10
-// Last changed: 2007-04-24
+// Last changed: 2007-04-26
 
 #include <dolfin/Mesh.h>
 #include <dolfin/Vertex.h>
@@ -81,14 +81,12 @@ void BoundaryCondition::apply(GenericMatrix& A, GenericVector& b,
   ufc::dof_map* dof_map = form.create_dof_map(1);
   ufc::finite_element* finite_element = form.create_finite_element(1);
 
-
   // Create local data for solution u (second argument of form)
-
-  real* w = new real[finite_element->space_dimension()];
-  uint* cell_dofs = new uint[finite_element->space_dimension()];
-  uint* facet_dofs = new uint[dof_map->num_facet_dofs()];
-  uint* rows = new uint[dof_map->num_facet_dofs()];
-  real* values = new real[dof_map->num_facet_dofs()];
+  real* w = new real[10*finite_element->space_dimension()];
+  uint* cell_dofs = new uint[10*finite_element->space_dimension()];
+  uint* facet_dofs = new uint[10*dof_map->num_facet_dofs()];
+  uint* rows = new uint[10*dof_map->num_facet_dofs()];
+  real* values = new real[10*dof_map->num_facet_dofs()];
   UFCMesh ufc_mesh(mesh);
 
   // Make sure we have the facets
@@ -96,8 +94,8 @@ void BoundaryCondition::apply(GenericMatrix& A, GenericVector& b,
   mesh.init(D - 1);   
  
   // A set to hold dofs to which Dirichlet boundary conidtions are applied
-  std::set<uint> bc_rows;
-  bc_rows.clear();
+  std::set<uint> row_set;
+  row_set.clear();
 
   // Iterate over the facets of the mesh
   Progress p("Applying Dirichlet boundary conditions", mesh.size(D - 1));
@@ -130,12 +128,11 @@ void BoundaryCondition::apply(GenericMatrix& A, GenericVector& b,
     for (uint i = 0; i < dof_map->num_facet_dofs(); i++)
     {
       rows[i] = cell_dofs[facet_dofs[i]];
+      row_set.insert( rows[i] );
       values[i] = w[facet_dofs[i]];
-      bc_rows.insert(cell_dofs[facet_dofs[i]]);
     }    
 
-    // Modify linear system for facet dofs (A_ij = delta_ij and b[i] = value)
-    A.ident(rows, dof_map->num_facet_dofs());
+    // Modify RHS vector for facet dofs (b[i] = value)
     b.set(values, dof_map->num_facet_dofs(), rows);
 
     p++;
@@ -143,14 +140,15 @@ void BoundaryCondition::apply(GenericMatrix& A, GenericVector& b,
 
   // Copy contents of boundary condition set into an array
   uint i = 0;
-  uint* bc_temp = new uint[bc_rows.size()];
-  for(std::set<uint>::const_iterator bc_dof = bc_rows.begin(); bc_dof != bc_rows.end(); ++bc_dof)
-    bc_temp[i++] = *bc_dof;
+  uint* rows_temp = new uint[row_set.size()];
+  std::set<uint>::const_iterator row;
+  for(row = row_set.begin(); row != row_set.end(); ++row)
+    rows_temp[i++] = *row;
 
   // Modify linear system for facet dofs (A_ij = delta_ij)
-//  A.ident(bc_temp, bc_rows.size());
+  A.ident(rows_temp, row_set.size());
 
-  delete [] bc_temp;
+  delete [] rows_temp;
 
   // Finalise changes to b
   b.apply();
