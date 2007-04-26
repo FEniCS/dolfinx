@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2007-04-24
-// Last changed: 2007-04-24
+// Last changed: 2007-04-26
 
 #ifndef __SUB_SYSTEM_H
 #define __SUB_SYSTEM_H
@@ -13,21 +13,49 @@
 namespace dolfin
 {
 
-  /// This class implements functionality for extracting nested sub
-  /// finite elements and sub dof maps of a given finite element or
-  /// dof map.
+  /// This class represents a sub system that may be specified as a
+  /// recursively nested sub system of some given system.
+  ///
+  /// The sub system is specified by an array of indices. For example,
+  /// the array [3, 0, 2] specifies sub system 2 of sub system 0 of
+  /// sub system 3.
 
   class SubSystem
   {
   public:
 
-    /// Extract given sub finite element
-    static const ufc::finite_element* extractFiniteElement
-    (const ufc::finite_element& finite_element, Array<uint>& sub_system);
+    /// Create empty sub system (no sub systems)
+    SubSystem();
 
-    /// Extract given sub dof map
+    /// Create given sub system (one level)
+    SubSystem(uint sub_system);
+
+    /// Create given sub sub system (two levels)
+    SubSystem(uint sub_system, uint sub_sub_system);
+
+    /// Create sub system for given array (n levels)
+    SubSystem(const Array<uint>& sub_system);
+
+    /// Extract sub finite element of given finite element
+    const ufc::finite_element* extractFiniteElement
+    (const ufc::finite_element& finite_element) const;
+
+    /// Extract sub dof map of given dof map
+    const ufc::dof_map* extractDofMap
+    (const ufc::dof_map& dof_map) const;
+
+  private:
+
+    // Recursively extract sub finite element
+    static const ufc::finite_element* extractFiniteElement
+    (const ufc::finite_element& finite_element, const Array<uint>& sub_system);
+
+    // Recursively extract sub dof map
     static const ufc::dof_map* extractDofMap
-    (const ufc::dof_map& dof_map, Array<uint>& sub_system);
+    (const ufc::dof_map& dof_map, const Array<uint>& sub_system);
+
+    // The array specifying the sub system
+    Array<uint> sub_system;
     
   };
 

@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-04-10
-// Last changed: 2007-04-24
+// Last changed: 2007-04-26
 
 #ifndef __NEW_BOUNDARY_CONDITION_H
 #define __NEW_BOUNDARY_CONDITION_H
@@ -10,6 +10,7 @@
 #include <ufc.h>
 
 #include <dolfin/constants.h>
+#include <dolfin/SubSystem.h>
 #include <dolfin/MeshFunction.h>
 
 namespace dolfin
@@ -44,13 +45,26 @@ namespace dolfin
   {
   public:
 
-    /// Create boundary condition from sub domain
-    BoundaryCondition(Function& g, Mesh& mesh, SubDomain& sub_domain,
-                      int sub_system = -1, int sub_sub_system = -1);
+    /// Create boundary condition for sub domain
+    BoundaryCondition(Function& g,
+                      Mesh& mesh,
+                      SubDomain& sub_domain);
 
-    /// Create boundary condition from sub domain markers and sub domain index
-    BoundaryCondition(Function& g, MeshFunction<uint>& sub_domains, uint sub_domain,
-                      int sub_system = -1, int sub_sub_system = -1);
+    /// Create boundary condition for sub domain specified by index
+    BoundaryCondition(Function& g,
+                      MeshFunction<uint>& sub_domains, uint sub_domain);
+
+    /// Create sub system boundary condition for sub domain
+    BoundaryCondition(Function& g,
+                      Mesh& mesh,
+                      SubDomain& sub_domain,
+                      const SubSystem& sub_system);
+
+    /// Create sub system boundary condition for sub domain specified by index
+    BoundaryCondition(Function& g,
+                      MeshFunction<uint>& sub_domains,
+                      uint sub_domain,
+                      const SubSystem& sub_system);
 
     /// Destructor
     ~BoundaryCondition();
@@ -58,23 +72,25 @@ namespace dolfin
     /// Apply boundary condition to linear system
     void apply(GenericMatrix& A, GenericVector& b, const Form& form);
 
-    /// Apply boundary condition to linear system
-    void apply(GenericMatrix& A, GenericVector& b, const ufc::form& form);
-
   private:
 
+    // Initialize sub domain markers    
+    void init(SubDomain& sub_domain);
+
+    /*
     // Local data for application of boundary conditions
     class LocalData
     {
     public:
       
       // Constructor
-      LocalData(const ufc::form& form, int sub_system, int sub_sub_system);
+      LocalData(const ufc::form& form);
       
       // Destructor
       ~LocalData();
 
     };
+    */
 
     // The function
     Function& g;
@@ -91,11 +107,8 @@ namespace dolfin
     // True if sub domain markers are created locally
     bool sub_domains_local;
 
-    // The sub system
-    int sub_system;
-
-    // The sub system of the sub system
-    int sub_sub_system;
+    // Sub system
+    SubSystem sub_system;
 
   };
 

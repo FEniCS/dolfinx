@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2007-04-24
-// Last changed: 2007-04-24
+// Last changed: 2007-04-26
 
 #include <dolfin/MeshEntityIterator.h>
 #include <dolfin/Vertex.h>

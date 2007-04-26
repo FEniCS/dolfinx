@@ -4,6 +4,7 @@
 // DOLFIN fem interface
 
 #include <dolfin/assemble.h>
+#include <dolfin/SubSystem.h>
 #include <dolfin/BoundaryCondition.h>
 #include <dolfin/Form.h>
 #include <dolfin/Assembler.h>

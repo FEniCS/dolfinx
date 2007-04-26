@@ -46,18 +46,22 @@ int main()
   MeshFunction<unsigned int> sub_domains(mesh, "subdomains.xml.gz");
 
   // Create functions for boundary conditions
-  Noslip g0(mesh);
-  Inflow g1(mesh);
-  Function g2(mesh, 0.0);
+  Noslip noslip(mesh);
+  Inflow inflow(mesh);
+  Function zero(mesh, 0.0);
   
+  // Define sub systems for boundary conditions
+  SubSystem velocity(0);
+  SubSystem pressure(1);
+
   // No-slip boundary condition for velocity
-  BoundaryCondition bc0(g0, sub_domains, 0, 0);
+  BoundaryCondition bc0(noslip, sub_domains, 0, velocity);
 
   // Inflow boundary condition for velocity
-  BoundaryCondition bc1(g1, sub_domains, 1, 0);
+  BoundaryCondition bc1(inflow, sub_domains, 1, velocity);
 
   // Boundary condition for pressure at inflow
-  BoundaryCondition bc2(g2, sub_domains, 1, 1);
+  BoundaryCondition bc2(zero, sub_domains, 1, pressure);
 
   // Collect boundary conditions
   Array <BoundaryCondition*> bcs(&bc0, &bc1, &bc2);

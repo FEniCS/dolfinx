@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2007-04-24
-// Last changed: 2007-04-24
+// Last changed: 2007-04-26
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/SubSystem.h>
@@ -10,13 +10,52 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
+SubSystem::SubSystem()
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+SubSystem::SubSystem(uint sub_system)
+{
+  this->sub_system.push_back(sub_system);
+}
+//-----------------------------------------------------------------------------
+SubSystem::SubSystem(uint sub_system, uint sub_sub_system)
+{
+  this->sub_system.push_back(sub_system);
+  this->sub_system.push_back(sub_sub_system);
+}
+//-----------------------------------------------------------------------------
+SubSystem::SubSystem(const Array<uint>& sub_system) : sub_system(sub_system)
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
 const ufc::finite_element* SubSystem::extractFiniteElement
-(const ufc::finite_element& finite_element, Array<uint>& sub_system)
+(const ufc::finite_element& finite_element) const
+{
+  return extractFiniteElement(finite_element, sub_system);
+}
+//-----------------------------------------------------------------------------
+const ufc::dof_map* SubSystem::extractDofMap
+(const ufc::dof_map& dof_map) const
+{
+  return extractDofMap(dof_map, sub_system);
+}
+//-----------------------------------------------------------------------------
+const ufc::finite_element* SubSystem::extractFiniteElement
+(const ufc::finite_element& finite_element, const Array<uint>& sub_system)
 {
   // Check if there are any sub systems
   if (finite_element.num_sub_elements() == 0)
   {
     dolfin_error("Unable to extract sub system (there are no sub systems).");
+  }
+
+  // Check that a sub system has been specified
+  if (sub_system.size() == 0)
+  {
+    dolfin_error("Unable to extract sub system (no sub system specified).");
   }
   
   // Check the number of available sub systems
@@ -44,7 +83,7 @@ const ufc::finite_element* SubSystem::extractFiniteElement
 }
 //-----------------------------------------------------------------------------
 const ufc::dof_map* SubSystem::extractDofMap
-(const ufc::dof_map& dof_map, Array<uint>& sub_system)
+(const ufc::dof_map& dof_map, const Array<uint>& sub_system)
 {
   if (sub_system.size() == 0)
     return &dof_map;
