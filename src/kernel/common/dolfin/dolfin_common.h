@@ -6,6 +6,7 @@
 #include <dolfin/timing.h>
 #include <dolfin/Array.h>
 #include <dolfin/List.h>
+#include <dolfin/TimeDependent.h>
 #include <dolfin/Variable.h>
 
 #endif
