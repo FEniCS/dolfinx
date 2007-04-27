@@ -5,6 +5,7 @@ nobase_include_HEADERS        = dolfin/dolfin_function.h \
                                 dolfin/Function.h \
                                 dolfin/GenericFunction.h \
                                 dolfin/SpecialFunctions.h \
+                                dolfin/SubFunction.h \
                                 dolfin/UserFunction.h
 INCLUDES                      = @KERNEL_CFLAGS@
 lib_LTLIBRARIES               = libdolfin-function.la

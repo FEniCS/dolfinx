@@ -451,7 +451,7 @@ void XMLFile::operator<<(Function& f)
   *this << df->mesh;
   
   // Write the vector
-  *this << df->x;
+  *this << *df->x;
 
   // Write the finite element
   fp = openFile();

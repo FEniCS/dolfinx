@@ -1,10 +1,11 @@
-# Load mayavi
-from mayavi import *
+from dolfin import *
 
-# Plot solution
-v = mayavi()
-d = v.open_vtk_xml("velocity000000.vtu")
-m = v.load_module("VelocityVector")
+# FIXME: Plotting of vector field in Viper seems not to work
 
-# Wait until window is closed
-v.master.wait_window()
+# Plot velocity
+#u = Function("velocity.xml")
+#plot(u)
+
+# Plot pressure
+p = Function("pressure.xml")
+plot(p)

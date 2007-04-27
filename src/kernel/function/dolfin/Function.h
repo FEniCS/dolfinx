@@ -1,10 +1,10 @@
-// Copyright (C) 2003-2007 Johan Hoffman, Johan Jansson and Anders Logg.
+// Copyright (C) 2007 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells 2005.
 //
 // First added:  2003-11-28
-// Last changed: 2007-04-13
+// Last changed: 2007-04-27
 
 #ifndef __FUNCTION_H
 #define __FUNCTION_H
@@ -12,6 +12,7 @@
 #include <ufc.h>
 #include <dolfin/constants.h>
 #include <dolfin/Vector.h>
+#include <dolfin/SubFunction.h>
 #include <dolfin/Variable.h>
 
 namespace dolfin
@@ -50,6 +51,9 @@ namespace dolfin
     /// Create discrete function for argument function i of form
     Function(Mesh& mesh, Vector& x, const Form& form, uint i = 1);
 
+    /// Create discrete function from sub function
+    Function(SubFunction sub_function);
+
     /// Create function from data file
     Function(const std::string filename);
 
@@ -70,6 +74,9 @@ namespace dolfin
     
     /// Return the mesh
     Mesh& mesh();
+
+    /// Extract sub function/slice (only for discrete function)
+    SubFunction operator[] (uint i);
 
     /// Interpolate function to vertices of mesh
     void interpolate(real* values);

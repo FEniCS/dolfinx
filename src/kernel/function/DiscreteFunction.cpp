@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2007.
 //
 // First added:  2007-04-02
-// Last changed: 2007-04-25
+// Last changed: 2007-04-27
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Mesh.h>
@@ -15,13 +15,15 @@
 #include <dolfin/UFCMesh.h>
 #include <dolfin/UFCCell.h>
 #include <dolfin/ElementLibrary.h>
+#include <dolfin/SubFunction.h>
+#include <dolfin/SubSystem.h>
 #include <dolfin/DiscreteFunction.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 DiscreteFunction::DiscreteFunction(Mesh& mesh, Vector& x, const Form& form, uint i)
-  : GenericFunction(mesh), x(x), finite_element(0), dof_map(0), dofs(0),
+  : GenericFunction(mesh), x(&x), finite_element(0), dof_map(0), dofs(0),
     local_mesh(0), local_vector(0)
 {
   // Check argument
@@ -52,7 +54,7 @@ DiscreteFunction::DiscreteFunction(Mesh& mesh, Vector& x, const Form& form, uint
 DiscreteFunction::DiscreteFunction(Mesh& mesh, Vector& x,
                                    std::string finite_element_signature,
                                    std::string dof_map_signature)
-  : GenericFunction(mesh), x(x), finite_element(0), dof_map(0), dofs(0),
+  : GenericFunction(mesh), x(&x), finite_element(0), dof_map(0), dofs(0),
     local_mesh(0), local_vector(0)
 {
   // Create finite element
@@ -81,9 +83,46 @@ DiscreteFunction::DiscreteFunction(Mesh& mesh, Vector& x,
   for (uint i = 0; i < dof_map->local_dimension(); i++)
     dofs[i] = 0;
 
-  // Assume responsibility for data
+  // Assume responsibility for mesh and vector
   local_mesh = &mesh;
   local_vector = &x;
+}
+//-----------------------------------------------------------------------------
+DiscreteFunction::DiscreteFunction(SubFunction& sub_function)
+  : GenericFunction(sub_function.f->mesh), x(0),
+    finite_element(0), dof_map(0), dofs(0),
+    local_mesh(0), local_vector(0)
+{
+  // Create sub system
+  SubSystem sub_system(sub_function.i);
+
+  // Extract sub element
+  finite_element = sub_system.extractFiniteElement(*sub_function.f->finite_element);
+
+  // Extract sub dof map and offset
+  uint offset = 0;
+  ufc_dof_map = sub_system.extractDofMap(*sub_function.f->ufc_dof_map, mesh, offset);
+  dof_map = new DofMap(*ufc_dof_map, mesh);
+
+  // Create vector of dofs and copy values
+  const uint n = dof_map->global_dimension();
+  x = new Vector(n);
+  real* values = new real[n];
+  uint* get_rows = new uint[n];
+  uint* set_rows = new uint[n];
+  for (uint i = 0; i < n; i++)
+  {
+    get_rows[i] = offset + i;
+    set_rows[i] = i;
+  }
+  sub_function.f->x->get(values, n, get_rows);
+  x->set(values, n, set_rows);
+  delete [] values;
+  delete [] get_rows;
+  delete [] set_rows;
+
+  // Assume responsibility for vector
+  local_vector = x;
 }
 //-----------------------------------------------------------------------------
 DiscreteFunction::~DiscreteFunction()
@@ -148,7 +187,7 @@ void DiscreteFunction::interpolate(real* values)
     dof_map->tabulate_dofs(dofs, ufc_cell);
     
     // Pick values from global vector
-    x.get(dof_values, dof_map->local_dimension(), dofs);
+    x->get(dof_values, dof_map->local_dimension(), dofs);
 
     // Interpolate values at the vertices
     finite_element->interpolate_vertex_values(vertex_values, dof_values, ufc_cell);
@@ -183,6 +222,6 @@ void DiscreteFunction::interpolate(real* coefficients,
   dof_map->tabulate_dofs(dofs, cell);
   
   // Pick values from global vector
-  x.get(coefficients, dof_map->local_dimension(), dofs);
+  x->get(coefficients, dof_map->local_dimension(), dofs);
 }
 //-----------------------------------------------------------------------------

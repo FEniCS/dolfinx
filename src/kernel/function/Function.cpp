@@ -1,10 +1,10 @@
-// Copyright (C) 2003-2007 Johan Hoffman, Johan Jansson and Anders Logg.
+// Copyright (C) 2007 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells 2005
 //
 // First added:  2003-11-28
-// Last changed: 2007-04-16
+// Last changed: 2007-04-27
 //
 // The class Function serves as the envelope class and holds a pointer
 // to a letter class that is a subclass of GenericFunction. All the
@@ -50,16 +50,23 @@ Function::Function(const std::string filename)
   file >> *this;
 }
 //-----------------------------------------------------------------------------
+Function::Function(SubFunction sub_function)
+  : Variable("u", "discrete function"), f(0), _type(discrete)
+{
+  cout << "Extracting sub function" << endl;
+  f = new DiscreteFunction(sub_function);
+}
+//-----------------------------------------------------------------------------
 Function::~Function()
 {
-  if ( f )
+  if (f)
     delete f;
 }
 //-----------------------------------------------------------------------------
 void Function::init(Mesh& mesh, Vector& x, const Form& form, uint i)
 
 {
-  if ( f )
+  if (f)
     delete f;
 
   f = new DiscreteFunction(mesh, x, form, i);
@@ -75,7 +82,7 @@ Function::Type Function::type() const
 //-----------------------------------------------------------------------------
 dolfin::uint Function::rank() const
 {
-  if ( !f )
+  if (!f)
     dolfin_error("Function contains no data.");
 
   return f->rank();
@@ -83,7 +90,7 @@ dolfin::uint Function::rank() const
 //-----------------------------------------------------------------------------
 dolfin::uint Function::dim(unsigned int i) const
 {
-  if ( !f )
+  if (!f)
     dolfin_error("Function contains no data.");
 
   return f->dim(i);
@@ -91,15 +98,24 @@ dolfin::uint Function::dim(unsigned int i) const
 //-----------------------------------------------------------------------------
 Mesh& Function::mesh()
 {
-  if ( !f )
+  if (!f)
     dolfin_error("Function contains no data.");
 
   return f->mesh;
 }
 //-----------------------------------------------------------------------------
+SubFunction Function::operator[] (uint i)
+{
+  if (_type != discrete)
+    dolfin_error("Sub functions can only be extracted from discrete functions.");
+
+  SubFunction sub_function(static_cast<DiscreteFunction*>(f), i);
+  return sub_function;
+}
+//-----------------------------------------------------------------------------
 void Function::interpolate(real* values)
 {
-  if ( !f )
+  if (!f)
     dolfin_error("Function contains no data.");
 
   f->interpolate(values);
@@ -109,7 +125,7 @@ void Function::interpolate(real* coefficients,
                            const ufc::cell& cell,
                            const ufc::finite_element& finite_element)
 {
-  if ( !f )
+  if (!f)
     dolfin_error("Function contains no data.");
 
   f->interpolate(coefficients, cell, finite_element);

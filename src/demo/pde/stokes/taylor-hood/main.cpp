@@ -71,22 +71,24 @@ int main()
   StokesBilinearForm a;
   StokesLinearForm L(f);
   PDE pde(a, L, mesh, bcs);
-  //PDE pde(a, L, mesh);
 
   // Solve PDE
   Function w;
   pde.set("PDE linear solver", "direct");
   pde.solve(w);
 
-  // Save solution
-  //File file("solution.xml");
-  //file << w;
+  // Extract sub functions u and p
+  Function u = w[0];
+  Function p = w[1];
 
-  /*
-  // Save solution to file
-  File ufile("velocity.pvd");
-  File pfile("pressure.pvd");
-  ufile << U;
-  pfile << P;
-  */
+  // Save solution
+  File ufile("velocity.xml");
+  ufile << u;
+  File pfile("pressure.xml");
+  pfile << p;
+
+  //File ufile("velocity.pvd");
+  //ufile << u;
+  //File pfile("pressure.pvd");
+  //pfile << p;
 }

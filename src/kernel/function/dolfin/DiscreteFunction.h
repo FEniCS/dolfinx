@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-04-02
-// Last changed: 2007-04-13
+// Last changed: 2007-04-27
 
 #ifndef __DISCRETE_FUNCTION_H
 #define __DISCRETE_FUNCTION_H
@@ -16,6 +16,7 @@ namespace dolfin
   class Mesh;
   class Form;
   class DofMap;
+  class SubFunction;
 
   /// This class implements the functionality for discrete functions.
   /// A discrete function is defined in terms of a mesh, a vector of
@@ -34,6 +35,9 @@ namespace dolfin
 
     /// Create discrete function from given data and assume responsibility for data
     DiscreteFunction(Mesh& mesh, Vector& x, std::string finite_element_signature, std::string dof_map_signature);
+
+    /// Create discrete function from sub function
+    DiscreteFunction(SubFunction& sub_function);
 
     /// Destructor
     ~DiscreteFunction();
@@ -58,7 +62,7 @@ namespace dolfin
   private:
 
     // The vector of dofs
-    Vector& x;
+    Vector* x;
 
     // The finite element
     ufc::finite_element* finite_element;
