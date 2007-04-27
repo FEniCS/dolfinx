@@ -13,6 +13,8 @@
 namespace dolfin
 {
 
+  class Mesh;
+
   /// This class represents a sub system that may be specified as a
   /// recursively nested sub system of some given system.
   ///
@@ -48,7 +50,7 @@ namespace dolfin
 
     /// Extract sub dof map of given dof map
     ufc::dof_map* extractDofMap
-    (const ufc::dof_map& dof_map) const;
+    (const ufc::dof_map& dof_map, Mesh& mesh, uint& offset) const;
 
   private:
 
@@ -58,7 +60,7 @@ namespace dolfin
 
     // Recursively extract sub dof map
     static ufc::dof_map* extractDofMap
-    (const ufc::dof_map& dof_map, const Array<uint>& sub_system);
+    (const ufc::dof_map& dof_map, Mesh& mesh, uint& offset, const Array<uint>& sub_system);
 
     // The array specifying the sub system
     Array<uint> sub_system;

@@ -5,6 +5,7 @@
 // Last changed: 2007-04-27
 
 #include <dolfin/dolfin_log.h>
+#include <dolfin/DofMap.h>
 #include <dolfin/SubSystem.h>
 
 using namespace dolfin;
@@ -33,12 +34,8 @@ SubSystem::SubSystem(const Array<uint>& sub_system) : sub_system(sub_system)
 //-----------------------------------------------------------------------------
 SubSystem::SubSystem(const SubSystem& sub_system)
 {
-  cout << "copy constructor in sub system" << endl;
-
   for (uint i = 0; i < sub_system.sub_system.size(); i++)
     this->sub_system.push_back(sub_system.sub_system[i]);
-
-  cout << "size = " << this->sub_system.size() << endl;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint SubSystem::depth() const
@@ -49,13 +46,25 @@ dolfin::uint SubSystem::depth() const
 ufc::finite_element* SubSystem::extractFiniteElement
 (const ufc::finite_element& finite_element) const
 {
-  return extractFiniteElement(finite_element, sub_system);
+  // Recursively extract sub element
+  ufc::finite_element* sub_finite_element = extractFiniteElement(finite_element, sub_system);
+  cout << "Extracted finite element for sub system: " << sub_finite_element->signature() << endl;
+  
+  return sub_finite_element;
 }
 //-----------------------------------------------------------------------------
 ufc::dof_map* SubSystem::extractDofMap
-(const ufc::dof_map& dof_map) const
+(const ufc::dof_map& dof_map, Mesh& mesh, uint& offset) const
 {
-  return extractDofMap(dof_map, sub_system);
+  // Reset offset
+  offset = 0;
+
+  // Recursively extract sub dof map
+  ufc::dof_map* sub_dof_map = extractDofMap(dof_map, mesh, offset, sub_system);
+  cout << "Extracted dof map for sub system: " << sub_dof_map->signature() << endl;
+  cout << "Offset for sub system: " << offset << endl;
+
+  return sub_dof_map;
 }
 //-----------------------------------------------------------------------------
 ufc::finite_element* SubSystem::extractFiniteElement
@@ -98,7 +107,7 @@ ufc::finite_element* SubSystem::extractFiniteElement
 }
 //-----------------------------------------------------------------------------
 ufc::dof_map* SubSystem::extractDofMap
-(const ufc::dof_map& dof_map, const Array<uint>& sub_system)
+(const ufc::dof_map& dof_map, Mesh& mesh, uint& offset, const Array<uint>& sub_system)
 {
   // Check if there are any sub systems
   if (dof_map.num_sub_dof_maps() == 0)
@@ -118,6 +127,15 @@ ufc::dof_map* SubSystem::extractDofMap
     dolfin_error2("Unable to extract sub system %d (only %d sub systems defined).",
                   sub_system[0], dof_map.num_sub_dof_maps());
   }
+
+  // Add to offset if necessary
+  for (uint i = 0; i < sub_system[0]; i++)
+  {
+    ufc::dof_map* ufc_dof_map = dof_map.create_sub_dof_map(i);
+    DofMap dolfin_dof_map(*ufc_dof_map, mesh);
+    offset += dolfin_dof_map.global_dimension();
+    delete ufc_dof_map;
+  }
   
   // Create sub system
   ufc::dof_map* sub_dof_map = dof_map.create_sub_dof_map(sub_system[0]);
@@ -130,7 +148,7 @@ ufc::dof_map* SubSystem::extractDofMap
   Array<uint> sub_sub_system;
   for (uint i = 1; i < sub_system.size(); i++)
     sub_sub_system.push_back(sub_system[i]);
-  ufc::dof_map* sub_sub_dof_map = extractDofMap(*sub_dof_map, sub_sub_system);
+  ufc::dof_map* sub_sub_dof_map = extractDofMap(*sub_dof_map, mesh, offset, sub_sub_system);
   delete sub_dof_map;
 
   return sub_sub_dof_map;

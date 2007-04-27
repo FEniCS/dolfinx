@@ -83,7 +83,7 @@ namespace dolfin
     public:
       
       // Constructor
-      LocalData(const Form& form, const SubSystem& sub_system);
+      LocalData(const Form& form, Mesh& mesh, const SubSystem& sub_system);
       
       // Destructor
       ~LocalData();

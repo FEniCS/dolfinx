@@ -48,7 +48,7 @@ namespace dolfin
     Mesh& mesh;
 
     // The boundary conditions
-    Array<BoundaryCondition*>& bcs;
+    Array<BoundaryCondition*> bcs;
 
     // The solution vector
     Vector x;

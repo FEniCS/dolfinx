@@ -59,9 +59,6 @@ BoundaryCondition::BoundaryCondition(Function& g,
     sub_domains(&sub_domains), sub_domain(sub_domain), sub_domains_local(false),
     sub_system(sub_system)
 {
-
-  cout << "constructor in BoundaryCondition: " << sub_system.depth() << endl;
-
   // Do nothing
 }
 //-----------------------------------------------------------------------------
@@ -75,17 +72,17 @@ BoundaryCondition::~BoundaryCondition()
 void BoundaryCondition::apply(GenericMatrix& A, GenericVector& b,
                               const Form& form)
 {
-  cout << "Applying boundary conditions to linear system" << endl;
+  cout << "Applying boundary conditions to linear system." << endl;
 
   // FIXME: How do we reuse the dof map for u?
   // FIXME: Perhaps we should make DofMaps a member of Form?
   
   // Create local data for application of boundary conditions
-  LocalData data(form, sub_system);
+  LocalData data(form, mesh, sub_system);
 
-  // Make sure we have the facets
+  // Make sure we have the facet - cell connectivity
   const uint D = mesh.topology().dim();
-  mesh.init(D - 1);
+  mesh.init(D - 1, D);
   
   // Create UFC view of mesh
   UFCMesh ufc_mesh(mesh);
@@ -124,10 +121,10 @@ void BoundaryCondition::apply(GenericMatrix& A, GenericVector& b,
     // Pick values for facet
     for (uint i = 0; i < data.dof_map->num_facet_dofs(); i++)
     {
-      data.rows[i] = data.cell_dofs[data.facet_dofs[i]];
-      row_set.insert(data.rows[i] );
+      data.rows[i] = data.offset + data.cell_dofs[data.facet_dofs[i]];
+      row_set.insert(data.rows[i]);
       data.values[i] = data.w[data.facet_dofs[i]];
-    }    
+    } 
 
     // Modify RHS vector for facet dofs (b[i] = value)
     b.set(data.values, data.dof_map->num_facet_dofs(), data.rows);
@@ -168,6 +165,7 @@ void BoundaryCondition::init(SubDomain& sub_domain)
 }
 //-----------------------------------------------------------------------------
 BoundaryCondition::LocalData::LocalData(const Form& form,
+                                        Mesh& mesh,
                                         const SubSystem& sub_system)
   : finite_element(0), dof_map(0), offset(0),
     w(0), cell_dofs(0), values(0), facet_dofs(0), rows(0)
@@ -192,14 +190,11 @@ BoundaryCondition::LocalData::LocalData(const Form& form,
     finite_element = sub_finite_element;
 
     // Dof map
-    ufc::dof_map* sub_dof_map = sub_system.extractDofMap(*dof_map);
+    ufc::dof_map* sub_dof_map = sub_system.extractDofMap(*dof_map, mesh, offset);
     delete dof_map;
     dof_map = sub_dof_map;
   }
   
-  cout << "Extracted finite element for sub system: " << finite_element->signature() << endl;
-  cout << "Extracted dof map for sub system: " << dof_map->signature() << endl;
-
   // Create local data used to set boundary conditions
   w = new real[finite_element->space_dimension()];
   cell_dofs = new uint[finite_element->space_dimension()];
