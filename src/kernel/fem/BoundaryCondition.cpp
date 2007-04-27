@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-04-10
-// Last changed: 2007-04-26
+// Last changed: 2007-04-27
 
 #include <dolfin/Mesh.h>
 #include <dolfin/Vertex.h>
@@ -80,32 +80,17 @@ void BoundaryCondition::apply(GenericMatrix& A, GenericVector& b,
   // FIXME: How do we reuse the dof map for u?
   // FIXME: Perhaps we should make DofMaps a member of Form?
   
-  /*
-  cout << "apply in BoundaryCondition: " << sub_system.depth() << endl;
-
   // Create local data for application of boundary conditions
   LocalData data(form, sub_system);
-  
-  return;
-  */
-
-  // Create finite element and dof map for solution (second argument of form)
-  ufc::dof_map* dof_map = form.form().create_dof_map(1);
-  ufc::finite_element* finite_element = form.form().create_finite_element(1);
-
-  // Create local data for solution u (second argument of form)
-  real* w = new real[10*finite_element->space_dimension()];
-  uint* cell_dofs = new uint[10*finite_element->space_dimension()];
-  uint* facet_dofs = new uint[10*dof_map->num_facet_dofs()];
-  uint* rows = new uint[10*dof_map->num_facet_dofs()];
-  real* values = new real[10*dof_map->num_facet_dofs()];
-  UFCMesh ufc_mesh(mesh);
 
   // Make sure we have the facets
   const uint D = mesh.topology().dim();
-  mesh.init(D - 1);   
+  mesh.init(D - 1);
+  
+  // Create UFC view of mesh
+  UFCMesh ufc_mesh(mesh);
  
-  // A set to hold dofs to which Dirichlet boundary conidtions are applied
+  // A set to hold dofs to which Dirichlet boundary conditions are applied
   std::set<uint> row_set;
   row_set.clear();
 
@@ -128,24 +113,24 @@ void BoundaryCondition::apply(GenericMatrix& A, GenericVector& b,
     const uint local_facet = cell.index(*facet);
 
     // Interpolate function on cell
-    g.interpolate(w, ufc_cell, *finite_element);
+    g.interpolate(data.w, ufc_cell, *data.finite_element);
     
     // Tabulate dofs on cell
-    dof_map->tabulate_dofs(cell_dofs, ufc_mesh, ufc_cell);
+    data.dof_map->tabulate_dofs(data.cell_dofs, ufc_mesh, ufc_cell);
 
     // Tabulate which dofs are on the facet
-    dof_map->tabulate_facet_dofs(facet_dofs, ufc_mesh, ufc_cell, local_facet);
+    data.dof_map->tabulate_facet_dofs(data.facet_dofs, ufc_mesh, ufc_cell, local_facet);
     
     // Pick values for facet
-    for (uint i = 0; i < dof_map->num_facet_dofs(); i++)
+    for (uint i = 0; i < data.dof_map->num_facet_dofs(); i++)
     {
-      rows[i] = cell_dofs[facet_dofs[i]];
-      row_set.insert( rows[i] );
-      values[i] = w[facet_dofs[i]];
+      data.rows[i] = data.cell_dofs[data.facet_dofs[i]];
+      row_set.insert(data.rows[i] );
+      data.values[i] = data.w[data.facet_dofs[i]];
     }    
 
     // Modify RHS vector for facet dofs (b[i] = value)
-    b.set(values, dof_map->num_facet_dofs(), rows);
+    b.set(data.values, data.dof_map->num_facet_dofs(), data.rows);
 
     p++;
   }
@@ -164,15 +149,6 @@ void BoundaryCondition::apply(GenericMatrix& A, GenericVector& b,
 
   // Finalise changes to b
   b.apply();
-
-  // Delete dof map data
-  delete dof_map;
-  delete finite_element;
-  delete [] w;
-  delete [] cell_dofs;
-  delete [] facet_dofs;
-  delete [] rows;
-  delete [] values;
 }
 //-----------------------------------------------------------------------------
 void BoundaryCondition::init(SubDomain& sub_domain)
@@ -193,7 +169,8 @@ void BoundaryCondition::init(SubDomain& sub_domain)
 //-----------------------------------------------------------------------------
 BoundaryCondition::LocalData::LocalData(const Form& form,
                                         const SubSystem& sub_system)
-  : offset(0)
+  : finite_element(0), dof_map(0), offset(0),
+    w(0), cell_dofs(0), values(0), facet_dofs(0), rows(0)
 {
   // FIXME: Change behaviour of num_sub_elements() in FFC (return 0 when
   // FIXME: there are no nested elements
@@ -203,26 +180,66 @@ BoundaryCondition::LocalData::LocalData(const Form& form,
     dolfin_error("Form must be bilinear for application of boundary conditions.");
 
   // Create finite element and dof map for solution (second argument of form)
-  //ufc::finite_element* finite_element = form.form().create_finite_element(1);
-  //ufc::dof_map* dof_map = form.form().create_dof_map(1);
-
-
+  finite_element = form.form().create_finite_element(1);
+  dof_map = form.form().create_dof_map(1);
   
-  // Extract sub dof map for sub system
-  if ( sub_system.depth() > 0 )
+  // Extract sub element and sub dof map if we have a sub system
+  if (sub_system.depth() > 0)
   {
-    //const ufc::finite_element* sub_finite_element = sub_system.extractFiniteElement(*finite_element);
-    //cout << "Extracted finite element for sub system: " << sub_finite_element->signature();
-    cout << "hej" << endl;
-    //delete sub_finite_element;
+    // Finite element
+    ufc::finite_element* sub_finite_element = sub_system.extractFiniteElement(*finite_element);
+    delete finite_element;
+    finite_element = sub_finite_element;
+
+    // Dof map
+    ufc::dof_map* sub_dof_map = sub_system.extractDofMap(*dof_map);
+    delete dof_map;
+    dof_map = sub_dof_map;
   }
   
-  //delete finite_element;
+  cout << "Extracted finite element for sub system: " << finite_element->signature() << endl;
+  cout << "Extracted dof map for sub system: " << dof_map->signature() << endl;
 
+  // Create local data used to set boundary conditions
+  w = new real[finite_element->space_dimension()];
+  cell_dofs = new uint[finite_element->space_dimension()];
+  for (uint i = 0; i < finite_element->space_dimension(); i++)
+  {
+    w[i] = 0.0;
+    cell_dofs[i] = 0;
+  }
+  values = new real[dof_map->num_facet_dofs()];
+  facet_dofs = new uint[dof_map->num_facet_dofs()];
+  rows = new uint[dof_map->num_facet_dofs()];
+  for (uint i = 0; i < dof_map->num_facet_dofs(); i++)
+  {
+    values[i] = 0.0;
+    facet_dofs[i] = 0;
+    rows[i] = 0;
+  }
 }
 //-----------------------------------------------------------------------------
 BoundaryCondition::LocalData::~LocalData()
 {
-  
+  if (finite_element)
+    delete finite_element;
+
+  if (dof_map)
+    delete dof_map;
+
+  if (w)
+    delete [] w;
+
+  if (cell_dofs)
+    delete [] cell_dofs;
+
+  if (values)
+    delete [] values;
+
+  if (facet_dofs)
+    delete [] facet_dofs;
+
+  if (rows)
+    delete [] rows;
 }
 //-----------------------------------------------------------------------------

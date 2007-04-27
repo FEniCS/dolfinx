@@ -43,21 +43,21 @@ namespace dolfin
     uint depth() const;
     
     /// Extract sub finite element of given finite element
-    const ufc::finite_element* extractFiniteElement
+    ufc::finite_element* extractFiniteElement
     (const ufc::finite_element& finite_element) const;
 
     /// Extract sub dof map of given dof map
-    const ufc::dof_map* extractDofMap
+    ufc::dof_map* extractDofMap
     (const ufc::dof_map& dof_map) const;
 
   private:
 
     // Recursively extract sub finite element
-    static const ufc::finite_element* extractFiniteElement
+    static ufc::finite_element* extractFiniteElement
     (const ufc::finite_element& finite_element, const Array<uint>& sub_system);
 
     // Recursively extract sub dof map
-    static const ufc::dof_map* extractDofMap
+    static ufc::dof_map* extractDofMap
     (const ufc::dof_map& dof_map, const Array<uint>& sub_system);
 
     // The array specifying the sub system

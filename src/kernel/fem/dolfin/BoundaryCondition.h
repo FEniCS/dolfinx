@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-04-10
-// Last changed: 2007-04-26
+// Last changed: 2007-04-27
 
 #ifndef __NEW_BOUNDARY_CONDITION_H
 #define __NEW_BOUNDARY_CONDITION_H
@@ -88,8 +88,21 @@ namespace dolfin
       // Destructor
       ~LocalData();
 
+      // Finite element for sub system
+      ufc::finite_element* finite_element;
+      
+      // Dof map for sub system
+      ufc::dof_map* dof_map;
+
       // Offset for sub system
       uint offset;
+      
+      // Local data used to set boundary conditions
+      real* w;
+      uint* cell_dofs;
+      real* values;
+      uint* facet_dofs;
+      uint* rows;
 
     };
 
