@@ -1,10 +1,10 @@
-// Copyright (C) 2005-2006 Garth N. Wells.
+// Copyright (C) 2005-2007 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Anders Logg, 2005
 //
 // First added:  2005
-// Last changed: 2006-03-02
+// Last changed: 2007-04-27
 //
 // This program illustrates the use of the DOLFIN nonlinear solver for solving 
 // problems of the form F(u) = 0. The user must provide functions for the 
@@ -35,23 +35,38 @@
 using namespace dolfin;
 
 // Right-hand side
-class MyFunction : public Function
+class Source : public Function, public TimeDependent
 {
-  real eval(const Point& p, unsigned int i)
+  public:
+    Source(Mesh& mesh, const real& t) : Function(mesh), TimeDependent(t) {}
+
+    real eval(const real* x)
+    {
+      return time()*x[0]*sin(x[1]);
+    }
+};
+
+// Dirichlet boundary condition
+class DirichletBoundaryCondition : public Function, public TimeDependent
+{
+  public:
+    DirichletBoundaryCondition(Mesh& mesh, real& t) : Function(mesh), TimeDependent(t) {}
+
+    real eval(const real* x)
+    {
+      return 1.0*time();
+    }
+};
+
+// Sub domain for Dirichlet boundary condition
+class DirichletBoundary : public SubDomain
+{
+  bool inside(const real* x, bool on_boundary)
   {
-    return time()*p.x()*sin(p.y());
+    return std::abs(x[0] - 1.0) < DOLFIN_EPS && on_boundary;
   }
 };
 
-// Boundary condition
-class MyBC : public BoundaryCondition
-{
-  void eval(BoundaryValue& value, const Point& p, unsigned int i)
-  {
-    if ( std::abs(p.x() - 1.0) < DOLFIN_EPS )
-      value = 1.0*time();
-  }
-};
 
 // User defined nonlinear problem 
 class MyNonlinearProblem : public NonlinearProblem
@@ -59,15 +74,17 @@ class MyNonlinearProblem : public NonlinearProblem
   public:
 
     // Constructor 
-    MyNonlinearProblem(Mesh& mesh, BoundaryCondition& bc, Function& U, Function& f) 
-        : NonlinearProblem(), _mesh(&mesh), _bc(&bc)
+    MyNonlinearProblem(Mesh& mesh, SubDomain& dirichlet_boundary, 
+                       Function& g, Function& f, Function& u)  
+                       : NonlinearProblem(), _mesh(&mesh), 
+                       _dirichlet_boundary(&dirichlet_boundary), _g(&g)
     {
       // Create forms
-      a = new NonlinearPoisson::BilinearForm(U);
-      L = new NonlinearPoisson::LinearForm(U, f);
+      a = new NonlinearPoissonBilinearForm(u);
+      L = new NonlinearPoissonLinearForm(u, f);
 
       // Initialise solution vector u
-      U.init(mesh, a->trial());
+      //U.init(mesh, a->trial());
     }
 
     // Destructor 
@@ -80,37 +97,44 @@ class MyNonlinearProblem : public NonlinearProblem
     // User defined assemble of Jacobian and residual vector 
     void form(GenericMatrix& A, GenericVector& b, const GenericVector& x)
     {
-      dolfin_log(false);
-      FEM::assemble(*a, *L, A, b, *_mesh);
-      FEM::applyBC(A, *_mesh, a->test(), *_bc);
-      FEM::applyResidualBC(b, x, *_mesh, a->test(), *_bc);
-      dolfin_log(true);
+//      dolfin_log(false);
+//      FEM::assemble(*a, *L, A, b, *_mesh);
+//      FEM::applyBC(A, *_mesh, a->test(), *_bc);
+//      FEM::applyResidualBC(b, x, *_mesh, a->test(), *_bc);
+//      dolfin_log(true);
     }
 
   private:
 
     // Pointers to forms, mesh and boundary conditions
-    BilinearForm *a;
-    LinearForm *L;
+    Form *a;
+    Form *L;
     Mesh* _mesh;
-    BoundaryCondition* _bc;
+    SubDomain* _dirichlet_boundary;
+    Function* _g;
 };
-
-
-
 
 int main(int argc, char* argv[])
 {
   dolfin_init(argc, argv);
  
-  // Set up problem
+  // Create mesh
   UnitSquare mesh(64, 64);
-  MyFunction f;
-  MyBC bc;
-  Function U;
+
+  // Pseudo time
+  real t = 0.0;
+
+  // Source function
+  Source f(mesh, t);
+
+  // Dirichlet boundary conditions
+  DirichletBoundary dirichlet_boundary;
+  DirichletBoundaryCondition g(mesh, t);
+
+  Function u;
 
   // Create user-defined nonlinear problem
-  MyNonlinearProblem nonlinear_problem(mesh, bc, U, f);
+  MyNonlinearProblem nonlinear_problem(mesh, dirichlet_boundary, g, f, u);
 
   // Create nonlinear solver (using GMRES linear solver) and set parameters
   NewtonSolver nonlinear_solver(gmres);
@@ -119,20 +143,18 @@ int main(int argc, char* argv[])
   nonlinear_solver.set("Newton absolute tolerance", 1e-10);
 
   // Solve nonlinear problem in a series of steps
-  real dt = 1.0; real t  = 0.0; real T  = 3.0;
-  f.sync(t);
-  bc.sync(t);
+  real dt = 1.0; real T  = 3.0;
 
-  Vector& x = U.vector();
+//  Vector& x = u.vector();
   while( t < T)
   {
     t += dt;
-    nonlinear_solver.solve(nonlinear_problem, x);
+//    nonlinear_solver.solve(nonlinear_problem, x);
   }
 
   // Save function to file
   File file("nonlinear_poisson.pvd");
-  file << U;
+  file << u;
 
   return 0;
 }
