@@ -77,20 +77,21 @@ namespace dolfin
     // Initialize sub domain markers    
     void init(SubDomain& sub_domain);
 
-    /*
     // Local data for application of boundary conditions
     class LocalData
     {
     public:
       
       // Constructor
-      LocalData(const ufc::form& form);
+      LocalData(const Form& form, const SubSystem& sub_system);
       
       // Destructor
       ~LocalData();
 
+      // Offset for sub system
+      uint offset;
+
     };
-    */
 
     // The function
     Function& g;

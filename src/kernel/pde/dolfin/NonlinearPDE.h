@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2007
 //
 // First added:  2005-10-24
-// Last changed: 2007-04-17
+// Last changed: 2007-04-27
 
 #ifndef __NONLINEAR_PDE_H
 #define __NONLINEAR_PDE_H
@@ -22,7 +22,7 @@ namespace dolfin
   public:
 
     /// Constructor
-    NonlinearPDE(Form& a, Form& L, Mesh& mesh, Array<BoundaryCondition*> bcs);
+    NonlinearPDE(Form& a, Form& L, Mesh& mesh, Array<BoundaryCondition*>& bcs);
 
     /// Destructor
     ~NonlinearPDE();

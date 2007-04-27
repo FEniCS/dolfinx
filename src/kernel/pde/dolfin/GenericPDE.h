@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2007.
 //
 // First added:  2006-02-21
-// Last changed: 2007-04-17
+// Last changed: 2007-04-27
 
 #ifndef __GENERIC_PDE_H
 #define __GENERIC_PDE_H
@@ -28,7 +28,7 @@ namespace dolfin
   public:
 
     /// Constructor
-    GenericPDE(Form& a, Form& L, Mesh& mesh, Array<BoundaryCondition*> bcs);
+    GenericPDE(Form& a, Form& L, Mesh& mesh, Array<BoundaryCondition*>& bcs);
 
     /// Destructor
     virtual ~GenericPDE();
@@ -48,7 +48,7 @@ namespace dolfin
     Mesh& mesh;
 
     // The boundary conditions
-    Array<BoundaryCondition*> bcs;
+    Array<BoundaryCondition*>& bcs;
 
     // The solution vector
     Vector x;

@@ -9,6 +9,9 @@
 #ifndef __ARRAY_H
 #define __ARRAY_H
 
+#include <iostream>
+
+
 #include <dolfin/constants.h>
 #include <vector>
 
@@ -33,14 +36,14 @@ namespace dolfin
     Array(uint n) : std::vector<T>(n) {}
 
     /// Create array containing two elements
-    Array(const T& t0, const T& t1) : std::vector<T>(2)
+    Array(const T& t0, const T& t1)
     {
       push_back(t0);
       push_back(t1);
     }
 
     /// Create array containing three elements
-    Array(const T& t0, const T& t1, const T& t2) : std::vector<T>(3)
+    Array(const T& t0, const T& t1, const T& t2)
     {
       push_back(t0);
       push_back(t1);
@@ -48,7 +51,7 @@ namespace dolfin
     }
 
     /// Create array containing four elements
-    Array(const T& t0, const T& t1, const T& t2, const T& t3) : std::vector<T>(4)
+    Array(const T& t0, const T& t1, const T& t2, const T& t3)
     {
       push_back(t0);
       push_back(t1);
@@ -57,7 +60,7 @@ namespace dolfin
     }
 
     /// Create array containing five elements
-    Array(const T& t0, const T& t1, const T& t2, const T& t3, const T& t4) : std::vector<T>(5)
+    Array(const T& t0, const T& t1, const T& t2, const T& t3, const T& t4)
     {
       push_back(t0);
       push_back(t1);

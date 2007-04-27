@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells 2006.
 //
 // First added:  2004
-// Last changed: 2007-04-17
+// Last changed: 2007-04-27
 
 #ifndef __LINEAR_PDE_H
 #define __LINEAR_PDE_H
@@ -21,7 +21,7 @@ namespace dolfin
   public:
 
     /// Constructor
-    LinearPDE(Form& a, Form& L, Mesh& mesh, Array<BoundaryCondition*> bcs);
+    LinearPDE(Form& a, Form& L, Mesh& mesh, Array<BoundaryCondition*>& bcs);
 
     /// Destructor
     ~LinearPDE();

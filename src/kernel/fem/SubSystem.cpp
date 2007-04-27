@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2007-04-24
-// Last changed: 2007-04-26
+// Last changed: 2007-04-27
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/SubSystem.h>
@@ -29,6 +29,21 @@ SubSystem::SubSystem(uint sub_system, uint sub_sub_system)
 SubSystem::SubSystem(const Array<uint>& sub_system) : sub_system(sub_system)
 {
   // Do nothing
+}
+//-----------------------------------------------------------------------------
+SubSystem::SubSystem(const SubSystem& sub_system)
+{
+  cout << "copy constructor in sub system" << endl;
+
+  for (uint i = 0; i < sub_system.sub_system.size(); i++)
+    this->sub_system.push_back(sub_system.sub_system[i]);
+
+  cout << "size = " << this->sub_system.size() << endl;
+}
+//-----------------------------------------------------------------------------
+dolfin::uint SubSystem::depth() const
+{
+  return sub_system.size();
 }
 //-----------------------------------------------------------------------------
 const ufc::finite_element* SubSystem::extractFiniteElement

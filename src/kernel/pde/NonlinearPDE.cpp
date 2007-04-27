@@ -14,7 +14,7 @@ using namespace dolfin;
 NonlinearPDE::NonlinearPDE(Form& a,
                            Form& L,
                            Mesh& mesh,
-                           Array<BoundaryCondition*> bcs)
+                           Array<BoundaryCondition*>& bcs)
   : GenericPDE(a, L, mesh, bcs)
 {
   dolfin_info("Creating linear PDE with %d boundary condition(s).", bcs.size());

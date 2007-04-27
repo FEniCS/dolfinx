@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2006
 //
 // First added:  2004
-// Last changed: 2007-04-19
+// Last changed: 2007-04-27
 
 #include <dolfin/Matrix.h>
 #include <dolfin/BoundaryCondition.h>
@@ -21,7 +21,7 @@ using namespace dolfin;
 LinearPDE::LinearPDE(Form& a,
                      Form& L,
                      Mesh& mesh,
-                     Array<BoundaryCondition*> bcs)
+                     Array<BoundaryCondition*>& bcs)
   : GenericPDE(a, L, mesh, bcs)
 {
   dolfin_info("Creating linear PDE with %d boundary condition(s).", bcs.size());

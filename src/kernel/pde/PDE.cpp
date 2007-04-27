@@ -36,7 +36,7 @@ PDE::PDE(Form& a, Form& L, Mesh& mesh, BoundaryCondition& bc, Type type)
   init(a, L, mesh, bcs);
 }
 //-----------------------------------------------------------------------------
-PDE::PDE(Form& a, Form& L, Mesh& mesh, Array<BoundaryCondition*> bcs, Type type)
+PDE::PDE(Form& a, Form& L, Mesh& mesh, Array<BoundaryCondition*>& bcs, Type type)
   : pde(0), _type(type)
 {
   // Initialize
@@ -59,7 +59,7 @@ PDE::Type PDE::type() const
   return _type;
 }
 //-----------------------------------------------------------------------------
-void PDE::init(Form& a, Form& L, Mesh& mesh, Array<BoundaryCondition*> bcs)
+void PDE::init(Form& a, Form& L, Mesh& mesh, Array<BoundaryCondition*>& bcs)
 {
   // Initialize PDE instance
   switch ( _type )

@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2007
 //
 // First added:  2006-02-21
-// Last changed: 2007-04-17
+// Last changed: 2007-04-27
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Form.h>
@@ -16,7 +16,7 @@ using namespace dolfin;
 GenericPDE::GenericPDE(Form& a,
                        Form& L,
                        Mesh& mesh,
-                       Array<BoundaryCondition*> bcs)
+                       Array<BoundaryCondition*>& bcs)
   : a(a), L(L), mesh(mesh), bcs(bcs)
 {
   // Check ranks of forms

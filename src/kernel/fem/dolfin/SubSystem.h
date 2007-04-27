@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2007-04-24
-// Last changed: 2007-04-26
+// Last changed: 2007-04-27
 
 #ifndef __SUB_SYSTEM_H
 #define __SUB_SYSTEM_H
@@ -36,6 +36,12 @@ namespace dolfin
     /// Create sub system for given array (n levels)
     SubSystem(const Array<uint>& sub_system);
 
+    /// Copy constructor
+    SubSystem(const SubSystem& sub_system);
+    
+    /// Return number of levels for nested sub system
+    uint depth() const;
+    
     /// Extract sub finite element of given finite element
     const ufc::finite_element* extractFiniteElement
     (const ufc::finite_element& finite_element) const;

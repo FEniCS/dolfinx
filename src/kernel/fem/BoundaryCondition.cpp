@@ -59,6 +59,9 @@ BoundaryCondition::BoundaryCondition(Function& g,
     sub_domains(&sub_domains), sub_domain(sub_domain), sub_domains_local(false),
     sub_system(sub_system)
 {
+
+  cout << "constructor in BoundaryCondition: " << sub_system.depth() << endl;
+
   // Do nothing
 }
 //-----------------------------------------------------------------------------
@@ -77,9 +80,15 @@ void BoundaryCondition::apply(GenericMatrix& A, GenericVector& b,
   // FIXME: How do we reuse the dof map for u?
   // FIXME: Perhaps we should make DofMaps a member of Form?
   
+  /*
+  cout << "apply in BoundaryCondition: " << sub_system.depth() << endl;
+
   // Create local data for application of boundary conditions
-  //LocalData data(form);
+  LocalData data(form, sub_system);
   
+  return;
+  */
+
   // Create finite element and dof map for solution (second argument of form)
   ufc::dof_map* dof_map = form.form().create_dof_map(1);
   ufc::finite_element* finite_element = form.form().create_finite_element(1);
@@ -182,26 +191,38 @@ void BoundaryCondition::init(SubDomain& sub_domain)
   sub_domain.mark(*sub_domains, 0);
 }
 //-----------------------------------------------------------------------------
-/*
-BoundaryCondition::LocalData::LocalData(const ufc::form& form)
+BoundaryCondition::LocalData::LocalData(const Form& form,
+                                        const SubSystem& sub_system)
+  : offset(0)
 {
+  // FIXME: Change behaviour of num_sub_elements() in FFC (return 0 when
+  // FIXME: there are no nested elements
+
   // Check arity of form
-  if (form.rank() != 2)
+  if (form.form().rank() != 2)
     dolfin_error("Form must be bilinear for application of boundary conditions.");
 
-  // Extract sub finite element for sub system
-  //sub_element = SubSystem::extractFiniteElement(finite_element, sub_systems);
+  // Create finite element and dof map for solution (second argument of form)
+  //ufc::finite_element* finite_element = form.form().create_finite_element(1);
+  //ufc::dof_map* dof_map = form.form().create_dof_map(1);
 
 
+  
   // Extract sub dof map for sub system
+  if ( sub_system.depth() > 0 )
+  {
+    //const ufc::finite_element* sub_finite_element = sub_system.extractFiniteElement(*finite_element);
+    //cout << "Extracted finite element for sub system: " << sub_finite_element->signature();
+    cout << "hej" << endl;
+    //delete sub_finite_element;
+  }
   
-  
+  //delete finite_element;
+
 }
 //-----------------------------------------------------------------------------
 BoundaryCondition::LocalData::~LocalData()
 {
-
-
+  
 }
 //-----------------------------------------------------------------------------
-*/

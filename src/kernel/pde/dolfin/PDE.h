@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells 2006.
 //
 // First added:  2004
-// Last changed: 2007-04-17
+// Last changed: 2007-04-26
 
 #ifndef __PDE_H
 #define __PDE_H
@@ -54,7 +54,7 @@ namespace dolfin
     PDE(Form& a, Form& L, Mesh& mesh, BoundaryCondition& bc, Type type = linear);
     
     /// Define a PDE with a set of Dirichlet boundary conditions
-    PDE(Form& a, Form& L, Mesh& mesh, Array<BoundaryCondition*> bcs, Type type = linear);
+    PDE(Form& a, Form& L, Mesh& mesh, Array<BoundaryCondition*>& bcs, Type type = linear);
 
     /// Destructor
     ~PDE();
@@ -68,7 +68,7 @@ namespace dolfin
   private:
     
     // Initialize
-    void init(Form& a, Form& L, Mesh& mesh, Array<BoundaryCondition*> bcs);
+    void init(Form& a, Form& L, Mesh& mesh, Array<BoundaryCondition*>& bcs);
 
     // Pointer to current implementation (letter base class)
     GenericPDE* pde;
