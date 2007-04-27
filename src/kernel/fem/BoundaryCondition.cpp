@@ -118,6 +118,12 @@ void BoundaryCondition::apply(GenericMatrix& A, GenericVector& b,
     // Tabulate which dofs are on the facet
     data.dof_map->tabulate_facet_dofs(data.facet_dofs, ufc_mesh, ufc_cell, local_facet);
     
+    //for (uint i = 0; i < 12; i++)
+    //  dolfin_info("cell_dofs[%d] = %d", i, data.cell_dofs[i]);
+
+    //for (uint i = 0; i < 6; i++)
+    //  dolfin_info("facet_dofs[%d] = %d", i, data.facet_dofs[i]);
+
     // Pick values for facet
     for (uint i = 0; i < data.dof_map->num_facet_dofs(); i++)
     {
@@ -194,7 +200,7 @@ BoundaryCondition::LocalData::LocalData(const Form& form,
     delete dof_map;
     dof_map = sub_dof_map;
   }
-  
+
   // Create local data used to set boundary conditions
   w = new real[finite_element->space_dimension()];
   cell_dofs = new uint[finite_element->space_dimension()];

@@ -66,6 +66,12 @@ void LinearPDE::solve(Function& u)
   else
     dolfin_error1("Unknown solver type \"%s\".", solver_type.c_str());
 
+  //cout << "Matrix:" << endl;
+  //A.disp();
+
+  //cout << "Vector:" << endl;
+  //b.disp();
+
   //cout << "Solution vector:" << endl;
   //x.disp();
 
