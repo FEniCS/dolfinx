@@ -14,10 +14,11 @@
 
 #include <dolfin.h>
 #include "CahnHilliard2D.h"
-#include "CahnHilliard3D.h"
+//#include "CahnHilliard3D.h"
 
 using namespace dolfin;
 
+/*
 // User defined nonlinear problem 
 class CahnHilliardEquation : public NonlinearProblem, public Parametrized
 {
@@ -35,11 +36,11 @@ class CahnHilliardEquation : public NonlinearProblem, public Parametrized
         a = new CahnHilliard2D::BilinearForm(U, _lambda, _muFactor, *_dt, *_theta);
         L = new CahnHilliard2D::LinearForm(U, U0, rate0, _lambda, _muFactor, *_dt, *_theta);
       }
-      else if(mesh.topology().dim() == 3)
-      {
-        a = new CahnHilliard3D::BilinearForm(U, _lambda, _muFactor, *_dt, *_theta);
-        L = new CahnHilliard3D::LinearForm(U, U0, rate0, _lambda, _muFactor, *_dt, *_theta);
-      }
+//      else if(mesh.topology().dim() == 3)
+//      {
+//        a = new CahnHilliard3D::BilinearForm(U, _lambda, _muFactor, *_dt, *_theta);
+//        L = new CahnHilliard3D::LinearForm(U, U0, rate0, _lambda, _muFactor, *_dt, *_theta);
+//      }
       else
         dolfin_error("Cahn-Hilliard model is programmed for 2D and 3D only");
 
@@ -62,7 +63,9 @@ class CahnHilliardEquation : public NonlinearProblem, public Parametrized
     {
       // Assemble system and RHS (Neumann boundary conditions)
       dolfin_log(false);
-      FEM::assemble(*a, *L, A, b, *_mesh);
+      Assembler assembler;
+      assembler.assemble(A, a, b, L, mesh);
+//      FEM::assemble(*a, *L, A, b, *_mesh);
       dolfin_log(true);
     }
 
@@ -80,6 +83,7 @@ class CahnHilliardEquation : public NonlinearProblem, public Parametrized
     real _lambda, _muFactor;
 };
 
+*/
 
 int main(int argc, char* argv[])
 {
@@ -87,7 +91,7 @@ int main(int argc, char* argv[])
 
   // Mesh
   UnitSquare mesh(100, 100);
-
+/*
   // Time stepping parameters
   real dt = 2.0e-6; real t  = 0.0; real T  = 500*dt;
   real theta = 0.5;
@@ -149,7 +153,7 @@ int main(int argc, char* argv[])
     c = U[0];
     file << c;
   }
-
+*/
   return 0;
 }
 
