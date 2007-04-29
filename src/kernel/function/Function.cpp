@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells 2005
 //
 // First added:  2003-11-28
-// Last changed: 2007-04-27
+// Last changed: 2007-04-29
 //
 // The class Function serves as the envelope class and holds a pointer
 // to a letter class that is a subclass of GenericFunction. All the
@@ -53,7 +53,7 @@ Function::Function(const std::string filename)
 Function::Function(SubFunction sub_function)
   : Variable("u", "discrete function"), f(0), _type(discrete)
 {
-  cout << "Extracting sub function" << endl;
+  cout << "Extracting sub function." << endl;
   f = new DiscreteFunction(sub_function);
 }
 //-----------------------------------------------------------------------------
@@ -111,6 +111,19 @@ SubFunction Function::operator[] (uint i)
 
   SubFunction sub_function(static_cast<DiscreteFunction*>(f), i);
   return sub_function;
+}
+//-----------------------------------------------------------------------------
+const Function& Function::operator= (SubFunction sub_function)
+{
+  if (f)
+    delete f;
+
+  f = new DiscreteFunction(sub_function);
+  
+  rename("u", "discrete function");
+  _type = discrete;
+
+  return *this;
 }
 //-----------------------------------------------------------------------------
 void Function::interpolate(real* values)

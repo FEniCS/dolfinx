@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-02-09
-// Last changed: 2007-04-24
+// Last changed: 2007-04-29
 
 #include <dolfin.h>
 #include "Stokes.h"
@@ -11,7 +11,7 @@ using namespace dolfin;
 
 int main()
 {
-  // No-slip boundary condition for velocity
+  // Function for no-slip boundary condition for velocity
   class Noslip : public Function
   {
   public:
@@ -26,7 +26,7 @@ int main()
 
   };
 
-  // Inflow boundary condition for velocity
+  // Function for inflow boundary condition for velocity
   class Inflow : public Function
   {
   public:
@@ -73,13 +73,10 @@ int main()
   PDE pde(a, L, mesh, bcs);
 
   // Solve PDE
-  Function w;
+  Function u;
+  Function p;
   pde.set("PDE linear solver", "direct");
-  pde.solve(w);
-
-  // Extract sub functions u and p
-  Function u = w[0];
-  Function p = w[1];
+  pde.solve(u, p);
 
   // Save solution
   File ufile("velocity.xml");

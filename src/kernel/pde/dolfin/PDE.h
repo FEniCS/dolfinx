@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells 2006.
 //
 // First added:  2004
-// Last changed: 2007-04-26
+// Last changed: 2007-04-29
 
 #ifndef __PDE_H
 #define __PDE_H
@@ -59,8 +59,14 @@ namespace dolfin
     /// Destructor
     ~PDE();
 
-    /// Solve PDE
+    /// Solve PDE system
     void solve(Function& u);
+
+    /// Solve PDE system and extract sub functions
+    void solve(Function& u0, Function& u1);
+
+    /// Solve PDE system and extract sub functions
+    void solve(Function& u0, Function& u1, Function& u2);
 
     /// Return type of PDE
     Type type() const;

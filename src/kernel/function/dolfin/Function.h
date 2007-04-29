@@ -78,6 +78,9 @@ namespace dolfin
     /// Extract sub function/slice (only for discrete function)
     SubFunction operator[] (uint i);
 
+    /// Assign sub function/slice
+    const Function& operator= (SubFunction sub_function);
+    
     /// Interpolate function to vertices of mesh
     void interpolate(real* values);
 

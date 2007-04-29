@@ -51,7 +51,35 @@ PDE::~PDE()
 //-----------------------------------------------------------------------------
 void PDE::solve(Function& u)
 {
+  dolfin_assert(pde);
   pde->solve(u);
+}
+//-----------------------------------------------------------------------------
+void PDE::solve(Function& u0, Function& u1)
+{
+  dolfin_assert(pde);
+
+  // Solve system
+  Function u;
+  pde->solve(u);
+
+  // Extract sub functions
+  u0 = u[0];
+  u1 = u[1];
+}
+//-----------------------------------------------------------------------------
+void PDE::solve(Function& u0, Function& u1, Function& u2)
+{
+  dolfin_assert(pde);
+
+  // Solve system
+  Function u;
+  pde->solve(u);
+
+  // Extract sub functions
+  u0 = u[0];
+  u1 = u[1];
+  u2 = u[2];
 }
 //-----------------------------------------------------------------------------
 PDE::Type PDE::type() const
