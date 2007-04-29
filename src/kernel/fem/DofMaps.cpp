@@ -136,7 +136,7 @@ void DofMaps::matrixSparsityPattern(SparsityPattern& sparsity_pattern) const
   CellIterator cell(mesh);
   UFCCell ufc_cell(*cell);
 
-  // Build sparsity pattern
+  // Build sparsity pattern by looping over all cells
   for ( ; !cell.end(); ++cell)
   {
     ufc_cell.update(*cell);
@@ -149,7 +149,7 @@ void DofMaps::matrixSparsityPattern(SparsityPattern& sparsity_pattern) const
       for (uint j = 0; j < dim1; ++j)
         sparsity_pattern.insert(dof0[i], dof1[j] );
  }
-  
+
  delete [] dof0;
  delete [] dof1;
 }

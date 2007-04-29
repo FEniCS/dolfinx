@@ -87,8 +87,8 @@ int main()
   File pfile("pressure.xml");
   pfile << p;
 
-  //File ufile("velocity.pvd");
-  //ufile << u;
-  //File pfile("pressure.pvd");
-  //pfile << p;
+  File ufile2("velocity.pvd");
+  ufile2 << u;
+  File pfile2("pressure.pvd");
+  pfile2 << p;
 }

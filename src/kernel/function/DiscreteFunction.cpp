@@ -119,6 +119,11 @@ DiscreteFunction::DiscreteFunction(SubFunction& sub_function)
   delete [] get_rows;
   delete [] set_rows;
 
+  // Initialize local array for mapping of dofs
+  dofs = new uint[dof_map->local_dimension()];
+  for (uint i = 0; i < dof_map->local_dimension(); i++)
+    dofs[i] = 0;
+
   // Assume responsibility for vector
   local_vector = x;
 }
@@ -174,6 +179,7 @@ void DiscreteFunction::interpolate(real* values)
   const uint num_cell_vertices = mesh.type().numVertices(mesh.topology().dim());
   real* vertex_values = new real[size*num_cell_vertices];
   real* dof_values = new real[finite_element->space_dimension()];
+
 
   // Interpolate vertex values on each cell and pick the last value
   // if two or more cells disagree on the vertex values
