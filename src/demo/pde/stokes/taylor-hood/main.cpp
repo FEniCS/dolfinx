@@ -60,8 +60,8 @@ int main()
   // Inflow boundary condition for velocity
   BoundaryCondition bc1(inflow, sub_domains, 1, velocity);
 
-  // Boundary condition for pressure at inflow
-  BoundaryCondition bc2(zero, sub_domains, 1, pressure);
+  // Boundary condition for pressure at outflow
+  BoundaryCondition bc2(zero, sub_domains, 2, pressure);
 
   // Collect boundary conditions
   Array <BoundaryCondition*> bcs(&bc0, &bc1, &bc2);
@@ -82,13 +82,8 @@ int main()
   Function p = w[1];
 
   // Save solution
-  //File ufile("velocity.xml");
-  //ufile << u;
-  //File pfile("pressure.xml");
-  //pfile << p;
-
-  File ufile("velocity.pvd");
+  File ufile("velocity.xml");
   ufile << u;
-  File pfile("pressure.pvd");
+  File pfile("pressure.xml");
   pfile << p;
 }
