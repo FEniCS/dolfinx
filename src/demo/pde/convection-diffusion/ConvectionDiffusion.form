@@ -1,25 +1,25 @@
-# Copyright (C) 2006 Anders Logg.
+# Copyright (C) 2006-2007 Anders Logg.
 # Licensed under the GNU LGPL Version 2.1.
 #
 # First added:  2006-02-09
-# Last changed: 2006-03-28
+# Last changed: 2007-04-30
 #
-# The bilinear form a(v, U) and linear form L(v) for
+# The bilinear form a(v, u) and linear form L(v) for
 # convection-diffusion using cG(1)cG(1).
 #
-# Compile this form with FFC: ffc ConvectionDiffusion.form.
+# Compile this form with FFC: ffc -l dolfin ConvectionDiffusion.form
 
 scalar = FiniteElement("Lagrange", "triangle", 1)
-vector = FiniteElement("Vector Lagrange", "triangle", 2)
+vector = VectorElement("Lagrange", "triangle", 2)
 
 v  = TestFunction(scalar)
-U1 = TrialFunction(scalar)
-U0 = Function(scalar)
+u1 = TrialFunction(scalar)
+u0 = Function(scalar)
 b  = Function(vector)
 f  = Function(scalar)
 
 c = 0.005
 k = 0.05
 
-a = v*U1*dx + 0.5*k*(v*dot(b, grad(U1))*dx + c*dot(grad(v), grad(U1))*dx)
-L = v*U0*dx - 0.5*k*(v*dot(b, grad(U0))*dx + c*dot(grad(v), grad(U0))*dx) + k*v*f*dx
+a = v*u1*dx + 0.5*k*(v*dot(b, grad(u1))*dx + c*dot(grad(v), grad(u1))*dx)
+L = v*u0*dx - 0.5*k*(v*dot(b, grad(u0))*dx + c*dot(grad(v), grad(u0))*dx) + k*v*f*dx
