@@ -23,7 +23,8 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 DiscreteFunction::DiscreteFunction(Mesh& mesh, Vector& x, const Form& form, uint i)
-  : GenericFunction(mesh), x(&x), finite_element(0), dof_map(0), dofs(0),
+  : GenericFunction(mesh),
+    x(&x), finite_element(0), dof_map(0), ufc_dof_map(0), dofs(0),
     local_mesh(0), local_vector(0)
 {
   // Check argument
@@ -54,7 +55,8 @@ DiscreteFunction::DiscreteFunction(Mesh& mesh, Vector& x, const Form& form, uint
 DiscreteFunction::DiscreteFunction(Mesh& mesh, Vector& x,
                                    std::string finite_element_signature,
                                    std::string dof_map_signature)
-  : GenericFunction(mesh), x(&x), finite_element(0), dof_map(0), dofs(0),
+  : GenericFunction(mesh),
+    x(&x), finite_element(0), dof_map(0), ufc_dof_map(0), dofs(0),
     local_mesh(0), local_vector(0)
 {
   // Create finite element
@@ -89,8 +91,8 @@ DiscreteFunction::DiscreteFunction(Mesh& mesh, Vector& x,
 }
 //-----------------------------------------------------------------------------
 DiscreteFunction::DiscreteFunction(SubFunction& sub_function)
-  : GenericFunction(sub_function.f->mesh), x(0),
-    finite_element(0), dof_map(0), dofs(0),
+  : GenericFunction(sub_function.f->mesh),
+    x(0), finite_element(0), dof_map(0), ufc_dof_map(0), dofs(0),
     local_mesh(0), local_vector(0)
 {
   // Create sub system
@@ -120,6 +122,11 @@ DiscreteFunction::DiscreteFunction(SubFunction& sub_function)
   delete [] values;
   delete [] get_rows;
   delete [] set_rows;
+
+  // Initialize local array for mapping of dofs
+  dofs = new uint[dof_map->local_dimension()];
+  for (uint i = 0; i < dof_map->local_dimension(); i++)
+    dofs[i] = 0;
 
   // Assume responsibility for vector
   local_vector = x;

@@ -82,13 +82,13 @@ int main()
   Function p = w[1];
 
   // Save solution
-  File ufile("velocity.xml");
-  ufile << u;
-  File pfile("pressure.xml");
-  pfile << p;
-
-  //File ufile("velocity.pvd");
+  //File ufile("velocity.xml");
   //ufile << u;
-  //File pfile("pressure.pvd");
+  //File pfile("pressure.xml");
   //pfile << p;
+
+  File ufile("velocity.pvd");
+  ufile << u;
+  File pfile("pressure.pvd");
+  pfile << p;
 }
