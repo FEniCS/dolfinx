@@ -136,16 +136,21 @@ void BoundaryCondition::apply(GenericMatrix& A, GenericVector& b,
     //for (uint i = 0; i < 6; i++)
     //  dolfin_info("facet_dofs[%d] = %d", i, data.facet_dofs[i]);
 
-    // Get current solution values for nonlinear problems
-    if ( x )
-      x->get(data.x_values, data.dof_map->num_facet_dofs(), data.rows);
 
     // Pick values for facet
     for (uint i = 0; i < data.dof_map->num_facet_dofs(); i++)
     {
       data.rows[i] = data.offset + data.cell_dofs[data.facet_dofs[i]];
       row_set.insert(data.rows[i]);
-      data.values[i] = data.w[data.facet_dofs[i]] - data.x_values[i];
+      data.values[i] = data.w[data.facet_dofs[i]];
+    } 
+ 
+    // Get current solution values for nonlinear problems
+    if ( x )
+    {
+      x->get(data.x_values, data.dof_map->num_facet_dofs(), data.rows);
+      for (uint i = 0; i < data.dof_map->num_facet_dofs(); i++)
+        data.values[i] = data.values[i] - data.x_values[i];
     } 
 
     // Modify RHS vector for facet dofs (b[i] = value)

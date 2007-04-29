@@ -74,17 +74,19 @@ class MyNonlinearProblem : public NonlinearProblem
   public:
 
     // Constructor 
-    MyNonlinearProblem(Mesh& mesh, SubDomain& dirichlet_boundary, 
+    MyNonlinearProblem(Mesh& mesh, Vector& x, SubDomain& dirichlet_boundary, 
                        Function& g, Function& f, Function& u)  
-                       : NonlinearProblem(), _mesh(&mesh), 
-                       _dirichlet_boundary(&dirichlet_boundary), _g(&g)
+                       : NonlinearProblem(), _mesh(&mesh)
     {
       // Create forms
       a = new NonlinearPoissonBilinearForm(u);
       L = new NonlinearPoissonLinearForm(u, f);
 
+      // Create boundary conditions
+      bc = new BoundaryCondition(g, mesh, dirichlet_boundary);
+
       // Initialise solution vector u
-      //U.init(mesh, a->trial());
+      u.init(mesh, x, *a, 1);
     }
 
     // Destructor 
@@ -92,16 +94,18 @@ class MyNonlinearProblem : public NonlinearProblem
     {
       delete a;
       delete L;
+      delete bc;
     }
  
     // User defined assemble of Jacobian and residual vector 
     void form(GenericMatrix& A, GenericVector& b, const GenericVector& x)
     {
-//      dolfin_log(false);
-//      FEM::assemble(*a, *L, A, b, *_mesh);
-//      FEM::applyBC(A, *_mesh, a->test(), *_bc);
-//      FEM::applyResidualBC(b, x, *_mesh, a->test(), *_bc);
-//      dolfin_log(true);
+      dolfin_log(false);
+      Assembler assembler;
+      assembler.assemble(A, *a, *_mesh);
+      assembler.assemble(b, *L, *_mesh);
+      bc->apply(A, b, x, *a);
+      dolfin_log(true);
     }
 
   private:
@@ -110,8 +114,7 @@ class MyNonlinearProblem : public NonlinearProblem
     Form *a;
     Form *L;
     Mesh* _mesh;
-    SubDomain* _dirichlet_boundary;
-    Function* _g;
+    BoundaryCondition* bc;
 };
 
 int main(int argc, char* argv[])
@@ -124,20 +127,22 @@ int main(int argc, char* argv[])
   // Pseudo time
   real t = 0.0;
 
-  // Source function
+  // Create source function
   Source f(mesh, t);
 
   // Dirichlet boundary conditions
   DirichletBoundary dirichlet_boundary;
   DirichletBoundaryCondition g(mesh, t);
 
+  Vector x;
   Function u;
 
   // Create user-defined nonlinear problem
-  MyNonlinearProblem nonlinear_problem(mesh, dirichlet_boundary, g, f, u);
+  MyNonlinearProblem nonlinear_problem(mesh, x, dirichlet_boundary, g, f, u);
 
   // Create nonlinear solver (using GMRES linear solver) and set parameters
-  NewtonSolver nonlinear_solver(gmres);
+//  NewtonSolver nonlinear_solver(gmres);
+  NewtonSolver nonlinear_solver;
   nonlinear_solver.set("Newton maximum iterations", 50);
   nonlinear_solver.set("Newton relative tolerance", 1e-10);
   nonlinear_solver.set("Newton absolute tolerance", 1e-10);
@@ -145,11 +150,10 @@ int main(int argc, char* argv[])
   // Solve nonlinear problem in a series of steps
   real dt = 1.0; real T  = 3.0;
 
-//  Vector& x = u.vector();
   while( t < T)
   {
     t += dt;
-//    nonlinear_solver.solve(nonlinear_problem, x);
+    nonlinear_solver.solve(nonlinear_problem, x);
   }
 
   // Save function to file
