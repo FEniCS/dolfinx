@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2007.
 //
 // First added:  2007-04-02
-// Last changed: 2007-04-27
+// Last changed: 2007-04-29
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Mesh.h>
@@ -60,10 +60,8 @@ DiscreteFunction::DiscreteFunction(Mesh& mesh, Vector& x,
   // Create finite element
   finite_element = ElementLibrary::create_finite_element(finite_element_signature);
   if ( !finite_element )
-  {
     dolfin_error1("Unable to find finite element in library: \"%s\".",
                   finite_element_signature.c_str());
-  }
 
   // Create dof map
   ufc_dof_map = ElementLibrary::create_dof_map(dof_map_signature);
@@ -163,6 +161,7 @@ void DiscreteFunction::interpolate(real* values)
   dolfin_assert(values);
   dolfin_assert(finite_element);
   dolfin_assert(dof_map);
+  dolfin_assert(dofs);
   
   // Compute size of value (number of entries in tensor value)
   uint size = 1;
