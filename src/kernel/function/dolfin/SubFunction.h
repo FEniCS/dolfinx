@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2007-04-27
-// Last changed: 2007-04-27
+// Last changed: 2007-04-29
 
 #ifndef __SUB_FUNCTION_H
 #define __SUB_FUNCTION_H
@@ -28,6 +28,9 @@ namespace dolfin
   class SubFunction
   {
   public:
+
+    /// Create empty sub function
+    SubFunction() : f(0), i(0) {}
 
     /// Create sub function
     SubFunction(DiscreteFunction* f, uint i) : f(f), i(i) {}

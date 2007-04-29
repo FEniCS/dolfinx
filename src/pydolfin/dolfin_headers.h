@@ -4,6 +4,7 @@
 %include "dolfin/timing.h"
 %include "dolfin/Array.h"
 %include "dolfin/List.h"
+%include "dolfin/TimeDependent.h"
 %include "dolfin/Variable.h"
 
 // DOLFIN headers included from parameter
@@ -65,6 +66,7 @@
 
 // DOLFIN headers included from fem
 %include "dolfin/assemble.h"
+%include "dolfin/SubSystem.h"
 %include "dolfin/BoundaryCondition.h"
 %include "dolfin/Form.h"
 %include "dolfin/Assembler.h"

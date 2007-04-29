@@ -5,6 +5,5 @@
 
 #include <dolfin/Function.h>
 #include <dolfin/SpecialFunctions.h>
-#include <dolfin/SubFunction.h>
 
 #endif
