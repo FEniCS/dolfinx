@@ -170,6 +170,7 @@ void DiscreteFunction::interpolate(real* values)
   dolfin_assert(values);
   dolfin_assert(finite_element);
   dolfin_assert(dof_map);
+  dolfin_assert(dofs);
   
   // Compute size of value (number of entries in tensor value)
   uint size = 1;
