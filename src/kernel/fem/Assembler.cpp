@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-01-17
-// Last changed: 2007-04-10
+// Last changed: 2007-04-30
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Array.h>
@@ -94,7 +94,7 @@ void Assembler::assembleCells(GenericTensor& A, Mesh& mesh,
 
     // Interpolate coefficients on cell
     for (uint i = 0; i < coefficients.size(); i++)
-      coefficients[i]->interpolate(ufc.w[i], ufc.cell, *ufc.coefficient_elements[i]);
+      coefficients[i]->interpolate(ufc.w[i], ufc.cell, *ufc.coefficient_elements[i], *cell);
     
     // Tabulate dofs for each dimension
     for (uint i = 0; i < ufc.form.rank(); i++)
@@ -142,7 +142,7 @@ void Assembler::assembleExteriorFacets(GenericTensor& A, Mesh& mesh,
 
     // Interpolate coefficients on cell
     for (uint i = 0; i < coefficients.size(); i++)
-      coefficients[i]->interpolate(ufc.w[i], ufc.cell, *ufc.coefficient_elements[i]);
+      coefficients[i]->interpolate(ufc.w[i], ufc.cell, *ufc.coefficient_elements[i], mesh_cell);
 
     // Tabulate dofs for each dimension
     for (uint i = 0; i < ufc.form.rank(); i++)

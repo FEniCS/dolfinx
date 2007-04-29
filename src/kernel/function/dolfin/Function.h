@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells 2005.
 //
 // First added:  2003-11-28
-// Last changed: 2007-04-27
+// Last changed: 2007-04-30
 
 #ifndef __FUNCTION_H
 #define __FUNCTION_H
@@ -19,6 +19,7 @@ namespace dolfin
 {
 
   class Mesh;
+  class Cell;
   class Form;
   class GenericFunction;
 
@@ -86,8 +87,9 @@ namespace dolfin
 
     /// Interpolate function to finite element space on cell
     void interpolate(real* coefficients,
-                     const ufc::cell& cell,
-                     const ufc::finite_element& finite_element);
+                     const ufc::cell& ufc_cell,
+                     const ufc::finite_element& finite_element,
+                     Cell& cell);
 
     /// Evaluate function at given point (overload for user-defined function)
     virtual void eval(real* values, const real* x);
@@ -98,6 +100,11 @@ namespace dolfin
     /// Friends
     friend class XMLFile;
 
+  protected:
+    
+    // Access current cell (available during assembly for user-defined function)
+    const Cell& cell() const;
+
   private:
     
     // Pointer to current implementation (letter base class)
@@ -105,6 +112,9 @@ namespace dolfin
 
     // Type of function
     Type _type;
+    
+    // Pointer to current cell (if any)
+    Cell* _cell;
 
   };
 

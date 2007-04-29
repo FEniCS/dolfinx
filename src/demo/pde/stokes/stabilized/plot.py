@@ -1,10 +1,9 @@
-# Load mayavi
-from mayavi import *
+from dolfin import *
 
-# Plot solution
-v = mayavi()
-d = v.open_vtk_xml("velocity000000.vtu")
-m = v.load_module("VelocityVector")
+# Plot velocity
+u = Function("velocity.xml")
+plot(u)
 
-# Wait until window is closed
-v.master.wait_window()
+# Plot pressure
+p = Function("pressure.xml")
+plot(p)

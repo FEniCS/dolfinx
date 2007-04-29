@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells 2005
 //
 // First added:  2003-11-28
-// Last changed: 2007-04-29
+// Last changed: 2007-04-30
 //
 // The class Function serves as the envelope class and holds a pointer
 // to a letter class that is a subclass of GenericFunction. All the
@@ -20,38 +20,44 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 Function::Function()
-  : Variable("u", "empty function"), f(0), _type(empty)
+  : Variable("u", "empty function"),
+    f(0), _type(empty), _cell(0)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 Function::Function(Mesh& mesh)
-  : Variable("u", "user-defined function"), f(0), _type(user)
+  : Variable("u", "user-defined function"),
+    f(0), _type(user), _cell(0)
 {
   f = new UserFunction(mesh, this);
 }
 //-----------------------------------------------------------------------------
 Function::Function(Mesh& mesh, real value)
-  : Variable("u", "constant function"), f(0), _type(constant)
+  : Variable("u", "constant function"),
+    f(0), _type(constant), _cell(0)
 {
   f = new ConstantFunction(mesh, value);
 }
 //-----------------------------------------------------------------------------
 Function::Function(Mesh& mesh, Vector& x, const Form& form, uint i)
-  : Variable("u", "discrete function"), f(0), _type(discrete)
+  : Variable("u", "discrete function"),
+    f(0), _type(discrete), _cell(0)
 {
   f = new DiscreteFunction(mesh, x, form, i);
 }
 //-----------------------------------------------------------------------------
 Function::Function(const std::string filename)
-  : Variable("u", "discrete function from data file"), f(0), _type(empty)
+  : Variable("u", "discrete function from data file"),
+    f(0), _type(empty), _cell(0)
 {
   File file(filename);
   file >> *this;
 }
 //-----------------------------------------------------------------------------
 Function::Function(SubFunction sub_function)
-  : Variable("u", "discrete function"), f(0), _type(discrete)
+  : Variable("u", "discrete function"),
+    f(0), _type(discrete), _cell(0)
 {
   cout << "Extracting sub function." << endl;
   f = new DiscreteFunction(sub_function);
@@ -135,13 +141,18 @@ void Function::interpolate(real* values)
 }
 //-----------------------------------------------------------------------------
 void Function::interpolate(real* coefficients,
-                           const ufc::cell& cell,
-                           const ufc::finite_element& finite_element)
+                           const ufc::cell& ufc_cell,
+                           const ufc::finite_element& finite_element,
+                           Cell& cell)
 {
   if (!f)
     dolfin_error("Function contains no data.");
 
-  f->interpolate(coefficients, cell, finite_element);
+  // Make current cell available to user-defined function
+  _cell = &cell;
+
+  // Interpolate function
+  f->interpolate(coefficients, ufc_cell, finite_element);
 }
 //-----------------------------------------------------------------------------
 void Function::eval(real* values, const real* x)
@@ -154,5 +165,11 @@ dolfin::real Function::eval(const real* x)
 {
   dolfin_error("Missing eval() for user-defined function (must be overloaded).");
   return 0.0;
+}
+//-----------------------------------------------------------------------------
+const Cell& Function::cell() const
+{
+  dolfin_assert(_cell);
+  return *_cell;
 }
 //-----------------------------------------------------------------------------

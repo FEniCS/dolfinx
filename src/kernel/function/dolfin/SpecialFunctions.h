@@ -2,60 +2,53 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-02-09
-// Last changed: 2007-04-05
+// Last changed: 2007-04-30
 
 #ifndef __SPECIAL_FUNCTIONS_H
 #define __SPECIAL_FUNCTIONS_H
 
+#include <dolfin/Cell.h>
 #include <dolfin/Function.h>
 
 namespace dolfin
 {
 
-  /// This is the zero function.
-  class Zero : public Function
-  {
-    void eval(real* values, const real* coordinates)
-    {
-      values[0] = 0.0;
-    }
-  };
-
-  /// This is the unity function.
-  class Unity : public Function
-  {
-    void eval(real* values, const real* coordinates)
-    {
-      values[0] = 1.0;
-    }
-  };
-
   /// This function represents the local mesh size on a given mesh.
   class MeshSize : public Function
   {
-    void eval(real* values, const real* coordinates)
+  public:
+
+    MeshSize(Mesh& mesh) : Function(mesh) {}
+
+    real eval(const real* x)
     {
-      // FIXME: Not implemented
-      dolfin_error("Not implemented");
-      //return cell().diameter();
+      return cell().diameter();
     }
+    
   };
 
   /// This function represents the inverse of the local mesh size on a given mesh.
   class InvMeshSize : public Function
   {
-    void eval(real* values, const real* coordinates)
+  public:
+
+    InvMeshSize(Mesh& mesh) : Function(mesh) {}
+
+    real eval(const real* x)
     {
-      // FIXME: Not implemented
-      dolfin_error("Not implemented");
-      //return 1.0/cell().diameter();
+      return 1.0 / cell().diameter();
     }
+
   };
 
   /// This function represents the outward unit normal on mesh facets.
   class FacetNormal : public Function
   {
-    void eval(real* values, const real* coordinates)
+  public:
+
+    FacetNormal(Mesh& mesh) : Function(mesh) {}
+
+    void eval(real* values, const real* x)
     {
       // FIXME: Not implemented
       dolfin_error("Not implemented");
