@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-04-10
-// Last changed: 2007-04-27
+// Last changed: 2007-04-29
 
 #ifndef __NEW_BOUNDARY_CONDITION_H
 #define __NEW_BOUNDARY_CONDITION_H
@@ -72,10 +72,17 @@ namespace dolfin
     /// Apply boundary condition to linear system
     void apply(GenericMatrix& A, GenericVector& b, const Form& form);
 
+    /// Apply boundary condition to linear system for a nonlinear problem
+    void apply(GenericMatrix& A, GenericVector& b, const GenericVector& x, const Form& form);
+
   private:
 
     // Initialize sub domain markers    
     void init(SubDomain& sub_domain);
+
+    /// Apply boundary conditions
+    void apply(GenericMatrix& A, GenericVector& b,
+                              const GenericVector* x, const Form& form);
 
     // Local data for application of boundary conditions
     class LocalData
@@ -101,6 +108,7 @@ namespace dolfin
       real* w;
       uint* cell_dofs;
       real* values;
+      real* x_values;
       uint* facet_dofs;
       uint* rows;
 

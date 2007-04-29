@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-04-10
-// Last changed: 2007-04-27
+// Last changed: 2007-04-29
 
 #include <dolfin/Mesh.h>
 #include <dolfin/Vertex.h>
@@ -72,6 +72,18 @@ BoundaryCondition::~BoundaryCondition()
 void BoundaryCondition::apply(GenericMatrix& A, GenericVector& b,
                               const Form& form)
 {
+  apply(A, b, 0, form);
+}
+//-----------------------------------------------------------------------------
+void BoundaryCondition::apply(GenericMatrix& A, GenericVector& b, 
+                              const GenericVector& x, const Form& form)
+{
+  apply(A, b, &x, form);
+}
+//-----------------------------------------------------------------------------
+void BoundaryCondition::apply(GenericMatrix& A, GenericVector& b,
+                              const GenericVector* x, const Form& form)
+{
   cout << "Applying boundary conditions to linear system." << endl;
 
   // FIXME: How do we reuse the dof map for u?
@@ -124,12 +136,16 @@ void BoundaryCondition::apply(GenericMatrix& A, GenericVector& b,
     //for (uint i = 0; i < 6; i++)
     //  dolfin_info("facet_dofs[%d] = %d", i, data.facet_dofs[i]);
 
+    // Get current solution values for nonlinear problems
+    if ( x )
+      x->get(data.x_values, data.dof_map->num_facet_dofs(), data.rows);
+
     // Pick values for facet
     for (uint i = 0; i < data.dof_map->num_facet_dofs(); i++)
     {
       data.rows[i] = data.offset + data.cell_dofs[data.facet_dofs[i]];
       row_set.insert(data.rows[i]);
-      data.values[i] = data.w[data.facet_dofs[i]];
+      data.values[i] = data.w[data.facet_dofs[i]] - data.x_values[i];
     } 
 
     // Modify RHS vector for facet dofs (b[i] = value)
@@ -174,7 +190,7 @@ BoundaryCondition::LocalData::LocalData(const Form& form,
                                         Mesh& mesh,
                                         const SubSystem& sub_system)
   : finite_element(0), dof_map(0), offset(0),
-    w(0), cell_dofs(0), values(0), facet_dofs(0), rows(0)
+    w(0), cell_dofs(0), values(0), x_values(0), facet_dofs(0), rows(0)
 {
   // FIXME: Change behaviour of num_sub_elements() in FFC (return 0 when
   // FIXME: there are no nested elements
@@ -210,11 +226,13 @@ BoundaryCondition::LocalData::LocalData(const Form& form,
     cell_dofs[i] = 0;
   }
   values = new real[dof_map->num_facet_dofs()];
+  x_values = new real[dof_map->num_facet_dofs()];
   facet_dofs = new uint[dof_map->num_facet_dofs()];
   rows = new uint[dof_map->num_facet_dofs()];
   for (uint i = 0; i < dof_map->num_facet_dofs(); i++)
   {
     values[i] = 0.0;
+    x_values[i] = 0.0;
     facet_dofs[i] = 0;
     rows[i] = 0;
   }
@@ -236,6 +254,9 @@ BoundaryCondition::LocalData::~LocalData()
 
   if (values)
     delete [] values;
+
+  if (x_values)
+    delete [] x_values;
 
   if (facet_dofs)
     delete [] facet_dofs;
