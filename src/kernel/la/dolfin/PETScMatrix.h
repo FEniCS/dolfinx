@@ -55,9 +55,6 @@ namespace dolfin
     PETScMatrix(Mat A);
 
     /// Constructor
-    PETScMatrix(uint M, uint N);
-
-    /// Constructor (setting PETSc matrix type)
     PETScMatrix(uint M, uint N, Type type = default_matrix);
 
     /// Constructor (just for testing, will be removed)
