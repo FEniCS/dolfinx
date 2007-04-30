@@ -3,6 +3,13 @@
 //
 // First added:  2006-02-09
 // Last changed: 2007-04-29
+//
+// This demo solves the Stokes equations, using quadratic
+// elements for the velocity and first degree elements for
+// the pressure (Taylor-Hood elements). The sub domains
+// for the different boundary conditions used in this
+// simulation are computed by the demo program in
+// src/demo/subdomains.
 
 #include <dolfin.h>
 #include "Stokes.h"

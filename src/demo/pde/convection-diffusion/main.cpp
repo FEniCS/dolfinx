@@ -7,6 +7,8 @@
 // This demo solves the time-dependent convection-diffusion equation by
 // a least-squares stabilized cG(1)cG(1) method. The velocity field used
 // in the simulation is the output from the Stokes (Taylor-Hood) demo.
+// The sub domains for the different boundary conditions are computed
+// by the demo program in src/demo/subdomains.
 
 #include <dolfin.h>
 #include "ConvectionDiffusion.h"
