@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-01-17
-// Last changed: 2007-04-05
+// Last changed: 2007-04-30
 
 #ifndef __ASSEMBLER_H
 #define __ASSEMBLER_H
@@ -43,6 +43,16 @@ namespace dolfin
 
     /// Assemble tensor from given variational form, mesh and coefficients
     void assemble(GenericTensor& A, const ufc::form& form, Mesh& mesh,
+                  Array<Function*> coefficients);
+
+    /// Assemble scalar from given variational form and mesh
+    real assemble(const Form& form, Mesh& mesh);
+
+    /// Assemble scalar from given variational form and mesh
+    real assemble(const ufc::form& form, Mesh& mesh);
+
+    /// Assemble scalar from given variational form, mesh and coefficients
+    real assemble(const ufc::form& form, Mesh& mesh,
                   Array<Function*> coefficients);
 
   private:

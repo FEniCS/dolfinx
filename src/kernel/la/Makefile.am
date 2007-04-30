@@ -39,6 +39,7 @@ nobase_include_HEADERS  = dolfin/dolfin_la.h \
                           dolfin/uBlasPreconditioner.h \
                           dolfin/uBlasSparseMatrix.h \
                           dolfin/uBlasVector.h \
+	                  dolfin/Scalar.h \
                           dolfin/Vector.h
 INCLUDES                = @KERNEL_CFLAGS@
 lib_LTLIBRARIES         = libdolfin-la.la

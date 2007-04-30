@@ -7,6 +7,7 @@
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Array.h>
 #include <dolfin/GenericTensor.h>
+#include <dolfin/Scalar.h>
 #include <dolfin/Mesh.h>
 #include <dolfin/Cell.h>
 #include <dolfin/Facet.h>
@@ -75,6 +76,28 @@ void Assembler::assemble(GenericTensor& A, const ufc::form& form, Mesh& mesh,
 
   // Finalise assembly of global tensor
   A.apply();
+}
+//-----------------------------------------------------------------------------
+dolfin::real Assembler::assemble(const Form& form, Mesh& mesh)
+{
+  Scalar value;
+  assemble(value, form, mesh);
+  return value;
+}
+//-----------------------------------------------------------------------------
+dolfin::real Assembler::assemble(const ufc::form& form, Mesh& mesh)
+{
+  Scalar value;
+  assemble(value, form, mesh);
+  return value;
+}
+//-----------------------------------------------------------------------------
+dolfin::real Assembler::assemble(const ufc::form& form, Mesh& mesh,
+                                 Array<Function*> coefficients)
+{
+  Scalar value;
+  assemble(value, form, mesh, coefficients);
+  return value;
 }
 //-----------------------------------------------------------------------------
 void Assembler::assembleCells(GenericTensor& A, Mesh& mesh,

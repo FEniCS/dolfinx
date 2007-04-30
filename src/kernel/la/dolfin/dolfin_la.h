@@ -48,6 +48,8 @@
 #include <dolfin/LUSolver.h>
 #include <dolfin/LU.h>
 
+#include <dolfin/Scalar.h>
+
 #include <dolfin/solve.h>
 
 #endif
