@@ -198,6 +198,7 @@ swig_found = @swig_found@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 EXTRA_DIST = dolfin_la.h \
+             solve.h \
              AssemblyMatrix.h \
              DenseMatrix.h \
              DenseVector.h \

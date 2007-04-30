@@ -1,10 +1,9 @@
-# Load mayavi
-from mayavi import *
+from dolfin import *
 
-# Plot solution
-v = mayavi()
-d = v.open_vtk_xml("temperature000010.vtu")
-m = v.load_module("BandedSurfaceMap")
+# Plot velocity
+u = Function("velocity.xml")
+plot(u)
 
-# Wait until window is closed
-v.master.wait_window()
+# Plot pressure
+p = Function("pressure.xml")
+plot(p)

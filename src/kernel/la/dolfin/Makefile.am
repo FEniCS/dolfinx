@@ -1,4 +1,5 @@
 EXTRA_DIST = dolfin_la.h \
+             solve.h \
              AssemblyMatrix.h \
              DenseMatrix.h \
              DenseVector.h \

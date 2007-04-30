@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-04-02
-// Last changed: 2007-04-27
+// Last changed: 2007-04-30
 
 #ifndef __DISCRETE_FUNCTION_H
 #define __DISCRETE_FUNCTION_H
@@ -39,6 +39,9 @@ namespace dolfin
     /// Create discrete function from sub function
     DiscreteFunction(SubFunction& sub_function);
 
+    /// Copy constructor
+    DiscreteFunction(const DiscreteFunction& f);
+    
     /// Destructor
     ~DiscreteFunction();
 
@@ -47,6 +50,9 @@ namespace dolfin
 
     /// Return the dimension of the value space for axis i
     uint dim(uint i) const;
+
+    /// Assign discrete function
+    const DiscreteFunction& operator= (const DiscreteFunction& f);
 
     /// Interpolate function to vertices of mesh
     void interpolate(real* values);

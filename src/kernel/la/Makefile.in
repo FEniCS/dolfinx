@@ -61,13 +61,13 @@ am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(includedir)"
 libLTLIBRARIES_INSTALL = $(INSTALL)
 LTLIBRARIES = $(lib_LTLIBRARIES)
 libdolfin_la_la_LIBADD =
-am_libdolfin_la_la_OBJECTS = GMRES.lo LU.lo SLEPcEigenvalueSolver.lo \
-	PETScKrylovMatrix.lo PETScKrylovSolver.lo PETScLUSolver.lo \
-	PETScManager.lo PETScMatrix.lo PETScPreconditioner.lo \
-	PETScVector.lo SparsityPattern.lo uBlasKrylovMatrix.lo \
-	uBlasKrylovSolver.lo uBlasLUSolver.lo \
-	uBlasDummyPreconditioner.lo uBlasILUPreconditioner.lo \
-	uBlasVector.lo
+am_libdolfin_la_la_OBJECTS = solve.lo GMRES.lo LU.lo \
+	SLEPcEigenvalueSolver.lo PETScKrylovMatrix.lo \
+	PETScKrylovSolver.lo PETScLUSolver.lo PETScManager.lo \
+	PETScMatrix.lo PETScPreconditioner.lo PETScVector.lo \
+	SparsityPattern.lo uBlasKrylovMatrix.lo uBlasKrylovSolver.lo \
+	uBlasLUSolver.lo uBlasDummyPreconditioner.lo \
+	uBlasILUPreconditioner.lo uBlasVector.lo
 libdolfin_la_la_OBJECTS = $(am_libdolfin_la_la_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -242,6 +242,7 @@ sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 SUBDIRS = dolfin
 nobase_include_HEADERS = dolfin/dolfin_la.h \
+                          dolfin/solve.h \
                           dolfin/AssemblyMatrix.h \
                           dolfin/DenseMatrix.h \
                           dolfin/DenseVector.h \
@@ -284,7 +285,8 @@ nobase_include_HEADERS = dolfin/dolfin_la.h \
 
 INCLUDES = @KERNEL_CFLAGS@
 lib_LTLIBRARIES = libdolfin-la.la
-libdolfin_la_la_SOURCES = GMRES.cpp \
+libdolfin_la_la_SOURCES = solve.cpp \
+                          GMRES.cpp \
                           LU.cpp \
                           SLEPcEigenvalueSolver.cpp \
                           PETScKrylovMatrix.cpp \
@@ -383,6 +385,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PETScVector.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SLEPcEigenvalueSolver.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SparsityPattern.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/solve.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/uBlasDummyPreconditioner.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/uBlasILUPreconditioner.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/uBlasKrylovMatrix.Plo@am__quote@

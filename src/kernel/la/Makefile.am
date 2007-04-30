@@ -1,5 +1,6 @@
 SUBDIRS                 = dolfin
 nobase_include_HEADERS  = dolfin/dolfin_la.h \
+                          dolfin/solve.h \
                           dolfin/AssemblyMatrix.h \
                           dolfin/DenseMatrix.h \
                           dolfin/DenseVector.h \
@@ -41,7 +42,8 @@ nobase_include_HEADERS  = dolfin/dolfin_la.h \
                           dolfin/Vector.h
 INCLUDES                = @KERNEL_CFLAGS@
 lib_LTLIBRARIES         = libdolfin-la.la
-libdolfin_la_la_SOURCES = GMRES.cpp \
+libdolfin_la_la_SOURCES = solve.cpp \
+                          GMRES.cpp \
                           LU.cpp \
                           SLEPcEigenvalueSolver.cpp \
                           PETScKrylovMatrix.cpp \
