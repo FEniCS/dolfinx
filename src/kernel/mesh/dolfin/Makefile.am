@@ -10,6 +10,7 @@ EXTRA_DIST = dolfin_mesh.h \
              MeshHierarchy.h \
              MeshHierarchyAlgorithms.h \
              MeshOrdering.h \
+             MeshPartition.h \
              MeshTopology.h \
              Mesh.h \
              MeshData.h \

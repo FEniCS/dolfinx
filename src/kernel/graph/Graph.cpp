@@ -33,6 +33,12 @@ Graph::Graph(std::string filename) : Variable("graph", "DOLFIN graph")
   file >> *this;
 }
 //-----------------------------------------------------------------------------
+Graph::Graph(Mesh& mesh) : Variable("graph", "Graph")
+{
+  // Default mesh representation
+  createNodal(mesh);
+}
+//-----------------------------------------------------------------------------
 Graph::Graph(Mesh& mesh, Representation type) : Variable("graph", "Graph")
 {
   if ( type == nodal )
@@ -65,12 +71,14 @@ const Graph& Graph::operator=(const Graph& graph)
 }
 */
 //-----------------------------------------------------------------------------
-unsigned int Graph::numEdges(uint u)
+bool Graph::adjacent(uint u, uint v)
 {
-  if ( u == num_vertices - 1 )
-    return num_arches - vertices[num_vertices - 1];
-  else
-    return vertices[u+1] - vertices[u];
+  for(uint i=vertices[u]; i<vertices[u+1]; ++i)
+  {
+	 if(edges[i] == v)
+		return true;
+  }
+  return false;
 }
 //-----------------------------------------------------------------------------
 void Graph::disp()
@@ -97,6 +105,11 @@ void Graph::disp()
     std::cout << edges[i] << " ";
   }
   std::cout << std::endl;
+}
+//-----------------------------------------------------------------------------
+void Graph::partition(uint num_part, uint* vtx_part)
+{
+  GraphPartition::partition(*this, num_part, vtx_part);
 }
 //-----------------------------------------------------------------------------
 std::string Graph::typestr()
@@ -130,7 +143,8 @@ void Graph::createNodal(Mesh& mesh)
   num_arches = num_edges * 2;
 
   edges = new uint[num_arches];
-  vertices = new uint[num_vertices];
+  vertices = new uint[num_vertices + 1];
+  vertices[num_vertices] = num_arches;
 
   // Create nodal graph. Iterate over edges from all vertices
   uint i = 0, j = 0;
@@ -162,13 +176,18 @@ void Graph::createDual(Mesh& mesh)
   dolfin_debug1("createDual() with no edges %d", mesh.numEdges());
   num_arches = num_edges * 2;
 
+  // This initialization should be a method
   edges = new uint[num_arches];
-  vertices = new uint[num_vertices];
+  vertices = new uint[num_vertices + 1];
+  vertices[num_vertices] = num_arches;
   dolfin_debug("finished initing arrays and stuff");
 
   // Create dual graph. Iterate over neighbors from all cells
   uint i = 0, j = 0;
   //uint D = mesh.topology().dim();
+  //mesh.init(D,D);
+  //MeshConnectivity& connectivity = mesh.topology()(D,D);
+  //connectivity.
   for (CellIterator c0(mesh); !c0.end(); ++c0)
   {
     dolfin_debug1("Cell no %d", i);

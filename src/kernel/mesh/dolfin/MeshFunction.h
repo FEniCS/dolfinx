@@ -57,6 +57,9 @@ namespace dolfin
     /// Return array of values
     inline const T* values() const { return _values; }
 
+    /// Return array of values
+    inline T* values() { return _values; }
+
     /// Return value at given entity
     inline T& operator() (MeshEntity& entity)
     {
