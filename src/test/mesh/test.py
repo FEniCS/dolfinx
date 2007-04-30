@@ -38,6 +38,22 @@ class MeshRefinement(unittest.TestCase):
         self.assertEqual(mesh.numVertices(), 3135)
         self.assertEqual(mesh.numCells(), 15120)
 
+class MeshPartition(unittest.TestCase):
+
+    def testPartitionUnitSquare(self):
+        """Partition mesh of unit square"""
+        mesh = UnitSquare(5, 7)
+        #mesh.partition(10, )
+        self.assertEqual(mesh.numVertices(), 165)
+        self.assertEqual(mesh.numCells(), 280)
+
+    def testPartitionUnitCube(self):
+        """Refine mesh of unit cube"""
+        mesh = UnitCube(5, 7, 9)
+        mesh.refine()
+        self.assertEqual(mesh.numVertices(), 3135)
+        self.assertEqual(mesh.numCells(), 15120)
+
 class MeshIterators(unittest.TestCase):
 
     def testVertexIterators(self):

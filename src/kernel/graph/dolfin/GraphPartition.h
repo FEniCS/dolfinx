@@ -1,8 +1,8 @@
 // Copyright (C) 2007 Magnus Vikstrom
-// Licensed under the GNU LGPL Version 2.1.
+// Licensed under the GNU GPL Version 2.
 //
 // First added:  2007-04-03
-// Last changed: 2007-04-12
+// Last changed: 2007-04-22
 
 #ifndef __GRAPH_PARTITIONING_H
 #define __GRAPH_PARTITIONING_H
@@ -18,7 +18,7 @@ namespace dolfin
   {
   public:
     
-    /// Partition a graph into num_partitions.
+    /// Partition a graph into num_part partitions
     static void partition(Graph& graph, uint num_part, uint* vtx_part);
 
     /// Check partition correctness
@@ -29,6 +29,9 @@ namespace dolfin
 
     /// Display partitioning
     static void disp(Graph& graph, uint num_part, uint* vtx_part);
+	 
+    /// Calculate edge_cut
+    static real edgecut(Graph& graph, uint num_part, uint* vtx_part);
 
     /// Return partition vector (add typemap to dolfin.i instead)
     static uint* create(uint size) { return new uint[size]; }

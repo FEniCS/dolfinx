@@ -152,11 +152,57 @@ class Partitioning(unittest.TestCase):
 
     def testPartition(self):
         """Create a graph and partition it"""
+  
+        """ Example graph:
+		             0 -- 1 -- 2
+		                  |  /
+				            | /
+				       4 -- 3 -- 6
+						 |    |    |
+					    |		|    |
+					    7		5 -- 8
+        """
 
-        graph = UndirectedClique(100)
-        parts = numpy.zeros(graph.numVertices(), "uint")
-        GraphPartition.partition(graph, 10, parts)
-        print parts
+        nn = 9
+        num_part = 2
+        graph = Graph()
+        editor = GraphEditor()
+        editor.open(graph, "undirected")
+        editor.initVertices(nn)
+        editor.addVertex(0, 1)
+        editor.addVertex(1, 3)
+        editor.addVertex(2, 2)
+        editor.addVertex(3, 5)
+        editor.addVertex(4, 2)
+        editor.addVertex(5, 2)
+        editor.addVertex(6, 2)
+        editor.addVertex(7, 1)
+        editor.addVertex(8, 2)
+        editor.initEdges(10)
+        editor.addEdge(0, 1)
+        editor.addEdge(1, 2)
+        editor.addEdge(1, 3)
+        editor.addEdge(2, 3)
+        editor.addEdge(3, 4)
+        editor.addEdge(3, 5)
+        editor.addEdge(3, 6)
+        editor.addEdge(4, 7)
+        editor.addEdge(5, 8)
+        editor.addEdge(6, 8)
+        editor.close()
+
+        parts = GraphPartition.create(nn)
+        #parts = numpy.array('uint')
+
+        GraphPartition.partition(graph, num_part, parts)
+		  #graph.partition(graph, num_part, parts)
+        GraphPartition.eval(graph, num_part, parts)
+        GraphPartition.disp(graph, num_part, parts)
+        edgecut = GraphPartition.edgecut(graph, num_part, parts)
+        GraphPartition.check(graph, num_part, parts)
+
+        # Simple graph partitioning should give edge-cut: 2
+        #self.assertEqual(edgecut, 2)
 
 if __name__ == "__main__":
     unittest.main()

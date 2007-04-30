@@ -1,16 +1,15 @@
 // Copyright (C) 2006 Anders Logg.
-// Licensed under the GNU LGPL Version 2.1.
+// Licensed under the GNU GPL Version 2.
 //
 // Modified by Johan Hoffman 2007.
 //
 // First added:  2006-05-22
-// Last changed: 2007-04-24
+// Last changed: 2007-04-10
 
 #ifndef __MESH_FUNCTION_H
 #define __MESH_FUNCTION_H
 
 #include <dolfin/constants.h>
-#include <dolfin/File.h>
 #include <dolfin/MeshEntity.h>
 
 namespace dolfin
@@ -39,13 +38,6 @@ namespace dolfin
       init(dim);
     }
 
-    /// Create function from data file
-    MeshFunction(Mesh& mesh, const std::string filename) : _values(0), _mesh(&mesh), _dim(0), _size(0)
-    {
-      File file(filename);
-      file >> *this;
-    }
-
     /// Destructor
     ~MeshFunction()
     {
@@ -64,6 +56,9 @@ namespace dolfin
 
     /// Return array of values
     inline const T* values() const { return _values; }
+
+    /// Return array of values
+    inline T* values() { return _values; }
 
     /// Return value at given entity
     inline T& operator() (MeshEntity& entity)
@@ -85,20 +80,12 @@ namespace dolfin
       return _values[entity.index()];
     }
 
-    /// Set all values to given value
-    const MeshFunction<T>& operator= (const T& value)
-    {
-      dolfin_assert(_values);
-      for (uint i = 0; i < _size; i++)
-        _values[i] = value;
-      return *this;
-    }
-
     /// Initialize mesh function for given topological dimension
     void init(uint dim)
     {
       if ( !_mesh )
         dolfin_error("Mesh has not been specified, unable to initialize mesh function.");
+      _mesh->init(dim);
       init(*_mesh, dim, _mesh->size(dim));
     }
 
@@ -107,7 +94,7 @@ namespace dolfin
     {
       if ( !_mesh )
         dolfin_error("Mesh has not been specified, unable to initialize mesh function.");
-      init(*_mesh, dim, size);
+      init(*_mesh, dim, _mesh->size(dim));
     }
 
     /// Initialize mesh function for given topological dimension
@@ -119,11 +106,6 @@ namespace dolfin
     /// Initialize mesh function for given topological dimension of given size
     void init(Mesh& mesh, uint dim, uint size)
     {
-      // Initialize mesh for entities of given dimension
-      mesh.init(dim);
-      dolfin_assert(mesh.size(dim) == size);
-      
-      // Initialize data
       _mesh = &mesh;
       _dim = dim;
       _size = size;
