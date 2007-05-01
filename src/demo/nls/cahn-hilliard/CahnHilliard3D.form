@@ -1,55 +1,59 @@
-# Copyright (C) 2006 Garth N Wells.
+# Copyright (C) 2006-2007 Garth N Wells.
 # Licensed under the GNU LGPL Version 2.1.
 #
 # First added:  2006
-# Last changed: 2006-03-28
+# Last changed: 2007-05-01
 #
 # The linearised bilinear form a(v, U) and linear form L(v) for
 # the Cahn-Hilliard equation.
 #
 # Compile this form with FFC: ffc CahnHilliard.form.
 
-P1 = FiniteElement("Lagrange", "tetrahedron", 1)
-P2 = FiniteElement("Lagrange", "tetrahedron", 1)
+P1  = FiniteElement("Lagrange", "tetrahedron", 1)
+P2  = FiniteElement("Lagrange", "tetrahedron", 1)
+DG0 = FiniteElement("Discontinuous Lagrange", "tetrahedron", 0)
 
 ME = P1 + P2
 
-(v, q)   = TestFunctions(ME)
-(c, k)   = TrialFunctions(ME)  # concentration, potential
+(v,  q)  = TestFunctions(ME)
+(dk, dc) = TrialFunctions(ME)   # potential, concentration 
 
-(c1, k1) = Functions(ME)      # current solution 
+(k1, c1) = Functions(ME)        # current solution 
+(k0, c0) = Functions(ME)        # solution from previous converged step 
 
-c0         = Function(P1)      # solution from previous converged step 
-DcDt0      = Function(P1)      # rate from previous step
+lmbda    = Function(DG0)        # surface parameter
+muFactor = Function(DG0)        # chemical free energy multiplier
 
-lmbda      = Constant()        # surface parameter
-muFactor   = Constant()        # chemical free energy multiplier
+dt       = Function(DG0)        # time step
+theta    = Function(DG0)        # time stepping parameter 
 
-dt         = Constant()           # time step
-theta      = Constant()           # time stepping parameter 
+# Chemical free-energy \phi = c^2*(1-c^2)
 
-mu    = muFactor*(2.0*(1.0-c1)*(1.0-c1) - 8.0*c1*(1.0-c1) + 2.0*c1*c1)
-DmuDc = muFactor*(-12.0 + 24.0*c1)
+# mu = \phi,c
+def mu(c, muFactor):
+    return muFactor*(2*c*(1-c)*(1-c) - 2*c*c*(1-c))
 
+# DmuDc = \phi,cc
+def DmuDc(c, muFactor):
+    return muFactor*(2.0*(1.0-c)*(1.0-c) - 8.0*c*(1.0-c) + 2.0*c*c)
+
+# Mobility
 Mob = 1.0
 dMob = 0.0
 
-# Compute current rate (this implies the predictor)
-DcDt = (c1-c0)*(1.0/dt)*(1.0/theta) - (1-theta)*DcDt0*(1/theta)
+# k^(n+theta)
+k_mid = (1-theta)*k0 + theta*k1
 
-a1 = v*c*dx + theta*dt*Mob*mu*dot(grad(v), grad(c))*dx \
-            + theta*dt*dMob*mu*dot(grad(v), grad(c1))*c*dx \
-            + theta*dt*Mob*DmuDc*dot(grad(v), grad(c1))*c*dx \
-            - theta*dt*Mob*dot(grad(v), grad(k))*dx
+# \delta k^(n+theta)
+dk_mid = theta*dk
 
-a2 = q*k*dx + lmbda*dot(grad(q), grad(c))*dx
+a1 = q*dc*dx + dt*Mob*dot(grad(q), grad(dk_mid))*dx
+a2 = v*dk*dx - v*DmuDc(c1, muFactor)*dc*dx \
+             - lmbda*dot(grad(v), grad(dc))*dx
 
-L1int =  theta*dt*Mob*mu*dot(grad(v), grad(c1))*dx  \
-       - theta*dt*Mob*dot(grad(v), grad(k1))*dx
-L1dyn =  theta*dt*v*DcDt*dx
+L1 = q*c1*dx - q*c0*dx + dt*Mob*dot(grad(q), grad(k_mid))*dx
+L2 = v*k1*dx - v*mu(c1, muFactor)*dx - lmbda*dot(grad(v), grad(c1))*dx
 
-L2int =  q*k1*dx +   lmbda*dot(grad(q), grad(c1))*dx
+a =  a1 + a2
+L = -L1 - L2 
 
-
-a = a1 + a2
-L =  - L1int - L1dyn - L2int 

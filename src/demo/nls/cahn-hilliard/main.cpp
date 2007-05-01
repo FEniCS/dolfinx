@@ -14,41 +14,35 @@
 
 #include <dolfin.h>
 #include "CahnHilliard2D.h"
-//#include "CahnHilliard3D.h"
+#include "CahnHilliard3D.h"
 
 using namespace dolfin;
 
-/*
 // User defined nonlinear problem 
 class CahnHilliardEquation : public NonlinearProblem, public Parametrized
 {
   public:
 
     // Constructor 
-    CahnHilliardEquation(Mesh& mesh, Function& U, Function& rate1, Function& U0, 
-          Function& rate0, real& theta, real& dt, real lambda, real muFactor) 
-          : _mesh(&mesh), _dt(&dt), _theta(&theta), _lambda(lambda), 
-            _muFactor(muFactor)
+    CahnHilliardEquation(Mesh& mesh, Function& u, Function& u0, Function& dt, 
+                         Function& theta, Function& lambda, Function& muFactor) 
+          : _mesh(&mesh), _dt(&dt), _theta(&theta), _lambda(&lambda), 
+            _muFactor(&muFactor)
     {
       // Create forms
       if(mesh.topology().dim() == 2)
       {
-        a = new CahnHilliard2D::BilinearForm(U, _lambda, _muFactor, *_dt, *_theta);
-        L = new CahnHilliard2D::LinearForm(U, U0, rate0, _lambda, _muFactor, *_dt, *_theta);
+        cout << "Create forms " << endl;
+        a = new CahnHilliard2DBilinearForm(u, *_lambda, *_muFactor, *_dt, *_theta);
+        L = new CahnHilliard2DLinearForm(u, u0, *_lambda, *_muFactor, *_dt, *_theta);
       }
-//      else if(mesh.topology().dim() == 3)
-//      {
-//        a = new CahnHilliard3D::BilinearForm(U, _lambda, _muFactor, *_dt, *_theta);
-//        L = new CahnHilliard3D::LinearForm(U, U0, rate0, _lambda, _muFactor, *_dt, *_theta);
-//      }
+      else if(mesh.topology().dim() == 3)
+      {
+        a = new CahnHilliard3DBilinearForm(u, *_lambda, *_muFactor, *_dt, *_theta);
+        L = new CahnHilliard3DLinearForm(u, u0, *_lambda, *_muFactor, *_dt, *_theta);
+      }
       else
         dolfin_error("Cahn-Hilliard model is programmed for 2D and 3D only");
-
-      // Initialise solution functions
-      U.init(mesh, a->trial());
-      rate1.init(mesh, a->trial());
-      U0.init(mesh, a->trial());
-      rate0.init(mesh, a->trial());
     }
 
     // Destructor 
@@ -58,53 +52,80 @@ class CahnHilliardEquation : public NonlinearProblem, public Parametrized
       delete L;
     }
  
+    // Return forms 
+    const Form& form(dolfin::uint i) const
+    {
+      if( i == 1)
+        return *L;
+      else if( i == 2)
+        return *a;
+      else
+        dolfin_error("Can only return linear or bilinear form.");
+      return *L;
+    }
+
     // User defined assemble of Jacobian and residual vector 
     void form(GenericMatrix& A, GenericVector& b, const GenericVector& x)
     {
+      dolfin_log(true);
       // Assemble system and RHS (Neumann boundary conditions)
       dolfin_log(false);
       Assembler assembler;
-      assembler.assemble(A, a, b, L, mesh);
-//      FEM::assemble(*a, *L, A, b, *_mesh);
+      assembler.assemble(A, *a, *_mesh);
+      assembler.assemble(b, *L, *_mesh);
+      dolfin_log(true);
       dolfin_log(true);
     }
 
   private:
 
     // Pointers to forms and mesh
-    BilinearForm *a;
-    LinearForm *L;
+    Form *a;
+    Form *L;
     Mesh* _mesh;
 
     // Time stepping parameters
-    real *_dt, *_theta;
+    Function* _dt; 
+    Function* _theta;
 
     // Model parameters
-    real _lambda, _muFactor;
+    Function* _lambda; 
+    Function* _muFactor;
 };
 
-*/
+
 
 int main(int argc, char* argv[])
 {
   dolfin_init(argc, argv);
 
   // Mesh
-  UnitSquare mesh(100, 100);
-/*
-  // Time stepping parameters
-  real dt = 2.0e-6; real t  = 0.0; real T  = 500*dt;
-  real theta = 0.5;
+//  UnitSquare mesh(80, 80);
+  UnitCube mesh(20, 20, 20);
 
-  // Model parameters
-  real lambda = 1.0e-2;
-  real muFactor = 100.0;
+  // Time stepping and model parameters
+  real delta_t = 2.0e-6;
+  Function dt(mesh, delta_t); 
+  Function theta(mesh, 0.5); 
+  Function lambda(mesh, 1.0e-2); 
+  Function muFactor(mesh, 100.0); 
+
+  real t  = 0.0; 
+  real T  = 50*delta_t;
 
   // Solution functions
-  Function U, U0, rate1, rate0;
+  Function u; 
+  Function u0;
 
   // Create user-defined nonlinear problem
-  CahnHilliardEquation cahn_hilliard(mesh, U, rate1, U0, rate0, theta, dt, lambda, muFactor);
+  CahnHilliardEquation cahn_hilliard(mesh, u, u0, dt, theta, lambda, muFactor);
+
+  // Initialise discrete functions
+  cout << "Initialise functions " << endl;
+  Vector x, x0;
+  u.init(mesh,   x, cahn_hilliard.form(1), 1);
+  u0.init(mesh, x0, cahn_hilliard.form(1), 1);
+  cout << "Finsihed initialise functions " << endl;
 
   // Create nonlinear solver and set parameters
   NewtonSolver newton_solver;
@@ -113,47 +134,35 @@ int main(int argc, char* argv[])
   newton_solver.set("Newton relative tolerance", 1e-6);
   newton_solver.set("Newton absolute tolerance", 1e-15);
 
-  Vector& x = U.vector();
-
   // Randomly perturbed intitial conditions
-  dolfin::uint size = FEM::size(mesh, U.element()[0]);
+  dolfin::uint size = mesh.numVertices();
   dolfin::seed(2);
-  for(dolfin::uint i=0; i < size; ++i)
+  for(dolfin::uint i=size; i < 2*size; ++i)
      x(i) = 0.63 + 0.02*(0.5-dolfin::rand());
 
   // Save initial condition to file
   File file("cahn_hilliard.pvd");
-  Function c = U[0];
-  c = U[0];
+  Function c;
+  c = u[1];
   file << c;
 
-  Vector& r  = rate1.vector();
-  Vector& x0 = U0.vector();
-  Vector& r0 = rate0.vector();
-
+  File file_u("u.xml");
+  File file_u0("u0.xml");
   while( t < T)
   {
     // Update for next time step
-    t += dt;
-    U0    = U;
-    rate0 = rate1;
-
+    t += delta_t;
+    u0 = u;
+    
     // Solve
     newton_solver.solve(cahn_hilliard, x);
 
-    // Compute rate
-    r = x;
-    r *= 1.0/(theta*dt);
-    r0 *= -((1.0-theta)/theta);
-    r += r0;
-    x0 *= -(1.0/(theta*dt));
-    r += x0;
-
    // Save function to file
-    c = U[0];
+    c = u[1];
     file << c;
+
   }
-*/
+
   return 0;
 }
 
