@@ -55,12 +55,12 @@ Function::Function(const std::string filename)
   file >> *this;
 }
 //-----------------------------------------------------------------------------
-Function::Function(SubFunction sub_function)
+Function::Function(SubFunction f)
   : Variable("u", "discrete function"),
     f(0), _type(discrete), _cell(0)
 {
   cout << "Extracting sub function." << endl;
-  f = new DiscreteFunction(sub_function);
+  this->f = new DiscreteFunction(f);
 }
 //-----------------------------------------------------------------------------
 Function::~Function()
@@ -117,6 +117,27 @@ SubFunction Function::operator[] (uint i)
 
   SubFunction sub_function(static_cast<DiscreteFunction*>(f), i);
   return sub_function;
+}
+//-----------------------------------------------------------------------------
+const Function& Function::operator= (Function& f)
+{
+  // FIXME: Handle other assignments
+  if (f._type != discrete)
+    dolfin_error("Can only handle assignment from discrete functions (for now).");
+  
+  // Either create or copy discrete function
+  if (_type == discrete)
+  {
+    *static_cast<DiscreteFunction*>(this->f) = *static_cast<DiscreteFunction*>(f.f);
+  }
+  else
+  {
+    delete this->f;
+    this->f = new DiscreteFunction(*static_cast<DiscreteFunction*>(f.f));
+    _type = discrete;
+  }
+
+  return *this;
 }
 //-----------------------------------------------------------------------------
 const Function& Function::operator= (SubFunction sub_function)

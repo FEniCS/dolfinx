@@ -1,7 +1,7 @@
 #ifndef __DOLFIN_LA_H
 #define __DOLFIN_LA_H
 
-// DOLFIN linear algebra
+// DOLFIN la interface
 
 #include <dolfin/GenericTensor.h>
 #include <dolfin/GenericMatrix.h>
@@ -47,5 +47,9 @@
 #include <dolfin/GMRES.h>
 #include <dolfin/LUSolver.h>
 #include <dolfin/LU.h>
+
+#include <dolfin/Scalar.h>
+
+#include <dolfin/solve.h>
 
 #endif

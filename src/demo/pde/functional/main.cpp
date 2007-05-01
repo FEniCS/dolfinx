@@ -1,8 +1,8 @@
-// Copyright (C) 2006 Anders Logg.
+// Copyright (C) 2006-2007 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-09-19
-// Last changed: 2006-09-21
+// Last changed: 2007-04-30
 //
 // This demo program computes the value of the functional
 //
@@ -24,17 +24,22 @@ int main()
   // The function v
   class MyFunction : public Function
   {
-    real eval(const Point& p, unsigned int i)
+  public:
+
+    MyFunction(Mesh& mesh) : Function(mesh) {}
+    
+    real eval(const real* x)
     {
-      return sin(p.x()) + cos(p.y());
+      return sin(x[0]) + cos(x[1]);
     }
+    
   };
 
   // Compute approximate value
   UnitSquare mesh(16, 16);
-  EnergyNorm::Functional M;
-  MyFunction v;
-  real value = M(v, mesh);
+  MyFunction v(mesh);
+  EnergyNormFunctional M(v);
+  real value = assemble(M, mesh);
 
   // Compute exact value
   real exact_value = 2.0 + 2.0*sin(1.0)*(1.0 - cos(1.0));

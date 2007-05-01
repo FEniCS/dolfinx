@@ -4,7 +4,7 @@
 // Modifies bt Garth N. Wells, 2007.
 //
 // First added:  2007-01-17
-// Last changed: 2007-03-14
+// Last changed: 2007-04-30
 
 #ifndef __DOF_MAPS_H
 #define __DOF_MAPS_H
@@ -59,6 +59,9 @@ namespace dolfin
 
     // Iterator for map
     typedef std::map<const std::string, std::pair<ufc::dof_map*, DofMap*> >::iterator map_iterator;
+
+    /// Compute sparsity pattern for a scalar
+    void scalarSparsityPattern(SparsityPattern& sparsity_pattern) const;
 
     /// Compute sparsity pattern for a vector
     void vectorSparsityPattern(SparsityPattern& sparsity_pattern) const;

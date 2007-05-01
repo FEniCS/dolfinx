@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2007.
 //
 // First added:  2007-01-17
-// Last changed: 2007-04-03
+// Last changed: 2007-04-30
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Cell.h>
@@ -93,12 +93,19 @@ const DofMap& DofMaps::operator[] (uint i) const
 //-----------------------------------------------------------------------------
 void DofMaps::sparsityPattern(SparsityPattern& sparsity_pattern) const
 {
-  if( size() == 1)
+  if (size() == 0)
+    scalarSparsityPattern(sparsity_pattern);
+  else if (size() == 1)
     vectorSparsityPattern(sparsity_pattern);
-  else if( size() == 2)
+  else if (size() == 2)
     matrixSparsityPattern(sparsity_pattern);
   else
     dolfin_error("Cannot compute sparsity patterm for size > 2.");
+}
+//-----------------------------------------------------------------------------
+void DofMaps::scalarSparsityPattern(SparsityPattern& sparsity_pattern) const
+{
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 void DofMaps::vectorSparsityPattern(SparsityPattern& sparsity_pattern) const

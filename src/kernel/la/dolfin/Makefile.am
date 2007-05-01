@@ -1,4 +1,5 @@
 EXTRA_DIST = dolfin_la.h \
+             solve.h \
              AssemblyMatrix.h \
              DenseMatrix.h \
              DenseVector.h \
@@ -37,4 +38,5 @@ EXTRA_DIST = dolfin_la.h \
              uBlasPreconditioner.h \
              uBlasSparseMatrix.h \
              uBlasVector.h \
+             Scalar.h \
              Vector.h
