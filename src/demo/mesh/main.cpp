@@ -12,11 +12,7 @@ using namespace dolfin;
 
 int main()
 {
-  //UnitCube mesh(1,1,1);
   UnitSquare mesh(1,1);
-  //Mesh mesh("mesh2D.xml.gz");
-  //Mesh mesh("mesh3D.xml.gz");
-  // Mesh mesh("dolfin.xml.gz");
 
   // Uniform refinement
   //mesh.refine();
@@ -24,8 +20,8 @@ int main()
   //mesh.disp();
 
   // Local mesh refinement
-  File mesh_file_0("mesh-0.pvd"); 
-  mesh_file_0 << mesh; 
+  File file0("mesh.xml");
+  file0 << mesh; 
   
   unsigned int num_refinements = 8;
   for (unsigned int i = 0; i < num_refinements; i++)  
@@ -41,8 +37,8 @@ int main()
   }
 
   // Local mesh refinement
-  File mesh_file_fine("mesh-fine.pvd"); 
-  mesh_file_fine << mesh; 
+  File file1("mesh_refined.xml");
+  file1 << mesh; 
 
   unsigned int num_unrefinements = 2;
   for (unsigned int i = 0; i < num_unrefinements; i++)  
@@ -60,23 +56,13 @@ int main()
     mesh.smooth();
   }
 
-  File mesh_file_coarse("mesh-coarse.pvd"); 
-  mesh_file_coarse << mesh; 
+  File file2("mesh_coarsened.xml");
+  file2 << mesh; 
 
-  /*
-  cout << "Iterating over the cells in the mesh..." << endl;
-  for (CellIterator cell(mesh); !cell.end(); ++cell)
-    cout << *cell << endl;
-  
-  BoundaryMesh boundary(mesh);  
-
-  cout << "Iterating over the cells in the boundary..." << endl;
-  for (CellIterator facet(boundary); !facet.end(); ++facet)
-    cout << *facet << endl;
-  */
-
-  File mesh_file("mesh-tst.pvd"); 
-  mesh_file << mesh; 
+  // Extract boundary mesh
+  BoundaryMesh boundary(mesh);
+  File file3("mesh_boundary.xml");
+  file3 << boundary;
 
   return 0;
 }
