@@ -1,5 +1,5 @@
 // Copyright (C) 2006 Anders Logg.
-// Licensed under the GNU LGPL Version 2.1.
+// Licensed under the GNU GPL Version 2.
 //
 // Modified by Johan Hoffman 2006.
 //
@@ -12,57 +12,98 @@ using namespace dolfin;
 
 int main()
 {
-  UnitSquare mesh(1,1);
+  //UnitCube mesh(1,1,1);
+  UnitSquare mesh(10,10);
+  //Mesh mesh("mesh2D.xml.gz");
+  //Mesh mesh("mesh3D.xml.gz");
+  // Mesh mesh("dolfin.xml.gz");
 
   // Uniform refinement
   //mesh.refine();
 
   //mesh.disp();
 
-  // Local mesh refinement
-  File file0("mesh.xml");
-  file0 << mesh; 
-  
-  unsigned int num_refinements = 8;
-  for (unsigned int i = 0; i < num_refinements; i++)  
+  //Local mesh refinement
+  File mesh_file_fine("mesh-fine.pvd"); 
+  mesh_file_fine << mesh; 
+
+  File mesh_file_coarse("mesh-coarse.pvd"); 
+  mesh_file_coarse << mesh; 
+  File mesh_file_coarse_xml("mesh-coarse.xml"); 
+  //mesh_file_coarse_xml << mesh; 
+
+  real t = 0.0;
+
+  while(t < 2.0)
   {
-    MeshFunction<bool> cell_marker(mesh);
-    cell_marker.init(mesh.topology().dim());
+    MeshFunction<bool> cell_refinement_marker(mesh);
+    cell_refinement_marker.init(mesh.topology().dim());
+
     for (CellIterator c(mesh); !c.end(); ++c)
     {
-      if ( fabs(c->midpoint().x()-0.75) < 0.9 ) cell_marker.set(c->index(),true);
-      else                                      cell_marker.set(c->index(),false);
-    }
-    mesh.refine(cell_marker);
-  }
+      cell_refinement_marker.set(c->index(), false);
 
-  // Local mesh refinement
-  File file1("mesh_refined.xml");
-  file1 << mesh; 
+      if(fabs(c->midpoint().x() - t) < 0.1)
+      {
+	if(c->diameter() > 0.1)
+	{
+	  cout << "refining: " << endl;
+	  cout << c->diameter() << endl;
+	  cout << c->midpoint() << endl;
+	  cout << c->index() << endl;
 
-  unsigned int num_unrefinements = 2;
-  for (unsigned int i = 0; i < num_unrefinements; i++)  
-  {
-    MeshFunction<bool> cell_marker(mesh);
-    cell_marker.init(mesh.topology().dim());
-    for (CellIterator c(mesh); !c.end(); ++c)
-    {
-      if ( fabs(c->midpoint().x()-0.75) < 0.1 ) cell_marker.set(c->index(),true);
-      else                                      cell_marker.set(c->index(),false);
+	  cell_refinement_marker.set(c->index(), true);
+	}
+      }
     }
-    mesh.coarsen(cell_marker);
-    //LocalMeshCoarsening::coarsenMeshByEdgeCollapse(mesh,cell_marker);
+
+    mesh.refine(cell_refinement_marker);
+    //mesh.smooth();
+
+    MeshFunction<bool> cell_derefinement_marker(mesh);
+    cell_derefinement_marker.init(mesh.topology().dim());
     
-    mesh.smooth();
+    for (CellIterator c(mesh); !c.end(); ++c)
+    {
+      cell_derefinement_marker.set(c->index(), false);
+
+      if(fabs(c->midpoint().x() - t) >= 0.1)
+      {
+	if(c->diameter() <= 0.1)
+	{
+	  cout << "coarsening: " << endl;
+	  cout << c->diameter() << endl;
+	  cout << c->midpoint() << endl;
+	  cout << c->index() << endl;
+
+	  cell_derefinement_marker.set(c->index(), true);
+	}
+      }
+    }
+
+    mesh.coarsen(cell_derefinement_marker);
+    //mesh.smooth();
+
+    mesh_file_coarse << mesh; 
+
+    t += 0.1;
   }
 
-  File file2("mesh_coarsened.xml");
-  file2 << mesh; 
 
-  // Extract boundary mesh
-  BoundaryMesh boundary(mesh);
-  File file3("mesh_boundary.xml");
-  file3 << boundary;
+  /*
+  cout << "Iterating over the cells in the mesh..." << endl;
+  for (CellIterator cell(mesh); !cell.end(); ++cell)
+    cout << *cell << endl;
+  
+  BoundaryMesh boundary(mesh);  
+
+  cout << "Iterating over the cells in the boundary..." << endl;
+  for (CellIterator facet(boundary); !facet.end(); ++facet)
+    cout << *facet << endl;
+  */
+
+  //File mesh_file("mesh-tst.pvd"); 
+  //mesh_file << mesh; 
 
   return 0;
 }

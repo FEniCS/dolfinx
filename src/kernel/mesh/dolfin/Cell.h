@@ -34,8 +34,11 @@ namespace dolfin
     
     /// Return alignment of given entity with respect to the cell
     inline uint alignment(uint dim, uint e) const { return _mesh.type().alignment(*this, dim, e); }
+ 
+    /// Compute orientation of cell (0 is right, 1 is left)
+    inline real orientation() const { return _mesh.type().orientation(*this); }
 
-    /// Compute (generalized) volume of cell
+   /// Compute (generalized) volume of cell
     inline real volume() const { return _mesh.type().volume(*this); }
 
     /// Compute diameter of cell
