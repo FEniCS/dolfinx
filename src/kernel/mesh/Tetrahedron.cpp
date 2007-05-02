@@ -102,6 +102,17 @@ dolfin::uint Tetrahedron::alignment(const Cell& cell, uint dim, uint e) const
   return 0;
 }
 //-----------------------------------------------------------------------------
+dolfin::uint Tetrahedron::orientation(const Cell& cell) const
+{
+  Point v01 = Point(cell.entities(0)[1]) - Point(cell.entities(0)[0]);
+  Point v02 = Point(cell.entities(0)[2]) - Point(cell.entities(0)[0]);
+  Point v03 = Point(cell.entities(0)[3]) - Point(cell.entities(0)[0]);
+
+  Point n = v01.cross(v02);
+
+  return ( n.dot(v03) < 0.0 ? 1 : 0 );
+}
+//-----------------------------------------------------------------------------
 void Tetrahedron::createEntities(uint** e, uint dim, const uint v[]) const
 {
   // We only need to know how to create edges and faces
