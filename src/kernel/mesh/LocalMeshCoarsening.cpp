@@ -33,7 +33,7 @@ void LocalMeshCoarsening::coarsenMeshByEdgeCollapse(Mesh& mesh,
   dolfin_info("Coarsen simplicial mesh by edge collapse.");
 
   // Get size of old mesh
-  const uint num_vertices = mesh.size(0);
+  //const uint num_vertices = mesh.size(0);
   const uint num_cells = mesh.size(mesh.topology().dim());
   
   // Check cell marker 
@@ -46,7 +46,7 @@ void LocalMeshCoarsening::coarsenMeshByEdgeCollapse(Mesh& mesh,
   mesh.init(1, 0);
   
   // Get cell type
-  const CellType& cell_type = mesh.type();
+  //const CellType& cell_type = mesh.type();
   
   // Create new mesh
   Mesh coarse_mesh(mesh);
@@ -84,7 +84,7 @@ void LocalMeshCoarsening::coarsenMeshByEdgeCollapse(Mesh& mesh,
   while(improving)
   {
 
-    int presize = cells_to_coarsen.size();
+    uint presize = cells_to_coarsen.size();
 
     //cout << "presize: " << presize << endl;
 
@@ -106,7 +106,7 @@ void LocalMeshCoarsening::coarsenMeshByEdgeCollapse(Mesh& mesh,
 	iter != cells_to_coarsen.end(); iter++)
     {
       bool mesh_ok = false;
-      uint cid = *iter;
+      int cid = *iter;
 
       if(cid != -1)
       {
@@ -407,7 +407,7 @@ bool LocalMeshCoarsening::coarsenCell(Mesh& mesh, Mesh& coarse_mesh,
   for (CellIterator c(mesh); !c.end(); ++c)
   {
     uint id = c->index();
-    uint nid = old2new_cell[id];
+    int nid = old2new_cell[id];
 
     if(nid != -1)
     {
