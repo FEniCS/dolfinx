@@ -14,6 +14,7 @@
 #include <dolfin/MeshGeometry.h>
 #include <dolfin/Facet.h>
 #include <dolfin/Tetrahedron.h>
+#include <dolfin/Vertex.h>
 #include <dolfin/GeometricPredicates.h>
 
 using namespace dolfin;
@@ -104,13 +105,21 @@ dolfin::uint Tetrahedron::alignment(const Cell& cell, uint dim, uint e) const
 //-----------------------------------------------------------------------------
 dolfin::uint Tetrahedron::orientation(const Cell& cell) const
 {
-  Point v01 = Point(cell.entities(0)[1]) - Point(cell.entities(0)[0]);
-  Point v02 = Point(cell.entities(0)[2]) - Point(cell.entities(0)[0]);
-  Point v03 = Point(cell.entities(0)[3]) - Point(cell.entities(0)[0]);
+  // This is a trick to be allowed to initialize mesh entities from cell
+  Cell& c = const_cast<Cell&>(cell);
 
-  Point n = v01.cross(v02);
+  Vertex v0(c.mesh(), c.entities(0)[0]);
+  Vertex v1(c.mesh(), c.entities(0)[1]);
+  Vertex v2(c.mesh(), c.entities(0)[2]);
+  Vertex v3(c.mesh(), c.entities(0)[3]);
 
-  return ( n.dot(v03) < 0.0 ? 1 : 0 );
+  Point p01 = v1.point() - v0.point();
+  Point p02 = v2.point() - v0.point();
+  Point p03 = v3.point() - v0.point();
+
+  Point n = p01.cross(p02);
+
+  return ( n.dot(p03) < 0.0 ? 1 : 0 );
 }
 //-----------------------------------------------------------------------------
 void Tetrahedron::createEntities(uint** e, uint dim, const uint v[]) const
