@@ -5,5 +5,6 @@
 
 #include <dolfin/Parametrized.h>
 #include <dolfin/Parameter.h>
+#include <dolfin/ParameterSystem.h>
 
 #endif
