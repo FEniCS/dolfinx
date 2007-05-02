@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2007.
 //
 // First added:  2007-04-02
-// Last changed: 2007-04-27
+// Last changed: 2007-05-02
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Mesh.h>
@@ -256,7 +256,7 @@ void DiscreteFunction::interpolate(real* values)
     finite_element->interpolate_vertex_values(vertex_values, dof_values, ufc_cell);
 
     // Copy values to array of vertex values
-    for (VertexIterator vertex(cell); !vertex.end(); ++vertex)
+    for (VertexIterator vertex(*cell); !vertex.end(); ++vertex)
       for (uint i = 0; i < size; ++i)
         values[i*mesh.numVertices() + vertex->index()] = vertex_values[i*num_cell_vertices + vertex.pos()];
   }

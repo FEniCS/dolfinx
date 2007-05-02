@@ -1,10 +1,10 @@
 // Copyright (C) 2004 Harald Svensson.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Anders Logg 2004-2006.
+// Modified by Anders Logg 2004-2007.
 //
 // First added:  2004-03-30
-// Last changed: 2006-10-19
+// Last changed: 2007-05-02
 
 #include <stdio.h>
 #include <dolfin/Mesh.h>
@@ -64,7 +64,7 @@ void GiDFile::operator<<(Mesh& mesh)
     {
       cid = c->index();
       int i = 0;
-      for (VertexIterator n(c); !n.end(); ++n)
+      for (VertexIterator n(*c); !n.end(); ++n)
       {
         nid[i]  = n->index();
         i = i + 1;
@@ -88,7 +88,7 @@ void GiDFile::operator<<(Mesh& mesh)
     {
       cid = c->index();
       int i = 0;
-      for (VertexIterator n(c); !n.end(); ++n)
+      for (VertexIterator n(*c); !n.end(); ++n)
       {
         nid[i]  = n->index();
         i = i + 1;

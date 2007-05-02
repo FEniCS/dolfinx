@@ -135,7 +135,7 @@ void OpenDXFile::writeMesh(FILE* fp, Mesh& mesh)
 
   for (CellIterator c(mesh); !c.end(); ++c)
   {  
-    for (VertexIterator n(c); !n.end(); ++n)
+    for (VertexIterator n(*c); !n.end(); ++n)
     {
       int id  = n->index();
       fwrite(&id, sizeof(int), 1, fp);

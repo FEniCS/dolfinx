@@ -368,7 +368,7 @@ bool LocalMeshCoarsening::coarsenCell(Mesh& mesh, Mesh& coarse_mesh,
     if(cell_to_remove.get(*c) == false && cell_to_regenerate(*c) == false)
     {
       cv_idx = 0;
-      for (VertexIterator v(c); !v.end(); ++v)
+      for (VertexIterator v(*c); !v.end(); ++v)
         cell_vertices[cv_idx++] = old2new_vertex[v->index()]; 
       //cout << "adding old cell" << endl;
       editor.addCell(current_cell++, cell_vertices);

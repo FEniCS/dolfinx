@@ -164,7 +164,7 @@ void LocalMeshRefinement::refineMeshByEdgeBisection(Mesh& mesh,
     if ( cell_forbidden.get(*c) == false )
     {
       uint cv = 0;
-      for (VertexIterator v(c); !v.end(); ++v)
+      for (VertexIterator v(*c); !v.end(); ++v)
         cell_vertices[cv++] = v->index(); 
       editor.addCell(current_cell++, cell_vertices);
     }

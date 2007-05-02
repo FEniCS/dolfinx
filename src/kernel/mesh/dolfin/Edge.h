@@ -1,10 +1,10 @@
-// Copyright (C) 2006 Anders Logg.
+// Copyright (C) 2006-2007 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Johan Hoffman 2006.
 //
 // First added:  2006-06-02
-// Last changed: 2007-01-10
+// Last changed: 2007-05-02
 
 #ifndef __EDGE_H
 #define __EDGE_H
@@ -48,7 +48,6 @@ namespace dolfin
     
     EdgeIterator(Mesh& mesh) : MeshEntityIterator(mesh, 1) {}
     EdgeIterator(MeshEntity& entity) : MeshEntityIterator(entity, 1) {}
-    EdgeIterator(MeshEntityIterator& it) : MeshEntityIterator(it, 1) {}
 
     inline Edge& operator*() { return *operator->(); }
     inline Edge* operator->() { return static_cast<Edge*>(MeshEntityIterator::operator->()); }
