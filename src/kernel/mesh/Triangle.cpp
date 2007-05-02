@@ -75,11 +75,18 @@ dolfin::uint Triangle::alignment(const Cell& cell, uint dim, uint e) const
 //-----------------------------------------------------------------------------
 dolfin::uint Triangle::orientation(const Cell& cell) const
 {
-  Point v01 = Point(cell.entities(0)[1]) - Point(cell.entities(0)[0]);
-  Point v02 = Point(cell.entities(0)[2]) - Point(cell.entities(0)[0]);
-  Point n(-v01.y(), v01.x());
+  // This is a trick to be allowed to initialize mesh entities from cell
+  Cell& c = const_cast<Cell&>(cell);
 
-  return ( n.dot(v02) < 0.0 ? 1 : 0 );
+  Vertex v0(c.mesh(), c.entities(0)[0]);
+  Vertex v1(c.mesh(), c.entities(0)[1]);
+  Vertex v2(c.mesh(), c.entities(0)[2]);
+
+  Point p01 = v1.point() - v0.point();
+  Point p02 = v2.point() - v0.point();
+  Point n(-p01.y(), p01.x());
+
+  return ( n.dot(p02) < 0.0 ? 1 : 0 );
 }
 //-----------------------------------------------------------------------------
 void Triangle::createEntities(uint** e, uint dim, const uint v[]) const

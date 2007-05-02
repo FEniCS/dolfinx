@@ -13,7 +13,7 @@ using namespace dolfin;
 int main()
 {
   //UnitCube mesh(1,1,1);
-  UnitSquare mesh(1,1);
+  UnitSquare mesh(10,10);
   //Mesh mesh("mesh2D.xml.gz");
   //Mesh mesh("mesh3D.xml.gz");
   // Mesh mesh("dolfin.xml.gz");
@@ -23,45 +23,72 @@ int main()
 
   //mesh.disp();
 
-  // Local mesh refinement
-  File mesh_file_0("mesh-0.pvd"); 
-  mesh_file_0 << mesh; 
-  
-  unsigned int num_refinements = 8;
-  for (unsigned int i = 0; i < num_refinements; i++)  
-  {
-    MeshFunction<bool> cell_marker(mesh);
-    cell_marker.init(mesh.topology().dim());
-    for (CellIterator c(mesh); !c.end(); ++c)
-    {
-      if ( fabs(c->midpoint().x()-0.75) < 0.9 ) cell_marker.set(c->index(),true);
-      else                                      cell_marker.set(c->index(),false);
-    }
-    mesh.refine(cell_marker);
-  }
-
-  // Local mesh refinement
+  //Local mesh refinement
   File mesh_file_fine("mesh-fine.pvd"); 
   mesh_file_fine << mesh; 
 
-  unsigned int num_unrefinements = 2;
-  for (unsigned int i = 0; i < num_unrefinements; i++)  
-  {
-    MeshFunction<bool> cell_marker(mesh);
-    cell_marker.init(mesh.topology().dim());
-    for (CellIterator c(mesh); !c.end(); ++c)
-    {
-      if ( fabs(c->midpoint().x()-0.75) < 0.1 ) cell_marker.set(c->index(),true);
-      else                                      cell_marker.set(c->index(),false);
-    }
-    mesh.coarsen(cell_marker);
-    //LocalMeshCoarsening::coarsenMeshByEdgeCollapse(mesh,cell_marker);
-    
-    mesh.smooth();
-  }
-
   File mesh_file_coarse("mesh-coarse.pvd"); 
   mesh_file_coarse << mesh; 
+  File mesh_file_coarse_xml("mesh-coarse.xml"); 
+  //mesh_file_coarse_xml << mesh; 
+
+  real t = 0.0;
+
+  while(t < 2.0)
+  {
+    MeshFunction<bool> cell_refinement_marker(mesh);
+    cell_refinement_marker.init(mesh.topology().dim());
+
+    for (CellIterator c(mesh); !c.end(); ++c)
+    {
+      cell_refinement_marker.set(c->index(), false);
+
+      if(fabs(c->midpoint().x() - t) < 0.1)
+      {
+	if(c->diameter() > 0.1)
+	{
+	  cout << "refining: " << endl;
+	  cout << c->diameter() << endl;
+	  cout << c->midpoint() << endl;
+	  cout << c->index() << endl;
+
+	  cell_refinement_marker.set(c->index(), true);
+	}
+      }
+    }
+
+    mesh.refine(cell_refinement_marker);
+    //mesh.smooth();
+
+    MeshFunction<bool> cell_derefinement_marker(mesh);
+    cell_derefinement_marker.init(mesh.topology().dim());
+    
+    for (CellIterator c(mesh); !c.end(); ++c)
+    {
+      cell_derefinement_marker.set(c->index(), false);
+
+      if(fabs(c->midpoint().x() - t) >= 0.1)
+      {
+	if(c->diameter() <= 0.1)
+	{
+	  cout << "coarsening: " << endl;
+	  cout << c->diameter() << endl;
+	  cout << c->midpoint() << endl;
+	  cout << c->index() << endl;
+
+	  cell_derefinement_marker.set(c->index(), true);
+	}
+      }
+    }
+
+    mesh.coarsen(cell_derefinement_marker);
+    //mesh.smooth();
+
+    mesh_file_coarse << mesh; 
+
+    t += 0.1;
+  }
+
 
   /*
   cout << "Iterating over the cells in the mesh..." << endl;
@@ -75,8 +102,8 @@ int main()
     cout << *facet << endl;
   */
 
-  File mesh_file("mesh-tst.pvd"); 
-  mesh_file << mesh; 
+  //File mesh_file("mesh-tst.pvd"); 
+  //mesh_file << mesh; 
 
   return 0;
 }
