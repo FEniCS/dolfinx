@@ -86,7 +86,7 @@ void LocalMeshCoarsening::coarsenMeshByEdgeCollapse(Mesh& mesh,
 
     uint presize = cells_to_coarsen.size();
 
-    //cout << "presize: " << presize << endl;
+    cout << "presize: " << presize << endl;
 
     for(std::list<int>::iterator iter = cells_to_coarsen.begin();
 	iter != cells_to_coarsen.end(); iter++)
@@ -292,6 +292,16 @@ bool LocalMeshCoarsening::coarsenCell(Mesh& mesh, Mesh& coarse_mesh,
     {
       vert2remove_idx = edge_vertex[0];
     }
+    else if(vertex_boundary.get(edge_vertex[1]) == true &&
+	    vertex_boundary.get(edge_vertex[0]) == false)
+    {
+      vert2remove_idx = edge_vertex[0];
+    }
+    else if(vertex_boundary.get(edge_vertex[0]) == true &&
+	    vertex_boundary.get(edge_vertex[1]) == false)
+    {
+      vert2remove_idx = edge_vertex[1];
+    }
     else if ( edge_vertex[0] > edge_vertex[1] ) 
     {
       vert2remove_idx = edge_vertex[0];
@@ -354,6 +364,8 @@ bool LocalMeshCoarsening::coarsenCell(Mesh& mesh, Mesh& coarse_mesh,
     }
     else
     {
+      cout << "adding old vertex at: " << v->point() << endl;
+
       old2new_vertex[v->index()] = vertex;
       editor.addVertex(vertex++, v->point());
     }
@@ -391,20 +403,30 @@ bool LocalMeshCoarsening::coarsenCell(Mesh& mesh, Mesh& coarse_mesh,
   bool mesh_ok = true;
 
 
+  Cell removed_cell(mesh, cellid);
+
   // Check mesh quality (volume)
-  for (CellIterator c(coarse_mesh); !c.end(); ++c)
+  for (CellIterator c(removed_cell); !c.end(); ++c)
   {
-    //cout << "c[" << c->index() << "] volume: " << c->volume() << endl;
-    real qm = c->volume() / c->diameter();
-    if(qm < vol_tol)
+    uint id = c->index();
+    uint nid = old2new_cell[id];
+
+    if(nid != -1)
     {
-      mesh_ok = false;
-      //cout << "qm: " << qm << endl;
+      Cell cn(coarse_mesh, nid);
+      real qm = cn.volume() / cn.diameter();
+      if(qm < vol_tol)
+      {
+	cout << "cell quality too low" << endl;
+	cout << "qm: " << qm << endl;
+	mesh_ok = false;
+	return mesh_ok;
+      }
     }
   }
 
   // Checking for inverted cells
-  for (CellIterator c(mesh); !c.end(); ++c)
+  for (CellIterator c(removed_cell); !c.end(); ++c)
   {
     uint id = c->index();
     int nid = old2new_cell[id];
@@ -415,7 +437,9 @@ bool LocalMeshCoarsening::coarsenCell(Mesh& mesh, Mesh& coarse_mesh,
 
       if(c->orientation() != cn.orientation())
       {
+	cout << "cell orientation inverted" << endl;
 	mesh_ok = false;
+	return mesh_ok;
       }
     }
   }

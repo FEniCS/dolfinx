@@ -58,7 +58,7 @@ int main()
     }
 
     mesh.refine(cell_refinement_marker);
-    //mesh.smooth();
+    mesh.smooth();
 
     MeshFunction<bool> cell_derefinement_marker(mesh);
     cell_derefinement_marker.init(mesh.topology().dim());
@@ -81,8 +81,8 @@ int main()
       }
     }
 
-    mesh.coarsen(cell_derefinement_marker);
-    //mesh.smooth();
+    mesh.coarsen(cell_derefinement_marker, true);
+    mesh.smooth();
 
     mesh_file_coarse << mesh; 
 
