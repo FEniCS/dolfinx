@@ -409,7 +409,7 @@ bool LocalMeshCoarsening::coarsenCell(Mesh& mesh, Mesh& coarse_mesh,
   for (CellIterator c(removed_cell); !c.end(); ++c)
   {
     uint id = c->index();
-    uint nid = old2new_cell[id];
+    int nid = old2new_cell[id];
 
     if(nid != -1)
     {
