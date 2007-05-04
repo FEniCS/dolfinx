@@ -61,8 +61,8 @@ int main(int argc, char* argv[])
   Function U;
 
   // Create forms and nonlinear PDE
-  NonlinearPoisson::BilinearForm a(U);
-  NonlinearPoisson::LinearForm L(U, f);
+  NonlinearPoissonBilinearForm a(U);
+  NonlinearPoissonLinearForm L(U, f);
   PDE pde(a, L, mesh, bc, PDE::nonlinear);
 
   // Solve nonlinear problem in a series of steps
