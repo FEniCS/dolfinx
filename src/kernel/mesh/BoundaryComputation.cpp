@@ -67,7 +67,7 @@ void BoundaryComputation::computeBoundaryCommon(Mesh& mesh,
     if ( f->numEntities(mesh.topology().dim()) == 1 )
     {
       // Count boundary vertices and assign indices
-      for (VertexIterator v(f); !v.end(); ++v)
+      for (VertexIterator v(*f); !v.end(); ++v)
       {
 	const uint vertex_index = v->index();
 	if ( boundary_vertices[vertex_index] == num_vertices )

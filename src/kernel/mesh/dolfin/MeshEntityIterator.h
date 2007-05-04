@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-05-09
-// Last changed: 2007-04-12
+// Last changed: 2007-05-02
 
 #ifndef __MESH_ENTITY_ITERATOR_H
 #define __MESH_ENTITY_ITERATOR_H
@@ -76,33 +76,6 @@ namespace dolfin
       }
     }
 
-    /// Create iterator for entities of given dimension connected to given entity
-    MeshEntityIterator(MeshEntityIterator& it, uint dim)
-      : entity(it.entity.mesh(), dim, 0), _pos(0)
-    {
-      // Get entity
-      MeshEntity& entity = *it;
-      
-      // Get connectivity
-      MeshConnectivity& c = entity.mesh().topology()(entity.dim(), dim);
-      
-      // Compute connectivity if empty
-      if ( c.size() == 0 )
-        entity.mesh().init(entity.dim(), dim);
-      
-      // Get size and index map
-      if ( c.size() == 0 )
-      {
-        pos_end = 0;
-        index = 0;
-      }
-      else
-      {
-        pos_end = c.size(entity.index());
-        index = c(entity.index());
-      }
-    }
-
     /// Destructor
     virtual ~MeshEntityIterator() {}
     
@@ -126,6 +99,18 @@ namespace dolfin
     
   private:
 
+    /// Copy constructor is private to disallow usage. If it were public (or not
+    /// declared and thus a default version available) it would allow code like
+    ///
+    /// for (CellIterator c0(mesh); !c0.end(); ++c0)
+    ///   for (CellIterator c1(c0); !c1.end(); ++c1)
+    ///      ...
+    ///
+    /// c1 looks to be an iterator over the entities around c0 when it is in
+    /// fact a copy of c0.
+    MeshEntityIterator(MeshEntityIterator& entity) :  entity(entity.entity.mesh(), 0, 0), _pos(0)
+    { dolfin_error("Illegal use of mesh entity iterator."); }
+    
     // Mesh entity
     MeshEntity entity;
 

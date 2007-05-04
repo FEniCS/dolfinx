@@ -1,8 +1,8 @@
-// Copyright (C) 2006 Anders Logg.
+// Copyright (C) 2006-2007 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-06-02
-// Last changed: 2006-10-23
+// Last changed: 2007-10-23
 
 #ifndef __FACE_H
 #define __FACE_H
@@ -35,7 +35,6 @@ namespace dolfin
     
     FaceIterator(Mesh& mesh) : MeshEntityIterator(mesh, 2) {}
     FaceIterator(MeshEntity& entity) : MeshEntityIterator(entity, 2) {}
-    FaceIterator(MeshEntityIterator& it) : MeshEntityIterator(it, 2) {}
 
     inline Face& operator*() { return *operator->(); }
     inline Face* operator->() { return static_cast<Face*>(MeshEntityIterator::operator->()); }

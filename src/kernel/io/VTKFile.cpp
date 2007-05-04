@@ -108,7 +108,7 @@ void VTKFile::MeshWrite(Mesh& mesh) const
   fprintf(fp, "<DataArray  type=\"Int32\"  Name=\"connectivity\"  format=\"ascii\">  \n");
   for (CellIterator c(mesh); !c.end(); ++c)
   {
-    for (VertexIterator v(c); !v.end(); ++v)
+    for (VertexIterator v(*c); !v.end(); ++v)
       fprintf(fp," %8u ",v->index());
     fprintf(fp," \n");
   }  

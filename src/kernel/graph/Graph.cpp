@@ -174,7 +174,7 @@ void Graph::createDual(Mesh& mesh)
     dolfin_debug1("Cell no %d", i);
     vertices[i++] = j;
     //uint* facets_0 = c0->entities(D - 1);
-    for (CellIterator c1(c0); !c1.end(); ++c1)
+    for (CellIterator c1(*c0); !c1.end(); ++c1)
     {
       dolfin_debug1("Edge no %d", j);
       edges[j++] = c1->index();

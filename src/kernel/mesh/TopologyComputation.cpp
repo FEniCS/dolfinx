@@ -208,7 +208,7 @@ void TopologyComputation::computeFromTranspose(Mesh& mesh, uint d0, uint d1)
 
   // Count the number of connections
   for (MeshEntityIterator e1(mesh, d1); !e1.end(); ++e1)
-    for (MeshEntityIterator e0(e1, d0); !e0.end(); ++e0)
+    for (MeshEntityIterator e0(*e1, d0); !e0.end(); ++e0)
       tmp[e0->index()]++;
 
   // Initialize the number of connections
@@ -220,7 +220,7 @@ void TopologyComputation::computeFromTranspose(Mesh& mesh, uint d0, uint d1)
   
   // Add the connections
   for (MeshEntityIterator e1(mesh, d1); !e1.end(); ++e1)
-    for (MeshEntityIterator e0(e1, d0); !e0.end(); ++e0)
+    for (MeshEntityIterator e0(*e1, d0); !e0.end(); ++e0)
       connectivity.set(e0->index(), e1->index(), tmp[e0->index()]++);
 }
 //----------------------------------------------------------------------------
@@ -268,10 +268,10 @@ void TopologyComputation::computeFromIntersection(Mesh& mesh,
     entities.clear();
 
     // Iterate over all connected entities of dimension d
-    for (MeshEntityIterator e(e0, d); !e.end(); ++e)
+    for (MeshEntityIterator e(*e0, d); !e.end(); ++e)
     {
       // Iterate over all connected entities of dimension d1
-      for (MeshEntityIterator e1(e, d1); !e1.end(); ++e1)
+      for (MeshEntityIterator e1(*e, d1); !e1.end(); ++e1)
       {
 	if ( d0 == d1 )
 	{
@@ -302,10 +302,10 @@ void TopologyComputation::computeFromIntersection(Mesh& mesh,
     entities.clear();
 
     // Iterate over all connected entities of dimension d
-    for (MeshEntityIterator e(e0, d); !e.end(); ++e)
+    for (MeshEntityIterator e(*e0, d); !e.end(); ++e)
     {
       // Iterate over all connected entities of dimension d1
-      for (MeshEntityIterator e1(e, d1); !e1.end(); ++e1)
+      for (MeshEntityIterator e1(*e, d1); !e1.end(); ++e1)
       {
 	if ( d0 == d1 )
 	{
