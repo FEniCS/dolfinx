@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2007-05-02
-// Last changed: 2007-05-02
+// Last changed: 2007-05-04
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -35,7 +35,10 @@ void dolfin::plot(Function& f, std::string mode)
   fprintf(script_file, "try:\n");
   fprintf(script_file, "    from dolfin import *\n\n");
   fprintf(script_file, "    u = Function(\"%s\")\n", data_name.c_str());
-  fprintf(script_file, "    plot(u)\n");
+  if (mode == "")
+    fprintf(script_file, "    plot(u)\n");
+  else
+    fprintf(script_file, "    plot(u, mode=\"%s\")\n", mode.c_str());
   fprintf(script_file, "except:\n");
   fprintf(script_file, "    exit(1)\n");
   fclose(script_file);
@@ -46,7 +49,7 @@ void dolfin::plot(Function& f, std::string mode)
     dolfin_info("Unable to plot function (PyDOLFIN or Viper plotter not available).");
 }
 //-----------------------------------------------------------------------------
-void dolfin::plot(Mesh& mesh)
+void dolfin::plot(Mesh& mesh, std::string mode)
 {
   dolfin_info("Plotting mesh, press q to continue...");
 
@@ -65,7 +68,10 @@ void dolfin::plot(Mesh& mesh)
   fprintf(script_file, "try:\n");
   fprintf(script_file, "    from dolfin import *\n\n");
   fprintf(script_file, "    mesh = Function(\"%s\")\n", data_name.c_str());
-  fprintf(script_file, "    plot(mesh)\n");
+  if (mode == "")
+    fprintf(script_file, "    plot(mesh)\n");
+  else
+    fprintf(script_file, "    plot(u, mode=\"%s\")\n", mode.c_str());
   fprintf(script_file, "except:\n");
   fprintf(script_file, "    exit(1)\n");
   fclose(script_file);
