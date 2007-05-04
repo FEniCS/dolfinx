@@ -12,5 +12,6 @@ SUBDIRS = common \
           nls \
           ode \
           pde \
+          plot \
           parameter \
           quadrature

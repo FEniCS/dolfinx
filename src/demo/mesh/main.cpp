@@ -1,10 +1,10 @@
-// Copyright (C) 2006 Anders Logg.
+// Copyright (C) 2006-2007 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // Modified by Johan Hoffman 2006.
 //
 // First added:  2006-10-26
-// Last changed: 2007-01-15
+// Last changed: 2007-05-03
 
 #include <dolfin.h>
 
@@ -26,6 +26,9 @@ int main()
   //Local mesh refinement
   File mesh_file_fine("mesh-fine.pvd"); 
   mesh_file_fine << mesh; 
+
+  // Plot mesh
+  plot(mesh);
 
   File mesh_file_coarse("mesh-coarse.pvd"); 
   mesh_file_coarse << mesh; 
@@ -58,7 +61,7 @@ int main()
     }
 
     mesh.refine(cell_refinement_marker);
-    mesh.smooth();
+    //mesh.smooth();
 
     MeshFunction<bool> cell_derefinement_marker(mesh);
     cell_derefinement_marker.init(mesh.topology().dim());
@@ -81,8 +84,8 @@ int main()
       }
     }
 
-    mesh.coarsen(cell_derefinement_marker, true);
-    mesh.smooth();
+    mesh.coarsen(cell_derefinement_marker);
+    //mesh.smooth();
 
     mesh_file_coarse << mesh; 
 

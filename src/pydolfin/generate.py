@@ -3,7 +3,7 @@
 # Generate list of include files for SWIG interface file.
 
 __author__ = "Anders Logg (logg@simula.no)"
-__date__ = "2007-04-12 -- 2007-04-16"
+__date__ = "2007-04-12 -- 2007-05-02"
 __copyright__ = "Copyright (C) 2007 Anders Logg"
 __license__  = "GNU LGPL Version 2.1"
 
@@ -11,7 +11,7 @@ import os
 import re
 
 # List of headers to exclude (add more here)
-excludes = []#"dolfin/ParameterList.h", "dolfin/Parametrized.h"]
+excludes = ["plot.h"]
 
 # Name of SWIG interface file to be generated
 interface_file = "dolfin_headers.h"
