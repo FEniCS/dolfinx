@@ -31,22 +31,37 @@
   
 using namespace dolfin;
 
-// Source term
-class MyFunction : public Function
+// Right-hand side
+class Source : public Function, public TimeDependent
 {
-  real eval(const Point& p, unsigned int i)
-  {
-    return time()*p.x()*sin(p.y());
-  }
+  public:
+
+    Source(Mesh& mesh, const real& t) : Function(mesh), TimeDependent(t) {}
+
+    real eval(const real* x)
+    {
+      return time()*x[0]*sin(x[1]);
+    }
 };
 
-// Boundary conditions
-class MyBC : public BoundaryCondition
+// Dirichlet boundary condition
+class DirichletBoundaryCondition : public Function, public TimeDependent
 {
-  void eval(BoundaryValue& value, const Point& p, unsigned int i)
+  public:
+    DirichletBoundaryCondition(Mesh& mesh, real& t) : Function(mesh), TimeDependent(t) {}
+
+    real eval(const real* x)
+    {
+      return 1.0*time();
+    }
+};
+
+// Sub domain for Dirichlet boundary condition
+class DirichletBoundary : public SubDomain
+{
+  bool inside(const real* x, bool on_boundary)
   {
-    if ( std::abs(p.x() - 1.0) < DOLFIN_EPS )
-      value = time();
+    return std::abs(x[0] - 1.0) < DOLFIN_EPS && on_boundary;
   }
 };
 
@@ -56,32 +71,38 @@ int main(int argc, char* argv[])
  
   // Set up problem
   UnitSquare mesh(16, 16);
-  MyFunction f;
-  MyBC bc;
-  Function U;
+
+  // Pseudo time
+  real t = 0.0;
+
+  // Create source function
+  Source f(mesh, t);
+
+  // Dirichlet boundary conditions
+  DirichletBoundary dirichlet_boundary;
+  DirichletBoundaryCondition g(mesh, t);
+  BoundaryCondition bc(g, mesh, dirichlet_boundary);
+
+  // Solution function
+  Function u;
 
   // Create forms and nonlinear PDE
-  NonlinearPoissonBilinearForm a(U);
-  NonlinearPoissonLinearForm L(U, f);
-  PDE pde(a, L, mesh, bc, PDE::nonlinear);
+  NonlinearPoissonBilinearForm a(u);
+  NonlinearPoissonLinearForm L(u, f);
+  NonlinearPDE pde(a, L, mesh, bc);
 
   // Solve nonlinear problem in a series of steps
-  real dt = 1.0; real t  = 0.0; real T  = 3.0;
-  f.sync(t);
-  bc.sync(t);
+  real dt = 1.0; real T  = 3.0;
 
-  pde.set("Newton relative tolerance", 1e-6); 
-  pde.set("Newton convergence criterion", "incremental"); 
-//  pde.set("Newton convergence criterion", "residual"); 
-  while( t < T)
-  {
-    t += dt;
-    pde.solve(U);
-  }
+//  pde.set("Newton relative tolerance", 1e-6); 
+//  pde.set("Newton convergence criterion", "incremental"); 
+
+  // Solve
+  pde.solve(u, t, T, dt);
 
   // Save function to file
   File file("nonlinear_poisson.pvd");
-  file << U;
+  file << u;
 
   return 0;
 }
