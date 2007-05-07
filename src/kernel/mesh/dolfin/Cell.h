@@ -4,7 +4,7 @@
 // Modified by Johan Hoffman 2006.
 //
 // First added:  2006-06-01
-// Last changed: 2007-03-01
+// Last changed: 2007-05-02
 
 #ifndef __CELL_H
 #define __CELL_H
@@ -34,8 +34,11 @@ namespace dolfin
     
     /// Return alignment of given entity with respect to the cell
     inline uint alignment(uint dim, uint e) const { return _mesh.type().alignment(*this, dim, e); }
+ 
+    /// Compute orientation of cell (0 is right, 1 is left)
+    inline real orientation() const { return _mesh.type().orientation(*this); }
 
-    /// Compute (generalized) volume of cell
+   /// Compute (generalized) volume of cell
     inline real volume() const { return _mesh.type().volume(*this); }
 
     /// Compute diameter of cell
@@ -57,7 +60,6 @@ namespace dolfin
     
     CellIterator(Mesh& mesh) : MeshEntityIterator(mesh, mesh.topology().dim()) {}
     CellIterator(MeshEntity& entity) : MeshEntityIterator(entity, entity.mesh().topology().dim()) {}
-    CellIterator(MeshEntityIterator& it) : MeshEntityIterator(it, it->mesh().topology().dim()) {}
 
     inline Cell& operator*() { return *operator->(); }
     inline Cell* operator->() { return static_cast<Cell*>(MeshEntityIterator::operator->()); }

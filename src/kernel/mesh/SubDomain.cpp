@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2007-04-24
-// Last changed: 2007-04-26
+// Last changed: 2007-05-02
 
 #include <dolfin/MeshEntityIterator.h>
 #include <dolfin/Vertex.h>
@@ -47,7 +47,7 @@ void SubDomain::mark(MeshFunction<uint>& sub_domains, uint sub_domain)
 
     // Check if all vertices are inside
     bool all_vertices_inside = true;
-    for (VertexIterator vertex(entity); !vertex.end(); ++vertex)
+    for (VertexIterator vertex(*entity); !vertex.end(); ++vertex)
     {
       if (!inside(vertex->x(), on_boundary))
       {

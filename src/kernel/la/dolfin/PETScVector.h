@@ -71,9 +71,6 @@ namespace dolfin
     /// After usage, the function restore() must be called. (const version)
     const real* array() const;
 
-    /// Restore array after a call to array()
-    void restore(real data[]);
-
     /// Restore array after a call to array(), const version
     void restore(const real data[]) const;
 

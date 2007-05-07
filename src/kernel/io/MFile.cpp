@@ -1,10 +1,10 @@
-// Copyright (C) 2003-2006 Johan Hoffman and Anders Logg.
+// Copyright (C) 2003-2007 Johan Hoffman and Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells 2005
 //
 // First added:  2003-05-06
-// Last changed: 2006-11-14
+// Last changed: 2007-05-02
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Vector.h>
@@ -116,7 +116,7 @@ void MFile::operator<<(Mesh& mesh)
     fprintf(fp,"cells{%u} = [", counter + 1);
   for (CellIterator c(mesh); !c.end();)
   {
-    for (VertexIterator v(c); !v.end(); ++v)
+    for (VertexIterator v(*c); !v.end(); ++v)
       fprintf(fp, "%u ", (v->index()) + 1 );    
     ++c;
     if ( c.end() )

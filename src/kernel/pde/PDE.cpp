@@ -95,9 +95,6 @@ void PDE::init(Form& a, Form& L, Mesh& mesh, Array<BoundaryCondition*>& bcs)
   case linear:
     pde = new LinearPDE(a, L, mesh, bcs);
     break;
-  case nonlinear:
-    pde = new NonlinearPDE(a, L, mesh, bcs);
-    break;
   default:
     dolfin_error("Unknown PDE type");
   }

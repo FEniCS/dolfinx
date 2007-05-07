@@ -67,14 +67,10 @@ class CahnHilliardEquation : public NonlinearProblem, public Parametrized
     // User defined assemble of Jacobian and residual vector 
     void form(GenericMatrix& A, GenericVector& b, const GenericVector& x)
     {
-      dolfin_log(true);
       // Assemble system and RHS (Neumann boundary conditions)
-      dolfin_log(false);
       Assembler assembler;
       assembler.assemble(A, *a, *_mesh);
       assembler.assemble(b, *L, *_mesh);
-      dolfin_log(true);
-      dolfin_log(true);
     }
 
   private:
@@ -100,8 +96,7 @@ int main(int argc, char* argv[])
   dolfin_init(argc, argv);
 
   // Mesh
-//  UnitSquare mesh(80, 80);
-  UnitCube mesh(20, 20, 20);
+  UnitSquare mesh(80, 80);
 
   // Time stepping and model parameters
   real delta_t = 2.0e-6;

@@ -1,5 +1,5 @@
 // Copyright (C) 2007 Magnus Vikstrom.
-// Licensed under the GNU GPL Version 2.
+// Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-02-12
 // Last changed: 2007-03-19
@@ -160,14 +160,14 @@ void Graph::createNodal(Mesh& mesh)
       edges[j++] = entities[k];
     }
     // Replace with this?
-	 /*
+    /*
     for (VertexIterator neighbor(vertex); !neighbor.end(); ++neighbor)
     {
       //dolfin_debug1("Edge no %d", j);
 		dolfin_debug2("Vertex no %d connected to vertex no %d", vertex->index(), neighbor->index());
       edges[j++] = neighbor->index();
     }
-	 */
+    */
   }
 }
 //-----------------------------------------------------------------------------
@@ -207,14 +207,6 @@ void Graph::createDual(Mesh& mesh)
       edges[j++] = c1->index();
 
     }
-
-	 /*
-    uint* entities = c0->entities(D);
-    for (uint k=0; k<c0->numEntities(D); k++)
-    {
-      edges[i++] = entities[k];
-    }
-	 */
   }
 }
 //-----------------------------------------------------------------------------

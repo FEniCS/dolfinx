@@ -11,7 +11,9 @@
 
 P1  = FiniteElement("Lagrange", "tetrahedron", 1)
 P2  = FiniteElement("Lagrange", "tetrahedron", 1)
-DG0 = FiniteElement("Discontinuous Lagrange", "tetrahedron", 0)
+#DG0 = FiniteElement("Discontinuous Lagrange", "tetrahedron", 0)
+# Use continuous functions to avoid bug DOLFIN bug
+DG0 = FiniteElement("Lagrange", "tetrahedron", 1)
 
 ME = P1 + P2
 

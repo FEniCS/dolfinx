@@ -109,6 +109,9 @@ int main()
   pde.set("PDE linear solver", "direct");
   pde.solve(u);
 
+  // Plot solution
+  plot(u, "displacement");
+
   // Save solution to VTK format
   File vtk_file("elasticity.pvd");
   vtk_file << u;

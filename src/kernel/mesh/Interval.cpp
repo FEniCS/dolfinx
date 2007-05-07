@@ -57,6 +57,14 @@ dolfin::uint Interval::alignment(const Cell& cell, uint dim, uint e) const
   return 0;
 }
 //-----------------------------------------------------------------------------
+dolfin::uint Interval::orientation(const Cell& cell) const
+{
+  Point v01 = Point(cell.entities(0)[1]) - Point(cell.entities(0)[0]);
+  Point n(-v01.y(), v01.x());
+
+  return ( n.dot(v01) < 0.0 ? 1 : 0 );
+}
+//-----------------------------------------------------------------------------
 void Interval::createEntities(uint** e, uint dim, const uint v[]) const
 {
   // We don't need to create any entities

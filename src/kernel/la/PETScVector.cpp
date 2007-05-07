@@ -199,13 +199,6 @@ const real* PETScVector::array() const
   return data;
 }
 //-----------------------------------------------------------------------------
-void PETScVector::restore(real data[])
-{
-  dolfin_assert(x);
-
-  VecRestoreArray(x, &data);
-}
-//-----------------------------------------------------------------------------
 void PETScVector::restore(const real data[]) const
 {
   dolfin_assert(x);

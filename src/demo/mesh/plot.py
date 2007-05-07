@@ -1,20 +1,13 @@
-# Load mayavi
-from mayavi import *
+from dolfin import *
 
-# Plot 2D mesh
-v0 = mayavi()
-v1 = mayavi()
-d0 = v0.open_vtk_xml("mesh2D000003.vtu")
-d1 = v1.open_vtk_xml("mesh3D000003.vtu")
-m0 = v0.load_module("BandedSurfaceMap")
-m1 = v1.load_module("BandedSurfaceMap")
+mesh = Mesh("mesh.xml")
+plot(mesh)
 
-# Use wireframe (perhaps there's a nicer way to do this)
-m0.rep_var.set(1)
-m0.represent_config()
-m1.rep_var.set(1)
-m1.represent_config()
+mesh_refined = Mesh("mesh_refined.xml")
+plot(mesh_refined)
 
-# Wait until window is closed
-v0.master.wait_window()
-v1.master.wait_window()
+mesh_coarsened = Mesh("mesh_coarsened.xml")
+plot(mesh_coarsened)
+
+mesh_refined = Mesh("mesh_boundary.xml")
+plot(mesh_refined)

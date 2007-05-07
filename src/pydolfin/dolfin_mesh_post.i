@@ -27,15 +27,15 @@ def next(self):
 %pythoncode
 %{
 class MeshFunction(object):
-    def __new__(self, tp):
+    def __new__(self, tp, *args):
         if tp == "int":
-            return MeshFunctionInt()
+            return MeshFunctionInt(*args)
         if tp == "uint":
-            return MeshFunctionUInt()
+            return MeshFunctionUInt(*args)
         elif tp == "real":
-            return MeshFunctionReal()
+            return MeshFunctionReal(*args)
         elif tp == "bool":
-            return MeshFunctionBool()
+            return MeshFunctionBool(*args)
         else:
             raise RuntimeError, "Cannot create a MeshFunction of %s" % (tp,)
 

@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-02-07
-// Last changed: 2007-04-17
+// Last changed: 2007-05-02
 //
 // This demo program solves Poisson's equation
 //
@@ -113,6 +113,9 @@ int main()
   // Solve PDE
   Function u;
   pde.solve(u);
+
+  // Plot solution
+  plot(u);
 
   // Save solution to file
   File file("poisson.xml");

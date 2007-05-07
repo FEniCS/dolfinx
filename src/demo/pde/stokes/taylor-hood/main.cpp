@@ -85,6 +85,10 @@ int main()
   pde.set("PDE linear solver", "direct");
   pde.solve(u, p);
 
+  // Plot solution
+  plot(u);
+  plot(p);
+
   // Save solution
   File ufile("velocity.xml");
   ufile << u;
