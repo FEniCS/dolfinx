@@ -20,6 +20,7 @@ nobase_include_HEADERS    = dolfin/dolfin_mesh.h \
                             dolfin/MeshEntityIterator.h \
                             dolfin/MeshFunction.h \
                             dolfin/MeshGeometry.h \
+                            dolfin/MeshPartition.h \
                             dolfin/Mesh.h \
                             dolfin/MeshHierarchyAlgorithms.h \
                             dolfin/MeshHierarchy.h \
@@ -59,6 +60,7 @@ libdolfin_mesh_la_SOURCES = BoundaryComputation.cpp \
                             MeshHierarchyAlgorithms.cpp \
                             MeshHierarchy.cpp \
                             MeshOrdering.cpp \
+                            MeshPartition.cpp \
                             MeshTopology.cpp \
                             Point.cpp \
                             SubDomain.cpp \

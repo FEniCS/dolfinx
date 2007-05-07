@@ -1,5 +1,5 @@
 // Copyright (C) 2006 Anders Logg.
-// Licensed under the GNU LGPL Version 2.1.
+// Licensed under the GNU GPL Version 2.
 //
 // Modified by Johan Hoffman 2007.
 //
@@ -13,6 +13,7 @@
 #include <dolfin/TopologyComputation.h>
 #include <dolfin/MeshOrdering.h>
 #include <dolfin/MeshFunction.h>
+#include <dolfin/MeshPartition.h>
 #include <dolfin/Mesh.h>
 #include <dolfin/BoundaryMesh.h>
 #include <dolfin/Cell.h>
@@ -145,6 +146,11 @@ void Mesh::smooth()
         this->geometry().set(v->index(), sd, midpoint[sd]);
     }
   }
+}
+//-----------------------------------------------------------------------------
+void Mesh::partition(uint num_part, MeshFunction<uint>& partitions)
+{
+  MeshPartition::partition(*this, num_part, partitions.values());
 }
 //-----------------------------------------------------------------------------
 void Mesh::disp() const

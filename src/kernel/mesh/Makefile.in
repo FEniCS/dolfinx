@@ -68,9 +68,9 @@ am_libdolfin_mesh_la_OBJECTS = BoundaryComputation.lo BoundaryMesh.lo \
 	MeshConnectivity.lo Mesh.lo MeshData.lo MeshEditor.lo \
 	MeshEntity.lo MeshEntityIterator.lo MeshGeometry.lo \
 	MeshHierarchyAlgorithms.lo MeshHierarchy.lo MeshOrdering.lo \
-	MeshTopology.lo Point.lo SubDomain.lo Tetrahedron.lo \
-	TopologyComputation.lo Triangle.lo UniformMeshRefinement.lo \
-	UnitCube.lo UnitSquare.lo Vertex.lo
+	MeshPartition.lo MeshTopology.lo Point.lo SubDomain.lo \
+	Tetrahedron.lo TopologyComputation.lo Triangle.lo \
+	UniformMeshRefinement.lo UnitCube.lo UnitSquare.lo Vertex.lo
 libdolfin_mesh_la_OBJECTS = $(am_libdolfin_mesh_la_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -265,6 +265,7 @@ nobase_include_HEADERS = dolfin/dolfin_mesh.h \
                             dolfin/MeshEntityIterator.h \
                             dolfin/MeshFunction.h \
                             dolfin/MeshGeometry.h \
+                            dolfin/MeshPartition.h \
                             dolfin/Mesh.h \
                             dolfin/MeshHierarchyAlgorithms.h \
                             dolfin/MeshHierarchy.h \
@@ -305,6 +306,7 @@ libdolfin_mesh_la_SOURCES = BoundaryComputation.cpp \
                             MeshHierarchyAlgorithms.cpp \
                             MeshHierarchy.cpp \
                             MeshOrdering.cpp \
+                            MeshPartition.cpp \
                             MeshTopology.cpp \
                             Point.cpp \
                             SubDomain.cpp \
@@ -409,6 +411,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MeshHierarchy.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MeshHierarchyAlgorithms.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MeshOrdering.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MeshPartition.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MeshTopology.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Point.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SubDomain.Plo@am__quote@

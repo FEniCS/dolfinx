@@ -1,5 +1,5 @@
 // Copyright (C) 2007 Magnus Vikstrom.
-// Licensed under the GNU LGPL Version 2.1.
+// Licensed under the GNU GPL Version 2.
 //
 // First added:  2007-02-12
 // Last changed: 2007-03-19
@@ -53,7 +53,7 @@ void GraphEditor::initVertices(uint num_vertices)
   
   // Initialize graph data
   graph->num_vertices = num_vertices;
-  graph->vertices = new uint[num_vertices];
+  graph->vertices = new uint[num_vertices+1];
   graph->vertex_weights = new uint[num_vertices];
 
   // Initialize vertex data
@@ -88,6 +88,9 @@ void GraphEditor::initEdges(uint num_edges)
     graph->edges[i] = graph->num_vertices;
     graph->edge_weights[i] = 1;
   }
+
+  // Update vertex array
+  graph->vertices[graph->numVertices()] = graph->numArches();
 }
 //-----------------------------------------------------------------------------
 void GraphEditor::addVertex(uint u, uint num_edges)
@@ -107,8 +110,10 @@ void GraphEditor::addVertex(uint u, uint num_edges)
   
   // Set offset and step to next vertex
   //dolfin_debug2("addVertex(%d, %d)", u, num_edges);
+  dolfin_debug1("adding num_edges: %d", num_edges);
   graph->vertices[next_vertex++] = next_arch;
   next_arch += num_edges;
+  dolfin_debug1("next_arch = %d", next_arch);
 }
 //-----------------------------------------------------------------------------
 void GraphEditor::addEdge(uint u, uint v)
