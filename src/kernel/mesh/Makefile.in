@@ -61,17 +61,16 @@ am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(includedir)"
 libLTLIBRARIES_INSTALL = $(INSTALL)
 LTLIBRARIES = $(lib_LTLIBRARIES)
 libdolfin_mesh_la_LIBADD =
-am_libdolfin_mesh_la_OBJECTS = UnitCube.lo UnitSquare.lo \
-	MeshConnectivity.lo MeshEditor.lo MeshEntity.lo \
-	MeshEntityIterator.lo MeshGeometry.lo MeshHierarchy.lo \
-	MeshHierarchyAlgorithms.lo MeshOrdering.lo MeshPartition.lo \
-	MeshTopology.lo Mesh.lo MeshData.lo Vertex.lo Edge.lo Face.lo \
-	Facet.lo Cell.lo TopologyComputation.lo Interval.lo \
-	Triangle.lo Tetrahedron.lo CellType.lo \
-	UniformMeshRefinement.lo LocalMeshRefinement.lo \
-	LocalMeshCoarsening.lo Point.lo BoundaryComputation.lo \
-	BoundaryMesh.lo GeometricPredicates.lo GTSInterface.lo \
-	IntersectionDetector.lo
+am_libdolfin_mesh_la_OBJECTS = BoundaryComputation.lo BoundaryMesh.lo \
+	Cell.lo CellType.lo Edge.lo Face.lo Facet.lo \
+	GeometricPredicates.lo GTSInterface.lo IntersectionDetector.lo \
+	Interval.lo LocalMeshCoarsening.lo LocalMeshRefinement.lo \
+	MeshConnectivity.lo Mesh.lo MeshData.lo MeshEditor.lo \
+	MeshEntity.lo MeshEntityIterator.lo MeshGeometry.lo \
+	MeshHierarchyAlgorithms.lo MeshHierarchy.lo MeshOrdering.lo \
+	MeshPartition.lo MeshTopology.lo Point.lo SubDomain.lo \
+	Tetrahedron.lo TopologyComputation.lo Triangle.lo \
+	UniformMeshRefinement.lo UnitCube.lo UnitSquare.lo Vertex.lo
 libdolfin_mesh_la_OBJECTS = $(am_libdolfin_mesh_la_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -246,77 +245,78 @@ sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 SUBDIRS = dolfin
 nobase_include_HEADERS = dolfin/dolfin_mesh.h \
-                            dolfin/UnitCube.h \
-                            dolfin/UnitSquare.h \
+                            dolfin/BoundaryComputation.h \
+                            dolfin/BoundaryMesh.h \
+                            dolfin/Cell.h \
+                            dolfin/CellType.h \
+                            dolfin/Edge.h \
+                            dolfin/Face.h \
+                            dolfin/Facet.h \
+                            dolfin/GeometricPredicates.h \
+                            dolfin/GTSInterface.h \
+                            dolfin/IntersectionDetector.h \
+                            dolfin/Interval.h \
+                            dolfin/LocalMeshCoarsening.h \
+                            dolfin/LocalMeshRefinement.h \
                             dolfin/MeshConnectivity.h \
+                            dolfin/MeshData.h \
                             dolfin/MeshEditor.h \
                             dolfin/MeshEntity.h \
                             dolfin/MeshEntityIterator.h \
                             dolfin/MeshFunction.h \
                             dolfin/MeshGeometry.h \
-                            dolfin/MeshHierarchy.h \
-                            dolfin/MeshHierarchyAlgorithms.h \
-                            dolfin/MeshOrdering.h \
                             dolfin/MeshPartition.h \
-                            dolfin/MeshTopology.h \
                             dolfin/Mesh.h \
-                            dolfin/MeshData.h \
-                            dolfin/Vertex.h \
-                            dolfin/Edge.h \
-                            dolfin/Face.h \
-                            dolfin/Facet.h \
-                            dolfin/Cell.h \
-                            dolfin/TopologyComputation.h \
-                            dolfin/CellType.h \
-                            dolfin/Interval.h \
-                            dolfin/SubDomain.h \
-                            dolfin/Triangle.h \
-                            dolfin/Tetrahedron.h \
-                            dolfin/UniformMeshRefinement.h \
-                            dolfin/LocalMeshRefinement.h \
-                            dolfin/LocalMeshCoarsening.h \
+                            dolfin/MeshHierarchyAlgorithms.h \
+                            dolfin/MeshHierarchy.h \
+                            dolfin/MeshOrdering.h \
+                            dolfin/MeshTopology.h \
                             dolfin/Point.h \
-                            dolfin/BoundaryComputation.h \
-                            dolfin/BoundaryMesh.h \
-                            dolfin/GeometricPredicates.h \
-                            dolfin/GTSInterface.h \
-                            dolfin/IntersectionDetector.h 
+                            dolfin/SubDomain.h \
+                            dolfin/Tetrahedron.h \
+                            dolfin/TopologyComputation.h \
+                            dolfin/Triangle.h \
+                            dolfin/UniformMeshRefinement.h \
+                            dolfin/UnitCube.h \
+                            dolfin/UnitSquare.h \
+                            dolfin/Vertex.h
 
 INCLUDES = @KERNEL_CFLAGS@
 lib_LTLIBRARIES = libdolfin-mesh.la
-libdolfin_mesh_la_SOURCES = UnitCube.cpp \
-                            UnitSquare.cpp \
+libdolfin_mesh_la_SOURCES = BoundaryComputation.cpp \
+                            BoundaryMesh.cpp \
+                            Cell.cpp \
+                            CellType.cpp \
+                            Edge.cpp \
+                            Face.cpp \
+                            Facet.cpp \
+                            GeometricPredicates.cpp \
+                            GTSInterface.cpp \
+                            IntersectionDetector.cpp \
+                            Interval.cpp \
+                            LocalMeshCoarsening.cpp \
+                            LocalMeshRefinement.cpp \
                             MeshConnectivity.cpp \
+                            Mesh.cpp \
+                            MeshData.cpp \
                             MeshEditor.cpp \
                             MeshEntity.cpp \
                             MeshEntityIterator.cpp \
                             MeshGeometry.cpp \
-                            MeshHierarchy.cpp \
                             MeshHierarchyAlgorithms.cpp \
+                            MeshHierarchy.cpp \
                             MeshOrdering.cpp \
                             MeshPartition.cpp \
                             MeshTopology.cpp \
-                            Mesh.cpp \
-                            MeshData.cpp \
-                            Vertex.cpp \
-                            Edge.cpp \
-                            Face.cpp \
-                            Facet.cpp \
-                            Cell.cpp \
-                            TopologyComputation.cpp \
-                            Interval.cpp \
-                            Triangle.cpp \
-                            Tetrahedron.cpp \
-                            CellType.cpp \
-                            UniformMeshRefinement.cpp \
-                            LocalMeshRefinement.cpp \
-                            LocalMeshCoarsening.cpp \
                             Point.cpp \
-                            BoundaryComputation.cpp \
-                            BoundaryMesh.cpp \
-                            GeometricPredicates.cpp \
-                            GTSInterface.cpp \
-                            IntersectionDetector.cpp
+                            SubDomain.cpp \
+                            Tetrahedron.cpp \
+                            TopologyComputation.cpp \
+                            Triangle.cpp \
+                            UniformMeshRefinement.cpp \
+                            UnitCube.cpp \
+                            UnitSquare.cpp \
+                            Vertex.cpp
 
 libdolfin_mesh_la_LDFLAGS = -static
 all: all-recursive
@@ -414,6 +414,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MeshPartition.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MeshTopology.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Point.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SubDomain.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Tetrahedron.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TopologyComputation.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Triangle.Plo@am__quote@

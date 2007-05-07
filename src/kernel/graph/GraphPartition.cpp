@@ -14,7 +14,7 @@ void GraphPartition::partition(Graph& graph, uint num_part, uint* vtx_part)
 {
   // Basic breadth first algorithm
   dolfin_assert(vtx_part);
-  dolfin_assert(num_part < graph.numVertices());
+  dolfin_assert(num_part <= graph.numVertices());
 
   uint nn = graph.numVertices();
   uint size = nn/num_part;

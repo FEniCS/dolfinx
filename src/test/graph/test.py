@@ -191,18 +191,17 @@ class Partitioning(unittest.TestCase):
         editor.addEdge(6, 8)
         editor.close()
 
-        parts = GraphPartition.create(nn)
-        #parts = numpy.array('uint')
+        parts = numpy.array(0, 'L')
+        parts.resize(nn)
 
         GraphPartition.partition(graph, num_part, parts)
-		  #graph.partition(graph, num_part, parts)
         GraphPartition.eval(graph, num_part, parts)
         GraphPartition.disp(graph, num_part, parts)
         edgecut = GraphPartition.edgecut(graph, num_part, parts)
         GraphPartition.check(graph, num_part, parts)
 
-        # Simple graph partitioning should give edge-cut: 2
-        #self.assertEqual(edgecut, 2)
+        # Simple graph partitioning should give edge-cut: 1
+        self.assertEqual(edgecut, 1)
 
 if __name__ == "__main__":
     unittest.main()
