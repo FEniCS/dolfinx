@@ -10,8 +10,12 @@
 
 using namespace dolfin;
 
+//-----------------------------------------------------------------------------
 void MeshPartition::partition(Mesh& mesh, uint num_part, uint* vtx_part)
 {
+  // FIXME: Do appropriate partitions.init() here and then extract values
+
   Graph graph(mesh);
   GraphPartition::partition(graph, num_part, vtx_part);
 }
+//-----------------------------------------------------------------------------

@@ -1,10 +1,10 @@
-// Copyright (C) 2006 Anders Logg.
+// Copyright (C) 2006-2007 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // Modified by Johan Hoffman 2007.
 //
 // First added:  2006-05-09
-// Last changed: 2007-02-26
+// Last changed: 2007-05-07
 
 #include <dolfin/File.h>
 #include <dolfin/UniformMeshRefinement.h>
@@ -148,9 +148,9 @@ void Mesh::smooth()
   }
 }
 //-----------------------------------------------------------------------------
-void Mesh::partition(uint num_part, MeshFunction<uint>& partitions)
+void Mesh::partition(uint num_partitions, MeshFunction<uint>& partitions)
 {
-  MeshPartition::partition(*this, num_part, partitions.values());
+  MeshPartition::partition(*this, num_partitions, partitions.values());
 }
 //-----------------------------------------------------------------------------
 void Mesh::disp() const
