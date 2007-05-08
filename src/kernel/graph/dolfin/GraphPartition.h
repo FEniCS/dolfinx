@@ -32,6 +32,7 @@ namespace dolfin
 	 
     /// Calculate edge_cut
     static real edgecut(Graph& graph, uint num_part, uint* vtx_part);
+
   };
 
 }
