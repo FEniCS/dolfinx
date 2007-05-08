@@ -12,7 +12,7 @@
 P1  = FiniteElement("Lagrange", "triangle", 1)
 P2  = FiniteElement("Lagrange", "triangle", 1)
 #DG0 = FiniteElement("Discontinuous Lagrange", "triangle", 0)
-# Use continuous functions to avoid bug DOLFIN bug
+# Use continuous functions to avoid bug 
 DG0 = FiniteElement("Lagrange", "triangle", 1)
 
 ME = P1 + P2
