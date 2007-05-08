@@ -9,6 +9,7 @@
 
 #include <string>
 #include <dolfin/constants.h>
+#include <dolfin/MeshFunction.h>
 
 namespace dolfin
 {
@@ -30,6 +31,12 @@ namespace dolfin
 
   /// Plot mesh function
   void plot(MeshFunction<uint>& f, std::string mode = "");
+
+  /// Plot mesh function
+  void plot(MeshFunction<real>& f, std::string mode = "");
+
+  /// Plot mesh function
+  void plot(MeshFunction<bool>& f, std::string mode = "");
 
 }
 
