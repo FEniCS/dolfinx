@@ -147,13 +147,6 @@ void File::operator>>(MeshFunction<bool>& meshfunction)
   *file >> meshfunction;
 }
 //-----------------------------------------------------------------------------
-void File::operator>>(NewMesh& mesh)
-{
-  file->read();
-  
-  *file >> mesh;
-}
-//-----------------------------------------------------------------------------
 void File::operator>>(Function& f)
 {
   file->read();
@@ -243,13 +236,6 @@ void File::operator<<(MeshFunction<bool>& meshfunction)
   file->write();
   
   *file << meshfunction;
-}
-//-----------------------------------------------------------------------------
-void File::operator<<(NewMesh& mesh)
-{
-  file->write();
-  
-  *file << mesh;
 }
 //-----------------------------------------------------------------------------
 void File::operator<<(Function& u)

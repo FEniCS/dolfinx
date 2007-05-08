@@ -5,14 +5,16 @@
 // Modified by Kristian Oelgaard 2006.
 //
 // First added:  2005-07-05
-// Last changed: 2007-04-16
+// Last changed: 2007-05-16
 
 #include <dolfin/Mesh.h>
+#include <dolfin/MeshFunction.h>
 #include <dolfin/Vertex.h>
 #include <dolfin/Cell.h>
 #include <dolfin/Function.h>
 #include <dolfin/Vector.h>
 #include <dolfin/VTKFile.h>
+
 
 using namespace dolfin;
 
@@ -51,6 +53,21 @@ void VTKFile::operator<<(Mesh& mesh)
 
   cout << "Saved mesh " << mesh.name() << " (" << mesh.label()
        << ") to file " << filename << " in VTK format." << endl;
+}
+//----------------------------------------------------------------------------
+void VTKFile::operator<<(MeshFunction<int>& meshfunction)
+{
+  MeshFunctionWrite(meshfunction);
+}
+//----------------------------------------------------------------------------
+void VTKFile::operator<<(MeshFunction<unsigned int>& meshfunction)
+{
+  MeshFunctionWrite(meshfunction);
+}
+//----------------------------------------------------------------------------
+void VTKFile::operator<<(MeshFunction<double>& meshfunction)
+{
+  MeshFunctionWrite(meshfunction);
 }
 //----------------------------------------------------------------------------
 void VTKFile::operator<<(Function& u)
@@ -287,3 +304,48 @@ void VTKFile::vtuNameUpdate(const int counter)
   fclose(fp);
 }
 //----------------------------------------------------------------------------
+template<class T>
+void VTKFile::MeshFunctionWrite(T& meshfunction) 
+{
+  // Update vtu file name and clear file
+  vtuNameUpdate(counter);
+
+  // Write pvd file
+  pvdFileWrite(counter);
+
+  Mesh& mesh = meshfunction.mesh(); 
+
+  if( meshfunction.dim() != mesh.topology().dim() )
+    dolfin_error("VTK output of mesh functions is implemenetd for cell-based functions only.");    
+
+  // Write headers
+  VTKHeaderOpen(mesh);
+
+  // Write mesh
+  MeshWrite(mesh);
+  
+  // Open file
+  std::ofstream fp(vtu_filename.c_str(), std::ios_base::app);
+
+  fp << "<CellData  Scalars=\"U\">" << std::endl;
+  fp << "<DataArray  type=\"Float64\"  Name=\"U\"  format=\"ascii\">" << std::endl;
+  for (CellIterator cell(mesh); !cell.end(); ++cell)
+    fp << meshfunction.get( cell->index() )  << std::endl;
+  fp << "</DataArray>" << std::endl;
+  fp << "</CellData>" << std::endl;
+  
+  // Close file
+  fp.close();
+
+  // Close headers
+  VTKHeaderClose();
+
+  // Increase the number of times we have saved the mesh function
+  counter++;
+
+  cout << "saved mesh function " << counter << " times." << endl;
+
+  cout << "Saved mesh function " << mesh.name() << " (" << mesh.label()
+       << ") to file " << filename << " in VTK format." << endl;
+}    
+

@@ -21,7 +21,6 @@ namespace dolfin
   class Mesh;
   class Graph;
   template <class T> class MeshFunction;
-  class NewMesh;
   class Function;
   class Sample;
   class FiniteElementSpec;
@@ -67,9 +66,6 @@ namespace dolfin
     void operator>> (MeshFunction<double>& meshfunction);
     void operator>> (MeshFunction<bool>& meshfunction);
 
-    /// Read mesh from file
-    void operator>> (NewMesh& mesh);
-
     /// Read function from file
     void operator>> (Function& u);
 
@@ -104,9 +100,6 @@ namespace dolfin
     void operator<< (MeshFunction<unsigned int>& meshfunction);
     void operator<< (MeshFunction<double>& meshfunction);
     void operator<< (MeshFunction<bool>& meshfunction);
-
-    /// Write mesh to file
-    void operator<< (NewMesh& mesh);
 
     /// Write function to file
     void operator<< (Function& u);

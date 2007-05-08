@@ -18,7 +18,6 @@ namespace dolfin
   class Mesh;
   class Graph;
   template <class T> class MeshFunction;
-  class NewMesh;
   class Function;
   class Sample;
   class FiniteElementSpec;
@@ -43,7 +42,6 @@ namespace dolfin
     virtual void operator>> (MeshFunction<unsigned int>& meshfunction);
     virtual void operator>> (MeshFunction<double>& meshfunction);
     virtual void operator>> (MeshFunction<bool>& meshfunction);
-    virtual void operator>> (NewMesh& mesh);
     virtual void operator>> (Function& mesh);
     virtual void operator>> (Sample& sample);
     virtual void operator>> (FiniteElementSpec& spec);
@@ -60,7 +58,6 @@ namespace dolfin
     virtual void operator<< (MeshFunction<unsigned int>& meshfunction);
     virtual void operator<< (MeshFunction<double>& meshfunction);
     virtual void operator<< (MeshFunction<bool>& meshfunction);
-    virtual void operator<< (NewMesh& mesh);
     virtual void operator<< (Function& u);
     virtual void operator<< (Sample& sample);
     virtual void operator<< (FiniteElementSpec& spec);
