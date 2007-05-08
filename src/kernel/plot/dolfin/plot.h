@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2007-05-02
-// Last changed: 2007-05-02
+// Last changed: 2007-05-07
 
 #ifndef __PLOT_H
 #define __PLOT_H
@@ -27,6 +27,9 @@ namespace dolfin
 
   /// Plot mesh
   void plot(Mesh& mesh, std::string mode = "");
+
+  /// Plot mesh function
+  //void plot(MeshFunction<uint>& f, std::string mode = "");
 
 }
 
