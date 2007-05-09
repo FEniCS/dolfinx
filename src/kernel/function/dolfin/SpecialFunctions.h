@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-02-09
-// Last changed: 2007-04-30
+// Last changed: 2007-05-09
 
 #ifndef __SPECIAL_FUNCTIONS_H
 #define __SPECIAL_FUNCTIONS_H
@@ -41,7 +41,9 @@ namespace dolfin
 
   };
 
-  /// This function represents the outward unit normal on mesh facets.
+  /// This function represents the outward unit normal on mesh facets. Note that
+  /// it is only properly defined on cell facets. Its value on the internal of a
+  /// cells is equal to its value on the first of the cell facets.
   class FacetNormal : public Function
   {
   public:
@@ -50,10 +52,10 @@ namespace dolfin
 
     void eval(real* values, const real* x)
     {
-      // FIXME: Not implemented
-      dolfin_error("Not implemented");
-      //return cell().normal(facet(), i);
+      for (uint i = 0; i < mesh().geometry().dim(); i++)
+        values[i] = cell().normal(facet(), i);
     }
+
   };
 
 }

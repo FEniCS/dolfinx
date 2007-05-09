@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-04-10
-// Last changed: 2007-04-30
+// Last changed: 2007-05-09
 
 #include <dolfin/Mesh.h>
 #include <dolfin/Vertex.h>
@@ -122,7 +122,7 @@ void BoundaryCondition::apply(GenericMatrix& A, GenericVector& b,
     const uint local_facet = cell.index(*facet);
 
     // Interpolate function on cell
-    g.interpolate(data.w, ufc_cell, *data.finite_element, cell);
+    g.interpolate(data.w, ufc_cell, *data.finite_element, cell, local_facet);
     
     // Tabulate dofs on cell
     data.dof_map->tabulate_dofs(data.cell_dofs, ufc_mesh, ufc_cell);

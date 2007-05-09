@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells 2005
 //
 // First added:  2003-11-28
-// Last changed: 2007-04-30
+// Last changed: 2007-05-08
 //
 // The class Function serves as the envelope class and holds a pointer
 // to a letter class that is a subclass of GenericFunction. All the
@@ -21,35 +21,35 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 Function::Function()
   : Variable("u", "empty function"),
-    f(0), _type(empty), _cell(0)
+    f(0), _type(empty), _cell(0), _facet(-1)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 Function::Function(Mesh& mesh)
   : Variable("u", "user-defined function"),
-    f(0), _type(user), _cell(0)
+    f(0), _type(user), _cell(0), _facet(-1)
 {
   f = new UserFunction(mesh, this);
 }
 //-----------------------------------------------------------------------------
 Function::Function(Mesh& mesh, real value)
   : Variable("u", "constant function"),
-    f(0), _type(constant), _cell(0)
+    f(0), _type(constant), _cell(0), _facet(-1)
 {
   f = new ConstantFunction(mesh, value);
 }
 //-----------------------------------------------------------------------------
 Function::Function(Mesh& mesh, Vector& x, const Form& form, uint i)
   : Variable("u", "discrete function"),
-    f(0), _type(discrete), _cell(0)
+    f(0), _type(discrete), _cell(0), _facet(-1)
 {
   f = new DiscreteFunction(mesh, x, form, i);
 }
 //-----------------------------------------------------------------------------
 Function::Function(const std::string filename)
   : Variable("u", "discrete function from data file"),
-    f(0), _type(empty), _cell(0)
+    f(0), _type(empty), _cell(0), _facet(-1)
 {
   File file(filename);
   file >> *this;
@@ -57,7 +57,7 @@ Function::Function(const std::string filename)
 //-----------------------------------------------------------------------------
 Function::Function(SubFunction f)
   : Variable("u", "discrete function"),
-    f(0), _type(discrete), _cell(0)
+    f(0), _type(discrete), _cell(0), _facet(-1)
 {
   cout << "Extracting sub function." << endl;
   this->f = new DiscreteFunction(f);
@@ -164,16 +164,21 @@ void Function::interpolate(real* values)
 void Function::interpolate(real* coefficients,
                            const ufc::cell& ufc_cell,
                            const ufc::finite_element& finite_element,
-                           Cell& cell)
+                           Cell& cell, int facet)
 {
   if (!f)
     dolfin_error("Function contains no data.");
 
-  // Make current cell available to user-defined function
+  // Make current cell and facet are available to user-defined function
   _cell = &cell;
+  _facet = facet;
 
   // Interpolate function
   f->interpolate(coefficients, ufc_cell, finite_element);
+
+  // Make cell and facet unavailable
+  _cell = 0;
+  _facet = -1;
 }
 //-----------------------------------------------------------------------------
 void Function::eval(real* values, const real* x)
@@ -190,7 +195,17 @@ dolfin::real Function::eval(const real* x)
 //-----------------------------------------------------------------------------
 const Cell& Function::cell() const
 {
-  dolfin_assert(_cell);
+   if (!_cell)
+    dolfin_error("Current cell is unknown (only available during assembly).");
+  
   return *_cell;
+}
+//-----------------------------------------------------------------------------
+dolfin::uint Function::facet() const
+{
+  if (_facet < 0)
+    dolfin_error("Current facet is unknown (only available during assembly over facets).");
+
+  return static_cast<uint>(_facet);
 }
 //-----------------------------------------------------------------------------

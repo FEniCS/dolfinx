@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells 2005.
 //
 // First added:  2003-11-28
-// Last changed: 2007-04-30
+// Last changed: 2007-05-08
 
 #ifndef __FUNCTION_H
 #define __FUNCTION_H
@@ -92,7 +92,7 @@ namespace dolfin
     void interpolate(real* coefficients,
                      const ufc::cell& ufc_cell,
                      const ufc::finite_element& finite_element,
-                     Cell& cell);
+                     Cell& cell, int facet);
 
     /// Evaluate function at given point (overload for user-defined function)
     virtual void eval(real* values, const real* x);
@@ -108,6 +108,9 @@ namespace dolfin
     // Access current cell (available during assembly for user-defined function)
     const Cell& cell() const;
 
+    // Access current facet (available during assembly for user-defined functions)
+    uint facet() const;
+
   private:
     
     // Pointer to current implementation (letter base class)
@@ -116,8 +119,11 @@ namespace dolfin
     // Type of function
     Type _type;
     
-    // Pointer to current cell (if any)
+    // Pointer to current cell (if any, otherwise 0)
     Cell* _cell;
+
+    // Current facet (if any, otherwise -1)
+    int _facet;
 
   };
 

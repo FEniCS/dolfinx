@@ -1,13 +1,13 @@
-# Copyright (C) 2006 Kristiand Oelgaard and Anders Logg.
+# Copyright (C) 2006-2007 Kristiand Oelgaard and Anders Logg.
 # Licensed under the GNU LGPL Version 2.1.
 #
 # First added:  2006-12-14
-# Last changed: 2006-12-14
+# Last changed: 2007-05-09
 #
-# Compile this form with FFC: ffc Projection.form
+# Compile this form with FFC: ffc -l dolfin Projection.form
 
 CG1 = FiniteElement("Lagrange", "triangle", 1)
-DG1 =  FiniteElement("Discontinuous Lagrange", "triangle", 1)
+DG1 = FiniteElement("Discontinuous Lagrange", "triangle", 1)
 
 v = TestFunction(CG1)
 u = TrialFunction(CG1)

@@ -117,7 +117,7 @@ void Assembler::assembleCells(GenericTensor& A, Mesh& mesh,
 
     // Interpolate coefficients on cell
     for (uint i = 0; i < coefficients.size(); i++)
-      coefficients[i]->interpolate(ufc.w[i], ufc.cell, *ufc.coefficient_elements[i], *cell);
+      coefficients[i]->interpolate(ufc.w[i], ufc.cell, *ufc.coefficient_elements[i], *cell, 0);
     
     // Tabulate dofs for each dimension
     for (uint i = 0; i < ufc.form.rank(); i++)
@@ -165,7 +165,7 @@ void Assembler::assembleExteriorFacets(GenericTensor& A, Mesh& mesh,
 
     // Interpolate coefficients on cell
     for (uint i = 0; i < coefficients.size(); i++)
-      coefficients[i]->interpolate(ufc.w[i], ufc.cell, *ufc.coefficient_elements[i], mesh_cell);
+      coefficients[i]->interpolate(ufc.w[i], ufc.cell, *ufc.coefficient_elements[i], mesh_cell, local_facet);
 
     // Tabulate dofs for each dimension
     for (uint i = 0; i < ufc.form.rank(); i++)
