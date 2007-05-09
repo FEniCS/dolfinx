@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-01-17
-// Last changed: 2007-04-30
+// Last changed: 2007-05-09
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Array.h>
@@ -20,6 +20,8 @@
 #include <dolfin/SparsityPattern.h>
 
 using namespace dolfin;
+
+// FIXME: mesh.order() for higher degree elements
 
 //-----------------------------------------------------------------------------
 Assembler::Assembler()
@@ -117,7 +119,7 @@ void Assembler::assembleCells(GenericTensor& A, Mesh& mesh,
 
     // Interpolate coefficients on cell
     for (uint i = 0; i < coefficients.size(); i++)
-      coefficients[i]->interpolate(ufc.w[i], ufc.cell, *ufc.coefficient_elements[i], *cell, 0);
+      coefficients[i]->interpolate(ufc.w[i], ufc.cell, *ufc.coefficient_elements[i], *cell);
     
     // Tabulate dofs for each dimension
     for (uint i = 0; i < ufc.form.rank(); i++)
@@ -192,6 +194,9 @@ void Assembler::assembleInteriorFacets(GenericTensor& A,Mesh& mesh,
   // Compute facets and facet - cell connectivity if not already computed
   mesh.init(mesh.topology().dim() - 1);
   mesh.init(mesh.topology().dim() - 1, mesh.topology().dim());
+  
+  // Order mesh connectivity, needed for correct alignment on common facets
+  mesh.order();
 
   // Assemble over interior facets (the facets of the mesh)
   Progress p("Assembling over interior facets", mesh.numFacets());
@@ -215,10 +220,13 @@ void Assembler::assembleInteriorFacets(GenericTensor& A,Mesh& mesh,
     // Update to current pair of cells
     ufc.update(cell0, cell1);
     
-    // FIXME: Implement this, need to interpolate on both cells
     // Interpolate coefficients on cell
-    //for (uint i = 0; i < coefficients.size(); i++)
-    //  coefficients[i]->interpolate(ufc.w[i], ufc.cell, *ufc.coefficient_elements[i]);
+    for (uint i = 0; i < coefficients.size(); i++)
+    {
+      const uint offset = ufc.coefficient_elements[i]->space_dimension();
+      coefficients[i]->interpolate(ufc.macro_w[i], ufc.cell0, *ufc.coefficient_elements[i], cell0, facet0);
+      coefficients[i]->interpolate(ufc.macro_w[i] + offset, ufc.cell1, *ufc.coefficient_elements[i], cell1, facet1);
+    }
 
     // Tabulate dofs for each dimension on macro element
     for (uint i = 0; i < ufc.form.rank(); i++)
@@ -229,7 +237,7 @@ void Assembler::assembleInteriorFacets(GenericTensor& A,Mesh& mesh,
     }
 
     // Tabulate exterior interior facet tensor on macro element
-    ufc.interior_facet_integral->tabulate_tensor(ufc.macro_A, ufc.w, ufc.cell0, ufc.cell1, facet0, facet1);
+    ufc.interior_facet_integral->tabulate_tensor(ufc.macro_A, ufc.macro_w, ufc.cell0, ufc.cell1, facet0, facet1);
 
     // Add entries to global tensor
     A.add(ufc.macro_A, ufc.macro_local_dimensions, ufc.macro_dofs);

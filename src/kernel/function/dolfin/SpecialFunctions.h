@@ -41,9 +41,8 @@ namespace dolfin
 
   };
 
-  /// This function represents the outward unit normal on mesh facets. Note that
-  /// it is only properly defined on cell facets. Its value on the internal of a
-  /// cells is equal to its value on the first of the cell facets.
+  /// This function represents the outward unit normal on mesh facets.
+  /// Note that it is only nonzero on cell facets (not on cells).
   class FacetNormal : public Function
   {
   public:
@@ -52,8 +51,16 @@ namespace dolfin
 
     void eval(real* values, const real* x)
     {
-      for (uint i = 0; i < mesh().geometry().dim(); i++)
-        values[i] = cell().normal(facet(), i);
+      if (facet() >= 0)
+      {
+        for (uint i = 0; i < mesh().geometry().dim(); i++)
+          values[i] = cell().normal(facet(), i);
+      }
+      else
+      {
+        for (uint i = 0; i < mesh().geometry().dim(); i++)
+          values[i] = 0.0;
+      }
     }
 
   };

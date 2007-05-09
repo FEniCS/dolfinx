@@ -468,7 +468,7 @@ real Tetrahedron::diameter(const MeshEntity& tetrahedron) const
 //-----------------------------------------------------------------------------
 real Tetrahedron::normal(const Cell& cell, uint facet, uint i) const
 {
-  // This is a trick to be allowed to initialize a facet from the cell mesh
+  // This is a trick to be allowed to initialize a facet from the cell
   Cell& c = const_cast<Cell&>(cell);
 
   // Create facet from the mesh and local facet number

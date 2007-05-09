@@ -92,7 +92,7 @@ namespace dolfin
     void interpolate(real* coefficients,
                      const ufc::cell& ufc_cell,
                      const ufc::finite_element& finite_element,
-                     Cell& cell, int facet);
+                     Cell& cell, int facet = -1);
 
     /// Evaluate function at given point (overload for user-defined function)
     virtual void eval(real* values, const real* x);
@@ -109,7 +109,7 @@ namespace dolfin
     const Cell& cell() const;
 
     // Access current facet (available during assembly for user-defined functions)
-    uint facet() const;
+    int facet() const;
 
   private:
     

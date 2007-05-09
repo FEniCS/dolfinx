@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-01-17
-// Last changed: 2007-03-09
+// Last changed: 2007-05-10
 
 #ifndef __UFC_DATA_H
 #define __UFC_DATA_H
@@ -94,6 +94,9 @@ namespace dolfin
 
     // Array of coefficients
     real** w;
+
+    // Array of coefficients on macro element
+    real** macro_w;
 
   };
 

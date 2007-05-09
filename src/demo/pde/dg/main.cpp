@@ -111,9 +111,8 @@ int main()
   
   // Define PDE
   PoissonBilinearForm a(n, h);
-  PoissonLinearForm L(f, gn);
-  BoundaryCondition bc(gd, mesh, GD);
-  PDE pde(a, L, mesh, bc);
+  PoissonLinearForm L(f, gd, gn);
+  PDE pde(a, L, mesh);
 
   // Solve PDE
   Function u;
@@ -121,12 +120,6 @@ int main()
 
   // Plot solution
   plot(u);
-
-  // Project solution onto a continuous basis
-  //Projection::BilinearForm ap;
-  //Projection::LinearForm Lp(U);
-  //PDE projection(ap, Lp, mesh, bc);
-  //Function Up = projection.solve();
 
   // Save solution to file
   File file("poisson.xml");

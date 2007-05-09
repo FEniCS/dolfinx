@@ -261,7 +261,7 @@ real Triangle::diameter(const MeshEntity& triangle) const
 //-----------------------------------------------------------------------------
 real Triangle::normal(const Cell& cell, uint facet, uint i) const
 {
-  // This is a trick to be allowed to initialize a facet from the cell mesh
+  // This is a trick to be allowed to initialize a facet from the cell
   Cell& c = const_cast<Cell&>(cell);
 
   // Create facet from the mesh and local facet number
@@ -277,7 +277,7 @@ real Triangle::normal(const Cell& cell, uint facet, uint i) const
   // Get global index of vertices on the facet
   uint v1 = f.entities(0)[0];
   uint v2 = f.entities(0)[1];
-
+  
   // Get mesh geometry
   const MeshGeometry& geometry = cell.mesh().geometry();
   
@@ -290,10 +290,10 @@ real Triangle::normal(const Cell& cell, uint facet, uint i) const
   real n[2];
   n[0] = (p2[1] - p1[1]);
   n[1] = -(p2[0] - p1[0]);
-  
+
   // Compute length of normal
   const real l = std::sqrt(n[0]*n[0] + n[1]*n[1]);
-  
+
   // Flip direction of normal so it points outward
   if ( (n[0]*(p0[0] - p1[0]) + n[1]*(p0[1] - p1[1])) < 0 )
     return n[i] / l;

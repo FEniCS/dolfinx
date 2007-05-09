@@ -103,6 +103,16 @@ UFC::UFC(const ufc::form& form, Mesh& mesh, DofMaps& dof_maps) : form(form)
     for (uint j = 0; j < n; j++)
       w[i][j] = 0.0;
   }
+
+  // Initialize coefficients on macro element
+  macro_w = new real*[form.num_coefficients()];
+  for (uint i = 0; i < form.num_coefficients(); i++)
+  {
+    const uint n = 2*coefficient_elements[i]->space_dimension();
+    macro_w[i] = new real[n];
+    for (uint j = 0; j < n; j++)
+      macro_w[i][j] = 0.0;
+  }
 }
 //-----------------------------------------------------------------------------
 UFC::~UFC()
@@ -157,6 +167,11 @@ UFC::~UFC()
   for (uint i = 0; i < form.num_coefficients(); i++)
     delete [] w[i];
   delete [] w;
+
+  // Delete macro coefficients
+  for (uint i = 0; i < form.num_coefficients(); i++)
+    delete [] macro_w[i];
+  delete [] macro_w;
 }
 //-----------------------------------------------------------------------------
 void UFC::update(Cell& cell)

@@ -201,11 +201,8 @@ const Cell& Function::cell() const
   return *_cell;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint Function::facet() const
+int Function::facet() const
 {
-  if (_facet < 0)
-    dolfin_error("Current facet is unknown (only available during assembly over facets).");
-
-  return static_cast<uint>(_facet);
+  return _facet;
 }
 //-----------------------------------------------------------------------------

@@ -10,22 +10,34 @@
 #
 # Compile this form with FFC: ffc -l dolfin Poisson.form
 
+# Elements
 DG1 = FiniteElement("Discontinuous Lagrange", "triangle", 1)
 DGn = VectorElement("Discontinuous Lagrange", "triangle", 0)
 DGh = FiniteElement("Discontinuous Lagrange", "triangle", 0)
 
+# Test and trial functions
 v = TestFunction(DG1)
 u = TrialFunction(DG1)
+
+# Normal component, mesh size and right-hand side
 n = Function(DGn)
 h = Function(DGh)
 f = Function(DG1)
-g = Function(DG1)
 
+# Dirichlet and Neumann boundary conditions
+gD = Function(DG1)
+gN = Function(DG1)
+
+# Parameters
 alpha = 2.0
+gamma = 100.0
 
+# Bilinear form
 a =  dot(grad(v), grad(u))*dx \
    - dot(avg(grad(v)), jump(u, n))*dS \
    - dot(jump(v, n), avg(grad(u)))*dS \
-   + alpha*avg(h)*dot(jump(v, n), jump(u, n))*dS
+   + alpha*avg(h)*dot(jump(v, n), jump(u, n))*dS \
+   + gamma*v*u*ds
 
-L = v*f*dx + v*g*ds
+# Linear form
+L = v*f*dx + gamma*v*gD*ds + v*gN*ds
