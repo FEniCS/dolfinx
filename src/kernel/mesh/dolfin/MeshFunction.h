@@ -1,10 +1,10 @@
-// Copyright (C) 2006 Anders Logg.
+// Copyright (C) 2006-2007 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Johan Hoffman 2007.
 //
 // First added:  2006-05-22
-// Last changed: 2007-04-24
+// Last changed: 2007-05-09
 
 #ifndef __MESH_FUNCTION_H
 #define __MESH_FUNCTION_H
@@ -102,6 +102,7 @@ namespace dolfin
     {
       if ( !_mesh )
         dolfin_error("Mesh has not been specified, unable to initialize mesh function.");
+      _mesh->init(dim);
       init(*_mesh, dim, _mesh->size(dim));
     }
 
@@ -110,12 +111,14 @@ namespace dolfin
     {
       if ( !_mesh )
         dolfin_error("Mesh has not been specified, unable to initialize mesh function.");
+      _mesh->init(dim);
       init(*_mesh, dim, size);
     }
 
     /// Initialize mesh function for given topological dimension
     void init(Mesh& mesh, uint dim)
     {
+      _mesh->init(dim);
       init(mesh, dim, mesh.size(dim));
     }
 
@@ -130,7 +133,7 @@ namespace dolfin
       _mesh = &mesh;
       _dim = dim;
       _size = size;
-      if ( _values )
+      if (_values)
 	delete [] _values;
       _values = new T[size];
     }
