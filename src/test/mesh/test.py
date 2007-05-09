@@ -107,91 +107,88 @@ class MeshIterators(unittest.TestCase):
 
 class BoundaryExtraction(unittest.TestCase):
 
-    def testBoundaryComputation(self):
-        """Compute boundary of mesh"""
-        mesh = UnitCube(2, 2, 2)
-        boundary = BoundaryMesh(mesh)
-        self.assertEqual(boundary.numVertices(), 26)
-        self.assertEqual(boundary.numCells(), 48)
+     def testBoundaryComputation(self):
+         """Compute boundary of mesh"""
+         mesh = UnitCube(2, 2, 2)
+         boundary = BoundaryMesh(mesh)
+         self.assertEqual(boundary.numVertices(), 26)
+         self.assertEqual(boundary.numCells(), 48)
 
-    def testBoundaryBoundary(self):
-        """Compute boundary of boundary"""
-        mesh = UnitCube(2, 2, 2)
-        b0 = BoundaryMesh(mesh)
-        b1 = BoundaryMesh(b0)
-        self.assertEqual(b1.numVertices(), 0)
-        self.assertEqual(b1.numCells(), 0)
+     def testBoundaryBoundary(self):
+         """Compute boundary of boundary"""
+         mesh = UnitCube(2, 2, 2)
+         b0 = BoundaryMesh(mesh)
+         b1 = BoundaryMesh(b0)
+         self.assertEqual(b1.numVertices(), 0)
+         self.assertEqual(b1.numCells(), 0)
 
 class MeshFunctions(unittest.TestCase):
 
-    def testAssign(self):
-        mesh = UnitSquare(3, 3)
-        f = MeshFunction('int')
-        f.init(mesh, 0)
-        f.set(3, 10)
-        v = Vertex(mesh, 3)
-        self.assertEqual(f(v), 10)
-       
+     def testAssign(self):
+         mesh = UnitSquare(3, 3)
+         f = MeshFunction('int', mesh, 0)
+         f.set(3, 10)
+         v = Vertex(mesh, 3)
+         self.assertEqual(f(v), 10)
+      
 class InputOutput(unittest.TestCase):
 
-    def testMeshXML2D(self):
-        """Write and read 2D mesh to/from file"""
-        mesh_out = UnitSquare(3, 3)
-        mesh_in  = Mesh()
-        file = File("unitsquare.xml")
-        file << mesh_out
-        file >> mesh_in
-        self.assertEqual(mesh_in.numVertices(), 16)
+     def testMeshXML2D(self):
+         """Write and read 2D mesh to/from file"""
+         mesh_out = UnitSquare(3, 3)
+         mesh_in  = Mesh()
+         file = File("unitsquare.xml")
+         file << mesh_out
+         file >> mesh_in
+         self.assertEqual(mesh_in.numVertices(), 16)
 
-    def testMeshXML3D(self):
-        """Write and read 3D mesh to/from file"""
-        mesh_out = UnitCube(3, 3, 3)
-        mesh_in  = Mesh()
-        file = File("unitcube.xml")
-        file << mesh_out
-        file >> mesh_in
-        self.assertEqual(mesh_in.numVertices(), 64)
+     def testMeshXML3D(self):
+         """Write and read 3D mesh to/from file"""
+         mesh_out = UnitCube(3, 3, 3)
+         mesh_in  = Mesh()
+         file = File("unitcube.xml")
+         file << mesh_out
+         file >> mesh_in
+         self.assertEqual(mesh_in.numVertices(), 64)
 
-    def testMeshMatlab2D(self):
-        """Write matlab format (no real test)"""
-        mesh = UnitSquare(5, 5)
-        file = File("unitsquare.m")
-        file << mesh
-        self.assertEqual(0, 0)
+     def testMeshMatlab2D(self):
+         """Write matlab format (no real test)"""
+         mesh = UnitSquare(5, 5)
+         file = File("unitsquare.m")
+         file << mesh
+         self.assertEqual(0, 0)
 
-    def testMeshFunction(self):
-        """Write and read mesh function to/from file"""
-        mesh = UnitSquare(1, 1)
-        f = MeshFunction('int')
-        f.init(mesh, 0)
-        f.set(0, 2)
-        f.set(1, 4)
-        f.set(2, 6)
-        f.set(3, 8)
-        file = File("meshfunction.xml")
-        file << f
-        g = MeshFunction('int')
-        g.init(mesh, 0)
-        file >> g
-        for v in vertices(mesh):
-            self.assertEqual(f(v), g(v))
+     def testMeshFunction(self):
+         """Write and read mesh function to/from file"""
+         mesh = UnitSquare(1, 1)
+         f = MeshFunction('int', mesh, 0)
+         f.set(0, 2)
+         f.set(1, 4)
+         f.set(2, 6)
+         f.set(3, 8)
+         file = File("meshfunction.xml")
+         file << f
+         g = MeshFunction('int', mesh, 0)
+         file >> g
+         for v in vertices(mesh):
+             self.assertEqual(f(v), g(v))
 
 class PyCCInterface(unittest.TestCase):
 
-    def testGetGeometricalDimension(self):
-        """Get geometrical dimension of mesh"""
-        mesh = UnitSquare(5, 5)
-        self.assertEqual(mesh.geometry().dim(), 2)
+     def testGetGeometricalDimension(self):
+         """Get geometrical dimension of mesh"""
+         mesh = UnitSquare(5, 5)
+         self.assertEqual(mesh.geometry().dim(), 2)
 
-    def testGetCoordinates(self):
-        """Get coordinates of vertices"""
-        mesh = UnitSquare(5, 5)
-        self.assertEqual(len(mesh.coordinates()), 36)
+     def testGetCoordinates(self):
+         """Get coordinates of vertices"""
+         mesh = UnitSquare(5, 5)
+         self.assertEqual(len(mesh.coordinates()), 36)
 
-    def testGetCells(self):
-        """Get cells of mesh"""
-        mesh = UnitSquare(5, 5)
-        self.assertEqual(len(mesh.cells()), 50)
+     def testGetCells(self):
+         """Get cells of mesh"""
+         mesh = UnitSquare(5, 5)
+         self.assertEqual(len(mesh.cells()), 50)
 
 class Predicates(unittest.TestCase):
 
@@ -414,8 +411,8 @@ class IntersectionDetect(unittest.TestCase):
             print "p1: ", p1[0], " ", p1[1], " ", p1[2]
             print "p2: ", p2[0], " ", p2[1], " ", p2[2]
 
-        #self.assertEqual(overlaps.size(), 1)
-
+        self.assertEqual(overlaps.size(), 1)
 
 if __name__ == "__main__":
+
     unittest.main()
