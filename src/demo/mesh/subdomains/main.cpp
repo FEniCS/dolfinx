@@ -45,7 +45,7 @@ int main()
   };
   
   // Read mesh
-  Mesh mesh("../../../data/meshes/dolfin-2.xml.gz");
+  Mesh mesh("../../../../data/meshes/dolfin-2.xml.gz");
 
   // Create mesh function over the cell facets
   MeshFunction<unsigned int> sub_domains(mesh, mesh.topology().dim() - 1);

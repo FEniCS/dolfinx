@@ -1,1 +1,1 @@
-SUBDIRS = meshfunction partitioning refinement
+SUBDIRS = meshfunction partitioning refinement subdomains
