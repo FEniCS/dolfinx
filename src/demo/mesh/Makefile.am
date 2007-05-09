@@ -1,1 +1,1 @@
-SUBDIRS = partitioning refinement
+SUBDIRS = meshfunction partitioning refinement

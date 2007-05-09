@@ -206,7 +206,7 @@ sharedstatedir = @sharedstatedir@
 swig_found = @swig_found@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
-SUBDIRS = partitioning refinement
+SUBDIRS = meshfunction partitioning refinement
 all: all-recursive
 
 .SUFFIXES:
