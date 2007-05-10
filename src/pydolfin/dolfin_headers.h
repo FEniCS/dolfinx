@@ -12,8 +12,8 @@
 %include "dolfin/Parameter.h"
 
 // DOLFIN headers included from log
+%include "dolfin/log.h"
 %include "dolfin/Event.h"
-%include "dolfin/LoggerMacros.h"
 %include "dolfin/LogStream.h"
 %include "dolfin/Progress.h"
 
@@ -56,6 +56,8 @@
 %include "dolfin/GMRES.h"
 %include "dolfin/LUSolver.h"
 %include "dolfin/LU.h"
+%include "dolfin/Scalar.h"
+%include "dolfin/solve.h"
 
 // DOLFIN headers included from elements
 %include "dolfin/ElementLibrary.h"
@@ -131,3 +133,6 @@
 
 // DOLFIN headers included from pde
 %include "dolfin/PDE.h"
+%include "dolfin/NonlinearPDE.h"
+
+// DOLFIN headers included from plot

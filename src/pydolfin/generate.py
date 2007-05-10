@@ -11,7 +11,7 @@ import os
 import re
 
 # List of headers to exclude (add more here)
-excludes = ["plot.h"]
+excludes = ["plot.h", "ParameterSystem.h", "ParameterList.h"]
 
 # Name of SWIG interface file to be generated
 interface_file = "dolfin_headers.h"
@@ -34,7 +34,7 @@ for module in modules:
     for line in f:
         if re.search("^#include ",line):
             header = line.split()[1].replace("<", "").replace(">", "")
-            if not header in excludes:
+            if not header.split("/")[1] in excludes:
                 module_headers += [header]
     f.close()
     headers += [(module, module_headers)]
