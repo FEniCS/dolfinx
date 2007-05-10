@@ -61,10 +61,9 @@ am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(includedir)"
 libLTLIBRARIES_INSTALL = $(INSTALL)
 LTLIBRARIES = $(lib_LTLIBRARIES)
 libdolfin_log_la_LIBADD =
-am_libdolfin_log_la_OBJECTS = Buffer.lo GenericLogger.lo \
-	CursesLogger.lo Event.lo Logger.lo LoggerMacros.lo \
-	LogManager.lo LogStream.lo Progress.lo SilentLogger.lo \
-	TerminalLogger.lo
+am_libdolfin_log_la_OBJECTS = log.lo Buffer.lo GenericLogger.lo \
+	CursesLogger.lo Event.lo Logger.lo LogManager.lo LogStream.lo \
+	Progress.lo SilentLogger.lo TerminalLogger.lo
 libdolfin_log_la_OBJECTS = $(am_libdolfin_log_la_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -239,31 +238,31 @@ sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 SUBDIRS = dolfin
 nobase_include_HEADERS = dolfin/dolfin_log.h \
-                          dolfin/Buffer.h \
-                          dolfin/CursesLogger.h \
-                          dolfin/Event.h \
-                          dolfin/GenericLogger.h \
-                          dolfin/Logger.h \
-                          dolfin/LoggerMacros.h \
-                          dolfin/LogManager.h \
-                          dolfin/LogStream.h \
-                          dolfin/Progress.h \
-                          dolfin/SilentLogger.h \
-                          dolfin/TerminalLogger.h
+                           dolfin/log.h \
+                           dolfin/Buffer.h \
+                           dolfin/CursesLogger.h \
+                           dolfin/Event.h \
+                           dolfin/GenericLogger.h \
+                           dolfin/Logger.h \
+                           dolfin/LogManager.h \
+                           dolfin/LogStream.h \
+                           dolfin/Progress.h \
+                           dolfin/SilentLogger.h \
+                           dolfin/TerminalLogger.h
 
 INCLUDES = @KERNEL_CFLAGS@
 lib_LTLIBRARIES = libdolfin-log.la
-libdolfin_log_la_SOURCES = Buffer.cpp \
-                          GenericLogger.cpp \
-                          CursesLogger.cpp \
-                          Event.cpp \
-                          Logger.cpp \
-                          LoggerMacros.cpp \
-                          LogManager.cpp \
-                          LogStream.cpp \
-                          Progress.cpp \
-                          SilentLogger.cpp \
-                          TerminalLogger.cpp
+libdolfin_log_la_SOURCES = log.cpp \
+                           Buffer.cpp \
+                           GenericLogger.cpp \
+                           CursesLogger.cpp \
+                           Event.cpp \
+                           Logger.cpp \
+                           LogManager.cpp \
+                           LogStream.cpp \
+                           Progress.cpp \
+                           SilentLogger.cpp \
+                           TerminalLogger.cpp
 
 libdolfin_log_la_LDFLAGS = -static
 all: all-recursive
@@ -342,10 +341,10 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LogManager.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LogStream.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Logger.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LoggerMacros.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Progress.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SilentLogger.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TerminalLogger.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/log.Plo@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \

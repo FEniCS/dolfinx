@@ -4,7 +4,7 @@
 // First added:  2003-03-26
 // Last changed: 2005
 
-#include <dolfin/LoggerMacros.h>
+#include <dolfin/log.h>
 #include <dolfin/Buffer.h>
 
 using namespace dolfin;

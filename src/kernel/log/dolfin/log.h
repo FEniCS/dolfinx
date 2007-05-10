@@ -1,11 +1,11 @@
-// Copyright (C) 2003-2005 Anders Logg and Jim Tilander.
+// Copyright (C) 2003-2007 Anders Logg and Jim Tilander.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2003-03-13
-// Last changed: 2005-09-15
+// Last changed: 2007-10-15
 
-#ifndef __LOGGER_MACROS_H
-#define __LOGGER_MACROS_H
+#ifndef __LOG_H
+#define __LOG_H
 
 #include <stdarg.h>
 #include <dolfin/LogManager.h>

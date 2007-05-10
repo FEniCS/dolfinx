@@ -10,7 +10,7 @@
 #include <iostream>
 
 #include <dolfin/constants.h>
-#include <dolfin/LoggerMacros.h>
+#include <dolfin/log.h>
 #include <dolfin/TerminalLogger.h>
 #include <dolfin/CursesLogger.h>
 #include <dolfin/SilentLogger.h>

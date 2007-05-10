@@ -9,7 +9,7 @@
 #include <stdlib.h>
 
 #include <dolfin/utils.h>
-#include <dolfin/LoggerMacros.h>
+#include <dolfin/log.h>
 #include <dolfin/TerminalLogger.h>
 
 using namespace dolfin;

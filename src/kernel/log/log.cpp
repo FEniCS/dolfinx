@@ -1,14 +1,14 @@
-// Copyright (C) 2003-2005 Anders Logg.
+// Copyright (C) 2003-2007 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Thanks to Jim Tilander for many helpful hints.
 //
 // First added:  2003-03-13
-// Last changed: 2005-09-15
+// Last changed: 2007-05-10
 
 #include <stdarg.h>
 #include <signal.h>
-#include <dolfin/LoggerMacros.h>
+#include <dolfin/log.h>
 
 using namespace dolfin;
 

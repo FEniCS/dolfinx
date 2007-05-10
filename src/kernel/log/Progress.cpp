@@ -11,8 +11,8 @@
 #include <stdio.h>
 
 #include <dolfin/utils.h>
+#include <dolfin/log.h>
 #include <dolfin/LogManager.h>
-#include <dolfin/LoggerMacros.h>
 #include <dolfin/Progress.h>
 
 using namespace dolfin;

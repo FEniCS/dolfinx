@@ -1,4 +1,4 @@
-// Copyright (C) 2003-2005 Anders Logg.
+// Copyright (C) 2003-2007 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells, 2006
@@ -16,7 +16,7 @@
 
 #include <dolfin/constants.h>
 #include <dolfin/utils.h>
-#include <dolfin/LoggerMacros.h>
+#include <dolfin/log.h>
 #include <dolfin/CursesLogger.h>
 
 using namespace dolfin;
