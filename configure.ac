@@ -1,5 +1,5 @@
 # Init autoconf
-AC_INIT(DOLFIN, 0.6.4, http://www.fenics.org/bugzilla/)
+AC_INIT(DOLFIN, 0.6.4-dev, http://www.fenics.org/bugzilla/)
 
 # Init automake
 AM_INIT_AUTOMAKE($PACKAGE_NAME, $PACKAGE_VERSION, no-define)
@@ -37,12 +37,6 @@ AC_ARG_ENABLE(pydolfin,
               AC_HELP_STRING([--disable-pydolfin],
                              [Disable compilation of PyDOLFIN, the DOLFIN Python interface]),
               enable_pydolfin=$enableval, enable_pydolfin=yes)
-
-# Option --enable/disable-curses
-AC_ARG_ENABLE(curses,
-              AC_HELP_STRING([--disable-curses],
-                             [Disable compilation of the curses interface]),
-              enable_curses=$enableval, enable_curses=yes)
 
 # Option --enable/disable-petsc
 AC_ARG_ENABLE(petsc,
@@ -268,20 +262,6 @@ if test `uname -m` = x86_64; then
     CXXFLAGS="$CXXFLAGS -fPIC"
 fi
 
-# Handle option --disable-curses
-if test x$enable_curses = xyes; then
-    echo "enabling curses, use --disable-curses to disable"
-    AC_SEARCH_LIBS(wbkgdset, ncurses,,
-                   echo "*** Unable to find ncurses on your system. "
-                   echo "*** Try ./configure --disable-curses or install ncurses." ; exit 1)
-    CURSES_CFLAGS=""
-    CURSES_LIBS="-lncurses"
-else
-    echo "disabling curses"
-    CURSES_CFLAGS="-DNO_CURSES=1"
-    CURSES_LIBS=""
-fi
-
 # Handle option --enable-pydolfin
 AM_CONDITIONAL(COMPILE_PYDOLFIN, test x$enable_pydolfin = xyes)
 if test x$enable_pydolfin = xyes; then
@@ -360,7 +340,7 @@ fi
 DOLFIN_KERNEL="common elements fem function graph io la main math mesh nls ode pde quadrature parameter log plot"
 
 # Generate include path for external libraries
-EXTERNAL_CFLAGS="$CURSES_CFLAGS $PETSC_CFLAGS $SLEPC_CFLAGS $BOOST_CPPFLAGS $MPI_CFLAGS $XML_CPPFLAGS $UMFPACK_CFLAGS $GLIB_CFLAGS $GTS_CFLAGS $UFC_CFLAGS"
+EXTERNAL_CFLAGS="$PETSC_CFLAGS $SLEPC_CFLAGS $BOOST_CPPFLAGS $MPI_CFLAGS $XML_CPPFLAGS $UMFPACK_CFLAGS $GLIB_CFLAGS $GTS_CFLAGS $UFC_CFLAGS"
 AC_SUBST(EXTERNAL_CFLAGS)
 
 KERNEL_CFLAGS=""
@@ -387,7 +367,7 @@ done
 AC_SUBST(DOLFIN_DEFINITIONS)
 
 # External libraries which DOLFIN depends on
-DOLFIN_EXT_LIBS="$CURSES_LIBS $PETSC_LIBS $SLEPC_LIBS $XML_LIBS $UMFPACK_LIBS $GLIB_LIBS $GTS_LIBS"
+DOLFIN_EXT_LIBS="$PETSC_LIBS $SLEPC_LIBS $XML_LIBS $UMFPACK_LIBS $GLIB_LIBS $GTS_LIBS"
 AC_SUBST(DOLFIN_EXT_LIBS)
 
 # Library list which DOLFIN applications need to link against

@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2003-03-13
-// Last changed: 2007-10-15
+// Last changed: 2007-05-10
 
 #ifndef __LOG_H
 #define __LOG_H
@@ -14,7 +14,7 @@
 namespace dolfin { void dolfin_info(const char *msg, ...); }
 namespace dolfin { void dolfin_info_aptr(const char *msg, va_list aptr); }
 
-// Update (force refresh of curses interface)
+// Update (force refresh)
 namespace dolfin { void dolfin_update(); }
 
 // Stop program
@@ -32,7 +32,7 @@ namespace dolfin { void dolfin_begin(const char* msg, ...); }
 namespace dolfin { void dolfin_end(); }
 namespace dolfin { void dolfin_end(const char* msg, ...); }
 
-// Specify output type ("plain text", "curses", or "silent")
+// Specify output type ("plain text", or "silent")
 namespace dolfin { void dolfin_output(const char* destination); }
 
 // Switch logging on or off

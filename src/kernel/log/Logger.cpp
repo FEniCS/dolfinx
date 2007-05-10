@@ -12,7 +12,6 @@
 #include <dolfin/constants.h>
 #include <dolfin/log.h>
 #include <dolfin/TerminalLogger.h>
-#include <dolfin/CursesLogger.h>
 #include <dolfin/SilentLogger.h>
 #include <dolfin/Logger.h>
 
@@ -199,17 +198,6 @@ void Logger::init(const char* destination)
   {
     log = new TerminalLogger();
     return;
-  }
-  else if ( strcmp(destination, "curses") == 0 )
-  {
-#ifdef NO_CURSES
-    log = new TerminalLogger();
-    dolfin_warning("DOLFIN compiled without curses, using plain text.");
-    return;
-#else
-    log = new CursesLogger();
-    return;
-#endif
   }
   else if ( strcmp(destination, "silent") == 0 )
   {

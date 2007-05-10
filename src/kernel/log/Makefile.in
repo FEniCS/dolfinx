@@ -62,8 +62,8 @@ libLTLIBRARIES_INSTALL = $(INSTALL)
 LTLIBRARIES = $(lib_LTLIBRARIES)
 libdolfin_log_la_LIBADD =
 am_libdolfin_log_la_OBJECTS = log.lo Buffer.lo GenericLogger.lo \
-	CursesLogger.lo Event.lo Logger.lo LogManager.lo LogStream.lo \
-	Progress.lo SilentLogger.lo TerminalLogger.lo
+	Event.lo Logger.lo LogManager.lo LogStream.lo Progress.lo \
+	SilentLogger.lo TerminalLogger.lo
 libdolfin_log_la_OBJECTS = $(am_libdolfin_log_la_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -240,7 +240,6 @@ SUBDIRS = dolfin
 nobase_include_HEADERS = dolfin/dolfin_log.h \
                            dolfin/log.h \
                            dolfin/Buffer.h \
-                           dolfin/CursesLogger.h \
                            dolfin/Event.h \
                            dolfin/GenericLogger.h \
                            dolfin/Logger.h \
@@ -255,7 +254,6 @@ lib_LTLIBRARIES = libdolfin-log.la
 libdolfin_log_la_SOURCES = log.cpp \
                            Buffer.cpp \
                            GenericLogger.cpp \
-                           CursesLogger.cpp \
                            Event.cpp \
                            Logger.cpp \
                            LogManager.cpp \
@@ -335,7 +333,6 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Buffer.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/CursesLogger.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Event.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/GenericLogger.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LogManager.Plo@am__quote@
