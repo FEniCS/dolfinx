@@ -11,7 +11,7 @@ using namespace dolfin;
 int main()
 {
   // Create mesh
-  UnitSquare mesh(8, 8);
+  UnitSquare mesh(32, 32);
 
   // FIXME: Should work just like this, need to call partitions.init(...)
   // MeshFunction<unsigned int> partitions;

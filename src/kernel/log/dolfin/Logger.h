@@ -10,7 +10,6 @@
 #define __LOGGER_H
 
 #include <string>
-#include <stdarg.h>
 #include <dolfin/constants.h>
 
 namespace dolfin
@@ -23,19 +22,14 @@ namespace dolfin
     Logger();
     ~Logger();
 
-    void info     (const char* msg);
-    void info     (const char* format, va_list aptr);
-    void info     (int debug_level, const char* format, va_list aptr);
+    void info     (std::string msg);
+    void info     (int debug_level, std::string msg);
 
-    // void info(std::string msg);
-    // void warning(std::string msg, std::string location);
-    // void error(std::string msg, std::string location);
-    
+    void warning(std::string msg, std::string location);
+    void error(std::string msg, std::string location);
+    void debug(std::string msg, std::string location);
 
-    void debug    (const char* file, unsigned long line, const char* function, const char* format, ...);
-    void warning  (const char* file, unsigned long line, const char* function, const char* format, ...);
-    void error    (const char* file, unsigned long line, const char* function, const char* format, ...);
-    void dassert  (const char* file, unsigned long line, const char* function, const char* format, ...);
+    void dassert(std::string msg, std::string location);
     void progress (const char* title, const char* label, real p);
 
     void begin();

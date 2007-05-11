@@ -8,6 +8,7 @@
 
 #include <stdarg.h>
 #include <signal.h>
+#include <dolfin/LogManager.h>
 #include <dolfin/log.h>
 
 using namespace dolfin;
@@ -15,27 +16,29 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 void dolfin::dolfin_info(const char *msg, ...)
 {
+  char buffer[DOLFIN_LINELENGTH];
   va_list aptr;
   va_start(aptr, msg);
-
-  LogManager::log.info(0, msg, aptr);
-
+  vsprintf(buffer, msg, aptr);
   va_end(aptr);
+  LogManager::log.info(std::string(buffer));
 }
 //-----------------------------------------------------------------------------
 void dolfin::dolfin_info(int debug_level, const char *msg, ...)
 {
+  char buffer[DOLFIN_LINELENGTH];
   va_list aptr;
   va_start(aptr, msg);
-
-  LogManager::log.info(debug_level, msg, aptr);
-
+  vsprintf(buffer, msg, aptr);
   va_end(aptr);
+  LogManager::log.info(debug_level, std::string(buffer));
 }
 //-----------------------------------------------------------------------------
 void dolfin::dolfin_info_aptr(const char *msg, va_list aptr)
 {
-  LogManager::log.info(msg, aptr);
+  char buffer[DOLFIN_LINELENGTH];
+  vsprintf(buffer, msg, aptr);
+  LogManager::log.info(std::string(buffer));
 }
 //-----------------------------------------------------------------------------
 void dolfin::dolfin_begin()
@@ -45,25 +48,25 @@ void dolfin::dolfin_begin()
 //-----------------------------------------------------------------------------
 void dolfin::dolfin_begin(const char* msg, ...)
 {
+  char buffer[DOLFIN_LINELENGTH];
   va_list aptr;
   va_start(aptr, msg);
-
-  LogManager::log.info(0, msg, aptr);
-
+  vsprintf(buffer, msg, aptr);
   va_end(aptr);
 
+  LogManager::log.info(0, std::string(buffer));
   LogManager::log.begin();
 }
 //-----------------------------------------------------------------------------
 void dolfin::dolfin_begin(int debug_level, const char* msg, ...)
 {
+  char buffer[DOLFIN_LINELENGTH];
   va_list aptr;
   va_start(aptr, msg);
-
-  LogManager::log.info(debug_level, msg, aptr);
-
+  vsprintf(buffer, msg, aptr);
   va_end(aptr);
 
+  LogManager::log.info(debug_level, std::string(buffer));
   LogManager::log.begin();
 }
 //-----------------------------------------------------------------------------
@@ -87,3 +90,76 @@ void dolfin::dolfin_log(int debug_level)
   LogManager::log.level(debug_level);
 }
 //-----------------------------------------------------------------------------
+void dolfin::debug(const char* file, unsigned long line, const char* function, const char* format, ...)
+{
+  char buffer0[DOLFIN_LINELENGTH];
+  char buffer1[DOLFIN_LINELENGTH];
+  va_list aptr;
+  va_start(aptr, format);
+
+  vsprintf(buffer0, format, aptr);
+  sprintf(buffer1, "%s:%d: %s()", file, (int) line, function);
+  
+  va_end(aptr);
+
+  // Write message
+  std::string msg      = std::string(buffer0);
+  std::string location = " [at " + std::string(buffer1) + "]";
+  LogManager::log.debug(msg, location);
+}
+//-----------------------------------------------------------------------------
+void dolfin::warning(const char* file, unsigned long line, const char* function, const char* format, ...)
+{
+  char buffer0[DOLFIN_LINELENGTH];
+  char buffer1[DOLFIN_LINELENGTH];
+  va_list aptr;
+  va_start(aptr, format);
+
+  vsprintf(buffer0, format, aptr);
+  sprintf(buffer1, "%s:%d: %s()", file, (int) line, function);
+  
+  va_end(aptr);
+
+  // Write message
+  std::string msg      = std::string(buffer0);
+  std::string location = " [at " + std::string(buffer1) + "]";
+  LogManager::log.warning(msg, location);
+}
+//-----------------------------------------------------------------------------
+void dolfin::error(const char* file, unsigned long line, const char* function, const char* format, ...)
+{
+  char buffer0[DOLFIN_LINELENGTH];
+  char buffer1[DOLFIN_LINELENGTH];
+  va_list aptr;
+  va_start(aptr, format);
+
+  vsprintf(buffer0, format, aptr);
+  sprintf(buffer1, "%s:%d: %s()", file, (int) line, function);
+  
+  va_end(aptr);
+
+  // Write message
+  std::string msg      = std::string(buffer0);
+  std::string location = " [at " + std::string(buffer1) + "]";
+  LogManager::log.error(msg, location);
+}
+//-----------------------------------------------------------------------------
+void dolfin::dassert(const char* file, unsigned long line,
+		     const char* function, const char* format, ...)
+{
+  char buffer0[DOLFIN_LINELENGTH];
+  char buffer1[DOLFIN_LINELENGTH];
+  va_list aptr;
+  va_start(aptr, format);
+
+  vsprintf(buffer0, format, aptr);
+  sprintf(buffer1, "%s:%d: %s()", file, (int) line, function);
+
+  va_end(aptr);
+
+  // Write message
+  std::string msg      = std::string(buffer0);
+  std::string location = " [at " + std::string(buffer1) + "]";
+  LogManager::log.dassert(msg, location);
+
+}

@@ -9,7 +9,6 @@
 #include <stdexcept>
 
 #include <stdio.h>
-#include <stdarg.h>
 
 #include <dolfin/constants.h>
 #include <dolfin/Logger.h>
@@ -35,101 +34,50 @@ Logger::~Logger()
     delete [] buffer1;
 }
 //-----------------------------------------------------------------------------
-void Logger::info(const char* msg)
+void Logger::info(std::string msg)
 {
   if (!state)
     return;
 
   // Write message
-  std::string s(msg);
-  write(0, s);
+  write(0, msg);
 }
 //-----------------------------------------------------------------------------
-void Logger::info(const char* format, va_list aptr)
-{
-  if (!state || 0 > this->debug_level)
-    return;
-
-  vsprintf(buffer0, format, aptr);
-
-  // Write message
-  std::string s(buffer0);
-  write(0, s);
-}
-//-----------------------------------------------------------------------------
-void Logger::info(int debug_level, const char* format, va_list aptr)
+void Logger::info(int debug_level, std::string msg)
 {
   if (!state || debug_level > this->debug_level)
     return;
 
-  vsprintf(buffer0, format, aptr);
-
   // Write message
-  std::string s(buffer0);
-  write(debug_level, s);
+  write(debug_level, msg);
 }
 //-----------------------------------------------------------------------------
-void Logger::debug(const char* file, unsigned long line,
-		   const char* function, const char* format, ...)
+void Logger::debug(std::string msg, std::string location)
 {
-  va_list aptr;
-  va_start(aptr, format);
 
-  vsprintf(buffer0, format, aptr);
-  sprintf(buffer1, "%s:%d: %s()", file, (int) line, function);
+  // Write message
+  std::string s = std::string("Debug: ") + msg + location;
+  write(0, s);
+}
+//-----------------------------------------------------------------------------
+void Logger::warning(std::string msg, std::string location)
+{
+  std::string s = std::string("*** Warning: ") + msg + location;
+  write(0, s);
   
-  va_end(aptr);
-
-  // Write message
-  std::string s = std::string("Debug: ") + std::string(buffer0) + " [at " + std::string(buffer1) + "]";
-  write(0, s);
 }
 //-----------------------------------------------------------------------------
-void Logger::warning(const char* file, unsigned long line,
-		     const char* function, const char* format, ...)
+void Logger::error(std::string msg, std::string location)
 {
-  va_list aptr;
-  va_start(aptr, format);
-
-  vsprintf(buffer0, format, aptr);
-  sprintf(buffer1, "%s:%d: %s()", file, (int) line, function);
-
-  va_end(aptr);
-
-  // Write message
-  std::string s = std::string("*** Warning: ") + std::string(buffer0) + " [at " + std::string(buffer1) + "]";
-  write(0, s);
-}
-//-----------------------------------------------------------------------------
-void Logger::error(const char* file, unsigned long line,
-		   const char* function, const char* format, ...)
-{
-  va_list aptr;
-  va_start(aptr, format);
-
-  vsprintf(buffer0, format, aptr);
-  sprintf(buffer1, "%s:%d: %s()", file, (int) line, function);  
-
-  va_end(aptr);
-
   // Throw exception
-  std::string s = std::string("*** Error: ") + std::string(buffer0) + " [at " + std::string(buffer1) + "]";
+  std::string s = std::string("*** Error: ") + msg + location;
   throw std::runtime_error(s);
 }
 //-----------------------------------------------------------------------------
-void Logger::dassert(const char* file, unsigned long line,
-		     const char* function, const char* format, ...)
+void Logger::dassert(std::string msg, std::string location)
 {
-  va_list aptr;
-  va_start(aptr, format);
-
-  vsprintf(buffer0, format, aptr);
-  sprintf(buffer1, "%s:%d: %s()", file, (int) line, function);
-
-  va_end(aptr);
-
   // Throw exception
-  std::string s = std::string("*** Assertion ") + std::string(buffer0) + " failed [at " + std::string(buffer1) + "]";
+  std::string s = std::string("*** Assertion ") + msg + " failed " + location;
   throw std::runtime_error(s);
 }
 //-----------------------------------------------------------------------------

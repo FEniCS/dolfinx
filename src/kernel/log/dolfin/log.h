@@ -8,12 +8,12 @@
 #define __LOG_H
 
 #include <stdarg.h>
-#include <dolfin/LogManager.h>
 
 // FIXME: Put all parsing of varargs etc in log.cpp and remove all
 // FIXME: varargs, aptr etc from Logger.h and Logger.cpp. This will
 // FIXME: mean that the macros below (dolfin_error) etc must call
 // FIXME: dolfin_error etc in log.h and not Logger directly.
+// Done, I think. Ola
 
 namespace dolfin
 {
@@ -48,30 +48,34 @@ namespace dolfin
   // Switch logging on or off
   void dolfin_log(bool state);
 
+  void debug(const char* file, unsigned long line, const char* function, const char* format, ...);
+  void warning(const char* file, unsigned long line, const char* function, const char* format, ...);
+  void error(const char* file, unsigned long line, const char* function, const char* format, ...);
+  void dassert  (const char* file, unsigned long line, const char* function, const char* format, ...);
 }
 
 // Debug macros (with varying number of arguments)
 //#define dolfin_debug(msg)              do { dolfin_debug(__FILE__, __LINE__, __FUNCTION__, msg); } while (false)
-#define dolfin_debug(msg)              do { dolfin::LogManager::log.debug(__FILE__, __LINE__, __FUNCTION__, msg); } while (false)
-#define dolfin_debug1(msg, a0)         do { dolfin::LogManager::log.debug(__FILE__, __LINE__, __FUNCTION__, msg, a0); } while (false)
-#define dolfin_debug2(msg, a0, a1)     do { dolfin::LogManager::log.debug(__FILE__, __LINE__, __FUNCTION__, msg, a0, a1); } while (false)
-#define dolfin_debug3(msg, a0, a1, a2) do { dolfin::LogManager::log.debug(__FILE__, __LINE__, __FUNCTION__, msg, a0, a1, a2); } while (false)
+#define dolfin_debug(msg)              do { dolfin::debug(__FILE__, __LINE__, __FUNCTION__, msg); } while (false)
+#define dolfin_debug1(msg, a0)         do { dolfin::debug(__FILE__, __LINE__, __FUNCTION__, msg, a0); } while (false)
+#define dolfin_debug2(msg, a0, a1)     do { dolfin::debug(__FILE__, __LINE__, __FUNCTION__, msg, a0, a1); } while (false)
+#define dolfin_debug3(msg, a0, a1, a2) do { dolfin::debug(__FILE__, __LINE__, __FUNCTION__, msg, a0, a1, a2); } while (false)
 
 // Warning macros (with varying number of arguments)
-#define dolfin_warning(msg)              do { dolfin::LogManager::log.warning(__FILE__, __LINE__, __FUNCTION__, msg); } while (false)
-#define dolfin_warning1(msg, a0)         do { dolfin::LogManager::log.warning(__FILE__, __LINE__, __FUNCTION__, msg, a0); } while (false)
-#define dolfin_warning2(msg, a0, a1)     do { dolfin::LogManager::log.warning(__FILE__, __LINE__, __FUNCTION__, msg, a0, a1); } while (false)
-#define dolfin_warning3(msg, a0, a1, a2) do { dolfin::LogManager::log.warning(__FILE__, __LINE__, __FUNCTION__, msg, a0, a1, a2); } while (false)
+#define dolfin_warning(msg)              do { dolfin::warning(__FILE__, __LINE__, __FUNCTION__, msg); } while (false)
+#define dolfin_warning1(msg, a0)         do { dolfin::warning(__FILE__, __LINE__, __FUNCTION__, msg, a0); } while (false)
+#define dolfin_warning2(msg, a0, a1)     do { dolfin::warning(__FILE__, __LINE__, __FUNCTION__, msg, a0, a1); } while (false)
+#define dolfin_warning3(msg, a0, a1, a2) do { dolfin::warning(__FILE__, __LINE__, __FUNCTION__, msg, a0, a1, a2); } while (false)
 
 // Error macros (with varying number of arguments)
-#define dolfin_error(msg)              do { dolfin::LogManager::log.error(__FILE__, __LINE__, __FUNCTION__, msg); } while (false)
-#define dolfin_error1(msg, a0)         do { dolfin::LogManager::log.error(__FILE__, __LINE__, __FUNCTION__, msg, a0); } while (false)
-#define dolfin_error2(msg, a0, a1)     do { dolfin::LogManager::log.error(__FILE__, __LINE__, __FUNCTION__, msg, a0, a1); } while (false)
-#define dolfin_error3(msg, a0, a1, a2) do { dolfin::LogManager::log.error(__FILE__, __LINE__, __FUNCTION__, msg, a0, a1, a2); } while (false)
+#define dolfin_error(msg)              do { dolfin::error(__FILE__, __LINE__, __FUNCTION__, msg); } while (false)
+#define dolfin_error1(msg, a0)         do { dolfin::error(__FILE__, __LINE__, __FUNCTION__, msg, a0); } while (false)
+#define dolfin_error2(msg, a0, a1)     do { dolfin::error(__FILE__, __LINE__, __FUNCTION__, msg, a0, a1); } while (false)
+#define dolfin_error3(msg, a0, a1, a2) do { dolfin::error(__FILE__, __LINE__, __FUNCTION__, msg, a0, a1, a2); } while (false)
 
 // Assertion, only active if DEBUG is defined
 #ifdef DEBUG
-#define dolfin_assert(check) do { if ( !(check) ) dolfin::LogManager::log.dassert(__FILE__, __LINE__, __FUNCTION__, "(" #check ")"); } while (false)
+#define dolfin_assert(check) do { if ( !(check) ) dolfin::dassert(__FILE__, __LINE__, __FUNCTION__, "(" #check ")"); } while (false)
 #else
 #define dolfin_assert(check)
 #endif
