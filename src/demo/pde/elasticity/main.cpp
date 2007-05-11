@@ -119,7 +119,7 @@ int main()
   // Save solution to XML format
   File xml_file("elasticity.xml");
   xml_file << u;
- 
+
   /*
   // Set up post-processing problem to compute strain
   ElasticityStrain::BilinearForm a_strain;

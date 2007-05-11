@@ -87,9 +87,3 @@ void dolfin::dolfin_log(int debug_level)
   LogManager::log.level(debug_level);
 }
 //-----------------------------------------------------------------------------
-void dolfin::dolfin_segfault()
-{
-  dolfin_info("Deliberately raising a segmentation fault (so you can attach a debugger).");
-  raise(SIGSEGV);
-}
-//-----------------------------------------------------------------------------

@@ -10,6 +10,11 @@
 #include <stdarg.h>
 #include <dolfin/LogManager.h>
 
+// FIXME: Put all parsing of varargs etc in log.cpp and remove all
+// FIXME: varargs, aptr etc from Logger.h and Logger.cpp. This will
+// FIXME: mean that the macros below (dolfin_error) etc must call
+// FIXME: dolfin_error etc in log.h and not Logger directly.
+
 namespace dolfin
 {
   
@@ -43,12 +48,10 @@ namespace dolfin
   // Switch logging on or off
   void dolfin_log(bool state);
 
-  // Raise a segmentation fault, useful for debugging
-  void dolfin_segfault();
-
 }
 
 // Debug macros (with varying number of arguments)
+//#define dolfin_debug(msg)              do { dolfin_debug(__FILE__, __LINE__, __FUNCTION__, msg); } while (false)
 #define dolfin_debug(msg)              do { dolfin::LogManager::log.debug(__FILE__, __LINE__, __FUNCTION__, msg); } while (false)
 #define dolfin_debug1(msg, a0)         do { dolfin::LogManager::log.debug(__FILE__, __LINE__, __FUNCTION__, msg, a0); } while (false)
 #define dolfin_debug2(msg, a0, a1)     do { dolfin::LogManager::log.debug(__FILE__, __LINE__, __FUNCTION__, msg, a0, a1); } while (false)

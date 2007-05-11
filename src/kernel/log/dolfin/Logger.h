@@ -12,7 +12,6 @@
 #include <string>
 #include <stdarg.h>
 #include <dolfin/constants.h>
-#include <dolfin/GenericLogger.h>
 
 namespace dolfin
 {
@@ -28,12 +27,16 @@ namespace dolfin
     void info     (const char* format, va_list aptr);
     void info     (int debug_level, const char* format, va_list aptr);
 
+    // void info(std::string msg);
+    // void warning(std::string msg, std::string location);
+    // void error(std::string msg, std::string location);
+    
+
     void debug    (const char* file, unsigned long line, const char* function, const char* format, ...);
     void warning  (const char* file, unsigned long line, const char* function, const char* format, ...);
     void error    (const char* file, unsigned long line, const char* function, const char* format, ...);
     void dassert  (const char* file, unsigned long line, const char* function, const char* format, ...);
     void progress (const char* title, const char* label, real p);
-
 
     void begin();
     void end();
@@ -49,18 +52,14 @@ namespace dolfin
     Destination destination;
 
     // Write message to current output destination
-    void write(std::string msg);
-
-    void init();
-
-    GenericLogger* log;
-
-    char* buffer0;
-    char* buffer1;
+    void write(int debug_level, std::string msg);
 
     bool state;
     int debug_level;
     int indentation_level;
+
+    char* buffer0;
+    char* buffer1;
 
   };
 
