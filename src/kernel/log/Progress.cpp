@@ -1,12 +1,12 @@
-// Copyright (C) 2003-2005 Anders Logg.
+// Copyright (C) 2003-2007 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Thanks to Jim Tilander for many helpful hints.
 //
-// Modifies by Garth N. Wells, 2006.
+// Modified by Garth N. Wells, 2006.
 //
 // First added:  2003-03-14
-// Last changed: 2006-03-27
+// Last changed: 2007-05-11
 
 #include <stdio.h>
 
@@ -39,9 +39,6 @@ Progress::Progress(const char* title, unsigned int n)
 
   stopped = false;
 
-  // Notify that we have created a new progress bar
-  LogManager::log.progress_add(this);
-
   // Write first progress bar
   LogManager::log.progress(_title, _label, p1);
 }
@@ -61,9 +58,6 @@ Progress::Progress(const char* title)
 
   i = 0;
   n = 0;
-
-  // Notify that we have created a new progress bar
-  LogManager::log.progress_add(this);
 }
 //-----------------------------------------------------------------------------
 Progress::~Progress()
@@ -75,9 +69,6 @@ Progress::~Progress()
     LogManager::log.progress(_title, _label, p1);
   }
 
-  // Notify that the progress bar has finished
-  LogManager::log.progress_remove(this);
-  
   if ( _title )
     delete [] _title;
   _title = 0;

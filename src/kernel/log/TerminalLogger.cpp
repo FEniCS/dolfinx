@@ -1,8 +1,8 @@
-// Copyright (C) 2003-2005 Anders Logg.
+// Copyright (C) 2003-2007 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2003-03-13
-// Last changed: 2005
+// Last changed: 2007-05-11
 
 #include <iostream>
 #include <stdio.h>
@@ -17,12 +17,12 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 TerminalLogger::TerminalLogger() : GenericLogger()
 {
-
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 TerminalLogger::~TerminalLogger()
 {
-  
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 void TerminalLogger::info(const char* msg)
@@ -83,31 +83,6 @@ void TerminalLogger::progress(const char* title, const char* label, real p)
   for (int i = n; i < N; i++)
     printf("-");
   printf("| %.1f%%\n", 100.0*p);
-}
-//-----------------------------------------------------------------------------
-void TerminalLogger::update()
-{
-  // FIXME: Maybe we should flush the output?
-}
-//-----------------------------------------------------------------------------
-void TerminalLogger::quit()
-{
-  // FIXME: What should be done here?
-}
-//-----------------------------------------------------------------------------
-bool TerminalLogger::finished()
-{
-  return false;
-}
-//-----------------------------------------------------------------------------
-void TerminalLogger::progress_add(Progress* p)
-{
-  // Do nothing here
-}
-//-----------------------------------------------------------------------------
-void TerminalLogger::progress_remove(Progress *p)
-{
-  // Do nothing here
 }
 //-----------------------------------------------------------------------------
 void TerminalLogger::indent()

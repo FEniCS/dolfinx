@@ -4,7 +4,7 @@
 // Thanks to Jim Tilander for many helpful hints.
 //
 // First added:  2003-03-13
-// Last changed: 2007-05-10
+// Last changed: 2007-05-11
 
 #include <stdarg.h>
 #include <signal.h>
@@ -18,7 +18,17 @@ void dolfin::dolfin_info(const char *msg, ...)
   va_list aptr;
   va_start(aptr, msg);
 
-  LogManager::log.info(msg, aptr);
+  LogManager::log.info(0, msg, aptr);
+
+  va_end(aptr);
+}
+//-----------------------------------------------------------------------------
+void dolfin::dolfin_info(int debug_level, const char *msg, ...)
+{
+  va_list aptr;
+  va_start(aptr, msg);
+
+  LogManager::log.info(debug_level, msg, aptr);
 
   va_end(aptr);
 }
@@ -26,27 +36,6 @@ void dolfin::dolfin_info(const char *msg, ...)
 void dolfin::dolfin_info_aptr(const char *msg, va_list aptr)
 {
   LogManager::log.info(msg, aptr);
-}
-//-----------------------------------------------------------------------------
-void dolfin::dolfin_update()
-{
-  LogManager::log.update();
-}
-//-----------------------------------------------------------------------------
-void dolfin::dolfin_quit()
-{
-  LogManager::log.quit();
-}
-//-----------------------------------------------------------------------------
-bool dolfin::dolfin_finished()
-{
-  return LogManager::log.finished();
-}
-//-----------------------------------------------------------------------------
-void dolfin::dolfin_segfault()
-{
-  dolfin_info("Deliberately raising a segmentation fault (so you can attach a debugger).");
-  raise(SIGSEGV);
 }
 //-----------------------------------------------------------------------------
 void dolfin::dolfin_begin()
@@ -59,7 +48,19 @@ void dolfin::dolfin_begin(const char* msg, ...)
   va_list aptr;
   va_start(aptr, msg);
 
-  LogManager::log.info(msg, aptr);
+  LogManager::log.info(0, msg, aptr);
+
+  va_end(aptr);
+
+  LogManager::log.begin();
+}
+//-----------------------------------------------------------------------------
+void dolfin::dolfin_begin(int debug_level, const char* msg, ...)
+{
+  va_list aptr;
+  va_start(aptr, msg);
+
+  LogManager::log.info(debug_level, msg, aptr);
 
   va_end(aptr);
 
@@ -71,19 +72,7 @@ void dolfin::dolfin_end()
   LogManager::log.end();
 }
 //-----------------------------------------------------------------------------
-void dolfin::dolfin_end(const char* msg, ...)
-{
-  LogManager::log.end();
-
-  va_list aptr;
-  va_start(aptr, msg);
-
-  LogManager::log.info(msg, aptr);
-
-  va_end(aptr);
-}
-//-----------------------------------------------------------------------------
-void dolfin::dolfin_output(const char* destination)
+void dolfin::dolfin_log(const char* destination)
 {
   LogManager::log.init(destination);
 }
@@ -91,5 +80,16 @@ void dolfin::dolfin_output(const char* destination)
 void dolfin::dolfin_log(bool state)
 {
   LogManager::log.active(state);
+}
+//-----------------------------------------------------------------------------
+void dolfin::dolfin_log(int debug_level)
+{
+  LogManager::log.level(debug_level);
+}
+//-----------------------------------------------------------------------------
+void dolfin::dolfin_segfault()
+{
+  dolfin_info("Deliberately raising a segmentation fault (so you can attach a debugger).");
+  raise(SIGSEGV);
 }
 //-----------------------------------------------------------------------------

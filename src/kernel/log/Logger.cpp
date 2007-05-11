@@ -1,16 +1,16 @@
-// Copyright (C) 2003-2005 Anders Logg.
+// Copyright (C) 2003-2007 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2003-03-13
-// Last changed: 2005-12-19
+// Last changed: 2007-05-11
 
-#include <string.h>
-#include <stdio.h>
-#include <stdarg.h>
+#include <string>
 #include <iostream>
 
+#include <stdio.h>
+#include <stdarg.h>
+
 #include <dolfin/constants.h>
-#include <dolfin/log.h>
 #include <dolfin/TerminalLogger.h>
 #include <dolfin/SilentLogger.h>
 #include <dolfin/Logger.h>
@@ -19,29 +19,24 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 Logger::Logger()
+  : destination(terminal), log(0), buffer0(0), buffer1(0), state(true),
+    debug_level(0), indentation_level(0)
 {
-  // Will be initialised when first needed
-  log = 0;
-  
-  buffer = new char[DOLFIN_LINELENGTH];
-  location  = new char[DOLFIN_LINELENGTH];
-
-  state = true;
+  // Initialize buffers
+  buffer0 = new char[DOLFIN_LINELENGTH];
+  buffer1 = new char[DOLFIN_LINELENGTH];
 }
 //-----------------------------------------------------------------------------
 Logger::~Logger()
 {
-  if ( log )
+  if (log)
     delete log;
-  log = 0;
   
-  if ( buffer )
-    delete [] buffer;
-  buffer = 0;
-  
-  if ( location )
-    delete [] location;
-  location = 0;
+  if (buffer0)
+    delete [] buffer0;
+
+  if (buffer1)
+    delete [] buffer1;
 }
 //-----------------------------------------------------------------------------
 void Logger::info(const char* msg)
@@ -50,18 +45,33 @@ void Logger::info(const char* msg)
     return;
 
   init();
+
+  //std::string s(msg);
+  //write(s);
+  
   log->info(msg);
 }
 //-----------------------------------------------------------------------------
 void Logger::info(const char* format, va_list aptr)
 {
-  if ( !state )
+  if (!state || 0 > this->debug_level)
     return;
 
   init();
 
-  vsprintf(buffer, format, aptr);
-  log->info(buffer);
+  vsprintf(buffer0, format, aptr);
+  log->info(buffer0);
+}
+//-----------------------------------------------------------------------------
+void Logger::info(int debug_level, const char* format, va_list aptr)
+{
+  if (!state || debug_level > this->debug_level)
+    return;
+
+  init();
+
+  vsprintf(buffer0, format, aptr);
+  log->info(buffer0);
 }
 //-----------------------------------------------------------------------------
 void Logger::debug(const char* file, unsigned long line,
@@ -69,13 +79,13 @@ void Logger::debug(const char* file, unsigned long line,
 {
   init();
   
-  sprintf(location, "%s:%d: %s()", file, (int) line, function);
+  sprintf(buffer1, "%s:%d: %s()", file, (int) line, function);
   
   va_list aptr;
   va_start(aptr, format);
   
-  vsprintf(buffer, format, aptr);
-  log->debug(buffer, location);
+  vsprintf(buffer0, format, aptr);
+  log->debug(buffer0, buffer1);
   
   va_end(aptr);
 }
@@ -85,13 +95,13 @@ void Logger::warning(const char* file, unsigned long line,
 {
   init();
 
-  sprintf(location, "%s:%d: %s()", file, (int) line, function);
+  sprintf(buffer1, "%s:%d: %s()", file, (int) line, function);
   
   va_list aptr;
   va_start(aptr, format);
   
-  vsprintf(buffer, format, aptr);
-  log->warning(buffer, location);
+  vsprintf(buffer0, format, aptr);
+  log->warning(buffer0, buffer1);
 
   va_end(aptr);
 }
@@ -101,13 +111,13 @@ void Logger::error(const char* file, unsigned long line,
 {
   init();
 
-  sprintf(location, "%s:%d: %s()", file, (int) line, function);
+  sprintf(buffer1, "%s:%d: %s()", file, (int) line, function);
   
   va_list aptr;
   va_start(aptr, format);
   
-  vsprintf(buffer, format, aptr);
-  log->error(buffer, location);
+  vsprintf(buffer0, format, aptr);
+  log->error(buffer0, buffer1);
   
   va_end(aptr);
 }
@@ -117,13 +127,13 @@ void Logger::dassert(const char* file, unsigned long line,
 {
   init();
 
-  sprintf(location, "%s:%d: %s()", file, (int) line, function);
+  sprintf(buffer1, "%s:%d: %s()", file, (int) line, function);
   
   va_list aptr;
   va_start(aptr, format);
   
-  vsprintf(buffer, format, aptr);
-  log->dassert(buffer, location);
+  vsprintf(buffer0, format, aptr);
+  log->dassert(buffer0, buffer1);
   
   va_end(aptr);
 }
@@ -137,54 +147,30 @@ void Logger::progress(const char* title, const char* label, real p)
   log->progress(title, label, p);
 }
 //-----------------------------------------------------------------------------
-void Logger::update()
-{
-  if ( !state )
-    return;
-
-  init();
-  log->update();
-}
-//-----------------------------------------------------------------------------
-void Logger::quit()
-{
-  init();
-  log->quit();
-}
-//-----------------------------------------------------------------------------
-bool Logger::finished()
-{
-  init();
-  return log->finished();
-}
-//-----------------------------------------------------------------------------
-void Logger::progress_add(Progress* p)
-{
-  init();
-  log->progress_add(p);
-}
-//-----------------------------------------------------------------------------
-void Logger::progress_remove (Progress *p)
-{
-  init();
-  log->progress_remove(p);
-}
-//-----------------------------------------------------------------------------
 void Logger::begin()
 {
   init();
   log->begin();
+
+  indentation_level++;
 }
 //-----------------------------------------------------------------------------
 void Logger::end()
 {
   init();
   log->end();
+
+  indentation_level--;
 }
 //-----------------------------------------------------------------------------
 void Logger::active(bool state)
 {
   this->state = state;
+}
+//-----------------------------------------------------------------------------
+void Logger::level(int debug_level)
+{
+  this->debug_level = debug_level;
 }
 //-----------------------------------------------------------------------------
 void Logger::init(const char* destination)
@@ -207,16 +193,37 @@ void Logger::init(const char* destination)
   else
   {
     log = new TerminalLogger();
-    dolfin_warning1("Unknown output destination \"%s\", using plain text.", destination);
+    log->info("Unknown output destination, using plain text.");
   }
 }
 //-----------------------------------------------------------------------------
 void Logger::init()
 {
-  if ( log )
+  if (log)
     return;
 
   // Default is plain text
   init("plain text");
 }
-//-----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+void Logger::write(std::string msg)
+{
+  // Add indentation
+  for (int i = 0; i < indentation_level; i++)
+    msg = "  " + msg;
+  
+  // Choose destination
+  switch (destination)
+  {
+  case terminal:
+    std::cout << msg << std::endl;
+    break;
+  case stream:
+    std::cout << "Destination stream not available. Fix this Ola! :-)" << std::endl;
+    break;
+  default:
+    // Do nothing if destination == silent
+    do {} while (false);
+  }
+}
+//----------------------------------------------------------------------------
