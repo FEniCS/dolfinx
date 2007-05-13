@@ -17,8 +17,8 @@ namespace dolfin
   {
   public:
     
-    Progress(const char* title, unsigned int n);
-    Progress(const char* title);
+    Progress(std::string title, unsigned int n);
+    Progress(std::string title);
     ~Progress();
 
     void setStep(real step);
@@ -31,7 +31,7 @@ namespace dolfin
     void stop();
     
     real value();
-    const char* title();
+    std::string title();
 
   private:
     
@@ -40,7 +40,7 @@ namespace dolfin
     
     void update();
     
-    char* _title;
+    std::string _title;
     
     real p0;
     real p1;

@@ -18,15 +18,13 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Progress::Progress(const char* title, unsigned int n)
+Progress::Progress(std::string title, unsigned int n)
 {
   if (n <= 0)
     dolfin_error("Number of steps for progress session must be positive.");
 
-  _title = new char[DOLFIN_WORDLENGTH];
 
-  sprintf(_title, "%s", title);
-
+  _title = title;
   p0 = 0.0;
   p1 = 0.0;
 
@@ -41,12 +39,10 @@ Progress::Progress(const char* title, unsigned int n)
   LogManager::log.progress(_title, p1);
 }
 //-----------------------------------------------------------------------------
-Progress::Progress(const char* title)
+Progress::Progress(std::string title)
 {
-  _title = new char[DOLFIN_WORDLENGTH];
+  _title = title;
   
-  sprintf(_title, "%s", title);
-
   p0 = 0.0;
   p1 = 0.0;
 
@@ -64,10 +60,6 @@ Progress::~Progress()
     p1 = 1.0;
     LogManager::log.progress(_title, p1);
   }
-
-  if ( _title )
-    delete [] _title;
-  _title = 0;
 }
 //-----------------------------------------------------------------------------
 void Progress::setStep(real step)
@@ -131,7 +123,7 @@ real Progress::value()
   return p1;
 }
 //-----------------------------------------------------------------------------
-const char* Progress::title()
+std::string Progress::title()
 {
   return _title;
 }
