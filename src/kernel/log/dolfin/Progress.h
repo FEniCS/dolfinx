@@ -1,8 +1,8 @@
-// Copyright (C) 2003-2005 Anders Logg and Jim Tilander.
+// Copyright (C) 2003-2007 Anders Logg and Jim Tilander.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2003-03-14
-// Last changed: 2005-12-12
+// Last changed: 2007-05-13
 
 #ifndef __PROGRESS_H
 #define __PROGRESS_H
@@ -27,15 +27,11 @@ namespace dolfin
     void operator=(real p);
     void operator++();
     void operator++(int);
-    
-    void update(unsigned int i,  const char* format, ...);
-    void update(real p, const char* format, ...);
 
     void stop();
     
     real value();
     const char* title();
-    const char* label();
 
   private:
     
@@ -45,7 +41,6 @@ namespace dolfin
     void update();
     
     char* _title;
-    char* _label;
     
     real p0;
     real p1;

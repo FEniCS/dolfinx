@@ -3,8 +3,10 @@
 //
 // Thanks to Jim Tilander for many helpful hints.
 //
+// Modified by Ola Skavhaug, 2007.
+//
 // First added:  2003-03-13
-// Last changed: 2007-05-11
+// Last changed: 2007-05-13
 
 #ifndef __LOGGER_H
 #define __LOGGER_H
@@ -22,22 +24,21 @@ namespace dolfin
     Logger();
     ~Logger();
 
-    void info     (std::string msg);
-    void info     (int debug_level, std::string msg);
+    void info     (std::string msg, int debug_level = 0);
 
-    void warning(std::string msg, std::string location);
-    void error(std::string msg, std::string location);
-    void debug(std::string msg, std::string location);
+    void warning  (std::string msg, std::string location);
+    void error    (std::string msg, std::string location);
+    void debug    (std::string msg, std::string location);
 
-    void dassert(std::string msg, std::string location);
-    void progress (const char* title, const char* label, real p);
+    void dassert  (std::string msg, std::string location);
+    void progress (std::string title, real p);
 
     void begin();
     void end();
 
-    void active(bool state);
-    void init(const char* destination);
-    void level(int debug_level);
+    void active   (bool state);
+    void init     (std::string destination);
+    void level    (int debug_level);
 
   private:
 
@@ -51,9 +52,6 @@ namespace dolfin
     bool state;
     int debug_level;
     int indentation_level;
-
-    char* buffer0;
-    char* buffer1;
 
   };
 

@@ -1,14 +1,16 @@
 // Copyright (C) 2003-2007 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Ola Skavhaug, 2007.
+//
 // First added:  2003-03-13
-// Last changed: 2007-05-11
+// Last changed: 2007-05-13
 
 #include <string>
 #include <iostream>
+#include <sstream>
+#include <iomanip>
 #include <stdexcept>
-
-#include <stdio.h>
 
 #include <dolfin/constants.h>
 #include <dolfin/Logger.h>
@@ -17,33 +19,17 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 Logger::Logger()
-  : destination(terminal), state(true), debug_level(0), indentation_level(0),
-    buffer0(0), buffer1(0)
+  : destination(terminal), state(true), debug_level(0), indentation_level(0)
 {
-  // Initialize buffers
-  buffer0 = new char[DOLFIN_LINELENGTH];
-  buffer1 = new char[DOLFIN_LINELENGTH];
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 Logger::~Logger()
 {
-  if (buffer0)
-    delete [] buffer0;
-
-  if (buffer1)
-    delete [] buffer1;
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
-void Logger::info(std::string msg)
-{
-  if (!state)
-    return;
-
-  // Write message
-  write(0, msg);
-}
-//-----------------------------------------------------------------------------
-void Logger::info(int debug_level, std::string msg)
+void Logger::info(std::string msg, int debug_level)
 {
   if (!state || debug_level > this->debug_level)
     return;
@@ -54,7 +40,6 @@ void Logger::info(int debug_level, std::string msg)
 //-----------------------------------------------------------------------------
 void Logger::debug(std::string msg, std::string location)
 {
-
   // Write message
   std::string s = std::string("Debug: ") + msg + location;
   write(0, s);
@@ -62,9 +47,9 @@ void Logger::debug(std::string msg, std::string location)
 //-----------------------------------------------------------------------------
 void Logger::warning(std::string msg, std::string location)
 {
+  // Write message
   std::string s = std::string("*** Warning: ") + msg + location;
   write(0, s);
-  
 }
 //-----------------------------------------------------------------------------
 void Logger::error(std::string msg, std::string location)
@@ -81,17 +66,17 @@ void Logger::dassert(std::string msg, std::string location)
   throw std::runtime_error(s);
 }
 //-----------------------------------------------------------------------------
-void Logger::progress(const char* title, const char* label, real p)
+void Logger::progress(std::string title, real p)
 {
-  if ( !state )
+  if (!state)
     return;
 
   int N = DOLFIN_TERM_WIDTH - 15;
   int n = static_cast<int>(p*static_cast<real>(N));
   
   // Print the title
-  std::string s = "| " + std::string(title);
-  for (uint i = 0; i < (N - std::string(title).size() - 1); i++)
+  std::string s = "| " + title;
+  for (uint i = 0; i < (N - title.size() - 1); i++)
     s += " ";
   s += "|";
   write(0, s);
@@ -108,8 +93,11 @@ void Logger::progress(const char* title, const char* label, real p)
   for (int i = n; i < N; i++)
     s += "-";
   s += "| ";
-  sprintf(buffer0, "%.1f%%", 100.0*p);
-  s += std::string(buffer0);
+  std::stringstream line;
+  line << std::setiosflags(std::ios::fixed);
+  line << std::setprecision(1);
+  line << 100.0*p;
+  s += line.str() + "%";
   write(0, s);
 }
 //-----------------------------------------------------------------------------
@@ -133,12 +121,12 @@ void Logger::level(int debug_level)
   this->debug_level = debug_level;
 }
 //-----------------------------------------------------------------------------
-void Logger::init(const char* destination)
+void Logger::init(std::string destination)
 {
   // Choose output destination
-  if ( strcmp(destination, "terminal") == 0 )
+  if (destination == "terminal")
     this->destination = terminal;
-  else if ( strcmp(destination, "silent") == 0 )
+  else if (destination == "silent")
     this->destination = silent;
   else
   {

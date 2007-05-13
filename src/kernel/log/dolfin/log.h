@@ -1,19 +1,16 @@
 // Copyright (C) 2003-2007 Anders Logg and Jim Tilander.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Ola Skavhaug, 2007.
+// 
 // First added:  2003-03-13
 // Last changed: 2007-05-11
+
 
 #ifndef __LOG_H
 #define __LOG_H
 
 #include <stdarg.h>
-
-// FIXME: Put all parsing of varargs etc in log.cpp and remove all
-// FIXME: varargs, aptr etc from Logger.h and Logger.cpp. This will
-// FIXME: mean that the macros below (dolfin_error) etc must call
-// FIXME: dolfin_error etc in log.h and not Logger directly.
-// Done, I think. Ola
 
 namespace dolfin
 {
@@ -52,6 +49,7 @@ namespace dolfin
   void warning(const char* file, unsigned long line, const char* function, const char* format, ...);
   void error(const char* file, unsigned long line, const char* function, const char* format, ...);
   void dassert  (const char* file, unsigned long line, const char* function, const char* format, ...);
+
 }
 
 // Debug macros (with varying number of arguments)

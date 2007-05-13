@@ -6,7 +6,7 @@
 // Modified by Garth N. Wells, 2006.
 //
 // First added:  2003-03-14
-// Last changed: 2007-05-11
+// Last changed: 2007-05-13
 
 #include <stdio.h>
 
@@ -20,14 +20,12 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 Progress::Progress(const char* title, unsigned int n)
 {
-  if ( n <= 0 )
+  if (n <= 0)
     dolfin_error("Number of steps for progress session must be positive.");
 
   _title = new char[DOLFIN_WORDLENGTH];
-  _label = new char[DOLFIN_WORDLENGTH];
 
   sprintf(_title, "%s", title);
-  sprintf(_label, "%s", "");
 
   p0 = 0.0;
   p1 = 0.0;
@@ -40,16 +38,14 @@ Progress::Progress(const char* title, unsigned int n)
   stopped = false;
 
   // Write first progress bar
-  LogManager::log.progress(_title, _label, p1);
+  LogManager::log.progress(_title, p1);
 }
 //-----------------------------------------------------------------------------
 Progress::Progress(const char* title)
 {
   _title = new char[DOLFIN_WORDLENGTH];
-  _label = new char[DOLFIN_WORDLENGTH];
   
   sprintf(_title, "%s", title);
-  sprintf(_label, "%s", "");
 
   p0 = 0.0;
   p1 = 0.0;
@@ -66,16 +62,12 @@ Progress::~Progress()
   if ( p1 != 1.0 && !stopped )
   {
     p1 = 1.0;
-    LogManager::log.progress(_title, _label, p1);
+    LogManager::log.progress(_title, p1);
   }
 
   if ( _title )
     delete [] _title;
   _title = 0;
-
-  if ( _label )
-    delete [] _label;
-  _label = 0;
 }
 //-----------------------------------------------------------------------------
 void Progress::setStep(real step)
@@ -129,34 +121,6 @@ void Progress::operator++(int)
   update();
 }
 //-----------------------------------------------------------------------------
-void Progress::update(unsigned int i, const char* format, ...)
-{
-  if ( n == 0 )
-    dolfin_error("Cannot specify step number for progress session with unknown number of steps.");
-
-  va_list aptr;
-  va_start(aptr, format);
-  vsprintf(_label, format, aptr);
-  va_end(aptr);
-
-  p1 = checkBounds(i);
-  update();
-}
-//-----------------------------------------------------------------------------
-void Progress::update(real p, const char* format, ...)
-{
-  if ( n != 0 )
-    dolfin_error("Cannot specify value for progress session with given number of steps.");
-  
-  va_list aptr;
-  va_start(aptr, format);
-  vsprintf(_label, format, aptr);
-  va_end(aptr);
-  
-  p1 = checkBounds(p);
-  update();
-}
-//-----------------------------------------------------------------------------
 void Progress::stop()
 {
   stopped = true;
@@ -170,11 +134,6 @@ real Progress::value()
 const char* Progress::title()
 {
   return _title;
-}
-//-----------------------------------------------------------------------------
-const char* Progress::label()
-{
-  return _label;
 }
 //-----------------------------------------------------------------------------
 real Progress::checkBounds(unsigned int i)
@@ -199,7 +158,7 @@ void Progress::update()
   if ( (p1 - p0) < progress_step && (p1 != 1.0 || p1 == p0) )
     return;
 
-  LogManager::log.progress(_title, _label, p1);
+  LogManager::log.progress(_title, p1);
   p0 = p1;
 }
 //-----------------------------------------------------------------------------

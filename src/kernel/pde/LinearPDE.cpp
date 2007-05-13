@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2006
 //
 // First added:  2004
-// Last changed: 2007-04-27
+// Last changed: 2007-05-13
 
 #include <dolfin/Matrix.h>
 #include <dolfin/BoundaryCondition.h>
@@ -77,5 +77,7 @@ void LinearPDE::solve(Function& u)
 
   // Set function data
   u.init(mesh, x, a, 1);
+
+  dolfin_end();
 }
 //-----------------------------------------------------------------------------

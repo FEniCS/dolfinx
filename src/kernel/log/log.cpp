@@ -3,6 +3,8 @@
 //
 // Thanks to Jim Tilander for many helpful hints.
 //
+// Modified by Ola Skavhaug, 2007.
+//
 // First added:  2003-03-13
 // Last changed: 2007-05-11
 
@@ -31,7 +33,7 @@ void dolfin::dolfin_info(int debug_level, const char *msg, ...)
   va_start(aptr, msg);
   vsprintf(buffer, msg, aptr);
   va_end(aptr);
-  LogManager::log.info(debug_level, std::string(buffer));
+  LogManager::log.info(std::string(buffer), debug_level);
 }
 //-----------------------------------------------------------------------------
 void dolfin::dolfin_info_aptr(const char *msg, va_list aptr)
@@ -54,7 +56,7 @@ void dolfin::dolfin_begin(const char* msg, ...)
   vsprintf(buffer, msg, aptr);
   va_end(aptr);
 
-  LogManager::log.info(0, std::string(buffer));
+  LogManager::log.info(std::string(buffer));
   LogManager::log.begin();
 }
 //-----------------------------------------------------------------------------
@@ -66,7 +68,7 @@ void dolfin::dolfin_begin(int debug_level, const char* msg, ...)
   vsprintf(buffer, msg, aptr);
   va_end(aptr);
 
-  LogManager::log.info(debug_level, std::string(buffer));
+  LogManager::log.info(std::string(buffer), debug_level);
   LogManager::log.begin();
 }
 //-----------------------------------------------------------------------------
