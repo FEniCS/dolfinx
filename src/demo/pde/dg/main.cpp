@@ -22,7 +22,6 @@
 
 #include <dolfin.h>
 #include "Poisson.h"
-#include "Projection.h"
 
 using namespace dolfin;
 
