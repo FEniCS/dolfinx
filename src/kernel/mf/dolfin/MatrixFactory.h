@@ -1,4 +1,4 @@
-// Copyright (C) 2006 Anders Logg.
+// Copyright (C) 2006-2007 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-08-21
@@ -18,7 +18,9 @@ namespace dolfin
 
   /// This class provides functionality for computing a set of
   /// standard finite element matrices, such as the mass matrix
-  /// and the stiffness matrix.
+  /// and the stiffness matrix, with piecewise linear elements.
+  /// For other matrices (forms) and elements, forms must be
+  /// defined in the FFC form language and assembled.
 
   class MatrixFactory
   {
@@ -33,7 +35,7 @@ namespace dolfin
     /// Compute convection matrix with constant velocity c on a given mesh
     static void computeConvectionMatrix(GenericMatrix& A, Mesh& mesh,
 					real cx = 1.0, real cy = 0.0, real cz = 0.0);
-
+    
     /// Construct load vector with constant load c on a given mesh
     static void computeLoadVector(GenericVector& x, Mesh& mesh,  real c = 1.0);
 

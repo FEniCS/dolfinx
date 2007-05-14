@@ -10,6 +10,6 @@ element = FiniteElement("Lagrange", "tetrahedron", 1)
 
 v = TestFunction(element)
 U = TrialFunction(element)
-c = Constant()
+c = Constant("tetrahedron")
 
 a = c*dot(grad(v), grad(U))*dx

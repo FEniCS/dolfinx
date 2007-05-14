@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2007.
 //
 // First added:  2007-01-17
-// Last changed: 2007-04-30
+// Last changed: 2007-05-14
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Cell.h>
@@ -54,7 +54,7 @@ void DofMaps::update(const ufc::form& form, Mesh& mesh)
     map_iterator it = dof_map_cache.find(ufc_dof_map->signature());
     if ( it == dof_map_cache.end() )
     {
-      cout << "Creating dof map (not in cache): " << ufc_dof_map->signature() << endl;
+      message(2, "Creating dof map (not in cache): %s", ufc_dof_map->signature());
 
       // Create DOLFIN dof map
       DofMap* dolfin_dof_map = new DofMap(*ufc_dof_map, mesh);
@@ -69,7 +69,7 @@ void DofMaps::update(const ufc::form& form, Mesh& mesh)
     }
     else
     {
-      cout << "Reusing dof map (already in cache): " << ufc_dof_map->signature() << endl;
+      message(2, "Reusing dof map (already in cache): %s", ufc_dof_map->signature());
       
       // Set dof map for argument i
       dof_maps[i] = it->second.second;

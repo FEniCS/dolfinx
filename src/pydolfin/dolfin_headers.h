@@ -10,6 +10,7 @@
 // DOLFIN headers included from parameter
 %include "dolfin/Parametrized.h"
 %include "dolfin/Parameter.h"
+%include "dolfin/parameters.h"
 
 // DOLFIN headers included from log
 %include "dolfin/log.h"
@@ -118,6 +119,9 @@
 %include "dolfin/BoundaryMesh.h"
 %include "dolfin/UnitCube.h"
 %include "dolfin/UnitSquare.h"
+
+// DOLFIN headers included from mf
+%include "dolfin/MatrixFactory.h"
 
 // DOLFIN headers included from nls
 %include "dolfin/NewtonSolver.h"

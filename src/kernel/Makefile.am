@@ -9,6 +9,7 @@ SUBDIRS = common \
           math \
           main \
           mesh \
+          mf \
           nls \
           ode \
           pde \

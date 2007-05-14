@@ -337,7 +337,7 @@ else
 fi
 
 # List of DOLFIN kernel libraries
-DOLFIN_KERNEL="common elements fem function graph io la main math mesh nls ode pde quadrature parameter log plot"
+DOLFIN_KERNEL="common elements fem function graph io la main math mesh mf nls ode pde quadrature parameter log plot"
 
 # Generate include path for external libraries
 EXTERNAL_CFLAGS="$PETSC_CFLAGS $SLEPC_CFLAGS $BOOST_CPPFLAGS $MPI_CFLAGS $XML_CPPFLAGS $UMFPACK_CFLAGS $GLIB_CFLAGS $GTS_CFLAGS $UFC_CFLAGS"
@@ -422,6 +422,8 @@ AC_OUTPUT( Makefile \
            src/kernel/math/dolfin/Makefile \
            src/kernel/mesh/Makefile \
            src/kernel/mesh/dolfin/Makefile \
+           src/kernel/mf/Makefile \
+           src/kernel/mf/dolfin/Makefile \
            src/kernel/nls/Makefile \
            src/kernel/nls/dolfin/Makefile \
            src/kernel/ode/Makefile \

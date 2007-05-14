@@ -10,7 +10,7 @@ element = FiniteElement("Lagrange", "triangle", 1)
 
 v  = TestFunction(element)
 U  = TrialFunction(element)
-cx = Constant()
-cy = Constant()
+cx = Constant("triangle")
+cy = Constant("triangle")
 
 a = v*(cx*U.dx(0) + cy*U.dx(1))*dx

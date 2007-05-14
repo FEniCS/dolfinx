@@ -32,7 +32,7 @@
       break;
       
     default:
-      dolfin_error("Unknown type for parameter.");
+      error("Unknown type for parameter.");
     }
   }
 }

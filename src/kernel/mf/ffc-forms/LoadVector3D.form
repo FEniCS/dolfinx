@@ -9,6 +9,6 @@
 element = FiniteElement("Lagrange", "tetrahedron", 1)
 
 v = TestFunction(element)
-c = Constant()
+c = Constant("tetrahedron")
 
 L = c*v*dx

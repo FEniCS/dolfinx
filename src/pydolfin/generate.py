@@ -11,7 +11,8 @@ import os
 import re
 
 # List of headers to exclude (add more here)
-excludes = ["plot.h", "ParameterSystem.h", "ParameterList.h"]
+excludes = ["plot.h", "ParameterSystem.h", "ParameterList.h", \
+            "ConvectionMatrix.h", "MassMatrix.h", "StiffnessMatrix.h", "LoadVector.h"]
 
 # Name of SWIG interface file to be generated
 interface_file = "dolfin_headers.h"
