@@ -7,7 +7,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <dolfin/dolfin_log.h>
+#include <dolfin/log.h>
+#include <dolfin/parameters.h>
 #include <dolfin/Function.h>
 #include <dolfin/Mesh.h>
 #include <dolfin/File.h>
@@ -29,10 +30,10 @@ namespace dolfin
     
     // Save data to temporary file
     std::string data_name = std::string(tmpnam(0)) + ".xml";
-    log(false);
+    set("output destination", "silent");
     File file(data_name);
     file << t;
-    log(true);
+    set("output destination", "terminal");
     
     // Write script file
     fprintf(script_file, "try:\n");
@@ -63,11 +64,11 @@ namespace dolfin
     
     // Save data to temporary file
     std::string data_name = std::string(tmpnam(0)) + ".xml";
-    log(false);
+    set("output destination", "silent");
     File file(data_name);
     file << f.mesh();
     file << f;
-    log(true);
+    set("output destination", "terminal");
     
     // Write script file
     fprintf(script_file, "try:\n");

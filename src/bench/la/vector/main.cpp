@@ -18,7 +18,7 @@ struct VectorAssign
 {
   static tuple<real, real> benchVectorAssign(const dolfin::uint N, const dolfin::uint n)
   {
-    dolfin_log(false);
+    set("output destination", "silent");
 
     tuple<real, real> timing;
     Vec x(N);
@@ -64,7 +64,7 @@ int main()
 #endif
 
   // Output assignment timings
-  dolfin_log(true);
+  set("output destination", "terminal");
   begin("Assign values to a vector of length N elementwise n times");
 #ifdef HAVE_PETSC_H  
   cout << "PETScVector (N="<< N[0] << ", n=" << n[0] << "): " << get<0>(petsc_timing[0]) << endl;

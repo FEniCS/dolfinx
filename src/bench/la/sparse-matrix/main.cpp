@@ -21,7 +21,7 @@ struct MatrixAssemble
   //---------------------------------------------------------------------------
   static real assemble(BilinearForm& a, const dolfin::uint N)
   {
-    dolfin_log(false);  
+    set("output destination", "silent");  
     UnitSquare mesh(N, N);
     Mat A;
   
@@ -32,7 +32,7 @@ struct MatrixAssemble
   //---------------------------------------------------------------------------
   static real assemble(BilinearForm& a, Mat& A, const dolfin::uint N)
   {
-    dolfin_log(false);  
+    set("output destination", "silent");  
     UnitSquare mesh(N, N);
 
     tic();
@@ -42,7 +42,7 @@ struct MatrixAssemble
   //---------------------------------------------------------------------------
   static tuple<real, real> assemble(const dolfin::uint N)
   {
-    dolfin_log(false);
+    set("output destination", "silent");
     tuple<real, real> timing;
     Mat A;
     A.init(2*N, 2*N, 6);
@@ -71,7 +71,7 @@ struct MatrixAssemble
   //---------------------------------------------------------------------------
   static real vector_multiply(const dolfin::uint N, const dolfin::uint n)
   {
-    dolfin_log(false);
+    set("output destination", "silent");
     VectorPoisson::BilinearForm a;
     Mat A;
     Vec x, y;
@@ -102,14 +102,14 @@ void AssemblePoissonMatrix()
   for(dolfin::uint i =0; i < n; ++i)
   {
     time = MatrixAssemble< PETScMatrix >::assemble(a, N[i]);
-    dolfin_log(true);
+    set("output destination", "terminal");
     cout << "PETScMatrix       (N=" << N[i] << "): " << time << endl;
   }
 #endif
   for(dolfin::uint i =0; i < n; ++i)
   {
     time = MatrixAssemble< uBlasMatrix<ublas_sparse_matrix> >::assemble(a, N[i]);
-    dolfin_log(true);
+    set("output destination", "terminal");
     cout << "uBlasSparseMatrix (N=" << N[i] << "): " << time << endl;
   }
   end();
@@ -119,14 +119,14 @@ void AssemblePoissonMatrix()
   for(dolfin::uint i =0; i < n; ++i)
   {
     time = MatrixAssemble< PETScMatrix >::assemble(a_vector, N[i]);
-    dolfin_log(true);
+    set("output destination", "terminal");
     cout << "PETScMatrix       (N=" << N[i] << "): " << time << endl;
   }
 #endif
   for(dolfin::uint i =0; i < n; ++i)
   {
     time = MatrixAssemble< uBlasMatrix<ublas_sparse_matrix> >::assemble(a_vector, N[i]);
-    dolfin_log(true);
+    set("output destination", "terminal");
     cout << "uBlasSparseMatrix (N=" << N[i] << "): " << time << endl;
   }
   end();
@@ -138,16 +138,16 @@ void AssembleSparseMatrices()
   const dolfin::uint N = 500000;
   tuple<real, real> timing;
 
-  dolfin_log(true);
+  set("output destination", "terminal");
   begin("Assemble a sparse matrix in quasi-random order (size = 2N x 2N)" );
 #ifdef HAVE_PETSC_H  
   timing = MatrixAssemble< PETScMatrix >::assemble(N);
-  dolfin_log(true);
+  set("output destination", "terminal");
   cout << "PETScMatrix insert         (N=" << N << "): " << get<0>(timing) << endl;
   cout << "PETScMatrix finalise       (N=" << N << "): " << get<1>(timing) << endl;
 #endif
   timing = MatrixAssemble< uBlasMatrix<ublas_sparse_matrix> >::assemble(N);
-  dolfin_log(true);
+  set("output destination", "terminal");
   cout << "uBlasSparseMatrix insert   (N=" << N << "): " << get<0>(timing) << endl;
   cout << "uBlasSparseMatrix finalise (N=" << N << "): " << get<01>(timing) << endl;
         
@@ -161,15 +161,15 @@ void MatrixVectorMultiply()
   const dolfin::uint N = 200;
   real time;
 
-  dolfin_log(true);
+  set("output destination", "terminal");
   begin("Sparse matrix-vector multiplication (size N x N, repeated n times)");
 #ifdef HAVE_PETSC_H 
   time = MatrixAssemble< PETScMatrix, PETScVector >::vector_multiply(N, n);
-  dolfin_log(true);
+  set("output destination", "terminal");
   cout << "PETScMatrix: (N=" << N << ", n=" << n << "): " << time << endl;
 #endif
   time = MatrixAssemble< uBlasMatrix<ublas_sparse_matrix>, uBlasVector >::vector_multiply(N, n);
-  dolfin_log(true);
+  set("output destination", "terminal");
   cout << "uBlasMatrix: (N=" << N << ", n=" << n << "): " << time << endl;
 
   end();
@@ -178,7 +178,7 @@ void MatrixVectorMultiply()
 int main()
 {
   begin("Sparse matrix benchmark timings");
-  dolfin_log(false);
+  set("output destination", "silent");
 
   // Assembly of a sparse matrix
   AssembleSparseMatrices();  

@@ -18,12 +18,12 @@ double benchCurrent(BilinearForm& a, Mesh& mesh)
 
   Matrix A;
   
-  dolfin_log(false);
+  set("output destination", "silent");
   tic();
   for (unsigned int i = 0; i < num_repetitions; i++)
     FEM::assemble(a, A, mesh);
   double t = toc();
-  dolfin_log(true);
+  set("output destination", "terminal");
   
   //cout << A << endl;
   //A.disp();
@@ -37,12 +37,12 @@ double benchOld(BilinearForm& a, Mesh& mesh)
 
   Matrix A;
   
-  dolfin_log(false);
+  set("output destination", "silent");
   tic();
   for (unsigned int i = 0; i < num_repetitions; i++)
     FEM::assembleOld(a, A, mesh);
   double t = toc();
-  dolfin_log(true);
+  set("output destination", "terminal");
   
   //cout << A << endl;
   //A.disp();
@@ -56,12 +56,12 @@ double benchSimple(BilinearForm& a, Mesh& mesh)
 
   std::vector<std::map<int, double> > A;
   
-  dolfin_log(false);
+  set("output destination", "silent");
   tic();
   for (unsigned int i = 0; i < num_repetitions; i++)
     FEM::assembleSimple(a, A, mesh);
   double t = toc();
-  dolfin_log(true);
+  set("output destination", "terminal");
   
   //for (unsigned int i = 0; i < A.size(); i++)
   //{

@@ -60,13 +60,13 @@ int main()
 
   for (int q = 1; q <= 5; q++)
   {
-    dolfin_log(false);
+    set("output destination", "silent");
     set("ODE method", "cg");
     set("ODE order", q);
 
     Harmonic ode;
     ode.solve();
-    dolfin_log(true);
+    set("output destination", "terminal");
 
     message("cG(%d): e = %.3e", q, ode.error());
   }
@@ -75,13 +75,13 @@ int main()
 
   for (int q = 0; q <= 5; q++)
   {
-    dolfin_log(false);
+    set("output destination", "silent");
     set("ODE method", "dg");
     set("ODE order", q);
 
     Harmonic ode;
     ode.solve();
-    dolfin_log(true);
+    set("output destination", "terminal");
 
     message("dG(%d): e = %.3e", q, ode.error());
   }

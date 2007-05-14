@@ -61,7 +61,7 @@ dolfin::uint NewtonSolver::solve(NonlinearProblem& nonlinear_problem, Vector& x)
   begin("Starting Newton solve.");
 
   // Compute F(u) and J
-  log(false);
+  set("output destination", "silent");
   nonlinear_problem.form(*A, b, x);
 
   uint krylov_iterations = 0;
@@ -72,10 +72,10 @@ dolfin::uint NewtonSolver::solve(NonlinearProblem& nonlinear_problem, Vector& x)
   while( !newton_converged && newton_iteration < maxit )
   {
 
-      log(false);
+      set("output destination", "silent");
       // Perform linear solve and update total number of Krylov iterations
       krylov_iterations += solver->solve(*A, dx, b);
-      log(true);
+      set("output destination", "terminal");
 
       // Compute initial residual
       if(newton_iteration == 0)
@@ -86,12 +86,12 @@ dolfin::uint NewtonSolver::solve(NonlinearProblem& nonlinear_problem, Vector& x)
 
       ++newton_iteration;
 
-      log(false);
+      set("output destination", "silent");
       //FIXME: this step is not needed if residual is based on dx and this has converged.
       // Compute F(u) and J
       nonlinear_problem.form(*A, b, x);
 
-      log(true);
+      set("output destination", "terminal");
 
       // Test for convergence 
       newton_converged = converged(b, dx, nonlinear_problem);

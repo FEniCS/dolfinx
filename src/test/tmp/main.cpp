@@ -330,9 +330,9 @@ void testuBlasSparseMatrix()
   PETScVector xs;
 
   // Assemble and solve using PETSc
-  dolfin_log(false);
+  set("output destination", "silent");
   FEM::assemble(a, L, As, bs, mesh, bc);
-  dolfin_log(true);
+  set("output destination", "terminal");
 
 //  PETScKrylovSolver solver(PETScKrylovSolver::bicgstab);
   PETScKrylovSolver solver(gmres);
@@ -344,10 +344,10 @@ void testuBlasSparseMatrix()
 
 #endif
 
-  dolfin_log(false);
+  set("output destination", "silent");
   tic();
   FEM::assemble(a, L, A, b, mesh, bc);
-  dolfin_log(true);
+  set("output destination", "terminal");
   cout << "uBlas assembly time = " << toc() << endl;  
 
   //uBlasKrylovSolver ublas_solver(uBlasKrylovSolver::bicgstab);
@@ -373,21 +373,21 @@ void testuBlasSparseMatrix()
 
   // Assemble Ad
   uBlasDenseMatrix Ad;
-  dolfin_log(false);
+  set("output destination", "silent");
   tic();
   FEM::assemble(a, L, Ad, b, mesh, bc);
   uBlasVector xd(Ad.size(0));
-  dolfin_log(true);
+  set("output destination", "terminal");
 
   cout << "Testing direct solve " << endl;
   const dolfin::uint repeat = 50000;
 
   uBlasLUSolver lu;
   tic();
-  dolfin_log(false);
+  set("output destination", "silent");
   for(dolfin::uint i=0; i< repeat; ++i)
     lu.solve(A, xd, b);
-  dolfin_log(true);
+  set("output destination", "terminal");
   cout << "test umfpack " << xd.norm() << endl;
   
   real t_umfpack = toc();
@@ -409,7 +409,7 @@ void benchOldMesh()
   int num_refinements = 8;
   int num_iterations = 100;
 
-  dolfin_log(false);
+  set("output destination", "silent");
 
   tic();
   for (int i = 0; i < num_reads; i++)
@@ -436,7 +436,7 @@ void benchOldMesh()
   cout << "sum = " << sum << endl;
   real t2 = toc();
 
-  dolfin_log(true);
+  set("output destination", "terminal");
 
   cout << mesh << endl;
 
@@ -454,7 +454,7 @@ void benchNewMesh()
   int num_refinements = 12;
   int num_iterations = 100;
 
-  dolfin_log(false);
+  set("output destination", "silent");
 
   tic();
   for (int i = 0; i < num_reads; i++)
@@ -481,7 +481,7 @@ void benchNewMesh()
   cout << "sum = " << sum << endl;
   real t2 = toc();
 
-  dolfin_log(true);
+  set("output destination", "terminal");
 
   cout << mesh << endl;
 
