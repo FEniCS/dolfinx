@@ -72,6 +72,5 @@ CPPUNIT_TEST_SUITE_REGISTRATION(MeshRefinement);
 
 int main()
 {
-  DOLFIN_TEST
-  return 0;
+  DOLFIN_TEST;
 }

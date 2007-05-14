@@ -7,7 +7,7 @@
 #ifndef __PROGRESS_H
 #define __PROGRESS_H
 
-#include <stdarg.h>
+#include <string>
 #include <dolfin/constants.h>
 
 namespace dolfin

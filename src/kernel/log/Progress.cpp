@@ -8,8 +8,6 @@
 // First added:  2003-03-14
 // Last changed: 2007-05-13
 
-#include <stdio.h>
-
 #include <dolfin/utils.h>
 #include <dolfin/log.h>
 #include <dolfin/LogManager.h>

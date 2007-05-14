@@ -22,4 +22,5 @@ CppUnit::TestRunner runner; \
 runner.addTest(CppUnit::TestFactoryRegistry::getRegistry().makeTest()); \
 runner.run(result); \
 CppUnit::CompilerOutputter outputter(&collected_results, std::cerr); \
-outputter.write ();
+outputter.write (); \
+return collected_results.wasSuccessful () ? 0 : 1;
