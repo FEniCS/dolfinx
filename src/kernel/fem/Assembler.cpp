@@ -36,14 +36,57 @@ Assembler::~Assembler()
 //-----------------------------------------------------------------------------
 void Assembler::assemble(GenericTensor& A, const Form& form, Mesh& mesh)
 {
-  // Extract form and coefficients
-  assemble(A, form.form(), mesh, form.coefficients());
+  assemble(A, form.form(), mesh, form.coefficients(), 0, 0, 0);
+}
+//-----------------------------------------------------------------------------
+void Assembler::assemble(GenericTensor& A, const Form& form, Mesh& mesh,
+                         const SubDomain& sub_domain)
+{
+  error("Not implemented");
+}
+//-----------------------------------------------------------------------------
+void Assembler::assemble(GenericTensor& A, const Form& form, Mesh& mesh, 
+                         const MeshFunction<uint>& cell_domains,
+                         const MeshFunction<uint>& exterior_facet_domains,
+                         const MeshFunction<uint>& interior_facet_domains)
+{
+  error("Not implemented");
+}
+//-----------------------------------------------------------------------------
+dolfin::real Assembler::assemble(const Form& form, Mesh& mesh)
+{
+  Scalar value;
+  assemble(value, form, mesh);
+  return value;
+}
+//-----------------------------------------------------------------------------
+dolfin::real Assembler::assemble(const Form& form, Mesh& mesh,
+                                 const SubDomain& sub_domain)
+{
+  Scalar value;
+  assemble(value, form, mesh, sub_domain);
+  return value;
+}
+//-----------------------------------------------------------------------------
+dolfin::real Assembler::assemble(const Form& form, Mesh& mesh,
+                                 const MeshFunction<uint>& cell_domains,
+                                 const MeshFunction<uint>& exterior_facet_domains,
+                                 const MeshFunction<uint>& interior_facet_domains)
+{
+  Scalar value;
+  assemble(value, form, mesh,
+           cell_domains, exterior_facet_domains, interior_facet_domains);
+  return value;
 }
 //-----------------------------------------------------------------------------
 void Assembler::assemble(GenericTensor& A, const ufc::form& form, Mesh& mesh,
-                         Array<Function*> coefficients)
+                         Array<Function*> coefficients,
+                         const MeshFunction<uint>* cell_domains,
+                         const MeshFunction<uint>* exterior_facet_domains,
+                         const MeshFunction<uint>* interior_facet_domains)
 {
-  cout << "Assembling form " << form.signature() << endl;
+  message("Assembling rank %d form.", form.rank());
+  message(1, "Form: %s", form.signature());
 
   // Check arguments
   check(form, mesh, coefficients);
@@ -71,13 +114,6 @@ void Assembler::assemble(GenericTensor& A, const ufc::form& form, Mesh& mesh,
 
   // Finalise assembly of global tensor
   A.apply();
-}
-//-----------------------------------------------------------------------------
-dolfin::real Assembler::assemble(const Form& form, Mesh& mesh)
-{
-  Scalar value;
-  assemble(value, form, mesh);
-  return value;
 }
 //-----------------------------------------------------------------------------
 void Assembler::assembleCells(GenericTensor& A, Mesh& mesh,

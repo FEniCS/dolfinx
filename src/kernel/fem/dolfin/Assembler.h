@@ -10,6 +10,7 @@
 #include <ufc.h>
 
 #include <dolfin/Array.h>
+#include <dolfin/MeshFunction.h>
 #include <dolfin/DofMaps.h>
 
 namespace dolfin
@@ -19,6 +20,7 @@ namespace dolfin
   class Function;
   class Form;
   class Mesh;
+  class SubDomain;
   class UFC;
 
   /// This class provides automated assembly of linear systems, or
@@ -38,12 +40,35 @@ namespace dolfin
     /// Assemble tensor from given variational form and mesh
     void assemble(GenericTensor& A, const Form& form, Mesh& mesh);
 
+    /// Assemble tensor from given variational form and mesh over a sub domain
+    void assemble(GenericTensor& A, const Form& form, Mesh& mesh,
+                  const SubDomain& sub_domain);
+
+    /// Assemble tensor from given variational form and mesh over sub domains
+    void assemble(GenericTensor& A, const Form& form, Mesh& mesh, 
+                  const MeshFunction<uint>& cell_domains,
+                  const MeshFunction<uint>& exterior_facet_domains,
+                  const MeshFunction<uint>& interior_facet_domains);
+    
     /// Assemble scalar from given variational form and mesh
     real assemble(const Form& form, Mesh& mesh);
-
-    /// Assemble tensor from given (UFC) form, mesh and coefficients
+    
+    /// Assemble scalar from given variational form and mesh over a sub domain
+    real assemble(const Form& form, Mesh& mesh,
+                  const SubDomain& sub_domain);
+    
+    /// Assemble scalar from given variational form and mesh over sub domains
+    real assemble(const Form& form, Mesh& mesh,
+                  const MeshFunction<uint>& cell_domains,
+                  const MeshFunction<uint>& exterior_facet_domains,
+                  const MeshFunction<uint>& interior_facet_domains);
+    
+    /// Assemble tensor from given (UFC) form, mesh, coefficients and sub domains
     void assemble(GenericTensor& A, const ufc::form& form, Mesh& mesh,
-                  Array<Function*> coefficients);
+                  Array<Function*> coefficients,
+                  const MeshFunction<uint>* cell_domains,
+                  const MeshFunction<uint>* exterior_facet_domains,
+                  const MeshFunction<uint>* interior_facet_domains);
       
   private:
  

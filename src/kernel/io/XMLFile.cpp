@@ -223,8 +223,8 @@ void XMLFile::operator<<(Vector& x)
   // Close file
   closeFile(fp);
   
-  message("Saved vector %s (%s) to file %s in DOLFIN XML format.",
-	      x.name().c_str(), x.label().c_str(), filename.c_str());
+  message(1, "Saved vector %s (%s) to file %s in DOLFIN XML format.",
+          x.name().c_str(), x.label().c_str(), filename.c_str());
 #endif
 }
 //-----------------------------------------------------------------------------
@@ -259,8 +259,8 @@ void XMLFile::operator<<(Matrix& A)
   // Close file
   closeFile(fp);
 
-  message("Saved vector %s (%s) to file %s in DOLFIN XML format.",
-	      A.name().c_str(), A.label().c_str(), filename.c_str());
+  message(1, "Saved vector %s (%s) to file %s in DOLFIN XML format.",
+          A.name().c_str(), A.label().c_str(), filename.c_str());
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator<<(Mesh& mesh)

@@ -62,7 +62,7 @@ ufc::dof_map* SubSystem::extractDofMap
   // Recursively extract sub dof map
   ufc::dof_map* sub_dof_map = extractDofMap(dof_map, mesh, offset, sub_system);
   message(2, "Extracted dof map for sub system: %s", sub_dof_map->signature());
-  message(2, "Offset for sub system: %s", offset);
+  message(2, "Offset for sub system: %d", offset);
 
   return sub_dof_map;
 }

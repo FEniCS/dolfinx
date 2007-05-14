@@ -8,8 +8,7 @@
 #define __ASSEMBLE_H
 
 #include <ufc.h>
-
-#include <dolfin/Array.h>
+#include <dolfin/MeshFunction.h>
 
 namespace dolfin
 {
@@ -17,6 +16,7 @@ namespace dolfin
   class GenericTensor;
   class Function;
   class Form;
+  class SubDomain;
   class Mesh;
 
   /// These functions provide automated assembly of linear systems,
@@ -29,10 +29,27 @@ namespace dolfin
   void assemble(GenericTensor& A, const Form& form, Mesh& mesh);
   
   /// Assemble tensor from given variational form and mesh over a sub domain
-  //void assemble(GenericTensor& A, const Form& form, Mesh& mesh, const SubDomain& sub_domain);
+  void assemble(GenericTensor& A, const Form& form, Mesh& mesh,
+                const SubDomain& sub_domain);
+
+  /// Assemble tensor from given variational form and mesh over sub domains
+  void assemble(GenericTensor& A, const Form& form, Mesh& mesh, 
+                const MeshFunction<uint>& cell_domains,
+                const MeshFunction<uint>& exterior_facet_domains,
+                const MeshFunction<uint>& interior_facet_domains);
 
   /// Assemble scalar from given variational form and mesh
   real assemble(const Form& form, Mesh& mesh);
+
+  /// Assemble scalar from given variational form and mesh over a sub domain
+  real assemble(const Form& form, Mesh& mesh,
+                const SubDomain& sub_domain);
+
+  /// Assemble scalar from given variational form and mesh over sub domains
+  real assemble(const Form& form, Mesh& mesh,
+                const MeshFunction<uint>& cell_domains,
+                const MeshFunction<uint>& exterior_facet_domains,
+                const MeshFunction<uint>& interior_facet_domains);
   
 }
 
