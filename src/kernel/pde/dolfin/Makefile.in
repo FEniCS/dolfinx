@@ -198,10 +198,8 @@ swig_found = @swig_found@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 EXTRA_DIST = dolfin_pde.h \
-             GenericPDE.h \
              LinearPDE.h \
-             NonlinearPDE.h \
-             PDE.h
+             NonlinearPDE.h
 
 all: all-am
 

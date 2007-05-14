@@ -16,7 +16,7 @@
 namespace dolfin
 {
 
-  /// This class implements the solution functionality for nonlinear PDEs.
+  /// This class provides automated solution of nonlinear PDEs.
   
   class NonlinearPDE : public NonlinearProblem, public Parametrized
   {

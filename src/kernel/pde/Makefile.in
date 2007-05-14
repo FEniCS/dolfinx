@@ -61,8 +61,7 @@ am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(includedir)"
 libLTLIBRARIES_INSTALL = $(INSTALL)
 LTLIBRARIES = $(lib_LTLIBRARIES)
 libdolfin_pde_la_LIBADD =
-am_libdolfin_pde_la_OBJECTS = GenericPDE.lo LinearPDE.lo \
-	NonlinearPDE.lo PDE.lo
+am_libdolfin_pde_la_OBJECTS = LinearPDE.lo NonlinearPDE.lo
 libdolfin_pde_la_OBJECTS = $(am_libdolfin_pde_la_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -237,17 +236,13 @@ sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 SUBDIRS = dolfin
 nobase_include_HEADERS = dolfin/dolfin_pde.h \
-                           dolfin/GenericPDE.h \
                            dolfin/LinearPDE.h \
-                           dolfin/NonlinearPDE.h \
-                           dolfin/PDE.h
+                           dolfin/NonlinearPDE.h
 
 INCLUDES = @KERNEL_CFLAGS@
 lib_LTLIBRARIES = libdolfin-pde.la
-libdolfin_pde_la_SOURCES = GenericPDE.cpp \
-                           LinearPDE.cpp \
-                           NonlinearPDE.cpp \
-                           PDE.cpp
+libdolfin_pde_la_SOURCES = LinearPDE.cpp \
+                           NonlinearPDE.cpp
 
 libdolfin_pde_la_LDFLAGS = -static
 all: all-recursive
@@ -319,10 +314,8 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/GenericPDE.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LinearPDE.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NonlinearPDE.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PDE.Plo@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \

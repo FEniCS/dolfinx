@@ -108,7 +108,7 @@ int main()
   PoissonBilinearForm a;
   PoissonLinearForm L(f, gn);
   BoundaryCondition bc(gd, mesh, GD);
-  PDE pde(a, L, mesh, bc);
+  LinearPDE pde(a, L, mesh, bc);
 
   // Solve PDE
   Function u;

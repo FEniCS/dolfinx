@@ -136,7 +136,7 @@
 %include "dolfin/dGqMethod.h"
 
 // DOLFIN headers included from pde
-%include "dolfin/PDE.h"
+%include "dolfin/LinearPDE.h"
 %include "dolfin/NonlinearPDE.h"
 
 // DOLFIN headers included from plot

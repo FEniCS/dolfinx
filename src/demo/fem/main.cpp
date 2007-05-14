@@ -2,6 +2,11 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Thanks to David Heintz for the reference matrices.
+//
+// This demo program dmonstrates how to create simple finite
+// element matrices like the stiffness matrix and mass matrix.
+// For general forms and matrices, forms must be defined and
+// compiled with FFC.
 
 #include <dolfin.h>
 

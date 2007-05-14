@@ -111,7 +111,7 @@ int main()
   // Define PDE
   PoissonBilinearForm a(n, h);
   PoissonLinearForm L(f, gd, gn);
-  PDE pde(a, L, mesh);
+  LinearPDE pde(a, L, mesh);
 
   // Solve PDE
   Function u;

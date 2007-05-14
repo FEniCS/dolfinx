@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2006
 //
 // First added:  2004
-// Last changed: 2007-05-13
+// Last changed: 2007-05-14
 
 #include <dolfin/Matrix.h>
 #include <dolfin/BoundaryCondition.h>
@@ -18,13 +18,25 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-LinearPDE::LinearPDE(Form& a,
-                     Form& L,
-                     Mesh& mesh,
-                     Array<BoundaryCondition*>& bcs)
-  : GenericPDE(a, L, mesh, bcs)
+LinearPDE::LinearPDE(Form& a, Form& L, Mesh& mesh)
+  : a(a), L(L), mesh(mesh)
+{
+  message("Creating linear PDE.");
+}
+//-----------------------------------------------------------------------------
+LinearPDE::LinearPDE(Form& a, Form& L, Mesh& mesh, BoundaryCondition& bc)
+  : a(a), L(L), mesh(mesh)
+{
+  message("Creating linear PDE with one boundary condition.");
+  bcs.push_back(&bc);
+} 
+//-----------------------------------------------------------------------------
+LinearPDE::LinearPDE(Form& a, Form& L, Mesh& mesh, Array<BoundaryCondition*>& bcs)
+  : a(a), L(L), mesh(mesh)
 {
   message("Creating linear PDE with %d boundary condition(s).", bcs.size());
+  for (uint i = 0; i < bcs.size(); i++)
+    this->bcs.push_back(bcs[i]);
 }
 //-----------------------------------------------------------------------------
 LinearPDE::~LinearPDE()
@@ -79,5 +91,28 @@ void LinearPDE::solve(Function& u)
   u.init(mesh, x, a, 1);
 
   end();
+}
+//-----------------------------------------------------------------------------
+void LinearPDE::solve(Function& u0, Function& u1)
+{
+  // Solve system
+  Function u;
+  solve(u);
+
+  // Extract sub functions
+  u0 = u[0];
+  u1 = u[1];
+}
+//-----------------------------------------------------------------------------
+void LinearPDE::solve(Function& u0, Function& u1, Function& u2)
+{
+  // Solve system
+  Function u;
+  solve(u);
+
+  // Extract sub functions
+  u0 = u[0];
+  u1 = u[1];
+  u2 = u[2];
 }
 //-----------------------------------------------------------------------------

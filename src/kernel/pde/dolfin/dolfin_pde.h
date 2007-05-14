@@ -3,7 +3,7 @@
 
 // DOLFIN pde interface
 
-#include <dolfin/PDE.h>
+#include <dolfin/LinearPDE.h>
 #include <dolfin/NonlinearPDE.h>
 
 #endif

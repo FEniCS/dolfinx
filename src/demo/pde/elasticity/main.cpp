@@ -102,7 +102,7 @@ int main()
   // Set up PDE
   ElasticityBilinearForm a;
   ElasticityLinearForm L(f);
-  PDE pde(a, L, mesh, bcs);
+  LinearPDE pde(a, L, mesh, bcs);
 
   // Solve PDE (using direct solver)
   Function u;

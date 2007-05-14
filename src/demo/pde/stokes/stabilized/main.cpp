@@ -77,7 +77,7 @@ int main()
   Function f(mesh, 0.0);
   StokesBilinearForm a(h);
   StokesLinearForm L(f, h);
-  PDE pde(a, L, mesh, bcs);
+  LinearPDE pde(a, L, mesh, bcs);
 
   // Solve PDE
   Function u;
