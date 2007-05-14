@@ -16,80 +16,64 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void dolfin::dolfin_info(const char *msg, ...)
+void dolfin::dolfin_info(std::string msg, ...)
 {
   char buffer[DOLFIN_LINELENGTH];
   va_list aptr;
   va_start(aptr, msg);
-  vsprintf(buffer, msg, aptr);
+  vsprintf(buffer, msg.c_str(), aptr);
   va_end(aptr);
   LogManager::log.info(std::string(buffer));
 }
 //-----------------------------------------------------------------------------
-void dolfin::dolfin_info(int debug_level, const char *msg, ...)
+void dolfin::dolfin_info(int debug_level, std::string msg, ...)
 {
   char buffer[DOLFIN_LINELENGTH];
   va_list aptr;
   va_start(aptr, msg);
-  vsprintf(buffer, msg, aptr);
+  vsprintf(buffer, msg.c_str(), aptr);
   va_end(aptr);
   LogManager::log.info(std::string(buffer), debug_level);
 }
 //-----------------------------------------------------------------------------
-void dolfin::dolfin_info_aptr(const char *msg, va_list aptr)
-{
-  char buffer[DOLFIN_LINELENGTH];
-  vsprintf(buffer, msg, aptr);
-  LogManager::log.info(std::string(buffer));
-}
-//-----------------------------------------------------------------------------
-void dolfin::dolfin_warning(const char *msg, ...)
+void dolfin::dolfin_warning(std::string msg, ...)
 {
   char buffer[DOLFIN_LINELENGTH];
   va_list aptr;
   va_start(aptr, msg);
-  vsprintf(buffer, msg, aptr);
+  vsprintf(buffer, msg.c_str(), aptr);
   va_end(aptr);
   LogManager::log.warning(std::string(buffer));
 }
 //-----------------------------------------------------------------------------
-void dolfin::dolfin_error(const char *msg, ...)
+void dolfin::dolfin_error(std::string msg, ...)
 {
   char buffer[DOLFIN_LINELENGTH];
   va_list aptr;
   va_start(aptr, msg);
-  vsprintf(buffer, msg, aptr);
+  vsprintf(buffer, msg.c_str(), aptr);
   va_end(aptr);
-  LogManager::log.warning(std::string(buffer));
+  LogManager::log.error(std::string(buffer));
 }
 //-----------------------------------------------------------------------------
-void dolfin::dolfin_begin()
-{
-  LogManager::log.begin();
-}
-//-----------------------------------------------------------------------------
-void dolfin::dolfin_begin(const char* msg, ...)
+void dolfin::dolfin_begin(std::string msg, ...)
 {
   char buffer[DOLFIN_LINELENGTH];
   va_list aptr;
   va_start(aptr, msg);
-  vsprintf(buffer, msg, aptr);
+  vsprintf(buffer, msg.c_str(), aptr);
   va_end(aptr);
-
-  LogManager::log.info(std::string(buffer));
-  LogManager::log.begin();
+  LogManager::log.begin(std::string(buffer));
 }
 //-----------------------------------------------------------------------------
-void dolfin::dolfin_begin(int debug_level, const char* msg, ...)
+void dolfin::dolfin_begin(int debug_level, std::string msg, ...)
 {
   char buffer[DOLFIN_LINELENGTH];
   va_list aptr;
   va_start(aptr, msg);
-  vsprintf(buffer, msg, aptr);
+  vsprintf(buffer, msg.c_str(), aptr);
   va_end(aptr);
-
-  LogManager::log.info(std::string(buffer), debug_level);
-  LogManager::log.begin();
+  LogManager::log.begin(std::string(buffer), debug_level);
 }
 //-----------------------------------------------------------------------------
 void dolfin::dolfin_end()
@@ -97,14 +81,9 @@ void dolfin::dolfin_end()
   LogManager::log.end();
 }
 //-----------------------------------------------------------------------------
-void dolfin::dolfin_log(const char* destination)
+void dolfin::dolfin_log(std::string destination)
 {
   LogManager::log.init(destination);
-}
-//-----------------------------------------------------------------------------
-void dolfin::dolfin_log(bool state)
-{
-  LogManager::log.active(state);
 }
 //-----------------------------------------------------------------------------
 void dolfin::dolfin_log(int debug_level)

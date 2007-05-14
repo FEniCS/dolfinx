@@ -9,49 +9,41 @@
 #ifndef __LOG_H
 #define __LOG_H
 
+#include <string>
 #include <stdarg.h>
 
 namespace dolfin
 {
   
   // Print message
-  void dolfin_info(const char *msg, ...);
+  void dolfin_info(std::string msg, ...);
 
   // Print message
-  void dolfin_info(int debug_level, const char* msg, ...);
-
-  // Print message
-  void dolfin_info_aptr(const char *msg, va_list aptr);
+  void dolfin_info(int debug_level, std::string msg, ...);
 
   // Print warning
-  void dolfin_warning(const char* msg, ...);
+  void dolfin_warning(std::string msg, ...);
 
   // Print error message and throw an exception
-  void dolfin_error(const char* msg, ...);
+  void dolfin_error(std::string msg, ...);
 
   // Begin task (increase indentation level)
-  void dolfin_begin();
+  void dolfin_begin(std::string msg, ...);
 
   // Begin task (increase indentation level)
-  void dolfin_begin(const char* msg, ...);
-
-  // Begin task (increase indentation level)
-  void dolfin_begin(int debug_level, const char* msg, ...);
+  void dolfin_begin(int debug_level, std::string msg, ...);
 
   // End task (decrease indentation level)
   void dolfin_end();
 
   // Set output destination ("terminal", or "silent")
-  void dolfin_log(const char* destination);
+  void dolfin_log(std::string destination);
 
   // Set debug level
   void dolfin_log(int debug_level);
 
-  // Switch logging on or off
-  void dolfin_log(bool state);
-
   void debug(const char* file, unsigned long line, const char* function, const char* format, ...);
-  void dassert  (const char* file, unsigned long line, const char* function, const char* format, ...);
+  void dassert(const char* file, unsigned long line, const char* function, const char* format, ...);
 
 }
 

@@ -672,30 +672,30 @@ void dolfin::sax_end_element(void *ctx, const xmlChar *name)
 void dolfin::sax_warning(void *ctx, const char *msg, ...)
 {
   va_list args;
-  
   va_start(args, msg);
-  dolfin_info_aptr(msg, args);
-  dolfin_warning("Incomplete XML data.");
+  char buffer[DOLFIN_LINELENGTH];
+  vsprintf(buffer, msg, args);
+  dolfin_warning("Incomplete XML data: " + std::string(buffer));
   va_end(args);
 }
 //-----------------------------------------------------------------------------
 void dolfin::sax_error(void *ctx, const char *msg, ...)
 {
   va_list args;
-  
   va_start(args, msg);
-  dolfin_info_aptr(msg, args);
-  dolfin_error("Illegal XML data.");
+  char buffer[DOLFIN_LINELENGTH];
+  vsprintf(buffer, msg, args);
+  dolfin_error("Illegal XML data: " + std::string(buffer));
   va_end(args);
 }
 //-----------------------------------------------------------------------------
 void dolfin::sax_fatal_error(void *ctx, const char *msg, ...)
 {
   va_list args;
-  
   va_start(args, msg);
-  dolfin_info_aptr(msg, args);
-  dolfin_error("Illegal XML data.");
+  char buffer[DOLFIN_LINELENGTH];
+  vsprintf(buffer, msg, args);
+  dolfin_error("Illegal XML data: " + std::string(buffer));
   va_end(args);
 }
 //-----------------------------------------------------------------------------

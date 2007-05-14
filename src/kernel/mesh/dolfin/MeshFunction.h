@@ -179,7 +179,7 @@ namespace dolfin
     {
       cout << "Mesh function data" << endl;
       cout << "------------------" << endl;
-      dolfin_begin();
+      dolfin_begin("");
       cout << "Topological dimension: " << _dim << endl;
       cout << "Number of values:      " << _size << endl;
       cout << endl;

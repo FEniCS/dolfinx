@@ -34,10 +34,9 @@ namespace dolfin
     void dassert  (std::string msg, std::string location);
     void progress (std::string title, real p);
 
-    void begin();
+    void begin(std::string msg, int debug_level = 0);
     void end();
 
-    void active   (bool state);
     void init     (std::string destination);
     void level    (int debug_level);
 
@@ -50,7 +49,6 @@ namespace dolfin
     // Write message to current output destination
     void write(int debug_level, std::string msg);
 
-    bool state;
     int debug_level;
     int indentation_level;
 

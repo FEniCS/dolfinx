@@ -19,7 +19,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 Logger::Logger()
-  : destination(terminal), state(true), debug_level(0), indentation_level(0)
+  : destination(terminal), debug_level(0), indentation_level(0)
 {
   // Do nothing
 }
@@ -31,7 +31,7 @@ Logger::~Logger()
 //-----------------------------------------------------------------------------
 void Logger::info(std::string msg, int debug_level)
 {
-  if (!state || debug_level > this->debug_level)
+  if (debug_level > this->debug_level)
     return;
 
   // Write message
@@ -68,9 +68,6 @@ void Logger::dassert(std::string msg, std::string location)
 //-----------------------------------------------------------------------------
 void Logger::progress(std::string title, real p)
 {
-  if (!state)
-    return;
-
   int N = DOLFIN_TERM_WIDTH - 15;
   int n = static_cast<int>(p*static_cast<real>(N));
   
@@ -101,19 +98,15 @@ void Logger::progress(std::string title, real p)
   write(0, s);
 }
 //-----------------------------------------------------------------------------
-void Logger::begin()
+void Logger::begin(std::string msg, int debug_level)
 {
+  info(msg, debug_level);
   indentation_level++;
 }
 //-----------------------------------------------------------------------------
 void Logger::end()
 {
   indentation_level--;
-}
-//-----------------------------------------------------------------------------
-void Logger::active(bool state)
-{
-  this->state = state;
 }
 //-----------------------------------------------------------------------------
 void Logger::level(int debug_level)
@@ -137,8 +130,8 @@ void Logger::init(std::string destination)
 //-----------------------------------------------------------------------------
 void Logger::write(int debug_level, std::string msg)
 {
-  // Check if we should produce output
-  if (!state || debug_level > this->debug_level)
+  // Check debug level
+  if (debug_level > this->debug_level)
     return;
 
   // Add indentation
