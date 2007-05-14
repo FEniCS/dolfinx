@@ -7,6 +7,7 @@ nobase_include_HEADERS = dolfin/dolfin_common.h \
                          dolfin/TimeDependent.h \
                          dolfin/Variable.h \
                          dolfin/timing.h \
+                         dolfin/unittest.h \
                          dolfin/utils.h
 
 INCLUDES = @KERNEL_CFLAGS@
