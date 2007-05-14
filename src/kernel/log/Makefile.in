@@ -61,8 +61,8 @@ am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(includedir)"
 libLTLIBRARIES_INSTALL = $(INSTALL)
 LTLIBRARIES = $(lib_LTLIBRARIES)
 libdolfin_log_la_LIBADD =
-am_libdolfin_log_la_OBJECTS = log.lo Buffer.lo Event.lo Logger.lo \
-	LogManager.lo LogStream.lo Progress.lo
+am_libdolfin_log_la_OBJECTS = log.lo Event.lo Logger.lo LogManager.lo \
+	LogStream.lo Progress.lo
 libdolfin_log_la_OBJECTS = $(am_libdolfin_log_la_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -238,7 +238,6 @@ target_alias = @target_alias@
 SUBDIRS = dolfin
 nobase_include_HEADERS = dolfin/dolfin_log.h \
                            dolfin/log.h \
-                           dolfin/Buffer.h \
                            dolfin/Event.h \
                            dolfin/Logger.h \
                            dolfin/LogManager.h \
@@ -248,7 +247,6 @@ nobase_include_HEADERS = dolfin/dolfin_log.h \
 INCLUDES = @KERNEL_CFLAGS@
 lib_LTLIBRARIES = libdolfin-log.la
 libdolfin_log_la_SOURCES = log.cpp \
-                           Buffer.cpp \
                            Event.cpp \
                            Logger.cpp \
                            LogManager.cpp \
@@ -325,7 +323,6 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Buffer.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Event.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LogManager.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LogStream.Plo@am__quote@

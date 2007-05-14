@@ -46,14 +46,14 @@ dolfin::uint TopologyComputation::computeEntities(Mesh& mesh, uint dim)
   {
     // Make sure we really have the connectivity
     if ( (ce.size() == 0 && dim != topology.dim()) || (ev.size() == 0 && dim != 0) )
-      dolfin_error1("Entities of topological dimension %d exist but connectivity is missing.", dim);
+      dolfin_error("Entities of topological dimension %d exist but connectivity is missing.", dim);
     return topology.size(dim);
   }
   else
   {
     // Make sure connectivity does not already exist
     if ( ce.size() > 0 || ev.size() > 0 )
-      dolfin_error1("Connectivity for topological dimension %d exists but entities are missing.", dim);
+      dolfin_error("Connectivity for topological dimension %d exists but entities are missing.", dim);
   }
 
   //dolfin_info("Computing mesh entities of topological dimension %d.", dim);

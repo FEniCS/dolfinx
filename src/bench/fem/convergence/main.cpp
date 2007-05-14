@@ -84,7 +84,7 @@ real solve2D(int q, int n)
     L = new Poisson2D_5::LinearForm(f);
     break;
   default:
-    dolfin_error1("Forms not compiled for q = %d.", q);
+    dolfin_error("Forms not compiled for q = %d.", q);
   }    
 
   //FEM::disp(mesh, a->test());
@@ -154,7 +154,7 @@ real solve3D(int q, int n)
     L = new Poisson3D_5::LinearForm(f);
     break;
   default:
-    dolfin_error1("Forms not compiled for q = %d.", q);
+    dolfin_error("Forms not compiled for q = %d.", q);
   }    
 
   //FEM::disp(mesh, a->test());

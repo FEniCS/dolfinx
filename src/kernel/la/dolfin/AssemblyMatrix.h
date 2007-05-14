@@ -50,7 +50,7 @@ namespace dolfin
     {
       // Check that the rank is 2
       if ( rank != 2 )
-        dolfin_error1("Illegal tensor rank (%d) for matrix. Rank must be 2.", rank);
+        dolfin_error("Illegal tensor rank (%d) for matrix. Rank must be 2.", rank);
 
       // Initialize matrix
       init(dims[0], dims[1]);

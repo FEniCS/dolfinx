@@ -252,7 +252,7 @@ void Assembler::check(const ufc::form& form,
 {
   // Check that we get the correct number of coefficients
   if ( coefficients.size() != form.num_coefficients() )
-    dolfin_error2("Incorrect number of coefficients for form: %d given but %d required.",
+    dolfin_error("Incorrect number of coefficients for form: %d given but %d required.",
                   coefficients.size(), form.num_coefficients());
 }
 //-----------------------------------------------------------------------------

@@ -357,7 +357,7 @@ namespace dolfin
       // Compute new rho
       rho = ublas::inner_prod(r, rstar); 
       if( fabs(rho) < 1e-25 )
-        dolfin_error1("BiCGStab breakdown. rho = %g", rho);
+        dolfin_error("BiCGStab breakdown. rho = %g", rho);
 
       beta = (rho/rho_old)*(alpha/omega);
 

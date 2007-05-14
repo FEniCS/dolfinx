@@ -237,7 +237,7 @@ dolfin::uint Homotopy::countPaths()
     if ( (adjustedDegree(i) + 1) * product <= product )
     {
       const int max_paths = std::numeric_limits<int>::max();
-      dolfin_error1("Reached maximum number of homotopy paths (%d).", max_paths);
+      dolfin_error("Reached maximum number of homotopy paths (%d).", max_paths);
     }
     
     product *= (adjustedDegree(i) + 1);

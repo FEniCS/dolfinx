@@ -81,7 +81,7 @@ void XMLVector::readEntry(const xmlChar *name, const xmlChar **attrs)
   
   // Check values
   if ( row >= x.size() )
-    dolfin_error2("Illegal XML data for Vector: row index %d out of range (0 - %d)",
+    dolfin_error("Illegal XML data for Vector: row index %d out of range (0 - %d)",
 		  row, x.size() - 1);
   
   // FIXME: update to vector element access

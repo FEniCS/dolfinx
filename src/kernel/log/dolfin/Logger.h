@@ -6,7 +6,7 @@
 // Modified by Ola Skavhaug, 2007.
 //
 // First added:  2003-03-13
-// Last changed: 2007-05-13
+// Last changed: 2007-05-14
 
 #ifndef __LOGGER_H
 #define __LOGGER_H
@@ -26,8 +26,9 @@ namespace dolfin
 
     void info     (std::string msg, int debug_level = 0);
 
-    void warning  (std::string msg, std::string location);
-    void error    (std::string msg, std::string location);
+    void warning  (std::string msg);
+    void error    (std::string msg);
+
     void debug    (std::string msg, std::string location);
 
     void dassert  (std::string msg, std::string location);

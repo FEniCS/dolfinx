@@ -179,13 +179,13 @@ void GenericFile::write()
 //-----------------------------------------------------------------------------
 void GenericFile::read_not_impl(const std::string object)
 {
-  dolfin_error2("Unable to read objects of type %s from %s files.",
+  dolfin_error("Unable to read objects of type %s from %s files.",
 		object.c_str(), type.c_str());
 }
 //-----------------------------------------------------------------------------
 void GenericFile::write_not_impl(const std::string object)
 {
-  dolfin_error2("Unable to write objects of type %s to %s files.",
+  dolfin_error("Unable to write objects of type %s to %s files.",
 		object.c_str(), type.c_str());
 }
 //-----------------------------------------------------------------------------

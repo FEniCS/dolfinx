@@ -25,9 +25,9 @@ NonlinearPDE::NonlinearPDE(Form& a,
 
   // Check ranks of forms
   if ( a.form().rank() != 2 )
-    dolfin_error1("Expected a bilinear form but rank is %d.", a.form().rank());
+    dolfin_error("Expected a bilinear form but rank is %d.", a.form().rank());
   if ( L.form().rank() != 1 )
-    dolfin_error1("Expected a linear form but rank is %d.", L.form().rank());
+    dolfin_error("Expected a linear form but rank is %d.", L.form().rank());
 
   // Create array with one boundary condition
   bcs.push_back(&bc);
@@ -43,9 +43,9 @@ NonlinearPDE::NonlinearPDE(Form& a,
 
   // Check ranks of forms
   if ( a.form().rank() != 2 )
-    dolfin_error1("Expected a bilinear form but rank is %d.", a.form().rank());
+    dolfin_error("Expected a bilinear form but rank is %d.", a.form().rank());
   if ( L.form().rank() != 1 )
-    dolfin_error1("Expected a linear form but rank is %d.", L.form().rank());
+    dolfin_error("Expected a linear form but rank is %d.", L.form().rank());
 }
 //-----------------------------------------------------------------------------
 NonlinearPDE::~NonlinearPDE()

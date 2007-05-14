@@ -4,7 +4,7 @@
 // Modified by Ola Skavhaug, 2007.
 //
 // First added:  2003-03-13
-// Last changed: 2007-05-13
+// Last changed: 2007-05-14
 
 #include <string>
 #include <iostream>
@@ -45,17 +45,17 @@ void Logger::debug(std::string msg, std::string location)
   write(0, s);
 }
 //-----------------------------------------------------------------------------
-void Logger::warning(std::string msg, std::string location)
+void Logger::warning(std::string msg)
 {
   // Write message
-  std::string s = std::string("*** Warning: ") + msg + location;
+  std::string s = std::string("*** Warning: ") + msg;
   write(0, s);
 }
 //-----------------------------------------------------------------------------
-void Logger::error(std::string msg, std::string location)
+void Logger::error(std::string msg)
 {
   // Throw exception
-  std::string s = std::string("*** Error: ") + msg + location;
+  std::string s = std::string("*** Error: ") + msg;
   throw std::runtime_error(s);
 }
 //-----------------------------------------------------------------------------

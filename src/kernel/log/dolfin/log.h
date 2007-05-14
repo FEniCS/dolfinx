@@ -4,8 +4,7 @@
 // Modified by Ola Skavhaug, 2007.
 // 
 // First added:  2003-03-13
-// Last changed: 2007-05-11
-
+// Last changed: 2007-05-14
 
 #ifndef __LOG_H
 #define __LOG_H
@@ -23,6 +22,12 @@ namespace dolfin
 
   // Print message
   void dolfin_info_aptr(const char *msg, va_list aptr);
+
+  // Print warning
+  void dolfin_warning(const char* msg, ...);
+
+  // Print error message and throw an exception
+  void dolfin_error(const char* msg, ...);
 
   // Begin task (increase indentation level)
   void dolfin_begin();
@@ -46,30 +51,15 @@ namespace dolfin
   void dolfin_log(bool state);
 
   void debug(const char* file, unsigned long line, const char* function, const char* format, ...);
-  void warning(const char* file, unsigned long line, const char* function, const char* format, ...);
-  void error(const char* file, unsigned long line, const char* function, const char* format, ...);
   void dassert  (const char* file, unsigned long line, const char* function, const char* format, ...);
 
 }
 
 // Debug macros (with varying number of arguments)
-//#define dolfin_debug(msg)              do { dolfin_debug(__FILE__, __LINE__, __FUNCTION__, msg); } while (false)
 #define dolfin_debug(msg)              do { dolfin::debug(__FILE__, __LINE__, __FUNCTION__, msg); } while (false)
 #define dolfin_debug1(msg, a0)         do { dolfin::debug(__FILE__, __LINE__, __FUNCTION__, msg, a0); } while (false)
 #define dolfin_debug2(msg, a0, a1)     do { dolfin::debug(__FILE__, __LINE__, __FUNCTION__, msg, a0, a1); } while (false)
 #define dolfin_debug3(msg, a0, a1, a2) do { dolfin::debug(__FILE__, __LINE__, __FUNCTION__, msg, a0, a1, a2); } while (false)
-
-// Warning macros (with varying number of arguments)
-#define dolfin_warning(msg)              do { dolfin::warning(__FILE__, __LINE__, __FUNCTION__, msg); } while (false)
-#define dolfin_warning1(msg, a0)         do { dolfin::warning(__FILE__, __LINE__, __FUNCTION__, msg, a0); } while (false)
-#define dolfin_warning2(msg, a0, a1)     do { dolfin::warning(__FILE__, __LINE__, __FUNCTION__, msg, a0, a1); } while (false)
-#define dolfin_warning3(msg, a0, a1, a2) do { dolfin::warning(__FILE__, __LINE__, __FUNCTION__, msg, a0, a1, a2); } while (false)
-
-// Error macros (with varying number of arguments)
-#define dolfin_error(msg)              do { dolfin::error(__FILE__, __LINE__, __FUNCTION__, msg); } while (false)
-#define dolfin_error1(msg, a0)         do { dolfin::error(__FILE__, __LINE__, __FUNCTION__, msg, a0); } while (false)
-#define dolfin_error2(msg, a0, a1)     do { dolfin::error(__FILE__, __LINE__, __FUNCTION__, msg, a0, a1); } while (false)
-#define dolfin_error3(msg, a0, a1, a2) do { dolfin::error(__FILE__, __LINE__, __FUNCTION__, msg, a0, a1, a2); } while (false)
 
 // Assertion, only active if DEBUG is defined
 #ifdef DEBUG

@@ -34,7 +34,7 @@ dolfin::uint Triangle::numEntities(uint dim) const
   case 2:
     return 1; // cells
   default:
-    dolfin_error1("Illegal topological dimension %d for tetrahedron.", dim);
+    dolfin_error("Illegal topological dimension %d for tetrahedron.", dim);
   }
 
   return 0;
@@ -51,7 +51,7 @@ dolfin::uint Triangle::numVertices(uint dim) const
   case 2:
     return 3; // cells
   default:
-    dolfin_error1("Illegal topological dimension %d for tetrahedron.", dim);
+    dolfin_error("Illegal topological dimension %d for tetrahedron.", dim);
   }
 
   return 0;
@@ -93,7 +93,7 @@ void Triangle::createEntities(uint** e, uint dim, const uint v[]) const
 {
   // We only need to know how to create edges
   if ( dim != 1 )
-    dolfin_error1("Don't know how to create entities of topological dimension %d.", dim);
+    dolfin_error("Don't know how to create entities of topological dimension %d.", dim);
 
   // Create the three edges
   e[0][0] = v[1]; e[0][1] = v[2];

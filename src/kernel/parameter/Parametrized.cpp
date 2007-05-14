@@ -40,7 +40,7 @@ void Parametrized::set(std::string key, const Parametrized& parent)
 {
   // Check that key is "parent"
   if ( !(key == "parent") )
-    dolfin_error1("Illegal value for parameter \"%s\".", key.c_str());
+    dolfin_error("Illegal value for parameter \"%s\".", key.c_str());
 
   // Check if we already have a parent
   if ( this->parent )

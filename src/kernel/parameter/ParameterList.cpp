@@ -24,7 +24,7 @@ ParameterList::~ParameterList()
 void ParameterList::add(std::string key, Parameter value)
 {
   if ( defined(key) )
-    dolfin_error1("Unable to add parameter \"%s\" (already defined).",
+    dolfin_error("Unable to add parameter \"%s\" (already defined).",
 		  key.c_str());
 
   parameters.insert(pair(key, value));
@@ -35,7 +35,7 @@ void ParameterList::set(std::string key, Parameter value)
   iterator p = parameters.find(key);
 
   if ( p == parameters.end() )
-    dolfin_error1("Unknown parameter \"%s\".", key.c_str());
+    dolfin_error("Unknown parameter \"%s\".", key.c_str());
 
   p->second = value;
 }
@@ -45,7 +45,7 @@ Parameter ParameterList::get(std::string key) const
   const_iterator p = parameters.find(key);
 
   if ( p == parameters.end() )
-    dolfin_error1("Unknown parameter \"%s\".", key.c_str());
+    dolfin_error("Unknown parameter \"%s\".", key.c_str());
   
   return p->second;
 }

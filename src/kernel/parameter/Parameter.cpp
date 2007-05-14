@@ -60,7 +60,7 @@ Parameter::Parameter(const Parameter& parameter)
     value = new StringValue(*parameter.value);
     break;
   default:
-    dolfin_error1("Unknown parameter type: %d.", parameter._type);
+    dolfin_error("Unknown parameter type: %d.", parameter._type);
   }
 }
 //-----------------------------------------------------------------------------
@@ -113,7 +113,7 @@ const Parameter& Parameter::operator= (const Parameter& parameter)
     value = new StringValue(*parameter.value);
     break;
   default:
-    dolfin_error1("Unknown parameter type: %d.", parameter._type);
+    dolfin_error("Unknown parameter type: %d.", parameter._type);
   }  
 
   _type = parameter._type;
@@ -180,7 +180,7 @@ dolfin::LogStream& dolfin::operator<<(LogStream& stream,
 	   << static_cast<std::string>(parameter) << "\" (string)]";
     break;
   default:
-    dolfin_error1("Unknown parameter type: %d.", parameter._type);
+    dolfin_error("Unknown parameter type: %d.", parameter._type);
   }
   
   return stream;

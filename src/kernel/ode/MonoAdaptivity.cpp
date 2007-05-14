@@ -28,7 +28,7 @@ MonoAdaptivity::MonoAdaptivity(const ODE& ode, const Method& method)
     if ( k > _kmax )
     {
       k = _kmax;
-      dolfin_warning1("Initial time step larger than maximum time step, using k = %.3e.", k);
+      dolfin_warning("Initial time step larger than maximum time step, using k = %.3e.", k);
     }
   }
 

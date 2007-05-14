@@ -141,7 +141,7 @@ void XMLMeshFunction::readMeshFunction(const xmlChar *name, const xmlChar **attr
       dolfin_error("MeshFunction file of type \"int\", but MeshFunction<int> not initialized");
     _imeshfunction->init(tdim, size);
     if ( _imeshfunction->mesh().size(tdim) != size)
-      dolfin_error3("Size of mesh function (%d) does not match size of mesh (%d entities of dimension %d)", size, _imeshfunction->mesh().size(tdim), tdim);
+      dolfin_error("Size of mesh function (%d) does not match size of mesh (%d entities of dimension %d)", size, _imeshfunction->mesh().size(tdim), tdim);
     mf_type = INT;
   }
   else if (strcmp(type.c_str(), "uint") == 0 ) 
@@ -150,7 +150,7 @@ void XMLMeshFunction::readMeshFunction(const xmlChar *name, const xmlChar **attr
       dolfin_error("MeshFunction file of type \"uint\", but MeshFunction<uint> not initialized");
     _uimeshfunction->init(tdim, size);
     if ( _uimeshfunction->mesh().size(tdim) != size)
-      dolfin_error3("Size of mesh function (%d) does not match size of mesh (%d entities of dimension %d)", size, _uimeshfunction->mesh().size(tdim), tdim);
+      dolfin_error("Size of mesh function (%d) does not match size of mesh (%d entities of dimension %d)", size, _uimeshfunction->mesh().size(tdim), tdim);
     mf_type = UINT;
   }
   else if (strcmp(type.c_str(), "double") == 0 ) 
@@ -159,7 +159,7 @@ void XMLMeshFunction::readMeshFunction(const xmlChar *name, const xmlChar **attr
       dolfin_error("MeshFunction file of type \"double\", but MeshFunction<double> not initialized");
     _dmeshfunction->init(tdim, size);
     if ( _dmeshfunction->mesh().size(tdim) != size)
-      dolfin_error3("Size of mesh function (%d) does not match size of mesh (%d entities of dimension %d)", size, _dmeshfunction->mesh().size(tdim), tdim);
+      dolfin_error("Size of mesh function (%d) does not match size of mesh (%d entities of dimension %d)", size, _dmeshfunction->mesh().size(tdim), tdim);
     mf_type = DOUBLE;
   }
   else if (strcmp(type.c_str(), "bool") == 0 ) 
@@ -168,7 +168,7 @@ void XMLMeshFunction::readMeshFunction(const xmlChar *name, const xmlChar **attr
       dolfin_error("MeshFunction file of type \"bool\", but MeshFunction<bool> not initialized");
     _bmeshfunction->init(tdim, size);
     if ( _bmeshfunction->mesh().size(tdim) != size)
-      dolfin_error3("Size of mesh function (%d) does not match size of mesh (%d entities of dimension %d)", size, _bmeshfunction->mesh().size(tdim), tdim);
+      dolfin_error("Size of mesh function (%d) does not match size of mesh (%d entities of dimension %d)", size, _bmeshfunction->mesh().size(tdim), tdim);
     mf_type = BOOL;
   }
 }

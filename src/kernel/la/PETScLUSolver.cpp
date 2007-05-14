@@ -99,9 +99,9 @@ dolfin::uint PETScLUSolver::solve(const PETScKrylovMatrix& A,
   if ( kappa > 0.001 / DOLFIN_EPS )
   {
     if ( kappa > 1.0 / DOLFIN_EPS )
-      dolfin_error1("Matrix has very large condition number (%.1e). Is it singular?", kappa);
+      dolfin_error("Matrix has very large condition number (%.1e). Is it singular?", kappa);
     else
-      dolfin_warning1("Matrix has large condition number (%.1e).", kappa);
+      dolfin_warning("Matrix has large condition number (%.1e).", kappa);
   }
 
   return 1;

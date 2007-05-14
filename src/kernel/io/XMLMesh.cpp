@@ -188,7 +188,7 @@ void XMLMesh::readInterval(const xmlChar *name, const xmlChar **attrs)
 {
   // Check dimension
   if ( _mesh.topology().dim() != 1 )
-    dolfin_error1("Mesh entity (interval) does not match dimension of mesh (%d).",
+    dolfin_error("Mesh entity (interval) does not match dimension of mesh (%d).",
 		 _mesh.topology().dim());
 
   // Parse values
@@ -204,7 +204,7 @@ void XMLMesh::readTriangle(const xmlChar *name, const xmlChar **attrs)
 {
   // Check dimension
   if ( _mesh.topology().dim() != 2 )
-    dolfin_error1("Mesh entity (triangle) does not match dimension of mesh (%d).",
+    dolfin_error("Mesh entity (triangle) does not match dimension of mesh (%d).",
 		 _mesh.topology().dim());
 
   // Parse values
@@ -221,7 +221,7 @@ void XMLMesh::readTetrahedron(const xmlChar *name, const xmlChar **attrs)
 {
   // Check dimension
   if ( _mesh.topology().dim() != 3 )
-    dolfin_error1("Mesh entity (tetrahedron) does not match dimension of mesh (%d).",
+    dolfin_error("Mesh entity (tetrahedron) does not match dimension of mesh (%d).",
 		 _mesh.topology().dim());
 
   // Parse values

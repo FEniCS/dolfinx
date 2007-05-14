@@ -97,7 +97,7 @@ namespace dolfin
     // Factorise (with pivoting)
     uint singular = ublas::lu_factorize(A, pmatrix);
     if( singular > 0)
-      dolfin_error1("Singularity detected in uBlas matrix factorization on line %u.", singular-1); 
+      dolfin_error("Singularity detected in uBlas matrix factorization on line %u.", singular-1); 
 
     // Back substitute 
     ublas::lu_substitute(A, pmatrix, X);

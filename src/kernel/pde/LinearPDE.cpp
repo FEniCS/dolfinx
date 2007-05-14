@@ -64,7 +64,7 @@ void LinearPDE::solve(Function& u)
     solver.solve(A, x, b);
   }
   else
-    dolfin_error1("Unknown solver type \"%s\".", solver_type.c_str());
+    dolfin_error("Unknown solver type \"%s\".", solver_type.c_str());
 
   //cout << "Matrix:" << endl;
   //A.disp();

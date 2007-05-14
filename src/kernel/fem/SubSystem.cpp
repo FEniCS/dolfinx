@@ -85,7 +85,7 @@ ufc::finite_element* SubSystem::extractFiniteElement
   // Check the number of available sub systems
   if (sub_system[0] >= finite_element.num_sub_elements())
   {
-    dolfin_error2("Unable to extract sub system %d (only %d sub systems defined).",
+    dolfin_error("Unable to extract sub system %d (only %d sub systems defined).",
                   sub_system[0], finite_element.num_sub_elements());
   }
   
@@ -124,7 +124,7 @@ ufc::dof_map* SubSystem::extractDofMap
   // Check the number of available sub systems
   if (sub_system[0] >= dof_map.num_sub_dof_maps())
   {
-    dolfin_error2("Unable to extract sub system %d (only %d sub systems defined).",
+    dolfin_error("Unable to extract sub system %d (only %d sub systems defined).",
                   sub_system[0], dof_map.num_sub_dof_maps());
   }
 

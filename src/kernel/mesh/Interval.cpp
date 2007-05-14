@@ -30,7 +30,7 @@ dolfin::uint Interval::numEntities(uint dim) const
   case 1:
     return 1; // cells
   default:
-    dolfin_error1("Illegal topological dimension %d for interval.", dim);
+    dolfin_error("Illegal topological dimension %d for interval.", dim);
   }
 
   return 0;
@@ -45,7 +45,7 @@ dolfin::uint Interval::numVertices(uint dim) const
   case 1:
     return 2; // cells
   default:
-    dolfin_error1("Illegal topological dimension %d for interval.", dim);
+    dolfin_error("Illegal topological dimension %d for interval.", dim);
   }
 
   return 0;
@@ -68,7 +68,7 @@ dolfin::uint Interval::orientation(const Cell& cell) const
 void Interval::createEntities(uint** e, uint dim, const uint v[]) const
 {
   // We don't need to create any entities
-  dolfin_error1("Don't know how to create entities of topological dimension %d.", dim);
+  dolfin_error("Don't know how to create entities of topological dimension %d.", dim);
 }
 //-----------------------------------------------------------------------------
 void Interval::orderEntities(Cell& cell) const

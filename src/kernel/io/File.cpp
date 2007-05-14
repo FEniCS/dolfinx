@@ -54,7 +54,7 @@ File::File(const std::string& filename)
   else
   {
     file = 0;
-    dolfin_error1("Unknown file type for \"%s\".", filename.c_str());
+    dolfin_error("Unknown file type for \"%s\".", filename.c_str());
   }
 }
 //-----------------------------------------------------------------------------
@@ -87,7 +87,7 @@ File::File(const std::string& filename, Type type)
     break;
   default:
     file = 0;
-    dolfin_error1("Unknown file type for \"%s\".", filename.c_str());
+    dolfin_error("Unknown file type for \"%s\".", filename.c_str());
   }
 }
 //-----------------------------------------------------------------------------

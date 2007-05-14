@@ -7,7 +7,7 @@
 // Modified by Magnus Vikstrom 2007.
 //
 // First added:  2002-12-03
-// Last changed: 2007-04-13
+// Last changed: 2007-05-14
 
 #include <stdarg.h>
 
@@ -322,7 +322,7 @@ void XMLFile::operator<<(Mesh& mesh)
               c->index(), vertices[0], vertices[1], vertices[2], vertices[3]);
       break;
     default:
-      dolfin_error1("Unknown cell type: %u.", cell_type);
+      dolfin_error("Unknown cell type: %u.", cell_type);
     }
   }
 

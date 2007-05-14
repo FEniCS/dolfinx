@@ -120,7 +120,7 @@ real TimeStepper::step()
 
   // Check if solution was stopped
   if ( stopped )
-    dolfin_warning1("Solution stopped at t = %.3e.", t);
+    dolfin_warning("Solution stopped at t = %.3e.", t);
 
   // Update for next time slab
   if ( !timeslab->shift() )

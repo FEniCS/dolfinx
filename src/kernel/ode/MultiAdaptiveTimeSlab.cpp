@@ -1050,7 +1050,7 @@ TimeSlabSolver* MultiAdaptiveTimeSlab::chooseSolver()
   }
   else
   {
-    dolfin_error1("Uknown solver type: %s.", solver.c_str());
+    dolfin_error("Uknown solver type: %s.", solver.c_str());
   }
 
   return 0;

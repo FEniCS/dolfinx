@@ -94,13 +94,13 @@ void XMLParameterList::readParameter(const xmlChar *name, const xmlChar **attrs)
     else if ( pvalue == "false" )
       parameters.set(pname.c_str(), false);
     else
-      dolfin_warning1("Illegal value for boolean parameter: %s.", pname.c_str());
+      dolfin_warning("Illegal value for boolean parameter: %s.", pname.c_str());
   }
   else if ( ptype == "string" )
   {
     parameters.set(pname.c_str(), pvalue.c_str());
   }
   else
-    dolfin_warning1("Illegal parameter type: %s", ptype.c_str());
+    dolfin_warning("Illegal parameter type: %s", ptype.c_str());
 }
 //-----------------------------------------------------------------------------

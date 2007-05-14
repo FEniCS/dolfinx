@@ -31,7 +31,7 @@ DiscreteFunction::DiscreteFunction(Mesh& mesh, Vector& x, const Form& form, uint
   const uint num_arguments = form.form().rank() + form.form().num_coefficients();
   if (i >= num_arguments)
   {
-    dolfin_error2("Illegal function index %d. Form only has %d arguments.",
+    dolfin_error("Illegal function index %d. Form only has %d arguments.",
                   i, num_arguments);
   }
 
@@ -63,7 +63,7 @@ DiscreteFunction::DiscreteFunction(Mesh& mesh, Vector& x,
   finite_element = ElementLibrary::create_finite_element(finite_element_signature);
   if (!finite_element)
   {
-    dolfin_error1("Unable to find finite element in library: \"%s\".",
+    dolfin_error("Unable to find finite element in library: \"%s\".",
                   finite_element_signature.c_str());
   }
 
@@ -71,7 +71,7 @@ DiscreteFunction::DiscreteFunction(Mesh& mesh, Vector& x,
   ufc_dof_map = ElementLibrary::create_dof_map(dof_map_signature);
   if (!ufc_dof_map)
   {
-    dolfin_error1("Unable to find dof map in library: \"%s\".",
+    dolfin_error("Unable to find dof map in library: \"%s\".",
                   dof_map_signature.c_str());
   }
   dof_map = new DofMap(*ufc_dof_map, mesh);
@@ -143,7 +143,7 @@ DiscreteFunction::DiscreteFunction(const DiscreteFunction& f)
   finite_element = ElementLibrary::create_finite_element(f.finite_element->signature());
   if (!finite_element)
   {
-    dolfin_error1("Unable to find finite element in library: \"%s\".",
+    dolfin_error("Unable to find finite element in library: \"%s\".",
                   f.finite_element->signature());
   }
 
@@ -151,7 +151,7 @@ DiscreteFunction::DiscreteFunction(const DiscreteFunction& f)
   ufc_dof_map = ElementLibrary::create_dof_map(f.dof_map->signature());
   if (!ufc_dof_map)
   {
-    dolfin_error1("Unable to find dof map in library: \"%s\".",
+    dolfin_error("Unable to find dof map in library: \"%s\".",
                   f.dof_map->signature());
   }
   dof_map = new DofMap(*ufc_dof_map, mesh);

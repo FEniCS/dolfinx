@@ -49,7 +49,7 @@ dolfin::uint Tetrahedron::numEntities(uint dim) const
   case 3:
     return 1; // cells
   default:
-    dolfin_error1("Illegal topological dimension %d for tetrahedron.", dim);
+    dolfin_error("Illegal topological dimension %d for tetrahedron.", dim);
   }
 
   return 0;
@@ -68,7 +68,7 @@ dolfin::uint Tetrahedron::numVertices(uint dim) const
   case 3:
     return 4; // cells
   default:
-    dolfin_error1("Illegal topological dimension %d for tetrahedron.", dim);
+    dolfin_error("Illegal topological dimension %d for tetrahedron.", dim);
   }
 
   return 0;
@@ -144,7 +144,7 @@ void Tetrahedron::createEntities(uint** e, uint dim, const uint v[]) const
     e[3][0] = v[0]; e[3][1] = v[1]; e[3][2] = v[2];
     break;
   default:
-    dolfin_error1("Don't know how to create entities of topological dimension %d.", dim);
+    dolfin_error("Don't know how to create entities of topological dimension %d.", dim);
   }
 }
 //-----------------------------------------------------------------------------
@@ -401,7 +401,7 @@ void Tetrahedron::refineCellIrregular(Cell& cell, MeshEditor& editor,
     editor.addCell(current_cell++, v3, e5, e4, e3);
     break;
   default:
-    dolfin_error1("Illegal rule for irregular refinement of tetrahedron.");
+    dolfin_error("Illegal rule for irregular refinement of tetrahedron.");
   }
   */
 }

@@ -35,7 +35,7 @@ TimeSlab::TimeSlab(ODE& ode) :
     method = new dGqMethod(q);
   }
   else
-    dolfin_error1("Unknown ODE method: %s", m.c_str());
+    dolfin_error("Unknown ODE method: %s", m.c_str());
 
   // Get initial data
   u0 = 0.0;

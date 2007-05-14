@@ -42,7 +42,7 @@ void GraphEditor::open(Graph& graph, std::string type)
   else if ( type == "undirected" )
     open(graph, Graph::undirected);
   else
-    dolfin_error1("Unknown graph type \"%s\".", type.c_str());
+    dolfin_error("Unknown graph type \"%s\".", type.c_str());
 }
 //-----------------------------------------------------------------------------
 void GraphEditor::initVertices(uint num_vertices)
@@ -76,7 +76,7 @@ void GraphEditor::initEdges(uint num_edges)
 
   // Check if num_arches matches next_arch
   if ( next_arch != graph->num_arches )
-    dolfin_error2("num_arches (%u) mismatch with sum of vertex edges (%u)",
+    dolfin_error("num_arches (%u) mismatch with sum of vertex edges (%u)",
                   graph->num_arches, next_arch);
 
   graph->edges = new uint[graph->num_arches];
@@ -101,12 +101,12 @@ void GraphEditor::addVertex(uint u, uint num_edges)
 
   // Check value of vertex index
   if ( u >= graph->num_vertices )
-    dolfin_error2("Vertex index (%d) out of range [0, %d].",
+    dolfin_error("Vertex index (%d) out of range [0, %d].",
 		  u, graph->num_vertices - 1);
 
   // Check if vertex added in correct order
   if ( u != next_vertex )
-    dolfin_error1("Next vertex that can be added is %d.", next_vertex);
+    dolfin_error("Next vertex that can be added is %d.", next_vertex);
   
   // Set offset and step to next vertex
   //dolfin_debug2("addVertex(%d, %d)", u, num_edges);
@@ -122,7 +122,7 @@ void GraphEditor::addEdge(uint u, uint v)
   
   // Check value of to vertex index
   if ( v > next_vertex )
-    dolfin_error1("Cannot create edge to undefined vertex (%d).", v);
+    dolfin_error("Cannot create edge to undefined vertex (%d).", v);
 
   addArch(u, v);
   if ( graph->type() == Graph::undirected )
@@ -139,15 +139,15 @@ void GraphEditor::addArch(uint u, uint v)
 
   // Check value of from vertex index
   if ( u > next_vertex )
-    dolfin_error1("Cannot create edge from undefined vertex (%d).", u);
+    dolfin_error("Cannot create edge from undefined vertex (%d).", u);
 
   // Loop edges not allowed
   if ( u == v )
-    dolfin_error1("Cannot create edge from vertex %d to itself.", v);
+    dolfin_error("Cannot create edge from vertex %d to itself.", v);
 
   // Check that vertex u is correctly specified
   if ( graph->vertices[u] < 0 || graph->vertices[u] > graph->num_arches )
-    dolfin_error1("Vertice \"%u\" undefined or incorrectly defined.\n", u);
+    dolfin_error("Vertice \"%u\" undefined or incorrectly defined.\n", u);
 
   uint u_next = graph->vertices[u];
 
@@ -162,7 +162,7 @@ void GraphEditor::addArch(uint u, uint v)
 
   // Check if vertex has room for edge
   if ( u_next == stop || u_next == graph->vertices[u+1] )
-    dolfin_error1("Vertex %d does not have room for more edges.", u);
+    dolfin_error("Vertex %d does not have room for more edges.", u);
 
   graph->edges[u_next] = v;
 }
@@ -176,7 +176,7 @@ void GraphEditor::close()
     {
       if ( graph->edges[j] == graph->num_vertices )
       {
-        dolfin_error1("Cannot close, vertex %u has undefined edges\n", i);
+        dolfin_error("Cannot close, vertex %u has undefined edges\n", i);
       }
     }
   }

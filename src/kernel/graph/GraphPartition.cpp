@@ -119,7 +119,7 @@ void GraphPartition::check(Graph& graph, uint num_part, uint* vtx_part)
   for(uint i=0; i<graph.numVertices(); ++i)
   {
     if(vtx_part[i] == num_part)
-      dolfin_error1("Vertex %d not partitioned", i);
+      dolfin_error("Vertex %d not partitioned", i);
   }
 
   // Check that partitions are continuous
@@ -136,7 +136,7 @@ void GraphPartition::check(Graph& graph, uint num_part, uint* vtx_part)
 		// If vertices shares partition check that they are neighbors
 		if(vtx_part[i] == vtx_part[j] && !graph.adjacent(i, j))
 		{
-		  dolfin_error2("Vertex %d not adjacent to vertex %d, but in the same partition", i, j);
+		  dolfin_error("Vertex %d not adjacent to vertex %d, but in the same partition", i, j);
 		}
 	 }
 	 for(uint j=i+1; j<graph.numVertices(); ++j)
@@ -144,7 +144,7 @@ void GraphPartition::check(Graph& graph, uint num_part, uint* vtx_part)
 		// If vertices shares partition check that they are neighbors
 		if(vtx_part[i] == vtx_part[j] && !graph.adjacent(i, j))
 		{
-		  dolfin_error2("Vertex %d not adjacent to vertex %d, but in the same partition", i, j);
+		  dolfin_error("Vertex %d not adjacent to vertex %d, but in the same partition", i, j);
 		}
 	 }
   }

@@ -22,35 +22,35 @@ ParameterValue::~ParameterValue()
 //-----------------------------------------------------------------------------
 const ParameterValue& ParameterValue::operator= (int value)
 {
-  dolfin_error1("Cannot assign int value to parameter of type %s.",
+  dolfin_error("Cannot assign int value to parameter of type %s.",
   		type().c_str());
   return *this;
 }
 //-----------------------------------------------------------------------------
 const ParameterValue& ParameterValue::operator= (real value)
 {
-  dolfin_error1("Cannot assign real value to parameter of type %s.",
+  dolfin_error("Cannot assign real value to parameter of type %s.",
 		type().c_str());
   return *this;
 }
 //-----------------------------------------------------------------------------
 const ParameterValue& ParameterValue::operator= (bool value)
 {
-  dolfin_error1("Cannot assign bool value to parameter of type %s.",
+  dolfin_error("Cannot assign bool value to parameter of type %s.",
 		type().c_str());
   return *this;
 }
 //-----------------------------------------------------------------------------
 const ParameterValue& ParameterValue::operator= (std::string value)
 {
-  dolfin_error1("Cannot assign string value to parameter of type %s.",
+  dolfin_error("Cannot assign string value to parameter of type %s.",
 		type().c_str());
   return *this;
 }
 //-----------------------------------------------------------------------------
 const ParameterValue& ParameterValue::operator= (uint value)
 {
-  dolfin_error1("Cannot assign uint value to parameter of type %s.",
+  dolfin_error("Cannot assign uint value to parameter of type %s.",
 		type().c_str());
   return *this;
 }
@@ -58,35 +58,35 @@ const ParameterValue& ParameterValue::operator= (uint value)
 ParameterValue::operator int() const
 {
   cout << "Halla eller, fel typ" << endl;
-  //dolfin_error1("Unable to convert parameter of type %s to int.",
+  //dolfin_error("Unable to convert parameter of type %s to int.",
   //		type().c_str());
   return 0;
 }
 //-----------------------------------------------------------------------------
 ParameterValue::operator real() const
 {
-  dolfin_error1("Unable to convert parameter of type %s to real.",
+  dolfin_error("Unable to convert parameter of type %s to real.",
 		type().c_str());
   return 0.0;
 }
 //-----------------------------------------------------------------------------
 ParameterValue::operator bool() const
 {
-  dolfin_error1("Unable to convert parameter of type %s to bool.",
+  dolfin_error("Unable to convert parameter of type %s to bool.",
 		type().c_str());
   return false;
 }
 //-----------------------------------------------------------------------------
 ParameterValue::operator std::string() const
 {
-  dolfin_error1("Unable to convert parameter of type %s to string.",
+  dolfin_error("Unable to convert parameter of type %s to string.",
 		type().c_str());
   return "";
 }
 //-----------------------------------------------------------------------------
 ParameterValue::operator dolfin::uint() const
 {
-  dolfin_error1("Unable to convert parameter of type %s to uint.",
+  dolfin_error("Unable to convert parameter of type %s to uint.",
 		type().c_str());
   return 0;
 }
