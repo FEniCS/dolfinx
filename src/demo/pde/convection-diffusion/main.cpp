@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-02-09
-// Last changed: 2007-04-30
+// Last changed: 2007-05-14
 //
 // This demo solves the time-dependent convection-diffusion equation by
 // a least-squares stabilized cG(1)cG(1) method. The velocity field used
@@ -73,4 +73,7 @@ int main()
     t += k;
     u0 = u1;
   }
+
+  // Plot solution
+  plot(u1);
 }

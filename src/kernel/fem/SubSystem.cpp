@@ -2,9 +2,9 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2007-04-24
-// Last changed: 2007-04-27
+// Last changed: 2007-05-14
 
-#include <dolfin/dolfin_log.h>
+#include <dolfin/log.h>
 #include <dolfin/DofMap.h>
 #include <dolfin/SubSystem.h>
 
@@ -48,7 +48,7 @@ ufc::finite_element* SubSystem::extractFiniteElement
 {
   // Recursively extract sub element
   ufc::finite_element* sub_finite_element = extractFiniteElement(finite_element, sub_system);
-  cout << "Extracted finite element for sub system: " << sub_finite_element->signature() << endl;
+  message(2, "Extracted finite element for sub system: %s", sub_finite_element->signature());
   
   return sub_finite_element;
 }
@@ -61,8 +61,8 @@ ufc::dof_map* SubSystem::extractDofMap
 
   // Recursively extract sub dof map
   ufc::dof_map* sub_dof_map = extractDofMap(dof_map, mesh, offset, sub_system);
-  cout << "Extracted dof map for sub system: " << sub_dof_map->signature() << endl;
-  cout << "Offset for sub system: " << offset << endl;
+  message(2, "Extracted dof map for sub system: %s", sub_dof_map->signature());
+  message(2, "Offset for sub system: %s", offset);
 
   return sub_dof_map;
 }
