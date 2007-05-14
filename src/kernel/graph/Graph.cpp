@@ -1,12 +1,17 @@
 // Copyright (C) 2007 Magnus Vikstrom.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Anders Logg, 2007.
+//
 // First added:  2007-02-12
-// Last changed: 2007-03-19
+// Last changed: 2007-05-14
 
-#include <dolfin/dolfin_log.h>
-#include <dolfin.h>
+#include <dolfin/log.h>
+#include <dolfin/LogStream.h>
 #include <dolfin/File.h>
+#include <dolfin/Vertex.h>
+#include <dolfin/Cell.h>
+#include <dolfin/GraphPartition.h>
 #include <dolfin/Graph.h>
 
 using namespace dolfin;
@@ -83,28 +88,28 @@ bool Graph::adjacent(uint u, uint v)
 //-----------------------------------------------------------------------------
 void Graph::disp()
 {
-  std::cout << "Graph type: " << typestr() << std::endl;
-  std::cout << "Number of vertices = " << num_vertices << std::endl;
-  std::cout << "Number of edges = " << num_edges << std::endl;
-  std::cout << "Connectivity" << std::endl;
-  std::cout << "Vertex: Edges" << std::endl;
+  cout << "Graph type: " << typestr() << endl;
+  cout << "Number of vertices = " << num_vertices << endl;
+  cout << "Number of edges = " << num_edges << endl;
+  cout << "Connectivity" << endl;
+  cout << "Vertex: Edges" << endl;
   for(uint i=0; i<num_vertices-1; ++i)
   {
-    std::cout << i << ": ";
+    cout << i << ": ";
     for(uint j=vertices[i]; j<vertices[i+1]; ++j)
     {
-      std::cout << edges[j] << " ";
+      cout << edges[j] << " ";
     }
 
-    std::cout << std::endl;
+    cout << endl;
   }
   // last vertex
-  std::cout << num_vertices-1 << ": ";
+  cout << num_vertices-1 << ": ";
   for(uint i=vertices[num_vertices-1]; i<num_arches; ++i)
   {
-    std::cout << edges[i] << " ";
+    cout << edges[i] << " ";
   }
-  std::cout << std::endl;
+  cout << endl;
 }
 //-----------------------------------------------------------------------------
 void Graph::partition(uint num_part, uint* vtx_part)

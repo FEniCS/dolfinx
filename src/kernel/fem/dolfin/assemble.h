@@ -28,6 +28,9 @@ namespace dolfin
   /// Assemble tensor from given variational form and mesh
   void assemble(GenericTensor& A, const Form& form, Mesh& mesh);
   
+  /// Assemble tensor from given variational form and mesh over a sub domain
+  //void assemble(GenericTensor& A, const Form& form, Mesh& mesh, const SubDomain& sub_domain);
+
   /// Assemble scalar from given variational form and mesh
   real assemble(const Form& form, Mesh& mesh);
   

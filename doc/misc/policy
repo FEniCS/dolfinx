@@ -61,3 +61,8 @@ keep sort of the same style when writing the code.
 
 - The only part of PETSc that is visible outside of src/kernel/la are the functions
   Matrix::mat(), Vector::vec() etc.
+
+- Don't #include <dolfin.h> inside the DOLFIN kernel, only include the portions of
+  DOLFIN you are actually using
+
+- Use forward declarations instead of includes in header files when possible
