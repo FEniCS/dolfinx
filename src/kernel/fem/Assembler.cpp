@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-01-17
-// Last changed: 2007-05-09
+// Last changed: 2007-05-14
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Array.h>
@@ -38,13 +38,6 @@ void Assembler::assemble(GenericTensor& A, const Form& form, Mesh& mesh)
 {
   // Extract form and coefficients
   assemble(A, form.form(), mesh, form.coefficients());
-}
-//-----------------------------------------------------------------------------
-void Assembler::assemble(GenericTensor& A, const ufc::form& form, Mesh& mesh)
-{
-  // Create empty array of coefficients
-  Array<Function*> coefficients;
-  assemble(A, form, mesh, coefficients);
 }
 //-----------------------------------------------------------------------------
 void Assembler::assemble(GenericTensor& A, const ufc::form& form, Mesh& mesh,
@@ -84,21 +77,6 @@ dolfin::real Assembler::assemble(const Form& form, Mesh& mesh)
 {
   Scalar value;
   assemble(value, form, mesh);
-  return value;
-}
-//-----------------------------------------------------------------------------
-dolfin::real Assembler::assemble(const ufc::form& form, Mesh& mesh)
-{
-  Scalar value;
-  assemble(value, form, mesh);
-  return value;
-}
-//-----------------------------------------------------------------------------
-dolfin::real Assembler::assemble(const ufc::form& form, Mesh& mesh,
-                                 Array<Function*> coefficients)
-{
-  Scalar value;
-  assemble(value, form, mesh, coefficients);
   return value;
 }
 //-----------------------------------------------------------------------------
