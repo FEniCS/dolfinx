@@ -7,7 +7,7 @@
 #include <cmath>
 #include <dolfin/dolfin_log.h>
 #include <dolfin/dolfin_math.h>
-#include <dolfin/ParameterSystem.h>
+#include <dolfin/parameters.h>
 #include <dolfin/uBlasVector.h>
 #include <dolfin/ODE.h>
 #include <dolfin/Dependencies.h>
@@ -46,7 +46,7 @@ void Dependencies::set(uint i, uint j, bool checknew)
 
   // Check if the size has been specified
   if ( sdep[i].size() == sdep[i].capacity() )
-    dolfin_warning("Specify number of dependencies first for better performance.");
+    warning("Specify number of dependencies first for better performance.");
 
   // Check if the dependency already exists before inserting it
   if ( checknew )
@@ -67,7 +67,7 @@ void Dependencies::set(const uBlasSparseMatrix& A)
 
   // Check dimension of matrix
   if ( A.size(0) != N )
-    dolfin_error("Incorrect matrix dimensions for dependency pattern.");
+    error("Incorrect matrix dimensions for dependency pattern.");
 
   // Get data from matrix
   for (uint i = 0; i < N; i++)
@@ -163,7 +163,7 @@ void Dependencies::detect(ODE& ode)
     p = i;
   }
 
-  dolfin_info("Automatically detected %d dependencies.", sum);
+  message("Automatically detected %d dependencies.", sum);
 }
 //-----------------------------------------------------------------------------
 bool Dependencies::sparse() const
@@ -175,7 +175,7 @@ void Dependencies::disp() const
 {
   if ( _sparse )
   {
-    dolfin_info("Dependency pattern:");
+    message("Dependency pattern:");
     for (uint i = 0; i < N; i++)
     {
       cout << i << ":";
@@ -185,7 +185,7 @@ void Dependencies::disp() const
     }
   }
   else  
-    dolfin_info("Dependency pattern: dense");
+    message("Dependency pattern: dense");
 }
 //-----------------------------------------------------------------------------
 bool Dependencies::checkDependency(ODE& ode, uBlasVector& u, real f0,

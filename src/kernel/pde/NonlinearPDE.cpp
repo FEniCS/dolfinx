@@ -21,13 +21,13 @@ NonlinearPDE::NonlinearPDE(Form& a,
                            BoundaryCondition& bc)
   : a(a), L(L), mesh(mesh), bcs(bcs)
 {
-  dolfin_info("Creating nonlinear PDE with %d boundary condition(s).", bcs.size());
+  message("Creating nonlinear PDE with %d boundary condition(s).", bcs.size());
 
   // Check ranks of forms
   if ( a.form().rank() != 2 )
-    dolfin_error("Expected a bilinear form but rank is %d.", a.form().rank());
+    error("Expected a bilinear form but rank is %d.", a.form().rank());
   if ( L.form().rank() != 1 )
-    dolfin_error("Expected a linear form but rank is %d.", L.form().rank());
+    error("Expected a linear form but rank is %d.", L.form().rank());
 
   // Create array with one boundary condition
   bcs.push_back(&bc);
@@ -39,13 +39,13 @@ NonlinearPDE::NonlinearPDE(Form& a,
                            Array<BoundaryCondition*>& bcs)
   : a(a), L(L), mesh(mesh), bcs(bcs)
 {
-  dolfin_info("Creating nonlinear PDE with %d boundary condition(s).", bcs.size());
+  message("Creating nonlinear PDE with %d boundary condition(s).", bcs.size());
 
   // Check ranks of forms
   if ( a.form().rank() != 2 )
-    dolfin_error("Expected a bilinear form but rank is %d.", a.form().rank());
+    error("Expected a bilinear form but rank is %d.", a.form().rank());
   if ( L.form().rank() != 1 )
-    dolfin_error("Expected a linear form but rank is %d.", L.form().rank());
+    error("Expected a linear form but rank is %d.", L.form().rank());
 }
 //-----------------------------------------------------------------------------
 NonlinearPDE::~NonlinearPDE()
@@ -66,7 +66,7 @@ void NonlinearPDE::form(GenericMatrix& A, GenericVector& b, const GenericVector&
 //-----------------------------------------------------------------------------
 void NonlinearPDE::solve(Function& u, real& t, const real& T, const real& dt)
 {
-  dolfin_begin("Solving nonlinear PDE.");  
+  begin("Solving nonlinear PDE.");  
 
   // Initialise function
   u.init(mesh, x, a, 1);

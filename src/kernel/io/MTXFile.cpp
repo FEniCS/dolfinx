@@ -40,10 +40,10 @@ void MTXFile::operator>>(Vector& x)
 //  real* val;
 
   if ((f = fopen(filename.c_str(), "r")) == NULL)
-    dolfin_error("Unable to open Matrix Market inputfile.");
+    error("Unable to open Matrix Market inputfile.");
 
   if (MTXFile::mm_read_banner(f, &matcode) != 0)
-    dolfin_error("Could not process Matrix Market banner.");
+    error("Could not process Matrix Market banner.");
 
   // Check if Market Market type is implemented.
   if (
@@ -54,19 +54,19 @@ void MTXFile::operator>>(Vector& x)
       mm_is_hermitian(matcode) ||
       mm_is_skew     (matcode)
       )
-    dolfin_error("Used Matrix Market type is not implemented.");
+    error("Used Matrix Market type is not implemented.");
 
   // find out size of vector
   if (mm_read_mtx_array_size(f, &M, &N) !=0)
-    dolfin_error("Could not parse matrix size.");
+    error("Could not parse matrix size.");
 
   if (N!=1)
-    dolfin_error("Array width for Vector needs to be 1.");
+    error("Array width for Vector needs to be 1.");
 
   // resize x
   x.init(M);
 
-  dolfin_error("Reading MTX vectors is broken. Need to fix vector access.");
+  error("Reading MTX vectors is broken. Need to fix vector access.");
   // read from File and store into the Matrix
 /*
   real *temp = 0;
@@ -91,10 +91,10 @@ void MTXFile::operator>>(Matrix& A)
 //  uint i;
 
   if ((f = fopen(filename.c_str(), "r")) == NULL)
-    dolfin_error("Unable to open Matrix Market inputfile.");
+    error("Unable to open Matrix Market inputfile.");
 
   if (MTXFile::mm_read_banner(f, &matcode) != 0)
-    dolfin_error("Could not process Matrix Market banner.");
+    error("Could not process Matrix Market banner.");
 
   // Check if Market Market type is implemented.
   if (
@@ -105,17 +105,17 @@ void MTXFile::operator>>(Matrix& A)
       mm_is_hermitian(matcode) ||
       mm_is_skew     (matcode)
       )
-    dolfin_error("Used Matrix Market type is not implemented.");
+    error("Used Matrix Market type is not implemented.");
 
   // find out size of matrix
   if (MTXFile::mm_read_mtx_crd_size(f, &M, &N, &nz) !=0)
   {
-    dolfin_error("Could not parse matrix size.");
+    error("Could not parse matrix size.");
   }
   // resize A
   A.init(M, N, nz);
 
-  dolfin_error("Reading MTX matrices is broken. Need to fix matrix access.");
+  error("Reading MTX matrices is broken. Need to fix matrix access.");
 /*
   // read from File and store into the Matrix A
   uint k, l;
@@ -146,7 +146,7 @@ void MTXFile::operator<<(Vector& x)
   fprintf(f,"%% Vector generated with dolfin\n");
   mm_write_mtx_array_size(f, m, 1);
 
-  dolfin_error("Writing MTX vectors is broken. Need to fix element access.");
+  error("Writing MTX vectors is broken. Need to fix element access.");
 
   // NOTE: matrix market files use 1-based indices, i.e. 
   // first element of a vector has index 1, not 0.  
@@ -155,7 +155,7 @@ void MTXFile::operator<<(Vector& x)
   if (f !=stdout) 
     fclose(f);
 
-  dolfin_info("Saved vector to file %s in Matrix Market format.",
+  message("Saved vector to file %s in Matrix Market format.",
 	      filename.c_str());
 }
 //-----------------------------------------------------------------------------
@@ -176,7 +176,7 @@ void MTXFile::operator<<(Matrix& A)
   mm_set_coordinate(&matcode);
   mm_set_real(&matcode);
 
-  dolfin_error("Writing MTX vectors is broken. Need to fix element access.");
+  error("Writing MTX vectors is broken. Need to fix element access.");
 
   // NOTE: matrix market files use 1-based indices, i.e.
   // first element of a vector has index 1, not 0. 
@@ -215,7 +215,7 @@ void MTXFile::operator<<(Matrix& A)
 */
   if (f !=stdout) fclose(f);    
 
-  dolfin_info("Saved matrix to file %s in Matrix Market format.",
+  message("Saved matrix to file %s in Matrix Market format.",
 	      filename.c_str());
 }
 //-----------------------------------------------------------------------------
@@ -233,14 +233,14 @@ int MTXFile::mm_read_banner(FILE *f, MM_typecode *matcode)
 
   if (fgets(line, MM_MAX_LINE_LENGTH, f) == NULL)
   {
-    dolfin_error("premature EOF");
+    error("premature EOF");
     return 1;
   }
 
   if (sscanf(line, "%s %s %s %s %s", banner, mtx, crd, data_type,
 	     storage_scheme) != 5)
   {
-    dolfin_error("premature EOF");
+    error("premature EOF");
     return 1;
   }
 
@@ -252,14 +252,14 @@ int MTXFile::mm_read_banner(FILE *f, MM_typecode *matcode)
   // check for banner
   if (strncmp(banner, "%%MatrixMarket", strlen("%%MatrixMarket")) != 0)
   {
-    dolfin_error("no header in file"); 
+    error("no header in file"); 
     return 0;
   }
 
   // first field should be "mtx"
   if (strcmp(mtx, "matrix") != 0)
   {
-    dolfin_error("unsupported type in first field"); 
+    error("unsupported type in first field"); 
     return 0;
   }
   mm_set_matrix(matcode);
@@ -274,7 +274,7 @@ int MTXFile::mm_read_banner(FILE *f, MM_typecode *matcode)
       mm_set_dense(matcode);
     else
     {
-      dolfin_error("unsupported type in second field"); 
+      error("unsupported type in second field"); 
       return 0;
     }
 
@@ -293,7 +293,7 @@ int MTXFile::mm_read_banner(FILE *f, MM_typecode *matcode)
 	  mm_set_integer(matcode);
 	else
 	{
-	  dolfin_error("unsupported type in third field"); 
+	  error("unsupported type in third field"); 
 	  return 0;
 	}
 
@@ -312,7 +312,7 @@ int MTXFile::mm_read_banner(FILE *f, MM_typecode *matcode)
 	  mm_set_skew(matcode);
 	else
 	{
-	  dolfin_error("unsupported type in fourth field"); 
+	  error("unsupported type in fourth field"); 
 	  return 0;
 	}
 
@@ -323,7 +323,7 @@ int MTXFile::mm_write_mtx_crd_size(FILE* f, uint M, uint N, uint nz)
 {
   if (fprintf(f, "%u %u %u\n", M, N, nz) < 3)
   {
-    dolfin_error("Unable to write MTX file");
+    error("Unable to write MTX file");
     return 0;
   }
   else
@@ -343,7 +343,7 @@ int MTXFile::mm_read_mtx_crd_size(FILE* f, uint* M, uint* N, uint* nz )
   {
     if (fgets(line,MM_MAX_LINE_LENGTH,f) == NULL)
     {
-      dolfin_error("premature EOF");
+      error("premature EOF");
       return 1;
     }
     
@@ -360,7 +360,7 @@ int MTXFile::mm_read_mtx_crd_size(FILE* f, uint* M, uint* N, uint* nz )
       num_items_read = fscanf(f, "%u %u %u", M, N, nz);
       if (num_items_read == EOF)
       {
-        dolfin_error("premature EOF");
+        error("premature EOF");
         return 1;
       }
     }
@@ -381,7 +381,7 @@ int MTXFile::mm_read_mtx_array_size(FILE *f, uint *M, uint *N)
   {
     if (fgets(line,MM_MAX_LINE_LENGTH,f) == NULL)
     {
-      dolfin_error("premature EOF");
+      error("premature EOF");
       return 1;
     }
   }
@@ -397,7 +397,7 @@ int MTXFile::mm_read_mtx_array_size(FILE *f, uint *M, uint *N)
       num_items_read = fscanf(f, "%u %u", M, N);
       if (num_items_read == EOF) 
       {
-        dolfin_error("premature EOF");
+        error("premature EOF");
         return 1;
       }
       
@@ -411,7 +411,7 @@ int MTXFile::mm_write_mtx_array_size(FILE *f, uint M, uint N)
 {
   if (fprintf(f, "%u %u\n", M, N) < 0)
   {
-    dolfin_error("Unable to write file");
+    error("Unable to write file");
     return 0;
   }
   else
@@ -428,7 +428,7 @@ int MTXFile::mm_write_banner(FILE *f, MM_typecode matcode)
   delete[] str;
   if (ret_code < 0 )
   {
-    dolfin_error("Unable to write file");
+    error("Unable to write file");
     return 0;
   }
   else
@@ -444,7 +444,7 @@ int  MTXFile::mm_typecode_to_str(MM_typecode matcode, char* buffer)
     types[0] = "matrix";
   else
   {
-    dolfin_error("invalid matrix type");
+    error("invalid matrix type");
     return 0;
   }
 
@@ -456,7 +456,7 @@ int  MTXFile::mm_typecode_to_str(MM_typecode matcode, char* buffer)
       types[1] = "array";
     else
     {
-      dolfin_error("invalid spares/dense specification");
+      error("invalid spares/dense specification");
       return 0;
     }
 
@@ -474,7 +474,7 @@ int  MTXFile::mm_typecode_to_str(MM_typecode matcode, char* buffer)
 	  types[2] = "integer";
 	else
 	{
-	  dolfin_error("invalid data type");
+	  error("invalid data type");
 	  return 0;
 	}
 
@@ -492,7 +492,7 @@ int  MTXFile::mm_typecode_to_str(MM_typecode matcode, char* buffer)
 	  types[3] = "skew-symmetric";
 	else
 	{
-	  dolfin_error("invalid symmetry type");
+	  error("invalid symmetry type");
 	  return 0;
 	}
 

@@ -122,7 +122,7 @@ void MeshHierarchy::remove()
   }
   else
   {
-    dolfin_error("Cannot remove mesh from empty mesh hierarcy");
+    error("Cannot remove mesh from empty mesh hierarcy");
   }
 
 }
@@ -136,7 +136,7 @@ Mesh& MeshHierarchy::operator()(uint k) const
 Mesh& MeshHierarchy::operator[](uint k) const 
 {
   // Return full (reconstructed) mesh object on level k 
-  dolfin_error("not implemented.");
+  error("not implemented.");
   return meshes[k];
 }
 //-----------------------------------------------------------------------------

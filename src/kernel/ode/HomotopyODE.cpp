@@ -100,7 +100,7 @@ bool HomotopyODE::update(const complex z[], real t, bool end)
     
     if ( r > homotopy.divtol )
     {
-      dolfin_info("Homotopy path seems to be diverging.");
+      message("Homotopy path seems to be diverging.");
       return false;
     }
   }
@@ -108,7 +108,7 @@ bool HomotopyODE::update(const complex z[], real t, bool end)
   // Check if we reached the end of the integration
   if ( end )
   {
-    dolfin_info("Reached end of integration, saving solution.");
+    message("Reached end of integration, saving solution.");
     _state = endgame;
     
     for (uint i = 0; i < n; i++)
@@ -162,6 +162,6 @@ void HomotopyODE::monitor(const complex z[], real t)
   // Clear temporary storagexs
   delete [] h;
 
-  dolfin_info("Homotopy: F = %e G = %e H = %e", Fnorm, Gnorm, Hnorm);
+  message("Homotopy: F = %e G = %e H = %e", Fnorm, Gnorm, Hnorm);
 }
 //-----------------------------------------------------------------------------

@@ -55,7 +55,7 @@ void MeshHierarchyAlgorithms::refineTetMesh(MeshHierarchy& mesh_hierarchy)
 void MeshHierarchyAlgorithms::evaluateMarks(Mesh& mesh) 
 {
   // This function implements the "EvaluateMarks" subroutine by Bey 
-  dolfin_warning("Not implemented yet.");
+  warning("Not implemented yet.");
 
   /*
     cell_children = new MeshFunction<uint>[num_meshes]; 
@@ -81,25 +81,25 @@ void MeshHierarchyAlgorithms::evaluateMarks(Mesh& mesh)
 void MeshHierarchyAlgorithms::closeMesh(Mesh& mesh) 
 {
   // This function implements the "CloseGrid" subroutine by Bey 
-  dolfin_warning("Not implemented yet.");
+  warning("Not implemented yet.");
 }
 //-----------------------------------------------------------------------------
 void MeshHierarchyAlgorithms::closeCell(Cell& cell) 
 {
   // This function implements the "CloseElement" subroutine by Bey 
-  dolfin_warning("Not implemented yet.");
+  warning("Not implemented yet.");
 }
 //-----------------------------------------------------------------------------
 void MeshHierarchyAlgorithms::unrefineMesh(MeshHierarchy& mesh, uint k)
 {
   // This function implements the "UnrefineGrid" subroutine by Bey 
-  dolfin_warning("Not implemented yet.");
+  warning("Not implemented yet.");
 }
 //-----------------------------------------------------------------------------
 void MeshHierarchyAlgorithms::refineMesh(MeshHierarchy& mesh, uint k)
 {
   // This function implements the "RefineGrid" subroutine by Bey 
-  dolfin_warning("Not implemented yet.");
+  warning("Not implemented yet.");
 }
 //-----------------------------------------------------------------------------
 

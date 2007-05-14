@@ -129,7 +129,7 @@ void PETScKrylovMatrix::disp(bool sparse, int precision) const
   // Since we don't really have the matrix, we create the matrix by
   // performing multiplication with unit vectors. Used only for debugging.
   
-  dolfin_warning("Display of PETScKrylovMatrix needs to be fixed.");
+  warning("Display of PETScKrylovMatrix needs to be fixed.");
 
 /*
   uint M = size(0);

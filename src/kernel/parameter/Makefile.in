@@ -61,8 +61,9 @@ am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(includedir)"
 libLTLIBRARIES_INSTALL = $(INSTALL)
 LTLIBRARIES = $(lib_LTLIBRARIES)
 libdolfin_parameter_la_LIBADD =
-am_libdolfin_parameter_la_OBJECTS = Parameter.lo ParameterList.lo \
-	ParameterSystem.lo ParameterValue.lo Parametrized.lo
+am_libdolfin_parameter_la_OBJECTS = parameters.lo Parameter.lo \
+	ParameterList.lo ParameterSystem.lo ParameterValue.lo \
+	Parametrized.lo
 libdolfin_parameter_la_OBJECTS = $(am_libdolfin_parameter_la_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -237,19 +238,21 @@ sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 SUBDIRS = dolfin
 nobase_include_HEADERS = dolfin/dolfin_parameter.h \
-                                dolfin/Parameter.h \
-                                dolfin/ParameterList.h \
-                                dolfin/ParameterSystem.h \
-                                dolfin/ParameterValue.h \
-                                dolfin/Parametrized.h
+                                 dolfin/parameters.h \
+                                 dolfin/Parameter.h \
+                                 dolfin/ParameterList.h \
+                                 dolfin/ParameterSystem.h \
+                                 dolfin/ParameterValue.h \
+                                 dolfin/Parametrized.h
 
 INCLUDES = @KERNEL_CFLAGS@
 lib_LTLIBRARIES = libdolfin-parameter.la
-libdolfin_parameter_la_SOURCES = Parameter.cpp \
-                                ParameterList.cpp \
-                                ParameterSystem.cpp \
-                                ParameterValue.cpp \
-                                Parametrized.cpp
+libdolfin_parameter_la_SOURCES = parameters.cpp \
+                                 Parameter.cpp \
+                                 ParameterList.cpp \
+                                 ParameterSystem.cpp \
+                                 ParameterValue.cpp \
+                                 Parametrized.cpp
 
 libdolfin_parameter_la_LDFLAGS = -static
 all: all-recursive
@@ -326,6 +329,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ParameterSystem.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ParameterValue.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Parametrized.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/parameters.Plo@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \

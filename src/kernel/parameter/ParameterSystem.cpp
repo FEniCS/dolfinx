@@ -18,24 +18,6 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 ParameterSystem::ParameterSystem() : ParameterList()
 {
-  // dolfin_info("Initializing DOLFIN parameter system.");
-
-  // Include default values for parameters
 #include <dolfin/DefaultParameters.h>
-}
-//-----------------------------------------------------------------------------
-void dolfin::add(std::string key, Parameter value)
-{
-  ParameterSystem::parameters.add(key, value);
-}
-//-----------------------------------------------------------------------------
-void dolfin::set(std::string key, Parameter value)
-{
-  ParameterSystem::parameters.set(key, value);
-}
-//-----------------------------------------------------------------------------
-dolfin::Parameter dolfin::get(std::string key)
-{
-  return ParameterSystem::parameters.get(key);
 }
 //-----------------------------------------------------------------------------

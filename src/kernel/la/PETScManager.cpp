@@ -28,7 +28,7 @@ void PETScManager::init()
   if ( petsc.initialized )
     return;
 
-  dolfin_info("Initializing PETSc (ignoring command-line arguments).");
+  message("Initializing PETSc (ignoring command-line arguments).");
 
   // Prepare fake command-line arguments for PETSc. This is needed since
   // PetscInitializeNoArguments() does not seem to work.
@@ -58,7 +58,7 @@ void PETScManager::init(int argc, char* argv[])
   if ( petsc.initialized )
     return;
 
-  dolfin_info("Initializing PETSc with given command-line arguments.");
+  message("Initializing PETSc with given command-line arguments.");
   
   // Initialize PETSc
   PetscInitialize(&argc, &argv, PETSC_NULL, PETSC_NULL);
@@ -82,7 +82,7 @@ PETScManager::~PETScManager()
   {
     // FIXME: Can't use log system here because it may already
     // FIXME: be out of scope/destroyed
-    //dolfin_info("Finalizing PETSc.");
+    //message("Finalizing PETSc.");
     //printf("Finalizing PETSc.\n");
     PetscFinalize();
  

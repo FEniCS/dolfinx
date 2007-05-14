@@ -19,7 +19,7 @@ namespace dolfin
   public:
 
     // Singleton instance of logger
-    static Logger log;
+    static Logger logger;
 	 
   };
 

@@ -15,7 +15,7 @@ using namespace dolfin;
 UndirectedClique::UndirectedClique(uint num_vertices) : Graph()
 {
   if ( num_vertices < 1 )
-    dolfin_error("Graph must have at least one vertex.");
+    error("Graph must have at least one vertex.");
 
   rename("graph", "Undirected clique");
 

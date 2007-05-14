@@ -89,7 +89,7 @@ Function::Type Function::type() const
 dolfin::uint Function::rank() const
 {
   if (!f)
-    dolfin_error("Function contains no data.");
+    error("Function contains no data.");
 
   return f->rank();
 }
@@ -97,7 +97,7 @@ dolfin::uint Function::rank() const
 dolfin::uint Function::dim(unsigned int i) const
 {
   if (!f)
-    dolfin_error("Function contains no data.");
+    error("Function contains no data.");
 
   return f->dim(i);
 }
@@ -105,7 +105,7 @@ dolfin::uint Function::dim(unsigned int i) const
 Mesh& Function::mesh()
 {
   if (!f)
-    dolfin_error("Function contains no data.");
+    error("Function contains no data.");
 
   return f->mesh;
 }
@@ -113,7 +113,7 @@ Mesh& Function::mesh()
 SubFunction Function::operator[] (uint i)
 {
   if (_type != discrete)
-    dolfin_error("Sub functions can only be extracted from discrete functions.");
+    error("Sub functions can only be extracted from discrete functions.");
 
   SubFunction sub_function(static_cast<DiscreteFunction*>(f), i);
   return sub_function;
@@ -123,7 +123,7 @@ const Function& Function::operator= (Function& f)
 {
   // FIXME: Handle other assignments
   if (f._type != discrete)
-    dolfin_error("Can only handle assignment from discrete functions (for now).");
+    error("Can only handle assignment from discrete functions (for now).");
   
   // Either create or copy discrete function
   if (_type == discrete)
@@ -156,7 +156,7 @@ const Function& Function::operator= (SubFunction sub_function)
 void Function::interpolate(real* values)
 {
   if (!f)
-    dolfin_error("Function contains no data.");
+    error("Function contains no data.");
 
   f->interpolate(values);
 }
@@ -167,7 +167,7 @@ void Function::interpolate(real* coefficients,
                            Cell& cell, int facet)
 {
   if (!f)
-    dolfin_error("Function contains no data.");
+    error("Function contains no data.");
 
   // Make current cell and facet are available to user-defined function
   _cell = &cell;
@@ -189,14 +189,14 @@ void Function::eval(real* values, const real* x)
 //-----------------------------------------------------------------------------
 dolfin::real Function::eval(const real* x)
 {
-  dolfin_error("Missing eval() for user-defined function (must be overloaded).");
+  error("Missing eval() for user-defined function (must be overloaded).");
   return 0.0;
 }
 //-----------------------------------------------------------------------------
 const Cell& Function::cell() const
 {
    if (!_cell)
-    dolfin_error("Current cell is unknown (only available during assembly).");
+    error("Current cell is unknown (only available during assembly).");
   
   return *_cell;
 }

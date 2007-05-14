@@ -74,7 +74,7 @@ void VTKFile::operator<<(Function& u)
 {
   // Can only save discrete functions
   if ( u.type() != Function::discrete )
-    dolfin_error("Only discrete functions can be saved in VTK format.");
+    error("Only discrete functions can be saved in VTK format.");
 
   // Update vtu file name and clear file
   vtuNameUpdate(counter);
@@ -167,7 +167,7 @@ void VTKFile::ResultsWrite(Function& u) const
 
   const uint rank = u.rank();
   if(rank > 1)
-    dolfin_error("Only scalar and vectors functions can be saved in VTK format.");
+    error("Only scalar and vectors functions can be saved in VTK format.");
 
   // Get number of components
   const uint dim = u.dim(0);
@@ -194,7 +194,7 @@ void VTKFile::ResultsWrite(Function& u) const
   }
 
   if ( dim > 3 )
-    dolfin_warning("Cannot handle VTK file with number of components > 3. Writing first three components only");
+    warning("Cannot handle VTK file with number of components > 3. Writing first three components only");
 	
   for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
   {    
@@ -316,7 +316,7 @@ void VTKFile::MeshFunctionWrite(T& meshfunction)
   Mesh& mesh = meshfunction.mesh(); 
 
   if( meshfunction.dim() != mesh.topology().dim() )
-    dolfin_error("VTK output of mesh functions is implemenetd for cell-based functions only.");    
+    error("VTK output of mesh functions is implemenetd for cell-based functions only.");    
 
   // Write headers
   VTKHeaderOpen(mesh);

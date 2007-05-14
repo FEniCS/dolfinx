@@ -17,7 +17,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 cGqMethod::cGqMethod(unsigned int q) : Method(q, q + 1, q)
 {
-  dolfin_info("Initializing continuous Galerkin method cG(%d).", q);
+  message("Initializing continuous Galerkin method cG(%d).", q);
 
   init();
 
@@ -81,36 +81,36 @@ real cGqMethod::error(real k, real r) const
 //-----------------------------------------------------------------------------
 void cGqMethod::disp() const
 {
-  dolfin_info("Data for the cG(%d) method", q);
-  dolfin_info("=========================");
-  dolfin_info("");
+  message("Data for the cG(%d) method", q);
+  message("=========================");
+  message("");
 
-  dolfin_info("Lobatto quadrature points and weights on [0,1]:");
-  dolfin_info("");
-  dolfin_info(" i   points                   weights");
-  dolfin_info("----------------------------------------------------");
+  message("Lobatto quadrature points and weights on [0,1]:");
+  message("");
+  message(" i   points                   weights");
+  message("----------------------------------------------------");
   
   for (unsigned int i = 0; i < nq; i++)
-    dolfin_info("%2d   %.15e   %.15e", i, qpoints[i], qweights[i]);
-  dolfin_info("");
+    message("%2d   %.15e   %.15e", i, qpoints[i], qweights[i]);
+  message("");
 
   for (unsigned int i = 0; i < nn; i++)
   {
-    dolfin_info("");
-    dolfin_info("cG(%d) weights for degree of freedom %d:", q, i);
-    dolfin_info("");
-    dolfin_info(" i   weights");
-    dolfin_info("---------------------------");
+    message("");
+    message("cG(%d) weights for degree of freedom %d:", q, i);
+    message("");
+    message(" i   weights");
+    message("---------------------------");
     for (unsigned int j = 0; j < nq; j++)
-      dolfin_info("%2d   %.15e", j, nweights[i][j]);
+      message("%2d   %.15e", j, nweights[i][j]);
   }
-  dolfin_info("");
+  message("");
   
-  dolfin_info("cG(%d) weights in matrix format:", q);
+  message("cG(%d) weights in matrix format:", q);
   if ( q < 10 )
-    dolfin_info("-------------------------------");
+    message("-------------------------------");
   else
-    dolfin_info("--------------------------------");
+    message("--------------------------------");
   for (unsigned int i = 0; i < nn; i++)
   {
     for (unsigned int j = 0; j < nq; j++)

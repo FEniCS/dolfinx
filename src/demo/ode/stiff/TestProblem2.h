@@ -14,7 +14,7 @@ public:
   
   TestProblem2() : ODE(2, 10.0), A(2, 2)
   {
-    dolfin_info("The simple test system.");
+    message("The simple test system.");
 
     A(0, 0) = -100.0;
     A(1, 1) = -1000.0;

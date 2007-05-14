@@ -25,7 +25,7 @@ int XMLObject::parseInt(const xmlChar* name, const xmlChar** attrs,
 {
   // Check that we got the data
   if ( !attrs )
-    dolfin_error("Missing attribute \"%s\" for <%s> in XML file.",
+    error("Missing attribute \"%s\" for <%s> in XML file.",
                   attribute, name);
   
   // Parse data
@@ -35,7 +35,7 @@ int XMLObject::parseInt(const xmlChar* name, const xmlChar** attrs,
     if ( xmlStrcasecmp(attrs[i], (xmlChar *) attribute) == 0 )
     {
       if ( !attrs[i+1] )
-        dolfin_error("Value for attribute \"%s\" of <%s> missing in XML file.",
+        error("Value for attribute \"%s\" of <%s> missing in XML file.",
 		      attribute, name);
       
       int value = atoi((const char *) (attrs[i+1]));
@@ -44,7 +44,7 @@ int XMLObject::parseInt(const xmlChar* name, const xmlChar** attrs,
   }
   
   // Didn't get the value
-  dolfin_error("Missing attribute \"%s\" for <%s> in XML file.",
+  error("Missing attribute \"%s\" for <%s> in XML file.",
 		attribute, name);
 
   return 0;
@@ -56,7 +56,7 @@ dolfin::uint XMLObject::parseUnsignedInt(const xmlChar* name,
 {
   // Check that we got the data
   if ( !attrs )
-    dolfin_error("Missing attribute \"%s\" for <%s> in XML file.",
+    error("Missing attribute \"%s\" for <%s> in XML file.",
                   attribute, name);
   
   // Parse data
@@ -66,13 +66,13 @@ dolfin::uint XMLObject::parseUnsignedInt(const xmlChar* name,
     if ( xmlStrcasecmp(attrs[i], (xmlChar *) attribute) == 0 )
     {
       if ( !attrs[i+1] )
-        dolfin_error("Value for attribute \"%s\" of <%s> missing in XML file.",
+        error("Value for attribute \"%s\" of <%s> missing in XML file.",
 		      attribute, name);
       
       int value = atoi((const char *) (attrs[i+1]));
       if ( value < 0 )
       {
-	dolfin_error("Value for attribute \"%s\" of <%s> is negative.",
+	error("Value for attribute \"%s\" of <%s> is negative.",
 		      attribute, name);
       }
       return static_cast<uint>(value);
@@ -80,7 +80,7 @@ dolfin::uint XMLObject::parseUnsignedInt(const xmlChar* name,
   }
   
   // Didn't get the value
-  dolfin_error("Missing attribute \"%s\" for <%s> in XML file.",
+  error("Missing attribute \"%s\" for <%s> in XML file.",
 		attribute, name);
 
   return 0;
@@ -91,7 +91,7 @@ real XMLObject::parseReal(const xmlChar* name, const xmlChar** attrs,
 {
   // Check that we got the data
   if ( !attrs )
-    dolfin_error("Missing attribute \"%s\" for <%s> in XML file.",
+    error("Missing attribute \"%s\" for <%s> in XML file.",
                   attribute, name);
   
   // Parse data
@@ -101,7 +101,7 @@ real XMLObject::parseReal(const xmlChar* name, const xmlChar** attrs,
     if ( xmlStrcasecmp(attrs[i],(xmlChar *) attribute) == 0 )
     {
       if ( !attrs[i+1] )
-        dolfin_error("Value for attribute \"%s\" of <%s>  missing in XML file.",
+        error("Value for attribute \"%s\" of <%s>  missing in XML file.",
 		      attribute, name);
     
       real value = static_cast<real>(atof((const char *) (attrs[i+1])));
@@ -110,7 +110,7 @@ real XMLObject::parseReal(const xmlChar* name, const xmlChar** attrs,
   }
   
   // Didn't get the value
-  dolfin_error("Missing attribute \"%s\" for <%s> in XML file.",
+  error("Missing attribute \"%s\" for <%s> in XML file.",
 		attribute, name);
 
   return 0.0;
@@ -121,7 +121,7 @@ std::string XMLObject::parseString(const xmlChar* name, const xmlChar** attrs,
 {
   // Check that we got the data
   if ( !attrs )
-    dolfin_error("Missing attribute \"%s\" for <%s> in XML file.",
+    error("Missing attribute \"%s\" for <%s> in XML file.",
                   attribute, name);
   
   // Parse data
@@ -131,7 +131,7 @@ std::string XMLObject::parseString(const xmlChar* name, const xmlChar** attrs,
     if ( xmlStrcasecmp(attrs[i],(xmlChar *) attribute) == 0 )
     {
       if ( !attrs[i+1] )
-        dolfin_error("Value for attribute \"%s\" of <%s> missing in XML file.",
+        error("Value for attribute \"%s\" of <%s> missing in XML file.",
 		      attribute, name);
 
       std::string value = (const char *) (attrs[i+1]);
@@ -140,7 +140,7 @@ std::string XMLObject::parseString(const xmlChar* name, const xmlChar** attrs,
   }
   
   // Didn't get the value
-  dolfin_error("Missing attribute \"%s\" for <%s> in XML file.",
+  error("Missing attribute \"%s\" for <%s> in XML file.",
 		attribute, name);
 
   return "";
@@ -151,7 +151,7 @@ bool XMLObject::parseBool(const xmlChar* name, const xmlChar** attrs,
 {
   // Check that we got the data
   if ( !attrs )
-    dolfin_error("Missing attribute \"%s\" for <%s> in XML file.",
+    error("Missing attribute \"%s\" for <%s> in XML file.",
                   attribute, name);
   
   // Parse data
@@ -161,7 +161,7 @@ bool XMLObject::parseBool(const xmlChar* name, const xmlChar** attrs,
     if ( xmlStrcasecmp(attrs[i], (xmlChar *) attribute) == 0 )
     {
       if ( !attrs[i+1] )
-        dolfin_error("Value for attribute \"%s\" of <%s> missing in XML file.",
+        error("Value for attribute \"%s\" of <%s> missing in XML file.",
 		      attribute, name);
       
       std::string value = (const char *) (attrs[i+1]);
@@ -170,7 +170,7 @@ bool XMLObject::parseBool(const xmlChar* name, const xmlChar** attrs,
       if ( strcmp(value.c_str(), "false") == 0 or strcmp(value.c_str(), "0") == 0 )
         return false;
 
-      dolfin_error("Cannot convert \"%s\" for attribute \"%s\" in <%s> to bool.",
+      error("Cannot convert \"%s\" for attribute \"%s\" in <%s> to bool.",
 		    value.c_str(), attribute, name);
       return false;
       
@@ -178,7 +178,7 @@ bool XMLObject::parseBool(const xmlChar* name, const xmlChar** attrs,
   }
   
   // Didn't get the value
-  dolfin_error("Missing attribute \"%s\" for <%s> in XML file.",
+  error("Missing attribute \"%s\" for <%s> in XML file.",
 		attribute, name);
 
   return 0;

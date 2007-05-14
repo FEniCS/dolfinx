@@ -17,9 +17,9 @@ RadauQuadrature::RadauQuadrature(unsigned int n) : GaussianQuadrature(n)
   init();
 
   if ( !check(2*n-2) )
-    dolfin_error("Radau quadrature not ok, check failed.");
+    error("Radau quadrature not ok, check failed.");
 
-  //dolfin_info("Radau quadrature computed for n = %d, check passed.", n);
+  //message("Radau quadrature computed for n = %d, check passed.", n);
 }
 //-----------------------------------------------------------------------------
 void RadauQuadrature::disp() const
@@ -31,7 +31,7 @@ void RadauQuadrature::disp() const
   cout << "-----------------------------------------------------" << endl;
 
   for (unsigned int i = 0; i < n; i++)
-    dolfin_info("%2d   %.16e   %.16e", i, points[i], weights[i]);
+    message("%2d   %.16e   %.16e", i, points[i], weights[i]);
 }
 //-----------------------------------------------------------------------------
 void RadauQuadrature::computePoints()

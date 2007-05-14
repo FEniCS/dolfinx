@@ -28,7 +28,7 @@ GiDFile::~GiDFile()
 //-­---------------------------------------------------------------------------
 void GiDFile::operator<<(Mesh& mesh)
 {
-  dolfin_info("Saving mesh to GiD file.");
+  message("Saving mesh to GiD file.");
 
   // Open file
   FILE* fp = fopen(filename.c_str(), "a");
@@ -111,7 +111,7 @@ Needs to be updated for new function class.
 
 void GiDFile::operator<<(Function& u)
 {
-  dolfin_info("Saving scalar function to GiD file .");
+  message("Saving scalar function to GiD file .");
 
   Mesh* mesh = &(u.mesh());
 
@@ -139,7 +139,7 @@ void GiDFile::operator<<(Function& u)
 //-­---------------------------------------------------------------------------
 void GiDFile::operator<<(Function::Vector& u)
 {
-  dolfin_info("Saving vector function to GiD file .");
+  message("Saving vector function to GiD file .");
 
   Mesh* mesh = &(u(0).mesh());
 

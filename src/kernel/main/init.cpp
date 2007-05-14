@@ -12,7 +12,7 @@
 //-----------------------------------------------------------------------------
 void dolfin::dolfin_init(int argc, char* argv[])
 {
-  dolfin_info("Initializing DOLFIN version %s.", DOLFIN_VERSION);
+  message("Initializing DOLFIN version %s.", DOLFIN_VERSION);
   
 #ifdef HAVE_PETSC_H
   PETScManager::init(argc, argv);

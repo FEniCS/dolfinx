@@ -44,7 +44,7 @@ int main()
   // Compute exact value
   real exact_value = 2.0 + 2.0*sin(1.0)*(1.0 - cos(1.0));
 
-  dolfin_info("The energy norm of v is %.15g (should be %.15g).", value, exact_value);
+  message("The energy norm of v is %.15g (should be %.15g).", value, exact_value);
   
   return 0;
 }

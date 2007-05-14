@@ -128,11 +128,11 @@ LogStream& dolfin::operator<<(LogStream& stream, const Lagrange& p)
 //-----------------------------------------------------------------------------
 void Lagrange::disp() const
 {
-  dolfin_info("Lagrange polynomial of degree %d with %d points.", q, n);
-  dolfin_info("----------------------------------------------");
+  message("Lagrange polynomial of degree %d with %d points.", q, n);
+  message("----------------------------------------------");
 
   for (unsigned int i = 0; i < n; i++)
-    dolfin_info("x[%d] = %f", i, points[i]);
+    message("x[%d] = %f", i, points[i]);
 }
 //-----------------------------------------------------------------------------
 void Lagrange::init()

@@ -6,7 +6,7 @@
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/dolfin_math.h>
-#include <dolfin/ParameterSystem.h>
+#include <dolfin/parameters.h>
 #include <dolfin/uBlasKrylovSolver.h>
 #include <dolfin/uBlasLUSolver.h>
 #include <dolfin/Alloc.h>
@@ -236,12 +236,12 @@ void MonoAdaptiveNewtonSolver::chooseLinearSolver()
   // Initialize linear solver
   if ( direct )
   {
-    dolfin_info("Using uBlas direct solver.");
+    message("Using uBlas direct solver.");
     lu = new uBlasLUSolver();
   }
   else
   {
-    dolfin_info("Using uBlas Krylov solver with no preconditioning.");
+    message("Using uBlas Krylov solver with no preconditioning.");
     const real ktol = get("ODE discrete Krylov tolerance factor");
 
     // FIXME: Check choice of tolerances

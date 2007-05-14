@@ -109,7 +109,7 @@ namespace dolfin
     /// c1 looks to be an iterator over the entities around c0 when it is in
     /// fact a copy of c0.
     MeshEntityIterator(MeshEntityIterator& entity) :  entity(entity.entity.mesh(), 0, 0), _pos(0)
-    { dolfin_error("Illegal use of mesh entity iterator."); }
+    { error("Illegal use of mesh entity iterator."); }
     
     // Mesh entity
     MeshEntity entity;

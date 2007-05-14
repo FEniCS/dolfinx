@@ -53,7 +53,7 @@ void dolfin::delay(real seconds)
 {
   if ( seconds < 0 )
   {
-    dolfin_warning("Delay must be positive.");
+    warning("Delay must be positive.");
     return;
   }
   

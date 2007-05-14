@@ -96,7 +96,7 @@ void PDE::init(Form& a, Form& L, Mesh& mesh, Array<BoundaryCondition*>& bcs)
     pde = new LinearPDE(a, L, mesh, bcs);
     break;
   default:
-    dolfin_error("Unknown PDE type");
+    error("Unknown PDE type");
   }
 
   // Parametrize PDE instance

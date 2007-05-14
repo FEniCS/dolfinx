@@ -2,9 +2,10 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005-12-19
-// Last changed: 2007-04-13
+// Last changed: 2007-05-14
 
 #include <dolfin/dolfin_log.h>
+#include <dolfin/parameters.h>
 #include <dolfin/ParameterSystem.h>
 #include <dolfin/Parametrized.h>
 
@@ -40,15 +41,15 @@ void Parametrized::set(std::string key, const Parametrized& parent)
 {
   // Check that key is "parent"
   if ( !(key == "parent") )
-    dolfin_error("Illegal value for parameter \"%s\".", key.c_str());
+    error("Illegal value for parameter \"%s\".", key.c_str());
 
   // Check if we already have a parent
   if ( this->parent )
-    dolfin_error("Local paramater database can only have one parent.");
+    error("Local paramater database can only have one parent.");
 
   // Check that parent is not itself
   if ( this == &parent )
-    dolfin_error("Local parameter database cannot be its own parent.");
+    error("Local parameter database cannot be its own parent.");
 
   // Set parent
   this->parent = &parent;

@@ -86,9 +86,9 @@ int main()
   real t1 = benchOld(a, mesh);
   real t2 = benchSimple(a, mesh);
 
-  dolfin_info("Current assembly: %.3g", t0);
-  dolfin_info("Old assembly:     %.3g", t1);
-  dolfin_info("Simple assembly:  %.3g", t2);
+  message("Current assembly: %.3g", t0);
+  message("Old assembly:     %.3g", t1);
+  message("Simple assembly:  %.3g", t2);
 
   return 0;
 }

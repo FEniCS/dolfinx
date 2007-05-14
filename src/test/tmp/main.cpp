@@ -23,7 +23,7 @@ using namespace dolfin;
 void testPreconditioner()
 {
 <<<<<<< /NOBACKUP/jjan/data/src/tmp/dolfin-kth/src/test/tmp/main.cpp
-  dolfin_info("--- Testing preconditioner ---");
+  message("--- Testing preconditioner ---");
 
 /*
   class MyPreconditioner : public Preconditioner
@@ -34,7 +34,7 @@ void testPreconditioner()
     
     void solve(Vector& x, const Vector& b)
     {
-      dolfin_info("Calling preconditioner");
+      message("Calling preconditioner");
       for (unsigned int i = 0; i < x.size(); i++)
       {
         x(i) = b(i) / m(i);
@@ -66,7 +66,7 @@ void testPreconditioner()
 
 void testOutputVector()
 {
-  dolfin_info("--- Testing output of vector ---");
+  message("--- Testing output of vector ---");
 
   Vector x(10);
   for (unsigned int i = 0; i < 10; i++)
@@ -81,7 +81,7 @@ void testOutputVector()
 
 void testOutputMatrix()
 {
-  dolfin_info("--- Testing output of matrix ---");
+  message("--- Testing output of matrix ---");
 
   UnitSquare mesh(2, 2);
   MassMatrix M(mesh);
@@ -95,7 +95,7 @@ void testOutputMatrix()
 
 void testOutputMesh()
 {
-  dolfin_info("--- Testing output of mesh ---");
+  message("--- Testing output of mesh ---");
 
   UnitCube mesh(8, 8, 8);
   File file("mesh.m");
@@ -104,7 +104,7 @@ void testOutputMesh()
 
 void testOutputFiniteElementSpec()
 {
-  dolfin_info("--- Testing output of finite element specification ---");
+  message("--- Testing output of finite element specification ---");
 
   FiniteElementSpec spec("Lagrange", "triangle", 1, 1);
   File file("finiteelement.xml");
@@ -113,7 +113,7 @@ void testOutputFiniteElementSpec()
 
 void testOutputFunction()
 {
-  dolfin_info("--- Testing output of function ---");
+  message("--- Testing output of function ---");
 
   UnitSquare mesh(4, 4);
   Vector x(mesh.numVertices());
@@ -133,7 +133,7 @@ void testOutputFunction()
 
 void testOutputMultiple()
 {
-  dolfin_info("--- Testing input of multiple XML objects ---");
+  message("--- Testing input of multiple XML objects ---");
 
   Vector x(3);
   Matrix A(3, 3);
@@ -147,7 +147,7 @@ void testOutputMultiple()
 
 void testInputFunction()
 {
-  dolfin_info("--- Testing input of function ---");
+  message("--- Testing input of function ---");
 
   Function f;
   File file("function.xml");
@@ -159,7 +159,7 @@ void testInputFunction()
 
 void testFunctional()
 {
-  dolfin_info("--- Testing functional ---");
+  message("--- Testing functional ---");
 
   class MyFunction0 : public Function
   {
@@ -183,7 +183,7 @@ void testFunctional()
     
   };
 
-  dolfin_info("Computing L2 norm of f(x, y) = x - y on the unit square.");
+  message("Computing L2 norm of f(x, y) = x - y on the unit square.");
 
   UnitSquare mesh(16, 16);
   MyFunction0 f;
@@ -193,13 +193,13 @@ void testFunctional()
   FEM::assemble(L, b, mesh);
   real norm = sqrt(b.sum());
 
-  dolfin_info("Result:   %.15f", norm);
-  dolfin_info("Analytic: 0.408248290463863");
+  message("Result:   %.15f", norm);
+  message("Analytic: 0.408248290463863");
 }
 
 void testRandom()
 {
-  dolfin_info("--- Testing random ---");
+  message("--- Testing random ---");
 
   cout << "Random numbers: ";
   cout << dolfin::rand() << " ";
@@ -209,7 +209,7 @@ void testRandom()
 
 void testProgress()
 {
-  dolfin_info("--- Testing progress ---");
+  message("--- Testing progress ---");
 
   Progress p("Testing progress bar", 500);
   for (unsigned int i = 0; i < 500; i++)
@@ -218,7 +218,7 @@ void testProgress()
 
 void testParameters()
 {
-  dolfin_info("--- Testing parameters ---");
+  message("--- Testing parameters ---");
 
   class Foo : public Parametrized {};
   class Bar : public Parametrized {};
@@ -253,7 +253,7 @@ void testParameters()
 
 void testMakeElement()
 {
-  dolfin_info("--- Testing creation of element from spec ---");
+  message("--- Testing creation of element from spec ---");
   
   FiniteElement* P1 = FiniteElement::makeElement("Lagrange", "triangle", 1);
   FiniteElement* P2 = FiniteElement::makeElement("Lagrange", "triangle", 2);
@@ -264,7 +264,7 @@ void testMakeElement()
 
 void testMeshRefinement()
 {
-  dolfin_info("--- Testing mesh refinement ---");
+  message("--- Testing mesh refinement ---");
   
   UnitSquare mesh(2, 2);
 
@@ -288,7 +288,7 @@ void testMeshRefinement()
 
 void testuBlasSparseMatrix()
 {
-  dolfin_info("--- Testing sparse matrices ---");
+  message("--- Testing sparse matrices ---");
   
   // Boundary condition
   class MyBC : public BoundaryCondition
@@ -440,9 +440,9 @@ void benchOldMesh()
 
   cout << mesh << endl;
 
-  dolfin_info("Reading and initializing mesh %d times:    %.3g s", num_reads, t0);
-  dolfin_info("Refining mesh uniformly %d times:            %.3g s", num_refinements, t1);
-  dolfin_info("Iterating over mesh connectivity %d times: %.3g s", num_iterations, t2);
+  message("Reading and initializing mesh %d times:    %.3g s", num_reads, t0);
+  message("Refining mesh uniformly %d times:            %.3g s", num_refinements, t1);
+  message("Iterating over mesh connectivity %d times: %.3g s", num_iterations, t2);
 
   cout << "Sleeping so you have time to measure the memory usage of this process..." << endl;
   delay(5.0);
@@ -485,9 +485,9 @@ void benchNewMesh()
 
   cout << mesh << endl;
 
-  dolfin_info("Reading and initializing mesh %d times:    %.3g s", num_reads, t0);
-  dolfin_info("Refining mesh uniformly %d times:            %.3g s", num_refinements, t1);
-  dolfin_info("Iterating over mesh connectivity %d times: %.3g s", num_iterations, t2);
+  message("Reading and initializing mesh %d times:    %.3g s", num_reads, t0);
+  message("Refining mesh uniformly %d times:            %.3g s", num_refinements, t1);
+  message("Iterating over mesh connectivity %d times: %.3g s", num_iterations, t2);
 
   cout << "Sleeping so you have time to measure the memory usage of this process..." << endl;
   delay(5.0);
@@ -580,7 +580,7 @@ void testVectorAccess()
       x1(i) = 1.0;
   }
   t = toc();
-  dolfin_info("Setting values in PETSc vector:   %.3g", t / static_cast<real>(num_repetitions));
+  message("Setting values in PETSc vector:   %.3g", t / static_cast<real>(num_repetitions));
 
   num_repetitions = 1000;
   tic();
@@ -590,7 +590,7 @@ void testVectorAccess()
       tmp = x1(i);
   }
   t = toc();
-  dolfin_info("Accessing values in PETSc vector: %.3g", t / static_cast<real>(num_repetitions));
+  message("Accessing values in PETSc vector: %.3g", t / static_cast<real>(num_repetitions));
 
   // uBlas
 
@@ -602,7 +602,7 @@ void testVectorAccess()
       x2(i) = 1.0;
   }
   t = toc();
-  dolfin_info("Setting values in uBlas vector:   %.3g", t / static_cast<real>(num_repetitions));
+  message("Setting values in uBlas vector:   %.3g", t / static_cast<real>(num_repetitions));
 
   num_repetitions = 100000;
   tic();
@@ -612,7 +612,7 @@ void testVectorAccess()
       tmp = x2(i);
   }
   t = toc();
-  dolfin_info("Accessing values in uBlas vector: %.3g", t / static_cast<real>(num_repetitions));
+  message("Accessing values in uBlas vector: %.3g", t / static_cast<real>(num_repetitions));
 
   // STL
 
@@ -624,7 +624,7 @@ void testVectorAccess()
       x3[i] = 1.0;
   }
   t = toc();
-  dolfin_info("Setting values in STL vector:     %.3g", t / static_cast<real>(num_repetitions));
+  message("Setting values in STL vector:     %.3g", t / static_cast<real>(num_repetitions));
 
   num_repetitions = 100000;
   tic();
@@ -634,7 +634,7 @@ void testVectorAccess()
       tmp = x3[i];
   }
   t = toc();
-  dolfin_info("Accessing values in STL vector:   %.3g", t / static_cast<real>(num_repetitions));
+  message("Accessing values in STL vector:   %.3g", t / static_cast<real>(num_repetitions));
 
   // Plain C array
 
@@ -646,7 +646,7 @@ void testVectorAccess()
       x4[i] = 1.0;
   }
   t = toc();
-  dolfin_info("Setting values in C array:        %.3g", t / static_cast<real>(num_repetitions));
+  message("Setting values in C array:        %.3g", t / static_cast<real>(num_repetitions));
 
   num_repetitions = 100000;
   tic();
@@ -656,7 +656,7 @@ void testVectorAccess()
       tmp = x4[i];
   }
   t = toc();
-  dolfin_info("Accessing values in C array:      %.3g", t / static_cast<real>(num_repetitions));
+  message("Accessing values in C array:      %.3g", t / static_cast<real>(num_repetitions));
 }
 */
 /*

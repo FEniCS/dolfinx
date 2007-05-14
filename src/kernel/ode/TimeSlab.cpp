@@ -6,7 +6,7 @@
 
 #include <stdio.h>
 #include <string>
-#include <dolfin/ParameterSystem.h>
+#include <dolfin/parameters.h>
 #include <dolfin/ODE.h>
 #include <dolfin/cGqMethod.h>
 #include <dolfin/dGqMethod.h>
@@ -25,17 +25,17 @@ TimeSlab::TimeSlab(ODE& ode) :
   if ( m == "cg" || m == "mcg" )
   {
     if ( q < 1 )
-      dolfin_error("Minimal order is q = 1 for continuous Galerkin.");
+      error("Minimal order is q = 1 for continuous Galerkin.");
     method = new cGqMethod(q);
   }
   else if ( m == "dg" || m == "mdg" )
   {
     if ( q < 0 )
-      dolfin_error("Minimal order is q = 0 for discontinuous Galerkin.");
+      error("Minimal order is q = 0 for discontinuous Galerkin.");
     method = new dGqMethod(q);
   }
   else
-    dolfin_error("Unknown ODE method: %s", m.c_str());
+    error("Unknown ODE method: %s", m.c_str());
 
   // Get initial data
   u0 = 0.0;
@@ -81,7 +81,7 @@ void TimeSlab::write(const uBlasVector& u)
 {
   // FIXME: Make this a parameter?
   std::string filename = "solution.data";
-  dolfin_info("Saving solution at final time to file \"%s\".",
+  message("Saving solution at final time to file \"%s\".",
 	      filename.c_str());
 
   FILE* fp = fopen(filename.c_str(), "w");

@@ -247,7 +247,7 @@ void XMLBLASFormData::readTerm(const xmlChar *name, const xmlChar **attrs)
     break;
   default:
     cout << state << endl;
-    dolfin_error("Inconsistent state while reading XML form data.");
+    error("Inconsistent state while reading XML form data.");
   }
 
 }
@@ -264,7 +264,7 @@ void XMLBLASFormData::readGeoTensor(const xmlChar *name, const xmlChar **attrs)
     nb = parseInt(name, attrs, "size");
     break;
   default:
-    dolfin_error("Inconsistent state while reading XML form data.");
+    error("Inconsistent state while reading XML form data.");
   }
 }
 //-----------------------------------------------------------------------------
@@ -288,13 +288,13 @@ void XMLBLASFormData::readEntry(const xmlChar *name, const xmlChar **attrs)
     data_boundary.back().push_back(value);
     break;
   default:
-    dolfin_error("Inconsistent state while reading XML data.");
+    error("Inconsistent state while reading XML data.");
   }
 }
 //-----------------------------------------------------------------------------
 void XMLBLASFormData::initForm()
 {
-  dolfin_error("XMLBLASFormData not implemented for new UFC strcuture.");
+  error("XMLBLASFormData not implemented for new UFC strcuture.");
 /*
   // Give data to form
   blas.init(mi, ni, data_interior, mb, nb, data_boundary);

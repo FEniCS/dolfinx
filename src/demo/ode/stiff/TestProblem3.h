@@ -14,8 +14,8 @@ public:
   
   TestProblem3() : ODE(2, 1.0), A(2,2)
   {
-    dolfin_info("A non-normal test problem, critically damped oscillation");
-    dolfin_info("with eigenvalues l1 = l2 = 100.");
+    message("A non-normal test problem, critically damped oscillation");
+    message("with eigenvalues l1 = l2 = 100.");
 
     A(0,0) = 0.0;    
     A(0,1) = 1.0;

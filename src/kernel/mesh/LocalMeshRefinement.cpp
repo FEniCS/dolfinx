@@ -25,14 +25,14 @@ void LocalMeshRefinement::refineMeshByEdgeBisection(Mesh& mesh,
                                                     MeshFunction<bool>& cell_marker,
                                                     bool refine_boundary)
 {
-  dolfin_info("Refining simplicial mesh by edge bisection.");
+  message("Refining simplicial mesh by edge bisection.");
   
   // Get size of old mesh
   const uint num_vertices = mesh.size(0);
   const uint num_cells = mesh.size(mesh.topology().dim());
   
   // Check cell marker 
-  if ( cell_marker.size() != num_cells ) dolfin_error("Wrong dimension of cell_marker");
+  if ( cell_marker.size() != num_cells ) error("Wrong dimension of cell_marker");
   
   // Generate cell - edge connectivity if not generated
   mesh.init(mesh.topology().dim(), 1);

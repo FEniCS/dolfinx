@@ -26,7 +26,7 @@ TecplotFile::~TecplotFile()
 //-­---------------------------------------------------------------------------
 void TecplotFile::operator<<(Mesh& mesh)
 {
-  dolfin_info("Saving mesh to Tecplot file.");
+  message("Saving mesh to Tecplot file.");
 
   // Open file
   FILE* fp = fopen(filename.c_str(), "a");

@@ -18,7 +18,7 @@ ODE::ODE(uint N, real T)
     not_impl_M("Warning: multiplication with M not implemented, assuming identity."),
     not_impl_J("Warning: consider implementing Jacobian ODE::J() to improve efficiency.")
 {
-  dolfin_info("Creating ODE of size %d.", N);
+  message("Creating ODE of size %d.", N);
 }
 //-----------------------------------------------------------------------------
 ODE::~ODE()
@@ -41,7 +41,7 @@ void ODE::f(const uBlasVector& u, real t, uBlasVector& y)
 //-----------------------------------------------------------------------------
 real ODE::f(const uBlasVector& u, real t, uint i)
 {
-  dolfin_error("Right-hand side for ODE not supplied by user.");
+  error("Right-hand side for ODE not supplied by user.");
   return 0.0;
 }
 //-----------------------------------------------------------------------------

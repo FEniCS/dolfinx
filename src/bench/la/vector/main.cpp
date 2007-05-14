@@ -51,7 +51,7 @@ int main()
   tuple<real, real> petsc_timing[2];
 #endif
 
-  dolfin_begin("Vector benchmark timings");
+  begin("Vector benchmark timings");
 
   // Perform uBlas benchmarks
   ublas_timing[0] = VectorAssign<uBlasVector>::benchVectorAssign(N[0], n[0]);
@@ -65,25 +65,25 @@ int main()
 
   // Output assignment timings
   dolfin_log(true);
-  dolfin_begin("Assign values to a vector of length N elementwise n times");
+  begin("Assign values to a vector of length N elementwise n times");
 #ifdef HAVE_PETSC_H  
   cout << "PETScVector (N="<< N[0] << ", n=" << n[0] << "): " << get<0>(petsc_timing[0]) << endl;
 #endif
   for(dolfin::uint i=0; i< 3; ++i)
     cout << "uBlasVector (N="<< N[i] << ", n=" << n[i] << "): " << get<0>(ublas_timing[i]) << endl;
 
-  dolfin_end();
+  end();
 
   // Output access timings
-  dolfin_begin("Access values of a vector of length n elementwise N times");
+  begin("Access values of a vector of length n elementwise N times");
 #ifdef HAVE_PETSC_H  
   cout << "PETScVector (N="<< N[0] << ", n=" << n[0] << "): " << get<0>(petsc_timing[0]) << endl;
 #endif
   for(dolfin::uint i=0; i< 3; ++i)
     cout << "uBlasVector (N="<< N[i] << ", n=" << n[i] << "): " << get<1>(ublas_timing[i]) << endl;
 
-  dolfin_end();
-  dolfin_end();
+  end();
+  end();
 
   return 0;
 }

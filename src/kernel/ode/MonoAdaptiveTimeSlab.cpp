@@ -6,7 +6,7 @@
 
 #include <string>
 #include <dolfin/dolfin_log.h>
-#include <dolfin/ParameterSystem.h>
+#include <dolfin/parameters.h>
 #include <dolfin/ODE.h>
 #include <dolfin/Method.h>
 #include <dolfin/MonoAdaptiveFixedPointSolver.h>
@@ -84,7 +84,7 @@ real MonoAdaptiveTimeSlab::build(real a, real b)
 //-----------------------------------------------------------------------------
 bool MonoAdaptiveTimeSlab::solve()
 {
-  //dolfin_info("Solving time slab system on [%f, %f].", _a, _b);
+  //message("Solving time slab system on [%f, %f].", _a, _b);
 
   return solver->solve();
 }
@@ -251,21 +251,21 @@ TimeSlabSolver* MonoAdaptiveTimeSlab::chooseSolver()
   if ( solver == "fixed-point" )
   {
     if ( implicit )
-      dolfin_error("Newton solver must be used for implicit ODE.");
+      error("Newton solver must be used for implicit ODE.");
 
-    dolfin_info("Using mono-adaptive fixed-point solver.");
+    message("Using mono-adaptive fixed-point solver.");
     return new MonoAdaptiveFixedPointSolver(*this);
   }
   else if ( solver == "newton" )
   {
     if ( implicit )
     {
-      dolfin_info("Using mono-adaptive Newton solver for implicit ODE.");
+      message("Using mono-adaptive Newton solver for implicit ODE.");
       return new MonoAdaptiveNewtonSolver(*this, implicit);
     }
     else
     {
-      dolfin_info("Using mono-adaptive Newton solver.");
+      message("Using mono-adaptive Newton solver.");
       return new MonoAdaptiveNewtonSolver(*this, implicit);
     }
   }
@@ -273,18 +273,18 @@ TimeSlabSolver* MonoAdaptiveTimeSlab::chooseSolver()
   {
     if ( implicit )
     {      
-      dolfin_info("Using mono-adaptive Newton solver (default for implicit ODEs).");
+      message("Using mono-adaptive Newton solver (default for implicit ODEs).");
       return new MonoAdaptiveNewtonSolver(*this, implicit);
     }
     else
     {
-      dolfin_info("Using mono-adaptive fixed-point solver (default for c/dG(q)).");
+      message("Using mono-adaptive fixed-point solver (default for c/dG(q)).");
       return new MonoAdaptiveFixedPointSolver(*this);
     }
   }
   else
   {
-    dolfin_error("Uknown solver type: %s.", solver.c_str());
+    error("Uknown solver type: %s.", solver.c_str());
   }
 
   return 0;

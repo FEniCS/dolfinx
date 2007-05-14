@@ -21,24 +21,41 @@ namespace dolfin
   {
   public:
     
+    /// Constructor
     Logger();
+
+    /// Destructor
     ~Logger();
+    
+    /// Print message
+    void message(std::string msg, int debug_level = 0);
 
-    void info     (std::string msg, int debug_level = 0);
+    /// Print warning
+    void warning(std::string msg);
 
-    void warning  (std::string msg);
-    void error    (std::string msg);
+    /// Print error message and throw exception
+    void error(std::string msg);
 
-    void debug    (std::string msg, std::string location);
-
-    void dassert  (std::string msg, std::string location);
-    void progress (std::string title, real p);
-
+    /// Begin task (increase indentation level)
     void begin(std::string msg, int debug_level = 0);
+
+    /// End task (decrease indentation level)
     void end();
 
-    void init     (std::string destination);
-    void level    (int debug_level);
+    /// Draw progress bar
+    void progress (std::string title, real p);
+
+    /// Set output destination ("terminal" or "silent")
+    void setOutputDestination(std::string destination);
+
+    /// Set debug level
+    void setDebugLevel(int debug_level);
+
+    /// Helper function for dolfin_debug macro
+    void __debug(std::string msg);
+
+    /// Helper function for dolfin_assert macro
+    void __assert(std::string msg);
 
   private:
 
@@ -48,8 +65,11 @@ namespace dolfin
 
     // Write message to current output destination
     void write(int debug_level, std::string msg);
-
+    
+    // Current debug level
     int debug_level;
+
+    // Current indentation level
     int indentation_level;
 
   };

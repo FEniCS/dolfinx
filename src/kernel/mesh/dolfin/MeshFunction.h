@@ -101,7 +101,7 @@ namespace dolfin
     void init(uint dim)
     {
       if ( !_mesh )
-        dolfin_error("Mesh has not been specified, unable to initialize mesh function.");
+        error("Mesh has not been specified, unable to initialize mesh function.");
       _mesh->init(dim);
       init(*_mesh, dim, _mesh->size(dim));
     }
@@ -110,7 +110,7 @@ namespace dolfin
     void init(uint dim, uint size)
     {
       if ( !_mesh )
-        dolfin_error("Mesh has not been specified, unable to initialize mesh function.");
+        error("Mesh has not been specified, unable to initialize mesh function.");
       _mesh->init(dim);
       init(*_mesh, dim, size);
     }
@@ -179,7 +179,7 @@ namespace dolfin
     {
       cout << "Mesh function data" << endl;
       cout << "------------------" << endl;
-      dolfin_begin("");
+      begin("");
       cout << "Topological dimension: " << _dim << endl;
       cout << "Number of values:      " << _size << endl;
       cout << endl;
@@ -187,7 +187,7 @@ namespace dolfin
       {
         cout << "(" << _dim << ", " << i << "): " << _values[i] << endl;
       }
-      dolfin_end();
+      end();
     }
 
   private:

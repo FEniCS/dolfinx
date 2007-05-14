@@ -19,7 +19,7 @@ using namespace dolfin;
 Progress::Progress(std::string title, unsigned int n)
 {
   if (n <= 0)
-    dolfin_error("Number of steps for progress session must be positive.");
+    error("Number of steps for progress session must be positive.");
 
 
   _title = title;
@@ -34,7 +34,7 @@ Progress::Progress(std::string title, unsigned int n)
   stopped = false;
 
   // Write first progress bar
-  LogManager::log.progress(_title, p1);
+  LogManager::logger.progress(_title, p1);
 }
 //-----------------------------------------------------------------------------
 Progress::Progress(std::string title)
@@ -56,7 +56,7 @@ Progress::~Progress()
   if ( p1 != 1.0 && !stopped )
   {
     p1 = 1.0;
-    LogManager::log.progress(_title, p1);
+    LogManager::logger.progress(_title, p1);
   }
 }
 //-----------------------------------------------------------------------------
@@ -72,7 +72,7 @@ void Progress::setStep(real step)
 void Progress::operator=(unsigned int i)
 {
   if ( n == 0 )
-    dolfin_error("Cannot specify step number for progress session with unknown number of steps.");
+    error("Cannot specify step number for progress session with unknown number of steps.");
 
   p1 = checkBounds(i);
   update();  
@@ -81,7 +81,7 @@ void Progress::operator=(unsigned int i)
 void Progress::operator=(real p)
 {
   if ( n != 0 )
-    dolfin_error("Cannot specify value for progress session with given number of steps.");
+    error("Cannot specify value for progress session with given number of steps.");
 
   p1 = checkBounds(p);
   update();
@@ -90,7 +90,7 @@ void Progress::operator=(real p)
 void Progress::operator++()
 {
   if ( n == 0 )
-    dolfin_error("Cannot step progress for session with unknown number of steps.");
+    error("Cannot step progress for session with unknown number of steps.");
 
   if ( i < (n-1) )
     i++;
@@ -102,7 +102,7 @@ void Progress::operator++()
 void Progress::operator++(int)
 {
   if ( n == 0 )
-    dolfin_error("Cannot step progress for session with unknown number of steps.");
+    error("Cannot step progress for session with unknown number of steps.");
   
   if ( i < (n-1) )
     i++;
@@ -148,7 +148,7 @@ void Progress::update()
   if ( (p1 - p0) < progress_step && (p1 != 1.0 || p1 == p0) )
     return;
 
-  LogManager::log.progress(_title, p1);
+  LogManager::logger.progress(_title, p1);
   p0 = p1;
 }
 //-----------------------------------------------------------------------------

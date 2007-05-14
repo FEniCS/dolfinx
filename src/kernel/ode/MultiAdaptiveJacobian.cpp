@@ -36,7 +36,7 @@ MultiAdaptiveJacobian::MultiAdaptiveJacobian(MultiAdaptiveNewtonSolver& newton,
   for (uint pos = 0; pos < sum; pos++)
     Jvalues[pos] = 0.0;
 
-  dolfin_info("Generated Jacobian data structure for %d dependencies.", sum);
+  message("Generated Jacobian data structure for %d dependencies.", sum);
 
   // Compute maximum number of dependencies
   uint maxsize = 0;
@@ -82,7 +82,7 @@ void MultiAdaptiveJacobian::init()
 {
   // Compute Jacobian at the beginning of the slab
   real t = ts.starttime();
-  //dolfin_info("Recomputing Jacobian matrix at t = %f.", t);
+  //message("Recomputing Jacobian matrix at t = %f.", t);
   
   // Compute Jacobian
   for (uint i = 0; i < ode.size(); i++)
@@ -95,7 +95,7 @@ void MultiAdaptiveJacobian::init()
   /*
   // Compute Jacobian at the end of the slab
   real t = ts.endtime();
-  //dolfin_info("Recomputing Jacobian matrix at t = %f.", t);
+  //message("Recomputing Jacobian matrix at t = %f.", t);
   
   // Compute Jacobian
   for (uint i = 0; i < ode.size(); i++)
@@ -274,7 +274,7 @@ void MultiAdaptiveJacobian::cGmult(const uBlasVector& x, uBlasVector& y) const
 	// searching, but we were clever enough to pick out the value
 	// before when we had the chance... :-)
 	const real dfdu = Jlookup[dep];
-	//dolfin_info("Looks like df_%d/du_%d = %f", i0, i1, dfdu);      
+	//message("Looks like df_%d/du_%d = %f", i0, i1, dfdu);      
 	
 	// Iterate over quadrature points of other element
 	const real tmp0 = k0 * dfdu;
@@ -446,7 +446,7 @@ void MultiAdaptiveJacobian::dGmult(const uBlasVector& x, uBlasVector& y) const
 	// searching, but we were clever enough to pick out the value
 	// before when we had the chance... :-)
 	const real dfdu = Jlookup[dep];
-	//dolfin_info("Looks like df_%d/du_%d = %f", i0, i1, dfdu);      
+	//message("Looks like df_%d/du_%d = %f", i0, i1, dfdu);      
 	
 	// Iterate over quadrature points of other element
 	const real tmp0 = k0 * dfdu;

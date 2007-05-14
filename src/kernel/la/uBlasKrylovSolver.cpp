@@ -82,7 +82,7 @@ void uBlasKrylovSolver::selectPreconditioner(const Preconditioner preconditioner
       pc = new uBlasILUPreconditioner();
       break;
     default:
-      dolfin_warning("Requested preconditioner is not available for uBlas Krylov solver. Using ILU.");
+      warning("Requested preconditioner is not available for uBlas Krylov solver. Using ILU.");
       pc = new uBlasILUPreconditioner();
   }
 }

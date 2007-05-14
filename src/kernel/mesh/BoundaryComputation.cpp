@@ -43,7 +43,7 @@ void BoundaryComputation::computeBoundaryCommon(Mesh& mesh,
   // the boundary. A facet is on the boundary if it is connected to
   // exactly one cell.
 
-  //dolfin_info("Computing boundary mesh.");
+  //message("Computing boundary mesh.");
 
   // Open boundary mesh for editing
   MeshEditor editor;

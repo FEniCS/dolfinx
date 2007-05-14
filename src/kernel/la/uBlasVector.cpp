@@ -89,7 +89,7 @@ real uBlasVector::norm(NormType type) const
   case linf:
     return norm_inf(*this);
   default:
-    dolfin_error("Requested vector norm type for uBlasVector unknown");
+    error("Requested vector norm type for uBlasVector unknown");
   }
   return norm_inf(*this);
 }

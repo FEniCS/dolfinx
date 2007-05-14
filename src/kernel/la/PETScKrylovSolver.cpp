@@ -31,7 +31,7 @@ namespace dolfin
 {
   int monitor(KSP ksp, int iteration, real rnorm, void *mctx)
   {
-    dolfin_info("Iteration %d: residual = %g", iteration, rnorm);
+    message("Iteration %d: residual = %g", iteration, rnorm);
     return 0;
   }
 }
@@ -86,11 +86,11 @@ dolfin::uint PETScKrylovSolver::solve(const PETScMatrix& A, PETScVector& x, cons
   uint M = A.size(0);
   uint N = A.size(1);
   if ( N != b.size() )
-    dolfin_error("Non-matching dimensions for linear system.");
+    error("Non-matching dimensions for linear system.");
 
   // Write a message
   if ( get("Krylov report") )
-    dolfin_info("Solving linear system of size %d x %d (Krylov solver).", M, N);
+    message("Solving linear system of size %d x %d (Krylov solver).", M, N);
 
   // Reinitialize KSP solver if necessary
   init(M, N);
@@ -119,7 +119,7 @@ dolfin::uint PETScKrylovSolver::solve(const PETScMatrix& A, PETScVector& x, cons
   KSPConvergedReason reason;
   KSPGetConvergedReason(ksp, &reason);
   if ( reason < 0 )
-    dolfin_error("Krylov solver did not converge.");
+    error("Krylov solver did not converge.");
 
   // Get the number of iterations
   int num_iterations = 0;
@@ -137,11 +137,11 @@ dolfin::uint PETScKrylovSolver::solve(const PETScKrylovMatrix& A, PETScVector& x
   uint M = A.size(0);
   uint N = A.size(1);
   if ( N != b.size() )
-    dolfin_error("Non-matching dimensions for linear system.");
+    error("Non-matching dimensions for linear system.");
   
   // Write a message
   if ( get("Krylov report") )
-    dolfin_info("Solving virtual linear system of size %d x %d (Krylov solver).", M, N);
+    message("Solving virtual linear system of size %d x %d (Krylov solver).", M, N);
  
   // Reinitialize KSP solver if necessary
   init(M, N);
@@ -169,7 +169,7 @@ dolfin::uint PETScKrylovSolver::solve(const PETScKrylovMatrix& A, PETScVector& x
   KSPConvergedReason reason;
   KSPGetConvergedReason(ksp, &reason);
   if ( reason < 0 )
-    dolfin_error("Krylov solver did not converge.");
+    error("Krylov solver did not converge.");
 
   // Get the number of iterations
   int num_iterations = 0;
@@ -280,7 +280,7 @@ void PETScKrylovSolver::setPETScPreconditioner()
     PCSetType(pc, PCHYPRE);
     PCHYPRESetType(pc, "boomeramg");
 #else
-    dolfin_warning("PETSc has not been compiled with the HYPRE library for   "
+    warning("PETSc has not been compiled with the HYPRE library for   "
                    "algerbraic multigrid. Default PETSc solver will be used. "
                    "For performance, installation of HYPRE is recommended.   "
                    "See the DOLFIN user manual for more information.");
@@ -310,7 +310,7 @@ void PETScKrylovSolver::writeReport(int num_iterations)
   PCGetType(pc, &pc_type);
 
   // Report number of iterations and solver type
-  dolfin_info("Krylov solver (%s, %s) converged in %d iterations.",
+  message("Krylov solver (%s, %s) converged in %d iterations.",
 	      ksp_type, pc_type, num_iterations);
 }
 //-----------------------------------------------------------------------------
@@ -327,7 +327,7 @@ KSPType PETScKrylovSolver::getType(KrylovMethod method) const
   case gmres:
     return KSPGMRES;
   default:
-    dolfin_warning("Requested Krylov method unknown. Using GMRES.");
+    warning("Requested Krylov method unknown. Using GMRES.");
     return KSPGMRES;
   }
 }

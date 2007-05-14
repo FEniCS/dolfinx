@@ -192,9 +192,9 @@ int main(int argc, char* argv[])
   // Parse command line arguments
   if ( argc != 2 )
   {
-    dolfin_info("Usage: dolfin-ode-reaction method");
-    dolfin_info("");
-    dolfin_info("method - 'cg' or 'mcg'");
+    message("Usage: dolfin-ode-reaction method");
+    message("");
+    message("method - 'cg' or 'mcg'");
     return 1;
   }
   const char* method = argv[1];

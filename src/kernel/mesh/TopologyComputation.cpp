@@ -46,17 +46,17 @@ dolfin::uint TopologyComputation::computeEntities(Mesh& mesh, uint dim)
   {
     // Make sure we really have the connectivity
     if ( (ce.size() == 0 && dim != topology.dim()) || (ev.size() == 0 && dim != 0) )
-      dolfin_error("Entities of topological dimension %d exist but connectivity is missing.", dim);
+      error("Entities of topological dimension %d exist but connectivity is missing.", dim);
     return topology.size(dim);
   }
   else
   {
     // Make sure connectivity does not already exist
     if ( ce.size() > 0 || ev.size() > 0 )
-      dolfin_error("Connectivity for topological dimension %d exists but entities are missing.", dim);
+      error("Connectivity for topological dimension %d exists but entities are missing.", dim);
   }
 
-  //dolfin_info("Computing mesh entities of topological dimension %d.", dim);
+  //message("Computing mesh entities of topological dimension %d.", dim);
 
   // Compute connectivity dim - dim if not already computed
   computeConnectivity(mesh, mesh.topology().dim(), mesh.topology().dim());
@@ -115,7 +115,7 @@ dolfin::uint TopologyComputation::computeEntities(Mesh& mesh, uint dim)
     delete [] entities[i];
   delete [] entities;
 
-  //dolfin_info("Created %d new entities.", num_entities);
+  //message("Created %d new entities.", num_entities);
 
   return num_entities;
 }
@@ -142,7 +142,7 @@ void TopologyComputation::computeConnectivity(Mesh& mesh, uint d0, uint d1)
   if ( connectivity.size() > 0 )
     return;
 
-  //dolfin_info("Computing mesh connectivity %d - %d.", d0, d1);
+  //message("Computing mesh connectivity %d - %d.", d0, d1);
 
   // Compute entities if they don't exist
   if ( topology.size(d0) == 0 )
@@ -190,7 +190,7 @@ void TopologyComputation::computeFromTranspose(Mesh& mesh, uint d0, uint d1)
   //   3. Iterate again over entities of dimension d1 and add connections
   //      for each entity of dimension d0
 
-  //dolfin_info("Computing mesh connectivity %d - %d from transpose.", d0, d1);
+  //message("Computing mesh connectivity %d - %d from transpose.", d0, d1);
   
   // Get mesh topology and connectivity
   MeshTopology& topology = mesh.topology();
@@ -235,7 +235,7 @@ void TopologyComputation::computeFromIntersection(Mesh& mesh,
   //
   //   3. Nested iteration over mesh - d0 - d - d1 and add the connections
 
-  //dolfin_info("Computing mesh connectivity %d - %d from intersection %d - %d - %d.",
+  //message("Computing mesh connectivity %d - %d from intersection %d - %d - %d.",
   //            d0, d1, d0, d, d1);
 
   // Get mesh topology and connectivity

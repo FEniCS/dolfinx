@@ -73,7 +73,7 @@ void XMLVector::readVector(const xmlChar *name, const xmlChar **attrs)
 void XMLVector::readEntry(const xmlChar *name, const xmlChar **attrs)
 {
 #ifdef HAVE_PETSC_H
-  dolfin_error("XMLVector::readEntry needs to updated for new vector element access.");
+  error("XMLVector::readEntry needs to updated for new vector element access.");
 #else
   // Parse values
   uint row   = parseUnsignedInt(name, attrs, "row");
@@ -81,7 +81,7 @@ void XMLVector::readEntry(const xmlChar *name, const xmlChar **attrs)
   
   // Check values
   if ( row >= x.size() )
-    dolfin_error("Illegal XML data for Vector: row index %d out of range (0 - %d)",
+    error("Illegal XML data for Vector: row index %d out of range (0 - %d)",
 		  row, x.size() - 1);
   
   // FIXME: update to vector element access

@@ -5,7 +5,7 @@
 // Last changed: 2006-04-20
 
 #include <cmath>
-#include <dolfin/ParameterSystem.h>
+#include <dolfin/parameters.h>
 #include <dolfin/TimeSlab.h>
 #include <dolfin/TimeSlabSolver.h>
 
@@ -32,13 +32,13 @@ TimeSlabSolver::~TimeSlabSolver()
     const real global_average = static_cast<real>(num_global_iterations) / n;
     const real local_average = static_cast<real>(num_local_iterations) / 
       static_cast<real>(num_global_iterations);
-    dolfin_info("Average number of global iterations per step: %.3f",
+    message("Average number of global iterations per step: %.3f",
 		global_average);
-    dolfin_info("Average number of local iterations per global iteration: %.3f",
+    message("Average number of local iterations per global iteration: %.3f",
 		local_average);
   }
 
-  dolfin_info("Total number of (macro) time steps: %d", num_timeslabs);
+  message("Total number of (macro) time steps: %d", num_timeslabs);
 }
 //-----------------------------------------------------------------------------
 bool TimeSlabSolver::solve()
@@ -68,7 +68,7 @@ bool TimeSlabSolver::solve(uint attempt)
     // Do one iteration
     real d2 = iteration(tol, iter, d0, d1);
     if ( monitor )
-      dolfin_info("--- iter = %d: increment = %.3e", iter, d2);
+      message("--- iter = %d: increment = %.3e", iter, d2);
     
     // Check convergenge
     if ( d2 < tol )
@@ -77,7 +77,7 @@ bool TimeSlabSolver::solve(uint attempt)
       num_timeslabs += 1;
       num_global_iterations += iter + 1;
       if ( monitor )
-	dolfin_info("Time slab system of size %d converged in %d iterations.", size(), iter + 1);
+	message("Time slab system of size %d converged in %d iterations.", size(), iter + 1);
       return true;
     }
 
@@ -85,7 +85,7 @@ bool TimeSlabSolver::solve(uint attempt)
     // FIXME: implement better check and make this a parameter
     if ( (iter > 0 && d2 > 1000.0 * d1) || !std::isnormal(d2) )
     {
-      dolfin_warning("Time slab system seems to be diverging.");
+      warning("Time slab system seems to be diverging.");
       return false;
     }
     
@@ -93,7 +93,7 @@ bool TimeSlabSolver::solve(uint attempt)
     d1 = d2;
   }
 
-  dolfin_warning("Time slab system did not converge.");
+  warning("Time slab system did not converge.");
   return false;
 }
 //-----------------------------------------------------------------------------

@@ -8,7 +8,7 @@
 #include <string>
 #include <dolfin/dolfin_log.h>
 #include <dolfin/timing.h>
-#include <dolfin/ParameterSystem.h>
+#include <dolfin/parameters.h>
 #include <dolfin/ODE.h>
 #include <dolfin/ReducedModel.h>
 #include <dolfin/Sample.h>
@@ -54,8 +54,8 @@ void TimeStepper::solve(ODE& ode)
   // Check if we should create a reduced model (automatic modeling)
   if ( get("ODE automatic modeling") )
   {
-    dolfin_info("Creating reduced model (automatic modeling).");
-    dolfin_error("Automatic modeling temporarily broken.");
+    message("Creating reduced model (automatic modeling).");
+    error("Automatic modeling temporarily broken.");
 
     // Create the reduced model
     //ReducedModel reducedModel(ode);
@@ -79,7 +79,7 @@ void TimeStepper::solve(ODE& ode)
   }
 
   // Report elapsed time
-  dolfin_info("Solution computed in %.3f seconds.", toc());
+  message("Solution computed in %.3f seconds.", toc());
 }
 //-----------------------------------------------------------------------------
 real TimeStepper::step()
@@ -112,7 +112,7 @@ real TimeStepper::step()
     if ( timeslab->check(first) )
       break;
     
-    dolfin_info("Rejecting time slab K = %.3e, trying again.", timeslab->length());
+    message("Rejecting time slab K = %.3e, trying again.", timeslab->length());
   }
 
   // Save solution
@@ -120,12 +120,12 @@ real TimeStepper::step()
 
   // Check if solution was stopped
   if ( stopped )
-    dolfin_warning("Solution stopped at t = %.3e.", t);
+    warning("Solution stopped at t = %.3e.", t);
 
   // Update for next time slab
   if ( !timeslab->shift() )
   {
-    dolfin_info("ODE solver stopped on user's request.");
+    message("ODE solver stopped on user's request.");
     stopped = true;
   }
 

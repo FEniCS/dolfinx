@@ -97,7 +97,7 @@ void AssemblePoissonMatrix()
   Poisson::BilinearForm a;
   VectorPoisson::BilinearForm a_vector;
 
-  dolfin_begin("Assemble a sparse matrix for scalar Poisson equation on an square N x N mesh");
+  begin("Assemble a sparse matrix for scalar Poisson equation on an square N x N mesh");
 #ifdef HAVE_PETSC_H  
   for(dolfin::uint i =0; i < n; ++i)
   {
@@ -112,9 +112,9 @@ void AssemblePoissonMatrix()
     dolfin_log(true);
     cout << "uBlasSparseMatrix (N=" << N[i] << "): " << time << endl;
   }
-  dolfin_end();
+  end();
 
-  dolfin_begin("Assemble a sparse matrix for vector Poisson equation on an square N x N mesh");
+  begin("Assemble a sparse matrix for vector Poisson equation on an square N x N mesh");
 #ifdef HAVE_PETSC_H  
   for(dolfin::uint i =0; i < n; ++i)
   {
@@ -129,7 +129,7 @@ void AssemblePoissonMatrix()
     dolfin_log(true);
     cout << "uBlasSparseMatrix (N=" << N[i] << "): " << time << endl;
   }
-  dolfin_end();
+  end();
 }
 //-----------------------------------------------------------------------------
 void AssembleSparseMatrices()
@@ -139,7 +139,7 @@ void AssembleSparseMatrices()
   tuple<real, real> timing;
 
   dolfin_log(true);
-  dolfin_begin("Assemble a sparse matrix in quasi-random order (size = 2N x 2N)" );
+  begin("Assemble a sparse matrix in quasi-random order (size = 2N x 2N)" );
 #ifdef HAVE_PETSC_H  
   timing = MatrixAssemble< PETScMatrix >::assemble(N);
   dolfin_log(true);
@@ -151,7 +151,7 @@ void AssembleSparseMatrices()
   cout << "uBlasSparseMatrix insert   (N=" << N << "): " << get<0>(timing) << endl;
   cout << "uBlasSparseMatrix finalise (N=" << N << "): " << get<01>(timing) << endl;
         
-  dolfin_end();
+  end();
 }
 //-----------------------------------------------------------------------------
 void MatrixVectorMultiply()
@@ -162,7 +162,7 @@ void MatrixVectorMultiply()
   real time;
 
   dolfin_log(true);
-  dolfin_begin("Sparse matrix-vector multiplication (size N x N, repeated n times)");
+  begin("Sparse matrix-vector multiplication (size N x N, repeated n times)");
 #ifdef HAVE_PETSC_H 
   time = MatrixAssemble< PETScMatrix, PETScVector >::vector_multiply(N, n);
   dolfin_log(true);
@@ -172,12 +172,12 @@ void MatrixVectorMultiply()
   dolfin_log(true);
   cout << "uBlasMatrix: (N=" << N << ", n=" << n << "): " << time << endl;
 
-  dolfin_end();
+  end();
 }
 //-----------------------------------------------------------------------------
 int main()
 {
-  dolfin_begin("Sparse matrix benchmark timings");
+  begin("Sparse matrix benchmark timings");
   dolfin_log(false);
 
   // Assembly of a sparse matrix

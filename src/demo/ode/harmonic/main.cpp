@@ -68,7 +68,7 @@ int main()
     ode.solve();
     dolfin_log(true);
 
-    dolfin_info("cG(%d): e = %.3e", q, ode.error());
+    message("cG(%d): e = %.3e", q, ode.error());
   }
 
   cout << endl;
@@ -83,7 +83,7 @@ int main()
     ode.solve();
     dolfin_log(true);
 
-    dolfin_info("dG(%d): e = %.3e", q, ode.error());
+    message("dG(%d): e = %.3e", q, ode.error());
   }
 
   return 0;

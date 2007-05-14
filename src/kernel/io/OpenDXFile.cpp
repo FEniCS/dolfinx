@@ -7,11 +7,11 @@
 // Last changed: 2006-09-15
 
 #include <stdio.h>
-#include <dolfin/dolfin_log.h>
+#include <dolfin/log.h>
+#include <dolfin/parameter.h>
 #include <dolfin/Cell.h>
 #include <dolfin/Function.h>
 #include <dolfin/Mesh.h>
-#include <dolfin/ParameterSystem.h>
 #include <dolfin/Vertex.h>
 #include <dolfin/OpenDXFile.h>
 
@@ -20,7 +20,7 @@ using namespace dolfin;
 //-­---------------------------------------------------------------------------
 OpenDXFile::OpenDXFile(const std::string filename) : 
   GenericFile(filename),
-  save_each_mesh(dolfin::get("save each mesh")),
+  save_each_mesh(get("save each mesh")),
   event_saving_mesh("Saving mesh to OpenDX file."),
   event_saving_function("Saving function to OpenDX file.")
 {
@@ -57,7 +57,7 @@ void OpenDXFile::operator<<(Mesh& mesh)
 //-­---------------------------------------------------------------------------
 void OpenDXFile::operator<<(Function& u)
 {
-  dolfin_error("Function output in OpenDX format not implemented for new Function.");
+  error("Function output in OpenDX format not implemented for new Function.");
 
 /*
   event_saving_function();
@@ -159,7 +159,7 @@ void OpenDXFile::writeMeshData(FILE* fp, Mesh& mesh)
   // Check that we don't try to write mesh data at the same time as we
   // write a time series
   if ( frames.size() > 0 )
-    dolfin_error("Mesh data and time series cannot be mixed for OpenDX file format.");
+    error("Mesh data and time series cannot be mixed for OpenDX file format.");
 
   // Write data (cell diameter)
   fprintf(fp,"# Cell diameter\n");
@@ -185,7 +185,7 @@ void OpenDXFile::writeMeshData(FILE* fp, Mesh& mesh)
 //-­---------------------------------------------------------------------------
 void OpenDXFile::writeFunction(FILE* fp, Function& u)
 {
-  dolfin_error("Function output in OpenDX format not implemented for new Function.");
+  error("Function output in OpenDX format not implemented for new Function.");
 /*
   // Write header for object
   fprintf(fp,"# Values for [%s] at nodal points, frame %d\n", u.label().c_str(), (int)frames.size());

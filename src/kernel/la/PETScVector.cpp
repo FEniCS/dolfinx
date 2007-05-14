@@ -96,7 +96,7 @@ void PETScVector::init(const uint N)
 //-----------------------------------------------------------------------------
 void PETScVector::init(const SparsityPattern& sparsity_pattern)
 {
-  dolfin_error("Cannot initialise a PETSc vector using a sparsity pattern.");
+  error("Cannot initialise a PETSc vector using a sparsity pattern.");
 }
 //-----------------------------------------------------------------------------
 void PETScVector::axpy(const real a, const PETScVector& x)
@@ -339,7 +339,7 @@ void PETScVector::disp(uint precision) const
 {
   // FIXME: Maybe this could be an option?
   //VecView(x, PETSC_VIEWER_STDOUT_SELF);
-  dolfin_warning("PETScVector::disp() needs to be fixed.");
+  warning("PETScVector::disp() needs to be fixed.");
 /* 
   const uint M = size();
   cout << "[ ";

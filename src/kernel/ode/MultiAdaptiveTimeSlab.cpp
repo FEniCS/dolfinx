@@ -9,7 +9,7 @@
 #include <string>
 #include <algorithm>
 #include <dolfin/dolfin_log.h>
-#include <dolfin/ParameterSystem.h>
+#include <dolfin/parameters.h>
 #include <dolfin/ODE.h>
 #include <dolfin/Dependencies.h>
 #include <dolfin/Method.h>
@@ -43,7 +43,7 @@ MultiAdaptiveTimeSlab::MultiAdaptiveTimeSlab(ODE& ode) :
   u = 0.0;
 
   // Initialize transpose of dependencies if necessary
-  dolfin_info("Computing transpose (inverse) of dependency pattern.");
+  message("Computing transpose (inverse) of dependency pattern.");
   if ( ode.dependencies.sparse() && !ode.transpose.sparse() )
     ode.transpose.transp(ode.dependencies);
 }
@@ -99,7 +99,7 @@ real MultiAdaptiveTimeSlab::build(real a, real b)
 //-----------------------------------------------------------------------------
 bool MultiAdaptiveTimeSlab::solve()
 {
-  //dolfin_info("Solving time slab system on [%f, %f].", _a, _b);
+  //message("Solving time slab system on [%f, %f].", _a, _b);
 
   // Copy u0 to u. This happens automatically in feval if user has set
   // dependencies correctly, but you never know...
@@ -119,7 +119,7 @@ bool MultiAdaptiveTimeSlab::solve()
   //for (uint i = 0; i < N; i++)
   // {
   //  real endval = jx[elast[i] * method->nsize() + method->nsize() - 1];
-  //  dolfin_info("i = %d: u = %.16e", i, endval);
+  //  message("i = %d: u = %.16e", i, endval);
   // }
 }
 //-----------------------------------------------------------------------------
@@ -298,10 +298,10 @@ void MultiAdaptiveTimeSlab::disp() const
 {
   cout << "--------------------------------------------------------" << endl;
 
-  dolfin_info("s: size = %d alloc = %d", ns, size_s.size);
-  dolfin_info("e: size = %d alloc = %d", ne, size_e.size);
-  dolfin_info("j: size = %d alloc = %d", nj, size_j.size);
-  dolfin_info("d: size = %d alloc = %d", nd, size_d.size);
+  message("s: size = %d alloc = %d", ns, size_s.size);
+  message("e: size = %d alloc = %d", ne, size_e.size);
+  message("j: size = %d alloc = %d", nj, size_j.size);
+  message("d: size = %d alloc = %d", nd, size_d.size);
 
   cout << "sa = "; Alloc::disp(sa, ns);
   cout << "sb = "; Alloc::disp(sb, ns);
@@ -402,7 +402,7 @@ void MultiAdaptiveTimeSlab::create_e(uint index, uint subslab, real a, real b)
   // Get next available position
   uint pos = size_e.next++;
 
-  //dolfin_info("  Creating element e = %d for i = %d at [%f, %f]", pos, index, a, b);
+  //message("  Creating element e = %d for i = %d at [%f, %f]", pos, index, a, b);
   
   //if ( index == 145 )
   //  cout << "Modified: " << b - a << endl << endl;
@@ -440,7 +440,7 @@ void MultiAdaptiveTimeSlab::create_d(uint i0, uint e0, uint s0, real a0, real b0
   // Add dependencies to elements that depend on the given element if the
   // depending elements use larger time steps
   
-  //dolfin_info("Checking dependencies to element %d (component %d)", element, index);
+  //message("Checking dependencies to element %d (component %d)", element, index);
 
   // Get list of components depending on current component
   const Array<uint>& deps = ode.transpose[i0];
@@ -470,7 +470,7 @@ void MultiAdaptiveTimeSlab::create_d(uint i0, uint e0, uint s0, real a0, real b0
     if ( !within(a0, b0, a1, b1) || s0 == s1 )
       continue;
     
-    //dolfin_info("  Checking element %d (component %d)", e1, i1);
+    //message("  Checking element %d (component %d)", e1, i1);
     
     // Iterate over dofs for element
     for (uint n = 0; n < method->nsize(); n++)
@@ -478,7 +478,7 @@ void MultiAdaptiveTimeSlab::create_d(uint i0, uint e0, uint s0, real a0, real b0
       //const uint j = j1 + n;
       const real t = a1 + k1*method->npoint(n);
       
-      //dolfin_info("    Checking dof at t = %f", t);
+      //message("    Checking dof at t = %f", t);
       
       // Check if dof is contained in the current element
       if ( within(t, a0, b0) )
@@ -512,7 +512,7 @@ void MultiAdaptiveTimeSlab::alloc_s(uint newsize)
 
   if ( newsize <= size_s.size ) return;
 
-  //dolfin_info("Reallocating: ns = %d", newsize);
+  //message("Reallocating: ns = %d", newsize);
 
   Alloc::realloc(&sa, size_s.size, newsize);
   Alloc::realloc(&sb, size_s.size, newsize);
@@ -526,7 +526,7 @@ void MultiAdaptiveTimeSlab::alloc_e(uint newsize)
 
   if ( newsize <= size_e.size ) return;
 
-  //dolfin_info("Reallocating: ne = %d", newsize);
+  //message("Reallocating: ne = %d", newsize);
 
   Alloc::realloc(&ei, size_e.size, newsize);
   Alloc::realloc(&es, size_e.size, newsize);
@@ -542,7 +542,7 @@ void MultiAdaptiveTimeSlab::alloc_j(uint newsize)
 
   if ( newsize <= size_j.size ) return;
 
-  //dolfin_info("Reallocating: nj = %d", newsize);
+  //message("Reallocating: nj = %d", newsize);
 
   Alloc::realloc(&jx, size_j.size, newsize);
 
@@ -555,7 +555,7 @@ void MultiAdaptiveTimeSlab::alloc_d(uint newsize)
 
   if ( newsize <= size_d.size ) return;
 
-  //dolfin_info("Reallocating: nd = %d", newsize);
+  //message("Reallocating: nd = %d", newsize);
 
   Alloc::realloc(&de, size_d.size, newsize);
 
@@ -1031,26 +1031,26 @@ TimeSlabSolver* MultiAdaptiveTimeSlab::chooseSolver()
   std::string solver = get("ODE nonlinear solver");
 
   if ( implicit )
-    dolfin_error("Multi-adaptive solver cannot solver implicit ODEs. Use cG(q) or dG(q) instead.");
+    error("Multi-adaptive solver cannot solver implicit ODEs. Use cG(q) or dG(q) instead.");
 
   if ( solver == "fixed-point" )
   {
-    dolfin_info("Using multi-adaptive fixed-point solver.");
+    message("Using multi-adaptive fixed-point solver.");
     return new MultiAdaptiveFixedPointSolver(*this);
   }
   else if ( solver == "newton" )
   {
-    dolfin_info("Using multi-adaptive Newton solver.");
+    message("Using multi-adaptive Newton solver.");
     return new MultiAdaptiveNewtonSolver(*this);
   }
   else if ( solver == "default" )
   {
-    dolfin_info("Using multi-adaptive fixed-point solver (default for mc/dG(q)).");
+    message("Using multi-adaptive fixed-point solver (default for mc/dG(q)).");
     return new MultiAdaptiveFixedPointSolver(*this);
   }
   else
   {
-    dolfin_error("Uknown solver type: %s.", solver.c_str());
+    error("Uknown solver type: %s.", solver.c_str());
   }
 
   return 0;

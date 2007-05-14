@@ -24,7 +24,7 @@ void bench(unsigned int n, unsigned int M)
     UnitCube mesh(n, n, n);
   }
   t = toc() / MM;
-  dolfin_info("  Create unit cube mesh: %.3e", t);
+  message("  Create unit cube mesh: %.3e", t);
 
   // Iterate over entities
   unsigned int sum = 0;
@@ -36,7 +36,7 @@ void bench(unsigned int n, unsigned int M)
         sum += v->index();
   }
   t = toc() / MM;
-  dolfin_info("  Iterate over entities: %.3e (sum = %u)", t, sum);
+  message("  Iterate over entities: %.3e (sum = %u)", t, sum);
   
   // Uniform refinement
   dolfin_log(false);
@@ -44,7 +44,7 @@ void bench(unsigned int n, unsigned int M)
   mesh.refine();
   t = toc();
   dolfin_log(true);
-  dolfin_info("  Uniform refinement:    %.3e", t);
+  message("  Uniform refinement:    %.3e", t);
 }
 
 // Just create a single mesh (useful for memory benchmarking)
@@ -52,7 +52,7 @@ void bench(unsigned int n)
 {
   UnitCube mesh(n, n, n);
   cout << mesh << endl;
-  dolfin_info("Mesh created, sleeping for 5 seconds...");
+  message("Mesh created, sleeping for 5 seconds...");
   sleep(5);
 }
 

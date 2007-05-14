@@ -1,6 +1,7 @@
 #include <iostream>
 
 #include <dolfin_glue.h>
+#include <dolfin/parameters.h>
 #include <dolfin/ParameterSystem.h>
 #include <dolfin/File.h>
 

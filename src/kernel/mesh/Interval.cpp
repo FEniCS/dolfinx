@@ -30,7 +30,7 @@ dolfin::uint Interval::numEntities(uint dim) const
   case 1:
     return 1; // cells
   default:
-    dolfin_error("Illegal topological dimension %d for interval.", dim);
+    error("Illegal topological dimension %d for interval.", dim);
   }
 
   return 0;
@@ -45,7 +45,7 @@ dolfin::uint Interval::numVertices(uint dim) const
   case 1:
     return 2; // cells
   default:
-    dolfin_error("Illegal topological dimension %d for interval.", dim);
+    error("Illegal topological dimension %d for interval.", dim);
   }
 
   return 0;
@@ -53,7 +53,7 @@ dolfin::uint Interval::numVertices(uint dim) const
 //-----------------------------------------------------------------------------
 dolfin::uint Interval::alignment(const Cell& cell, uint dim, uint e) const
 {
-  dolfin_error("Unable to compute alignment for entity of dimension %d for interval.");
+  error("Unable to compute alignment for entity of dimension %d for interval.");
   return 0;
 }
 //-----------------------------------------------------------------------------
@@ -68,7 +68,7 @@ dolfin::uint Interval::orientation(const Cell& cell) const
 void Interval::createEntities(uint** e, uint dim, const uint v[]) const
 {
   // We don't need to create any entities
-  dolfin_error("Don't know how to create entities of topological dimension %d.", dim);
+  error("Don't know how to create entities of topological dimension %d.", dim);
 }
 //-----------------------------------------------------------------------------
 void Interval::orderEntities(Cell& cell) const
@@ -112,7 +112,7 @@ real Interval::volume(const MeshEntity& interval) const
 {
   // Check that we get an interval
   if ( interval.dim() != 1 )
-    dolfin_error("Illegal mesh entity for computation of interval volume (length). Not an interval.");
+    error("Illegal mesh entity for computation of interval volume (length). Not an interval.");
 
   // Get mesh geometry
   const MeshGeometry& geometry = interval.mesh().geometry();
@@ -137,7 +137,7 @@ real Interval::diameter(const MeshEntity& interval) const
 {
   // Check that we get an interval
   if ( interval.dim() != 1 )
-    dolfin_error("Illegal mesh entity for computation of interval diameter. Not an interval.");
+    error("Illegal mesh entity for computation of interval diameter. Not an interval.");
 
   // Diameter is same as volume for interval (line segment)
   return volume(interval);
@@ -145,14 +145,14 @@ real Interval::diameter(const MeshEntity& interval) const
 //-----------------------------------------------------------------------------
 real Interval::normal(const Cell& cell, uint facet, uint i) const
 {
-  dolfin_error("Not implemented. Please fix this Kristian. ;-)");
+  error("Not implemented. Please fix this Kristian. ;-)");
   return 0.0;
 }
 //-----------------------------------------------------------------------------
 bool Interval::intersects(const MeshEntity& interval, const Point& p) const
 {
   // FIXME: Not implemented
-  dolfin_error("Interval::intersects() not implemented");
+  error("Interval::intersects() not implemented");
 
   return false;
 }

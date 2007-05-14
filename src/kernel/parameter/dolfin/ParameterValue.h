@@ -83,7 +83,7 @@ namespace dolfin
     operator uint() const
     { 
       if ( value < 0 )
-	dolfin_error("Unable to convert negative int parameter to uint.");
+	error("Unable to convert negative int parameter to uint.");
       return static_cast<uint>(value);
     }
 

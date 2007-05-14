@@ -329,7 +329,7 @@ real PETScMatrix::norm(const Norm type) const
     MatNorm(A, NORM_FROBENIUS, &value);
     break;
   default:
-    dolfin_error("Unknown norm type.");
+    error("Unknown norm type.");
   }
   
   return value;
@@ -361,7 +361,7 @@ void PETScMatrix::disp(uint precision) const
   // FIXME: Maybe this could be an option?
   //MatView(A, PETSC_VIEWER_STDOUT_SELF);
 
-  dolfin_warning("PETScMatrix::disp needs to be fixed.");
+  warning("PETScMatrix::disp needs to be fixed.");
 /*
   const uint M = size(0);
   const uint N = size(1);
@@ -437,24 +437,24 @@ void PETScMatrix::checkType()
     return;
   case spooles:
     #if !PETSC_HAVE_SPOOLES
-      dolfin_warning("PETSc has not been complied with Spooles. Using default matrix type");
+      warning("PETSc has not been complied with Spooles. Using default matrix type");
       _type = default_matrix;
     #endif
     return;
   case superlu:
     #if !PETSC_HAVE_SUPERLU
-      dolfin_warning("PETSc has not been complied with Super LU. Using default matrix type");
+      warning("PETSc has not been complied with Super LU. Using default matrix type");
       _type = default_matrix;
     #endif
     return;
   case umfpack:
     #if !PETSC_HAVE_UMFPACK
-      dolfin_warning("PETSc has not been complied with UMFPACK. Using default matrix type");
+      warning("PETSc has not been complied with UMFPACK. Using default matrix type");
       _type = default_matrix;
     #endif
     return;
   default:
-    dolfin_warning("Requested matrix type unknown. Using default.");
+    warning("Requested matrix type unknown. Using default.");
     _type = default_matrix;
   }
 }

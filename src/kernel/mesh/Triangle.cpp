@@ -34,7 +34,7 @@ dolfin::uint Triangle::numEntities(uint dim) const
   case 2:
     return 1; // cells
   default:
-    dolfin_error("Illegal topological dimension %d for tetrahedron.", dim);
+    error("Illegal topological dimension %d for tetrahedron.", dim);
   }
 
   return 0;
@@ -51,7 +51,7 @@ dolfin::uint Triangle::numVertices(uint dim) const
   case 2:
     return 3; // cells
   default:
-    dolfin_error("Illegal topological dimension %d for tetrahedron.", dim);
+    error("Illegal topological dimension %d for tetrahedron.", dim);
   }
 
   return 0;
@@ -68,7 +68,7 @@ dolfin::uint Triangle::alignment(const Cell& cell, uint dim, uint e) const
         return ( edge_vertices[0] == cell_vertices[(e + 1) % 3] ? 0 : 1 );
   }
   else
-    dolfin_error("Unable to compute alignment for entity of dimension %d for triangle.");
+    error("Unable to compute alignment for entity of dimension %d for triangle.");
 
   return 0;
 }
@@ -93,7 +93,7 @@ void Triangle::createEntities(uint** e, uint dim, const uint v[]) const
 {
   // We only need to know how to create edges
   if ( dim != 1 )
-    dolfin_error("Don't know how to create entities of topological dimension %d.", dim);
+    error("Don't know how to create entities of topological dimension %d.", dim);
 
   // Create the three edges
   e[0][0] = v[1]; e[0][1] = v[2];
@@ -193,7 +193,7 @@ real Triangle::volume(const MeshEntity& triangle) const
 {
   // Check that we get a triangle
   if ( triangle.dim() != 2 )
-    dolfin_error("Illegal mesh entity for computation of triangle volume (area). Not a triangle.");
+    error("Illegal mesh entity for computation of triangle volume (area). Not a triangle.");
 
   // Get mesh geometry
   const MeshGeometry& geometry = triangle.mesh().geometry();
@@ -223,7 +223,7 @@ real Triangle::volume(const MeshEntity& triangle) const
     return  0.5 * sqrt(v0*v0 + v1*v1 + v2*v2);
   }
   else
-    dolfin_error("Only know how to volume (area) of a triangle when embedded in R^2 or R^3.");
+    error("Only know how to volume (area) of a triangle when embedded in R^2 or R^3.");
 
   return 0.0;
 }
@@ -232,14 +232,14 @@ real Triangle::diameter(const MeshEntity& triangle) const
 {
   // Check that we get a triangle
   if ( triangle.dim() != 2 )
-    dolfin_error("Illegal mesh entity for computation of triangle diameter. Not a triangle.");
+    error("Illegal mesh entity for computation of triangle diameter. Not a triangle.");
 
   // Get mesh geometry
   const MeshGeometry& geometry = triangle.mesh().geometry();
 
   // Only know how to compute the diameter when embedded in R^2 or R^3
   if ( geometry.dim() != 2 && geometry.dim() != 3 )
-    dolfin_error("Only know how to volume (area) of a triangle when embedded in R^2 or R^3.");
+    error("Only know how to volume (area) of a triangle when embedded in R^2 or R^3.");
 
   // Get the coordinates of the three vertices
   const uint* vertices = triangle.entities(0);
@@ -269,7 +269,7 @@ real Triangle::normal(const Cell& cell, uint facet, uint i) const
 
   // The normal vector is currently only defined for a triangle in R^2
   if ( c.mesh().geometry().dim() != 2 )
-    dolfin_error("The normal vector is only defined when the triangle is in R^2");
+    error("The normal vector is only defined when the triangle is in R^2");
     
   // Get global index of opposite vertex
   const uint v0 = cell.entities(0)[facet];

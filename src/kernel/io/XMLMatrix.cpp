@@ -89,7 +89,7 @@ void XMLMatrix::readMatrix(const xmlChar *name, const xmlChar **attrs)
 void XMLMatrix::readRow(const xmlChar *name, const xmlChar **attrs)
 {
   // FIXME: update to new format
-  dolfin_error("This function needs to be updated to the new format.");
+  error("This function needs to be updated to the new format.");
 
   /*
   // Set default values
@@ -108,7 +108,7 @@ void XMLMatrix::readRow(const xmlChar *name, const xmlChar **attrs)
 void XMLMatrix::readEntry(const xmlChar *name, const xmlChar **attrs)
 {
 #ifdef HAVE_PETSC_H
-  dolfin_error("XMLMatrix::readEntry needs to updated for new matrix element access.");
+  error("XMLMatrix::readEntry needs to updated for new matrix element access.");
 #else
   // Parse values
   uint column = parseUnsignedInt(name, attrs, "column");

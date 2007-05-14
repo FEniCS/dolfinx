@@ -94,13 +94,13 @@ void MeshGeometry::disp() const
   cout << "-------------" << endl << endl;
 
   // Begin indentation
-  dolfin_begin("");
+  begin("");
 
   // Check if empty
   if ( _dim == 0 )
   {
     cout << "empty" << endl << endl;
-    dolfin_end();
+    end();
     return;
   }
   
@@ -115,6 +115,6 @@ void MeshGeometry::disp() const
   cout << endl;
 
   // End indentation
-  dolfin_end();
+  end();
 }
 //-----------------------------------------------------------------------------

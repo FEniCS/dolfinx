@@ -13,7 +13,7 @@ using namespace dolfin;
 UnitCube::UnitCube(uint nx, uint ny, uint nz) : Mesh()
 {
   if ( nx < 1 || ny < 1 || nz < 1 )
-    dolfin_error("Size of unit cube must be at least 1 in each dimension.");
+    error("Size of unit cube must be at least 1 in each dimension.");
 
   rename("mesh", "Mesh of the unit cube (0,1) x (0,1) x (0,1)");
 

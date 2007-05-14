@@ -202,7 +202,7 @@ void XMLFile::operator>>(Graph& graph)
 void XMLFile::operator<<(Vector& x)
 {
 #ifdef HAVE_PETSC_H
-  dolfin_error("Function output in XML format broken. Need to fix vector element access.");
+  error("Function output in XML format broken. Need to fix vector element access.");
 #else
   // Open file
   FILE* fp = openFile();
@@ -223,7 +223,7 @@ void XMLFile::operator<<(Vector& x)
   // Close file
   closeFile(fp);
   
-  dolfin_info("Saved vector %s (%s) to file %s in DOLFIN XML format.",
+  message("Saved vector %s (%s) to file %s in DOLFIN XML format.",
 	      x.name().c_str(), x.label().c_str(), filename.c_str());
 #endif
 }
@@ -259,7 +259,7 @@ void XMLFile::operator<<(Matrix& A)
   // Close file
   closeFile(fp);
 
-  dolfin_info("Saved vector %s (%s) to file %s in DOLFIN XML format.",
+  message("Saved vector %s (%s) to file %s in DOLFIN XML format.",
 	      A.name().c_str(), A.label().c_str(), filename.c_str());
 }
 //-----------------------------------------------------------------------------
@@ -295,7 +295,7 @@ void XMLFile::operator<<(Mesh& mesh)
               v->index(), p.x(), p.y(), p.z());
       break;
     default:
-      dolfin_error("The XML mesh file format only supports 1D, 2D and 3D meshes.");
+      error("The XML mesh file format only supports 1D, 2D and 3D meshes.");
     }
   }
 
@@ -322,7 +322,7 @@ void XMLFile::operator<<(Mesh& mesh)
               c->index(), vertices[0], vertices[1], vertices[2], vertices[3]);
       break;
     default:
-      dolfin_error("Unknown cell type: %u.", cell_type);
+      error("Unknown cell type: %u.", cell_type);
     }
   }
 
@@ -437,7 +437,7 @@ void XMLFile::operator<<(Function& f)
 {
   // Can only save discrete functions
   if ( f.type() != Function::discrete )
-    dolfin_error("Only discrete functions can be saved in XML format.");
+    error("Only discrete functions can be saved in XML format.");
 
   // Get discrete function (we're all friends here)
   DiscreteFunction* df = static_cast<DiscreteFunction*>(f.f);
@@ -624,7 +624,7 @@ void XMLFile::parseFile()
   
   // Notify that file is being closed
   if ( !xmlObject->close() )
-    dolfin_error("Unable to find data in XML file.");
+    error("Unable to find data in XML file.");
 }
 //-----------------------------------------------------------------------------
 void XMLFile::parseSAX()
@@ -675,7 +675,7 @@ void dolfin::sax_warning(void *ctx, const char *msg, ...)
   va_start(args, msg);
   char buffer[DOLFIN_LINELENGTH];
   vsprintf(buffer, msg, args);
-  dolfin_warning("Incomplete XML data: " + std::string(buffer));
+  warning("Incomplete XML data: " + std::string(buffer));
   va_end(args);
 }
 //-----------------------------------------------------------------------------
@@ -685,7 +685,7 @@ void dolfin::sax_error(void *ctx, const char *msg, ...)
   va_start(args, msg);
   char buffer[DOLFIN_LINELENGTH];
   vsprintf(buffer, msg, args);
-  dolfin_error("Illegal XML data: " + std::string(buffer));
+  error("Illegal XML data: " + std::string(buffer));
   va_end(args);
 }
 //-----------------------------------------------------------------------------
@@ -695,7 +695,7 @@ void dolfin::sax_fatal_error(void *ctx, const char *msg, ...)
   va_start(args, msg);
   char buffer[DOLFIN_LINELENGTH];
   vsprintf(buffer, msg, args);
-  dolfin_error("Illegal XML data: " + std::string(buffer));
+  error("Illegal XML data: " + std::string(buffer));
   va_end(args);
 }
 //-----------------------------------------------------------------------------

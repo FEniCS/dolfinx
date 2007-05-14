@@ -108,7 +108,7 @@ namespace dolfin
     uint M = A.size(0);
     uint N = A.size(1);
     if ( N != b.size() )
-      dolfin_error("Non-matching dimensions for linear system.");
+      error("Non-matching dimensions for linear system.");
 
     // Reinitialise x if necessary 
     // FIXME: this erases initial guess
@@ -120,7 +120,7 @@ namespace dolfin
 
     // Write a message
     if ( report )
-      dolfin_info("Solving linear system of size %d x %d (uBlas Krylov solver).", M, N);
+      message("Solving linear system of size %d x %d (uBlas Krylov solver).", M, N);
 
     // Initialise preconditioner if necessary
     pc->init(A);
@@ -140,15 +140,15 @@ namespace dolfin
       iterations = solveBiCGStab(A, x, b, converged);
       break;
     default:
-      dolfin_warning("Requested Krylov method unknown. Using BiCGStab.");
+      warning("Requested Krylov method unknown. Using BiCGStab.");
       iterations = solveBiCGStab(A, x, b, converged);
     }
   
     // Check for convergence
     if( !converged )
-      dolfin_warning("Krylov solver failed to converge.");
+      warning("Krylov solver failed to converge.");
     else if ( report )
-      dolfin_info("Krylov solver converged in %d iterations.", iterations);
+      message("Krylov solver converged in %d iterations.", iterations);
   
     return iterations; 
   }
@@ -357,7 +357,7 @@ namespace dolfin
       // Compute new rho
       rho = ublas::inner_prod(r, rstar); 
       if( fabs(rho) < 1e-25 )
-        dolfin_error("BiCGStab breakdown. rho = %g", rho);
+        error("BiCGStab breakdown. rho = %g", rho);
 
       beta = (rho/rho_old)*(alpha/omega);
 

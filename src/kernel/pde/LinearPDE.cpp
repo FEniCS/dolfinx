@@ -24,7 +24,7 @@ LinearPDE::LinearPDE(Form& a,
                      Array<BoundaryCondition*>& bcs)
   : GenericPDE(a, L, mesh, bcs)
 {
-  dolfin_info("Creating linear PDE with %d boundary condition(s).", bcs.size());
+  message("Creating linear PDE with %d boundary condition(s).", bcs.size());
 }
 //-----------------------------------------------------------------------------
 LinearPDE::~LinearPDE()
@@ -34,7 +34,7 @@ LinearPDE::~LinearPDE()
 //-----------------------------------------------------------------------------
 void LinearPDE::solve(Function& u)
 {
-  dolfin_begin("Solving linear PDE.");
+  begin("Solving linear PDE.");
     
   // Assemble linear system
   Matrix A;
@@ -64,7 +64,7 @@ void LinearPDE::solve(Function& u)
     solver.solve(A, x, b);
   }
   else
-    dolfin_error("Unknown solver type \"%s\".", solver_type.c_str());
+    error("Unknown solver type \"%s\".", solver_type.c_str());
 
   //cout << "Matrix:" << endl;
   //A.disp();
@@ -78,6 +78,6 @@ void LinearPDE::solve(Function& u)
   // Set function data
   u.init(mesh, x, a, 1);
 
-  dolfin_end();
+  end();
 }
 //-----------------------------------------------------------------------------

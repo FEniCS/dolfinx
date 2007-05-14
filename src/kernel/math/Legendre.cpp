@@ -14,7 +14,7 @@ using namespace dolfin;
 Legendre::Legendre(int n)
 {
   if ( n < 0 )
-    dolfin_error("Degree for Legendre polynomial must be non-negative.");
+    error("Degree for Legendre polynomial must be non-negative.");
 
   this->n = n;
 }

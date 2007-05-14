@@ -30,14 +30,14 @@ void LocalMeshCoarsening::coarsenMeshByEdgeCollapse(Mesh& mesh,
                                                     MeshFunction<bool>& cell_marker,
                                                     bool coarsen_boundary)
 {
-  dolfin_info("Coarsen simplicial mesh by edge collapse.");
+  message("Coarsen simplicial mesh by edge collapse.");
 
   // Get size of old mesh
   //const uint num_vertices = mesh.size(0);
   const uint num_cells = mesh.size(mesh.topology().dim());
   
   // Check cell marker 
-  if ( cell_marker.size() != num_cells ) dolfin_error("Wrong dimension of cell_marker");
+  if ( cell_marker.size() != num_cells ) error("Wrong dimension of cell_marker");
   
   // Generate cell - edge connectivity if not generated
   mesh.init(mesh.topology().dim(), 1);
@@ -155,7 +155,7 @@ void LocalMeshCoarsening::collapseEdge(Mesh& mesh, Edge& edge,
   else if ( edge_vertex[1] == vert_slave ) 
     vert_master = edge_vertex[0]; 
   else
-    dolfin_error("Node to delete and edge to collapse not compatible.");
+    error("Node to delete and edge to collapse not compatible.");
 
   for (CellIterator c(vertex_to_remove); !c.end(); ++c)
   {

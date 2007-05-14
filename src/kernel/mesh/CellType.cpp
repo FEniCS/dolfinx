@@ -38,7 +38,7 @@ CellType* CellType::create(Type type)
   case tetrahedron:
     return new Tetrahedron();
   default:
-    dolfin_error("Unknown cell type: %d.", type);
+    error("Unknown cell type: %d.", type);
   }
   
   return 0;
@@ -58,7 +58,7 @@ CellType::Type CellType::string2type(std::string type)
   else if ( type == "tetrahedron" )
     return tetrahedron;
   else
-    dolfin_error("Unknown cell type: \"%s\".", type.c_str());
+    error("Unknown cell type: \"%s\".", type.c_str());
   
   return interval;
 }
@@ -95,7 +95,7 @@ std::string CellType::type2string(Type type)
   case tetrahedron:
     return "tetrahedron";
   default:
-    dolfin_error("Unknown cell type: %d.", type);
+    error("Unknown cell type: %d.", type);
   }
 
   return "";

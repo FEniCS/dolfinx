@@ -80,7 +80,7 @@ bool GaussianQuadrature::check(unsigned int q) const
   for (unsigned int i = 0; i < n; i++)
     sum += weights[i] * p(points[i]);
   
-  //dolfin_info("Checking quadrature weights: %.2e.", fabs(sum));
+  //message("Checking quadrature weights: %.2e.", fabs(sum));
   
   if ( q == 0 )
   {
@@ -93,7 +93,7 @@ bool GaussianQuadrature::check(unsigned int q) const
       return true;
   }
 
-  dolfin_info("Quadrature check failed: r = %.2e.", fabs(sum));
+  message("Quadrature check failed: r = %.2e.", fabs(sum));
 
   return false;
 }

@@ -29,41 +29,35 @@ Logger::~Logger()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void Logger::info(std::string msg, int debug_level)
+void Logger::message(std::string msg, int debug_level)
 {
   if (debug_level > this->debug_level)
     return;
 
-  // Write message
   write(debug_level, msg);
-}
-//-----------------------------------------------------------------------------
-void Logger::debug(std::string msg, std::string location)
-{
-  // Write message
-  std::string s = std::string("Debug: ") + msg + location;
-  write(0, s);
 }
 //-----------------------------------------------------------------------------
 void Logger::warning(std::string msg)
 {
-  // Write message
   std::string s = std::string("*** Warning: ") + msg;
   write(0, s);
 }
 //-----------------------------------------------------------------------------
 void Logger::error(std::string msg)
 {
-  // Throw exception
   std::string s = std::string("*** Error: ") + msg;
   throw std::runtime_error(s);
 }
 //-----------------------------------------------------------------------------
-void Logger::dassert(std::string msg, std::string location)
+void Logger::begin(std::string msg, int debug_level)
 {
-  // Throw exception
-  std::string s = std::string("*** Assertion ") + msg + " failed " + location;
-  throw std::runtime_error(s);
+  message(msg, debug_level);
+  indentation_level++;
+}
+//-----------------------------------------------------------------------------
+void Logger::end()
+{
+  indentation_level--;
 }
 //-----------------------------------------------------------------------------
 void Logger::progress(std::string title, real p)
@@ -98,23 +92,7 @@ void Logger::progress(std::string title, real p)
   write(0, s);
 }
 //-----------------------------------------------------------------------------
-void Logger::begin(std::string msg, int debug_level)
-{
-  info(msg, debug_level);
-  indentation_level++;
-}
-//-----------------------------------------------------------------------------
-void Logger::end()
-{
-  indentation_level--;
-}
-//-----------------------------------------------------------------------------
-void Logger::level(int debug_level)
-{
-  this->debug_level = debug_level;
-}
-//-----------------------------------------------------------------------------
-void Logger::init(std::string destination)
+void Logger::setOutputDestination(std::string destination)
 {
   // Choose output destination
   if (destination == "terminal")
@@ -124,8 +102,25 @@ void Logger::init(std::string destination)
   else
   {
     this->destination = terminal;
-    info("Unknown output destination, using plain text.");
+    message("Unknown output destination, using plain text.");
   }
+}
+//-----------------------------------------------------------------------------
+void Logger::setDebugLevel(int debug_level)
+{
+  this->debug_level = debug_level;
+}
+//-----------------------------------------------------------------------------
+void Logger::__debug(std::string msg)
+{
+  std::string s = std::string("Debug: ") + msg;
+  write(0, s);
+}
+//-----------------------------------------------------------------------------
+void Logger::__assert(std::string msg)
+{
+  std::string s = std::string("*** Assertion ") + msg;
+  throw std::runtime_error(s);
 }
 //-----------------------------------------------------------------------------
 void Logger::write(int debug_level, std::string msg)

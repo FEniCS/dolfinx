@@ -15,7 +15,7 @@ public:
   TestProblem7() : ODE(101, 1.0)
   {
     h = 1.0 / (static_cast<real>(N) - 1);
-    dolfin_info("The heat equation on [0,1] with h = %f", h);
+    message("The heat equation on [0,1] with h = %f", h);
   }
   
   void u0(uBlasVector& u)

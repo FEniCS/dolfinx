@@ -18,9 +18,9 @@ GaussQuadrature::GaussQuadrature(unsigned int n) : GaussianQuadrature(n)
   init();
 
   if ( !check(2*n-1) )
-    dolfin_error("Gauss quadrature not ok, check failed.");
+    error("Gauss quadrature not ok, check failed.");
   
-  //dolfin_info("Gauss quadrature computed for n = %d, check passed.", n);
+  //message("Gauss quadrature computed for n = %d, check passed.", n);
 }
 //-----------------------------------------------------------------------------
 void GaussQuadrature::disp() const
@@ -32,7 +32,7 @@ void GaussQuadrature::disp() const
   cout << "-----------------------------------------------------" << endl;
   
   for (unsigned int i = 0; i < n; i++)
-    dolfin_info("%2d   %.16e   %.16e", i, points[i], weights[i]);
+    message("%2d   %.16e   %.16e", i, points[i], weights[i]);
 }
 //-----------------------------------------------------------------------------
 void GaussQuadrature::computePoints()

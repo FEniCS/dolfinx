@@ -98,7 +98,7 @@ PCType PETScPreconditioner::getType(Preconditioner pc)
   case none:
     return PCNONE;
   default:
-    dolfin_warning("Requested preconditioner unkown. Using incomplete LU.");
+    warning("Requested preconditioner unkown. Using incomplete LU.");
     return PCILU;
   }
 }

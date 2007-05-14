@@ -5,7 +5,7 @@
 // Last changed: 2006-05-29
 
 #include <dolfin/dolfin_log.h>
-#include <dolfin/ParameterSystem.h>
+#include <dolfin/parameters.h>
 #include <dolfin/ODE.h>
 #include <dolfin/TimeStepper.h>
 #include <dolfin/ODESolver.h>
@@ -15,7 +15,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 void ODESolver::solve(ODE& ode)
 {
-  dolfin_begin("Solving ODE on time interval (0, %g).", ode.endtime());
+  begin("Solving ODE on time interval (0, %g).", ode.endtime());
 
   // Temporary fix until we fix the dual problem again
   TimeStepper::solve(ode);
@@ -23,7 +23,7 @@ void ODESolver::solve(ODE& ode)
   cout << "Not computing an error estimate. " 
        << "The solution may be inaccurate." << endl;
 
-  dolfin_end();
+  end();
 }
 //-----------------------------------------------------------------------------
 
@@ -49,7 +49,7 @@ void ODESolver::solve(ODE& ode)
   // Check if we should solve the dual problem
   bool solve_dual = get("ODE solve dual problem");
 
-  dolfin_begin("Solving ODE");  
+  begin("Solving ODE");  
 
   // Solve primal problem
   solvePrimal(ode, u);
@@ -63,12 +63,12 @@ void ODESolver::solve(ODE& ode)
   cout << "Not computing an error estimate. " 
        << "The solution may be inaccurate." << endl;
 
-  dolfin_end();
+  end();
 }
 //-----------------------------------------------------------------------------
 void ODESolver::solvePrimal(ODE& ode)
 {
-  dolfin_begin("Solving primal problem");
+  begin("Solving primal problem");
   
   // Initialize primal solution
   //u.init(ode.size());
@@ -77,12 +77,12 @@ void ODESolver::solvePrimal(ODE& ode)
   // Solve primal problem
   TimeStepper::solve(ode);
 
-  dolfin_end();
+  end();
 }
 //-----------------------------------------------------------------------------
 void ODESolver::solveDual(ODE& ode, Function& u, Function& phi)
 { 
-  dolfin_begin("Solving dual problem");
+  begin("Solving dual problem");
   
   // FIXME: BROKEN
 
@@ -99,7 +99,7 @@ void ODESolver::solveDual(ODE& ode, Function& u, Function& phi)
   else
     TimeStepper::solve(dual, phi);
 
-  dolfin_end();
+  end();
 }
 //-----------------------------------------------------------------------------
 

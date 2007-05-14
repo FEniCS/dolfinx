@@ -27,7 +27,7 @@ void UniformMeshRefinement::refine(Mesh& mesh)
 //-----------------------------------------------------------------------------
 void UniformMeshRefinement::refineSimplex(Mesh& mesh)
 {
-  dolfin_info("Refining simplicial mesh uniformly.");
+  message("Refining simplicial mesh uniformly.");
   
   // Generate cell - edge connectivity if not generated
   mesh.init(mesh.topology().dim(), 1);

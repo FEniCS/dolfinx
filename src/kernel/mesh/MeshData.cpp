@@ -62,7 +62,7 @@ void MeshData::disp() const
   cout << "---------" << endl << endl;
   
   // Begin indentation
-  dolfin_begin("");
+  begin("");
 
   // Display topology and geometry
   topology.disp();
@@ -71,15 +71,15 @@ void MeshData::disp() const
   // Display cell type
   cout << "Cell type" << endl;
   cout << "---------" << endl << endl;
-  dolfin_begin("");
+  begin("");
   if ( cell_type )
     cout << cell_type->description() << endl;
   else
     cout << "undefined" << endl;
-  dolfin_end();
+  end();
   cout << endl;
   
   // End indentation
-  dolfin_end();
+  end();
 }
 //-----------------------------------------------------------------------------

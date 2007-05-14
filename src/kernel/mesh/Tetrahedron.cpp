@@ -49,7 +49,7 @@ dolfin::uint Tetrahedron::numEntities(uint dim) const
   case 3:
     return 1; // cells
   default:
-    dolfin_error("Illegal topological dimension %d for tetrahedron.", dim);
+    error("Illegal topological dimension %d for tetrahedron.", dim);
   }
 
   return 0;
@@ -68,7 +68,7 @@ dolfin::uint Tetrahedron::numVertices(uint dim) const
   case 3:
     return 4; // cells
   default:
-    dolfin_error("Illegal topological dimension %d for tetrahedron.", dim);
+    error("Illegal topological dimension %d for tetrahedron.", dim);
   }
 
   return 0;
@@ -95,10 +95,10 @@ dolfin::uint Tetrahedron::alignment(const Cell& cell, uint dim, uint e) const
       return ( face_edges[1] == cell_edges[face_alignment_11[e]] ? 2 : 3 );
     else if ( face_edges[0] == cell_edges[face_alignment_20[e]] )
       return ( face_edges[1] == cell_edges[face_alignment_21[e]] ? 4 : 5 );
-    dolfin_error("Unable to compute alignment of tetrahedron.");
+    error("Unable to compute alignment of tetrahedron.");
   }
   else
-    dolfin_error("Unable to compute alignment for entity of dimension %d for tetrehdron.");
+    error("Unable to compute alignment for entity of dimension %d for tetrehdron.");
   
   return 0;
 }
@@ -144,7 +144,7 @@ void Tetrahedron::createEntities(uint** e, uint dim, const uint v[]) const
     e[3][0] = v[0]; e[3][1] = v[1]; e[3][2] = v[2];
     break;
   default:
-    dolfin_error("Don't know how to create entities of topological dimension %d.", dim);
+    error("Don't know how to create entities of topological dimension %d.", dim);
   }
 }
 //-----------------------------------------------------------------------------
@@ -346,7 +346,7 @@ void Tetrahedron::refineCellIrregular(Cell& cell, MeshEditor& editor,
 				      uint& current_cell, uint refinement_rule, 
 				      uint* marked_edges) const
 {
-  dolfin_warning("Not implemented yet.");
+  warning("Not implemented yet.");
 
   /*
   // Get vertices and edges
@@ -401,7 +401,7 @@ void Tetrahedron::refineCellIrregular(Cell& cell, MeshEditor& editor,
     editor.addCell(current_cell++, v3, e5, e4, e3);
     break;
   default:
-    dolfin_error("Illegal rule for irregular refinement of tetrahedron.");
+    error("Illegal rule for irregular refinement of tetrahedron.");
   }
   */
 }
@@ -413,7 +413,7 @@ real Tetrahedron::volume(const MeshEntity& tetrahedron) const
 
   // Only know how to compute the volume when embedded in R^3
   if ( geometry.dim() != 3 )
-    dolfin_error("Only know how to compute the volume of a tetrahedron when embedded in R^3.");
+    error("Only know how to compute the volume of a tetrahedron when embedded in R^3.");
 
   // Get the coordinates of the four vertices
   const uint* vertices = tetrahedron.entities(0);
@@ -438,7 +438,7 @@ real Tetrahedron::diameter(const MeshEntity& tetrahedron) const
 
   // Only know how to compute the volume when embedded in R^3
   if ( geometry.dim() != 3 )
-    dolfin_error("Only know how to compute the diameter of a tetrahedron when embedded in R^3.");
+    error("Only know how to compute the diameter of a tetrahedron when embedded in R^3.");
   
   // Get the coordinates of the four vertices
   const uint* vertices = tetrahedron.entities(0);

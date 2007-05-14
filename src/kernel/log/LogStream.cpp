@@ -1,8 +1,8 @@
-// Copyright (C) 2003-2005 Anders Logg.
+// Copyright (C) 2003-2007 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2003-03-13
-// Last changed: 2005-12-09
+// Last changed: 2007-05-14
 
 #include <stdio.h>
 #include <cmath>
@@ -28,7 +28,7 @@ LogStream::LogStream(Type type)
 //-----------------------------------------------------------------------------
 LogStream::~LogStream()
 {
-  if ( buffer )
+  if (buffer)
     delete [] buffer;
   buffer = 0;
 }
@@ -47,8 +47,9 @@ LogStream& LogStream::operator<<(const std::string& s)
 //-----------------------------------------------------------------------------
 LogStream& LogStream::operator<<(const LogStream& stream)
 {
-  if ( stream.type == ENDL ) {
-    LogManager::log.info(buffer);
+  if (stream.type == ENDL)
+  {
+    LogManager::logger.message(buffer);
     current = 0;
     buffer[0] = '\0';
   }
@@ -78,7 +79,7 @@ LogStream& LogStream::operator<<(real a)
 {
   char tmp[DOLFIN_WORDLENGTH];
   /*
-    if ( fabs(a) < 1e-5 || fabs(a) > 1e5 )
+    if (fabs(a) < 1e-5 || fabs(a) > 1e5)
     sprintf(tmp, "%e", a);
     else
     sprintf(tmp, "%f", a);
@@ -115,9 +116,11 @@ void LogStream::disp() const
 //-----------------------------------------------------------------------------
 void LogStream::add(const char* msg)
 {
-  for (int i = 0; msg[i]; i++) {
-    if ( current >= (DOLFIN_LINELENGTH-1) ) {
-      LogManager::log.info(buffer);
+  for (int i = 0; msg[i]; i++)
+  {
+    if (current >= (DOLFIN_LINELENGTH-1))
+    {
+      LogManager::logger.message(buffer);
       current = 0;
       buffer[0] = '\0';
       return;

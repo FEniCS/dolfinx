@@ -49,9 +49,9 @@ class Source3D : public Function
 // Solve equation and compute error, 2D
 real solve2D(int q, int n)
 {
-  dolfin_info("--------------------------------------------------");
-  dolfin_info("Solving Poisson's equation in 2D for q = %d, n = %d.", q, n);
-  dolfin_info("--------------------------------------------------");
+  message("--------------------------------------------------");
+  message("Solving Poisson's equation in 2D for q = %d, n = %d.", q, n);
+  message("--------------------------------------------------");
 
   // Set up problem
   UnitSquare mesh(n, n);
@@ -84,7 +84,7 @@ real solve2D(int q, int n)
     L = new Poisson2D_5::LinearForm(f);
     break;
   default:
-    dolfin_error("Forms not compiled for q = %d.", q);
+    error("Forms not compiled for q = %d.", q);
   }    
 
   //FEM::disp(mesh, a->test());
@@ -119,9 +119,9 @@ real solve2D(int q, int n)
 // Solve equation and compute error, 3D
 real solve3D(int q, int n)
 {
-  dolfin_info("--------------------------------------------------");
-  dolfin_info("Solving Poisson's equation in 3D for q = %d, n = %d.", q, n);
-  dolfin_info("--------------------------------------------------");
+  message("--------------------------------------------------");
+  message("Solving Poisson's equation in 3D for q = %d, n = %d.", q, n);
+  message("--------------------------------------------------");
 
   // Set up problem
   UnitCube mesh(n, n, n);
@@ -154,7 +154,7 @@ real solve3D(int q, int n)
     L = new Poisson3D_5::LinearForm(f);
     break;
   default:
-    dolfin_error("Forms not compiled for q = %d.", q);
+    error("Forms not compiled for q = %d.", q);
   }    
 
   //FEM::disp(mesh, a->test());

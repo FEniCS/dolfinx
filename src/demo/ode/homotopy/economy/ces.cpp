@@ -31,12 +31,12 @@ int main(int argc, const char* argv[])
   // Parse command line arguments
   if ( argc != 5 )
   {
-    dolfin_info("Usage: dolfin-ode-homotopy-ces m n alpha beta");
-    dolfin_info("");
-    dolfin_info("m     - number of traders");
-    dolfin_info("n     - number of goods");
-    dolfin_info("alpha - 1/scaling factor");
-    dolfin_info("beta  - scaled exponents");
+    message("Usage: dolfin-ode-homotopy-ces m n alpha beta");
+    message("");
+    message("m     - number of traders");
+    message("n     - number of goods");
+    message("alpha - 1/scaling factor");
+    message("beta  - scaled exponents");
     return 1;
   }
   const unsigned int m = static_cast<unsigned int>(atoi(argv[1]));

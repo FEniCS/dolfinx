@@ -5,7 +5,7 @@
 // Last changed: 2006-04-20
 
 #include <cmath>
-#include <dolfin/ParameterSystem.h>
+#include <dolfin/parameters.h>
 #include <dolfin/Array.h>
 #include <dolfin/ODE.h>
 #include <dolfin/Method.h>
@@ -44,7 +44,7 @@ MultiAdaptivity::MultiAdaptivity(const ODE& ode, const Method& method)
     if ( k > _kmax )
     {
       k = _kmax;
-      dolfin_warning("Initial time step larger than maximum time step, using k = %.3e.", k);
+      warning("Initial time step larger than maximum time step, using k = %.3e.", k);
     }
     for (uint i = 0; i < ode.size(); i++)
       timesteps[i] = k;

@@ -33,7 +33,7 @@ dolfin::uint MeshEntity::index(const MeshEntity& entity) const
 {
   // Must be in the same mesh to be incident
   if ( &_mesh != &entity._mesh )
-    dolfin_error("Unable to compute index of given entity defined on a different mesh.");
+    error("Unable to compute index of given entity defined on a different mesh.");
 
   // Get list of entities for given topological dimension
   const uint* entities = _mesh.topology()(_dim, entity._dim)(_index);
@@ -45,7 +45,7 @@ dolfin::uint MeshEntity::index(const MeshEntity& entity) const
       return i;
 
   // Entity was not found
-  dolfin_error("Unable to compute index of given entity (not found).");
+  error("Unable to compute index of given entity (not found).");
 
   return 0;
 }

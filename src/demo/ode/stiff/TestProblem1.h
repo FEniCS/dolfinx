@@ -14,7 +14,7 @@ public:
   
   TestProblem1() : ODE(1, 10.0)
   {
-    dolfin_info("The simple test equation: u' = -1000 u, u(0) = 1.");
+    message("The simple test equation: u' = -1000 u, u(0) = 1.");
   }
 
   void u0(uBlasVector& u)

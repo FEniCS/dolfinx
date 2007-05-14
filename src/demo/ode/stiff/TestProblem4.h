@@ -14,7 +14,7 @@ public:
   
   TestProblem4() : ODE(8, 321.8122)
   {
-    dolfin_info("The HIRES problem.");
+    message("The HIRES problem.");
   }
 
   void u0(uBlasVector& u)

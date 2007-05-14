@@ -6,7 +6,7 @@
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/dolfin_math.h>
-#include <dolfin/ParameterSystem.h>
+#include <dolfin/parameters.h>
 #include <dolfin/uBlasSparseMatrix.h>
 #include <dolfin/Alloc.h>
 #include <dolfin/ODE.h>
@@ -47,7 +47,7 @@ MultiAdaptiveNewtonSolver::~MultiAdaptiveNewtonSolver()
   if ( num_elements > 0 )
   {
     const real alpha = num_elements_mono / static_cast<real>(num_elements);
-    dolfin_info("Multi-adaptive efficiency index: %.3f", alpha);
+    message("Multi-adaptive efficiency index: %.3f", alpha);
   }
   
   // Delete local arrays

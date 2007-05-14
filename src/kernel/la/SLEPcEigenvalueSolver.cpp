@@ -87,7 +87,7 @@ void SLEPcEigenvalueSolver::getEigenvalue(real& xr, real& xc, const int i)
   if( i < num_computed_eigenvalues )
     EPSGetValue(eps, i, &xr, &xc);
   else
-    dolfin_error("Requested eigenvalue has not been computed");
+    error("Requested eigenvalue has not been computed");
 }
 //-----------------------------------------------------------------------------
 void SLEPcEigenvalueSolver::getEigenpair(real& xr, real& xc, PETScVector& r, PETScVector& c, const int i)
@@ -99,7 +99,7 @@ void SLEPcEigenvalueSolver::getEigenpair(real& xr, real& xc, PETScVector& r, PET
   if( i < num_computed_eigenvalues )
     EPSGetEigenpair(eps, i, &xr, &xc, r.vec(), c.vec());
   else
-    dolfin_error("Requested eigenvalue/vector has not been computed");
+    error("Requested eigenvalue/vector has not been computed");
 }
 //-----------------------------------------------------------------------------
 void SLEPcEigenvalueSolver::solve(const PETScMatrix& A, const PETScMatrix* B, const uint n)
@@ -130,7 +130,7 @@ void SLEPcEigenvalueSolver::solve(const PETScMatrix& A, const PETScMatrix* B, co
 //  else if (eigenvalues_compute == "smallest")
 //    EPSSetWhichEigenpairs(eps, EPS_SMALLEST_MAGNITUDE);
 //  else
-//    dolfin_error("Invalid choice if which eigenvalues to compute (smallest/largest)");
+//    error("Invalid choice if which eigenvalues to compute (smallest/largest)");
   
   // Set algorithm type
   EPSType eps_type = getType(type);
@@ -150,7 +150,7 @@ void SLEPcEigenvalueSolver::solve(const PETScMatrix& A, const PETScMatrix* B, co
   EPSConvergedReason reason;
   EPSGetConvergedReason(eps, &reason);
   if( reason < 0 )
-    dolfin_warning("Eigenvalue solver did not converge"); 
+    warning("Eigenvalue solver did not converge"); 
 
   // Get number of iterations
   int num_iterations;
@@ -159,7 +159,7 @@ void SLEPcEigenvalueSolver::solve(const PETScMatrix& A, const PETScMatrix* B, co
   // Get algorithm type
   EPSGetType(eps, &eps_type);
 
-  dolfin_info("Eigenvalue solver (%s) converged in %d iterations.",
+  message("Eigenvalue solver (%s) converged in %d iterations.",
 	      eps_type, num_iterations);
 }
 //-----------------------------------------------------------------------------
@@ -180,7 +180,7 @@ EPSType SLEPcEigenvalueSolver::getType(const Type type) const
   case subspace:
     return EPSSUBSPACE;
   default:
-    dolfin_warning("Requested Krylov method unknown. Using GMRES.");
+    warning("Requested Krylov method unknown. Using GMRES.");
     return KSPGMRES;
   }
 }

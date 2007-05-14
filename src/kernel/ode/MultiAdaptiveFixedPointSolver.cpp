@@ -5,7 +5,7 @@
 // Last changed: 2006-08-08
 
 #include <dolfin/dolfin_log.h>
-#include <dolfin/ParameterSystem.h>
+#include <dolfin/parameters.h>
 #include <dolfin/Alloc.h>
 #include <dolfin/ODE.h>
 #include <dolfin/Method.h>
@@ -42,7 +42,7 @@ MultiAdaptiveFixedPointSolver::~MultiAdaptiveFixedPointSolver()
   if ( num_elements > 0 )
   {
     const real alpha = num_elements_mono / static_cast<real>(num_elements);
-    dolfin_info("Multi-adaptive efficiency index: %.3f", alpha);
+    message("Multi-adaptive efficiency index: %.3f", alpha);
   }
 
   // Delete local array
@@ -68,8 +68,8 @@ bool MultiAdaptiveFixedPointSolver::retry()
   // Reset system
   ts.reset();
 
-  dolfin_info("Direct fixed-point iteration does not converge.");
-  dolfin_info("Trying diagonally damped fixed-point iteration.");
+  message("Direct fixed-point iteration does not converge.");
+  message("Trying diagonally damped fixed-point iteration.");
   return true;
 }
 //-----------------------------------------------------------------------------

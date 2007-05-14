@@ -99,14 +99,14 @@ int main(int argc, char* argv[])
   // Parse command line arguments
   if ( argc != 7 )
   {
-    dolfin_info("Usage: dolfin-ode-reaction method solver tol kmax N L params");
-    dolfin_info("");
-    dolfin_info("method - 'cg' or 'mcg'");
-    dolfin_info("solver - 'fixed-point' or 'newton'");
-    dolfin_info("tol    - tolerance");
-    dolfin_info("N      - number of components");
-    dolfin_info("L      - length of domain");
-    dolfin_info("params - name of parameter file");
+    message("Usage: dolfin-ode-reaction method solver tol kmax N L params");
+    message("");
+    message("method - 'cg' or 'mcg'");
+    message("solver - 'fixed-point' or 'newton'");
+    message("tol    - tolerance");
+    message("N      - number of components");
+    message("L      - length of domain");
+    message("params - name of parameter file");
     return 1;
   }
   const char* method = argv[1];

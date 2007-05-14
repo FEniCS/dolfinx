@@ -14,7 +14,7 @@ public:
   
   TestProblem9() : ODE(3, 30.0)
   {
-    dolfin_info("A mixed stiff/nonstiff test problem.");
+    message("A mixed stiff/nonstiff test problem.");
 
     lambda = 1000.0;
   }

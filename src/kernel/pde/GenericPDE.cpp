@@ -21,9 +21,9 @@ GenericPDE::GenericPDE(Form& a,
 {
   // Check ranks of forms
   if ( a.form().rank() != 2 )
-    dolfin_error("Expected a bilinear form but rank is %d.", a.form().rank());
+    error("Expected a bilinear form but rank is %d.", a.form().rank());
   if ( L.form().rank() != 1 )
-    dolfin_error("Expected a linear form but rank is %d.", L.form().rank());
+    error("Expected a linear form but rank is %d.", L.form().rank());
 }
 //-----------------------------------------------------------------------------
 GenericPDE::~GenericPDE()

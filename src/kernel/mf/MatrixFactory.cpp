@@ -36,7 +36,7 @@ void MatrixFactory::computeMassMatrix(GenericMatrix& A, Mesh& mesh)
   }
   else
   {
-    dolfin_error("Unknown mesh type.");
+    error("Unknown mesh type.");
   }
 }
 //-----------------------------------------------------------------------------
@@ -55,7 +55,7 @@ void MatrixFactory::computeStiffnessMatrix(GenericMatrix& A, Mesh& mesh,
   }
   else
   {
-    dolfin_error("Unknown mesh type.");
+    error("Unknown mesh type.");
   } 
 }
 //-----------------------------------------------------------------------------
@@ -74,13 +74,13 @@ void MatrixFactory::computeConvectionMatrix(GenericMatrix& A, Mesh& mesh,
   }
   else
   {
-    dolfin_error("Unknown mesh type.");
+    error("Unknown mesh type.");
   }
 }
 //-----------------------------------------------------------------------------
 void MatrixFactory::computeLoadVector(GenericVector& x, Mesh& mesh, real c)
 {
-  dolfin_error("MF forms need to be updated to new mesh format.");
+  error("MF forms need to be updated to new mesh format.");
   if ( mesh.type().cellType() == CellType::triangle )
   {
     LoadVector2D::LinearForm b(c);
@@ -93,7 +93,7 @@ void MatrixFactory::computeLoadVector(GenericVector& x, Mesh& mesh, real c)
   }
   else
   {
-    dolfin_error("Unknown mesh type.");
+    error("Unknown mesh type.");
   } 
 }
 //-----------------------------------------------------------------------------

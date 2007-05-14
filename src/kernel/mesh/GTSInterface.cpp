@@ -54,7 +54,7 @@ GtsBBox* GTSInterface::bboxCell(Cell& c)
   return bbox;
 
 #else
-  dolfin_error("missing GTS");
+  error("missing GTS");
   return 0;
 #endif
 }
@@ -72,7 +72,7 @@ GtsBBox* GTSInterface::bboxPoint(Point& p)
   return bbox;
 
 #else
-  dolfin_error("missing GTS");
+  error("missing GTS");
   return 0;
 #endif
 }
@@ -97,7 +97,7 @@ GNode* GTSInterface::buildCellTree(Mesh& mesh)
   return tree;
 
 #else
-  dolfin_error("missing GTS");
+  error("missing GTS");
   return 0;
 #endif
 }
@@ -133,7 +133,7 @@ void GTSInterface::overlap(Cell& c, GNode* tree, Mesh& mesh,
   }
 
 #else
-  dolfin_error("missing GTS");
+  error("missing GTS");
 #endif
 }
 //-----------------------------------------------------------------------------
@@ -177,7 +177,7 @@ void GTSInterface::overlap(Point& p, GNode* tree, Mesh& mesh,
   }
 
 #else
-  dolfin_error("missing GTS");
+  error("missing GTS");
 #endif
 }
 //-----------------------------------------------------------------------------

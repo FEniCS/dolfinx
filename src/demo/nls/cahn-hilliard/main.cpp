@@ -42,7 +42,7 @@ class CahnHilliardEquation : public NonlinearProblem, public Parametrized
         L = new CahnHilliard3DLinearForm(u, u0, *_lambda, *_muFactor, *_dt, *_theta);
       }
       else
-        dolfin_error("Cahn-Hilliard model is programmed for 2D and 3D only");
+        error("Cahn-Hilliard model is programmed for 2D and 3D only");
     }
 
     // Destructor 
@@ -60,7 +60,7 @@ class CahnHilliardEquation : public NonlinearProblem, public Parametrized
       else if( i == 2)
         return *a;
       else
-        dolfin_error("Can only return linear or bilinear form.");
+        error("Can only return linear or bilinear form.");
       return *L;
     }
 

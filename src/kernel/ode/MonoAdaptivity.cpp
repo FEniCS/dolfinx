@@ -5,7 +5,7 @@
 // Last changed: 2005-12-19
 
 #include <cmath>
-#include <dolfin/ParameterSystem.h>
+#include <dolfin/parameters.h>
 #include <dolfin/ODE.h>
 #include <dolfin/Method.h>
 #include <dolfin/MonoAdaptivity.h>
@@ -28,7 +28,7 @@ MonoAdaptivity::MonoAdaptivity(const ODE& ode, const Method& method)
     if ( k > _kmax )
     {
       k = _kmax;
-      dolfin_warning("Initial time step larger than maximum time step, using k = %.3e.", k);
+      warning("Initial time step larger than maximum time step, using k = %.3e.", k);
     }
   }
 
@@ -76,7 +76,7 @@ void MonoAdaptivity::update(real k0, real r, const Method& method, real t,
     controller.reset(k);
     _accept = false;
 
-    //dolfin_info("e = %.3e  tol = %.3e", error, tol);
+    //message("e = %.3e  tol = %.3e", error, tol);
   }
 }
 //-----------------------------------------------------------------------------

@@ -131,10 +131,10 @@ void BoundaryCondition::apply(GenericMatrix& A, GenericVector& b,
     data.dof_map->tabulate_facet_dofs(data.facet_dofs, ufc_mesh, ufc_cell, local_facet);
     
     //for (uint i = 0; i < 12; i++)
-    //  dolfin_info("cell_dofs[%d] = %d", i, data.cell_dofs[i]);
+    //  message("cell_dofs[%d] = %d", i, data.cell_dofs[i]);
 
     //for (uint i = 0; i < 6; i++)
-    //  dolfin_info("facet_dofs[%d] = %d", i, data.facet_dofs[i]);
+    //  message("facet_dofs[%d] = %d", i, data.facet_dofs[i]);
 
 
     // Pick values for facet
@@ -202,7 +202,7 @@ BoundaryCondition::LocalData::LocalData(const Form& form,
 
   // Check arity of form
   if (form.form().rank() != 2)
-    dolfin_error("Form must be bilinear for application of boundary conditions.");
+    error("Form must be bilinear for application of boundary conditions.");
 
   // Create finite element and dof map for solution (second argument of form)
   finite_element = form.form().create_finite_element(1);

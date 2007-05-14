@@ -9,7 +9,7 @@
 // FIXME: BROKEN
 
 #include <cmath>
-#include <dolfin/ParameterSystem.h>
+#include <dolfin/parameters.h>
 #include <dolfin/ReducedModel.h>
 
 using namespace dolfin;
@@ -18,7 +18,7 @@ using namespace dolfin;
 ReducedModel::ReducedModel(ODE& ode) 
   : ODE(ode.size(), ode.endtime()), ode(ode), g(ode.size()), reduced(false)
 {
-  dolfin_warning("Automatic modeling is EXPERIMENTAL.");
+  warning("Automatic modeling is EXPERIMENTAL.");
 
   tau     = get("ODE average length");
   samples = get("ODE average samples");
@@ -66,7 +66,7 @@ void ReducedModel::update(RHS& f, Function& u, real t)
     return;
 
   // Write a message
-  dolfin_info("Creating reduced model at t = %.1e.", 2*tau);
+  message("Creating reduced model at t = %.1e.", 2*tau);
 
   // Compute averages of u and f
   computeAverages(f, u, fbar, ubar);
@@ -114,7 +114,7 @@ void ReducedModel::save(Sample& sample)
 void ReducedModel::computeAverages(RHS& f, Function& u,
 				   Vector& fbar, Vector& ubar)
 {
-dolfin_error("This function needs to be updated to the new format.");
+error("This function needs to be updated to the new format.");
 
   // Sample length
   real k = tau / static_cast<real>(samples);

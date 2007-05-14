@@ -61,14 +61,14 @@ void MeshEditor::open(Mesh& mesh, std::string type, uint tdim, uint gdim)
   else if ( type == "tetrahedron" )
     open(mesh, CellType::tetrahedron, tdim, gdim);
   else
-    dolfin_error("Unknown cell type \"%s\".", type.c_str());
+    error("Unknown cell type \"%s\".", type.c_str());
 }
 //-----------------------------------------------------------------------------
 void MeshEditor::initVertices(uint num_vertices)
 {
   // Check if we are currently editing a mesh
   if ( !mesh )
-    dolfin_error("No mesh opened, unable to edit.");
+    error("No mesh opened, unable to edit.");
   
   // Initialize mesh data
   this->num_vertices = num_vertices;
@@ -80,7 +80,7 @@ void MeshEditor::initCells(uint num_cells)
 {
   // Check if we are currently editing a mesh
   if ( !mesh )
-    dolfin_error("No mesh opened, unable to edit.");
+    error("No mesh opened, unable to edit.");
 
   // Initialize mesh data
   this->num_cells = num_cells;
@@ -183,21 +183,21 @@ void MeshEditor::addVertexCommon(uint v, uint gdim)
 {
   // Check if we are currently editing a mesh
   if ( !mesh )
-    dolfin_error("No mesh opened, unable to edit.");
+    error("No mesh opened, unable to edit.");
 
   // Check that the dimension matches
   if ( gdim != this->gdim )
-    dolfin_error("Illegal dimension for vertex coordinate: %d (should be %d).",
+    error("Illegal dimension for vertex coordinate: %d (should be %d).",
 		  gdim, this->gdim);
 
   // Check value of vertex index
   if ( v >= num_vertices )
-    dolfin_error("Vertex index (%d) out of range [0, %d].",
+    error("Vertex index (%d) out of range [0, %d].",
 		  v, num_vertices - 1);
 
   // Check if there is room for more vertices
   if ( next_vertex >= num_vertices )
-    dolfin_error("Vertex list is full, %d vertices already specified.",
+    error("Vertex list is full, %d vertices already specified.",
 		  num_vertices);
   
   // Step to next vertex
@@ -208,21 +208,21 @@ void MeshEditor::addCellCommon(uint c, uint tdim)
 {
   // Check if we are currently editing a mesh
   if ( !mesh )
-    dolfin_error("No mesh opened, unable to edit.");
+    error("No mesh opened, unable to edit.");
 
   // Check that the dimension matches
   if ( tdim != this->tdim )
-    dolfin_error("Illegal dimension for cell: %d (should be %d).",
+    error("Illegal dimension for cell: %d (should be %d).",
 		  tdim, this->tdim);
 
   // Check value of cell index
   if ( c >= num_cells )
-    dolfin_error("Cell index (%d) out of range [0, %d].",
+    error("Cell index (%d) out of range [0, %d].",
 		  c, num_cells - 1);
 
   // Check if there is room for more cells
   if ( next_cell >= num_cells )
-    dolfin_error("Cell list is full, %d cells already specified.", num_cells);
+    error("Cell list is full, %d cells already specified.", num_cells);
 
   // Step to next cell
   next_cell++;

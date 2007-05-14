@@ -107,13 +107,13 @@ void MeshTopology::disp() const
   cout << "-------------" << endl << endl;
 
   // Begin indentation
-  dolfin_begin("");
+  begin("");
 
   // Check if empty
   if ( _dim == 0 )
   {
     cout << "empty" << endl << endl;
-    dolfin_end();
+    end();
     return;
   }
   
@@ -122,15 +122,15 @@ void MeshTopology::disp() const
   
   // Display number of entities for each topological dimension
   cout << "Number of entities:" << endl << endl;
-  dolfin_begin("");
+  begin("");
   for (uint d = 0; d <= _dim; d++)
     cout << "dim = " << d << ": " << num_entities[d] << endl;
-  dolfin_end();
+  end();
   cout << endl;
   
   // Display matrix of connectivities
   cout << "Connectivity:" << endl << endl;
-  dolfin_begin("");
+  begin("");
   cout << " ";
   for (uint d1 = 0; d1 <= _dim; d1++)
     cout << " " << d1;
@@ -148,7 +148,7 @@ void MeshTopology::disp() const
     cout << endl;
   }
   cout << endl;
-  dolfin_end();
+  end();
 
   // Display connectivity for each topological dimension
   for (uint d0 = 0; d0 <= _dim; d0++)
@@ -158,14 +158,14 @@ void MeshTopology::disp() const
       if ( connectivity[d0][d1].size() == 0 )
 	continue;
       cout << "Connectivity " << d0 << " -- " << d1 << ":" << endl << endl;
-      dolfin_begin("");
+      begin("");
       connectivity[d0][d1].disp();
-      dolfin_end();
+      end();
       cout << endl;
     }
   }
 
   // End indentation
-  dolfin_end();
+  end();
 }
 //-----------------------------------------------------------------------------

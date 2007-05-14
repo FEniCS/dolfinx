@@ -9,7 +9,7 @@
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/dolfin_math.h>
-#include <dolfin/ParameterSystem.h>
+#include <dolfin/parameters.h>
 #include <dolfin/MultiAdaptivity.h>
 #include <dolfin/Partition.h>
 

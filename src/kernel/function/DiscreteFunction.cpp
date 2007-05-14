@@ -31,7 +31,7 @@ DiscreteFunction::DiscreteFunction(Mesh& mesh, Vector& x, const Form& form, uint
   const uint num_arguments = form.form().rank() + form.form().num_coefficients();
   if (i >= num_arguments)
   {
-    dolfin_error("Illegal function index %d. Form only has %d arguments.",
+    error("Illegal function index %d. Form only has %d arguments.",
                   i, num_arguments);
   }
 
@@ -63,7 +63,7 @@ DiscreteFunction::DiscreteFunction(Mesh& mesh, Vector& x,
   finite_element = ElementLibrary::create_finite_element(finite_element_signature);
   if (!finite_element)
   {
-    dolfin_error("Unable to find finite element in library: \"%s\".",
+    error("Unable to find finite element in library: \"%s\".",
                   finite_element_signature.c_str());
   }
 
@@ -71,14 +71,14 @@ DiscreteFunction::DiscreteFunction(Mesh& mesh, Vector& x,
   ufc_dof_map = ElementLibrary::create_dof_map(dof_map_signature);
   if (!ufc_dof_map)
   {
-    dolfin_error("Unable to find dof map in library: \"%s\".",
+    error("Unable to find dof map in library: \"%s\".",
                   dof_map_signature.c_str());
   }
   dof_map = new DofMap(*ufc_dof_map, mesh);
 
   // Check size of vector
   if (x.size() != dof_map->global_dimension())
-    dolfin_error("Size of vector does not match global dimension of finite element space.");
+    error("Size of vector does not match global dimension of finite element space.");
 
   // Initialize local array for mapping of dofs
   dofs = new uint[dof_map->local_dimension()];
@@ -143,7 +143,7 @@ DiscreteFunction::DiscreteFunction(const DiscreteFunction& f)
   finite_element = ElementLibrary::create_finite_element(f.finite_element->signature());
   if (!finite_element)
   {
-    dolfin_error("Unable to find finite element in library: \"%s\".",
+    error("Unable to find finite element in library: \"%s\".",
                   f.finite_element->signature());
   }
 
@@ -151,7 +151,7 @@ DiscreteFunction::DiscreteFunction(const DiscreteFunction& f)
   ufc_dof_map = ElementLibrary::create_dof_map(f.dof_map->signature());
   if (!ufc_dof_map)
   {
-    dolfin_error("Unable to find dof map in library: \"%s\".",
+    error("Unable to find dof map in library: \"%s\".",
                   f.dof_map->signature());
   }
   dof_map = new DofMap(*ufc_dof_map, mesh);
@@ -211,7 +211,7 @@ const DiscreteFunction& DiscreteFunction::operator= (const DiscreteFunction& f)
        strcmp(dof_map->signature(), f.dof_map->signature()) != 0 ||
       x->size() != f.x->size())
   {
-    dolfin_error("Assignment of discrete function failed. Finite element spaces or dimensions don't match.");
+    error("Assignment of discrete function failed. Finite element spaces or dimensions don't match.");
   }
 
   // Copy vector
@@ -279,7 +279,7 @@ void DiscreteFunction::interpolate(real* coefficients,
 
   // Check dimension
   if (finite_element.space_dimension() != dof_map->local_dimension())
-    dolfin_error("Finite element does not match for interpolation of discrete function.");
+    error("Finite element does not match for interpolation of discrete function.");
 
   // Tabulate dofs
   dof_map->tabulate_dofs(dofs, cell);

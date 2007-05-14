@@ -50,7 +50,7 @@ namespace dolfin
     {
       // Check that the rank is 2
       if ( rank != 2 )
-        dolfin_error("Illegal tensor rank (%d) for matrix. Rank must be 2.", rank);
+        error("Illegal tensor rank (%d) for matrix. Rank must be 2.", rank);
 
       // Initialize matrix
       init(dims[0], dims[1]);
@@ -125,12 +125,12 @@ namespace dolfin
     
     void get(real* block, uint m, const uint* rows, uint n, const uint* cols) const
     {
-      dolfin_error("Not implemented");
+      error("Not implemented");
     }
 
     void set(const real* block, uint m, const uint* rows, uint n, const uint* cols)
     {
-      dolfin_error("Not implemented");
+      error("Not implemented");
     }
 
     /// Finalise assembly

@@ -10,8 +10,8 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Event::Event(const std::string message, unsigned int maxcount) :
-  message(message), _maxcount(maxcount), _count(0)
+Event::Event(const std::string msg, unsigned int maxcount) :
+  msg(msg), _maxcount(maxcount), _count(0)
 {
   // Do nothing
 }
@@ -24,12 +24,12 @@ Event::~Event()
 void Event::operator() ()
 {
   if ( _count < _maxcount)
-    dolfin_info(message.c_str());
+    message(msg);
   
   _count++;
   
   if ( _count == _maxcount && _maxcount > 1 )
-    dolfin_info("Last message repeated %d times. Not displaying again.", _count);
+    message("Last message repeated %d times. Not displaying again.", _count);
 }
 //-----------------------------------------------------------------------------
 unsigned int Event::count() const

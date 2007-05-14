@@ -15,7 +15,7 @@ public:
   
   TestProblem6() : ODE(2, 100.0)
   {
-    dolfin_info("Van der Pol's equation.");
+    message("Van der Pol's equation.");
 
     mu = 10.0;
   }

@@ -58,10 +58,10 @@ dolfin::uint NewtonSolver::solve(NonlinearProblem& nonlinear_problem, Vector& x)
 
   // FIXME: add option to compute F(u) anf J together or separately
 
-  dolfin_begin("Starting Newton solve.");
+  begin("Starting Newton solve.");
 
   // Compute F(u) and J
-  dolfin_log(false);
+  log(false);
   nonlinear_problem.form(*A, b, x);
 
   uint krylov_iterations = 0;
@@ -72,10 +72,10 @@ dolfin::uint NewtonSolver::solve(NonlinearProblem& nonlinear_problem, Vector& x)
   while( !newton_converged && newton_iteration < maxit )
   {
 
-      dolfin_log(false);
+      log(false);
       // Perform linear solve and update total number of Krylov iterations
       krylov_iterations += solver->solve(*A, dx, b);
-      dolfin_log(true);
+      log(true);
 
       // Compute initial residual
       if(newton_iteration == 0)
@@ -86,24 +86,24 @@ dolfin::uint NewtonSolver::solve(NonlinearProblem& nonlinear_problem, Vector& x)
 
       ++newton_iteration;
 
-      dolfin_log(false);
+      log(false);
       //FIXME: this step is not needed if residual is based on dx and this has converged.
       // Compute F(u) and J
       nonlinear_problem.form(*A, b, x);
 
-      dolfin_log(true);
+      log(true);
 
       // Test for convergence 
       newton_converged = converged(b, dx, nonlinear_problem);
   }
 
   if(newton_converged)
-    dolfin_info("Newton solver finished in %d iterations and %d linear solver iterations.", 
+    message("Newton solver finished in %d iterations and %d linear solver iterations.", 
         newton_iteration, krylov_iterations);
   else
-    dolfin_warning("Newton solver did not converge.");
+    warning("Newton solver did not converge.");
 
-  dolfin_end();
+  end();
 
   return newton_iteration;
 } 
@@ -129,7 +129,7 @@ bool NewtonSolver::converged(const Vector& b, const Vector& dx,
   else if (convergence_criterion == "incremental")
     residual = dx.norm();
   else
-    dolfin_error("Unknown Newton convergence criterion");
+    error("Unknown Newton convergence criterion");
 
   // If this is the first iteration step, set initial residual
   if(newton_iteration == 0)

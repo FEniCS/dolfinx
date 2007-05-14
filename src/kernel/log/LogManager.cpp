@@ -7,4 +7,4 @@
 #include <dolfin/LogManager.h>
 
 // Initialise static data
-dolfin::Logger dolfin::LogManager::log;
+dolfin::Logger dolfin::LogManager::logger;

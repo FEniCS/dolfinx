@@ -40,10 +40,10 @@ void SparsityPattern::init(uint M, uint N)
 void SparsityPattern::numNonZeroPerRow(uint nzrow[]) const
 {
   if ( dim[1] == 0 )
-    dolfin_error("Non-zero entries per row can be computed for matrices only.");
+    error("Non-zero entries per row can be computed for matrices only.");
 
   if ( sparsity_pattern.size() == 0 )
-    dolfin_error("Sparsity pattern has not been computed.");
+    error("Sparsity pattern has not been computed.");
 
   // Compute number of nonzeros per row
   std::vector< std::set<int> >::const_iterator set;
@@ -54,10 +54,10 @@ void SparsityPattern::numNonZeroPerRow(uint nzrow[]) const
 dolfin::uint SparsityPattern::numNonZero() const
 {
   if ( dim[1] == 0 )
-    dolfin_error("Total non-zeros entries can be computed for matrices only.");
+    error("Total non-zeros entries can be computed for matrices only.");
 
   if ( sparsity_pattern.size() == 0 )
-    dolfin_error("Sparsity pattern has not been computed.");
+    error("Sparsity pattern has not been computed.");
 
   // Compute total number of nonzeros per row
   uint nz = 0;
@@ -70,7 +70,7 @@ dolfin::uint SparsityPattern::numNonZero() const
 void SparsityPattern::disp() const
 { 
   if ( dim[1] == 0 )
-    dolfin_warning("Only matrix sparsity patterns can be displayed.");
+    warning("Only matrix sparsity patterns can be displayed.");
 
   std::vector< std::set<int> >::const_iterator set;
   std::set<int>::const_iterator element;

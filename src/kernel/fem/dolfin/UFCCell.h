@@ -60,7 +60,7 @@ namespace dolfin
         num_vertices = 4;
         break;
       default:
-        dolfin_error("Unknown cell type.");
+        error("Unknown cell type.");
       }
 
       // Set topological dimension

@@ -57,7 +57,7 @@ dolfin::uint PETScLUSolver::solve(const PETScMatrix& A,
 
   // Write a message
   if ( report )
-    dolfin_info("Solving linear system of size %d x %d (PETSc LU solver).",
+    message("Solving linear system of size %d x %d (PETSc LU solver).",
 		A.size(0), A.size(1));
 
   // Solve linear system
@@ -85,7 +85,7 @@ dolfin::uint PETScLUSolver::solve(const PETScKrylovMatrix& A,
 
   // Write a message
   if ( report )
-    dolfin_info("Solving linear system of size %d x %d (PETSc LU solver).",
+    message("Solving linear system of size %d x %d (PETSc LU solver).",
 		A.size(0), A.size(1));
 
   // Solve linear system
@@ -99,9 +99,9 @@ dolfin::uint PETScLUSolver::solve(const PETScKrylovMatrix& A,
   if ( kappa > 0.001 / DOLFIN_EPS )
   {
     if ( kappa > 1.0 / DOLFIN_EPS )
-      dolfin_error("Matrix has very large condition number (%.1e). Is it singular?", kappa);
+      error("Matrix has very large condition number (%.1e). Is it singular?", kappa);
     else
-      dolfin_warning("Matrix has large condition number (%.1e).", kappa);
+      warning("Matrix has large condition number (%.1e).", kappa);
   }
 
   return 1;
@@ -114,7 +114,7 @@ void PETScLUSolver::disp() const
 //-----------------------------------------------------------------------------
 real PETScLUSolver::copyToDense(const PETScKrylovMatrix& A)
 {
-  dolfin_error("PETScLUSolver::copyToDense needs to be fixed");
+  error("PETScLUSolver::copyToDense needs to be fixed");
 /*
   // Get size
   uint M = A.size(0);
@@ -141,7 +141,7 @@ real PETScLUSolver::copyToDense(const PETScKrylovMatrix& A)
     MatGetSize(B, &MM, &NN);
 
     if ( MM != static_cast<int>(M) || NN != static_cast<int>(M) )
-      dolfin_error("FIXME: Matrix dimensions changed, not implemented (should be).");
+      error("FIXME: Matrix dimensions changed, not implemented (should be).");
   }
 
   // Multiply matrix with unit vectors to get the values

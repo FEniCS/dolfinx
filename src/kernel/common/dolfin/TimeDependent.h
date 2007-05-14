@@ -32,7 +32,7 @@ namespace dolfin
     real time() const
     {
 	    if( !t )
-        dolfin_error("Time has not been associated with object.");		
+        error("Time has not been associated with object.");		
 	    return *t;
     };
 

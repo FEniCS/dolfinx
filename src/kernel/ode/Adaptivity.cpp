@@ -4,7 +4,7 @@
 // First added:  2005-11-04
 // Last changed: 2005-12-09
 
-#include <dolfin/ParameterSystem.h>
+#include <dolfin/parameters.h>
 #include <dolfin/Adaptivity.h>
 
 using namespace dolfin;
@@ -32,7 +32,7 @@ Adaptivity::Adaptivity(const ODE& ode, const Method& method)
 //-----------------------------------------------------------------------------
 Adaptivity::~Adaptivity()
 {
-  dolfin_info("Number of rejected time steps: %d", num_rejected);
+  message("Number of rejected time steps: %d", num_rejected);
 }
 //-----------------------------------------------------------------------------
 bool Adaptivity::accept()
@@ -60,7 +60,7 @@ bool Adaptivity::accept()
     num_rejected++;
   }
 
-  //dolfin_info("safefy factor = %.3e", safety);
+  //message("safefy factor = %.3e", safety);
   
   return _accept;
 }

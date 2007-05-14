@@ -13,7 +13,7 @@ using namespace dolfin;
 ComplexODE::ComplexODE(uint n, real T) : ODE(2*n, T), n(n), j(0.0, 1.0),
 					 zvalues(0), fvalues(0), yvalues(0)
 {
-  dolfin_info("Creating complex ODE of size %d (%d complex components).", N, n);
+  message("Creating complex ODE of size %d (%d complex components).", N, n);
   
   // Initialize complex solution vector and right-hand side
   zvalues = new complex[n];
@@ -34,7 +34,7 @@ ComplexODE::~ComplexODE()
 //-----------------------------------------------------------------------------
 complex ComplexODE::f(const complex z[], real t, uint i)
 {
-  dolfin_error("Right-hand side for complex ODE not supplied by user.");
+  error("Right-hand side for complex ODE not supplied by user.");
   
   complex zvalue;
   return zvalue;
@@ -62,7 +62,7 @@ void ComplexODE::J(const complex x[], complex y[], const complex z[], real t)
   //
   //     Jx = ( f(z + hx) - f(z - hx) ) / 2h
 
-  dolfin_error("Not implemented yet...");
+  error("Not implemented yet...");
 }
 //-----------------------------------------------------------------------------
 real ComplexODE::k(uint i)

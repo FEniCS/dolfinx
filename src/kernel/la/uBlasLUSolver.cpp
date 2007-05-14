@@ -66,7 +66,7 @@ dolfin::uint uBlasLUSolver::solve(const uBlasMatrix<ublas_sparse_matrix>& A, uBl
 
   x.init(N);
 
-  dolfin_info("Solving linear system of size %d x %d (UMFPACK LU solver).", 
+  message("Solving linear system of size %d x %d (UMFPACK LU solver).", 
       M, N);
 
   //FIXME: From UMFPACK v.5.0 onwards, UF_long is introduced and should be used 
@@ -111,7 +111,7 @@ dolfin::uint uBlasLUSolver::solve(const uBlasMatrix<ublas_sparse_matrix>& A, uBl
 dolfin::uint uBlasLUSolver::solve(const uBlasMatrix<ublas_sparse_matrix>& A, uBlasVector& x, 
     const uBlasVector& b)
 {
-  dolfin_warning("UMFPACK must be installed to peform a LU solve for uBlas matrices. A Krylov iterative solver will be used instead.");
+  warning("UMFPACK must be installed to peform a LU solve for uBlas matrices. A Krylov iterative solver will be used instead.");
 
   uBlasKrylovSolver solver;
   return solver.solve(A, x, b);

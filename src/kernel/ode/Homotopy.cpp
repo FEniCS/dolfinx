@@ -10,7 +10,7 @@
 #include <limits>
 #include <dolfin/dolfin_log.h>
 #include <dolfin/dolfin_math.h>
-#include <dolfin/ParameterSystem.h>
+#include <dolfin/parameters.h>
 #include <dolfin/ComplexODE.h>
 #include <dolfin/HomotopyJacobian.h>
 #include <dolfin/HomotopyODE.h>
@@ -25,7 +25,7 @@ Homotopy::Homotopy(uint n)
     filename(""), mi(0), ci(0), tmp(0), x(2*n),
     degree_adjusted("Adjusting degree of equation, maximum reached.")
 {
-  dolfin_info("Creating homotopy for system of size %d.", n);
+  message("Creating homotopy for system of size %d.", n);
   
   // We should not solve the dual problem
   set("ODE solve dual problem", false);
@@ -42,18 +42,18 @@ Homotopy::Homotopy(uint n)
   // Get type of initial data (random or morgan)
   random = get("homotopy randomize");
   if ( random )
-    dolfin_info("Using random initial system for homotopy.");
+    message("Using random initial system for homotopy.");
 
   // Get maximum number of iterations
   maxiter = get("ODE maximum iterations");
 
   // Get maximum number of paths
   maxpaths = get("homotopy maximum size");
-  dolfin_info("Maximum number of homotopy paths is %d.", maxpaths);
+  message("Maximum number of homotopy paths is %d.", maxpaths);
 
   // Get maximum degree for a single equation
   maxdegree = get("homotopy maximum degree");
-  dolfin_info("Maximum degree for a single equations is %d.", maxdegree);
+  message("Maximum degree for a single equations is %d.", maxdegree);
 
   // Get filename
   filename = static_cast<std::string>(get("homotopy solution file name"));
@@ -91,16 +91,16 @@ void Homotopy::solve()
 {
   // Compute the total number of paths
   M = countPaths();
-  dolfin_info("Total number of paths is %d.", M);
+  message("Total number of paths is %d.", M);
   if ( M > maxpaths )
-    dolfin_info("Computing only %d paths as requested.", maxpaths);
+    message("Computing only %d paths as requested.", maxpaths);
 
   char filename[64];
 
   uint num_roots = 0;
   for (uint m = 0; m < M; m++)
   {
-    dolfin_info("\nComputing path number %d out of %d.", m + 1, M);
+    message("\nComputing path number %d out of %d.", m + 1, M);
 
     // Change name of output file for each path
     sprintf(filename, "solution_%u.py", m);
@@ -117,7 +117,7 @@ void Homotopy::solve()
     // Use Newton's method to find the solution
     if ( ode.state() == HomotopyODE::endgame )
     {
-      dolfin_info("Homotopy path converged, using Newton's method to improve solution.");
+      message("Homotopy path converged, using Newton's method to improve solution.");
       if ( computeSolution(ode) )
       {
 	num_roots += 1;
@@ -125,18 +125,18 @@ void Homotopy::solve()
       }
     }
 
-    dolfin_info("Number of solutions so far: %d (%d dropped).",
+    message("Number of solutions so far: %d (%d dropped).",
 		zs.size(), num_roots - zs.size());
 
     // Check if we reached the maximum number of paths
     if ( m == (maxpaths - 1) )
     {
-      dolfin_info("Maximum number of paths reached, stopping.");
+      message("Maximum number of paths reached, stopping.");
       break;
     }
   }
 
-  dolfin_info("\nTotal number of solutions found: %d (%d dropped).",
+  message("\nTotal number of solutions found: %d (%d dropped).",
 	      zs.size(), num_roots - zs.size());
 }
 //-----------------------------------------------------------------------------
@@ -237,7 +237,7 @@ dolfin::uint Homotopy::countPaths()
     if ( (adjustedDegree(i) + 1) * product <= product )
     {
       const int max_paths = std::numeric_limits<int>::max();
-      dolfin_error("Reached maximum number of homotopy paths (%d).", max_paths);
+      error("Reached maximum number of homotopy paths (%d).", max_paths);
     }
     
     product *= (adjustedDegree(i) + 1);
@@ -299,7 +299,7 @@ bool Homotopy::computeSolution(HomotopyODE& ode)
     x -= dx;
   }
 
-  dolfin_warning("Solution did not converge.");
+  warning("Solution did not converge.");
   return false;
 }
 //-----------------------------------------------------------------------------
@@ -316,13 +316,13 @@ void Homotopy::saveSolution()
   // Check if solution is valid
   if ( !verify(z) )
   {
-    dolfin_info("Verification of solution failed, dropping solution.");
+    message("Verification of solution failed, dropping solution.");
     delete [] z;
     return;
   }
 
   // Save solution
-  dolfin_info("Solution verified, keeping solution.");
+  message("Solution verified, keeping solution.");
   zs.push_back(z);
 
   // Save solution to file

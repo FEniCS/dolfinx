@@ -193,7 +193,7 @@ void uBlasILUPreconditioner::init(const uBlasMatrix<ublas_sparse_matrix>& A)
     diagonal[k] = j;
 
     if( jrow != k || fabs( M.value_data() [j] ) < DOLFIN_EPS )
-      dolfin_error("Zero pivot detected in uBlas ILU preconditioner in row %u.", k);
+      error("Zero pivot detected in uBlas ILU preconditioner in row %u.", k);
 
     //    M.value_data() [j] = 1.0/( M.value_data() [j] );
     for(uint i=j0; i <= j1; ++i)

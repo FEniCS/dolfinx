@@ -1,8 +1,8 @@
-// Copyright (C) 2004-2005 Anders Logg.
+// Copyright (C) 2004-2007 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2004-01-03
-// Last changed: 2005
+// Last changed: 2007-05-14
 
 #ifndef __EVENT_H
 #define __EVENT_H
@@ -33,7 +33,7 @@ namespace dolfin
   public:
 
     /// Constructor
-    Event(const std::string message, unsigned int maxcount = 1);
+    Event(const std::string msg, unsigned int maxcount = 1);
 
     /// Destructor
     ~Event();
@@ -49,7 +49,7 @@ namespace dolfin
 
   private:
 
-    std::string message;
+    std::string msg;
     unsigned int _maxcount;
     unsigned int _count;
 

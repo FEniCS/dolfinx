@@ -91,7 +91,7 @@ int main()
       return x[0] > 1.0 - DOLFIN_EPS && on_boundary;
     }
   };
-  
+
   // Create mesh
   UnitSquare mesh(16, 16);
 

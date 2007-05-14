@@ -15,14 +15,14 @@ using namespace dolfin;
 LobattoQuadrature::LobattoQuadrature(unsigned int n) : GaussianQuadrature(n)
 {
   if ( n < 2 )
-    dolfin_error("Lobatto quadrature requires at least 2 points.");
+    error("Lobatto quadrature requires at least 2 points.");
 
   init();
 
   if ( !check(2*n-3) )
-    dolfin_error("Lobatto quadrature not ok, check failed.");
+    error("Lobatto quadrature not ok, check failed.");
 
-  //dolfin_info("Lobatto quadrature computed for n = %d, check passed.", n);
+  //message("Lobatto quadrature computed for n = %d, check passed.", n);
 }
 //-----------------------------------------------------------------------------
 void LobattoQuadrature::disp() const
@@ -34,7 +34,7 @@ void LobattoQuadrature::disp() const
   cout << "-----------------------------------------------------" << endl;
 
   for (unsigned int i = 0; i < n; i++)
-    dolfin_info("%2d   %.16e   %.16e", i, points[i], weights[i]);
+    message("%2d   %.16e   %.16e", i, points[i], weights[i]);
 }
 //----------------------------------------------------------------------------
 void LobattoQuadrature::computePoints()

@@ -74,8 +74,8 @@ public:
   
   ~Courtemanche()
   {
-    dolfin_info("Function evaluations:  %d", num_fevals);
-    dolfin_info("Potential at end time: %.6f", VT);
+    message("Function evaluations:  %d", num_fevals);
+    message("Potential at end time: %.6f", VT);
   }
 
   void u0(uBlasVector& u)

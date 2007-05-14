@@ -54,7 +54,7 @@ Graph::Graph(Mesh& mesh, std::string type) : Variable("graph", "Graph")
   else if ( type == "dual" )
     createDual(mesh);
   else
-    dolfin_error("Unknown mesh representation \"%s\".", type.c_str());
+    error("Unknown mesh representation \"%s\".", type.c_str());
 }
 //-----------------------------------------------------------------------------
 Graph::~Graph()
