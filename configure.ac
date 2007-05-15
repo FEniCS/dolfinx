@@ -101,6 +101,7 @@ if test $libxml2_found = no; then
     exit 1
 fi
 
+# Check for Boost
 AX_BOOST_BASE([1.33])
 
 # Check for Glib
@@ -114,6 +115,7 @@ else
     echo "Missing GTS"
 fi
 
+# Check for UFC
 PKG_CHECK_MODULES(UFC, ufc-1)
 
 # Check for umfpack
@@ -142,6 +144,7 @@ if test $have_amd_lib = yes; then
         fi
     fi
 fi
+
 # Check for umfpack header files if umfpack and amd libraries have been found
 if test $have_umfpack_and_amd_lib = yes; then
     if test x$UMFPACK_INCLUDE_DIR != x; then
@@ -196,6 +199,7 @@ if test x$enable_pydolfin = xyes; then
 
 fi
 
+# Check for NumPy
 if test x$enable_pydolfin = xyes; then
     echo "checking for NumPy..."
     NUMPY_CFLAGS=`python numpy.conf`
@@ -232,7 +236,7 @@ if test x$enable_optimization = xyes; then
 fi
 
 # Handle option --enable-debug-ublas
-
+# FIXME: Not handled
 
 # Add compiler specific flags
 case "${ax_cv_cxx_compiler_vendor}" in

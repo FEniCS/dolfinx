@@ -44,7 +44,7 @@ path. (You will be reminded of this when running ./configure.local.)
 ------------------------------------------------------------------------------
 3. License
 
-DOLFIN is licensed under the GNU GPL Version 2, see http://www.gnu.org.
+DOLFIN is licensed under the GNU LGPL Version 2.1, see http://www.gnu.org.
 
 -------------------------------------------------------------------------------
 4. Feed back
