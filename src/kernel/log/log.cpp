@@ -17,62 +17,50 @@
 using namespace dolfin;
 
 // Buffers
-char buffer0[DOLFIN_LINELENGTH];
-char buffer1[DOLFIN_LINELENGTH];
+static char buffer[DOLFIN_LINELENGTH];
+
+#define read(buffer, msg) \
+  va_list aptr; \
+  va_start(aptr, msg); \
+  vsnprintf(buffer, DOLFIN_LINELENGTH, msg.c_str(), aptr); \
+  va_end(aptr);
+  
 
 //-----------------------------------------------------------------------------
 void dolfin::message(std::string msg, ...)
 {
-  va_list aptr;
-  va_start(aptr, msg);
-  vsnprintf(buffer0, DOLFIN_LINELENGTH, msg.c_str(), aptr);
-  va_end(aptr);
-  LogManager::logger.message(std::string(buffer0));
+  read(buffer, msg);
+  LogManager::logger.message(buffer);
 }
 //-----------------------------------------------------------------------------
 void dolfin::message(int debug_level, std::string msg, ...)
 {
-  va_list aptr;
-  va_start(aptr, msg);
-  vsnprintf(buffer0, DOLFIN_LINELENGTH, msg.c_str(), aptr);
-  va_end(aptr);
-  LogManager::logger.message(std::string(buffer0), debug_level);
+  read(buffer, msg);
+  LogManager::logger.message(buffer, debug_level);
 }
 //-----------------------------------------------------------------------------
 void dolfin::warning(std::string msg, ...)
 {
-  va_list aptr;
-  va_start(aptr, msg);
-  vsnprintf(buffer0, DOLFIN_LINELENGTH, msg.c_str(), aptr);
-  va_end(aptr);
-  LogManager::logger.warning(std::string(buffer0));
+  read(buffer, msg);
+  LogManager::logger.warning(buffer);
 }
 //-----------------------------------------------------------------------------
 void dolfin::error(std::string msg, ...)
 {
-  va_list aptr;
-  va_start(aptr, msg);
-  vsnprintf(buffer0, DOLFIN_LINELENGTH, msg.c_str(), aptr);
-  va_end(aptr);
-  LogManager::logger.error(std::string(buffer0));
+  read(buffer, msg);
+  LogManager::logger.error(buffer);
 }
 //-----------------------------------------------------------------------------
 void dolfin::begin(std::string msg, ...)
 {
-  va_list aptr;
-  va_start(aptr, msg);
-  vsnprintf(buffer0, DOLFIN_LINELENGTH, msg.c_str(), aptr);
-  va_end(aptr);
-  LogManager::logger.begin(std::string(buffer0));
+  read(buffer, msg);
+  LogManager::logger.begin(buffer);
 }
 //-----------------------------------------------------------------------------
 void dolfin::begin(int debug_level, std::string msg, ...)
 {
-  va_list aptr;
-  va_start(aptr, msg);
-  vsnprintf(buffer0, DOLFIN_LINELENGTH, msg.c_str(), aptr);
-  va_end(aptr);
-  LogManager::logger.begin(std::string(buffer0), debug_level);
+  read(buffer, msg);
+  LogManager::logger.begin(buffer, debug_level);
 }
 //-----------------------------------------------------------------------------
 void dolfin::end()
@@ -83,24 +71,20 @@ void dolfin::end()
 void dolfin::__debug(std::string file, unsigned long line,
                      std::string function, std::string format, ...)
 {
-  va_list aptr;
-  va_start(aptr, format);
-  vsnprintf(buffer0, DOLFIN_LINELENGTH, format.c_str(), aptr);
-  snprintf(buffer1, DOLFIN_LINELENGTH, "%s:%d: %s()", file.c_str(), (int) line, function.c_str());
-  va_end(aptr);
-  std::string msg = std::string(buffer0) + " [at " + std::string(buffer1) + "]";
+  read(buffer, format);
+  std::ostringstream ost(file);
+  ost << ":" << line << ": " << function;
+  std::string msg = std::string(buffer) + " [at " + ost.str() + "]";
   LogManager::logger.__debug(msg);
 }
 //-----------------------------------------------------------------------------
 void dolfin::__assert(std::string file, unsigned long line,
                       std::string function, std::string format, ...)
 {
-  va_list aptr;
-  va_start(aptr, format);
-  vsnprintf(buffer0, DOLFIN_LINELENGTH, format.c_str(), aptr);
-  snprintf(buffer1, DOLFIN_LINELENGTH, "%s:%d: %s()", file.c_str(), (int) line, function.c_str());
-  va_end(aptr);
-  std::string msg = std::string(buffer0) + " [at " + std::string(buffer1) + "]";
+  read(buffer, format);
+  std::ostringstream ost(file);
+  ost << ":" << line << ": " << function;
+  std::string msg = std::string(buffer) + " [at " + ost.str() + "]";
   LogManager::logger.__assert(msg);
 }
 //-----------------------------------------------------------------------------
