@@ -54,4 +54,3 @@ L2 = v*k1*dx - v*mu(c1, muFactor)*dx - lmbda*dot(grad(v), grad(c1))*dx
 
 a =  a1 + a2
 L = -L1 - L2 
-
