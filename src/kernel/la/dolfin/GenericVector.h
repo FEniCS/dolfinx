@@ -68,6 +68,15 @@ namespace dolfin
     /// Return size
     virtual uint size() const = 0;
 
+    /// Get values
+    virtual void get(real* values) const = 0;
+
+    /// Set values
+    virtual void set(real* values) = 0;
+
+    /// Add values
+    virtual void add(real* values) = 0;
+
     /// Get block of values
     virtual void get(real* block, uint m, const uint* rows) const = 0;
 

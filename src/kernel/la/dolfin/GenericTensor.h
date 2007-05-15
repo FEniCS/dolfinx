@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2007.
 //
 // First added:  2007-01-17
-// Last changed: 2007-04-03
+// Last changed: 2007-05-15
 
 #ifndef __GENERIC_TENSOR_H
 #define __GENERIC_TENSOR_H

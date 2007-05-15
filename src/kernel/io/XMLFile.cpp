@@ -201,31 +201,30 @@ void XMLFile::operator>>(Graph& graph)
 //-----------------------------------------------------------------------------
 void XMLFile::operator<<(Vector& x)
 {
-#ifdef HAVE_PETSC_H
-  error("Function output in XML format broken. Need to fix vector element access.");
-#else
   // Open file
   FILE* fp = openFile();
+
+  // Get vector values
+  real* values = new real[x.size()];
+  x.get(values);
   
   // Write vector in XML format
   fprintf(fp, "  <vector size=\"%u\"> \n", x.size() );
-  
   for (unsigned int i = 0; i < x.size(); i++) 
   {
-    // FIXME: This is a slow way to acces PETSc vectors. Need a fast way 
-    //        which is consistent for different vector types.
-    real temp = x(i);
-    fprintf(fp, "    <entry row=\"%u\" value=\"%.15g\"/>\n", i, temp);
+    fprintf(fp, "    <entry row=\"%u\" value=\"%.15g\"/>\n", i, values[i]);
     if ( i == (x.size() - 1))
       fprintf(fp, "  </vector>\n");
   }
   
+  // Delete vector values
+  delete [] values;
+
   // Close file
   closeFile(fp);
   
   message(1, "Saved vector %s (%s) to file %s in DOLFIN XML format.",
           x.name().c_str(), x.label().c_str(), filename.c_str());
-#endif
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator<<(Matrix& A)

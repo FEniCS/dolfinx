@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells 2005-2007.
 //
 // First added:  2004
-// Last changed: 2007-04-16
+// Last changed: 2007-05-15
 
 // FIXME: Insert dolfin_assert() where appropriate
 
@@ -120,6 +120,30 @@ void PETScVector::mult(const real a)
 {
   dolfin_assert(x);
   VecScale(x, a);
+}
+//-----------------------------------------------------------------------------
+void PETScVector::get(real* values) const
+{
+  const real* xx = array();
+  for (uint i = 0; i < size(); i++)
+    values[i] = xx[i];
+  restore(xx);
+}
+//-----------------------------------------------------------------------------
+void PETScVector::set(real* values)
+{
+  real* xx = array();
+  for (uint i = 0; i < size(); i++)
+    xx[i] = values[i];
+  restore(xx);
+}
+//-----------------------------------------------------------------------------
+void PETScVector::add(real* values)
+{
+  real* xx = array();
+  for (uint i = 0; i < size(); i++)
+    xx[i] += values[i];
+  restore(xx);
 }
 //-----------------------------------------------------------------------------
 void PETScVector::get(real* block, uint m, const uint* rows) const

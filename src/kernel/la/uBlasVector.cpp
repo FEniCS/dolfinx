@@ -4,7 +4,7 @@
 // Modified by Anders Logg 2006-2007.
 //
 // First added:  2006-04-04
-// Last changed: 2007-04-25
+// Last changed: 2007-05-15
 
 #include <dolfin/dolfin_log.h>
 #include <boost/numeric/ublas/vector.hpp>
@@ -49,6 +49,24 @@ void uBlasVector::init(uint N)
   
   this->resize(N, false);
   clear();
+}
+//-----------------------------------------------------------------------------
+void uBlasVector::get(real* values) const
+{
+  for (uint i = 0; i < size(); i++)
+    values[i] = (*this)(i);
+}
+//-----------------------------------------------------------------------------
+void uBlasVector::set(real* values)
+{
+  for (uint i = 0; i < size(); i++)
+    (*this)(i) = values[i];
+}
+//-----------------------------------------------------------------------------
+void uBlasVector::add(real* values)
+{
+  for (uint i = 0; i < size(); i++)
+    (*this)(i) += values[i];
 }
 //-----------------------------------------------------------------------------
 void uBlasVector::get(real* block, uint m, const uint* rows) const

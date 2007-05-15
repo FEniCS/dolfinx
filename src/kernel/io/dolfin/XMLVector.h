@@ -1,8 +1,8 @@
-// Copyright (C) 2003-2006 Anders Logg.
+// Copyright (C) 2003-2007 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2003-07-15
-// Last changed: 2006-05-07
+// Last changed: 2007-05-15
 
 #ifndef __XML_VECTOR_H
 #define __XML_VECTOR_H
@@ -26,12 +26,16 @@ namespace dolfin
     
     enum ParserState { OUTSIDE, INSIDE_VECTOR, DONE };
     
-    void readVector  (const xmlChar *name, const xmlChar **attrs);
-    void readEntry   (const xmlChar *name, const xmlChar **attrs);
+    void startVector(const xmlChar *name, const xmlChar **attrs);
+    void endVector  ();
+    void readEntry  (const xmlChar *name, const xmlChar **attrs);
     
     Vector& x;
     ParserState state;
-    
+
+    real* values;
+    uint size;
+
   };
   
 }

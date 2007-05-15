@@ -4,7 +4,7 @@
 // Modified by Anders Logg 2006-2007.
 //
 // First added:  2006-03-04
-// Last changed: 2007-04-25
+// Last changed: 2007-05-15
 
 #ifndef __UBLAS_VECTOR_H
 #define __UBLAS_VECTOR_H
@@ -75,6 +75,15 @@ namespace dolfin
     /// Access value of given entry
     inline real operator() (uint i) const
     { return ublas::vector<real>::operator() (i); };
+
+    /// Get values
+    void get(real* values) const;
+
+    /// Set values
+    void set(real* values);
+
+    /// Add values
+    void add(real* values);
 
     /// Get block of values
     void get(real* block, uint m, const uint* rows) const;
