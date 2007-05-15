@@ -8,7 +8,7 @@
 
 #include <stdio.h>
 #include <dolfin/log.h>
-#include <dolfin/parameter.h>
+#include <dolfin/parameters.h>
 #include <dolfin/Cell.h>
 #include <dolfin/Function.h>
 #include <dolfin/Mesh.h>
