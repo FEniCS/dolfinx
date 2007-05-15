@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells 2005-2007.
 //
 // First added:  2004
-// Last changed: 2007-04-16
+// Last changed: 2007-05-15
 
 #ifndef __PETSC_VECTOR_H
 #define __PETSC_VECTOR_H
@@ -85,6 +85,15 @@ namespace dolfin
 
     /// Element-wise multiplication
     void mult(const real a);
+
+    /// Get values
+    void get(real* values) const;
+
+    /// Set values
+    void set(real* values);
+
+    /// Add values
+    void add(real* values);
 
     /// Get block of values
     void get(real* block, uint m, const uint* rows) const;

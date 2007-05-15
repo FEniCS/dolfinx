@@ -12,7 +12,8 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-XMLVector::XMLVector(Vector& vector) : XMLObject(), x(vector)
+XMLVector::XMLVector(Vector& vector)
+  : XMLObject(), x(vector), values(0), size(0)
 {
   state = OUTSIDE;
 }
@@ -25,7 +26,7 @@ void XMLVector::startElement(const xmlChar *name, const xmlChar **attrs)
     
     if ( xmlStrcasecmp(name, (xmlChar *) "vector") == 0 )
     {
-      readVector(name, attrs);
+      startVector(name, attrs);
       state = INSIDE_VECTOR;
     }
     
@@ -51,6 +52,7 @@ void XMLVector::endElement(const xmlChar *name)
     
     if ( xmlStrcasecmp(name, (xmlChar *) "vector") == 0 )
     {
+      endVector();
       state = DONE;
     }
     
@@ -61,32 +63,40 @@ void XMLVector::endElement(const xmlChar *name)
   }
 }
 //-----------------------------------------------------------------------------
-void XMLVector::readVector(const xmlChar *name, const xmlChar **attrs)
+void XMLVector::startVector(const xmlChar *name, const xmlChar **attrs)
 {
-  // Parse values
-  uint size = parseInt(name, attrs, "size");
+  // Parse size of vector
+  size = parseUnsignedInt(name, attrs, "size");
   
   // Initialize vector
-  x.init(size);	 
+  if (values)
+    delete [] values;
+  values = new real[size];
+}
+//-----------------------------------------------------------------------------
+void XMLVector::endVector()
+{
+  // Copy values to vector
+  dolfin_assert(values);
+  x.init(size);
+  x.set(values);
+  delete [] values;
+  values = 0;
 }
 //-----------------------------------------------------------------------------
 void XMLVector::readEntry(const xmlChar *name, const xmlChar **attrs)
 {
-#ifdef HAVE_PETSC_H
-  error("XMLVector::readEntry needs to updated for new vector element access.");
-#else
   // Parse values
   uint row   = parseUnsignedInt(name, attrs, "row");
   real value = parseReal(name, attrs, "value");
   
   // Check values
-  if ( row >= x.size() )
+  if (row >= size)
     error("Illegal XML data for Vector: row index %d out of range (0 - %d)",
-		  row, x.size() - 1);
+          row, size - 1);
   
-  // FIXME: update to vector element access
   // Set value
-  x(row) = value;
-#endif
+  dolfin_assert(values);
+  values[row] = value;
 }
 //-----------------------------------------------------------------------------
