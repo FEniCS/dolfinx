@@ -4,14 +4,12 @@
 // Modified by Garth N. Wells, 2006.
 //
 // First added:  2004-06-19
-// Last changed: 2006-08-08
+// Last changed: 2007-05-15
 
 #ifndef __PETSC_LINEAR_SOLVER_H
 #define __PETSC_LINEAR_SOLVER_H
 
 #ifdef HAVE_PETSC_H
-
-#include <dolfin/dolfin_log.h>
 
 namespace dolfin
 {
@@ -34,7 +32,7 @@ namespace dolfin
     virtual ~PETScLinearSolver(){}
 
     /// Solve linear system Ax = b
-    virtual uint solve(const PETScMatrix& A, PETScVector& x, const PETScVector& b) = 0;
+    virtual unsigned int solve(const PETScMatrix& A, PETScVector& x, const PETScVector& b) = 0;
 
   };
 
