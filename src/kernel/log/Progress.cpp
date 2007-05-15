@@ -16,139 +16,57 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Progress::Progress(std::string title, unsigned int n)
+Progress::Progress(std::string title, unsigned int n) 
+  : title(title), n(n), i(0), step(0.1), p(0)
 {
   if (n <= 0)
     error("Number of steps for progress session must be positive.");
 
-
-  _title = title;
-  p0 = 0.0;
-  p1 = 0.0;
-
-  progress_step = 0.1;
-
-  i = 0;
-  this->n = n;
-
-  stopped = false;
-
-  // Write first progress bar
-  LogManager::logger.progress(_title, p1);
+  LogManager::logger.progress(title, 0.0);
 }
 //-----------------------------------------------------------------------------
 Progress::Progress(std::string title)
+  : title(title), n(0), i(0), step(0.1), p(0)
 {
-  _title = title;
-  
-  p0 = 0.0;
-  p1 = 0.0;
-
-  progress_step = 0.1;
-
-  i = 0;
-  n = 0;
+  LogManager::logger.progress(title, 0.0);
 }
 //-----------------------------------------------------------------------------
 Progress::~Progress()
 {
   // Step to end
-  if ( p1 != 1.0 && !stopped )
-  {
-    p1 = 1.0;
-    LogManager::logger.progress(_title, p1);
-  }
-}
-//-----------------------------------------------------------------------------
-void Progress::setStep(real step)
-{
-  // We can't go through the parameter system, since the parameter system
-  // depends on the log system and the log system should not depend on the
-  // parameter system.
-
-  progress_step = step;
-}
-//-----------------------------------------------------------------------------
-void Progress::operator=(unsigned int i)
-{
-  if ( n == 0 )
-    error("Cannot specify step number for progress session with unknown number of steps.");
-
-  p1 = checkBounds(i);
-  update();  
+  if (p != 1.0)
+    LogManager::logger.progress(title, 1.0);
 }
 //-----------------------------------------------------------------------------
 void Progress::operator=(real p)
 {
-  if ( n != 0 )
+  if (n != 0)
     error("Cannot specify value for progress session with given number of steps.");
 
-  p1 = checkBounds(p);
-  update();
-}
-//-----------------------------------------------------------------------------
-void Progress::operator++()
-{
-  if ( n == 0 )
-    error("Cannot step progress for session with unknown number of steps.");
-
-  if ( i < (n-1) )
-    i++;
-
-  p1 = checkBounds(i);  
-  update();
+  update(p);
 }
 //-----------------------------------------------------------------------------
 void Progress::operator++(int)
 {
-  if ( n == 0 )
+  if (n == 0)
     error("Cannot step progress for session with unknown number of steps.");
   
-  if ( i < (n-1) )
+  if (i < (n-1))
     i++;
-  
-  p1 = checkBounds(i);
-  update();
+
+  update(static_cast<real>(i) / static_cast<real>(n));
 }
 //-----------------------------------------------------------------------------
-void Progress::stop()
+void Progress::update(real p)
 {
-  stopped = true;
-}
-//-----------------------------------------------------------------------------
-real Progress::value()
-{
-  return p1;
-}
-//-----------------------------------------------------------------------------
-std::string Progress::title()
-{
-  return _title;
-}
-//-----------------------------------------------------------------------------
-real Progress::checkBounds(unsigned int i)
-{
-  if ( i >= (n-1) )
-    return 1.0;
-  return ((real) i) / ((real) n);
-}
-//-----------------------------------------------------------------------------
-real Progress::checkBounds(real p)
-{
-  if ( p > 1.0 )
-    return 1.0;
-  if ( p < 0.0 )
-    return 0.0;
-  return p;
-}
-//-----------------------------------------------------------------------------
-void Progress::update()
-{
+  p = std::min(p, 1.0);
+  p = std::max(p, 0.0);
+
   // Only update when the increase is significant
-  if ( (p1 - p0) < progress_step && (p1 != 1.0 || p1 == p0) )
+  if ((p - this->p) < step && (p != 1.0 || this->p == p))
     return;
 
-  LogManager::logger.progress(_title, p1);
-  p0 = p1;
+  LogManager::logger.progress(title, p);
+  this->p = p;
 }
 //-----------------------------------------------------------------------------

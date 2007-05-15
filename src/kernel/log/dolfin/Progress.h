@@ -2,55 +2,77 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2003-03-14
-// Last changed: 2007-05-13
+// Last changed: 2007-05-14
 
 #ifndef __PROGRESS_H
 #define __PROGRESS_H
 
 #include <string>
+#include <stdarg.h>
+
 #include <dolfin/constants.h>
 
 namespace dolfin
 {
   
+  /// This class provides a simple way to create and update progress
+  /// bars during a computation. A progress bar may be used either
+  /// in an iteration with a known number of steps:
+  ///
+  ///     Progress p("Iterating...", n);
+  ///     for (int i = 0; i < n; i++)
+  ///     {
+  ///       ...
+  ///       p++;
+  ///     }
+  ///
+  /// or in an iteration with an unknown number of steps:
+  ///
+  ///     Progress p("Iterating...");
+  ///     while (t < T)
+  ///     {
+  ///       ...
+  ///       p = t / T;
+  ///     }
+
   class Progress
   {
   public:
-    
+
+    /// Create progress bar with a known number of steps
     Progress(std::string title, unsigned int n);
+
+    /// Create progress bar with an unknown number of steps
     Progress(std::string title);
+
+    /// Destructor
     ~Progress();
-
-    void setStep(real step);
     
-    void operator=(unsigned int i);
+    /// Set current position
     void operator=(real p);
-    void operator++();
+
+    /// Increment progress
     void operator++(int);
-
-    void stop();
     
-    real value();
-    std::string title();
-
   private:
     
-    real checkBounds(unsigned int i);
-    real checkBounds(real p);
+    // Update progress
+    void update(real p);
     
-    void update();
+    // Title of progress bar
+    std::string title;
     
-    std::string _title;
-    
-    real p0;
-    real p1;
+    // Number of steps
+    uint n;
 
-    real progress_step;
-    
-    unsigned int i;
-    unsigned int n;
+    // Current position
+    uint i;
 
-    bool stopped;
+    // Minimum increment for progress bar
+    real step;
+
+    // Current progress
+    real p;
     
   };
   
