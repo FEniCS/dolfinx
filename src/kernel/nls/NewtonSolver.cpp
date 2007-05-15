@@ -1,10 +1,10 @@
-// Copyright (C) 2005-2006 Garth N. Wells.
+// Copyright (C) 2005-2007 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Anders Logg, 2005-2006.
 //
 // First added:  2005-10-23
-// Last changed: 2006-09-03
+// Last changed: 2007-05-15
 
 #include <dolfin/NewtonSolver.h>
 #include <dolfin/NonlinearProblem.h>
@@ -32,12 +32,6 @@ NewtonSolver::NewtonSolver(Matrix::Type matrix_type) : Parametrized()
   A = new Matrix(matrix_type);
 }
 #endif
-//-----------------------------------------------------------------------------
-NewtonSolver::NewtonSolver(KrylovMethod method) : Parametrized()
-{
-  solver = new KrylovSolver(method);
-  A = new Matrix;
-}
 //-----------------------------------------------------------------------------
 NewtonSolver::NewtonSolver(KrylovMethod method, Preconditioner pc)
   : Parametrized()

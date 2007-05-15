@@ -1,10 +1,10 @@
-// Copyright (C) 2005-2006 Garth N. Wells.
+// Copyright (C) 2005-2007 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Anders Logg 2006.
 //
 // First added:  2005-10-23
-// Last changed: 2006-09-03
+// Last changed: 2007-05-15
 
 #ifndef __NEWTON_SOLVER_H
 #define __NEWTON_SOLVER_H
@@ -35,11 +35,8 @@ namespace dolfin
     NewtonSolver(Matrix::Type matrix_type);
 #endif
 
-    /// Initialise nonlinear solver and choose Krylov solver
-    NewtonSolver(KrylovMethod method);
-
-    /// Initialise nonlinear solver and choose Krylov solver
-    NewtonSolver(KrylovMethod method, Preconditioner pc);
+    /// Initialise nonlinear solver and choose Krylov solver and preconditioner
+    NewtonSolver(KrylovMethod method, Preconditioner pc = default_pc);
 
     /// Destructor
     virtual ~NewtonSolver();
