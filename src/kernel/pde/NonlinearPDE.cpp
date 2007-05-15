@@ -19,7 +19,7 @@ NonlinearPDE::NonlinearPDE(Form& a,
                            Form& L,
                            Mesh& mesh,
                            BoundaryCondition& bc)
-  : a(a), L(L), mesh(mesh), bcs(bcs)
+  : a(a), L(L), mesh(mesh)
 {
   message("Creating nonlinear PDE with %d boundary condition(s).", bcs.size());
 
