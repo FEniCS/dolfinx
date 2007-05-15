@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2007
 //
 // First added:  2005-10-24
-// Last changed: 2007-05-05
+// Last changed: 2007-05-15
 
 #ifndef __NONLINEAR_PDE_H
 #define __NONLINEAR_PDE_H
@@ -30,7 +30,11 @@ namespace dolfin
 
     /// Destructor
     ~NonlinearPDE();
-    
+
+    /// Function called before Jacobian matrix and RHS vector are formed. Users
+    /// can supply this function to perform updates.
+    virtual void update(const GenericVector& x);
+
     /// User-defined function to compute F(u) its Jacobian
     void form(GenericMatrix& A, GenericVector& b, const GenericVector& x); 
 
