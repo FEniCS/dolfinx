@@ -72,8 +72,8 @@ void dolfin::__debug(std::string file, unsigned long line,
                      std::string function, std::string format, ...)
 {
   read(buffer, format);
-  std::ostringstream ost(file);
-  ost << ":" << line << ": " << function;
+  std::ostringstream ost;
+  ost << file << ":" << line << " in " << function << "()";
   std::string msg = std::string(buffer) + " [at " + ost.str() + "]";
   LogManager::logger.__debug(msg);
 }
@@ -82,8 +82,8 @@ void dolfin::__assert(std::string file, unsigned long line,
                       std::string function, std::string format, ...)
 {
   read(buffer, format);
-  std::ostringstream ost(file);
-  ost << ":" << line << ": " << function;
+  std::ostringstream ost;
+  ost << file << ":" << line << " in " << function << "()";
   std::string msg = std::string(buffer) + " [at " + ost.str() + "]";
   LogManager::logger.__assert(msg);
 }

@@ -21,8 +21,6 @@
 
 using namespace dolfin;
 
-// FIXME: mesh.order() for higher degree elements
-
 //-----------------------------------------------------------------------------
 Assembler::Assembler()
 {
@@ -125,6 +123,7 @@ void Assembler::assembleCells(GenericTensor& A, Mesh& mesh,
     return;
 
   // Assemble over cells
+  message("Assembling over %d cells.", mesh.numCells());
   Progress p("Assembling over cells", mesh.numCells());
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
@@ -164,6 +163,7 @@ void Assembler::assembleExteriorFacets(GenericTensor& A, Mesh& mesh,
   BoundaryMesh boundary(mesh, vertex_map, cell_map);
   
   // Assemble over exterior facets (the cells of the boundary)
+  message("Assembling over %d exterior facets.", boundary.numCells());
   Progress p("Assembling over exterior facets", boundary.numCells());
   for (CellIterator boundary_cell(boundary); !boundary_cell.end(); ++boundary_cell)
   {
@@ -210,11 +210,10 @@ void Assembler::assembleInteriorFacets(GenericTensor& A,Mesh& mesh,
   // Compute facets and facet - cell connectivity if not already computed
   mesh.init(mesh.topology().dim() - 1);
   mesh.init(mesh.topology().dim() - 1, mesh.topology().dim());
+  mesh.order();
   
-  // Order mesh connectivity, needed for correct alignment on common facets
-  //mesh.order();
-
   // Assemble over interior facets (the facets of the mesh)
+  message("Assembling over %d interior facets.", mesh.numFacets());
   Progress p("Assembling over interior facets", mesh.numFacets());
   for (FacetIterator facet(mesh); !facet.end(); ++facet)
   {

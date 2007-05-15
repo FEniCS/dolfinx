@@ -2,9 +2,9 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-01-30
-// Last changed: 2007-01-30
+// Last changed: 2007-05-16
 
-#include <dolfin/dolfin_log.h>
+#include <dolfin/log.h>
 #include <dolfin/Mesh.h>
 #include <dolfin/Cell.h>
 #include <dolfin/MeshOrdering.h>
@@ -14,7 +14,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 void MeshOrdering::order(Mesh& mesh)
 {
-  cout << "Ordering mesh entities..." << endl;
+  message("Ordering mesh entities...");
 
   // Get cell type
   const CellType& cell_type = mesh.type();
