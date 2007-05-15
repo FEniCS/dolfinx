@@ -75,17 +75,20 @@ namespace dolfin
     // Assemble over cells
     void assembleCells(GenericTensor& A, Mesh& mesh,
                        Array<Function*>& coefficients,
-                       UFC& data) const;
+                       UFC& data,
+                       const MeshFunction<uint>* domains) const;
 
     // Assemble over exterior facets
     void assembleExteriorFacets(GenericTensor& A, Mesh& mesh,
                                 Array<Function*>& coefficients,
-                                UFC& data) const;
+                                UFC& data,
+                                const MeshFunction<uint>* domains) const;
 
     // Assemble over interior facets
     void assembleInteriorFacets(GenericTensor& A, Mesh& mesh,
                                 Array<Function*>& coefficients,
-                                UFC& data) const;
+                                UFC& data,
+                                const MeshFunction<uint>* domains) const;
 
     // Check arguments
     void check(const ufc::form& form, const Mesh& mesh,

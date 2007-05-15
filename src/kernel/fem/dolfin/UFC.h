@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-01-17
-// Last changed: 2007-05-10
+// Last changed: 2007-05-15
 
 #ifndef __UFC_DATA_H
 #define __UFC_DATA_H
@@ -49,14 +49,14 @@ namespace dolfin
     // Array of dof maps for primary arguments
     ufc::dof_map** dof_maps;
 
-    // Cell integral
-    ufc::cell_integral* cell_integral;
+    // Array of cell integrals
+    ufc::cell_integral** cell_integrals;
 
-    // Exterior facet integral
-    ufc::exterior_facet_integral* exterior_facet_integral;
+    // Array of exterior facet integrals
+    ufc::exterior_facet_integral** exterior_facet_integrals;
 
-    // Interior facet integral
-    ufc::interior_facet_integral* interior_facet_integral;
+    // Array of interior facet integrals
+    ufc::interior_facet_integral** interior_facet_integrals;
 
     // Form
     const ufc::form& form;

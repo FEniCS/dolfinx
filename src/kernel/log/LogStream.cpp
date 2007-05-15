@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2003-03-13
-// Last changed: 2007-05-14
+// Last changed: 2007-05-15
 
 #include <stdio.h>
 #include <cmath>
@@ -30,7 +30,6 @@ LogStream::~LogStream()
 {
   if (buffer)
     delete [] buffer;
-  buffer = 0;
 }
 //-----------------------------------------------------------------------------
 LogStream& LogStream::operator<<(const char* s)
@@ -61,38 +60,38 @@ LogStream& LogStream::operator<<(const LogStream& stream)
 //-----------------------------------------------------------------------------
 LogStream& LogStream::operator<<(int a)
 {
-  char tmp[DOLFIN_WORDLENGTH];
-  sprintf(tmp, "%d", a);
+  char tmp[DOLFIN_LINELENGTH];
+  snprintf(tmp, DOLFIN_LINELENGTH, "%d", a);
   add(tmp);
   return *this;
 }
 //-----------------------------------------------------------------------------
 LogStream& LogStream::operator<<(unsigned int a)
 {
-  char tmp[DOLFIN_WORDLENGTH];
-  sprintf(tmp, "%u", a);
+  char tmp[DOLFIN_LINELENGTH];
+  snprintf(tmp, DOLFIN_LINELENGTH, "%u", a);
   add(tmp);
   return *this;
 }
 //-----------------------------------------------------------------------------
 LogStream& LogStream::operator<<(real a)
 {
-  char tmp[DOLFIN_WORDLENGTH];
+  char tmp[DOLFIN_LINELENGTH];
   /*
     if (fabs(a) < 1e-5 || fabs(a) > 1e5)
     sprintf(tmp, "%e", a);
     else
     sprintf(tmp, "%f", a);
   */
-  sprintf(tmp, "%.3g", a);
+  snprintf(tmp, DOLFIN_LINELENGTH, "%.3g", a);
   add(tmp);
   return *this;
 }
 //-----------------------------------------------------------------------------
 LogStream& LogStream::operator<<(complex z)
 {
-  char tmp[DOLFIN_WORDLENGTH];
-  sprintf(tmp, "%f + %fi", z.real(), z.imag());
+  char tmp[DOLFIN_LINELENGTH];
+  snprintf(tmp, DOLFIN_LINELENGTH, "%f + %fi", z.real(), z.imag());
   add(tmp);
   return *this;
 }

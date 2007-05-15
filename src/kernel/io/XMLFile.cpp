@@ -7,7 +7,7 @@
 // Modified by Magnus Vikstrom 2007.
 //
 // First added:  2002-12-03
-// Last changed: 2007-05-14
+// Last changed: 2007-05-15
 
 #include <stdarg.h>
 
@@ -673,7 +673,7 @@ void dolfin::sax_warning(void *ctx, const char *msg, ...)
   va_list args;
   va_start(args, msg);
   char buffer[DOLFIN_LINELENGTH];
-  vsprintf(buffer, msg, args);
+  vsnprintf(buffer, DOLFIN_LINELENGTH, msg, args);
   warning("Incomplete XML data: " + std::string(buffer));
   va_end(args);
 }
@@ -683,7 +683,7 @@ void dolfin::sax_error(void *ctx, const char *msg, ...)
   va_list args;
   va_start(args, msg);
   char buffer[DOLFIN_LINELENGTH];
-  vsprintf(buffer, msg, args);
+  vsnprintf(buffer, DOLFIN_LINELENGTH, msg, args);
   error("Illegal XML data: " + std::string(buffer));
   va_end(args);
 }
@@ -693,7 +693,7 @@ void dolfin::sax_fatal_error(void *ctx, const char *msg, ...)
   va_list args;
   va_start(args, msg);
   char buffer[DOLFIN_LINELENGTH];
-  vsprintf(buffer, msg, args);
+  vsnprintf(buffer, DOLFIN_LINELENGTH, msg, args);
   error("Illegal XML data: " + std::string(buffer));
   va_end(args);
 }

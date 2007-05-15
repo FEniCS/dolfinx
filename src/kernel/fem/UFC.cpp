@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-01-17
-// Last changed: 2007-04-04
+// Last changed: 2007-05-15
 
 #include <dolfin/constants.h>
 #include <dolfin/DofMaps.h>
@@ -29,12 +29,20 @@ UFC::UFC(const ufc::form& form, Mesh& mesh, DofMaps& dof_maps) : form(form)
   for (uint i = 0; i < form.rank(); i++)
     this->dof_maps[i] = &dof_maps[i].ufc_dof_map;
 
-  // FIXME: Assume for now there is only one sub domain
+  // Create cell integrals
+  cell_integrals = new ufc::cell_integral*[form.num_cell_integrals()];
+  for (uint i = 0; i < form.num_cell_integrals(); i++)
+    cell_integrals[i] = form.create_cell_integral(i);
 
-  // Create integrals
-  cell_integral = form.create_cell_integral(0);
-  exterior_facet_integral = form.create_exterior_facet_integral(0);
-  interior_facet_integral = form.create_interior_facet_integral(0);
+  // Create exterior facet integrals
+  exterior_facet_integrals = new ufc::exterior_facet_integral*[form.num_exterior_facet_integrals()];
+  for (uint i = 0; i < form.num_exterior_facet_integrals(); i++)
+    exterior_facet_integrals[i] = form.create_exterior_facet_integral(i);
+
+  // Create interior facet integrals
+  interior_facet_integrals = new ufc::interior_facet_integral*[form.num_interior_facet_integrals()];
+  for (uint i = 0; i < form.num_interior_facet_integrals(); i++)
+    interior_facet_integrals[i] = form.create_interior_facet_integral(i);
 
   // Initialize mesh
   this->mesh.init(mesh);
@@ -130,13 +138,20 @@ UFC::~UFC()
   // Delete dof maps (don't touch reused dof maps)
   delete [] dof_maps;
 
-  // Delete integrals
-  if ( cell_integral )
-    delete cell_integral;
-  if ( exterior_facet_integral )
-    delete exterior_facet_integral;
-  if ( interior_facet_integral )
-    delete interior_facet_integral;
+  // Delete cell integrals
+  for (uint i = 0; i < form.num_cell_integrals(); i++)
+    delete cell_integrals[i];
+  delete [] cell_integrals;
+
+  // Delete exterior facet integrals
+  for (uint i = 0; i < form.num_exterior_facet_integrals(); i++)
+    delete exterior_facet_integrals[i];
+  delete [] exterior_facet_integrals;
+
+  // Delete interior facet integrals
+  for (uint i = 0; i < form.num_interior_facet_integrals(); i++)
+    delete interior_facet_integrals[i];
+  delete [] interior_facet_integrals;
 
   // Delete local tensor
   delete [] A;

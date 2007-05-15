@@ -86,7 +86,6 @@ void Assembler::assemble(GenericTensor& A, const ufc::form& form, Mesh& mesh,
                          const MeshFunction<uint>* interior_facet_domains)
 {
   message("Assembling rank %d form.", form.rank());
-  message(1, "Form: %s", form.signature());
 
   // Check arguments
   check(form, mesh, coefficients);
@@ -104,13 +103,13 @@ void Assembler::assemble(GenericTensor& A, const ufc::form& form, Mesh& mesh,
   initCoefficients(coefficients, ufc);
 
   // Assemble over cells
-  assembleCells(A, mesh, coefficients, ufc);
+  assembleCells(A, mesh, coefficients, ufc, cell_domains);
 
   // Assemble over exterior facets
-  assembleExteriorFacets(A, mesh, coefficients, ufc);
+  assembleExteriorFacets(A, mesh, coefficients, ufc, exterior_facet_domains);
 
   // Assemble over interior facets
-  assembleInteriorFacets(A, mesh, coefficients, ufc);
+  assembleInteriorFacets(A, mesh, coefficients, ufc, interior_facet_domains);
 
   // Finalise assembly of global tensor
   A.apply();
@@ -118,10 +117,11 @@ void Assembler::assemble(GenericTensor& A, const ufc::form& form, Mesh& mesh,
 //-----------------------------------------------------------------------------
 void Assembler::assembleCells(GenericTensor& A, Mesh& mesh,
                               Array<Function*>& coefficients,
-                              UFC& ufc) const
+                              UFC& ufc,
+                              const MeshFunction<uint>* domains) const
 {
-  // Skip assembly if there is no cell integral
-  if ( !ufc.cell_integral )
+  // Skip assembly if there are no cell integrals
+  if (ufc.form.num_cell_integrals() == 0)
     return;
 
   // Assemble over cells
@@ -140,7 +140,7 @@ void Assembler::assembleCells(GenericTensor& A, Mesh& mesh,
       ufc.dof_maps[i]->tabulate_dofs(ufc.dofs[i], ufc.mesh, ufc.cell);
 
     // Tabulate cell tensor
-    ufc.cell_integral->tabulate_tensor(ufc.A, ufc.w, ufc.cell);
+    ufc.cell_integrals[0]->tabulate_tensor(ufc.A, ufc.w, ufc.cell);
 
     // Add entries to global tensor
     A.add(ufc.A, ufc.local_dimensions, ufc.dofs);
@@ -151,10 +151,11 @@ void Assembler::assembleCells(GenericTensor& A, Mesh& mesh,
 //-----------------------------------------------------------------------------
 void Assembler::assembleExteriorFacets(GenericTensor& A, Mesh& mesh,
                                        Array<Function*>& coefficients,
-                                       UFC& ufc) const
+                                       UFC& ufc,
+                                       const MeshFunction<uint>* domains) const
 {
-  // Skip assembly if there is no exterior facet integral
-  if ( !ufc.exterior_facet_integral )
+  // Skip assembly if there are no exterior facet integrals
+  if (ufc.form.num_exterior_facet_integrals() == 0)
     return;
 
   // Create boundary mesh
@@ -188,7 +189,7 @@ void Assembler::assembleExteriorFacets(GenericTensor& A, Mesh& mesh,
       ufc.dof_maps[i]->tabulate_dofs(ufc.dofs[i], ufc.mesh, ufc.cell);
 
     // Tabulate exterior facet tensor
-    ufc.exterior_facet_integral->tabulate_tensor(ufc.A, ufc.w, ufc.cell, local_facet);
+    ufc.exterior_facet_integrals[0]->tabulate_tensor(ufc.A, ufc.w, ufc.cell, local_facet);
 
     // Add entries to global tensor
     A.add(ufc.A, ufc.local_dimensions, ufc.dofs);
@@ -199,10 +200,11 @@ void Assembler::assembleExteriorFacets(GenericTensor& A, Mesh& mesh,
 //-----------------------------------------------------------------------------
 void Assembler::assembleInteriorFacets(GenericTensor& A,Mesh& mesh,
                                        Array<Function*>& coefficients,
-                                       UFC& ufc) const
+                                       UFC& ufc,
+                                       const MeshFunction<uint>* domains) const
 {
-  // Skip assembly if there is no interior facet integral
-  if ( !ufc.interior_facet_integral )
+  // Skip assembly if there are no interior facet integrals
+  if (ufc.form.num_interior_facet_integrals() == 0)
     return;
 
   // Compute facets and facet - cell connectivity if not already computed
@@ -251,7 +253,7 @@ void Assembler::assembleInteriorFacets(GenericTensor& A,Mesh& mesh,
     }
 
     // Tabulate exterior interior facet tensor on macro element
-    ufc.interior_facet_integral->tabulate_tensor(ufc.macro_A, ufc.macro_w, ufc.cell0, ufc.cell1, facet0, facet1);
+    ufc.interior_facet_integrals[0]->tabulate_tensor(ufc.macro_A, ufc.macro_w, ufc.cell0, ufc.cell1, facet0, facet1);
 
     // Add entries to global tensor
     A.add(ufc.macro_A, ufc.macro_local_dimensions, ufc.macro_dofs);
