@@ -11,8 +11,8 @@
 #include <dolfin/SparsityPattern.h>
 
 #include <dolfin/PETScKrylovMatrix.h>
-#include <dolfin/PETScKrylovSolver.h>
 #include <dolfin/PETScLinearSolver.h>
+#include <dolfin/PETScKrylovSolver.h>
 #include <dolfin/PETScLUSolver.h>
 #include <dolfin/PETScMatrix.h>
 #include <dolfin/PETScPreconditioner.h>
