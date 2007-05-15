@@ -24,6 +24,9 @@ using namespace dolfin;
 // Directors
 %include "directors.i"
 
+// Exceptions
+%include "dolfin_exceptions.i"
+
 // FIXME: what are these doing?
 namespace dolfin { class ublas_vector {}; }
 %include "cpointer.i"
