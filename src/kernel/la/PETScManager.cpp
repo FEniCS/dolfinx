@@ -34,8 +34,8 @@ void PETScManager::init()
   // PetscInitializeNoArguments() does not seem to work.
   int argc = 1;
   char** argv = new char * [1];
-  argv[0] = new char[DOLFIN_WORDLENGTH];
-  sprintf(argv[0], "%s", "unknown");
+  argv[0] = new char[DOLFIN_LINELENGTH];
+  snprintf(argv[0], DOLFIN_LINELENGTH, "%s", "unknown");
 
   // Initialize PETSc
   PetscInitialize(&argc, &argv, PETSC_NULL, PETSC_NULL);
