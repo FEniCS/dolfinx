@@ -1,8 +1,8 @@
-// Copyright (C) 2005-2006 Garth N. Wells.
+// Copyright (C) 2005-2007 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-03-02
-// Last changed: 2006-09-03
+// Last changed: 2007-05-15
 //
 // This program illustrates the use of the DOLFIN nonlinear solver for solving 
 // the Cahn-Hilliard equation.
@@ -26,8 +26,8 @@ class CahnHilliardEquation : public NonlinearProblem, public Parametrized
     // Constructor 
     CahnHilliardEquation(Mesh& mesh, Function& u, Function& u0, Function& dt, 
                          Function& theta, Function& lambda, Function& muFactor) 
-          : _mesh(&mesh), _dt(&dt), _theta(&theta), _lambda(&lambda), 
-            _muFactor(&muFactor)
+                         : _mesh(&mesh), _dt(&dt), _theta(&theta), 
+                           _lambda(&lambda), _muFactor(&muFactor)
     {
       // Create forms
       if(mesh.topology().dim() == 2)

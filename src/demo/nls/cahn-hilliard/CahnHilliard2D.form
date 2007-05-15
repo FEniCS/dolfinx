@@ -9,12 +9,8 @@
 #
 # Compile this form with FFC: ffc CahnHilliard.form.
 
-P1  = FiniteElement("Lagrange", "triangle", 1)
-P2  = FiniteElement("Lagrange", "triangle", 1)
-#DG0 = FiniteElement("Discontinuous Lagrange", "triangle", 0)
-# Use continuous functions to avoid bug 
-DG0 = FiniteElement("Lagrange", "triangle", 1)
-
+P1 = FiniteElement("Lagrange", "triangle", 1)
+P2 = FiniteElement("Lagrange", "triangle", 1)
 ME = P1 + P2
 
 (v,  q)  = TestFunctions(ME)
@@ -23,11 +19,11 @@ ME = P1 + P2
 (k1, c1) = Functions(ME)        # current solution 
 (k0, c0) = Functions(ME)        # solution from previous converged step 
 
-lmbda    = Function(DG0)        # surface parameter
-muFactor = Function(DG0)        # chemical free energy multiplier
+lmbda    = Constant("triangle") # surface parameter
+muFactor = Constant("triangle") # chemical free energy multiplier
 
-dt       = Function(DG0)        # time step
-theta    = Function(DG0)        # time stepping parameter 
+dt       = Constant("triangle") # time step
+theta    = Constant("triangle") # time stepping parameter 
 
 # Chemical free-energy \phi = c^2*(1-c^2)
 
