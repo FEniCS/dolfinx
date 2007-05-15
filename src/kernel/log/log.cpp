@@ -12,6 +12,7 @@
 #include <signal.h>
 #include <dolfin/LogManager.h>
 #include <dolfin/log.h>
+#include <dolfin/constants.h>
 
 using namespace dolfin;
 
