@@ -48,6 +48,7 @@ Progress::Progress(std::string title)
 
   i = 0;
   n = 0;
+  LogManager::logger.progress(_title, p1);
 }
 //-----------------------------------------------------------------------------
 Progress::~Progress()
