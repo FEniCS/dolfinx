@@ -9,25 +9,21 @@
 #
 # Compile this form with FFC: ffc CahnHilliard.form.
 
-P1  = FiniteElement("Lagrange", "tetrahedron", 1)
-P2  = FiniteElement("Lagrange", "tetrahedron", 1)
-#DG0 = FiniteElement("Discontinuous Lagrange", "tetrahedron", 0)
-# Use continuous functions to avoid bug DOLFIN bug
-DG0 = FiniteElement("Lagrange", "tetrahedron", 1)
-
+P1 = FiniteElement("Lagrange", "tetrahedron", 1)
+P2 = FiniteElement("Lagrange", "tetrahedron", 1)
 ME = P1 + P2
 
 (v,  q)  = TestFunctions(ME)
-(dk, dc) = TrialFunctions(ME)   # potential, concentration 
+(dk, dc) = TrialFunctions(ME)      # potential, concentration 
 
-(k1, c1) = Functions(ME)        # current solution 
-(k0, c0) = Functions(ME)        # solution from previous converged step 
+(k1, c1) = Functions(ME)           # current solution 
+(k0, c0) = Functions(ME)           # solution from previous converged step 
 
-lmbda    = Function(DG0)        # surface parameter
-muFactor = Function(DG0)        # chemical free energy multiplier
+lmbda    = Constant("tetrahedron") # surface parameter
+muFactor = Constant("tetrahedron") # chemical free energy multiplier
 
-dt       = Function(DG0)        # time step
-theta    = Function(DG0)        # time stepping parameter 
+dt       = Constant("tetrahedron") # time step
+theta    = Constant("tetrahedron") # time stepping parameter 
 
 # Chemical free-energy \phi = c^2*(1-c^2)
 
