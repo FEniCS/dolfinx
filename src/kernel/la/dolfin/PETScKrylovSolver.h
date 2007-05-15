@@ -16,10 +16,10 @@
 
 #include <dolfin/constants.h>
 #include <dolfin/Parametrized.h>
+#include <dolfin/PETScLinearSolver.h>
 #include <dolfin/Preconditioner.h>
 #include <dolfin/KrylovMethod.h>
 #include <dolfin/PETScPreconditioner.h>
-#include <dolfin/PETScLinearSolver.h>
 #include <dolfin/PETScManager.h>
 
 namespace dolfin
