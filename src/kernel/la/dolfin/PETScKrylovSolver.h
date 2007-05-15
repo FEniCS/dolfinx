@@ -14,13 +14,12 @@
 
 #ifdef HAVE_PETSC_H
 
+#include <dolfin/PETScLinearSolver.h>
 #include <dolfin/constants.h>
 #include <dolfin/Parametrized.h>
-#include <dolfin/PETScLinearSolver.h>
 #include <dolfin/Preconditioner.h>
 #include <dolfin/KrylovMethod.h>
 #include <dolfin/PETScPreconditioner.h>
-#include <dolfin/PETScManager.h>
 
 namespace dolfin
 {

@@ -36,7 +36,7 @@ namespace dolfin
 #endif
 
     /// Initialise nonlinear solver and choose Krylov solver and preconditioner
-    NewtonSolver(KrylovMethod method, Preconditioner pc = default_pc);
+    NewtonSolver(KrylovMethod method, Preconditioner pc);
 
     /// Destructor
     virtual ~NewtonSolver();
