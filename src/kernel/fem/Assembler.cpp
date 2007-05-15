@@ -212,7 +212,7 @@ void Assembler::assembleInteriorFacets(GenericTensor& A,Mesh& mesh,
   mesh.init(mesh.topology().dim() - 1, mesh.topology().dim());
   
   // Order mesh connectivity, needed for correct alignment on common facets
-  mesh.order();
+  //mesh.order();
 
   // Assemble over interior facets (the facets of the mesh)
   Progress p("Assembling over interior facets", mesh.numFacets());
