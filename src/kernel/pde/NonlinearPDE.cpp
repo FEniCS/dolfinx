@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2006-2007.
 //
 // First added:  2005-10-24
-// Last changed: 2007-05-05
+// Last changed: 2007-05-15
 
 #include <dolfin/BoundaryCondition.h>
 #include <dolfin/Function.h>
@@ -49,6 +49,11 @@ NonlinearPDE::NonlinearPDE(Form& a,
 }
 //-----------------------------------------------------------------------------
 NonlinearPDE::~NonlinearPDE()
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+void NonlinearPDE::update(const GenericVector& x)
 {
   // Do nothing
 }
