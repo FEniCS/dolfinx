@@ -88,7 +88,7 @@ void dolfin::__debug(std::string file, unsigned long line,
   vsnprintf(buffer0, DOLFIN_LINELENGTH, format.c_str(), aptr);
   snprintf(buffer1, DOLFIN_LINELENGTH, "%s:%d: %s()", file.c_str(), (int) line, function.c_str());
   va_end(aptr);
-  std::string msg = std::string(buffer0) + "[at " + std::string(buffer1) + "]";
+  std::string msg = std::string(buffer0) + " [at " + std::string(buffer1) + "]";
   LogManager::logger.__debug(msg);
 }
 //-----------------------------------------------------------------------------
