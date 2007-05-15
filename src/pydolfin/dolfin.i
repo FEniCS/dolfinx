@@ -42,7 +42,6 @@ namespace dolfin { class ublas_vector {}; }
 // Fixes for specific kernel modules (pre)
 %include "dolfin_la_pre.i"
 %include "dolfin_mesh_pre.i"
-%include "dolfin_log_pre.i"
 
 // DOLFIN interface
 %import "dolfin/constants.h"
