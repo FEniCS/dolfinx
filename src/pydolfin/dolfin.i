@@ -58,3 +58,4 @@ namespace dolfin { class ublas_vector {}; }
 // Fixes for specific kernel modules (post)
 %include "dolfin_la_post.i"
 %include "dolfin_mesh_post.i"
+%include "dolfin_log_post.i"
