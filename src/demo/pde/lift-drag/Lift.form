@@ -1,0 +1,16 @@
+# Copyright (C) 2007 Anders Logg.
+# Licensed under the GNU LGPL Version 2.1.
+#
+# First added:  2007-05-14
+# Last changed: 2007-05-14
+#
+# This form defines the functional for computing the
+# lift on a body.
+#
+# Compile this form with FFC: ffc -l dolfin Lift.form.
+
+element = FiniteElement("Lagrange", "triangle", 1)
+
+p = Function(element)
+n = FacetNormal("triangle")
+M = p*n[1]*ds

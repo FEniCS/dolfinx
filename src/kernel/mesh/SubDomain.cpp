@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2007-04-24
-// Last changed: 2007-05-02
+// Last changed: 2007-05-17
 
 #include <dolfin/MeshEntityIterator.h>
 #include <dolfin/Vertex.h>
@@ -21,8 +21,10 @@ SubDomain::~SubDomain()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void SubDomain::mark(MeshFunction<uint>& sub_domains, uint sub_domain)
+void SubDomain::mark(MeshFunction<uint>& sub_domains, uint sub_domain) const
 {
+  message(1, "Computing sub domain markers for sub domain %d.", sub_domain);
+
   // Get the dimension of the entities we are marking
   const uint dim = sub_domains.dim();
 

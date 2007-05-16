@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-01-17
-// Last changed: 2007-05-14
+// Last changed: 2007-05-16
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Array.h>
@@ -13,6 +13,7 @@
 #include <dolfin/Facet.h>
 #include <dolfin/BoundaryMesh.h>
 #include <dolfin/MeshFunction.h>
+#include <dolfin/SubDomain.h>
 #include <dolfin/Function.h>
 #include <dolfin/Form.h>
 #include <dolfin/UFC.h>
@@ -40,23 +41,36 @@ void Assembler::assemble(GenericTensor& A, const Form& form, Mesh& mesh)
 void Assembler::assemble(GenericTensor& A, const Form& form, Mesh& mesh,
                          const SubDomain& sub_domain)
 {
-  /*
   // Extract cell domains
   MeshFunction<uint>* cell_domains = 0;
   if (form.form().num_cell_integrals() > 0)
   {
-    cell_domains = new MeshFunction<uint>(mesh.topology.dim());
-    delete cell_domains;
+    cell_domains = new MeshFunction<uint>(mesh, mesh.topology().dim());
+    (*cell_domains) = 1;
+    sub_domain.mark(*cell_domains, 0);
   }
-    
-  
+
+  // Extract facet domains
+  MeshFunction<uint>* facet_domains = 0;
+  if (form.form().num_exterior_facet_integrals() > 0 ||
+      form.form().num_interior_facet_integrals() > 0)
+  {
+    facet_domains = new MeshFunction<uint>(mesh, mesh.topology().dim() - 1);
+    (*facet_domains) = 1;
+    sub_domain.mark(*facet_domains, 0);
+  }
+
+  warning("Experimental, integrals over sub domains not yet implemented.");
+
+  // Assemble
+  assemble(A, form.form(), mesh, form.coefficients(),
+           cell_domains, facet_domains, facet_domains);
 
   // Delete domains
   if (cell_domains)
     delete cell_domains;
-
-  error("Not implemented");
-  */
+  if (facet_domains)
+    delete facet_domains;
 }
 //-----------------------------------------------------------------------------
 void Assembler::assemble(GenericTensor& A, const Form& form, Mesh& mesh, 
