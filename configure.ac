@@ -26,12 +26,6 @@ AC_ARG_ENABLE(optimization,
                              [Turn on optimizations]),
               enable_optimization=$enableval, enable_optimization=no)
 
-# Option --enable/disable-mpi
-AC_ARG_ENABLE(mpi,
-              AC_HELP_STRING([--enable-mpi],
-                             [Compile with suport for MPI]),
-              enable_mpi=$enableval, enable_mpi=no)
-
 # Option --enable/disable-pydolfin
 AC_ARG_ENABLE(pydolfin,
               AC_HELP_STRING([--disable-pydolfin],
@@ -71,9 +65,15 @@ AC_ARG_WITH(amd-lib,
 # Use C++ compiler for performing configure tests
 AC_LANG(C++)
 
+# Check for MPI and print message if not found
+AC_CHECK_PROG(mpi_found, mpirun, yes, no)
+if test $mpi_found = no; then
+    echo "MPI not found (might not work if PETSc uses MPI)."
+fi
+
 # Standard tests
-AC_PROG_CXX
-AC_PROG_CC
+AC_PROG_CXX([mpic++ mpicxx])
+AC_PROG_CC([mpicc])
 AX_COMPILER_VENDOR
 AC_PROG_AWK
 AC_PROG_INSTALL
@@ -274,24 +274,6 @@ else
     echo "disabling compilation of PyDOLFIN"
 fi
 
-# Handle option --enable-mpi
-if test x$enable_mpi = xyes; then
-    AC_CHECK_PROG(mpi_found, mpirun, yes, no)
-    if test $mpi_found = yes; then
-        DIR=`which mpirun | sed 's/bin\/mpirun/include/'`
-        if [ test -d $DIR/mpi ]; then
-            MPI_CFLAGS="-I$DIR/mpi"
-        else
-            MPI_CFLAGS="-I$DIR"
-        fi
-    else
-        echo "*** Unable to find MPI on your system."
-        echo "*** Perhaps you need to install the packages libmpich1.0-dev and mpich-bin?"
-        exit 1
-    fi
-else
-    echo "disabling MPI (might not work if PETSc uses MPI)"
-fi
 
 # Handle option --disable-petsc
 if test x$enable_petsc = xyes; then
