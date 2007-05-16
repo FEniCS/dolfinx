@@ -116,11 +116,9 @@ int main(int argc, char* argv[])
   CahnHilliardEquation cahn_hilliard(mesh, u, u0, dt, theta, lambda, muFactor);
 
   // Initialise discrete functions
-  cout << "Initialise functions " << endl;
   Vector x, x0;
   u.init(mesh,   x, cahn_hilliard.form(1), 1);
   u0.init(mesh, x0, cahn_hilliard.form(1), 1);
-  cout << "Finsihed initialise functions " << endl;
 
   // Create nonlinear solver and set parameters
   NewtonSolver newton_solver;
@@ -132,7 +130,6 @@ int main(int argc, char* argv[])
   // Randomly perturbed intitial conditions
   dolfin::seed(2);
   dolfin::uint size = mesh.numVertices();
-  cout << "size " << size << "  " << x.size() << endl;
   real* x_init = new real[size];
   unsigned int* x_pos = new unsigned int[size];
   for(dolfin::uint i=0; i < size; ++i)
@@ -151,8 +148,6 @@ int main(int argc, char* argv[])
   c = u[1];
   file << c;
 
-  File file_u("u.xml");
-  File file_u0("u0.xml");
   while( t < T)
   {
     // Update for next time step
@@ -162,7 +157,7 @@ int main(int argc, char* argv[])
     // Solve
     newton_solver.solve(cahn_hilliard, x);
 
-   // Save function to file
+    // Save function to file
     c = u[1];
     file << c;
 

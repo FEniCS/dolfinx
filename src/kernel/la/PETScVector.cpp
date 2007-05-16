@@ -79,7 +79,10 @@ void PETScVector::init(const uint N)
   {
     const uint n = this->size();
     if (n == N)
+    {
+      VecZeroEntries(x);
       return;      
+    }
   }
   else
     clear();
@@ -362,16 +365,7 @@ real PETScVector::min() const
 //-----------------------------------------------------------------------------
 void PETScVector::disp(uint precision) const
 {
-  // FIXME: Maybe this could be an option?
-  //VecView(x, PETSC_VIEWER_STDOUT_SELF);
-  warning("PETScVector::disp() needs to be fixed.");
-/* 
-  const uint M = size();
-  cout << "[ ";
-  for (uint i = 0; i < M; i++)
-    cout << get(i) << " ";
-  cout << "]" << endl;
-*/
+  VecView(x, PETSC_VIEWER_STDOUT_SELF);
 }
 //-----------------------------------------------------------------------------
 LogStream& dolfin::operator<< (LogStream& stream, const PETScVector& x)

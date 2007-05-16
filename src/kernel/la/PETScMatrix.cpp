@@ -105,7 +105,10 @@ void PETScMatrix::init(uint M, uint N, uint nz)
   if ( A )
   {
     if ( M == size(0) && N == size(1) )
+    {
+      MatZeroEntries(A);
       return;
+    }
     else
       MatDestroy(A);
   }
@@ -117,6 +120,7 @@ void PETScMatrix::init(uint M, uint N, uint nz)
   MatSeqAIJSetPreallocation(A, nz, PETSC_NULL);
   MatSetFromOptions(A);
   MatSetOption(A, MAT_KEEP_ZEROED_ROWS);
+  MatZeroEntries(A);
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::init(uint M, uint N, const uint nz[])
@@ -125,7 +129,10 @@ void PETScMatrix::init(uint M, uint N, const uint nz[])
   if ( A )
   {
     if ( M == size(0) && N == size(1) )
+    {
+      MatZeroEntries(A);
       return;
+    }
     else
       MatDestroy(A);
   }
@@ -137,6 +144,7 @@ void PETScMatrix::init(uint M, uint N, const uint nz[])
   MatSeqAIJSetPreallocation(A, PETSC_DEFAULT, (int*)nz);
   MatSetFromOptions(A);
   MatSetOption(A, MAT_KEEP_ZEROED_ROWS);
+  MatZeroEntries(A);
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::init(const uint M, const uint N, const uint bs, const uint nz)
@@ -145,7 +153,10 @@ void PETScMatrix::init(const uint M, const uint N, const uint bs, const uint nz)
   if ( A )
   {
     if ( M == size(0) && N == size(1) )
+    {
+      MatZeroEntries(A);
       return;
+    }
     else
       MatDestroy(A);
   }
@@ -155,6 +166,7 @@ void PETScMatrix::init(const uint M, const uint N, const uint bs, const uint nz)
   MatCreateSeqBAIJ(PETSC_COMM_SELF, bs, bs*M, bs*N, nz, PETSC_NULL, &A);
   MatSetFromOptions(A);
   MatSetOption(A, MAT_KEEP_ZEROED_ROWS);
+  MatZeroEntries(A);
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::init(const SparsityPattern& sparsity_pattern, bool reset)
@@ -359,9 +371,8 @@ Mat PETScMatrix::mat() const
 void PETScMatrix::disp(uint precision) const
 {
   // FIXME: Maybe this could be an option?
-  //MatView(A, PETSC_VIEWER_STDOUT_SELF);
+  MatView(A, PETSC_VIEWER_STDOUT_SELF);
 
-  warning("PETScMatrix::disp needs to be fixed.");
 /*
   const uint M = size(0);
   const uint N = size(1);

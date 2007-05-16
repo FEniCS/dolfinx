@@ -119,6 +119,7 @@ DiscreteFunction::DiscreteFunction(SubFunction& sub_function)
   }
   sub_function.f->x->get(values, n, get_rows);
   x->set(values, n, set_rows);
+  x->apply();
   delete [] values;
   delete [] get_rows;
   delete [] set_rows;
