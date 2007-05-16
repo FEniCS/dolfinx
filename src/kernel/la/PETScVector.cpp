@@ -192,8 +192,9 @@ void PETScVector::clear()
 dolfin::uint PETScVector::size() const
 {
   int n = 0;
-  VecGetSize(x, &n);
-
+  if (x)
+    VecGetSize(x, &n);
+  
   return static_cast<uint>(n);
 }
 //-----------------------------------------------------------------------------
