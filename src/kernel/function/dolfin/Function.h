@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells 2005.
 //
 // First added:  2003-11-28
-// Last changed: 2007-05-08
+// Last changed: 2007-05-17
 
 #ifndef __FUNCTION_H
 #define __FUNCTION_H
@@ -95,10 +95,10 @@ namespace dolfin
                      Cell& cell, int facet = -1);
 
     /// Evaluate function at given point (overload for user-defined function)
-    virtual void eval(real* values, const real* x);
+    virtual void eval(real* values, const real* x) const;
 
     /// Evaluate scalar function at given point (overload for scalar user-defined function)
-    virtual real eval(const real* x);
+    virtual real eval(const real* x) const;
 
     /// Friends
     friend class XMLFile;

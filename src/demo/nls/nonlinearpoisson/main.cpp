@@ -37,31 +37,33 @@ using namespace dolfin;
 // Right-hand side
 class Source : public Function, public TimeDependent
 {
-  public:
+public:
+  
     Source(Mesh& mesh, const real& t) : Function(mesh), TimeDependent(t) {}
 
-    real eval(const real* x)
+    real eval(const real* x) const
     {
       return time()*x[0]*sin(x[1]);
     }
+
 };
 
 // Dirichlet boundary condition
 class DirichletBoundaryCondition : public Function, public TimeDependent
 {
-  public:
-    DirichletBoundaryCondition(Mesh& mesh, real& t) : Function(mesh), TimeDependent(t) {}
-
-    real eval(const real* x)
-    {
-      return 1.0*time();
-    }
+public:
+  DirichletBoundaryCondition(Mesh& mesh, real& t) : Function(mesh), TimeDependent(t) {}
+  
+  real eval(const real* x) const
+  {
+    return 1.0*time();
+  }
 };
 
 // Sub domain for Dirichlet boundary condition
 class DirichletBoundary : public SubDomain
 {
-  bool inside(const real* x, bool on_boundary)
+  bool inside(const real* x, bool on_boundary) const
   {
     return std::abs(x[0] - 1.0) < DOLFIN_EPS && on_boundary;
   }

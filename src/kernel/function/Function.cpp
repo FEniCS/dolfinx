@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells 2005
 //
 // First added:  2003-11-28
-// Last changed: 2007-05-08
+// Last changed: 2007-05-17
 //
 // The class Function serves as the envelope class and holds a pointer
 // to a letter class that is a subclass of GenericFunction. All the
@@ -181,13 +181,13 @@ void Function::interpolate(real* coefficients,
   _facet = -1;
 }
 //-----------------------------------------------------------------------------
-void Function::eval(real* values, const real* x)
+void Function::eval(real* values, const real* x) const
 {
   // Try scalar function if not overloaded
   values[0] = eval(x);
 }
 //-----------------------------------------------------------------------------
-dolfin::real Function::eval(const real* x)
+dolfin::real Function::eval(const real* x) const
 {
   error("Missing eval() for user-defined function (must be overloaded).");
   return 0.0;

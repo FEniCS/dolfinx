@@ -20,7 +20,7 @@ namespace dolfin
 
     MeshSize(Mesh& mesh) : Function(mesh) {}
 
-    real eval(const real* x)
+    real eval(const real* x) const
     {
       return cell().diameter();
     }
@@ -34,7 +34,7 @@ namespace dolfin
 
     InvMeshSize(Mesh& mesh) : Function(mesh) {}
 
-    real eval(const real* x)
+    real eval(const real* x) const
     {
       return 1.0 / cell().diameter();
     }
@@ -49,16 +49,16 @@ namespace dolfin
 
     FacetNormal(Mesh& mesh) : Function(mesh) {}
 
-    void eval(real* values, const real* x)
+    void eval(real* values, const real* x) const
     {
       if (facet() >= 0)
       {
-        for (uint i = 0; i < mesh().geometry().dim(); i++)
+        for (uint i = 0; i < cell().dim(); i++)
           values[i] = cell().normal(facet(), i);
       }
       else
       {
-        for (uint i = 0; i < mesh().geometry().dim(); i++)
+        for (uint i = 0; i < cell().dim(); i++)
           values[i] = 0.0;
       }
     }

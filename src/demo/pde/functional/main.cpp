@@ -28,7 +28,7 @@ int main()
 
     MyFunction(Mesh& mesh) : Function(mesh) {}
     
-    real eval(const real* x)
+    real eval(const real* x) const
     {
       return sin(x[0]) + cos(x[1]);
     }

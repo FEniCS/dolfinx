@@ -25,7 +25,7 @@ int main()
 
     Noslip(Mesh& mesh) : Function(mesh) {}
 
-    void eval(real* values, const real* x)
+    void eval(real* values, const real* x) const
     {
       values[0] = 0.0;
       values[1] = 0.0;
@@ -40,7 +40,7 @@ int main()
 
     Inflow(Mesh& mesh) : Function(mesh) {}
 
-    void eval(real* values, const real* x)
+    void eval(real* values, const real* x) const
     {
       values[0] = -1.0;
       values[1] = 0.0;

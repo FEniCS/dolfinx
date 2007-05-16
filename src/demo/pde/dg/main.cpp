@@ -34,7 +34,7 @@ int main()
     
     Source(Mesh& mesh) : Function(mesh) {}
 
-    real eval(const real* x)
+    real eval(const real* x) const
     {
       real dx = x[0] - 0.5;
       real dy = x[1] - 0.5;
@@ -50,7 +50,7 @@ int main()
 
     DirichletBC(Mesh& mesh) : Function(mesh) {}
 
-    real eval(const real* x)
+    real eval(const real* x) const
     {
       return 0.0;
     }
@@ -66,7 +66,7 @@ int main()
 
     NeumannBC(Mesh& mesh) : Function(mesh) {}
 
-    real eval(const real* x)
+    real eval(const real* x) const
     {
       if ( std::abs(x[0] - 1.0) < DOLFIN_EPS )
         return 1.0;
@@ -79,7 +79,7 @@ int main()
   // Sub domain for Dirichlet boundary condition
   class DirichletBoundary : public SubDomain
   {
-    bool inside(const real* x, bool on_boundary)
+    bool inside(const real* x, bool on_boundary) const
     {
       return x[0] < DOLFIN_EPS && on_boundary;
     }
@@ -88,7 +88,7 @@ int main()
   // Sub domain for Neumann boundary condition
   class NeumannBoundary : public SubDomain
   {
-    bool inside(const real* x, bool on_boundary)
+    bool inside(const real* x, bool on_boundary) const
     {
       return x[0] > 1.0 - DOLFIN_EPS && on_boundary;
     }

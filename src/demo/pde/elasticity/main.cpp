@@ -23,7 +23,7 @@ int main()
 
     Clamp(Mesh& mesh) : Function(mesh) {}
 
-    void eval(real* values, const real* x)
+    void eval(real* values, const real* x) const
     {
       values[0] = 0.0;
       values[1] = 0.0;
@@ -35,7 +35,7 @@ int main()
   // Sub domain for clamp at left end
   class Left : public SubDomain
   {
-    bool inside(const real* x, bool on_boundary)
+    bool inside(const real* x, bool on_boundary) const
     {
       return x[0] < 0.5 && on_boundary;
     }
@@ -48,7 +48,7 @@ int main()
 
     Rotation(Mesh& mesh) : Function(mesh) {}
 
-    void eval(real* values, const real* x)
+    void eval(real* values, const real* x) const
     {
       // Center of rotation
       real y0 = 0.5;
@@ -72,7 +72,7 @@ int main()
   // Sub domain for rotation at right end
   class Right : public SubDomain
   {
-    bool inside(const real* x, bool on_boundary)
+    bool inside(const real* x, bool on_boundary) const
     {
       return x[0] > 0.9 && on_boundary;
     }

@@ -28,7 +28,7 @@ namespace dolfin
     virtual ~SubDomain();
 
     /// Return true for points inside the sub domain
-    virtual bool inside(const real* x, bool on_boundary) = 0;
+    virtual bool inside(const real* x, bool on_boundary) const = 0;
 
     /// Set sub domain markers for given sub domain
     void mark(MeshFunction<uint>& sub_domains, uint sub_domain);
