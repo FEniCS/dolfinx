@@ -28,12 +28,14 @@ int main()
 
   PETScMatrix A(2,2);
   A.set(*A_array, 2, position, 2, position);  
+  A.apply();
   cout << "Matrix A:" << endl;
   A.disp();
 
 
   PETScMatrix B(2,2);
   B.set(*B_array, 2, position, 2, position);  
+  B.apply();
   cout << "Matrix B:" << endl;
   B.disp();
 

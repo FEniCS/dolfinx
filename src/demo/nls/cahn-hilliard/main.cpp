@@ -130,10 +130,10 @@ int main(int argc, char* argv[])
   newton_solver.set("Newton absolute tolerance", 1e-15);
 
   // Randomly perturbed intitial conditions
-  dolfin::uint size = mesh.numVertices();
   dolfin::seed(2);
-
-  real* x_init = new real[10];
+  dolfin::uint size = mesh.numVertices();
+  cout << "size " << size << "  " << x.size() << endl;
+  real* x_init = new real[size];
   unsigned int* x_pos = new unsigned int[size];
   for(dolfin::uint i=0; i < size; ++i)
   {
@@ -141,6 +141,7 @@ int main(int argc, char* argv[])
      x_pos[i]  = i + size;
   }
   x.set(x_init, size, x_pos);
+  x.apply();
   delete [] x_init;
   delete [] x_pos;
 
