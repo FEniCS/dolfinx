@@ -6,6 +6,9 @@
 // First added:  2006-04-04
 // Last changed: 2007-05-15
 
+#include <sstream>
+#include <iomanip>
+
 #include <dolfin/dolfin_log.h>
 #include <boost/numeric/ublas/vector.hpp>
 #include <dolfin/uBlasVector.h>
@@ -144,10 +147,16 @@ const uBlasVector& uBlasVector::operator= (real a)
 //-----------------------------------------------------------------------------
 void uBlasVector::disp(uint precision) const
 {
-  dolfin::cout << "[ ";
-  for (uint i = 0; i < size(); i++)
-    cout << (*this)(i) << " ";
-  dolfin::cout << "]" << endl;
+  std::stringstream line;
+  line << std::setiosflags(std::ios::scientific);
+  line << std::setprecision(precision);
+  line << "[ ";
+
+  for (ublas_vector::const_iterator it = this->begin(); it != this->end(); ++it)
+    line << *it << " ";
+
+  line << " ]";
+  dolfin::cout << line.str().c_str() << dolfin::endl;
 }
 //-----------------------------------------------------------------------------
 LogStream& dolfin::operator<< (LogStream& stream, const uBlasVector& x)
