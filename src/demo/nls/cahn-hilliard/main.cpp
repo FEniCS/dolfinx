@@ -132,8 +132,17 @@ int main(int argc, char* argv[])
   // Randomly perturbed intitial conditions
   dolfin::uint size = mesh.numVertices();
   dolfin::seed(2);
-  for(dolfin::uint i=size; i < 2*size; ++i)
-     x(i) = 0.63 + 0.02*(0.5-dolfin::rand());
+
+  real* x_init = new real[10];
+  unsigned int* x_pos = new unsigned int[size];
+  for(dolfin::uint i=0; i < size; ++i)
+  {
+     x_init[i] = 0.63 + 0.02*(0.5-dolfin::rand());
+     x_pos[i]  = i + size;
+  }
+  x.set(x_init, size, x_pos);
+  delete [] x_init;
+  delete [] x_pos;
 
   // Save initial condition to file
   File file("cahn_hilliard.pvd");

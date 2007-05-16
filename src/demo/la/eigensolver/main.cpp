@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-03-08
-// Last changed: 2007-03-08
+// Last changed: 2007-05-16
 //
 // This simple program illustrates the use of the PETScEigenvalueSolver
 
@@ -15,21 +15,25 @@ int main()
   #ifdef HAVE_SLEPC_H
 
   // Set up two simple test matrices (2 x 2)
-  PETScMatrix A(2,2);
-  A(0,0) = 4;
-  A(0,1) = 1;
-  A(1,0) = 3;
-  A(1,1) = 2;
+  real A_array[2][2];
+  real B_array[2][2];
 
+  A_array[0][0] = 4;  A_array[0][1] = 1;
+  A_array[1][0] = 3;  A_array[1][1] = 2;
+
+  B_array[0][0] = 4;  B_array[0][1] = 0;
+  B_array[1][0] = 0;  B_array[1][1] = 1;
+
+  unsigned int position[] = {0, 1};
+
+  PETScMatrix A(2,2);
+  A.set(*A_array, 2, position, 2, position);  
   cout << "Matrix A:" << endl;
   A.disp();
 
-  PETScMatrix B(2,2);
-  B(0,0) = 1;
-  B(0,1) = 0;
-  B(1,0) = 0;
-  B(1,1) = 1;
 
+  PETScMatrix B(2,2);
+  B.set(*B_array, 2, position, 2, position);  
   cout << "Matrix B:" << endl;
   B.disp();
 
