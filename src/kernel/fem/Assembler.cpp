@@ -40,7 +40,23 @@ void Assembler::assemble(GenericTensor& A, const Form& form, Mesh& mesh)
 void Assembler::assemble(GenericTensor& A, const Form& form, Mesh& mesh,
                          const SubDomain& sub_domain)
 {
+  /*
+  // Extract cell domains
+  MeshFunction<uint>* cell_domains = 0;
+  if (form.form().num_cell_integrals() > 0)
+  {
+    cell_domains = new MeshFunction<uint>(mesh.topology.dim());
+    delete cell_domains;
+  }
+    
+  
+
+  // Delete domains
+  if (cell_domains)
+    delete cell_domains;
+
   error("Not implemented");
+  */
 }
 //-----------------------------------------------------------------------------
 void Assembler::assemble(GenericTensor& A, const Form& form, Mesh& mesh, 
@@ -48,7 +64,8 @@ void Assembler::assemble(GenericTensor& A, const Form& form, Mesh& mesh,
                          const MeshFunction<uint>& exterior_facet_domains,
                          const MeshFunction<uint>& interior_facet_domains)
 {
-  error("Not implemented");
+  assemble(A, form.form(), mesh, form.coefficients(),
+           &cell_domains, &exterior_facet_domains, &interior_facet_domains);
 }
 //-----------------------------------------------------------------------------
 dolfin::real Assembler::assemble(const Form& form, Mesh& mesh)
