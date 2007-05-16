@@ -7,12 +7,35 @@
 #include <dolfin/GraphPartition.h>
 #include <iostream>
 #include <deque>
+#include <queue>
+#include <vector>
 
 using namespace dolfin;
 
+// Helper class for priority queue
+class Node {
+  public:
+    Node(dolfin::uint index_, dolfin::uint prio)
+    {
+      index = index_;
+      priority = prio;
+    }
+
+    dolfin::uint index;
+    dolfin::uint priority;
+};
+// Class with function object for comparison of Nodes
+class PrioritizeNodes {
+  public :
+    int operator()( const Node &x, const Node &y )
+    {
+      return x.priority < y.priority;
+    }
+};
 //-----------------------------------------------------------------------------
 void GraphPartition::partition(Graph& graph, uint num_part, uint* vtx_part)
 {
+  dolfin_debug("GraphPartition::partition");
   // Basic breadth first algorithm
   dolfin_assert(vtx_part);
   dolfin_assert(num_part <= graph.numVertices());
@@ -26,28 +49,31 @@ void GraphPartition::partition(Graph& graph, uint num_part, uint* vtx_part)
     vtx_part[i] = num_part;
 
   // Put visited vertices in a queue
-  std::deque<uint> start_queue, partition_queue;
-  start_queue.push_back(0);
+  //std::deque<uint> start_queue, partition_queue;
+  std::priority_queue<Node, std::vector<Node>, PrioritizeNodes> start_queue,
+                                               partition_queue;
+  start_queue.push(Node(0, graph.numEdges(0)));
   uint part_size = 0;
 
   // For each partition
   for(uint i=0; i<num_part; ++i)
   {
     //dolfin_debug1("\nPartion no: %d", i);
-    partition_queue.push_back(start_queue.front());
-    start_queue.pop_front();
+    partition_queue.push(start_queue.top());
+    start_queue.pop();
     
     // Insert vertices in partition
     while(part_size < size && !partition_queue.empty())
     {
-      uint vertex = partition_queue.front();
-      //dolfin_debug1("Current vertex: %d", vertex);
-      partition_queue.pop_front();
+      Node node = partition_queue.top();
+      partition_queue.pop();
+      uint vertex = node.index;
+      dolfin_debug1("Current vertex: %d", vertex);
       vtx_part[vertex] = i;
-      //dolfin_debug2("Assigning vertex %d to partition %d", vertex, i);
+      dolfin_debug2("Assigning vertex %d to partition %d", vertex, i);
       part_size++;
       
-      //dolfin_debug1("Checking %d neigbors", graph.numEdges(vertex));
+      dolfin_debug1("Checking %d neigbors", graph.numEdges(vertex));
       uint found = 0;
       // Look for unvisited neigbors of current vertex
       for(uint j=0; j<graph.numEdges(vertex); ++j)
@@ -56,19 +82,19 @@ void GraphPartition::partition(Graph& graph, uint num_part, uint* vtx_part)
         uint nvtx = graph.connectivity()[edge_index];
         if(vtx_part[nvtx] == num_part)
         {
-          //dolfin_debug1("Found unvisited vertex %d", nvtx);
+          dolfin_debug1("Found unvisited vertex %d", nvtx);
           found++;
-          partition_queue.push_back(nvtx);
+          partition_queue.push(Node(nvtx, graph.numEdges(nvtx)));
           vtx_part[nvtx] = 0; // Mark vertex as visited
         }
       }
-      //dolfin_debug1("Found %d unvisited vertices", found);
+      dolfin_debug1("Found %d unvisited vertices", found);
     }
     while(!partition_queue.empty())
     {
       //dolfin_debug1("partition_queue.front(): %d", partition_queue.front());
-      start_queue.push_back(partition_queue.front());
-      partition_queue.pop_front();
+      start_queue.push(partition_queue.top());
+      partition_queue.pop();
     }
     part_size = 0;
   }
@@ -76,20 +102,21 @@ void GraphPartition::partition(Graph& graph, uint num_part, uint* vtx_part)
   // Assign remaining vertices to partitions
   while(!start_queue.empty())
   {
-    partition_queue.push_back(start_queue.front());
-    start_queue.pop_front();
+    partition_queue.push(start_queue.top());
+    start_queue.pop();
     
     while(!partition_queue.empty())
     {
-      uint vertex = partition_queue.front();
-      partition_queue.pop_front();
+      Node node = partition_queue.top();
+      uint vertex = node.index;
+      partition_queue.pop();
       
-      //dolfin_debug1("Found unpartitioned vertex: %d", vertex);
+      dolfin_debug1("Found unpartitioned vertex: %d", vertex);
       // Insert vertex into same partition as first neigbor
       int edge_index = (int) (graph.offsets()[(int) vertex ]);
       uint nvtx = graph.connectivity()[edge_index];
       vtx_part[vertex] = vtx_part[nvtx];
-      //dolfin_debug2("Assigning vertex %d to partition %d", vertex, vtx_part[nvtx]);
+      dolfin_debug2("Assigning vertex %d to partition %d", vertex, vtx_part[nvtx]);
       
       // If remaining vertice has unvisited neigbors add to partition queue
       // Look for unvisited neigbors of current vertex
@@ -100,13 +127,13 @@ void GraphPartition::partition(Graph& graph, uint num_part, uint* vtx_part)
         uint nvtx = graph.connectivity()[edge_index];
         if(vtx_part[nvtx] == num_part)
         {
-          //dolfin_debug1("Found unvisited vertex %d", nvtx);
+          dolfin_debug1("Found unvisited vertex %d", nvtx);
           found++;
-          partition_queue.push_back(nvtx);
+          partition_queue.push(Node(nvtx, graph.numEdges(nvtx)));
           vtx_part[nvtx] = 0; // Mark vertex as visited
         }
       }
-      //dolfin_debug1("Found %d unvisited vertices", found);
+      dolfin_debug1("Found %d unvisited vertices", found);
     }
   }
 }

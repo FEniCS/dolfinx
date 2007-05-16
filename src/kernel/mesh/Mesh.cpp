@@ -150,7 +150,7 @@ void Mesh::smooth()
 //-----------------------------------------------------------------------------
 void Mesh::partition(uint num_partitions, MeshFunction<uint>& partitions)
 {
-  MeshPartition::partition(*this, num_partitions, partitions.values());
+  MeshPartition::partition(*this, num_partitions, partitions);
 }
 //-----------------------------------------------------------------------------
 void Mesh::disp() const
