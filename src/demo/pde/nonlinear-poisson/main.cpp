@@ -100,6 +100,9 @@ int main(int argc, char* argv[])
   // Solve
   pde.solve(u, t, T, dt);
 
+  // Plot solution
+  plot(u);
+
   // Save function to file
   File file("nonlinear_poisson.pvd");
   file << u;
