@@ -29,6 +29,7 @@
 #include "ffc_23.h"
 #include "ffc_24.h"
 #include "ffc_25.h"
+#include "ffc_26.h"
 
 #include <dolfin/ElementLibrary.h>
 
@@ -86,6 +87,8 @@ ufc::finite_element* dolfin::ElementLibrary::create_finite_element(const char* s
     return new ffc_24_finite_element_0();
   if (strcmp(signature, "Mixed finite element: [Discontinuous Lagrange finite element of degree 3 on a tetrahedron, Discontinuous Lagrange finite element of degree 3 on a tetrahedron, Discontinuous Lagrange finite element of degree 3 on a tetrahedron]") == 0)
     return new ffc_25_finite_element_0();
+  if (strcmp(signature, "Brezzi-Douglas-Marini finite element of degree 1 on a triangle") == 0)
+    return new ffc_26_finite_element_0();
   return 0;
 }
 
@@ -143,5 +146,7 @@ ufc::dof_map* dolfin::ElementLibrary::create_dof_map(const char* signature)
     return new ffc_24_dof_map_0();
   if (strcmp(signature, "FFC dof map for Mixed finite element: [Discontinuous Lagrange finite element of degree 3 on a tetrahedron, Discontinuous Lagrange finite element of degree 3 on a tetrahedron, Discontinuous Lagrange finite element of degree 3 on a tetrahedron]") == 0)
     return new ffc_25_dof_map_0();
+  if (strcmp(signature, "FFC dof map for Brezzi-Douglas-Marini finite element of degree 1 on a triangle") == 0)
+    return new ffc_26_dof_map_0();
   return 0;
 }

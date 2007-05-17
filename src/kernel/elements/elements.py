@@ -25,4 +25,5 @@ VectorElement("Discontinuous Lagrange", "tetrahedron", 0)
 VectorElement("Discontinuous Lagrange", "tetrahedron", 1)
 VectorElement("Discontinuous Lagrange", "tetrahedron", 2)
 VectorElement("Discontinuous Lagrange", "tetrahedron", 3)
+FiniteElement("Brezzi-Douglas-Marini", "triangle", 1)
 """
