@@ -6,7 +6,7 @@
 // Modified by Garth N. Wells, 2006.
 //
 // First added:  2003-03-14
-// Last changed: 2007-05-13
+// Last changed: 2007-05-18
 
 #include <dolfin/utils.h>
 #include <dolfin/log.h>
@@ -33,9 +33,7 @@ Progress::Progress(std::string title)
 //-----------------------------------------------------------------------------
 Progress::~Progress()
 {
-  // Step to end
-  if (p != 1.0)
-    LogManager::logger.progress(title, 1.0);
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 void Progress::operator=(real p)
@@ -51,7 +49,7 @@ void Progress::operator++(int)
   if (n == 0)
     error("Cannot step progress for session with unknown number of steps.");
   
-  if (i < (n-1))
+  if (i < n)
     i++;
 
   update(static_cast<real>(i) / static_cast<real>(n));
@@ -63,10 +61,12 @@ void Progress::update(real p)
   p = std::max(p, 0.0);
 
   // Only update when the increase is significant
-  if ((p - this->p) < step && (p != 1.0 || this->p == p))
-    return;
+  if (p - this->p >= step - DOLFIN_EPS || (p >= 1.0 - DOLFIN_EPS) && p > this->p)
+  {
+    message("Updating...");
 
-  LogManager::logger.progress(title, p);
-  this->p = p;
+    LogManager::logger.progress(title, p);
+    this->p = p;
+  }
 }
 //-----------------------------------------------------------------------------
