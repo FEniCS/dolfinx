@@ -72,8 +72,8 @@ if test $mpi_found = no; then
 fi
 
 # Standard tests
-AC_PROG_CXX([mpic++ mpicxx])
-AC_PROG_CC([mpicc])
+AC_PROG_CXX([mpic++ mpicxx c++ g++])
+AC_PROG_CC([mpicc cc gcc])
 AX_COMPILER_VENDOR
 AC_PROG_AWK
 AC_PROG_INSTALL
