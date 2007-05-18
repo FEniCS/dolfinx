@@ -66,5 +66,11 @@ int main()
   f0 << sigma;
   f1 << u;
 
+  // Save solution to pvd format
+  File f3("sigma.pvd");
+  File f4("u.pvd");
+  f3 << sigma;
+  f4 << u;
+
   return 0;
 }
