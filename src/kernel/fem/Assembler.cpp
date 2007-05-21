@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-01-17
-// Last changed: 2007-05-16
+// Last changed: 2007-05-22
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Array.h>
@@ -153,11 +153,23 @@ void Assembler::assembleCells(GenericTensor& A, Mesh& mesh,
   if (ufc.form.num_cell_integrals() == 0)
     return;
 
+  // Cell integral
+  ufc::cell_integral* integral = ufc.cell_integrals[0];
+
   // Assemble over cells
   message("Assembling over %d cells.", mesh.numCells());
   Progress p("Assembling over cells", mesh.numCells());
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
+    // Get integral for sub domain (if any)
+    if (domains)
+    {
+      if (uint domain = (*domains)(*cell) < ufc.form.num_cell_integrals())
+        integral = ufc.cell_integrals[domain];
+      else
+        continue;
+    }
+
     // Update to current cell
     ufc.update(*cell);
 
@@ -170,7 +182,7 @@ void Assembler::assembleCells(GenericTensor& A, Mesh& mesh,
       ufc.dof_maps[i]->tabulate_dofs(ufc.dofs[i], ufc.mesh, ufc.cell);
 
     // Tabulate cell tensor
-    ufc.cell_integrals[0]->tabulate_tensor(ufc.A, ufc.w, ufc.cell);
+    integral->tabulate_tensor(ufc.A, ufc.w, ufc.cell);
 
     // Add entries to global tensor
     A.add(ufc.A, ufc.local_dimensions, ufc.dofs);
@@ -187,6 +199,9 @@ void Assembler::assembleExteriorFacets(GenericTensor& A, Mesh& mesh,
   // Skip assembly if there are no exterior facet integrals
   if (ufc.form.num_exterior_facet_integrals() == 0)
     return;
+  
+  // Exterior facet integral
+  ufc::exterior_facet_integral* integral = ufc.exterior_facet_integrals[0];
 
   // Create boundary mesh
   MeshFunction<uint> vertex_map;
@@ -200,6 +215,15 @@ void Assembler::assembleExteriorFacets(GenericTensor& A, Mesh& mesh,
   {
     // Get mesh facet corresponding to boundary cell
     Facet mesh_facet(mesh, cell_map(*boundary_cell));
+
+    // Get integral for sub domain (if any)
+    if (domains)
+    {
+      if (uint domain = (*domains)(mesh_facet) < ufc.form.num_exterior_facet_integrals())
+        integral = ufc.exterior_facet_integrals[domain];
+      else
+        continue;
+    }
 
     // Get mesh cell to which mesh facet belongs (pick first, there is only one)
     dolfin_assert(mesh_facet.numEntities(mesh.topology().dim()) == 1);
@@ -237,6 +261,9 @@ void Assembler::assembleInteriorFacets(GenericTensor& A,Mesh& mesh,
   // Skip assembly if there are no interior facet integrals
   if (ufc.form.num_interior_facet_integrals() == 0)
     return;
+  
+  // Interior facet integral
+  ufc::interior_facet_integral* integral = ufc.interior_facet_integrals[0];
 
   // Compute facets and facet - cell connectivity if not already computed
   mesh.init(mesh.topology().dim() - 1);
@@ -253,6 +280,15 @@ void Assembler::assembleInteriorFacets(GenericTensor& A,Mesh& mesh,
     {
       p++;
       continue;
+    }
+
+    // Get integral for sub domain (if any)
+    if (domains)
+    {
+      if (uint domain = (*domains)(*facet) < ufc.form.num_interior_facet_integrals())
+        integral = ufc.interior_facet_integrals[domain];
+      else
+        continue;
     }
 
     // Get cells incident with facet
