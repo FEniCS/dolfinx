@@ -59,7 +59,7 @@ namespace dolfin
   void __debug(std::string file, unsigned long line, std::string function, std::string format, ...);
 
   // Helper function for dolfin_assert macro
-  void __assert(std::string file, unsigned long line, std::string function, std::string format, ...);
+  void __dolfin_assert(std::string file, unsigned long line, std::string function, std::string format, ...);
 
 }
 
@@ -71,7 +71,7 @@ namespace dolfin
 
 // Assertion, only active if DEBUG is defined
 #ifdef DEBUG
-#define dolfin_assert(check) do { if ( !(check) ) dolfin::__assert(__FILE__, __LINE__, __FUNCTION__, "(" #check ")"); } while (false)
+#define dolfin_assert(check) do { if ( !(check) ) dolfin::__dolfin_assert(__FILE__, __LINE__, __FUNCTION__, "(" #check ")"); } while (false)
 #else
 #define dolfin_assert(check)
 #endif
