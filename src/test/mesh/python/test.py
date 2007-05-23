@@ -1,7 +1,7 @@
 """Unit test for the mesh library"""
 
 __author__ = "Anders Logg (logg@simula.no)"
-__date__ = "2006-08-08 -- 2006-11-28"
+__date__ = "2006-08-08 -- 2007-05-23"
 __copyright__ = "Copyright (C) 2006 Anders Logg"
 __license__  = "GNU GPL Version 2"
 
@@ -74,7 +74,7 @@ class MeshIterators(unittest.TestCase):
 
     def testCellIterators(self):
         """Iterate over cells"""
-        mesh = UnitCube(1, 1, 1)
+        mesh = UnitCube(5, 5, 5)
         n = 0
         for c in cells(mesh):
             n += 1
@@ -109,6 +109,7 @@ class BoundaryExtraction(unittest.TestCase):
 class MeshFunctions(unittest.TestCase):
 
      def testAssign(self):
+         """Assign value of mesh function"""
          mesh = UnitSquare(3, 3)
          f = MeshFunction('int', mesh, 0)
          f.set(3, 10)
