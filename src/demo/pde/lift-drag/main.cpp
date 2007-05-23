@@ -19,8 +19,6 @@ using namespace dolfin;
 
 int main()
 {
-  set("debug level", 1);
-
   // Read velocity field from file and get the mesh
   Function p("pressure.xml.gz");
   Mesh& mesh(p.mesh());
