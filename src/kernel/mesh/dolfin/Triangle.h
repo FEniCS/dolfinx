@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-06-05
-// Last changed: 2007-01-30
+// Last changed: 2007-05-23
 
 #ifndef __TRIANGLE_H
 #define __TRIANGLE_H
@@ -59,6 +59,11 @@ namespace dolfin
 
     /// Return description of cell type
     std::string description() const;
+
+  private:
+
+    // Find local index of edge i according to ordering convention
+    uint findEdge(uint i, const Cell& cell) const;
 
   };
 

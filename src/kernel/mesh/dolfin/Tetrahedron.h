@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells 2006.
 //
 // First added:  2006-06-05
-// Last changed: 2007-01-30
+// Last changed: 2007-05-23
 
 #ifndef __TETRAHEDRON_H
 #define __TETRAHEDRON_H
@@ -68,6 +68,11 @@ namespace dolfin
 
     /// Return description of cell type
     std::string description() const;
+
+  private:
+    
+    // Find local index of edge i according to ordering convention
+    uint findEdge(uint i, const Cell& cell) const;
 
   };
 

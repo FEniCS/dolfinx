@@ -60,8 +60,6 @@ void Assembler::assemble(GenericTensor& A, const Form& form, Mesh& mesh,
     sub_domain.mark(*facet_domains, 0);
   }
 
-  warning("Experimental, integrals over sub domains not yet implemented.");
-
   // Assemble
   assemble(A, form.form(), mesh, form.coefficients(),
            cell_domains, facet_domains, facet_domains);
