@@ -57,8 +57,6 @@ int main()
 
   };
 
-  // FIXME: Use sub domain, not condition in function
-  
   // Neumann boundary condition
   class NeumannBC : public Function
   {
