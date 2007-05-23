@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-02-07
-// Last changed: 2007-05-02
+// Last changed: 2007-05-23
 //
 // This demo program solves Poisson's equation
 //
@@ -41,33 +41,17 @@ int main()
 
   };
 
-  // Dirichlet boundary condition
-  class DirichletBC : public Function
-  {
-  public:
-
-    DirichletBC(Mesh& mesh) : Function(mesh) {}
-
-    real eval(const real* x) const
-    {
-      return 0.0;
-    }
-
-  };
-
-  // FIXME: Use sub domain, not condition in function
-  
   // Neumann boundary condition
-  class NeumannBC : public Function
+  class Flux : public Function
   {
   public:
 
-    NeumannBC(Mesh& mesh) : Function(mesh) {}
+    Flux(Mesh& mesh) : Function(mesh) {}
 
     real eval(const real* x) const
     {
-      if ( std::abs(x[0] - 1.0) < DOLFIN_EPS )
-        return 1.0;
+      if (x[0] > DOLFIN_EPS)
+        return 25.0*sin(5.0*DOLFIN_PI*x[1]);
       else
         return 0.0;
     }
@@ -83,31 +67,21 @@ int main()
     }
   };
 
-  // Sub domain for Neumann boundary condition
-  class NeumannBoundary : public SubDomain
-  {
-    bool inside(const real* x, bool on_boundary) const
-    {
-      return x[0] > 1.0 - DOLFIN_EPS && on_boundary;
-    }
-  };
-
   // Create mesh
-  UnitSquare mesh(16, 16);
+  UnitSquare mesh(32, 32);
 
   // Create functions
   Source f(mesh);
-  DirichletBC gd(mesh);
-  NeumannBC gn(mesh);
+  Flux g(mesh);
 
-  // Create sub domains
-  DirichletBoundary GD;
-  NeumannBoundary GN;
+  // Create boundary condition
+  Function u0(mesh, 0.0);
+  DirichletBoundary boundary;
+  BoundaryCondition bc(u0, mesh, boundary);
   
   // Define PDE
   PoissonBilinearForm a;
-  PoissonLinearForm L(f, gn);
-  BoundaryCondition bc(gd, mesh, GD);
+  PoissonLinearForm L(f, g);
   LinearPDE pde(a, L, mesh, bc);
 
   // Solve PDE
