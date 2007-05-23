@@ -324,22 +324,22 @@ void Tetrahedron::refineCell(Cell& cell, MeshEditor& editor,
   const uint v1 = v[1];
   const uint v2 = v[2];
   const uint v3 = v[3];
-  const uint e0 = offset + e[0];
-  const uint e1 = offset + e[1];
-  const uint e2 = offset + e[2];
-  const uint e3 = offset + e[3];
-  const uint e4 = offset + e[4];
-  const uint e5 = offset + e[5];
+  const uint e0 = offset + e[findEdge(0, cell)];
+  const uint e1 = offset + e[findEdge(1, cell)];
+  const uint e2 = offset + e[findEdge(2, cell)];
+  const uint e3 = offset + e[findEdge(3, cell)];
+  const uint e4 = offset + e[findEdge(4, cell)];
+  const uint e5 = offset + e[findEdge(5, cell)];
 
   // Regular refinement: 8 new cells
-  editor.addCell(current_cell++, v0, e1, e3, e2);
-  editor.addCell(current_cell++, v1, e2, e4, e0);
-  editor.addCell(current_cell++, v2, e0, e5, e1);
-  editor.addCell(current_cell++, v3, e5, e4, e3);
-  editor.addCell(current_cell++, e0, e4, e5, e1);
-  editor.addCell(current_cell++, e1, e5, e3, e4);
-  editor.addCell(current_cell++, e2, e3, e4, e1);
-  editor.addCell(current_cell++, e0, e1, e2, e4);
+  editor.addCell(current_cell++, v0, e3, e4, e5);
+  editor.addCell(current_cell++, v1, e1, e2, e5);
+  editor.addCell(current_cell++, v2, e0, e2, e4);
+  editor.addCell(current_cell++, v3, e0, e1, e3);
+  editor.addCell(current_cell++, e0, e1, e2, e5);
+  editor.addCell(current_cell++, e0, e1, e3, e5);
+  editor.addCell(current_cell++, e0, e2, e4, e5);
+  editor.addCell(current_cell++, e0, e3, e4, e5);
 }
 //-----------------------------------------------------------------------------
 void Tetrahedron::refineCellIrregular(Cell& cell, MeshEditor& editor, 
@@ -569,5 +569,33 @@ std::string Tetrahedron::description() const
 {
   std::string s = "tetrahedron (simplex of topological dimension 3)";
   return s;
+}
+//-----------------------------------------------------------------------------
+dolfin::uint Tetrahedron::findEdge(uint i, const Cell& cell) const
+{
+  // Get vertices and edges
+  const uint* v = cell.entities(0);
+  const uint* e = cell.entities(1);
+  dolfin_assert(v);
+  dolfin_assert(e);
+  
+  // Ordering convention for edges (order of non-incident vertices)
+  static uint EV[6][2] = {{0, 1}, {0, 2}, {0, 3}, {1, 2}, {1, 3}, {2, 3}};
+
+  // Look for edge satisfying ordering convention
+  for (uint j = 0; j < 6; j++)
+  {
+    const uint* ev = cell.mesh().topology()(1, 0)(e[j]);
+    dolfin_assert(ev);
+    const uint v0 = v[EV[i][0]];
+    const uint v1 = v[EV[i][1]];
+    if (ev[0] != v0 && ev[0] != v1 && ev[1] != v0 && ev[1] != v1)
+      return j;
+  }
+
+  // We should not reach this
+  error("Unable to find edge.");
+
+  return 0;
 }
 //-----------------------------------------------------------------------------

@@ -5,7 +5,7 @@
 // Modified by Kristian Oelgaard, 2006-2007.
 // 
 // First added:  2006-06-05
-// Last changed: 2007-02-27
+// Last changed: 2007-05-23
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Cell.h>
@@ -178,9 +178,9 @@ void Triangle::refineCell(Cell& cell, MeshEditor& editor,
   const uint v0 = v[0];
   const uint v1 = v[1];
   const uint v2 = v[2];
-  const uint e0 = offset + e[0];
-  const uint e1 = offset + e[1];
-  const uint e2 = offset + e[2];
+  const uint e0 = offset + e[findEdge(0, cell)];
+  const uint e1 = offset + e[findEdge(1, cell)];
+  const uint e2 = offset + e[findEdge(2, cell)];
   
   // Add the four new cells
   editor.addCell(current_cell++, v0, e2, e1);
@@ -390,5 +390,28 @@ std::string Triangle::description() const
 {
   std::string s = "triangle (simplex of topological dimension 2)";
   return s;
+}
+//-----------------------------------------------------------------------------
+dolfin::uint Triangle::findEdge(uint i, const Cell& cell) const
+{
+  // Get vertices and edges
+  const uint* v = cell.entities(0);
+  const uint* e = cell.entities(1);
+  dolfin_assert(v);
+  dolfin_assert(e);
+  
+  // Look for edge satisfying ordering convention
+  for (uint j = 0; j < 3; j++)
+  {
+    const uint* ev = cell.mesh().topology()(1, 0)(e[j]);
+    dolfin_assert(ev);
+    if (ev[0] != v[i] && ev[1] != v[i])
+      return j;
+  }
+
+  // We should not reach this
+  error("Unable to find edge.");
+
+  return 0;
 }
 //-----------------------------------------------------------------------------
