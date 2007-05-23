@@ -63,8 +63,6 @@ void Progress::update(real p)
   // Only update when the increase is significant
   if (p - this->p >= step - DOLFIN_EPS || (p >= 1.0 - DOLFIN_EPS) && p > this->p)
   {
-    message("Updating...");
-
     LogManager::logger.progress(title, p);
     this->p = p;
   }
