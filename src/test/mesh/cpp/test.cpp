@@ -74,6 +74,7 @@ class MeshIterators : public CppUnit::TestFixture
   CPPUNIT_TEST_SUITE(MeshIterators);
   CPPUNIT_TEST(testVertexIterators);
   CPPUNIT_TEST(testEdgeIterators);
+  CPPUNIT_TEST(testFaceIterators);
   CPPUNIT_TEST(testFacetIterators);
   CPPUNIT_TEST(testCellIterators);
   CPPUNIT_TEST(testMixedIterators);
