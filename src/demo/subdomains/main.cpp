@@ -20,7 +20,7 @@ int main()
   // Sub domain for no-slip (everything except inflow and outflow)
   class Noslip : public SubDomain
   {
-    bool inside(const real* x, bool on_boundary)
+    bool inside(const real* x, bool on_boundary) const
     {
       return x[0] > DOLFIN_EPS && x[0] < 1.0 - DOLFIN_EPS && on_boundary;
     }
@@ -29,7 +29,7 @@ int main()
   // Sub domain for inflow (right)
   class Inflow : public SubDomain
   {
-    bool inside(const real* x, bool on_boundary)
+    bool inside(const real* x, bool on_boundary) const
     {
       return x[0] > 1.0 - DOLFIN_EPS && on_boundary;
     }
@@ -38,7 +38,7 @@ int main()
   // Sub domain for outflow (left)
   class Outflow : public SubDomain
   {
-    bool inside(const real* x, bool on_boundary)
+    bool inside(const real* x, bool on_boundary) const
     {
       return x[0] < DOLFIN_EPS && on_boundary;
     }
