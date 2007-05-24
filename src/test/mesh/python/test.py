@@ -1,4 +1,4 @@
-"""Unit test for the mesh library"""
+"""Unit tests for the mesh library"""
 
 __author__ = "Anders Logg (logg@simula.no)"
 __date__ = "2006-08-08 -- 2007-05-23"
@@ -176,5 +176,4 @@ class PyCCInterface(unittest.TestCase):
          self.assertEqual(len(mesh.cells()), 50)
 
 if __name__ == "__main__":
-
     unittest.main()

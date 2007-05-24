@@ -6,8 +6,6 @@
 //
 // Unit tests for the mesh library
 
-#include <iostream>
-
 #include <dolfin.h>
 #include <dolfin/unittest.h>
 
