@@ -121,7 +121,7 @@ void XMLMeshFunction::endElement(const xmlChar *name)
 //-----------------------------------------------------------------------------
 void XMLMeshFunction::open(std::string filename)
 {
-  cout << "Reading mesh from file " << filename << "." << endl;
+  message(1, "Reading mesh from file \"%s\".", filename.c_str());
 }
 //-----------------------------------------------------------------------------
 bool XMLMeshFunction::close()

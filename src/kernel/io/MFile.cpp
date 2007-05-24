@@ -144,8 +144,8 @@ void MFile::operator<<(Mesh& mesh)
   // Increase the number of meshes saved to this file
   counter++;
 
-  cout << "Saved mesh " << mesh.name() << " (" << mesh.label()
-       << ") to file " << filename << " in Octave/Matlab format." << endl;
+  message(1, "Saved mesh %s (%s) to file %s in Octave/MATLAB format.",
+          mesh.name().c_str(), mesh.label().c_str(), filename.c_str());
 }
 //-----------------------------------------------------------------------------
 void MFile::operator<<(Function& u)

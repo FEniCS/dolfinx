@@ -66,3 +66,6 @@ keep sort of the same style when writing the code.
   DOLFIN you are actually using
 
 - Use forward declarations instead of includes in header files when possible
+
+- Classes should have methods str() and disp(). Perhaps these should be
+  made virtual in Variable

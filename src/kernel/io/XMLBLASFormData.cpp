@@ -205,7 +205,7 @@ void XMLBLASFormData::endElement(const xmlChar *name)
 //-----------------------------------------------------------------------------
 void XMLBLASFormData::open(std::string filename)
 {
-  cout << "Reading form data from file \"" << filename << "\"." << endl;
+  message(1, "Reading form data from file \"%s\".", filename.c_str());
 }
 //-----------------------------------------------------------------------------
 bool XMLBLASFormData::close()

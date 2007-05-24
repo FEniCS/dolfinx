@@ -5,7 +5,7 @@
 // Modified by Magnus Vikstrøm 2007.
 //
 // First added:  2006-05-08
-// Last changed: 2007-05-07
+// Last changed: 2007-05-24
 
 #ifndef __MESH_H
 #define __MESH_H
@@ -142,6 +142,9 @@ namespace dolfin
     /// Display mesh data
     void disp() const;
     
+    /// Return a short desriptive string
+    std::string str() const;
+
     /// Output
     friend LogStream& operator<< (LogStream& stream, const Mesh& mesh);
     

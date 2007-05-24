@@ -58,9 +58,8 @@ void MatlabFile::operator<<(Matrix& A)
   // Close file
   fclose(fp);
 
-
-  cout << "Saved matrix " << A.name() << " (" << A.label()
-       << ") to file " << filename << " in sparse MATLAB format." << endl;
+  message(1, "Saved matrix %s (%s) to file %s in sparse MATLAB format",
+          A.name().c_str(), A.label().c_str(), filename.c_str());
 }
 //-----------------------------------------------------------------------------
 

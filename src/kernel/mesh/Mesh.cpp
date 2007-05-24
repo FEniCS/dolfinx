@@ -4,7 +4,7 @@
 // Modified by Johan Hoffman 2007.
 //
 // First added:  2006-05-09
-// Last changed: 2007-05-07
+// Last changed: 2007-05-24
 
 #include <dolfin/File.h>
 #include <dolfin/UniformMeshRefinement.h>
@@ -158,16 +158,20 @@ void Mesh::disp() const
   data.disp();
 }
 //-----------------------------------------------------------------------------
+std::string Mesh::str() const
+{
+  std::ostringstream stream;
+  stream << "[Mesh of topological dimension "
+         << numVertices()
+         << " and "
+         << numCells()
+         << " cells]";
+  return stream.str();
+}
+//-----------------------------------------------------------------------------
 dolfin::LogStream& dolfin::operator<< (LogStream& stream, const Mesh& mesh)
 {
-  stream << "[ Mesh of topological dimension "
-	 << mesh.topology().dim()
-	 << " with "
-	 << mesh.numVertices()
-	 << " vertices and "
-	 << mesh.numCells()
-	 << " cells ]";
-  
+  stream << mesh.str();
   return stream;
 }
 //-----------------------------------------------------------------------------

@@ -136,7 +136,7 @@ void TecplotFile::operator<<(Function& u)
   // Increase the number of times we have saved the function
   counter++;
 
-  cout << "Saved function " << u.name() << " (" << u.label()
-       << ") to file " << filename << " in Tecplot format." << endl;
+  message(1, "Saved function %s (%s) to file %s in Tecplot format.",
+          u.name().c_str(), u.label().c_str(), filename.c_str());
 }
 //-­---------------------------------------------------------------------------

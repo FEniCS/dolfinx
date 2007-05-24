@@ -59,7 +59,7 @@ void OctaveFile::operator<<(Matrix& A)
   fclose(fp);
   delete [] row;
   
-  cout << "Saved matrix " << A.name() << " (" << A.label()
-       << ") to file " << filename << " in Octave format." << endl;
+  message(1, "Saved matrix %s (%s) to file %s in Octave format.",
+          A.name().c_str(), A.label().c_str(), filename.c_str());
 }
 //-----------------------------------------------------------------------------
