@@ -79,7 +79,7 @@ void Mesh::order()
 //-----------------------------------------------------------------------------
 void Mesh::refine()
 {
-  message("No cells marked for refinement, assuming uniform mesh refinement.");
+  message(1, "No cells marked for refinement, assuming uniform mesh refinement.");
   UniformMeshRefinement::refine(*this);
 }
 //-----------------------------------------------------------------------------
@@ -93,7 +93,7 @@ void Mesh::coarsen()
 {
   // FIXME: Move implementation to separate class and just call function here
 
-  message("No cells marked for coarsening, assuming uniform mesh coarsening.");
+  message(1, "No cells marked for coarsening, assuming uniform mesh coarsening.");
   MeshFunction<bool> cell_marker(*this);
   cell_marker.init(this->topology().dim());
   for (CellIterator c(*this); !c.end(); ++c)

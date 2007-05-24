@@ -1,11 +1,11 @@
-// Copyright (C) 2006 Anders Logg.
+// Copyright (C) 2006-2007 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Johan Jansson 2006.
 // Modified by Ola Skavhaug 2006.
 //
 // First added:  2006-06-21
-// Last changed: 2006-12-01
+// Last changed: 2007-05-24
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Array.h>
@@ -43,7 +43,7 @@ void BoundaryComputation::computeBoundaryCommon(Mesh& mesh,
   // the boundary. A facet is on the boundary if it is connected to
   // exactly one cell.
 
-  //message("Computing boundary mesh.");
+  message(1, "Computing boundary mesh.");
 
   // Open boundary mesh for editing
   MeshEditor editor;
@@ -128,7 +128,5 @@ void BoundaryComputation::computeBoundaryCommon(Mesh& mesh,
 
   // Close mesh editor
   editor.close();
-
-  cout << "Created boundary mesh: " << boundary << endl;
 }
 //-----------------------------------------------------------------------------

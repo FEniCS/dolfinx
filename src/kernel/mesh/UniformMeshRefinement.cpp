@@ -1,8 +1,8 @@
-// Copyright (C) 2006 Anders Logg.
+// Copyright (C) 2006-2007 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-06-08
-// Last changed: 2006-10-11
+// Last changed: 2007-05-24
 
 #include <dolfin/dolfin_math.h>
 #include <dolfin/dolfin_log.h>
@@ -27,7 +27,7 @@ void UniformMeshRefinement::refine(Mesh& mesh)
 //-----------------------------------------------------------------------------
 void UniformMeshRefinement::refineSimplex(Mesh& mesh)
 {
-  message("Refining simplicial mesh uniformly.");
+  message(1, "Refining simplicial mesh uniformly.");
   
   // Generate cell - edge connectivity if not generated
   mesh.init(mesh.topology().dim(), 1);
@@ -70,7 +70,5 @@ void UniformMeshRefinement::refineSimplex(Mesh& mesh)
   // Overwrite old mesh with refined mesh
   editor.close();
   mesh = refined_mesh;
-
-  cout << "Refined mesh: " << mesh << endl;
 }
 //-----------------------------------------------------------------------------

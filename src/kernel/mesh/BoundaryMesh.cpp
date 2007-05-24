@@ -4,6 +4,9 @@
 // First added:  2006-06-21
 // Last changed: 2006-10-16
 
+#include <iostream>
+
+#include <dolfin/log.h>
 #include <dolfin/BoundaryComputation.h>
 #include <dolfin/BoundaryMesh.h>
 

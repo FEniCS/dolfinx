@@ -6,6 +6,8 @@
 //
 // Unit tests for the mesh library
 
+#include <iostream>
+
 #include <dolfin.h>
 #include <dolfin/unittest.h>
 
@@ -137,7 +139,6 @@ public:
     for (CellIterator c(mesh); !c.end(); ++c)
       for (VertexIterator v(*c); !v.end(); ++v)
         n++;
-    dolfin::cout << "n = " << n << dolfin::endl;
     CPPUNIT_ASSERT(n == 4*mesh.numCells());
   }
 
@@ -164,13 +165,19 @@ public:
   void testBoundaryBoundary()
   {
     // Compute boundary of boundary
+    //
+    // Note that we can't do
+    //
+    //   BoundaryMesh b0(mesh);
+    //   BoundaryMesh b1(b0);
+    //
+    // since b1 would then be a copy of b0 (copy
+    // constructor in Mesh will be used).
+
     UnitCube mesh(2, 2, 2);
     BoundaryMesh b0(mesh);
-    BoundaryMesh b1(b0);
-    mesh.disp();
-    b0.disp();
-    b1.disp();
-
+    BoundaryMesh b1;
+    b1.init(b0);
     CPPUNIT_ASSERT(b1.numVertices() == 0);
     CPPUNIT_ASSERT(b1.numCells() == 0);
   }
