@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-03-02
-// Last changed: 2007-05-15
+// Last changed: 2007-05-24
 //
 // This program illustrates the use of the DOLFIN nonlinear solver for solving 
 // the Cahn-Hilliard equation.
@@ -10,7 +10,6 @@
 // The Cahn-Hilliard equation is very sensitive to the chosen parameters and
 // time step. It also requires fines meshes, and is often not well-suited to
 // iterative linear solvers.
-//
 
 #include <dolfin.h>
 #include "CahnHilliard2D.h"
@@ -26,8 +25,8 @@ class CahnHilliardEquation : public NonlinearProblem, public Parametrized
     // Constructor 
     CahnHilliardEquation(Mesh& mesh, Function& u, Function& u0, Function& dt, 
                          Function& theta, Function& lambda, Function& muFactor) 
-                         : _mesh(&mesh), _dt(&dt), _theta(&theta), 
-                           _lambda(&lambda), _muFactor(&muFactor)
+      : _mesh(&mesh), _dt(&dt), _theta(&theta), 
+        _lambda(&lambda), _muFactor(&muFactor)
     {
       // Create forms
       if(mesh.topology().dim() == 2)
@@ -89,8 +88,6 @@ class CahnHilliardEquation : public NonlinearProblem, public Parametrized
     Function* _muFactor;
 };
 
-
-
 int main(int argc, char* argv[])
 {
   dolfin_init(argc, argv);
@@ -105,8 +102,8 @@ int main(int argc, char* argv[])
   Function lambda(mesh, 1.0e-2); 
   Function muFactor(mesh, 100.0); 
 
-  real t  = 0.0; 
-  real T  = 50*delta_t;
+  real t = 0.0; 
+  real T = 50*delta_t;
 
   // Solution functions
   Function u; 
@@ -161,8 +158,9 @@ int main(int argc, char* argv[])
     c = u[1];
     file << c;
 
+    // Plot solution
+    plot(c);
   }
-
+  
   return 0;
 }
-

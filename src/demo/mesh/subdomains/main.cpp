@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-04-24
-// Last changed: 2007-04-24
+// Last changed: 2007-05-24
 //
 // This demo program demonstrates how to mark sub domains
 // of a mesh and store the sub domain markers as a mesh
@@ -20,7 +20,7 @@ int main()
   // Sub domain for no-slip (everything except inflow and outflow)
   class Noslip : public SubDomain
   {
-    bool inside(const real* x, bool on_boundary)
+    bool inside(const real* x, bool on_boundary) const
     {
       return x[0] > DOLFIN_EPS && x[0] < 1.0 - DOLFIN_EPS && on_boundary;
     }
@@ -29,7 +29,7 @@ int main()
   // Sub domain for inflow (right)
   class Inflow : public SubDomain
   {
-    bool inside(const real* x, bool on_boundary)
+    bool inside(const real* x, bool on_boundary) const
     {
       return x[0] > 1.0 - DOLFIN_EPS && on_boundary;
     }
@@ -38,11 +38,13 @@ int main()
   // Sub domain for outflow (left)
   class Outflow : public SubDomain
   {
-    bool inside(const real* x, bool on_boundary)
+    bool inside(const real* x, bool on_boundary) const
     {
       return x[0] < DOLFIN_EPS && on_boundary;
     }
   };
+
+  set("debug level", 1);
   
   // Read mesh
   Mesh mesh("../../../../data/meshes/dolfin-2.xml.gz");

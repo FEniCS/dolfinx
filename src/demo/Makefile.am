@@ -1,1 +1,1 @@
-SUBDIRS = fem la mesh nls ode pde quadrature subdomains
+SUBDIRS = fem la mesh nls ode pde quadrature

@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2005
 //
 // First added:  2005
-// Last changed: 2007-04-27
+// Last changed: 2007-05-24
 //
 // This program illustrates the use of the DOLFIN nonlinear solver for solving 
 // problems of the form F(u) = 0. The user must provide functions for the 
@@ -27,7 +27,6 @@
 //
 // This is equivalent to solving: 
 // F(u) = (grad(v), (1-u^2)*grad(u)) - f(x,y) = 0
-//
 
 #include <dolfin.h>
 #include "NonlinearPoisson.h"
@@ -68,7 +67,6 @@ class DirichletBoundary : public SubDomain
     return std::abs(x[0] - 1.0) < DOLFIN_EPS && on_boundary;
   }
 };
-
 
 // User defined nonlinear problem 
 class MyNonlinearProblem : public NonlinearProblem
@@ -143,7 +141,7 @@ int main(int argc, char* argv[])
   MyNonlinearProblem nonlinear_problem(mesh, x, dirichlet_boundary, g, f, u);
 
   // Create nonlinear solver (using GMRES linear solver) and set parameters
-//  NewtonSolver nonlinear_solver(gmres);
+  // NewtonSolver nonlinear_solver(gmres);
   NewtonSolver nonlinear_solver;
   nonlinear_solver.set("Newton maximum iterations", 50);
   nonlinear_solver.set("Newton relative tolerance", 1e-10);
@@ -151,12 +149,14 @@ int main(int argc, char* argv[])
 
   // Solve nonlinear problem in a series of steps
   real dt = 1.0; real T  = 3.0;
-
   while( t < T)
   {
     t += dt;
     nonlinear_solver.solve(nonlinear_problem, x);
   }
+
+  // Plot solution
+  plot(u);
 
   // Save function to file
   File file("nonlinear_poisson.pvd");

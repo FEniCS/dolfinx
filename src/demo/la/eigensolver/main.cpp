@@ -32,7 +32,6 @@ int main()
   cout << "Matrix A:" << endl;
   A.disp();
 
-
   PETScMatrix B(2,2);
   B.set(*B_array, 2, position, 2, position);  
   B.apply();

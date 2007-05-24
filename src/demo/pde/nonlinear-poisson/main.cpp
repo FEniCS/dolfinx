@@ -1,10 +1,10 @@
-// Copyright (C) 2006 Garth N. Wells.
+// Copyright (C) 2006-2007 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Anders Logg, 2005
 //
 // First added:  2005
-// Last changed: 2006-03-01
+// Last changed: 2007-05-24
 //
 // This program illustrates the use of the DOLFIN for solving a nonlinear PDE
 // by solving the nonlinear variant of Poisson's equation
@@ -24,7 +24,6 @@
 //
 // This is equivalent to solving: 
 // F(u) = (grad(v), (1-u^2)*grad(u)) - f(x,y) = 0
-//
 
 #include <dolfin.h>
 #include "NonlinearPoisson.h"
