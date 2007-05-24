@@ -1,10 +1,9 @@
-// Copyright (C) 2005-2006 Anders Logg.
+// Copyright (C) 2005-2007 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005
-// Last changed: 2006-10-20
+// Last changed: 2007-05-24
 
-#include <stdio.h>
 #include <dolfin.h>
 #include "Poisson2D_1.h"
 #include "Poisson2D_2.h"
@@ -20,30 +19,40 @@
 using namespace dolfin;
 
 // Boundary condition
-class BC : public BoundaryCondition
+class DirichletBoundary : public SubDomain
 {
-  void eval(BoundaryValue& value, const Point& p, unsigned int i)
+  bool inside(const real* x, bool on_boundary) const
   {
-    value = 0.0;
+    return on_boundary;
   }
 };
 
 // Right-hand side, 2D
 class Source2D : public Function
 {
-  real eval(const Point& p, unsigned int i)
+public:
+
+  Source2D(Mesh& mesh) : Function(mesh) {}
+
+  real eval(const real* x) const
   {
-    return 2.0*DOLFIN_PI*DOLFIN_PI*sin(DOLFIN_PI*p.x())*sin(DOLFIN_PI*p.y());
+    return 2.0*DOLFIN_PI*DOLFIN_PI*sin(DOLFIN_PI*x[0])*sin(DOLFIN_PI*x[1]);
   }
+
 };
 
 // Right-hand side, 3D
 class Source3D : public Function
 {
-  real eval(const Point& p, unsigned int i)
+public:
+  
+  Source3D(Mesh& mesh) : Function(mesh) {}
+
+  real eval(const real* x) const
   {
-    return 3.0*DOLFIN_PI*DOLFIN_PI*sin(DOLFIN_PI*p.x())*sin(DOLFIN_PI*p.y())*sin(DOLFIN_PI*p.z());
+    return 3.0*DOLFIN_PI*DOLFIN_PI*sin(DOLFIN_PI*x[0])*sin(DOLFIN_PI*x[1])*sin(DOLFIN_PI*x[2]);
   }
+
 };
 
 // Solve equation and compute error, 2D
@@ -55,44 +64,46 @@ real solve2D(int q, int n)
 
   // Set up problem
   UnitSquare mesh(n, n);
-  Source2D f;
-  BC bc;
+  Source2D f(mesh);
+  Function zero(mesh, 0.0);
+  DirichletBoundary boundary;
+  BoundaryCondition bc(zero, mesh, boundary);
 
   // Choose forms
-  BilinearForm* a = 0;
-  LinearForm* L = 0;
+  Form* a = 0;
+  Form* L = 0;
   switch ( q )
   {
   case 1:
-    a = new Poisson2D_1::BilinearForm();
-    L = new Poisson2D_1::LinearForm(f);
+    a = new Poisson2D_1BilinearForm();
+    L = new Poisson2D_1LinearForm(f);
     break;
   case 2:
-    a = new Poisson2D_2::BilinearForm();
-    L = new Poisson2D_2::LinearForm(f);
+    a = new Poisson2D_2BilinearForm();
+    L = new Poisson2D_2LinearForm(f);
     break;
   case 3:
-    a = new Poisson2D_3::BilinearForm();
-    L = new Poisson2D_3::LinearForm(f);
+    a = new Poisson2D_3BilinearForm();
+    L = new Poisson2D_3LinearForm(f);
     break;
   case 4:
-    a = new Poisson2D_4::BilinearForm();
-    L = new Poisson2D_4::LinearForm(f);
+    a = new Poisson2D_4BilinearForm();
+    L = new Poisson2D_4LinearForm(f);
     break;
   case 5:
-    a = new Poisson2D_5::BilinearForm();
-    L = new Poisson2D_5::LinearForm(f);
+    a = new Poisson2D_5BilinearForm();
+    L = new Poisson2D_5LinearForm(f);
     break;
   default:
     error("Forms not compiled for q = %d.", q);
   }    
 
-  //FEM::disp(mesh, a->test());
-  
   // Discretize equation
   Matrix A;
   Vector x, b;
-  FEM::assemble(*a, *L, A, b, mesh, bc);
+  assemble(A, *a, mesh);
+  assemble(b, *L, mesh);
+  bc.apply(A, b, *a);
 
   // Solve the linear system
   KrylovSolver solver(gmres);
@@ -125,47 +136,47 @@ real solve3D(int q, int n)
 
   // Set up problem
   UnitCube mesh(n, n, n);
-  Source3D f;
-  BC bc;
+  Source3D f(mesh);
+  Function zero(mesh, 0.0);
+  DirichletBoundary boundary;
+  BoundaryCondition bc(zero, mesh, boundary);
 
   // Choose forms
-  BilinearForm* a = 0;
-  LinearForm* L = 0;
+  Form* a = 0;
+  Form* L = 0;
   switch ( q )
   {
   case 1:
-    a = new Poisson3D_1::BilinearForm();
-    L = new Poisson3D_1::LinearForm(f);
+    a = new Poisson3D_1BilinearForm();
+    L = new Poisson3D_1LinearForm(f);
     break;
   case 2:
-    a = new Poisson3D_2::BilinearForm();
-    L = new Poisson3D_2::LinearForm(f);
+    a = new Poisson3D_2BilinearForm();
+    L = new Poisson3D_2LinearForm(f);
     break;
   case 3:
-    a = new Poisson3D_3::BilinearForm();
-    L = new Poisson3D_3::LinearForm(f);
+    a = new Poisson3D_3BilinearForm();
+    L = new Poisson3D_3LinearForm(f);
     break;
   case 4:
-    a = new Poisson3D_4::BilinearForm();
-    L = new Poisson3D_4::LinearForm(f);
+    a = new Poisson3D_4BilinearForm();
+    L = new Poisson3D_4LinearForm(f);
     break;
   case 5:
-    a = new Poisson3D_5::BilinearForm();
-    L = new Poisson3D_5::LinearForm(f);
+    a = new Poisson3D_5BilinearForm();
+    L = new Poisson3D_5LinearForm(f);
     break;
   default:
     error("Forms not compiled for q = %d.", q);
   }    
 
-  //FEM::disp(mesh, a->test());
-  
   // Discretize equation
   Matrix A;
   Vector x, b;
-  FEM::assemble(*a, *L, A, b, mesh, bc);
+  assemble(A, *a, mesh);
+  assemble(b, *L, mesh);
+  bc.apply(A, b, *a);
 
-  cout << "Maximum number of nonzeros: " << A.nzmax() << endl;
-  
   // Solve the linear system
   KrylovSolver solver(gmres);
   solver.set("Krylov relative tolerance", 1e-14); 
