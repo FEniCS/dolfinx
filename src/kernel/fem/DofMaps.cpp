@@ -8,12 +8,14 @@
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Cell.h>
+#include <dolfin/Facet.h>
 #include <dolfin/DofMap.h>
 #include <dolfin/DofMaps.h>
 #include <dolfin/Mesh.h>
 #include <dolfin/SparsityPattern.h>
 #include <dolfin/UFCCell.h>
 #include <dolfin/UFCMesh.h>
+#include <dolfin/UFC.h>
 
 #include <ufc.h>
 
@@ -91,14 +93,15 @@ const DofMap& DofMaps::operator[] (uint i) const
   return *dof_maps[i];
 }
 //-----------------------------------------------------------------------------
-void DofMaps::sparsityPattern(SparsityPattern& sparsity_pattern) const
+void DofMaps::sparsityPattern(SparsityPattern& sparsity_pattern, Mesh& mesh,
+                              UFC& ufc) const
 {
   if (size() == 0)
     scalarSparsityPattern(sparsity_pattern);
   else if (size() == 1)
     vectorSparsityPattern(sparsity_pattern);
   else if (size() == 2)
-    matrixSparsityPattern(sparsity_pattern);
+    matrixSparsityPattern(sparsity_pattern, mesh, ufc);
   else
     error("Cannot compute sparsity patterm for size > 2.");
 }
@@ -117,47 +120,72 @@ void DofMaps::vectorSparsityPattern(SparsityPattern& sparsity_pattern) const
   sparsity_pattern.init(dof_map0->global_dimension());
 }
 //-----------------------------------------------------------------------------
-void DofMaps::matrixSparsityPattern(SparsityPattern& sparsity_pattern) const
+void DofMaps::matrixSparsityPattern(SparsityPattern& sparsity_pattern, Mesh& mesh, 
+                                    UFC& ufc) const
 {
   if( size() != 2)
     error("Number of DOF maps in not equal to 2. Do not know how to build sparsity pattern.");
  
-  // Get maps
-  DofMap* dof_map0 = dof_maps[0];
-  DofMap* dof_map1 = dof_maps[1];
+  // Initialise sparsity pattern
+  sparsity_pattern.init(dof_maps[0]->global_dimension(), dof_maps[1]->global_dimension());
 
-  // Get mesh associated with first map
-  Mesh& mesh = dof_map0->mesh();
-
-  // Get local dimensions 
-  const uint dim0 = dof_map0->local_dimension();
-  const uint dim1 = dof_map1->local_dimension();
-
-  // Initialise sparsity pattern 
-  sparsity_pattern.init(dof_map0->global_dimension(), dof_map1->global_dimension());  
-
-  uint* dof0 = new uint[dim0];
-  uint* dof1 = new uint[dim1];
-
-  // Create UFC cell
-  CellIterator cell(mesh);
-  UFCCell ufc_cell(*cell);
-
-  // Build sparsity pattern by looping over all cells
-  for ( ; !cell.end(); ++cell)
+  // Create sparsity pattern for cell integrals
+  if (ufc.form.num_interior_facet_integrals() != 0)
   {
-    ufc_cell.update(*cell);
+    for (CellIterator cell(mesh); !cell.end(); ++cell)
+    {
+      // Update to current cell
+      ufc.update(*cell);
+  
+      // Tabulate dofs for each dimension
+      ufc.dof_maps[0]->tabulate_dofs(ufc.dofs[0], ufc.mesh, ufc.cell);
+      ufc.dof_maps[1]->tabulate_dofs(ufc.dofs[1], ufc.mesh, ufc.cell);
+  
+      // Build sparsity
+      uint dim0 = ufc.dof_maps[0]->local_dimension();
+      uint dim1 = ufc.dof_maps[1]->local_dimension();
+      for (uint i = 0; i < dim0; ++i)
+        for (uint j = 0; j < dim1; ++j)
+          sparsity_pattern.insert( (ufc.dofs[0])[i], (ufc.dofs[0])[j] );
+    }
+  }
 
-    dof_map0->tabulate_dofs(dof0, ufc_cell);
-    dof_map1->tabulate_dofs(dof1, ufc_cell);
+  // Create sparsity pattern for interior facet integrals
+  if(ufc.form.num_interior_facet_integrals() != 0)
+  {
+    // Compute facets and facet - cell connectivity if not already computed
+    mesh.init(mesh.topology().dim() - 1);
+    mesh.init(mesh.topology().dim() - 1, mesh.topology().dim());
+    mesh.order();
+  
+    for (FacetIterator facet(mesh); !facet.end(); ++facet)
+    {
+      // Check if we have an interior facet
+      if ( facet->numEntities(mesh.topology().dim()) != 2 )
+        continue;
 
-    // Building sparsity
-    for (uint i = 0; i < dim0; ++i)
-      for (uint j = 0; j < dim1; ++j)
-        sparsity_pattern.insert(dof0[i], dof1[j] );
- }
+      // Get cells incident with facet
+      Cell cell0(mesh, facet->entities(mesh.topology().dim())[0]);
+      Cell cell1(mesh, facet->entities(mesh.topology().dim())[1]);
+      
+      // Update to current pair of cells
+      ufc.update(cell0, cell1);
+    
+      // Tabulate dofs for each dimension on macro element
+      for (uint i = 0; i < ufc.form.rank(); i++)
+      {
+        const uint offset = ufc.local_dimensions[i];
+        ufc.dof_maps[i]->tabulate_dofs(ufc.macro_dofs[i], ufc.mesh, ufc.cell0);
+        ufc.dof_maps[i]->tabulate_dofs(ufc.macro_dofs[i] + offset, ufc.mesh, ufc.cell1);
+      }
 
- delete [] dof0;
- delete [] dof1;
+      // Build sparsity
+      uint dim0 = ufc.macro_local_dimensions[0];
+      uint dim1 = ufc.macro_local_dimensions[1];
+      for (uint i = 0; i < dim0; ++i)
+        for (uint j = 0; j < dim1; ++j)
+          sparsity_pattern.insert( (ufc.macro_dofs[0])[i], (ufc.macro_dofs[1])[j] );
+    }
+  }
 }
 //-----------------------------------------------------------------------------

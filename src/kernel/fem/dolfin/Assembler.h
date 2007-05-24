@@ -95,7 +95,7 @@ namespace dolfin
                Array<Function*>& coefficients) const;
 
     // Initialize global tensor
-    void initGlobalTensor(GenericTensor& A, const UFC& ufc) const;
+    void initGlobalTensor(GenericTensor& A, Mesh& mesh, UFC& ufc) const;
 
     // Initialize coefficients
     void initCoefficients(Array<Function*>& coefficients, const UFC& ufc) const;

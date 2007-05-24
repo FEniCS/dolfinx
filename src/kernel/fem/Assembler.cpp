@@ -124,7 +124,7 @@ void Assembler::assemble(GenericTensor& A, const ufc::form& form, Mesh& mesh,
   UFC ufc(form, mesh, dof_maps);
 
   // Initialize global tensor
-  initGlobalTensor(A, ufc);
+  initGlobalTensor(A, mesh, ufc);
 
   // Initialize coefficients
   initCoefficients(coefficients, ufc);
@@ -336,12 +336,12 @@ void Assembler::check(const ufc::form& form,
                   coefficients.size(), form.num_coefficients());
 }
 //-----------------------------------------------------------------------------
-void Assembler::initGlobalTensor(GenericTensor& A, const UFC& ufc) const
+void Assembler::initGlobalTensor(GenericTensor& A, Mesh& mesh, UFC& ufc) const
 {
   //A.init(ufc.form.rank(), ufc.global_dimensions);
 
   SparsityPattern sparsity_pattern; 
-  dof_maps.sparsityPattern(sparsity_pattern);
+  dof_maps.sparsityPattern(sparsity_pattern, mesh, ufc);
   A.init(sparsity_pattern);
 }
 //-----------------------------------------------------------------------------
