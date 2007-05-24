@@ -13,7 +13,7 @@ logfile = "bench.log"
 
 # Run benchmark
 tic = time()
-system("./dolfin-bench-fem-assembly")
+system("./dolfin-fem-assembly-bench")
 toc = time() - tic
 
 # Save timing to log file

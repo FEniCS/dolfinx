@@ -2,7 +2,7 @@ CFLAGS  = `pkg-config --cflags dolfin`
 LIBS    = `pkg-config --libs dolfin`
 CXX     = `pkg-config --variable=compiler dolfin`
 
-DEST    = dolfin-bench-fem-assembly
+DEST    = dolfin-fem-assembly-bench
 OBJECTS = main.o
 
 all: $(DEST)

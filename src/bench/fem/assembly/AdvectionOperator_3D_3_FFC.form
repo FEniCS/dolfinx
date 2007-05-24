@@ -1,9 +1,0 @@
-P1 = FiniteElement("Lagrange", "tetrahedron", 3)
-P0 = FiniteElement("Discontinuous vector Lagrange", "tetrahedron", 0)
-
-v = BasisFunction(P1)
-U = BasisFunction(P1)
-c = Function(P0)
-i = Index()
-
-a = v*c[i]*U.dx(i)*dx
