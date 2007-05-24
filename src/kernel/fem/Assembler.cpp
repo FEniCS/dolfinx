@@ -1,8 +1,10 @@
 // Copyright (C) 2007 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Garth N. Wells, 2007
+//
 // First added:  2007-01-17
-// Last changed: 2007-05-22
+// Last changed: 2007-05-24
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Array.h>
@@ -19,6 +21,7 @@
 #include <dolfin/UFC.h>
 #include <dolfin/Assembler.h>
 #include <dolfin/SparsityPattern.h>
+#include <dolfin/SparsityPatternBuilder.h>
 
 using namespace dolfin;
 
@@ -124,7 +127,7 @@ void Assembler::assemble(GenericTensor& A, const ufc::form& form, Mesh& mesh,
   UFC ufc(form, mesh, dof_maps);
 
   // Initialize global tensor
-  initGlobalTensor(A, ufc);
+  initGlobalTensor(A, mesh, ufc);
 
   // Initialize coefficients
   initCoefficients(coefficients, ufc);
@@ -336,12 +339,12 @@ void Assembler::check(const ufc::form& form,
                   coefficients.size(), form.num_coefficients());
 }
 //-----------------------------------------------------------------------------
-void Assembler::initGlobalTensor(GenericTensor& A, const UFC& ufc) const
+void Assembler::initGlobalTensor(GenericTensor& A, Mesh& mesh, UFC& ufc) const
 {
   //A.init(ufc.form.rank(), ufc.global_dimensions);
 
   SparsityPattern sparsity_pattern; 
-  dof_maps.sparsityPattern(sparsity_pattern);
+  SparsityPatternBuilder::build(sparsity_pattern, mesh, ufc);
   A.init(sparsity_pattern);
 }
 //-----------------------------------------------------------------------------

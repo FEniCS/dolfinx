@@ -6,6 +6,7 @@ nobase_include_HEADERS   = dolfin/dolfin_fem.h \
                            dolfin/DofMap.h \
                            dolfin/DofMaps.h \
                            dolfin/Form.h \
+                           dolfin/SparsityPatternBuilder.h \
                            dolfin/SubSystem.h \
                            dolfin/UFC.h \
                            dolfin/UFCCell.h \
@@ -17,6 +18,7 @@ libdolfin_fem_la_SOURCES = assemble.cpp \
                            BoundaryCondition.cpp \
                            DofMap.cpp \
                            DofMaps.cpp \
+                           SparsityPatternBuilder.cpp \
                            SubSystem.cpp \
                            UFC.cpp
 libdolfin_fem_la_LDFLAGS = -static

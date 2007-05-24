@@ -98,6 +98,9 @@ namespace dolfin
     /// Compute product y = Ax
     void mult(const uBlasVector& x, uBlasVector& y) const;
 
+    /// Compress matrix (eliminate all non-zeros from a sparse matrix) 
+    void compress();
+
     /// Display matrix
     void disp(uint precision = 2) const;
 
@@ -263,6 +266,14 @@ namespace dolfin
   void uBlasMatrix<Mat>::mult(const uBlasVector& x, uBlasVector& y) const
   {
     ublas::axpy_prod(*this, x, y, true);
+  }
+  //-----------------------------------------------------------------------------
+  template <class Mat>  
+  void uBlasMatrix<Mat>::compress()
+  {
+    Mat A_temp(this->size(0), this->size(1));
+    A_temp.assign(*this);
+    this->swap(A_temp);
   }
   //-----------------------------------------------------------------------------
   template <class Mat>  
