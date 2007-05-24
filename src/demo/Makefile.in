@@ -206,7 +206,7 @@ sharedstatedir = @sharedstatedir@
 swig_found = @swig_found@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
-SUBDIRS = fem la mesh nls ode pde quadrature subdomains
+SUBDIRS = fem la mesh nls ode pde quadrature
 all: all-recursive
 
 .SUFFIXES:

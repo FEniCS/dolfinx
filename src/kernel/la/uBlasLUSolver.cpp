@@ -54,7 +54,7 @@ dolfin::uint uBlasLUSolver::solve(const uBlasMatrix<ublas_dense_matrix>& A,
 //-----------------------------------------------------------------------------
 #if defined(HAVE_UMFPACK_H)|| defined(HAVE_UMFPACK_UMFPACK_H) || defined(HAVE_UFSPARSE_UMFPACK_H)
 dolfin::uint uBlasLUSolver::solve(const uBlasMatrix<ublas_sparse_matrix>& A, uBlasVector& x, 
-    const uBlasVector& b)
+                                  const uBlasVector& b)
 {
   // Check dimensions and get number of non-zeroes
   const uint M  = A.size(0);
@@ -181,4 +181,3 @@ dolfin::uint uBlasLUSolver::solveInPlaceUBlas(uBlasMatrix<ublas_dense_matrix>& A
   return solveInPlace(A, x);
 }
 //-----------------------------------------------------------------------------
-

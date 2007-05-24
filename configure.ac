@@ -118,10 +118,11 @@ fi
 # Check for UFC
 PKG_CHECK_MODULES(UFC, ufc-1)
 
-# Check for umfpack
+# Prepare for AMD and UMFPACK tests
 have_umfpack_header=yes
 have_amd_lib=no
 have_umfpack_and_amd_lib=no
+
 # Check for amd library
 if test x$AMD_LIB_DIR != x; then
     UMFPACK_LIBS="-L$AMD_LIB_DIR -lamd"
@@ -132,21 +133,23 @@ else
         echo "Cannot find amd library (part of umfpack). Umfpack will be disabled"
     fi
 fi
+
 # Check for umfpack library if amd library has been found
-if test $have_amd_lib = yes; then
-    if test x$UMFPACK_LIB_DIR != x; then
-        UMFPACK_LIBS="$UMFPACK_LIBS -L$UMFPACK_LIB_DIR -lumfpack"
-        have_umfpack_and_amd_lib=yes
-    else
-        AC_CHECK_LIB(umfpack,umf_i_malloc, UMFPACK_LIBS="$UMFPACK_LIBS -lumfpack" have_umfpack_and_amd_lib=yes,,$UMFPACK_LIBS)
-        if test $have_umfpack_and_amd_lib != yes; then
-            echo "Cannot find umfpack library. Umfpack will be disabled"
-        fi
-    fi
-fi
+#if test $have_amd_lib = yes; then
+#    if test x$UMFPACK_LIB_DIR != x; then
+#        UMFPACK_LIBS="$UMFPACK_LIBS -L$UMFPACK_LIB_DIR -lumfpack"
+#        have_umfpack_and_amd_lib=yes
+#    else
+#        AC_CHECK_LIB(umfpack, umfpack_dl_solve, UMFPACK_LIBS="$UMFPACK_LIBS -lumfpack" have_umfpack_and_amd_lib=yes,,$UMFPACK_LIBS)
+#        if test $have_umfpack_and_amd_lib != yes; then
+#            echo "Cannot find umfpack library. Umfpack will be disabled"
+#        fi
+#    fi
+#fi
 
 # Check for umfpack header files if umfpack and amd libraries have been found
-if test $have_umfpack_and_amd_lib = yes; then
+#if test $have_umfpack_and_amd_lib = yes; then
+if test $have_amd_lib = yes; then
     if test x$UMFPACK_INCLUDE_DIR != x; then
         UMFPACK_CFLAGS="-I$UMFPACK_INCLUDE_DIR"
         AC_DEFINE(HAVE_UMFPACK_H,1)
@@ -170,6 +173,17 @@ if test $have_umfpack_and_amd_lib = yes; then
             fi
        fi
     fi
+fi
+
+# This is a temporary fix to support both libumfpack4 and libufsparse.
+# In libufsparse, -lblas is missing, so we skip the test for the library
+# above, only check for the header, and add the flag here.
+if test $have_umfpack_header = yes; then
+   if test x$UMFPACK_LIB_DIR != x; then
+      UMFPACK_LIBS="$UMFPACK_LIBS -L$UMFPACK_LIB_DIR -lumfpack -lblas"
+   else
+      UMFPACK_LIBS="$UMFPACK_LIBS -lumfpack -lblas"
+   fi
 fi
 
 # Test for PyDOLFIN
@@ -355,6 +369,7 @@ AC_SUBST(DOLFIN_DEFINITIONS)
 # External libraries which DOLFIN depends on
 DOLFIN_EXT_LIBS="$PETSC_LIBS $SLEPC_LIBS $XML_LIBS $UMFPACK_LIBS $GLIB_LIBS $GTS_LIBS"
 AC_SUBST(DOLFIN_EXT_LIBS)
+echo "external libraries: $DOLFIN_EXT_LIBS"
 
 # Library list which DOLFIN applications need to link against
 DOLFIN_LIBS="-ldolfin"
