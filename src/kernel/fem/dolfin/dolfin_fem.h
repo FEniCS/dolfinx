@@ -8,5 +8,6 @@
 #include <dolfin/BoundaryCondition.h>
 #include <dolfin/Form.h>
 #include <dolfin/Assembler.h>
+#include <dolfin/SparsityPatternBuilder.h>
 
 #endif
