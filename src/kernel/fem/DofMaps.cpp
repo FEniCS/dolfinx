@@ -130,7 +130,7 @@ void DofMaps::matrixSparsityPattern(SparsityPattern& sparsity_pattern, Mesh& mes
   sparsity_pattern.init(dof_maps[0]->global_dimension(), dof_maps[1]->global_dimension());
 
   // Create sparsity pattern for cell integrals
-  if (ufc.form.num_interior_facet_integrals() != 0)
+  if (ufc.form.num_cell_integrals() != 0)
   {
     for (CellIterator cell(mesh); !cell.end(); ++cell)
     {

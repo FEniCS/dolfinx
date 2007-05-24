@@ -92,7 +92,7 @@ int main()
   plot(u);
 
   // Save solution to file
-  File file("poisson.xml");
+  File file("poisson.pvd");
   file << u;
 
   return 0;
