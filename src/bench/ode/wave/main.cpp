@@ -1,10 +1,10 @@
-// Copyright (C) 2005-2006 Anders Logg.
+// Copyright (C) 2005-2007 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells 2005
 //
 // First added:  2005
-// Last changed: 2006-10-26
+// Last changed: 2007-05-24
 
 #include <dolfin.h>
 
@@ -28,7 +28,7 @@ public:
 
     // Lump mass matrix
     uBlasMassMatrix M(mesh);
-    FEM::lump(M, m);
+    M.lump(m);
 
     // Set dependencies
     for (unsigned int i = 0; i < offset; i++)
@@ -49,10 +49,11 @@ public:
 
     // Get local mesh size (check smallest neighboring triangle)
     hmin = 1.0;
+    mesh.init(0, mesh.topology().dim());
     for (VertexIterator v(mesh); !v.end(); ++v)
     {
       real dmin = 1.0;
-      for (CellIterator c(v); !c.end(); ++c)
+      for (CellIterator c(*v); !c.end(); ++c)
       {
 	const real d = c->diameter();
 	if ( d < dmin )
@@ -76,15 +77,15 @@ public:
 
       if ( i < offset )
       {
-	const Point p = mesh.geometry().point(i);
-	if ( std::abs(p.x() - x0) < 0.5*w )
-	  u(i) = 0.5*(cos(2.0*DOLFIN_PI*(p.x() - x0)/w) + 1.0);
+        const real x = mesh.geometry().x(i, 0);
+	if ( std::abs(x - x0) < 0.5*w )
+	  u(i) = 0.5*(cos(2.0*DOLFIN_PI*(x - x0)/w) + 1.0);
       }
       else
       {
-	const Point p = mesh.geometry().point(i);
-	if ( std::abs(p.x() - x0) < 0.5*w )
-	  u(i) = -(DOLFIN_PI/w)*sin(2.0*DOLFIN_PI*(p.x() - x0)/w);
+        const real x = mesh.geometry().x(i - offset, 0);
+	if ( std::abs(x - x0) < 0.5*w )
+	  u(i) = -(DOLFIN_PI/w)*sin(2.0*DOLFIN_PI*(x - x0)/w);
       }
     }
   }
@@ -130,51 +131,7 @@ public:
 
     return - inner_prod(row(A, j), u) / m(j);
   }
-  
-  void save(Sample& sample)
-  {
-    cout << "Saving data at t = " << sample.t() << endl;
-
-    // Create functions
-    static Vector ux(N/2);
-    static Vector vx(N/2);
-    static Vector kx(N/2);
-    static Vector rx(N/2);
-    static P1tri element;
-    static Function u(ux, mesh, element);
-    static Function v(vx, mesh, element);
-    static Function k(kx, mesh, element);
-    static Function r(rx, mesh, element);
-    static File ufile("solutionu.m");
-    static File vfile("solutionv.m");
-    static File kfile("timesteps.m");
-    static File rfile("residual.m");
-    
-    u.rename("u", "Solution of the wave equation");
-    v.rename("v", "Speed of the wave equation");
-    k.rename("k", "Time steps for the wave equation");
-    r.rename("r", "Time residual for the wave equation");
-
-    // Get the degrees of freedom and set current time
-    u.sync(sample.t());
-    v.sync(sample.t());
-    k.sync(sample.t());
-    r.sync(sample.t());
-    for (unsigned int i = 0; i < offset; i++)
-    {
-      ux(i) = sample.u(i);
-      vx(i) = sample.u(i + offset);
-      kx(i) = sample.k(i + offset);
-      rx(i) = sample.r(i + offset);
-    }
-
-    // Save solution to file
-    ufile << u;
-    vfile << v;
-    kfile << k;
-    rfile << r;
-  }
-
+ 
 private:
 
   Mesh& mesh;             // The mesh
