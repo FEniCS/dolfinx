@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-05-14
-// Last changed: 2007-05-14
+// Last changed: 2007-05-24
 //
 // Simple macro for DOLFIN unit tests (using cppunit). The macro
 // DOLFIN_TEST removes the need of repeating the same 8 lines of
