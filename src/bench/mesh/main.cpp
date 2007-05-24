@@ -1,8 +1,8 @@
-// Copyright (C) 2006 Anders Logg.
+// Copyright (C) 2006-2007 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-11-01
-// Last changed: 2006-11-01
+// Last changed: 2007-05-24
 
 #include <dolfin.h>
 
@@ -32,7 +32,7 @@ void bench(unsigned int n, unsigned int M)
   for (unsigned int i = 0; i < M; ++i)
   {
     for (CellIterator c(mesh); !c.end(); ++c)
-      for (VertexIterator v(c); !v.end(); ++v)
+      for (VertexIterator v(*c); !v.end(); ++v)
         sum += v->index();
   }
   t = toc() / MM;
