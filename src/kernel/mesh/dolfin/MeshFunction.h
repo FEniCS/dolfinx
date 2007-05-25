@@ -100,7 +100,7 @@ namespace dolfin
     /// Initialize mesh function for given topological dimension
     void init(uint dim)
     {
-      if ( !_mesh )
+      if (!_mesh)
         error("Mesh has not been specified, unable to initialize mesh function.");
       _mesh->init(dim);
       init(*_mesh, dim, _mesh->size(dim));
@@ -109,7 +109,7 @@ namespace dolfin
     /// Initialize mesh function for given topological dimension of given size
     void init(uint dim, uint size)
     {
-      if ( !_mesh )
+      if (!_mesh)
         error("Mesh has not been specified, unable to initialize mesh function.");
       _mesh->init(dim);
       init(*_mesh, dim, size);
@@ -118,7 +118,7 @@ namespace dolfin
     /// Initialize mesh function for given topological dimension
     void init(Mesh& mesh, uint dim)
     {
-      _mesh->init(dim);
+      mesh.init(dim);
       init(mesh, dim, mesh.size(dim));
     }
 
