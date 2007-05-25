@@ -119,7 +119,7 @@ fi
 PKG_CHECK_MODULES(UFC, ufc-1)
 
 # Prepare for AMD and UMFPACK tests
-have_umfpack_header=yes
+have_umfpack_header=no
 have_amd_lib=no
 have_umfpack_and_amd_lib=no
 
