@@ -4,7 +4,7 @@
 // Modified by Johan Hoffman 2007.
 //
 // First added:  2006-05-09
-// Last changed: 2007-05-24
+// Last changed: 2007-05-07
 
 #include <dolfin/File.h>
 #include <dolfin/UniformMeshRefinement.h>
@@ -79,7 +79,7 @@ void Mesh::order()
 //-----------------------------------------------------------------------------
 void Mesh::refine()
 {
-  message(1, "No cells marked for refinement, assuming uniform mesh refinement.");
+  dolfin_info("No cells marked for refinement, assuming uniform mesh refinement.");
   UniformMeshRefinement::refine(*this);
 }
 //-----------------------------------------------------------------------------
@@ -93,7 +93,7 @@ void Mesh::coarsen()
 {
   // FIXME: Move implementation to separate class and just call function here
 
-  message(1, "No cells marked for coarsening, assuming uniform mesh coarsening.");
+  dolfin_info("No cells marked for coarsening, assuming uniform mesh coarsening.");
   MeshFunction<bool> cell_marker(*this);
   cell_marker.init(this->topology().dim());
   for (CellIterator c(*this); !c.end(); ++c)
@@ -150,7 +150,7 @@ void Mesh::smooth()
 //-----------------------------------------------------------------------------
 void Mesh::partition(uint num_partitions, MeshFunction<uint>& partitions)
 {
-  MeshPartition::partition(*this, num_partitions, partitions.values());
+  MeshPartition::partition(*this, num_partitions, partitions);
 }
 //-----------------------------------------------------------------------------
 void Mesh::disp() const
@@ -158,20 +158,16 @@ void Mesh::disp() const
   data.disp();
 }
 //-----------------------------------------------------------------------------
-std::string Mesh::str() const
-{
-  std::ostringstream stream;
-  stream << "[Mesh of topological dimension "
-         << numVertices()
-         << " and "
-         << numCells()
-         << " cells]";
-  return stream.str();
-}
-//-----------------------------------------------------------------------------
 dolfin::LogStream& dolfin::operator<< (LogStream& stream, const Mesh& mesh)
 {
-  stream << mesh.str();
+  stream << "[ Mesh of topological dimension "
+	 << mesh.topology().dim()
+	 << " with "
+	 << mesh.numVertices()
+	 << " vertices and "
+	 << mesh.numCells()
+	 << " cells ]";
+  
   return stream;
 }
 //-----------------------------------------------------------------------------

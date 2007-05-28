@@ -5,6 +5,7 @@
 // Last changed: 2007-04-24
 
 #include <dolfin/GraphPartition.h>
+#include <iostream>
 #include <deque>
 #include <queue>
 #include <vector>
@@ -23,7 +24,7 @@ class Node {
     dolfin::uint index;
     dolfin::uint priority;
 };
-// Friend class with function object for comparison of Nodes
+// Class with function object for comparison of Nodes
 class PrioritizeNodes {
   public :
     int operator()( const Node &x, const Node &y )
@@ -139,13 +140,13 @@ void GraphPartition::partition(Graph& graph, uint num_part, uint* vtx_part)
 //-----------------------------------------------------------------------------
 void GraphPartition::check(Graph& graph, uint num_part, uint* vtx_part)
 {
-  cout << "Checking that all vertices are partitioned" << endl;
+  std::cout << "Checking that all vertices are partitioned" << std::endl;
 
   // Check that all vertices are partitioned
   for(uint i=0; i<graph.numVertices(); ++i)
   {
     if(vtx_part[i] == num_part)
-      error("Vertex %d not partitioned", i);
+      dolfin_error1("Vertex %d not partitioned", i);
   }
 
   // Check that partitions are continuous
@@ -179,7 +180,7 @@ void GraphPartition::check(Graph& graph, uint num_part, uint* vtx_part)
 //-----------------------------------------------------------------------------
 void GraphPartition::eval(Graph& graph, uint num_part, uint* vtx_part)
 {
-  cout << "Evaluating partition quality" << endl;
+  std::cout << "Evaluating partition quality" << std::endl;
 
   // Number of vertices per partition
   uint* part_sizes = new uint[num_part];
@@ -195,11 +196,11 @@ void GraphPartition::eval(Graph& graph, uint num_part, uint* vtx_part)
   }
 
   // Print number of vertices per partition
-  cout << "partition\tnum_vtx" << endl;
+  std::cout << "partition\tnum_vtx" << std::endl;
   for(uint i=0; i<num_part; ++i)
-    cout << i << "\t\t" << part_sizes[i] << endl;
+    std::cout << i << "\t\t" << part_sizes[i] << std::endl;
 
-  cout << "edge-cut: " << edgecut(graph, num_part, vtx_part) << endl;
+  std::cout << "edge-cut: " << edgecut(graph, num_part, vtx_part) << std::endl;
 }
 //-----------------------------------------------------------------------------
 real GraphPartition::edgecut(Graph& graph, uint num_part, uint* vtx_part)
@@ -228,13 +229,13 @@ real GraphPartition::edgecut(Graph& graph, uint num_part, uint* vtx_part)
 //-----------------------------------------------------------------------------
 void GraphPartition::disp(Graph& graph, uint num_part, uint* vtx_part)
 {
-  cout << "Number of partitions: " << num_part << endl;
-  cout << "Partition vector" << endl;
+  std::cout << "Number of partitions: " << num_part << std::endl;
+  std::cout << "Partition vector" << std::endl;
 
   for(uint i = 0; i < graph.numVertices(); ++i)
   {
-    cout << vtx_part[i];
+    std::cout << vtx_part[i];
   }
-  cout << endl;
+  std::cout << std::endl;
 }
 //-----------------------------------------------------------------------------

@@ -17,11 +17,8 @@ namespace dolfin
   {
   public:
 
-    // FIXME: Change interface to and extract values inside cpp file after init()
-    //static void partition(Mesh& mesh, uint num_partitions, MeshFunction<uint>& partitions);
-    
     /// Partition a mesh into num_part partitions
-    static void partition(Mesh& mesh, uint num_partitions, uint* vtx_part);
+    static void partition(Mesh& mesh, uint num_partitions, MeshFunction<uint>& partitions);
 
   };
 
