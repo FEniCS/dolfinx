@@ -57,17 +57,11 @@ namespace dolfin
     /// Constructor
     PETScMatrix(uint M, uint N, Type type = default_matrix);
 
-    /// Constructor (just for testing, will be removed)
-    PETScMatrix(const PETScMatrix &B);
-
     /// Destructor
     ~PETScMatrix();
 
     /// Initialize M x N matrix
     void init(uint M, uint N, bool reset = true);
-
-    /// Initialize M x N matrix with given maximum number of nonzeros in each row
-    void init(uint M, uint N, uint nzmax);
 
     /// Initialize M x N matrix with a given number of nonzeros per row
     void init(uint M, uint N, const uint nz[]);

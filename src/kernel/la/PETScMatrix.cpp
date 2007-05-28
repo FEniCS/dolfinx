@@ -61,18 +61,6 @@ PETScMatrix::PETScMatrix(uint M, uint N, Type type)
   init(M, N);
 }
 //-----------------------------------------------------------------------------
-PETScMatrix::PETScMatrix(const PETScMatrix& B)
-  : GenericMatrix(), 
-    Variable("A", "a sparse matrix"), 
-    A(0), _type(B._type)
-{
-  // Initialize PETSc
-  PETScManager::init();
-
-  // Create new PETSc matrix which is a copy of B
-  MatDuplicate(B.A, MAT_COPY_VALUES, &A);  
-}
-//-----------------------------------------------------------------------------
 PETScMatrix::~PETScMatrix()
 {
   // Free memory of matrix
@@ -97,30 +85,6 @@ void PETScMatrix::init(uint M, uint N, bool reset)
   MatCreateSeqAIJ(PETSC_COMM_SELF, M, N, 50, PETSC_NULL, &A);
   MatSetFromOptions(A);
   MatSetOption(A, MAT_KEEP_ZEROED_ROWS);
-}
-//-----------------------------------------------------------------------------
-void PETScMatrix::init(uint M, uint N, uint nz)
-{
-  // Free previously allocated memory if necessary
-  if ( A )
-  {
-    if ( M == size(0) && N == size(1) )
-    {
-      MatZeroEntries(A);
-      return;
-    }
-    else
-      MatDestroy(A);
-  }
-
-  // Create a sparse matrix in compressed row format
-  MatCreate(PETSC_COMM_SELF, &A);
-  MatSetSizes(A,  PETSC_DECIDE,  PETSC_DECIDE, M, N);
-  setType();
-  MatSeqAIJSetPreallocation(A, nz, PETSC_NULL);
-  MatSetFromOptions(A);
-  MatSetOption(A, MAT_KEEP_ZEROED_ROWS);
-  MatZeroEntries(A);
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::init(uint M, uint N, const uint nz[])
