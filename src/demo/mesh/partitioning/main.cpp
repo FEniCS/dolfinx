@@ -11,14 +11,10 @@ using namespace dolfin;
 int main()
 {
   // Create mesh
-  UnitSquare mesh(4, 4);
-
-  mesh.init();
-  // FIXME: Should work just like this, need to call partitions.init(...)
-  MeshFunction<unsigned int> partitions;
+  UnitSquare mesh(8, 8);
 
   // Partition mesh
-  //MeshFunction<unsigned int> partitions(mesh, 2);
+  MeshFunction<unsigned int> partitions;
   mesh.partition(4, partitions);
 
   // Plot mesh partition
