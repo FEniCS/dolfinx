@@ -13,5 +13,5 @@ Description: Dynamic Object-oriented Library for FINite element computation
 Version: @PACKAGE_VERSION@
 Requires: ufc-1
 Conflicts:
-Libs: -L${libdir} -ldolfin
+Libs: -L${libdir} -ldolfin @DOLFIN_EXT_LIBS@
 Cflags: -I${includedir} @EXTERNAL_CFLAGS@ @CXXFLAGS@

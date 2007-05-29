@@ -372,7 +372,7 @@ AC_SUBST(DOLFIN_EXT_LIBS)
 echo "external libraries: $DOLFIN_EXT_LIBS"
 
 # Library list which DOLFIN applications need to link against
-DOLFIN_LIBS="-ldolfin"
+DOLFIN_LIBS="-ldolfin $PETSC_LIBS"
 DOLFIN_LIBS="$DOLFIN_LIBS $DOLFIN_EXT_LIBS"
 AC_SUBST(DOLFIN_LIBS)
 

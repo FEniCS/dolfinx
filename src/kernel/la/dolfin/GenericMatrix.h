@@ -32,10 +32,6 @@ namespace dolfin
 
     ///--- Implementation of GenericTensor interface ---
 
-    /// Initialize zero tensor of given rank and dimensions
-    virtual void init(uint rank, const uint* dims, bool reset = true)
-    { init(dims[0], dims[1], reset); }
-
     /// Initialize zero tensor using sparsity pattern (implemented by sub class)
     virtual void init(const SparsityPattern& sparsity_pattern, bool reset = true) = 0;
 
