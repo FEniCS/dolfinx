@@ -449,6 +449,7 @@ AC_OUTPUT( Makefile \
            src/demo/ode/homotopy/Makefile \
            src/demo/pde/Makefile \
            src/demo/pde/stokes/Makefile \
+           src/test/Makefile \
            src/bench/Makefile \
            src/bench/fem/Makefile \
            src/bench/la/Makefile \
