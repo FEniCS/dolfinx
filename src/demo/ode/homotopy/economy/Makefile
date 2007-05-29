@@ -2,10 +2,10 @@ CFLAGS  = `pkg-config --cflags dolfin`
 LIBS    = `pkg-config --libs dolfin`
 CXX     = `pkg-config --variable=compiler dolfin`
 
-DEST1    = dolfin-ode-homotopy-test
+DEST1    = demo-test
 OBJECTS1 = test.o
 
-DEST2    = dolfin-ode-homotopy-ces
+DEST2    = demo-ces
 OBJECTS2 = ces.o
 
 all: $(DEST1) $(DEST2)
