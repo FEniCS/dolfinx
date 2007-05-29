@@ -9,7 +9,7 @@ from os import system
 from commands import getoutput
 
 # Tests to run
-tests = ["mesh", "function"]
+tests = ["graph", "mesh", "function"]
 
 # Run tests
 failed = []
