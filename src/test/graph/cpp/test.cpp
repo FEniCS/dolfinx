@@ -8,6 +8,8 @@
 
 #include <dolfin.h>
 #include <dolfin/unittest.h>
+//#include <iostream>
+#include <fstream>
 
 using namespace dolfin;
 
@@ -117,12 +119,50 @@ public:
   {
     // Create metis graph file, convert to dolfin xml and read xml file
 
+    // Change to temp files
+    std::ofstream mfile("metis_graph.gra");
+    mfile << "3 3" << std::endl;
+    mfile << " 1 2" << std::endl;
+    mfile << " 0 2" << std::endl;
+    mfile << " 0 1" << std::endl;
+
+    mfile.close();
+
+    // Create dolfin xml file from metis graph
+    system("dolfin-convert metis_graph.gra mgraph.xml");
+
+    Graph graph;
+    File file("mgraph.xml");
+    file >> graph;
+
+    CPPUNIT_ASSERT(graph.numVertices() == 3);
+    CPPUNIT_ASSERT(graph.numEdges() == 3);
   }
 
   void testScotchGraphConvertion()
   {
     // Create scotch graph file, convert to dolfin xml and read xml file
 
+    // Change to temp files
+    std::ofstream sfile("scotch_graph.grf");
+    sfile << "0" << std::endl;
+    sfile << "3 6" << std::endl;
+    sfile << "1 000" << std::endl;
+    sfile << "2 1 2" << std::endl;
+    sfile << "2 0 2" << std::endl;
+    sfile << "2 0 1" << std::endl;
+
+    sfile.close();
+
+    // Create dolfin xml file from scotch graph
+    system("dolfin-convert scotch_graph.grf sgraph.xml");
+
+    Graph graph;
+    File file("sgraph.xml");
+    file >> graph;
+
+    CPPUNIT_ASSERT(graph.numVertices() == 3);
+    CPPUNIT_ASSERT(graph.numEdges() == 3);
   }
 };
 
