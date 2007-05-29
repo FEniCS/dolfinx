@@ -7,6 +7,7 @@ __license__  = "GNU GPL Version 2"
 
 from os import system
 from commands import getoutput
+import re
 
 # Tests to run
 tests = ["function", "graph", "mesh"]
@@ -20,7 +21,8 @@ for test in tests:
     print "C++:   ",
     output = getoutput("cd %s/cpp && ./test" % test)
     if "OK" in output:
-        print "OK"
+        num_tests = int(re.search("OK \((\d+)\)", output).groups()[0])
+        print "OK (%d tests)" % num_tests
     else:
         print "*** Failed"
         failed += [(test, "C++", output)]
@@ -28,7 +30,8 @@ for test in tests:
     print "Python:",
     output = getoutput("cd %s/python && python ./test.py" % test)
     if "OK" in output:
-        print "OK"
+        num_tests = int(re.search("Ran (\d+) test", output).groups()[0])
+        print "OK (%d tests)" % num_tests
     else:
         print "*** Failed"
         failed += [(test, "Python", output)]
