@@ -110,10 +110,10 @@ void GraphEditor::addVertex(uint u, uint num_edges)
   
   // Set offset and step to next vertex
   //dolfin_debug2("addVertex(%d, %d)", u, num_edges);
-  dolfin_debug1("adding num_edges: %d", num_edges);
+  //dolfin_debug1("adding num_edges: %d", num_edges);
   graph->vertices[next_vertex++] = next_arch;
   next_arch += num_edges;
-  dolfin_debug1("next_arch = %d", next_arch);
+  //dolfin_debug1("next_arch = %d", next_arch);
 }
 //-----------------------------------------------------------------------------
 void GraphEditor::addEdge(uint u, uint v)

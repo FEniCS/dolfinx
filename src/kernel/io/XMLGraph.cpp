@@ -157,7 +157,7 @@ void XMLGraph::readEdge(const xmlChar *name, const xmlChar **attrs)
   uint v1 = parseUnsignedInt(name, attrs, "v1");
   uint v2 = parseUnsignedInt(name, attrs, "v2");
 
-  dolfin_debug2("readEdge, v1 = %d, v2 = %d", v1, v2);
+  //dolfin_debug2("readEdge, v1 = %d, v2 = %d", v1, v2);
   
   // Edge weights not yet implemented
   //uint w = parseUnsignedInt(name, attrs, "weight");

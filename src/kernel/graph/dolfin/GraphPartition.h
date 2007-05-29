@@ -31,7 +31,7 @@ namespace dolfin
     static void disp(Graph& graph, uint num_part, uint* vtx_part);
 	 
     /// Calculate edge_cut
-    static real edgecut(Graph& graph, uint num_part, uint* vtx_part);
+    static uint edgecut(Graph& graph, uint num_part, uint* vtx_part);
 
   };
 
