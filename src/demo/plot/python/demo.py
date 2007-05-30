@@ -36,8 +36,7 @@ for i in xrange(500):
         if r < R:
             coordinates[j] = [X + (r/R)**2*(x - X), Y + (r/R)**2*(y - Y)]
 
-    print "Press q to continue..."
-    plot(mesh)
+    update(mesh)
 
 
     for j in xrange(mesh.numVertices()):
