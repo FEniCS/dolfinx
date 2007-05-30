@@ -206,3 +206,11 @@ int Function::facet() const
   return _facet;
 }
 //-----------------------------------------------------------------------------
+Mesh& Function::mesh() const
+{
+  if (!f)
+    error("Function contains no data.");
+
+  return f->mesh;
+}
+//-----------------------------------------------------------------------------
