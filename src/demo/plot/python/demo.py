@@ -21,7 +21,7 @@ dX = H
 dY = H
 coordinates = mesh.coordinates()
 original = coordinates.copy()
-for i in xrange(500):
+for i in xrange(1000):
 
     if X < H or X > 1.0 - H:
         dX = -dX
@@ -38,7 +38,6 @@ for i in xrange(500):
 
     print "Press q to continue..."
     plot(mesh)
-
 
     for j in xrange(mesh.numVertices()):
         coordinates[j] = original[j]
