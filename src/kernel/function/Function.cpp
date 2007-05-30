@@ -102,7 +102,7 @@ dolfin::uint Function::dim(unsigned int i) const
   return f->dim(i);
 }
 //-----------------------------------------------------------------------------
-Mesh& Function::mesh()
+Mesh& Function::mesh() const
 {
   if (!f)
     error("Function contains no data.");
