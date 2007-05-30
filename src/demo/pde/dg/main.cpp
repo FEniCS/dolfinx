@@ -100,7 +100,7 @@ int main()
   DirichletBC gd(mesh);
   NeumannBC gn(mesh);
   FacetNormal n(mesh);
-  InvMeshSize h(mesh);
+  AvgMeshSize h(mesh);
 
   // Create sub domains
   DirichletBoundary GD;
@@ -108,7 +108,7 @@ int main()
   
   // Define PDE
   PoissonBilinearForm a(n, h);
-  PoissonLinearForm L(f, gd, gn);
+  PoissonLinearForm L(f, gn);
   LinearPDE pde(a, L, mesh);
 
   // Solve PDE
