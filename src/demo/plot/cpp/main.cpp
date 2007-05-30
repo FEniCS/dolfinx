@@ -11,6 +11,6 @@ using namespace dolfin;
 int main()
 {
   // Read and plot mesh from file
-  Mesh mesh("cow.xml.gz");
+  Mesh mesh("dolfin-2.xml.gz");
   plot(mesh);
 }
