@@ -86,7 +86,7 @@ void LocalMeshCoarsening::coarsenMeshByEdgeCollapse(Mesh& mesh,
 
     uint presize = cells_to_coarsen.size();
 
-    cout << "presize: " << presize << endl;
+    //cout << "presize: " << presize << endl;
 
     for(std::list<int>::iterator iter = cells_to_coarsen.begin();
 	iter != cells_to_coarsen.end(); iter++)
@@ -115,7 +115,7 @@ void LocalMeshCoarsening::coarsenMeshByEdgeCollapse(Mesh& mesh,
 			      coarsen_boundary);
 	if(!mesh_ok)
 	{
-	  cout << "mesh not ok" << endl;
+	  warning("Mesh not ok");
 	}
 	else
 	{
@@ -364,7 +364,7 @@ bool LocalMeshCoarsening::coarsenCell(Mesh& mesh, Mesh& coarse_mesh,
     }
     else
     {
-      cout << "adding old vertex at: " << v->point() << endl;
+      //cout << "adding old vertex at: " << v->point() << endl;
 
       old2new_vertex[v->index()] = vertex;
       editor.addVertex(vertex++, v->point());
@@ -417,7 +417,7 @@ bool LocalMeshCoarsening::coarsenCell(Mesh& mesh, Mesh& coarse_mesh,
       real qm = cn.volume() / cn.diameter();
       if(qm < vol_tol)
       {
-	cout << "cell quality too low" << endl;
+	warning("Cell quality too low");
 	cout << "qm: " << qm << endl;
 	mesh_ok = false;
 	return mesh_ok;

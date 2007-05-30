@@ -125,13 +125,13 @@ namespace dolfin
     void refine();
 
     /// Refine mesh according to cells marked for refinement
-    void refine(MeshFunction<bool>& cell_marker, bool refine_boundary = true);
+    void refine(MeshFunction<bool>& cell_markers, bool refine_boundary = true);
 
     /// Coarsen mesh uniformly
     void coarsen();
 
     /// Coarsen mesh according to cells marked for coarsening
-    void coarsen(MeshFunction<bool>& cell_marker, bool coarsen_boundary = false);
+    void coarsen(MeshFunction<bool>& cell_markers, bool coarsen_boundary = false);
     
     /// Smooth mesh using Lagrangian mesh smoothing 
     void smooth();

@@ -85,9 +85,9 @@ void Mesh::refine()
   UniformMeshRefinement::refine(*this);
 }
 //-----------------------------------------------------------------------------
-void Mesh::refine(MeshFunction<bool>& cell_marker, bool refine_boundary)
+void Mesh::refine(MeshFunction<bool>& cell_markers, bool refine_boundary)
 {
-  LocalMeshRefinement::refineMeshByEdgeBisection(*this,cell_marker,
+  LocalMeshRefinement::refineMeshByEdgeBisection(*this, cell_markers,
                                                  refine_boundary);
 }
 //-----------------------------------------------------------------------------
@@ -104,9 +104,9 @@ void Mesh::coarsen()
   LocalMeshCoarsening::coarsenMeshByEdgeCollapse(*this,cell_marker);
 }
 //-----------------------------------------------------------------------------
-void Mesh::coarsen(MeshFunction<bool>& cell_marker, bool coarsen_boundary)
+void Mesh::coarsen(MeshFunction<bool>& cell_markers, bool coarsen_boundary)
 {
-  LocalMeshCoarsening::coarsenMeshByEdgeCollapse(*this,cell_marker,
+  LocalMeshCoarsening::coarsenMeshByEdgeCollapse(*this, cell_markers,
                                                  coarsen_boundary);
 }
 //-----------------------------------------------------------------------------
