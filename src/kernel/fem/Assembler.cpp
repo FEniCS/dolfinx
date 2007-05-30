@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2007
 //
 // First added:  2007-01-17
-// Last changed: 2007-05-24
+// Last changed: 2007-05-30
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Array.h>
@@ -36,13 +36,14 @@ Assembler::~Assembler()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void Assembler::assemble(GenericTensor& A, const Form& form, Mesh& mesh)
+void Assembler::assemble(GenericTensor& A, const Form& form, Mesh& mesh, 
+                          bool reset_tensor)
 {
   assemble(A, form.form(), mesh, form.coefficients(), 0, 0, 0);
 }
 //-----------------------------------------------------------------------------
 void Assembler::assemble(GenericTensor& A, const Form& form, Mesh& mesh,
-                         const SubDomain& sub_domain)
+                         const SubDomain& sub_domain, bool reset_tensor)
 {
   // Extract cell domains
   MeshFunction<uint>* cell_domains = 0;
@@ -77,7 +78,8 @@ void Assembler::assemble(GenericTensor& A, const Form& form, Mesh& mesh,
 void Assembler::assemble(GenericTensor& A, const Form& form, Mesh& mesh, 
                          const MeshFunction<uint>& cell_domains,
                          const MeshFunction<uint>& exterior_facet_domains,
-                         const MeshFunction<uint>& interior_facet_domains)
+                         const MeshFunction<uint>& interior_facet_domains,
+                         bool reset_tensor)
 {
   assemble(A, form.form(), mesh, form.coefficients(),
            &cell_domains, &exterior_facet_domains, &interior_facet_domains);
@@ -113,7 +115,8 @@ void Assembler::assemble(GenericTensor& A, const ufc::form& form, Mesh& mesh,
                          Array<Function*> coefficients,
                          const MeshFunction<uint>* cell_domains,
                          const MeshFunction<uint>* exterior_facet_domains,
-                         const MeshFunction<uint>* interior_facet_domains)
+                         const MeshFunction<uint>* interior_facet_domains,
+                         bool reset_tensor)
 {
   message("Assembling rank %d form.", form.rank());
 
@@ -127,7 +130,7 @@ void Assembler::assemble(GenericTensor& A, const ufc::form& form, Mesh& mesh,
   UFC ufc(form, mesh, dof_maps);
 
   // Initialize global tensor
-  initGlobalTensor(A, mesh, ufc);
+  initGlobalTensor(A, mesh, ufc, reset_tensor);
 
   // Initialize coefficients
   initCoefficients(coefficients, ufc);
@@ -339,13 +342,19 @@ void Assembler::check(const ufc::form& form,
                   coefficients.size(), form.num_coefficients());
 }
 //-----------------------------------------------------------------------------
-void Assembler::initGlobalTensor(GenericTensor& A, Mesh& mesh, UFC& ufc) const
+void Assembler::initGlobalTensor(GenericTensor& A, Mesh& mesh, UFC& ufc, 
+                                 bool reset_tensor) const
 {
   //A.init(ufc.form.rank(), ufc.global_dimensions);
 
-  SparsityPattern sparsity_pattern; 
-  SparsityPatternBuilder::build(sparsity_pattern, mesh, ufc);
-  A.init(sparsity_pattern);
+  if( reset_tensor )
+  {
+    SparsityPattern sparsity_pattern; 
+    SparsityPatternBuilder::build(sparsity_pattern, mesh, ufc);
+    A.init(sparsity_pattern);
+  }
+  else
+    A.zero();
 }
 //-----------------------------------------------------------------------------
 void Assembler::initCoefficients(Array<Function*>& coefficients,

@@ -108,10 +108,10 @@ namespace dolfin
     /// In order to link correctly, they must be made inline functions.
 
     /// Initialize M x N matrix
-    void init(uint M, uint N, bool reset = true);
+    void init(uint M, uint N);
 
     /// Initialize a matrix from the sparsity pattern
-    void init(const SparsityPattern& sparsity_pattern, bool reset = true);
+    void init(const SparsityPattern& sparsity_pattern);
 
     //friend LogStream& operator<< <Mat> (LogStream&, const uBlasMatrix<Mat>&);
 
@@ -141,21 +141,14 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <class Mat> 
-  void uBlasMatrix< Mat >::init(uint M, uint N, bool reset)
+  void uBlasMatrix< Mat >::init(uint M, uint N)
   {
     // Resize matrix
     if( size(0) != M || size(1) != N )
-    { 
       this->resize(M, N, false);  
-      this->clear();
-      return;
-    }
 
     // Clear matrix (detroys any structure)
-    if( reset )
-      this->clear();
-    else
-      (*this) *= 0.0; // FIXME: This could be done better, but will it be much faster?
+    this->clear();
   }
   //---------------------------------------------------------------------------
   template <class Mat> 
@@ -247,11 +240,9 @@ namespace dolfin
   template <class Mat>  
   void uBlasMatrix<Mat>::zero()
   {
-    // Clear destroys non-zero structure of a sparse matrix 
-    this->clear();
-
     // Set all non-zero values to zero without detroying non-zero pattern
-  //  (*this) *= 0.0;
+    // It might be faster to iterate throught entries?
+    (*this) *= 0.0;
   }
   //-----------------------------------------------------------------------------
   template <class Mat>  
@@ -300,33 +291,26 @@ namespace dolfin
   // Specialised member functions (must be inlined to avoid link errors)
   //-----------------------------------------------------------------------------
   template <> 
-  inline void uBlasMatrix<ublas_dense_matrix>::init(const SparsityPattern& sparsity_pattern,
-                                                    bool reset)
+  inline void uBlasMatrix<ublas_dense_matrix>::init(const SparsityPattern& sparsity_pattern)
   {
     init(sparsity_pattern.size(0), sparsity_pattern.size(1));
   }
   //---------------------------------------------------------------------------
   template <class Mat> 
-  inline void uBlasMatrix<Mat>::init(const SparsityPattern& sparsity_pattern, 
-                                     bool reset)
+  inline void uBlasMatrix<Mat>::init(const SparsityPattern& sparsity_pattern)
   {
-    if( reset )
-    {
-      init(sparsity_pattern.size(0), sparsity_pattern.size(1));
+    init(sparsity_pattern.size(0), sparsity_pattern.size(1));
 
-      // Reserve space for non-zeroes
-      this->reserve(sparsity_pattern.numNonZero());
+    // Reserve space for non-zeroes
+    this->reserve(sparsity_pattern.numNonZero());
 
-      const std::vector< std::set<int> >& pattern = sparsity_pattern.pattern();
+    const std::vector< std::set<int> >& pattern = sparsity_pattern.pattern();
 
-      std::vector< std::set<int> >::const_iterator set;
-      std::set<int>::const_iterator element;
-      for(set = pattern.begin(); set != pattern.end(); ++set)
-        for(element = set->begin(); element != set->end(); ++element)
-          this->push_back(set - pattern.begin(), *element, 0.0);
-    }
-    else
-      (*this) *= 0.0; // FIXME: This could be done better, but will it be much faster?
+    std::vector< std::set<int> >::const_iterator set;
+    std::set<int>::const_iterator element;
+    for(set = pattern.begin(); set != pattern.end(); ++set)
+      for(element = set->begin(); element != set->end(); ++element)
+        this->push_back(set - pattern.begin(), *element, 0.0);
   }
   //---------------------------------------------------------------------------
   template <class Mat>  

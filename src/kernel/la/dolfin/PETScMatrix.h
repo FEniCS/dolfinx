@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells, 2006-2007.
 //
 // First added:  2004
-// Last changed: 2007-04-16
+// Last changed: 2007-05-29
 
 #ifndef __PETSC_MATRIX_H
 #define __PETSC_MATRIX_H
@@ -61,7 +61,7 @@ namespace dolfin
     ~PETScMatrix();
 
     /// Initialize M x N matrix
-    void init(uint M, uint N, bool reset = true);
+    void init(uint M, uint N);
 
     /// Initialize M x N matrix with a given number of nonzeros per row
     void init(uint M, uint N, const uint nz[]);
@@ -70,7 +70,7 @@ namespace dolfin
     void init(const uint M, const uint N, const uint bs, const uint nzmax);
 
     /// Initialize a matrix from the sparsity pattern
-    void init(const SparsityPattern& sparsity_pattern, bool reset = true);
+    void init(const SparsityPattern& sparsity_pattern);
 
     /// Return number of rows (dim = 0) or columns (dim = 1) along dimension dim
     uint size(const uint dim) const;

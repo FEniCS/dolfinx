@@ -67,16 +67,11 @@ PETScMatrix::~PETScMatrix()
   if ( A ) MatDestroy(A);
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::init(uint M, uint N, bool reset)
+void PETScMatrix::init(uint M, uint N)
 {
   // Free previously allocated memory if necessary
   if ( A )
-  {
-    if ( M == size(0) && N == size(1) )
-      return;
-    else
-      MatDestroy(A);
-  }
+    MatDestroy(A);
   
   // FIXME: maybe 50 should be a parameter?
   // FIXME: it should definitely be a parameter
@@ -91,15 +86,7 @@ void PETScMatrix::init(uint M, uint N, const uint nz[])
 {
   // Free previously allocated memory if necessary
   if ( A )
-  {
-    if ( M == size(0) && N == size(1) )
-    {
-      MatZeroEntries(A);
-      return;
-    }
-    else
-      MatDestroy(A);
-  }
+    MatDestroy(A);
 
   // Create a sparse matrix in compressed row format
   MatCreate(PETSC_COMM_SELF, &A);
@@ -115,15 +102,7 @@ void PETScMatrix::init(const uint M, const uint N, const uint bs, const uint nz)
 {
   // Free previously allocated memory if necessary
   if ( A )
-  {
-    if ( M == size(0) && N == size(1) )
-    {
-      MatZeroEntries(A);
-      return;
-    }
-    else
-      MatDestroy(A);
-  }
+    MatDestroy(A);
   
   // Creates a sparse matrix in block AIJ (block compressed row) format.
   // Given blocksize bs, and max no connectivity mnc.  
@@ -133,7 +112,7 @@ void PETScMatrix::init(const uint M, const uint N, const uint bs, const uint nz)
   MatZeroEntries(A);
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::init(const SparsityPattern& sparsity_pattern, bool reset)
+void PETScMatrix::init(const SparsityPattern& sparsity_pattern)
 {
   uint* nzrow = new uint[sparsity_pattern.size(0)];  
   sparsity_pattern.numNonZeroPerRow(nzrow);
@@ -155,7 +134,7 @@ dolfin::uint PETScMatrix::nz(const uint row) const
   int ncols = 0;
   const int* cols = 0;
   const double* vals = 0;
-  MatGetRow(A, static_cast<int>(row), &ncols, &cols, &vals);
+  MatGetRow(A,     static_cast<int>(row), &ncols, &cols, &vals);
   MatRestoreRow(A, static_cast<int>(row), &ncols, &cols, &vals);
 
   return ncols;
@@ -292,7 +271,6 @@ void PETScMatrix::lump(PETScVector& m) const
 real PETScMatrix::norm(const Norm type) const
 {
   real value = 0.0;
-
   switch ( type )
   {
   case l1:
@@ -307,7 +285,6 @@ real PETScMatrix::norm(const Norm type) const
   default:
     error("Unknown norm type.");
   }
-  
   return value;
 }
 //-----------------------------------------------------------------------------
@@ -393,7 +370,7 @@ LogStream& dolfin::operator<< (LogStream& stream, const PETScMatrix& A)
   int m = A.size(0);
   int n = A.size(1);
   stream << "[ PETSc matrix (type " << type << ") of size "
-	 << m << " x " << n << " ]";
+	  << m << " x " << n << " ]";
 
   return stream;
 }

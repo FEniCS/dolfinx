@@ -14,7 +14,6 @@
 #include <dolfin/GenericFile.h>
 #include <dolfin/XMLFile.h>
 #include <dolfin/MatlabFile.h>
-#include <dolfin/MTXFile.h>
 #include <dolfin/OctaveFile.h>
 #include <dolfin/OpenDXFile.h>
 #include <dolfin/PythonFile.h>
@@ -35,10 +34,6 @@ File::File(const std::string& filename)
     file = new XMLFile(filename);
   else if ( filename.rfind(".xml.gz") != filename.npos )
     file = new XMLFile(filename);
-  else if ( filename.rfind(".mat") != filename.npos )
-    file = new MTXFile(filename);
-  else if ( filename.rfind(".mtx") != filename.npos )
-    file = new MTXFile(filename);
   else if ( filename.rfind(".msh") != filename.npos )
     file = new GiDFile(filename);
   else if ( filename.rfind(".res") != filename.npos )
@@ -66,9 +61,6 @@ File::File(const std::string& filename, Type type)
     break;
   case matlab:
     file = new MatlabFile(filename);
-    break;
-  case matrixmarket:
-    file = new MTXFile(filename);
     break;
   case octave:
     file = new OctaveFile(filename);

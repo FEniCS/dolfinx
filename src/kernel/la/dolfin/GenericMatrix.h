@@ -5,7 +5,7 @@
 // Modified by Anders Logg 2006-2007.
 //
 // First added:  2006-04-24
-// Last changed: 2007-04-25
+// Last changed: 2007-05-30
 
 #ifndef __GENERIC_MATRIX_H
 #define __GENERIC_MATRIX_H
@@ -33,7 +33,10 @@ namespace dolfin
     ///--- Implementation of GenericTensor interface ---
 
     /// Initialize zero tensor using sparsity pattern (implemented by sub class)
-    virtual void init(const SparsityPattern& sparsity_pattern, bool reset = true) = 0;
+    virtual void init(const SparsityPattern& sparsity_pattern) = 0;
+
+    /// Zero tensor and keep any sparse structure
+    virtual void zero() = 0;
 
     /// Return size of given dimension (implemented by sub class)
     virtual uint size(uint dim) const = 0;
@@ -59,7 +62,7 @@ namespace dolfin
     ///--- Matrix interface ---
 
     /// Initialize M x N matrix
-    virtual void init(uint M, uint N, bool reset = true) = 0;
+    virtual void init(uint M, uint N) = 0;
     
     /// Get block of values
     virtual void get(real* block, uint m, const uint* rows, uint n, const uint* cols) const = 0;
@@ -72,11 +75,6 @@ namespace dolfin
 
     /// Set given rows to identity matrix
     virtual void ident(const uint rows[], uint m) = 0;
-
-    ///--- FIXME: Which of the functions below do we really need? ---
-
-    /// Set all entries to zero
-    virtual void zero() = 0;
 
   };
 
