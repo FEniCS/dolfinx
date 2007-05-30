@@ -61,7 +61,7 @@ namespace dolfin
     ~PETScMatrix();
 
     /// Initialize M x N matrix
-    void init(uint M, uint N, bool reset = true);
+    void init(uint M, uint N);
 
     /// Initialize M x N matrix with a given number of nonzeros per row
     void init(uint M, uint N, const uint nz[]);
