@@ -1,1 +1,29 @@
-SUBDIRS = fem la mesh nls ode pde quadrature
+SUBDIRS = la/eigensolver \
+          fem \
+          nls/nonlinearpoisson \
+          nls/cahn-hilliard \
+          ode/complex \
+          ode/stiff \
+          ode/aliev-panfilov \
+          ode/courtemanche \
+          ode/homotopy/economy \
+          ode/homotopy/simple \
+          ode/harmonic \
+          ode/lorenz \
+          ode/method-weights \
+          pde/dg \
+          pde/nonlinear-poisson \
+          pde/convection-diffusion \
+          pde/functional \
+          pde/elasticity \
+          pde/mixed-poisson \
+          pde/stokes/stabilized \
+          pde/stokes/taylor-hood \
+          pde/lift-drag \
+          pde/poisson \
+          mesh/refinement \
+          mesh/subdomains \
+          mesh/meshfunction \
+          mesh/partitioning \
+          plot/cpp \
+          quadrature

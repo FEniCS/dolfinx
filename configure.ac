@@ -442,13 +442,6 @@ AC_OUTPUT( Makefile \
            src/lib/Makefile \
            src/pydolfin/Makefile \
            src/demo/Makefile \
-           src/demo/la/Makefile \
-           src/demo/nls/Makefile \
-           src/demo/mesh/Makefile \
-           src/demo/ode/Makefile \
-           src/demo/ode/homotopy/Makefile \
-           src/demo/pde/Makefile \
-           src/demo/pde/stokes/Makefile \
            src/test/Makefile \
            src/bench/Makefile \
            src/bench/fem/Makefile \
