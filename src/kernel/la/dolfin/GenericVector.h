@@ -1,10 +1,10 @@
-// Copyright (C) 2006 Garth N. Wells.
+// Copyright (C) 2006-2007 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Anders Logg 2006-2007.
 //
 // First added:  2006-04-25
-// Last changed: 2007-04-03
+// Last changed: 2007-05-30
 
 #ifndef __GENERIC_VECTOR_H
 #define __GENERIC_VECTOR_H
@@ -35,8 +35,11 @@ namespace dolfin
     { init(dims[0]); }
 
     /// Initialize zero tensor using sparsity pattern
-    virtual void init(const SparsityPattern& sparsity_pattern, bool reset)
+    virtual void init(const SparsityPattern& sparsity_pattern)
     { init(sparsity_pattern.size(0)); }
+
+    /// Zero tensor and keep any sparse structure
+    virtual void zero() = 0;
 
     /// Return size of given dimension
     virtual uint size(uint dim) const
@@ -88,9 +91,6 @@ namespace dolfin
     
     ///--- FIXME: Which of the functions below do we really need? ---
 
-    /// Set all entries to zero
-    virtual void zero() = 0;
-    
     /// Compute sum of vector
     virtual real sum() const = 0;
 

@@ -1,8 +1,10 @@
 // Copyright (C) 2007 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Garth N. Wells, 2007.
+//
 // First added:  2007-03-15
-// Last changed: 2007-04-30
+// Last changed: 2007-05-30
 
 #ifndef __SCALAR_H
 #define __SCALAR_H
@@ -32,16 +34,16 @@ namespace dolfin
     ///--- Implementation of GenericTensor interface ---
 
     /// Initialize zero tensor of given rank and dimensions
-    inline void init(uint rank, const uint* dims, bool reset = true)
-    {
-      if (reset) value = 0.0;
-    }
+    inline void init(uint rank, const uint* dims)
+    { value = 0.0; }
 
     /// Initialize zero tensor using sparsity pattern
-    inline void init(const SparsityPattern& sparsity_pattern, bool reset = true)
-    {
-      if (reset) value = 0.0;
-    }
+    inline void init(const SparsityPattern& sparsity_pattern)
+    { value = 0.0; }
+
+    /// Initialize zero tensor
+    inline void zero()
+    { value = 0.0; }
 
     /// Return size of given dimension
     inline uint size(const uint dim) const

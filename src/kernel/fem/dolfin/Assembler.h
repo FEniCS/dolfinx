@@ -1,8 +1,10 @@
 // Copyright (C) 2007 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Garth N. Wells, 2007
+//
 // First added:  2007-01-17
-// Last changed: 2007-05-14
+// Last changed: 2007-05-30
 
 #ifndef __ASSEMBLER_H
 #define __ASSEMBLER_H
@@ -38,17 +40,17 @@ namespace dolfin
     ~Assembler();
 
     /// Assemble tensor from given variational form and mesh
-    void assemble(GenericTensor& A, const Form& form, Mesh& mesh);
+    void assemble(GenericTensor& A, const Form& form, Mesh& mesh, bool reset_tensor = true);
 
     /// Assemble tensor from given variational form and mesh over a sub domain
     void assemble(GenericTensor& A, const Form& form, Mesh& mesh,
-                  const SubDomain& sub_domain);
+                  const SubDomain& sub_domain, bool reset_tensor = true);
 
     /// Assemble tensor from given variational form and mesh over sub domains
     void assemble(GenericTensor& A, const Form& form, Mesh& mesh, 
                   const MeshFunction<uint>& cell_domains,
                   const MeshFunction<uint>& exterior_facet_domains,
-                  const MeshFunction<uint>& interior_facet_domains);
+                  const MeshFunction<uint>& interior_facet_domains, bool reset_tensor = true);
     
     /// Assemble scalar from given variational form and mesh
     real assemble(const Form& form, Mesh& mesh);
@@ -68,7 +70,7 @@ namespace dolfin
                   Array<Function*> coefficients,
                   const MeshFunction<uint>* cell_domains,
                   const MeshFunction<uint>* exterior_facet_domains,
-                  const MeshFunction<uint>* interior_facet_domains);
+                  const MeshFunction<uint>* interior_facet_domains, bool reset_tensor = true);
       
   private:
  
@@ -95,7 +97,7 @@ namespace dolfin
                Array<Function*>& coefficients) const;
 
     // Initialize global tensor
-    void initGlobalTensor(GenericTensor& A, Mesh& mesh, UFC& ufc) const;
+    void initGlobalTensor(GenericTensor& A, Mesh& mesh, UFC& ufc, bool reset_tensor) const;
 
     // Initialize coefficients
     void initCoefficients(Array<Function*>& coefficients, const UFC& ufc) const;

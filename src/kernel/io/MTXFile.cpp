@@ -113,7 +113,7 @@ void MTXFile::operator>>(Matrix& A)
     error("Could not parse matrix size.");
   }
   // resize A
-  A.init(M, N, nz);
+//  A.init(M, N, nz);
 
   error("Reading MTX matrices is broken. Need to fix matrix access.");
 /*

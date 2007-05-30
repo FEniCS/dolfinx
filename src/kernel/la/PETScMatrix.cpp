@@ -67,7 +67,7 @@ PETScMatrix::~PETScMatrix()
   if ( A ) MatDestroy(A);
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::init(uint M, uint N, bool reset)
+void PETScMatrix::init(uint M, uint N)
 {
   // Free previously allocated memory if necessary
   if ( A )
@@ -133,7 +133,7 @@ void PETScMatrix::init(const uint M, const uint N, const uint bs, const uint nz)
   MatZeroEntries(A);
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::init(const SparsityPattern& sparsity_pattern, bool reset)
+void PETScMatrix::init(const SparsityPattern& sparsity_pattern)
 {
   uint* nzrow = new uint[sparsity_pattern.size(0)];  
   sparsity_pattern.numNonZeroPerRow(nzrow);
