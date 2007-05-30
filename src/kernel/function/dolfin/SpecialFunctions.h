@@ -64,7 +64,7 @@ namespace dolfin
         // If there are two cells connected to the facet
         if (facet0.numEntities(cell().mesh().topology().dim()) == 2)
         {
-          // Create the two connected cells and return the acerage of their diameter
+          // Create the two connected cells and return the average of their diameter
           Cell cell0(mesh(), facet0.entities(cell().mesh().topology().dim())[0]);
           Cell cell1(mesh(), facet0.entities(cell().mesh().topology().dim())[1]);
 

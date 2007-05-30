@@ -75,7 +75,7 @@ namespace dolfin
     uint dim(unsigned int i) const;
     
     /// Return the mesh
-    Mesh& mesh();
+    Mesh& mesh() const;
 
     /// Extract sub function/slice (only for discrete function)
     SubFunction operator[] (uint i);
@@ -111,9 +111,6 @@ namespace dolfin
 
     // Access current facet (available during assembly for user-defined functions)
     int facet() const;
-
-    /// Return the mesh
-    Mesh& mesh() const;
 
   private:
     

@@ -102,7 +102,7 @@ dolfin::uint Function::dim(unsigned int i) const
   return f->dim(i);
 }
 //-----------------------------------------------------------------------------
-Mesh& Function::mesh()
+Mesh& Function::mesh() const
 {
   if (!f)
     error("Function contains no data.");
@@ -204,13 +204,5 @@ const Cell& Function::cell() const
 int Function::facet() const
 {
   return _facet;
-}
-//-----------------------------------------------------------------------------
-Mesh& Function::mesh() const
-{
-  if (!f)
-    error("Function contains no data.");
-
-  return f->mesh;
 }
 //-----------------------------------------------------------------------------
