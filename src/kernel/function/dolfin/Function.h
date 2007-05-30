@@ -2,9 +2,10 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells 2005.
-//
+// Modified by Kristian B. Oelgaard, 2007.
+
 // First added:  2003-11-28
-// Last changed: 2007-05-17
+// Last changed: 2007-05-29
 
 #ifndef __FUNCTION_H
 #define __FUNCTION_H
@@ -110,6 +111,9 @@ namespace dolfin
 
     // Access current facet (available during assembly for user-defined functions)
     int facet() const;
+
+    /// Return the mesh
+    Mesh& mesh() const;
 
   private:
     
