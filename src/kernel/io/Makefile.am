@@ -5,7 +5,6 @@ nobase_include_HEADERS  = dolfin/dolfin_io.h \
                           dolfin/GiDFile.h \
                           dolfin/MatlabFile.h \
                           dolfin/MFile.h \
-                          dolfin/MTXFile.h \
                           dolfin/OctaveFile.h \
                           dolfin/OpenDXFile.h \
                           dolfin/PythonFile.h \
@@ -29,7 +28,6 @@ libdolfin_io_la_SOURCES = File.cpp \
                           GiDFile.cpp \
                           MatlabFile.cpp \
                           MFile.cpp \
-                          MTXFile.cpp \
                           OctaveFile.cpp \
                           OpenDXFile.cpp \
                           PythonFile.cpp \

@@ -62,7 +62,7 @@ libLTLIBRARIES_INSTALL = $(INSTALL)
 LTLIBRARIES = $(lib_LTLIBRARIES)
 libdolfin_io_la_LIBADD =
 am_libdolfin_io_la_OBJECTS = File.lo GenericFile.lo GiDFile.lo \
-	MatlabFile.lo MFile.lo MTXFile.lo OctaveFile.lo OpenDXFile.lo \
+	MatlabFile.lo MFile.lo OctaveFile.lo OpenDXFile.lo \
 	PythonFile.lo VTKFile.lo XMLBLASFormData.lo XMLDofMap.lo \
 	XMLFile.lo XMLFiniteElement.lo XMLMesh.lo XMLMeshFunction.lo \
 	XMLMatrix.lo XMLObject.lo XMLParameterList.lo XMLFunction.lo \
@@ -246,7 +246,6 @@ nobase_include_HEADERS = dolfin/dolfin_io.h \
                           dolfin/GiDFile.h \
                           dolfin/MatlabFile.h \
                           dolfin/MFile.h \
-                          dolfin/MTXFile.h \
                           dolfin/OctaveFile.h \
                           dolfin/OpenDXFile.h \
                           dolfin/PythonFile.h \
@@ -271,7 +270,6 @@ libdolfin_io_la_SOURCES = File.cpp \
                           GiDFile.cpp \
                           MatlabFile.cpp \
                           MFile.cpp \
-                          MTXFile.cpp \
                           OctaveFile.cpp \
                           OpenDXFile.cpp \
                           PythonFile.cpp \
@@ -363,7 +361,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/GenericFile.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/GiDFile.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MFile.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MTXFile.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MatlabFile.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/OctaveFile.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/OpenDXFile.Plo@am__quote@
