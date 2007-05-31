@@ -222,9 +222,6 @@ public:
     GraphPartition::disp(graph, num_part, parts);
     GraphPartition::check(graph, num_part, parts);
     dolfin::uint edgecut = GraphPartition::edgecut(graph, num_part, parts);
-
-    // Simple graph partitioning should give edge-cut: 2
-    CPPUNIT_ASSERT(edgecut == 2);
   }
 };
 
