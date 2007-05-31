@@ -62,6 +62,12 @@ AC_ARG_WITH(amd-lib,
                            [Specify path to amd library (part of umfpack)]),
             [AMD_LIB_DIR=$with_amd_lib],)
 
+# Option --enable/disable-scotch
+AC_ARG_ENABLE(scotch,
+              AC_HELP_STRING([--enable-scotch],
+                             [Compile with support for SCOTCH graph partitioning]),
+              disable_scotch=$enableval, enable_scotch=no)
+
 # Use C++ compiler for performing configure tests
 AC_LANG(C++)
 
@@ -336,11 +342,35 @@ else
     PETSC_CFLAGS=""
 fi
 
+# Handle option --disable-scotch
+if test x$enable_scotch = xyes; then
+    # Check for SCOTCH
+    AC_CHECK_HEADER(scotch.h, have_scotch_header=yes, have_scotch_header=no)
+    if test $have_scotch_header = yes; then
+      AC_DEFINE(HAVE_SCOTCH_H,1)
+      SCOTCH_CFLAGS="-DCOMMON_RANDOM_FIXED_SEED -DSCOTCH_RENAME -DSCOTCH_VERSION="\"4.0\"""
+      SCOTCH_LIBS="-llapack -lX11 -lm -lscotch -lscotcherrcom -lcommon"
+    else
+        echo "*** Unable to find SCOTCH on your system."
+        echo "*** Use --with-scotch-dir=<path> to specify the correct path for SCOTCH,"
+        echo "*** or set the environment variable SCOTCH_DIR to the correct path."
+        echo "*** SCOTCH is available at http://www.labri.fr/perso/pelegrin/scotch/"
+        exit 1
+    fi
+
+    # Found SCOTCH, so set HAVE_SCOTCH_H
+    CXXFLAGS="-DHAVE_SCOTCH_H=1 $CXXFLAGS"
+
+else
+    # Compile without SCOTCH
+    echo "disabling SCOTCH (mesh/graph partitioning will not work)"
+    SCOTCH_CFLAGS=""
+fi
 # List of DOLFIN kernel libraries
 DOLFIN_KERNEL="common elements fem function graph io la main math mesh mf nls ode pde quadrature parameter log plot"
 
 # Generate include path for external libraries
-EXTERNAL_CFLAGS="$PETSC_CFLAGS $SLEPC_CFLAGS $BOOST_CPPFLAGS $MPI_CFLAGS $XML_CPPFLAGS $UMFPACK_CFLAGS $GLIB_CFLAGS $GTS_CFLAGS $UFC_CFLAGS"
+EXTERNAL_CFLAGS="$PETSC_CFLAGS $SLEPC_CFLAGS $BOOST_CPPFLAGS $MPI_CFLAGS $XML_CPPFLAGS $UMFPACK_CFLAGS $GLIB_CFLAGS $GTS_CFLAGS $UFC_CFLAGS $SCOTCH_CFLAGS"
 AC_SUBST(EXTERNAL_CFLAGS)
 
 KERNEL_CFLAGS=""
@@ -367,7 +397,7 @@ done
 AC_SUBST(DOLFIN_DEFINITIONS)
 
 # External libraries which DOLFIN depends on
-DOLFIN_EXT_LIBS="$PETSC_LIBS $SLEPC_LIBS $XML_LIBS $UMFPACK_LIBS $GLIB_LIBS $GTS_LIBS"
+DOLFIN_EXT_LIBS="$PETSC_LIBS $SLEPC_LIBS $XML_LIBS $UMFPACK_LIBS $GLIB_LIBS $GTS_LIBS $SCOTCH_LIBS"
 AC_SUBST(DOLFIN_EXT_LIBS)
 echo "external libraries: $DOLFIN_EXT_LIBS"
 
