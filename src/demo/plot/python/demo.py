@@ -6,8 +6,6 @@ __license__  = "GNU GPL Version 2"
 from dolfin import *
 from math import sqrt
 
-print "Press q to continue..."
-
 # Read and plot mesh from file
 mesh = Mesh("dolfin-2.xml.gz")
 plot(mesh, interactive=False)

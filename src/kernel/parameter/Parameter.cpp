@@ -36,12 +36,6 @@ Parameter::Parameter(std::string value) : value(0), _type(type_string)
   this->value = new StringValue(value);
 }
 //-----------------------------------------------------------------------------
-Parameter::Parameter(const char* value) : value(0), _type(type_string)
-{
-  std::string s(value);
-  this->value = new StringValue(s);
-}
-//-----------------------------------------------------------------------------
 Parameter::Parameter(const Parameter& parameter)
   : value(0), _type(parameter._type)
 { 
