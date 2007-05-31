@@ -10,15 +10,15 @@ print "Press q to continue..."
 
 # Read and plot mesh from file
 mesh = Mesh("dolfin-2.xml.gz")
-plot(mesh)
+plot(mesh, interactive=False)
 
 # Have some fun with the mesh
 R = 0.15
-H = 0.05
+H = 0.025
 X = 0.3
 Y = 0.4
 dX = H
-dY = H
+dY = 1.5*H
 coordinates = mesh.coordinates()
 original = coordinates.copy()
 for i in xrange(500):
@@ -37,7 +37,6 @@ for i in xrange(500):
             coordinates[j] = [X + (r/R)**2*(x - X), Y + (r/R)**2*(y - Y)]
 
     update(mesh)
-
 
     for j in xrange(mesh.numVertices()):
         coordinates[j] = original[j]
