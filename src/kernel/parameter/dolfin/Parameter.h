@@ -40,6 +40,9 @@ namespace dolfin
     /// Create string-valued parameter
     Parameter(std::string value);
 
+    /// Create string-valued parameter
+    Parameter(const char* value);
+
     /// Copy constructor
     Parameter(const Parameter& parameter);
 
