@@ -12,6 +12,7 @@
 #define __LOGGER_H
 
 #include <string>
+#include <ostream>
 #include <dolfin/constants.h>
 
 namespace dolfin
@@ -48,6 +49,9 @@ namespace dolfin
     /// Set output destination ("terminal" or "silent")
     void setOutputDestination(std::string destination);
 
+    /// Set output destination to stream
+    void setOutputDestination(std::ostream& stream);
+
     /// Set debug level
     void setDebugLevel(int debug_level);
 
@@ -71,6 +75,8 @@ namespace dolfin
 
     // Current indentation level
     int indentation_level;
+
+    std::ostream* logstream;
 
   };
 

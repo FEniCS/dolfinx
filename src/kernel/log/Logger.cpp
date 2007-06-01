@@ -19,7 +19,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 Logger::Logger()
-  : destination(terminal), debug_level(0), indentation_level(0)
+  : destination(terminal), debug_level(0), indentation_level(0), logstream(0)
 {
   // Do nothing
 }
@@ -99,11 +99,21 @@ void Logger::setOutputDestination(std::string destination)
     this->destination = terminal;
   else if (destination == "silent")
     this->destination = silent;
+  else if (destination == "stream"){
+    warning("Please provide the actual stream. Using terminal instead.");
+    this->destination = terminal;
+  }
   else
   {
     this->destination = terminal;
     message("Unknown output destination, using plain text.");
   }
+}
+//-----------------------------------------------------------------------------
+void Logger::setOutputDestination(std::ostream& ostream)
+{
+   logstream = &ostream;
+    this->destination = stream;
 }
 //-----------------------------------------------------------------------------
 void Logger::setDebugLevel(int debug_level)
@@ -140,7 +150,9 @@ void Logger::write(int debug_level, std::string msg)
     std::cout << msg << std::endl;
     break;
   case stream:
-    std::cout << "Destination stream not available. Fix this Ola! :-)" << std::endl;
+    if (logstream == NULL)
+      error("No stream attached, cannot write to stream");
+    *logstream << msg << std::endl;
     break;
   default:
     // Do nothing if destination == silent
