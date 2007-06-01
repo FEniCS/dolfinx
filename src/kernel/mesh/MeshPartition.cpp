@@ -8,6 +8,7 @@
 #include <dolfin/GraphPartition.h>
 #include <dolfin/MeshPartition.h>
 #include <dolfin/MeshFunction.h>
+#include <dolfin/parameters.h>
 
 using namespace dolfin;
 
@@ -19,5 +20,9 @@ void MeshPartition::partition(Mesh& mesh, uint num_part,
   partitions.init(mesh, mesh.topology().dim());
   Graph graph(mesh);
   GraphPartition::partition(graph, num_part, partitions.values());
+
+  bool report_edge_cut = get("report edge cut");
+  if(report_edge_cut)
+    GraphPartition::edgecut(graph, num_part, partitions.values());
 }
 //-----------------------------------------------------------------------------
