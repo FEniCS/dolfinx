@@ -30,6 +30,8 @@ using namespace dolfin;
 // FIXME: what are these doing?
 namespace dolfin { class ublas_vector {}; }
 %include "cpointer.i"
+//%include "std_iostream.i"
+%include "std_sstream.i"
 %include "std_string.i"
 %include "std_vector.i"
 %include "stl.i"
