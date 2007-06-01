@@ -5,9 +5,28 @@
 %typemap(in) dolfin::uint = int;
 %typemap(out) dolfin::uint = int;
 
+%typemap(in) dolfin::Parameter {
+    if PyString_Check($input) {
+        std::string input = PyString_AsString($input);
+        dolfin::Parameter tmp(input);
+        $1 = tmp;
+    }
+    else if PyInt_Check($input) {
+        int val = PyInt_AsLong($input);
+        dolfin::Parameter tmp(val);
+        $1 = tmp;
+    }
+    else if PyFloat_Check($input) {
+        dolfin::Parameter tmp(PyFloat_AsDouble($input));
+        $1 = tmp;
+    }
+}
+
+
 %typemap(out) dolfin::Parameter {
   {
     // Custom typemap
+    // std::string tmp; 
 
     switch ( $1.type() )
     {
@@ -28,7 +47,11 @@
       
     case Parameter::type_string:
       
-      $result = SWIG_From_std_string(*&($1));
+      //$result = SWIG_From_std_string(*&($1));
+      //tmp = (std::string)*&($1);
+      //$result = SWIG_FromCharPtrAndSize(tmp.c_str(), tmp.size());
+      $result = SWIG_FromCharPtrAndSize(((std::string)*&($1)).c_str(), ((std::string)*&($1)).size());
+
       break;
       
     default:
@@ -36,6 +59,7 @@
     }
   }
 }
+
 
 %typemap(directorin) dolfin::real* {
   {
@@ -57,6 +81,14 @@
 
 %typecheck(SWIG_TYPECHECK_DOUBLE_ARRAY) dolfin::uint* {
     $1 = PyArray_Check($input) ? 1 : 0;
+}
+
+%typecheck(SWIG_TYPECHECK_DOUBLE_ARRAY) dolfin::Parameter {
+    bool pass = 0;
+    pass = PyString_Check($input) ? 1 : pass;
+    pass = PyInt_Check($input)    ? 1 : pass;
+    pass = PyFloat_Check($input)  ? 1 : pass;
+    $1 = pass;
 }
 
 %typemap(in) dolfin::real* {
