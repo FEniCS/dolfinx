@@ -24,6 +24,6 @@ SUBDIRS = la/eigensolver \
           mesh/refinement \
           mesh/subdomains \
           mesh/meshfunction \
-          mesh/partitioning \
+          mesh/partitioning/cpp \
           plot/cpp \
           quadrature

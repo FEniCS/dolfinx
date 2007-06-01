@@ -11,11 +11,11 @@ using namespace dolfin;
 int main()
 {
   // Create mesh
-  UnitSquare mesh(32, 32);
+  UnitCube mesh(16, 16, 16);
 
   // Partition mesh
   MeshFunction<unsigned int> partitions;
-  mesh.partition(8, partitions);
+  mesh.partition(20, partitions);
 
   // Plot mesh partition
   plot(partitions);
