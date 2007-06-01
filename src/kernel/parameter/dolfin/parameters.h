@@ -10,6 +10,7 @@
 #define __PARAMETERS_H
 
 #include <dolfin/Parameter.h>
+#include <ostream>
 
 namespace dolfin
 {
@@ -19,6 +20,9 @@ namespace dolfin
   
   /// Set value of parameter
   void set(std::string key, dolfin::Parameter value);
+
+  /// Set special key/value pair
+  void set(std::string key, std::ostream& ostream);
   
   /// Get value of parameter with given key
   Parameter get(std::string key);

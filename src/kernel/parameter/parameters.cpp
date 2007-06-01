@@ -33,6 +33,23 @@ void dolfin::set(std::string key, Parameter value)
   ParameterSystem::parameters.set(key, value);
 }
 //-----------------------------------------------------------------------------
+void dolfin::set(std::string key, std::ostream& stream)
+{
+  if (key == "output destination"){
+    LogManager::logger.setOutputDestination(stream);
+    {
+        if (key == "output destination"){
+              LogManager::logger.setOutputDestination(stream);
+                }
+          else
+                error("Only key 'output destination' can take a stream as value.");
+    }
+    
+  }
+  else
+    error("Only key 'output destination' can take a stream as value.");
+}
+//-----------------------------------------------------------------------------
 dolfin::Parameter dolfin::get(std::string key)
 {
   return ParameterSystem::parameters.get(key);
