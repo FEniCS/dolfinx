@@ -149,8 +149,8 @@ void LocalMeshRefinement::refineMeshByEdgeBisection(Mesh& mesh,
   editor.initVertices(num_vertices + num_new_vertices);
   editor.initCells(num_cells + num_new_cells);
 
-  cout << "Number of cells in old mesh: " << num_cells << "; to add: " << num_new_cells << endl;
-  cout << "Number of vertices in old mesh: " << num_vertices << "; to add: " << num_new_vertices << endl;
+  //cout << "Number of cells in old mesh: " << num_cells << "; to add: " << num_new_cells << endl;
+  //cout << "Number of vertices in old mesh: " << num_vertices << "; to add: " << num_new_vertices << endl;
   
   // Add old vertices
   uint current_vertex = 0;

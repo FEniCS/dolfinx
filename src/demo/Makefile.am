@@ -21,7 +21,7 @@ SUBDIRS = la/eigensolver \
           pde/stokes/taylor-hood \
           pde/lift-drag \
           pde/poisson \
-          mesh/refinement \
+          mesh/refinement/cpp \
           mesh/subdomains \
           mesh/meshfunction \
           mesh/partitioning/cpp \
