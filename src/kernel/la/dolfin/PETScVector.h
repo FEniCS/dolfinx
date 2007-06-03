@@ -51,9 +51,6 @@ namespace dolfin
     /// Initialize vector data
     void init(const uint N);
 
-    /// Initialize vector using sparsity pattern
-    void init(const SparsityPattern& sparsity_pattern);
-
     /// Clear vector data
     void clear();
 

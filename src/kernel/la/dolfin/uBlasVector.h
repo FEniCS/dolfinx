@@ -17,7 +17,6 @@
 namespace dolfin
 {
 
-  class SparsityPattern;
 #ifdef HAVE_PETSC_H
   class PETScVector;
 #endif
