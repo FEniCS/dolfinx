@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-04-10
-// Last changed: 2007-05-09
+// Last changed: 2007-06-05
 
 #include <dolfin/Mesh.h>
 #include <dolfin/Vertex.h>
@@ -128,7 +128,7 @@ void BoundaryCondition::apply(GenericMatrix& A, GenericVector& b,
     data.dof_map->tabulate_dofs(data.cell_dofs, ufc_mesh, ufc_cell);
 
     // Tabulate which dofs are on the facet
-    data.dof_map->tabulate_facet_dofs(data.facet_dofs, ufc_mesh, ufc_cell, local_facet);
+    data.dof_map->tabulate_facet_dofs(data.facet_dofs, local_facet);
     
     //for (uint i = 0; i < 12; i++)
     //  message("cell_dofs[%d] = %d", i, data.cell_dofs[i]);
