@@ -6,6 +6,7 @@
 # Modified by Garth N. Wells (gmsh function)
 # Modified by Alexander H. Jarosch (gmsh fix)
 # Modified by Angelo Simone (Gmsh and Medit fix)
+# Modified by Andy R. Terrel (gmsh fix)
 # Modified by Magnus Vikstrom (metis and scotch function)
 #
 # Script for converting between various data formats
@@ -309,36 +310,70 @@ def gmsh2xml(ifilename, ofilename):
     # Scan file for cell type
     cell_type = None
     dim = 0
-    while 1:
-
-        # Read next line
-        line = ifile.readline()
-        if not line: break
+    line = ifile.readline()
+    while line:
 
         # Remove newline
         if line[-1] == "\n":
             line = line[:-1]
 
         # Read dimension
-        if line == "$Elements":
+        if line.find("$Elements") == 0:
+                        
             line = ifile.readline()
             num_cells  = int(line)
+            num_cells_counted = 0
             if num_cells == 0:
                 error("No cells found in gmsh file.")
             line = ifile.readline()
-            element = line.split()
-            celltype = int(element[1])
-            if celltype == 2:
-                cell_type = "triangle"
-                dim = 2
-            elif celltype == 3:
-                cell_type = "tetrahedron"
-                dim = 3
-            break
 
-    # Check that we got the cell type
+            # Now iterate through elements to find largest dimension.  Gmsh
+            # format might include elements of lower dimensions in the element list.
+            # We also need to count number of elements of correct dimensions.
+            # Also determine which vertices are not used.
+            dim_2_count = 0
+            dim_3_count = 0
+            vertices_2_used = []
+            vertices_3_used = []
+            while line.find("$EndElements") == -1:
+                element = line.split()
+                elem_type = int(element[1])
+                num_tags = int(element[2])
+                if elem_type == 2:
+                    if dim < 2:
+                        cell_type = "triangle"
+                        dim = 2
+                    node_num_list = [int(node) for node in element[3 + num_tags:]]
+                    vertices_2_used.extend(node_num_list)
+                    dim_2_count += 1
+                elif elem_type == 4:
+                    if dim < 3:
+                        cell_type = "tetrahedron"
+                        dim = 3
+                        vertices_2_used = None
+                    node_num_list = [int(node) for node in element[3 + num_tags:]]
+                    vertices_3_used.extend(node_num_list)
+                    dim_3_count += 1
+                line = ifile.readline()
+        else:
+            # Read next line
+            line = ifile.readline()
+
+    # Check that we got the cell type and set num_cells_counted
     if cell_type == None:
         error("Unable to find cell type.")
+    if dim == 3:
+        num_cells_counted = dim_3_count
+        vertex_set = set(vertices_3_used)
+        vertices_3_used = None
+    elif dim == 2:
+        num_cells_counted = dim_2_count
+        vertex_set = set(vertices_2_used)
+        vertices_2_used = None
+
+    vertex_dict = {}
+    for n,v in enumerate(vertex_set):
+        vertex_dict[v] = n
 
     # Step to beginning of file
     ifile.seek(0)
@@ -356,7 +391,7 @@ def gmsh2xml(ifilename, ofilename):
     num_vertices_read = 0
     num_cells_read = 0
 
-    while 1:
+    while state != 10:
 
         # Read next line
         line = ifile.readline()
@@ -372,22 +407,27 @@ def gmsh2xml(ifilename, ofilename):
 
         if state == 0:
             if line == "$MeshFormat":
-                state += 1
+                state = 1
         elif state == 1:
             (version, file_type, data_size) = line.split()
-            state += 1
+            state = 2
         elif state == 2:
             if line == "$EndMeshFormat":
-                state += 1
+                state = 3
         elif state == 3:
             if line == "$Nodes":
-                state += 1
+                state = 4
         elif state == 4:
-            num_vertices = int(line)
+            #num_vertices = int(line)
+            num_vertices = len(vertex_dict)
             write_header_vertices(ofile, num_vertices)
-            state +=1
+            state = 5
         elif state == 5:
             (node_no, x, y, z) = line.split()
+            if vertex_dict.has_key(int(node_no)):
+                node_no = vertex_dict[int(node_no)]
+            else:
+                continue
             nodelist[int(node_no)] = num_vertices_read
             x = float(x)
             y = float(y)
@@ -397,48 +437,47 @@ def gmsh2xml(ifilename, ofilename):
             
             if num_vertices == num_vertices_read:
                 write_footer_vertices(ofile)                
-                state += 1
+                state = 6
         elif state == 6:
             if line == "$EndNodes":
-                state += 1
+                state = 7
         elif state == 7:
             if line == "$Elements":
-                state += 1
+                state = 8
         elif state == 8:
-            num_cells  = int(line)
-            if num_cells == 0:
-                error("No cells found in gmsh file.")
-            else:
-                write_header_cells(ofile, num_cells)   
-                state += 1
+            write_header_cells(ofile,  num_cells_counted)   
+            state = 9
         elif state == 9:
             element = line.split()
-            cell_type = int(element[1])
+            elem_type = int(element[1])
             num_tags  = int(element[2])
-            if cell_type == 2:
-                nn = [int(node) for node in element[3 + num_tags:8]]
-                for node in nn:
+            if elem_type == 2 and dim == 2:
+                node_num_list = [vertex_dict[int(node)] for node in element[3 + num_tags:]]
+                for node in node_num_list:
                     if not node in nodelist:
-                        error("Vertex %d of triangle %d not previously defined." % (node, num_cells_read))
-                n0 = nodelist[nn[0]]
-                n1 = nodelist[nn[1]]
-                n2 = nodelist[nn[2]]
+                        error("Vertex %d of triangle %d not previously defined." %
+                              (node, num_cells_read))
+                n0 = nodelist[node_num_list[0]]
+                n1 = nodelist[node_num_list[1]]
+                n2 = nodelist[node_num_list[2]]
                 write_cell_triangle(ofile, num_cells_read, n0, n1, n2)
-            elif cell_type == 4:
-                nn = [int(node) for node in element[3 + num_tags:9]]
-                for node in nn:
+                num_cells_read +=1 
+            elif elem_type == 4 and dim == 3:
+                node_num_list = [vertex_dict[int(node)] for node in element[3 + num_tags:9]]
+                for node in node_num_list:
                     if not node in nodelist:
-                        error("Vertex %d of tetrahedron %d not previously defined." % (node, num_cells_read))
-                n0 = nodelist[nn[0]]
-                n1 = nodelist[nn[1]]
-                n2 = nodelist[nn[2]]
-                n3 = nodelist[nn[3]]
+                        error("Vertex %d of tetrahedron %d not previously defined." % 
+                              (node, num_cells_read))
+                n0 = nodelist[node_num_list[0]]
+                n1 = nodelist[node_num_list[1]]
+                n2 = nodelist[node_num_list[2]]
+                n3 = nodelist[node_num_list[3]]
                 write_cell_tetrahedron(ofile, num_cells_read, n0, n1, n2, n3)
+                num_cells_read +=1 
 
-            num_cells_read +=1 
-            if num_cells == num_cells_read:
+            if num_cells_counted == num_cells_read:
               write_footer_cells(ofile)                
-              state += 1
+              state = 10
         elif state == 10:
             break
 
