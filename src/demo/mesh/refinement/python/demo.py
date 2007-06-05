@@ -30,4 +30,6 @@ for i in range(5):
     
     # Smooth mesh
     mesh.smooth()
+
+    # Plot mesh
     plot(mesh)

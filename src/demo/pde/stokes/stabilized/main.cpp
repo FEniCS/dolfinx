@@ -94,4 +94,10 @@ int main()
   ufile << u;
   File pfile("pressure.xml");
   pfile << p;
+
+  // Save solution in VTK format
+  File ufile_pvd("velocity.pvd");
+  ufile_pvd << u;
+  File pfile_pvd("pressure.pvd");
+  pfile_pvd << p;
 }
