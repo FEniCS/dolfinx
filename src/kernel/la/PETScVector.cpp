@@ -97,11 +97,6 @@ void PETScVector::init(const uint N)
   VecSet(x, a);
 }
 //-----------------------------------------------------------------------------
-void PETScVector::init(const SparsityPattern& sparsity_pattern)
-{
-  error("Cannot initialise a PETSc vector using a sparsity pattern.");
-}
-//-----------------------------------------------------------------------------
 void PETScVector::axpy(const real a, const PETScVector& x)
 {
   VecAXPY(this->x, a, x.vec());

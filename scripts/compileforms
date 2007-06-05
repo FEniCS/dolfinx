@@ -1,39 +1,27 @@
 #!/bin/sh
 #
-# Copyright (C) 2005-2006 Anders Logg.
+# Copyright (C) 2005-2007 Anders Logg.
 # Licensed under the GNU LGPL Version 2.1.
 #
 # Recompile all ffc forms (use when FFC has been updated)
 # This script should be run from the top level directory.
 
-# Simple test to see where we are
-# FIXME: Does not work when typing ./scripts/...
-CHECK=`echo $0 | cut -d'/' -f1`
-if [ "$CHECK" != "scripts" ]; then
-        echo "This script must be run from the top level directory."
-        exit 1
-fi
-
-FORMFILES=`find . -name '*.form'`
-
+FORMFILES=`find src -name '*.form'`
 TOPDIR=`pwd`
 
+# Regenerate all forms in element library
+cd $TOPDIR/src/kernel/elements
+python generate.py
+
+# Compile all form files
 for FORMFILE in $FORMFILES; do
 
-    echo "--- Compiling $FORMFILE ---"
+    echo "Compiling $FORMFILE"
 
     DIRNAME=`dirname $FORMFILE`
     FILENAME=`echo $FORMFILE | sed s#$DIRNAME/##`
 
-    cd $DIRNAME
-    ffc $FILENAME
-    cd $TOPDIR
+    cd $TOPDIR/$DIRNAME
+    ffc -s -l dolfin $FILENAME
 
 done
-
-# Special case: compile with optimization
-cd $TOPDIR
-cd src/bench/fem/assembly
-FORMFILE='AdvectionOperator_3D_3_FER.form'
-echo "--- Compiling $FORMFILE ---"
-ffc -O $FORMFILE
