@@ -151,9 +151,6 @@ void Graph::createNodal(Mesh& mesh)
   vertices = new uint[num_vertices + 1];
   vertices[num_vertices] = num_arches;
 
-  dolfin_debug1("createNodal() with no vertices %d", num_vertices);
-  dolfin_debug1("createNodal() with no arches %d", num_arches);
-  dolfin_debug1("createNodal() with no edges %d", num_edges);
   // Create nodal graph. Iterate over edges from all vertices
   uint i = 0, j = 0;
   for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
@@ -179,7 +176,6 @@ void Graph::createNodal(Mesh& mesh)
 void Graph::createDual(Mesh& mesh)
 {
   num_vertices = mesh.numCells();
-  dolfin_debug1("createDual() with no vertices %d", num_vertices);
 
   // Get number of arches
   uint D = mesh.topology().dim();
@@ -188,14 +184,11 @@ void Graph::createDual(Mesh& mesh)
   num_arches = connectivity.size();
   num_edges = num_arches/2;
 
-  dolfin_debug1("createDual() with no arches %d", num_arches);
-  dolfin_debug1("createDual() with no edges %d", num_edges);
 
   // This initialization should be a method
   edges = new uint[num_arches];
   vertices = new uint[num_vertices + 1];
   vertices[num_vertices] = num_arches;
-  dolfin_debug("finished initing arrays");
 
   // Create dual graph. Iterate over neighbors from all cells
   uint i = 0, j = 0;

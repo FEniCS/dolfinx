@@ -1,4 +1,4 @@
-// Copyright (C) 2007 Anders Logg.
+// Copyright (C) 2007 Magnus Vikstrøm.
 // Licensed under the GNU LGPL Version 2.1. 
 //
 // First added:  2007-05-29
