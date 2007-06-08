@@ -68,7 +68,7 @@ real solve2D(int q, int n)
   Function zero(mesh, 0.0);
   DirichletBoundary boundary;
   BoundaryCondition bc(zero, mesh, boundary);
-  mesh.disp();
+
   // Choose forms
   Form* a = 0;
   Form* L = 0;
