@@ -8,7 +8,7 @@
 // first order elements for the velocity and pressure. The
 // sub domains for the different boundary conditions used
 // in this simulation are computed by the demo program in
-// src/demo/subdomains.
+// src/demo/mesh/subdomains.
 
 #include <dolfin.h>
 #include "Stokes.h"
