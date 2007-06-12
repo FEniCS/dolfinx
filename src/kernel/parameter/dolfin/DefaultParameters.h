@@ -94,3 +94,6 @@ add("LU report", true);
 
 //--- Parameter for PDE solver ---
 add("PDE linear solver", "direct");
+
+//--- Mesh partitioning ---
+add("report edge cut", false);

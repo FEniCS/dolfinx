@@ -19,6 +19,9 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 void GraphPartition::partition(Graph& graph, uint num_part, uint* vtx_part)
 {
+  if(num_part == 0)
+    error("Minimum number of partitions is 1");
+
   #ifdef HAVE_SCOTCH_H
 
   SCOTCH_Graph grafdat;

@@ -1,4 +1,4 @@
-// Copyright (C) 2007 Anders Logg.
+// Copyright (C) 2007 Magnus Vikstrøm.
 // Licensed under the GNU LGPL Version 2.1. 
 //
 // First added:  2007-05-29
@@ -221,7 +221,7 @@ public:
     GraphPartition::eval(graph, num_part, parts);
     GraphPartition::disp(graph, num_part, parts);
     GraphPartition::check(graph, num_part, parts);
-    GraphPartition::edgecut(graph, num_part, parts);
+    dolfin::uint edgecut = GraphPartition::edgecut(graph, num_part, parts);
   }
 };
 
