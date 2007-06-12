@@ -221,7 +221,7 @@ public:
     GraphPartition::eval(graph, num_part, parts);
     GraphPartition::disp(graph, num_part, parts);
     GraphPartition::check(graph, num_part, parts);
-    dolfin::uint edgecut = GraphPartition::edgecut(graph, num_part, parts);
+    GraphPartition::edgecut(graph, num_part, parts);
   }
 };
 
