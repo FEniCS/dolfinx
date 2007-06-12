@@ -1,8 +1,8 @@
-% Copyright (C) 2005 Anders Logg.
-% Licensed under the GNU LGPL Version 2.1.
+% Copyright (C) 2005-2007 Anders Logg.
+% Licensed under the GNU GPL Version 2.
 %
 % First added:  2004-09-03
-% Last changed: 2007-01-30
+% Last changed: 2007-05-27
 %
 % LaTeX document class for FEniCS manuals.
 
@@ -20,17 +20,20 @@
 \RequirePackage{sectsty}
 \RequirePackage{amsmath}
 \RequirePackage{amssymb}
+\RequirePackage{stmaryrd}
 \RequirePackage{makeidx}
 \RequirePackage{url}
 \RequirePackage{here}
 \RequirePackage[latin1]{inputenc}
 \RequirePackage[colorlinks]{hyperref}
 \RequirePackage[small]{caption}
+\RequirePackage{algorithm}
 
 %--- Misc options ---
 \setlength{\parindent}{0pt}
 \setlength{\parskip}{12pt}
 \allsectionsfont{\sffamily}
+\newcommand{\tab}{\hspace*{2em}}
 \makeindex
 
 %--- Remove header and footer from blank pages  ---

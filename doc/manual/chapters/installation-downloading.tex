@@ -10,18 +10,20 @@ archive in the download section at
  http://www.fenics.org/
 \end{code}
 
-Download the latest release of \package{}, for example \texttt{\packagett{}-0.1.0.tar.gz},
+Download the latest release of \package{}, for example \texttt{\packagett{}-x.y.z.tar.gz},
 and unpack using the command
 \begin{macrocode}
-# tar zxfv \packagett{}-0.1.0.tar.gz
+# tar zxfv \packagett{}-x.y.z.tar.gz
 \end{macrocode}
 
-This creates a directory \texttt{\packagett{}-0.1.0} containing the
+This creates a directory \texttt{\packagett{}-x.y.z} containing the
 \package{} source code.
 
-If you want the very latest version of \package{}, there is also a
-version named \texttt{\packagett{}-cvs-current.tar.gz} which provides a
-snapshot of the current CVS version of \package{}, updated
-automatically from the CVS repository each hour. This version may
-contain features not yet present in the latest release, but may also
-be less stable and even not work at all.
+If you want the very latest version of \package{}, it can be accessed
+directly from the development repository through \texttt{hg}
+(Mercurial):
+\begin{macrocode}
+# hg clone http://www.fenics.org/hg/\packagett{}
+\end{macrocode}
+This version may contain features not yet present in the latest
+release, but may also be less stable and even not work at all.
