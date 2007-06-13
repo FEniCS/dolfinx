@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2007-05-02
-// Last changed: 2007-05-14
+// Last changed: 2007-06-13
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -44,7 +44,8 @@ namespace dolfin
     else
       fprintf(script_file, "    plot(object, mode=\"%s\")\n", mode.c_str());
     fprintf(script_file, "except:\n");
-    fprintf(script_file, "    exit(1)\n");
+    fprintf(script_file, "    import sys\n");
+    fprintf(script_file, "    sys.exit(1)\n");
     fclose(script_file);
     
     // Run script
@@ -80,7 +81,8 @@ namespace dolfin
     else
       fprintf(script_file, "    plot(f, mode=\"%s\")\n", mode.c_str());
     fprintf(script_file, "except:\n");
-    fprintf(script_file, "    exit(1)\n");
+    fprintf(script_file, "    import sys\n");
+    fprintf(script_file, "    sys.exit(1)\n");
     fclose(script_file);
     
     // Run script
