@@ -2,7 +2,6 @@ SUBDIRS                 = dolfin
 nobase_include_HEADERS  = dolfin/dolfin_io.h \
                           dolfin/File.h \
                           dolfin/GenericFile.h \
-                          dolfin/GiDFile.h \
                           dolfin/MatlabFile.h \
                           dolfin/MFile.h \
                           dolfin/OctaveFile.h \
@@ -25,7 +24,6 @@ INCLUDES                = @KERNEL_CFLAGS@
 lib_LTLIBRARIES         = libdolfin-io.la
 libdolfin_io_la_SOURCES = File.cpp \
                           GenericFile.cpp \
-                          GiDFile.cpp \
                           MatlabFile.cpp \
                           MFile.cpp \
                           OctaveFile.cpp \
