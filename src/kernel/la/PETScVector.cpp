@@ -371,7 +371,6 @@ LogStream& dolfin::operator<< (LogStream& stream, const PETScVector& x)
     stream << "[ PETSc vector (empty) ]";
     return stream;
   }
-
   stream << "[ PETSc vector of size " << x.size() << " ]";
 
   return stream;
@@ -379,19 +378,15 @@ LogStream& dolfin::operator<< (LogStream& stream, const PETScVector& x)
 //-----------------------------------------------------------------------------
 void PETScVector::gather(PETScVector& x1, PETScVector& x2, VecScatter& x1sc)
 {
-  VecScatterBegin(x1.vec(), x2.vec(), INSERT_VALUES, SCATTER_FORWARD,
-		  x1sc);
-  VecScatterEnd(x1.vec(), x2.vec(), INSERT_VALUES, SCATTER_FORWARD,
-		x1sc);
+  VecScatterBegin(x1sc, x1.vec(), x2.vec(), INSERT_VALUES, SCATTER_FORWARD);
+  VecScatterEnd(x1sc, x1.vec(), x2.vec(), INSERT_VALUES, SCATTER_FORWARD);
 }
 //-----------------------------------------------------------------------------
 void PETScVector::scatter(PETScVector& x1, PETScVector& x2,
 			   VecScatter& x1sc)
 {
-  VecScatterBegin(x2.vec(), x1.vec(), INSERT_VALUES, SCATTER_REVERSE,
-		  x1sc);
-  VecScatterEnd(x2.vec(), x1.vec(), INSERT_VALUES, SCATTER_REVERSE,
-		x1sc);
+  VecScatterBegin(x1sc, x2.vec(), x1.vec(), INSERT_VALUES, SCATTER_REVERSE);
+  VecScatterEnd(x1sc, x2.vec(), x1.vec(), INSERT_VALUES, SCATTER_REVERSE);
 }
 //-----------------------------------------------------------------------------
 VecScatter* PETScVector::createScatterer(PETScVector& x1, PETScVector& x2,
@@ -401,8 +396,7 @@ VecScatter* PETScVector::createScatterer(PETScVector& x1, PETScVector& x2,
   IS* is = new IS;
 
   ISCreateBlock(MPI_COMM_WORLD, size, 1, &offset, is);
-  VecScatterCreate(x1.vec(), PETSC_NULL, x2.vec(), *is,
-		   sc);
+  VecScatterCreate(x1.vec(), PETSC_NULL, x2.vec(), *is, sc);
 
   return sc;
 }

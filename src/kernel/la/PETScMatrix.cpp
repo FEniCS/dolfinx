@@ -78,6 +78,7 @@ void PETScMatrix::init(uint M, uint N)
 
   // Create a sparse matrix in compressed row format
   MatCreateSeqAIJ(PETSC_COMM_SELF, M, N, 50, PETSC_NULL, &A);
+  setType();
   MatSetFromOptions(A);
   MatSetOption(A, MAT_KEEP_ZEROED_ROWS);
 }
