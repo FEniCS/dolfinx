@@ -225,7 +225,6 @@ void PETScKrylovSolver::readParameters()
   // Set monitor
   if ( get("Krylov monitor convergence") )
     KSPMonitorSet(ksp, monitor, 0, 0);
-//    KSPSetMonitor(ksp, monitor, 0, 0);
 
   // Set tolerances
   KSPSetTolerances(ksp,
