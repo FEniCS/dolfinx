@@ -10,6 +10,7 @@
 %ignore operator std::string;
 %ignore operator bool;
 
+%ignore dolfin::Mesh::partition(dolfin::uint num_partitions, dolfin::MeshFunction<dolfin::uint>& partitions);
 %ignore dolfin::dolfin_info_aptr;
 %ignore operator<< <Mat>;
 %ignore dolfin::Parameter;
