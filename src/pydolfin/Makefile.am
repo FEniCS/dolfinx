@@ -11,7 +11,8 @@ _dolfin_la_LDFLAGS = -module
 _dolfin_la_LIBADD = $(top_builddir)/src/lib/libdolfin.la
 
 # Need -fno-strict-aliasing to avoid "dereferencing type-punned pointer" warning
-CXXFLAGS = @DOLFIN_DEFINITIONS@ -g -O2 -fno-strict-aliasing -Wall -Werror -ansi
+# Need -Wno-uninitialized avoid spurious error under Cygwin
+CXXFLAGS = @DOLFIN_DEFINITIONS@ -g -O2 -fno-strict-aliasing -Wall -Werror -ansi -Wno-uninitialized
 
 dolfin_wrap.cpp : $(SWIG_SOURCES)
 	$(SWIG) $(SWIG_PYTHON_OPT) -ignoremissing -nodefaultctor -nodefaultdtor -dirprot -Werror @KERNEL_INCLUDE@ @DOLFIN_DEFINITIONS@ -o $@ $<

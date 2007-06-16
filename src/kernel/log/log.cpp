@@ -9,6 +9,7 @@
 // Last changed: 2007-05-15
 
 #include <stdarg.h>
+#include <stdio.h>
 #include <signal.h>
 #include <dolfin/LogManager.h>
 #include <dolfin/log.h>

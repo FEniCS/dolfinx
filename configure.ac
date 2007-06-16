@@ -243,9 +243,9 @@ if test x$enable_debug = xyes; then
     echo "enabling debugging compiler flags"
     if test x$enable_debug_ublas = xyes; then
        echo "enabling extra uBlas debugging compiler flags"
-       CXXFLAGS="-DDEBUG -g -O2 -Wall -Werror -ansi"
+       CXXFLAGS="-DDEBUG -g -O2 -Wall -Werror"
     else
-       CXXFLAGS="-DDEBUG -g -O2 -Wall -Werror -ansi -DNDEBUG"
+       CXXFLAGS="-DDEBUG -g -O2 -Wall -Werror -DNDEBUG"
     fi
 fi 
 
@@ -258,10 +258,17 @@ fi
 # Handle option --enable-debug-ublas
 # FIXME: Not handled
 
-# Add compiler specific flags
+# Add compiler/platform specific flags
 case "${ax_cv_cxx_compiler_vendor}" in
    gnu) 
-        CXXFLAGS="$CXXFLAGS -pedantic -Wno-long-long -std=c++98"
+        # Add '-Wno-uninitialized' due to a Cygwin gcc 3.4 bug and don't use -ansi.
+        # At least on Darwin, -o is not an allowed option!
+        if ! test `uname -s` = Darwin && test `uname -o` = Cygwin; then
+            echo "adding compiler flags for cygwin"
+            CXXFLAGS="$CXXFLAGS -Wno-uninitialized"
+        else
+            CXXFLAGS="$CXXFLAGS -pedantic -ansi -Wno-long-long -std=c++98"
+         fi
         ;;
    intel)
         echo 'WARNING: Intel C++ compiler versions <= 9.0 are incompatible with' 
@@ -269,16 +276,9 @@ case "${ax_cv_cxx_compiler_vendor}" in
         echo 'gcc header files to be used by setting the compiler option' 
         echo '-gcc-name=<name> through the environment variables'
         echo 'e.g. export INTEL_CXXFLAGS="-gcc-name=gcc-3.4"'
-        CXXFLAGS="$CXXFLAGS -wd111 -wd383 -wd654 -wd810 -wd869 -wd981 -wd1125 -wd1418 -wd1419 -wd1572 -wd1599 $INTEL_CXXFLAGS"
+        CXXFLAGS="$CXXFLAGS -ansi -wd111 -wd383 -wd654 -wd810 -wd869 -wd981 -wd1125 -wd1418 -wd1419 -wd1572 -wd1599 $INTEL_CXXFLAGS"
         ;;
 esac
-
-# Add '-Wno-uninitialized' due to a Cygwin gcc 3.4 bug.
-# At least on Darwin, -o is not an allowed option!
-if ! test `uname -s` = Darwin && test `uname -o` = Cygwin; then
-    echo "adding compiler flags for cygwin"
-    CXXFLAGS="$CXXFLAGS -Wno-uninitialized"
-fi
 
 # Add '-fPIC' for AMD 64 bit system
 if test `uname -m` = x86_64; then
