@@ -37,6 +37,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
+LIBOBJDIR =
 subdir = src/kernel/io
 DIST_COMMON = $(nobase_include_HEADERS) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in
@@ -61,12 +62,11 @@ am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(includedir)"
 libLTLIBRARIES_INSTALL = $(INSTALL)
 LTLIBRARIES = $(lib_LTLIBRARIES)
 libdolfin_io_la_LIBADD =
-am_libdolfin_io_la_OBJECTS = File.lo GenericFile.lo GiDFile.lo \
-	MatlabFile.lo MFile.lo OctaveFile.lo OpenDXFile.lo \
-	PythonFile.lo VTKFile.lo XMLBLASFormData.lo XMLDofMap.lo \
-	XMLFile.lo XMLFiniteElement.lo XMLMesh.lo XMLMeshFunction.lo \
-	XMLMatrix.lo XMLObject.lo XMLParameterList.lo XMLFunction.lo \
-	XMLVector.lo XMLGraph.lo
+am_libdolfin_io_la_OBJECTS = File.lo GenericFile.lo MatlabFile.lo \
+	MFile.lo OctaveFile.lo OpenDXFile.lo PythonFile.lo VTKFile.lo \
+	XMLBLASFormData.lo XMLDofMap.lo XMLFile.lo XMLFiniteElement.lo \
+	XMLMesh.lo XMLMeshFunction.lo XMLMatrix.lo XMLObject.lo \
+	XMLParameterList.lo XMLFunction.lo XMLVector.lo XMLGraph.lo
 libdolfin_io_la_OBJECTS = $(am_libdolfin_io_la_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -243,7 +243,6 @@ SUBDIRS = dolfin
 nobase_include_HEADERS = dolfin/dolfin_io.h \
                           dolfin/File.h \
                           dolfin/GenericFile.h \
-                          dolfin/GiDFile.h \
                           dolfin/MatlabFile.h \
                           dolfin/MFile.h \
                           dolfin/OctaveFile.h \
@@ -267,7 +266,6 @@ INCLUDES = @KERNEL_CFLAGS@
 lib_LTLIBRARIES = libdolfin-io.la
 libdolfin_io_la_SOURCES = File.cpp \
                           GenericFile.cpp \
-                          GiDFile.cpp \
                           MatlabFile.cpp \
                           MFile.cpp \
                           OctaveFile.cpp \
@@ -359,7 +357,6 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/File.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/GenericFile.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/GiDFile.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MFile.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MatlabFile.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/OctaveFile.Plo@am__quote@

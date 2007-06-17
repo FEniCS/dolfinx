@@ -35,6 +35,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
+LIBOBJDIR =
 subdir = src/kernel/io/dolfin
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -200,7 +201,6 @@ target_alias = @target_alias@
 EXTRA_DIST = dolfin_io.h \
              File.h \
              GenericFile.h \
-             GiDFile.h \
              MFile.h \
              OpenDXFile.h \
              MatlabFile.h \

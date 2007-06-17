@@ -113,14 +113,16 @@ real solve2D(int q, int n)
 
   // Compute maximum norm of error
   real emax = 0.0;
+  real* U = new real[x.size()];
+  x.get(U);
   for (VertexIterator v(mesh); !v.end(); ++v)
   {
     const Point p = v->point();
-    const real U = x(v->index());
     const real u = sin(DOLFIN_PI*p.x())*sin(DOLFIN_PI*p.y());
-    const real e = std::abs(U - u);
+    const real e = std::abs(U[v->index()] - u);
     emax = std::max(emax, e);
   }
+  delete [] U;
 
   delete a;
   delete L;
@@ -186,14 +188,16 @@ real solve3D(int q, int n)
 
   // Compute maximum norm of error
   real emax = 0.0;
+  real* U = new real[x.size()];
+  x.get(U);
   for (VertexIterator v(mesh); !v.end(); ++v)
   {
     const Point p = v->point();
-    const real U = x(v->index());
     const real u = sin(DOLFIN_PI*p.x())*sin(DOLFIN_PI*p.y())*sin(DOLFIN_PI*p.z());
-    const real e = std::abs(U - u);
+    const real e = std::abs(U[v->index()] - u);
     emax = std::max(emax, e);
   }
+  delete [] U;
 
   delete a;
   delete L;

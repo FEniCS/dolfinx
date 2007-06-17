@@ -17,7 +17,6 @@
 #include <dolfin/OctaveFile.h>
 #include <dolfin/OpenDXFile.h>
 #include <dolfin/PythonFile.h>
-#include <dolfin/GiDFile.h>
 #include <dolfin/VTKFile.h>
 
 using namespace dolfin;
@@ -34,10 +33,6 @@ File::File(const std::string& filename)
     file = new XMLFile(filename);
   else if ( filename.rfind(".xml.gz") != filename.npos )
     file = new XMLFile(filename);
-  else if ( filename.rfind(".msh") != filename.npos )
-    file = new GiDFile(filename);
-  else if ( filename.rfind(".res") != filename.npos )
-    file = new GiDFile(filename);
   else if ( filename.rfind(".m") != filename.npos )
     file = new OctaveFile(filename);
   else if ( filename.rfind(".dx") != filename.npos )
@@ -67,9 +62,6 @@ File::File(const std::string& filename, Type type)
     break;
   case opendx:
     file = new OpenDXFile(filename);
-    break;
-  case gid:
-    file = new GiDFile(filename);
     break;
   case vtk:
     file = new VTKFile(filename);
