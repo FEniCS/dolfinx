@@ -85,9 +85,11 @@
   \normalsize
   Visit \texttt{http://www.fenics.org/} for the latest version of this manual. \\
   Send comments and suggestions to \texttt{\@fenicspackagett{}-dev@fenics.org}.
-  \thispagestyle{empty}
+  \pagestyle{empty}
   \cleardoublepage
-  \tableofcontents}
+  \tableofcontents
+  \cleardoublepage
+  \pagestyle{fancy}}
 
 \newcommand{\fenics}{\textbf{\textsf{\normalsize{FE}\Large{ni}\normalsize{CS}}}}
 \newcommand{\dolfin}{\textbf{\textsf{DOLFIN}}}
