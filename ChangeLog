@@ -1,6 +1,16 @@
- - Add support for plotting from within DOLFIN in Python
- - Add support for discontinuous Galerkin (DG) methods
- - Move PyDOLFIN demos to src/demo/pydolfin
+ - Move to UFC interface for code generation
+ - Major rewrite, restructure, cleanup
+ - Add support for Brezzi-Douglas-Marini (BDM) elements
+ - Add support for Raviart-Thomas (RT) elements
+ - Add support for Discontinuous Galerkin (DG) methods
+ - Add support for mesh partitioning (through SCOTCH)
+ - Handle both UMFPACK and UFSPARSE
+ - Local mesh refinement
+ - Mesh smoothing
+ - Built-in plotting (through Viper)
+ - Cleanup log system
+ - Numerous fixes for mesh, in particular MeshFunction
+ - Much improved Python bindings for mesh
  - Fix Python interface for vertex and cell maps in boundary computation
 0.6.4 [2006-12-01]
  - Switch from Python Numeric to Python NumPy

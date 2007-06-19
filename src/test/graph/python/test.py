@@ -3,7 +3,7 @@
 __author__ = "Gustav Magnus Vikstrom (gustavv@ifi.uio.no)"
 __date__ = "2007-02-12 -- 2007-03-21"
 __copyright__ = "Copyright (C) 2007 Gustav Magnus Vikstrom"
-__license__  = "GNU GPL Version 2"
+__license__  = "GNU LGPL Version 2.1"
 
 import unittest
 import os

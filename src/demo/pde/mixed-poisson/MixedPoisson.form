@@ -1,5 +1,5 @@
 # Copyright (C) 2006-2007 Anders Logg (logg@simula.no) and Marie Rognes (meg@math.uio.no)"
-# Licensed under the GNU GPL Version 2
+# Licensed under the GNU LGPL Version 2.1
 #
 # The bilinear form a(v, u) and linear form L(v) for
 # a mixed formulation of Poisson's equation with BDM

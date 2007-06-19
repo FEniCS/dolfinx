@@ -15,7 +15,7 @@ function writegid(p,t,filename)
 %   Alexandra Krusper  (PDE project course 2001/2002)
 %   Walter Villanueva  (PDE project course 2001/2002)
 %
-% Distributed under the GNU GPL.
+% Distributed under the GNU LGPL Version 2.1.
 %
 % Slightly modified by Hoffman/Logg.
  

@@ -3,7 +3,7 @@
 __author__ = "Anders Logg (logg@simula.no)"
 __date__ = "2006-08-09 -- 2007-05-24"
 __copyright__ = "Copyright (C) 2006-2007 Anders Logg"
-__license__  = "GNU GPL Version 2"
+__license__  = "GNU LGPL Version 2.1"
 
 from os import system
 from commands import getoutput
