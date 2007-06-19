@@ -8,8 +8,9 @@
 where $F: \mathbb{R}^{n} \rightarrow \mathbb{R}^{n}$. 
 To use the nonlinear solver, a nonlinear function must be defined. 
 The nonlinear solver is then initialised with this function and a 
-solution computed.
-
+solution computed. The source code for examples of solving 
+nonlinear problems can be found in \texttt{src/demo/nls}.
+%------------------------------------------------------------------------------
 \section{Nonlinear functions}
 \index{NonlinearFunction}
 
@@ -117,11 +118,10 @@ NewtonSolver newton_solver;
 newton_solver.set("Newton convergence criterion", "incremental");
 \end{code}
 \normalsize
-%
-
+%------------------------------------------------------------------------------
 \subsection{Linear solver}
 The solution to the nonlinear problems is returned in the vector~\texttt{x}.
-By default, the \texttt{NewtonSolver} used a direct solver to solve systems
+By default, the \texttt{NewtonSolver} uses a direct solver to solve systems
 of linear equations. It is possible to set the type linear solver to be used 
 when creating a \texttt{NewtonSolver}. For example, 
 %
@@ -137,7 +137,7 @@ NewtonSolver newton_solver(gmres, ilu);
 %
 The above Newton solver will use GMRES in combination with incomplete LU 
 factorisation.
-
+%------------------------------------------------------------------------------
 \subsection{Application of Dirichlet boundary conditions}
 %
 The application of Dirichlet boundary conditions to finite element
@@ -146,11 +146,14 @@ attention. The `residual' $F(u)$ at nodes where Dirichlet boundary
 conditions are applied is the equal to difference between the 
 imposed boundary condition value and the current solution~$u$.
 The function 
+%
+{\small
 \begin{code}
-void FEM::applyResidualBC(GenericVector& b, 
-           const GenericVector& x, Mesh& mesh,
-           FiniteElement& element, BoundaryCondition& bc)
+BoundaryCondition bc;
+bc.apply(Matrix& A, Matrix& b, const Matrix& x, const Form& form);
 \end{code}
+}
+%
 applies Dirichlet boundary conditions correctly. For a nonlinear
 finite element problem, the below code assembles the function $F(u)$
 and its Jacobian, and applied Dirichlet boundary conditions in the
@@ -170,9 +173,10 @@ public:
             const GenericVector& u)
   {
     // Insert F(u) into the vector b and J into the matrix A 
-    FEM::assemble(*a, *L, A, b, *_mesh);
-    FEM::applyBC(A, *_mesh, a->test(), *_bc);
-    FEM::applyResidualBC(b, x, *_mesh, a->test(), *_bc);
+    Assembler assembler;
+    assembler.assemble(A, a, mesh);
+    assembler.assemble(b, L, mesh);
+    bc.apply(A, b, x, a);
   }
 
 private:
@@ -180,18 +184,19 @@ private:
 };
 \end{code}
 \normalsize
-
+%------------------------------------------------------------------------------
 \section{Incremental Newton solver}
 %
 Newton solvers are commonly used to solve nonlinear equations in a series 
 of steps. This can be done by building a simple loop around a Newton solver,
 and is shown in the following code.
 %
+{
 \begin{code}
-MyNonlinearProblem F(U);
+Function u;
+Vector x;
+MyNonlinearProblem F(u,x); // Initialise u with the vector x
 NewtonSolver nonlinear_solver;
-
-Vector& x = U.vector();
 
 // Solve nonlinear problem in a series of steps
 real dt = 1.0; real t  = 0.0; real T  = 3.0;
@@ -201,6 +206,7 @@ while( t < T)
   nonlinear_solver.solve(F, x);
 }
 \end{code}
+}
 %
 Typically, the boundary conditions and/or source terms will be dependent 
 on~\texttt{t}.
