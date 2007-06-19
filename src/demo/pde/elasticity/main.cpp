@@ -120,23 +120,5 @@ int main()
   File xml_file("elasticity.xml");
   xml_file << u;
 
-  /*
-  // Set up post-processing problem to compute strain
-  ElasticityStrain::BilinearForm a_strain;
-  ElasticityStrain::LinearForm L_strain(U);
-  PDE pde_strain(a_strain, L_strain, mesh);
-  Function normal_strain, shear_strain;
-
-  // Compute solution (using GMRES solver)
-  pde_strain.set("PDE linear solver", "iterative");
-  pde_strain.solve(normal_strain, shear_strain);
-
-  // Save solution (strain) to files
-  File file_normal_strain("normal_strain.pvd");
-  File file_shear_strain("shear_strain.pvd");
-  file_normal_strain << normal_strain;
-  file_shear_strain  << shear_strain;
-  */
-
   return 0;
 }
