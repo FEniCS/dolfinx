@@ -30,10 +30,10 @@ The value of the parameter is automatically cast to the correct type
 when assigning the value of \texttt{get()} to a variable, as
 illustrated by the following examples:
 \begin{code}
-real TOL = get(``tolerance'');
-int num_samples = get(``number of samples'');
-bool solve_dual = get(``solve dual problem'');
-std::string filename = get(``file name'');
+real TOL = get("tolerance");
+int num_samples = get("number of samples");
+bool solve_dual = get("solve dual problem");
+std::string filename = get("file name");
 \end{code}
 
 Note that there is a small cost associated with accessing the value of
@@ -41,7 +41,7 @@ a parameter, so if the value of a parameter is to be used multiple
 times, then it should be retrieved once and stored in a local variable
 as illustrated by the following example:
 \begin{code}
-int num_samples = get(``number of samples'');
+int num_samples = get("number of samples");
 for (int i = 0; i < num_samples; i++)
 {
   ...
@@ -66,10 +66,10 @@ key in the database.
 The following examples illustrate
 the use of \texttt{set()}:
 \begin{code}
-set(``tolerance'', 0.01);
-set(``number of samples'', 10);
-set(``solve dual problem'', true);
-set(``file name'', ``solution.xml'');
+set("tolerance", 0.01);
+set("number of samples", 10);
+set("solve dual problem", true);
+set("file name", "solution.xml");
 \end{code}
 
 Note that changing the values of parameters using
@@ -95,10 +95,10 @@ parameter.
 The following examples illustrate the use of
 \texttt{add()}:
 \begin{code}
-add(``tolerance'', 0.01);
-add(``number of samples'', 10);
-add(``solve dual problem'', true);
-add(``file name'', ``solution.xml'');
+add("tolerance", 0.01);
+add("number of samples", 10);
+add("solve dual problem", true);
+add("file name", "solution.xml");
 \end{code}
 
 %------------------------------------------------------------------------------
@@ -108,7 +108,7 @@ add(``file name'', ``solution.xml'');
 The following code illustrates how to save the current database of
 parameters to a file in \dolfin{} XML format:
 \begin{code}
-File file(``parameters.xml'');
+File file("parameters.xml");
 file << ParameterSystem::parameters;
 \end{code}
 When running a simulation in \dolfin{}, saving the parameter database
@@ -122,21 +122,21 @@ simulation.
 The following code illustrates how to load a set of parameters into
 the current database of parameters from a file in \dolfin{} XML format:
 \begin{code}
-File file(``parameters.xml'');
+File file("parameters.xml");
 file >> ParameterSystem::parameters;
 \end{code}
 The following example illustrates how to specify a list of parameters
 in the \dolfin{} XML format
 \footnotesize
 \begin{code}
-<?xml version=''1.0'' encoding=''UTF-8''?> 
+<?xml version="1.0" encoding="UTF-8"?> 
 
-<dolfin xmlns:dolfin=''http://www.fenics.org/dolfin/''> 
+<dolfin xmlns:dolfin="http://www.fenics.org/dolfin/"> 
   <parameters>
-    <parameter name=''tolerance'' type=''real'' value=''0.01''/>
-    <parameter name=''number of samples'' type=''int'' value=''10''/>
-    <parameter name=''solve dual problem'' type=''bool'' value=''false''/>
-    <parameter name=''file name'' type=''string'' value=''solution.xml''/>
+    <parameter name="tolerance" type="real" value="0.01"/>
+    <parameter name="number of samples" type="int" value="10"/>
+    <parameter name="solve dual problem" type="bool" value="false"/>
+    <parameter name="file name" type="string" value="solution.xml"/>
   </parameters>
 </dolfin>
 \end{code}

@@ -1,16 +1,7 @@
 \chapter{The mesh}
 
-\devnote{The \dolfin{} mesh library has recently been reimplemented
-  from scratch and replaces the old mesh library starting at \dolfin{}
-  version 0.6.3.  The new mesh is simpler, faster and more general
-  than the old mesh library, but adaptive mesh refinement is still
-  missing from the old feature set. This will be added in the near
-  future.}
-
 \devnote{This chapter is just a quick write-up of the most basic
   functionality of the mesh library and will be expanded.}
-
-\newpage
 
 \section{Basic concepts}
 
@@ -73,23 +64,23 @@ as the specialized mesh iterators
 \texttt{EdgeIterator},
 \texttt{FaceIterator},
 \texttt{FacetIterator} and
-\texttt{CellIterator}.
+\texttt{Cell\-Iterator}.
 
 The following code illustrates how to iterate over all incident
 (connected) vertices of all vertices of all cells of a given mesh:
 \begin{code}
 for (CellIterator c(mesh); !c.end(); ++c)
-  for (VertexIterator v0(c); !v0.end(); ++v0)
-    for (VertexIterator v1(v0); !v1.end(); ++v1)
+  for (VertexIterator v0(*c); !v0.end(); ++v0)
+    for (VertexIterator v1(*v0); !v1.end(); ++v1)
       cout << *v1 << endl;
 \end{code}
 This may alternatively be implemented using the general iterator
-\texttt{MeshEntityIterator} as follows:
+\texttt{MeshEntity\-Iterator} as follows:
 \begin{code}
 unsigned int dim = mesh.topology().dim();
 for (MeshEntityIterator c(mesh, dim); !c.end(); ++c)
-  for (MeshEntityIterator v0(c, 0); !v0.end(); ++v0)
-    for (MeshEntityIterator v1(v0, 0); !v1.end(); ++v1)
+  for (MeshEntityIterator v0(*c, 0); !v0.end(); ++v0)
+    for (MeshEntityIterator v1(*v0, 0); !v1.end(); ++v1)
       cout << *v1 << endl;
 \end{code}
 
@@ -107,8 +98,9 @@ A mesh may be refined uniformly as follows:
 \begin{code}
 mesh.refine();
 \end{code}
-\dolfin{} does currently not support adaptive mesh refinement, but
-this will be supported in future versions.
+A mesh may also be refined locally by supplying a
+\texttt{MeshFunction} with boolean markers for the cells that should
+be refined.
 
 \section{Working with meshes}
 
@@ -117,18 +109,18 @@ this will be supported in future versions.
 A mesh may be loaded from a file, either by specifying the file name
 to the constructor of the class \texttt{Mesh}:
 \begin{code}
-Mesh mesh(''mesh.xml'');
+Mesh mesh("mesh.xml");
 \end{code}
 or by creating a \texttt{File} object and streaming to a
 \texttt{Mesh}:
 \begin{code}
-File file(''mesh.xml'');
+File file("mesh.xml");
 Mesh mesh;
 file >> mesh;
 \end{code}
 A mesh may be stored to file as follows:
 \begin{code}
-File file(''mesh.xml'');
+File file("mesh.xml");
 Mesh mesh;
 file << mesh;
 \end{code}
