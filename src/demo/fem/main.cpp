@@ -44,6 +44,9 @@ int main()
   A0.set(*A0_array, 4, position, 4, position);
   M0.set(*M0_array, 4, position, 4, position);
 
+  A0.apply(); 
+  M0.apply(); 
+
   // Display matrices
   cout << endl;
   cout << "Assembled stiffness matrix:" << endl;

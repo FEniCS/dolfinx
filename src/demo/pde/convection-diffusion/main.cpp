@@ -72,8 +72,9 @@ int main()
     p = t / T;
     t += k;
     u0 = u1;
-
-    // Plot solution
-    plot(u1);
   }
+
+  // Plot solution
+  plot(u1);
+
 }

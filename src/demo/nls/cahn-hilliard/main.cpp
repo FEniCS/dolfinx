@@ -96,7 +96,7 @@ int main(int argc, char* argv[])
   UnitSquare mesh(80, 80);
 
   // Time stepping and model parameters
-  real delta_t = 2.0e-6;
+  real delta_t = 1.0e-5;
   Function dt(mesh, delta_t); 
   Function theta(mesh, 0.5); 
   Function lambda(mesh, 1.0e-2); 
@@ -158,9 +158,10 @@ int main(int argc, char* argv[])
     c = u[1];
     file << c;
 
-    // Plot solution
-    plot(c);
   }
+
+  // Plot solution
+  plot(c);
   
   return 0;
 }
