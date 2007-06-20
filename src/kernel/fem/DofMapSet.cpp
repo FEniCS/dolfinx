@@ -8,7 +8,7 @@
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/DofMap.h>
-#include <dolfin/DofMaps.h>
+#include <dolfin/DofMapSet.h>
 #include <dolfin/Mesh.h>
 
 #include <ufc.h>
@@ -16,12 +16,12 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-DofMaps::DofMaps()
+DofMapSet::DofMapSet()
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-DofMaps::~DofMaps()
+DofMapSet::~DofMapSet()
 {
   // Delete all dof maps in the cache
   for (map_iterator it = dof_map_cache.begin(); it != dof_map_cache.end(); it++)
@@ -34,10 +34,10 @@ DofMaps::~DofMaps()
   }
 }
 //-----------------------------------------------------------------------------
-void DofMaps::update(const ufc::form& form, Mesh& mesh)
+void DofMapSet::update(const ufc::form& form, Mesh& mesh)
 {
   // Resize array of dof maps
-  dof_maps.resize(form.rank());
+  dof_map_set.resize(form.rank());
 
   // Create dof maps and reuse previously computed dof maps
   for (uint i = 0; i < form.rank(); i++)
@@ -61,14 +61,14 @@ void DofMaps::update(const ufc::form& form, Mesh& mesh)
       dof_map_cache[ufc_dof_map->signature()] = dof_map_pair;
       
       // Set dof map for argument i
-      dof_maps[i] = dolfin_dof_map;
+      dof_map_set[i] = dolfin_dof_map;
     }
     else
     {
       message(2, "Reusing dof map (already in cache): %s", ufc_dof_map->signature());
       
       // Set dof map for argument i
-      dof_maps[i] = it->second.second;
+      dof_map_set[i] = it->second.second;
      
       // Delete UFC dof map (not used)
       delete ufc_dof_map;
@@ -76,15 +76,15 @@ void DofMaps::update(const ufc::form& form, Mesh& mesh)
   }
 }
 //-----------------------------------------------------------------------------
-dolfin::uint DofMaps::size() const
+dolfin::uint DofMapSet::size() const
 {
-  return dof_maps.size();
+  return dof_map_set.size();
 }
 //-----------------------------------------------------------------------------
-const DofMap& DofMaps::operator[] (uint i) const
+const DofMap& DofMapSet::operator[] (uint i) const
 {
-  dolfin_assert(i < dof_maps.size());
-  return *dof_maps[i];
+  dolfin_assert(i < dof_map_set.size());
+  return *dof_map_set[i];
 }
 //-----------------------------------------------------------------------------
 

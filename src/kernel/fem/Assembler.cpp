@@ -124,10 +124,10 @@ void Assembler::assemble(GenericTensor& A, const ufc::form& form, Mesh& mesh,
   check(form, mesh, coefficients);
 
   // Update dof maps
-  dof_maps.update(form, mesh);
+  dof_map_set.update(form, mesh);
 
   // Create data structure for local assembly data
-  UFC ufc(form, mesh, dof_maps);
+  UFC ufc(form, mesh, dof_map_set);
 
   // Initialize global tensor
   initGlobalTensor(A, mesh, ufc, reset_tensor);

@@ -6,8 +6,8 @@
 // First added:  2007-01-17
 // Last changed: 2007-05-24
 
-#ifndef __DOF_MAPS_H
-#define __DOF_MAPS_H
+#ifndef __DOF_MAP_SET_H
+#define __DOF_MAP_SET_H
 
 #include <map>
 #include <vector>
@@ -27,15 +27,15 @@ namespace dolfin
   /// maps and enables reuse of already computed dof maps with equal
   /// signatures.
 
-  class DofMaps
+  class DofMapSet
   {
   public:
     
     /// Create empty set of dof maps
-    DofMaps();
+    DofMapSet();
 
     /// Destructor
-    ~DofMaps();
+    ~DofMapSet();
 
     /// Update set of dof maps for given form
     void update(const ufc::form& form, Mesh& mesh);
@@ -52,7 +52,7 @@ namespace dolfin
     std::map<const std::string, std::pair<ufc::dof_map*, DofMap*> > dof_map_cache;
 
     // Array of dof maps for current form
-    std::vector<DofMap*> dof_maps;
+    std::vector<DofMap*> dof_map_set;
 
     // Iterator for map
     typedef std::map<const std::string, std::pair<ufc::dof_map*, DofMap*> >::iterator map_iterator;

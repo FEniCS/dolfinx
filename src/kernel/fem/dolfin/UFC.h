@@ -16,7 +16,7 @@ namespace dolfin
 
   class Mesh;
   class Cell;
-  class DofMaps;
+  class DofMapSet;
 
   /// This class is a simple data structure that holds data used
   /// during assembly of a given UFC form. Data is created for each
@@ -29,7 +29,7 @@ namespace dolfin
   public:
 
     /// Constructor
-    UFC(const ufc::form& form, Mesh& mesh, DofMaps& dof_maps);
+    UFC(const ufc::form& form, Mesh& mesh, DofMapSet& dof_map_set);
 
     /// Destructor
     ~UFC();

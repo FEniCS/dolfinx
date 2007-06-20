@@ -3,7 +3,7 @@ EXTRA_DIST = dolfin_fem.h \
              Assembler.h \
              BoundaryCondition.h \
              DofMap.h \
-             DofMaps.h \
+             DofMapSet.h \
              Form.h \
              SparsityPatternBuilder.h \
              SubSystem.h \

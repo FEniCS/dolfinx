@@ -13,7 +13,7 @@
 
 #include <dolfin/Array.h>
 #include <dolfin/MeshFunction.h>
-#include <dolfin/DofMaps.h>
+#include <dolfin/DofMapSet.h>
 
 namespace dolfin
 {
@@ -103,7 +103,7 @@ namespace dolfin
     void initCoefficients(Array<Function*>& coefficients, const UFC& ufc) const;
 
     // Storage for dof maps
-    DofMaps dof_maps;
+    DofMapSet dof_map_set;
 
   };
 

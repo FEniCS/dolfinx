@@ -5,14 +5,14 @@
 // Last changed: 2007-05-15
 
 #include <dolfin/constants.h>
-#include <dolfin/DofMaps.h>
+#include <dolfin/DofMapSet.h>
 #include <dolfin/DofMap.h>
 #include <dolfin/UFC.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-UFC::UFC(const ufc::form& form, Mesh& mesh, DofMaps& dof_maps) : form(form)
+UFC::UFC(const ufc::form& form, Mesh& mesh, DofMapSet& dof_map_set) : form(form)
 {
   // Create finite elements
   finite_elements = new ufc::finite_element*[form.rank()];
@@ -27,7 +27,7 @@ UFC::UFC(const ufc::form& form, Mesh& mesh, DofMaps& dof_maps) : form(form)
   // Create dof maps (reuse from dof map storage)
   this->dof_maps = new ufc::dof_map*[form.rank()];
   for (uint i = 0; i < form.rank(); i++)
-    this->dof_maps[i] = &dof_maps[i].ufc_dof_map;
+    this->dof_maps[i] = &dof_map_set[i].ufc_dof_map;
 
   // Create cell integrals
   cell_integrals = new ufc::cell_integral*[form.num_cell_integrals()];

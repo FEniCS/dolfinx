@@ -87,7 +87,7 @@ void BoundaryCondition::apply(GenericMatrix& A, GenericVector& b,
   cout << "Applying boundary conditions to linear system." << endl;
 
   // FIXME: How do we reuse the dof map for u?
-  // FIXME: Perhaps we should make DofMaps a member of Form?
+  // FIXME: Perhaps we should make DofMapSet a member of Form?
   
   // Create local data for application of boundary conditions
   LocalData data(form, mesh, sub_system);
