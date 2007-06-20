@@ -137,6 +137,8 @@ void VTKFile::MeshWrite(Mesh& mesh) const
       fprintf(fp, " %8u \n",  offsets*4);
     if (mesh.type().cellType() == CellType::triangle )
       fprintf(fp, " %8u \n", offsets*3);
+    if (mesh.type().cellType() == CellType::interval )
+      fprintf(fp, " %8u \n",  offsets*2);
   }
   fprintf(fp, "</DataArray> \n");
   
@@ -148,6 +150,8 @@ void VTKFile::MeshWrite(Mesh& mesh) const
       fprintf(fp, " 10 \n");
     if (mesh.type().cellType() == CellType::triangle )
       fprintf(fp, " 5 \n");
+    if (mesh.type().cellType() == CellType::interval )
+      fprintf(fp, " 3 \n");
   }
   fprintf(fp, "</DataArray> \n");
   fprintf(fp, "</Cells> \n"); 
