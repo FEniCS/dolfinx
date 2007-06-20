@@ -34,7 +34,13 @@
     PyObject* cells() {
        // Get the node-id for all vertices.
         int m = self->numCells();
-        int n = (self->topology().dim() == 2) ? 3 : 4;
+        int n = 0;
+        if(self->topology().dim() == 1)
+          n = 2;
+        else if(self->topology().dim() == 2)
+          n = 3;
+        else
+          n = 4;
 
         MAKE_ARRAY(2, m, n, self->cells(), NPY_INT)
 
