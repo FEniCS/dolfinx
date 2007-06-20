@@ -8,13 +8,13 @@
 #include "Poisson2D_1.h"
 #include "Poisson2D_2.h"
 #include "Poisson2D_3.h"
-//#include "Poisson2D_4.h"
-//#include "Poisson2D_5.h"
+#include "Poisson2D_4.h"
+#include "Poisson2D_5.h"
 #include "Poisson3D_1.h"
 #include "Poisson3D_2.h"
 #include "Poisson3D_3.h"
-//#include "Poisson3D_4.h"
-//#include "Poisson3D_5.h"
+#include "Poisson3D_4.h"
+#include "Poisson3D_5.h"
 
 using namespace dolfin;
 
@@ -86,7 +86,7 @@ real solve2D(int q, int n)
     a = new Poisson2D_3BilinearForm();
     L = new Poisson2D_3LinearForm(f);
     break;
-/*case 4:
+  case 4:
     a = new Poisson2D_4BilinearForm();
     L = new Poisson2D_4LinearForm(f);
     break;
@@ -94,7 +94,6 @@ real solve2D(int q, int n)
     a = new Poisson2D_5BilinearForm();
     L = new Poisson2D_5LinearForm(f);
     break;
-*/
   default:
     error("Forms not compiled for q = %d.", q);
   }    
@@ -161,7 +160,7 @@ real solve3D(int q, int n)
     a = new Poisson3D_3BilinearForm();
     L = new Poisson3D_3LinearForm(f);
     break;
-/*  case 4:
+  case 4:
     a = new Poisson3D_4BilinearForm();
     L = new Poisson3D_4LinearForm(f);
     break;
@@ -169,7 +168,6 @@ real solve3D(int q, int n)
     a = new Poisson3D_5BilinearForm();
     L = new Poisson3D_5LinearForm(f);
     break;
-*/
   default:
     error("Forms not compiled for q = %d.", q);
   }    
@@ -207,7 +205,7 @@ real solve3D(int q, int n)
 
 int main()
 {
-  const int qmax = 3;
+  const int qmax = 5;
   const int num_meshes = 3;
   real e2D[qmax][num_meshes];
   real e3D[qmax][num_meshes];
