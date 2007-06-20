@@ -1,13 +1,3 @@
-This is the old TODO list for DOLFIN.
-
-Items on the TODO list is currently being moved to the FEniCS Bugzilla
-database and should be flagged as "enhancement" if they are not bugs.
-
-When this file is empty, we should remove it.
-
-----------------------------------------------------------------------
-
-
 Manual
 ------
 
@@ -17,43 +7,40 @@ Manual
 Assembly
 --------
 
-* Things to fix for new assembler:
-  - Implement parallel assembly
-  - Support for integrals over sub domains
-  - Reordering in DofMap
-
-* Use MatSetOption(A, MAT_ROWS_SORTED), MatSetOption(A, MAT_COLUMNS_SORTED)?
-* Use MatSetOption(A, MAT_USE_HASH_TABLE)?
-* Compute number of nonzeros before assembly
-* Parallel assembly
+* Implement parallel assembly
+* Reordering in DofMap
+* Expose only DofMap in DOLFIN (not ufc::dof_map)
 
 Mesh
 ----
 
-o [jj] Schema for mesh XML format
-* Geometry representation, including boundaries
-* Mesh generation using triangle or tetgen?
-* Seems to be something wrong with trimesh-32.xml.gz
-* Compute normals of edges
+* 1D
+* 1D and 2D cells in R^3
+* Check coarsening
+* Continue work on refinement
 
 Linear Algebra
 --------------
 
-* Cleanups and testing
+* Create templated classes KrylovSolverTemplate<..>, MatrixTemplate<..>, etc.
+* Refine PETSc wrappers for parallel assembly and solve
 
 Function
 --------
 
 * Input/output for time-series
+* Tensor-valued functions
+* 'quadrature' function
 
 Input/Output
 ------------
 
-* Improve script dolfin-convert
-* Save edges in MATLAB format
+* Figure out what to do with i/o when running in parallel
 
 Solvers
 -------
+
+* Create template for users to create solvers that use the DOLFIN library
 
 ODE solvers
 -----------
@@ -66,6 +53,12 @@ o [jj, logg] Error estimates
 o [jj, logg] Automatic computation of stability factors as function of time T
 o [jj, logg] Use two files for MATLAB format
 
+PDE solvers
+-----------
+
+* Improve NonlinearPDE
+* Create TimeDependentPDE
+
 Modules
 -------
 
@@ -74,59 +67,18 @@ Modules
 Parameters
 ----------
 
-o Load default parameters from file
-o Add function to display all parameters
+* Load default parameters from file
+* Add function to display all parameters
+
+PyDOLFIN
+-------
+
+* Make linear algebra work
 
 General
 -------
 
-* Remove target install from simple makefiles
-
-* Write FAQ and put on web page:
-
-  Q: Parallel mesh?
-  A: Waiting for Matt.
-
-  Q: What does DOLFIN mean?
-  A: Dynamic Object-oriented Library for FINite element computation.
-
-  Q: Is it fast?
-  A: Yes.
-
-  Q: Can I help?
-  A: Yes.
-
 * New repository dolfin-contrib?
-* Don't use cut in src/config script
-* Replace unsigned int and int with uint when possible
-* Replace Array and List with NewArray and NewList everywhere
 * Replace stdio with iostream and fstream
 * Fix setprecision() for cout
-* Use symbolic links for meshes, see example src/demo/fem
-* Collect diagnostic and error messages into one file? Translations?
 
-Some suggestions for PETSc
---------------------------
-
-Use namespaces, don't define macros like restrict which prevents
-users of PETSc to declare functions with that name.
-
-Dependencies
-------------
-
-Required
-* Boost
-* libxml2
-
-Optional
-* PETSc
-* FFC
-* FIAT
-* Hypre?
-* UMFPACK
-* curses
-
-Postprocessing
-* SciPy
-* ParaView
-* MayaVi

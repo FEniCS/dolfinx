@@ -1,3 +1,4 @@
+ - Rename DofMaps -> DofMapSet
 0.7.0 [2007-06-20]
  - Move to UFC interface for code generation
  - Major rewrite, restructure, cleanup

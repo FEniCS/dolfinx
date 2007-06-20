@@ -1,13 +1,19 @@
 Contents
 
     1. Installation
-    2. Compabitility
-    3. License
-    4. Feedback
-    5. About
+    2. Installation
+    3. Compabitility
+    4. License
+    5. Feedback
+    6. About
 
 -------------------------------------------------------------------------------
-1. Installation
+1. Dependencies
+
+Dependencies are listed at http://www.fenics.org/wiki/DOLFIN
+
+-------------------------------------------------------------------------------
+2. Installation
 
 DOLFIN follows GNU standard, so the installation procedure is simple:
 
@@ -34,7 +40,7 @@ Note that you need to add the directory `pwd`/local/bin/ to your
 path. (You will be reminded of this when running ./configure.local.)
 
 ------------------------------------------------------------------------------
-2. Compatibility
+3. Compatibility
 
  - When compiling on non-Linux systems, you may need to use gmake
    instead of make.
@@ -42,19 +48,19 @@ path. (You will be reminded of this when running ./configure.local.)
  - When compiling with g++ (gcc), you may need version 3.4 or higher.
 
 ------------------------------------------------------------------------------
-3. License
+4. License
 
 DOLFIN is licensed under the GNU LGPL Version 2.1, see http://www.gnu.org.
 
 -------------------------------------------------------------------------------
-4. Feed back
+5. Feed back
 
 Feed back, patches, and comments should be sent to
 
     dolfin-dev@fenics.org
 
 ------------------------------------------------------------------------------
-5. About
+6. About
 
 A hopefully complete list of authors is given in the file AUTHORS.
 
@@ -63,5 +69,6 @@ For more information about DOLFIN, visit
     http://www.fenics.org/dolfin/
 
 -------------------------------------------------------------------------------
-Oslo
+Oslo/Delft
 June 2007
+
