@@ -1,16 +1,17 @@
 // Copyright (C) 2004-2007 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Garth N. Wells 2006.
+// Modified by Garth N. Wells 2006, 2007.
 //
 // First added:  2004
-// Last changed: 2007-05-14
+// Last changed: 2007-06-20
 
 #ifndef __LINEAR_PDE_H
 #define __LINEAR_PDE_H
 
 #include <dolfin/Array.h>
 #include <dolfin/Parametrized.h>
+#include <dolfin/Vector.h>
 
 namespace dolfin
 {
