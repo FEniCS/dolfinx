@@ -34,8 +34,6 @@
 
 #include <dolfin/AssemblyMatrix.h>
 
-#include <dolfin/SparseMatrix.h>
-#include <dolfin/SparseVector.h>
 #include <dolfin/DenseMatrix.h>
 #include <dolfin/DenseVector.h>
 #include <dolfin/Matrix.h>
