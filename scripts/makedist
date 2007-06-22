@@ -8,10 +8,10 @@
 # Make sure we have the current version
 echo '--- Synchronizing repository'
 sleep 1
-hg pull
+hg pull http://www.fenics.org/hg/dolfin
 hg update
 hg commit
-hg push default
+hg push ssh://dolfin@fenics.org/hg/dolfin
 echo '--- Repository synchronized, press return to continue'
 read
 
@@ -37,7 +37,7 @@ sleep 1
 # Commit changes to hg
 echo '--- Pushing changes to parent repository'
 hg commit
-hg push default
+hg push ssh://dolfin@fenics.org/hg/dolfin
 echo '--- Changes pushed, press return to continue'
 read
 
