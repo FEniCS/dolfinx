@@ -1,3 +1,6 @@
+ - Recompile all forms with latest FFC release
+ - Remove typedefs SparseMatrix and SparseVector
+ - Fix includes in LinearPDE
  - Rename DofMaps -> DofMapSet
 0.7.0 [2007-06-20]
  - Move to UFC interface for code generation
