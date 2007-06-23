@@ -1,8 +1,10 @@
 // Copyright (C) 2007 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Garth N. Wells, 2007.
+//
 // First added:  2007-04-02
-// Last changed: 2007-04-30
+// Last changed: 2007-06-23
 
 #ifndef __DISCRETE_FUNCTION_H
 #define __DISCRETE_FUNCTION_H
@@ -61,6 +63,9 @@ namespace dolfin
     void interpolate(real* coefficients,
                      const ufc::cell& cell,
                      const ufc::finite_element& finite_element);
+
+    /// Return vector
+    Vector& vector() const;
 
     /// Friends
     friend class XMLFile;

@@ -1,11 +1,11 @@
 // Copyright (C) 2007 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Garth N. Wells 2005.
+// Modified by Garth N. Wells 2005-2007.
 // Modified by Kristian B. Oelgaard, 2007.
 
 // First added:  2003-11-28
-// Last changed: 2007-05-29
+// Last changed: 2007-06-23
 
 #ifndef __FUNCTION_H
 #define __FUNCTION_H
@@ -76,6 +76,9 @@ namespace dolfin
     
     /// Return the mesh
     Mesh& mesh() const;
+
+    /// Return the vector associated with a DiscreteFunction
+    Vector& vector() const;
 
     /// Extract sub function/slice (only for discrete function)
     SubFunction operator[] (uint i);

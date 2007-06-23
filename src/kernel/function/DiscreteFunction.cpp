@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2007.
 //
 // First added:  2007-04-02
-// Last changed: 2007-05-02
+// Last changed: 2007-06-23
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Mesh.h>
@@ -287,5 +287,15 @@ void DiscreteFunction::interpolate(real* coefficients,
   
   // Pick values from global vector
   x->get(coefficients, dof_map->local_dimension(), dofs);
+}
+//-----------------------------------------------------------------------------
+Vector& DiscreteFunction::vector() const
+{
+  if( !x )
+    error("Vector associated with DiscreteFunction has not been initialised.");
+
+  cout << "Returning vector " << endl;
+
+  return *x;
 }
 //-----------------------------------------------------------------------------
