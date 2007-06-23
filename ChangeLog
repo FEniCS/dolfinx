@@ -1,3 +1,4 @@
+ - Add function to return Vector associated with a DiscreteFunction
 0.7.0-1 [2007-06-22]
  - Recompile all forms with latest FFC release
  - Remove typedefs SparseMatrix and SparseVector
