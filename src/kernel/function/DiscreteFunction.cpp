@@ -294,8 +294,6 @@ Vector& DiscreteFunction::vector() const
   if( !x )
     error("Vector associated with DiscreteFunction has not been initialised.");
 
-  cout << "Returning vector " << endl;
-
   return *x;
 }
 //-----------------------------------------------------------------------------
