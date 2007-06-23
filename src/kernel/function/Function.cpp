@@ -1,10 +1,10 @@
 // Copyright (C) 2007 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Garth N. Wells 2005
+// Modified by Garth N. Wells 2005-2007.
 //
 // First added:  2003-11-28
-// Last changed: 2007-05-17
+// Last changed: 2007-06-23
 //
 // The class Function serves as the envelope class and holds a pointer
 // to a letter class that is a subclass of GenericFunction. All the
@@ -108,6 +108,17 @@ Mesh& Function::mesh() const
     error("Function contains no data.");
 
   return f->mesh;
+}
+//-----------------------------------------------------------------------------
+Vector& Function::vector() const
+{
+  if (!f)
+    error("Function contains no data.");
+
+  if (_type != discrete)
+    error("A vector can only be extracted from discrete functions.");
+
+  return (static_cast<DiscreteFunction*>(f))->vector();
 }
 //-----------------------------------------------------------------------------
 SubFunction Function::operator[] (uint i)
