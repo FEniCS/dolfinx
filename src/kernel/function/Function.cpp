@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells 2005-2007.
 //
 // First added:  2003-11-28
-// Last changed: 2007-06-23
+// Last changed: 2007-06-26
 //
 // The class Function serves as the envelope class and holds a pointer
 // to a letter class that is a subclass of GenericFunction. All the
@@ -146,8 +146,8 @@ const Function& Function::operator= (Function& f)
     delete this->f;
     this->f = new DiscreteFunction(*static_cast<DiscreteFunction*>(f.f));
     _type = discrete;
+    rename(name(), "discrete function");
   }
-
   return *this;
 }
 //-----------------------------------------------------------------------------
