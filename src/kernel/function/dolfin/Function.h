@@ -59,6 +59,9 @@ namespace dolfin
     /// Create function from data file
     Function(const std::string filename);
 
+    /// Copy constructor
+    Function(const Function& f);
+
     /// Destructor
     virtual ~Function();
 

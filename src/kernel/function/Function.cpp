@@ -63,6 +63,22 @@ Function::Function(SubFunction f)
   this->f = new DiscreteFunction(f);
 }
 //-----------------------------------------------------------------------------
+Function::Function(const Function& f) : f(0), _type(f.type()), _cell(0), _facet(-1)
+{
+  if( f.type() == discrete ) 
+  {
+    this->f = new DiscreteFunction(*static_cast<DiscreteFunction*>(f.f));
+    rename("x", "discrete function");
+  }
+  else if( f.type() == constant )
+  {
+    this->f = new ConstantFunction(*static_cast<ConstantFunction*>(f.f));
+    rename("x", "constant function");
+  }
+  else
+    error("Copy constructor works for discrete and constant functions only (so far).");
+}
+//-----------------------------------------------------------------------------
 Function::~Function()
 {
   if (f)
@@ -70,7 +86,6 @@ Function::~Function()
 }
 //-----------------------------------------------------------------------------
 void Function::init(Mesh& mesh, Vector& x, const Form& form, uint i)
-
 {
   if (f)
     delete f;
