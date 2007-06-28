@@ -54,7 +54,7 @@ namespace dolfin
     real eval(const real* x) const
     {
       // If there is no facet (assembling on interior), return cell diameter
-      if (facet() <= 0)
+      if (facet() < 0)
         return cell().diameter();
       else
       {
