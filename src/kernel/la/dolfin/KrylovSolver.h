@@ -7,6 +7,7 @@
 #ifndef __KRYLOV_SOLVER_H
 #define __KRYLOV_SOLVER_H
 
+#include <dolfin/LinearSolver.h>
 #include <dolfin/Parametrized.h>
 #include <dolfin/Vector.h>
 #include <dolfin/Matrix.h>
@@ -16,7 +17,6 @@
 
 #include <dolfin/default_la_types.h>
 
-#include <dolfin/LinearSolver.h>
 
 namespace dolfin
 {

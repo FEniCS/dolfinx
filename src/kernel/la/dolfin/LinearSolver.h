@@ -9,15 +9,12 @@
 #ifndef __LINEAR_SOLVER_H
 #define __LINEAR_SOLVER_H
 
+#include <dolfin/constants.h>
 #include <dolfin/Matrix.h>
 #include <dolfin/Vector.h>
 
 namespace dolfin
 {
-
-  /// Forward declarations
-  //class Matrix;
-  //class Vector;
 
   /// This class defines the interfaces for default linear solvers for
   /// systems of the form Ax = b.
@@ -33,7 +30,7 @@ namespace dolfin
     virtual ~LinearSolver() {}
 
     /// Solve linear system Ax = b
-    virtual unsigned int solve(const Matrix& A, Vector& x, const Vector& b) = 0;
+    virtual uint solve(const Matrix& A, Vector& x, const Vector& b) = 0;
 
   };
 

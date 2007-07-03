@@ -7,6 +7,8 @@
 #include <dolfin/GenericMatrix.h>
 #include <dolfin/GenericVector.h>
 
+#include <dolfin/LinearSolver.h>
+
 #include <dolfin/Preconditioner.h>
 #include <dolfin/SparsityPattern.h>
 
@@ -41,7 +43,6 @@
 
 #include <dolfin/KrylovMethod.h>
 #include <dolfin/KrylovSolver.h>
-#include <dolfin/LinearSolver.h>
 #include <dolfin/GMRES.h>
 #include <dolfin/LUSolver.h>
 #include <dolfin/LU.h>
