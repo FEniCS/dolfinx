@@ -107,9 +107,8 @@ void XMLMatrix::readRow(const xmlChar *name, const xmlChar **attrs)
 //-----------------------------------------------------------------------------
 void XMLMatrix::readEntry(const xmlChar *name, const xmlChar **attrs)
 {
-#ifdef HAVE_PETSC_H
   error("XMLMatrix::readEntry needs to updated for new matrix element access.");
-#else
+/*
   // Parse values
   uint column = parseUnsignedInt(name, attrs, "column");
   real value  = parseReal(name, attrs, "value");
@@ -117,6 +116,6 @@ void XMLMatrix::readEntry(const xmlChar *name, const xmlChar **attrs)
   // FIXME: update to matrix element access
   // Set values
   A(row, column) = value;
-#endif
+*/
 }
 //-----------------------------------------------------------------------------

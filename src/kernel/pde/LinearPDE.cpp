@@ -54,10 +54,14 @@ void LinearPDE::solve(Function& u)
   Matrix* A;
   Vector b;
 #ifdef HAVE_PETSC_H
+  /*
   if ( solver_type == "direct" )
     A = new Matrix(Matrix::umfpack);
   else
     A = new Matrix;
+  */
+  // FIXME: Need to choose approproate PETSc matrix.
+  A = new Matrix;
 #else
   A = new Matrix;
 #endif

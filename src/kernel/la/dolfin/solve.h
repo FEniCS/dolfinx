@@ -12,26 +12,19 @@
 namespace dolfin
 {  
 
+  class Matrix;
+  class Vector;
+
   /// Solve linear system Ax = b using a direct method (LU factorization).
   /// Note that iterative methods (preconditioned Krylov methods including
   /// GMRES) are also available through the KrylovSolver interface.
 
-#ifdef HAVE_PETSC_H
+  /// Solve linear system Ax = b
+  void solve(const Matrix& A, Vector& x, const Vector& b);
   
   /// Solve linear system Ax = b
-  void solve(const PETScMatrix& A, PETScVector& x, const PETScVector& b);
+  //void solve(const PETScKrylovMatrix& A, PETScVector& x, const PETScVector& b);
   
-  /// Solve linear system Ax = b
-  void solve(const PETScKrylovMatrix& A, PETScVector& x, const PETScVector& b);
-  
-#endif
-  
-  /// Solve linear system Ax = b
-  void solve(const uBlasMatrix<ublas_dense_matrix>& A, uBlasVector& x, const uBlasVector& b);
-  
-  /// Solve linear system Ax = b
-  void solve(const uBlasMatrix<ublas_sparse_matrix>& A, uBlasVector& x, const uBlasVector& b);
-
 }
 
 #endif

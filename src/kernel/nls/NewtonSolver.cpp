@@ -19,7 +19,9 @@ NewtonSolver::NewtonSolver() : Parametrized()
 {
   solver = new LUSolver();
 #ifdef HAVE_PETSC_H
-  A = new Matrix(Matrix::umfpack);
+  //A = new Matrix(Matrix::umfpack);
+  // FIXME: Need to select appropriate PETSc matrix
+  A = new Matrix;
 #else
   A = new Matrix;
 #endif
@@ -29,7 +31,9 @@ NewtonSolver::NewtonSolver() : Parametrized()
 NewtonSolver::NewtonSolver(Matrix::Type matrix_type) : Parametrized()
 {
   solver = new LUSolver();
-  A = new Matrix(matrix_type);
+  // FIXME: Need to select appropriate PETSc matrix
+  //A = new Matrix(matrix_type);
+  A = new Matrix;
 }
 #endif
 //-----------------------------------------------------------------------------

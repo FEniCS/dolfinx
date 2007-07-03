@@ -3,6 +3,7 @@ EXTRA_DIST = dolfin_la.h \
              AssemblyMatrix.h \
              DenseMatrix.h \
              DenseVector.h \
+             default_la_types.h \
              GenericMatrix.h \
              GenericVector.h \
              GenericTensor.h \
@@ -13,12 +14,6 @@ EXTRA_DIST = dolfin_la.h \
              LU.h \
              LUSolver.h \
              Matrix.h \
-             default_la_types.h \
-             NewKrylovSolver.h \
-             NewLinearSolver.h \
-             NewLUSolver.h \
-             NewMatrix.h \
-             NewVector.h \
              SLEPcEigenvalueSolver.h \
              PETScLinearSolver.h \
              PETScKrylovMatrix.h \

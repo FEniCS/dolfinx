@@ -246,6 +246,7 @@ nobase_include_HEADERS = dolfin/dolfin_la.h \
                           dolfin/AssemblyMatrix.h \
                           dolfin/DenseMatrix.h \
                           dolfin/DenseVector.h \
+                          dolfin/default_la_types.h \
                           dolfin/KrylovMethod.h \
                           dolfin/KrylovSolver.h \
                           dolfin/GenericMatrix.h \
@@ -256,12 +257,6 @@ nobase_include_HEADERS = dolfin/dolfin_la.h \
                           dolfin/LU.h \
                           dolfin/LUSolver.h \
                           dolfin/Matrix.h \
-                          dolfin/default_la_types.h \
-                          dolfin/NewKrylovSolver.h \
-                          dolfin/NewLinearSolver.h \
-                          dolfin/NewLUSolver.h \
-                          dolfin/NewMatrix.h \
-                          dolfin/NewVector.h \
                           dolfin/SLEPcEigenvalueSolver.h \
                           dolfin/PETScKrylovMatrix.h \
                           dolfin/PETScKrylovSolver.h \

@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2006 Anders Logg.
+// Copyright (C) 2004-2007 Anders Logg and Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells, 2006.
@@ -9,17 +9,30 @@
 #ifndef __LINEAR_SOLVER_H
 #define __LINEAR_SOLVER_H
 
-#include <dolfin/PETScLinearSolver.h>
-#include <dolfin/uBlasLinearSolver.h>
-
 namespace dolfin
 {
 
-#ifdef HAVE_PETSC_H
-  typedef PETScLinearSolver LinearSolver;
-#else
-  typedef uBlasLinearSolver LinearSolver;
-#endif
+  /// Forward declarations
+  class Matrix;
+  class Vector;
+
+  /// This class defines the interfaces for default linear solvers for
+  /// systems of the form Ax = b.
+
+  class LinearSolver
+  {
+  public:
+
+    /// Constructor
+    LinearSolver(){}
+
+    /// Destructor
+    virtual ~LinearSolver(){}
+
+    /// Solve linear system Ax = b
+    virtual unsigned int solve(const Matrix& A, Vector& x, const Vector& b) = 0;
+
+  };
 
 }
 
