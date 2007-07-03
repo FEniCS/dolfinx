@@ -14,7 +14,7 @@
 #include <dolfin/ublas.h>
 #include <dolfin/GenericVector.h>
 
-#include <dolfin/NormType.h>
+#include <dolfin/VectorNormType.h>
 
 namespace dolfin
 {
