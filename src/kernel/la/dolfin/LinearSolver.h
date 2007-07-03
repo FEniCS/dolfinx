@@ -27,10 +27,10 @@ namespace dolfin
   public:
 
     /// Constructor
-    LinearSolver(){}
+    LinearSolver() {}
 
     /// Destructor
-    virtual ~LinearSolver(){}
+    virtual ~LinearSolver() {}
 
     /// Solve linear system Ax = b
     virtual unsigned int solve(const Matrix& A, Vector& x, const Vector& b) = 0;

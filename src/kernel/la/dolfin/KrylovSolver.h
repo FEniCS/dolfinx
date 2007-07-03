@@ -7,7 +7,6 @@
 #ifndef __KRYLOV_SOLVER_H
 #define __KRYLOV_SOLVER_H
 
-#include <dolfin/LinearSolver.h>
 #include <dolfin/Parametrized.h>
 #include <dolfin/Vector.h>
 #include <dolfin/Matrix.h>
@@ -16,6 +15,8 @@
 #include <dolfin/Preconditioner.h>
 
 #include <dolfin/default_la_types.h>
+
+#include <dolfin/LinearSolver.h>
 
 namespace dolfin
 {
@@ -27,9 +28,12 @@ namespace dolfin
     
     public:
 
-      KrylovSolver(KrylovMethod method = default_method, 
-                      Preconditioner pc = default_pc) : LinearSolver(),
-                      solver(default_method, default_pc) {}
+      KrylovSolver() : solver() {}
+
+      KrylovSolver(KrylovMethod method) : solver(method, default_pc) {}
+
+      KrylovSolver(KrylovMethod method, Preconditioner pc) 
+                  : solver(method, pc) {}
 
       ~KrylovSolver() {}
 
