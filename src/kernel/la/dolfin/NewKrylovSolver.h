@@ -8,6 +8,7 @@
 #define __NEW_KRYLOV_SOLVER_H
 
 #include <dolfin/NewLinearSolver.h>
+#include <dolfin/Parametrized.h>
 #include <dolfin/NewVector.h>
 #include <dolfin/NewMatrix.h>
 
@@ -16,7 +17,7 @@
 namespace dolfin
 {
 
-  class NewKrylovSolver : public NewLinearSolver, public Variable
+  class NewKrylovSolver : public NewLinearSolver, public Parametrized
   {
     /// This class defines an interface for a Krylov solver. The underlying 
     /// type of Krylov solver is defined in default_type.h.
