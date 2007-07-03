@@ -14,6 +14,8 @@
 #include <dolfin/ublas.h>
 #include <dolfin/GenericVector.h>
 
+#include <dolfin/NormType.h>
+
 namespace dolfin
 {
 
@@ -100,8 +102,7 @@ namespace dolfin
     void zero();
 
     /// Compute norm of vector
-    enum NormType { l1, l2, linf };
-    real norm(NormType type = l2) const;
+    real norm(VectorNormType type = l2) const;
 
     /// Compute sum of vector
     real sum() const

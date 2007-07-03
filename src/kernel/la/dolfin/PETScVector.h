@@ -16,6 +16,7 @@
 #include <dolfin/Variable.h>
 #include <dolfin/GenericVector.h>
 #include <dolfin/PETScManager.h>
+#include <dolfin/VectorNormType.h>
 
 namespace dolfin
 {
@@ -129,8 +130,7 @@ namespace dolfin
     real operator*(const PETScVector& x);
 
     /// Compute norm of vector
-    enum NormType { l1, l2, linf };
-    real norm(const NormType type = l2) const;
+    real norm(VectorNormType type = l2) const;
 
     /// Compute sum of vector
     real sum() const;

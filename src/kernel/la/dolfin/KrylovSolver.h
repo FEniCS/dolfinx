@@ -28,7 +28,7 @@ namespace dolfin
     public:
 
       KrylovSolver(KrylovMethod method = default_method, 
-                      Preconditioner pc = default_pc) :
+                      Preconditioner pc = default_pc) : LinearSolver(),
                       solver(default_method, default_pc) {}
 
       ~KrylovSolver() {}

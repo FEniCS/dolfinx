@@ -91,7 +91,7 @@ real MultiAdaptiveNewtonSolver::iteration(real tol, uint iter,
   // FIXME: Scaling needed for PETSc Krylov solver, but maybe not for uBlas?
   
   // Solve linear system
-  const real r = b.norm(uBlasVector::linf) + DOLFIN_EPS;
+  const real r = b.norm(linf) + DOLFIN_EPS;
   b /= r;
   num_local_iterations += solver.solve(*A, dx, b);
   dx *= r;

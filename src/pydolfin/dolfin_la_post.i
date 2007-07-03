@@ -2,31 +2,6 @@
 %template(uBlasSparseMatrix) dolfin::uBlasMatrix<dolfin::ublas_sparse_matrix>;
 %template(uBlasDenseMatrix) dolfin::uBlasMatrix<dolfin::ublas_dense_matrix>;
 
-// Select matrix types (for PETSc or uBlas)
-#ifdef HAVE_PETSC_H
-%pythoncode
-%{
-  # Explicit typedefs
-  Vector = PETScVector
-  Matrix = PETScMatrix
-  KrylovSolver = PETScKrylovSolver
-  LUSolver = PETScLUSolver
-
-  Vector_createScatterer = PETScVector_createScatterer
-  Vector_gather = PETScVector_gather
-  Vector_scatter = PETScVector_scatter
-%}
-#else
-%pythoncode
-%{
-  # Explicit typedefs
-  Vector = uBlasVector
-  Matrix = uBlasSparseMatrix
-  KrylovSolver = uBlasKrylovSolver
-  LUSolver = uBlasLUSolver
-%}
-#endif
-
 // Select matrix types (for both PETSc and uBlas)
 %pythoncode
 %{

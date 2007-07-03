@@ -52,7 +52,7 @@ int PETScPreconditioner::PCApply(PC pc, Vec x, Vec y)
 
   PETScPreconditioner* newpc = (PETScPreconditioner*)pc->data;
 
-  Vector dolfinx(x), dolfiny(y);
+  PETScVector dolfinx(x), dolfiny(y);
 
   newpc->solve(dolfiny, dolfinx);
 

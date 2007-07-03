@@ -305,7 +305,7 @@ real PETScVector::operator*(const PETScVector& x)
   return a;
 }
 //-----------------------------------------------------------------------------
-real PETScVector::norm(const NormType type) const
+real PETScVector::norm(VectorNormType type) const
 {
   dolfin_assert(x);
 

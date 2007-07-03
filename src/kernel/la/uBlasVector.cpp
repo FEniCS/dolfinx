@@ -100,7 +100,7 @@ void uBlasVector::zero()
   clear();
 }
 //-----------------------------------------------------------------------------
-real uBlasVector::norm(NormType type) const
+real uBlasVector::norm(VectorNormType type) const
 {
   switch (type) {
   case l1:

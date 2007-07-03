@@ -7,10 +7,12 @@
 #ifndef __VECTOR_H
 #define __VECTOR_H
 
+#include <dolfin/PETScVector.h>
 #include <dolfin/GenericMatrix.h>
 #include <dolfin/dolfin_main.h>
 
 #include <dolfin/default_la_types.h>
+#include <dolfin/VectorNormType.h>
 
 namespace dolfin
 {
@@ -59,9 +61,8 @@ namespace dolfin
         { vector.add(block, m, rows); }
 
       /// Compute norm of vector
-      enum NormType { l1, l2, linf };
-      real norm(NormType type = l2) const
-        { return vector(type); }
+      real norm(VectorNormType type = l2) const
+        { return vector.norm(type); }
 
       /// Set all entries to zero
       void zero()

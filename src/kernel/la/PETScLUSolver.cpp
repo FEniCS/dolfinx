@@ -13,6 +13,8 @@
 #include <dolfin/PETScKrylovMatrix.h>
 #include <dolfin/PETScLUSolver.h>
 
+#include <dolfin/NormType.h>
+
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
@@ -93,8 +95,8 @@ dolfin::uint PETScLUSolver::solve(const PETScKrylovMatrix& A,
   KSPSolve(ksp, b.vec(), x.vec());
 
   // Estimate condition number for l1 norm
-  const real xnorm = x.norm(PETScVector::l1);
-  const real bnorm = b.norm(PETScVector::l1) + DOLFIN_EPS;
+  const real xnorm = x.norm(l1);
+  const real bnorm = b.norm(l1) + DOLFIN_EPS;
   const real kappa = Anorm * xnorm / bnorm;
   if ( kappa > 0.001 / DOLFIN_EPS )
   {

@@ -27,6 +27,7 @@ NewtonSolver::NewtonSolver() : Parametrized()
 #endif
 }
 //-----------------------------------------------------------------------------
+/*
 #ifdef HAVE_PETSC_H
 NewtonSolver::NewtonSolver(Matrix::Type matrix_type) : Parametrized()
 {
@@ -36,6 +37,7 @@ NewtonSolver::NewtonSolver(Matrix::Type matrix_type) : Parametrized()
   A = new Matrix;
 }
 #endif
+*/
 //-----------------------------------------------------------------------------
 NewtonSolver::NewtonSolver(KrylovMethod method, Preconditioner pc)
   : Parametrized()

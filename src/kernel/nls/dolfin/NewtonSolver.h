@@ -30,11 +30,12 @@ namespace dolfin
     /// Initialise nonlinear solver and choose LU solver
     NewtonSolver();
 
+/*
 #ifdef HAVE_PETSC_H
     /// Initialise nonlinear solver and choose matrix type which defines LU solver
     NewtonSolver(Matrix::Type matrix_type);
 #endif
-
+*/
     /// Initialise nonlinear solver and choose Krylov solver and preconditioner
     NewtonSolver(KrylovMethod method, Preconditioner pc);
 

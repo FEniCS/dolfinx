@@ -74,7 +74,7 @@ namespace dolfin
       const DefaultMatrix& mat() const
         { return matrix; }
 
-      uBlasSparseMatrix& mat()
+      DefaultMatrix& mat()
         { return matrix; }
 
     private:

@@ -38,4 +38,6 @@ EXTRA_DIST = dolfin_la.h \
              uBlasSparseMatrix.h \
              uBlasVector.h \
              Scalar.h \
-             Vector.h
+             Vector.h \
+             VectorNormType.h
+

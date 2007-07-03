@@ -80,7 +80,7 @@ real MonoAdaptiveNewtonSolver::iteration(real tol, uint iter, real d0, real d1)
   if ( krylov )
   {
     // FIXME: Scaling needed for PETSc Krylov solver, but maybe not for uBlas?
-    const real r = b.norm(uBlasVector::linf) + DOLFIN_EPS;
+    const real r = b.norm(linf) + DOLFIN_EPS;
     b /= r;
     num_local_iterations += krylov->solve(A, dx, b);
     dx *= r;
@@ -101,7 +101,7 @@ real MonoAdaptiveNewtonSolver::iteration(real tol, uint iter, real d0, real d1)
   ts.x += dx;
   
   // Return maximum increment
-  return dx.norm(uBlasVector::linf);
+  return dx.norm(linf);
 }
 //-----------------------------------------------------------------------------
 dolfin::uint MonoAdaptiveNewtonSolver::size() const

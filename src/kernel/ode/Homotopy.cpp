@@ -283,7 +283,7 @@ bool Homotopy::computeSolution(HomotopyODE& ode)
     feval(F, ode);
 
     // Check convergence
-    real r = F.norm(uBlasVector::linf);
+    real r = F.norm(linf);
     //cout << "r = " << r << ": x = "; x.disp();
     if ( r < tol )
     {
