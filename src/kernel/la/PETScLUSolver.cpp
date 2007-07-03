@@ -13,8 +13,6 @@
 #include <dolfin/PETScKrylovMatrix.h>
 #include <dolfin/PETScLUSolver.h>
 
-#include <dolfin/NormType.h>
-
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
