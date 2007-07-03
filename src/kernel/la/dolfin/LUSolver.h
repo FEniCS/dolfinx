@@ -13,6 +13,8 @@
 
 #include <dolfin/uBlasLUSolver.h>
 
+//#include <dolfin/NewMatrix.h>
+
 namespace dolfin
 {
 

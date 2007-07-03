@@ -92,7 +92,7 @@ namespace dolfin
     ///--- FIXME: Which of the functions below do we really need? ---
 
     /// Compute sum of vector
-    virtual real sum() const = 0;
+    //virtual real sum() const = 0;
 
   };  
 
