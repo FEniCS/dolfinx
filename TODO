@@ -22,7 +22,6 @@ Mesh
 Linear Algebra
 --------------
 
-* Create templated classes KrylovSolverTemplate<..>, MatrixTemplate<..>, etc.
 * Refine PETSc wrappers for parallel assembly and solve
 
 Function
