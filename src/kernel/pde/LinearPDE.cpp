@@ -51,29 +51,17 @@ void LinearPDE::solve(Function& u)
   const std::string solver_type = get("PDE linear solver");
 
   // Create matrix and vector for assembly
-  Matrix* A;
+  Matrix A;
   Vector b;
-#ifdef HAVE_PETSC_H
-  /*
-  if ( solver_type == "direct" )
-    A = new Matrix(Matrix::umfpack);
-  else
-    A = new Matrix;
-  */
-  // FIXME: Need to choose approproate PETSc matrix.
-  A = new Matrix;
-#else
-  A = new Matrix;
-#endif
 
   // Assemble linear system
   Assembler assembler;
-  assembler.assemble(*A, a, mesh);
+  assembler.assemble(A, a, mesh);
   assembler.assemble(b, L, mesh);
 
   // Apply boundary conditions
   for (uint i = 0; i < bcs.size(); i++)
-    bcs[i]->apply(*A, b, a);
+    bcs[i]->apply(A, b, a);
 
   // Solve linear system
   if ( solver_type == "direct" )
@@ -81,14 +69,14 @@ void LinearPDE::solve(Function& u)
     cout << "Using direct solver." << endl;
     LUSolver solver;
     solver.set("parent", *this);
-    solver.solve(*A, x, b);
+    solver.solve(A, x, b);
   }
   else if ( solver_type == "iterative" )
   {
     cout << "Using iterative solver (GMRES)." << endl;
     KrylovSolver solver(gmres);
     solver.set("parent", *this);
-    solver.solve(*A, x, b);
+    solver.solve(A, x, b);
   }
   else
     error("Unknown solver type \"%s\".", solver_type.c_str());

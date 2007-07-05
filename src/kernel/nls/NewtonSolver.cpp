@@ -18,13 +18,6 @@ using namespace dolfin;
 NewtonSolver::NewtonSolver() : Parametrized()
 {
   solver = new LUSolver();
-#ifdef HAVE_PETSC_H
-  //A = new Matrix(Matrix::umfpack);
-  // FIXME: Need to select appropriate PETSc matrix
-  A = new Matrix;
-#else
-  A = new Matrix;
-#endif
 }
 //-----------------------------------------------------------------------------
 /*
@@ -43,13 +36,11 @@ NewtonSolver::NewtonSolver(KrylovMethod method, Preconditioner pc)
   : Parametrized()
 {
   solver = new KrylovSolver(method, pc);
-  A = new Matrix;
 }
 //-----------------------------------------------------------------------------
 NewtonSolver::~NewtonSolver()
 {
   delete solver; 
-  delete A;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint NewtonSolver::solve(NonlinearProblem& nonlinear_problem, Vector& x)
@@ -62,7 +53,7 @@ dolfin::uint NewtonSolver::solve(NonlinearProblem& nonlinear_problem, Vector& x)
 
   // Compute F(u) and J
   set("output destination", "silent");
-  nonlinear_problem.form(*A, b, x);
+  nonlinear_problem.form(A, b, x);
 
   uint krylov_iterations = 0;
   newton_iteration = 0;
@@ -74,7 +65,7 @@ dolfin::uint NewtonSolver::solve(NonlinearProblem& nonlinear_problem, Vector& x)
 
       set("output destination", "silent");
       // Perform linear solve and update total number of Krylov iterations
-      krylov_iterations += solver->solve(*A, dx, b);
+      krylov_iterations += solver->solve(A, dx, b);
       set("output destination", "terminal");
 
       // Compute initial residual
@@ -89,7 +80,7 @@ dolfin::uint NewtonSolver::solve(NonlinearProblem& nonlinear_problem, Vector& x)
       set("output destination", "silent");
       //FIXME: this step is not needed if residual is based on dx and this has converged.
       // Compute F(u) and J
-      nonlinear_problem.form(*A, b, x);
+      nonlinear_problem.form(A, b, x);
 
       set("output destination", "terminal");
 

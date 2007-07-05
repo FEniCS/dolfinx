@@ -65,7 +65,7 @@ namespace dolfin
     LinearSolver* solver;
 
     /// Jacobian matrix
-    Matrix* A;
+    Matrix A;
 
     /// Resdiual vector
     Vector b;

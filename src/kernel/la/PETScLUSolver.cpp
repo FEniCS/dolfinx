@@ -49,6 +49,19 @@ PETScLUSolver::~PETScLUSolver()
 dolfin::uint PETScLUSolver::solve(const PETScMatrix& A,
 		       PETScVector& x, const PETScVector& b)
 {
+  MatType mat_type;
+
+  // Convert to UMFPACK matrix if matrix type is MATSEQAIJ and UMFPACK is available.
+  #if PETSC_HAVE_UMFPACK
+    MatGetType(A.mat(), &mat_type);
+    std::string _mat_type = mat_type;
+    if(_mat_type == MATSEQAIJ)
+    {
+      Mat Atemp = A.mat();
+      MatConvert(A.mat(), MATUMFPACK, MAT_REUSE_MATRIX, &Atemp);
+    }
+  #endif
+
   // Get parameters
   const bool report = get("LU report");
 
@@ -64,6 +77,20 @@ dolfin::uint PETScLUSolver::solve(const PETScMatrix& A,
   KSPSetOperators(ksp, A.mat(), A.mat(), DIFFERENT_NONZERO_PATTERN);
   KSPSolve(ksp, b.vec(), x.vec());
   
+  // Get name of solver
+  KSPType ksp_type;
+  KSPGetType(ksp, &ksp_type);
+
+  // Get name of preconditioner
+  PC pc;
+  KSPGetPC(ksp, &pc);
+  PCType pc_type;
+  PCGetType(pc, &pc_type);
+  MatGetType(A.mat(), &mat_type);
+
+  // Report solver type
+  message("LU solver (%s, %s) finished.", pc_type, mat_type);
+
   return 1;
 }
 //-----------------------------------------------------------------------------
