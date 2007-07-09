@@ -6,6 +6,7 @@ nobase_include_HEADERS   = dolfin/dolfin_fem.h \
                            dolfin/DofMap.h \
                            dolfin/DofMapSet.h \
                            dolfin/Form.h \
+                           dolfin/PeriodicBoundaryCondition.h \
                            dolfin/SparsityPatternBuilder.h \
                            dolfin/SubSystem.h \
                            dolfin/UFC.h \
@@ -18,6 +19,7 @@ libdolfin_fem_la_SOURCES = assemble.cpp \
                            BoundaryCondition.cpp \
                            DofMap.cpp \
                            DofMapSet.cpp \
+                           PeriodicBoundaryCondition.cpp \
                            SparsityPatternBuilder.cpp \
                            SubSystem.cpp \
                            UFC.cpp

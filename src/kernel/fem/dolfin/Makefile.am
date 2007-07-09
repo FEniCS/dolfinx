@@ -5,6 +5,7 @@ EXTRA_DIST = dolfin_fem.h \
              DofMap.h \
              DofMapSet.h \
              Form.h \
+             PeriodicBoundaryCondition.h \
              SparsityPatternBuilder.h \
              SubSystem.h \
              UFC.h \

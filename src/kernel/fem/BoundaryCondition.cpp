@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-04-10
-// Last changed: 2007-06-05
+// Last changed: 2007-07-08
 
 #include <dolfin/Mesh.h>
 #include <dolfin/Vertex.h>
@@ -84,7 +84,7 @@ void BoundaryCondition::apply(GenericMatrix& A, GenericVector& b,
 void BoundaryCondition::apply(GenericMatrix& A, GenericVector& b,
                               const GenericVector* x, const Form& form)
 {
-  cout << "Applying boundary conditions to linear system." << endl;
+  message("Applying Dirichlet boundary conditions to linear system.");
 
   // FIXME: How do we reuse the dof map for u?
   // FIXME: Perhaps we should make DofMapSet a member of Form?
@@ -130,13 +130,6 @@ void BoundaryCondition::apply(GenericMatrix& A, GenericVector& b,
     // Tabulate which dofs are on the facet
     data.dof_map->tabulate_facet_dofs(data.facet_dofs, local_facet);
     
-    //for (uint i = 0; i < 12; i++)
-    //  message("cell_dofs[%d] = %d", i, data.cell_dofs[i]);
-
-    //for (uint i = 0; i < 6; i++)
-    //  message("facet_dofs[%d] = %d", i, data.facet_dofs[i]);
-
-
     // Pick values for facet
     for (uint i = 0; i < data.dof_map->num_facet_dofs(); i++)
     {
@@ -146,7 +139,7 @@ void BoundaryCondition::apply(GenericMatrix& A, GenericVector& b,
     } 
  
     // Get current solution values for nonlinear problems
-    if ( x )
+    if (x)
     {
       x->get(data.x_values, data.dof_map->num_facet_dofs(), data.rows);
       for (uint i = 0; i < data.dof_map->num_facet_dofs(); i++)
@@ -241,10 +234,26 @@ BoundaryCondition::LocalData::LocalData(const Form& form,
     facet_dofs[i] = 0;
     rows[i] = 0;
   }
+
+  // Create local coordinate data
+  coordinates = new real*[dof_map->local_dimension()];
+  for (uint i = 0; i < dof_map->local_dimension(); i++)
+  {
+    coordinates[i] = new real[mesh.geometry().dim()];
+    for (uint j = 0; j < mesh.geometry().dim(); j++)
+      coordinates[i][j] = 0.0;
+  }
 }
 //-----------------------------------------------------------------------------
 BoundaryCondition::LocalData::~LocalData()
 {
+  if (coordinates)
+  {
+    for (uint i = 0; i < dof_map->local_dimension(); i++)
+      delete [] coordinates[i];
+    delete [] coordinates;
+  }
+
   if (finite_element)
     delete finite_element;
 

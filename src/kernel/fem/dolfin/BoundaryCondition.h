@@ -2,10 +2,10 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-04-10
-// Last changed: 2007-04-29
+// Last changed: 2007-07-08
 
-#ifndef __NEW_BOUNDARY_CONDITION_H
-#define __NEW_BOUNDARY_CONDITION_H
+#ifndef __BOUNDARY_CONDITION_H
+#define __BOUNDARY_CONDITION_H
 
 #include <ufc.h>
 
@@ -75,6 +75,9 @@ namespace dolfin
     /// Apply boundary condition to linear system for a nonlinear problem
     void apply(GenericMatrix& A, GenericVector& b, const GenericVector& x, const Form& form);
 
+    // Friends
+    friend class PeriodicBoundaryCondition;
+
   private:
 
     // Initialize sub domain markers    
@@ -111,6 +114,7 @@ namespace dolfin
       real* x_values;
       uint* facet_dofs;
       uint* rows;
+      real** coordinates;
 
     };
 

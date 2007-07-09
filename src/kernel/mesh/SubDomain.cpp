@@ -2,8 +2,9 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-04-24
-// Last changed: 2007-05-17
+// Last changed: 2007-07-08
 
+#include <dolfin/log.h>
 #include <dolfin/MeshEntityIterator.h>
 #include <dolfin/Vertex.h>
 #include <dolfin/SubDomain.h>
@@ -19,6 +20,11 @@ SubDomain::SubDomain()
 SubDomain::~SubDomain()
 {
   // Do nothing
+}
+//-----------------------------------------------------------------------------
+void SubDomain::map(const real* x, real* y) const
+{
+  error("Mapping between subdomains missing for periodic boundary conditions.");
 }
 //-----------------------------------------------------------------------------
 void SubDomain::mark(MeshFunction<uint>& sub_domains, uint sub_domain) const
