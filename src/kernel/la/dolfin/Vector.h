@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-07-03
-// Last changed:
+// Last changed: 2007-07-11
 
 #ifndef __VECTOR_H
 #define __VECTOR_H
@@ -30,64 +30,64 @@ namespace dolfin
 
       ~Vector() {}
 
-      void init(uint i) 
+      inline void init(uint i) 
         { vector.init(i); }
 
-      uint size() const
+      inline uint size() const
         { return vector.size(); }
 
       /// Get values
-      void get(real* values) const
+      inline void get(real* values) const
         { vector.get(values); }
 
       /// Set values
-      void set(real* values)
+      inline void set(real* values)
         { vector.set(values); }
 
       /// Add values
-      void add(real* values)
+      inline void add(real* values)
         { vector.add(values); }
 
       /// Get block of values
-      void get(real* block, uint m, const uint* rows) const
+      inline void get(real* block, uint m, const uint* rows) const
         { vector.get(block, m, rows); }
 
       /// Set block of values
-      void set(const real* block, uint m, const uint* rows)
+      inline void set(const real* block, uint m, const uint* rows)
         { vector.set(block, m, rows); }
 
       /// Add block of values
-      void add(const real* block, const uint m, const uint* rows)
+      inline void add(const real* block, const uint m, const uint* rows)
         { vector.add(block, m, rows); }
 
       /// Compute norm of vector
-      real norm(VectorNormType type = l2) const
+      inline real norm(VectorNormType type = l2) const
         { return vector.norm(type); }
 
       /// Set all entries to zero
-      void zero()
+      inline void zero()
         { vector.zero(); }
 
       /// Add vector x
-      const Vector& operator+= (const Vector& x)
+      inline const Vector& operator+= (const Vector& x)
         { vector += x.vec(); 
           return *this; 
         }
 
       /// Apply changes to matrix
-      void apply()
+      inline void apply()
         { vector.apply(); }
 
       /// Display matrix (sparse output is default)
-      void disp(uint precision = 2) const
+      inline void disp(uint precision = 2) const
         { vector.disp(precision); }
 
       /// Return underlying vector (const version)
-      const DefaultVector& vec() const
+      inline const DefaultVector& vec() const
         { return vector; }
 
       /// Return underlying vector
-      DefaultVector& vec()
+      inline DefaultVector& vec()
         { return vector; }
 
     private:

@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-07-03
-// Last changed:
+// Last changed: 2007-07-11
 
 #ifndef __KRYLOV_SOLVER_H
 #define __KRYLOV_SOLVER_H
@@ -37,7 +37,7 @@ namespace dolfin
 
       ~KrylovSolver() {}
 
-      uint solve(const Matrix& A, Vector& x, const Vector& b)
+      inline uint solve(const Matrix& A, Vector& x, const Vector& b)
         { return solver.solve(A.mat(), x.vec(), b.vec()); }
 
     private:
