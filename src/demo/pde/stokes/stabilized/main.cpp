@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-02-09
-// Last changed: 2007-04-29
+// Last changed: 2007-07-11
 //
 // This demo solves the Stokes equations, using stabilized
 // first order elements for the velocity and pressure. The
@@ -61,13 +61,13 @@ int main()
   SubSystem pressure(1);
 
   // No-slip boundary condition for velocity
-  BoundaryCondition bc0(noslip, sub_domains, 0, velocity);
+  DirichletBC bc0(noslip, sub_domains, 0, velocity);
 
   // Inflow boundary condition for velocity
-  BoundaryCondition bc1(inflow, sub_domains, 1, velocity);
+  DirichletBC bc1(inflow, sub_domains, 1, velocity);
 
   // Boundary condition for pressure at outflow
-  BoundaryCondition bc2(zero, sub_domains, 2, pressure);
+  DirichletBC bc2(zero, sub_domains, 2, pressure);
 
   // Collect boundary conditions
   Array <BoundaryCondition*> bcs(&bc0, &bc1, &bc2);

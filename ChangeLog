@@ -1,3 +1,5 @@
+ - Name change: BoundaryCondition --> DirichletBC
+ - Add support for periodic boundary conditions: class PeriodicBC
  - Redesign default linear algebra interface (Matrix, Vector, KrylovSolver, etc)
  - Add function to return Vector associated with a DiscreteFunction
 0.7.0-1 [2007-06-22]

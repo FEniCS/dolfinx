@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2005
 //
 // First added:  2005
-// Last changed: 2007-05-24
+// Last changed: 2007-07-11
 //
 // This program illustrates the use of the DOLFIN nonlinear solver for solving 
 // problems of the form F(u) = 0. The user must provide functions for the 
@@ -83,7 +83,7 @@ class MyNonlinearProblem : public NonlinearProblem
       L = new NonlinearPoissonLinearForm(u, f);
 
       // Create boundary conditions
-      bc = new BoundaryCondition(g, mesh, dirichlet_boundary);
+      bc = new DirichletBC(g, mesh, dirichlet_boundary);
 
       // Initialise solution vector u
       u.init(mesh, x, *a, 1);
@@ -114,7 +114,7 @@ class MyNonlinearProblem : public NonlinearProblem
     Form *a;
     Form *L;
     Mesh* _mesh;
-    BoundaryCondition* bc;
+    DirichletBC* bc;
 };
 
 int main(int argc, char* argv[])

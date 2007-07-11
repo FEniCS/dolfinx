@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2005
 //
 // First added:  2005
-// Last changed: 2007-05-24
+// Last changed: 2007-07-11
 //
 // This program illustrates the use of the DOLFIN for solving a nonlinear PDE
 // by solving the nonlinear variant of Poisson's equation
@@ -80,7 +80,7 @@ int main(int argc, char* argv[])
   // Dirichlet boundary conditions
   DirichletBoundary dirichlet_boundary;
   DirichletBoundaryCondition g(mesh, t);
-  BoundaryCondition bc(g, mesh, dirichlet_boundary);
+  DirichletBC bc(g, mesh, dirichlet_boundary);
 
   // Solution function
   Function u;

@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-07-08
-// Last changed: 2007-07-08
+// Last changed: 2007-07-11
 
 #include <vector>
 #include <map>
@@ -19,7 +19,7 @@
 #include <dolfin/GenericVector.h>
 #include <dolfin/SubSystem.h>
 #include <dolfin/BoundaryCondition.h>
-#include <dolfin/PeriodicBoundaryCondition.h>
+#include <dolfin/PeriodicBC.h>
 
 using namespace dolfin;
 
@@ -45,27 +45,27 @@ struct lt_coordinate
 };
 
 //-----------------------------------------------------------------------------
-PeriodicBoundaryCondition::PeriodicBoundaryCondition(Mesh& mesh,
+PeriodicBC::PeriodicBC(Mesh& mesh,
                                                      SubDomain& sub_domain)
-  : mesh(mesh), sub_domain(sub_domain)
+  : BoundaryCondition(), mesh(mesh), sub_domain(sub_domain)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-PeriodicBoundaryCondition::PeriodicBoundaryCondition(Mesh& mesh,
+PeriodicBC::PeriodicBC(Mesh& mesh,
                                                      SubDomain& sub_domain,
                                                      const SubSystem& sub_system)
-  : mesh(mesh), sub_domain(sub_domain), sub_system(sub_system)
+  : BoundaryCondition(), mesh(mesh), sub_domain(sub_domain), sub_system(sub_system)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-PeriodicBoundaryCondition::~PeriodicBoundaryCondition()
+PeriodicBC::~PeriodicBC()
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void PeriodicBoundaryCondition::apply(GenericMatrix& A, GenericVector& b,
+void PeriodicBC::apply(GenericMatrix& A, GenericVector& b,
                                       const Form& form)
 {
   cout << "Applying periodic boundary conditions to linear system." << endl;
@@ -124,13 +124,16 @@ void PeriodicBoundaryCondition::apply(GenericMatrix& A, GenericVector& b,
       const real* x = data.coordinates[local_dof];
 
       // Map coordinate from H to G
+      for (uint j = 0; j < mesh.geometry().dim(); j++)
+        y[j] = x[j];
       sub_domain.map(x, y);
 
       // Check if coordinate is inside the domain G or in H
       const bool on_boundary = facet->numEntities(D) == 1;
       if (sub_domain.inside(x, on_boundary))
       {
-        // Coordinate is in G
+        // Coordinate x is in G
+        //cout << "Inside: " << x[0] << " " << x[1] << endl;
         
         // Copy coordinate to std::vector
         for (uint j = 0; j < mesh.geometry().dim(); j++)
@@ -163,7 +166,8 @@ void PeriodicBoundaryCondition::apply(GenericMatrix& A, GenericVector& b,
       }
       else if (sub_domain.inside(y, on_boundary))
       {
-        // y = F(x) is in G, so coordinate is in H
+        // y = F(x) is in G, so coordinate x is in H
+        //cout << "Mapped: " << x[0] << " " << x[1] << endl;
         
         // Copy coordinate to std::vector
         for (uint j = 0; j < mesh.geometry().dim(); j++)
@@ -237,5 +241,12 @@ void PeriodicBoundaryCondition::apply(GenericMatrix& A, GenericVector& b,
   }
   A.apply();
   b.apply();
+}
+//-----------------------------------------------------------------------------
+void PeriodicBC::apply(GenericMatrix& A, GenericVector& b,
+                       const GenericVector& x, const Form& form)
+{
+  // FIXME: Implement this (Garth?)
+  error("Periodic boundary conditions not implemented for nonlinear systems.");
 }
 //-----------------------------------------------------------------------------

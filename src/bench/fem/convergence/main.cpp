@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005
-// Last changed: 2007-05-24
+// Last changed: 2007-07-11
 
 #include <dolfin.h>
 #include "Poisson2D_1.h"
@@ -67,7 +67,7 @@ real solve2D(int q, int n)
   Source2D f(mesh);
   Function zero(mesh, 0.0);
   DirichletBoundary boundary;
-  BoundaryCondition bc(zero, mesh, boundary);
+  DirichletBC bc(zero, mesh, boundary);
 
   // Choose forms
   Form* a = 0;
@@ -141,7 +141,7 @@ real solve3D(int q, int n)
   Source3D f(mesh);
   Function zero(mesh, 0.0);
   DirichletBoundary boundary;
-  BoundaryCondition bc(zero, mesh, boundary);
+  DirichletBC bc(zero, mesh, boundary);
 
   // Choose forms
   Form* a = 0;

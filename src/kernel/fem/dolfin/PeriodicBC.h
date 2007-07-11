@@ -2,20 +2,18 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-07-08
-// Last changed: 2007-07-08
+// Last changed: 2007-07-11
 
-#ifndef __PERIODIC_BOUNDARY_CONDITION_H
-#define __PERIODIC_BOUNDARY_CONDITION_H
-
-#include <ufc.h>
+#ifndef __PERIODIC_BC_H
+#define __PERIODIC_BC_H
 
 #include <dolfin/constants.h>
 #include <dolfin/SubSystem.h>
+#include <dolfin/BoundaryCondition.h>
 
 namespace dolfin
 {
 
-  class Function;
   class Mesh;
   class SubDomain;
   class Form;
@@ -30,32 +28,34 @@ namespace dolfin
   ///
   /// where F : H --> G is a map from a subdomain H to a subdomain G.
   ///
-  /// A PeriodicBoundaryCondition is specified by a Mesh and a
-  /// SubDomain. The given subdomain must overload both the inside()
-  /// function, which specifies the points of G, and the map()
-  /// function, which specifies the map from the points of H to the
-  /// points of G.
+  /// A PeriodicBC is specified by a Mesh and a SubDomain. The given
+  /// subdomain must overload both the inside() function, which
+  /// specifies the points of G, and the map() function, which
+  /// specifies the map from the points of H to the points of G.
   ///
   /// For mixed systems (vector-valued and mixed elements), an
   /// optional set of parameters may be used to specify for which sub
   /// system the boundary condition should be specified.
   
-  class PeriodicBoundaryCondition
+  class PeriodicBC : public BoundaryCondition
   {
   public:
 
     /// Create periodic boundary condition for sub domain
-    PeriodicBoundaryCondition(Mesh& mesh, SubDomain& sub_domain);
+    PeriodicBC(Mesh& mesh, SubDomain& sub_domain);
 
     /// Create sub system boundary condition for sub domain
-    PeriodicBoundaryCondition(Mesh& mesh, SubDomain& sub_domain,
-                      const SubSystem& sub_system);
-
+    PeriodicBC(Mesh& mesh, SubDomain& sub_domain,
+               const SubSystem& sub_system);
+    
     /// Destructor
-    ~PeriodicBoundaryCondition();
+    ~PeriodicBC();
 
     /// Apply boundary condition to linear system
     void apply(GenericMatrix& A, GenericVector& b, const Form& form);
+
+    /// Apply boundary condition to linear system for a nonlinear problem (not implemented)
+    void apply(GenericMatrix& A, GenericVector& b, const GenericVector& x, const Form& form);
 
   private:
 

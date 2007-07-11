@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-02-07
-// Last changed: 2007-05-23
+// Last changed: 2007-07-11
 //
 // This demo program solves Poisson's equation
 //
@@ -77,7 +77,7 @@ int main()
   // Create boundary condition
   Function u0(mesh, 0.0);
   DirichletBoundary boundary;
-  BoundaryCondition bc(u0, mesh, boundary);
+  DirichletBC bc(u0, mesh, boundary);
   
   // Define PDE
   PoissonBilinearForm a;
