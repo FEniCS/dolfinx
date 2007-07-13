@@ -1,10 +1,10 @@
-// Copyright (C) 2006 Garth N. Wells.
+// Copyright (C) 2006-2007 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Anders Logg 2006.
 // 
 // First added:  2006-06-01
-// Last changed: 2006-09-27
+// Last changed: 2007-07-13
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/uBlasLUSolver.h>
@@ -66,8 +66,10 @@ dolfin::uint uBlasLUSolver::solve(const uBlasMatrix<ublas_sparse_matrix>& A, uBl
 
   x.init(N);
 
-  message("Solving linear system of size %d x %d (UMFPACK LU solver).", 
-      M, N);
+  // Make sure matrix assembly is complete
+  (const_cast< uBlasMatrix<ublas_sparse_matrix>& >(A)).complete_index1_data(); 
+
+  message("Solving linear system of size %d x %d (UMFPACK LU solver).", M, N);
 
   //FIXME: From UMFPACK v.5.0 onwards, UF_long is introduced and should be used 
   //       in place of long int.
