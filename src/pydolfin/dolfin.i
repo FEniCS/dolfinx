@@ -28,9 +28,7 @@ using namespace dolfin;
 %include "dolfin_exceptions.i"
 
 // FIXME: what are these doing?
-namespace dolfin { class ublas_vector {}; }
 %include "cpointer.i"
-//%include "std_iostream.i"
 %include "std_sstream.i"
 %include "std_string.i"
 %include "std_vector.i"
@@ -49,14 +47,8 @@ namespace dolfin { class ublas_vector {}; }
 %import "dolfin/constants.h"
 %include "dolfin_headers.h"
 
-// FIXME: Move to dolfin_common_post.i
-// common post
-%template(STLVectorFunctionPtr) std::vector<dolfin::Function *>;
-%template(ArrayFunctionPtr) dolfin::Array<dolfin::Function *>;
-%template(STLVectorUInt) std::vector<unsigned int>;
-%template(ArrayUInt) dolfin::Array<unsigned int>;
-
 // Fixes for specific kernel modules (post)
 %include "dolfin_la_post.i"
 %include "dolfin_mesh_post.i"
 %include "dolfin_log_post.i"
+%include "dolfin_common_post.i"

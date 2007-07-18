@@ -2,8 +2,6 @@ SUBDIRS                 = dolfin
 nobase_include_HEADERS  = dolfin/dolfin_la.h \
                           dolfin/solve.h \
                           dolfin/AssemblyMatrix.h \
-                          dolfin/DenseMatrix.h \
-                          dolfin/DenseVector.h \
                           dolfin/default_la_types.h \
                           dolfin/KrylovMethod.h \
                           dolfin/KrylovSolver.h \

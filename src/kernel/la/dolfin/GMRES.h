@@ -25,7 +25,7 @@ namespace dolfin
     /// Solve linear system Ax = b and return number of iterations
     static uint solve(const PETScMatrix& A, PETScVector& x, const PETScVector& b,
 		      Preconditioner pc = default_pc);
-
+    
     /// Solve linear system Ax = b and return number of iterations
     static uint solve(const PETScKrylovMatrix& A, PETScVector& x, const PETScVector& b,
 		      Preconditioner pc = default_pc);

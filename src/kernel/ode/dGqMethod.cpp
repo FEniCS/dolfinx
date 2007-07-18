@@ -1,15 +1,15 @@
-// Copyright (C) 2003-2006 Anders Logg.
+// Copyright (C) 2003-2007 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005-05-02
-// Last changed: 2006-10-23
+// Last changed: 2007-07-18
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/dolfin_math.h>
 #include <dolfin/Lagrange.h>
 #include <dolfin/RadauQuadrature.h>
 #include <dolfin/uBlasVector.h>
-#include <dolfin/DenseMatrix.h>
+#include <dolfin/uBlasDenseMatrix.h>
 #include <dolfin/dGqMethod.h>
 
 using namespace dolfin;
@@ -163,7 +163,7 @@ void dGqMethod::computeBasis()
 //-----------------------------------------------------------------------------
 void dGqMethod::computeWeights()
 {
-  DenseMatrix A(nn, nn);
+  uBlasDenseMatrix A(nn, nn);
   
   // Compute matrix coefficients
   for (unsigned int i = 0; i < nn; i++)

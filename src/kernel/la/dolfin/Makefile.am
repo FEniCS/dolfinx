@@ -1,9 +1,7 @@
 EXTRA_DIST = dolfin_la.h \
+             default_la_types.h \
              solve.h \
              AssemblyMatrix.h \
-             DenseMatrix.h \
-             DenseVector.h \
-             default_la_types.h \
              GenericMatrix.h \
              GenericVector.h \
              GenericTensor.h \

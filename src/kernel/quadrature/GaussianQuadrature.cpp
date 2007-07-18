@@ -1,13 +1,13 @@
-// Copyright (C) 2003-2006 Anders Logg.
+// Copyright (C) 2003-2007 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2003-06-03
-// Last changed: 2006-06-07
+// Last changed: 2007-07-18
 
 #include <cmath>
 #include <dolfin/dolfin_log.h>
 #include <dolfin/uBlasVector.h>
-#include <dolfin/DenseMatrix.h>
+#include <dolfin/uBlasDenseMatrix.h>
 #include <dolfin/Legendre.h>
 #include <dolfin/GaussianQuadrature.h>
 
@@ -43,7 +43,7 @@ void GaussianQuadrature::computeWeights()
     return;
   }
 
-  DenseMatrix A(n, n);
+  uBlasDenseMatrix A(n, n);
   uBlasVector x(n), b(n);
 
   // Compute the matrix coefficients
