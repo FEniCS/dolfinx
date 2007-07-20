@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells, 2006-2007.
 //
 // First added:  2004
-// Last changed: 2007-05-29
+// Last changed: 2007-07-20
 
 #ifndef __PETSC_MATRIX_H
 #define __PETSC_MATRIX_H
@@ -64,19 +64,19 @@ namespace dolfin
     void init(uint M, uint N);
 
     /// Initialize M x N matrix with a given number of nonzeros per row
-    void init(uint M, uint N, const uint nz[]);
+    void init(uint M, uint N, const uint* nz);
 
     /// Initialize M x N matrix with given block size and maximum number of nonzeros in each row
-    void init(const uint M, const uint N, const uint bs, const uint nzmax);
+    void init(uint M, uint N, uint bs, uint nzmax);
 
     /// Initialize a matrix from the sparsity pattern
     void init(const SparsityPattern& sparsity_pattern);
 
     /// Return number of rows (dim = 0) or columns (dim = 1) along dimension dim
-    uint size(const uint dim) const;
+    uint size(uint dim) const;
 
     /// Return number of nonzero entries in given row
-    uint nz(const uint row) const;
+    uint nz(uint row) const;
 
     /// Return total number of nonzero entries
     uint nzsum() const;
@@ -91,22 +91,22 @@ namespace dolfin
     void set(const real* block, uint m, const uint* rows, uint n, const uint* cols);
 
     /// Add block of values
-    void add(const real* block, const uint m, const uint* rows, const uint n, const uint* cols);
+    void add(const real* block, uint m, const uint* rows, uint n, const uint* cols);
 
     /// Get non-zero values of row i
-    void getRow(const uint i, int& ncols, Array<int>& columns, Array<real>& values) const;
+    void getRow(uint i, int& ncols, Array<int>& columns, Array<real>& values) const;
 
     /// Set given rows to identity matrix
-    void ident(const uint rows[], uint m);
+    void ident(const uint* rows, uint m);
     
     /// Matrix-vector multiplication
     void mult(const PETScVector& x, PETScVector& Ax) const;
 
     /// Matrix-vector multiplication with given row (temporary fix, assumes uniprocessor case)
-    real mult(const PETScVector& x, const uint row) const;
+    real mult(const PETScVector& x, uint row) const;
 
     /// Matrix-vector multiplication with given row (temporary fix, assumes uniprocessor case)
-    real mult(const real x[], const uint row) const;
+    real mult(const real* x, uint row) const;
 
     /// Lump matrix into vector m
     void lump(PETScVector& m) const;

@@ -58,7 +58,7 @@ MultiAdaptiveJacobian::~MultiAdaptiveJacobian()
   if ( Jlookup ) delete [] Jlookup;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint MultiAdaptiveJacobian::size(const uint dim) const
+dolfin::uint MultiAdaptiveJacobian::size(uint dim) const
 {
   return ts.nj;
 }

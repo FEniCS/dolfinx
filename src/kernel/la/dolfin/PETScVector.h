@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells 2005-2007.
 //
 // First added:  2004
-// Last changed: 2007-05-15
+// Last changed: 2007-07-20
 
 #ifndef __PETSC_VECTOR_H
 #define __PETSC_VECTOR_H
@@ -38,7 +38,7 @@ namespace dolfin
     PETScVector();
 
     /// Create vector of given size
-    PETScVector(const uint N);
+    PETScVector(uint N);
 
     /// Create vector from given PETSc Vec pointer
     PETScVector(Vec x);
@@ -50,7 +50,7 @@ namespace dolfin
     ~PETScVector ();
 
     /// Initialize vector data
-    void init(const uint N);
+    void init(uint N);
 
     /// Clear vector data
     void clear();
@@ -161,16 +161,14 @@ namespace dolfin
     static void scatter(PETScVector& x1, PETScVector& x2, VecScatter& x1sc);
 
     // Copy values from array into vector
-    static void fromArray(const real u[], PETScVector& x, const uint offset,
-			  const uint size);
+    static void fromArray(const real u[], PETScVector& x, uint offset, uint size);
 
     // Copy values from vector into array
-    static void toArray(real y[], const PETScVector&x, const uint offset, 
-                  const uint size);
+    static void toArray(real y[], const PETScVector&x, uint offset, uint size);
 
     // Copy values between different vector representations
-    void copy(const PETScVector& y, const uint off1, const uint off2, const uint len);
-    void copy(const uBlasVector& y, const uint off1, const uint off2, const uint len);
+    void copy(const PETScVector& y, uint off1, uint off2, uint len);
+    void copy(const uBlasVector& y, uint off1, uint off2, uint len);
 
   private:
 

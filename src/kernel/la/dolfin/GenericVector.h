@@ -4,7 +4,7 @@
 // Modified by Anders Logg 2006-2007.
 //
 // First added:  2006-04-25
-// Last changed: 2007-05-30
+// Last changed: 2007-07-20
 
 #ifndef __GENERIC_VECTOR_H
 #define __GENERIC_VECTOR_H
@@ -16,7 +16,7 @@
 namespace dolfin
 {
 
-  /// This class defines a common interface for sparse and dense vectors.
+  /// This class defines a common interface for matrices.
 
   class GenericVector : public GenericTensor
   {
@@ -31,31 +31,34 @@ namespace dolfin
     ///--- Implementation of GenericTensor interface ---
 
     /// Initialize zero tensor of given rank and dimensions
-    virtual void init(uint rank, const uint* dims, bool reset)
+    inline void init(uint rank, const uint* dims, bool reset)
     { init(dims[0]); }
 
     /// Initialize zero tensor using sparsity pattern
-    virtual void init(const SparsityPattern& sparsity_pattern)
+    inline void init(const SparsityPattern& sparsity_pattern)
     { init(sparsity_pattern.size(0)); }
 
-    /// Zero tensor and keep any sparse structure
-    virtual void zero() = 0;
+    /// Return rank of tensor (number of dimensions)
+    inline uint rank() const { return 1; }
 
     /// Return size of given dimension
-    virtual uint size(uint dim) const
+    inline uint size(uint dim) const
     { return size(); }
 
     /// Get block of values
-    virtual void get(real* block, const uint* num_rows, const uint * const * rows) const
+    inline void get(real* block, const uint* num_rows, const uint * const * rows) const
     { get(block, num_rows[0], rows[0]); }
 
     /// Set block of values
-    virtual void set(const real* block, const uint* num_rows, const uint * const * rows)
+    inline void set(const real* block, const uint* num_rows, const uint * const * rows)
     { set(block, num_rows[0], rows[0]); }
 
     /// Add block of values
-    virtual void add(const real* block, const uint* num_rows, const uint * const * rows)
+    inline void add(const real* block, const uint* num_rows, const uint * const * rows)
     { add(block, num_rows[0], rows[0]); }
+
+    /// Set all entries to zero and keep any sparse structure (implemented by sub class)
+    virtual void zero() = 0;
 
     /// Finalise assembly of tensor (implemented by sub class)
     virtual void apply() = 0;
@@ -66,7 +69,7 @@ namespace dolfin
     ///--- Vector interface ---
     
     /// Initialize vector of size N
-    virtual void init(const uint N) = 0;
+    virtual void init(uint N) = 0;
 
     /// Return size
     virtual uint size() const = 0;
@@ -89,11 +92,6 @@ namespace dolfin
     /// Add block of values
     virtual void add(const real* block, uint m, const uint* rows) = 0;
     
-    ///--- FIXME: Which of the functions below do we really need? ---
-
-    /// Compute sum of vector
-    //virtual real sum() const = 0;
-
   };  
 
 }

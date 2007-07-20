@@ -70,7 +70,7 @@ namespace dolfin
     virtual uint orientation(const Cell& cell) const = 0;
 
     /// Create entities e of given topological dimension from vertices v
-    virtual void createEntities(uint** e, uint dim, const uint v[]) const = 0;
+    virtual void createEntities(uint** e, uint dim, const uint* v) const = 0;
 
     /// Refine cell uniformly
     virtual void refineCell(Cell& cell, MeshEditor& editor, uint& current_cell) const = 0;

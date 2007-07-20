@@ -41,12 +41,11 @@ namespace dolfin
     inline void init(const SparsityPattern& sparsity_pattern)
     { value = 0.0; }
 
-    /// Initialize zero tensor
-    inline void zero()
-    { value = 0.0; }
+    /// Return rank of tensor (number of dimensions)
+    inline uint rank() const { return 0; }
 
     /// Return size of given dimension
-    inline uint size(const uint dim) const
+    inline uint size(uint dim) const
     { return 1; }
 
     /// Get block of values
@@ -60,6 +59,10 @@ namespace dolfin
     /// Add block of values
     inline void add(const real* block, const uint* num_rows, const uint * const * rows)
     { value += block[0]; }
+
+    /// Set all entries to zero and keep any sparse structure (implemented by sub class)
+    inline void zero()
+    { value = 0.0; }
 
     /// Finalise assembly of tensor
     inline void apply() {}

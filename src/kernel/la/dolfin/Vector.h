@@ -19,8 +19,8 @@
 namespace dolfin
 {
 
-  /// This class defines the interface for a standard Vector using
-  /// the default backend as decided in default_la_types.h.
+  /// This class provides an interface to the default DOLFIN
+  /// vector implementation as decided in default_la_types.h.
 
   class Vector : public GenericVector, public Variable
   {
@@ -64,22 +64,12 @@ namespace dolfin
     { vector.set(block, m, rows); }
 
     /// Add block of values
-    inline void add(const real* block, const uint m, const uint* rows)
+    inline void add(const real* block, uint m, const uint* rows)
     { vector.add(block, m, rows); }
-    
-    /// Compute norm of vector
-    inline real norm(VectorNormType type = l2) const
-    { return vector.norm(type); }
-    
+        
     /// Set all entries to zero
     inline void zero()
     { vector.zero(); }
-    
-    /// Add vector x
-    inline const Vector& operator+= (const Vector& x)
-    { vector += x.vec(); 
-    return *this; 
-    }
     
     /// Apply changes to matrix
     inline void apply()
@@ -89,6 +79,19 @@ namespace dolfin
     inline void disp(uint precision = 2) const
     { vector.disp(precision); }
     
+    /// FIXME: Functions below are not in the GenericVector interface.
+    /// FIXME: Should these be removed or added to the interface?
+
+    /// Add vector x
+    inline const Vector& operator+= (const Vector& x)
+    { vector += x.vec(); 
+    return *this; 
+    }
+    
+    /// Compute norm of vector
+    inline real norm(VectorNormType type = l2) const
+    { return vector.norm(type); }
+   
     /// Return const implementation
     inline const DefaultVector& vec() const
     { return vector; }

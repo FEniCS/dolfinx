@@ -65,7 +65,7 @@ dolfin::uint Interval::orientation(const Cell& cell) const
   return ( n.dot(v01) < 0.0 ? 1 : 0 );
 }
 //-----------------------------------------------------------------------------
-void Interval::createEntities(uint** e, uint dim, const uint v[]) const
+void Interval::createEntities(uint** e, uint dim, const uint* v) const
 {
   // We don't need to create any entities
   error("Don't know how to create entities of topological dimension %d.", dim);

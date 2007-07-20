@@ -33,7 +33,7 @@ namespace dolfin
     ~TimeSlabJacobian();
     
     /// Return number of rows (dim = 0) or columns (dim = 1)
-    virtual uint size(const uint dim) const = 0;
+    virtual uint size(uint dim) const = 0;
     
     /// Compute product y = Ax
     virtual void mult(const uBlasVector& x, uBlasVector& y) const = 0;

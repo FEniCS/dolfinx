@@ -31,7 +31,7 @@ namespace dolfin
     ~HomotopyJacobian();
 
     /// Return number of rows (dim = 0) or columns (dim = 1)
-    uint size(const uint dim) const;
+    uint size(uint dim) const;
 
     /// Compute product y = Ax
     void mult(const uBlasVector& x, uBlasVector& y) const;

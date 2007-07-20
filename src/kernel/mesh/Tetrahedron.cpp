@@ -122,7 +122,7 @@ dolfin::uint Tetrahedron::orientation(const Cell& cell) const
   return ( n.dot(p03) < 0.0 ? 1 : 0 );
 }
 //-----------------------------------------------------------------------------
-void Tetrahedron::createEntities(uint** e, uint dim, const uint v[]) const
+void Tetrahedron::createEntities(uint** e, uint dim, const uint* v) const
 {
   // We only need to know how to create edges and faces
   switch ( dim )

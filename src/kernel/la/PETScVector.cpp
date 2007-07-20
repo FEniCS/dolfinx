@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells 2005-2007.
 //
 // First added:  2004
-// Last changed: 2007-05-15
+// Last changed: 2007-07-20
 
 // FIXME: Insert dolfin_assert() where appropriate
 
@@ -29,7 +29,7 @@ PETScVector::PETScVector()
   PETScManager::init();
 }
 //-----------------------------------------------------------------------------
-PETScVector::PETScVector(const uint N)
+PETScVector::PETScVector(uint N)
   : GenericVector(), 
     Variable("x", "a sparse vector"), 
     x(0), _copy(false)
@@ -66,7 +66,7 @@ PETScVector::~PETScVector()
   clear();
 }
 //-----------------------------------------------------------------------------
-void PETScVector::init(const uint N)
+void PETScVector::init(uint N)
 {
   // Two cases:
   //
@@ -402,7 +402,7 @@ VecScatter* PETScVector::createScatterer(PETScVector& x1, PETScVector& x2,
 }
 //-----------------------------------------------------------------------------
 void PETScVector::fromArray(const real u[], PETScVector& x,
-			                      const uint offset, const uint size)
+                            uint offset, uint size)
 {
   // Workaround to interface PETScVector and arrays
 
@@ -413,7 +413,7 @@ void PETScVector::fromArray(const real u[], PETScVector& x,
 }
 //-----------------------------------------------------------------------------
 void PETScVector::toArray(real y[], const PETScVector& x,
-			                    const uint offset, const uint s)
+                          uint offset, uint s)
 {
   // Workaround to interface PETScVector and arrays
 
@@ -423,8 +423,7 @@ void PETScVector::toArray(real y[], const PETScVector& x,
   x.restore(vals);
 }
 //-----------------------------------------------------------------------------
-void PETScVector::copy(const PETScVector& y, const uint off1, const uint off2, 
-                       const uint len)
+void PETScVector::copy(const PETScVector& y, uint off1, uint off2, uint len)
 {
   // FIXME: Use gather/scatter for parallel case
 
@@ -436,8 +435,7 @@ void PETScVector::copy(const PETScVector& y, const uint off1, const uint off2,
   restore(yvals);
 }
 //-----------------------------------------------------------------------------
-void PETScVector::copy(const uBlasVector& y, const uint off1, const uint off2, 
-                       const uint len)
+void PETScVector::copy(const uBlasVector& y, uint off1, uint off2, uint len)
 {
   // FIXME: Verify if there's a more efficient implementation
 

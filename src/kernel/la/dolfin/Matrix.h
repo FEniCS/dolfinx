@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-05-15
-// Last changed: 2007-07-11
+// Last changed: 2007-07-18
 
 #ifndef __MATRIX_H
 #define __MATRIX_H
@@ -15,8 +15,8 @@
 namespace dolfin
 {
   
-  /// This class defines the interface for a standard Matrix using
-  /// the default backend as decided in default_la_types.h.
+  /// This class provides an interface to the default DOLFIN
+  /// matrix implementation as decided in default_la_types.h.
   
   class Matrix : public GenericMatrix, public Variable
   {
@@ -40,7 +40,7 @@ namespace dolfin
     { matrix.init(sparsity_pattern); }
     
     /// Return size of given dimension
-    inline uint size(const uint dim) const
+    inline uint size(uint dim) const
     { return matrix.size(dim); }
 
     /// Get block of values
@@ -52,22 +52,18 @@ namespace dolfin
     { matrix.set(block, m, rows, n, cols); }
     
     /// Add block of values
-    inline void add(const real* block, const uint m, const uint* rows, const uint n, const uint* cols)
+    inline void add(const real* block, uint m, const uint* rows, uint n, const uint* cols)
     { matrix.add(block, m, rows, n, cols); }
-    
-    /// Get non-zero values of row i
-    inline void getRow(const uint i, int& ncols, Array<int>& columns, Array<real>& values)
-    { matrix.getRow(i, ncols, columns, values); }
-    
-    /// Set given rows to identity matrix
-    inline void ident(const uint rows[], uint m)
-    { matrix.ident(rows, m); }
-    
-    /// Set all entries to zero
+
+    /// Set all entries to zero and keep any sparse structure (implemented by sub class)
     inline void zero()
     { matrix.zero(); }
     
-    /// Apply changes to matrix
+    /// Set given rows to identity matrix
+    inline void ident(const uint* rows, uint m)
+    { matrix.ident(rows, m); }
+        
+    /// Finalise assembly of matrix
     inline void apply()
     { matrix.apply(); }
     
@@ -75,6 +71,13 @@ namespace dolfin
     void disp(uint precision = 2) const
     { matrix.disp(precision); }
 
+    /// FIXME: Functions below are not in the GenericVector interface.
+    /// FIXME: Should these be removed or added to the interface?
+
+    /// Get non-zero values of row i
+    inline void getRow(uint i, int& ncols, Array<int>& columns, Array<real>& values)
+    { matrix.getRow(i, ncols, columns, values); }
+    
     /// Return const reference to implementation
     inline const DefaultMatrix& mat() const
     { return matrix; }

@@ -1,10 +1,10 @@
 // Copyright (C) 2006-2007 Garth N. Wells
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Anders Logg 2006.
+// Modified by Anders Logg 2006-2007.
 //
 // First added:  2006-07-05
-// Last changed: 2007-04-26
+// Last changed: 2007-07-20
 
 #ifndef __UBLAS_MATRIX_H
 #define __UBLAS_MATRIX_H
@@ -93,7 +93,7 @@ namespace dolfin
     void zero();
 
     /// Set given rows to identity matrix
-    void ident(const uint rows[], uint m);
+    void ident(const uint* rows, uint m);
 
     /// Compute product y = Ax
     void mult(const uBlasVector& x, uBlasVector& y) const;
@@ -246,7 +246,7 @@ namespace dolfin
   }
   //-----------------------------------------------------------------------------
   template <class Mat>  
-  void uBlasMatrix<Mat>::ident(const uint rows[], uint m) 
+  void uBlasMatrix<Mat>::ident(const uint* rows, uint m) 
   {
     const uint n = this->size(1);
     for(uint i = 0; i < m; ++i)

@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells, 2007.
 //
 // First added:  2007-01-17
-// Last changed: 2007-03-16
+// Last changed: 2007-07-20
 
 #ifndef __ASSEMBLY_MATRIX_H
 #define __ASSEMBLY_MATRIX_H
@@ -61,7 +61,7 @@ namespace dolfin
     }
     
     /// Return size of given dimension
-    virtual uint size(const uint dim) const
+    virtual uint size(uint dim) const
     {
       return dims[dim];
     }

@@ -18,40 +18,43 @@ namespace dolfin
 
   class SparsityPattern;
   
-  /// This class defines a common interface for sparse and dense matrices.
-
+  /// This class defines a common interface for matrices.
+  
   class GenericMatrix : public GenericTensor
   {
   public:
- 
+    
     /// Constructor
     GenericMatrix() : GenericTensor() {}
 
     /// Destructor
     virtual ~GenericMatrix() {}
-
+    
     ///--- Implementation of GenericTensor interface ---
 
     /// Initialize zero tensor using sparsity pattern (implemented by sub class)
     virtual void init(const SparsityPattern& sparsity_pattern) = 0;
 
-    /// Zero tensor and keep any sparse structure
-    virtual void zero() = 0;
+    /// Return rank of tensor (number of dimensions)
+    inline uint rank() const { return 2; }
 
     /// Return size of given dimension (implemented by sub class)
     virtual uint size(uint dim) const = 0;
 
     /// Get block of values
-    virtual void get(real* block, const uint* num_rows, const uint * const * rows) const
+    inline void get(real* block, const uint* num_rows, const uint * const * rows) const
     { get(block, num_rows[0], rows[0], num_rows[1], rows[1]); }
 
     /// Set block of values
-    virtual void set(const real* block, const uint* num_rows, const uint * const * rows)
+    inline void set(const real* block, const uint* num_rows, const uint * const * rows)
     { set(block, num_rows[0], rows[0], num_rows[1], rows[1]); }
 
     /// Add block of values
-    virtual void add(const real* block, const uint* num_rows, const uint * const * rows)
+    inline void add(const real* block, const uint* num_rows, const uint * const * rows)
     { add(block, num_rows[0], rows[0], num_rows[1], rows[1]); }
+
+    /// Set all entries to zero and keep any sparse structure (implemented by sub class)
+    virtual void zero() = 0;
 
     /// Finalise assembly of tensor (implemented by sub class)
     virtual void apply() = 0;
@@ -74,7 +77,7 @@ namespace dolfin
     virtual void add(const real* block, uint m, const uint* rows, uint n, const uint* cols) = 0;
 
     /// Set given rows to identity matrix
-    virtual void ident(const uint rows[], uint m) = 0;
+    virtual void ident(const uint* rows, uint m) = 0;
 
   };
 

@@ -37,7 +37,7 @@ namespace dolfin
     uint orientation(const Cell& cell) const;
 
     /// Create entities e of given topological dimension from vertices v
-    void createEntities(uint** e, uint dim, const uint v[]) const;
+    void createEntities(uint** e, uint dim, const uint* v) const;
 
     /// Order entities locally (connectivity 1-0)
     void orderEntities(Cell& cell) const;

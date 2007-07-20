@@ -89,7 +89,7 @@ dolfin::uint Triangle::orientation(const Cell& cell) const
   return ( n.dot(p02) < 0.0 ? 1 : 0 );
 }
 //-----------------------------------------------------------------------------
-void Triangle::createEntities(uint** e, uint dim, const uint v[]) const
+void Triangle::createEntities(uint** e, uint dim, const uint* v) const
 {
   // We only need to know how to create edges
   if ( dim != 1 )

@@ -5,7 +5,7 @@
 // Modified by Andy R. Terrel 2005.
 //
 // First added:  2004
-// Last changed: 2007-04-16
+// Last changed: 2007-07-20
 
 #ifdef HAVE_PETSC_H
 
@@ -83,7 +83,7 @@ void PETScMatrix::init(uint M, uint N)
   MatSetOption(A, MAT_KEEP_ZEROED_ROWS);
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::init(uint M, uint N, const uint nz[])
+void PETScMatrix::init(uint M, uint N, const uint* nz)
 {
   // Free previously allocated memory if necessary
   if ( A )
@@ -99,7 +99,7 @@ void PETScMatrix::init(uint M, uint N, const uint nz[])
   MatZeroEntries(A);
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::init(const uint M, const uint N, const uint bs, const uint nz)
+void PETScMatrix::init(uint M, uint N, uint bs, uint nz)
 {
   // Free previously allocated memory if necessary
   if ( A )
@@ -121,7 +121,7 @@ void PETScMatrix::init(const SparsityPattern& sparsity_pattern)
   delete [] nzrow;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint PETScMatrix::size(const uint dim) const
+dolfin::uint PETScMatrix::size(uint dim) const
 {
   int M = 0;
   int N = 0;
@@ -129,7 +129,7 @@ dolfin::uint PETScMatrix::size(const uint dim) const
   return (dim == 0 ? M : N);
 }
 //-----------------------------------------------------------------------------
-dolfin::uint PETScMatrix::nz(const uint row) const
+dolfin::uint PETScMatrix::nz(uint row) const
 {
   // FIXME: this can probably be done better
   int ncols = 0;
@@ -194,7 +194,7 @@ void PETScMatrix::add(const real* block,
                block, ADD_VALUES);
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::getRow(const uint i, int& ncols, Array<int>& columns, 
+void PETScMatrix::getRow(uint i, int& ncols, Array<int>& columns, 
                          Array<real>& values) const
 {
   const int *cols = 0;
@@ -208,7 +208,7 @@ void PETScMatrix::getRow(const uint i, int& ncols, Array<int>& columns,
   MatRestoreRow(A, i, &ncols, &cols, &vals);
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::ident(const uint rows[], uint m)
+void PETScMatrix::ident(const uint* rows, uint m)
 {
   IS is = 0;
   ISCreateGeneral(PETSC_COMM_SELF, static_cast<int>(m), reinterpret_cast<int*>(const_cast<uint*>(rows)), &is);
@@ -222,7 +222,7 @@ void PETScMatrix::mult(const PETScVector& x, PETScVector& Ax) const
   MatMult(A, x.vec(), Ax.vec());
 }
 //-----------------------------------------------------------------------------
-real PETScMatrix::mult(const PETScVector& x, const uint row) const
+real PETScMatrix::mult(const PETScVector& x, uint row) const
 {
   // FIXME: Temporary fix (assumes uniprocessor case)
 
@@ -243,7 +243,7 @@ real PETScMatrix::mult(const PETScVector& x, const uint row) const
   return sum;
 }
 //-----------------------------------------------------------------------------
-real PETScMatrix::mult(const real x[], const uint row) const
+real PETScMatrix::mult(const real x[], uint row) const
 {
   // FIXME: Temporary fix (assumes uniprocessor case)
 

@@ -26,7 +26,7 @@ MonoAdaptiveJacobian::~MonoAdaptiveJacobian()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-dolfin::uint MonoAdaptiveJacobian::size(const uint dim) const
+dolfin::uint MonoAdaptiveJacobian::size(uint dim) const
 {
   return ts.x.size();
 }

@@ -22,7 +22,7 @@ HomotopyJacobian::~HomotopyJacobian()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-dolfin::uint HomotopyJacobian::size(const uint dim) const
+dolfin::uint HomotopyJacobian::size(uint dim) const
 {
   return u.size();
 }

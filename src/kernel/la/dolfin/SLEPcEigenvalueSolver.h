@@ -50,13 +50,13 @@ namespace dolfin
     void solve(const PETScMatrix& A);
 
     /// Compute largest n eigenpairs of the matrix A (solve Ax = \lambda x)
-    void solve(const PETScMatrix& A, const uint n);
+    void solve(const PETScMatrix& A, uint n);
 
     /// Compute all eigenpairs of the generalised problem Ax = \lambda Bx
     void solve(const PETScMatrix& A, const PETScMatrix& B);
 
     /// Compute largest n eigenpairs of the generalised problem Ax = \lambda Bx
-    void solve(const PETScMatrix& A, const PETScMatrix& B, const uint n);
+    void solve(const PETScMatrix& A, const PETScMatrix& B, uint n);
 
     /// Get the 0th eigenvalue 
     void getEigenvalue(real& xr, real& xc);
@@ -73,7 +73,7 @@ namespace dolfin
   private:
 
     /// Compute eigenvalues
-    void solve(const PETScMatrix& A, const PETScMatrix* B, const uint n);
+    void solve(const PETScMatrix& A, const PETScMatrix* B, uint n);
 
     EPSType getType(const Type type) const;
 

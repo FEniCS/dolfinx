@@ -27,7 +27,7 @@ UpdatedMultiAdaptiveJacobian::~UpdatedMultiAdaptiveJacobian()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-dolfin::uint UpdatedMultiAdaptiveJacobian::size(const uint dim) const
+dolfin::uint UpdatedMultiAdaptiveJacobian::size(uint dim) const
 {
   return ts.nj;
 }

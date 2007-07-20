@@ -53,7 +53,7 @@ void SLEPcEigenvalueSolver::solve(const PETScMatrix& A)
   solve(A, 0, A.size(0));
 }
 //-----------------------------------------------------------------------------
-void SLEPcEigenvalueSolver::solve(const PETScMatrix& A, const uint n)
+void SLEPcEigenvalueSolver::solve(const PETScMatrix& A, uint n)
 {
   solve(A, 0, n);
 }
@@ -63,7 +63,7 @@ void SLEPcEigenvalueSolver::solve(const PETScMatrix& A, const PETScMatrix& B)
   solve(A, &B, A.size(0));
 }
 //-----------------------------------------------------------------------------
-void SLEPcEigenvalueSolver::solve(const PETScMatrix& A, const PETScMatrix& B, const uint n)
+void SLEPcEigenvalueSolver::solve(const PETScMatrix& A, const PETScMatrix& B, uint n)
 {
   solve(A, &B, n);
 }
@@ -102,7 +102,7 @@ void SLEPcEigenvalueSolver::getEigenpair(real& xr, real& xc, PETScVector& r, PET
     error("Requested eigenvalue/vector has not been computed");
 }
 //-----------------------------------------------------------------------------
-void SLEPcEigenvalueSolver::solve(const PETScMatrix& A, const PETScMatrix* B, const uint n)
+void SLEPcEigenvalueSolver::solve(const PETScMatrix& A, const PETScMatrix* B, uint n)
 {
   const std::string eigenvalues_compute = get("Eigenvalues to compute");
 
