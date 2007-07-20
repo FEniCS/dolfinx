@@ -6,7 +6,7 @@
 // Modified by Kristian Oelgaard 2006.
 //
 // First added:  2006-06-05
-// Last changed: 2007-02-27
+// Last changed: 2007-07-20
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Cell.h>
@@ -18,17 +18,6 @@
 #include <dolfin/GeometricPredicates.h>
 
 using namespace dolfin;
-
-// Alignment convention for edges according to the DOLFIN manual (first vertex)
-static int edge_alignment[6] = {1, 2, 0, 0, 1, 2};
-
-// Alignment convention for faces according to the DOLFIN manual
-static int face_alignment_00[4] = {5, 3, 2, 0}; // Edge 0 for alignment 0
-static int face_alignment_01[4] = {0, 1, 3, 1}; // Edge 1 for alignment 0 (otherwise 1)
-static int face_alignment_10[4] = {0, 1, 3, 1}; // Edge 0 for alignment 2
-static int face_alignment_11[4] = {4, 5, 4, 2}; // Edge 1 for alignment 2 (otherwise 3)
-static int face_alignment_20[4] = {4, 5, 4, 2}; // Edge 0 for alignment 4
-static int face_alignment_21[4] = {5, 3, 2, 0}; // Edge 1 for alignment 4 (otherwise 5)
 
 //-----------------------------------------------------------------------------
 dolfin::uint Tetrahedron::dim() const
@@ -71,35 +60,6 @@ dolfin::uint Tetrahedron::numVertices(uint dim) const
     error("Illegal topological dimension %d for tetrahedron.", dim);
   }
 
-  return 0;
-}
-//-----------------------------------------------------------------------------
-dolfin::uint Tetrahedron::alignment(const Cell& cell, uint dim, uint e) const
-{
-  // Compute alignment according the convention in the DOLFIN manual
-  if ( dim == 1 )
-  {
-    // Compute alignment of given edge by checking first vertex
-    const uint* edge_vertices = cell.mesh().topology()(dim, 0)(cell.entities(dim)[e]);
-    const uint* cell_vertices = cell.entities(0);
-    return ( edge_vertices[0] == cell_vertices[edge_alignment[e]] ? 0 : 1 );
-  }
-  else if ( dim == 2 )
-  {
-    // Compute alignment of given face by checking the first two edges
-    const uint* face_edges = cell.mesh().topology()(dim, 1)(cell.entities(dim)[e]);
-    const uint* cell_edges = cell.entities(1);
-    if ( face_edges[0] == cell_edges[face_alignment_00[e]] )
-      return ( face_edges[1] == cell_edges[face_alignment_01[e]] ? 0 : 1 );
-    else if ( face_edges[0] == cell_edges[face_alignment_10[e]] )
-      return ( face_edges[1] == cell_edges[face_alignment_11[e]] ? 2 : 3 );
-    else if ( face_edges[0] == cell_edges[face_alignment_20[e]] )
-      return ( face_edges[1] == cell_edges[face_alignment_21[e]] ? 4 : 5 );
-    error("Unable to compute alignment of tetrahedron.");
-  }
-  else
-    error("Unable to compute alignment for entity of dimension %d for tetrehdron.");
-  
   return 0;
 }
 //-----------------------------------------------------------------------------

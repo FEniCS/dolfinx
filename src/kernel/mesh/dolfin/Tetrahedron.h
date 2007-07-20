@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells 2006.
 //
 // First added:  2006-06-05
-// Last changed: 2007-05-23
+// Last changed: 2007-07-20
 
 #ifndef __TETRAHEDRON_H
 #define __TETRAHEDRON_H
@@ -34,9 +34,6 @@ namespace dolfin
 
     /// Return number of vertices for entity of given topological dimension
     uint numVertices(uint dim) const;
-
-    /// Return alignment of given entity with respect to the cell
-    uint alignment(const Cell& cell, uint dim, uint e) const;
 
     /// Return orientation of the cell
     uint orientation(const Cell& cell) const;

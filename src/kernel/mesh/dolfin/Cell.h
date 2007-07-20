@@ -4,7 +4,7 @@
 // Modified by Johan Hoffman 2006.
 //
 // First added:  2006-06-01
-// Last changed: 2007-05-02
+// Last changed: 2007-07-20
 
 #ifndef __CELL_H
 #define __CELL_H
@@ -32,9 +32,6 @@ namespace dolfin
     /// Return type of cell
     inline CellType::Type type() const { return _mesh.type().cellType(); }
     
-    /// Return alignment of given entity with respect to the cell
-    inline uint alignment(uint dim, uint e) const { return _mesh.type().alignment(*this, dim, e); }
- 
     /// Compute orientation of cell (0 is right, 1 is left)
     inline real orientation() const { return _mesh.type().orientation(*this); }
 

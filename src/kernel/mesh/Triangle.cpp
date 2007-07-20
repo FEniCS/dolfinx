@@ -5,7 +5,7 @@
 // Modified by Kristian Oelgaard, 2006-2007.
 // 
 // First added:  2006-06-05
-// Last changed: 2007-05-23
+// Last changed: 2007-07-20
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Cell.h>
@@ -53,22 +53,6 @@ dolfin::uint Triangle::numVertices(uint dim) const
   default:
     error("Illegal topological dimension %d for tetrahedron.", dim);
   }
-
-  return 0;
-}
-//-----------------------------------------------------------------------------
-dolfin::uint Triangle::alignment(const Cell& cell, uint dim, uint e) const
-{
-  // Compute alignment according the convention in the DOLFIN manual
-  if ( dim == 1 )
-  {
-    // Compute alignment of given edge by checking first vertex
-    const uint* edge_vertices = cell.mesh().topology()(dim, 0)(cell.entities(dim)[e]);
-    const uint* cell_vertices = cell.entities(0);
-        return ( edge_vertices[0] == cell_vertices[(e + 1) % 3] ? 0 : 1 );
-  }
-  else
-    error("Unable to compute alignment for entity of dimension %d for triangle.");
 
   return 0;
 }

@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-06-05
-// Last changed: 2007-02-27
+// Last changed: 2007-07-20
 //
 // Modified by Kristian Oelgaard 2007.
 
@@ -48,12 +48,6 @@ dolfin::uint Interval::numVertices(uint dim) const
     error("Illegal topological dimension %d for interval.", dim);
   }
 
-  return 0;
-}
-//-----------------------------------------------------------------------------
-dolfin::uint Interval::alignment(const Cell& cell, uint dim, uint e) const
-{
-  error("Unable to compute alignment for entity of dimension %d for interval.");
   return 0;
 }
 //-----------------------------------------------------------------------------
