@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells, 2006-2007.
 //
 // First added:  2004
-// Last changed: 2007-07-20
+// Last changed: 2007-07-22
 
 #ifndef __PETSC_MATRIX_H
 #define __PETSC_MATRIX_H
@@ -97,7 +97,7 @@ namespace dolfin
     void getRow(uint i, int& ncols, Array<int>& columns, Array<real>& values) const;
 
     /// Set given rows to identity matrix
-    void ident(const uint* rows, uint m);
+    void ident(uint m, const uint* rows);
     
     /// Matrix-vector multiplication
     void mult(const PETScVector& x, PETScVector& Ax) const;

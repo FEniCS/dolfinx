@@ -235,7 +235,7 @@ void PeriodicBC::apply(GenericMatrix& A, GenericVector& b,
     vals[0] = -1;
     zero[0] = 0.0;
 
-    A.ident(rows, 1);
+    A.ident(1, rows);
     A.set(vals, 1, rows, 1, cols);
     b.set(zero, 1, rows);
   }

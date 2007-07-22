@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-05-15
-// Last changed: 2007-07-18
+// Last changed: 2007-07-22
 
 #ifndef __MATRIX_H
 #define __MATRIX_H
@@ -60,8 +60,8 @@ namespace dolfin
     { matrix.zero(); }
     
     /// Set given rows to identity matrix
-    inline void ident(const uint* rows, uint m)
-    { matrix.ident(rows, m); }
+    inline void ident(uint m, const uint* rows)
+    { matrix.ident(m, rows); }
         
     /// Finalise assembly of matrix
     inline void apply()

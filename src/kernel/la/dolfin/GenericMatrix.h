@@ -5,7 +5,7 @@
 // Modified by Anders Logg 2006-2007.
 //
 // First added:  2006-04-24
-// Last changed: 2007-05-30
+// Last changed: 2007-07-22
 
 #ifndef __GENERIC_MATRIX_H
 #define __GENERIC_MATRIX_H
@@ -77,7 +77,7 @@ namespace dolfin
     virtual void add(const real* block, uint m, const uint* rows, uint n, const uint* cols) = 0;
 
     /// Set given rows to identity matrix
-    virtual void ident(const uint* rows, uint m) = 0;
+    virtual void ident(uint m, const uint* rows) = 0;
 
   };
 

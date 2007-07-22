@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-04-10
-// Last changed: 2007-07-08
+// Last changed: 2007-07-22
 
 #include <dolfin/Mesh.h>
 #include <dolfin/Vertex.h>
@@ -160,7 +160,7 @@ void DirichletBC::apply(GenericMatrix& A, GenericVector& b,
     rows_temp[i++] = *row;
 
   // Modify linear system for facet dofs (A_ij = delta_ij)
-  A.ident(rows_temp, row_set.size());
+  A.ident(row_set.size(), rows_temp);
 
   delete [] rows_temp;
 
