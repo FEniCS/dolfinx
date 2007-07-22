@@ -429,9 +429,6 @@ def gmsh2xml(ifilename, ofilename):
             else:
                 continue
             nodelist[int(node_no)] = num_vertices_read
-            x = float(x)
-            y = float(y)
-            z = float(z)
             write_vertex(ofile, num_vertices_read, x, y, z)
             num_vertices_read +=1
             
@@ -722,7 +719,7 @@ def write_footer_edges(ofile):
 
 def write_vertex(ofile, vertex, x, y, z):
     "Write vertex"
-    ofile.write("      <vertex index=\"%d\" x=\"%g\" y=\"%g\" z=\"%g\"/>\n" % \
+    ofile.write("      <vertex index=\"%d\" x=\"%s\" y=\"%s\" z=\"%s\"/>\n" % \
         (vertex, x, y, z))
 
 def write_graph_vertex(ofile, vertex, num_edges, weight = 1):

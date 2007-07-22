@@ -17,6 +17,7 @@ SUBDIRS = la/eigensolver \
           pde/functional \
           pde/elasticity \
           pde/mixed-poisson \
+          pde/periodic \
           pde/stokes/stabilized \
           pde/stokes/taylor-hood \
           pde/lift-drag \
