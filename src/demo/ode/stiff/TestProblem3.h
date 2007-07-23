@@ -36,6 +36,6 @@ public:
 
 private:
   
-  DenseMatrix A;
+  uBlasDenseMatrix A;
 
 };
