@@ -59,4 +59,16 @@ dolfin::real dolfin::assemble(const Form& form, Mesh& mesh,
                             exterior_facet_domains,
                             interior_facet_domains);
 }
-//-----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+void dolfin::assemble(GenericTensor& A, const ufc::form& form, Mesh& mesh,
+                      Array<Function*>& coefficients,
+                      const MeshFunction<uint>* cell_domains,
+                      const MeshFunction<uint>* exterior_facet_domains,
+                      const MeshFunction<uint>* interior_facet_domains, bool reset_tensor)
+{
+  Assembler assembler;
+  assembler.assemble(A, form, mesh, coefficients,
+                     cell_domains, exterior_facet_domains, interior_facet_domains,
+                     reset_tensor);
+}
+//----------------------------------------------------------------------------

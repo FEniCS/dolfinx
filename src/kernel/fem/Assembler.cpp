@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2007
 //
 // First added:  2007-01-17
-// Last changed: 2007-05-30
+// Last changed: 2007-07-22
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Array.h>
@@ -37,7 +37,7 @@ Assembler::~Assembler()
 }
 //-----------------------------------------------------------------------------
 void Assembler::assemble(GenericTensor& A, const Form& form, Mesh& mesh, 
-                          bool reset_tensor)
+                         bool reset_tensor)
 {
   assemble(A, form.form(), mesh, form.coefficients(), 0, 0, 0);
 }
@@ -112,7 +112,7 @@ dolfin::real Assembler::assemble(const Form& form, Mesh& mesh,
 }
 //-----------------------------------------------------------------------------
 void Assembler::assemble(GenericTensor& A, const ufc::form& form, Mesh& mesh,
-                         Array<Function*> coefficients,
+                         const Array<Function*>& coefficients,
                          const MeshFunction<uint>* cell_domains,
                          const MeshFunction<uint>* exterior_facet_domains,
                          const MeshFunction<uint>* interior_facet_domains,
@@ -132,9 +132,6 @@ void Assembler::assemble(GenericTensor& A, const ufc::form& form, Mesh& mesh,
   // Initialize global tensor
   initGlobalTensor(A, mesh, ufc, reset_tensor);
 
-  // Initialize coefficients
-  initCoefficients(coefficients, ufc);
-
   // Assemble over cells
   assembleCells(A, mesh, coefficients, ufc, cell_domains);
 
@@ -149,7 +146,7 @@ void Assembler::assemble(GenericTensor& A, const ufc::form& form, Mesh& mesh,
 }
 //-----------------------------------------------------------------------------
 void Assembler::assembleCells(GenericTensor& A, Mesh& mesh,
-                              Array<Function*>& coefficients,
+                              const Array<Function*>& coefficients,
                               UFC& ufc,
                               const MeshFunction<uint>* domains) const
 {
@@ -196,7 +193,7 @@ void Assembler::assembleCells(GenericTensor& A, Mesh& mesh,
 }
 //-----------------------------------------------------------------------------
 void Assembler::assembleExteriorFacets(GenericTensor& A, Mesh& mesh,
-                                       Array<Function*>& coefficients,
+                                       const Array<Function*>& coefficients,
                                        UFC& ufc,
                                        const MeshFunction<uint>* domains) const
 {
@@ -258,7 +255,7 @@ void Assembler::assembleExteriorFacets(GenericTensor& A, Mesh& mesh,
 }
 //-----------------------------------------------------------------------------
 void Assembler::assembleInteriorFacets(GenericTensor& A,Mesh& mesh,
-                                       Array<Function*>& coefficients,
+                                       const Array<Function*>& coefficients,
                                        UFC& ufc,
                                        const MeshFunction<uint>* domains) const
 {
@@ -334,7 +331,7 @@ void Assembler::assembleInteriorFacets(GenericTensor& A,Mesh& mesh,
 //-----------------------------------------------------------------------------
 void Assembler::check(const ufc::form& form,
                       const Mesh& mesh,
-                      Array<Function*>& coefficients) const
+                      const Array<Function*>& coefficients) const
 {
   // Check that we get the correct number of coefficients
   if ( coefficients.size() != form.num_coefficients() )
@@ -355,19 +352,5 @@ void Assembler::initGlobalTensor(GenericTensor& A, Mesh& mesh, UFC& ufc,
   }
   else
     A.zero();
-}
-//-----------------------------------------------------------------------------
-void Assembler::initCoefficients(Array<Function*>& coefficients,
-                                 const UFC& ufc) const
-{
-  /*
-  const uint r = ufc.form.rank();
-  for (uint i = 0; i < coefficients.size(); i++)
-  {
-    const ufc::finite_element& finite_element = *ufc.finite_elements[r + i];
-    const ufc::dof_map& dof_map = *ufc.dof_maps[r + i];
-    coefficients[i]->init(ufc.mesh, finite_element, dof_map);
-  }
-  */
 }
 //-----------------------------------------------------------------------------

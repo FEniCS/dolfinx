@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2007
 //
 // First added:  2007-01-17
-// Last changed: 2007-05-30
+// Last changed: 2007-07-22
 
 #ifndef __ASSEMBLER_H
 #define __ASSEMBLER_H
@@ -67,7 +67,7 @@ namespace dolfin
     
     /// Assemble tensor from given (UFC) form, mesh, coefficients and sub domains
     void assemble(GenericTensor& A, const ufc::form& form, Mesh& mesh,
-                  Array<Function*> coefficients,
+                  const Array<Function*>& coefficients,
                   const MeshFunction<uint>* cell_domains,
                   const MeshFunction<uint>* exterior_facet_domains,
                   const MeshFunction<uint>* interior_facet_domains, bool reset_tensor = true);
@@ -76,31 +76,28 @@ namespace dolfin
  
     // Assemble over cells
     void assembleCells(GenericTensor& A, Mesh& mesh,
-                       Array<Function*>& coefficients,
+                       const Array<Function*>& coefficients,
                        UFC& data,
                        const MeshFunction<uint>* domains) const;
 
     // Assemble over exterior facets
     void assembleExteriorFacets(GenericTensor& A, Mesh& mesh,
-                                Array<Function*>& coefficients,
+                                const Array<Function*>& coefficients,
                                 UFC& data,
                                 const MeshFunction<uint>* domains) const;
 
     // Assemble over interior facets
     void assembleInteriorFacets(GenericTensor& A, Mesh& mesh,
-                                Array<Function*>& coefficients,
+                                const Array<Function*>& coefficients,
                                 UFC& data,
                                 const MeshFunction<uint>* domains) const;
 
     // Check arguments
     void check(const ufc::form& form, const Mesh& mesh,
-               Array<Function*>& coefficients) const;
+               const Array<Function*>& coefficients) const;
 
     // Initialize global tensor
     void initGlobalTensor(GenericTensor& A, Mesh& mesh, UFC& ufc, bool reset_tensor) const;
-
-    // Initialize coefficients
-    void initCoefficients(Array<Function*>& coefficients, const UFC& ufc) const;
 
     // Storage for dof maps
     DofMapSet dof_map_set;
