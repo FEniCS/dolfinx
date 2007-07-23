@@ -5,7 +5,7 @@
 // Modified by Andy R. Terrel 2005.
 //
 // First added:  2004
-// Last changed: 2007-07-20
+// Last changed: 2007-07-23
 
 #ifdef HAVE_PETSC_H
 
@@ -208,7 +208,7 @@ void PETScMatrix::getRow(uint i, int& ncols, Array<int>& columns,
   MatRestoreRow(A, i, &ncols, &cols, &vals);
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::ident(const uint* rows, uint m)
+void PETScMatrix::ident(uint m, const uint* rows)
 {
   IS is = 0;
   ISCreateGeneral(PETSC_COMM_SELF, static_cast<int>(m), reinterpret_cast<int*>(const_cast<uint*>(rows)), &is);

@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-01-17
-// Last changed: 2007-05-14
+// Last changed: 2007-07-22
 
 #ifndef __ASSEMBLE_H
 #define __ASSEMBLE_H
@@ -50,7 +50,14 @@ namespace dolfin
                 const MeshFunction<uint>& cell_domains,
                 const MeshFunction<uint>& exterior_facet_domains,
                 const MeshFunction<uint>& interior_facet_domains);
-  
+
+  /// Assemble tensor from given (UFC) form, mesh, coefficients and sub domains
+  void assemble(GenericTensor& A, const ufc::form& form, Mesh& mesh,
+                Array<Function*>& coefficients,
+                const MeshFunction<uint>* cell_domains,
+                const MeshFunction<uint>* exterior_facet_domains,
+                const MeshFunction<uint>* interior_facet_domains, bool reset_tensor = true);  
+
 }
 
 #endif
