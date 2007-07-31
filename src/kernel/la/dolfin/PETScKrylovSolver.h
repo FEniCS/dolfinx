@@ -41,7 +41,7 @@ namespace dolfin
     PETScKrylovSolver(KrylovMethod method = default_method, Preconditioner pc = default_pc);
 
     /// Create Krylov solver with default PETSc method and a particular preconditioner
-    PETScKrylovSolver(Preconditioner pc);
+    //PETScKrylovSolver(Preconditioner pc);
 
     /// Create Krylov solver with default PETSc method and a particular PETScPreconditioner
     PETScKrylovSolver(PETScPreconditioner& PETScPreconditioner);

@@ -46,14 +46,14 @@ PETScKrylovSolver::PETScKrylovSolver(KrylovMethod method, Preconditioner pc)
   PETScManager::init();
 }
 //-----------------------------------------------------------------------------
-PETScKrylovSolver::PETScKrylovSolver(Preconditioner pc)
-  : PETScLinearSolver(),
-    method(default_method), pc_petsc(pc), pc_dolfin(0),
-    ksp(0), M(0), N(0), parameters_read(false), pc_set(false)
-{
-  // Initialize PETSc
-  PETScManager::init();
-}
+//PETScKrylovSolver::PETScKrylovSolver(Preconditioner pc)
+//  : PETScLinearSolver(),
+//    method(default_method), pc_petsc(pc), pc_dolfin(0),
+//    ksp(0), M(0), N(0), parameters_read(false), pc_set(false)
+//{
+//  // Initialize PETSc
+//  PETScManager::init();
+//}
 //-----------------------------------------------------------------------------
 PETScKrylovSolver::PETScKrylovSolver(PETScPreconditioner& preconditioner)
   : PETScLinearSolver(),
