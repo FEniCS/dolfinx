@@ -72,3 +72,9 @@ void dolfin::assemble(GenericTensor& A, const ufc::form& form, Mesh& mesh,
                      reset_tensor);
 }
 //----------------------------------------------------------------------------
+
+// FIXME: For testing JIT compiler
+void assemble_test(const ufc::form& form)
+{
+  message("assemble_test working!");
+}
