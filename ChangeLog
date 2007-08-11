@@ -1,3 +1,4 @@
+ - Conversion from from Diffpack grid format to DOLFIN XML
  - Name change: BoundaryCondition --> DirichletBC
  - Add support for periodic boundary conditions: class PeriodicBC
  - Redesign default linear algebra interface (Matrix, Vector, KrylovSolver, etc)

@@ -73,7 +73,7 @@ def main(argv):
         # Convert from scotch graph to dolfin graph xml format
         scotch_graph2graph_xml(ifilename, ofilename)
     elif input_format == "diffpack" and output_format == "xml":
-        # Convert from Diffpack tetraherdrals grid formar to xml format
+        # Convert from Diffpack tetrahedral grid format to xml format
         diffpack2xml(ifilename, ofilename)
     else:
         error("Sorry, cannot convert between .%s and .%s file formats." % (isuffix, osuffix))
