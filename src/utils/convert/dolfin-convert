@@ -469,7 +469,7 @@ def gmsh2xml(ifilename, ofilename):
                 write_cell_triangle(ofile, num_cells_read, n0, n1, n2)
                 num_cells_read +=1 
             elif elem_type == 4 and dim == 3:
-                node_num_list = [vertex_dict[int(node)] for node in element[3 + num_tags:9]]
+                node_num_list = [vertex_dict[int(node)] for node in element[3 + num_tags:]]
                 for node in node_num_list:
                     if not node in nodelist:
                         error("Vertex %d of tetrahedron %d not previously defined." % 

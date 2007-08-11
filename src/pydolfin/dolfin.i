@@ -47,6 +47,8 @@ using namespace dolfin;
 %import "dolfin/constants.h"
 %include "dolfin_headers.h"
 
+%include "ufc.h"
+
 // Fixes for specific kernel modules (post)
 %include "dolfin_la_post.i"
 %include "dolfin_mesh_post.i"

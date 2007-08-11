@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells 2005-2006.
 //
 // First added:  2005-12-02
-// Last changed: 2006-11-24
+// Last changed: 2007-07-31
 
 #ifdef HAVE_PETSC_H
 
@@ -40,24 +40,6 @@ namespace dolfin
 PETScKrylovSolver::PETScKrylovSolver(KrylovMethod method, Preconditioner pc)
   : PETScLinearSolver(),
     method(method), pc_petsc(pc), pc_dolfin(0),
-    ksp(0), M(0), N(0), parameters_read(false), pc_set(false)
-{
-  // Initialize PETSc
-  PETScManager::init();
-}
-//-----------------------------------------------------------------------------
-PETScKrylovSolver::PETScKrylovSolver(Preconditioner pc)
-  : PETScLinearSolver(),
-    method(default_method), pc_petsc(pc), pc_dolfin(0),
-    ksp(0), M(0), N(0), parameters_read(false), pc_set(false)
-{
-  // Initialize PETSc
-  PETScManager::init();
-}
-//-----------------------------------------------------------------------------
-PETScKrylovSolver::PETScKrylovSolver(PETScPreconditioner& preconditioner)
-  : PETScLinearSolver(),
-    method(default_method), pc_petsc(default_pc), pc_dolfin(&preconditioner),
     ksp(0), M(0), N(0), parameters_read(false), pc_set(false)
 {
   // Initialize PETSc

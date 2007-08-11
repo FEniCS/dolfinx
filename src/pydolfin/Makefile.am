@@ -14,7 +14,10 @@ _dolfin_la_LIBADD = $(top_builddir)/src/lib/libdolfin.la
 # Need -Wno-uninitialized avoid spurious error under Cygwin
 CXXFLAGS = @DOLFIN_DEFINITIONS@ -g -O2 -fno-strict-aliasing -Wall -Werror -ansi -Wno-uninitialized
 
+# Add include path to ufc.h (pkg-config --cflags ufc-1 returns empty string, why?)
+UFC_PATH = -I/usr/include
+
 dolfin_wrap.cpp : $(SWIG_SOURCES)
-	$(SWIG) $(SWIG_PYTHON_OPT) -ignoremissing -nodefaultctor -nodefaultdtor -dirprot -Werror @KERNEL_INCLUDE@ @DOLFIN_DEFINITIONS@ -o $@ $<
+	$(SWIG) $(SWIG_PYTHON_OPT) -ignoremissing -nodefaultctor -nodefaultdtor -dirprot -Werror $(UFC_PATH) @KERNEL_INCLUDE@ @DOLFIN_DEFINITIONS@ -o $@ $<
 
 dolfin.py: $(SWIG_SOURCES)

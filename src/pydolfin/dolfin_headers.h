@@ -31,6 +31,7 @@
 %include "dolfin/PETScKrylovSolver.h"
 %include "dolfin/PETScLUSolver.h"
 %include "dolfin/SLEPcEigenvalueSolver.h"
+%include "dolfin/uBlasDenseMatrix.h"
 %include "dolfin/uBlasMatrix.h"
 %include "dolfin/uBlasVector.h"
 %include "dolfin/uBlasLinearSolver.h"
