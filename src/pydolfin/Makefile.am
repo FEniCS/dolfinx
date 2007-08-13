@@ -15,7 +15,7 @@ _dolfin_la_LIBADD = $(top_builddir)/src/lib/libdolfin.la
 CXXFLAGS = @DOLFIN_DEFINITIONS@ -g -O2 -fno-strict-aliasing -Wall -Werror -ansi -Wno-uninitialized
 
 # Add include path to ufc.h
-UFC_PATH = `pkg-config --cflags ufc-1`
+UFC_PATH = `pkg-config --cflags ufc-1` -I/usr/include
 
 dolfin_wrap.cpp : $(SWIG_SOURCES)
 	$(SWIG) $(SWIG_PYTHON_OPT) -ignoremissing -nodefaultctor -nodefaultdtor -dirprot -Werror $(UFC_PATH) @KERNEL_INCLUDE@ @DOLFIN_DEFINITIONS@ -o $@ $<

@@ -241,7 +241,7 @@ _dolfin_la_LDFLAGS = -module
 _dolfin_la_LIBADD = $(top_builddir)/src/lib/libdolfin.la
 
 # Add include path to ufc.h
-UFC_PATH = `pkg-config --cflags ufc-1`
+UFC_PATH = `pkg-config --cflags ufc-1` -I/usr/include
 all: $(BUILT_SOURCES)
 	$(MAKE) $(AM_MAKEFLAGS) all-am
 
