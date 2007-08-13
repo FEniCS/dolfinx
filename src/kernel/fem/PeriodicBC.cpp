@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-07-08
-// Last changed: 2007-07-11
+// Last changed: 2007-08-10
 
 #include <vector>
 #include <map>
@@ -203,11 +203,17 @@ void PeriodicBC::apply(GenericMatrix& A, GenericVector& b,
     p++;
   }
 
-  // Iterate over pairs of global dofs
-  uint rows[1];
-  uint cols[1];
-  real vals[1];
-  real zero[1];
+  // Insert 1 at (dof0, dof1)
+  uint* rows = new uint[coordinate_dofs.size()];
+  uint i = 0;
+  for (iterator it = coordinate_dofs.begin(); it != coordinate_dofs.end(); ++it)
+    rows[i++] = static_cast<uint>(it->second.first);
+  A.ident(coordinate_dofs.size(), rows);
+
+  // Insert -1 at (dof0, dof1) and 0 on right-hand side
+  uint* cols = new uint[1];
+  real* vals = new real[1];
+  real* zero = new real[1];
   for (iterator it = coordinate_dofs.begin(); it != coordinate_dofs.end(); ++it)
   {
     // Check that we got both dofs
@@ -235,10 +241,15 @@ void PeriodicBC::apply(GenericMatrix& A, GenericVector& b,
     vals[0] = -1;
     zero[0] = 0.0;
 
-    A.ident(1, rows);
     A.set(vals, 1, rows, 1, cols);
     b.set(zero, 1, rows);
   }
+  delete [] rows;
+  delete [] cols;
+  delete [] vals;
+  delete [] zero;
+
+  // Apply changes
   A.apply();
   b.apply();
 }
