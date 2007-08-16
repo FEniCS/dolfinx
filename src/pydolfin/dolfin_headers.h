@@ -54,15 +54,6 @@
 %include "dolfin/Function.h"
 %include "dolfin/SpecialFunctions.h"
 
-// DOLFIN headers included from fem
-%include "dolfin/assemble.h"
-%include "dolfin/SubSystem.h"
-%include "dolfin/BoundaryCondition.h"
-%include "dolfin/DirichletBC.h"
-%include "dolfin/PeriodicBC.h"
-%include "dolfin/Form.h"
-%include "dolfin/Assembler.h"
-
 // DOLFIN headers included from graph
 %include "dolfin/Graph.h"
 %include "dolfin/GraphEditor.h"
@@ -109,6 +100,15 @@
 %include "dolfin/BoundaryMesh.h"
 %include "dolfin/UnitCube.h"
 %include "dolfin/UnitSquare.h"
+
+// DOLFIN headers included from fem
+%include "dolfin/assemble.h"
+%include "dolfin/SubSystem.h"
+%include "dolfin/BoundaryCondition.h"
+%include "dolfin/DirichletBC.h"
+%include "dolfin/PeriodicBC.h"
+%include "dolfin/Form.h"
+%include "dolfin/Assembler.h"
 
 // DOLFIN headers included from mf
 %include "dolfin/MatrixFactory.h"

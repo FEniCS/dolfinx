@@ -65,7 +65,14 @@ namespace dolfin
                   const MeshFunction<uint>& exterior_facet_domains,
                   const MeshFunction<uint>& interior_facet_domains);
     
-    /// Assemble tensor from given (UFC) form, mesh, coefficients and sub domains
+    /// Assemble tensor from given (UFC) form, mesh, coefficients and sub domains.
+    /// This is the main assembly function in DOLFIN. All other assembly functions
+    /// end up calling this function.
+    ///
+    /// The MeshFunction arguments can be used to specify assembly over subdomains
+    /// of the mesh cells, exterior facets and interior facets. Either a null pointer
+    /// or an empty MeshFunction may be used to specify that the tensor should be
+    /// assembled over the entire set of cells or facets.
     void assemble(GenericTensor& A, const ufc::form& form, Mesh& mesh,
                   const Array<Function*>& coefficients,
                   const MeshFunction<uint>* cell_domains,

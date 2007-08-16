@@ -42,12 +42,12 @@ using namespace dolfin;
 // Fixes for specific kernel modules (pre)
 %include "dolfin_la_pre.i"
 %include "dolfin_mesh_pre.i"
+%include "dolfin_fem_pre.i"
+%include "dolfin_function_pre.i"
 
 // DOLFIN interface
 %import "dolfin/constants.h"
 %include "dolfin_headers.h"
-
-%include "ufc.h"
 
 // Fixes for specific kernel modules (post)
 %include "dolfin_la_post.i"

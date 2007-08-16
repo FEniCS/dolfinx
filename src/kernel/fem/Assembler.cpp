@@ -120,6 +120,9 @@ void Assembler::assemble(GenericTensor& A, const ufc::form& form, Mesh& mesh,
 {
   message("Assembling rank %d form.", form.rank());
 
+  // Note the importance of treating empty mesh functions as null pointers
+  // for the PyDOLFIN interface.
+  
   // Check arguments
   check(form, mesh, coefficients);
 
@@ -163,7 +166,7 @@ void Assembler::assembleCells(GenericTensor& A, Mesh& mesh,
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     // Get integral for sub domain (if any)
-    if (domains)
+    if (domains && domains->size() > 0)
     {
       if (uint domain = (*domains)(*cell) < ufc.form.num_cell_integrals())
         integral = ufc.cell_integrals[domain];
@@ -218,7 +221,7 @@ void Assembler::assembleExteriorFacets(GenericTensor& A, Mesh& mesh,
     Facet mesh_facet(mesh, cell_map(*boundary_cell));
 
     // Get integral for sub domain (if any)
-    if (domains)
+    if (domains && domains->size() > 0)
     {
       if (uint domain = (*domains)(mesh_facet) < ufc.form.num_exterior_facet_integrals())
         integral = ufc.exterior_facet_integrals[domain];
@@ -284,7 +287,7 @@ void Assembler::assembleInteriorFacets(GenericTensor& A,Mesh& mesh,
     }
 
     // Get integral for sub domain (if any)
-    if (domains)
+    if (domains && domains->size() > 0)
     {
       if (uint domain = (*domains)(*facet) < ufc.form.num_interior_facet_integrals())
         integral = ufc.interior_facet_integrals[domain];
