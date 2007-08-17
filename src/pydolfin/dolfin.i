@@ -44,6 +44,7 @@ using namespace dolfin;
 %include "dolfin_mesh_pre.i"
 %include "dolfin_fem_pre.i"
 %include "dolfin_function_pre.i"
+%include "dolfin_pde_pre.i"
 
 // DOLFIN interface
 %import "dolfin/constants.h"

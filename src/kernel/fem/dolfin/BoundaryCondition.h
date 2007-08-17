@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-07-11
-// Last changed: 2007-07-11
+// Last changed: 2007-08-18
 
 #ifndef __BOUNDARY_CONDITION_H
 #define __BOUNDARY_CONDITION_H
@@ -15,9 +15,9 @@ namespace dolfin
 
   class GenericMatrix;
   class GenericVector;
-  class Form;
   class SubSystem;
   class Mesh;
+  class Form;
 
   /// Common base class for boundary conditions
 
@@ -34,8 +34,14 @@ namespace dolfin
     /// Apply boundary condition to linear system
     virtual void apply(GenericMatrix& A, GenericVector& b, const Form& form) = 0;
 
+    /// Apply boundary condition to linear system
+    virtual void apply(GenericMatrix& A, GenericVector& b, const ufc::form& form) = 0;
+
     /// Apply boundary condition to linear system for a nonlinear problem
     virtual void apply(GenericMatrix& A, GenericVector& b, const GenericVector& x, const Form& form) = 0;
+
+    /// Apply boundary condition to linear system for a nonlinear problem
+    virtual void apply(GenericMatrix& A, GenericVector& b, const GenericVector& x, const ufc::form& form) = 0;
 
   protected:
 
@@ -45,7 +51,7 @@ namespace dolfin
     public:
       
       // Constructor
-      LocalData(const Form& form, Mesh& mesh, const SubSystem& sub_system);
+      LocalData(const ufc::form& form, Mesh& mesh, const SubSystem& sub_system);
       
       // Destructor
       ~LocalData();

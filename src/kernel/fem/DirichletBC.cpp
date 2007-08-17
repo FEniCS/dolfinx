@@ -70,19 +70,31 @@ DirichletBC::~DirichletBC()
 }
 //-----------------------------------------------------------------------------
 void DirichletBC::apply(GenericMatrix& A, GenericVector& b,
-                              const Form& form)
+                        const Form& form)
+{
+  apply(A, b, 0, form.form());
+}
+//-----------------------------------------------------------------------------
+void DirichletBC::apply(GenericMatrix& A, GenericVector& b,
+                        const ufc::form& form)
 {
   apply(A, b, 0, form);
 }
 //-----------------------------------------------------------------------------
-void DirichletBC::apply(GenericMatrix& A, GenericVector& b, 
-                              const GenericVector& x, const Form& form)
+void DirichletBC::apply(GenericMatrix& A, GenericVector& b,
+                        const GenericVector& x, const Form& form)
+{
+  apply(A, b, &x, form.form());
+}
+//-----------------------------------------------------------------------------
+void DirichletBC::apply(GenericMatrix& A, GenericVector& b,
+                        const GenericVector& x, const ufc::form& form)
 {
   apply(A, b, &x, form);
 }
 //-----------------------------------------------------------------------------
 void DirichletBC::apply(GenericMatrix& A, GenericVector& b,
-                              const GenericVector* x, const Form& form)
+                        const GenericVector* x, const ufc::form& form)
 {
   message("Applying Dirichlet boundary conditions to linear system.");
 

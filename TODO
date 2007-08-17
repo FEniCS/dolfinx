@@ -1,83 +1,68 @@
-Manual
-------
+This file lists TODO items for DOLFIN. As usual, the priority depends
+on the current interests of the various DOLFIN developers. To edit this
+file, it is convenient to install org-mode in Emacs.
 
-* Fix incomplete sections
-* Write section on coding style
+* Manual
 
-Assembly
---------
+** Write incomplete sections
+** Write appendix on coding style
+** Document Python interface
 
-* Implement parallel assembly
-* Reordering in DofMap
-* Expose only DofMap in DOLFIN (not ufc::dof_map)
+* Assembly
 
-Mesh
-----
+** Implement parallel assembly
+** Reordering in DofMap
+** Expose only DofMap in DOLFIN (not ufc::dof_map)
 
-* 1D
-* 1D and 2D cells in R^3
-* Check coarsening
-* Continue work on refinement
+* Linear Algebra
 
-Linear Algebra
---------------
+** Refine PETSc wrappers for parallel assembly and solve
+** Finalize GenericFoo interfaces and merge linear algebra with PyCC
+   - Assigned to: Martin, Garth, Anders
 
-* Refine PETSc wrappers for parallel assembly and solve
+* Mesh
 
-Function
---------
+** Implement 1D meshes
+** 1D and 2D cells in R^3
+** Check coarsening
+** Continue work on refinement
+** Collect meshes on wiki
 
-* Input/output for time-series
-* Tensor-valued functions
-* 'quadrature' function
+* Function
 
-Input/Output
-------------
+** Input/output for time-series
+** Tensor-valued functions
+** 'quadrature' function
 
-* Figure out what to do with i/o when running in parallel
+* Input/Output
 
-Solvers
--------
+** Figure out what to do with i/o when running in parallel
 
-* Create template for users to create solvers that use the DOLFIN library
+* Solvers
 
-ODE solvers
------------
+** Create template for users to create solvers that use the DOLFIN library
 
-o [jj, logg] Enable use of direct solver for linear system
-o [jj, logg] Is Newton working correctly for high-order methods?
-o [jj, logg] Save solution for new solver
-o [jj, logg] Save dual solution backwards
-o [jj, logg] Error estimates
-o [jj, logg] Automatic computation of stability factors as function of time T
-o [jj, logg] Use two files for MATLAB format
+* ODE solvers
 
-PDE solvers
------------
+** Solve dual and compute error estimate
+** Automatic computation of stability factors as function of time T
 
-* Improve NonlinearPDE
-* Create TimeDependentPDE
+* PDE solvers
 
-Modules
--------
+** Improve NonlinearPDE
+** Create TimeDependentPDE
+   - Use ODE solvers
 
-* Adaptivity
+* Parameters
 
-Parameters
-----------
+** Load default parameters from file
+** Add function to display all parameters
 
-* Load default parameters from file
-* Add function to display all parameters
+* Demos
 
-PyDOLFIN
--------
+** Add Python versions of all demos
 
-* Make linear algebra work
+* General
 
-General
--------
-
-* New repository dolfin-contrib?
-* Replace stdio with iostream and fstream
-* Fix setprecision() for cout
-
+** Replace stdio with iostream and fstream
+** Fix setprecision() for cout

@@ -72,14 +72,3 @@ void dolfin::assemble(GenericTensor& A, const ufc::form& form, Mesh& mesh,
                      reset_tensor);
 }
 //----------------------------------------------------------------------------
-
-// FIXME: For testing JIT compiler
-
-void dolfin::assemble_test(GenericTensor& A, const ufc::form& form, Mesh& mesh,
-                           Array<Function*>& coefficients,
-                           const MeshFunction<uint>* cell_domains,
-                           const MeshFunction<uint>* exterior_facet_domains,
-                           const MeshFunction<uint>* interior_facet_domains, bool reset_tensor)
-{
-  message("assemble_test working: A, form, mesh, cell_domains, exterior_face_domains, interior_facet_domains, reset_tensor");
-}

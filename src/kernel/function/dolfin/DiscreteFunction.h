@@ -35,6 +35,9 @@ namespace dolfin
     /// Create discrete function for argument function i of form
     DiscreteFunction(Mesh& mesh, Vector& x, const Form& form, uint i);
 
+    /// Create discrete function for argument function i of form
+    DiscreteFunction(Mesh& mesh, Vector& x, const ufc::form& form, uint i);
+
     /// Create discrete function from given data and assume responsibility for data
     DiscreteFunction(Mesh& mesh, Vector& x, std::string finite_element_signature, std::string dof_map_signature);
 
@@ -71,6 +74,9 @@ namespace dolfin
     friend class XMLFile;
 
   private:
+
+    // Initialize discrete function
+    void init(Mesh& mesh, Vector& x, const ufc::form& form, uint i);
 
     // The vector of dofs
     Vector* x;

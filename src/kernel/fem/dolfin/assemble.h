@@ -58,13 +58,6 @@ namespace dolfin
                 const MeshFunction<uint>* exterior_facet_domains,
                 const MeshFunction<uint>* interior_facet_domains, bool reset_tensor = true);  
 
-  // FIXME: For testing JIT compiler
-  void assemble_test(GenericTensor& A, const ufc::form& form, Mesh& mesh,
-                     Array<Function*>& coefficients,
-                     const MeshFunction<uint>* cell_domains,
-                     const MeshFunction<uint>* exterior_facet_domains,
-                     const MeshFunction<uint>* interior_facet_domains, bool reset_tensor);
-
 }
 
 #endif

@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells 2005-2007.
 //
 // First added:  2003-11-28
-// Last changed: 2007-06-26
+// Last changed: 2007-08-17
 //
 // The class Function serves as the envelope class and holds a pointer
 // to a letter class that is a subclass of GenericFunction. All the
@@ -41,6 +41,13 @@ Function::Function(Mesh& mesh, real value)
 }
 //-----------------------------------------------------------------------------
 Function::Function(Mesh& mesh, Vector& x, const Form& form, uint i)
+  : Variable("u", "discrete function"),
+    f(0), _type(discrete), _cell(0), _facet(-1)
+{
+  f = new DiscreteFunction(mesh, x, form, i);
+}
+//-----------------------------------------------------------------------------
+Function::Function(Mesh& mesh, Vector& x, const ufc::form& form, uint i)
   : Variable("u", "discrete function"),
     f(0), _type(discrete), _cell(0), _facet(-1)
 {

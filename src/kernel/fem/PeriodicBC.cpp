@@ -66,7 +66,13 @@ PeriodicBC::~PeriodicBC()
 }
 //-----------------------------------------------------------------------------
 void PeriodicBC::apply(GenericMatrix& A, GenericVector& b,
-                                      const Form& form)
+                       const Form& form)
+{
+  apply(A, b, form.form());
+}
+//-----------------------------------------------------------------------------
+void PeriodicBC::apply(GenericMatrix& A, GenericVector& b,
+                       const ufc::form& form)
 {
   cout << "Applying periodic boundary conditions to linear system." << endl;
 
@@ -256,6 +262,12 @@ void PeriodicBC::apply(GenericMatrix& A, GenericVector& b,
 //-----------------------------------------------------------------------------
 void PeriodicBC::apply(GenericMatrix& A, GenericVector& b,
                        const GenericVector& x, const Form& form)
+{
+  apply(A, b, x, form.form());
+}
+//-----------------------------------------------------------------------------
+void PeriodicBC::apply(GenericMatrix& A, GenericVector& b,
+                       const GenericVector& x, const ufc::form& form)
 {
   // FIXME: Implement this (Garth?)
   error("Periodic boundary conditions not implemented for nonlinear systems.");

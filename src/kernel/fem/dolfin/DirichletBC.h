@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-04-10
-// Last changed: 2007-07-11
+// Last changed: 2007-08-18
 
 #ifndef __DIRICHLET_BC_H
 #define __DIRICHLET_BC_H
@@ -71,8 +71,14 @@ namespace dolfin
     /// Apply boundary condition to linear system
     void apply(GenericMatrix& A, GenericVector& b, const Form& form);
 
+    /// Apply boundary condition to linear system
+    void apply(GenericMatrix& A, GenericVector& b, const ufc::form& form);
+
     /// Apply boundary condition to linear system for a nonlinear problem
     void apply(GenericMatrix& A, GenericVector& b, const GenericVector& x, const Form& form);
+
+    /// Apply boundary condition to linear system for a nonlinear problem
+    void apply(GenericMatrix& A, GenericVector& b, const GenericVector& x, const ufc::form& form);
 
   private:
 
@@ -81,7 +87,7 @@ namespace dolfin
 
     /// Apply boundary conditions
     void apply(GenericMatrix& A, GenericVector& b,
-                              const GenericVector* x, const Form& form);
+               const GenericVector* x, const ufc::form& form);
 
     // The function
     Function& g;

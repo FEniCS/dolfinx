@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2007.
 //
 // First added:  2007-04-02
-// Last changed: 2007-06-23
+// Last changed: 2007-08-17
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Mesh.h>
@@ -27,29 +27,15 @@ DiscreteFunction::DiscreteFunction(Mesh& mesh, Vector& x, const Form& form, uint
     x(&x), finite_element(0), dof_map(0), ufc_dof_map(0), dofs(0),
     local_mesh(false), local_vector(false)
 {
-  // Check argument
-  const uint num_arguments = form.form().rank() + form.form().num_coefficients();
-  if (i >= num_arguments)
-  {
-    error("Illegal function index %d. Form only has %d arguments.",
-                  i, num_arguments);
-  }
-
-  // Create finite element
-  finite_element = form.form().create_finite_element(i);
-
-  // Create dof map
-  ufc_dof_map = form.form().create_dof_map(i);
-  dof_map = new DofMap(*ufc_dof_map, mesh);
-
-  // Initialize vector
-  if (x.size() != dof_map->global_dimension())
-    x.init(dof_map->global_dimension());
-
-  // Initialize local array for mapping of dofs
-  dofs = new uint[dof_map->local_dimension()];
-  for (uint i = 0; i < dof_map->local_dimension(); i++)
-    dofs[i] = 0;
+  init(mesh, x, form.form(), i);
+}
+//-----------------------------------------------------------------------------
+DiscreteFunction::DiscreteFunction(Mesh& mesh, Vector& x, const ufc::form& form, uint i)
+  : GenericFunction(mesh),
+    x(&x), finite_element(0), dof_map(0), ufc_dof_map(0), dofs(0),
+    local_mesh(false), local_vector(false)
+{
+  init(mesh, x, form, i);
 }
 //-----------------------------------------------------------------------------
 DiscreteFunction::DiscreteFunction(Mesh& mesh, Vector& x,
@@ -295,5 +281,32 @@ Vector& DiscreteFunction::vector() const
     error("Vector associated with DiscreteFunction has not been initialised.");
 
   return *x;
+}
+//-----------------------------------------------------------------------------
+void DiscreteFunction::init(Mesh& mesh, Vector& x, const ufc::form& form, uint i)
+{
+  // Check argument
+  const uint num_arguments = form.rank() + form.num_coefficients();
+  if (i >= num_arguments)
+  {
+    error("Illegal function index %d. Form only has %d arguments.",
+                  i, num_arguments);
+  }
+
+  // Create finite element
+  finite_element = form.create_finite_element(i);
+
+  // Create dof map
+  ufc_dof_map = form.create_dof_map(i);
+  dof_map = new DofMap(*ufc_dof_map, mesh);
+
+  // Initialize vector
+  if (x.size() != dof_map->global_dimension())
+    x.init(dof_map->global_dimension());
+
+  // Initialize local array for mapping of dofs
+  dofs = new uint[dof_map->local_dimension()];
+  for (uint i = 0; i < dof_map->local_dimension(); i++)
+    dofs[i] = 0;
 }
 //-----------------------------------------------------------------------------

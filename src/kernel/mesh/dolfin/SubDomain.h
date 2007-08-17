@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-04-10
-// Last changed: 2007-07-08
+// Last changed: 2007-08-17
 
 #ifndef __SUB_DOMAIN_H
 #define __SUB_DOMAIN_H
@@ -28,7 +28,7 @@ namespace dolfin
     virtual ~SubDomain();
 
     /// Return true for points inside the sub domain
-    virtual bool inside(const real* x, bool on_boundary) const = 0;
+    virtual bool inside(const real* x, bool on_boundary) const;
 
     /// Map coordinate x in domain H to coordinate y in domain G (used for periodic boundary conditions)
     virtual void map(const real* x, real* y) const;

@@ -1,5 +1,6 @@
 # Import DOLFIN wrapper module as well as additional utility entities
 
-from plot import *
+from constants import *
 from assemble import *
+from plot import *
 from dolfin import *

@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-07-11
-// Last changed: 2007-07-11
+// Last changed: 2007-08-18
 
 #include <dolfin/Form.h>
 #include <dolfin/SubSystem.h>
@@ -22,7 +22,7 @@ BoundaryCondition::~BoundaryCondition()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-BoundaryCondition::LocalData::LocalData(const Form& form,
+BoundaryCondition::LocalData::LocalData(const ufc::form& form,
                                         Mesh& mesh,
                                         const SubSystem& sub_system)
   : finite_element(0), dof_map(0), offset(0),
@@ -32,12 +32,12 @@ BoundaryCondition::LocalData::LocalData(const Form& form,
   // FIXME: there are no nested elements
 
   // Check arity of form
-  if (form.form().rank() != 2)
+  if (form.rank() != 2)
     error("Form must be bilinear for application of boundary conditions.");
 
   // Create finite element and dof map for solution (second argument of form)
-  finite_element = form.form().create_finite_element(1);
-  dof_map = form.form().create_dof_map(1);
+  finite_element = form.create_finite_element(1);
+  dof_map = form.create_dof_map(1);
   
   // Extract sub element and sub dof map if we have a sub system
   if (sub_system.depth() > 0)

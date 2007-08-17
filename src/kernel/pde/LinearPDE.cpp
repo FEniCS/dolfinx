@@ -47,8 +47,6 @@ LinearPDE::~LinearPDE()
 void LinearPDE::solve(Function& u)
 {
   begin("Solving linear PDE.");
-    
-  const std::string solver_type = get("PDE linear solver");
 
   // Create matrix and vector for assembly
   Matrix A;
@@ -64,6 +62,7 @@ void LinearPDE::solve(Function& u)
     bcs[i]->apply(A, b, a);
 
   // Solve linear system
+  const std::string solver_type = get("PDE linear solver");
   if ( solver_type == "direct" )
   {
     cout << "Using direct solver." << endl;

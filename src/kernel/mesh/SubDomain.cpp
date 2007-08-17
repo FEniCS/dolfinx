@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-04-24
-// Last changed: 2007-07-08
+// Last changed: 2007-08-17
 
 #include <dolfin/log.h>
 #include <dolfin/MeshEntityIterator.h>
@@ -22,9 +22,15 @@ SubDomain::~SubDomain()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
+bool SubDomain::inside(const real* x, bool on_boundary) const
+{
+  error("Unable to determine if point is inside subdomain, function inside() not implemented by user.");
+  return false;
+}
+//-----------------------------------------------------------------------------
 void SubDomain::map(const real* x, real* y) const
 {
-  error("Mapping between subdomains missing for periodic boundary conditions.");
+  error("Mapping between subdomains missing for periodic boundary conditions, function map() not implemented by user.");
 }
 //-----------------------------------------------------------------------------
 void SubDomain::mark(MeshFunction<uint>& sub_domains, uint sub_domain) const
