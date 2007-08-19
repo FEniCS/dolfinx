@@ -4,7 +4,7 @@
 // Modified by Anders Logg 2006-2007.
 //
 // First added:  2006-07-05
-// Last changed: 2007-07-22
+// Last changed: 2007-08-19
 
 #ifndef __UBLAS_MATRIX_H
 #define __UBLAS_MATRIX_H
@@ -273,18 +273,19 @@ namespace dolfin
     typename Mat::const_iterator1 it1;  // Iterator over rows
     typename Mat::const_iterator2 it2;  // Iterator over entries
 
-    for (it1 = this->begin1(); it1 != this->end1(); ++it1)
-    {
-      std::stringstream line;
-      line << std::setiosflags(std::ios::scientific);
-      line << std::setprecision(precision);
-    
-      line << "|";
-      for (it2 = it1.begin(); it2 != it1.end(); ++it2)
-        line << " (" << it2.index1() << ", " << it2.index2() << ", " << *it2 << ")";
-      line << " |";
+    std::stringstream entry;
+    entry << std::setiosflags(std::ios::scientific);
+    entry << std::setprecision(precision);
 
-      dolfin::cout << line.str().c_str() << dolfin::endl;
+    for (it1 = this->begin1(); it1 != this->end1(); ++it1)
+    {    
+      dolfin::cout << "|";
+      for (it2 = it1.begin(); it2 != it1.end(); ++it2)
+      {
+        entry << " (" << it2.index1() << ", " << it2.index2() << ", " << *it2 << ")";
+        dolfin::cout << entry.str().c_str();
+      }
+      dolfin::cout  << " |" << dolfin::endl;
     }  
   }
   //-----------------------------------------------------------------------------

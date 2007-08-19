@@ -81,7 +81,7 @@ void LinearPDE::solve(Function& u)
     error("Unknown solver type \"%s\".", solver_type.c_str());
 
   //cout << "Matrix:" << endl;
-  //A->disp();
+  //A.disp();
 
   //cout << "Vector:" << endl;
   //b.disp();
