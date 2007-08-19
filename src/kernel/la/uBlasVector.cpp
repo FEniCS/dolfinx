@@ -4,7 +4,7 @@
 // Modified by Anders Logg 2006-2007.
 //
 // First added:  2006-04-04
-// Last changed: 2007-05-15
+// Last changed: 2007-08-19
 
 #include <sstream>
 #include <iomanip>
@@ -147,16 +147,17 @@ const uBlasVector& uBlasVector::operator= (real a)
 //-----------------------------------------------------------------------------
 void uBlasVector::disp(uint precision) const
 {
-  std::stringstream line;
-  line << std::setiosflags(std::ios::scientific);
-  line << std::setprecision(precision);
-  line << "[ ";
+  std::stringstream entry;
+  entry << std::setiosflags(std::ios::scientific);
+  entry << std::setprecision(precision);
 
+  dolfin::cout << "[ ";
   for (ublas_vector::const_iterator it = this->begin(); it != this->end(); ++it)
-    line << *it << " ";
-
-  line << " ]";
-  dolfin::cout << line.str().c_str() << dolfin::endl;
+  {
+    entry << *it << " ";
+    dolfin::cout << entry.str().c_str() << dolfin::endl;
+  }
+  dolfin::cout << " ]";
 }
 //-----------------------------------------------------------------------------
 LogStream& dolfin::operator<< (LogStream& stream, const uBlasVector& x)
@@ -167,7 +168,6 @@ LogStream& dolfin::operator<< (LogStream& stream, const uBlasVector& x)
     stream << "[ uBlasVector (empty) ]";
     return stream;
   }
-
   stream << "[ uBlasVector of size " << x.size() << " ]";
 
   return stream;

@@ -110,7 +110,7 @@ int main()
   pde.solve(u);
 
   // Plot solution
-//  plot(u, "displacement");
+  plot(u, "displacement");
 
   // Save solution to VTK format
   File vtk_file("elasticity.pvd");
@@ -118,7 +118,7 @@ int main()
 
   // Save solution to XML format
   File xml_file("elasticity.xml");
-//  xml_file << u;
+  xml_file << u;
 
   return 0;
 }
