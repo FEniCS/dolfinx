@@ -62,6 +62,10 @@ file, it is convenient to install org-mode in Emacs.
 
 ** Add Python versions of all demos
 
+* PyDOLFIN
+** Fix memory leak warning for Array of Function*
+** Needing to convert numpy.bool to bool in inside
+
 * General
 
 ** Replace stdio with iostream and fstream

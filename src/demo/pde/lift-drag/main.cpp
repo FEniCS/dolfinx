@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-05-14
-// Last changed: 2007-05-14
+// Last changed: 2007-08-20
 //
 // This demo demonstrates how to compute functionals (or forms
 // in general) over subsets of the mesh. The two functionals

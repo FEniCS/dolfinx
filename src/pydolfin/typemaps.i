@@ -6,28 +6,26 @@
 %typemap(in) dolfin::uint = int;
 %typemap(out) dolfin::uint = int;
 
-%typemap(directorin) dolfin::real* {
+// Typemap for dolfin::arrays as input arguments to overloaded functions.
+// This converts a C++ dolfin::array to a numpy array in Python.
+%typemap(directorin) dolfin::array& {
   {
-    // Custom typemap
-    $input = SWIG_NewPointerObj((void *) $1_name, $1_descriptor, $owner);
+    npy_intp dims[1] = {$1_name.size};
+    $input = PyArray_SimpleNewFromData(1, dims, NPY_DOUBLE, reinterpret_cast<char *>($1_name.data));
   }
 }
 
-%typemap(directorin) const dolfin::real* {
-  {
-    // Custom typemap
-    $input = SWIG_NewPointerObj((void *) $1_name, $1_descriptor, $owner);
-  }
-}
-
+// Typemap check
 %typecheck(SWIG_TYPECHECK_DOUBLE_ARRAY) dolfin::real* {
     $1 = PyArray_Check($input) ? 1 : 0;
 }
 
+// Typemap check
 %typecheck(SWIG_TYPECHECK_DOUBLE_ARRAY) dolfin::uint* {
     $1 = PyArray_Check($input) ? 1 : 0;
 }
 
+// Typemap for sending numpy arrays as input to functions expecting a C array of real
 %typemap(in) dolfin::real* {
     if PyArray_Check($input) {
         PyArrayObject *xa = (PyArrayObject*)($input);
@@ -39,6 +37,7 @@
         SWIG_exception(SWIG_ValueError, "numpy array expected");
 }
 
+// Typemap for sending numpy arrays as input to functions expecting a C array of uint
 %typemap(in) dolfin::uint* {
     if PyArray_Check($input) {
         PyArrayObject *xa = (PyArrayObject*)($input);

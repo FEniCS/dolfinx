@@ -4,3 +4,5 @@ from constants import *
 from assemble import *
 from plot import *
 from dolfin import *
+
+from numpy import sin, cos, exp

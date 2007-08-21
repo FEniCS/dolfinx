@@ -4,6 +4,7 @@
 // DOLFIN common classes
 
 #include <dolfin/timing.h>
+#include <dolfin/array.h>
 #include <dolfin/Array.h>
 #include <dolfin/List.h>
 #include <dolfin/TimeDependent.h>

@@ -11,7 +11,6 @@
 
 #include <iostream>
 
-
 #include <dolfin/constants.h>
 #include <vector>
 

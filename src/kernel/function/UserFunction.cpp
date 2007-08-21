@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005-11-26
-// Last changed: 2007-04-12
+// Last changed: 2007-08-20
 //
 // Note: this breaks the standard envelope-letter idiom slightly,
 // since we call the envelope class from one of the letter classes.
@@ -44,18 +44,25 @@ void UserFunction::interpolate(real* values)
   dolfin_assert(values);
   dolfin_assert(f);
 
+  // Compute size of value (number of entries in tensor value)
+  //uint size = 1;
+  //for (uint i = 0; i < finite_element->value_rank(); i++)
+  //  size *= finite_element->value_dimension(i);
+
   // Call overloaded eval function at each vertex
-  real* local_values = new real[size];
+  array local_values(size, new real[size]);
+  
   for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
   {
     // Evaluate at function at vertex
-    f->eval(local_values, vertex->x());
+    array x(mesh.geometry().dim(), vertex->x());
+    f->eval(local_values, x);
 
     // Copy values to array of vertex values
     for (uint i = 0; i < size; i++)
       values[i*mesh.numVertices() + vertex->index()] = local_values[i];
   }
-  delete [] local_values;
+  delete [] local_values.data;
 }
 //-----------------------------------------------------------------------------
 void UserFunction::interpolate(real* coefficients,
@@ -78,6 +85,8 @@ void UserFunction::evaluate(real* values,
   dolfin_assert(f);
 
   // Call overloaded eval function
-  f->eval(values, coordinates);
+  array v(size, values);
+  array x(cell.geometric_dimension, const_cast<real*>(coordinates));
+  f->eval(v, x);
 }
 //-----------------------------------------------------------------------------

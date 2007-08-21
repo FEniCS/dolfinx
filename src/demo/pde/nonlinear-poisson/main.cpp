@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2005
 //
 // First added:  2005
-// Last changed: 2007-07-11
+// Last changed: 2007-08-20
 //
 // This program illustrates the use of the DOLFIN for solving a nonlinear PDE
 // by solving the nonlinear variant of Poisson's equation

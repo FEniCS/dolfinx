@@ -2,12 +2,13 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-04-10
-// Last changed: 2007-08-17
+// Last changed: 2007-08-20
 
 #ifndef __SUB_DOMAIN_H
 #define __SUB_DOMAIN_H
 
 #include <dolfin/constants.h>
+#include <dolfin/array.h>
 #include <dolfin/MeshFunction.h>
 
 namespace dolfin
@@ -27,8 +28,14 @@ namespace dolfin
     /// Destructor
     virtual ~SubDomain();
 
+    /// Return true for points inside the sub domain (used for subclassing through SWIG interface)
+    virtual bool inside(const array& x, bool on_boundary) const { return inside(x.data, on_boundary); }
+
     /// Return true for points inside the sub domain
     virtual bool inside(const real* x, bool on_boundary) const;
+    
+    /// Map coordinate x in domain H to coordinate y in domain G (used for subclassing through SWIG interface)
+    virtual void map(const array& x, array& y) const { map(x.data, y.data); }
 
     /// Map coordinate x in domain H to coordinate y in domain G (used for periodic boundary conditions)
     virtual void map(const real* x, real* y) const;

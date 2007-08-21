@@ -5,13 +5,14 @@
 // Modified by Kristian B. Oelgaard, 2007.
 
 // First added:  2003-11-28
-// Last changed: 2007-08-17
+// Last changed: 2007-08-21
 
 #ifndef __FUNCTION_H
 #define __FUNCTION_H
 
 #include <ufc.h>
 #include <dolfin/constants.h>
+#include <dolfin/array.h>
 #include <dolfin/Vector.h>
 #include <dolfin/SubFunction.h>
 #include <dolfin/Variable.h>
@@ -104,7 +105,10 @@ namespace dolfin
                      const ufc::finite_element& finite_element,
                      Cell& cell, int facet = -1);
 
-    /// Evaluate function at given point (overload for user-defined function)
+    /// Evaluate function at given point (used for subclassing through SWIG interface)
+    virtual void eval(array& values, const array& x) const { eval(values.data, x.data); }
+
+    /// Evaluate scalar function at given point (overload for scalar user-defined function)
     virtual void eval(real* values, const real* x) const;
 
     /// Evaluate scalar function at given point (overload for scalar user-defined function)

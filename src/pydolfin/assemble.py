@@ -88,6 +88,7 @@ class LinearPDE:
         self.L = L
         self.mesh = mesh
         self.bcs = bcs
+        self.x = Vector()
 
         # Make sure we have a list
         if not isinstance(self.bcs, list):
@@ -110,6 +111,12 @@ class LinearPDE:
         for bc in self.bcs:
             bc.apply(A, b, compiled_form)
 
+        #message("Matrix:")
+        #A.disp()
+
+        #message("Vector:")
+        #b.disp()
+
         # Choose linear solver
         solver_type = get("PDE linear solver")
         if solver_type == "direct":
@@ -124,11 +131,13 @@ class LinearPDE:
             error("Unknown solver type \"%s\"." % solver_type)
 
         # Solver linear system
-        x = Vector()
-        solver.solve(A, x, b)
+        solver.solve(A, self.x, b)
+
+        #message("Solution vector:")
+        #self.x.disp()
   
         # Create Function
-        u = Function(self.mesh, x, compiled_form)
+        u = Function(self.mesh, self.x, compiled_form)
 
         end()
 

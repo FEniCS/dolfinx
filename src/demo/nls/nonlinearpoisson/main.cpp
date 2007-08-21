@@ -1,10 +1,10 @@
 // Copyright (C) 2005-2007 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Anders Logg, 2005
+// Modified by Anders Logg, 2005, 2007
 //
 // First added:  2005
-// Last changed: 2007-07-11
+// Last changed: 2007-08-20
 //
 // This program illustrates the use of the DOLFIN nonlinear solver for solving 
 // problems of the form F(u) = 0. The user must provide functions for the 

@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-02-07
-// Last changed: 2007-07-11
+// Last changed: 2007-08-20
 //
 // This demo program solves the equations of static
 // linear elasticity for a gear clamped at two of its
