@@ -63,7 +63,7 @@ void SubDomain::mark(MeshFunction<uint>& sub_domains, uint sub_domain) const
     bool all_vertices_inside = true;
     for (VertexIterator vertex(*entity); !vertex.end(); ++vertex)
     {
-      array x(mesh.geometry().dim(), vertex->x());
+      simple_array<real> x(mesh.geometry().dim(), vertex->x());
       if (!inside(x, on_boundary))
       {
         all_vertices_inside = false;

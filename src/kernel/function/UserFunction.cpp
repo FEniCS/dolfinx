@@ -50,12 +50,12 @@ void UserFunction::interpolate(real* values)
   //  size *= finite_element->value_dimension(i);
 
   // Call overloaded eval function at each vertex
-  array local_values(size, new real[size]);
+  simple_array<real> local_values(size, new real[size]);
   
   for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
   {
     // Evaluate at function at vertex
-    array x(mesh.geometry().dim(), vertex->x());
+    simple_array<real> x(mesh.geometry().dim(), vertex->x());
     f->eval(local_values, x);
 
     // Copy values to array of vertex values
@@ -85,8 +85,8 @@ void UserFunction::evaluate(real* values,
   dolfin_assert(f);
 
   // Call overloaded eval function
-  array v(size, values);
-  array x(cell.geometric_dimension, const_cast<real*>(coordinates));
+  simple_array<real> v(size, values);
+  simple_array<real> x(cell.geometric_dimension, const_cast<real*>(coordinates));
   f->eval(v, x);
 }
 //-----------------------------------------------------------------------------

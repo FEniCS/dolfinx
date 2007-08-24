@@ -12,7 +12,7 @@
 
 #include <ufc.h>
 #include <dolfin/constants.h>
-#include <dolfin/array.h>
+#include <dolfin/simple_array.h>
 #include <dolfin/Vector.h>
 #include <dolfin/SubFunction.h>
 #include <dolfin/Variable.h>
@@ -106,7 +106,7 @@ namespace dolfin
                      Cell& cell, int facet = -1);
 
     /// Evaluate function at given point (used for subclassing through SWIG interface)
-    virtual void eval(array& values, const array& x) const { eval(values.data, x.data); }
+    virtual void eval(simple_array<real>& values, const simple_array<real>& x) const { eval(values.data, x.data); }
 
     /// Evaluate scalar function at given point (overload for scalar user-defined function)
     virtual void eval(real* values, const real* x) const;

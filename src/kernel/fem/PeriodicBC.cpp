@@ -87,7 +87,7 @@ void PeriodicBC::apply(GenericMatrix& A, GenericVector& b,
   std::vector<real> xx(mesh.geometry().dim());
   
   // Array used for mapping coordinates
-  array y(mesh.geometry().dim(), new real[mesh.geometry().dim()]);
+  simple_array<real> y(mesh.geometry().dim(), new real[mesh.geometry().dim()]);
   for (uint i = 0; i < mesh.geometry().dim(); i++)
     y[i] = 0.0;
 
@@ -127,7 +127,7 @@ void PeriodicBC::apply(GenericMatrix& A, GenericVector& b,
       // Get dof and coordinate of dof
       const uint local_dof = data.facet_dofs[i];
       const int global_dof = static_cast<int>(data.offset + data.cell_dofs[local_dof]);
-      const array x(mesh.geometry().dim(), data.coordinates[local_dof]);
+      const simple_array<real> x(mesh.geometry().dim(), data.coordinates[local_dof]);
 
       // Map coordinate from H to G
       for (uint j = 0; j < mesh.geometry().dim(); j++)

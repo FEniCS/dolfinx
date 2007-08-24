@@ -1,14 +1,14 @@
 // Type maps for PyDOLFIN
 
 // Basic typemaps
-%typemap(in) dolfin::real = double;
+%typemap(in)  dolfin::real = double;
 %typemap(out) dolfin::real = double;
-%typemap(in) dolfin::uint = int;
+%typemap(in)  dolfin::uint = int;
 %typemap(out) dolfin::uint = int;
 
 // Typemap for dolfin::arrays as input arguments to overloaded functions.
-// This converts a C++ dolfin::array to a numpy array in Python.
-%typemap(directorin) dolfin::array& {
+// This converts a C++ dolfin::simple_array to a numpy array in Python.
+%typemap(directorin) dolfin::simple_array<dolfin::real>& {
   {
     npy_intp dims[1] = {$1_name.size};
     $input = PyArray_SimpleNewFromData(1, dims, NPY_DOUBLE, reinterpret_cast<char *>($1_name.data));
