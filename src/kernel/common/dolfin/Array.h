@@ -79,6 +79,9 @@ namespace dolfin
       return *this;
     }
 
+    /// Destructor
+    ~Array() {}
+
   };
 
 }
