@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells 2005-2007.
 //
 // First added:  2003-11-28
-// Last changed: 2007-08-17
+// Last changed: 2007-08-27
 //
 // The class Function serves as the envelope class and holds a pointer
 // to a letter class that is a subclass of GenericFunction. All the
@@ -141,6 +141,14 @@ Vector& Function::vector() const
     error("A vector can only be extracted from discrete functions.");
 
   return (static_cast<DiscreteFunction*>(f))->vector();
+}
+//-----------------------------------------------------------------------------
+dolfin::uint Function::numSubFunctions() const
+{
+  if (_type != discrete)
+    error("Only discrete functions have sub functions.");
+
+  return static_cast<DiscreteFunction*>(f)->numSubFunctions();
 }
 //-----------------------------------------------------------------------------
 SubFunction Function::operator[] (uint i)

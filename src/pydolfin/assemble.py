@@ -72,6 +72,10 @@ class Function(ffc_Function, cpp_Function):
         else:
             cpp_Function.__init__(self, *((element,) + others))
 
+    def split(self):
+        "Extract subfunctions"
+        return tuple([Function(self.sub(i)) for i in range(self.numSubFunctions())])
+
 # LinearPDE class
 class LinearPDE:
     """A LinearPDE represents a (system of) linear partial differential

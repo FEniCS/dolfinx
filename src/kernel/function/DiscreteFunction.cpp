@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2007.
 //
 // First added:  2007-04-02
-// Last changed: 2007-08-17
+// Last changed: 2007-08-27
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Mesh.h>
@@ -187,6 +187,12 @@ dolfin::uint DiscreteFunction::dim(uint i) const
 {
   dolfin_assert(finite_element);
   return finite_element->value_dimension(i);
+}
+//-----------------------------------------------------------------------------
+dolfin::uint DiscreteFunction::numSubFunctions() const
+{
+  dolfin_assert(finite_element);
+  return finite_element->num_sub_elements();
 }
 //-----------------------------------------------------------------------------
 const DiscreteFunction& DiscreteFunction::operator= (const DiscreteFunction& f)

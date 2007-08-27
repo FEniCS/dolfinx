@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2007.
 //
 // First added:  2007-04-02
-// Last changed: 2007-06-23
+// Last changed: 2007-08-27
 
 #ifndef __DISCRETE_FUNCTION_H
 #define __DISCRETE_FUNCTION_H
@@ -55,6 +55,9 @@ namespace dolfin
 
     /// Return the dimension of the value space for axis i
     uint dim(uint i) const;
+
+    /// Return the number of sub functions
+    uint numSubFunctions() const;
 
     /// Assign discrete function
     const DiscreteFunction& operator= (const DiscreteFunction& f);

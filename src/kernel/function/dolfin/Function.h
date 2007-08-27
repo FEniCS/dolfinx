@@ -5,7 +5,7 @@
 // Modified by Kristian B. Oelgaard, 2007.
 
 // First added:  2003-11-28
-// Last changed: 2007-08-21
+// Last changed: 2007-08-27
 
 #ifndef __FUNCTION_H
 #define __FUNCTION_H
@@ -87,6 +87,9 @@ namespace dolfin
     /// Return the vector associated with a DiscreteFunction
     Vector& vector() const;
 
+    /// Return the number of sub functions (only for discrete functions)
+    uint numSubFunctions() const;
+    
     /// Extract sub function/slice (only for discrete function)
     SubFunction operator[] (uint i);
 
