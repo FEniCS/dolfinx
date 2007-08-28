@@ -139,9 +139,12 @@ class LinearPDE:
 
         #message("Solution vector:")
         #self.x.disp()
+
+        # Get trial element
+        element = form_data[0].elements[1]
   
         # Create Function
-        u = Function(self.mesh, self.x, compiled_form)
+        u = Function(element, self.mesh, self.x, compiled_form)
 
         end()
 
