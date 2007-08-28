@@ -66,7 +66,7 @@ class Function(ffc_Function, cpp_Function):
         "Create Function"
 
         # Element is given to constructor of FFC Function (if any)
-        if isinstance(element, FiniteElement):
+        if isinstance(element, FiniteElement) or isinstance(element, MixedElement):
             ffc_Function.__init__(self, element)
             cpp_Function.__init__(self, *others)
         else:
