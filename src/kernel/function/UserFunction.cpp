@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005-11-26
-// Last changed: 2007-08-20
+// Last changed: 2007-08-28
 //
 // Note: this breaks the standard envelope-letter idiom slightly,
 // since we call the envelope class from one of the letter classes.
@@ -17,7 +17,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 UserFunction::UserFunction(Mesh& mesh, Function* f)
-  : GenericFunction(mesh), ufc::function(), f(f), size(1)
+  : GenericFunction(mesh), ufc::function(), f(f)
 {
   // Do nothing
 }
@@ -29,13 +29,13 @@ UserFunction::~UserFunction()
 //-----------------------------------------------------------------------------
 dolfin::uint UserFunction::rank() const
 {
-  // Just return 0 for now (might extend to vectors later)
+  // Just return 0 (if not overloaded by user)
   return 0;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint UserFunction::dim(uint i) const
 {
-  // Just return 1 for now (might extend to vectors later)
+  // Just return 1 (if not overloaded by user)
   return 1;
 }
 //-----------------------------------------------------------------------------
@@ -45,9 +45,9 @@ void UserFunction::interpolate(real* values)
   dolfin_assert(f);
 
   // Compute size of value (number of entries in tensor value)
-  //uint size = 1;
-  //for (uint i = 0; i < finite_element->value_rank(); i++)
-  //  size *= finite_element->value_dimension(i);
+  uint size = 1;
+  for (uint i = 0; i < f->rank(); i++)
+    size *= f->dim(i);
 
   // Call overloaded eval function at each vertex
   simple_array<real> local_values(size, new real[size]);
@@ -83,6 +83,11 @@ void UserFunction::evaluate(real* values,
   dolfin_assert(values);
   dolfin_assert(coordinates);
   dolfin_assert(f);
+
+  // Compute size of value (number of entries in tensor value)
+  uint size = 1;
+  for (uint i = 0; i < f->rank(); i++)
+    size *= f->dim(i);
 
   // Call overloaded eval function
   simple_array<real> v(size, values);

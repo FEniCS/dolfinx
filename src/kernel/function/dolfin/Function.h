@@ -5,7 +5,7 @@
 // Modified by Kristian B. Oelgaard, 2007.
 
 // First added:  2003-11-28
-// Last changed: 2007-08-27
+// Last changed: 2007-08-28
 
 #ifndef __FUNCTION_H
 #define __FUNCTION_H
@@ -76,10 +76,10 @@ namespace dolfin
     Type type() const;
 
     /// Return the rank of the value space
-    uint rank() const;
+    virtual uint rank() const;
 
     /// Return the dimension of the value space for axis i
-    uint dim(unsigned int i) const;
+    virtual uint dim(unsigned int i) const;
     
     /// Return the mesh
     Mesh& mesh() const;

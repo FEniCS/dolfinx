@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005-11-26
-// Last changed: 2007-04-12
+// Last changed: 2007-08-28
 
 #ifndef __USER_FUNCTION_H
 #define __USER_FUNCTION_H
@@ -50,9 +50,6 @@ namespace dolfin
 
     // Pointer to Function with overloaded evaluation operator
     Function* f;
-
-    // Size of value (number of entries in tensor value)
-    uint size;
 
   };
 
