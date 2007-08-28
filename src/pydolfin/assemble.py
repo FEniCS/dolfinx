@@ -74,7 +74,7 @@ class Function(ffc_Function, cpp_Function):
 
     def split(self):
         "Extract subfunctions"
-        return tuple([Function(self.sub(i)) for i in range(self.numSubFunctions())])
+        return tuple([Function(self.e0.sub_element(i), self.sub(i)) for i in range(self.numSubFunctions())])
 
 # LinearPDE class
 class LinearPDE:

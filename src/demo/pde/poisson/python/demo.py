@@ -64,9 +64,8 @@ bc = DirichletBC(u0, mesh, boundary)
 # Solve PDE and plot solution
 pde = LinearPDE(a, L, mesh, bc)
 u = pde.solve()
-plot(u)
+#plot(u)
 
 # Save solution to file
 file = File("poisson.pvd")
 file << u
-
