@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2006-2007.
 //
 // First added:  2005-10-24
-// Last changed: 2007-05-15
+// Last changed: 2007-08-28
 
 #include <dolfin/BoundaryCondition.h>
 #include <dolfin/Function.h>
@@ -19,7 +19,7 @@ NonlinearPDE::NonlinearPDE(Form& a,
                            Form& L,
                            Mesh& mesh,
                            BoundaryCondition& bc)
-  : a(a), L(L), mesh(mesh)
+  : a(a), L(L), mesh(mesh), assembler(mesh)
 {
   message("Creating nonlinear PDE with %d boundary condition(s).", bcs.size());
 
@@ -37,7 +37,7 @@ NonlinearPDE::NonlinearPDE(Form& a,
                            Form& L,
                            Mesh& mesh,
                            Array<BoundaryCondition*>& bcs)
-  : a(a), L(L), mesh(mesh), bcs(bcs)
+  : a(a), L(L), mesh(mesh), bcs(bcs), assembler(mesh)
 {
   message("Creating nonlinear PDE with %d boundary condition(s).", bcs.size());
 
@@ -61,8 +61,8 @@ void NonlinearPDE::update(const GenericVector& x)
 void NonlinearPDE::form(GenericMatrix& A, GenericVector& b, const GenericVector& x)
 {
   // Assemble 
-  assembler.assemble(A, a, mesh);
-  assembler.assemble(b, L, mesh);
+  assembler.assemble(A, a);
+  assembler.assemble(b, L);
 
   // Apply boundary conditions
   for (uint i = 0; i < bcs.size(); i++)

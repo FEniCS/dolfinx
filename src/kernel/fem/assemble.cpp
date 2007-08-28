@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-01-17
-// Last changed: 2007-05-14
+// Last changed: 2007-08-28
 
 #include <dolfin/Assembler.h>
 #include <dolfin/assemble.h>
@@ -12,24 +12,24 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 void dolfin::assemble(GenericTensor& A, const Form& form, Mesh& mesh)
 {
-  Assembler assembler;
-  assembler.assemble(A, form, mesh);
+  Assembler assembler(mesh);
+  assembler.assemble(A, form);
 }
 //-----------------------------------------------------------------------------
 void dolfin::assemble(GenericTensor& A, const Form& form, Mesh& mesh,
                       const SubDomain& sub_domain)
 {
-  Assembler assembler;
-  assembler.assemble(A, form, mesh, sub_domain);
+  Assembler assembler(mesh);
+  assembler.assemble(A, form, sub_domain);
 }
 //-----------------------------------------------------------------------------
-void dolfin::assemble(GenericTensor& A, const Form& form, Mesh& mesh, 
+void dolfin::assemble(GenericTensor& A, const Form& form, Mesh& mesh,
                       const MeshFunction<dolfin::uint>& cell_domains,
                       const MeshFunction<dolfin::uint>& exterior_facet_domains,
                       const MeshFunction<dolfin::uint>& interior_facet_domains)
 {
-  Assembler assembler;
-  assembler.assemble(A, form, mesh,
+  Assembler assembler(mesh);
+  assembler.assemble(A, form,
                      cell_domains,
                      exterior_facet_domains,
                      interior_facet_domains);
@@ -37,15 +37,15 @@ void dolfin::assemble(GenericTensor& A, const Form& form, Mesh& mesh,
 //-----------------------------------------------------------------------------
 dolfin::real dolfin::assemble(const Form& form, Mesh& mesh)
 {
-  Assembler assembler;
-  return assembler.assemble(form, mesh);
+  Assembler assembler(mesh);
+  return assembler.assemble(form);
 }
 //-----------------------------------------------------------------------------
 dolfin::real dolfin::assemble(const Form& form, Mesh& mesh,
                               const SubDomain& sub_domain)
 {
-  Assembler assembler;
-  return assembler.assemble(form, mesh, sub_domain);
+  Assembler assembler(mesh);
+  return assembler.assemble(form, sub_domain);
 }
 //-----------------------------------------------------------------------------
 dolfin::real dolfin::assemble(const Form& form, Mesh& mesh,
@@ -53,8 +53,8 @@ dolfin::real dolfin::assemble(const Form& form, Mesh& mesh,
                               const MeshFunction<dolfin::uint>& exterior_facet_domains,
                               const MeshFunction<dolfin::uint>& interior_facet_domains)
 {
-  Assembler assembler;
-  return assembler.assemble(form, mesh,
+  Assembler assembler(mesh);
+  return assembler.assemble(form,
                             cell_domains,
                             exterior_facet_domains,
                             interior_facet_domains);
@@ -66,8 +66,8 @@ void dolfin::assemble(GenericTensor& A, const ufc::form& form, Mesh& mesh,
                       const MeshFunction<uint>* exterior_facet_domains,
                       const MeshFunction<uint>* interior_facet_domains, bool reset_tensor)
 {
-  Assembler assembler;
-  assembler.assemble(A, form, mesh, coefficients,
+  Assembler assembler(mesh);
+  assembler.assemble(A, form, coefficients,
                      cell_domains, exterior_facet_domains, interior_facet_domains,
                      reset_tensor);
 }

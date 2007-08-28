@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2006
 //
 // First added:  2004
-// Last changed: 2007-05-14
+// Last changed: 2007-08-28
 
 #include <dolfin/Matrix.h>
 #include <dolfin/BoundaryCondition.h>
@@ -53,9 +53,9 @@ void LinearPDE::solve(Function& u)
   Vector b;
 
   // Assemble linear system
-  Assembler assembler;
-  assembler.assemble(A, a, mesh);
-  assembler.assemble(b, L, mesh);
+  Assembler assembler(mesh);
+  assembler.assemble(A, a);
+  assembler.assemble(b, L);
 
   // Apply boundary conditions
   for (uint i = 0; i < bcs.size(); i++)

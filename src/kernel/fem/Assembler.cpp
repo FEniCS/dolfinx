@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2007
 //
 // First added:  2007-01-17
-// Last changed: 2007-07-22
+// Last changed: 2007-08-28
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Array.h>
@@ -26,7 +26,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Assembler::Assembler()
+Assembler::Assembler(Mesh& mesh) : mesh(mesh)
 {
   // Do nothing
 }
@@ -36,13 +36,13 @@ Assembler::~Assembler()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void Assembler::assemble(GenericTensor& A, const Form& form, Mesh& mesh, 
+void Assembler::assemble(GenericTensor& A, const Form& form,
                          bool reset_tensor)
 {
-  assemble(A, form.form(), mesh, form.coefficients(), 0, 0, 0);
+  assemble(A, form.form(), form.coefficients(), 0, 0, 0);
 }
 //-----------------------------------------------------------------------------
-void Assembler::assemble(GenericTensor& A, const Form& form, Mesh& mesh,
+void Assembler::assemble(GenericTensor& A, const Form& form,
                          const SubDomain& sub_domain, bool reset_tensor)
 {
   // Extract cell domains
@@ -65,7 +65,7 @@ void Assembler::assemble(GenericTensor& A, const Form& form, Mesh& mesh,
   }
 
   // Assemble
-  assemble(A, form.form(), mesh, form.coefficients(),
+  assemble(A, form.form(), form.coefficients(),
            cell_domains, facet_domains, facet_domains);
 
   // Delete domains
@@ -75,43 +75,43 @@ void Assembler::assemble(GenericTensor& A, const Form& form, Mesh& mesh,
     delete facet_domains;
 }
 //-----------------------------------------------------------------------------
-void Assembler::assemble(GenericTensor& A, const Form& form, Mesh& mesh, 
+void Assembler::assemble(GenericTensor& A, const Form& form,
                          const MeshFunction<uint>& cell_domains,
                          const MeshFunction<uint>& exterior_facet_domains,
                          const MeshFunction<uint>& interior_facet_domains,
                          bool reset_tensor)
 {
-  assemble(A, form.form(), mesh, form.coefficients(),
+  assemble(A, form.form(), form.coefficients(),
            &cell_domains, &exterior_facet_domains, &interior_facet_domains);
 }
 //-----------------------------------------------------------------------------
-dolfin::real Assembler::assemble(const Form& form, Mesh& mesh)
+dolfin::real Assembler::assemble(const Form& form)
 {
   Scalar value;
-  assemble(value, form, mesh);
+  assemble(value, form);
   return value;
 }
 //-----------------------------------------------------------------------------
-dolfin::real Assembler::assemble(const Form& form, Mesh& mesh,
+dolfin::real Assembler::assemble(const Form& form,
                                  const SubDomain& sub_domain)
 {
   Scalar value;
-  assemble(value, form, mesh, sub_domain);
+  assemble(value, form, sub_domain);
   return value;
 }
 //-----------------------------------------------------------------------------
-dolfin::real Assembler::assemble(const Form& form, Mesh& mesh,
+dolfin::real Assembler::assemble(const Form& form,
                                  const MeshFunction<uint>& cell_domains,
                                  const MeshFunction<uint>& exterior_facet_domains,
                                  const MeshFunction<uint>& interior_facet_domains)
 {
   Scalar value;
-  assemble(value, form, mesh,
+  assemble(value, form,
            cell_domains, exterior_facet_domains, interior_facet_domains);
   return value;
 }
 //-----------------------------------------------------------------------------
-void Assembler::assemble(GenericTensor& A, const ufc::form& form, Mesh& mesh,
+void Assembler::assemble(GenericTensor& A, const ufc::form& form,
                          const Array<Function*>& coefficients,
                          const MeshFunction<uint>* cell_domains,
                          const MeshFunction<uint>* exterior_facet_domains,
@@ -124,7 +124,7 @@ void Assembler::assemble(GenericTensor& A, const ufc::form& form, Mesh& mesh,
   // for the PyDOLFIN interface.
   
   // Check arguments
-  check(form, mesh, coefficients);
+  check(form, coefficients);
 
   // Update dof maps
   dof_map_set.update(form, mesh);
@@ -133,22 +133,22 @@ void Assembler::assemble(GenericTensor& A, const ufc::form& form, Mesh& mesh,
   UFC ufc(form, mesh, dof_map_set);
 
   // Initialize global tensor
-  initGlobalTensor(A, mesh, ufc, reset_tensor);
+  initGlobalTensor(A, ufc, reset_tensor);
 
   // Assemble over cells
-  assembleCells(A, mesh, coefficients, ufc, cell_domains);
+  assembleCells(A, coefficients, ufc, cell_domains);
 
   // Assemble over exterior facets
-  assembleExteriorFacets(A, mesh, coefficients, ufc, exterior_facet_domains);
+  assembleExteriorFacets(A, coefficients, ufc, exterior_facet_domains);
 
   // Assemble over interior facets
-  assembleInteriorFacets(A, mesh, coefficients, ufc, interior_facet_domains);
+  assembleInteriorFacets(A, coefficients, ufc, interior_facet_domains);
 
   // Finalise assembly of global tensor
   A.apply();
 }
 //-----------------------------------------------------------------------------
-void Assembler::assembleCells(GenericTensor& A, Mesh& mesh,
+void Assembler::assembleCells(GenericTensor& A,
                               const Array<Function*>& coefficients,
                               UFC& ufc,
                               const MeshFunction<uint>* domains) const
@@ -195,7 +195,7 @@ void Assembler::assembleCells(GenericTensor& A, Mesh& mesh,
   }
 }
 //-----------------------------------------------------------------------------
-void Assembler::assembleExteriorFacets(GenericTensor& A, Mesh& mesh,
+void Assembler::assembleExteriorFacets(GenericTensor& A,
                                        const Array<Function*>& coefficients,
                                        UFC& ufc,
                                        const MeshFunction<uint>* domains) const
@@ -257,7 +257,7 @@ void Assembler::assembleExteriorFacets(GenericTensor& A, Mesh& mesh,
   }
 }
 //-----------------------------------------------------------------------------
-void Assembler::assembleInteriorFacets(GenericTensor& A,Mesh& mesh,
+void Assembler::assembleInteriorFacets(GenericTensor& A,
                                        const Array<Function*>& coefficients,
                                        UFC& ufc,
                                        const MeshFunction<uint>* domains) const
@@ -333,7 +333,6 @@ void Assembler::assembleInteriorFacets(GenericTensor& A,Mesh& mesh,
 }
 //-----------------------------------------------------------------------------
 void Assembler::check(const ufc::form& form,
-                      const Mesh& mesh,
                       const Array<Function*>& coefficients) const
 {
   // Check that we get the correct number of coefficients
@@ -342,7 +341,7 @@ void Assembler::check(const ufc::form& form,
                   coefficients.size(), form.num_coefficients());
 }
 //-----------------------------------------------------------------------------
-void Assembler::initGlobalTensor(GenericTensor& A, Mesh& mesh, UFC& ufc, 
+void Assembler::initGlobalTensor(GenericTensor& A, UFC& ufc,
                                  bool reset_tensor) const
 {
   //A.init(ufc.form.rank(), ufc.global_dimensions);
