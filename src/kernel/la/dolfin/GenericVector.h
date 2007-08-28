@@ -4,7 +4,7 @@
 // Modified by Anders Logg 2006-2007.
 //
 // First added:  2006-04-25
-// Last changed: 2007-07-20
+// Last changed: 2007-08-28
 
 #ifndef __GENERIC_VECTOR_H
 #define __GENERIC_VECTOR_H
@@ -37,6 +37,12 @@ namespace dolfin
     /// Initialize zero tensor using sparsity pattern
     inline void init(const SparsityPattern& sparsity_pattern)
     { init(sparsity_pattern.size(0)); }
+
+    /// Create uninitialized vector
+    virtual GenericVector* create() const = 0;
+
+    /// Create copy of vector
+    virtual GenericVector* copy() const = 0;
 
     /// Return rank of tensor (number of dimensions)
     inline uint rank() const { return 1; }

@@ -5,7 +5,7 @@
 // Modified by Andy R. Terrel 2005.
 //
 // First added:  2004
-// Last changed: 2007-07-23
+// Last changed: 2007-08-28
 
 #ifdef HAVE_PETSC_H
 
@@ -119,6 +119,19 @@ void PETScMatrix::init(const SparsityPattern& sparsity_pattern)
   sparsity_pattern.numNonZeroPerRow(nzrow);
   init(sparsity_pattern.size(0), sparsity_pattern.size(1), nzrow);
   delete [] nzrow;
+}
+//-----------------------------------------------------------------------------
+PETScMatrix* PETScMatrix::create() const
+{
+  return new PETScMatrix();
+}
+//-----------------------------------------------------------------------------
+PETScMatrix* PETScMatrix::copy() const
+{
+  // Not yet implemented
+  error("Not yet implemented.");
+
+  return 0;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint PETScMatrix::size(uint dim) const

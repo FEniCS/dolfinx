@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2007.
 //
 // First added:  2007-01-17
-// Last changed: 2007-07-20
+// Last changed: 2007-08-28
 
 #ifndef __GENERIC_TENSOR_H
 #define __GENERIC_TENSOR_H
@@ -30,6 +30,12 @@ namespace dolfin
 
     /// Initialize zero tensor using sparsity pattern
     virtual void init(const SparsityPattern& sparsity_pattern) = 0;
+
+    /// Create uninitialized tensor
+    virtual GenericTensor* create() const = 0;
+
+    /// Create copy of tensor
+    virtual GenericTensor* copy() const = 0;
 
     /// Return rank of tensor (number of dimensions)
     virtual uint rank() const = 0;

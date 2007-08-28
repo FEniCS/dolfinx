@@ -54,6 +54,12 @@ namespace dolfin
     /// Initialize a vector of length N
     void init(uint N);
 
+    /// Create uninitialized vector
+    uBlasVector* create() const;
+
+    /// Create copy of vector
+    uBlasVector* copy() const;
+
     /// Set all entries to a single scalar value
     const uBlasVector& operator= (real a);
 

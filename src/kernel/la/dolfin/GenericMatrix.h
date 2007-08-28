@@ -5,7 +5,7 @@
 // Modified by Anders Logg 2006-2007.
 //
 // First added:  2006-04-24
-// Last changed: 2007-07-22
+// Last changed: 2007-08-28
 
 #ifndef __GENERIC_MATRIX_H
 #define __GENERIC_MATRIX_H
@@ -34,6 +34,12 @@ namespace dolfin
 
     /// Initialize zero tensor using sparsity pattern (implemented by sub class)
     virtual void init(const SparsityPattern& sparsity_pattern) = 0;
+
+    /// Create uninitialized matrix
+    virtual GenericMatrix* create() const = 0;
+
+    /// Create copy of matrix
+    virtual GenericMatrix* copy() const = 0;
 
     /// Return rank of tensor (number of dimensions)
     inline uint rank() const { return 2; }

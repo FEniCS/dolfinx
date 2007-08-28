@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2007.
 //
 // First added:  2007-07-03
-// Last changed: 2007-07-18
+// Last changed: 2007-08-28
 
 #ifndef __VECTOR_H
 #define __VECTOR_H
@@ -38,6 +38,14 @@ namespace dolfin
     /// Initialize vector of size N
     inline void init(uint N) 
     { vector.init(N); }
+
+    /// Create uninitialized vector
+    inline Vector* create() const
+    { return new Vector(); }
+
+    /// Create copy of vector
+    inline Vector* copy() const
+    { error("Not yet implemented."); return 0; }
 
     /// Return size
     inline uint size() const

@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells, 2006-2007.
 //
 // First added:  2004
-// Last changed: 2007-07-22
+// Last changed: 2007-08-28
 
 #ifndef __PETSC_MATRIX_H
 #define __PETSC_MATRIX_H
@@ -71,6 +71,12 @@ namespace dolfin
 
     /// Initialize a matrix from the sparsity pattern
     void init(const SparsityPattern& sparsity_pattern);
+
+    /// Create uninitialized matrix
+    PETScMatrix* create() const;
+
+    /// Create copy of matrix
+    PETScMatrix* copy() const;
 
     /// Return number of rows (dim = 0) or columns (dim = 1) along dimension dim
     uint size(uint dim) const;

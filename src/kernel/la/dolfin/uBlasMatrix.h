@@ -113,6 +113,12 @@ namespace dolfin
     /// Initialize a matrix from the sparsity pattern
     void init(const SparsityPattern& sparsity_pattern);
 
+    /// Create uninitialized matrix
+    uBlasMatrix<Mat>* create() const;
+
+    /// Create copy of matrix
+    uBlasMatrix<Mat>* copy() const;
+
     //friend LogStream& operator<< <Mat> (LogStream&, const uBlasMatrix<Mat>&);
 
   private:
@@ -134,13 +140,13 @@ namespace dolfin
     // Do nothing 
   }
   //---------------------------------------------------------------------------
-  template <class Mat> 
+  template <class Mat>
   uBlasMatrix<Mat>::~uBlasMatrix()
   { 
     // Do nothing 
   }
   //---------------------------------------------------------------------------
-  template <class Mat> 
+  template <class Mat>
   void uBlasMatrix< Mat >::init(uint M, uint N)
   {
     // Resize matrix
@@ -149,6 +155,21 @@ namespace dolfin
 
     // Clear matrix (detroys any structure)
     this->clear();
+  }
+  //---------------------------------------------------------------------------
+  template <class Mat> 
+  uBlasMatrix<Mat>* uBlasMatrix<Mat>::create() const
+  {
+    return new uBlasMatrix<Mat>();
+  }
+  //---------------------------------------------------------------------------
+  template <class Mat>
+  uBlasMatrix<Mat>* uBlasMatrix<Mat>::copy() const
+  {
+    // Not yet implemented
+    error("Not yet implemented.");
+
+    return 0;
   }
   //---------------------------------------------------------------------------
   template <class Mat> 

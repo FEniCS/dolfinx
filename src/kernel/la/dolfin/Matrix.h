@@ -39,6 +39,14 @@ namespace dolfin
     inline void init(const SparsityPattern& sparsity_pattern)
     { matrix.init(sparsity_pattern); }
     
+    /// Create uninitialized matrix
+    inline Matrix* create() const
+    { return new Matrix(); }
+
+    /// Create copy of matrix
+    inline Matrix* copy() const
+    { error("Not yet implemented."); return 0; }
+
     /// Return size of given dimension
     inline uint size(uint dim) const
     { return matrix.size(dim); }

@@ -54,6 +54,19 @@ void uBlasVector::init(uint N)
   clear();
 }
 //-----------------------------------------------------------------------------
+uBlasVector* uBlasVector::create() const
+{
+  return new uBlasVector();
+} 
+//-----------------------------------------------------------------------------
+uBlasVector* uBlasVector::copy() const
+{
+  // Not yet implemented
+  error("Not yet implemented.");
+
+  return 0;
+}
+//-----------------------------------------------------------------------------
 void uBlasVector::get(real* values) const
 {
   for (uint i = 0; i < size(); i++)
