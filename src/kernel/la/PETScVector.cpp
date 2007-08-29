@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells 2005-2007.
 //
 // First added:  2004
-// Last changed: 2007-07-20
+// Last changed: 2007-08-29
 
 // FIXME: Insert dolfin_assert() where appropriate
 
@@ -95,6 +95,19 @@ void PETScVector::init(uint N)
   // Set all entries to zero
   PetscScalar a = 0.0;
   VecSet(x, a);
+}
+//-----------------------------------------------------------------------------
+PETScVector* PETScVector::create() const
+{
+  return new PETScVector();
+}
+//-----------------------------------------------------------------------------
+PETScVector* PETScVector::copy() const
+{
+  // Not yet implemented
+  error("Not yet implemented.");
+
+  return 0;
 }
 //-----------------------------------------------------------------------------
 void PETScVector::axpy(const real a, const PETScVector& x)

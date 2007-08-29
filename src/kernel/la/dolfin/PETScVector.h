@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells 2005-2007.
 //
 // First added:  2004
-// Last changed: 2007-07-20
+// Last changed: 2007-08-29
 
 #ifndef __PETSC_VECTOR_H
 #define __PETSC_VECTOR_H
@@ -51,6 +51,12 @@ namespace dolfin
 
     /// Initialize vector data
     void init(uint N);
+
+    /// Create uninitialized vector
+    PETScVector* create() const;
+
+    /// Create copy of vector
+    PETScVector* copy() const;
 
     /// Clear vector data
     void clear();
