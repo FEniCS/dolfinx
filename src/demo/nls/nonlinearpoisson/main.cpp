@@ -76,7 +76,7 @@ class MyNonlinearProblem : public NonlinearProblem
     // Constructor 
     MyNonlinearProblem(Mesh& mesh, Vector& x, SubDomain& dirichlet_boundary, 
                        Function& g, Function& f, Function& u)  
-                       : NonlinearProblem(), _mesh(&mesh)
+                       : NonlinearProblem(), mesh(mesh)
     {
       // Create forms
       a = new NonlinearPoissonBilinearForm(u);
@@ -101,9 +101,9 @@ class MyNonlinearProblem : public NonlinearProblem
     void form(GenericMatrix& A, GenericVector& b, const GenericVector& x)
     {
       set("output destination", "silent");
-      Assembler assembler;
-      assembler.assemble(A, *a, *_mesh);
-      assembler.assemble(b, *L, *_mesh);
+      Assembler assembler(mesh);
+      assembler.assemble(A, *a);
+      assembler.assemble(b, *L);
       bc->apply(A, b, x, *a);
       set("output destination", "terminal");
     }
@@ -113,7 +113,7 @@ class MyNonlinearProblem : public NonlinearProblem
     // Pointers to forms, mesh and boundary conditions
     Form *a;
     Form *L;
-    Mesh* _mesh;
+    Mesh& mesh;
     DirichletBC* bc;
 };
 

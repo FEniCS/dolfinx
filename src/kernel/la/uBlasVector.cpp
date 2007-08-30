@@ -4,7 +4,7 @@
 // Modified by Anders Logg 2006-2007.
 //
 // First added:  2006-04-04
-// Last changed: 2007-08-20
+// Last changed: 2007-08-30
 
 #include <sstream>
 #include <iomanip>
@@ -61,10 +61,7 @@ uBlasVector* uBlasVector::create() const
 //-----------------------------------------------------------------------------
 uBlasVector* uBlasVector::copy() const
 {
-  // Not yet implemented
-  error("Not yet implemented.");
-
-  return 0;
+  return new uBlasVector(*this);
 }
 //-----------------------------------------------------------------------------
 void uBlasVector::get(real* values) const

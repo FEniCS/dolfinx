@@ -4,7 +4,7 @@
 // Modified by Anders Logg 2006-2007.
 //
 // First added:  2006-07-05
-// Last changed: 2007-08-20
+// Last changed: 2007-08-30
 
 #ifndef __UBLAS_MATRIX_H
 #define __UBLAS_MATRIX_H
@@ -166,10 +166,7 @@ namespace dolfin
   template <class Mat>
   uBlasMatrix<Mat>* uBlasMatrix<Mat>::copy() const
   {
-    // Not yet implemented
-    error("Not yet implemented.");
-
-    return 0;
+    return new uBlasMatrix<Mat>(*this);
   }
   //---------------------------------------------------------------------------
   template <class Mat> 

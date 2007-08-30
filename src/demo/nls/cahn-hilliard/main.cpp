@@ -25,20 +25,19 @@ class CahnHilliardEquation : public NonlinearProblem, public Parametrized
     // Constructor 
     CahnHilliardEquation(Mesh& mesh, Function& u, Function& u0, Function& dt, 
                          Function& theta, Function& lambda, Function& muFactor) 
-      : _mesh(&mesh), _dt(&dt), _theta(&theta), 
-        _lambda(&lambda), _muFactor(&muFactor)
+         : mesh(mesh), dt(dt), theta(theta), lambda(lambda), muFactor(muFactor)
     {
       // Create forms
       if(mesh.topology().dim() == 2)
       {
         cout << "Create forms " << endl;
-        a = new CahnHilliard2DBilinearForm(u, *_lambda, *_muFactor, *_dt, *_theta);
-        L = new CahnHilliard2DLinearForm(u, u0, *_lambda, *_muFactor, *_dt, *_theta);
+        a = new CahnHilliard2DBilinearForm(u, lambda, muFactor, dt, theta);
+        L = new CahnHilliard2DLinearForm(u, u0, lambda, muFactor, dt, theta);
       }
       else if(mesh.topology().dim() == 3)
       {
-        a = new CahnHilliard3DBilinearForm(u, *_lambda, *_muFactor, *_dt, *_theta);
-        L = new CahnHilliard3DLinearForm(u, u0, *_lambda, *_muFactor, *_dt, *_theta);
+        a = new CahnHilliard3DBilinearForm(u, lambda, muFactor, dt, theta);
+        L = new CahnHilliard3DLinearForm(u, u0, lambda, muFactor, dt, theta);
       }
       else
         error("Cahn-Hilliard model is programmed for 2D and 3D only");
@@ -67,9 +66,9 @@ class CahnHilliardEquation : public NonlinearProblem, public Parametrized
     void form(GenericMatrix& A, GenericVector& b, const GenericVector& x)
     {
       // Assemble system and RHS (Neumann boundary conditions)
-      Assembler assembler;
-      assembler.assemble(A, *a, *_mesh);
-      assembler.assemble(b, *L, *_mesh);
+      Assembler assembler(mesh);
+      assembler.assemble(A, *a);
+      assembler.assemble(b, *L);
     }
 
   private:
@@ -77,15 +76,15 @@ class CahnHilliardEquation : public NonlinearProblem, public Parametrized
     // Pointers to forms and mesh
     Form *a;
     Form *L;
-    Mesh* _mesh;
+    Mesh& mesh;
 
     // Time stepping parameters
-    Function* _dt; 
-    Function* _theta;
+    Function& dt; 
+    Function& theta;
 
     // Model parameters
-    Function* _lambda; 
-    Function* _muFactor;
+    Function& lambda; 
+    Function& muFactor;
 };
 
 int main(int argc, char* argv[])
