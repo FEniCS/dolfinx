@@ -89,6 +89,9 @@ namespace dolfin
     inline const Scalar& operator=(real value)
     { this->value = value; return *this; }
 
+    /// Get value (needed for SWIG interface)
+    inline real getval() const { return value; }
+
   private:
     
     real value;

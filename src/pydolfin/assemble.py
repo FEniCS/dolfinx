@@ -9,7 +9,7 @@ The C++ PDE classes are reimplemented in Python since the C++ classes
 rely on the dolfin::Form class which is not used on the Python side."""
 
 __author__ = "Anders Logg (logg@simula.no)"
-__date__ = "2007-08-15 -- 2007-08-16"
+__date__ = "2007-08-15 -- 2007-08-30"
 __copyright__ = "Copyright (C) 2007 Anders Logg"
 __license__  = "GNU LGPL Version 2.1"
 
@@ -40,7 +40,7 @@ def assemble(form, mesh):
         cpp_assemble(s, compiled_form, mesh, coefficients,
                      cell_domains, exterior_facet_domains, interior_facet_domains,
                      True)
-        return s
+        return s.getval()
     elif rank == 1:
         b = Vector()
         cpp_assemble(b, compiled_form, mesh, coefficients,
