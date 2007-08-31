@@ -1,5 +1,5 @@
 # Init autoconf
-AC_INIT(DOLFIN, 0.7.0-1, http://www.fenics.org/bugzilla/)
+AC_INIT(DOLFIN, 0.7.1, http://www.fenics.org/bugzilla/)
 
 # Init automake
 AM_INIT_AUTOMAKE($PACKAGE_NAME, $PACKAGE_VERSION, no-define)
