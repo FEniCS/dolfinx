@@ -90,14 +90,24 @@ dolfin::uint uBlasLUSolver::solve(const uBlasMatrix<ublas_sparse_matrix>& A, uBl
   long int* Ri = new long int[nz];
   double* Rx   = new double[nz];
 
+  long int status;
+
   // Compute transpose
-  umfpack_dl_transpose(M, M, (const long int*) Ap, (const long int*) Ai, Ax, inull, inull, Rp, Ri, Rx);
+  status= umfpack_dl_transpose(M, M, (const long int*) Ap, (const long int*) Ai, Ax, inull, inull, Rp, Ri, Rx);
+  check_status(status, "transpose");
 
   // Solve procedure
-  umfpack_dl_symbolic(M, M, (const long int*) Rp, (const long int*) Ri, Rx, &Symbolic, dnull, dnull);
-  umfpack_dl_numeric( (const long int*) Rp, (const long int*) Ri, Rx, Symbolic, &Numeric, dnull, dnull);
+  status= umfpack_dl_symbolic(M, M, (const long int*) Rp, (const long int*) Ri, Rx, &Symbolic, dnull, dnull);
+  check_status(status, "symbolic");
+
+  status = umfpack_dl_numeric( (const long int*) Rp, (const long int*) Ri, Rx, Symbolic, &Numeric, dnull, dnull);
+  check_status(status, "numeric");
+
   umfpack_dl_free_symbolic(&Symbolic);
-  umfpack_dl_solve(UMFPACK_A, (const long int*) Rp, (const long int*) Ri, Rx, xx, bb, Numeric, dnull, dnull);
+
+  status = umfpack_dl_solve(UMFPACK_A, (const long int*) Rp, (const long int*) Ri, Rx, xx, bb, Numeric, dnull, dnull);
+  check_status(status, "solve");
+ 
   umfpack_dl_free_numeric(&Numeric);
 
   // Clean up
@@ -183,3 +193,28 @@ dolfin::uint uBlasLUSolver::solveInPlaceUBlas(uBlasMatrix<ublas_dense_matrix>& A
   return solveInPlace(A, x);
 }
 //-----------------------------------------------------------------------------
+void uBlasLUSolver::check_status(long int status, std::string function) const
+{
+  if(status == UMFPACK_OK)
+    return;
+
+  // Help out by printing which UMFPACK function is returning the warning/error
+  cout << "UMFPACK problem related to call to " << function << endl;
+
+  if(status == UMFPACK_WARNING_singular_matrix)
+    warning("UMFPACK reports that the matrix being solved is singular.");
+  else if(status == UMFPACK_ERROR_out_of_memory)
+    error("UMFPACK has run out of memory solving a system.");
+  else if(status == UMFPACK_ERROR_invalid_system)
+    error("UMFPACK reports an invalid system. Is the matrix square?.");
+  else if(status == UMFPACK_ERROR_invalid_Numeric_object)
+    error("UMFPACK reports an invalid Numeric object.");
+  else if(status == UMFPACK_ERROR_invalid_Symbolic_object)
+    error("UMFPACK reports an invalid Symbolic object.");
+  else if(status != UMFPACK_OK)
+    warning("UMFPACK is reporting an unknown error.");
+}
+//-----------------------------------------------------------------------------
+
+
+

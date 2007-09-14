@@ -56,6 +56,9 @@ namespace dolfin
 
   private:
     
+    /// Check status flag returned by an UMFPACK function
+    void check_status(long int status, std::string function) const;
+
     /// General uBlas LU solver which accepts both vector and matrix right-hand sides
     template<class Mat, class B>
     uint solveInPlace(Mat& A, B& X) const;
