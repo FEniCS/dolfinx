@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2007
 //
 // First added:  2007-01-17
-// Last changed: 2007-08-28
+// Last changed: 2007-09-17
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Array.h>
@@ -66,7 +66,7 @@ void Assembler::assemble(GenericTensor& A, const Form& form,
 
   // Assemble
   assemble(A, form.form(), form.coefficients(),
-           cell_domains, facet_domains, facet_domains);
+           cell_domains, facet_domains, facet_domains, reset_tensor);
 
   // Delete domains
   if (cell_domains)
@@ -81,8 +81,8 @@ void Assembler::assemble(GenericTensor& A, const Form& form,
                          const MeshFunction<uint>& interior_facet_domains,
                          bool reset_tensor)
 {
-  assemble(A, form.form(), form.coefficients(),
-           &cell_domains, &exterior_facet_domains, &interior_facet_domains);
+  assemble(A, form.form(), form.coefficients(), &cell_domains, 
+           &exterior_facet_domains, &interior_facet_domains, reset_tensor);
 }
 //-----------------------------------------------------------------------------
 dolfin::real Assembler::assemble(const Form& form)
