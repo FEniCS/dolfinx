@@ -195,6 +195,7 @@ dolfin::uint uBlasLUSolver::solveInPlaceUBlas(uBlasMatrix<ublas_dense_matrix>& A
 //-----------------------------------------------------------------------------
 void uBlasLUSolver::check_status(long int status, std::string function) const
 {
+#if defined(HAVE_UMFPACK_H)|| defined(HAVE_UMFPACK_UMFPACK_H) || defined(HAVE_UFSPARSE_UMFPACK_H)
   if(status == UMFPACK_OK)
     return;
 
@@ -213,6 +214,12 @@ void uBlasLUSolver::check_status(long int status, std::string function) const
     error("UMFPACK reports an invalid Symbolic object.");
   else if(status != UMFPACK_OK)
     warning("UMFPACK is reporting an unknown error.");
+
+#else
+
+  error("Problem with UMFPACK build configuration.");   
+
+#endif
 }
 //-----------------------------------------------------------------------------
 
