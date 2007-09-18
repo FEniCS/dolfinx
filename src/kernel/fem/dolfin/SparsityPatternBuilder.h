@@ -25,10 +25,13 @@ namespace dolfin
 
   private:
 
+    /// Build scalar sparsity pattern (do nothing)
     static void scalarBuild(SparsityPattern& sparsity_pattern);
 
+    /// Build vector sparsity pattern (compute length of vector)
     static void vectorBuild(SparsityPattern& sparsity_pattern, UFC& ufc);
 
+    /// Build matrix sparsity pattern (compute sparse matrix layput)
     static void matrixBuild(SparsityPattern& sparsity_pattern, Mesh& mesh, 
                                     UFC& ufc);
 
