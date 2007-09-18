@@ -346,6 +346,8 @@ void Assembler::initGlobalTensor(GenericTensor& A, UFC& ufc,
 {
   //A.init(ufc.form.rank(), ufc.global_dimensions);
 
+  // FIXME: full sparsity pattern should be constructed only be constructed 
+  //        for matrices 
   if( reset_tensor )
   {
     SparsityPattern sparsity_pattern; 
