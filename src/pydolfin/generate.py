@@ -33,7 +33,7 @@ for module in modules:
     module_headers = []
     print "Processing dolfin_%s.h..." % module
     f = open("../kernel/%s/dolfin/dolfin_%s.h" % (module, module))
-    module_base = "../kernel/" + module + "/"
+    module_base = "../kernel/" + module + "/"  # Added for docstring extraction
     for line in f:
         if re.search("^#include ",line):
             header = line.split()[1].replace("<", "").replace(">", "")
