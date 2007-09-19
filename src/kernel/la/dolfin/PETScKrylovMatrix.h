@@ -74,6 +74,8 @@ namespace dolfin
 
   };
 
+  LogStream& operator<< (LogStream& stream, const PETScKrylovMatrix& A);
+  
 }
 
 #endif

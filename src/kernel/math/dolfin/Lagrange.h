@@ -77,6 +77,8 @@ namespace dolfin
 
   };
 
+  LogStream& operator<<(LogStream& stream, const Lagrange& p);
+
 }
 
 #endif

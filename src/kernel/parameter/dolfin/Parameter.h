@@ -100,6 +100,8 @@ namespace dolfin
     Type _type;
     
   };
+
+  LogStream& operator<< (LogStream& stream, const Parameter& parameter);
   
 }
 
