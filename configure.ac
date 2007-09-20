@@ -222,7 +222,7 @@ fi
 # Check for NumPy
 if test x$enable_pydolfin = xyes; then
     echo "checking for NumPy..."
-    NUMPY_CFLAGS=`python numpy.conf`
+    NUMPY_CFLAGS=`$PYTHON numpy.conf`
     if test $NUMPY_CFLAGS == none; then
        echo "*** Cannot find NumPy on your system."
        echo "*** Perhaps you need to install the package python-numpy?"
