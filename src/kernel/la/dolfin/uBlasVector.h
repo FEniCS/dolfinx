@@ -136,6 +136,9 @@ namespace dolfin
     void copy(const uBlasVector& y, uint off1, uint off2, uint len);
 
   };
+
+  LogStream& operator<< (LogStream& stream, const uBlasVector& x);
+  
 }
 
 #endif
