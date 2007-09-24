@@ -158,6 +158,8 @@ namespace dolfin
 
   };
 
+  LogStream& operator<< (LogStream& stream, const PETScMatrix& A);
+
 }
 
 #endif

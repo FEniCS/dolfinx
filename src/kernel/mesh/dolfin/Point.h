@@ -92,7 +92,7 @@ namespace dolfin
 
   /// Multiplication with scalar
   inline Point operator*(real a, const Point& p) { return p*a; }
-
+  LogStream& operator<< (LogStream& stream, const Point& p);
 }
 
 #endif
