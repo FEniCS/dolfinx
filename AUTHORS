@@ -15,9 +15,11 @@ DOLFIN is written and maintained by:
 Contributors in alphabetical order:
 
   Fredrik Bengzon       <bengzon@math.chalmers.se>
+  Jed Brown             <fenics@59A2.org>
   Niklas Ericsson       <nen@math.chalmers.se>
   Haiko Etzel           <hetzel.devel@web.de>
   Georgios Foufas       <foufas@math.chalmers.se>
+  Johan Hake            <hake@simula.no>
   Rasmus Hemph          <PDE project course 2001/2002>
   David Heintz          <david.heintz@comhem.se>
   Par Ingelstrom        <pi@elmagn.chalmers.se>
