@@ -22,9 +22,6 @@ f = Function(element)
 n = FacetNormal("triangle")
 h = MeshSize("triangle")
 
-# Neumann boundary conditions
-gN = Function(element)
-
 # Parameters
 alpha = 4.0
 gamma = 8.0
@@ -39,4 +36,5 @@ a = dot(grad(v), grad(u))*dx \
    + gamma/h*v*u*ds
 
 # Linear form
-L = v*f*dx + v*gN*ds
+L = v*f*dx
+
