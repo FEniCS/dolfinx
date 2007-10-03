@@ -39,7 +39,7 @@ Assembler::~Assembler()
 void Assembler::assemble(GenericTensor& A, const Form& form,
                          bool reset_tensor)
 {
-  assemble(A, form.form(), form.coefficients(), 0, 0, 0);
+  assemble(A, form.form(), form.coefficients(), 0, 0, 0, reset_tensor);
 }
 //-----------------------------------------------------------------------------
 void Assembler::assemble(GenericTensor& A, const Form& form,
