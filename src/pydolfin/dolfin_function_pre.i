@@ -3,4 +3,3 @@
 %rename(sub) dolfin::Function::operator[];
 %rename(cpp_FacetNormal) dolfin::FacetNormal;
 %rename(cpp_AvgMeshSize) dolfin::AvgMeshSize;
-

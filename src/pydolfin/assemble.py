@@ -77,7 +77,7 @@ class Function(ffc_Function, cpp_Function):
         return tuple([Function(self.e0.sub_element(i), self.sub(i)) for i in range(self.numSubFunctions())])
 
 # Create new class inheriting from both FFC and DOLFIN FacetNormal
-# (FFC FacetNormal is a function that return a FFC Function object)
+# (FFC FacetNormal is a function that returns a FFC Function object)
 class FacetNormal(ffc_Function, cpp_FacetNormal):
 
     def __init__(self, shape, mesh):
@@ -88,7 +88,7 @@ class FacetNormal(ffc_Function, cpp_FacetNormal):
         cpp_FacetNormal.__init__(self, mesh)
 
 # Create new class inheriting from FFC MeshSize and DOLFIN AvgMeshSize
-# (FFC MeshSize is a function that return a FFC Function object)
+# (FFC MeshSize is a function that returns a FFC Function object)
 class AvgMeshSize(ffc_Function, cpp_AvgMeshSize):
 
     def __init__(self, shape, mesh):
