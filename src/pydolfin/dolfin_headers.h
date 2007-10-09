@@ -1,3 +1,6 @@
+// Generated file to include docstrings
+%include "dolfin_docstrings.i"
+
 // Generated list of include files for PyDOLFIN
 
 // DOLFIN headers included from common

@@ -1,5 +1,5 @@
 # Init autoconf
-AC_INIT(DOLFIN, 0.7.0-1, http://www.fenics.org/bugzilla/)
+AC_INIT(DOLFIN, 0.7.1, http://www.fenics.org/bugzilla/)
 
 # Init automake
 AM_INIT_AUTOMAKE($PACKAGE_NAME, $PACKAGE_VERSION, no-define)
@@ -222,7 +222,7 @@ fi
 # Check for NumPy
 if test x$enable_pydolfin = xyes; then
     echo "checking for NumPy..."
-    NUMPY_CFLAGS=`python numpy.conf`
+    NUMPY_CFLAGS=`$PYTHON numpy.conf`
     if test $NUMPY_CFLAGS == none; then
        echo "*** Cannot find NumPy on your system."
        echo "*** Perhaps you need to install the package python-numpy?"

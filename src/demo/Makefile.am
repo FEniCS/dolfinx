@@ -11,7 +11,7 @@ SUBDIRS = la/eigensolver \
           ode/harmonic \
           ode/lorenz \
           ode/method-weights \
-          pde/dg \
+          pde/dg/cpp \
           pde/nonlinear-poisson \
           pde/convection-diffusion \
           pde/functional \

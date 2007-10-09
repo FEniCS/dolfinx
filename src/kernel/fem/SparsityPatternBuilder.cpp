@@ -25,7 +25,7 @@ void SparsityPatternBuilder::build(SparsityPattern& sparsity_pattern, Mesh& mesh
   else if (ufc.form.rank() == 2)
     matrixBuild(sparsity_pattern, mesh, ufc);
   else
-    error("Cannot compute sparsity patterm for size > 2.");
+    error("Cannot compute sparsity patterm for rank > 2.");
 }
 //-----------------------------------------------------------------------------
 void SparsityPatternBuilder::scalarBuild(SparsityPattern& sparsity_pattern) 
@@ -36,7 +36,7 @@ void SparsityPatternBuilder::scalarBuild(SparsityPattern& sparsity_pattern)
 void SparsityPatternBuilder::vectorBuild(SparsityPattern& sparsity_pattern, 
                                          UFC& ufc)
 {
-  // Initialise sparsity pattern 
+  // Initialise sparsity pattern with problem size
   sparsity_pattern.init(ufc.global_dimensions[0]);
 }
 //-----------------------------------------------------------------------------

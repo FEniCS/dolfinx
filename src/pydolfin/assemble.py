@@ -9,7 +9,7 @@ The C++ PDE classes are reimplemented in Python since the C++ classes
 rely on the dolfin::Form class which is not used on the Python side."""
 
 __author__ = "Anders Logg (logg@simula.no)"
-__date__ = "2007-08-15 -- 2007-08-16"
+__date__ = "2007-08-15 -- 2007-08-30"
 __copyright__ = "Copyright (C) 2007 Anders Logg"
 __license__  = "GNU LGPL Version 2.1"
 
@@ -40,7 +40,7 @@ def assemble(form, mesh):
         cpp_assemble(s, compiled_form, mesh, coefficients,
                      cell_domains, exterior_facet_domains, interior_facet_domains,
                      True)
-        return s
+        return s.getval()
     elif rank == 1:
         b = Vector()
         cpp_assemble(b, compiled_form, mesh, coefficients,
@@ -75,6 +75,28 @@ class Function(ffc_Function, cpp_Function):
     def split(self):
         "Extract subfunctions"
         return tuple([Function(self.e0.sub_element(i), self.sub(i)) for i in range(self.numSubFunctions())])
+
+# Create new class inheriting from both FFC and DOLFIN FacetNormal
+# (FFC FacetNormal is a function that returns a FFC Function object)
+class FacetNormal(ffc_Function, cpp_FacetNormal):
+
+    def __init__(self, shape, mesh):
+        "Create FacetNormal"
+
+        element = VectorElement("Discontinuous Lagrange", shape, 0)
+        ffc_Function.__init__(self, element)
+        cpp_FacetNormal.__init__(self, mesh)
+
+# Create new class inheriting from FFC MeshSize and DOLFIN AvgMeshSize
+# (FFC MeshSize is a function that returns a FFC Function object)
+class AvgMeshSize(ffc_Function, cpp_AvgMeshSize):
+
+    def __init__(self, shape, mesh):
+        "Create FacetNormal"
+
+        element = FiniteElement("Discontinuous Lagrange", shape, 0)
+        ffc_Function.__init__(self, element)
+        cpp_AvgMeshSize.__init__(self, mesh)
 
 # LinearPDE class
 class LinearPDE:

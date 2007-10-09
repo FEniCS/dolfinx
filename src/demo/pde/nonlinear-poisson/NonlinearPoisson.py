@@ -24,4 +24,4 @@ f = Function(element)
 a = v.dx(i)*(1+U0*U0)*U.dx(i)*dx + v.dx(i)*2*U0*U*U0.dx(i)*dx
 L = v*f*dx - v.dx(i)*(1+U0*U0)*U0.dx(i)*dx
 
-compile([a, L, M, element], "NonlinearPoisson", "tensor", "dolfin", {'blas': False, 'precision=': '15', 'optimize': False})
+compile([a, L, M, element], "NonlinearPoisson", "tensor", "dolfin", {'quadrature_points=': False, 'blas': False, 'precision=': '15', 'optimize': False})

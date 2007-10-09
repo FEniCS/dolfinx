@@ -30,7 +30,6 @@ class CahnHilliardEquation : public NonlinearProblem, public Parametrized
       // Create forms
       if(mesh.topology().dim() == 2)
       {
-        cout << "Create forms " << endl;
         a = new CahnHilliard2DBilinearForm(u, lambda, muFactor, dt, theta);
         L = new CahnHilliard2DLinearForm(u, u0, lambda, muFactor, dt, theta);
       }
@@ -156,7 +155,6 @@ int main(int argc, char* argv[])
     // Save function to file
     c = u[1];
     file << c;
-
   }
 
   // Plot solution

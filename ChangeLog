@@ -1,3 +1,5 @@
+ - Check UMFPACK return argument for warnings/errors
+0.7.1 [2007-08-31]
  - Integrate FFC form language into PyDOLFIN
  - Just-in-time (JIT) compilation of variational forms
  - Conversion from from Diffpack grid format to DOLFIN XML
