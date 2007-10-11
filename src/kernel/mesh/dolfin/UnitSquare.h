@@ -17,11 +17,16 @@ namespace dolfin
   /// the total number of triangles will be 2*nx*ny and the
   /// total number of vertices will be (nx + 1)*(ny + 1).
 
+  /// The Type is an enumerater taking values in {left, right or
+  /// crisscross} indicating the direction of the diagonals for
+  /// left/right or both == crisscross. The default is right.
+
   class UnitSquare : public Mesh
   {
   public:
-
-    UnitSquare(uint nx, uint ny);
+    enum Type {right, left, crisscross};
+    
+    UnitSquare(uint nx, uint ny, Type type = right);
 
   };
   
