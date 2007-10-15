@@ -22,6 +22,8 @@ extern "C"
   #include <umfpack/umfpack.h>
 #elif HAVE_UFSPARSE_UMFPACK_H
   #include <ufsparse/umfpack.h>
+#elif HAVE_SUITESPARSE_UMFPACK_H
+  #include <suitesparse/umfpack.h>
 #endif
 }
 
@@ -52,7 +54,7 @@ dolfin::uint uBlasLUSolver::solve(const uBlasMatrix<ublas_dense_matrix>& A,
   return solveInPlace(Atemp, x);
 }
 //-----------------------------------------------------------------------------
-#if defined(HAVE_UMFPACK_H)|| defined(HAVE_UMFPACK_UMFPACK_H) || defined(HAVE_UFSPARSE_UMFPACK_H)
+#if defined(HAVE_UMFPACK_H) || defined(HAVE_UMFPACK_UMFPACK_H) || defined(HAVE_UFSPARSE_UMFPACK_H) ||  defined(HAVE_SUITESPARSE_UMFPACK_H)
 dolfin::uint uBlasLUSolver::solve(const uBlasMatrix<ublas_sparse_matrix>& A, uBlasVector& x, 
                                   const uBlasVector& b)
 {
@@ -195,7 +197,7 @@ dolfin::uint uBlasLUSolver::solveInPlaceUBlas(uBlasMatrix<ublas_dense_matrix>& A
 //-----------------------------------------------------------------------------
 void uBlasLUSolver::check_status(long int status, std::string function) const
 {
-#if defined(HAVE_UMFPACK_H)|| defined(HAVE_UMFPACK_UMFPACK_H) || defined(HAVE_UFSPARSE_UMFPACK_H)
+#if defined(HAVE_UMFPACK_H)|| defined(HAVE_UMFPACK_UMFPACK_H) || defined(HAVE_UFSPARSE_UMFPACK_H) ||  defined(HAVE_SUITESPARSE_UMFPACK_H)
   if(status == UMFPACK_OK)
     return;
 
@@ -217,7 +219,7 @@ void uBlasLUSolver::check_status(long int status, std::string function) const
 
 #else
 
-  error("Problem with UMFPACK build configuration.");   
+  error("Problem with DOLFIN build configuration for using UMFPACK.");   
 
 #endif
 }

@@ -174,7 +174,12 @@ if test $have_amd_lib = yes; then
                 if test $have_umfpack_header = yes; then
                     AC_DEFINE(HAVE_UFSPARSE_UMFPACK_H,1)    
                 else
-                    echo "Cannot find umfpack header files. Umfpack will be disabled"
+                    AC_CHECK_HEADER(suitesparse/umfpack.h, have_umfpack_header=yes, have_umfpack_header=no)
+                    if test $have_umfpack_header = yes; then
+                        AC_DEFINE(HAVE_SUITESPARSE_UMFPACK_H,1)    
+                    else
+                        echo "Cannot find umfpack header files. Umfpack will be disabled"
+                    fi
                 fi
             fi
        fi
