@@ -839,8 +839,10 @@ Destructor. ";
 
 %feature("docstring")  dolfin::GenericMatrix::init "
 
+--- Implementation of GenericTensor interface ---
+
 Initialize zero tensor using sparsity pattern (implemented by sub
-class). ";
+class) ";
 
 %feature("docstring")  dolfin::GenericMatrix::create "
 
@@ -885,7 +887,9 @@ Display tensor (implemented by sub class). ";
 
 %feature("docstring")  dolfin::GenericMatrix::init "
 
-Initialize M x N matrix. ";
+--- Matrix interface ---
+
+Initialize M x N matrix ";
 
 %feature("docstring")  dolfin::GenericMatrix::get "
 
@@ -981,7 +985,9 @@ Destructor. ";
 
 %feature("docstring")  dolfin::GenericVector::init "
 
-Initialize zero tensor of given rank and dimensions. ";
+--- Implementation of GenericTensor interface ---
+
+Initialize zero tensor of given rank and dimensions ";
 
 %feature("docstring")  dolfin::GenericVector::init "
 
@@ -1030,7 +1036,9 @@ Display tensor (implemented by sub class). ";
 
 %feature("docstring")  dolfin::GenericVector::init "
 
-Initialize vector of size N. ";
+--- Vector interface ---
+
+Initialize vector of size N ";
 
 %feature("docstring")  dolfin::GenericVector::size "
 
@@ -1132,7 +1140,9 @@ Destructor. ";
 
 %feature("docstring")  dolfin::Graph::numVertices "
 
-Return number of vertices. ";
+Assignment.
+
+Return number of vertices ";
 
 %feature("docstring")  dolfin::Graph::numEdges "
 
@@ -2909,7 +2919,9 @@ Destructor. ";
 
 %feature("docstring")  dolfin::Scalar::init "
 
-Initialize zero tensor of given rank and dimensions. ";
+--- Implementation of GenericTensor interface ---
+
+Initialize zero tensor of given rank and dimensions ";
 
 %feature("docstring")  dolfin::Scalar::init "
 
@@ -3503,9 +3515,12 @@ C++ includes: UnitCube.h ";
 // File: classdolfin_1_1UnitSquare.xml
 %feature("docstring") dolfin::UnitSquare "
 
-The Type is an enumerater taking values in {left, right or crisscross}
-indicating the direction of the diagonals for left/right or both ==
-crisscross. The default is right.
+Triangular mesh of the 2D unit square (0,1) x (0,1). Given the number
+of cells (nx, ny) in each direction, the total number of triangles
+will be 2*nx*ny and the total number of vertices will be (nx + 1)*(ny
++ 1). The Type is an enumerater taking values in {left, right or
+crisscross} indicating the direction of the diagonals for left/right
+or both == crisscross. The default is right.
 
 C++ includes: UnitSquare.h ";
 
@@ -3662,6 +3677,154 @@ C++ includes: Vertex.h ";
 
 
 // File: namespacedolfin.xml
+%feature("docstring")  dolfin::tic "
+
+Start timing. ";
+
+%feature("docstring")  dolfin::toc "
+
+Return elapsed time. ";
+
+%feature("docstring")  dolfin::tocd "
+
+Return and display elapsed time. ";
+
+%feature("docstring")  dolfin::add "
+
+Add parameter. ";
+
+%feature("docstring")  dolfin::set "
+
+Set value of parameter. ";
+
+%feature("docstring")  dolfin::set "
+
+Set special key/value pair. ";
+
+%feature("docstring")  dolfin::get "
+
+Get value of parameter with given key. ";
+
+%feature("docstring")  dolfin::message "
+
+Print message.
+
+The DOLFIN log system provides the following set of functions for
+uniform handling of log messages, warnings and errors. In addition,
+macros are provided for debug messages and assertions.
+
+Only messages with a debug level higher than or equal to the global
+debug level are printed (the default being zero). The global debug
+level may be controlled by
+
+set(\"debug level\", debug_level);
+
+where debug_level is the desired debug level.
+
+The output destination can be controlled by
+
+set(\"output destination\", destination);
+
+where destination is one of \"terminal\" (default) or \"silent\".
+Setting the output destination to \"silent\" means no messages will be
+printed. ";
+
+%feature("docstring")  dolfin::message "
+
+Print message. ";
+
+%feature("docstring")  dolfin::warning "
+
+Print warning. ";
+
+%feature("docstring")  dolfin::error "
+
+Print error message and throw an exception. ";
+
+%feature("docstring")  dolfin::begin "
+
+Begin task (increase indentation level). ";
+
+%feature("docstring")  dolfin::begin "
+
+Begin task (increase indentation level). ";
+
+%feature("docstring")  dolfin::end "
+
+End task (decrease indentation level). ";
+
+%feature("docstring")  dolfin::__debug "";
+
+%feature("docstring")  dolfin::__dolfin_assert "";
+
+%feature("docstring")  dolfin::solve "
+
+Solve linear system Ax = b.
+
+Solve linear system Ax = b using a direct method ( LU factorization).
+Note that iterative methods (preconditioned Krylov methods including
+GMRES) are also available through the KrylovSolver interface. ";
+
+%feature("docstring")  dolfin::dolfin_init "
+
+Initialize DOLFIN (and PETSc) with command-line arguments. This should
+not be needed in most cases since the initialization is otherwise
+handled automatically. ";
+
+%feature("docstring")  dolfin::sqr "
+
+Return the square of x. ";
+
+%feature("docstring")  dolfin::ipow "
+
+Return a to the power n. ";
+
+%feature("docstring")  dolfin::rand "
+
+Return a random number, uniformly distributed between [0.0, 1.0). ";
+
+%feature("docstring")  dolfin::seed "
+
+Seed random number generator. ";
+
+%feature("docstring")  dolfin::assemble "
+
+Assemble tensor from given variational form and mesh.
+
+These functions provide automated assembly of linear systems, or more
+generally, assembly of a sparse tensor from a given variational form.
+If you need to assemble a system more than once, consider using the
+Assembler class, which may improve performance by reuse of data
+structures. ";
+
+%feature("docstring")  dolfin::assemble "
+
+Assemble tensor from given variational form and mesh over a sub
+domain. ";
+
+%feature("docstring")  dolfin::assemble "
+
+Assemble tensor from given variational form and mesh over sub domains.
+";
+
+%feature("docstring")  dolfin::assemble "
+
+Assemble scalar from given variational form and mesh. ";
+
+%feature("docstring")  dolfin::assemble "
+
+Assemble scalar from given variational form and mesh over a sub
+domain. ";
+
+%feature("docstring")  dolfin::assemble "
+
+Assemble scalar from given variational form and mesh over sub domains.
+";
+
+%feature("docstring")  dolfin::assemble "
+
+Assemble tensor from given (UFC) form, mesh, coefficients and sub
+domains. ";
 
 
 // File: Array_8h.xml
@@ -3952,107 +4115,107 @@ C++ includes: Vertex.h ";
 // File: RadauQuadrature_8h.xml
 
 
-// File: dir_6a88ce87808e5d857b93dc0c3cb764f6.xml
+// File: dir_c60082fd3e8c51f3a15f3952cb427112.xml
 
 
-// File: dir_a16f79b17e5a6626e8c01334ecc559e0.xml
+// File: dir_3d21814d2835459f3da1fa5ed8e43be6.xml
 
 
-// File: dir_1283c9282325eade2504f42f559c6577.xml
+// File: dir_7dc50eed79ee42fc373ac6bb06319fbd.xml
 
 
-// File: dir_a5398253c8d39b65c48388939887bc77.xml
+// File: dir_3c5d8f0ae3c89286e8a22246a2b15a76.xml
 
 
-// File: dir_cf544d76fc7d4815ae78c63858230150.xml
+// File: dir_18eaa3195393ebcc46a9f8771cee20a5.xml
 
 
-// File: dir_9d56dd2b0bbf0b2d0266417232cffef8.xml
+// File: dir_6374f96629924f58a5a2ed60279b0411.xml
 
 
-// File: dir_29ae80976855ec6615788e1bf08dcf0a.xml
+// File: dir_b22a99c8566e1d6acc173e4cae03011e.xml
 
 
-// File: dir_090bc9667cf2edb7ef6bad94a75b5526.xml
+// File: dir_094b78feb97aa792afa27de3ab6e8851.xml
 
 
-// File: dir_f4acad725a8f6794aceaaed75c4a38cb.xml
+// File: dir_62e122ae400d4a77e78a9a3f7efc04c0.xml
 
 
-// File: dir_7b206dd91b0a180bbbf7500f1620dd15.xml
+// File: dir_732e703d02d4c035a4fa8e44c328d35a.xml
 
 
-// File: dir_5453f8d380884590dc6a8c82b865bb8d.xml
+// File: dir_edf3cb46a7189f41a39af09448d32528.xml
 
 
-// File: dir_5b83ed8a00e945319ac2230c63e24119.xml
+// File: dir_de8329c7d423dd6cece8ff5263452f6e.xml
 
 
-// File: dir_31573e2cd7c706bd55b1d1d39b3f37cb.xml
+// File: dir_4dad7afb06ba8cd2a53251858c69bdee.xml
 
 
-// File: dir_3b20b12fe7d00bcff0e0d15313cdc6dc.xml
+// File: dir_075e467c95d4f3fd60b7499528d145e1.xml
 
 
-// File: dir_b8e54580c76effbe3187f1af8a8e5c54.xml
+// File: dir_2b3f4bfc0249bca1398e000cff0f7055.xml
 
 
-// File: dir_2b58638b9a5b120757156e95b42065f8.xml
+// File: dir_b4e54699c910479fc4e660a3ff12bd4f.xml
 
 
-// File: dir_c590bfed8346c7dd302df99e45689ae1.xml
+// File: dir_a91c6b42fbded2c97e3cca96bc9e338b.xml
 
 
-// File: dir_e94d53c694cdfb609d93d2fae7aa4e4e.xml
+// File: dir_b9413dc616ed1935fd0d07580736cde3.xml
 
 
-// File: dir_92e0664e2159e45c0ac11c25a21590c1.xml
+// File: dir_c6d0900b472507d44ee88f83078ce5c3.xml
 
 
-// File: dir_66f7991935ea3387470b4bd033b3f31d.xml
+// File: dir_1a37cdf1998f53e48739adf5a49461f4.xml
 
 
-// File: dir_8478162c998c6a049990fccb9d24f5a3.xml
+// File: dir_fb32a8a20aa03205d393e8130a175cb8.xml
 
 
-// File: dir_fb768efafdc678bbbc50ec394adfda9d.xml
+// File: dir_80293c20761785ae8db238456796bd86.xml
 
 
-// File: dir_02030192eb22525c84f0a17505f0878d.xml
+// File: dir_49e61b3115d06df2b03473f51f7d6fd2.xml
 
 
-// File: dir_496e40d727edf6ee522ecd31489d9858.xml
+// File: dir_521fb44ea70108ea024b12df2eee4ae3.xml
 
 
-// File: dir_e9b2473ee1ca0f4992bd089cd382550b.xml
+// File: dir_fb67b1f8adc11a89c9d303b6bc0a1fb2.xml
 
 
-// File: dir_7c6a06a3f1ac0ba76011aa74e011f0f9.xml
+// File: dir_d541c4e4e6d4c140e70fb3ae180d4062.xml
 
 
-// File: dir_25238cd7426b94650ff0909dae5c4575.xml
+// File: dir_5a2875feb6931a2ab5abb2fad953e225.xml
 
 
-// File: dir_501988810395b3d68c10ab691689c400.xml
+// File: dir_400ae4e1767b1e7a4bfa6009f61ce1d0.xml
 
 
-// File: dir_8a759014beec4cc833e3f3f0651baa19.xml
+// File: dir_80a347816a1a515e75b53fc9b43e17ad.xml
 
 
-// File: dir_4555bc2898fa8d059bb9ca0837c9d67e.xml
+// File: dir_44518db957486ac038844039e54135bd.xml
 
 
-// File: dir_099acd69a4791d69f6f1c59a401f484c.xml
+// File: dir_da2222faeabe775e3f1d1ceb0345a4e4.xml
 
 
-// File: dir_1c6552f17ad8b9bf17ece71b83a876b5.xml
+// File: dir_728f3e7c60a2e644ffbff57e5f6b0a71.xml
 
 
-// File: dir_6b3aabe520bfafde7f3e8f20aaf3894f.xml
+// File: dir_9fa49838df67b12a4a81a039bfe28786.xml
 
 
-// File: dir_28810ea173714dbd566d65b3a2e57e53.xml
+// File: dir_546c30d5b20fa3712b124c27b9483968.xml
 
 
-// File: dir_4cecbe2494d0c236b8a58c71f66ce6e1.xml
+// File: dir_7dae5ed20d2fd5be416fe014f5d93942.xml
 

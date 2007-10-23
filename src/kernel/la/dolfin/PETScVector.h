@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells 2005-2007.
 //
 // First added:  2004
-// Last changed: 2007-08-29
+// Last changed: 2007-10-23
 
 #ifndef __PETSC_VECTOR_H
 #define __PETSC_VECTOR_H
@@ -63,9 +63,6 @@ namespace dolfin
 
     /// Return size of vector
     uint size() const;
-
-    /// Return PETSc Vec pointer
-    Vec vec() const;
 
     /// Return array containing this processor's portion of the data.
     /// After usage, the function restore() must be called.
@@ -141,12 +138,6 @@ namespace dolfin
     /// Compute sum of vector
     real sum() const;
 
-    /// Return value of maximum component of vector
-    real max() const;
-    
-    /// Return value of minimum component of vector
-    real min() const;
-    
     /// Display vector
     void disp(uint precision = 2) const;
 
@@ -175,6 +166,9 @@ namespace dolfin
     // Copy values between different vector representations
     void copy(const PETScVector& y, uint off1, uint off2, uint len);
     void copy(const uBlasVector& y, uint off1, uint off2, uint len);
+
+    /// Return PETSc Vec pointer
+    Vec vec() const;
 
   private:
 

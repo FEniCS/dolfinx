@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells, 2006-2007.
 //
 // First added:  2004
-// Last changed: 2007-08-28
+// Last changed: 2007-10-23
 
 #ifndef __PETSC_MATRIX_H
 #define __PETSC_MATRIX_H
@@ -130,15 +130,15 @@ namespace dolfin
     /// Return matrix type 
     Type type() const;
 
-    /// Return PETSc Mat pointer
-    Mat mat() const;
-
     /// Display matrix (sparse output is default)
     void disp(uint precision = 2) const;
 
     /// Output
     friend LogStream& operator<< (LogStream& stream, const PETScMatrix& A);
     
+    /// Return PETSc Mat pointer
+    Mat mat() const;
+
   private:
 
     // PETSc Mat pointer

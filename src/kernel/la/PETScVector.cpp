@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells 2005-2007.
 //
 // First added:  2004
-// Last changed: 2007-08-29
+// Last changed: 2007-10-23
 
 // FIXME: Insert dolfin_assert() where appropriate
 
@@ -209,11 +209,6 @@ dolfin::uint PETScVector::size() const
   return static_cast<uint>(n);
 }
 //-----------------------------------------------------------------------------
-Vec PETScVector::vec() const
-{
-  return x;
-}
-//-----------------------------------------------------------------------------
 real* PETScVector::array()
 {
   dolfin_assert(x);
@@ -347,30 +342,6 @@ real PETScVector::sum() const
   return value;
 }
 //-----------------------------------------------------------------------------
-real PETScVector::max() const
-{
-  dolfin_assert(x);
-
-  int position = 0;
-  real value = 0.0;
-  
-  VecMax(x, &position, &value);
-
-  return value;
-}
-//-----------------------------------------------------------------------------
-real PETScVector::min() const
-{
-  dolfin_assert(x);
-
-  int  position = 0;
-  real value   = 0.0;
-  
-  VecMin(x, &position, &value);
-
-  return value;
-}
-//-----------------------------------------------------------------------------
 void PETScVector::disp(uint precision) const
 {
   VecView(x, PETSC_VIEWER_STDOUT_SELF);
@@ -456,6 +427,11 @@ void PETScVector::copy(const uBlasVector& y, uint off1, uint off2, uint len)
   for(uint i = 0; i < len; i++)
     vals[i + off1] = y[i + off2];
   restore(vals);
+}
+//-----------------------------------------------------------------------------
+Vec PETScVector::vec() const
+{
+  return x;
 }
 //-----------------------------------------------------------------------------
 

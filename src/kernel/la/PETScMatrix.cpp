@@ -5,7 +5,7 @@
 // Modified by Andy R. Terrel 2005.
 //
 // First added:  2004
-// Last changed: 2007-08-28
+// Last changed: 2007-10-23
 
 #ifdef HAVE_PETSC_H
 
@@ -318,11 +318,6 @@ PETScMatrix::Type PETScMatrix::type() const
   return _type;
 }
 //-----------------------------------------------------------------------------
-Mat PETScMatrix::mat() const
-{
-  return A;
-}
-//-----------------------------------------------------------------------------
 void PETScMatrix::disp(uint precision) const
 {
   // FIXME: Maybe this could be an option?
@@ -387,6 +382,11 @@ LogStream& dolfin::operator<< (LogStream& stream, const PETScMatrix& A)
 	  << m << " x " << n << " ]";
 
   return stream;
+}
+//-----------------------------------------------------------------------------
+Mat PETScMatrix::mat() const
+{
+  return A;
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::setType() 
