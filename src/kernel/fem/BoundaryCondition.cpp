@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-07-11
-// Last changed: 2007-08-18
+// Last changed: 2007-10-28
 
 #include <dolfin/Form.h>
 #include <dolfin/SubSystem.h>
@@ -25,8 +25,8 @@ BoundaryCondition::~BoundaryCondition()
 BoundaryCondition::LocalData::LocalData(const ufc::form& form,
                                         Mesh& mesh,
                                         const SubSystem& sub_system)
-  : finite_element(0), dof_map(0), offset(0),
-    w(0), cell_dofs(0), values(0), x_values(0), facet_dofs(0), rows(0)
+  : ufc_mesh(mesh), finite_element(0), dof_map(0), offset(0),
+    w(0), cell_dofs(0), facet_dofs(0)
 {
   // FIXME: Change behaviour of num_sub_elements() in FFC (return 0 when
   // FIXME: there are no nested elements
@@ -61,17 +61,9 @@ BoundaryCondition::LocalData::LocalData(const ufc::form& form,
     w[i] = 0.0;
     cell_dofs[i] = 0;
   }
-  values = new real[dof_map->num_facet_dofs()];
-  x_values = new real[dof_map->num_facet_dofs()];
   facet_dofs = new uint[dof_map->num_facet_dofs()];
-  rows = new uint[dof_map->num_facet_dofs()];
   for (uint i = 0; i < dof_map->num_facet_dofs(); i++)
-  {
-    values[i] = 0.0;
-    x_values[i] = 0.0;
     facet_dofs[i] = 0;
-    rows[i] = 0;
-  }
 
   // Create local coordinate data
   coordinates = new real*[dof_map->local_dimension()];
@@ -104,16 +96,7 @@ BoundaryCondition::LocalData::~LocalData()
   if (cell_dofs)
     delete [] cell_dofs;
 
-  if (values)
-    delete [] values;
-
-  if (x_values)
-    delete [] x_values;
-
   if (facet_dofs)
     delete [] facet_dofs;
-
-  if (rows)
-    delete [] rows;
 }
 //-----------------------------------------------------------------------------

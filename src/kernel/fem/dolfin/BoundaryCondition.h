@@ -2,13 +2,14 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-07-11
-// Last changed: 2007-08-18
+// Last changed: 2007-10-28
 
 #ifndef __BOUNDARY_CONDITION_H
 #define __BOUNDARY_CONDITION_H
 
 #include <ufc.h>
 #include <dolfin/constants.h>
+#include <dolfin/UFCMesh.h>
 
 namespace dolfin
 {
@@ -55,7 +56,10 @@ namespace dolfin
       
       // Destructor
       ~LocalData();
-
+      
+      // UFC view of mesh
+      UFCMesh ufc_mesh;
+      
       // Finite element for sub system
       ufc::finite_element* finite_element;
       
@@ -68,10 +72,7 @@ namespace dolfin
       // Local data used to set boundary conditions
       real* w;
       uint* cell_dofs;
-      real* values;
-      real* x_values;
       uint* facet_dofs;
-      uint* rows;
       real** coordinates;
 
     };

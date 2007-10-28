@@ -1,3 +1,5 @@
+ - Ability to set strong boundary values for DG elements
+ - Option for setting boundary conditions based on geometrical search
  - Check UMFPACK return argument for warnings/errors
 0.7.1 [2007-08-31]
  - Integrate FFC form language into PyDOLFIN
