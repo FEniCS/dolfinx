@@ -138,7 +138,6 @@ namespace dolfin
                               BoundaryCondition::LocalData& data);
     
     // Check if the point is in the same plane as the given facet
-    //    static bool onFacet(const Point& p, Cell& facet);
     static bool onFacet(real* coordinates, Facet& facet);
     
   };
