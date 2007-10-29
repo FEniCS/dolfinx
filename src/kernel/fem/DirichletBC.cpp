@@ -259,57 +259,54 @@ void DirichletBC::computeBCGeometrical(std::map<uint, real>& boundary_values,
   }
 }
 //-----------------------------------------------------------------------------
-//bool DirichletBC::onFacet(const Point& p, Cell& facet)
 bool DirichletBC::onFacet(real* coordinates, Facet& facet)
 {
-//std::cout << "calling onFacet" << std::endl;
-//std::cout << "facet.dim: " << facet.dim() << std::endl;
-
-  // Get mesh geometry and vertices of facet
-//  const MeshGeometry& geometry = facet.mesh().geometry();
-//  const uint* vertices = facet.entities(0);
-
-  if (facet.dim() != 2)
-    error("Only implemented in 2D, ask Kristian to implement 3D. ;-)");
-
+  // Check if the coordinates are on the same line as the line segment
   if ( facet.dim() == 1 )
   {
-    // Check if the coordinates are on the same line as the line segment
-
     // Create points
     Point p(coordinates[0], coordinates[1]);
     Point v0 = Vertex(facet.mesh(), facet.entities(0)[0]).point();
     Point v1 = Vertex(facet.mesh(), facet.entities(0)[1]).point();
 
-//    dolfin::cout << "p: " << p << dolfin::endl;
-//    dolfin::cout << "v0: " << v0 << dolfin::endl;
-//    dolfin::cout << "v1: " << v1 << dolfin::endl;
-
+    // Create vectors
     Point v01 = v1 - v0;
-    Point v0p = p - v0;
-    // Check if the point is on the line that intersects v0 and v1, and check
-    // if the distance from v0 to p is smaller than the distance v0 to v1
-    if (v01.cross(v0p).norm() < DOLFIN_EPS and (v0p.norm() - v01.norm()) < DOLFIN_EPS)
+    Point vp0 = v0 - p;
+    Point vp1 = v1 - p;
+
+    // Check if the length of the sum of the two line segments vp0 and vp1 is
+    // equal to the total length of the facet
+    if ( std::abs(v01.norm() - vp0.norm() - vp1.norm()) < DOLFIN_EPS )
       return true;
     else
       return false;
   }
+  // Check if the coordinates are in the same plane as the triangular facet
   else if ( facet.dim() == 2 )
   {
-    // Check if the coordinates are in the same plane as the triangular facet
+    // Create points
     Point p(coordinates[0], coordinates[1], coordinates[2]);
-//    Point v0  = geometry.point(vertices[0]);
-//    Point v1  = geometry.point(vertices[1]);
-//    Point v2  = geometry.point(vertices[2]);
-//    Point v01 = v1 - v0;
-//    Point v02 = v2 - v0;
-//    Point v0p = p - v0;
-//    Point n   = v01.cross(v02);
-//    return std::abs(n.dot(v0p)) < DOLFIN_EPS;
-  return false;
+    Point v0 = Vertex(facet.mesh(), facet.entities(0)[0]).point();
+    Point v1 = Vertex(facet.mesh(), facet.entities(0)[1]).point();
+    Point v2 = Vertex(facet.mesh(), facet.entities(0)[2]).point();
+
+    // Create vectors
+    Point v01 = v1 - v0;
+    Point v02 = v2 - v0;
+    Point vp0 = v0 - p;
+    Point vp1 = v1 - p;
+    Point vp2 = v2 - p;
+
+    // Check if the sum of the area of the sub triangles is equal to the total
+    // area of the facet
+    if ( std::abs(v01.cross(v02).norm() - vp0.cross(vp1).norm() - vp1.cross(vp2).norm()
+        - vp2.cross(vp0).norm()) < DOLFIN_EPS )
+      return true;
+    else
+      return false;
   }
 
-  error("Unable to determine if given point is on facet.");
+  error("Unable to determine if given point is on facet (not implemented for given facet dimension).");
 
   return false;
 }
