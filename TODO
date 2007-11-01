@@ -8,9 +8,16 @@ file, it is convenient to install org-mode in Emacs.
 
 ** Expose only DofMap in DOLFIN (not ufc::dof_map)
 ** Reordering in DofMap
-** Send Mesh to processes
-** Send mesh parition function to processes
-** Generalise Assembler for parallel assembly 
+** Implement broadcast for Mesh (in MPIMeshCommunicator)
+** Implement broadcast for MeshFunction (in MPIMeshCommunicator)
+** Generalise Assembler for parallel assembly
+   - Should be possible to do with minor changes
+   - Add something similar to what is done now for assembling
+     over subdomains:
+
+     if (partition(*cell) != this_process)
+       continue;
+
 ** Figure out what to do with Functions
 
 * Manual
