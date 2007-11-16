@@ -14,17 +14,31 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 MPIMeshCommunicator::MPIMeshCommunicator()
 {
-  // Do nothing
+  MPI_Init(0, 0);
 }
 //-----------------------------------------------------------------------------
 MPIMeshCommunicator::~MPIMeshCommunicator()
 {
-  // Do nothing
+  MPI_Finalize();
 }
 //-----------------------------------------------------------------------------
 void MPIMeshCommunicator::broadcast(const Mesh& mesh)
 {
-  error("MPI broadcast of meshes not yet implemented");
+  int process_int;
+  MPI_Comm_rank(MPI_COMM_WORLD, &process_int);
+  unsigned int this_process = process_int;
+
+  int broadcast_message = -1;
+
+  if(this_process == 0)
+  {
+    broadcast_message = 42;
+  }
+ 
+  MPI_Bcast(&broadcast_message, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  
+  int sum = this_process + broadcast_message;
+  cout << "Finished mesh broadcast on process " << this_process << " sum: " << sum << endl;
 }
 //-----------------------------------------------------------------------------
 void MPIMeshCommunicator::receive(Mesh& mesh)
@@ -34,7 +48,21 @@ void MPIMeshCommunicator::receive(Mesh& mesh)
 //-----------------------------------------------------------------------------
 void MPIMeshCommunicator::broadcast(const MeshFunction<unsigned int>& mesh_function)
 {
-  error("MPI broadcast of a MeshFunction not yet implemented");
+  int process_int;
+  MPI_Comm_rank(MPI_COMM_WORLD, &process_int);
+  unsigned int this_process = process_int;
+
+  int broadcast_message = -1;
+
+  if(this_process == 0)
+  {
+    broadcast_message = 42;
+  }
+ 
+  MPI_Bcast(&broadcast_message, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  
+  int sum = this_process + broadcast_message;
+  cout << "Finished meshfunction broadcast on process" << this_process << " sum: " << sum << endl;
 }
 //-----------------------------------------------------------------------------
 void MPIMeshCommunicator::receive(MeshFunction<unsigned int>& mesh_function)

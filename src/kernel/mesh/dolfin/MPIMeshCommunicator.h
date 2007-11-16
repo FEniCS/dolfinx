@@ -9,6 +9,12 @@
 
 #include <dolfin/MeshFunction.h>
 
+//Bug in MPI2. MPI C++ interface and stdio.h both uses, SEEK_SET, SEEK_END and SEEK_CUR
+#undef SEEK_SET
+#undef SEEK_END
+#undef SEEK_CUR
+#include <mpi.h>
+
 namespace dolfin
 {
   class Mesh;
