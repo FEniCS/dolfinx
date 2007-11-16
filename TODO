@@ -19,6 +19,18 @@ file, it is convenient to install org-mode in Emacs.
        continue;
 
 ** Figure out what to do with Functions
+** Parallelize necessary parts of Mesh
+   - Store both global and local indices for cell/vertex, add mesh
+     functions for this
+   - IO: read/write mesh in parallel (each processor reads/writes only
+     its own part), should be doable with small extension of
+     MeshEditor and XMLMesh
+   - Adapt BoundaryComputation for parallel mesh, use knowledge about
+     which vertices are shared to decide if a facet is a global or
+     local boundary
+   - Use parallel mesh information in DofMap to simplify
+     implementation - should only need map from local to global cell/vertex
+   - Use parallel mesh information in ParMETIS partitioning implementation
 
 * Manual
 
