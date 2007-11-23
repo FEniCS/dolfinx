@@ -103,8 +103,11 @@ void MeshEditor::addVertex(uint v, real x)
   // Add vertex
   addVertexCommon(v, 1);
 
+  // Set coordinate, next_vertex doesn't seem to work right
+//  mesh->data.geometry.set(next_vertex, 0, x);
+
   // Set coordinate
-  mesh->data.geometry.set(next_vertex, 0, x);
+  mesh->data.geometry.set(v, 0, x);
 }
 //-----------------------------------------------------------------------------
 void MeshEditor::addVertex(uint v, real x, real y)

@@ -34,6 +34,7 @@ nobase_include_HEADERS    = dolfin/dolfin_mesh.h \
                             dolfin/Triangle.h \
                             dolfin/UniformMeshRefinement.h \
                             dolfin/UnitCube.h \
+                            dolfin/UnitInterval.h \
                             dolfin/UnitSquare.h \
                             dolfin/Vertex.h
 INCLUDES                  = @KERNEL_CFLAGS@
@@ -71,6 +72,7 @@ libdolfin_mesh_la_SOURCES = BoundaryComputation.cpp \
                             Triangle.cpp \
                             UniformMeshRefinement.cpp \
                             UnitCube.cpp \
+                            UnitInterval.cpp \
                             UnitSquare.cpp \
                             Vertex.cpp
 libdolfin_mesh_la_LDFLAGS = -static

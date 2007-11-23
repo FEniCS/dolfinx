@@ -21,6 +21,7 @@
 #include <dolfin/SubDomain.h>
 #include <dolfin/BoundaryMesh.h>
 #include <dolfin/UnitCube.h>
+#include <dolfin/UnitInterval.h>
 #include <dolfin/UnitSquare.h>
 
 #endif

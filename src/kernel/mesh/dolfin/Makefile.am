@@ -32,5 +32,6 @@ EXTRA_DIST = dolfin_mesh.h \
              Triangle.h \
              UniformMeshRefinement.h \
              UnitCube.h \
+             UnitInterval.h \
              UnitSquare.h \
              Vertex.h
