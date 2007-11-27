@@ -4,7 +4,7 @@
 // Modified by Kristian Oelgaard, 2007
 //
 // First added:  2007-04-10
-// Last changed: 2007-10-28
+// Last changed: 2007-11-27
 
 #ifndef __DIRICHLET_BC_H
 #define __DIRICHLET_BC_H
@@ -14,26 +14,30 @@
 #include <dolfin/MeshFunction.h>
 #include <dolfin/BoundaryCondition.h>
 #include <dolfin/Facet.h>
+#include <dolfin/SubDomain.h>
 
 namespace dolfin
 {
 
   class Function;
   class Mesh;
-  class SubDomain;
   class Form;
   class GenericMatrix;
   class GenericVector;
   
   /// The BCMethod variable may be used to specify the type of method
-  /// used to identify degrees of freedom on the boundary. Either a
-  /// topological approach (default) or a geometrical approach may be
-  /// used. The topological approach is faster, but will only identify
-  /// degrees of freedom that are located on a facet that is entirely
-  /// on the boundary. In particular, the topological approach will
-  /// not identify degrees of freedom for discontinuous elements
-  /// (which are all internal to the cell).
-  enum BCMethod {topological, geometrical};
+  /// used to identify degrees of freedom on the boundary. Available
+  /// methods are: topological approach (default), geometrical approach,
+  /// and pointwise approach. The topological approach is faster,
+  /// but will only identify degrees of freedom that are located on a
+  /// facet that is entirely on the boundary. In particular, the
+  /// topological approach will not identify degrees of freedom
+  /// for discontinuous elements (which are all internal to the cell).
+  /// A remedy for this is to use the geometrical approach. To apply
+  /// pointwise boundary conditions e.g. pointloads, one will have to
+  /// use the pointwise approach which in turn is the slowest of the
+  /// three possible methods.
+  enum BCMethod {topological, geometrical, pointwise};
   
   /// This class specifies the interface for setting (strong)
   /// Dirichlet boundary conditions for partial differential
@@ -127,6 +131,9 @@ namespace dolfin
     // Search method
     BCMethod method;
 
+    // User defined sub domain
+    SubDomain* user_sub_domain;
+
     // Compute boundary values for facet (topological approach)
     void computeBCTopological(std::map<uint, real>& boundary_values,
                               Facet& facet,
@@ -135,6 +142,11 @@ namespace dolfin
     // Compute boundary values for facet (geometrical approach)
     void computeBCGeometrical(std::map<uint, real>& boundary_values,
                               Facet& facet,
+                              BoundaryCondition::LocalData& data);
+
+    // Compute boundary values for facet (pointwise approach)
+    void computeBCPointwise(std::map<uint, real>& boundary_values,
+                              Cell& cell,
                               BoundaryCondition::LocalData& data);
     
     // Check if the point is in the same plane as the given facet
