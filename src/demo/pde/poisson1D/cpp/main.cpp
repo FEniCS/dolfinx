@@ -65,7 +65,10 @@ int main()
   Function u;
   pde.solve(u);
 
-  // Plot solution doesn't work yet
+  // Plot solution
+// ERROR:
+  // Plotting Function, press q to continue...
+  // Unable to plot (PyDOLFIN or Viper plotter not available).
 //  plot(u);
 
 
