@@ -353,8 +353,8 @@ if test x$enable_scotch = xyes; then
     AC_CHECK_HEADER(scotch.h, have_scotch_header=yes, have_scotch_header=no)
     if test $have_scotch_header = yes; then
       AC_DEFINE(HAVE_SCOTCH_H,1)
-      SCOTCH_CFLAGS="-DCOMMON_RANDOM_FIXED_SEED -DSCOTCH_RENAME -DSCOTCH_VERSION="\"4.0\"""
-      SCOTCH_LIBS="-llapack -lX11 -lm -lscotch -lscotcherrcom -lcommon"
+      SCOTCH_CFLAGS="-DCOMMON_RANDOM_FIXED_SEED -DSCOTCH_RENAME"
+      SCOTCH_LIBS="-lscotch -lscotcherr -lm"
     else
         echo "*** Unable to find SCOTCH on your system."
         echo "*** Use --with-scotch-dir=<path> to specify the correct path for SCOTCH,"
