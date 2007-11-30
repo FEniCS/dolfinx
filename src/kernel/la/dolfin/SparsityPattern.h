@@ -22,7 +22,7 @@ namespace dolfin
   /// used to initalise vectors and sparse matrices. It must be initialised
   /// before use.
 
-  class SparsityPattern
+  class SparsityPattern: public GenericSparsityPattern
   {
   public:
 
