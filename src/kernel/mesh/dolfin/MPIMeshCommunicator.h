@@ -1,19 +1,19 @@
 // Copyright (C) 2007 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by: Magnus Vikstrøm, 2007.
+//
 // First added:  2007-05-30
-// Last changed: 
+// Last changed: 2007-12-01
 
 #ifndef __MPI_MESH_COMMUNICATOR_H
 #define __MPI_MESH_COMMUNICATOR_H
 
 #include <dolfin/MeshFunction.h>
 
-//Bug in MPI2. MPI C++ interface and stdio.h both uses, SEEK_SET, SEEK_END and SEEK_CUR
-#undef SEEK_SET
-#undef SEEK_END
-#undef SEEK_CUR
-#include <mpi.h>
+#ifdef HAVE_MPI_H
+  #include <mpi.h>
+#endif
 
 namespace dolfin
 {
@@ -33,19 +33,20 @@ namespace dolfin
     ~MPIMeshCommunicator();
 
     /// Broadcast mesh to all processes
-    void broadcast(const Mesh& mesh);
+    static void broadcast(const Mesh& mesh);
 
     /// Receive mesh
-    void receive(Mesh& mesh);
+    static void receive(Mesh& mesh);
     
     /// Broadcast MeshFunction to all processes
-    void broadcast(const MeshFunction<unsigned int>& mesh_function);
+    static void broadcast(const MeshFunction<unsigned int>& mesh_function);
 
     /// Receive MeshFunction
-    void receive(MeshFunction<unsigned int>& mesh_function);
+    static void receive(MeshFunction<unsigned int>& mesh_function);
 
+    /// Return proccess number
+    static int processNum();
   };
-
 }
 
 #endif

@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-06-05
-// Last changed: 2007-07-20
+// Last changed: 2007-11-30
 
 #ifndef __CELL_TYPE_H
 #define __CELL_TYPE_H
@@ -94,6 +94,7 @@ namespace dolfin
     virtual std::string description() const = 0;
 
   protected:
+    friend class MPIMeshCommunicator;
 
     Type cell_type;
     Type facet_type;

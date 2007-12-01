@@ -4,7 +4,7 @@
 // Modified by Johan Hoffman 2007.
 //
 // First added:  2006-05-22
-// Last changed: 2007-05-09
+// Last changed: 2007-11-30
 
 #ifndef __MESH_FUNCTION_H
 #define __MESH_FUNCTION_H
@@ -12,6 +12,8 @@
 #include <dolfin/constants.h>
 #include <dolfin/File.h>
 #include <dolfin/MeshEntity.h>
+#include <dolfin/MPIManager.h>
+#include <dolfin/MPIMeshCommunicator.h>
 
 namespace dolfin
 {
@@ -26,6 +28,7 @@ namespace dolfin
   template <class T> class MeshFunction
   {
   public:
+    class MPIManager;
 
     /// Create empty mesh function
     MeshFunction() : _values(0), _mesh(0), _dim(0), _size(0) {}
@@ -191,6 +194,7 @@ namespace dolfin
     }
 
   private:
+    friend class MPIMeshCommunicator;
 
     /// Values at the set of mesh entities
     T* _values;

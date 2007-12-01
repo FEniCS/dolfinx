@@ -4,7 +4,7 @@
 // Modified by Johan Hoffman 2007.
 //
 // First added:  2006-05-09
-// Last changed: 2007-05-29
+// Last changed: 2007-11-30
 
 #include <sstream>
 
@@ -152,7 +152,14 @@ void Mesh::smooth()
 //-----------------------------------------------------------------------------
 void Mesh::partition(uint num_partitions, MeshFunction<uint>& partitions)
 {
+  int this_process = MPIManager::processNum();
+  if (this_process != 0)
+  {
+    MPIMeshCommunicator::receive(partitions);
+    return;
+  }
   MeshPartition::partition(*this, num_partitions, partitions);
+  MPIMeshCommunicator::broadcast(partitions);
 }
 //-----------------------------------------------------------------------------
 void Mesh::disp() const

@@ -68,10 +68,10 @@ am_libdolfin_mesh_la_OBJECTS = BoundaryComputation.lo BoundaryMesh.lo \
 	MeshConnectivity.lo Mesh.lo MeshData.lo MeshEditor.lo \
 	MeshEntity.lo MeshEntityIterator.lo MeshGeometry.lo \
 	MeshHierarchyAlgorithms.lo MeshHierarchy.lo MeshOrdering.lo \
-	MeshPartition.lo MeshTopology.lo MPIMeshCommunicator.lo \
-	Point.lo SubDomain.lo Tetrahedron.lo TopologyComputation.lo \
-	Triangle.lo UniformMeshRefinement.lo UnitCube.lo UnitSquare.lo \
-	Vertex.lo
+	MeshPartition.lo MeshTopology.lo MPIManager.lo \
+	MPIMeshCommunicator.lo Point.lo SubDomain.lo Tetrahedron.lo \
+	TopologyComputation.lo Triangle.lo UniformMeshRefinement.lo \
+	UnitCube.lo UnitSquare.lo Vertex.lo
 libdolfin_mesh_la_OBJECTS = $(am_libdolfin_mesh_la_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -272,6 +272,7 @@ nobase_include_HEADERS = dolfin/dolfin_mesh.h \
                             dolfin/MeshHierarchy.h \
                             dolfin/MeshOrdering.h \
                             dolfin/MeshTopology.h \
+                            dolfin/MPIManager.h \
                             dolfin/MPIMeshCommunicator.h \
                             dolfin/Point.h \
                             dolfin/SubDomain.h \
@@ -310,6 +311,7 @@ libdolfin_mesh_la_SOURCES = BoundaryComputation.cpp \
                             MeshOrdering.cpp \
                             MeshPartition.cpp \
                             MeshTopology.cpp \
+                            MPIManager.cpp \
                             MPIMeshCommunicator.cpp \
                             Point.cpp \
                             SubDomain.cpp \
@@ -404,6 +406,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Interval.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LocalMeshCoarsening.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LocalMeshRefinement.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MPIManager.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MPIMeshCommunicator.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Mesh.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MeshConnectivity.Plo@am__quote@

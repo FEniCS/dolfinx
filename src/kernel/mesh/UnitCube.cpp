@@ -2,16 +2,26 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005-12-02
-// Last changed: 2006-11-01
+// Last changed: 2007-11-30
 
 #include <dolfin/MeshEditor.h>
 #include <dolfin/UnitCube.h>
+#include <dolfin/MPIManager.h>
+#include <dolfin/MPIMeshCommunicator.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 UnitCube::UnitCube(uint nx, uint ny, uint nz) : Mesh()
 {
+  int this_process = MPIManager::processNum();
+  if (this_process != 0)
+  {
+    MPIMeshCommunicator::receive(*this);
+    dolfin_debug1("MPI finished on process: %d\n", this_process);
+    return;
+  }
+
   if ( nx < 1 || ny < 1 || nz < 1 )
     error("Size of unit cube must be at least 1 in each dimension.");
 
@@ -68,5 +78,9 @@ UnitCube::UnitCube(uint nx, uint ny, uint nz) : Mesh()
 
   // Close mesh editor
   editor.close();
+
+  // Broadcast mesh
+  cout << "Finished constructing mesh.... broadcasting" << endl;
+  MPIMeshCommunicator::broadcast(*this);
 }
 //-----------------------------------------------------------------------------

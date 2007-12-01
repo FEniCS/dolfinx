@@ -5,7 +5,7 @@
 // Modified by Magnus Vikstrøm 2007.
 //
 // First added:  2006-05-08
-// Last changed: 2007-05-24
+// Last changed: 2007-11-30
 
 #ifndef __MESH_H
 #define __MESH_H
@@ -152,6 +152,7 @@ namespace dolfin
 
     // Friends
     friend class MeshEditor;
+    friend class MPIMeshCommunicator;
 
     // Mesh data
     MeshData data;

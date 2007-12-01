@@ -75,6 +75,9 @@ AC_LANG(C++)
 AC_CHECK_PROG(mpi_found, mpirun, yes, no)
 if test $mpi_found = no; then
     echo "MPI not found (might not work if PETSc uses MPI)."
+else
+    # Found MPI, so set HAVE_MPI_H and IGNORE_CXX_SEEK (mpich2 bug)
+    CXXFLAGS="-DHAVE_MPI_H=1 -DMPICH_IGNORE_CXX_SEEK $CXXFLAGS"
 fi
 
 # Standard tests
@@ -353,8 +356,9 @@ if test x$enable_scotch = xyes; then
     AC_CHECK_HEADER(scotch.h, have_scotch_header=yes, have_scotch_header=no)
     if test $have_scotch_header = yes; then
       AC_DEFINE(HAVE_SCOTCH_H,1)
-      SCOTCH_CFLAGS="-DCOMMON_RANDOM_FIXED_SEED -DSCOTCH_RENAME -DSCOTCH_VERSION="\"4.0\"""
       SCOTCH_LIBS="-llapack -lX11 -lm -lscotch -lscotcherrcom -lcommon"
+      SCOTCH_CFLAGS="-DCOMMON_RANDOM_FIXED_SEED -DSCOTCH_RENAME"
+      SCOTCH_LIBS="-lscotch -lscotcherr -lm"
     else
         echo "*** Unable to find SCOTCH on your system."
         echo "*** Use --with-scotch-dir=<path> to specify the correct path for SCOTCH,"
