@@ -233,24 +233,24 @@ MPIMeshCommunicator::~MPIMeshCommunicator()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-MPIMeshCommunicator::broadcast(const Mesh& mesh) 
+void MPIMeshCommunicator::broadcast(const Mesh& mesh) 
 { 
-  return 0;
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
-MPIMeshCommunicator::receive(Mesh& mesh) 
+void MPIMeshCommunicator::receive(Mesh& mesh) 
 { 
-  return 0;
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
-MPIMeshCommunicator::broadcast(const MeshFunction<unsigned int>& mesh_function) 
+void MPIMeshCommunicator::broadcast(const MeshFunction<unsigned int>& mesh_function) 
 { 
-  return 0;
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
-MPIMeshCommunicator::receive(MeshFunction<unsigned int>& mesh_function) 
+void MPIMeshCommunicator::receive(MeshFunction<unsigned int>& mesh_function) 
 { 
-  return 0;
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 
