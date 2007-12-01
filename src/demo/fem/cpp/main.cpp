@@ -17,7 +17,7 @@ using namespace dolfin;
 int main()
 {
   // Load reference mesh (just a simple tetrahedron)
-  Mesh mesh("tetrahedron.xml.gz");
+  Mesh mesh("../tetrahedron.xml.gz");
 
   // Create stiffness and mass matrices
   StiffnessMatrix A(mesh);

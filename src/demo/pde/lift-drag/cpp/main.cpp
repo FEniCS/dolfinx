@@ -20,7 +20,7 @@ using namespace dolfin;
 int main()
 {
   // Read velocity field from file and get the mesh
-  Function p("pressure.xml.gz");
+  Function p("../pressure.xml.gz");
   Mesh& mesh(p.mesh());
 
   // Define sub domain for the dolphin

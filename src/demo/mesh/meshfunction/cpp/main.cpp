@@ -12,10 +12,10 @@ using namespace dolfin;
 
 int main()
 {
-  Mesh mesh("mesh2D.xml.gz");
+  Mesh mesh("../mesh2D.xml.gz");
   
   // Read mesh function from file
-  File in("meshfunction.xml");
+  File in("../meshfunction.xml");
   MeshFunction<double> f(mesh);
   in >> f;
 
