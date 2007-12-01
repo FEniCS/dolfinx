@@ -3,16 +3,19 @@ EXTRA_DIST = dolfin_la.h \
              solve.h \
              AssemblyMatrix.h \
              GenericMatrix.h \
-             GenericVector.h \
+             GenericSparsityPattern.h \
              GenericTensor.h \
+             GenericVector.h \
              GMRES.h \
              KrylovMethod.h \
              KrylovSolver.h \
+             LinearAlgebraFactory.h \
              LinearSolver.h \
              LU.h \
              LUSolver.h \
              Matrix.h \
              SLEPcEigenvalueSolver.h \
+             PETScFactory.h \
              PETScLinearSolver.h \
              PETScKrylovMatrix.h \
              PETScKrylovSolver.h \

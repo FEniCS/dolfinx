@@ -12,6 +12,7 @@
 #include <set>
 #include <vector>
 
+#include <dolfin/GenericSparsityPattern.h>
 #include <dolfin/dolfin_log.h>
 #include <dolfin/constants.h>
 

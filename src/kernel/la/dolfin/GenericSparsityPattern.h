@@ -7,6 +7,8 @@
 #ifndef __GENERIC_SPARSITY_PATTERN_H
 #define __GENERIC_SPARSITY_PATTERN_H
 
+#include <dolfin/constants.h>
+
 namespace dolfin
 {
   /// Base class for sparsity patterns of vectors/matrices. Concrete sub classes can 
@@ -35,15 +37,16 @@ namespace dolfin
     virtual void insert(uint m, const uint* rows, uint n, const uint* cols) = 0;
 
     /// Return global size 
-    uint size(uint n) const = 0;
+    virtual uint size(uint n) const = 0;
 
     /// Return array with number of non-zeroes per row
-    void numNonZeroPerRow(uint nzrow[]) const = 0;
+    virtual void numNonZeroPerRow(uint nzrow[]) const = 0;
 
     /// Return total number of non-zeroes
-    uint numNonZero() const = 0;
+    virtual uint numNonZero() const = 0;
 
-  }
+  };
+
 }
 
 #endif
