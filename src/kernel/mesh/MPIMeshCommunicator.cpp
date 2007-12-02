@@ -15,6 +15,7 @@
 using namespace dolfin;
 
 #ifdef HAVE_MPI_H
+
 //-----------------------------------------------------------------------------
 MPIMeshCommunicator::MPIMeshCommunicator()
 {
@@ -222,6 +223,7 @@ void MPIMeshCommunicator::receive(MeshFunction<unsigned int>& mesh_function)
   mesh_function._values = values;
 }
 //-----------------------------------------------------------------------------
+
 #else
 
 //-----------------------------------------------------------------------------

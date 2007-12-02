@@ -2,6 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells, 2007.
+// Modified by Anders Logg, 2007.
 //
 // First added:  2007-11-30
 // Last changed: 2007-12-02
@@ -14,10 +15,11 @@
 using namespace dolfin;
 
 #ifdef HAVE_MPI_H
+
 //-----------------------------------------------------------------------------
 MPIManager::MPIManager()
 {
-  //Do nothing
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 MPIManager::~MPIManager()
@@ -25,40 +27,65 @@ MPIManager::~MPIManager()
   MPIManager::finalize();
 }
 //-----------------------------------------------------------------------------
+void MPIManager::init()
+{
+  int initialized;
+  MPI_Initialized(&initialized);
+  if (initialized)
+    return;
+
+  dolfin_debug("Initializing MPI");
+  MPI_Init(0, 0);
+}
+//-----------------------------------------------------------------------------
 void MPIManager::finalize()
 {
-  int inited;
-  MPI_Initialized(&inited);
-  if (inited)
+  int initialized;
+  MPI_Initialized(&initialized);
+  if (initialized)
   {
     dolfin_debug("Finalizing MPI");
     MPI_Finalize();
   }
 }
 //-----------------------------------------------------------------------------
-void MPIManager::init()
+dolfin::uint MPIManager::processNumber()
 {
-  int inited;
-  MPI_Initialized(&inited);
-  if (inited)
-  {
-    return;
-  }
-  dolfin_debug("Initing MPI");
-  MPI_Init(0, 0);
-}
-//-----------------------------------------------------------------------------
-int MPIManager::processNum()
-{
-  dolfin_debug("MPIManagor::processNum");
   MPIManager::init();
 
   int this_process;
   MPI_Comm_rank(MPI_COMM_WORLD, &this_process);
 
-  return this_process;
+  dolfin_debug1("MPIManager: Process number is %d", this_process);
+
+  return static_cast<uint>(this_process);
 }
 //-----------------------------------------------------------------------------
+dolfin::uint MPIManager::numProcesses()
+{
+  MPIManager::init();
+
+  int num_processes;
+  MPI_Comm_size(MPI_COMM_WORLD, &num_processes);
+
+  dolfin_debug1("MPIManager: Number of processes is %d", num_processes);
+
+  return static_cast<uint>(num_processes);
+}
+//-----------------------------------------------------------------------------
+bool MPIManager::broadcast()
+{
+  // Always broadcast from processor number 0
+  return numProcesses() > 0 && processNumber() == 0;
+}
+//-----------------------------------------------------------------------------
+bool MPIManager::receive()
+{
+  // Always receive on processors with numbers > 0
+  return numProcesses() > 0 && processNumber() > 0;
+}
+//-----------------------------------------------------------------------------
+
 #else
 
 //-----------------------------------------------------------------------------
@@ -72,14 +99,34 @@ MPIManager::~MPIManager()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-int MPIManager::processNum()
+void MPIManager::init()
 {
-  return 0;
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 void MPIManager::finalize()
 {
   // Do nothing
+}
+//-----------------------------------------------------------------------------
+dolfin::uint MPIManager::processNumber()
+{
+  return 0;
+}
+//-----------------------------------------------------------------------------
+dolfin::uint MPIManager::numProcesses()
+{
+  return 1;
+}
+//-----------------------------------------------------------------------------
+bool MPIManager::broadcast();
+{
+  return false;
+}
+//-----------------------------------------------------------------------------
+bool MPIManager::receive()
+{
+  return false;
 }
 //-----------------------------------------------------------------------------
 

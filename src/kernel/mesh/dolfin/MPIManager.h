@@ -10,42 +10,38 @@
 #include <dolfin/MeshFunction.h>
 
 #ifdef HAVE_MPI_H
-  #include <mpi.h>
+#include <mpi.h>
 #endif
 
 namespace dolfin
 {
-  class Mesh;
-//  class MeshFunction<unsigned int>;
-  
-  /// The class facilitates the transfer of a mesh between processes using MPI
+  /// This class handles initialization/finalization of MPI and provides
+  /// utility functions for easy access of the number of processes and
+  /// current process number.
   
   class MPIManager
   {
   public:
-    
-    /// Broadcast mesh to all processes
-    static void broadcast(const Mesh& mesh);
-
-    /// Receive mesh
-    static void receive(Mesh& mesh);
-    
-    /// Broadcast MeshFunction to all processes
-    static void broadcast(const MeshFunction<unsigned int>& mesh_function);
-
-    /// Receive MeshFunction
-    static void receive(MeshFunction<unsigned int>& mesh_function);
-
-    /// Return proccess number
-    static int processNum();
-
-    /// Finalize MPI
-    static void finalize();
-
-  private:
 
     /// Initialize MPI
     static void init();
+
+    /// Finalize MPI
+    static void finalize();
+    
+    /// Return proccess number
+    static uint processNumber();
+
+    /// Return number of processes
+    static uint numProcesses();
+
+    /// Determine whether we should broadcast (based on current parallel policy)
+    static bool broadcast();
+
+    /// Determine whether we should receive (based on current parallel policy)
+    static bool receive();
+
+  private:
 
     /// Constructor
     MPIManager();
@@ -53,7 +49,9 @@ namespace dolfin
     /// Destructor
     ~MPIManager();
 
+    /// Singleton instance of MPIManager
     static MPIManager mpi;
+  
   };
 }
 
