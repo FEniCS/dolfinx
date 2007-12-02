@@ -71,7 +71,7 @@ am_libdolfin_mesh_la_OBJECTS = BoundaryComputation.lo BoundaryMesh.lo \
 	MeshPartition.lo MeshTopology.lo MPIManager.lo \
 	MPIMeshCommunicator.lo Point.lo SubDomain.lo Tetrahedron.lo \
 	TopologyComputation.lo Triangle.lo UniformMeshRefinement.lo \
-	UnitCube.lo UnitSquare.lo Vertex.lo
+	UnitCube.lo UnitInterval.lo UnitSquare.lo Vertex.lo
 libdolfin_mesh_la_OBJECTS = $(am_libdolfin_mesh_la_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -281,6 +281,7 @@ nobase_include_HEADERS = dolfin/dolfin_mesh.h \
                             dolfin/Triangle.h \
                             dolfin/UniformMeshRefinement.h \
                             dolfin/UnitCube.h \
+                            dolfin/UnitInterval.h \
                             dolfin/UnitSquare.h \
                             dolfin/Vertex.h
 
@@ -320,6 +321,7 @@ libdolfin_mesh_la_SOURCES = BoundaryComputation.cpp \
                             Triangle.cpp \
                             UniformMeshRefinement.cpp \
                             UnitCube.cpp \
+                            UnitInterval.cpp \
                             UnitSquare.cpp \
                             Vertex.cpp
 
@@ -427,6 +429,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Triangle.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/UniformMeshRefinement.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/UnitCube.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/UnitInterval.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/UnitSquare.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Vertex.Plo@am__quote@
 

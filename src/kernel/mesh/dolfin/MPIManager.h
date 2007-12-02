@@ -41,7 +41,9 @@ namespace dolfin
 
     /// Finalize MPI
     static void finalize();
+
   private:
+
     /// Initialize MPI
     static void init();
 

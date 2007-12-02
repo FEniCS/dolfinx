@@ -4,7 +4,7 @@
 //  Modified by Magnus Vikstrøm, 2007.
 //
 // First added:  2007-05-30
-// Last changed: 2007-12-01
+// Last changed: 2007-12-02
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Mesh.h>
@@ -235,22 +235,22 @@ MPIMeshCommunicator::~MPIMeshCommunicator()
 //-----------------------------------------------------------------------------
 void MPIMeshCommunicator::broadcast(const Mesh& mesh) 
 { 
-  // Do nothing
+  error("Cannot broadcast meshes without MPI.");
 }
 //-----------------------------------------------------------------------------
 void MPIMeshCommunicator::receive(Mesh& mesh) 
 { 
-  // Do nothing
+  error("Cannot receive meshes without MPI.");
 }
 //-----------------------------------------------------------------------------
 void MPIMeshCommunicator::broadcast(const MeshFunction<unsigned int>& mesh_function) 
 { 
-  // Do nothing
+  error("Cannot broadcast mesh functions without MPI.");
 }
 //-----------------------------------------------------------------------------
 void MPIMeshCommunicator::receive(MeshFunction<unsigned int>& mesh_function) 
 { 
-  // Do nothing
+  error("Cannot receive mesh functions without MPI.");
 }
 //-----------------------------------------------------------------------------
 

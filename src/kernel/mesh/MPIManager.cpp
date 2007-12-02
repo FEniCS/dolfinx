@@ -1,8 +1,10 @@
 // Copyright (C) 2007 Magnus Vikstrøm.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Garth N. Wells, 2007.
+//
 // First added:  2007-11-30
-// Last changed: 2007-12-01
+// Last changed: 2007-12-02
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Mesh.h>
@@ -73,6 +75,11 @@ MPIManager::~MPIManager()
 int MPIManager::processNum()
 {
   return 0;
+}
+//-----------------------------------------------------------------------------
+void MPIManager::finalize()
+{
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 
