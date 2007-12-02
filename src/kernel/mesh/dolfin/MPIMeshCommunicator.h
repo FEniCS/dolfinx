@@ -4,7 +4,7 @@
 // Modified by: Magnus Vikstrøm, 2007.
 //
 // First added:  2007-05-30
-// Last changed: 2007-12-01
+// Last changed: 2007-12-02
 
 #ifndef __MPI_MESH_COMMUNICATOR_H
 #define __MPI_MESH_COMMUNICATOR_H
@@ -45,7 +45,7 @@ namespace dolfin
     static void receive(MeshFunction<unsigned int>& mesh_function);
 
     /// Return proccess number
-    static int processNum();
+    //static int processNum();
   };
 }
 

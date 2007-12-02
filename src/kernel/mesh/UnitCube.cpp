@@ -14,6 +14,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 UnitCube::UnitCube(uint nx, uint ny, uint nz) : Mesh()
 {
+/*
   int this_process = MPIManager::processNum();
   if (this_process != 0)
   {
@@ -21,6 +22,7 @@ UnitCube::UnitCube(uint nx, uint ny, uint nz) : Mesh()
     dolfin_debug1("MPI finished on process: %d\n", this_process);
     return;
   }
+*/
 
   if ( nx < 1 || ny < 1 || nz < 1 )
     error("Size of unit cube must be at least 1 in each dimension.");
@@ -42,8 +44,8 @@ UnitCube::UnitCube(uint nx, uint ny, uint nz) : Mesh()
       const real y = static_cast<real>(iy) / static_cast<real>(ny);
       for (uint ix = 0; ix <= nx; ix++)
       {
-	const real x = static_cast<real>(ix) / static_cast<real>(nx);
-	editor.addVertex(vertex++, x, y, z);
+        const real x = static_cast<real>(ix) / static_cast<real>(nx);
+        editor.addVertex(vertex++, x, y, z);
       }
     }
   }
@@ -57,21 +59,21 @@ UnitCube::UnitCube(uint nx, uint ny, uint nz) : Mesh()
     {
       for (uint ix = 0; ix < nx; ix++)
       {
-	const uint v0 = iz*(nx + 1)*(ny + 1) + iy*(nx + 1) + ix;
-	const uint v1 = v0 + 1;
-	const uint v2 = v0 + (nx + 1);
-	const uint v3 = v1 + (nx + 1);
-	const uint v4 = v0 + (nx + 1)*(ny + 1);
-	const uint v5 = v1 + (nx + 1)*(ny + 1);
-	const uint v6 = v2 + (nx + 1)*(ny + 1);
-	const uint v7 = v3 + (nx + 1)*(ny + 1);
+        const uint v0 = iz*(nx + 1)*(ny + 1) + iy*(nx + 1) + ix;
+        const uint v1 = v0 + 1;
+        const uint v2 = v0 + (nx + 1);
+        const uint v3 = v1 + (nx + 1);
+        const uint v4 = v0 + (nx + 1)*(ny + 1);
+        const uint v5 = v1 + (nx + 1)*(ny + 1);
+        const uint v6 = v2 + (nx + 1)*(ny + 1);
+        const uint v7 = v3 + (nx + 1)*(ny + 1);
 
-	editor.addCell(cell++, v0, v1, v3, v7);
-	editor.addCell(cell++, v0, v1, v7, v5);
-	editor.addCell(cell++, v0, v5, v7, v4);
-	editor.addCell(cell++, v0, v3, v2, v7);
-	editor.addCell(cell++, v0, v6, v4, v7);
-	editor.addCell(cell++, v0, v2, v6, v7);
+        editor.addCell(cell++, v0, v1, v3, v7);
+        editor.addCell(cell++, v0, v1, v7, v5);
+        editor.addCell(cell++, v0, v5, v7, v4);
+        editor.addCell(cell++, v0, v3, v2, v7);
+        editor.addCell(cell++, v0, v6, v4, v7);
+        editor.addCell(cell++, v0, v2, v6, v7);
       }
     }
   }
@@ -80,7 +82,7 @@ UnitCube::UnitCube(uint nx, uint ny, uint nz) : Mesh()
   editor.close();
 
   // Broadcast mesh
-  cout << "Finished constructing mesh.... broadcasting" << endl;
-  MPIMeshCommunicator::broadcast(*this);
+//  cout << "Finished constructing mesh.... broadcasting" << endl;
+//  MPIMeshCommunicator::broadcast(*this);
 }
 //-----------------------------------------------------------------------------

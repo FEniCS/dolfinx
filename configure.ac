@@ -71,15 +71,6 @@ AC_ARG_ENABLE(scotch,
 # Use C++ compiler for performing configure tests
 AC_LANG(C++)
 
-# Check for MPI and print message if not found
-AC_CHECK_PROG(mpi_found, mpirun, yes, no)
-if test $mpi_found = no; then
-    echo "MPI not found (might not work if PETSc uses MPI)."
-else
-    # Found MPI, so set HAVE_MPI_H and IGNORE_CXX_SEEK (mpich2 bug)
-    CXXFLAGS="-DHAVE_MPI_H=1 -DMPICH_IGNORE_CXX_SEEK $CXXFLAGS"
-fi
-
 # Standard tests
 AC_PROG_CXX([mpic++ mpicxx c++ g++])
 AC_PROG_CC([mpicc cc gcc])
@@ -350,19 +341,27 @@ else
     PETSC_CFLAGS=""
 fi
 
+# Check for MPI and print message if not found
+#AC_CHECK_PROG(mpi_found, mpirun, yes, no)
+#if test $mpi_found = no; then
+#    echo "MPI not found (might not work if PETSc uses MPI)."
+#else
+#    # Found MPI, so set HAVE_MPI_H and IGNORE_CXX_SEEK (mpich2 bug)
+#    CXXFLAGS="-DHAVE_MPI_H=1 -DMPICH_IGNORE_CXX_SEEK $CXXFLAGS"
+#fi
+
 # Handle option --disable-scotch
 if test x$enable_scotch = xyes; then
     # Check for SCOTCH
     AC_CHECK_HEADER(scotch.h, have_scotch_header=yes, have_scotch_header=no)
     if test $have_scotch_header = yes; then
       AC_DEFINE(HAVE_SCOTCH_H,1)
-      SCOTCH_LIBS="-llapack -lX11 -lm -lscotch -lscotcherrcom -lcommon"
       SCOTCH_CFLAGS="-DCOMMON_RANDOM_FIXED_SEED -DSCOTCH_RENAME"
       SCOTCH_LIBS="-lscotch -lscotcherr -lm"
     else
         echo "*** Unable to find SCOTCH on your system."
-        echo "*** Use --with-scotch-dir=<path> to specify the correct path for SCOTCH,"
-        echo "*** or set the environment variable SCOTCH_DIR to the correct path."
+        echo "*** This is experimental. You need put place SCOTCH include and"
+        echo "*** library files in the system path."
         echo "*** SCOTCH is available at http://www.labri.fr/perso/pelegrin/scotch/"
         exit 1
     fi
@@ -375,6 +374,7 @@ else
     echo "disabling SCOTCH (mesh/graph partitioning will not work)"
     SCOTCH_CFLAGS=""
 fi
+
 # List of DOLFIN kernel libraries
 DOLFIN_KERNEL="common elements fem function graph io la main math mesh mf nls ode pde quadrature parameter log plot"
 

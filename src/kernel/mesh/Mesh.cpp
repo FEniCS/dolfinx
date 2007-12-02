@@ -152,6 +152,7 @@ void Mesh::smooth()
 //-----------------------------------------------------------------------------
 void Mesh::partition(uint num_partitions, MeshFunction<uint>& partitions)
 {
+/*
   int this_process = MPIManager::processNum();
   if (this_process != 0)
   {
@@ -160,6 +161,7 @@ void Mesh::partition(uint num_partitions, MeshFunction<uint>& partitions)
   }
   MeshPartition::partition(*this, num_partitions, partitions);
   MPIMeshCommunicator::broadcast(partitions);
+*/
 }
 //-----------------------------------------------------------------------------
 void Mesh::disp() const
