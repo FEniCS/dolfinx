@@ -342,13 +342,13 @@ else
 fi
 
 # Check for MPI and print message if not found
-#AC_CHECK_PROG(mpi_found, mpirun, yes, no)
-#if test $mpi_found = no; then
-#    echo "MPI not found (might not work if PETSc uses MPI)."
-#else
-#    # Found MPI, so set HAVE_MPI_H and IGNORE_CXX_SEEK (mpich2 bug)
-#    CXXFLAGS="-DHAVE_MPI_H=1 -DMPICH_IGNORE_CXX_SEEK $CXXFLAGS"
-#fi
+AC_CHECK_PROG(mpi_found, mpirun, yes, no)
+if test $mpi_found = no; then
+    echo "MPI not found (might not work if PETSc uses MPI)."
+else
+    # Found MPI, so set HAVE_MPI_H and IGNORE_CXX_SEEK (mpich2 bug)
+    CXXFLAGS="-DHAVE_MPI_H=1 -DMPICH_IGNORE_CXX_SEEK $CXXFLAGS"
+fi
 
 # Handle option --disable-scotch
 if test x$enable_scotch = xyes; then

@@ -184,13 +184,15 @@ void MPIMeshCommunicator::broadcast(const MeshFunction<unsigned int>& mesh_funct
   dolfin_debug("MPIMeshCommunicator::broadcast");
   int process_int;
   MPI_Comm_rank(MPI_COMM_WORLD, &process_int);
-  unsigned int this_process = process_int;
+  //unsigned int this_process = process_int;
 
   uint size = mesh_function._size;
   uint dim = mesh_function._dim;
   const uint* values = mesh_function.values();
+
   dolfin_debug1("sending meshfunction size %d", size);
   MPI_Bcast(&size, 1, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
+
   dolfin_debug1("sending meshfunction dim %d", dim);
   MPI_Bcast(&dim, 1, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
   MPI_Bcast(const_cast<uint *>(values), size, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
@@ -201,7 +203,7 @@ void MPIMeshCommunicator::receive(MeshFunction<unsigned int>& mesh_function)
   dolfin_debug("MPIMeshCommunicator::receive");
   int process_int;
   MPI_Comm_rank(MPI_COMM_WORLD, &process_int);
-  unsigned int this_process = process_int;
+  //unsigned int this_process = process_int;
 
   uint size = 0;
   MPI_Bcast(&size, 1, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
