@@ -13,14 +13,15 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 TimeSlabJacobian::TimeSlabJacobian(TimeSlab& timeslab)
-  : ode(timeslab.ode), method(*timeslab.method)
+  : ode(timeslab.ode), method(*timeslab.method), As(0)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 TimeSlabJacobian::~TimeSlabJacobian()
 {
-  // Do nothing
+  if(As != 0)
+    delete As;
 }
 //-----------------------------------------------------------------------------
 void TimeSlabJacobian::init()

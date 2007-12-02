@@ -11,6 +11,7 @@
 #include <dolfin/Event.h>
 #include <dolfin/uBlasVector.h>
 #include <dolfin/uBlasSparseMatrix.h>
+#include <dolfin/Matrix.h>
 #include <dolfin/Dependencies.h>
 #include <dolfin/Sample.h>
 
@@ -72,6 +73,12 @@ namespace dolfin
 
     /// Compute product y = Jx for Jacobian J (optional)
     virtual void J(const uBlasVector& x, uBlasVector& y, const uBlasVector& u, real t);
+
+    /// Compute Jacobian matrix J (optional)
+    virtual Matrix& Jmatrix(const uBlasVector& u, real t);
+
+    /// Compute LHS matrix M (optional)
+    virtual Matrix& Mmatrix(real t);
 
     /// Compute entry of Jacobian (optional)
     virtual real dfdu(const uBlasVector& u, real t, uint i, uint j);

@@ -24,6 +24,7 @@ add("ODE matrix piecewise constant", true);
 add("ODE monitor convergence", false);
 add("ODE updated jacobian", false);        // only multi-adaptive Newton
 add("ODE diagonal newton damping", false); // only multi-adaptive fixed-point
+add("ODE matrix-free jacobian", true);
 
 add("ODE order", 1);
 add("ODE number of samples", 100);

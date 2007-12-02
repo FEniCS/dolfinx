@@ -95,6 +95,16 @@ void ODE::J(const uBlasVector& x, uBlasVector& y, const uBlasVector& u, real t)
   y *= 0.5/h;
 }
 //-----------------------------------------------------------------------------
+Matrix& ODE::Jmatrix(const uBlasVector& u, real t)
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+Matrix& ODE::Mmatrix(real t)
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
 real ODE::dfdu(const uBlasVector& u, real t, uint i, uint j)
 {
   // Compute Jacobian numerically if dfdu() is not implemented by user
