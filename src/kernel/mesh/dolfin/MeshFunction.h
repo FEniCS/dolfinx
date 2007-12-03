@@ -2,9 +2,10 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Johan Hoffman 2007.
+// Modified by Magnus Vikstrøm 2007.
 //
 // First added:  2006-05-22
-// Last changed: 2007-11-30
+// Last changed: 2007-12-03
 
 #ifndef __MESH_FUNCTION_H
 #define __MESH_FUNCTION_H
@@ -191,6 +192,17 @@ namespace dolfin
         cout << "(" << _dim << ", " << i << "): " << _values[i] << endl;
       }
       end();
+    }
+
+    /// Broadcast mesh function data
+    void broadcast() const
+    {
+      MPIMeshCommunicator::broadcast(*this);
+    }
+
+    void receive()
+    {
+      MPIMeshCommunicator::receive(*this);
     }
 
   private:
