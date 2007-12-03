@@ -8,15 +8,11 @@
 #
 
 __author__ = "Kristian B. Oelgaard (k.b.oelgaard@tudelft.nl)"
-__date__ = "2007-11-15 -- 2007-11-28"
+__date__ = "2007-11-15 -- 2007-12-03"
 __copyright__ = "Copyright (C) 2007 Kristian B. Oelgaard"
 __license__  = "GNU LGPL Version 2.1"
 
 from dolfin import *
-
-#
-# THIS DEMO IS CURRENTLY NOT WORKING, SEE NOTE IN CODE.
-#
 
 # Load mesh and create finite elements
 mesh = Mesh("../../../../../../data/meshes/dolfin-2.xml.gz")
@@ -35,13 +31,12 @@ class Noslip(Function):
     def eval(self, values, x):
         values[0] = 0.0
         values[1] = 0.0
-# ERROR:
-# terminate called after throwing an instance of 'Swig::DirectorMethodException'
-# Aborted (core dumped)
 
-# It looks like vector valued functions are not supported. If values[1] and values[2]
-# are commented out, the error doesn't occur (the results are not correct of course)
-# Same error as in the elasticity demo
+    def rank(self):
+        return 1
+
+    def dim(self, i):
+        return 2
 
 # Function for inflow boundary condition for velocity
 class Inflow(Function):
@@ -52,18 +47,13 @@ class Inflow(Function):
         values[0] = -1.0
         values[1] = 0.0
 
-# ERROR:
-# terminate called after throwing an instance of 'Swig::DirectorMethodException'
-# Aborted (core dumped)
+    def rank(self):
+        return 1
 
-# It looks like vector valued functions are not supported. If values[1] and values[2]
-# are commented out, the error doesn't occur (the results are not correct of course)
-# Same error as in the elasticity demo
+    def dim(self, i):
+        return 2
 
 # Create functions for boundary conditions
-#noslip = Noslip(vector, mesh)
-#inflow = Inflow(vector, mesh)
-#zero = Function(scalar, mesh, 0.0)
 noslip = Noslip(mesh)
 inflow = Inflow(mesh)
 zero = Function(mesh, 0.0)
@@ -85,7 +75,7 @@ bc2 = DirichletBC(zero, sub_domains, 2, pressure)
 bcs = [bc0, bc1, bc2]
 
 
-# # Define variational problem
+# Define variational problem
 (v, q) = TestFunctions(system)
 (u, p) = TrialFunctions(system)
 
@@ -101,28 +91,22 @@ L = dot(v + mult(delta, grad(q)), f)*dx
 # Set up PDE
 pde = LinearPDE(a, L, mesh, bcs)
 
-#   // Solve PDE
-#u = Function(mesh)
-#p = Function(mesh)
+# Solve PDE
 (U, P) = pde.solve().split()
 
-#   // Plot solution
-#   plot(u);
-#   plot(p);
+# Plot solution
+plot(U)
+plot(P)
 
+# Save solution
+ufile = File("velocity.xml")
+ufile << U
+pfile = File("pressure.xml")
+pfile << P
 
-# # Solve PDE and plot solution
-# pde = LinearPDE(a, L, mesh, bcs)
-# u = pde.solve()
-# plot(u)
-
-# Save solution to file
-# file = File("poisson.pvd")
-# file << u
-
-
-
-
-
-
+# Save solution in VTK format
+ufile_pvd = File("velocity.pvd")
+ufile_pvd << U
+pfile_pvd = File("pressure.pvd")
+pfile_pvd << P
 

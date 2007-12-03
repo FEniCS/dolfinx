@@ -5,15 +5,11 @@
 # Original implementation: ../cpp/main.cpp by Johan Jansson and Anders Logg
 #
 __author__ = "Kristian B. Oelgaard (k.b.oelgaard@tudelft.nl)"
-__date__ = "2007-11-14 -- 2007-11-28"
+__date__ = "2007-11-14 -- 2007-12-03"
 __copyright__ = "Copyright (C) 2007 Kristian B. Oelgaard"
 __license__  = "GNU LGPL Version 2.1"
 
 from dolfin import *
-
-#
-# THIS DEMO IS CURRENTLY NOT WORKING, SEE NOTE IN CODE.
-#
 
 # Load mesh and create finite element
 mesh = Mesh("../../../../../data/meshes/gear.xml.gz")
@@ -29,12 +25,11 @@ class Clamp(Function):
         values[1] = 0.0
         values[2] = 0.0
 
-# ERROR:
-# terminate called after throwing an instance of 'Swig::DirectorMethodException'
-# Aborted (core dumped)
+    def rank(self):
+        return 1
 
-# It looks like vector valued functions are not supported. If values[1] and values[2]
-# are commented out, the error doesn't occur (the results are not correct of course)
+    def dim(self, i):
+        return 3
 
 # Sub domain for clamp at left end
 class Left(SubDomain):
@@ -63,13 +58,11 @@ class Rotation(Function):
         values[1] = y - x[1]
         values[2] = z - x[2]
 
-# ERROR:
-# terminate called after throwing an instance of 'Swig::DirectorMethodException'
-# Aborted (core dumped)
+    def rank(self):
+        return 1
 
-# It looks like vector valued functions are not supported. If values[1] and values[2]
-# are commented out, the error doesn't occur (the results are not correct of course)
-
+    def dim(self, i):
+        return 3
 
 # Sub domain for rotation at right end
 class Right(SubDomain):
@@ -101,13 +94,11 @@ L = dot(v, f)*dx
 
 # Set up boundary condition at left end
 c = Clamp(element, mesh)
-#c = Function(mesh)
 left = Left()
 bcl = DirichletBC(c, mesh, left)
 
 # Set up boundary condition at right end
 r = Rotation(element, mesh)
-#r = Function(mesh)
 right = Right()
 bcr = DirichletBC(r, mesh, right)
 
@@ -119,7 +110,7 @@ pde = LinearPDE(a, L, mesh, bcs)
 sol = pde.solve()
 
 # Plot solution
-plot(sol)
+plot(sol, mode="displacement")
 
 # Save solution to VTK format
 vtk_file = File("elasticity.pvd")
