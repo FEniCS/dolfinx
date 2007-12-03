@@ -81,7 +81,7 @@ real MonoAdaptiveNewtonSolver::iteration(real tol, uint iter, real d0, real d1)
   // Solve linear system
   if ( krylov )
   {
-    const bool matrix_free = get("ODE matrix-free Jacobian");
+    const bool matrix_free = get("ODE matrix-free jacobian");
 
     if(!matrix_free)
     {

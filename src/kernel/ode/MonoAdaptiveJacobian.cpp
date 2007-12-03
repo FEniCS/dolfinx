@@ -166,3 +166,9 @@ void MonoAdaptiveJacobian::update(const uBlasVector& u, real t)
   error("Sparse Jacobian only implemented for PETSc");
 #endif
 }
+//-----------------------------------------------------------------------------
+void MonoAdaptiveJacobian::update()
+{
+  TimeSlabJacobian::update();
+}
+//-----------------------------------------------------------------------------
