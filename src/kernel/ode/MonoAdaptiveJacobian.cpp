@@ -122,13 +122,7 @@ void MonoAdaptiveJacobian::update(const uBlasVector& u, real t)
 {
   //const uint N = ode.size();
 
-  //real k = ts.endtime() - ts.starttime();
-
-//   cout << "k: " << k << endl;
-
-
   Matrix& Atmp = ode.Jmatrix(u, t);
-  //Matrix& Mtmp = ode.Mmatrix(t);
 
   tic();
   if(As == 0)
@@ -138,6 +132,10 @@ void MonoAdaptiveJacobian::update(const uBlasVector& u, real t)
   message("Matrix dup took %g seconds",toc());
 
 #ifdef HAVE_PETSC_H
+
+  real k = ts.endtime() - ts.starttime();
+  Matrix& Mtmp = ode.Mmatrix(t);
+
   tic();
   Mat As_M = As->mat().mat();
   Mat Atmp_M = Atmp.mat().mat();
