@@ -139,6 +139,12 @@ namespace dolfin
     /// Partition mesh into num_partitions partitions
     void partition(uint num_partitions, MeshFunction<uint>& partitions);
 
+    /// Broadcast mesh to all other processes
+    void broadcast() const;
+
+    /// Receive mesh
+    void receive();
+
     /// Display mesh data
     void disp() const;
     

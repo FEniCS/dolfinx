@@ -18,7 +18,6 @@
 namespace dolfin
 {
   class Mesh;
-//  class MeshFunction<unsigned int>;
   
   /// The class facilitates the transfer of a mesh between processes using MPI
   
@@ -38,14 +37,12 @@ namespace dolfin
     /// Receive mesh
     static void receive(Mesh& mesh);
     
-    /// Broadcast MeshFunction to all processes
+    /// Broadcast mesh function to all processes
     static void broadcast(const MeshFunction<unsigned int>& mesh_function);
 
-    /// Receive MeshFunction
+    /// Receive mesh function
     static void receive(MeshFunction<unsigned int>& mesh_function);
 
-    /// Return proccess number
-    //static int processNum();
   };
 }
 

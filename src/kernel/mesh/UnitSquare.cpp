@@ -14,15 +14,9 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 UnitSquare::UnitSquare(uint nx, uint ny, Type type) : Mesh()
 {
-/*
-  int this_process = MPIManager::processNum();
-  if (this_process != 0)
-  {
-    MPIMeshCommunicator::receive(*this);
-    dolfin_debug1("MPI finished on process: %d\n", this_process);
-    return;
-  }
-*/
+  // Receive mesh according to parallel policy
+  //if (MPIManager::receive()) { receive(); return; }
+  
   if ( nx < 1 || ny < 1 )
     error("Size of unit square must be at least 1 in each dimension.");
 
@@ -128,7 +122,7 @@ UnitSquare::UnitSquare(uint nx, uint ny, Type type) : Mesh()
   // Close mesh editor
   editor.close();
 
-  // Broadcast mesh
-//  MPIMeshCommunicator::broadcast(*this);
+  // Broadcast mesh according to parallel policy
+  //if (MPIManager::broadcast()) { broadcast(); }
 }
 //-----------------------------------------------------------------------------

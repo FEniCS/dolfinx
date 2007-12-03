@@ -20,6 +20,7 @@
 #include <dolfin/BoundaryMesh.h>
 #include <dolfin/Cell.h>
 #include <dolfin/Vertex.h>
+#include <dolfin/MPIMeshCommunicator.h>
 
 using namespace dolfin;
 
@@ -162,6 +163,16 @@ void Mesh::partition(uint num_partitions, MeshFunction<uint>& partitions)
   MeshPartition::partition(*this, num_partitions, partitions);
   MPIMeshCommunicator::broadcast(partitions);
 */
+}
+//-----------------------------------------------------------------------------
+void Mesh::broadcast() const
+{
+  MPIMeshCommunicator::broadcast(*this);
+}
+//-----------------------------------------------------------------------------
+void Mesh::receive()
+{
+  MPIMeshCommunicator::receive(*this);
 }
 //-----------------------------------------------------------------------------
 void Mesh::disp() const
