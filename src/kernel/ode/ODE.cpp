@@ -97,12 +97,14 @@ void ODE::J(const uBlasVector& x, uBlasVector& y, const uBlasVector& u, real t)
 //-----------------------------------------------------------------------------
 Matrix& ODE::Jmatrix(const uBlasVector& u, real t)
 {
-  // Do nothing
+  error("Not implemented");
+  return *(new Matrix());
 }
 //-----------------------------------------------------------------------------
 Matrix& ODE::Mmatrix(real t)
 {
-  // Do nothing
+  error("Not implemented");
+  return *(new Matrix());
 }
 //-----------------------------------------------------------------------------
 real ODE::dfdu(const uBlasVector& u, real t, uint i, uint j)

@@ -120,7 +120,7 @@ void MonoAdaptiveJacobian::mult(const uBlasVector& x, uBlasVector& y) const
 //-----------------------------------------------------------------------------
 void MonoAdaptiveJacobian::update(const uBlasVector& u, real t)
 {
-  const uint N = ode.size();
+  //const uint N = ode.size();
 
   real k = ts.endtime() - ts.starttime();
 
