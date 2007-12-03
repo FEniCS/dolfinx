@@ -56,13 +56,13 @@ void MonoAdaptiveJacobian::mult(const uBlasVector& x, uBlasVector& y) const
       // Do multiplication
       if ( piecewise )
       {
-	ode.M(xx, yy, ts.u0, a);
+        ode.M(xx, yy, ts.u0, a);
       }
       else
       {
-	const real t = a + method.npoint(n) * k;
-	ts.copy(ts.x, noffset, ts.u, 0, ts.N);
-	ode.M(xx, yy, ts.u, t);
+        const real t = a + method.npoint(n) * k;
+        ts.copy(ts.x, noffset, ts.u, 0, ts.N);
+        ode.M(xx, yy, ts.u, t);
       }
       
       // Copy values from yy
@@ -85,8 +85,8 @@ void MonoAdaptiveJacobian::mult(const uBlasVector& x, uBlasVector& y) const
       const uint Joffset = Jindices[i];
       for (uint pos = 0; pos < deps.size(); pos++)
       {
-	const uint j = deps[pos];
-	sum += Jvalues[Joffset + pos] * xxx[noffset + j];
+        const uint j = deps[pos];
+        sum += Jvalues[Joffset + pos] * xxx[noffset + j];
       }
       yy[i] = sum;
     }
@@ -107,13 +107,13 @@ void MonoAdaptiveJacobian::mult(const uBlasVector& x, uBlasVector& y) const
       // Get correct weight
       real w = 0.0;
       if ( method.type() == Method::cG )
-	w = - k * method.nweight(m, n + 1);
+        w = - k * method.nweight(m, n + 1);
       else
-	w = - k * method.nweight(m, n);
+        w = - k * method.nweight(m, n);
 
       // Add w*yy to y
       for (uint i = 0; i < ts.N; i++)
-	y(moffset + i) += w * yy(i);
+        y(moffset + i) += w * yy(i);
     }
   }
 }
@@ -122,13 +122,13 @@ void MonoAdaptiveJacobian::update(const uBlasVector& u, real t)
 {
   //const uint N = ode.size();
 
-  real k = ts.endtime() - ts.starttime();
+  //real k = ts.endtime() - ts.starttime();
 
 //   cout << "k: " << k << endl;
 
 
   Matrix& Atmp = ode.Jmatrix(u, t);
-  Matrix& Mtmp = ode.Mmatrix(t);
+  //Matrix& Mtmp = ode.Mmatrix(t);
 
   tic();
   if(As == 0)
