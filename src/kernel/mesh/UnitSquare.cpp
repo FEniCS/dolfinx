@@ -15,7 +15,7 @@ using namespace dolfin;
 UnitSquare::UnitSquare(uint nx, uint ny, Type type) : Mesh()
 {
   // Receive mesh according to parallel policy
-  //if (MPIManager::receive()) { receive(); return; }
+  if (MPIManager::receive()) { receive(); return; }
   
   if ( nx < 1 || ny < 1 )
     error("Size of unit square must be at least 1 in each dimension.");
@@ -123,6 +123,6 @@ UnitSquare::UnitSquare(uint nx, uint ny, Type type) : Mesh()
   editor.close();
 
   // Broadcast mesh according to parallel policy
-  //if (MPIManager::broadcast()) { broadcast(); }
+  if (MPIManager::broadcast()) { broadcast(); }
 }
 //-----------------------------------------------------------------------------

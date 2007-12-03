@@ -1,10 +1,11 @@
 // Copyright (C) 2006-2007 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Johan Hoffman 2007.
+// Modified by Johan Hoffman, 2007.
+// Modified by Garth N. Wells 2007.
 //
 // First added:  2006-05-09
-// Last changed: 2007-11-30
+// Last changed: 2007-12-03
 
 #include <sstream>
 
@@ -20,6 +21,7 @@
 #include <dolfin/BoundaryMesh.h>
 #include <dolfin/Cell.h>
 #include <dolfin/Vertex.h>
+#include <dolfin/MPIManager.h>
 #include <dolfin/MPIMeshCommunicator.h>
 
 using namespace dolfin;
@@ -153,16 +155,14 @@ void Mesh::smooth()
 //-----------------------------------------------------------------------------
 void Mesh::partition(uint num_partitions, MeshFunction<uint>& partitions)
 {
-/*
-  int this_process = MPIManager::processNum();
-  if (this_process != 0)
-  {
-    MPIMeshCommunicator::receive(partitions);
-    return;
-  }
+  // Receive mesh partition function according to parallel policy
+  if (MPIManager::receive()) { receive(); return; }
+
+  // Partition mesh
   MeshPartition::partition(*this, num_partitions, partitions);
-  MPIMeshCommunicator::broadcast(partitions);
-*/
+
+  // Broadcast mesh according to parallel policy
+  if (MPIManager::broadcast()) { broadcast(); }
 }
 //-----------------------------------------------------------------------------
 void Mesh::broadcast() const

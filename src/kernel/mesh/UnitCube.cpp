@@ -1,8 +1,10 @@
 // Copyright (C) 2005-2006 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Garth N. Wells, 2007.
+//
 // First added:  2005-12-02
-// Last changed: 2007-11-30
+// Last changed: 2007-12-03
 
 #include <dolfin/MeshEditor.h>
 #include <dolfin/UnitCube.h>
@@ -14,15 +16,8 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 UnitCube::UnitCube(uint nx, uint ny, uint nz) : Mesh()
 {
-/*
-  int this_process = MPIManager::processNum();
-  if (this_process != 0)
-  {
-    MPIMeshCommunicator::receive(*this);
-    dolfin_debug1("MPI finished on process: %d\n", this_process);
-    return;
-  }
-*/
+  // Receive mesh according to parallel policy
+  if (MPIManager::receive()) { receive(); return; }
 
   if ( nx < 1 || ny < 1 || nz < 1 )
     error("Size of unit cube must be at least 1 in each dimension.");
@@ -81,8 +76,7 @@ UnitCube::UnitCube(uint nx, uint ny, uint nz) : Mesh()
   // Close mesh editor
   editor.close();
 
-  // Broadcast mesh
-//  cout << "Finished constructing mesh.... broadcasting" << endl;
-//  MPIMeshCommunicator::broadcast(*this);
+  // Broadcast mesh according to parallel policy
+  if (MPIManager::broadcast()) { broadcast(); }
 }
 //-----------------------------------------------------------------------------
