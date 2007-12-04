@@ -17,6 +17,8 @@
 
 namespace dolfin
 {
+  
+  class MPIManager;
 
   /// A MeshFunction is a function that can be evaluated at a set of
   /// mesh entities. A MeshFunction is discrete and is only defined
@@ -28,8 +30,7 @@ namespace dolfin
   template <class T> class MeshFunction
   {
   public:
-    class MPIManager;
-
+ 
     /// Create empty mesh function
     MeshFunction() : _values(0), _mesh(0), _dim(0), _size(0) {}
 
@@ -53,7 +54,7 @@ namespace dolfin
     ~MeshFunction()
     {
       if ( _values )
-	delete [] _values;
+      delete [] _values;
     }
 
     /// Return mesh associated with mesh function
@@ -137,7 +138,7 @@ namespace dolfin
       _dim = dim;
       _size = size;
       if (_values)
-	delete [] _values;
+        delete [] _values;
       _values = new T[size];
     }
 
@@ -177,6 +178,18 @@ namespace dolfin
       _values[index] = value;
     }
     
+    /// Broadcast mesh function to all other processes
+    void broadcast() const
+    {
+      MPIMeshCommunicator::broadcast(*this); 
+    }
+
+    /// Receive mesh
+    void receive()
+    {
+      MPIMeshCommunicator::receive(*this); 
+    }
+
     /// Display mesh function data
     void disp() const
     {
@@ -187,13 +200,12 @@ namespace dolfin
       cout << "Number of values:      " << _size << endl;
       cout << endl;
       for (uint i = 0; i < _size; i++)
-      {
         cout << "(" << _dim << ", " << i << "): " << _values[i] << endl;
-      }
       end();
     }
 
   private:
+
     friend class MPIMeshCommunicator;
 
     /// Values at the set of mesh entities
@@ -207,7 +219,6 @@ namespace dolfin
 
     /// Number of mesh entities
     uint _size;
-
   };
 
 }

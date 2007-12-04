@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells 2007.
 //
 // First added:  2006-05-09
-// Last changed: 2007-12-03
+// Last changed: 2007-12-04
 
 #include <sstream>
 
@@ -156,22 +156,13 @@ void Mesh::smooth()
 void Mesh::partition(uint num_partitions, MeshFunction<uint>& partitions)
 {
   // Receive mesh partition function according to parallel policy
-  if (MPIManager::receive()) 
-  { 
-    MPIMeshCommunicator::receive(partitions); 
-    dolfin_debug1("Received mesh partitions on process %d", MPIManager::processNumber());
-    return; 
-  }
+  if (MPIManager::receive()) { partitions.receive(); return; }
 
   // Partition mesh
   MeshPartition::partition(*this, num_partitions, partitions);
 
   // Broadcast mesh according to parallel policy
-  if (MPIManager::broadcast()) 
-  { 
-    MPIMeshCommunicator::broadcast(partitions); 
-    dolfin_debug1("Broadcasted mesh partitions from process %d", MPIManager::processNumber());
-  }
+  if (MPIManager::broadcast()) { partitions.broadcast(); }
 }
 //-----------------------------------------------------------------------------
 void Mesh::broadcast() const
