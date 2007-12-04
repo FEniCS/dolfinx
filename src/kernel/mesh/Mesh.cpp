@@ -156,13 +156,13 @@ void Mesh::smooth()
 void Mesh::partition(uint num_partitions, MeshFunction<uint>& partitions)
 {
   // Receive mesh partition function according to parallel policy
-  if (MPIManager::receive()) { partitions.receive(); return; }
+  if (MPIManager::receive()) { MPIMeshCommunicator::receive(partitions); return; }
 
   // Partition mesh
   MeshPartition::partition(*this, num_partitions, partitions);
 
   // Broadcast mesh according to parallel policy
-  if (MPIManager::broadcast()) { partitions.broadcast(); }
+  if (MPIManager::broadcast()) { MPIMeshCommunicator::broadcast(partitions); }
 }
 //-----------------------------------------------------------------------------
 void Mesh::broadcast() const

@@ -178,18 +178,6 @@ namespace dolfin
       _values[index] = value;
     }
     
-    /// Broadcast mesh function to all other processes
-    void broadcast() const
-    {
-      MPIMeshCommunicator::broadcast(*this); 
-    }
-
-    /// Receive mesh
-    void receive()
-    {
-      MPIMeshCommunicator::receive(*this); 
-    }
-
     /// Display mesh function data
     void disp() const
     {
