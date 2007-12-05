@@ -66,11 +66,34 @@ DirichletBC::DirichletBC(Function& g,
                          uint sub_domain,
                          const SubSystem& sub_system,
                          BCMethod method)
-  : g(g), mesh(sub_domains.mesh()),
+  : BoundaryCondition(), g(g), mesh(sub_domains.mesh()),
     sub_domains(&sub_domains), sub_domain(sub_domain), sub_domains_local(false),
     sub_system(sub_system), method(method)
 {
   // Do nothing
+}
+//-----------------------------------------------------------------------------
+DirichletBC::DirichletBC(Function& g,
+                         Mesh& mesh,
+                         BCMethod method)
+  : BoundaryCondition(), g(g), mesh(mesh),
+    sub_domains(0), sub_domain(0), sub_domains_local(false), method(method),
+    user_sub_domain(0)
+{
+  // Create sub domain for entire boundary
+  class EntireBoundary : public SubDomain
+  {
+  public:
+    bool inside(const real* x, bool on_boundary) const
+    {
+      return on_boundary;
+    }
+  };
+
+  EntireBoundary sub_domain;
+
+  // Initialize sub domain markers
+  init(sub_domain);
 }
 //-----------------------------------------------------------------------------
 DirichletBC::~DirichletBC()

@@ -469,6 +469,11 @@ Create sub system boundary condition for sub domain. ";
 Create sub system boundary condition for sub domain specified by
 index. ";
 
+%feature("docstring")  dolfin::DirichletBC::DirichletBC "
+
+Simple creation of boundary condition with given value on the entire
+boundary. ";
+
 %feature("docstring")  dolfin::DirichletBC::~DirichletBC "
 
 Destructor. ";
@@ -1794,6 +1799,14 @@ Smooth mesh using Lagrangian mesh smoothing. ";
 
 Partition mesh into num_partitions partitions. ";
 
+%feature("docstring")  dolfin::Mesh::broadcast "
+
+Broadcast mesh to all other processes. ";
+
+%feature("docstring")  dolfin::Mesh::receive "
+
+Receive mesh. ";
+
 %feature("docstring")  dolfin::Mesh::disp "
 
 Display mesh data. ";
@@ -2132,6 +2145,14 @@ Set value at given entity. ";
 
 Set value at given entity. ";
 
+%feature("docstring")  dolfin::MeshFunction::broadcast "
+
+Broadcast mesh function to all other processes. ";
+
+%feature("docstring")  dolfin::MeshFunction::receive "
+
+Receive mesh. ";
+
 %feature("docstring")  dolfin::MeshFunction::disp "
 
 Display mesh function data. ";
@@ -2385,6 +2406,16 @@ Compute error estimate (modulo stability factor). ";
 Display method data. ";
 
 
+// File: classdolfin_1_1MPIManager.xml
+%feature("docstring") dolfin::MPIManager "
+
+This class handles initialization/finalization of MPI and provides
+utility functions for easy access of the number of processes and
+current process number.
+
+C++ includes: MPIManager.h ";
+
+
 // File: classdolfin_1_1MPIMeshCommunicator.xml
 %feature("docstring") dolfin::MPIMeshCommunicator "
 
@@ -2402,22 +2433,6 @@ Constructor. ";
 dolfin::MPIMeshCommunicator::~MPIMeshCommunicator "
 
 Destructor. ";
-
-%feature("docstring")  dolfin::MPIMeshCommunicator::broadcast "
-
-Broadcast mesh to all processes. ";
-
-%feature("docstring")  dolfin::MPIMeshCommunicator::receive "
-
-Receive mesh. ";
-
-%feature("docstring")  dolfin::MPIMeshCommunicator::broadcast "
-
-Broadcast MeshFunction to all processes. ";
-
-%feature("docstring")  dolfin::MPIMeshCommunicator::receive "
-
-Receive MeshFunction. ";
 
 
 // File: classdolfin_1_1NewtonSolver.xml
@@ -2576,6 +2591,14 @@ Compute product y = Mx for implicit system (optional). ";
 %feature("docstring")  dolfin::ODE::J "
 
 Compute product y = Jx for Jacobian J (optional). ";
+
+%feature("docstring")  dolfin::ODE::Jmatrix "
+
+Compute Jacobian matrix J (optional). ";
+
+%feature("docstring")  dolfin::ODE::Mmatrix "
+
+Compute LHS matrix M (optional). ";
 
 %feature("docstring")  dolfin::ODE::dfdu "
 
@@ -3512,6 +3535,18 @@ C++ includes: UnitCube.h ";
 %feature("docstring")  dolfin::UnitCube::UnitCube "";
 
 
+// File: classdolfin_1_1UnitInterval.xml
+%feature("docstring") dolfin::UnitInterval "
+
+Interval mesh of the 1D unit line (0,1). Given the number of cells
+(nx) in the axial direction, the total number of intervals will be nx
+and the total number of vertices will be (nx + 1).
+
+C++ includes: UnitInterval.h ";
+
+%feature("docstring")  dolfin::UnitInterval::UnitInterval "";
+
+
 // File: classdolfin_1_1UnitSquare.xml
 %feature("docstring") dolfin::UnitSquare "
 
@@ -4040,6 +4075,9 @@ domains. ";
 // File: MeshTopology_8h.xml
 
 
+// File: MPIManager_8h.xml
+
+
 // File: MPIMeshCommunicator_8h.xml
 
 
@@ -4050,6 +4088,9 @@ domains. ";
 
 
 // File: UnitCube_8h.xml
+
+
+// File: UnitInterval_8h.xml
 
 
 // File: UnitSquare_8h.xml

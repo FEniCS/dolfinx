@@ -86,6 +86,11 @@ namespace dolfin
                 const SubSystem& sub_system,
                 BCMethod method = topological);
 
+    /// Simple creation of boundary condition with given value on the entire boundary
+    DirichletBC(Function& g,
+                Mesh& mesh,
+                BCMethod method = topological);
+
     /// Destructor
     ~DirichletBC();
 
