@@ -44,6 +44,12 @@ AC_ARG_WITH(petsc-dir,
                            [Specify path to PETSc]),
             [PETSC_DIR=$with_petsc_dir],)
 
+# Option --enable/disable-mpi
+AC_ARG_ENABLE(mpi,
+              AC_HELP_STRING([--enable-mpi],
+                             [Compile with support for MPI]),
+              enable_mpi=$enableval, enable_mpi=yes)
+
 # Option --with-umfpack-include
 AC_ARG_WITH(umfpack-include,
             AC_HELP_STRING([--with-umfpack-include=<path>],
@@ -341,13 +347,18 @@ else
     PETSC_CFLAGS=""
 fi
 
-# Check for MPI and print message if not found
-AC_CHECK_PROG(mpi_found, mpirun, yes, no)
-if test $mpi_found = no; then
-    echo "MPI not found (might not work if PETSc uses MPI)."
-else
-    # Found MPI, so set HAVE_MPI_H and IGNORE_CXX_SEEK (mpich2 bug)
-    CXXFLAGS="-DHAVE_MPI_H=1 -DMPICH_IGNORE_CXX_SEEK $CXXFLAGS"
+# Handle option --disable-mpi
+if test x$enable_mpi = xyes; then
+
+   # Check for MPI and print message if not found
+   AC_CHECK_PROG(mpi_found, mpirun, yes, no)
+   if test $mpi_found = no; then
+       echo "MPI not found (might not work if PETSc uses MPI)."
+   else
+       # Found MPI, so set HAVE_MPI_H and IGNORE_CXX_SEEK (mpich2 bug)
+       CXXFLAGS="-DHAVE_MPI_H=1 -DMPICH_IGNORE_CXX_SEEK $CXXFLAGS"
+   fi
+
 fi
 
 # Handle option --disable-scotch
