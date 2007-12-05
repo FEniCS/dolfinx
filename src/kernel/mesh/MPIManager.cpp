@@ -123,7 +123,7 @@ dolfin::uint MPIManager::numProcesses()
   return 1;
 }
 //-----------------------------------------------------------------------------
-bool MPIManager::broadcast();
+bool MPIManager::broadcast()
 {
   return false;
 }
