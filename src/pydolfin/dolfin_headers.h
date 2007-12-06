@@ -26,6 +26,7 @@
 %include "dolfin/GenericTensor.h"
 %include "dolfin/GenericMatrix.h"
 %include "dolfin/GenericVector.h"
+%include "dolfin/GenericSparsityPattern.h"
 %include "dolfin/SparsityPattern.h"
 %include "dolfin/KrylovMethod.h"
 %include "dolfin/Preconditioner.h"
@@ -103,6 +104,7 @@
 %include "dolfin/SubDomain.h"
 %include "dolfin/BoundaryMesh.h"
 %include "dolfin/UnitCube.h"
+%include "dolfin/UnitInterval.h"
 %include "dolfin/UnitSquare.h"
 
 // DOLFIN headers included from fem

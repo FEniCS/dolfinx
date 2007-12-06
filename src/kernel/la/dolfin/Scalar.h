@@ -12,6 +12,7 @@
 #include <dolfin/constants.h>
 #include <dolfin/LogStream.h>
 #include <dolfin/GenericTensor.h>
+#include <dolfin/uBlasFactory.h>
 
 namespace dolfin
 {
@@ -91,6 +92,8 @@ namespace dolfin
 
     /// Get value (needed for SWIG interface)
     inline real getval() const { return value; }
+
+    inline LinearAlgebraFactory& factory() const { return dolfin::uBlasFactory::instance(); }
 
   private:
     

@@ -4,9 +4,12 @@
 // First added:  2007-11-30
 // Last changed: 2007-11-30
 
+#ifndef __LINEAR_ALGEBRA_FACTORY_H
+#define __LINEAR_ALGEBRA_FACTORY_H
 
-#ifndef __ LINEAR_ALGEBRA_FACTORY_H
-#define __ LINEAR_ALGEBRA_FACTORY_H
+#include <dolfin/GenericMatrix.h>
+#include <dolfin/GenericSparsityPattern.h>
+#include <dolfin/GenericVector.h>
 
 namespace dolfin
 {

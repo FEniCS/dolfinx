@@ -15,6 +15,7 @@ namespace dolfin
 {
 
   class SparsityPattern;
+  class LinearAlgebraFactory;
 
   /// This class defines a common interface for general tensors.
 
@@ -60,6 +61,9 @@ namespace dolfin
 
     /// Display tensor
     virtual void disp(uint precision = 2) const = 0;
+
+    /// Get LA backend factory
+    virtual LinearAlgebraFactory& factory() const = 0; 
 
   };
 

@@ -17,6 +17,7 @@
 #include <dolfin/PETScManager.h>
 #include <dolfin/Variable.h>
 #include <dolfin/GenericMatrix.h>
+#include <dolfin/PETScFactory.h>
 
 namespace dolfin
 {
@@ -138,6 +139,9 @@ namespace dolfin
     
     /// Return PETSc Mat pointer
     Mat mat() const;
+
+    /// Return factory object for backend
+    PETScFactory& factory() const { return dolfin::PETScFactory::instance(); }
 
   private:
 

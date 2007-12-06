@@ -908,6 +908,55 @@ Add block of values. ";
 Set given rows to identity matrix. ";
 
 
+// File: classdolfin_1_1GenericSparsityPattern.xml
+%feature("docstring") dolfin::GenericSparsityPattern "
+
+Base class for sparsity patterns of vectors/matrices. Concrete sub
+classes can be used to initalise vectors and sparse matrices.
+
+C++ includes: GenericSparsityPattern.h ";
+
+%feature("docstring")
+dolfin::GenericSparsityPattern::GenericSparsityPattern "
+
+Constructor. ";
+
+%feature("docstring")
+dolfin::GenericSparsityPattern::~GenericSparsityPattern "
+
+Destructor. ";
+
+%feature("docstring")  dolfin::GenericSparsityPattern::init "
+
+Initialise sparsity pattern for a vector. ";
+
+%feature("docstring")  dolfin::GenericSparsityPattern::init "
+
+Initialise sparsity pattern for a matrix with total number of rows and
+columns. ";
+
+%feature("docstring")  dolfin::GenericSparsityPattern::insert "
+
+Insert non-zero entry. ";
+
+%feature("docstring")  dolfin::GenericSparsityPattern::insert "
+
+Insert non-zero entry. ";
+
+%feature("docstring")  dolfin::GenericSparsityPattern::size "
+
+Return global size. ";
+
+%feature("docstring")
+dolfin::GenericSparsityPattern::numNonZeroPerRow "
+
+Return array with number of non-zeroes per row. ";
+
+%feature("docstring")  dolfin::GenericSparsityPattern::numNonZero "
+
+Return total number of non-zeroes. ";
+
+
 // File: classdolfin_1_1GenericTensor.xml
 %feature("docstring") dolfin::GenericTensor "
 
@@ -966,6 +1015,10 @@ Finalise assembly of tensor. ";
 %feature("docstring")  dolfin::GenericTensor::disp "
 
 Display tensor. ";
+
+%feature("docstring")  dolfin::GenericTensor::factory "
+
+Get LA backend factory. ";
 
 
 // File: classdolfin_1_1GenericVector.xml
@@ -1637,6 +1690,10 @@ Return const reference to implementation. ";
 %feature("docstring")  dolfin::Matrix::mat "
 
 Return const reference to implementation. ";
+
+%feature("docstring")  dolfin::Matrix::factory "
+
+Get LA backend factory. ";
 
 
 // File: classdolfin_1_1MatrixFactory.xml
@@ -2972,6 +3029,10 @@ Display tensor. ";
 
 Get value (needed for SWIG interface). ";
 
+%feature("docstring")  dolfin::Scalar::factory "
+
+Get LA backend factory. ";
+
 
 // File: classdolfin_1_1simple__array.xml
 %feature("docstring") dolfin::simple_array "
@@ -3018,6 +3079,10 @@ Initialise sparsity pattern for a vector. ";
 
 Initialise sparsity pattern for a matrix with total number of rows and
 columns. ";
+
+%feature("docstring")  dolfin::SparsityPattern::insert "
+
+Insert non-zero entry. ";
 
 %feature("docstring")  dolfin::SparsityPattern::insert "
 
@@ -3383,6 +3448,10 @@ Create uninitialized matrix. ";
 
 Create copy of matrix. ";
 
+%feature("docstring")  dolfin::uBlasMatrix::factory "
+
+Get LA backend factory. ";
+
 
 // File: classdolfin_1_1uBlasVector.xml
 %feature("docstring") dolfin::uBlasVector "
@@ -3484,6 +3553,10 @@ Element-wise division. ";
 
 Display vector. ";
 
+%feature("docstring")  dolfin::uBlasVector::factory "
+
+Return backend factory. ";
+
 %feature("docstring")  dolfin::uBlasVector::copy "";
 
 
@@ -3510,6 +3583,18 @@ tetrahedra will be 6*nx*ny*nz and the total number of vertices will be
 C++ includes: UnitCube.h ";
 
 %feature("docstring")  dolfin::UnitCube::UnitCube "";
+
+
+// File: classdolfin_1_1UnitInterval.xml
+%feature("docstring") dolfin::UnitInterval "
+
+Interval mesh of the 1D unit line (0,1). Given the number of cells
+(nx) in the axial direction, the total number of intervals will be nx
+and the total number of vertices will be (nx + 1).
+
+C++ includes: UnitInterval.h ";
+
+%feature("docstring")  dolfin::UnitInterval::UnitInterval "";
 
 
 // File: classdolfin_1_1UnitSquare.xml
@@ -3626,6 +3711,10 @@ Return const implementation. ";
 %feature("docstring")  dolfin::Vector::vec "
 
 Return implementation. ";
+
+%feature("docstring")  dolfin::Vector::factory "
+
+Return backend factory. ";
 
 
 // File: classdolfin_1_1Vertex.xml
@@ -3896,6 +3985,9 @@ domains. ";
 // File: GenericMatrix_8h.xml
 
 
+// File: GenericSparsityPattern_8h.xml
+
+
 // File: GenericTensor_8h.xml
 
 
@@ -4052,6 +4144,9 @@ domains. ";
 // File: UnitCube_8h.xml
 
 
+// File: UnitInterval_8h.xml
+
+
 // File: UnitSquare_8h.xml
 
 
@@ -4115,107 +4210,107 @@ domains. ";
 // File: RadauQuadrature_8h.xml
 
 
-// File: dir_6a88ce87808e5d857b93dc0c3cb764f6.xml
+// File: dir_0f6a826406b982fffcb7321fd9f2a074.xml
 
 
-// File: dir_a16f79b17e5a6626e8c01334ecc559e0.xml
+// File: dir_7d7984d67fd94e4cfcff1f740ae1e382.xml
 
 
-// File: dir_1283c9282325eade2504f42f559c6577.xml
+// File: dir_3b0a6a12f6f1f9c84c64e4d68e5d7ddf.xml
 
 
-// File: dir_a5398253c8d39b65c48388939887bc77.xml
+// File: dir_bd1f94d42f59b0bab5157aa734014633.xml
 
 
-// File: dir_cf544d76fc7d4815ae78c63858230150.xml
+// File: dir_4217384d7f977ce8a1ac67fa4eb7f7ec.xml
 
 
-// File: dir_9d56dd2b0bbf0b2d0266417232cffef8.xml
+// File: dir_8731c9bd9a36a518aeda956b0f0d72cb.xml
 
 
-// File: dir_29ae80976855ec6615788e1bf08dcf0a.xml
+// File: dir_9734bbaf9200da2a00c9c2b057bfd461.xml
 
 
-// File: dir_090bc9667cf2edb7ef6bad94a75b5526.xml
+// File: dir_f8db092ddb07b76d9705751c47aa386a.xml
 
 
-// File: dir_f4acad725a8f6794aceaaed75c4a38cb.xml
+// File: dir_5f9238fed4a2ecc531989eeea9520f2d.xml
 
 
-// File: dir_7b206dd91b0a180bbbf7500f1620dd15.xml
+// File: dir_8607f85f2eb053a9e92acd6747ddf3b9.xml
 
 
-// File: dir_5453f8d380884590dc6a8c82b865bb8d.xml
+// File: dir_074d8cbf322265c89f7f7d91f3aeb1e5.xml
 
 
-// File: dir_5b83ed8a00e945319ac2230c63e24119.xml
+// File: dir_b8077a8c12bbbf92766b5850db6d8877.xml
 
 
-// File: dir_31573e2cd7c706bd55b1d1d39b3f37cb.xml
+// File: dir_6c390a866349136806fee780c8e3acd2.xml
 
 
-// File: dir_3b20b12fe7d00bcff0e0d15313cdc6dc.xml
+// File: dir_e3bda9ed258ac30937db06d80bcdf22e.xml
 
 
-// File: dir_b8e54580c76effbe3187f1af8a8e5c54.xml
+// File: dir_d4dbb1db1726d551d49455a0df7237dc.xml
 
 
-// File: dir_2b58638b9a5b120757156e95b42065f8.xml
+// File: dir_b672e13ae3f89c283e595f72b5f3852e.xml
 
 
-// File: dir_c590bfed8346c7dd302df99e45689ae1.xml
+// File: dir_398cb8628aad1991fc41136a47e1afe1.xml
 
 
-// File: dir_e94d53c694cdfb609d93d2fae7aa4e4e.xml
+// File: dir_382870a5bbec77aa64d781c1afd60346.xml
 
 
-// File: dir_92e0664e2159e45c0ac11c25a21590c1.xml
+// File: dir_8e5a47236e1b23f287ff94e28718d778.xml
 
 
-// File: dir_66f7991935ea3387470b4bd033b3f31d.xml
+// File: dir_c2544ebf4585406faab9575fb5355cc9.xml
 
 
-// File: dir_8478162c998c6a049990fccb9d24f5a3.xml
+// File: dir_8a2c912aaf5638dfc979a6157cc2279c.xml
 
 
-// File: dir_fb768efafdc678bbbc50ec394adfda9d.xml
+// File: dir_9866a7e0176d27995ef8c1d94e4bd3a7.xml
 
 
-// File: dir_02030192eb22525c84f0a17505f0878d.xml
+// File: dir_f7799a203fcf85337476d038a439447d.xml
 
 
-// File: dir_496e40d727edf6ee522ecd31489d9858.xml
+// File: dir_6b499e21a197cf10b5a1b95a2c055ec4.xml
 
 
-// File: dir_e9b2473ee1ca0f4992bd089cd382550b.xml
+// File: dir_c0a7d0af3c33d8b1974288b7bb1bd8c6.xml
 
 
-// File: dir_7c6a06a3f1ac0ba76011aa74e011f0f9.xml
+// File: dir_372db2e923b8c30da6b93151a6f6c88b.xml
 
 
-// File: dir_25238cd7426b94650ff0909dae5c4575.xml
+// File: dir_c9c5f0e01fd02de9efb463eedd5965b4.xml
 
 
-// File: dir_501988810395b3d68c10ab691689c400.xml
+// File: dir_fad5a245bff705f95a9ff554244ab6d3.xml
 
 
-// File: dir_8a759014beec4cc833e3f3f0651baa19.xml
+// File: dir_40440b07e86bbf8ec22c3153da8d2bba.xml
 
 
-// File: dir_4555bc2898fa8d059bb9ca0837c9d67e.xml
+// File: dir_4c316a75d476c6fe31e53410cea44a16.xml
 
 
-// File: dir_099acd69a4791d69f6f1c59a401f484c.xml
+// File: dir_49192be8e6dc9bbd7f5f48bb525823e1.xml
 
 
-// File: dir_1c6552f17ad8b9bf17ece71b83a876b5.xml
+// File: dir_aa299af9e211e19560d478d4356a82cc.xml
 
 
-// File: dir_6b3aabe520bfafde7f3e8f20aaf3894f.xml
+// File: dir_afbbc5749c2b1c0d6b103370812f04b1.xml
 
 
-// File: dir_28810ea173714dbd566d65b3a2e57e53.xml
+// File: dir_398f98dcea0e0d374dde434e8deba94a.xml
 
 
-// File: dir_4cecbe2494d0c236b8a58c71f66ce6e1.xml
+// File: dir_8a3204b42563fce7ebae27487c798bd1.xml
 

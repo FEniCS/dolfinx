@@ -6,6 +6,7 @@
 #include <dolfin/GenericTensor.h>
 #include <dolfin/GenericMatrix.h>
 #include <dolfin/GenericVector.h>
+#include <dolfin/GenericSparsityPattern.h>
 
 #include <dolfin/SparsityPattern.h>
 #include <dolfin/KrylovMethod.h>

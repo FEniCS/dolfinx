@@ -93,6 +93,9 @@ namespace dolfin
     /// Return const reference to implementation
     inline DefaultMatrix& mat()
     { return matrix; }
+
+    inline LinearAlgebraFactory& factory() const
+    { return matrix.factory(); }
     
     private:
 

@@ -20,6 +20,7 @@
 #include <dolfin/ublas.h>
 #include <dolfin/uBlasVector.h>
 #include <dolfin/uBlasLUSolver.h>
+#include <dolfin/uBlasFactory.h>
 
 namespace dolfin
 {
@@ -118,6 +119,8 @@ namespace dolfin
 
     /// Create copy of matrix
     uBlasMatrix<Mat>* copy() const;
+
+    uBlasFactory& factory() const { return dolfin::uBlasFactory::instance(); }
 
     //friend LogStream& operator<< <Mat> (LogStream&, const uBlasMatrix<Mat>&);
 

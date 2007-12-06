@@ -4,38 +4,44 @@
 // First added:  2007-11-30
 // Last changed: 2007-11-30
 
+#ifdef HAVE_PETSC_H
 
-#ifndef __ PETSC_FACTORY_H
-#define __ PETSC_FACTORY_H
+#ifndef __PETSC_FACTORY_H
+#define __PETSC_FACTORY_H
 
-#include <dolfin/PETScMatrix.h>
-#include <dolfin/PETScVector.h>
-#include <dolfin/SparsityPattern.h>
+
+#include <dolfin/LinearAlgebraFactory.h>
 
 namespace dolfin
 {
 
   class PETScFactory: public LinearAlgebraFactory
   {
-    public:
-
-    /// Constructor
-    PETScFactory() {}
+  public:
 
     /// Destructor
     virtual ~PETScFactory() {}
 
     /// Create empty matrix
-    virtual PETScMatrix* createMatrix() const { return new PETScMatrix(); }
+    GenericMatrix* createMatrix() const;
 
     /// Create empty sparsity pattern 
-    virtual SparsityPattern * createPattern() const {return new SparsityPattern(); }
+    GenericSparsityPattern* createPattern() const;
 
     /// Create empty vector
-    virtual PETScVector* createVector() const { return new PETScVector(); }
+    GenericVector* createVector() const;
+
+    static PETScFactory& instance() { return petscfactory; }
+
+  private:
+    /// Private Constructor
+    PETScFactory() {}
+    static PETScFactory petscfactory;
 
   };
 
 }
 
-#
+#endif
+
+#endif
