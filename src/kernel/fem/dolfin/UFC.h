@@ -46,9 +46,6 @@ namespace dolfin
     // Array of finite elements for coefficients
     ufc::finite_element** coefficient_elements;
 
-    // Array of dof maps for primary arguments
-    ufc::dof_map** dof_maps;
-
     // Array of cell integrals
     ufc::cell_integral** cell_integrals;
 
@@ -97,6 +94,12 @@ namespace dolfin
 
     // Array of coefficients on macro element
     real** macro_w;
+
+    private:
+
+      // FIXME: thus will eventually be removed. It has been made private to prevent access
+      // Array of dof maps for primary arguments
+      ufc::dof_map** dof_maps;
 
   };
 

@@ -44,7 +44,7 @@ namespace dolfin
     uint size() const;
     
     /// Return dof map for argument function i
-    const DofMap& operator[] (uint i) const;
+    DofMap& operator[] (uint i) const;
     
   private:
 

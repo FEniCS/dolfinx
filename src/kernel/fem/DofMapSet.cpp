@@ -81,7 +81,7 @@ dolfin::uint DofMapSet::size() const
   return dof_map_set.size();
 }
 //-----------------------------------------------------------------------------
-const DofMap& DofMapSet::operator[] (uint i) const
+DofMap& DofMapSet::operator[] (uint i) const
 {
   dolfin_assert(i < dof_map_set.size());
   return *dof_map_set[i];

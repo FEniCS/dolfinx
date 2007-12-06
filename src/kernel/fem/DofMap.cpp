@@ -39,6 +39,10 @@ DofMap::DofMap(ufc::dof_map& dof_map, Mesh& mesh) : ufc_dof_map(dof_map),
     }
     ufc_dof_map.init_cell_finalize();
   }
+
+  // Initialise ufc cell 
+  CellIterator cell(mesh);
+  ufc_cell.init(*cell);
 }
 //-----------------------------------------------------------------------------
 DofMap::~DofMap()

@@ -47,8 +47,22 @@ namespace dolfin
       return ufc_dof_map.local_dimension();
     }
 
+    /// Return the dimension of the local finite element function space
+    unsigned int macro_local_dimension() const
+    {
+      return ufc_dof_map.local_dimension();
+    }
+
     /// Tabulate the local-to-global mapping of dofs on a cell
-    void tabulate_dofs(uint* dofs, const ufc::cell& cell) const
+    void tabulate_dofs(uint* dofs, Cell& cell) 
+    {
+      ufc_cell.update(cell);
+      ufc_dof_map.tabulate_dofs(dofs, ufc_mesh, ufc_cell);
+    }
+
+    // FIXME: Can this function eventually be removed?
+    /// Tabulate the local-to-global mapping of dofs on a ufc cell
+    void tabulate_dofs(uint* dofs, const ufc::cell& cell) const 
     {
       ufc_dof_map.tabulate_dofs(dofs, ufc_mesh, cell);
     }
@@ -73,6 +87,8 @@ namespace dolfin
     // DOLFIN mesh
     Mesh& dolfin_mesh;
 
+    // UFC cell
+    UFCCell ufc_cell;
   };
 
 }

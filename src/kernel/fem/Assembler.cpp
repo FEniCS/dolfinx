@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2007
 //
 // First added:  2007-01-17
-// Last changed: 2007-09-17
+// Last changed: 2007-12-06
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Array.h>
@@ -183,8 +183,7 @@ void Assembler::assembleCells(GenericTensor& A,
     
     // Tabulate dofs for each dimension
     for (uint i = 0; i < ufc.form.rank(); i++)
-      dof_map_set[i].tabulate_dofs(ufc.dofs[i], ufc.cell);    
-      //ufc.dof_maps[i]->tabulate_dofs(ufc.dofs[i], ufc.mesh, ufc.cell);
+      dof_map_set[i].tabulate_dofs(ufc.dofs[i], *cell);
 
     // Tabulate cell tensor
     integral->tabulate_tensor(ufc.A, ufc.w, ufc.cell);
@@ -246,8 +245,7 @@ void Assembler::assembleExteriorFacets(GenericTensor& A,
 
     // Tabulate dofs for each dimension
     for (uint i = 0; i < ufc.form.rank(); i++)
-      dof_map_set[i].tabulate_dofs(ufc.dofs[i], ufc.cell);    
-      //ufc.dof_maps[i]->tabulate_dofs(ufc.dofs[i], ufc.mesh, ufc.cell);
+      dof_map_set[i].tabulate_dofs(ufc.dofs[i], mesh_cell);    
 
     // Tabulate exterior facet tensor
     ufc.exterior_facet_integrals[0]->tabulate_tensor(ufc.A, ufc.w, ufc.cell, local_facet);
@@ -320,10 +318,8 @@ void Assembler::assembleInteriorFacets(GenericTensor& A,
     for (uint i = 0; i < ufc.form.rank(); i++)
     {
       const uint offset = ufc.local_dimensions[i];
-      //ufc.dof_maps[i]->tabulate_dofs(ufc.macro_dofs[i], ufc.mesh, ufc.cell0);
-      //ufc.dof_maps[i]->tabulate_dofs(ufc.macro_dofs[i] + offset, ufc.mesh, ufc.cell1);
-      dof_map_set[i].tabulate_dofs(ufc.macro_dofs[i], ufc.cell0);
-      dof_map_set[i].tabulate_dofs(ufc.macro_dofs[i] + offset, ufc.cell0);
+      dof_map_set[i].tabulate_dofs(ufc.macro_dofs[i], cell0);
+      dof_map_set[i].tabulate_dofs(ufc.macro_dofs[i] + offset, cell1);
     }
 
     // Tabulate exterior interior facet tensor on macro element
@@ -351,7 +347,7 @@ void Assembler::initGlobalTensor(GenericTensor& A, UFC& ufc,
   if( reset_tensor )
   {
     SparsityPattern sparsity_pattern; 
-    SparsityPatternBuilder::build(sparsity_pattern, mesh, ufc);
+    SparsityPatternBuilder::build(sparsity_pattern, mesh, ufc, dof_map_set);
     A.init(sparsity_pattern);
   }
   else

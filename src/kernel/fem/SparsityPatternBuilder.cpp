@@ -2,9 +2,10 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-05-24
-// Last changed:
+// Last changed: 2007-12-06
 
 #include <dolfin/dolfin_log.h>
+#include <dolfin/DofMapSet.h>
 #include <dolfin/Cell.h>
 #include <dolfin/Facet.h>
 #include <dolfin/Mesh.h>
@@ -16,14 +17,14 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 void SparsityPatternBuilder::build(SparsityPattern& sparsity_pattern, Mesh& mesh,
-                                   UFC& ufc)
+                                                UFC& ufc, const DofMapSet& dof_map_set)
 {
   if (ufc.form.rank() == 0)
     scalarBuild(sparsity_pattern);
   else if (ufc.form.rank() == 1)
-    vectorBuild(sparsity_pattern, ufc);
+    vectorBuild(sparsity_pattern, dof_map_set);
   else if (ufc.form.rank() == 2)
-    matrixBuild(sparsity_pattern, mesh, ufc);
+    matrixBuild(sparsity_pattern, mesh, ufc, dof_map_set);
   else
     error("Cannot compute sparsity patterm for rank > 2.");
 }
@@ -34,14 +35,14 @@ void SparsityPatternBuilder::scalarBuild(SparsityPattern& sparsity_pattern)
 }
 //-----------------------------------------------------------------------------
 void SparsityPatternBuilder::vectorBuild(SparsityPattern& sparsity_pattern, 
-                                         UFC& ufc)
+                                                    const DofMapSet& dof_map_set)
 {
   // Initialise sparsity pattern with problem size
-  sparsity_pattern.init(ufc.global_dimensions[0]);
+  sparsity_pattern.init(dof_map_set[0].global_dimension());
 }
 //-----------------------------------------------------------------------------
 void SparsityPatternBuilder::matrixBuild(SparsityPattern& sparsity_pattern, 
-                                         Mesh& mesh, UFC& ufc)
+                                  Mesh& mesh, UFC& ufc, const DofMapSet& dof_map_set)
 {
   // Initialise sparsity pattern
   sparsity_pattern.init(ufc.global_dimensions[0], ufc.global_dimensions[1]);
@@ -50,17 +51,17 @@ void SparsityPatternBuilder::matrixBuild(SparsityPattern& sparsity_pattern,
   if (ufc.form.num_cell_integrals() != 0)
   {
     for (CellIterator cell(mesh); !cell.end(); ++cell)
-    {
+    { 
       // Update to current cell
       ufc.update(*cell);
-  
+          
       // Tabulate dofs for each dimension
-      ufc.dof_maps[0]->tabulate_dofs(ufc.dofs[0], ufc.mesh, ufc.cell);
-      ufc.dof_maps[1]->tabulate_dofs(ufc.dofs[1], ufc.mesh, ufc.cell);
-  
-      // Build sparsity pattern
-      uint dim0 = ufc.dof_maps[0]->local_dimension();
-      uint dim1 = ufc.dof_maps[1]->local_dimension();
+      dof_map_set[0].tabulate_dofs(ufc.dofs[0], *cell);
+      dof_map_set[1].tabulate_dofs(ufc.dofs[1], *cell);
+ 
+     // Build sparsity pattern
+      uint dim0 = dof_map_set[0].local_dimension();
+      uint dim1 = dof_map_set[1].local_dimension();
       for (uint i = 0; i < dim0; ++i)
         for (uint j = 0; j < dim1; ++j)
           sparsity_pattern.insert( (ufc.dofs[0])[i], (ufc.dofs[0])[j] );
@@ -91,12 +92,13 @@ void SparsityPatternBuilder::matrixBuild(SparsityPattern& sparsity_pattern,
       // Tabulate dofs for each dimension on macro element
       for (uint i = 0; i < ufc.form.rank(); i++)
       {
-        const uint offset = ufc.local_dimensions[i];
-        ufc.dof_maps[i]->tabulate_dofs(ufc.macro_dofs[i], ufc.mesh, ufc.cell0);
-        ufc.dof_maps[i]->tabulate_dofs(ufc.macro_dofs[i] + offset, ufc.mesh, ufc.cell1);
+        const uint offset = dof_map_set[i].local_dimension();
+        dof_map_set[i].tabulate_dofs(ufc.macro_dofs[i], cell0);
+        dof_map_set[i].tabulate_dofs(ufc.macro_dofs[i] + offset, cell1);
       }
 
       // Build sparsity
+      // FIXME: local macro dimension should come from DofMap
       uint dim0 = ufc.macro_local_dimensions[0];
       uint dim1 = ufc.macro_local_dimensions[1];
       for (uint i = 0; i < dim0; ++i)
