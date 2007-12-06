@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2007.
 //
 // First added:  2005-12-02
-// Last changed: 2007-12-03
+// Last changed: 2007-12-06
 
 #include <dolfin/MeshEditor.h>
 #include <dolfin/UnitCube.h>
@@ -17,7 +17,7 @@ using namespace dolfin;
 UnitCube::UnitCube(uint nx, uint ny, uint nz) : Mesh()
 {
   // Receive mesh according to parallel policy
-  if (MPIManager::receive()) { receive(); return; }
+  if (MPIManager::receive()) { MPIMeshCommunicator::receive(*this); return; }
 
   if ( nx < 1 || ny < 1 || nz < 1 )
     error("Size of unit cube must be at least 1 in each dimension.");
@@ -77,6 +77,6 @@ UnitCube::UnitCube(uint nx, uint ny, uint nz) : Mesh()
   editor.close();
 
   // Broadcast mesh according to parallel policy
-  if (MPIManager::broadcast()) { broadcast(); }
+  if (MPIManager::broadcast()) { MPIMeshCommunicator::broadcast(*this); }
 }
 //-----------------------------------------------------------------------------

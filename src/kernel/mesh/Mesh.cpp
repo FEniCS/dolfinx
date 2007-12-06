@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells 2007.
 //
 // First added:  2006-05-09
-// Last changed: 2007-12-04
+// Last changed: 2007-12-06
 
 #include <sstream>
 
@@ -163,16 +163,6 @@ void Mesh::partition(uint num_partitions, MeshFunction<uint>& partitions)
 
   // Broadcast mesh according to parallel policy
   if (MPIManager::broadcast()) { MPIMeshCommunicator::broadcast(partitions); }
-}
-//-----------------------------------------------------------------------------
-void Mesh::broadcast() const
-{
-  MPIMeshCommunicator::broadcast(*this);
-}
-//-----------------------------------------------------------------------------
-void Mesh::receive()
-{
-  MPIMeshCommunicator::receive(*this);
 }
 //-----------------------------------------------------------------------------
 void Mesh::disp() const
