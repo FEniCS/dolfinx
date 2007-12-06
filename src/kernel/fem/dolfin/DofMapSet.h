@@ -15,11 +15,11 @@
 #include <ufc.h>
 
 #include <dolfin/constants.h>
+#include <dolfin/DofMap.h>
 
 namespace dolfin
 {
 
-  class DofMap;
   class Mesh;
   class UFC;
 

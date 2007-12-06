@@ -20,12 +20,8 @@ DofMap::DofMap(ufc::dof_map& dof_map, Mesh& mesh) : ufc_dof_map(dof_map),
 
   // Initialize mesh entities used by dof map
   for (uint d = 0; d <= mesh.topology().dim(); d++)
-  {
     if ( ufc_dof_map.needs_mesh_entities(d) )
-    {
       mesh.init(d);
-    }
-  }
   
   // Initialize UFC mesh data (must be done after entities are created)
   ufc_mesh.init(mesh);
