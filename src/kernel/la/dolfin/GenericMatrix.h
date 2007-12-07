@@ -3,9 +3,10 @@
 //
 // Modified by Johan Jansson 2006.
 // Modified by Anders Logg 2006-2007.
+// Modified by Ola Skavhaug 2007.
 //
 // First added:  2006-04-24
-// Last changed: 2007-08-28
+// Last changed: 2007-12-07
 
 #ifndef __GENERIC_MATRIX_H
 #define __GENERIC_MATRIX_H
@@ -16,7 +17,7 @@
 namespace dolfin
 {
 
-  class SparsityPattern;
+  class GenericSparsityPattern;
   
   /// This class defines a common interface for matrices.
   
@@ -33,7 +34,7 @@ namespace dolfin
     ///--- Implementation of GenericTensor interface ---
 
     /// Initialize zero tensor using sparsity pattern (implemented by sub class)
-    virtual void init(const SparsityPattern& sparsity_pattern) = 0;
+    virtual void init(const GenericSparsityPattern& sparsity_pattern) = 0;
 
     /// Create uninitialized matrix
     virtual GenericMatrix* create() const = 0;

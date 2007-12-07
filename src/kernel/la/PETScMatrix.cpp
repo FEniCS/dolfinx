@@ -3,9 +3,10 @@
 //
 // Modified by Garth N. Wells 2005-2007.
 // Modified by Andy R. Terrel 2005.
+// Modified by Ola Skavhaug 2007.
 //
 // First added:  2004
-// Last changed: 2007-10-23
+// Last changed: 2007-12-07
 
 #ifdef HAVE_PETSC_H
 
@@ -17,6 +18,7 @@
 #include <dolfin/PETScManager.h>
 #include <dolfin/PETScVector.h>
 #include <dolfin/PETScMatrix.h>
+#include <dolfin/GenericSparsityPattern.h>
 #include <dolfin/SparsityPattern.h>
 
 using namespace dolfin;
@@ -113,11 +115,12 @@ void PETScMatrix::init(uint M, uint N, uint bs, uint nz)
   MatZeroEntries(A);
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::init(const SparsityPattern& sparsity_pattern)
+void PETScMatrix::init(const GenericSparsityPattern& sparsity_pattern)
 {
-  uint* nzrow = new uint[sparsity_pattern.size(0)];  
-  sparsity_pattern.numNonZeroPerRow(nzrow);
-  init(sparsity_pattern.size(0), sparsity_pattern.size(1), nzrow);
+  const SparsityPattern& spattern = reinterpret_cast<const SparsityPattern&>(sparsity_pattern);
+  uint* nzrow = new uint[spattern.size(0)];  
+  spattern.numNonZeroPerRow(nzrow);
+  init(spattern.size(0), spattern.size(1), nzrow);
   delete [] nzrow;
 }
 //-----------------------------------------------------------------------------

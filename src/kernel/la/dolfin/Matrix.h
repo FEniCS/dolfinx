@@ -1,8 +1,10 @@
 // Copyright (C) 2006-2007 Anders Logg and Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Ola Skavhaug, 2007.
+//
 // First added:  2006-05-15
-// Last changed: 2007-07-22
+// Last changed: 2007-12-07
 
 #ifndef __MATRIX_H
 #define __MATRIX_H
@@ -36,7 +38,7 @@ namespace dolfin
     { matrix.init(M, N); }
     
     /// Initialize zero matrix using sparsity pattern
-    inline void init(const SparsityPattern& sparsity_pattern)
+    inline void init(const GenericSparsityPattern& sparsity_pattern)
     { matrix.init(sparsity_pattern); }
     
     /// Create uninitialized matrix

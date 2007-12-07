@@ -2,9 +2,10 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Anders Logg 2006-2007.
+// Modified by Ola Skavhaug 2007.
 //
 // First added:  2006-07-05
-// Last changed: 2007-08-30
+// Last changed: 2007-12-07
 
 #ifndef __UBLAS_MATRIX_H
 #define __UBLAS_MATRIX_H
@@ -16,6 +17,7 @@
 #include <dolfin/Array.h>
 #include <dolfin/Variable.h>
 #include <dolfin/GenericMatrix.h>
+#include <dolfin/GenericSparsityPattern.h>
 #include <dolfin/SparsityPattern.h>
 #include <dolfin/ublas.h>
 #include <dolfin/uBlasVector.h>
@@ -112,7 +114,7 @@ namespace dolfin
     void init(uint M, uint N);
 
     /// Initialize a matrix from the sparsity pattern
-    void init(const SparsityPattern& sparsity_pattern);
+    void init(const GenericSparsityPattern& sparsity_pattern);
 
     /// Create uninitialized matrix
     uBlasMatrix<Mat>* create() const;
@@ -312,20 +314,24 @@ namespace dolfin
   // Specialised member functions (must be inlined to avoid link errors)
   //-----------------------------------------------------------------------------
   template <> 
-  inline void uBlasMatrix<ublas_dense_matrix>::init(const SparsityPattern& sparsity_pattern)
+  inline void uBlasMatrix<ublas_dense_matrix>::init(const GenericSparsityPattern& sparsity_pattern)
   {
     init(sparsity_pattern.size(0), sparsity_pattern.size(1));
   }
   //---------------------------------------------------------------------------
   template <class Mat> 
-  inline void uBlasMatrix<Mat>::init(const SparsityPattern& sparsity_pattern)
+  inline void uBlasMatrix<Mat>::init(const GenericSparsityPattern& sparsity_pattern)
   {
     init(sparsity_pattern.size(0), sparsity_pattern.size(1));
 
     // Reserve space for non-zeroes
     this->reserve(sparsity_pattern.numNonZero());
 
-    const std::vector< std::set<int> >& pattern = sparsity_pattern.pattern();
+    //const SparsityPattern& spattern = dynamic_cast<const SparsityPattern&>(sparsity_pattern);
+    const SparsityPattern* pattern_pointer = dynamic_cast<const SparsityPattern*>(&sparsity_pattern);
+    if (not pattern_pointer)
+      error("Cannot convert GenericSparsityPattern to concrete SparsityPattern type. Aborting.");
+    const std::vector< std::set<int> >& pattern = pattern_pointer->pattern();
 
     std::vector< std::set<int> >::const_iterator set;
     std::set<int>::const_iterator element;

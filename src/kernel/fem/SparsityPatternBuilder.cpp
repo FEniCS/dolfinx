@@ -1,21 +1,23 @@
 // Copyright (C) 2007 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Ola Skavhaug
+//
 // First added:  2007-05-24
-// Last changed:
+// Last changed: 2007-12-07
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Cell.h>
 #include <dolfin/Facet.h>
 #include <dolfin/Mesh.h>
-#include <dolfin/SparsityPattern.h>
+#include <dolfin/GenericSparsityPattern.h>
 #include <dolfin/SparsityPatternBuilder.h>
 #include <dolfin/UFC.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void SparsityPatternBuilder::build(SparsityPattern& sparsity_pattern, Mesh& mesh,
+void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern, Mesh& mesh,
                                    UFC& ufc)
 {
   if (ufc.form.rank() == 0)
@@ -28,19 +30,19 @@ void SparsityPatternBuilder::build(SparsityPattern& sparsity_pattern, Mesh& mesh
     error("Cannot compute sparsity patterm for rank > 2.");
 }
 //-----------------------------------------------------------------------------
-void SparsityPatternBuilder::scalarBuild(SparsityPattern& sparsity_pattern) 
+void SparsityPatternBuilder::scalarBuild(GenericSparsityPattern& sparsity_pattern) 
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void SparsityPatternBuilder::vectorBuild(SparsityPattern& sparsity_pattern, 
+void SparsityPatternBuilder::vectorBuild(GenericSparsityPattern& sparsity_pattern, 
                                          UFC& ufc)
 {
   // Initialise sparsity pattern with problem size
   sparsity_pattern.init(ufc.global_dimensions[0]);
 }
 //-----------------------------------------------------------------------------
-void SparsityPatternBuilder::matrixBuild(SparsityPattern& sparsity_pattern, 
+void SparsityPatternBuilder::matrixBuild(GenericSparsityPattern& sparsity_pattern, 
                                          Mesh& mesh, UFC& ufc)
 {
   // Initialise sparsity pattern

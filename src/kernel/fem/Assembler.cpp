@@ -2,9 +2,10 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells, 2007
+// Modified by Ola Skavhaug, 2007
 //
 // First added:  2007-01-17
-// Last changed: 2007-09-17
+// Last changed: 2007-12-07
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Array.h>
@@ -346,9 +347,9 @@ void Assembler::initGlobalTensor(GenericTensor& A, UFC& ufc,
 {
   if( reset_tensor )
   {
-    SparsityPattern sparsity_pattern; 
-    SparsityPatternBuilder::build(sparsity_pattern, mesh, ufc);
-    A.init(sparsity_pattern);
+    GenericSparsityPattern* sparsity_pattern = A.factory().createPattern(); 
+    SparsityPatternBuilder::build(*sparsity_pattern, mesh, ufc);
+    A.init(*sparsity_pattern);
   }
   else
     A.zero();

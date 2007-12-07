@@ -1,14 +1,13 @@
 // Copyright (C) 2007 Ola Skavhaug.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// First added:  2007-12-6
-// Last changed: 2007-12-6
+// First added:  2007-12-06
+// Last changed: 2007-12-06
 
 
 #ifndef __UBLAS_FACTORY_H
 #define __UBLAS_FACTORY_H
 
-#include <dolfin/SparsityPattern.h>
 #include <dolfin/LinearAlgebraFactory.h>
 #include <dolfin/ublas.h>
 
@@ -27,7 +26,7 @@ namespace dolfin
     GenericMatrix* createMatrix() const;
 
     /// Create empty sparsity pattern 
-    SparsityPattern* createPattern() const;
+    GenericSparsityPattern* createPattern() const;
 
     /// Create empty vector
     GenericVector* createVector() const;

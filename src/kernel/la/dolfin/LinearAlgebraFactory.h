@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-11-30
-// Last changed: 2007-11-30
+// Last changed: 2007-12-06
 
 #ifndef __LINEAR_ALGEBRA_FACTORY_H
 #define __LINEAR_ALGEBRA_FACTORY_H

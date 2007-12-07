@@ -25,6 +25,7 @@ nobase_include_HEADERS  = dolfin/dolfin_la.h \
                           dolfin/PETScPreconditioner.h \
                           dolfin/PETScVector.h \
                           dolfin/Preconditioner.h \
+                          dolfin/GenericSparsityPattern.h \
                           dolfin/SparsityPattern.h \
                           dolfin/ublas.h \
                           dolfin/uBlasDenseMatrix.h \
