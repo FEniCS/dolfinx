@@ -469,6 +469,11 @@ Create sub system boundary condition for sub domain. ";
 Create sub system boundary condition for sub domain specified by
 index. ";
 
+%feature("docstring")  dolfin::DirichletBC::DirichletBC "
+
+Simple creation of boundary condition with given value on the entire
+boundary. ";
+
 %feature("docstring")  dolfin::DirichletBC::~DirichletBC "
 
 Destructor. ";
@@ -2442,6 +2447,16 @@ Compute error estimate (modulo stability factor). ";
 Display method data. ";
 
 
+// File: classdolfin_1_1MPIManager.xml
+%feature("docstring") dolfin::MPIManager "
+
+This class handles initialization/finalization of MPI and provides
+utility functions for easy access of the number of processes and
+current process number.
+
+C++ includes: MPIManager.h ";
+
+
 // File: classdolfin_1_1MPIMeshCommunicator.xml
 %feature("docstring") dolfin::MPIMeshCommunicator "
 
@@ -2459,22 +2474,6 @@ Constructor. ";
 dolfin::MPIMeshCommunicator::~MPIMeshCommunicator "
 
 Destructor. ";
-
-%feature("docstring")  dolfin::MPIMeshCommunicator::broadcast "
-
-Broadcast mesh to all processes. ";
-
-%feature("docstring")  dolfin::MPIMeshCommunicator::receive "
-
-Receive mesh. ";
-
-%feature("docstring")  dolfin::MPIMeshCommunicator::broadcast "
-
-Broadcast MeshFunction to all processes. ";
-
-%feature("docstring")  dolfin::MPIMeshCommunicator::receive "
-
-Receive MeshFunction. ";
 
 
 // File: classdolfin_1_1NewtonSolver.xml
@@ -2633,6 +2632,14 @@ Compute product y = Mx for implicit system (optional). ";
 %feature("docstring")  dolfin::ODE::J "
 
 Compute product y = Jx for Jacobian J (optional). ";
+
+%feature("docstring")  dolfin::ODE::Jmatrix "
+
+Compute Jacobian matrix J (optional). ";
+
+%feature("docstring")  dolfin::ODE::Mmatrix "
+
+Compute LHS matrix M (optional). ";
 
 %feature("docstring")  dolfin::ODE::dfdu "
 
@@ -3031,7 +3038,7 @@ Get value (needed for SWIG interface). ";
 
 %feature("docstring")  dolfin::Scalar::factory "
 
-Get LA backend factory. ";
+Return a factory for the default linear algebra backend. ";
 
 
 // File: classdolfin_1_1simple__array.xml
@@ -4130,6 +4137,9 @@ domains. ";
 
 
 // File: MeshTopology_8h.xml
+
+
+// File: MPIManager_8h.xml
 
 
 // File: MPIMeshCommunicator_8h.xml

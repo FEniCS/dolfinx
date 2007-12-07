@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-05-09
-// Last changed: 2007-03-01
+// Last changed: 2007-11-30
 
 #ifndef __MESH_CONNECTIVITY_H
 #define __MESH_CONNECTIVITY_H
@@ -84,6 +84,8 @@ namespace dolfin
     void disp() const;
     
   private:
+
+    friend class MPIMeshCommunicator;
 
     /// Total number of connections
     uint _size;

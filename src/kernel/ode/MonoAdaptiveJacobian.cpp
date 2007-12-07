@@ -9,6 +9,7 @@
 #include <dolfin/Method.h>
 #include <dolfin/MonoAdaptiveTimeSlab.h>
 #include <dolfin/MonoAdaptiveJacobian.h>
+#include <dolfin/timing.h>
 
 using namespace dolfin;
 
@@ -55,13 +56,13 @@ void MonoAdaptiveJacobian::mult(const uBlasVector& x, uBlasVector& y) const
       // Do multiplication
       if ( piecewise )
       {
-	ode.M(xx, yy, ts.u0, a);
+        ode.M(xx, yy, ts.u0, a);
       }
       else
       {
-	const real t = a + method.npoint(n) * k;
-	ts.copy(ts.x, noffset, ts.u, 0, ts.N);
-	ode.M(xx, yy, ts.u, t);
+        const real t = a + method.npoint(n) * k;
+        ts.copy(ts.x, noffset, ts.u, 0, ts.N);
+        ode.M(xx, yy, ts.u, t);
       }
       
       // Copy values from yy
@@ -84,8 +85,8 @@ void MonoAdaptiveJacobian::mult(const uBlasVector& x, uBlasVector& y) const
       const uint Joffset = Jindices[i];
       for (uint pos = 0; pos < deps.size(); pos++)
       {
-	const uint j = deps[pos];
-	sum += Jvalues[Joffset + pos] * xxx[noffset + j];
+        const uint j = deps[pos];
+        sum += Jvalues[Joffset + pos] * xxx[noffset + j];
       }
       yy[i] = sum;
     }
@@ -106,14 +107,66 @@ void MonoAdaptiveJacobian::mult(const uBlasVector& x, uBlasVector& y) const
       // Get correct weight
       real w = 0.0;
       if ( method.type() == Method::cG )
-	w = - k * method.nweight(m, n + 1);
+        w = - k * method.nweight(m, n + 1);
       else
-	w = - k * method.nweight(m, n);
+        w = - k * method.nweight(m, n);
 
       // Add w*yy to y
       for (uint i = 0; i < ts.N; i++)
-	y(moffset + i) += w * yy(i);
+        y(moffset + i) += w * yy(i);
     }
   }
+}
+//-----------------------------------------------------------------------------
+void MonoAdaptiveJacobian::update(const uBlasVector& u, real t)
+{
+  //const uint N = ode.size();
+
+  Matrix& Atmp = ode.Jmatrix(u, t);
+
+  tic();
+  if(As == 0)
+  {
+    As = new Matrix(Atmp);
+  }
+  message("Matrix dup took %g seconds",toc());
+
+#ifdef HAVE_PETSC_H
+
+  real k = ts.endtime() - ts.starttime();
+  Matrix& Mtmp = ode.Mmatrix(t);
+
+  tic();
+  Mat As_M = As->mat().mat();
+  Mat Atmp_M = Atmp.mat().mat();
+  Mat Mtmp_M = Mtmp.mat().mat();
+
+  MatCopy(Mtmp_M, As_M, SUBSET_NONZERO_PATTERN);
+  message("Matrix copy2 took %g seconds",toc());
+
+  tic();
+  if(method.type() == Method::cG)
+  {
+    if(method.degree() != 1)
+      error("Sparse Jacobian only implemented for dG(0) and cG(1)");
+
+    MatAXPY(As_M, -0.5 * k, Atmp_M, SAME_NONZERO_PATTERN);
+  }
+  else
+  {
+    if(method.degree() != 0)
+      error("Sparse Jacobian only implemented for dG(0) and cG(1)");
+
+    MatAXPY(As_M, -k, Atmp_M, SAME_NONZERO_PATTERN);
+  }
+  message("Matrix axpy took %g seconds",toc());
+#else
+  error("Sparse Jacobian only implemented for PETSc");
+#endif
+}
+//-----------------------------------------------------------------------------
+void MonoAdaptiveJacobian::update()
+{
+  TimeSlabJacobian::update();
 }
 //-----------------------------------------------------------------------------

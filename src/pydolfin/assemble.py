@@ -87,12 +87,23 @@ class FacetNormal(ffc_Function, cpp_FacetNormal):
         ffc_Function.__init__(self, element)
         cpp_FacetNormal.__init__(self, mesh)
 
+# Create new class inheriting from FFC MeshSize and DOLFIN MeshSize
+# (FFC MeshSize is a function that returns a FFC Function object)
+class MeshSize(ffc_Function, cpp_MeshSize):
+
+    def __init__(self, shape, mesh):
+        "Create MeshSize"
+
+        element = FiniteElement("Discontinuous Lagrange", shape, 0)
+        ffc_Function.__init__(self, element)
+        cpp_MeshSize.__init__(self, mesh)
+
 # Create new class inheriting from FFC MeshSize and DOLFIN AvgMeshSize
 # (FFC MeshSize is a function that returns a FFC Function object)
 class AvgMeshSize(ffc_Function, cpp_AvgMeshSize):
 
     def __init__(self, shape, mesh):
-        "Create FacetNormal"
+        "Create AvgMeshSize"
 
         element = FiniteElement("Discontinuous Lagrange", shape, 0)
         ffc_Function.__init__(self, element)

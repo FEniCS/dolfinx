@@ -1,8 +1,9 @@
 This file lists TODO items for DOLFIN. As usual, the priority depends
-on the current interests of the various DOLFIN developers. To edit this
-file, it is convenient to install org-mode in Emacs.
+on the current interests of the various DOLFIN developers.
 
-
+To edit this file, it is convenient to install org-mode in Emacs.
+It is available as part of Emacs 22 and can be invoked by M-x org-mode.
+This gives convenient expand/collapse of bullets by pressing TAB.
 
 * Parallelisation
 
@@ -89,6 +90,43 @@ file, it is convenient to install org-mode in Emacs.
 * Demos
 
 ** Add Python versions of all demos
+
+** Working
+   mesh/meshfunction
+   mesh/partitioning
+   mesh/refinement
+   pde/convection-diffusion
+   pde/dg
+   pde/elasticity
+   pde/functional
+   pde/mixed-poisson
+   pde/periodic
+   pde/poisson
+   pde/poisson1D
+   pde/stokes/stabilized
+   pde/stokes/taylor-hood
+   plot
+   quadrature
+
+** Not working (in Python)
+   fem
+   la/eigensolver
+   mesh/subdomains
+   nls/nonlinearpoisson
+   ode/aliev-panfilov
+   pde/lift-drag
+   pde/nonlinear-poisson
+
+** Not added (in Python)
+   ode/complex
+   ode/stiff
+   ode/courtemanche
+   ode/homotopy/economy
+   ode/homotopy/simple
+   ode/harmonic
+   ode/lorenz
+   ode/method-weights
+   nls/cahn-hilliard
 
 * PyDOLFIN
 ** Fix memory leak warning for Array of Function*

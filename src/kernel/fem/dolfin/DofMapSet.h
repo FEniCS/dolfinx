@@ -15,11 +15,11 @@
 #include <ufc.h>
 
 #include <dolfin/constants.h>
+#include <dolfin/DofMap.h>
 
 namespace dolfin
 {
 
-  class DofMap;
   class Mesh;
   class UFC;
 
@@ -44,7 +44,7 @@ namespace dolfin
     uint size() const;
     
     /// Return dof map for argument function i
-    const DofMap& operator[] (uint i) const;
+    DofMap& operator[] (uint i) const;
     
   private:
 

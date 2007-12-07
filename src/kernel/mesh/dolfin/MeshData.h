@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-05-08
-// Last changed: 2006-06-12
+// Last changed: 2006-11-30
 
 #ifndef __MESH_DATA_H
 #define __MESH_DATA_H
@@ -51,6 +51,8 @@ namespace dolfin
     // Cell type
     CellType* cell_type;
     
+  private:
+    friend class MPIMeshCommunicator;
   };
 
 }

@@ -1,18 +1,23 @@
 // Copyright (C) 2007 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by: Magnus Vikstrøm, 2007.
+//
 // First added:  2007-05-30
-// Last changed: 
+// Last changed: 2007-12-02
 
 #ifndef __MPI_MESH_COMMUNICATOR_H
 #define __MPI_MESH_COMMUNICATOR_H
 
 #include <dolfin/MeshFunction.h>
 
+#ifdef HAVE_MPI_H
+  #include <mpi.h>
+#endif
+
 namespace dolfin
 {
   class Mesh;
-//  class MeshFunction<unsigned int>;
   
   /// The class facilitates the transfer of a mesh between processes using MPI
   
@@ -27,19 +32,18 @@ namespace dolfin
     ~MPIMeshCommunicator();
 
     /// Broadcast mesh to all processes
-    void broadcast(const Mesh& mesh);
+    static void broadcast(const Mesh& mesh);
 
     /// Receive mesh
-    void receive(Mesh& mesh);
+    static void receive(Mesh& mesh);
     
-    /// Broadcast MeshFunction to all processes
-    void broadcast(const MeshFunction<unsigned int>& mesh_function);
+    /// Broadcast mesh function to all processes
+    static void broadcast(const MeshFunction<unsigned int>& mesh_function);
 
-    /// Receive MeshFunction
-    void receive(MeshFunction<unsigned int>& mesh_function);
+    /// Receive mesh function
+    static void receive(MeshFunction<unsigned int>& mesh_function);
 
   };
-
 }
 
 #endif

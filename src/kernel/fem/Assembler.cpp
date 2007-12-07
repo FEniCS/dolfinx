@@ -184,7 +184,7 @@ void Assembler::assembleCells(GenericTensor& A,
     
     // Tabulate dofs for each dimension
     for (uint i = 0; i < ufc.form.rank(); i++)
-      ufc.dof_maps[i]->tabulate_dofs(ufc.dofs[i], ufc.mesh, ufc.cell);
+      dof_map_set[i].tabulate_dofs(ufc.dofs[i], *cell);
 
     // Tabulate cell tensor
     integral->tabulate_tensor(ufc.A, ufc.w, ufc.cell);
@@ -246,7 +246,7 @@ void Assembler::assembleExteriorFacets(GenericTensor& A,
 
     // Tabulate dofs for each dimension
     for (uint i = 0; i < ufc.form.rank(); i++)
-      ufc.dof_maps[i]->tabulate_dofs(ufc.dofs[i], ufc.mesh, ufc.cell);
+      dof_map_set[i].tabulate_dofs(ufc.dofs[i], mesh_cell);    
 
     // Tabulate exterior facet tensor
     ufc.exterior_facet_integrals[0]->tabulate_tensor(ufc.A, ufc.w, ufc.cell, local_facet);
@@ -319,8 +319,8 @@ void Assembler::assembleInteriorFacets(GenericTensor& A,
     for (uint i = 0; i < ufc.form.rank(); i++)
     {
       const uint offset = ufc.local_dimensions[i];
-      ufc.dof_maps[i]->tabulate_dofs(ufc.macro_dofs[i], ufc.mesh, ufc.cell0);
-      ufc.dof_maps[i]->tabulate_dofs(ufc.macro_dofs[i] + offset, ufc.mesh, ufc.cell1);
+      dof_map_set[i].tabulate_dofs(ufc.macro_dofs[i], cell0);
+      dof_map_set[i].tabulate_dofs(ufc.macro_dofs[i] + offset, cell1);
     }
 
     // Tabulate exterior interior facet tensor on macro element
@@ -348,8 +348,9 @@ void Assembler::initGlobalTensor(GenericTensor& A, UFC& ufc,
   if( reset_tensor )
   {
     GenericSparsityPattern* sparsity_pattern = A.factory().createPattern(); 
-    SparsityPatternBuilder::build(*sparsity_pattern, mesh, ufc);
+    SparsityPatternBuilder::build(*sparsity_pattern, mesh, ufc, dof_map_set);
     A.init(*sparsity_pattern);
+    delete sparsity_pattern;
   }
   else
     A.zero();

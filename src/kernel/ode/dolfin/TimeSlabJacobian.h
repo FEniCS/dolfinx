@@ -11,6 +11,7 @@
 #include <dolfin/uBlasDenseMatrix.h>
 #include <dolfin/uBlasVector.h>
 #include <dolfin/uBlasKrylovMatrix.h>
+#include <dolfin/Matrix.h>
 
 namespace dolfin
 {
@@ -50,6 +51,13 @@ namespace dolfin
       dolfin_assert(A.size(0) == ode.size());
       return A;
     }
+
+    /// Return sparse copy of Jacobian
+    inline const Matrix& matrix_sparse() const
+    {
+      dolfin_assert(As->size(0) == ode.size());
+      return *As;
+    }
     
   protected:
     
@@ -61,6 +69,9 @@ namespace dolfin
 
     // Dense copy of the Jacobian
     uBlasDenseMatrix A;
+
+    // Sparse copy of the Jacobian
+    Matrix* As;
 
     // Vectors used to compute dense copy of the Jacobian
     uBlasVector ej, Aj;

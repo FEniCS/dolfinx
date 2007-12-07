@@ -4,10 +4,11 @@
 // First added:  2006-02-09
 // Last changed: 2007-07-11
 //
-// This demo solves the Stokes equations, using stabilized
-// first order elements for the velocity and pressure. The
-// sub domains for the different boundary conditions used
-// in this simulation are computed by the demo program in
+// This demo solves the Stokes equations, using quadratic
+// elements for the velocity and first degree elements for
+// the pressure (Taylor-Hood elements). The sub domains
+// for the different boundary conditions used in this
+// simulation are computed by the demo program in
 // src/demo/mesh/subdomains.
 
 #include <dolfin.h>
@@ -48,8 +49,8 @@ int main()
   };
 
   // Read mesh and sub domain markers
-  Mesh mesh("../../../../../data/meshes/dolfin-2.xml.gz");
-  MeshFunction<unsigned int> sub_domains(mesh, "subdomains.xml.gz");
+  Mesh mesh("../../../../../../data/meshes/dolfin-2.xml.gz");
+  MeshFunction<unsigned int> sub_domains(mesh, "../subdomains.xml.gz");
 
   // Create functions for boundary conditions
   Noslip noslip(mesh);
@@ -73,10 +74,9 @@ int main()
   Array <BoundaryCondition*> bcs(&bc0, &bc1, &bc2);
 
   // Set up PDE
-  MeshSize h(mesh);
   Function f(mesh, 0.0);
-  StokesBilinearForm a(h);
-  StokesLinearForm L(f, h);
+  StokesBilinearForm a;
+  StokesLinearForm L(f);
   LinearPDE pde(a, L, mesh, bcs);
 
   // Solve PDE

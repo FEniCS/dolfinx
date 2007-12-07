@@ -1,31 +1,31 @@
-SUBDIRS = la/eigensolver \
-          fem \
-          nls/nonlinearpoisson \
+SUBDIRS = fem/cpp \
+          la/eigensolver/cpp \
+          mesh/meshfunction/cpp \
+          mesh/partitioning/cpp \
+          mesh/refinement/cpp \
+          mesh/subdomains/cpp \
           nls/cahn-hilliard \
+          nls/nonlinearpoisson/cpp \
+          ode/aliev-panfilov/cpp \
           ode/complex \
-          ode/stiff \
-          ode/aliev-panfilov \
           ode/courtemanche \
+          ode/harmonic \
           ode/homotopy/economy \
           ode/homotopy/simple \
-          ode/harmonic \
           ode/lorenz \
           ode/method-weights \
+          ode/stiff \
+          pde/convection-diffusion/cpp \
           pde/dg/cpp \
-          pde/nonlinear-poisson \
-          pde/convection-diffusion \
-          pde/functional \
-          pde/elasticity \
-          pde/mixed-poisson \
-          pde/periodic \
-          pde/stokes/stabilized \
-          pde/stokes/taylor-hood \
-          pde/lift-drag \
+          pde/elasticity/cpp \
+          pde/functional/cpp \
+          pde/lift-drag/cpp \
+          pde/mixed-poisson/cpp \
+          pde/nonlinear-poisson/cpp \
+          pde/periodic/cpp \
           pde/poisson/cpp \
           pde/poisson1D/cpp \
-          mesh/refinement/cpp \
-          mesh/subdomains \
-          mesh/meshfunction \
-          mesh/partitioning/cpp \
+          pde/stokes/stabilized/cpp \
+          pde/stokes/taylor-hood/cpp \
           plot/cpp \
-          quadrature
+          quadrature/cpp

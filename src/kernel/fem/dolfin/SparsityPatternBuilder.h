@@ -12,6 +12,7 @@
 namespace dolfin
 {
 
+  class DofMapSet;
   class Mesh;
   class GenericSparsityPattern;
   class UFC;
@@ -23,7 +24,8 @@ namespace dolfin
   public:
     
     /// Build sparsity pattern
-    static void build(GenericSparsityPattern& sparsity_pattern, Mesh& mesh, UFC& ufc);
+    static void build(GenericSparsityPattern& sparsity_pattern, Mesh& mesh, UFC& ufc, 
+                                    const DofMapSet& dof_map_set);
 
   private:
 
@@ -31,11 +33,11 @@ namespace dolfin
     static void scalarBuild(GenericSparsityPattern& sparsity_pattern);
 
     /// Build vector sparsity pattern (compute length of vector)
-    static void vectorBuild(GenericSparsityPattern& sparsity_pattern, UFC& ufc);
+    static void vectorBuild(GenericSparsityPattern& sparsity_pattern,  const DofMapSet& dof_map_set);
 
     /// Build matrix sparsity pattern (compute sparse matrix layput)
-    static void matrixBuild(GenericSparsityPattern& sparsity_pattern, 
-                                    Mesh& mesh, UFC& ufc);
+    static void matrixBuild(GenericSparsityPattern& sparsity_pattern, Mesh& mesh, 
+                                    UFC& ufc, const DofMapSet& dof_map_set);
 
   };
 

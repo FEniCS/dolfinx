@@ -9,11 +9,13 @@
 #include <dolfin/parameters.h>
 #include <dolfin/uBlasKrylovSolver.h>
 #include <dolfin/uBlasLUSolver.h>
+#include <dolfin/KrylovSolver.h>
 #include <dolfin/Alloc.h>
 #include <dolfin/ODE.h>
 #include <dolfin/Method.h>
 #include <dolfin/MonoAdaptiveTimeSlab.h>
 #include <dolfin/MonoAdaptiveNewtonSolver.h>
+#include <dolfin/timing.h>
 
 using namespace dolfin;
 
@@ -23,7 +25,7 @@ MonoAdaptiveNewtonSolver::MonoAdaptiveNewtonSolver
   : TimeSlabSolver(timeslab), implicit(implicit),
     piecewise(get("ODE matrix piecewise constant")),
     ts(timeslab), A(timeslab, implicit, piecewise),
-    krylov(0), lu(0)
+    krylov(0), lu(0), krylov_g(0)
 {
   // Initialize product M*u0 for implicit system
   if ( implicit )
@@ -79,11 +81,38 @@ real MonoAdaptiveNewtonSolver::iteration(real tol, uint iter, real d0, real d1)
   // Solve linear system
   if ( krylov )
   {
-    // FIXME: Scaling needed for PETSc Krylov solver, but maybe not for uBlas?
-    const real r = b.norm(linf) + DOLFIN_EPS;
-    b /= r;
-    num_local_iterations += krylov->solve(A, dx, b);
-    dx *= r;
+    const bool matrix_free = get("ODE matrix-free jacobian");
+
+    if(!matrix_free)
+    {
+      // Need to make implementation-independent copies
+      Vector dx2(dx.size());
+      Vector b2(b.size());
+      
+      dx2.vec().copy(dx, 0, 0, dx2.size());
+      b2.vec().copy(b, 0, 0, b2.size());
+
+      // FIXME: Implement a better check
+      if ( d1 >= 0.5*d0 )
+      {
+	A.update(ts.u, ts.endtime());
+      }
+
+      tic();
+      num_local_iterations += krylov_g->solve(A.matrix_sparse(), dx2, b2);
+      message("Linear solve took %g seconds",toc());
+
+      dx.copy(dx2.vec(), 0, 0, dx.size());
+    }
+    else
+    {
+      // FIXME: Scaling needed for PETSc Krylov solver, but maybe not for
+      // uBlas?
+      const real r = b.norm(linf) + DOLFIN_EPS;
+      b /= r;
+      num_local_iterations += krylov->solve(A, dx, b);
+      dx *= r;
+    }
   }
   else
   {
@@ -249,6 +278,12 @@ void MonoAdaptiveNewtonSolver::chooseLinearSolver()
     krylov->set("Krylov report", monitor);
     krylov->set("Krylov relative tolerance", ktol);
     krylov->set("Krylov absolute tolerance", ktol*tol);
+
+    message("Using default Krylov solver for matrix Jacobian");
+    krylov_g = new KrylovSolver(bicgstab, ilu);
+    krylov_g->set("Krylov report", monitor);
+    krylov_g->set("Krylov relative tolerance", ktol);
+    krylov_g->set("Krylov absolute tolerance", ktol*tol);
   }
 }
 //-----------------------------------------------------------------------------
