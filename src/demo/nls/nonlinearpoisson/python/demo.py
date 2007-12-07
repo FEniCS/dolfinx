@@ -23,7 +23,7 @@
 # Original implementation: ../cpp/main.cpp by Garth N. Wells.
 #
 __author__ = "Kristian B. Oelgaard (k.b.oelgaard@tudelft.nl)"
-__date__ = "2007-11-15 -- 2007-11-28"
+__date__ = "2007-11-15 -- 2007-12-07"
 __copyright__ = "Copyright (C) 2007 Kristian B. Oelgaard"
 __license__  = "GNU LGPL Version 2.1"
 
@@ -33,35 +33,38 @@ from dolfin import *
 # THIS DEMO IS CURRENTLY NOT WORKING
 #
 # ERROR:
-# Starting Newton solve.
-# Traceback (most recent call last):
-#   File "demo.py", line 135, in <module>
-#     nonlinear_solver.solve(nonlinear_problem, x)
-#   File "/home/oelgaard/fenics/dolfin/local/lib/python2.5/site-packages/dolfin/dolfin.py", line 6107, in solve
-#     return _dolfin.NewtonSolver_solve(*args)
-# RuntimeError: *** Error: Nonlinear problem update for F(u) and J  has not been supplied by user.
 
 # Create mesh and create finite element
 mesh = UnitSquare(64, 64)
 element = FiniteElement("Lagrange", "triangle", 1)
 
 # Right-hand side
-class Source(Function, TimeDependent):
+#class Source(Function, TimeDependent):
+class Source(Function):
     def __init__(self, element, mesh, t):
         Function.__init__(self, element, mesh)
-        TimeDependent.__init__(self, t)
+#        TimeDependent.__init__(self, t)
+        self.t = t
+
+    def time(self):
+        return self.t
 
     def eval(self, values, x):
-        values[0] = time()*x[0]*sin(x[1])
+        values[0] = self.time()*x[0]*sin(x[1])
 
 # Dirichlet boundary condition
-class DirichletBoundaryCondition(Function, TimeDependent):
+#class DirichletBoundaryCondition(Function, TimeDependent):
+class DirichletBoundaryCondition(Function):
     def __init__(self, element, mesh, t):
         Function.__init__(self, element, mesh)
-        TimeDependent.__init__(self, t)
+#        TimeDependent.__init__(self, t)
+        self.t = t
+
+    def time(self):
+        return self.t
   
     def eval(self, values, x):
-        values[0] = 1.0*time()
+        values[0] = self.time()*1.0
 
 # Sub domain for Dirichlet boundary condition
 class DirichletBoundary(SubDomain):
@@ -70,7 +73,7 @@ class DirichletBoundary(SubDomain):
 
 # User defined nonlinear problem 
 class MyNonlinearProblem(NonlinearProblem):
-    def __init__(self, element, mesh, x, dirichlet_boundary, g, f, u0):
+    def __init__(self, element, mesh, bc, u0, f):
         NonlinearProblem.__init__(self)
 
         # Define variational problem
@@ -80,32 +83,61 @@ class MyNonlinearProblem(NonlinearProblem):
         a = (1.0 + u0*u0)*dot(grad(v), grad(u))*dx + 2.0*u0*u*dot(grad(v), grad(u0))*dx
         L = v*f*dx - (1.0 + u0*u0)*dot(grad(v), grad(u0))*dx
 
-        # Define Dirichlet boundary conditions
-        bc = DirichletBC(g, mesh, dirichlet_boundary)
-
         # Attach members
         self.a = a
         self.L = L
-        self.compiled_form = jit(a)[0]
         self.mesh = mesh
         self.bc = bc
-
-#       // Initialise solution vector u
-#        u0.init(element, mesh, x)
+        self.compiled_form = jit(a)[0]
  
     # User defined assemble of Jacobian and residual vector 
     def form(self, A, b, x):
-        print "form"
         set("output destination", "silent")
-        A = assemble(self.a, self.mesh)
-        b = assemble(self.L, self.mesh)
-        self.bc.apply(A, b, x, self.compiled_form)
-        set("output destination", "terminal")
+        # Copy paste from assemble.py
+        # Assemble A
+        # Compile form
+        (compiled_form, module, form_data) = jit(self.a)
 
-    def F(b, x):
-        print x
-    def J(A, x):
-        print x
+        # Extract coefficients
+        coefficients = ArrayFunctionPtr()
+        for c in form_data[0].coefficients:
+            coefficients.push_back(c.f)
+
+        # Create dummy arguments (not yet supported)
+        cell_domains = MeshFunction("uint")
+        exterior_facet_domains = MeshFunction("uint")
+        interior_facet_domains = MeshFunction("uint")
+
+        # Assemble compiled form
+        cpp_assemble(A, compiled_form, mesh, coefficients,
+                     cell_domains, exterior_facet_domains, interior_facet_domains,
+                     True)
+
+#        A = assemble(self.a, self.mesh)
+#        b = assemble(self.L, self.mesh)
+
+        # Assemble b
+        (compiled_form, module, form_data) = jit(self.L)
+
+        # Extract coefficients
+        coefficients = ArrayFunctionPtr()
+        for c in form_data[0].coefficients:
+            coefficients.push_back(c.f)
+
+        # Create dummy arguments (not yet supported)
+        cell_domains = MeshFunction("uint")
+        exterior_facet_domains = MeshFunction("uint")
+        interior_facet_domains = MeshFunction("uint")
+
+        # Assemble compiled form
+        cpp_assemble(b, compiled_form, mesh, coefficients,
+                     cell_domains, exterior_facet_domains, interior_facet_domains,
+                     True)
+
+#        print "b: ", b.disp()
+        self.bc.apply(A, b, x, self.compiled_form)
+#        print "bc"
+        set("output destination", "terminal")
 
 # Pseudo time
 t = 0.0
@@ -116,38 +148,40 @@ f = Source(element, mesh, t)
 # Dirichlet boundary conditions
 dirichlet_boundary = DirichletBoundary()
 g = DirichletBoundaryCondition(element, mesh, t)
+bc = DirichletBC(g, mesh, dirichlet_boundary)
 
 x = Vector()
 v = TestFunction(element)
 u = TrialFunction(element)
-u0 = Function(element, mesh)
 
-a = (1.0 + u0*u0)*dot(grad(v), grad(u))*dx + 2.0*u0*u*dot(grad(v), grad(u0))*dx
-compiled_form = jit(a)[0]
+compiled_form = jit(v*u*dx)[0]
+u0 = Function(element, mesh, x, compiled_form)
 
-u1 = Function(element, mesh, x, compiled_form)
-
-# # Create user-defined nonlinear problem
-nonlinear_problem = MyNonlinearProblem(element, mesh, u1.vector(), dirichlet_boundary, g, f, u1)
+# Create user-defined nonlinear problem
+nonlinear_problem = MyNonlinearProblem(element, mesh, bc, u0, f)
 
 # Create nonlinear solver (using GMRES linear solver) and set parameters
 # nonlinear_solver = NewtonSolver(gmres)
 nonlinear_solver = NewtonSolver()
+# nonlinear_solver.set("Newton maximum iterations", 50)
+# nonlinear_solver.set("Newton relative tolerance", 1e-10)
+# nonlinear_solver.set("Newton absolute tolerance", 1e-10)
 
 # Solve nonlinear problem in a series of steps
 dt = 1.0
 T  = 3.0
 
-while( t < T):
-    t += dt
+while( f.t < T):
+    f.t += dt
+    g.t += dt
     nonlinear_solver.solve(nonlinear_problem, x)
 
 # Plot solution
-plot(u)
+plot(u0)
 
 # Save function to file
 file = File("nonlinear_poisson.pvd")
-file << u
+file << u0
 
 
 
