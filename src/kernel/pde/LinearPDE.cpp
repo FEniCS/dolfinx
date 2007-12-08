@@ -14,6 +14,7 @@
 #include <dolfin/Function.h>
 #include <dolfin/LinearPDE.h>
 #include <dolfin/dolfin_io.h>
+#include <dolfin/Form.h>
 
 using namespace dolfin;
 
@@ -22,12 +23,14 @@ LinearPDE::LinearPDE(Form& a, Form& L, Mesh& mesh)
   : a(a), L(L), mesh(mesh)
 {
   message("Creating linear PDE.");
+  dof_map_set.update(a.form(), mesh);
 }
 //-----------------------------------------------------------------------------
 LinearPDE::LinearPDE(Form& a, Form& L, Mesh& mesh, BoundaryCondition& bc)
   : a(a), L(L), mesh(mesh)
 {
   message("Creating linear PDE with one boundary condition.");
+  dof_map_set.update(a.form(), mesh);
   bcs.push_back(&bc);
 } 
 //-----------------------------------------------------------------------------
@@ -35,6 +38,7 @@ LinearPDE::LinearPDE(Form& a, Form& L, Mesh& mesh, Array<BoundaryCondition*>& bc
   : a(a), L(L), mesh(mesh)
 {
   message("Creating linear PDE with %d boundary condition(s).", bcs.size());
+  dof_map_set.update(a.form(), mesh);
   for (uint i = 0; i < bcs.size(); i++)
     this->bcs.push_back(bcs[i]);
 }
@@ -59,7 +63,7 @@ void LinearPDE::solve(Function& u)
 
   // Apply boundary conditions
   for (uint i = 0; i < bcs.size(); i++)
-    bcs[i]->apply(A, b, a);
+    bcs[i]->apply(A, b, dof_map_set[1], a);
 
   // Solve linear system
   const std::string solver_type = get("PDE linear solver");
@@ -90,7 +94,7 @@ void LinearPDE::solve(Function& u)
   //x.disp();
 
   // Set function data
-  u.init(mesh, x, a, 1);
+  u.init(mesh, dof_map_set[0], x, a, 1);
 
   end();
 }

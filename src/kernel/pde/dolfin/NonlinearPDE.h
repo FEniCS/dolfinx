@@ -12,6 +12,7 @@
 #include <dolfin/NonlinearProblem.h>
 #include <dolfin/NewtonSolver.h>
 #include <dolfin/Assembler.h>
+#include <dolfin/DofMapSet.h>
 
 namespace dolfin
 {
@@ -63,6 +64,9 @@ namespace dolfin
 
     // Solver
     NewtonSolver newton_solver;
+
+    // dof maps
+    DofMapSet dof_map_set;
       
   };
 

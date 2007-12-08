@@ -12,6 +12,7 @@
 #include <dolfin/Array.h>
 #include <dolfin/Parametrized.h>
 #include <dolfin/Vector.h>
+#include <dolfin/DofMapSet.h>
 
 namespace dolfin
 {
@@ -70,6 +71,8 @@ namespace dolfin
     // The solution vector
     Vector x;
 
+    // dof map
+    DofMapSet dof_map_set;
   };
 
 }

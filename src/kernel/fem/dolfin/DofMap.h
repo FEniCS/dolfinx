@@ -25,11 +25,17 @@ namespace dolfin
   {
   public:
 
+    /// Create empty dof map
+    DofMap();
+
     /// Create dof map on mesh
     DofMap(ufc::dof_map& dof_map, Mesh& mesh);
 
     /// Destructor
     ~DofMap();
+
+    /// Initialise dof map
+    void init(ufc::dof_map& dof_map, Mesh& mesh);
 
     /// Return a string identifying the dof map
     const char* signature() const
@@ -47,6 +53,10 @@ namespace dolfin
     unsigned int macro_local_dimension() const
       { return ufc_dof_map.local_dimension(); }
 
+    /// Return number of facet dofs
+    unsigned int num_facet_dofs() const
+      { return ufc_dof_map.num_facet_dofs(); }
+
     /// Tabulate the local-to-global mapping of dofs on a cell
     void tabulate_dofs(uint* dofs, Cell& cell) 
     {
@@ -54,13 +64,22 @@ namespace dolfin
       ufc_dof_map.tabulate_dofs(dofs, ufc_mesh, ufc_cell);
     }
 
+    /// Tabulate local-local facet dofs
+    void tabulate_facet_dofs(uint* dofs, uint local_facet) const
+    {
+      ufc_dof_map.tabulate_facet_dofs(dofs, local_facet);
+    }
+
     // FIXME: Can this function eventually be removed?
     /// Tabulate the local-to-global mapping of dofs on a ufc cell
     void tabulate_dofs(uint* dofs, const ufc::cell& cell) const 
       { ufc_dof_map.tabulate_dofs(dofs, ufc_mesh, cell); }
 
+    void tabulate_coordinates(real** coordinates, const ufc::cell& ufc_cell) const
+      { ufc_dof_map.tabulate_coordinates(coordinates, ufc_cell); }
+
     /// Extract sub DofMap
-    DofMap* extractDofMap(const Array<uint>& sub_system, dolfin::uint& offset) const;
+    DofMap* extractDofMap(const Array<uint>& sub_system, uint& offset) const;
 
     /// Return mesh associated with map
     Mesh& mesh() const

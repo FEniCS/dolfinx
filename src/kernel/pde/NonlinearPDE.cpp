@@ -31,6 +31,8 @@ NonlinearPDE::NonlinearPDE(Form& a,
 
   // Create array with one boundary condition
   bcs.push_back(&bc);
+
+  dof_map_set.update(a.form(), mesh);
 }
 //-----------------------------------------------------------------------------
 NonlinearPDE::NonlinearPDE(Form& a,
@@ -46,6 +48,8 @@ NonlinearPDE::NonlinearPDE(Form& a,
     error("Expected a bilinear form but rank is %d.", a.form().rank());
   if ( L.form().rank() != 1 )
     error("Expected a linear form but rank is %d.", L.form().rank());
+
+  dof_map_set.update(a.form(), mesh);
 }
 //-----------------------------------------------------------------------------
 NonlinearPDE::~NonlinearPDE()
@@ -66,7 +70,7 @@ void NonlinearPDE::form(GenericMatrix& A, GenericVector& b, const GenericVector&
 
   // Apply boundary conditions
   for (uint i = 0; i < bcs.size(); i++)
-    bcs[i]->apply(A, b, x, a);
+    bcs[i]->apply(A, b, x, dof_map_set[0], a);
 }
 //-----------------------------------------------------------------------------
 void NonlinearPDE::solve(Function& u, real& t, const real& T, const real& dt)
@@ -74,7 +78,7 @@ void NonlinearPDE::solve(Function& u, real& t, const real& T, const real& dt)
   begin("Solving nonlinear PDE.");  
 
   // Initialise function
-  u.init(mesh, x, a, 1);
+  u.init(mesh, dof_map_set[0], x, a, 1);
 
   // Solve
   while( t < T )

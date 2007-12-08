@@ -52,6 +52,7 @@ ufc::finite_element* SubSystem::extractFiniteElement(const ufc::finite_element& 
   return sub_finite_element;
 }
 //-----------------------------------------------------------------------------
+/*
 ufc::dof_map* SubSystem::extractDofMap(const ufc::dof_map& dof_map, Mesh& mesh,  
                                        uint& offset) const
 {
@@ -65,6 +66,7 @@ ufc::dof_map* SubSystem::extractDofMap(const ufc::dof_map& dof_map, Mesh& mesh,
 
   return sub_dof_map;
 }
+*/
 //-----------------------------------------------------------------------------
 ufc::finite_element* SubSystem::extractFiniteElement
       (const ufc::finite_element& finite_element, const Array<uint>& sub_system)
@@ -105,6 +107,7 @@ ufc::finite_element* SubSystem::extractFiniteElement
   return sub_sub_element;
 }
 //-----------------------------------------------------------------------------
+/*
 ufc::dof_map* SubSystem::extractDofMap(const ufc::dof_map& dof_map, Mesh& mesh, 
                                     uint& offset, const Array<uint>& sub_system)
 {
@@ -152,4 +155,5 @@ ufc::dof_map* SubSystem::extractDofMap(const ufc::dof_map& dof_map, Mesh& mesh,
 
   return sub_sub_dof_map;
 }
+*/
 //-----------------------------------------------------------------------------

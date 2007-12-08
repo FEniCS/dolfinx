@@ -33,10 +33,10 @@ namespace dolfin
   public:
 
     /// Create discrete function for argument function i of form
-    DiscreteFunction(Mesh& mesh, Vector& x, const Form& form, uint i);
+    DiscreteFunction(Mesh& mesh, DofMap& dof_map, Vector& x, const Form& form, uint i);
 
     /// Create discrete function for argument function i of form
-    DiscreteFunction(Mesh& mesh, Vector& x, const ufc::form& form, uint i);
+    DiscreteFunction(Mesh& mesh, DofMap& dof_map, Vector& x, const ufc::form& form, uint i);
 
     /// Create discrete function from given data and assume responsibility for data
     DiscreteFunction(Mesh& mesh, Vector& x, std::string finite_element_signature, std::string dof_map_signature);
@@ -91,7 +91,7 @@ namespace dolfin
     DofMap* dof_map;
 
     // The UFC dof map
-    ufc::dof_map* ufc_dof_map;
+    //ufc::dof_map* ufc_dof_map;
 
     // Local array for mapping of dofs
     uint* dofs;
