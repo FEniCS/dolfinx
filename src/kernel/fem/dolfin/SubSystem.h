@@ -49,8 +49,7 @@ namespace dolfin
     (const ufc::finite_element& finite_element) const;
 
     /// Extract sub dof map of given dof map
-    ufc::dof_map* extractDofMap
-    (const ufc::dof_map& dof_map, Mesh& mesh, uint& offset) const;
+    ufc::dof_map* extractDofMap(const ufc::dof_map& dof_map, Mesh& mesh, uint& offset) const;
 
   private:
 

@@ -43,8 +43,7 @@ dolfin::uint SubSystem::depth() const
   return sub_system.size();
 }
 //-----------------------------------------------------------------------------
-ufc::finite_element* SubSystem::extractFiniteElement
-(const ufc::finite_element& finite_element) const
+ufc::finite_element* SubSystem::extractFiniteElement(const ufc::finite_element& finite_element) const
 {
   // Recursively extract sub element
   ufc::finite_element* sub_finite_element = extractFiniteElement(finite_element, sub_system);
@@ -53,8 +52,8 @@ ufc::finite_element* SubSystem::extractFiniteElement
   return sub_finite_element;
 }
 //-----------------------------------------------------------------------------
-ufc::dof_map* SubSystem::extractDofMap
-(const ufc::dof_map& dof_map, Mesh& mesh, uint& offset) const
+ufc::dof_map* SubSystem::extractDofMap(const ufc::dof_map& dof_map, Mesh& mesh,  
+                                       uint& offset) const
 {
   // Reset offset
   offset = 0;
@@ -68,7 +67,7 @@ ufc::dof_map* SubSystem::extractDofMap
 }
 //-----------------------------------------------------------------------------
 ufc::finite_element* SubSystem::extractFiniteElement
-(const ufc::finite_element& finite_element, const Array<uint>& sub_system)
+      (const ufc::finite_element& finite_element, const Array<uint>& sub_system)
 {
   // Check if there are any sub systems
   if (finite_element.num_sub_elements() == 0)
@@ -106,8 +105,8 @@ ufc::finite_element* SubSystem::extractFiniteElement
   return sub_sub_element;
 }
 //-----------------------------------------------------------------------------
-ufc::dof_map* SubSystem::extractDofMap
-(const ufc::dof_map& dof_map, Mesh& mesh, uint& offset, const Array<uint>& sub_system)
+ufc::dof_map* SubSystem::extractDofMap(const ufc::dof_map& dof_map, Mesh& mesh, 
+                                    uint& offset, const Array<uint>& sub_system)
 {
   // Check if there are any sub systems
   if (dof_map.num_sub_dof_maps() == 0)

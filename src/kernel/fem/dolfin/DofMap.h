@@ -11,10 +11,12 @@
 #include <dolfin/Mesh.h>
 #include <dolfin/UFCCell.h>
 #include <dolfin/UFCMesh.h>
+#include <dolfin/constants.h>
 
 namespace dolfin
 {
-  
+    class SubSytem;
+
   /// This class handles the mapping of degrees of freedom.
   /// It wraps a ufc::dof_map on a specific mesh and provides
   /// optional precomputation and reordering of dofs.
@@ -31,27 +33,19 @@ namespace dolfin
 
     /// Return a string identifying the dof map
     const char* signature() const
-    {
-      return ufc_dof_map.signature();
-    }
+      { return ufc_dof_map.signature(); }
 
     /// Return the dimension of the global finite element function space
     unsigned int global_dimension() const
-    {
-      return ufc_dof_map.global_dimension();
-    }
+      { return ufc_dof_map.global_dimension(); }
 
     /// Return the dimension of the local finite element function space
     unsigned int local_dimension() const
-    {
-      return ufc_dof_map.local_dimension();
-    }
+      { return ufc_dof_map.local_dimension(); }
 
     /// Return the dimension of the local finite element function space
     unsigned int macro_local_dimension() const
-    {
-      return ufc_dof_map.local_dimension();
-    }
+      { return ufc_dof_map.local_dimension(); }
 
     /// Tabulate the local-to-global mapping of dofs on a cell
     void tabulate_dofs(uint* dofs, Cell& cell) 
@@ -63,20 +57,22 @@ namespace dolfin
     // FIXME: Can this function eventually be removed?
     /// Tabulate the local-to-global mapping of dofs on a ufc cell
     void tabulate_dofs(uint* dofs, const ufc::cell& cell) const 
-    {
-      ufc_dof_map.tabulate_dofs(dofs, ufc_mesh, cell);
-    }
+      { ufc_dof_map.tabulate_dofs(dofs, ufc_mesh, cell); }
+
+    /// Extract sub DofMap
+    DofMap* extractDofMap(const Array<uint>& sub_system, dolfin::uint& offset) const;
 
     /// Return mesh associated with map
     Mesh& mesh() const
-    {
-      return dolfin_mesh;
-    }
+      { return dolfin_mesh; }
 
     /// Friends
     friend class UFC;
     
   private:
+
+    /// Extract sub DofMap
+    ufc::dof_map* extractDofMap(const ufc::dof_map& dof_map, uint& offset, const Array<uint>& sub_system) const;
 
     // UFC dof map
     ufc::dof_map& ufc_dof_map;
