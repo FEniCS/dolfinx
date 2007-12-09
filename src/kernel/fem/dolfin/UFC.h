@@ -95,12 +95,6 @@ namespace dolfin
     // Array of coefficients on macro element
     real** macro_w;
 
-    private:
-
-      // FIXME: thus will eventually be removed. It has been made private to prevent access
-      // Array of dof maps for primary arguments
-      ufc::dof_map** dof_maps;
-
   };
 
 }
