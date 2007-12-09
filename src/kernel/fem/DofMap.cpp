@@ -16,13 +16,14 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 DofMap::DofMap(ufc::dof_map& dof_map, Mesh& mesh) : ufc_dof_map(&dof_map), 
-               ufc_dof_map_local(false), dolfin_mesh(mesh)
+               ufc_dof_map_local(false), dolfin_mesh(mesh), ufc_map(true)
 {
   init();
 }
 //-----------------------------------------------------------------------------
 DofMap::DofMap(const std::string signature, Mesh& mesh) 
-           : ufc_dof_map(0), ufc_dof_map_local(false), dolfin_mesh(mesh)
+           : ufc_dof_map(0), ufc_dof_map_local(false), dolfin_mesh(mesh), 
+             ufc_map(true)
 {
   // Create ufc dof map from signature
   ufc_dof_map = ElementLibrary::create_dof_map(signature);
@@ -43,6 +44,10 @@ DofMap::~DofMap()
 //-----------------------------------------------------------------------------
 DofMap* DofMap::extractDofMap(const Array<uint>& sub_system, uint& offset) const
 {
+  // Check that dof map has not be re-ordered
+  if (!ufc_map)
+    error("Dof map has been re-ordered. Don't yet know how to extract sub dof maps.");
+
   // Reset offset
   offset = 0;
 

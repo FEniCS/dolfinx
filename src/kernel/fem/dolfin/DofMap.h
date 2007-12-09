@@ -36,7 +36,15 @@ namespace dolfin
 
     /// Return a string identifying the dof map
     const char* signature() const
-      { return ufc_dof_map->signature(); }
+      { 
+        if(ufc_map)
+          return ufc_dof_map->signature(); 
+        else
+        {
+          error("DofMap has been re-ordered. Cannot return signature string.");
+          return ufc_dof_map->signature(); 
+        }  
+      }
 
     /// Return the dimension of the global finite element function space
     unsigned int global_dimension() const
@@ -63,9 +71,7 @@ namespace dolfin
 
     /// Tabulate local-local facet dofs
     void tabulate_facet_dofs(uint* dofs, uint local_facet) const
-    {
-      ufc_dof_map->tabulate_facet_dofs(dofs, local_facet);
-    }
+      { ufc_dof_map->tabulate_facet_dofs(dofs, local_facet); }
 
     // FIXME: Can this function eventually be removed?
     /// Tabulate the local-to-global mapping of dofs on a ufc cell
@@ -82,9 +88,6 @@ namespace dolfin
     Mesh& mesh() const
       { return dolfin_mesh; }
 
-    /// Friends
-    friend class UFC;
-    
   private:
 
     /// Initialise DofMap
@@ -107,6 +110,9 @@ namespace dolfin
 
     // UFC cell
     UFCCell ufc_cell;
+
+    bool ufc_map;
+
   };
 
 }
