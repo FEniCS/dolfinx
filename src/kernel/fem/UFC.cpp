@@ -27,7 +27,7 @@ UFC::UFC(const ufc::form& form, Mesh& mesh, DofMapSet& dof_map_set) : form(form)
   // Create dof maps (reuse from dof map storage)
   this->dof_maps = new ufc::dof_map*[form.rank()];
   for (uint i = 0; i < form.rank(); i++)
-    this->dof_maps[i] = &dof_map_set[i].ufc_dof_map;
+    this->dof_maps[i] = dof_map_set[i].ufc_dof_map;
 
   // Create cell integrals
   cell_integrals = new ufc::cell_integral*[form.num_cell_integrals()];

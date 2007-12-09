@@ -96,6 +96,7 @@ namespace dolfin
     // Pointers to local data if owned
     Mesh* local_mesh;
     Vector* local_vector;
+    DofMap* local_dof_map;
 
   };
 

@@ -10,57 +10,36 @@
 #include <dolfin/DofMap.h>
 #include <dolfin/SubSystem.h>
 #include <dolfin/Array.h>
+#include <dolfin/ElementLibrary.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-DofMap::DofMap(ufc::dof_map& dof_map, Mesh& mesh) : ufc_dof_map(dof_map), 
-               dolfin_mesh(mesh)
+DofMap::DofMap(ufc::dof_map& dof_map, Mesh& mesh) : ufc_dof_map(&dof_map), 
+               ufc_dof_map_local(false), dolfin_mesh(mesh)
 {
-  // Order vertices, so entities will be created correctly according to convention
-  mesh.order();
+  init();
+}
+//-----------------------------------------------------------------------------
+DofMap::DofMap(const std::string signature, Mesh& mesh) 
+           : ufc_dof_map(0), ufc_dof_map_local(false), dolfin_mesh(mesh)
+{
+  // Create ufc dof map from signature
+  ufc_dof_map = ElementLibrary::create_dof_map(signature);
+  if (!ufc_dof_map)
+    error("Unable to find dof map in library: \"%s\".",signature.c_str());
 
-  // Initialize mesh entities used by dof map
-  for (uint d = 0; d <= mesh.topology().dim(); d++)
-    if ( ufc_dof_map.needs_mesh_entities(d) )
-      mesh.init(d);
-  
-  // Initialize UFC mesh data (must be done after entities are created)
-  ufc_mesh.init(mesh);
+  // Take resposibility for ufc dof map
+  ufc_dof_map_local = ufc_dof_map;
 
-  // Initialize UFC dof map
-  const bool init_cells = ufc_dof_map.init_mesh(ufc_mesh);
-  if ( init_cells )
-  {
-    CellIterator cell(mesh);
-    UFCCell ufc_cell(*cell);
-    for (; !cell.end(); ++cell)
-    {
-      ufc_cell.update(*cell);
-      ufc_dof_map.init_cell(ufc_mesh, ufc_cell);
-    }
-    ufc_dof_map.init_cell_finalize();
-  }
-
-  // Initialise ufc cell 
-  CellIterator cell(mesh);
-  ufc_cell.init(*cell);
+  init();
 }
 //-----------------------------------------------------------------------------
 DofMap::~DofMap()
 {
-  // Do nothing
+  if(ufc_dof_map_local)
+    delete ufc_dof_map_local;
 }
-//-----------------------------------------------------------------------------
-//DofMap* DofMap::create_dof_map(char* signature) const
-//{
-//  ufc::dof_map* ufc_dof_map = ElementLibrary::create_dof_map(signature);
-//  if (!ufc_dof_map)
-//    error("Unable to find dof map in library: \"%s\".",signature);
-//
-//  dof_map = new DofMap(*ufc_dof_map, mesh);
-//
-//}
 //-----------------------------------------------------------------------------
 DofMap* DofMap::extractDofMap(const Array<uint>& sub_system, uint& offset) const
 {
@@ -68,7 +47,7 @@ DofMap* DofMap::extractDofMap(const Array<uint>& sub_system, uint& offset) const
   offset = 0;
 
   // Recursively extract sub dof map
-  ufc::dof_map* sub_dof_map = extractDofMap(ufc_dof_map, offset, sub_system);
+  ufc::dof_map* sub_dof_map = extractDofMap(*ufc_dof_map, offset, sub_system);
   message(2, "Extracted dof map for sub system: %s", sub_dof_map->signature());
   message(2, "Offset for sub system: %d", offset);
 
@@ -117,6 +96,38 @@ ufc::dof_map* DofMap::extractDofMap(const ufc::dof_map& dof_map, uint& offset, c
   delete sub_dof_map;
 
   return sub_sub_dof_map;
+}
+//-----------------------------------------------------------------------------
+void DofMap::init()
+{
+  // Order vertices, so entities will be created correctly according to convention
+  dolfin_mesh.order();
+
+  // Initialize mesh entities used by dof map
+  for (uint d = 0; d <= dolfin_mesh.topology().dim(); d++)
+    if ( ufc_dof_map->needs_mesh_entities(d) )
+      dolfin_mesh.init(d);
+  
+  // Initialize UFC mesh data (must be done after entities are created)
+  ufc_mesh.init(dolfin_mesh);
+
+  // Initialize UFC dof map
+  const bool init_cells = ufc_dof_map->init_mesh(ufc_mesh);
+  if ( init_cells )
+  {
+    CellIterator cell(dolfin_mesh);
+    UFCCell ufc_cell(*cell);
+    for (; !cell.end(); ++cell)
+    {
+      ufc_cell.update(*cell);
+      ufc_dof_map->init_cell(ufc_mesh, ufc_cell);
+    }
+    ufc_dof_map->init_cell_finalize();
+  }
+
+  // Initialise ufc cell 
+  CellIterator cell(dolfin_mesh);
+  ufc_cell.init(*cell);
 }
 //-----------------------------------------------------------------------------
 

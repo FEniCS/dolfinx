@@ -26,7 +26,7 @@ DiscreteFunction::DiscreteFunction(Mesh& mesh, DofMap& dof_map, Vector& x,
                                   const Form& form, uint i)
   : GenericFunction(mesh),
     x(&x), finite_element(0), dof_map(&dof_map), dofs(0),
-    local_mesh(false), local_vector(false)
+    local_mesh(false), local_vector(false), local_dof_map(false)
 {
   init(mesh, x, form.form(), i);
 }
@@ -35,7 +35,7 @@ DiscreteFunction::DiscreteFunction(Mesh& mesh, DofMap& dof_map, Vector& x,
                                    const ufc::form& form, uint i)
   : GenericFunction(mesh),
     x(&x), finite_element(0), dof_map(&dof_map), dofs(0),
-    local_mesh(false), local_vector(false)
+    local_mesh(false), local_vector(false), local_dof_map(false)
 {
   init(mesh, x, form, i);
 }
@@ -45,11 +45,8 @@ DiscreteFunction::DiscreteFunction(Mesh& mesh, Vector& x,
                                    std::string dof_map_signature)
   : GenericFunction(mesh),
     x(&x), finite_element(0), dof_map(0), dofs(0),
-    local_mesh(false), local_vector(false)
+    local_mesh(false), local_vector(false), local_dof_map(false)
 {
-  error("DiscreteFunction not yet fully updated for dof mapping.");
-
-/*
   // Create finite element
   finite_element = ElementLibrary::create_finite_element(finite_element_signature);
   if (!finite_element)
@@ -59,13 +56,7 @@ DiscreteFunction::DiscreteFunction(Mesh& mesh, Vector& x,
   }
 
   // Create dof map
-  ufc_dof_map = ElementLibrary::create_dof_map(dof_map_signature);
-  if (!ufc_dof_map)
-  {
-    error("Unable to find dof map in library: \"%s\".",
-                  dof_map_signature.c_str());
-  }
-  dof_map = new DofMap(*ufc_dof_map, mesh);
+  dof_map = new DofMap(dof_map_signature, mesh);
 
   // Check size of vector
   if (x.size() != dof_map->global_dimension())
@@ -79,13 +70,13 @@ DiscreteFunction::DiscreteFunction(Mesh& mesh, Vector& x,
   // Assume responsibility for mesh and vector
   local_mesh = &mesh;
   local_vector = &x;
-*/
+  local_dof_map = dof_map;
 }
 //-----------------------------------------------------------------------------
 DiscreteFunction::DiscreteFunction(SubFunction& sub_function)
   : GenericFunction(sub_function.f->mesh),
-    x(0), finite_element(0), dof_map(sub_function.f->dof_map), dofs(0),
-    local_mesh(false), local_vector(false)
+    x(0), finite_element(0), dof_map(0), dofs(0),
+    local_mesh(false), local_vector(false), local_dof_map(false)
 {
   // Create sub system
   SubSystem sub_system(sub_function.i);
@@ -120,17 +111,19 @@ DiscreteFunction::DiscreteFunction(SubFunction& sub_function)
   for (uint i = 0; i < dof_map->local_dimension(); i++)
     dofs[i] = 0;
 
-  // Assume responsibility for vector
+  // Assume responsibility for vector and dof map
   local_vector = x;
+  local_dof_map = dof_map;
 }
 //-----------------------------------------------------------------------------
 DiscreteFunction::DiscreteFunction(const DiscreteFunction& f)
   : GenericFunction(f.mesh),
-    x(0), finite_element(0), dof_map(f.dof_map), dofs(0),
-    local_mesh(false), local_vector(false)
+    x(0), finite_element(0), dof_map(0), dofs(0),
+    local_mesh(false), local_vector(false), local_dof_map(false)
 {
   cout << "Copy constructor for discrete function" << endl;
 
+  // FIXME: Why don't we just copy the finite_element?
   // Create finite element
   finite_element = ElementLibrary::create_finite_element(f.finite_element->signature());
   if (!finite_element)
@@ -138,6 +131,9 @@ DiscreteFunction::DiscreteFunction(const DiscreteFunction& f)
     error("Unable to find finite element in library: \"%s\".",
                   f.finite_element->signature());
   }
+
+  // Create dof map
+  dof_map = new DofMap(f.dof_map->signature(), mesh); 
 
   // Create vector and copy values
   x = new Vector(dof_map->global_dimension());
@@ -148,8 +144,9 @@ DiscreteFunction::DiscreteFunction(const DiscreteFunction& f)
   for (uint i = 0; i < dof_map->local_dimension(); i++)
     dofs[i] = 0;
 
-  // Assume responsibility for vector
+  // Assume responsibility for vector and dof map
   local_vector = x;
+  local_dof_map = dof_map;
 }
 //-----------------------------------------------------------------------------
 DiscreteFunction::~DiscreteFunction()
@@ -165,6 +162,9 @@ DiscreteFunction::~DiscreteFunction()
 
   if (local_vector)
     delete local_vector;
+
+  if (local_dof_map)
+    delete local_dof_map;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint DiscreteFunction::rank() const
@@ -188,8 +188,6 @@ dolfin::uint DiscreteFunction::numSubFunctions() const
 const DiscreteFunction& DiscreteFunction::operator= (const DiscreteFunction& f)
 {
   cout << "Assignment in discrete function" << endl;
-
-  error("DiscreteFunction assignment needs to be updated for dof mapping");
 
   // Check that data matches
   if (strcmp(finite_element->signature(), f.finite_element->signature()) != 0 ||
