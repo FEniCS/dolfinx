@@ -20,6 +20,7 @@
 namespace dolfin
 {
 
+  class Form;
   class Mesh;
   class UFC;
 
@@ -34,8 +35,17 @@ namespace dolfin
     /// Create empty set of dof maps
     DofMapSet();
 
+    /// Create set of dof maps
+    DofMapSet(const Form& form, Mesh& mesh);
+
+    /// Create set of dof maps
+    DofMapSet(const ufc::form& form, Mesh& mesh);
+
     /// Destructor
     ~DofMapSet();
+
+    /// Update set of dof maps for given form
+    void update(const Form& form, Mesh& mesh);
 
     /// Update set of dof maps for given form
     void update(const ufc::form& form, Mesh& mesh);

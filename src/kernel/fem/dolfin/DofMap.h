@@ -25,17 +25,14 @@ namespace dolfin
   {
   public:
 
-    /// Create empty dof map
-    DofMap();
-
     /// Create dof map on mesh
     DofMap(ufc::dof_map& dof_map, Mesh& mesh);
 
     /// Destructor
     ~DofMap();
 
-    /// Initialise dof map
-    void init(ufc::dof_map& dof_map, Mesh& mesh);
+    /// Create dof map from signature
+    //DofMap* create_dof_map(char* signature) const;
 
     /// Return a string identifying the dof map
     const char* signature() const
@@ -78,7 +75,7 @@ namespace dolfin
     void tabulate_coordinates(real** coordinates, const ufc::cell& ufc_cell) const
       { ufc_dof_map.tabulate_coordinates(coordinates, ufc_cell); }
 
-    /// Extract sub DofMap
+    /// Extract sub dof map
     DofMap* extractDofMap(const Array<uint>& sub_system, uint& offset) const;
 
     /// Return mesh associated with map

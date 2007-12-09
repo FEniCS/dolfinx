@@ -1,8 +1,10 @@
 // Copyright (C) 2007 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Garth N. Wells 2007
+//
 // First added:  2007-07-08
-// Last changed: 2007-08-20
+// Last changed: 2007-12-09
 
 #include <vector>
 #include <map>
@@ -63,13 +65,13 @@ PeriodicBC::~PeriodicBC()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void PeriodicBC::apply(GenericMatrix& A, GenericVector& b, DofMap& dof_map,
+void PeriodicBC::apply(GenericMatrix& A, GenericVector& b, const DofMap& dof_map,
                        const Form& form)
 {
   apply(A, b, dof_map, form.form());
 }
 //-----------------------------------------------------------------------------
-void PeriodicBC::apply(GenericMatrix& A, GenericVector& b, DofMap& dof_map,
+void PeriodicBC::apply(GenericMatrix& A, GenericVector& b, const DofMap& dof_map,
                        const ufc::form& form)
 {
   cout << "Applying periodic boundary conditions to linear system." << endl;
@@ -111,16 +113,16 @@ void PeriodicBC::apply(GenericMatrix& A, GenericVector& b, DofMap& dof_map,
     const uint local_facet = cell.index(*facet);
 
     // Tabulate dofs on cell
-    data.dof_map.tabulate_dofs(data.cell_dofs, ufc_cell);
+    data.dof_map->tabulate_dofs(data.cell_dofs, ufc_cell);
     
     // Tabulate coordinates on cell
-    data.dof_map.tabulate_coordinates(data.coordinates, ufc_cell);
+    data.dof_map->tabulate_coordinates(data.coordinates, ufc_cell);
 
     // Tabulate which dofs are on the facet
-    data.dof_map.tabulate_facet_dofs(data.facet_dofs, local_facet);
+    data.dof_map->tabulate_facet_dofs(data.facet_dofs, local_facet);
 
     // Iterate over facet dofs
-    for (uint i = 0; i < data.dof_map.num_facet_dofs(); i++)
+    for (uint i = 0; i < data.dof_map->num_facet_dofs(); i++)
     {
       // Get dof and coordinate of dof
       const uint local_dof = data.facet_dofs[i];
@@ -260,13 +262,13 @@ void PeriodicBC::apply(GenericMatrix& A, GenericVector& b, DofMap& dof_map,
 }
 //-----------------------------------------------------------------------------
 void PeriodicBC::apply(GenericMatrix& A, GenericVector& b,
-                       const GenericVector& x, DofMap& dof_map, const Form& form)
+                       const GenericVector& x, const DofMap& dof_map, const Form& form)
 {
   apply(A, b, x, dof_map, form.form());
 }
 //-----------------------------------------------------------------------------
 void PeriodicBC::apply(GenericMatrix& A, GenericVector& b,
-                       const GenericVector& x, DofMap& dof_map, const ufc::form& form)
+                       const GenericVector& x, const DofMap& dof_map, const ufc::form& form)
 {
   // FIXME: Implement this (Garth?)
   error("Periodic boundary conditions not implemented for nonlinear systems.");

@@ -34,7 +34,7 @@ namespace dolfin
   public:
 
     /// Constructor
-    Assembler(Mesh& mesh);
+    Assembler(Mesh& mesh, DofMapSet& dof_map_set);
 
     /// Destructor
     ~Assembler();
@@ -108,8 +108,8 @@ namespace dolfin
     // The mesh
     Mesh& mesh;
 
-    // Storage for dof maps
-    DofMapSet dof_map_set;
+    // Dof maps
+    DofMapSet& dof_map_set;
 
   };
 

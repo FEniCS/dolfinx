@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells 2007
 //
 // First added:  2007-07-11
-// Last changed: 2007-12-08
+// Last changed: 2007-12-09
 
 #ifndef __BOUNDARY_CONDITION_H
 #define __BOUNDARY_CONDITION_H
@@ -37,16 +37,16 @@ namespace dolfin
     virtual ~BoundaryCondition();
 
     /// Apply boundary condition to linear system
-    virtual void apply(GenericMatrix& A, GenericVector& b, DofMap& dof_map, const Form& form) = 0;
+    virtual void apply(GenericMatrix& A, GenericVector& b, const DofMap& dof_map, const Form& form) = 0;
 
     /// Apply boundary condition to linear system
-    virtual void apply(GenericMatrix& A, GenericVector& b, DofMap& dof_map, const ufc::form& form) = 0;
+    virtual void apply(GenericMatrix& A, GenericVector& b, const DofMap& dof_map, const ufc::form& form) = 0;
 
     /// Apply boundary condition to linear system for a nonlinear problem
-    virtual void apply(GenericMatrix& A, GenericVector& b, const GenericVector& x, DofMap& dof_map, const Form& form) = 0;
+    virtual void apply(GenericMatrix& A, GenericVector& b, const GenericVector& x, const DofMap& dof_map, const Form& form) = 0;
 
     /// Apply boundary condition to linear system for a nonlinear problem
-    virtual void apply(GenericMatrix& A, GenericVector& b, const GenericVector& x, DofMap& dof_map, const ufc::form& form) = 0;
+    virtual void apply(GenericMatrix& A, GenericVector& b, const GenericVector& x, const DofMap& dof_map, const ufc::form& form) = 0;
 
   protected:
 
@@ -56,7 +56,7 @@ namespace dolfin
     public:
       
       // Constructor
-      LocalData(const ufc::form& form, Mesh& mesh, DofMap& dof_map, const SubSystem& sub_system);
+      LocalData(const ufc::form& form, Mesh& mesh, const DofMap& global_dof_map, const SubSystem& sub_system);
       
       // Destructor
       ~LocalData();
@@ -68,7 +68,7 @@ namespace dolfin
       ufc::finite_element* finite_element;
       
       // Dof map for sub system
-      DofMap& dof_map;
+      const DofMap* dof_map;
 
       // Offset for sub system
       uint offset;

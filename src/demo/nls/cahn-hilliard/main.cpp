@@ -40,6 +40,8 @@ class CahnHilliardEquation : public NonlinearProblem, public Parametrized
       }
       else
         error("Cahn-Hilliard model is programmed for 2D and 3D only");
+
+      dof_map_set.update(*a, mesh);
     }
 
     // Destructor 
@@ -65,10 +67,13 @@ class CahnHilliardEquation : public NonlinearProblem, public Parametrized
     void form(GenericMatrix& A, GenericVector& b, const GenericVector& x)
     {
       // Assemble system and RHS (Neumann boundary conditions)
-      Assembler assembler(mesh);
+      Assembler assembler(mesh, dof_map_set);
       assembler.assemble(A, *a);
       assembler.assemble(b, *L);
     }
+
+    // Dof map
+    DofMapSet dof_map_set;
 
   private:
 
@@ -112,8 +117,8 @@ int main(int argc, char* argv[])
 
   // Initialise discrete functions
   Vector x, x0;
-  u.init(mesh,   x, cahn_hilliard.form(1), 1);
-  u0.init(mesh, x0, cahn_hilliard.form(1), 1);
+  u.init(mesh,  cahn_hilliard.dof_map_set[1], x, cahn_hilliard.form(1), 1);
+  u0.init(mesh, cahn_hilliard.dof_map_set[1], x0, cahn_hilliard.form(1), 1);
 
   // Create nonlinear solver and set parameters
   NewtonSolver newton_solver;

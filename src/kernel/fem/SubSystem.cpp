@@ -73,22 +73,16 @@ ufc::finite_element* SubSystem::extractFiniteElement
 {
   // Check if there are any sub systems
   if (finite_element.num_sub_elements() == 0)
-  {
     error("Unable to extract sub system (there are no sub systems).");
-  }
 
   // Check that a sub system has been specified
   if (sub_system.size() == 0)
-  {
     error("Unable to extract sub system (no sub system specified).");
-  }
   
   // Check the number of available sub systems
   if (sub_system[0] >= finite_element.num_sub_elements())
-  {
     error("Unable to extract sub system %d (only %d sub systems defined).",
                   sub_system[0], finite_element.num_sub_elements());
-  }
   
   // Create sub system
   ufc::finite_element* sub_element = finite_element.create_sub_element(sub_system[0]);

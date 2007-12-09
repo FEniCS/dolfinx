@@ -1,8 +1,10 @@
 // Copyright (C) 2007 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Garth N. Wells 2007
+//
 // First added:  2007-07-08
-// Last changed: 2007-08-18
+// Last changed: 2007-12-08
 
 #ifndef __PERIODIC_BC_H
 #define __PERIODIC_BC_H
@@ -53,16 +55,16 @@ namespace dolfin
     ~PeriodicBC();
 
     /// Apply boundary condition to linear system
-    void apply(GenericMatrix& A, GenericVector& b, DofMap& dof_map, const Form& form);
+    void apply(GenericMatrix& A, GenericVector& b, const DofMap& dof_map, const Form& form);
 
     /// Apply boundary condition to linear system
-    void apply(GenericMatrix& A, GenericVector& b, DofMap& dof_map, const ufc::form& form);
+    void apply(GenericMatrix& A, GenericVector& b, const DofMap& dof_map, const ufc::form& form);
 
     /// Apply boundary condition to linear system for a nonlinear problem (not implemented)
-    void apply(GenericMatrix& A, GenericVector& b, const GenericVector& x, DofMap& dof_map, const Form& form);
+    void apply(GenericMatrix& A, GenericVector& b, const GenericVector& x, const DofMap& dof_map, const Form& form);
 
     /// Apply boundary condition to linear system for a nonlinear problem (not implemented)
-    void apply(GenericMatrix& A, GenericVector& b, const GenericVector& x, DofMap& dof_map, const ufc::form& form);
+    void apply(GenericMatrix& A, GenericVector& b, const GenericVector& x, const DofMap& dof_map, const ufc::form& form);
 
   private:
 

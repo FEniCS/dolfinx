@@ -40,11 +40,14 @@ int main()
   Matrix A;
   Vector x, b;
 
+  // Creat dof maps
+  DofMapSet dof_map_set(a, mesh);
+
   // Solution vector
-  Function u1(mesh, x, a);
+  Function u1(mesh, dof_map_set[1], x, a);
 
   // Assemble matrix
-  assemble(A, a, mesh);
+  assemble(A, a, mesh, dof_map_set);
   
   // Parameters for time-stepping
   real T = 2.0;
@@ -59,8 +62,8 @@ int main()
   while ( t < T )
   {
     // Assemble vector and apply boundary conditions
-    assemble(b, L, mesh);
-    bc.apply(A, b, a);
+    assemble(b, L, mesh, dof_map_set);
+    bc.apply(A, b, dof_map_set[0], a);
     
     // Solve the linear system
     solve(A, x, b);

@@ -19,7 +19,7 @@ NonlinearPDE::NonlinearPDE(Form& a,
                            Form& L,
                            Mesh& mesh,
                            BoundaryCondition& bc)
-  : a(a), L(L), mesh(mesh), assembler(mesh)
+  : a(a), L(L), mesh(mesh), assembler(mesh, dof_map_set)
 {
   message("Creating nonlinear PDE with %d boundary condition(s).", bcs.size());
 
@@ -39,7 +39,7 @@ NonlinearPDE::NonlinearPDE(Form& a,
                            Form& L,
                            Mesh& mesh,
                            Array<BoundaryCondition*>& bcs)
-  : a(a), L(L), mesh(mesh), bcs(bcs), assembler(mesh)
+  : a(a), L(L), mesh(mesh), bcs(bcs), assembler(mesh, dof_map_set)
 {
   message("Creating nonlinear PDE with %d boundary condition(s).", bcs.size());
 

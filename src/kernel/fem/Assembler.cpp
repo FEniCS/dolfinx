@@ -27,7 +27,8 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Assembler::Assembler(Mesh& mesh) : mesh(mesh)
+Assembler::Assembler(Mesh& mesh, DofMapSet& dof_map_set) 
+                    : mesh(mesh), dof_map_set(dof_map_set)
 {
   // Do nothing
 }
@@ -126,9 +127,6 @@ void Assembler::assemble(GenericTensor& A, const ufc::form& form,
   
   // Check arguments
   check(form, coefficients);
-
-  // Update dof maps
-  dof_map_set.update(form, mesh);
 
   // Create data structure for local assembly data
   UFC ufc(form, mesh, dof_map_set);

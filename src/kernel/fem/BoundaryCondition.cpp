@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells 2007
 //
 // First added:  2007-07-11
-// Last changed: 2007-12-08
+// Last changed: 2007-12-09
 
 #include <dolfin/Form.h>
 #include <dolfin/SubSystem.h>
@@ -24,10 +24,10 @@ BoundaryCondition::~BoundaryCondition()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-BoundaryCondition::LocalData::LocalData(const ufc::form& form,
-                                        Mesh& mesh, DofMap& dof_map, 
+BoundaryCondition::LocalData::LocalData(const ufc::form& form, Mesh& mesh, 
+                                        const DofMap& global_dof_map, 
                                         const SubSystem& sub_system)
-  : ufc_mesh(mesh), finite_element(0), dof_map(dof_map), offset(0),
+  : ufc_mesh(mesh), finite_element(0), dof_map(0), offset(0),
     w(0), cell_dofs(0), facet_dofs(0)
 {
   // FIXME: Change behaviour of num_sub_elements() in FFC (return 0 when
@@ -43,21 +43,16 @@ BoundaryCondition::LocalData::LocalData(const ufc::form& form,
   // Extract sub element and sub dof map if we have a sub system
   if (sub_system.depth() > 0)
   {
-    error("Need to fix extraction of sub dof maps.");
     // Finite element
     ufc::finite_element* sub_finite_element = sub_system.extractFiniteElement(*finite_element);
     delete finite_element;
     finite_element = sub_finite_element;
 
-    // Dof map
-    //DofMap* sub_dof_map = dof_map.extractDofMap(sub_system.array(), offset);
-    //delete dof_map;
-    //dof_map = sub_dof_map;
-
-    //ufc::dof_map* sub_dof_map = sub_system.extractDofMap(*dof_map, mesh, offset);
-    //delete dof_map;
-    //dof_map = sub_dof_map;
+    // Create sub dof map
+    dof_map = global_dof_map.extractDofMap(sub_system.array(), offset);
   }
+  else
+    dof_map = &global_dof_map;
 
   // Create local data used to set boundary conditions
   w = new real[finite_element->space_dimension()];
@@ -67,13 +62,13 @@ BoundaryCondition::LocalData::LocalData(const ufc::form& form,
     w[i] = 0.0;
     cell_dofs[i] = 0;
   }
-  facet_dofs = new uint[dof_map.num_facet_dofs()];
-  for (uint i = 0; i < dof_map.num_facet_dofs(); i++)
+  facet_dofs = new uint[dof_map->num_facet_dofs()];
+  for (uint i = 0; i < dof_map->num_facet_dofs(); i++)
     facet_dofs[i] = 0;
 
   // Create local coordinate data
-  coordinates = new real*[dof_map.local_dimension()];
-  for (uint i = 0; i < dof_map.local_dimension(); i++)
+  coordinates = new real*[dof_map->local_dimension()];
+  for (uint i = 0; i < dof_map->local_dimension(); i++)
   {
     coordinates[i] = new real[mesh.geometry().dim()];
     for (uint j = 0; j < mesh.geometry().dim(); j++)
@@ -85,7 +80,7 @@ BoundaryCondition::LocalData::~LocalData()
 {
   if (coordinates)
   {
-    for (uint i = 0; i < dof_map.local_dimension(); i++)
+    for (uint i = 0; i < dof_map->local_dimension(); i++)
       delete [] coordinates[i];
     delete [] coordinates;
   }

@@ -103,32 +103,32 @@ DirichletBC::~DirichletBC()
     delete sub_domains;
 }
 //-----------------------------------------------------------------------------
-void DirichletBC::apply(GenericMatrix& A, GenericVector& b, DofMap& dof_map,
+void DirichletBC::apply(GenericMatrix& A, GenericVector& b, const DofMap& dof_map,
                         const Form& form)
 {
   apply(A, b, 0, dof_map, form.form());
 }
 //-----------------------------------------------------------------------------
-void DirichletBC::apply(GenericMatrix& A, GenericVector& b, DofMap& dof_map,
+void DirichletBC::apply(GenericMatrix& A, GenericVector& b, const DofMap& dof_map,
                         const ufc::form& form)
 {
   apply(A, b, 0, dof_map, form);
 }
 //-----------------------------------------------------------------------------
 void DirichletBC::apply(GenericMatrix& A, GenericVector& b,
-                        const GenericVector& x, DofMap& dof_map, const Form& form)
+                        const GenericVector& x, const DofMap& dof_map, const Form& form)
 {
   apply(A, b, &x, dof_map, form.form());
 }
 //-----------------------------------------------------------------------------
 void DirichletBC::apply(GenericMatrix& A, GenericVector& b,
-                        const GenericVector& x, DofMap& dof_map, const ufc::form& form)
+                        const GenericVector& x, const DofMap& dof_map, const ufc::form& form)
 {
   apply(A, b, &x, dof_map, form);
 }
 //-----------------------------------------------------------------------------
 void DirichletBC::apply(GenericMatrix& A, GenericVector& b,
-                const GenericVector* x, DofMap& dof_map, const ufc::form& form)
+                const GenericVector* x, const DofMap& dof_map, const ufc::form& form)
 {
   // FIXME: How do we reuse the dof map for u?
   // FIXME: Perhaps we should make DofMapSet a member of Form?
@@ -249,13 +249,13 @@ void DirichletBC::computeBCTopological(std::map<uint, real>& boundary_values,
   g.interpolate(data.w, ufc_cell, *data.finite_element, cell, local_facet);
   
   // Tabulate dofs on cell
-  data.dof_map.tabulate_dofs(data.cell_dofs, ufc_cell);
-  
+  data.dof_map->tabulate_dofs(data.cell_dofs, ufc_cell);
+
   // Tabulate which dofs are on the facet
-  data.dof_map.tabulate_facet_dofs(data.facet_dofs, local_facet);
+  data.dof_map->tabulate_facet_dofs(data.facet_dofs, local_facet);
   
   // Pick values for facet
-  for (uint i = 0; i < data.dof_map.num_facet_dofs(); i++)
+  for (uint i = 0; i < data.dof_map->num_facet_dofs(); i++)
   {
     const uint dof = data.offset + data.cell_dofs[data.facet_dofs[i]];
     const real value = data.w[data.facet_dofs[i]];
@@ -279,11 +279,11 @@ void DirichletBC::computeBCGeometrical(std::map<uint, real>& boundary_values,
       g.interpolate(data.w, ufc_cell, *data.finite_element, *c);
       
       // Tabulate dofs on cell, and their coordinates
-      data.dof_map.tabulate_dofs(data.cell_dofs, ufc_cell);
-      data.dof_map.tabulate_coordinates(data.coordinates, ufc_cell);
+      data.dof_map->tabulate_dofs(data.cell_dofs, ufc_cell);
+      data.dof_map->tabulate_coordinates(data.coordinates, ufc_cell);
       
       // Loop all dofs on cell
-      for (uint i = 0; i < data.dof_map.local_dimension(); ++i)
+      for (uint i = 0; i < data.dof_map->local_dimension(); ++i)
       {
         // Check if the coordinates are on current facet and thus on boundary
         if (!onFacet(data.coordinates[i], facet))
@@ -308,11 +308,11 @@ void DirichletBC::computeBCPointwise(std::map<uint, real>& boundary_values,
   g.interpolate(data.w, ufc_cell, *data.finite_element, cell);
       
   // Tabulate dofs on cell, and their coordinates
-  data.dof_map.tabulate_dofs(data.cell_dofs, ufc_cell);
-  data.dof_map.tabulate_coordinates(data.coordinates, ufc_cell);
+  data.dof_map->tabulate_dofs(data.cell_dofs, ufc_cell);
+  data.dof_map->tabulate_coordinates(data.coordinates, ufc_cell);
       
   // Loop all dofs on cell
-  for (uint i = 0; i < data.dof_map.local_dimension(); ++i)
+  for (uint i = 0; i < data.dof_map->local_dimension(); ++i)
   {
     // Check if the coordinates are part of the sub domain
     if ( !user_sub_domain->inside(data.coordinates[i], false) )

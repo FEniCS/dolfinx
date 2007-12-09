@@ -52,6 +52,16 @@ DofMap::~DofMap()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
+//DofMap* DofMap::create_dof_map(char* signature) const
+//{
+//  ufc::dof_map* ufc_dof_map = ElementLibrary::create_dof_map(signature);
+//  if (!ufc_dof_map)
+//    error("Unable to find dof map in library: \"%s\".",signature);
+//
+//  dof_map = new DofMap(*ufc_dof_map, mesh);
+//
+//}
+//-----------------------------------------------------------------------------
 DofMap* DofMap::extractDofMap(const Array<uint>& sub_system, uint& offset) const
 {
   // Reset offset
@@ -69,29 +79,26 @@ ufc::dof_map* DofMap::extractDofMap(const ufc::dof_map& dof_map, uint& offset, c
 {
   // Check if there are any sub systems
   if (dof_map.num_sub_dof_maps() == 0)
-  {
     error("Unable to extract sub system (there are no sub systems).");
-  }
 
   // Check that a sub system has been specified
   if (sub_system.size() == 0)
-  {
     error("Unable to extract sub system (no sub system specified).");
-  }
   
   // Check the number of available sub systems
   if (sub_system[0] >= dof_map.num_sub_dof_maps())
-  {
     error("Unable to extract sub system %d (only %d sub systems defined).",
                   sub_system[0], dof_map.num_sub_dof_maps());
-  }
 
   // Add to offset if necessary
   for (uint i = 0; i < sub_system[0]; i++)
   {
     ufc::dof_map* ufc_dof_map = dof_map.create_sub_dof_map(i);
-    DofMap dolfin_dof_map(*ufc_dof_map, dolfin_mesh);
-    offset += dolfin_dof_map.global_dimension();
+    // FIXME: Can we avoid creating a DofMap here just for getting the global dimension?
+    DofMap dof_map_test(*ufc_dof_map, dolfin_mesh);
+    offset += ufc_dof_map->global_dimension();
+    cout << "Offset " << offset << "  " << ufc_dof_map->global_dimension() << endl; 
+    cout << "       " << offset << "  " << dof_map_test.global_dimension() << endl; 
     delete ufc_dof_map;
   }
   

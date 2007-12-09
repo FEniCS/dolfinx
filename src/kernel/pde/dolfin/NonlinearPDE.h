@@ -53,6 +53,9 @@ namespace dolfin
     // The mesh
     Mesh& mesh;
 
+    // dof maps
+    DofMapSet dof_map_set;
+
     // The boundary conditions
     Array<BoundaryCondition*> bcs;
 
@@ -64,9 +67,6 @@ namespace dolfin
 
     // Solver
     NewtonSolver newton_solver;
-
-    // dof maps
-    DofMapSet dof_map_set;
       
   };
 

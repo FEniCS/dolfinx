@@ -22,7 +22,8 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-DiscreteFunction::DiscreteFunction(Mesh& mesh, DofMap& dof_map, Vector& x, const Form& form, uint i)
+DiscreteFunction::DiscreteFunction(Mesh& mesh, DofMap& dof_map, Vector& x, 
+                                  const Form& form, uint i)
   : GenericFunction(mesh),
     x(&x), finite_element(0), dof_map(&dof_map), dofs(0),
     local_mesh(false), local_vector(false)
@@ -30,7 +31,8 @@ DiscreteFunction::DiscreteFunction(Mesh& mesh, DofMap& dof_map, Vector& x, const
   init(mesh, x, form.form(), i);
 }
 //-----------------------------------------------------------------------------
-DiscreteFunction::DiscreteFunction(Mesh& mesh, DofMap& dof_map, Vector& x, const ufc::form& form, uint i)
+DiscreteFunction::DiscreteFunction(Mesh& mesh, DofMap& dof_map, Vector& x, 
+                                   const ufc::form& form, uint i)
   : GenericFunction(mesh),
     x(&x), finite_element(0), dof_map(&dof_map), dofs(0),
     local_mesh(false), local_vector(false)
@@ -85,8 +87,6 @@ DiscreteFunction::DiscreteFunction(SubFunction& sub_function)
     x(0), finite_element(0), dof_map(sub_function.f->dof_map), dofs(0),
     local_mesh(false), local_vector(false)
 {
-  error("DiscreteFunction::DiscreteFunction(SubFunction& sub_function) needs to be updated for dof map");
-/*
   // Create sub system
   SubSystem sub_system(sub_function.i);
 
@@ -95,9 +95,7 @@ DiscreteFunction::DiscreteFunction(SubFunction& sub_function)
 
   // Extract sub dof map and offset
   uint offset = 0;
-  //ufc_dof_map = sub_system.extractDofMap(*sub_function.f->ufc_dof_map, mesh, offset);
-  //dof_map = new DofMap(*ufc_dof_map, mesh);
-  sub_dof_map = sub_function.f->dof_map->extractDofMap(sub_system.array(), offset);
+  dof_map = sub_function.f->dof_map->extractDofMap(sub_system.array(), offset);
 
   // Create vector of dofs and copy values
   const uint n = dof_map->global_dimension();
@@ -124,7 +122,6 @@ DiscreteFunction::DiscreteFunction(SubFunction& sub_function)
 
   // Assume responsibility for vector
   local_vector = x;
-*/
 }
 //-----------------------------------------------------------------------------
 DiscreteFunction::DiscreteFunction(const DiscreteFunction& f)
@@ -132,8 +129,6 @@ DiscreteFunction::DiscreteFunction(const DiscreteFunction& f)
     x(0), finite_element(0), dof_map(f.dof_map), dofs(0),
     local_mesh(false), local_vector(false)
 {
-  error("Copy constructor for discrete function not yet updated.");
-/*
   cout << "Copy constructor for discrete function" << endl;
 
   // Create finite element
@@ -143,15 +138,6 @@ DiscreteFunction::DiscreteFunction(const DiscreteFunction& f)
     error("Unable to find finite element in library: \"%s\".",
                   f.finite_element->signature());
   }
-
-  // Create dof map
-  ufc_dof_map = ElementLibrary::create_dof_map(f.dof_map->signature());
-  if (!ufc_dof_map)
-  {
-    error("Unable to find dof map in library: \"%s\".",
-                  f.dof_map->signature());
-  }
-  dof_map = new DofMap(*ufc_dof_map, mesh);
 
   // Create vector and copy values
   x = new Vector(dof_map->global_dimension());
@@ -164,7 +150,6 @@ DiscreteFunction::DiscreteFunction(const DiscreteFunction& f)
 
   // Assume responsibility for vector
   local_vector = x;
-*/
 }
 //-----------------------------------------------------------------------------
 DiscreteFunction::~DiscreteFunction()
@@ -203,6 +188,8 @@ dolfin::uint DiscreteFunction::numSubFunctions() const
 const DiscreteFunction& DiscreteFunction::operator= (const DiscreteFunction& f)
 {
   cout << "Assignment in discrete function" << endl;
+
+  error("DiscreteFunction assignment needs to be updated for dof mapping");
 
   // Check that data matches
   if (strcmp(finite_element->signature(), f.finite_element->signature()) != 0 ||
@@ -299,10 +286,8 @@ void DiscreteFunction::init(Mesh& mesh, Vector& x, const ufc::form& form, uint i
   // Check argument
   const uint num_arguments = form.rank() + form.num_coefficients();
   if (i >= num_arguments)
-  {
     error("Illegal function index %d. Form only has %d arguments.",
                   i, num_arguments);
-  }
 
   // Create finite element
   finite_element = form.create_finite_element(i);

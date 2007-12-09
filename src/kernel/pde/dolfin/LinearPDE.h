@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells 2006, 2007.
 //
 // First added:  2004
-// Last changed: 2007-06-20
+// Last changed: 2007-12-09
 
 #ifndef __LINEAR_PDE_H
 #define __LINEAR_PDE_H
@@ -71,7 +71,7 @@ namespace dolfin
     // The solution vector
     Vector x;
 
-    // dof map
+    // Dof map set
     DofMapSet dof_map_set;
   };
 

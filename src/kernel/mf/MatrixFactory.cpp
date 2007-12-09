@@ -5,6 +5,7 @@
 // Last changed: 2006-10-26
 
 #include <dolfin/assemble.h>
+#include <dolfin/DofMapSet.h>
 #include <dolfin/GenericMatrix.h>
 #include <dolfin/GenericVector.h>
 #include <dolfin/Mesh.h>
@@ -24,15 +25,18 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 void MatrixFactory::computeMassMatrix(GenericMatrix& A, Mesh& mesh)
 {
+  warning("Using default dof map in MatrixFactory");
   if (mesh.type().cellType() == CellType::triangle)
   {
     MassMatrix2DBilinearForm a;
-    assemble(A, a, mesh);
+    DofMapSet dof_map_set(a.form(), mesh);
+    assemble(A, a, mesh, dof_map_set);
   }
   else if (mesh.type().cellType() == CellType::tetrahedron)
   {
     MassMatrix3DBilinearForm a;
-    assemble(A, a, mesh);
+    DofMapSet dof_map_set(a.form(), mesh);
+    assemble(A, a, mesh, dof_map_set);
   }
   else
   {
@@ -40,20 +44,22 @@ void MatrixFactory::computeMassMatrix(GenericMatrix& A, Mesh& mesh)
   }
 }
 //-----------------------------------------------------------------------------
-void MatrixFactory::computeStiffnessMatrix(GenericMatrix& A, Mesh& mesh,
-					   real c)
+void MatrixFactory::computeStiffnessMatrix(GenericMatrix& A, Mesh& mesh, real c)
 {
   Function f(mesh, c);
 
+  warning("Using default dof map in MatrixFactory");
   if (mesh.type().cellType() == CellType::triangle)
   {
     StiffnessMatrix2DBilinearForm a(f);
-    assemble(A, a, mesh);
+    DofMapSet dof_map_set(a.form(), mesh);
+    assemble(A, a, mesh, dof_map_set);
   }
   else if (mesh.type().cellType() == CellType::tetrahedron)
   {
     StiffnessMatrix3DBilinearForm a(f);
-    assemble(A, a, mesh);
+    DofMapSet dof_map_set(a.form(), mesh);
+    assemble(A, a, mesh, dof_map_set);
   }
   else
   {
@@ -68,15 +74,18 @@ void MatrixFactory::computeConvectionMatrix(GenericMatrix& A, Mesh& mesh,
   Function fy(mesh, cy);
   Function fz(mesh, cz);
 
+  warning("Using default dof map in MatrixFactory");
   if (mesh.type().cellType() == CellType::triangle)
   {
     ConvectionMatrix2DBilinearForm a(fx, fy);
-    assemble(A, a, mesh);
+    DofMapSet dof_map_set(a.form(), mesh);
+    assemble(A, a, mesh, dof_map_set);
   }
   else if (mesh.type().cellType() == CellType::tetrahedron)
   {
     ConvectionMatrix3DBilinearForm a(fx, fy, fz);
-    assemble(A, a, mesh);
+    DofMapSet dof_map_set(a.form(), mesh);
+    assemble(A, a, mesh, dof_map_set);
   }
   else
   {
@@ -89,15 +98,18 @@ void MatrixFactory::computeLoadVector(GenericVector& x, Mesh& mesh, real c)
   Function f(mesh, c);
 
   error("MF forms need to be updated to new mesh format.");
+  warning("Using default dof map in MatrixFactory");
   if (mesh.type().cellType() == CellType::triangle)
   {
     LoadVector2DLinearForm b(f);
-    assemble(x, b, mesh);
+    DofMapSet dof_map_set(b.form(), mesh);
+    assemble(x, b, mesh, dof_map_set);
   }
   else if (mesh.type().cellType() == CellType::tetrahedron)
   {
     LoadVector3DLinearForm b(f);
-    assemble(x, b, mesh);
+    DofMapSet dof_map_set(b.form(), mesh);
+    assemble(x, b, mesh, dof_map_set);
   }
   else
   {

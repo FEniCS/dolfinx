@@ -13,6 +13,7 @@
 namespace dolfin
 {
 
+  class DofMapSet;
   class GenericTensor;
   class Function;
   class Form;
@@ -26,33 +27,34 @@ namespace dolfin
   /// performance by reuse of data structures.
 
   /// Assemble tensor from given variational form and mesh
-  void assemble(GenericTensor& A, const Form& form, Mesh& mesh);
+  void assemble(GenericTensor& A, const Form& form, Mesh& mesh, 
+                DofMapSet& dof_map_set);
   
   /// Assemble tensor from given variational form and mesh over a sub domain
-  void assemble(GenericTensor& A, const Form& form, Mesh& mesh,
-                const SubDomain& sub_domain);
+  void assemble(GenericTensor& A, const Form& form, Mesh& mesh, 
+                DofMapSet& dof_map_set, const SubDomain& sub_domain);
 
   /// Assemble tensor from given variational form and mesh over sub domains
-  void assemble(GenericTensor& A, const Form& form, Mesh& mesh, 
+  void assemble(GenericTensor& A, const Form& form, Mesh& mesh, DofMapSet& dof_map_set, 
                 const MeshFunction<uint>& cell_domains,
                 const MeshFunction<uint>& exterior_facet_domains,
                 const MeshFunction<uint>& interior_facet_domains);
 
   /// Assemble scalar from given variational form and mesh
-  real assemble(const Form& form, Mesh& mesh);
+  real assemble(const Form& form, Mesh& mesh, DofMapSet& dof_map_set);
 
   /// Assemble scalar from given variational form and mesh over a sub domain
-  real assemble(const Form& form, Mesh& mesh,
+  real assemble(const Form& form, Mesh& mesh, DofMapSet& dof_map_set,
                 const SubDomain& sub_domain);
 
   /// Assemble scalar from given variational form and mesh over sub domains
-  real assemble(const Form& form, Mesh& mesh,
+  real assemble(const Form& form, Mesh& mesh, DofMapSet& dof_map_set,
                 const MeshFunction<uint>& cell_domains,
                 const MeshFunction<uint>& exterior_facet_domains,
                 const MeshFunction<uint>& interior_facet_domains);
 
   /// Assemble tensor from given (UFC) form, mesh, coefficients and sub domains
-  void assemble(GenericTensor& A, const ufc::form& form, Mesh& mesh,
+  void assemble(GenericTensor& A, const ufc::form& form, Mesh& mesh, DofMapSet& dof_map_set,
                 Array<Function*>& coefficients,
                 const MeshFunction<uint>* cell_domains,
                 const MeshFunction<uint>* exterior_facet_domains,

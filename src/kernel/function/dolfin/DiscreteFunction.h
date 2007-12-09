@@ -90,9 +90,6 @@ namespace dolfin
     // The dof map
     DofMap* dof_map;
 
-    // The UFC dof map
-    //ufc::dof_map* ufc_dof_map;
-
     // Local array for mapping of dofs
     uint* dofs;
 

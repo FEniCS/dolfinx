@@ -12,6 +12,7 @@
 namespace dolfin
 {
 
+  class DofMapSet;
   class GenericMatrix;
   class GenericVector;
   class Mesh;
@@ -37,7 +38,7 @@ namespace dolfin
 					real cx = 1.0, real cy = 0.0, real cz = 0.0);
     
     /// Construct load vector with constant load c on a given mesh
-    static void computeLoadVector(GenericVector& x, Mesh& mesh,  real c = 1.0);
+    static void computeLoadVector(GenericVector& x, Mesh& mesh, real c = 1.0);
 
   };
 

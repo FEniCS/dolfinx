@@ -1,10 +1,10 @@
 // Copyright (C) 2004-2007 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Garth N. Wells, 2006
+// Modified by Garth N. Wells, 2006, 2007
 //
 // First added:  2004
-// Last changed: 2007-08-28
+// Last changed: 2007-12-28
 
 #include <dolfin/Matrix.h>
 #include <dolfin/BoundaryCondition.h>
@@ -23,6 +23,8 @@ LinearPDE::LinearPDE(Form& a, Form& L, Mesh& mesh)
   : a(a), L(L), mesh(mesh)
 {
   message("Creating linear PDE.");
+
+  // Create dof map set
   dof_map_set.update(a.form(), mesh);
 }
 //-----------------------------------------------------------------------------
@@ -30,17 +32,23 @@ LinearPDE::LinearPDE(Form& a, Form& L, Mesh& mesh, BoundaryCondition& bc)
   : a(a), L(L), mesh(mesh)
 {
   message("Creating linear PDE with one boundary condition.");
-  dof_map_set.update(a.form(), mesh);
+
   bcs.push_back(&bc);
+
+  // Create dof map set
+  dof_map_set.update(a.form(), mesh);
 } 
 //-----------------------------------------------------------------------------
 LinearPDE::LinearPDE(Form& a, Form& L, Mesh& mesh, Array<BoundaryCondition*>& bcs)
   : a(a), L(L), mesh(mesh)
 {
   message("Creating linear PDE with %d boundary condition(s).", bcs.size());
-  dof_map_set.update(a.form(), mesh);
+
   for (uint i = 0; i < bcs.size(); i++)
     this->bcs.push_back(bcs[i]);
+
+  // Create dof map set
+  dof_map_set.update(a.form(), mesh);
 }
 //-----------------------------------------------------------------------------
 LinearPDE::~LinearPDE()
@@ -57,7 +65,7 @@ void LinearPDE::solve(Function& u)
   Vector b;
 
   // Assemble linear system
-  Assembler assembler(mesh);
+  Assembler assembler(mesh, dof_map_set);
   assembler.assemble(A, a);
   assembler.assemble(b, L);
 
@@ -93,7 +101,6 @@ void LinearPDE::solve(Function& u)
   //cout << "Solution vector:" << endl;
   //x.disp();
 
-  // Set function data
   u.init(mesh, dof_map_set[0], x, a, 1);
 
   end();
