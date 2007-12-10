@@ -4,6 +4,8 @@
 // DOLFIN fem interface
 
 #include <dolfin/assemble.h>
+#include <dolfin/DofMap.h>
+#include <dolfin/DofMapSet.h>
 #include <dolfin/SubSystem.h>
 #include <dolfin/BoundaryCondition.h>
 #include <dolfin/DirichletBC.h>

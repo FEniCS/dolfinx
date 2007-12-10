@@ -103,6 +103,17 @@ void Function::init(Mesh& mesh, Vector& x, Form& form, uint i)
   _type = discrete;
 }
 //-----------------------------------------------------------------------------
+void Function::init(Mesh& mesh, DofMap& dof_map, Vector& x, const ufc::form& form, uint i)
+{
+  if (f)
+    delete f;
+
+  f = new DiscreteFunction(mesh, dof_map, x, form, i);
+  
+  rename("u", "discrete function");
+  _type = discrete;
+}
+//-----------------------------------------------------------------------------
 Function::Type Function::type() const
 {
   return _type;
