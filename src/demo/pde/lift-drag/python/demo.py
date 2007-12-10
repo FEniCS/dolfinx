@@ -15,7 +15,7 @@ __license__  = "GNU LGPL Version 2.1"
 from dolfin import *
 
 #
-# THIS DEMO IS CURRENTLY NOT WORKING, SEE NOTE IN CODE.
+print "****THIS DEMO IS CURRENTLY NOT WORKING, SEE NOTE IN CODE."
 #
 
 # Create element

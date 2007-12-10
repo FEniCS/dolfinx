@@ -128,6 +128,7 @@ class LinearPDE:
         self.mesh = mesh
         self.bcs = bcs
         self.x = Vector()
+        self.dof_maps = DofMapSet()
 
         # Make sure we have a list
         if not isinstance(self.bcs, list):
@@ -138,8 +139,8 @@ class LinearPDE:
 
         begin("Solving linear PDE.");
         # Assemble linear system
-        (A, dof_maps_A) = assemble(self.a, self.mesh)
-        (b, dof_maps_b) = assemble(self.L, self.mesh)
+        (A, self.dof_maps) = assemble(self.a, self.mesh)
+        (b, dof_maps_L)    = assemble(self.L, self.mesh)
 
         # FIXME: Maybe there is a better solution?
         # Compile form, needed to create discrete function
@@ -147,7 +148,7 @@ class LinearPDE:
 
             # Apply boundary conditions
         for bc in self.bcs:
-            bc.apply(A, b, dof_maps_A.sub(1), compiled_form)
+            bc.apply(A, b, self.dof_maps.sub(1), compiled_form)
 
         #message("Matrix:")
         #A.disp()
@@ -178,7 +179,7 @@ class LinearPDE:
         element = form_data[0].elements[1]
   
         # Create Function
-        u = Function(element, self.mesh, dof_maps_A.sub(1), self.x, compiled_form)
+        u = Function(element, self.mesh, self.dof_maps.sub(1), self.x, compiled_form)
 
         end()
 
