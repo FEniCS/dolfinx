@@ -21,6 +21,7 @@ libdolfin_fem_la_SOURCES = assemble.cpp \
                            DirichletBC.cpp \
                            DofMap.cpp \
                            DofMapSet.cpp \
+                           Form.cpp \
                            PeriodicBC.cpp \
                            SparsityPatternBuilder.cpp \
                            SubSystem.cpp \

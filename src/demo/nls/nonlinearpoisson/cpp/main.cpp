@@ -89,7 +89,7 @@ class MyNonlinearProblem : public NonlinearProblem
       dof_map_set.update(a->form(), mesh);
 
       // Initialise solution vector u
-      u.init(mesh, dof_map_set[1], x, *a, 1);
+      u.init(mesh, x, *a, 1);
     }
 
     // Destructor 
@@ -104,10 +104,10 @@ class MyNonlinearProblem : public NonlinearProblem
     void form(GenericMatrix& A, GenericVector& b, const GenericVector& x)
     {
       set("output destination", "silent");
-      Assembler assembler(mesh, dof_map_set);
+      Assembler assembler(mesh);
       assembler.assemble(A, *a);
       assembler.assemble(b, *L);
-      bc->apply(A, b, x, dof_map_set[0], *a);
+      bc->apply(A, b, x, *a);
       set("output destination", "terminal");
     }
 

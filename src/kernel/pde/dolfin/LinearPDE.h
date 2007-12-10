@@ -70,9 +70,6 @@ namespace dolfin
 
     // The solution vector
     Vector x;
-
-    // Dof map set
-    DofMapSet dof_map_set;
   };
 
 }

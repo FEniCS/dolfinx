@@ -33,7 +33,7 @@ namespace dolfin
   public:
 
     /// Create discrete function for argument function i of form
-    DiscreteFunction(Mesh& mesh, DofMap& dof_map, Vector& x, const Form& form, uint i);
+    DiscreteFunction(Mesh& mesh, Vector& x, Form& form, uint i);
 
     /// Create discrete function for argument function i of form
     DiscreteFunction(Mesh& mesh, DofMap& dof_map, Vector& x, const ufc::form& form, uint i);

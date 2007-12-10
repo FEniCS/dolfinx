@@ -96,13 +96,13 @@ namespace dolfin
     ~DirichletBC();
 
     /// Apply boundary condition to linear system
-    void apply(GenericMatrix& A, GenericVector& b, const DofMap& dof_map, const Form& form);
+    void apply(GenericMatrix& A, GenericVector& b, const Form& form);
 
     /// Apply boundary condition to linear system
     void apply(GenericMatrix& A, GenericVector& b, const DofMap& dof_map, const ufc::form& form);
 
     /// Apply boundary condition to linear system for a nonlinear problem
-    void apply(GenericMatrix& A, GenericVector& b, const GenericVector& x, const DofMap& dof_map, const Form& form);
+    void apply(GenericMatrix& A, GenericVector& b, const GenericVector& x, const Form& form);
 
     /// Apply boundary condition to linear system for a nonlinear problem
     void apply(GenericMatrix& A, GenericVector& b, const GenericVector& x, const DofMap& dof_map, const ufc::form& form);

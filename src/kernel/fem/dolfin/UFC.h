@@ -29,7 +29,7 @@ namespace dolfin
   public:
 
     /// Constructor
-    UFC(const ufc::form& form, Mesh& mesh, DofMapSet& dof_map_set);
+    UFC(const ufc::form& form, Mesh& mesh, const DofMapSet& dof_map_set);
 
     /// Destructor
     ~UFC();
@@ -94,12 +94,6 @@ namespace dolfin
 
     // Array of coefficients on macro element
     real** macro_w;
-
-    private:
-
-      // FIXME: thus will eventually be removed. It has been made private to prevent access
-      // Array of dof maps for primary arguments
-      ufc::dof_map** dof_maps;
 
   };
 

@@ -29,14 +29,12 @@ void MatrixFactory::computeMassMatrix(GenericMatrix& A, Mesh& mesh)
   if (mesh.type().cellType() == CellType::triangle)
   {
     MassMatrix2DBilinearForm a;
-    DofMapSet dof_map_set(a.form(), mesh);
-    assemble(A, a, mesh, dof_map_set);
+    assemble(A, a, mesh);
   }
   else if (mesh.type().cellType() == CellType::tetrahedron)
   {
     MassMatrix3DBilinearForm a;
-    DofMapSet dof_map_set(a.form(), mesh);
-    assemble(A, a, mesh, dof_map_set);
+    assemble(A, a, mesh);
   }
   else
   {
@@ -52,14 +50,12 @@ void MatrixFactory::computeStiffnessMatrix(GenericMatrix& A, Mesh& mesh, real c)
   if (mesh.type().cellType() == CellType::triangle)
   {
     StiffnessMatrix2DBilinearForm a(f);
-    DofMapSet dof_map_set(a.form(), mesh);
-    assemble(A, a, mesh, dof_map_set);
+    assemble(A, a, mesh);
   }
   else if (mesh.type().cellType() == CellType::tetrahedron)
   {
     StiffnessMatrix3DBilinearForm a(f);
-    DofMapSet dof_map_set(a.form(), mesh);
-    assemble(A, a, mesh, dof_map_set);
+    assemble(A, a, mesh);
   }
   else
   {
@@ -78,14 +74,12 @@ void MatrixFactory::computeConvectionMatrix(GenericMatrix& A, Mesh& mesh,
   if (mesh.type().cellType() == CellType::triangle)
   {
     ConvectionMatrix2DBilinearForm a(fx, fy);
-    DofMapSet dof_map_set(a.form(), mesh);
-    assemble(A, a, mesh, dof_map_set);
+    assemble(A, a, mesh);
   }
   else if (mesh.type().cellType() == CellType::tetrahedron)
   {
     ConvectionMatrix3DBilinearForm a(fx, fy, fz);
-    DofMapSet dof_map_set(a.form(), mesh);
-    assemble(A, a, mesh, dof_map_set);
+    assemble(A, a, mesh);
   }
   else
   {
@@ -102,14 +96,12 @@ void MatrixFactory::computeLoadVector(GenericVector& x, Mesh& mesh, real c)
   if (mesh.type().cellType() == CellType::triangle)
   {
     LoadVector2DLinearForm b(f);
-    DofMapSet dof_map_set(b.form(), mesh);
-    assemble(x, b, mesh, dof_map_set);
+    assemble(x, b, mesh);
   }
   else if (mesh.type().cellType() == CellType::tetrahedron)
   {
     LoadVector3DLinearForm b(f);
-    DofMapSet dof_map_set(b.form(), mesh);
-    assemble(x, b, mesh, dof_map_set);
+    assemble(x, b, mesh);
   }
   else
   {

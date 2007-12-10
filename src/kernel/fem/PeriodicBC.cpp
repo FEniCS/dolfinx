@@ -65,10 +65,9 @@ PeriodicBC::~PeriodicBC()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void PeriodicBC::apply(GenericMatrix& A, GenericVector& b, const DofMap& dof_map,
-                       const Form& form)
+void PeriodicBC::apply(GenericMatrix& A, GenericVector& b, const Form& form)
 {
-  apply(A, b, dof_map, form.form());
+  apply(A, b, form.dofMaps()[0], form.form());
 }
 //-----------------------------------------------------------------------------
 void PeriodicBC::apply(GenericMatrix& A, GenericVector& b, const DofMap& dof_map,
@@ -262,9 +261,9 @@ void PeriodicBC::apply(GenericMatrix& A, GenericVector& b, const DofMap& dof_map
 }
 //-----------------------------------------------------------------------------
 void PeriodicBC::apply(GenericMatrix& A, GenericVector& b,
-                       const GenericVector& x, const DofMap& dof_map, const Form& form)
+                       const GenericVector& x, const Form& form)
 {
-  apply(A, b, x, dof_map, form.form());
+  apply(A, b, x, form.dofMaps()[0], form.form());
 }
 //-----------------------------------------------------------------------------
 void PeriodicBC::apply(GenericMatrix& A, GenericVector& b,

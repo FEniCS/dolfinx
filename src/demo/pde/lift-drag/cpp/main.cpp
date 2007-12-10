@@ -43,12 +43,8 @@ int main()
 
   // Assemble functionals over sub domain
   Fish fish;
-  
-  DofMapSet dof_map_set_lift(L, mesh); 
-  real lift = assemble(L, mesh, dof_map_set_lift, fish);
-
-  DofMapSet dof_map_set_drag(D, mesh); 
-  real drag = assemble(D, mesh, dof_map_set_lift, fish);
+  real lift = assemble(L, mesh, fish);
+  real drag = assemble(D, mesh, fish);
 
   message("Lift: %f", lift);
   message("Drag: %f", drag);

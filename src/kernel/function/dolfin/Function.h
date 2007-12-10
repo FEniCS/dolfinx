@@ -53,7 +53,7 @@ namespace dolfin
     Function(Mesh& mesh, real value);
 
     /// Create discrete function for argument function i of form
-    Function(Mesh& mesh, DofMap& dof_map, Vector& x, const Form& form, uint i = 1);
+    Function(Mesh& mesh, Vector& x, Form& form, uint i = 1);
 
     /// Create discrete function for argument function i of form
     Function(Mesh& mesh, DofMap& dof_map, Vector& x, const ufc::form& form, uint i = 1);
@@ -71,7 +71,7 @@ namespace dolfin
     virtual ~Function();
 
     /// Create discrete function for argument function i of form
-    void init(Mesh& mesh, DofMap& dof_map, Vector& x, const Form& form, uint i = 1);
+    void init(Mesh& mesh, Vector& x, Form& form, uint i = 1);
 
     /// Return the type of function
     Type type() const;

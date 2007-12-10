@@ -23,32 +23,21 @@ LinearPDE::LinearPDE(Form& a, Form& L, Mesh& mesh)
   : a(a), L(L), mesh(mesh)
 {
   message("Creating linear PDE.");
-
-  // Create dof map set
-  dof_map_set.update(a.form(), mesh);
 }
 //-----------------------------------------------------------------------------
 LinearPDE::LinearPDE(Form& a, Form& L, Mesh& mesh, BoundaryCondition& bc)
   : a(a), L(L), mesh(mesh)
 {
   message("Creating linear PDE with one boundary condition.");
-
   bcs.push_back(&bc);
-
-  // Create dof map set
-  dof_map_set.update(a.form(), mesh);
 } 
 //-----------------------------------------------------------------------------
 LinearPDE::LinearPDE(Form& a, Form& L, Mesh& mesh, Array<BoundaryCondition*>& bcs)
   : a(a), L(L), mesh(mesh)
 {
   message("Creating linear PDE with %d boundary condition(s).", bcs.size());
-
   for (uint i = 0; i < bcs.size(); i++)
     this->bcs.push_back(bcs[i]);
-
-  // Create dof map set
-  dof_map_set.update(a.form(), mesh);
 }
 //-----------------------------------------------------------------------------
 LinearPDE::~LinearPDE()
@@ -65,13 +54,13 @@ void LinearPDE::solve(Function& u)
   Vector b;
 
   // Assemble linear system
-  Assembler assembler(mesh, dof_map_set);
+  Assembler assembler(mesh);
   assembler.assemble(A, a);
   assembler.assemble(b, L);
 
   // Apply boundary conditions
   for (uint i = 0; i < bcs.size(); i++)
-    bcs[i]->apply(A, b, dof_map_set[1], a);
+    bcs[i]->apply(A, b, a);
 
   // Solve linear system
   const std::string solver_type = get("PDE linear solver");
@@ -101,7 +90,7 @@ void LinearPDE::solve(Function& u)
   //cout << "Solution vector:" << endl;
   //x.disp();
 
-  u.init(mesh, dof_map_set[0], x, a, 1);
+  u.init(mesh, x, a, 1);
 
   end();
 }

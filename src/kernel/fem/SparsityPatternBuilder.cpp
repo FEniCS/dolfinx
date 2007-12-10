@@ -21,11 +21,11 @@ using namespace dolfin;
 void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern, Mesh& mesh,
                                                 UFC& ufc, const DofMapSet& dof_map_set)
 {
-  if (ufc.form.rank() == 0)
+  if (dof_map_set.size() == 0)
     scalarBuild(sparsity_pattern);
-  else if (ufc.form.rank() == 1)
+  else if (dof_map_set.size() == 1)
     vectorBuild(sparsity_pattern, dof_map_set);
-  else if (ufc.form.rank() == 2)
+  else if (dof_map_set.size() == 2)
     matrixBuild(sparsity_pattern, mesh, ufc, dof_map_set);
   else
     error("Cannot compute sparsity patterm for rank > 2.");
@@ -47,7 +47,7 @@ void SparsityPatternBuilder::matrixBuild(GenericSparsityPattern& sparsity_patter
                                   Mesh& mesh, UFC& ufc, const DofMapSet& dof_map_set)
 {
   // Initialise sparsity pattern
-  sparsity_pattern.init(ufc.global_dimensions[0], ufc.global_dimensions[1]);
+  sparsity_pattern.init(dof_map_set[0].global_dimension(), dof_map_set[1].global_dimension());
 
   // Create sparsity pattern for cell integrals
   if (ufc.form.num_cell_integrals() != 0)
@@ -101,8 +101,8 @@ void SparsityPatternBuilder::matrixBuild(GenericSparsityPattern& sparsity_patter
 
       // Build sparsity
       // FIXME: local macro dimension should come from DofMap
-      uint dim0 = ufc.macro_local_dimensions[0];
-      uint dim1 = ufc.macro_local_dimensions[1];
+      uint dim0 = dof_map_set[0].macro_local_dimension();
+      uint dim1 = dof_map_set[1].macro_local_dimension();
       for (uint i = 0; i < dim0; ++i)
         for (uint j = 0; j < dim1; ++j)
           sparsity_pattern.insert( (ufc.macro_dofs[0])[i], (ufc.macro_dofs[1])[j] );

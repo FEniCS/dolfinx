@@ -103,10 +103,9 @@ DirichletBC::~DirichletBC()
     delete sub_domains;
 }
 //-----------------------------------------------------------------------------
-void DirichletBC::apply(GenericMatrix& A, GenericVector& b, const DofMap& dof_map,
-                        const Form& form)
+void DirichletBC::apply(GenericMatrix& A, GenericVector& b, const Form& form)
 {
-  apply(A, b, 0, dof_map, form.form());
+  apply(A, b, 0, form.dofMaps()[1], form.form());
 }
 //-----------------------------------------------------------------------------
 void DirichletBC::apply(GenericMatrix& A, GenericVector& b, const DofMap& dof_map,
@@ -116,9 +115,9 @@ void DirichletBC::apply(GenericMatrix& A, GenericVector& b, const DofMap& dof_ma
 }
 //-----------------------------------------------------------------------------
 void DirichletBC::apply(GenericMatrix& A, GenericVector& b,
-                        const GenericVector& x, const DofMap& dof_map, const Form& form)
+                        const GenericVector& x, const Form& form)
 {
-  apply(A, b, &x, dof_map, form.form());
+  apply(A, b, &x, form.dofMaps()[1], form.form());
 }
 //-----------------------------------------------------------------------------
 void DirichletBC::apply(GenericMatrix& A, GenericVector& b,
@@ -131,7 +130,6 @@ void DirichletBC::apply(GenericMatrix& A, GenericVector& b,
                 const GenericVector* x, const DofMap& dof_map, const ufc::form& form)
 {
   // FIXME: How do we reuse the dof map for u?
-  // FIXME: Perhaps we should make DofMapSet a member of Form?
 
   if (method == topological)
     message("Applying Dirichlet boundary conditions to linear system.");

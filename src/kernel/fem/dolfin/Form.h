@@ -10,6 +10,7 @@
 #include <ufc.h>
 
 #include <dolfin/Array.h>
+#include <dolfin/DofMapSet.h>
 #include <dolfin/Function.h>
 
 namespace dolfin
@@ -21,8 +22,11 @@ namespace dolfin
   {
   public:
 
+    /// Constructor
+    Form() : dof_map_set(0), local_dof_map_set(false) {}
+
     /// Destructor
-    virtual ~Form() {}
+    virtual ~Form();
 
     /// Return UFC form
     virtual const ufc::form& form() const = 0;
@@ -30,6 +34,22 @@ namespace dolfin
     /// Return array of coefficients
     virtual const Array<Function*>& coefficients() const = 0;
 
+    /// Create degree of freedom maps 
+    void updateDofMaps(Mesh& mesh);
+
+    /// Set degree of freedom maps
+    void setDofMaps(DofMapSet& dof_map_set);
+
+    /// Return DofMapSet
+    DofMapSet& dofMaps() const;
+
+  private:
+
+    // Degree of freedom maps
+    DofMapSet* dof_map_set;
+
+    // Local degree of freedom maps (locally owned)
+    DofMapSet* local_dof_map_set;
   };
 
 }

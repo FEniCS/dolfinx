@@ -39,8 +39,7 @@ int main()
   UnitSquare mesh(16, 16);
   MyFunction v(mesh);
   EnergyNormFunctional M(v);
-  DofMapSet dof_map_set(M, mesh);
-  real value = assemble(M, mesh, dof_map_set);
+  real value = assemble(M, mesh);
 
   // Compute exact value
   real exact_value = 2.0 + 2.0*sin(1.0)*(1.0 - cos(1.0));

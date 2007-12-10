@@ -40,11 +40,11 @@ Function::Function(Mesh& mesh, real value)
   f = new ConstantFunction(mesh, value);
 }
 //-----------------------------------------------------------------------------
-Function::Function(Mesh& mesh, DofMap& dof_map, Vector& x, const Form& form, uint i)
+Function::Function(Mesh& mesh, Vector& x, Form& form, uint i)
   : Variable("u", "discrete function"),
     f(0), _type(discrete), _cell(0), _facet(-1)
 {
-  f = new DiscreteFunction(mesh, dof_map, x, form, i);
+  f = new DiscreteFunction(mesh, x, form, i);
 }
 //-----------------------------------------------------------------------------
 Function::Function(Mesh& mesh, DofMap& dof_map, Vector& x, const ufc::form& form, uint i)
@@ -92,12 +92,12 @@ Function::~Function()
     delete f;
 }
 //-----------------------------------------------------------------------------
-void Function::init(Mesh& mesh, DofMap& dof_map, Vector& x, const Form& form, uint i)
+void Function::init(Mesh& mesh, Vector& x, Form& form, uint i)
 {
   if (f)
     delete f;
 
-  f = new DiscreteFunction(mesh, dof_map, x, form, i);
+  f = new DiscreteFunction(mesh, x, form, i);
   
   rename("u", "discrete function");
   _type = discrete;

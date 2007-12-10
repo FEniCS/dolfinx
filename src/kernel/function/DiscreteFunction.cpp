@@ -22,12 +22,15 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-DiscreteFunction::DiscreteFunction(Mesh& mesh, DofMap& dof_map, Vector& x, 
-                                  const Form& form, uint i)
+DiscreteFunction::DiscreteFunction(Mesh& mesh, Vector& x, Form& form, uint i)
   : GenericFunction(mesh),
-    x(&x), finite_element(0), dof_map(&dof_map), dofs(0),
+    x(&x), finite_element(0), dof_map(&form.dofMaps()[i]), dofs(0),
     local_mesh(false), local_vector(false), local_dof_map(false)
 {
+  // Update dof maps if required
+  form.updateDofMaps(mesh);
+
+  // Initialise function
   init(mesh, x, form.form(), i);
 }
 //-----------------------------------------------------------------------------
@@ -55,7 +58,7 @@ DiscreteFunction::DiscreteFunction(Mesh& mesh, Vector& x,
                   finite_element_signature.c_str());
   }
 
-  // Create dof map
+  // Create dof map from signature
   dof_map = new DofMap(dof_map_signature, mesh);
 
   // Check size of vector

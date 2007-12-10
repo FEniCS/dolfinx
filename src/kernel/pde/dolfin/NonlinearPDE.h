@@ -53,9 +53,6 @@ namespace dolfin
     // The mesh
     Mesh& mesh;
 
-    // dof maps
-    DofMapSet dof_map_set;
-
     // The boundary conditions
     Array<BoundaryCondition*> bcs;
 
