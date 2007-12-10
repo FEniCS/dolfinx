@@ -76,8 +76,6 @@ ufc::dof_map* DofMap::extractDofMap(const ufc::dof_map& dof_map, uint& offset, c
     // FIXME: Can we avoid creating a DofMap here just for getting the global dimension?
     DofMap dof_map_test(*ufc_dof_map, dolfin_mesh);
     offset += ufc_dof_map->global_dimension();
-    cout << "Offset " << offset << "  " << ufc_dof_map->global_dimension() << endl; 
-    cout << "       " << offset << "  " << dof_map_test.global_dimension() << endl; 
     delete ufc_dof_map;
   }
   

@@ -24,11 +24,12 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 DiscreteFunction::DiscreteFunction(Mesh& mesh, Vector& x, Form& form, uint i)
   : GenericFunction(mesh),
-    x(&x), finite_element(0), dof_map(&form.dofMaps()[i]), dofs(0),
+    x(&x), finite_element(0), dof_map(0), dofs(0),
     local_mesh(false), local_vector(false), local_dof_map(false)
 {
-  // Update dof maps if required
+  // Update dof maps
   form.updateDofMaps(mesh);
+  dof_map = &form.dofMaps()[i];
 
   // Initialise function
   init(mesh, x, form.form(), i);
