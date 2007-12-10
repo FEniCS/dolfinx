@@ -84,4 +84,3 @@ ufc::finite_element* SubSystem::extractFiniteElement
   return sub_sub_element;
 }
 //-----------------------------------------------------------------------------
-
