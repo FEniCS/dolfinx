@@ -52,11 +52,7 @@ UFC::UFC(const ufc::form& form, Mesh& mesh, const DofMapSet& dof_map_set) : form
   // Initialize local tensor
   uint num_entries = 1;
   for (uint i = 0; i < form.rank(); i++)
-<<<<<<< /tmp/UFC.cpp~base.qUKkzs
-    num_entries *= this->dof_maps[i]->local_dimension();
-=======
     num_entries *= dof_map_set[i].local_dimension();
->>>>>>> /tmp/UFC.cpp~other.H3DU0u
   A = new real[num_entries];
   for (uint i = 0; i < num_entries; i++)
     A[i] = 0.0;
