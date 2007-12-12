@@ -37,7 +37,7 @@ dolfin::uint TriangleCell::numEntities(uint dim) const
   case 2:
     return 1; // cells
   default:
-    error("Illegal topological dimension %d for tetrahedron.", dim);
+    error("Illegal topological dimension %d for triangle.", dim);
   }
 
   return 0;
@@ -54,7 +54,7 @@ dolfin::uint TriangleCell::numVertices(uint dim) const
   case 2:
     return 3; // cells
   default:
-    error("Illegal topological dimension %d for tetrahedron.", dim);
+    error("Illegal topological dimension %d for triangle.", dim);
   }
 
   return 0;
