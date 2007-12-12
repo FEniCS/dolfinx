@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells 2005-2007.
 //
 // First added:  2004
-// Last changed: 2007-10-23
+// Last changed: 2007-12-12
 
 // FIXME: Insert dolfin_assert() where appropriate
 
@@ -432,6 +432,11 @@ void PETScVector::copy(const uBlasVector& y, uint off1, uint off2, uint len)
 Vec PETScVector::vec() const
 {
   return x;
+}
+//-----------------------------------------------------------------------------
+PETScFactory& PETScVector::factory() const
+{
+  return PETScFactory::instance();
 }
 //-----------------------------------------------------------------------------
 

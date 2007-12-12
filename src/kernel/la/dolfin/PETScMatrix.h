@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells, 2006-2007.
 //
 // First added:  2004
-// Last changed: 2007-10-23
+// Last changed: 2007-12-12
 
 #ifndef __PETSC_MATRIX_H
 #define __PETSC_MATRIX_H
@@ -24,7 +24,7 @@ namespace dolfin
   
   /// Forward declarations
   class PETScVector;
-  class SparsityPattern;
+  class GenericSparsityPattern;
   
   template<class M>
   class Array;
@@ -71,7 +71,7 @@ namespace dolfin
     void init(uint M, uint N, uint bs, uint nzmax);
 
     /// Initialize a matrix from the sparsity pattern
-    void init(const SparsityPattern& sparsity_pattern);
+    void init(const GenericSparsityPattern& sparsity_pattern);
 
     /// Create uninitialized matrix
     PETScMatrix* create() const;
@@ -136,12 +136,12 @@ namespace dolfin
 
     /// Output
     friend LogStream& operator<< (LogStream& stream, const PETScMatrix& A);
+
+    /// Return factory object for backend
+    PETScFactory& factory() const;
     
     /// Return PETSc Mat pointer
     Mat mat() const;
-
-    /// Return factory object for backend
-    PETScFactory& factory() const { return dolfin::PETScFactory::instance(); }
 
   private:
 
