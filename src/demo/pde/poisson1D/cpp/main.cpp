@@ -26,7 +26,8 @@ class DirichletBoundary : public SubDomain
 {
   bool inside(const real* x, bool on_boundary) const
   {
-      return on_boundary;
+//      return on_boundary;
+    return (std::abs(x[0]) < DOLFIN_EPS or std::abs(x[0] - 1.0) < DOLFIN_EPS);
   }
 };
 

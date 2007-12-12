@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-04-24
-// Last changed: 2007-08-20
+// Last changed: 2007-12-12
 
 #include <dolfin/log.h>
 #include <dolfin/MeshEntityIterator.h>
@@ -59,15 +59,27 @@ void SubDomain::mark(MeshFunction<uint>& sub_domains, uint sub_domain) const
     if (dim == D - 1)
       on_boundary = entity->numEntities(D) == 1;
 
-    // Check if all vertices are inside
     bool all_vertices_inside = true;
-    for (VertexIterator vertex(*entity); !vertex.end(); ++vertex)
+    // Dimension of facet > 0, check incident vertices
+    if (entity->dim() > 0)
     {
-      simple_array<real> x(mesh.geometry().dim(), vertex->x());
+      for (VertexIterator vertex(*entity); !vertex.end(); ++vertex)
+      {
+        simple_array<real> x(mesh.geometry().dim(), vertex->x());
+        if (!inside(x, on_boundary))
+        {
+          all_vertices_inside = false;
+          break;
+        }
+      }
+    }
+    // Dimension of facet == 0, so just check the vertex itself
+    else
+    {
+      simple_array<real> x(mesh.geometry().dim(), mesh.geometry().x(entity->index()));
       if (!inside(x, on_boundary))
       {
         all_vertices_inside = false;
-        break;
       }
     }
 
