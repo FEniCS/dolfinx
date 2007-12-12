@@ -99,10 +99,10 @@ namespace dolfin
     inline LinearAlgebraFactory& factory() const
     { return matrix.factory(); }
     
-    private:
+  private:
 
-      DefaultMatrix matrix;
-
+    DefaultMatrix matrix;
+    
   };
 
 }

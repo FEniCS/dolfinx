@@ -131,8 +131,7 @@ namespace dolfin
     friend LogStream& operator<< (LogStream& stream, const uBlasVector& x);
 
     /// Return backend factory
-
-    uBlasFactory& factory() const { return dolfin::uBlasFactory::instance(); }
+    uBlasFactory& factory() const { return uBlasFactory::instance(); }
 
     // Copy values between different vector representations
 #ifdef HAVE_PETSC_H

@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells 2005-2007.
 //
 // First added:  2004
-// Last changed: 2007-10-23
+// Last changed: 2007-12-12
 
 #ifndef __PETSC_VECTOR_H
 #define __PETSC_VECTOR_H
@@ -16,6 +16,7 @@
 #include <dolfin/Variable.h>
 #include <dolfin/GenericVector.h>
 #include <dolfin/PETScManager.h>
+#include <dolfin/PETScFactory.h>
 #include <dolfin/VectorNormType.h>
 
 namespace dolfin
@@ -166,6 +167,9 @@ namespace dolfin
     // Copy values between different vector representations
     void copy(const PETScVector& y, uint off1, uint off2, uint len);
     void copy(const uBlasVector& y, uint off1, uint off2, uint len);
+
+    /// Return backend factory
+    PETScFactory& factory() const;
 
     /// Return PETSc Vec pointer
     Vec vec() const;
