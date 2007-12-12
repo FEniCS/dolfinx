@@ -5,9 +5,10 @@
 // Last changed: 2006-10-16
 
 #include <dolfin/dolfin_log.h>
-#include <dolfin/Interval.h>
-#include <dolfin/Triangle.h>
-#include <dolfin/Tetrahedron.h>
+#include <dolfin/PointCell.h>
+#include <dolfin/IntervalCell.h>
+#include <dolfin/TriangleCell.h>
+#include <dolfin/TetrahedronCell.h>
 #include <dolfin/Vertex.h>
 #include <dolfin/CellType.h>
 #include <dolfin/Cell.h>
@@ -31,12 +32,14 @@ CellType* CellType::create(Type type)
 {
   switch ( type )
   {
+  case point:
+    return new PointCell();
   case interval:
-    return new Interval();
+    return new IntervalCell();
   case triangle:
-    return new Triangle();
+    return new TriangleCell();
   case tetrahedron:
-    return new Tetrahedron();
+    return new TetrahedronCell();
   default:
     error("Unknown cell type: %d.", type);
   }
@@ -88,6 +91,8 @@ std::string CellType::type2string(Type type)
 {
   switch ( type )
   {
+  case point:
+    return "point";
   case interval:
     return "interval";
   case triangle:

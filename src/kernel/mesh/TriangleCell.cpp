@@ -6,24 +6,27 @@
 // 
 // First added:  2006-06-05
 // Last changed: 2007-07-20
+//
+// Rename of the former Triangle.cpp
+//
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Cell.h>
 #include <dolfin/MeshEditor.h>
 #include <dolfin/Facet.h>
-#include <dolfin/Triangle.h>
+#include <dolfin/TriangleCell.h>
 #include <dolfin/Vertex.h>
 #include <dolfin/GeometricPredicates.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-dolfin::uint Triangle::dim() const
+dolfin::uint TriangleCell::dim() const
 {
   return 2;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint Triangle::numEntities(uint dim) const
+dolfin::uint TriangleCell::numEntities(uint dim) const
 {
   switch ( dim )
   {
@@ -40,7 +43,7 @@ dolfin::uint Triangle::numEntities(uint dim) const
   return 0;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint Triangle::numVertices(uint dim) const
+dolfin::uint TriangleCell::numVertices(uint dim) const
 {
   switch ( dim )
   {
@@ -57,7 +60,7 @@ dolfin::uint Triangle::numVertices(uint dim) const
   return 0;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint Triangle::orientation(const Cell& cell) const
+dolfin::uint TriangleCell::orientation(const Cell& cell) const
 {
   // This is a trick to be allowed to initialize mesh entities from cell
   Cell& c = const_cast<Cell&>(cell);
@@ -73,7 +76,7 @@ dolfin::uint Triangle::orientation(const Cell& cell) const
   return ( n.dot(p02) < 0.0 ? 1 : 0 );
 }
 //-----------------------------------------------------------------------------
-void Triangle::createEntities(uint** e, uint dim, const uint* v) const
+void TriangleCell::createEntities(uint** e, uint dim, const uint* v) const
 {
   // We only need to know how to create edges
   if ( dim != 1 )
@@ -85,7 +88,7 @@ void Triangle::createEntities(uint** e, uint dim, const uint* v) const
   e[2][0] = v[0]; e[2][1] = v[1];
 }
 //-----------------------------------------------------------------------------
-void Triangle::orderEntities(Cell& cell) const
+void TriangleCell::orderEntities(Cell& cell) const
 {
   // Sort i - j for i > j: 1 - 0, 2 - 0, 2 - 1
 
@@ -146,7 +149,7 @@ void Triangle::orderEntities(Cell& cell) const
   }
 }
 //-----------------------------------------------------------------------------
-void Triangle::refineCell(Cell& cell, MeshEditor& editor,
+void TriangleCell::refineCell(Cell& cell, MeshEditor& editor,
                           uint& current_cell) const
 {
   // Get vertices and edges
@@ -173,7 +176,7 @@ void Triangle::refineCell(Cell& cell, MeshEditor& editor,
   editor.addCell(current_cell++, e0, e1, e2);
 }
 //-----------------------------------------------------------------------------
-real Triangle::volume(const MeshEntity& triangle) const
+real TriangleCell::volume(const MeshEntity& triangle) const
 {
   // Check that we get a triangle
   if ( triangle.dim() != 2 )
@@ -212,7 +215,7 @@ real Triangle::volume(const MeshEntity& triangle) const
   return 0.0;
 }
 //-----------------------------------------------------------------------------
-real Triangle::diameter(const MeshEntity& triangle) const
+real TriangleCell::diameter(const MeshEntity& triangle) const
 {
   // Check that we get a triangle
   if ( triangle.dim() != 2 )
@@ -243,7 +246,7 @@ real Triangle::diameter(const MeshEntity& triangle) const
   return 0.5 * a*b*c / volume(triangle);
 }
 //-----------------------------------------------------------------------------
-real Triangle::normal(const Cell& cell, uint facet, uint i) const
+real TriangleCell::normal(const Cell& cell, uint facet, uint i) const
 {
   // This is a trick to be allowed to initialize a facet from the cell
   Cell& c = const_cast<Cell&>(cell);
@@ -287,7 +290,7 @@ real Triangle::normal(const Cell& cell, uint facet, uint i) const
   return 0.0;
 }
 //-----------------------------------------------------------------------------
-bool Triangle::intersects(const MeshEntity& triangle, const Point& p) const
+bool TriangleCell::intersects(const MeshEntity& triangle, const Point& p) const
 {
   // Get mesh geometry
   const MeshGeometry& geometry = triangle.mesh().geometry();
@@ -370,13 +373,13 @@ bool Triangle::intersects(const MeshEntity& triangle, const Point& p) const
   return true;
 }
 //-----------------------------------------------------------------------------
-std::string Triangle::description() const
+std::string TriangleCell::description() const
 {
   std::string s = "triangle (simplex of topological dimension 2)";
   return s;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint Triangle::findEdge(uint i, const Cell& cell) const
+dolfin::uint TriangleCell::findEdge(uint i, const Cell& cell) const
 {
   // Get vertices and edges
   const uint* v = cell.entities(0);

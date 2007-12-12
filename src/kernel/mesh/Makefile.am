@@ -10,7 +10,7 @@ nobase_include_HEADERS    = dolfin/dolfin_mesh.h \
                             dolfin/GeometricPredicates.h \
                             dolfin/GTSInterface.h \
                             dolfin/IntersectionDetector.h \
-                            dolfin/Interval.h \
+                            dolfin/IntervalCell.h \
                             dolfin/LocalMeshCoarsening.h \
                             dolfin/LocalMeshRefinement.h \
                             dolfin/MeshConnectivity.h \
@@ -29,10 +29,11 @@ nobase_include_HEADERS    = dolfin/dolfin_mesh.h \
                             dolfin/MPIManager.h \
                             dolfin/MPIMeshCommunicator.h \
                             dolfin/Point.h \
+                            dolfin/PointCell.h \
                             dolfin/SubDomain.h \
-                            dolfin/Tetrahedron.h \
+                            dolfin/TetrahedronCell.h \
                             dolfin/TopologyComputation.h \
-                            dolfin/Triangle.h \
+                            dolfin/TriangleCell.h \
                             dolfin/UniformMeshRefinement.h \
                             dolfin/UnitCube.h \
                             dolfin/UnitInterval.h \
@@ -50,7 +51,7 @@ libdolfin_mesh_la_SOURCES = BoundaryComputation.cpp \
                             GeometricPredicates.cpp \
                             GTSInterface.cpp \
                             IntersectionDetector.cpp \
-                            Interval.cpp \
+                            IntervalCell.cpp \
                             LocalMeshCoarsening.cpp \
                             LocalMeshRefinement.cpp \
                             MeshConnectivity.cpp \
@@ -68,10 +69,11 @@ libdolfin_mesh_la_SOURCES = BoundaryComputation.cpp \
                             MPIManager.cpp \
                             MPIMeshCommunicator.cpp \
                             Point.cpp \
+                            PointCell.cpp \
                             SubDomain.cpp \
-                            Tetrahedron.cpp \
+                            TetrahedronCell.cpp \
                             TopologyComputation.cpp \
-                            Triangle.cpp \
+                            TriangleCell.cpp \
                             UniformMeshRefinement.cpp \
                             UnitCube.cpp \
                             UnitInterval.cpp \

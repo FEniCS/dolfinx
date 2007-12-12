@@ -1,25 +1,26 @@
-// Copyright (C) 2006-2007 Anders Logg.
+// Copyright (C) 2007-2007 Kristian B. Oelgaard.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// First added:  2006-06-05
-// Last changed: 2007-07-20
+// First added:  2007-12-12
+// Last changed: 2007-12-12
+//
 
-#ifndef __INTERVAL_H
-#define __INTERVAL_H
+#ifndef __POINT_CELL_H
+#define __POINT_CELL_H
 
 #include <dolfin/CellType.h>
 
 namespace dolfin
 {
 
-  /// This class implements functionality for interval meshes.
+  /// This class implements functionality for triangular meshes.
 
-  class Interval : public CellType
+  class PointCell : public CellType
   {
   public:
 
     /// Specify cell type and facet type
-    Interval() : CellType(interval, point) {}
+    PointCell() : CellType(point, point) {}
 
     /// Return topological dimension of cell
     uint dim() const;
@@ -36,17 +37,17 @@ namespace dolfin
     /// Create entities e of given topological dimension from vertices v
     void createEntities(uint** e, uint dim, const uint* v) const;
 
-    /// Order entities locally (connectivity 1-0)
+    /// Order entities locally (connectivity 1-0, 2-0, 2-1)
     void orderEntities(Cell& cell) const;
-
+    
     /// Refine cell uniformly
     void refineCell(Cell& cell, MeshEditor& editor, uint& current_cell) const;
 
-    /// Compute (generalized) volume (length) of interval
-    real volume(const MeshEntity& interval) const;
+    /// Compute (generalized) volume (area) of triangle
+    real volume(const MeshEntity& triangle) const;
 
-    /// Compute diameter of interval
-    real diameter(const MeshEntity& interval) const;
+    /// Compute diameter of triangle
+    real diameter(const MeshEntity& triangle) const;
 
     /// Compute component i of normal of given facet with respect to the cell
     real normal(const Cell& cell, uint facet, uint i) const;
@@ -56,6 +57,11 @@ namespace dolfin
 
     /// Return description of cell type
     std::string description() const;
+
+  private:
+
+    // Find local index of edge i according to ordering convention
+    uint findEdge(uint i, const Cell& cell) const;
 
   };
 

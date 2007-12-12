@@ -20,8 +20,8 @@
 #include <dolfin/MeshGeometry.h>
 #include <dolfin/LocalMeshCoarsening.h>
 #include <dolfin/CellType.h>
-#include <dolfin/Triangle.h>
-#include <dolfin/Tetrahedron.h>
+#include <dolfin/TriangleCell.h>
+#include <dolfin/TetrahedronCell.h>
 
 using namespace dolfin;
 

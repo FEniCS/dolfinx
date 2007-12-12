@@ -16,7 +16,8 @@ v = TestFunction(element)
 u = TrialFunction(element)
 
 f = Function(element)
+g = Function(element)
 
 a = dot(grad(v), grad(u))*dx
-L = v*f*dx
+L = v*f*dx + v*g*ds
 
