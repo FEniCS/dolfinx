@@ -5,7 +5,7 @@
 // Modified by Anders Logg, 2007.
 //
 // First added:  2007-11-30
-// Last changed: 2007-12-04
+// Last changed: 2007-12-13
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Mesh.h>
@@ -80,13 +80,13 @@ dolfin::uint MPIManager::numProcesses()
 bool MPIManager::broadcast()
 {
   // Always broadcast from processor number 0
-  return numProcesses() > 0 && processNumber() == 0;
+  return numProcesses() > 1 && processNumber() == 0;
 }
 //-----------------------------------------------------------------------------
 bool MPIManager::receive()
 {
   // Always receive on processors with numbers > 0
-  return numProcesses() > 0 && processNumber() > 0;
+  return numProcesses() > 1 && processNumber() > 0;
 }
 //-----------------------------------------------------------------------------
 
