@@ -33,8 +33,8 @@ u = TrialFunction(element)
 stiff = dot(grad(v), grad(u))*dx
 mass  = v*u*dx
 
-A = assemble(stiff, mesh)
-M = assemble(mass, mesh)
+A, dofmapset_a = assemble(stiff, mesh)
+M, dofmapset_m = assemble(mass, mesh)
 
 # Create reference matrices
 A0_array = numpy.array([[1.0/2.0, -1.0/6.0, -1.0/6.0, -1.0/6.0],
@@ -61,6 +61,7 @@ M0.apply()
 # Display matrices
 print ""
 print "Assembled stiffness matrix:"
+print A
 A.disp()
 print ""
 

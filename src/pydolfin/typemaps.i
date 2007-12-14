@@ -17,11 +17,13 @@
 
 // Typemap check
 %typecheck(SWIG_TYPECHECK_DOUBLE_ARRAY) dolfin::real* {
+    // General typemap
     $1 = PyArray_Check($input) ? 1 : 0;
 }
 
 // Typemap check
 %typecheck(SWIG_TYPECHECK_DOUBLE_ARRAY) dolfin::uint* {
+    // General typemap
     $1 = PyArray_Check($input) ? 1 : 0;
 }
 
@@ -114,3 +116,5 @@
     }
   }
 }
+
+%include numpy_typemaps.i

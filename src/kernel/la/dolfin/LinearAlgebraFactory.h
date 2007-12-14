@@ -25,13 +25,13 @@ namespace dolfin
     virtual ~LinearAlgebraFactory() {}
 
     /// Create empty matrix
-    virtual GenericMatrix* createMatrix() const = 0;
+    virtual dolfin::GenericMatrix* createMatrix() const = 0;
 
     /// Create empty sparsity pattern 
-    virtual GenericSparsityPattern * createPattern() const = 0;
+    virtual dolfin::GenericSparsityPattern * createPattern() const = 0;
 
     /// Create empty vector
-    virtual GenericVector* createVector() const = 0;
+    virtual dolfin::GenericVector* createVector() const = 0;
 
   };
 

@@ -22,7 +22,6 @@ namespace dolfin
     virtual ~uBlasFactory() {}
 
     /// Create empty matrix
-    //uBlasMatrix<ublas_dense_matrix>* createMatrix() const;
     GenericMatrix* createMatrix() const;
 
     /// Create empty sparsity pattern 
@@ -31,6 +30,7 @@ namespace dolfin
     /// Create empty vector
     GenericVector* createVector() const;
 
+    /// Return sigleton instance
     static uBlasFactory& instance() { return ublasfactory; }
 
   private:

@@ -3,6 +3,10 @@
 
 // DOLFIN la interface
 
+#include <dolfin/LinearAlgebraFactory.h>
+#include <dolfin/uBlasFactory.h>
+#include <dolfin/PETScFactory.h>
+
 #include <dolfin/GenericTensor.h>
 #include <dolfin/GenericMatrix.h>
 #include <dolfin/GenericVector.h>

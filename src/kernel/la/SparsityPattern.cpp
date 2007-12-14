@@ -6,6 +6,7 @@
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/SparsityPattern.h>
+#include <iostream>
 
 using namespace dolfin;
 
@@ -22,19 +23,28 @@ SparsityPattern::~SparsityPattern()
   //Do nothing
 }
 //-----------------------------------------------------------------------------
-void SparsityPattern::init(uint M)
+void SparsityPattern::init(uint rank, const uint* dims)
 {
-  dim[0] = M;
-  dim[1] = 0;
+  dolfin_assert(rank <= 2);
+  dim[0] = dim[1] = 0;
+  dim[0] = dims[0];
+  dim[1] = dims[1];
   sparsity_pattern.clear();
+  sparsity_pattern.resize( dim[0] );
 }
 //-----------------------------------------------------------------------------
-void SparsityPattern::init(uint M, uint N)
+void SparsityPattern::insert(const uint* num_rows, const uint * const * rows)
+{ 
+  for (unsigned int i = 0; i<num_rows[0];++i)
+    for (unsigned int j = 0; j<num_rows[1];++j){
+      sparsity_pattern[rows[0][i]].insert(rows[1][j]);
+    }
+}
+//-----------------------------------------------------------------------------
+dolfin::uint SparsityPattern::size(uint n) const
 {
-  dim[0] = M;
-  dim[1] = N;
-  sparsity_pattern.clear();
-  sparsity_pattern.resize( M );
+  dolfin_assert(n < 2);
+  return dim[n]; 
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::numNonZeroPerRow(uint nzrow[]) const
