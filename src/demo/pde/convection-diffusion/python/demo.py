@@ -7,16 +7,11 @@
 # Original implementation: ../cpp/main.cpp by Anders Logg
 #
 __author__ = "Kristian B. Oelgaard (k.b.oelgaard@tudelft.nl)"
-__date__ = "2007-11-14 -- 2007-11-28"
+__date__ = "2007-11-14 -- 2007-12-07"
 __copyright__ = "Copyright (C) 2007 Kristian B. Oelgaard"
 __license__  = "GNU LGPL Version 2.1"
 
 from dolfin import *
-
-#
-# THIS DEMO WORKS, BUT...
-# it is very slow because Instant recompiles the form every timestep
-#
 
 # Load mesh and create finite elements
 mesh = Mesh("../../../../../data/meshes/dolfin-2.xml.gz")
@@ -58,7 +53,6 @@ A = assemble(a, mesh)
 b = Vector()
 x = Vector()
 
-# FIXME: Maybe there is a better solution?
 # Compile form, needed to create discrete function
 (compiled_form, module, form_data) = jit(a)
 
@@ -68,7 +62,7 @@ sol = Function(scalar, mesh, x, compiled_form)
 # Output file
 out_file = File("temperature.pvd")
 
-# Time-stepping (This is super slow because Instant recompiles the form every timestep)
+# Time-stepping
 while ( t < T ):
 
     # Linear form (update RHS)

@@ -1,8 +1,10 @@
 // Copyright (C) 2007 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Garth N. Wells 2007
+//
 // First added:  2007-07-11
-// Last changed: 2007-10-28
+// Last changed: 2007-12-09
 
 #include <dolfin/Form.h>
 #include <dolfin/SubSystem.h>
@@ -22,8 +24,8 @@ BoundaryCondition::~BoundaryCondition()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-BoundaryCondition::LocalData::LocalData(const ufc::form& form,
-                                        Mesh& mesh,
+BoundaryCondition::LocalData::LocalData(const ufc::form& form, Mesh& mesh, 
+                                        const DofMap& global_dof_map, 
                                         const SubSystem& sub_system)
   : ufc_mesh(mesh), finite_element(0), dof_map(0), offset(0),
     w(0), cell_dofs(0), facet_dofs(0)
@@ -35,9 +37,8 @@ BoundaryCondition::LocalData::LocalData(const ufc::form& form,
   if (form.rank() != 2)
     error("Form must be bilinear for application of boundary conditions.");
 
-  // Create finite element and dof map for solution (second argument of form)
+  // Create finite element (second argument of form)
   finite_element = form.create_finite_element(1);
-  dof_map = form.create_dof_map(1);
   
   // Extract sub element and sub dof map if we have a sub system
   if (sub_system.depth() > 0)
@@ -47,11 +48,11 @@ BoundaryCondition::LocalData::LocalData(const ufc::form& form,
     delete finite_element;
     finite_element = sub_finite_element;
 
-    // Dof map
-    ufc::dof_map* sub_dof_map = sub_system.extractDofMap(*dof_map, mesh, offset);
-    delete dof_map;
-    dof_map = sub_dof_map;
+    // Create sub dof map
+    dof_map = global_dof_map.extractDofMap(sub_system.array(), offset);
   }
+  else
+    dof_map = &global_dof_map;
 
   // Create local data used to set boundary conditions
   w = new real[finite_element->space_dimension()];
@@ -86,9 +87,6 @@ BoundaryCondition::LocalData::~LocalData()
 
   if (finite_element)
     delete finite_element;
-
-  if (dof_map)
-    delete dof_map;
 
   if (w)
     delete [] w;

@@ -4,7 +4,7 @@
 // Modified by Kristian Oelgaard, 2007
 //
 // First added:  2007-04-10
-// Last changed: 2007-11-27
+// Last changed: 2007-12-08
 
 #ifndef __DIRICHLET_BC_H
 #define __DIRICHLET_BC_H
@@ -19,6 +19,7 @@
 namespace dolfin
 {
 
+  class DofMap;
   class Function;
   class Mesh;
   class Form;
@@ -86,6 +87,11 @@ namespace dolfin
                 const SubSystem& sub_system,
                 BCMethod method = topological);
 
+    /// Simple creation of boundary condition with given value on the entire boundary
+    DirichletBC(Function& g,
+                Mesh& mesh,
+                BCMethod method = topological);
+
     /// Destructor
     ~DirichletBC();
 
@@ -93,13 +99,13 @@ namespace dolfin
     void apply(GenericMatrix& A, GenericVector& b, const Form& form);
 
     /// Apply boundary condition to linear system
-    void apply(GenericMatrix& A, GenericVector& b, const ufc::form& form);
+    void apply(GenericMatrix& A, GenericVector& b, const DofMap& dof_map, const ufc::form& form);
 
     /// Apply boundary condition to linear system for a nonlinear problem
     void apply(GenericMatrix& A, GenericVector& b, const GenericVector& x, const Form& form);
 
     /// Apply boundary condition to linear system for a nonlinear problem
-    void apply(GenericMatrix& A, GenericVector& b, const GenericVector& x, const ufc::form& form);
+    void apply(GenericMatrix& A, GenericVector& b, const GenericVector& x, const DofMap& dof_map, const ufc::form& form);
 
   private:
 
@@ -108,7 +114,7 @@ namespace dolfin
 
     /// Apply boundary conditions
     void apply(GenericMatrix& A, GenericVector& b,
-               const GenericVector* x, const ufc::form& form);
+               const GenericVector* x, const DofMap& dof_map, const ufc::form& form);
 
     // The function
     Function& g;

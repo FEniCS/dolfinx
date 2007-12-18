@@ -8,7 +8,7 @@ EXTRA_DIST = dolfin_mesh.h \
              GeometricPredicates.h \
              GTSInterface.h \
              IntersectionDetector.h \
-             Interval.h \
+             IntervalCell.h \
              LocalMeshCoarsening.h \
              LocalMeshRefinement.h \
              MeshConnectivity.h \
@@ -26,10 +26,11 @@ EXTRA_DIST = dolfin_mesh.h \
              MeshTopology.h \
              MPIManager.h \
              Point.h \
+             PointCell.h \
              SubDomain.h \
-             Tetrahedron.h \
+             TetrahedronCell.h \
              TopologyComputation.h \
-             Triangle.h \
+             TriangleCell.h \
              UniformMeshRefinement.h \
              UnitCube.h \
              UnitInterval.h \

@@ -50,7 +50,7 @@ class CahnHilliardEquation : public NonlinearProblem, public Parametrized
     }
  
     // Return forms 
-    const Form& form(dolfin::uint i) const
+    Form& form(dolfin::uint i) const
     {
       if( i == 1)
         return *L;

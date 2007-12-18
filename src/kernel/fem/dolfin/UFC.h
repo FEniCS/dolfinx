@@ -29,7 +29,7 @@ namespace dolfin
   public:
 
     /// Constructor
-    UFC(const ufc::form& form, Mesh& mesh, DofMapSet& dof_map_set);
+    UFC(const ufc::form& form, Mesh& mesh, const DofMapSet& dof_map_set);
 
     /// Destructor
     ~UFC();
@@ -45,9 +45,6 @@ namespace dolfin
 
     // Array of finite elements for coefficients
     ufc::finite_element** coefficient_elements;
-
-    // Array of dof maps for primary arguments
-    ufc::dof_map** dof_maps;
 
     // Array of cell integrals
     ufc::cell_integral** cell_integrals;

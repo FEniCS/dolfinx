@@ -85,6 +85,9 @@ class MyNonlinearProblem : public NonlinearProblem
       // Create boundary conditions
       bc = new DirichletBC(g, mesh, dirichlet_boundary);
 
+      // Initialise dof map
+      dof_map_set.update(a->form(), mesh);
+
       // Initialise solution vector u
       u.init(mesh, x, *a, 1);
     }
@@ -108,6 +111,7 @@ class MyNonlinearProblem : public NonlinearProblem
       set("output destination", "terminal");
     }
 
+
   private:
 
     // Pointers to forms, mesh and boundary conditions
@@ -115,6 +119,7 @@ class MyNonlinearProblem : public NonlinearProblem
     Form *L;
     Mesh& mesh;
     DirichletBC* bc;
+    DofMapSet dof_map_set;
 };
 
 int main(int argc, char* argv[])

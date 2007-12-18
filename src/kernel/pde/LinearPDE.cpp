@@ -1,10 +1,10 @@
 // Copyright (C) 2004-2007 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Garth N. Wells, 2006
+// Modified by Garth N. Wells, 2006, 2007
 //
 // First added:  2004
-// Last changed: 2007-08-28
+// Last changed: 2007-12-28
 
 #include <dolfin/Matrix.h>
 #include <dolfin/BoundaryCondition.h>
@@ -14,6 +14,7 @@
 #include <dolfin/Function.h>
 #include <dolfin/LinearPDE.h>
 #include <dolfin/dolfin_io.h>
+#include <dolfin/Form.h>
 
 using namespace dolfin;
 
@@ -89,7 +90,6 @@ void LinearPDE::solve(Function& u)
   //cout << "Solution vector:" << endl;
   //x.disp();
 
-  // Set function data
   u.init(mesh, x, a, 1);
 
   end();

@@ -1,8 +1,10 @@
 // Copyright (C) 2005-2006 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Garth N. Wells 2007.
+//
 // First added:  2005-12-02
-// Last changed: 2007-11-30
+// Last changed: 2007-1-06
 
 #include <dolfin/MeshEditor.h>
 #include <dolfin/UnitSquare.h>
@@ -15,7 +17,7 @@ using namespace dolfin;
 UnitSquare::UnitSquare(uint nx, uint ny, Type type) : Mesh()
 {
   // Receive mesh according to parallel policy
-  if (MPIManager::receive()) { receive(); return; }
+  if (MPIManager::receive()) { MPIMeshCommunicator::receive(*this); return; }
   
   if ( nx < 1 || ny < 1 )
     error("Size of unit square must be at least 1 in each dimension.");
@@ -123,6 +125,6 @@ UnitSquare::UnitSquare(uint nx, uint ny, Type type) : Mesh()
   editor.close();
 
   // Broadcast mesh according to parallel policy
-  if (MPIManager::broadcast()) { broadcast(); }
+  if (MPIManager::broadcast()) { MPIMeshCommunicator::broadcast(*this); }
 }
 //-----------------------------------------------------------------------------

@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-05-08
-// Last changed: 2007-06-01
+// Last changed: 2007-12-18
 
 #include <dolfin.h>
 
@@ -16,6 +16,9 @@ int main()
   // Partition mesh
   MeshFunction<unsigned int> partitions;
   mesh.partition(20, partitions);
+
+  // Display partition
+  partitions.disp();
 
   // Plot mesh partition
   plot(partitions);

@@ -2,9 +2,10 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells, 2007.
+// Modified by Ola Skavhaug, 2007.
 //
 // First added:  2007-01-17
-// Last changed: 2007-08-28
+// Last changed: 2007-12-07
 
 #ifndef __GENERIC_TENSOR_H
 #define __GENERIC_TENSOR_H
@@ -14,7 +15,8 @@
 namespace dolfin
 {
 
-  class SparsityPattern;
+  class GenericSparsityPattern;
+  class LinearAlgebraFactory;
 
   /// This class defines a common interface for general tensors.
 
@@ -29,7 +31,7 @@ namespace dolfin
     virtual ~GenericTensor() {}
 
     /// Initialize zero tensor using sparsity pattern
-    virtual void init(const SparsityPattern& sparsity_pattern) = 0;
+    virtual void init(const GenericSparsityPattern& sparsity_pattern) = 0;
 
     /// Create uninitialized tensor
     virtual GenericTensor* create() const = 0;
@@ -60,6 +62,9 @@ namespace dolfin
 
     /// Display tensor
     virtual void disp(uint precision = 2) const = 0;
+
+    /// Get LA backend factory
+    virtual LinearAlgebraFactory& factory() const = 0; 
 
   };
 

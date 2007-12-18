@@ -100,4 +100,9 @@ int main()
   ufile_pvd << u;
   File pfile_pvd("pressure.pvd");
   pfile_pvd << p;
+
+  File x_file("x.xml");
+  x_file << u.vector();
+
+
 }

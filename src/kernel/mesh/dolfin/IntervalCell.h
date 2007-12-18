@@ -1,30 +1,28 @@
 // Copyright (C) 2006-2007 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Johan Hoffman 2006.
-// Modified by Garth N. Wells 2006.
-//
 // First added:  2006-06-05
 // Last changed: 2007-07-20
+//
+// Rename of the former Interval.h
+//
 
-#ifndef __TETRAHEDRON_H
-#define __TETRAHEDRON_H
+#ifndef __INTERVAL_CELL_H
+#define __INTERVAL_CELL_H
 
 #include <dolfin/CellType.h>
 
 namespace dolfin
 {
 
-  class Cell;
+  /// This class implements functionality for interval meshes.
 
-  /// This class implements functionality for tetrahedral meshes.
-
-  class Tetrahedron : public CellType
+  class IntervalCell : public CellType
   {
   public:
 
     /// Specify cell type and facet type
-    Tetrahedron() : CellType(tetrahedron, triangle) {}
+    IntervalCell() : CellType(interval, point) {}
 
     /// Return topological dimension of cell
     uint dim() const;
@@ -41,21 +39,17 @@ namespace dolfin
     /// Create entities e of given topological dimension from vertices v
     void createEntities(uint** e, uint dim, const uint* v) const;
 
-    /// Order entities locally (connectivity 1-0, 2-0, 2-1, 3-0, 3-1, 3-2)
+    /// Order entities locally (connectivity 1-0)
     void orderEntities(Cell& cell) const;
 
-    /// Regular refinement of cell 
+    /// Refine cell uniformly
     void refineCell(Cell& cell, MeshEditor& editor, uint& current_cell) const;
 
-    /// Irregular refinement of cell 
-    void refineCellIrregular(Cell& cell, MeshEditor& editor, uint& current_cell, 
-			     uint refinement_rule, uint* marked_edges) const;
+    /// Compute (generalized) volume (length) of interval
+    real volume(const MeshEntity& interval) const;
 
-    /// Compute volume of tetrahedron
-    real volume(const MeshEntity& tetrahedron) const;
-
-    /// Compute diameter of tetrahedron
-    real diameter(const MeshEntity& tetrahedron) const;
+    /// Compute diameter of interval
+    real diameter(const MeshEntity& interval) const;
 
     /// Compute component i of normal of given facet with respect to the cell
     real normal(const Cell& cell, uint facet, uint i) const;
@@ -65,11 +59,6 @@ namespace dolfin
 
     /// Return description of cell type
     std::string description() const;
-
-  private:
-    
-    // Find local index of edge i according to ordering convention
-    uint findEdge(uint i, const Cell& cell) const;
 
   };
 

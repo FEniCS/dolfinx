@@ -24,6 +24,7 @@ namespace dolfin
   class Cell;
   class Form;
   class GenericFunction;
+  class DofMap;
 
   /// This class represents a function that can be evaluated on a
   /// mesh. The actual representation of the function can vary, but
@@ -52,10 +53,10 @@ namespace dolfin
     Function(Mesh& mesh, real value);
 
     /// Create discrete function for argument function i of form
-    Function(Mesh& mesh, Vector& x, const Form& form, uint i = 1);
+    Function(Mesh& mesh, Vector& x, Form& form, uint i = 1);
 
     /// Create discrete function for argument function i of form
-    Function(Mesh& mesh, Vector& x, const ufc::form& form, uint i = 1);
+    Function(Mesh& mesh, DofMap& dof_map, Vector& x, const ufc::form& form, uint i = 1);
 
     /// Create discrete function from sub function
     Function(SubFunction sub_function);
@@ -70,7 +71,10 @@ namespace dolfin
     virtual ~Function();
 
     /// Create discrete function for argument function i of form
-    void init(Mesh& mesh, Vector& x, const Form& form, uint i = 1);
+    void init(Mesh& mesh, Vector& x, Form& form, uint i = 1);
+
+    /// Create discrete function for argument function i of form
+    void init(Mesh& mesh, DofMap& dof_map, Vector& x, const ufc::form& form, uint i = 1);
 
     /// Return the type of function
     Type type() const;

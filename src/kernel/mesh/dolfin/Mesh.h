@@ -3,9 +3,10 @@
 //
 // Modified by Johan Hoffman 2007.
 // Modified by Magnus Vikstrøm 2007.
+// Modified by Garth N. Wells 2007.
 //
 // First added:  2006-05-08
-// Last changed: 2007-11-30
+// Last changed: 2007-12-06
 
 #ifndef __MESH_H
 #define __MESH_H
@@ -138,12 +139,6 @@ namespace dolfin
 
     /// Partition mesh into num_partitions partitions
     void partition(uint num_partitions, MeshFunction<uint>& partitions);
-
-    /// Broadcast mesh to all other processes
-    void broadcast() const;
-
-    /// Receive mesh
-    void receive();
 
     /// Display mesh data
     void disp() const;

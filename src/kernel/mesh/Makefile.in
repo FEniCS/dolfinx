@@ -64,14 +64,15 @@ libdolfin_mesh_la_LIBADD =
 am_libdolfin_mesh_la_OBJECTS = BoundaryComputation.lo BoundaryMesh.lo \
 	Cell.lo CellType.lo Edge.lo Face.lo Facet.lo \
 	GeometricPredicates.lo GTSInterface.lo IntersectionDetector.lo \
-	Interval.lo LocalMeshCoarsening.lo LocalMeshRefinement.lo \
+	IntervalCell.lo LocalMeshCoarsening.lo LocalMeshRefinement.lo \
 	MeshConnectivity.lo Mesh.lo MeshData.lo MeshEditor.lo \
 	MeshEntity.lo MeshEntityIterator.lo MeshGeometry.lo \
 	MeshHierarchyAlgorithms.lo MeshHierarchy.lo MeshOrdering.lo \
 	MeshPartition.lo MeshTopology.lo MPIManager.lo \
-	MPIMeshCommunicator.lo Point.lo SubDomain.lo Tetrahedron.lo \
-	TopologyComputation.lo Triangle.lo UniformMeshRefinement.lo \
-	UnitCube.lo UnitInterval.lo UnitSquare.lo Vertex.lo
+	MPIMeshCommunicator.lo Point.lo PointCell.lo SubDomain.lo \
+	TetrahedronCell.lo TopologyComputation.lo TriangleCell.lo \
+	UniformMeshRefinement.lo UnitCube.lo UnitInterval.lo \
+	UnitSquare.lo Vertex.lo
 libdolfin_mesh_la_OBJECTS = $(am_libdolfin_mesh_la_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -256,7 +257,7 @@ nobase_include_HEADERS = dolfin/dolfin_mesh.h \
                             dolfin/GeometricPredicates.h \
                             dolfin/GTSInterface.h \
                             dolfin/IntersectionDetector.h \
-                            dolfin/Interval.h \
+                            dolfin/IntervalCell.h \
                             dolfin/LocalMeshCoarsening.h \
                             dolfin/LocalMeshRefinement.h \
                             dolfin/MeshConnectivity.h \
@@ -275,10 +276,11 @@ nobase_include_HEADERS = dolfin/dolfin_mesh.h \
                             dolfin/MPIManager.h \
                             dolfin/MPIMeshCommunicator.h \
                             dolfin/Point.h \
+                            dolfin/PointCell.h \
                             dolfin/SubDomain.h \
-                            dolfin/Tetrahedron.h \
+                            dolfin/TetrahedronCell.h \
                             dolfin/TopologyComputation.h \
-                            dolfin/Triangle.h \
+                            dolfin/TriangleCell.h \
                             dolfin/UniformMeshRefinement.h \
                             dolfin/UnitCube.h \
                             dolfin/UnitInterval.h \
@@ -297,7 +299,7 @@ libdolfin_mesh_la_SOURCES = BoundaryComputation.cpp \
                             GeometricPredicates.cpp \
                             GTSInterface.cpp \
                             IntersectionDetector.cpp \
-                            Interval.cpp \
+                            IntervalCell.cpp \
                             LocalMeshCoarsening.cpp \
                             LocalMeshRefinement.cpp \
                             MeshConnectivity.cpp \
@@ -315,10 +317,11 @@ libdolfin_mesh_la_SOURCES = BoundaryComputation.cpp \
                             MPIManager.cpp \
                             MPIMeshCommunicator.cpp \
                             Point.cpp \
+                            PointCell.cpp \
                             SubDomain.cpp \
-                            Tetrahedron.cpp \
+                            TetrahedronCell.cpp \
                             TopologyComputation.cpp \
-                            Triangle.cpp \
+                            TriangleCell.cpp \
                             UniformMeshRefinement.cpp \
                             UnitCube.cpp \
                             UnitInterval.cpp \
@@ -405,7 +408,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/GTSInterface.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/GeometricPredicates.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/IntersectionDetector.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Interval.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/IntervalCell.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LocalMeshCoarsening.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LocalMeshRefinement.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MPIManager.Plo@am__quote@
@@ -423,10 +426,11 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MeshPartition.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MeshTopology.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Point.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PointCell.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SubDomain.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Tetrahedron.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TetrahedronCell.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TopologyComputation.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Triangle.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TriangleCell.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/UniformMeshRefinement.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/UnitCube.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/UnitInterval.Plo@am__quote@

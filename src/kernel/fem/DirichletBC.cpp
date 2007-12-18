@@ -4,7 +4,7 @@
 // Modified by Kristian Oelgaard, 2007
 //
 // First added:  2007-04-10
-// Last changed: 2007-11-27
+// Last changed: 2007-12-09
 
 #include <dolfin/log.h>
 #include <dolfin/Mesh.h>
@@ -66,11 +66,34 @@ DirichletBC::DirichletBC(Function& g,
                          uint sub_domain,
                          const SubSystem& sub_system,
                          BCMethod method)
-  : g(g), mesh(sub_domains.mesh()),
+  : BoundaryCondition(), g(g), mesh(sub_domains.mesh()),
     sub_domains(&sub_domains), sub_domain(sub_domain), sub_domains_local(false),
     sub_system(sub_system), method(method)
 {
   // Do nothing
+}
+//-----------------------------------------------------------------------------
+DirichletBC::DirichletBC(Function& g,
+                         Mesh& mesh,
+                         BCMethod method)
+  : BoundaryCondition(), g(g), mesh(mesh),
+    sub_domains(0), sub_domain(0), sub_domains_local(false), method(method),
+    user_sub_domain(0)
+{
+  // Create sub domain for entire boundary
+  class EntireBoundary : public SubDomain
+  {
+  public:
+    bool inside(const real* x, bool on_boundary) const
+    {
+      return on_boundary;
+    }
+  };
+
+  EntireBoundary sub_domain;
+
+  // Initialize sub domain markers
+  init(sub_domain);
 }
 //-----------------------------------------------------------------------------
 DirichletBC::~DirichletBC()
@@ -80,35 +103,33 @@ DirichletBC::~DirichletBC()
     delete sub_domains;
 }
 //-----------------------------------------------------------------------------
-void DirichletBC::apply(GenericMatrix& A, GenericVector& b,
-                        const Form& form)
+void DirichletBC::apply(GenericMatrix& A, GenericVector& b, const Form& form)
 {
-  apply(A, b, 0, form.form());
+  apply(A, b, 0, form.dofMaps()[1], form.form());
 }
 //-----------------------------------------------------------------------------
-void DirichletBC::apply(GenericMatrix& A, GenericVector& b,
+void DirichletBC::apply(GenericMatrix& A, GenericVector& b, const DofMap& dof_map,
                         const ufc::form& form)
 {
-  apply(A, b, 0, form);
+  apply(A, b, 0, dof_map, form);
 }
 //-----------------------------------------------------------------------------
 void DirichletBC::apply(GenericMatrix& A, GenericVector& b,
                         const GenericVector& x, const Form& form)
 {
-  apply(A, b, &x, form.form());
+  apply(A, b, &x, form.dofMaps()[1], form.form());
 }
 //-----------------------------------------------------------------------------
 void DirichletBC::apply(GenericMatrix& A, GenericVector& b,
-                        const GenericVector& x, const ufc::form& form)
+                        const GenericVector& x, const DofMap& dof_map, const ufc::form& form)
 {
-  apply(A, b, &x, form);
+  apply(A, b, &x, dof_map, form);
 }
 //-----------------------------------------------------------------------------
 void DirichletBC::apply(GenericMatrix& A, GenericVector& b,
-                        const GenericVector* x, const ufc::form& form)
+                const GenericVector* x, const DofMap& dof_map, const ufc::form& form)
 {
   // FIXME: How do we reuse the dof map for u?
-  // FIXME: Perhaps we should make DofMapSet a member of Form?
 
   if (method == topological)
     message("Applying Dirichlet boundary conditions to linear system.");
@@ -123,7 +144,7 @@ void DirichletBC::apply(GenericMatrix& A, GenericVector& b,
     mesh.init(D - 1, D);
 
   // Create local data for application of boundary conditions
-  BoundaryCondition::LocalData data(form, mesh, sub_system);
+  BoundaryCondition::LocalData data(form, mesh, dof_map, sub_system);
   
   // A map to hold the mapping from boundary dofs to boundary values
   std::map<uint, real> boundary_values;
@@ -168,7 +189,7 @@ void DirichletBC::apply(GenericMatrix& A, GenericVector& b,
   uint i = 0;
   for (boundary_value = boundary_values.begin(); boundary_value != boundary_values.end(); ++boundary_value)
   {
-    dofs[i] = boundary_value->first;
+    dofs[i]     = boundary_value->first;
     values[i++] = boundary_value->second;
   }
 
@@ -226,8 +247,8 @@ void DirichletBC::computeBCTopological(std::map<uint, real>& boundary_values,
   g.interpolate(data.w, ufc_cell, *data.finite_element, cell, local_facet);
   
   // Tabulate dofs on cell
-  data.dof_map->tabulate_dofs(data.cell_dofs, data.ufc_mesh, ufc_cell);
-  
+  data.dof_map->tabulate_dofs(data.cell_dofs, ufc_cell);
+
   // Tabulate which dofs are on the facet
   data.dof_map->tabulate_facet_dofs(data.facet_dofs, local_facet);
   
@@ -256,7 +277,7 @@ void DirichletBC::computeBCGeometrical(std::map<uint, real>& boundary_values,
       g.interpolate(data.w, ufc_cell, *data.finite_element, *c);
       
       // Tabulate dofs on cell, and their coordinates
-      data.dof_map->tabulate_dofs(data.cell_dofs, data.ufc_mesh, ufc_cell);
+      data.dof_map->tabulate_dofs(data.cell_dofs, ufc_cell);
       data.dof_map->tabulate_coordinates(data.coordinates, ufc_cell);
       
       // Loop all dofs on cell
@@ -285,7 +306,7 @@ void DirichletBC::computeBCPointwise(std::map<uint, real>& boundary_values,
   g.interpolate(data.w, ufc_cell, *data.finite_element, cell);
       
   // Tabulate dofs on cell, and their coordinates
-  data.dof_map->tabulate_dofs(data.cell_dofs, data.ufc_mesh, ufc_cell);
+  data.dof_map->tabulate_dofs(data.cell_dofs, ufc_cell);
   data.dof_map->tabulate_coordinates(data.coordinates, ufc_cell);
       
   // Loop all dofs on cell
@@ -354,4 +375,3 @@ bool DirichletBC::onFacet(real* coordinates, Facet& facet)
   return false;
 }
 //-----------------------------------------------------------------------------
-

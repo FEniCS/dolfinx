@@ -3,6 +3,7 @@
 //
 // Modified by Garth N. Wells, 2007
 // Modified by Ola Skavhaug, 2007
+// Modified by Magnus Vikstrøm, 2007
 //
 // First added:  2007-01-17
 // Last changed: 2007-12-07
@@ -20,31 +21,37 @@
 #include <dolfin/Function.h>
 #include <dolfin/Form.h>
 #include <dolfin/UFC.h>
-#include <dolfin/Assembler.h>
+#include <dolfin/pAssembler.h>
 #include <dolfin/SparsityPattern.h>
 #include <dolfin/SparsityPatternBuilder.h>
 #include <dolfin/DofMapSet.h>
+#include <dolfin/MPIManager.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Assembler::Assembler(Mesh& mesh) : mesh(mesh)
+pAssembler::pAssembler(Mesh& mesh, MeshFunction<uint>* partitions) : mesh(mesh), partitions(partitions)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-Assembler::~Assembler()
+pAssembler::pAssembler(Mesh& mesh) : mesh(mesh)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void Assembler::assemble(GenericTensor& A, Form& form, bool reset_tensor)
+pAssembler::~pAssembler()
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+void pAssembler::assemble(GenericTensor& A, Form& form, bool reset_tensor)
 {
   form.updateDofMaps(mesh);
   assemble(A, form.form(), form.coefficients(), form.dofMaps(), 0, 0, 0, reset_tensor);
 }
 //-----------------------------------------------------------------------------
-void Assembler::assemble(GenericTensor& A, Form& form,
+void pAssembler::assemble(GenericTensor& A, Form& form,
                          const SubDomain& sub_domain, bool reset_tensor)
 {
   // Extract cell domains
@@ -78,7 +85,7 @@ void Assembler::assemble(GenericTensor& A, Form& form,
     delete facet_domains;
 }
 //-----------------------------------------------------------------------------
-void Assembler::assemble(GenericTensor& A, Form& form,
+void pAssembler::assemble(GenericTensor& A, Form& form,
                          const MeshFunction<uint>& cell_domains,
                          const MeshFunction<uint>& exterior_facet_domains,
                          const MeshFunction<uint>& interior_facet_domains,
@@ -89,14 +96,14 @@ void Assembler::assemble(GenericTensor& A, Form& form,
            &exterior_facet_domains, &interior_facet_domains, reset_tensor);
 }
 //-----------------------------------------------------------------------------
-dolfin::real Assembler::assemble(Form& form)
+dolfin::real pAssembler::assemble(Form& form)
 {
   Scalar value;
   assemble(value, form);
   return value;
 }
 //-----------------------------------------------------------------------------
-dolfin::real Assembler::assemble(Form& form,
+dolfin::real pAssembler::assemble(Form& form,
                                  const SubDomain& sub_domain)
 {
   Scalar value;
@@ -104,7 +111,7 @@ dolfin::real Assembler::assemble(Form& form,
   return value;
 }
 //-----------------------------------------------------------------------------
-dolfin::real Assembler::assemble(Form& form,
+dolfin::real pAssembler::assemble(Form& form,
                                  const MeshFunction<uint>& cell_domains,
                                  const MeshFunction<uint>& exterior_facet_domains,
                                  const MeshFunction<uint>& interior_facet_domains)
@@ -115,7 +122,7 @@ dolfin::real Assembler::assemble(Form& form,
   return value;
 }
 //-----------------------------------------------------------------------------
-void Assembler::assemble(GenericTensor& A, const ufc::form& form,
+void pAssembler::assemble(GenericTensor& A, const ufc::form& form,
                          const Array<Function*>& coefficients,
                          const DofMapSet& dof_map_set,
                          const MeshFunction<uint>* cell_domains,
@@ -150,7 +157,7 @@ void Assembler::assemble(GenericTensor& A, const ufc::form& form,
   A.apply();
 }
 //-----------------------------------------------------------------------------
-void Assembler::assembleCells(GenericTensor& A,
+void pAssembler::assembleCells(GenericTensor& A,
                               const Array<Function*>& coefficients,
                               const DofMapSet& dof_map_set,
                               UFC& ufc,
@@ -163,11 +170,17 @@ void Assembler::assembleCells(GenericTensor& A,
   // Cell integral
   ufc::cell_integral* integral = ufc.cell_integrals[0];
 
+  dolfin_debug2("Partitions: dim = %d size = %d", partitions->dim(), partitions->size());
+
   // Assemble over cells
   message("Assembling over %d cells.", mesh.numCells());
   Progress p("Assembling over cells", mesh.numCells());
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
+    // Assemble only cells in this processors partition
+    if (partitions && (*partitions)(*cell) != MPIManager::processNumber())
+      continue;
+
     // Get integral for sub domain (if any)
     if (domains && domains->size() > 0)
     {
@@ -198,7 +211,7 @@ void Assembler::assembleCells(GenericTensor& A,
   }
 }
 //-----------------------------------------------------------------------------
-void Assembler::assembleExteriorFacets(GenericTensor& A,
+void pAssembler::assembleExteriorFacets(GenericTensor& A,
                                        const Array<Function*>& coefficients,
                                        const DofMapSet& dof_map_set,
                                        UFC& ufc,
@@ -261,7 +274,7 @@ void Assembler::assembleExteriorFacets(GenericTensor& A,
   }
 }
 //-----------------------------------------------------------------------------
-void Assembler::assembleInteriorFacets(GenericTensor& A,
+void pAssembler::assembleInteriorFacets(GenericTensor& A,
                                        const Array<Function*>& coefficients,
                                        const DofMapSet& dof_map_set,
                                        UFC& ufc,
@@ -337,7 +350,7 @@ void Assembler::assembleInteriorFacets(GenericTensor& A,
   }
 }
 //-----------------------------------------------------------------------------
-void Assembler::check(const ufc::form& form,
+void pAssembler::check(const ufc::form& form,
                       const Array<Function*>& coefficients) const
 {
   // Check that we get the correct number of coefficients
@@ -346,7 +359,7 @@ void Assembler::check(const ufc::form& form,
                   coefficients.size(), form.num_coefficients());
 }
 //-----------------------------------------------------------------------------
-void Assembler::initGlobalTensor(GenericTensor& A, const DofMapSet& dof_map_set, UFC& ufc,
+void pAssembler::initGlobalTensor(GenericTensor& A, const DofMapSet& dof_map_set, UFC& ufc,
                                  bool reset_tensor) const
 {
   if( reset_tensor )

@@ -10,6 +10,7 @@
 #include <dolfin/DofMap.h>
 #include <dolfin/DofMapSet.h>
 #include <dolfin/Mesh.h>
+#include <dolfin/Form.h>
 
 #include <ufc.h>
 
@@ -19,6 +20,16 @@ using namespace dolfin;
 DofMapSet::DofMapSet()
 {
   // Do nothing
+}
+//-----------------------------------------------------------------------------
+DofMapSet::DofMapSet(const Form& form, Mesh& mesh)
+{
+  update(form.form(), mesh);
+}
+//-----------------------------------------------------------------------------
+DofMapSet::DofMapSet(const ufc::form& form, Mesh& mesh)
+{
+  update(form, mesh);
 }
 //-----------------------------------------------------------------------------
 DofMapSet::~DofMapSet()
@@ -32,6 +43,11 @@ DofMapSet::~DofMapSet()
     // Delete DOLFIN dof map
     delete it->second.second;
   }
+}
+//-----------------------------------------------------------------------------
+void DofMapSet::update(const Form& form, Mesh& mesh)
+{
+  update(form.form(), mesh);
 }
 //-----------------------------------------------------------------------------
 void DofMapSet::update(const ufc::form& form, Mesh& mesh)
@@ -81,7 +97,7 @@ dolfin::uint DofMapSet::size() const
   return dof_map_set.size();
 }
 //-----------------------------------------------------------------------------
-const DofMap& DofMapSet::operator[] (uint i) const
+DofMap& DofMapSet::operator[] (uint i) const
 {
   dolfin_assert(i < dof_map_set.size());
   return *dof_map_set[i];

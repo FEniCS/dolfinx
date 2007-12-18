@@ -26,6 +26,7 @@
 %include "dolfin/GenericTensor.h"
 %include "dolfin/GenericMatrix.h"
 %include "dolfin/GenericVector.h"
+%include "dolfin/GenericSparsityPattern.h"
 %include "dolfin/SparsityPattern.h"
 %include "dolfin/KrylovMethod.h"
 %include "dolfin/Preconditioner.h"
@@ -93,6 +94,7 @@
 %include "dolfin/MeshConnectivity.h"
 %include "dolfin/MeshEditor.h"
 %include "dolfin/MeshFunction.h"
+%include "dolfin/MPIManager.h"
 %include "dolfin/MPIMeshCommunicator.h"
 %include "dolfin/Vertex.h"
 %include "dolfin/Edge.h"
@@ -108,6 +110,8 @@
 
 // DOLFIN headers included from fem
 %include "dolfin/assemble.h"
+%include "dolfin/DofMap.h"
+%include "dolfin/DofMapSet.h"
 %include "dolfin/SubSystem.h"
 %include "dolfin/BoundaryCondition.h"
 %include "dolfin/DirichletBC.h"

@@ -2,6 +2,7 @@ SUBDIRS                  = dolfin
 nobase_include_HEADERS   = dolfin/dolfin_fem.h \
                            dolfin/assemble.h \
                            dolfin/Assembler.h \
+                           dolfin/pAssembler.h \
                            dolfin/BoundaryCondition.h \
                            dolfin/DirichletBC.h \
                            dolfin/DofMap.h \
@@ -17,10 +18,12 @@ INCLUDES                 = @KERNEL_CFLAGS@
 lib_LTLIBRARIES          = libdolfin-fem.la
 libdolfin_fem_la_SOURCES = assemble.cpp \
                            Assembler.cpp \
+                           pAssembler.cpp \
                            BoundaryCondition.cpp \
                            DirichletBC.cpp \
                            DofMap.cpp \
                            DofMapSet.cpp \
+                           Form.cpp \
                            PeriodicBC.cpp \
                            SparsityPatternBuilder.cpp \
                            SubSystem.cpp \

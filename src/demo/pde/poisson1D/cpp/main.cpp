@@ -26,7 +26,9 @@ class DirichletBoundary : public SubDomain
 {
   bool inside(const real* x, bool on_boundary) const
   {
-      return on_boundary;
+//      return on_boundary;
+//    return (std::abs(x[0]) < DOLFIN_EPS or std::abs(x[0] - 1.0) < DOLFIN_EPS);
+    return (std::abs(x[0]) < DOLFIN_EPS);
   }
 };
 
@@ -43,22 +45,39 @@ public:
   }
 };
 
+// Neumann boundary condition
+class Flux : public Function
+{
+public:
+
+  Flux(Mesh& mesh) : Function(mesh) {}
+
+  real eval(const real* x) const
+  {
+//     if (x[0] > DOLFIN_EPS)
+//       return -3.0*DOLFIN_PI;
+//     else
+      return 0.0;
+  }
+};
+
 int main()
 {
   // Create mesh
-  UnitInterval mesh(15);
+  UnitInterval mesh(50);
 
   // Set up BCs
   Function zero(mesh, 0.0);
   DirichletBoundary boundary;
   DirichletBC bc(zero, mesh, boundary);
 
-  // Create source
+  // Create source and flux
   Source f(mesh);
+  Flux g(mesh);
 
   // Define PDE
   PoissonBilinearForm a;
-  PoissonLinearForm L(f);
+  PoissonLinearForm L(f, g);
   LinearPDE pde(a, L, mesh, bc);
 
   // Solve PDE

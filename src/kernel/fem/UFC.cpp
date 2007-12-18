@@ -12,7 +12,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-UFC::UFC(const ufc::form& form, Mesh& mesh, DofMapSet& dof_map_set) : form(form)
+UFC::UFC(const ufc::form& form, Mesh& mesh, const DofMapSet& dof_map_set) : form(form)
 {
   // Create finite elements
   finite_elements = new ufc::finite_element*[form.rank()];
@@ -24,10 +24,6 @@ UFC::UFC(const ufc::form& form, Mesh& mesh, DofMapSet& dof_map_set) : form(form)
   for (uint i = 0; i < form.num_coefficients(); i++)
     coefficient_elements[i] = form.create_finite_element(form.rank() + i);
 
-  // Create dof maps (reuse from dof map storage)
-  this->dof_maps = new ufc::dof_map*[form.rank()];
-  for (uint i = 0; i < form.rank(); i++)
-    this->dof_maps[i] = &dof_map_set[i].ufc_dof_map;
 
   // Create cell integrals
   cell_integrals = new ufc::cell_integral*[form.num_cell_integrals()];
@@ -56,7 +52,7 @@ UFC::UFC(const ufc::form& form, Mesh& mesh, DofMapSet& dof_map_set) : form(form)
   // Initialize local tensor
   uint num_entries = 1;
   for (uint i = 0; i < form.rank(); i++)
-    num_entries *= this->dof_maps[i]->local_dimension();
+    num_entries *= dof_map_set[i].local_dimension();
   A = new real[num_entries];
   for (uint i = 0; i < num_entries; i++)
     A[i] = 0.0;
@@ -64,7 +60,7 @@ UFC::UFC(const ufc::form& form, Mesh& mesh, DofMapSet& dof_map_set) : form(form)
   // Initialize local tensor for macro element
   num_entries = 1;
   for (uint i = 0; i < form.rank(); i++)
-    num_entries *= 2*this->dof_maps[i]->local_dimension();
+    num_entries *= 2*dof_map_set[i].local_dimension();
   macro_A = new real[num_entries];
   for (uint i = 0; i < num_entries; i++)
     macro_A[i] = 0.0;  
@@ -72,17 +68,17 @@ UFC::UFC(const ufc::form& form, Mesh& mesh, DofMapSet& dof_map_set) : form(form)
   // Initialize local dimensions
   local_dimensions = new uint[form.rank()];
   for (uint i = 0; i < form.rank(); i++)
-    local_dimensions[i] = this->dof_maps[i]->local_dimension();
+    local_dimensions[i] = dof_map_set[i].local_dimension();
 
   // Initialize local dimensions for macro element
   macro_local_dimensions = new uint[form.rank()];
   for (uint i = 0; i < form.rank(); i++)
-    macro_local_dimensions[i] = 2*this->dof_maps[i]->local_dimension();
+    macro_local_dimensions[i] = 2*dof_map_set[i].local_dimension();
 
   // Initialize global dimensions
   global_dimensions = new uint[form.rank()];
   for (uint i = 0; i < form.rank(); i++)
-    global_dimensions[i] = this->dof_maps[i]->global_dimension();
+    global_dimensions[i] = dof_map_set[i].global_dimension();
 
   // Initialize dofs
   dofs = new uint*[form.rank()];
@@ -134,9 +130,6 @@ UFC::~UFC()
   for (uint i = 0; i < form.num_coefficients(); i++)
     delete coefficient_elements[i];
   delete [] coefficient_elements;
-
-  // Delete dof maps (don't touch reused dof maps)
-  delete [] dof_maps;
 
   // Delete cell integrals
   for (uint i = 0; i < form.num_cell_integrals(); i++)

@@ -7,25 +7,28 @@
 //
 // First added:  2006-06-05
 // Last changed: 2007-07-20
+//
+// Rename of the former Tetrahedron.cpp
+//
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Cell.h>
 #include <dolfin/MeshEditor.h>
 #include <dolfin/MeshGeometry.h>
 #include <dolfin/Facet.h>
-#include <dolfin/Tetrahedron.h>
+#include <dolfin/TetrahedronCell.h>
 #include <dolfin/Vertex.h>
 #include <dolfin/GeometricPredicates.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-dolfin::uint Tetrahedron::dim() const
+dolfin::uint TetrahedronCell::dim() const
 {
   return 3;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint Tetrahedron::numEntities(uint dim) const
+dolfin::uint TetrahedronCell::numEntities(uint dim) const
 {
   switch ( dim )
   {
@@ -44,7 +47,7 @@ dolfin::uint Tetrahedron::numEntities(uint dim) const
   return 0;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint Tetrahedron::numVertices(uint dim) const
+dolfin::uint TetrahedronCell::numVertices(uint dim) const
 {
   switch ( dim )
   {
@@ -63,7 +66,7 @@ dolfin::uint Tetrahedron::numVertices(uint dim) const
   return 0;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint Tetrahedron::orientation(const Cell& cell) const
+dolfin::uint TetrahedronCell::orientation(const Cell& cell) const
 {
   // This is a trick to be allowed to initialize mesh entities from cell
   Cell& c = const_cast<Cell&>(cell);
@@ -82,7 +85,7 @@ dolfin::uint Tetrahedron::orientation(const Cell& cell) const
   return ( n.dot(p03) < 0.0 ? 1 : 0 );
 }
 //-----------------------------------------------------------------------------
-void Tetrahedron::createEntities(uint** e, uint dim, const uint* v) const
+void TetrahedronCell::createEntities(uint** e, uint dim, const uint* v) const
 {
   // We only need to know how to create edges and faces
   switch ( dim )
@@ -108,7 +111,7 @@ void Tetrahedron::createEntities(uint** e, uint dim, const uint* v) const
   }
 }
 //-----------------------------------------------------------------------------
-void Tetrahedron::orderEntities(Cell& cell) const
+void TetrahedronCell::orderEntities(Cell& cell) const
 {
   // Sort i - j for i > j: 1 - 0, 2 - 0, 2 - 1, 3 - 0, 3 - 1, 3 - 2
 
@@ -267,7 +270,7 @@ void Tetrahedron::orderEntities(Cell& cell) const
   }
 }
 //-----------------------------------------------------------------------------
-void Tetrahedron::refineCell(Cell& cell, MeshEditor& editor,
+void TetrahedronCell::refineCell(Cell& cell, MeshEditor& editor,
 			     uint& current_cell) const
 {
   // Get vertices and edges
@@ -302,7 +305,7 @@ void Tetrahedron::refineCell(Cell& cell, MeshEditor& editor,
   editor.addCell(current_cell++, e0, e3, e4, e5);
 }
 //-----------------------------------------------------------------------------
-void Tetrahedron::refineCellIrregular(Cell& cell, MeshEditor& editor, 
+void TetrahedronCell::refineCellIrregular(Cell& cell, MeshEditor& editor, 
 				      uint& current_cell, uint refinement_rule, 
 				      uint* marked_edges) const
 {
@@ -366,7 +369,7 @@ void Tetrahedron::refineCellIrregular(Cell& cell, MeshEditor& editor,
   */
 }
 //-----------------------------------------------------------------------------
-real Tetrahedron::volume(const MeshEntity& tetrahedron) const
+real TetrahedronCell::volume(const MeshEntity& tetrahedron) const
 {
   // Get mesh geometry
   const MeshGeometry& geometry = tetrahedron.mesh().geometry();
@@ -391,7 +394,7 @@ real Tetrahedron::volume(const MeshEntity& tetrahedron) const
   return std::abs(v) / 6.0;
 }
 //-----------------------------------------------------------------------------
-real Tetrahedron::diameter(const MeshEntity& tetrahedron) const
+real TetrahedronCell::diameter(const MeshEntity& tetrahedron) const
 {
   // Get mesh geometry
   const MeshGeometry& geometry = tetrahedron.mesh().geometry();
@@ -426,7 +429,7 @@ real Tetrahedron::diameter(const MeshEntity& tetrahedron) const
   return area / ( 3.0*volume(tetrahedron) );
 }
 //-----------------------------------------------------------------------------
-real Tetrahedron::normal(const Cell& cell, uint facet, uint i) const
+real TetrahedronCell::normal(const Cell& cell, uint facet, uint i) const
 {
   // This is a trick to be allowed to initialize a facet from the cell
   Cell& c = const_cast<Cell&>(cell);
@@ -474,7 +477,7 @@ real Tetrahedron::normal(const Cell& cell, uint facet, uint i) const
   return 0.0;
 }
 //-----------------------------------------------------------------------------
-bool Tetrahedron::intersects(const MeshEntity& tetrahedron,
+bool TetrahedronCell::intersects(const MeshEntity& tetrahedron,
                              const Point& p) const
 {
   // Get mesh geometry
@@ -525,13 +528,13 @@ bool Tetrahedron::intersects(const MeshEntity& tetrahedron,
   return true;
 }
 //-----------------------------------------------------------------------------
-std::string Tetrahedron::description() const
+std::string TetrahedronCell::description() const
 {
   std::string s = "tetrahedron (simplex of topological dimension 3)";
   return s;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint Tetrahedron::findEdge(uint i, const Cell& cell) const
+dolfin::uint TetrahedronCell::findEdge(uint i, const Cell& cell) const
 {
   // Get vertices and edges
   const uint* v = cell.entities(0);

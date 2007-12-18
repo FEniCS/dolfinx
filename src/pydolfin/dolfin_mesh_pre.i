@@ -7,7 +7,7 @@
         if (dim_size == 2)
             adims[1] = n;
 
-        PyArrayObject* array = (PyArrayObject *)PyArray_SimpleNewFromData(dim_size, adims, TYPE, (char *)(dataptr));
+        PyArrayObject* array = reinterpret_cast<PyArrayObject*>(PyArray_SimpleNewFromData(dim_size, adims, TYPE, (char *)(dataptr)));
         if ( array == NULL ) return NULL;
         PyArray_INCREF(array);
 %enddef
@@ -24,7 +24,7 @@
 
         MAKE_ARRAY(2, m, n, self->coordinates(), NPY_DOUBLE)
 
-        return (PyObject *)array;
+        return reinterpret_cast<PyObject*>(array);
     }
 }
 %enddef
@@ -44,7 +44,7 @@
 
         MAKE_ARRAY(2, m, n, self->cells(), NPY_INT)
 
-        return (PyObject *)array;
+        return reinterpret_cast<PyObject*>(array);
     }
 }
 %enddef
@@ -57,7 +57,7 @@
 
         MAKE_ARRAY(1, m, n, self->values(), TYPE)
 
-        return (PyObject *)array;
+        return reinterpret_cast<PyObject*>(array);
     }
 }
 %enddef

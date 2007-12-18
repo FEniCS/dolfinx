@@ -2,9 +2,10 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells, 2007.
+// Modified by Ola Skavhaug, 2007.
 //
 // First added:  2007-03-15
-// Last changed: 2007-08-28
+// Last changed: 2007-12-07
 
 #ifndef __SCALAR_H
 #define __SCALAR_H
@@ -12,11 +13,12 @@
 #include <dolfin/constants.h>
 #include <dolfin/LogStream.h>
 #include <dolfin/GenericTensor.h>
+#include <dolfin/uBlasFactory.h>
 
 namespace dolfin
 {
 
-  class SparsityPattern;
+  class GenericSparsityPattern;
 
   /// This class represents a real-valued scalar quantity and
   /// implements the GenericTensor interface for scalars.
@@ -38,7 +40,7 @@ namespace dolfin
     { value = 0.0; }
 
     /// Initialize zero tensor using sparsity pattern
-    inline void init(const SparsityPattern& sparsity_pattern)
+    inline void init(const GenericSparsityPattern& sparsity_pattern)
     { value = 0.0; }
 
     /// Create uninitialized scalar
@@ -91,6 +93,9 @@ namespace dolfin
 
     /// Get value (needed for SWIG interface)
     inline real getval() const { return value; }
+
+    /// Return a factory for the default linear algebra backend
+    inline LinearAlgebraFactory& factory() const { return dolfin::uBlasFactory::instance(); }
 
   private:
     

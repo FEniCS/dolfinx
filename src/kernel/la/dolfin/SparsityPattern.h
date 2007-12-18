@@ -12,6 +12,7 @@
 #include <set>
 #include <vector>
 
+#include <dolfin/GenericSparsityPattern.h>
 #include <dolfin/dolfin_log.h>
 #include <dolfin/constants.h>
 
@@ -22,7 +23,7 @@ namespace dolfin
   /// used to initalise vectors and sparse matrices. It must be initialised
   /// before use.
 
-  class SparsityPattern
+  class SparsityPattern: public GenericSparsityPattern
   {
   public:
 
@@ -41,6 +42,13 @@ namespace dolfin
     /// Insert non-zero entry
     void insert(uint row, uint column)
       { sparsity_pattern[row].insert(column); };
+
+    void insert(uint m, const uint* rows, uint n, const uint* cols)
+    { 
+      for (unsigned int i = 0; i<m;++i)
+        for (unsigned int j = 0; i<j;++j)
+          sparsity_pattern[rows[i]].insert(cols[j]);
+    }
 
     /// Return global size 
     uint size(uint n) const

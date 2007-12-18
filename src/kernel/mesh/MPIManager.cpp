@@ -5,12 +5,15 @@
 // Modified by Anders Logg, 2007.
 //
 // First added:  2007-11-30
-// Last changed: 2007-12-02
+// Last changed: 2007-12-13
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Mesh.h>
 #include <dolfin/MeshFunction.h>
 #include <dolfin/MPIManager.h>
+
+// Initialize static data
+dolfin::MPIManager dolfin::MPIManager::mpi;
 
 using namespace dolfin;
 
@@ -24,6 +27,7 @@ MPIManager::MPIManager()
 //-----------------------------------------------------------------------------
 MPIManager::~MPIManager()
 {
+  dolfin_debug("Calling MPIManager::finalize() in destructor of singleton MPIManager instance");
   MPIManager::finalize();
 }
 //-----------------------------------------------------------------------------
@@ -76,13 +80,13 @@ dolfin::uint MPIManager::numProcesses()
 bool MPIManager::broadcast()
 {
   // Always broadcast from processor number 0
-  return numProcesses() > 0 && processNumber() == 0;
+  return numProcesses() > 1 && processNumber() == 0;
 }
 //-----------------------------------------------------------------------------
 bool MPIManager::receive()
 {
   // Always receive on processors with numbers > 0
-  return numProcesses() > 0 && processNumber() > 0;
+  return numProcesses() > 1 && processNumber() > 0;
 }
 //-----------------------------------------------------------------------------
 
@@ -119,7 +123,7 @@ dolfin::uint MPIManager::numProcesses()
   return 1;
 }
 //-----------------------------------------------------------------------------
-bool MPIManager::broadcast();
+bool MPIManager::broadcast()
 {
   return false;
 }

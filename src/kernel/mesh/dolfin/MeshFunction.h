@@ -2,10 +2,9 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Johan Hoffman 2007.
-// Modified by Magnus Vikstrøm 2007.
 //
 // First added:  2006-05-22
-// Last changed: 2007-12-03
+// Last changed: 2007-11-30
 
 #ifndef __MESH_FUNCTION_H
 #define __MESH_FUNCTION_H
@@ -18,6 +17,8 @@
 
 namespace dolfin
 {
+  
+  class MPIManager;
 
   /// A MeshFunction is a function that can be evaluated at a set of
   /// mesh entities. A MeshFunction is discrete and is only defined
@@ -29,8 +30,7 @@ namespace dolfin
   template <class T> class MeshFunction
   {
   public:
-    class MPIManager;
-
+ 
     /// Create empty mesh function
     MeshFunction() : _values(0), _mesh(0), _dim(0), _size(0) {}
 
@@ -54,7 +54,7 @@ namespace dolfin
     ~MeshFunction()
     {
       if ( _values )
-	delete [] _values;
+      delete [] _values;
     }
 
     /// Return mesh associated with mesh function
@@ -75,8 +75,10 @@ namespace dolfin
     /// Return value at given entity
     inline T& operator() (MeshEntity& entity)
     {
+      // FIXME: Removed temporarily, to get parallel assembly working
+      //dolfin_assert(&entity.mesh() == _mesh);
+      
       dolfin_assert(_values);
-      dolfin_assert(&entity.mesh() == _mesh);
       dolfin_assert(entity.dim() == _dim);
       dolfin_assert(entity.index() < _size);
       return _values[entity.index()];
@@ -138,7 +140,7 @@ namespace dolfin
       _dim = dim;
       _size = size;
       if (_values)
-	delete [] _values;
+        delete [] _values;
       _values = new T[size];
     }
 
@@ -188,24 +190,12 @@ namespace dolfin
       cout << "Number of values:      " << _size << endl;
       cout << endl;
       for (uint i = 0; i < _size; i++)
-      {
         cout << "(" << _dim << ", " << i << "): " << _values[i] << endl;
-      }
       end();
     }
 
-    /// Broadcast mesh function data
-    void broadcast() const
-    {
-      MPIMeshCommunicator::broadcast(*this);
-    }
-
-    void receive()
-    {
-      MPIMeshCommunicator::receive(*this);
-    }
-
   private:
+
     friend class MPIMeshCommunicator;
 
     /// Values at the set of mesh entities
@@ -219,7 +209,6 @@ namespace dolfin
 
     /// Number of mesh entities
     uint _size;
-
   };
 
 }

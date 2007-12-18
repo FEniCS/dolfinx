@@ -10,7 +10,7 @@
 #define __GENERIC_VECTOR_H
 
 #include <dolfin/constants.h>
-#include <dolfin/SparsityPattern.h>
+#include <dolfin/GenericSparsityPattern.h>
 #include <dolfin/GenericTensor.h>
 
 namespace dolfin
@@ -35,7 +35,7 @@ namespace dolfin
     { init(dims[0]); }
 
     /// Initialize zero tensor using sparsity pattern
-    inline void init(const SparsityPattern& sparsity_pattern)
+    inline void init(const GenericSparsityPattern& sparsity_pattern)
     { init(sparsity_pattern.size(0)); }
 
     /// Create uninitialized vector

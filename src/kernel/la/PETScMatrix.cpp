@@ -3,9 +3,10 @@
 //
 // Modified by Garth N. Wells 2005-2007.
 // Modified by Andy R. Terrel 2005.
+// Modified by Ola Skavhaug 2007.
 //
 // First added:  2004
-// Last changed: 2007-10-23
+// Last changed: 2007-12-07
 
 #ifdef HAVE_PETSC_H
 
@@ -17,7 +18,9 @@
 #include <dolfin/PETScManager.h>
 #include <dolfin/PETScVector.h>
 #include <dolfin/PETScMatrix.h>
+#include <dolfin/GenericSparsityPattern.h>
 #include <dolfin/SparsityPattern.h>
+#include <dolfin/MPIManager.h>
 
 using namespace dolfin;
 
@@ -77,7 +80,14 @@ void PETScMatrix::init(uint M, uint N)
   // FIXME: it should definitely be a parameter
 
   // Create a sparse matrix in compressed row format
-  MatCreateSeqAIJ(PETSC_COMM_SELF, M, N, 50, PETSC_NULL, &A);
+  if (MPIManager::numProcesses() > 1)
+  {
+    // Create PETSc parallel matrix with a guess for number of non-zeroes (10 in thise case)
+    MatCreateMPIAIJ(PETSC_COMM_WORLD, PETSC_DECIDE, PETSC_DECIDE, M, N, 10, PETSC_NULL, 10, PETSC_NULL , &A);
+    //MatZeroEntries(A);
+  }
+  else
+    MatCreateSeqAIJ(PETSC_COMM_SELF, M, N, 50, PETSC_NULL, &A);
   setType();
   MatSetFromOptions(A);
   MatSetOption(A, MAT_KEEP_ZEROED_ROWS);
@@ -113,11 +123,12 @@ void PETScMatrix::init(uint M, uint N, uint bs, uint nz)
   MatZeroEntries(A);
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::init(const SparsityPattern& sparsity_pattern)
+void PETScMatrix::init(const GenericSparsityPattern& sparsity_pattern)
 {
-  uint* nzrow = new uint[sparsity_pattern.size(0)];  
-  sparsity_pattern.numNonZeroPerRow(nzrow);
-  init(sparsity_pattern.size(0), sparsity_pattern.size(1), nzrow);
+  const SparsityPattern& spattern = reinterpret_cast<const SparsityPattern&>(sparsity_pattern);
+  uint* nzrow = new uint[spattern.size(0)];  
+  spattern.numNonZeroPerRow(nzrow);
+  init(spattern.size(0), spattern.size(1), nzrow);
   delete [] nzrow;
 }
 //-----------------------------------------------------------------------------
@@ -382,6 +393,11 @@ LogStream& dolfin::operator<< (LogStream& stream, const PETScMatrix& A)
 	  << m << " x " << n << " ]";
 
   return stream;
+}
+//-----------------------------------------------------------------------------
+PETScFactory& PETScMatrix::factory() const
+{
+  return PETScFactory::instance();
 }
 //-----------------------------------------------------------------------------
 Mat PETScMatrix::mat() const

@@ -61,9 +61,10 @@ am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(includedir)"
 libLTLIBRARIES_INSTALL = $(INSTALL)
 LTLIBRARIES = $(lib_LTLIBRARIES)
 libdolfin_fem_la_LIBADD =
-am_libdolfin_fem_la_OBJECTS = assemble.lo Assembler.lo \
+am_libdolfin_fem_la_OBJECTS = assemble.lo Assembler.lo pAssembler.lo \
 	BoundaryCondition.lo DirichletBC.lo DofMap.lo DofMapSet.lo \
-	PeriodicBC.lo SparsityPatternBuilder.lo SubSystem.lo UFC.lo
+	Form.lo PeriodicBC.lo SparsityPatternBuilder.lo SubSystem.lo \
+	UFC.lo
 libdolfin_fem_la_OBJECTS = $(am_libdolfin_fem_la_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -240,6 +241,7 @@ SUBDIRS = dolfin
 nobase_include_HEADERS = dolfin/dolfin_fem.h \
                            dolfin/assemble.h \
                            dolfin/Assembler.h \
+                           dolfin/pAssembler.h \
                            dolfin/BoundaryCondition.h \
                            dolfin/DirichletBC.h \
                            dolfin/DofMap.h \
@@ -256,10 +258,12 @@ INCLUDES = @KERNEL_CFLAGS@
 lib_LTLIBRARIES = libdolfin-fem.la
 libdolfin_fem_la_SOURCES = assemble.cpp \
                            Assembler.cpp \
+                           pAssembler.cpp \
                            BoundaryCondition.cpp \
                            DirichletBC.cpp \
                            DofMap.cpp \
                            DofMapSet.cpp \
+                           Form.cpp \
                            PeriodicBC.cpp \
                            SparsityPatternBuilder.cpp \
                            SubSystem.cpp \
@@ -340,11 +344,13 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DirichletBC.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DofMap.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DofMapSet.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Form.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PeriodicBC.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SparsityPatternBuilder.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SubSystem.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/UFC.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/assemble.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pAssembler.Plo@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \

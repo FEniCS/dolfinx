@@ -62,12 +62,13 @@ libLTLIBRARIES_INSTALL = $(INSTALL)
 LTLIBRARIES = $(lib_LTLIBRARIES)
 libdolfin_la_la_LIBADD =
 am_libdolfin_la_la_OBJECTS = solve.lo GMRES.lo LU.lo \
-	SLEPcEigenvalueSolver.lo PETScKrylovMatrix.lo \
+	SLEPcEigenvalueSolver.lo PETScFactory.lo PETScKrylovMatrix.lo \
 	PETScKrylovSolver.lo PETScLUSolver.lo PETScManager.lo \
 	PETScMatrix.lo PETScPreconditioner.lo PETScVector.lo \
-	SparsityPattern.lo uBlasKrylovMatrix.lo uBlasKrylovSolver.lo \
-	uBlasLUSolver.lo uBlasDummyPreconditioner.lo \
-	uBlasILUPreconditioner.lo uBlasVector.lo
+	SparsityPattern.lo uBlasFactory.lo uBlasKrylovMatrix.lo \
+	uBlasKrylovSolver.lo uBlasLUSolver.lo \
+	uBlasDummyPreconditioner.lo uBlasILUPreconditioner.lo \
+	uBlasVector.lo
 libdolfin_la_la_OBJECTS = $(am_libdolfin_la_la_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -252,10 +253,12 @@ nobase_include_HEADERS = dolfin/dolfin_la.h \
                           dolfin/GenericTensor.h \
                           dolfin/GMRES.h \
                           dolfin/LinearSolver.h \
+                          dolfin/LinearAlgebraFactory.h \
                           dolfin/LU.h \
                           dolfin/LUSolver.h \
                           dolfin/Matrix.h \
                           dolfin/SLEPcEigenvalueSolver.h \
+                          dolfin/PETScFactory.h \
                           dolfin/PETScKrylovMatrix.h \
                           dolfin/PETScKrylovSolver.h \
                           dolfin/PETScLinearSolver.h \
@@ -265,9 +268,11 @@ nobase_include_HEADERS = dolfin/dolfin_la.h \
                           dolfin/PETScPreconditioner.h \
                           dolfin/PETScVector.h \
                           dolfin/Preconditioner.h \
+                          dolfin/GenericSparsityPattern.h \
                           dolfin/SparsityPattern.h \
                           dolfin/ublas.h \
                           dolfin/uBlasDenseMatrix.h \
+                          dolfin/uBlasFactory.h \
                           dolfin/uBlasKrylovMatrix.h \
                           dolfin/uBlasKrylovSolver.h \
                           dolfin/uBlasLinearSolver.h \
@@ -288,6 +293,7 @@ libdolfin_la_la_SOURCES = solve.cpp \
                           GMRES.cpp \
                           LU.cpp \
                           SLEPcEigenvalueSolver.cpp \
+                          PETScFactory.cpp \
                           PETScKrylovMatrix.cpp \
                           PETScKrylovSolver.cpp \
                           PETScLUSolver.cpp \
@@ -296,6 +302,7 @@ libdolfin_la_la_SOURCES = solve.cpp \
                           PETScPreconditioner.cpp \
                           PETScVector.cpp \
                           SparsityPattern.cpp \
+                          uBlasFactory.cpp \
                           uBlasKrylovMatrix.cpp \
                           uBlasKrylovSolver.cpp \
                           uBlasLUSolver.cpp \
@@ -375,6 +382,7 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/GMRES.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LU.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PETScFactory.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PETScKrylovMatrix.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PETScKrylovSolver.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PETScLUSolver.Plo@am__quote@
@@ -386,6 +394,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SparsityPattern.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/solve.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/uBlasDummyPreconditioner.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/uBlasFactory.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/uBlasILUPreconditioner.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/uBlasKrylovMatrix.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/uBlasKrylovSolver.Plo@am__quote@

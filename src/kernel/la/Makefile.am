@@ -10,10 +10,12 @@ nobase_include_HEADERS  = dolfin/dolfin_la.h \
                           dolfin/GenericTensor.h \
                           dolfin/GMRES.h \
                           dolfin/LinearSolver.h \
+                          dolfin/LinearAlgebraFactory.h \
                           dolfin/LU.h \
                           dolfin/LUSolver.h \
                           dolfin/Matrix.h \
                           dolfin/SLEPcEigenvalueSolver.h \
+                          dolfin/PETScFactory.h \
                           dolfin/PETScKrylovMatrix.h \
                           dolfin/PETScKrylovSolver.h \
                           dolfin/PETScLinearSolver.h \
@@ -23,9 +25,11 @@ nobase_include_HEADERS  = dolfin/dolfin_la.h \
                           dolfin/PETScPreconditioner.h \
                           dolfin/PETScVector.h \
                           dolfin/Preconditioner.h \
+                          dolfin/GenericSparsityPattern.h \
                           dolfin/SparsityPattern.h \
                           dolfin/ublas.h \
                           dolfin/uBlasDenseMatrix.h \
+                          dolfin/uBlasFactory.h \
                           dolfin/uBlasKrylovMatrix.h \
                           dolfin/uBlasKrylovSolver.h \
                           dolfin/uBlasLinearSolver.h \
@@ -45,6 +49,7 @@ libdolfin_la_la_SOURCES = solve.cpp \
                           GMRES.cpp \
                           LU.cpp \
                           SLEPcEigenvalueSolver.cpp \
+                          PETScFactory.cpp \
                           PETScKrylovMatrix.cpp \
                           PETScKrylovSolver.cpp \
                           PETScLUSolver.cpp \
@@ -53,6 +58,7 @@ libdolfin_la_la_SOURCES = solve.cpp \
                           PETScPreconditioner.cpp \
                           PETScVector.cpp \
                           SparsityPattern.cpp \
+                          uBlasFactory.cpp \
                           uBlasKrylovMatrix.cpp \
                           uBlasKrylovSolver.cpp \
                           uBlasLUSolver.cpp \

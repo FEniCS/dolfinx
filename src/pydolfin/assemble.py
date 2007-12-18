@@ -33,26 +33,29 @@ def assemble(form, mesh):
     exterior_facet_domains = MeshFunction("uint")
     interior_facet_domains = MeshFunction("uint")
 
+    # Create dof maps
+    dof_maps = DofMapSet(compiled_form, mesh)
+
     # Assemble compiled form
     rank = compiled_form.rank()
     if rank == 0:
         s = Scalar()
-        cpp_assemble(s, compiled_form, mesh, coefficients,
+        cpp_assemble(s, compiled_form, mesh, coefficients, dof_maps,
                      cell_domains, exterior_facet_domains, interior_facet_domains,
                      True)
-        return s.getval()
+        return (s.getval(), dof_maps)
     elif rank == 1:
         b = Vector()
-        cpp_assemble(b, compiled_form, mesh, coefficients,
+        cpp_assemble(b, compiled_form, mesh, coefficients, dof_maps,
                      cell_domains, exterior_facet_domains, interior_facet_domains,
                      True)
-        return b
+        return (b, dof_maps)
     elif rank == 2:
         A = Matrix()
-        cpp_assemble(A, compiled_form, mesh, coefficients,
+        cpp_assemble(A, compiled_form, mesh, coefficients, dof_maps,
                      cell_domains, exterior_facet_domains, interior_facet_domains,
                      True)
-        return A
+        return (A, dof_maps)
     else:
         raise RuntimeError, "Unable to assemble tensors of rank %d." % rank
 
@@ -64,7 +67,6 @@ class Function(ffc_Function, cpp_Function):
 
     def __init__(self, element, *others):
         "Create Function"
-
         # Element is given to constructor of FFC Function (if any)
         if isinstance(element, FiniteElement) or isinstance(element, MixedElement):
             ffc_Function.__init__(self, element)
@@ -126,6 +128,7 @@ class LinearPDE:
         self.mesh = mesh
         self.bcs = bcs
         self.x = Vector()
+        self.dof_maps = DofMapSet()
 
         # Make sure we have a list
         if not isinstance(self.bcs, list):
@@ -135,18 +138,17 @@ class LinearPDE:
         "Solve PDE and return solution"
 
         begin("Solving linear PDE.");
-
         # Assemble linear system
-        A = assemble(self.a, self.mesh)
-        b = assemble(self.L, self.mesh)
+        (A, self.dof_maps) = assemble(self.a, self.mesh)
+        (b, dof_maps_L)    = assemble(self.L, self.mesh)
 
         # FIXME: Maybe there is a better solution?
         # Compile form, needed to create discrete function
         (compiled_form, module, form_data) = jit(self.a)
 
-        # Apply boundary conditions
+            # Apply boundary conditions
         for bc in self.bcs:
-            bc.apply(A, b, compiled_form)
+            bc.apply(A, b, self.dof_maps.sub(1), compiled_form)
 
         #message("Matrix:")
         #A.disp()
@@ -177,8 +179,9 @@ class LinearPDE:
         element = form_data[0].elements[1]
   
         # Create Function
-        u = Function(element, self.mesh, self.x, compiled_form)
+        u = Function(element, self.mesh, self.dof_maps.sub(1), self.x, compiled_form)
 
         end()
 
         return u
+

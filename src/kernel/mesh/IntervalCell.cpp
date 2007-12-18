@@ -5,23 +5,26 @@
 // Last changed: 2007-07-20
 //
 // Modified by Kristian Oelgaard 2007.
+//
+// Rename of the former Interval.cpp
+//
 
 #include <cmath>
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Cell.h>
 #include <dolfin/MeshEditor.h>
 #include <dolfin/MeshGeometry.h>
-#include <dolfin/Interval.h>
+#include <dolfin/IntervalCell.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-dolfin::uint Interval::dim() const
+dolfin::uint IntervalCell::dim() const
 {
   return 1;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint Interval::numEntities(uint dim) const
+dolfin::uint IntervalCell::numEntities(uint dim) const
 {
   switch ( dim )
   {
@@ -36,7 +39,7 @@ dolfin::uint Interval::numEntities(uint dim) const
   return 0;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint Interval::numVertices(uint dim) const
+dolfin::uint IntervalCell::numVertices(uint dim) const
 {
   switch ( dim )
   {
@@ -51,7 +54,7 @@ dolfin::uint Interval::numVertices(uint dim) const
   return 0;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint Interval::orientation(const Cell& cell) const
+dolfin::uint IntervalCell::orientation(const Cell& cell) const
 {
   Point v01 = Point(cell.entities(0)[1]) - Point(cell.entities(0)[0]);
   Point n(-v01.y(), v01.x());
@@ -59,13 +62,13 @@ dolfin::uint Interval::orientation(const Cell& cell) const
   return ( n.dot(v01) < 0.0 ? 1 : 0 );
 }
 //-----------------------------------------------------------------------------
-void Interval::createEntities(uint** e, uint dim, const uint* v) const
+void IntervalCell::createEntities(uint** e, uint dim, const uint* v) const
 {
   // We don't need to create any entities
   error("Don't know how to create entities of topological dimension %d.", dim);
 }
 //-----------------------------------------------------------------------------
-void Interval::orderEntities(Cell& cell) const
+void IntervalCell::orderEntities(Cell& cell) const
 {
   // Sort i - j for i > j: 1 - 0
 
@@ -80,7 +83,7 @@ void Interval::orderEntities(Cell& cell) const
   }
 }
 //-----------------------------------------------------------------------------
-void Interval::refineCell(Cell& cell, MeshEditor& editor,
+void IntervalCell::refineCell(Cell& cell, MeshEditor& editor,
 			  uint& current_cell) const
 {
   // Get vertices and edges
@@ -102,7 +105,7 @@ void Interval::refineCell(Cell& cell, MeshEditor& editor,
   editor.addCell(current_cell++, e0, v1);
 }
 //-----------------------------------------------------------------------------
-real Interval::volume(const MeshEntity& interval) const
+real IntervalCell::volume(const MeshEntity& interval) const
 {
   // Check that we get an interval
   if ( interval.dim() != 1 )
@@ -127,7 +130,7 @@ real Interval::volume(const MeshEntity& interval) const
   return std::sqrt(sum);
 }
 //-----------------------------------------------------------------------------
-real Interval::diameter(const MeshEntity& interval) const
+real IntervalCell::diameter(const MeshEntity& interval) const
 {
   // Check that we get an interval
   if ( interval.dim() != 1 )
@@ -137,13 +140,48 @@ real Interval::diameter(const MeshEntity& interval) const
   return volume(interval);
 }
 //-----------------------------------------------------------------------------
-real Interval::normal(const Cell& cell, uint facet, uint i) const
+real IntervalCell::normal(const Cell& cell, uint facet, uint i) const
 {
-  error("Not implemented. Please fix this Kristian. ;-)");
+  // Get mesh geometry
+  const MeshGeometry& geometry = cell.mesh().geometry();
+
+  // The normal vector is currently only defined for an interval in R^1
+  if ( geometry.dim() != 1 )
+    error("The normal vector is only defined when the interval is in R^1");
+
+  // Currently only the x coordinate can be returned
+  if ( i != 0 )
+    error("IntervalCell::normal() can currently only return the x-component.");
+
+  // Get the two vertices as points
+  const uint* vertices = cell.entities(0);
+  Point p0 = geometry.point(vertices[0]);
+  Point p1 = geometry.point(vertices[1]);
+
+  // Compute normal for the two facet
+  if (facet == 0)
+  {
+    // Represent interval as a vector
+    Point iv = p0-p1;
+
+    // Divide by norm of vector and get component
+    return (iv/iv.norm()).x();
+  }
+  else if (facet == 1)
+  {
+    // Represent interval as a vector
+    Point iv = p1-p0;
+
+    // Divide by norm of vector and get component
+    return (iv/iv.norm()).x();
+  }
+  else
+    error("Local facet number must be either 0 or 1");
+
   return 0.0;
 }
 //-----------------------------------------------------------------------------
-bool Interval::intersects(const MeshEntity& interval, const Point& p) const
+bool IntervalCell::intersects(const MeshEntity& interval, const Point& p) const
 {
   // FIXME: Not implemented
   error("Interval::intersects() not implemented");
@@ -151,7 +189,7 @@ bool Interval::intersects(const MeshEntity& interval, const Point& p) const
   return false;
 }
 //-----------------------------------------------------------------------------
-std::string Interval::description() const
+std::string IntervalCell::description() const
 {
   std::string s = "interval (simplex of topological dimension 1)";
   return s;
