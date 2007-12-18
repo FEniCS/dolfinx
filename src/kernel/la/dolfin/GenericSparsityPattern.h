@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-11-30
-// Last changed: 2007-11-30
+// Last changed: 2007-12-14
 
 #ifndef __GENERIC_SPARSITY_PATTERN_H
 #define __GENERIC_SPARSITY_PATTERN_H
@@ -23,18 +23,12 @@ namespace dolfin
 
     /// Destructor
     virtual ~GenericSparsityPattern() {};
-      
-    /// Initialise sparsity pattern for a vector
-    virtual void init(uint M) = 0;
 
-    /// Initialise sparsity pattern for a matrix with total number of rows and columns
-    virtual void init(uint M, uint N) = 0;
+    /// Initialise sparsity pattern for a generic tensor
+    virtual void init(uint rank, const uint* dims) = 0;
 
     /// Insert non-zero entry
-    virtual void insert(uint row, uint column) = 0;
-
-    /// Insert non-zero entry
-    virtual void insert(uint m, const uint* rows, uint n, const uint* cols) = 0;
+    virtual void insert(const uint* num_rows, const uint * const * rows) = 0;
 
     /// Return global size 
     virtual uint size(uint n) const = 0;
@@ -44,6 +38,9 @@ namespace dolfin
 
     /// Return total number of non-zeroes
     virtual uint numNonZero() const = 0;
+
+    /// Finalize sparsity pattern (needed by most parallel la backends)
+    virtual void apply() = 0;
 
   };
 

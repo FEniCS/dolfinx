@@ -1,4 +1,4 @@
-// Copyright (C) 2005-2006 Ola Skavhaug.
+// Copyright (C) 2007 Ola Skavhaug.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-12-06
@@ -11,19 +11,19 @@
 
 using namespace dolfin;
 
-GenericMatrix* dolfin::uBlasFactory::createMatrix() const 
+GenericMatrix* uBlasFactory::createMatrix() const 
 {
   return new uBlasMatrix<ublas_dense_matrix>(); 
 }
 
-GenericSparsityPattern* dolfin::uBlasFactory::createPattern() const 
+GenericSparsityPattern* uBlasFactory::createPattern() const 
 {
   return new SparsityPattern(); 
 }
 
-GenericVector* dolfin::uBlasFactory::createVector() const 
+GenericVector* uBlasFactory::createVector() const 
 {
   return new uBlasVector(); 
 }
 
-dolfin::uBlasFactory dolfin::uBlasFactory::ublasfactory;
+uBlasFactory uBlasFactory::ublasfactory;

@@ -17,7 +17,7 @@ from ffc import *
 from dolfin import *
 
 # JIT assembler
-def assemble(form, mesh):
+def assemble(form, mesh, backend=None):
     "Assemble form over mesh and return tensor"
     
     # Compile form
@@ -36,6 +36,11 @@ def assemble(form, mesh):
     # Create dof maps
     dof_maps = DofMapSet(compiled_form, mesh)
 
+    # Figure out linear algebra backend
+    if backend is None:
+        backend = Vector().factory() # FIXME: Figure out a better way of doing this
+    assert isinstance(backend, LinearAlgebraFactory)
+
     # Assemble compiled form
     rank = compiled_form.rank()
     if rank == 0:
@@ -45,13 +50,15 @@ def assemble(form, mesh):
                      True)
         return (s.getval(), dof_maps)
     elif rank == 1:
-        b = Vector()
+        b = backend.createVector()
+        print b
         cpp_assemble(b, compiled_form, mesh, coefficients, dof_maps,
                      cell_domains, exterior_facet_domains, interior_facet_domains,
                      True)
         return (b, dof_maps)
     elif rank == 2:
-        A = Matrix()
+        A = backend.createMatrix()
+        print A
         cpp_assemble(A, compiled_form, mesh, coefficients, dof_maps,
                      cell_domains, exterior_facet_domains, interior_facet_domains,
                      True)

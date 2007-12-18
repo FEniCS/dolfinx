@@ -33,29 +33,14 @@ namespace dolfin
     /// Destructor
     ~SparsityPattern();
 
-    /// Initialise sparsity pattern for a vector
-    void init(uint M);
-
     /// Initialise sparsity pattern for a matrix with total number of rows and columns
-    void init(uint M, uint N);
+    void init(uint rank, const uint* dims);
 
     /// Insert non-zero entry
-    void insert(uint row, uint column)
-      { sparsity_pattern[row].insert(column); };
-
-    void insert(uint m, const uint* rows, uint n, const uint* cols)
-    { 
-      for (unsigned int i = 0; i<m;++i)
-        for (unsigned int j = 0; i<j;++j)
-          sparsity_pattern[rows[i]].insert(cols[j]);
-    }
+    void insert(const uint* num_rows, const uint * const * rows);
 
     /// Return global size 
-    uint size(uint n) const
-    { 
-      dolfin_assert(n < 2);
-      return dim[n]; 
-    };
+    uint size(uint n) const;
 
     /// Return array with number of non-zeroes per row
     void numNonZeroPerRow(uint nzrow[]) const;
@@ -68,6 +53,8 @@ namespace dolfin
 
     /// Display sparsity pattern
     void disp() const;
+
+    void apply() { /* Do nothing */ }
 
   private:
 

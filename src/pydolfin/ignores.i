@@ -22,3 +22,4 @@
 %ignore dolfin::uBlasVector::operator ()(uint i) const;
 %ignore dolfin::cout;
 %ignore dolfin::endl;
+%ignore *::operator<<(unsigned int);
