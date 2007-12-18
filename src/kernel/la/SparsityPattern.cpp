@@ -27,10 +27,10 @@ void SparsityPattern::init(uint rank, const uint* dims)
 {
   dolfin_assert(rank <= 2);
   dim[0] = dim[1] = 0;
-  for (int i=0; i<rank; ++i)
+  for (uint i = 0; i < rank; ++i)
     dim[i] = dims[i];
   sparsity_pattern.clear();
-  sparsity_pattern.resize( dim[0] );
+  sparsity_pattern.resize(dim[0]);
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::insert(const uint* num_rows, const uint * const * rows)
