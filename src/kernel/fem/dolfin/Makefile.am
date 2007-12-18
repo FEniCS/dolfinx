@@ -1,6 +1,7 @@
 EXTRA_DIST = dolfin_fem.h \
              assemble.h \
              Assembler.h \
+             pAssembler.h \
              BoundaryCondition.h \
              DirichletBC.h \
              DofMap.h \

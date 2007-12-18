@@ -12,5 +12,6 @@
 #include <dolfin/PeriodicBC.h>
 #include <dolfin/Form.h>
 #include <dolfin/Assembler.h>
+#include <dolfin/pAssembler.h>
 
 #endif
