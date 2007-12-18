@@ -1,7 +1,8 @@
 // Copyright (C) 2007 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
-//  Modified by Magnus Vikstrøm, 2007.
+// Modified by Magnus Vikstrøm, 2007.
+// Modified by Anders Logg, 2007.
 //
 // First added:  2007-05-30
 // Last changed: 2007-12-02
@@ -214,8 +215,8 @@ void MPIMeshCommunicator::receive(MeshFunction<unsigned int>& mesh_function)
   MPI_Bcast(&dim, 1, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
   dolfin_debug1("received meshfunction dim %d", dim);
 
-  if (mesh_function.values)
-    delete [] mesh_function.values;
+  if (mesh_function._values)
+    delete [] mesh_function._values;
   uint* values = new uint[size];
   MPI_Bcast(values, size, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
 
