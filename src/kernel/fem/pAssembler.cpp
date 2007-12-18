@@ -170,6 +170,8 @@ void pAssembler::assembleCells(GenericTensor& A,
   // Cell integral
   ufc::cell_integral* integral = ufc.cell_integrals[0];
 
+  dolfin_debug2("Partitions: dim = %d size = %d", partitions->dim(), partitions->size());
+
   // Assemble over cells
   message("Assembling over %d cells.", mesh.numCells());
   Progress p("Assembling over cells", mesh.numCells());
