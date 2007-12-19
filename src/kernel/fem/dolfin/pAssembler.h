@@ -38,7 +38,7 @@ namespace dolfin
     pAssembler(Mesh& mesh);
 
     /// Constructor
-    pAssembler(Mesh& mesh, MeshFunction<uint>* partitions);
+    pAssembler(Mesh& mesh, MeshFunction<uint>& partitions);
 
     /// Destructor
     ~pAssembler();

@@ -30,7 +30,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-pAssembler::pAssembler(Mesh& mesh, MeshFunction<uint>* partitions) : mesh(mesh), partitions(partitions)
+pAssembler::pAssembler(Mesh& mesh, MeshFunction<uint>& partitions) : mesh(mesh), partitions(&partitions)
 {
   // Do nothing
 }
@@ -169,8 +169,6 @@ void pAssembler::assembleCells(GenericTensor& A,
 
   // Cell integral
   ufc::cell_integral* integral = ufc.cell_integrals[0];
-
-  dolfin_debug2("Partitions: dim = %d size = %d", partitions->dim(), partitions->size());
 
   // Assemble over cells
   message("Assembling over %d cells.", mesh.numCells());
