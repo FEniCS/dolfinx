@@ -19,21 +19,21 @@ namespace dolfin
   class LUSolver : public LinearSolver, public Parametrized
   {
     /// This class defines an interface for a LU solver. The underlying type of 
-    /// LU is defined in default_type.h.
+    /// LU is defined in default_la_types.h.
     
-    public:
+  public:
 
-      LUSolver(){}
-
-      ~LUSolver() {}
-
-      inline uint solve(const Matrix& A, Vector& x, const Vector& b)
-        { return solver.solve(A.mat(), x.vec(), b.vec()); }
-
-    private:
-
-      DefaultLUSolver solver;
-
+    LUSolver(){}
+    
+    ~LUSolver() {}
+    
+    inline uint solve(const Matrix& A, Vector& x, const Vector& b)
+    { return solver.solve(A.mat(), x.vec(), b.vec()); }
+    
+  private:
+    
+    DefaultLUSolver solver;
+    
   };
 }
 
