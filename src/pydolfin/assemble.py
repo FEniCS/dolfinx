@@ -9,7 +9,7 @@ The C++ PDE classes are reimplemented in Python since the C++ classes
 rely on the dolfin::Form class which is not used on the Python side."""
 
 __author__ = "Anders Logg (logg@simula.no)"
-__date__ = "2007-08-15 -- 2007-08-30"
+__date__ = "2007-08-15 -- 2007-12-20"
 __copyright__ = "Copyright (C) 2007 Anders Logg"
 __license__  = "GNU LGPL Version 2.1"
 
@@ -17,7 +17,7 @@ from ffc import *
 from dolfin import *
 
 # JIT assembler
-def assemble(form, mesh, backend=None):
+def assemble(form, mesh, backend=None, return_dofmaps=False):
     "Assemble form over mesh and return tensor"
     
     # Compile form
@@ -36,34 +36,36 @@ def assemble(form, mesh, backend=None):
     # Create dof maps
     dof_maps = DofMapSet(compiled_form, mesh)
 
-    # Assemble compiled form
+    # Create tensor
     rank = compiled_form.rank()
     if rank == 0:
-        s = Scalar()
-        cpp_assemble(s, compiled_form, mesh, coefficients, dof_maps,
-                     cell_domains, exterior_facet_domains, interior_facet_domains,
-                     True)
-        return (s.getval(), dof_maps)
+        tensor = Scalar()
     elif rank == 1:
         if backend:
-            b = backend.createVector()
+            tensor = backend.createVector()
         else:
-            b = Vector()
-        cpp_assemble(b, compiled_form, mesh, coefficients, dof_maps,
-                     cell_domains, exterior_facet_domains, interior_facet_domains,
-                     True)
-        return (b, dof_maps)
+            tensor = Vector()
     elif rank == 2:
         if backend:
-            A = backend.createMatrix()
+            tensor = backend.createMatrix()
         else:
-            A = Matrix()
-        cpp_assemble(A, compiled_form, mesh, coefficients, dof_maps,
-                     cell_domains, exterior_facet_domains, interior_facet_domains,
-                     True)
-        return (A, dof_maps)
+            tensor = Matrix()
     else:
         raise RuntimeError, "Unable to assemble tensors of rank %d." % rank
+
+    # Assemble compiled form
+    cpp_assemble(tensor, compiled_form, mesh, coefficients, dof_maps,
+                 cell_domains, exterior_facet_domains, interior_facet_domains, True)
+
+    # Convert to float for scalars
+    if rank == 0:
+        tensor = tensor.getval()
+
+    # Return value
+    if return_dofmaps:
+        return (tensor, dof_maps)
+    else:
+        return tensor
 
 # Rename FFC Function
 ffc_Function = Function
@@ -145,8 +147,8 @@ class LinearPDE:
 
         begin("Solving linear PDE.");
         # Assemble linear system
-        (A, self.dof_maps) = assemble(self.a, self.mesh)
-        (b, dof_maps_L)    = assemble(self.L, self.mesh)
+        (A, self.dof_maps) = assemble(self.a, self.mesh, return_dofmaps=True)
+        (b, dof_maps_L)    = assemble(self.L, self.mesh, return_dofmaps=True)
 
         # FIXME: Maybe there is a better solution?
         # Compile form, needed to create discrete function
@@ -190,4 +192,3 @@ class LinearPDE:
         end()
 
         return u
-
