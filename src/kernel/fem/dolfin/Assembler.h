@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2007
 //
 // First added:  2007-01-17
-// Last changed: 2007-08-28
+// Last changed: 2007-12-12
 
 #ifndef __ASSEMBLER_H
 #define __ASSEMBLER_H
@@ -104,7 +104,8 @@ namespace dolfin
 
     // Check arguments
     void check(const ufc::form& form,
-               const Array<Function*>& coefficients) const;
+               const Array<Function*>& coefficients,
+               const Mesh& mesh) const;
 
     // Initialize global tensor
     void initGlobalTensor(GenericTensor& A, const DofMapSet& dof_map_set, UFC& ufc, bool reset_tensor) const;

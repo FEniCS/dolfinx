@@ -24,7 +24,6 @@ UFC::UFC(const ufc::form& form, Mesh& mesh, const DofMapSet& dof_map_set) : form
   for (uint i = 0; i < form.num_coefficients(); i++)
     coefficient_elements[i] = form.create_finite_element(form.rank() + i);
 
-
   // Create cell integrals
   cell_integrals = new ufc::cell_integral*[form.num_cell_integrals()];
   for (uint i = 0; i < form.num_cell_integrals(); i++)

@@ -5,7 +5,7 @@
 // Modified by Ola Skavhaug, 2007
 //
 // First added:  2007-01-17
-// Last changed: 2007-12-07
+// Last changed: 2007-12-21
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Array.h>
@@ -129,7 +129,7 @@ void Assembler::assemble(GenericTensor& A, const ufc::form& form,
   // for the PyDOLFIN interface.
   
   // Check arguments
-  check(form, coefficients);
+  check(form, coefficients, mesh);
 
   // Create data structure for local assembly data
   UFC ufc(form, mesh, dof_map_set);
@@ -338,18 +338,33 @@ void Assembler::assembleInteriorFacets(GenericTensor& A,
 }
 //-----------------------------------------------------------------------------
 void Assembler::check(const ufc::form& form,
-                      const Array<Function*>& coefficients) const
+                      const Array<Function*>& coefficients,
+                      const Mesh& mesh) const
 {
   // Check that we get the correct number of coefficients
-  if ( coefficients.size() != form.num_coefficients() )
+  if (coefficients.size() != form.num_coefficients())
     error("Incorrect number of coefficients for form: %d given but %d required.",
-                  coefficients.size(), form.num_coefficients());
+          coefficients.size(), form.num_coefficients());
+  
+  // Check that the cell dimension matches the mesh dimension
+  if (form.rank() + form.num_coefficients() > 0)
+  {
+    ufc::finite_element* element = form.create_finite_element(0);
+    dolfin_assert(element);
+    if (mesh.type().cellType() == CellType::interval && element->cell_shape() != ufc::interval)
+      error("Mesh cell type (intervals) does not match cell type of form.");
+    if (mesh.type().cellType() == CellType::triangle && element->cell_shape() != ufc::triangle)
+      error("Mesh cell type (triangles) does not match cell type of form.");
+    if (mesh.type().cellType() == CellType::tetrahedron && element->cell_shape() != ufc::tetrahedron)
+      error("Mesh cell type (tetrahedra) does not match cell type of form.");
+    delete element;
+  }
 }
 //-----------------------------------------------------------------------------
 void Assembler::initGlobalTensor(GenericTensor& A, const DofMapSet& dof_map_set, UFC& ufc,
                                  bool reset_tensor) const
 {
-  if( reset_tensor )
+  if (reset_tensor)
   {
     GenericSparsityPattern* sparsity_pattern = A.factory().createPattern(); 
     SparsityPatternBuilder::build(*sparsity_pattern, mesh, ufc, dof_map_set);
