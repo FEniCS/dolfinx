@@ -9,7 +9,7 @@ The C++ PDE classes are reimplemented in Python since the C++ classes
 rely on the dolfin::Form class which is not used on the Python side."""
 
 __author__ = "Anders Logg (logg@simula.no)"
-__date__ = "2007-08-15 -- 2007-12-20"
+__date__ = "2007-08-15 -- 2008-01-01"
 __copyright__ = "Copyright (C) 2007 Anders Logg"
 __license__  = "GNU LGPL Version 2.1"
 
@@ -25,7 +25,7 @@ def assemble(form, mesh, backend=None, return_dofmaps=False):
 
     # Extract coefficients
     coefficients = ArrayFunctionPtr()
-    for c in form_data[0].coefficients:
+    for c in form_data.coefficients:
         coefficients.push_back(c.f)
 
     # Create dummy arguments (not yet supported)
@@ -184,7 +184,7 @@ class LinearPDE:
         #self.x.disp()
 
         # Get trial element
-        element = form_data[0].elements[1]
+        element = form_data.elements[1]
   
         # Create Function
         u = Function(element, self.mesh, self.dof_maps.sub(1), self.x, compiled_form)
