@@ -842,6 +842,10 @@ Create discrete function for argument function i of form. ";
 
 %feature("docstring")  dolfin::Function::Function "
 
+Create discrete function for argument function i of form. ";
+
+%feature("docstring")  dolfin::Function::Function "
+
 Create discrete function from sub function. ";
 
 %feature("docstring")  dolfin::Function::Function "
@@ -1054,16 +1058,7 @@ Destructor. ";
 
 %feature("docstring")  dolfin::GenericSparsityPattern::init "
 
-Initialise sparsity pattern for a vector. ";
-
-%feature("docstring")  dolfin::GenericSparsityPattern::init "
-
-Initialise sparsity pattern for a matrix with total number of rows and
-columns. ";
-
-%feature("docstring")  dolfin::GenericSparsityPattern::insert "
-
-Insert non-zero entry. ";
+Initialise sparsity pattern for a generic tensor. ";
 
 %feature("docstring")  dolfin::GenericSparsityPattern::insert "
 
@@ -1081,6 +1076,10 @@ Return array with number of non-zeroes per row. ";
 %feature("docstring")  dolfin::GenericSparsityPattern::numNonZero "
 
 Return total number of non-zeroes. ";
+
+%feature("docstring")  dolfin::GenericSparsityPattern::apply "
+
+Finalize sparsity pattern (needed by most parallel la backends). ";
 
 
 // File: classdolfin_1_1GenericTensor.xml
@@ -1752,7 +1751,7 @@ C++ includes: LU.h ";
 %feature("docstring")  dolfin::LUSolver::LUSolver "
 
 This class defines an interface for a LU solver. The underlying type
-of LU is defined in default_type.h. ";
+of LU is defined in default_la_types.h. ";
 
 %feature("docstring")  dolfin::LUSolver::~LUSolver "";
 
@@ -2929,6 +2928,63 @@ Check if parameter with given key has been defined locally. ";
 Callback for changes in parameter values. ";
 
 
+// File: classdolfin_1_1pAssembler.xml
+%feature("docstring") dolfin::pAssembler "
+
+This class provides automated assembly of linear systems, or more
+generally, assembly of a sparse tensor from a given variational form.
+
+C++ includes: pAssembler.h ";
+
+%feature("docstring")  dolfin::pAssembler::pAssembler "
+
+Constructor. ";
+
+%feature("docstring")  dolfin::pAssembler::pAssembler "
+
+Constructor. ";
+
+%feature("docstring")  dolfin::pAssembler::~pAssembler "
+
+Destructor. ";
+
+%feature("docstring")  dolfin::pAssembler::assemble "
+
+Assemble tensor from given variational form. ";
+
+%feature("docstring")  dolfin::pAssembler::assemble "
+
+Assemble tensor from given variational form over a sub domain. ";
+
+%feature("docstring")  dolfin::pAssembler::assemble "
+
+Assemble tensor from given variational form over sub domains. ";
+
+%feature("docstring")  dolfin::pAssembler::assemble "
+
+Assemble scalar from given variational form. ";
+
+%feature("docstring")  dolfin::pAssembler::assemble "
+
+Assemble scalar from given variational form over a sub domain. ";
+
+%feature("docstring")  dolfin::pAssembler::assemble "
+
+Assemble scalar from given variational form over sub domains. ";
+
+%feature("docstring")  dolfin::pAssembler::assemble "
+
+Assemble tensor from given (UFC) form, coefficients and sub domains.
+This is the main assembly function in DOLFIN. All other assembly
+functions end up calling this function.
+
+The MeshFunction arguments can be used to specify assembly over
+subdomains of the mesh cells, exterior facets and interior facets.
+Either a null pointer or an empty MeshFunction may be used to specify
+that the tensor should be assembled over the entire set of cells or
+facets. ";
+
+
 // File: classdolfin_1_1PeriodicBC.xml
 %feature("docstring") dolfin::PeriodicBC "
 
@@ -3227,16 +3283,8 @@ Destructor. ";
 
 %feature("docstring")  dolfin::SparsityPattern::init "
 
-Initialise sparsity pattern for a vector. ";
-
-%feature("docstring")  dolfin::SparsityPattern::init "
-
 Initialise sparsity pattern for a matrix with total number of rows and
 columns. ";
-
-%feature("docstring")  dolfin::SparsityPattern::insert "
-
-Insert non-zero entry. ";
 
 %feature("docstring")  dolfin::SparsityPattern::insert "
 
@@ -3261,6 +3309,10 @@ Return underlying sparsity pattern. ";
 %feature("docstring")  dolfin::SparsityPattern::disp "
 
 Display sparsity pattern. ";
+
+%feature("docstring")  dolfin::SparsityPattern::apply "
+
+Finalize sparsity pattern (needed by most parallel la backends). ";
 
 
 // File: classstd_1_1vector.xml
@@ -4132,6 +4184,9 @@ domains. ";
 // File: Form_8h.xml
 
 
+// File: pAssembler_8h.xml
+
+
 // File: PeriodicBC_8h.xml
 
 
@@ -4402,107 +4457,107 @@ domains. ";
 // File: RadauQuadrature_8h.xml
 
 
-// File: dir_0f6a826406b982fffcb7321fd9f2a074.xml
+// File: dir_c60082fd3e8c51f3a15f3952cb427112.xml
 
 
-// File: dir_7d7984d67fd94e4cfcff1f740ae1e382.xml
+// File: dir_3d21814d2835459f3da1fa5ed8e43be6.xml
 
 
-// File: dir_3b0a6a12f6f1f9c84c64e4d68e5d7ddf.xml
+// File: dir_7dc50eed79ee42fc373ac6bb06319fbd.xml
 
 
-// File: dir_bd1f94d42f59b0bab5157aa734014633.xml
+// File: dir_3c5d8f0ae3c89286e8a22246a2b15a76.xml
 
 
-// File: dir_4217384d7f977ce8a1ac67fa4eb7f7ec.xml
+// File: dir_18eaa3195393ebcc46a9f8771cee20a5.xml
 
 
-// File: dir_8731c9bd9a36a518aeda956b0f0d72cb.xml
+// File: dir_6374f96629924f58a5a2ed60279b0411.xml
 
 
-// File: dir_9734bbaf9200da2a00c9c2b057bfd461.xml
+// File: dir_b22a99c8566e1d6acc173e4cae03011e.xml
 
 
-// File: dir_f8db092ddb07b76d9705751c47aa386a.xml
+// File: dir_094b78feb97aa792afa27de3ab6e8851.xml
 
 
-// File: dir_5f9238fed4a2ecc531989eeea9520f2d.xml
+// File: dir_62e122ae400d4a77e78a9a3f7efc04c0.xml
 
 
-// File: dir_8607f85f2eb053a9e92acd6747ddf3b9.xml
+// File: dir_732e703d02d4c035a4fa8e44c328d35a.xml
 
 
-// File: dir_074d8cbf322265c89f7f7d91f3aeb1e5.xml
+// File: dir_edf3cb46a7189f41a39af09448d32528.xml
 
 
-// File: dir_b8077a8c12bbbf92766b5850db6d8877.xml
+// File: dir_de8329c7d423dd6cece8ff5263452f6e.xml
 
 
-// File: dir_6c390a866349136806fee780c8e3acd2.xml
+// File: dir_4dad7afb06ba8cd2a53251858c69bdee.xml
 
 
-// File: dir_e3bda9ed258ac30937db06d80bcdf22e.xml
+// File: dir_075e467c95d4f3fd60b7499528d145e1.xml
 
 
-// File: dir_d4dbb1db1726d551d49455a0df7237dc.xml
+// File: dir_2b3f4bfc0249bca1398e000cff0f7055.xml
 
 
-// File: dir_b672e13ae3f89c283e595f72b5f3852e.xml
+// File: dir_b4e54699c910479fc4e660a3ff12bd4f.xml
 
 
-// File: dir_398cb8628aad1991fc41136a47e1afe1.xml
+// File: dir_a91c6b42fbded2c97e3cca96bc9e338b.xml
 
 
-// File: dir_382870a5bbec77aa64d781c1afd60346.xml
+// File: dir_b9413dc616ed1935fd0d07580736cde3.xml
 
 
-// File: dir_8e5a47236e1b23f287ff94e28718d778.xml
+// File: dir_c6d0900b472507d44ee88f83078ce5c3.xml
 
 
-// File: dir_c2544ebf4585406faab9575fb5355cc9.xml
+// File: dir_1a37cdf1998f53e48739adf5a49461f4.xml
 
 
-// File: dir_8a2c912aaf5638dfc979a6157cc2279c.xml
+// File: dir_fb32a8a20aa03205d393e8130a175cb8.xml
 
 
-// File: dir_9866a7e0176d27995ef8c1d94e4bd3a7.xml
+// File: dir_80293c20761785ae8db238456796bd86.xml
 
 
-// File: dir_f7799a203fcf85337476d038a439447d.xml
+// File: dir_49e61b3115d06df2b03473f51f7d6fd2.xml
 
 
-// File: dir_6b499e21a197cf10b5a1b95a2c055ec4.xml
+// File: dir_521fb44ea70108ea024b12df2eee4ae3.xml
 
 
-// File: dir_c0a7d0af3c33d8b1974288b7bb1bd8c6.xml
+// File: dir_fb67b1f8adc11a89c9d303b6bc0a1fb2.xml
 
 
-// File: dir_372db2e923b8c30da6b93151a6f6c88b.xml
+// File: dir_d541c4e4e6d4c140e70fb3ae180d4062.xml
 
 
-// File: dir_c9c5f0e01fd02de9efb463eedd5965b4.xml
+// File: dir_5a2875feb6931a2ab5abb2fad953e225.xml
 
 
-// File: dir_fad5a245bff705f95a9ff554244ab6d3.xml
+// File: dir_400ae4e1767b1e7a4bfa6009f61ce1d0.xml
 
 
-// File: dir_40440b07e86bbf8ec22c3153da8d2bba.xml
+// File: dir_80a347816a1a515e75b53fc9b43e17ad.xml
 
 
-// File: dir_4c316a75d476c6fe31e53410cea44a16.xml
+// File: dir_44518db957486ac038844039e54135bd.xml
 
 
-// File: dir_49192be8e6dc9bbd7f5f48bb525823e1.xml
+// File: dir_da2222faeabe775e3f1d1ceb0345a4e4.xml
 
 
-// File: dir_aa299af9e211e19560d478d4356a82cc.xml
+// File: dir_728f3e7c60a2e644ffbff57e5f6b0a71.xml
 
 
-// File: dir_afbbc5749c2b1c0d6b103370812f04b1.xml
+// File: dir_9fa49838df67b12a4a81a039bfe28786.xml
 
 
-// File: dir_398f98dcea0e0d374dde434e8deba94a.xml
+// File: dir_546c30d5b20fa3712b124c27b9483968.xml
 
 
-// File: dir_8a3204b42563fce7ebae27487c798bd1.xml
+// File: dir_7dae5ed20d2fd5be416fe014f5d93942.xml
 

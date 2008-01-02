@@ -5,7 +5,7 @@
 // Modified by Kristian B. Oelgaard, 2007.
 
 // First added:  2003-11-28
-// Last changed: 2007-08-28
+// Last changed: 2008-01-02
 
 #ifndef __FUNCTION_H
 #define __FUNCTION_H
@@ -55,6 +55,9 @@ namespace dolfin
     /// Create discrete function for argument function i of form
     Function(Mesh& mesh, Vector& x, Form& form, uint i = 1);
 
+    /// Create discrete function for argument function i of form
+    Function(Mesh& mesh, Vector& x, const ufc::form& form, uint i = 1);
+    
     /// Create discrete function for argument function i of form
     Function(Mesh& mesh, DofMap& dof_map, Vector& x, const ufc::form& form, uint i = 1);
 

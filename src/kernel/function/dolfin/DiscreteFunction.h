@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2007.
 //
 // First added:  2007-04-02
-// Last changed: 2007-08-27
+// Last changed: 2008-01-02
 
 #ifndef __DISCRETE_FUNCTION_H
 #define __DISCRETE_FUNCTION_H
@@ -34,6 +34,9 @@ namespace dolfin
 
     /// Create discrete function for argument function i of form
     DiscreteFunction(Mesh& mesh, Vector& x, Form& form, uint i);
+
+    /// Create discrete function for argument function i of form
+    DiscreteFunction(Mesh& mesh, Vector& x, const ufc::form& form, uint i);
 
     /// Create discrete function for argument function i of form
     DiscreteFunction(Mesh& mesh, DofMap& dof_map, Vector& x, const ufc::form& form, uint i);
@@ -96,6 +99,7 @@ namespace dolfin
     // Pointers to local data if owned
     Mesh* local_mesh;
     Vector* local_vector;
+    ufc::dof_map* local_ufc_dof_map;
     DofMap* local_dof_map;
 
   };

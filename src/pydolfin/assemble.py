@@ -75,10 +75,22 @@ class Function(ffc_Function, cpp_Function):
 
     def __init__(self, element, *others):
         "Create Function"
-        # Element is given to constructor of FFC Function (if any)
-        if isinstance(element, FiniteElement) or isinstance(element, MixedElement):
+        # Special case, Function(element, mesh, x), need to create simple form to pass to DOLFIN
+        if (isinstance(element, FiniteElement) or isinstance(element, MixedElement)) and \
+               len(others) == 2 and isinstance(others[0], Mesh) and isinstance(others[1], Vector):
+            # Create simplest possible form
+            if element.value_dimension(0) > 1:
+                form = ffc_Function(element)[0]*dx
+            else:
+                form = ffc_Function(element)*dx
+            (compiled_form, module, form_data) = jit(form)
+            ffc_Function.__init__(self, element)
+            cpp_Function.__init__(self, others[0], others[1], compiled_form, 0)
+        # If we have an element, then give element to FFC and the rest to DOLFIN
+        elif isinstance(element, FiniteElement) or isinstance(element, MixedElement):
             ffc_Function.__init__(self, element)
             cpp_Function.__init__(self, *others)
+        # Otherwise give all to DOLFIN
         else:
             cpp_Function.__init__(self, *((element,) + others))
 
@@ -154,7 +166,7 @@ class LinearPDE:
         # Compile form, needed to create discrete function
         (compiled_form, module, form_data) = jit(self.a)
 
-            # Apply boundary conditions
+        # Apply boundary conditions
         for bc in self.bcs:
             bc.apply(A, b, self.dof_maps.sub(1), compiled_form)
 

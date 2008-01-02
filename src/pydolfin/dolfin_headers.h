@@ -121,6 +121,7 @@
 %include "dolfin/PeriodicBC.h"
 %include "dolfin/Form.h"
 %include "dolfin/Assembler.h"
+%include "dolfin/pAssembler.h"
 
 // DOLFIN headers included from mf
 %include "dolfin/MatrixFactory.h"
