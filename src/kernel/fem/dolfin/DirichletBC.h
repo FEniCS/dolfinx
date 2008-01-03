@@ -99,9 +99,6 @@ namespace dolfin
     void apply(GenericMatrix& A, GenericVector& b, const Form& form);
 
     /// Apply boundary condition to linear system
-    void apply(GenericMatrix& A, GenericVector& b, const ufc::form& form);
-
-    /// Apply boundary condition to linear system
     void apply(GenericMatrix& A, GenericVector& b, const DofMap& dof_map, const ufc::form& form);
 
     /// Apply boundary condition to linear system for a nonlinear problem
@@ -109,6 +106,9 @@ namespace dolfin
 
     /// Apply boundary condition to linear system for a nonlinear problem
     void apply(GenericMatrix& A, GenericVector& b, const GenericVector& x, const DofMap& dof_map, const ufc::form& form);
+
+    /// Return mesh
+    Mesh& mesh();
 
   private:
 
@@ -123,7 +123,7 @@ namespace dolfin
     Function& g;
 
     // The mesh
-    Mesh& mesh;
+    Mesh& _mesh;
 
     // Sub domain markers (if any)
     MeshFunction<uint>* sub_domains;

@@ -75,17 +75,22 @@ class Function(ffc_Function, cpp_Function):
 
     def __init__(self, element, *others):
         "Create Function"
-        # Special case, Function(element, mesh, x), need to create simple form to pass to DOLFIN
+        # Special case, Function(element, mesh, x), need to create simple form to get arguments
         if (isinstance(element, FiniteElement) or isinstance(element, MixedElement)) and \
                len(others) == 2 and isinstance(others[0], Mesh) and isinstance(others[1], Vector):
+            mesh = others[0]
+            x = others[1]
             # Create simplest possible form
             if element.value_dimension(0) > 1:
-                form = ffc_Function(element)[0]*dx
+                form = TestFunction(element)[0]*dx
             else:
-                form = ffc_Function(element)*dx
+                form = TestFunction(element)*dx
+            # Compile form and create dof map
             (compiled_form, module, form_data) = jit(form)
+            dof_maps = DofMapSet(compiled_form, mesh)
+            # Initialize FFC and DOLFIN Function
             ffc_Function.__init__(self, element)
-            cpp_Function.__init__(self, others[0], others[1], compiled_form, 0)
+            cpp_Function.__init__(self, mesh, x, dof_maps.sub(0), compiled_form, 0)
         # If we have an element, then give element to FFC and the rest to DOLFIN
         elif isinstance(element, FiniteElement) or isinstance(element, MixedElement):
             ffc_Function.__init__(self, element)
@@ -168,7 +173,8 @@ class LinearPDE:
 
         # Apply boundary conditions
         for bc in self.bcs:
-            bc.apply(A, b, self.dof_maps.sub(1), compiled_form)
+            cpp_DirichletBC.apply(bc, A, b, self.dof_maps.sub(1), compiled_form)
+            # bc.apply(A, b, self.dof_maps.sub(1), compiled_form)
 
         #message("Matrix:")
         #A.disp()
@@ -199,7 +205,7 @@ class LinearPDE:
         element = form_data.elements[1]
   
         # Create Function
-        u = Function(element, self.mesh, self.dof_maps.sub(1), self.x, compiled_form)
+        u = Function(element, self.mesh, self.x, self.dof_maps.sub(1), compiled_form)
 
         end()
 
@@ -218,8 +224,8 @@ class DirichletBC(cpp_DirichletBC):
         # Compile form
         (compiled_form, module, form_data) = jit(form)        
 
-        # FIXME: Should maybe use DofMapSet as above in assemble
-        # FIXME: and remove special-trick apply() function used below
-
-        # Create DofMap
-        cpp_DirichletBC.apply(self, A, b, compiled_form)
+        # Create dof maps
+        dof_maps = DofMapSet(compiled_form, self.mesh())
+        
+        # Apply boundary condition
+        cpp_DirichletBC.apply(self, A, b, dof_maps.sub(1), compiled_form)

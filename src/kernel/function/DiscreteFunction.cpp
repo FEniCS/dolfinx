@@ -1,10 +1,10 @@
-// Copyright (C) 2007 Anders Logg.
+// Copyright (C) 2007-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells, 2007.
 //
 // First added:  2007-04-02
-// Last changed: 2008-01-02
+// Last changed: 2008-01-03
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Mesh.h>
@@ -25,7 +25,7 @@ using namespace dolfin;
 DiscreteFunction::DiscreteFunction(Mesh& mesh, Vector& x, Form& form, uint i)
   : GenericFunction(mesh),
     x(&x), finite_element(0), dof_map(0), dofs(0),
-    local_mesh(0), local_vector(0), local_ufc_dof_map(0), local_dof_map(0)
+    local_mesh(0), local_vector(0), local_dof_map(0)
 {
   // Update dof maps
   form.updateDofMaps(mesh);
@@ -35,28 +35,11 @@ DiscreteFunction::DiscreteFunction(Mesh& mesh, Vector& x, Form& form, uint i)
   init(mesh, x, form.form(), i);
 }
 //-----------------------------------------------------------------------------
-DiscreteFunction::DiscreteFunction(Mesh& mesh, Vector& x,
-                                   const ufc::form& form, uint i)
-  : GenericFunction(mesh),
-    x(&x), finite_element(0), dof_map(0), dofs(0),
-    local_mesh(0), local_vector(0), local_ufc_dof_map(0), local_dof_map(0)
-{
-  // Create dof map
-  local_ufc_dof_map = form.create_dof_map(i);
-  dof_map = new DofMap(*local_ufc_dof_map, mesh);
-
-  // Initialise function
-  init(mesh, x, form, i);
-
-  // Assume responsibility for data
-  local_dof_map = dof_map;
-}
-//-----------------------------------------------------------------------------
-DiscreteFunction::DiscreteFunction(Mesh& mesh, DofMap& dof_map, Vector& x, 
+DiscreteFunction::DiscreteFunction(Mesh& mesh, Vector& x, DofMap& dof_map,
                                    const ufc::form& form, uint i)
   : GenericFunction(mesh),
     x(&x), finite_element(0), dof_map(&dof_map), dofs(0),
-    local_mesh(0), local_vector(0), local_ufc_dof_map(0), local_dof_map(0)
+    local_mesh(0), local_vector(0), local_dof_map(0)
 {
   init(mesh, x, form, i);
 }
@@ -66,7 +49,7 @@ DiscreteFunction::DiscreteFunction(Mesh& mesh, Vector& x,
                                    std::string dof_map_signature)
   : GenericFunction(mesh),
     x(&x), finite_element(0), dof_map(0), dofs(0),
-    local_mesh(0), local_vector(0), local_ufc_dof_map(0), local_dof_map(0)
+    local_mesh(0), local_vector(0), local_dof_map(0)
 {
   // Create finite element
   finite_element = ElementLibrary::create_finite_element(finite_element_signature);
@@ -97,7 +80,7 @@ DiscreteFunction::DiscreteFunction(Mesh& mesh, Vector& x,
 DiscreteFunction::DiscreteFunction(SubFunction& sub_function)
   : GenericFunction(sub_function.f->mesh),
     x(0), finite_element(0), dof_map(0), dofs(0),
-    local_mesh(0), local_vector(0), local_ufc_dof_map(0), local_dof_map(0)
+    local_mesh(0), local_vector(0), local_dof_map(0)
 {
   // Create sub system
   SubSystem sub_system(sub_function.i);
@@ -140,7 +123,7 @@ DiscreteFunction::DiscreteFunction(SubFunction& sub_function)
 DiscreteFunction::DiscreteFunction(const DiscreteFunction& f)
   : GenericFunction(f.mesh),
     x(0), finite_element(0), dof_map(0), dofs(0),
-    local_mesh(0), local_vector(0), local_ufc_dof_map(0), local_dof_map(0)
+    local_mesh(0), local_vector(0), local_dof_map(0)
 {
   cout << "Copy constructor for discrete function" << endl;
 
@@ -183,9 +166,6 @@ DiscreteFunction::~DiscreteFunction()
 
   if (local_vector)
     delete local_vector;
-
-  if (local_ufc_dof_map)
-    delete local_ufc_dof_map;
 
   if (local_dof_map)
     delete local_dof_map;

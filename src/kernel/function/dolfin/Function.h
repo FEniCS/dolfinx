@@ -5,7 +5,7 @@
 // Modified by Kristian B. Oelgaard, 2007.
 
 // First added:  2003-11-28
-// Last changed: 2008-01-02
+// Last changed: 2008-01-03
 
 #ifndef __FUNCTION_H
 #define __FUNCTION_H
@@ -56,10 +56,7 @@ namespace dolfin
     Function(Mesh& mesh, Vector& x, Form& form, uint i = 1);
 
     /// Create discrete function for argument function i of form
-    Function(Mesh& mesh, Vector& x, const ufc::form& form, uint i = 1);
-    
-    /// Create discrete function for argument function i of form
-    Function(Mesh& mesh, DofMap& dof_map, Vector& x, const ufc::form& form, uint i = 1);
+    Function(Mesh& mesh, Vector& x, DofMap& dof_map, const ufc::form& form, uint i = 1);
 
     /// Create discrete function from sub function
     Function(SubFunction sub_function);
@@ -77,7 +74,7 @@ namespace dolfin
     void init(Mesh& mesh, Vector& x, Form& form, uint i = 1);
 
     /// Create discrete function for argument function i of form
-    void init(Mesh& mesh, DofMap& dof_map, Vector& x, const ufc::form& form, uint i = 1);
+    void init(Mesh& mesh, Vector& x, DofMap& dof_map, const ufc::form& form, uint i = 1);
 
     /// Return the type of function
     Type type() const;
