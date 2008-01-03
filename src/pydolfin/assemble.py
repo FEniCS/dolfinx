@@ -78,7 +78,7 @@ class Function(ffc_Function, cpp_Function):
         # Special case, Function(element, mesh, x), need to create simple form to get arguments
         if (isinstance(element, FiniteElement) or isinstance(element, MixedElement)) and \
                len(others) == 2 and isinstance(others[0], Mesh) and isinstance(others[1], Vector):
-            self.mesh = others[0]
+            mesh = others[0]
             self.x = others[1]
             # Create simplest possible form
             if element.value_dimension(0) > 1:
@@ -87,10 +87,10 @@ class Function(ffc_Function, cpp_Function):
                 form = TestFunction(element)*dx
             # Compile form and create dof map
             (compiled_form, module, form_data) = jit(form)
-            self.dof_maps = DofMapSet(compiled_form, self.mesh)
+            self.dof_maps = DofMapSet(compiled_form, mesh)
             # Initialize FFC and DOLFIN Function
             ffc_Function.__init__(self, element)
-            cpp_Function.__init__(self, self.mesh, self.x, self.dof_maps.sub(0), compiled_form, 0)
+            cpp_Function.__init__(self, mesh, self.x, self.dof_maps.sub(0), compiled_form, 0)
         # If we have an element, then give element to FFC and the rest to DOLFIN
         elif isinstance(element, FiniteElement) or isinstance(element, MixedElement):
             ffc_Function.__init__(self, element)

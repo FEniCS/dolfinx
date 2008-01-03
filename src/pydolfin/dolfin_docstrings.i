@@ -494,6 +494,10 @@ Apply boundary condition to linear system for a nonlinear problem. ";
 
 Apply boundary condition to linear system for a nonlinear problem. ";
 
+%feature("docstring")  dolfin::DirichletBC::mesh "
+
+Return mesh. ";
+
 
 // File: classdolfin_1_1DofMap.xml
 %feature("docstring") dolfin::DofMap "
@@ -831,10 +835,6 @@ Create user-defined function (evaluation operator must be overloaded).
 %feature("docstring")  dolfin::Function::Function "
 
 Create constant function from given value. ";
-
-%feature("docstring")  dolfin::Function::Function "
-
-Create discrete function for argument function i of form. ";
 
 %feature("docstring")  dolfin::Function::Function "
 
