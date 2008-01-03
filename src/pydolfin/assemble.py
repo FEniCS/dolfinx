@@ -204,3 +204,22 @@ class LinearPDE:
         end()
 
         return u
+
+# DirichletBC class (need to compile form before calling constructor)
+class DirichletBC(cpp_DirichletBC):
+
+    def __init__(self, *args):
+        "Create Dirichlet boundary condition"
+        cpp_DirichletBC.__init__(self, *args)
+
+    def apply(self, A, b, form):
+        "Apply boundary condition to linear system"
+        
+        # Compile form
+        (compiled_form, module, form_data) = jit(form)        
+
+        # FIXME: Should maybe use DofMapSet as above in assemble
+        # FIXME: and remove special-trick apply() function used below
+
+        # Create DofMap
+        cpp_DirichletBC.apply(self, A, b, compiled_form)

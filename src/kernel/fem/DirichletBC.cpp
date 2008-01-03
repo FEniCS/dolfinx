@@ -108,6 +108,20 @@ void DirichletBC::apply(GenericMatrix& A, GenericVector& b, const Form& form)
   apply(A, b, 0, form.dofMaps()[1], form.form());
 }
 //-----------------------------------------------------------------------------
+void DirichletBC::apply(GenericMatrix& A, GenericVector& b, const ufc::form& form)
+{
+  // FIXME: This is needed for PyDOLFIN, maybe we need to find another way
+  // FIXME: to solve this, not very efficient or nice to create the DofMap
+  // FIXME: every time
+  
+  ufc::dof_map* ufc_dof_map = form.create_dof_map(1);
+  DofMap dof_map(*ufc_dof_map, mesh);
+  
+  apply(A, b, 0, dof_map, form);
+
+  delete ufc_dof_map;
+}
+//-----------------------------------------------------------------------------
 void DirichletBC::apply(GenericMatrix& A, GenericVector& b, const DofMap& dof_map,
                         const ufc::form& form)
 {

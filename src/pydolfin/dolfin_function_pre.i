@@ -4,4 +4,3 @@
 %rename(cpp_FacetNormal) dolfin::FacetNormal;
 %rename(cpp_MeshSize) dolfin::MeshSize;
 %rename(cpp_AvgMeshSize) dolfin::AvgMeshSize;
-
