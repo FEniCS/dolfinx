@@ -87,10 +87,10 @@ class Function(ffc_Function, cpp_Function):
                 form = TestFunction(element)*dx
             # Compile form and create dof map
             (compiled_form, module, form_data) = jit(form)
-            dof_maps = DofMapSet(compiled_form, mesh)
+            self.dof_maps = DofMapSet(compiled_form, mesh)
             # Initialize FFC and DOLFIN Function
             ffc_Function.__init__(self, element)
-            cpp_Function.__init__(self, mesh, x, dof_maps.sub(0), compiled_form, 0)
+            cpp_Function.__init__(self, mesh, x, self.dof_maps.sub(0), compiled_form, 0)
         # If we have an element, then give element to FFC and the rest to DOLFIN
         elif isinstance(element, FiniteElement) or isinstance(element, MixedElement):
             ffc_Function.__init__(self, element)
@@ -174,7 +174,6 @@ class LinearPDE:
         # Apply boundary conditions
         for bc in self.bcs:
             cpp_DirichletBC.apply(bc, A, b, self.dof_maps.sub(1), compiled_form)
-            # bc.apply(A, b, self.dof_maps.sub(1), compiled_form)
 
         #message("Matrix:")
         #A.disp()

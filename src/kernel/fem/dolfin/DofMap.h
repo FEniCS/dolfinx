@@ -15,7 +15,7 @@
 
 namespace dolfin
 {
-    class SubSytem;
+  class SubSytem;
 
   /// This class handles the mapping of degrees of freedom.
   /// It wraps a ufc::dof_map on a specific mesh and provides
@@ -52,15 +52,15 @@ namespace dolfin
 
     /// Return the dimension of the local finite element function space
     unsigned int local_dimension() const
-      { return ufc_dof_map->local_dimension(); }
+    { return ufc_dof_map->local_dimension(); }
 
     /// Return the dimension of the local finite element function space
     unsigned int macro_local_dimension() const
-      { return ufc_dof_map->local_dimension(); }
+    { return ufc_dof_map->local_dimension(); }
 
     /// Return number of facet dofs
     unsigned int num_facet_dofs() const
-      { return ufc_dof_map->num_facet_dofs(); }
+    { return ufc_dof_map->num_facet_dofs(); }
 
     /// Tabulate the local-to-global mapping of dofs on a cell
     void tabulate_dofs(uint* dofs, Cell& cell) 
@@ -71,7 +71,7 @@ namespace dolfin
 
     /// Tabulate local-local facet dofs
     void tabulate_facet_dofs(uint* dofs, uint local_facet) const
-      { ufc_dof_map->tabulate_facet_dofs(dofs, local_facet); }
+    { ufc_dof_map->tabulate_facet_dofs(dofs, local_facet); }
 
     // FIXME: Can this function eventually be removed?
     /// Tabulate the local-to-global mapping of dofs on a ufc cell
