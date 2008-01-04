@@ -60,8 +60,6 @@ dolfin::uint MPIManager::processNumber()
   int this_process;
   MPI_Comm_rank(MPI_COMM_WORLD, &this_process);
 
-  dolfin_debug1("MPIManager: Process number is %d", this_process);
-
   return static_cast<uint>(this_process);
 }
 //-----------------------------------------------------------------------------
