@@ -17,6 +17,8 @@
       PyErr_SetString(PyExc_Exception, const_cast<char*>(e.what()));
       return NULL;
    }
+   // director exceptions
+   catch (Swig::DirectorException &e) {
+     SWIG_fail;
+   }
 }
-
-
