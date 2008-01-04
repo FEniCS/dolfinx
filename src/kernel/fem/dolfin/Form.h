@@ -50,6 +50,7 @@ namespace dolfin
 
     // Local degree of freedom maps (locally owned)
     DofMapSet* local_dof_map_set;
+
   };
 
 }

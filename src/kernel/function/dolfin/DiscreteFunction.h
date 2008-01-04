@@ -1,10 +1,10 @@
-// Copyright (C) 2007 Anders Logg.
+// Copyright (C) 2007-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells, 2007.
 //
 // First added:  2007-04-02
-// Last changed: 2007-08-27
+// Last changed: 2008-01-03
 
 #ifndef __DISCRETE_FUNCTION_H
 #define __DISCRETE_FUNCTION_H
@@ -36,7 +36,7 @@ namespace dolfin
     DiscreteFunction(Mesh& mesh, Vector& x, Form& form, uint i);
 
     /// Create discrete function for argument function i of form
-    DiscreteFunction(Mesh& mesh, DofMap& dof_map, Vector& x, const ufc::form& form, uint i);
+    DiscreteFunction(Mesh& mesh, Vector& x, DofMap& dof_map, const ufc::form& form, uint i);
 
     /// Create discrete function from given data and assume responsibility for data
     DiscreteFunction(Mesh& mesh, Vector& x, std::string finite_element_signature, std::string dof_map_signature);

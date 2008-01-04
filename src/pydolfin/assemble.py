@@ -9,7 +9,7 @@ The C++ PDE classes are reimplemented in Python since the C++ classes
 rely on the dolfin::Form class which is not used on the Python side."""
 
 __author__ = "Anders Logg (logg@simula.no)"
-__date__ = "2007-08-15 -- 2007-08-30"
+__date__ = "2007-08-15 -- 2008-01-01"
 __copyright__ = "Copyright (C) 2007 Anders Logg"
 __license__  = "GNU LGPL Version 2.1"
 
@@ -17,7 +17,7 @@ from ffc import *
 from dolfin import *
 
 # JIT assembler
-def assemble(form, mesh, backend=None):
+def assemble(form, mesh, backend=None, return_dofmaps=False):
     "Assemble form over mesh and return tensor"
     
     # Compile form
@@ -25,7 +25,7 @@ def assemble(form, mesh, backend=None):
 
     # Extract coefficients
     coefficients = ArrayFunctionPtr()
-    for c in form_data[0].coefficients:
+    for c in form_data.coefficients:
         coefficients.push_back(c.f)
 
     # Create dummy arguments (not yet supported)
@@ -36,35 +36,36 @@ def assemble(form, mesh, backend=None):
     # Create dof maps
     dof_maps = DofMapSet(compiled_form, mesh)
 
-    # Figure out linear algebra backend
-    if backend is None:
-        backend = Vector().factory() # FIXME: Figure out a better way of doing this
-    assert isinstance(backend, LinearAlgebraFactory)
-
-    # Assemble compiled form
+    # Create tensor
     rank = compiled_form.rank()
     if rank == 0:
-        s = Scalar()
-        cpp_assemble(s, compiled_form, mesh, coefficients, dof_maps,
-                     cell_domains, exterior_facet_domains, interior_facet_domains,
-                     True)
-        return (s.getval(), dof_maps)
+        tensor = Scalar()
     elif rank == 1:
-        b = backend.createVector()
-        print b
-        cpp_assemble(b, compiled_form, mesh, coefficients, dof_maps,
-                     cell_domains, exterior_facet_domains, interior_facet_domains,
-                     True)
-        return (b, dof_maps)
+        if backend:
+            tensor = backend.createVector()
+        else:
+            tensor = Vector()
     elif rank == 2:
-        A = backend.createMatrix()
-        print A
-        cpp_assemble(A, compiled_form, mesh, coefficients, dof_maps,
-                     cell_domains, exterior_facet_domains, interior_facet_domains,
-                     True)
-        return (A, dof_maps)
+        if backend:
+            tensor = backend.createMatrix()
+        else:
+            tensor = Matrix()
     else:
         raise RuntimeError, "Unable to assemble tensors of rank %d." % rank
+
+    # Assemble compiled form
+    cpp_assemble(tensor, compiled_form, mesh, coefficients, dof_maps,
+                 cell_domains, exterior_facet_domains, interior_facet_domains, True)
+
+    # Convert to float for scalars
+    if rank == 0:
+        tensor = tensor.getval()
+
+    # Return value
+    if return_dofmaps:
+        return (tensor, dof_maps)
+    else:
+        return tensor
 
 # Rename FFC Function
 ffc_Function = Function
@@ -74,10 +75,27 @@ class Function(ffc_Function, cpp_Function):
 
     def __init__(self, element, *others):
         "Create Function"
-        # Element is given to constructor of FFC Function (if any)
-        if isinstance(element, FiniteElement) or isinstance(element, MixedElement):
+        # Special case, Function(element, mesh, x), need to create simple form to get arguments
+        if (isinstance(element, FiniteElement) or isinstance(element, MixedElement)) and \
+               len(others) == 2 and isinstance(others[0], Mesh) and isinstance(others[1], Vector):
+            mesh = others[0]
+            self.x = others[1]
+            # Create simplest possible form
+            if element.value_dimension(0) > 1:
+                form = TestFunction(element)[0]*dx
+            else:
+                form = TestFunction(element)*dx
+            # Compile form and create dof map
+            (compiled_form, module, form_data) = jit(form)
+            self.dof_maps = DofMapSet(compiled_form, mesh)
+            # Initialize FFC and DOLFIN Function
+            ffc_Function.__init__(self, element)
+            cpp_Function.__init__(self, mesh, self.x, self.dof_maps.sub(0), compiled_form, 0)
+        # If we have an element, then give element to FFC and the rest to DOLFIN
+        elif isinstance(element, FiniteElement) or isinstance(element, MixedElement):
             ffc_Function.__init__(self, element)
             cpp_Function.__init__(self, *others)
+        # Otherwise give all to DOLFIN
         else:
             cpp_Function.__init__(self, *((element,) + others))
 
@@ -146,16 +164,16 @@ class LinearPDE:
 
         begin("Solving linear PDE.");
         # Assemble linear system
-        (A, self.dof_maps) = assemble(self.a, self.mesh)
-        (b, dof_maps_L)    = assemble(self.L, self.mesh)
+        (A, self.dof_maps) = assemble(self.a, self.mesh, return_dofmaps=True)
+        (b, dof_maps_L)    = assemble(self.L, self.mesh, return_dofmaps=True)
 
         # FIXME: Maybe there is a better solution?
         # Compile form, needed to create discrete function
         (compiled_form, module, form_data) = jit(self.a)
 
-            # Apply boundary conditions
+        # Apply boundary conditions
         for bc in self.bcs:
-            bc.apply(A, b, self.dof_maps.sub(1), compiled_form)
+            cpp_DirichletBC.apply(bc, A, b, self.dof_maps.sub(1), compiled_form)
 
         #message("Matrix:")
         #A.disp()
@@ -178,17 +196,35 @@ class LinearPDE:
 
         # Solver linear system
         solver.solve(A, self.x, b)
-
+        
         #message("Solution vector:")
         #self.x.disp()
 
         # Get trial element
-        element = form_data[0].elements[1]
+        element = form_data.elements[1]
   
         # Create Function
-        u = Function(element, self.mesh, self.dof_maps.sub(1), self.x, compiled_form)
+        u = Function(element, self.mesh, self.x, self.dof_maps.sub(1), compiled_form)
 
         end()
 
         return u
 
+# DirichletBC class (need to compile form before calling constructor)
+class DirichletBC(cpp_DirichletBC):
+
+    def __init__(self, *args):
+        "Create Dirichlet boundary condition"
+        cpp_DirichletBC.__init__(self, *args)
+
+    def apply(self, A, b, form):
+        "Apply boundary condition to linear system"
+        
+        # Compile form
+        (compiled_form, module, form_data) = jit(form)        
+
+        # Create dof maps
+        dof_maps = DofMapSet(compiled_form, self.mesh())
+        
+        # Apply boundary condition
+        cpp_DirichletBC.apply(self, A, b, dof_maps.sub(1), compiled_form)

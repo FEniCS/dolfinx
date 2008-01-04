@@ -4,10 +4,10 @@
 # The sub domains for the different boundary conditions are computed
 # by the demo program in src/demo/subdomains.
 #
-# Original implementation: ../cpp/main.cpp by Anders Logg
-#
+# Modified by Anders Logg, 2008
+
 __author__ = "Kristian B. Oelgaard (k.b.oelgaard@tudelft.nl)"
-__date__ = "2007-11-14 -- 2007-12-07"
+__date__ = "2007-11-14 -- 2008-01-04"
 __copyright__ = "Copyright (C) 2007 Kristian B. Oelgaard"
 __license__  = "GNU LGPL Version 2.1"
 
@@ -26,38 +26,30 @@ velocity = Function(vector, "../velocity.xml.gz");
 f = Function(scalar, mesh, 0.0)
 u0 = Function(scalar, mesh, 0.0)
 
-# Parameters for time-stepping
+# Parameters
 T = 1.0
 k = 0.05
 t = k
-
-# Define variational problem
-# Test and trial functions
-v  = TestFunction(scalar)
-u1 = TrialFunction(scalar)
-
-# Diffusion parameter
 c = 0.005
 
-# Bilinear form
-a = v*u1*dx + 0.5*k*(v*dot(velocity, grad(u1))*dx + c*dot(grad(v), grad(u1))*dx)
+# Test and trial functions
+v = TestFunction(scalar)
+u = TrialFunction(scalar)
+
+# Functions
+u0 = Function(scalar, mesh, Vector())
+u1 = Function(scalar, mesh, Vector())
+
+# Variational problem
+a = v*u*dx + 0.5*k*(v*dot(velocity, grad(u))*dx + c*dot(grad(v), grad(u))*dx)
+L = v*u0*dx - 0.5*k*(v*dot(velocity, grad(u0))*dx + c*dot(grad(v), grad(u0))*dx) + k*v*f*dx
 
 # Set up boundary condition
 g = Function(mesh, 1.0)
 bc = DirichletBC(g, sub_domains, 1)
 
-# Linear system
 # Assemble matrix
 A = assemble(a, mesh)
-
-b = Vector()
-x = Vector()
-
-# Compile form, needed to create discrete function
-(compiled_form, module, form_data) = jit(a)
-
-# Solution vector
-sol = Function(scalar, mesh, x, compiled_form)
 
 # Output file
 out_file = File("temperature.pvd")
@@ -65,27 +57,19 @@ out_file = File("temperature.pvd")
 # Time-stepping
 while ( t < T ):
 
-    # Linear form (update RHS)
-    L = v*u0*dx - 0.5*k*(v*dot(velocity, grad(u0))*dx + c*dot(grad(v), grad(u0))*dx) + k*v*f*dx
-
     # Assemble vector and apply boundary conditions
     b = assemble(L, mesh)
-    bc.apply(A, b, compiled_form)
+    bc.apply(A, b, a)
     
     # Solve the linear system
-    solve(A, x, b)
+    solve(A, u1.vector(), b)
     
     # Save the solution to file
-    out_file << sol
+    out_file << u1
 
     # Move to next interval
     t += k
-    u0 = sol
+    u0.assign(u1)
 
 # Plot solution
-plot(sol)
-
-
-
-
-
+plot(u1)

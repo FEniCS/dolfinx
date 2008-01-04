@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells 2005-2007.
 //
 // First added:  2003-11-28
-// Last changed: 2007-08-27
+// Last changed: 2008-01-03
 //
 // The class Function serves as the envelope class and holds a pointer
 // to a letter class that is a subclass of GenericFunction. All the
@@ -47,11 +47,11 @@ Function::Function(Mesh& mesh, Vector& x, Form& form, uint i)
   f = new DiscreteFunction(mesh, x, form, i);
 }
 //-----------------------------------------------------------------------------
-Function::Function(Mesh& mesh, DofMap& dof_map, Vector& x, const ufc::form& form, uint i)
+Function::Function(Mesh& mesh, Vector& x, DofMap& dof_map, const ufc::form& form, uint i)
   : Variable("u", "discrete function"),
     f(0), _type(discrete), _cell(0), _facet(-1)
 {
-  f = new DiscreteFunction(mesh, dof_map, x, form, i);
+  f = new DiscreteFunction(mesh, x, dof_map, form, i);
 }
 //-----------------------------------------------------------------------------
 Function::Function(const std::string filename)
@@ -103,12 +103,12 @@ void Function::init(Mesh& mesh, Vector& x, Form& form, uint i)
   _type = discrete;
 }
 //-----------------------------------------------------------------------------
-void Function::init(Mesh& mesh, DofMap& dof_map, Vector& x, const ufc::form& form, uint i)
+void Function::init(Mesh& mesh, Vector& x, DofMap& dof_map, const ufc::form& form, uint i)
 {
   if (f)
     delete f;
 
-  f = new DiscreteFunction(mesh, dof_map, x, form, i);
+  f = new DiscreteFunction(mesh, x, dof_map, form, i);
   
   rename("u", "discrete function");
   _type = discrete;

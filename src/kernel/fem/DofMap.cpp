@@ -38,7 +38,7 @@ DofMap::DofMap(const std::string signature, Mesh& mesh)
 //-----------------------------------------------------------------------------
 DofMap::~DofMap()
 {
-  if(ufc_dof_map_local)
+  if (ufc_dof_map_local)
     delete ufc_dof_map_local;
 }
 //-----------------------------------------------------------------------------

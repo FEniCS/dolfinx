@@ -4,7 +4,7 @@
 // Modified by Kristian Oelgaard, 2007
 //
 // First added:  2007-04-10
-// Last changed: 2007-12-08
+// Last changed: 2008-01-02
 
 #ifndef __DIRICHLET_BC_H
 #define __DIRICHLET_BC_H
@@ -107,6 +107,9 @@ namespace dolfin
     /// Apply boundary condition to linear system for a nonlinear problem
     void apply(GenericMatrix& A, GenericVector& b, const GenericVector& x, const DofMap& dof_map, const ufc::form& form);
 
+    /// Return mesh
+    Mesh& mesh();
+
   private:
 
     // Initialize sub domain markers    
@@ -120,7 +123,7 @@ namespace dolfin
     Function& g;
 
     // The mesh
-    Mesh& mesh;
+    Mesh& _mesh;
 
     // Sub domain markers (if any)
     MeshFunction<uint>* sub_domains;
