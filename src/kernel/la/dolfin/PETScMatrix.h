@@ -12,9 +12,11 @@
 
 #ifdef HAVE_PETSC_H
 
+#include <petscmat.h>
+
 #include <dolfin/constants.h>
 #include <dolfin/dolfin_log.h>
-#include <dolfin/PETScManager.h>
+#include <dolfin/PETScObject.h>
 #include <dolfin/Variable.h>
 #include <dolfin/GenericMatrix.h>
 #include <dolfin/PETScFactory.h>
@@ -36,7 +38,7 @@ namespace dolfin
   /// access the PETSc Mat pointer using the function mat() and
   /// use the standard PETSc interface.
 
-  class PETScMatrix : public GenericMatrix, public Variable
+  class PETScMatrix : public GenericMatrix, public PETScObject, public Variable
   {
   public:
 

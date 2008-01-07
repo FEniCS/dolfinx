@@ -11,7 +11,6 @@
 #include <iostream>
 
 #include <dolfin/dolfin_log.h>
-#include <dolfin/PETScManager.h>
 #include <dolfin/Vector.h>
 #include <dolfin/Matrix.h>
 #include <dolfin/PETScKrylovMatrix.h>
@@ -19,6 +18,7 @@
 using namespace dolfin;
 
 // Mult function
+// FIXME: Add an explanation why this function is needed
 namespace dolfin
 {
  
@@ -34,19 +34,14 @@ namespace dolfin
 }
 
 //-----------------------------------------------------------------------------
-PETScKrylovMatrix::PETScKrylovMatrix()
-  : A(0)
+PETScKrylovMatrix::PETScKrylovMatrix(): A(0)
 {
-  // Initialize PETSc
-  PETScManager::init();
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 PETScKrylovMatrix::PETScKrylovMatrix(const PETScVector& x, const PETScVector& y)
   : A(0)
 {
-  // Initialize PETSc
-  PETScManager::init();
-
   // Create PETSc matrix
   init(x, y);
 }

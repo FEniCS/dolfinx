@@ -9,13 +9,7 @@
 
 #ifdef HAVE_PETSC_H
 
-#include <dolfin/PETScManager.h>
-
-#if PETSC_VERSION_MAJOR==2 && PETSC_VERSION_MINOR==3 && PETSC_VERSION_SUBMINOR==0
-  #include <src/ksp/pc/pcimpl.h>
-#else
-  #include <private/pcimpl.h>
-#endif
+#include <private/pcimpl.h>
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/PETScKrylovSolver.h>
@@ -42,8 +36,7 @@ PETScKrylovSolver::PETScKrylovSolver(KrylovMethod method, Preconditioner pc)
     method(method), pc_petsc(pc), pc_dolfin(0),
     ksp(0), M(0), N(0), parameters_read(false), pc_set(false)
 {
-  // Initialize PETSc
-  PETScManager::init();
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 PETScKrylovSolver::PETScKrylovSolver(KrylovMethod method,
@@ -52,8 +45,7 @@ PETScKrylovSolver::PETScKrylovSolver(KrylovMethod method,
     method(method), pc_petsc(default_pc), pc_dolfin(&preconditioner),
     ksp(0), M(0), N(0), parameters_read(false), pc_set(false)
 {
-  // Initialize PETSc
-  PETScManager::init();
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 PETScKrylovSolver::~PETScKrylovSolver()

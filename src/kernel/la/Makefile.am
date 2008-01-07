@@ -20,8 +20,8 @@ nobase_include_HEADERS  = dolfin/dolfin_la.h \
                           dolfin/PETScKrylovSolver.h \
                           dolfin/PETScLinearSolver.h \
                           dolfin/PETScLUSolver.h \
-                          dolfin/PETScManager.h \
                           dolfin/PETScMatrix.h \
+                          dolfin/PETScObject.h \
                           dolfin/PETScPreconditioner.h \
                           dolfin/PETScVector.h \
                           dolfin/Preconditioner.h \
@@ -53,7 +53,6 @@ libdolfin_la_la_SOURCES = solve.cpp \
                           PETScKrylovMatrix.cpp \
                           PETScKrylovSolver.cpp \
                           PETScLUSolver.cpp \
-                          PETScManager.cpp \
                           PETScMatrix.cpp \
                           PETScPreconditioner.cpp \
                           PETScVector.cpp \

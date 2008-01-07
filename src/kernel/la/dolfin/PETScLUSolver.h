@@ -9,9 +9,11 @@
 
 #ifdef HAVE_PETSC_H
 
+#include <petscmat.h>
+#include <petscksp.h>
+
 #include <dolfin/PETScLinearSolver.h>
 #include <dolfin/Parametrized.h>
-#include <dolfin/PETScManager.h>
 #include <dolfin/PETScVector.h>
 
 namespace dolfin

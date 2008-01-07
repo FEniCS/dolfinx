@@ -20,8 +20,8 @@ EXTRA_DIST = dolfin_la.h \
              PETScKrylovMatrix.h \
              PETScKrylovSolver.h \
              PETScLUSolver.h \
-             PETScManager.h \
              PETScMatrix.h \
+             PETScObject.h \
              PETScPreconditioner.h \
              PETScVector.h \
              Preconditioner.h \

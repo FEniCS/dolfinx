@@ -4,6 +4,9 @@
 // First added:  2008-01-07
 // Last changed: 
 
+// Due to a bug in PETSC, the Boost headers must be included
+// before including petscerror.h.
+
 #ifdef HAVE_PETSC_H
 #include <petsc.h>
 #endif
@@ -45,11 +48,11 @@ SubSystemsManager::~SubSystemsManager()
 //-----------------------------------------------------------------------------
 void SubSystemsManager::initMPI()
 {
-  // Return if MPI is already initialised
+  // Return if MPI is already initialized
   if ( MPIinitialized() )
     return;
 
-  // Initialise MPI
+  // Initialize MPI
   MPIinit();
 }
 //-----------------------------------------------------------------------------
@@ -68,7 +71,7 @@ void SubSystemsManager::initPETSc()
   argv[0] = new char[DOLFIN_LINELENGTH];
   snprintf(argv[0], DOLFIN_LINELENGTH, "%s", "unknown");
 
-  // Initialise PETSc
+  // Initialize PETSc
   initPETSc(argc, argv, false);
 
   // Cleanup
@@ -95,11 +98,11 @@ void SubSystemsManager::initPETSc(int argc, char* argv[], bool cmd_line_args)
   SlepcInitialize(&argc, &argv, PETSC_NULL, PETSC_NULL);
 #endif
 
-  sub_systems_manager->petsc_initialized = true;
+  sub_systems_manager.petsc_initialized = true;
 
   // Determine if PETSc initialised MPI and is then responsible for MPI finalization
   if(mpi_init_status == false && MPIinitialized() == true)
-    sub_systems_manager->petsc_controls_mpi = true;
+    sub_systems_manager.petsc_controls_mpi = true;
 }
 //-----------------------------------------------------------------------------
 #else
@@ -160,7 +163,7 @@ bool SubSystemsManager::MPIinitialized()
   }
 #else
   // DOLFIN is not configured for MPI (it might be through PETSc)
-  return true;
+  return false;
 #endif
 }
 //-----------------------------------------------------------------------------

@@ -5,15 +5,18 @@
 // Modified Garth N. Wells 2005
 //
 // First added:  2005
-// Last changed: 2006-08-15
+// Last changed: 2008-01-07
 
 #ifndef __PETSC_PRECONDITIONER_H
 #define __PETSC_PRECONDITIONER_H
 
 #ifdef HAVE_PETSC_H
 
+#include <petscksp.h>
+#include <petscpc.h>
+
 #include <dolfin/Preconditioner.h>
-#include <dolfin/PETScManager.h>
+#include <dolfin/PETScObject.h>
 
 namespace dolfin
 {
@@ -25,7 +28,7 @@ namespace dolfin
   /// PETScPreconditioner needs only supply a function that approximately
   /// solves the linear system given a right-hand side.
 
-  class PETScPreconditioner
+  class PETScPreconditioner : public PETScObject
   {
   public:
 

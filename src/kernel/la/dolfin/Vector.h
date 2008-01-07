@@ -9,7 +9,6 @@
 #ifndef __VECTOR_H
 #define __VECTOR_H
 
-#include <dolfin/PETScVector.h>
 #include <dolfin/GenericMatrix.h>
 #include <dolfin/dolfin_main.h>
 

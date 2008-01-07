@@ -11,6 +11,8 @@
 
 #ifdef HAVE_PETSC_H
 
+#include <dolfin/PETScObject.h>
+
 namespace dolfin
 {
 
@@ -21,7 +23,7 @@ namespace dolfin
   /// This class defines the interfaces for PETSc linear solvers for
   /// systems of the form Ax = b.
 
-  class PETScLinearSolver
+  class PETScLinearSolver : public PETScObject
   {
   public:
 

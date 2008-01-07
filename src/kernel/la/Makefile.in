@@ -59,12 +59,11 @@ LTLIBRARIES = $(lib_LTLIBRARIES)
 libdolfin_la_la_LIBADD =
 am_libdolfin_la_la_OBJECTS = solve.lo GMRES.lo LU.lo \
 	SLEPcEigenvalueSolver.lo PETScFactory.lo PETScKrylovMatrix.lo \
-	PETScKrylovSolver.lo PETScLUSolver.lo PETScManager.lo \
-	PETScMatrix.lo PETScPreconditioner.lo PETScVector.lo \
-	SparsityPattern.lo uBlasFactory.lo uBlasKrylovMatrix.lo \
-	uBlasKrylovSolver.lo uBlasLUSolver.lo \
-	uBlasDummyPreconditioner.lo uBlasILUPreconditioner.lo \
-	uBlasVector.lo
+	PETScKrylovSolver.lo PETScLUSolver.lo PETScMatrix.lo \
+	PETScPreconditioner.lo PETScVector.lo SparsityPattern.lo \
+	uBlasFactory.lo uBlasKrylovMatrix.lo uBlasKrylovSolver.lo \
+	uBlasLUSolver.lo uBlasDummyPreconditioner.lo \
+	uBlasILUPreconditioner.lo uBlasVector.lo
 libdolfin_la_la_OBJECTS = $(am_libdolfin_la_la_OBJECTS)
 libdolfin_la_la_LINK = $(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(AM_CXXFLAGS) \
@@ -266,8 +265,8 @@ nobase_include_HEADERS = dolfin/dolfin_la.h \
                           dolfin/PETScKrylovSolver.h \
                           dolfin/PETScLinearSolver.h \
                           dolfin/PETScLUSolver.h \
-                          dolfin/PETScManager.h \
                           dolfin/PETScMatrix.h \
+                          dolfin/PETScObject.h \
                           dolfin/PETScPreconditioner.h \
                           dolfin/PETScVector.h \
                           dolfin/Preconditioner.h \
@@ -300,7 +299,6 @@ libdolfin_la_la_SOURCES = solve.cpp \
                           PETScKrylovMatrix.cpp \
                           PETScKrylovSolver.cpp \
                           PETScLUSolver.cpp \
-                          PETScManager.cpp \
                           PETScMatrix.cpp \
                           PETScPreconditioner.cpp \
                           PETScVector.cpp \
@@ -389,7 +387,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PETScKrylovMatrix.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PETScKrylovSolver.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PETScLUSolver.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PETScManager.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PETScMatrix.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PETScPreconditioner.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PETScVector.Plo@am__quote@

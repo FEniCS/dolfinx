@@ -7,7 +7,6 @@
 #ifdef HAVE_PETSC_H
 
 #include <dolfin/dolfin_log.h>
-#include <dolfin/PETScManager.h>
 #include <dolfin/PETScMatrix.h>
 #include <dolfin/PETScVector.h>
 #include <dolfin/PETScKrylovMatrix.h>
@@ -19,9 +18,6 @@ using namespace dolfin;
 PETScLUSolver::PETScLUSolver()
   : PETScLinearSolver(), ksp(0), B(0), idxm(0), idxn(0)
 {
-  // Initialize PETSc
-  PETScManager::init();
-  
   // Set up solver environment to use only preconditioner
   KSPCreate(PETSC_COMM_SELF, &ksp);
   //KSPSetType(ksp, KSPPREONLY);

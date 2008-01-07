@@ -9,13 +9,12 @@
 #ifndef __PETSC_FACTORY_H
 #define __PETSC_FACTORY_H
 
-
 #include <dolfin/LinearAlgebraFactory.h>
 
 namespace dolfin
 {
 
-  class PETScFactory: public LinearAlgebraFactory
+  class PETScFactory : public LinearAlgebraFactory
   {
   public:
 
@@ -34,6 +33,7 @@ namespace dolfin
     static PETScFactory& instance() { return petscfactory; }
 
   private:
+
     /// Private Constructor
     PETScFactory() {}
     static PETScFactory petscfactory;

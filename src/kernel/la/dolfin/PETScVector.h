@@ -11,11 +11,13 @@
 
 #ifdef HAVE_PETSC_H
 
+#include <petscvec.h>
+
 #include <dolfin/constants.h>
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Variable.h>
 #include <dolfin/GenericVector.h>
-#include <dolfin/PETScManager.h>
+#include <dolfin/PETScObject.h>
 #include <dolfin/PETScFactory.h>
 #include <dolfin/VectorNormType.h>
 
@@ -31,7 +33,7 @@ namespace dolfin
   /// access the PETSc Vec pointer using the function vec() and
   /// use the standard PETSc interface.
 
-  class PETScVector : public GenericVector, public Variable
+  class PETScVector : public GenericVector, public PETScObject, public Variable
   {
   public:
 

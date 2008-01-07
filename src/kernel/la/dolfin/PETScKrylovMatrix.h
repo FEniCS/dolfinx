@@ -13,7 +13,7 @@
 
 #include <dolfin/constants.h>
 #include <dolfin/dolfin_log.h>
-#include <dolfin/PETScManager.h>
+#include <dolfin/PETScObject.h>
 
 namespace dolfin
 {
@@ -33,7 +33,7 @@ namespace dolfin
   /// the multiplication operator needs to be defined in terms of
   /// PETSc data structures (Vec), since it will be called from PETSc.
 
-  class PETScKrylovMatrix
+  class PETScKrylovMatrix : public PETScObject
   {
   public:
 
