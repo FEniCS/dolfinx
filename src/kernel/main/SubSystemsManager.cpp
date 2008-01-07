@@ -4,9 +4,6 @@
 // First added:  2008-01-07
 // Last changed: 
 
-// Due to a bug in PETSC, the Boost headers must be included
-// before including petscerror.h.
-
 #ifdef HAVE_PETSC_H
 #include <petsc.h>
 #endif
@@ -28,7 +25,7 @@ using namespace dolfin;
 dolfin::SubSystemsManager dolfin::SubSystemsManager::sub_systems_manager;
 
 //-----------------------------------------------------------------------------
-SubSystemsManager::SubSystemsManager() : petsc_initialized(false), 
+SubSystemsManager::SubSystemsManager() : petsc_initialized(false),
                                          petsc_controls_mpi(false)
 {
   // Do nothing
@@ -36,7 +33,7 @@ SubSystemsManager::SubSystemsManager() : petsc_initialized(false),
 //-----------------------------------------------------------------------------
 SubSystemsManager::SubSystemsManager(const SubSystemsManager& sub_sys_manager)
 {
-  error("Should not be usibng copy constructor of SubSystemsManager.");
+  error("Should not be using copy constructor of SubSystemsManager.");
 }
 //-----------------------------------------------------------------------------
 SubSystemsManager::~SubSystemsManager()
@@ -48,10 +45,6 @@ SubSystemsManager::~SubSystemsManager()
 //-----------------------------------------------------------------------------
 void SubSystemsManager::initMPI()
 {
-  // Return if MPI is already initialized
-  if ( MPIinitialized() )
-    return;
-
   // Initialize MPI
   MPIinit();
 }
@@ -85,7 +78,7 @@ void SubSystemsManager::initPETSc(int argc, char* argv[], bool cmd_line_args)
     return;
 
   // Get status of MPI before PETSc initialisation
-  bool mpi_init_status = MPIinitialized();
+  const bool mpi_init_status = MPIinitialized();
 
   if(cmd_line_args)
     message("Initializing PETSc with given command-line arguments.");
@@ -101,7 +94,7 @@ void SubSystemsManager::initPETSc(int argc, char* argv[], bool cmd_line_args)
   sub_systems_manager.petsc_initialized = true;
 
   // Determine if PETSc initialised MPI and is then responsible for MPI finalization
-  if(mpi_init_status == false && MPIinitialized() == true)
+  if(!mpi_init_status && MPIinitialized())
     sub_systems_manager.petsc_controls_mpi = true;
 }
 //-----------------------------------------------------------------------------
@@ -136,6 +129,7 @@ void SubSystemsManager::finalizePETSc()
 #ifdef HAVE_PETSC_H
  if ( sub_systems_manager.petsc_initialized )
   {
+    dolfin_debug("Finalizing PETSc");
     PetscFinalize();
  
     #ifdef HAVE_SLEPC_H
@@ -170,6 +164,9 @@ bool SubSystemsManager::MPIinitialized()
 void SubSystemsManager::MPIinit()
 {
 #ifdef HAVE_MPI_H
+  if( MPIinitialized() )
+    return;
+
   dolfin_debug("Initializing MPI");
   MPI_Init(0, 0);
 #else
