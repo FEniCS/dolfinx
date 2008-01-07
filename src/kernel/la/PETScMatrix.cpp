@@ -81,13 +81,11 @@ void PETScMatrix::init(uint M, uint N)
 
   // Create a sparse matrix in compressed row format
   if (MPIManager::numProcesses() > 1)
-  {
     // Create PETSc parallel matrix with a guess for number of non-zeroes (10 in thise case)
     MatCreateMPIAIJ(PETSC_COMM_WORLD, PETSC_DECIDE, PETSC_DECIDE, M, N, 10, PETSC_NULL, 10, PETSC_NULL , &A);
-    //MatZeroEntries(A);
-  }
   else
     MatCreateSeqAIJ(PETSC_COMM_SELF, M, N, 50, PETSC_NULL, &A);
+
   setType();
   MatSetFromOptions(A);
   MatSetOption(A, MAT_KEEP_ZEROED_ROWS);
@@ -446,7 +444,10 @@ MatType PETScMatrix::getPETScType() const
   switch ( _type )
   {
   case default_matrix:
-    return MATSEQAIJ;
+    if (MPIManager::numProcesses() > 1)
+      return MATMPIAIJ;
+    else
+      return MATSEQAIJ;
   case spooles:
       return MATSEQAIJSPOOLES;
   case superlu:

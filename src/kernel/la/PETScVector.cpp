@@ -16,6 +16,7 @@
 #include <dolfin/PETScManager.h>
 #include <dolfin/PETScVector.h>
 #include <dolfin/uBlasVector.h>
+#include <dolfin/MPIManager.h>
 
 using namespace dolfin;
 
@@ -88,7 +89,11 @@ void PETScVector::init(uint N)
     clear();
 
   // Create vector
-  VecCreate(PETSC_COMM_SELF, &x);
+  if (MPIManager::numProcesses() > 1)
+    VecCreateMPI(PETSC_COMM_WORLD, PETSC_DECIDE, &x);
+  else
+    VecCreate(PETSC_COMM_SELF, &x);
+
   VecSetSizes(x, PETSC_DECIDE, N);
   VecSetFromOptions(x);
 
