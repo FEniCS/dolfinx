@@ -25,7 +25,7 @@
 #include <dolfin/SparsityPattern.h>
 #include <dolfin/SparsityPatternBuilder.h>
 #include <dolfin/DofMapSet.h>
-#include <dolfin/MPIManager.h>
+#include <dolfin/MPI.h>
 
 using namespace dolfin;
 
@@ -176,7 +176,7 @@ void pAssembler::assembleCells(GenericTensor& A,
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     // Assemble only cells in this processors partition
-    if (partitions && (*partitions)(*cell) != MPIManager::processNumber())
+    if (partitions && (*partitions)(*cell) != MPI::processNumber())
       continue;
 
     // Get integral for sub domain (if any)

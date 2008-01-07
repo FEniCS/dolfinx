@@ -11,10 +11,6 @@
 
 #include <dolfin/MeshFunction.h>
 
-#ifdef HAVE_MPI_H
-  #include <mpi.h>
-#endif
-
 namespace dolfin
 {
   class Mesh;

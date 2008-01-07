@@ -1,1 +1,5 @@
-EXTRA_DIST = constants.h Problem.h Solver.h
+EXTRA_DIST = constants.h \
+             MPI.h \
+             Problem.h \
+             SubSystemsManager.h \
+             Solver.h

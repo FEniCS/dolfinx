@@ -24,7 +24,6 @@ EXTRA_DIST = dolfin_mesh.h \
              MeshOrdering.h \
              MeshPartition.h \
              MeshTopology.h \
-             MPIManager.h \
              Point.h \
              PointCell.h \
              SubDomain.h \

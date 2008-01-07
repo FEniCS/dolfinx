@@ -8,7 +8,7 @@
 
 #include <dolfin/MeshEditor.h>
 #include <dolfin/UnitSquare.h>
-#include <dolfin/MPIManager.h>
+#include <dolfin/MPI.h>
 #include <dolfin/MPIMeshCommunicator.h>
 
 using namespace dolfin;
@@ -17,7 +17,7 @@ using namespace dolfin;
 UnitSquare::UnitSquare(uint nx, uint ny, Type type) : Mesh()
 {
   // Receive mesh according to parallel policy
-  if (MPIManager::receive()) { MPIMeshCommunicator::receive(*this); return; }
+  if (MPI::receive()) { MPIMeshCommunicator::receive(*this); return; }
   
   if ( nx < 1 || ny < 1 )
     error("Size of unit square must be at least 1 in each dimension.");
@@ -125,6 +125,6 @@ UnitSquare::UnitSquare(uint nx, uint ny, Type type) : Mesh()
   editor.close();
 
   // Broadcast mesh according to parallel policy
-  if (MPIManager::broadcast()) { MPIMeshCommunicator::broadcast(*this); }
+  if (MPI::broadcast()) { MPIMeshCommunicator::broadcast(*this); }
 }
 //-----------------------------------------------------------------------------

@@ -4,8 +4,8 @@
 // First added:  2005-08-31
 // Last changed: 2006-08-21
 
-#ifndef __PETSC_EIGENVALUE_SOLVER_H
-#define __PETSC_EIGENVALUE_SOLVER_H
+#ifndef __SLEPC_EIGENVALUE_SOLVER_H
+#define __SLEPC_EIGENVALUE_SOLVER_H
 
 #ifdef HAVE_SLEPC_H
 
