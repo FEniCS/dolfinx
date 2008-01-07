@@ -97,7 +97,6 @@
 %include "dolfin/MeshConnectivity.h"
 %include "dolfin/MeshEditor.h"
 %include "dolfin/MeshFunction.h"
-%include "dolfin/MPIManager.h"
 %include "dolfin/MPIMeshCommunicator.h"
 %include "dolfin/Vertex.h"
 %include "dolfin/Edge.h"
