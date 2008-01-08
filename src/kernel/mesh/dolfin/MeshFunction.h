@@ -12,7 +12,7 @@
 #include <dolfin/constants.h>
 #include <dolfin/File.h>
 #include <dolfin/MeshEntity.h>
-#include <dolfin/MPIManager.h>
+#include <dolfin/MPI.h>
 #include <dolfin/MPIMeshCommunicator.h>
 
 namespace dolfin

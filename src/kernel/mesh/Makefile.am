@@ -26,7 +26,6 @@ nobase_include_HEADERS    = dolfin/dolfin_mesh.h \
                             dolfin/MeshHierarchy.h \
                             dolfin/MeshOrdering.h \
                             dolfin/MeshTopology.h \
-                            dolfin/MPIManager.h \
                             dolfin/MPIMeshCommunicator.h \
                             dolfin/Point.h \
                             dolfin/PointCell.h \
@@ -66,7 +65,6 @@ libdolfin_mesh_la_SOURCES = BoundaryComputation.cpp \
                             MeshOrdering.cpp \
                             MeshPartition.cpp \
                             MeshTopology.cpp \
-                            MPIManager.cpp \
                             MPIMeshCommunicator.cpp \
                             Point.cpp \
                             PointCell.cpp \

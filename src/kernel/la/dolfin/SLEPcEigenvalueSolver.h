@@ -4,13 +4,14 @@
 // First added:  2005-08-31
 // Last changed: 2006-08-21
 
-#ifndef __PETSC_EIGENVALUE_SOLVER_H
-#define __PETSC_EIGENVALUE_SOLVER_H
+#ifndef __SLEPC_EIGENVALUE_SOLVER_H
+#define __SLEPC_EIGENVALUE_SOLVER_H
 
 #ifdef HAVE_SLEPC_H
 
 #include <slepceps.h>
 #include <dolfin/Parametrized.h>
+#include <dolfin/PETScObject.h>
 
 namespace dolfin
 {
@@ -22,7 +23,7 @@ namespace dolfin
   /// This class computes eigenvalues of a matrix. It is 
 	/// a wrapper for the eigenvalue solver SLEPc.
   
-  class SLEPcEigenvalueSolver: public Parametrized
+  class SLEPcEigenvalueSolver : public Parametrized, public PETScObject
   {
   public:
 

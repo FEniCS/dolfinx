@@ -21,7 +21,7 @@
 #include <dolfin/BoundaryMesh.h>
 #include <dolfin/Cell.h>
 #include <dolfin/Vertex.h>
-#include <dolfin/MPIManager.h>
+#include <dolfin/MPI.h>
 #include <dolfin/MPIMeshCommunicator.h>
 
 using namespace dolfin;
@@ -156,13 +156,13 @@ void Mesh::smooth()
 void Mesh::partition(uint num_partitions, MeshFunction<uint>& partitions)
 {
   // Receive mesh partition function according to parallel policy
-  if (MPIManager::receive()) { MPIMeshCommunicator::receive(partitions); return; }
+  if (MPI::receive()) { MPIMeshCommunicator::receive(partitions); return; }
 
   // Partition mesh
   MeshPartition::partition(*this, num_partitions, partitions);
 
   // Broadcast mesh according to parallel policy
-  if (MPIManager::broadcast()) { MPIMeshCommunicator::broadcast(partitions); }
+  if (MPI::broadcast()) { MPIMeshCommunicator::broadcast(partitions); }
 }
 //-----------------------------------------------------------------------------
 void Mesh::disp() const

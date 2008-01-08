@@ -11,7 +11,11 @@
 #include <dolfin/Mesh.h>
 #include <dolfin/MeshFunction.h>
 #include <dolfin/MPIMeshCommunicator.h>
-#include <dolfin/MPIManager.h>
+#include <dolfin/MPI.h>
+
+#ifdef HAVE_MPI_H
+  #include <mpi.h>
+#endif
 
 using namespace dolfin;
 

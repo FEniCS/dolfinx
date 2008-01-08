@@ -7,7 +7,6 @@
 #ifdef HAVE_SLEPC_H
 
 #include <dolfin/dolfin_log.h>
-#include <dolfin/PETScManager.h>
 #include <dolfin/SLEPcEigenvalueSolver.h>
 #include <dolfin/PETScMatrix.h>
 #include <dolfin/PETScVector.h>
@@ -17,9 +16,6 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 SLEPcEigenvalueSolver::SLEPcEigenvalueSolver(): eps(0), type(default_solver)
 {
-  // Initialize PETSc/SLEPc
-  PETScManager::init();
-
   // Set up solver environment
   EPSCreate(PETSC_COMM_SELF, &eps);
 
@@ -30,9 +26,6 @@ SLEPcEigenvalueSolver::SLEPcEigenvalueSolver(): eps(0), type(default_solver)
 //-----------------------------------------------------------------------------
 SLEPcEigenvalueSolver::SLEPcEigenvalueSolver(Type solver): eps(0), type(solver)
 {
-  // Initialize PETSc/SLEPc
-  PETScManager::init();
-
   // Set up solver environment
   EPSCreate(PETSC_COMM_SELF, &eps);
 
