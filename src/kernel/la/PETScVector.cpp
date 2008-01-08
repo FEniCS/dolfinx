@@ -81,7 +81,7 @@ void PETScVector::init(uint N)
 
   // Create vector
   if (MPI::numProcesses() > 1)
-    VecCreateMPI(PETSC_COMM_WORLD, PETSC_DECIDE, &x);
+    VecCreateMPI(PETSC_COMM_WORLD, PETSC_DECIDE, N, &x);
   else
     VecCreate(PETSC_COMM_SELF, &x);
 
