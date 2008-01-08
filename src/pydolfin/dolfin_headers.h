@@ -33,6 +33,7 @@
 %include "dolfin/SparsityPattern.h"
 %include "dolfin/KrylovMethod.h"
 %include "dolfin/Preconditioner.h"
+%include "dolfin/PETScObject.h"
 %include "dolfin/PETScMatrix.h"
 %include "dolfin/PETScVector.h"
 %include "dolfin/PETScLinearSolver.h"

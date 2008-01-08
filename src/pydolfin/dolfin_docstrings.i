@@ -3027,6 +3027,18 @@ Apply boundary condition to linear system for a nonlinear problem (not
 implemented). ";
 
 
+// File: classdolfin_1_1PETScObject.xml
+%feature("docstring") dolfin::PETScObject "
+
+This class calls SubSystemsManger to initialise PETSc.
+
+All PETSc objects must be derived from this class.
+
+C++ includes: PETScObject.h ";
+
+%feature("docstring")  dolfin::PETScObject::PETScObject "";
+
+
 // File: classdolfin_1_1Point.xml
 %feature("docstring") dolfin::Point "
 
@@ -4258,6 +4270,9 @@ domains. ";
 // File: PETScMatrix_8h.xml
 
 
+// File: PETScObject_8h.xml
+
+
 // File: PETScVector_8h.xml
 
 
@@ -4444,107 +4459,107 @@ domains. ";
 // File: RadauQuadrature_8h.xml
 
 
-// File: dir_a5eb7283888fe5b3ceae9e0236a3a6af.xml
+// File: dir_c60082fd3e8c51f3a15f3952cb427112.xml
 
 
-// File: dir_0661c9d71b732b0ca6b708986dae8551.xml
+// File: dir_3d21814d2835459f3da1fa5ed8e43be6.xml
 
 
-// File: dir_996a19408e9f2cdbbd34789faea4e36e.xml
+// File: dir_7dc50eed79ee42fc373ac6bb06319fbd.xml
 
 
-// File: dir_6018488015e85f079f666bae5020985a.xml
+// File: dir_3c5d8f0ae3c89286e8a22246a2b15a76.xml
 
 
-// File: dir_3bac92c10e5af3552728c38973d250b0.xml
+// File: dir_18eaa3195393ebcc46a9f8771cee20a5.xml
 
 
-// File: dir_af9261c8b920fbf2976e9c6ea0bf4b89.xml
+// File: dir_6374f96629924f58a5a2ed60279b0411.xml
 
 
-// File: dir_f243d8a60ea07537ea119b0ddfc97b4c.xml
+// File: dir_b22a99c8566e1d6acc173e4cae03011e.xml
 
 
-// File: dir_0ad193992fe3607c90608fb015e0160d.xml
+// File: dir_094b78feb97aa792afa27de3ab6e8851.xml
 
 
-// File: dir_3af56ac29bc84dc8d30d4dc6d1c82cdb.xml
+// File: dir_62e122ae400d4a77e78a9a3f7efc04c0.xml
 
 
-// File: dir_1907ac175a68cbbe933a0eb78e14c720.xml
+// File: dir_732e703d02d4c035a4fa8e44c328d35a.xml
 
 
-// File: dir_072d9f56e6138c162d0304869ff38ca4.xml
+// File: dir_edf3cb46a7189f41a39af09448d32528.xml
 
 
-// File: dir_6afb3d090ccc09db7ac7749293b05bbb.xml
+// File: dir_de8329c7d423dd6cece8ff5263452f6e.xml
 
 
-// File: dir_61dfd02a41e3f9a3665dfef68b24862a.xml
+// File: dir_4dad7afb06ba8cd2a53251858c69bdee.xml
 
 
-// File: dir_0a8e24add42d0386f5563acae2d85638.xml
+// File: dir_075e467c95d4f3fd60b7499528d145e1.xml
 
 
-// File: dir_3c065572e1f343a5eeea4e7dbcd2b396.xml
+// File: dir_2b3f4bfc0249bca1398e000cff0f7055.xml
 
 
-// File: dir_47ee1829b21600639325ce25d193ff9a.xml
+// File: dir_b4e54699c910479fc4e660a3ff12bd4f.xml
 
 
-// File: dir_b83a84197a2679d2d8832fbd41f633d2.xml
+// File: dir_a91c6b42fbded2c97e3cca96bc9e338b.xml
 
 
-// File: dir_672ba04e139bc30e128b47194091767d.xml
+// File: dir_b9413dc616ed1935fd0d07580736cde3.xml
 
 
-// File: dir_024c53c8f6cd2a6b5b71c6be8e5613b9.xml
+// File: dir_c6d0900b472507d44ee88f83078ce5c3.xml
 
 
-// File: dir_1a60e32b1738777ec526c08d85789d4f.xml
+// File: dir_1a37cdf1998f53e48739adf5a49461f4.xml
 
 
-// File: dir_d63d09f6beea482edd18bca988534801.xml
+// File: dir_fb32a8a20aa03205d393e8130a175cb8.xml
 
 
-// File: dir_e078747fbf9667e7c4e8007d3bb2c916.xml
+// File: dir_80293c20761785ae8db238456796bd86.xml
 
 
-// File: dir_1a7efb3be5f3541b02bdabc7d411c120.xml
+// File: dir_49e61b3115d06df2b03473f51f7d6fd2.xml
 
 
-// File: dir_5a927617fea2b12d15d13f5064ab48e1.xml
+// File: dir_521fb44ea70108ea024b12df2eee4ae3.xml
 
 
-// File: dir_2d32fce308c443df6a068cf7b197c908.xml
+// File: dir_fb67b1f8adc11a89c9d303b6bc0a1fb2.xml
 
 
-// File: dir_639a581b7575067f79c5490273617818.xml
+// File: dir_d541c4e4e6d4c140e70fb3ae180d4062.xml
 
 
-// File: dir_b5b26cb11a3e10aa0cd4c134b30bb572.xml
+// File: dir_5a2875feb6931a2ab5abb2fad953e225.xml
 
 
-// File: dir_6e6973ea2fc3e98375f891dc00c2db07.xml
+// File: dir_400ae4e1767b1e7a4bfa6009f61ce1d0.xml
 
 
-// File: dir_ab95082fd348f559cad72d7e0d7e00b9.xml
+// File: dir_80a347816a1a515e75b53fc9b43e17ad.xml
 
 
-// File: dir_b7ba2b1a87d6f393d7a6c736596a1ad2.xml
+// File: dir_44518db957486ac038844039e54135bd.xml
 
 
-// File: dir_ed1ad6e99bedb6fdd2239966ecbbb977.xml
+// File: dir_da2222faeabe775e3f1d1ceb0345a4e4.xml
 
 
-// File: dir_75358fcbd97d27ea13b4815e7a98e1f4.xml
+// File: dir_728f3e7c60a2e644ffbff57e5f6b0a71.xml
 
 
-// File: dir_6df00d84da8f0ef44cb67fabba678b30.xml
+// File: dir_9fa49838df67b12a4a81a039bfe28786.xml
 
 
-// File: dir_fb1731154a8034f3175b30bff5351d9b.xml
+// File: dir_546c30d5b20fa3712b124c27b9483968.xml
 
 
-// File: dir_d544187b8d47f521cf1a688a30f594e3.xml
+// File: dir_7dae5ed20d2fd5be416fe014f5d93942.xml
 
