@@ -1,8 +1,6 @@
 // Can not handle overloading on enums Preconditioner and KrylovMethod
 %ignore dolfin::uBlasKrylovSolver;
 
-%ignore dolfin::PETScObject;
-
 // Fix problem with missing uBlas namespace
 %inline %{
   namespace boost{ namespace numeric{ namespace ublas{}}}
