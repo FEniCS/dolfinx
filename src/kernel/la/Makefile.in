@@ -266,6 +266,7 @@ nobase_include_HEADERS = dolfin/dolfin_la.h \
                           dolfin/PETScLinearSolver.h \
                           dolfin/PETScLUSolver.h \
                           dolfin/PETScMatrix.h \
+                          dolfin/PETScObject.h \
                           dolfin/PETScPreconditioner.h \
                           dolfin/PETScVector.h \
                           dolfin/Preconditioner.h \
