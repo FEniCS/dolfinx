@@ -15,12 +15,11 @@
 #include <iomanip>
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Array.h>
-#include <dolfin/PETScManager.h>
 #include <dolfin/PETScVector.h>
 #include <dolfin/PETScMatrix.h>
 #include <dolfin/GenericSparsityPattern.h>
 #include <dolfin/SparsityPattern.h>
-#include <dolfin/MPIManager.h>
+#include <dolfin/MPI.h>
 
 using namespace dolfin;
 
@@ -30,9 +29,6 @@ PETScMatrix::PETScMatrix(const Type type)
     Variable("A", "a sparse matrix"),
     A(0), _type(type)
 {
-  // Initialize PETSc
-  PETScManager::init();
-
   // Check type
   checkType();
 }
@@ -42,9 +38,6 @@ PETScMatrix::PETScMatrix(Mat A)
     Variable("A", "a sparse matrix"),
     A(A), _type(default_matrix)
 {
-  // Initialize PETSc
-  PETScManager::init();
-
   // FIXME: get PETSc matrix type and set
   _type = default_matrix;
 }
@@ -54,9 +47,6 @@ PETScMatrix::PETScMatrix(uint M, uint N, Type type)
     Variable("A", "a sparse matrix"),
     A(0),  _type(type)
 {
-  // Initialize PETSc
-  PETScManager::init();
-
   // Check type
   checkType();
 
@@ -80,7 +70,7 @@ void PETScMatrix::init(uint M, uint N)
   // FIXME: it should definitely be a parameter
 
   // Create a sparse matrix in compressed row format
-  if (MPIManager::numProcesses() > 1)
+  if (MPI::numProcesses() > 1)
     // Create PETSc parallel matrix with a guess for number of non-zeroes (10 in thise case)
     MatCreateMPIAIJ(PETSC_COMM_WORLD, PETSC_DECIDE, PETSC_DECIDE, M, N, 10, PETSC_NULL, 10, PETSC_NULL , &A);
   else
@@ -444,7 +434,7 @@ MatType PETScMatrix::getPETScType() const
   switch ( _type )
   {
   case default_matrix:
-    if (MPIManager::numProcesses() > 1)
+    if (MPI::numProcesses() > 1)
       return MATMPIAIJ;
     else
       return MATSEQAIJ;

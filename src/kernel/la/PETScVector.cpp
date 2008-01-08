@@ -13,10 +13,9 @@
 #include <cmath>
 #include <dolfin/dolfin_math.h>
 #include <dolfin/dolfin_log.h>
-#include <dolfin/PETScManager.h>
 #include <dolfin/PETScVector.h>
 #include <dolfin/uBlasVector.h>
-#include <dolfin/MPIManager.h>
+#include <dolfin/MPI.h>
 
 using namespace dolfin;
 
@@ -26,8 +25,7 @@ PETScVector::PETScVector()
     Variable("x", "a sparse vector"),
     x(0), _copy(false)
 {
-  // Initialize PETSc
-  PETScManager::init();
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 PETScVector::PETScVector(uint N)
@@ -35,9 +33,6 @@ PETScVector::PETScVector(uint N)
     Variable("x", "a sparse vector"), 
     x(0), _copy(false)
 {
-  // Initialize PETSc
-  PETScManager::init();
-
   // Create PETSc vector
   init(N);
 }
@@ -47,8 +42,7 @@ PETScVector::PETScVector(Vec x)
     Variable("x", "a vector"),
     x(x), _copy(true)
 {
-  // Initialize PETSc 
-  PETScManager::init();
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 PETScVector::PETScVector(const PETScVector& v)
@@ -56,9 +50,6 @@ PETScVector::PETScVector(const PETScVector& v)
     Variable("x", "a vector"),
     x(0), _copy(false)
 {
-  // Initialize PETSc 
-  PETScManager::init();
-
   *this = v;
 }
 //-----------------------------------------------------------------------------
@@ -89,7 +80,7 @@ void PETScVector::init(uint N)
     clear();
 
   // Create vector
-  if (MPIManager::numProcesses() > 1)
+  if (MPI::numProcesses() > 1)
     VecCreateMPI(PETSC_COMM_WORLD, PETSC_DECIDE, &x);
   else
     VecCreate(PETSC_COMM_SELF, &x);
