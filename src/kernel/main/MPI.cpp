@@ -60,7 +60,7 @@ dolfin::uint dolfin::MPI::processNumber()
   return 0;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint MPI::numProcesses()
+dolfin::uint dolfin::MPI::numProcesses()
 {
   return 1;
 }

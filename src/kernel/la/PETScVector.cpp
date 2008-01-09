@@ -25,6 +25,7 @@ PETScVector::PETScVector()
     Variable("x", "a sparse vector"),
     x(0), _copy(false)
 {
+  dolfin_debug("PETScVector::PETScVector()");
   // Do nothing
 }
 //-----------------------------------------------------------------------------
@@ -60,6 +61,7 @@ PETScVector::~PETScVector()
 //-----------------------------------------------------------------------------
 void PETScVector::init(uint N)
 {
+  dolfin_debug("PETScVector::init(N)");
   // Two cases:
   //
   //   1. Already allocated and dimension changes -> reallocate
@@ -81,7 +83,10 @@ void PETScVector::init(uint N)
 
   // Create vector
   if (MPI::numProcesses() > 1)
+  {
+    dolfin_debug("PETScVector::init(N) - VecCreateMPI");
     VecCreateMPI(PETSC_COMM_WORLD, PETSC_DECIDE, N, &x);
+  }
   else
     VecCreate(PETSC_COMM_SELF, &x);
 
