@@ -28,7 +28,6 @@ class Source(Function):
     def __init__(self, element, mesh):
         Function.__init__(self, element, mesh)
     def eval(self, values, x):
-        print x[2]
         dx = x[0] - 0.5
         dy = x[1] - 0.5
         values[0] = 500.0*exp(-(dx*dx + dy*dy)/0.02)
