@@ -70,15 +70,21 @@ void PETScMatrix::init(uint M, uint N)
   // FIXME: it should definitely be a parameter
 
   // Create a sparse matrix in compressed row format
-  if (MPI::numProcesses() > 1)
-    // Create PETSc parallel matrix with a guess for number of non-zeroes (10 in thise case)
-    MatCreateMPIAIJ(PETSC_COMM_WORLD, PETSC_DECIDE, PETSC_DECIDE, M, N, 10, PETSC_NULL, 10, PETSC_NULL , &A);
+  if (dolfin::MPI::numProcesses() > 1)
+  {
+    dolfin_debug("PETScMatrix::init(M, N) - MatCreateMPIAIJ");
+    // Create PETSc parallel matrix with a guess for number of non-zeroes (50 in thise case)
+    MatCreateMPIAIJ(PETSC_COMM_WORLD, PETSC_DECIDE, PETSC_DECIDE, M, N, 50, PETSC_NULL, 50, PETSC_NULL, &A);
+  }
   else
+  {
+    // Create PETSc sequential matrix with a guess for number of non-zeroes (50 in thise case)
     MatCreateSeqAIJ(PETSC_COMM_SELF, M, N, 50, PETSC_NULL, &A);
 
-  setType();
-  MatSetFromOptions(A);
-  MatSetOption(A, MAT_KEEP_ZEROED_ROWS);
+    setType();
+    MatSetFromOptions(A);
+    MatSetOption(A, MAT_KEEP_ZEROED_ROWS);
+  }
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::init(uint M, uint N, const uint* nz)
@@ -88,13 +94,23 @@ void PETScMatrix::init(uint M, uint N, const uint* nz)
     MatDestroy(A);
 
   // Create a sparse matrix in compressed row format
-  MatCreate(PETSC_COMM_SELF, &A);
-  MatSetSizes(A,  PETSC_DECIDE,  PETSC_DECIDE, M, N);
-  setType();
-  MatSeqAIJSetPreallocation(A, PETSC_DEFAULT, (int*)nz);
-  MatSetFromOptions(A);
-  MatSetOption(A, MAT_KEEP_ZEROED_ROWS);
-  MatZeroEntries(A);
+  if (dolfin::MPI::numProcesses() > 1)
+  {
+    dolfin_debug("PETScMatrix::init(M, N, nz) - MatCreateMPIAIJ");
+    // Create PETSc parallel matrix with a guess for number of non-zeroes (50 in thise case)
+    MatCreateMPIAIJ(PETSC_COMM_WORLD, PETSC_DECIDE, PETSC_DECIDE, M, N, 50, PETSC_NULL, 50, PETSC_NULL, &A);
+  }
+  else
+  {
+    // Create PETSc sequential matrix with a guess for number of non-zeroes (50 in thise case)
+    MatCreate(PETSC_COMM_SELF, &A);
+    MatSetSizes(A,  PETSC_DECIDE,  PETSC_DECIDE, M, N);
+    setType();
+    MatSeqAIJSetPreallocation(A, PETSC_DEFAULT, (int*)nz);
+    MatSetFromOptions(A);
+    MatSetOption(A, MAT_KEEP_ZEROED_ROWS);
+    MatZeroEntries(A);
+  }
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::init(uint M, uint N, uint bs, uint nz)
@@ -104,11 +120,20 @@ void PETScMatrix::init(uint M, uint N, uint bs, uint nz)
     MatDestroy(A);
   
   // Creates a sparse matrix in block AIJ (block compressed row) format.
-  // Given blocksize bs, and max no connectivity mnc.  
-  MatCreateSeqBAIJ(PETSC_COMM_SELF, bs, bs*M, bs*N, nz, PETSC_NULL, &A);
-  MatSetFromOptions(A);
-  MatSetOption(A, MAT_KEEP_ZEROED_ROWS);
-  MatZeroEntries(A);
+  if (dolfin::MPI::numProcesses() > 1)
+  {
+    dolfin_debug("PETScMatrix::init(M, N, bs, nz) - MatCreateMPIBAIJ");
+    // Create PETSc parallel matrix with a guess for number of non-zeroes (50 in thise case)
+    MatCreateMPIBAIJ(PETSC_COMM_WORLD, bs, PETSC_DECIDE, PETSC_DECIDE, M, N, 50, PETSC_NULL, 50, PETSC_NULL, &A);
+  }
+  else
+  {
+    // Given blocksize bs, and max no connectivity mnc.  
+    MatCreateSeqBAIJ(PETSC_COMM_SELF, bs, bs*M, bs*N, nz, PETSC_NULL, &A);
+    MatSetFromOptions(A);
+    MatSetOption(A, MAT_KEEP_ZEROED_ROWS);
+    MatZeroEntries(A);
+  }
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::init(const GenericSparsityPattern& sparsity_pattern)
