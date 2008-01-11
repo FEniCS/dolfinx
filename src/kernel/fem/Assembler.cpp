@@ -196,6 +196,7 @@ void Assembler::assembleCells(GenericTensor& A,
 
     p++;
   }
+  message("Assembly over cells completed.");
 }
 //-----------------------------------------------------------------------------
 void Assembler::assembleExteriorFacets(GenericTensor& A,
@@ -259,6 +260,7 @@ void Assembler::assembleExteriorFacets(GenericTensor& A,
 
     p++;  
   }
+  message("Assembly over exterior facets completed.");
 }
 //-----------------------------------------------------------------------------
 void Assembler::assembleInteriorFacets(GenericTensor& A,
@@ -335,6 +337,7 @@ void Assembler::assembleInteriorFacets(GenericTensor& A,
 
     p++;
   }
+  message("Assembly over interior facets completed.");
 }
 //-----------------------------------------------------------------------------
 void Assembler::check(const ufc::form& form,

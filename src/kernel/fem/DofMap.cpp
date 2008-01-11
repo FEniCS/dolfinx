@@ -103,6 +103,8 @@ ufc::dof_map* DofMap::extractDofMap(const ufc::dof_map& dof_map, uint& offset, c
 //-----------------------------------------------------------------------------
 void DofMap::init()
 {
+  dolfin_debug("Initializing dof map...");
+
   // Order vertices, so entities will be created correctly according to convention
   dolfin_mesh.order();
 
@@ -131,6 +133,8 @@ void DofMap::init()
   // Initialise ufc cell 
   CellIterator cell(dolfin_mesh);
   ufc_cell.init(*cell);
+
+  dolfin_debug("Dof map initialized");
 }
 //-----------------------------------------------------------------------------
 

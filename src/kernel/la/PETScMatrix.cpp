@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2007 Johan Hoffman, Johan Jansson and Anders Logg.
+// Copyright (C) 2004-2008 Johan Hoffman, Johan Jansson and Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells 2005-2007.
@@ -6,7 +6,7 @@
 // Modified by Ola Skavhaug 2007.
 //
 // First added:  2004
-// Last changed: 2007-12-07
+// Last changed: 2008-01-11
 
 #ifdef HAVE_PETSC_H
 
@@ -256,6 +256,7 @@ void PETScMatrix::ident(uint m, const uint* rows)
 //-----------------------------------------------------------------------------
 void PETScMatrix::mult(const PETScVector& x, PETScVector& Ax) const
 {
+  Ax.init(x.size());
   MatMult(A, x.vec(), Ax.vec());
 }
 //-----------------------------------------------------------------------------

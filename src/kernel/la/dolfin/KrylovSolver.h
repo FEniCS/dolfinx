@@ -17,33 +17,34 @@
 
 #include <dolfin/default_la_types.h>
 
-
 namespace dolfin
 {
 
+  /// This class defines an interface for a Krylov solver. The underlying 
+  /// Krylov solver type is defined in default_type.h.
+
   class KrylovSolver : public LinearSolver, public Parametrized
   {
-    /// This class defines an interface for a Krylov solver. The underlying 
-    /// Krylov solver type is defined in default_type.h.
+  public:
+
+    KrylovSolver() : solver() {}
     
-    public:
+    KrylovSolver(KrylovMethod method) : solver(method, default_pc) {}
+    
+    KrylovSolver(KrylovMethod method, Preconditioner pc) 
+      : solver(method, pc) {}
+    
+    ~KrylovSolver() {}
+    
+    inline uint solve(const Matrix& A, Vector& x, const Vector& b)
+    { return solver.solve(A.mat(), x.vec(), b.vec()); }
+    
+  private:
+    
+    DefaultKrylovSolver solver;
 
-      KrylovSolver() : solver() {}
-
-      KrylovSolver(KrylovMethod method) : solver(method, default_pc) {}
-
-      KrylovSolver(KrylovMethod method, Preconditioner pc) 
-                  : solver(method, pc) {}
-
-      ~KrylovSolver() {}
-
-      inline uint solve(const Matrix& A, Vector& x, const Vector& b)
-        { return solver.solve(A.mat(), x.vec(), b.vec()); }
-
-    private:
-
-      DefaultKrylovSolver solver;
   };
+
 }
 
 #endif

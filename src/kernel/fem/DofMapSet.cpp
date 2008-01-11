@@ -52,6 +52,8 @@ void DofMapSet::update(const Form& form, Mesh& mesh)
 //-----------------------------------------------------------------------------
 void DofMapSet::update(const ufc::form& form, Mesh& mesh)
 {
+  dolfin_debug("Updating set of dof maps...");
+
   // Resize array of dof maps
   dof_map_set.resize(form.rank());
 
@@ -90,6 +92,8 @@ void DofMapSet::update(const ufc::form& form, Mesh& mesh)
       delete ufc_dof_map;
     }
   }
+
+  dolfin_debug("Finished updating set of dof maps");
 }
 //-----------------------------------------------------------------------------
 dolfin::uint DofMapSet::size() const

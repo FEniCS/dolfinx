@@ -1496,12 +1496,14 @@ defined function). ";
 
 
 // File: classdolfin_1_1KrylovSolver.xml
-%feature("docstring") dolfin::KrylovSolver "";
-
-%feature("docstring")  dolfin::KrylovSolver::KrylovSolver "
+%feature("docstring") dolfin::KrylovSolver "
 
 This class defines an interface for a Krylov solver. The underlying
-Krylov solver type is defined in default_type.h. ";
+Krylov solver type is defined in default_type.h.
+
+C++ includes: KrylovSolver.h ";
+
+%feature("docstring")  dolfin::KrylovSolver::KrylovSolver "";
 
 %feature("docstring")  dolfin::KrylovSolver::KrylovSolver "";
 
@@ -1509,7 +1511,9 @@ Krylov solver type is defined in default_type.h. ";
 
 %feature("docstring")  dolfin::KrylovSolver::~KrylovSolver "";
 
-%feature("docstring")  dolfin::KrylovSolver::solve "";
+%feature("docstring")  dolfin::KrylovSolver::solve "
+
+Solve linear system Ax = b. ";
 
 
 // File: classdolfin_1_1Lagrange.xml
@@ -4082,6 +4086,10 @@ Solve linear system Ax = b using a direct method ( LU factorization).
 Note that iterative methods (preconditioned Krylov methods including
 GMRES) are also available through the KrylovSolver interface. ";
 
+%feature("docstring")  dolfin::residual "
+
+Compute residual ||Ax - b||. ";
+
 %feature("docstring")  dolfin::dolfin_init "
 
 Initialize DOLFIN (and PETSc) with command-line arguments. This should
@@ -4459,107 +4467,107 @@ domains. ";
 // File: RadauQuadrature_8h.xml
 
 
-// File: dir_c60082fd3e8c51f3a15f3952cb427112.xml
+// File: dir_8f99fa75e45c026ae299746a85430e3d.xml
 
 
-// File: dir_3d21814d2835459f3da1fa5ed8e43be6.xml
+// File: dir_bda22f29b6a6ccc4d8564c94603f3070.xml
 
 
-// File: dir_7dc50eed79ee42fc373ac6bb06319fbd.xml
+// File: dir_226de932f8a1ee2c7866c078ddb0cbe0.xml
 
 
-// File: dir_3c5d8f0ae3c89286e8a22246a2b15a76.xml
+// File: dir_fd3d1a03cbb0ba248c78b01acee5a65e.xml
 
 
-// File: dir_18eaa3195393ebcc46a9f8771cee20a5.xml
+// File: dir_1f590fa352609c3c8b6a7741855c9e96.xml
 
 
-// File: dir_6374f96629924f58a5a2ed60279b0411.xml
+// File: dir_ccc70d671dc7f2c169a675a4a2bc8e2d.xml
 
 
-// File: dir_b22a99c8566e1d6acc173e4cae03011e.xml
+// File: dir_9270d4bcd3c18c409e65bb2843c05bd5.xml
 
 
-// File: dir_094b78feb97aa792afa27de3ab6e8851.xml
+// File: dir_7c397a22545de22724863f5badbe4c13.xml
 
 
-// File: dir_62e122ae400d4a77e78a9a3f7efc04c0.xml
+// File: dir_e8d769cf583871e1ffe572a3b4d49060.xml
 
 
-// File: dir_732e703d02d4c035a4fa8e44c328d35a.xml
+// File: dir_93cd7ab2d594d75c91cc9ff4330d48b0.xml
 
 
-// File: dir_edf3cb46a7189f41a39af09448d32528.xml
+// File: dir_7c5cb082d003f55935562b24eb98bb03.xml
 
 
-// File: dir_de8329c7d423dd6cece8ff5263452f6e.xml
+// File: dir_7f095e81acd39259730fef16e9b57484.xml
 
 
-// File: dir_4dad7afb06ba8cd2a53251858c69bdee.xml
+// File: dir_a7889e87f7b7726b3fa19fc727a4e9a6.xml
 
 
-// File: dir_075e467c95d4f3fd60b7499528d145e1.xml
+// File: dir_03f938e2071f2a0fb165521c0efb03e7.xml
 
 
-// File: dir_2b3f4bfc0249bca1398e000cff0f7055.xml
+// File: dir_477a01c8fece4016975be05ad058480c.xml
 
 
-// File: dir_b4e54699c910479fc4e660a3ff12bd4f.xml
+// File: dir_b0faab9e91e6f2a8de4e1c3847fcace1.xml
 
 
-// File: dir_a91c6b42fbded2c97e3cca96bc9e338b.xml
+// File: dir_044c8a9c2fce6301b6013539c172da8c.xml
 
 
-// File: dir_b9413dc616ed1935fd0d07580736cde3.xml
+// File: dir_5b3309fde14d9db637a4f8f8ce64e818.xml
 
 
-// File: dir_c6d0900b472507d44ee88f83078ce5c3.xml
+// File: dir_cab5a1b0d79bf0b4d07a83f56cbc5bf6.xml
 
 
-// File: dir_1a37cdf1998f53e48739adf5a49461f4.xml
+// File: dir_f99b4d9dcfc1c809b817fc9b03947889.xml
 
 
-// File: dir_fb32a8a20aa03205d393e8130a175cb8.xml
+// File: dir_fa2940e6f4027112e923db54c0c9d4a5.xml
 
 
-// File: dir_80293c20761785ae8db238456796bd86.xml
+// File: dir_d713f27f66c2e75b7b7ecf942dcdd699.xml
 
 
-// File: dir_49e61b3115d06df2b03473f51f7d6fd2.xml
+// File: dir_1f6fd5d8ff40aa66701b8c309328f95d.xml
 
 
-// File: dir_521fb44ea70108ea024b12df2eee4ae3.xml
+// File: dir_63095dc93a373210fc5a1f1e56dcf6b5.xml
 
 
-// File: dir_fb67b1f8adc11a89c9d303b6bc0a1fb2.xml
+// File: dir_b9d748b378b8eb7591c3507f66b0f031.xml
 
 
-// File: dir_d541c4e4e6d4c140e70fb3ae180d4062.xml
+// File: dir_8f53bcb69f620d18ecdefe6233e677c0.xml
 
 
-// File: dir_5a2875feb6931a2ab5abb2fad953e225.xml
+// File: dir_f5fc29378bc31411832c3bdf99698ed3.xml
 
 
-// File: dir_400ae4e1767b1e7a4bfa6009f61ce1d0.xml
+// File: dir_9edc37267fe012bac2fc8c3aa54bdbbd.xml
 
 
-// File: dir_80a347816a1a515e75b53fc9b43e17ad.xml
+// File: dir_bae3692a4afabfbc4ec271447e8a40ce.xml
 
 
-// File: dir_44518db957486ac038844039e54135bd.xml
+// File: dir_3ddea3575cd7b4878aac0722eb95ea5d.xml
 
 
-// File: dir_da2222faeabe775e3f1d1ceb0345a4e4.xml
+// File: dir_3770a9ee6ce3cedfa4f35d265db30183.xml
 
 
-// File: dir_728f3e7c60a2e644ffbff57e5f6b0a71.xml
+// File: dir_b5c3dcc2db72c560939ddf08b58bc271.xml
 
 
-// File: dir_9fa49838df67b12a4a81a039bfe28786.xml
+// File: dir_f4a020190e14a2a09e081ef39d23e598.xml
 
 
-// File: dir_546c30d5b20fa3712b124c27b9483968.xml
+// File: dir_ab1716513f7abe6b6ba15f980e652cd4.xml
 
 
-// File: dir_7dae5ed20d2fd5be416fe014f5d93942.xml
+// File: dir_6e9bec057e6169a84ffadbac0b241046.xml
 
