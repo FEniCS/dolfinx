@@ -4,6 +4,7 @@
 // Modified by Garth N. Wells 2005-2007.
 // Modified by Andy R. Terrel 2005.
 // Modified by Ola Skavhaug 2007.
+// Modified by Magnus Vikstrøm 2007-2008.
 //
 // First added:  2004
 // Last changed: 2008-01-11
@@ -72,9 +73,10 @@ void PETScMatrix::init(uint M, uint N)
   // Create a sparse matrix in compressed row format
   if (dolfin::MPI::numProcesses() > 1)
   {
-    // Create PETSc parallel matrix with a guess for number of diagonal (50 in this case) and number of off-diagonal non-zeroes (50 in this case)
+    // Create PETSc parallel matrix with a guess for number of diagonal (50 in this case) 
+    // and number of off-diagonal non-zeroes (50 in this case).
     // Note that guessing too high leads to excessive memory usage.
-    // In order to not waste any memory one would need to specify d_nnz and o_nnz
+    // In order to not waste any memory one would need to specify d_nnz and o_nnz.
     MatCreateMPIAIJ(PETSC_COMM_WORLD, PETSC_DECIDE, PETSC_DECIDE, M, N, 50, PETSC_NULL, 50, PETSC_NULL, &A);
   }
   else
@@ -97,10 +99,11 @@ void PETScMatrix::init(uint M, uint N, const uint* nz)
   // Create a sparse matrix in compressed row format
   if (dolfin::MPI::numProcesses() > 1)
   {
-    // Create PETSc parallel matrix with a guess for number of diagonal (50 in this case) and number of off-diagonal non-zeroes (50 in this case)
-    // In order to not waste any memory one would need to specify d_nnz and o_nnz
+    // Create PETSc parallel matrix with a guess for number of diagonal (50 in this case) 
+    // and number of off-diagonal non-zeroes (50 in this case).
+    // Note that guessing too high leads to excessive memory usage.
+    // In order to not waste any memory one would need to specify d_nnz and o_nnz.
     MatCreateMPIAIJ(PETSC_COMM_WORLD, PETSC_DECIDE, PETSC_DECIDE, M, N, 50, PETSC_NULL, 50, PETSC_NULL, &A);
-    MatSetFromOptions(A);
   }
   else
   {
@@ -124,9 +127,10 @@ void PETScMatrix::init(uint M, uint N, uint bs, uint nz)
   // Creates a sparse matrix in block AIJ (block compressed row) format.
   if (dolfin::MPI::numProcesses() > 1)
   {
-    dolfin_debug("PETScMatrix::init(M, N, bs, nz) - MatCreateMPIBAIJ");
-    // Create PETSc parallel matrix with a guess for number of diagonal (50 in this case) and number of off-diagonal non-zeroes (50 in this case)
-    // In order to not waste any memory one would need to specify d_nnz and o_nnz
+    // Create PETSc parallel matrix with a guess for number of diagonal (50 in this case) 
+    // and number of off-diagonal non-zeroes (50 in this case).
+    // Note that guessing too high leads to excessive memory usage.
+    // In order to not waste any memory one would need to specify d_nnz and o_nnz.
     MatCreateMPIBAIJ(PETSC_COMM_WORLD, bs, PETSC_DECIDE, PETSC_DECIDE, M, N, 50, PETSC_NULL, 50, PETSC_NULL, &A);
   }
   else
