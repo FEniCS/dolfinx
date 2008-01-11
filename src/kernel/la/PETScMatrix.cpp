@@ -72,8 +72,9 @@ void PETScMatrix::init(uint M, uint N)
   // Create a sparse matrix in compressed row format
   if (dolfin::MPI::numProcesses() > 1)
   {
-    dolfin_debug("PETScMatrix::init(M, N) - MatCreateMPIAIJ");
-    // Create PETSc parallel matrix with a guess for number of non-zeroes (50 in thise case)
+    // Create PETSc parallel matrix with a guess for number of diagonal (50 in this case) and number of off-diagonal non-zeroes (50 in this case)
+    // Note that guessing too high leads to excessive memory usage.
+    // In order to not waste any memory one would need to specify d_nnz and o_nnz
     MatCreateMPIAIJ(PETSC_COMM_WORLD, PETSC_DECIDE, PETSC_DECIDE, M, N, 50, PETSC_NULL, 50, PETSC_NULL, &A);
   }
   else
@@ -96,9 +97,10 @@ void PETScMatrix::init(uint M, uint N, const uint* nz)
   // Create a sparse matrix in compressed row format
   if (dolfin::MPI::numProcesses() > 1)
   {
-    dolfin_debug("PETScMatrix::init(M, N, nz) - MatCreateMPIAIJ");
-    // Create PETSc parallel matrix with a guess for number of non-zeroes (50 in thise case)
+    // Create PETSc parallel matrix with a guess for number of diagonal (50 in this case) and number of off-diagonal non-zeroes (50 in this case)
+    // In order to not waste any memory one would need to specify d_nnz and o_nnz
     MatCreateMPIAIJ(PETSC_COMM_WORLD, PETSC_DECIDE, PETSC_DECIDE, M, N, 50, PETSC_NULL, 50, PETSC_NULL, &A);
+    MatSetFromOptions(A);
   }
   else
   {
@@ -123,7 +125,8 @@ void PETScMatrix::init(uint M, uint N, uint bs, uint nz)
   if (dolfin::MPI::numProcesses() > 1)
   {
     dolfin_debug("PETScMatrix::init(M, N, bs, nz) - MatCreateMPIBAIJ");
-    // Create PETSc parallel matrix with a guess for number of non-zeroes (50 in thise case)
+    // Create PETSc parallel matrix with a guess for number of diagonal (50 in this case) and number of off-diagonal non-zeroes (50 in this case)
+    // In order to not waste any memory one would need to specify d_nnz and o_nnz
     MatCreateMPIBAIJ(PETSC_COMM_WORLD, bs, PETSC_DECIDE, PETSC_DECIDE, M, N, 50, PETSC_NULL, 50, PETSC_NULL, &A);
   }
   else
@@ -346,7 +349,10 @@ PETScMatrix::Type PETScMatrix::type() const
 void PETScMatrix::disp(uint precision) const
 {
   // FIXME: Maybe this could be an option?
-  MatView(A, PETSC_VIEWER_STDOUT_SELF);
+  if(MPI::numProcesses() > 1)
+    MatView(A, PETSC_VIEWER_STDOUT_WORLD);
+  else
+    MatView(A, PETSC_VIEWER_STDOUT_SELF);
 
 /*
   const uint M = size(0);

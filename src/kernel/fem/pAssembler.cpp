@@ -179,6 +179,7 @@ void pAssembler::assembleCells(GenericTensor& A,
     if (partitions && (*partitions)(*cell) != MPI::processNumber())
       continue;
 
+    dolfin_debug2("cpu %d assembling cell %d", MPI::processNumber(), (*cell).index());
     // Get integral for sub domain (if any)
     if (domains && domains->size() > 0)
     {
