@@ -74,12 +74,9 @@ namespace dolfin
       dolfin_debug2("cpu %d tabulating dofs for cell %d", MPI::processNumber(), cell.index());
       for (uint i = 0; i < local_dimension(); i++)
       {
-        dolfin_debug3("dofs[%d] = dof_map[%d][%d]", i, cell.index(), i);
-        //dofs[i] = dof_map[cell.index()][i];
+        dolfin_debug2("dofs[%d] = %d", i, dof_map[cell.index()][i]);
+        dofs[i] = dof_map[cell.index()][i];
       }
-
-      //ufc_cell.update(cell);
-      //ufc_dof_map->tabulate_dofs(dofs, ufc_mesh, ufc_cell);
     }
 
     /// Tabulate local-local facet dofs

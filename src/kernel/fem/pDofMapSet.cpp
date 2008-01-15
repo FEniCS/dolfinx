@@ -100,10 +100,10 @@ void pDofMapSet::update(const ufc::form& form, Mesh& mesh,
   dolfin_debug("Finished updating set of dof maps");
 }
 //-----------------------------------------------------------------------------
-void pDofMapSet::build(pUFC& ufc_) const
+void pDofMapSet::build(pUFC& ufc) const
 {
   for (uint i=0; i<dof_map_set.size(); ++i)
-    dof_map_set[i]->build(*ufc);
+    dof_map_set[i]->build(ufc);
 }
 //-----------------------------------------------------------------------------
 dolfin::uint pDofMapSet::size() const

@@ -73,9 +73,6 @@ namespace dolfin
 
     // Iterator for map
     typedef std::map<const std::string, std::pair<ufc::dof_map*, pDofMap*> >::iterator map_iterator;
-
-    // UFC
-    pUFC* ufc;
   };
 
 }

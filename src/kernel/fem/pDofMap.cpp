@@ -156,39 +156,36 @@ void pDofMap::build(pUFC& ufc)
   {
     // for all cells
     std::map<const uint, uint> map;
+    uint current_dof = 0;
 
     for (CellIterator c(dolfin_mesh); !c.end(); ++c)
     {
-      dolfin_debug2("dof_map[%d] = new uint[%d]", c->index(), local_dimension());
       dof_map[c->index()] = new uint[local_dimension()];
       // if cell in partitions belonging to process
       if ((*partitions)(*c) != MPI::processNumber())
         continue;
  
-       //ufc.update(*c);
-       ufc_cell.update(*c);
-       dolfin_debug("ufc_dof_map[0].tabulate_dofs");
-       //ufc.dof_maps[0].tabulate_dofs(ufc.dofs[0], ufc.mesh, ufc.cell);
-       //ufc_dof_map[0].tabulate_dofs(ufc.dofs[0], ufc.mesh, ufc.cell);
-       //ufc_dof_map->tabulate_dofs(ufc.dofs[0], ufc.mesh, ufc.cell);
- 
-         /*
-       for (uint i=0; i < ufc_dof_map[0].local_dimension(); ++i)
-       {
-         const uint dof = ufc.dofs[0][i];
-         dolfin_debug1("current dof = %d", dof);
- 
-         // Lite pseudo-kod här...
+      dolfin_debug2("cpu %d building cell %d", MPI::processNumber(), c->index());
+      ufc.update(*c);
+      ufc_dof_map[0].tabulate_dofs(ufc.dofs[0], ufc.mesh, ufc.cell);
 
-         if (dof in map)
-           dof_map[c->index()][i] = map[dof];
-         else
-         {
-           dof_map[c->index()][i] = current_dof;
-           map[dof] = current_dof++;
-         }
-       }
-  */
+      for (uint i=0; i < ufc_dof_map[0].local_dimension(); ++i)
+      {
+        //dolfin_debug2("cpu %d dof = %d", MPI::processNumber(), ufc.dofs[0][i]);
+        const uint dof = ufc.dofs[0][i];
+
+        std::map<const uint, uint>::iterator it = map.find(dof);
+        if (it != map.end())
+        {
+          dolfin_debug2("cpu %d dof %d already computed", MPI::processNumber(), dof);
+          dof_map[c->index()][i] = map[dof];
+        }
+        else
+        {
+          dof_map[c->index()][i] = current_dof;
+          map[dof] = current_dof++;
+        }
+      }
     }  
   }
 }
