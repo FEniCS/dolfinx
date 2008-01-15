@@ -171,7 +171,7 @@ void pDofMap::build(pUFC& ufc)
       for (uint i=0; i < ufc_dof_map[0].local_dimension(); ++i)
       {
         const uint dof = ufc.dofs[0][i];
-        dolfin_debug2("ufc.dofs[%d][%d] = %d", 0, iMPI::processNumber(), ufc.dofs[0][i]);
+        dolfin_debug3("ufc.dofs[%d][%d] = %d", 0, MPI::processNumber(), ufc.dofs[0][i]);
 
         std::map<const uint, uint>::iterator it = map.find(dof);
         if (it != map.end())
