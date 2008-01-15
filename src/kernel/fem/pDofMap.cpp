@@ -152,27 +152,26 @@ void pDofMap::build(pUFC& ufc)
   dof_map = new uint*[dolfin_mesh.numCells()];
   
   // for all processes
+  std::map<const uint, uint> map;
+  uint current_dof = 0;
   for (uint p = 0; p < MPI::numProcesses(); ++p)
   {
     // for all cells
-    std::map<const uint, uint> map;
-    uint current_dof = 0;
-
     for (CellIterator c(dolfin_mesh); !c.end(); ++c)
     {
-      dof_map[c->index()] = new uint[local_dimension()];
-      // if cell in partitions belonging to process
-      if ((*partitions)(*c) != MPI::processNumber())
+      // if cell in partitions belonging to process p
+      if ((*partitions)(*c) != p)
         continue;
  
+      dof_map[c->index()] = new uint[local_dimension()];
       dolfin_debug2("cpu %d building cell %d", MPI::processNumber(), c->index());
       ufc.update(*c);
       ufc_dof_map[0].tabulate_dofs(ufc.dofs[0], ufc.mesh, ufc.cell);
 
       for (uint i=0; i < ufc_dof_map[0].local_dimension(); ++i)
       {
-        //dolfin_debug2("cpu %d dof = %d", MPI::processNumber(), ufc.dofs[0][i]);
         const uint dof = ufc.dofs[0][i];
+        dolfin_debug2("ufc.dofs[%d][%d] = %d", 0, iMPI::processNumber(), ufc.dofs[0][i]);
 
         std::map<const uint, uint>::iterator it = map.find(dof);
         if (it != map.end())

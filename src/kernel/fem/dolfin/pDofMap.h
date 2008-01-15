@@ -77,6 +77,8 @@ namespace dolfin
         dolfin_debug2("dofs[%d] = %d", i, dof_map[cell.index()][i]);
         dofs[i] = dof_map[cell.index()][i];
       }
+      //ufc_cell.update(cell);
+      //ufc_dof_map->tabulate_dofs(dofs, ufc_mesh, ufc_cell);
     }
 
     /// Tabulate local-local facet dofs
