@@ -9,11 +9,13 @@
 # Modified by Andy R. Terrel (gmsh fix)
 # Modified by Magnus Vikstrom (metis and scotch function)
 # Modified by Bartosz Sawicki (diffpack function)
+# Modified by Gideon Simpson (Exodus II function)
 #
 # Script for converting between various data formats
 
 import getopt
 import sys
+import os
 from commands import getoutput
 import re
 
@@ -75,6 +77,12 @@ def main(argv):
     elif input_format == "diffpack" and output_format == "xml":
         # Convert from Diffpack tetrahedral grid format to xml format
         diffpack2xml(ifilename, ofilename)
+    elif input_format == "NetCDF" and output_format == "xml":
+        # Convert from NetCDF generated from ExodusII format to xml format
+        netcdf2xml(ifilename, ofilename)      
+    elif input_format =="ExodusII" and output_format =="xml":
+        # Convert from ExodusII format to xml format via NetCDF
+        exodus2xml(ifilename, ofilename)
     else:
         error("Sorry, cannot convert between .%s and .%s file formats." % (isuffix, osuffix))
 
@@ -104,6 +112,7 @@ Supported formats:
   metis    - Metis graph file format
   scotch   - Scotch graph file format
   diffpack - Diffpack terahedral grid format
+  ExodusII - Sandia Format (requires ncdump utility from NetCDF)
 
 If --input or --output are not specified, the format will
 be deduced from the suffix:
@@ -115,6 +124,9 @@ be deduced from the suffix:
   .gra  - metis
   .grf  - scotch
   .grid - diffpack
+  .e	- Exodus II
+  .exo  - Exodus II
+  .ncdf - ncdump'ed Exodus II
 """
 
 def format_from_suffix(suffix):
@@ -133,6 +145,12 @@ def format_from_suffix(suffix):
 		  return "scotch"
     elif suffix == "grid":
 		  return "diffpack"
+    elif suffix == "ncdf":
+		  return "NetCDF"
+    elif suffix =="exo":
+          return "ExodusII"
+    elif suffix =="e":
+          return "ExodusII"
     else:
         error("Sorry, unknown suffix %s." % suffix)
 
@@ -754,6 +772,131 @@ def diffpack2xml(ifilename, ofilename):
     ofile.close()
     ofile_mat.close()
     ofile_bi.close() 
+
+def netcdf2xml(ifilename,ofilename):
+    "Convert from NetCDF format to DOLFIN XML."
+
+    print "Converting from NetCDF format (.ncdf) to DOLFIN XML format"
+
+    # Open files
+    ifile = open(ifilename, "r")
+    ofile = open(ofilename, "w")
+
+
+    cell_type = None
+    dim = 0
+
+    # Scan file for dimension, number of nodes, number of elements
+    while 1:
+        line = ifile.readline()
+        if not line:
+            error("Empty file")
+        if re.search(r"num_dim.*=", line):
+            dim = int(re.match(".*\s=\s(\d+)\s;",line).group(1))
+        if re.search(r"num_nodes.*=", line):
+            num_vertices = int(re.match(".*\s=\s(\d+)\s;",line).group(1))
+        if re.search(r"num_elem.*=", line):
+            num_cells = int(re.match(".*\s=\s(\d+)\s;",line).group(1))
+        if re.search(r"connect1 =",line):
+            break            
+
+    num_dims=dim
+    
+    # Set cell type
+    if dim == 2:
+        cell_type ="triangle"
+    if dim == 3:
+        cell_type ="tetrahedron"
+        
+    # Check that we got the cell type
+    if cell_type == None:
+        error("Unable to find cell type.")
+            
+    # Write header
+    write_header_mesh(ofile, cell_type, dim)
+    write_header_cells(ofile, num_cells)
+    num_cells_read = 0
+
+    # Read and write cells
+    while 1:
+        # Read next line
+        line = ifile.readline()
+        if not line: 
+            break
+        connect=re.split("[,;]",line)
+        if num_dims == 2:
+            n0 = int(connect[0])-1
+            n1 = int(connect[1])-1
+            n2 = int(connect[2])-1
+            write_cell_triangle(ofile, num_cells_read, n0, n1, n2)
+        elif num_dims == 3:
+            n0 = int(connect[0])-1
+            n1 = int(connect[1])-1
+            n2 = int(connect[2])-1
+            n3 = int(connect[3])-1
+            write_cell_tetrahedron(ofile, num_cells_read, n0, n1, n2, n3)
+        num_cells_read +=1
+        if num_cells == num_cells_read:
+           write_footer_cells(ofile)
+           write_header_vertices(ofile, num_vertices)
+           break
+
+    num_vertices_read = 0
+    coords = [[],[],[]]
+    coord = -1
+
+    while 1:
+        line = ifile.readline()
+        if not line:
+            error("Missing data")
+        if re.search(r"coord =",line):
+            break            
+
+    # Read vertices
+    while 1:
+        line = ifile.readline()
+#        print line
+        if not line: 
+            break
+        if re.search(r"\A\s\s\S+,",line):
+#            print line
+            coord+=1
+            print "Found x_"+str(coord)+" coordinates"
+        coords[coord] += line.split()
+        if re.search(r";",line):
+            break
+
+    # Write vertices
+    for i in range(num_vertices):
+        if num_dims == 2:
+            x = float(re.split(",",coords[0].pop(0))[0])
+            y = float(re.split(",",coords[1].pop(0))[0])
+            z = 0
+        if num_dims == 3:
+            x = float(re.split(",",coords[0].pop(0))[0])
+            y = float(re.split(",",coords[1].pop(0))[0])
+            z = float(re.split(",",coords[2].pop(0))[0])
+        write_vertex(ofile, i, x, y, z)
+
+
+    # Write footer
+    write_footer_vertices(ofile)
+    write_footer_mesh(ofile)
+
+    # Close files
+    ifile.close()
+    ofile.close()
+
+def exodus2xml(ifilename,ofilename):
+    "Convert from Exodus II format to DOLFIN XML."
+
+    print "Converting from Exodus II format to NetCDF format"
+
+    name = ifilename.split(".")[0]
+    netcdffilename = name +".ncdf"
+    arglist=[' ',ifilename,' > ',netcdffilename]
+    os.spawnv(os.P_WAIT, 'ncdump',arglist)
+    netcdf2xml(netcdffilename,ofilename)
 
 # Write mesh header
 def write_header_mesh(ofile, cell_type, dim):
