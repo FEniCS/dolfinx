@@ -1,8 +1,10 @@
-// Copyright (C) 2007 Anders Logg.
+// Copyright (C) 2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// First added:  2007-04-02
-// Last changed: 2007-04-05
+// Modified by Magnus Vikstrøm, 2008
+//
+// First added:  2008-01-11
+// Last changed: 2008-01-15
 
 #ifndef __P_FORM_H
 #define __P_FORM_H
@@ -35,7 +37,7 @@ namespace dolfin
     virtual const Array<Function*>& coefficients() const = 0;
 
     /// Create degree of freedom maps 
-    void updateDofMaps(Mesh& mesh);
+    void updateDofMaps(Mesh& mesh, MeshFunction<uint>& partitions);
 
     /// Set degree of freedom maps
     void setDofMaps(pDofMapSet& dof_map_set);

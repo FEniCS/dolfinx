@@ -47,7 +47,7 @@ pAssembler::~pAssembler()
 //-----------------------------------------------------------------------------
 void pAssembler::assemble(GenericTensor& A, pForm& form, bool reset_tensor)
 {
-  form.updateDofMaps(mesh);
+  form.updateDofMaps(mesh, *partitions);
   assemble(A, form.form(), form.coefficients(), form.dofMaps(), 0, 0, 0, reset_tensor);
 }
 //-----------------------------------------------------------------------------
@@ -74,7 +74,7 @@ void pAssembler::assemble(GenericTensor& A, pForm& form,
   }
 
   // Assemble
-  form.updateDofMaps(mesh);
+  form.updateDofMaps(mesh, *partitions);
   assemble(A, form.form(), form.coefficients(), form.dofMaps(),
            cell_domains, facet_domains, facet_domains, reset_tensor);
 
@@ -91,7 +91,7 @@ void pAssembler::assemble(GenericTensor& A, pForm& form,
                          const MeshFunction<uint>& interior_facet_domains,
                          bool reset_tensor)
 {
-  form.updateDofMaps(mesh);
+  form.updateDofMaps(mesh, *partitions);
   assemble(A, form.form(), form.coefficients(), form.dofMaps(), &cell_domains, 
            &exterior_facet_domains, &interior_facet_domains, reset_tensor);
 }
@@ -140,6 +140,9 @@ void pAssembler::assemble(GenericTensor& A, const ufc::form& form,
 
   // Create data structure for local assembly data
   pUFC ufc(form, mesh, dof_map_set);
+
+  // FIXME: Temporary hack..
+  dof_map_set.build(ufc);
 
   // Initialize global tensor
   initGlobalTensor(A, dof_map_set, ufc, reset_tensor);

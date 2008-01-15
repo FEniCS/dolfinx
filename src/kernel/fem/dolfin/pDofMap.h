@@ -1,8 +1,10 @@
-// Copyright (C) 2007 Anders Logg and Garth N. Wells.
+// Copyright (C) 2008 Anders Logg and Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
-
-// First added:  2007-03-01
-// Last changed: 2007-04-03
+//
+// Modified by Magnus Vikstrøm, 2008
+//
+// First added:  2008-01-11
+// Last changed: 2008-01-15
 
 #ifndef __P_DOF_MAP_H
 #define __P_DOF_MAP_H
@@ -12,6 +14,9 @@
 #include <dolfin/UFCCell.h>
 #include <dolfin/UFCMesh.h>
 #include <dolfin/constants.h>
+#include <dolfin/MPI.h>
+#include <dolfin/MeshFunction.h>
+#include <dolfin/pUFC.h>
 
 namespace dolfin
 {
@@ -26,10 +31,11 @@ namespace dolfin
   public:
 
     /// Create dof map on mesh
-    pDofMap(ufc::dof_map& dof_map, Mesh& mesh);
+    pDofMap(ufc::dof_map& dof_map, Mesh& mesh, MeshFunction<uint>& partitions);
 
     /// Create dof map on mesh
-    pDofMap(const std::string signature, Mesh& mesh);
+    pDofMap(const std::string signature, Mesh& mesh, 
+        MeshFunction<uint>& partitions);
 
     /// Destructor
     ~pDofMap();
@@ -65,8 +71,15 @@ namespace dolfin
     /// Tabulate the local-to-global mapping of dofs on a cell
     void tabulate_dofs(uint* dofs, Cell& cell) 
     {
-      ufc_cell.update(cell);
-      ufc_dof_map->tabulate_dofs(dofs, ufc_mesh, ufc_cell);
+      dolfin_debug2("cpu %d tabulating dofs for cell %d", MPI::processNumber(), cell.index());
+      for (uint i = 0; i < local_dimension(); i++)
+      {
+        dolfin_debug3("dofs[%d] = dof_map[%d][%d]", i, cell.index(), i);
+        //dofs[i] = dof_map[cell.index()][i];
+      }
+
+      //ufc_cell.update(cell);
+      //ufc_dof_map->tabulate_dofs(dofs, ufc_mesh, ufc_cell);
     }
 
     /// Tabulate local-local facet dofs
@@ -88,6 +101,9 @@ namespace dolfin
     Mesh& mesh() const
       { return dolfin_mesh; }
 
+    /// Build parallel dof map
+    void build(pUFC& ufc);
+
   private:
 
     /// Initialise pDofMap
@@ -95,6 +111,9 @@ namespace dolfin
 
     /// Extract sub pDofMap
     ufc::dof_map* extractDofMap(const ufc::dof_map& dof_map, uint& offset, const Array<uint>& sub_system) const;
+
+    // Parallel dof map
+    uint** dof_map;
 
     // UFC dof map
     ufc::dof_map* ufc_dof_map;
@@ -113,6 +132,8 @@ namespace dolfin
 
     bool ufc_map;
 
+    // Partitions
+    MeshFunction<uint>* partitions;
   };
 
 }
