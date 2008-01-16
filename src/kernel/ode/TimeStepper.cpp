@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2003
-// Last changed: 2006-05-07
+// Last changed: 2008-01-16
 
 #include <cmath>
 #include <string>
@@ -139,6 +139,11 @@ real TimeStepper::step()
 bool TimeStepper::finished() const
 {
   return t >= T;
+}
+//-----------------------------------------------------------------------------
+bool TimeStepper::stopped() const
+{
+  return _stopped;
 }
 //-----------------------------------------------------------------------------
 void TimeStepper::save()
