@@ -53,6 +53,9 @@ namespace dolfin
     /// Check if we have reached the end time
     bool finished() const;
 
+    /// Check if we have stopped
+    bool stopped() const;
+
   private:
 
     // Save interpolated solution (when necessary)
@@ -88,7 +91,7 @@ namespace dolfin
     Progress p;
 
     // True if solution has been stopped
-    bool stopped;
+    bool _stopped;
 
     // True if we have reached the given end time
     bool _finished;
