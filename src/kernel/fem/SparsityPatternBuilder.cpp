@@ -18,14 +18,15 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern, Mesh& mesh,
-                                                UFC& ufc, const DofMapSet& dof_map_set)
+void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
+				   Mesh& mesh,
+				   UFC& ufc, const DofMapSet& dof_map_set)
 {
-  if (dof_map_set.size() == 0)
+  if (ufc.form.rank() == 0)
     scalarBuild(sparsity_pattern);
-  else if (dof_map_set.size() == 1)
+  else if (ufc.form.rank() == 1)
     vectorBuild(sparsity_pattern, dof_map_set);
-  else if (dof_map_set.size() == 2)
+  else if (ufc.form.rank() == 2)
     matrixBuild(sparsity_pattern, mesh, ufc, dof_map_set);
   else
     error("Cannot compute sparsity patterm for rank > 2.");

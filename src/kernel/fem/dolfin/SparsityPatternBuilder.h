@@ -24,8 +24,9 @@ namespace dolfin
   public:
     
     /// Build sparsity pattern
-    static void build(GenericSparsityPattern& sparsity_pattern, Mesh& mesh, UFC& ufc, 
-                                    const DofMapSet& dof_map_set);
+    static void build(GenericSparsityPattern& sparsity_pattern, Mesh& mesh,
+		      UFC& ufc, 
+		      const DofMapSet& dof_map_set);
 
   private:
 
