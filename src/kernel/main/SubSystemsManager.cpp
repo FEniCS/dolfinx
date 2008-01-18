@@ -1,8 +1,10 @@
 // Copyright (C) 2008 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Anders Logg, 2008.
+//
 // First added:  2008-01-07
-// Last changed: 
+// Last changed: 2008-01-18
 
 #ifdef HAVE_PETSC_H
 #include <petsc.h>
@@ -28,6 +30,7 @@ dolfin::SubSystemsManager dolfin::SubSystemsManager::sub_systems_manager;
 SubSystemsManager::SubSystemsManager() : petsc_initialized(false),
                                          petsc_controls_mpi(false)
 {
+  dolfin_debug("Creating DOLFIN sub system manager.");
   // Do nothing
 }
 //-----------------------------------------------------------------------------
@@ -38,6 +41,8 @@ SubSystemsManager::SubSystemsManager(const SubSystemsManager& sub_sys_manager)
 //-----------------------------------------------------------------------------
 SubSystemsManager::~SubSystemsManager()
 {
+  dolfin_debug("DOLFIN sub system manager shutting down...");
+
   // Finalize subsystems in the correct order
   finalizePETSc();
   finalizeMPI();
@@ -45,13 +50,20 @@ SubSystemsManager::~SubSystemsManager()
 //-----------------------------------------------------------------------------
 void SubSystemsManager::initMPI()
 {
-  // Initialize MPI
-  MPIinit();
+#ifdef HAVE_MPI_H
+  if( MPIinitialized() )
+    return;
+
+  dolfin_debug("Initializing MPI");
+  MPI_Init(0, 0);
+#else
+  // Do nothing
+#endif
 }
 //-----------------------------------------------------------------------------
-#ifdef HAVE_PETSC_H
 void SubSystemsManager::initPETSc()
 {
+#ifdef HAVE_PETSC_H
   if ( sub_systems_manager.petsc_initialized )
     return;
 
@@ -70,10 +82,14 @@ void SubSystemsManager::initPETSc()
   // Cleanup
   delete [] argv[0];
   delete [] argv;
+#else
+  error("DOLFIN has not been configured for PETSc.");
+#endif
 }
 //-----------------------------------------------------------------------------
 void SubSystemsManager::initPETSc(int argc, char* argv[], bool cmd_line_args)
 {
+#ifdef HAVE_PETSC_H
   if ( sub_systems_manager.petsc_initialized )
     return;
 
@@ -96,29 +112,25 @@ void SubSystemsManager::initPETSc(int argc, char* argv[], bool cmd_line_args)
   // Determine if PETSc initialised MPI and is then responsible for MPI finalization
   if(!mpi_init_status && MPIinitialized())
     sub_systems_manager.petsc_controls_mpi = true;
-}
-//-----------------------------------------------------------------------------
 #else
-void SubSystemsManager::initPETSc()
-{
   error("DOLFIN has not been configured for PETSc.");
-}
-//-----------------------------------------------------------------------------
-void SubSystemsManager::initPETSc(int argc, char* argv[], bool cmd_line_args)
-{
-  error("DOLFIN has not been configured for PETSc.");
-}
 #endif
+}
 //-----------------------------------------------------------------------------
 void SubSystemsManager::finalizeMPI()
 {
+  dolfin_debug("DOLFIN sub system manager checking if MPI needs to be finalized...");
+
 #ifdef HAVE_MPI_H
   // Finalise MPI if required
   if ( MPIinitialized() )
   {
+    dolfin_debug("DOLFIN sub system manager finalizing MPI...");
     dolfin_debug("Finalizing MPI");
     MPI_Finalize();
   }
+  else
+    dolfin_debug("MPI not initialized so no need to finalize.");
 #else
   // Do nothing
 #endif
@@ -126,13 +138,17 @@ void SubSystemsManager::finalizeMPI()
 //-----------------------------------------------------------------------------
 void SubSystemsManager::finalizePETSc()
 {
+  dolfin_debug("DOLFIN sub system manager checking if PETSc needs to be finalized...");
+
 #ifdef HAVE_PETSC_H
  if ( sub_systems_manager.petsc_initialized )
   {
+    dolfin_debug("DOLFIN sub system manager finalizing MPI...");
     dolfin_debug("Finalizing PETSc");
     PetscFinalize();
  
     #ifdef HAVE_SLEPC_H
+    dolfin_debug("DOLFIN sub system manager finalizing SLECc...");
     SlepcFinalize();
     #endif
   }
@@ -161,19 +177,3 @@ bool SubSystemsManager::MPIinitialized()
 #endif
 }
 //-----------------------------------------------------------------------------
-void SubSystemsManager::MPIinit()
-{
-#ifdef HAVE_MPI_H
-  if( MPIinitialized() )
-    return;
-
-  dolfin_debug("Initializing MPI");
-  MPI_Init(0, 0);
-#else
-  // Do nothing
-#endif
-}
-//-----------------------------------------------------------------------------
-
-
-
