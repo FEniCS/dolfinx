@@ -152,32 +152,31 @@ void pDofMap::build(pUFC& ufc)
   dof_map = new uint*[dolfin_mesh.numCells()];
   
   // for all processes
-  std::map<const uint, uint> map;
   uint current_dof = 0;
   for (uint p = 0; p < MPI::numProcesses(); ++p)
   {
     // for all cells
     for (CellIterator c(dolfin_mesh); !c.end(); ++c)
     {
-      // if cell in partitions belonging to process p
+      // if cell in partition belonging to process p
       if ((*partitions)(*c) != p)
         continue;
  
       dof_map[c->index()] = new uint[local_dimension()];
-      dolfin_debug2("cpu %d building cell %d", MPI::processNumber(), c->index());
+      //dolfin_debug2("cpu %d building cell %d", MPI::processNumber(), c->index());
       ufc.update(*c);
       ufc_dof_map[0].tabulate_dofs(ufc.dofs[0], ufc.mesh, ufc.cell);
 
       for (uint i=0; i < ufc_dof_map[0].local_dimension(); ++i)
       {
         const uint dof = ufc.dofs[0][i];
-        dolfin_debug3("ufc.dofs[%d][%d] = %d", 0, MPI::processNumber(), ufc.dofs[0][i]);
+        //dolfin_debug3("ufc.dofs[%d][%d] = %d", 0, MPI::processNumber(), ufc.dofs[0][i]);
 
         std::map<const uint, uint>::iterator it = map.find(dof);
         if (it != map.end())
         {
-          dolfin_debug2("cpu %d dof %d already computed", MPI::processNumber(), dof);
-          dof_map[c->index()][i] = map[dof];
+          //dolfin_debug2("cpu %d dof %d already computed", MPI::processNumber(), it->second);
+          dof_map[c->index()][i] = it->second;
         }
         else
         {
