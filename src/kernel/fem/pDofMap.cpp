@@ -165,9 +165,9 @@ void pDofMap::build(pUFC& ufc)
       dof_map[c->index()] = new uint[local_dimension()];
       //dolfin_debug2("cpu %d building cell %d", MPI::processNumber(), c->index());
       ufc.update(*c);
-      ufc_dof_map[0].tabulate_dofs(ufc.dofs[0], ufc.mesh, ufc.cell);
+      ufc_dof_map->tabulate_dofs(ufc.dofs[0], ufc.mesh, ufc.cell);
 
-      for (uint i=0; i < ufc_dof_map[0].local_dimension(); ++i)
+      for (uint i=0; i < ufc_dof_map->local_dimension(); ++i)
       {
         const uint dof = ufc.dofs[0][i];
         //dolfin_debug3("ufc.dofs[%d][%d] = %d", 0, MPI::processNumber(), ufc.dofs[0][i]);
