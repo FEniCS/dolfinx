@@ -98,11 +98,20 @@ real MonoAdaptiveNewtonSolver::iteration(real tol, uint iter, real d0, real d1)
 	A.update(ts.u, ts.endtime());
       }
 
+//       cout << "A:" << endl;
+//       A.matrix_sparse().disp();
+
       tic();
       num_local_iterations += krylov_g->solve(A.matrix_sparse(), dx2, b2);
       message("Linear solve took %g seconds",toc());
 
       dx.copy(dx2.vec(), 0, 0, dx.size());
+
+
+//       cout << "b:" << endl;
+//       b.disp();
+//       cout << "dx:" << endl;
+//       dx.disp();
     }
     else
     {
@@ -279,7 +288,7 @@ void MonoAdaptiveNewtonSolver::chooseLinearSolver()
     krylov->set("Krylov relative tolerance", ktol);
     krylov->set("Krylov absolute tolerance", ktol*tol);
 
-    message("Using default Krylov solver for matrix Jacobian");
+    message("Using BiCGStab Krylov solver for matrix Jacobian");
     krylov_g = new KrylovSolver(bicgstab, ilu);
     krylov_g->set("Krylov report", monitor);
     krylov_g->set("Krylov relative tolerance", ktol);
