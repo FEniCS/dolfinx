@@ -159,10 +159,11 @@ PETScMatrix* PETScMatrix::create() const
 //-----------------------------------------------------------------------------
 PETScMatrix* PETScMatrix::copy() const
 {
-  // Not yet implemented
-  error("Not yet implemented.");
+  PETScMatrix* mcopy = create();
 
-  return 0;
+  MatDuplicate(A, MAT_COPY_VALUES, &(mcopy->A));
+
+  return mcopy;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint PETScMatrix::size(uint dim) const
