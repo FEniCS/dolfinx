@@ -63,7 +63,7 @@ am_libdolfin_la_la_OBJECTS = solve.lo GMRES.lo LU.lo \
 	PETScPreconditioner.lo PETScVector.lo SparsityPattern.lo \
 	uBlasFactory.lo uBlasKrylovMatrix.lo uBlasKrylovSolver.lo \
 	uBlasLUSolver.lo uBlasDummyPreconditioner.lo \
-	uBlasILUPreconditioner.lo uBlasVector.lo
+	uBlasILUPreconditioner.lo uBlasVector.lo uBlasMatrix.lo
 libdolfin_la_la_OBJECTS = $(am_libdolfin_la_la_OBJECTS)
 libdolfin_la_la_LINK = $(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(AM_CXXFLAGS) \
@@ -309,7 +309,8 @@ libdolfin_la_la_SOURCES = solve.cpp \
                           uBlasLUSolver.cpp \
                           uBlasDummyPreconditioner.cpp \
                           uBlasILUPreconditioner.cpp \
-                          uBlasVector.cpp
+                          uBlasVector.cpp \
+                          uBlasMatrix.cpp
 
 libdolfin_la_la_LDFLAGS = -static
 all: all-recursive
@@ -399,6 +400,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/uBlasKrylovMatrix.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/uBlasKrylovSolver.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/uBlasLUSolver.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/uBlasMatrix.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/uBlasVector.Plo@am__quote@
 
 .cpp.o:

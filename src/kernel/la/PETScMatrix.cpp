@@ -20,6 +20,7 @@
 #include <dolfin/PETScMatrix.h>
 #include <dolfin/GenericSparsityPattern.h>
 #include <dolfin/SparsityPattern.h>
+#include <dolfin/PETScFactory.h>
 #include <dolfin/MPI.h>
 
 using namespace dolfin;
@@ -420,7 +421,7 @@ LogStream& dolfin::operator<< (LogStream& stream, const PETScMatrix& A)
   return stream;
 }
 //-----------------------------------------------------------------------------
-PETScFactory& PETScMatrix::factory() const
+LinearAlgebraFactory& PETScMatrix::factory() const
 {
   return PETScFactory::instance();
 }

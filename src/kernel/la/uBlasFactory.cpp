@@ -4,24 +4,21 @@
 // First added:  2007-12-06
 // Last changed: 2007-12-07
 
-#include <dolfin/uBlasMatrix.h>
-#include <dolfin/uBlasVector.h>
 #include <dolfin/uBlasFactory.h>
-#include <dolfin/SparsityPattern.h>
 
 using namespace dolfin;
 
-GenericMatrix* uBlasFactory::createMatrix() const 
+uBlasMatrix<ublas_sparse_matrix>* uBlasFactory::createMatrix() const 
 {
-  return new uBlasMatrix<ublas_dense_matrix>(); 
+  return new uBlasMatrix<ublas_sparse_matrix>(); 
 }
 
-GenericSparsityPattern* uBlasFactory::createPattern() const 
+SparsityPattern* uBlasFactory::createPattern() const 
 {
   return new SparsityPattern(); 
 }
 
-GenericVector* uBlasFactory::createVector() const 
+uBlasVector* uBlasFactory::createVector() const 
 {
   return new uBlasVector(); 
 }

@@ -19,7 +19,7 @@
 #include <dolfin/PETScObject.h>
 #include <dolfin/Variable.h>
 #include <dolfin/GenericMatrix.h>
-#include <dolfin/PETScFactory.h>
+#include <dolfin/LinearAlgebraFactory.h>
 
 namespace dolfin
 {
@@ -140,7 +140,7 @@ namespace dolfin
     friend LogStream& operator<< (LogStream& stream, const PETScMatrix& A);
 
     /// Return factory object for backend
-    PETScFactory& factory() const;
+    LinearAlgebraFactory& factory() const;
     
     /// Return PETSc Mat pointer
     Mat mat() const;
