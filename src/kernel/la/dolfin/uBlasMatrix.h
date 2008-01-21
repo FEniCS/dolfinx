@@ -22,7 +22,7 @@
 #include <dolfin/ublas.h>
 #include <dolfin/uBlasVector.h>
 #include <dolfin/uBlasLUSolver.h>
-#include <dolfin/uBlasFactory.h>
+#include <dolfin/LinearAlgebraFactory.h>
 
 namespace dolfin
 {
@@ -122,13 +122,14 @@ namespace dolfin
     /// Create copy of matrix
     uBlasMatrix<Mat>* copy() const;
 
-    uBlasFactory& factory() const { return dolfin::uBlasFactory::instance(); }
+    LinearAlgebraFactory& factory() const;
 
     //friend LogStream& operator<< <Mat> (LogStream&, const uBlasMatrix<Mat>&);
 
   private:
 
   };
+
 
   //---------------------------------------------------------------------------
   // Implementation of uBlasMatrix

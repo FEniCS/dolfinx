@@ -52,6 +52,9 @@ namespace dolfin
     /// Create constant function from given value
     Function(Mesh& mesh, real value);
 
+    /// Create constant function from given value
+    //Function(Mesh& mesh, GenericFunction& function);
+
     /// Create discrete function for argument function i of form
     Function(Mesh& mesh, Vector& x, Form& form, uint i = 1);
 

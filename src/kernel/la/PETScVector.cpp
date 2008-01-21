@@ -433,7 +433,7 @@ Vec PETScVector::vec() const
   return x;
 }
 //-----------------------------------------------------------------------------
-PETScFactory& PETScVector::factory() const
+LinearAlgebraFactory& PETScVector::factory() const
 {
   return PETScFactory::instance();
 }

@@ -419,7 +419,7 @@ LogStream& dolfin::operator<< (LogStream& stream, const PETScMatrix& A)
   return stream;
 }
 //-----------------------------------------------------------------------------
-PETScFactory& PETScMatrix::factory() const
+LinearAlgebraFactory& PETScMatrix::factory() const
 {
   return PETScFactory::instance();
 }
