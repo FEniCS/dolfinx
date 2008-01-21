@@ -9,6 +9,9 @@
 #ifndef __PETSC_FACTORY_H
 #define __PETSC_FACTORY_H
 
+#include <dolfin/PETScMatrix.h>
+#include <dolfin/PETScVector.h>
+#include <dolfin/SparsityPattern.h>
 #include <dolfin/LinearAlgebraFactory.h>
 
 namespace dolfin
