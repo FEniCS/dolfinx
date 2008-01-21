@@ -33,7 +33,7 @@ namespace dolfin
 			     matrix(new DefaultMatrix(M, N)) {}
     
     /// Destructor
-    ~Matrix() {}
+    ~Matrix() { delete matrix; }
     
     /// Initialize M x N matrix
     inline void init(uint M, uint N) 
