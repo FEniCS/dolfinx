@@ -10,6 +10,7 @@
 #include <dolfin/uBlasKrylovSolver.h>
 #include <dolfin/uBlasLUSolver.h>
 #include <dolfin/KrylovSolver.h>
+#include <dolfin/LUSolver.h>
 #include <dolfin/Alloc.h>
 #include <dolfin/ODE.h>
 #include <dolfin/Method.h>
@@ -25,7 +26,7 @@ MonoAdaptiveNewtonSolver::MonoAdaptiveNewtonSolver
   : TimeSlabSolver(timeslab), implicit(implicit),
     piecewise(get("ODE matrix piecewise constant")),
     ts(timeslab), A(timeslab, implicit, piecewise),
-    krylov(0), lu(0), krylov_g(0)
+    krylov(0), lu(0), krylov_g(0), lu_g(0)
 {
   // Initialize product M*u0 for implicit system
   if ( implicit )
@@ -44,6 +45,10 @@ MonoAdaptiveNewtonSolver::~MonoAdaptiveNewtonSolver()
     delete krylov;
   if ( lu )
     delete lu;
+  if ( krylov_g )
+    delete krylov_g;
+  if ( lu_g )
+    delete lu_g;
 }
 //-----------------------------------------------------------------------------
 void MonoAdaptiveNewtonSolver::start()
@@ -79,41 +84,50 @@ real MonoAdaptiveNewtonSolver::iteration(real tol, uint iter, real d0, real d1)
   //b.disp();
 
   // Solve linear system
-  if ( krylov )
+  const bool matrix_free = get("ODE matrix-free jacobian");
+  if(!matrix_free)
   {
-    const bool matrix_free = get("ODE matrix-free jacobian");
-
-    if(!matrix_free)
+    // Need to make implementation-independent copies
+    Vector dx2(dx.size());
+    Vector b2(b.size());
+    
+    dx2.vec().copy(dx, 0, 0, dx2.size());
+    b2.vec().copy(b, 0, 0, b2.size());
+    
+    // FIXME: Implement a better check
+    if ( d1 >= 0.5*d0 )
     {
-      // Need to make implementation-independent copies
-      Vector dx2(dx.size());
-      Vector b2(b.size());
-      
-      dx2.vec().copy(dx, 0, 0, dx2.size());
-      b2.vec().copy(b, 0, 0, b2.size());
-
-      // FIXME: Implement a better check
-      if ( d1 >= 0.5*d0 )
-      {
-	A.update(ts.u, ts.endtime());
-      }
-
+      A.update(ts.u, ts.endtime());
+    }
+    
+    if(krylov)
+    {
+//       cout << "Solving:" << endl;
 //       cout << "A:" << endl;
 //       A.matrix_sparse().disp();
+//       cout << "b:" << endl;
+//       b2.disp();
 
       tic();
       num_local_iterations += krylov_g->solve(A.matrix_sparse(), dx2, b2);
       message("Linear solve took %g seconds",toc());
 
-      dx.copy(dx2.vec(), 0, 0, dx.size());
-
-
-//       cout << "b:" << endl;
-//       b.disp();
 //       cout << "dx:" << endl;
-//       dx.disp();
+//       dx2.disp();
+
     }
     else
+    {
+      lu_g->solve(A.matrix_sparse(), dx2, b2);
+    }
+    dx.copy(dx2.vec(), 0, 0, dx.size());
+
+//     cout << "dx:" << endl;
+//     dx2.disp();
+  }
+  else
+  {
+    if ( krylov )
     {
       // FIXME: Scaling needed for PETSc Krylov solver, but maybe not for
       // uBlas?
@@ -122,13 +136,13 @@ real MonoAdaptiveNewtonSolver::iteration(real tol, uint iter, real d0, real d1)
       num_local_iterations += krylov->solve(A, dx, b);
       dx *= r;
     }
-  }
-  else
-  {
-    // FIXME: Implement a better check
-    if ( d1 >= 0.5*d0 )
-      A.update();
-    lu->solve(A.matrix(), dx, b);
+    else
+    {
+      // FIXME: Implement a better check
+      if ( d1 >= 0.5*d0 )
+        A.update();
+      lu->solve(A.matrix(), dx, b);
+    }
   }
 
   //cout << "A = "; A.disp(10);

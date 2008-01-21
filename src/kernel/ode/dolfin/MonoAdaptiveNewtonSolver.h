@@ -18,6 +18,7 @@ namespace dolfin
   class uBlasKrylovSolver;
   class uBlasLUSolver;
   class KrylovSolver;
+  class LUSolver;
   class ODE;
   class MonoAdaptiveTimeSlab;
   class NewMethod;
@@ -77,6 +78,7 @@ namespace dolfin
     uBlasVector Mu0;             // Precomputed product M*u0 for implicit system
 
     KrylovSolver* krylov_g;      // Iterative linear solver (general)
+    LUSolver* lu_g;              // Direct linear solver (general)
   };
 
 }
