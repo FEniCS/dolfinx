@@ -9,6 +9,9 @@
 #ifndef __PETSC_FACTORY_H
 #define __PETSC_FACTORY_H
 
+#include <dolfin/PETScMatrix.h>
+#include <dolfin/PETScVector.h>
+#include <dolfin/SparsityPattern.h>
 #include <dolfin/LinearAlgebraFactory.h>
 
 namespace dolfin
@@ -22,13 +25,13 @@ namespace dolfin
     virtual ~PETScFactory() {}
 
     /// Create empty matrix
-    GenericMatrix* createMatrix() const;
+    PETScMatrix* createMatrix() const;
 
     /// Create empty sparsity pattern 
-    GenericSparsityPattern* createPattern() const;
+    SparsityPattern* createPattern() const;
 
     /// Create empty vector
-    GenericVector* createVector() const;
+    PETScVector* createVector() const;
 
     static PETScFactory& instance() { return petscfactory; }
 

@@ -8,8 +8,10 @@
 #ifndef __UBLAS_FACTORY_H
 #define __UBLAS_FACTORY_H
 
+#include <dolfin/uBlasMatrix.h>
+#include <dolfin/uBlasVector.h>
+#include <dolfin/SparsityPattern.h>
 #include <dolfin/LinearAlgebraFactory.h>
-#include <dolfin/ublas.h>
 
 namespace dolfin
 {
@@ -22,13 +24,13 @@ namespace dolfin
     virtual ~uBlasFactory() {}
 
     /// Create empty matrix
-    GenericMatrix* createMatrix() const;
+    uBlasMatrix<ublas_sparse_matrix>* createMatrix() const;
 
     /// Create empty sparsity pattern 
-    GenericSparsityPattern* createPattern() const;
+    SparsityPattern* createPattern() const;
 
     /// Create empty vector
-    GenericVector* createVector() const;
+    uBlasVector* createVector() const;
 
     /// Return sigleton instance
     static uBlasFactory& instance() { return ublasfactory; }

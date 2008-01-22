@@ -20,6 +20,7 @@
 #include <dolfin/PETScMatrix.h>
 #include <dolfin/GenericSparsityPattern.h>
 #include <dolfin/SparsityPattern.h>
+#include <dolfin/PETScFactory.h>
 #include <dolfin/MPI.h>
 
 using namespace dolfin;
@@ -159,10 +160,11 @@ PETScMatrix* PETScMatrix::create() const
 //-----------------------------------------------------------------------------
 PETScMatrix* PETScMatrix::copy() const
 {
-  // Not yet implemented
-  error("Not yet implemented.");
+  PETScMatrix* mcopy = create();
 
-  return 0;
+  MatDuplicate(A, MAT_COPY_VALUES, &(mcopy->A));
+
+  return mcopy;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint PETScMatrix::size(uint dim) const
@@ -419,7 +421,7 @@ LogStream& dolfin::operator<< (LogStream& stream, const PETScMatrix& A)
   return stream;
 }
 //-----------------------------------------------------------------------------
-PETScFactory& PETScMatrix::factory() const
+LinearAlgebraFactory& PETScMatrix::factory() const
 {
   return PETScFactory::instance();
 }
