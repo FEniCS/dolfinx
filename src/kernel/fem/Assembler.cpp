@@ -204,7 +204,7 @@ void Assembler::assembleCells(GenericTensor& A,
   }
 
   t = toc() - t;
-  printf("Assembler: %g\n", t);
+  printf("assembly loop (s): %.3e\n", t);
 
   message("Assembly over cells completed.");
 }
