@@ -216,7 +216,7 @@ void pAssembler::assembleCells(GenericTensor& A,
   }
 
   t = toc() - t;
-  printf("pAssembler: %g\n", t);
+  printf("assembly loop (p): %.3e\n", t);
 
 }
 //-----------------------------------------------------------------------------
@@ -371,10 +371,10 @@ void pAssembler::check(const ufc::form& form,
 void pAssembler::initGlobalTensor(GenericTensor& A, const pDofMapSet& dof_map_set, pUFC& ufc,
                                  bool reset_tensor) const
 {
-  if( reset_tensor )
+  if (reset_tensor)
   {
     // Build parallel dof map
-    //dof_map_set.build(ufc);
+    dof_map_set.build(ufc);
     
     // Build sparsity pattern from dof map
     GenericSparsityPattern* sparsity_pattern = A.factory().createPattern(); 
