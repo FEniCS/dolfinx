@@ -19,8 +19,8 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-pDofMap::pDofMap(ufc::dof_map& dof_map, Mesh& mesh, 
-    MeshFunction<uint>& partitions) : ufc_dof_map(&dof_map), 
+pDofMap::pDofMap(ufc::dof_map& dof_map, Mesh& mesh, MeshFunction<uint>& partitions)
+  : dof_map(0), ufc_dof_map(&dof_map), 
     ufc_dof_map_local(false), dolfin_mesh(mesh), ufc_map(true), 
     partitions(&partitions)
 {
@@ -28,8 +28,8 @@ pDofMap::pDofMap(ufc::dof_map& dof_map, Mesh& mesh,
   //build();
 }
 //-----------------------------------------------------------------------------
-pDofMap::pDofMap(const std::string signature, Mesh& mesh, 
-    MeshFunction<uint>& partitions) : ufc_dof_map(0), 
+pDofMap::pDofMap(const std::string signature, Mesh& mesh, MeshFunction<uint>& partitions)
+  : dof_map(0), ufc_dof_map(0), 
     ufc_dof_map_local(false), dolfin_mesh(mesh), ufc_map(true),
     partitions(&partitions)
 {
@@ -47,6 +47,13 @@ pDofMap::pDofMap(const std::string signature, Mesh& mesh,
 //-----------------------------------------------------------------------------
 pDofMap::~pDofMap()
 {
+  if (dof_map)
+  {
+    for (uint i = 0; i < dolfin_mesh.numCells(); ++i)
+      delete [] dof_map[i];
+    delete [] dof_map;
+  }
+
   if (ufc_dof_map_local)
     delete ufc_dof_map_local;
 }
