@@ -143,9 +143,6 @@ void pAssembler::assemble(GenericTensor& A, const ufc::form& form,
   // Create data structure for local assembly data
   pUFC ufc(form, mesh, dof_map_set);
 
-  // FIXME: Temporary hack..
-  dof_map_set.build(ufc);
-
   // Initialize global tensor
   initGlobalTensor(A, dof_map_set, ufc, reset_tensor);
 
@@ -179,8 +176,8 @@ void pAssembler::assembleCells(GenericTensor& A,
   message("Assembling over %d cells.", mesh.numCells());
   Progress p("Assembling over cells", mesh.numCells());
   
-  //tic();
-  //printf("pAssembler: start\n");
+  real t = toc();
+  printf("pAssembler: start\n");
 
   const uint this_process = MPI::processNumber();
   for (CellIterator cell(mesh); !cell.end(); ++cell)
@@ -211,15 +208,15 @@ void pAssembler::assembleCells(GenericTensor& A,
 
     // Tabulate cell tensor
     integral->tabulate_tensor(ufc.A, ufc.w, ufc.cell);
-
+    
     // Add entries to global tensor
     A.add(ufc.A, ufc.local_dimensions, ufc.dofs);
 
     p++;
   }
 
-  //real t = toc();
-  //printf("pAssembler: %g\n", t);
+  t = toc() - t;
+  printf("pAssembler: %g\n", t);
 
 }
 //-----------------------------------------------------------------------------
@@ -376,6 +373,10 @@ void pAssembler::initGlobalTensor(GenericTensor& A, const pDofMapSet& dof_map_se
 {
   if( reset_tensor )
   {
+    // Build parallel dof map
+    //dof_map_set.build(ufc);
+    
+    // Build sparsity pattern from dof map
     GenericSparsityPattern* sparsity_pattern = A.factory().createPattern(); 
     pSparsityPatternBuilder::build(*sparsity_pattern, mesh, ufc, dof_map_set);
     A.init(*sparsity_pattern);

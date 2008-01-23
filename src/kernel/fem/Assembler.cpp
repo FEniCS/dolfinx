@@ -169,7 +169,7 @@ void Assembler::assembleCells(GenericTensor& A,
   message("Assembling over %d cells.", mesh.numCells());
   Progress p("Assembling over cells", mesh.numCells());
 
-  tic();
+  real t = toc();
   printf("Assembler: start\n");
 
   for (CellIterator cell(mesh); !cell.end(); ++cell)
@@ -199,11 +199,11 @@ void Assembler::assembleCells(GenericTensor& A,
 
     // Add entries to global tensor
     A.add(ufc.A, ufc.local_dimensions, ufc.dofs);
-
+    
     p++;
   }
 
-  real t = toc();
+  t = toc() - t;
   printf("Assembler: %g\n", t);
 
   message("Assembly over cells completed.");

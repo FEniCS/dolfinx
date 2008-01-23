@@ -118,6 +118,7 @@ namespace dolfin
 
     // The partitions;
     MeshFunction<uint>* partitions;
+
   };
 
 }
