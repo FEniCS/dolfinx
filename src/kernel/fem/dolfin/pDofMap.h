@@ -71,11 +71,15 @@ namespace dolfin
     /// Tabulate the local-to-global mapping of dofs on a cell
     void tabulate_dofs(uint* dofs, Cell& cell) 
     {
-      //dolfin_debug2("cpu %d tabulating dofs for cell %d", MPI::processNumber(), cell.index());
-      for (uint i = 0; i < local_dimension(); i++)
+      if (dof_map)
       {
-        //dolfin_debug2("dofs[%d] = %d", i, dof_map[cell.index()][i]);
-        dofs[i] = dof_map[cell.index()][i];
+        for (uint i = 0; i < local_dimension(); i++)
+          dofs[i] = dof_map[cell.index()][i];
+      }
+      else
+      {
+        ufc_cell.update(cell);
+        ufc_dof_map->tabulate_dofs(dofs, ufc_mesh, ufc_cell);
       }
     }
 

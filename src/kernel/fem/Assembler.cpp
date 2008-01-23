@@ -25,6 +25,8 @@
 #include <dolfin/SparsityPatternBuilder.h>
 #include <dolfin/DofMapSet.h>
 
+#include <dolfin/timing.h>
+
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
@@ -166,6 +168,10 @@ void Assembler::assembleCells(GenericTensor& A,
   // Assemble over cells
   message("Assembling over %d cells.", mesh.numCells());
   Progress p("Assembling over cells", mesh.numCells());
+
+  tic();
+  printf("Assembler: start\n");
+
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     // Get integral for sub domain (if any)
@@ -196,6 +202,10 @@ void Assembler::assembleCells(GenericTensor& A,
 
     p++;
   }
+
+  real t = toc();
+  printf("Assembler: %g\n", t);
+
   message("Assembly over cells completed.");
 }
 //-----------------------------------------------------------------------------

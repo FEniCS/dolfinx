@@ -27,6 +27,8 @@
 #include <dolfin/pDofMapSet.h>
 #include <dolfin/MPI.h>
 
+#include <dolfin/timing.h>
+
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
@@ -176,13 +178,17 @@ void pAssembler::assembleCells(GenericTensor& A,
   // Assemble over cells
   message("Assembling over %d cells.", mesh.numCells());
   Progress p("Assembling over cells", mesh.numCells());
+  
+  //tic();
+  //printf("pAssembler: start\n");
+
+  const uint this_process = MPI::processNumber();
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     // Assemble only cells in this processors partition
-    if (partitions && (*partitions)(*cell) != MPI::processNumber())
+    if (partitions && (*partitions)(*cell) != this_process)
       continue;
 
-    dolfin_debug2("cpu %d assembling cell %d", MPI::processNumber(), (*cell).index());
     // Get integral for sub domain (if any)
     if (domains && domains->size() > 0)
     {
@@ -211,6 +217,10 @@ void pAssembler::assembleCells(GenericTensor& A,
 
     p++;
   }
+
+  //real t = toc();
+  //printf("pAssembler: %g\n", t);
+
 }
 //-----------------------------------------------------------------------------
 void pAssembler::assembleExteriorFacets(GenericTensor& A,
