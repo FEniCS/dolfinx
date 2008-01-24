@@ -1,8 +1,10 @@
 // Copyright (C) 2007 Ola Skavhaug
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Magnus Vikstrom 2008.
+//
 // First added:  2007-11-30
-// Last changed: 2007-12-14
+// Last changed: 2008-01-24
 
 #ifndef __GENERIC_SPARSITY_PATTERN_H
 #define __GENERIC_SPARSITY_PATTERN_H
@@ -27,8 +29,14 @@ namespace dolfin
     /// Initialise sparsity pattern for a generic tensor
     virtual void init(uint rank, const uint* dims) = 0;
 
+    /// Initialise sparsity pattern for a parallel generic tensor
+    virtual void pinit(uint rank, const uint* dims) = 0;
+
     /// Insert non-zero entry
     virtual void insert(const uint* num_rows, const uint * const * rows) = 0;
+
+    /// Insert non-zero entry
+    virtual void pinsert(const uint* num_rows, const uint * const * rows) = 0;
 
     /// Return global size 
     virtual uint size(uint n) const = 0;
