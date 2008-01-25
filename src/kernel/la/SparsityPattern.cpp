@@ -6,8 +6,6 @@
 // First added:  2007-03-13
 // Last changed: 2008-01-24
 
-//#include <petscvec.h>
-
 #include <dolfin/dolfin_log.h>
 #include <dolfin/SparsityPattern.h>
 #include <dolfin/MPI.h>
@@ -166,17 +164,10 @@ dolfin::uint SparsityPattern::numLocalRows(uint process_number) const
 //-----------------------------------------------------------------------------
 void SparsityPattern::initRange()
 {
-  /// Preferably use PETSc to get process range
-  //PetscMap map;
-  //PetscMapCreateMPI(PETSC_COMM_WORLD, &map);
-  //PetscMapGetGlobalRange(m, &range);
-
-  // Simulating PetscMapGetGlobalRange
   uint num_procs = dolfin::MPI::numProcesses();
-  uint process = dolfin::MPI::processNumber();
   range = new uint[num_procs+1];
   range[0] = 0;
-  uint jump = dim[0]/num_procs + (dim[0]%num_procs > process ? 1 : 0);
-  for(uint i=1; i<num_procs+1; ++i)
-    range[i] = range [i-1] + jump;
+
+  for(uint p=0; p<num_procs; ++p)
+    range[p+1] = range[p] + dim[0]/num_procs + ((dim[0]%num_procs) > p ? 1 : 0);
 }
