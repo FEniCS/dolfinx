@@ -62,7 +62,7 @@ void SparsityPattern::insert(const uint* num_rows, const uint * const * rows)
 //-----------------------------------------------------------------------------
 void SparsityPattern::pinsert(const uint* num_rows, const uint * const * rows)
 { 
-  uint process = dolfin::MPI::numProcesses();
+  uint process = dolfin::MPI::processNumber();
 
   for (unsigned int i = 0; i<num_rows[0];++i)
   {

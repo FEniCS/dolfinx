@@ -105,6 +105,9 @@ void PETScMatrix::init(uint M, uint N, const uint* nz)
     // Note that guessing too high leads to excessive memory usage.
     // In order to not waste any memory one would need to specify d_nnz and o_nnz.
     MatCreateMPIAIJ(PETSC_COMM_WORLD, PETSC_DECIDE, PETSC_DECIDE, M, N, 50, PETSC_NULL, 50, PETSC_NULL, &A);
+    //MatSetFromOptions(A);
+    //MatSetOption(A, MAT_KEEP_ZEROED_ROWS);
+    //MatZeroEntries(A);
   }
   else
   {
