@@ -148,7 +148,7 @@ void SubSystemsManager::finalizePETSc()
     PetscFinalize();
  
     #ifdef HAVE_SLEPC_H
-    dolfin_debug("DOLFIN sub system manager finalizing SLECc...");
+    dolfin_debug("DOLFIN sub system manager finalizing SLEPc...");
     SlepcFinalize();
     #endif
   }
