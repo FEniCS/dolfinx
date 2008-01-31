@@ -177,7 +177,8 @@ void Assembler::assembleCells(GenericTensor& A,
     // Get integral for sub domain (if any)
     if (domains && domains->size() > 0)
     {
-      if (uint domain = (*domains)(*cell) < ufc.form.num_cell_integrals())
+      const uint domain = (*domains)(*cell);
+      if (domain < ufc.form.num_cell_integrals())
         integral = ufc.cell_integrals[domain];
       else
         continue;
@@ -238,7 +239,8 @@ void Assembler::assembleExteriorFacets(GenericTensor& A,
     // Get integral for sub domain (if any)
     if (domains && domains->size() > 0)
     {
-      if (uint domain = (*domains)(mesh_facet) < ufc.form.num_exterior_facet_integrals())
+      const uint domain = (*domains)(mesh_facet);
+      if (domain < ufc.form.num_exterior_facet_integrals())
         integral = ufc.exterior_facet_integrals[domain];
       else
         continue;
@@ -306,7 +308,8 @@ void Assembler::assembleInteriorFacets(GenericTensor& A,
     // Get integral for sub domain (if any)
     if (domains && domains->size() > 0)
     {
-      if (uint domain = (*domains)(*facet) < ufc.form.num_interior_facet_integrals())
+      const uint domain = (*domains)(*facet);
+      if (domain < ufc.form.num_interior_facet_integrals())
         integral = ufc.interior_facet_integrals[domain];
       else
         continue;
