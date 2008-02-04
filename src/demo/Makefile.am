@@ -1,4 +1,5 @@
-SUBDIRS = fem/cpp \
+SUBDIRS = fem/assembly/cpp \
+          fem/simple/cpp \
           la/eigensolver/cpp \
           mesh/meshfunction/cpp \
           mesh/partitioning/cpp \
