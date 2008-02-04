@@ -46,13 +46,13 @@ namespace dolfin
     // Check if MPI has been initialised
     static bool MPIinitialized();
 
-    // Check if MPI has been initialised
-    static void MPIinit();
-
+    // Singleton instance
     static SubSystemsManager sub_systems_manager;
 
+    // State variables
     bool petsc_initialized;
     bool petsc_controls_mpi;
+
   };
 
 }

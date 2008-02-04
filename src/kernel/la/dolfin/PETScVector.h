@@ -18,7 +18,7 @@
 #include <dolfin/Variable.h>
 #include <dolfin/GenericVector.h>
 #include <dolfin/PETScObject.h>
-#include <dolfin/PETScFactory.h>
+#include <dolfin/LinearAlgebraFactory.h>
 #include <dolfin/VectorNormType.h>
 
 namespace dolfin
@@ -171,7 +171,7 @@ namespace dolfin
     void copy(const uBlasVector& y, uint off1, uint off2, uint len);
 
     /// Return backend factory
-    PETScFactory& factory() const;
+    LinearAlgebraFactory& factory() const;
 
     /// Return PETSc Vec pointer
     Vec vec() const;

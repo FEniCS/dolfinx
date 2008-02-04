@@ -13,18 +13,18 @@
 
 using namespace dolfin;
 
-GenericSparsityPattern* PETScFactory::createPattern() const 
+SparsityPattern* PETScFactory::createPattern() const 
 {
   return new SparsityPattern(); 
 }
 
-GenericMatrix* PETScFactory::createMatrix() const 
+PETScMatrix* PETScFactory::createMatrix() const 
 { 
   PETScMatrix* pm = new PETScMatrix();
   return pm;
 }
 
-GenericVector* PETScFactory:: createVector() const 
+PETScVector* PETScFactory:: createVector() const 
 { 
   return new PETScVector(); 
 }

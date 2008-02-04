@@ -315,8 +315,8 @@ if test x$enable_petsc = xyes; then
     MKFILE=$PETSC_DIR/bmake/common/base
     if test -f $MKFILE; then
         # Extract PETSc variables
-        PETSC_CFLAGS=`make -f petsc.conf get_petsc_include PETSC_DIR=$PETSC_DIR`
-        PETSC_LIBS=`make -f petsc.conf get_petsc_libs PETSC_DIR=$PETSC_DIR`
+        PETSC_CFLAGS=`make -sf petsc.conf get_petsc_include PETSC_DIR=$PETSC_DIR`
+        PETSC_LIBS=`make -sf petsc.conf get_petsc_libs PETSC_DIR=$PETSC_DIR`
     else
         echo "*** Unable to find PETSc on your system."
         echo "*** Use --with-petsc-dir=<path> to specify the correct path for PETSc,"

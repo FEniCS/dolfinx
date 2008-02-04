@@ -7,7 +7,7 @@
 // Modified by Magnus Vikstrøm 2007-2008.
 //
 // First added:  2004
-// Last changed: 2008-01-11
+// Last changed: 2008-01-24
 
 #ifdef HAVE_PETSC_H
 
@@ -20,6 +20,7 @@
 #include <dolfin/PETScMatrix.h>
 #include <dolfin/GenericSparsityPattern.h>
 #include <dolfin/SparsityPattern.h>
+#include <dolfin/PETScFactory.h>
 #include <dolfin/MPI.h>
 
 using namespace dolfin;
@@ -104,6 +105,9 @@ void PETScMatrix::init(uint M, uint N, const uint* nz)
     // Note that guessing too high leads to excessive memory usage.
     // In order to not waste any memory one would need to specify d_nnz and o_nnz.
     MatCreateMPIAIJ(PETSC_COMM_WORLD, PETSC_DECIDE, PETSC_DECIDE, M, N, 50, PETSC_NULL, 50, PETSC_NULL, &A);
+    //MatSetFromOptions(A);
+    //MatSetOption(A, MAT_KEEP_ZEROED_ROWS);
+    //MatZeroEntries(A);
   }
   else
   {
@@ -116,6 +120,19 @@ void PETScMatrix::init(uint M, uint N, const uint* nz)
     MatSetOption(A, MAT_KEEP_ZEROED_ROWS);
     MatZeroEntries(A);
   }
+}
+//-----------------------------------------------------------------------------
+void PETScMatrix::init(uint M, uint N, const uint* d_nzrow, const uint* o_nzrow)
+{
+  // Free previously allocated memory if necessary
+  if ( A )
+    MatDestroy(A);
+  // Create PETSc parallel matrix with a guess for number of diagonal (50 in this case) 
+  // and number of off-diagonal non-zeroes (50 in this case).
+  // Note that guessing too high leads to excessive memory usage.
+  // In order to not waste any memory one would need to specify d_nnz and o_nnz.
+
+  MatCreateMPIAIJ(PETSC_COMM_WORLD, PETSC_DECIDE, PETSC_DECIDE, M, N, PETSC_NULL, (int*)d_nzrow, PETSC_NULL, (int*)o_nzrow, &A);
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::init(uint M, uint N, uint bs, uint nz)
@@ -145,11 +162,26 @@ void PETScMatrix::init(uint M, uint N, uint bs, uint nz)
 //-----------------------------------------------------------------------------
 void PETScMatrix::init(const GenericSparsityPattern& sparsity_pattern)
 {
-  const SparsityPattern& spattern = reinterpret_cast<const SparsityPattern&>(sparsity_pattern);
-  uint* nzrow = new uint[spattern.size(0)];  
-  spattern.numNonZeroPerRow(nzrow);
-  init(spattern.size(0), spattern.size(1), nzrow);
-  delete [] nzrow;
+  if (dolfin::MPI::numProcesses() > 1)
+  {
+    uint p = dolfin::MPI::processNumber();
+    const SparsityPattern& spattern = reinterpret_cast<const SparsityPattern&>(sparsity_pattern);
+    uint local_size = spattern.numLocalRows(p);
+    uint* d_nzrow = new uint[local_size];
+    uint* o_nzrow = new uint[local_size];
+    spattern.numNonZeroPerRow(p, d_nzrow, o_nzrow);
+    init(spattern.size(0), spattern.size(1), d_nzrow, o_nzrow);
+    delete [] d_nzrow;
+    delete [] o_nzrow;
+  }
+  else
+  {
+    const SparsityPattern& spattern = reinterpret_cast<const SparsityPattern&>(sparsity_pattern);
+    uint* nzrow = new uint[spattern.size(0)];  
+    spattern.numNonZeroPerRow(nzrow);
+    init(spattern.size(0), spattern.size(1), nzrow);
+    delete [] nzrow;
+  }
 }
 //-----------------------------------------------------------------------------
 PETScMatrix* PETScMatrix::create() const
@@ -159,10 +191,11 @@ PETScMatrix* PETScMatrix::create() const
 //-----------------------------------------------------------------------------
 PETScMatrix* PETScMatrix::copy() const
 {
-  // Not yet implemented
-  error("Not yet implemented.");
+  PETScMatrix* mcopy = create();
 
-  return 0;
+  MatDuplicate(A, MAT_COPY_VALUES, &(mcopy->A));
+
+  return mcopy;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint PETScMatrix::size(uint dim) const
@@ -419,7 +452,7 @@ LogStream& dolfin::operator<< (LogStream& stream, const PETScMatrix& A)
   return stream;
 }
 //-----------------------------------------------------------------------------
-PETScFactory& PETScMatrix::factory() const
+LinearAlgebraFactory& PETScMatrix::factory() const
 {
   return PETScFactory::instance();
 }

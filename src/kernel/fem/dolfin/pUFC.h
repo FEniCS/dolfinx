@@ -1,15 +1,18 @@
-// Copyright (C) 2007 Anders Logg.
+// Copyright (C) 2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// First added:  2007-01-17
-// Last changed: 2007-05-15
+// Modified by Magnus Vikstrøm, 2008
+//
+// First added:  2008-01-11
+// Last changed: 2007-01-15
 
-#ifndef __P_pUFC_DATA_H
-#define __P_pUFC_DATA_H
+#ifndef __P_UFC_DATA_H
+#define __P_UFC_DATA_H
 
 #include <ufc.h>
 #include <dolfin/UFCMesh.h>
 #include <dolfin/UFCCell.h>
+#include <dolfin/pDofMapSet.h>
 
 namespace dolfin
 {
@@ -94,7 +97,6 @@ namespace dolfin
 
     // Array of coefficients on macro element
     real** macro_w;
-
   };
 
 }

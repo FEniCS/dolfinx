@@ -52,6 +52,8 @@ void dolfin::set(std::string key, std::ostream& stream)
 //-----------------------------------------------------------------------------
 dolfin::Parameter dolfin::get(std::string key)
 {
+  if (key == "debug level")
+    return Parameter(LogManager::logger.getDebugLevel());
   return ParameterSystem::parameters.get(key);
 }
 //-----------------------------------------------------------------------------

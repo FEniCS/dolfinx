@@ -13,7 +13,7 @@
 #include <dolfin/Variable.h>
 #include <dolfin/ublas.h>
 #include <dolfin/GenericVector.h>
-#include <dolfin/uBlasFactory.h>
+#include <dolfin/LinearAlgebraFactory.h>
 
 #include <dolfin/VectorNormType.h>
 
@@ -131,7 +131,7 @@ namespace dolfin
     friend LogStream& operator<< (LogStream& stream, const uBlasVector& x);
 
     /// Return backend factory
-    uBlasFactory& factory() const { return uBlasFactory::instance(); }
+    LinearAlgebraFactory& factory() const;
 
     // Copy values between different vector representations
 #ifdef HAVE_PETSC_H

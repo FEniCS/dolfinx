@@ -25,6 +25,8 @@
 #include <dolfin/SparsityPatternBuilder.h>
 #include <dolfin/DofMapSet.h>
 
+#include <dolfin/timing.h>
+
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
@@ -166,12 +168,17 @@ void Assembler::assembleCells(GenericTensor& A,
   // Assemble over cells
   message("Assembling over %d cells.", mesh.numCells());
   Progress p("Assembling over cells", mesh.numCells());
+
+  real t = toc();
+  printf("Assembler: start\n");
+
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     // Get integral for sub domain (if any)
     if (domains && domains->size() > 0)
     {
-      if (uint domain = (*domains)(*cell) < ufc.form.num_cell_integrals())
+      const uint domain = (*domains)(*cell);
+      if (domain < ufc.form.num_cell_integrals())
         integral = ufc.cell_integrals[domain];
       else
         continue;
@@ -193,9 +200,13 @@ void Assembler::assembleCells(GenericTensor& A,
 
     // Add entries to global tensor
     A.add(ufc.A, ufc.local_dimensions, ufc.dofs);
-
+    
     p++;
   }
+
+  t = toc() - t;
+  printf("assembly loop (s): %.3e\n", t);
+
   message("Assembly over cells completed.");
 }
 //-----------------------------------------------------------------------------
@@ -228,7 +239,8 @@ void Assembler::assembleExteriorFacets(GenericTensor& A,
     // Get integral for sub domain (if any)
     if (domains && domains->size() > 0)
     {
-      if (uint domain = (*domains)(mesh_facet) < ufc.form.num_exterior_facet_integrals())
+      const uint domain = (*domains)(mesh_facet);
+      if (domain < ufc.form.num_exterior_facet_integrals())
         integral = ufc.exterior_facet_integrals[domain];
       else
         continue;
@@ -296,7 +308,8 @@ void Assembler::assembleInteriorFacets(GenericTensor& A,
     // Get integral for sub domain (if any)
     if (domains && domains->size() > 0)
     {
-      if (uint domain = (*domains)(*facet) < ufc.form.num_interior_facet_integrals())
+      const uint domain = (*domains)(*facet);
+      if (domain < ufc.form.num_interior_facet_integrals())
         integral = ufc.interior_facet_integrals[domain];
       else
         continue;

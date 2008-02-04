@@ -2,9 +2,10 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Ola Skavhaug
+// Modified by Magnus Vikstrom 2008.
 //
 // First added:  2007-05-24
-// Last changed: 2007-12-07
+// Last changed: 2008-01-24
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/pDofMapSet.h>
@@ -52,7 +53,8 @@ void pSparsityPatternBuilder::matrixBuild(GenericSparsityPattern& sparsity_patte
   uint dims[2];
   dims[0] = dof_map_set[0].global_dimension();
   dims[1] = dof_map_set[1].global_dimension();
-  sparsity_pattern.init(2, dims);
+  //sparsity_pattern.init(2, dims);
+  sparsity_pattern.pinit(2, dims);
 
   // Create sparsity pattern for cell integrals
   if (ufc.form.num_cell_integrals() != 0)
@@ -72,8 +74,8 @@ void pSparsityPatternBuilder::matrixBuild(GenericSparsityPattern& sparsity_patte
       dof_map_set[1].tabulate_dofs(ufc.dofs[1], *cell);
  
       // Fill sparsity pattern.
-      sparsity_pattern.insert(num_rows, ufc.dofs);
-
+      //sparsity_pattern.insert(num_rows, ufc.dofs);
+      sparsity_pattern.pinsert(num_rows, ufc.dofs);
     }
   }
 

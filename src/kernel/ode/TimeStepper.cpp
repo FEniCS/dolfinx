@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2003
-// Last changed: 2006-05-07
+// Last changed: 2008-01-16
 
 #include <cmath>
 #include <string>
@@ -22,7 +22,7 @@ using namespace dolfin;
 TimeStepper::TimeStepper(ODE& ode) :
   N(ode.size()), t(0), T(ode.endtime()),
   ode(ode), timeslab(0), file(get("ODE solution file name")),
-  p("Time-stepping"), stopped(false), _finished(false),
+  p("Time-stepping"), _stopped(false), _finished(false),
   save_solution(get("ODE save solution")),
   solve_dual(get("ODE solve dual problem")),
   adaptive_samples(get("ODE adaptive samples")),
@@ -74,7 +74,7 @@ void TimeStepper::solve(ODE& ode)
     
     // Do time stepping
 
-    while ( !timeStepper.finished() && !timeStepper.stopped )
+    while ( !timeStepper.finished() && !timeStepper.stopped() )
       timeStepper.step();
   }
 
@@ -90,7 +90,7 @@ real TimeStepper::step()
   const bool first = t < DOLFIN_EPS;
 
   // Reset stopped flag
-  stopped = false;
+  _stopped = false;
 
   // Iterate until solution is accepted
   const real a = t;
@@ -103,7 +103,7 @@ real TimeStepper::step()
     // Solve time slab system
     if ( !timeslab->solve() )
     {
-      stopped = true;
+      _stopped = true;
       break;
     }
     //timeslab->disp();
@@ -119,18 +119,18 @@ real TimeStepper::step()
   save();
 
   // Check if solution was stopped
-  if ( stopped )
+  if ( _stopped )
     warning("Solution stopped at t = %.3e.", t);
 
   // Update for next time slab
   if ( !timeslab->shift() )
   {
     message("ODE solver stopped on user's request.");
-    stopped = true;
+    _stopped = true;
   }
 
   // Update progress
-  if (!stopped)
+  if (!_stopped)
     p = t / T;
 
   return t;
@@ -139,6 +139,11 @@ real TimeStepper::step()
 bool TimeStepper::finished() const
 {
   return t >= T;
+}
+//-----------------------------------------------------------------------------
+bool TimeStepper::stopped() const
+{
+  return _stopped;
 }
 //-----------------------------------------------------------------------------
 void TimeStepper::save()

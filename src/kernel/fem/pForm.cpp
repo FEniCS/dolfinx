@@ -1,8 +1,10 @@
 // Copyright (C) 2007 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Magnus Vikstrøm, 2008
+//
 // First added:  2007-12-10
-// Last changed:
+// Last changed: 2008-01-15
 
 #include <dolfin/pForm.h>
 
@@ -15,12 +17,12 @@ pForm::~pForm()
     delete local_dof_map_set;
 }
 //-----------------------------------------------------------------------------
-void pForm::updateDofMaps(Mesh& mesh)
+void pForm::updateDofMaps(Mesh& mesh, MeshFunction<uint>& partitions)
 {
   if( !dof_map_set )
   {
     // Create dof maps
-    dof_map_set = new pDofMapSet(form(), mesh);
+    dof_map_set = new pDofMapSet(form(), mesh, partitions);
 
     // Take ownership of dof maps
     local_dof_map_set = dof_map_set;

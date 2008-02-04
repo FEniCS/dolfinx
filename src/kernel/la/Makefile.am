@@ -63,5 +63,6 @@ libdolfin_la_la_SOURCES = solve.cpp \
                           uBlasLUSolver.cpp \
                           uBlasDummyPreconditioner.cpp \
                           uBlasILUPreconditioner.cpp \
-                          uBlasVector.cpp
+                          uBlasVector.cpp \
+                          uBlasMatrix.cpp
 libdolfin_la_la_LDFLAGS = -static

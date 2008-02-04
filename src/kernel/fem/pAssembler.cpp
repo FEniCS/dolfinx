@@ -27,6 +27,8 @@
 #include <dolfin/pDofMapSet.h>
 #include <dolfin/MPI.h>
 
+#include <dolfin/timing.h>
+
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
@@ -47,7 +49,7 @@ pAssembler::~pAssembler()
 //-----------------------------------------------------------------------------
 void pAssembler::assemble(GenericTensor& A, pForm& form, bool reset_tensor)
 {
-  form.updateDofMaps(mesh);
+  form.updateDofMaps(mesh, *partitions);
   assemble(A, form.form(), form.coefficients(), form.dofMaps(), 0, 0, 0, reset_tensor);
 }
 //-----------------------------------------------------------------------------
@@ -74,7 +76,7 @@ void pAssembler::assemble(GenericTensor& A, pForm& form,
   }
 
   // Assemble
-  form.updateDofMaps(mesh);
+  form.updateDofMaps(mesh, *partitions);
   assemble(A, form.form(), form.coefficients(), form.dofMaps(),
            cell_domains, facet_domains, facet_domains, reset_tensor);
 
@@ -91,7 +93,7 @@ void pAssembler::assemble(GenericTensor& A, pForm& form,
                          const MeshFunction<uint>& interior_facet_domains,
                          bool reset_tensor)
 {
-  form.updateDofMaps(mesh);
+  form.updateDofMaps(mesh, *partitions);
   assemble(A, form.form(), form.coefficients(), form.dofMaps(), &cell_domains, 
            &exterior_facet_domains, &interior_facet_domains, reset_tensor);
 }
@@ -173,13 +175,17 @@ void pAssembler::assembleCells(GenericTensor& A,
   // Assemble over cells
   message("Assembling over %d cells.", mesh.numCells());
   Progress p("Assembling over cells", mesh.numCells());
+  
+  real t = toc();
+  printf("pAssembler: start\n");
+
+  const uint this_process = MPI::processNumber();
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     // Assemble only cells in this processors partition
-    if (partitions && (*partitions)(*cell) != MPI::processNumber())
+    if (partitions && (*partitions)(*cell) != this_process)
       continue;
 
-    dolfin_debug2("cpu %d assembling cell %d", MPI::processNumber(), (*cell).index());
     // Get integral for sub domain (if any)
     if (domains && domains->size() > 0)
     {
@@ -202,12 +208,16 @@ void pAssembler::assembleCells(GenericTensor& A,
 
     // Tabulate cell tensor
     integral->tabulate_tensor(ufc.A, ufc.w, ufc.cell);
-
+    
     // Add entries to global tensor
     A.add(ufc.A, ufc.local_dimensions, ufc.dofs);
 
     p++;
   }
+
+  t = toc() - t;
+  printf("assembly loop (p): %.3e\n", t);
+
 }
 //-----------------------------------------------------------------------------
 void pAssembler::assembleExteriorFacets(GenericTensor& A,
@@ -361,8 +371,12 @@ void pAssembler::check(const ufc::form& form,
 void pAssembler::initGlobalTensor(GenericTensor& A, const pDofMapSet& dof_map_set, pUFC& ufc,
                                  bool reset_tensor) const
 {
-  if( reset_tensor )
+  if (reset_tensor)
   {
+    // Build parallel dof map
+    dof_map_set.build(ufc);
+    
+    // Build sparsity pattern from dof map
     GenericSparsityPattern* sparsity_pattern = A.factory().createPattern(); 
     pSparsityPatternBuilder::build(*sparsity_pattern, mesh, ufc, dof_map_set);
     A.init(*sparsity_pattern);

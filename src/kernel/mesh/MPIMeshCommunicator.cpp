@@ -45,27 +45,27 @@ void MPIMeshCommunicator::broadcast(const Mesh& mesh)
 
   // Send size
   uint size = mesh.geometry().size();
-  dolfin_debug1("sending geometry size %d", size);
+  //dolfin_debug1("sending geometry size %d", size);
   MPI_Bcast(&size, 1, MPI_UNSIGNED, this_process, MPI_COMM_WORLD);
 
   // Send dim
   uint dim = mesh.geometry().dim();
-  dolfin_debug1("sending geometry dim %d", dim);
+  //dolfin_debug1("sending geometry dim %d", dim);
   MPI_Bcast(&dim, 1, MPI_UNSIGNED, this_process, MPI_COMM_WORLD);
 
   // Send the coordinates
   const real* coordinates = mesh.coordinates(); 
-  dolfin_debug1("sending geometry %d coordinates", dim*size);
+  //dolfin_debug1("sending geometry %d coordinates", dim*size);
   MPI_Bcast(const_cast<real *>(coordinates), dim*size, MPI_DOUBLE, this_process, MPI_COMM_WORLD);
 
   // Mesh topology
   uint D = mesh.topology().dim();
-  dolfin_debug1("sending topology D %d", D);
+  //dolfin_debug1("sending topology D %d", D);
   MPI_Bcast(&D, 1, MPI_UNSIGNED, this_process, MPI_COMM_WORLD);
 
   // Send num_entities
   uint* num_entities = mesh.topology().num_entities;
-  dolfin_debug1("sending %d num_entities", D+1);
+  //dolfin_debug1("sending %d num_entities", D+1);
   MPI_Bcast(num_entities, D+1, MPI_UNSIGNED, this_process, MPI_COMM_WORLD);
   
   // Send connectivity
@@ -93,9 +93,9 @@ void MPIMeshCommunicator::broadcast(const Mesh& mesh)
   // CellType
   int cell_type = mesh.data.cell_type->cell_type;
   int facet_type = mesh.data.cell_type->facet_type;
-  dolfin_debug1("Sending cell_type %d", cell_type);
+  //dolfin_debug1("Sending cell_type %d", cell_type);
   MPI_Bcast(&cell_type, 1, MPI_INT, this_process, MPI_COMM_WORLD);
-  dolfin_debug1("Sending facet_type %d", facet_type);
+  //dolfin_debug1("Sending facet_type %d", facet_type);
   MPI_Bcast(&facet_type, 1, MPI_INT, this_process, MPI_COMM_WORLD);
 
   dolfin_debug1("Finished mesh broadcast on process %d", this_process);
@@ -114,12 +114,12 @@ void MPIMeshCommunicator::receive(Mesh& mesh)
   // Receiving number of coordinates 
   uint size = 0;
   MPI_Bcast(&size, 1, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
-  dolfin_debug1("received geometry size %d", size);
+  //dolfin_debug1("received geometry size %d", size);
 
   // Receiving dim
   uint dim = 0;
   MPI_Bcast(&dim, 1, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
-  dolfin_debug1("received geometry dim %d", dim);
+  //dolfin_debug1("received geometry dim %d", dim);
 
   // Receiving coordinates
   real* coordinates = new real[dim*size];
@@ -129,7 +129,7 @@ void MPIMeshCommunicator::receive(Mesh& mesh)
   // Receiving dim
   uint D = 0;
   MPI_Bcast(&D, 1, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
-  dolfin_debug2("process num: %d received topology %d ", this_process, D);
+  //dolfin_debug2("process num: %d received topology %d ", this_process, D);
 
   // Receiving num_entities
   uint* num_entities = new uint[D + 1];
@@ -166,9 +166,9 @@ void MPIMeshCommunicator::receive(Mesh& mesh)
   
   int cell_type, facet_type;
   MPI_Bcast(&cell_type, 1, MPI_INT, 0, MPI_COMM_WORLD);
-  dolfin_debug2("process num: %d received cell_type %d ", this_process, cell_type);
+  //dolfin_debug2("process num: %d received cell_type %d ", this_process, cell_type);
   MPI_Bcast(&facet_type, 1, MPI_INT, 0, MPI_COMM_WORLD);
-  dolfin_debug2("process num: %d received facet_type %d ", this_process, facet_type);
+  //dolfin_debug2("process num: %d received facet_type %d ", this_process, facet_type);
 
   // Updating mesh
   mesh.geometry()._size = size;
@@ -196,10 +196,10 @@ void MPIMeshCommunicator::broadcast(const MeshFunction<unsigned int>& mesh_funct
   uint dim = mesh_function._dim;
   const uint* values = mesh_function.values();
 
-  dolfin_debug1("sending meshfunction size %d", size);
+  //dolfin_debug1("sending meshfunction size %d", size);
   MPI_Bcast(&size, 1, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
 
-  dolfin_debug1("sending meshfunction dim %d", dim);
+  //dolfin_debug1("sending meshfunction dim %d", dim);
   MPI_Bcast(&dim, 1, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
   MPI_Bcast(const_cast<uint *>(values), size, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
 }
@@ -213,11 +213,11 @@ void MPIMeshCommunicator::receive(MeshFunction<unsigned int>& mesh_function)
 
   uint size = 0;
   MPI_Bcast(&size, 1, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
-  dolfin_debug1("received meshfunction size %d", size);
+  //dolfin_debug1("received meshfunction size %d", size);
 
   uint dim = 0;
   MPI_Bcast(&dim, 1, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
-  dolfin_debug1("received meshfunction dim %d", dim);
+  //dolfin_debug1("received meshfunction dim %d", dim);
 
   if (mesh_function._values)
     delete [] mesh_function._values;

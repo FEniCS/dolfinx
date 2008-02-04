@@ -12,6 +12,7 @@
 #include <dolfin/dolfin_log.h>
 #include <boost/numeric/ublas/vector.hpp>
 #include <dolfin/uBlasVector.h>
+#include <dolfin/uBlasFactory.h>
 
 #ifdef HAVE_PETSC_H
 #include <dolfin/PETScVector.h>
@@ -180,6 +181,11 @@ LogStream& dolfin::operator<< (LogStream& stream, const uBlasVector& x)
   stream << "[ uBlasVector of size " << x.size() << " ]";
 
   return stream;
+}
+//-----------------------------------------------------------------------------
+LinearAlgebraFactory& uBlasVector::factory() const
+{
+  return uBlasFactory::instance();
 }
 //-----------------------------------------------------------------------------
 #ifdef HAVE_PETSC_H

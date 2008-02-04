@@ -54,11 +54,14 @@ void DofMapSet::update(const ufc::form& form, Mesh& mesh)
 {
   dolfin_debug("Updating set of dof maps...");
 
+  const uint num_arguments = form.rank() +
+    form.num_coefficients();
+
   // Resize array of dof maps
-  dof_map_set.resize(form.rank());
+  dof_map_set.resize(num_arguments);
 
   // Create dof maps and reuse previously computed dof maps
-  for (uint i = 0; i < form.rank(); i++)
+  for (uint i = 0; i < num_arguments; i++)
   {
     // Create UFC dof map
     ufc::dof_map* ufc_dof_map = form.create_dof_map(i);

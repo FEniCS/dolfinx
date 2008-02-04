@@ -2,10 +2,10 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells, 2007
-// Modified by Magnus Vikstrøm, 2007
+// Modified by Magnus Vikstrøm, 2008
 //
 // First added:  2007-01-17
-// Last changed: 2007-12-18
+// Last changed: 2008-01-15
 
 #ifndef __P_ASSEMBLER_H
 #define __P_ASSEMBLER_H
@@ -118,6 +118,7 @@ namespace dolfin
 
     // The partitions;
     MeshFunction<uint>* partitions;
+
   };
 
 }

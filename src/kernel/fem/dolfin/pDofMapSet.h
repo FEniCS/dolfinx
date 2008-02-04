@@ -4,7 +4,7 @@
 // Modifies by Magnus Vikstrøm, 2008
 //
 // First added:  2008-01-11
-// Last changed: 2008-01-11
+// Last changed: 2008-01-15
 
 #ifndef __P_DOF_MAP_SET_H
 #define __P_DOF_MAP_SET_H
@@ -23,6 +23,7 @@ namespace dolfin
   class pForm;
   class Mesh;
   class pUFC;
+  class pDofMap;
 
   /// This class provides storage and caching of (precomputed) dof
   /// maps and enables reuse of already computed dof maps with equal
@@ -36,25 +37,31 @@ namespace dolfin
     pDofMapSet();
 
     /// Create set of dof maps
-    pDofMapSet(const pForm& form, Mesh& mesh);
+    pDofMapSet(const pForm& form, Mesh& mesh, MeshFunction<uint>& partitions);
 
     /// Create set of dof maps
-    pDofMapSet(const ufc::form& form, Mesh& mesh);
+    pDofMapSet(const ufc::form& form, Mesh& mesh,
+        MeshFunction<uint>& partitions);
 
     /// Destructor
     ~pDofMapSet();
 
     /// Update set of dof maps for given form
-    void update(const pForm& form, Mesh& mesh);
+    void update(const pForm& form, Mesh& mesh, 
+        MeshFunction<uint>& partitions);
 
     /// Update set of dof maps for given form
-    void update(const ufc::form& form, Mesh& mesh);
+    void update(const ufc::form& form, Mesh& mesh,
+        MeshFunction<uint>& partitions);
     
     /// Return number of dof maps
     uint size() const;
     
     /// Return dof map for argument function i
     pDofMap& operator[] (uint i) const;
+
+    /// Build parallel dof maps
+    void build(pUFC& ufc) const;
     
   private:
 
@@ -66,7 +73,6 @@ namespace dolfin
 
     // Iterator for map
     typedef std::map<const std::string, std::pair<ufc::dof_map*, pDofMap*> >::iterator map_iterator;
-
   };
 
 }

@@ -19,7 +19,7 @@
 #include <dolfin/PETScObject.h>
 #include <dolfin/Variable.h>
 #include <dolfin/GenericMatrix.h>
-#include <dolfin/PETScFactory.h>
+#include <dolfin/LinearAlgebraFactory.h>
 
 namespace dolfin
 {
@@ -68,6 +68,9 @@ namespace dolfin
 
     /// Initialize M x N matrix with a given number of nonzeros per row
     void init(uint M, uint N, const uint* nz);
+
+    /// Initialize M x N matrix with a given number of nonzeros per row diagonal and off-diagonal
+    void init(uint M, uint N, const uint* d_nzrow, const uint* o_nzrow);
 
     /// Initialize M x N matrix with given block size and maximum number of nonzeros in each row
     void init(uint M, uint N, uint bs, uint nzmax);
@@ -140,7 +143,7 @@ namespace dolfin
     friend LogStream& operator<< (LogStream& stream, const PETScMatrix& A);
 
     /// Return factory object for backend
-    PETScFactory& factory() const;
+    LinearAlgebraFactory& factory() const;
     
     /// Return PETSc Mat pointer
     Mat mat() const;

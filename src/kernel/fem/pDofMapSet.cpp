@@ -4,7 +4,7 @@
 // Modified by Magnus Vikstrøm 2008.
 //
 // First added:  2008-01-11
-// Last changed: 2008-01-11
+// Last changed: 2008-01-15
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/pDofMap.h>
@@ -22,14 +22,16 @@ pDofMapSet::pDofMapSet()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-pDofMapSet::pDofMapSet(const pForm& form, Mesh& mesh)
+pDofMapSet::pDofMapSet(const pForm& form, Mesh& mesh, 
+    MeshFunction<uint>& partitions)
 {
-  update(form.form(), mesh);
+  update(form, mesh, partitions);
 }
 //-----------------------------------------------------------------------------
-pDofMapSet::pDofMapSet(const ufc::form& form, Mesh& mesh)
+pDofMapSet::pDofMapSet(const ufc::form& form, Mesh& mesh,
+    MeshFunction<uint>& partitions)
 {
-  update(form, mesh);
+  update(form, mesh, partitions);
 }
 //-----------------------------------------------------------------------------
 pDofMapSet::~pDofMapSet()
@@ -45,12 +47,14 @@ pDofMapSet::~pDofMapSet()
   }
 }
 //-----------------------------------------------------------------------------
-void pDofMapSet::update(const pForm& form, Mesh& mesh)
+void pDofMapSet::update(const pForm& form, Mesh& mesh,
+        MeshFunction<uint>& partitions)
 {
-  update(form.form(), mesh);
+  update(form.form(), mesh, partitions);
 }
 //-----------------------------------------------------------------------------
-void pDofMapSet::update(const ufc::form& form, Mesh& mesh)
+void pDofMapSet::update(const ufc::form& form, Mesh& mesh,
+        MeshFunction<uint>& partitions)
 {
   dolfin_debug("Updating set of dof maps...");
 
@@ -71,7 +75,7 @@ void pDofMapSet::update(const ufc::form& form, Mesh& mesh)
       message(2, "Creating dof map (not in cache): %s", ufc_dof_map->signature());
 
       // Create DOLFIN dof map
-      pDofMap* dolfin_dof_map = new pDofMap(*ufc_dof_map, mesh);
+      pDofMap* dolfin_dof_map = new pDofMap(*ufc_dof_map, mesh, partitions);
       dolfin_assert(dolfin_dof_map);
 
       // Save pair of UFC and DOLFIN dof maps in cache
@@ -94,6 +98,12 @@ void pDofMapSet::update(const ufc::form& form, Mesh& mesh)
   }
 
   dolfin_debug("Finished updating set of dof maps");
+}
+//-----------------------------------------------------------------------------
+void pDofMapSet::build(pUFC& ufc) const
+{
+  for (uint i=0; i<dof_map_set.size(); ++i)
+    dof_map_set[i]->build(ufc);
 }
 //-----------------------------------------------------------------------------
 dolfin::uint pDofMapSet::size() const

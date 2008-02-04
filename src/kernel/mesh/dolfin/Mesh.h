@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2007 Anders Logg.
+// Copyright (C) 2006-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Johan Hoffman 2007.
@@ -6,7 +6,7 @@
 // Modified by Garth N. Wells 2007.
 //
 // First added:  2006-05-08
-// Last changed: 2007-12-06
+// Last changed: 2008-02-04
 
 #ifndef __MESH_H
 #define __MESH_H
@@ -136,9 +136,12 @@ namespace dolfin
     
     /// Smooth mesh using Lagrangian mesh smoothing 
     void smooth();
+    
+    /// Partition mesh into num_processes partitions
+    void partition(MeshFunction<uint>& partitions);
 
     /// Partition mesh into num_partitions partitions
-    void partition(uint num_partitions, MeshFunction<uint>& partitions);
+    void partition(MeshFunction<uint>& partitions, uint num_partitions);
 
     /// Display mesh data
     void disp() const;

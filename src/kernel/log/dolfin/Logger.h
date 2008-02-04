@@ -55,6 +55,9 @@ namespace dolfin
     /// Set debug level
     void setDebugLevel(int debug_level);
 
+    /// Set debug level
+    inline int getDebugLevel() { return debug_level; }
+
     /// Helper function for dolfin_debug macro
     void __debug(std::string msg);
 

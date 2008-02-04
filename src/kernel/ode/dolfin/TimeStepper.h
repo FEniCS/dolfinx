@@ -1,8 +1,8 @@
-// Copyright (C) 2003-2005 Johan Jansson and Anders Logg.
+// Copyright (C) 2003-2008 Johan Jansson and Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2003
-// Last changed: 2005
+// Last changed: 2008-01-16
 
 #ifndef __TIME_STEPPER_H
 #define __TIME_STEPPER_H
@@ -53,6 +53,9 @@ namespace dolfin
     /// Check if we have reached the end time
     bool finished() const;
 
+    /// Check if we have stopped
+    bool stopped() const;
+
   private:
 
     // Save interpolated solution (when necessary)
@@ -88,7 +91,7 @@ namespace dolfin
     Progress p;
 
     // True if solution has been stopped
-    bool stopped;
+    bool _stopped;
 
     // True if we have reached the given end time
     bool _finished;

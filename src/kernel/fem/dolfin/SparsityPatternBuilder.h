@@ -1,10 +1,11 @@
 // Copyright (C) 2007 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Ola Skavhaug
+// Modified by Ola Skavhaug, 2007.
+// Modified by Anders Logg, 2008.
 //
 // First added:  2007-05-24
-// Last changed: 2007-12-07
+// Last changed: 2008-01-29
 
 #ifndef __SPARSITY_PATTERN_BUILDER_H
 #define __SPARSITY_PATTERN_BUILDER_H
@@ -24,20 +25,9 @@ namespace dolfin
   public:
     
     /// Build sparsity pattern
-    static void build(GenericSparsityPattern& sparsity_pattern, Mesh& mesh, UFC& ufc, 
-                                    const DofMapSet& dof_map_set);
-
-  private:
-
-    /// Build scalar sparsity pattern (do nothing)
-    static void scalarBuild(GenericSparsityPattern& sparsity_pattern);
-
-    /// Build vector sparsity pattern (compute length of vector)
-    static void vectorBuild(GenericSparsityPattern& sparsity_pattern,  const DofMapSet& dof_map_set);
-
-    /// Build matrix sparsity pattern (compute sparse matrix layput)
-    static void matrixBuild(GenericSparsityPattern& sparsity_pattern, Mesh& mesh, 
-                                    UFC& ufc, const DofMapSet& dof_map_set);
+    static void build(GenericSparsityPattern& sparsity_pattern, Mesh& mesh,
+		      UFC& ufc, 
+		      const DofMapSet& dof_map_set);
 
   };
 
