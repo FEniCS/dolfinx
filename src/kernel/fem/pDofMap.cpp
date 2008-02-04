@@ -22,7 +22,7 @@ using namespace dolfin;
 pDofMap::pDofMap(ufc::dof_map& dof_map, Mesh& mesh, MeshFunction<uint>& partitions)
   : dof_map(0), ufc_dof_map(&dof_map), 
     ufc_dof_map_local(false), dolfin_mesh(mesh), ufc_map(true), 
-    partitions(&partitions)
+    num_cells(mesh.numCells()), partitions(&partitions)
 {
   init();
   //build();
@@ -31,7 +31,7 @@ pDofMap::pDofMap(ufc::dof_map& dof_map, Mesh& mesh, MeshFunction<uint>& partitio
 pDofMap::pDofMap(const std::string signature, Mesh& mesh, MeshFunction<uint>& partitions)
   : dof_map(0), ufc_dof_map(0), 
     ufc_dof_map_local(false), dolfin_mesh(mesh), ufc_map(true),
-    partitions(&partitions)
+    num_cells(mesh.numCells()), partitions(&partitions)
 {
   // Create ufc dof map from signature
   ufc_dof_map = ElementLibrary::create_dof_map(signature);
@@ -49,7 +49,7 @@ pDofMap::~pDofMap()
 {
   if (dof_map)
   {
-    for (uint i = 0; i < dolfin_mesh.numCells(); ++i)
+    for (uint i = 0; i < num_cells; ++i)
       delete [] dof_map[i];
     delete [] dof_map;
   }

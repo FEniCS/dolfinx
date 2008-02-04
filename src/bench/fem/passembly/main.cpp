@@ -124,7 +124,7 @@ int main(int argc, char* argv[])
   {
     char** init_argv = new char*[2];
     init_argv[0] = argv[0];
-    init_argv[1] = "-info";
+    sprintf(init_argv[1], "%s", "-info");
     dolfin::cout << "dolfin_init" << dolfin::endl;
     dolfin_init(2, init_argv);
   }

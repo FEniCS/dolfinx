@@ -4,7 +4,7 @@
 // Modified by Magnus Vikstrøm, 2008
 //
 // First added:  2008-01-11
-// Last changed: 2008-01-15
+// Last changed: 2008-02-04
 
 #ifndef __P_DOF_MAP_H
 #define __P_DOF_MAP_H
@@ -136,6 +136,9 @@ namespace dolfin
     UFCCell ufc_cell;
 
     bool ufc_map;
+
+    // Number of cells in the mesh
+    uint num_cells;
 
     // Partitions
     MeshFunction<uint>* partitions;
