@@ -1,0 +1,9 @@
+# The nonlinear term of the Navier-Stokes equations
+
+element = VectorElement("Lagrange", "triangle", 3)
+
+v = TestFunction(element)
+u = TrialFunction(element)
+w = Function(element)
+
+a = v[i]*w[j]*u[i].dx(j)*dx
