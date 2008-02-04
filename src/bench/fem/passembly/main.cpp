@@ -176,7 +176,7 @@ int main(int argc, char* argv[])
     {
       dolfin::cout << "Partitioning mesh into: " << num_part << " partitions" << dolfin::endl;
       partitions = new MeshFunction<dolfin::uint>(mesh);
-      mesh.partition(num_part, *partitions);
+      mesh.partition(*partitions, num_part);
     }
 
     pForm* a;
