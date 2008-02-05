@@ -10,7 +10,6 @@ nobase_include_HEADERS   = dolfin/dolfin_fem.h \
                            dolfin/Form.h \
                            dolfin/PeriodicBC.h \
                            dolfin/SparsityPatternBuilder.h \
-                           dolfin/pSparsityPatternBuilder.h \
                            dolfin/SubSystem.h \
                            dolfin/UFC.h \
                            dolfin/UFCCell.h \
@@ -27,7 +26,6 @@ libdolfin_fem_la_SOURCES = assemble.cpp \
                            Form.cpp \
                            PeriodicBC.cpp \
                            SparsityPatternBuilder.cpp \
-                           pSparsityPatternBuilder.cpp \
                            SubSystem.cpp \
                            UFC.cpp
 libdolfin_fem_la_LDFLAGS = -static

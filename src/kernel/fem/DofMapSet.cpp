@@ -22,22 +22,24 @@ DofMapSet::DofMapSet()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-DofMapSet::DofMapSet(const Form& form, Mesh& mesh)
+DofMapSet::DofMapSet(const Form& form, Mesh& mesh) : _parallel(false)
 {
   update(form.form(), mesh);
 }
 //-----------------------------------------------------------------------------
-DofMapSet::DofMapSet(const Form& form, Mesh& mesh, MeshFunction<uint>& partitions)
+DofMapSet::DofMapSet(const Form& form, Mesh& mesh, 
+                     MeshFunction<uint>& partitions) : _parallel(true)
 {
   update(form, mesh, partitions);
 }
 //-----------------------------------------------------------------------------
-DofMapSet::DofMapSet(const ufc::form& form, Mesh& mesh)
+DofMapSet::DofMapSet(const ufc::form& form, Mesh& mesh) : _parallel(false)
 {
   update(form, mesh);
 }
 //-----------------------------------------------------------------------------
-DofMapSet::DofMapSet(const ufc::form& form, Mesh& mesh, MeshFunction<uint>& partitions)
+DofMapSet::DofMapSet(const ufc::form& form, Mesh& mesh, 
+                     MeshFunction<uint>& partitions) : _parallel(true)
 {
   update(form, mesh, partitions);
 }

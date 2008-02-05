@@ -20,11 +20,13 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
-				   Mesh& mesh,
-				   UFC& ufc, const DofMapSet& dof_map_set)
+				   Mesh& mesh, UFC& ufc, const DofMapSet& dof_map_set)
 {
   // Initialise sparsity pattern
-  sparsity_pattern.init(ufc.form.rank(), ufc.global_dimensions);
+  if( dof_map_set.parallel() )
+    sparsity_pattern.pinit(ufc.form.rank(), ufc.global_dimensions);
+  else
+    sparsity_pattern.init(ufc.form.rank(), ufc.global_dimensions);
 
   // Only build for rank >= 2 (matrices and higher order tensors)
   if (ufc.form.rank() < 2)
@@ -43,7 +45,10 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
         dof_map_set[i].tabulate_dofs(ufc.dofs[i], *cell);
  
       // Fill sparsity pattern.
-      sparsity_pattern.insert(ufc.local_dimensions, ufc.dofs);
+      if( dof_map_set.parallel() )
+        sparsity_pattern.pinsert(ufc.local_dimensions, ufc.dofs);
+      else
+        sparsity_pattern.insert(ufc.local_dimensions, ufc.dofs);
     }
   }
 

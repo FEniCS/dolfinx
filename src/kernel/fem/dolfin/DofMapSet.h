@@ -71,6 +71,9 @@ namespace dolfin
     /// Build parallel dof maps
     void build(UFC& ufc) const;
 
+    bool parallel() const
+      { return _parallel; }
+
   private:
 
     // Cached precomputed dof maps
@@ -81,6 +84,8 @@ namespace dolfin
 
     // Iterator for map
     typedef std::map<const std::string, std::pair<ufc::dof_map*, DofMap*> >::iterator map_iterator;
+
+    bool _parallel;
 
   };
 

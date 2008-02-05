@@ -59,8 +59,8 @@ LTLIBRARIES = $(lib_LTLIBRARIES)
 libdolfin_fem_la_LIBADD =
 am_libdolfin_fem_la_OBJECTS = assemble.lo Assembler.lo pAssembler.lo \
 	BoundaryCondition.lo DirichletBC.lo DofMap.lo DofMapSet.lo \
-	Form.lo PeriodicBC.lo SparsityPatternBuilder.lo \
-	pSparsityPatternBuilder.lo SubSystem.lo UFC.lo
+	Form.lo PeriodicBC.lo SparsityPatternBuilder.lo SubSystem.lo \
+	UFC.lo
 libdolfin_fem_la_OBJECTS = $(am_libdolfin_fem_la_OBJECTS)
 libdolfin_fem_la_LINK = $(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(AM_CXXFLAGS) \
@@ -252,7 +252,6 @@ nobase_include_HEADERS = dolfin/dolfin_fem.h \
                            dolfin/Form.h \
                            dolfin/PeriodicBC.h \
                            dolfin/SparsityPatternBuilder.h \
-                           dolfin/pSparsityPatternBuilder.h \
                            dolfin/SubSystem.h \
                            dolfin/UFC.h \
                            dolfin/UFCCell.h \
@@ -270,7 +269,6 @@ libdolfin_fem_la_SOURCES = assemble.cpp \
                            Form.cpp \
                            PeriodicBC.cpp \
                            SparsityPatternBuilder.cpp \
-                           pSparsityPatternBuilder.cpp \
                            SubSystem.cpp \
                            UFC.cpp
 
@@ -356,7 +354,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/UFC.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/assemble.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pAssembler.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pSparsityPatternBuilder.Plo@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<

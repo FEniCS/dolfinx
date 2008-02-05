@@ -15,6 +15,7 @@
 #include <dolfin/constants.h>
 #include <dolfin/MeshFunction.h>
 
+
 namespace dolfin
 {
   class SubSytem;
@@ -109,9 +110,8 @@ namespace dolfin
     /// Build parallel dof map
     void build(UFC& ufc);
 
-    /// Return renumbering
-    std::map<const uint, uint> getMap() const
-      { return map; }
+    /// Return renumbering (used for testing)
+    std::map<uint, uint> getMap() const;
 
   private:
 
@@ -148,7 +148,7 @@ namespace dolfin
     MeshFunction<uint>* partitions;
 
     // Provide easy access to map for testing
-    std::map<const uint, uint> map;
+    std::map<uint, uint> map;
 
   };
 

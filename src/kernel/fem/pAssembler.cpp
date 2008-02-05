@@ -23,7 +23,7 @@
 #include <dolfin/UFC.h>
 #include <dolfin/pAssembler.h>
 #include <dolfin/SparsityPattern.h>
-#include <dolfin/pSparsityPatternBuilder.h>
+#include <dolfin/SparsityPatternBuilder.h>
 #include <dolfin/DofMapSet.h>
 #include <dolfin/MPI.h>
 
@@ -378,7 +378,7 @@ void pAssembler::initGlobalTensor(GenericTensor& A, const DofMapSet& dof_map_set
     
     // Build sparsity pattern from dof map
     GenericSparsityPattern* sparsity_pattern = A.factory().createPattern(); 
-    pSparsityPatternBuilder::build(*sparsity_pattern, mesh, ufc, dof_map_set);
+    SparsityPatternBuilder::build(*sparsity_pattern, mesh, ufc, dof_map_set);
     A.init(*sparsity_pattern);
     delete sparsity_pattern;
   }

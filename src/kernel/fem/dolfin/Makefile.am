@@ -9,7 +9,6 @@ EXTRA_DIST = dolfin_fem.h \
              Form.h \
              PeriodicBC.h \
              SparsityPatternBuilder.h \
-             pSparsityPatternBuilder.h \
              SubSystem.h \
              UFC.h \
              UFCCell.h \
