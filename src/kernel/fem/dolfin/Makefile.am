@@ -5,7 +5,6 @@ EXTRA_DIST = dolfin_fem.h \
              BoundaryCondition.h \
              DirichletBC.h \
              DofMap.h \
-             pDofMap.h \
              DofMapSet.h \
              Form.h \
              PeriodicBC.h \
