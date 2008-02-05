@@ -7,15 +7,19 @@
 #ifndef __DOF_MAP_H
 #define __DOF_MAP_H
 
+#include <map>
 #include <ufc.h>
 #include <dolfin/Mesh.h>
 #include <dolfin/UFCCell.h>
 #include <dolfin/UFCMesh.h>
 #include <dolfin/constants.h>
+#include <dolfin/MeshFunction.h>
+
 
 namespace dolfin
 {
   class SubSytem;
+  class UFC;
 
   /// This class handles the mapping of degrees of freedom.
   /// It wraps a ufc::dof_map on a specific mesh and provides
@@ -28,8 +32,15 @@ namespace dolfin
     /// Create dof map on mesh
     DofMap(ufc::dof_map& dof_map, Mesh& mesh);
 
+    /// Create dof map on mesh (parallel)
+    DofMap(ufc::dof_map& dof_map, Mesh& mesh, MeshFunction<uint>& partitions);
+
     /// Create dof map on mesh
     DofMap(const std::string signature, Mesh& mesh);
+
+    /// Create dof map on mesh (parallel)
+    DofMap(const std::string signature, Mesh& mesh, 
+        MeshFunction<uint>& partitions);
 
     /// Destructor
     ~DofMap();
@@ -65,8 +76,16 @@ namespace dolfin
     /// Tabulate the local-to-global mapping of dofs on a cell
     void tabulate_dofs(uint* dofs, Cell& cell) 
     {
-      ufc_cell.update(cell);
-      ufc_dof_map->tabulate_dofs(dofs, ufc_mesh, ufc_cell);
+      if (dof_map)
+      {
+        for (uint i = 0; i < local_dimension(); i++)
+          dofs[i] = dof_map[cell.index()][i];
+      }
+      else
+      {
+        ufc_cell.update(cell);
+        ufc_dof_map->tabulate_dofs(dofs, ufc_mesh, ufc_cell);
+      }
     }
 
     /// Tabulate local-local facet dofs
@@ -88,6 +107,12 @@ namespace dolfin
     Mesh& mesh() const
       { return dolfin_mesh; }
 
+    /// Build parallel dof map
+    void build(UFC& ufc);
+
+    /// Return renumbering (used for testing)
+    std::map<uint, uint> getMap() const;
+
   private:
 
     /// Initialise DofMap
@@ -95,6 +120,9 @@ namespace dolfin
 
     /// Extract sub DofMap
     ufc::dof_map* extractDofMap(const ufc::dof_map& dof_map, uint& offset, const Array<uint>& sub_system) const;
+
+    // Parallel dof map
+    uint** dof_map;
 
     // UFC dof map
     ufc::dof_map* ufc_dof_map;
@@ -112,6 +140,15 @@ namespace dolfin
     UFCCell ufc_cell;
 
     bool ufc_map;
+
+    // Number of cells in the mesh
+    uint num_cells;
+
+    // Partitions
+    MeshFunction<uint>* partitions;
+
+    // Provide easy access to map for testing
+    std::map<uint, uint> map;
 
   };
 

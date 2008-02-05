@@ -15,7 +15,7 @@ int main()
 
   // Partition mesh
   MeshFunction<unsigned int> partitions;
-  mesh.partition(20, partitions);
+  mesh.partition(partitions, 20);
 
   // Display partition
   partitions.disp();

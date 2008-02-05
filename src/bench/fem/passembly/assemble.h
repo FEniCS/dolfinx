@@ -1,6 +1,5 @@
 #include <dolfin.h>
 #include "Poisson.h"
-#include "pPoisson.h"
 
 using namespace dolfin;
 //-----------------------------------------------------------------------------
@@ -20,7 +19,7 @@ void check_assembly(Mesh& mesh, MeshFunction<dolfin::uint>& partitions)
 {
   // Do normal assembly on process 1
   PoissonBilinearForm a;
-  pPoissonBilinearForm b;
+  PoissonBilinearForm b;
   Matrix A, B;
 
   if(dolfin::MPI::numProcesses() == 1)
@@ -33,7 +32,7 @@ void check_assembly(Mesh& mesh, MeshFunction<dolfin::uint>& partitions)
     pAssembler passembler(mesh, partitions);
     passembler.assemble(B, b, true);
   }
-  pDofMapSet& dof_map_set = b.dofMaps();
+  DofMapSet& dof_map_set = b.dofMaps();
 
   // Would be nice to have automatic testing of B = A * modified dofs
   // Currently just printing so that matrices can be manually inspected

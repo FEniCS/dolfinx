@@ -58,10 +58,9 @@ libLTLIBRARIES_INSTALL = $(INSTALL)
 LTLIBRARIES = $(lib_LTLIBRARIES)
 libdolfin_fem_la_LIBADD =
 am_libdolfin_fem_la_OBJECTS = assemble.lo Assembler.lo pAssembler.lo \
-	BoundaryCondition.lo DirichletBC.lo DofMap.lo pDofMap.lo \
-	DofMapSet.lo pDofMapSet.lo Form.lo pForm.lo PeriodicBC.lo \
-	SparsityPatternBuilder.lo pSparsityPatternBuilder.lo \
-	SubSystem.lo UFC.lo pUFC.lo
+	BoundaryCondition.lo DirichletBC.lo DofMap.lo DofMapSet.lo \
+	Form.lo PeriodicBC.lo SparsityPatternBuilder.lo SubSystem.lo \
+	UFC.lo
 libdolfin_fem_la_OBJECTS = $(am_libdolfin_fem_la_OBJECTS)
 libdolfin_fem_la_LINK = $(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(AM_CXXFLAGS) \
@@ -249,17 +248,12 @@ nobase_include_HEADERS = dolfin/dolfin_fem.h \
                            dolfin/BoundaryCondition.h \
                            dolfin/DirichletBC.h \
                            dolfin/DofMap.h \
-			   dolfin/pDofMap.h \
                            dolfin/DofMapSet.h \
-			   dolfin/pDofMapSet.h \
                            dolfin/Form.h \
-                           dolfin/pForm.h \
                            dolfin/PeriodicBC.h \
                            dolfin/SparsityPatternBuilder.h \
-                           dolfin/pSparsityPatternBuilder.h \
                            dolfin/SubSystem.h \
                            dolfin/UFC.h \
-                           dolfin/pUFC.h \
                            dolfin/UFCCell.h \
                            dolfin/UFCMesh.h
 
@@ -271,17 +265,12 @@ libdolfin_fem_la_SOURCES = assemble.cpp \
                            BoundaryCondition.cpp \
                            DirichletBC.cpp \
                            DofMap.cpp \
-			   pDofMap.cpp \
                            DofMapSet.cpp \
-			   pDofMapSet.cpp \
                            Form.cpp \
-                           pForm.cpp \
                            PeriodicBC.cpp \
                            SparsityPatternBuilder.cpp \
-                           pSparsityPatternBuilder.cpp \
                            SubSystem.cpp \
-                           UFC.cpp \
-                           pUFC.cpp
+                           UFC.cpp
 
 libdolfin_fem_la_LDFLAGS = -static
 all: all-recursive
@@ -365,11 +354,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/UFC.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/assemble.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pAssembler.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pDofMap.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pDofMapSet.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pForm.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pSparsityPatternBuilder.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pUFC.Plo@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<

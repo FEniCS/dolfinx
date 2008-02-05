@@ -18,13 +18,13 @@
 namespace dolfin
 {
 
-  class pDofMapSet;
+  class DofMapSet;
   class GenericTensor;
   class Function;
-  class pForm;
+  class Form;
   class Mesh;
   class SubDomain;
-  class pUFC;
+  class UFC;
 
   /// This class provides automated assembly of linear systems, or
   /// more generally, assembly of a sparse tensor from a given
@@ -44,31 +44,31 @@ namespace dolfin
     ~pAssembler();
 
     /// Assemble tensor from given variational form
-    void assemble(GenericTensor& A, pForm& form, bool reset_tensor = true);
+    void assemble(GenericTensor& A, Form& form, bool reset_tensor = true);
 
     /// Assemble tensor from given variational form over a sub domain
-    void assemble(GenericTensor& A, pForm& form,
+    void assemble(GenericTensor& A, Form& form,
                   const SubDomain& sub_domain, bool reset_tensor = true);
 
     /// Assemble tensor from given variational form over sub domains
-    void assemble(GenericTensor& A, pForm& form,
+    void assemble(GenericTensor& A, Form& form,
                   const MeshFunction<uint>& cell_domains,
                   const MeshFunction<uint>& exterior_facet_domains,
                   const MeshFunction<uint>& interior_facet_domains, bool reset_tensor = true);
     
     /// Assemble scalar from given variational form
-    real assemble(pForm& form);
+    real assemble(Form& form);
     
     /// Assemble scalar from given variational form over a sub domain
-    real assemble(pForm& form, const SubDomain& sub_domain);
+    real assemble(Form& form, const SubDomain& sub_domain);
     
     /// Assemble scalar from given variational form over sub domains
-    real assemble(pForm& form,
+    real assemble(Form& form,
                   const MeshFunction<uint>& cell_domains,
                   const MeshFunction<uint>& exterior_facet_domains,
                   const MeshFunction<uint>& interior_facet_domains);
     
-    /// Assemble tensor from given (pUFC) form, coefficients and sub domains.
+    /// Assemble tensor from given (UFC) form, coefficients and sub domains.
     /// This is the main assembly function in DOLFIN. All other assembly functions
     /// end up calling this function.
     ///
@@ -78,7 +78,7 @@ namespace dolfin
     /// assembled over the entire set of cells or facets.
     void assemble(GenericTensor& A, const ufc::form& form,
                   const Array<Function*>& coefficients,
-                  const pDofMapSet& dof_map_set,
+                  const DofMapSet& dof_map_set,
                   const MeshFunction<uint>* cell_domains,
                   const MeshFunction<uint>* exterior_facet_domains,
                   const MeshFunction<uint>* interior_facet_domains, bool reset_tensor = true);
@@ -88,22 +88,22 @@ namespace dolfin
     // Assemble over cells
     void assembleCells(GenericTensor& A,
                        const Array<Function*>& coefficients,
-                       const pDofMapSet& dof_set_map,
-                       pUFC& data,
+                       const DofMapSet& dof_set_map,
+                       UFC& data,
                        const MeshFunction<uint>* domains) const;
 
     // Assemble over exterior facets
     void assembleExteriorFacets(GenericTensor& A,
                                 const Array<Function*>& coefficients,
-                                const pDofMapSet& dof_set_map,
-                                pUFC& data,
+                                const DofMapSet& dof_set_map,
+                                UFC& data,
                                 const MeshFunction<uint>* domains) const;
 
     // Assemble over interior facets
     void assembleInteriorFacets(GenericTensor& A,
                                 const Array<Function*>& coefficients,
-                                const pDofMapSet& dof_set_map,
-                                pUFC& data,
+                                const DofMapSet& dof_set_map,
+                                UFC& data,
                                 const MeshFunction<uint>* domains) const;
 
     // Check arguments
@@ -111,7 +111,7 @@ namespace dolfin
                const Array<Function*>& coefficients) const;
 
     // Initialize global tensor
-    void initGlobalTensor(GenericTensor& A, const pDofMapSet& dof_map_set, pUFC& ufc, bool reset_tensor) const;
+    void initGlobalTensor(GenericTensor& A, const DofMapSet& dof_map_set, UFC& ufc, bool reset_tensor) const;
 
     // The mesh
     Mesh& mesh;

@@ -8,9 +8,7 @@
 // This file is used for testing distribution of the mesh using MPI
 
 #include <dolfin.h>
-#include "pPoisson.h"
 #include "Poisson.h"
-#include "pNonlinear2D.h"
 #include "Nonlinear2D.h"
 #include <iostream>
 #include <fstream>
@@ -32,7 +30,7 @@ real timer(Mesh& mesh, int num_iterations, Form& a)
   return toc()/static_cast<real>(num_iterations);
 }
 
-real p_timer(Mesh& mesh, MeshFunction<dolfin::uint>& partitions, int num_iterations, pForm& a)
+real p_timer(Mesh& mesh, MeshFunction<dolfin::uint>& partitions, int num_iterations, Form& a)
 {
   dolfin::cout << "Assembling with parallel assembler." << dolfin::endl;
   Matrix B;
@@ -179,16 +177,16 @@ int main(int argc, char* argv[])
       mesh.partition(*partitions, num_part);
     }
 
-    pForm* a;
+    Form* a;
     if(testtype == "Poisson3D")
-      a = new pPoissonBilinearForm();
+      a = new PoissonBilinearForm();
     else if(testtype == "Nonlinear2D")
     {
       Function w(mesh, 1.0);
-      a = new pNonlinear2DBilinearForm(w);
+      a = new Nonlinear2DBilinearForm(w);
     }
     else
-      a = new pPoissonBilinearForm();
+      a = new PoissonBilinearForm();
 
     dolfin::cout << "Running test " << testtype << dolfin::endl;
     dolfin::cout << "Assembling with parallel assembler." << dolfin::endl;

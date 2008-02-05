@@ -27,6 +27,18 @@ void Form::updateDofMaps(Mesh& mesh)
   }
 }
 //-----------------------------------------------------------------------------
+void Form::updateDofMaps(Mesh& mesh, MeshFunction<uint>& partitions)
+{
+  if( !dof_map_set )
+  {
+    // Create dof maps
+    dof_map_set = new DofMapSet(form(), mesh, partitions);
+
+    // Take ownership of dof maps
+    local_dof_map_set = dof_map_set;
+  }
+}
+//-----------------------------------------------------------------------------
 void Form::setDofMaps(DofMapSet& dof_map_set)
 {
   // Delete dof map if locally owned 

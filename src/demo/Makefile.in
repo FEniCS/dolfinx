@@ -205,7 +205,8 @@ sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-SUBDIRS = fem/cpp \
+SUBDIRS = fem/assembly/cpp \
+          fem/simple/cpp \
           la/eigensolver/cpp \
           mesh/meshfunction/cpp \
           mesh/partitioning/cpp \
