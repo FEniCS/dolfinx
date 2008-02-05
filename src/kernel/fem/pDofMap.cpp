@@ -14,7 +14,7 @@
 #include <dolfin/Array.h>
 #include <dolfin/ElementLibrary.h>
 #include <dolfin/MeshFunction.h>
-#include <dolfin/pUFC.h>
+#include <dolfin/UFC.h>
 
 using namespace dolfin;
 
@@ -153,7 +153,7 @@ void pDofMap::init()
   dolfin_debug("Dof map initialized");
 }
 //-----------------------------------------------------------------------------
-void pDofMap::build(pUFC& ufc)
+void pDofMap::build(UFC& ufc)
 {
   dolfin_debug("pDofMap::build()");
   dof_map = new uint*[dolfin_mesh.numCells()];

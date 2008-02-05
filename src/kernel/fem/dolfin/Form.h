@@ -12,6 +12,7 @@
 #include <dolfin/Array.h>
 #include <dolfin/DofMapSet.h>
 #include <dolfin/Function.h>
+#include <dolfin/MeshFunction.h>
 
 namespace dolfin
 {
@@ -36,6 +37,9 @@ namespace dolfin
 
     /// Create degree of freedom maps 
     void updateDofMaps(Mesh& mesh);
+
+    /// Create degree of freedom maps 
+    void updateDofMaps(Mesh& mesh, MeshFunction<uint>& partitions);
 
     /// Set degree of freedom maps
     void setDofMaps(DofMapSet& dof_map_set);

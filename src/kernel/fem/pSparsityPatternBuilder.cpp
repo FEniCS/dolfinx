@@ -8,19 +8,19 @@
 // Last changed: 2008-01-24
 
 #include <dolfin/dolfin_log.h>
-#include <dolfin/pDofMapSet.h>
+#include <dolfin/DofMapSet.h>
 #include <dolfin/Cell.h>
 #include <dolfin/Facet.h>
 #include <dolfin/Mesh.h>
 #include <dolfin/GenericSparsityPattern.h>
 #include <dolfin/pSparsityPatternBuilder.h>
-#include <dolfin/pUFC.h>
+#include <dolfin/UFC.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 void pSparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern, Mesh& mesh,
-                                                pUFC& ufc, const pDofMapSet& dof_map_set)
+                                                UFC& ufc, const DofMapSet& dof_map_set)
 {
   if (dof_map_set.size() == 0)
     scalarBuild(sparsity_pattern);
@@ -38,7 +38,7 @@ void pSparsityPatternBuilder::scalarBuild(GenericSparsityPattern& sparsity_patte
 }
 //-----------------------------------------------------------------------------
 void pSparsityPatternBuilder::vectorBuild(GenericSparsityPattern& sparsity_pattern, 
-                                                    const pDofMapSet& dof_map_set)
+                                                    const DofMapSet& dof_map_set)
 {
   // Initialise sparsity pattern with problem size
   uint dims[1];
@@ -47,7 +47,7 @@ void pSparsityPatternBuilder::vectorBuild(GenericSparsityPattern& sparsity_patte
 }
 //-----------------------------------------------------------------------------
 void pSparsityPatternBuilder::matrixBuild(GenericSparsityPattern& sparsity_pattern, 
-                                  Mesh& mesh, pUFC& ufc, const pDofMapSet& dof_map_set)
+                                  Mesh& mesh, UFC& ufc, const DofMapSet& dof_map_set)
 {
   // Initialise sparsity pattern
   uint dims[2];

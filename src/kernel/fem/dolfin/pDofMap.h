@@ -16,7 +16,7 @@
 #include <dolfin/constants.h>
 #include <dolfin/MPI.h>
 #include <dolfin/MeshFunction.h>
-#include <dolfin/pUFC.h>
+#include <dolfin/UFC.h>
 
 namespace dolfin
 {
@@ -103,7 +103,7 @@ namespace dolfin
       { return dolfin_mesh; }
 
     /// Build parallel dof map
-    void build(pUFC& ufc);
+    void build(UFC& ufc);
 
     /// Return renumbering
     std::map<const uint, uint> getMap() const

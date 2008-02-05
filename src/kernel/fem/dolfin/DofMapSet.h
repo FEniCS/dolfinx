@@ -38,8 +38,14 @@ namespace dolfin
     /// Create set of dof maps
     DofMapSet(const Form& form, Mesh& mesh);
 
+    /// Create set of dof maps (parallel)
+    DofMapSet(const Form& form, Mesh& mesh, MeshFunction<uint>& partitions);
+
     /// Create set of dof maps
     DofMapSet(const ufc::form& form, Mesh& mesh);
+
+    /// Create set of dof maps (parallel)
+    DofMapSet(const ufc::form& form, Mesh& mesh, MeshFunction<uint>& partitions);
 
     /// Destructor
     ~DofMapSet();
@@ -47,15 +53,24 @@ namespace dolfin
     /// Update set of dof maps for given form
     void update(const Form& form, Mesh& mesh);
 
+    /// Update set of dof maps for given form (parallel)
+    void update(const Form& form, Mesh& mesh, MeshFunction<uint>& partitions);
+
     /// Update set of dof maps for given form
     void update(const ufc::form& form, Mesh& mesh);
     
+    /// Update set of dof maps for given form (parallel)
+    void update(const ufc::form& form, Mesh& mesh, MeshFunction<uint>& partitions);
+
     /// Return number of dof maps
     uint size() const;
     
     /// Return dof map for argument function i
     DofMap& operator[] (uint i) const;
     
+    /// Build parallel dof maps
+    void build(UFC& ufc) const;
+
   private:
 
     // Cached precomputed dof maps
