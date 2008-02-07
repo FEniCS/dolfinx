@@ -22,7 +22,7 @@ system("./dolfin-ode-reaction mcg fixed-point 1e-6 1000 5.0 parameters-overhead.
 tmcg = time() - tic
 
 # Save timing to log file
-system("dolfin-config --version >> " + logfile)
+system("pkg-config --modversion dolfin >> " + logfile)
 system("date >> " + logfile)
 file = open(logfile, "a")
 file.write("CPU time cG(1):  %g s\n" % tcg)

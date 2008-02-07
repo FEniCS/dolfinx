@@ -17,7 +17,7 @@ tols  = [1e-6]
 sizes = [1000, 2000, 4000, 8000, 16000]
 
 # Write version and date to log file
-system("dolfin-config --version >> " + logfile)
+system("pkg-config --modversion dolfin >> " + logfile)
 system("date +'%Y-%m-%d %H:%M:%S' >> " + logfile)
 system("uname -snm >> " + logfile)
 file = open(logfile, "a")
