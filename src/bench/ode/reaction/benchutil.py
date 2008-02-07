@@ -38,6 +38,8 @@ def run_set(method, solver, tols, sizes, logfile):
             output = getoutput("./dolfin-ode-reaction %s %s %e %d %e parameters-bench.xml" % \
                                (method, solver, tol, N, L))
 
+            print output
+
             # Check if we got any solution
             if len(output.split("Solution stopped")) > 1:
                 file.write("Unable to compute solution\n")

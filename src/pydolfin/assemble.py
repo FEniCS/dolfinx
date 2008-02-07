@@ -20,20 +20,27 @@ from dolfin import *
 def assemble(form, mesh, backend=None, return_dofmaps=False):
     "Assemble form over mesh and return tensor"
     
-    # Compile form
-    (compiled_form, module, form_data) = jit(form)
-
-    # Extract coefficients
+    # Create empty list of coefficients
     coefficients = ArrayFunctionPtr()
-    for c in form_data.coefficients:
-        coefficients.push_back(c.f)
 
-    # Create dummy arguments (not yet supported)
+    # Create dummy arguments for domains (not yet supported in Python)
     cell_domains = MeshFunction("uint")
     exterior_facet_domains = MeshFunction("uint")
     interior_facet_domains = MeshFunction("uint")
 
-    # Create dof maps
+    # Check if we need to compile the form (JIT)
+    if hasattr(form, "create_cell_integral"):
+        # UFC form, no need to compile
+        compiled_form = form
+    else:
+        # FFC form, call JIT compile
+        (compiled_form, module, form_data) = jit(form)
+
+        # Extract coefficients
+        for c in form_data.coefficients:
+            coefficients.push_back(c.f)
+
+    # Create dof map set
     dof_maps = DofMapSet(compiled_form, mesh)
 
     # Create tensor

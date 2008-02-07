@@ -51,6 +51,7 @@ public:
   /// Right-hand side, mono-adaptive version
   void f(const uBlasVector& u, real t, uBlasVector& y)
   {
+    printf("MONO!\n");
     for (unsigned int i = 0; i < N; i++)
     {
       const real ui = u(i);
@@ -70,6 +71,7 @@ public:
   /// Right-hand side, multi-adaptive version
   real f(const uBlasVector& u, real t, unsigned int i)
   {
+    printf("MULTI!\n");
     const real ui = u(i);
     
     real sum = 0.0;

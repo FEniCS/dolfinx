@@ -169,8 +169,8 @@ void Assembler::assembleCells(GenericTensor& A,
   message("Assembling over %d cells.", mesh.numCells());
   Progress p("Assembling over cells", mesh.numCells());
 
-  real t = toc();
-  printf("Assembler: start\n");
+  //real t = toc();
+  //printf("Assembler: start\n");
 
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
@@ -204,8 +204,8 @@ void Assembler::assembleCells(GenericTensor& A,
     p++;
   }
 
-  t = toc() - t;
-  printf("assembly loop (s): %.3e\n", t);
+  //t = toc() - t;
+  //printf("assembly loop (s): %.3e\n", t);
 
   message("Assembly over cells completed.");
 }
