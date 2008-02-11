@@ -1,8 +1,8 @@
-// Copyright (C) 2005-2006 Anders Logg.
+// Copyright (C) 2005-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005-01-28
-// Last changed: 2006-08-21
+// Last changed: 2008-08-11
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/dolfin_math.h>
@@ -24,7 +24,7 @@ using namespace dolfin;
 MonoAdaptiveNewtonSolver::MonoAdaptiveNewtonSolver
 (MonoAdaptiveTimeSlab& timeslab, bool implicit)
   : TimeSlabSolver(timeslab), implicit(implicit),
-    piecewise(get("ODE matrix piecewise constant")),
+    piecewise(dolfin_get("ODE matrix piecewise constant")),
     ts(timeslab), A(timeslab, implicit, piecewise),
     krylov(0), lu(0), krylov_g(0), lu_g(0)
 {
@@ -84,7 +84,7 @@ real MonoAdaptiveNewtonSolver::iteration(real tol, uint iter, real d0, real d1)
   //b.disp();
 
   // Solve linear system
-  const bool matrix_free = get("ODE matrix-free jacobian");
+  const bool matrix_free = dolfin_get("ODE matrix-free jacobian");
   if(!matrix_free)
   {
     // Need to make implementation-independent copies
@@ -262,7 +262,7 @@ void MonoAdaptiveNewtonSolver::FevalImplicit(uBlasVector& F)
 //-----------------------------------------------------------------------------
 void MonoAdaptiveNewtonSolver::chooseLinearSolver()
 {
-  const std::string linear_solver = get("ODE linear solver");
+  const std::string linear_solver = dolfin_get("ODE linear solver");
   
   // First determine if we should use a direct solver
   bool direct = false;  
@@ -273,7 +273,7 @@ void MonoAdaptiveNewtonSolver::chooseLinearSolver()
   else if ( linear_solver == "auto" )
   {
     /*
-    const uint ode_size_threshold = get("ODE size threshold");
+    const uint ode_size_threshold = dolfin_get("ODE size threshold");
     if ( ode.size() > ode_size_threshold )
       direct = false;
     else
@@ -294,7 +294,7 @@ void MonoAdaptiveNewtonSolver::chooseLinearSolver()
   else
   {
     message("Using uBlas Krylov solver with no preconditioning.");
-    const real ktol = get("ODE discrete Krylov tolerance factor");
+    const real ktol = dolfin_get("ODE discrete Krylov tolerance factor");
 
     // FIXME: Check choice of tolerances
     krylov = new uBlasKrylovSolver(none);

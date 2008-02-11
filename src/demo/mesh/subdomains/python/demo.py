@@ -33,7 +33,7 @@ class Outflow(SubDomain):
     def inside(x, on_boundary):
         return bool(x[0] < DOLFIN_EPS and on_boundary)
 
-set("debug level", 1);
+dolfin_set("debug level", 1);
   
 # Read mesh
 mesh = Mesh("../../../../../data/meshes/dolfin-2.xml.gz")

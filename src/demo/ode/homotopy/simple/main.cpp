@@ -68,11 +68,11 @@ int main(int argc, char* argv[])
 {
   dolfin_init(argc, argv);
 
-  set("ODE method", "cg");
-  set("ODE order", 1);
-  set("ODE tolerance", 0.05);
-  set("homotopy monitoring", true);
-  set("homotopy randomize", false);
+  dolfin_set("ODE method", "cg");
+  dolfin_set("ODE order", 1);
+  dolfin_set("ODE tolerance", 0.05);
+  dolfin_set("homotopy monitoring", true);
+  dolfin_set("homotopy randomize", false);
 
   Quadratic quadratic;
   quadratic.solve();

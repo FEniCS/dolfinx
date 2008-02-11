@@ -200,16 +200,16 @@ void test11()
 
 int main()
 {
-  set("ODE method", "cg");
-  set("ODE order", 1);
-  set("ODE tolerance", 0.01);
-  set("ODE discrete tolerance", 1e-10);
-  set("ODE initial time step", 0.001);
-  //set("linear solver", "direct");
-  set("ODE adaptive samples", false);
-  set("homotopy monitoring", false);
-  set("homotopy divergence tolerance", 10.0);
-  set("homotopy randomize", false);
+  dolfin_set("ODE method", "cg");
+  dolfin_set("ODE order", 1);
+  dolfin_set("ODE tolerance", 0.01);
+  dolfin_set("ODE discrete tolerance", 1e-10);
+  dolfin_set("ODE initial time step", 0.001);
+  //dolfin_set("linear solver", "direct");
+  dolfin_set("ODE adaptive samples", false);
+  dolfin_set("homotopy monitoring", false);
+  dolfin_set("homotopy divergence tolerance", 10.0);
+  dolfin_set("homotopy randomize", false);
 
   // Test  1: CES test problem from Eaves and Schmedders (rational-rational form).
   // Test  2: CES test problem from Eaves and Schmedders (polynomial-rational form)

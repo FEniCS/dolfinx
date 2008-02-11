@@ -55,18 +55,18 @@ private:
 
 int main()
 {
-  set("ODE fixed time step", true);
-  set("ODE discrete tolerance", 1e-14);
+  dolfin_set("ODE fixed time step", true);
+  dolfin_set("ODE discrete tolerance", 1e-14);
 
   for (int q = 1; q <= 5; q++)
   {
-    set("output destination", "silent");
-    set("ODE method", "cg");
-    set("ODE order", q);
+    dolfin_set("output destination", "silent");
+    dolfin_set("ODE method", "cg");
+    dolfin_set("ODE order", q);
 
     Harmonic ode;
     ode.solve();
-    set("output destination", "terminal");
+    dolfin_set("output destination", "terminal");
 
     message("cG(%d): e = %.3e", q, ode.error());
   }
@@ -75,13 +75,13 @@ int main()
 
   for (int q = 0; q <= 5; q++)
   {
-    set("output destination", "silent");
-    set("ODE method", "dg");
-    set("ODE order", q);
+    dolfin_set("output destination", "silent");
+    dolfin_set("ODE method", "dg");
+    dolfin_set("ODE order", q);
 
     Harmonic ode;
     ode.solve();
-    set("output destination", "terminal");
+    dolfin_set("output destination", "terminal");
 
     message("dG(%d): e = %.3e", q, ode.error());
   }

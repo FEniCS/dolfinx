@@ -47,20 +47,20 @@ int main(int argc, char* argv[])
   int n = atoi(argv[1]);
 
   // Parameters
-  set("ODE method", "dg");
-  set("ODE order", 1);
-  set("ODE maximum time step", 5.0);
-  set("ODE tolerance", 0.01);
-  set("ODE nonlinear solver", "newton");
-  set("ODE adaptive samples", true);
-  set("ODE solve dual problem", false);
+  dolfin_set("ODE method", "dg");
+  dolfin_set("ODE order", 1);
+  dolfin_set("ODE maximum time step", 5.0);
+  dolfin_set("ODE tolerance", 0.01);
+  dolfin_set("ODE nonlinear solver", "newton");
+  dolfin_set("ODE adaptive samples", true);
+  dolfin_set("ODE solve dual problem", false);
 
   // Choose test problem
   switch (n) {
   case 1:
     {
       message("Solving test problem number 1.");
-      set("ODE solution file name", "solution_1.py");
+      dolfin_set("ODE solution file name", "solution_1.py");
       TestProblem1 testProblem;
       testProblem.solve();
     }
@@ -68,7 +68,7 @@ int main(int argc, char* argv[])
   case 2:
     {
       message("Solving test problem number 2.");
-      set("ODE solution file name", "solution_2.py");
+      dolfin_set("ODE solution file name", "solution_2.py");
       TestProblem2 testProblem;
       testProblem.solve();
     }
@@ -76,7 +76,7 @@ int main(int argc, char* argv[])
   case 3:
     {
       message("Solving test problem number 3.");
-      set("ODE solution file name", "solution_3.py");
+      dolfin_set("ODE solution file name", "solution_3.py");
       TestProblem3 testProblem;
       testProblem.solve();
     }
@@ -84,7 +84,7 @@ int main(int argc, char* argv[])
   case 4:
     {
       message("Solving test problem number 4.");
-      set("ODE solution file name", "solution_4.py");
+      dolfin_set("ODE solution file name", "solution_4.py");
       TestProblem4 testProblem;
       testProblem.solve();
     }
@@ -92,7 +92,7 @@ int main(int argc, char* argv[])
   case 5:
     {
       message("Solving test problem number 5.");
-      set("ODE solution file name", "solution_5.py");
+      dolfin_set("ODE solution file name", "solution_5.py");
       TestProblem5 testProblem;
       testProblem.solve();
     }
@@ -100,7 +100,7 @@ int main(int argc, char* argv[])
   case 6:
     {
       message("Solving test problem number 6.");
-      set("ODE solution file name", "solution_6.py");
+      dolfin_set("ODE solution file name", "solution_6.py");
       TestProblem6 testProblem;
       testProblem.solve();
     }
@@ -108,7 +108,7 @@ int main(int argc, char* argv[])
   case 7:
     {
       message("Solving test problem number 7.");
-      set("ODE solution file name", "solution_7.py");
+      dolfin_set("ODE solution file name", "solution_7.py");
       TestProblem7 testProblem;
       testProblem.solve();
     }
@@ -116,7 +116,7 @@ int main(int argc, char* argv[])
   case 8:
     {
       message("Solving test problem number 8.");
-      set("ODE solution file name", "solution_8.py");
+      dolfin_set("ODE solution file name", "solution_8.py");
       TestProblem8 testProblem;
       testProblem.solve();
     }
@@ -124,7 +124,7 @@ int main(int argc, char* argv[])
   case 9:
     {
       message("Solving test problem number 9.");
-      set("ODE solution file name", "solution_9.py");
+      dolfin_set("ODE solution file name", "solution_9.py");
       TestProblem9 testProblem;
       testProblem.solve();
     }

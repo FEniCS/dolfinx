@@ -1,8 +1,8 @@
-// Copyright (C) 2005-2006 Anders Logg.
+// Copyright (C) 2005-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005-01-27
-// Last changed: 2006-08-08
+// Last changed: 2008-02-11
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/parameters.h>
@@ -19,8 +19,8 @@ MultiAdaptiveFixedPointSolver::MultiAdaptiveFixedPointSolver
 (MultiAdaptiveTimeSlab& timeslab)
   : TimeSlabSolver(timeslab), ts(timeslab), f(0),
     num_elements(0), num_elements_mono(0), 
-    maxiter_local(get("ODE maximum local iterations")),
-    diagonal_newton_damping(get("ODE diagonal newton damping")), dfdu(0)
+    maxiter_local(dolfin_get("ODE maximum local iterations")),
+    diagonal_newton_damping(dolfin_get("ODE diagonal newton damping")), dfdu(0)
 {
   // Initialize local array for quadrature
   f = new real[method.qsize()];

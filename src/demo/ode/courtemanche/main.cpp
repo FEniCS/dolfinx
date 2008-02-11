@@ -319,13 +319,13 @@ private:
 
 int main()
 {
-  set("ODE tolerance", 10.0);
-  set("ODE maximum time step", 100.0);
-  set("ODE nonlinear solver", "newton");
-  set("ODE linear solver", "iterative");
-  set("ODE initial time step", 0.25);
+  dolfin_set("ODE tolerance", 10.0);
+  dolfin_set("ODE maximum time step", 100.0);
+  dolfin_set("ODE nonlinear solver", "newton");
+  dolfin_set("ODE linear solver", "iterative");
+  dolfin_set("ODE initial time step", 0.25);
 
-  //set("ODE save solution", false);
+  //dolfin_set("ODE save solution", false);
 
   Courtemanche ode;
   ode.solve();

@@ -1,8 +1,8 @@
-// Copyright (C) 2005 Anders Logg.
+// Copyright (C) 2005-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005-01-29
-// Last changed: 2005-12-19
+// Last changed: 2008-02-11
 
 #include <cmath>
 #include <dolfin/parameters.h>
@@ -17,7 +17,7 @@ MonoAdaptivity::MonoAdaptivity(const ODE& ode, const Method& method)
   : Adaptivity(ode, method), k(0)
 {
   // Specify initial time step
-  real k0 = get("ODE initial time step");
+  real k0 = dolfin_get("ODE initial time step");
   if ( kfixed )
   {
     k = ode.timestep(0.0, k0);

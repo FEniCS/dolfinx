@@ -44,7 +44,7 @@ int main()
     }
   };
 
-  set("debug level", 1);
+  dolfin_set("debug level", 1);
   
   // Read mesh
   Mesh mesh("../../../../../data/meshes/dolfin-2.xml.gz");

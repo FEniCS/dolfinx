@@ -103,12 +103,12 @@ class MyNonlinearProblem : public NonlinearProblem
     // User defined assemble of Jacobian and residual vector 
     void form(GenericMatrix& A, GenericVector& b, const GenericVector& x)
     {
-      set("output destination", "silent");
+      dolfin_set("output destination", "silent");
       Assembler assembler(mesh);
       assembler.assemble(A, *a);
       assembler.assemble(b, *L);
       bc->apply(A, b, x, *a);
-      set("output destination", "terminal");
+      dolfin_set("output destination", "terminal");
     }
 
 

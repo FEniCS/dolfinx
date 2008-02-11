@@ -30,10 +30,10 @@ namespace dolfin
     
     // Save data to temporary file
     std::string data_name = std::string(tmpnam(0)) + ".xml";
-    set("output destination", "silent");
+    dolfin_set("output destination", "silent");
     File file(data_name);
     file << t;
-    set("output destination", "terminal");
+    dolfin_set("output destination", "terminal");
     
     // Write script file
     fprintf(script_file, "try:\n");
@@ -65,11 +65,11 @@ namespace dolfin
     
     // Save data to temporary file
     std::string data_name = std::string(tmpnam(0)) + ".xml";
-    set("output destination", "silent");
+    dolfin_set("output destination", "silent");
     File file(data_name);
     file << f.mesh();
     file << f;
-    set("output destination", "terminal");
+    dolfin_set("output destination", "terminal");
     
     // Write script file
     fprintf(script_file, "try:\n");

@@ -1,8 +1,8 @@
-// Copyright (C) 2003-2006 Anders Logg.
+// Copyright (C) 2003-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005-01-06
-// Last changed: 2006-07-05
+// Last changed: 2008-02-11
 
 #include <cmath>
 #include <dolfin/dolfin_log.h>
@@ -16,7 +16,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 Dependencies::Dependencies(uint N) :
-  N(N), increment(get("ODE sparsity check increment")), _sparse(false)
+  N(N), increment(dolfin_get("ODE sparsity check increment")), _sparse(false)
 {
   // Use dense dependency pattern by default
   ddep.reserve(N);

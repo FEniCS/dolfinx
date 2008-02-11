@@ -92,7 +92,7 @@ class MyNonlinearProblem(NonlinearProblem):
  
     # User defined assemble of Jacobian and residual vector 
     def form(self, A, b, x):
-        set("output destination", "silent")
+        dolfin_set("output destination", "silent")
         # Copy paste from assemble.py
         # Assemble A
         # Compile form
@@ -137,7 +137,7 @@ class MyNonlinearProblem(NonlinearProblem):
 #        print "b: ", b.disp()
         self.bc.apply(A, b, x, self.compiled_form)
 #        print "bc"
-        set("output destination", "terminal")
+        dolfin_set("output destination", "terminal")
 
 # Pseudo time
 t = 0.0

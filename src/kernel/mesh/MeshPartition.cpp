@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2008.
 //
 // First added:  2007-04-03
-// Last changed: 2008-02-04
+// Last changed: 2008-02-11
 
 #include <dolfin/Graph.h>
 #include <dolfin/GraphPartition.h>
@@ -24,7 +24,7 @@ void MeshPartition::partition(Mesh& mesh,
   Graph graph(mesh);
   GraphPartition::partition(graph, num_partitions, partitions.values());
 
-  bool report_edge_cut = get("report edge cut");
+  bool report_edge_cut = dolfin_get("report edge cut");
   if(report_edge_cut)
     GraphPartition::edgecut(graph, num_partitions, partitions.values());
 }

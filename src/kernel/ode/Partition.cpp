@@ -1,8 +1,8 @@
-// Copyright (C) 2004-2005 Johan Jansson and Anders Logg.
+// Copyright (C) 2004-2008 Johan Jansson and Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2004
-// Last changed: 2005-12-19
+// Last changed: 2008-12-11
 
 #include <algorithm>
 #include <cmath>
@@ -19,7 +19,7 @@ using namespace dolfin;
 Partition::Partition(uint N) : indices(N)
 {
   // Get parameter for threshold
-  threshold = get("ODE partitioning threshold");
+  threshold = dolfin_get("ODE partitioning threshold");
 
   // Reset all indices
   for (uint i = 0; i < N; i++)

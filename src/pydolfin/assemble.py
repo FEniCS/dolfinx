@@ -9,8 +9,8 @@ The C++ PDE classes are reimplemented in Python since the C++ classes
 rely on the dolfin::Form class which is not used on the Python side."""
 
 __author__ = "Anders Logg (logg@simula.no)"
-__date__ = "2007-08-15 -- 2008-01-01"
-__copyright__ = "Copyright (C) 2007 Anders Logg"
+__date__ = "2007-08-15 -- 2008-02-11"
+__copyright__ = "Copyright (C) 2007-2008 Anders Logg"
 __license__  = "GNU LGPL Version 2.1"
 
 from ffc import *
@@ -197,7 +197,7 @@ class LinearPDE:
         #b.disp()
 
         # Choose linear solver
-        solver_type = get("PDE linear solver")
+        solver_type = dolfin_get("PDE linear solver")
         if solver_type == "direct":
             message("Using direct solver.")
             solver = LUSolver()

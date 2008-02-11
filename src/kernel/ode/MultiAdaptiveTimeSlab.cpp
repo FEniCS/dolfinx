@@ -1,10 +1,10 @@
-// Copyright (C) 2005-2006 Anders Logg.
+// Copyright (C) 2005-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells
 //
 // First added:  2005-01-27
-// Last changed: 2006-07-05
+// Last changed: 2008-02-11
 
 #include <string>
 #include <algorithm>
@@ -1027,8 +1027,8 @@ void MultiAdaptiveTimeSlab::dGfeval(real* f, uint s0, uint e0, uint i0,
 //-----------------------------------------------------------------------------
 TimeSlabSolver* MultiAdaptiveTimeSlab::chooseSolver()
 {
-  bool implicit = get("ODE implicit");
-  std::string solver = get("ODE nonlinear solver");
+  bool implicit = dolfin_get("ODE implicit");
+  std::string solver = dolfin_get("ODE nonlinear solver");
 
   if ( implicit )
     error("Multi-adaptive solver cannot solver implicit ODEs. Use cG(q) or dG(q) instead.");

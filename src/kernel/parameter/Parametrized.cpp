@@ -1,8 +1,8 @@
-// Copyright (C) 2005-2007 Anders Logg.
+// Copyright (C) 2005-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005-12-19
-// Last changed: 2007-05-14
+// Last changed: 2008-02-11
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/parameters.h>
@@ -66,7 +66,7 @@ Parameter Parametrized::get(std::string key) const
     return parent->get(key);
 
   // Fall back on global database
-  return dolfin::get(key);
+  return dolfin::dolfin_get(key);
 }
 //-----------------------------------------------------------------------------
 bool Parametrized::has(std::string key) const

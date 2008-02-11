@@ -1,10 +1,10 @@
-// Copyright (C) 2005-2006 Anders Logg.
+// Copyright (C) 2005-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells, 2006.
 //
 // First added:  2005
-// Last changed: 2006-08-22
+// Last changed: 2008-02-11
 
 #include <stdio.h>
 #include <limits>
@@ -28,40 +28,40 @@ Homotopy::Homotopy(uint n)
   message("Creating homotopy for system of size %d.", n);
   
   // We should not solve the dual problem
-  set("ODE solve dual problem", false);
+  dolfin_set("ODE solve dual problem", false);
 
   // System is implicit
-  set("ODE implicit", true);
+  dolfin_set("ODE implicit", true);
 
   // Get divergence tolerance
-  divtol = get("homotopy divergence tolerance");
+  divtol = dolfin_get("homotopy divergence tolerance");
 
   // Check if we should monitor the homotopy
-  monitor = get("homotopy monitoring");
+  monitor = dolfin_get("homotopy monitoring");
 
   // Get type of initial data (random or morgan)
-  random = get("homotopy randomize");
+  random = dolfin_get("homotopy randomize");
   if ( random )
     message("Using random initial system for homotopy.");
 
   // Get maximum number of iterations
-  maxiter = get("ODE maximum iterations");
+  maxiter = dolfin_get("ODE maximum iterations");
 
   // Get maximum number of paths
-  maxpaths = get("homotopy maximum size");
+  maxpaths = dolfin_get("homotopy maximum size");
   message("Maximum number of homotopy paths is %d.", maxpaths);
 
   // Get maximum degree for a single equation
-  maxdegree = get("homotopy maximum degree");
+  maxdegree = dolfin_get("homotopy maximum degree");
   message("Maximum degree for a single equations is %d.", maxdegree);
 
   // Get filename
-  filename = static_cast<std::string>(get("homotopy solution file name"));
+  filename = static_cast<std::string>(dolfin_get("homotopy solution file name"));
   FILE* fp = fopen(filename.c_str(), "w");
   fclose(fp);
 
   // FIXME: Maybe this should be a parameter?
-  tol = get("homotopy solution tolerance");
+  tol = dolfin_get("homotopy solution tolerance");
   
   // Initialize array mi
   mi = new uint[n];
@@ -104,7 +104,7 @@ void Homotopy::solve()
 
     // Change name of output file for each path
     sprintf(filename, "solution_%u.py", m);
-    set("ODE solution file name", filename);
+    dolfin_set("ODE solution file name", filename);
 
     // Compute the component paths from global path number
     computePath(m);

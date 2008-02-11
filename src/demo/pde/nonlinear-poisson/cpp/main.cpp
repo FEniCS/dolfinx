@@ -93,8 +93,8 @@ int main(int argc, char* argv[])
   // Solve nonlinear problem in a series of steps
   real dt = 1.0; real T  = 3.0;
 
-//  pde.set("Newton relative tolerance", 1e-6); 
-//  pde.set("Newton convergence criterion", "incremental"); 
+//  pde.dolfin_set("Newton relative tolerance", 1e-6); 
+//  pde.dolfin_set("Newton convergence criterion", "incremental"); 
 
   // Solve
   pde.solve(u, t, T, dt);

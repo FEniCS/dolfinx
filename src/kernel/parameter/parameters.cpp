@@ -1,22 +1,24 @@
-// Copyright (C) 2005-2007 Anders Logg.
+// Copyright (C) 2005-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells, 2006.
 //
 // First added:  2005-12-19
-// Last changed: 2007-05-14
+// Last changed: 2008-02-11
 
 #include <dolfin/LogManager.h>
 #include <dolfin/ParameterSystem.h>
 #include <dolfin/parameters.h>
 
 //-----------------------------------------------------------------------------
-void dolfin::add(std::string key, Parameter value)
+dolfin::Parameter dolfin::dolfin_get(std::string key)
 {
-  ParameterSystem::parameters.add(key, value);
+  if (key == "debug level")
+    return Parameter(LogManager::logger.getDebugLevel());
+  return ParameterSystem::parameters.get(key);
 }
 //-----------------------------------------------------------------------------
-void dolfin::set(std::string key, Parameter value)
+void dolfin::dolfin_set(std::string key, Parameter value)
 {
   // Special cases: pass on to log system
   if (key == "debug level")
@@ -33,7 +35,7 @@ void dolfin::set(std::string key, Parameter value)
   ParameterSystem::parameters.set(key, value);
 }
 //-----------------------------------------------------------------------------
-void dolfin::set(std::string key, std::ostream& stream)
+void dolfin::dolfin_set(std::string key, std::ostream& stream)
 {
   if (key == "output destination"){
     LogManager::logger.setOutputDestination(stream);
@@ -50,10 +52,8 @@ void dolfin::set(std::string key, std::ostream& stream)
     error("Only key 'output destination' can take a stream as value.");
 }
 //-----------------------------------------------------------------------------
-dolfin::Parameter dolfin::get(std::string key)
+void dolfin::dolfin_add(std::string key, Parameter value)
 {
-  if (key == "debug level")
-    return Parameter(LogManager::logger.getDebugLevel());
-  return ParameterSystem::parameters.get(key);
+  ParameterSystem::parameters.add(key, value);
 }
 //-----------------------------------------------------------------------------

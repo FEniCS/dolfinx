@@ -44,18 +44,18 @@ int main(int argc, const char* argv[])
   const unsigned int a = static_cast<unsigned int>(atoi(argv[3]));
   const unsigned int b = static_cast<unsigned int>(atoi(argv[4]));
 
-  set("ODE method", "cg");
-  set("ODE order", 1);
-  set("ODE tolerance", 1e-3);
-  set("ODE discrete tolerance", 1e-10);
-  set("ODE initial time step", 0.001);
-  //set("ODE linear solver", "direct");
-  set("ODE adaptive samples", false);
-  set("homotopy monitoring", false);
-  set("homotopy divergence tolerance", 10.0);
-  set("homotopy randomize", false);
-  set("homotopy maximum size", 100);
-  set("homotopy maximum degree", 5);
+  dolfin_set("ODE method", "cg");
+  dolfin_set("ODE order", 1);
+  dolfin_set("ODE tolerance", 1e-3);
+  dolfin_set("ODE discrete tolerance", 1e-10);
+  dolfin_set("ODE initial time step", 0.001);
+  //dolfin_set("ODE linear solver", "direct");
+  dolfin_set("ODE adaptive samples", false);
+  dolfin_set("homotopy monitoring", false);
+  dolfin_set("homotopy divergence tolerance", 10.0);
+  dolfin_set("homotopy randomize", false);
+  dolfin_set("homotopy maximum size", 100);
+  dolfin_set("homotopy maximum degree", 5);
 
   ces(m, n, a, b);
 

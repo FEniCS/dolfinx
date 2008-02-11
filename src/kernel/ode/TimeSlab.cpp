@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005-05-02
-// Last changed: 2006-08-21
+// Last changed: 2008-02-11
 
 #include <stdio.h>
 #include <string>
@@ -17,11 +17,11 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 TimeSlab::TimeSlab(ODE& ode) : 
   N(ode.size()), _a(0.0), _b(0.0), ode(ode), method(0), u0(ode.size()),
-  save_final(get("ODE save final solution"))
+  save_final(dolfin_get("ODE save final solution"))
 {
   // Choose method
-  std::string m = get("ODE method");
-  int q = get("ODE order");
+  std::string m = dolfin_get("ODE method");
+  int q = dolfin_get("ODE order");
   if ( m == "cg" || m == "mcg" )
   {
     if ( q < 1 )
