@@ -17,11 +17,11 @@ from ffc import *
 from dolfin import *
 
 # JIT assembler
-def assemble(form, mesh, backend=None, return_dofmaps=False):
+def assemble(form, mesh, backend=None, return_dofmaps=False, coefficients=None):
     "Assemble form over mesh and return tensor"
     
     # Create empty list of coefficients
-    coefficients = ArrayFunctionPtr()
+    coefficients_ = ArrayFunctionPtr()
 
     # Create dummy arguments for domains (not yet supported in Python)
     cell_domains = MeshFunction("uint")
@@ -32,13 +32,19 @@ def assemble(form, mesh, backend=None, return_dofmaps=False):
     if hasattr(form, "create_cell_integral"):
         # UFC form, no need to compile
         compiled_form = form
+
+        # Extract coefficients
+        if not coefficients is None: 
+            for c in coefficients:
+                coefficients_.push_back(c)
+
     else:
         # FFC form, call JIT compile
         (compiled_form, module, form_data) = jit(form)
 
         # Extract coefficients
         for c in form_data.coefficients:
-            coefficients.push_back(c.f)
+            coefficients_.push_back(c.f)
 
     # Create dof map set
     dof_maps = DofMapSet(compiled_form, mesh)
@@ -61,7 +67,7 @@ def assemble(form, mesh, backend=None, return_dofmaps=False):
         raise RuntimeError, "Unable to assemble tensors of rank %d." % rank
 
     # Assemble compiled form
-    cpp_assemble(tensor, compiled_form, mesh, coefficients, dof_maps,
+    cpp_assemble(tensor, compiled_form, mesh, coefficients_, dof_maps,
                  cell_domains, exterior_facet_domains, interior_facet_domains, True)
 
     print "Assembly finished"
