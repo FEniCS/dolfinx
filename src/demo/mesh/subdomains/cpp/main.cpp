@@ -1,8 +1,8 @@
-// Copyright (C) 2007 Anders Logg.
+// Copyright (C) 2007-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-04-24
-// Last changed: 2007-08-20
+// Last changed: 2008-02-13
 //
 // This demo program demonstrates how to mark sub domains
 // of a mesh and store the sub domain markers as a mesh
@@ -22,7 +22,7 @@ int main()
   {
     bool inside(const real* x, bool on_boundary) const
     {
-      return x[0] > DOLFIN_EPS && x[0] < 1.0 - DOLFIN_EPS && on_boundary;
+      return x[0] > DOLFIN_EPS and x[0] < 1.0 - DOLFIN_EPS and on_boundary;
     }
   };
 
