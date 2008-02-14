@@ -14,12 +14,12 @@ parameters and adding new parameters to the database.
 
 %------------------------------------------------------------------------------
 \section{Retrieving the value of a parameter}
-\index{\texttt{get()}}
+\index{\texttt{dolfin\_get()}}
 
-To retrieve the value of a parameter, use the function \texttt{get()}
+To retrieve the value of a parameter, use the function \texttt{dolfin\_get()}
 available in the \texttt{dolfin} namespace:
 \begin{code}
-Parameter get(std::string key);
+Parameter dolfin_get(std::string key);
 \end{code}
 This function accepts as argument a string \texttt{key} and returns
 the value of the parameter matching the given key. An error message is
@@ -27,13 +27,13 @@ printed through the log system if there is no parameter with the given
 key in the database.
 
 The value of the parameter is automatically cast to the correct type
-when assigning the value of \texttt{get()} to a variable, as
+when assigning the value of \texttt{dolfin\_get()} to a variable, as
 illustrated by the following examples:
 \begin{code}
-real TOL = get("tolerance");
-int num_samples = get("number of samples");
-bool solve_dual = get("solve dual problem");
-std::string filename = get("file name");
+real TOL = dolfin_get("tolerance");
+int num_samples = dolfin_get("number of samples");
+bool solve_dual = dolfin_get("solve dual problem");
+std::string filename = dolfin_get("file name");
 \end{code}
 
 Note that there is a small cost associated with accessing the value of
@@ -41,7 +41,7 @@ a parameter, so if the value of a parameter is to be used multiple
 times, then it should be retrieved once and stored in a local variable
 as illustrated by the following example:
 \begin{code}
-int num_samples = get("number of samples");
+int num_samples = dolfin_get("number of samples");
 for (int i = 0; i < num_samples; i++)
 {
   ...
@@ -50,12 +50,12 @@ for (int i = 0; i < num_samples; i++)
 
 %------------------------------------------------------------------------------
 \section{Modifying the value of a parameter}
-\index{\texttt{set()}}
+\index{\texttt{dolfin\_set()}}
 
-To modify the value of a parameter, use the function \texttt{set()}
+To modify the value of a parameter, use the function \texttt{dolfin\_set()}
 available in the \texttt{dolfin} namespace:
 \begin{code}
-void set(std::string key, Parameter value);
+void dolfin_set(std::string key, Parameter value);
 \end{code}
 This function accepts as arguments a string \texttt{key} together with
 the corresponding value. The value type should match the type of
@@ -64,16 +64,16 @@ printed through the log system if there is no parameter with the given
 key in the database.
 
 The following examples illustrate
-the use of \texttt{set()}:
+the use of \texttt{dolfin\_set()}:
 \begin{code}
-set("tolerance", 0.01);
-set("number of samples", 10);
-set("solve dual problem", true);
-set("file name", "solution.xml");
+dolfin_set("tolerance", 0.01);
+dolfin_set("number of samples", 10);
+dolfin_set("solve dual problem", true);
+dolfin_set("file name", "solution.xml");
 \end{code}
 
 Note that changing the values of parameters using
-\texttt{set()} does not change the values of already retrieved
+\texttt{dolfin\_set()} does not change the values of already retrieved
 parameters; it only changes the values of parameters in the
 database. Thus, the value of a parameter must be changed before using
 a component that is controlled by the parameter in question.

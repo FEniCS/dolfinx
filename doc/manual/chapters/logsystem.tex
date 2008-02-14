@@ -196,7 +196,7 @@ default at least $10\%$). The
 amount of change needed for an update can be controlled using the
 parameter \texttt{"progress step"}:
 \begin{code}
-set("progress step", 0.01);
+dolfin_set("progress step", 0.01);
 \end{code}
 
 Note that several progress sessions may be created simultaneously, or
@@ -210,13 +210,13 @@ By default, the \dolfin{} log system directs messages to standard
 output (the terminal). Messages may also be turned off completely.
 To specify the destination, set the value of the parameter "output destination":
 \begin{code}
-set("output destination", "terminal");
-set("output destination", "silent");
+dolfin_set("output destination", "terminal");
+dolfin_set("output destination", "silent");
 \end{code}
 
 One may also set the debug level for the \dolfin{} log system so that
 only messages with a debug level higher than or equal to the current
 debug level are printed:
 \begin{code}
-set("debug level", "1");
+dolfin_set("debug level", "1");
 \end{code}
