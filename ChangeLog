@@ -1,6 +1,25 @@
- - Ability to set strong boundary values for DG elements
- - Option for setting boundary conditions based on geometrical search
+ - Add support for setting strong boundary values for DG elements
+ - Add option setting boundary conditions based on geometrical search
  - Check UMFPACK return argument for warnings/errors
+ - Simplify setting simple Dirichlet boundary conditions
+ - Much improved integration with FFC in PyDOLFIN
+ - Caching of forms by JIT compiler now works
+ - Updates for UFC 1.1
+ - Catch exceptions in PyDOLFIN
+ - Work on linear algebra interfaces GenericTensor/Matrix/Vector
+ - Add linear algebra factory (backend) interface
+ - Add support for 1D meshes
+ - Make Assembler independent of linear algebra backend
+ - Add manager for handling sub systems (PETSc and MPI)
+ - Add parallel broadcast of Mesh and MeshFunction
+ - Add experimental support for parallel assembly
+ - Use PETSc MPI matrices when running in parallel
+ - Add predefined functions FacetNormal and AvgMeshSize
+ - Add left/right/crisscross options for UnitSquare
+ - Add more Python demos
+ - Add support for Exodus II format in dolfin-convert
+ - Autogenerate docstrings for PyDOLFIN
+ - Various small bug fixes and improvements
 0.7.1 [2007-08-31]
  - Integrate FFC form language into PyDOLFIN
  - Just-in-time (JIT) compilation of variational forms
