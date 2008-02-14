@@ -8,16 +8,16 @@
 # Original implementation: ../cpp/main.cpp by Anders Logg.
 #
 __author__ = "Kristian B. Oelgaard (k.b.oelgaard@tudelft.nl)"
-__date__ = "2007-11-15 -- 2008-02-13"
+__date__ = "2007-11-15 -- 2008-02-14"
 __copyright__ = "Copyright (C) 2007 Kristian B. Oelgaard"
 __license__  = "GNU LGPL Version 2.1"
 
 from dolfin import *
 
-# Sub domain for no-slip (everything except inflow and outflow)
+# Sub domain for no-slip (mark whole boundary, inflow and outflow will overwrite)
 class Noslip(SubDomain):
     def inside(self, x, on_boundary):
-        return bool(x[0] > DOLFIN_EPS and x[0] < 1.0 - DOLFIN_EPS and on_boundary)
+        return on_boundary
 
 # Sub domain for inflow (right)
 class Inflow(SubDomain):
