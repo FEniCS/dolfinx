@@ -142,6 +142,7 @@ namespace dolfin
       if (_values)
         delete [] _values;
       _values = new T[size];
+      std::fill(_values, _values + size, static_cast<T>(0));
     }
 
     /// Get value at given entity
