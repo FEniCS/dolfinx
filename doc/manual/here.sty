@@ -1,0 +1,213 @@
+%%% ====================================================================
+%%%  @LaTeX-style-file{
+%%%     filename        = "here.sty",
+%%%     version         = "1.01",
+%%%     date            = "12 June 1992",
+%%%     time            = "15:26:24 BST",
+%%%     author          = "David Carlisle",
+%%%     address         = "Computer Science Department
+%%%                        Manchester University
+%%%                        Oxford Road
+%%%                        Manchester
+%%%                        England
+%%%                        M13 9PL",
+%%%     telephone       = "+44 61 275 6139",
+%%%     FAX             = "+44 61 275 6236",
+%%%     checksum        = "51873 214 1175 8528",
+%%%     email           = "carlisle@cs.man.ac.uk (Internet)",
+%%%     codetable       = "ISO/ASCII",
+%%%     keywords        = "LaTeX, figure, table, floats",
+%%%     supported       = "yes",
+%%%     docstring       = "
+%%%
+%%%     here.sty
+%%%
+%%%     A LaTeX style option giving floats a [H] option,
+%%%     meaning `do not float', or `PUT IT HERE'.
+%%%
+%%%     Documentation requires Mittelbach's doc.sty.
+%%%
+%%%     The checksum field above was produced by
+%%%     Robert Solovay's checksum utility.",
+%%%  }
+%%% ====================================================================
+%
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% * Version 1, 13 Sept 1991
+% * Version 1.01, added \vbox accidently omitted from previous version.
+%
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%<*x>
+% This file may be used without modification as a style (.sty) file.
+%
+% If you have Mittelbach's doc.sty, this file may be formatted with a
+% command like:
+%                latex here.sty
+%
+% If you have the Mittelbach/Duchier/Braams docstrip utility, you may
+% produce a faster loading .sty file.  Rename this file to: here.doc
+% Then run this file through *plain* TeX:
+%                tex here.doc
+% This should produce the file here.sty.
+% If you do not have plain TeX on your system, you can trick LaTeX into
+% doing the work as follows:
+%                latex \def\fmtname{plain} \input here.doc
+% Note that you may need to quote the arguments here to stop your
+% operating system treating the \ characters incorrectly.
+%
+%                latex here.doc
+% Will produce a typeset version of the documentation, as above.
+%
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\def\plain{plain}\ifx\fmtname\plain\csname fi\endcsname
+     \def\batchfile{here.doc}
+     \input docstrip
+     \preamble
+ 
+     Do not distribute the stripped version of this file.
+     The checksum in the header refers to the documented version.
+ 
+     \endpreamble
+     \generateFile{here.sty}{t}{\from{here.doc}{}}
+     \endinput
+\fi
+%
+\ifcat a\noexpand @\let\next\relax\else\def\next{%
+    \documentstyle[here,doc]{article}\MakePercentIgnore}\fi\next
+%
+%\def\eatmodule<#1>{}\eatmodule
+%</x>
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% \textwidth=355pt   ^^A Allow macrocode text with 72 columns.
+% \CodelineIndex     ^^A Code lines numbered.
+% \DisableCrossrefs  ^^A No Cross references.
+% \MakeShortVerb{\|} ^^A |\foo| works like \verb+\foo+
+%
+% \title{here.sty}
+% \author{D. P. Carlisle}
+% \date{12 June 1992}
+% \begin{document}
+% \maketitle
+% \begin{abstract}
+% {\tt here.sty} gives environments such as {\tt figure} and {\tt table}
+% a {\tt [H]} option  which means `PUT IT HERE'. As opposed to the
+% standard {\tt [h]} option which means `You may put it here if you
+% wish'.
+% \end{abstract}
+%
+% \begin{figure}[H]
+% This figure will not float, even if this causes a bad page break.
+% \caption{It may be captioned as usual.}
+% \end{figure}
+%
+% Many people have problems with \LaTeX's floating environments. A
+% common complaint is that all the environments appear at the end of the
+% document (or chapter). Many users try to correct this behaviour by
+% using the {\tt [h]} option. Incorect use of this option, in particular
+% using just {\tt [h]} rather than a more liberal option such as {\tt
+% [hp]} actually makes the problem worse!
+%
+% \LaTeX\ will only position a float (even one with the {\tt [h]}
+% option) in a position which does not violate the rules for float
+% placement set by the document style. These rules are determined by the
+% following parameters:
+%
+% \begin{table}[H]
+% \begin{tabular}{lp{220pt}}
+%  |\c@topnumber|&    Number of floats allowed at the top of a
+%                          column.\\
+%  |\topfraction|&    Fraction of column that can be devoted to
+%                          floats.\\
+%  |\c@dbltopnumber|\\ \verb|\dbltopfraction|&  Same as above, but for
+%                          double-column floats.\\
+%  |\c@bottomnumber|\\ \verb|\bottomfraction|&  Same as above for
+%                          bottom of page.\\
+%  |\c@totalnumber|&  Number of floats allowed in a single column,\\
+%                       &  including in-text floats.\\
+%  |\textfraction|&   Minimum fraction of column that must contain
+%                          text.\\
+%  |\floatpagefraction|& Minimum fraction of page that must be taken
+%                          up by a  float page.\\
+%  |\dblfloatpagefraction|&As above, for double-column floats.
+% \end{tabular}
+% \caption{\LaTeX`s float placement parameters}
+% \end{table}
+%
+% The default settings (in {\tt article.doc} for {\tt article} style)
+% for these parameters make it difficult to set floats if the document
+% has a lot of small floats. The result is that \LaTeX\ `holds them
+% back' in the hope of finding a better place later. At the end of the
+% document (or at a |\clearpage|) it gives up and outputs all the
+% remaining floats.
+%
+% It may be seen from the above paragraph that the `correct' way to
+% handle float problems is to write a style file modifying these
+% parameters, however for many purposes, authors to not want a float at
+% all, they just use the {\tt figure} or {\tt table} environments to get
+% the correct spacing, and a counter that may be referenced. This style
+% option provides an easy solution in this case. If the {\tt [H]} option
+% is specified, the environment will not float even if it causes a bad
+% page break, or breaks the rules specified in the above parameters. The
+% main drawback is that if the [H] option is used in one figure, and the
+% following figure uses the {\tt [t]} option, then the second figure may
+% float in front of the first.
+%
+% Note that the {\tt [H]} should not be used in conjunction with the
+% other options. {\tt [Htp]} is not allowed by this style. The {\tt h}
+% option may still be used, so {\tt [htp]} is OK.
+% \typeout{End of the Introduction and Examples.}
+% \typein[\answer]%
+%   {Do you want an annotated listing of the macro definitions (y/n) ?}
+% \def\next{y}\ifx\answer\next\else\expandafter\stop\fi
+%
+% \section{The Macros}
+% First we make sure that this file is only loaded once.
+%    \begin{macrocode}
+\ifx\@Hxfloat\@Hundef\else\expandafter\endinput\fi
+%    \end{macrocode}
+%
+% \begin{macro}{\@Hxfloat}
+% Now we can save the original version of |\@xfloat|.
+%    \begin{macrocode}
+\let\@Hxfloat\@xfloat
+%    \end{macrocode}
+% \end{macro}
+% \begin{macro}{\@xfloat}
+% The new version of |@xfloat| looks for a |[H]| argument.
+% If it is present |\@HHfloat| is called, otherwise the original macro
+% (renamed to |\@Hfloat|) is called.
+%    \begin{macrocode}
+\def\@xfloat#1[{\@ifnextchar{H}{\@HHfloat{#1}[}{\@Hxfloat{#1}[}}
+%    \end{macrocode}
+% \end{macro}
+% \begin{macro}{\@HHfloat}
+% First gobble the |[H]|. Note that {\tt H} should not be used in
+% conjunction with the other placement options, nor as the value of the
+% default placement, as set in |\fps@|{\it type}.
+%    \begin{macrocode}
+\def\@HHfloat#1[H]{%
+%    \end{macrocode}
+% Locally redefine the end of the environment.
+%    \begin{macrocode}
+\expandafter\let\csname end#1\endcsname\end@Hfloat
+%    \end{macrocode}
+% Add the vertical space, and define |\caption|. Also reset
+% |\parindent| for compatibility with the standard {\tt [h]} option.
+%    \begin{macrocode}
+\vskip\intextsep\vbox\bgroup\def\@captype{#1}\parindent\z@
+%    \end{macrocode}
+% The final |\ignorespaces| is needed to gobble any spaces or newlines
+% after the {\tt[H]} tokens.
+%    \begin{macrocode}
+\ignorespaces}
+%    \end{macrocode}
+% \end{macro}
+% \begin{macro}{\end@Hfloat}
+% Add the same vertical space as would be added by a float placed with
+% {\tt[h]}.
+%    \begin{macrocode}
+\def\end@Hfloat{\egroup\vskip \intextsep}
+%    \end{macrocode}
+% \end{macro}
+% \end{document}
