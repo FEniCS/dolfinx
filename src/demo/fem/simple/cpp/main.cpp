@@ -18,7 +18,7 @@ int main()
 {
   // Load reference mesh (just a simple tetrahedron)
   Mesh mesh("../tetrahedron.xml.gz");
-/*
+
   // Create stiffness and mass matrices
   StiffnessMatrix A(mesh);
   MassMatrix M(mesh);
@@ -64,6 +64,6 @@ int main()
   cout << "Reference mass matrix:" << endl;
   M0.disp();
   cout << endl;
-*/  
+
   return 0;
 }

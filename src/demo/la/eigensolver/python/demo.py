@@ -8,9 +8,10 @@ __license__  = "GNU LGPL Version 2.1"
 from dolfin import *
 import numpy
 
-#
-# THIS DEMO IS CURRENTLY NOT WORKING, SEE NOTE IN CODE.
-#
+# FIXME: Not working, see notice below
+import sys
+print "This demo is not working, please fix me"
+sys.exit(1)
 
 # Set up two simple test matrices (2 x 2)
 A_array = numpy.array([[4.0, 1.0], [3.0, 2.0]])

@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2007.
 //
 // First added:  2007-01-17
-// Last changed: 2007-05-24
+// Last changed: 2008-02-15
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/DofMap.h>
@@ -69,8 +69,6 @@ void DofMapSet::update(const Form& form, Mesh& mesh, MeshFunction<uint>& partiti
 //-----------------------------------------------------------------------------
 void DofMapSet::update(const ufc::form& form, Mesh& mesh)
 {
-  dolfin_debug("Updating set of dof maps...");
-
   const uint num_arguments = form.rank() +
     form.num_coefficients();
 
@@ -112,15 +110,11 @@ void DofMapSet::update(const ufc::form& form, Mesh& mesh)
       delete ufc_dof_map;
     }
   }
-
-  dolfin_debug("Finished updating set of dof maps");
 }
 //-----------------------------------------------------------------------------
 void DofMapSet::update(const ufc::form& form, Mesh& mesh,
         MeshFunction<uint>& partitions)
 {
-  dolfin_debug("Updating set of dof maps...");
-
   // Resize array of dof maps
   dof_map_set.resize(form.rank());
 
@@ -159,7 +153,6 @@ void DofMapSet::update(const ufc::form& form, Mesh& mesh,
       delete ufc_dof_map;
     }
   }
-  dolfin_debug("Finished updating set of dof maps");
 }
 //-----------------------------------------------------------------------------
 void DofMapSet::build(UFC& ufc) const

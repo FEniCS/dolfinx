@@ -30,7 +30,7 @@ dolfin::SubSystemsManager dolfin::SubSystemsManager::sub_systems_manager;
 SubSystemsManager::SubSystemsManager() : petsc_initialized(false),
                                          petsc_controls_mpi(false)
 {
-  dolfin_debug("Creating DOLFIN sub system manager.");
+  //dolfin_debug("Creating DOLFIN sub system manager.");
   // Do nothing
 }
 //-----------------------------------------------------------------------------
@@ -41,7 +41,7 @@ SubSystemsManager::SubSystemsManager(const SubSystemsManager& sub_sys_manager)
 //-----------------------------------------------------------------------------
 SubSystemsManager::~SubSystemsManager()
 {
-  dolfin_debug("DOLFIN sub system manager shutting down...");
+  //  dolfin_debug("DOLFIN sub system manager shutting down...");
 
   // Finalize subsystems in the correct order
   finalizePETSc();
@@ -54,7 +54,7 @@ void SubSystemsManager::initMPI()
   if( MPIinitialized() )
     return;
 
-  dolfin_debug("Initializing MPI");
+  //dolfin_debug("Initializing MPI");
   MPI_Init(0, 0);
 #else
   // Do nothing
@@ -119,14 +119,14 @@ void SubSystemsManager::initPETSc(int argc, char* argv[], bool cmd_line_args)
 //-----------------------------------------------------------------------------
 void SubSystemsManager::finalizeMPI()
 {
-  dolfin_debug("DOLFIN sub system manager checking if MPI needs to be finalized...");
+  //dolfin_debug("DOLFIN sub system manager checking if MPI needs to be finalized...");
 
 #ifdef HAVE_MPI_H
   // Finalise MPI if required
-  if ( MPIinitialized() && !sub_systems_manager.petsc_controls_mpi )
-    dolfin_debug("DOLFIN sub system manager finalizing MPI...");
-  else
-    dolfin_debug("MPI is not initialized or has already been finalized.");
+  //if ( MPIinitialized() && !sub_systems_manager.petsc_controls_mpi )
+  //  dolfin_debug("DOLFIN sub system manager finalizing MPI...");
+  //else
+  //  dolfin_debug("MPI is not initialized or has already been finalized.");
 #else
   // Do nothing
 #endif
@@ -134,16 +134,16 @@ void SubSystemsManager::finalizeMPI()
 //-----------------------------------------------------------------------------
 void SubSystemsManager::finalizePETSc()
 {
-  dolfin_debug("DOLFIN sub system manager checking if PETSc needs to be finalized...");
+  //dolfin_debug("DOLFIN sub system manager checking if PETSc needs to be finalized...");
 
 #ifdef HAVE_PETSC_H
  if ( sub_systems_manager.petsc_initialized )
   {
-    dolfin_debug("DOLFIN sub system manager finalizing PETSc...");
+    //dolfin_debug("DOLFIN sub system manager finalizing PETSc...");
     PetscFinalize();
  
     #ifdef HAVE_SLEPC_H
-    dolfin_debug("DOLFIN sub system manager finalizing SLEPc...");
+    //dolfin_debug("DOLFIN sub system manager finalizing SLEPc...");
     SlepcFinalize();
     #endif
   }
