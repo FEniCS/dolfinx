@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2008.
 //
 // First added:  2008-01-07
-// Last changed: 2008-01-30
+// Last changed: 2008-02-15
 
 #ifdef HAVE_PETSC_H
 #include <petsc.h>
@@ -122,8 +122,9 @@ void SubSystemsManager::finalizeMPI()
   //dolfin_debug("DOLFIN sub system manager checking if MPI needs to be finalized...");
 
 #ifdef HAVE_MPI_H
-  // Finalise MPI if required
-  //if ( MPIinitialized() && !sub_systems_manager.petsc_controls_mpi )
+  //Finalise MPI if required
+  if ( MPIinitialized() && !sub_systems_manager.petsc_controls_mpi )
+    MPI_Finalize();
   //  dolfin_debug("DOLFIN sub system manager finalizing MPI...");
   //else
   //  dolfin_debug("MPI is not initialized or has already been finalized.");
@@ -155,11 +156,13 @@ void SubSystemsManager::finalizePETSc()
 bool SubSystemsManager::MPIinitialized()
 {
   // This function not affected if MPI_Finalize has been called. It returns 
-  // true of MPI_Init has been called.
+  // true if MPI_Init has been called at any point, even if MPI_Finalize has
+  // been called.
 
 #ifdef HAVE_MPI_H
   int initialized;
   MPI_Initialized(&initialized);
+
   if (initialized)
     return true;
   else if (!initialized)
