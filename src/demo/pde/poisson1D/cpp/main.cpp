@@ -14,7 +14,7 @@
 //
 // and boundary conditions given by
 //
-//     u(x)     = 0  for x = 0 and x = 1
+//     u(x) = 0  for x = 0 and x = 1
 
 #include <dolfin.h>
 #include "Poisson.h"
@@ -26,8 +26,6 @@ class DirichletBoundary : public SubDomain
 {
   bool inside(const real* x, bool on_boundary) const
   {
-//      return on_boundary;
-//    return (std::abs(x[0]) < DOLFIN_EPS or std::abs(x[0] - 1.0) < DOLFIN_EPS);
     return (std::abs(x[0]) < DOLFIN_EPS);
   }
 };
@@ -54,9 +52,6 @@ public:
 
   real eval(const real* x) const
   {
-//     if (x[0] > DOLFIN_EPS)
-//       return -3.0*DOLFIN_PI;
-//     else
       return 0.0;
   }
 };
@@ -84,12 +79,8 @@ int main()
   Function u;
   pde.solve(u);
 
-  // Plot solution
-// ERROR:
-  // Plotting Function, press q to continue...
-  // Unable to plot (PyDOLFIN or Viper plotter not available).
-//  plot(u);
-
+  // Plot solution (Viper can't plot in 1D yet)
+  //plot(u);
 
   // Save solution to file
   File file_u("poisson.pvd");
