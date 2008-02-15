@@ -14,9 +14,10 @@ __license__  = "GNU LGPL Version 2.1"
 
 from dolfin import *
 
-#
-print "****THIS DEMO IS CURRENTLY NOT WORKING, SEE NOTE IN CODE."
-#
+# FIXME: Not working, see notice below
+import sys
+print "This demo is not working, please fix me"
+sys.exit(1)
 
 # Create element
 element = FiniteElement("Lagrange", "triangle", 1)
@@ -32,6 +33,7 @@ class Fish(SubDomain):
               x[1] > DOLFIN_EPS and x[1] < (1.0 - DOLFIN_EPS) and
               on_boundary)
 
+
 n = FacetNormal("triangle", mesh)
 
 # Functionals for drag and lift
@@ -41,18 +43,10 @@ L =  p*n[1]*ds
 # Assemble functionals over sub domain
 fish =  Fish()
 
+# FIXME: Need to assemble over subdomain, but not yet supported in Python
+
 drag = assemble(D, mesh, fish)
 lift = assemble(L, mesh, fish)
-
-# ERROR:
-# Traceback (most recent call last):
-#   File "demo.py", line 40, in <module>
-#     drag = assemble(D, mesh, fish)
-# TypeError: assemble() takes exactly 2 arguments (3 given)
-
-# Have assemble() support assembly over a subdomain. For this we will have to
-# use a MeshFunction?? but then we get some other problems
-# (see note on mesh/subdomains)
 
 print "Lift: %f" %lift
 print "Drag: %f" %drag
