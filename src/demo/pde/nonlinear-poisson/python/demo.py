@@ -27,9 +27,11 @@ __license__  = "GNU LGPL Version 2.1"
 
 from dolfin import *
 
-#
-# THIS DEMO IS CURRENTLY NOT WORKING, SEE NOTE IN CODE.
-#
+
+# FIXME: Not working, see notice below
+import sys
+print "This demo is not working, please fix me"
+sys.exit(1)
 
 # Create mesh and finite element
 mesh = UnitSquare(16, 16)

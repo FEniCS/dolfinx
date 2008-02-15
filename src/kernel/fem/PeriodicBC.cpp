@@ -1,10 +1,10 @@
-// Copyright (C) 2007 Anders Logg.
+// Copyright (C) 2007-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells 2007
 //
 // First added:  2007-07-08
-// Last changed: 2007-12-09
+// Last changed: 2008-02-15
 
 #include <vector>
 #include <map>
@@ -233,10 +233,10 @@ void PeriodicBC::apply(GenericMatrix& A, GenericVector& b, const DofMap& dof_map
       error("Unable to find a pair of matching dofs for periodic boundary condition.");
     }
 
-    cout << "Setting periodic bc at x =";
-    for (uint j = 0; j < mesh.geometry().dim(); j++)
-      cout << " " << it->first[j];
-    cout << ": " << dof0 << " " << dof1 << endl;
+    //cout << "Setting periodic bc at x =";
+    //for (uint j = 0; j < mesh.geometry().dim(); j++)
+    //  cout << " " << it->first[j];
+    //cout << ": " << dof0 << " " << dof1 << endl;
     
     // FIXME: Perhaps this can be done more efficiently?
 
