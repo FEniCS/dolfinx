@@ -1,13 +1,12 @@
-// Copyright (C) 2007 Garth N. Wells.
+// Copyright (C) 2007-2008 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Ola Skavhaug, 2007.
 // Modified by Anders Logg, 2008.
 //
 // First added:  2007-05-24
-// Last changed: 2007-12-07
+// Last changed: 2008-02-15
 
-#include <dolfin/dolfin_log.h>
 #include <dolfin/DofMapSet.h>
 #include <dolfin/Cell.h>
 #include <dolfin/Facet.h>
@@ -85,7 +84,7 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
       }
 
       // Fill sparsity pattern.
-      sparsity_pattern.insert(ufc.local_dimensions, ufc.macro_dofs);
+      sparsity_pattern.insert(ufc.macro_local_dimensions, ufc.macro_dofs);
     }
   }
   
