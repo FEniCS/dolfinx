@@ -7,10 +7,7 @@ This gives convenient expand/collapse of bullets by pressing TAB.
 
 * Parallelisation
 
-** Expose only DofMap in DOLFIN (not ufc::dof_map)
 ** Reordering in DofMap
-** Implement broadcast for Mesh (in MPIMeshCommunicator)
-** Implement broadcast for MeshFunction (in MPIMeshCommunicator)
 ** Generalise Assembler for parallel assembly
    - Should be possible to do with minor changes
    - Add something similar to what is done now for assembling
@@ -19,7 +16,7 @@ This gives convenient expand/collapse of bullets by pressing TAB.
      if (partition(*cell) != this_process)
        continue;
 
-** Figure out what to do with Functions
+** Figure out what to do with Functions in parallel
 ** Parallelize necessary parts of Mesh
    - Store both global and local indices for cell/vertex, add mesh
      functions for this
@@ -51,7 +48,6 @@ This gives convenient expand/collapse of bullets by pressing TAB.
 
 * Mesh
 
-** Implement 1D meshes
 ** 1D and 2D cells in R^3
 ** Check coarsening
 ** Continue work on refinement
@@ -81,6 +77,7 @@ This gives convenient expand/collapse of bullets by pressing TAB.
 ** Improve NonlinearPDE
 ** Create TimeDependentPDE
    - Use ODE solvers
+** Linear PDE should not own a Vector
 
 * Parameters
 
