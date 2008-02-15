@@ -10,7 +10,7 @@ mesh = UnitCube(16, 16, 16)
 
 # Partition mesh
 partitions = MeshFunction("uint")
-mesh.partition(20, partitions)
+mesh.partition(partitions, 20)
 
 # Plot mesh partition
 plot(partitions)

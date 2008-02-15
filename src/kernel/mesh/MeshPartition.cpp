@@ -19,7 +19,6 @@ void MeshPartition::partition(Mesh& mesh,
                               MeshFunction<uint>& partitions,
                               uint num_partitions)
 {
-  dolfin_debug1("partitions.init(mesh, %d)", mesh.topology().dim());
   partitions.init(mesh, mesh.topology().dim());
   Graph graph(mesh);
   GraphPartition::partition(graph, num_partitions, partitions.values());

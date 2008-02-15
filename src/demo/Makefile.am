@@ -5,7 +5,7 @@ SUBDIRS = fem/assembly/cpp \
           mesh/partitioning/cpp \
           mesh/refinement/cpp \
           mesh/subdomains/cpp \
-          nls/cahn-hilliard \
+          nls/cahn-hilliard/cpp \
           nls/nonlinearpoisson/cpp \
           ode/aliev-panfilov/cpp \
           ode/complex \
