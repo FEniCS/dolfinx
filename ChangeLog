@@ -1,3 +1,5 @@
+ - Improve sparsity pattern generator efficiency
+ - Dimension-independent sparsity pattern generator
  - Add support for setting strong boundary values for DG elements
  - Add option setting boundary conditions based on geometrical search
  - Check UMFPACK return argument for warnings/errors
