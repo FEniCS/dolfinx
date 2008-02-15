@@ -52,8 +52,8 @@ a = dot(grad(v), grad(u))*dx \
    - dot(avg(grad(v)), jump(u, n))*dS \
    - dot(jump(v, n), avg(grad(u)))*dS \
    + alpha/h('+')*dot(jump(v, n), jump(u, n))*dS \
-   - dot(grad(v), jump(u,n))*ds \
-   - dot(jump(v,n), grad(u))*ds \
+   - dot(grad(v), mult(u, n))*ds \
+   - dot(mult(v, n), grad(u))*ds \
    + gamma/h*v*u*ds
 
 # Linear form

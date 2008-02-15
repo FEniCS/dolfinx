@@ -22,7 +22,7 @@ int main()
   {
     bool inside(const real* x, bool on_boundary) const
     {
-      return x[0] > DOLFIN_EPS and x[0] < 1.0 - DOLFIN_EPS and on_boundary;
+      return on_boundary;
     }
   };
 
@@ -44,8 +44,6 @@ int main()
     }
   };
 
-  dolfin_set("debug level", 1);
-  
   // Read mesh
   Mesh mesh("../../../../../data/meshes/dolfin-2.xml.gz");
 
