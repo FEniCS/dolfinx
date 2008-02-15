@@ -35,24 +35,6 @@ class AlievPanfilov(ODE):
         y[1] = eps*(-u[1] - self.k*u[0]*(u[0] - self.a - 1.0))
 
 
-ode = ODE(2, 300)
-# ERROR:
-# Traceback (most recent call last):
-#   File "demo.py", line 39, in <module>
-#     ode = ODE(2, 300)
-# TypeError: __init__() takes exactly 1 argument (3 given)
-
-#ode = ODE()
-# ERROR:
-# Traceback (most recent call last):
-#   File "demo.py", line 37, in <module>
-#     ode = ODE()
-#   File "/home/oelgaard/fenics/dolfin/local/lib/python2.5/site-packages/dolfin/dolfin.py", line 6208, in __init__
-#     def __init__(self): raise AttributeError, "No constructor defined"
-# AttributeError: No constructor defined
-
-
-#ode = AlievPanfilov(2, 300)
-#  ode.solve();
-
+ode = AlievPanfilov(2, 300)
+ode.solve()
 
