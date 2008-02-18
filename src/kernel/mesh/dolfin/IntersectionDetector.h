@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-06-21
-// Last changed: 2006-06-22
+// Last changed: 2008-02-18
 
 #ifndef __INTERSECTION_DETECTOR_H
 #define __INTERSECTION_DETECTOR_H
@@ -28,18 +28,28 @@ namespace dolfin
   class IntersectionDetector
   {
   public:
-    
-    IntersectionDetector();
 
-    void init(Mesh& mesh);
+    /// Constructor
+    IntersectionDetector(Mesh& mesh);
 
+    /// Destructor
+    ~IntersectionDetector();
+
+    // FIXME: Should we use mesh functions instead of Array?
+
+    /// Compute overlap with mesh
     void overlap(Cell& c, Array<uint>& overlap);
+
+    /// Compute overlap with point
     void overlap(Point& p, Array<uint>& overlap);
 
   private:
 
+    // The mesh
+    Mesh& mesh;
+
+    // The tree
     GNode* tree;
-    Mesh* mesh;
 
   };
 

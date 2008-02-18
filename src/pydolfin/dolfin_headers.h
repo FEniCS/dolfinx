@@ -110,6 +110,7 @@
 %include "dolfin/UnitCube.h"
 %include "dolfin/UnitInterval.h"
 %include "dolfin/UnitSquare.h"
+%include "dolfin/IntersectionDetector.h"
 
 // DOLFIN headers included from fem
 %include "dolfin/assemble.h"

@@ -25,17 +25,17 @@ namespace dolfin
 
   /// This class provides a set of functions to interface the DOLFIN
   /// mesh with the GTS mesh library
-
+  
   class GTSInterface
   {
   public:
     
     /// Test
     static void test();
-
+    
     /// Construct bounding box of cell
     static GtsBBox* bboxCell(Cell& c);
-
+    
     /// Construct bounding box of a single point
     static GtsBBox* bboxPoint(Point& p);
 

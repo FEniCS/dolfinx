@@ -514,7 +514,15 @@ Create dof map on mesh. ";
 
 %feature("docstring")  dolfin::DofMap::DofMap "
 
+Create dof map on mesh (parallel). ";
+
+%feature("docstring")  dolfin::DofMap::DofMap "
+
 Create dof map on mesh. ";
+
+%feature("docstring")  dolfin::DofMap::DofMap "
+
+Create dof map on mesh (parallel). ";
 
 %feature("docstring")  dolfin::DofMap::~DofMap "
 
@@ -562,6 +570,14 @@ Extract sub dof map. ";
 
 Return mesh associated with map. ";
 
+%feature("docstring")  dolfin::DofMap::build "
+
+Build parallel dof map. ";
+
+%feature("docstring")  dolfin::DofMap::getMap "
+
+Return renumbering (used for testing). ";
+
 
 // File: classdolfin_1_1DofMapSet.xml
 %feature("docstring") dolfin::DofMapSet "
@@ -581,7 +597,15 @@ Create set of dof maps. ";
 
 %feature("docstring")  dolfin::DofMapSet::DofMapSet "
 
+Create set of dof maps (parallel). ";
+
+%feature("docstring")  dolfin::DofMapSet::DofMapSet "
+
 Create set of dof maps. ";
+
+%feature("docstring")  dolfin::DofMapSet::DofMapSet "
+
+Create set of dof maps (parallel). ";
 
 %feature("docstring")  dolfin::DofMapSet::~DofMapSet "
 
@@ -593,11 +617,25 @@ Update set of dof maps for given form. ";
 
 %feature("docstring")  dolfin::DofMapSet::update "
 
+Update set of dof maps for given form (parallel). ";
+
+%feature("docstring")  dolfin::DofMapSet::update "
+
 Update set of dof maps for given form. ";
+
+%feature("docstring")  dolfin::DofMapSet::update "
+
+Update set of dof maps for given form (parallel). ";
 
 %feature("docstring")  dolfin::DofMapSet::size "
 
 Return number of dof maps. ";
+
+%feature("docstring")  dolfin::DofMapSet::build "
+
+Build parallel dof maps. ";
+
+%feature("docstring")  dolfin::DofMapSet::parallel "";
 
 
 // File: classdolfin_1_1Edge.xml
@@ -799,6 +837,10 @@ Return array of coefficients. ";
 
 Create degree of freedom maps. ";
 
+%feature("docstring")  dolfin::Form::updateDofMaps "
+
+Create degree of freedom maps. ";
+
 %feature("docstring")  dolfin::Form::setDofMaps "
 
 Set degree of freedom maps. ";
@@ -838,7 +880,9 @@ Create constant function from given value. ";
 
 %feature("docstring")  dolfin::Function::Function "
 
-Create discrete function for argument function i of form. ";
+Create constant function from given value.
+
+Create discrete function for argument function i of form ";
 
 %feature("docstring")  dolfin::Function::Function "
 
@@ -1060,7 +1104,15 @@ Destructor. ";
 
 Initialise sparsity pattern for a generic tensor. ";
 
+%feature("docstring")  dolfin::GenericSparsityPattern::pinit "
+
+Initialise sparsity pattern for a parallel generic tensor. ";
+
 %feature("docstring")  dolfin::GenericSparsityPattern::insert "
+
+Insert non-zero entry. ";
+
+%feature("docstring")  dolfin::GenericSparsityPattern::pinsert "
 
 Insert non-zero entry. ";
 
@@ -1477,6 +1529,33 @@ Check if found solution is correct (optional). ";
 %feature("docstring")  dolfin::Homotopy::degree "
 
 Return degree of polynomial F_i(z). ";
+
+
+// File: classdolfin_1_1IntersectionDetector.xml
+%feature("docstring") dolfin::IntersectionDetector "
+
+This class provides an interface for computing intersection (overlap)
+between a mesh and an individual cell or point
+
+C++ includes: IntersectionDetector.h ";
+
+%feature("docstring")
+dolfin::IntersectionDetector::IntersectionDetector "
+
+Constructor. ";
+
+%feature("docstring")
+dolfin::IntersectionDetector::~IntersectionDetector "
+
+Destructor. ";
+
+%feature("docstring")  dolfin::IntersectionDetector::overlap "
+
+Compute overlap with mesh. ";
+
+%feature("docstring")  dolfin::IntersectionDetector::overlap "
+
+Compute overlap with point. ";
 
 
 // File: classdolfin_1_1InvMeshSize.xml
@@ -2001,6 +2080,10 @@ Coarsen mesh according to cells marked for coarsening. ";
 %feature("docstring")  dolfin::Mesh::smooth "
 
 Smooth mesh using Lagrangian mesh smoothing. ";
+
+%feature("docstring")  dolfin::Mesh::partition "
+
+Partition mesh into num_processes partitions. ";
 
 %feature("docstring")  dolfin::Mesh::partition "
 
@@ -3292,9 +3375,18 @@ Destructor. ";
 Initialise sparsity pattern for a matrix with total number of rows and
 columns. ";
 
+%feature("docstring")  dolfin::SparsityPattern::pinit "
+
+Initialise sparsity pattern for a parallel matrix with total number of
+rows and columns. ";
+
 %feature("docstring")  dolfin::SparsityPattern::insert "
 
 Insert non-zero entry. ";
+
+%feature("docstring")  dolfin::SparsityPattern::pinsert "
+
+Insert non-zero entry for parallel matrices. ";
 
 %feature("docstring")  dolfin::SparsityPattern::size "
 
@@ -3303,6 +3395,11 @@ Return global size. ";
 %feature("docstring")  dolfin::SparsityPattern::numNonZeroPerRow "
 
 Return array with number of non-zeroes per row. ";
+
+%feature("docstring")  dolfin::SparsityPattern::numNonZeroPerRow "
+
+Return array with number of non-zeroes per row diagonal and
+offdiagonal for process_number. ";
 
 %feature("docstring")  dolfin::SparsityPattern::numNonZero "
 
@@ -3319,6 +3416,14 @@ Display sparsity pattern. ";
 %feature("docstring")  dolfin::SparsityPattern::apply "
 
 Finalize sparsity pattern (needed by most parallel la backends). ";
+
+%feature("docstring")  dolfin::SparsityPattern::processRange "
+
+Return array with row range for process_number. ";
+
+%feature("docstring")  dolfin::SparsityPattern::numLocalRows "
+
+Return number of local rows for process_number. ";
 
 
 // File: classstd_1_1vector.xml
@@ -4010,21 +4115,21 @@ Return elapsed time. ";
 
 Return and display elapsed time. ";
 
-%feature("docstring")  dolfin::add "
+%feature("docstring")  dolfin::dolfin_get "
 
-Add parameter. ";
+Get value of parameter with given key. ";
 
-%feature("docstring")  dolfin::set "
+%feature("docstring")  dolfin::dolfin_set "
 
 Set value of parameter. ";
 
-%feature("docstring")  dolfin::set "
+%feature("docstring")  dolfin::dolfin_set "
 
 Set special key/value pair. ";
 
-%feature("docstring")  dolfin::get "
+%feature("docstring")  dolfin::dolfin_add "
 
-Get value of parameter with given key. ";
+Add parameter. ";
 
 %feature("docstring")  dolfin::message "
 
@@ -4365,6 +4470,9 @@ domains. ";
 // File: Facet_8h.xml
 
 
+// File: IntersectionDetector_8h.xml
+
+
 // File: Mesh_8h.xml
 
 
@@ -4467,107 +4575,107 @@ domains. ";
 // File: RadauQuadrature_8h.xml
 
 
-// File: dir_8f99fa75e45c026ae299746a85430e3d.xml
+// File: dir_b6f50706cb9714b448a6eb80737026a9.xml
 
 
-// File: dir_bda22f29b6a6ccc4d8564c94603f3070.xml
+// File: dir_2da428ad44f53dfe553da921dc9958db.xml
 
 
-// File: dir_226de932f8a1ee2c7866c078ddb0cbe0.xml
+// File: dir_e1c7277e193fbd0adb23368c0e38bb75.xml
 
 
-// File: dir_fd3d1a03cbb0ba248c78b01acee5a65e.xml
+// File: dir_40220893e01e460d18509f097f94540d.xml
 
 
-// File: dir_1f590fa352609c3c8b6a7741855c9e96.xml
+// File: dir_d1e2aef396b1a3e5b8fcb4aa5c24449c.xml
 
 
-// File: dir_ccc70d671dc7f2c169a675a4a2bc8e2d.xml
+// File: dir_5f4fcd2bba542de4e226828392fdfa6e.xml
 
 
-// File: dir_9270d4bcd3c18c409e65bb2843c05bd5.xml
+// File: dir_91ecf1529bbe7024b548c6fb7f0b27c0.xml
 
 
-// File: dir_7c397a22545de22724863f5badbe4c13.xml
+// File: dir_15c6e4422aec06179b9b60e889e09528.xml
 
 
-// File: dir_e8d769cf583871e1ffe572a3b4d49060.xml
+// File: dir_531c39d775379704ed499baa9dcd4436.xml
 
 
-// File: dir_93cd7ab2d594d75c91cc9ff4330d48b0.xml
+// File: dir_56b9860eb883c4c158c65333cf55ea79.xml
 
 
-// File: dir_7c5cb082d003f55935562b24eb98bb03.xml
+// File: dir_82bacb5830a795738b7bccbfdf2ca737.xml
 
 
-// File: dir_7f095e81acd39259730fef16e9b57484.xml
+// File: dir_769ea50760d8bc5f3305f92ded7c16ba.xml
 
 
-// File: dir_a7889e87f7b7726b3fa19fc727a4e9a6.xml
+// File: dir_69898268e5df5b89dd84521bf0e385bb.xml
 
 
-// File: dir_03f938e2071f2a0fb165521c0efb03e7.xml
+// File: dir_169eea683125e6c26f8526cf4daa7422.xml
 
 
-// File: dir_477a01c8fece4016975be05ad058480c.xml
+// File: dir_5ec121423962ee8787737efa6f6421e4.xml
 
 
-// File: dir_b0faab9e91e6f2a8de4e1c3847fcace1.xml
+// File: dir_6d6c59dade9611e72e5d605ee8693670.xml
 
 
-// File: dir_044c8a9c2fce6301b6013539c172da8c.xml
+// File: dir_930b4bafb793a34e5823888263adb3f3.xml
 
 
-// File: dir_5b3309fde14d9db637a4f8f8ce64e818.xml
+// File: dir_d7703bdfa5748737b170136bd5963f04.xml
 
 
-// File: dir_cab5a1b0d79bf0b4d07a83f56cbc5bf6.xml
+// File: dir_733a0def988b57d08a2a2817a30c611f.xml
 
 
-// File: dir_f99b4d9dcfc1c809b817fc9b03947889.xml
+// File: dir_b269bc3560f04f2b861fd291e35a8396.xml
 
 
-// File: dir_fa2940e6f4027112e923db54c0c9d4a5.xml
+// File: dir_ba8c5d58a5e682babe409bbf8d436d56.xml
 
 
-// File: dir_d713f27f66c2e75b7b7ecf942dcdd699.xml
+// File: dir_4b8c1586a59038bab34cc078308378c1.xml
 
 
-// File: dir_1f6fd5d8ff40aa66701b8c309328f95d.xml
+// File: dir_5181fc30b74596c127f02eb6380599f1.xml
 
 
-// File: dir_63095dc93a373210fc5a1f1e56dcf6b5.xml
+// File: dir_2663a796a8bf0c5fc4c72a5516e654e2.xml
 
 
-// File: dir_b9d748b378b8eb7591c3507f66b0f031.xml
+// File: dir_e7b96a461c41eff64e0b5d9505aa73b1.xml
 
 
-// File: dir_8f53bcb69f620d18ecdefe6233e677c0.xml
+// File: dir_afb2bc9dfd9657d8ddf4393cf30bdf65.xml
 
 
-// File: dir_f5fc29378bc31411832c3bdf99698ed3.xml
+// File: dir_6000af6eef1afe780b3bba23fda3d89a.xml
 
 
-// File: dir_9edc37267fe012bac2fc8c3aa54bdbbd.xml
+// File: dir_95c5c65f39ef2792fc4865c83fd27db3.xml
 
 
-// File: dir_bae3692a4afabfbc4ec271447e8a40ce.xml
+// File: dir_d00be9c89d8f8aa90f29356b72b0c6a6.xml
 
 
-// File: dir_3ddea3575cd7b4878aac0722eb95ea5d.xml
+// File: dir_a45f7652b6600b09ebddd098b5ce6e42.xml
 
 
-// File: dir_3770a9ee6ce3cedfa4f35d265db30183.xml
+// File: dir_7d01225e783771cb437686f8c4a31a5d.xml
 
 
-// File: dir_b5c3dcc2db72c560939ddf08b58bc271.xml
+// File: dir_617ebbb62e9ca71f8fb1a6afb144b9f3.xml
 
 
-// File: dir_f4a020190e14a2a09e081ef39d23e598.xml
+// File: dir_0edd2b5577f17de64d6dc96fdc2bcdbd.xml
 
 
-// File: dir_ab1716513f7abe6b6ba15f980e652cd4.xml
+// File: dir_c8dc3b8fff82d0eca9d61d998ba9168b.xml
 
 
-// File: dir_6e9bec057e6169a84ffadbac0b241046.xml
+// File: dir_5dc63f43beb5f8e3855237ab305c58ce.xml
 

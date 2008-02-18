@@ -15,13 +15,12 @@
 #include <dolfin/Cell.h>
 #include <dolfin/GTSInterface.h>
 
+#ifdef HAVE_GTS_H
+#include <gts.h>
+#endif
+
 using namespace dolfin;
 
-#ifdef HAVE_GTS_H
-
-#include <gts.h>
-
-#endif
 //-----------------------------------------------------------------------------
 void GTSInterface::test()
 {

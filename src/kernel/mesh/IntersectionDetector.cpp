@@ -4,8 +4,8 @@
 // Modified by Johan Jansson 2006.
 // Modified by Ola Skavhaug 2006.
 //
-// First added:  2006-06-21
-// Last changed: 2006-12-01
+// First added:  2006-06-21
+// Last changed: 2008-02-18
 
 #include <dolfin/IntersectionDetector.h>
 #include <dolfin/dolfin_log.h>
@@ -19,23 +19,28 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-IntersectionDetector::IntersectionDetector()
+IntersectionDetector::IntersectionDetector(Mesh& mesh) : mesh(mesh), tree(0)
 {
+  // Build tree
+  tree = GTSInterface::buildCellTree(mesh);
 }
 //-----------------------------------------------------------------------------
-void IntersectionDetector::init(Mesh& mesh)
+IntersectionDetector::~IntersectionDetector()
 {
-  this->mesh = &mesh;
-  tree = GTSInterface::buildCellTree(mesh);
+  // FIXME: Should delete tree here but need to include GNode properly.
+  // FIXME: (warning: invalid use of incomplete type 'struct _GNode')
+
+  //if (tree)
+  //  delete (GNode*) tree;
 }
 //-----------------------------------------------------------------------------
 void IntersectionDetector::overlap(Cell& c, Array<uint>& cells)
 {
-  GTSInterface::overlap(c, tree, *mesh, cells);
+  GTSInterface::overlap(c, tree, mesh, cells);
 }
 //-----------------------------------------------------------------------------
 void IntersectionDetector::overlap(Point& p, Array<uint>& cells)
 {
-  GTSInterface::overlap(p, tree, *mesh, cells);
+  GTSInterface::overlap(p, tree, mesh, cells);
 }
 //-----------------------------------------------------------------------------
