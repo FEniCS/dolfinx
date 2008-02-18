@@ -117,7 +117,7 @@ int main(int argc, char* argv[])
 
   Mesh mesh;
   MeshFunction<dolfin::uint>* partitions;
-  set("debug level", debug);
+  dolfin_set("debug level", debug);
   if(petsc_info)
   {
     char** init_argv = new char*[2];

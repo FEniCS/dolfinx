@@ -1,7 +1,0 @@
-element = FiniteElement("Lagrange", "tetrahedron", 1)
-
-v = TestFunction(element)
-u = TrialFunction(element)
-f = Function(element)
-
-a = dot(grad(v), grad(u))*dx
