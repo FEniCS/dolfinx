@@ -42,7 +42,7 @@ void check_assembly(Mesh& mesh, MeshFunction<dolfin::uint>& partitions)
   MatView(A.mat().mat(), viewer_a);
 
   dolfin::cout << "Mapping: " << dolfin::endl;
-  std::map<const dolfin::uint, dolfin::uint> map = dof_map_set[0].getMap();
+  std::map<dolfin::uint, dolfin::uint> map = dof_map_set[0].getMap();
   for(dolfin::uint i=0; i<map.size(); ++i)
   {
     dolfin::cout << i << " => " << map[i] << dolfin::endl;
