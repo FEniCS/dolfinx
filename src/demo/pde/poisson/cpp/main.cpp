@@ -82,6 +82,7 @@ int main()
   // Define PDE
   PoissonBilinearForm a;
   PoissonLinearForm L(f, g);
+  cout << "Call solve " << endl;
   LinearPDE pde(a, L, mesh, bc);
 
   // Solve PDE

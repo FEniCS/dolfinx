@@ -50,10 +50,12 @@ void LinearPDE::solve(Function& u)
   begin("Solving linear PDE.");
 
   // Create matrix and vector for assembly
+  cout << "Create Matrix" << endl;
   Matrix A;
   Vector b;
 
   // Assemble linear system
+  cout << "Create assembler" << endl;
   Assembler assembler(mesh);
   assembler.assemble(A, a);
   assembler.assemble(b, L);

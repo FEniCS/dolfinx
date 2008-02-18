@@ -40,6 +40,7 @@ This gives convenient expand/collapse of bullets by pressing TAB.
 
 * Linear Algebra
 
+** Refine initialisation of PETSc matrices for parallel case
 ** Refine PETSc wrappers for parallel assembly and solve
 ** Finalize GenericFoo interfaces and merge linear algebra with PyCC
    - Assigned to: Martin, Garth, Anders

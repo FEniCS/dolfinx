@@ -137,6 +137,7 @@ void Assembler::assemble(GenericTensor& A, const ufc::form& form,
   UFC ufc(form, mesh, dof_map_set);
 
   // Initialize global tensor
+  cout << "Init tensor" << endl;
   initGlobalTensor(A, dof_map_set, ufc, reset_tensor);
 
   // Assemble over cells
@@ -384,7 +385,9 @@ void Assembler::initGlobalTensor(GenericTensor& A, const DofMapSet& dof_map_set,
   {
     GenericSparsityPattern* sparsity_pattern = A.factory().createPattern(); 
     SparsityPatternBuilder::build(*sparsity_pattern, mesh, ufc, dof_map_set);
+    cout << "Calling A.init(...) " << endl;
     A.init(*sparsity_pattern);
+    cout << "Finioshed calling A.init(...) " << endl;
     delete sparsity_pattern;
   }
   else
