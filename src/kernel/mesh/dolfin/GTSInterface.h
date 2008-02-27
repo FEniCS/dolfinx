@@ -18,37 +18,46 @@ typedef _GNode GNode;
 namespace dolfin
 {
 
-  // Forward declarations
-  class Cell;
   class Mesh;
+  class Point;
+  class Cell;
   template <class T> class Array;
 
-  /// This class provides a set of functions to interface the DOLFIN
-  /// mesh with the GTS mesh library
-  
   class GTSInterface
   {
   public:
-    
-    /// Test
-    static void test();
-    
-    /// Construct bounding box of cell
-    static GtsBBox* bboxCell(Cell& c);
-    
-    /// Construct bounding box of a single point
-    static GtsBBox* bboxPoint(Point& p);
 
-    /// Construct hierarchical space partition tree of mesh
-    static GNode* buildCellTree(Mesh& mesh);
+    GTSInterface(Mesh& m);
+    ~GTSInterface(void);
 
     /// Compute cells overlapping c
-    static void overlap(Cell& c, GNode* tree, Mesh& mesh, Array<uint>& cells);
+    void overlap(Cell& c, Array<uint>& cells);
 
     /// Compute cells overlapping p
-    static void overlap(Point& p, GNode* tree, Mesh& mesh, Array<uint>& cells);
+    void overlap(Point& p, Array<uint>& cells);
+
+    /// Compute cells overlapping bounding box constructed from p1 and p2
+    void overlap(Point& p1, Point& p2, Array<uint>& cells);
+
+  private:
+
+    GTSInterface(void);
+    GTSInterface(const GTSInterface&);
+
+    /// Construct bounding box of cell
+    GtsBBox* bboxCell(Cell&);
+
+    /// Construct bounding box of a single point
+    GtsBBox* bboxPoint(const Point&);
+
+    /// Construct bounding box of a pair of points
+    GtsBBox* bboxPoint(const Point&, const Point&);
+
+    /// Construct hierarchical space partition tree of mesh
+    void buildCellTree(void);
+
+    Mesh& mesh;
+    GNode* tree;
   };
-
 }
-
 #endif

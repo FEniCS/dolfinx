@@ -9,21 +9,15 @@
 
 #include <dolfin/constants.h>
 
-// Forward declarations
-struct _GNode;
-typedef _GNode GNode;
+#include <dolfin/GTSInterface.h>
 
 namespace dolfin
 {
-
   class Mesh;
-  class BoundaryMesh;
   class Cell;
   class Point;
+  //class GTSInterface;
   template <class T> class Array;
-
-  /// This class provides an interface for computing intersection
-  /// (overlap) between a mesh and an individual cell or point
 
   class IntersectionDetector
   {
@@ -35,24 +29,21 @@ namespace dolfin
     /// Destructor
     ~IntersectionDetector();
 
-    // FIXME: Should we use mesh functions instead of Array?
-
     /// Compute overlap with mesh
     void overlap(Cell& c, Array<uint>& overlap);
 
     /// Compute overlap with point
     void overlap(Point& p, Array<uint>& overlap);
 
+    /// Compute overlap with bounding box
+    void overlap(Point& p1, Point& p2, Array<uint>& overlap);
+
   private:
+    IntersectionDetector();
+    IntersectionDetector(const IntersectionDetector&);
 
-    // The mesh
-    Mesh& mesh;
-
-    // The tree
-    GNode* tree;
-
+    GTSInterface gts;
   };
-
 }
 
 #endif

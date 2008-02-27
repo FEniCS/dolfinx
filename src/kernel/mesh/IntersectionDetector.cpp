@@ -14,33 +14,28 @@
 #include <dolfin/Facet.h>
 #include <dolfin/Vertex.h>
 #include <dolfin/Cell.h>
+
 #include <dolfin/GTSInterface.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-IntersectionDetector::IntersectionDetector(Mesh& mesh) : mesh(mesh), tree(0)
-{
-  // Build tree
-  tree = GTSInterface::buildCellTree(mesh);
-}
+IntersectionDetector::IntersectionDetector(Mesh& mesh) : gts(mesh) {}
 //-----------------------------------------------------------------------------
-IntersectionDetector::~IntersectionDetector()
-{
-  // FIXME: Should delete tree here but need to include GNode properly.
-  // FIXME: (warning: invalid use of incomplete type 'struct _GNode')
-
-  //if (tree)
-  //  delete (GNode*) tree;
-}
+IntersectionDetector::~IntersectionDetector() {}
 //-----------------------------------------------------------------------------
 void IntersectionDetector::overlap(Cell& c, Array<uint>& cells)
 {
-  GTSInterface::overlap(c, tree, mesh, cells);
+  gts.overlap(c, cells);
 }
 //-----------------------------------------------------------------------------
 void IntersectionDetector::overlap(Point& p, Array<uint>& cells)
 {
-  GTSInterface::overlap(p, tree, mesh, cells);
+  gts.overlap(p, cells);
+}
+//-----------------------------------------------------------------------------
+void IntersectionDetector::overlap(Point& p1, Point& p2, Array<uint>& cells)
+{
+  gts.overlap(p1, p2, cells);
 }
 //-----------------------------------------------------------------------------
