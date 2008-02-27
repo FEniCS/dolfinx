@@ -202,7 +202,7 @@ class LinearPDE:
             message("Using direct solver.")
             solver = LUSolver()
             #solver.set("parent", self)
-        elif solve_type == "iterative":
+        elif solver_type == "iterative":
             message("Using iterative solver (GMRES).")
             solver = KrylovSolver(gmres)
             #solver.set("parent", self)
