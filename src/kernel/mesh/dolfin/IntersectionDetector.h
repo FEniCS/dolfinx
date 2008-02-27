@@ -38,6 +38,12 @@ namespace dolfin
     /// Compute overlap with bounding box
     void overlap(Point& p1, Point& p2, Array<uint>& overlap);
 
+    /// Compute overlap with set of points
+    void overlap(Array<Point>& points, Array<uint>& overlap);
+
+    /// Compute overlap with set of line segments
+    void curve_mesh_overlap(Array<Point>& points, Array<uint>& overlap);
+
   private:
     IntersectionDetector();
     IntersectionDetector(const IntersectionDetector&);

@@ -160,7 +160,6 @@ void GTSInterface::overlap(Cell& c, Array<uint>& cells)
 
   overlaps = gts_bb_tree_overlap(tree, bbprobe);
 
-  cells.clear();
   while(overlaps)
     {
       bb = (GtsBBox *)overlaps->data;
@@ -196,7 +195,6 @@ void GTSInterface::overlap(Point& p, Array<uint>& cells)
 
   overlaps = gts_bb_tree_overlap(tree, bbprobe);
 
-  cells.clear();
   while(overlaps)
     {
       bb = (GtsBBox *)overlaps->data;
@@ -231,7 +229,6 @@ void GTSInterface::overlap(Point& p1, Point& p2, Array<uint>& cells)
 
   overlaps = gts_bb_tree_overlap(tree, bbprobe);
 
-  //cells.clear();
   while(overlaps)
     {
       bb = (GtsBBox *)overlaps->data;

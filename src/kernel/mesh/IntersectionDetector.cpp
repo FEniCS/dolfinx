@@ -26,16 +26,48 @@ IntersectionDetector::~IntersectionDetector() {}
 //-----------------------------------------------------------------------------
 void IntersectionDetector::overlap(Cell& c, Array<uint>& cells)
 {
+  cells.clear();
   gts.overlap(c, cells);
 }
 //-----------------------------------------------------------------------------
 void IntersectionDetector::overlap(Point& p, Array<uint>& cells)
 {
+  cells.clear();
   gts.overlap(p, cells);
 }
 //-----------------------------------------------------------------------------
 void IntersectionDetector::overlap(Point& p1, Point& p2, Array<uint>& cells)
 {
+  cells.clear();
   gts.overlap(p1, p2, cells);
 }
 //-----------------------------------------------------------------------------
+void IntersectionDetector::overlap(Array<Point>& points, Array<uint>& cells)
+{
+  cells.clear();
+  for(int i=0; i<points.size(); i++)
+    gts.overlap(points[i],cells);
+}
+//-----------------------------------------------------------------------------
+void IntersectionDetector::curve_mesh_overlap(Array<Point>& points, 
+					      Array<uint>& cells) 
+{
+  // Intersect each segment with mesh
+  Array<uint> cc;
+  for(int i=0; i<points.size()-1; i++)
+    gts.overlap(points[i],points[i+1],cc);
+
+  // sort cells
+  std::sort(cc.begin(),cc.end());
+
+  // remove repeated cells
+  cells.clear();
+  uint k = 0;
+  cells.push_back(cc[k]);
+  for(int i=0; i<cc.size(); i++){
+    if(cc[i] > k){
+      cells.push_back(cc[i]);
+      k = cc[i];
+    }
+  }
+}
