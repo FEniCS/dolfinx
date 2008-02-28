@@ -42,7 +42,7 @@ namespace dolfin
     void overlap(Array<Point>& points, Array<uint>& overlap);
 
     /// Compute overlap with set of line segments
-    void curve_mesh_overlap(Array<Point>& points, Array<uint>& overlap);
+    void curve_overlap(Array<Point>& points, Array<uint>& overlap);
 
   private:
     IntersectionDetector();

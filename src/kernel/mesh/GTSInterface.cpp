@@ -173,8 +173,9 @@ void GTSInterface::overlap(Cell& c, Array<uint>& cells)
 	}
       overlaps = overlaps->next;
     }
-
-  free(bbprobe);
+  
+  g_slist_free(overlaps);
+  g_free(bbprobe);
 
 #else
   error("missing GTS");
@@ -207,8 +208,8 @@ void GTSInterface::overlap(Point& p, Array<uint>& cells)
 
       overlaps = overlaps->next;
     }
-
-  free(bbprobe);
+  g_slist_free(overlaps);
+  g_free(bbprobe);
 
 #else
   error("missing GTS");
@@ -223,8 +224,6 @@ void GTSInterface::overlap(Point& p1, Point& p2, Array<uint>& cells)
   GSList* overlaps = 0;
   uint boundedcell;
 
-  CellType& type = mesh.type();
-
   bbprobe = bboxPoint(p1,p2);
 
   overlaps = gts_bb_tree_overlap(tree, bbprobe);
@@ -238,8 +237,8 @@ void GTSInterface::overlap(Point& p1, Point& p2, Array<uint>& cells)
 
       overlaps = overlaps->next;
     }
-
-  free(bbprobe);
+  g_slist_free(overlaps);
+  g_free(bbprobe);
 
 #else
   error("missing GTS");

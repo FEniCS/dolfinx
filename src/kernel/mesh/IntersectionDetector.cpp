@@ -49,8 +49,8 @@ void IntersectionDetector::overlap(Array<Point>& points, Array<uint>& cells)
     gts.overlap(points[i],cells);
 }
 //-----------------------------------------------------------------------------
-void IntersectionDetector::curve_mesh_overlap(Array<Point>& points, 
-					      Array<uint>& cells) 
+void IntersectionDetector::curve_overlap(Array<Point>& points, 
+					 Array<uint>& cells) 
 {
   // Intersect each segment with mesh
   Array<uint> cc;
