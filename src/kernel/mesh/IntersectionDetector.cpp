@@ -3,6 +3,7 @@
 //
 // Modified by Johan Jansson 2006.
 // Modified by Ola Skavhaug 2006.
+// Modified by Dag Lindbo 2008.
 //
 // First added:  2006-06-21
 // Last changed: 2008-02-18
@@ -42,12 +43,12 @@ void IntersectionDetector::overlap(Point& p1, Point& p2, Array<uint>& cells)
   gts.overlap(p1, p2, cells);
 }
 //-----------------------------------------------------------------------------
-void IntersectionDetector::overlap(Array<Point>& points, Array<uint>& cells)
-{
-  cells.clear();
-  for(int i=0; i<points.size(); i++)
-    gts.overlap(points[i],cells);
-}
+//void IntersectionDetector::overlap(Array<Point>& points, Array<uint>& cells)
+//{
+//  cells.clear();
+//  for(int i=0; i<points.size(); i++)
+//    gts.overlap(points[i],cells);
+//}
 //-----------------------------------------------------------------------------
 void IntersectionDetector::curve_overlap(Array<Point>& points, 
 					 Array<uint>& cells) 
