@@ -31,7 +31,9 @@ GTSInterface::GTSInterface(Mesh& m) : mesh(m), tree(0)
 //-----------------------------------------------------------------------------
 GTSInterface::~GTSInterface() 
 {
+#ifdef HAVE_GTS_H
   gts_bb_tree_destroy(tree, 1);
+#endif
 }
 //-----------------------------------------------------------------------------
 GtsBBox* GTSInterface::bboxCell(Cell& c)

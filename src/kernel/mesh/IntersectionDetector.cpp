@@ -55,7 +55,7 @@ void IntersectionDetector::curve_overlap(Array<Point>& points,
 {
   // Intersect each segment with mesh
   Array<uint> cc;
-  for(int i=0; i<points.size()-1; i++)
+  for (uint i = 0; i < points.size() - 1; i++)
     gts.overlap(points[i],points[i+1],cc);
 
   // sort cells
@@ -65,10 +65,13 @@ void IntersectionDetector::curve_overlap(Array<Point>& points,
   cells.clear();
   uint k = 0;
   cells.push_back(cc[k]);
-  for(int i=0; i<cc.size(); i++){
-    if(cc[i] > k){
+  for (uint i = 0; i < cc.size(); i++)
+  {
+    if (cc[i] > k)
+    {
       cells.push_back(cc[i]);
       k = cc[i];
     }
   }
 }
+//-----------------------------------------------------------------------------
