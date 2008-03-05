@@ -1,1 +1,0 @@
-SUBDIRS = sparse-matrix vector

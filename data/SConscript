@@ -1,0 +1,30 @@
+import os
+import os.path
+import simula_scons as scons
+import fnmatch
+
+Import("env")
+
+# Directories/files to exclude as globbable patterns (passed to fnmatch and/or rsync)
+Exclude = [".*", "SCons*"]
+
+dataDir = Dir(".").srcnode().abspath
+
+def _filter(names):
+    to_exclude = []
+    for ex in Exclude:
+        to_exclude += fnmatch.filter(names, ex)
+    return [n for n in names if not n in to_exclude]
+
+data = []
+# Recurse through dataDir and find all datafiles. Exclude subdirectories
+# and files matching glob patterns in the Exclude list (located at the top of
+# this file).
+for dpath, dnames, fnames in os.walk(dataDir):
+    rel_dpath = dpath.replace(dataDir, "")
+    if rel_dpath and rel_dpath[0] == os.path.sep:
+        rel_dpath = rel_dpath[1:]
+    dnames[:] = _filter(dnames)
+    data += [os.path.join(rel_dpath,f) for f in _filter(fnames)]
+
+Return("data")

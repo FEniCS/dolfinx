@@ -1,1 +1,0 @@
-SUBDIRS = fem la ode

@@ -1,0 +1,18 @@
+import os.path
+from simula_scons import latex
+
+Import("env")
+latex.generate(env)
+
+# SCons doesn't include a scanner for TeX in general, only LaTeX, presumably 
+# because TeX lacks a general convention for inclusions?
+from glob import glob
+includedTex = glob(os.path.join("manual", "chapters", "*.tex"))
+
+manualDvi = env.DVI(source=[os.path.join("manual", "dolfin-user-manual.tex")] + includedTex)
+manualPdf = env.PDF(source=manualDvi)
+manualPs = env.PostScript(source=manualDvi)
+
+# Builders return node lists, concatenate into one
+ret = manualPdf + manualPs
+Return("ret")

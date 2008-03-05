@@ -1,0 +1,267 @@
+# -*- coding: utf-8 -*-
+import os.path, sys, re
+from distutils import sysconfig
+
+# exceptions
+from simula_scons.Errors import PkgconfigError, PkgconfigMissing, CommandError, _configError
+
+# import the local 'scons'
+import simula_scons as scons
+
+# Here, the main program will be written. The logic must be _visible_, and the
+# code should be short and simple.
+
+# import the default env and configure objects created in SConstruct
+Import("env", "configure")
+
+# Set the default env in our local scons utility module.
+scons.setDefaultEnv(env)
+  
+python_version = "python-%d" % (sys.version_info[0])
+
+# Add non-standard paths with pkg-config
+#configuredPackages = {}
+
+# determine which packages that should be disabled:
+disabled_packages = []
+if not env["enablePetsc"]:
+    disabled_packages.append("petsc")
+if not env["enableSlepc"]:
+    disabled_packages.append("slepc")
+if not env["enableScotch"]:
+    disabled_packages.append("scotch")
+if not env["enableGts"]:
+    disabled_packages.append("gts")
+if not env["enableUmfpack"]:
+    disabled_packages.append("umfpack")
+
+# Find modules in the project and dependencies:
+# only modules and configuredPackages will be used in this code:
+modules, dependencies, alldependencies, configuredPackages, packcfgObjs = \
+    scons.getModulesAndDependencies(disabled_packages=disabled_packages)
+
+# we will not use the 'dependencies' and 'alldependencies' here.
+# TODO: Consider removing it from the API.
+dependencies = None
+alldependencies = None
+# See if dependencies can be resolved with PkgConfig.
+# for d in alldependencies.keys():
+#    try:
+#       packcfg = scons.pkgconfig.PkgConfig(d, env=env)
+#       configuredPackages[d] = scons.Customize.Dependency(cppPath=packcfg.includeDirs(), \
+#                               libPath=packcfg.libDirs(), libs=packcfg.libs(),\
+#                               version=packcfg.version())
+#    except:
+#       pass
+
+# resolve modules according to detected dependencies.
+# if a dependency can not be found, the module will not be built:
+#modules = scons.resolveModuleDependencies(modules, configuredPackages)
+modules, env = scons.resolveModuleDependencies(modules, configuredPackages, packcfgObjs, sconsEnv=env)
+
+if env["PLATFORM"] == "darwin":
+    env = scons.Customize.darwinCxx(env)
+     
+swigFlags = "-python -c++ -shadow -Iinclude/swig".split()
+out, err = scons.runCommand("swig", "-version")
+# Determine swig version, v 1.3.28 and later supports -O flag
+m = re.match(r"SWIG Version (.+)", out, re.M)
+if scons.checkVersion(m.group(1), "1.3.28"):
+    swigFlags.append("-O")
+
+swigEnv = env.Copy()
+swigEnv["SWIGFLAGS"] = swigFlags
+swigEnv["SHLIBPREFIX"] = "_"
+if env["PLATFORM"] == "darwin":
+    swigEnv = scons.Customize.darwinSwig(swigEnv)
+
+cFileBldr, cxxFileBldr = swigEnv["BUILDERS"]["CFile"], swigEnv["BUILDERS"]["CXXFile"]
+
+for bldr in cFileBldr, cxxFileBldr:
+    bldr.add_emitter(".i", scons.Customize.swigEmitter)
+
+swigEnv.Append(SCANNERS=scons.Customize.swigscanner)
+
+# stencil for return-values:
+ret = {"shlibs": [], "extModules": [], "docs": [], "headers": [], "pythonModules": [], \
+       "pythonScripts": [], "pkgconfig": [], "pythonPackageDirs": [], "data": [], "tests": [], \
+       "progs": [], "demos": [], "main_header": ""}
+
+#### XXX
+#### Messy code
+#### TODO
+#### Fix and move to a better location.
+####
+# build rpath for paths for all modules, stored in the Module objects.
+# 
+# Used for building test-binaries (aka AppSources)
+rpathdirs=[Dir("#src/%s" % (m.path)).abspath  for m in modules.values()]
+#### End TODO
+
+for modName, mod in modules.items():
+    libs, libPath, cppPath, frameworks = [], [], [], []
+    swiglibs, swigframeworks, swiglibPath, swigcppPath = [], [], [], []
+
+    for d in mod.dependencies:
+        if d in modules:
+            # Internal dependency
+            libs.append(d)
+            libPath.insert(0, modules[d].path)
+        elif d in configuredPackages:
+            # External (configured) dependency
+            dep = configuredPackages[d]
+            libs += dep.libs[0]          # The libs
+            frameworks += list(dep.libs[1])    # The frameworks (Darwin)
+            libPath += dep.libPath
+            cppPath += dep.cppPath
+            
+            # on Darwin, automatically add all regular external deps to 
+            # swig deps. Strictly speaking, it is only required if the 
+            # external dep consist of shared libraries.
+            scons.addToDependencies(mod.swigDependencies,d)
+
+    for d in mod.swigDependencies:
+        if d in modules:
+            # not sure what to do with that... Or maybe not relevant
+            print "Internal module %s as swigDependency in module %s is undefined" % (modules[d].modName,modName)
+        elif d in configuredPackages:
+            swigdep = configuredPackages[d]
+            swiglibs += swigdep.libs[0]
+            swigframeworks += list(swigdep.libs[1])
+            swiglibPath += swigdep.libPath
+            swigcppPath += swigdep.cppPath
+
+
+    if mod.libSources:
+        # Register shared library targets in the module
+
+        modEnv = env.Copy(CXXFLAGS=mod.cxxFlags, LINKFLAGS=mod.linkFlags)
+        # Prepend the CPPPATH so that directories containing headers are searched before those
+        # they are to be installed into, otherwise SCons might think it necessary to install
+        # them first
+
+        modEnv.Prepend(CPPPATH=[Dir("#").abspath] + cppPath, LIBPATH=libPath)
+        modEnv.Append(LIBS=libs)
+        if env["PLATFORM"] == "darwin":
+            modEnv.Append(FRAMEWORKS=frameworks)
+        shlib = modEnv.SharedLibrary(target=os.path.join(mod.path, modName), source=\
+                [os.path.join(mod.path, s) for s in mod.libSources])
+        # The builder returns a node list
+        ret["shlibs"].append(shlib[0])
+
+    if mod.swigSources:
+        # Register swig wrapper targets in the module
+        mod.cxxFlags += " -fno-strict-aliasing"
+
+        modEnv = swigEnv.Copy(CXXFLAGS=mod.cxxFlags, LINKFLAGS=mod.linkFlags)
+        modEnv.Append(SWIGFLAGS=mod.swigFlags + ["-I%s" % i for i in swigcppPath])
+        
+        ### uncomment the following line to remove -Werror from the CXXFLAGS:
+        #modEnv["CXXFLAGS"] = re.sub("-Werror","",modEnv["CXXFLAGS"])
+            
+        # Add python dependency (always required in python wrappers)
+        pyPkg = configuredPackages[python_version]
+        cppPath += pyPkg.cppPath + swigcppPath
+        libPath += pyPkg.libPath + swiglibPath
+        libs += pyPkg.libs[0] + swiglibs
+        frameworks += pyPkg.libs[1] + swigframeworks
+
+        # Add the directories of the module and its dependencies to swig's include path, so
+        # that it can resolve included headers
+        modEnv.Prepend(CPPPATH=[Dir("#").abspath] + cppPath, \
+                LIBPATH=[mod.path] + swiglibPath, LIBS=swiglibs)
+
+        if mod.libSources:
+            modEnv.Append(LIBS=modName)
+        else:
+            # This is a standalone swig'ed module
+            modEnv.Append(LIBPATH=libPath, LIBS=libs)
+        if env["PLATFORM"] == "darwin":
+            modEnv.Append(FRAMEWORKS=frameworks)
+
+        wrapCxx, wrapPy = modEnv.CXXFile(target=os.path.join(mod.path, "swig", modName), source=[os.path.join(mod.path, s) for s in mod.swigSources])
+        swig = modEnv.SharedLibrary(target=os.path.join(mod.path, "swig", modName), source=wrapCxx)[0]
+        # The builder returns a node list
+        ret["extModules"].append(swig)
+        ret["pythonModules"].append(wrapPy)
+
+    for progName, progSources in mod.progSources.items():
+        # Register program targets in the module
+
+        modEnv = env.Copy(CXXFLAGS=mod.cxxFlags, LINKFLAGS=mod.linkFlags)
+
+        # Prepend the CPPPATH so that directories containing headers are searched before those
+        # they are to be installed into, otherwise SCons might think it necessary to install
+        # them first
+
+        # disable building of apps' on macosx as those only cause problems...
+        #if env["PLATFORM"] == "darwin":
+        #    continue 
+
+        modEnv.Prepend(CPPPATH=[Dir("#").abspath] + cppPath)
+        if mod.libSources and env["PLATFORM"] != "darwin":
+            # Link against module library if defined
+            modEnv.Append(LIBS=modName, LIBPATH=mod.path, RPATH=rpathdirs)
+        elif mod.libSources and env["PLATFORM"] == "darwin":
+            # Do not use rpath on darwin, as it doesn't work
+            modEnv.Append(LIBS=[modName] + libs, LIBPATH=[mod.path] + libPath)
+            modEnv.Append(FRAMEWORKS=frameworks)
+ 
+        prog = modEnv.Program(target=os.path.join(mod.path, progName), source=\
+                [os.path.join(mod.path, s) for s in progSources])
+        # The builder returns a node list
+        ret["progs"].append(prog[0])
+
+    # Register headers to be installed for the module
+    ret["headers"] += [File(h, mod.path) for h in mod.libHeaders]
+    # Need to detect the 'dolfin.h' header file, and treat differently
+    for h in mod.libHeaders:
+        if h.endswith("dolfin.h"):
+            ret["main_header"] = File(h, mod.path)
+
+# set pythonScripts we want to install
+ret["pythonScripts"]  += scons.globFiles(Dir("#/app").srcnode().abspath, "*.py")
+# set python packagedirs we want to install (in site-packages)
+ret["pythonPackageDirs"] += [Dir("#site-packages")]
+
+# read SConscript in data.
+data = env.SConscript(os.path.join("#data", "SConscript"), exports=["env"])
+# set information about data we want to install
+ret["data"].extend([File(os.path.join("#data", f)) for f in data])
+
+## read SConscript for tests
+#tests = env.SConscript(os.path.join("#test", "SConscript"), exports=["env", "modules", "configuredPackages"])
+#ret["tests"].extend([File(os.path.join("#test", f)) for f in tests["pytests"]])
+## join the cpptests with regular progs.
+#ret["progs"].append([t for t in tests["cpptests"]])
+
+# read SConscript for docs if enabled
+ret["docs"] = []
+if env["enableDocs"]:
+    ret["docs"] += env.SConscript(os.path.join("#doc", "SConscript"), exports=["env"])
+
+# read the SConscript for demos if enabled
+ret["demos"] = []
+if env["enableDemos"]:
+    ret["demos"] += env.SConscript(os.path.join("#demo", "SConscript"),
+                                   exports=["env", "modules", "configuredPackages"])
+
+# generate a builder for the pycc pkg-config file.
+# TODO: The template-based generator can maybe be replaced with the
+# "builtin" generator (in simula-scons/_module
+# But look out for strange names... The default-name used by that
+# functionality is projectname_module -> dolfin_dolfin.pc...
+# sticking to the "old-style" (but renowed) for now:
+replacements = {}
+# set the dolfin-version. Bad place to have it, consider moving this!
+replacements['PACKAGE_VERSION'] = "0.7.2"
+# make all dependencies into a list, based on the configured Packages.
+replacements['PACKAGE_REQUIRES'] = " ".join(configuredPackages.keys())
+scons.pkgconfig.generate(env, replace=replacements)
+ret["pkgconfig"] = [env.PkgConfigGenerator("%s.pc.in" % (env["projectname"]))]
+
+# Return the big data dictionary. Actual targets will be run in SConstruct based 
+# on this information.
+Return("ret")
+
+# vim:ft=python sw=2 ts=2 

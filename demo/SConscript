@@ -1,0 +1,54 @@
+import os, glob
+
+Import("env")
+Import("configuredPackages")
+Import("modules")
+
+demos = []
+
+for modName, mod in modules.items():
+  libs, libPath, cppPath, frameworks = [], [], [], []
+
+  # this is needed to find dolfin.h
+  cppPath = ["..", os.path.abspath(os.path.join("..",modName)),
+             os.path.abspath(os.path.join("..",modName,"main"))]
+  for d in mod.dependencies:
+    if d in modules:
+      # Internal dependency
+      libs.append(d)
+      libPath.insert(0, modules[d].fullpath)
+      cppPath.insert(0, modules[d].fullpath)
+      
+    elif d in configuredPackages:
+      # External (configured) dependency
+      dep = configuredPackages[d]
+      libs += dep.libs[0]              # The libs
+      frameworks += list(dep.libs[1])  # The frameworks (Darwin)
+      libPath += dep.libPath
+      cppPath += dep.cppPath
+
+  modEnv = env.Copy(CXXFLAGS=mod.cxxFlags, LINKFLAGS=mod.linkFlags,
+                    CPPPATH=Dir("#"), LIBPATH=mod.fullpath, LIBS=modName)
+  modEnv.Append(LIBPATH=libPath)
+  modEnv.Append(CPPPATH=cppPath)
+  modEnv.Append(LIBS=libs)
+  if env["PLATFORM"] == "darwin":
+    modEnv.Append(FRAMEWORKS=frameworks)
+    modEnv.Append(CXXFLAGS=" -bind_at_load")
+    modEnv.Append(LDFLAGS=" -bind_at_load")
+  
+  # the cpp demos!
+  for dpath, dnames, fnames in os.walk(os.curdir):
+    if os.path.basename(dpath) == 'cpp':
+      if "main.cpp" in fnames:
+        demoSource = os.path.join(dpath,"main.cpp")
+        demos += modEnv.Program(target=os.path.join(dpath,"demo"),
+                                source=demoSource)
+        # Adding VTK format files from the cpp and python demos to clean target
+        Clean(demos[-1],glob.glob(os.path.join(dpath,"*.vtu")))
+        Clean(demos[-1],glob.glob(os.path.join(dpath,"*.pvd")))
+        Clean(demos[-1],glob.glob(os.path.join(dpath,os.pardir,"python","*.vtu")))
+        Clean(demos[-1],glob.glob(os.path.join(dpath,os.pardir,"python","*.pvd")))
+        # FIXME: add more?
+        
+Return("demos")

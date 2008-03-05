@@ -1,2 +1,0 @@
-SUBDIRS = reaction wave
-

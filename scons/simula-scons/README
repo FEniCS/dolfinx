@@ -1,0 +1,25 @@
+-------------------------------------------------------------------------------
+simula-scons - A SCons addon
+-------------------------------------------------------------------------------
+
+Overview:
+
+At Simula Research Laboratory, SCons (http://www.scons.org) is used for
+building several software packages. While we find SCons to be a favorable tool
+for our builds, we still need to implement some additional tools to make the
+buildprocess even smoother.
+
+Installation:
+
+The addon should be installed with distutils, running
+
+   python setup.py install [--prefix=<installation-dir>]
+
+-------------------------------------------------------------------------------
+
+Feedback:
+
+Please provide feedback either to developers found in the AUTHORS file, or to
+the pycc-dev@simula.no mailling list.
+
+Oslo, June 2007.
