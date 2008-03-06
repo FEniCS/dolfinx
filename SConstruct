@@ -6,12 +6,20 @@ from distutils import sysconfig
 # Make sure that we have a good scons-version
 EnsureSConsVersion(0, 96)
 
+# Import the local 'scons'
+try:
+  import simula_scons as scons
+except ImportError:
+  # Add simula-scons to sys.path and PYTHONPATH
+  os.environ["PYTHONPATH"] = \
+      os.pathsep.join([os.environ.get("PYTHONPATH",""),
+                       os.path.join(os.getcwd(),"scons","simula-scons")])
+  sys.path.insert(0, os.path.join(os.getcwd(),"scons","simula-scons"))
+  import simula_scons as scons
+ 
 # Import local exceptions
 from simula_scons.Errors import PkgconfigError, PkgconfigMissing
 
-# Import the local 'scons'
-import simula_scons as scons
- 
 # Create a SCons Environment based on the main os environment
 env = Environment(ENV=os.environ)
 
