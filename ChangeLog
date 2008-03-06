@@ -1,3 +1,4 @@
+ - Make progress bar less annoying
  - New scons-based build system replaces autotools
  - Fix bug when choosing iterative solver from Python
 0.7.2 [2008-02-18]
