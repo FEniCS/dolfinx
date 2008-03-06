@@ -131,12 +131,13 @@ void DirichletBC::apply(GenericMatrix& A, GenericVector& b,
 {
   // FIXME: How do we reuse the dof map for u?
 
+  std::string s;
   if (method == topological)
-    message("Applying Dirichlet boundary conditions to linear system.");
+    s = "Applying Dirichlet boundary conditions to linear system";
   else if (method == geometrical)
-    message("Applying Dirichlet boundary conditions to linear system (geometrical approach).");
+    s = "Applying Dirichlet boundary conditions to linear system (geometrical approach)";
   else
-    message("Applying Dirichlet boundary conditions to linear system (pointwise approach).");
+    s = "Applying Dirichlet boundary conditions to linear system (pointwise approach)";
   
   // Make sure we have the facet - cell connectivity
   const uint D = _mesh.topology().dim();
@@ -151,7 +152,7 @@ void DirichletBC::apply(GenericMatrix& A, GenericVector& b,
 
   if (method == pointwise)
   {
-    Progress p("Applying Dirichlet boundary conditions", _mesh.size(D));
+    Progress p(s, _mesh.size(D));
     for (CellIterator cell(_mesh); !cell.end(); ++cell)
     {
       computeBCPointwise(boundary_values, *cell, data);

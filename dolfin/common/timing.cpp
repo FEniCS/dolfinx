@@ -1,8 +1,8 @@
-// Copyright (C) 2003-2005 Anders Logg.
+// Copyright (C) 2003-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2003-12-21
-// Last changed: 2005-12-21
+// Last changed: 2008-03-06
 
 #include <ctime>
 #include <dolfin/log/dolfin_log.h>
@@ -41,5 +41,11 @@ real dolfin::tocd()
   cout << "Elapsed time: " << elapsed_time << " seconds" << endl;
 
   return elapsed_time;
+}
+//-----------------------------------------------------------------------------
+real dolfin::time()
+{
+  clock_t __toc_time = clock();
+  return ((real) (__toc_time)) / CLOCKS_PER_SEC;
 }
 //-----------------------------------------------------------------------------

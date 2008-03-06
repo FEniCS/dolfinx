@@ -1,8 +1,8 @@
-// Copyright (C) 2003-2007 Anders Logg and Jim Tilander.
+// Copyright (C) 2003-2008 Anders Logg and Jim Tilander.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2003-03-14
-// Last changed: 2007-05-14
+// Last changed: 2008-03-06
 
 #ifndef __PROGRESS_H
 #define __PROGRESS_H
@@ -68,11 +68,17 @@ namespace dolfin
     // Current position
     uint i;
 
-    // Minimum increment for progress bar
-    real step;
+    // Minimum progress increment
+    real p_step;
+
+    // Minimum time increment
+    real t_step;
 
     // Current progress
     real p;
+    
+    // Current time
+    real t;
     
   };
   

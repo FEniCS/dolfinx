@@ -125,8 +125,6 @@ void Assembler::assemble(GenericTensor& A, const ufc::form& form,
                          const MeshFunction<uint>* interior_facet_domains,
                          bool reset_tensor)
 {
-  message("Assembling rank %d form.", form.rank());
-
   // Note the importance of treating empty mesh functions as null pointers
   // for the PyDOLFIN interface.
   
@@ -166,7 +164,6 @@ void Assembler::assembleCells(GenericTensor& A,
   ufc::cell_integral* integral = ufc.cell_integrals[0];
 
   // Assemble over cells
-  message("Assembling over %d cells.", mesh.numCells());
   Progress p("Assembling over cells", mesh.numCells());
 
   //real t = toc();
@@ -206,8 +203,6 @@ void Assembler::assembleCells(GenericTensor& A,
 
   //t = toc() - t;
   //printf("assembly loop (s): %.3e\n", t);
-
-  message("Assembly over cells completed.");
 }
 //-----------------------------------------------------------------------------
 void Assembler::assembleExteriorFacets(GenericTensor& A,
@@ -229,7 +224,6 @@ void Assembler::assembleExteriorFacets(GenericTensor& A,
   BoundaryMesh boundary(mesh, vertex_map, cell_map);
   
   // Assemble over exterior facets (the cells of the boundary)
-  message("Assembling over %d exterior facets.", boundary.numCells());
   Progress p("Assembling over exterior facets", boundary.numCells());
   for (CellIterator boundary_cell(boundary); !boundary_cell.end(); ++boundary_cell)
   {
@@ -272,7 +266,6 @@ void Assembler::assembleExteriorFacets(GenericTensor& A,
 
     p++;  
   }
-  message("Assembly over exterior facets completed.");
 }
 //-----------------------------------------------------------------------------
 void Assembler::assembleInteriorFacets(GenericTensor& A,
@@ -294,7 +287,6 @@ void Assembler::assembleInteriorFacets(GenericTensor& A,
   mesh.order();
   
   // Assemble over interior facets (the facets of the mesh)
-  message("Assembling over %d interior facets.", mesh.numFacets());
   Progress p("Assembling over interior facets", mesh.numFacets());
   for (FacetIterator facet(mesh); !facet.end(); ++facet)
   {
@@ -350,7 +342,6 @@ void Assembler::assembleInteriorFacets(GenericTensor& A,
 
     p++;
   }
-  message("Assembly over interior facets completed.");
 }
 //-----------------------------------------------------------------------------
 void Assembler::check(const ufc::form& form,
