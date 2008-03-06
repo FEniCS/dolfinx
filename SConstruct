@@ -9,6 +9,7 @@ EnsureSConsVersion(0, 96)
 # Import the local 'scons'
 try:
   import simula_scons as scons
+  print scons.__file__
 except ImportError:
   # Add simula-scons to sys.path and PYTHONPATH
   os.environ["PYTHONPATH"] = \
@@ -16,6 +17,7 @@ except ImportError:
                        os.path.join(os.getcwd(),"scons","simula-scons")])
   sys.path.insert(0, os.path.join(os.getcwd(),"scons","simula-scons"))
   import simula_scons as scons
+  print scons.__file__
  
 # Import local exceptions
 from simula_scons.Errors import PkgconfigError, PkgconfigMissing
