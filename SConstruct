@@ -61,11 +61,11 @@ options = [
     # disabled here, that will override scons.cfg. Remark that unless the
     # module is listed as OptDependencies in scons.cfg, the whole module
     # will be turned off.
-    BoolOption("enablePetsc", "Compile with support for PETSc linear algebra", "no"),
-    BoolOption("enableSlepc", "Compile with support for SLEPc", "no"),
-    BoolOption("enableScotch", "Compile with support for Scotch", "no"),
-    BoolOption("enableGts", "Compile with support for GTS", "no"),
-    BoolOption("enableUmfpack", "Compile with support for UMFPACK", "no"),
+    BoolOption("enablePetsc", "Compile with support for PETSc linear algebra", "yes"),
+    BoolOption("enableSlepc", "Compile with support for SLEPc", "yes"),
+    BoolOption("enableScotch", "Compile with support for Scotch", "yes"),
+    BoolOption("enableGts", "Compile with support for GTS", "yes"),
+    BoolOption("enableUmfpack", "Compile with support for UMFPACK", "yes"),
     BoolOption("enablePydolfin", "Compile the python wrappers of Dolfin", "yes"),
     # some of the above may need extra options (like petscDir), should we
     # try to get that from pkg-config?
