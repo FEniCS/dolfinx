@@ -9,7 +9,6 @@ EnsureSConsVersion(0, 96)
 # Import the local 'scons'
 try:
   import simula_scons as scons
-  print scons.__file__
 except ImportError:
   # Add simula-scons to sys.path and PYTHONPATH
   os.environ["PYTHONPATH"] = \
@@ -17,7 +16,6 @@ except ImportError:
                        os.path.join(os.getcwd(),"scons","simula-scons")])
   sys.path.insert(0, os.path.join(os.getcwd(),"scons","simula-scons"))
   import simula_scons as scons
-  print scons.__file__
  
 # Import local exceptions
 from simula_scons.Errors import PkgconfigError, PkgconfigMissing
@@ -25,10 +23,10 @@ from simula_scons.Errors import PkgconfigError, PkgconfigMissing
 # Create a SCons Environment based on the main os environment
 env = Environment(ENV=os.environ)
 
-scons.setDefaultEnv(env)
-
 # Set a projectname. Used in some places, like pkg-config generator
 env["projectname"] = "dolfin"
+
+scons.setDefaultEnv(env)
 
 # Specify a file where SCons store file signatures, used to figure out what is
 # changed. We store it in the 'scons' subdirectory to avoid mixing signatures
@@ -89,6 +87,7 @@ options = [
     ("SSLOG", "Set Simula scons log file", os.path.join(os.getcwd(),"scons","simula_scons.log")),
     ]
 
+
 # This Configure class handles both command-line options (which are merged into 
 # the environment) and autoconf-style tests. A special feature is that it
 # remembers configuration parameters (options and results from tests) between
@@ -99,6 +98,10 @@ configure = scons.Configure(env, ARGUMENTS, options)
 scons.logOpen(env)
 scons.log("=================== %s log ===================" % env["projectname"])
 scons.logDate()
+
+# Writing the simula_scons used to the log:
+scons.log("Using simula_scons from: %s" % scons.__file__)
+
 
 # If we are in very-clean mode, remove the sconsign file. 
 if env.GetOption("clean"):

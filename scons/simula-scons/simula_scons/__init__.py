@@ -722,7 +722,9 @@ def resolveCompiler(configuredPackages, packcfgObjs, sconsEnv):
           dep_packcfg = packcfgObjs[pack]
           dep_packgen.pkgTests(forceCompiler=compiler, sconsEnv=sconsEnv,
                                cflags=dep_packcfg.cflags(), libs=dep_packcfg.ldflags())
-        except:
+        except Exception, msg:
+          log2("Some tests failed for package '%s'. Discarding package." % pack)
+          log2(msg)
           flag = False
         if flag:
           verifiedPackages[pack] = dep
@@ -741,8 +743,9 @@ def resolveCompiler(configuredPackages, packcfgObjs, sconsEnv):
               vdep_packcfg = packcfgObjs[pack]
               vdep_packgen.pkgTests(forceCompiler=dep.compiler, sconsEnv=sconsEnv,
                                     cflags=vdep_packcfg.cflags(), libs=vdep_packcfg.ldflags())
-            except:
+            except Exception, msg:
               log2("Some tests failed for package '%s'. Discarding package." % pack)
+              log2(msg)
               flag = False
               break
           if flag:
@@ -763,9 +766,10 @@ def resolveCompiler(configuredPackages, packcfgObjs, sconsEnv):
           dep_packgen.pkgTests(forceCompiler=compiler, sconsEnv=sconsEnv,
                                cflags=dep_packcfg.cflags(), libs=dep_packcfg.ldflags())
           verifiedPackages[pack] = dep
-        except:
+        except Exception, msg:
           # Cannot compile, link, or run package. Discard it.
           log2("Some tests failed for package '%s'. Discarding package." % pack)
+          log2(msg)
           continue
       except PkgconfigGeneratorMissing:
         # This dep does not have its own pkg-config generator. Treat as verified?
@@ -789,8 +793,9 @@ def resolveCompiler(configuredPackages, packcfgObjs, sconsEnv):
           vdep_packcfg = packcfgObjs[pack]
           vdep_packgen.pkgTests(forceCompiler=dep.compiler, sconsEnv=sconsEnv,
                                 cflags=vdep_packcfg.cflags(), libs=vdep_packcfg.ldflags())
-        except:
+        except Exception, msg:
           log2("Some tests failed for package '%s'. Discarding package." % pack)
+          log2(msg)
           flag = False
           break
       if flag:
