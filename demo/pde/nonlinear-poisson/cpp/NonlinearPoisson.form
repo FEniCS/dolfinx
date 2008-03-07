@@ -4,7 +4,7 @@
 # The linearised bilinear form a(v, U) and linear form L(v) for
 # the nonlinear equation - div (1+u^2) grad u = f
 #
-# Compile this form with FFC: ffc NonlinearPoisson.form.
+# Compile this form with FFC: ffc -l dolfin NonlinearPoisson.form.
 
 element = FiniteElement("Lagrange", "triangle", 1)
 

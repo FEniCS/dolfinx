@@ -7,7 +7,7 @@
 # The linearised bilinear form a(v, U) and linear form L(v) for
 # the Cahn-Hilliard equation.
 #
-# Compile this form with FFC: ffc CahnHilliard.form.
+# Compile this form with FFC: ffc -l dolfin CahnHilliard.form
 
 P1 = FiniteElement("Lagrange", "tetrahedron", 1)
 P2 = FiniteElement("Lagrange", "tetrahedron", 1)

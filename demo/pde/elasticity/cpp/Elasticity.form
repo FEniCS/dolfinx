@@ -7,7 +7,7 @@
 # Last changed: 2007-04-18
 #
 # The bilinear form for classical linear elasticity (Navier).
-# Compile this form with FFC: ffc Elasticity.form.
+# Compile this form with FFC: ffc -l dolfin Elasticity.form.
 
 element = VectorElement("Lagrange", "tetrahedron", 1)
 

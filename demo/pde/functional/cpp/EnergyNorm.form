@@ -4,7 +4,7 @@
 # This example demonstrates how to define a functional, here
 # the energy norm (squared) for a reaction-diffusion problem.
 #
-# Compile this form with FFC: ffc EnergyNorm.form
+# Compile this form with FFC: ffc -l dolfin EnergyNorm.form
 
 element = FiniteElement("Lagrange", "triangle", 2)
 
