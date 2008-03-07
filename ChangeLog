@@ -1,3 +1,4 @@
+ - Fix bug in assembling over exterior facets (subdomains were ignored)
  - Make progress bar less annoying
  - New scons-based build system replaces autotools
  - Fix bug when choosing iterative solver from Python

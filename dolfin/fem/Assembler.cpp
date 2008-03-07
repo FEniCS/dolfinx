@@ -1,16 +1,17 @@
-// Copyright (C) 2007 Anders Logg.
+// Copyright (C) 2007-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells, 2007
 // Modified by Ola Skavhaug, 2007
 //
 // First added:  2007-01-17
-// Last changed: 2007-12-21
+// Last changed: 2008-03-07
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Array.h>
 #include <dolfin/la/GenericTensor.h>
 #include <dolfin/la/Scalar.h>
+#include <dolfin/la/SparsityPattern.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Facet.h>
@@ -21,7 +22,6 @@
 #include "Form.h"
 #include "UFC.h"
 #include "Assembler.h"
-#include <dolfin/la/SparsityPattern.h>
 #include "SparsityPatternBuilder.h"
 #include "DofMapSet.h"
 
@@ -259,7 +259,7 @@ void Assembler::assembleExteriorFacets(GenericTensor& A,
       dof_map_set[i].tabulate_dofs(ufc.dofs[i], mesh_cell);    
 
     // Tabulate exterior facet tensor
-    ufc.exterior_facet_integrals[0]->tabulate_tensor(ufc.A, ufc.w, ufc.cell, local_facet);
+    integral->tabulate_tensor(ufc.A, ufc.w, ufc.cell, local_facet);
 
     // Add entries to global tensor
     A.add(ufc.A, ufc.local_dimensions, ufc.dofs);
