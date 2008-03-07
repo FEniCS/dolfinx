@@ -66,8 +66,8 @@ swigFlags = "-python -c++ -shadow -Iinclude/swig".split()
 out, err = scons.runCommand("swig", "-version")
 # Determine swig version, v 1.3.28 and later supports -O flag
 m = re.match(r"SWIG Version (.+)", out, re.M)
-if scons.checkVersion(m.group(1), "1.3.28"):
-    swigFlags.append("-O")
+#if scons.checkVersion(m.group(1), "1.3.28"):
+#    swigFlags.append("-O")
 
 swigEnv = env.Copy()
 swigEnv["SWIGFLAGS"] = swigFlags
