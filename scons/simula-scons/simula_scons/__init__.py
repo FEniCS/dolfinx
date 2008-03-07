@@ -740,7 +740,7 @@ def resolveCompiler(configuredPackages, packcfgObjs, sconsEnv):
               log2("No pkg-config generator for package '%s'. Assuming Ok." % vpack)
               continue
             try:
-              vdep_packcfg = packcfgObjs[pack]
+              vdep_packcfg = packcfgObjs[vpack]
               vdep_packgen.pkgTests(forceCompiler=dep.compiler, sconsEnv=sconsEnv,
                                     cflags=vdep_packcfg.cflags(), libs=vdep_packcfg.ldflags())
             except Exception, msg:
@@ -790,7 +790,7 @@ def resolveCompiler(configuredPackages, packcfgObjs, sconsEnv):
           log2("No pkg-config generator for package '%s'. Assuming Ok." % pack)
           continue
         try:
-          vdep_packcfg = packcfgObjs[pack]
+          vdep_packcfg = packcfgObjs[vpack]
           vdep_packgen.pkgTests(forceCompiler=dep.compiler, sconsEnv=sconsEnv,
                                 cflags=vdep_packcfg.cflags(), libs=vdep_packcfg.ldflags())
         except Exception, msg:
