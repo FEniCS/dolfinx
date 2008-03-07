@@ -50,7 +50,7 @@ return 0;
   compileFailed, cmdoutput = commands.getstatusoutput(cmdstr)
   if compileFailed:
     msg = ("Unable to compile some Boost tests, using '%s' as " + \
-           "location for Boost includes.") % getBoostDir()
+           "cflags for Boost includes.") % cflags
     raise UnableToCompileException(msg, cmdoutput)
 
   runFailed, cmdoutput = commands.getstatusoutput("./a.out")
@@ -88,10 +88,10 @@ def pkgTests(forceCompiler=None, sconsEnv=None,
   else:
     compiler, linker = set_forced_compiler(forceCompiler)
 
-  if not version:
-    version = pkgVersion(compiler=compiler)
   if not cflags:
     cflags = pkgCflags()
+  if not version:
+    version = pkgVersion(compiler=compiler, cflags=cflags)
   if not libs:
     libs = pkgLibs()
   
@@ -115,7 +115,7 @@ int main() {
   compileFailed, cmdoutput = commands.getstatusoutput(cmdstr)
   if compileFailed:
     msg = ("Unable to compile some Boost tests, using '%s' as " + \
-          "location for Boost includes.") % getBoostDir()
+          "cflags for Boost includes.") % cflags
     raise UnableToCompileException(msg, cmdoutput)
 
   runFailed, cmdoutput = commands.getstatusoutput("./a.out")
