@@ -1030,7 +1030,7 @@ def resolveModuleDependencies(modules, configuredPackages, packcfgObjs,
     for modName,mod in new_modules.items():
         if isinstance(mod.optDependencies, dict):
             for package,request_version in mod.optDependencies.items():
-                print "%s, an optional dependency for %s with version %s, is" % (package,modName,request_version), 
+                found = False
                 if configuredPackages.has_key(package):
                     if request_version: # requested version is not None
                         if checkVersion(configuredPackages[package].version, request_version):
@@ -1038,38 +1038,42 @@ def resolveModuleDependencies(modules, configuredPackages, packcfgObjs,
                             mod.cxxFlags += " -DHAS_%s=1" % (package.upper())
                             mod.swigFlags.append("-DHAS_%s=1" % (package.upper()))
                             addToDependencies(mod.dependencies,package)
-                            print "found"
+                            found = True
                     else:
                         # Add cxxflags, and add package as a regular dependency.
                         mod.cxxFlags += " -DHAS_%s=1" % (package.upper())
                         mod.swigFlags.append("-DHAS_%s=1" % (package.upper()))
                         addToDependencies(mod.dependencies,package)
-                        print "found"
+                        found = True
                 elif internalmodules.has_key(package):
                     # Add cxxflags, and add package as a regular dependency.
                     mod.cxxFlags += " -DHAS_%s=1" % (package.upper())
                     mod.swigFlags.append("-DHAS_%s=1" % (package.upper()))
                     addToDependencies(mod.dependencies,package)
-                    print "found"
+                    found = True
                 else:
-                    print "not found"
+                    found = False
+                if not found:
+                    print "Unable to find optional package: %s (version %s)" % (package,request_version)
         else:
             for package in mod.optDependencies:
-                print "%s, an optional dependency for %s, is" % (package,modName),
+                found = False
                 if configuredPackages.has_key(package):
                     # Add cxxflags, and add package as a regular dependency.
                     mod.cxxFlags += " -DHAS_%s=1" % (package.upper())
                     mod.swigFlags.append("-DHAS_%s=1" % (package.upper()))
                     addToDependencies(mod.dependencies,package)
-                    print "found"
+                    found = True
                 elif internalmodules.has_key(package):
                     # Add cxxflags, and add package as a regular dependency.
                     mod.cxxFlags += " -DHAS_%s=1" % (package.upper())
                     mod.swigFlags.append("-DHAS_%s=1" % (package.upper()))
                     addToDependencies(mod.dependencies,package)
-                    print "found"
+                    found = True
                 else:
-                    print "not found"
+                    found = False
+                if not found:
+                    print "Unable to find optional package: %s" % package
 
     return new_modules, sconsEnv
 
