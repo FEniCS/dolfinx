@@ -56,6 +56,7 @@ This gives convenient expand/collapse of bullets by pressing TAB.
 
 * Function
 
+** Assignment from other than discrete functions (use evaluate_dof)
 ** Input/output for time-series
 ** Tensor-valued functions
 ** 'quadrature' function
