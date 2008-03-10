@@ -254,17 +254,12 @@ env.Command("runtests", buildDataHash["shlibs"] + buildDataHash["extModules"],
             Action(_runTests, scons._strRuntests))
 
 # Create helper file for setting environment variables
-f= open('dolfin.conf', 'w')
 pyversion=".".join([str(s) for s in sys.version_info[0:2]])
+f = open('dolfin.conf', 'w')
 f.write('export PATH="'            + prefix + 'bin:$PATH"\n')
 f.write('export LD_LIBRARY_PATH="' + prefix + 'lib:$LD_LIBRARY_PATH"\n')
 f.write('export PKG_CONFIG_PATH="' + prefix + 'lib/pkgconfig:$PKG_CONFIG_PATH"\n')
 f.write('export PYTHONPATH="'      + prefix + 'lib/python'    + pyversion + '/site-packages:$PYTHONPATH"\n')
-
-print 'export PATH="'            + prefix + 'bin:$PATH"'
-print 'export LD_LIBRARY_PATH="' + prefix + 'lib:$LD_LIBRARY_PATH"'
-print 'export PKG_CONFIG_PATH="' + prefix + 'lib/pkgconfig:$PKG_CONFIG_PATH"'
-print 'export PYTHONPATH="'      + prefix + 'lib/python'    + pyversion + '/site-packages:$PYTHONPATH"'
 f.close()
 
 # Close log file
