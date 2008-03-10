@@ -6,7 +6,7 @@
 // Modified by Garth N. Wells 2007.
 //
 // First added:  2006-05-08
-// Last changed: 2008-02-04
+// Last changed: 2008-03-10
 
 #ifndef __MESH_H
 #define __MESH_H
@@ -42,6 +42,14 @@ namespace dolfin
   /// When working with mesh iterators, all entities and connectivity
   /// are precomputed automatically the first time an iterator is
   /// created over any given topological dimension or connectivity.
+  ///
+  /// Note that for efficiency, only entities of dimension zero
+  /// (vertices) and entities of the maximal dimension (cells) exist
+  /// when creating a Mesh. Other entities must be explicitly created
+  /// by calling init(). For example, all edges in a mesh may be created
+  /// by a call to mesh.init(1). Similarly, connectivities such as
+  /// all edges connected to a given vertex must also be explicitly
+  /// created (in this case by a call to mesh.init(0, 1)).
   
   class Mesh : public Variable
   {
