@@ -44,7 +44,7 @@ get_petsc_include:
 	-@echo  -I${PETSC_DIR}/bmake/${PETSC_ARCH} -I${PETSC_DIR}/include ${MPI_INCLUDE}
 
 get_petsc_libs:
-	-@echo   ${C_SH_LIB_PATH} -L${PETSC_LIB_DIR} ${PETSC_LIB_BASIC}
+	-@echo   ${C_SH_LIB_PATH} -L${PETSC_LIB_DIR} ${PETSC_LIB_BASIC} ${PETSC_TS_LIB}
 
 get_petsc_cc:
 	-@echo ${PCC}
