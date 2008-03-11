@@ -1,75 +1,43 @@
 Contents
 
     1. Installation
-    2. Installation
-    3. Compabitility
-    4. License
-    5. Feedback
-    6. About
+    2. License
+    3. Feedback
+    4. About
 
 -------------------------------------------------------------------------------
-1. Dependencies
+1. Installation
 
-Dependencies are listed at http://www.fenics.org/wiki/DOLFIN
+To build DOLFIN, run
 
--------------------------------------------------------------------------------
-2. Installation
+    scons
 
-DOLFIN follows GNU standard, so the installation procedure is simple:
+After a successful build, you may install DOLFIN by running
 
-    ./configure
-    make
+    scons install prefix=<somewhere>
 
-followed by an optional
+For detailed installation instructions, see
 
-    make install
-
-Type ./configure --help for a list of available options.
-More information is availabel in the file INSTALL.
-
-Optionally, you may install DOLFIN locally in the current source
-tree, which is a convenient way of running the demos without needing
-to install DOLFIN on your system:
-
-    ./configure.local
-    make
-    make install
-    make demo
-
-Note that you need to add the directory `pwd`/local/bin/ to your
-path. (You will be reminded of this when running ./configure.local.)
+    <insert page here after removing old autotools page on wiki>
 
 ------------------------------------------------------------------------------
-3. Compatibility
-
- - When compiling on non-Linux systems, you may need to use gmake
-   instead of make.
-
- - When compiling with g++ (gcc), you may need version 3.4 or higher.
-
-------------------------------------------------------------------------------
-4. License
+2. License
 
 DOLFIN is licensed under the GNU LGPL Version 2.1, see http://www.gnu.org.
 
 -------------------------------------------------------------------------------
-5. Feed back
+3. Feed back
 
 Feed back, patches, and comments should be sent to
 
     dolfin-dev@fenics.org
 
 ------------------------------------------------------------------------------
-6. About
+4. About
 
 A hopefully complete list of authors is given in the file AUTHORS.
 
 For more information about DOLFIN, visit
 
     http://www.fenics.org/dolfin/
-
-
--------------------------------------------------------------------------------
-Oslo/Delft
-June 2007
-
+------------------------------------------------------------------------------
