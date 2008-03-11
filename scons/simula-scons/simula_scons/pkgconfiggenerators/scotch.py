@@ -52,7 +52,6 @@ def pkgTests(forceCompiler=None, sconsEnv=None, **kwargs):
   # Simple test-program that try to include the main scotch header
   cpp_test_include_str = r"""
 extern "C" {
-#include <common.h>
 #include <scotch.h>
 }
 int main() {
@@ -63,7 +62,6 @@ int main() {
   # Test that I can call a scotch function
   cpp_test_lib_str = r"""
 extern "C" {
-#include <common.h>
 #include <scotch.h>
 }
 #include <iostream>
@@ -92,7 +90,7 @@ int main() {
   if os.environ.has_key('SCOTCH_DIR'):
     scotch_dir = os.environ['SCOTCH_DIR']
   else:
-    scotch_dir = os.path.join(os.path.sep, "usr", "local", "scotch")
+    scotch_dir = os.path.join(os.path.sep, "usr", "local")
   scotch_libs = scotch_dir
   scotch_includes = scotch_dir
 
