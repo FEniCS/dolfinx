@@ -26,25 +26,28 @@ log_file = None
 def logOpen(env):
     global log_file
 
-    if env['SSLOG'] == '':
-        log_file = sys.stdout
-    elif log_file == None:
-        log_file = open(env['SSLOG'], 'w+')
-    elif log_file.closed:
-        log_file = open(env['SSLOG'], 'a+')
+    if env.has_key('SSLOG'):
+        if env['SSLOG'] == '':
+            log_file = sys.stdout
+        elif log_file == None:
+            log_file = open(env['SSLOG'], 'w+')
+        elif log_file.closed:
+            log_file = open(env['SSLOG'], 'a+')
 
 def log(s):
-    log_file.write("%s\n" % s)
+    if log_file is not None:
+        log_file.write("%s\n" % s)
 
 def log2(s):
-    calling_func_name = sys._getframe(1).f_code.co_name
-    log_file.write("%s: %s\n" % (calling_func_name,s))
+    if log_file is not None:
+        calling_func_name = sys._getframe(1).f_code.co_name
+        log_file.write("%s: %s\n" % (calling_func_name,s))
 
 def logDate():
     log(datetime.datetime.now())
 
 def logClose():
-    if log_file != sys.stdout:
+    if log_file != sys.stdout and log_file is not None:
         log_file.close()
 
 def runCommand(command, args, captureOutput=True):
@@ -1027,6 +1030,8 @@ def resolveModuleDependencies(modules, configuredPackages, packcfgObjs,
     # for the remaining modules we need to check whether optional dependencies
     # was specified, and if so se if we can resolve these. If we can resolve
     # them, we have to add '-DHAS_<module>' to cxx-flags.
+    found_packages = []
+    not_found_packages = []
     for modName,mod in new_modules.items():
         if isinstance(mod.optDependencies, dict):
             for package,request_version in mod.optDependencies.items():
@@ -1054,9 +1059,9 @@ def resolveModuleDependencies(modules, configuredPackages, packcfgObjs,
                 else:
                     found = False
                 if not found:
-                    print "Unable to find optional package: %s (version %s)" % (package,request_version)
+                    not_found_packages.append("%s (version %s)" % (package,request_version))
                 else:
-                    print "Found optional package: %s (version %s)" % (package,request_version)
+                    found.append("%s (version %s)" % (package,request_version))
         else:
             for package in mod.optDependencies:
                 found = False
@@ -1075,9 +1080,14 @@ def resolveModuleDependencies(modules, configuredPackages, packcfgObjs,
                 else:
                     found = False
                 if not found:
-                    print "Unable to find optional package: %s" % package
+                    not_found_packages.append(package)
                 else:
-                    print "Found optional package: %s" % package
+                    found_packages.append(package)
+
+    for package in found_packages:
+        print "Found optional package: %s" % package
+    for package in not_found_packages:
+        print "Unable to find optional package: %s" % package
 
     return new_modules, sconsEnv
 
