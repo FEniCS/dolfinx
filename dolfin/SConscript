@@ -259,6 +259,8 @@ replacements['PACKAGE_VERSION'] = "0.7.2"
 replacements['PACKAGE_REQUIRES'] = " ".join(configuredPackages.keys())
 scons.pkgconfig.generate(env, replace=replacements)
 ret["pkgconfig"] = [env.PkgConfigGenerator("%s.pc.in" % (env["projectname"]))]
+# make sure the dolfin.pc file is updated according to the configured packages.
+env.Depends(ret["pkgconfig"][0], Value(configuredPackages.keys()))
 
 # Return the big data dictionary. Actual targets will be run in SConstruct based 
 # on this information.
