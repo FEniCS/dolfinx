@@ -155,7 +155,7 @@ def pkgLibs(**kwargs):
 
 def pkgCflags(**kwargs):
   includes, libs, compiler, linker = getPetscVariables()
-  return cflags
+  return includes
 
 def pkgCompiler(**kwargs):
   includes, libs, compiler, linker = getPetscVariables()
