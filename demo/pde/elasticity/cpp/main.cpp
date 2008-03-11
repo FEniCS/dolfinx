@@ -10,7 +10,6 @@
 
 #include <dolfin.h>
 #include "Elasticity.h"
-//#include "ElasticityStrain.h"
 
 using namespace dolfin;
 
@@ -79,7 +78,7 @@ int main()
   };
 
   // Read mesh
-  Mesh mesh("../../../../../data/meshes/gear.xml.gz");
+  Mesh mesh("../../../../data/meshes/gear.xml.gz");
   
   // Create right-hand side
   Function f(mesh, 0.0);
