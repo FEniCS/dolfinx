@@ -1055,6 +1055,8 @@ def resolveModuleDependencies(modules, configuredPackages, packcfgObjs,
                     found = False
                 if not found:
                     print "Unable to find optional package: %s (version %s)" % (package,request_version)
+                else:
+                    print "Found optional package: %s (version %s)" % (package,request_version)
         else:
             for package in mod.optDependencies:
                 found = False
@@ -1074,6 +1076,8 @@ def resolveModuleDependencies(modules, configuredPackages, packcfgObjs,
                     found = False
                 if not found:
                     print "Unable to find optional package: %s" % package
+                else:
+                    print "Found optional package: %s" % package
 
     return new_modules, sconsEnv
 
