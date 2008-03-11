@@ -151,12 +151,10 @@ int main() {
 
 def pkgLibs(**kwargs):
   includes, libs, compiler, linker = getPetscVariables()
-  libs = " ".join(set(libs.split()))  # remove duplicates
   return libs
 
 def pkgCflags(**kwargs):
   includes, libs, compiler, linker = getPetscVariables()
-  cflags = " ".join(set(includes.split()))  # remove duplicates
   return cflags
 
 def pkgCompiler(**kwargs):

@@ -209,8 +209,6 @@ def pkgCflags(**kwargs):
     cflags += " -I%s" % getAMDIncDir()
   if needUFconfig():
     cflags += " -I%s" % getUFconfigIncDir()
-  # remove duplicates in string:
-  cflags = " ".join(set(cflags.split()))
   return cflags
 
 def getATLASDir():
@@ -222,17 +220,14 @@ def getATLASDir():
   return atlaslocation
 
 def pkgLibs(**kwargs):
-  libs = "-L%s -lumfpack" % getUmfpackLibDir()
-  if needAMD():
-    libs += " -L%s -lamd" % getAMDLibDir()
-  
+  libs = ""
   if get_architecture() == "darwin":
-    libs += " -framework vecLib"
+    libs += "-framework vecLib"
   else:
-    libs += " -L%s -lblas -llapack" % getATLASDir()
-
-  # remove duplicates in string:
-  libs = " ".join(set(libs.split()))
+    libs += "-L%s -lblas -llapack" % getATLASDir()
+  libs += " -L%s -lumfpack" % getUmfpackLibDir()
+  if needAMD():
+    libs += " -L%s -lamd" % getAMDLibDir() 
   return libs
 
 def pkgTests(forceCompiler=None, sconsEnv=None,
@@ -258,7 +253,7 @@ def pkgTests(forceCompiler=None, sconsEnv=None,
   if not libs:
     libs = pkgLibs()
   if not version:
-    version = pkgVersion(compiler=compiler, cflags=cflags, libs=libs)
+    version = pkgVersion(compiler=compiler, cflags=cflags, libs=libs, sconsEnv=sconsEnv)
 
   # a program that do a real umfpack test.
   cpp_test_lib_str = r"""
