@@ -12,7 +12,7 @@ __license__  = "GNU LGPL Version 2.1"
 from dolfin import *
 
 # Load mesh and create finite element
-mesh = Mesh("../../../../../data/meshes/gear.xml.gz")
+mesh = Mesh("../../../../data/meshes/gear.xml.gz")
 element = VectorElement("Lagrange", "tetrahedron", 1)
 
 # Dirichlet boundary condition for clamp at left end
