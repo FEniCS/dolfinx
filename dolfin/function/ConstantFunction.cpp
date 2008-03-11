@@ -1,8 +1,8 @@
-// Copyright (C) 2006-2007 Anders Logg.
+// Copyright (C) 2006-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-02-09
-// Last changed: 2007-04-24
+// Last changed: 2008-03-11
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/mesh/Mesh.h>
@@ -12,7 +12,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 ConstantFunction::ConstantFunction(Mesh& mesh, real value)
-  : GenericFunction(mesh), ufc::function(), value(value), size(1)
+  : GenericFunction(mesh), ufc::function(), value(value), size(0)
 {
   // Do nothing
 }
@@ -38,6 +38,10 @@ void ConstantFunction::interpolate(real* values)
 {
   dolfin_assert(values);
 
+  // Check size
+  if (size == 0)
+    error("Size (number of components) of constant function unknown, unable to interpolate.");
+
   // Set all vertex values to the constant value
   const uint num_values = size*mesh.numVertices();
   for (uint i = 0; i < num_values; i++)
@@ -60,15 +64,25 @@ void ConstantFunction::interpolate(real* coefficients,
     coefficients[i] = finite_element.evaluate_dof(i, *this, cell);
 }
 //-----------------------------------------------------------------------------
-void ConstantFunction::evaluate(real* values,
-                                const real* coordinates,
-                                const ufc::cell& cell) const
+void ConstantFunction::eval(real* values, const real* x) const
 {
   dolfin_assert(values);
-  dolfin_assert(coordinates);
+  dolfin_assert(x);
+
+  // Check size
+  if (size == 0)
+    error("Size (number of components) of constant function unknown, unable to evaluate.");
 
   // Set all values to the constant value
   for (uint i = 0; i < size; i++)
     values[i] = value;
+}
+//-----------------------------------------------------------------------------
+void ConstantFunction::evaluate(real* values,
+                                const real* coordinates,
+                                const ufc::cell& cell) const
+{
+  // Call eval(), cell ignored
+  eval(values, coordinates);
 }
 //-----------------------------------------------------------------------------

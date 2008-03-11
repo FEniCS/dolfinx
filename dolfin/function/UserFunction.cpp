@@ -1,8 +1,8 @@
-// Copyright (C) 2005-2007 Anders Logg.
+// Copyright (C) 2005-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005-11-26
-// Last changed: 2007-08-28
+// Last changed: 2008-03-11
 //
 // Note: this breaks the standard envelope-letter idiom slightly,
 // since we call the envelope class from one of the letter classes.
@@ -76,6 +76,14 @@ void UserFunction::interpolate(real* coefficients,
     coefficients[i] = finite_element.evaluate_dof(i, *this, cell);
 }
 //-----------------------------------------------------------------------------
+void UserFunction::eval(real* values, const real* x) const
+{
+  message("Calling user function");
+
+  // Call user-overloaded eval function in Function
+  f->eval(values, x);
+}
+//-----------------------------------------------------------------------------
 void UserFunction::evaluate(real* values,
                             const real* coordinates,
                             const ufc::cell& cell) const
@@ -89,7 +97,7 @@ void UserFunction::evaluate(real* values,
   for (uint i = 0; i < f->rank(); i++)
     size *= f->dim(i);
 
-  // Call overloaded eval function
+  // Call user-overloaded eval function in Function
   simple_array<real> v(size, values);
   simple_array<real> x(cell.geometric_dimension, const_cast<real*>(coordinates));
   f->eval(v, x);

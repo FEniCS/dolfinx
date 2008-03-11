@@ -1,10 +1,10 @@
-// Copyright (C) 2007 Anders Logg.
+// Copyright (C) 2007-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells 2005-2007.
 //
 // First added:  2003-11-28
-// Last changed: 2008-01-03
+// Last changed: 2008-03-11
 //
 // The class Function serves as the envelope class and holds a pointer
 // to a letter class that is a subclass of GenericFunction. All the
@@ -235,8 +235,18 @@ void Function::interpolate(real* coefficients,
 //-----------------------------------------------------------------------------
 void Function::eval(real* values, const real* x) const
 {
-  // Try scalar function if not overloaded
-  values[0] = eval(x);
+  if (!f)
+    error("Function contains no data.");
+  
+  // Try scalar version for user-defined function if not overloaded.
+  // Otherwise, call eval() function in implementation. Note that we
+  // must check if we have a user-defined function or we will go into
+  // a loop between Function and UserFunction...
+
+  if (_type == user)
+    values[0] = eval(x);
+  else
+    f->eval(values, x);
 }
 //-----------------------------------------------------------------------------
 dolfin::real Function::eval(const real* x) const
@@ -247,7 +257,7 @@ dolfin::real Function::eval(const real* x) const
 //-----------------------------------------------------------------------------
 const Cell& Function::cell() const
 {
-   if (!_cell)
+  if (!_cell)
     error("Current cell is unknown (only available during assembly).");
   
   return *_cell;

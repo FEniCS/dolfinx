@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2007.
 //
 // First added:  2007-04-02
-// Last changed: 2008-01-03
+// Last changed: 2008-03-11
 
 #ifndef __DISCRETE_FUNCTION_H
 #define __DISCRETE_FUNCTION_H
@@ -69,6 +69,9 @@ namespace dolfin
     void interpolate(real* coefficients,
                      const ufc::cell& cell,
                      const ufc::finite_element& finite_element);
+
+    /// Evaluate function at given point
+    void eval(real* values, const real* x) const;
 
     /// Return vector
     Vector& vector() const;

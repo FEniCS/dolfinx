@@ -1,8 +1,8 @@
-// Copyright (C) 2006-2007 Anders Logg.
+// Copyright (C) 2006-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-02-09
-// Last changed: 2007-04-12
+// Last changed: 2008-03-11
 
 #ifndef __CONSTANT_FUNCTION_H
 #define __CONSTANT_FUNCTION_H
@@ -38,6 +38,9 @@ namespace dolfin
     void interpolate(real* coefficients,
                      const ufc::cell& cell,
                      const ufc::finite_element& finite_element);
+
+    /// Evaluate function at given point
+    void eval(real* values, const real* x) const;
 
     /// Evaluate function at given point in cell (UFC function interface)
     void evaluate(real* values,

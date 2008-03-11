@@ -268,6 +268,11 @@ void DiscreteFunction::interpolate(real* coefficients,
   x->get(coefficients, dof_map->local_dimension(), dofs);
 }
 //-----------------------------------------------------------------------------
+void DiscreteFunction::eval(real* values, const real* x) const
+{
+  error("Evaluation at arbitrary points not implemented for discrete functions (yet).");
+}
+//-----------------------------------------------------------------------------
 Vector& DiscreteFunction::vector() const
 {
   if( !x )
