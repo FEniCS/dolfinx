@@ -52,6 +52,7 @@ def pkgTests(forceCompiler=None, sconsEnv=None, **kwargs):
   # Simple test-program that try to include the main scotch header
   cpp_test_include_str = r"""
 extern "C" {
+#include <common.h>
 #include <scotch.h>
 }
 int main() {
@@ -62,6 +63,7 @@ int main() {
   # Test that I can call a scotch function
   cpp_test_lib_str = r"""
 extern "C" {
+#include <common.h>
 #include <scotch.h>
 }
 #include <iostream>
