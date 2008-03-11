@@ -17,7 +17,7 @@
 
 #include "GTSInterface.h"
 
-#ifdef HAVE_GTS_H
+#ifdef HAS_GTS
 #include <gts.h>
 #endif
 
@@ -31,14 +31,14 @@ GTSInterface::GTSInterface(Mesh& m) : mesh(m), tree(0)
 //-----------------------------------------------------------------------------
 GTSInterface::~GTSInterface() 
 {
-#ifdef HAVE_GTS_H
+#ifdef HAS_GTS
   gts_bb_tree_destroy(tree, 1);
 #endif
 }
 //-----------------------------------------------------------------------------
 GtsBBox* GTSInterface::bboxCell(Cell& c)
 {
-#ifdef HAVE_GTS_H
+#ifdef HAS_GTS
   GtsBBox* bbox;
   Point p;
 
@@ -69,7 +69,7 @@ GtsBBox* GTSInterface::bboxCell(Cell& c)
 //-----------------------------------------------------------------------------
 GtsBBox* GTSInterface::bboxPoint(const Point& p)
 {
-#ifdef HAVE_GTS_H
+#ifdef HAS_GTS
 
   GtsBBox* bbox;
 
@@ -87,7 +87,7 @@ GtsBBox* GTSInterface::bboxPoint(const Point& p)
 //-----------------------------------------------------------------------------
 GtsBBox* GTSInterface::bboxPoint(const Point& p1, const Point& p2)
 {
-#ifdef HAVE_GTS_H
+#ifdef HAS_GTS
 
   GtsBBox* bbox;
 
@@ -128,7 +128,7 @@ GtsBBox* GTSInterface::bboxPoint(const Point& p1, const Point& p2)
 //-----------------------------------------------------------------------------
 void GTSInterface::buildCellTree()
 {
-#ifdef HAVE_GTS_H
+#ifdef HAS_GTS
 
   if(tree)
     warning("tree already initialized");
@@ -151,7 +151,7 @@ void GTSInterface::buildCellTree()
 //-----------------------------------------------------------------------------
 void GTSInterface::overlap(Cell& c, Array<uint>& cells)
 {
-#ifdef HAVE_GTS_H
+#ifdef HAS_GTS
   GtsBBox* bbprobe;
   GtsBBox* bb;
   GSList* overlaps = 0, *overlaps_base;
@@ -188,7 +188,7 @@ void GTSInterface::overlap(Cell& c, Array<uint>& cells)
 //-----------------------------------------------------------------------------
 void GTSInterface::overlap(Point& p, Array<uint>& cells)
 {
-#ifdef HAVE_GTS_H
+#ifdef HAS_GTS
   GtsBBox* bbprobe;
   GtsBBox* bb;
   GSList* overlaps = 0, *overlaps_base;
@@ -224,7 +224,7 @@ void GTSInterface::overlap(Point& p, Array<uint>& cells)
 //-----------------------------------------------------------------------------
 void GTSInterface::overlap(Point& p1, Point& p2, Array<uint>& cells)
 {
-#ifdef HAVE_GTS_H
+#ifdef HAS_GTS
   GtsBBox* bbprobe;
   GtsBBox* bb;
   GSList* overlaps = 0,*overlaps_base;
