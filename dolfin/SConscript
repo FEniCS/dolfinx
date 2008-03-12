@@ -80,7 +80,7 @@ cFileBldr, cxxFileBldr = swigEnv["BUILDERS"]["CFile"], swigEnv["BUILDERS"]["CXXF
 for bldr in cFileBldr, cxxFileBldr:
     bldr.add_emitter(".i", scons.Customize.swigEmitter)
 
-swigEnv.Append(SCANNERS=scons.Customize.swigscanner)
+swigEnv.Prepend(SCANNERS=scons.Customize.swigscanner)
 
 # stencil for return-values:
 ret = {"shlibs": [], "extModules": [], "docs": [], "headers": [], "pythonModules": [], \
