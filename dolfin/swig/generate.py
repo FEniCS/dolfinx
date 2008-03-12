@@ -42,7 +42,7 @@ for module in modules:
             # get just the file name (after last /) and check against excludes:
             if not header.split("/")[-1] in excludes:
                 module_headers += [header]
-                docstring_headers += [module_base + header]  # Added for docstring extraction
+                docstring_headers += [module_base + os.path.basename(header)]  # Added for docstring extraction
     f.close()
     headers += [(module, module_headers)]
 
