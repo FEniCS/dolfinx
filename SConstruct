@@ -144,12 +144,12 @@ if env["customCxxFlags"]:
 #env["doFetch"] = doFetch
 
 # -----------------------------------------------------------------------------
-# Call the main SConscript in the 'src' directory
+# Call the main SConscript in the project directory
 # -----------------------------------------------------------------------------
 try:
   # Invoke the SConscript as if it was situated in the build directory, this
   # tells SCons to build beneath this
-  buildDataHash = env.SConscript(os.path.join("dolfin", "SConscript"), exports=["env", "configure"])
+  buildDataHash = env.SConscript(os.path.join(env["projectname"], "SConscript"), exports=["env", "configure"])
 except PkgconfigError, err:
   sys.stderr.write("%s\n" % err)
   Exit(1)
@@ -256,8 +256,11 @@ env.Command("runtests", buildDataHash["shlibs"] + buildDataHash["extModules"],
 # Create helper file for setting environment variables
 pyversion=".".join([str(s) for s in sys.version_info[0:2]])
 f = open('dolfin.conf', 'w')
+if env["PLATFORM"] == "darwin":
+    f.write('export DYLD_LIBRARY_PATH="' + prefix + 'lib:$DYLD_LIBRARY_PATH"\n')
+else:
+    f.write('export LD_LIBRARY_PATH="'   + prefix + 'lib:$LD_LIBRARY_PATH"\n')
 f.write('export PATH="'            + prefix + 'bin:$PATH"\n')
-f.write('export LD_LIBRARY_PATH="' + prefix + 'lib:$LD_LIBRARY_PATH"\n')
 f.write('export PKG_CONFIG_PATH="' + prefix + 'lib/pkgconfig:$PKG_CONFIG_PATH"\n')
 f.write('export PYTHONPATH="'      + prefix + 'lib/python'    + pyversion + '/site-packages:$PYTHONPATH"\n')
 f.close()

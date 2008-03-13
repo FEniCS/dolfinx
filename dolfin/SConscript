@@ -95,7 +95,7 @@ ret = {"shlibs": [], "extModules": [], "docs": [], "headers": [], "pythonModules
 # build rpath for paths for all modules, stored in the Module objects.
 # 
 # Used for building test-binaries (aka AppSources)
-rpathdirs=[Dir("#src/%s" % (m.path)).abspath  for m in modules.values()]
+rpathdirs=[Dir("#%s/%s" % (env["projectname"],m.path)).abspath  for m in modules.values()]
 #### End TODO
 
 for modName, mod in modules.items():
