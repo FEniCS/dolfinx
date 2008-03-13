@@ -52,7 +52,7 @@ def pkgTests(forceCompiler=None, sconsEnv=None, **kwargs):
   # Simple test-program that try to include the main scotch header
   cpp_test_include_str = r"""
 extern "C" {
-#include <common.h>
+#include <stdio.h>
 #include <scotch.h>
 }
 int main() {
@@ -63,7 +63,7 @@ int main() {
   # Test that I can call a scotch function
   cpp_test_lib_str = r"""
 extern "C" {
-#include <common.h>
+#include <stdio.h>
 #include <scotch.h>
 }
 #include <iostream>
@@ -124,8 +124,8 @@ int main() {
     raise unableToCompileException(scotch_dir, cmdstr)
 
   # test that we can link a binary using scotch:
-  cmdstr = "%s -L%s scotch_config_test_lib.o -lscotch -lscotcherrcom -lcommon" % (linker, scotch_dir)
-  alt_cmdstr = "%s -L%s/lib scotch_config_test_lib.o -lscotch -lscotcherrcom -lcommon" % (linker, scotch_dir)
+  cmdstr = "%s -L%s scotch_config_test_lib.o -lscotch -lscotcherr" % (linker, scotch_dir)
+  alt_cmdstr = "%s -L%s/lib scotch_config_test_lib.o -lscotch -lscotcherr" % (linker, scotch_dir)
   if usealternate:
     cmdstr = alt_cmdstr
   compileFailed, cmdoutput = commands.getstatusoutput(cmdstr)
@@ -164,7 +164,7 @@ def generatePkgConf(directory=suitablePkgConfDir(), sconsEnv=None, **kwargs):
   pkg_file_str = r"""Name: scotch
 Version: %s
 Description: Scotch mesh and graph partitioning, http://www.labri.fr/perso/pelegrin/scotch/
-Libs: -L%s -lscotch -lscotcherrcom -lcommon
+Libs: -L%s -lscotch -lscotcherr
 Cflags: -I%s 
 """ % (scotch_version, scotch_libs, scotch_includes)
   pkg_file = open("%s/scotch.pc" % (directory), 'w')
