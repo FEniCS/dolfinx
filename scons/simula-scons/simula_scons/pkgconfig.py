@@ -112,16 +112,24 @@ class PkgConfig(object):
       # I'll create a suiteable directory and set as PKG_CONFIG_PATH 
       # right away.
 
+      # Set up a temporary place for pkgconfig files. 
       pkgconfdir = os.path.join(env.Dir("#scons").abspath,"pkgconfig")
+      # set this is SCONS_PKG_CONFIG_DIR, which should be the place the 
+      # pkgconfiggenerators put pc-files during build
+      os.environ["SCONS_PKG_CONFIG_DIR"] = pkgconfdir
+      # Make sure that the directory exist:
+      if not os.path.isdir(pkgconfdir):
+        os.makedirs(pkgconfdir)
+      
       if not os.environ.has_key("PKG_CONFIG_PATH") or os.environ["PKG_CONFIG_PATH"] == "":
-
-        if not os.path.isdir(pkgconfdir):
-          os.makedirs(pkgconfdir)
         os.environ["PKG_CONFIG_PATH"]=pkgconfdir
-        print "\n** Warning: Added %s \n    as PKG_CONFIG_PATH **" % (pkgconfdir)
-      else:
-        os.environ["SCONS_PKG_CONFIG_DIR"] = pkgconfdir
-
+        #print "\n** Warning: Added %s \n    as PKG_CONFIG_PATH **" % (pkgconfdir)
+      elif os.environ.has_key("PKG_CONFIG_PATH") and pkgconfdir not in os.environ["PKG_CONFIG_PATH"]:
+        pkgConfPath = os.environ["PKG_CONFIG_PATH"].split(os.path.pathsep)
+        pkgConfPath.append(pkgconfdir)
+        os.environ["PKG_CONFIG_PATH"] = os.path.pathsep.join(pkgConfPath)
+        #print "\n** Warning: Added %s \n    in PKG_CONFIG_PATH **" % (pkgconfdir)
+      
       self.package = package
       self.env = env
       try: 

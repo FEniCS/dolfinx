@@ -23,22 +23,30 @@ class NoWritablePkgConfDir(Exception):
         Exception.__init__(self," Unable to use '%s' as PKG_CONFIG directory. (%s)\nPlease, add a writeable directory in your PKG_CONFIG_PATH variable." % (directory,msg))
 
 def suitablePkgConfDir():
-    try:
-        pkgConfDirs = os.environ["PKG_CONFIG_PATH"].split(os.pathsep)
-    except:
-        pkgConfDirs = []
+    # try:
+    #         pkgConfDirs = os.environ["PKG_CONFIG_PATH"].split(os.pathsep)
+    #     except:
+    #         pkgConfDirs = []
         
     # return first writeable directory in the PKG_CONFIG_PATH environment:
-    for directory in pkgConfDirs:
-        try:
-            testfilename = "%s/__testpkgconfwritablefile" % (directory)
-            tmpfile = open(testfilename,'w')
-            tmpfile.write("test")
-            tmpfile.close()
-            os.unlink(testfilename)
-            return directory
-        except:
-            pass
+    #
+    # Most people just don't want this, so we have to make a slight change...
+    #
+    # * we don't have a scons env here, and I'm not sure we want one, so grabbing
+    # options from the env is probably not what we want here... 
+    # * A possible solution could be that we read a --pkg-config-dir option
+    # in scons, and update the os.environ with the SCONS_PKG_CONFIG_DIR variable
+    # as used below. 
+    # for directory in pkgConfDirs:
+    #     try:
+    #         testfilename = "%s/__testpkgconfwritablefile" % (directory)
+    #         tmpfile = open(testfilename,'w')
+    #         tmpfile.write("test")
+    #         tmpfile.close()
+    #         os.unlink(testfilename)
+    #         return directory
+    #     except:
+    #         pass
     
     # if we are unable to find a suitable directory     
     # If we have SCONS_PKG_CONFIG_DIR defined, we use that, else we use
@@ -47,6 +55,7 @@ def suitablePkgConfDir():
     if os.environ.has_key("SCONS_PKG_CONFIG_DIR"):
       directory = os.environ["SCONS_PKG_CONFIG_DIR"]
       try:
+        # The try/except should only be for the write-test
         if not os.path.isdir(directory):
           os.makedirs(directory)
         testfilename = "%s/__testpkgconfwritablefile" % (directory)
@@ -54,14 +63,19 @@ def suitablePkgConfDir():
         tmpfile.write("test")
         tmpfile.close()
         os.unlink(testfilename)
-        # also, put this directory early in PKG_CONFIG_DIR
-        if os.environ.has_key("PKG_CONFIG_PATH") and os.environ["PKG_CONFIG_PATH"] != "":
+        # also, put this directory early in PKG_CONFIG_DIR if not there already (which it should)
+        if os.environ.has_key("PKG_CONFIG_PATH") and os.environ["PKG_CONFIG_PATH"] != "" \
+            and not directory in os.environ["PKG_CONFIG_PATH"]:
           pkgConfPath = os.environ["PKG_CONFIG_PATH"].split(os.path.pathsep)
           pkgConfPath.append(directory)
-          os.environ["PKG_CONFIG_PATH"] = ":".join(pkgConfPath)
-        else: 
+          os.environ["PKG_CONFIG_PATH"] = os.path.pathsep.join(pkgConfPath)
+          print """\n** Warning: consider adding %s
+in your PKG_CONFIG_PATH permanently**""" % (directory)
+
+        elif (os.environ.has_key("PKG_CONFIG_PATH") and os.environ["PKG_CONFIG_PATH"] == "") \
+             or not os.environ.has_key("PKG_CONFIG_PATH"): 
           os.environ["PKG_CONFIG_PATH"] = directory
-        print """\n** Warning: consider adding %s
+          print """\n** Warning: consider adding %s
 in your PKG_CONFIG_PATH permanently**""" % (directory)
         return directory
       except:
