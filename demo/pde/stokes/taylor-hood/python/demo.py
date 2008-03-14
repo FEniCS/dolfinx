@@ -16,7 +16,7 @@ __license__  = "GNU LGPL Version 2.1"
 from dolfin import *
 
 # Load mesh and create finite elements
-mesh = Mesh("../../../../../../data/meshes/dolfin-2.xml.gz")
+mesh = Mesh("../../../../../data/meshes/dolfin-2.xml.gz")
 scalar = FiniteElement("Lagrange", "triangle", 1)
 vector = VectorElement("Lagrange", "triangle", 2)
 system = vector + scalar
