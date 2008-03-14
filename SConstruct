@@ -248,7 +248,7 @@ env = scons.addInstallTargets(env, sourcefiles=buildDataHash["docs"],
 
 # Instruct scons what to do when user requests 'install'
 env.Alias("install", [env["libDir"], env["includeDir"],
-                      env["pythonModuleDir"], env["pythonExtDir"]])
+                      env["pythonModuleDir"], env["pythonExtDir"], env["pkgConfDir"]])
 
 # _runTests used to use the global 'ret' (now buildDataHash). Therefore, we
 # need to wrap _runTests in a closure, now that the functions is moved into
