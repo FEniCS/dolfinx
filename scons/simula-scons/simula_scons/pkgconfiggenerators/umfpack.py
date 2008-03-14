@@ -69,6 +69,9 @@ def find_dependency_file(dirs, filename, what="", package=""):
 def getBaseDirs():
   base_dirs = \
       [os.path.join(os.path.sep, *d) for d in [["usr"], ["usr", "local"]]]
+  if get_architecture() == 'darwin':
+    # use fink as default
+    base_dirs.append(os.path.join(os.path.sep,"sw"))
   if os.environ.has_key("UMFPACK_DIR"):
     base_dirs.insert(0, os.environ["UMFPACK_DIR"])
   # FIXME: should we also look for AMD_DIR and UFCONFIG_DIR in os.environ?
@@ -224,7 +227,7 @@ def pkgLibs(**kwargs):
   if get_architecture() == "darwin":
     libs += "-framework vecLib"
   else:
-    libs += "-L%s -lblas -llapack" % getATLASDir()
+    libs += "-L%s -llapack" % getATLASDir()
   libs += " -L%s -lumfpack" % getUmfpackLibDir()
   if needAMD():
     libs += " -L%s -lamd" % getAMDLibDir() 
