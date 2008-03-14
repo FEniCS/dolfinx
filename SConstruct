@@ -45,6 +45,7 @@ options = [
     # configurable options for installation:
     scons.PathOption("prefix", "Installation prefix", "/usr/local"),
     scons.PathOption("libDir", "Library installation directory", "$prefix/lib"),
+    scons.PathOption("pkgConfDir", "Directory for installation of pkg-config files", "$prefix/lib/pkgconfig"),
     scons.PathOption("includeDir", "C/C++ header installation directory", "$prefix/include"),
     scons.PathOption("pythonModuleDir", "Python module installation directory", 
                      scons.defaultPythonLib(prefix="$prefix")),
@@ -195,10 +196,14 @@ for m in buildDataHash["pythonModules"]:
 for e in buildDataHash["extModules"]:
   env.Install(os.path.join(env["pythonExtDir"], "dolfin"), e)
 
-# install created pkg-config files in prefix/lib/pkgconfig
+# install created pkg-config files in $prefix/lib/pkgconfig or other specified
+# place
 #
+# make sure that the pkgConfDir exist if are in install mode.
+if 'install' in COMMAND_LINE_TARGETS and not os.path.isdir(env["pkgConfDir"]):
+  os.makedirs(env["pkgConfDir"])
 for p in buildDataHash["pkgconfig"]:
-  env.Install(os.path.join(env["libDir"], "pkgconfig"), p)
+  env.Install(env["pkgConfDir"], p)
 
 # grab prefix from the environment, substitute all scons construction variables
 # (those prefixed with $...), and create a normalized path:

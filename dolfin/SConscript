@@ -258,10 +258,14 @@ replacements['PACKAGE_VERSION'] = "0.7.2"
 # make all dependencies into a list, based on the configured Packages.
 replacements['PACKAGE_REQUIRES'] = " ".join(configuredPackages.keys())
 scons.pkgconfig.generate(env, replace=replacements)
-ret["pkgconfig"] = [env.PkgConfigGenerator("%s.pc.in" % (env["projectname"]))]
+ret["pkgconfig"] = env.PkgConfigGenerator("%s.pc.in" % (env["projectname"]))
 # the dolfin.pc file needs to be regenerated if the configured packages or
 # the installation prefix changes:
 env.Depends(ret["pkgconfig"][0], Value((configuredPackages.keys(),env["prefix"])))
+
+# We also like to install all generated pkg-config files. 
+
+ret["pkgconfig"] += scons.globFiles(Dir("#/scons/pkgconfig/").srcnode().abspath, "*.pc")
 
 # Return the big data dictionary. Actual targets will be run in SConstruct based 
 # on this information.
