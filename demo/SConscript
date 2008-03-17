@@ -9,9 +9,8 @@ demos = []
 for modName, mod in modules.items():
   libs, libPath, cppPath, frameworks = [], [], [], []
 
-  # this is needed to find dolfin.h
-  cppPath = ["..", os.path.abspath(os.path.join("..",modName)),
-             os.path.abspath(os.path.join("..",modName,"main"))]
+  ## this is needed to find dolfin.h
+  cppPath = ["..", os.path.abspath(os.path.join("..",modName))]
   for d in mod.dependencies:
     if d in modules:
       # Internal dependency
