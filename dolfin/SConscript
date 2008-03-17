@@ -26,6 +26,7 @@ python_version = "python-%d" % (sys.version_info[0])
 disabled_packages = []
 if not env["enablePetsc"]:
     disabled_packages.append("petsc")
+    disabled_packages.append("slepc")
 if not env["enableSlepc"]:
     disabled_packages.append("slepc")
 if not env["enableScotch"]:
