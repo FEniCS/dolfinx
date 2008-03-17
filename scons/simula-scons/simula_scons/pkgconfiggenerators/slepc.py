@@ -85,7 +85,7 @@ get_slepc_include:
 	-@echo  ${SLEPC_INCLUDE}
 
 get_slepc_libs:
-	-@echo ${CC_LINKER_SLFLAG}${SLEPC_LIB_DIR} -L${SLEPC_LIB_DIR} -lslepc ${PETSC_TS_LIB_BASIC} -L${PETSC_LIB_DIR}
+	-@echo ${CC_LINKER_SLFLAG}${SLEPC_LIB_DIR} -L${SLEPC_LIB_DIR} -L${PETSC_LIB_DIR}
 """
   slepc_make_file = open("slepc_makefile","w")
   slepc_make_file.write(slepc_makefile_str)
