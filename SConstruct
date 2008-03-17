@@ -196,12 +196,8 @@ for m in buildDataHash["pythonModules"]:
 for e in buildDataHash["extModules"]:
   env.Install(os.path.join(env["pythonExtDir"], "dolfin"), e)
 
-# install created pkg-config files in $prefix/lib/pkgconfig or other specified
-# place
-#
-# make sure that the pkgConfDir exist if are in install mode.
-if 'install' in COMMAND_LINE_TARGETS and not os.path.isdir(env["pkgConfDir"]):
-  os.makedirs(env["pkgConfDir"])
+# install generated pkg-config files in $prefix/lib/pkgconfig or other
+# specified place
 for p in buildDataHash["pkgconfig"]:
   env.Install(env["pkgConfDir"], p)
 
