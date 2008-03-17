@@ -144,7 +144,6 @@ int main() {
   if runFailed:
     raise UnableToRunException("PETSc", errormsg=cmdoutput)
   petsc_version = cmdoutput
-  print petsc_version
 
   remove_cppfile("petsc_config_test_version.cpp", ofile=True, execfile=True)
   return petsc_version
