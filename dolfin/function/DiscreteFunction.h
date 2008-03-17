@@ -82,6 +82,31 @@ namespace dolfin
 
   private:
 
+    // Scratch space
+    class Scratch
+    {
+    public:
+
+      // Constructor
+      Scratch(ufc::finite_element& finite_element);
+
+      // Destructor
+      ~Scratch();
+
+      // Value size (number of entries in tensor value)
+      uint size;
+      
+      // Local array for mapping of dofs
+      uint* dofs;
+      
+      // Local array for expansion coefficients
+      real* coefficients;
+      
+      // Local array for values
+      real* values;
+
+    };
+
     // Initialize discrete function
     void init(Mesh& mesh, Vector& x, const ufc::form& form, uint i);
 
@@ -93,18 +118,6 @@ namespace dolfin
     
     // The dof map
     DofMap* dof_map;
-    
-    // Value size (number of entries in tensor value)
-    uint size;
-
-    // Local array for mapping of dofs
-    uint* dofs;
-
-    // Local array for expansion coefficients
-    real* coefficients;
-
-    // Local array for values
-    real* values;
 
     // Pointers to local data if owned
     Vector* local_vector;
@@ -112,6 +125,9 @@ namespace dolfin
 
     // Intersection detector
     mutable IntersectionDetector* intersection_detector;
+
+    // Scratch space
+    Scratch* scratch;
 
   };
 

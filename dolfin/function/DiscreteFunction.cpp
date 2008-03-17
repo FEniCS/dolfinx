@@ -28,8 +28,7 @@ using namespace dolfin;
 DiscreteFunction::DiscreteFunction(Mesh& mesh, Vector& x, Form& form, uint i)
   : GenericFunction(mesh),
     x(&x), finite_element(0), dof_map(0),
-    size(0), dofs(0), coefficients(0), values(0),
-    local_vector(0), local_dof_map(0), intersection_detector(0)
+    local_vector(0), local_dof_map(0), intersection_detector(0), scratch(0)
 {
   // Update dof maps
   form.updateDofMaps(mesh);
@@ -43,8 +42,7 @@ DiscreteFunction::DiscreteFunction(Mesh& mesh, Vector& x, DofMap& dof_map,
                                    const ufc::form& form, uint i)
   : GenericFunction(mesh),
     x(&x), finite_element(0), dof_map(&dof_map),
-    size(0), dofs(0), coefficients(0), values(0),
-    local_vector(0), local_dof_map(0), intersection_detector(0)
+    local_vector(0), local_dof_map(0), intersection_detector(0), scratch(0)
 {
   init(mesh, x, form, i);
 }
@@ -54,8 +52,7 @@ DiscreteFunction::DiscreteFunction(Mesh& mesh, Vector& x,
                                    std::string dof_map_signature)
   : GenericFunction(mesh),
     x(&x), finite_element(0), dof_map(0),
-    size(0), dofs(0), coefficients(0), values(0),
-    local_vector(0), local_dof_map(0), intersection_detector(0)
+    local_vector(0), local_dof_map(0), intersection_detector(0), scratch(0)
 {
   // Create finite element
   finite_element = ElementLibrary::create_finite_element(finite_element_signature);
@@ -72,20 +69,17 @@ DiscreteFunction::DiscreteFunction(Mesh& mesh, Vector& x,
   if (x.size() != dof_map->global_dimension())
     error("Size of vector does not match global dimension of finite element space.");
 
-  // Initialize local array for mapping of dofs
-  dofs = new uint[dof_map->local_dimension()];
-  for (uint i = 0; i < dof_map->local_dimension(); i++)
-    dofs[i] = 0;
-
   // Assume responsibility for data
   local_dof_map = dof_map;
+
+  // Initialize scratch space
+  scratch = new Scratch(*finite_element);
 }
 //-----------------------------------------------------------------------------
 DiscreteFunction::DiscreteFunction(SubFunction& sub_function)
   : GenericFunction(sub_function.f->mesh),
     x(0), finite_element(0), dof_map(0),
-    size(0), dofs(0), coefficients(0), values(0),
-    local_vector(0), local_dof_map(0), intersection_detector(0)
+    local_vector(0), local_dof_map(0), intersection_detector(0), scratch(0)
 {
   // Create sub system
   SubSystem sub_system(sub_function.i);
@@ -115,20 +109,17 @@ DiscreteFunction::DiscreteFunction(SubFunction& sub_function)
   delete [] get_rows;
   delete [] set_rows;
 
-  // Initialize local array for mapping of dofs
-  dofs = new uint[dof_map->local_dimension()];
-  for (uint i = 0; i < dof_map->local_dimension(); i++)
-    dofs[i] = 0;
-
   // Assume responsibility for vector and dof map
   local_vector = x;
   local_dof_map = dof_map;
+
+  // Initialize scratch space
+  scratch = new Scratch(*finite_element);
 }
 //-----------------------------------------------------------------------------
 DiscreteFunction::DiscreteFunction(const DiscreteFunction& f)
   : GenericFunction(f.mesh),
-    size(0), dofs(0), coefficients(0), values(0),
-    local_vector(0), local_dof_map(0), intersection_detector(0)
+    local_vector(0), local_dof_map(0), intersection_detector(0), scratch(0)
 {
   cout << "Copy constructor for discrete function" << endl;
 
@@ -146,14 +137,12 @@ DiscreteFunction::DiscreteFunction(const DiscreteFunction& f)
   x  = new Vector(dof_map->global_dimension());
   *x = *f.x;
 
-  // Initialize local array for mapping of dofs
-  dofs = new uint[dof_map->local_dimension()];
-  for (uint i = 0; i < dof_map->local_dimension(); i++)
-    dofs[i] = 0;
-
   // Assume responsibility for vector and dof map
   local_vector = x;
   local_dof_map = dof_map;
+
+  // Initialize scratch space
+  scratch = new Scratch(*finite_element);
 }
 //-----------------------------------------------------------------------------
 DiscreteFunction::~DiscreteFunction()
@@ -161,23 +150,17 @@ DiscreteFunction::~DiscreteFunction()
   if (finite_element)
     delete finite_element;
       
-  if (dofs)
-    delete [] dofs;
-
-  if (coefficients)
-    delete [] coefficients;
-
-  if (values)
-    delete [] values;
-
   if (local_vector)
     delete local_vector;
 
   if (local_dof_map)
     delete local_dof_map;
-
+  
   if (intersection_detector)
     delete intersection_detector;
+
+  if (scratch)
+    delete scratch;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint DiscreteFunction::rank() const
@@ -221,14 +204,15 @@ void DiscreteFunction::interpolate(real* values) const
   dolfin_assert(values);
   dolfin_assert(finite_element);
   dolfin_assert(dof_map);
-  dolfin_assert(dofs);
+  dolfin_assert(scratch);
   
   // Local data for interpolation on each cell
   CellIterator cell(mesh);
   UFCCell ufc_cell(*cell);
   const uint num_cell_vertices = mesh.type().numVertices(mesh.topology().dim());
-  real* vertex_values = new real[size*num_cell_vertices];
-  real* dof_values = new real[finite_element->space_dimension()];
+  real* vertex_values = new real[scratch->size*num_cell_vertices];
+
+  dolfin_debug1("size = %d", scratch->size);
 
   // Interpolate vertex values on each cell and pick the last value
   // if two or more cells disagree on the vertex values
@@ -238,23 +222,22 @@ void DiscreteFunction::interpolate(real* values) const
     ufc_cell.update(*cell);
 
     // Tabulate dofs
-    dof_map->tabulate_dofs(dofs, ufc_cell);
+    dof_map->tabulate_dofs(scratch->dofs, ufc_cell);
     
     // Pick values from global vector
-    x->get(dof_values, dof_map->local_dimension(), dofs);
+    x->get(scratch->coefficients, dof_map->local_dimension(), scratch->dofs);
 
     // Interpolate values at the vertices
-    finite_element->interpolate_vertex_values(vertex_values, dof_values, ufc_cell);
+    finite_element->interpolate_vertex_values(vertex_values, scratch->coefficients, ufc_cell);
 
     // Copy values to array of vertex values
     for (VertexIterator vertex(*cell); !vertex.end(); ++vertex)
-      for (uint i = 0; i < size; ++i)
+      for (uint i = 0; i < scratch->size; ++i)
         values[i*mesh.numVertices() + vertex->index()] = vertex_values[i*num_cell_vertices + vertex.pos()];
   }
 
   // Delete local data
   delete [] vertex_values;
-  delete [] dof_values;
 }
 //-----------------------------------------------------------------------------
 void DiscreteFunction::interpolate(real* coefficients,
@@ -264,7 +247,7 @@ void DiscreteFunction::interpolate(real* coefficients,
   dolfin_assert(coefficients);
   dolfin_assert(this->finite_element);
   dolfin_assert(this->dof_map);
-  dolfin_assert(this->dofs);
+  dolfin_assert(scratch);
 
   // FIXME: Better test here, compare against the local element
 
@@ -273,14 +256,16 @@ void DiscreteFunction::interpolate(real* coefficients,
     error("Finite element does not match for interpolation of discrete function.");
 
   // Tabulate dofs
-  dof_map->tabulate_dofs(dofs, cell);
+  dof_map->tabulate_dofs(scratch->dofs, cell);
   
   // Pick values from global vector
-  x->get(coefficients, dof_map->local_dimension(), dofs);
+  x->get(coefficients, dof_map->local_dimension(), scratch->dofs);
 }
 //-----------------------------------------------------------------------------
 void DiscreteFunction::eval(real* values, const real* x) const
 {
+  dolfin_assert(scratch);
+
   // Initialize intersection detector if not done before
   if (!intersection_detector)
     intersection_detector = new IntersectionDetector(mesh);
@@ -300,16 +285,16 @@ void DiscreteFunction::eval(real* values, const real* x) const
   UFCCell ufc_cell(cell);
   
   // Get expansion coefficients on cell
-  this->interpolate(coefficients, ufc_cell, *finite_element);
+  this->interpolate(scratch->coefficients, ufc_cell, *finite_element);
 
   // Compute linear combination
-  for (uint j = 0; j < size; j++)
+  for (uint j = 0; j < scratch->size; j++)
     values[j] = 0.0;
   for (uint i = 0; i < finite_element->space_dimension(); i++)
   {
-    finite_element->evaluate_basis(i, this->values, x, ufc_cell);
-    for (uint j = 0; j < size; j++)
-      values[j] += coefficients[i] * this->values[j];
+    finite_element->evaluate_basis(i, scratch->values, x, ufc_cell);
+    for (uint j = 0; j < scratch->size; j++)
+      values[j] += scratch->coefficients[i] * scratch->values[j];
   }
 }
 //-----------------------------------------------------------------------------
@@ -336,24 +321,44 @@ void DiscreteFunction::init(Mesh& mesh, Vector& x, const ufc::form& form, uint i
   if (x.size() != dof_map->global_dimension())
     x.init(dof_map->global_dimension());
 
+  // Initialize scratch space
+  if (!scratch)
+    scratch = new Scratch(*finite_element);
+}
+//-----------------------------------------------------------------------------
+DiscreteFunction::Scratch::Scratch(ufc::finite_element& finite_element)
+  : size(0), dofs(0), coefficients(0), values(0)
+{
   // Compute size of value (number of entries in tensor value)
   size = 1;
-  for (uint i = 0; i < finite_element->value_rank(); i++)
-    size *= finite_element->value_dimension(i);
+  for (uint i = 0; i < finite_element.value_rank(); i++)
+    size *= finite_element.value_dimension(i);
 
   // Initialize local array for mapping of dofs
-  dofs = new uint[dof_map->local_dimension()];
-  for (uint i = 0; i < dof_map->local_dimension(); i++)
+  dofs = new uint[finite_element.space_dimension()];
+  for (uint i = 0; i < finite_element.space_dimension(); i++)
     dofs[i] = 0;
 
   // Initialize local array for expansion coefficients
-  coefficients = new real[dof_map->local_dimension()];
-  for (uint i = 0; i < dof_map->local_dimension(); i++)
+  coefficients = new real[finite_element.space_dimension()];
+  for (uint i = 0; i < finite_element.space_dimension(); i++)
     coefficients[i] = 0.0;
 
   // Initialize local array for values
   values = new real[size];
   for (uint i = 0; i < size; i++)
-    values[i] = 0.0;
+    values[i] = 0.0;  
+}
+//-----------------------------------------------------------------------------
+DiscreteFunction::Scratch::~Scratch()
+{
+  if (dofs)
+    delete [] dofs;
+
+  if (coefficients)
+    delete [] coefficients;
+
+  if (values)
+    delete [] values;
 }
 //-----------------------------------------------------------------------------
