@@ -251,6 +251,18 @@ void Function::eval(real* values, const real* x) const
 //-----------------------------------------------------------------------------
 dolfin::real Function::eval(const real* x) const
 {
+  // Try vector-version for non-user-defined function if not
+  // overloaded. Otherwise, raise an exception. Note that we must
+  // check that we *don't* have a user-defined function or we will go
+  // into a loop between Function and UserFunction...
+
+  if (_type != user)
+  {
+    real values[1] = {0.0};
+    eval(values, x);
+    return values[0];
+  }
+  
   error("Missing eval() for user-defined function (must be overloaded).");
   return 0.0;
 }

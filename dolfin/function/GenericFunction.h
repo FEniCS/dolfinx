@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005-11-28
-// Last changed: 2008-03-11
+// Last changed: 2008-03-17
 
 #ifndef __GENERIC_FUNCTION_H
 #define __GENERIC_FUNCTION_H
@@ -35,12 +35,12 @@ namespace dolfin
     virtual uint dim(uint i) const = 0;
 
     /// Interpolate function to vertices of mesh
-    virtual void interpolate(real* values) = 0;
+    virtual void interpolate(real* values) const = 0;
 
     /// Interpolate function to finite element space on cell
     virtual void interpolate(real* coefficients,
                              const ufc::cell& cell,
-                             const ufc::finite_element& finite_element) = 0;
+                             const ufc::finite_element& finite_element) const = 0;
 
     /// Evaluate function at given point
     virtual void eval(real* values, const real* x) const = 0;

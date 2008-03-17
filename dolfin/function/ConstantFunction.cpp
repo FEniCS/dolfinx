@@ -34,7 +34,7 @@ dolfin::uint ConstantFunction::dim(uint i) const
   return 1;
 }
 //-----------------------------------------------------------------------------
-void ConstantFunction::interpolate(real* values)
+void ConstantFunction::interpolate(real* values) const
 {
   dolfin_assert(values);
 
@@ -50,7 +50,7 @@ void ConstantFunction::interpolate(real* values)
 //-----------------------------------------------------------------------------
 void ConstantFunction::interpolate(real* coefficients,
                                    const ufc::cell& cell,
-                                   const ufc::finite_element& finite_element)
+                                   const ufc::finite_element& finite_element) const
 {
   dolfin_assert(coefficients);
 

@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-02-09
-// Last changed: 2008-03-11
+// Last changed: 2008-03-17
 
 #ifndef __CONSTANT_FUNCTION_H
 #define __CONSTANT_FUNCTION_H
@@ -32,12 +32,12 @@ namespace dolfin
     uint dim(uint i) const;
 
     /// Interpolate function to vertices of mesh
-    void interpolate(real* values);
+    void interpolate(real* values) const;
 
     /// Interpolate function to finite element space on cell
     void interpolate(real* coefficients,
                      const ufc::cell& cell,
-                     const ufc::finite_element& finite_element);
+                     const ufc::finite_element& finite_element) const;
 
     /// Evaluate function at given point
     void eval(real* values, const real* x) const;
@@ -53,7 +53,7 @@ namespace dolfin
     real value;
 
     // Size of value (number of entries in tensor value)
-    uint size;
+    mutable uint size;
 
   };
 
