@@ -3,7 +3,7 @@
 %feature("autodoc", "1");
 
 %{
-#include <dolfin/main/dolfin.h>
+#include <dolfin/dolfin.h>
 #include <numpy/arrayobject.h>
 using namespace dolfin;
 %}
