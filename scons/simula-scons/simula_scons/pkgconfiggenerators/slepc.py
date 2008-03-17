@@ -175,3 +175,4 @@ Cflags: %s
 
 if __name__ == "__main__": 
   generatePkgConf(directory=".")
+

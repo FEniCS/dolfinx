@@ -136,8 +136,7 @@ int main() {
   compileFailed, cmdoutput = commands.getstatusoutput(cmdstr)
   if compileFailed:
     raise UnableToCompileException(petsc_dir=getPetscDir(), errormsg=cmdoutput)
-  #cmdstr = "%s %s petsc_config_test_version.o" % (linker, libs)
-  cmdstr = "%s petsc_config_test_version.o" % linker
+  cmdstr = "%s %s petsc_config_test_version.o" % (linker, libs)
   linkFailed, cmdoutput = commands.getstatusoutput(cmdstr)
   if linkFailed:
     raise UnableToLinkException(petsc_dir=getPetscDir(), errormsg=cmdoutput)
@@ -145,6 +144,7 @@ int main() {
   if runFailed:
     raise UnableToRunException("PETSc", errormsg=cmdoutput)
   petsc_version = cmdoutput
+  print petsc_version
 
   remove_cppfile("petsc_config_test_version.cpp", ofile=True, execfile=True)
   return petsc_version
