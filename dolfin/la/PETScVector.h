@@ -150,22 +150,6 @@ namespace dolfin
     // Friends
     friend class PETScMatrix;
 
-    // Create Scatterer
-    static VecScatter* createScatterer(PETScVector& x1, PETScVector& x2,
-				       const int offset, const int size);
-
-    // Gather x1 (subvector) into x2
-    static void gather(PETScVector& x1, PETScVector& x2, VecScatter& x1sc);
-
-    // Scatter part of x2 into x1 (subvector)
-    static void scatter(PETScVector& x1, PETScVector& x2, VecScatter& x1sc);
-
-    // Copy values from array into vector
-    static void fromArray(const real u[], PETScVector& x, uint offset, uint size);
-
-    // Copy values from vector into array
-    static void toArray(real y[], const PETScVector&x, uint offset, uint size);
-
     // Copy values between different vector representations
     void copy(const PETScVector& y, uint off1, uint off2, uint len);
     void copy(const uBlasVector& y, uint off1, uint off2, uint len);

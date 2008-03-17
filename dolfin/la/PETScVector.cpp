@@ -360,53 +360,6 @@ LogStream& dolfin::operator<< (LogStream& stream, const PETScVector& x)
   return stream;
 }
 //-----------------------------------------------------------------------------
-void PETScVector::gather(PETScVector& x1, PETScVector& x2, VecScatter& x1sc)
-{
-  VecScatterBegin(x1sc, x1.vec(), x2.vec(), INSERT_VALUES, SCATTER_FORWARD);
-  VecScatterEnd(x1sc, x1.vec(), x2.vec(), INSERT_VALUES, SCATTER_FORWARD);
-}
-//-----------------------------------------------------------------------------
-void PETScVector::scatter(PETScVector& x1, PETScVector& x2,
-			   VecScatter& x1sc)
-{
-  VecScatterBegin(x1sc, x2.vec(), x1.vec(), INSERT_VALUES, SCATTER_REVERSE);
-  VecScatterEnd(x1sc, x2.vec(), x1.vec(), INSERT_VALUES, SCATTER_REVERSE);
-}
-//-----------------------------------------------------------------------------
-VecScatter* PETScVector::createScatterer(PETScVector& x1, PETScVector& x2,
-					  const int offset, const int size)
-{
-  VecScatter* sc = new VecScatter;
-  IS* is = new IS;
-
-  ISCreateBlock(MPI_COMM_WORLD, size, 1, &offset, is);
-  VecScatterCreate(x1.vec(), PETSC_NULL, x2.vec(), *is, sc);
-
-  return sc;
-}
-//-----------------------------------------------------------------------------
-void PETScVector::fromArray(const real u[], PETScVector& x,
-                            uint offset, uint size)
-{
-  // Workaround to interface PETScVector and arrays
-
-  real* vals = x.array();
-  for(uint i = 0; i < size; i++)
-    vals[i] = u[i + offset];
-  x.restore(vals);
-}
-//-----------------------------------------------------------------------------
-void PETScVector::toArray(real y[], const PETScVector& x,
-                          uint offset, uint s)
-{
-  // Workaround to interface PETScVector and arrays
-
-  const real* vals = x.array();
-  for(uint i = 0; i < s; i++)
-    y[offset + i] = vals[i];
-  x.restore(vals);
-}
-//-----------------------------------------------------------------------------
 void PETScVector::copy(const PETScVector& y, uint off1, uint off2, uint len)
 {
   // FIXME: Use gather/scatter for parallel case
