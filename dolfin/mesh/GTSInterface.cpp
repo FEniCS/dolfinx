@@ -26,6 +26,9 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 GTSInterface::GTSInterface(Mesh& m) : mesh(m), tree(0) 
 {
+  if (m.geometry().dim() > 3)
+    error("Sorry, GTS interface not implemented for meshes of dimension %d.", m.geometry().dim());
+
   buildCellTree();
 }
 //-----------------------------------------------------------------------------

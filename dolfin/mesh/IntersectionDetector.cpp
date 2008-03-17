@@ -8,20 +8,22 @@
 // First added:  2006-06-21
 // Last changed: 2008-02-18
 
-#include "IntersectionDetector.h"
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Array.h>
 #include "Mesh.h"
 #include "Facet.h"
 #include "Vertex.h"
 #include "Cell.h"
-
 #include "GTSInterface.h"
+#include "IntersectionDetector.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-IntersectionDetector::IntersectionDetector(Mesh& mesh) : gts(mesh) {}
+IntersectionDetector::IntersectionDetector(Mesh& mesh) : gts(mesh)
+{
+  dolfin_debug("Initializing intersection detector.");
+}
 //-----------------------------------------------------------------------------
 IntersectionDetector::~IntersectionDetector() {}
 //-----------------------------------------------------------------------------

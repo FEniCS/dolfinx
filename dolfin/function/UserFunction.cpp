@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005-11-26
-// Last changed: 2008-03-11
+// Last changed: 2008-03-17
 //
 // Note: this breaks the standard envelope-letter idiom slightly,
 // since we call the envelope class from one of the letter classes.
@@ -39,7 +39,7 @@ dolfin::uint UserFunction::dim(uint i) const
   return 1;
 }
 //-----------------------------------------------------------------------------
-void UserFunction::interpolate(real* values)
+void UserFunction::interpolate(real* values) const
 {
   dolfin_assert(values);
   dolfin_assert(f);
@@ -67,7 +67,7 @@ void UserFunction::interpolate(real* values)
 //-----------------------------------------------------------------------------
 void UserFunction::interpolate(real* coefficients,
                                const ufc::cell& cell,
-                               const ufc::finite_element& finite_element)
+                               const ufc::finite_element& finite_element) const
 {
   dolfin_assert(coefficients);
 

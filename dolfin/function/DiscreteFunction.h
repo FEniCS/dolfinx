@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2007.
 //
 // First added:  2007-04-02
-// Last changed: 2008-03-11
+// Last changed: 2008-03-17
 
 #ifndef __DISCRETE_FUNCTION_H
 #define __DISCRETE_FUNCTION_H
@@ -19,6 +19,7 @@ namespace dolfin
   class Form;
   class DofMap;
   class SubFunction;
+  class IntersectionDetector;
 
   /// This class implements the functionality for discrete functions.
   /// A discrete function is defined in terms of a mesh, a vector of
@@ -63,12 +64,12 @@ namespace dolfin
     const DiscreteFunction& operator= (const DiscreteFunction& f);
 
     /// Interpolate function to vertices of mesh
-    void interpolate(real* values);
+    void interpolate(real* values) const;
 
     /// Interpolate function to finite element space on cell
     void interpolate(real* coefficients,
                      const ufc::cell& cell,
-                     const ufc::finite_element& finite_element);
+                     const ufc::finite_element& finite_element) const;
 
     /// Evaluate function at given point
     void eval(real* values, const real* x) const;
@@ -89,16 +90,28 @@ namespace dolfin
 
     // The finite element
     ufc::finite_element* finite_element;
-
+    
     // The dof map
     DofMap* dof_map;
+    
+    // Value size (number of entries in tensor value)
+    uint size;
 
     // Local array for mapping of dofs
     uint* dofs;
 
+    // Local array for expansion coefficients
+    real* coefficients;
+
+    // Local array for values
+    real* values;
+
     // Pointers to local data if owned
     Vector* local_vector;
     DofMap* local_dof_map;
+
+    // Intersection detector
+    mutable IntersectionDetector* intersection_detector;
 
   };
 
