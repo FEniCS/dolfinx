@@ -18,10 +18,7 @@
 //     du/dn(x, y) = 1  for x = 1
 //     du/dn(x, y) = 0  otherwise
 
-#include <dolfin/mesh/dolfin_mesh.h>
-#include <dolfin/fem/dolfin_fem.h>
-#include <dolfin/pde/dolfin_pde.h>
-#include <dolfin/plot/dolfin_plot.h>
+#include <dolfin.h>
 #include "Poisson.h"
   
 using namespace dolfin;

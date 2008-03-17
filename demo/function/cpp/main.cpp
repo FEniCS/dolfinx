@@ -29,7 +29,6 @@ int main()
   // Create mesh and a point in the mesh
   UnitCube mesh(8, 8, 8);
   real x[3] = {0.3, 0.3, 0.3};
-  real values[1] = {0.0};
 
   // A user-defined function
   F f(mesh);
