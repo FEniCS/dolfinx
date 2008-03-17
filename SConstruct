@@ -181,8 +181,8 @@ for h in buildDataHash["headers"]:
   env.Install(os.path.join(env["includeDir"], "dolfin", dpath), h)
 # Also, we want the special 'dolfin.h' file to be installed directly in the
 # toplevel includeDir. 
-if buildDataHash.has_key("main_header") and buildDataHash["main_header"] != "":
-  env.Install(env["includeDir"], buildDataHash["main_header"])
+if buildDataHash.has_key("dolfin_header") and buildDataHash["dolfin_header"] != "":
+  env.Install(env["includeDir"], buildDataHash["dolfin_header"])
 
 ## install python scripts in the bin directory
 #for s in buildDataHash["pythonScripts"]:

@@ -86,7 +86,7 @@ swigEnv.Prepend(SCANNERS=scons.Customize.swigscanner)
 # stencil for return-values:
 ret = {"shlibs": [], "extModules": [], "docs": [], "headers": [], "pythonModules": [], \
        "pythonScripts": [], "pkgconfig": [], "pythonPackageDirs": [], "data": [], "tests": [], \
-       "progs": [], "demos": [], "main_header": ""}
+       "progs": [], "demos": [], "dolfin_header": ""}
 
 #### XXX
 #### Messy code
@@ -215,10 +215,12 @@ for modName, mod in modules.items():
 
     # Register headers to be installed for the module
     ret["headers"] += [File(h, mod.path) for h in mod.libHeaders]
-    # Need to detect the 'dolfin.h' header file, and treat differently
-    for h in mod.libHeaders:
-        if h.endswith("dolfin.h"):
-            ret["main_header"] = File(h, mod.path)
+    ## Need to detect the 'dolfin.h' header file, and treat differently
+    #for h in mod.libHeaders:
+    #    if h.endswith("dolfin.h"):
+    #        ret["main_header"] = File(h, mod.path)
+# The 'dolfin.h' header file is treated differently
+ret["dolfin_header"] = File("dolfin.h", '.')
 
 # set pythonScripts we want to install
 ret["pythonScripts"]  += scons.globFiles(Dir("#/app").srcnode().abspath, "*.py")
