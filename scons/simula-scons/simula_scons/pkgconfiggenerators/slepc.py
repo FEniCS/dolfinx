@@ -44,7 +44,7 @@ def pkgTests(forceCompiler=None, sconsEnv=None, **kwargs):
   # prototype - make this a utility in commonPkgConfigUtils
   dep_module_name = "PETSc"
   dep_module = "petsc"
-  notexist,cmdoutput = commands.getstatusoutput("pkg-config --exists petsc")
+  notexist, cmdoutput = commands.getstatusoutput("pkg-config --exists petsc")
   if notexist:
     # Try to generate petsc:
     # Are we running "globally"?
@@ -85,7 +85,7 @@ get_slepc_include:
 	-@echo  ${SLEPC_INCLUDE}
 
 get_slepc_libs:
-	-@echo ${CC_LINKER_SLFLAG}${SLEPC_LIB_DIR} -L${SLEPC_LIB_DIR} -lslepc -L${PETSC_LIB_DIR}
+	-@echo ${CC_LINKER_SLFLAG}${SLEPC_LIB_DIR} -L${SLEPC_LIB_DIR} -lslepc  ${C_SH_LIB_PATH} -L${PETSC_LIB_DIR} ${PETSC_LIB_BASIC}
 """
   slepc_make_file = open("slepc_makefile","w")
   slepc_make_file.write(slepc_makefile_str)
@@ -144,6 +144,8 @@ int main() {
   compileFailed, cmdoutput = commands.getstatusoutput(cmdstr)
   if compileFailed:
     raise unableToCompileException(slepc_dir=slepc_dir, errormsg=cmdoutput)
+  print 'libs '
+  print slepc_libs
   cmdstr = "%s %s slepc_config_test_version.o" % (linker, slepc_libs)
   linkFailed, cmdoutput = commands.getstatusoutput(cmdstr)
   if linkFailed:
