@@ -292,6 +292,8 @@ real TriangleCell::normal(const Cell& cell, uint facet, uint i) const
 //-----------------------------------------------------------------------------
 bool TriangleCell::intersects(const MeshEntity& triangle, const Point& p) const
 {
+  // Adapted from gts_point_is_in_triangle from GTS
+
   // Get mesh geometry
   const MeshGeometry& geometry = triangle.mesh().geometry();
 
@@ -321,54 +323,26 @@ bool TriangleCell::intersects(const MeshEntity& triangle, const Point& p) const
   x[1] = p[1];
   x[2] = p[2];
 
-//   cout << "p0: " << vx0.point() << endl;
-//   cout << "p1: " << vx1.point() << endl;
-//   cout << "p2: " << vx2.point() << endl;
-
-//   cout << "p: " << p << endl;
-
   real d1, d2, d3;
-
-//   // Test orientation of p w.r.t. each edge
-//   d1 = orient2d((double *)x0, (double *)x1, x);
-//   if(d1 < 0.0)
-//     return false;
-//   d2 = orient2d((double *)x1, (double *)x2, x);
-//   if(d2 < 0.0)
-//     return false;
-//   d3 = orient2d((double *)x2, (double *)x0, x);
-//   if(d3 < 0.0)
-//     return false;
-
-//   if(d1 == 0.0 || d2 == 0.0 || d3 == 0.0)
-//     return true;
 
   // Test orientation of p w.r.t. each edge
   d1 = orient2d((double *)x0, (double *)x1, x);
-  //cout << "d1: " << d1 << endl;
   d2 = orient2d((double *)x1, (double *)x2, x);
-  //cout << "d2: " << d2 << endl;
   d3 = orient2d((double *)x2, (double *)x0, x);
-  //cout << "d3: " << d3 << endl;
 
   // FIXME: Need to check the predicates for correctness
-  // Temporary fix: introduce threshold
-  //   if(d1 == 0.0 || d2 == 0.0 || d3 == 0.0)
-  //     return true;
-  if(fabs(d1) <= DOLFIN_EPS ||
-     fabs(d2) <= DOLFIN_EPS ||
-     fabs(d3) <= DOLFIN_EPS)
-  {
-    return true;
-  }
-  
+//   if(fabs(d1) == DOLFIN_EPS ||
+//      fabs(d2) == DOLFIN_EPS ||
+//      fabs(d3) == DOLFIN_EPS)
+//   {
+//     return true;
+//   }
   if(d1 < 0.0)
     return false;
   if(d2 < 0.0)
     return false;
   if(d3 < 0.0)
     return false;
-
 
   return true;
 }
