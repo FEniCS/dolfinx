@@ -188,13 +188,15 @@ if buildDataHash.has_key("dolfin_header") and buildDataHash["dolfin_header"] != 
 #for s in buildDataHash["pythonScripts"]:
 #  env.Install(env["binDir"], s)
 
-# install python modules, usually in site-packages/dolfin
-for m in buildDataHash["pythonModules"]:
-  env.Install(os.path.join(env["pythonModuleDir"], "dolfin"), m)
+if env["enablePydolfin"]:
+    # install python modules, usually in site-packages/dolfin
+    for m in buildDataHash["pythonModules"]:
+        env.Install(os.path.join(env["pythonModuleDir"], "dolfin"), m)
 
-# install extension modules, usually in site-packages
-for e in buildDataHash["extModules"]:
-  env.Install(os.path.join(env["pythonExtDir"], "dolfin"), e)
+if env["enablePydolfin"]:
+    # install extension modules, usually in site-packages
+    for e in buildDataHash["extModules"]:
+        env.Install(os.path.join(env["pythonExtDir"], "dolfin"), e)
 
 # install generated pkg-config files in $prefix/lib/pkgconfig or other
 # specified place
@@ -211,12 +213,13 @@ if not prefix[-1] == os.path.sep:
 # not sure we need common.py for pydolfin.
 #commonfile=os.path.join("site-packages", "pycc", "common.py")
 
-installfiles = scons.buildFileList(
-    buildDataHash["pythonPackageDirs"])
+if env["enablePydolfin"]:
+    installfiles = scons.buildFileList(
+        buildDataHash["pythonPackageDirs"])
 
-for f in installfiles:
-  #installpath=os.path.sep.join(os.path.dirname(f).split(os.path.sep)[1:])
-  env.Install(os.path.join(env["pythonModuleDir"],"dolfin"), f)
+    for f in installfiles:
+        #installpath=os.path.sep.join(os.path.dirname(f).split(os.path.sep)[1:])
+        env.Install(os.path.join(env["pythonModuleDir"],"dolfin"), f)
 
 #env = scons.installCommonFile(env, commonfile, prefix)
 
@@ -243,8 +246,11 @@ env = scons.addInstallTargets(env, sourcefiles=buildDataHash["docs"],
                               targetdir=_targetdir)
 
 # Instruct scons what to do when user requests 'install'
-env.Alias("install", [env["libDir"], env["includeDir"],
-                      env["pythonModuleDir"], env["pythonExtDir"], env["pkgConfDir"]])
+targets = [env["libDir"], env["includeDir"], env["pkgConfDir"]]
+if env["enablePydolfin"]:
+    targets.append(env["pythonModuleDir"])
+    targets.append(env["pythonExtDir"])
+env.Alias("install", targets)
 
 # _runTests used to use the global 'ret' (now buildDataHash). Therefore, we
 # need to wrap _runTests in a closure, now that the functions is moved into
@@ -255,7 +261,6 @@ env.Command("runtests", buildDataHash["shlibs"] + buildDataHash["extModules"],
             Action(_runTests, scons._strRuntests))
 
 # Create helper file for setting environment variables
-pyversion=".".join([str(s) for s in sys.version_info[0:2]])
 f = open('dolfin.conf', 'w')
 if env["PLATFORM"] == "darwin":
     f.write('export DYLD_LIBRARY_PATH="' + prefix + 'lib:$DYLD_LIBRARY_PATH"\n')
@@ -263,7 +268,9 @@ else:
     f.write('export LD_LIBRARY_PATH="'   + prefix + 'lib:$LD_LIBRARY_PATH"\n')
 f.write('export PATH="'            + prefix + 'bin:$PATH"\n')
 f.write('export PKG_CONFIG_PATH="' + prefix + 'lib/pkgconfig:$PKG_CONFIG_PATH"\n')
-f.write('export PYTHONPATH="'      + prefix + 'lib/python'    + pyversion + '/site-packages:$PYTHONPATH"\n')
+if env["enablePydolfin"]:
+    pyversion=".".join([str(s) for s in sys.version_info[0:2]])
+    f.write('export PYTHONPATH="'  + prefix + 'lib/python'    + pyversion + '/site-packages:$PYTHONPATH"\n')
 f.close()
 
 # Close log file

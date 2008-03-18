@@ -87,10 +87,10 @@ class _Module:
       """
 
       # create a pkg-config file named env["projectname"]_self.name.pc, located
-      # in #/src/self.name/
+      # in #/projectname/self.path/
       # TODO: check that the description is accurate.
       # Return the created file using SCons abs.path syntax ('#' as root)
-      modpcfile = os.path.join(self.name,"%s_%s.pc.in" % (env["projectname"],self.name))
+      modpcfile = os.path.join(self.path,"%s_%s.pc.in" % (env["projectname"],self.name))
       mod_reqs = []
       for d in self.dependencies:
         if d in modules:
@@ -113,7 +113,7 @@ class _Module:
       else:
         compiler=""
 
-      modpc_str = """prefix=/home/hake
+      modpc_str = """prefix=%s
 exec_prefix=${prefix}
 includedir=${prefix}/include
 compiler=%s
@@ -125,12 +125,12 @@ Description: The %s module in the %s project
 Requires: %s
 Cflags: -I${includedir}
 Libs: -L${libdir} %s
-""" % (compiler, env["projectname"], self.name, self.name, env["projectname"], mod_reqs, mod_libs)
+""" % (env["prefix"], compiler, env["projectname"], self.name, self.name, env["projectname"], mod_reqs, mod_libs)
       f = open(modpcfile,'w')
       f.write(modpc_str)
       f.close()
 
-      return os.path.join("#src",modpcfile)
+      return os.path.join("#%s" % env["projectname"], modpcfile)
 
 def readModuleConfig(dirPath, modulePath, env):
     """ Read module configuration script.
@@ -147,7 +147,7 @@ def readModuleConfig(dirPath, modulePath, env):
     modName = modName.replace("-", "_")
     cxxFlags = [f.strip() for f in env["CXXFLAGS"].split()]
     linkFlags = [f.strip() for f in str(env["LINKFLAGS"]).split()]
-    if env["SWIGFLAGS"]:
+    if env.has_key("SWIGFLAGS") and env["SWIGFLAGS"]:
         swigFlags = [f.strip() for f in env["SWIGFLAGS"].split()]
     else:
         swigFlags = []
