@@ -21,7 +21,7 @@ interface_file = "dolfin_headers.h"
 
 # Extract modules from dolfin.h
 modules = []
-f = open("../main/dolfin.h")
+f = open("../dolfin.h")
 for line in f:
     if "#include <dolfin/" in line and line[:17] == "#include <dolfin/":
         module = line.split("/")[1]
