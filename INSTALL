@@ -1,0 +1,2 @@
+DOLFIN has recently moved to a new SCons-based build system. Instructions for 
+building DOLFIN using SCons will eventually be added here.

@@ -1,0 +1,10 @@
+* Add enableMpi
+* Add test for MPI
+* Fix selection of compiler (why is mpicxx not be used when it should?)
+* Fix linking of PETSc libraries (need to add  -Wl,-rpath,)
+* Add compiler flags (-DHAS_UMFPACK, etc) to dolfin.pc
+
+* Demos are not built when using' scons install . . . '
+
+* Add instructions for buidling and installing to INSTALL
+
