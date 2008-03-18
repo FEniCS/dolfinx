@@ -4,6 +4,7 @@
 // DOLFIN element library
 
 #include <dolfin/elements/ElementLibrary.h>
+#include <dolfin/elements/ProjectionLibrary.h>
 
 #endif
 

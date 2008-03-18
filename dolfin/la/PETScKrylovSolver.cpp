@@ -198,7 +198,14 @@ void PETScKrylovSolver::readParameters()
 
   // Set monitor
   if ( get("Krylov monitor convergence") )
+  {
+    //FIXME: Decide on supported version of PETSc
+#if(PETSC_VERSION_SUBMINOR > 2)
     KSPMonitorSet(ksp, monitor, 0, 0);
+#else
+    KSPSetMonitor(ksp, monitor, 0, 0);
+#endif
+  }
 
   // Set tolerances
   KSPSetTolerances(ksp,
