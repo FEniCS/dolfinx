@@ -20,10 +20,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-IntersectionDetector::IntersectionDetector(Mesh& mesh) : gts(mesh)
-{
-  dolfin_debug("Initializing intersection detector.");
-}
+IntersectionDetector::IntersectionDetector(Mesh& mesh) : gts(mesh) {}
 //-----------------------------------------------------------------------------
 IntersectionDetector::~IntersectionDetector() {}
 //-----------------------------------------------------------------------------
