@@ -480,6 +480,8 @@ real TetrahedronCell::normal(const Cell& cell, uint facet, uint i) const
 bool TetrahedronCell::intersects(const MeshEntity& tetrahedron,
                              const Point& p) const
 {
+  // Adapted from gts_point_is_in_triangle from GTS
+
   // Get mesh geometry
   const MeshGeometry& geometry = tetrahedron.mesh().geometry();
 
@@ -488,6 +490,15 @@ bool TetrahedronCell::intersects(const MeshEntity& tetrahedron,
   uint v1 = tetrahedron.entities(0)[1];
   uint v2 = tetrahedron.entities(0)[2];
   uint v3 = tetrahedron.entities(0)[3];
+
+  // Check orientation
+  dolfin::uint vtmp;
+  if(orientation((Cell&)tetrahedron) == 1)
+  {
+    vtmp = v3;
+    v3 = v2;
+    v2 = vtmp;
+  }
 
   // Get the coordinates of the four vertices
   const real* x0 = geometry.x(v0);
@@ -506,24 +517,31 @@ bool TetrahedronCell::intersects(const MeshEntity& tetrahedron,
 
   // Test orientation of p w.r.t. each face
   d1 = orient3d((double *)x2, (double *)x1, (double *)x0, x);
-  //cout << "d1: " << d1 << endl;
+  d2 = orient3d((double *)x0, (double *)x3, (double *)x2, x);
+  d3 = orient3d((double *)x0, (double *)x1, (double *)x3, x);
+  d4 = orient3d((double *)x1, (double *)x2, (double *)x3, x);
+
+  cout << "d1: " << d1 << endl;
+  cout << "d2: " << d2 << endl;
+  cout << "d3: " << d3 << endl;
+  cout << "d4: " << d4 << endl;
+
+  // FIXME: Need to check the predicates for correctness
+//   if(fabs(d1) == DOLFIN_EPS ||
+//      fabs(d2) == DOLFIN_EPS ||
+//      fabs(d3) == DOLFIN_EPS ||
+//      fabs(d4) == DOLFIN_EPS)
+//   {
+//     return true;
+//   }
   if(d1 < 0.0)
     return false;
-  d2 = orient3d((double *)x0, (double *)x3, (double *)x2, x);
-  //cout << "d2: " << d2 << endl;
   if(d2 < 0.0)
     return false;
-  d3 = orient3d((double *)x0, (double *)x1, (double *)x3, x);
-  //cout << "d3: " << d3 << endl;
   if(d3 < 0.0)
     return false;
-  d4 = orient3d((double *)x1, (double *)x2, (double *)x3, x);
-  //cout << "d4: " << d4 << endl;
   if(d4 < 0.0)
     return false;
-
-  if(d1 == 0.0 || d2 == 0.0 || d3 == 0.0 || d4 == 0.0)
-    return true;
 
   return true;
 }
