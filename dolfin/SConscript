@@ -260,7 +260,6 @@ ret["demos"] = []
 if env["enableDemos"]:
     ret["demos"] += env.SConscript(os.path.join("#demo", "SConscript"),
                                    exports=["env", "modules", "configuredPackages"])
-
 # generate a builder for the pycc pkg-config file.
 # TODO: The template-based generator can maybe be replaced with the
 # "builtin" generator (in simula-scons/_module
@@ -272,6 +271,8 @@ replacements = {}
 replacements['PACKAGE_VERSION'] = "0.7.2"
 # make all dependencies into a list, based on the configured Packages.
 replacements['PACKAGE_REQUIRES'] = " ".join(configuredPackages.keys())
+replacements['PACKAGE_CXXFLAGS'] = modEnv["CXXFLAGS"]
+
 scons.pkgconfig.generate(env, replace=replacements)
 ret["pkgconfig"] = env.PkgConfigGenerator("%s.pc.in" % (env["projectname"]))
 # the dolfin.pc file needs to be regenerated if the configured packages or

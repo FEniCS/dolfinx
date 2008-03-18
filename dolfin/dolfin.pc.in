@@ -14,4 +14,4 @@ Version: @PACKAGE_VERSION@
 Requires: @PACKAGE_REQUIRES@
 Conflicts:
 Libs: -L${libdir} -ldolfin 
-Cflags: -I${includedir} 
+Cflags: @PACKAGE_CXXFLAGS@ -I${includedir} 
