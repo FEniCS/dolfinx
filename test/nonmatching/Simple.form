@@ -1,5 +1,0 @@
-K1 = FiniteElement("Lagrange", "triangle", 1)
-
-U = Function(K1)
-
-M = dot(U, U) * dx
