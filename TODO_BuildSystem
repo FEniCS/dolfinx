@@ -7,4 +7,5 @@
 * Demos are not built when using' scons install . . . '
 
 * Add instructions for buidling and installing to INSTALL
-
+* Python interface not regenerated when changing header files
+  (same as old touch dolfin.i issue)
