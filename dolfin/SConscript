@@ -63,15 +63,16 @@ modules, env = scons.resolveModuleDependencies(modules, configuredPackages, pack
 if env["PLATFORM"] == "darwin":
     env = scons.Customize.darwinCxx(env)
 
-# Disable PyDOLFIN if we are unable to find swig
-try:
-    out, err = scons.runCommand("swig", "-version")
-except Exception, err:
-    msg = "Unable to find PyDOLFIN dependency: swig"
-    scons.log(msg)
-    scons.log("Error:\n%s" % err)
-    print msg
-    env["enablePydolfin"] = False
+if env["enablePydolfin"]:
+    # Disable PyDOLFIN if we are unable to find swig
+    try:
+        out, err = scons.runCommand("swig", "-version")
+    except Exception, err:
+        msg = "Unable to find PyDOLFIN dependency: swig"
+        scons.log(msg)
+        scons.log("Error:\n%s" % err)
+        print msg
+        env["enablePydolfin"] = False
 
 if env["enablePydolfin"]:
     swigFlags = "-python -c++ -shadow -Iinclude/swig".split()
