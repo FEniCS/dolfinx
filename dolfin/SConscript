@@ -62,26 +62,37 @@ modules, env = scons.resolveModuleDependencies(modules, configuredPackages, pack
 
 if env["PLATFORM"] == "darwin":
     env = scons.Customize.darwinCxx(env)
-     
-swigFlags = "-python -c++ -shadow -Iinclude/swig".split()
-out, err = scons.runCommand("swig", "-version")
-# Determine swig version, v 1.3.28 and later supports -O flag
-m = re.match(r"SWIG Version (.+)", out, re.M)
-#if scons.checkVersion(m.group(1), "1.3.28"):
-#    swigFlags.append("-O")
 
-swigEnv = env.Copy()
-swigEnv["SWIGFLAGS"] = swigFlags
-swigEnv["SHLIBPREFIX"] = "_"
-if env["PLATFORM"] == "darwin":
-    swigEnv = scons.Customize.darwinSwig(swigEnv)
+# Disable PyDOLFIN if we are unable to find swig
+try:
+    out, err = scons.runCommand("swig", "-version")
+except Exception, err:
+    msg = "Unable to find PyDOLFIN dependency: swig"
+    scons.log(msg)
+    scons.log("Error:\n%s" % err)
+    print msg
+    env["enablePydolfin"] = False
 
-cFileBldr, cxxFileBldr = swigEnv["BUILDERS"]["CFile"], swigEnv["BUILDERS"]["CXXFile"]
+if env["enablePydolfin"]:
+    swigFlags = "-python -c++ -shadow -Iinclude/swig".split()
+    #out, err = scons.runCommand("swig", "-version")
+    # Determine swig version, v 1.3.28 and later supports -O flag
+    m = re.match(r"SWIG Version (.+)", out, re.M)
+    #if scons.checkVersion(m.group(1), "1.3.28"):
+    #    swigFlags.append("-O")
 
-for bldr in cFileBldr, cxxFileBldr:
-    bldr.add_emitter(".i", scons.Customize.swigEmitter)
+    swigEnv = env.Copy()
+    swigEnv["SWIGFLAGS"] = swigFlags
+    swigEnv["SHLIBPREFIX"] = "_"
+    if env["PLATFORM"] == "darwin":
+        swigEnv = scons.Customize.darwinSwig(swigEnv)
 
-swigEnv.Prepend(SCANNERS=scons.Customize.swigscanner)
+    cFileBldr, cxxFileBldr = swigEnv["BUILDERS"]["CFile"], swigEnv["BUILDERS"]["CXXFile"]
+
+    for bldr in cFileBldr, cxxFileBldr:
+        bldr.add_emitter(".i", scons.Customize.swigEmitter)
+
+    swigEnv.Prepend(SCANNERS=scons.Customize.swigscanner)
 
 # stencil for return-values:
 ret = {"shlibs": [], "extModules": [], "docs": [], "headers": [], "pythonModules": [], \
@@ -150,7 +161,7 @@ for modName, mod in modules.items():
         # The builder returns a node list
         ret["shlibs"].append(shlib[0])
 
-    if mod.swigSources:
+    if mod.swigSources and env["enablePydolfin"]:
         # Register swig wrapper targets in the module
         mod.cxxFlags += " -fno-strict-aliasing"
 
