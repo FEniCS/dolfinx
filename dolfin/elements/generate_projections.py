@@ -1,8 +1,8 @@
-"Generate finite elements for DOLFIN library of precompiled elements"
+"Generate pre-compiled L2 projections for DOLFIN"
 
-__author__ = "Anders Logg (logg@simula.no)"
-__date__ = "2007-04-12 -- 2007-04-25"
-__copyright__ = "Copyright (C) 2007 Anders Logg"
+__author__ = "Anders Logg (logg@simula.no), Johan Jansson (jjan@csc.kth.se)"
+__date__ = "2008-03-18 -- 2008-03-18"
+__copyright__ = "Copyright (C) 2008 Anders Logg, Johan Jansson"
 __license__  = "GNU LGPL Version 2.1"
 
 from ffc import *
@@ -18,40 +18,49 @@ for i in range(len(elements)):
     # Generate code
     print "Compiling element %d out of %d..." % (i, len(elements))
     element = elements[i]
-    name = "ffc_%.2d" % i
-    compile(element, name)
+    print element
+    print type(element)
+
+    v = TestFunction(element)
+    Pf = TrialFunction(element)
+    f = Function(element)
+    a = dot(Pf, v) * dx
+    L = dot(f, v) * dx
+
+    name = "ffc_L2proj_%.2d" % i
+    compile([a, L], name, language="dolfin")
 
     # Save signatures of elements and dof maps
     dof_map = DofMap(element)
     signatures += [(name, element.signature(), dof_map.signature())]
     
-# Generate code for elementmap.cpp
-filename = "ElementLibrary.cpp"
+# Generate code for projections
+filename = "ProjectionLibrary.cpp"
 print "Generating file " + filename
 file = open(filename, "w")
-file.write("// Automatically generated code mapping element and dof map signatures\n")
-file.write("// to the corresponding ufc::finite_element and ufc::dof_map classes\n")
+file.write("// Automatically generated code mapping element signatures\n")
+file.write("// to the corresponding Form classes representing projection\n")
 file.write("\n")
 file.write("#include <cstring>\n")
 file.write("\n")
 for (name, element_signature, dof_map_signature) in signatures:
     file.write("#include \"%s.h\"\n" % name)
 file.write("\n")
-file.write("#include \"ElementLibrary.h\"\n")
+file.write("#include \"ProjectionLibrary.h\"\n")
 file.write("\n")
-file.write("ufc::finite_element* dolfin::ElementLibrary::create_finite_element(const char* signature)\n")
+file.write("dolfin::Form* dolfin::ProjectionLibrary::create_projection_a(const char* signature)\n")
 file.write("{\n")
 for (name, element_signature, dof_map_signature) in signatures:
     file.write("  if (strcmp(signature, \"%s\") == 0)\n" % element_signature)
-    file.write("    return new %s_finite_element_0();\n" % name)
+    file.write("    return new %sBilinearForm;\n" % name)
 file.write("  return 0;\n")
 file.write("}\n")
 file.write("\n")
-file.write("ufc::dof_map* dolfin::ElementLibrary::create_dof_map(const char* signature)\n")
+file.write("dolfin::Form* dolfin::ProjectionLibrary::create_projection_L(const char* signature, Function& f)\n")
 file.write("{\n")
 for (name, element_signature, dof_map_signature) in signatures:
-    file.write("  if (strcmp(signature, \"%s\") == 0)\n" % dof_map_signature)
-    file.write("    return new %s_dof_map_0();\n" % name)
+    file.write("  if (strcmp(signature, \"%s\") == 0)\n" % element_signature)
+    file.write("    return new %sLinearForm(f);\n" % name)
 file.write("  return 0;\n")
 file.write("}\n")
 file.close()
