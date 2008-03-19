@@ -47,6 +47,8 @@
 %include "dolfin/la/uBlasLinearSolver.h"
 %include "dolfin/la/uBlasKrylovSolver.h"
 %include "dolfin/la/uBlasLUSolver.h"
+%include "dolfin/la/uBlasPreconditioner.h"
+%include "dolfin/la/uBlasILUPreconditioner.h"
 %include "dolfin/la/Matrix.h"
 %include "dolfin/la/Vector.h"
 %include "dolfin/la/Scalar.h"
