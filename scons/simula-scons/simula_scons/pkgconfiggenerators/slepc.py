@@ -173,7 +173,7 @@ def generatePkgConf(directory=suitablePkgConfDir(), sconsEnv=None, **kwargs):
 Version: %s
 Description: The SLEPc project from Universidad Politecnica de Valencia, Spain
 Requires: petsc
-linkeropts: %s
+linkeropts=%s
 Libs: %s
 Cflags: %s
 """ % (slepc_version, slepc_link_opts, slepc_libs, slepc_includes)
