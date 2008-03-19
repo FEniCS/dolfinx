@@ -1,10 +1,11 @@
 // Copyright (C) 2006-2007 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Anders Logg 2006-2007.
+// Modified by Anders Logg 2006-2008.
+// Modified by Kent-Andre Mardal 2008.
 //
 // First added:  2006-04-04
-// Last changed: 2007-08-30
+// Last changed: 2008-03-19
 
 #include <sstream>
 #include <iomanip>
@@ -150,7 +151,7 @@ void uBlasVector::mult(real a)
   y *= a;
 }
 //-----------------------------------------------------------------------------
-real uBlasVector::inner(const uBlasVector& x)
+real uBlasVector::inner(const uBlasVector& x) const
 {
   return inner_prod(*this,x); 
 }

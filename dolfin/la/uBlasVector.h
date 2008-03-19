@@ -1,10 +1,11 @@
 // Copyright (C) 2006-2007 Garth N. Wells
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Anders Logg 2006-2007.
+// Modified by Anders Logg 2006-2008.
+// Modified by Kent-Andre Mardal 2008.
 //
 // First added:  2006-03-04
-// Last changed: 2007-05-15
+// Last changed: 2008-03-19
 
 #ifndef __UBLAS_VECTOR_H
 #define __UBLAS_VECTOR_H
@@ -122,7 +123,7 @@ namespace dolfin
     void mult(real a);
 
     /// Inner product 
-    real inner(const uBlasVector& x);
+    real inner(const uBlasVector& x) const;
 
     /// Element-wise division
     void div(const uBlasVector& x);

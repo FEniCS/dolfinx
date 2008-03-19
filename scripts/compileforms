@@ -9,9 +9,10 @@
 FORMFILES=`find src -name '*.form'`
 TOPDIR=`pwd`
 
-# Regenerate all forms in element library
+# Regenerate all forms in element and projection library
 cd $TOPDIR/src/kernel/elements
 python generate.py
+python generate_projections.py
 
 # Compile all form files
 for FORMFILE in $FORMFILES; do

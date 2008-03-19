@@ -5,7 +5,7 @@ compiler = commands.getoutput('pkg-config --variable=compiler dolfin')
 env      = Environment(CXX = compiler)
 
 # Get compiler flags from pkg-config
-env.ParseConfig('pkg-config --cflags --libs dolfin')
+env.ParseConfig('pkg-config --cflags --variable=linkeropts --libs dolfin')
 
 # Program name
 env.Program('demo', 'main.cpp')

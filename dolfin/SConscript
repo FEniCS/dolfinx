@@ -63,15 +63,16 @@ modules, env = scons.resolveModuleDependencies(modules, configuredPackages, pack
 if env["PLATFORM"] == "darwin":
     env = scons.Customize.darwinCxx(env)
 
-# Disable PyDOLFIN if we are unable to find swig
-try:
-    out, err = scons.runCommand("swig", "-version")
-except Exception, err:
-    msg = "Unable to find PyDOLFIN dependency: swig"
-    scons.log(msg)
-    scons.log("Error:\n%s" % err)
-    print msg
-    env["enablePydolfin"] = False
+if env["enablePydolfin"]:
+    # Disable PyDOLFIN if we are unable to find swig
+    try:
+        out, err = scons.runCommand("swig", "-version")
+    except Exception, err:
+        msg = "Unable to find PyDOLFIN dependency: swig"
+        scons.log(msg)
+        scons.log("Error:\n%s" % err)
+        print msg
+        env["enablePydolfin"] = False
 
 if env["enablePydolfin"]:
     swigFlags = "-python -c++ -shadow -Iinclude/swig".split()
@@ -111,7 +112,7 @@ rpathdirs=[Dir("#%s/%s" % (env["projectname"],m.path)).abspath  for m in modules
 #### End TODO
 
 for modName, mod in modules.items():
-    libs, libPath, cppPath, frameworks = [], [], [], []
+    libs, libPath, linkOpts, cppPath, frameworks = [], [], [], [], []
     swiglibs, swigframeworks, swiglibPath, swigcppPath = [], [], [], []
 
     for d in mod.dependencies:
@@ -124,9 +125,10 @@ for modName, mod in modules.items():
             dep = configuredPackages[d]
             libs += dep.libs[0]          # The libs
             frameworks += list(dep.libs[1])    # The frameworks (Darwin)
-            libPath += dep.libPath
-            cppPath += dep.cppPath
-            
+            libPath  += dep.libPath
+            linkOpts += dep.linkOpts
+            cppPath  += dep.cppPath
+
             # on Darwin, automatically add all regular external deps to 
             # swig deps. Strictly speaking, it is only required if the 
             # external dep consist of shared libraries.
@@ -154,6 +156,7 @@ for modName, mod in modules.items():
 
         modEnv.Prepend(CPPPATH=[Dir("#").abspath] + cppPath, LIBPATH=libPath)
         modEnv.Append(LIBS=libs)
+        modEnv.Append(LINKFLAGS=linkOpts)
         if env["PLATFORM"] == "darwin":
             modEnv.Append(FRAMEWORKS=frameworks)
         shlib = modEnv.SharedLibrary(target=os.path.join(mod.path, modName), source=\
@@ -259,7 +262,6 @@ ret["demos"] = []
 if env["enableDemos"]:
     ret["demos"] += env.SConscript(os.path.join("#demo", "SConscript"),
                                    exports=["env", "modules", "configuredPackages"])
-
 # generate a builder for the pycc pkg-config file.
 # TODO: The template-based generator can maybe be replaced with the
 # "builtin" generator (in simula-scons/_module
@@ -271,6 +273,8 @@ replacements = {}
 replacements['PACKAGE_VERSION'] = "0.7.2"
 # make all dependencies into a list, based on the configured Packages.
 replacements['PACKAGE_REQUIRES'] = " ".join(configuredPackages.keys())
+replacements['PACKAGE_CXXFLAGS'] = modEnv["CXXFLAGS"]
+
 scons.pkgconfig.generate(env, replace=replacements)
 ret["pkgconfig"] = env.PkgConfigGenerator("%s.pc.in" % (env["projectname"]))
 # the dolfin.pc file needs to be regenerated if the configured packages or

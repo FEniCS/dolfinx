@@ -185,6 +185,12 @@ class PkgConfig(object):
             dirs.append(o[2:])
         return dirs
 
+    def linkOpts(self):
+      dirs = []
+      link_opts = self._pkgconfig("--variable=linkeropts")
+      dirs.append(link_opts)
+      return dirs
+
     def compiler(self):
       # If the compiler, and maybe the compilertype variable is set, read and 
       # return as a tuple. If I can't figure out the compilertype, I use None

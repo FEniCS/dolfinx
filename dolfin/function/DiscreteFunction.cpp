@@ -212,8 +212,6 @@ void DiscreteFunction::interpolate(real* values) const
   const uint num_cell_vertices = mesh.type().numVertices(mesh.topology().dim());
   real* vertex_values = new real[scratch->size*num_cell_vertices];
 
-  dolfin_debug1("size = %d", scratch->size);
-
   // Interpolate vertex values on each cell and pick the last value
   // if two or more cells disagree on the vertex values
   for (; !cell.end(); ++cell)

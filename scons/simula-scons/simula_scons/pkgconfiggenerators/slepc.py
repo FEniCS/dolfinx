@@ -86,6 +86,9 @@ get_slepc_include:
 
 get_slepc_libs:
 	-@echo ${CC_LINKER_SLFLAG}${SLEPC_LIB_DIR} -L${SLEPC_LIB_DIR} -lslepc ${C_SH_LIB_PATH} -L${PETSC_LIB_DIR} ${PETSC_LIB_BASIC}
+
+get_slepc_link_options:
+	-@echo   ${CC_LINKER_SLFLAG}${SLEPC_LIB_DIR}
 """
   slepc_make_file = open("slepc_makefile","w")
   slepc_make_file.write(slepc_makefile_str)
@@ -101,6 +104,11 @@ get_slepc_libs:
   if runFailed:
     raise Exception ("Unable to read SLEPc libs through make")
   slepc_libs = cmdoutput
+
+  runFailed, cmdoutput = commands.getstatusoutput("make -f slepc_makefile get_slepc_link_options")
+  if runFailed:
+    raise Exception ("Unable to read SLEPc link options through make")
+  slepc_link_opts = cmdoutput
 
   # Try to get compiler and linker from petsc
   failure, cmdoutput = commands.getstatusoutput("pkg-config petsc --variable=compiler")
@@ -144,7 +152,7 @@ int main() {
   compileFailed, cmdoutput = commands.getstatusoutput(cmdstr)
   if compileFailed:
     raise unableToCompileException(slepc_dir=slepc_dir, errormsg=cmdoutput)
-  cmdstr = "%s %s slepc_config_test_version.o" % (linker, slepc_libs)
+  cmdstr = "%s %s %s slepc_config_test_version.o" % (linker, slepc_link_opts, slepc_libs)
   linkFailed, cmdoutput = commands.getstatusoutput(cmdstr)
   if linkFailed:
     raise unableToLinkException(slepc_dir=slepc_dir, errormsg=cmdoutput)
@@ -155,19 +163,20 @@ int main() {
 
   remove_cppfile("slepc_config_test_version.cpp", ofile=True, execfile=True)
 
-  return slepc_version, slepc_libs, slepc_includes
+  return slepc_version, slepc_link_opts, slepc_libs, slepc_includes
 
 def generatePkgConf(directory=suitablePkgConfDir(), sconsEnv=None, **kwargs):
 
-  (slepc_version, slepc_libs, slepc_includes) = pkgTests(sconsEnv=sconsEnv)
+  (slepc_version, slepc_link_opts, slepc_libs, slepc_includes) = pkgTests(sconsEnv=sconsEnv)
 
   pkg_file_str = r"""Name: SLEPc
 Version: %s
 Description: The SLEPc project from Universidad Politecnica de Valencia, Spain
 Requires: petsc
+linkeropts=%s
 Libs: %s
 Cflags: %s
-""" % (slepc_version, slepc_libs, slepc_includes)
+""" % (slepc_version, slepc_link_opts, slepc_libs, slepc_includes)
   pkg_file = open("%s/slepc.pc" % (directory), "w")
   pkg_file.write(pkg_file_str)
   pkg_file.close()
