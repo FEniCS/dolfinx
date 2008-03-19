@@ -150,6 +150,11 @@ void uBlasVector::mult(real a)
   y *= a;
 }
 //-----------------------------------------------------------------------------
+real uBlasVector::inner(const uBlasVector& x)
+{
+  return inner_prod(*this,x); 
+}
+//-----------------------------------------------------------------------------
 const uBlasVector& uBlasVector::operator= (real a) 
 { 
   this->assign(ublas::scalar_vector<double> (this->size(), a));

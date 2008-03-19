@@ -121,6 +121,9 @@ namespace dolfin
     /// Scalar multiplication
     void mult(real a);
 
+    /// Inner product 
+    real inner(const uBlasVector& x);
+
     /// Element-wise division
     void div(const uBlasVector& x);
 
