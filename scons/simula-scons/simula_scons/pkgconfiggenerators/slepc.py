@@ -85,7 +85,7 @@ get_slepc_include:
 	-@echo  ${SLEPC_INCLUDE}
 
 get_slepc_libs:
-	-@echo -L${SLEPC_LIB_DIR} -lslepc ${C_SH_LIB_PATH} -L${PETSC_LIB_DIR} ${PETSC_LIB_BASIC}
+	-@echo ${CC_LINKER_SLFLAG}${SLEPC_LIB_DIR} -L${SLEPC_LIB_DIR} -lslepc ${C_SH_LIB_PATH} -L${PETSC_LIB_DIR} ${PETSC_LIB_BASIC}
 
 get_slepc_link_options:
 	-@echo   ${CC_LINKER_SLFLAG}${SLEPC_LIB_DIR}

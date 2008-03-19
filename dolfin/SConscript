@@ -112,7 +112,7 @@ rpathdirs=[Dir("#%s/%s" % (env["projectname"],m.path)).abspath  for m in modules
 #### End TODO
 
 for modName, mod in modules.items():
-    libs, libPath, cppPath, frameworks = [], [], [], []
+    libs, libPath, linkOpts, cppPath, frameworks = [], [], [], [], []
     swiglibs, swigframeworks, swiglibPath, swigcppPath = [], [], [], []
 
     for d in mod.dependencies:
@@ -125,9 +125,10 @@ for modName, mod in modules.items():
             dep = configuredPackages[d]
             libs += dep.libs[0]          # The libs
             frameworks += list(dep.libs[1])    # The frameworks (Darwin)
-            libPath += dep.libPath
-            cppPath += dep.cppPath
-            
+            libPath  += dep.libPath
+            linkOpts += dep.linkOpts
+            cppPath  += dep.cppPath
+
             # on Darwin, automatically add all regular external deps to 
             # swig deps. Strictly speaking, it is only required if the 
             # external dep consist of shared libraries.
@@ -155,6 +156,7 @@ for modName, mod in modules.items():
 
         modEnv.Prepend(CPPPATH=[Dir("#").abspath] + cppPath, LIBPATH=libPath)
         modEnv.Append(LIBS=libs)
+        modEnv.Append(LINKFLAGS=linkOpts)
         if env["PLATFORM"] == "darwin":
             modEnv.Append(FRAMEWORKS=frameworks)
         shlib = modEnv.SharedLibrary(target=os.path.join(mod.path, modName), source=\
