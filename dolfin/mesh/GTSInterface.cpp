@@ -233,6 +233,8 @@ void GTSInterface::overlap(Point& p1, Point& p2, Array<uint>& cells)
   GSList* overlaps = 0,*overlaps_base;
   uint boundedcell;
 
+  CellType& type = mesh.type();
+
   bbprobe = bboxPoint(p1,p2);
 
   overlaps = gts_bb_tree_overlap(tree, bbprobe);
@@ -243,7 +245,10 @@ void GTSInterface::overlap(Point& p1, Point& p2, Array<uint>& cells)
       bb = (GtsBBox *)overlaps->data;
       boundedcell = (uint)(long)bb->bounded;
 
-      cells.push_back(boundedcell);
+      Cell close(mesh, boundedcell);
+
+      if( type.intersects(close, p1, p2) )
+	cells.push_back(boundedcell);
 
       overlaps = overlaps->next;
     }

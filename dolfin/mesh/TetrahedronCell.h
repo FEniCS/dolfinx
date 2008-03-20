@@ -66,6 +66,9 @@ namespace dolfin
     /// Check if point p intersects the cell
     bool intersects(const MeshEntity& entity, const Point& p) const;
 
+    /// Check if points line connecting p1 and p2 cuts the cell
+    bool intersects(const MeshEntity& entity, const Point& p1, const Point& p2) const;
+
     /// Return description of cell type
     std::string description() const;
 
