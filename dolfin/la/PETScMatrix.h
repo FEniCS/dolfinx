@@ -108,6 +108,9 @@ namespace dolfin
     /// Get non-zero values of row i
     void getRow(uint i, int& ncols, Array<int>& columns, Array<real>& values) const;
 
+    /// Set given rows to zero matrix
+    void zero(uint m, const uint* rows);
+
     /// Set given rows to identity matrix
     void ident(uint m, const uint* rows);
     

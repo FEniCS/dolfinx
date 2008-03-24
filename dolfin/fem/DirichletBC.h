@@ -107,6 +107,9 @@ namespace dolfin
     /// Apply boundary condition to linear system for a nonlinear problem
     void apply(GenericMatrix& A, GenericVector& b, const GenericVector& x, const DofMap& dof_map, const ufc::form& form);
 
+    /// Apply boundary condition to linear system for a nonlinear problem
+    void zero(GenericMatrix& A, const DofMap& dof_map, const ufc::form& form);
+
     /// Return mesh
     Mesh& mesh();
 

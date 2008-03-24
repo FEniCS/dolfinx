@@ -285,6 +285,15 @@ void PETScMatrix::getRow(uint i, int& ncols, Array<int>& columns,
   MatRestoreRow(A, i, &ncols, &cols, &vals);
 }
 //-----------------------------------------------------------------------------
+void PETScMatrix::zero(uint m, const uint* rows)
+{
+  IS is = 0;
+  ISCreateGeneral(PETSC_COMM_SELF, static_cast<int>(m), reinterpret_cast<int*>(const_cast<uint*>(rows)), &is);
+  PetscScalar null = 0.0;
+  MatZeroRowsIS(A, is, null);
+  ISDestroy(is);
+}
+//-----------------------------------------------------------------------------
 void PETScMatrix::ident(uint m, const uint* rows)
 {
   IS is = 0;

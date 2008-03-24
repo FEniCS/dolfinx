@@ -77,10 +77,16 @@ namespace dolfin
     /// Set all entries to zero and keep any sparse structure (implemented by sub class)
     inline void zero()
     { matrix->zero(); }
+
+    /// Set given rows to zero matrix
+    inline void zero(uint m, const uint* rows)
+    { matrix->zero(m, rows); }
+
     
     /// Set given rows to identity matrix
     inline void ident(uint m, const uint* rows)
     { matrix->ident(m, rows); }
+
         
     /// Finalise assembly of matrix
     inline void apply()
