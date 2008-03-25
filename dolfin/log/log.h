@@ -71,7 +71,7 @@ namespace dolfin
 
 // Assertion, only active if DEBUG is defined
 #ifdef DEBUG
-#define dolfin_assert(check) do { if ( !(check) ) dolfin::__dolfin_assert(__FILE__, __LINE__, __FUNCTION__, "(" #check ")"); } while (false)
+#define dolfin_assert(check) do { if ( !(check) ) { dolfin::__dolfin_assert(__FILE__, __LINE__, __FUNCTION__, "(" #check ")"); } } while (false)
 #else
 #define dolfin_assert(check)
 #endif
