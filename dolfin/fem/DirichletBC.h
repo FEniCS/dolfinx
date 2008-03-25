@@ -107,7 +107,10 @@ namespace dolfin
     /// Apply boundary condition to linear system for a nonlinear problem
     void apply(GenericMatrix& A, GenericVector& b, const GenericVector& x, const DofMap& dof_map, const ufc::form& form);
 
-    /// Apply boundary condition to linear system for a nonlinear problem
+    /// make row associated with boundary conditions zero, useful for  non-diagonal matrices in a block matrix. 
+    void zero(GenericMatrix& A, const Form& form);
+
+    /// make row associated with boundary conditions zero, useful for  non-diagonal matrices in a block matrix. 
     void zero(GenericMatrix& A, const DofMap& dof_map, const ufc::form& form);
 
     /// Return mesh

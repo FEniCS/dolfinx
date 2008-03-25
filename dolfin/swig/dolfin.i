@@ -8,6 +8,8 @@
 using namespace dolfin;
 %}
 
+//
+
 %init%{
   import_array();
 %}

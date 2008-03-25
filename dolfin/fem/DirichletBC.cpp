@@ -381,8 +381,10 @@ bool DirichletBC::onFacet(real* coordinates, Facet& facet)
   return false;
 }
 //-----------------------------------------------------------------------------
-//
-
+void DirichletBC::zero(GenericMatrix& A, const Form& form)
+{
+  zero(A, form.dofMaps()[1], form.form());
+}
 //-----------------------------------------------------------------------------
 void DirichletBC::zero(GenericMatrix& A, const DofMap& dof_map, const ufc::form& form)
 {
