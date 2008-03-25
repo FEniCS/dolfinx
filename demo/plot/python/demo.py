@@ -1,6 +1,6 @@
 __author__ = "Anders Logg (logg@simula.no)"
-__date__ = "2007-05-29 -- 2007-05-30"
-__copyright__ = "Copyright (C) 2007 Anders Logg"
+__date__ = "2007-05-29 -- 2008-03-25"
+__copyright__ = "Copyright (C) 2007-2008 Anders Logg"
 __license__  = "GNU LGPL Version 2.1"
 
 from dolfin import *
@@ -19,7 +19,7 @@ dX = H
 dY = 1.5*H
 coordinates = mesh.coordinates()
 original = coordinates.copy()
-for i in xrange(500):
+for i in xrange(100):
 
     if X < H or X > 1.0 - H:
         dX = -dX
@@ -38,3 +38,47 @@ for i in xrange(500):
 
     for j in xrange(mesh.numVertices()):
         coordinates[j] = original[j]
+
+# Define a scalar function
+class ScalarFunction(Function):
+    def __init__(self, mesh):
+        self.t = 0.0
+        Function.__init__(self, mesh)
+
+    def eval(self, values, x):
+        dx = x[0] - self.t
+        dy = x[1] - self.t
+        values[0] = exp(-10.0*(dx*dx + dy*dy))
+
+# Define a vector function
+class VectorFunction(Function):
+    def __init__(self, mesh):
+        self.t = 0.0
+        Function.__init__(self, mesh)
+
+    def eval(self, values, x):
+        dx = x[0] - self.t
+        dy = x[1] - self.t
+        values[0] = -dy*exp(-10.0*(dx*dx + dy*dy))
+        values[1] = dx*exp(-10.0*(dx*dx + dy*dy))
+
+    def rank(self):
+        return 1
+
+    def dim(self, i):
+        return 2
+    
+# Plot scalar function
+f = ScalarFunction(mesh)
+plot(f, interactive=False)
+for i in range(100):
+    f.t += 0.01
+    update(f)
+
+# Plot vector function
+mesh = UnitSquare(16, 16)
+g = VectorFunction(mesh)
+plot(g, interactive=False)
+for i in range(200):
+    g.t += 0.005
+    update(g)
