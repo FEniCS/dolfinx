@@ -127,7 +127,7 @@ void SLEPcEigenvalueSolver::solve(const PETScMatrix& A, const PETScMatrix* B, ui
   
   // Set algorithm type
   EPSType eps_type = getType(type);
-  if(eps_type != "default")
+  if(strcmp(eps_type, "default") != 0)
     EPSSetType(eps, eps_type);
 
 //  // Set algorithm type (Hermitian matrix)
