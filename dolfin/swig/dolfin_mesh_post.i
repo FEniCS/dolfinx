@@ -1,5 +1,18 @@
 //--- Extend mesh entity iterators to work as Python iterators ---
 
+%feature("docstring")  dolfin::MeshFunction::fill "
+
+Set all values to given value";
+
+%extend dolfin::MeshFunction {
+
+void fill(const T& value)
+{
+  (*self) = value;
+}
+
+}
+
 %extend dolfin::MeshEntityIterator {
 %pythoncode
 %{
