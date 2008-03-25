@@ -275,7 +275,6 @@ namespace dolfin
   template <class Mat>  
   void uBlasMatrix<Mat>::zero(uint m, const uint* rows) 
   {
-//    const uint n = this->size(1);
     for(uint i = 0; i < m; ++i) {
       ublas::row(*this, rows[i]) *= 0.0;  
     }
