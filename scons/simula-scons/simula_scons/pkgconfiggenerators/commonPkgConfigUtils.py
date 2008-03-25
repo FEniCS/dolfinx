@@ -17,6 +17,7 @@
 
 import os
 import os.path
+import commands
 
 class NoWritablePkgConfDir(Exception):
     def __init__(self, directory, msg=""):
@@ -214,7 +215,7 @@ def write_cppfile(code_str, name):
   cpp_file.close()
 
 def write_cfile(code_str, name):
-    write_cppfile(code_str, name)
+  write_cppfile(code_str, name)
 
 def remove_cppfile(name, execfile=False, ofile=False, libfile=False):
   if execfile:
@@ -228,15 +229,66 @@ def remove_cppfile(name, execfile=False, ofile=False, libfile=False):
   os.unlink(name)
 
 def remove_cfile(name, execfile=False, ofile=False, libfile=False):
-    remove_cppfile(name, execfile, ofile, libfile)
+  remove_cppfile(name, execfile, ofile, libfile)
+
+def is_cxx_compiler(compiler):
+  """Return True if the given compiler is a valid C++ compiler."""
+  # Create a test case that simply includes iostream and prints out some text
+  test_include_iostream_str = r"""#include <iostream>
+
+int main()
+{
+  std::cout << "ok";
+  return 0;
+}
+"""
+  write_cppfile(test_include_iostream_str, "test_include_iostream.cpp")
+
+  cmdstr = "%s test_include_iostream.cpp" % compiler
+  compileFailed, cmdoutput = commands.getstatusoutput(cmdstr)
+  if compileFailed:
+    remove_cppfile("test_include_iostream.cpp")
+    return False
+
+  runFailed, cmdoutput = commands.getstatusoutput("./a.out")
+  if runFailed or cmdoutput != "ok":
+    remove_cppfile("test_include_iostream.cpp", ofile=True, execfile=True)
+    return False
+  return True
 
 class UnableToXXXException(Exception):
-    def __init__(self, msg="", errormsg=""):
-        if errormsg:
-            msg += "\nError message:\n%s" % errormsg
-        Exception.__init__(self, msg)
-        
-class UnableToFindPackageException(UnableToXXXException): pass
-class UnableToCompileException(UnableToXXXException): pass
-class UnableToLinkException(UnableToXXXException): pass
-class UnableToRunException(UnableToXXXException): pass
+  def __init__(self, msg="", errormsg=""):
+    if errormsg:
+      msg += "\nError message:\n%s" % errormsg
+    Exception.__init__(self, msg)
+
+class UnableToFindPackageException(UnableToXXXException):
+  def __init__(self, package):
+    msg = ("Unable to find the location of %s. Consider setting the " + \
+           "%s_DIR variable.") % (package, package.upper())
+    UnableToXXXException.__init__(self, msg)
+
+class UnableToCompileException(UnableToXXXException):
+  def __init__(self, package, cmd="", program="", errormsg=""):
+    msg = "Unable to compile a %s test program." % package
+    if cmd:
+      msg += "\nCompilation command was:\n%s" % cmd
+    if program:
+      msg += "\nFailed test program was:\n%s" % program
+    UnableToXXXException.__init__(self, msg, errormsg=errormsg)
+
+class UnableToLinkException(UnableToXXXException):
+  def __init__(self, package, cmd="", program="", errormsg=""):
+    msg = "Unable to link a %s test program." % package
+    if cmd:
+      msg += "\nLink command was:\n%s" % cmd
+    if program:
+      msg += "\nFailed test program was:\n%s" % program
+    UnableToXXXException.__init__(self, msg, errormsg=errormsg)
+
+class UnableToRunException(UnableToXXXException):
+  def __init__(self, package, cmd="", errormsg=""):
+    msg = "Unable to run a %s test program correctly." % package
+    if cmd:
+      msg += "\nCommand was:\n%s" % cmd
+    UnableToXXXException.__init__(self, msg, errormsg=errormsg)

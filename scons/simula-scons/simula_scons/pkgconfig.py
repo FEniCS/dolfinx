@@ -187,7 +187,7 @@ class PkgConfig(object):
 
     def linkOpts(self):
       dirs = []
-      link_opts = self._pkgconfig("--variable=linkeropts")
+      link_opts = self._pkgconfig("--libs-only-other")
       dirs.append(link_opts)
       return dirs
 

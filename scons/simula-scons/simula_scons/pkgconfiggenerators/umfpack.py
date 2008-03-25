@@ -6,29 +6,6 @@ import commands
 
 from commonPkgConfigUtils import *
 
-class UnableToFindPackage(UnableToXXXException):
-  def __init__(self, package="", what=""):
-    msg = ("Unable to find the location of %s (%s), consider setting the " + \
-           "UMFPACK_DIR variable") % (package, what)
-    Exception.__init__(self, msg)
-
-class UnableToCompileException(UnableToXXXException):
-  def __init__(self, umfpack_dir="", errormsg=""):
-    msg = ("Unable to compile some UMFPACK tests, using '%s' as location " + \
-           "for UMFPACK includes.") % umfpack_dir
-    UnableToXXXException.__init__(self, msg, errormsg=errormsg)
-    
-class UnableToLinkException(UnableToXXXException):
-  def __init__(self, umfpack_dir="", errormsg=""):
-    msg = ("Unable to link some UMFPACK tests, using '%s' as location " + \
-           "for UMFPACK libs.") % umfpack_dir
-    UnableToXXXException.__init__(self, msg, errormsg=errormsg)
-
-class UnableToRunException(UnableToXXXException):
-  def __init__(self, errormsg=""):
-    msg = "Unable to run UMFPACK program correctly."
-    UnableToXXXException.__init__(self, msg, errormsg=errormsg)
-
 def generate_dirs(base_dirs, *names):
   include_exts = [["include"], ["Include"]]
   for name in names:
@@ -63,7 +40,7 @@ def find_dependency_file(dirs, filename, what="", package=""):
     if os.path.isfile(os.path.join(found_dir, filename)):
       found_file = True
   if not found_file:
-    raise UnableToFindPackage(package=package, what=what)
+    raise UnableToFindPackage(package)
   return found_dir
 
 def getBaseDirs():
@@ -196,10 +173,13 @@ int main() {
   cmdstr = "%s %s umfpack_config_test_include.cpp %s" % (compiler, cflags, libs)
   compileFailed, cmdoutput = commands.getstatusoutput(cmdstr)
   if compileFailed:
-    raise UnableToCompileException(umfpack_dir=getUmfpackIncDir(), errormsg=cmdoutput)
+    remove_cppfile("umfpack_config_test_include.cpp")
+    raise UnableToCompileException("UMFPACK", cmd=cmdstr,
+                                   program=cpp_test_include_str, errormsg=cmdoutput)
   runFailed, cmdoutput = commands.getstatusoutput("./a.out")
   if runFailed:
-    raise UnableToRunException(errormsg=cmdoutput)
+    remove_cppfile("umfpack_config_test_include.cpp", execfile=True)
+    raise UnableToRunException("UMFPACK", errormsg=cmdoutput)
   umfpack_version = cmdoutput
 
   remove_cppfile("umfpack_config_test_include.cpp", execfile=True)
@@ -298,25 +278,30 @@ int main (void)
   cmdstr = "%s %s -c umfpack_config_test_lib.cpp" % (compiler, cflags)
   compileFailed, cmdoutput = commands.getstatusoutput(cmdstr)
   if compileFailed:
-    raise UnableToCompileException(umfpack_dir=getUmfpackIncDir(), errormsg=cmdoutput)
+    remove_cppfile("umfpack_config_test_lib.cpp")
+    raise UnableToCompileException("UMFPACK", cmd=cmdstr,
+                                   program=cpp_test_lib_str, errormsg=cmdoutput)
 
   cmdstr = "%s %s umfpack_config_test_lib.o" % (linker, libs)
-  compileFailed, cmdoutput = commands.getstatusoutput(cmdstr)
-  if compileFailed:
+  linkFailed, cmdoutput = commands.getstatusoutput(cmdstr)
+  if linkFailed:
     errormsg = ("Using '%s' for BLAS, consider setting the environment " + \
                 "variable ATLAS_DIR if this is wrong.\n") % getATLASDir()
     errormsg += cmdoutput
-    raise UnableToLinkException(umfpack_dir=getUmfpackLibDir(), errormsg=errormsg)
+    raise UnableToLinkException("UMFPACK", cmd=cmdstr,
+                                program=cpp_test_lib_str, errormsg=errormsg)
 
   runFailed, cmdoutput = commands.getstatusoutput("./a.out")
   if runFailed:
-    raise UnableToRunException(errormsg=cmdoutput)
+    raise UnableToRunException("UMFPACK", errormsg=cmdoutput)
   cmdlines = cmdoutput.split("\n")
   values = []
   for line in cmdlines:
     values.append(int(line.split(" ")[3]))
   if not values == [1, 2, 3, 4, 5]:
-    raise Exception("UMFPACK test does not produce correct result, check your UMFPACK installation.")
+    errormsg = "UMFPACK test does not produce correct result, check your UMFPACK installation."
+    errormsg += "\n%s" % cmdoutput
+    raise UnableToRunException("UMFPACK", errormsg=errormsg)
 
   remove_cppfile("umfpack_config_test_lib.cpp", ofile=True, execfile=True)
 

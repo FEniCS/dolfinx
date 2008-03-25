@@ -1,4 +1,4 @@
-Add meta-dependency package for optional dependencies, where at least one
+* Add meta-dependency package for optional dependencies, where at least one
 dependency must be satisfied:
 
 A-la:
@@ -19,3 +19,10 @@ matrix = Dependency("petsc", "umfpack", type="any")
 Again, we put matrix in the Dependencies list
 
 We also need to set HAVE_<PACKAGE> flags accordingly
+
+* Use env["projectname"] instead of the src symlink
+
+* Fix better exception handling (more consistent) in the pkg-config generators
+
+* Remove files like petsc_config_test_version.cpp also when exceptions occurs
+

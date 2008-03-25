@@ -17,6 +17,13 @@ The addon should be installed with distutils, running
 
 -------------------------------------------------------------------------------
 
+License:
+
+simula-scons is released under the same license as SCons itself, that is the
+MIT license (see LICENSE).
+
+-------------------------------------------------------------------------------
+
 Feedback:
 
 Please provide feedback either to developers found in the AUTHORS file, or to
