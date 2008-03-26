@@ -14,12 +14,15 @@ elements = [eval(element) for element in elements.split("\n")[1:-1]]
 # Iterate over elements and compile
 signatures = []
 for i in range(len(elements)):
+
+    # Don't generate all functions
+    OPTIONS = FFC_OPTIONS.copy()
+    OPTIONS["no-evaluate_basis"] = True
+    OPTIONS["no-evaluate_basis_derivatives"] = True
     
     # Generate code
-    print "Compiling element %d out of %d..." % (i, len(elements))
+    print "Compiling projection %d out of %d..." % (i, len(elements))
     element = elements[i]
-    print element
-    print type(element)
 
     v = TestFunction(element)
     Pf = TrialFunction(element)
@@ -28,7 +31,7 @@ for i in range(len(elements)):
     L = dot(f, v) * dx
 
     name = "ffc_L2proj_%.2d" % i
-    compile([a, L], name, language="dolfin")
+    compile([a, L], name, language="dolfin", options=OPTIONS)
 
     # Save signatures of elements and dof maps
     dof_map = DofMap(element)
