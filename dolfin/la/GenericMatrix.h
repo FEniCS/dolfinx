@@ -86,6 +86,11 @@ namespace dolfin
     /// Set given rows to identity matrix
     virtual void ident(uint m, const uint* rows) = 0;
 
+    /// Set given rows to zero matrix
+    virtual void zero(uint m, const uint* rows) = 0;
+
+
+
   };
 
 }

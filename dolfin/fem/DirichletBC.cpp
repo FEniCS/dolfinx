@@ -381,3 +381,80 @@ bool DirichletBC::onFacet(real* coordinates, Facet& facet)
   return false;
 }
 //-----------------------------------------------------------------------------
+void DirichletBC::zero(GenericMatrix& A, const Form& form)
+{
+  zero(A, form.dofMaps()[1], form.form());
+}
+//-----------------------------------------------------------------------------
+void DirichletBC::zero(GenericMatrix& A, const DofMap& dof_map, const ufc::form& form)
+{
+  // FIXME: How do we reuse the dof map for u?
+
+  std::string s;
+  if (method == topological)
+    s = "Applying Dirichlet boundary conditions to linear system";
+  else if (method == geometrical)
+    s = "Applying Dirichlet boundary conditions to linear system (geometrical approach)";
+  else
+    s = "Applying Dirichlet boundary conditions to linear system (pointwise approach)";
+  
+  // Make sure we have the facet - cell connectivity
+  const uint D = _mesh.topology().dim();
+  if (method == topological)
+    _mesh.init(D - 1, D);
+
+  // Create local data for application of boundary conditions
+  BoundaryCondition::LocalData data(form, _mesh, dof_map, sub_system);
+  
+  // A map to hold the mapping from boundary dofs to boundary values
+  std::map<uint, real> boundary_values;
+
+  if (method == pointwise)
+  {
+    Progress p(s, _mesh.size(D));
+    for (CellIterator cell(_mesh); !cell.end(); ++cell)
+    {
+      computeBCPointwise(boundary_values, *cell, data);
+      p++;
+    }
+  }
+  else
+  {
+    // Iterate over the facets of the mesh
+    Progress p("Applying Dirichlet boundary conditions", _mesh.size(D - 1));
+    for (FacetIterator facet(_mesh); !facet.end(); ++facet)
+    {
+      // Skip facets not inside the sub domain
+      if ((*sub_domains)(*facet) != sub_domain)
+      {
+        p++;
+        continue;
+      }
+
+      // Chose strategy
+      if (method == topological)
+        computeBCTopological(boundary_values, *facet, data);
+      else
+        computeBCGeometrical(boundary_values, *facet, data);
+    
+      // Update process
+      p++;
+    }
+  }
+
+  // Copy boundary value data to arrays
+  uint* dofs = new uint[boundary_values.size()];
+  std::map<uint, real>::const_iterator boundary_value;
+  uint i = 0;
+  for (boundary_value = boundary_values.begin(); boundary_value != boundary_values.end(); ++boundary_value)
+  {
+    dofs[i]     = boundary_value->first;
+  }
+
+  // Modify linear system (A_ii = 1)
+  A.zero(boundary_values.size(), dofs);
+
+  // Clear temporary arrays
+  delete [] dofs;
+}
+

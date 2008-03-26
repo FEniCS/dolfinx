@@ -95,6 +95,9 @@ namespace dolfin
     /// Set all entries to zero
     void zero();
 
+    /// Set given rows to zero matrix
+    void zero(uint m, const uint* rows);
+
     /// Set given rows to identity matrix
     void ident(uint m, const uint* rows);
 
@@ -267,6 +270,14 @@ namespace dolfin
     // Set all non-zero values to zero without detroying non-zero pattern
     // It might be faster to iterate throught entries?
     (*this) *= 0.0;
+  }
+  //-----------------------------------------------------------------------------
+  template <class Mat>  
+  void uBlasMatrix<Mat>::zero(uint m, const uint* rows) 
+  {
+    for(uint i = 0; i < m; ++i) {
+      ublas::row(*this, rows[i]) *= 0.0;  
+    }
   }
   //-----------------------------------------------------------------------------
   template <class Mat>  
