@@ -122,8 +122,9 @@ elif env["enableDebug"]:
 
 # if Optimization is requested, use -O3
 if env["enableOptimize"]:
-  env.Append(CXXFLAGS=" -O3")
+  env.Append(CXXFLAGS=" -O3 -DNDEBUG")
 else:
+  # FIXME: why are we optimizing when enableOptimize is False?
   env.Append(CXXFLAGS=" -O2")
 
 # Not sure we need this - but lets leave it for completeness sake - if people
