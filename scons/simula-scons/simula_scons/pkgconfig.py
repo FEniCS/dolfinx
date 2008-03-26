@@ -186,10 +186,8 @@ class PkgConfig(object):
         return dirs
 
     def linkOpts(self):
-      dirs = []
-      link_opts = self._pkgconfig("--libs-only-other")
-      dirs.append(link_opts)
-      return dirs
+      link_opts = self._pkgconfig("--libs-only-other").split()
+      return link_opts
 
     def compiler(self):
       # If the compiler, and maybe the compilertype variable is set, read and 
