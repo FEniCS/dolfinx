@@ -8,7 +8,6 @@ from math import sqrt
 
 # Read and plot mesh from file
 mesh = Mesh("dolfin-2.xml.gz")
-plot(mesh, interactive=False)
 
 # Have some fun with the mesh
 R = 0.15
@@ -34,7 +33,7 @@ for i in xrange(100):
         if r < R:
             coordinates[j] = [X + (r/R)**2*(x - X), Y + (r/R)**2*(y - Y)]
 
-    update(mesh)
+    plot(mesh)
 
     for j in xrange(mesh.numVertices()):
         coordinates[j] = original[j]
@@ -70,15 +69,13 @@ class VectorFunction(Function):
     
 # Plot scalar function
 f = ScalarFunction(mesh)
-plot(f, interactive=False)
 for i in range(100):
     f.t += 0.01
-    update(f)
+    plot(f)
 
 # Plot vector function
 mesh = UnitSquare(16, 16)
 g = VectorFunction(mesh)
-plot(g, interactive=False)
 for i in range(200):
     g.t += 0.005
-    update(g)
+    plot(g)
