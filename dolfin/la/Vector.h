@@ -106,15 +106,15 @@ namespace dolfin
     /// Return implementation
     inline DefaultVector& vec()
     { return vector; }
-
+    
     /// Return backend factory
     inline LinearAlgebraFactory& factory() const
     { return vector.factory(); }
     
-    private:
-
-      DefaultVector vector;
-
+  private:
+    
+    DefaultVector vector;
+    
   };
 
 }

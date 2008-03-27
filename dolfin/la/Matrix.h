@@ -19,6 +19,9 @@ namespace dolfin
   
   /// This class provides an interface to the default DOLFIN
   /// matrix implementation as decided in default_la_types.h.
+
+  // FIXME: This class should exactly duplicate the GenericMatrix interface
+  // FIXME: Nothing more or less (perhaps with exception from the mat() function
   
   class Matrix : public GenericMatrix, public Variable
   {
@@ -110,6 +113,8 @@ namespace dolfin
     
   private:
 
+    // FIXME: Why should this be static? Why not just GenericMatrix*? (envelope-letter)
+    // FIXME: And why a pointer here and not in Vector?
     DefaultMatrix* matrix;
     
   };
