@@ -115,14 +115,15 @@ env["CXXFLAGS"] = "-Wall -pipe -ansi" # -Werror"
 #env["SHFORTRANFLAGS"] = "-Wall -pipe -fPIC"
 
 # If Debug is enabled, add -g:
-if env["enableDebugUblas"]:
+if env["enableDebug"]:
   env.Append(CXXFLAGS=" -DDEBUG -g -Werror")
-elif env["enableDebug"]:
-  env.Append(CXXFLAGS=" -DDEBUG -g -Werror -DNDEBUG")
+
+if not env["enableDebugUblas"]:
+  env.Append(CXXFLAGS=" -DNDEBUG")
 
 # if Optimization is requested, use -O3
 if env["enableOptimize"]:
-  env.Append(CXXFLAGS=" -O3 -DNDEBUG")
+  env.Append(CXXFLAGS=" -O3")
 else:
   # FIXME: why are we optimizing when enableOptimize is False?
   env.Append(CXXFLAGS=" -O2")
