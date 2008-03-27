@@ -69,8 +69,6 @@ class VectorFunction(Function):
     
 # Plot scalar function
 f = ScalarFunction(mesh)
-file = File("test.pvd")
-file << f
 for i in range(100):
     f.t += 0.01
     plot(f)
