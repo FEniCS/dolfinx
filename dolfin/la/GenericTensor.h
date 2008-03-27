@@ -33,6 +33,7 @@ namespace dolfin
     /// Initialize zero tensor using sparsity pattern
     virtual void init(const GenericSparsityPattern& sparsity_pattern) = 0;
 
+    // FIXME: Remove, not needed? Use factory instead?
     /// Create uninitialized tensor
     virtual GenericTensor* create() const = 0;
 

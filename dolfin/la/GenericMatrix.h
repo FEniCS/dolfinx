@@ -36,6 +36,7 @@ namespace dolfin
     /// Initialize zero tensor using sparsity pattern (implemented by sub class)
     virtual void init(const GenericSparsityPattern& sparsity_pattern) = 0;
 
+    // FIXME: Not needed?
     /// Create uninitialized matrix
     virtual GenericMatrix* create() const = 0;
 
@@ -85,6 +86,8 @@ namespace dolfin
 
     /// Set given rows to identity matrix
     virtual void ident(uint m, const uint* rows) = 0;
+
+	// FIXME: Add more functions here
 
     /// Set given rows to zero matrix
     virtual void zero(uint m, const uint* rows) = 0;
