@@ -20,11 +20,11 @@ def pkgTests(forceCompiler=None, sconsEnv=None, **kwargs):
 # interface for the generatePkgConf function.
 def generatePkgConf(directory=suitablePkgConfDir(),**kwargs):
     
-    print """\nError:\n\nDolfin now supplies its own pkg-config file, which we are
+    print """\nError:\n\nDOLFIN now supplies its own pkg-config file, which we are
 unable to find! Either copy that file to a directory search by pkg-config, or 
-add the directory where dolfin installs the file to your PKG_CONFIG_PATH 
+add the directory where DOLFIN installs the file to your PKG_CONFIG_PATH 
 environment variable. The directory in question is $prefix/lib/pkgconfig, where 
-$prefix is the install prefix for Dolfin\n\n"""
+$prefix is the install prefix for DOLFIN\n\n"""
 
     sys.exit(1)
 

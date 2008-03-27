@@ -113,7 +113,7 @@ rpathdirs=[Dir("#%s/%s" % (env["projectname"],m.path)).abspath  for m in modules
 
 for modName, mod in modules.items():
     libs, libPath, linkOpts, cppPath, frameworks = [], [], [], [], []
-    swiglibs, swigframeworks, swiglibPath, swigcppPath = [], [], [], []
+    swiglibs, swigframeworks, swiglinkOpts, swiglibPath, swigcppPath = [], [], [], [], []
 
     for d in mod.dependencies:
         if d in modules:
@@ -168,7 +168,7 @@ for modName, mod in modules.items():
         # Register swig wrapper targets in the module
         mod.cxxFlags += " -fno-strict-aliasing"
 
-        modEnv = swigEnv.Copy(CXXFLAGS=mod.cxxFlags, LINKFLAGS=mod.linkFlags)
+        modEnv = swigEnv.Copy(CXXFLAGS=mod.cxxFlags, LINKFLAGS=mod.linkFlags + linkOpts)
         modEnv.Append(SWIGFLAGS=mod.swigFlags + ["-I%s" % i for i in swigcppPath])
         
         ### uncomment the following line to remove -Werror from the CXXFLAGS:

@@ -1,10 +1,10 @@
-// Copyright (C) 2007 Anders Logg and Garth N. Wells.
+// Copyright (C) 2007-2008 Anders Logg and Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Kristian Oelgaard, 2007
 //
 // First added:  2007-04-10
-// Last changed: 2008-01-03
+// Last changed: 2008-03-26
 
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Mesh.h>
@@ -127,17 +127,25 @@ void DirichletBC::apply(GenericMatrix& A, GenericVector& b,
 }
 //-----------------------------------------------------------------------------
 void DirichletBC::apply(GenericMatrix& A, GenericVector& b,
-                const GenericVector* x, const DofMap& dof_map, const ufc::form& form)
+                        const GenericVector* x, const DofMap& dof_map, const ufc::form& form)
 {
   // FIXME: How do we reuse the dof map for u?
-
+  
+  // Simple check
+  const uint N = dof_map.global_dimension();
+  if (N != A.size(0) || N != A.size(1))
+    error("Incorrect dimension of matrix for application of boundary conditions. Did you assemble it on a different mesh?");
+  if (N != b.size())
+    error("Incorrect dimension of matrix for application of boundary conditions. Did you assemble it on a different mesh?");
+  
+  // Set message string
   std::string s;
   if (method == topological)
-    s = "Applying Dirichlet boundary conditions to linear system";
+    s = "Computing Dirichlet boundary values";
   else if (method == geometrical)
-    s = "Applying Dirichlet boundary conditions to linear system (geometrical approach)";
+    s = "Computing Dirichlet boundary values (geometrical approach)";
   else
-    s = "Applying Dirichlet boundary conditions to linear system (pointwise approach)";
+    s = "Computing Dirichlet boundary values (pointwise approach)";
   
   // Make sure we have the facet - cell connectivity
   const uint D = _mesh.topology().dim();
@@ -162,7 +170,7 @@ void DirichletBC::apply(GenericMatrix& A, GenericVector& b,
   else
   {
     // Iterate over the facets of the mesh
-    Progress p("Applying Dirichlet boundary conditions", _mesh.size(D - 1));
+    Progress p(s, _mesh.size(D - 1));
     for (FacetIterator facet(_mesh); !facet.end(); ++facet)
     {
       // Skip facets not inside the sub domain
@@ -202,6 +210,8 @@ void DirichletBC::apply(GenericMatrix& A, GenericVector& b,
     for (uint i = 0; i < boundary_values.size(); i++)
       values[i] -= x_values[i];
   }
+
+  message("Applying boundary conditions to linear system.");
   
   // Modify RHS vector (b[i] = value)
   b.set(values, boundary_values.size(), dofs);

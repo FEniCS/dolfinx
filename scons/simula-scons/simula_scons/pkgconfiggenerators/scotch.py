@@ -6,29 +6,6 @@ import commands
 
 from commonPkgConfigUtils import *
 
-class unableToCompileException(Exception):
-  def __init__(self, scotch_dir="", cmdstr=None):
-    if cmdstr:
-      Exception.__init__(self, "Unable to compile a scotch tests,\nusing %s as location for scotch includes.\nTry to set the SCOTCH_DIR environment variable.\nThe following compile command was used:\n%s" % (scotch_dir, cmdstr))
-    else:
-      Exception.__init__(self, "Unable to compile a scotch tests,\nusing %s as location for scotch includes.\nTry to set the SCOTCH_DIR environment variable." % (scotch_dir))
-
-class unableToLinkException(Exception):
-  def __init__(self, scotch_dir="", cmdstr=None):
-    if cmdstr:
-      Exception.__init__(self, "Unable to link a scotch test,\nusing %s as location for scotch includes.\nTry to set the SCOTCH_DIR environment variable.\nThe following link command was used:\n%s" % (scotch_dir, cmdstr))
-    else:
-      Exception.__init__(self, "Unable to link a scotch tests,\nusing %s as location for scotch includes.\nTry to set the SCOTCH_DIR environment variable." % (scotch_dir))
-
-
-class unableToRunException(Exception):
-  def __init__(self):
-    Exception.__init__(self, "Unable to run scotch program correctly.")
-
-class runFailureException(Exception):
-  def __init__(self):
-    Exception.__init__(self, "The scotch testprogram does not run correctly.")
-
 def pkgTests(forceCompiler=None, sconsEnv=None, **kwargs):
   """Run the tests for this package
   
@@ -106,7 +83,9 @@ int main() {
     compileFailed, cmdoutput = commands.getstatusoutput(cmdstr)
     if compileFailed:
       # Nope, still does not work, exit with Exception, print orig. cmdstr
-      raise unableToCompileException(scotch_dir, cmdstr)
+      remove_cppfile("scotch_config_test_include.cpp")
+      raise UnableToCompileException("SCOTCH", cmd=cmdstr,
+                                     program=cpp_test_include_str, errormsg=cmdoutput)
   else:
     usealternate = True
     scotch_libs = os.path.join(scotch_libs,'lib')
@@ -121,31 +100,39 @@ int main() {
     cmdstr = alt_cmdstr
   compileFailed, cmdoutput = commands.getstatusoutput(cmdstr)
   if compileFailed:
-    raise unableToCompileException(scotch_dir, cmdstr)
+    remove_cppfile("scotch_config_test_lib.cpp")
+    raise UnableToCompileException("SCOTCH", cmd=cmdstr,
+                                   program=cpp_test_lib_str, errormsg=cmdoutput)
 
   # test that we can link a binary using scotch:
   cmdstr = "%s -L%s scotch_config_test_lib.o -lscotch -lscotcherr" % (linker, scotch_dir)
   alt_cmdstr = "%s -L%s/lib scotch_config_test_lib.o -lscotch -lscotcherr" % (linker, scotch_dir)
   if usealternate:
     cmdstr = alt_cmdstr
-  compileFailed, cmdoutput = commands.getstatusoutput(cmdstr)
-  if compileFailed:
-    raise unableToLinkException(scotch_dir, cmdstr)
+  linkFailed, cmdoutput = commands.getstatusoutput(cmdstr)
+  if linkFailed:
+    remove_cppfile("scotch_config_test_lib.cpp", ofile=True)
+    raise UnableToLinkException("SCOTCH", cmd=cmdstr,
+                                program=cpp_test_lib_str, errormsg=cmdoutput)
    
   # run the binary:
   runFailed, cmdoutput = commands.getstatusoutput("./a.out")
-  if runFailed:
-    raise unableToRunException()
-  if not cmdoutput == "success":
-    raise runFailureException()
+  if runFailed or not cmdoutput == "success":
+    remove_cppfile("scotch_config_test_lib.cpp", ofile=True, execfile=True)
+    raise UnableToRunException("SCOTCH", errormsg=cmdoutput)
 
   remove_cppfile("scotch_config_test_lib.cpp", ofile=True, execfile=True)
 
   # Trying to figure out the version number from scotch.h
   if usealternate:
-    scotch_h_file = open("%s/include/scotch.h" % scotch_dir, 'r')
+    scotch_h_filename = "%s/include/scotch.h" % scotch_dir
   else:
-    scotch_h_file = open("%s/scotch.h" % scotch_dir, 'r')
+    scotch_h_filename = "%s/scotch.h" % scotch_dir
+  try:
+    scotch_h_file = open(scotch_h_filename, 'r')
+  except Exception, err:
+    msg = "Unable to open %s. Is SCOTCH_DIR set correctly?" % scotch_h_filename
+    raise UnableToXXXException(msg, errormsg=err)
   scotch_version = '4.0'  # assume 4.0 as default
   for line in scotch_h_file:
     if "Version" in line:

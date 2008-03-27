@@ -70,10 +70,6 @@ void VTKFile::operator<<(MeshFunction<double>& meshfunction)
 //----------------------------------------------------------------------------
 void VTKFile::operator<<(Function& u)
 {
-  // Can only save discrete functions
-  if ( u.type() != Function::discrete )
-    error("Only discrete functions can be saved in VTK format.");
-
   // Update vtu file name and clear file
   vtuNameUpdate(counter);
   

@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2007 Anders Logg.
+// Copyright (C) 2006-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Johan Hoffman 2006.
@@ -6,7 +6,7 @@
 // Modified by Kristian Oelgaard 2006.
 //
 // First added:  2006-06-05
-// Last changed: 2007-07-20
+// Last changed: 2008-03-25
 //
 // Rename of the former Tetrahedron.cpp
 //
@@ -520,11 +520,6 @@ bool TetrahedronCell::intersects(const MeshEntity& tetrahedron,
   d2 = orient3d((double *)x0, (double *)x3, (double *)x2, x);
   d3 = orient3d((double *)x0, (double *)x1, (double *)x3, x);
   d4 = orient3d((double *)x1, (double *)x2, (double *)x3, x);
-
-  cout << "d1: " << d1 << endl;
-  cout << "d2: " << d2 << endl;
-  cout << "d3: " << d3 << endl;
-  cout << "d4: " << d4 << endl;
 
   // FIXME: Need to check the predicates for correctness
 //   if(fabs(d1) == DOLFIN_EPS ||

@@ -6,29 +6,6 @@ import commands
 
 from commonPkgConfigUtils import *
 
-class UnableToFindPackageException(UnableToXXXException):
-  def __init__(self, package=""):
-    msg = ("Unable to find the location of %s. Consider setting " + \
-           "the %s_DIR variable.") % (package, package.upper())
-    UnableToXXXException.__init__(self, msg)
-
-class UnableToCompileException(UnableToXXXException):
-  def __init__(self, petsc_dir="", errormsg=""):
-    msg = ("Unable to compile some PETSc tests, using '%s' as " + \
-           "location for PETSc includes.") % petsc_dir
-    UnableToXXXException.__init__(self, msg, errormsg=errormsg)
-    
-class UnableToLinkException(UnableToXXXException):
-  def __init__(self, petsc_dir="", errormsg=""):
-    msg = ("Unable to link some PETSc tests, using '%s' as location " + \
-           "for PETSc libs.") % petsc_dir
-    UnableToXXXException.__init__(self, msg, errormsg=errormsg)
-
-class UnableToRunException(UnableToXXXException):
-  def __init__(self, package, errormsg=""):
-    msg = "Unable to run %s program correctly." % package
-    UnableToXXXException.__init__(self, msg, errormsg=errormsg)
-
 def getPetscVariables():
   # First make sure PETSC_DIR is set. This will raise an exception if not:
   petsc_dir = getPetscDir()
@@ -44,10 +21,7 @@ get_petsc_include:
 	-@echo  -I${PETSC_DIR}/bmake/${PETSC_ARCH} -I${PETSC_DIR}/include ${MPI_INCLUDE}
 
 get_petsc_libs:
-	-@echo  ${C_SH_LIB_PATH} -L${PETSC_LIB_DIR} ${PETSC_LIB_BASIC}
-
-get_petsc_link_options:
-	-@echo   ${C_SH_LIB_PATH}
+	-@echo   ${C_SH_LIB_PATH} -L${PETSC_LIB_DIR} ${PETSC_LIB_BASIC}
 
 get_petsc_cc:
 	-@echo ${PCC}
@@ -62,6 +36,7 @@ get_petsc_ld:
   cmdstr = "make -f %s get_petsc_include" % filename
   runFailed, cmdoutput = commands.getstatusoutput(cmdstr)
   if runFailed:
+    os.unlink(filename)
     msg = "Unable to read PETSc includes through make."
     raise UnableToXXXException(msg, errormsg=cmdoutput)
   petsc_includes = cmdoutput
@@ -69,20 +44,15 @@ get_petsc_ld:
   cmdstr = "make -f %s get_petsc_libs" % filename
   runFailed, cmdoutput = commands.getstatusoutput(cmdstr)
   if runFailed:
+    os.unlink(filename)
     msg = "Unable to read PETSc libs through make."
     raise UnableToXXXException(msg, errormsg=cmdoutput)
   petsc_libs = cmdoutput
 
-  cmdstr = "make -f %s get_petsc_link_options" % filename
-  runFailed, cmdoutput = commands.getstatusoutput(cmdstr)
-  if runFailed:
-    msg = "Unable to read PETSc link options through make."
-    raise UnableToXXXException(msg, errormsg=cmdoutput)
-  petsc_link_options = cmdoutput
-
   cmdstr = "make -f %s get_petsc_cc" % filename
   runFailed, cmdoutput = commands.getstatusoutput(cmdstr)
   if runFailed:
+    os.unlink(filename)
     msg = "Unable to figure out correct PETSc compiler."
     raise UnableToXXXException(msg, errormsg=cmdoutput)
   # We probably get a c-compiler from the petsc config, switch to a 
@@ -92,6 +62,7 @@ get_petsc_ld:
   cmdstr = "make -f %s get_petsc_ld" % filename
   runFailed, cmdoutput = commands.getstatusoutput(cmdstr)
   if runFailed:
+    os.unlink(filename)
     msg = "Unable to figure out correct PETSc linker"
     raise UnableToXXXException(msg, errormsg=cmdoutput)
   # We probably get a c-compiler from the petsc config, switch to a 
@@ -100,7 +71,7 @@ get_petsc_ld:
 
   os.unlink(filename)
   
-  return petsc_includes, petsc_libs, petsc_link_options, petsc_cc, petsc_ld
+  return petsc_includes, petsc_libs, petsc_cc, petsc_ld
 
 def getPetscDir():
   petsc_dir = ""
@@ -108,10 +79,10 @@ def getPetscDir():
     petsc_dir = os.environ["PETSC_DIR"]
   else:
     #petsc_dir = os.path.join(os.path.sep,"usr","lib","petsc")
-    raise UnableToFindPackageException(package="PETSc")
+    raise UnableToFindPackageException("PETSc")
   return petsc_dir 
 
-def pkgVersion(compiler=None, linker=None, link_opts=None, cflags=None, libs=None, **kwargs):
+def pkgVersion(compiler=None, linker=None, cflags=None, libs=None, **kwargs):
   cpp_test_version_str = r"""
 #include <stdio.h>
 #include <petsc.h>
@@ -137,8 +108,6 @@ int main() {
     compiler = pkgCompiler(**kwargs)
   if not linker:
     linker = pkgLinker(**kwargs)
-  if not link_opts:
-    link_opts = pkgLinkOpts(**kwargs)
   if not cflags:
     cflags = pkgCflags()
   if not libs:
@@ -147,13 +116,18 @@ int main() {
   cmdstr = "%s %s -c petsc_config_test_version.cpp" % (compiler, cflags)
   compileFailed, cmdoutput = commands.getstatusoutput(cmdstr)
   if compileFailed:
-    raise UnableToCompileException(petsc_dir=getPetscDir(), errormsg=cmdoutput)
-  cmdstr = "%s %s %s petsc_config_test_version.o" % (linker, link_opts, libs)
+    remove_cppfile("petsc_config_test_version.cpp")
+    raise UnableToCompileException("PETSc", cmd=cmdstr,
+                                   program=cpp_test_version_str, errormsg=cmdoutput)
+  cmdstr = "%s %s petsc_config_test_version.o" % (linker, libs)
   linkFailed, cmdoutput = commands.getstatusoutput(cmdstr)
   if linkFailed:
-    raise UnableToLinkException(petsc_dir=getPetscDir(), errormsg=cmdoutput)
+    remove_cppfile("petsc_config_test_version.cpp", ofile=True)
+    raise UnableToLinkException("PETSc", cmd=cmdstr,
+                                program=cpp_test_version_str, errormsg=cmdoutput)
   runFailed, cmdoutput = commands.getstatusoutput("./a.out")
   if runFailed:
+    remove_cppfile("petsc_config_test_version.cpp", ofile=True, execfile=True)
     raise UnableToRunException("PETSc", errormsg=cmdoutput)
   petsc_version = cmdoutput
 
@@ -161,31 +135,27 @@ int main() {
   return petsc_version
 
 def pkgLibs(**kwargs):
-  includes, libs, link_opts, compiler, linker = getPetscVariables()
+  includes, libs, compiler, linker = getPetscVariables()
   return libs
 
-def pkgLinkOpts(**kwargs):
-  includes, libs, link_opts, compiler, linker = getPetscVariables()
-  return link_opts
-
 def pkgCflags(**kwargs):
-  includes, libs, link_opts, compiler, linker = getPetscVariables()
+  includes, libs, compiler, linker = getPetscVariables()
   return includes
 
 def pkgCompiler(**kwargs):
-  includes, libs, link_opts, compiler, linker = getPetscVariables()
+  includes, libs, compiler, linker = getPetscVariables()
   if not compiler:
     compiler = get_compiler(kwargs.get("sconsEnv", None))
   return compiler
 
 def pkgLinker(**kwargs):
-  includes, libs, link_opts, compiler, linker = getPetscVariables()
+  includes, libs, compiler, linker = getPetscVariables()
   if not linker:
     linker = get_linker(kwargs.get("sconsEnv", None))
   return linker
 
 def pkgTests(forceCompiler=None, sconsEnv=None,
-             cflags=None, libs=None, link_opts=None, version=None, **kwargs):
+             cflags=None, libs=None, version=None, **kwargs):
   """Run the tests for this package.
      
      If Ok, return various variables, if not we will end with an exception.
@@ -196,8 +166,6 @@ def pkgTests(forceCompiler=None, sconsEnv=None,
     cflags = pkgCflags()
   if not libs:
     libs = pkgLibs()
-  if not link_opts:
-    link_opts = pkgLinkOpts()
 
   if not forceCompiler:
     compiler = pkgCompiler(sconsEnv=sconsEnv)
@@ -210,23 +178,22 @@ def pkgTests(forceCompiler=None, sconsEnv=None,
                          compiler=compiler, linker=linker)
   else:
     # Run pkgVersion since this is the current PETSc test
-    pkgVersion(cflags=cflags, libs=libs, link_opts=link_opts, compiler=compiler, linker=linker)
+    pkgVersion(cflags=cflags, libs=libs, compiler=compiler, linker=linker)
 
-  return version, compiler, linker, link_opts, libs, cflags
+  return version, compiler, linker, libs, cflags
 
 def generatePkgConf(directory=suitablePkgConfDir(), sconsEnv=None, **kwargs):
 
-  version, compiler, linker, link_opts, libs, cflags = pkgTests(sconsEnv=sconsEnv)
+  version, compiler, linker, libs, cflags = pkgTests(sconsEnv=sconsEnv)
 
   pkg_file_str = r"""Name: PETSc
 Version: %s
 Description: The PETSc project from Argonne Nat.Lab, Math. and CS Division (http://www-unix.mcs.anl.gov/petsc/petsc-as/)
 compiler=%s
-linkeropts=%s
 linker=%s
 Libs: %s
 Cflags: %s
-""" % (version, compiler, link_opts, linker, libs, cflags)
+""" % (version, compiler, linker, libs, cflags)
   pkg_file = open(os.path.join(directory,"petsc.pc"), "w")
   pkg_file.write(pkg_file_str)
   pkg_file.close()

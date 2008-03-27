@@ -27,11 +27,13 @@ def darwinSwig(env):
 
 
 def swigScanner(node, env, path):
-    """What do I do? Arve will write this."""
+    """SCons scanner hook to scan swig files for dependencies.
+    @return: list of files depended on.
+    """
     include_pattern = re.compile(r"%include\s+(\S+)")
 
     def recurse(path, search_path):
-        """What do I do? Arve will write this."""
+        """Scan recursively."""
         f = open(path)
         try: contents = f.read()
         finally: f.close()
@@ -80,7 +82,7 @@ class Dependency:
         self.cppPath, self.libPath, self.libs, self.linkOpts, self.version, self.compiler  = cppPath, libPath, libs, linkOpts, version, compiler
 
     def __str__(self):
-      return "\ncppPath: %s\nlibPath: %s\nlibs: %s\nlibs: %s\ncompiler: %s\n" % \
+        return "\ncppPath: %s\nlibPath: %s\nlibs: %s\nlibs: %s\ncompiler: %s\n" % \
                (self.cppPath,self.libPath,self.libs,self.linkOpts,self.compiler)
 
 

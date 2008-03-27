@@ -6,19 +6,6 @@ import commands
 
 from commonPkgConfigUtils import *
 
-
-class unableToCompileException(Exception):
-    def __init__(self, trilinos_dir="", errormsg=""):
-        Exception.__init__(self, "Unable to compile some Trilinos tests, using %s as location for Trilinos includes.\nAdditional message:\n%s" % (trilinos_dir, errormsg))
-
-class unableToLinkException(Exception):
-    def __init__(self, trilinos_dir="", errormsg=""):
-        Exception.__init__(self, "Unable to link some Trilinos tests, using %s as location for Trilinos libs.\nAdditional message:\n%s" % (trilinos_dir, errormsg))
-
-class unableToRunException(Exception):
-    def __init__(self):
-        Exception.__init__(self, "Unable to run Trilinos program correctly.")
-
 def pkgTests(forceCompiler=None, sconsEnv=None, **kwargs):
     """Run the tests for this package
      
@@ -117,14 +104,19 @@ printf("-lml\n");
     cmdstr = "%s -I%s/include -c trilinos_config_test.cpp" % (compiler,trilinos_dir)
     compileFailed, cmdoutput = commands.getstatusoutput(cmdstr)
     if compileFailed:
-        raise unableToCompileException(trilinos_dir=trilinos_dir, errormsg=cmdoutput)
+        remove_cppfile("trilinos_config_test.cpp")
+        raise UnableToCompileException("Trilinos", cmd=cmdstr,
+                                       program=cpp_file_str, errormsg=cmdoutput)
     cmdstr = "%s trilinos_config_test.o" % linker
-    compileFailed, cmdoutput = commands.getstatusoutput(cmdstr)
-    if compileFailed:
-        raise unableToLinkException(trilinos_dir=trilinos_dir, errormsg=cmdoutput)
+    linkFailed, cmdoutput = commands.getstatusoutput(cmdstr)
+    if linkFailed:
+        remove_cppfile("trilinos_config_test.cpp", ofile=True)
+        raise UnableToLinkException("Trilinos", cmd=cmdstr,
+                                    program=cpp_file_str, errormsg=cmdoutput)
     runFailed, cmdoutput = commands.getstatusoutput("./a.out")
     if runFailed:
-        raise unableToRunException()
+        remove_cppfile("trilinos_config_test.cpp", ofile=True, execfile=True)
+        raise UnableToRunException("Trilinos", errormsg=cmdoutput)
     libs_str = string.join(string.split(cmdoutput, '\n'))
     
     remove_cppfile("trilinos_config_test.cpp", ofile=True, execfile=True)
@@ -134,7 +126,9 @@ printf("-lml\n");
     if arch == "darwin":
     	blasstring = "-framework vecLib"
     else:
-    	blasstring = "-L%s -lblas -llapack" % (atlaslocation)
+        # FIXME: is it okay to only link with lapack?
+        blasstring = "-L%s -llapack" % (atlaslocation)
+        #blasstring = "-L%s -lblas -llapack" % (atlaslocation)
 	
 
     # Next, we try to figure out what version of trilinos we have.

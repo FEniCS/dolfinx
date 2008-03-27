@@ -15,11 +15,16 @@ elements = [eval(element) for element in elements.split("\n")[1:-1]]
 signatures = []
 for i in range(len(elements)):
     
+    # Don't generate all functions
+    OPTIONS = FFC_OPTIONS.copy()
+    OPTIONS["no-evaluate_basis"] = True
+    OPTIONS["no-evaluate_basis_derivatives"] = True
+
     # Generate code
     print "Compiling element %d out of %d..." % (i, len(elements))
     element = elements[i]
     name = "ffc_%.2d" % i
-    compile(element, name)
+    compile(element, name, options=OPTIONS)
 
     # Save signatures of elements and dof maps
     dof_map = DofMap(element)

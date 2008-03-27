@@ -45,11 +45,11 @@ namespace dolfin
   // uBlas sparse matrix (column major format) 
   typedef ublas::compressed_matrix<double, ublas::column_major> ublas_sparse_matrix_cmajor;
 
-  // uBlas sparse matrix for temporoary assembly
+  // uBlas sparse matrix for temporary assembly
   typedef ublas::generalized_vector_of_vector< double, ublas::row_major, 
             ublas::vector<ublas::compressed_vector<double> > > ublas_assembly_matrix;
 
-  // uBlas sparse matrix for temporoary assembly (column major format)
+  // uBlas sparse matrix for temporary assembly (column major format)
   typedef ublas::generalized_vector_of_vector< double, ublas::column_major, 
             ublas::vector<ublas::compressed_vector<double> > > ublas_assembly_matrix_cmajor;
 

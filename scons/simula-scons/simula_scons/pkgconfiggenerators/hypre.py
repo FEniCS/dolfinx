@@ -39,12 +39,13 @@ int main() {
   cmdstr = "%s %s hypre_config_test_version.c" % (compiler,cflags)
   compileFailed, cmdoutput = commands.getstatusoutput(cmdstr)
   if compileFailed:
-    msg = ("Unable to compile some Hypre tests, using '%s' as " + \
-           "location for Hypre libs and includes.") % getHypreDir()
-    raise UnableToCompileException(msg, errormsg=cmdoutput)
+    remove_cfile("hypre_config_test_version.c")
+    raise UnableToCompileException("Hypre", cmd=cmdstr,
+                                   program=cpp_version_str, errormsg=cmdoutput)
   runFailed, cmdoutput = commands.getstatusoutput("./a.out")
   if runFailed:
-    raise UnableToRunException(errormsg=cmdoutput)
+    remove_cfile("hypre_config_test_version.c", execfile=True)
+    raise UnableToRunException("Hypre", errormsg=cmdoutput)
   hypre_version = cmdoutput
 
   remove_cfile("hypre_config_test_version.c", execfile=True)
@@ -78,13 +79,19 @@ int main() {
   cmdstr = "%s %s hypre_config_test_libs.c" % (compiler,cflags)
   compileFailed, cmdoutput = commands.getstatusoutput(cmdstr)
   if compileFailed:
-    msg = ("Unable to compile some Hypre tests, using '%s' as " + \
-           "location for Hypre libs and includes.") % getHypreDir()
-    raise UnableToCompileException(msg, errormsg=cmdoutput)
+    remove_cfile("hypre_config_test_libs.c")
+    raise UnableToCompileException("Hypre", cmd=cmdstr,
+                                   program=cpp_libs_str, errormsg=cmdoutput)
+  
   runFailed, cmdoutput = commands.getstatusoutput("./a.out")
   if runFailed:
-    raise UnableToRunException(errormsg=cmdoutput)
+    remove_cfile("hypre_config_test_libs.c", execfile=True)
+    raise UnableToRunException("Hypre", errormsg=cmdoutput)
   libs_str = string.join(string.split(cmdoutput, '\n'))
+  if 'blas' in libs_str and 'lapack' in libs_str:
+    # Add only -llapack since lapack should be linked to the rigth blas lib
+    # FIXME: Is this always true?
+    libs_str = '-llapack'
     
   remove_cfile("hypre_config_test_libs.c", execfile=True)
 
@@ -137,9 +144,9 @@ def pkgTests(forceCompiler=None, sconsEnv=None,
   if not cflags:
     cflags = pkgCflags()
   if not version:
-    version = pkgVersion(compiler=compiler, cflags=cflags)
+    version = pkgVersion(compiler=compiler, cflags=cflags, sconsEnv=sconsEnv)
   if not libs:
-    libs = pkgLibs(compiler=compiler, cflags=cflags)
+    libs = pkgLibs(compiler=compiler, cflags=cflags, sconsEnv=sconsEnv)
 
   # A test to see if we can actually use the libHYPRE
   cpp_testlib_str = r"""
@@ -158,20 +165,22 @@ int main() {
   write_cppfile(cpp_testlib_str, "hypre_config_test_libstest.c")
 
   cmdstr = "%s %s -c hypre_config_test_libstest.c" % (compiler,cflags)
-  compileFailed, cmdoutout = commands.getstatusoutput(cmdstr)
-  if compileFailed:
-    msg = ("Unable to compile some Hypre tests, using '%s' as " + \
-           "location for Hypre libs and includes.") % getHypreDir()
-    raise UnableToCompileException(msg, errormsg=cmdoutput)
-  cmdstr = "%s %s hypre_config_test_libstest.o" % (linker,libs)
   compileFailed, cmdoutput = commands.getstatusoutput(cmdstr)
   if compileFailed:
-    msg = "Unable to link some Hypre tests, using '%s' as " + \
-          "location for hypre libs." % getHypreDir()
-    raise UnableToLinkException(msg, errormsg=cmdoutput)
+    remove_cfile("hypre_config_test_libstest.c")
+    raise UnableToCompileException("Hypre", cmd=cmdstr,
+                                   program=cpp_testlib_str, errormsg=cmdoutput)
+  
+  cmdstr = "%s %s hypre_config_test_libstest.o" % (linker,libs)
+  linkFailed, cmdoutput = commands.getstatusoutput(cmdstr)
+  if linkFailed:
+    remove_cfile("hypre_config_test_libstest.c", ofile=True)
+    raise UnableToLinkException("Hypre", cmd=cmdstr,
+                                program=cpp_testlib_str, errormsg=cmdoutput)
   runFailed, cmdoutput = commands.getstatusoutput("./a.out")
   if runFailed:
-    raise UnableToRunException(errormsg=cmdoutput)
+    remove_cfile("hypre_config_test_libstest.c", execfile=True, ofile=True)
+    raise UnableToRunException("Hypre", errormsg=cmdoutput)
   
   remove_cfile("hypre_config_test_libstest.c", execfile=True, ofile=True)
 

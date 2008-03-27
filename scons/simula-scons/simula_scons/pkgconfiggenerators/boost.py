@@ -49,13 +49,14 @@ return 0;
   cmdstr = "%s %s boost_config_test_version.cpp" % (compiler, cflags)
   compileFailed, cmdoutput = commands.getstatusoutput(cmdstr)
   if compileFailed:
-    msg = ("Unable to compile some Boost tests, using '%s' as " + \
-           "cflags for Boost includes.") % cflags
-    raise UnableToCompileException(msg, cmdoutput)
+    remove_cppfile("boost_config_test_version.cpp")
+    raise UnableToCompileException("Boost", cmd=cmdstr,
+                                   program=cpp_version_str, errormsg=cmdoutput)
 
   runFailed, cmdoutput = commands.getstatusoutput("./a.out")
   if runFailed:
-    raise UnableToRunException(errormsg=cmdoutput)
+    remove_cppfile("boost_config_test_version.cpp", execfile=True)
+    raise UnableToRunException("Boost", errormsg=cmdoutput)
   boost_version = int(cmdoutput)
   boost_major = boost_version/100000
   boost_minor = boost_version / 100 % 1000
@@ -114,13 +115,14 @@ int main() {
   cmdstr = "%s %s boost_config_test_ublas.cpp" % (compiler, cflags)
   compileFailed, cmdoutput = commands.getstatusoutput(cmdstr)
   if compileFailed:
-    msg = ("Unable to compile some Boost tests, using '%s' as " + \
-          "cflags for Boost includes.") % cflags
-    raise UnableToCompileException(msg, cmdoutput)
+    remove_cppfile("boost_config_test_ublas.cpp")
+    raise UnableToCompileException("Boost", cmd=cmdstr,
+                                   program=cpp_testublas_str, errormsg=cmdoutput)
 
   runFailed, cmdoutput = commands.getstatusoutput("./a.out")
   if runFailed or cmdoutput != "ublas ok":
-    raise UnableToRunException(errormsg=cmdoutput)
+    remove_cppfile("boost_config_test_ublas.cpp", execfile=True)
+    raise UnableToRunException("Boost", errormsg=cmdoutput)
 
   remove_cppfile("boost_config_test_ublas.cpp", execfile=True)
 

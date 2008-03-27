@@ -44,6 +44,7 @@ DefaultPackages = ""
 options = [
     # configurable options for installation:
     scons.PathOption("prefix", "Installation prefix", "/usr/local"),
+    scons.PathOption("binDir", "Binary installation directory", "$prefix/bin"),
     scons.PathOption("libDir", "Library installation directory", "$prefix/lib"),
     scons.PathOption("pkgConfDir", "Directory for installation of pkg-config files", "$prefix/lib/pkgconfig"),
     scons.PathOption("includeDir", "C/C++ header installation directory", "$prefix/include"),
@@ -115,15 +116,17 @@ env["CXXFLAGS"] = "-Wall -pipe -ansi" # -Werror"
 #env["SHFORTRANFLAGS"] = "-Wall -pipe -fPIC"
 
 # If Debug is enabled, add -g:
-if env["enableDebugUblas"]:
+if env["enableDebug"]:
   env.Append(CXXFLAGS=" -DDEBUG -g -Werror")
-elif env["enableDebug"]:
-  env.Append(CXXFLAGS=" -DDEBUG -g -Werror -DNDEBUG")
+
+if not env["enableDebugUblas"]:
+  env.Append(CXXFLAGS=" -DNDEBUG")
 
 # if Optimization is requested, use -O3
 if env["enableOptimize"]:
   env.Append(CXXFLAGS=" -O3")
 else:
+  # FIXME: why are we optimizing when enableOptimize is False?
   env.Append(CXXFLAGS=" -O2")
 
 # Not sure we need this - but lets leave it for completeness sake - if people
@@ -168,6 +171,9 @@ for n in buildDataHash["shlibs"] + buildDataHash["extModules"] + \
 # -----------------------------------------------------------------------------
 # Set up installation targets
 # -----------------------------------------------------------------------------
+
+# install dolfin-convert into binDir:
+env.Install(env["binDir"], os.path.join("misc","utils","convert","dolfin-convert"))
 
 # shared libraries goes into our libDir:
 for l in buildDataHash["shlibs"]:
@@ -246,7 +252,7 @@ env = scons.addInstallTargets(env, sourcefiles=buildDataHash["docs"],
                               targetdir=_targetdir)
 
 # Instruct scons what to do when user requests 'install'
-targets = [env["libDir"], env["includeDir"], env["pkgConfDir"]]
+targets = [env["binDir"], env["libDir"], env["includeDir"], env["pkgConfDir"]]
 if env["enablePydolfin"]:
     targets.append(env["pythonModuleDir"])
     targets.append(env["pythonExtDir"])

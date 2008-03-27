@@ -16,10 +16,10 @@
 #include <dolfin/main/constants.h>
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Variable.h>
-#include "GenericVector.h"
-#include "PETScObject.h"
 #include "LinearAlgebraFactory.h"
 #include "VectorNormType.h"
+#include "GenericVector.h"
+#include "PETScObject.h"
 
 namespace dolfin
 {

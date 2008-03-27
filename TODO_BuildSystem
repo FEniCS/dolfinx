@@ -1,7 +1,6 @@
 * Add enableMpi
 * Add test for MPI
 * Fix selection of compiler (why is mpicxx not be used when it should?)
-* Fix linking of PETSc libraries (need to add  -Wl,-rpath,)
 
 * Demos are not built when using' scons install . . . '
 
