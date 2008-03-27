@@ -44,6 +44,7 @@ DefaultPackages = ""
 options = [
     # configurable options for installation:
     scons.PathOption("prefix", "Installation prefix", "/usr/local"),
+    scons.PathOption("binDir", "Binary installation directory", "$prefix/bin"),
     scons.PathOption("libDir", "Library installation directory", "$prefix/lib"),
     scons.PathOption("pkgConfDir", "Directory for installation of pkg-config files", "$prefix/lib/pkgconfig"),
     scons.PathOption("includeDir", "C/C++ header installation directory", "$prefix/include"),
@@ -171,6 +172,9 @@ for n in buildDataHash["shlibs"] + buildDataHash["extModules"] + \
 # Set up installation targets
 # -----------------------------------------------------------------------------
 
+# install dolfin-convert into binDir:
+env.Install(env["binDir"], os.path.join("misc","utils","convert","dolfin-convert"))
+
 # shared libraries goes into our libDir:
 for l in buildDataHash["shlibs"]:
   env.Install(env["libDir"], l)
@@ -248,7 +252,7 @@ env = scons.addInstallTargets(env, sourcefiles=buildDataHash["docs"],
                               targetdir=_targetdir)
 
 # Instruct scons what to do when user requests 'install'
-targets = [env["libDir"], env["includeDir"], env["pkgConfDir"]]
+targets = [env["binDir"], env["libDir"], env["includeDir"], env["pkgConfDir"]]
 if env["enablePydolfin"]:
     targets.append(env["pythonModuleDir"])
     targets.append(env["pythonExtDir"])
