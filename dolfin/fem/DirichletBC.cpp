@@ -200,8 +200,6 @@ void DirichletBC::apply(GenericMatrix& A, GenericVector& b,
   {
     dofs[i]     = boundary_value->first;
     values[i++] = boundary_value->second;
-
-    message("dofs[%d] = %d", i, dofs[i]);
   }
 
   // Modify boundary values for nonlinear problems
