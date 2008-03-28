@@ -142,6 +142,7 @@ int main(int argc, char* argv[])
     {
       printf("Creating UnitCube(%d, %d, %d)\n", cells_3D, cells_3D, cells_3D);
       mesh = UnitCube(cells_3D, cells_3D, cells_3D);
+      printf("Finished creating UnitCube\n");
     }
   }
   real time = 0;
@@ -174,7 +175,9 @@ int main(int argc, char* argv[])
     {
       dolfin::cout << "Partitioning mesh into: " << num_part << " partitions" << dolfin::endl;
       partitions = new MeshFunction<dolfin::uint>(mesh);
+      dolfin::cout << "Partitiong mesh" << dolfin::endl;
       mesh.partition(*partitions, num_part);
+      dolfin::cout << "Finished partitiong mesh" << dolfin::endl;
     }
 
     Form* a;

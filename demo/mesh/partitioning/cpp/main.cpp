@@ -23,5 +23,4 @@ int main()
   // Plot mesh partition
   plot(partitions);
 
-  return 0;
 }
