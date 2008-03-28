@@ -81,6 +81,7 @@ namespace dolfin
       fprintf(script_file, "    plot(f)\n");
     else
       fprintf(script_file, "    plot(f, mode=\"%s\")\n", mode.c_str());
+    fprintf(script_file, "    interactive()\n");
     fprintf(script_file, "except:\n");
     fprintf(script_file, "    import sys\n");
     fprintf(script_file, "    sys.exit(1)\n");
