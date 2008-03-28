@@ -89,9 +89,13 @@ namespace dolfin
 
 	// FIXME: Add more functions here
 
-    /// Set given rows to zero matrix
+    /// Set given matrix rows to zero
     virtual void zero(uint m, const uint* rows) = 0;
 
+    /// Set given matrix entry to value
+    virtual void set(uint i, uint j, real value) {
+      set(&value, 1, &i, 1, &j);  
+    }
 
 
   };
