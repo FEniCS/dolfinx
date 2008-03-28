@@ -25,7 +25,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-DiscreteFunction::DiscreteFunction(Mesh& mesh, Vector& x, Form& form, uint i)
+DiscreteFunction::DiscreteFunction(Mesh& mesh, GenericVector& x, Form& form, uint i)
   : GenericFunction(mesh),
     x(&x), finite_element(0), dof_map(0),
     local_vector(0), local_dof_map(0), intersection_detector(0), scratch(0)
@@ -38,7 +38,7 @@ DiscreteFunction::DiscreteFunction(Mesh& mesh, Vector& x, Form& form, uint i)
   init(mesh, x, form.form(), i);
 }
 //-----------------------------------------------------------------------------
-DiscreteFunction::DiscreteFunction(Mesh& mesh, Vector& x, DofMap& dof_map,
+DiscreteFunction::DiscreteFunction(Mesh& mesh, GenericVector& x, DofMap& dof_map,
                                    const ufc::form& form, uint i)
   : GenericFunction(mesh),
     x(&x), finite_element(0), dof_map(&dof_map),
@@ -47,7 +47,7 @@ DiscreteFunction::DiscreteFunction(Mesh& mesh, Vector& x, DofMap& dof_map,
   init(mesh, x, form, i);
 }
 //-----------------------------------------------------------------------------
-DiscreteFunction::DiscreteFunction(Mesh& mesh, Vector& x,
+DiscreteFunction::DiscreteFunction(Mesh& mesh, GenericVector& x,
                                    std::string finite_element_signature,
                                    std::string dof_map_signature)
   : GenericFunction(mesh),
@@ -296,7 +296,7 @@ void DiscreteFunction::eval(real* values, const real* x) const
   }
 }
 //-----------------------------------------------------------------------------
-Vector& DiscreteFunction::vector() const
+GenericVector& DiscreteFunction::vector() const
 {
   if( !x )
     error("Vector associated with DiscreteFunction has not been initialised.");
@@ -304,7 +304,7 @@ Vector& DiscreteFunction::vector() const
   return *x;
 }
 //-----------------------------------------------------------------------------
-void DiscreteFunction::init(Mesh& mesh, Vector& x, const ufc::form& form, uint i)
+void DiscreteFunction::init(Mesh& mesh, GenericVector& x, const ufc::form& form, uint i)
 {
   // Check argument
   const uint num_arguments = form.rank() + form.num_coefficients();

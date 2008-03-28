@@ -40,14 +40,14 @@ Function::Function(Mesh& mesh, real value)
   f = new ConstantFunction(mesh, value);
 }
 //-----------------------------------------------------------------------------
-Function::Function(Mesh& mesh, Vector& x, Form& form, uint i)
+Function::Function(Mesh& mesh, GenericVector& x, Form& form, uint i)
   : Variable("u", "discrete function"),
     f(0), _type(discrete), _cell(0), _facet(-1)
 {
   f = new DiscreteFunction(mesh, x, form, i);
 }
 //-----------------------------------------------------------------------------
-Function::Function(Mesh& mesh, Vector& x, DofMap& dof_map, const ufc::form& form, uint i)
+Function::Function(Mesh& mesh, GenericVector& x, DofMap& dof_map, const ufc::form& form, uint i)
   : Variable("u", "discrete function"),
     f(0), _type(discrete), _cell(0), _facet(-1)
 {
@@ -92,7 +92,7 @@ Function::~Function()
     delete f;
 }
 //-----------------------------------------------------------------------------
-void Function::init(Mesh& mesh, Vector& x, Form& form, uint i)
+void Function::init(Mesh& mesh, GenericVector& x, Form& form, uint i)
 {
   if (f)
     delete f;
@@ -103,7 +103,7 @@ void Function::init(Mesh& mesh, Vector& x, Form& form, uint i)
   _type = discrete;
 }
 //-----------------------------------------------------------------------------
-void Function::init(Mesh& mesh, Vector& x, DofMap& dof_map, const ufc::form& form, uint i)
+void Function::init(Mesh& mesh, GenericVector& x, DofMap& dof_map, const ufc::form& form, uint i)
 {
   if (f)
     delete f;
@@ -143,7 +143,7 @@ Mesh& Function::mesh() const
   return f->mesh;
 }
 //-----------------------------------------------------------------------------
-Vector& Function::vector() const
+GenericVector& Function::vector() const
 {
   if (!f)
     error("Function contains no data.");

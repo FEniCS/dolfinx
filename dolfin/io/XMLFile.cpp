@@ -56,7 +56,7 @@ XMLFile::~XMLFile()
     delete xmlObject;
 }
 //-----------------------------------------------------------------------------
-void XMLFile::operator>>(Vector& x)
+void XMLFile::operator>>(GenericVector& x)
 {
   message(1, "Reading vector from file %s.", filename.c_str());
 
@@ -199,7 +199,7 @@ void XMLFile::operator>>(Graph& graph)
   parseFile();
 }
 //-----------------------------------------------------------------------------
-void XMLFile::operator<<(Vector& x)
+void XMLFile::operator<<(GenericVector& x)
 {
   // Open file
   FILE* fp = openFile();
@@ -223,8 +223,8 @@ void XMLFile::operator<<(Vector& x)
   // Close file
   closeFile(fp);
   
-  message(1, "Saved vector %s (%s) to file %s in DOLFIN XML format.",
-          x.name().c_str(), x.label().c_str(), filename.c_str());
+//  message(1, "Saved vector %s (%s) to file %s in DOLFIN XML format.", x.name().c_str(), x.label().c_str(), filename.c_str());
+  message(1, "Saved vector  to file %s in DOLFIN XML format.", filename.c_str());
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator<<(Matrix& A)
