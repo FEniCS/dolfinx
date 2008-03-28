@@ -207,7 +207,7 @@ def pkgLibs(**kwargs):
   if get_architecture() == "darwin":
     libs += "-framework vecLib"
   else:
-    libs += "-L%s -lblas -llapack" % getATLASDir()
+    libs += "-L%s -lblas" % getATLASDir()
   libs += " -L%s -lumfpack" % getUmfpackLibDir()
   if needAMD():
     libs += " -L%s -lamd" % getAMDLibDir() 
