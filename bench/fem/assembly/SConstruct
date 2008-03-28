@@ -1,0 +1,12 @@
+import commands
+
+# Get compiler from pkg-config
+compiler = commands.getoutput('pkg-config --variable=compiler dolfin')
+env      = Environment(CXX = compiler)
+
+# Get compiler flags from pkg-config
+env.ParseConfig('pkg-config --cflags --libs dolfin')
+
+# Program name
+env.Program('dolfin-fem-assembly', 'main.cpp')
+

@@ -7,7 +7,7 @@
 # Bilinear form a(v, U) for vector-valued Poisson equation
 #
 
-element = FiniteElement("Vector Lagrange", "triangle", 1)
+element = VectorElement("Lagrange", "triangle", 1)
 
 v = TestFunction(element)
 U = TrialFunction(element)

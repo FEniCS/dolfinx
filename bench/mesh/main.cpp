@@ -20,9 +20,7 @@ void bench(unsigned int n, unsigned int M)
   // Create unit cube
   tic();
   for (unsigned int i = 0; i < M; ++i)
-  {
     UnitCube mesh(n, n, n);
-  }
   t = toc() / MM;
   message("  Create unit cube mesh: %.3e", t);
 
@@ -39,11 +37,11 @@ void bench(unsigned int n, unsigned int M)
   message("  Iterate over entities: %.3e (sum = %u)", t, sum);
   
   // Uniform refinement
-  set("output destination", "silent");
+  dolfin_set("output destination", "silent");
   tic();
   mesh.refine();
   t = toc();
-  set("output destination", "terminal");
+  dolfin_set("output destination", "terminal");
   message("  Uniform refinement:    %.3e", t);
 }
 
