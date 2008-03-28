@@ -19,7 +19,7 @@ using namespace dolfin;
 
 real timer(Mesh& mesh, int num_iterations, Form& a)
 {
-  dolfin::cout << "Assembling with sequential assembler." << dolfin::endl;
+  std::cout << "Assembling with sequential assembler." << std::endl;
   Matrix A;
   Assembler assembler(mesh);
 
@@ -32,7 +32,7 @@ real timer(Mesh& mesh, int num_iterations, Form& a)
 
 real p_timer(Mesh& mesh, MeshFunction<dolfin::uint>& partitions, int num_iterations, Form& a)
 {
-  dolfin::cout << "Assembling with parallel assembler." << dolfin::endl;
+  std::cout << "Assembling with parallel assembler." << std::endl;
   Matrix B;
   pAssembler passembler(mesh, partitions);
 
@@ -123,12 +123,12 @@ int main(int argc, char* argv[])
     char** init_argv = new char*[2];
     init_argv[0] = argv[0];
     sprintf(init_argv[1], "%s", "-info");
-    dolfin::cout << "dolfin_init" << dolfin::endl;
+    std::cout << "dolfin_init" << std::endl;
     dolfin_init(2, init_argv);
   }
   if(meshfile != "")
   {
-    dolfin::cout << "Reading mesh from file: " << meshfile << dolfin::endl;
+    std::cout << "Reading mesh from file: " << meshfile << std::endl;
     mesh = Mesh(meshfile);
   }
   else
@@ -140,9 +140,9 @@ int main(int argc, char* argv[])
     }
     else
     {
-      printf("Creating UnitCube(%d, %d, %d)\n", cells_3D, cells_3D, cells_3D);
+      printf("***Creating UnitCube(%d, %d, %d)\n", cells_3D, cells_3D, cells_3D);
       mesh = UnitCube(cells_3D, cells_3D, cells_3D);
-      printf("Finished creating UnitCube\n");
+      std::cout << "Finished creating UnitCube" << std::endl;
     }
   }
   real time = 0;
@@ -159,8 +159,8 @@ int main(int argc, char* argv[])
     else
       a = new PoissonBilinearForm();
 
-    dolfin::cout << "Running test " << testtype << dolfin::endl;
-    dolfin::cout << "Assembling with sequential assembler." << dolfin::endl;
+    std::cout << "Running test " << testtype << std::endl;
+    std::cout << "Assembling with sequential assembler." << std::endl;
     printf("Number of iteration(s): %d\n", num_iterations);
     time = timer(mesh, num_iterations, *a);
   }
@@ -168,16 +168,16 @@ int main(int argc, char* argv[])
   {
     if(partitionsfile != "")
     {
-      dolfin::cout << "Reading partitions from file: " << partitionsfile << dolfin::endl;
+      std::cout << "Reading partitions from file: " << partitionsfile << std::endl;
       partitions = new MeshFunction<dolfin::uint>(mesh, partitionsfile);
     }
     else
     {
-      dolfin::cout << "Partitioning mesh into: " << num_part << " partitions" << dolfin::endl;
+      std::cout << "Partitioning mesh into: " << num_part << " partitions" << std::endl;
       partitions = new MeshFunction<dolfin::uint>(mesh);
-      dolfin::cout << "Partitiong mesh" << dolfin::endl;
+      std::cout << "Partitioning mesh" << std::endl;
       mesh.partition(*partitions, num_part);
-      dolfin::cout << "Finished partitiong mesh" << dolfin::endl;
+      std::cout << "Finished partitiong mesh" << std::endl;
     }
 
     Form* a;
@@ -191,14 +191,14 @@ int main(int argc, char* argv[])
     else
       a = new PoissonBilinearForm();
 
-    dolfin::cout << "Running test " << testtype << dolfin::endl;
-    dolfin::cout << "Assembling with parallel assembler." << dolfin::endl;
+    std::cout << "Running test " << testtype << std::endl;
+    std::cout << "Assembling with parallel assembler." << std::endl;
     printf("Number of iteration(s): %d Number of partitions: %d\n", num_iterations, num_part);
     time = p_timer(mesh, *partitions, num_iterations, *a);
   }
   if(resultfile != "")
   {
-    dolfin::cout << "Appending results to " << resultfile << dolfin::endl;
+    std::cout << "Appending results to " << resultfile << std::endl;
     std::ofstream outfile(resultfile.c_str(), std::ofstream::app);
     outfile << dolfin::MPI::numProcesses() << " " << time << std::endl;
     outfile.close();
@@ -209,7 +209,7 @@ int main(int argc, char* argv[])
   }
   if(check)
   {
-    dolfin::cout << "Not implemented" << dolfin::endl;
+    std::cout << "Not implemented" << std::endl;
     //check_assembly(mesh, *partitions);
   }
   return 0;

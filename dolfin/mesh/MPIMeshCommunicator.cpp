@@ -13,13 +13,13 @@
 #include "MPIMeshCommunicator.h"
 #include <dolfin/main/MPI.h>
 
-#ifdef HAVE_MPI_H
+#ifdef HAS_MPI
   #include <mpi.h>
 #endif
 
 using namespace dolfin;
 
-#ifdef HAVE_MPI_H
+#ifdef HAS_MPI
 
 //-----------------------------------------------------------------------------
 MPIMeshCommunicator::MPIMeshCommunicator()

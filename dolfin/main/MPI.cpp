@@ -13,12 +13,12 @@
 #include "MPI.h"
 #include "SubSystemsManager.h"
 
-#ifdef HAVE_MPI_H
+#ifdef HAS_MPI
   #include <mpi.h>
 #endif
 
 //-----------------------------------------------------------------------------
-#ifdef HAVE_MPI_H
+#ifdef HAS_MPI
 dolfin::uint dolfin::MPI::processNumber()
 {
   SubSystemsManager::initMPI();

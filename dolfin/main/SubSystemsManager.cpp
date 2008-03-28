@@ -14,7 +14,7 @@
 #include <slepc.h>
 #endif
 
-#ifdef HAVE_MPI_H
+#ifdef HAS_MPI
 #include <mpi.h>
 #endif
 
@@ -47,7 +47,7 @@ SubSystemsManager::~SubSystemsManager()
 //-----------------------------------------------------------------------------
 void SubSystemsManager::initMPI()
 {
-#ifdef HAVE_MPI_H
+#ifdef HAS_MPI
   if( MPIinitialized() )
     return;
 
@@ -115,7 +115,7 @@ void SubSystemsManager::initPETSc(int argc, char* argv[], bool cmd_line_args)
 //-----------------------------------------------------------------------------
 void SubSystemsManager::finalizeMPI()
 {
-#ifdef HAVE_MPI_H
+#ifdef HAS_MPI
   //Finalise MPI if required
   if ( MPIinitialized() && !sub_systems_manager.petsc_controls_mpi )
     MPI_Finalize();
@@ -146,7 +146,7 @@ bool SubSystemsManager::MPIinitialized()
   // true if MPI_Init has been called at any point, even if MPI_Finalize has
   // been called.
 
-#ifdef HAVE_MPI_H
+#ifdef HAS_MPI
   int initialized;
   MPI_Initialized(&initialized);
 
