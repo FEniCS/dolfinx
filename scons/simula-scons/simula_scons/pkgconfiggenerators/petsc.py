@@ -6,7 +6,9 @@ import commands
 
 from commonPkgConfigUtils import *
 
-def getPetscVariables():
+def getPetscVariables(variables=('includes','libs','compiler','linker')):
+  if isinstance(variables, str):
+    variables = (variables,)
   # First make sure PETSC_DIR is set. This will raise an exception if not:
   petsc_dir = getPetscDir()
   filename = "petsc_makefile"
@@ -33,45 +35,61 @@ get_petsc_ld:
   petsc_make_file.write(petsc_makefile_str)
   petsc_make_file.close()
 
-  cmdstr = "make -f %s get_petsc_include" % filename
-  runFailed, cmdoutput = commands.getstatusoutput(cmdstr)
-  if runFailed:
-    os.unlink(filename)
-    msg = "Unable to read PETSc includes through make."
-    raise UnableToXXXException(msg, errormsg=cmdoutput)
-  petsc_includes = cmdoutput
+  petsc_includes = None
+  if 'includes' in variables: 
+    cmdstr = "make -f %s get_petsc_include" % filename
+    runFailed, cmdoutput = commands.getstatusoutput(cmdstr)
+    if runFailed:
+      os.unlink(filename)
+      msg = "Unable to read PETSc includes through make."
+      raise UnableToXXXException(msg, errormsg=cmdoutput)
+    petsc_includes = cmdoutput
 
-  cmdstr = "make -f %s get_petsc_libs" % filename
-  runFailed, cmdoutput = commands.getstatusoutput(cmdstr)
-  if runFailed:
-    os.unlink(filename)
-    msg = "Unable to read PETSc libs through make."
-    raise UnableToXXXException(msg, errormsg=cmdoutput)
-  petsc_libs = cmdoutput
+  petsc_libs = None
+  if 'libs' in variables:
+    cmdstr = "make -f %s get_petsc_libs" % filename
+    runFailed, cmdoutput = commands.getstatusoutput(cmdstr)
+    if runFailed:
+      os.unlink(filename)
+      msg = "Unable to read PETSc libs through make."
+      raise UnableToXXXException(msg, errormsg=cmdoutput)
+    petsc_libs = cmdoutput
 
-  cmdstr = "make -f %s get_petsc_cc" % filename
-  runFailed, cmdoutput = commands.getstatusoutput(cmdstr)
-  if runFailed:
-    os.unlink(filename)
-    msg = "Unable to figure out correct PETSc compiler."
-    raise UnableToXXXException(msg, errormsg=cmdoutput)
-  # We probably get a c-compiler from the petsc config, switch to a 
-  # compatible c++
-  petsc_cc = get_alternate_cxx_compiler(cmdoutput,arch=arch)
+  petsc_cc = None
+  if 'compiler' in variables:
+    cmdstr = "make -f %s get_petsc_cc" % filename
+    runFailed, cmdoutput = commands.getstatusoutput(cmdstr)
+    if runFailed:
+      os.unlink(filename)
+      msg = "Unable to figure out correct PETSc compiler."
+      raise UnableToXXXException(msg, errormsg=cmdoutput)
+    # We probably get a c-compiler from the petsc config, switch to a 
+    # compatible c++
+    petsc_cc = cmdoutput
+    if not is_cxx_compiler(petsc_cc):
+      petsc_cc = get_alternate_cxx_compiler(petsc_cc, arch=arch)
 
-  cmdstr = "make -f %s get_petsc_ld" % filename
-  runFailed, cmdoutput = commands.getstatusoutput(cmdstr)
-  if runFailed:
-    os.unlink(filename)
-    msg = "Unable to figure out correct PETSc linker"
-    raise UnableToXXXException(msg, errormsg=cmdoutput)
-  # We probably get a c-compiler from the petsc config, switch to a 
-  # compatible c++
-  petsc_ld = get_alternate_cxx_compiler(cmdoutput,arch=arch)
+  petsc_ld = None
+  if 'linker' in variables:
+    cmdstr = "make -f %s get_petsc_ld" % filename
+    runFailed, cmdoutput = commands.getstatusoutput(cmdstr)
+    if runFailed:
+      os.unlink(filename)
+      msg = "Unable to figure out correct PETSc linker"
+      raise UnableToXXXException(msg, errormsg=cmdoutput)
+    # We probably get a c-compiler from the petsc config, switch to a 
+    # compatible c++
+    petsc_ld = cmdoutput
+    if not is_cxx_compiler(petsc_ld):
+      petsc_ld = get_alternate_cxx_compiler(petsc_ld, arch=arch)
 
   os.unlink(filename)
-  
-  return petsc_includes, petsc_libs, petsc_cc, petsc_ld
+
+  ret = []
+  for variable in petsc_includes, petsc_libs, petsc_cc, petsc_ld:
+    if variable is not None:
+      ret.append(variable)
+  return ret
 
 def getPetscDir():
   petsc_dir = ""
@@ -135,21 +153,21 @@ int main() {
   return petsc_version
 
 def pkgLibs(**kwargs):
-  includes, libs, compiler, linker = getPetscVariables()
+  libs, = getPetscVariables(variables='libs')
   return libs
 
 def pkgCflags(**kwargs):
-  includes, libs, compiler, linker = getPetscVariables()
+  includes, = getPetscVariables(variables='includes')
   return includes
 
 def pkgCompiler(**kwargs):
-  includes, libs, compiler, linker = getPetscVariables()
+  compiler, = getPetscVariables(variables='compiler')
   if not compiler:
     compiler = get_compiler(kwargs.get("sconsEnv", None))
   return compiler
 
 def pkgLinker(**kwargs):
-  includes, libs, compiler, linker = getPetscVariables()
+  linker, = getPetscVariables(variables='linker')
   if not linker:
     linker = get_linker(kwargs.get("sconsEnv", None))
   return linker
