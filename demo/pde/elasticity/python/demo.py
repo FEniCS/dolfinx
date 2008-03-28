@@ -111,6 +111,7 @@ sol = pde.solve()
 
 # Plot solution
 plot(sol, mode="displacement")
+interactive()
 
 # Save solution to VTK format
 vtk_file = File("elasticity.pvd")
