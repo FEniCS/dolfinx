@@ -1,5 +1,3 @@
-* Add enableMpi
-* Add test for MPI
 * Fix selection of compiler (why is mpicxx not be used when it should?)
 
 * Demos are not built when using' scons install . . . '
