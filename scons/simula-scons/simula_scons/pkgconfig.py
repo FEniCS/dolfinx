@@ -158,8 +158,8 @@ class PkgConfig(object):
 
 
     def _pkgconfig(self, param):
-        os.environ["PKG_CONFIG_ALLOW_SYSTEM_CFLAGS"] = "1"
-        os.environ["PKG_CONFIG_ALLOW_SYSTEM_LIBS"] = "1"
+        #os.environ["PKG_CONFIG_ALLOW_SYSTEM_CFLAGS"] = "1"
+        #os.environ["PKG_CONFIG_ALLOW_SYSTEM_LIBS"] = "1"
         try: out, err = scons.runCommand("pkg-config", [param, self.package])
         except CommandError, err:
             raise PkgconfigError(self.package, "Error reported by pkg-config: `%s'" % err.stderr)
