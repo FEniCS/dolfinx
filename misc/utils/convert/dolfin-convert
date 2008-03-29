@@ -894,8 +894,7 @@ def exodus2xml(ifilename,ofilename):
 
     name = ifilename.split(".")[0]
     netcdffilename = name +".ncdf"
-    arglist=[' ',ifilename,' > ',netcdffilename]
-    os.spawnv(os.P_WAIT, 'ncdump',arglist)
+    os.system('ncdump '+ifilename + ' > '+netcdffilename)
     netcdf2xml(netcdffilename,ofilename)
 
 # Write mesh header
