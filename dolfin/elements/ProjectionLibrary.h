@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-04-12
-// Last changed: 2007-04-13
+// Last changed: 2008-03-29
 
 #ifndef __PROJECTION_LIBRARY_H
 #define __PROJECTION_LIBRARY_H
@@ -22,8 +22,8 @@ namespace dolfin
 
     /// Create projection forms with given signature
     static Form* create_projection_a(const char* signature);
-    static Form* create_projection_L(const char* signature,
-				     Function& f);
+    static Form* create_projection_L(const char* signature, Function& f);
+
   };
 
 }

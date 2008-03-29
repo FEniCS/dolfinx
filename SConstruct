@@ -58,7 +58,7 @@ options = [
     BoolOption("enableOptimize", "Compile with optimization", 0),
     BoolOption("enableDocs", "Build documentation", 0),
     BoolOption("enableDemos", "Build demos", 0),
-    BoolOption("enableProjectionLibrary", "Enable Projection Library", 0),
+    BoolOption("enableProjectionLibrary", "Enable projection library", 0),
     # Enable or disable external packages.
     # These will also be listed in scons.cfg files, but if they are 
     # disabled here, that will override scons.cfg. Remark that unless the
@@ -130,6 +130,7 @@ else:
   # FIXME: why are we optimizing when enableOptimize is False?
   env.Append(CXXFLAGS=" -O2")
 
+# Set ENABLE_PROJECTION_LIBRARY if enabled
 if env["enableProjectionLibrary"]:
   env.Append(CXXFLAGS=" -DENABLE_PROJECTION_LIBRARY")
 

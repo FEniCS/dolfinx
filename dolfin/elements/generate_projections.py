@@ -1,7 +1,7 @@
 "Generate pre-compiled L2 projections for DOLFIN"
 
 __author__ = "Anders Logg (logg@simula.no), Johan Jansson (jjan@csc.kth.se)"
-__date__ = "2008-03-18 -- 2008-03-18"
+__date__ = "2008-03-18 -- 2008-03-29"
 __copyright__ = "Copyright (C) 2008 Anders Logg, Johan Jansson"
 __license__  = "GNU LGPL Version 2.1"
 
@@ -38,7 +38,7 @@ for i in range(len(elements)):
     signatures += [(name, element.signature(), dof_map.signature())]
     
 # Generate code for projections
-filename = "ProjectionLibrary.cpp"
+filename = "projection_library.inc"
 print "Generating file " + filename
 file = open(filename, "w")
 file.write("// Automatically generated code mapping element signatures\n")
