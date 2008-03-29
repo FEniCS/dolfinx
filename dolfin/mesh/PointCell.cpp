@@ -93,6 +93,12 @@ bool PointCell::intersects(const MeshEntity& triangle, const Point& p) const
   return true;
 }
 //-----------------------------------------------------------------------------
+bool PointCell::intersects(const MeshEntity& triangle, const Point& p1, const Point& p2) const
+{
+    error("PointCell::intersects() not implemented.");
+  return true;
+}
+//-----------------------------------------------------------------------------
 std::string PointCell::description() const
 {
   std::string s = "point (simplex of topological dimension 0)";

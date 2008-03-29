@@ -541,6 +541,14 @@ bool TetrahedronCell::intersects(const MeshEntity& tetrahedron,
   return true;
 }
 //-----------------------------------------------------------------------------
+bool TetrahedronCell::intersects(const MeshEntity& interval, const Point& p1, const Point& p2) const
+{
+  // FIXME: Not implemented
+  error("Interval::intersects() not implemented");
+
+  return false;
+}
+//-----------------------------------------------------------------------------
 std::string TetrahedronCell::description() const
 {
   std::string s = "tetrahedron (simplex of topological dimension 3)";

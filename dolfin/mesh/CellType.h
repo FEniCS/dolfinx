@@ -87,6 +87,9 @@ namespace dolfin
     /// Check if point p intersects the cell
     virtual bool intersects(const MeshEntity& entity, const Point& p) const = 0;
 
+    /// Check if points line connecting p1 and p2 cuts the cell
+    virtual bool intersects(const MeshEntity& entity, const Point& p1, const Point& p2) const = 0;
+
     /// Check if cell c intersects the cell
     virtual bool intersects(MeshEntity& entity, Cell& c) const;
 

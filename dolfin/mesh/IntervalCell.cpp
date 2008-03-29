@@ -189,6 +189,14 @@ bool IntervalCell::intersects(const MeshEntity& interval, const Point& p) const
   return false;
 }
 //-----------------------------------------------------------------------------
+bool IntervalCell::intersects(const MeshEntity& interval, const Point& p1, const Point& p2) const
+{
+  // FIXME: Not implemented
+  error("Interval::intersects() not implemented");
+
+  return false;
+}
+//-----------------------------------------------------------------------------
 std::string IntervalCell::description() const
 {
   std::string s = "interval (simplex of topological dimension 1)";
