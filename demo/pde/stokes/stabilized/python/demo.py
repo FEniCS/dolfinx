@@ -110,3 +110,5 @@ ufile_pvd << U
 pfile_pvd = File("pressure.pvd")
 pfile_pvd << P
 
+# Hold plots
+interactive()
