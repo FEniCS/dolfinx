@@ -1,18 +1,18 @@
-// Copyright (C) 2002-2006 Johan Hoffman and Anders Logg.
+// Copyright (C) 2002-2008 Johan Hoffman and Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells, 2005, 2006.
 // Modified by Magnus Vikstrom 2007
 //
 // First added:  2002-11-12
-// Last changed: 2007-03-21
+// Last changed: 2008-03-29
 
 #ifndef __FILE_H
 #define __FILE_H
 
 #include <string>
 
-#include <dolfin/la/Vector.h>
+#include <dolfin/la/GenericVector.h>
 #include <dolfin/la/Matrix.h>
 
 namespace dolfin
@@ -52,7 +52,7 @@ namespace dolfin
     //--- Input ---
     
     /// Read vector from file
-    void operator>> (Vector& x);
+    void operator>> (GenericVector& x);
 
     /// Read matrix from file
     void operator>> (Matrix& A);
@@ -87,7 +87,7 @@ namespace dolfin
     //--- Output ---
 
     /// Write vector to file
-    void operator<< (Vector& x);
+    void operator<< (GenericVector& x);
 
     /// Write matrix to file
     void operator<< (Matrix& A);

@@ -1,15 +1,15 @@
-// Copyright (C) 2003-2006 Johan Hoffman and Anders Logg.
+// Copyright (C) 2003-2008 Johan Hoffman and Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2003-07-15
-// Last changed: 2006-05-24
+// Last changed: 2008-03-29
 
 #ifndef __GENERIC_FILE_H
 #define __GENERIC_FILE_H
 
 #include <string>
 
-#include <dolfin/la/Vector.h>
+#include <dolfin/la/GenericVector.h>
 #include <dolfin/la/Matrix.h>
 
 namespace dolfin
@@ -35,7 +35,7 @@ namespace dolfin
     
     // Input
 
-    virtual void operator>> (Vector& x);
+    virtual void operator>> (GenericVector& x);
     virtual void operator>> (Matrix& A);
     virtual void operator>> (Mesh& mesh);
     virtual void operator>> (MeshFunction<int>& meshfunction);
@@ -51,7 +51,7 @@ namespace dolfin
     
     // Output
     
-    virtual void operator<< (Vector& x);
+    virtual void operator<< (GenericVector& x);
     virtual void operator<< (Matrix& A);
     virtual void operator<< (Mesh& mesh);
     virtual void operator<< (MeshFunction<int>& meshfunction);

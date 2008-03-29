@@ -1,8 +1,8 @@
-// Copyright (C) 2002-2006 Johan Hoffman and Anders Logg.
+// Copyright (C) 2002-2008 Johan Hoffman and Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2002-11-12
-// Last changed: 2006-05-24
+// Last changed: 2008-03-29
 
 // FIXME: Use streams instead of stdio
 #include <stdio.h>
@@ -31,7 +31,7 @@ GenericFile::~GenericFile()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void GenericFile::operator>>(Vector& x)
+void GenericFile::operator>>(GenericVector& x)
 {
   read_not_impl("Vector");
 }
@@ -96,7 +96,7 @@ void GenericFile::operator>>(Graph& graph)
   read_not_impl("Graph");
 }
 //-----------------------------------------------------------------------------
-void GenericFile::operator<<(Vector& x)
+void GenericFile::operator<<(GenericVector& x)
 {
   write_not_impl("Vector");
 }

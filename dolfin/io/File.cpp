@@ -82,7 +82,7 @@ File::~File()
   file = 0;
 }
 //-----------------------------------------------------------------------------
-void File::operator>>(Vector& x)
+void File::operator>>(GenericVector& x)
 {
   file->read();
   
@@ -173,7 +173,7 @@ void File::operator>>(Graph& graph)
   *file >> graph;
 }
 //-----------------------------------------------------------------------------
-void File::operator<<(Vector& x)
+void File::operator<<(GenericVector& x)
 {
   file->write();
   

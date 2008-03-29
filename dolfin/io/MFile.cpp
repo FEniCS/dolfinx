@@ -1,13 +1,13 @@
-// Copyright (C) 2003-2007 Johan Hoffman and Anders Logg.
+// Copyright (C) 2003-2008 Johan Hoffman and Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells 2005
 //
 // First added:  2003-05-06
-// Last changed: 2007-05-02
+// Last changed: 2008-03-29
 
 #include <dolfin/log/dolfin_log.h>
-#include <dolfin/la/Vector.h>
+#include <dolfin/la/GenericVector.h>
 #include <dolfin/la/Matrix.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/function/Function.h>
@@ -30,7 +30,7 @@ MFile::~MFile()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void MFile::operator<<(Vector& x)
+void MFile::operator<<(GenericVector& x)
 {
   error("Function output in Matlab/Octave format is broken. Need to access vector elements correctly.");
 /*

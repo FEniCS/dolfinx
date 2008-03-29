@@ -1,8 +1,8 @@
-// Copyright (C) 2003-2006 Johan Hoffman and Anders Logg.
+// Copyright (C) 2003-2008 Johan Hoffman and Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2003-07-15
-// Last changed: 2006-05-07
+// Last changed: 2008-03-29
 
 #ifndef __M_FILE_H
 #define __M_FILE_H
@@ -24,7 +24,7 @@ namespace dolfin
     
     // Output
 
-    void operator<< (Vector& x);
+    void operator<< (GenericVector& x);
     virtual void operator<< (Matrix& A) = 0;
     void operator<< (Mesh& mesh);
     void operator<< (Function& u);
