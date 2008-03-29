@@ -58,6 +58,7 @@ options = [
     BoolOption("enableOptimize", "Compile with optimization", 0),
     BoolOption("enableDocs", "Build documentation", 0),
     BoolOption("enableDemos", "Build demos", 0),
+    BoolOption("enableProjectionLibrary", "Enable Projection Library", 0),
     # Enable or disable external packages.
     # These will also be listed in scons.cfg files, but if they are 
     # disabled here, that will override scons.cfg. Remark that unless the
@@ -128,6 +129,9 @@ if env["enableOptimize"]:
 else:
   # FIXME: why are we optimizing when enableOptimize is False?
   env.Append(CXXFLAGS=" -O2")
+
+if env["enableProjectionLibrary"]:
+  env.Append(CXXFLAGS=" -DENABLE_PROJECTION_LIBRARY")
 
 # Not sure we need this - but lets leave it for completeness sake - if people
 # use if for PyCC, and know that dolfin use the same system, they will expect
