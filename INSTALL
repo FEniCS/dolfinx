@@ -1,2 +1,43 @@
-DOLFIN has recently moved to a new SCons-based build system. Instructions for 
-building DOLFIN using SCons will eventually be added here.
+Requirements
+------------
+
+DOLFIN uses a SCons-based build system. You will there need SCons to build
+and install DOLFIN. SCons is available as a package for most operating systems.
+Alternatively, it can be found at www.scons.org.
+
+DOLFIN depends on various packages. Details of the dependencies can found at 
+
+  http://www.fenics.org/wiki/Installing_DOLFIN
+
+
+Simple build and install
+--------------------------
+
+In the directory containing the DOLFIN source code, type
+
+  scons enableDemos=yes
+
+This will configure and build DOLFIN and the demo programs. To install the 
+library, type
+
+  scons install prefix=PREFIX
+
+which will install DOLFIN files in PREFIX. Depending on where DOLFIN has been
+installed, it may be necessary to set various environment variables. A helper 
+file 'dolfin.conf' is generated to do this for bash shell users. Type
+
+  source ./dolfin.conf
+
+to set the necessary variables. It should now be possible to run the demo 
+programs. To install locally (within the DOLFIN tree), type
+
+  ./scons.local
+
+
+Customised builds
+-----------------
+
+Various options for building DOLFIN are printed to the screen by typing
+
+  scons -h
+
