@@ -17,7 +17,7 @@ namespace dolfin
   {
   public:
 
-    XMLVector(Vector& vector);
+    XMLVector(GenericVector& vector);
     
     void startElement (const xmlChar *name, const xmlChar **attrs);
     void endElement   (const xmlChar *name);
@@ -30,7 +30,7 @@ namespace dolfin
     void endVector  ();
     void readEntry  (const xmlChar *name, const xmlChar **attrs);
     
-    Vector& x;
+    GenericVector& x;
     ParserState state;
 
     real* values;

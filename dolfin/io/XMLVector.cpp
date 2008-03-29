@@ -12,7 +12,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-XMLVector::XMLVector(Vector& vector)
+XMLVector::XMLVector(GenericVector& vector)
   : XMLObject(), x(vector), values(0), size(0)
 {
   state = OUTSIDE;

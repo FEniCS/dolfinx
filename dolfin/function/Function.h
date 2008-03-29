@@ -57,10 +57,10 @@ namespace dolfin
 
     // FIXME: Should be GenericVector here
     /// Create discrete function for argument function i of form
-    Function(Mesh& mesh, Vector& x, Form& form, uint i = 1);
+    Function(Mesh& mesh, GenericVector& x, Form& form, uint i = 1);
 
     /// Create discrete function for argument function i of form
-    Function(Mesh& mesh, Vector& x, DofMap& dof_map, const ufc::form& form, uint i = 1);
+    Function(Mesh& mesh, GenericVector& x, DofMap& dof_map, const ufc::form& form, uint i = 1);
 
     /// Create discrete function from sub function
     Function(SubFunction sub_function);
@@ -75,10 +75,10 @@ namespace dolfin
     virtual ~Function();
 
     /// Create discrete function for argument function i of form
-    void init(Mesh& mesh, Vector& x, Form& form, uint i = 1);
+    void init(Mesh& mesh, GenericVector& x, Form& form, uint i = 1);
 
     /// Create discrete function for argument function i of form
-    void init(Mesh& mesh, Vector& x, DofMap& dof_map, const ufc::form& form, uint i = 1);
+    void init(Mesh& mesh, GenericVector& x, DofMap& dof_map, const ufc::form& form, uint i = 1);
 
     /// Return the type of function
     Type type() const;
@@ -93,7 +93,7 @@ namespace dolfin
     Mesh& mesh() const;
 
     /// Return the vector associated with a DiscreteFunction
-    Vector& vector() const;
+    GenericVector& vector() const;
 
     /// Return the number of sub functions (only for discrete functions)
     uint numSubFunctions() const;

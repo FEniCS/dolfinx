@@ -36,7 +36,7 @@ namespace dolfin
     
     // Input
 
-    void operator>> (Vector& x);
+    void operator>> (GenericVector& x);
     void operator>> (Matrix& A);
     void operator>> (Mesh& mesh);
     void operator>> (MeshFunction<int>& meshfunction);
@@ -52,7 +52,7 @@ namespace dolfin
     
     // Output
     
-    void operator<< (Vector& x);
+    void operator<< (GenericVector& x);
     void operator<< (Matrix& A);
     void operator<< (Mesh& mesh);
     void operator<< (Graph& graph);

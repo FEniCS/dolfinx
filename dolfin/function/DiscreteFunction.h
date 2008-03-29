@@ -34,13 +34,13 @@ namespace dolfin
   public:
 
     /// Create discrete function for argument function i of form
-    DiscreteFunction(Mesh& mesh, Vector& x, Form& form, uint i);
+    DiscreteFunction(Mesh& mesh, GenericVector& x, Form& form, uint i);
 
     /// Create discrete function for argument function i of form
-    DiscreteFunction(Mesh& mesh, Vector& x, DofMap& dof_map, const ufc::form& form, uint i);
+    DiscreteFunction(Mesh& mesh, GenericVector& x, DofMap& dof_map, const ufc::form& form, uint i);
 
     /// Create discrete function from given data and assume responsibility for data
-    DiscreteFunction(Mesh& mesh, Vector& x, std::string finite_element_signature, std::string dof_map_signature);
+    DiscreteFunction(Mesh& mesh, GenericVector& x, std::string finite_element_signature, std::string dof_map_signature);
 
     /// Create discrete function from sub function
     DiscreteFunction(SubFunction& sub_function);
@@ -75,7 +75,7 @@ namespace dolfin
     void eval(real* values, const real* x) const;
 
     /// Return vector
-    Vector& vector() const;
+    GenericVector& vector() const;
 
     /// Friends
     friend class XMLFile;
@@ -108,10 +108,10 @@ namespace dolfin
     };
 
     // Initialize discrete function
-    void init(Mesh& mesh, Vector& x, const ufc::form& form, uint i);
+    void init(Mesh& mesh, GenericVector& x, const ufc::form& form, uint i);
 
     // The vector of dofs
-    Vector* x;
+    GenericVector* x;
 
     // The finite element
     ufc::finite_element* finite_element;
@@ -120,7 +120,7 @@ namespace dolfin
     DofMap* dof_map;
 
     // Pointers to local data if owned
-    Vector* local_vector;
+    GenericVector* local_vector;
     DofMap* local_dof_map;
 
     // Intersection detector
