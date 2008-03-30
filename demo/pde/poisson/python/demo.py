@@ -69,3 +69,6 @@ plot(u)
 # Save solution to file
 file = File("poisson.pvd")
 file << u
+
+# Hold plot
+interactive()
