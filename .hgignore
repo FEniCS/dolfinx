@@ -1,12 +1,24 @@
-(^|/)CVS($|/)
-(^|/)\.hg($|/)
-^tailor.log$
-^tailor.state$
-^tailor.state.journal$
-.*\.o
-.*\.Plo
-.*\.Po
-.*\.lo
-.*\.la
-.*\.a
-.*~
+syntax: glob
+*.o
+*.Plo
+*.Po
+*.lo
+*.la
+*.a
+*.os
+*~
+*.pyc
+*.so{,.0}
+*.pc
+
+syntax: regexp
+^\.hg/
+^local/
+^dolfin\.conf$
+^dolfin/swig/.*\.(py|cc|h)$
+
+^scons/\.sconsign\.dblite$
+^scons/options\.cache$
+^scons/.*\.log$
+
+^demo/.*/(cpp|python)/.*\.(pvd|vtu|xml)$
