@@ -1,16 +1,16 @@
 DOLFIN is written and maintained by:
 
-  Johan Hoffman <hoffman@csc.kth.se>
-  http://www.csc.kth.se/~jhoffman/
-
-  Johan Jansson <johanjan@math.chalmers.se>
-  http://www.math.chalmers.se/~johanjan/
-
   Anders Logg <logg@simula.no>
   http://home.simula.no/~logg/
 
   Garth N. Wells <gnw20@cam.ac.uk>
   http://www.eng.cam.ac.uk/~gnw20/
+
+  Johan Hoffman <hoffman@csc.kth.se>
+  http://www.csc.kth.se/~jhoffman/
+
+  Johan Jansson <johanjan@math.chalmers.se>
+  http://www.math.chalmers.se/~johanjan/
 
 Contributors in alphabetical order:
 
@@ -19,6 +19,7 @@ Contributors in alphabetical order:
   Niklas Ericsson       <nen@math.chalmers.se>
   Haiko Etzel           <hetzel.devel@web.de>
   Georgios Foufas       <foufas@math.chalmers.se>
+  Joachim B Haga        <jobh@broadpark.no>
   Johan Hake            <hake@simula.no>
   Rasmus Hemph          <PDE project course 2001/2002>
   David Heintz          <david.heintz@comhem.se>
@@ -34,6 +35,7 @@ Contributors in alphabetical order:
   Pablo De Napoli       <pdenapo@gmail.com>
   Andreas Nilsson       <f99anni@dd.chalmers.se>
   Minh Do-Quang         <minh@mech.kth.se>
+  Johannes Ring         <johannr@simula.no>
   Angelo Simone         <a.simone@tudelft.nl>
   Ola Skavhaug          <skavhaug@simula.no>
   Thomas Svedberg       <thsv@am.chalmers.se>
@@ -42,8 +44,9 @@ Contributors in alphabetical order:
   Andy Terrel           <aterrel@uchicago.edu>
   Jim Tilander          <jt@dd.chalmers.se>
   Walter Villanueva     <PDE project course 2001/2002>
+  Ilmar Wilbers         <ilmarw@simula.dot.no>
   Åsmund Ødegård        <aasmund@simula.no>
   Kristian Ølgaard      <k.b.oelgaard@tudelft.nl>
 
 Missing credits? Tell us and we will fix it.
-Send an email to dolfin@fenics.org.
+Send an email to dolfin-dev@fenics.org.
