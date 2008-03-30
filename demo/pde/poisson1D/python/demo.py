@@ -51,8 +51,8 @@ bc = DirichletBC(u0, mesh, boundary)
 pde = LinearPDE(a, L, mesh, bc)
 u = pde.solve()
 
-# Viper can't plot in 1D yet
-# plot(u)
+# Plot solution
+plot(u)
 
 # Save solution to file
 file = File("poisson.pvd")
