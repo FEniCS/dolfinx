@@ -2,9 +2,10 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Ola Skavhaug, 2007.
+// Modified by Kent-Andre Mardal 2008.
 //
 // First added:  2006-05-15
-// Last changed: 2007-12-07
+// Last changed: 2008-03-21
 
 #ifndef __MATRIX_H
 #define __MATRIX_H
@@ -114,6 +115,14 @@ namespace dolfin
 
     inline LinearAlgebraFactory& factory() const
     { return matrix->factory(); }
+
+    // y = A x  ( or y = A^T x if transposed==true) 
+    inline void prod(const GenericVector& x, GenericVector& y, bool transposed=false) const 
+    {  
+      matrix->prod(x, y, transposed); 
+    }
+
+
     
   private:
 

@@ -2,9 +2,10 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Anders Logg, 2007.
+// Modified by Kent-Andre Mardal 2008.
 //
 // First added:  2007-07-03
-// Last changed: 2007-08-28
+// Last changed: 2008-03-21
 
 #ifndef __VECTOR_H
 #define __VECTOR_H
@@ -110,7 +111,26 @@ namespace dolfin
     /// Return backend factory
     inline LinearAlgebraFactory& factory() const
     { return vector.factory(); }
-    
+
+    /// inner product 
+    inline real inner(const GenericVector& x_) const
+    { 
+      const Vector* x = dynamic_cast<const Vector*>(&x_);  
+      if (!x) error("The vector needs to be a Vector"); 
+      return this->vector.inner(x->vector); 
+    }
+
+    /// this += a*x  
+    inline void add(const GenericVector& x_, real a = 1.0) 
+    { 
+      const Vector* x = dynamic_cast<const Vector*>(&x_);  
+      if (!x) error("The vector needs to be a Vector"); 
+      return this->add(x->vector, a); 
+    }
+
+
+
+
   private:
     
     DefaultVector vector;

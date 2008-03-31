@@ -309,6 +309,18 @@ void PETScMatrix::mult(const PETScVector& x, PETScVector& Ax) const
   MatMult(A, x.vec(), Ax.vec());
 }
 //-----------------------------------------------------------------------------
+void PETScMatrix::prod(const GenericVector& x_, GenericVector& Ax_, bool transposed) const
+{
+  const PETScVector* x = dynamic_cast<const PETScVector*>(&x_);  
+  if (!x) error("The vector x should be of type PETScVector");  
+
+  PETScVector* Ax = dynamic_cast<PETScVector*>(&Ax_);  
+  if (!Ax) error("The vector Ax should be of type PETScVector");  
+
+  this->mult(*x, *Ax);
+}
+
+//-----------------------------------------------------------------------------
 real PETScMatrix::mult(const PETScVector& x, uint row) const
 {
   // FIXME: Temporary fix (assumes uniprocessor case)

@@ -3,9 +3,10 @@
 //
 // Modified by Andy R. Terrel, 2005.
 // Modified by Garth N. Wells, 2006-2007.
+// Modified by Kent-Andre Mardal 2008.
 //
 // First added:  2004
-// Last changed: 2007-12-12
+// Last changed: 2008-03-21
 
 #ifndef __PETSC_MATRIX_H
 #define __PETSC_MATRIX_H
@@ -116,6 +117,9 @@ namespace dolfin
     
     /// Matrix-vector multiplication
     void mult(const PETScVector& x, PETScVector& Ax) const;
+
+    // y = A x  ( or y = A^T x if transposed==true) 
+    virtual void prod(const GenericVector& x, GenericVector& y, bool transposed=false) const; 
 
     /// Matrix-vector multiplication with given row (temporary fix, assumes uniprocessor case)
     real mult(const PETScVector& x, uint row) const;

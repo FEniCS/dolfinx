@@ -3,9 +3,10 @@
 //
 // Modified by Anders Logg 2006-2007.
 // Modified by Ola Skavhaug 2007.
+// Modified by Kent-Andre Mardal 2008.
 //
 // First added:  2006-07-05
-// Last changed: 2007-12-07
+// Last changed: 2008-03-21
 
 #ifndef __UBLAS_MATRIX_H
 #define __UBLAS_MATRIX_H
@@ -104,6 +105,9 @@ namespace dolfin
     /// Compute product y = Ax
     void mult(const uBlasVector& x, uBlasVector& y) const;
 
+    /// Compute product y = Ax
+    virtual void prod(const GenericVector& x, GenericVector& y, bool transposed=false) const; 
+
     /// Compress matrix (eliminate all non-zeros from a sparse matrix) 
     void compress();
 
@@ -126,6 +130,7 @@ namespace dolfin
     uBlasMatrix<Mat>* copy() const;
 
     LinearAlgebraFactory& factory() const;
+
 
     //friend LogStream& operator<< <Mat> (LogStream&, const uBlasMatrix<Mat>&);
 
@@ -293,6 +298,21 @@ namespace dolfin
   {
     ublas::axpy_prod(*this, x, y, true);
   }
+  //---------------------------------------------------------------------------
+  template <class Mat>  
+  void uBlasMatrix<Mat>::prod(const GenericVector& x_, GenericVector& y_, bool transposed) const
+  {
+    const uBlasVector* x = dynamic_cast<const uBlasVector*>(&x_);  
+    if (!x)  error("The first vector needs to be of type uBlasVector"); 
+
+    uBlasVector* y = dynamic_cast<uBlasVector*>(&y_);  
+    if (!y)  error("The second vector needs to be of type uBlasVector"); 
+
+    if (transposed==true) error("The transposed version of the uBLAS matrix vector product is not yet implemented");  
+    this->mult(*x, *y); 
+  }
+
+
   //-----------------------------------------------------------------------------
   template <class Mat>  
   void uBlasMatrix<Mat>::compress()

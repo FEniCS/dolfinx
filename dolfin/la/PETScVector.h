@@ -2,9 +2,10 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells 2005-2007.
+// Modified by Kent-Andre Mardal 2008.
 //
 // First added:  2004
-// Last changed: 2007-12-12
+// Last changed: 2008-03-21
 
 #ifndef __PETSC_VECTOR_H
 #define __PETSC_VECTOR_H
@@ -134,6 +135,12 @@ namespace dolfin
 
     /// Scalar product
     real operator*(const PETScVector& x);
+
+    // FIXME: another way of calling the scalar or inner product (from GenericVector)
+    real inner(const GenericVector& v) const; 
+
+    //  this +=  a*x   
+    virtual void add(const GenericVector& x, real a = 1.0); 
 
     /// Compute norm of vector
     real norm(VectorNormType type = l2) const;
