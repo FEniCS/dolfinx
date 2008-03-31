@@ -93,8 +93,14 @@ namespace dolfin
     virtual void zero(uint m, const uint* rows) = 0;
 
     /// Set given matrix entry to value
-    virtual void set(uint i, uint j, real value) {
+    virtual void set_index(uint i, uint j, real value) {
       set(&value, 1, &i, 1, &j);  
+    }
+
+    virtual real get(uint i, uint j) {
+      real result;
+      get(&result, 1, &i, 1, &j);
+      return result;
     }
 
 

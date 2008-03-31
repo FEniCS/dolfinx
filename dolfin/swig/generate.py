@@ -17,7 +17,7 @@ excludes = ["plot.h", "ParameterSystem.h", "ParameterList.h", \
             "ConvectionMatrix.h", "MassMatrix.h", "StiffnessMatrix.h", "LoadVector.h"]
 
 # Name of SWIG interface file to be generated
-interface_file = "dolfin_headers.h"
+interface_file = "dolfin_headers.i"
 
 # Extract modules from dolfin.h
 modules = []
