@@ -80,7 +80,7 @@ options = [
     BoolOption("veryClean", "Remove the sconsign file during clean, must be set during regular build", 0),
     # maybe we should do this more cleverly. The default in dolfin now is
     # to use mpicxx if that is available...:
-    #("CXX", "Set C++ compiler",scons.defaultCxxCompiler()),
+    #("CXX", "Set C++ compiler", scons.defaultCxxCompiler()),
     #("FORTRAN", "Set FORTRAN compiler",scons.defaultFortranCompiler()),
     ("customCxxFlags", "Customize compilation of C++ code", ""),
     #("data", "Parameter to the 'fetch' target: comma-delimited list of directories/files to fetch, \
@@ -105,6 +105,15 @@ scons.logDate()
 
 # Writing the simula_scons used to the log:
 scons.log("Using simula_scons from: %s" % scons.__file__)
+
+# Notify the user about that options from scons/options.cache are being used:
+if not env.GetOption("clean"):
+  try:
+    lines = file(os.path.join('scons','options.cache')).readlines()
+    if lines:
+      print "Using options from scons/options.cache"
+  except:
+    pass
 
 # If we are in very-clean mode, remove the sconsign file. 
 if env.GetOption("clean"):
@@ -143,24 +152,24 @@ if env["customCxxFlags"]:
   env.Append(CXXFLAGS=" " + env["customCxxFlags"])
 
 # Determine which compiler to be used:
-cxx_compilers = [ "c++", "g++"]
-default_cxx_compiler = scons.defaultCxxCompiler()
-if default_cxx_compiler:
-  cxx_compilers.insert(0, default_cxx_compiler)
+cxx_compilers = ["mpic++", "mpicxx", "mpiCC", "c++", "g++", "CC"]
+# If CXX is defined in os.environ, we add this first
+if os.environ.has_key("CXX"):
+  cxx_compilers.insert(0, os.environ["CXX"])
 env["CXX"] = env.Detect(cxx_compilers)
 
 # Set MPI compiler and add neccessary MPI flags if enableMpi is True:
 if env["enableMpi"]:
-  mpi_cxx_compilers = ["mpic++", "mpicxx"]
-  if not env.Detect("mpirun") and not env.Detect(mpi_cxx_compilers):
+  if not env.Detect("mpirun"):
     print "MPI not found (might not work if PETSc uses MPI)."
   else:
     # Found MPI, so set HAS_MPI and IGNORE_CXX_SEEK (mpich2 bug)
     env.Append(CXXFLAGS=" -DHAS_MPI=1 -DMPICH_IGNORE_CXX_SEEK")
-    env["CXX"] = env.Detect(mpi_cxx_compilers)
 
 if not env["CXX"]:
   print "Unable to find any valid C++ compiler."
+  # try to use g++ as default:
+  env["CXX"] = "g++"
 
 # process list of packages to be included in allowed Dependencies.
 # Do we need this any more? I think we rather pick up (external) packages from
