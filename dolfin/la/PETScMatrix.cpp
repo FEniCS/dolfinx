@@ -16,8 +16,8 @@
 #include <iomanip>
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Array.h>
-#include "PETScVector.h"
 #include "PETScMatrix.h"
+#include "PETScVector.h"
 #include "GenericSparsityPattern.h"
 #include "SparsityPattern.h"
 #include "PETScFactory.h"
