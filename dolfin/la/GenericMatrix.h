@@ -93,12 +93,16 @@ namespace dolfin
     virtual void zero(uint m, const uint* rows) = 0;
 
     /// Set given matrix entry to value
-    virtual void set_index(uint i, uint j, real value) {
+    virtual void set_index(std::pair<uint, uint> idx, real value) {
+      const uint i = idx.first;
+      const uint j = idx.second;
       set(&value, 1, &i, 1, &j);  
     }
 
-    virtual real get(uint i, uint j) {
+    virtual real get_index(std::pair<uint,uint> idx) {
       real result;
+      const uint i = idx.first;
+      const uint j = idx.second;
       get(&result, 1, &i, 1, &j);
       return result;
     }

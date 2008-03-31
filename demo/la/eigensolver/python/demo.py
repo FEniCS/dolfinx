@@ -14,7 +14,7 @@ B_array = numpy.array([[4.0, 0.0], [0.0, 1.0]])
 
 position = numpy.array([0, 1], 'uint32')
 
-A = PETScMatrix(2,2)
+A = dolfin.PETScMatrix(2,2)
 A.set(A_array, position, position)
 A.apply()
 print ""
@@ -22,7 +22,7 @@ print "Matrix A:"
 A.disp()
 print ""
 
-B = PETScMatrix(2,2)
+B = dolfin.PETScMatrix(2,2)
 B.set(B_array, position, position)
 B.apply()
 print ""
@@ -37,8 +37,8 @@ esolver = SLEPcEigenvalueSolver(SLEPcEigenvalueSolver.lapack)
 esolver.solve(A, B)
 
 # Real and imaginary parts of an eigenvector
-rr = PETScVector(2)
-cc = PETScVector(2)
+rr = dolfin.PETScVector(2)
+cc = dolfin.PETScVector(2)
 
 # Get the first eigenpair from the solver
 emode = 0

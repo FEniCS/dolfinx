@@ -13,6 +13,16 @@ namespace dolfin {
   class ublas_vector {};
 }
 
+%typecheck(SWIG_TYPECHECK_DOUBLE_ARRAY) std::pair<dolfin::uint, dolfin::uint> idx {
+ $1 = PyTuple_Check($input) ? 1 : 0;
+}
+
+%typemap(in) std::pair<dolfin::uint,dolfin::uint> idx (std::pair<dolfin::uint, dolfin::uint> idx) {
+   idx.first   = PyLong_AsUnsignedLong(PyTuple_GetItem($input,0));
+   idx.second  = PyLong_AsUnsignedLong(PyTuple_GetItem($input,1));
+   $1 = idx;
+}
+
 
 %typemap(in) const double* block = double* _array;
 %typemap(in) (dolfin::uint m, const dolfin::uint* rows) = (int _array_dim, unsigned int* _array);
