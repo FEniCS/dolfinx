@@ -8,14 +8,12 @@ __license__  = "GNU LGPL Version 2.1"
 from dolfin import *
 import numpy
 
-# Set up two simple test matrices (2 x 2)
-A_array = numpy.array([[4.0, 1.0], [3.0, 2.0]])
-B_array = numpy.array([[4.0, 0.0], [0.0, 1.0]])
-
-position = numpy.array([0, 1], 'uint32')
-
 A = dolfin.PETScMatrix(2,2)
-A.set(A_array, position, position)
+A[0, 0] = 4.0
+A[0, 1] = 1.0
+A[1, 0] = 3.0
+A[1, 1] = 2.0
+
 A.apply()
 print ""
 print "Matrix A:"
@@ -23,7 +21,10 @@ A.disp()
 print ""
 
 B = dolfin.PETScMatrix(2,2)
-B.set(B_array, position, position)
+B[0,0] = 4.0
+B[0,1] = 0.0
+B[1,0] = 0.0
+B[1,1] = 1.0
 B.apply()
 print ""
 print "Matrix B:"
