@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2007.
 //
 // First added:  2006-11-29
-// Last changed: 2007-05-09
+// Last changed: 2008-03-31
 
 #include <dolfin.h>
 
@@ -12,6 +12,9 @@ using namespace dolfin;
 
 int main()
 {
+  dolfin_set("debug level", 1);
+
+  // Read mesh from file
   Mesh mesh("../mesh2D.xml.gz");
   
   // Read mesh function from file
