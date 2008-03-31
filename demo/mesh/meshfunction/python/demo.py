@@ -9,8 +9,6 @@ __license__  = "GNU LGPL Version 2.1"
 
 from dolfin import *
 
-dolfin_set("debug level", 1)
-
 # Read mesh from file
 mesh = Mesh("../mesh2D.xml.gz")
  

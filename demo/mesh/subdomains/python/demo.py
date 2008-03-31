@@ -14,6 +14,8 @@ __license__  = "GNU LGPL Version 2.1"
 
 from dolfin import *
 
+dolfin_set("debug level", 1)
+
 # Sub domain for no-slip (mark whole boundary, inflow and outflow will overwrite)
 class Noslip(SubDomain):
     def inside(self, x, on_boundary):

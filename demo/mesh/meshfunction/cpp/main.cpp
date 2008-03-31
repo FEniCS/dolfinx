@@ -12,8 +12,6 @@ using namespace dolfin;
 
 int main()
 {
-  dolfin_set("debug level", 1);
-
   // Read mesh from file
   Mesh mesh("../mesh2D.xml.gz");
   
