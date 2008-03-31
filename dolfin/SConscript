@@ -64,19 +64,24 @@ if env["PLATFORM"] == "darwin":
     env = scons.Customize.darwinCxx(env)
 
 if env["enablePydolfin"]:
-    # Disable PyDOLFIN if we are unable to find swig
+    # Make sure we can find both SWIG and Python header files (Python.h):
     try:
         out, err = scons.runCommand("swig", "-version")
     except Exception, err:
-        msg = "Unable to find PyDOLFIN dependency: swig"
-        scons.log(msg)
-        scons.log("Error:\n%s" % err)
-        print msg
-        env["enablePydolfin"] = False
+        print "*** Unable to find SWIG."
+        print "*** Install SWIG or disable PyDOLFIN with enablePydolfin=no"
+        Exit(1)
+    py_inc = sysconfig.get_python_inc()
+    py_ver = "%s.%s" % (sys.version_info[0],sys.version_info[1])
+    if not os.path.isfile(os.path.join(py_inc, "Python.h")):
+        print "*** Unable to find Python developement files on your system.\n"
+        print "*** Perhaps you need to install the package python%s-dev?"
+        Exit(1)
 
 if env["enablePydolfin"]:
+    print "Enabling compilation of PyDOLFIN"
     swigFlags = "-python -c++ -shadow -Iinclude/swig".split()
-    #out, err = scons.runCommand("swig", "-version")
+    out, err = scons.runCommand("swig", "-version")
     # Determine swig version, v 1.3.28 and later supports -O flag
     m = re.match(r"SWIG Version (.+)", out, re.M)
     #if scons.checkVersion(m.group(1), "1.3.28"):
@@ -94,6 +99,8 @@ if env["enablePydolfin"]:
         bldr.add_emitter(".i", scons.Customize.swigEmitter)
 
     swigEnv.Prepend(SCANNERS=scons.Customize.swigscanner)
+else:
+    print "Disabling compilation of PyDOLFIN"
 
 # stencil for return-values:
 ret = {"shlibs": [], "extModules": [], "docs": [], "headers": [], "pythonModules": [], \
