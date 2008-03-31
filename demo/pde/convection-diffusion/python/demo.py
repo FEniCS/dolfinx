@@ -28,7 +28,7 @@ u0 = Function(scalar, mesh, 0.0)
 
 # Parameters
 T = 1.0
-k = 0.05
+k = 0.1
 t = k
 c = 0.005
 
@@ -37,8 +37,10 @@ v = TestFunction(scalar)
 u = TrialFunction(scalar)
 
 # Functions
-u0 = Function(scalar, mesh, Vector())
-u1 = Function(scalar, mesh, Vector())
+x0 = Vector()
+x1 = Vector()
+u0 = Function(scalar, mesh, x0)
+u1 = Function(scalar, mesh, x1)
 
 # Variational problem
 a = v*u*dx + 0.5*k*(v*dot(velocity, grad(u))*dx + c*dot(grad(v), grad(u))*dx)
@@ -55,21 +57,23 @@ A = assemble(a, mesh)
 out_file = File("temperature.pvd")
 
 # Time-stepping
-while ( t < T ):
+while t < T:
+
+    # Copy solution from previous interval
+    u0.assign(u1)
 
     # Assemble vector and apply boundary conditions
     b = assemble(L, mesh)
     bc.apply(A, b, a)
     
     # Solve the linear system
-    solve(A, u1.vector(), b)
+    solve(A, x1, b)
     
+    # Plot solution
+    plot(u1)
+
     # Save the solution to file
     out_file << u1
 
     # Move to next interval
     t += k
-    u0.assign(u1)
-
-# Plot solution
-plot(u1)

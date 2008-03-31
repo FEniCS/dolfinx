@@ -94,10 +94,6 @@ pde = LinearPDE(a, L, mesh, bcs)
 # Solve PDE
 (U, P) = pde.solve().split()
 
-# Plot solution
-plot(U)
-plot(P)
-
 # Save solution
 ufile = File("velocity.xml")
 ufile << U
@@ -110,5 +106,7 @@ ufile_pvd << U
 pfile_pvd = File("pressure.pvd")
 pfile_pvd << P
 
-# Hold plots
+# Plot solution
+plot(U)
+plot(P)
 interactive()

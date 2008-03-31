@@ -109,10 +109,6 @@ bcs = [bcl, bcr]
 pde = LinearPDE(a, L, mesh, bcs)
 sol = pde.solve()
 
-# Plot solution
-plot(sol, mode="displacement")
-interactive()
-
 # Save solution to VTK format
 vtk_file = File("elasticity.pvd")
 vtk_file << sol
@@ -121,3 +117,7 @@ vtk_file << sol
 xml_file = File("elasticity.xml")
 xml_file << sol
 
+
+# Plot solution
+plot(sol, mode="displacement")
+interactive()
