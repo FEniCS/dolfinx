@@ -2,9 +2,10 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Anders Logg 2006-2007.
+// Modified by Kent-Andre Mardal 2008.
 //
 // First added:  2006-04-25
-// Last changed: 2007-08-28
+// Last changed: 2008-03-21
 
 #ifndef __GENERIC_VECTOR_H
 #define __GENERIC_VECTOR_H
@@ -97,7 +98,12 @@ namespace dolfin
 
     /// Add block of values
     virtual void add(const real* block, uint m, const uint* rows) = 0;
-    
+
+    /// Inner product 
+    virtual real inner(const GenericVector& vector) const = 0; 
+
+    //  this += a*x   
+    virtual void add(const GenericVector& x, real a = 1.0) = 0; 
   };  
 
 }

@@ -4,9 +4,10 @@
 // Modified by Johan Jansson 2006.
 // Modified by Anders Logg 2006-2007.
 // Modified by Ola Skavhaug 2007.
+// Modified by Kent-Andre Mardal 2008.
 //
 // First added:  2006-04-24
-// Last changed: 2007-12-07
+// Last changed: 2008-03-21
 
 #ifndef __GENERIC_MATRIX_H
 #define __GENERIC_MATRIX_H
@@ -17,6 +18,7 @@
 namespace dolfin
 {
 
+  class GenericVector; 
   class GenericSparsityPattern;
   
   /// This class defines a common interface for matrices.
@@ -97,6 +99,8 @@ namespace dolfin
       set(&value, 1, &i, 1, &j);  
     }
 
+    // y = A x  ( or y = A^T x if transposed==true) 
+    virtual void prod(const GenericVector& x, GenericVector& y, bool transposed=false) const = 0; 
 
   };
 

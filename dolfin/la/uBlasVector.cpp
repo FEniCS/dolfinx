@@ -137,6 +137,12 @@ void uBlasVector::div(const uBlasVector& y)
   }
 }
 //-----------------------------------------------------------------------------
+void uBlasVector::add(const GenericVector& x_, real a) {
+  const uBlasVector* x = dynamic_cast<const uBlasVector*>(&x_);  
+  if (!x)  error("The vector needs to be of type uBlasVector"); 
+  axpy(a,*x); 
+}
+//-----------------------------------------------------------------------------
 void uBlasVector::axpy(real a, const uBlasVector& x)
 {
   uBlasVector& y = *this;
@@ -151,9 +157,11 @@ void uBlasVector::mult(real a)
   y *= a;
 }
 //-----------------------------------------------------------------------------
-real uBlasVector::inner(const uBlasVector& x) const
+real uBlasVector::inner(const GenericVector& x_) const
 {
-  return inner_prod(*this,x); 
+  const uBlasVector* x = dynamic_cast<const uBlasVector*>(&x_);  
+  if (!x)  error("The vector needs to be of type uBlasVector"); 
+  return inner_prod(*this,*x); 
 }
 //-----------------------------------------------------------------------------
 const uBlasVector& uBlasVector::operator= (real a) 

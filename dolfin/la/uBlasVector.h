@@ -5,7 +5,7 @@
 // Modified by Kent-Andre Mardal 2008.
 //
 // First added:  2006-03-04
-// Last changed: 2008-03-19
+// Last changed: 2008-03-31
 
 #ifndef __UBLAS_VECTOR_H
 #define __UBLAS_VECTOR_H
@@ -123,7 +123,10 @@ namespace dolfin
     void mult(real a);
 
     /// Inner product 
-    real inner(const uBlasVector& x) const;
+    real inner(const GenericVector& x) const;
+
+    //  this +=  a*x   
+    virtual void add(const GenericVector& x, real a = 1.0); 
 
     /// Element-wise division
     void div(const uBlasVector& x);

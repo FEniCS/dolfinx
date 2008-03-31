@@ -313,6 +313,31 @@ real PETScVector::operator*(const PETScVector& x)
   return a;
 }
 //-----------------------------------------------------------------------------
+real PETScVector::inner(const GenericVector& x_) const
+{
+  const PETScVector* x = dynamic_cast<const PETScVector*>(&x_);  
+  if (!x) error("The vector should be of type PETScVector");  
+
+  dolfin_assert(this->x);
+  dolfin_assert(x->x);
+
+  real a;
+  VecDot(x->x, this->x, &a);
+
+  return a;
+}
+//-----------------------------------------------------------------------------
+void PETScVector::add(const GenericVector& x_, real a) 
+{
+  const PETScVector* x = dynamic_cast<const PETScVector*>(&x_);  
+  if (!x) error("The vector x should be of type PETScVector");  
+
+  dolfin_assert(this->x);
+  dolfin_assert(x->x);
+
+  VecAXPY(this->x, a, x->x);
+}
+//-----------------------------------------------------------------------------
 real PETScVector::norm(VectorNormType type) const
 {
   dolfin_assert(x);
