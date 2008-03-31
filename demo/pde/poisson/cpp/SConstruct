@@ -1,12 +1,14 @@
+# This is an example of a simple SConstruct file for building
+# programs against DOLFIN. To build this demo, just type 'scons'.
+
 import commands
 
 # Get compiler from pkg-config
 compiler = commands.getoutput('pkg-config --variable=compiler dolfin')
-env      = Environment(CXX = compiler)
+env = Environment(CXX = compiler)
 
 # Get compiler flags from pkg-config
 env.ParseConfig('pkg-config --cflags --libs dolfin')
 
 # Program name
 env.Program('demo', 'main.cpp')
-
