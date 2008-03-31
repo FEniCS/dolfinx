@@ -7,11 +7,11 @@ from dolfin import *
 
 # Create mesh of unit square
 mesh = UnitSquare(5, 5)
-plot(mesh)
+plot(mesh, interactive=True)
 
 # Uniform refinement
 mesh.refine()
-plot(mesh)
+plot(mesh, interactive=True)
 
 # Refine mesh close to x = (0.5, 0.5)
 p = Point(0.5, 0.5)
@@ -32,4 +32,4 @@ for i in range(5):
     mesh.smooth()
 
     # Plot mesh
-    plot(mesh)
+    plot(mesh, interactive=True)

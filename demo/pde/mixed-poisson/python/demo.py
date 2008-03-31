@@ -60,10 +60,6 @@ pde = LinearPDE(a, L, mesh)
 # Solve PDE and get sub-functions
 (sigma, u) = pde.solve().split()
 
-# Plot solution
-plot(sigma)
-plot(u)
-
 # Save solution to file
 f0 = File("sigma.xml")
 f1 = File("u.xml")
@@ -76,5 +72,7 @@ f4 = File("u.pvd")
 f3 << sigma
 f4 << u
 
-
-
+# Plot solution
+plot(sigma)
+plot(u)
+interactive()

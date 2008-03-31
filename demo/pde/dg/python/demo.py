@@ -59,11 +59,13 @@ a = dot(grad(v), grad(u))*dx \
 # Linear form
 L = v*f*dx
 
-# Solve PDE and plot solution
+# Solve PDE
 pde = LinearPDE(a, L, mesh)
 u = pde.solve()
-plot(u)
 
 # Save solution to file
 file = File("poisson.pvd")
 file << u
+
+# Plot solution
+plot(u, interactive=True)

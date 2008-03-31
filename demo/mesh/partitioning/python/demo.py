@@ -13,4 +13,4 @@ partitions = MeshFunction("uint")
 mesh.partition(partitions, 20)
 
 # Plot mesh partition
-plot(partitions)
+plot(partitions, interactive=True)

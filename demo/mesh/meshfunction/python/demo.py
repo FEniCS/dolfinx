@@ -21,5 +21,4 @@ out = File("meshfunction_out.xml");
 out << f
 
 # Plot mesh function
-plot(f)
-
+plot(f, interactive=True)
