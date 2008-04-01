@@ -66,12 +66,20 @@ options = [
     BoolOption("enableMpi", "Compile with support for MPI", "yes"),
     BoolOption("enablePetsc", "Compile with support for PETSc linear algebra", "yes"),
     BoolOption("enableSlepc", "Compile with support for SLEPc", "yes"),
-    BoolOption("enableScotch", "Compile with support for Scotch", "yes"),
+    BoolOption("enableScotch", "Compile with support for SCOTCH graph partitioning", "yes"),
     BoolOption("enableGts", "Compile with support for GTS", "yes"),
     BoolOption("enableUmfpack", "Compile with support for UMFPACK", "yes"),
     BoolOption("enablePydolfin", "Compile the python wrappers of Dolfin", "yes"),
     # some of the above may need extra options (like petscDir), should we
     # try to get that from pkg-config?
+    # It may be neccessary to specify the installation path to the above packages.
+    # One can either use the options below (with<Package>Dir) or define the
+    # <PACKAGE>_DIR environment variable.
+    PathOption("withPetscDir", "Specify path to PETSc", None),
+    PathOption("withSlepcDir", "Specify path to SLEPc", None),
+    PathOption("withScotchDir", "Specify path to SCOTCH", None),
+    PathOption("withUmfpackDir", "Specify path to UMFPACK", None),
+    PathOption("withBoostDir", "Specify path to Boost", None),
     #
     # a few more options originally from PyCC:
     #BoolOption("autoFetch", "Automatically fetch datafiles from (password protected) SSH repository", 0),
@@ -159,7 +167,8 @@ env["CXX"] = env.Detect(cxx_compilers)
 
 # Set MPI compiler and add neccessary MPI flags if enableMpi is True:
 if env["enableMpi"]:
-  if not env.Detect("mpirun"):
+  mpi_cxx_compilers = ["mpic++", "mpicxx", "mpiCC"]
+  if not env.Detect("mpirun") and env["CXX"] not in mpi_cxx_compilers:
     print "MPI not found (might not work if PETSc uses MPI)."
   else:
     # Found MPI, so set HAS_MPI and IGNORE_CXX_SEEK (mpich2 bug)
