@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import os.path, sys, re
-from distutils import sysconfig
 
 # exceptions
 from simula_scons.Errors import PkgconfigError, PkgconfigMissing, CommandError, _configError
@@ -71,11 +70,11 @@ if env["enablePydolfin"]:
         print "*** Unable to find SWIG."
         print "*** Install SWIG or disable PyDOLFIN with enablePydolfin=no"
         Exit(1)
-    py_inc = sysconfig.get_python_inc()
     py_ver = "%s.%s" % (sys.version_info[0],sys.version_info[1])
+    py_inc = os.path.join(sys.prefix,"include","python"+py_ver)
     if not os.path.isfile(os.path.join(py_inc, "Python.h")):
-        print "*** Unable to find Python developement files on your system.\n"
-        print "*** Perhaps you need to install the package python%s-dev?"
+        print "*** Unable to find Python developement files on your system."
+        print "*** Perhaps you need to install the package python%s-dev?" % py_ver
         Exit(1)
 
 if env["enablePydolfin"]:
