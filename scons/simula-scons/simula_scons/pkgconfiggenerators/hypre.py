@@ -6,16 +6,12 @@ import commands
 
 from commonPkgConfigUtils import *
 
-def getHypreDir():
-  # Try to get hypre_dir from an evironment variable, else use some default.
-  if os.environ.has_key('HYPRE_DIR'):
-    hypre_dir = os.environ["HYPRE_DIR"]
-  else:
-    # FIXME: should /usr be the default Hypre dir (as in the Debian package)?
-    hypre_dir = os.path.join(os.path.sep,"usr","local")
-  return hypre_dir
+def getHypreDir(sconsEnv=None):
+    default = os.path.join(os.path.sep,"usr","local")
+    hypre_dir = getPackageDir("hypre", sconsEnv=sconsEnv, default=default)
+    return hypre_dir
 
-def pkgVersion(compiler=None, cflags=None, **kwargs):
+def pkgVersion(compiler=None, cflags=None, sconsEnv=None):
   # A test for checking the hypre version
   cpp_version_str = r"""
 #include <stdio.h>
@@ -33,7 +29,7 @@ int main() {
 
   if not compiler:
     # FIXME: get_compiler() returns a C++ compiler. Should be a C compiler.
-    compiler = get_compiler(kwargs.get("sconsEnv", None))
+    compiler = get_compiler(sconsEnv)
   if not cflags:
     cflags = pkgCflags()
   cmdstr = "%s %s hypre_config_test_version.c" % (compiler,cflags)
@@ -52,7 +48,7 @@ int main() {
 
   return hypre_version
 
-def pkgLibs(compiler=None, cflags=None, **kwargs):
+def pkgLibs(compiler=None, cflags=None, sconsEnv=None):
   # A test to see if we need to link with blas and lapack
   cpp_libs_str = r"""
 #include <stdio.h>
@@ -72,8 +68,8 @@ int main() {
   write_cppfile(cpp_libs_str, "hypre_config_test_libs.c")
 
   if not compiler:
-    # FIXME: get_compiler() returns a C++ compiler. Should be a C compiler.
-    compiler = get_compiler(kwargs.get("sconsEnv", None))
+    # FIXME: get_compiler() returns a C++ compiler. Do we need a C compiler?
+    compiler = get_compiler(sconsEnv)
   if not cflags:
     cflags = pkgCflags()
   cmdstr = "%s %s hypre_config_test_libs.c" % (compiler,cflags)
@@ -87,33 +83,22 @@ int main() {
   if runFailed:
     remove_cfile("hypre_config_test_libs.c", execfile=True)
     raise UnableToRunException("Hypre", errormsg=cmdoutput)
-  libs_str = string.join(string.split(cmdoutput, '\n'))
-  if 'blas' in libs_str and 'lapack' in libs_str:
-    # Add only -llapack since lapack should be linked to the rigth blas lib
-    # FIXME: Is this always true?
-    libs_str = '-llapack'
+  blaslapack_str = string.join(string.split(cmdoutput, '\n'))
     
   remove_cfile("hypre_config_test_libs.c", execfile=True)
 
-  libs_dir = os.path.join(getHypreDir(),"lib")
+  if get_architecture() == "darwin":
+    libs_str = "-framework vecLib"
+  else:
+    libs_str = "-L%s %s" % (getAtlasDir(sconsEnv=sconsEnv),blaslapack_str)
+
+  libs_dir = os.path.join(getHypreDir(sconsEnv=sconsEnv),"lib")
   libs_str += " -L%s -lHYPRE" % libs_dir
   
-  # Set ATLAS location from environ, or use default
-  atlaslocation = ""
-  if os.environ.has_key('ATLAS_DIR'):
-    atlaslocation = os.environ["ATLAS_DIR"]
-  else:
-    atlaslocation = os.path.join(os.path.sep, "usr","lib","atlas")
-
-  if get_architecture() == "darwin":
-    libs_str += " -framework vecLib"
-  else:
-    libs_str += " -L%s" % atlaslocation
-
   return libs_str
 
-def pkgCflags(**kwargs):
-  include_dir = os.path.join(getHypreDir(),"include")
+def pkgCflags(sconsEnv=None):
+  include_dir = os.path.join(getHypreDir(sconsEnv=sconsEnv),"include")
   cflags = "-I%s -fPIC" % include_dir
   if get_architecture() == "darwin":
     # Additional cflags required on Mac
@@ -142,7 +127,7 @@ def pkgTests(forceCompiler=None, sconsEnv=None,
   linker = 'gcc'
 
   if not cflags:
-    cflags = pkgCflags()
+    cflags = pkgCflags(sconsEnv=sconsEnv)
   if not version:
     version = pkgVersion(compiler=compiler, cflags=cflags, sconsEnv=sconsEnv)
   if not libs:

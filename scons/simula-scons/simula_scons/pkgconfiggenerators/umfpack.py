@@ -43,20 +43,23 @@ def find_dependency_file(dirs, filename, what="", package=""):
     raise UnableToFindPackage(package)
   return found_dir
 
-def getBaseDirs():
+def getBaseDirs(sconsEnv):
   base_dirs = \
       [os.path.join(os.path.sep, *d) for d in [["usr"], ["usr", "local"]]]
   if get_architecture() == 'darwin':
     # use fink as default
     base_dirs.append(os.path.join(os.path.sep,"sw"))
-  if os.environ.has_key("UMFPACK_DIR"):
-    base_dirs.insert(0, os.environ["UMFPACK_DIR"])
+  umfpack_dir = getPackageDir("umfpack", sconsEnv=sconsEnv, default=None)
+  if umfpack_dir:
+    base_dirs.insert(0, umfpack_dir)
   # FIXME: should we also look for AMD_DIR and UFCONFIG_DIR in os.environ?
+  #amd_dir = getPackageDir("amd", sconsEnv=sconsEnv, default=None)
+  #ufconfig_dir = getPackageDir("ufconfig", sconsEnv=sconsEnv, default=None)
   return base_dirs
 
-def needAMD():
+def needAMD(sconsEnv):
   """Return True if UMFPACK depends on AMD."""
-  umfpack_include_dir = getUmfpackIncDir()
+  umfpack_include_dir = getUmfpackIncDir(sconsEnv)
   need_amd = False
   for line in file(os.path.join(umfpack_include_dir, "umfpack.h")):
     if '#include "amd.h"' in line:
@@ -64,9 +67,9 @@ def needAMD():
       #print "UMFPACK needs AMD"
   return need_amd
 
-def needUFconfig():
+def needUFconfig(sconsEnv):
   """Return True if UMFPACK depends on UFconfig."""
-  umfpack_include_dir = getUmfpackIncDir()
+  umfpack_include_dir = getUmfpackIncDir(sconsEnv)
   need_ufconfig = False
   for line in file(os.path.join(umfpack_include_dir, "umfpack.h")):
     if '#include "UFconfig.h"' in line:
@@ -74,8 +77,8 @@ def needUFconfig():
       #print "UMFPACK needs UFconfig"
   return need_ufconfig
 
-def getAMDDirs():
-  base_dirs = getBaseDirs()
+def getAMDDirs(sconsEnv):
+  base_dirs = getBaseDirs(sconsEnv)
   all_include_dirs, all_lib_dirs = \
       generate_dirs(base_dirs, "suitesparse", "amd", "AMD", "ufsparse", "UFSPARSE", "umfpack", "UMFPACK")
   amd_include_dir = \
@@ -85,14 +88,14 @@ def getAMDDirs():
       find_dependency_file(all_lib_dirs, filename="libamd.a", what="libs", package="AMD")
   return amd_include_dir, amd_lib_dir
 
-def getAMDIncDir():
-  return getAMDDirs()[0]
+def getAMDIncDir(sconsEnv):
+  return getAMDDirs(sconsEnv)[0]
 
-def getAMDLibDir():
-  return getAMDDirs()[1]
+def getAMDLibDir(sconsEnv):
+  return getAMDDirs(sconsEnv)[1]
 
-def getUFconfigIncDir():
-  base_dirs = getBaseDirs()
+def getUFconfigIncDir(sconsEnv):
+  base_dirs = getBaseDirs(sconsEnv)
   all_include_dirs, all_lib_dirs = \
       generate_dirs(base_dirs, "suitesparse", "ufconfig", "UFconfig", "ufsparse", "UFSPARSE", "umfpack", "UMFPACK")
   ufconfig_include_dir = \
@@ -100,7 +103,7 @@ def getUFconfigIncDir():
                            filename="UFconfig.h", what="includes", package="UFconfig")
   return ufconfig_include_dir
 
-def getUmfpackDirs():
+def getUmfpackDirs(sconsEnv):
   # There are several ways umfpack can be installed:
   # 1. As part of ufsparse (e.g. the ubuntu package). 
   # 2. As separate debian umfpack package
@@ -121,7 +124,7 @@ def getUmfpackDirs():
 
   umfpack_include_dir = ""
   umfpack_lib_dir = ""
-  base_dirs = getBaseDirs()
+  base_dirs = getBaseDirs(sconsEnv)
 
   all_include_dirs, all_lib_dirs = \
       generate_dirs(base_dirs, "suitesparse", "ufsparse", "UFSPARSE", "umfpack", "UMFPACK")
@@ -135,13 +138,13 @@ def getUmfpackDirs():
   
   return umfpack_include_dir, umfpack_lib_dir
 
-def getUmfpackIncDir():
-  return getUmfpackDirs()[0]
+def getUmfpackIncDir(sconsEnv):
+  return getUmfpackDirs(sconsEnv)[0]
 
-def getUmfpackLibDir():
-  return getUmfpackDirs()[1]
+def getUmfpackLibDir(sconsEnv):
+  return getUmfpackDirs(sconsEnv)[1]
 
-def pkgVersion(compiler=None, cflags=None, libs=None, **kwargs):
+def pkgVersion(compiler=None, cflags=None, libs=None, sconsEnv=None):
   # a program to test that we can find umfpack includes
   cpp_test_include_str = r"""
 #include <stdio.h>
@@ -165,7 +168,7 @@ int main() {
   write_cppfile(cpp_test_include_str,"umfpack_config_test_include.cpp");
 
   if not compiler:
-    compiler = get_compiler(kwargs.get("sconsEnv", None))
+    compiler = get_compiler(sconsEnv)
   if not libs:
     libs = pkgLibs()
   if not cflags:
@@ -186,31 +189,23 @@ int main() {
   
   return umfpack_version
 
-def pkgCflags(**kwargs):
-  cflags = "-I%s" % getUmfpackIncDir()
-  if needAMD():
-    cflags += " -I%s" % getAMDIncDir()
-  if needUFconfig():
-    cflags += " -I%s" % getUFconfigIncDir()
+def pkgCflags(sconsEnv=None):
+  cflags = "-I%s" % getUmfpackIncDir(sconsEnv)
+  if needAMD(sconsEnv):
+    cflags += " -I%s" % getAMDIncDir(sconsEnv)
+  if needUFconfig(sconsEnv):
+    cflags += " -I%s" % getUFconfigIncDir(sconsEnv)
   return cflags
 
-def getATLASDir():
-  # Set ATLAS location from environ, or use default
-  if os.environ.has_key('ATLAS_DIR'):
-    atlaslocation = os.environ["ATLAS_DIR"]
-  else:
-    atlaslocation = os.path.join(os.path.sep,"usr","lib","atlas")
-  return atlaslocation
-
-def pkgLibs(**kwargs):
+def pkgLibs(sconsEnv=None):
   libs = ""
   if get_architecture() == "darwin":
     libs += "-framework vecLib"
   else:
-    libs += "-L%s -lblas" % getATLASDir()
-  libs += " -L%s -lumfpack" % getUmfpackLibDir()
-  if needAMD():
-    libs += " -L%s -lamd" % getAMDLibDir() 
+    libs += "-L%s -lblas" % getAtlasDir(sconsEnv=sconsEnv)
+  libs += " -L%s -lumfpack" % getUmfpackLibDir(sconsEnv)
+  if needAMD(sconsEnv):
+    libs += " -L%s -lamd" % getAMDLibDir(sconsEnv)
   return libs
 
 def pkgTests(forceCompiler=None, sconsEnv=None,
@@ -232,9 +227,9 @@ def pkgTests(forceCompiler=None, sconsEnv=None,
     compiler, linker = set_forced_compiler(forceCompiler)
 
   if not cflags:
-    cflags = pkgCflags()
+    cflags = pkgCflags(sconsEnv=sconsEnv)
   if not libs:
-    libs = pkgLibs()
+    libs = pkgLibs(sconsEnv=sconsEnv)
   if not version:
     version = pkgVersion(compiler=compiler, cflags=cflags, libs=libs, sconsEnv=sconsEnv)
 
@@ -285,6 +280,7 @@ int main (void)
   cmdstr = "%s %s umfpack_config_test_lib.o" % (linker, libs)
   linkFailed, cmdoutput = commands.getstatusoutput(cmdstr)
   if linkFailed:
+    remove_cppfile("umfpack_config_test_lib.cpp", ofile=True)
     errormsg = ("Using '%s' for BLAS, consider setting the environment " + \
                 "variable ATLAS_DIR if this is wrong.\n") % getATLASDir()
     errormsg += cmdoutput
@@ -293,6 +289,7 @@ int main (void)
 
   runFailed, cmdoutput = commands.getstatusoutput("./a.out")
   if runFailed:
+    remove_cppfile("umfpack_config_test_lib.cpp", ofile=True, execfile=True)
     raise UnableToRunException("UMFPACK", errormsg=cmdoutput)
   cmdlines = cmdoutput.split("\n")
   values = []

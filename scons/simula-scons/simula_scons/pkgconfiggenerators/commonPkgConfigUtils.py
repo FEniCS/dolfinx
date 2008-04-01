@@ -256,6 +256,28 @@ int main()
     return False
   return True
 
+def getPackageDir(package,
+                  sconsEnv=None,
+                  default=os.path.join(os.path.sep,"usr")):
+    """Return directory of given package."""
+    # Three cases:
+    # 1. A SCons environment is supplied and it has a with<Package>Dir setting
+    # 2. The <PACKAGE>_DIR environment variable is defined
+    # 3. Use the given default directory (e.g, /usr/local)
+    if sconsEnv is not None and \
+           sconsEnv.get("with%sDir" % package.capitalize(), None):
+        package_dir = sconsEnv["with%sDir" % package.capitalize()]
+    elif os.environ.has_key('%s_DIR' % package.upper()):
+        package_dir = os.environ["%s_DIR" % package.upper()]
+    else:
+        package_dir = default
+    return package_dir
+
+def getAtlasDir(sconsEnv=None):
+    atlas_dir = getPackageDir("atlas", sconsEnv=sconsEnv,
+                              default=os.path.join(os.path.sep,"usr","lib","atlas"))
+    return atlas_dir
+
 class UnableToXXXException(Exception):
   def __init__(self, msg="", errormsg=""):
     if errormsg:

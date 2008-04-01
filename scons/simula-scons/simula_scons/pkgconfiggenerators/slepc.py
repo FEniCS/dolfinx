@@ -6,22 +6,17 @@ import commands
 
 from commonPkgConfigUtils import *
 
-class unableToFindPackage(Exception):
-  def __init__(self, package="", what=""):
-    Exception.__init__(self, "Unable to find the location of %s (%s), consider setting the SLEPC_DIR variable" % (package, what))
+def getPetscDir(sconsEnv=None):
+    petsc_dir = getPackageDir("petsc", sconsEnv=sconsEnv, default=None)
+    if not petsc_dir:
+        raise UnableToFindPackageException("PETSc")
+    return petsc_dir
 
-class unableToCompileException(Exception):
-  def __init__(self, slepc_dir="", errormsg=""):
-    Exception.__init__(self, "Unable to compile some slepc tests, using %s as location for slepc includes.\nAdditional message:\n%s" % (slepc_dir, errormsg))
-    
-class unableToLinkException(Exception):
-  def __init__(self, slepc_dir="", errormsg=""):
-    Exception.__init__(self, "Unable to link some slepc tests, using %s as location for slepc libs.\nAdditional message:\n%s" % (slepc_dir, errormsg))
-
-class unableToRunException(Exception):
-  def __init__(self):
-    Exception.__init__(self, "Unable to run slepc program correctly.")
-
+def getSlepcDir(sconsEnv=None):
+    slepc_dir = getPackageDir("slepc", sconsEnv=sconsEnv, default=None)
+    if not slepc_dir:
+        raise UnableToFindPackageException("SLEPc")
+    return slepc_dir
 
 def pkgTests(forceCompiler=None, sconsEnv=None, **kwargs):
   """Run the tests for this package
@@ -35,10 +30,10 @@ def pkgTests(forceCompiler=None, sconsEnv=None, **kwargs):
   # make sure that "directory" is contained in PKG_CONFIG_PATH, only relevant 
   # for test-cases where directory="."
   # FIXME: directory is not defined here
-##   if os.environ.has_key("PKG_CONFIG_PATH"):
-##     os.environ["PKG_CONFIG_PATH"] += ":%s" % (directory)
-##   else:
-##     os.environ["PKG_CONFIG_PATH"] = "%s" % (directory)
+  if os.environ.has_key("PKG_CONFIG_PATH"):
+    os.environ["PKG_CONFIG_PATH"] += ":%s" % os.getcwd()
+  else:
+    os.environ["PKG_CONFIG_PATH"] = "%s" % os.getcwd()
 
   # SLEPc depends on PETSC_DIR. 
   # prototype - make this a utility in commonPkgConfigUtils
@@ -52,7 +47,7 @@ def pkgTests(forceCompiler=None, sconsEnv=None, **kwargs):
       packgen = __import__("simula_scons.pkgconfiggenerators", globals(), locals())
     except:
       print "[scons/pkgconfiggenerators/slepc.py. l. 40] Unable to find pkgconfiggenerators"
-      raise Exception ("Unable to find the pkgconfiggenerators")
+      raise UnableToXXXException("Unable to find the pkgconfiggenerators")
     ns = {}
     exec "from simula_scons.pkgconfiggenerators import %s" % (dep_module) in ns
     packgen = ns.get("%s" % (dep_module))
@@ -62,22 +57,18 @@ def pkgTests(forceCompiler=None, sconsEnv=None, **kwargs):
   failure,dep_mod_cflags = commands.getstatusoutput("pkg-config %s --cflags" % (dep_module))
   if failure:
     # some strange unknown error, report something!
-    raise Exception ("Unable to read CFLAGS for %s" % (dep_module_name))
+    raise UnableToXXXException("Unable to read CFLAGS for %s" % (dep_module_name))
   failure,dep_mod_libs = commands.getstatusoutput("pkg-config %s --libs" % (dep_module))
   if failure:
     # some strange unknown error, report something!
-    raise Exception ("Unable to read LDFLAGS for %s" % (dep_module_name))
-
-  slepc_dir = ""
-  if os.environ.has_key("SLEPC_DIR"):
-    slepc_dir = os.environ["SLEPC_DIR"]
-  else:
-    raise Exception ("The SLEPC_DIR environment variable is not set. Plese set the variable to point to your SLEPc installation")
- 
+    raise UnableToXXXException("Unable to read LDFLAGS for %s" % (dep_module_name))
   
   # Create a makefile to read basic things:
   slepc_makefile_str="""
 # Retrive various flags from SLEPc settings.
+
+PETSC_DIR=%s
+SLEPC_DIR=%s
 
 include ${SLEPC_DIR}/bmake/slepc_common
 
@@ -85,8 +76,8 @@ get_slepc_include:
 	-@echo  ${SLEPC_INCLUDE}
 
 get_slepc_libs:
-	-@echo ${CC_LINKER_SLFLAG}${SLEPC_LIB_DIR} -L${SLEPC_LIB_DIR} -lslepc ${C_SH_LIB_PATH} -L${PETSC_LIB_DIR} ${PETSC_LIB_BASIC}
-"""
+	-@echo ${CC_LINKER_SLFLAG}${SLEPC_LIB_DIR} -L${SLEPC_LIB_DIR} -lslepc
+""" % (getPetscDir(sconsEnv=sconsEnv),getSlepcDir(sconsEnv=sconsEnv))
   slepc_make_file = open("slepc_makefile","w")
   slepc_make_file.write(slepc_makefile_str)
   slepc_make_file.close()
@@ -94,25 +85,29 @@ get_slepc_libs:
   slepc_libs = ""
   runFailed, cmdoutput = commands.getstatusoutput("make -f slepc_makefile get_slepc_include")
   if runFailed:
-    raise Exception ("Unable to read SLEPc includes through make")
+    os.unlink("slepc_makefile")
+    msg = "Unable to read SLEPc includes through make"
+    raise UnableToXXXException(msg, errormsg=cmdoutput)
   slepc_includes = cmdoutput
     
   runFailed, cmdoutput = commands.getstatusoutput("make -f slepc_makefile get_slepc_libs")
   if runFailed:
-    raise Exception ("Unable to read SLEPc libs through make")
+    os.unlink("slepc_makefile")
+    msg = "Unable to read SLEPc libs through make"
+    raise UnableToXXXException(msg, errormsg=cmdoutput)
   slepc_libs = cmdoutput
 
   # Try to get compiler and linker from petsc
   failure, cmdoutput = commands.getstatusoutput("pkg-config petsc --variable=compiler")
   if failure:
     compiler = get_compiler(sconsEnv)
-    print "Could not retrieve compiler info from petsc.pc; using %s instead." % compiler
+    print "Unable to get compiler from petsc.pc; using %s instead." % compiler
   else:
     compiler = cmdoutput
   failure, cmdoutput = commands.getstatusoutput("pkg-config petsc --variable=linker")
   if failure:
     linker = get_linker(sconsEnv)
-    print "Could not retrieve linker info from petsc.pc; using %s instead." % linker
+    print "Unable to get linker from petsc.pc; using %s instead." % linker
   else:
     linker = cmdoutput
 
@@ -143,14 +138,19 @@ int main() {
   cmdstr = "%s %s %s -c slepc_config_test_version.cpp" % (compiler, dep_mod_cflags, slepc_includes)
   compileFailed, cmdoutput = commands.getstatusoutput(cmdstr)
   if compileFailed:
-    raise unableToCompileException(slepc_dir=slepc_dir, errormsg=cmdoutput)
-  cmdstr = "%s %s slepc_config_test_version.o" % (linker, slepc_libs)
+    remove_cppfile("slepc_config_test_version.cpp")
+    raise UnableToCompileException("SLEPc", cmd=cmdstr,
+                                   program=cpp_test_version_str, errormsg=cmdoutput)
+  cmdstr = "%s %s %s slepc_config_test_version.o" % (linker, dep_mod_libs, slepc_libs)
   linkFailed, cmdoutput = commands.getstatusoutput(cmdstr)
   if linkFailed:
-    raise unableToLinkException(slepc_dir=slepc_dir, errormsg=cmdoutput)
+    remove_cppfile("slepc_config_test_version.cpp", ofile=True)
+    raise UnableToLinkException("SLEPc", cmd=cmdstr,
+                                program=cpp_test_version_str, errormsg=cmdoutput)
   runFailed, cmdoutput = commands.getstatusoutput("./a.out")
   if runFailed:
-    raise unableToRunException()
+    remove_cppfile("slepc_config_test_version.cpp", ofile=True, execfile=True)
+    raise UnableToRunException("SLEPc", errormsg=cmdoutput)
   slepc_version = cmdoutput
 
   remove_cppfile("slepc_config_test_version.cpp", ofile=True, execfile=True)
@@ -159,7 +159,7 @@ int main() {
 
 def generatePkgConf(directory=suitablePkgConfDir(), sconsEnv=None, **kwargs):
 
-  (slepc_version, slepc_libs, slepc_includes) = pkgTests(sconsEnv=sconsEnv)
+  slepc_version, slepc_libs, slepc_includes = pkgTests(sconsEnv=sconsEnv)
 
   pkg_file_str = r"""Name: SLEPc
 Version: %s
@@ -168,10 +168,10 @@ Requires: petsc
 Libs: %s
 Cflags: %s
 """ % (slepc_version, slepc_libs, slepc_includes)
-  pkg_file = open("%s/slepc.pc" % (directory), "w")
+  pkg_file = open("%s/slepc.pc" % directory, "w")
   pkg_file.write(pkg_file_str)
   pkg_file.close()
-  print "done\n Found '%s' and generated pkg-config file in \n %s" % ("SLEPc", directory)
+  print "done\n Found SLEPc and generated pkg-config file in \n '%s'" % directory
 
 if __name__ == "__main__": 
   generatePkgConf(directory=".")

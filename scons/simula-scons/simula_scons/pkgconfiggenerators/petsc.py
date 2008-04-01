@@ -6,16 +6,16 @@ import commands
 
 from commonPkgConfigUtils import *
 
-def getPetscVariables(variables=('includes','libs','compiler','linker')):
+def getPetscVariables(variables=('includes','libs','compiler','linker'), sconsEnv=None):
   if isinstance(variables, str):
     variables = (variables,)
-  # First make sure PETSC_DIR is set. This will raise an exception if not:
-  petsc_dir = getPetscDir()
   filename = "petsc_makefile"
   arch = get_architecture()
   # Create a makefile to read basic things from PETSc
   petsc_makefile_str="""
 # Retrive various flags from PETSc settings.
+
+PETSC_DIR=%s
 
 include ${PETSC_DIR}/bmake/common/variables
 
@@ -30,7 +30,7 @@ get_petsc_cc:
 
 get_petsc_ld:
 	-@echo ${PCC_LINKER}
-"""
+""" % getPetscDir(sconsEnv=sconsEnv)
   petsc_make_file = open(filename, "w")
   petsc_make_file.write(petsc_makefile_str)
   petsc_make_file.close()
@@ -91,16 +91,13 @@ get_petsc_ld:
       ret.append(variable)
   return ret
 
-def getPetscDir():
-  petsc_dir = ""
-  if os.environ.has_key("PETSC_DIR"):
-    petsc_dir = os.environ["PETSC_DIR"]
-  else:
-    #petsc_dir = os.path.join(os.path.sep,"usr","lib","petsc")
-    raise UnableToFindPackageException("PETSc")
-  return petsc_dir 
+def getPetscDir(sconsEnv=None):
+    petsc_dir = getPackageDir("petsc", sconsEnv=sconsEnv, default=None)
+    if not petsc_dir:
+        raise UnableToFindPackageException("PETSc")
+    return petsc_dir
 
-def pkgVersion(compiler=None, linker=None, cflags=None, libs=None, **kwargs):
+def pkgVersion(compiler=None, linker=None, cflags=None, libs=None, sconsEnv=None):
   cpp_test_version_str = r"""
 #include <stdio.h>
 #include <petsc.h>
@@ -123,13 +120,13 @@ int main() {
   write_cppfile(cpp_test_version_str, "petsc_config_test_version.cpp");
 
   if not compiler:
-    compiler = pkgCompiler(**kwargs)
+    compiler = pkgCompiler(sconsEnv=sconsEnv)
   if not linker:
-    linker = pkgLinker(**kwargs)
+    linker = pkgLinker(sconsEnv=sconsEnv)
   if not cflags:
-    cflags = pkgCflags()
+    cflags = pkgCflags(sconsEnv=sconsEnv)
   if not libs:
-    libs = pkgLibs()
+    libs = pkgLibs(sconsEnv=sconsEnv)
 
   cmdstr = "%s %s -c petsc_config_test_version.cpp" % (compiler, cflags)
   compileFailed, cmdoutput = commands.getstatusoutput(cmdstr)
@@ -152,24 +149,24 @@ int main() {
   remove_cppfile("petsc_config_test_version.cpp", ofile=True, execfile=True)
   return petsc_version
 
-def pkgLibs(**kwargs):
-  libs, = getPetscVariables(variables='libs')
+def pkgLibs(sconsEnv=None):
+  libs, = getPetscVariables(variables='libs', sconsEnv=sconsEnv)
   return libs
 
-def pkgCflags(**kwargs):
-  includes, = getPetscVariables(variables='includes')
+def pkgCflags(sconsEnv=None):
+  includes, = getPetscVariables(variables='includes', sconsEnv=sconsEnv)
   return includes
 
-def pkgCompiler(**kwargs):
-  compiler, = getPetscVariables(variables='compiler')
+def pkgCompiler(sconsEnv=None):
+  compiler, = getPetscVariables(variables='compiler', sconsEnv=sconsEnv)
   if not compiler:
-    compiler = get_compiler(kwargs.get("sconsEnv", None))
+    compiler = get_compiler(sconsEnv)
   return compiler
 
-def pkgLinker(**kwargs):
-  linker, = getPetscVariables(variables='linker')
+def pkgLinker(sconsEnv=None):
+  linker, = getPetscVariables(variables='linker', sconsEnv=sconsEnv)
   if not linker:
-    linker = get_linker(kwargs.get("sconsEnv", None))
+    linker = get_linker(sconsEnv)
   return linker
 
 def pkgTests(forceCompiler=None, sconsEnv=None,
@@ -181,9 +178,9 @@ def pkgTests(forceCompiler=None, sconsEnv=None,
      or just a string, which in that case will be used as both.
   """
   if not cflags:
-    cflags = pkgCflags()
+    cflags = pkgCflags(sconsEnv=sconsEnv)
   if not libs:
-    libs = pkgLibs()
+    libs = pkgLibs(sconsEnv=sconsEnv)
 
   if not forceCompiler:
     compiler = pkgCompiler(sconsEnv=sconsEnv)
@@ -193,10 +190,11 @@ def pkgTests(forceCompiler=None, sconsEnv=None,
 
   if not version:
     version = pkgVersion(cflags=cflags, libs=libs,
-                         compiler=compiler, linker=linker)
+                         compiler=compiler, linker=linker, sconsEnv=sconsEnv)
   else:
     # Run pkgVersion since this is the current PETSc test
-    pkgVersion(cflags=cflags, libs=libs, compiler=compiler, linker=linker)
+    pkgVersion(cflags=cflags, libs=libs,
+               compiler=compiler, linker=linker, sconsEnv=sconsEnv)
 
   return version, compiler, linker, libs, cflags
 

@@ -6,6 +6,11 @@ import commands
 
 from commonPkgConfigUtils import *
 
+def getScotchDir(sconsEnv=None):
+    default = os.path.join(os.path.sep,"usr","local")
+    scotch_dir = getPackageDir("scotch", sconsEnv=sconsEnv, default=default)
+    return scotch_dir
+
 def pkgTests(forceCompiler=None, sconsEnv=None, **kwargs):
   """Run the tests for this package
   
@@ -65,11 +70,7 @@ int main() {
   else:
     compiler, linker = set_forced_compiler(forceCompiler)
 
-  scotch_dir=""
-  if os.environ.has_key('SCOTCH_DIR'):
-    scotch_dir = os.environ['SCOTCH_DIR']
-  else:
-    scotch_dir = os.path.join(os.path.sep, "usr", "local")
+  scotch_dir = getScotchDir(sconsEnv=sconsEnv)
   scotch_libs = scotch_dir
   scotch_includes = scotch_dir
 
@@ -148,16 +149,16 @@ def generatePkgConf(directory=suitablePkgConfDir(), sconsEnv=None, **kwargs):
   scotch_version, scotch_libs, scotch_includes = pkgTests(sconsEnv=sconsEnv)
 
   # Ready to create a pkg-config file:
-  pkg_file_str = r"""Name: scotch
+  pkg_file_str = r"""Name: SCOTCH
 Version: %s
-Description: Scotch mesh and graph partitioning, http://www.labri.fr/perso/pelegrin/scotch/
+Description: SCOTCH mesh and graph partitioning, http://www.labri.fr/perso/pelegrin/scotch/
 Libs: -L%s -lscotch -lscotcherr
 Cflags: -I%s 
 """ % (scotch_version, scotch_libs, scotch_includes)
   pkg_file = open("%s/scotch.pc" % (directory), 'w')
   pkg_file.write(pkg_file_str)
   pkg_file.close()
-  print "done\n Found '%s' and generated pkg-config file in\n '%s'" % ("scotch", directory)
+  print "done\n Found SCOTCH and generated pkg-config file in\n '%s'" % directory
 
 if __name__ == "__main__":
   generatePkgConf(directory=".")
