@@ -100,7 +100,7 @@ namespace dolfin
     }
 
     // y = A x  ( or y = A^T x if transposed==true) 
-    virtual void prod(const GenericVector& x, GenericVector& y, bool transposed=false) const = 0; 
+    virtual void mult(const GenericVector& x, GenericVector& y, bool transposed=false) const = 0; 
 
   };
 

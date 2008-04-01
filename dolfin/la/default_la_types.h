@@ -23,15 +23,17 @@ namespace dolfin
   /// Various default linear algebra quantities are defined here.
   
 #ifdef HAS_PETSC
-  typedef PETScVector        DefaultVector;
-  typedef PETScMatrix        DefaultMatrix;
-  typedef PETScLUSolver      DefaultLUSolver;
-  typedef PETScKrylovSolver  DefaultKrylovSolver;
+  typedef PETScVector         DefaultVector;
+  typedef PETScMatrix         DefaultMatrix;
+  typedef PETScLUSolver       DefaultLUSolver;
+  typedef PETScKrylovSolver   DefaultKrylovSolver;
+  typedef PETScPreconditioner DefaultPreconditioner; 
 #else
-  typedef uBlasVector        DefaultVector;
-  typedef uBlasSparseMatrix  DefaultMatrix;
-  typedef uBlasLUSolver      DefaultLUSolver;
-  typedef uBlasKrylovSolver  DefaultKrylovSolver;
+  typedef uBlasVector         DefaultVector;
+  typedef uBlasSparseMatrix   DefaultMatrix;
+  typedef uBlasLUSolver       DefaultLUSolver;
+  typedef uBlasKrylovSolver   DefaultKrylovSolver;
+  typedef uBlasPreconditioner DefaultPreconditioner;
 #endif
 
 }

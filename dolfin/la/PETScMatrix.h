@@ -119,7 +119,7 @@ namespace dolfin
     void mult(const PETScVector& x, PETScVector& Ax) const;
 
     // y = A x  ( or y = A^T x if transposed==true) 
-    virtual void prod(const GenericVector& x, GenericVector& y, bool transposed=false) const; 
+    virtual void mult(const GenericVector& x, GenericVector& y, bool transposed=false) const; 
 
     /// Matrix-vector multiplication with given row (temporary fix, assumes uniprocessor case)
     real mult(const PETScVector& x, uint row) const;

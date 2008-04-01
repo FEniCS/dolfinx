@@ -106,7 +106,7 @@ namespace dolfin
     void mult(const uBlasVector& x, uBlasVector& y) const;
 
     /// Compute product y = Ax
-    virtual void prod(const GenericVector& x, GenericVector& y, bool transposed=false) const; 
+    virtual void mult(const GenericVector& x, GenericVector& y, bool transposed=false) const; 
 
     /// Compress matrix (eliminate all non-zeros from a sparse matrix) 
     void compress();
@@ -300,7 +300,7 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <class Mat>  
-  void uBlasMatrix<Mat>::prod(const GenericVector& x_, GenericVector& y_, bool transposed) const
+  void uBlasMatrix<Mat>::mult(const GenericVector& x_, GenericVector& y_, bool transposed) const
   {
     const uBlasVector* x = dynamic_cast<const uBlasVector*>(&x_);  
     if (!x)  error("The first vector needs to be of type uBlasVector"); 

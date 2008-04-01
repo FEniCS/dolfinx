@@ -117,9 +117,9 @@ namespace dolfin
     { return matrix->factory(); }
 
     // y = A x  ( or y = A^T x if transposed==true) 
-    inline void prod(const GenericVector& x, GenericVector& y, bool transposed=false) const 
+    inline void mult(const GenericVector& x, GenericVector& y, bool transposed=false) const 
     {  
-      matrix->prod(x, y, transposed); 
+      matrix->mult(x, y, transposed); 
     }
 
 
