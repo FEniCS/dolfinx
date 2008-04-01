@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import os, os.path, sys
-from distutils import sysconfig
 
 # Make sure that we have a good scons-version
 EnsureSConsVersion(0, 96)
