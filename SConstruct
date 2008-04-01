@@ -321,6 +321,25 @@ if env["enablePydolfin"]:
     f.write('export PYTHONPATH="'  + prefix + 'lib/python'    + pyversion + '/site-packages:$PYTHONPATH"\n')
 f.close()
 
+# Print some help text at the end
+import atexit
+def help():
+    print "DOLFIN has be sucessfully compiled. To install DOLFIN, type"
+    print "  scons install"
+    print "To specify to the installation path PATH type"
+    print "  scons install prefix=PATH"
+    print "or to install locally type" 
+    print "  ./scons.local"
+def help_install():
+        print "DOLFIN has be sucessfully compiled and installed in\n  %s" % prefix
+        print "You may need to set various enviroment variables to use DOLFIN. Bash shell users can simply type"
+        print "  source ./dolfin.conf'"
+
+if 'install' in COMMAND_LINE_TARGETS:
+    atexit.register(help_install)
+else:
+    atexit.register(help)
+
 # Close log file
 scons.logClose()
 
