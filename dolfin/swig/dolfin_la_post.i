@@ -3,6 +3,7 @@
 %template(uBlasDenseMatrix) dolfin::uBlasMatrix<dolfin::ublas_dense_matrix>;
 
 
+#ifdef HAS_SLEPC
 %extend dolfin::SLEPcEigenvalueSolver{
 
 PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const int emode) {
@@ -18,3 +19,4 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
 }
 
 }
+#endif
