@@ -168,7 +168,7 @@ env["CXX"] = env.Detect(cxx_compilers)
 # Set MPI compiler and add neccessary MPI flags if enableMpi is True:
 if env["enableMpi"]:
   mpi_cxx_compilers = ["mpic++", "mpicxx", "mpiCC"]
-  if not env.Detect("mpirun") and env["CXX"] not in mpi_cxx_compilers:
+  if not env.Detect("mpirun") or not env["CXX"] in mpi_cxx_compilers:
     print "MPI not found (might not work if PETSc uses MPI)."
   else:
     # Found MPI, so set HAS_MPI and IGNORE_CXX_SEEK (mpich2 bug)
