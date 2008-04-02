@@ -323,17 +323,64 @@ f.close()
 
 # Print some help text at the end
 import atexit
+
 def help():
-    print "DOLFIN has be sucessfully compiled. To install DOLFIN, type"
-    print "  scons install"
-    print "To specify to the installation path PATH type"
-    print "  scons install prefix=PATH"
-    print "or to install locally type" 
-    print "  ./scons.local"
+    # TODO: The message below should only be printed if there were no
+    # errors running scons. In SCons 0.98 we can do this by checking
+    # if GetBuildFailures() returns an empty list.
+    #from SCons.Script import GetBuildFailures
+    #if GetBuildFailures():
+    #    # There have been errors. Write out error summary or just
+    #    # return and let SCons handle the error message.
+    #    return
+    msg = """---------------------------------------------------------
+Building DOLFIN finished. Now type
+
+    scons install
+
+to install DOLFIN on your system. Note that you may need
+to be root in order to install. To specify an alternative
+installation directory, run
+
+    scons install prefix=<path>
+
+You may also run ./scons.local for a local installation
+in the DOLFIN source tree.
+You can compile all the demo programs in the subdirectory
+demo by running
+
+   scons enableDemos=yes
+
+---------------------------------------------------------"""
+    print msg
+
 def help_install():
-        print "DOLFIN has be sucessfully compiled and installed in\n  %s" % prefix
-        print "You may need to set various enviroment variables to use DOLFIN. Bash shell users can simply type"
-        print "  source ./dolfin.conf'"
+    # TODO: The message below should only be printed if there were no
+    # errors running scons. In SCons 0.98 we can do this by checking
+    # if GetBuildFailures() returns an empty list.
+    #from SCons.Script import GetBuildFailures
+    #if GetBuildFailures():
+    #    # There have been errors. Write out error summary or just
+    #    # return and let SCons handle the error message.
+    #    return
+    msg = """---------------------------------------------------------
+DOLFIN sucessfully compiled and installed in\n\n  %s\n""" % prefix
+    # Check that the installation directory is set up correctly
+    if not os.path.join(prefix,"bin") in os.environ["PATH"]:
+        msg += """\nWarning: Installation directory is not in PATH.
+
+To compile a program against DOLFIN you need to update
+your environment variables to reflect the installation
+directory you have chosen for DOLFIN. A simple way to do
+this if you are using Bash-like shell is to source the
+file dolfin.conf:
+
+    source dolfin.conf
+
+This will update the values for the environment variables
+PATH, LD_LIBRARY_PATH, PKG_CONFIG_PATH and PYTHONPATH."""
+    msg += "\n---------------------------------------------------------"
+    print msg
 
 if 'install' in COMMAND_LINE_TARGETS:
     atexit.register(help_install)
