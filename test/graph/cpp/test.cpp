@@ -7,7 +7,7 @@
 // Unit tests for the graph library 
 
 #include <dolfin.h>
-#include <dolfin/unittest.h>
+#include <dolfin/common/unittest.h>
 //#include <iostream>
 #include <fstream>
 

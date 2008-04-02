@@ -7,7 +7,7 @@
 // Unit tests for the function library
 
 #include <dolfin.h>
-#include <dolfin/unittest.h>
+#include <dolfin/common/unittest.h>
 
 using namespace dolfin;
 
