@@ -55,7 +55,7 @@ for level in xrange(MAX_ITER):
     # Compute error indicators
     h = array([c.diameter() for c in cells(mesh)])
     K = array([c.volume() for c in cells(mesh)])
-    R = array([source([c.midpoint().x(), c.midpoint().y()]) for c in cells(mesh)])
+    R = array([abs(source([c.midpoint().x(), c.midpoint().y()])) for c in cells(mesh)])
     gamma = h*R*sqrt(K)
 
     # Compute error estimate
