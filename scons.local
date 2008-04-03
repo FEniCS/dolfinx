@@ -8,5 +8,5 @@
 
 INSTALLDIR=`pwd`"/local"
 
-scons install prefix=$INSTALLDIR $*
-
+scons enableDebug=yes $*
+scons install prefix=$INSTALLDIR
