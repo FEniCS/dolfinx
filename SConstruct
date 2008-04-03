@@ -321,9 +321,6 @@ if env["enablePydolfin"]:
     f.write('export PYTHONPATH="'  + prefix + 'lib/python'    + pyversion + '/site-packages:$PYTHONPATH"\n')
 f.close()
 
-# Print some help text at the end
-import atexit
-
 def help():
     # TODO: The message below should only be printed if there were no
     # errors running scons. In SCons 0.98 we can do this by checking
@@ -334,7 +331,7 @@ def help():
     #    # return and let SCons handle the error message.
     #    return
     msg = """---------------------------------------------------------
-Building DOLFIN finished. Now type
+If there were no errors, run
 
     scons install
 
@@ -346,6 +343,7 @@ installation directory, run
 
 You may also run ./scons.local for a local installation
 in the DOLFIN source tree.
+
 You can compile all the demo programs in the subdirectory
 demo by running
 
@@ -363,13 +361,14 @@ def help_install():
     #    # There have been errors. Write out error summary or just
     #    # return and let SCons handle the error message.
     #    return
-    msg = """---------------------------------------------------------
-DOLFIN sucessfully compiled and installed in\n\n  %s\n""" % prefix
+    #msg = """---------------------------------------------------------
+#DOLFIN successfully compiled and installed in\n\n  %s\n""" % prefix
     # Check that the installation directory is set up correctly
     if not os.path.join(prefix,"bin") in os.environ["PATH"]:
-        msg += """\nWarning: Installation directory is not in PATH.
+        msg = """---------------------------------------------------------
+Warning: Installation directory is not in PATH.
 
-To compile a program against DOLFIN you need to update
+To compile a program against DOLFIN, you need to update
 your environment variables to reflect the installation
 directory you have chosen for DOLFIN. A simple way to do
 this if you are using Bash-like shell is to source the
@@ -378,14 +377,19 @@ file dolfin.conf:
     source dolfin.conf
 
 This will update the values for the environment variables
-PATH, LD_LIBRARY_PATH, PKG_CONFIG_PATH and PYTHONPATH."""
-    msg += "\n---------------------------------------------------------"
-    print msg
+PATH, LD_LIBRARY_PATH, PKG_CONFIG_PATH and PYTHONPATH.
+---------------------------------------------------------"""
+        print msg
+    #msg += "\n---------------------------------------------------------"
+    #print msg
 
-if 'install' in COMMAND_LINE_TARGETS:
-    atexit.register(help_install)
-else:
-    atexit.register(help)
+# Print some help text at the end
+if not env.GetOption("clean"):
+    import atexit
+    if 'install' in COMMAND_LINE_TARGETS:
+        atexit.register(help_install)
+    else:
+        atexit.register(help)
 
 # Close log file
 scons.logClose()
