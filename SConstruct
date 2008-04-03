@@ -334,7 +334,7 @@ def help():
     #    # return and let SCons handle the error message.
     #    return
     msg = """---------------------------------------------------------
-Building DOLFIN finished. Now type
+If there was no errors, type
 
     scons install
 
@@ -363,11 +363,12 @@ def help_install():
     #    # There have been errors. Write out error summary or just
     #    # return and let SCons handle the error message.
     #    return
-    msg = """---------------------------------------------------------
-DOLFIN sucessfully compiled and installed in\n\n  %s\n""" % prefix
+    #msg = """---------------------------------------------------------
+#DOLFIN successfully compiled and installed in\n\n  %s\n""" % prefix
     # Check that the installation directory is set up correctly
     if not os.path.join(prefix,"bin") in os.environ["PATH"]:
-        msg += """\nWarning: Installation directory is not in PATH.
+        msg = """---------------------------------------------------------
+Warning: Installation directory is not in PATH.
 
 To compile a program against DOLFIN you need to update
 your environment variables to reflect the installation
@@ -378,9 +379,11 @@ file dolfin.conf:
     source dolfin.conf
 
 This will update the values for the environment variables
-PATH, LD_LIBRARY_PATH, PKG_CONFIG_PATH and PYTHONPATH."""
-    msg += "\n---------------------------------------------------------"
-    print msg
+PATH, LD_LIBRARY_PATH, PKG_CONFIG_PATH and PYTHONPATH.
+---------------------------------------------------------"""
+        print msg
+    #msg += "\n---------------------------------------------------------"
+    #print msg
 
 if 'install' in COMMAND_LINE_TARGETS:
     atexit.register(help_install)
