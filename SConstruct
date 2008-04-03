@@ -321,9 +321,6 @@ if env["enablePydolfin"]:
     f.write('export PYTHONPATH="'  + prefix + 'lib/python'    + pyversion + '/site-packages:$PYTHONPATH"\n')
 f.close()
 
-# Print some help text at the end
-import atexit
-
 def help():
     # TODO: The message below should only be printed if there were no
     # errors running scons. In SCons 0.98 we can do this by checking
@@ -385,10 +382,13 @@ PATH, LD_LIBRARY_PATH, PKG_CONFIG_PATH and PYTHONPATH.
     #msg += "\n---------------------------------------------------------"
     #print msg
 
-if 'install' in COMMAND_LINE_TARGETS:
-    atexit.register(help_install)
-else:
-    atexit.register(help)
+# Print some help text at the end
+if not env.GetOption("clean"):
+    import atexit
+    if 'install' in COMMAND_LINE_TARGETS:
+        atexit.register(help_install)
+    else:
+        atexit.register(help)
 
 # Close log file
 scons.logClose()
