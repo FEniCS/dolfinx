@@ -331,7 +331,7 @@ def help():
     #    # return and let SCons handle the error message.
     #    return
     msg = """---------------------------------------------------------
-If there was no errors, type
+If there were no errors, run
 
     scons install
 
@@ -343,6 +343,7 @@ installation directory, run
 
 You may also run ./scons.local for a local installation
 in the DOLFIN source tree.
+
 You can compile all the demo programs in the subdirectory
 demo by running
 
@@ -367,7 +368,7 @@ def help_install():
         msg = """---------------------------------------------------------
 Warning: Installation directory is not in PATH.
 
-To compile a program against DOLFIN you need to update
+To compile a program against DOLFIN, you need to update
 your environment variables to reflect the installation
 directory you have chosen for DOLFIN. A simple way to do
 this if you are using Bash-like shell is to source the
