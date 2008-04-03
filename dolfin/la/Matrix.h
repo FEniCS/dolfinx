@@ -102,7 +102,7 @@ namespace dolfin
     /// FIXME: Should these be removed or added to the interface?
 
     /// Get non-zero values of row i
-    inline void getRow(uint i, int& ncols, Array<int>& columns, Array<real>& values)
+    inline void getRow(uint i, int& ncols, Array<int>& columns, Array<real>& values) const
     { matrix->getRow(i, ncols, columns, values); }
     
     /// Return const reference to implementation
@@ -117,9 +117,9 @@ namespace dolfin
     { return matrix->factory(); }
 
     // y = A x  ( or y = A^T x if transposed==true) 
-    inline void prod(const GenericVector& x, GenericVector& y, bool transposed=false) const 
+    inline void mult(const GenericVector& x, GenericVector& y, bool transposed=false) const 
     {  
-      matrix->prod(x, y, transposed); 
+      matrix->mult(x, y, transposed); 
     }
 
 

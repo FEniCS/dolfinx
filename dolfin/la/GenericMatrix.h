@@ -20,6 +20,8 @@ namespace dolfin
 
   class GenericVector; 
   class GenericSparsityPattern;
+  template<class M>
+  class Array;
   
   /// This class defines a common interface for matrices.
   
@@ -95,22 +97,18 @@ namespace dolfin
     virtual void zero(uint m, const uint* rows) = 0;
 
     /// Set given matrix entry to value
-    virtual void set_index(std::pair<uint, uint> idx, real value) {
-      const uint i = idx.first;
-      const uint j = idx.second;
+    virtual void set(uint i, uint j, real value) {
       set(&value, 1, &i, 1, &j);  
     }
 
-    virtual real get_index(std::pair<uint,uint> idx) {
-      real result;
-      const uint i = idx.first;
-      const uint j = idx.second;
-      get(&result, 1, &i, 1, &j);
-      return result;
-    }
-
     // y = A x  ( or y = A^T x if transposed==true) 
-    virtual void prod(const GenericVector& x, GenericVector& y, bool transposed=false) const = 0; 
+    virtual void mult(const GenericVector& x, GenericVector& y, bool transposed=false) const = 0; 
+
+    // FIXME remove this function and re-implement the << operator in terms of sparsity pattern and get
+    /// Get non-zero values of row i
+    virtual void getRow(uint i, int& ncols, Array<int>& columns, Array<real>& values) const = 0;
+
+
 
   };
 

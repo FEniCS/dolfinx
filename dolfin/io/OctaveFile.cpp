@@ -12,8 +12,8 @@
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Array.h>
-#include <dolfin/la/Vector.h>
-#include <dolfin/la/Matrix.h>
+#include <dolfin/la/GenericVector.h>
+#include <dolfin/la/GenericMatrix.h>
 #include "MatlabFile.h"
 #include "OctaveFile.h"
 
@@ -30,7 +30,7 @@ OctaveFile::~OctaveFile()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void OctaveFile::operator<<(Matrix& A)
+void OctaveFile::operator<<(GenericMatrix& A)
 {
   // Octave file format for Matrix is not the same as the Matlab format,
   // since octave cannot handle sparse matrices.
@@ -40,7 +40,8 @@ void OctaveFile::operator<<(Matrix& A)
   real* row = new real[N];
   
   FILE *fp = fopen(filename.c_str(), "a");
-  fprintf(fp, "%s = zeros(%u, %u);\n", A.name().c_str(), M, N);
+//  fprintf(fp, "%s = zeros(%u, %u);\n", A.name().c_str(), M, N);
+  fprintf(fp, "A = zeros(%u, %u);\n", M, N);
   
   for (uint i = 0; i < M; i++)
   {
@@ -52,14 +53,16 @@ void OctaveFile::operator<<(Matrix& A)
 
     // Write nonzero entries
     for (int pos = 0; pos < ncols; pos++)
-      fprintf(fp, "%s(%d, %d) = %.16e;\n",
-	      A.name().c_str(), (int)i + 1, columns[pos] + 1, values[pos]);
+//      fprintf(fp, "%s(%d, %d) = %.16e;\n",
+      fprintf(fp, "A(%d, %d) = %.16e;\n", (int)i + 1, columns[pos] + 1, values[pos]);
   }
   
   fclose(fp);
   delete [] row;
   
-  message(1, "Saved matrix %s (%s) to file %s in Octave format.",
-          A.name().c_str(), A.label().c_str(), filename.c_str());
+//  message(1, "Saved matrix %s (%s) to file %s in Octave format.",
+//          A.name().c_str(), A.label().c_str(), filename.c_str());
+
+  message(1, "Saved matrix to file %s in Octave format.", filename.c_str());
 }
 //-----------------------------------------------------------------------------

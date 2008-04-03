@@ -8,7 +8,7 @@
 #define __MATLAB_FILE_H
 
 #include <dolfin/main/constants.h>
-#include <dolfin/la/Matrix.h>
+#include <dolfin/la/GenericMatrix.h>
 #include "MFile.h"
 
 namespace dolfin
@@ -25,7 +25,7 @@ namespace dolfin
     
     // Output
 
-    void operator<< (Matrix& A);
+    void operator<< (GenericMatrix& A);
         
   };
   

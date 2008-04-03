@@ -118,6 +118,9 @@ namespace dolfin
     /// Assignment of vector
     const PETScVector& operator= (const PETScVector& x);
 
+    /// Assignment of vector
+    const PETScVector& operator= (const GenericVector& x);
+
     /// Assignment of all elements to a single scalar value
     const PETScVector& operator= (const real a);
 

@@ -89,7 +89,7 @@ void File::operator>>(GenericVector& x)
   *file >> x;
 }
 //-----------------------------------------------------------------------------
-void File::operator>>(Matrix& A)
+void File::operator>>(GenericMatrix& A)
 {
   file->read();
   
@@ -180,7 +180,7 @@ void File::operator<<(GenericVector& x)
   *file << x;
 }
 //-----------------------------------------------------------------------------
-void File::operator<<(Matrix& A)
+void File::operator<<(GenericMatrix& A)
 {
   file->write();
 	 

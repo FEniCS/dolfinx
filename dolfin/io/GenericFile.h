@@ -10,7 +10,7 @@
 #include <string>
 
 #include <dolfin/la/GenericVector.h>
-#include <dolfin/la/Matrix.h>
+#include <dolfin/la/GenericMatrix.h>
 
 namespace dolfin
 {
@@ -36,7 +36,7 @@ namespace dolfin
     // Input
 
     virtual void operator>> (GenericVector& x);
-    virtual void operator>> (Matrix& A);
+    virtual void operator>> (GenericMatrix& A);
     virtual void operator>> (Mesh& mesh);
     virtual void operator>> (MeshFunction<int>& meshfunction);
     virtual void operator>> (MeshFunction<unsigned int>& meshfunction);
@@ -52,7 +52,7 @@ namespace dolfin
     // Output
     
     virtual void operator<< (GenericVector& x);
-    virtual void operator<< (Matrix& A);
+    virtual void operator<< (GenericMatrix& A);
     virtual void operator<< (Mesh& mesh);
     virtual void operator<< (MeshFunction<int>& meshfunction);
     virtual void operator<< (MeshFunction<unsigned int>& meshfunction);

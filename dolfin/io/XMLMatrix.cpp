@@ -5,13 +5,14 @@
 // Last changed: 2006-05-23
 
 
-#include <dolfin/la/Matrix.h>
+#include <dolfin/la/GenericMatrix.h>
+#include <dolfin/log/dolfin_log.h>
 #include "XMLMatrix.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-XMLMatrix::XMLMatrix(Matrix& matrix) : XMLObject(), A(matrix)
+XMLMatrix::XMLMatrix(GenericMatrix& matrix) : XMLObject(), A(matrix)
 {
   state = OUTSIDE;
   row = 0;

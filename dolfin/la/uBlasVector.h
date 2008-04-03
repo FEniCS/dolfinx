@@ -65,6 +65,9 @@ namespace dolfin
     /// Set all entries to a single scalar value
     const uBlasVector& operator= (real a);
 
+    /// Assignment of vector
+    const uBlasVector& operator= (const GenericVector& x);
+
     /// Assignment from a vector_expression
     template <class E>
     uBlasVector& operator=(const ublas::vector_expression<E>& A)

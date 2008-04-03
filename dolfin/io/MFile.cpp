@@ -8,7 +8,7 @@
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/la/GenericVector.h>
-#include <dolfin/la/Matrix.h>
+#include <dolfin/la/GenericMatrix.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/ode/Sample.h>

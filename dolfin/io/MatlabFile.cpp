@@ -11,7 +11,7 @@
 #include <stdio.h>
 
 #include <dolfin/log/dolfin_log.h>
-#include <dolfin/la/Matrix.h>
+#include <dolfin/la/GenericMatrix.h>
 #include "MatlabFile.h"
 #include <dolfin/common/Array.h>
 
@@ -28,13 +28,14 @@ MatlabFile::~MatlabFile()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void MatlabFile::operator<<(Matrix& A)
+void MatlabFile::operator<<(GenericMatrix& A)
 {
   // Open file
   FILE *fp = fopen(filename.c_str(), "a");
 
   // Write matrix in sparse format
-  fprintf(fp, "%s = [", A.name().c_str());
+//  fprintf(fp, "%s = [", A.name().c_str());
+  fprintf(fp, "A = [");
 
   int ncols = 0;
   Array<int> columns;
@@ -53,13 +54,15 @@ void MatlabFile::operator<<(Matrix& A)
       }
     }
   }
-  fprintf(fp, "%s = spconvert(%s);\n", A.name().c_str(), A.name().c_str());
+//  fprintf(fp, "%s = spconvert(%s);\n", A.name().c_str(), A.name().c_str());
+  fprintf(fp, "A = spconvert(A);\n");
   
   // Close file
   fclose(fp);
 
-  message(1, "Saved matrix %s (%s) to file %s in sparse MATLAB format",
-          A.name().c_str(), A.label().c_str(), filename.c_str());
+//  message(1, "Saved matrix %s (%s) to file %s in sparse MATLAB format",
+//          A.name().c_str(), A.label().c_str(), filename.c_str());
+  message(1, "Saved matrix to file %s in sparse MATLAB format", filename.c_str());
 }
 //-----------------------------------------------------------------------------
 

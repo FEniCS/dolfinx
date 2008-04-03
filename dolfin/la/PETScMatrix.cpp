@@ -16,8 +16,8 @@
 #include <iomanip>
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Array.h>
-#include "PETScMatrix.h"
 #include "PETScVector.h"
+#include "PETScMatrix.h"
 #include "GenericSparsityPattern.h"
 #include "SparsityPattern.h"
 #include "PETScFactory.h"
@@ -309,7 +309,7 @@ void PETScMatrix::mult(const PETScVector& x, PETScVector& Ax) const
   MatMult(A, x.vec(), Ax.vec());
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::prod(const GenericVector& x_, GenericVector& Ax_, bool transposed) const
+void PETScMatrix::mult(const GenericVector& x_, GenericVector& Ax_, bool transposed) const
 {
   const PETScVector* x = dynamic_cast<const PETScVector*>(&x_);  
   if (!x) error("The vector x should be of type PETScVector");  

@@ -13,8 +13,8 @@
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/Array.h>
-#include <dolfin/la/Vector.h>
-#include <dolfin/la/Matrix.h>
+#include <dolfin/la/GenericVector.h>
+#include <dolfin/la/GenericMatrix.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/Vertex.h>
 #include <dolfin/mesh/Cell.h>
@@ -66,7 +66,7 @@ void XMLFile::operator>>(GenericVector& x)
   parseFile();
 }
 //-----------------------------------------------------------------------------
-void XMLFile::operator>>(Matrix& A)
+void XMLFile::operator>>(GenericMatrix& A)
 {
   message(1, "Reading matrix from file %s.", filename.c_str());
 
@@ -227,7 +227,7 @@ void XMLFile::operator<<(GenericVector& x)
   message(1, "Saved vector  to file %s in DOLFIN XML format.", filename.c_str());
 }
 //-----------------------------------------------------------------------------
-void XMLFile::operator<<(Matrix& A)
+void XMLFile::operator<<(GenericMatrix& A)
 {
   // Open file
   FILE *fp = openFile();
@@ -258,8 +258,7 @@ void XMLFile::operator<<(Matrix& A)
   // Close file
   closeFile(fp);
 
-  message(1, "Saved vector %s (%s) to file %s in DOLFIN XML format.",
-          A.name().c_str(), A.label().c_str(), filename.c_str());
+  message(1, "Saved matrix file %s in DOLFIN XML format.", filename.c_str());
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator<<(Mesh& mesh)

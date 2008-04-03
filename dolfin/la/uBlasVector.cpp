@@ -170,6 +170,21 @@ const uBlasVector& uBlasVector::operator= (real a)
   return *this;
 }
 //-----------------------------------------------------------------------------
+const uBlasVector& uBlasVector::operator= (const GenericVector& x_) 
+{ 
+  cout << "Assignment in uBlasVector" << endl;
+
+  const uBlasVector* x = dynamic_cast<const uBlasVector*>(&x_);  
+  if (!x) error("The vector should be of type PETScVector");  
+  
+  *this = (*x)*1.0; 
+  return *this; 
+}
+
+
+
+
+//-----------------------------------------------------------------------------
 void uBlasVector::disp(uint precision) const
 {
   dolfin::cout << "[ ";

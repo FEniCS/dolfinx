@@ -36,7 +36,7 @@ void GenericFile::operator>>(GenericVector& x)
   read_not_impl("Vector");
 }
 //-----------------------------------------------------------------------------
-void GenericFile::operator>>(Matrix& A)
+void GenericFile::operator>>(GenericMatrix& A)
 {
   read_not_impl("Matrix");
 }
@@ -101,7 +101,7 @@ void GenericFile::operator<<(GenericVector& x)
   write_not_impl("Vector");
 }
 //-----------------------------------------------------------------------------
-void GenericFile::operator<<(Matrix& A)
+void GenericFile::operator<<(GenericMatrix& A)
 {
   write_not_impl("Matrix");
 }

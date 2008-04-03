@@ -95,6 +95,15 @@ namespace dolfin
     { vector += x.vec(); 
     return *this; 
     }
+
+    /// assignment operator
+    inline const Vector& operator= (const GenericVector& x_)
+    { 
+      const Vector* x = dynamic_cast<const Vector*>(&x_);  
+      vector = x->vec(); 
+      return *this; 
+    }
+
     
     /// Compute norm of vector
     inline real norm(VectorNormType type = l2) const

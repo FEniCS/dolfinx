@@ -13,7 +13,7 @@
 #include <string>
 
 #include <dolfin/la/GenericVector.h>
-#include <dolfin/la/Matrix.h>
+#include <dolfin/la/GenericMatrix.h>
 
 namespace dolfin
 {
@@ -55,7 +55,7 @@ namespace dolfin
     void operator>> (GenericVector& x);
 
     /// Read matrix from file
-    void operator>> (Matrix& A);
+    void operator>> (GenericMatrix& A);
 
     /// Read mesh from file
     void operator>> (Mesh& mesh);
@@ -90,7 +90,7 @@ namespace dolfin
     void operator<< (GenericVector& x);
 
     /// Write matrix to file
-    void operator<< (Matrix& A);
+    void operator<< (GenericMatrix& A);
 
     /// Write mesh to file
     void operator<< (Mesh& mesh);

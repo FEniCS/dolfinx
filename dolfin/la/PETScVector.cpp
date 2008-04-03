@@ -253,6 +253,20 @@ const PETScVector& PETScVector::operator= (const PETScVector& x)
   return *this;
 }
 //-----------------------------------------------------------------------------
+const PETScVector& PETScVector::operator= (const GenericVector& x_)
+{
+
+  cout << "Assignment in PETScVector" << endl;
+
+  const PETScVector* x = dynamic_cast<const PETScVector*>(&x_);  
+  if (!x) error("The vector should be of type PETScVector");  
+  
+  *this = *x; 
+
+  return *this; 
+}
+
+//-----------------------------------------------------------------------------
 const PETScVector& PETScVector::operator= (const real a)
 {
   dolfin_assert(x);

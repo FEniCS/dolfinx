@@ -7,7 +7,7 @@
 #ifndef __XML_MATRIX_H
 #define __XML_MATRIX_H
 
-#include <dolfin/la/Matrix.h>
+#include <dolfin/la/GenericMatrix.h>
 #include "XMLObject.h"
 
 namespace dolfin
@@ -17,7 +17,7 @@ namespace dolfin
   {
   public:
 
-    XMLMatrix(Matrix& matrix);
+    XMLMatrix(GenericMatrix& matrix);
     
     void startElement (const xmlChar *name, const xmlChar **attrs);
     void endElement   (const xmlChar *name);
@@ -30,7 +30,7 @@ namespace dolfin
     void readRow     (const xmlChar *name, const xmlChar **attrs);
     void readEntry   (const xmlChar *name, const xmlChar **attrs);
     
-    Matrix& A;
+    GenericMatrix& A;
     int row;
     
     ParserState state;
