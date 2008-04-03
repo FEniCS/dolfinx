@@ -2,12 +2,12 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Johan Jansson 2006.
-// Modified by Anders Logg 2006-2007.
+// Modified by Anders Logg 2006-2008.
 // Modified by Ola Skavhaug 2007.
 // Modified by Kent-Andre Mardal 2008.
 //
 // First added:  2006-04-24
-// Last changed: 2008-03-21
+// Last changed: 2008-04-03
 
 #ifndef __GENERIC_MATRIX_H
 #define __GENERIC_MATRIX_H
@@ -39,13 +39,6 @@ namespace dolfin
 
     /// Initialize zero tensor using sparsity pattern (implemented by sub class)
     virtual void init(const GenericSparsityPattern& sparsity_pattern) = 0;
-
-    // FIXME: Not needed?
-    /// Create uninitialized matrix
-    virtual GenericMatrix* create() const = 0;
-
-    /// Create copy of matrix
-    virtual GenericMatrix* copy() const = 0;
 
     /// Return rank of tensor (number of dimensions)
     inline uint rank() const { return 2; }
@@ -91,7 +84,12 @@ namespace dolfin
     /// Set given rows to identity matrix
     virtual void ident(uint m, const uint* rows) = 0;
 
-	// FIXME: Add more functions here
+    // FIXME: --- Work in progress below here ---
+    // FIXME: Add more functions
+    // FIXME: Cleanup
+    // FIXME: Remove getRow()
+    // FIXME: Add itemwize get, set, add
+    // FIXME: Add copy constructor and assignment operator
 
     /// Set given matrix rows to zero
     virtual void zero(uint m, const uint* rows) = 0;

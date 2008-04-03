@@ -1,11 +1,11 @@
 // Copyright (C) 2006-2007 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Anders Logg 2006-2007.
+// Modified by Anders Logg 2006-2008.
 // Modified by Kent-Andre Mardal 2008.
 //
 // First added:  2006-04-25
-// Last changed: 2008-03-21
+// Last changed: 2008-04-03
 
 #ifndef __GENERIC_VECTOR_H
 #define __GENERIC_VECTOR_H
@@ -38,12 +38,6 @@ namespace dolfin
     /// Initialize zero tensor using sparsity pattern
     inline void init(const GenericSparsityPattern& sparsity_pattern)
     { init(sparsity_pattern.size(0)); }
-
-    /// Create uninitialized vector
-    virtual GenericVector* create() const = 0;
-
-    /// Create copy of vector
-    virtual GenericVector* copy() const = 0;
 
     /// Return rank of tensor (number of dimensions)
     inline uint rank() const { return 1; }
@@ -98,6 +92,12 @@ namespace dolfin
 
     /// Add block of values
     virtual void add(const real* block, uint m, const uint* rows) = 0;
+
+    // FIXME: --- Work in progress below here ---
+    // FIXME: Add more functions
+    // FIXME: Cleanup
+    // FIXME: Add itemwize get, set, add
+    // FIXME: Add copy constructor and assignment operator
 
     /// Inner product 
     virtual real inner(const GenericVector& vector) const = 0; 

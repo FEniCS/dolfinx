@@ -1,11 +1,11 @@
-// Copyright (C) 2007 Anders Logg.
+// Copyright (C) 2007-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells, 2007.
 // Modified by Ola Skavhaug, 2007.
 //
 // First added:  2007-01-17
-// Last changed: 2007-12-07
+// Last changed: 2008-04-03
 
 #ifndef __GENERIC_TENSOR_H
 #define __GENERIC_TENSOR_H
@@ -32,13 +32,6 @@ namespace dolfin
 
     /// Initialize zero tensor using sparsity pattern
     virtual void init(const GenericSparsityPattern& sparsity_pattern) = 0;
-
-    // FIXME: Remove, not needed? Use factory instead?
-    /// Create uninitialized tensor
-    virtual GenericTensor* create() const = 0;
-
-    /// Create copy of tensor
-    virtual GenericTensor* copy() const = 0;
 
     /// Return rank of tensor (number of dimensions)
     virtual uint rank() const = 0;

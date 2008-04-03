@@ -1,11 +1,11 @@
-// Copyright (C) 2007 Anders Logg.
+// Copyright (C) 2007-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells, 2007.
 // Modified by Ola Skavhaug, 2007.
 //
 // First added:  2007-03-15
-// Last changed: 2007-12-07
+// Last changed: 2008-04-03
 
 #ifndef __SCALAR_H
 #define __SCALAR_H
@@ -42,14 +42,6 @@ namespace dolfin
     /// Initialize zero tensor using sparsity pattern
     inline void init(const GenericSparsityPattern& sparsity_pattern)
     { value = 0.0; }
-
-    /// Create uninitialized scalar
-    inline Scalar* create() const
-    { return new Scalar(); }
-
-    /// Create copy of scalar
-    inline Scalar* copy() const
-    { Scalar* s = new Scalar(); s->value = value; return s; }
 
     /// Return rank of tensor (number of dimensions)
     inline uint rank() const { return 0; }
