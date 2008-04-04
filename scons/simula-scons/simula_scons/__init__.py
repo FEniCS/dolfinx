@@ -652,12 +652,12 @@ def getModulesAndDependencies(directory=".",
           packcfgObjs[d] = packcfg
         except:
           print "failed"
-          print """ *** Unable to generate a suitable pkg-config file for %s.
- *** If %s is present on your system, try setting the %s_DIR 
- *** environment variable to the directory where %s is installed.""" % (d,d,str.upper(d),d)
-          if os.environ.has_key("%s_DIR" % (str.upper(d))):
-            print " *** %s_DIR is currently set to %s" % (str.upper(d),os.environ["%s_DIR" % (str.upper(d))])
-          pass
+##           print "failed"
+##           print """ *** Unable to generate a suitable pkg-config file for %s.
+##  *** If %s is present on your system, try setting the %s_DIR 
+##  *** environment variable to the directory where %s is installed.""" % (d,d,str.upper(d),d)
+##           if os.environ.has_key("%s_DIR" % (str.upper(d))):
+##             print " *** %s_DIR is currently set to %s" % (str.upper(d),os.environ["%s_DIR" % (str.upper(d))])
 
     return modules,dependencies,alldependencies,configuredPackages,packcfgObjs
 
@@ -707,6 +707,7 @@ def resolveCompiler(configuredPackages, packcfgObjs, sconsEnv):
   # is the same.
   # Or we can handle this in the pkgconfig generator, which is how it is done 
   # right now...
+  print "Resolving compiler...",
   verifiedPackages = {}
   compiler = sconsEnv["CXX"]
   for pack, dep in configuredPackages.items():
@@ -806,8 +807,12 @@ def resolveCompiler(configuredPackages, packcfgObjs, sconsEnv):
       if flag:
         compiler = dep.compiler
         verifiedPackages[pack] = dep
+  print "done"
   # Store the compiler in the SCons environment and return the verifiedPackages
   # hash as the new configuredPackages
+  if sconsEnv["CXX"] != compiler:
+    print " Some tests failed using %s" % sconsEnv["CXX"]
+    print " Switching to use %s instead." % compiler
   sconsEnv['CXX'] = compiler
   return verifiedPackages
 
