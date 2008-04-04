@@ -57,6 +57,7 @@ options = [
     BoolOption("enableOptimize", "Compile with optimization", 0),
     BoolOption("enableDocs", "Build documentation", 0),
     BoolOption("enableDemos", "Build demos", 0),
+    BoolOption("enableTests", "Build tests", 0),
     BoolOption("enableProjectionLibrary", "Enable projection library", 0),
     # Enable or disable external packages.
     # These will also be listed in scons.cfg files, but if they are 
@@ -221,7 +222,7 @@ except PkgconfigError, err:
 # default build-targets: shared libs, extension modules, programs, demos, and
 # documentation.
 for n in buildDataHash["shlibs"] + buildDataHash["extModules"] + \
-        buildDataHash["progs"] + buildDataHash["demos"], buildDataHash["docs"]:
+        buildDataHash["progs"] + buildDataHash["demos"], buildDataHash["docs"], buildDataHash["tests"]:
   env.Default(n)
 
 # -----------------------------------------------------------------------------

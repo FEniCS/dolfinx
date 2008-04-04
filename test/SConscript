@@ -1,0 +1,51 @@
+import os, glob
+
+Import("env")
+Import("configuredPackages")
+Import("modules")
+
+cpptests = []
+
+for modName, mod in modules.items():
+  libs, libPath, linkOpts, cppPath, frameworks = [], [], [], [], []
+
+  ## this is needed to find dolfin.h
+  cppPath = ["..", os.path.abspath(os.path.join("..",modName))]
+  for d in mod.dependencies:
+    if d in modules:
+      # Internal dependency
+      libs.append(d)
+      libPath.insert(0, modules[d].fullpath)
+      cppPath.insert(0, modules[d].fullpath)
+      
+    elif d in configuredPackages:
+      # External (configured) dependency
+      dep = configuredPackages[d]
+      libs += dep.libs[0]              # The libs
+      frameworks += list(dep.libs[1])  # The frameworks (Darwin)
+      libPath += dep.libPath
+      linkOpts += dep.linkOpts
+      cppPath += dep.cppPath
+
+  modEnv = env.Copy(CXXFLAGS=mod.cxxFlags, LINKFLAGS=mod.linkFlags,
+                    CPPPATH=Dir("#"), LIBPATH=mod.fullpath, LIBS=modName)
+  modEnv.Append(LIBPATH=libPath)
+  modEnv.Append(CPPPATH=cppPath)
+  modEnv.Append(LIBS=libs)
+  modEnv.Append(LINKFLAGS=linkOpts)
+  # We need to add -lcppunit to LIBS:
+  modEnv.Append(LIBS="cppunit")
+  if env["PLATFORM"] == "darwin":
+    modEnv.Append(FRAMEWORKS=frameworks)
+    modEnv.Append(CXXFLAGS=" -bind_at_load")
+    modEnv.Append(LDFLAGS=" -bind_at_load")
+  
+  # the cpp tests!
+  for dpath, dnames, fnames in os.walk(os.curdir):
+    if os.path.basename(dpath) == 'cpp':
+      if "test.cpp" in fnames:
+        testSource = os.path.join(dpath,"test.cpp")
+        cpptests += modEnv.Program(target=os.path.join(dpath,"test"),
+                                   source=testSource)
+        
+Return("cpptests")

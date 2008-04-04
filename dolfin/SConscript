@@ -258,6 +258,12 @@ ret["data"].extend([File(os.path.join("#data", f)) for f in data])
 ## join the cpptests with regular progs.
 #ret["progs"].append([t for t in tests["cpptests"]])
 
+# read the SConscript for demos if enabled
+ret["tests"] = []
+if env["enableTests"]:
+    ret["tests"] += env.SConscript(os.path.join("#test", "SConscript"),
+                                   exports=["env", "modules", "configuredPackages"])
+
 # read SConscript for docs if enabled
 ret["docs"] = []
 if env["enableDocs"]:
