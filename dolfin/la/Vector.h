@@ -45,7 +45,7 @@ namespace dolfin
 
     /// Create copy of vector
     inline Vector* copy() const
-    { error("Not yet implemented."); return 0; }
+    { return new Vector(vector.size()); }
 
     /// Return size
     inline uint size() const
