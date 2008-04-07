@@ -32,18 +32,17 @@ MFile::~MFile()
 //-----------------------------------------------------------------------------
 void MFile::operator<<(GenericVector& x)
 {
-  error("Function output in Matlab/Octave format is broken. Need to access vector elements correctly.");
-/*
   // Open file
   FILE *fp = fopen(filename.c_str(), "a");
   
   // Write vector
-  fprintf(fp, "%s = [", x.name().c_str());
+  fprintf(fp, "x = [");
+  real temp; 
   for (unsigned int i = 0; i < x.size(); i++)
   {
     // FIXME: This is a slow way to access PETSc vectors. Need a fast way 
     //        which is consistent for different vector types.
-    real temp = x(i);
+    x.get(&temp, 1, &i);
     fprintf(fp, " %.15g", temp);
   }
   fprintf(fp, " ];\n");
@@ -51,9 +50,7 @@ void MFile::operator<<(GenericVector& x)
   // Close file
   fclose(fp);
 
-  message("Saved vector %s (%s) to file %s in Octave/MATLAB format.",
-	      x.name().c_str(), x.label().c_str(), filename.c_str());
-*/
+  message("Saved vector to file %s in Octave/MATLAB format.", filename.c_str());
 }
 //-----------------------------------------------------------------------------
 void MFile::operator<<(Mesh& mesh)
