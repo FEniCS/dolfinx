@@ -8,6 +8,7 @@
 #include <dolfin/la/default_la_types.h>
 #include <dolfin/la/GenericTensor.h>
 #include <dolfin/la/GenericMatrix.h>
+#include <dolfin/la/PETScObject.h>
 #include <dolfin/la/uBlasMatrix.h>
 #include <dolfin/la/PETScMatrix.h>
 #include <dolfin/la/GenericVector.h>
@@ -20,7 +21,6 @@
 #include <dolfin/la/PETScFactory.h>
 #include <dolfin/la/KrylovMethod.h>
 #include <dolfin/la/Preconditioner.h>
-#include <dolfin/la/PETScObject.h>
 #include <dolfin/la/PETScLinearSolver.h>
 #include <dolfin/la/PETScKrylovSolver.h>
 #include <dolfin/la/PETScLUSolver.h>
