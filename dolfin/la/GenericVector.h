@@ -109,6 +109,16 @@ namespace dolfin
     virtual const GenericVector& operator= (const GenericVector& x) { 
       return *this; 
     }
+
+    /// Return concrete (const) GenericVector instance
+    virtual GenericVector* instance() {
+      return this;
+    }
+
+    /// Return concrete (const) GenericVector instance
+    virtual const GenericVector* instance() const {
+      return this;
+    }
   };  
 
 }

@@ -137,7 +137,16 @@ namespace dolfin
       return this->add(x->vector, a); 
     }
 
+    /// Return concrete GenericVector instance
+    virtual GenericVector* instance() {
+      return &vector;
+    }
 
+
+    /// Return concrete (const) GenericVector instance
+    virtual const GenericVector* instance() const {
+      return &vector;
+    }
 
 
   private:

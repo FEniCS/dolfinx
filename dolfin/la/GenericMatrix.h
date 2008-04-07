@@ -95,7 +95,9 @@ namespace dolfin
     virtual void zero(uint m, const uint* rows) = 0;
 
     /// Set given matrix entry to value
-    virtual void set(uint i, uint j, real value) {
+    virtual void setval(std::pair<uint, uint> idx, real value) {
+      const uint i = idx.first;
+      const uint j = idx.second;
       set(&value, 1, &i, 1, &j);  
     }
 
