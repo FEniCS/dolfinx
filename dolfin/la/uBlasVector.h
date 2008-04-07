@@ -133,7 +133,7 @@ namespace dolfin
     void axpy(real a, const uBlasVector& x);
 
     /// Scalar multiplication
-    void mult(real a);
+    void mult(real const a);
 
     /// Inner product 
     real inner(const GenericVector& x) const;

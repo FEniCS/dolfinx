@@ -138,7 +138,7 @@ void uBlasVector::div(const uBlasVector& y)
 }
 //-----------------------------------------------------------------------------
 void uBlasVector::add(const GenericVector& x_, real a) {
-  const uBlasVector* x = dynamic_cast<const uBlasVector*>(&x_);  
+  const uBlasVector* x = dynamic_cast<const uBlasVector*>(x_.instance());  
   if (!x)  error("The vector needs to be of type uBlasVector"); 
   axpy(a,*x); 
 }
@@ -150,7 +150,7 @@ void uBlasVector::axpy(real a, const uBlasVector& x)
   y += a * x;
 }
 //-----------------------------------------------------------------------------
-void uBlasVector::mult(real a)
+void uBlasVector::mult(const real a)
 {
   uBlasVector& y = *this;
   
@@ -159,7 +159,7 @@ void uBlasVector::mult(real a)
 //-----------------------------------------------------------------------------
 real uBlasVector::inner(const GenericVector& x_) const
 {
-  const uBlasVector* x = dynamic_cast<const uBlasVector*>(&x_);  
+  const uBlasVector* x = dynamic_cast<const uBlasVector*>(x_.instance());  
   if (!x)  error("The vector needs to be of type uBlasVector"); 
   return inner_prod(*this,*x); 
 }
@@ -174,7 +174,7 @@ const uBlasVector& uBlasVector::operator= (const GenericVector& x_)
 { 
   cout << "Assignment in uBlasVector" << endl;
 
-  const uBlasVector* x = dynamic_cast<const uBlasVector*>(&x_);  
+  const uBlasVector* x = dynamic_cast<const uBlasVector*>(x_.instance());  
   if (!x) error("The vector should be of type PETScVector");  
   
   *this = (*x)*1.0; 

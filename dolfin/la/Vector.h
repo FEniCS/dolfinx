@@ -45,7 +45,13 @@ namespace dolfin
 
     /// Create copy of vector
     inline Vector* copy() const
-    { return new Vector(vector.size()); }
+    { 
+      // create a new vector; 
+      Vector* v =  new Vector(vector.size()); 
+      // assign values
+      *v = *this; 
+      return v; 
+    }
 
     /// Return size
     inline uint size() const
@@ -99,8 +105,12 @@ namespace dolfin
     /// assignment operator
     inline const Vector& operator= (const GenericVector& x_)
     { 
-      const Vector* x = dynamic_cast<const Vector*>(&x_);  
-      vector = x->vec(); 
+      // get the underlying GenericVector instance (in case of a Vector) 
+      const GenericVector* x = dynamic_cast<const GenericVector*>(x_.instance());  
+
+      // employ the operator= of the underlying instance
+      vector = *x; 
+
       return *this; 
     }
 
@@ -124,18 +134,22 @@ namespace dolfin
     /// inner product 
     inline real inner(const GenericVector& x_) const
     { 
-      const Vector* x = dynamic_cast<const Vector*>(&x_);  
-      if (!x) error("The vector needs to be a Vector"); 
-      return this->vector.inner(x->vector); 
+      return this->vector.inner(x_); 
     }
 
     /// this += a*x  
     inline void add(const GenericVector& x_, real a = 1.0) 
     { 
-      const Vector* x = dynamic_cast<const Vector*>(&x_);  
-      if (!x) error("The vector needs to be a Vector"); 
-      return this->add(x->vector, a); 
+      return this->vector.add(x_, a); 
     }
+
+    /// this *= a  
+    inline void mult(const real a) 
+    { 
+      return this->vector.mult(a); 
+    }
+
+
 
     /// Return concrete GenericVector instance
     virtual GenericVector* instance() {

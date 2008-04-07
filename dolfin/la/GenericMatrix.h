@@ -107,9 +107,6 @@ namespace dolfin
     // FIXME remove this function and re-implement the << operator in terms of sparsity pattern and get
     /// Get non-zero values of row i
     virtual void getRow(uint i, int& ncols, Array<int>& columns, Array<real>& values) const = 0;
-
-
-
   };
 
 }
