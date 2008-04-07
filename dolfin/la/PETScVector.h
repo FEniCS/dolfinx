@@ -62,6 +62,18 @@ namespace dolfin
     /// Create copy of vector
     PETScVector* copy() const;
 
+    /// Return concrete (const) implementation of GenericVector
+    virtual const PETScVector* instance() const {
+      return this;
+    }
+
+    /// Return concrete implementation of GenericVector
+    virtual PETScVector* instance() {
+      return this;
+    }
+
+
+
     /// Clear vector data
     void clear();
 
