@@ -2,4 +2,4 @@
 
 //%rename(__repr__) *::operator<<;
 
-%rename(__setitem__) *::set_index;
+%rename(__setitem__) *::setval;
