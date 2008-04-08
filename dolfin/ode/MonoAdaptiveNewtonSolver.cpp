@@ -91,8 +91,8 @@ real MonoAdaptiveNewtonSolver::iteration(real tol, uint iter, real d0, real d1)
     Vector dx2(dx.size());
     Vector b2(b.size());
     
-    dx2.vec().copy(dx, 0, 0, dx2.size());
-    b2.vec().copy(b, 0, 0, b2.size());
+    dx2.instance()->copy(dx, 0, 0, dx2.size());
+    b2.instance()->copy(b, 0, 0, b2.size());
     
     // FIXME: Implement a better check
     if ( d1 >= 0.5*d0 )
@@ -120,7 +120,7 @@ real MonoAdaptiveNewtonSolver::iteration(real tol, uint iter, real d0, real d1)
     {
       lu_g->solve(A.matrix_sparse(), dx2, b2);
     }
-    dx.copy(dx2.vec(), 0, 0, dx.size());
+    dx.copy(*(dx2.instance()), 0, 0, dx.size());
 
 //     cout << "dx:" << endl;
 //     dx2.disp();

@@ -28,7 +28,7 @@ namespace dolfin
     ~LUSolver() {}
     
     inline uint solve(const Matrix& A, Vector& x, const Vector& b)
-    { return solver.solve(A.mat(), x.vec(), b.vec()); }
+    { return solver.solve(*A.instance(), *x.instance(), *b.instance()); }
     
   private:
     
