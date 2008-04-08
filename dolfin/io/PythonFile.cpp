@@ -2,9 +2,11 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells 2005.
-//
+// Modified by Rolv E. Bredesen 2008.
+
 // First added:  2003-05-06
-// Last changed: 2006-05-29
+// Last changed: 2008-04-08
+// 
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/la/GenericVector.h>
@@ -64,12 +66,17 @@ void PythonFile::operator<<(Sample& sample)
   // Python wrapper file
   if ( counter2 == 0 )
   {
-    fprintf(fp, "from scipy.io.array_import import *\n");
+    fprintf(fp, "from numpy import fromfile\n");
     fprintf(fp, "\n");
-    fprintf(fp, "t = read_array(\"%s\")\n", filename_t.c_str());
-    fprintf(fp, "u = read_array(\"%s\")\n", filename_u.c_str());
-    fprintf(fp, "k = read_array(\"%s\")\n", filename_k.c_str());
-    fprintf(fp, "r = read_array(\"%s\")\n", filename_r.c_str());
+    fprintf(fp, "t = fromfile(\"%s\", sep=\" \")\n", filename_t.c_str());
+    fprintf(fp, "u = fromfile(\"%s\", sep=\" \")\n", filename_u.c_str());
+    fprintf(fp, "k = fromfile(\"%s\", sep=\" \")\n", filename_k.c_str());
+    fprintf(fp, "r = fromfile(\"%s\", sep=\" \")\n", filename_r.c_str());
+    fprintf(fp, "\n");
+    fprintf(fp, "u.shape = len(u)//%d, %d\n", sample.size(), sample.size());
+    fprintf(fp, "k.shape = len(k)//%d, %d\n", sample.size(), sample.size());
+    fprintf(fp, "r.shape = len(r)//%d, %d\n", sample.size(), sample.size());
+    fprintf(fp, "\n");
   }
 
   // Save time
