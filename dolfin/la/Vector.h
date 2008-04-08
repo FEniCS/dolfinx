@@ -3,9 +3,10 @@
 //
 // Modified by Anders Logg, 2007.
 // Modified by Kent-Andre Mardal 2008.
+// Modified by Ola Skavhaug 2008.
 //
 // First added:  2007-07-03
-// Last changed: 2008-03-21
+// Last changed: 2008-04-08
 
 #ifndef __VECTOR_H
 #define __VECTOR_H
@@ -149,19 +150,15 @@ namespace dolfin
       return this->vector.mult(a); 
     }
 
-
-
     /// Return concrete GenericVector instance
-    virtual GenericVector* instance() {
+    virtual DefaultVector* instance() {
       return &vector;
     }
-
 
     /// Return concrete (const) GenericVector instance
-    virtual const GenericVector* instance() const {
+    virtual const DefaultVector* instance() const {
       return &vector;
     }
-
 
   private:
     

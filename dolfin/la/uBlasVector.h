@@ -3,9 +3,10 @@
 //
 // Modified by Anders Logg 2006-2008.
 // Modified by Kent-Andre Mardal 2008.
+// Modified by Ola Skavhaug 2008.
 //
 // First added:  2006-03-04
-// Last changed: 2008-03-31
+// Last changed: 2008-04-08
 
 #ifndef __UBLAS_VECTOR_H
 #define __UBLAS_VECTOR_H
@@ -62,21 +63,21 @@ namespace dolfin
     /// Create copy of vector
     uBlasVector* copy() const;
 
-    /// Return concrete (const) implementation of GenericVector
-    virtual const uBlasVector* instance() const {
-      return this;
-    }
-
-    /// Return concrete implementation of GenericVector
-    virtual uBlasVector* instance() {
-      return this;
-    }
-
     /// Set all entries to a single scalar value
     const uBlasVector& operator= (real a);
 
     /// Assignment of vector
     const uBlasVector& operator= (const GenericVector& x);
+
+    /// Return concrete (const) uBlasVector instance
+    virtual const uBlasVector* instance() const {
+      return this;
+    }
+
+    /// Return concrete uBlasVector instance
+    virtual uBlasVector* instance() {
+      return this;
+    }
 
     /// Assignment from a vector_expression
     template <class E>

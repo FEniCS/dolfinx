@@ -3,9 +3,10 @@
 //
 // Modified by Garth N. Wells 2005-2007.
 // Modified by Kent-Andre Mardal 2008.
+// Modified by Ola Skavhaug 2008.
 //
 // First added:  2004
-// Last changed: 2008-03-21
+// Last changed: 2008-04-08
 
 #ifndef __PETSC_VECTOR_H
 #define __PETSC_VECTOR_H
@@ -62,17 +63,6 @@ namespace dolfin
     /// Create copy of vector
     PETScVector* copy() const;
 
-    /// Return concrete (const) implementation of GenericVector
-    virtual const PETScVector* instance() const {
-      return this;
-    }
-
-    /// Return concrete implementation of GenericVector
-    virtual PETScVector* instance() {
-      return this;
-    }
-
-
 
     /// Clear vector data
     void clear();
@@ -128,10 +118,20 @@ namespace dolfin
     void zero();
 
     /// Assignment of vector
-    const PETScVector& operator= (const PETScVector& x);
+    const PETScVector& operator= (const GenericVector& x);
+
+    /// Return concrete (const) PETScVector instance
+    virtual const PETScVector* instance() const {
+      return this;
+    }
+
+    /// Return concrete PETScVector instance
+    virtual PETScVector* instance() {
+      return this;
+    }
 
     /// Assignment of vector
-    const PETScVector& operator= (const GenericVector& x);
+    const PETScVector& operator= (const PETScVector& x);
 
     /// Assignment of all elements to a single scalar value
     const PETScVector& operator= (const real a);
