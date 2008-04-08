@@ -101,6 +101,16 @@ namespace dolfin
       set(&value, 1, &i, 1, &j);  
     }
 
+    /// Set given matrix entry to value
+    virtual real getval(std::pair<uint, uint> idx) {
+      const uint i = idx.first;
+      const uint j = idx.second;
+      real value;
+      get(&value, 1, &i, 1, &j);  
+      return value;
+    }
+
+
     // y = A x  ( or y = A^T x if transposed==true) 
     virtual void mult(const GenericVector& x, GenericVector& y, bool transposed=false) const = 0; 
 
