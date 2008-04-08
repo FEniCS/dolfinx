@@ -1,11 +1,11 @@
 // Copyright (C) 2006-2007 Anders Logg and Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Ola Skavhaug, 2007.
+// Modified by Ola Skavhaug, 2007-2008.
 // Modified by Kent-Andre Mardal 2008.
 //
 // First added:  2006-05-15
-// Last changed: 2008-03-21
+// Last changed: 2008-04-08
 
 #ifndef __MATRIX_H
 #define __MATRIX_H
@@ -104,12 +104,22 @@ namespace dolfin
     /// Get non-zero values of row i
     inline void getRow(uint i, int& ncols, Array<int>& columns, Array<real>& values) const
     { matrix->getRow(i, ncols, columns, values); }
+
+    /// Return concrete (const) GenericMatrix instance
+    virtual const DefaultMatrix* instance() const { 
+      return matrix; 
+    }
+
+    /// Return concrete implementation GenericMatrix instance
+    virtual DefaultMatrix* instance() { 
+      return matrix; 
+    }
     
     /// Return const reference to implementation
     inline const DefaultMatrix& mat() const
     { return *matrix; }
     
-    /// Return const reference to implementation
+    /// Return reference to implementation
     inline DefaultMatrix& mat()
     { return *matrix; }
 

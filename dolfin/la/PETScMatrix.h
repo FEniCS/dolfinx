@@ -4,9 +4,10 @@
 // Modified by Andy R. Terrel, 2005.
 // Modified by Garth N. Wells, 2006-2007.
 // Modified by Kent-Andre Mardal 2008.
+// Modified by Ola Skavhaug 2008.
 //
 // First added:  2004
-// Last changed: 2008-03-21
+// Last changed: 2008-04-08
 
 #ifndef __PETSC_MATRIX_H
 #define __PETSC_MATRIX_H
@@ -84,6 +85,12 @@ namespace dolfin
 
     /// Create copy of matrix
     PETScMatrix* copy() const;
+
+    /// Return concrete (const) PETScMatrix instance
+    virtual const PETScMatrix* instance() const { return this; }
+
+    /// Return concrete PETScMatrix instance
+    virtual PETScMatrix* instance() { return this; }
 
     /// Return number of rows (dim = 0) or columns (dim = 1) along dimension dim
     uint size(uint dim) const;

@@ -3,9 +3,10 @@
 //
 // Modified by Anders Logg 2006-2008.
 // Modified by Kent-Andre Mardal 2008.
+// Modified by Ola Skavhaug 2008.
 //
 // First added:  2006-04-25
-// Last changed: 2008-04-03
+// Last changed: 2008-04-08
 
 #ifndef __GENERIC_VECTOR_H
 #define __GENERIC_VECTOR_H
@@ -108,20 +109,18 @@ namespace dolfin
     //  this *= a   
     virtual void mult(const real a) = 0; 
 
-
-
     /// Assignment of vector
     virtual const GenericVector& operator= (const GenericVector& x) { 
       return *this; 
     }
 
     /// Return concrete (const) GenericVector instance
-    virtual GenericVector* instance() {
+    virtual const GenericVector* instance() const {
       return this;
     }
 
-    /// Return concrete (const) GenericVector instance
-    virtual const GenericVector* instance() const {
+    /// Return concrete GenericVector instance
+    virtual GenericVector* instance() {
       return this;
     }
   };  
