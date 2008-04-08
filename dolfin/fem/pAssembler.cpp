@@ -204,7 +204,7 @@ void pAssembler::assembleCells(GenericTensor& A,
     
     // Tabulate dofs for each dimension
     for (uint i = 0; i < ufc.form.rank(); i++)
-      dof_map_set[i].tabulate_dofs(ufc.dofs[i], *cell);
+      dof_map_set[i].tabulate_dofs(ufc.dofs[i], ufc.cell, cell->index());
 
     // Tabulate cell tensor
     integral->tabulate_tensor(ufc.A, ufc.w, ufc.cell);
@@ -271,7 +271,7 @@ void pAssembler::assembleExteriorFacets(GenericTensor& A,
 
     // Tabulate dofs for each dimension
     for (uint i = 0; i < ufc.form.rank(); i++)
-      dof_map_set[i].tabulate_dofs(ufc.dofs[i], mesh_cell);    
+      dof_map_set[i].tabulate_dofs(ufc.dofs[i], ufc.cell, mesh_cell.index());
 
     // Tabulate exterior facet tensor
     ufc.exterior_facet_integrals[0]->tabulate_tensor(ufc.A, ufc.w, ufc.cell, local_facet);
@@ -345,8 +345,8 @@ void pAssembler::assembleInteriorFacets(GenericTensor& A,
     for (uint i = 0; i < ufc.form.rank(); i++)
     {
       const uint offset = ufc.local_dimensions[i];
-      dof_map_set[i].tabulate_dofs(ufc.macro_dofs[i], cell0);
-      dof_map_set[i].tabulate_dofs(ufc.macro_dofs[i] + offset, cell1);
+      dof_map_set[i].tabulate_dofs(ufc.macro_dofs[i], ufc.cell0, cell0.index());
+      dof_map_set[i].tabulate_dofs(ufc.macro_dofs[i] + offset, ufc.cell1, cell1.index());
     }
 
     // Tabulate exterior interior facet tensor on macro element
