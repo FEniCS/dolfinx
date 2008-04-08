@@ -1,9 +1,12 @@
 #!/usr/bin/env python
 """
-Lorentz demo
+Lorenz demo
 """
 
-__author__ = 'Rolv Erlend Bredesen <rolv@simula.no>'
+__author__ = "Rolv Erlend Bredesen <rolv@simula.no>"
+__date__ = "2008-04-03 -- 2008-04-03"
+__copyright__ = "Copyright (C) 2008 Rolv Erlend Bredesen"
+__license__  = "GNU LGPL Version 2.1"
 
 from numpy import empty
 from dolfin import *
@@ -49,19 +52,15 @@ class Lorenz(ODE):
         y[1] = [self.r - u[2]]*x[0] - x[1] - u[0]*x[2];
         y[2] = u[1]*x[0] + u[0]*x[1] - self.b*x[2];
         y_.set(y)
-
         
-if __name__ == '__main__':
-    dolfin_set("ODE number of samples", 500);
-    dolfin_set("ODE initial time step", 0.01);
-    #dolfin_set("ODE fixed time step", True);
-    #dolfin_set("ODE nonlinear solver", "newton");
-    dolfin_set("ODE method", "cg");
-    dolfin_set("ODE order", 5); # 1 in exersize
-    dolfin_set("ODE discrete tolerance", 1e-12);
-    #dolfin_set("ODE save solution", 1);
+dolfin_set("ODE number of samples", 500);
+dolfin_set("ODE initial time step", 0.01);
+#dolfin_set("ODE fixed time step", True);
+#dolfin_set("ODE nonlinear solver", "newton");
+dolfin_set("ODE method", "cg");
+dolfin_set("ODE order", 5); # 1 in exersize
+dolfin_set("ODE discrete tolerance", 1e-12);
+#dolfin_set("ODE save solution", 1);
 
-    lorenz = Lorenz()
-    lorenz.solve();
-    
-       
+lorenz = Lorenz()
+lorenz.solve();
