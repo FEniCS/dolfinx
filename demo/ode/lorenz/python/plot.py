@@ -27,9 +27,9 @@ ax.set_xlabel('x')
 ax.set_ylabel('y')
 ax.set_zlabel('z')
 savefig('lorenz.png')
-draw()
 
 figure()
 plot(t, x, label='x')
 legend()
 
+show()

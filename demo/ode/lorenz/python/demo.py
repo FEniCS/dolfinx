@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """
 Lorenz demo
 """
@@ -73,7 +72,7 @@ def plot():
     ax.set_title('Lorenz attractor')
     pylab.savefig('lorenz.png', dpi=100)
     print "Generated plot: lorenz.png"
-    pylab.draw()
+    pylab.show()
    
 dolfin_set("ODE number of samples", 6000);
 dolfin_set("ODE initial time step", 0.02);
