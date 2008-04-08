@@ -131,39 +131,7 @@ void MonoAdaptiveJacobian::update(const uBlasVector& u, real t)
   }
   message("Matrix dup took %g seconds",toc());
 
-#ifdef HAS_PETSC
-
-  real k = ts.endtime() - ts.starttime();
-  Matrix& Mtmp = ode.Mmatrix(t);
-
-  tic();
-  Mat As_M = As->mat().mat();
-  Mat Atmp_M = Atmp.mat().mat();
-  Mat Mtmp_M = Mtmp.mat().mat();
-
-  MatCopy(Mtmp_M, As_M, SUBSET_NONZERO_PATTERN);
-  message("Matrix copy took %g seconds",toc());
-
-  tic();
-  if(method.type() == Method::cG)
-  {
-    if(method.degree() != 1)
-      error("Sparse Jacobian only implemented for dG(0) and cG(1)");
-
-    MatAXPY(As_M, -0.5 * k, Atmp_M, SAME_NONZERO_PATTERN);
-  }
-  else
-  {
-    if(method.degree() != 0)
-      error("Sparse Jacobian only implemented for dG(0) and cG(1)");
-
-    MatAXPY(As_M, -k, Atmp_M, SAME_NONZERO_PATTERN);
-  }
-  message("Matrix axpy took %g seconds",toc());
-
-#else
   error("Sparse Jacobian only implemented for PETSc");
-#endif
 }
 //-----------------------------------------------------------------------------
 void MonoAdaptiveJacobian::update()

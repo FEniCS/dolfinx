@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2007 Anders Logg and Garth N. Wells.
+// Copyright (C) 2006-2008 Anders Logg and Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Ola Skavhaug, 2007-2008.

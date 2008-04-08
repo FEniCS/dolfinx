@@ -1,7 +1,7 @@
 // Copyright (C) 2007 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Anders Logg, 2007.
+// Modified by Anders Logg, 2007-2008.
 // Modified by Kent-Andre Mardal 2008.
 // Modified by Ola Skavhaug 2008.
 //
@@ -28,13 +28,15 @@ namespace dolfin
   public:
 
     /// Constructor
-    Vector() : GenericVector(), Variable("x", "DOLFIN vector") {}
+    Vector() : GenericVector(), Variable("x", "DOLFIN vector"),
+               vector(new DefaultVector()) {}
     
     /// Constructor
-    Vector(uint N) : GenericVector(), Variable("x", "DOLFIN vector"), vector(0) { vector = new DefaultVector(N); }
+    Vector(uint N) : GenericVector(), Variable("x", "DOLFIN vector"),
+                     vector(new DefaultVector(N)) {}
     
     /// Destructor
-    ~Vector() {}
+    ~Vector() { delete vector; }
     
     /// Initialize vector of size N
     inline void init(uint N) 
