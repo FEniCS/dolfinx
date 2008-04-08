@@ -49,7 +49,7 @@ namespace dolfin
   /// by setting the option "implicit" to true and defining the
   /// function M().
 
-  class ODE
+  class ODE : public Parametrized
   {
   public:
 

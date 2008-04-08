@@ -1027,8 +1027,8 @@ void MultiAdaptiveTimeSlab::dGfeval(real* f, uint s0, uint e0, uint i0,
 //-----------------------------------------------------------------------------
 TimeSlabSolver* MultiAdaptiveTimeSlab::chooseSolver()
 {
-  bool implicit = dolfin_get("ODE implicit");
-  std::string solver = dolfin_get("ODE nonlinear solver");
+  bool implicit = ode.get("ODE implicit");
+  std::string solver = ode.get("ODE nonlinear solver");
 
   if ( implicit )
     error("Multi-adaptive solver cannot solver implicit ODEs. Use cG(q) or dG(q) instead.");
@@ -1055,4 +1055,4 @@ TimeSlabSolver* MultiAdaptiveTimeSlab::chooseSolver()
 
   return 0;
 }
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------

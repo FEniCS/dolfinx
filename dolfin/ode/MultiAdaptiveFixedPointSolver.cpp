@@ -19,8 +19,8 @@ MultiAdaptiveFixedPointSolver::MultiAdaptiveFixedPointSolver
 (MultiAdaptiveTimeSlab& timeslab)
   : TimeSlabSolver(timeslab), ts(timeslab), f(0),
     num_elements(0), num_elements_mono(0), 
-    maxiter_local(dolfin_get("ODE maximum local iterations")),
-    diagonal_newton_damping(dolfin_get("ODE diagonal newton damping")), dfdu(0)
+    maxiter_local(ode.get("ODE maximum local iterations")),
+    diagonal_newton_damping(ode.get("ODE diagonal newton damping")), dfdu(0)
 {
   // Initialize local array for quadrature
   f = new real[method.qsize()];
