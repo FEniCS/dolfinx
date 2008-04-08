@@ -34,12 +34,6 @@ namespace dolfin
     /// Compute product y = Ax
     void mult(const uBlasVector& x, uBlasVector& y) const;
 
-    /// Update sparse copy of Jacobian
-    void update();
-
-    /// Update sparse copy of Jacobian
-    void update(const uBlasVector& u, real t);
-
   private:
 
     /// Friends

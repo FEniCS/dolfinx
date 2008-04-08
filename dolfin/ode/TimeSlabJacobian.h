@@ -1,8 +1,8 @@
-// Copyright (C) 2005-2006 Anders Logg.
+// Copyright (C) 2005-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005-01-28
-// Last changed: 2006-08-08
+// Last changed: 2008-04-08
 
 #ifndef __TIME_SLAB_JACOBIAN_H
 #define __TIME_SLAB_JACOBIAN_H
@@ -46,19 +46,8 @@ namespace dolfin
     void update();
 
     /// Return dense copy of Jacobian
-    inline const uBlasDenseMatrix& matrix() const
-    {
-      dolfin_assert(A.size(0) == ode.size());
-      return A;
-    }
+    const uBlasDenseMatrix& matrix() const;
 
-    /// Return sparse copy of Jacobian
-    inline const Matrix& matrix_sparse() const
-    {
-      dolfin_assert(As->size(0) == ode.size());
-      return *As;
-    }
-    
   protected:
     
     // The ODE
@@ -69,9 +58,6 @@ namespace dolfin
 
     // Dense copy of the Jacobian
     uBlasDenseMatrix A;
-
-    // Sparse copy of the Jacobian
-    Matrix* As;
 
     // Vectors used to compute dense copy of the Jacobian
     uBlasVector ej, Aj;

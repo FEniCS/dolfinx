@@ -118,24 +118,3 @@ void MonoAdaptiveJacobian::mult(const uBlasVector& x, uBlasVector& y) const
   }
 }
 //-----------------------------------------------------------------------------
-void MonoAdaptiveJacobian::update(const uBlasVector& u, real t)
-{
-  //const uint N = ode.size();
-
-  Matrix& Atmp = ode.Jmatrix(u, t);
-
-  tic();
-  if(As == 0)
-  {
-    As = Atmp.copy();
-  }
-  message("Matrix dup took %g seconds",toc());
-
-  error("Sparse Jacobian only implemented for PETSc");
-}
-//-----------------------------------------------------------------------------
-void MonoAdaptiveJacobian::update()
-{
-  TimeSlabJacobian::update();
-}
-//-----------------------------------------------------------------------------

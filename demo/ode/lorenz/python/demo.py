@@ -76,12 +76,12 @@ def plot():
    
 dolfin_set("ODE number of samples", 6000);
 dolfin_set("ODE initial time step", 0.02);
-dolfin_set("ODE fixed time step", True);
+#dolfin_set("ODE fixed time step", True);
 dolfin_set("ODE nonlinear solver", "newton");
 dolfin_set("ODE method", "dg"); # cg/dg
 dolfin_set("ODE order", 18); # Convergence order 37!
 dolfin_set("ODE discrete tolerance", 1e-13);
-dolfin_set("ODE save solution", True)
+#dolfin_set("ODE save solution", True)
 
 lorenz = Lorenz(T=60)
 lorenz.solve();
