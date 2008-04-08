@@ -311,10 +311,10 @@ void PETScMatrix::mult(const PETScVector& x, PETScVector& Ax) const
 //-----------------------------------------------------------------------------
 void PETScMatrix::mult(const GenericVector& x_, GenericVector& Ax_, bool transposed) const
 {
-  const PETScVector* x = dynamic_cast<const PETScVector*>(&x_);  
+  const PETScVector* x = dynamic_cast<const PETScVector*>(x_.instance());  
   if (!x) error("The vector x should be of type PETScVector");  
 
-  PETScVector* Ax = dynamic_cast<PETScVector*>(&Ax_);  
+  PETScVector* Ax = dynamic_cast<PETScVector*>(Ax_.instance());  
   if (!Ax) error("The vector Ax should be of type PETScVector");  
 
   this->mult(*x, *Ax);

@@ -117,6 +117,17 @@ namespace dolfin
     /// The below functions have specialisations for particular matrix types.
     /// In order to link correctly, they must be made inline functions.
 
+    /// Return concrete (const) implementation of GenericMatrix
+    virtual const uBlasMatrix<Mat>* instance() const {
+      return this;
+    }
+
+    /// Return concrete implementation of GenericMatrix
+    virtual uBlasMatrix<Mat>* instance() {
+      return this;
+    }
+
+
     /// Initialize M x N matrix
     void init(uint M, uint N);
 
@@ -302,10 +313,10 @@ namespace dolfin
   template <class Mat>  
   void uBlasMatrix<Mat>::mult(const GenericVector& x_, GenericVector& y_, bool transposed) const
   {
-    const uBlasVector* x = dynamic_cast<const uBlasVector*>(&x_);  
+    const uBlasVector* x = dynamic_cast<const uBlasVector*>(x_.instance());  
     if (!x)  error("The first vector needs to be of type uBlasVector"); 
 
-    uBlasVector* y = dynamic_cast<uBlasVector*>(&y_);  
+    uBlasVector* y = dynamic_cast<uBlasVector*>(y_.instance());  
     if (!y)  error("The second vector needs to be of type uBlasVector"); 
 
     if (transposed==true) error("The transposed version of the uBLAS matrix vector product is not yet implemented");  

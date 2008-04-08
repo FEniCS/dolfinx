@@ -258,6 +258,12 @@ ret["data"].extend([File(os.path.join("#data", f)) for f in data])
 ## join the cpptests with regular progs.
 #ret["progs"].append([t for t in tests["cpptests"]])
 
+# read the SConscript for demos if enabled
+ret["tests"] = []
+if env["enableTests"]:
+    ret["tests"] += env.SConscript(os.path.join("#test", "SConscript"),
+                                   exports=["env", "modules", "configuredPackages"])
+
 # read SConscript for docs if enabled
 ret["docs"] = []
 if env["enableDocs"]:
@@ -279,25 +285,19 @@ replacements = {}
 replacements['PACKAGE_VERSION'] = "0.7.2"
 # make all dependencies into a list, based on the configured Packages.
 replacements['PACKAGE_REQUIRES'] = " ".join(configuredPackages.keys())
-# FIXME: modEnv is not always defined here!
-try:
-    replacements['PACKAGE_CXXFLAGS'] = modEnv["CXXFLAGS"]
-    replacements['CXX'] = modEnv["CXX"]
-except NameError:
-    print "Unable to get CXXFLAGS and CXX from modEnv (modEnv not defined)."
+# set CXX flags:
+cxxflags = ""
+for mod in modules.values():
+    cxxflags += " " + mod.cxxFlags
+replacements['PACKAGE_CXXFLAGS'] = cxxflags
+# set CXX compiler:
+replacements['CXX'] = env["CXX"]
 
 scons.pkgconfig.generate(env, replace=replacements)
 ret["pkgconfig"] = env.PkgConfigGenerator("%s.pc.in" % (env["projectname"]))
 # the dolfin.pc file needs to be regenerated if there are changes to the
 # configured packages, installation prefix, any CXXFLAGS, or the compiler
-pkgconfig_deps = [configuredPackages.keys(),env["prefix"]]
-# FIXME: modEnv is not always defined here!
-try:
-    pkgconfig_deps.append(modEnv["CXXFLAGS"])
-    pkgconfig_deps.append(modEnv["CXX"])
-except NameError:
-    # same as above
-    pass
+pkgconfig_deps = [configuredPackages.keys(),env["prefix"],cxxflags,env["CXX"]]
 env.Depends(ret["pkgconfig"][0], Value(pkgconfig_deps))
 
 # We also like to install all generated pkg-config files. 

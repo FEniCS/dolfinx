@@ -6,7 +6,7 @@
 // Modified by Garth N. Wells, 2006.
 //
 // First added:  2003-03-14
-// Last changed: 2008-03-06
+// Last changed: 2008-04-07
 
 #include <dolfin/common/utils.h>
 #include <dolfin/common/timing.h>
@@ -63,14 +63,14 @@ void Progress::operator++(int)
 //-----------------------------------------------------------------------------
 void Progress::update(real p)
 {
-  p = std::max(std::min(p, 1.0), 0.0);
+  //p = std::max(std::min(p, 1.0), 0.0);
+  //const bool p_check = p - this->p >= p_step - DOLFIN_EPS;
+
   const real t = time();
-  
-  const bool p_check = p - this->p >= p_step - DOLFIN_EPS;
   const bool t_check = t - this->t >= t_step - DOLFIN_EPS;
 
   // Only update when the increase is significant
-  if ((p_check && t_check) || t_check)
+  if (t_check)
   {
     LogManager::logger.progress(title, p);
     this->p = p;

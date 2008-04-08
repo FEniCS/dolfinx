@@ -95,9 +95,25 @@ namespace dolfin
     virtual void zero(uint m, const uint* rows) = 0;
 
     /// Set given matrix entry to value
-    virtual void set(uint i, uint j, real value) {
+    virtual void setval(std::pair<uint, uint> idx, real value) {
+      const uint i = idx.first;
+      const uint j = idx.second;
       set(&value, 1, &i, 1, &j);  
     }
+
+    /// Set given matrix entry to value
+    virtual real getval(std::pair<uint, uint> idx) {
+      const uint i = idx.first;
+      const uint j = idx.second;
+      real value;
+      get(&value, 1, &i, 1, &j);  
+      return value;
+    }
+
+
+    virtual GenericMatrix* instance() { return this; }
+    virtual const GenericMatrix* instance() const { return this; }
+
 
     // y = A x  ( or y = A^T x if transposed==true) 
     virtual void mult(const GenericVector& x, GenericVector& y, bool transposed=false) const = 0; 
@@ -105,9 +121,6 @@ namespace dolfin
     // FIXME remove this function and re-implement the << operator in terms of sparsity pattern and get
     /// Get non-zero values of row i
     virtual void getRow(uint i, int& ncols, Array<int>& columns, Array<real>& values) const = 0;
-
-
-
   };
 
 }

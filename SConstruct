@@ -57,6 +57,7 @@ options = [
     BoolOption("enableOptimize", "Compile with optimization", 0),
     BoolOption("enableDocs", "Build documentation", 0),
     BoolOption("enableDemos", "Build demos", 0),
+    BoolOption("enableTests", "Build tests", 0),
     BoolOption("enableProjectionLibrary", "Enable projection library", 0),
     # Enable or disable external packages.
     # These will also be listed in scons.cfg files, but if they are 
@@ -159,20 +160,34 @@ if env["customCxxFlags"]:
   env.Append(CXXFLAGS=" " + env["customCxxFlags"])
 
 # Determine which compiler to be used:
-cxx_compilers = ["mpic++", "mpicxx", "mpiCC", "c++", "g++", "CC"]
-# If CXX is defined in os.environ, we add this first
-if os.environ.has_key("CXX"):
-  cxx_compilers.insert(0, os.environ["CXX"])
-env["CXX"] = env.Detect(cxx_compilers)
+cxx_compilers = ["c++", "g++", "CC"]
+# Use CXX from os.environ if available:
+cxx = os.environ.get("CXX", env.Detect(cxx_compilers))
 
 # Set MPI compiler and add neccessary MPI flags if enableMpi is True:
 if env["enableMpi"]:
   mpi_cxx_compilers = ["mpic++", "mpicxx", "mpiCC"]
-  if not env.Detect("mpirun") or not env["CXX"] in mpi_cxx_compilers:
+  mpi_cxx = os.environ.get("CXX", env.Detect(mpi_cxx_compilers))
+  # Several cases for mpi_cxx depending on CXX from os.environ:
+  # CXX=                           - not OK
+  # CXX=cxx_compiler               - not OK
+  # CXX=/path/to/cxx_compiler      - not OK 
+  # CXX=mpi_cxx_compiler           - OK
+  # CXX=/path/to/mpi_cxx_compiler  - OK (use os.path.basename)
+  # CXX="ccache cxx_compiler"      - OK (use mpi_cxx.split()[-1])
+  # FIXME: Any other cases?
+  if not env.Detect("mpirun") or not \
+         (mpi_cxx and \
+          os.path.basename(mpi_cxx.split()[-1]) in mpi_cxx_compilers):
     print "MPI not found (might not work if PETSc uses MPI)."
+    # revert back to cxx compiler
+    env["CXX"] = cxx
   else:
     # Found MPI, so set HAS_MPI and IGNORE_CXX_SEEK (mpich2 bug)
     env.Append(CXXFLAGS=" -DHAS_MPI=1 -DMPICH_IGNORE_CXX_SEEK")
+    env["CXX"] = mpi_cxx
+else:
+  env["CXX"] = cxx
 
 if not env["CXX"]:
   print "Unable to find any valid C++ compiler."
@@ -207,7 +222,7 @@ except PkgconfigError, err:
 # default build-targets: shared libs, extension modules, programs, demos, and
 # documentation.
 for n in buildDataHash["shlibs"] + buildDataHash["extModules"] + \
-        buildDataHash["progs"] + buildDataHash["demos"], buildDataHash["docs"]:
+        buildDataHash["progs"] + buildDataHash["demos"], buildDataHash["docs"], buildDataHash["tests"]:
   env.Default(n)
 
 # -----------------------------------------------------------------------------

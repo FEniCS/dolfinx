@@ -62,6 +62,16 @@ namespace dolfin
     /// Create copy of vector
     uBlasVector* copy() const;
 
+    /// Return concrete (const) implementation of GenericVector
+    virtual const uBlasVector* instance() const {
+      return this;
+    }
+
+    /// Return concrete implementation of GenericVector
+    virtual uBlasVector* instance() {
+      return this;
+    }
+
     /// Set all entries to a single scalar value
     const uBlasVector& operator= (real a);
 
@@ -123,7 +133,7 @@ namespace dolfin
     void axpy(real a, const uBlasVector& x);
 
     /// Scalar multiplication
-    void mult(real a);
+    void mult(real const a);
 
     /// Inner product 
     real inner(const GenericVector& x) const;

@@ -104,10 +104,8 @@ PETScVector* PETScVector::create() const
 //-----------------------------------------------------------------------------
 PETScVector* PETScVector::copy() const
 {
-  // Not yet implemented
-  error("Not yet implemented.");
-
-  return 0;
+  PETScVector* v = new PETScVector(*this); 
+  return v; 
 }
 //-----------------------------------------------------------------------------
 void PETScVector::axpy(const real a, const PETScVector& x)
@@ -258,7 +256,7 @@ const PETScVector& PETScVector::operator= (const GenericVector& x_)
 
   cout << "Assignment in PETScVector" << endl;
 
-  const PETScVector* x = dynamic_cast<const PETScVector*>(&x_);  
+  const PETScVector* x = dynamic_cast<const PETScVector*>(x_.instance());  
   if (!x) error("The vector should be of type PETScVector");  
   
   *this = *x; 
@@ -329,7 +327,7 @@ real PETScVector::operator*(const PETScVector& x)
 //-----------------------------------------------------------------------------
 real PETScVector::inner(const GenericVector& x_) const
 {
-  const PETScVector* x = dynamic_cast<const PETScVector*>(&x_);  
+  const PETScVector* x = dynamic_cast<const PETScVector*>(x_.instance());  
   if (!x) error("The vector should be of type PETScVector");  
 
   dolfin_assert(this->x);
@@ -343,7 +341,7 @@ real PETScVector::inner(const GenericVector& x_) const
 //-----------------------------------------------------------------------------
 void PETScVector::add(const GenericVector& x_, real a) 
 {
-  const PETScVector* x = dynamic_cast<const PETScVector*>(&x_);  
+  const PETScVector* x = dynamic_cast<const PETScVector*>(x_.instance());  
   if (!x) error("The vector x should be of type PETScVector");  
 
   dolfin_assert(this->x);
