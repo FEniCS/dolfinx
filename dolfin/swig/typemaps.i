@@ -58,6 +58,7 @@
     pass = PyString_Check($input) ? 1 : pass;
     pass = PyInt_Check($input)    ? 1 : pass;
     pass = PyFloat_Check($input)  ? 1 : pass;
+    pass = PyBool_Check($input)  ? 1 : pass;
     $1 = pass;
 }
 
@@ -68,6 +69,17 @@
         dolfin::Parameter tmp(input);
         $1 = tmp;
     }
+    else if PyBool_Check($input) {
+        int val = PyInt_AsLong($input);
+        if (val == 1) {
+            dolfin::Parameter tmp(true);
+            $1 = tmp;
+        }
+        else {
+            dolfin::Parameter tmp(false);
+            $1 = tmp;
+        }
+    }
     else if PyInt_Check($input) {
         int val = PyInt_AsLong($input);
         dolfin::Parameter tmp(val);
@@ -77,6 +89,8 @@
         dolfin::Parameter tmp(PyFloat_AsDouble($input));
         $1 = tmp;
     }
+    
+
 }
 
 // Typemap for Parameter (out)
