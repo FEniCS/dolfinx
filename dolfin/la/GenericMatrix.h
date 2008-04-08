@@ -111,6 +111,10 @@ namespace dolfin
     }
 
 
+    virtual GenericMatrix* instance() { return this; }
+    virtual const GenericMatrix* instance() const { return this; }
+
+
     // y = A x  ( or y = A^T x if transposed==true) 
     virtual void mult(const GenericVector& x, GenericVector& y, bool transposed=false) const = 0; 
 

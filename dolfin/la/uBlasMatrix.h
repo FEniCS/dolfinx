@@ -117,6 +117,17 @@ namespace dolfin
     /// The below functions have specialisations for particular matrix types.
     /// In order to link correctly, they must be made inline functions.
 
+    /// Return concrete (const) implementation of GenericMatrix
+    virtual const uBlasMatrix<Mat>* instance() const {
+      return this;
+    }
+
+    /// Return concrete implementation of GenericMatrix
+    virtual uBlasMatrix<Mat>* instance() {
+      return this;
+    }
+
+
     /// Initialize M x N matrix
     void init(uint M, uint N);
 
