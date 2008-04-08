@@ -33,7 +33,7 @@ using namespace dolfin;
 %include "std_sstream.i"
 %include "std_string.i"
 %include "std_vector.i"
-%include "std_map.i"
+//%include "std_map.i" // FIXME: Make this work
 %include "stl.i"
 %include "carrays.i"
 %array_functions(dolfin::real, realArray);
@@ -58,5 +58,5 @@ using namespace dolfin;
 %include "dolfin_log_post.i"
 %include "dolfin_common_post.i"
 
-%typedef         std::map<dolfin::uint, dolfin::uint> iimap;
-%template(iimap) std::map<dolfin::uint, dolfin::uint>;
+//%typedef         std::map<dolfin::uint, dolfin::uint> iimap; //FIXME: Make this work
+//%template(iimap) std::map<dolfin::uint, dolfin::uint>; //FIXME: Make this work
