@@ -42,8 +42,25 @@ cppdemos.remove('./quadrature/cpp')
 cppdemos.remove('./ode/method-weights/cpp')
 cppdemos.remove('./ode/stiff/cpp')
 
-# Run Python demos
 failed = []
+
+# Run C++ demos
+for demo in cppdemos:
+    print "----------------------------------------------------------------------"
+    print "Running C++ demo %s" % demo
+    print ""
+    if os.path.isfile(os.path.join(demo, 'demo')):
+        output = getstatusoutput("cd %s && ./demo" % demo)
+        success = not output[0]
+        if success:
+            print "OK"
+        else:
+            print "*** Failed"
+            failed += [(demo, "C++", output[1])]
+    else:
+        print "*** Warning: missing demo"
+
+# Run Python demos
 for demo in pydemos:
     print "----------------------------------------------------------------------"
     print "Running Python demo %s" % demo
@@ -59,27 +76,10 @@ for demo in pydemos:
     else:
         print "*** Warning: missing demo"
 
-# Run C++ demos
-for demo in cppdemos:
-    continue
-    print "----------------------------------------------------------------------"
-    print "Running C++ demo %s" % demo
-    print ""
-    if os.path.isfile(os.path.join(demo, 'demo')):
-        output = getstatusoutput("cd %s && ./demo" % demo)
-        success = not output[0]
-        if success:
-            print "OK"
-        else:
-            print "*** Failed"
-            failed += [(demo, "C++", output[1])]
-    else:
-        print "*** Warning: missing demo"
-
 # Print output for failed tests
 print ""
 if len(failed) > 0:
-    print "One or more demos failed, see demo.log for details."
+    print "%d demo(s) failed, see demo.log for details." % len(failed)
     file = open("demo.log", "w")
     for (test, interface, output) in failed:
         file.write("----------------------------------------------------------------------\n")
