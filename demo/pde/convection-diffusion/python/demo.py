@@ -27,7 +27,7 @@ f = Function(scalar, mesh, 0.0)
 u0 = Function(scalar, mesh, 0.0)
 
 # Parameters
-T = 1.0
+T = 5.0
 k = 0.1
 t = k
 c = 0.005
@@ -77,3 +77,6 @@ while t < T:
 
     # Move to next interval
     t += k
+
+# Hold plot
+interactive()
