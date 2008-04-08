@@ -1,8 +1,8 @@
-// Copyright (C) 2003-2006 Johan Jansson and Anders Logg.
+// Copyright (C) 2003-2008 Johan Jansson and Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2003
-// Last changed: 2008-01-16
+// Last changed: 2008-04-08
 
 #include <cmath>
 #include <string>
@@ -24,7 +24,6 @@ TimeStepper::TimeStepper(ODE& ode) :
   ode(ode), timeslab(0), file(dolfin_get("ODE solution file name")),
   p("Time-stepping"), _stopped(false), _finished(false),
   save_solution(dolfin_get("ODE save solution")),
-  solve_dual(dolfin_get("ODE solve dual problem")),
   adaptive_samples(dolfin_get("ODE adaptive samples")),
   no_samples(dolfin_get("ODE number of samples")),
   sample_density(dolfin_get("ODE sample density"))
