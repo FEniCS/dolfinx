@@ -1,3 +1,5 @@
+ - Improved linear algebra, both in C++ and Python
+ - Make periodic boundary conditions work in Python
  - Fix saving of user-defined functions
  - Improve plotting
  - Simple computation of various norms of functions from Python
