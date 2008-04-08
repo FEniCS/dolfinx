@@ -33,6 +33,7 @@ using namespace dolfin;
 %include "std_sstream.i"
 %include "std_string.i"
 %include "std_vector.i"
+%include "std_map.i"
 %include "stl.i"
 %include "carrays.i"
 %array_functions(dolfin::real, realArray);
@@ -56,3 +57,6 @@ using namespace dolfin;
 %include "dolfin_mesh_post.i"
 %include "dolfin_log_post.i"
 %include "dolfin_common_post.i"
+
+%typedef         std::map<dolfin::uint, dolfin::uint> iimap;
+%template(iimap) std::map<dolfin::uint, dolfin::uint>;
