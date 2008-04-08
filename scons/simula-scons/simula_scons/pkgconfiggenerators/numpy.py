@@ -6,6 +6,8 @@ from os.path import sep, join, dirname, abspath
 
 from commonPkgConfigUtils import *
 
+# FIXME: script fails when running in the same folder as it is located
+
 def trickPythonpath():
     # play tricks with pythonpath to avoid mixing up 
     # the real numpy with this file.
@@ -30,8 +32,8 @@ def pkgVersion(**kwargs):
     cmdstr = "%s -c 'import numpy; print numpy.__version__'" % sys.executable
     failure, cmdoutput = commands.getstatusoutput(cmdstr)
     if failure:
-        print "Unable to get numpy version. Assuming 1.0 as default."
-        version = "1.0"
+        msg = "Unable to get numpy version.\nCommand was:\n%s" % cmdstr
+        raise UnableToXXXException(msg, errormsg=cmdoutput)
     else:
         version = cmdoutput
     #restorePythonpath()
@@ -42,8 +44,8 @@ def pkgCflags(**kwargs):
     cmdstr = "%s -c 'import numpy; print numpy.get_include()'" % sys.executable
     failure, cmdoutput = commands.getstatusoutput(cmdstr)
     if failure:
-        print "Unable to get numpy include folder."
-        include_dir = ""
+        msg = "Unable to get numpy include folder.\nCommand was:\n%s" % cmdstr
+        raise UnableToXXXException(msg, errormsg=cmdoutput)
     else:
         include_dir = cmdoutput
     #restorePythonpath()
