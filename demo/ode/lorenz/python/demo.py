@@ -52,7 +52,7 @@ class Lorenz(ODE):
         y_.set(y)
 
         
-def plot():
+def myplot():
     import matplotlib
     import pylab
     pylab.ion()
@@ -86,4 +86,4 @@ dolfin_set("ODE discrete tolerance", 1e-13);
 lorenz = Lorenz(T=60)
 lorenz.solve();
 
-plot()
+#myplot()

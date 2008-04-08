@@ -20,7 +20,7 @@ __license__  = "GNU LGPL Version 2.1"
 from dolfin import *
 from numpy import array, sqrt
 
-TOL = 1e-4          # Error tolerance
+TOL = 5e-4          # Error tolerance
 REFINE_RATIO = 0.50 # Refine 50 % of the cells in each iteration
 MAX_ITER = 20       # Maximal number of iterations
 
