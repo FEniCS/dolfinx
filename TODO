@@ -9,6 +9,21 @@ This gives convenient expand/collapse of bullets by pressing TAB.
 * Build system
 ** Demos are not built when using 'scons install . . . enableDemos=yes'
 ** Python interface sometimes not regenerated when changing header files
+* Linear Algebra
+** Current items (discussion 2008-04-09)
+*** GenericOperator --> Kent
+*** Vector(x), xx = x,array() --> Ola
+*** Remove copy(), create() --> Anders
+*** Add copy constructors --> Martin
+*** Assignment operators --> Martin
+*** getitem/setitem --> Ola
+*** operator[] etc --> Kent
+*** cleanup of all interfaces --> Anders
+** Old items
+*** Refine initialisation of PETSc matrices for parallel case
+*** Refine PETSc wrappers for parallel assembly and solve
+*** Finalize GenericFoo interfaces and merge linear algebra with PyCC
+   - Assigned to: Martin, Garth, Anders
 * Parallelisation
 ** Reordering in DofMap
 ** Generalise Assembler for parallel assembly
@@ -18,7 +33,6 @@ This gives convenient expand/collapse of bullets by pressing TAB.
 
      if (partition(*cell) != this_process)
        continue;
-
 ** Figure out what to do with Functions in parallel
 ** Parallelize necessary parts of Mesh
    - Store both global and local indices for cell/vertex, add mesh
@@ -32,7 +46,6 @@ This gives convenient expand/collapse of bullets by pressing TAB.
    - Use parallel mesh information in DofMap to simplify
      implementation - should only need map from local to global cell/vertex
    - Use parallel mesh information in ParMETIS partitioning implementation
-
 * Manual
 ** Write incomplete sections
 ** Write appendix on coding style
@@ -41,11 +54,6 @@ This gives convenient expand/collapse of bullets by pressing TAB.
 * Assembly
 ** Further develop and then merge parallel assembly
 
-* Linear Algebra
-** Refine initialisation of PETSc matrices for parallel case
-** Refine PETSc wrappers for parallel assembly and solve
-** Finalize GenericFoo interfaces and merge linear algebra with PyCC
-   - Assigned to: Martin, Garth, Anders
 * Mesh
 ** 1D and 2D cells in R^3
 ** Check coarsening
