@@ -1,7 +1,7 @@
 """Run all demos."""
 
 __author__ = "Ilmar Wilbers (ilmarw@simula.no)"
-__date__ = "2008-04-04 -- 2008-04-04"
+__date__ = "2008-04-08 -- 2008-04-09"
 __copyright__ = "Copyright (C) 2008 Ilmar Wilbers"
 __license__  = "GNU LGPL Version 2.1"
 
@@ -13,7 +13,7 @@ from commands import getstatusoutput
 # Demos to run
 cppdemos = []
 pydemos = []
-for dpath, dnames, fnames in os.walk(os.curdir):
+for dpath, dnames, fnames in os.walk(os.path.join(os.curdir, "..", "..", "demo")):
     if os.path.basename(dpath) == 'cpp':
         if os.path.isfile(os.path.join(dpath, 'SConstruct')):
             cppdemos.append(dpath)
@@ -31,16 +31,16 @@ print "Found %d Python demos" % len(pydemos)
 print ""
 
 # Remove demos that are known not to work (FIXME's)
-pydemos.remove('./nls/nonlinearpoisson/python')
-pydemos.remove('./pde/nonlinear-poisson/python')
-pydemos.remove('./pde/lift-drag/python')
-pydemos.remove('./ode/aliev-panfilov/python')
+pydemos.remove('./../../demo/nls/nonlinearpoisson/python')
+pydemos.remove('./../../demo/pde/nonlinear-poisson/python')
+pydemos.remove('./../../demo/pde/lift-drag/python')
+pydemos.remove('./../../demo/ode/aliev-panfilov/python')
 
 # Demos that need command line arguments are treated seperately
-pydemos.remove('./quadrature/python')
-cppdemos.remove('./quadrature/cpp')
-cppdemos.remove('./ode/method-weights/cpp')
-cppdemos.remove('./ode/stiff/cpp')
+pydemos.remove('./../../demo/quadrature/python')
+cppdemos.remove('./../../demo/quadrature/cpp')
+cppdemos.remove('./../../demo/ode/method-weights/cpp')
+cppdemos.remove('./../../demo/ode/stiff/cpp')
 
 failed = []
 

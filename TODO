@@ -4,9 +4,27 @@ on the current interests of the various DOLFIN developers.
 To edit this file, it is convenient to install org-mode in Emacs.
 It is available as part of Emacs 22 and can be invoked by M-x org-mode.
 This gives convenient expand/collapse of bullets by pressing TAB.
+-----------------------------------------------------------------------
 
+* Build system
+** Demos are not built when using 'scons install . . . enableDemos=yes'
+** Python interface sometimes not regenerated when changing header files
+* Linear Algebra
+** Current items (discussion 2008-04-09)
+*** GenericOperator --> Kent
+*** Vector(x), xx = x,array() --> Ola
+*** Remove copy(), create() --> Anders
+*** Add copy constructors --> Martin
+*** Assignment operators --> Martin
+*** getitem/setitem --> Ola
+*** operator[] etc --> Kent
+*** cleanup of all interfaces --> Anders
+** Old items
+*** Refine initialisation of PETSc matrices for parallel case
+*** Refine PETSc wrappers for parallel assembly and solve
+*** Finalize GenericFoo interfaces and merge linear algebra with PyCC
+   - Assigned to: Martin, Garth, Anders
 * Parallelisation
-
 ** Reordering in DofMap
 ** Generalise Assembler for parallel assembly
    - Should be possible to do with minor changes
@@ -15,7 +33,6 @@ This gives convenient expand/collapse of bullets by pressing TAB.
 
      if (partition(*cell) != this_process)
        continue;
-
 ** Figure out what to do with Functions in parallel
 ** Parallelize necessary parts of Mesh
    - Store both global and local indices for cell/vertex, add mesh
@@ -29,74 +46,49 @@ This gives convenient expand/collapse of bullets by pressing TAB.
    - Use parallel mesh information in DofMap to simplify
      implementation - should only need map from local to global cell/vertex
    - Use parallel mesh information in ParMETIS partitioning implementation
-
 * Manual
-
 ** Write incomplete sections
 ** Write appendix on coding style
 ** Document Python interface
 
 * Assembly
-
 ** Further develop and then merge parallel assembly
 
-* Linear Algebra
-
-** Refine initialisation of PETSc matrices for parallel case
-** Refine PETSc wrappers for parallel assembly and solve
-** Finalize GenericFoo interfaces and merge linear algebra with PyCC
-   - Assigned to: Martin, Garth, Anders
-
 * Mesh
-
 ** 1D and 2D cells in R^3
 ** Check coarsening
 ** Continue work on refinement
 ** Collect meshes on wiki
 
 * Function
-
 ** Assignment from other than discrete functions (use evaluate_dof)
 ** Input/output for time-series
 ** Tensor-valued functions
 ** 'quadrature' function
 
 * Input/Output
-
 ** Figure out what to do with i/o when running in parallel
-
 * Solvers
-
 ** Create template for users to create solvers that use the DOLFIN library
-
 * ODE solvers
-
 ** Solve dual and compute error estimate
 ** Automatic computation of stability factors as function of time T
-
 * PDE solvers
-
 ** Improve NonlinearPDE
 ** Create TimeDependentPDE
    - Use ODE solvers
 ** Linear PDE should not own a Vector
-
 * Parameters
-
 ** Load default parameters from file
 ** Add function to display all parameters
-
 * Demos
-
 ** Add Python versions of all demos
-
 ** Not working (in Python)
   src/demo/pde/nonlinear-poisson/python/demo.py
   src/demo/pde/lift-drag/python/demo.py
   src/demo/la/eigensolver/python/demo.py
   src/demo/nls/nonlinearpoisson/python/demo.py
   src/demo/ode/aliev-panfilov/python/demo.py
-
 ** Not added (in Python)
    ode/complex
    ode/stiff
@@ -107,13 +99,9 @@ This gives convenient expand/collapse of bullets by pressing TAB.
    ode/lorenz
    ode/method-weights
    nls/cahn-hilliard
-
 * PyDOLFIN
 ** Fix memory leak warning for Array of Function*
 ** Needing to convert numpy.bool to bool in inside
-
 * General
-
 ** Replace stdio with iostream and fstream
 ** Fix setprecision() for cout
-
