@@ -95,18 +95,6 @@ void ODE::J(const uBlasVector& x, uBlasVector& y, const uBlasVector& u, real t)
   y *= 0.5/h;
 }
 //-----------------------------------------------------------------------------
-Matrix& ODE::Jmatrix(const uBlasVector& u, real t)
-{
-  error("Not implemented");
-  return *(new Matrix());
-}
-//-----------------------------------------------------------------------------
-Matrix& ODE::Mmatrix(real t)
-{
-  error("Not implemented");
-  return *(new Matrix());
-}
-//-----------------------------------------------------------------------------
 real ODE::dfdu(const uBlasVector& u, real t, uint i, uint j)
 {
   // Compute Jacobian numerically if dfdu() is not implemented by user

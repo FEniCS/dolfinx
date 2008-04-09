@@ -2,11 +2,11 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Anders Logg 2006-2007.
-// Modified by Ola Skavhaug 2007.
+// Modified by Ola Skavhaug 2007-2008.
 // Modified by Kent-Andre Mardal 2008.
 //
 // First added:  2006-07-05
-// Last changed: 2008-03-21
+// Last changed: 2008-04-08
 
 #ifndef __UBLAS_MATRIX_H
 #define __UBLAS_MATRIX_H
@@ -116,6 +116,16 @@ namespace dolfin
 
     /// The below functions have specialisations for particular matrix types.
     /// In order to link correctly, they must be made inline functions.
+
+    /// Return concrete (const) uBlasMatrix<Mat> instance
+    virtual const uBlasMatrix<Mat>* instance() const {
+      return this;
+    }
+
+    /// Return concrete uBlasMatrix<Mat> instance
+    virtual uBlasMatrix<Mat>* instance() {
+      return this;
+    }
 
     /// Initialize M x N matrix
     void init(uint M, uint N);

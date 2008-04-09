@@ -21,9 +21,9 @@ void dolfin::solve(const Matrix& A, Vector& x, const Vector& b)
 real dolfin::residual(const Matrix& A, const Vector& x, const Vector& b)
 {
   Vector y;
-  A.mat().mult(x.vec(), y.vec());
-  y.vec() -= b.vec();
-  return y.vec().norm();
+  A.instance()->mult(*(x.instance()), *(y.instance()));
+  *(y.instance()) -= *(b.instance());
+  return y.instance()->norm();
 }
 //-----------------------------------------------------------------------------  
 /*

@@ -1,20 +1,19 @@
-// Copyright (C) 2007 Anders Logg and Garth N. Wells.
+// Copyright (C) 2007-2008 Anders Logg and Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 
 // First added:  2007-03-01
-// Last changed: 2007-04-03
+// Last changed: 2008-04-08
 
 #ifndef __DOF_MAP_H
 #define __DOF_MAP_H
 
 #include <map>
 #include <ufc.h>
+#include <dolfin/main/constants.h>
 #include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/MeshFunction.h>
 #include "UFCCell.h"
 #include "UFCMesh.h"
-#include <dolfin/main/constants.h>
-#include <dolfin/mesh/MeshFunction.h>
-
 
 namespace dolfin
 {
@@ -47,16 +46,16 @@ namespace dolfin
 
     /// Return a string identifying the dof map
     const char* signature() const
-      { 
-        if(ufc_map)
-          return ufc_dof_map->signature(); 
-        else
-        {
-          error("DofMap has been re-ordered. Cannot return signature string.");
-          return ufc_dof_map->signature(); 
-        }  
-      }
-
+    { 
+      if (!dof_map)
+        return ufc_dof_map->signature(); 
+      else
+      {
+        error("DofMap has been re-ordered. Cannot return signature string.");
+        return ufc_dof_map->signature(); 
+      }  
+    }
+    
     /// Return the dimension of the global finite element function space
     unsigned int global_dimension() const
       { return ufc_dof_map->global_dimension(); }
@@ -74,19 +73,7 @@ namespace dolfin
     { return ufc_dof_map->num_facet_dofs(); }
 
     /// Tabulate the local-to-global mapping of dofs on a cell
-    void tabulate_dofs(uint* dofs, Cell& cell) 
-    {
-      if (dof_map)
-      {
-        for (uint i = 0; i < local_dimension(); i++)
-          dofs[i] = dof_map[cell.index()][i];
-      }
-      else
-      {
-        ufc_cell.update(cell);
-        ufc_dof_map->tabulate_dofs(dofs, ufc_mesh, ufc_cell);
-      }
-    }
+    void tabulate_dofs(uint* dofs, ufc::cell& ufc_cell, uint cell_index);
 
     /// Tabulate local-local facet dofs
     void tabulate_facet_dofs(uint* dofs, uint local_facet) const
@@ -135,11 +122,6 @@ namespace dolfin
 
     // DOLFIN mesh
     Mesh& dolfin_mesh;
-
-    // UFC cell
-    UFCCell ufc_cell;
-
-    bool ufc_map;
 
     // Number of cells in the mesh
     uint num_cells;

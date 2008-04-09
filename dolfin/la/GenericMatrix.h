@@ -3,11 +3,11 @@
 //
 // Modified by Johan Jansson 2006.
 // Modified by Anders Logg 2006-2008.
-// Modified by Ola Skavhaug 2007.
+// Modified by Ola Skavhaug 2007-2008.
 // Modified by Kent-Andre Mardal 2008.
 //
 // First added:  2006-04-24
-// Last changed: 2008-04-03
+// Last changed: 2008-04-09
 
 #ifndef __GENERIC_MATRIX_H
 #define __GENERIC_MATRIX_H
@@ -95,14 +95,14 @@ namespace dolfin
     virtual void zero(uint m, const uint* rows) = 0;
 
     /// Set given matrix entry to value
-    virtual void setval(std::pair<uint, uint> idx, real value) {
+    virtual void setitem(std::pair<uint, uint> idx, real value) {
       const uint i = idx.first;
       const uint j = idx.second;
       set(&value, 1, &i, 1, &j);  
     }
 
-    /// Set given matrix entry to value
-    virtual real getval(std::pair<uint, uint> idx) {
+    /// Get given matrix entry 
+    virtual real getitem(std::pair<uint, uint> idx) {
       const uint i = idx.first;
       const uint j = idx.second;
       real value;
@@ -110,6 +110,15 @@ namespace dolfin
       return value;
     }
 
+    /// Return concrete (const) GenericMatrix instance
+    virtual const GenericMatrix* instance() const { 
+      return this; 
+    }
+
+    /// Return concrete GenericMatrix instance
+    virtual GenericMatrix* instance() { 
+      return this; 
+    }
 
     // y = A x  ( or y = A^T x if transposed==true) 
     virtual void mult(const GenericVector& x, GenericVector& y, bool transposed=false) const = 0; 

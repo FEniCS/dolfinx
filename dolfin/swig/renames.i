@@ -2,5 +2,5 @@
 
 //%rename(__repr__) *::operator<<;
 
-%rename(__setitem__) *::setval;
-%rename(__getitem__) *::getval;
+%rename(__setitem__) *::setitem;
+%rename(__getitem__) *::getitem;

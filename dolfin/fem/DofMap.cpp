@@ -1,8 +1,8 @@
-// Copyright (C) 2007 Anders Logg and Garth N. Wells.
+// Copyright (C) 2007-2008 Anders Logg and Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 
 // First added:  2007-03-01
-// Last changed: 2007-03-15
+// Last changed: 2008-04-08
 
 #include <dolfin/main/constants.h>
 #include <dolfin/mesh/Cell.h>
@@ -19,7 +19,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 DofMap::DofMap(ufc::dof_map& dof_map, Mesh& mesh) : dof_map(0), 
                ufc_dof_map(&dof_map), ufc_dof_map_local(false), 
-               dolfin_mesh(mesh), ufc_map(true), num_cells(mesh.numCells()), 
+               dolfin_mesh(mesh), num_cells(mesh.numCells()), 
                partitions(0)
 {
   init();
@@ -27,15 +27,15 @@ DofMap::DofMap(ufc::dof_map& dof_map, Mesh& mesh) : dof_map(0),
 //-----------------------------------------------------------------------------
 DofMap::DofMap(ufc::dof_map& dof_map, Mesh& mesh, MeshFunction<uint>& partitions)
              : dof_map(0), ufc_dof_map(&dof_map), ufc_dof_map_local(false), 
-               dolfin_mesh(mesh), ufc_map(true), num_cells(mesh.numCells()), 
+               dolfin_mesh(mesh), num_cells(mesh.numCells()), 
                partitions(&partitions)
 {
   init();
 }
 //-----------------------------------------------------------------------------
-DofMap::DofMap(const std::string signature, Mesh& mesh) : dof_map(0), 
-              ufc_dof_map(0), ufc_dof_map_local(false), dolfin_mesh(mesh), 
-              ufc_map(true), num_cells(mesh.numCells()), partitions(0)
+DofMap::DofMap(const std::string signature, Mesh& mesh) 
+  : dof_map(0), ufc_dof_map(0), ufc_dof_map_local(false),
+    dolfin_mesh(mesh), num_cells(mesh.numCells()), partitions(0)
 {
   // Create ufc dof map from signature
   ufc_dof_map = ElementLibrary::create_dof_map(signature);
@@ -49,9 +49,10 @@ DofMap::DofMap(const std::string signature, Mesh& mesh) : dof_map(0),
 }
 //-----------------------------------------------------------------------------
 DofMap::DofMap(const std::string signature, Mesh& mesh, 
-               MeshFunction<uint>& partitions) : dof_map(0), ufc_dof_map(0), 
-               ufc_dof_map_local(false), dolfin_mesh(mesh), ufc_map(true),
-               num_cells(mesh.numCells()), partitions(&partitions)
+               MeshFunction<uint>& partitions) 
+  : dof_map(0), ufc_dof_map(0), 
+    ufc_dof_map_local(false), dolfin_mesh(mesh), num_cells(mesh.numCells()),
+    partitions(&partitions)
 {
   // Create ufc dof map from signature
   ufc_dof_map = ElementLibrary::create_dof_map(signature);
@@ -80,7 +81,7 @@ DofMap::~DofMap()
 DofMap* DofMap::extractDofMap(const Array<uint>& sub_system, uint& offset) const
 {
   // Check that dof map has not be re-ordered
-  if (!ufc_map)
+  if (dof_map)
     error("Dof map has been re-ordered. Don't yet know how to extract sub dof maps.");
 
   // Reset offset
@@ -91,7 +92,7 @@ DofMap* DofMap::extractDofMap(const Array<uint>& sub_system, uint& offset) const
   message(2, "Extracted dof map for sub system: %s", sub_dof_map->signature());
   message(2, "Offset for sub system: %d", offset);
 
-  if(partitions)
+  if (partitions)
     return new DofMap(*sub_dof_map, dolfin_mesh, *partitions);
   else
     return new DofMap(*sub_dof_map, dolfin_mesh);
@@ -171,16 +172,31 @@ void DofMap::init()
     ufc_dof_map->init_cell_finalize();
   }
 
-  // Initialise ufc cell 
-  CellIterator cell(dolfin_mesh);
-  ufc_cell.init(*cell);
-
   //dolfin_debug("Dof map initialized");
+}
+//-----------------------------------------------------------------------------
+void DofMap::tabulate_dofs(uint* dofs, ufc::cell& ufc_cell, uint cell_index)
+{
+  // Either lookup pretabulated values (if build() has been called)
+  // or ask the ufc::dof_map to tabulate the values
+
+  if (dof_map)
+  {
+    // FIXME: Maybe memcpy() can be used to speed this up?
+    for (uint i = 0; i < local_dimension(); i++)
+      dofs[i] = dof_map[cell_index][i];
+  }
+  else
+    ufc_dof_map->tabulate_dofs(dofs, ufc_mesh, ufc_cell);
 }
 //-----------------------------------------------------------------------------
 void DofMap::build(UFC& ufc)
 {
-  //dolfin_debug("pDofMap::build()");
+  printf("BUILDING\n");
+
+  // Initialize new dof map
+  if (dof_map)
+    delete dof_map;
   dof_map = new uint*[dolfin_mesh.numCells()];
   
   // for all processes
@@ -225,10 +241,3 @@ std::map<dolfin::uint, dolfin::uint> DofMap::getMap() const
   return map;
 }
 //-----------------------------------------------------------------------------
-
-
-
-
-
-
-

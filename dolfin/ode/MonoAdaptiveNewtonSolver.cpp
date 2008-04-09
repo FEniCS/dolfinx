@@ -66,7 +66,7 @@ void MonoAdaptiveNewtonSolver::start()
   A.init();
 
   // Precompute product M*u0
-  if ( implicit )
+  if (implicit)
     ode.M(ts.u0, Mu0, ts.u0, ts.starttime());
 
   //debug();
@@ -78,76 +78,20 @@ real MonoAdaptiveNewtonSolver::iteration(real tol, uint iter, real d0, real d1)
   // Evaluate b = -F(x) at current x
   Feval(b);
 
-  //cout << "A = ";
-  //A.disp(10);
-  //cout << "b = ";
-  //b.disp();
-
-  // Solve linear system
-  const bool matrix_free = dolfin_get("ODE matrix-free jacobian");
-  if(!matrix_free)
+  if (krylov)
   {
-    // Need to make implementation-independent copies
-    Vector dx2(dx.size());
-    Vector b2(b.size());
-    
-    dx2.vec().copy(dx, 0, 0, dx2.size());
-    b2.vec().copy(b, 0, 0, b2.size());
-    
-    // FIXME: Implement a better check
-    if ( d1 >= 0.5*d0 )
-    {
-      A.update(ts.u, ts.endtime());
-    }
-    
-    if(krylov)
-    {
-//       cout << "Solving:" << endl;
-//       cout << "A:" << endl;
-//       A.matrix_sparse().disp();
-//       cout << "b:" << endl;
-//       b2.disp();
-
-      tic();
-      num_local_iterations += krylov_g->solve(A.matrix_sparse(), dx2, b2);
-      message("Linear solve took %g seconds",toc());
-
-//       cout << "dx:" << endl;
-//       dx2.disp();
-
-    }
-    else
-    {
-      lu_g->solve(A.matrix_sparse(), dx2, b2);
-    }
-    dx.copy(dx2.vec(), 0, 0, dx.size());
-
-//     cout << "dx:" << endl;
-//     dx2.disp();
+    const real r = b.norm(linf) + DOLFIN_EPS;
+    b /= r;
+    num_local_iterations += krylov->solve(A, dx, b);
+    dx *= r;
   }
   else
   {
-    if ( krylov )
-    {
-      // FIXME: Scaling needed for PETSc Krylov solver, but maybe not for
-      // uBlas?
-      const real r = b.norm(linf) + DOLFIN_EPS;
-      b /= r;
-      num_local_iterations += krylov->solve(A, dx, b);
-      dx *= r;
-    }
-    else
-    {
-      // FIXME: Implement a better check
-      if ( d1 >= 0.5*d0 )
-        A.update();
-      lu->solve(A.matrix(), dx, b);
-    }
+    // FIXME: Implement a better check
+    if (d1 >= 0.5*d0)
+      A.update();
+    lu->solve(A.matrix(), dx, b);
   }
-
-  //cout << "A = "; A.disp(10);
-  //cout << "b = "; b.disp();
-  //cout << "dx = "; dx.disp();
 
   // Update solution x <- x + dx (note: b = -F)
   ts.x += dx;

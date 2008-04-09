@@ -1,8 +1,8 @@
-// Copyright (C) 2003-2006 Johan Jansson and Anders Logg.
+// Copyright (C) 2003-2008 Johan Jansson and Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2003-10-21
-// Last changed: 2006-08-21
+// Last changed: 2008-04-08
 
 #ifndef __ODE_H
 #define __ODE_H
@@ -73,12 +73,6 @@ namespace dolfin
 
     /// Compute product y = Jx for Jacobian J (optional)
     virtual void J(const uBlasVector& x, uBlasVector& y, const uBlasVector& u, real t);
-
-    /// Compute Jacobian matrix J (optional)
-    virtual Matrix& Jmatrix(const uBlasVector& u, real t);
-
-    /// Compute LHS matrix M (optional)
-    virtual Matrix& Mmatrix(real t);
 
     /// Compute entry of Jacobian (optional)
     virtual real dfdu(const uBlasVector& u, real t, uint i, uint j);
