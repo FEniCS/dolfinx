@@ -11,6 +11,7 @@ This gives convenient expand/collapse of bullets by pressing TAB.
 ** Python interface sometimes not regenerated when changing header files
 * Linear Algebra
 ** Current items (discussion 2008-04-09)
+*** Make solve() work with GenericFoo
 *** GenericOperator --> Kent
 *** Vector(x), xx = x,array() --> Ola
 *** Remove copy(), create() --> Anders
