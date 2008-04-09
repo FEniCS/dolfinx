@@ -303,10 +303,18 @@ void PETScMatrix::ident(uint m, const uint* rows)
   ISDestroy(is);
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::mult(const PETScVector& x, PETScVector& Ax) const
+void PETScMatrix::mult(const PETScVector& x, PETScVector& Ax, bool transposed) const
 {
-  Ax.init(x.size());
-  MatMult(A, x.vec(), Ax.vec());
+  if (transposed) { 
+    if (size(0) != x.size()) error("Matrix and vector dimensions must match");  
+    Ax.init(size(1));
+    MatMultTranspose(A, x.vec(), Ax.vec());
+  }
+  else {
+    if (size(1) != x.size()) error("Matrix and vector dimensions must match");  
+    Ax.init(size(0));
+    MatMult(A, x.vec(), Ax.vec());
+  }
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::mult(const GenericVector& x_, GenericVector& Ax_, bool transposed) const
@@ -317,7 +325,7 @@ void PETScMatrix::mult(const GenericVector& x_, GenericVector& Ax_, bool transpo
   PETScVector* Ax = dynamic_cast<PETScVector*>(Ax_.instance());  
   if (!Ax) error("The vector Ax should be of type PETScVector");  
 
-  this->mult(*x, *Ax);
+  this->mult(*x, *Ax, transposed);
 }
 
 //-----------------------------------------------------------------------------

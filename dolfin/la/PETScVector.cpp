@@ -253,9 +253,6 @@ const PETScVector& PETScVector::operator= (const PETScVector& x)
 //-----------------------------------------------------------------------------
 const PETScVector& PETScVector::operator= (const GenericVector& x_)
 {
-
-  cout << "Assignment in PETScVector" << endl;
-
   const PETScVector* x = dynamic_cast<const PETScVector*>(x_.instance());  
   if (!x) error("The vector should be of type PETScVector");  
   
@@ -343,6 +340,7 @@ void PETScVector::add(const GenericVector& x_, real a)
 {
   const PETScVector* x = dynamic_cast<const PETScVector*>(x_.instance());  
   if (!x) error("The vector x should be of type PETScVector");  
+  if (x->size() != size()) error("The vectors must be of the same size.");  
 
   dolfin_assert(this->x);
   dolfin_assert(x->x);

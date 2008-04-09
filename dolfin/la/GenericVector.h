@@ -108,8 +108,6 @@ namespace dolfin
     //  this *= a   
     virtual void mult(const real a) = 0; 
 
-
-
     /// Assignment of vector
     virtual const GenericVector& operator= (const GenericVector& x) { 
       return *this; 

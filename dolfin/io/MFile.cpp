@@ -43,7 +43,7 @@ void MFile::operator<<(GenericVector& x)
     // FIXME: This is a slow way to access PETSc vectors. Need a fast way 
     //        which is consistent for different vector types.
     x.get(&temp, 1, &i);
-    fprintf(fp, " %.15g", temp);
+    fprintf(fp, " %.15g;", temp);
   }
   fprintf(fp, " ];\n");
   

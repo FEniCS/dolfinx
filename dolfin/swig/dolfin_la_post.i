@@ -20,3 +20,29 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
 
 }
 #endif
+
+%newobject  dolfin::Matrix::__mul__;
+%extend dolfin::Matrix {
+      dolfin::Vector* __mul__(const dolfin::Vector& x) {
+        dolfin::Vector* Ax = new dolfin::Vector((*self).size(0)); 
+      (*self).mult(x, *Ax); 
+      return Ax;  
+    }
+
+
+}
+
+%extend dolfin::Vector {
+    void __iadd__(dolfin::Vector& v) {
+      (*self).add(v); 
+    }
+    void __isub__(dolfin::Vector& v) {
+      (*self).add(v,-1.0); 
+    }
+
+    void __imul__(real a) {
+      (*self).mult(a); 
+    }
+}
+
+

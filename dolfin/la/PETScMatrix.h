@@ -116,7 +116,7 @@ namespace dolfin
     void ident(uint m, const uint* rows);
     
     /// Matrix-vector multiplication
-    void mult(const PETScVector& x, PETScVector& Ax) const;
+    void mult(const PETScVector& x, PETScVector& Ax, bool transposed=false) const;
 
     // y = A x  ( or y = A^T x if transposed==true) 
     virtual void mult(const GenericVector& x, GenericVector& y, bool transposed=false) const; 
