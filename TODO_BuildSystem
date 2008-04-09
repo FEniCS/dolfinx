@@ -1,4 +1,0 @@
-* Demos are not built when using 'scons install . . . enableDemos=yes'
-
-* Python interface not regenerated when changing header files
-  (same as old touch dolfin.i issue)
