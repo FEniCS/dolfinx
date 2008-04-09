@@ -52,7 +52,7 @@ namespace dolfin
       // create a new vector; 
       Vector* v =  new Vector(vector->size()); 
       // assign values
-      *v = *this; 
+      *v = *vector; 
       return v; 
     }
 
@@ -100,11 +100,19 @@ namespace dolfin
     /// FIXME: Should these be removed or added to the interface?
 
     /// Add vector x
-    inline const Vector& operator+= (const Vector& x)
+    inline const Vector& operator+= (const GenericVector& x)
     { 
       *vector += *(x.instance()); 
       return *this; 
     }
+
+    /// Subtract vector x
+    inline const Vector& operator-= (const GenericVector& x)
+    { 
+      *vector -= *(x.instance()); 
+      return *this; 
+    }
+
 
     /// assignment operator
     inline const Vector& operator= (const GenericVector& x_)
@@ -134,9 +142,9 @@ namespace dolfin
     }
 
     /// this += a*x  
-    inline void add(const GenericVector& x_, real a = 1.0) 
+    inline void axpy(real a, const GenericVector& x_) 
     { 
-      return this->vector->add(x_, a); 
+      return this->vector->axpy(a, x_); 
     }
 
     /// this *= a  

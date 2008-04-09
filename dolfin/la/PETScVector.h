@@ -81,9 +81,6 @@ namespace dolfin
     /// Restore array after a call to array(), const version
     void restore(const real data[]) const;
 
-    /// Addition (AXPY)
-    void axpy(const real a, const PETScVector& x);
-
     /// Element-wise division
     void div(const PETScVector& x);
 
@@ -120,6 +117,11 @@ namespace dolfin
     /// Assignment of vector
     const PETScVector& operator= (const GenericVector& x);
 
+    /// Assignment of vector
+    const PETScVector& operator= (const PETScVector& x);
+
+
+
     /// Return concrete (const) PETScVector instance
     virtual const PETScVector* instance() const {
       return this;
@@ -130,17 +132,14 @@ namespace dolfin
       return this;
     }
 
-    /// Assignment of vector
-    const PETScVector& operator= (const PETScVector& x);
-
     /// Assignment of all elements to a single scalar value
     const PETScVector& operator= (const real a);
 
     /// Add vector x
-    const PETScVector& operator+= (const PETScVector& x);
+    const PETScVector& operator+= (const GenericVector& x);
 
     /// Subtract vector x
-    const PETScVector& operator-= (const PETScVector& x);
+    const PETScVector& operator-= (const GenericVector& x);
 
     /// Multiply vector with scalar
     const PETScVector& operator*= (const real a);
@@ -155,7 +154,7 @@ namespace dolfin
     real inner(const GenericVector& v) const; 
 
     //  this +=  a*x   
-    virtual void add(const GenericVector& x, real a = 1.0); 
+    virtual void axpy(real a, const GenericVector& x); 
 
     /// Compute norm of vector
     real norm(VectorNormType type = l2) const;

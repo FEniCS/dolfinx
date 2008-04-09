@@ -108,11 +108,6 @@ PETScVector* PETScVector::copy() const
   return v; 
 }
 //-----------------------------------------------------------------------------
-void PETScVector::axpy(const real a, const PETScVector& x)
-{
-  VecAXPY(this->x, a, x.vec());
-}
-//-----------------------------------------------------------------------------
 void PETScVector::div(const PETScVector& x)
 {
   VecPointwiseDivide(this->x, this->x, x.vec());
@@ -237,6 +232,16 @@ void PETScVector::restore(const real data[]) const
   VecRestoreArray(x, &tmp);
 }
 //-----------------------------------------------------------------------------
+const PETScVector& PETScVector::operator= (const GenericVector& x_)
+{
+  const PETScVector* x = dynamic_cast<const PETScVector*>(x_.instance());  
+  if (!x) error("The vector should be of type PETScVector");  
+
+  *this = *x; 
+  return *this; 
+}
+
+//-----------------------------------------------------------------------------
 const PETScVector& PETScVector::operator= (const PETScVector& x)
 {
   if ( !x.x )
@@ -248,18 +253,10 @@ const PETScVector& PETScVector::operator= (const PETScVector& x)
   init(x.size());
   VecCopy(x.x, this->x);
 
-  return *this;
-}
-//-----------------------------------------------------------------------------
-const PETScVector& PETScVector::operator= (const GenericVector& x_)
-{
-  const PETScVector* x = dynamic_cast<const PETScVector*>(x_.instance());  
-  if (!x) error("The vector should be of type PETScVector");  
-  
-  *this = *x; 
-
   return *this; 
 }
+
+
 
 //-----------------------------------------------------------------------------
 const PETScVector& PETScVector::operator= (const real a)
@@ -270,24 +267,32 @@ const PETScVector& PETScVector::operator= (const real a)
   return *this;
 }
 //-----------------------------------------------------------------------------
-const PETScVector& PETScVector::operator+= (const PETScVector& x)
+const PETScVector& PETScVector::operator+= (const GenericVector& x_)
 {
-  dolfin_assert(x.x);
+  const PETScVector* x = dynamic_cast<const PETScVector*>(x_.instance());  
+  if (!x) error("The vector x should be of type PETScVector");  
+  if (x->size() != size()) error("The vectors must be of the same size.");  
+
+  dolfin_assert(x->x);
   dolfin_assert(this->x);
 
   const real a = 1.0;
-  VecAXPY(this->x, a, x.x);
+  VecAXPY(this->x, a, x->x);
 
   return *this;
 }
 //-----------------------------------------------------------------------------
-const PETScVector& PETScVector::operator-= (const PETScVector& x)
+const PETScVector& PETScVector::operator-= (const GenericVector& x_)
 {
-  dolfin_assert(x.x);
+  const PETScVector* x = dynamic_cast<const PETScVector*>(x_.instance());  
+  if (!x) error("The vector x should be of type PETScVector");  
+  if (x->size() != size()) error("The vectors must be of the same size.");  
+
+  dolfin_assert(x->x);
   dolfin_assert(this->x);
 
   const real a = -1.0;
-  VecAXPY(this->x, a, x.x);
+  VecAXPY(this->x, a, x->x);
 
   return *this;
 }
@@ -336,7 +341,7 @@ real PETScVector::inner(const GenericVector& x_) const
   return a;
 }
 //-----------------------------------------------------------------------------
-void PETScVector::add(const GenericVector& x_, real a) 
+void PETScVector::axpy(real a, const GenericVector& x_) 
 {
   const PETScVector* x = dynamic_cast<const PETScVector*>(x_.instance());  
   if (!x) error("The vector x should be of type PETScVector");  
@@ -345,7 +350,7 @@ void PETScVector::add(const GenericVector& x_, real a)
   dolfin_assert(this->x);
   dolfin_assert(x->x);
 
-  VecAXPY(this->x, a, x->x);
+  VecAXPY(this->x, a, x->vec());
 }
 //-----------------------------------------------------------------------------
 real PETScVector::norm(VectorNormType type) const

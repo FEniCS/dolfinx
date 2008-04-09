@@ -137,17 +137,21 @@ void uBlasVector::div(const uBlasVector& y)
   }
 }
 //-----------------------------------------------------------------------------
-void uBlasVector::add(const GenericVector& x_, real a) {
+void uBlasVector::axpy(real a, const GenericVector& x_)
+{
   const uBlasVector* x = dynamic_cast<const uBlasVector*>(x_.instance());  
   if (!x)  error("The vector needs to be of type uBlasVector"); 
-  axpy(a,*x); 
-}
-//-----------------------------------------------------------------------------
-void uBlasVector::axpy(real a, const uBlasVector& x)
-{
+  if (size() != x->size())  error("Vectors must be of same size.");
+
   uBlasVector& y = *this;
-  
-  y += a * x;
+  const uBlasVector& xx = *x;
+
+  uint s = size();
+
+  for(uint i = 0; i < s; i++)
+  {
+    y[i] = y[i]  + a*xx[i];
+  }
 }
 //-----------------------------------------------------------------------------
 void uBlasVector::mult(const real a)
@@ -172,18 +176,39 @@ const uBlasVector& uBlasVector::operator= (real a)
 //-----------------------------------------------------------------------------
 const uBlasVector& uBlasVector::operator= (const GenericVector& x_) 
 { 
-  cout << "Assignment in uBlasVector" << endl;
-
   const uBlasVector* x = dynamic_cast<const uBlasVector*>(x_.instance());  
   if (!x) error("The vector should be of type PETScVector");  
   
   *this = (*x)*1.0; 
   return *this; 
 }
+//-----------------------------------------------------------------------------
+const uBlasVector& uBlasVector::operator*= (real a) 
+{ 
+  (*this).mult(a); 
+  return *this; 
+}
 
-
-
-
+//-----------------------------------------------------------------------------
+const uBlasVector& uBlasVector::operator+= (const GenericVector& x_) 
+{ 
+  const uBlasVector* x = dynamic_cast<const uBlasVector*>(x_.instance());  
+  if (!x) error("The vector should be of type PETScVector");  
+  if (size() != x->size())  error("Vectors must be of same size.");
+  
+  *this += (*x); 
+  return *this; 
+}
+//-----------------------------------------------------------------------------
+const uBlasVector& uBlasVector::operator-= (const GenericVector& x_) 
+{ 
+  const uBlasVector* x = dynamic_cast<const uBlasVector*>(x_.instance());  
+  if (!x) error("The vector should be of type PETScVector");  
+  if (size() != x->size())  error("Vectors must be of same size.");
+  
+  *this -= (*x); 
+  return *this; 
+}
 //-----------------------------------------------------------------------------
 void uBlasVector::disp(uint precision) const
 {

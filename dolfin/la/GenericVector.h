@@ -14,6 +14,7 @@
 #include <dolfin/main/constants.h>
 #include "GenericSparsityPattern.h"
 #include "GenericTensor.h"
+#include <dolfin/log/log.h>
 
 namespace dolfin
 {
@@ -104,13 +105,38 @@ namespace dolfin
     virtual real inner(const GenericVector& vector) const = 0; 
 
     //  this += a*x   
-    virtual void add(const GenericVector& x, real a = 1.0) = 0; 
+    virtual void axpy(real a, const GenericVector& x) = 0; 
 
-    //  this *= a   
-    virtual void mult(const real a) = 0; 
+    /// Add vector x
+    const GenericVector& operator+= (const GenericVector& x) { 
+      // Can not be abstract since a GenericVector reference is returned
+      // Therefore the current implementation: 
+      error("The operator += can not be used in GenericVector"); 
+      return *this; 
+    }
+
+    /// Subtract vector x
+    const GenericVector& operator-= (const GenericVector& x) { 
+      // Can not be abstract since a GenericVector reference is returned
+      // Therefore the current implementation: 
+      error("The operator -= can not be used in GenericVector"); 
+      return *this; 
+    }
+
+    /// Multiply vector with scalar
+    const GenericVector& operator*= (const real a) { 
+      // Can not be abstract since a GenericVector reference is returned
+      // Therefore the current implementation: 
+      error("The operator *= can not be used in GenericVector"); 
+      return *this; 
+    }
+
 
     /// Assignment of vector
     virtual const GenericVector& operator= (const GenericVector& x) { 
+      // Can not be abstract since a GenericVector reference is returned
+      // Therefore the current implementation: 
+      error("The operator = can not be used in GenericVector"); 
       return *this; 
     }
 

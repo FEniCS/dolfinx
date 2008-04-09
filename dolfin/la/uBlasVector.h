@@ -69,6 +69,17 @@ namespace dolfin
     /// Assignment of vector
     const uBlasVector& operator= (const GenericVector& x);
 
+    /// Add vector
+    const uBlasVector& operator+= (const GenericVector& x);
+
+    /// Subtract vector
+    const uBlasVector& operator-= (const GenericVector& x);
+
+    /// Multiply vector with scalar 
+    const uBlasVector& operator *= (real a);
+
+
+
     /// Return concrete (const) uBlasVector instance
     virtual const uBlasVector* instance() const {
       return this;
@@ -131,16 +142,13 @@ namespace dolfin
     { return ublas::sum(*this); }
     
     /// Addition (AXPY)
-    void axpy(real a, const uBlasVector& x);
+    void axpy(real a, const GenericVector& x);
 
     /// Scalar multiplication
     void mult(real const a);
 
     /// Inner product 
     real inner(const GenericVector& x) const;
-
-    //  this +=  a*x   
-    virtual void add(const GenericVector& x, real a = 1.0); 
 
     /// Element-wise division
     void div(const uBlasVector& x);

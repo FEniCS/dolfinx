@@ -21,28 +21,83 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
 }
 #endif
 
-%newobject  dolfin::Matrix::__mul__;
 %extend dolfin::Matrix {
-      dolfin::Vector* __mul__(const dolfin::Vector& x) {
-        dolfin::Vector* Ax = new dolfin::Vector((*self).size(0)); 
-      (*self).mult(x, *Ax); 
-      return Ax;  
-    }
+  %pythoncode %{
+    def __mul__(self, other):
+      v = Vector(self.size(0))
+      self.mult(other, v)
+      return v
 
-
+  %}
 }
+
+%extend dolfin::PETScMatrix {
+  %pythoncode %{
+    def __mul__(self, other):
+      v = PETScVector(self.size(0))
+      self.mult(other, v)
+      return v
+
+  %}
+}
+
+%extend dolfin::uBlasMatrix {
+  %pythoncode %{
+    def __mul__(self, other):
+      v = PETScVector(self.size(0))
+      self.mult(other, v)
+      return v
+
+  %}
+}
+
+
+
 
 %extend dolfin::Vector {
-    void __iadd__(dolfin::Vector& v) {
-      (*self).add(v); 
-    }
-    void __isub__(dolfin::Vector& v) {
-      (*self).add(v,-1.0); 
-    }
+  %pythoncode %{
+    def __add__(self, v): 
+      a = self.copy() 
+      a += v
+      return a
 
-    void __imul__(real a) {
-      (*self).mult(a); 
-    }
+    def __sub__(self, v): 
+      a = self.copy() 
+      a -= v
+      return a
+  %}
 }
+
+
+
+%extend dolfin::PETScVector {
+  %pythoncode %{
+    def __add__(self, v): 
+      a = self.copy() 
+      a += v
+      return a
+
+    def __sub__(self, v):
+      a = self.copy() 
+      a -= v
+      return a
+  %}
+}
+
+%extend dolfin::uBlasVector {
+  %pythoncode %{
+    def __add__(self, v):
+      a = self.copy() 
+      a += v
+      return a
+
+    def __sub__(self, v):
+      a = self.copy() 
+      a -= v
+      return a
+  %}
+}
+
+
 
 
