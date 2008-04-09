@@ -77,7 +77,9 @@
             $1 = static_cast<$1_type>(PyArray_DIM(xa,0));
             $2 = static_cast<unsigned int*>(PyArray_DATA(xa));
         } else {
-            SWIG_exception(SWIG_TypeError, "Numpy array of 32 bit unsigned integers (uint32) expected. Make sure that the numpy array use dtype='I'.");
+            std::ostringstream ost("Failure: ");
+            ost << "Numpy array of 32 bit unsigned integers (uint32) expected.  Got '" << xa->descr->type << "' instead.";
+            SWIG_exception(SWIG_TypeError, ost.str().c_str());
         }
     } else {
         SWIG_exception(SWIG_TypeError, "Numpy array expected");
