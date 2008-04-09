@@ -7,14 +7,22 @@ __license__  = "GNU LGPL version 2.1"
 
 from os import system
 from commands import getoutput
-import re
+import re, sys
 
 # Tests to run
 tests = ["unit", "system"]
+
+failed = []
 
 # Run tests
 for test in tests:
     print "Running tests: %s" % test
     print "----------------------------------------------------------------------"
-    system("cd %s; python test.py" % test)
+    fail = system("cd %s; python test.py" % test)
+    if fail:
+        failed.append(fail)
     print ""
+
+sys.exit(len(failed))
+
+    
