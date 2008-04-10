@@ -116,56 +116,47 @@ real uBlasVector::norm(VectorNormType type) const
 {
   switch (type) {
   case l1:
-    return norm_1(*this);
+    return ublas::norm_1(*this);
   case l2:
-    return norm_2(*this);
+    return ublas::norm_2(*this);
   case linf:
-    return norm_inf(*this);
+    return ublas::norm_inf(*this);
   default:
     error("Requested vector norm type for uBlasVector unknown");
   }
-  return norm_inf(*this);
+  return ublas::norm_inf(*this);
 }
+//-----------------------------------------------------------------------------
 void uBlasVector::div(const uBlasVector& y)
 {
-  uBlasVector& x = *this;
-  uint s = size();
-
-  for(uint i = 0; i < s; i++)
-  {
-    x[i] = x[i] / y[i];
-  }
+  (*this) = ublas::element_div((*this), y);
 }
 //-----------------------------------------------------------------------------
 void uBlasVector::axpy(real a, const GenericVector& x_)
 {
   const uBlasVector* x = dynamic_cast<const uBlasVector*>(x_.instance());  
-  if (!x)  error("The vector needs to be of type uBlasVector"); 
-  if (size() != x->size())  error("Vectors must be of same size.");
+  if ( !x )  
+    error("The vector needs to be of type uBlasVector"); 
+  if ( size() != x->size() )  
+    error("Vectors must be of same size.");
 
-  uBlasVector& y = *this;
-  const uBlasVector& xx = *x;
-
-  uint s = size();
-
+  const uint s = size();
   for(uint i = 0; i < s; i++)
-  {
-    y[i] = y[i]  + a*xx[i];
-  }
+    (*this)[i] = (*this)[i]  + a*(*x)[i];
+
 }
 //-----------------------------------------------------------------------------
 void uBlasVector::mult(const real a)
 {
-  uBlasVector& y = *this;
-  
-  y *= a;
+  (*this) *= a;
 }
 //-----------------------------------------------------------------------------
 real uBlasVector::inner(const GenericVector& x_) const
 {
   const uBlasVector* x = dynamic_cast<const uBlasVector*>(x_.instance());  
-  if (!x)  error("The vector needs to be of type uBlasVector"); 
-  return inner_prod(*this,*x); 
+  if (!x)  
+    error("The vector needs to be of type uBlasVector"); 
+  return ublas::inner_prod(*this,*x); 
 }
 //-----------------------------------------------------------------------------
 const uBlasVector& uBlasVector::operator= (real a) 
@@ -192,15 +183,11 @@ const uBlasVector& uBlasVector::operator= (const uBlasVector& x_)
 //-----------------------------------------------------------------------------
 const uBlasVector& uBlasVector::operator*= (const real a) 
 { 
-  uBlasVector& y = *this;
-  uint s = size();
+  const uint s = size();
   for(uint i = 0; i < s; i++)
-  {
-    y[i] = a*y[i]; 
-  }
-  return *this; 
+    (*this)[i] = a*(*this)[i]; 
+  return *this;   
 }
-
 //-----------------------------------------------------------------------------
 const uBlasVector& uBlasVector::operator+= (const GenericVector& x) 
 { 
