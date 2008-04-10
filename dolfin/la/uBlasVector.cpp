@@ -183,30 +183,33 @@ const uBlasVector& uBlasVector::operator= (const GenericVector& x_)
   return *this; 
 }
 //-----------------------------------------------------------------------------
-const uBlasVector& uBlasVector::operator*= (real a) 
+const uBlasVector& uBlasVector::operator= (const uBlasVector& x_) 
 { 
-  (*this).mult(a); 
+  *this = x_*1.0;  
+  return *this; 
+}
+//-----------------------------------------------------------------------------
+const uBlasVector& uBlasVector::operator*= (const real a) 
+{ 
+  uBlasVector& y = *this;
+  uint s = size();
+  for(uint i = 0; i < s; i++)
+  {
+    y[i] = a*y[i]; 
+  }
   return *this; 
 }
 
 //-----------------------------------------------------------------------------
-const uBlasVector& uBlasVector::operator+= (const GenericVector& x_) 
+const uBlasVector& uBlasVector::operator+= (const GenericVector& x) 
 { 
-  const uBlasVector* x = dynamic_cast<const uBlasVector*>(x_.instance());  
-  if (!x) error("The vector should be of type PETScVector");  
-  if (size() != x->size())  error("Vectors must be of same size.");
-  
-  *this += (*x); 
+  this->axpy(1.0, x); 
   return *this; 
 }
 //-----------------------------------------------------------------------------
-const uBlasVector& uBlasVector::operator-= (const GenericVector& x_) 
+const uBlasVector& uBlasVector::operator-= (const GenericVector& x) 
 { 
-  const uBlasVector* x = dynamic_cast<const uBlasVector*>(x_.instance());  
-  if (!x) error("The vector should be of type PETScVector");  
-  if (size() != x->size())  error("Vectors must be of same size.");
-  
-  *this -= (*x); 
+  this->axpy(-1.0, x); 
   return *this; 
 }
 //-----------------------------------------------------------------------------

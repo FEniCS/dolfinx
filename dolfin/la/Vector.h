@@ -102,16 +102,24 @@ namespace dolfin
     /// Add vector x
     inline const Vector& operator+= (const GenericVector& x)
     { 
-      *vector += *(x.instance()); 
+      this->vector->axpy(1.0, x); 
       return *this; 
     }
 
     /// Subtract vector x
     inline const Vector& operator-= (const GenericVector& x)
     { 
-      *vector -= *(x.instance()); 
+      this->vector->axpy(-1.0, x); 
       return *this; 
     }
+
+    /// Add vector x
+    inline const Vector& operator*= (const real a)
+    { 
+      *vector *= a;  
+      return *this; 
+    }
+
 
 
     /// assignment operator
@@ -142,9 +150,9 @@ namespace dolfin
     }
 
     /// this += a*x  
-    inline void axpy(real a, const GenericVector& x_) 
+    inline void axpy(real a, const GenericVector& x) 
     { 
-      return this->vector->axpy(a, x_); 
+      return this->vector->axpy(a, x); 
     }
 
     /// this *= a  

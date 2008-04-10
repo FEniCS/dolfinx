@@ -69,6 +69,10 @@ namespace dolfin
     /// Assignment of vector
     const uBlasVector& operator= (const GenericVector& x);
 
+    /// Assignment of vector
+    const uBlasVector& operator= (const uBlasVector& x);
+
+
     /// Add vector
     const uBlasVector& operator+= (const GenericVector& x);
 
