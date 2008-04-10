@@ -31,6 +31,7 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
   %}
 }
 
+#ifdef HAS_PETSC
 %extend dolfin::PETScMatrix {
   %pythoncode %{
     def __mul__(self, other):
@@ -40,7 +41,7 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
 
   %}
 }
-
+#else
 %extend dolfin::uBlasMatrix {
   %pythoncode %{
     def __mul__(self, other):
@@ -50,6 +51,7 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
 
   %}
 }
+#endif
 
 
 
@@ -70,6 +72,7 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
 
 
 
+#ifdef HAS_PETSC
 %extend dolfin::PETScVector {
   %pythoncode %{
     def __add__(self, v): 
@@ -83,7 +86,7 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
       return a
   %}
 }
-
+#else
 %extend dolfin::uBlasVector {
   %pythoncode %{
     def __add__(self, v):
@@ -97,6 +100,7 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
       return a
   %}
 }
+#endif
 
 
 
