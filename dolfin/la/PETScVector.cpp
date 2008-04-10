@@ -240,7 +240,6 @@ const PETScVector& PETScVector::operator= (const GenericVector& x_)
   *this = *x; 
   return *this; 
 }
-
 //-----------------------------------------------------------------------------
 const PETScVector& PETScVector::operator= (const PETScVector& x)
 {
