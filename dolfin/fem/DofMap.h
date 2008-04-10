@@ -1,8 +1,10 @@
 // Copyright (C) 2007-2008 Anders Logg and Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 
+// Modified by Martin Alnes, 2008
+
 // First added:  2007-03-01
-// Last changed: 2008-04-08
+// Last changed: 2008-04-10
 
 #ifndef __DOF_MAP_H
 #define __DOF_MAP_H
@@ -99,6 +101,9 @@ namespace dolfin
 
     /// Return renumbering (used for testing)
     std::map<uint, uint> getMap() const;
+
+    /// Display mapping
+    void disp() const;
 
   private:
 
