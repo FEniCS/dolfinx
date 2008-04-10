@@ -184,9 +184,9 @@ void DofMap::tabulate_dofs(uint* dofs, ufc::cell& ufc_cell, uint cell_index)
 
   if (dof_map)
   {
-    // FIXME: Maybe memcpy() can be used to speed this up?
     for (uint i = 0; i < local_dimension(); i++)
       dofs[i] = dof_map[cell_index][i];
+    //memcpy(dofs, dof_map[cell_index], sizeof(uint)*local_dimension()); // FIXME: Maybe memcpy() can be used to speed this up? Test this!
   }
   else
     ufc_dof_map->tabulate_dofs(dofs, ufc_mesh, ufc_cell);
@@ -306,7 +306,8 @@ void DofMap::disp() const
           ufc_dof_map->tabulate_entity_dofs(dofs, d, i);
           for(uint j=0; j<num_dofs; j++)
           {
-            cout << dofs[j] << ", ";
+            cout << dofs[j];
+            if(j < num_dofs-1) cout << ", ";
           }
           cout << endl;
         }
@@ -331,7 +332,8 @@ void DofMap::disp() const
       ufc_dof_map->tabulate_facet_dofs(dofs, i);
       for(uint j=0; j<num_dofs; j++)
       {
-        cout << dofs[j] << ", ";
+        cout << dofs[j];
+        if(j < num_dofs-1) cout << ", ";
       }
       cout << endl;
     }
@@ -358,7 +360,8 @@ void DofMap::disp() const
       cout << "Cell " << ufc_cell.entity_indices[tdim][0] << ":  ";
       for(uint j=0; j<num_dofs; j++)
       {
-        cout << dofs[j] << ", ";
+        cout << dofs[j];
+        if(j < num_dofs-1) cout << ", ";
       }
       cout << endl;
     }
@@ -367,16 +370,15 @@ void DofMap::disp() const
   }
   end();
 
-  /* FIXME: Segmentation fault in this code!
   cout << "tabulate_coordinates output" << endl;
-  cout << "--------------------------" << endl;
+  cout << "---------------------------" << endl;
   begin("");
   {
     uint tdim = dolfin_mesh.topology().dim();
     uint gdim = ufc_dof_map->geometric_dimension();
     uint num_dofs = ufc_dof_map->local_dimension();
     double** coordinates = new double*[num_dofs];
-    for(uint k=0; k<gdim; k++)
+    for(uint k=0; k<num_dofs; k++)
     {
       coordinates[k] = new double[gdim];
     }
@@ -394,9 +396,11 @@ void DofMap::disp() const
         cout << "(";
         for(uint k=0; k<gdim; k++)
         {
-          cout << coordinates[j][k] << ", ";
+          cout << coordinates[j][k];
+          if(k < gdim-1) cout << ", ";
         }
-        cout << ");  ";
+        cout << ")";
+        if(j < num_dofs-1) cout << ",  ";
       }
       cout << endl;
     }
@@ -408,7 +412,6 @@ void DofMap::disp() const
     cout << endl;
   }
   end();
-  */
 
   // TODO: Display information on renumbering?
   // TODO: Display information on parallel stuff?
