@@ -5,7 +5,7 @@
 // Modified by Ola Skavhaug, 2007
 //
 // First added:  2007-01-17
-// Last changed: 2008-04-08
+// Last changed: 2008-04-10
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Array.h>
@@ -164,11 +164,7 @@ void Assembler::assembleCells(GenericTensor& A,
   ufc::cell_integral* integral = ufc.cell_integrals[0];
 
   // Assemble over cells
-  Progress p("Assembling over cells", mesh.numCells());
-
-  //real t = toc();
-  //printf("Assembler: start\n");
-
+  Progress p(progressMessage(A.rank(), "cells"), mesh.numCells());
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     // Get integral for sub domain (if any)
@@ -224,7 +220,7 @@ void Assembler::assembleExteriorFacets(GenericTensor& A,
   BoundaryMesh boundary(mesh, vertex_map, cell_map);
   
   // Assemble over exterior facets (the cells of the boundary)
-  Progress p("Assembling over exterior facets", boundary.numCells());
+  Progress p(progressMessage(A.rank(), "exterior facets"), boundary.numCells());
   for (CellIterator boundary_cell(boundary); !boundary_cell.end(); ++boundary_cell)
   {
     // Get mesh facet corresponding to boundary cell
@@ -287,7 +283,7 @@ void Assembler::assembleInteriorFacets(GenericTensor& A,
   mesh.order();
   
   // Assemble over interior facets (the facets of the mesh)
-  Progress p("Assembling over interior facets", mesh.numFacets());
+  Progress p(progressMessage(A.rank(), "interior facets"), mesh.numFacets());
   for (FacetIterator facet(mesh); !facet.end(); ++facet)
   {
     // Check if we have an interior facet
@@ -380,5 +376,31 @@ void Assembler::initGlobalTensor(GenericTensor& A, const DofMapSet& dof_map_set,
   }
   else
     A.zero();
+}
+//-----------------------------------------------------------------------------
+std::string Assembler::progressMessage(uint rank, std::string integral_type) const
+{
+  std::stringstream s;
+  s << "Assembling ";
+  
+  switch (rank)
+  {
+  case 0:
+    s << "scalar value over ";
+    break;
+  case 1:
+    s << "vector over ";
+    break;
+  case 2:
+    s << "matrix over ";
+    break;
+  default:
+    s << "rank " << rank << " tensor over ";
+    break;
+  }
+ 
+  s << integral_type;
+
+  return s.str();
 }
 //-----------------------------------------------------------------------------

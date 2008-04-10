@@ -1,10 +1,10 @@
-// Copyright (C) 2007 Anders Logg.
+// Copyright (C) 2007-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells, 2007
 //
 // First added:  2007-01-17
-// Last changed: 2007-12-12
+// Last changed: 2008-04-08
 
 #ifndef __ASSEMBLER_H
 #define __ASSEMBLER_H
@@ -109,6 +109,9 @@ namespace dolfin
 
     // Initialize global tensor
     void initGlobalTensor(GenericTensor& A, const DofMapSet& dof_map_set, UFC& ufc, bool reset_tensor) const;
+
+    // Pretty-printing for progress bar
+    std::string progressMessage(uint rank, std::string integral_type) const;
 
     // The mesh
     Mesh& mesh;
