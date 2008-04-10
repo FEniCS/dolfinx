@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2007 Garth N. Wells
+// Copyright (C) 2006-2008 Garth N. Wells
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Anders Logg 2006-2008.
@@ -6,7 +6,7 @@
 // Modified by Ola Skavhaug 2008.
 //
 // First added:  2006-03-04
-// Last changed: 2008-04-08
+// Last changed: 2008-04-10
 
 #ifndef __UBLAS_VECTOR_H
 #define __UBLAS_VECTOR_H
@@ -99,15 +99,15 @@ namespace dolfin
     
     /// Return size
     inline uint size() const
-      { return ublas::vector<real>::size(); }
+      { return this->ublas_vector::size(); }
 
     /// Access given entry
     inline real& operator() (uint i)
-      { return ublas::vector<real>::operator() (i); };
+      { return this->ublas_vector::operator() (i); };
 
     /// Access value of given entry
     inline real operator() (uint i) const
-      { return ublas::vector<real>::operator() (i); };
+      { return this->ublas_vector::operator() (i); };
 
     /// Get values
     void get(real* values) const;

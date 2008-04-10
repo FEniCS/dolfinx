@@ -1,11 +1,11 @@
-// Copyright (C) 2006-2007 Garth N. Wells.
+// Copyright (C) 2006-2008 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Anders Logg 2006-2008.
 // Modified by Kent-Andre Mardal 2008.
 //
 // First added:  2006-04-04
-// Last changed: 2008-03-19
+// Last changed: 2008-04-10
 
 #include <sstream>
 #include <iomanip>
@@ -35,8 +35,8 @@ uBlasVector::uBlasVector(uint N)
     Variable("x", "a dense vector"),
     ublas_vector(N)
 {
-  // Clear matrix (not done by ublas)
-  clear();
+  // Clear matrix
+  ublas_vector::clear();
 }
 //-----------------------------------------------------------------------------
 uBlasVector::~uBlasVector()
@@ -48,12 +48,12 @@ void uBlasVector::init(uint N)
 {
   if( this->size() == N)
   {
-    clear();
+    ublas_vector::clear();
     return;
   }
-  
-  this->resize(N, false);
-  clear();
+ 
+  this->ublas_vector::resize(N, false);
+  ublas_vector::clear();
 }
 //-----------------------------------------------------------------------------
 uBlasVector* uBlasVector::create() const
@@ -109,7 +109,7 @@ void uBlasVector::apply()
 //-----------------------------------------------------------------------------
 void uBlasVector::zero()
 {
-  clear();
+  ublas_vector::clear();
 }
 //-----------------------------------------------------------------------------
 real uBlasVector::norm(VectorNormType type) const
@@ -161,7 +161,7 @@ real uBlasVector::inner(const GenericVector& x_) const
 //-----------------------------------------------------------------------------
 const uBlasVector& uBlasVector::operator= (real a) 
 { 
-  this->assign(ublas::scalar_vector<double> (this->size(), a));
+  this->ublas_vector::assign(ublas::scalar_vector<double> (this->size(), a));
   return *this;
 }
 //-----------------------------------------------------------------------------
@@ -186,7 +186,7 @@ const uBlasVector& uBlasVector::operator*= (const real a)
   const uint s = size();
   for(uint i = 0; i < s; i++)
     (*this)[i] = a*(*this)[i]; 
-  return *this;   
+  return *this;     
 }
 //-----------------------------------------------------------------------------
 const uBlasVector& uBlasVector::operator+= (const GenericVector& x) 
@@ -251,8 +251,6 @@ void uBlasVector::copy(const PETScVector& y, uint off1, uint off2, uint len)
 //-----------------------------------------------------------------------------
 void uBlasVector::copy(const uBlasVector& y, uint off1, uint off2, uint len)
 {
-  uBlasVector& x = *this;
-
-  subrange(x, off1, off1 + len) = subrange(y, off2, off2 + len);
+  ublas::subrange(*this, off1, off1 + len) = ublas::subrange(y, off2, off2 + len);
 }
 //-----------------------------------------------------------------------------
