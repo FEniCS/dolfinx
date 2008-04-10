@@ -36,8 +36,8 @@ namespace dolfin
   /// http://www.boost.org/libs/numeric/ublas/doc/index.htm.
 
   class uBlasVector : public GenericVector,
-		      public Variable,
-		      public ublas_vector
+                      public Variable,
+                      public ublas_vector
   {
   public:
 
@@ -96,9 +96,9 @@ namespace dolfin
 
     /// Assignment from a vector_expression
     template <class E>
-    uBlasVector& operator=(const ublas::vector_expression<E>& A)
+    uBlasVector& operator=(const ublas::vector_expression<E>& x)
     { 
-      ublas_vector::operator=(A); 
+      ublas_vector::operator=(x); 
       return *this;
     } 
     

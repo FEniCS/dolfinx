@@ -177,15 +177,16 @@ const uBlasVector& uBlasVector::operator= (real a)
 const uBlasVector& uBlasVector::operator= (const GenericVector& x_) 
 { 
   const uBlasVector* x = dynamic_cast<const uBlasVector*>(x_.instance());  
-  if (!x) error("The vector should be of type PETScVector");  
+  if (!x) 
+    error("The vector should be of type PETScVector");  
   
-  *this = (*x)*1.0; 
+  *this = ublas_vector::operator=(*x);
   return *this; 
 }
 //-----------------------------------------------------------------------------
 const uBlasVector& uBlasVector::operator= (const uBlasVector& x_) 
 { 
-  *this = x_*1.0;  
+  *this = ublas_vector::operator=(x_);
   return *this; 
 }
 //-----------------------------------------------------------------------------
