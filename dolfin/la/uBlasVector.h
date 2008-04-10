@@ -72,7 +72,6 @@ namespace dolfin
     /// Assignment of vector
     const uBlasVector& operator= (const uBlasVector& x);
 
-
     /// Add vector
     const uBlasVector& operator+= (const GenericVector& x);
 
@@ -82,37 +81,33 @@ namespace dolfin
     /// Multiply vector with scalar 
     const uBlasVector& operator *= (real a);
 
-
-
     /// Return concrete (const) uBlasVector instance
-    virtual const uBlasVector* instance() const {
-      return this;
-    }
+    virtual const uBlasVector* instance() const 
+      { return this; }
 
     /// Return concrete uBlasVector instance
-    virtual uBlasVector* instance() {
-      return this;
-    }
+    virtual uBlasVector* instance() 
+      { return this; }
 
     /// Assignment from a vector_expression
     template <class E>
     uBlasVector& operator=(const ublas::vector_expression<E>& x)
     { 
-      ublas_vector::operator=(x); 
+      this->ublas_vector::operator=(x); 
       return *this;
     } 
     
     /// Return size
     inline uint size() const
-    { return ublas::vector<real>::size(); }
+      { return ublas::vector<real>::size(); }
 
     /// Access given entry
     inline real& operator() (uint i)
-    { return ublas::vector<real>::operator() (i); };
+      { return ublas::vector<real>::operator() (i); };
 
     /// Access value of given entry
     inline real operator() (uint i) const
-    { return ublas::vector<real>::operator() (i); };
+      { return ublas::vector<real>::operator() (i); };
 
     /// Get values
     void get(real* values) const;
