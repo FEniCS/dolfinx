@@ -14,14 +14,14 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 TimeSlabSolver::TimeSlabSolver(TimeSlab& timeslab)
   : ode(timeslab.ode), method(*timeslab.method), tol(0.0), maxiter(0),
-    monitor(dolfin_get("ODE monitor convergence")),
+    monitor(ode.get("ODE monitor convergence")),
     num_timeslabs(0), num_global_iterations(0), num_local_iterations(0)
 {
   // Choose tolerance
   chooseTolerance();
 
   // Get maximum number of iterations
-  maxiter = dolfin_get("ODE maximum iterations");
+  maxiter = ode.get("ODE maximum iterations");
 }
 //-----------------------------------------------------------------------------
 TimeSlabSolver::~TimeSlabSolver()
@@ -115,11 +115,11 @@ void TimeSlabSolver::end()
 //-----------------------------------------------------------------------------
 void TimeSlabSolver::chooseTolerance()
 {
-  const real TOL   = dolfin_get("ODE tolerance");
-  const real alpha = dolfin_get("ODE discrete tolerance factor");
+  const real TOL   = ode.get("ODE tolerance");
+  const real alpha = ode.get("ODE discrete tolerance factor");
 
-  tol = dolfin_get("ODE discrete tolerance");
-  if ( !dolfin_get("ODE fixed time step") )
+  tol = ode.get("ODE discrete tolerance");
+  if ( !ode.get("ODE fixed time step") )
     tol = std::min(tol, alpha*TOL);
   cout << "Using discrete tolerance tol = " << tol << "." << endl;
 }

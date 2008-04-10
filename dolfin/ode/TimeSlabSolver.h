@@ -7,9 +7,10 @@
 #ifndef __TIME_SLAB_SOLVER_H
 #define __TIME_SLAB_SOLVER_H
 
+#include "ODE.h"
+
 namespace dolfin
 {
-  class ODE;
   class Method;
   class TimeSlab;
   
