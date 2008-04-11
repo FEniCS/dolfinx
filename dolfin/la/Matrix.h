@@ -37,22 +37,23 @@ namespace dolfin
 			     matrix(new DefaultMatrix(M, N)) {}
     
     /// Destructor
-    ~Matrix() { delete matrix; }
+    ~Matrix() 
+     { delete matrix; }
     
     /// Initialize M x N matrix
-    inline void init(uint M, uint N) 
+    void init(uint M, uint N) 
     { matrix->init(M, N); }
     
     /// Initialize zero matrix using sparsity pattern
-    inline void init(const GenericSparsityPattern& sparsity_pattern)
+    void init(const GenericSparsityPattern& sparsity_pattern)
     { matrix->init(sparsity_pattern); }
     
     /// Create uninitialized matrix
-    inline Matrix* create() const
+    Matrix* create() const
     { return new Matrix(); }
 
     /// Create copy of matrix
-    inline Matrix* copy() const
+    Matrix* copy() const
     {
       Matrix* Mcopy = create();
       Mcopy->matrix = matrix->copy();
@@ -63,35 +64,35 @@ namespace dolfin
     }
 
     /// Return size of given dimension
-    inline uint size(uint dim) const
+    uint size(uint dim) const
     { return matrix->size(dim); }
 
     /// Get block of values
-    inline void get(real* block, uint m, const uint* rows, uint n, const uint* cols) const
+    void get(real* block, uint m, const uint* rows, uint n, const uint* cols) const
     { matrix->get(block, m, rows, n, cols); }
     
     /// Set block of values
-    inline void set(const real* block, uint m, const uint* rows, uint n, const uint* cols)
+    void set(const real* block, uint m, const uint* rows, uint n, const uint* cols)
     { matrix->set(block, m, rows, n, cols); }
     
     /// Add block of values
-    inline void add(const real* block, uint m, const uint* rows, uint n, const uint* cols)
+    void add(const real* block, uint m, const uint* rows, uint n, const uint* cols)
     { matrix->add(block, m, rows, n, cols); }
 
     /// Set all entries to zero and keep any sparse structure (implemented by sub class)
-    inline void zero()
+    void zero()
     { matrix->zero(); }
 
     /// Set given rows to zero matrix
-    inline void zero(uint m, const uint* rows)
+    void zero(uint m, const uint* rows)
     { matrix->zero(m, rows); }
     
     /// Set given rows to identity matrix
-    inline void ident(uint m, const uint* rows)
+    void ident(uint m, const uint* rows)
     { matrix->ident(m, rows); }
         
     /// Finalise assembly of matrix
-    inline void apply()
+    void apply()
     { matrix->apply(); }
     
     /// Display matrix (sparse output is default)
@@ -102,30 +103,24 @@ namespace dolfin
     /// FIXME: Should these be removed or added to the interface?
 
     /// Get non-zero values of row i
-    inline void getRow(uint i, int& ncols, Array<int>& columns, Array<real>& values) const
+    void getRow(uint i, int& ncols, Array<int>& columns, Array<real>& values) const
     { matrix->getRow(i, ncols, columns, values); }
 
     /// Return concrete (const) GenericMatrix instance
-    virtual const DefaultMatrix* instance() const { 
-      return matrix; 
-    }
+    virtual const DefaultMatrix* instance() const 
+    { return matrix; }
 
     /// Return concrete implementation GenericMatrix instance
-    virtual DefaultMatrix* instance() { 
-      return matrix; 
-    }
+    virtual DefaultMatrix* instance() 
+    { return matrix; }
     
-    inline LinearAlgebraFactory& factory() const
+    LinearAlgebraFactory& factory() const
     { return matrix->factory(); }
 
     // y = A x  ( or y = A^T x if transposed==true) 
-    inline void mult(const GenericVector& x, GenericVector& y, bool transposed=false) const 
-    {  
-      matrix->mult(x, y, transposed); 
-    }
+    void mult(const GenericVector& x, GenericVector& y, bool transposed=false) const 
+    { matrix->mult(x, y, transposed); }
 
-
-    
   private:
 
     // FIXME: Why should this be static? Why not just GenericMatrix*? (envelope-letter)

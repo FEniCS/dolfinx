@@ -85,11 +85,14 @@ namespace dolfin
 
     /// Create copy of matrix
     PETScMatrix* copy() const;
+
     /// Return concrete (const) PETScMatrix instance
-    virtual const PETScMatrix* instance() const { return this; }
+    virtual const PETScMatrix* instance() const 
+    { return this; }
 
     /// Return concrete PETScMatrix instance
-    virtual PETScMatrix* instance() { return this; }
+    virtual PETScMatrix* instance() 
+    { return this; }
 
     /// Return number of rows (dim = 0) or columns (dim = 1) along dimension dim
     uint size(uint dim) const;

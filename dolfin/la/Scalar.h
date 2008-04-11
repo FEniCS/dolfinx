@@ -36,58 +36,63 @@ namespace dolfin
     ///--- Implementation of GenericTensor interface ---
 
     /// Initialize zero tensor of given rank and dimensions
-    inline void init(uint rank, const uint* dims)
+    void init(uint rank, const uint* dims)
     { value = 0.0; }
 
     /// Initialize zero tensor using sparsity pattern
-    inline void init(const GenericSparsityPattern& sparsity_pattern)
+    void init(const GenericSparsityPattern& sparsity_pattern)
     { value = 0.0; }
 
     /// Return rank of tensor (number of dimensions)
-    inline uint rank() const { return 0; }
+    uint rank() const 
+    { return 0; }
 
     /// Return size of given dimension
-    inline uint size(uint dim) const
+    uint size(uint dim) const
     { return 1; }
 
     /// Get block of values
-    inline void get(real* block, const uint* num_rows, const uint * const * rows) const
+    void get(real* block, const uint* num_rows, const uint * const * rows) const
     { block[0] = value; }
 
     /// Set block of values
-    inline void set(const real* block, const uint* num_rows, const uint * const * rows)
+    void set(const real* block, const uint* num_rows, const uint * const * rows)
     { value = block[0]; }
     
     /// Add block of values
-    inline void add(const real* block, const uint* num_rows, const uint * const * rows)
+    void add(const real* block, const uint* num_rows, const uint * const * rows)
     { value += block[0]; }
 
     /// Set all entries to zero and keep any sparse structure (implemented by sub class)
-    inline void zero()
+    void zero()
     { value = 0.0; }
 
     /// Finalise assembly of tensor
-    inline void apply() {}
+    void apply() {}
 
     /// Display tensor
-    inline void disp(uint precision = 2) const
+    void disp(uint precision = 2) const
     { cout << "Scalar value: " << value << endl; }
 
     ///--- Scalar interface ---
     
     /// Cast to real
-    inline operator real()
+    operator real()
     { return value; }
 
     /// Assignment from real
-    inline const Scalar& operator=(real value)
-    { this->value = value; return *this; }
+    const Scalar& operator=(real value)
+    { this->value = value; 
+      return *this; 
+    }
 
     /// Get value (needed for SWIG interface)
-    inline real getval() const { return value; }
+    real getval() const 
+    { return value; }
 
     /// Return a factory for the default linear algebra backend
-    inline LinearAlgebraFactory& factory() const { return dolfin::uBlasFactory::instance(); }
+    inline LinearAlgebraFactory& factory() const 
+    { return dolfin::uBlasFactory::instance(); }
 
   private:
     

@@ -41,21 +41,22 @@ namespace dolfin
     virtual void init(const GenericSparsityPattern& sparsity_pattern) = 0;
 
     /// Return rank of tensor (number of dimensions)
-    inline uint rank() const { return 2; }
+    uint rank() const 
+    { return 2; }
 
     /// Return size of given dimension (implemented by sub class)
     virtual uint size(uint dim) const = 0;
 
     /// Get block of values
-    inline void get(real* block, const uint* num_rows, const uint * const * rows) const
+    void get(real* block, const uint* num_rows, const uint * const * rows) const
     { get(block, num_rows[0], rows[0], num_rows[1], rows[1]); }
 
     /// Set block of values
-    inline void set(const real* block, const uint* num_rows, const uint * const * rows)
+    void set(const real* block, const uint* num_rows, const uint * const * rows)
     { set(block, num_rows[0], rows[0], num_rows[1], rows[1]); }
 
     /// Add block of values
-    inline void add(const real* block, const uint* num_rows, const uint * const * rows)
+    void add(const real* block, const uint* num_rows, const uint * const * rows)
     { add(block, num_rows[0], rows[0], num_rows[1], rows[1]); }
 
     /// Set all entries to zero and keep any sparse structure (implemented by sub class)

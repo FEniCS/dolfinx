@@ -33,15 +33,11 @@ namespace dolfin
 
     /// Constructor
     AssemblyMatrix() : GenericTensor(), dims(0)
-    {
-      dims = new uint[2];
-    }
+    { dims = new uint[2]; }
 
     /// Destructor
     ~AssemblyMatrix()
-    {
-      delete [] dims;
-    }
+    { delete [] dims; }
 
     ///--- Functions overloaded from GenericTensor ---
 
@@ -62,27 +58,19 @@ namespace dolfin
     
     /// Return size of given dimension
     virtual uint size(uint dim) const
-    {
-      return dims[dim];
-    }
+    { return dims[dim]; }
 
     /// Get block of values
     void get(real* block, const uint* num_rows, const uint * const * rows) const
-    {
-      get(block, num_rows[0], rows[0], num_rows[1], rows[1]);
-    }
+    { get(block, num_rows[0], rows[0], num_rows[1], rows[1]); }
 
     /// Set block of values
     void set(const real* block, const uint* num_rows, const uint * const * rows)
-    {
-      set(block, num_rows[0], rows[0], num_rows[1], rows[1]);
-    }
+    { set(block, num_rows[0], rows[0], num_rows[1], rows[1]); }
 
     /// Add block of values
     void add(const real* block, const uint* num_rows, const uint * const * rows)
-    {
-      add(block, num_rows[0], rows[0], num_rows[1], rows[1]);
-    }
+    { add(block, num_rows[0], rows[0], num_rows[1], rows[1]); }
 
     ///--- Specialized matrix functions ---
 
@@ -99,9 +87,7 @@ namespace dolfin
     }
 
     void init(const SparsityPattern& sparsity_pattern, bool reset = true)
-    {
-      init(sparsity_pattern.size(0), sparsity_pattern.size(1));
-    }
+    { init(sparsity_pattern.size(0), sparsity_pattern.size(1)); }
 
     /// Add entries to matrix
     void add(const real* block, uint m, const uint* rows, uint n, const uint* cols)
@@ -124,14 +110,10 @@ namespace dolfin
 
     
     void get(real* block, uint m, const uint* rows, uint n, const uint* cols) const
-    {
-      error("Not implemented");
-    }
+    { error("Not implemented"); }
 
     void set(const real* block, uint m, const uint* rows, uint n, const uint* cols)
-    {
-      error("Not implemented");
-    }
+    { error("Not implemented"); }
 
     /// Finalise assembly
     void apply() {}

@@ -120,17 +120,13 @@ namespace dolfin
     /// Assignment of vector
     const PETScVector& operator= (const PETScVector& x);
 
-
-
     /// Return concrete (const) PETScVector instance
-    virtual const PETScVector* instance() const {
-      return this;
-    }
+    virtual const PETScVector* instance() const 
+    { return this; }
 
     /// Return concrete PETScVector instance
-    virtual PETScVector* instance() {
-      return this;
-    }
+    virtual PETScVector* instance() 
+    { return this; }
 
     /// Assignment of all elements to a single scalar value
     const PETScVector& operator= (const real a);
