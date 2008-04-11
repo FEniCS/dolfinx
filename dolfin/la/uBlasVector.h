@@ -4,9 +4,10 @@
 // Modified by Anders Logg 2006-2008.
 // Modified by Kent-Andre Mardal 2008.
 // Modified by Ola Skavhaug 2008.
+// Modified by Martin Alnæs 2008.
 //
 // First added:  2006-03-04
-// Last changed: 2008-04-10
+// Last changed: 2008-04-11
 
 #ifndef __UBLAS_VECTOR_H
 #define __UBLAS_VECTOR_H
@@ -184,6 +185,39 @@ namespace dolfin
 
   LogStream& operator<< (LogStream& stream, const uBlasVector& x);
   
+
+  inline bool is_uBlasVector(const GenericVector & gv)
+  {
+    const uBlasVector * v = dynamic_cast<const uBlasVector*>(gv.instance());
+    return bool(v);
+  }
+  
+  inline uBlasVector & as_uBlasVector(GenericVector & gv)
+  {
+    uBlasVector * v = dynamic_cast<uBlasVector*>(gv.instance());
+    if(!v) error("Cannot convert GenericVector to uBlasVector.");
+    return *v;
+  }
+
+  inline const uBlasVector & as_const_uBlasVector(const GenericVector & gv)
+  {
+    const uBlasVector * v = dynamic_cast<const uBlasVector*>(gv.instance());
+    if(!v) error("Cannot convert GenericVector to uBlasVector.");
+    return *v;
+  }
+  
+  inline ublas_vector & as_ublas_vector(GenericVector & gv)
+  {
+    uBlasVector & v = as_uBlasVector(gv);
+    return v.vec();
+  }
+  
+  inline const ublas_vector & as_const_ublas_vector(const GenericVector & gv)
+  {
+    const uBlasVector & v = as_const_uBlasVector(gv);
+    return v.vec();
+  }
+
 }
 
 #endif
