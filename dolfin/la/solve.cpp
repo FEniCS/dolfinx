@@ -1,29 +1,33 @@
 // Copyright (C) 2007-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Ola Skavhaug 2008.
+//
 // First added:  2007-04-30
-// Last changed: 2008-01-10
+// Last changed: 2008-04-11
 
 #include "LUSolver.h"
-#include "Matrix.h"
-#include "Vector.h"
+#include "GenericMatrix.h"
+#include "GenericVector.h"
 #include "solve.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void dolfin::solve(const Matrix& A, Vector& x, const Vector& b)
+void dolfin::solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b)
 {
   LUSolver solver;
   solver.solve(A, x, b);
 }
 //-----------------------------------------------------------------------------  
-real dolfin::residual(const Matrix& A, const Vector& x, const Vector& b)
+real dolfin::residual(const GenericMatrix& A, const GenericVector& x, const GenericVector& b)
 {
-  Vector y;
-  A.instance()->mult(*(x.instance()), *(y.instance()));
-  *(y.instance()) -= *(b.instance());
-  return y.instance()->norm();
+  DefaultVector* y = dynamic_cast<DefaultVector*>(A.factory().createVector());
+  A.mult(x, *y);
+  *y -= b;
+  const real norm = y->norm();
+  delete y;
+  return norm;
 }
 //-----------------------------------------------------------------------------  
 /*
