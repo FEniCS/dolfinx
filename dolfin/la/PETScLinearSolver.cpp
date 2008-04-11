@@ -13,7 +13,7 @@
 
 namespace dolfin
 {
-  int PETScLinearSolver:: solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b)
+  unsigned int PETScLinearSolver:: solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b)
   {
     const PETScMatrix* AA = dynamic_cast<const PETScMatrix*>(A.instance());
     if (!AA) error("Could not convert first arguement to a PETScMatrix");
