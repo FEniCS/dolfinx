@@ -58,6 +58,7 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
 
 %extend dolfin::Vector {
   %pythoncode %{
+
     def __add__(self, v): 
       a = self.copy() 
       a += v
@@ -67,6 +68,14 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
       a = self.copy() 
       a -= v
       return a
+
+    def __mul__(self, v): 
+      a = self.copy() 
+      a *= v
+      return a
+
+    def __rmul__(self, v):
+      return self.__mul__(v)
   %}
 }
 
@@ -75,6 +84,7 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
 #ifdef HAS_PETSC
 %extend dolfin::PETScVector {
   %pythoncode %{
+
     def __add__(self, v): 
       a = self.copy() 
       a += v
@@ -84,11 +94,20 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
       a = self.copy() 
       a -= v
       return a
+
+    def __mul__(self, v): 
+      a = self.copy() 
+      a *= v
+      return a
+
+    def __rmul__(self, v):
+      return self.__mul__(v)
   %}
 }
 #else
 %extend dolfin::uBlasVector {
   %pythoncode %{
+
     def __add__(self, v):
       a = self.copy() 
       a += v
@@ -98,6 +117,14 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
       a = self.copy() 
       a -= v
       return a
+
+    def __mul__(self, v): 
+      a = self.copy() 
+      a *= v
+      return a
+
+    def __rmul__(self, v):
+      return self.__mul__(v)
   %}
 }
 #endif
