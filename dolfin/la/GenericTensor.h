@@ -11,6 +11,7 @@
 #define __GENERIC_TENSOR_H
 
 #include <dolfin/main/constants.h>
+#include <dolfin/log/log.h>
 
 namespace dolfin
 {
@@ -59,6 +60,24 @@ namespace dolfin
 
     /// Get LA backend factory
     virtual LinearAlgebraFactory& factory() const = 0; 
+
+    /// Cast a GenericTensor to its derived class (const version)
+    template<class T> const T* down_cast() const
+    {
+      const T* t = dynamic_cast<const T*>(this);
+      if ( !t )  
+        error("GenericTensor cannot be cast to the requested type."); 
+      return t;
+    }
+
+    /// Cast a GenericTensor to its derived class (non-const version)
+    template<class T> T* down_cast()
+    {
+      T* t = dynamic_cast<T*>(this);
+      if ( !t )  
+        error("GenericTensor cannot be cast to the requested type."); 
+      return t;
+    }
 
   };
 
