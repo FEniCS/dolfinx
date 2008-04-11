@@ -4,9 +4,10 @@
 // Modified by Garth N. Wells 2005-2007.
 // Modified by Kent-Andre Mardal 2008.
 // Modified by Ola Skavhaug 2008.
+// Modified by Martin Alnæs 2008.
 //
 // First added:  2004
-// Last changed: 2008-04-08
+// Last changed: 2008-04-11
 
 #ifndef __PETSC_VECTOR_H
 #define __PETSC_VECTOR_H
@@ -192,6 +193,39 @@ namespace dolfin
   };
 
   LogStream& operator<< (LogStream& stream, const PETScVector& A);
+  
+
+  inline bool is_PETScVector(const GenericVector & gv)
+  {
+    const PETScVector * v = dynamic_cast<const PETScVector*>(gv.instance());
+    return bool(v);
+  }
+
+  inline PETScVector & as_PETScVector(GenericVector & gv)
+  {
+    PETScVector * uv = dynamic_cast<PETScVector*>(gv.instance());
+    if(!uv) error("Cannot convert GenericVector to PETScVector.");
+    return *uv;
+  }
+
+  inline const PETScVector & as_const_PETScVector(const GenericVector & gv)
+  {
+    const PETScVector * uv = dynamic_cast<const PETScVector*>(gv.instance());
+    if(!uv) error("Cannot convert GenericVector to PETScVector.");
+    return *uv;
+  }
+  
+  inline PETSc_Vec & as_PETSc_Vec(GenericVector & gv)
+  {
+    PETScVector & uv = as_PETScVector(gv);
+    return uv.vec();
+  }
+  
+  inline const PETSc_Vec & as_const_PETSc_Vec(const GenericVector & gv)
+  {
+    const PETScVector & uv = as_PETScVector(gv);
+    return uv.vec();
+  }
 
 }
 
