@@ -14,6 +14,7 @@
 #include <boost/numeric/ublas/vector.hpp>
 #include "uBlasVector.h"
 #include "uBlasFactory.h"
+#include "LinearAlgebraFactory.h"
 
 #ifdef HAS_PETSC
 #include "PETScVector.h"
@@ -239,16 +240,6 @@ LogStream& dolfin::operator<< (LogStream& stream, const uBlasVector& x)
 LinearAlgebraFactory& uBlasVector::factory() const
 {
   return uBlasFactory::instance();
-}
-//-----------------------------------------------------------------------------
-const ublas_vector& uBlasVector::vec() const
-{
-  return x;
-}
-//-----------------------------------------------------------------------------
-ublas_vector& uBlasVector::vec()
-{
-  return x;
 }
 //-----------------------------------------------------------------------------
 #ifdef HAS_PETSC

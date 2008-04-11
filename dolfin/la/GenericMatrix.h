@@ -95,14 +95,16 @@ namespace dolfin
     virtual void zero(uint m, const uint* rows) = 0;
 
     /// Set given matrix entry to value
-    virtual void setitem(std::pair<uint, uint> idx, real value) {
+    virtual void setitem(std::pair<uint, uint> idx, real value) 
+    {
       const uint i = idx.first;
       const uint j = idx.second;
       set(&value, 1, &i, 1, &j);  
     }
 
     /// Get given matrix entry 
-    virtual real getitem(std::pair<uint, uint> idx) {
+    virtual real getitem(std::pair<uint, uint> idx) 
+    {
       const uint i = idx.first;
       const uint j = idx.second;
       real value;
@@ -111,14 +113,12 @@ namespace dolfin
     }
 
     /// Return concrete (const) GenericMatrix instance
-    virtual const GenericMatrix* instance() const { 
-      return this; 
-    }
+    virtual const GenericMatrix* instance() const 
+    { return this; }
 
     /// Return concrete GenericMatrix instance
-    virtual GenericMatrix* instance() { 
-      return this; 
-    }
+    virtual GenericMatrix* instance() 
+    { return this; }
 
     // y = A x  ( or y = A^T x if transposed==true) 
     virtual void mult(const GenericVector& x, GenericVector& y, bool transposed=false) const = 0; 
