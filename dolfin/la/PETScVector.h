@@ -4,9 +4,10 @@
 // Modified by Garth N. Wells 2005-2007.
 // Modified by Kent-Andre Mardal 2008.
 // Modified by Ola Skavhaug 2008.
+// Modified by Martin Alnæs 2008.
 //
 // First added:  2004
-// Last changed: 2008-04-08
+// Last changed: 2008-04-11
 
 #ifndef __PETSC_VECTOR_H
 #define __PETSC_VECTOR_H
@@ -120,12 +121,12 @@ namespace dolfin
     /// Assignment of vector
     const PETScVector& operator= (const PETScVector& x);
 
-    /// Return concrete (const) PETScVector instance
-    virtual const PETScVector* instance() const 
+    /// Return const GenericVector* (internal library use only!)
+    virtual const GenericVector* instance() const 
     { return this; }
 
-    /// Return concrete PETScVector instance
-    virtual PETScVector* instance() 
+    /// Return GenericVector* (internal library use only!)
+    virtual GenericVector* instance() 
     { return this; }
 
     /// Assignment of all elements to a single scalar value
@@ -188,6 +189,19 @@ namespace dolfin
   };
 
   LogStream& operator<< (LogStream& stream, const PETScVector& A);
+  
+
+  /// Check if vector implementation is PETScVector.
+  bool is_PETScVector(const GenericVector & gv);
+
+  /// Cast vector reference to PETScVector if possible.
+  PETScVector & as_PETScVector(GenericVector & gv);
+
+  /// Cast vector reference to const PETScVector if possible.
+  const PETScVector & as_const_PETScVector(const GenericVector & gv);
+  
+  /// Cast vector reference to Vec if possible.
+  Vec as_PETSc_Vec(GenericVector & gv);
 
 }
 

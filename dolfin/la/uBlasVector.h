@@ -4,9 +4,10 @@
 // Modified by Anders Logg 2006-2008.
 // Modified by Kent-Andre Mardal 2008.
 // Modified by Ola Skavhaug 2008.
+// Modified by Martin Alnæs 2008.
 //
 // First added:  2006-03-04
-// Last changed: 2008-04-10
+// Last changed: 2008-04-11
 
 #ifndef __UBLAS_VECTOR_H
 #define __UBLAS_VECTOR_H
@@ -85,12 +86,12 @@ namespace dolfin
     /// Divide vector with scalar 
     const uBlasVector& operator /= (real a);
 
-    /// Return concrete (const) uBlasVector instance
-    virtual const uBlasVector* instance() const 
+    /// Return const GenericVector* (internal library use only!)
+    virtual const GenericVector* instance() const 
     { return this; }
 
-    /// Return concrete uBlasVector instance
-    virtual uBlasVector* instance() 
+    /// Return GenericVector* (internal library use only!)
+    virtual GenericVector* instance() 
     { return this; }
 
     /// Assignment from a vector_expression
@@ -187,7 +188,23 @@ namespace dolfin
   };
 
   LogStream& operator<< (LogStream& stream, const uBlasVector& x);
-  
+ 
+ 
+  /// Check if vector implementation is uBlasVector.
+  bool is_uBlasVector(const GenericVector & gv);
+
+  /// Cast vector reference to uBlasVector if possible.
+  uBlasVector & as_uBlasVector(GenericVector & gv);
+
+  /// Cast vector reference to const uBlasVector if possible.
+  const uBlasVector & as_const_uBlasVector(const GenericVector & gv);
+
+  /// Cast vector reference to const ublas_vector if possible.
+  ublas_vector & as_ublas_vector(GenericVector & gv);
+
+  /// Cast vector reference to const ublas_vector if possible.
+  const ublas_vector & as_const_ublas_vector(const GenericVector & gv);
+
 }
 
 #endif
