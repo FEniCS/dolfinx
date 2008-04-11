@@ -76,7 +76,7 @@ def myplot():
    
 dolfin_set("ODE number of samples", 6000);
 dolfin_set("ODE initial time step", 0.02);
-#dolfin_set("ODE fixed time step", True);
+dolfin_set("ODE fixed time step", True);
 dolfin_set("ODE nonlinear solver", "newton");
 dolfin_set("ODE method", "dg"); # cg/dg
 dolfin_set("ODE order", 18); # Convergence order 37!

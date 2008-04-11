@@ -24,7 +24,7 @@ using namespace dolfin;
 MonoAdaptiveNewtonSolver::MonoAdaptiveNewtonSolver
 (MonoAdaptiveTimeSlab& timeslab, bool implicit)
   : TimeSlabSolver(timeslab), implicit(implicit),
-    piecewise(dolfin_get("ODE matrix piecewise constant")),
+    piecewise(ode.get("ODE matrix piecewise constant")),
     ts(timeslab), A(timeslab, implicit, piecewise),
     krylov(0), lu(0), krylov_g(0), lu_g(0)
 {
@@ -200,13 +200,13 @@ void MonoAdaptiveNewtonSolver::FevalImplicit(uBlasVector& F)
 
     // Copy values from yy
     for (uint i = 0; i < ts.N; i++)
-      F(noffset + i) -= yy[i];
+      F(noffset + i) -= yy(i);
   }
 }
 //-----------------------------------------------------------------------------
 void MonoAdaptiveNewtonSolver::chooseLinearSolver()
 {
-  const std::string linear_solver = dolfin_get("ODE linear solver");
+  const std::string linear_solver = ode.get("ODE linear solver");
   
   // First determine if we should use a direct solver
   bool direct = false;  
@@ -217,7 +217,7 @@ void MonoAdaptiveNewtonSolver::chooseLinearSolver()
   else if ( linear_solver == "auto" )
   {
     /*
-    const uint ode_size_threshold = dolfin_get("ODE size threshold");
+    const uint ode_size_threshold = ode.get("ODE size threshold");
     if ( ode.size() > ode_size_threshold )
       direct = false;
     else
@@ -238,7 +238,7 @@ void MonoAdaptiveNewtonSolver::chooseLinearSolver()
   else
   {
     message("Using uBlas Krylov solver with no preconditioning.");
-    const real ktol = dolfin_get("ODE discrete Krylov tolerance factor");
+    const real ktol = ode.get("ODE discrete Krylov tolerance factor");
 
     // FIXME: Check choice of tolerances
     krylov = new uBlasKrylovSolver(none);

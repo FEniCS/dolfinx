@@ -12,6 +12,7 @@
 #include <dolfin/la/uBlasVector.h>
 #include <dolfin/la/uBlasSparseMatrix.h>
 #include <dolfin/la/Matrix.h>
+#include <dolfin/parameter/Parametrized.h>
 #include "Dependencies.h"
 #include "Sample.h"
 
@@ -49,7 +50,7 @@ namespace dolfin
   /// by setting the option "implicit" to true and defining the
   /// function M().
 
-  class ODE
+  class ODE : public Parametrized
   {
   public:
 

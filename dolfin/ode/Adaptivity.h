@@ -9,7 +9,7 @@
 
 #include <dolfin/main/constants.h>
 #include "Controller.h"
-
+#include "ODE.h"
 namespace dolfin
 {
   

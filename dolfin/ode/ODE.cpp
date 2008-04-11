@@ -80,18 +80,18 @@ void ODE::J(const uBlasVector& x, uBlasVector& y, const uBlasVector& u, real t)
     tmp.init(N);
   
   // Evaluate at u + hx
-  noalias(uu) += h*x;
+  ublas::noalias(uu.vec()) += h*x.vec();
   f(uu, t, y);
 
   // Evaluate at u - hx
-  noalias(uu) -= 2.0*h*x;
+  ublas::noalias(uu.vec()) -= 2.0*h*x.vec();
   f(uu, t, tmp);
 
   // Reset u
-  noalias(uu) += h*x;
+  ublas::noalias(uu.vec()) += h*x.vec();
 
   // Compute product y = Jx
-  noalias(y) -= tmp;
+  ublas::noalias(y.vec()) -= tmp.vec();
   y *= 0.5/h;
 }
 //-----------------------------------------------------------------------------

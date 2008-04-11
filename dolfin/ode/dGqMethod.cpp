@@ -43,7 +43,7 @@ real dGqMethod::ueval(real x0, uBlasVector& values, uint offset, real tau) const
 
   real sum = 0.0;
   for (unsigned int i = 0; i < nn; i++)
-    sum += values[offset + i] * trial->eval(i, tau);
+    sum += values(offset + i) * trial->eval(i, tau);
   
   return sum;
 }
@@ -63,7 +63,7 @@ real dGqMethod::residual(real x0, uBlasVector& values, uint offset, real f, real
   // FIXME: Include jump term in residual
   real sum = 0.0;
   for (uint i = 0; i < nn; i++)
-    sum += values[offset + i] * derivatives[i];
+    sum += values(offset + i) * derivatives[i];
 
   return sum / k - f;
 }

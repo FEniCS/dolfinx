@@ -256,7 +256,7 @@ namespace dolfin
     const uint n = this->size(1);
     m.init( n );
     ublas::scalar_vector<double> one(n, 1.0);
-    ublas::axpy_prod(*this, one, m, true);
+    ublas::axpy_prod(*this, one, m.vec(), true);
   }
   //-----------------------------------------------------------------------------
   template <class Mat>  
@@ -306,23 +306,23 @@ namespace dolfin
   template <class Mat>  
   void uBlasMatrix<Mat>::mult(const uBlasVector& x, uBlasVector& y) const
   {
-    ublas::axpy_prod(*this, x, y, true);
+    ublas::axpy_prod(*this, x.vec(), y.vec(), true);
   }
   //---------------------------------------------------------------------------
   template <class Mat>  
   void uBlasMatrix<Mat>::mult(const GenericVector& x_, GenericVector& y_, bool transposed) const
   {
     const uBlasVector* x = dynamic_cast<const uBlasVector*>(x_.instance());  
-    if (!x)  error("The first vector needs to be of type uBlasVector"); 
+    if (!x)  
+      error("The first vector needs to be of type uBlasVector"); 
 
     uBlasVector* y = dynamic_cast<uBlasVector*>(y_.instance());  
-    if (!y)  error("The second vector needs to be of type uBlasVector"); 
+    if (!y)  
+      error("The second vector needs to be of type uBlasVector"); 
 
     if (transposed==true) error("The transposed version of the uBLAS matrix vector product is not yet implemented");  
     this->mult(*x, *y); 
   }
-
-
   //-----------------------------------------------------------------------------
   template <class Mat>  
   void uBlasMatrix<Mat>::compress()

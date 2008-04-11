@@ -183,8 +183,6 @@ dolfin::uint DiscreteFunction::numSubFunctions() const
 //-----------------------------------------------------------------------------
 const DiscreteFunction& DiscreteFunction::operator= (const DiscreteFunction& f)
 {
-  cout << "Assignment in discrete function" << endl;
-
   // Check that data matches
   if (strcmp(finite_element->signature(), f.finite_element->signature()) != 0 ||
        strcmp(dof_map->signature(), f.dof_map->signature()) != 0              ||

@@ -66,8 +66,8 @@ dolfin::uint PETScLUSolver::solve(const PETScMatrix& A,
 
   // Write a message
   if ( report )
-    message("Solving linear system of size %d x %d (PETSc LU solver).",
-		A.size(0), A.size(1));
+    message("Solving linear system of size %d x %d (PETSc LU solver, %s).",
+            A.size(0), A.size(1), mat_type);
 
   // Solve linear system
   KSPSetOperators(ksp, A.mat(), A.mat(), DIFFERENT_NONZERO_PATTERN);
@@ -83,9 +83,6 @@ dolfin::uint PETScLUSolver::solve(const PETScMatrix& A,
   PCType pc_type;
   PCGetType(pc, &pc_type);
   MatGetType(A.mat(), &mat_type);
-
-  // Report solver type
-  message("LU solver (%s, %s) finished.", pc_type, mat_type);
 
   return 1;
 }

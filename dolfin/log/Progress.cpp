@@ -37,7 +37,7 @@ Progress::Progress(std::string title)
 Progress::~Progress()
 {
   if (this->p == 0.0)
-    LogManager::logger.message(title + " (finished)");
+    LogManager::logger.message(title + " (finished).");
   else if (this ->p < 1.0)
     LogManager::logger.progress(title, 1.0);
 }

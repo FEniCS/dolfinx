@@ -22,7 +22,7 @@ void GraphPartition::partition(Graph& graph, uint num_part, uint* vtx_part)
   if(num_part == 0)
     error("Minimum number of partitions is 1");
 
-  #ifdef HAS_SCOTCH
+#ifdef HAS_SCOTCH
 
   SCOTCH_Graph grafdat;
   SCOTCH_Strat strat;
@@ -41,9 +41,9 @@ void GraphPartition::partition(Graph& graph, uint num_part, uint* vtx_part)
   SCOTCH_stratExit (&strat);
   SCOTCH_graphExit (&grafdat);
 
-  #else
-    error("GraphPartition requires Scotch");
-  #endif
+#else
+  error("GraphPartition requires SCOTCH");
+#endif
 }
 //-----------------------------------------------------------------------------
 void GraphPartition::check(Graph& graph, uint num_part, uint* vtx_part)

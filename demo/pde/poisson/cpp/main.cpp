@@ -86,7 +86,12 @@ int main()
 
   // Solve PDE
   Function u;
+  pde.set("PDE linear solver", "iterative");
   pde.solve(u);
+
+  ublas_vector xx(10);
+  uBlasVector x(xx);
+  cout << xx.size() << endl;
 
   // Plot solution
   plot(u);

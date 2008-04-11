@@ -32,16 +32,20 @@ uBlasILUPreconditioner::~uBlasILUPreconditioner()
 //-----------------------------------------------------------------------------
 void uBlasILUPreconditioner::solve(uBlasVector& x, const uBlasVector& b) const
 {
-  dolfin_assert( x.size() == M.size1() );
-  dolfin_assert( x.size() == b.size());
+  // Get uderlying uBLAS vectors
+  ublas_vector& _x = x.vec(); 
+  const ublas_vector& _b = b.vec(); 
+
+  dolfin_assert( _x.size() == M.size1() );
+  dolfin_assert( _x.size() == _b.size());
 
   // Solve in-place
-  x.assign(b);
+  _x.assign(_b);
 
   // Let uBlas solve the systems. This is however very slow as uBlas
   // is not optimised for sparse storage, especially when using using
   // row-major matrices.
-  //ublas::lu_substitute(M, x);
+  //ublas::lu_substitute(M, _x);
 
   // Perform substutions using uBlas sparse matrix iterators. This is 
   // relatively fast, but not that great.
@@ -56,7 +60,7 @@ void uBlasILUPreconditioner::solve(uBlasVector& x, const uBlasVector& b) const
     uBlasMatrix<ublas_sparse_matrix>::const_iterator2 col_end = row.end();
     while ((col != col_end) && (col.index2() < n) ) 
     {
-      x (n) -= *col * x (col.index2());
+      x (n) -= *col * _x (col.index2());
       ++ col;
     }
   }
@@ -69,10 +73,10 @@ void uBlasILUPreconditioner::solve(uBlasVector& x, const uBlasVector& b) const
     uBlasMatrix<ublas_sparse_matrix>::const_reverse_iterator2 col_end = row_r.rend();
     while ((col != col_end) && (col.index2() > n) ) 
     {
-      x (n) -= *col * x (col.index2());
+      _x (n) -= *col * x (col.index2());
       ++ col;
     }
-    x (n) /= (*col);
+    _x (n) /= (*col);
   }
   */
 
@@ -82,14 +86,14 @@ void uBlasILUPreconditioner::solve(uBlasVector& x, const uBlasVector& b) const
   {
     uint k;
     for(k = M.index1_data () [i]; k < diagonal[i]; ++k)
-      x(i) -= ( M.value_data () [k] )*x( M.index2_data () [k] );
+      _x(i) -= ( M.value_data () [k] )*x( M.index2_data () [k] );
   } 
   for(int i =size-1; i >= 0; --i)
   {
     uint k;
     for(k = M.index1_data () [i+1]-1; k > diagonal[i]; --k)
-      x(i) -= ( M.value_data () [k] )*x( M.index2_data () [k] );
-    x(i) /= ( M.value_data () [k] );  
+      _x(i) -= ( M.value_data () [k] )*x( M.index2_data () [k] );
+    _x(i) /= ( M.value_data () [k] );  
   }
 }
 //-----------------------------------------------------------------------------

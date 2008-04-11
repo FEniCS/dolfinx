@@ -134,6 +134,19 @@ namespace dolfin
       return *this; 
     }
 
+    /// assignment operator
+    inline const Vector& operator= (const Vector& x_)
+    { 
+      // get the underlying GenericVector instance (in case of a Vector) 
+      const GenericVector* x = dynamic_cast<const GenericVector*>(x_.instance());  
+
+      // employ the operator= of the underlying instance
+      *vector = *x; 
+
+      return *this; 
+    }
+
+
     
     /// Compute norm of vector
     inline real norm(VectorNormType type = l2) const

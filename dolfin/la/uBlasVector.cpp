@@ -1,11 +1,11 @@
-// Copyright (C) 2006-2007 Garth N. Wells.
+// Copyright (C) 2006-2008 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Anders Logg 2006-2008.
 // Modified by Kent-Andre Mardal 2008.
 //
 // First added:  2006-04-04
-// Last changed: 2008-03-19
+// Last changed: 2008-04-10
 
 #include <sstream>
 #include <iomanip>
@@ -25,7 +25,7 @@ using namespace dolfin;
 uBlasVector::uBlasVector()
   : GenericVector(),
     Variable("x", "a dense vector"),
-    ublas_vector()
+    x(0)
 {
   //Do nothing
 }
@@ -33,10 +33,10 @@ uBlasVector::uBlasVector()
 uBlasVector::uBlasVector(uint N)
   : GenericVector(),
     Variable("x", "a dense vector"),
-    ublas_vector(N)
+    x(N)
 {
-  // Clear matrix (not done by ublas)
-  clear();
+  // Clear vector
+  x.clear();
 }
 //-----------------------------------------------------------------------------
 uBlasVector::~uBlasVector()
@@ -46,14 +46,14 @@ uBlasVector::~uBlasVector()
 //-----------------------------------------------------------------------------
 void uBlasVector::init(uint N)
 {
-  if( this->size() == N)
+  if( x.size() == N)
   {
-    clear();
+    x.clear();
     return;
   }
-  
-  this->resize(N, false);
-  clear();
+ 
+  x.resize(N, false);
+  x.clear();
 }
 //-----------------------------------------------------------------------------
 uBlasVector* uBlasVector::create() const
@@ -69,37 +69,37 @@ uBlasVector* uBlasVector::copy() const
 void uBlasVector::get(real* values) const
 {
   for (uint i = 0; i < size(); i++)
-    values[i] = (*this)(i);
+    values[i] = x(i);
 }
 //-----------------------------------------------------------------------------
 void uBlasVector::set(real* values)
 {
   for (uint i = 0; i < size(); i++)
-    (*this)(i) = values[i];
+    x(i) = values[i];
 }
 //-----------------------------------------------------------------------------
 void uBlasVector::add(real* values)
 {
   for (uint i = 0; i < size(); i++)
-    (*this)(i) += values[i];
+    x(i) += values[i];
 }
 //-----------------------------------------------------------------------------
 void uBlasVector::get(real* block, uint m, const uint* rows) const
 {
   for (uint i = 0; i < m; i++)
-    block[i] = (*this)(rows[i]);
+    block[i] = x(rows[i]);
 }
 //-----------------------------------------------------------------------------
 void uBlasVector::set(const real* block, uint m, const uint* rows)
 {
   for (uint i = 0; i < m; i++)
-    (*this)(rows[i]) = block[i];
+    x(rows[i]) = block[i];
 }
 //-----------------------------------------------------------------------------
 void uBlasVector::add(const real* block, uint m, const uint* rows)
 {
   for (uint i = 0; i < m; i++)
-    (*this)(rows[i]) += block[i];
+    x(rows[i]) += block[i];
 }
 //-----------------------------------------------------------------------------
 void uBlasVector::apply()
@@ -109,115 +109,110 @@ void uBlasVector::apply()
 //-----------------------------------------------------------------------------
 void uBlasVector::zero()
 {
-  clear();
+  x.clear();
 }
 //-----------------------------------------------------------------------------
 real uBlasVector::norm(VectorNormType type) const
 {
   switch (type) {
   case l1:
-    return norm_1(*this);
+    return norm_1(x);
   case l2:
-    return norm_2(*this);
+    return norm_2(x);
   case linf:
-    return norm_inf(*this);
+    return norm_inf(x);
   default:
     error("Requested vector norm type for uBlasVector unknown");
   }
-  return norm_inf(*this);
-}
-void uBlasVector::div(const uBlasVector& y)
-{
-  uBlasVector& x = *this;
-  uint s = size();
-
-  for(uint i = 0; i < s; i++)
-  {
-    x[i] = x[i] / y[i];
-  }
+  return norm_inf(x);
 }
 //-----------------------------------------------------------------------------
-void uBlasVector::axpy(real a, const GenericVector& x_)
+void uBlasVector::div(const uBlasVector& y)
 {
-  const uBlasVector* x = dynamic_cast<const uBlasVector*>(x_.instance());  
-  if (!x)  error("The vector needs to be of type uBlasVector"); 
-  if (size() != x->size())  error("Vectors must be of same size.");
+  x = ublas::element_div(x, y.vec());
+}
+//-----------------------------------------------------------------------------
+void uBlasVector::axpy(real a, const GenericVector& y_)
+{
+  const uBlasVector* y = dynamic_cast<const uBlasVector*>(y_.instance());  
+  if ( !y )  
+    error("The vector needs to be of type uBlasVector"); 
+  if ( size() != y->size() )  
+    error("Vectors must be of same size.");
 
-  uBlasVector& y = *this;
-  const uBlasVector& xx = *x;
-
-  uint s = size();
-
-  for(uint i = 0; i < s; i++)
-  {
-    y[i] = y[i]  + a*xx[i];
-  }
+  x += a*y->vec(); 
 }
 //-----------------------------------------------------------------------------
 void uBlasVector::mult(const real a)
 {
-  uBlasVector& y = *this;
-  
-  y *= a;
+  x *= a;
 }
 //-----------------------------------------------------------------------------
-real uBlasVector::inner(const GenericVector& x_) const
+real uBlasVector::inner(const GenericVector& y_) const
 {
-  const uBlasVector* x = dynamic_cast<const uBlasVector*>(x_.instance());  
-  if (!x)  error("The vector needs to be of type uBlasVector"); 
-  return inner_prod(*this,*x); 
+  const uBlasVector* y = dynamic_cast<const uBlasVector*>(y_.instance());  
+  if (!y)  
+    error("The vector needs to be of type uBlasVector"); 
+  return ublas::inner_prod(x, y->vec()); 
 }
 //-----------------------------------------------------------------------------
 const uBlasVector& uBlasVector::operator= (real a) 
 { 
-  this->assign(ublas::scalar_vector<double> (this->size(), a));
+  x.ublas_vector::assign(ublas::scalar_vector<double> (x.size(), a));
   return *this;
 }
 //-----------------------------------------------------------------------------
-const uBlasVector& uBlasVector::operator= (const GenericVector& x_) 
+const uBlasVector& uBlasVector::operator= (const GenericVector& y_) 
 { 
-  const uBlasVector* x = dynamic_cast<const uBlasVector*>(x_.instance());  
-  if (!x) 
+  const uBlasVector* y = dynamic_cast<const uBlasVector*>(y_.instance());  
+  if (!y) 
     error("The vector should be of type uBlasVector");  
   
-  this->ublas_vector::operator=(*x);
+  x = y->vec();
   return *this; 
 }
 //-----------------------------------------------------------------------------
-const uBlasVector& uBlasVector::operator= (const uBlasVector& x_) 
+const uBlasVector& uBlasVector::operator= (const uBlasVector& y) 
 { 
-  this->ublas_vector::operator=(x_);
+  x = y.vec();
   return *this; 
 }
 //-----------------------------------------------------------------------------
 const uBlasVector& uBlasVector::operator*= (const real a) 
 { 
-  uBlasVector& y = *this;
-  uint s = size();
-  for(uint i = 0; i < s; i++)
-  {
-    y[i] = a*y[i]; 
-  }
-  return *this; 
+  x *= a;
+  return *this;     
 }
+//-----------------------------------------------------------------------------
+const uBlasVector& uBlasVector::operator/= (const real a) 
+{ 
+  x /= a;
+  return *this;     
+}
+//-----------------------------------------------------------------------------
+const uBlasVector& uBlasVector::operator+= (const GenericVector& y_) 
+{ 
+  const uBlasVector* y = dynamic_cast<const uBlasVector*>(y_.instance());  
+  if (!y)  
+    error("The vector needs to be of type uBlasVector"); 
 
-//-----------------------------------------------------------------------------
-const uBlasVector& uBlasVector::operator+= (const GenericVector& x) 
-{ 
-  this->axpy(1.0, x); 
+  x += y->vec();
   return *this; 
 }
 //-----------------------------------------------------------------------------
-const uBlasVector& uBlasVector::operator-= (const GenericVector& x) 
+const uBlasVector& uBlasVector::operator-= (const GenericVector& y_) 
 { 
-  this->axpy(-1.0, x); 
+  const uBlasVector* y = dynamic_cast<const uBlasVector*>(y_.instance());  
+  if (!y)  
+    error("The vector needs to be of type uBlasVector"); 
+  x -= y->vec();
   return *this; 
 }
 //-----------------------------------------------------------------------------
 void uBlasVector::disp(uint precision) const
 {
   dolfin::cout << "[ ";
-  for (ublas_vector::const_iterator it = this->begin(); it != this->end(); ++it)
+  for (ublas_vector::const_iterator it = x.begin(); it != x.end(); ++it)
   {
     std::stringstream entry;
     entry << std::setiosflags(std::ios::scientific);
@@ -246,26 +241,31 @@ LinearAlgebraFactory& uBlasVector::factory() const
   return uBlasFactory::instance();
 }
 //-----------------------------------------------------------------------------
+const ublas_vector& uBlasVector::vec() const
+{
+  return x;
+}
+//-----------------------------------------------------------------------------
+ublas_vector& uBlasVector::vec()
+{
+  return x;
+}
+//-----------------------------------------------------------------------------
 #ifdef HAS_PETSC
 void uBlasVector::copy(const PETScVector& y, uint off1, uint off2, uint len)
 {
   // FIXME: Verify if there's a more efficient implementation
-
-  uBlasVector& x = *this;
   const real* vals = 0;
   vals = y.array();
   for(uint i = 0; i < len; i++)
-  {
-    x[i + off1] = vals[i + off2];
-  }
+    x(i + off1) = vals[i + off2];
+
   y.restore(vals);
 }
 #endif
 //-----------------------------------------------------------------------------
 void uBlasVector::copy(const uBlasVector& y, uint off1, uint off2, uint len)
 {
-  uBlasVector& x = *this;
-
-  subrange(x, off1, off1 + len) = subrange(y, off2, off2 + len);
+  ublas::subrange(x, off1, off1 + len) = ublas::subrange(y.vec(), off2, off2 + len);
 }
 //-----------------------------------------------------------------------------
