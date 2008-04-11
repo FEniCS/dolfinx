@@ -399,7 +399,7 @@ void PETScVector::copy(const uBlasVector& y, uint off1, uint off2, uint len)
 
   real* vals = array();
   for(uint i = 0; i < len; i++)
-    vals[i + off1] = y[i + off2];
+    vals[i + off1] = y(i + off2);
   restore(vals);
 }
 //-----------------------------------------------------------------------------
