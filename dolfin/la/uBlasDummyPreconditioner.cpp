@@ -22,6 +22,6 @@ uBlasDummyPreconditioner::~uBlasDummyPreconditioner()
 //-----------------------------------------------------------------------------
 void uBlasDummyPreconditioner::solve(uBlasVector& x, const uBlasVector& b) const
 {
-  x.assign(b);
+  x.vec().assign(b.vec());
 }
 //-----------------------------------------------------------------------------

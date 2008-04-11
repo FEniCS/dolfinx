@@ -36,8 +36,7 @@ namespace dolfin
   /// http://www.boost.org/libs/numeric/ublas/doc/index.htm.
 
   class uBlasVector : public GenericVector,
-                      public Variable,
-                      public ublas_vector
+                      public Variable
   {
   public:
 
@@ -49,7 +48,7 @@ namespace dolfin
     
     /// Constructor from a uBlas vector_expression
     template <class E>
-    uBlasVector(const ublas::vector_expression<E>& x) : ublas_vector(x) {}
+    uBlasVector(const ublas::vector_expression<E>& x) : x(x) {}
 
     /// Destructor
     ~uBlasVector();
@@ -81,6 +80,9 @@ namespace dolfin
     /// Multiply vector with scalar 
     const uBlasVector& operator *= (real a);
 
+    /// Divide vector with scalar 
+    const uBlasVector& operator /= (real a);
+
     /// Return concrete (const) uBlasVector instance
     virtual const uBlasVector* instance() const 
       { return this; }
@@ -90,24 +92,24 @@ namespace dolfin
       { return this; }
 
     /// Assignment from a vector_expression
-    template <class E>
-    uBlasVector& operator=(const ublas::vector_expression<E>& x)
-    { 
-      this->ublas_vector::operator=(x); 
-      return *this;
-    } 
+    //template <class E>
+    //uBlasVector& operator=(const ublas::vector_expression<E>& x)
+    //{ 
+    //  this->ublas_vector::operator=(x); 
+    //  return *this;
+    //} 
     
     /// Return size
     inline uint size() const
-      { return this->ublas_vector::size(); }
+      { return x.size(); }
 
     /// Access given entry
     inline real& operator() (uint i)
-      { return this->ublas_vector::operator() (i); };
+      { return x(i); };
 
     /// Access value of given entry
     inline real operator() (uint i) const
-      { return this->ublas_vector::operator() (i); };
+      { return x(i); };
 
     /// Get values
     void get(real* values) const;
@@ -138,7 +140,7 @@ namespace dolfin
 
     /// Compute sum of vector
     real sum() const
-    { return ublas::sum(*this); }
+    { return ublas::sum(x); }
     
     /// Addition (AXPY)
     void axpy(real a, const GenericVector& x);
@@ -161,11 +163,22 @@ namespace dolfin
     /// Return backend factory
     LinearAlgebraFactory& factory() const;
 
+    /// Return uBLAS ublas_vector reference
+    const ublas_vector& vec() const;
+
+    /// Return uBLAS ublas_vector reference
+    ublas_vector& vec();
+
     // Copy values between different vector representations
 #ifdef HAS_PETSC
     void copy(const PETScVector& y, uint off1, uint off2, uint len);
 #endif
     void copy(const uBlasVector& y, uint off1, uint off2, uint len);
+
+  private:
+
+    // Underlying uBLAS vector object
+    ublas_vector x;
 
   };
 

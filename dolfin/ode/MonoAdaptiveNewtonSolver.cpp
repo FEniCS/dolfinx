@@ -200,7 +200,7 @@ void MonoAdaptiveNewtonSolver::FevalImplicit(uBlasVector& F)
 
     // Copy values from yy
     for (uint i = 0; i < ts.N; i++)
-      F(noffset + i) -= yy[i];
+      F(noffset + i) -= yy(i);
   }
 }
 //-----------------------------------------------------------------------------

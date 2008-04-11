@@ -39,13 +39,17 @@ uBlasLUSolver::~uBlasLUSolver()
 dolfin::uint uBlasLUSolver::solve(const uBlasMatrix<ublas_dense_matrix>& A, 
                                   uBlasVector& x, const uBlasVector& b)
 {    
+  // Get underlying uBLAS vectors
+  ublas_vector& _x = x.vec(); 
+  const ublas_vector& _b = b.vec(); 
+
   // Make copy of matrix and vector
   ublas_dense_matrix Atemp(A);
-  x.resize(b.size());
-  x.assign(b);
+  _x.resize(_b.size());
+  _x.assign(_b);
 
   // Solve
-  return solveInPlace(Atemp, x);
+  return solveInPlace(Atemp, _x);
 }
 //-----------------------------------------------------------------------------
 #ifdef HAS_UMFPACK
@@ -62,6 +66,10 @@ dolfin::uint uBlasLUSolver::solve(const uBlasMatrix<ublas_sparse_matrix>& A, uBl
 
   x.init(N);
 
+  // Get underlying uBLAS vectors
+  ublas_vector& _x = x.vec(); 
+  const ublas_vector& _b = b.vec(); 
+
   // Make sure matrix assembly is complete
   (const_cast< uBlasMatrix<ublas_sparse_matrix>& >(A)).complete_index1_data(); 
 
@@ -76,8 +84,8 @@ dolfin::uint uBlasLUSolver::solve(const uBlasMatrix<ublas_sparse_matrix>& A, uBl
   const std::size_t* Ap = &(A.index1_data() [0]);
   const std::size_t* Ai = &(A.index2_data() [0]);
   const double* Ax = &(A.value_data() [0]);
-  double* xx = &(x.data() [0]);
-  const double* bb = &(b.data() [0]);
+  double* xx = &(_x.data() [0]);
+  const double* bb = &(_b.data() [0]);
 
   // Solve for transpose since we use compressed row format, and UMFPACK 
   // expects compressed column format
@@ -152,21 +160,25 @@ void uBlasLUSolver::solve(const uBlasKrylovMatrix& A, uBlasVector& x,
     Aj->init(N);
   }
 
+  // Get underlying uBLAS vectors
+  ublas_vector& _ej = ej->vec(); 
+  ublas_vector& _Aj = Aj->vec(); 
+
   // Reset unit vector
-  *ej = 0.0;
+  _ej *= 0.0;
 
   // Compute columns of matrix
   for (uint j = 0; j < N; j++)
   {
-    (*ej)(j) = 1.0;
+    (_ej)(j) = 1.0;
 
     // Compute product Aj = Aej
     A.mult(*ej, *Aj);
     
     // Set column of A
-    column(*AA, j) = *Aj;
+    column(*AA, j) = _Aj;
     
-    (*ej)(j) = 0.0;
+    (_ej)(j) = 0.0;
   }
 
   // Solve linear system
@@ -179,14 +191,18 @@ dolfin::uint uBlasLUSolver::solveInPlaceUBlas(uBlasMatrix<ublas_dense_matrix>& A
   const uint M = A.size1();
   dolfin_assert(M == b.size());
   
-  if( x.size() != M )
-    x.resize(M);
+  // Get underlying uBLAS vectors
+  ublas_vector& _x = x.vec(); 
+  const ublas_vector& _b = b.vec(); 
+
+  if( _x.size() != M )
+    _x.resize(M);
 
   // Initialise solution vector
-  x.assign(b);
+  _x.assign(_b);
 
   // Solve
-  return solveInPlace(A, x);
+  return solveInPlace(A, _x);
 }
 //-----------------------------------------------------------------------------
 void uBlasLUSolver::check_status(long int status, std::string function) const

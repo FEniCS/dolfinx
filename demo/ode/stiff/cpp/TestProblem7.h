@@ -37,7 +37,7 @@ public:
       if ( i == N/2 )
 	source = 100.0;
       
-      y[i] = (u[i-1] - 2.0*u[i] + u[i+1]) / (h*h) + source;
+      y(i) = (u(i-1) - 2.0*u(i) + u(i+1)) / (h*h) + source;
     }
   }
   
