@@ -412,6 +412,12 @@ LinearAlgebraFactory& PETScVector::factory() const
   return PETScFactory::instance();
 }
 //-----------------------------------------------------------------------------
+
+
+namespace dolfin
+{
+
+//-----------------------------------------------------------------------------
 bool is_PETScVector(const GenericVector & gv)
 {
   const PETScVector * v = dynamic_cast<const PETScVector*>(gv.instance());
@@ -438,6 +444,8 @@ Vec as_PETSc_Vec(GenericVector & gv)
   return uv.vec();
 }
 //-----------------------------------------------------------------------------
+
+} // end namespace dolfin
 
 
 #endif

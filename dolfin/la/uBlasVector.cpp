@@ -244,6 +244,10 @@ void uBlasVector::copy(const uBlasVector& y, uint off1, uint off2, uint len)
   ublas::subrange(x, off1, off1 + len) = ublas::subrange(y.vec(), off2, off2 + len);
 }
 //-----------------------------------------------------------------------------
+
+namespace dolfin
+{
+
 bool is_uBlasVector(const GenericVector & gv)
 {
   const uBlasVector * v = dynamic_cast<const uBlasVector*>(gv.instance());
@@ -275,5 +279,9 @@ const ublas_vector & as_const_ublas_vector(const GenericVector & gv)
   const uBlasVector & v = as_const_uBlasVector(gv);
   return v.vec();
 }
+//-----------------------------------------------------------------------------
+
+} // end namespace dolfin
+
 //-----------------------------------------------------------------------------
 

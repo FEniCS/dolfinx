@@ -147,13 +147,12 @@ namespace dolfin
     { 
       // employ the operator= of the underlying instance
       *vector = *x.vector; 
-
       return *this; 
     }
 
     /// Compute norm of vector
     inline real norm(VectorNormType type = l2) const
-    { return vector->norm(type); }
+    { return vector->norm(type); } // FIXME: This isn't in the GenericVector interface!
    
     /// Return backend factory
     inline LinearAlgebraFactory& factory() const
@@ -161,21 +160,15 @@ namespace dolfin
 
     /// inner product 
     inline real inner(const GenericVector& x_) const
-    { 
-      return vector->inner(x_); 
-    }
+    { return vector->inner(x_); }
 
     /// this += a*x  
     inline void axpy(real a, const GenericVector& x) 
-    { 
-      return vector->axpy(a, x); 
-    }
+    { return vector->axpy(a, x); } // FIXME: This isn't in the GenericVector interface!
 
     /// this *= a  
     inline void mult(const real a) 
-    { 
-      return vector->mult(a); 
-    }
+    { return vector->mult(a); } // FIXME: This isn't in the GenericVector interface!
 
     /// Return const GenericVector* (internal library use only!)
     virtual const GenericVector* instance() const 
@@ -188,7 +181,8 @@ namespace dolfin
 
   private:
     
-    GenericVector* vector;
+    //GenericVector* vector; // FIXME: Use this when above FIXME's have been handled.
+    DefaultVector* vector;
     
   };
 
