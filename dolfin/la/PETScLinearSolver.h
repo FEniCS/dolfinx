@@ -34,6 +34,9 @@ namespace dolfin
     virtual ~PETScLinearSolver(){}
 
     /// Solve linear system Ax = b
+    virtual unsigned int solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b);
+
+    /// Solve linear system Ax = b
     virtual unsigned int solve(const PETScMatrix& A, PETScVector& x, const PETScVector& b) = 0;
 
   };

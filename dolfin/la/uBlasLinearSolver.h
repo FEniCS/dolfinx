@@ -17,6 +17,8 @@ namespace dolfin
 
   /// Forward declarations
   class uBlasVector;  
+  class GenericMatrix;
+  class GenericVector;
   template<class Mat> class uBlasMatrix;
 
   /// This class defines the interfaces for uBlas-based linear solvers for
@@ -32,6 +34,9 @@ namespace dolfin
     /// Destructor
     virtual ~uBlasLinearSolver() {}
 
+
+    /// Solve linear system Ax = b 
+    virtual uint solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b);
     /// Solve linear system Ax = b (A is dense)
     virtual uint solve(const uBlasMatrix<ublas_dense_matrix>& A, uBlasVector& x, 
                        const uBlasVector& b) = 0;
