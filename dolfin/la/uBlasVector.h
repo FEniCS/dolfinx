@@ -86,12 +86,12 @@ namespace dolfin
     /// Divide vector with scalar 
     const uBlasVector& operator /= (real a);
 
-    /// Return concrete (const) uBlasVector instance
-    virtual const uBlasVector* instance() const 
+    /// Return const GenericVector* (internal library use only!)
+    virtual const GenericVector* instance() const 
     { return this; }
 
-    /// Return concrete uBlasVector instance
-    virtual uBlasVector* instance() 
+    /// Return GenericVector* (internal library use only!)
+    virtual GenericVector* instance() 
     { return this; }
 
     /// Assignment from a vector_expression
@@ -188,39 +188,22 @@ namespace dolfin
   };
 
   LogStream& operator<< (LogStream& stream, const uBlasVector& x);
-  
+ 
+ 
+  /// Check if vector implementation is uBlasVector.
+  bool is_uBlasVector(const GenericVector & gv);
 
-  inline bool is_uBlasVector(const GenericVector & gv)
-  {
-    const uBlasVector * v = dynamic_cast<const uBlasVector*>(gv.instance());
-    return bool(v);
-  }
-  
-  inline uBlasVector & as_uBlasVector(GenericVector & gv)
-  {
-    uBlasVector * v = dynamic_cast<uBlasVector*>(gv.instance());
-    if(!v) error("Cannot convert GenericVector to uBlasVector.");
-    return *v;
-  }
+  /// Cast vector reference to uBlasVector if possible.
+  uBlasVector & as_uBlasVector(GenericVector & gv);
 
-  inline const uBlasVector & as_const_uBlasVector(const GenericVector & gv)
-  {
-    const uBlasVector * v = dynamic_cast<const uBlasVector*>(gv.instance());
-    if(!v) error("Cannot convert GenericVector to uBlasVector.");
-    return *v;
-  }
-  
-  inline ublas_vector & as_ublas_vector(GenericVector & gv)
-  {
-    uBlasVector & v = as_uBlasVector(gv);
-    return v.vec();
-  }
-  
-  inline const ublas_vector & as_const_ublas_vector(const GenericVector & gv)
-  {
-    const uBlasVector & v = as_const_uBlasVector(gv);
-    return v.vec();
-  }
+  /// Cast vector reference to const uBlasVector if possible.
+  const uBlasVector & as_const_uBlasVector(const GenericVector & gv);
+
+  /// Cast vector reference to const ublas_vector if possible.
+  ublas_vector & as_ublas_vector(GenericVector & gv);
+
+  /// Cast vector reference to const ublas_vector if possible.
+  const ublas_vector & as_const_ublas_vector(const GenericVector & gv);
 
 }
 

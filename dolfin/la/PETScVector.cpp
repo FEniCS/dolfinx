@@ -412,5 +412,32 @@ LinearAlgebraFactory& PETScVector::factory() const
   return PETScFactory::instance();
 }
 //-----------------------------------------------------------------------------
+bool is_PETScVector(const GenericVector & gv)
+{
+  const PETScVector * v = dynamic_cast<const PETScVector*>(gv.instance());
+  return bool(v);
+}
+//-----------------------------------------------------------------------------
+PETScVector & as_PETScVector(GenericVector & gv)
+{
+  PETScVector * uv = dynamic_cast<PETScVector*>(gv.instance());
+  if(!uv) error("Cannot convert GenericVector to PETScVector.");
+  return *uv;
+}
+//-----------------------------------------------------------------------------
+const PETScVector & as_const_PETScVector(const GenericVector & gv)
+{
+  const PETScVector * uv = dynamic_cast<const PETScVector*>(gv.instance());
+  if(!uv) error("Cannot convert GenericVector to PETScVector.");
+  return *uv;
+}
+//-----------------------------------------------------------------------------
+Vec as_PETSc_Vec(GenericVector & gv)
+{
+  PETScVector & uv = as_PETScVector(gv);
+  return uv.vec();
+}
+//-----------------------------------------------------------------------------
+
 
 #endif

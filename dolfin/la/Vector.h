@@ -4,9 +4,10 @@
 // Modified by Anders Logg, 2007-2008.
 // Modified by Kent-Andre Mardal 2008.
 // Modified by Ola Skavhaug 2008.
+// Modified by Martin Alnæs 2008.
 //
 // First added:  2007-07-03
-// Last changed: 2008-04-08
+// Last changed: 2008-04-11
 
 #ifndef __VECTOR_H
 #define __VECTOR_H
@@ -29,14 +30,23 @@ namespace dolfin
 
     /// Constructor
     Vector() : GenericVector(), Variable("x", "DOLFIN vector"),
-               vector(new DefaultVector()) {}
+               vector(0)
+    {
+      // TODO: use globally selected linear algebra factory to create new vector of any backend
+      vector = new DefaultVector();
+    }
     
     /// Constructor
     Vector(uint N) : GenericVector(), Variable("x", "DOLFIN vector"),
-                     vector(new DefaultVector(N)) {}
+                     vector(0)
+    {
+      // TODO: use globally selected linear algebra factory to create new vector of any backend
+      vector = new DefaultVector(N);
+    }
     
     /// Destructor
-    ~Vector() { delete vector; }
+    ~Vector()
+    { delete vector; }
     
     /// Initialize vector of size N
     inline void init(uint N) 
@@ -102,14 +112,14 @@ namespace dolfin
     /// Add vector x
     inline const Vector& operator+= (const GenericVector& x)
     { 
-      this->vector->axpy(1.0, x); 
+      vector->axpy(1.0, x); 
       return *this; 
     }
 
     /// Subtract vector x
     inline const Vector& operator-= (const GenericVector& x)
     { 
-      this->vector->axpy(-1.0, x); 
+      vector->axpy(-1.0, x); 
       return *this; 
     }
 
@@ -120,34 +130,27 @@ namespace dolfin
       return *this; 
     }
 
-
-
     /// assignment operator
-    inline const Vector& operator= (const GenericVector& x_)
+    inline const Vector& operator= (const GenericVector& x)
     { 
-      // get the underlying GenericVector instance (in case of a Vector) 
-      const GenericVector* x = dynamic_cast<const GenericVector*>(x_.instance());  
+      // get the underlying GenericVector instance (in case x is a Vector) 
+      const GenericVector* y = x.instance();
 
       // employ the operator= of the underlying instance
-      *vector = *x; 
+      *vector = *y; 
 
       return *this; 
     }
 
     /// assignment operator
-    inline const Vector& operator= (const Vector& x_)
+    inline const Vector& operator= (const Vector& x)
     { 
-      // get the underlying GenericVector instance (in case of a Vector) 
-      const GenericVector* x = dynamic_cast<const GenericVector*>(x_.instance());  
-
       // employ the operator= of the underlying instance
-      *vector = *x; 
+      *vector = *x.vector; 
 
       return *this; 
     }
 
-
-    
     /// Compute norm of vector
     inline real norm(VectorNormType type = l2) const
     { return vector->norm(type); }
@@ -159,34 +162,33 @@ namespace dolfin
     /// inner product 
     inline real inner(const GenericVector& x_) const
     { 
-      return this->vector->inner(x_); 
+      return vector->inner(x_); 
     }
 
     /// this += a*x  
     inline void axpy(real a, const GenericVector& x) 
     { 
-      return this->vector->axpy(a, x); 
+      return vector->axpy(a, x); 
     }
 
     /// this *= a  
     inline void mult(const real a) 
     { 
-      return this->vector->mult(a); 
+      return vector->mult(a); 
     }
 
-    /// Return concrete GenericVector instance
-    virtual DefaultVector* instance() {
-      return vector;
-    }
+    /// Return const GenericVector* (internal library use only!)
+    virtual const GenericVector* instance() const 
+    { return this; }
 
-    /// Return concrete (const) GenericVector instance
-    virtual const DefaultVector* instance() const {
-      return vector;
-    }
+    /// Return GenericVector* (internal library use only!)
+    virtual GenericVector* instance() 
+    { return this; }
+
 
   private:
     
-    DefaultVector* vector;
+    GenericVector* vector;
     
   };
 

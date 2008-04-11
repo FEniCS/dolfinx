@@ -121,17 +121,13 @@ namespace dolfin
     /// Assignment of vector
     const PETScVector& operator= (const PETScVector& x);
 
+    /// Return const GenericVector* (internal library use only!)
+    virtual const GenericVector* instance() const 
+    { return this; }
 
-
-    /// Return concrete (const) PETScVector instance
-    virtual const PETScVector* instance() const {
-      return this;
-    }
-
-    /// Return concrete PETScVector instance
-    virtual PETScVector* instance() {
-      return this;
-    }
+    /// Return GenericVector* (internal library use only!)
+    virtual GenericVector* instance() 
+    { return this; }
 
     /// Assignment of all elements to a single scalar value
     const PETScVector& operator= (const real a);
@@ -195,37 +191,17 @@ namespace dolfin
   LogStream& operator<< (LogStream& stream, const PETScVector& A);
   
 
-  inline bool is_PETScVector(const GenericVector & gv)
-  {
-    const PETScVector * v = dynamic_cast<const PETScVector*>(gv.instance());
-    return bool(v);
-  }
+  /// Check if vector implementation is PETScVector.
+  bool is_PETScVector(const GenericVector & gv);
 
-  inline PETScVector & as_PETScVector(GenericVector & gv)
-  {
-    PETScVector * uv = dynamic_cast<PETScVector*>(gv.instance());
-    if(!uv) error("Cannot convert GenericVector to PETScVector.");
-    return *uv;
-  }
+  /// Cast vector reference to PETScVector if possible.
+  PETScVector & as_PETScVector(GenericVector & gv);
 
-  inline const PETScVector & as_const_PETScVector(const GenericVector & gv)
-  {
-    const PETScVector * uv = dynamic_cast<const PETScVector*>(gv.instance());
-    if(!uv) error("Cannot convert GenericVector to PETScVector.");
-    return *uv;
-  }
+  /// Cast vector reference to const PETScVector if possible.
+  const PETScVector & as_const_PETScVector(const GenericVector & gv);
   
-  inline PETSc_Vec & as_PETSc_Vec(GenericVector & gv)
-  {
-    PETScVector & uv = as_PETScVector(gv);
-    return uv.vec();
-  }
-  
-  inline const PETSc_Vec & as_const_PETSc_Vec(const GenericVector & gv)
-  {
-    const PETScVector & uv = as_PETScVector(gv);
-    return uv.vec();
-  }
+  /// Cast vector reference to Vec if possible.
+  Vec as_PETSc_Vec(GenericVector & gv);
 
 }
 
