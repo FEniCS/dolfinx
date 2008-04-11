@@ -170,11 +170,11 @@ namespace dolfin
 
     /// Return const GenericVector* (internal library use only!)
     virtual const GenericVector* instance() const 
-    { return this; }
+    { return vector; }
 
     /// Return GenericVector* (internal library use only!)
     virtual GenericVector* instance() 
-    { return this; }
+    { return vector; }
 
   private:
     
