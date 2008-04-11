@@ -1,10 +1,11 @@
-// Copyright (C) 2004-2007 Anders Logg and Garth N. Wells.
+// Copyright (C) 2004-2008 Anders Logg and Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells, 2006.
+// Modified by Ola Skavhaug 2008.
 //
 // First added:  2004-06-19
-// Last changed: 2006-08-07
+// Last changed: 2008-04-11
 
 #ifndef __LINEAR_SOLVER_H
 #define __LINEAR_SOLVER_H
@@ -30,7 +31,7 @@ namespace dolfin
     virtual ~LinearSolver() {}
 
     /// Solve linear system Ax = b
-    virtual uint solve(const Matrix& A, Vector& x, const Vector& b) = 0;
+    virtual uint solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b) = 0;
 
   };
 
