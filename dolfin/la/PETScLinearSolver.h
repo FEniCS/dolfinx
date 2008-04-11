@@ -19,6 +19,8 @@ namespace dolfin
   /// Forward declarations
   class PETScMatrix;
   class PETScVector;
+  class GenericMatrix;
+  class GenericVector;
 
   /// This class defines the interfaces for PETSc linear solvers for
   /// systems of the form Ax = b.
