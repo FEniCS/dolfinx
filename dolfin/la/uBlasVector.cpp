@@ -3,9 +3,10 @@
 //
 // Modified by Anders Logg 2006-2008.
 // Modified by Kent-Andre Mardal 2008.
+// Modified by Martin Alnæs 2008.
 //
 // First added:  2006-04-04
-// Last changed: 2008-04-10
+// Last changed: 2008-04-11
 
 #include <sstream>
 #include <iomanip>
@@ -133,15 +134,12 @@ void uBlasVector::div(const uBlasVector& y)
   x = ublas::element_div(x, y.vec());
 }
 //-----------------------------------------------------------------------------
-void uBlasVector::axpy(real a, const GenericVector& y_)
+void uBlasVector::axpy(real a, const GenericVector& y)
 {
-  const uBlasVector* y = dynamic_cast<const uBlasVector*>(y_.instance());  
-  if ( !y )  
-    error("The vector needs to be of type uBlasVector"); 
-  if ( size() != y->size() )  
+  if ( size() != y.size() )  
     error("Vectors must be of same size.");
 
-  x += a*y->vec(); 
+  x += a*as_const_ublas_vector(y);
 }
 //-----------------------------------------------------------------------------
 void uBlasVector::mult(const real a)
@@ -149,12 +147,9 @@ void uBlasVector::mult(const real a)
   x *= a;
 }
 //-----------------------------------------------------------------------------
-real uBlasVector::inner(const GenericVector& y_) const
+real uBlasVector::inner(const GenericVector& y) const
 {
-  const uBlasVector* y = dynamic_cast<const uBlasVector*>(y_.instance());  
-  if (!y)  
-    error("The vector needs to be of type uBlasVector"); 
-  return ublas::inner_prod(x, y->vec()); 
+  return ublas::inner_prod(x, as_const_ublas_vector(y));
 }
 //-----------------------------------------------------------------------------
 const uBlasVector& uBlasVector::operator= (real a) 
@@ -163,13 +158,9 @@ const uBlasVector& uBlasVector::operator= (real a)
   return *this;
 }
 //-----------------------------------------------------------------------------
-const uBlasVector& uBlasVector::operator= (const GenericVector& y_) 
+const uBlasVector& uBlasVector::operator= (const GenericVector& y) 
 { 
-  const uBlasVector* y = dynamic_cast<const uBlasVector*>(y_.instance());  
-  if (!y) 
-    error("The vector should be of type uBlasVector");  
-  
-  x = y->vec();
+  x = as_const_ublas_vector(y);
   return *this; 
 }
 //-----------------------------------------------------------------------------
@@ -191,22 +182,15 @@ const uBlasVector& uBlasVector::operator/= (const real a)
   return *this;     
 }
 //-----------------------------------------------------------------------------
-const uBlasVector& uBlasVector::operator+= (const GenericVector& y_) 
+const uBlasVector& uBlasVector::operator+= (const GenericVector& y) 
 { 
-  const uBlasVector* y = dynamic_cast<const uBlasVector*>(y_.instance());  
-  if (!y)  
-    error("The vector needs to be of type uBlasVector"); 
-
-  x += y->vec();
+  x += as_const_ublas_vector(y);
   return *this; 
 }
 //-----------------------------------------------------------------------------
-const uBlasVector& uBlasVector::operator-= (const GenericVector& y_) 
+const uBlasVector& uBlasVector::operator-= (const GenericVector& y) 
 { 
-  const uBlasVector* y = dynamic_cast<const uBlasVector*>(y_.instance());  
-  if (!y)  
-    error("The vector needs to be of type uBlasVector"); 
-  x -= y->vec();
+  x -= as_const_ublas_vector(y);
   return *this; 
 }
 //-----------------------------------------------------------------------------
@@ -260,3 +244,44 @@ void uBlasVector::copy(const uBlasVector& y, uint off1, uint off2, uint len)
   ublas::subrange(x, off1, off1 + len) = ublas::subrange(y.vec(), off2, off2 + len);
 }
 //-----------------------------------------------------------------------------
+
+namespace dolfin
+{
+
+bool is_uBlasVector(const GenericVector & gv)
+{
+  const uBlasVector * v = dynamic_cast<const uBlasVector*>(gv.instance());
+  return bool(v);
+}
+//-----------------------------------------------------------------------------
+uBlasVector & as_uBlasVector(GenericVector & gv)
+{
+  uBlasVector * v = dynamic_cast<uBlasVector*>(gv.instance());
+  if(!v) error("Cannot convert GenericVector to uBlasVector.");
+  return *v;
+}
+//-----------------------------------------------------------------------------
+const uBlasVector & as_const_uBlasVector(const GenericVector & gv)
+{
+  const uBlasVector * v = dynamic_cast<const uBlasVector*>(gv.instance());
+  if(!v) error("Cannot convert GenericVector to uBlasVector.");
+  return *v;
+}
+//-----------------------------------------------------------------------------
+ublas_vector & as_ublas_vector(GenericVector & gv)
+{
+  uBlasVector & v = as_uBlasVector(gv);
+  return v.vec();
+}
+//-----------------------------------------------------------------------------
+const ublas_vector & as_const_ublas_vector(const GenericVector & gv)
+{
+  const uBlasVector & v = as_const_uBlasVector(gv);
+  return v.vec();
+}
+//-----------------------------------------------------------------------------
+
+} // end namespace dolfin
+
+//-----------------------------------------------------------------------------
+

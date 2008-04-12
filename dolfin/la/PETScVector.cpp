@@ -2,9 +2,10 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells 2005-2007.
+// Modified by Martin Alnæs 2008
 //
 // First added:  2004
-// Last changed: 2007-12-12
+// Last changed: 2008-04-11
 
 // FIXME: Insert dolfin_assert() where appropriate
 
@@ -108,15 +109,15 @@ PETScVector* PETScVector::copy() const
   return v; 
 }
 //-----------------------------------------------------------------------------
-void PETScVector::div(const PETScVector& x)
+void PETScVector::div(const PETScVector& y)
 {
-  VecPointwiseDivide(this->x, this->x, x.vec());
+  VecPointwiseDivide(x, x, y.vec());
   apply();
 }
 //-----------------------------------------------------------------------------
-void PETScVector::mult(const PETScVector& x)
+void PETScVector::mult(const PETScVector& y)
 {
-  VecPointwiseMult(this->x, this->x, x.vec());
+  VecPointwiseMult(x, x, y.vec());
   apply();
 }
 //-----------------------------------------------------------------------------
@@ -232,28 +233,22 @@ void PETScVector::restore(const real data[]) const
   VecRestoreArray(x, &tmp);
 }
 //-----------------------------------------------------------------------------
-const PETScVector& PETScVector::operator= (const GenericVector& x_)
+const PETScVector& PETScVector::operator= (const GenericVector& v)
 {
-  const PETScVector* x = dynamic_cast<const PETScVector*>(x_.instance());  
-  if (!x) error("The vector should be of type PETScVector");  
-
-  *this = *x; 
+  *this = as_const_PETScVector(v);
   return *this; 
 }
 //-----------------------------------------------------------------------------
-const PETScVector& PETScVector::operator= (const PETScVector& x)
+const PETScVector& PETScVector::operator= (const PETScVector& v)
 {
-  if ( !x.x )
-  {
-    clear();
-    return *this;
-  }
+  dolfin_assert(v.x);
 
-  init(x.size());
-  VecCopy(x.x, this->x);
+  init(v.size());
+  VecCopy(v.x, x);
 
   return *this; 
 }
+
 
 
 
@@ -297,41 +292,41 @@ const PETScVector& PETScVector::operator/= (const real a)
   return *this;
 }
 //-----------------------------------------------------------------------------
-real PETScVector::operator*(const PETScVector& x)
+real PETScVector::operator*(const PETScVector& y)
 {
-  dolfin_assert(x.x);
-  dolfin_assert(this->x);
+  dolfin_assert(x);
+  dolfin_assert(y.x);
 
   real a;
-  VecDot(x.x, this->x, &a);
+  VecDot(y.x, x, &a);
 
   return a;
 }
 //-----------------------------------------------------------------------------
-real PETScVector::inner(const GenericVector& x_) const
+real PETScVector::inner(const GenericVector& y) const
 {
-  const PETScVector* x = dynamic_cast<const PETScVector*>(x_.instance());  
-  if (!x) error("The vector should be of type PETScVector");  
+  dolfin_assert(x);
 
-  dolfin_assert(this->x);
-  dolfin_assert(x->x);
+  const PETScVector& v = as_const_PETScVector(y);
+  dolfin_assert(v.x);
 
   real a;
-  VecDot(x->x, this->x, &a);
+  VecDot(v.x, x, &a);
 
   return a;
 }
 //-----------------------------------------------------------------------------
-void PETScVector::axpy(real a, const GenericVector& x_) 
+void PETScVector::axpy(real a, const GenericVector& y) 
 {
-  const PETScVector* x = dynamic_cast<const PETScVector*>(x_.instance());  
-  if (!x) error("The vector x should be of type PETScVector");  
-  if (x->size() != size()) error("The vectors must be of the same size.");  
+  dolfin_assert(x);
 
-  dolfin_assert(this->x);
-  dolfin_assert(x->x);
+  const PETScVector& v = as_const_PETScVector(y);
+  dolfin_assert(v.x);
 
-  VecAXPY(this->x, a, x->vec());
+  if (size() != v.size())
+    error("The vectors must be of the same size.");  
+
+  VecAXPY(x, a, v.x);
 }
 //-----------------------------------------------------------------------------
 real PETScVector::norm(VectorNormType type) const
@@ -357,6 +352,7 @@ real PETScVector::norm(VectorNormType type) const
 real PETScVector::sum() const
 {
   dolfin_assert(x);
+
   real value = 0.0;
   VecSum(x, &value);
   
@@ -413,5 +409,40 @@ LinearAlgebraFactory& PETScVector::factory() const
   return PETScFactory::instance();
 }
 //-----------------------------------------------------------------------------
+
+
+namespace dolfin
+{
+
+//-----------------------------------------------------------------------------
+bool is_PETScVector(const GenericVector & gv)
+{
+  const PETScVector * v = dynamic_cast<const PETScVector*>(gv.instance());
+  return bool(v);
+}
+//-----------------------------------------------------------------------------
+PETScVector & as_PETScVector(GenericVector & gv)
+{
+  PETScVector * uv = dynamic_cast<PETScVector*>(gv.instance());
+  if(!uv) error("Cannot convert GenericVector to PETScVector.");
+  return *uv;
+}
+//-----------------------------------------------------------------------------
+const PETScVector & as_const_PETScVector(const GenericVector & gv)
+{
+  const PETScVector * uv = dynamic_cast<const PETScVector*>(gv.instance());
+  if(!uv) error("Cannot convert GenericVector to PETScVector.");
+  return *uv;
+}
+//-----------------------------------------------------------------------------
+Vec as_PETSc_Vec(GenericVector & gv)
+{
+  PETScVector & uv = as_PETScVector(gv);
+  return uv.vec();
+}
+//-----------------------------------------------------------------------------
+
+} // end namespace dolfin
+
 
 #endif
