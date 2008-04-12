@@ -233,25 +233,22 @@ void PETScVector::restore(const real data[]) const
   VecRestoreArray(x, &tmp);
 }
 //-----------------------------------------------------------------------------
-const PETScVector& PETScVector::operator= (const GenericVector& x_)
+const PETScVector& PETScVector::operator= (const GenericVector& v)
 {
-  *this = as_const_PETScVector(x);
+  *this = as_const_PETScVector(v);
   return *this; 
 }
 //-----------------------------------------------------------------------------
-const PETScVector& PETScVector::operator= (const PETScVector& x)
+const PETScVector& PETScVector::operator= (const PETScVector& v)
 {
-  if ( !x.x )
-  {
-    clear();
-    return *this;
-  }
+  dolfin_assert(v.x);
 
-  init(x.size());
-  VecCopy(x.x, this->x);
+  init(v.size());
+  VecCopy(v.x, x);
 
   return *this; 
 }
+
 
 
 
@@ -310,7 +307,7 @@ real PETScVector::inner(const GenericVector& y) const
 {
   dolfin_assert(x);
 
-  const PETScVector& v = as_PETScVector(y);
+  const PETScVector& v = as_const_PETScVector(y);
   dolfin_assert(v.x);
 
   real a;
@@ -323,7 +320,7 @@ void PETScVector::axpy(real a, const GenericVector& y)
 {
   dolfin_assert(x);
 
-  const PETScVector& v = as_PETScVector(y);
+  const PETScVector& v = as_const_PETScVector(y);
   dolfin_assert(v.x);
 
   if (size() != v.size())
