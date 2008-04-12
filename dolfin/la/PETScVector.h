@@ -7,7 +7,7 @@
 // Modified by Martin Alnæs 2008.
 //
 // First added:  2004
-// Last changed: 2008-04-11
+// Last changed: 2008-04-12
 
 #ifndef __PETSC_VECTOR_H
 #define __PETSC_VECTOR_H
@@ -120,14 +120,6 @@ namespace dolfin
 
     /// Assignment of vector
     const PETScVector& operator= (const PETScVector& x);
-
-    /// Return const GenericVector* (internal library use only!)
-    virtual const GenericVector* instance() const 
-    { return this; }
-
-    /// Return GenericVector* (internal library use only!)
-    virtual GenericVector* instance() 
-    { return this; }
 
     /// Assignment of all elements to a single scalar value
     const PETScVector& operator= (const real a);

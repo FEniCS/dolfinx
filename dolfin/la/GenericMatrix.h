@@ -5,9 +5,10 @@
 // Modified by Anders Logg 2006-2008.
 // Modified by Ola Skavhaug 2007-2008.
 // Modified by Kent-Andre Mardal 2008.
+// Modified by Martin Alnæs, 2008.
 //
 // First added:  2006-04-24
-// Last changed: 2008-04-09
+// Last changed: 2008-04-12
 
 #ifndef __GENERIC_MATRIX_H
 #define __GENERIC_MATRIX_H
@@ -113,20 +114,21 @@ namespace dolfin
       return value;
     }
 
-    /// Return concrete (const) GenericMatrix instance
-    virtual const GenericMatrix* instance() const 
-    { return this; }
-
-    /// Return concrete GenericMatrix instance
-    virtual GenericMatrix* instance() 
-    { return this; }
-
     // y = A x  ( or y = A^T x if transposed==true) 
     virtual void mult(const GenericVector& x, GenericVector& y, bool transposed=false) const = 0; 
 
     // FIXME remove this function and re-implement the << operator in terms of sparsity pattern and get
     /// Get non-zero values of row i
     virtual void getRow(uint i, int& ncols, Array<int>& columns, Array<real>& values) const = 0;
+
+    /// Return const GenericMatrix* (internal library use only!)
+    virtual const GenericMatrix* instance() const 
+    { return this; }
+
+    /// Return GenericMatrix* (internal library use only!)
+    virtual GenericMatrix* instance() 
+    { return this; }
+
   };
 
 }

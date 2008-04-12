@@ -99,20 +99,20 @@ namespace dolfin
     void disp(uint precision = 2) const
     { matrix->disp(precision); }
 
+    /// Return const GenericMatrix* (internal library use only!)
+    virtual const GenericMatrix* instance() const 
+    { return matrix; }
+
+    /// Return GenericMatrix* (internal library use only!)
+    virtual GenericMatrix* instance() 
+    { return matrix; }
+
     /// FIXME: Functions below are not in the GenericVector interface.
     /// FIXME: Should these be removed or added to the interface?
 
     /// Get non-zero values of row i
     void getRow(uint i, int& ncols, Array<int>& columns, Array<real>& values) const
     { matrix->getRow(i, ncols, columns, values); }
-
-    /// Return concrete (const) GenericMatrix instance
-    virtual const DefaultMatrix* instance() const 
-    { return matrix; }
-
-    /// Return concrete implementation GenericMatrix instance
-    virtual DefaultMatrix* instance() 
-    { return matrix; }
     
     LinearAlgebraFactory& factory() const
     { return matrix->factory(); }

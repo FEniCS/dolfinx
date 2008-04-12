@@ -7,7 +7,7 @@
 // Modified by Martin Alnæs 2008.
 //
 // First added:  2006-03-04
-// Last changed: 2008-04-11
+// Last changed: 2008-04-12
 
 #ifndef __UBLAS_VECTOR_H
 #define __UBLAS_VECTOR_H
@@ -85,14 +85,6 @@ namespace dolfin
 
     /// Divide vector with scalar 
     const uBlasVector& operator /= (real a);
-
-    /// Return const GenericVector* (internal library use only!)
-    virtual const GenericVector* instance() const 
-    { return this; }
-
-    /// Return GenericVector* (internal library use only!)
-    virtual GenericVector* instance() 
-    { return this; }
 
     /// Assignment from a vector_expression
     //template <class E>
