@@ -1,8 +1,13 @@
 """
+FiniteElement("Lagrange", "interval", 1)
+FiniteElement("Lagrange", "interval", 2)
 FiniteElement("Lagrange", "triangle", 1)
 FiniteElement("Lagrange", "triangle", 2)
 FiniteElement("Lagrange", "tetrahedron", 1)
 FiniteElement("Lagrange", "tetrahedron", 2)
+FiniteElement("Discontinuous Lagrange", "interval", 0)
+FiniteElement("Discontinuous Lagrange", "interval", 1)
+FiniteElement("Discontinuous Lagrange", "interval", 2)
 FiniteElement("Discontinuous Lagrange", "triangle", 0)
 FiniteElement("Discontinuous Lagrange", "triangle", 1)
 FiniteElement("Discontinuous Lagrange", "triangle", 2)

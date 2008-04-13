@@ -1,11 +1,12 @@
 "Generate finite elements for DOLFIN library of precompiled elements"
 
 __author__ = "Anders Logg (logg@simula.no)"
-__date__ = "2007-04-12 -- 2008-03-29"
+__date__ = "2007-04-12 -- 2008-04-13"
 __copyright__ = "Copyright (C) 2007-2008 Anders Logg"
 __license__  = "GNU LGPL Version 2.1"
 
 from ffc import *
+from ffc.common.constants import FFC_OPTIONS
 
 # Fancy import of list of elements from elements.py
 from elements import __doc__ as elements
