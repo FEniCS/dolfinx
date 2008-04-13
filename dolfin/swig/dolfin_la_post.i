@@ -1,6 +1,8 @@
-// Define uBlas matrix types (typedefs are ignored)
+// Instantiate uBlas matrix types (typedefs are ignored)
 %template(uBlasSparseMatrix) dolfin::uBlasMatrix<dolfin::ublas_sparse_matrix>;
 %template(uBlasDenseMatrix) dolfin::uBlasMatrix<dolfin::ublas_dense_matrix>;
+%typedef dolfin::uBlasMatrix<dolfin::ublas_sparse_matrix> uBlasSparseMatrix;
+%typedef dolfin::uBlasMatrix<dolfin::ublas_dense_matrix> uBlasDenseMatrix;
 
 
 #ifdef HAS_SLEPC
@@ -52,8 +54,6 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
   %}
 }
 #endif
-
-
 
 
 %extend dolfin::Vector {
@@ -130,5 +130,57 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
 #endif
 
 
+
+// Initialize tensor type map
+%pythoncode %{
+_down_cast_map = {}
+%}
+
+
+// Add PETSc support
+#ifdef HAS_PETSC
+
+%inline %{
+dolfin::PETScVector & down_cast_petsc_vector(dolfin::GenericTensor & tensor)
+{ return tensor.down_cast<dolfin::PETScVector>(); }
+
+dolfin::PETScMatrix & down_cast_petsc_matrix(dolfin::GenericTensor & tensor)
+{ return tensor.down_cast<dolfin::PETScMatrix>(); }
+%}
+
+%pythoncode %{
+_down_cast_map[PETScVector] = down_cast_petsc_vector
+_down_cast_map[PETScMatrix] = down_cast_petsc_matrix
+%}
+
+#endif
+
+// Add uBlas support
+//#ifdef HAS_BOOST
+
+%inline %{
+dolfin::uBlasVector & down_cast_ublas_vector(dolfin::GenericTensor & tensor)
+{ return tensor.down_cast<dolfin::uBlasVector>(); }
+
+uBlasSparseMatrix   & down_cast_ublas_matrix(dolfin::GenericTensor & tensor)
+{ return tensor.down_cast<uBlasSparseMatrix>(); }
+%}
+
+%pythoncode %{
+_down_cast_map[uBlasVector] = down_cast_ublas_vector
+_down_cast_map[uBlasSparseMatrix] = down_cast_ublas_matrix
+%}
+
+//#endif
+
+
+// Dynamic wrapper for down_cast, using dict of tensor types to select from C++ template instantiations
+%pythoncode %{
+def down_cast(tensor, subclass):
+    global _down_cast_map
+    assert _down_cast_map
+    assert subclass in _down_cast_map
+    return _down_cast_map[subclass](tensor)
+%}
 
 
