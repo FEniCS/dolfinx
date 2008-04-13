@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-02-04
-// Last changed: 2008-02-04
+// Last changed: 2008-04-12
 //
 // This demonstrates parallel assembly in DOLFIN. Parallel
 // assembly is currently experimental and exists in the form
@@ -25,6 +25,11 @@ using namespace dolfin;
 
 int main()
 {
+#ifndef HAS_SCOTCH
+  message("Sorry, this demo requires SCOTCH.");
+  return 0;
+#endif
+
   // Create mesh and form
   UnitCube mesh(20, 20, 20);
   ReactionDiffusionBilinearForm a; 
