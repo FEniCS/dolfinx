@@ -159,8 +159,8 @@ dolfin::PETScMatrix & down_cast_petsc_matrix(dolfin::GenericTensor & tensor)
 %}
 
 %pythoncode %{
-_has_type_map[PETScVector] = has_type_petsc_vector
-_has_type_map[PETScMatrix] = has_type_petsc_matrix
+#_has_type_map[PETScVector] = has_type_petsc_vector # FIXME: enable and test with petsc
+#_has_type_map[PETScMatrix] = has_type_petsc_matrix
 _down_cast_map[PETScVector] = down_cast_petsc_vector
 _down_cast_map[PETScMatrix] = down_cast_petsc_matrix
 %}
