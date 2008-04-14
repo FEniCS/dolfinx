@@ -198,8 +198,8 @@ _down_cast_map[uBlasSparseMatrix] = down_cast_ublas_matrix
 def get_tensor_type(tensor):
     "Return the concrete subclass of tensor."
     for k,v in _has_type_map.items():
-        if v(tensor, k):
-            return True
+        if v(tensor):
+            return k
     dolfin_error("Unregistered tensor type.")
 
 def has_type(tensor, subclass):
