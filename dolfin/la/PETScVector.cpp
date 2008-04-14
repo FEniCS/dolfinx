@@ -5,7 +5,7 @@
 // Modified by Martin Alnæs 2008
 //
 // First added:  2004
-// Last changed: 2008-04-11
+// Last changed: 2008-04-14
 
 // FIXME: Insert dolfin_assert() where appropriate
 
@@ -235,8 +235,7 @@ void PETScVector::restore(const real data[]) const
 //-----------------------------------------------------------------------------
 const PETScVector& PETScVector::operator= (const GenericVector& v)
 {
-  //*this = v.down_cast<PETScVector>(); // FIXME: enable this
-  *this = as_const_PETScVector(v);
+  *this = v.down_cast<PETScVector>();
   return *this; 
 }
 //-----------------------------------------------------------------------------
@@ -308,8 +307,7 @@ real PETScVector::inner(const GenericVector& y) const
 {
   dolfin_assert(x);
 
-  //const PETScVector& v = y.down_cast<PETScVector>(); // FIXME: enable this
-  const PETScVector& v = as_const_PETScVector(y);
+  const PETScVector& v = y.down_cast<PETScVector>();
   dolfin_assert(v.x);
 
   real a;
@@ -322,8 +320,7 @@ void PETScVector::axpy(real a, const GenericVector& y)
 {
   dolfin_assert(x);
 
-  //const PETScVector& v = y.down_cast<PETScVector>(); // FIXME: enable this
-  const PETScVector& v = as_const_PETScVector(y);
+  const PETScVector& v = y.down_cast<PETScVector>();
   dolfin_assert(v.x);
 
   if (size() != v.size())
@@ -412,40 +409,5 @@ LinearAlgebraFactory& PETScVector::factory() const
   return PETScFactory::instance();
 }
 //-----------------------------------------------------------------------------
-
-
-namespace dolfin
-{
-
-//-----------------------------------------------------------------------------
-bool is_PETScVector(const GenericVector & gv)
-{
-  const PETScVector * v = dynamic_cast<const PETScVector*>(gv.instance());
-  return bool(v);
-}
-//-----------------------------------------------------------------------------
-PETScVector & as_PETScVector(GenericVector & gv)
-{
-  PETScVector * uv = dynamic_cast<PETScVector*>(gv.instance());
-  if(!uv) error("Cannot convert GenericVector to PETScVector.");
-  return *uv;
-}
-//-----------------------------------------------------------------------------
-const PETScVector & as_const_PETScVector(const GenericVector & gv)
-{
-  const PETScVector * uv = dynamic_cast<const PETScVector*>(gv.instance());
-  if(!uv) error("Cannot convert GenericVector to PETScVector.");
-  return *uv;
-}
-//-----------------------------------------------------------------------------
-Vec as_PETSc_Vec(GenericVector & gv)
-{
-  PETScVector & uv = as_PETScVector(gv);
-  return uv.vec();
-}
-//-----------------------------------------------------------------------------
-
-} // end namespace dolfin
-
 
 #endif

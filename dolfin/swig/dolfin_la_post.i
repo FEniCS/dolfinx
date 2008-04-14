@@ -143,13 +143,12 @@ _down_cast_map = {}
 #ifdef HAS_PETSC
 
 %inline %{
-/* // FIXME: enable and test with petsc
+
 bool has_type_petsc_vector(dolfin::GenericTensor & tensor)
 { return tensor.has_type<dolfin::PETScVector>(); }
 
 bool has_type_petsc_matrix(dolfin::GenericTensor & tensor)
 { return tensor.has_type<dolfin::PETScMatrix>(); }
-*/
 
 dolfin::PETScVector & down_cast_petsc_vector(dolfin::GenericTensor & tensor)
 { return tensor.down_cast<dolfin::PETScVector>(); }
@@ -159,8 +158,8 @@ dolfin::PETScMatrix & down_cast_petsc_matrix(dolfin::GenericTensor & tensor)
 %}
 
 %pythoncode %{
-#_has_type_map[PETScVector] = has_type_petsc_vector # FIXME: enable and test with petsc
-#_has_type_map[PETScMatrix] = has_type_petsc_matrix
+_has_type_map[PETScVector] = has_type_petsc_vector
+_has_type_map[PETScMatrix] = has_type_petsc_matrix
 _down_cast_map[PETScVector] = down_cast_petsc_vector
 _down_cast_map[PETScMatrix] = down_cast_petsc_matrix
 %}

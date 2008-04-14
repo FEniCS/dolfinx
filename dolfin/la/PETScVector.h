@@ -7,7 +7,7 @@
 // Modified by Martin Alnæs 2008.
 //
 // First added:  2004
-// Last changed: 2008-04-12
+// Last changed: 2008-04-14
 
 #ifndef __PETSC_VECTOR_H
 #define __PETSC_VECTOR_H
@@ -182,19 +182,6 @@ namespace dolfin
 
   LogStream& operator<< (LogStream& stream, const PETScVector& A);
   
-
-  /// Check if vector implementation is PETScVector.
-  bool is_PETScVector(const GenericVector & gv);
-
-  /// Cast vector reference to PETScVector if possible.
-  PETScVector & as_PETScVector(GenericVector & gv);
-
-  /// Cast vector reference to const PETScVector if possible.
-  const PETScVector & as_const_PETScVector(const GenericVector & gv);
-  
-  /// Cast vector reference to Vec if possible.
-  Vec as_PETSc_Vec(GenericVector & gv);
-
 }
 
 #endif
