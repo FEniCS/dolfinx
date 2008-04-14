@@ -181,22 +181,6 @@ namespace dolfin
 
   LogStream& operator<< (LogStream& stream, const uBlasVector& x);
  
- 
-  /// Check if vector implementation is uBlasVector.
-  bool is_uBlasVector(const GenericVector & gv);
-
-  /// Cast vector reference to uBlasVector if possible.
-  uBlasVector & as_uBlasVector(GenericVector & gv);
-
-  /// Cast vector reference to const uBlasVector if possible.
-  const uBlasVector & as_const_uBlasVector(const GenericVector & gv);
-
-  /// Cast vector reference to const ublas_vector if possible.
-  ublas_vector & as_ublas_vector(GenericVector & gv);
-
-  /// Cast vector reference to const ublas_vector if possible.
-  const ublas_vector & as_const_ublas_vector(const GenericVector & gv);
-
 }
 
 #endif

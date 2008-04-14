@@ -6,7 +6,7 @@
 // Modified by Martin Alnæs, 2008.
 //
 // First added:  2007-01-17
-// Last changed: 2008-04-12
+// Last changed: 2008-04-14
 
 #ifndef __GENERIC_TENSOR_H
 #define __GENERIC_TENSOR_H
@@ -87,6 +87,10 @@ namespace dolfin
         error("GenericTensor cannot be cast to the requested type."); 
       return *t;
     }
+
+    /// Check wether the GenericTensor object matches a specific type
+    template<class T> bool has_type() const
+    { return bool(dynamic_cast<const T*>(instance())); }
 
   };
 

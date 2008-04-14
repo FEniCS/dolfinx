@@ -1,6 +1,7 @@
-// Instantiate uBlas matrix types (typedefs are ignored)
+// Instantiate uBlas matrix types
 %template(uBlasSparseMatrix) dolfin::uBlasMatrix<dolfin::ublas_sparse_matrix>;
 %template(uBlasDenseMatrix) dolfin::uBlasMatrix<dolfin::ublas_dense_matrix>;
+// Define names for uBlas matrix types
 %typedef dolfin::uBlasMatrix<dolfin::ublas_sparse_matrix> uBlasSparseMatrix;
 %typedef dolfin::uBlasMatrix<dolfin::ublas_dense_matrix> uBlasDenseMatrix;
 
@@ -133,6 +134,7 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
 
 // Initialize tensor type map
 %pythoncode %{
+_has_type_map = {}
 _down_cast_map = {}
 %}
 
@@ -141,6 +143,14 @@ _down_cast_map = {}
 #ifdef HAS_PETSC
 
 %inline %{
+/* // FIXME: enable and test with petsc
+bool has_type_petsc_vector(dolfin::GenericTensor & tensor)
+{ return tensor.has_type<dolfin::PETScVector>(); }
+
+bool has_type_petsc_matrix(dolfin::GenericTensor & tensor)
+{ return tensor.has_type<dolfin::PETScMatrix>(); }
+*/
+
 dolfin::PETScVector & down_cast_petsc_vector(dolfin::GenericTensor & tensor)
 { return tensor.down_cast<dolfin::PETScVector>(); }
 
@@ -149,6 +159,8 @@ dolfin::PETScMatrix & down_cast_petsc_matrix(dolfin::GenericTensor & tensor)
 %}
 
 %pythoncode %{
+_has_type_map[PETScVector] = has_type_petsc_vector
+_has_type_map[PETScMatrix] = has_type_petsc_matrix
 _down_cast_map[PETScVector] = down_cast_petsc_vector
 _down_cast_map[PETScMatrix] = down_cast_petsc_matrix
 %}
@@ -159,6 +171,12 @@ _down_cast_map[PETScMatrix] = down_cast_petsc_matrix
 //#ifdef HAS_BOOST
 
 %inline %{
+bool has_type_ublas_vector(dolfin::GenericTensor & tensor)
+{ return tensor.has_type<dolfin::uBlasVector>(); }
+
+bool has_type_ublas_matrix(dolfin::GenericTensor & tensor)
+{ return tensor.has_type<uBlasSparseMatrix>(); }
+
 dolfin::uBlasVector & down_cast_ublas_vector(dolfin::GenericTensor & tensor)
 { return tensor.down_cast<dolfin::uBlasVector>(); }
 
@@ -167,6 +185,8 @@ uBlasSparseMatrix   & down_cast_ublas_matrix(dolfin::GenericTensor & tensor)
 %}
 
 %pythoncode %{
+_has_type_map[uBlasVector] = has_type_ublas_vector
+_has_type_map[uBlasSparseMatrix] = has_type_ublas_matrix
 _down_cast_map[uBlasVector] = down_cast_ublas_vector
 _down_cast_map[uBlasSparseMatrix] = down_cast_ublas_matrix
 %}
@@ -174,11 +194,28 @@ _down_cast_map[uBlasSparseMatrix] = down_cast_ublas_matrix
 //#endif
 
 
-// Dynamic wrapper for down_cast, using dict of tensor types to select from C++ template instantiations
+// Dynamic wrappers for GenericTensor::down_cast and GenericTensor::has_type, using dict of tensor types to select from C++ template instantiations
 %pythoncode %{
-def down_cast(tensor, subclass):
+def get_tensor_type(tensor):
+    "Return the concrete subclass of tensor."
+    for k,v in _has_type_map.items():
+        if v(tensor, k):
+            return True
+    dolfin_error("Unregistered tensor type.")
+
+def has_type(tensor, subclass):
+    "Return wether tensor is of the given subclass."
+    global _has_type_map
+    assert _has_type_map
+    assert subclass in _has_type_map
+    return bool(_has_type_map[subclass](tensor))
+
+def down_cast(tensor, subclass=None):
+    "Cast tensor to the given subclass, passing the wrong class is an error."
     global _down_cast_map
     assert _down_cast_map
+    if subclass is None:
+        subclass = get_tensor_type(tensor)
     assert subclass in _down_cast_map
     return _down_cast_map[subclass](tensor)
 %}

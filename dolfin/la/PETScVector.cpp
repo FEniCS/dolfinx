@@ -235,6 +235,7 @@ void PETScVector::restore(const real data[]) const
 //-----------------------------------------------------------------------------
 const PETScVector& PETScVector::operator= (const GenericVector& v)
 {
+  //*this = v.down_cast<PETScVector>(); // FIXME: enable this
   *this = as_const_PETScVector(v);
   return *this; 
 }
@@ -307,6 +308,7 @@ real PETScVector::inner(const GenericVector& y) const
 {
   dolfin_assert(x);
 
+  //const PETScVector& v = y.down_cast<PETScVector>(); // FIXME: enable this
   const PETScVector& v = as_const_PETScVector(y);
   dolfin_assert(v.x);
 
@@ -320,6 +322,7 @@ void PETScVector::axpy(real a, const GenericVector& y)
 {
   dolfin_assert(x);
 
+  //const PETScVector& v = y.down_cast<PETScVector>(); // FIXME: enable this
   const PETScVector& v = as_const_PETScVector(y);
   dolfin_assert(v.x);
 
