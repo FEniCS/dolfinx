@@ -31,13 +31,14 @@ namespace dolfin
     
     inline uint solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b)
     { 
-      const DefaultMatrix* AA = dynamic_cast<const DefaultMatrix*>(A.instance()); 
-      if (!AA) error("Could not convert first argument to correct backend");
-      DefaultVector* xx = dynamic_cast<DefaultVector*>(x.instance()); 
-      if (!xx) error("Could not convert second argument to correct backend");
-      const DefaultVector* bb = dynamic_cast<const DefaultVector*>(b.instance()); 
-      if (!bb) error("Could not convert third argument to correct backend");
-      return solver.solve(*AA, *xx, *bb); 
+      //const DefaultMatrix* AA = dynamic_cast<const DefaultMatrix*>(A.instance()); 
+      //if (!AA) error("Could not convert first argument to correct backend");
+      //DefaultVector* xx = dynamic_cast<DefaultVector*>(x.instance()); 
+      //if (!xx) error("Could not convert second argument to correct backend");
+      //const DefaultVector* bb = dynamic_cast<const DefaultVector*>(b.instance()); 
+      //if (!bb) error("Could not convert third argument to correct backend");
+      //return solver.solve(*AA, *xx, *bb); 
+      return solver.solve(A, x, b);
     }
     
   private:

@@ -37,6 +37,7 @@ namespace dolfin
 
     /// Solve linear system Ax = b 
     virtual uint solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b);
+
     /// Solve linear system Ax = b (A is dense)
     virtual uint solve(const uBlasMatrix<ublas_dense_matrix>& A, uBlasVector& x, 
                        const uBlasVector& b) = 0;
