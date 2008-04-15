@@ -261,6 +261,13 @@ ret["data"].extend([File(os.path.join("#data", f)) for f in data])
 # read the SConscript for tests if enabled
 ret["tests"] = []
 if env["enableTests"]:
+    # make sure CppUnit is found:
+    try:
+        scons.runCommand("pkg-config", "--exists cppunit")
+    except Exception:
+        print "*** Unable to find the Unit Testing Library for C++"
+        print "*** Install CppUnit (libcppunit-dev) or disable testing with enableTests=no"
+        Exit(1)
     ret["tests"] += env.SConscript(os.path.join("#test", "SConscript"),
                                    exports=["env", "modules", "configuredPackages"])
 

@@ -268,13 +268,22 @@ void DirichletBC::computeBCTopological(std::map<uint, real>& boundary_values,
   // Tabulate which dofs are on the facet
   data.dof_map->tabulate_facet_dofs(data.facet_dofs, local_facet);
   
+  // Debugging print:
+  /* 
+  cout << endl << "Handling BC's for:" << endl;
+  cout << "Cell:  " << facet.entities(facet.dim() + 1)[0] << endl;
+  cout << "Facet: " << local_facet << endl;
+  */
+  
   // Pick values for facet
   for (uint i = 0; i < data.dof_map->num_facet_dofs(); i++)
   {
     const uint dof = data.offset + data.cell_dofs[data.facet_dofs[i]];
     const real value = data.w[data.facet_dofs[i]];
     boundary_values[dof] = value;
+    //cout << "Setting BC value: i = " << i << ", dof = " << dof << ", value = " << value << endl;
   }
+
 }
 //-----------------------------------------------------------------------------
 void DirichletBC::computeBCGeometrical(std::map<uint, real>& boundary_values,

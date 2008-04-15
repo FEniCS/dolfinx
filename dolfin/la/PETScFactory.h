@@ -33,7 +33,8 @@ namespace dolfin
     /// Create empty vector
     PETScVector* createVector() const;
 
-    static PETScFactory& instance() { return petscfactory; }
+    static PETScFactory& instance() 
+    { return petscfactory; }
 
   private:
 

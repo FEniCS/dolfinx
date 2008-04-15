@@ -107,48 +107,22 @@ namespace dolfin
     //  this += a*x   
     virtual void axpy(real a, const GenericVector& x) = 0; 
 
-    /// Add vector x
-    const GenericVector& operator+= (const GenericVector& x) { 
-      // Can not be abstract since a GenericVector reference is returned
-      // Therefore the current implementation: 
-      error("The operator += can not be used in GenericVector"); 
-      return *this; 
-    }
-
-    /// Subtract vector x
-    const GenericVector& operator-= (const GenericVector& x) { 
-      // Can not be abstract since a GenericVector reference is returned
-      // Therefore the current implementation: 
-      error("The operator -= can not be used in GenericVector"); 
-      return *this; 
-    }
-
-    /// Multiply vector with scalar
-    const GenericVector& operator*= (const real a) { 
-      // Can not be abstract since a GenericVector reference is returned
-      // Therefore the current implementation: 
-      error("The operator *= can not be used in GenericVector"); 
-      return *this; 
-    }
-
-
     /// Assignment of vector
     virtual const GenericVector& operator= (const GenericVector& x) { 
       // Can not be abstract since a GenericVector reference is returned
       // Therefore the current implementation: 
-      error("The operator = can not be used in GenericVector"); 
+      error("The operator = can not be used on GenericVector"); 
       return *this; 
     }
 
-    /// Return concrete (const) GenericVector instance
-    virtual GenericVector* instance() {
-      return this;
-    }
+    /// Return const GenericVector* (internal library use only!)
+    virtual const GenericVector* instance() const 
+    { return this; }
 
-    /// Return concrete (const) GenericVector instance
-    virtual const GenericVector* instance() const {
-      return this;
-    }
+    /// Return GenericVector* (internal library use only!)
+    virtual GenericVector* instance() 
+    { return this; }
+
   };  
 
 }

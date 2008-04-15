@@ -29,7 +29,7 @@ namespace dolfin
     
     ~LUSolver() {}
     
-    inline uint solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b)
+    uint solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b)
     { 
       //const DefaultMatrix* AA = dynamic_cast<const DefaultMatrix*>(A.instance()); 
       //if (!AA) error("Could not convert first argument to correct backend");
@@ -39,6 +39,7 @@ namespace dolfin
       //if (!bb) error("Could not convert third argument to correct backend");
       //return solver.solve(*AA, *xx, *bb); 
       return solver.solve(A, x, b);
+        error("Could not convert third argument to correct backend");
     }
     
   private:

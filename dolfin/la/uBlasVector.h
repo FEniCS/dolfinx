@@ -4,9 +4,10 @@
 // Modified by Anders Logg 2006-2008.
 // Modified by Kent-Andre Mardal 2008.
 // Modified by Ola Skavhaug 2008.
+// Modified by Martin Alnæs 2008.
 //
 // First added:  2006-03-04
-// Last changed: 2008-04-10
+// Last changed: 2008-04-12
 
 #ifndef __UBLAS_VECTOR_H
 #define __UBLAS_VECTOR_H
@@ -15,7 +16,6 @@
 #include <dolfin/common/Variable.h>
 #include "ublas.h"
 #include "GenericVector.h"
-#include "LinearAlgebraFactory.h"
 
 #include "VectorNormType.h"
 
@@ -27,6 +27,9 @@ namespace dolfin
 #endif
 
   namespace ublas = boost::numeric::ublas;
+  
+  //// Forward declarations
+  class LinearAlgebraFactory;
 
   /// This class represents a dense vector of dimension N.
   /// It is a simple wrapper for a Boost ublas vector.
@@ -83,33 +86,25 @@ namespace dolfin
     /// Divide vector with scalar 
     const uBlasVector& operator /= (real a);
 
-    /// Return concrete (const) uBlasVector instance
-    virtual const uBlasVector* instance() const 
-      { return this; }
-
-    /// Return concrete uBlasVector instance
-    virtual uBlasVector* instance() 
-      { return this; }
-
     /// Assignment from a vector_expression
     //template <class E>
     //uBlasVector& operator=(const ublas::vector_expression<E>& x)
     //{ 
-    //  this->ublas_vector::operator=(x); 
+    //  x->ublas_vector::operator=(x); 
     //  return *this;
     //} 
     
     /// Return size
-    inline uint size() const
-      { return x.size(); }
+    uint size() const
+    { return x.size(); }
 
     /// Access given entry
-    inline real& operator() (uint i)
-      { return x(i); };
+    real& operator() (uint i)
+    { return x(i); };
 
     /// Access value of given entry
-    inline real operator() (uint i) const
-      { return x(i); };
+    real operator() (uint i) const
+    { return x(i); };
 
     /// Get values
     void get(real* values) const;
@@ -164,10 +159,12 @@ namespace dolfin
     LinearAlgebraFactory& factory() const;
 
     /// Return uBLAS ublas_vector reference
-    const ublas_vector& vec() const;
+    const ublas_vector& vec() const
+    { return x; }
 
     /// Return uBLAS ublas_vector reference
-    ublas_vector& vec();
+    ublas_vector& vec()
+    { return x; }
 
     // Copy values between different vector representations
 #ifdef HAS_PETSC
@@ -183,7 +180,7 @@ namespace dolfin
   };
 
   LogStream& operator<< (LogStream& stream, const uBlasVector& x);
-  
+ 
 }
 
 #endif

@@ -58,7 +58,8 @@ namespace dolfin
     uint numNonZero() const;
 
     /// Return underlying sparsity pattern
-    const std::vector< std::set<int> >& pattern() const { return sparsity_pattern; };
+    const std::vector< std::set<int> >& pattern() const 
+    { return sparsity_pattern; };
 
     /// Display sparsity pattern
     void disp() const;

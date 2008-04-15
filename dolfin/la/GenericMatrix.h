@@ -5,9 +5,10 @@
 // Modified by Anders Logg 2006-2008.
 // Modified by Ola Skavhaug 2007-2008.
 // Modified by Kent-Andre Mardal 2008.
+// Modified by Martin Alnæs, 2008.
 //
 // First added:  2006-04-24
-// Last changed: 2008-04-09
+// Last changed: 2008-04-12
 
 #ifndef __GENERIC_MATRIX_H
 #define __GENERIC_MATRIX_H
@@ -41,21 +42,22 @@ namespace dolfin
     virtual void init(const GenericSparsityPattern& sparsity_pattern) = 0;
 
     /// Return rank of tensor (number of dimensions)
-    inline uint rank() const { return 2; }
+    uint rank() const 
+    { return 2; }
 
     /// Return size of given dimension (implemented by sub class)
     virtual uint size(uint dim) const = 0;
 
     /// Get block of values
-    inline void get(real* block, const uint* num_rows, const uint * const * rows) const
+    void get(real* block, const uint* num_rows, const uint * const * rows) const
     { get(block, num_rows[0], rows[0], num_rows[1], rows[1]); }
 
     /// Set block of values
-    inline void set(const real* block, const uint* num_rows, const uint * const * rows)
+    void set(const real* block, const uint* num_rows, const uint * const * rows)
     { set(block, num_rows[0], rows[0], num_rows[1], rows[1]); }
 
     /// Add block of values
-    inline void add(const real* block, const uint* num_rows, const uint * const * rows)
+    void add(const real* block, const uint* num_rows, const uint * const * rows)
     { add(block, num_rows[0], rows[0], num_rows[1], rows[1]); }
 
     /// Set all entries to zero and keep any sparse structure (implemented by sub class)
@@ -95,29 +97,21 @@ namespace dolfin
     virtual void zero(uint m, const uint* rows) = 0;
 
     /// Set given matrix entry to value
-    virtual void setitem(std::pair<uint, uint> idx, real value) {
+    virtual void setitem(std::pair<uint, uint> idx, real value) 
+    {
       const uint i = idx.first;
       const uint j = idx.second;
       set(&value, 1, &i, 1, &j);  
     }
 
     /// Get given matrix entry 
-    virtual real getitem(std::pair<uint, uint> idx) {
+    virtual real getitem(std::pair<uint, uint> idx) 
+    {
       const uint i = idx.first;
       const uint j = idx.second;
       real value;
       get(&value, 1, &i, 1, &j);  
       return value;
-    }
-
-    /// Return concrete (const) GenericMatrix instance
-    virtual const GenericMatrix* instance() const { 
-      return this; 
-    }
-
-    /// Return concrete GenericMatrix instance
-    virtual GenericMatrix* instance() { 
-      return this; 
     }
 
     // y = A x  ( or y = A^T x if transposed==true) 
@@ -126,6 +120,15 @@ namespace dolfin
     // FIXME remove this function and re-implement the << operator in terms of sparsity pattern and get
     /// Get non-zero values of row i
     virtual void getRow(uint i, int& ncols, Array<int>& columns, Array<real>& values) const = 0;
+
+    /// Return const GenericMatrix* (internal library use only!)
+    virtual const GenericMatrix* instance() const 
+    { return this; }
+
+    /// Return GenericMatrix* (internal library use only!)
+    virtual GenericMatrix* instance() 
+    { return this; }
+
   };
 
 }

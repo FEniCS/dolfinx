@@ -8,6 +8,19 @@ __license__  = "GNU LGPL Version 2.1"
 from dolfin import *
 import numpy
 
+# Test for PETSc and SLEPc
+try:
+    dolfin.PETScMatrix
+except:
+    print "PyDOLFIN has not been configured with PETSc. Exiting."
+    exit()
+try:
+    dolfin.SLEPcEigenvalueSolver
+except:
+    print "PyDOLFIN has not been configured with SLEPc. Exiting."
+    exit()
+
+
 A = dolfin.PETScMatrix(2,2)
 A[0, 0] = 4.0
 A[0, 1] = 1.0

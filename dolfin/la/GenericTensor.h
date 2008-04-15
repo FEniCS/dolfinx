@@ -3,14 +3,16 @@
 //
 // Modified by Garth N. Wells, 2007.
 // Modified by Ola Skavhaug, 2007.
+// Modified by Martin Alnæs, 2008.
 //
 // First added:  2007-01-17
-// Last changed: 2008-04-03
+// Last changed: 2008-04-14
 
 #ifndef __GENERIC_TENSOR_H
 #define __GENERIC_TENSOR_H
 
 #include <dolfin/main/constants.h>
+#include <dolfin/log/log.h>
 
 namespace dolfin
 {
@@ -59,6 +61,36 @@ namespace dolfin
 
     /// Get LA backend factory
     virtual LinearAlgebraFactory& factory() const = 0; 
+
+    /// Return const GenericTensor* (internal library use only!)
+    virtual const GenericTensor* instance() const 
+    { return this; }
+
+    /// Return GenericTensor* (internal library use only!)
+    virtual GenericTensor* instance() 
+    { return this; }
+
+    /// Cast a GenericTensor to its derived class (const version)
+    template<class T> const T& down_cast() const
+    {
+      const T* t = dynamic_cast<const T*>(instance());
+      if ( !t )  
+        error("GenericTensor cannot be cast to the requested type."); 
+      return *t;
+    }
+
+    /// Cast a GenericTensor to its derived class (non-const version)
+    template<class T> T& down_cast()
+    {
+      T* t = dynamic_cast<T*>(instance());
+      if ( !t )  
+        error("GenericTensor cannot be cast to the requested type."); 
+      return *t;
+    }
+
+    /// Check wether the GenericTensor object matches a specific type
+    template<class T> bool has_type() const
+    { return bool(dynamic_cast<const T*>(instance())); }
 
   };
 

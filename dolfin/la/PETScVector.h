@@ -4,9 +4,10 @@
 // Modified by Garth N. Wells 2005-2007.
 // Modified by Kent-Andre Mardal 2008.
 // Modified by Ola Skavhaug 2008.
+// Modified by Martin Alnæs 2008.
 //
 // First added:  2004
-// Last changed: 2008-04-08
+// Last changed: 2008-04-14
 
 #ifndef __PETSC_VECTOR_H
 #define __PETSC_VECTOR_H
@@ -120,18 +121,6 @@ namespace dolfin
     /// Assignment of vector
     const PETScVector& operator= (const PETScVector& x);
 
-
-
-    /// Return concrete (const) PETScVector instance
-    virtual const PETScVector* instance() const {
-      return this;
-    }
-
-    /// Return concrete PETScVector instance
-    virtual PETScVector* instance() {
-      return this;
-    }
-
     /// Assignment of all elements to a single scalar value
     const PETScVector& operator= (const real a);
 
@@ -192,7 +181,7 @@ namespace dolfin
   };
 
   LogStream& operator<< (LogStream& stream, const PETScVector& A);
-
+  
 }
 
 #endif

@@ -4,9 +4,10 @@
 // Modified by Anders Logg, 2007-2008.
 // Modified by Kent-Andre Mardal 2008.
 // Modified by Ola Skavhaug 2008.
+// Modified by Martin Alnæs 2008.
 //
 // First added:  2007-07-03
-// Last changed: 2008-04-08
+// Last changed: 2008-04-11
 
 #ifndef __VECTOR_H
 #define __VECTOR_H
@@ -29,163 +30,155 @@ namespace dolfin
 
     /// Constructor
     Vector() : GenericVector(), Variable("x", "DOLFIN vector"),
-               vector(new DefaultVector()) {}
+               vector(0)
+    {
+      // TODO: use globally selected linear algebra factory to create new vector of any backend
+      vector = new DefaultVector();
+    }
     
     /// Constructor
     Vector(uint N) : GenericVector(), Variable("x", "DOLFIN vector"),
-                     vector(new DefaultVector(N)) {}
+                     vector(0)
+    {
+      // TODO: use globally selected linear algebra factory to create new vector of any backend
+      vector = new DefaultVector(N);
+    }
     
     /// Destructor
-    ~Vector() { delete vector; }
+    ~Vector()
+    { delete vector; }
     
     /// Initialize vector of size N
-    inline void init(uint N) 
+    void init(uint N) 
     { vector->init(N); }
 
     /// Create uninitialized vector
-    inline Vector* create() const
+    Vector* create() const
     { return new Vector(); }
 
     /// Create copy of vector
-    inline Vector* copy() const
+    Vector* copy() const
     { 
-      // create a new vector; 
       Vector* v =  new Vector(vector->size()); 
-      // assign values
       *v = *vector; 
       return v; 
     }
 
     /// Return size
-    inline uint size() const
+    uint size() const
     { return vector->size(); }
 
     /// Get values
-    inline void get(real* values) const
+    void get(real* values) const
     { vector->get(values); }
     
     /// Set values
-    inline void set(real* values)
+    void set(real* values)
     { vector->set(values); }
     
     /// Add values
-    inline void add(real* values)
+    void add(real* values)
     { vector->add(values); }
     
     /// Get block of values
-    inline void get(real* block, uint m, const uint* rows) const
+    void get(real* block, uint m, const uint* rows) const
     { vector->get(block, m, rows); }
     
     /// Set block of values
-    inline void set(const real* block, uint m, const uint* rows)
+    void set(const real* block, uint m, const uint* rows)
     { vector->set(block, m, rows); }
 
     /// Add block of values
-    inline void add(const real* block, uint m, const uint* rows)
+    void add(const real* block, uint m, const uint* rows)
     { vector->add(block, m, rows); }
         
     /// Set all entries to zero
-    inline void zero()
+    void zero()
     { vector->zero(); }
     
     /// Apply changes to matrix
-    inline void apply()
+    void apply()
     { vector->apply(); }
     
     /// Display matrix (sparse output is default)
-    inline void disp(uint precision = 2) const
+    void disp(uint precision = 2) const
     { vector->disp(precision); }
     
     /// FIXME: Functions below are not in the GenericVector interface.
     /// FIXME: Should these be removed or added to the interface?
 
     /// Add vector x
-    inline const Vector& operator+= (const GenericVector& x)
+    const Vector& operator+= (const GenericVector& x)
     { 
-      this->vector->axpy(1.0, x); 
+      vector->axpy(1.0, x); 
       return *this; 
     }
 
     /// Subtract vector x
-    inline const Vector& operator-= (const GenericVector& x)
+    const Vector& operator-= (const GenericVector& x)
     { 
-      this->vector->axpy(-1.0, x); 
+      vector->axpy(-1.0, x); 
       return *this; 
     }
 
     /// Add vector x
-    inline const Vector& operator*= (const real a)
+    const Vector& operator*= (const real a)
     { 
       *vector *= a;  
       return *this; 
     }
 
-
-
-    /// assignment operator
-    inline const Vector& operator= (const GenericVector& x_)
+    /// Assignment operator
+    const Vector& operator= (const GenericVector& x)
     { 
-      // get the underlying GenericVector instance (in case of a Vector) 
-      const GenericVector* x = dynamic_cast<const GenericVector*>(x_.instance());  
+      // get the underlying GenericVector instance (in case x is a Vector) 
+      const GenericVector* y = x.instance();
 
       // employ the operator= of the underlying instance
-      *vector = *x; 
+      *vector = *y; 
 
       return *this; 
     }
 
-    /// assignment operator
-    inline const Vector& operator= (const Vector& x_)
+    /// Assignment operator
+    const Vector& operator= (const Vector& x)
     { 
-      // get the underlying GenericVector instance (in case of a Vector) 
-      const GenericVector* x = dynamic_cast<const GenericVector*>(x_.instance());  
-
       // employ the operator= of the underlying instance
-      *vector = *x; 
-
+      *vector = *(x.vector); 
       return *this; 
     }
 
-
-    
     /// Compute norm of vector
-    inline real norm(VectorNormType type = l2) const
-    { return vector->norm(type); }
+    real norm(VectorNormType type = l2) const
+    { return vector->norm(type); } // FIXME: This isn't in the GenericVector interface!
    
     /// Return backend factory
-    inline LinearAlgebraFactory& factory() const
+    LinearAlgebraFactory& factory() const
     { return vector->factory(); }
 
     /// inner product 
-    inline real inner(const GenericVector& x_) const
-    { 
-      return this->vector->inner(x_); 
-    }
+    real inner(const GenericVector& x) const
+    { return vector->inner(x); }
 
     /// this += a*x  
-    inline void axpy(real a, const GenericVector& x) 
-    { 
-      return this->vector->axpy(a, x); 
-    }
+    void axpy(real a, const GenericVector& x) 
+    { return vector->axpy(a, x); }
 
     /// this *= a  
-    inline void mult(const real a) 
-    { 
-      return this->vector->mult(a); 
-    }
+    void mult(const real a) 
+    { return vector->mult(a); } // FIXME: This isn't in the GenericVector interface!
 
-    /// Return concrete GenericVector instance
-    virtual DefaultVector* instance() {
-      return vector;
-    }
+    /// Return const GenericVector* (internal library use only!)
+    virtual const GenericVector* instance() const 
+    { return vector; }
 
-    /// Return concrete (const) GenericVector instance
-    virtual const DefaultVector* instance() const {
-      return vector;
-    }
+    /// Return GenericVector* (internal library use only!)
+    virtual GenericVector* instance() 
+    { return vector; }
 
   private:
     
+    //GenericVector* vector; // FIXME: Use this when above FIXME's have been handled.
     DefaultVector* vector;
     
   };
