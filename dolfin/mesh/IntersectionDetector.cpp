@@ -55,9 +55,10 @@ void IntersectionDetector::overlap(Array<Point>& points,
 
   // remove repeated cells
   cells.clear();
-  uint k = 0;
-  cells.push_back(cc[k]);
-  for (uint i = 0; i < cc.size(); i++)
+  //uint k = 0;
+  cells.push_back(cc[0]);
+  uint k = cc[0];
+  for (uint i = 1; i < cc.size(); i++)
   {
     if (cc[i] > k)
     {
