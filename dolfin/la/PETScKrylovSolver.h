@@ -14,7 +14,6 @@
 
 #ifdef HAS_PETSC
 
-#include "PETScLinearSolver.h"
 #include <dolfin/main/constants.h>
 #include <dolfin/parameter/Parametrized.h>
 #include "Preconditioner.h"

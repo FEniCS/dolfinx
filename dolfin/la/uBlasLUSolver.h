@@ -11,7 +11,6 @@
 
 #include "ublas.h"
 #include <dolfin/parameter/Parametrized.h>
-#include "uBlasLinearSolver.h"
 
 namespace dolfin
 {
@@ -27,7 +26,7 @@ namespace dolfin
   /// are solved using UMFPACK (http://www.cise.ufl.edu/research/sparse/umfpack/)
   /// is installed. Matrices can also be inverted.
     
-  class uBlasLUSolver : public uBlasLinearSolver, public Parametrized
+  class uBlasLUSolver : public Parametrized
   {
 
   public:
