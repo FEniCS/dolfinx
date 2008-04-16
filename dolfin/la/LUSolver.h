@@ -52,10 +52,9 @@ namespace dolfin
       }
 
 #ifdef HAS_PETSC
-      const PETScMatrix* AA = dynamic_cast<const PETScMatrix*>(A.instance()); 
       if (A.has_type<PETScMatrix>()) {
         if (!petscsolver)
-          petscsolver = new PETScLUSolver()
+          petscsolver = new PETScLUSolver();
         return petscsolver->solve(A.down_cast<PETScMatrix >(), x.down_cast<PETScVector>(), b.down_cast<PETScVector>());
       }
 #endif
