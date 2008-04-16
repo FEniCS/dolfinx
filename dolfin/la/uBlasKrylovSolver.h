@@ -15,7 +15,6 @@
 #include <dolfin/parameter/Parametrized.h>
 #include "Preconditioner.h"
 #include "KrylovMethod.h"
-#include "uBlasLinearSolver.h"
 #include "uBlasKrylovMatrix.h"
 #include "uBlasMatrix.h"
 #include "uBlasVector.h"
@@ -27,7 +26,7 @@ namespace dolfin
   /// This class implements Krylov methods for linear systems
   /// of the form Ax = b using uBlas data types.
 
-  class uBlasKrylovSolver : public Parametrized, public uBlasLinearSolver
+  class uBlasKrylovSolver : public Parametrized
   {
   public:
 

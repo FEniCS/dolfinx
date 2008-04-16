@@ -12,7 +12,6 @@
 #include <petscmat.h>
 #include <petscksp.h>
 
-#include "PETScLinearSolver.h"
 #include <dolfin/parameter/Parametrized.h>
 #include "PETScVector.h"
 
@@ -28,7 +27,7 @@ namespace dolfin
   /// linear systems of the form Ax = b. It is a wrapper for the LU
   /// solver of PETSc.
   
-  class PETScLUSolver : public PETScLinearSolver, public Parametrized
+  class PETScLUSolver : public Parametrized
   {
   public:
     
