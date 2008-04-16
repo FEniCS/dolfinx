@@ -16,7 +16,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 PETScLUSolver::PETScLUSolver()
-  : PETScLinearSolver(), ksp(0), B(0), idxm(0), idxn(0)
+  : ksp(0), B(0), idxm(0), idxn(0)
 {
   // Set up solver environment to use only preconditioner
   KSPCreate(PETSC_COMM_SELF, &ksp);

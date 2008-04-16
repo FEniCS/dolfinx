@@ -32,7 +32,7 @@ namespace dolfin
   /// of the form Ax = b. It is a wrapper for the Krylov solvers
   /// of PETSc.
   
-  class PETScKrylovSolver : public PETScLinearSolver, public Parametrized
+  class PETScKrylovSolver : public Parametrized
   {
   public:
 

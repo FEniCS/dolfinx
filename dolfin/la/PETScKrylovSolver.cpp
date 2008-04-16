@@ -32,8 +32,7 @@ namespace dolfin
 
 //-----------------------------------------------------------------------------
 PETScKrylovSolver::PETScKrylovSolver(KrylovMethod method, Preconditioner pc)
-  : PETScLinearSolver(),
-    method(method), pc_petsc(pc), pc_dolfin(0),
+  : method(method), pc_petsc(pc), pc_dolfin(0),
     ksp(0), M(0), N(0), parameters_read(false), pc_set(false)
 {
   // Do nothing
@@ -41,8 +40,7 @@ PETScKrylovSolver::PETScKrylovSolver(KrylovMethod method, Preconditioner pc)
 //-----------------------------------------------------------------------------
 PETScKrylovSolver::PETScKrylovSolver(KrylovMethod method,
 				     PETScPreconditioner& preconditioner)
-  : PETScLinearSolver(),
-    method(method), pc_petsc(default_pc), pc_dolfin(&preconditioner),
+  : method(method), pc_petsc(default_pc), pc_dolfin(&preconditioner),
     ksp(0), M(0), N(0), parameters_read(false), pc_set(false)
 {
   // Do nothing
