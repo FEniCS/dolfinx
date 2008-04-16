@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005
-// Last changed: 2006-08-24
+// Last changed: 2008-04-16
 
 #ifdef HAS_PETSC
 
@@ -46,10 +46,10 @@ dolfin::uint PETScLUSolver::solve(const PETScMatrix& A,
 		       PETScVector& x, const PETScVector& b)
 {
   MatType mat_type;
+  MatGetType(A.mat(), &mat_type);
 
   // Convert to UMFPACK matrix if matrix type is MATSEQAIJ and UMFPACK is available.
   #if PETSC_HAVE_UMFPACK
-    MatGetType(A.mat(), &mat_type);
     std::string _mat_type = mat_type;
     if(_mat_type == MATSEQAIJ)
     {
