@@ -228,7 +228,7 @@ Version: %s
 Description: The Trilinos project - http://software.sandia.gov/trilinos
 Libs: %s
 Cflags: %s
-""" % (trilinos_version, trilinos_cflags, trilinos_libs)
+""" % (trilinos_version, trilinos_libs, trilinos_cflags)
 
     pkg_file = open("%s/trilinos.pc" % directory, 'w')
     pkg_file.write(pkg_file_str)
