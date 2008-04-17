@@ -47,7 +47,9 @@ namespace dolfin
     EpetraVector(Epetra_FEVector* vector);
 
     /// Create vector from given Epetra_Map reference
-    explicit EpetraVector(const Epetra_Map& map);
+    explicit EpetraVector(const Epetra_Map& map) {
+      error("Not implemented yet"); 
+    }
 
     /// Copy constructor
     EpetraVector(const EpetraVector& x);

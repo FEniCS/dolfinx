@@ -68,13 +68,13 @@ void EpetraMatrix::init(uint M, uint N)
   if (A) delete A;
 
   // Not yet implemented
-  error("Not yet implemented.");
+  error("EpetraMatrix::init(uint, unit) not yet implemented.");
 }
 //-----------------------------------------------------------------------------
 void EpetraMatrix::init(const GenericSparsityPattern& sparsity_pattern)
 {
   // Not yet implemented
-  error("Not yet implemented.");
+  error("EpetraMatrix::init(GenericSparsityPattern&) not yet implemented.");
 }
 //-----------------------------------------------------------------------------
 EpetraMatrix* EpetraMatrix::create() const
@@ -88,7 +88,7 @@ EpetraMatrix* EpetraMatrix::copy() const
 
   //MatDuplicate(A, MAT_COPY_VALUES, &(mcopy->A));
   // Not yet implemented
-  error("Not yet implemented.");
+  error("EpetraMatrix::copy not yet implemented.");
 
   return mcopy;
 }
@@ -108,7 +108,7 @@ void EpetraMatrix::get(real* block,
   //A->ExtractGlobalRowCopy(...)
 
   // Not yet implemented
-  error("Not yet implemented.");
+  error("EpetraMatrix::get not yet implemented.");
 }
 //-----------------------------------------------------------------------------
 void EpetraMatrix::set(const real* block,
@@ -143,19 +143,19 @@ void EpetraMatrix::apply()
 void EpetraMatrix::disp(uint precision) const
 {
   // Not yet implemented
-  error("Not yet implemented.");
+  error("EpetraMatrix::disp not yet implemented.");
 }
 //-----------------------------------------------------------------------------
 void EpetraMatrix::ident(uint m, const uint* rows)
 {
   // Not yet implemented
-  error("Not yet implemented.");
+  error("EpetraMatrix::ident not yet implemented.");
 }
 //-----------------------------------------------------------------------------
 void EpetraMatrix::zero(uint m, const uint* rows)
 {
   // Not yet implemented
-  error("Not yet implemented.");
+  error("EpetraMatrix::zero not yet implemented.");
 }
 
 //-----------------------------------------------------------------------------
@@ -174,7 +174,7 @@ void EpetraMatrix::mult(const GenericVector& x_, GenericVector& Ax_, bool transp
 void EpetraMatrix::getRow(uint i, int& ncols, Array<int>& columns, 
                          Array<real>& values) const
 {
-  error("Not yet implemented.");
+  error("EpetraMatrix::getRow not yet implemented.");
 }
 //-----------------------------------------------------------------------------
 LinearAlgebraFactory& EpetraMatrix::factory() const
@@ -182,8 +182,16 @@ LinearAlgebraFactory& EpetraMatrix::factory() const
   return EpetraFactory::instance();
 }
 //-----------------------------------------------------------------------------
-
-
+Epetra_FECrsMatrix& EpetraMatrix::mat() const
+{
+  return *A;
+}
+//-----------------------------------------------------------------------------
+LogStream& dolfin::operator<< (LogStream& stream, const Epetra_FECrsMatrix& A)
+{
+  error("operator << EpetraMatrix not implemented yet"); 
+  return stream;
+}
 
 
 #endif
