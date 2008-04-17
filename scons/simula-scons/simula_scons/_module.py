@@ -135,9 +135,9 @@ Libs: -L${libdir} %s
 def readModuleConfig(dirPath, modulePath, env):
     """ Read module configuration script.
 
-    A module configuration is read from a file 'scons.cfg', containing parameters pertaining to
-    a module's build configuration. It is possible to specify both full dependencies (on headers
-    and libraries) and just headers (need the include path).
+    A module configuration is read from a file 'scons.cfg' (or 'scons.local.cfg' if it exists),
+    containing parameters pertaining to a module's build configuration. It is possible to
+    specify both full dependencies (on headers and libraries) and just headers (need the include path).
     @param dirPath: Path to directory, presumably containing module configuration.
     @param modulePath: Path to module directory relative to source root.
     @return: A L{module<_Module>} object
@@ -162,9 +162,13 @@ def readModuleConfig(dirPath, modulePath, env):
     # 'Default' will be used to represent no particular version in dependencies.
     ns["Default"] = None
 
-    cfgPath = os.path.join(dirPath, "scons.cfg")
+    # Look for scons.local.cfg first:
+    cfgPath = os.path.join(dirPath, "scons.local.cfg")
     if not os.path.isfile(cfgPath):
-        raise NoModule
+        # No scons.local.cfg file. Look for scons.cfg instead:
+        cfgPath = os.path.join(dirPath, "scons.cfg")
+        if not os.path.isfile(cfgPath):
+            raise NoModule
 
     f = file(cfgPath)
     try:

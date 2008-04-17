@@ -49,12 +49,12 @@ def getBaseDirs(sconsEnv):
   if get_architecture() == 'darwin':
     # use fink as default
     base_dirs.append(os.path.join(os.path.sep,"sw"))
+  amd_dir = getPackageDir("amd", sconsEnv=sconsEnv, default=None)
+  ufconfig_dir = getPackageDir("ufconfig", sconsEnv=sconsEnv, default=None)
   umfpack_dir = getPackageDir("umfpack", sconsEnv=sconsEnv, default=None)
-  if umfpack_dir:
-    base_dirs.insert(0, umfpack_dir)
-  # FIXME: should we also look for AMD_DIR and UFCONFIG_DIR in os.environ?
-  #amd_dir = getPackageDir("amd", sconsEnv=sconsEnv, default=None)
-  #ufconfig_dir = getPackageDir("ufconfig", sconsEnv=sconsEnv, default=None)
+  for d in amd_dir, ufconfig_dir, umfpack_dir:
+    if d:
+      base_dirs.insert(0, d)
   return base_dirs
 
 def needAMD(sconsEnv):

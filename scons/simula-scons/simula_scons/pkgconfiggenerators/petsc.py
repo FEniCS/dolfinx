@@ -37,7 +37,7 @@ get_petsc_ld:
 
   petsc_includes = None
   if 'includes' in variables: 
-    cmdstr = "make -f %s get_petsc_include" % filename
+    cmdstr = "make -s -f %s get_petsc_include" % filename
     runFailed, cmdoutput = commands.getstatusoutput(cmdstr)
     if runFailed:
       os.unlink(filename)
@@ -47,7 +47,7 @@ get_petsc_ld:
 
   petsc_libs = None
   if 'libs' in variables:
-    cmdstr = "make -f %s get_petsc_libs" % filename
+    cmdstr = "make -s -f %s get_petsc_libs" % filename
     runFailed, cmdoutput = commands.getstatusoutput(cmdstr)
     if runFailed:
       os.unlink(filename)
@@ -57,7 +57,7 @@ get_petsc_ld:
 
   petsc_cc = None
   if 'compiler' in variables:
-    cmdstr = "make -f %s get_petsc_cc" % filename
+    cmdstr = "make -s -f %s get_petsc_cc" % filename
     runFailed, cmdoutput = commands.getstatusoutput(cmdstr)
     if runFailed:
       os.unlink(filename)
@@ -71,7 +71,7 @@ get_petsc_ld:
 
   petsc_ld = None
   if 'linker' in variables:
-    cmdstr = "make -f %s get_petsc_ld" % filename
+    cmdstr = "make -s -f %s get_petsc_ld" % filename
     runFailed, cmdoutput = commands.getstatusoutput(cmdstr)
     if runFailed:
       os.unlink(filename)
