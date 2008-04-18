@@ -29,22 +29,21 @@ namespace dolfin
   public:
 
     KrylovSolver() : 
-      ublassolver(0), method(default_method), pc(default_pc)
+      method(default_method), pc(default_pc), ublassolver(0)
 #ifdef HAS_PETSC
       , petscsolver(0) 
 #endif
     {}
     
     KrylovSolver(KrylovMethod method) : 
-      ublassolver(0), method(method), pc(default_pc) 
+      method(method), pc(default_pc), ublassolver(0)
 #ifdef HAS_PETSC
       , petscsolver(0) 
 #endif
     {}
     
-    KrylovSolver(KrylovMethod method, Preconditioner pc) 
-      : 
-        ublassolver(0), method(method), pc(pc) 
+    KrylovSolver(KrylovMethod method, Preconditioner pc) : 
+      method(method), pc(pc), ublassolver(0)
 #ifdef HAS_PETSC
       , petscsolver(0) 
 #endif
@@ -82,12 +81,12 @@ namespace dolfin
     }
     
   private:
+      KrylovMethod method;
+      Preconditioner pc;
       uBlasKrylovSolver* ublassolver;
 #ifdef HAS_PETSC
       PETScKrylovSolver* petscsolver;
 #endif
-      KrylovMethod method;
-      Preconditioner pc;
   };
 
 }
