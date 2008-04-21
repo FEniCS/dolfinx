@@ -139,8 +139,23 @@ void BoundaryComputation::reorder(Array<uint>& vertices, Facet& facet)
   Mesh& mesh = facet.mesh();
 
   // Get the vertex opposite to the facet (the one we remove)
+  uint vertex = 0;
   const Cell cell(mesh, facet.entities(mesh.topology().dim())[0]);
-  const uint vertex = cell.index(facet);
+  for (uint i = 0; i < cell.numEntities(0); i++)
+  {
+    bool not_in_facet = true;
+    vertex = cell.entities(0)[i];
+    for (uint j = 0; j < facet.numEntities(0); j++)
+    {
+      if (vertex == facet.entities(0)[j])
+      {
+        not_in_facet = false;
+        break;
+      }
+    }
+    if (not_in_facet)
+      break;
+  }
   const Point p = mesh.geometry().point(vertex);
 
   // Check orientation

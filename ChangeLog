@@ -1,3 +1,4 @@
+ - Boundary meshes are now always oriented with respect to outward facet normals
  - Improved linear algebra, both in C++ and Python
  - Make periodic boundary conditions work in Python
  - Fix saving of user-defined functions
