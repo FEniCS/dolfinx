@@ -13,6 +13,7 @@
 #include "LinearSolver.h"
 #include "uBlasSparseMatrix.h"
 #include "uBlasDenseMatrix.h"
+#include "PETScMatrix.h"
 
 namespace dolfin
 {

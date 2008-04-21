@@ -9,15 +9,14 @@
 #ifndef __KRYLOV_SOLVER_H
 #define __KRYLOV_SOLVER_H
 
-#include "LinearSolver.h"
 #include <dolfin/parameter/Parametrized.h>
-#include "Vector.h"
-#include "Matrix.h"
+#include "LinearSolver.h"
+#include "uBlasSparseMatrix.h"
+#include "uBlasDenseMatrix.h"
+#include "PETScMatrix.h"
 
 #include "KrylovMethod.h"
 #include "Preconditioner.h"
-
-#include "default_la_types.h"
 
 namespace dolfin
 {
@@ -29,33 +28,65 @@ namespace dolfin
   {
   public:
 
-    KrylovSolver() : solver() {}
+    KrylovSolver() : 
+      method(default_method), pc(default_pc), ublassolver(0)
+#ifdef HAS_PETSC
+      , petscsolver(0) 
+#endif
+    {}
     
-    KrylovSolver(KrylovMethod method) : solver(method, default_pc) {}
+    KrylovSolver(KrylovMethod method) : 
+      method(method), pc(default_pc), ublassolver(0)
+#ifdef HAS_PETSC
+      , petscsolver(0) 
+#endif
+    {}
     
-    KrylovSolver(KrylovMethod method, Preconditioner pc) 
-      : solver(method, pc) {}
+    KrylovSolver(KrylovMethod method, Preconditioner pc) : 
+      method(method), pc(pc), ublassolver(0)
+#ifdef HAS_PETSC
+      , petscsolver(0) 
+#endif
+    {}
     
-    ~KrylovSolver() {}
+    ~KrylovSolver() {
+      delete ublassolver; 
+#ifdef HAS_PETSC
+      delete petscsolver; 
+#endif
+    }
     
     uint solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b)
     { 
-      const DefaultMatrix* AA = dynamic_cast<const DefaultMatrix*>(A.instance()); 
-      if (!AA) 
-        error("Could not convert first argument to correct backend");
-      DefaultVector* xx = dynamic_cast<DefaultVector*>(x.instance()); 
-      if (!xx) 
-        error("Could not convert second argument to correct backend");
-      const DefaultVector* bb = dynamic_cast<const DefaultVector*>(b.instance()); 
-      if (!bb) 
-        error("Could not convert third argument to correct backend");
-      return solver.solve(*AA, *xx, *bb); 
+      if (A.has_type<uBlasSparseMatrix>()) {
+        if (!ublassolver)
+          ublassolver = new uBlasKrylovSolver(method, pc);
+        return ublassolver->solve(A.down_cast<uBlasSparseMatrix>(), x.down_cast<uBlasVector>(), b.down_cast<uBlasVector>());
+      }
+
+      if (A.has_type<uBlasDenseMatrix>()) {
+        if (!ublassolver)
+          ublassolver = new uBlasKrylovSolver(method, pc);
+        return ublassolver->solve(A.down_cast<uBlasDenseMatrix>(), x.down_cast<uBlasVector>(), b.down_cast<uBlasVector>());
+      }
+#ifdef HAS_PETSC
+      if (A.has_type<PETScMatrix>()) {
+        if (!petscsolver)
+          petscsolver = new PETScKrylovSolver(method, pc);
+        return petscsolver->solve(A.down_cast<PETScMatrix >(), x.down_cast<PETScVector>(), b.down_cast<PETScVector>());
+      }
+#endif
+      error("No default LU solver for given backend");
+      return 0;
     }
     
   private:
-    
-    DefaultKrylovSolver solver;
-
+      KrylovMethod method;
+      Preconditioner pc;
+      uBlasKrylovSolver* ublassolver;
+#ifdef HAS_PETSC
+      PETScKrylovSolver* petscsolver;
+#endif
   };
 
 }
