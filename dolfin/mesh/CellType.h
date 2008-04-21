@@ -97,6 +97,7 @@ namespace dolfin
     virtual std::string description() const = 0;
 
   protected:
+
     friend class MPIMeshCommunicator;
 
     Type cell_type;
