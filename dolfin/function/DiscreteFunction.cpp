@@ -230,6 +230,7 @@ void DiscreteFunction::interpolate(real* values) const
     for (VertexIterator vertex(*cell); !vertex.end(); ++vertex)
       for (uint i = 0; i < scratch->size; ++i)
         values[i*mesh.numVertices() + vertex->index()] = vertex_values[i*num_cell_vertices + vertex.pos()];
+        //values[i*mesh.numVertices() + vertex->index()] = vertex_values[vertex.pos()*scratch->size + i]; // FIXME: Use this to adhere to UFC. FFC should be fixed first.
   }
 
   // Delete local data

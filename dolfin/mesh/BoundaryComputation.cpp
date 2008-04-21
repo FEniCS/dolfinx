@@ -1,11 +1,11 @@
-// Copyright (C) 2006-2007 Anders Logg.
+// Copyright (C) 2006-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Johan Jansson 2006.
 // Modified by Ola Skavhaug 2006.
 //
 // First added:  2006-06-21
-// Last changed: 2007-05-24
+// Last changed: 2008-04-21
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Array.h>
@@ -64,13 +64,13 @@ void BoundaryComputation::computeBoundaryCommon(Mesh& mesh,
   for (FacetIterator f(mesh); !f.end(); ++f)
   {
     // Boundary facets are connected to exactly one cell
-    if ( f->numEntities(mesh.topology().dim()) == 1 )
+    if (f->numEntities(mesh.topology().dim()) == 1)
     {
       // Count boundary vertices and assign indices
       for (VertexIterator v(*f); !v.end(); ++v)
       {
 	const uint vertex_index = v->index();
-	if ( boundary_vertices[vertex_index] == num_vertices )
+	if (boundary_vertices[vertex_index] == num_vertices)
 	  boundary_vertices[vertex_index] = num_boundary_vertices++;
       }
 
@@ -84,9 +84,9 @@ void BoundaryComputation::computeBoundaryCommon(Mesh& mesh,
   editor.initCells(num_boundary_cells);
 
   // Initialize the mappings from boundary to mesh if requested
-  if ( vertex_map )
+  if (vertex_map)
     vertex_map->init(boundary, 0, num_boundary_vertices);
-  if ( cell_map )
+  if (cell_map)
     cell_map->init(boundary, mesh.topology().dim() - 1, num_boundary_cells);
     
   // Create vertices
@@ -110,15 +110,18 @@ void BoundaryComputation::computeBoundaryCommon(Mesh& mesh,
   for (FacetIterator f(mesh); !f.end(); ++f)
   {
     // Boundary facets are connected to exactly one cell
-    if ( f->numEntities(mesh.topology().dim()) == 1 )
+    if (f->numEntities(mesh.topology().dim()) == 1)
     {
       // Compute new vertex numbers for cell
       uint* vertices = f->entities(0);
       for (uint i = 0; i < cell.size(); i++)
 	cell[i] = boundary_vertices[vertices[i]];
 
+      // Reorder vertices so facet is right-oriented w.r.t. facet normal
+      reorder(cell, *f);
+
       // Create mapping from boundary cell to mesh facet if requested
-      if ( cell_map )
+      if (cell_map)
         cell_map->set(current_cell, f->index());
 
       // Add cell
@@ -128,5 +131,77 @@ void BoundaryComputation::computeBoundaryCommon(Mesh& mesh,
 
   // Close mesh editor
   editor.close();
+}
+//-----------------------------------------------------------------------------
+void BoundaryComputation::reorder(Array<uint>& vertices, Facet& facet)
+{
+  // Get mesh
+  Mesh& mesh = facet.mesh();
+
+  // Get the vertex opposite to the facet (the one we remove)
+  uint vertex = 0;
+  const Cell cell(mesh, facet.entities(mesh.topology().dim())[0]);
+  for (uint i = 0; i < cell.numEntities(0); i++)
+  {
+    bool not_in_facet = true;
+    vertex = cell.entities(0)[i];
+    for (uint j = 0; j < facet.numEntities(0); j++)
+    {
+      if (vertex == facet.entities(0)[j])
+      {
+        not_in_facet = false;
+        break;
+      }
+    }
+    if (not_in_facet)
+      break;
+  }
+  const Point p = mesh.geometry().point(vertex);
+
+  // Check orientation
+  switch (mesh.type().cellType())
+  {
+  case CellType::interval:
+    // Do nothing
+    break;
+  case CellType::triangle:
+    {
+      dolfin_assert(facet.numEntities(0) == 2);
+      
+      Point p0 = mesh.geometry().point(facet.entities(0)[0]);
+      Point p1 = mesh.geometry().point(facet.entities(0)[1]);
+      Point v = p1 - p0;
+      Point n(v.y(), -v.x());
+
+      if (n.dot(p0 - p) < 0.0)
+      {
+        const uint tmp = vertices[0];
+        vertices[0] = vertices[1];
+        vertices[1] = tmp;
+      }
+    }
+    break;
+  case CellType::tetrahedron:
+    {
+      dolfin_assert(facet.numEntities(0) == 3);
+    
+      Point p0 = mesh.geometry().point(facet.entities(0)[0]);
+      Point p1 = mesh.geometry().point(facet.entities(0)[1]);
+      Point p2 = mesh.geometry().point(facet.entities(0)[2]);
+      Point v1 = p1 - p0;
+      Point v2 = p2 - p0;
+      Point n = v1.cross(v2);
+
+      if (n.dot(p0 - p) < 0.0)
+      {
+        const uint tmp = vertices[0];
+        vertices[0] = vertices[1];
+        vertices[1] = tmp;
+      }
+    }
+    break;
+  default:
+    error("Unknown cell type, down know how to reorder.");
+  }
 }
 //-----------------------------------------------------------------------------

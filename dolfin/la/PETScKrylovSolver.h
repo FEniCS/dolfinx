@@ -14,7 +14,6 @@
 
 #ifdef HAS_PETSC
 
-#include "PETScLinearSolver.h"
 #include <dolfin/main/constants.h>
 #include <dolfin/parameter/Parametrized.h>
 #include "Preconditioner.h"
@@ -33,7 +32,7 @@ namespace dolfin
   /// of the form Ax = b. It is a wrapper for the Krylov solvers
   /// of PETSc.
   
-  class PETScKrylovSolver : public PETScLinearSolver, public Parametrized
+  class PETScKrylovSolver : public Parametrized
   {
   public:
 

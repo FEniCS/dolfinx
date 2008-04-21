@@ -11,7 +11,6 @@
 
 #include "ublas.h"
 #include <dolfin/parameter/Parametrized.h>
-#include "uBlasLinearSolver.h"
 
 namespace dolfin
 {
@@ -27,7 +26,7 @@ namespace dolfin
   /// are solved using UMFPACK (http://www.cise.ufl.edu/research/sparse/umfpack/)
   /// is installed. Matrices can also be inverted.
     
-  class uBlasLUSolver : public uBlasLinearSolver, public Parametrized
+  class uBlasLUSolver : public Parametrized
   {
 
   public:
@@ -39,10 +38,10 @@ namespace dolfin
     ~uBlasLUSolver();
 
     /// Solve linear system Ax = b for a dense matrix
-    uint solve(const uBlasMatrix<ublas_dense_matrix>& A, uBlasVector& x, const uBlasVector& b);
+    virtual uint solve(const uBlasMatrix<ublas_dense_matrix>& A, uBlasVector& x, const uBlasVector& b);
 
     /// Solve linear system Ax = b for a sparse matrix using UMFPACK if installed
-    uint solve(const uBlasMatrix<ublas_sparse_matrix>& A, uBlasVector& x, const uBlasVector& b);
+    virtual uint solve(const uBlasMatrix<ublas_sparse_matrix>& A, uBlasVector& x, const uBlasVector& b);
 
     /// Solve linear system Ax = b for a Krylov matrix
     void solve(const uBlasKrylovMatrix& A, uBlasVector& x, const uBlasVector& b);

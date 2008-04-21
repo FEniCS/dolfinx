@@ -83,14 +83,16 @@ get_slepc_libs:
   slepc_make_file.close()
   slepc_includes = ""
   slepc_libs = ""
-  runFailed, cmdoutput = commands.getstatusoutput("make -f slepc_makefile get_slepc_include")
+  cmdstr = "make -s -f slepc_makefile get_slepc_include"
+  runFailed, cmdoutput = commands.getstatusoutput(cmdstr)
   if runFailed:
     os.unlink("slepc_makefile")
     msg = "Unable to read SLEPc includes through make"
     raise UnableToXXXException(msg, errormsg=cmdoutput)
   slepc_includes = cmdoutput
-    
-  runFailed, cmdoutput = commands.getstatusoutput("make -f slepc_makefile get_slepc_libs")
+
+  cmdstr = "make -s -f slepc_makefile get_slepc_libs"
+  runFailed, cmdoutput = commands.getstatusoutput(cmdstr)
   if runFailed:
     os.unlink("slepc_makefile")
     msg = "Unable to read SLEPc libs through make"
@@ -98,13 +100,15 @@ get_slepc_libs:
   slepc_libs = cmdoutput
 
   # Try to get compiler and linker from petsc
-  failure, cmdoutput = commands.getstatusoutput("pkg-config petsc --variable=compiler")
+  cmdstr = "pkg-config petsc --variable=compiler"
+  failure, cmdoutput = commands.getstatusoutput(cmdstr)
   if failure:
     compiler = get_compiler(sconsEnv)
     print "Unable to get compiler from petsc.pc; using %s instead." % compiler
   else:
     compiler = cmdoutput
-  failure, cmdoutput = commands.getstatusoutput("pkg-config petsc --variable=linker")
+  cmdstr = "pkg-config petsc --variable=linker"
+  failure, cmdoutput = commands.getstatusoutput(cmdstr)
   if failure:
     linker = get_linker(sconsEnv)
     print "Unable to get linker from petsc.pc; using %s instead." % linker

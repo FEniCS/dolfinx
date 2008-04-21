@@ -24,7 +24,7 @@ extern "C"
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-uBlasLUSolver::uBlasLUSolver() : uBlasLinearSolver(), AA(0), ej(0), Aj(0)
+uBlasLUSolver::uBlasLUSolver() : AA(0), ej(0), Aj(0)
 {
   // Do nothing
 }
@@ -61,8 +61,8 @@ dolfin::uint uBlasLUSolver::solve(const uBlasMatrix<ublas_sparse_matrix>& A, uBl
   const uint N  = A.size(1);
   const uint nz = A.nnz();
 
-  dolfin_assert(M == A.size(1));
-  dolfin_assert(nz > 0);
+  dolfin_assert(M == N);
+  dolfin_assert(nz >= N);
 
   x.init(N);
 

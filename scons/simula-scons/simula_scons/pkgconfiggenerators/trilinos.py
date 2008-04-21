@@ -226,8 +226,8 @@ def generatePkgConf(directory=suitablePkgConfDir(), sconsEnv=None, **kwargs):
     pkg_file_str = r"""Name: Trilinos
 Version: %s
 Description: The Trilinos project - http://software.sandia.gov/trilinos
-Libs: %s
 Cflags: %s
+Libs: %s
 """ % (trilinos_version, trilinos_cflags, trilinos_libs)
 
     pkg_file = open("%s/trilinos.pc" % directory, 'w')
