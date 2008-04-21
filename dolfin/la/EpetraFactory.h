@@ -1,8 +1,7 @@
-// Copyright (C) 2008 Johannes Ring.
+// Copyright (C) 2008 Kent-Andre Mardal and Johannes Ring.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// First added:  2008-01-24
-// Last changed: 2008-01-24
+// First added:  2008-04-21
 
 #ifdef HAS_TRILINOS
 
@@ -11,8 +10,9 @@
 
 #include "EpetraMatrix.h"
 #include "EpetraVector.h"
-#include "SparsityPattern.h"
+#include "EpetraSparsityPattern.h"
 #include "LinearAlgebraFactory.h"
+#include "Epetra_SerialComm.h"
 
 namespace dolfin
 {
@@ -28,10 +28,13 @@ namespace dolfin
     EpetraMatrix* createMatrix() const;
 
     /// Create empty sparsity pattern 
-    SparsityPattern* createPattern() const;
+    EpetraSparsityPattern* createPattern() const;
 
     /// Create empty vector
     EpetraVector* createVector() const;
+
+    // Return Epetra Communicator  
+    Epetra_SerialComm& getSerialComm() { return comm;}; 
 
     static EpetraFactory& instance() { return epetrafactory; }
 
@@ -40,6 +43,7 @@ namespace dolfin
     /// Private Constructor
     EpetraFactory() {}
     static EpetraFactory epetrafactory;
+    Epetra_SerialComm comm;
 
   };
 

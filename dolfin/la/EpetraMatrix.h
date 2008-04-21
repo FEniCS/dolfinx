@@ -1,8 +1,7 @@
-// Copyright (C) 2008 Johannes Ring.
+// Copyright (C) 2008 Kent-Andre Mardal and Johannes Ring.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// First added:  2008-01-23
-// Last changed: 2008-01-24
+// First added:  2008-04-21
 
 #ifndef __EPETRA_MATRIX_H
 #define __EPETRA_MATRIX_H
@@ -103,10 +102,6 @@ namespace dolfin
     /// Get non-zero values of row i
     void getRow(uint i, int& ncols, Array<int>& columns, Array<real>& values) const;
 
-
-
-
-
     /// Output
     friend LogStream& operator<< (LogStream& stream, 
 				  const Epetra_FECrsMatrix& A);
@@ -132,5 +127,4 @@ namespace dolfin
 }
 
 #endif
-
 #endif

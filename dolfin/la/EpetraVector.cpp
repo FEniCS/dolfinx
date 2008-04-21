@@ -1,9 +1,7 @@
-// Copyright (C) 2008 Johannes Ring.
+// Copyright (C) 2008 Kent-Andre Mardal and Johannes Ring.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// First added:  2008-01-24
-// Last changed: 2008-01-25
-
+// First added:  2008-04-21
 #ifdef HAS_TRILINOS
 
 #include <cmath>
@@ -15,6 +13,9 @@
 #include "EpetraFactory.h"
 //#include <dolfin/MPI.h>
 
+
+
+
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
@@ -23,6 +24,7 @@ EpetraVector::EpetraVector()
     Variable("x", "a sparse vector"),
     x(0), _copy(false)
 {
+  std::cout <<"using the empty constructor "<<std::endl; 
   // Do nothing
 }
 //-----------------------------------------------------------------------------
@@ -58,14 +60,18 @@ EpetraVector::~EpetraVector()
 //-----------------------------------------------------------------------------
 void EpetraVector::init(uint N)
 {
-  if( this->size() == N)
+  std::cout <<"usint init "<<N <<std::endl; 
+  if (x and this->size() == N) 
   {
     //clear();
     return;
   }
 
-  // Not yet implemented
-  error("Not yet implemented.");
+  EpetraFactory& f = dynamic_cast<EpetraFactory&>(factory());
+  Epetra_SerialComm Comm = f.getSerialComm();
+  Epetra_Map map(N, N, 0, Comm);
+
+  x = new Epetra_FEVector(map); 
 }
 //-----------------------------------------------------------------------------
 EpetraVector* EpetraVector::create() const
@@ -75,19 +81,19 @@ EpetraVector* EpetraVector::create() const
 //-----------------------------------------------------------------------------
 EpetraVector* EpetraVector::copy() const
 {
-  // Not yet implemented
-  error("Not yet implemented.");
-
-  return 0;
+  EpetraVector* v = new EpetraVector(*this); 
+  return v;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint EpetraVector::size() const
 {
+  dolfin_assert(x);
   return x->GlobalLength();
 }
 //-----------------------------------------------------------------------------
 void EpetraVector::zero()
 {
+  dolfin_assert(x);
   x->PutScalar(0.0);
 }
 //-----------------------------------------------------------------------------
@@ -148,10 +154,13 @@ void EpetraVector::set(const real* block, uint m, const uint* rows)
 //-----------------------------------------------------------------------------
 void EpetraVector::add(const real* block, uint m, const uint* rows)
 {
+  if (!x) {  
+    std::cout <<" x does not exist"<<std::endl; 
+  }
   x->SumIntoGlobalValues(m, reinterpret_cast<const int*>(rows), block);
 }
 //-----------------------------------------------------------------------------
-Epetra_MultiVector& EpetraVector::vec() const
+Epetra_FEVector& EpetraVector::vec() const
 {
   return *x;
 }
@@ -178,13 +187,50 @@ void EpetraVector::axpy(real a, const GenericVector& y)
   if (size() != v.size())
     error("The vectors must be of the same size.");  
 
-  error("Not yet implemented"); 
-
+  x->Update(1.0,  v.vec(), a); 
 }
 //-----------------------------------------------------------------------------
 LinearAlgebraFactory& EpetraVector::factory() const
 {
   return EpetraFactory::instance();
+}
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+const EpetraVector& EpetraVector::operator= (const GenericVector& v)
+{
+  *this = v.down_cast<EpetraVector>();
+  return *this; 
+}
+//-----------------------------------------------------------------------------
+const EpetraVector& EpetraVector::operator= (const EpetraVector& v)
+{
+  dolfin_assert(v.x);
+  if (!x) { 
+    x = new Epetra_FEVector(v.vec()); 
+  } else {
+    *x = v.vec(); 
+  }
+  return *this; 
+}
+
+//-----------------------------------------------------------------------------
+const EpetraVector& EpetraVector::operator+= (const GenericVector& x)
+{
+  this->axpy(1.0, x); 
+  return *this;
+}
+//-----------------------------------------------------------------------------
+const EpetraVector& EpetraVector::operator-= (const GenericVector& x)
+{
+  this->axpy(1.0, x); 
+  return *this;
+}
+//-----------------------------------------------------------------------------
+const EpetraVector& EpetraVector::operator*= (const real a)
+{
+  dolfin_assert(x);
+  x->Scale(a);
+  return *this;
 }
 //-----------------------------------------------------------------------------
 

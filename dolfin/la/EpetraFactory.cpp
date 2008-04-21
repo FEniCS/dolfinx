@@ -1,12 +1,11 @@
-// Copyright (C) 2008 Johannes Ring.
+// Copyright (C) 2008 Kent-Andre Mardal and Johannes Ring.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// First added:  2008-01-24
-// Last changed: 2008-01-24
+// First added:  2008-04-21
 
 #ifdef HAS_TRILINOS
 
-#include "SparsityPattern.h"
+#include "EpetraSparsityPattern.h"
 #include "EpetraMatrix.h"
 #include "EpetraVector.h"
 #include "EpetraFactory.h"
@@ -18,9 +17,9 @@ EpetraMatrix* EpetraFactory::createMatrix() const
   return new EpetraMatrix();
 }
 
-SparsityPattern* EpetraFactory::createPattern() const 
+EpetraSparsityPattern* EpetraFactory::createPattern() const 
 {
-  return new SparsityPattern(); 
+  return new EpetraSparsityPattern(); 
 }
 
 EpetraVector* EpetraFactory::createVector() const 

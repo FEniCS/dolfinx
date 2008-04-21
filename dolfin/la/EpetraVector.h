@@ -1,8 +1,7 @@
-// Copyright (C) 2008 Johannes Ring.
+// Copyright (C) 2008 Kent-Andre Mardal and Johannes Ring.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// First added:  2008-01-24
-// Last changed: 2008-01-24
+// First added:  2008-04-21
 
 #ifndef __EPETRA_VECTOR_H
 #define __EPETRA_VECTOR_H
@@ -75,6 +74,21 @@ namespace dolfin
     /// Set all entries to zero
     void zero();
 
+    /// Assignment of vector
+    const EpetraVector& operator= (const GenericVector& x);
+
+    /// Assignment of vector
+    const EpetraVector& operator= (const EpetraVector& x);
+
+    /// Add vector x
+    const EpetraVector& operator+= (const GenericVector& x);
+
+    /// Subtract vector x
+    const EpetraVector& operator-= (const GenericVector& x);
+
+    /// Multiply vector with scalar
+    const EpetraVector& operator*= (const real a);
+
     /// Apply changes to vector
     void apply();
 
@@ -103,7 +117,7 @@ namespace dolfin
     void add(const real* block, uint m, const uint* rows);
 
     /// Return Epetra_MultiVector pointer
-    Epetra_MultiVector& vec() const;
+    Epetra_FEVector& vec() const;
 
     /// Inner product 
     virtual real inner(const GenericVector& vector) const; 

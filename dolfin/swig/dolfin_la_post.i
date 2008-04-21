@@ -55,6 +55,17 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
   %}
 }
 #endif
+#ifdef HAS_TRILINOS
+%extend dolfin::EpetraMatrix {
+  %pythoncode %{
+    def __mul__(self, other):
+      v = EpetraVector(self.size(0))
+      self.mult(other, v)
+      return v
+
+  %}
+}
+#endif
 
 
 %extend dolfin::Vector {
@@ -110,6 +121,31 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
   %pythoncode %{
 
     def __add__(self, v):
+      a = self.copy() 
+      a += v
+      return a
+
+    def __sub__(self, v):
+      a = self.copy() 
+      a -= v
+      return a
+
+    def __mul__(self, v): 
+      a = self.copy() 
+      a *= v
+      return a
+
+    def __rmul__(self, v):
+      return self.__mul__(v)
+  %}
+}
+#endif
+
+#ifdef HAS_TRILINOS
+%extend dolfin::EpetraVector {
+  %pythoncode %{
+
+    def __add__(self, v): 
       a = self.copy() 
       a += v
       return a
@@ -191,6 +227,33 @@ _down_cast_map[uBlasSparseMatrix] = down_cast_ublas_matrix
 %}
 
 //#endif
+
+
+#ifdef HAS_TRILINOS
+
+%inline %{
+
+bool has_type_epetra_vector(dolfin::GenericTensor & tensor)
+{ return tensor.has_type<dolfin::EpetraVector>(); }
+
+bool has_type_epetra_matrix(dolfin::GenericTensor & tensor)
+{ return tensor.has_type<dolfin::EpetraMatrix>(); }
+
+dolfin::EpetraVector & down_cast_epetra_vector(dolfin::GenericTensor & tensor)
+{ return tensor.down_cast<dolfin::EpetraVector>(); }
+
+dolfin::EpetraMatrix & down_cast_epetra_matrix(dolfin::GenericTensor & tensor)
+{ return tensor.down_cast<dolfin::EpetraMatrix>(); }
+%}
+
+%pythoncode %{
+_has_type_map[PETScVector] = has_type_epetra_vector
+_has_type_map[PETScMatrix] = has_type_epetra_matrix
+_down_cast_map[PETScVector] = down_cast_epetra_vector
+_down_cast_map[PETScMatrix] = down_cast_epetra_matrix
+%}
+
+#endif
 
 
 // Dynamic wrappers for GenericTensor::down_cast and GenericTensor::has_type, using dict of tensor types to select from C++ template instantiations
