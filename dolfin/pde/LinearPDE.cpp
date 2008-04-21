@@ -12,6 +12,7 @@
 #include <dolfin/la/LUSolver.h>
 #include <dolfin/la/KrylovSolver.h>
 #include <dolfin/function/Function.h>
+#include <dolfin/function/DiscreteFunction.h>
 #include "LinearPDE.h"
 #include <dolfin/io/dolfin_io.h>
 #include <dolfin/fem/Form.h>
@@ -52,6 +53,7 @@ void LinearPDE::solve(Function& u)
   // Create matrix and vector for assembly
   Matrix A;
   Vector b;
+  Vector* x = new Vector();
 
   // Assemble linear system
   Assembler assembler(mesh);
@@ -69,14 +71,14 @@ void LinearPDE::solve(Function& u)
     cout << "Using direct solver." << endl;
     LUSolver solver;
     solver.set("parent", *this);
-    solver.solve(A, x, b);
+    solver.solve(A, *x, b);
   }
   else if ( solver_type == "iterative" )
   {
     cout << "Using iterative solver (GMRES)." << endl;
     KrylovSolver solver(gmres);
     solver.set("parent", *this);
-    solver.solve(A, x, b);
+    solver.solve(A, *x, b);
   }
   else
     error("Unknown solver type \"%s\".", solver_type.c_str());
@@ -90,7 +92,9 @@ void LinearPDE::solve(Function& u)
   //cout << "Solution vector:" << endl;
   //x.disp();
 
-  u.init(mesh, x, a, 1);
+  u.init(mesh, *x, a, 1);
+  DiscreteFunction& uu = dynamic_cast<DiscreteFunction&>(*u.f);
+  uu.local_vector = x;
 
   end();
 }

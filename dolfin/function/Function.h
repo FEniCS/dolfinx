@@ -126,6 +126,7 @@ namespace dolfin
 
     /// Friends
     friend class XMLFile;
+    friend class LinearPDE;
 
   protected:
     
