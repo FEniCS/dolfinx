@@ -6,7 +6,7 @@
 // Modified by Kristen Kaasbjerg, 2008.
 //
 // First added:  2007-04-02
-// Last changed: 2008-03-17
+// Last changed: 2008-04-22
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/mesh/Mesh.h>
@@ -229,8 +229,7 @@ void DiscreteFunction::interpolate(real* values) const
     // Copy values to array of vertex values
     for (VertexIterator vertex(*cell); !vertex.end(); ++vertex)
       for (uint i = 0; i < scratch->size; ++i)
-        values[i*mesh.numVertices() + vertex->index()] = vertex_values[i*num_cell_vertices + vertex.pos()];
-        //values[i*mesh.numVertices() + vertex->index()] = vertex_values[vertex.pos()*scratch->size + i]; // FIXME: Use this to adhere to UFC. FFC should be fixed first.
+        values[i*mesh.numVertices() + vertex->index()] = vertex_values[vertex.pos()*scratch->size + i];
   }
 
   // Delete local data

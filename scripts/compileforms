@@ -1,16 +1,16 @@
 #!/bin/sh
 #
-# Copyright (C) 2005-2007 Anders Logg.
+# Copyright (C) 2005-2008 Anders Logg.
 # Licensed under the GNU LGPL Version 2.1.
 #
 # Recompile all ffc forms (use when FFC has been updated)
 # This script should be run from the top level directory.
 
-FORMFILES=`find src -name '*.form'`
+FORMFILES=`find . -name '*.form'`
 TOPDIR=`pwd`
 
 # Regenerate all forms in element and projection library
-cd $TOPDIR/src/kernel/elements
+cd $TOPDIR/dolfin/elements
 python generate.py
 python generate_projections.py
 
