@@ -134,7 +134,7 @@ void Dependencies::detect(ODE& ode)
   // Randomize solution vector
   uBlasVector u(N);
   for (uint i = 0; i < N; i++)
-    u(i) = rand();
+    u[i] = rand();
   
   // Check dependencies for all components
   Progress p("Computing sparsity", N);
@@ -192,14 +192,14 @@ bool Dependencies::checkDependency(ODE& ode, uBlasVector& u, real f0,
 				   uint i, uint j)
 {
   // Save original value
-  real uj = u(j);
+  real uj = u[j];
 
   // Change value and compute new value for f_i
-  u(j) += increment;
+  u[j] += increment;
   real f = ode.f(u, 0.0, i);
 
   // Restore the value
-  u(j) = uj;
+  u[j] = uj;
 
   // Compare function values
   return fabs(f - f0) > DOLFIN_EPS;

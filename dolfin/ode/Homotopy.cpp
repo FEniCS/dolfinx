@@ -308,7 +308,7 @@ void Homotopy::saveSolution()
   // Copy values to complex array
   complex* z = new complex[n];
   for (uint i = 0; i < n; i++)
-    z[i] = complex(x(2*i), x(2*i + 1));
+    z[i] = complex(x[2*i], x[2*i + 1]);
 
   // Allow user to modify solution
   modify(z);

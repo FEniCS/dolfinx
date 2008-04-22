@@ -34,11 +34,11 @@ void MultiAdaptivePreconditioner::solve(uBlasVector& x,
   {
     // Get initial value for element
     const int ep = ts.ee[e];
-    const real x0 = ( ep != -1 ? x(ep*method.nsize() + method.nsize() - 1) : 0.0 );
+    const real x0 = ( ep != -1 ? x[ep*method.nsize() + method.nsize() - 1] : 0.0 );
 
     // Propagate value on element
     for (uint n = 0; n < method.nsize(); n++)
-      x(j + n) = x0 + b(j + n);
+      x[j + n] = x0 + b[j + n];
 
     // Update dof
     j += method.nsize();

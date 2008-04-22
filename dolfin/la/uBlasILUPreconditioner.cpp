@@ -86,13 +86,13 @@ void uBlasILUPreconditioner::solve(uBlasVector& x, const uBlasVector& b) const
   {
     uint k;
     for(k = M.index1_data () [i]; k < diagonal[i]; ++k)
-      _x(i) -= ( M.value_data () [k] )*x( M.index2_data () [k] );
+      _x(i) -= ( M.value_data () [k] )*x[ M.index2_data () [k] ];
   } 
   for(int i =size-1; i >= 0; --i)
   {
     uint k;
     for(k = M.index1_data () [i+1]-1; k > diagonal[i]; --k)
-      _x(i) -= ( M.value_data () [k] )*x( M.index2_data () [k] );
+      _x(i) -= ( M.value_data () [k] )*x[ M.index2_data () [k] ];
     _x(i) /= ( M.value_data () [k] );  
   }
 }

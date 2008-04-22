@@ -39,7 +39,7 @@ real cGqMethod::ueval(real x0, uBlasVector& values, uint offset, real tau) const
 {
   real sum = x0 * trial->eval(0, tau);
   for (uint i = 0; i < nn; i++)
-    sum += values(offset + i) * trial->eval(i + 1, tau);
+    sum += values[offset + i] * trial->eval(i + 1, tau);
   
   return sum;
 }
@@ -57,7 +57,7 @@ real cGqMethod::residual(real x0, uBlasVector& values, uint offset, real f, real
 {
   real sum = x0 * derivatives[0];
   for (uint i = 0; i < nn; i++)
-    sum += values(offset + i) * derivatives[i + 1];
+    sum += values[offset + i] * derivatives[i + 1];
 
   return sum / k - f;
 }
@@ -191,7 +191,7 @@ void cGqMethod::computeWeights()
     
     // Evaluate test functions at current nodal point
     for (unsigned int j = 0; j < nn; j++)
-      b(j) = test->eval(j, x);
+      b[j] = test->eval(j, x);
     
     // Solve for the weight functions at the nodal point
     // FIXME: Do we get high enough precision?
@@ -199,7 +199,7 @@ void cGqMethod::computeWeights()
 
     // Save weights including quadrature
     for (unsigned int j = 0; j < nn; j++)
-      nweights[j][i] = qweights[i] * w(j);
+      nweights[j][i] = qweights[i] * w[j];
   }
 }
 //-----------------------------------------------------------------------------

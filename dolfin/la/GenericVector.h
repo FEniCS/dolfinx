@@ -115,6 +115,16 @@ namespace dolfin
       return *this; 
     }
 
+    /// Access value of given entry
+    //virtual real& operator[] (uint i) = 0;
+
+    /// Access value of given entry
+    virtual real operator[] (uint i) const {
+      real value;
+      get(&value, 1, &i);
+      return value;
+    }
+
     /// Return const GenericVector* (internal library use only!)
     virtual const GenericVector* instance() const 
     { return this; }

@@ -44,7 +44,7 @@ void TimeSlabJacobian::update()
   // Compute columns of Jacobian
   for (uint j = 0; j < ode.size(); j++)
   {
-    ej(j) = 1.0;
+    ej[j] = 1.0;
 
     //cout << ej << endl;
     //cout << Aj << endl;
@@ -55,7 +55,7 @@ void TimeSlabJacobian::update()
     // Set column of A
     column(A, j) = Aj.vec();
     
-    ej(j) = 0.0;
+    ej[j] = 0.0;
   }
 }
 //-----------------------------------------------------------------------------

@@ -26,8 +26,8 @@ public:
   void f(const uBlasVector& u, real t, uBlasVector& y)
   {
     // Boundary values
-    y(0)   = 0.0;
-    y(N-1) = 0.0;
+    y[0]   = 0.0;
+    y[N-1] = 0.0;
 
     // Interior values
     for (unsigned int i = 1; i < N - 1; i++)
@@ -37,7 +37,7 @@ public:
       if ( i == N/2 )
 	source = 100.0;
       
-      y(i) = (u(i-1) - 2.0*u(i) + u(i+1)) / (h*h) + source;
+      y[i] = (u[i-1] - 2.0*u[i] + u[i+1]) / (h*h) + source;
     }
   }
   

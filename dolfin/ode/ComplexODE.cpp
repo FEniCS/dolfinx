@@ -82,7 +82,7 @@ void ComplexODE::u0(uBlasVector& u)
   for (uint i = 0; i < N; i++)
   {
     complex z = zvalues[i / 2];
-    u(i) = ( i % 2 == 0 ? z.real() : z.imag() );
+    u[i] = ( i % 2 == 0 ? z.real() : z.imag() );
   }
 }
 //-----------------------------------------------------------------------------
@@ -103,7 +103,7 @@ real ComplexODE::f(const uBlasVector& u, real t, uint i)
     const uint jz = ju / 2;
 
     // Update value
-    const complex zvalue(u(2*jz), u(2*jz + 1));
+    const complex zvalue(u[2*jz], u[2*jz + 1]);
     zvalues[jz] = zvalue;
   }
 
@@ -119,7 +119,7 @@ void ComplexODE::f(const uBlasVector& u, real t, uBlasVector& y)
   // Update zvalues for all components
   for (uint i = 0; i < n; i++)
   {
-    const complex zvalue(u(2*i), u(2*i + 1));
+    const complex zvalue(u[2*i], u[2*i + 1]);
     zvalues[i] = zvalue;
   }
 
@@ -130,8 +130,8 @@ void ComplexODE::f(const uBlasVector& u, real t, uBlasVector& y)
   for (uint i = 0; i < n; i++)
   {
     const complex fvalue = fvalues[i];
-    y(2*i) = fvalue.real();
-    y(2*i + 1) = fvalue.imag();
+    y[2*i] = fvalue.real();
+    y[2*i + 1] = fvalue.imag();
   }
 }
 //-----------------------------------------------------------------------------
@@ -141,8 +141,8 @@ void ComplexODE::M(const uBlasVector& x, uBlasVector& y,
   // Update zvalues and fvalues for all components
   for (uint i = 0; i < n; i++)
   {
-    const complex zvalue(u(2*i), u(2*i + 1));
-    const complex xvalue(x(2*i), x(2*i + 1));
+    const complex zvalue(u[2*i], u[2*i + 1]);
+    const complex xvalue(x[2*i], x[2*i + 1]);
     zvalues[i] = zvalue;
     fvalues[i] = xvalue; // Use fvalues for x
   }
@@ -162,8 +162,8 @@ void ComplexODE::M(const uBlasVector& x, uBlasVector& y,
   for (uint i = 0; i < n; i++)
   {
     const complex yvalue = yvalues[i];
-    y(2*i) = yvalue.real();
-    y(2*i + 1) = yvalue.imag();
+    y[2*i] = yvalue.real();
+    y[2*i + 1] = yvalue.imag();
   }
 }
 //-----------------------------------------------------------------------------
@@ -173,8 +173,8 @@ void ComplexODE::J(const uBlasVector& x, uBlasVector& y,
   // Update zvalues and fvalues for all components
   for (uint i = 0; i < n; i++)
   {
-    const complex zvalue(u(2*i), u(2*i + 1));
-    const complex xvalue(x(2*i), x(2*i + 1));
+    const complex zvalue(u[2*i], u[2*i + 1]);
+    const complex xvalue(x[2*i], x[2*i + 1]);
     zvalues[i] = zvalue;
     fvalues[i] = xvalue; // Use fvalues for x
   }
@@ -194,8 +194,8 @@ void ComplexODE::J(const uBlasVector& x, uBlasVector& y,
   for (uint i = 0; i < n; i++)
   {
     const complex yvalue = yvalues[i];
-    y(2*i) = yvalue.real();
-    y(2*i + 1) = yvalue.imag();
+    y[2*i] = yvalue.real();
+    y[2*i + 1] = yvalue.imag();
   }
 }
 //-----------------------------------------------------------------------------
@@ -210,7 +210,7 @@ bool ComplexODE::update(const uBlasVector& u, real t, bool end)
   // Update zvalues for all components
   for (uint i = 0; i < n; i++)
   {
-    const complex zvalue(u(2*i), u(2*i + 1));
+    const complex zvalue(u[2*i], u[2*i + 1]);
     zvalues[i] = zvalue;
   }
 

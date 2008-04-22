@@ -87,7 +87,7 @@ void TimeSlab::write(const uBlasVector& u)
   FILE* fp = fopen(filename.c_str(), "w");
   for (uint i = 0; i < u.size(); i++)
   {
-    fprintf(fp, "%.15e ", u(i));
+    fprintf(fp, "%.15e ", u[i]);
   }
   fprintf(fp, "\n");
   fclose(fp);
@@ -102,18 +102,18 @@ void TimeSlab::copy(const real x[], uint xoffset, real y[], uint yoffset, uint n
 void TimeSlab::copy(const uBlasVector& x, uint xoffset, real y[], uint yoffset, uint n)
 {
   for (uint i = 0; i < n; i++)
-    y[yoffset + i] = x(xoffset + i);
+    y[yoffset + i] = x[xoffset + i];
 }
 //-----------------------------------------------------------------------------
 void TimeSlab::copy(const real x[], uint xoffset, uBlasVector& y, uint yoffset, uint n)
 {
   for (uint i = 0; i < n; i++)
-    y(yoffset + i) = x[xoffset + i];
+    y[yoffset + i] = x[xoffset + i];
 }
 //-----------------------------------------------------------------------------
 void TimeSlab::copy(const uBlasVector& x, uint xoffset, uBlasVector& y, uint yoffset, uint n)
 {
   for (uint i = 0; i < n; i++)
-    y(yoffset + i) = x(xoffset + i);
+    y[yoffset + i] = x[xoffset + i];
 }
 //-----------------------------------------------------------------------------

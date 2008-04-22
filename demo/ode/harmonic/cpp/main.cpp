@@ -20,14 +20,14 @@ public:
 
   void u0(uBlasVector& u)
   {
-    u(0) = 0.0;
-    u(1) = 1.0;
+    u[0] = 0.0;
+    u[1] = 1.0;
   }
 
   void f(const uBlasVector& u, real t, uBlasVector& y)
   {
-    y(0) = u(1);
-    y(1) = - u(0);
+    y[0] = u[1];
+    y[1] = - u[0];
   }
 
   bool update(const uBlasVector& u, real t, bool end)
@@ -35,8 +35,8 @@ public:
     if ( !end )
       return true;
 
-    real e0 = u(0) - 0.0;
-    real e1 = u(1) - 1.0;
+    real e0 = u[0] - 0.0;
+    real e1 = u[1] - 1.0;
     e = std::max(std::abs(e0), std::abs(e1));
 
     return true;
