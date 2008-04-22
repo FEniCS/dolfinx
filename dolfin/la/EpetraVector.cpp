@@ -60,7 +60,6 @@ EpetraVector::~EpetraVector()
 //-----------------------------------------------------------------------------
 void EpetraVector::init(uint N)
 {
-  std::cout <<"usint init "<<N <<std::endl; 
   if (x and this->size() == N) 
   {
     //clear();
@@ -105,8 +104,8 @@ void EpetraVector::apply()
 //-----------------------------------------------------------------------------
 void EpetraVector::disp(uint precision) const
 {
-  // Not yet implemented
-  error("Not yet implemented.");
+  dolfin_assert(x); 
+  x->Print(std::cout); 
 }
 //-----------------------------------------------------------------------------
 LogStream& dolfin::operator<< (LogStream& stream, const EpetraVector& x)

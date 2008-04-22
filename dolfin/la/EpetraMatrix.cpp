@@ -73,17 +73,7 @@ void EpetraMatrix::init(uint M, uint N)
 //-----------------------------------------------------------------------------
 void EpetraMatrix::init(const GenericSparsityPattern& sparsity_pattern)
 {
-  /* OLD attempt
-  EpetraFactory& f = dynamic_cast<EpetraFactory&>(factory());
-  Epetra_SerialComm Comm = f.getSerialComm();
-
-  Epetra_Map row_map(sparsity_pattern.size(0), 0, Comm);
-  Epetra_Map col_map(sparsity_pattern.size(1), 0, Comm);
-
-  std::cout <<"sparsity_pattern.numNonZero "<< sparsity_pattern.numNonZero() <<std::endl; 
-
-  A = new Epetra_FECrsMatrix(Copy, row_map, col_map, sparsity_pattern.numNonZero());
-  */
+  cout <<"dabla "<<endl; 
   const EpetraSparsityPattern& epetra_pattern = dynamic_cast<const EpetraSparsityPattern&>(sparsity_pattern);
   A = new Epetra_FECrsMatrix(Copy, epetra_pattern.pattern());
 }
@@ -225,11 +215,28 @@ void EpetraMatrix::mult(const GenericVector& x_, GenericVector& Ax_, bool transp
 }
 
 //-----------------------------------------------------------------------------
-void EpetraMatrix::getRow(uint i, int& ncols, Array<int>& columns, 
-                         Array<real>& values) const
+void EpetraMatrix::getRow(uint i, int& ncols, Array<int>& columns, Array<real>& values) const
 {
+//  int Epetra_CrsMatrix::ExtractGlobalRowCopy  	(int GlobalRow, int Length,int& NumEntries, double* Values, int *Indices) const
+
   dolfin_assert(A); 
-  error("EpetraMatrix::getRow not yet implemented.");
+
+  int len= 10; 
+  int *cols = new int(len); 
+  double* vals = new double(len); 
+
+  int err = A->ExtractGlobalRowCopy(i, len, ncols, vals, cols); 
+  if (err!= 0) error("Did not manage to get a copy of the row."); 
+
+  columns.clear();
+  values.clear(); 
+  for (int i=0; i< ncols; i++) {
+      columns.push_back(cols[i]);
+      values.push_back(vals[i]);
+  }
+
+  delete cols; 
+  delete vals; 
 }
 //-----------------------------------------------------------------------------
 LinearAlgebraFactory& EpetraMatrix::factory() const
