@@ -8,7 +8,7 @@
 // Modified by Martin Alnæs, 2008.
 //
 // First added:  2006-04-24
-// Last changed: 2008-04-12
+// Last changed: 2008-04-22
 
 #ifndef __GENERIC_MATRIX_H
 #define __GENERIC_MATRIX_H
@@ -20,23 +20,18 @@ namespace dolfin
 {
 
   class GenericVector; 
-  class GenericSparsityPattern;
-  template<class M>
-  class Array;
+  template<class M> class Array;
   
   /// This class defines a common interface for matrices.
   
   class GenericMatrix : public GenericTensor
   {
   public:
-    
-    /// Constructor
-    GenericMatrix() : GenericTensor() {}
 
     /// Destructor
     virtual ~GenericMatrix() {}
     
-    ///--- Implementation of GenericTensor interface ---
+    ///--- Implementation of the GenericTensor interface ---
 
     /// Initialize zero tensor using sparsity pattern (implemented by sub class)
     virtual void init(const GenericSparsityPattern& sparsity_pattern) = 0;
@@ -83,8 +78,12 @@ namespace dolfin
     /// Add block of values
     virtual void add(const real* block, uint m, const uint* rows, uint n, const uint* cols) = 0;
 
+    /// Set given rows to zero
+    virtual void zero(uint m, const uint* rows) = 0;
+
     /// Set given rows to identity matrix
     virtual void ident(uint m, const uint* rows) = 0;
+
 
     // FIXME: --- Work in progress below here ---
     // FIXME: Add more functions
@@ -93,8 +92,6 @@ namespace dolfin
     // FIXME: Add itemwize get, set, add
     // FIXME: Add copy constructor and assignment operator
 
-    /// Set given matrix rows to zero
-    virtual void zero(uint m, const uint* rows) = 0;
 
     /// Set given matrix entry to value
     virtual void setitem(std::pair<uint, uint> idx, real value) 

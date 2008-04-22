@@ -5,7 +5,7 @@
 
 #ifdef HAS_TRILINOS
 
-#include <dolfin/common/constants.h>
+#include <dolfin/common/types.h>
 #include <dolfin/log/log.h>
 #include "EpetraFactory.h"
 #include "GenericSparsityPattern.h"

@@ -6,7 +6,7 @@
 // Modified by Martin Alnæs, 2008.
 //
 // First added:  2007-01-17
-// Last changed: 2008-04-14
+// Last changed: 2008-04-22
 
 #ifndef __GENERIC_TENSOR_H
 #define __GENERIC_TENSOR_H
@@ -16,19 +16,18 @@
 
 namespace dolfin
 {
-
+  
   class GenericSparsityPattern;
   class LinearAlgebraFactory;
 
-  /// This class defines a common interface for general tensors.
+  /// This class defines a common interface for arbitrary rank tensors.
 
   class GenericTensor
   {
   public:
 
-    /// Constructor
-    GenericTensor() {};
-
+    ///--- Basic GenericTensor interface ---
+    
     /// Destructor
     virtual ~GenericTensor() {}
 
@@ -59,14 +58,16 @@ namespace dolfin
     /// Display tensor
     virtual void disp(uint precision = 2) const = 0;
 
-    /// Get LA backend factory
+    /// Get linear algebra backend factory
     virtual LinearAlgebraFactory& factory() const = 0; 
 
-    /// Return const GenericTensor* (internal library use only!)
+    ///--- Special functions, intended for library use only ---
+
+    /// Return instance (const version)
     virtual const GenericTensor* instance() const 
     { return this; }
 
-    /// Return GenericTensor* (internal library use only!)
+    /// Return instance (non-const version)
     virtual GenericTensor* instance() 
     { return this; }
 
@@ -74,7 +75,7 @@ namespace dolfin
     template<class T> const T& down_cast() const
     {
       const T* t = dynamic_cast<const T*>(instance());
-      if ( !t )  
+      if (!t)  
         error("GenericTensor cannot be cast to the requested type."); 
       return *t;
     }
@@ -83,12 +84,12 @@ namespace dolfin
     template<class T> T& down_cast()
     {
       T* t = dynamic_cast<T*>(instance());
-      if ( !t )  
+      if (!t)  
         error("GenericTensor cannot be cast to the requested type."); 
       return *t;
     }
 
-    /// Check wether the GenericTensor object matches a specific type
+    /// Check whether the GenericTensor instance matches a specific type
     template<class T> bool has_type() const
     { return bool(dynamic_cast<const T*>(instance())); }
 

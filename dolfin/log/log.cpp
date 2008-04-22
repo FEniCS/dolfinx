@@ -11,9 +11,10 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <signal.h>
+#include <dolfin/common/types.h>
+#include <dolfin/common/constants.h>
 #include "LogManager.h"
 #include "log.h"
-#include <dolfin/common/constants.h>
 
 using namespace dolfin;
 
