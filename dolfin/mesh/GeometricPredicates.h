@@ -7,7 +7,7 @@
 #ifndef __GEOMETRIC_PREDICATES_H
 #define __GEOMETRIC_PREDICATES_H
 
-#include <dolfin/main/constants.h>
+#include <dolfin/common/types.h>
 
 namespace dolfin
 {

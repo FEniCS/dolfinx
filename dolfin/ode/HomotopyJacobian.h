@@ -7,7 +7,7 @@
 #ifndef __HOMOTOPY_JACOBIAN_H
 #define __HOMOTOPY_JACOBIAN_H
 
-#include <dolfin/main/constants.h>
+#include <dolfin/common/types.h>
 #include <dolfin/la/uBlasKrylovMatrix.h>
 
 namespace dolfin

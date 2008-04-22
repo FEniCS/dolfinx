@@ -9,7 +9,7 @@
 #ifndef __GENERIC_SPARSITY_PATTERN_H
 #define __GENERIC_SPARSITY_PATTERN_H
 
-#include <dolfin/main/constants.h>
+#include <dolfin/common/types.h>
 
 namespace dolfin
 {

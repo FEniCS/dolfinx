@@ -10,7 +10,7 @@
 #include <libxml/parser.h>
 #include <string>
 
-#include <dolfin/main/constants.h>
+#include <dolfin/common/types.h>
 
 namespace dolfin
 {

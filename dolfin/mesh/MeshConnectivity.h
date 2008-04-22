@@ -7,7 +7,7 @@
 #ifndef __MESH_CONNECTIVITY_H
 #define __MESH_CONNECTIVITY_H
 
-#include <dolfin/main/constants.h>
+#include <dolfin/common/types.h>
 #include <dolfin/common/Array.h>
 
 namespace dolfin

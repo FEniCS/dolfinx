@@ -9,7 +9,7 @@
 #ifndef __MESH_PARTITIONING_H
 #define __MESH_PARTITIONING_H
 
-#include <dolfin/main/constants.h>
+#include <dolfin/common/types.h>
 
 namespace dolfin
 {

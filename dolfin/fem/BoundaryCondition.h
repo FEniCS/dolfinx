@@ -10,7 +10,7 @@
 #define __BOUNDARY_CONDITION_H
 
 #include <ufc.h>
-#include <dolfin/main/constants.h>
+#include <dolfin/common/types.h>
 #include "UFCMesh.h"
 #include "DofMap.h"
 

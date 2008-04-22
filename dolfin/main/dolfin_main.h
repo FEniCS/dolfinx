@@ -4,7 +4,7 @@
 /// DOLFIN main
 
 #include <dolfin/main/init.h>
-#include <dolfin/main/constants.h>
+#include <dolfin/common/types.h>
 
 #endif
 

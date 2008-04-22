@@ -7,7 +7,7 @@
 #ifndef __MULTI_ADAPTIVITY_H
 #define __MULTI_ADAPTIVITY_H
 
-#include <dolfin/main/constants.h>
+#include <dolfin/common/types.h>
 #include "Controller.h"
 #include "Adaptivity.h"
 

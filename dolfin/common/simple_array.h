@@ -9,7 +9,7 @@
 #ifndef __SIMPLE_ARRAY_H
 #define __SIMPLE_ARRAY_H
 
-#include <dolfin/main/constants.h>
+#include <dolfin/common/types.h>
 
 namespace dolfin
 {

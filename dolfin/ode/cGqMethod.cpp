@@ -1,9 +1,10 @@
-// Copyright (C) 2003-2007 Anders Logg.
+// Copyright (C) 2003-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005-05-02
-// Last changed: 2007-07-18
+// Last changed: 2008-04-22
 
+#include <dolfin/common/constants.h>
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/math/dolfin_math.h>
 #include <dolfin/math/Lagrange.h>

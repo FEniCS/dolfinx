@@ -7,7 +7,7 @@
 #ifndef __GTS_INTERFACE_H
 #define __GTS_INTERFACE_H
 
-#include <dolfin/main/constants.h>
+#include <dolfin/common/types.h>
 
 // Forward declarations
 struct  _GtsBBox;

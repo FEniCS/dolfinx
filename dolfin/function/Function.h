@@ -11,7 +11,7 @@
 #define __FUNCTION_H
 
 #include <ufc.h>
-#include <dolfin/main/constants.h>
+#include <dolfin/common/types.h>
 #include <dolfin/common/simple_array.h>
 #include <dolfin/la/Vector.h>
 #include "SubFunction.h"

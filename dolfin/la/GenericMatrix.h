@@ -13,7 +13,7 @@
 #ifndef __GENERIC_MATRIX_H
 #define __GENERIC_MATRIX_H
 
-#include <dolfin/main/constants.h>
+#include <dolfin/common/types.h>
 #include "GenericTensor.h"
 
 namespace dolfin

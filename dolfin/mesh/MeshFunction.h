@@ -9,7 +9,7 @@
 #ifndef __MESH_FUNCTION_H
 #define __MESH_FUNCTION_H
 
-#include <dolfin/main/constants.h>
+#include <dolfin/common/types.h>
 #include <dolfin/io/File.h>
 #include "MeshEntity.h"
 #include <dolfin/main/MPI.h>

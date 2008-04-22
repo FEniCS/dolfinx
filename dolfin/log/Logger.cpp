@@ -12,7 +12,7 @@
 #include <iomanip>
 #include <stdexcept>
 
-#include <dolfin/main/constants.h>
+#include <dolfin/common/constants.h>
 #include "Logger.h"
 
 using namespace dolfin;

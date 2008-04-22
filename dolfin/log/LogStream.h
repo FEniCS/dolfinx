@@ -10,7 +10,7 @@
 #define __LOG_STREAM_H
 
 #include <string>
-#include <dolfin/main/constants.h>
+#include <dolfin/common/types.h>
 
 namespace dolfin
 {

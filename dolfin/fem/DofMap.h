@@ -11,7 +11,7 @@
 
 #include <map>
 #include <ufc.h>
-#include <dolfin/main/constants.h>
+#include <dolfin/common/types.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include "UFCCell.h"

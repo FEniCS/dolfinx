@@ -7,7 +7,7 @@
 #ifndef __HOMOTOPY_ODE_H
 #define __HOMOTOPY_ODE_H
 
-#include <dolfin/main/constants.h>
+#include <dolfin/common/types.h>
 #include "ComplexODE.h"
 
 namespace dolfin

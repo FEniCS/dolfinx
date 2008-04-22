@@ -7,7 +7,7 @@
 #ifndef __UBLAS_KRYLOV_MATRIX_H
 #define __UBLAS_KRYLOV_MATRIX_H
 
-#include <dolfin/main/constants.h>
+#include <dolfin/common/types.h>
 
 namespace dolfin
 {

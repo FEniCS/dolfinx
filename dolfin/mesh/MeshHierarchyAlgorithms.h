@@ -6,7 +6,7 @@
 #ifndef __MESH_HIERARCHY_ALGORITHMS_H
 #define __MESH_HIERARCHY_ALGORITHMS_H
 
-#include <dolfin/main/constants.h>
+#include <dolfin/common/types.h>
 
 namespace dolfin
 {

@@ -9,7 +9,7 @@
 
 #include <string>
 #include <stdio.h>
-#include <dolfin/main/constants.h>
+#include <dolfin/common/types.h>
 #include <dolfin/log/Event.h>
 #include <dolfin/common/Array.h>
 #include "GenericFile.h"

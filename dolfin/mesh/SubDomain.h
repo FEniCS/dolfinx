@@ -7,7 +7,7 @@
 #ifndef __SUB_DOMAIN_H
 #define __SUB_DOMAIN_H
 
-#include <dolfin/main/constants.h>
+#include <dolfin/common/types.h>
 #include <dolfin/common/simple_array.h>
 #include "MeshFunction.h"
 

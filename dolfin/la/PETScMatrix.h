@@ -16,7 +16,7 @@
 
 #include <petscmat.h>
 
-#include <dolfin/main/constants.h>
+#include <dolfin/common/types.h>
 #include <dolfin/log/dolfin_log.h>
 #include "PETScObject.h"
 #include <dolfin/common/Variable.h>

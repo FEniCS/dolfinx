@@ -7,7 +7,7 @@
 #ifndef __MESH_EDITOR_H
 #define __MESH_EDITOR_H
 
-#include <dolfin/main/constants.h>
+#include <dolfin/common/types.h>
 #include "CellType.h"
 #include <dolfin/common/Array.h>
 

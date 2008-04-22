@@ -7,7 +7,7 @@
 #ifndef __MESHHIERARCHY_H
 #define __MESHHIERARCHY_H
 
-#include <dolfin/main/constants.h>
+#include <dolfin/common/types.h>
 #include "MeshFunction.h"
 
 namespace dolfin

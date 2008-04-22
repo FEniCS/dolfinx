@@ -7,7 +7,7 @@
 #ifndef __INTERSECTION_DETECTOR_H
 #define __INTERSECTION_DETECTOR_H
 
-#include <dolfin/main/constants.h>
+#include <dolfin/common/types.h>
 
 #include "GTSInterface.h"
 

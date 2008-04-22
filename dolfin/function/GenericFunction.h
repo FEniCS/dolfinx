@@ -8,7 +8,7 @@
 #define __GENERIC_FUNCTION_H
 
 #include <ufc.h>
-#include <dolfin/main/constants.h>
+#include <dolfin/common/types.h>
 
 namespace dolfin
 {

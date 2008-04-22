@@ -8,7 +8,7 @@
 #define __PLOT_H
 
 #include <string>
-#include <dolfin/main/constants.h>
+#include <dolfin/common/types.h>
 #include <dolfin/mesh/MeshFunction.h>
 
 namespace dolfin

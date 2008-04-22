@@ -7,7 +7,7 @@
 #ifndef __BOUNDARY_COMPUTATION_H
 #define __BOUNDARY_COMPUTATION_H
 
-#include <dolfin/main/constants.h>
+#include <dolfin/common/types.h>
 #include "MeshFunction.h"
 
 namespace dolfin

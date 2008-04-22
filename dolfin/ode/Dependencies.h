@@ -7,7 +7,7 @@
 #ifndef __DEPENDENCIES_H
 #define __DEPENDENCIES_H
 
-#include <dolfin/main/constants.h>
+#include <dolfin/common/types.h>
 #include <dolfin/common/Array.h>
 #include <dolfin/la/uBlasSparseMatrix.h>
 

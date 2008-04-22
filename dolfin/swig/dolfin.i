@@ -49,7 +49,7 @@ using namespace dolfin;
 %include "dolfin_pde_pre.i"
 
 // DOLFIN interface
-%import "dolfin/main/constants.h"
+%import "dolfin/common/types.h"
 %include "dolfin_headers.i"
 
 // Fixes for specific kernel modules (post)

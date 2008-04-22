@@ -9,7 +9,7 @@
 #ifndef __UBLAS_KRYLOV_SOLVER_H
 #define __UBLAS_KRYLOV_SOLVER_H
 
-#include <dolfin/main/constants.h>
+#include <dolfin/common/types.h>
 #include "ublas.h"
 
 #include <dolfin/parameter/Parametrized.h>

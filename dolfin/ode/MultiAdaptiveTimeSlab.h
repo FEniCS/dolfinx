@@ -8,7 +8,7 @@
 #define __MULTI_ADAPTIVE_TIME_SLAB_H
 
 #include <dolfin/log/dolfin_log.h>
-#include <dolfin/main/constants.h>
+#include <dolfin/common/types.h>
 #include <dolfin/la/uBlasVector.h>
 #include "Alloc.h"
 #include "Partition.h"

@@ -8,7 +8,7 @@
 #define __MESH_GEOMETRY_H
 
 #include "Point.h"
-#include <dolfin/main/constants.h>
+#include <dolfin/common/types.h>
 
 namespace dolfin
 {

@@ -15,7 +15,7 @@
 #include <sstream>
 #include <iomanip>
 
-#include <dolfin/main/constants.h>
+#include <dolfin/common/types.h>
 #include <dolfin/log/dolfin_log.h>
 #include "GenericTensor.h"
 #include "SparsityPattern.h"

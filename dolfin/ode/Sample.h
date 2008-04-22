@@ -8,7 +8,7 @@
 #define __SAMPLE_H
 
 #include <string>
-#include <dolfin/main/constants.h>
+#include <dolfin/common/types.h>
 #include <dolfin/common/Variable.h>
 
 namespace dolfin

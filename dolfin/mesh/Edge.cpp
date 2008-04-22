@@ -7,7 +7,7 @@
 // Last changed: 2007-01-10
 
 #include <cmath>
-#include <dolfin/main/constants.h>
+#include <dolfin/common/constants.h>
 #include "Vertex.h"
 #include "Edge.h"
 

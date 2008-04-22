@@ -11,7 +11,7 @@
 #ifndef __GENERIC_TENSOR_H
 #define __GENERIC_TENSOR_H
 
-#include <dolfin/main/constants.h>
+#include <dolfin/common/types.h>
 #include <dolfin/log/log.h>
 
 namespace dolfin

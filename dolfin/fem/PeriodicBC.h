@@ -9,7 +9,7 @@
 #ifndef __PERIODIC_BC_H
 #define __PERIODIC_BC_H
 
-#include <dolfin/main/constants.h>
+#include <dolfin/common/types.h>
 #include "SubSystem.h"
 #include "BoundaryCondition.h"
 

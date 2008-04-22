@@ -7,7 +7,7 @@
 #ifndef __M_FILE_H
 #define __M_FILE_H
 
-#include <dolfin/main/constants.h>
+#include <dolfin/common/types.h>
 #include "GenericFile.h"
 
 namespace dolfin

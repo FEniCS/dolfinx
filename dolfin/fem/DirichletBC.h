@@ -9,7 +9,7 @@
 #ifndef __DIRICHLET_BC_H
 #define __DIRICHLET_BC_H
 
-#include <dolfin/main/constants.h>
+#include <dolfin/common/types.h>
 #include "SubSystem.h"
 #include <dolfin/mesh/MeshFunction.h>
 #include "BoundaryCondition.h"
