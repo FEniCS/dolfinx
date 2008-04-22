@@ -16,7 +16,7 @@
 
 #include <petscvec.h>
 
-#include <dolfin/main/constants.h>
+#include <dolfin/common/types.h>
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Variable.h>
 #include "LinearAlgebraFactory.h"

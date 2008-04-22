@@ -7,7 +7,7 @@
 #ifndef __MONO_ADAPTIVE_NEWTON_SOLVER_H
 #define __MONO_ADAPTIVE_NEWTON_SOLVER_H
 
-#include <dolfin/main/constants.h>
+#include <dolfin/common/types.h>
 #include <dolfin/la/uBlasVector.h>
 #include "MonoAdaptiveJacobian.h"
 #include "TimeSlabSolver.h"

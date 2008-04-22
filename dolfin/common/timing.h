@@ -7,7 +7,7 @@
 #ifndef __TIMING_H
 #define __TIMING_H
 
-#include <dolfin/main/constants.h>
+#include <dolfin/common/types.h>
 
 namespace dolfin
 {

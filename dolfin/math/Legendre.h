@@ -7,7 +7,7 @@
 #ifndef __LEGENDRE_H
 #define __LEGENDRE_H
 
-#include <dolfin/main/constants.h>
+#include <dolfin/common/types.h>
 
 namespace dolfin {
 

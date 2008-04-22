@@ -9,7 +9,7 @@
 #ifndef __EDGE_H
 #define __EDGE_H
 
-#include <dolfin/main/constants.h>
+#include <dolfin/common/types.h>
 #include "Point.h"
 #include "MeshEntity.h"
 #include "MeshEntityIterator.h"

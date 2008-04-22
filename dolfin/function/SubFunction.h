@@ -7,7 +7,7 @@
 #ifndef __SUB_FUNCTION_H
 #define __SUB_FUNCTION_H
 
-#include <dolfin/main/constants.h>
+#include <dolfin/common/types.h>
 
 namespace dolfin
 {

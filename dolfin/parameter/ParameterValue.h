@@ -8,7 +8,7 @@
 #define __PARAMETER_VALUE_H
 
 #include <string>
-#include <dolfin/main/constants.h>
+#include <dolfin/common/types.h>
 
 namespace dolfin
 {

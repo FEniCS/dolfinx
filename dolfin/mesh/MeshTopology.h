@@ -8,7 +8,7 @@
 #define __MESH_TOPOLOGY_H
 
 #include <dolfin/log/dolfin_log.h>
-#include <dolfin/main/constants.h>
+#include <dolfin/common/types.h>
 #include <dolfin/common/Array.h>
 #include "MeshConnectivity.h"
 

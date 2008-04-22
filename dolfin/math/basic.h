@@ -8,7 +8,7 @@
 #define __BASIC_H
 
 #include <cmath>
-#include <dolfin/main/constants.h>
+#include <dolfin/common/types.h>
 
 namespace dolfin
 {

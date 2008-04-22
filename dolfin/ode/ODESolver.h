@@ -7,7 +7,7 @@
 #ifndef __ODE_SOLVER_H
 #define __ODE_SOLVER_H
 
-#include <dolfin/main/constants.h>
+#include <dolfin/common/types.h>
 
 namespace dolfin {
 

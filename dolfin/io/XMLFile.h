@@ -11,7 +11,7 @@
 
 #include <libxml/parser.h>
 
-#include <dolfin/main/constants.h>
+#include <dolfin/common/types.h>
 #include <dolfin/la/Vector.h>
 #include <dolfin/la/GenericMatrix.h>
 #include "GenericFile.h"

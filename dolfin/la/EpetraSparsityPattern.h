@@ -8,7 +8,7 @@
 
 #ifdef HAS_TRILINOS
 
-#include <dolfin/main/constants.h>
+#include <dolfin/common/types.h>
 #include "GenericSparsityPattern.h"
 #include <Epetra_FECrsGraph.h>
 #include "LinearAlgebraFactory.h"

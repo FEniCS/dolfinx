@@ -14,7 +14,7 @@
 
 #ifdef HAS_PETSC
 
-#include <dolfin/main/constants.h>
+#include <dolfin/common/types.h>
 #include <dolfin/parameter/Parametrized.h>
 #include "Preconditioner.h"
 #include "KrylovMethod.h"

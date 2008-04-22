@@ -7,7 +7,7 @@
 #ifndef __MONO_ADAPTIVE_FIXED_POINT_SOLVER_H
 #define __MONO_ADAPTIVE_FIXED_POINT_SOLVER_H
 
-#include <dolfin/main/constants.h>
+#include <dolfin/common/types.h>
 #include "TimeSlabSolver.h"
 
 namespace dolfin

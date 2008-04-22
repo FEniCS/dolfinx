@@ -11,7 +11,7 @@
 #define __UTILS_H
 
 #include <string>
-#include <dolfin/main/constants.h>
+#include <dolfin/common/types.h>
 
 namespace dolfin
 {

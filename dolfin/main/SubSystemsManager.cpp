@@ -18,6 +18,7 @@
 #include <mpi.h>
 #endif
 
+#include <dolfin/common/constants.h>
 #include <dolfin/log/dolfin_log.h>
 #include "SubSystemsManager.h"
 

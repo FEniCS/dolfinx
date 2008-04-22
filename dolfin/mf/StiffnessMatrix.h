@@ -7,7 +7,7 @@
 #ifndef __STIFFNESS_MATRIX_H
 #define __STIFFNESS_MATRIX_H
 
-#include <dolfin/main/constants.h>
+#include <dolfin/common/types.h>
 #include <dolfin/la/Matrix.h>
 #include <dolfin/la/PETScMatrix.h>
 #include <dolfin/la/uBlasSparseMatrix.h>

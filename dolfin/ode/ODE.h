@@ -7,7 +7,7 @@
 #ifndef __ODE_H
 #define __ODE_H
 
-#include <dolfin/main/constants.h>
+#include <dolfin/common/types.h>
 #include <dolfin/log/Event.h>
 #include <dolfin/la/uBlasVector.h>
 #include <dolfin/la/uBlasSparseMatrix.h>

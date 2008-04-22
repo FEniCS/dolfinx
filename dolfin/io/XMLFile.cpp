@@ -1,4 +1,4 @@
-// Copyright (C) 2002-2007 Anders Logg.
+// Copyright (C) 2002-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Erik Svensson 2003.
@@ -7,11 +7,12 @@
 // Modified by Magnus Vikstrom 2007.
 //
 // First added:  2002-12-03
-// Last changed: 2007-05-15
+// Last changed: 2008-04-22
 
 #include <stdarg.h>
 
 #include <dolfin/log/log.h>
+#include <dolfin/common/constants.h>
 #include <dolfin/common/Array.h>
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/la/GenericMatrix.h>

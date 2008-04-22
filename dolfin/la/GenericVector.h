@@ -11,7 +11,7 @@
 #ifndef __GENERIC_VECTOR_H
 #define __GENERIC_VECTOR_H
 
-#include <dolfin/main/constants.h>
+#include <dolfin/common/types.h>
 #include "GenericSparsityPattern.h"
 #include "GenericTensor.h"
 #include <dolfin/log/log.h>

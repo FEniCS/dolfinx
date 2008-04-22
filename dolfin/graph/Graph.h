@@ -7,7 +7,7 @@
 #ifndef __GRAPH_H
 #define __GRAPH_H
 
-#include <dolfin/main/constants.h>
+#include <dolfin/common/types.h>
 #include <dolfin/common/Variable.h>
 #include <dolfin/mesh/Mesh.h>
 

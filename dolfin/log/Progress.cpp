@@ -6,8 +6,9 @@
 // Modified by Garth N. Wells, 2006.
 //
 // First added:  2003-03-14
-// Last changed: 2008-04-07
+// Last changed: 2008-04-22
 
+#include <dolfin/common/constants.h>
 #include <dolfin/common/utils.h>
 #include <dolfin/common/timing.h>
 #include "log.h"

@@ -7,7 +7,7 @@
 #ifndef __MATRIX_FACTORY_H
 #define __MATRIX_FACTORY_H
 
-#include <dolfin/main/constants.h>
+#include <dolfin/common/types.h>
 
 namespace dolfin
 {

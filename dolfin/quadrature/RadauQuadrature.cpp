@@ -5,6 +5,7 @@
 // Last changed: 2006-10-23
 
 #include <cmath>
+#include <dolfin/common/constants.h>
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/math/Legendre.h>
 #include "RadauQuadrature.h"

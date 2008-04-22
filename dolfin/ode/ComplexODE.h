@@ -7,7 +7,7 @@
 #ifndef __COMPLEX_ODE_H
 #define __COMPLEX_ODE_H
 
-#include <dolfin/main/constants.h>
+#include <dolfin/common/types.h>
 #include "ODE.h"
 
 namespace dolfin

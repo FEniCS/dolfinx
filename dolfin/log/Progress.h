@@ -10,7 +10,7 @@
 #include <string>
 #include <stdarg.h>
 
-#include <dolfin/main/constants.h>
+#include <dolfin/common/types.h>
 
 namespace dolfin
 {
