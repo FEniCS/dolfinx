@@ -78,52 +78,36 @@ namespace dolfin
     /// Add block of values
     virtual void add(const real* block, uint m, const uint* rows, uint n, const uint* cols) = 0;
 
+    /// Get non-zero values of given row
+    virtual void getrow(uint i, int& ncols, Array<int>& columns, Array<real>& values) const = 0;
+
     /// Set given rows to zero
     virtual void zero(uint m, const uint* rows) = 0;
 
     /// Set given rows to identity matrix
     virtual void ident(uint m, const uint* rows) = 0;
 
+    /// Matrix-vector product, y = Ax
+    virtual void mult(const GenericVector& x, GenericVector& y, bool transposed=false) const = 0;
 
-    // FIXME: --- Work in progress below here ---
-    // FIXME: Add more functions
-    // FIXME: Cleanup
-    // FIXME: Remove getRow()
-    // FIXME: Add itemwize get, set, add
-    // FIXME: Add copy constructor and assignment operator
-
+    ///--- Convenience functions ---
 
     /// Set given matrix entry to value
-    virtual void setitem(std::pair<uint, uint> idx, real value) 
-    {
-      const uint i = idx.first;
-      const uint j = idx.second;
-      set(&value, 1, &i, 1, &j);  
-    }
+    virtual void setitem(std::pair<uint, uint> idx, real value)
+    { set(&value, 1, &idx.first, 1, &idx.second); }
 
     /// Get given matrix entry 
-    virtual real getitem(std::pair<uint, uint> idx) 
-    {
-      const uint i = idx.first;
-      const uint j = idx.second;
-      real value;
-      get(&value, 1, &i, 1, &j);  
-      return value;
-    }
+    virtual real getitem(std::pair<uint, uint> idx)
+    { real value(0); get(&value, 1, &idx.first, 1, &idx.second); return value; }
 
-    // y = A x  ( or y = A^T x if transposed==true) 
-    virtual void mult(const GenericVector& x, GenericVector& y, bool transposed=false) const = 0; 
+    ///--- Special functions, intended for library use only ---
 
-    // FIXME remove this function and re-implement the << operator in terms of sparsity pattern and get
-    /// Get non-zero values of row i
-    virtual void getRow(uint i, int& ncols, Array<int>& columns, Array<real>& values) const = 0;
-
-    /// Return const GenericMatrix* (internal library use only!)
-    virtual const GenericMatrix* instance() const 
+    /// Return instance (const version)
+    virtual const GenericMatrix* instance() const
     { return this; }
 
-    /// Return GenericMatrix* (internal library use only!)
-    virtual GenericMatrix* instance() 
+    /// Return instance (non-const version)
+    virtual GenericMatrix* instance()
     { return this; }
 
   };

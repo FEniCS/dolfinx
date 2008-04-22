@@ -64,11 +64,11 @@ namespace dolfin
     ///--- Special functions, intended for library use only ---
 
     /// Return instance (const version)
-    virtual const GenericTensor* instance() const 
+    virtual const GenericTensor* instance() const
     { return this; }
 
     /// Return instance (non-const version)
-    virtual GenericTensor* instance() 
+    virtual GenericTensor* instance()
     { return this; }
 
     /// Cast a GenericTensor to its derived class (const version)
@@ -76,7 +76,7 @@ namespace dolfin
     {
       const T* t = dynamic_cast<const T*>(instance());
       if (!t)  
-        error("GenericTensor cannot be cast to the requested type."); 
+        error("GenericTensor cannot be cast to the requested type.");
       return *t;
     }
 
@@ -85,7 +85,7 @@ namespace dolfin
     {
       T* t = dynamic_cast<T*>(instance());
       if (!t)  
-        error("GenericTensor cannot be cast to the requested type."); 
+        error("GenericTensor cannot be cast to the requested type.");
       return *t;
     }
 
