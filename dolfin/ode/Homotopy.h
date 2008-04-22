@@ -7,7 +7,7 @@
 #ifndef __HOMOTOPY_H
 #define __HOMOTOPY_H
 
-#include <dolfin/main/constants.h>
+#include <dolfin/common/types.h>
 #include <dolfin/common/Array.h>
 #include <dolfin/la/uBlasVector.h>
 #include <dolfin/la/uBlasKrylovSolver.h>

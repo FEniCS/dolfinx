@@ -2,8 +2,9 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005-01-28
-// Last changed: 2008-08-11
+// Last changed: 2008-04-22
 
+#include <dolfin/common/constants.h>
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/math/dolfin_math.h>
 #include <dolfin/parameter/parameters.h>
@@ -129,7 +130,7 @@ void MonoAdaptiveNewtonSolver::FevalExplicit(uBlasVector& F)
 
     // Reset values to initial data
     for (uint i = 0; i < ts.N; i++)
-      F(noffset + i) = ts.u0(i);
+      F[noffset + i] = ts.u0[i];
     
     // Add weights of right-hand side
     for (uint m = 0; m < method.qsize(); m++)
@@ -137,7 +138,7 @@ void MonoAdaptiveNewtonSolver::FevalExplicit(uBlasVector& F)
       const real tmp = k * method.nweight(n, m);
       const uint moffset = m * ts.N;
       for (uint i = 0; i < ts.N; i++)
-	F(noffset + i) += tmp * ts.fq[moffset + i];
+	F[noffset + i] += tmp * ts.fq[moffset + i];
     }
   }
 
@@ -166,7 +167,7 @@ void MonoAdaptiveNewtonSolver::FevalImplicit(uBlasVector& F)
 
     // Reset values to initial data
     for (uint i = 0; i < ts.N; i++)
-      F(noffset + i) = Mu0(i);
+      F[noffset + i] = Mu0[i];
     
     // Add weights of right-hand side
     for (uint m = 0; m < method.qsize(); m++)
@@ -174,7 +175,7 @@ void MonoAdaptiveNewtonSolver::FevalImplicit(uBlasVector& F)
       const real tmp = k * method.nweight(n, m);
       const uint moffset = m * ts.N;
       for (uint i = 0; i < ts.N; i++)
-	F(noffset + i) += tmp * ts.fq[moffset + i];
+	F[noffset + i] += tmp * ts.fq[moffset + i];
     }
   }
   
@@ -200,7 +201,7 @@ void MonoAdaptiveNewtonSolver::FevalImplicit(uBlasVector& F)
 
     // Copy values from yy
     for (uint i = 0; i < ts.N; i++)
-      F(noffset + i) -= yy(i);
+      F[noffset + i] -= yy[i];
   }
 }
 //-----------------------------------------------------------------------------
@@ -263,20 +264,20 @@ void MonoAdaptiveNewtonSolver::debug()
   // Iterate over the columns of B
   for (uint j = 0; j < n; j++)
   {
-    const real xj = ts.x(j);
+    const real xj = ts.x[j];
     real dx = std::max(DOLFIN_SQRT_EPS, DOLFIN_SQRT_EPS * std::abs(xj));
 		  
-    ts.x(j) -= 0.5*dx;
+    ts.x[j] -= 0.5*dx;
     Feval(F1);
 
-    ts.x(j) = xj + 0.5*dx;
+    ts.x[j] = xj + 0.5*dx;
     Feval(F2);
     
-    ts.x(j) = xj;
+    ts.x[j] = xj;
 
     for (uint i = 0; i < n; i++)
     {
-      real dFdx = (F1(i) - F2(i)) / dx;
+      real dFdx = (F1[i] - F2[i]) / dx;
       if ( fabs(dFdx) > DOLFIN_EPS )
 	B(i, j) = dFdx;
     }

@@ -13,7 +13,7 @@
 
 #include <string>
 #include <ostream>
-#include <dolfin/main/constants.h>
+#include <dolfin/common/types.h>
 
 namespace dolfin
 {

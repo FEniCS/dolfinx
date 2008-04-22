@@ -7,7 +7,7 @@
 #ifndef __CONTROLLER_H
 #define __CONTROLLER_H
 
-#include <dolfin/main/constants.h>
+#include <dolfin/common/types.h>
 
 namespace dolfin
 {

@@ -1,9 +1,10 @@
-// Copyright (C) 2003-2007 Anders Logg.
+// Copyright (C) 2003-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005-05-02
-// Last changed: 2007-07-18
+// Last changed: 2008-04-22
 
+#include <dolfin/common/constants.h>
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/math/dolfin_math.h>
 #include <dolfin/math/Lagrange.h>
@@ -43,7 +44,7 @@ real dGqMethod::ueval(real x0, uBlasVector& values, uint offset, real tau) const
 
   real sum = 0.0;
   for (unsigned int i = 0; i < nn; i++)
-    sum += values(offset + i) * trial->eval(i, tau);
+    sum += values[offset + i] * trial->eval(i, tau);
   
   return sum;
 }
@@ -63,7 +64,7 @@ real dGqMethod::residual(real x0, uBlasVector& values, uint offset, real f, real
   // FIXME: Include jump term in residual
   real sum = 0.0;
   for (uint i = 0; i < nn; i++)
-    sum += values(offset + i) * derivatives[i];
+    sum += values[offset + i] * derivatives[i];
 
   return sum / k - f;
 }
@@ -193,7 +194,7 @@ void dGqMethod::computeWeights()
     
     // Evaluate test functions at current nodal point
     for (unsigned int j = 0; j < nn; j++)
-      b(j) = test->eval(j, x);
+      b[j] = test->eval(j, x);
 
     // Solve for the weight functions at the nodal point
     // FIXME: Do we get high enough precision?
@@ -201,7 +202,7 @@ void dGqMethod::computeWeights()
 
     // Save weights including quadrature
     for (unsigned int j = 0; j < nn; j++)
-      nweights[j][i] = qweights[i] * w(j);
+      nweights[j][i] = qweights[i] * w[j];
   }
 }
 //-----------------------------------------------------------------------------

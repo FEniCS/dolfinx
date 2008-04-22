@@ -12,7 +12,7 @@
 #include <Epetra_CrsMatrix.h>
 #include <Epetra_FECrsMatrix.h>
 
-#include <dolfin/main/constants.h>
+#include <dolfin/common/types.h>
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Variable.h>
 #include "GenericMatrix.h"
@@ -100,7 +100,7 @@ namespace dolfin
     void mult(const GenericVector& x, GenericVector& y, bool transposed=false) const; 
 
     /// Get non-zero values of row i
-    void getRow(uint i, int& ncols, Array<int>& columns, Array<real>& values) const;
+    void getrow(uint i, int& ncols, Array<int>& columns, Array<real>& values) const;
 
     /// Output
     friend LogStream& operator<< (LogStream& stream, 

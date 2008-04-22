@@ -1,9 +1,10 @@
-// Copyright (C) 2005-2006 Anders Logg.
+// Copyright (C) 2005-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005-01-27
-// Last changed: 2006-08-08
+// Last changed: 2008-04-22
 
+#include <dolfin/common/constants.h>
 #include <dolfin/math/dolfin_math.h>
 #include <dolfin/la/uBlasVector.h>
 #include "ODE.h"
@@ -133,9 +134,9 @@ void MultiAdaptiveJacobian::cGmult(const uBlasVector& x, uBlasVector& y) const
     const int ep = ts.ee[e0];
     if ( ep != -1 )
     {
-      const real xp = x(ep*method.nsize() + method.nsize() - 1);
+      const real xp = x[ep*method.nsize() + method.nsize() - 1];
       for (uint n = 0; n < method.nsize(); n++)
-	y(j0 + n) -= xp;
+	y[j0 + n] -= xp;
     }
 
     // Reset Jpos
@@ -167,9 +168,9 @@ void MultiAdaptiveJacobian::cGmult(const uBlasVector& x, uBlasVector& y) const
 	Jlookup[Jpos++] = dfdu;
 
 	// Add dependency to initial value for all dofs
-	const real tmp = k0 * dfdu * x(e1 * method.nsize() + method.nsize() - 1);
+	const real tmp = k0 * dfdu * x[e1 * method.nsize() + method.nsize() - 1];
 	for (uint n = 0; n < method.nsize(); n++)
-	  y(j0 + n) -= tmp * method.nweight(n, 0);
+	  y[j0 + n] -= tmp * method.nweight(n, 0);
 
        	continue;
       }
@@ -185,9 +186,9 @@ void MultiAdaptiveJacobian::cGmult(const uBlasVector& x, uBlasVector& y) const
 	const real tmp0 = k0 * dfdu;
 	if ( ep != -1 )
 	{
-	  const real tmp1 = tmp0 * x(ep * method.nsize() + method.nsize() - 1);
+	  const real tmp1 = tmp0 * x[ep * method.nsize() + method.nsize() - 1];
 	  for (uint n = 0; n < method.nsize(); n++)
-	    y(j0 + n) -= tmp1 * method.nweight(n, 0);
+	    y[j0 + n] -= tmp1 * method.nweight(n, 0);
 	}
 	
 	// Add dependencies to internal dofs
@@ -195,8 +196,8 @@ void MultiAdaptiveJacobian::cGmult(const uBlasVector& x, uBlasVector& y) const
 	{
 	  real sum = 0.0;
 	  for (uint m = 0; m < method.nsize(); m++)
-	    sum += method.nweight(n, m + 1) * x(j1 + m);
-	  y(j0 + n) -= tmp0 * sum;
+	    sum += method.nweight(n, m + 1) * x[j1 + m];
+	  y[j0 + n] -= tmp0 * sum;
 	}
       }
       else
@@ -221,17 +222,17 @@ void MultiAdaptiveJacobian::cGmult(const uBlasVector& x, uBlasVector& y) const
 	    const int ep = ts.ee[e1];
 	    if ( ep != -1 )
 	    {
-	      const real x0 = x(ep * method.nsize() + method.nsize() - 1);
+	      const real x0 = x[ep * method.nsize() + method.nsize() - 1];
 	      sum += tmp1 * method.eval(0, tau) * x0;
 	    }
 	    
 	    // Iterate over dofs of other element and add dependencies
 	    for (uint l = 0; l < method.nsize(); l++)
-	      sum += tmp1 * method.eval(l + 1, tau) * x(j1 + l);
+	      sum += tmp1 * method.eval(l + 1, tau) * x[j1 + l];
 	  }
 	    
 	  // Add dependencies
-	  y(j0 + n) -= tmp0 * sum;
+	  y[j0 + n] -= tmp0 * sum;
 	}
       }      
     }
@@ -287,17 +288,17 @@ void MultiAdaptiveJacobian::cGmult(const uBlasVector& x, uBlasVector& y) const
 	    if ( ep != -1 )
 	    {
 	      // Iterate over dofs of current element
-	      tmp1 *= x(ep*method.nsize() + method.nsize() - 1);
+	      tmp1 *= x[ep*method.nsize() + method.nsize() - 1];
 	      for (uint n = 0; n < method.nsize(); n++)
-		y(j0 + n) -= tmp1 * method.nweight(n, m);		
+		y[j0 + n] -= tmp1 * method.nweight(n, m);		
 	    }
 	  }
 	  else
 	  {
 	    // Iterate over dofs of current element
-	    tmp1 *= x(j1 + l - 1);
+	    tmp1 *= x[j1 + l - 1];
 	    for (uint n = 0; n < method.nsize(); n++)
-	      y(j0 + n) -= tmp1 * method.nweight(n, m);		
+	      y[j0 + n] -= tmp1 * method.nweight(n, m);		
 	  }
 	}
       }
@@ -331,9 +332,9 @@ void MultiAdaptiveJacobian::dGmult(const uBlasVector& x, uBlasVector& y) const
     const int ep = ts.ee[e0];
     if ( ep != -1 )
     {
-      const real xp = x(ep*method.nsize() + method.nsize() - 1);
+      const real xp = x[ep*method.nsize() + method.nsize() - 1];
       for (uint n = 0; n < method.nsize(); n++)
-	y(j0 + n) -= xp;
+	y[j0 + n] -= xp;
     }
 
     // Reset Jpos
@@ -377,8 +378,8 @@ void MultiAdaptiveJacobian::dGmult(const uBlasVector& x, uBlasVector& y) const
 	{
 	  real sum = 0.0;
 	  for (uint m = 0; m < method.qsize(); m++)
-	    sum += method.nweight(n, m) * x(j1 + m);
-	  y(j0 + n) -= tmp * sum;
+	    sum += method.nweight(n, m) * x[j1 + m];
+	  y[j0 + n] -= tmp * sum;
 	}
       }
       else
@@ -399,11 +400,11 @@ void MultiAdaptiveJacobian::dGmult(const uBlasVector& x, uBlasVector& y) const
 	    
 	    // Iterate over dofs of other element and add dependencies
 	    for (uint l = 0; l < method.nsize(); l++)
-	      sum += tmp1 * method.eval(l, tau) * x(j1 + l);
+	      sum += tmp1 * method.eval(l, tau) * x[j1 + l];
 	  }
 	  
 	  // Add dependencies
-	  y(j0 + n) -= tmp0 * sum;
+	  y[j0 + n] -= tmp0 * sum;
 	}
       }
     }
@@ -452,9 +453,9 @@ void MultiAdaptiveJacobian::dGmult(const uBlasVector& x, uBlasVector& y) const
 	const real tmp0 = k0 * dfdu;
 	for (uint l = 0; l < method.qsize(); l++)
 	{
-	  real tmp1 = tmp0 * method.eval(l, tau) * x(j1 + l);
+	  real tmp1 = tmp0 * method.eval(l, tau) * x[j1 + l];
 	  for (uint n = 0; n < method.nsize(); n++)
-	    y(j0 + n) -= tmp1 * method.nweight(n, m);
+	    y[j0 + n] -= tmp1 * method.nweight(n, m);
 	}
       }
     }

@@ -4,9 +4,9 @@
 // First added:  2005-02-13
 // Last changed: 2006-05-07
 
+#include <dolfin/common/constants.h>
 #include <dolfin/log/dolfin_log.h>
 #include "SubSystemsManager.h"
-#include "constants.h"
 #include "init.h"
 
 //-----------------------------------------------------------------------------

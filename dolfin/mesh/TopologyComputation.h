@@ -7,7 +7,7 @@
 #ifndef __TOPOLOGY_COMPUTATION_H
 #define __TOPOLOGY_COMPUTATION_H
 
-#include <dolfin/main/constants.h>
+#include <dolfin/common/types.h>
 
 namespace dolfin
 {

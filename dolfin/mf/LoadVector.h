@@ -7,7 +7,7 @@
 #ifndef __LOAD_VECTOR_H
 #define __LOAD_VECTOR_H
 
-#include <dolfin/main/constants.h>
+#include <dolfin/common/types.h>
 #include <dolfin/la/Vector.h>
 #include <dolfin/la/PETScVector.h>
 #include <dolfin/la/uBlasVector.h>

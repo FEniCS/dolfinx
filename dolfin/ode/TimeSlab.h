@@ -7,7 +7,7 @@
 #ifndef __TIME_SLAB_H
 #define __TIME_SLAB_H
 
-#include <dolfin/main/constants.h>
+#include <dolfin/common/types.h>
 #include <dolfin/la/uBlasVector.h>
 
 namespace dolfin

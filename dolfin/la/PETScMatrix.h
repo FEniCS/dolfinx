@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2007 Johan Hoffman, Johan Jansson and Anders Logg.
+// Copyright (C) 2004-2008 Johan Hoffman, Johan Jansson and Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Andy R. Terrel, 2005.
@@ -7,7 +7,7 @@
 // Modified by Ola Skavhaug 2008.
 //
 // First added:  2004
-// Last changed: 2008-04-08
+// Last changed: 2008-04-22
 
 #ifndef __PETSC_MATRIX_H
 #define __PETSC_MATRIX_H
@@ -16,7 +16,7 @@
 
 #include <petscmat.h>
 
-#include <dolfin/main/constants.h>
+#include <dolfin/common/types.h>
 #include <dolfin/log/dolfin_log.h>
 #include "PETScObject.h"
 #include <dolfin/common/Variable.h>
@@ -86,14 +86,6 @@ namespace dolfin
     /// Create copy of matrix
     PETScMatrix* copy() const;
 
-    /// Return concrete (const) PETScMatrix instance
-    virtual const PETScMatrix* instance() const 
-    { return this; }
-
-    /// Return concrete PETScMatrix instance
-    virtual PETScMatrix* instance() 
-    { return this; }
-
     /// Return number of rows (dim = 0) or columns (dim = 1) along dimension dim
     uint size(uint dim) const;
 
@@ -116,7 +108,7 @@ namespace dolfin
     void add(const real* block, uint m, const uint* rows, uint n, const uint* cols);
 
     /// Get non-zero values of row i
-    void getRow(uint i, int& ncols, Array<int>& columns, Array<real>& values) const;
+    void getrow(uint i, int& ncols, Array<int>& columns, Array<real>& values) const;
 
     /// Set given rows to zero matrix
     void zero(uint m, const uint* rows);
@@ -155,6 +147,9 @@ namespace dolfin
     /// Display matrix (sparse output is default)
     void disp(uint precision = 2) const;
 
+    /// Multiply matrix by given number
+    const PETScMatrix& operator*= (real a);
+    
     /// Output
     friend LogStream& operator<< (LogStream& stream, const PETScMatrix& A);
 

@@ -113,7 +113,7 @@ void MonoAdaptiveJacobian::mult(const uBlasVector& x, uBlasVector& y) const
 
       // Add w*yy to y
       for (uint i = 0; i < ts.N; i++)
-        y(moffset + i) += w * yy(i);
+        y[moffset + i] += w * yy[i];
     }
   }
 }

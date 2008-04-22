@@ -7,7 +7,7 @@
 // Modified by Magnus Vikstrøm 2007-2008.
 //
 // First added:  2004
-// Last changed: 2008-01-24
+// Last changed: 2008-04-22
 
 #ifdef HAS_PETSC
 
@@ -271,7 +271,7 @@ void PETScMatrix::add(const real* block,
                block, ADD_VALUES);
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::getRow(uint i, int& ncols, Array<int>& columns, 
+void PETScMatrix::getrow(uint i, int& ncols, Array<int>& columns, 
                          Array<real>& values) const
 {
   const int *cols = 0;
@@ -405,6 +405,13 @@ void PETScMatrix::apply()
 void PETScMatrix::zero()
 {
   MatZeroEntries(A);
+}
+//-----------------------------------------------------------------------------
+const PETScMatrix& PETScMatrix::operator*= (real a)
+{
+  dolfin_assert(A);
+  MatScale(A, a);
+  return *this;
 }
 //-----------------------------------------------------------------------------
 PETScMatrix::Type PETScMatrix::type() const

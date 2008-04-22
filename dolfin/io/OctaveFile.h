@@ -7,7 +7,7 @@
 #ifndef __OCTAVE_FILE_H
 #define __OCTAVE_FILE_H
 
-#include <dolfin/main/constants.h>
+#include <dolfin/common/types.h>
 #include <dolfin/la/Matrix.h>
 #include "MFile.h"
 

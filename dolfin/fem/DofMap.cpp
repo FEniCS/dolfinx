@@ -6,7 +6,7 @@
 // First added:  2007-03-01
 // Last changed: 2008-04-10
 
-#include <dolfin/main/constants.h>
+#include <dolfin/common/types.h>
 #include <dolfin/mesh/Cell.h>
 #include "UFCCell.h"
 #include "DofMap.h"

@@ -7,7 +7,7 @@
 #ifndef __ALLOC_H
 #define __ALLOC_H
 
-#include <dolfin/main/constants.h>
+#include <dolfin/common/types.h>
 
 namespace dolfin
 {

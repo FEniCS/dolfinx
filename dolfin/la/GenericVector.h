@@ -6,43 +6,35 @@
 // Modified by Ola Skavhaug 2008.
 //
 // First added:  2006-04-25
-// Last changed: 2008-04-08
+// Last changed: 2008-04-22
 
 #ifndef __GENERIC_VECTOR_H
 #define __GENERIC_VECTOR_H
 
-#include <dolfin/main/constants.h>
 #include "GenericSparsityPattern.h"
 #include "GenericTensor.h"
-#include <dolfin/log/log.h>
 
 namespace dolfin
 {
 
-  /// This class defines a common interface for matrices.
+  /// This class defines a common interface for vectors.
 
   class GenericVector : public GenericTensor
   {
   public:
- 
-    /// Constructor
-    GenericVector() : GenericTensor() {}
 
     /// Destructor
     virtual ~GenericVector() {}
 
-    ///--- Implementation of GenericTensor interface ---
-
-    /// Initialize zero tensor of given rank and dimensions
-    inline void init(uint rank, const uint* dims, bool reset)
-    { init(dims[0]); }
+    ///--- Implementation of the GenericTensor interface ---
 
     /// Initialize zero tensor using sparsity pattern
     inline void init(const GenericSparsityPattern& sparsity_pattern)
     { init(sparsity_pattern.size(0)); }
 
     /// Return rank of tensor (number of dimensions)
-    inline uint rank() const { return 1; }
+    inline uint rank() const
+    { return 1; }
 
     /// Return size of given dimension
     inline uint size(uint dim) const
@@ -77,15 +69,6 @@ namespace dolfin
     /// Return size
     virtual uint size() const = 0;
 
-    /// Get values
-    virtual void get(real* values) const = 0;
-
-    /// Set values
-    virtual void set(real* values) = 0;
-
-    /// Add values
-    virtual void add(real* values) = 0;
-
     /// Get block of values
     virtual void get(real* block, uint m, const uint* rows) const = 0;
 
@@ -95,32 +78,58 @@ namespace dolfin
     /// Add block of values
     virtual void add(const real* block, uint m, const uint* rows) = 0;
 
-    // FIXME: --- Work in progress below here ---
-    // FIXME: Add more functions
-    // FIXME: Cleanup
-    // FIXME: Add itemwize get, set, add
-    // FIXME: Add copy constructor and assignment operator
+    /// Get all values
+    virtual void get(real* values) const = 0;
 
-    /// Inner product 
-    virtual real inner(const GenericVector& vector) const = 0; 
+    /// Set all values
+    virtual void set(real* values) = 0;
 
-    //  this += a*x   
-    virtual void axpy(real a, const GenericVector& x) = 0; 
+    /// Add values to each entry
+    virtual void add(real* values) = 0;
 
-    /// Assignment of vector
-    virtual const GenericVector& operator= (const GenericVector& x) { 
-      // Can not be abstract since a GenericVector reference is returned
-      // Therefore the current implementation: 
-      error("The operator = can not be used on GenericVector"); 
-      return *this; 
-    }
+    /// Inner product
+    virtual real inner(const GenericVector& x) const = 0;
 
-    /// Return const GenericVector* (internal library use only!)
-    virtual const GenericVector* instance() const 
+    /// Add multiple of given vector (AXPY operation)
+    virtual void axpy(real a, const GenericVector& x) = 0;
+
+    /// Multiply vector by given number
+    virtual const GenericVector& operator*= (real a) = 0;
+
+    ///--- Convenience functions ---
+
+    /// Get value of given entry
+    virtual real operator[] (uint i) const
+    { real value(0); get(&value, 1, &i); return value; }
+
+    /// Get value of given entry 
+    virtual real getitem(uint i) const
+    { real value(0); get(&value, 1, &i); return value; }
+
+    /// Set given entry to value
+    virtual void setitem(uint i, real value)
+    { set(&value, 1, &i); }
+
+    /// Add given vector
+    virtual const GenericVector& operator+= (const GenericVector& x)
+    { axpy(1.0, x); return *this; }
+
+    /// Subtract given vector
+    virtual const GenericVector& operator-= (const GenericVector& x)
+    { axpy(-1.0, x); return *this; }
+
+    /// Divide vector by given number
+    virtual const GenericVector& operator/= (real a)
+    { *this *= 1.0 / a; return *this; }
+
+    ///--- Special functions, intended for library use only ---
+
+    /// Return instance (const version)
+    virtual const GenericVector* instance() const
     { return this; }
 
-    /// Return GenericVector* (internal library use only!)
-    virtual GenericVector* instance() 
+    /// Return instance (non-const version)
+    virtual GenericVector* instance()
     { return this; }
 
   };  

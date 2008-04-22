@@ -49,7 +49,7 @@ void OctaveFile::operator<<(GenericMatrix& A)
     int ncols = 0;
     Array<int> columns;
     Array<real> values;
-    A.getRow(i, ncols, columns, values);
+    A.getrow(i, ncols, columns, values);
 
     // Write nonzero entries
     for (int pos = 0; pos < ncols; pos++)

@@ -1,9 +1,10 @@
-// Copyright (C) 2005-2006 Anders Logg.
+// Copyright (C) 2005-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005-01-27
-// Last changed: 2006-08-21
+// Last changed: 2008-04-22
 
+#include <dolfin/common/constants.h>
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/math/dolfin_math.h>
 #include <dolfin/parameter/parameters.h>
@@ -98,13 +99,13 @@ real MultiAdaptiveNewtonSolver::iteration(real tol, uint iter,
 
   // Update solution x -> x + dx (note: b = -F)
   for (uint j = 0; j < ts.nj; j++)
-    ts.jx[j] += dx(j);
+    ts.jx[j] += dx[j];
 
   // Compute maximum increment
   real max_increment = 0.0;
   for (uint j = 0; j < ts.nj; j++)
   {
-    const real increment = fabs(dx(j));
+    const real increment = fabs(dx[j]);
     if ( increment > max_increment )
       max_increment = increment;
   }
@@ -143,7 +144,7 @@ void MultiAdaptiveNewtonSolver::Feval(uBlasVector& F)
 
     // Get initial value for element
     const int ep = ts.ee[e];
-    const real x0 = ( ep != -1 ? ts.jx[ep*method.nsize() + method.nsize() - 1] : ts.u0(i) );
+    const real x0 = ( ep != -1 ? ts.jx[ep*method.nsize() + method.nsize() - 1] : ts.u0[i] );
 
     // Evaluate right-hand side at quadrature points of element
     if ( method.type() == Method::cG )
@@ -157,7 +158,7 @@ void MultiAdaptiveNewtonSolver::Feval(uBlasVector& F)
     
     // Subtract current values
     for (uint n = 0; n < method.nsize(); n++)
-      F(j + n) = u[j] - ts.jx[j + n];
+      F[j + n] = u[j] - ts.jx[j + n];
 
     // Update dof
     j += method.nsize();
@@ -186,7 +187,7 @@ void MultiAdaptiveNewtonSolver::debug()
 
     for (uint i = 0; i < n; i++)
     {
-      real dFdx = (F1(i) - F2(i)) / dx;
+      real dFdx = (F1[i] - F2[i]) / dx;
       if ( fabs(dFdx) > DOLFIN_EPS )
 	B(i, j) = dFdx;
     }

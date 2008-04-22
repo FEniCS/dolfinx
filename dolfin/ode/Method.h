@@ -8,7 +8,7 @@
 #define __METHOD_H
 
 #include <dolfin/math/Lagrange.h>
-#include <dolfin/main/constants.h>
+#include <dolfin/common/types.h>
 
 namespace dolfin
 {

@@ -110,9 +110,13 @@ namespace dolfin
     /// FIXME: Functions below are not in the GenericVector interface.
     /// FIXME: Should these be removed or added to the interface?
 
+    /// Multiply matrix by given number
+    virtual const Matrix& operator*= (real a)
+    { *matrix *= a; return *this; }
+
     /// Get non-zero values of row i
-    void getRow(uint i, int& ncols, Array<int>& columns, Array<real>& values) const
-    { matrix->getRow(i, ncols, columns, values); }
+    void getrow(uint i, int& ncols, Array<int>& columns, Array<real>& values) const
+    { matrix->getrow(i, ncols, columns, values); }
     
     LinearAlgebraFactory& factory() const
     { return matrix->factory(); }

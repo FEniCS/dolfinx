@@ -10,7 +10,7 @@
 #ifndef __LINEAR_SOLVER_H
 #define __LINEAR_SOLVER_H
 
-#include <dolfin/main/constants.h>
+#include <dolfin/common/types.h>
 #include "Matrix.h"
 #include "Vector.h"
 

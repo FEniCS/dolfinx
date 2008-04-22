@@ -8,35 +8,29 @@
 // Modified by Martin Alnæs, 2008.
 //
 // First added:  2006-04-24
-// Last changed: 2008-04-12
+// Last changed: 2008-04-22
 
 #ifndef __GENERIC_MATRIX_H
 #define __GENERIC_MATRIX_H
 
-#include <dolfin/main/constants.h>
 #include "GenericTensor.h"
 
 namespace dolfin
 {
 
   class GenericVector; 
-  class GenericSparsityPattern;
-  template<class M>
-  class Array;
+  template<class M> class Array;
   
   /// This class defines a common interface for matrices.
   
   class GenericMatrix : public GenericTensor
   {
   public:
-    
-    /// Constructor
-    GenericMatrix() : GenericTensor() {}
 
     /// Destructor
     virtual ~GenericMatrix() {}
     
-    ///--- Implementation of GenericTensor interface ---
+    ///--- Implementation of the GenericTensor interface ---
 
     /// Initialize zero tensor using sparsity pattern (implemented by sub class)
     virtual void init(const GenericSparsityPattern& sparsity_pattern) = 0;
@@ -83,50 +77,50 @@ namespace dolfin
     /// Add block of values
     virtual void add(const real* block, uint m, const uint* rows, uint n, const uint* cols) = 0;
 
+    /// Get non-zero values of given row
+    virtual void getrow(uint i, int& ncols, Array<int>& columns, Array<real>& values) const = 0;
+
+    /// Set given rows to zero
+    virtual void zero(uint m, const uint* rows) = 0;
+
     /// Set given rows to identity matrix
     virtual void ident(uint m, const uint* rows) = 0;
 
-    // FIXME: --- Work in progress below here ---
-    // FIXME: Add more functions
-    // FIXME: Cleanup
-    // FIXME: Remove getRow()
-    // FIXME: Add itemwize get, set, add
-    // FIXME: Add copy constructor and assignment operator
+    /// Matrix-vector product, y = Ax
+    virtual void mult(const GenericVector& x, GenericVector& y, bool transposed=false) const = 0;
 
-    /// Set given matrix rows to zero
-    virtual void zero(uint m, const uint* rows) = 0;
+    /// Multiply matrix by given number
+    virtual const GenericMatrix& operator*= (real a) = 0;
 
-    /// Set given matrix entry to value
-    virtual void setitem(std::pair<uint, uint> idx, real value) 
-    {
-      const uint i = idx.first;
-      const uint j = idx.second;
-      set(&value, 1, &i, 1, &j);  
-    }
+    ///--- Convenience functions ---
 
-    /// Get given matrix entry 
-    virtual real getitem(std::pair<uint, uint> idx) 
-    {
-      const uint i = idx.first;
-      const uint j = idx.second;
-      real value;
-      get(&value, 1, &i, 1, &j);  
-      return value;
-    }
+    // FIXME: Ambiguity problem for uBlasMatrix, need to implement as a wrapper
+    // FIXME: instead of inheriting
+    
+    /// Get value of given entry 
+    //virtual real operator() (uint i, uint j) const
+    //{ real value(0); get(&value, 1, &i, 1, &j); return value; }
 
-    // y = A x  ( or y = A^T x if transposed==true) 
-    virtual void mult(const GenericVector& x, GenericVector& y, bool transposed=false) const = 0; 
+    /// Get value of given entry 
+    virtual real getitem(std::pair<uint, uint> idx) const
+    { real value(0); get(&value, 1, &idx.first, 1, &idx.second); return value; }
 
-    // FIXME remove this function and re-implement the << operator in terms of sparsity pattern and get
-    /// Get non-zero values of row i
-    virtual void getRow(uint i, int& ncols, Array<int>& columns, Array<real>& values) const = 0;
+    /// Set given entry to value
+    virtual void setitem(std::pair<uint, uint> idx, real value)
+    { set(&value, 1, &idx.first, 1, &idx.second); }
 
-    /// Return const GenericMatrix* (internal library use only!)
-    virtual const GenericMatrix* instance() const 
+    /// Divide matrix by given number
+    virtual const GenericMatrix& operator/= (real a)
+    { *this *= 1.0 / a; return *this; }
+
+    ///--- Special functions, intended for library use only ---
+
+    /// Return instance (const version)
+    virtual const GenericMatrix* instance() const
     { return this; }
 
-    /// Return GenericMatrix* (internal library use only!)
-    virtual GenericMatrix* instance() 
+    /// Return instance (non-const version)
+    virtual GenericMatrix* instance()
     { return this; }
 
   };

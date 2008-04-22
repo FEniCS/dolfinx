@@ -2,9 +2,10 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005-01-06
-// Last changed: 2008-02-11
+// Last changed: 2008-04-22
 
 #include <cmath>
+#include <dolfin/common/constants.h>
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/math/dolfin_math.h>
 #include <dolfin/parameter/parameters.h>
@@ -76,7 +77,7 @@ void Dependencies::set(const uBlasSparseMatrix& A)
     Array<int> columns;
     Array<real> values;
     int ncols = 0;
-    A.getRow(i, ncols, columns, values); 
+    A.getrow(i, ncols, columns, values); 
     setsize(i, ncols);
     for (uint j = 0; j < static_cast<uint>(ncols); j++)
       set(i, columns[j]);
@@ -134,7 +135,7 @@ void Dependencies::detect(ODE& ode)
   // Randomize solution vector
   uBlasVector u(N);
   for (uint i = 0; i < N; i++)
-    u(i) = rand();
+    u[i] = rand();
   
   // Check dependencies for all components
   Progress p("Computing sparsity", N);
@@ -192,14 +193,14 @@ bool Dependencies::checkDependency(ODE& ode, uBlasVector& u, real f0,
 				   uint i, uint j)
 {
   // Save original value
-  real uj = u(j);
+  real uj = u[j];
 
   // Change value and compute new value for f_i
-  u(j) += increment;
+  u[j] += increment;
   real f = ode.f(u, 0.0, i);
 
   // Restore the value
-  u(j) = uj;
+  u[j] = uj;
 
   // Compare function values
   return fabs(f - f0) > DOLFIN_EPS;

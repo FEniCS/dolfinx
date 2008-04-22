@@ -9,7 +9,7 @@
 
 #include <string>
 #include <dolfin/log/dolfin_log.h>
-#include <dolfin/main/constants.h>
+#include <dolfin/common/types.h>
 
 namespace dolfin
 {
@@ -97,6 +97,7 @@ namespace dolfin
     virtual std::string description() const = 0;
 
   protected:
+
     friend class MPIMeshCommunicator;
 
     Type cell_type;

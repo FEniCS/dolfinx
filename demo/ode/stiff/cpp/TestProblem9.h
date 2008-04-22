@@ -21,16 +21,16 @@ public:
 
   void u0(uBlasVector& u)
   {
-    u(0) = 0.0;
-    u(1) = 1.0;
-    u(2) = 1.0;
+    u[0] = 0.0;
+    u[1] = 1.0;
+    u[2] = 1.0;
   }
   
   void f(const uBlasVector& u, real t, uBlasVector& y)
   {
-    y(0) = u(1);
-    y(1) = -(1.0 - u(2))*u(0);
-    y(2) = -lambda * (u(0)*u(0) + u(1)*u(1)) * u(2);
+    y[0] = u[1];
+    y[1] = -(1.0 - u[2])*u[0];
+    y[2] = -lambda * (u[0]*u[0] + u[1]*u[1]) * u[2];
   }
 
 private:

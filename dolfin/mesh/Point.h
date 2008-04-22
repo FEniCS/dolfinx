@@ -10,7 +10,7 @@
 #define __POINT_H
 
 #include <dolfin/log/dolfin_log.h>
-#include <dolfin/main/constants.h>
+#include <dolfin/common/types.h>
 
 namespace dolfin
 {

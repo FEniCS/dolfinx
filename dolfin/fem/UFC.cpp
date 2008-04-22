@@ -4,7 +4,7 @@
 // First added:  2007-01-17
 // Last changed: 2007-05-15
 
-#include <dolfin/main/constants.h>
+#include <dolfin/common/types.h>
 #include "DofMapSet.h"
 #include "DofMap.h"
 #include "UFC.h"

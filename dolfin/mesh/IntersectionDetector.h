@@ -7,7 +7,7 @@
 #ifndef __INTERSECTION_DETECTOR_H
 #define __INTERSECTION_DETECTOR_H
 
-#include <dolfin/main/constants.h>
+#include <dolfin/common/types.h>
 
 #include "GTSInterface.h"
 
@@ -38,11 +38,8 @@ namespace dolfin
     /// Compute overlap with bounding box
     void overlap(Point& p1, Point& p2, Array<uint>& overlap);
 
-    // /// Compute overlap with set of points
-    //void overlap(Array<Point>& points, Array<uint>& overlap);
-
-    /// Compute overlap with set of line segments
-    void curve_overlap(Array<Point>& points, Array<uint>& overlap);
+    /// Compute which cells are intersected by a polygon (defined by points)
+    void overlap(Array<Point>& points, Array<uint>& overlap);
 
   private:
     IntersectionDetector();

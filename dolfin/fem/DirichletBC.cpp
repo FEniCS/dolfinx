@@ -4,8 +4,9 @@
 // Modified by Kristian Oelgaard, 2007
 //
 // First added:  2007-04-10
-// Last changed: 2008-03-26
+// Last changed: 2008-04-22
 
+#include <dolfin/common/constants.h>
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/Vertex.h>
@@ -13,11 +14,11 @@
 #include <dolfin/mesh/Facet.h>
 #include <dolfin/mesh/Point.h>
 #include <dolfin/mesh/SubDomain.h>
+#include <dolfin/la/GenericMatrix.h>
+#include <dolfin/la/GenericVector.h>
 #include "Form.h"
 #include "UFCMesh.h"
 #include "UFCCell.h"
-#include <dolfin/la/GenericMatrix.h>
-#include <dolfin/la/GenericVector.h>
 #include "SubSystem.h"
 #include "DirichletBC.h"
 

@@ -7,7 +7,7 @@
 #ifndef __MESH_ENTITY_ITERATOR_H
 #define __MESH_ENTITY_ITERATOR_H
 
-#include <dolfin/main/constants.h>
+#include <dolfin/common/types.h>
 #include <dolfin/log/dolfin_log.h>
 #include "Mesh.h"
 #include "MeshEntity.h"

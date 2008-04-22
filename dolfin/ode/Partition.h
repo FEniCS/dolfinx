@@ -8,7 +8,7 @@
 #define __PARTITION_H
 
 #include <functional>
-#include <dolfin/main/constants.h>
+#include <dolfin/common/types.h>
 #include <dolfin/common/Array.h>
 
 namespace dolfin

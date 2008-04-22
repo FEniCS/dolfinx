@@ -7,7 +7,7 @@
 #ifndef __GRAPH_PARTITIONING_H
 #define __GRAPH_PARTITIONING_H
 
-#include <dolfin/main/constants.h>
+#include <dolfin/common/types.h>
 #include "Graph.h"
 
 namespace dolfin

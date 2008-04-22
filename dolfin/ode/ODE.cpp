@@ -1,9 +1,10 @@
-// Copyright (C) 2003-2006 Johan Jansson and Anders Logg.
+// Copyright (C) 2003-2008 Johan Jansson and Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2003-10-21
-// Last changed: 2006-07-05
+// Last changed: 2008-04-22
 
+#include <dolfin/common/constants.h>
 #include <dolfin/math/dolfin_math.h>
 #include <dolfin/la/uBlasVector.h>
 #include "ODESolver.h"
@@ -36,7 +37,7 @@ void ODE::f(const uBlasVector& u, real t, uBlasVector& y)
 
   // Call f for each component
   for (uint i = 0; i < N; i++)
-    y(i) = this->f(u, t, i);
+    y[i] = this->f(u, t, i);
 }
 //-----------------------------------------------------------------------------
 real ODE::f(const uBlasVector& u, real t, uint i)
@@ -68,7 +69,7 @@ void ODE::J(const uBlasVector& x, uBlasVector& y, const uBlasVector& u, real t)
   // Small change in u
   real umax = 0.0;
   for (unsigned int i = 0; i < N; i++)
-    umax = std::max(umax, std::abs(u(i)));
+    umax = std::max(umax, std::abs(u[i]));
   real h = std::max(DOLFIN_SQRT_EPS, DOLFIN_SQRT_EPS * umax);
 
   // We are not allowed to change u, but we restore it afterwards,
@@ -106,20 +107,20 @@ real ODE::dfdu(const uBlasVector& u, real t, uint i, uint j)
   uBlasVector& uu = const_cast<uBlasVector&>(u);
 
   // Save value of u_j
-  real uj = uu(j);
+  real uj = uu[j];
   
   // Small change in u_j
   real h = std::max(DOLFIN_SQRT_EPS, DOLFIN_SQRT_EPS * std::abs(uj));
   
   // Compute F values
-  uu(j) -= 0.5 * h;
+  uu[j] -= 0.5 * h;
   real f1 = f(uu, t, i);
   
-  uu(j) = uj + 0.5*h;
+  uu[j] = uj + 0.5*h;
   real f2 = f(uu, t, i);
          
   // Reset value of uj
-  uu(j) = uj;
+  uu[j] = uj;
 
   // Compute derivative
   if ( std::abs(f1 - f2) < DOLFIN_EPS * std::max(std::abs(f1), std::abs(f2)) )

@@ -7,7 +7,7 @@
 #ifndef __TIME_STEPPER_H
 #define __TIME_STEPPER_H
 
-#include <dolfin/main/constants.h>
+#include <dolfin/common/types.h>
 #include <dolfin/io/File.h>
 
 namespace dolfin

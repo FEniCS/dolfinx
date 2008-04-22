@@ -14,7 +14,7 @@
 #include <string>
 #include <ufc.h>
 
-#include <dolfin/main/constants.h>
+#include <dolfin/common/types.h>
 #include "DofMap.h"
 
 namespace dolfin

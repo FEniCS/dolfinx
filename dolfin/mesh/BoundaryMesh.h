@@ -7,7 +7,7 @@
 #ifndef __BOUNDARY_MESH_H
 #define __BOUNDARY_MESH_H
 
-#include <dolfin/main/constants.h>
+#include <dolfin/common/types.h>
 #include "Mesh.h"
 #include "MeshFunction.h"
 

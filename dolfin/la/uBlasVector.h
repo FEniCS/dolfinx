@@ -7,7 +7,7 @@
 // Modified by Martin Alnæs 2008.
 //
 // First added:  2006-03-04
-// Last changed: 2008-04-12
+// Last changed: 2008-04-22
 
 #ifndef __UBLAS_VECTOR_H
 #define __UBLAS_VECTOR_H
@@ -98,12 +98,12 @@ namespace dolfin
     uint size() const
     { return x.size(); }
 
-    /// Access given entry
-    real& operator() (uint i)
+    /// Access value of given entry
+    virtual real& operator[] (uint i)
     { return x(i); };
 
     /// Access value of given entry
-    real operator() (uint i) const
+    virtual real operator[] (uint i) const
     { return x(i); };
 
     /// Get values

@@ -76,7 +76,7 @@ namespace dolfin
     void add(const real* block, uint m, const uint* rows, uint n, const uint* cols);
 
     /// Get non-zero values of row i
-    void getRow(uint i, int& ncols, Array<int>& columns, Array<real>& values) const;
+    void getrow(uint i, int& ncols, Array<int>& columns, Array<real>& values) const;
 
     /// Get block of values
     void get(real* block, uint m, const uint* rows, uint n, const uint* cols) const;
@@ -113,6 +113,14 @@ namespace dolfin
 
     /// Display matrix
     void disp(uint precision = 2) const;
+
+    /// Multiply matrix by given number
+    const uBlasMatrix<Mat>& operator*= (real a)
+    { error("Not implemented."); return *this; }
+
+    /// Divide matrix by given number
+    const uBlasMatrix<Mat>& operator/= (real a)
+    { error("Not implemented."); return *this; }
 
     /// The below functions have specialisations for particular matrix types.
     /// In order to link correctly, they must be made inline functions.
@@ -201,7 +209,7 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template < class Mat >  
-  void uBlasMatrix< Mat >::getRow(uint i, int& ncols, Array<int>& columns, 
+  void uBlasMatrix< Mat >::getrow(uint i, int& ncols, Array<int>& columns, 
 				  Array<real>& values) const
   {
     // Reference to matrix row (throw away const-ness and trust uBlas)

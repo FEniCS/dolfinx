@@ -1,10 +1,11 @@
-// Copyright (C) 2005-2006 Anders Logg.
+// Copyright (C) 2005-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005-01-28
-// Last changed: 2006-07-06
+// Last changed: 2008-04-22
 
 #include <string>
+#include <dolfin/common/constants.h>
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/parameter/parameters.h>
 #include "ODE.h"
@@ -61,7 +62,7 @@ real MonoAdaptiveTimeSlab::build(real a, real b)
   // Copy initial values to solution
   for (uint n = 0; n < method->nsize(); n++)
     for (uint i = 0; i < N; i++)
-      x(n*N + i) = u0(i);
+      x[n*N + i] = u0[i];
 
   // Choose time step
   const real k = adaptivity.timestep();
@@ -103,9 +104,9 @@ bool MonoAdaptiveTimeSlab::check(bool first)
   for (uint i = 0; i < N; i++)
   {
     // Prepare data for computation of derivative
-    const real x0 = u0(i);
+    const real x0 = u0[i];
     for (uint n = 0; n < method->nsize(); n++)
-      dofs[n] = x(n*N + i);
+      dofs[n] = x[n*N + i];
 
     // Compute residual
     const real r = fabs(method->residual(x0, dofs, fq[foffset + i], k));
@@ -145,7 +146,7 @@ bool MonoAdaptiveTimeSlab::shift()
 
   // Set initial value to end-time value
   for (uint i = 0; i < N; i++)
-    u0(i) = x(xoffset + i);
+    u0[i] = x[xoffset + i];
 
   // Set f at first quadrature point to f at end-time for cG(q)
   if ( method->type() == Method::cG )
@@ -166,12 +167,12 @@ void MonoAdaptiveTimeSlab::sample(real t)
 real MonoAdaptiveTimeSlab::usample(uint i, real t)
 {
   // Prepare data
-  const real x0 = u0(i);
+  const real x0 = u0[i];
   const real tau = (t - _a) / (_b - _a);  
 
   // Prepare array of values
   for (uint n = 0; n < method->nsize(); n++)
-    dofs[n] = x(n*N + i);
+    dofs[n] = x[n*N + i];
 
   // Interpolate value
   const real value = method->ueval(x0, dofs, tau);
@@ -189,9 +190,9 @@ real MonoAdaptiveTimeSlab::rsample(uint i, real t)
   // Right-hand side at end-point already computed
 
   // Prepare data for computation of derivative
-  const real x0 = u0(i);
+  const real x0 = u0[i];
   for (uint n = 0; n < method->nsize(); n++)
-    dofs[n] = x(n*N + i);
+    dofs[n] = x[n*N + i];
   
   // Compute residual
   const real k = length();
@@ -207,7 +208,7 @@ void MonoAdaptiveTimeSlab::disp() const
   cout << "nj = " << nj << endl;
   cout << "x =";
   for (uint j = 0; j < nj; j++)
-    cout << " " << x(j);
+    cout << " " << x[j];
   cout << endl;
   cout << "f =";
   for (uint j = 0; j < (method->nsize() * N); j++)

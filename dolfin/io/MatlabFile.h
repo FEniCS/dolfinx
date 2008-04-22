@@ -7,7 +7,7 @@
 #ifndef __MATLAB_FILE_H
 #define __MATLAB_FILE_H
 
-#include <dolfin/main/constants.h>
+#include <dolfin/common/types.h>
 #include <dolfin/la/GenericMatrix.h>
 #include "MFile.h"
 

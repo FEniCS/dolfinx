@@ -97,7 +97,7 @@ real MonoAdaptiveFixedPointSolver::iteration(real tol, uint iter,
 
     // Reset values to initial data
     for (uint i = 0; i < ts.N; i++)
-      ts.x(noffset + i) += alpha*(ts.u0(i) - ts.x(noffset+i));
+      ts.x[noffset + i] += alpha*(ts.u0[i] - ts.x[noffset+i]);
 
     // Add weights of right-hand side
     for (uint m = 0; m < method.qsize(); m++)
@@ -105,7 +105,7 @@ real MonoAdaptiveFixedPointSolver::iteration(real tol, uint iter,
       const real tmp = k * method.nweight(n, m);
       const uint moffset = m * ts.N;
       for (uint i = 0; i < ts.N; i++)
-	ts.x(noffset + i) += alpha*tmp*ts.fq[moffset + i];
+	ts.x[noffset + i] += alpha*tmp*ts.fq[moffset + i];
     }
   }
   
@@ -113,7 +113,7 @@ real MonoAdaptiveFixedPointSolver::iteration(real tol, uint iter,
   real max_increment = 0.0;
   for (uint i = 0; i < ts.N; i++)
   {
-    const real increment = fabs(ts.x(xoffset + i) - xold[i]);
+    const real increment = fabs(ts.x[xoffset + i] - xold[i]);
     if ( increment > max_increment )
       max_increment = increment;
   }

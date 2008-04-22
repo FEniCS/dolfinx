@@ -7,7 +7,7 @@
 #ifndef __PYTHON_FILE_H
 #define __PYTHON_FILE_H
 
-#include <dolfin/main/constants.h>
+#include <dolfin/common/types.h>
 #include "GenericFile.h"
 
 namespace dolfin

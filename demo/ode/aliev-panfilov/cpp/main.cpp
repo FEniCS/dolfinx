@@ -27,16 +27,16 @@ public:
   
   void u0(uBlasVector& u)
   {
-    u(0) = 0.2;
-    u(1) = 0.0;
+    u[0] = 0.2;
+    u[1] = 0.0;
   }
   
   void f(const uBlasVector& u, real t, uBlasVector& y)
   {
-    const real eps = eps0 + mu1*u(1) / (u(0) + mu2);
+    const real eps = eps0 + mu1*u[1] / (u[0] + mu2);
 
-    y(0) = -k*u(0)*(u(0) - a)*(u(0) - 1.0) - u(0)*u(1);
-    y(1) = eps*(-u(1) - k*u(0)*(u(0) - a - 1.0));
+    y[0] = -k*u[0]*(u[0] - a)*(u[0] - 1.0) - u[0]*u[1];
+    y[1] = eps*(-u[1] - k*u[0]*(u[0] - a - 1.0));
   }
   
 private:

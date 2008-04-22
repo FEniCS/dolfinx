@@ -42,15 +42,8 @@ void IntersectionDetector::overlap(Point& p1, Point& p2, Array<uint>& cells)
   gts.overlap(p1, p2, cells);
 }
 //-----------------------------------------------------------------------------
-//void IntersectionDetector::overlap(Array<Point>& points, Array<uint>& cells)
-//{
-//  cells.clear();
-//  for(int i=0; i<points.size(); i++)
-//    gts.overlap(points[i],cells);
-//}
-//-----------------------------------------------------------------------------
-void IntersectionDetector::curve_overlap(Array<Point>& points, 
-					 Array<uint>& cells) 
+void IntersectionDetector::overlap(Array<Point>& points, 
+				   Array<uint>& cells) 
 {
   // Intersect each segment with mesh
   Array<uint> cc;
@@ -62,9 +55,10 @@ void IntersectionDetector::curve_overlap(Array<Point>& points,
 
   // remove repeated cells
   cells.clear();
-  uint k = 0;
-  cells.push_back(cc[k]);
-  for (uint i = 0; i < cc.size(); i++)
+  //uint k = 0;
+  cells.push_back(cc[0]);
+  uint k = cc[0];
+  for (uint i = 1; i < cc.size(); i++)
   {
     if (cc[i] > k)
     {

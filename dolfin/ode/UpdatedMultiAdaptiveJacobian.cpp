@@ -1,9 +1,10 @@
-// Copyright (C) 2005-2006 Anders Logg.
+// Copyright (C) 2005-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005-01-27
-// Last changed: 2006-08-21
+// Last changed: 2008-04-22
 
+#include <dolfin/common/constants.h>
 #include <dolfin/math/dolfin_math.h>
 #include <dolfin/la/uBlasVector.h>
 #include "ODE.h"
@@ -42,14 +43,14 @@ void UpdatedMultiAdaptiveJacobian::mult(const uBlasVector& x,
 
   // Update values, u <-- u - hx
   for (unsigned int j = 0; j < ts.nj; j++)
-    ts.jx[j] -= h*x(j);
+    ts.jx[j] -= h*x[j];
 
   // Compute -F(u - hx)
   newton.Feval(y);
 
   // Restore values, u <-- u + hx
   for (unsigned int j = 0; j < ts.nj; j++)
-    ts.jx[j] += h*x(j);
+    ts.jx[j] += h*x[j];
 
   // Compute difference, using already computed -F(u)
   y -= newton. b;
@@ -61,7 +62,7 @@ void UpdatedMultiAdaptiveJacobian::init()
   // Compute size of increment
   real umax = 0.0;
   for (unsigned int i = 0; i < ts.N; i++)
-    umax = std::max(umax, std::abs(ts.u0(i)));
+    umax = std::max(umax, std::abs(ts.u0[i]));
   h = std::max(DOLFIN_SQRT_EPS, DOLFIN_SQRT_EPS * umax);
 }
 //-----------------------------------------------------------------------------

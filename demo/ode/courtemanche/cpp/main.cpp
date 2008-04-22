@@ -81,30 +81,30 @@ public:
   void u0(uBlasVector& u)
   {
     // Set initial data
-    u(0)  = -85.0; 
-    u(1)  = 2.91e-3; 
-    u(2)  = 9.65e-1;
-    u(3)  = 9.78e-1;
-    u(4)  = 3.04e-2;
-    u(5)  = 9.99e-1;
-    u(6)  = 4.96e-3;
-    u(7)  = 9.99e-1;
-    u(8)  = 3.29e-5;
-    u(9)  = 1.87e-2;
-    u(10) = 1.37e-4;
-    u(11) = 9.99e-1; 
-    u(12) = 7.75e-1;
-    u(13) = 0.0;
-    u(14) = 1.0;
-    u(15) = 9.99e-1;
-    u(16) = 11.2;
-    u(17) = 1.02e-4;
-    u(18) = 1.49;
-    u(19) = 1.49;
-    u(20) = 139.0;
+    u[0]  = -85.0; 
+    u[1]  = 2.91e-3; 
+    u[2]  = 9.65e-1;
+    u[3]  = 9.78e-1;
+    u[4]  = 3.04e-2;
+    u[5]  = 9.99e-1;
+    u[6]  = 4.96e-3;
+    u[7]  = 9.99e-1;
+    u[8]  = 3.29e-5;
+    u[9]  = 1.87e-2;
+    u[10] = 1.37e-4;
+    u[11] = 9.99e-1; 
+    u[12] = 7.75e-1;
+    u[13] = 0.0;
+    u[14] = 1.0;
+    u[15] = 9.99e-1;
+    u[16] = 11.2;
+    u[17] = 1.02e-4;
+    u[18] = 1.49;
+    u[19] = 1.49;
+    u[20] = 139.0;
 
     // Initial kick
-    u(0) = -25.0;
+    u[0] = -25.0;
   }
   
   void f(const uBlasVector& u, real t, uBlasVector& y)
@@ -112,54 +112,54 @@ public:
     computeCurrents(u);
     computeGateCoefficients(u);
 
-    y(0) = -1.0/Cm*(I_ion + ist);
-    y(1) = (m_inf - m)/tau_m;
-    y(2) = (h_inf - h)/tau_h;
-    y(3) = (j_inf - j)/tau_j;
-    y(4) = (oa_inf - oa)/tau_oa;
-    y(5) = (oi_inf - oi)/tau_oi;
-    y(6) = (ua_inf - ua)/tau_ua;
-    y(7) = (ui_inf - ui)/tau_ui;
-    y(8) = (xr_inf - xr)/tau_xr;
-    y(9) = (xs_inf - xs)/tau_xs;
-    y(10) = (d_inf - d)/tau_d;
-    y(11) = (f_inf - ff)/tau_f;
-    y(12) = (fca_inf - fca)/tau_fca;
-    y(13) = (u_inf - uu)/tau_u;
-    y(14) = (v_inf - v)/tau_v;
-    y(15) = (w_inf - w)/tau_w;
-    y(16) = (-3.0*I_NaK - 3.0*I_NaCa - I_bNa - I_Na)/(F*Vi);
-    y(17) = B1/B2;
-    y(18) = (I_tr - I_rel)/(1.0 + Csqn_max*K_mCsqn/((Ca_rel + K_mCsqn)*(Ca_rel + K_mCsqn)));
-    y(19) = I_up - I_upleak - I_tr*(Vrel/Vup);
-    y(20) = (2.0*I_NaK - I_K1 - I_to - I_Kur - I_Kr - I_Ks)/(F*Vi);
+    y[0] = -1.0/Cm*(I_ion + ist);
+    y[1] = (m_inf - m)/tau_m;
+    y[2] = (h_inf - h)/tau_h;
+    y[3] = (j_inf - j)/tau_j;
+    y[4] = (oa_inf - oa)/tau_oa;
+    y[5] = (oi_inf - oi)/tau_oi;
+    y[6] = (ua_inf - ua)/tau_ua;
+    y[7] = (ui_inf - ui)/tau_ui;
+    y[8] = (xr_inf - xr)/tau_xr;
+    y[9] = (xs_inf - xs)/tau_xs;
+    y[10] = (d_inf - d)/tau_d;
+    y[11] = (f_inf - ff)/tau_f;
+    y[12] = (fca_inf - fca)/tau_fca;
+    y[13] = (u_inf - uu)/tau_u;
+    y[14] = (v_inf - v)/tau_v;
+    y[15] = (w_inf - w)/tau_w;
+    y[16] = (-3.0*I_NaK - 3.0*I_NaCa - I_bNa - I_Na)/(F*Vi);
+    y[17] = B1/B2;
+    y[18] = (I_tr - I_rel)/(1.0 + Csqn_max*K_mCsqn/((Ca_rel + K_mCsqn)*(Ca_rel + K_mCsqn)));
+    y[19] = I_up - I_upleak - I_tr*(Vrel/Vup);
+    y[20] = (2.0*I_NaK - I_K1 - I_to - I_Kur - I_Kr - I_Ks)/(F*Vi);
 
     num_fevals++;
   }
 
   void computeCurrents(const uBlasVector& u)
   {
-    V      = u(0);
-    m      = u(1);
-    h      = u(2);
-    j      = u(3);
-    oa     = u(4);
-    oi     = u(5);
-    ua     = u(6);
-    ui     = u(7);
-    xr     = u(8);
-    xs     = u(9);
-    d      = u(10);
-    ff     = u(11);
-    fca    = u(12);
-    uu     = u(13);
-    v      = u(14);
-    w      = u(15);
-    Na_i   = u(16);
-    Ca_i   = u(17);
-    Ca_rel = u(18);
-    Ca_up  = u(19);
-    K_i    = u(20);
+    V      = u[0];
+    m      = u[1];
+    h      = u[2];
+    j      = u[3];
+    oa     = u[4];
+    oi     = u[5];
+    ua     = u[6];
+    ui     = u[7];
+    xr     = u[8];
+    xs     = u[9];
+    d      = u[10];
+    ff     = u[11];
+    fca    = u[12];
+    uu     = u[13];
+    v      = u[14];
+    w      = u[15];
+    Na_i   = u[16];
+    Ca_i   = u[17];
+    Ca_rel = u[18];
+    Ca_up  = u[19];
+    K_i    = u[20];
 
     I_rel    = k_rel*uu*uu*v*w*(Ca_rel - Ca_i);
     I_CaL    = Cm*g_CaL*d*ff*fca*(V - 65);
@@ -191,7 +191,7 @@ public:
   
   void computeGateCoefficients(const uBlasVector& u)
   {
-    V = u(0);
+    V = u[0];
     
     if ( V == -47.13 )
         alpha_m = 3.2;
@@ -275,7 +275,7 @@ public:
   bool update(const uBlasVector& u, real t, bool end)
   {
     if ( end )
-      VT = u(0);
+      VT = u[0];
     return true;
   }
   

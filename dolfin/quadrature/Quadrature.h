@@ -7,7 +7,7 @@
 #ifndef __QUADRATURE_H
 #define __QUADRATURE_H
 
-#include <dolfin/main/constants.h>
+#include <dolfin/common/types.h>
 
 namespace dolfin
 {

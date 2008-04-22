@@ -81,7 +81,7 @@
 
 // DOLFIN headers included from main
 %include "dolfin/main/init.h"
-%include "dolfin/main/constants.h"
+%include "dolfin/common/types.h"
 
 // DOLFIN headers included from math
 %include "dolfin/math/basic.h"

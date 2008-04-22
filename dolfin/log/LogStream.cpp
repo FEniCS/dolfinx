@@ -7,7 +7,8 @@
 #include <stdio.h>
 #include <cmath>
 #include <string>
-#include <dolfin/main/constants.h>
+#include <dolfin/common/constants.h>
+#include <dolfin/common/types.h>
 #include "log.h"
 #include "LogManager.h"
 #include "LogStream.h"

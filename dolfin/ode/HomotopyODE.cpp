@@ -114,8 +114,8 @@ bool HomotopyODE::update(const complex z[], real t, bool end)
     for (uint i = 0; i < n; i++)
     {
       const complex zi = z[i];
-      homotopy.x(2*i) = zi.real();
-      homotopy.x(2*i + 1) = zi.imag();
+      homotopy.x[2*i] = zi.real();
+      homotopy.x[2*i + 1] = zi.imag();
     }
   }
   

@@ -7,7 +7,7 @@
 #ifndef __ADAPTIVITY_H
 #define __ADAPTIVITY_H
 
-#include <dolfin/main/constants.h>
+#include <dolfin/common/types.h>
 #include "Controller.h"
 #include "ODE.h"
 namespace dolfin

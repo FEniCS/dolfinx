@@ -73,7 +73,6 @@ void EpetraMatrix::init(uint M, uint N)
 //-----------------------------------------------------------------------------
 void EpetraMatrix::init(const GenericSparsityPattern& sparsity_pattern)
 {
-  cout <<"dabla "<<endl; 
   const EpetraSparsityPattern& epetra_pattern = dynamic_cast<const EpetraSparsityPattern&>(sparsity_pattern);
   A = new Epetra_FECrsMatrix(Copy, epetra_pattern.pattern());
 }
@@ -215,12 +214,12 @@ void EpetraMatrix::mult(const GenericVector& x_, GenericVector& Ax_, bool transp
 }
 
 //-----------------------------------------------------------------------------
-void EpetraMatrix::getRow(uint i, int& ncols, Array<int>& columns, Array<real>& values) const
+void EpetraMatrix::getrow(uint i, int& ncols, Array<int>& columns, 
+                         Array<real>& values) const
 {
 //  int Epetra_CrsMatrix::ExtractGlobalRowCopy  	(int GlobalRow, int Length,int& NumEntries, double* Values, int *Indices) const
 
   dolfin_assert(A); 
-
   int len= 10; 
   int *cols = new int(len); 
   double* vals = new double(len); 

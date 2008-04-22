@@ -11,7 +11,7 @@
 
 // FIXME: BROKEN
 
-#include <dolfin/main/constants.h>
+#include <dolfin/common/types.h>
 #include <dolfin/common/Array.h>
 #include "ODE.h"
 

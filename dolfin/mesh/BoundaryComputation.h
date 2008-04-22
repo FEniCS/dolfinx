@@ -1,19 +1,20 @@
-// Copyright (C) 2006 Anders Logg.
+// Copyright (C) 2006-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-06-21
-// Last changed: 2006-06-22
+// Last changed: 2008-04-21
 
 #ifndef __BOUNDARY_COMPUTATION_H
 #define __BOUNDARY_COMPUTATION_H
 
-#include <dolfin/main/constants.h>
+#include <dolfin/common/types.h>
 #include "MeshFunction.h"
 
 namespace dolfin
 {
 
   class Mesh;
+  class Facet;
   class BoundaryMesh;
 
   /// This class implements provides a set of basic algorithms for
@@ -39,6 +40,9 @@ namespace dolfin
     static void computeBoundaryCommon(Mesh& mesh, BoundaryMesh& boundary,
                                       MeshFunction<uint>* vertex_map,
                                       MeshFunction<uint>* cell_map);
+
+    /// Reorder vertices so facet is right-oriented w.r.t. facet normal
+    static void reorder(Array<uint>& vertices, Facet& facet);
 
   };
 

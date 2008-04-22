@@ -22,8 +22,8 @@ public:
 
   void u0(uBlasVector& u)
   {
-    u(0) = 1.0;
-    u(1) = 1.0;
+    u[0] = 1.0;
+    u[1] = 1.0;
   }
   
   void f(const uBlasVector& u, real t, uBlasVector& y)

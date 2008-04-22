@@ -12,7 +12,7 @@
 #include <Epetra_MultiVector.h>
 #include <Epetra_FEVector.h>
 
-#include <dolfin/main/constants.h>
+#include <dolfin/common/types.h>
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Variable.h>
 #include "GenericVector.h"

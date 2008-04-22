@@ -4,9 +4,10 @@
 // Modified by Minh Do-Quang 2006
 //
 // First added:  2003-07-15
-// Last changed: 2008-02-11
+// Last changed: 2008-04-22
 
 #include <stdio.h>
+#include <dolfin/common/constants.h>
 #include <dolfin/log/log.h>
 #include <dolfin/parameter/parameters.h>
 #include <dolfin/mesh/Cell.h>

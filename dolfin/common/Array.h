@@ -11,7 +11,7 @@
 
 #include <iostream>
 
-#include <dolfin/main/constants.h>
+#include <dolfin/common/types.h>
 #include <vector>
 
 namespace dolfin
