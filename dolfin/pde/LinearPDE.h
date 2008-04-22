@@ -2,6 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells 2006, 2007.
+// Modified by Dag Lindbo, 2008.
 //
 // First added:  2004
 // Last changed: 2007-12-09
@@ -67,11 +68,7 @@ namespace dolfin
 
     // The boundary conditions
     Array<BoundaryCondition*> bcs;
-
-    // The solution vector
-    Vector x;
   };
-
 }
 
 #endif
