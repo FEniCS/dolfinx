@@ -249,6 +249,13 @@ Epetra_FECrsMatrix& EpetraMatrix::mat() const
   return *A;
 }
 //-----------------------------------------------------------------------------
+const EpetraMatrix& EpetraMatrix::operator*= (real a)
+{
+  dolfin_assert(A);
+  A->Scale(a);
+  return *this;
+}
+//-----------------------------------------------------------------------------
 LogStream& dolfin::operator<< (LogStream& stream, const Epetra_FECrsMatrix& A)
 {
   error("operator << EpetraMatrix not implemented yet"); 
