@@ -41,7 +41,7 @@ public:
       int ncols = 0;
       Array<int> columns;
       Array<real> values;
-      A.getRow(i, ncols, columns, values);
+      A.getrow(i, ncols, columns, values);
       dependencies.setsize(i + offset, ncols);
       for (int j = 0; j < ncols; j++)
 	dependencies.set(i + offset, columns[j]);

@@ -43,7 +43,7 @@ void MatlabFile::operator<<(GenericMatrix& A)
   
   for (uint i = 0; i < A.size(0); i++)
   {
-    A.getRow(i, ncols, columns, values);
+    A.getrow(i, ncols, columns, values);
     for (int pos = 0; pos < ncols; pos++)
     {
       fprintf(fp, " %u %i %.15g", i + 1, columns[pos] + 1, values[pos]);

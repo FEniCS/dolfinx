@@ -111,8 +111,8 @@ namespace dolfin
     /// FIXME: Should these be removed or added to the interface?
 
     /// Get non-zero values of row i
-    void getRow(uint i, int& ncols, Array<int>& columns, Array<real>& values) const
-    { matrix->getRow(i, ncols, columns, values); }
+    void getrow(uint i, int& ncols, Array<int>& columns, Array<real>& values) const
+    { matrix->getrow(i, ncols, columns, values); }
     
     LinearAlgebraFactory& factory() const
     { return matrix->factory(); }

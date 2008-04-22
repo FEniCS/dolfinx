@@ -242,7 +242,7 @@ void XMLFile::operator<<(GenericMatrix& A)
 
   for (unsigned int i = 0; i < A.size(0); i++)
   {
-    A.getRow(i, ncols, columns, values);
+    A.getrow(i, ncols, columns, values);
     if ( ncols > 0 )
       fprintf(fp, "    <row row=\"%u\" size=\"%i\">\n", i, ncols);
     for (int pos = 0; pos < ncols; pos++)

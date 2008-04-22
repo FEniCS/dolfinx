@@ -271,7 +271,7 @@ void PETScMatrix::add(const real* block,
                block, ADD_VALUES);
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::getRow(uint i, int& ncols, Array<int>& columns, 
+void PETScMatrix::getrow(uint i, int& ncols, Array<int>& columns, 
                          Array<real>& values) const
 {
   const int *cols = 0;

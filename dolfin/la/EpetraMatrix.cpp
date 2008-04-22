@@ -225,11 +225,11 @@ void EpetraMatrix::mult(const GenericVector& x_, GenericVector& Ax_, bool transp
 }
 
 //-----------------------------------------------------------------------------
-void EpetraMatrix::getRow(uint i, int& ncols, Array<int>& columns, 
+void EpetraMatrix::getrow(uint i, int& ncols, Array<int>& columns, 
                          Array<real>& values) const
 {
   dolfin_assert(A); 
-  error("EpetraMatrix::getRow not yet implemented.");
+  error("EpetraMatrix::getrow not yet implemented.");
 }
 //-----------------------------------------------------------------------------
 LinearAlgebraFactory& EpetraMatrix::factory() const

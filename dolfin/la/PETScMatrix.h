@@ -116,7 +116,7 @@ namespace dolfin
     void add(const real* block, uint m, const uint* rows, uint n, const uint* cols);
 
     /// Get non-zero values of row i
-    void getRow(uint i, int& ncols, Array<int>& columns, Array<real>& values) const;
+    void getrow(uint i, int& ncols, Array<int>& columns, Array<real>& values) const;
 
     /// Set given rows to zero matrix
     void zero(uint m, const uint* rows);

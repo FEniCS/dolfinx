@@ -77,7 +77,7 @@ void Dependencies::set(const uBlasSparseMatrix& A)
     Array<int> columns;
     Array<real> values;
     int ncols = 0;
-    A.getRow(i, ncols, columns, values); 
+    A.getrow(i, ncols, columns, values); 
     setsize(i, ncols);
     for (uint j = 0; j < static_cast<uint>(ncols); j++)
       set(i, columns[j]);
