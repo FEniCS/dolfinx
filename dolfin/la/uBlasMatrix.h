@@ -114,6 +114,14 @@ namespace dolfin
     /// Display matrix
     void disp(uint precision = 2) const;
 
+    /// Multiply matrix by given number
+    const uBlasMatrix<Mat>& operator*= (real a)
+    { error("Not implemented."); return *this; }
+
+    /// Divide matrix by given number
+    const uBlasMatrix<Mat>& operator/= (real a)
+    { error("Not implemented."); return *this; }
+
     /// The below functions have specialisations for particular matrix types.
     /// In order to link correctly, they must be made inline functions.
 

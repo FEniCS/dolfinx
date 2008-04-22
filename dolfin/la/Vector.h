@@ -107,26 +107,6 @@ namespace dolfin
     /// FIXME: Functions below are not in the GenericVector interface.
     /// FIXME: Should these be removed or added to the interface?
 
-    /// Add vector x
-    const Vector& operator+= (const GenericVector& x)
-    { 
-      vector->axpy(1.0, x); 
-      return *this; 
-    }
-
-    /// Subtract vector x
-    const Vector& operator-= (const GenericVector& x)
-    { 
-      vector->axpy(-1.0, x); 
-      return *this; 
-    }
-
-    /// Add vector x
-    const Vector& operator*= (const real a)
-    { 
-      *vector *= a;  
-      return *this; 
-    }
 
     /// Assignment operator
     const Vector& operator= (const GenericVector& x)
@@ -167,6 +147,10 @@ namespace dolfin
     /// this *= a  
     void mult(const real a) 
     { return vector->mult(a); } // FIXME: This isn't in the GenericVector interface!
+
+    /// Multiply vector by given number
+    const Vector& operator*= (real a)
+    { *vector *= a; return *this; }
 
     /// Return const GenericVector* (internal library use only!)
     virtual const GenericVector* instance() const 

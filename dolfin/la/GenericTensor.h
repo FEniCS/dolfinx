@@ -25,11 +25,11 @@ namespace dolfin
   class GenericTensor
   {
   public:
-
-    ///--- Basic GenericTensor interface ---
     
     /// Destructor
     virtual ~GenericTensor() {}
+
+    ///--- Basic GenericTensor interface ---
 
     /// Initialize zero tensor using sparsity pattern
     virtual void init(const GenericSparsityPattern& sparsity_pattern) = 0;
@@ -92,6 +92,10 @@ namespace dolfin
     /// Check whether the GenericTensor instance matches a specific type
     template<class T> bool has_type() const
     { return bool(dynamic_cast<const T*>(instance())); }
+
+    /// Assignment (must be overloaded by subclass)
+    virtual const GenericTensor& operator= (const GenericTensor& x)
+    { error("Assignment operator not implemented by subclass"); return *this; }
 
   };
 

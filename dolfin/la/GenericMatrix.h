@@ -13,7 +13,6 @@
 #ifndef __GENERIC_MATRIX_H
 #define __GENERIC_MATRIX_H
 
-#include <dolfin/common/types.h>
 #include "GenericTensor.h"
 
 namespace dolfin
@@ -90,15 +89,29 @@ namespace dolfin
     /// Matrix-vector product, y = Ax
     virtual void mult(const GenericVector& x, GenericVector& y, bool transposed=false) const = 0;
 
+    /// Multiply matrix by given number
+    virtual const GenericMatrix& operator*= (real a) = 0;
+
     ///--- Convenience functions ---
 
-    /// Set given matrix entry to value
+    // FIXME: Ambiguity problem for uBlasMatrix, need to implement as a wrapper
+    // FIXME: instead of inheriting
+    
+    /// Get value of given entry 
+    //virtual real operator() (uint i, uint j) const
+    //{ real value(0); get(&value, 1, &i, 1, &j); return value; }
+
+    /// Get value of given entry 
+    virtual real getitem(std::pair<uint, uint> idx) const
+    { real value(0); get(&value, 1, &idx.first, 1, &idx.second); return value; }
+
+    /// Set given entry to value
     virtual void setitem(std::pair<uint, uint> idx, real value)
     { set(&value, 1, &idx.first, 1, &idx.second); }
 
-    /// Get given matrix entry 
-    virtual real getitem(std::pair<uint, uint> idx)
-    { real value(0); get(&value, 1, &idx.first, 1, &idx.second); return value; }
+    /// Divide matrix by given number
+    virtual const GenericMatrix& operator/= (real a)
+    { *this *= 1.0 / a; return *this; }
 
     ///--- Special functions, intended for library use only ---
 
