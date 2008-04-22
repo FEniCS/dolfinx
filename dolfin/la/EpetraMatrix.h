@@ -90,6 +90,9 @@ namespace dolfin
     /// Display matrix (sparse output is default)
     void disp(uint precision = 2) const;
 
+    /// Multiply matrix by given number
+    const EpetraMatrix& operator*= (real a);
+
     /// Set given rows to identity matrix
     void ident(uint m, const uint* rows);
 

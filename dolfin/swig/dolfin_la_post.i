@@ -247,10 +247,10 @@ dolfin::EpetraMatrix & down_cast_epetra_matrix(dolfin::GenericTensor & tensor)
 %}
 
 %pythoncode %{
-_has_type_map[PETScVector] = has_type_epetra_vector
-_has_type_map[PETScMatrix] = has_type_epetra_matrix
-_down_cast_map[PETScVector] = down_cast_epetra_vector
-_down_cast_map[PETScMatrix] = down_cast_epetra_matrix
+_has_type_map[EpetraVector] = has_type_epetra_vector
+_has_type_map[EpetraMatrix] = has_type_epetra_matrix
+_down_cast_map[EpetraVector] = down_cast_epetra_vector
+_down_cast_map[EpetraMatrix] = down_cast_epetra_matrix
 %}
 
 #endif
