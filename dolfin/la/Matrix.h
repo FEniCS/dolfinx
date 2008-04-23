@@ -125,6 +125,14 @@ namespace dolfin
     void mult(const GenericVector& x, GenericVector& y, bool transposed=false) const 
     { matrix->mult(x, y, transposed); }
 
+    /// Assignment operator
+    const GenericMatrix& operator= (const GenericMatrix& A)
+    { *matrix = A; return *this; }
+
+    /// Assignment operator
+    const Matrix& operator= (const Matrix& A)
+    { *matrix = *A.matrix; return *this; }
+
   private:
 
     // FIXME: Why should this be static? Why not just GenericMatrix*? (envelope-letter)

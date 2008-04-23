@@ -116,7 +116,7 @@ namespace dolfin
     void zero();
 
     /// Assignment of vector
-    const PETScVector& operator= (const GenericVector& x);
+    const GenericVector& operator= (const GenericVector& x);
 
     /// Assignment of vector
     const PETScVector& operator= (const PETScVector& x);

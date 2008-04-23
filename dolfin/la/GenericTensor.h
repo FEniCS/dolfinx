@@ -34,6 +34,9 @@ namespace dolfin
     /// Initialize zero tensor using sparsity pattern
     virtual void init(const GenericSparsityPattern& sparsity_pattern) = 0;
 
+    /// Return copy of tensor
+    virtual GenericTensor* copy() const = 0;
+
     /// Return rank of tensor (number of dimensions)
     virtual uint rank() const = 0;
 
@@ -67,8 +70,7 @@ namespace dolfin
     template<class T> const T& down_cast() const
     {
       const T* t = dynamic_cast<const T*>(instance());
-      if (!t)  
-        error("GenericTensor cannot be cast to the requested type.");
+      if (!t) error("GenericTensor cannot be cast to the requested type.");
       return *t;
     }
 
@@ -76,8 +78,7 @@ namespace dolfin
     template<class T> T& down_cast()
     {
       T* t = dynamic_cast<T*>(instance());
-      if (!t)  
-        error("GenericTensor cannot be cast to the requested type.");
+      if (!t) error("GenericTensor cannot be cast to the requested type.");
       return *t;
     }
 
@@ -85,10 +86,6 @@ namespace dolfin
     template<class T> bool has_type() const
     { return bool(dynamic_cast<const T*>(instance())); }
 
-    /// Assignment (must be overloaded by subclass)
-    virtual const GenericTensor& operator= (const GenericTensor& x)
-    { error("Assignment operator not implemented by subclass"); return *this; }
-    
     ///--- Special functions, intended for library use only ---
 
     /// Return instance (const version)
@@ -99,6 +96,10 @@ namespace dolfin
     virtual GenericTensor* instance()
     { return this; }
 
+    /// Assignment (must be overloaded by subclass)
+    virtual const GenericTensor& operator= (const GenericTensor& x)
+    { error("Assignment operator not implemented by subclass"); return *this; }
+    
   };
 
 }

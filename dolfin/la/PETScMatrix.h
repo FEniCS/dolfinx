@@ -153,6 +153,14 @@ namespace dolfin
     /// Output
     friend LogStream& operator<< (LogStream& stream, const PETScMatrix& A);
 
+    /// Assignment operator
+    const GenericMatrix& operator= (const GenericMatrix& x)
+    { error("Not implemented."); return *this; }
+
+    /// Assignment operator
+    const PETScMatrix& operator= (const PETScMatrix& x)
+    { error("Not implemented."); return *this; }
+
     /// Return factory object for backend
     LinearAlgebraFactory& factory() const;
     

@@ -32,15 +32,9 @@ namespace dolfin
     
     ///--- Implementation of the GenericTensor interface ---
 
-    /// Initialize zero tensor using sparsity pattern (implemented by sub class)
-    virtual void init(const GenericSparsityPattern& sparsity_pattern) = 0;
-
     /// Return rank of tensor (number of dimensions)
     uint rank() const 
     { return 2; }
-
-    /// Return size of given dimension (implemented by sub class)
-    virtual uint size(uint dim) const = 0;
 
     /// Get block of values
     void get(real* block, const uint* num_rows, const uint * const * rows) const
@@ -53,15 +47,6 @@ namespace dolfin
     /// Add block of values
     void add(const real* block, const uint* num_rows, const uint * const * rows)
     { add(block, num_rows[0], rows[0], num_rows[1], rows[1]); }
-
-    /// Set all entries to zero and keep any sparse structure (implemented by sub class)
-    virtual void zero() = 0;
-
-    /// Finalise assembly of tensor (implemented by sub class)
-    virtual void apply() = 0;
-
-    /// Display tensor (implemented by sub class)
-    virtual void disp(uint precision = 2) const = 0;
 
     ///--- Matrix interface ---
 
@@ -92,6 +77,9 @@ namespace dolfin
     /// Multiply matrix by given number
     virtual const GenericMatrix& operator*= (real a) = 0;
 
+    /// Assignment operator
+    virtual const GenericMatrix& operator= (const GenericMatrix& x) = 0;
+
     ///--- Convenience functions ---
 
     // FIXME: Ambiguity problem for uBlasMatrix, need to implement as a wrapper
@@ -112,16 +100,6 @@ namespace dolfin
     /// Divide matrix by given number
     virtual const GenericMatrix& operator/= (real a)
     { *this *= 1.0 / a; return *this; }
-
-    ///--- Special functions, intended for library use only ---
-
-    /// Return instance (const version)
-    virtual const GenericMatrix* instance() const
-    { return this; }
-
-    /// Return instance (non-const version)
-    virtual GenericMatrix* instance()
-    { return this; }
 
   };
 

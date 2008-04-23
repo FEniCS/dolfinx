@@ -5,7 +5,7 @@
 // Modified by Ola Skavhaug, 2007.
 //
 // First added:  2007-03-15
-// Last changed: 2008-04-03
+// Last changed: 2008-04-22
 
 #ifndef __SCALAR_H
 #define __SCALAR_H
@@ -38,6 +38,10 @@ namespace dolfin
     /// Initialize zero tensor of given rank and dimensions
     void init(uint rank, const uint* dims)
     { value = 0.0; }
+
+    /// Return copy of tensor
+    virtual Scalar* copy() const
+    { Scalar* s = new Scalar(); s->value = value; return s; }
 
     /// Initialize zero tensor using sparsity pattern
     void init(const GenericSparsityPattern& sparsity_pattern)

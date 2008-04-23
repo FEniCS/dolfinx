@@ -233,7 +233,7 @@ void PETScVector::restore(const real data[]) const
   VecRestoreArray(x, &tmp);
 }
 //-----------------------------------------------------------------------------
-const PETScVector& PETScVector::operator= (const GenericVector& v)
+const GenericVector& PETScVector::operator= (const GenericVector& v)
 {
   *this = v.down_cast<PETScVector>();
   return *this; 
@@ -248,10 +248,6 @@ const PETScVector& PETScVector::operator= (const PETScVector& v)
 
   return *this; 
 }
-
-
-
-
 //-----------------------------------------------------------------------------
 const PETScVector& PETScVector::operator= (const real a)
 {

@@ -125,15 +125,13 @@ namespace dolfin
     /// The below functions have specialisations for particular matrix types.
     /// In order to link correctly, they must be made inline functions.
 
-    /// Return concrete (const) uBlasMatrix<Mat> instance
-    virtual const uBlasMatrix<Mat>* instance() const {
-      return this;
-    }
+    /// Assignment operator
+    const GenericMatrix& operator= (const GenericMatrix& x)
+    { error("Not implemented."); return *this; }
 
-    /// Return concrete uBlasMatrix<Mat> instance
-    virtual uBlasMatrix<Mat>* instance() {
-      return this;
-    }
+    /// Assignment operator
+    const uBlasMatrix<Mat>& operator= (const uBlasMatrix<Mat>& x)
+    { error("Not implemented."); return *this; }
 
     /// Initialize M x N matrix
     void init(uint M, uint N);

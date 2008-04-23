@@ -52,15 +52,6 @@ namespace dolfin
     inline void add(const real* block, const uint* num_rows, const uint * const * rows)
     { add(block, num_rows[0], rows[0]); }
 
-    /// Set all entries to zero and keep any sparse structure (implemented by sub class)
-    virtual void zero() = 0;
-
-    /// Finalise assembly of tensor (implemented by sub class)
-    virtual void apply() = 0;
-
-    /// Display tensor (implemented by sub class)
-    virtual void disp(uint precision = 2) const = 0;
-
     ///--- Vector interface ---
     
     /// Initialize vector of size N
@@ -96,6 +87,9 @@ namespace dolfin
     /// Multiply vector by given number
     virtual const GenericVector& operator*= (real a) = 0;
 
+    /// Assignment operator
+    virtual const GenericVector& operator= (const GenericVector& x) = 0;
+
     ///--- Convenience functions ---
 
     /// Get value of given entry
@@ -121,19 +115,6 @@ namespace dolfin
     /// Divide vector by given number
     virtual const GenericVector& operator/= (real a)
     { *this *= 1.0 / a; return *this; }
-
-    ///--- Special functions, intended for library use only ---
-
-    /// Return instance (const version)
-    virtual const GenericVector* instance() const
-    { return this; }
-
-    /// Return instance (non-const version)
-    virtual GenericVector* instance()
-    { return this; }
-
-    virtual const GenericVector& operator= (const GenericVector& x) = 0;
-
 
   };  
 

@@ -110,23 +110,11 @@ namespace dolfin
 
     /// Assignment operator
     const GenericVector& operator= (const GenericVector& x)
-    { 
-      // get the underlying GenericVector instance (in case x is a Vector) 
-      const GenericVector* y = x.instance();
-
-      // employ the operator= of the underlying instance
-      *vector = *y; 
-
-      return *this; 
-    }
+    { *vector = x; return *this; }
 
     /// Assignment operator
     const Vector& operator= (const Vector& x)
-    { 
-      // employ the operator= of the underlying instance
-      *vector = *(x.vector); 
-      return *this; 
-    }
+    { *vector = *x.vector; return *this; }
 
     /// Compute norm of vector
     real norm(VectorNormType type = l2) const
