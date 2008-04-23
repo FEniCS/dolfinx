@@ -59,18 +59,6 @@ namespace dolfin
     /// Return size
     uint size() const
     { return vector->size(); }
-
-    /// Get values
-    void get(real* values) const
-    { vector->get(values); }
-    
-    /// Set values
-    void set(real* values)
-    { vector->set(values); }
-    
-    /// Add values
-    void add(real* values)
-    { vector->add(values); }
     
     /// Get block of values
     void get(real* block, uint m, const uint* rows) const
@@ -88,13 +76,37 @@ namespace dolfin
     void zero()
     { vector->zero(); }
     
-    /// Apply changes to matrix
+    /// Apply changes
     void apply()
     { vector->apply(); }
+
+    /// Get all values
+    void get(real* values) const
+    { vector->get(values); }
     
-    /// Display matrix (sparse output is default)
-    void disp(uint precision = 2) const
-    { vector->disp(precision); }
+    /// Set all values
+    void set(real* values)
+    { vector->set(values); }
+    
+    /// Add values to each entry
+    void add(real* values)
+    { vector->add(values); }
+
+     /// Add multiple of given vector (AXPY operation)
+    void axpy(real a, const GenericVector& x)
+    { return vector->axpy(a, x); }
+    
+    /// Return inner product 
+    real inner(const GenericVector& x) const
+    { return vector->inner(x); }
+
+    /// Compute norm of vector
+    real norm(VectorNormType type = l2) const
+    { return vector->norm(type); }
+
+    /// Multiply vector by given number
+    const Vector& operator*= (real a)
+    { *vector *= a; return *this; }
 
     /// Assignment operator
     const GenericVector& operator= (const GenericVector& x)
@@ -104,25 +116,15 @@ namespace dolfin
     const Vector& operator= (const Vector& x)
     { *vector = *x.vector; return *this; }
 
-    /// Compute norm of vector
-    real norm(VectorNormType type = l2) const
-    { return vector->norm(type); } // FIXME: This isn't in the GenericVector interface!
-   
-    /// Return backend factory
+    /// Display vector (sparse output is default)
+    void disp(uint precision = 2) const
+    { vector->disp(precision); }
+
+    ///--- Special functions ---
+
+    /// Get linear algebra backend factory
     LinearAlgebraFactory& factory() const
     { return vector->factory(); }
-
-    /// inner product 
-    real inner(const GenericVector& x) const
-    { return vector->inner(x); }
-
-    /// this += a*x  
-    void axpy(real a, const GenericVector& x) 
-    { return vector->axpy(a, x); }
-
-    /// Multiply vector by given number
-    const Vector& operator*= (real a)
-    { *vector *= a; return *this; }
 
     ///--- Special functions, intended for library use only ---
 

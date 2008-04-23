@@ -51,6 +51,18 @@ namespace dolfin
     uint size(uint dim) const
     { return matrix->size(dim); }
 
+    /// Set all entries to zero and keep any sparse structure (implemented by sub class)
+    void zero()
+    { matrix->zero(); }
+
+    /// Finalise assembly of matrix
+    void apply()
+    { matrix->apply(); }
+    
+    /// Display matrix (sparse output is default)
+    void disp(uint precision = 2) const
+    { matrix->disp(precision); }
+
     /// Get block of values
     void get(real* block, uint m, const uint* rows, uint n, const uint* cols) const
     { matrix->get(block, m, rows, n, cols); }
@@ -63,40 +75,25 @@ namespace dolfin
     void add(const real* block, uint m, const uint* rows, uint n, const uint* cols)
     { matrix->add(block, m, rows, n, cols); }
 
-    /// Set all entries to zero and keep any sparse structure (implemented by sub class)
-    void zero()
-    { matrix->zero(); }
+    /// Get non-zero values of given row
+    void getrow(uint i, int& ncols, Array<int>& columns, Array<real>& values) const
+    { matrix->getrow(i, ncols, columns, values); }
 
-    /// Set given rows to zero matrix
+    /// Set given rows to zero
     void zero(uint m, const uint* rows)
     { matrix->zero(m, rows); }
     
     /// Set given rows to identity matrix
     void ident(uint m, const uint* rows)
     { matrix->ident(m, rows); }
-        
-    /// Finalise assembly of matrix
-    void apply()
-    { matrix->apply(); }
-    
-    /// Display matrix (sparse output is default)
-    void disp(uint precision = 2) const
-    { matrix->disp(precision); }
+
+    // Matrix-vector product, y = Ax
+    void mult(const GenericVector& x, GenericVector& y, bool transposed=false) const
+    { matrix->mult(x, y, transposed); }
 
     /// Multiply matrix by given number
     virtual const Matrix& operator*= (real a)
     { *matrix *= a; return *this; }
-
-    /// Get non-zero values of row i
-    void getrow(uint i, int& ncols, Array<int>& columns, Array<real>& values) const
-    { matrix->getrow(i, ncols, columns, values); }
-    
-    LinearAlgebraFactory& factory() const
-    { return matrix->factory(); }
-
-    // y = A x  ( or y = A^T x if transposed==true) 
-    void mult(const GenericVector& x, GenericVector& y, bool transposed=false) const 
-    { matrix->mult(x, y, transposed); }
 
     /// Assignment operator
     const GenericMatrix& operator= (const GenericMatrix& A)
@@ -105,6 +102,12 @@ namespace dolfin
     /// Assignment operator
     const Matrix& operator= (const Matrix& A)
     { *matrix = *A.matrix; return *this; }
+
+    ///--- Special functions ---
+
+    /// Get linear algebra backend factory
+    LinearAlgebraFactory& factory() const
+    { return matrix->factory(); }
 
     ///--- Special functions, intended for library use only ---
 
