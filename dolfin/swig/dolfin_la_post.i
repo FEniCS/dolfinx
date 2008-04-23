@@ -27,6 +27,7 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
 %extend dolfin::Matrix {
   %pythoncode %{
     def __mul__(self, other):
+      print "in Matrix __mul__"
       v = Vector(self.size(0))
       self.mult(other, v)
       return v
@@ -38,6 +39,7 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
 %extend dolfin::PETScMatrix {
   %pythoncode %{
     def __mul__(self, other):
+      print "in PETScMatrix __mul__"
       v = PETScVector(self.size(0))
       self.mult(other, v)
       return v
@@ -59,6 +61,7 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
 %extend dolfin::EpetraMatrix {
   %pythoncode %{
     def __mul__(self, other):
+      print "in EpetraMatrix __mul__"
       v = EpetraVector(self.size(0))
       self.mult(other, v)
       return v

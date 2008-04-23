@@ -24,7 +24,6 @@ EpetraVector::EpetraVector()
     Variable("x", "a sparse vector"),
     x(0), _copy(false)
 {
-  std::cout <<"using the empty constructor "<<std::endl; 
   // Do nothing
 }
 //-----------------------------------------------------------------------------

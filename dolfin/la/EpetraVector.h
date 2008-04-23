@@ -89,6 +89,10 @@ namespace dolfin
     /// Multiply vector with scalar
     const EpetraVector& operator*= (const real a);
 
+    /// Divide vector by given number
+    virtual const EpetraVector& operator/= (real a)
+    { *this *= 1.0 / a; return *this; }
+
     /// Apply changes to vector
     void apply();
 

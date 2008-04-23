@@ -124,9 +124,19 @@ namespace dolfin
     const Vector& operator*= (real a)
     { *vector *= a; return *this; }
 
-    ///--- Special functions, intended for library use only ---
+    /// Add given vector
+    virtual const Vector& operator+= (const GenericVector& x)
+    { axpy(1.0, x); return *this; }
 
-    /// Return instance (const version)
+    /// Subtract given vector
+    virtual const Vector& operator-= (const GenericVector& x)
+    { axpy(-1.0, x); return *this; }
+
+    /// Divide vector by given number
+    virtual const Vector& operator/= (real a)
+    { *this *= 1.0 / a; return *this; }
+
+    /// Return const GenericVector* (internal library use only!)
     virtual const GenericVector* instance() const 
     { return vector; }
 
