@@ -93,6 +93,15 @@ namespace dolfin
     /// Multiply matrix by given number
     const EpetraMatrix& operator*= (real a);
 
+    /// Assignment operator
+    const GenericMatrix& operator= (const GenericMatrix& x)
+    { error("Not implemented."); return *this; }
+
+    /// Assignment operator
+    const EpetraMatrix& operator= (const EpetraMatrix& x)
+    { error("Not implemented."); return *this; }
+
+
     /// Set given rows to identity matrix
     void ident(uint m, const uint* rows);
 
