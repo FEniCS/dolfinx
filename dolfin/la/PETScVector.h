@@ -130,10 +130,10 @@ namespace dolfin
     const PETScVector& operator-= (const GenericVector& x);
 
     /// Multiply vector with scalar
-    const PETScVector& operator*= (const real a);
+    const PETScVector& operator*= (real a);
 
     /// Divide vector by scalar
-    const PETScVector& operator/= (const real a);
+    const PETScVector& operator/= (real a);
 
     /// Scalar product
     real operator*(const PETScVector& x);
