@@ -54,10 +54,10 @@ namespace dolfin
     };
 
     /// Constructor
-    PETScMatrix(Type type = default_matrix);
+    explicit PETScMatrix(Type type = default_matrix);
 
     /// Constructor
-    PETScMatrix(Mat A);
+    explicit PETScMatrix(Mat A);
 
     /// Constructor
     PETScMatrix(uint M, uint N, Type type = default_matrix);

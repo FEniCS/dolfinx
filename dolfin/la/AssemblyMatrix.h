@@ -32,7 +32,7 @@ namespace dolfin
   public:
 
     /// Constructor
-    AssemblyMatrix() : GenericTensor(), dims(0)
+    AssemblyMatrix() : dims(0)
     { dims = new uint[2]; }
 
     /// Destructor

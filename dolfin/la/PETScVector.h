@@ -44,13 +44,13 @@ namespace dolfin
     PETScVector();
 
     /// Create vector of given size
-    PETScVector(uint N);
+    explicit PETScVector(uint N);
 
     /// Create vector from given PETSc Vec pointer
-    PETScVector(Vec x);
+    explicit PETScVector(Vec x);
 
     /// Copy constructor
-    PETScVector(const PETScVector& x);
+    explicit PETScVector(const PETScVector& x);
     
     /// Destructor
     ~PETScVector ();

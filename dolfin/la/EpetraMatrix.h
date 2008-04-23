@@ -43,7 +43,7 @@ namespace dolfin
     EpetraMatrix(uint M, uint N);
 
     /// Create matrix from given Epetra_FECrsMatrix pointer
-    EpetraMatrix(Epetra_FECrsMatrix* A);
+    explicit EpetraMatrix(Epetra_FECrsMatrix* A);
 
     /// Create matrix from given Epetra_CrsGraph pointer
     explicit EpetraMatrix(const Epetra_CrsGraph& graph);

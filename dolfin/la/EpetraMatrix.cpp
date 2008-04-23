@@ -21,16 +21,14 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-EpetraMatrix::EpetraMatrix()
-  : GenericMatrix(), 
+EpetraMatrix::EpetraMatrix():
     Variable("A", "a sparse matrix"),
     A(0), _copy(false)
 {
   // TODO: call Epetra_Init or something?
 }
 //-----------------------------------------------------------------------------
-EpetraMatrix::EpetraMatrix(uint M, uint N)
-  : GenericMatrix(),
+EpetraMatrix::EpetraMatrix(uint M, uint N):
     Variable("A", "a sparse matrix"),
     A(0), _copy(false)
 {
@@ -39,16 +37,14 @@ EpetraMatrix::EpetraMatrix(uint M, uint N)
   init(M, N);
 }
 //-----------------------------------------------------------------------------
-EpetraMatrix::EpetraMatrix(Epetra_FECrsMatrix* A)
-  : GenericMatrix(),
+EpetraMatrix::EpetraMatrix(Epetra_FECrsMatrix* A):
     Variable("A", "a sparse matrix"),
     A(A), _copy(true)
 {
   // TODO: call Epetra_Init or something?
 }
 //-----------------------------------------------------------------------------
-EpetraMatrix::EpetraMatrix(const Epetra_CrsGraph& graph)
-  : GenericMatrix(),
+EpetraMatrix::EpetraMatrix(const Epetra_CrsGraph& graph):
     Variable("A", "a sparse matrix"),
     A(0), _copy(false)
 {

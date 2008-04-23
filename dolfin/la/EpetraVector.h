@@ -2,6 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-04-21
+// Last changed:  2008-04-23
 
 #ifndef __EPETRA_VECTOR_H
 #define __EPETRA_VECTOR_H
@@ -36,18 +37,16 @@ namespace dolfin
     EpetraVector();
 
     /// Create vector of given size
-    EpetraVector(uint N);
+    explicit EpetraVector(uint N);
 
     /// Create vector from given Epetra_FEVector pointer
-    EpetraVector(Epetra_FEVector* vector);
+    explicit EpetraVector(Epetra_FEVector* vector);
 
     /// Create vector from given Epetra_Map reference
-    explicit EpetraVector(const Epetra_Map& map) {
-      error("Not implemented yet"); 
-    }
+    explicit EpetraVector(const Epetra_Map& map);
 
     /// Copy constructor
-    EpetraVector(const EpetraVector& x);
+    explicit EpetraVector(const EpetraVector& x);
 
     /// Destructor
     ~EpetraVector();
@@ -119,7 +118,7 @@ namespace dolfin
     /// Add block of values
     void add(const real* block, uint m, const uint* rows);
 
-    /// Return Epetra_MultiVector pointer
+    /// Return Epetra_MultiVector reference
     Epetra_FEVector& vec() const;
 
     /// Inner product 

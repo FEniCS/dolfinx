@@ -6,7 +6,7 @@
 // Modified by Martin Alnæs 2008.
 //
 // First added:  2006-04-04
-// Last changed: 2008-04-11
+// Last changed: 2008-04-23
 
 #include <sstream>
 #include <iomanip>
@@ -24,16 +24,14 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-uBlasVector::uBlasVector()
-  : GenericVector(),
+uBlasVector::uBlasVector():
     Variable("x", "a dense vector"),
     x(0)
 {
   //Do nothing
 }
 //-----------------------------------------------------------------------------
-uBlasVector::uBlasVector(uint N)
-  : GenericVector(),
+uBlasVector::uBlasVector(uint N):
     Variable("x", "a dense vector"),
     x(N)
 {

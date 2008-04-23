@@ -26,8 +26,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-PETScMatrix::PETScMatrix(const Type type)
-  : GenericMatrix(), 
+PETScMatrix::PETScMatrix(const Type type):
     Variable("A", "a sparse matrix"),
     A(0), _type(type)
 {
@@ -35,8 +34,7 @@ PETScMatrix::PETScMatrix(const Type type)
   checkType();
 }
 //-----------------------------------------------------------------------------
-PETScMatrix::PETScMatrix(Mat A)
-  : GenericMatrix(),
+PETScMatrix::PETScMatrix(Mat A):
     Variable("A", "a sparse matrix"),
     A(A), _type(default_matrix)
 {
@@ -44,8 +42,7 @@ PETScMatrix::PETScMatrix(Mat A)
   _type = default_matrix;
 }
 //-----------------------------------------------------------------------------
-PETScMatrix::PETScMatrix(uint M, uint N, Type type)
-  : GenericMatrix(), 
+PETScMatrix::PETScMatrix(uint M, uint N, Type type):
     Variable("A", "a sparse matrix"),
     A(0),  _type(type)
 {

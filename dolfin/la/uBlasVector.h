@@ -47,11 +47,11 @@ namespace dolfin
     uBlasVector();
     
     /// Constructor
-    uBlasVector(uint N);
+    explicit uBlasVector(uint N);
     
     /// Constructor from a uBlas vector_expression
     template <class E>
-    uBlasVector(const ublas::vector_expression<E>& x) : x(x) {}
+    explicit uBlasVector(const ublas::vector_expression<E>& x) : x(x) {}
 
     /// Destructor
     ~uBlasVector();

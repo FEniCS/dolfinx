@@ -29,7 +29,7 @@ namespace dolfin
   public:
 
     /// Constructor
-    Vector() : GenericVector(), Variable("x", "DOLFIN vector"),
+    Vector() : Variable("x", "DOLFIN vector"),
                vector(0)
     {
       // TODO: use globally selected linear algebra factory to create new vector of any backend
@@ -37,8 +37,8 @@ namespace dolfin
     }
     
     /// Constructor
-    Vector(uint N) : GenericVector(), Variable("x", "DOLFIN vector"),
-                     vector(0)
+    explicit Vector(uint N) : Variable("x", "DOLFIN vector"),
+                              vector(0)
     {
       // TODO: use globally selected linear algebra factory to create new vector of any backend
       vector = new DefaultVector(N);

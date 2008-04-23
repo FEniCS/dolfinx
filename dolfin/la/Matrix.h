@@ -3,9 +3,10 @@
 //
 // Modified by Ola Skavhaug, 2007-2008.
 // Modified by Kent-Andre Mardal 2008.
+// Modified by Martin Sandve Alnes 2008.
 //
 // First added:  2006-05-15
-// Last changed: 2008-04-22
+// Last changed: 2008-04-23
 
 #ifndef __MATRIX_H
 #define __MATRIX_H
@@ -24,16 +25,18 @@ namespace dolfin
   public:
     
     /// Constructor
-    Matrix() : GenericMatrix(), Variable("A", "DOLFIN matrix"),
-	       matrix(new DefaultMatrix()) {}
+    Matrix() : Variable("A", "DOLFIN matrix"),
+	           matrix(new DefaultMatrix())
+    {}
     
     /// Constructor
-    Matrix(uint M, uint N) : GenericMatrix(), Variable("A", "DOLFIN matrix"),
-			     matrix(new DefaultMatrix(M, N)) {}
+    Matrix(uint M, uint N) : Variable("A", "DOLFIN matrix"),
+			                 matrix(new DefaultMatrix(M, N))
+    {}
     
     /// Destructor
     ~Matrix()
-     { delete matrix; }
+    { delete matrix; }
     
     /// Initialize M x N matrix
     void init(uint M, uint N)

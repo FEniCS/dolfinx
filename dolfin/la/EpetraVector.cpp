@@ -2,6 +2,8 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-04-21
+// Last changed:  2008-04-23
+
 #ifdef HAS_TRILINOS
 
 #include <cmath>
@@ -19,29 +21,37 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-EpetraVector::EpetraVector()
-  : GenericVector(), 
+EpetraVector::EpetraVector():
     Variable("x", "a sparse vector"),
-    x(0), _copy(false)
+    x(0),
+    _copy(false)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-EpetraVector::EpetraVector(uint N)
-  : GenericVector(), 
+EpetraVector::EpetraVector(uint N):
     Variable("x", "a sparse vector"), 
-    x(0), _copy(false)
+    x(0),
+    _copy(false)
 {
   // Create Epetra vector
   init(N);
 }
 //-----------------------------------------------------------------------------
-EpetraVector::EpetraVector(Epetra_FEVector* x)
-  : GenericVector(),
+EpetraVector::EpetraVector(Epetra_FEVector* x):
     Variable("x", "a vector"),
-    x(x), _copy(true)
+    x(x),
+    _copy(true)
 {
   // Do nothing
+}
+//-----------------------------------------------------------------------------
+EpetraVector::EpetraVector(const Epetra_Map& map):
+    Variable("x", "a vector"),
+    x(0),
+    _copy(false)
+{
+  error("Not implemented yet");
 }
 //-----------------------------------------------------------------------------
 EpetraVector::EpetraVector(const EpetraVector& v)
