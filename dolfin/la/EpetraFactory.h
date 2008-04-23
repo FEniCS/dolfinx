@@ -1,4 +1,4 @@
-// Copyright (C) 2008 Kent-Andre Mardal and Johannes Ring.
+// Copyright (C) 2008 Martin Sandve Alnes, Kent-Andre Mardal and Johannes Ring.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-04-21

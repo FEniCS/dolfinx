@@ -1,4 +1,4 @@
-// Copyright (C) 2008 Kent-Andre Mardal and Johannes Ring.
+// Copyright (C) 2008 Martin Sandve Alnes, Kent-Andre Mardal and Johannes Ring.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-04-21
@@ -21,10 +21,6 @@
 
 namespace dolfin
 {
-  
-  class uBlasVector;
-  class PETScVector;
-
   /// This class represents a vector of dimension N.
   /// It is a simple wrapper for a Epetra vector pointer (Epetra_FEVector).
   ///
@@ -54,7 +50,7 @@ namespace dolfin
     EpetraVector(const EpetraVector& x);
 
     /// Destructor
-    virtual ~EpetraVector();
+    ~EpetraVector();
 
     /// Return backend factory
     LinearAlgebraFactory& factory() const;
@@ -87,7 +83,7 @@ namespace dolfin
     const EpetraVector& operator-= (const GenericVector& x);
 
     /// Multiply vector with scalar
-    const EpetraVector& operator*= (const real a);
+    const EpetraVector& operator*= (real a);
 
     /// Divide vector by given number
     virtual const EpetraVector& operator/= (real a)
@@ -101,6 +97,9 @@ namespace dolfin
 
     /// Output
     friend LogStream& operator<< (LogStream& stream, const EpetraVector& A);
+
+    // Friends
+    friend class EpetraMatrix;
 
     /// Get values
     void get(real* values) const;
@@ -150,5 +149,4 @@ namespace dolfin
 }
 
 #endif
-
 #endif
