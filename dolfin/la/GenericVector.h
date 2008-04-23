@@ -1,9 +1,9 @@
 // Copyright (C) 2006-2007 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Anders Logg 2006-2008.
-// Modified by Kent-Andre Mardal 2008.
-// Modified by Ola Skavhaug 2008.
+// Modified by Anders Logg, 2006-2008.
+// Modified by Kent-Andre Mardal, 2008.
+// Modified by Ola Skavhaug, 2008.
 //
 // First added:  2006-04-25
 // Last changed: 2008-04-23
@@ -27,7 +27,7 @@ namespace dolfin
     /// Destructor
     virtual ~GenericVector() {}
 
-    ///--- Implementation of the GenericTensor interface ---
+    //--- Implementation of the GenericTensor interface ---
 
     /// Initialize zero tensor using sparsity pattern
     inline void init(const GenericSparsityPattern& sparsity_pattern)
@@ -59,13 +59,13 @@ namespace dolfin
     /// Set all entries to zero and keep any sparse structure
     virtual void zero() = 0;
 
-    /// Finalise assembly of tensor
+    /// Finalize assembly of tensor
     virtual void apply() = 0;
 
     /// Display tensor
     virtual void disp(uint precision=2) const = 0;
 
-    ///--- Vector interface ---
+    //--- Vector interface ---
 
     /// Initialize vector of size N
     virtual void init(uint N) = 0;
@@ -106,7 +106,7 @@ namespace dolfin
     /// Assignment operator
     virtual const GenericVector& operator= (const GenericVector& x) = 0;
 
-    ///--- Convenience functions ---
+    //--- Convenience functions ---
 
     /// Get value of given entry
     virtual real operator[] (uint i) const
