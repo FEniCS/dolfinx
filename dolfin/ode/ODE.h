@@ -75,6 +75,10 @@ namespace dolfin
     /// Compute product y = Jx for Jacobian J (optional)
     virtual void J(const uBlasVector& x, uBlasVector& y, const uBlasVector& u, real t);
 
+    /// Compute product y = tranpose(J)x for Jacobian J (optional)
+    /// Used when computing error estimate only
+    virtual void JT(const uBlasVector& x, uBlasVector& y, const uBlasVector& u, real t);
+
     /// Compute entry of Jacobian (optional)
     virtual real dfdu(const uBlasVector& u, real t, uint i, uint j);
 
@@ -146,7 +150,7 @@ namespace dolfin
     Event not_impl_f;
     Event not_impl_M;
     Event not_impl_J;
-
+    Event not_impl_JT;
   };
 
 }

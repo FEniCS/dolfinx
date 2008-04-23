@@ -41,6 +41,13 @@ public:
     y[1] = (r - u[2])*x[0] - x[1] - u[0]*x[2];
     y[2] = u[1]*x[0] + u[0]*x[1] - b*x[2];
   }
+
+  void JT(const uBlasVector& x, uBlasVector& y, const uBlasVector& u, real t) {
+    y[0] = -x[0]*s + (r-u[2])*x[1] + u[1]*x[2];
+    y[1] = s*x[0] - x[1] + u[0]*x[2];
+    y[2] = -u[0]*x[1] - b*x[2];
+  }
+
  
 private:
 

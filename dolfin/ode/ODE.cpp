@@ -17,7 +17,8 @@ ODE::ODE(uint N, real T)
   : N(N), T(T), dependencies(N), transpose(N), tmp(0),
     not_impl_f("Warning: consider implementing mono-adaptive ODE::f() to improve efficiency."),
     not_impl_M("Warning: multiplication with M not implemented, assuming identity."),
-    not_impl_J("Warning: consider implementing Jacobian ODE::J() to improve efficiency.")
+    not_impl_J("Warning: consider implementing Jacobian ODE::J() to improve efficiency."),
+    not_impl_JT("Warning: consider implementing Jacobian transpose ODE::JT() to improve efficiency")
 {
   message("Creating ODE of size %d.", N);
 }
@@ -95,7 +96,45 @@ void ODE::J(const uBlasVector& x, uBlasVector& y, const uBlasVector& u, real t)
   ublas::noalias(y.vec()) -= tmp.vec();
   y *= 0.5/h;
 }
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------
+
+void ODE::JT(const uBlasVector& x, uBlasVector& y, const uBlasVector& u, real t) {
+
+  //Display warning
+  not_impl_JT();
+
+  // Similar to J()
+  real umax = 0.0;
+  for (unsigned int i = 0; i < N; i++)
+    umax = std::max(umax, std::abs(u[i]));
+  real h = std::max(DOLFIN_SQRT_EPS, DOLFIN_SQRT_EPS * umax);
+
+  uBlasVector& uu = const_cast<uBlasVector&>(u);
+
+  if ( tmp.size() != N )
+    tmp.init(N);
+
+  uBlasVector tmp2(N);
+
+  for (uint i = 0; i < N; ++i) {
+    uu[i] += h; //small change component i
+    f(uu, t, tmp);
+    
+    uu[i] -= 2*h;
+    f(uu, t, tmp2);
+
+    //restore u
+    uu[i] += h;
+
+    tmp -= tmp2;
+    tmp /= 2*h;
+
+    y[i] = ublas::inner_prod(tmp.vec(), x.vec());
+  }
+}
+
+//------------------------------------------------------------------------
+
 real ODE::dfdu(const uBlasVector& u, real t, uint i, uint j)
 {
   // Compute Jacobian numerically if dfdu() is not implemented by user
