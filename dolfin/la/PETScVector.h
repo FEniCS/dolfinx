@@ -64,7 +64,6 @@ namespace dolfin
     /// Create copy of vector
     PETScVector* copy() const;
 
-
     /// Clear vector data
     void clear();
 

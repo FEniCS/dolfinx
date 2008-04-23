@@ -82,12 +82,12 @@ namespace dolfin
     /// Add values to each entry
     virtual void add(real* values) = 0;
 
-    /// Return inner product
-    virtual real inner(const GenericVector& x) const = 0;
-
     /// Add multiple of given vector (AXPY operation)
     virtual void axpy(real a, const GenericVector& x) = 0;
     
+    /// Return inner product
+    virtual real inner(const GenericVector& x) const = 0;
+
     /// Return norm of vector
     virtual real norm(VectorNormType type = l2) const = 0;
 
