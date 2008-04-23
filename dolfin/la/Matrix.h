@@ -79,8 +79,8 @@ namespace dolfin
     { matrix->add(block, m, rows, n, cols); }
 
     /// Get non-zero values of given row
-    void getrow(uint i, int& ncols, Array<int>& columns, Array<real>& values) const
-    { matrix->getrow(i, ncols, columns, values); }
+    void getrow(uint i, Array<uint>& columns, Array<real>& values) const
+    { matrix->getrow(i, columns, values); }
 
     /// Set given rows to zero
     void zero(uint m, const uint* rows)

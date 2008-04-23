@@ -77,7 +77,7 @@ namespace dolfin
     void add(const real* block, uint m, const uint* rows, uint n, const uint* cols);
 
     /// Get non-zero values of row i
-    void getrow(uint i, int& ncols, Array<int>& columns, Array<real>& values) const;
+    void getrow(uint i, Array<uint>& columns, Array<real>& values) const;
 
     /// Get block of values
     void get(real* block, uint m, const uint* rows, uint n, const uint* cols) const;
@@ -222,8 +222,7 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template < class Mat >  
-  void uBlasMatrix< Mat >::getrow(uint i, int& ncols, Array<int>& columns, 
-				  Array<real>& values) const
+  void uBlasMatrix< Mat >::getrow(uint i, Array<uint>& columns, Array<real>& values) const
   {
     // Reference to matrix row (throw away const-ness and trust uBlas)
     ublas::matrix_row< Mat > row( *(const_cast<Mat*>(&A)) , i);
@@ -238,7 +237,6 @@ namespace dolfin
       columns.push_back( component.index() );
       values.push_back( *component );
     }
-    ncols = columns.size();
   }
   //-----------------------------------------------------------------------------
   template <class Mat>

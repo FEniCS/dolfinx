@@ -268,11 +268,11 @@ void PETScMatrix::add(const real* block,
                block, ADD_VALUES);
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::getrow(uint i, int& ncols, Array<int>& columns, 
-                         Array<real>& values) const
+void PETScMatrix::getrow(uint i, Array<uint>& columns, Array<real>& values) const
 {
   const int *cols = 0;
   const double *vals = 0;
+  int ncols = 0;
   MatGetRow(A, i, &ncols, &cols, &vals);
   
   // Assign values to Arrays

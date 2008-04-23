@@ -74,12 +74,11 @@ void Dependencies::set(const uBlasSparseMatrix& A)
   for (uint i = 0; i < N; i++)
   {
     // FIXME: Could add function to return sparsity pattern
-    Array<int> columns;
+    Array<uint> columns;
     Array<real> values;
-    int ncols = 0;
-    A.getrow(i, ncols, columns, values); 
-    setsize(i, ncols);
-    for (uint j = 0; j < static_cast<uint>(ncols); j++)
+    A.getrow(i, columns, values); 
+    setsize(i, columns.size());
+    for (uint j = 0; j < columns.size(); j++)
       set(i, columns[j]);
   }
 }

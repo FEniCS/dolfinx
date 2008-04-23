@@ -1,14 +1,14 @@
 // Copyright (C) 2006-2007 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Johan Jansson 2006.
-// Modified by Anders Logg 2006-2008.
-// Modified by Ola Skavhaug 2007-2008.
-// Modified by Kent-Andre Mardal 2008.
+// Modified by Johan Jansson, 2006.
+// Modified by Anders Logg, 2006-2008.
+// Modified by Ola Skavhaug, 2007-2008.
+// Modified by Kent-Andre Mardal, 2008.
 // Modified by Martin Alnæs, 2008.
 //
 // First added:  2006-04-24
-// Last changed: 2008-04-22
+// Last changed: 2008-04-23
 
 #ifndef __GENERIC_MATRIX_H
 #define __GENERIC_MATRIX_H
@@ -18,11 +18,11 @@
 namespace dolfin
 {
 
-  class GenericVector; 
+  class GenericVector;
   template<class M> class Array;
-  
+
   /// This class defines a common interface for matrices.
-  
+
   class GenericMatrix : public GenericTensor
   {
   public:
@@ -35,12 +35,15 @@ namespace dolfin
     /// Initialize zero tensor using sparsity pattern
     virtual void init(const GenericSparsityPattern& sparsity_pattern) = 0;
 
-    /// Return copy of matrix
+    /// Return copy of tensor
     virtual GenericMatrix* copy() const = 0;
 
-    /// Return rank of tensor (number of dimensions)
-    uint rank() const 
+    /// Return tensor rank (number of dimensions)
+    uint rank() const
     { return 2; }
+
+    /// Return size of given dimension
+    virtual uint size(uint dim) const = 0;
 
     /// Get block of values
     void get(real* block, const uint* num_rows, const uint * const * rows) const
@@ -57,11 +60,17 @@ namespace dolfin
     /// Set all entries to zero and keep any sparse structure
     virtual void zero() = 0;
 
+    /// Finalise assembly of tensor
+    virtual void apply() = 0;
+
+    /// Display tensor
+    virtual void disp(uint precision=2) const = 0;
+
     ///--- Matrix interface ---
 
     /// Initialize M x N matrix
     virtual void init(uint M, uint N) = 0;
-    
+
     /// Get block of values
     virtual void get(real* block, uint m, const uint* rows, uint n, const uint* cols) const = 0;
 
@@ -72,7 +81,7 @@ namespace dolfin
     virtual void add(const real* block, uint m, const uint* rows, uint n, const uint* cols) = 0;
 
     /// Get non-zero values of given row
-    virtual void getrow(uint i, int& ncols, Array<int>& columns, Array<real>& values) const = 0;
+    virtual void getrow(uint row, Array<uint>& columns, Array<real>& values) const = 0;
 
     /// Set given rows to zero
     virtual void zero(uint m, const uint* rows) = 0;
@@ -91,20 +100,17 @@ namespace dolfin
 
     ///--- Convenience functions ---
 
-    // FIXME: Ambiguity problem for uBlasMatrix, need to implement as a wrapper
-    // FIXME: instead of inheriting
-    
     /// Get value of given entry 
-    //virtual real operator() (uint i, uint j) const
-    //{ real value(0); get(&value, 1, &i, 1, &j); return value; }
+    virtual real operator() (uint i, uint j) const
+    { real value(0); get(&value, 1, &i, 1, &j); return value; }
 
     /// Get value of given entry 
-    virtual real getitem(std::pair<uint, uint> idx) const
-    { real value(0); get(&value, 1, &idx.first, 1, &idx.second); return value; }
+    virtual real getitem(std::pair<uint, uint> ij) const
+    { real value(0); get(&value, 1, &ij.first, 1, &ij.second); return value; }
 
     /// Set given entry to value
-    virtual void setitem(std::pair<uint, uint> idx, real value)
-    { set(&value, 1, &idx.first, 1, &idx.second); }
+    virtual void setitem(std::pair<uint, uint> ij, real value)
+    { set(&value, 1, &ij.first, 1, &ij.second); }
 
     /// Divide matrix by given number
     virtual const GenericMatrix& operator/= (real a)

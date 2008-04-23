@@ -6,7 +6,7 @@
 // Modified by Martin Alnæs, 2008.
 //
 // First added:  2007-01-17
-// Last changed: 2008-04-22
+// Last changed: 2008-04-23
 
 #ifndef __GENERIC_TENSOR_H
 #define __GENERIC_TENSOR_H
@@ -16,7 +16,7 @@
 
 namespace dolfin
 {
-  
+
   class GenericSparsityPattern;
   class LinearAlgebraFactory;
 
@@ -25,7 +25,7 @@ namespace dolfin
   class GenericTensor
   {
   public:
-    
+
     /// Destructor
     virtual ~GenericTensor() {}
 
@@ -37,7 +37,7 @@ namespace dolfin
     /// Return copy of tensor
     virtual GenericTensor* copy() const = 0;
 
-    /// Return rank of tensor (number of dimensions)
+    /// Return tensor rank (number of dimensions)
     virtual uint rank() const = 0;
 
     /// Return size of given dimension
@@ -59,12 +59,12 @@ namespace dolfin
     virtual void apply() = 0;
 
     /// Display tensor
-    virtual void disp(uint precision = 2) const = 0;
+    virtual void disp(uint precision=2) const = 0;
 
     ///--- Special functions, downcasting to concrete types ---
-    
-    /// Get linear algebra backend factory
-    virtual LinearAlgebraFactory& factory() const = 0; 
+
+    /// Return linear algebra backend factory
+    virtual LinearAlgebraFactory& factory() const = 0;
 
     /// Cast a GenericTensor to its derived class (const version)
     template<class T> const T& down_cast() const
@@ -88,18 +88,18 @@ namespace dolfin
 
     ///--- Special functions, intended for library use only ---
 
-    /// Return instance (const version)
+    /// Return concrete instance / unwrap (const version)
     virtual const GenericTensor* instance() const
     { return this; }
 
-    /// Return instance (non-const version)
+    /// Return instance / unwrap (non-const version)
     virtual GenericTensor* instance()
     { return this; }
 
     /// Assignment (must be overloaded by subclass)
     virtual const GenericTensor& operator= (const GenericTensor& x)
     { error("Assignment operator not implemented by subclass"); return *this; }
-    
+
   };
 
 }

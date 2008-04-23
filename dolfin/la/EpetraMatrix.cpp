@@ -210,8 +210,7 @@ void EpetraMatrix::mult(const GenericVector& x_, GenericVector& Ax_, bool transp
 }
 
 //-----------------------------------------------------------------------------
-void EpetraMatrix::getrow(uint i, int& ncols, Array<int>& columns, 
-                         Array<real>& values) const
+void EpetraMatrix::getrow(uint i, Array<uint>& columns, Array<real>& values) const
 {
 //  int Epetra_CrsMatrix::ExtractGlobalRowCopy  	(int GlobalRow, int Length,int& NumEntries, double* Values, int *Indices) const
 
@@ -220,14 +219,16 @@ void EpetraMatrix::getrow(uint i, int& ncols, Array<int>& columns,
   int *cols = new int(len); 
   double* vals = new double(len); 
 
+  int ncols = 0;
   int err = A->ExtractGlobalRowCopy(i, len, ncols, vals, cols); 
   if (err!= 0) error("Did not manage to get a copy of the row."); 
 
   columns.clear();
   values.clear(); 
-  for (int i=0; i< ncols; i++) {
-      columns.push_back(cols[i]);
-      values.push_back(vals[i]);
+  for (int i=0; i< ncols; i++)
+  {
+    columns.push_back(cols[i]);
+    values.push_back(vals[i]);
   }
 
   delete cols; 
