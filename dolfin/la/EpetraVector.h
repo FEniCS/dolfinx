@@ -129,7 +129,11 @@ namespace dolfin
     //  this += a*x   
     virtual void axpy(real a, const GenericVector& x); 
 
-
+    /// Return norm of vector
+    virtual real norm(VectorNormType type = l2) const { 
+      error("EpetraVector::norm Not implemented yet"); 
+      return -1.0; 
+    }
 
   private:
 
