@@ -75,7 +75,7 @@ namespace dolfin
     void disp(uint precision=2) const
     { cout << "Scalar value: " << value << endl; }
 
-    ///--- Scalar interface ---
+    //--- Scalar interface ---
 
     /// Cast to real
     operator real() const
