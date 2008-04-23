@@ -53,7 +53,7 @@ void TimeSlabJacobian::update()
     mult(ej, Aj);
     
     // Set column of A
-    column(A, j) = Aj.vec();
+    column(A.mat(), j) = Aj.vec();
     
     ej[j] = 0.0;
   }

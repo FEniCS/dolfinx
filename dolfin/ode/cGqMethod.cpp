@@ -163,6 +163,7 @@ void cGqMethod::computeBasis()
 void cGqMethod::computeWeights()
 {
   uBlasDenseMatrix A(q, q);
+  ublas_dense_matrix& _A = A.mat();
   
   // Compute matrix coefficients
   for (unsigned int i = 0; i < nn; i++)
@@ -176,13 +177,14 @@ void cGqMethod::computeWeights()
 	      real x = qpoints[k];
 	      integral += qweights[k] * trial->ddx(j + 1, x) * test->eval(i, x);
       }
-      
-      A(i, j) = integral;
+      _A(i, j) = integral;
     }
   }
 
   uBlasVector b(q);
   uBlasVector w(q);
+  ublas_vector& _b = b.vec();
+  ublas_vector& _w = w.vec();
 
   // Compute nodal weights for each degree of freedom (loop over points)
   for (unsigned int i = 0; i < nq; i++)
@@ -192,7 +194,7 @@ void cGqMethod::computeWeights()
     
     // Evaluate test functions at current nodal point
     for (unsigned int j = 0; j < nn; j++)
-      b[j] = test->eval(j, x);
+      _b[j] = test->eval(j, x);
     
     // Solve for the weight functions at the nodal point
     // FIXME: Do we get high enough precision?
@@ -200,7 +202,7 @@ void cGqMethod::computeWeights()
 
     // Save weights including quadrature
     for (unsigned int j = 0; j < nn; j++)
-      nweights[j][i] = qweights[i] * w[j];
+      nweights[j][i] = qweights[i] * _w[j];
   }
 }
 //-----------------------------------------------------------------------------

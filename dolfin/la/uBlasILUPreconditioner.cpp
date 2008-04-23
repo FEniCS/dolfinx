@@ -33,81 +33,46 @@ uBlasILUPreconditioner::~uBlasILUPreconditioner()
 //-----------------------------------------------------------------------------
 void uBlasILUPreconditioner::solve(uBlasVector& x, const uBlasVector& b) const
 {
-  // Get uderlying uBLAS vectors
+  // Get uderlying uBLAS matrices and vectors
   ublas_vector& _x = x.vec(); 
   const ublas_vector& _b = b.vec(); 
+  const ublas_sparse_matrix & _M = M.mat();
 
-  dolfin_assert( _x.size() == M.size1() );
+  dolfin_assert( _x.size() == _M.size1() );
   dolfin_assert( _x.size() == _b.size());
 
   // Solve in-place
   _x.assign(_b);
 
-  // Let uBlas solve the systems. This is however very slow as uBlas
-  // is not optimised for sparse storage, especially when using using
-  // row-major matrices.
-  //ublas::lu_substitute(M, _x);
-
-  // Perform substutions using uBlas sparse matrix iterators. This is 
-  // relatively fast, but not that great.
-
-  /*
-  uBlasMatrix<ublas_sparse_matrix>::const_iterator1 row;
-  uBlasMatrix<ublas_sparse_matrix>::const_iterator1 row_end = M.end1();
-  for (row = M.begin1(); row != row_end; ++ row) 
-  {
-    uint n = row.index1();
-    uBlasMatrix<ublas_sparse_matrix>::const_iterator2 col = row.begin();
-    uBlasMatrix<ublas_sparse_matrix>::const_iterator2 col_end = row.end();
-    while ((col != col_end) && (col.index2() < n) ) 
-    {
-      x (n) -= *col * _x (col.index2());
-      ++ col;
-    }
-  }
-  uBlasMatrix<ublas_sparse_matrix>::const_reverse_iterator1 row_r;
-  uBlasMatrix<ublas_sparse_matrix>::const_reverse_iterator1 row_end_r = M.rend1();
-  for (row_r = M.rbegin1(); row_r != row_end_r; ++ row_r) 
-  {
-    uint n = row_r.index1();
-    uBlasMatrix<ublas_sparse_matrix>::const_reverse_iterator2 col = row_r.rbegin();
-    uBlasMatrix<ublas_sparse_matrix>::const_reverse_iterator2 col_end = row_r.rend();
-    while ((col != col_end) && (col.index2() > n) ) 
-    {
-      _x (n) -= *col * x (col.index2());
-      ++ col;
-    }
-    _x (n) /= (*col);
-  }
-  */
-
   // Perform substutions for compressed row storage. This is the fastest.
-  const uint size = M.size1();
+  const uint size = _M.size1();
   for(uint i =0; i < size; ++i)
   {
     uint k;
-    for(k = M.index1_data () [i]; k < diagonal[i]; ++k)
-      _x(i) -= ( M.value_data () [k] )*x[ M.index2_data () [k] ];
+    for(k = _M.index1_data () [i]; k < diagonal[i]; ++k)
+      _x(i) -= ( _M.value_data () [k] )*x[ _M.index2_data () [k] ];
   } 
   for(int i =size-1; i >= 0; --i)
   {
     uint k;
-    for(k = M.index1_data () [i+1]-1; k > diagonal[i]; --k)
-      _x(i) -= ( M.value_data () [k] )*x[ M.index2_data () [k] ];
-    _x(i) /= ( M.value_data () [k] );  
+    for(k = _M.index1_data () [i+1]-1; k > diagonal[i]; --k)
+      _x(i) -= ( _M.value_data () [k] )*x[ _M.index2_data () [k] ];
+    _x(i) /= ( _M.value_data () [k] );  
   }
 }
 //-----------------------------------------------------------------------------
 void uBlasILUPreconditioner::init(const uBlasMatrix<ublas_sparse_matrix>& A)
 {
+  ublas_sparse_matrix & _M = M.mat();
+
   const uint size = A.size(0); 
-  M.resize(size, size, false);
-  M.assign(A); 
+  _M.resize(size, size, false);
+  _M.assign(A.mat()); 
 
   // Add term to diagonal to avoid negative pivots
   const real zero_shift = get("Krylov shift nonzero");
   if(zero_shift > 0.0)
-    M.plus_assign( zero_shift*ublas::identity_matrix<double>(size) );  
+    _M.plus_assign( zero_shift*ublas::identity_matrix<double>(size) );  
   
   /*
   // Straightforward and very slow implementation. This is used for verification
@@ -168,45 +133,39 @@ void uBlasILUPreconditioner::init(const uBlasMatrix<ublas_sparse_matrix>& A)
 
   for (uint k = 0; k < size ; ++k)        // i (rows)
   {
-    j0 = M.index1_data () [k];    // ia 
-    j1 = M.index1_data () [k+1]-1;
+    j0 = _M.index1_data () [k];    // ia 
+    j1 = _M.index1_data () [k+1]-1;
 
     // Initialise working array iw
     for (uint i = j0;  i <= j1; ++i)       
-      iw[ M.index2_data () [i] ] = i;  // ja     
+      iw[ _M.index2_data () [i] ] = i;  // ja     
 
     // Move along row looking for diagonal
     j=j0;
     while(j <= j1)
     {
-      jrow = M.index2_data () [j];  // ja  
+      jrow = _M.index2_data () [j];  // ja  
 
       if( jrow >= k ) // passed or found diagonal, therefore break
         break;
 
-      //      t1 = (M.value_data() [j])*(M.value_data() [ diagonal[jrow] ]);
-      t1 = (M.value_data() [j])/(M.value_data() [ diagonal[jrow] ]);  //M(k,j) = M(k,j)/M(j,j) 
-      M.value_data() [j] = t1;
-      for(uint jj = diagonal[jrow]+1; jj <= M.index1_data () [jrow+1]-1; ++jj)
+      t1 = (_M.value_data() [j])/(_M.value_data() [ diagonal[jrow] ]);  //M(k,j) = M(k,j)/M(j,j) 
+      _M.value_data() [j] = t1;
+      for(uint jj = diagonal[jrow]+1; jj <= _M.index1_data () [jrow+1]-1; ++jj)
       {
-        jw = iw[ M.index2_data () [jj] ];
+        jw = iw[ _M.index2_data () [jj] ];
         if(jw != 0)
-          M.value_data() [jw] = M.value_data() [jw] -t1*(M.value_data() [jj]);
+          _M.value_data() [jw] = _M.value_data() [jw] -t1*(_M.value_data() [jj]);
       } // jj
       ++j;
     }
     diagonal[k] = j;
 
-    if( jrow != k || fabs( M.value_data() [j] ) < DOLFIN_EPS )
+    if( jrow != k || fabs( _M.value_data() [j] ) < DOLFIN_EPS )
       error("Zero pivot detected in uBlas ILU preconditioner in row %u.", k);
 
-    //    M.value_data() [j] = 1.0/( M.value_data() [j] );
     for(uint i=j0; i <= j1; ++i)
-      iw[ M.index2_data () [i] ] = 0;        
+      iw[ _M.index2_data () [i] ] = 0;        
   } // k
-
-  // Restore diagonal
-  //  for (uint k = 0; k < size ; ++k)
-  //    M.value_data() [ uptr[k] ] = 1.0/M.value_data() [ uptr[k] ];
 }
 //-----------------------------------------------------------------------------

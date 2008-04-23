@@ -138,7 +138,7 @@ void MonoAdaptiveNewtonSolver::FevalExplicit(uBlasVector& F)
       const real tmp = k * method.nweight(n, m);
       const uint moffset = m * ts.N;
       for (uint i = 0; i < ts.N; i++)
-	F[noffset + i] += tmp * ts.fq[moffset + i];
+        F[noffset + i] += tmp * ts.fq[moffset + i];
     }
   }
 
@@ -175,7 +175,7 @@ void MonoAdaptiveNewtonSolver::FevalImplicit(uBlasVector& F)
       const real tmp = k * method.nweight(n, m);
       const uint moffset = m * ts.N;
       for (uint i = 0; i < ts.N; i++)
-	F[noffset + i] += tmp * ts.fq[moffset + i];
+        F[noffset + i] += tmp * ts.fq[moffset + i];
     }
   }
   
@@ -259,6 +259,7 @@ void MonoAdaptiveNewtonSolver::debug()
 {
   const uint n = ts.nj;
   uBlasSparseMatrix B(n, n);
+  ublas_sparse_matrix& _B = B.mat();
   uBlasVector F1(n), F2(n);
 
   // Iterate over the columns of B
@@ -279,7 +280,7 @@ void MonoAdaptiveNewtonSolver::debug()
     {
       real dFdx = (F1[i] - F2[i]) / dx;
       if ( fabs(dFdx) > DOLFIN_EPS )
-	B(i, j) = dFdx;
+        _B(i, j) = dFdx;
     }
   }
 

@@ -79,7 +79,7 @@ int main()
 
   // Read mesh
   Mesh mesh("../../../../data/meshes/gear.xml.gz");
-  
+
   // Create right-hand side
   Function f(mesh, 0.0);
 

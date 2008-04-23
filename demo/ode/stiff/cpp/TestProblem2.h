@@ -16,8 +16,8 @@ public:
   {
     message("The simple test system.");
 
-    A(0, 0) = -100.0;
-    A(1, 1) = -1000.0;
+    A.mat()(0, 0) = -100.0;
+    A.mat()(1, 1) = -1000.0;
   }
 
   void u0(uBlasVector& u)

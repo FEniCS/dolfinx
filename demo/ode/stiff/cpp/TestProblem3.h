@@ -17,10 +17,10 @@ public:
     message("A non-normal test problem, critically damped oscillation");
     message("with eigenvalues l1 = l2 = 100.");
 
-    A(0,0) = 0.0;    
-    A(0,1) = 1.0;
-    A(1,0) = -1e4;
-    A(1,1) = -200.0;
+    A.mat()(0,0) = 0.0;    
+    A.mat()(0,1) = 1.0;
+    A.mat()(1,0) = -1e4;
+    A.mat()(1,1) = -200.0;
   }
 
   void u0(uBlasVector& u)

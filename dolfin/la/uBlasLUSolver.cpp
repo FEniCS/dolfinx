@@ -44,7 +44,7 @@ dolfin::uint uBlasLUSolver::solve(const uBlasMatrix<ublas_dense_matrix>& A,
   const ublas_vector& _b = b.vec(); 
 
   // Make copy of matrix and vector
-  ublas_dense_matrix Atemp(A);
+  ublas_dense_matrix Atemp(A.mat());
   _x.resize(_b.size());
   _x.assign(_b);
 
@@ -56,22 +56,23 @@ dolfin::uint uBlasLUSolver::solve(const uBlasMatrix<ublas_dense_matrix>& A,
 dolfin::uint uBlasLUSolver::solve(const uBlasMatrix<ublas_sparse_matrix>& A, uBlasVector& x, 
                                   const uBlasVector& b)
 {
+  // Get underlying uBLAS vectors
+  ublas_vector& _x = x.vec(); 
+  const ublas_vector& _b = b.vec(); 
+  const ublas_sparse_matrix& _A = A.mat(); 
+
   // Check dimensions and get number of non-zeroes
   const uint M  = A.size(0);
   const uint N  = A.size(1);
-  const uint nz = A.nnz();
+  const uint nz = _A.nnz();
 
   dolfin_assert(M == N);
   dolfin_assert(nz >= N);
 
   x.init(N);
 
-  // Get underlying uBLAS vectors
-  ublas_vector& _x = x.vec(); 
-  const ublas_vector& _b = b.vec(); 
-
   // Make sure matrix assembly is complete
-  (const_cast< uBlasMatrix<ublas_sparse_matrix>& >(A)).complete_index1_data(); 
+  (const_cast< ublas_sparse_matrix& >(_A)).complete_index1_data(); 
 
   message("Solving linear system of size %d x %d (UMFPACK LU solver).", M, N);
 
@@ -81,9 +82,9 @@ dolfin::uint uBlasLUSolver::solve(const uBlasMatrix<ublas_sparse_matrix>& A, uBl
   double* dnull = (double *) NULL;
   long int*    inull = (long int *) NULL;
   void *Symbolic, *Numeric;
-  const std::size_t* Ap = &(A.index1_data() [0]);
-  const std::size_t* Ai = &(A.index2_data() [0]);
-  const double* Ax = &(A.value_data() [0]);
+  const std::size_t* Ap = &(_A.index1_data() [0]);
+  const std::size_t* Ai = &(_A.index2_data() [0]);
+  const double* Ax = &(_A.value_data() [0]);
   double* xx = &(_x.data() [0]);
   const double* bb = &(_b.data() [0]);
 
@@ -163,6 +164,7 @@ void uBlasLUSolver::solve(const uBlasKrylovMatrix& A, uBlasVector& x,
   // Get underlying uBLAS vectors
   ublas_vector& _ej = ej->vec(); 
   ublas_vector& _Aj = Aj->vec(); 
+  ublas_dense_matrix& _AA = AA->mat(); 
 
   // Reset unit vector
   _ej *= 0.0;
@@ -176,7 +178,7 @@ void uBlasLUSolver::solve(const uBlasKrylovMatrix& A, uBlasVector& x,
     A.mult(*ej, *Aj);
     
     // Set column of A
-    column(*AA, j) = _Aj;
+    column(_AA, j) = _Aj;
     
     (_ej)(j) = 0.0;
   }
@@ -188,7 +190,7 @@ void uBlasLUSolver::solve(const uBlasKrylovMatrix& A, uBlasVector& x,
 dolfin::uint uBlasLUSolver::solveInPlaceUBlas(uBlasMatrix<ublas_dense_matrix>& A, 
                                       uBlasVector& x, const uBlasVector& b) const
 {
-  const uint M = A.size1();
+  const uint M = A.size(0);
   dolfin_assert(M == b.size());
   
   // Get underlying uBLAS vectors
@@ -202,7 +204,7 @@ dolfin::uint uBlasLUSolver::solveInPlaceUBlas(uBlasMatrix<ublas_dense_matrix>& A
   _x.assign(_b);
 
   // Solve
-  return solveInPlace(A, _x);
+  return solveInPlace(A.mat(), _x);
 }
 //-----------------------------------------------------------------------------
 void uBlasLUSolver::check_status(long int status, std::string function) const
