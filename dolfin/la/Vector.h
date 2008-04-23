@@ -109,7 +109,7 @@ namespace dolfin
 
 
     /// Assignment operator
-    const Vector& operator= (const GenericVector& x)
+    const GenericVector& operator= (const GenericVector& x)
     { 
       // get the underlying GenericVector instance (in case x is a Vector) 
       const GenericVector* y = x.instance();

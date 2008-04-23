@@ -58,18 +58,10 @@ namespace dolfin
     /// Display tensor
     virtual void disp(uint precision = 2) const = 0;
 
+    ///--- Special functions, downcasting to concrete types ---
+    
     /// Get linear algebra backend factory
     virtual LinearAlgebraFactory& factory() const = 0; 
-
-    ///--- Special functions, intended for library use only ---
-
-    /// Return instance (const version)
-    virtual const GenericTensor* instance() const
-    { return this; }
-
-    /// Return instance (non-const version)
-    virtual GenericTensor* instance()
-    { return this; }
 
     /// Cast a GenericTensor to its derived class (const version)
     template<class T> const T& down_cast() const
@@ -96,6 +88,16 @@ namespace dolfin
     /// Assignment (must be overloaded by subclass)
     virtual const GenericTensor& operator= (const GenericTensor& x)
     { error("Assignment operator not implemented by subclass"); return *this; }
+    
+    ///--- Special functions, intended for library use only ---
+
+    /// Return instance (const version)
+    virtual const GenericTensor* instance() const
+    { return this; }
+
+    /// Return instance (non-const version)
+    virtual GenericTensor* instance()
+    { return this; }
 
   };
 

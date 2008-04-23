@@ -132,6 +132,9 @@ namespace dolfin
     virtual GenericVector* instance()
     { return this; }
 
+    virtual const GenericVector& operator= (const GenericVector& x) = 0;
+
+
   };  
 
 }
