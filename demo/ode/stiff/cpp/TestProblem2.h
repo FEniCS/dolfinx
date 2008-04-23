@@ -17,6 +17,7 @@ public:
     message("The simple test system.");
 
     A.mat()(0, 0) = -100.0;
+    A.mat()(0, 0) = -100.0;
     A.mat()(1, 1) = -1000.0;
   }
 

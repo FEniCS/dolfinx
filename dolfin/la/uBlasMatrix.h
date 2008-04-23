@@ -225,12 +225,10 @@ namespace dolfin
   void uBlasMatrix< Mat >::getrow(uint i, int& ncols, Array<int>& columns, 
 				  Array<real>& values) const
   {
-    error("Broken");
-/*
     // Reference to matrix row (throw away const-ness and trust uBlas)
-    ublas::matrix_row< uBlasMatrix<Mat> > row( *(const_cast< uBlasMatrix<Mat>* >(*A)) , i);
+    ublas::matrix_row< Mat > row( *(const_cast<Mat*>(&A)) , i);
 
-    typename ublas::matrix_row< uBlasMatrix<Mat> >::const_iterator component;
+    typename ublas::matrix_row< Mat >::const_iterator component;
 
     // Insert values into Arrays
     columns.clear();
@@ -241,7 +239,6 @@ namespace dolfin
       values.push_back( *component );
     }
     ncols = columns.size();
-*/
   }
   //-----------------------------------------------------------------------------
   template <class Mat>
