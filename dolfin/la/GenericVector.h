@@ -11,6 +11,7 @@
 #ifndef __GENERIC_VECTOR_H
 #define __GENERIC_VECTOR_H
 
+#include "VectorNormType.h"
 #include "GenericSparsityPattern.h"
 #include "GenericTensor.h"
 
@@ -31,6 +32,9 @@ namespace dolfin
     /// Initialize zero tensor using sparsity pattern
     inline void init(const GenericSparsityPattern& sparsity_pattern)
     { init(sparsity_pattern.size(0)); }
+
+    /// Return copy of vector
+    virtual GenericVector* copy() const = 0;
 
     /// Return rank of tensor (number of dimensions)
     inline uint rank() const
@@ -57,7 +61,7 @@ namespace dolfin
     /// Initialize vector of size N
     virtual void init(uint N) = 0;
 
-    /// Return size
+    /// Return size of vector
     virtual uint size() const = 0;
 
     /// Get block of values
@@ -78,11 +82,14 @@ namespace dolfin
     /// Add values to each entry
     virtual void add(real* values) = 0;
 
-    /// Inner product
+    /// Return inner product
     virtual real inner(const GenericVector& x) const = 0;
 
     /// Add multiple of given vector (AXPY operation)
     virtual void axpy(real a, const GenericVector& x) = 0;
+    
+    /// Return norm of vector
+    virtual real norm(VectorNormType type = l2) const = 0;
 
     /// Multiply vector by given number
     virtual const GenericVector& operator*= (real a) = 0;

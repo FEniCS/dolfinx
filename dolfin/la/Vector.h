@@ -43,26 +43,18 @@ namespace dolfin
       // TODO: use globally selected linear algebra factory to create new vector of any backend
       vector = new DefaultVector(N);
     }
-    
+
     /// Destructor
     ~Vector()
     { delete vector; }
-    
+
     /// Initialize vector of size N
     void init(uint N) 
     { vector->init(N); }
 
-    /// Create uninitialized vector
-    Vector* create() const
-    { return new Vector(); }
-
-    /// Create copy of vector
+    /// Return copy of vector
     Vector* copy() const
-    { 
-      Vector* v =  new Vector(vector->size()); 
-      *v = *vector; 
-      return v; 
-    }
+    { Vector* x = new Vector(); delete x->vector; x->vector = vector->copy(); return x; }
 
     /// Return size
     uint size() const
@@ -103,10 +95,6 @@ namespace dolfin
     /// Display matrix (sparse output is default)
     void disp(uint precision = 2) const
     { vector->disp(precision); }
-    
-    /// FIXME: Functions below are not in the GenericVector interface.
-    /// FIXME: Should these be removed or added to the interface?
-
 
     /// Assignment operator
     const GenericVector& operator= (const GenericVector& x)
@@ -132,26 +120,23 @@ namespace dolfin
     void axpy(real a, const GenericVector& x) 
     { return vector->axpy(a, x); }
 
-    /// this *= a  
-    void mult(const real a) 
-    { return vector->mult(a); } // FIXME: This isn't in the GenericVector interface!
-
     /// Multiply vector by given number
     const Vector& operator*= (real a)
     { *vector *= a; return *this; }
 
-    /// Return const GenericVector* (internal library use only!)
+    ///--- Special functions, intended for library use only ---
+
+    /// Return instance (const version)
     virtual const GenericVector* instance() const 
     { return vector; }
 
-    /// Return GenericVector* (internal library use only!)
+    /// Return instance (non-const version)
     virtual GenericVector* instance() 
     { return vector; }
 
   private:
     
-    //GenericVector* vector; // FIXME: Use this when above FIXME's have been handled.
-    DefaultVector* vector;
+    GenericVector* vector;
     
   };
 

@@ -5,24 +5,19 @@
 // Modified by Kent-Andre Mardal 2008.
 //
 // First added:  2006-05-15
-// Last changed: 2008-04-08
+// Last changed: 2008-04-22
 
 #ifndef __MATRIX_H
 #define __MATRIX_H
 
-#include "GenericMatrix.h"
-#include <dolfin/main/dolfin_main.h>
-
 #include "default_la_types.h"
+#include "GenericMatrix.h"
 
 namespace dolfin
 {
   
   /// This class provides an interface to the default DOLFIN
   /// matrix implementation as decided in default_la_types.h.
-
-  // FIXME: This class should exactly duplicate the GenericMatrix interface
-  // FIXME: Nothing more or less (perhaps with exception from the mat() function
   
   class Matrix : public GenericMatrix, public Variable
   {
@@ -37,31 +32,20 @@ namespace dolfin
 			     matrix(new DefaultMatrix(M, N)) {}
     
     /// Destructor
-    ~Matrix() 
+    ~Matrix()
      { delete matrix; }
     
     /// Initialize M x N matrix
-    void init(uint M, uint N) 
+    void init(uint M, uint N)
     { matrix->init(M, N); }
     
     /// Initialize zero matrix using sparsity pattern
     void init(const GenericSparsityPattern& sparsity_pattern)
     { matrix->init(sparsity_pattern); }
     
-    /// Create uninitialized matrix
-    Matrix* create() const
-    { return new Matrix(); }
-
-    /// Create copy of matrix
+    /// Return copy of matrix
     Matrix* copy() const
-    {
-      Matrix* Mcopy = create();
-      Mcopy->matrix = matrix->copy();
-      return Mcopy;
-//       DefaultMatrix* mcopy = matrix->copy();
-//       delete Mcopy->matrix;
-//       Mcopy->matrix = mcopy;
-    }
+    { Matrix* A = new Matrix(); delete A->matrix; A->matrix = matrix->copy(); return A; }
 
     /// Return size of given dimension
     uint size(uint dim) const
@@ -99,17 +83,6 @@ namespace dolfin
     void disp(uint precision = 2) const
     { matrix->disp(precision); }
 
-    /// Return const GenericMatrix* (internal library use only!)
-    virtual const GenericMatrix* instance() const 
-    { return matrix; }
-
-    /// Return GenericMatrix* (internal library use only!)
-    virtual GenericMatrix* instance() 
-    { return matrix; }
-
-    /// FIXME: Functions below are not in the GenericVector interface.
-    /// FIXME: Should these be removed or added to the interface?
-
     /// Multiply matrix by given number
     virtual const Matrix& operator*= (real a)
     { *matrix *= a; return *this; }
@@ -133,11 +106,19 @@ namespace dolfin
     const Matrix& operator= (const Matrix& A)
     { *matrix = *A.matrix; return *this; }
 
+    ///--- Special functions, intended for library use only ---
+
+    /// Return instance (const version)
+    virtual const GenericMatrix* instance() const 
+    { return matrix; }
+
+    /// Return instance (non-const version)
+    virtual GenericMatrix* instance() 
+    { return matrix; }
+
   private:
 
-    // FIXME: Why should this be static? Why not just GenericMatrix*? (envelope-letter)
-    // FIXME: And why a pointer here and not in Vector?
-    DefaultMatrix* matrix;
+    GenericMatrix* matrix;
     
   };
 

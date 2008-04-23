@@ -32,6 +32,12 @@ namespace dolfin
     
     ///--- Implementation of the GenericTensor interface ---
 
+    /// Initialize zero tensor using sparsity pattern
+    virtual void init(const GenericSparsityPattern& sparsity_pattern) = 0;
+
+    /// Return copy of matrix
+    virtual GenericMatrix* copy() const = 0;
+
     /// Return rank of tensor (number of dimensions)
     uint rank() const 
     { return 2; }
@@ -47,6 +53,9 @@ namespace dolfin
     /// Add block of values
     void add(const real* block, const uint* num_rows, const uint * const * rows)
     { add(block, num_rows[0], rows[0], num_rows[1], rows[1]); }
+
+    /// Set all entries to zero and keep any sparse structure
+    virtual void zero() = 0;
 
     ///--- Matrix interface ---
 
