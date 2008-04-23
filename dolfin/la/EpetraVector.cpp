@@ -230,7 +230,7 @@ const EpetraVector& EpetraVector::operator+= (const GenericVector& x)
 //-----------------------------------------------------------------------------
 const EpetraVector& EpetraVector::operator-= (const GenericVector& x)
 {
-  this->axpy(1.0, x); 
+  this->axpy(-1.0, x); 
   return *this;
 }
 //-----------------------------------------------------------------------------
