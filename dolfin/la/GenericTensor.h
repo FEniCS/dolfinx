@@ -29,7 +29,7 @@ namespace dolfin
     /// Destructor
     virtual ~GenericTensor() {}
 
-    ///--- Basic GenericTensor interface ---
+    //--- Basic GenericTensor interface ---
 
     /// Initialize zero tensor using sparsity pattern
     virtual void init(const GenericSparsityPattern& sparsity_pattern) = 0;
@@ -55,13 +55,13 @@ namespace dolfin
     /// Set all entries to zero and keep any sparse structure
     virtual void zero() = 0;
 
-    /// Finalise assembly of tensor
+    /// Finalize assembly of tensor
     virtual void apply() = 0;
 
     /// Display tensor
     virtual void disp(uint precision=2) const = 0;
 
-    ///--- Special functions, downcasting to concrete types ---
+    //--- Special functions, downcasting to concrete types ---
 
     /// Return linear algebra backend factory
     virtual LinearAlgebraFactory& factory() const = 0;
@@ -86,13 +86,13 @@ namespace dolfin
     template<class T> bool has_type() const
     { return bool(dynamic_cast<const T*>(instance())); }
 
-    ///--- Special functions, intended for library use only ---
+    //--- Special functions, intended for library use only ---
 
     /// Return concrete instance / unwrap (const version)
     virtual const GenericTensor* instance() const
     { return this; }
 
-    /// Return instance / unwrap (non-const version)
+    /// Return concrete instance / unwrap (non-const version)
     virtual GenericTensor* instance()
     { return this; }
 

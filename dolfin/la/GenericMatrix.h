@@ -30,7 +30,7 @@ namespace dolfin
     /// Destructor
     virtual ~GenericMatrix() {}
     
-    ///--- Implementation of the GenericTensor interface ---
+    //--- Implementation of the GenericTensor interface ---
 
     /// Initialize zero tensor using sparsity pattern
     virtual void init(const GenericSparsityPattern& sparsity_pattern) = 0;
@@ -60,13 +60,13 @@ namespace dolfin
     /// Set all entries to zero and keep any sparse structure
     virtual void zero() = 0;
 
-    /// Finalise assembly of tensor
+    /// Finalize assembly of tensor
     virtual void apply() = 0;
 
     /// Display tensor
     virtual void disp(uint precision=2) const = 0;
 
-    ///--- Matrix interface ---
+    //--- Matrix interface ---
 
     /// Initialize M x N matrix
     virtual void init(uint M, uint N) = 0;
@@ -98,7 +98,7 @@ namespace dolfin
     /// Assignment operator
     virtual const GenericMatrix& operator= (const GenericMatrix& x) = 0;
 
-    ///--- Convenience functions ---
+    //--- Convenience functions ---
 
     /// Get value of given entry 
     virtual real operator() (uint i, uint j) const

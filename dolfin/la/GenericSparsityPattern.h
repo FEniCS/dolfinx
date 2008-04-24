@@ -14,7 +14,7 @@
 namespace dolfin
 {
   /// Base class for sparsity patterns of vectors/matrices. Concrete sub classes can 
-  /// be used to initalise vectors and sparse matrices.
+  /// be used to initialize vectors and sparse matrices.
 
   class GenericSparsityPattern
   {
@@ -26,7 +26,7 @@ namespace dolfin
     /// Destructor
     virtual ~GenericSparsityPattern() {};
 
-    /// Initialise sparsity pattern for a generic tensor
+    /// Initialize sparsity pattern for a generic tensor
     virtual void init(uint rank, const uint* dims) = 0;
 
     /// Initialise sparsity pattern for a parallel generic tensor

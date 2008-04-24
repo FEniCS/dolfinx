@@ -2,68 +2,75 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Anders Logg, 2007-2008.
-// Modified by Kent-Andre Mardal 2008.
-// Modified by Ola Skavhaug 2008.
-// Modified by Martin Alnæs 2008.
+// Modified by Kent-Andre Mardal, 2008.
+// Modified by Ola Skavhaug, 2008.
+// Modified by Martin Alnæs, 2008.
 //
 // First added:  2007-07-03
-// Last changed: 2008-04-11
+// Last changed: 2008-04-23
 
 #ifndef __VECTOR_H
 #define __VECTOR_H
 
-#include "GenericMatrix.h"
-#include <dolfin/main/dolfin_main.h>
-
 #include "default_la_types.h"
-#include "VectorNormType.h"
+#include "GenericVector.h"
 
 namespace dolfin
 {
 
-  /// This class provides an interface to the default DOLFIN
-  /// vector implementation as decided in default_la_types.h.
+  /// This class provides the default DOLFIN vector class,
+  /// based on the default DOLFIN linear algebra backend.
 
   class Vector : public GenericVector, public Variable
   {
   public:
 
-    /// Constructor
+    /// Create empty vector
     Vector() : Variable("x", "DOLFIN vector"),
-               vector(0)
-    {
-      // TODO: use globally selected linear algebra factory to create new vector of any backend
-      vector = new DefaultVector();
-    }
+               vector(new DefaultVector())
+    {}
     
-    /// Constructor
+    /// Create vector of size N
     explicit Vector(uint N) : Variable("x", "DOLFIN vector"),
-                              vector(0)
-    {
-      // TODO: use globally selected linear algebra factory to create new vector of any backend
-      vector = new DefaultVector(N);
-    }
+                              vector(new DefaultVector(N))
+    {}
 
     /// Destructor
     ~Vector()
     { delete vector; }
 
+    //--- Implementation of the GenericTensor interface ---
+
+    /// Return copy of tensor
+    Vector* copy() const
+    { Vector* x = new Vector(); delete x->vector; x->vector = vector->copy(); return x; }
+
+    /// Set all entries to zero and keep any sparse structure
+    void zero()
+    { vector->zero(); }
+
+    /// Finalize assembly of tensor
+    void apply()
+    { vector->apply(); }
+
+    /// Display tensor
+    void disp(uint precision=2) const
+    { vector->disp(precision); }
+
+    //--- Implementation of the GenericVector interface ---
+
     /// Initialize vector of size N
     void init(uint N) 
     { vector->init(N); }
 
-    /// Return copy of vector
-    Vector* copy() const
-    { Vector* x = new Vector(); delete x->vector; x->vector = vector->copy(); return x; }
-
-    /// Return size
+    /// Return size of vector
     uint size() const
     { return vector->size(); }
-    
+
     /// Get block of values
     void get(real* block, uint m, const uint* rows) const
     { vector->get(block, m, rows); }
-    
+ 
     /// Set block of values
     void set(const real* block, uint m, const uint* rows)
     { vector->set(block, m, rows); }
@@ -71,42 +78,44 @@ namespace dolfin
     /// Add block of values
     void add(const real* block, uint m, const uint* rows)
     { vector->add(block, m, rows); }
-        
-    /// Set all entries to zero
-    void zero()
-    { vector->zero(); }
-    
-    /// Apply changes
-    void apply()
-    { vector->apply(); }
 
     /// Get all values
     void get(real* values) const
     { vector->get(values); }
-    
+
     /// Set all values
     void set(real* values)
     { vector->set(values); }
-    
+
     /// Add values to each entry
     void add(real* values)
     { vector->add(values); }
 
      /// Add multiple of given vector (AXPY operation)
     void axpy(real a, const GenericVector& x)
-    { return vector->axpy(a, x); }
-    
-    /// Return inner product 
+    { vector->axpy(a, x); }
+
+    /// Return inner product with given vector
     real inner(const GenericVector& x) const
     { return vector->inner(x); }
 
-    /// Compute norm of vector
-    real norm(VectorNormType type = l2) const
+    /// Return norm of vector
+    real norm(VectorNormType type=l2) const
     { return vector->norm(type); }
 
     /// Multiply vector by given number
     const Vector& operator*= (real a)
     { *vector *= a; return *this; }
+
+    /// Assignment operator
+    const GenericVector& operator= (const GenericVector& x)
+    { *vector = x; return *this; }
+
+    /// Assignment operator
+    const Vector& operator= (const Vector& x)
+    { *vector = *x.vector; return *this; }
+
+    //--- Convenience functions ---
 
     /// Add given vector
     virtual const Vector& operator+= (const GenericVector& x)
@@ -120,39 +129,29 @@ namespace dolfin
     virtual const Vector& operator/= (real a)
     { *this *= 1.0 / a; return *this; }
 
-    /// Assignment operator
-    const GenericVector& operator= (const GenericVector& x)
-    { *vector = x; return *this; }
-
-    /// Assignment operator
-    const Vector& operator= (const Vector& x)
-    { *vector = *x.vector; return *this; }
-
-    /// Display vector (sparse output is default)
-    void disp(uint precision = 2) const
-    { vector->disp(precision); }
-
-    ///--- Special functions ---
+    //--- Special functions ---
 
     /// Get linear algebra backend factory
     LinearAlgebraFactory& factory() const
     { return vector->factory(); }
 
-    ///--- Special functions, intended for library use only ---
+    //--- Special functions, intended for library use only ---
 
-    /// Return const GenericVector* (internal library use only!)
-    virtual const GenericVector* instance() const 
+    /// Return concrete instance / unwrap (const version)
+    virtual const GenericVector* instance() const
     { return vector; }
 
-    /// Return instance (non-const version)
-    virtual GenericVector* instance() 
+    /// Return concrete instance / unwrap (non-const version)
+    virtual GenericVector* instance()
     { return vector; }
 
   private:
-    
+
+    // Pointer to concrete implementation
     GenericVector* vector;
-    
+
   };
 
 }
+
 #endif
