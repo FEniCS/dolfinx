@@ -8,15 +8,14 @@
 
 #ifdef HAS_TRILINOS
 
-#include <Epetra_CrsGraph.h>
-#include <Epetra_CrsMatrix.h>
-#include <Epetra_FECrsMatrix.h>
-
 #include <dolfin/common/types.h>
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Variable.h>
 #include "GenericMatrix.h"
 #include "LinearAlgebraFactory.h"
+
+class Epetra_FECrsMatrix; 
+class Epetra_CrsGraph;
 
 namespace dolfin
 {

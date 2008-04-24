@@ -17,6 +17,11 @@
 #include "EpetraFactory.h"
 //#include <dolfin/MPI.h>
 
+#include <Epetra_CrsGraph.h>
+#include <Epetra_FECrsGraph.h>
+#include <Epetra_CrsMatrix.h>
+#include <Epetra_FECrsMatrix.h>
+#include <Epetra_FEVector.h>
 
 using namespace dolfin;
 

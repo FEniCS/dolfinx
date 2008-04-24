@@ -11,6 +11,10 @@
 #include "GenericSparsityPattern.h"
 #include "EpetraSparsityPattern.h"
 
+
+#include <Epetra_SerialComm.h>
+#include <Epetra_FECrsGraph.h>
+
 using namespace dolfin;
 using dolfin::uint;
 

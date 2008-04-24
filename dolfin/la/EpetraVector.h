@@ -9,9 +9,11 @@
 
 #ifdef HAS_TRILINOS
 
+/*
 #include <Epetra_Map.h>
 #include <Epetra_MultiVector.h>
 #include <Epetra_FEVector.h>
+*/
 
 #include <dolfin/common/types.h>
 #include <dolfin/log/dolfin_log.h>
@@ -19,6 +21,9 @@
 #include "GenericVector.h"
 #include "LinearAlgebraFactory.h"
 #include "VectorNormType.h"
+
+class Epetra_FEVector; 
+class Epetra_Map;
 
 namespace dolfin
 {
@@ -39,7 +44,7 @@ namespace dolfin
     /// Create vector of given size
     explicit EpetraVector(uint N);
 
-    /// Create vector from given Epetra_FEVector pointer
+    /// Create vector view from given Epetra_FEVector pointer
     explicit EpetraVector(Epetra_FEVector* vector);
 
     /// Create vector from given Epetra_Map reference
