@@ -16,7 +16,10 @@
 //#include <dolfin/MPI.h>
 
 
-
+#include <Epetra_FEVector.h>
+#include <Epetra_Map.h>
+#include <Epetra_MultiVector.h>
+#include <Epetra_SerialComm.h>
 
 using namespace dolfin;
 
