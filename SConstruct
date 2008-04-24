@@ -262,6 +262,9 @@ if env["enablePydolfin"]:
     # install extension modules, usually in site-packages
     for e in buildDataHash["extModules"]:
         env.Install(os.path.join(env["pythonExtDir"], "dolfin"), e)
+    # install SWIG interface files in includeDir/swig
+    for s in buildDataHash["swigfiles"]:
+        env.Install(os.path.join(env["includeDir"], "dolfin", "swig"), s)
 
 # install generated pkg-config files in $prefix/lib/pkgconfig or other
 # specified place
