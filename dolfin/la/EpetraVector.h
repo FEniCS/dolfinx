@@ -56,63 +56,27 @@ namespace dolfin
     /// Destructor
     ~EpetraVector();
 
-    /// Return backend factory
-    LinearAlgebraFactory& factory() const;
-
-    /// Initialize vector data
-    void init(uint N);
-
-    /// Create uninitialized vector
-    EpetraVector* create() const;
-
+    //--- Implementation of the GenericTensor interface ---
+   
     /// Create copy of vector
     EpetraVector* copy() const;
-
-    /// Return size of vector
-    uint size() const;
 
     /// Set all entries to zero
     void zero();
 
-    /// Assignment of vector
-    const EpetraVector& operator= (const GenericVector& x);
-
-    /// Assignment of vector
-    const EpetraVector& operator= (const EpetraVector& x);
-
-    /// Add vector x
-    const EpetraVector& operator+= (const GenericVector& x);
-
-    /// Subtract vector x
-    const EpetraVector& operator-= (const GenericVector& x);
-
-    /// Multiply vector with scalar
-    const EpetraVector& operator*= (real a);
-
-    /// Divide vector by given number
-    virtual const EpetraVector& operator/= (real a)
-    { *this *= 1.0 / a; return *this; }
-
-    /// Apply changes to vector
+    /// Finalize assembly of vector 
     void apply();
 
     /// Display vector
     void disp(uint precision = 2) const;
 
-    /// Output
-    friend LogStream& operator<< (LogStream& stream, const EpetraVector& A);
+    //--- Implementation of the GenericVector interface ---
 
-    // Friends
-    friend class EpetraMatrix;
+    /// Initialize vector data
+    void init(uint N);
 
-    /// Get values
-    void get(real* values) const;
-
-    /// Set values
-    void set(real* values);
-
-    /// Add values
-    void add(real* values);
+    /// Return size of vector
+    uint size() const;
 
     /// Get block of values
     void get(real* block, uint m, const uint* rows) const;
@@ -123,20 +87,65 @@ namespace dolfin
     /// Add block of values
     void add(const real* block, uint m, const uint* rows);
 
+    /// Get all values
+    void get(real* values) const;
+
+    /// Set all values
+    void set(real* values);
+
+    /// Add all values
+    void add(real* values);
+
+     /// Add multiple of given vector (AXPY operation)
+    virtual void axpy(real a, const GenericVector& x); 
+
+    /// Return inner product with given vector
+    virtual real inner(const GenericVector& vector) const; 
+
+    /// Return norm of vector
+    virtual real norm(VectorNormType type = l2) const;  
+
+    /// Multiply vector with scalar
+    const EpetraVector& operator*= (real a);
+
+    /// Assignment operator 
+    const EpetraVector& operator= (const GenericVector& x);
+
+    /// Assignment operator 
+    const EpetraVector& operator= (const EpetraVector& x);
+
+    //--- Convenience functions ---
+
+    /// Add vector x
+    const EpetraVector& operator+= (const GenericVector& x);
+
+    /// Subtract vector x
+    const EpetraVector& operator-= (const GenericVector& x);
+
+    /// Divide vector by given number
+    virtual const EpetraVector& operator/= (real a)
+    { *this *= 1.0 / a; return *this; }
+
+    //--- Special functions ---
+
+    /// Return backend factory
+    LinearAlgebraFactory& factory() const;
+
+    //--- Special functions, intended for library use only ---
+    
     /// Return Epetra_MultiVector reference
     Epetra_FEVector& vec() const;
 
-    /// Inner product 
-    virtual real inner(const GenericVector& vector) const; 
+    /// Create uninitialized vector
+    EpetraVector* create() const;
 
-    //  this += a*x   
-    virtual void axpy(real a, const GenericVector& x); 
+    //--- Output ---  
 
-    /// Return norm of vector
-    virtual real norm(VectorNormType type = l2) const { 
-      error("EpetraVector::norm Not implemented yet"); 
-      return -1.0; 
-    }
+    /// Output
+    friend LogStream& operator<< (LogStream& stream, const EpetraVector& A);
+
+    // Friends
+    friend class EpetraMatrix;
 
   private:
 
@@ -149,8 +158,7 @@ namespace dolfin
   };  
 
   LogStream& operator<< (LogStream& stream, const EpetraVector& A);
-
 }
 
-#endif
-#endif
+#endif //HAS_TRILINOS
+#endif //__EPETRA_VECTOR_H

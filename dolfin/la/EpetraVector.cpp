@@ -244,6 +244,20 @@ const EpetraVector& EpetraVector::operator*= (real a)
   return *this;
 }
 //-----------------------------------------------------------------------------
+real EpetraVector::norm(VectorNormType type) const {
+  real value = 0.0;
+  switch (type) {
+  case l1:
+    x->Norm1(&value);
+    break;
+  case l2:
+    x->Norm2(&value);
+    break;
+  default:
+    x->NormInf(&value);
+  }
+  return value;
+}
 
 
 #endif
