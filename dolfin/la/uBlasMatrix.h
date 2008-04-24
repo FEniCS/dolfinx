@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2007 Garth N. Wells
+// Copyright (C) 2006-2008 Garth N. Wells
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Anders Logg 2006-2007.
@@ -6,7 +6,7 @@
 // Modified by Kent-Andre Mardal 2008.
 //
 // First added:  2006-07-05
-// Last changed: 2008-04-08
+// Last changed: 2008-04-24
 
 #ifndef __UBLAS_MATRIX_H
 #define __UBLAS_MATRIX_H
@@ -59,14 +59,6 @@ namespace dolfin
     /// Destructor
     ~uBlasMatrix();
 
-    /// Assignment from a matrix_expression
-    template <class E>
-    uBlasMatrix<Mat>& operator=(const ublas::matrix_expression<E>& A)
-    { 
-      Mat::operator=(A); 
-      return *this;
-    } 
-
     /// Return number of rows (dim = 0) or columns (dim = 1) 
     uint size(uint dim) const;
 
@@ -116,26 +108,26 @@ namespace dolfin
     void disp(uint precision = 2) const;
 
     real operator() (uint i, uint j) const
-    {  return A(i, j); }
+    { return A(i, j); }
 
     /// Multiply matrix by given number
     const uBlasMatrix<Mat>& operator*= (real a)
-    { error("Not implemented."); return *this; }
+    { A *= a; return *this; }
 
     /// Divide matrix by given number
     const uBlasMatrix<Mat>& operator/= (real a)
-    { error("Not implemented."); return *this; }
+    { A /= a; return *this; }
 
     /// The below functions have specialisations for particular matrix types.
     /// In order to link correctly, they must be made inline functions.
 
     /// Assignment operator
-    const GenericMatrix& operator= (const GenericMatrix& x)
-    { error("Not implemented."); return *this; }
+    const GenericMatrix& operator= (const GenericMatrix& B)
+    { A = B.down_cast< uBlasMatrix<Mat> >().mat(); return *this; }
 
     /// Assignment operator
-    const uBlasMatrix<Mat>& operator= (const uBlasMatrix<Mat>& x)
-    { error("Not implemented."); return *this; }
+    const uBlasMatrix<Mat>& operator= (const uBlasMatrix<Mat>& B)
+    { A = B.mat(); return *this; }
 
     /// Initialize M x N matrix
     void init(uint M, uint N);
@@ -159,14 +151,12 @@ namespace dolfin
     Mat& mat()
     { return A; }
 
-
     //friend LogStream& operator<< <Mat> (LogStream&, const uBlasMatrix<Mat>&);
 
   private:
 
     // Underlying uBLAS matrix object
     Mat A;
-
   };
 
 

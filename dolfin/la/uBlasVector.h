@@ -86,14 +86,6 @@ namespace dolfin
     /// Divide vector with scalar 
     const uBlasVector& operator /= (real a);
 
-    /// Assignment from a vector_expression
-    //template <class E>
-    //uBlasVector& operator=(const ublas::vector_expression<E>& x)
-    //{ 
-    //  x->ublas_vector::operator=(x); 
-    //  return *this;
-    //} 
-    
     /// Return size
     uint size() const
     { return x.size(); }
