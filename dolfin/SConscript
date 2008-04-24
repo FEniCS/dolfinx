@@ -75,7 +75,7 @@ if env["enablePydolfin"]:
     py_ver = "%s.%s" % (sys.version_info[0],sys.version_info[1])
     py_inc = os.path.join(sys.prefix,"include","python"+py_ver)
     if not os.path.isfile(os.path.join(py_inc, "Python.h")):
-        print "*** Unable to find Python developement files on your system."
+        print "*** Unable to find Python development files on your system."
         print "*** Perhaps you need to install the package python%s-dev?" % py_ver
         Exit(1)
 
@@ -106,7 +106,7 @@ else:
 # stencil for return-values:
 ret = {"shlibs": [], "extModules": [], "docs": [], "headers": [], "pythonModules": [], \
        "pythonScripts": [], "pkgconfig": [], "pythonPackageDirs": [], "data": [], "tests": [], \
-       "progs": [], "demos": [], "dolfin_header": ""}
+       "progs": [], "demos": [], "dolfin_header": "", "swigfiles": []}
 
 #### XXX
 #### Messy code
@@ -248,6 +248,10 @@ ret["dolfin_header"] = File("dolfin.h", '.')
 ret["pythonScripts"]  += scons.globFiles(Dir("#/app").srcnode().abspath, "*.py")
 # set python packagedirs we want to install (in site-packages)
 ret["pythonPackageDirs"] += [Dir("#site-packages")]
+
+if env["enablePydolfin"]:
+    # set SWIG interface files we want to install
+    ret["swigfiles"] += scons.globFiles(Dir("#/dolfin/swig").srcnode().abspath, "*.i")
 
 # read SConscript in data.
 data = env.SConscript(os.path.join("#data", "SConscript"), exports=["env"])

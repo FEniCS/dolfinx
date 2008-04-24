@@ -1,4 +1,4 @@
-// Copyright (C) 2008 Kent-Andre Mardal and Johannes Ring.
+// Copyright (C) 2008 Martin Sandve Alnes, Kent-Andre Mardal and Johannes Ring.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-04-21
@@ -17,20 +17,23 @@
 #include "EpetraFactory.h"
 //#include <dolfin/MPI.h>
 
+#include <Epetra_CrsGraph.h>
+#include <Epetra_FECrsGraph.h>
+#include <Epetra_CrsMatrix.h>
+#include <Epetra_FECrsMatrix.h>
+#include <Epetra_FEVector.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-EpetraMatrix::EpetraMatrix()
-  : GenericMatrix(), 
+EpetraMatrix::EpetraMatrix():
     Variable("A", "a sparse matrix"),
     A(0), _copy(false)
 {
   // TODO: call Epetra_Init or something?
 }
 //-----------------------------------------------------------------------------
-EpetraMatrix::EpetraMatrix(uint M, uint N)
-  : GenericMatrix(),
+EpetraMatrix::EpetraMatrix(uint M, uint N):
     Variable("A", "a sparse matrix"),
     A(0), _copy(false)
 {
@@ -39,16 +42,14 @@ EpetraMatrix::EpetraMatrix(uint M, uint N)
   init(M, N);
 }
 //-----------------------------------------------------------------------------
-EpetraMatrix::EpetraMatrix(Epetra_FECrsMatrix* A)
-  : GenericMatrix(),
+EpetraMatrix::EpetraMatrix(Epetra_FECrsMatrix* A):
     Variable("A", "a sparse matrix"),
     A(A), _copy(true)
 {
   // TODO: call Epetra_Init or something?
 }
 //-----------------------------------------------------------------------------
-EpetraMatrix::EpetraMatrix(const Epetra_CrsGraph& graph)
-  : GenericMatrix(),
+EpetraMatrix::EpetraMatrix(const Epetra_CrsGraph& graph):
     Variable("A", "a sparse matrix"),
     A(0), _copy(false)
 {
@@ -214,8 +215,7 @@ void EpetraMatrix::mult(const GenericVector& x_, GenericVector& Ax_, bool transp
 }
 
 //-----------------------------------------------------------------------------
-void EpetraMatrix::getrow(uint i, int& ncols, Array<int>& columns, 
-                         Array<real>& values) const
+void EpetraMatrix::getrow(uint i, Array<uint>& columns, Array<real>& values) const
 {
 //  int Epetra_CrsMatrix::ExtractGlobalRowCopy  	(int GlobalRow, int Length,int& NumEntries, double* Values, int *Indices) const
 
@@ -224,14 +224,16 @@ void EpetraMatrix::getrow(uint i, int& ncols, Array<int>& columns,
   int *cols = new int(len); 
   double* vals = new double(len); 
 
+  int ncols = 0;
   int err = A->ExtractGlobalRowCopy(i, len, ncols, vals, cols); 
   if (err!= 0) error("Did not manage to get a copy of the row."); 
 
   columns.clear();
   values.clear(); 
-  for (int i=0; i< ncols; i++) {
-      columns.push_back(cols[i]);
-      values.push_back(vals[i]);
+  for (int i=0; i< ncols; i++)
+  {
+    columns.push_back(cols[i]);
+    values.push_back(vals[i]);
   }
 
   delete cols; 

@@ -1,4 +1,4 @@
-// Copyright (C) 2008 Kent-Andre Mardal 
+// Copyright (C) 2008 Martin Sandve Alnes, Kent-Andre Mardal and Johannes Ring.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-04-21
@@ -10,8 +10,9 @@
 
 #include <dolfin/common/types.h>
 #include "GenericSparsityPattern.h"
-#include <Epetra_FECrsGraph.h>
 #include "LinearAlgebraFactory.h"
+
+class Epetra_FECrsGraph; 
 
 namespace dolfin
 {

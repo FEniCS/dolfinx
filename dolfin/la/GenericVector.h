@@ -1,16 +1,17 @@
 // Copyright (C) 2006-2007 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Anders Logg 2006-2008.
-// Modified by Kent-Andre Mardal 2008.
-// Modified by Ola Skavhaug 2008.
+// Modified by Anders Logg, 2006-2008.
+// Modified by Kent-Andre Mardal, 2008.
+// Modified by Ola Skavhaug, 2008.
 //
 // First added:  2006-04-25
-// Last changed: 2008-04-22
+// Last changed: 2008-04-23
 
 #ifndef __GENERIC_VECTOR_H
 #define __GENERIC_VECTOR_H
 
+#include "VectorNormType.h"
 #include "GenericSparsityPattern.h"
 #include "GenericTensor.h"
 
@@ -26,19 +27,22 @@ namespace dolfin
     /// Destructor
     virtual ~GenericVector() {}
 
-    ///--- Implementation of the GenericTensor interface ---
+    //--- Implementation of the GenericTensor interface ---
 
     /// Initialize zero tensor using sparsity pattern
     inline void init(const GenericSparsityPattern& sparsity_pattern)
     { init(sparsity_pattern.size(0)); }
 
-    /// Return rank of tensor (number of dimensions)
+    /// Return copy of tensor
+    virtual GenericVector* copy() const = 0;
+
+    /// Return tensor rank (number of dimensions)
     inline uint rank() const
     { return 1; }
 
     /// Return size of given dimension
     inline uint size(uint dim) const
-    { return size(); }
+    { dolfin_assert(dim == 0); return size(); }
 
     /// Get block of values
     inline void get(real* block, const uint* num_rows, const uint * const * rows) const
@@ -52,21 +56,21 @@ namespace dolfin
     inline void add(const real* block, const uint* num_rows, const uint * const * rows)
     { add(block, num_rows[0], rows[0]); }
 
-    /// Set all entries to zero and keep any sparse structure (implemented by sub class)
+    /// Set all entries to zero and keep any sparse structure
     virtual void zero() = 0;
 
-    /// Finalise assembly of tensor (implemented by sub class)
+    /// Finalize assembly of tensor
     virtual void apply() = 0;
 
-    /// Display tensor (implemented by sub class)
-    virtual void disp(uint precision = 2) const = 0;
+    /// Display tensor
+    virtual void disp(uint precision=2) const = 0;
 
-    ///--- Vector interface ---
-    
+    //--- Vector interface ---
+
     /// Initialize vector of size N
     virtual void init(uint N) = 0;
 
-    /// Return size
+    /// Return size of vector
     virtual uint size() const = 0;
 
     /// Get block of values
@@ -87,16 +91,22 @@ namespace dolfin
     /// Add values to each entry
     virtual void add(real* values) = 0;
 
-    /// Inner product
-    virtual real inner(const GenericVector& x) const = 0;
-
     /// Add multiple of given vector (AXPY operation)
     virtual void axpy(real a, const GenericVector& x) = 0;
+
+    /// Return inner product with given vector
+    virtual real inner(const GenericVector& x) const = 0;
+
+    /// Return norm of vector
+    virtual real norm(VectorNormType type=l2) const = 0;
 
     /// Multiply vector by given number
     virtual const GenericVector& operator*= (real a) = 0;
 
-    ///--- Convenience functions ---
+    /// Assignment operator
+    virtual const GenericVector& operator= (const GenericVector& x) = 0;
+
+    //--- Convenience functions ---
 
     /// Get value of given entry
     virtual real operator[] (uint i) const
@@ -122,17 +132,7 @@ namespace dolfin
     virtual const GenericVector& operator/= (real a)
     { *this *= 1.0 / a; return *this; }
 
-    ///--- Special functions, intended for library use only ---
-
-    /// Return instance (const version)
-    virtual const GenericVector* instance() const
-    { return this; }
-
-    /// Return instance (non-const version)
-    virtual GenericVector* instance()
-    { return this; }
-
-  };  
+  };
 
 }
 

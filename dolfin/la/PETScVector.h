@@ -44,13 +44,13 @@ namespace dolfin
     PETScVector();
 
     /// Create vector of given size
-    PETScVector(uint N);
+    explicit PETScVector(uint N);
 
     /// Create vector from given PETSc Vec pointer
-    PETScVector(Vec x);
+    explicit PETScVector(Vec x);
 
     /// Copy constructor
-    PETScVector(const PETScVector& x);
+    explicit PETScVector(const PETScVector& x);
     
     /// Destructor
     ~PETScVector ();
@@ -63,7 +63,6 @@ namespace dolfin
 
     /// Create copy of vector
     PETScVector* copy() const;
-
 
     /// Clear vector data
     void clear();
@@ -116,7 +115,7 @@ namespace dolfin
     void zero();
 
     /// Assignment of vector
-    const PETScVector& operator= (const GenericVector& x);
+    const GenericVector& operator= (const GenericVector& x);
 
     /// Assignment of vector
     const PETScVector& operator= (const PETScVector& x);
@@ -131,10 +130,10 @@ namespace dolfin
     const PETScVector& operator-= (const GenericVector& x);
 
     /// Multiply vector with scalar
-    const PETScVector& operator*= (const real a);
+    const PETScVector& operator*= (real a);
 
     /// Divide vector by scalar
-    const PETScVector& operator/= (const real a);
+    const PETScVector& operator/= (real a);
 
     /// Scalar product
     real operator*(const PETScVector& x);

@@ -236,22 +236,21 @@ void XMLFile::operator<<(GenericMatrix& A)
   // Write matrix in XML format
   fprintf(fp, "  <matrix rows=\"%u\" columns=\"%u\">\n", A.size(0), A.size(1));
         
-  int ncols = 0;
-  Array<int> columns;
+  Array<uint> columns;
   Array<real> values;
 
   for (unsigned int i = 0; i < A.size(0); i++)
   {
-    A.getrow(i, ncols, columns, values);
-    if ( ncols > 0 )
-      fprintf(fp, "    <row row=\"%u\" size=\"%i\">\n", i, ncols);
-    for (int pos = 0; pos < ncols; pos++)
+    A.getrow(i, columns, values);
+    if (columns.size() > 0)
+      fprintf(fp, "    <row row=\"%u\" size=\"%d\">\n", i, (int)columns.size());
+    for (uint pos = 0; pos < columns.size(); pos++)
     {
       unsigned int j = columns[pos];
       real aij = values[pos];
       fprintf(fp, "      <entry column=\"%u\" value=\"%.15g\"/>\n", j, aij);
     }
-    if ( ncols > 0 )
+    if (columns.size() > 0 )
       fprintf(fp, "    </row>\n");
   }
   fprintf(fp, "  </matrix>\n");

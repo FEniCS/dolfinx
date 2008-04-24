@@ -170,6 +170,7 @@ void MultiAdaptiveNewtonSolver::debug()
   const uint n = ts.nj;
   uBlasSparseMatrix B(n, n);
   uBlasVector F1(n), F2(n);
+  ublas_sparse_matrix& _B = B.mat();
 
   // Iterate over the columns of B
   for (uint j = 0; j < n; j++)
@@ -189,7 +190,7 @@ void MultiAdaptiveNewtonSolver::debug()
     {
       real dFdx = (F1[i] - F2[i]) / dx;
       if ( fabs(dFdx) > DOLFIN_EPS )
-	B(i, j) = dFdx;
+        _B(i, j) = dFdx;
     }
   }
 

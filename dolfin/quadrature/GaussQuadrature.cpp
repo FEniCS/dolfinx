@@ -52,7 +52,8 @@ void GaussQuadrature::computePoints()
   real x, dx;
   
   // Compute the points by Newton's method
-  for (unsigned int i = 0; i <= ((n-1)/2); i++) {
+  for (unsigned int i = 0; i <= ((n-1)/2); i++) 
+  {
     
     // Initial guess
     x = cos(DOLFIN_PI*(real(i+1)-0.25)/(real(n)+0.5));

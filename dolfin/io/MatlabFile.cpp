@@ -1,4 +1,4 @@
-// Copyright (C) 2003-2006 Johan Hoffman and Anders Logg.
+// Copyright (C) 2003-2008 Johan Hoffman and Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Erik Svensson, 2003.
@@ -6,7 +6,7 @@
 // Modified by Garth N. Wells, 2006.
 //
 // First added:  2003-02-17
-// Last changed: 2006-05-30
+// Last changed: 2008-04-23
 
 #include <stdio.h>
 
@@ -37,17 +37,16 @@ void MatlabFile::operator<<(GenericMatrix& A)
 //  fprintf(fp, "%s = [", A.name().c_str());
   fprintf(fp, "A = [");
 
-  int ncols = 0;
-  Array<int> columns;
+  Array<uint> columns;
   Array<real> values;
   
   for (uint i = 0; i < A.size(0); i++)
   {
-    A.getrow(i, ncols, columns, values);
-    for (int pos = 0; pos < ncols; pos++)
+    A.getrow(i, columns, values);
+    for (uint pos = 0; pos < columns.size(); pos++)
     {
       fprintf(fp, " %u %i %.15g", i + 1, columns[pos] + 1, values[pos]);
-      if ( i == (A.size(0) - 1) && (pos + 1 == ncols) )
+      if ( i == (A.size(0) - 1) && (pos + 1 == columns.size()) )
         fprintf(fp, "];\n");
       else {
         fprintf(fp, "\n");

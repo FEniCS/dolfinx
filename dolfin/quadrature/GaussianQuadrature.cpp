@@ -45,17 +45,20 @@ void GaussianQuadrature::computeWeights()
   }
 
   uBlasDenseMatrix A(n, n);
+  ublas_dense_matrix& _A = A.mat();
   uBlasVector x(n), b(n);
+  ublas_vector& _x = x.vec();
+  ublas_vector& _b = b.vec();
 
   // Compute the matrix coefficients
   for (unsigned int i = 0; i < n; i++)
   {
     Legendre p(i);
     for (unsigned int j = 0; j < n; j++)
-      A(i, j) = p(points[j]);
-    b[i] = 0.0;
+      _A(i, j) = p(points[j]);
+    _b[i] = 0.0;
   }
-  b[0] = 2.0;
+  _b[0] = 2.0;
 
   // Solve the system of equations
   // FIXME: Do we get high enough precision?
@@ -66,7 +69,7 @@ void GaussianQuadrature::computeWeights()
 
   // Save the weights
   for (unsigned int i = 0; i < n; i++)
-    weights[i] = x[i];
+    weights[i] = _x[i];
 }
 //-----------------------------------------------------------------------------
 bool GaussianQuadrature::check(unsigned int q) const

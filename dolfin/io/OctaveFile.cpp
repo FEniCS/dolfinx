@@ -46,13 +46,12 @@ void OctaveFile::operator<<(GenericMatrix& A)
   for (uint i = 0; i < M; i++)
   {
     // Get nonzero entries
-    int ncols = 0;
-    Array<int> columns;
+    Array<uint> columns;
     Array<real> values;
-    A.getrow(i, ncols, columns, values);
+    A.getrow(i, columns, values);
 
     // Write nonzero entries
-    for (int pos = 0; pos < ncols; pos++)
+    for (uint pos = 0; pos < columns.size(); pos++)
 //      fprintf(fp, "%s(%d, %d) = %.16e;\n",
       fprintf(fp, "A(%d, %d) = %.16e;\n", (int)i + 1, columns[pos] + 1, values[pos]);
   }

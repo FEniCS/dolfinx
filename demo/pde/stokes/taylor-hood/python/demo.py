@@ -22,7 +22,7 @@ vector = VectorElement("Lagrange", "triangle", 2)
 system = vector + scalar
 
 # Load subdomains
-sub_domains = MeshFunction("uint", mesh, "../subdomains.xml.gz");
+sub_domains = MeshFunction("uint", mesh, "../subdomains.xml.gz")
 
 # Function for no-slip boundary condition for velocity
 class Noslip(Function):

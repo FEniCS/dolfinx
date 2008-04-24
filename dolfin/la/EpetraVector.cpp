@@ -1,7 +1,9 @@
-// Copyright (C) 2008 Kent-Andre Mardal and Johannes Ring.
+// Copyright (C) 2008 Martin Sandve Alnes, Kent-Andre Mardal and Johannes Ring.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-04-21
+// Last changed:  2008-04-23
+
 #ifdef HAS_TRILINOS
 
 #include <cmath>
@@ -14,35 +16,45 @@
 //#include <dolfin/MPI.h>
 
 
-
+#include <Epetra_FEVector.h>
+#include <Epetra_Map.h>
+#include <Epetra_MultiVector.h>
+#include <Epetra_SerialComm.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-EpetraVector::EpetraVector()
-  : GenericVector(), 
+EpetraVector::EpetraVector():
     Variable("x", "a sparse vector"),
-    x(0), _copy(false)
+    x(0),
+    _copy(false)
 {
-  std::cout <<"using the empty constructor "<<std::endl; 
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-EpetraVector::EpetraVector(uint N)
-  : GenericVector(), 
+EpetraVector::EpetraVector(uint N):
     Variable("x", "a sparse vector"), 
-    x(0), _copy(false)
+    x(0),
+    _copy(false)
 {
   // Create Epetra vector
   init(N);
 }
 //-----------------------------------------------------------------------------
-EpetraVector::EpetraVector(Epetra_FEVector* x)
-  : GenericVector(),
+EpetraVector::EpetraVector(Epetra_FEVector* x):
     Variable("x", "a vector"),
-    x(x), _copy(true)
+    x(x),
+    _copy(true)
 {
   // Do nothing
+}
+//-----------------------------------------------------------------------------
+EpetraVector::EpetraVector(const Epetra_Map& map):
+    Variable("x", "a vector"),
+    x(0),
+    _copy(false)
+{
+  error("Not implemented yet");
 }
 //-----------------------------------------------------------------------------
 EpetraVector::EpetraVector(const EpetraVector& v)
@@ -221,17 +233,31 @@ const EpetraVector& EpetraVector::operator+= (const GenericVector& x)
 //-----------------------------------------------------------------------------
 const EpetraVector& EpetraVector::operator-= (const GenericVector& x)
 {
-  this->axpy(1.0, x); 
+  this->axpy(-1.0, x); 
   return *this;
 }
 //-----------------------------------------------------------------------------
-const EpetraVector& EpetraVector::operator*= (const real a)
+const EpetraVector& EpetraVector::operator*= (real a)
 {
   dolfin_assert(x);
   x->Scale(a);
   return *this;
 }
 //-----------------------------------------------------------------------------
+real EpetraVector::norm(VectorNormType type) const {
+  real value = 0.0;
+  switch (type) {
+  case l1:
+    x->Norm1(&value);
+    break;
+  case l2:
+    x->Norm2(&value);
+    break;
+  default:
+    x->NormInf(&value);
+  }
+  return value;
+}
 
 
 #endif

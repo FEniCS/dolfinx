@@ -6,7 +6,7 @@
 // Modified by Martin Alnæs, 2008.
 //
 // First added:  2007-01-17
-// Last changed: 2008-04-22
+// Last changed: 2008-04-23
 
 #ifndef __GENERIC_TENSOR_H
 #define __GENERIC_TENSOR_H
@@ -16,7 +16,7 @@
 
 namespace dolfin
 {
-  
+
   class GenericSparsityPattern;
   class LinearAlgebraFactory;
 
@@ -25,16 +25,19 @@ namespace dolfin
   class GenericTensor
   {
   public:
-    
+
     /// Destructor
     virtual ~GenericTensor() {}
 
-    ///--- Basic GenericTensor interface ---
+    //--- Basic GenericTensor interface ---
 
     /// Initialize zero tensor using sparsity pattern
     virtual void init(const GenericSparsityPattern& sparsity_pattern) = 0;
 
-    /// Return rank of tensor (number of dimensions)
+    /// Return copy of tensor
+    virtual GenericTensor* copy() const = 0;
+
+    /// Return tensor rank (number of dimensions)
     virtual uint rank() const = 0;
 
     /// Return size of given dimension
@@ -52,31 +55,22 @@ namespace dolfin
     /// Set all entries to zero and keep any sparse structure
     virtual void zero() = 0;
 
-    /// Finalise assembly of tensor
+    /// Finalize assembly of tensor
     virtual void apply() = 0;
 
     /// Display tensor
-    virtual void disp(uint precision = 2) const = 0;
+    virtual void disp(uint precision=2) const = 0;
 
-    /// Get linear algebra backend factory
-    virtual LinearAlgebraFactory& factory() const = 0; 
+    //--- Special functions, downcasting to concrete types ---
 
-    ///--- Special functions, intended for library use only ---
-
-    /// Return instance (const version)
-    virtual const GenericTensor* instance() const
-    { return this; }
-
-    /// Return instance (non-const version)
-    virtual GenericTensor* instance()
-    { return this; }
+    /// Return linear algebra backend factory
+    virtual LinearAlgebraFactory& factory() const = 0;
 
     /// Cast a GenericTensor to its derived class (const version)
     template<class T> const T& down_cast() const
     {
       const T* t = dynamic_cast<const T*>(instance());
-      if (!t)  
-        error("GenericTensor cannot be cast to the requested type.");
+      if (!t) error("GenericTensor cannot be cast to the requested type.");
       return *t;
     }
 
@@ -84,14 +78,23 @@ namespace dolfin
     template<class T> T& down_cast()
     {
       T* t = dynamic_cast<T*>(instance());
-      if (!t)  
-        error("GenericTensor cannot be cast to the requested type.");
+      if (!t) error("GenericTensor cannot be cast to the requested type.");
       return *t;
     }
 
     /// Check whether the GenericTensor instance matches a specific type
     template<class T> bool has_type() const
     { return bool(dynamic_cast<const T*>(instance())); }
+
+    //--- Special functions, intended for library use only ---
+
+    /// Return concrete instance / unwrap (const version)
+    virtual const GenericTensor* instance() const
+    { return this; }
+
+    /// Return concrete instance / unwrap (non-const version)
+    virtual GenericTensor* instance()
+    { return this; }
 
     /// Assignment (must be overloaded by subclass)
     virtual const GenericTensor& operator= (const GenericTensor& x)

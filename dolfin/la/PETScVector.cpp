@@ -5,7 +5,7 @@
 // Modified by Martin Alnæs 2008
 //
 // First added:  2004
-// Last changed: 2008-04-14
+// Last changed: 2008-04-23
 
 // FIXME: Insert dolfin_assert() where appropriate
 
@@ -22,16 +22,14 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-PETScVector::PETScVector()
-  : GenericVector(), 
+PETScVector::PETScVector():
     Variable("x", "a sparse vector"),
     x(0), _copy(false)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-PETScVector::PETScVector(uint N)
-  : GenericVector(), 
+PETScVector::PETScVector(uint N):
     Variable("x", "a sparse vector"), 
     x(0), _copy(false)
 {
@@ -39,16 +37,14 @@ PETScVector::PETScVector(uint N)
   init(N);
 }
 //-----------------------------------------------------------------------------
-PETScVector::PETScVector(Vec x)
-  : GenericVector(),
+PETScVector::PETScVector(Vec x):
     Variable("x", "a vector"),
     x(x), _copy(true)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-PETScVector::PETScVector(const PETScVector& v)
-  : GenericVector(), 
+PETScVector::PETScVector(const PETScVector& v):
     Variable("x", "a vector"),
     x(0), _copy(false)
 {
@@ -233,7 +229,7 @@ void PETScVector::restore(const real data[]) const
   VecRestoreArray(x, &tmp);
 }
 //-----------------------------------------------------------------------------
-const PETScVector& PETScVector::operator= (const GenericVector& v)
+const GenericVector& PETScVector::operator= (const GenericVector& v)
 {
   *this = v.down_cast<PETScVector>();
   return *this; 
@@ -248,10 +244,6 @@ const PETScVector& PETScVector::operator= (const PETScVector& v)
 
   return *this; 
 }
-
-
-
-
 //-----------------------------------------------------------------------------
 const PETScVector& PETScVector::operator= (const real a)
 {
@@ -269,7 +261,7 @@ const PETScVector& PETScVector::operator+= (const GenericVector& x)
 //-----------------------------------------------------------------------------
 const PETScVector& PETScVector::operator-= (const GenericVector& x)
 {
-  this->axpy(1.0, x); 
+  this->axpy(-1.0, x); 
   return *this;
 }
 //-----------------------------------------------------------------------------
