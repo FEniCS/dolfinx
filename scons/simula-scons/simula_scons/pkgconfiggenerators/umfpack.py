@@ -40,7 +40,7 @@ def find_dependency_file(dirs, filename, what="", package=""):
     if os.path.isfile(os.path.join(found_dir, filename)):
       found_file = True
   if not found_file:
-    raise UnableToFindPackage(package)
+    raise UnableToFindPackageException(package)
   return found_dir
 
 def getBaseDirs(sconsEnv):
