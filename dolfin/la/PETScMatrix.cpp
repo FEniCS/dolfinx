@@ -53,6 +53,13 @@ PETScMatrix::PETScMatrix(uint M, uint N, Type type):
   init(M, N);
 }
 //-----------------------------------------------------------------------------
+PETScMatrix::PETScMatrix(const PETScMatrix& A):
+  Variable("A", "PETSc matrix"),
+  A(0), _type(A._type)
+{
+  *this = A;
+}
+//-----------------------------------------------------------------------------
 PETScMatrix::~PETScMatrix()
 {
   // Free memory of matrix
@@ -363,14 +370,6 @@ real PETScMatrix::mult(const real x[], uint row) const
   MatRestoreRow(A, static_cast<int>(row), &ncols, &cols, &Avals);
 
   return sum;
-}
-//-----------------------------------------------------------------------------
-void PETScMatrix::lump(PETScVector& m) const
-{
-  m.init(size(0));
-  PETScVector one(m);
-  one = 1.0;
-  mult(one, m);   
 }
 //-----------------------------------------------------------------------------
 real PETScMatrix::norm(const Norm type) const

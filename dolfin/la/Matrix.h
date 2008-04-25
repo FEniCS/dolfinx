@@ -34,6 +34,11 @@ namespace dolfin
                              matrix(new DefaultMatrix(M, N))
     {}
 
+    /// Copy constructor
+    Matrix(const Matrix& A) : Variable("A", "DOLFIN matrix"),
+                              matrix(new DefaultMatrix((*A.matrix).down_cast<DefaultMatrix>()))
+    {}
+
     /// Destructor
     ~Matrix()
     { delete matrix; }

@@ -62,6 +62,9 @@ namespace dolfin
     /// Constructor
     PETScMatrix(uint M, uint N, Type type = default_matrix);
 
+    /// Copy constructor
+    explicit PETScMatrix(const PETScMatrix& A);
+
     /// Destructor
     ~PETScMatrix();
 
@@ -129,7 +132,7 @@ namespace dolfin
     real mult(const real* x, uint row) const;
 
     /// Lump matrix into vector m
-    void lump(PETScVector& m) const;
+    //void lump(PETScVector& m) const;
 
     /// Compute given norm of matrix
     enum Norm { l1, linf, frobenius };

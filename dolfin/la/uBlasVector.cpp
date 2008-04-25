@@ -225,22 +225,3 @@ LinearAlgebraFactory& uBlasVector::factory() const
   return uBlasFactory::instance();
 }
 //-----------------------------------------------------------------------------
-#ifdef HAS_PETSC
-void uBlasVector::copy(const PETScVector& y, uint off1, uint off2, uint len)
-{
-  // FIXME: Verify if there's a more efficient implementation
-  const real* vals = 0;
-  vals = y.array();
-  for(uint i = 0; i < len; i++)
-    x(i + off1) = vals[i + off2];
-
-  y.restore(vals);
-}
-#endif
-//-----------------------------------------------------------------------------
-void uBlasVector::copy(const uBlasVector& y, uint off1, uint off2, uint len)
-{
-  ublas::subrange(x, off1, off1 + len) = ublas::subrange(y.vec(), off2, off2 + len);
-}
-//-----------------------------------------------------------------------------
-
