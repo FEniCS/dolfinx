@@ -66,72 +66,66 @@ namespace dolfin
     //--- Implementation of the GenericTensor interface ---
 
     /// Initialize zero tensor using sparsity pattern
-    void init(const GenericSparsityPattern& sparsity_pattern);
+    virtual void init(const GenericSparsityPattern& sparsity_pattern);
 
     /// Return copy of tensor
-    uBlasMatrix<Mat>* copy() const;
+    virtual uBlasMatrix<Mat>* copy() const;
 
     /// Return size of given dimension
-    uint size(uint dim) const;
+    virtual uint size(uint dim) const;
 
     /// Set all entries to zero and keep any sparse structure
-    void zero();
+    virtual void zero();
 
     /// Finalize assembly of tensor
-    void apply();
+    virtual void apply();
 
     /// Display tensor
-    void disp(uint precision=2) const;
+    virtual void disp(uint precision=2) const;
 
     //--- Implementation of the GenericMatrix interface ---
 
     /// Initialize M x N matrix
-    void init(uint M, uint N);
+    virtual void init(uint M, uint N);
 
     /// Get block of values
-    void get(real* block, uint m, const uint* rows, uint n, const uint* cols) const;
+    virtual void get(real* block, uint m, const uint* rows, uint n, const uint* cols) const;
 
     /// Set block of values
-    void set(const real* block, uint m, const uint* rows, uint n, const uint* cols);
+    virtual void set(const real* block, uint m, const uint* rows, uint n, const uint* cols);
 
     /// Add block of values
-    void add(const real* block, uint m, const uint* rows, uint n, const uint* cols);
+    virtual void add(const real* block, uint m, const uint* rows, uint n, const uint* cols);
 
     /// Get non-zero values of given row
-    void getrow(uint row, Array<uint>& columns, Array<real>& values) const;
+    virtual void getrow(uint row, Array<uint>& columns, Array<real>& values) const;
 
     /// Set given rows to zero
-    void zero(uint m, const uint* rows);
+    virtual void zero(uint m, const uint* rows);
 
     /// Set given rows to identity matrix
-    void ident(uint m, const uint* rows);
+    virtual void ident(uint m, const uint* rows);
 
     /// Matrix-vector product, y = Ax
-    void mult(const GenericVector& x, GenericVector& y, bool transposed=false) const; 
+    virtual void mult(const GenericVector& x, GenericVector& y, bool transposed=false) const; 
 
     /// Multiply matrix by given number
-    const uBlasMatrix<Mat>& operator*= (real a)
-    { A *= a; return *this; }
+    virtual const uBlasMatrix<Mat>& operator*= (real a);
 
     /// Divide matrix by given number
-    const uBlasMatrix<Mat>& operator/= (real a)
-    { A /= a; return *this; }
+    virtual const uBlasMatrix<Mat>& operator/= (real a);
 
     /// Assignment operator
-    const GenericMatrix& operator= (const GenericMatrix& A)
-    { this->A = A.down_cast< uBlasMatrix<Mat> >().mat(); return *this; }
+    virtual const GenericMatrix& operator= (const GenericMatrix& A);
 
     /// Assignment operator
-    const uBlasMatrix<Mat>& operator= (const uBlasMatrix<Mat>& A)
-    { this->A = A.mat(); return *this; }
+    const uBlasMatrix<Mat>& operator= (const uBlasMatrix<Mat>& A);
 
     //--- Special functions ---
 
     /// Return linear algebra backend factory
     LinearAlgebraFactory& factory() const;
     
-    //--- Special uBLAS functions ---
-
     /// Return reference to uBLAS matrix (const version)
     const Mat& mat() const
     { return A; }
@@ -139,6 +133,8 @@ namespace dolfin
     /// Return reference to uBLAS matrix (non-const version)
     Mat& mat()
     { return A; }
+
+    //--- Special uBLAS functions ---
 
     /// Solve Ax = b out-of-place (A is not destroyed)
     void solve(uBlasVector& x, const uBlasVector& b) const;
@@ -302,9 +298,8 @@ namespace dolfin
   template <class Mat>  
   void uBlasMatrix<Mat>::zero(uint m, const uint* rows) 
   {
-    for(uint i = 0; i < m; ++i) {
+    for(uint i = 0; i < m; ++i) 
       ublas::row(A, rows[i]) *= 0.0;  
-    }
   }
   //-----------------------------------------------------------------------------
   template <class Mat>  
@@ -318,16 +313,42 @@ namespace dolfin
   template <class Mat>
   void uBlasMatrix<Mat>::mult(const GenericVector& x, GenericVector& y, bool transposed) const
   {
-    const uBlasVector& xx = x.down_cast<uBlasVector>();
-    uBlasVector& yy = y.down_cast<uBlasVector>();
+    if (transposed == true) 
+      error("The transposed version of the uBLAS matrix-vector product is not yet implemented");
 
-    if (transposed == true) error("The transposed version of the uBLAS matrix-vector product is not yet implemented");
-    
-    ublas::axpy_prod(A, xx.vec(), yy.vec(), true);
+    ublas::axpy_prod(A, x.down_cast<uBlasVector>().vec(), y.down_cast<uBlasVector>().vec(), true);
+  }
+  //-----------------------------------------------------------------------------
+  template <class Mat>
+  const uBlasMatrix<Mat>& uBlasMatrix<Mat>::operator*= (real a)
+   { 
+    A *= a; 
+    return *this; 
   }
   //-----------------------------------------------------------------------------
   template <class Mat>  
-  void uBlasMatrix<Mat>::compress()
+  const uBlasMatrix<Mat>& uBlasMatrix<Mat>::operator/= (real a)
+  { 
+    A /= a; 
+    return *this; 
+  }
+  //-----------------------------------------------------------------------------
+  template <class Mat>  
+  const GenericMatrix& uBlasMatrix<Mat>::operator= (const GenericMatrix& A)
+  { 
+    this->A = A.down_cast< uBlasMatrix<Mat> >().mat(); 
+    return *this;
+  }
+  //-----------------------------------------------------------------------------
+  template <class Mat>  
+  inline const uBlasMatrix<Mat>& uBlasMatrix<Mat>::operator= (const uBlasMatrix<Mat>& A)
+  {
+    this->A = A.mat(); 
+    return *this;
+  }
+  //-----------------------------------------------------------------------------
+  template <class Mat>  
+  inline void uBlasMatrix<Mat>::compress()
   {
     Mat A_temp(this->size(0), this->size(1));
     A_temp.assign(A);
@@ -371,7 +392,6 @@ namespace dolfin
     // Reserve space for non-zeroes
     A.reserve(sparsity_pattern.numNonZero());
 
-    //const SparsityPattern& spattern = dynamic_cast<const SparsityPattern&>(sparsity_pattern);
     const SparsityPattern* pattern_pointer = dynamic_cast<const SparsityPattern*>(&sparsity_pattern);
     if (not pattern_pointer)
       error("Cannot convert GenericSparsityPattern to concrete SparsityPattern type. Aborting.");
