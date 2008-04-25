@@ -15,7 +15,7 @@
 #include <dolfin/common/Variable.h>
 #include "GenericVector.h"
 
-class Epetra_FEVector; 
+class Epetra_FEVector;
 class Epetra_Map;
 
 namespace dolfin
@@ -33,41 +33,41 @@ namespace dolfin
   {
   public:
 
-    /// Empty vector
-    EpetraVector();
+    /// Create empty vector
+    explicit EpetraVector();
 
-    /// Create vector of given size
+    /// Create vector of size N
     explicit EpetraVector(uint N);
+
+    /// Copy constructor
+    explicit EpetraVector(const EpetraVector& x);
 
     /// Create vector view from given Epetra_FEVector pointer
     explicit EpetraVector(Epetra_FEVector* vector);
 
-    /// Create vector from given Epetra_Map reference
+    /// Create vector from given Epetra_Map
     explicit EpetraVector(const Epetra_Map& map);
-
-    /// Copy constructor
-    explicit EpetraVector(const EpetraVector& x);
 
     /// Destructor
     ~EpetraVector();
 
     //--- Implementation of the GenericTensor interface ---
-   
-    /// Create copy of vector
+
+    /// Return copy of tensor
     EpetraVector* copy() const;
 
-    /// Set all entries to zero
+    /// Set all entries to zero and keep any sparse structure
     void zero();
 
-    /// Finalize assembly of vector 
+    /// Finalize assembly of tensor
     void apply();
 
     /// Display vector
-    void disp(uint precision = 2) const;
+    void disp(uint precision=2) const;
 
     //--- Implementation of the GenericVector interface ---
 
-    /// Initialize vector data
+    /// Initialize vector of size N
     void init(uint N);
 
     /// Return size of vector
@@ -88,17 +88,17 @@ namespace dolfin
     /// Set all values
     void set(real* values);
 
-    /// Add all values
+    /// Add all values to each entry
     void add(real* values);
 
-     /// Add multiple of given vector (AXPY operation)
-    virtual void axpy(real a, const GenericVector& x); 
+    /// Add multiple of given vector (AXPY operation)
+    virtual void axpy(real a, const GenericVector& x);
 
     /// Return inner product with given vector
-    virtual real inner(const GenericVector& vector) const; 
+    virtual real inner(const GenericVector& vector) const;
 
     /// Return norm of vector
-    virtual real norm(VectorNormType type = l2) const;  
+    virtual real norm(VectorNormType type = l2) const;
 
     /// Multiply vector by given number
     const EpetraVector& operator*= (real a);
@@ -113,7 +113,7 @@ namespace dolfin
     /// Subtract given vector
     const EpetraVector& operator-= (const GenericVector& x);
 
-    /// Assignment operator 
+    /// Assignment operator
     const EpetraVector& operator= (const GenericVector& x);
 
     /// Assignment operator 
@@ -121,12 +121,12 @@ namespace dolfin
 
     //--- Special functions ---
 
-    /// Return backend factory
+    /// Return linear algebra backend factory
     LinearAlgebraFactory& factory() const;
 
     //--- Special Epetra functions ---
-    
-    /// Return Epetra_MultiVector reference
+
+    /// Return Epetra_FEVector reference
     Epetra_FEVector& vec() const;
 
     /// Create uninitialized vector
@@ -138,13 +138,14 @@ namespace dolfin
 
     // Epetra_FEVector pointer
     Epetra_FEVector* x;
-    
+
     // True if the pointer is a copy of someone else's data
     bool _copy;
-    
+
   };  
 
   LogStream& operator<< (LogStream& stream, const EpetraVector& A);
+
 }
 
 #endif //HAS_TRILINOS

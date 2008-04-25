@@ -15,7 +15,7 @@
 #include <dolfin/common/Variable.h>
 #include "GenericMatrix.h"
 
-class Epetra_FECrsMatrix; 
+class Epetra_FECrsMatrix;
 class Epetra_CrsGraph;
 
 namespace dolfin
@@ -34,31 +34,34 @@ namespace dolfin
   class EpetraMatrix: public GenericMatrix, public Variable
   {
   public:
-    
-    /// Empty matrix
-    EpetraMatrix();
 
-    /// Create matrix of given size
-    EpetraMatrix(uint M, uint N);
+    /// Create empty matrix
+    explicit EpetraMatrix();
+
+    /// Create M x N matrix
+    explicit EpetraMatrix(uint M, uint N);
+
+    /// Copy constuctor
+    explicit EpetraMatrix(const EpetraMatrix& A);
 
     /// Create matrix from given Epetra_FECrsMatrix pointer
     explicit EpetraMatrix(Epetra_FECrsMatrix* A);
 
-    /// Create matrix from given Epetra_CrsGraph pointer
+    /// Create matrix from given Epetra_CrsGraph
     explicit EpetraMatrix(const Epetra_CrsGraph& graph);
 
     /// Destructor
     virtual ~EpetraMatrix();
 
     //--- Implementation of the GenericTensor interface ---
-    
-    /// Initialize a matrix from the sparsity pattern
-    void init(const GenericSparsityPattern& sparsity_pattern); 
 
-    /// Create copy of matrix
+    /// Initialize zero tensor using sparsity pattern
+    void init(const GenericSparsityPattern& sparsity_pattern);
+
+    /// Return copy of tensor
     EpetraMatrix* copy() const;
 
-    /// Return number of rows (dim=0) or columns (dim=1) along dimension dim
+    /// Return size of given dimension
     uint size(uint dim) const;
 
     /// Set all entries to zero and keep any sparse structure
@@ -67,8 +70,8 @@ namespace dolfin
     /// Finalize assembly of tensor
     void apply();
 
-    /// Display matrix (sparse output is default)
-    void disp(uint precision = 2) const;
+    /// Display tensor
+    void disp(uint precision=2) const;
 
     //--- Implementation of the GenericMatrix interface ---
 
@@ -84,17 +87,17 @@ namespace dolfin
     /// Add block of values
     void add(const real* block, uint m, const uint* rows, uint n, const uint* cols);
 
-    /// Get non-zero values of row i
-    void getrow(uint i, Array<uint>& columns, Array<real>& values) const;
+    /// Get non-zero values of given row
+    void getrow(uint row, Array<uint>& columns, Array<real>& values) const;
 
-    /// Set given rows to zero matrix
+    /// Set given rows to zero
     void zero(uint m, const uint* rows);
 
     /// Set given rows to identity matrix
     void ident(uint m, const uint* rows);
 
-    // y = A x  ( or y = A^T x if transposed==true) 
-    void mult(const GenericVector& x, GenericVector& y, bool transposed=false) const; 
+    // Matrix-vector product, y = Ax
+    void mult(const GenericVector& x, GenericVector& y, bool transposed=false) const;
 
     /// Multiply matrix by given number
     const EpetraMatrix& operator*= (real a);
@@ -110,12 +113,14 @@ namespace dolfin
     const EpetraMatrix& operator= (const EpetraMatrix& x)
     { error("Not implemented."); return *this; }
 
-    //--- Special Epetra functions ---
+    //--- Special functions ---
 
-    /// Return factory object for backend
+    /// Return linear algebra backend factory
     LinearAlgebraFactory& factory() const;
 
-    /// Return Epetra_FECrsMatrix pointer
+    //--- Special Epetra functions ---
+
+    /// Return Epetra_FECrsMatrix reference
     Epetra_FECrsMatrix& mat() const;
 
     /// Create uninitialized matrix

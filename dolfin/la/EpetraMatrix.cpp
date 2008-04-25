@@ -30,19 +30,26 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 EpetraMatrix::EpetraMatrix():
-    Variable("A", "a sparse matrix"),
+    Variable("A", "Epetra matrix"),
     A(0), _copy(false)
 {
   // TODO: call Epetra_Init or something?
 }
 //-----------------------------------------------------------------------------
 EpetraMatrix::EpetraMatrix(uint M, uint N):
-    Variable("A", "a sparse matrix"),
+    Variable("A", "Epetra matrix"),
     A(0), _copy(false)
 {
   // TODO: call Epetra_Init or something?
   // Create Epetra matrix
   init(M, N);
+}
+//-----------------------------------------------------------------------------
+EpetraMatrix::EpetraMatrix(const EpetraMatrix& A):
+  Variable("A", "Epetra matrix"),
+  A(0), _copy(true)
+{
+  error("Not implemented.");
 }
 //-----------------------------------------------------------------------------
 EpetraMatrix::EpetraMatrix(Epetra_FECrsMatrix* A):
@@ -218,9 +225,9 @@ void EpetraMatrix::mult(const GenericVector& x_, GenericVector& Ax_, bool transp
 }
 
 //-----------------------------------------------------------------------------
-void EpetraMatrix::getrow(uint i, Array<uint>& columns, Array<real>& values) const
+void EpetraMatrix::getrow(uint row, Array<uint>& columns, Array<real>& values) const
 {
-//  int Epetra_CrsMatrix::ExtractGlobalRowCopy  	(int GlobalRow, int Length,int& NumEntries, double* Values, int *Indices) const
+  //  int Epetra_CrsMatrix::ExtractGlobalRowCopy  	(int GlobalRow, int Length,int& NumEntries, double* Values, int *Indices) const
 
   dolfin_assert(A); 
   int len= 10; 
@@ -228,7 +235,7 @@ void EpetraMatrix::getrow(uint i, Array<uint>& columns, Array<real>& values) con
   double* vals = new double(len); 
 
   int ncols = 0;
-  int err = A->ExtractGlobalRowCopy(i, len, ncols, vals, cols); 
+  int err = A->ExtractGlobalRowCopy(row, len, ncols, vals, cols); 
   if (err!= 0) error("Did not manage to get a copy of the row."); 
 
   columns.clear();
