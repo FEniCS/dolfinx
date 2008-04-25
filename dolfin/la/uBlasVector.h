@@ -158,12 +158,6 @@ namespace dolfin
     ublas_vector& vec()
     { return x; }
 
-    // Copy values between different vector representations
-#ifdef HAS_PETSC
-    void copy(const PETScVector& y, uint off1, uint off2, uint len);
-#endif
-    void copy(const uBlasVector& y, uint off1, uint off2, uint len);
-
   private:
 
     // Underlying uBLAS vector object

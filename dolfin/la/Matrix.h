@@ -25,20 +25,25 @@ namespace dolfin
   public:
 
     /// Create empty matrix
-    Matrix() : Variable("A", "DOLFIN matrix"),
-               matrix(new DefaultMatrix())
+    explicit Matrix() : Variable("A", "DOLFIN matrix"),
+                        matrix(new DefaultMatrix())
     {}
 
     /// Create M x N matrix
-    Matrix(uint M, uint N) : Variable("A", "DOLFIN matrix"),
-                             matrix(new DefaultMatrix(M, N))
+    explicit Matrix(uint M, uint N) : Variable("A", "DOLFIN matrix"),
+                                      matrix(new DefaultMatrix(M, N))
+    {}
+
+    /// Copy constructor
+    explicit Matrix(const Matrix& A) : Variable("A", "DOLFIN matrix"),
+                                       matrix(new DefaultMatrix((*A.matrix).down_cast<DefaultMatrix>()))
     {}
 
     /// Destructor
     ~Matrix()
     { delete matrix; }
 
-    //--- Implementation of the GenericTensor interface --
+    //--- Implementation of the GenericTensor interface ---
 
     /// Initialize zero tensor using sparsity pattern
     void init(const GenericSparsityPattern& sparsity_pattern)
@@ -64,7 +69,7 @@ namespace dolfin
     void disp(uint precision=2) const
     { matrix->disp(precision); }
 
-    //--- Implementation of the GenericMatrix interface --
+    //--- Implementation of the GenericMatrix interface ---
 
     /// Initialize M x N matrix
     void init(uint M, uint N)
@@ -110,13 +115,19 @@ namespace dolfin
     const Matrix& operator= (const Matrix& A)
     { *matrix = *A.matrix; return *this; }
 
-    //--- Special functions --
+    //--- Convenience functions ---
+
+    /// Divide matrix by given number
+    virtual const Matrix& operator/= (real a)
+    { *this /= a; return *this; }
+
+    //--- Special functions ---
 
     /// Return linear algebra backend factory
     LinearAlgebraFactory& factory() const
     { return matrix->factory(); }
 
-    //--- Special functions, intended for library use only --
+    //--- Special functions, intended for library use only ---
 
     /// Return concrete instance / unwrap (const version)
     virtual const GenericMatrix* instance() const

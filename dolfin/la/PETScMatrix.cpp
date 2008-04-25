@@ -28,7 +28,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 PETScMatrix::PETScMatrix(const Type type):
     Variable("A", "a sparse matrix"),
-    A(0), _type(type)
+    A(0), _copy(false), _type(type)
 {
   // Check type
   checkType();
@@ -36,7 +36,7 @@ PETScMatrix::PETScMatrix(const Type type):
 //-----------------------------------------------------------------------------
 PETScMatrix::PETScMatrix(Mat A):
     Variable("A", "a sparse matrix"),
-    A(A), _type(default_matrix)
+    A(A), _copy(true), _type(default_matrix)
 {
   // FIXME: get PETSc matrix type and set
   _type = default_matrix;
@@ -44,7 +44,7 @@ PETScMatrix::PETScMatrix(Mat A):
 //-----------------------------------------------------------------------------
 PETScMatrix::PETScMatrix(uint M, uint N, Type type):
     Variable("A", "a sparse matrix"),
-    A(0),  _type(type)
+    A(0), _copy(false), _type(type)
 {
   // Check type
   checkType();
@@ -53,10 +53,17 @@ PETScMatrix::PETScMatrix(uint M, uint N, Type type):
   init(M, N);
 }
 //-----------------------------------------------------------------------------
+PETScMatrix::PETScMatrix(const PETScMatrix& A):
+  Variable("A", "PETSc matrix"),
+  A(0), _copy(false), _type(A._type)
+{
+  *this = A;
+}
+//-----------------------------------------------------------------------------
 PETScMatrix::~PETScMatrix()
 {
-  // Free memory of matrix
-  if ( A ) MatDestroy(A);
+  if (A && !_copy)
+    MatDestroy(A);
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::init(uint M, uint N)
@@ -132,31 +139,6 @@ void PETScMatrix::init(uint M, uint N, const uint* d_nzrow, const uint* o_nzrow)
   MatCreateMPIAIJ(PETSC_COMM_WORLD, PETSC_DECIDE, PETSC_DECIDE, M, N, PETSC_NULL, (int*)d_nzrow, PETSC_NULL, (int*)o_nzrow, &A);
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::init(uint M, uint N, uint bs, uint nz)
-{
-  // Free previously allocated memory if necessary
-  if ( A )
-    MatDestroy(A);
-  
-  // Creates a sparse matrix in block AIJ (block compressed row) format.
-  if (dolfin::MPI::numProcesses() > 1)
-  {
-    // Create PETSc parallel matrix with a guess for number of diagonal (50 in this case) 
-    // and number of off-diagonal non-zeroes (50 in this case).
-    // Note that guessing too high leads to excessive memory usage.
-    // In order to not waste any memory one would need to specify d_nnz and o_nnz.
-    MatCreateMPIBAIJ(PETSC_COMM_WORLD, bs, PETSC_DECIDE, PETSC_DECIDE, M, N, 50, PETSC_NULL, 50, PETSC_NULL, &A);
-  }
-  else
-  {
-    // Given blocksize bs, and max no connectivity mnc.  
-    MatCreateSeqBAIJ(PETSC_COMM_SELF, bs, bs*M, bs*N, nz, PETSC_NULL, &A);
-    MatSetFromOptions(A);
-    MatSetOption(A, MAT_KEEP_ZEROED_ROWS);
-    MatZeroEntries(A);
-  }
-}
-//-----------------------------------------------------------------------------
 void PETScMatrix::init(const GenericSparsityPattern& sparsity_pattern)
 {
   if (dolfin::MPI::numProcesses() > 1)
@@ -181,14 +163,9 @@ void PETScMatrix::init(const GenericSparsityPattern& sparsity_pattern)
   }
 }
 //-----------------------------------------------------------------------------
-PETScMatrix* PETScMatrix::create() const
-{
-  return new PETScMatrix();
-}
-//-----------------------------------------------------------------------------
 PETScMatrix* PETScMatrix::copy() const
 {
-  PETScMatrix* mcopy = create();
+  PETScMatrix* mcopy = new PETScMatrix();
 
   MatDuplicate(A, MAT_COPY_VALUES, &(mcopy->A));
 
@@ -201,38 +178,6 @@ dolfin::uint PETScMatrix::size(uint dim) const
   int N = 0;
   MatGetSize(A, &M, &N);
   return (dim == 0 ? M : N);
-}
-//-----------------------------------------------------------------------------
-dolfin::uint PETScMatrix::nz(uint row) const
-{
-  // FIXME: this can probably be done better
-  int ncols = 0;
-  const int* cols = 0;
-  const double* vals = 0;
-  MatGetRow(A,     static_cast<int>(row), &ncols, &cols, &vals);
-  MatRestoreRow(A, static_cast<int>(row), &ncols, &cols, &vals);
-
-  return ncols;
-}
-//-----------------------------------------------------------------------------
-dolfin::uint PETScMatrix::nzsum() const
-{
-  uint M = size(0);
-  uint sum = 0;
-  for (uint i = 0; i < M; i++)
-    sum += nz(i);
-
-  return sum;
-}
-//-----------------------------------------------------------------------------
-dolfin::uint PETScMatrix::nzmax() const
-{
-  uint M = size(0);
-  uint max = 0;
-  for (uint i = 0; i < M; i++)
-    max = std::max(max, nz(i));
-
-  return max;
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::get(real* block,
@@ -268,18 +213,18 @@ void PETScMatrix::add(const real* block,
                block, ADD_VALUES);
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::getrow(uint i, Array<uint>& columns, Array<real>& values) const
+void PETScMatrix::getrow(uint row, Array<uint>& columns, Array<real>& values) const
 {
   const int *cols = 0;
   const double *vals = 0;
   int ncols = 0;
-  MatGetRow(A, i, &ncols, &cols, &vals);
+  MatGetRow(A, row, &ncols, &cols, &vals);
   
   // Assign values to Arrays
   columns.assign(cols, cols+ncols);
   values.assign(vals, vals+ncols);
 
-  MatRestoreRow(A, i, &ncols, &cols, &vals);
+  MatRestoreRow(A, row, &ncols, &cols, &vals);
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::zero(uint m, const uint* rows)
@@ -300,77 +245,22 @@ void PETScMatrix::ident(uint m, const uint* rows)
   ISDestroy(is);
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::mult(const PETScVector& x, PETScVector& Ax, bool transposed) const
+void PETScMatrix::mult(const GenericVector& x, GenericVector& y, bool transposed) const
 {
-  if (transposed) { 
-    if (size(0) != x.size()) error("Matrix and vector dimensions must match");  
-    Ax.init(size(1));
-    MatMultTranspose(A, x.vec(), Ax.vec());
+  const PETScVector& xx = x.down_cast<PETScVector>();  
+  PETScVector& yy = y.down_cast<PETScVector>();
+
+  if (transposed)
+  { 
+    if (size(0) != xx.size()) error("Matrix and vector dimensions don't match for matrix-vector product.");
+    yy.init(size(1));
+    MatMultTranspose(A, xx.vec(), yy.vec());
   }
   else {
-    if (size(1) != x.size()) error("Matrix and vector dimensions must match");  
-    Ax.init(size(0));
-    MatMult(A, x.vec(), Ax.vec());
+    if (size(1) != xx.size()) error("Matrix and vector dimensions don't match for matrix-vector product.");
+    yy.init(size(0));
+    MatMult(A, xx.vec(), yy.vec());
   }
-}
-//-----------------------------------------------------------------------------
-void PETScMatrix::mult(const GenericVector& x_, GenericVector& Ax_, bool transposed) const
-{
-  const PETScVector* x = dynamic_cast<const PETScVector*>(x_.instance());  
-  if (!x) error("The vector x should be of type PETScVector");  
-
-  PETScVector* Ax = dynamic_cast<PETScVector*>(Ax_.instance());  
-  if (!Ax) error("The vector Ax should be of type PETScVector");  
-
-  this->mult(*x, *Ax, transposed);
-}
-
-//-----------------------------------------------------------------------------
-real PETScMatrix::mult(const PETScVector& x, uint row) const
-{
-  // FIXME: Temporary fix (assumes uniprocessor case)
-
-  int ncols = 0;
-  const int* cols = 0;
-  const double* Avals = 0;
-  double* xvals = 0;
-  MatGetRow(A, static_cast<int>(row), &ncols, &cols, &Avals);
-  VecGetArray(x.x, &xvals);
-
-  real sum = 0.0;
-  for (int i = 0; i < ncols; i++)
-    sum += Avals[i] * xvals[cols[i]];
-
-  MatRestoreRow(A, static_cast<int>(row), &ncols, &cols, &Avals);
-  VecRestoreArray(x.x, &xvals);
-
-  return sum;
-}
-//-----------------------------------------------------------------------------
-real PETScMatrix::mult(const real x[], uint row) const
-{
-  // FIXME: Temporary fix (assumes uniprocessor case)
-
-  int ncols = 0;
-  const int* cols = 0;
-  const double* Avals = 0;
-  MatGetRow(A, static_cast<int>(row), &ncols, &cols, &Avals);
-
-  real sum = 0.0;
-  for (int i = 0; i < ncols; i++)
-    sum += Avals[i] * x[cols[i]];
-
-  MatRestoreRow(A, static_cast<int>(row), &ncols, &cols, &Avals);
-
-  return sum;
-}
-//-----------------------------------------------------------------------------
-void PETScMatrix::lump(PETScVector& m) const
-{
-  m.init(size(0));
-  PETScVector one(m);
-  one = 1.0;
-  mult(one, m);   
 }
 //-----------------------------------------------------------------------------
 real PETScMatrix::norm(const Norm type) const
@@ -409,6 +299,25 @@ const PETScMatrix& PETScMatrix::operator*= (real a)
   dolfin_assert(A);
   MatScale(A, a);
   return *this;
+}
+//-----------------------------------------------------------------------------
+const PETScMatrix& PETScMatrix::operator/= (real a)
+{
+  dolfin_assert(A);
+  MatScale(A, 1.0 / a);
+  return *this;
+}
+//-----------------------------------------------------------------------------
+const GenericMatrix& PETScMatrix::operator= (const GenericMatrix& A)
+{
+  error("Not implemented.");
+  return *this;
+}
+//-----------------------------------------------------------------------------
+const PETScMatrix& PETScMatrix::operator= (const PETScMatrix& A)
+{
+  error("Not implemented.");
+  return *this; 
 }
 //-----------------------------------------------------------------------------
 PETScMatrix::Type PETScMatrix::type() const
@@ -464,25 +373,6 @@ void PETScMatrix::disp(uint precision) const
     cout << line.str().c_str() << endl;
   }
 */
-}
-//-----------------------------------------------------------------------------
-LogStream& dolfin::operator<< (LogStream& stream, const PETScMatrix& A)
-{
-  // Check if matrix has been defined
-  if ( !A.A )
-  {
-    stream << "[ PETSc matrix (empty) ]";
-    return stream;
-  }
-
-  MatType type = 0;
-  MatGetType(A.mat(), &type);
-  int m = A.size(0);
-  int n = A.size(1);
-  stream << "[ PETSc matrix (type " << type << ") of size "
-	  << m << " x " << n << " ]";
-
-  return stream;
 }
 //-----------------------------------------------------------------------------
 LinearAlgebraFactory& PETScMatrix::factory() const
@@ -549,6 +439,12 @@ MatType PETScMatrix::getPETScType() const
   default:
     return "default";
   }
+}
+//-----------------------------------------------------------------------------
+LogStream& dolfin::operator<< (LogStream& stream, const PETScMatrix& A)
+{
+  stream << "[ PETSc matrix of size " << A.size(0) << " x " << A.size(1) << " ]";
+  return stream;
 }
 //-----------------------------------------------------------------------------
 

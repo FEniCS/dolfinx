@@ -158,7 +158,7 @@ printf("-lml\n");
     cmdstr = "%s %s trilinos_config_test.cpp" % (compiler,cflags)
     compileFailed, cmdoutput = commands.getstatusoutput(cmdstr)
     if compileFailed:
-        remove_cppfile("trilinos_config_test.cpp", ofile=True)
+        remove_cppfile("trilinos_config_test.cpp")
         raise UnableToCompileException("Trilinos", cmd=cmdstr,
                                        program=cpp_file_str, errormsg=cmdoutput)
 
@@ -214,6 +214,9 @@ def pkgTests(forceCompiler=None, sconsEnv=None,
         cflags = pkgCflags(sconsEnv=sconsEnv, **kwargs)
     if not libs:
         libs = pkgLibs(compiler=compiler, cflags=cflags, sconsEnv=sconsEnv)
+    else:
+        # Force a call to pkgLibs since this is the test for this package:
+        libs = pkgLibs(compiler=compiler, cflags=cflags, sconsEnv=sconsEnv)
     if not version:
         version = pkgVersion(**kwargs)
 
@@ -226,9 +229,9 @@ def generatePkgConf(directory=suitablePkgConfDir(), sconsEnv=None, **kwargs):
     pkg_file_str = r"""Name: Trilinos
 Version: %s
 Description: The Trilinos project - http://software.sandia.gov/trilinos
-Cflags: %s
 Libs: %s
-""" % (trilinos_version, trilinos_cflags, trilinos_libs)
+Cflags: %s
+""" % (trilinos_version, trilinos_libs, trilinos_cflags)
 
     pkg_file = open("%s/trilinos.pc" % directory, 'w')
     pkg_file.write(pkg_file_str)

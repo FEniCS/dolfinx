@@ -1,12 +1,12 @@
-// Copyright (C) 2004-2007 Johan Hoffman, Johan Jansson and Anders Logg.
+// Copyright (C) 2004-2008 Johan Hoffman, Johan Jansson and Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Garth N. Wells 2005-2007.
-// Modified by Kent-Andre Mardal 2008.
-// Modified by Ola Skavhaug 2008.
-// Modified by Martin Alnæs 2008.
+// Modified by Garth N. Wells, 2005-2007.
+// Modified by Kent-Andre Mardal, 2008.
+// Modified by Ola Skavhaug, 2008.
+// Modified by Martin Alnæs, 2008.
 //
-// First added:  2004
+// First added:  2004-01-01
 // Last changed: 2008-04-14
 
 #ifndef __PETSC_VECTOR_H
@@ -16,21 +16,17 @@
 
 #include <petscvec.h>
 
-#include <dolfin/common/types.h>
-#include <dolfin/log/dolfin_log.h>
+#include <dolfin/log/LogStream.h>
 #include <dolfin/common/Variable.h>
-#include "LinearAlgebraFactory.h"
-#include "VectorNormType.h"
-#include "GenericVector.h"
 #include "PETScObject.h"
+#include "GenericVector.h"
 
 namespace dolfin
 {
-  
-  class uBlasVector;
 
-  /// This class represents a vector of dimension N.
-  /// It is a simple wrapper for a PETSc vector pointer (Vec).
+  /// This class provides a simple vector class based on PETSc.
+  /// It is a simple wrapper for a PETSc vector pointer (Vec)
+  /// implementing the GenericVector interface.
   ///
   /// The interface is intentionally simple. For advanced usage,
   /// access the PETSc Vec pointer using the function vec() and
@@ -40,64 +36,42 @@ namespace dolfin
   {
   public:
 
-    /// Empty vector
-    PETScVector();
+    /// Create empty vector
+    explicit PETScVector();
 
-    /// Create vector of given size
+    /// Create vector of size N
     explicit PETScVector(uint N);
+
+    /// Copy constructor
+    explicit PETScVector(const PETScVector& x);
 
     /// Create vector from given PETSc Vec pointer
     explicit PETScVector(Vec x);
 
-    /// Copy constructor
-    explicit PETScVector(const PETScVector& x);
-    
     /// Destructor
-    ~PETScVector ();
+    ~PETScVector();
 
-    /// Initialize vector data
-    void init(uint N);
+    //--- Implementation of the GenericTensor interface ---
 
-    /// Create uninitialized vector
-    PETScVector* create() const;
-
-    /// Create copy of vector
+    /// Return copy of tensor
     PETScVector* copy() const;
 
-    /// Clear vector data
-    void clear();
+    /// Set all entries to zero and keep any sparse structure
+    void zero();
+
+    /// Finalize assembly of tensor
+    void apply();
+
+    /// Display tensor
+    void disp(uint precision=2) const;
+
+    //--- Implementation of the GenericVector interface ---
+
+    /// Initialize vector of size N
+    void init(uint N);
 
     /// Return size of vector
     uint size() const;
-
-    /// Return array containing this processor's portion of the data.
-    /// After usage, the function restore() must be called.
-    real* array();
-
-    /// Return array containing this processor's portion of the data.
-    /// After usage, the function restore() must be called. (const version)
-    const real* array() const;
-
-    /// Restore array after a call to array(), const version
-    void restore(const real data[]) const;
-
-    /// Element-wise division
-    void div(const PETScVector& x);
-
-    /// Element-wise multiplication
-    void mult(const PETScVector& x);
-
-    /// Element-wise multiplication
-    void mult(const real a);
-
-    /// Get values
-    void get(real* values) const;
-
-    /// Set values
-    void set(real* values);
-
-    /// Add values
-    void add(real* values);
 
     /// Get block of values
     void get(real* block, uint m, const uint* rows) const;
@@ -108,66 +82,55 @@ namespace dolfin
     /// Add block of values
     void add(const real* block, uint m, const uint* rows);
 
-    /// Apply changes to vector
-    void apply();
+    /// Get all values
+    void get(real* values) const;
 
-    /// Set all entries to zero
-    void zero();
+    /// Set all values
+    void set(real* values);
 
-    /// Assignment of vector
-    const GenericVector& operator= (const GenericVector& x);
+    /// Add values to each entry
+    void add(real* values);
 
-    /// Assignment of vector
-    const PETScVector& operator= (const PETScVector& x);
-
-    /// Assignment of all elements to a single scalar value
-    const PETScVector& operator= (const real a);
-
-    /// Add vector x
-    const PETScVector& operator+= (const GenericVector& x);
-
-    /// Subtract vector x
-    const PETScVector& operator-= (const GenericVector& x);
-
-    /// Multiply vector with scalar
-    const PETScVector& operator*= (real a);
-
-    /// Divide vector by scalar
-    const PETScVector& operator/= (real a);
-
-    /// Scalar product
-    real operator*(const PETScVector& x);
-
-    // FIXME: another way of calling the scalar or inner product (from GenericVector)
-    real inner(const GenericVector& v) const; 
-
-    //  this +=  a*x   
+    /// Add multiple of given vector (AXPY operation)
     virtual void axpy(real a, const GenericVector& x); 
 
-    /// Compute norm of vector
-    real norm(VectorNormType type = l2) const;
+    /// Return inner product with given vector
+    real inner(const GenericVector& v) const;
 
-    /// Compute sum of vector
-    real sum() const;
+    /// Return norm of vector
+    real norm(VectorNormType type=l2) const;
 
-    /// Display vector
-    void disp(uint precision = 2) const;
+    /// Multiply vector by given number
+    const PETScVector& operator*= (real a);
 
-    /// Output
-    friend LogStream& operator<< (LogStream& stream, const PETScVector& A);
+    /// Assignment operator
+    const GenericVector& operator= (const GenericVector& x);
 
-    // Friends
-    friend class PETScMatrix;
+    /// Assignment operator
+    const PETScVector& operator= (const PETScVector& x);
 
-    // Copy values between different vector representations
-    void copy(const PETScVector& y, uint off1, uint off2, uint len);
-    void copy(const uBlasVector& y, uint off1, uint off2, uint len);
+    //--- Convenience functions ---
 
-    /// Return backend factory
+    /// Add given vector
+    const PETScVector& operator+= (const GenericVector& x);
+
+    /// Subtract given vector
+    const PETScVector& operator-= (const GenericVector& x);
+
+    /// Divide vector by given number
+    const PETScVector& operator/= (real a);
+
+    //--- Special functions ---
+
+    /// Return linear algebra backend factory
     LinearAlgebraFactory& factory() const;
+
+    //--- Special PETScFunctions ---
 
     /// Return PETSc Vec pointer
     Vec vec() const;
+
+    friend class PETScMatrix;
 
   private:
 
@@ -179,7 +142,8 @@ namespace dolfin
 
   };
 
-  LogStream& operator<< (LogStream& stream, const PETScVector& A);
+  /// Output of PETScVector
+  LogStream& operator<< (LogStream& stream, const PETScVector& x);
   
 }
 

@@ -40,7 +40,7 @@ def find_dependency_file(dirs, filename, what="", package=""):
     if os.path.isfile(os.path.join(found_dir, filename)):
       found_file = True
   if not found_file:
-    raise UnableToFindPackage(package)
+    raise UnableToFindPackageException(package)
   return found_dir
 
 def getBaseDirs(sconsEnv):
@@ -282,7 +282,7 @@ int main (void)
   if linkFailed:
     remove_cppfile("umfpack_config_test_lib.cpp", ofile=True)
     errormsg = ("Using '%s' for BLAS, consider setting the environment " + \
-                "variable ATLAS_DIR if this is wrong.\n") % getATLASDir()
+                "variable ATLAS_DIR if this is wrong.\n") % getAtlasDir()
     errormsg += cmdoutput
     raise UnableToLinkException("UMFPACK", cmd=cmdstr,
                                 program=cpp_test_lib_str, errormsg=errormsg)

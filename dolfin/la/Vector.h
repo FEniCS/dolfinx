@@ -26,13 +26,18 @@ namespace dolfin
   public:
 
     /// Create empty vector
-    Vector() : Variable("x", "DOLFIN vector"),
-               vector(new DefaultVector())
+    explicit Vector() : Variable("x", "DOLFIN vector"),
+                        vector(new DefaultVector())
     {}
     
     /// Create vector of size N
     explicit Vector(uint N) : Variable("x", "DOLFIN vector"),
                               vector(new DefaultVector(N))
+    {}
+
+    /// Copy constructor
+    explicit Vector(const Vector& x) : Variable("x", "DOLFIN vector"),
+                                       vector(new DefaultVector((*x.vector).down_cast<DefaultVector>()))
     {}
 
     /// Destructor
@@ -91,7 +96,7 @@ namespace dolfin
     void add(real* values)
     { vector->add(values); }
 
-     /// Add multiple of given vector (AXPY operation)
+    /// Add multiple of given vector (AXPY operation)
     void axpy(real a, const GenericVector& x)
     { vector->axpy(a, x); }
 
@@ -131,7 +136,7 @@ namespace dolfin
 
     //--- Special functions ---
 
-    /// Get linear algebra backend factory
+    /// Return linear algebra backend factory
     LinearAlgebraFactory& factory() const
     { return vector->factory(); }
 
