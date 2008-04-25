@@ -38,7 +38,7 @@ TimeSlab::TimeSlab(ODE& ode) :
     error("Unknown ODE method: %s", m.c_str());
 
   // Get initial data
-  u0 = 0.0;
+  u0.zero();
   ode.u0(u0);
 }
 //-----------------------------------------------------------------------------

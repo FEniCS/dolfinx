@@ -1,9 +1,9 @@
-// Copyright (C) 2006-2008 Garth N. Wells
+// Copyright (C) 2006-2008 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Anders Logg 2006-2007.
-// Modified by Ola Skavhaug 2007-2008.
-// Modified by Kent-Andre Mardal 2008.
+// Modified by Anders Logg, 2006-2008.
+// Modified by Ola Skavhaug, 2007-2008.
+// Modified by Kent-Andre Mardal, 2008.
 //
 // First added:  2006-07-05
 // Last changed: 2008-04-24
@@ -14,53 +14,82 @@
 #include <sstream>
 #include <iomanip>
 
-#include <dolfin/log/dolfin_log.h>
-#include <dolfin/common/Array.h>
+#include <dolfin/log/LogStream.h>
 #include <dolfin/common/Variable.h>
-#include "GenericMatrix.h"
-#include "GenericSparsityPattern.h"
+#include <dolfin/common/Array.h>
+#include "LinearAlgebraFactory.h"
 #include "SparsityPattern.h"
 #include "ublas.h"
 #include "uBlasVector.h"
 #include "uBlasLUSolver.h"
-#include "LinearAlgebraFactory.h"
+#include "GenericMatrix.h"
 
 namespace dolfin
 {
 
-  /// This class represents a matrix (dense or sparse) of dimension M x N.
-  /// It is a wrapper for a Boost uBLAS matrix of type Mat.
-  ///
-  /// The interface is intended to provide uniformity with respect to other
-  /// matrix data types. For advanced usage, refer to the documentation for 
-  /// uBLAS which can be found at 
-  /// http://www.boost.org/libs/numeric/ublas/doc/index.htm.
-
-  /// Developer note: specialised member functions must be inlined to avoid link errors.
-
+  class uBlasVector;
   namespace ublas = boost::numeric::ublas;
 
-  template< class Mat >
-  class uBlasMatrix : public GenericMatrix,
-                      public Variable
+  /// This class provides a simple matrix class based on uBLAS.
+  /// It is a simple wrapper for a uBLAS matrix implementing the
+  /// GenericMatrix interface.
+  ///
+  /// The interface is intentionally simple. For advanced usage,
+  /// access the underlying uBLAS matrix and use the standard
+  /// uBLAS interface which is documented at
+  /// http://www.boost.org/libs/numeric/ublas/doc/index.htm.
+  ///
+  /// Developer note: specialised member functions must be
+  /// inlined to avoid link errors.
+
+  template<class Mat>
+  class uBlasMatrix : public GenericMatrix, public Variable
   {
   public:
-    
-    /// Constructor
-    uBlasMatrix();
-    
-    /// Constructor
-    uBlasMatrix(uint M, uint N);
 
-   /// Constructor from a uBlas matrix_expression
+    /// Create empty matrix
+    explicit uBlasMatrix();
+    
+    /// Create M x N matrix
+    explicit uBlasMatrix(uint M, uint N);
+
+    /// Copy constructor
+    explicit uBlasMatrix(const uBlasMatrix& A);
+
+    /// Create matrix from given uBLAS matrix expression
     template <class E>
     explicit uBlasMatrix(const ublas::matrix_expression<E>& A) : Mat(A) {}
 
     /// Destructor
     ~uBlasMatrix();
 
-    /// Return number of rows (dim = 0) or columns (dim = 1) 
+    //--- Implementation of the GenericTensor interface ---
+
+    /// Initialize zero tensor using sparsity pattern
+    void init(const GenericSparsityPattern& sparsity_pattern);
+
+    /// Return copy of tensor
+    uBlasMatrix<Mat>* copy() const;
+
+    /// Return size of given dimension
     uint size(uint dim) const;
+
+    /// Set all entries to zero and keep any sparse structure
+    void zero();
+
+    /// Finalize assembly of tensor
+    void apply();
+
+    /// Display tensor
+    void disp(uint precision=2) const;
+
+    //--- Implementation of the GenericMatrix interface ---
+
+    /// Initialize M x N matrix
+    void init(uint M, uint N);
+
+    /// Get block of values
+    void get(real* block, uint m, const uint* rows, uint n, const uint* cols) const;
 
     /// Set block of values
     void set(const real* block, uint m, const uint* rows, uint n, const uint* cols);
@@ -68,14 +97,50 @@ namespace dolfin
     /// Add block of values
     void add(const real* block, uint m, const uint* rows, uint n, const uint* cols);
 
-    /// Get non-zero values of row i
-    void getrow(uint i, Array<uint>& columns, Array<real>& values) const;
+    /// Get non-zero values of given row
+    void getrow(uint row, Array<uint>& columns, Array<real>& values) const;
 
-    /// Get block of values
-    void get(real* block, uint m, const uint* rows, uint n, const uint* cols) const;
+    /// Set given rows to zero
+    void zero(uint m, const uint* rows);
 
-    /// Lump matrix into vector m
-    void lump(uBlasVector& m) const;
+    /// Set given rows to identity matrix
+    void ident(uint m, const uint* rows);
+
+    /// Matrix-vector product, y = Ax
+    void mult(const GenericVector& x, GenericVector& y, bool transposed=false) const; 
+
+    /// Multiply matrix by given number
+    const uBlasMatrix<Mat>& operator*= (real a)
+    { A *= a; return *this; }
+
+    /// Assignment operator
+    const GenericMatrix& operator= (const GenericMatrix& A)
+    { this->A = A.down_cast< uBlasMatrix<Mat> >().mat(); return *this; }
+
+    /// Assignment operator
+    const uBlasMatrix<Mat>& operator= (const uBlasMatrix<Mat>& A)
+    { this->A = A.mat(); return *this; }
+
+    //--- Convenience functions ---
+
+    /// Divide matrix by given number
+    const uBlasMatrix<Mat>& operator/= (real a)
+    { A /= a; return *this; }
+
+    //--- Special functions ---
+
+    /// Return linear algebra backend factory
+    LinearAlgebraFactory& factory() const;
+    
+    //--- Special uBLAS functions ---
+
+    /// Return reference to uBLAS matrix (const version)
+    const Mat& mat() const
+    { return A; }
+
+    /// Return reference to uBLAS matrix (non-const version)
+    Mat& mat()
+    { return A; }
 
     /// Solve Ax = b out-of-place (A is not destroyed)
     void solve(uBlasVector& x, const uBlasVector& b) const;
@@ -83,82 +148,22 @@ namespace dolfin
     /// Compute inverse of matrix
     void invert();
 
-    /// Apply changes to matrix 
-    void apply();
-
-    /// Set all entries to zero
-    void zero();
-
-    /// Set given rows to zero matrix
-    void zero(uint m, const uint* rows);
-
-    /// Set given rows to identity matrix
-    void ident(uint m, const uint* rows);
-
-    /// Compute product y = Ax
-    void mult(const uBlasVector& x, uBlasVector& y) const;
-
-    /// Compute product y = Ax
-    virtual void mult(const GenericVector& x, GenericVector& y, bool transposed=false) const; 
+    /// Lump matrix into vector m
+    void lump(uBlasVector& m) const;
 
     /// Compress matrix (eliminate all non-zeros from a sparse matrix) 
     void compress();
 
-    /// Display matrix
-    void disp(uint precision = 2) const;
-
+    /// Access value of given entry
     real operator() (uint i, uint j) const
     { return A(i, j); }
 
-    /// Multiply matrix by given number
-    const uBlasMatrix<Mat>& operator*= (real a)
-    { A *= a; return *this; }
-
-    /// Divide matrix by given number
-    const uBlasMatrix<Mat>& operator/= (real a)
-    { A /= a; return *this; }
-
-    /// The below functions have specialisations for particular matrix types.
-    /// In order to link correctly, they must be made inline functions.
-
-    /// Assignment operator
-    const GenericMatrix& operator= (const GenericMatrix& B)
-    { A = B.down_cast< uBlasMatrix<Mat> >().mat(); return *this; }
-
-    /// Assignment operator
-    const uBlasMatrix<Mat>& operator= (const uBlasMatrix<Mat>& B)
-    { A = B.mat(); return *this; }
-
-    /// Initialize M x N matrix
-    void init(uint M, uint N);
-
-    /// Initialize a matrix from the sparsity pattern
-    void init(const GenericSparsityPattern& sparsity_pattern);
-
-    /// Create uninitialized matrix
-    uBlasMatrix<Mat>* create() const;
-
-    /// Create copy of matrix
-    uBlasMatrix<Mat>* copy() const;
-
-    LinearAlgebraFactory& factory() const;
-
-    /// Return uBLAS matrix reference
-    const Mat& mat() const
-    { return A; }
-
-    /// Return uBLAS matrixr reference
-    Mat& mat()
-    { return A; }
-
-    //friend LogStream& operator<< <Mat> (LogStream&, const uBlasMatrix<Mat>&);
-
   private:
 
-    // Underlying uBLAS matrix object
+    // uBLAS matrix object
     Mat A;
-  };
 
+  };
 
   //---------------------------------------------------------------------------
   // Implementation of uBlasMatrix
@@ -171,6 +176,12 @@ namespace dolfin
   //---------------------------------------------------------------------------
   template <class Mat> 
   uBlasMatrix<Mat>::uBlasMatrix(uint M, uint N) : GenericMatrix(), A(M, N)
+  { 
+    // Do nothing 
+  }
+  //---------------------------------------------------------------------------
+  template <class Mat> 
+  uBlasMatrix<Mat>::uBlasMatrix(const uBlasMatrix& A) : GenericMatrix(), A(A.A)
   { 
     // Do nothing 
   }
@@ -192,12 +203,6 @@ namespace dolfin
     A.Mat::clear();
   }
   //---------------------------------------------------------------------------
-  template <class Mat> 
-  uBlasMatrix<Mat>* uBlasMatrix<Mat>::create() const
-  {
-    return new uBlasMatrix<Mat>();
-  }
-  //---------------------------------------------------------------------------
   template <class Mat>
   uBlasMatrix<Mat>* uBlasMatrix<Mat>::copy() const
   {
@@ -211,21 +216,21 @@ namespace dolfin
     return (dim == 0 ? A.Mat::size1() : A.Mat::size2());  
   }
   //---------------------------------------------------------------------------
-  template < class Mat >  
-  void uBlasMatrix< Mat >::getrow(uint i, Array<uint>& columns, Array<real>& values) const
+  template <class Mat>
+  void uBlasMatrix< Mat >::getrow(uint row, Array<uint>& columns, Array<real>& values) const
   {
     // Reference to matrix row (throw away const-ness and trust uBlas)
-    ublas::matrix_row< Mat > row( *(const_cast<Mat*>(&A)) , i);
+    ublas::matrix_row< Mat > r( *(const_cast<Mat*>(&A)) , row);
 
     typename ublas::matrix_row< Mat >::const_iterator component;
 
     // Insert values into Arrays
     columns.clear();
     values.clear();
-    for (component=row.begin(); component != row.end(); ++component) 
+    for (component=r.begin(); component != r.end(); ++component) 
     {
-      columns.push_back( component.index() );
-      values.push_back( *component );
+      columns.push_back(component.index());
+      values.push_back(*component );
     }
   }
   //-----------------------------------------------------------------------------
@@ -263,7 +268,7 @@ namespace dolfin
   void uBlasMatrix<Mat>::lump(uBlasVector& m) const
   {
     const uint n = size(1);
-    m.init( n );
+    m.init(n);
     ublas::scalar_vector<double> one(n, 1.0);
     ublas::axpy_prod(A, one, m.vec(), true);
   }
@@ -312,26 +317,15 @@ namespace dolfin
       ublas::row(A, rows[i]) = ublas::unit_vector<double> (n, rows[i]);
   }
   //---------------------------------------------------------------------------
-  template <class Mat>  
-  void uBlasMatrix<Mat>::mult(const uBlasVector& x, uBlasVector& y) const
+  template <class Mat>
+  void uBlasMatrix<Mat>::mult(const GenericVector& x, GenericVector& y, bool transposed) const
   {
-    ublas::axpy_prod(A, x.vec(), y.vec(), true);
-  }
-  //---------------------------------------------------------------------------
-  template <class Mat>  
-  void uBlasMatrix<Mat>::mult(const GenericVector& x_, GenericVector& y_, bool transposed) const
-  {
-    const uBlasVector* x = dynamic_cast<const uBlasVector*>(x_.instance());  
-    if (!x)  
-      error("The first vector needs to be of type uBlasVector"); 
+    const uBlasVector& xx = x.down_cast<uBlasVector>();
+    uBlasVector& yy = y.down_cast<uBlasVector>();
 
-    uBlasVector* y = dynamic_cast<uBlasVector*>(y_.instance());  
-    if (!y)  
-      error("The second vector needs to be of type uBlasVector"); 
-
-    if (transposed==true) error("The transposed version of the uBLAS matrix vector product is not yet implemented");  
-
-    this->mult(*x, *y); 
+    if (transposed == true) error("The transposed version of the uBLAS matrix-vector product is not yet implemented");
+    
+    ublas::axpy_prod(A, xx.vec(), yy.vec(), true);
   }
   //-----------------------------------------------------------------------------
   template <class Mat>  

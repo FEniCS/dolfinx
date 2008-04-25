@@ -123,15 +123,15 @@ namespace dolfin
     //--- Convenience functions ---
 
     /// Add given vector
-    virtual const Vector& operator+= (const GenericVector& x)
+    const Vector& operator+= (const GenericVector& x)
     { axpy(1.0, x); return *this; }
 
     /// Subtract given vector
-    virtual const Vector& operator-= (const GenericVector& x)
+    const Vector& operator-= (const GenericVector& x)
     { axpy(-1.0, x); return *this; }
 
     /// Divide vector by given number
-    virtual const Vector& operator/= (real a)
+    const Vector& operator/= (real a)
     { *this *= 1.0 / a; return *this; }
 
     //--- Special functions ---
@@ -143,11 +143,11 @@ namespace dolfin
     //--- Special functions, intended for library use only ---
 
     /// Return concrete instance / unwrap (const version)
-    virtual const GenericVector* instance() const
+    const GenericVector* instance() const
     { return vector; }
 
     /// Return concrete instance / unwrap (non-const version)
-    virtual GenericVector* instance()
+    GenericVector* instance()
     { return vector; }
 
   private:

@@ -39,7 +39,7 @@ void TimeSlabJacobian::update()
   Aj.init(N);
 
   // Reset unit vector
-  ej = 0.0;
+  ej.zero();
 
   // Compute columns of Jacobian
   for (uint j = 0; j < ode.size(); j++)

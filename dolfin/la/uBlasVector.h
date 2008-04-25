@@ -1,111 +1,78 @@
-// Copyright (C) 2006-2008 Garth N. Wells
+// Copyright (C) 2006-2008 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Anders Logg 2006-2008.
-// Modified by Kent-Andre Mardal 2008.
-// Modified by Ola Skavhaug 2008.
-// Modified by Martin Alnæs 2008.
+// Modified by Anders Logg, 2006-2008.
+// Modified by Kent-Andre Mardal, 2008.
+// Modified by Ola Skavhaug, 2008.
+// Modified by Martin Alnæs, 2008.
 //
 // First added:  2006-03-04
-// Last changed: 2008-04-22
+// Last changed: 2008-04-25
 
 #ifndef __UBLAS_VECTOR_H
 #define __UBLAS_VECTOR_H
 
-#include <dolfin/log/dolfin_log.h>
+#include <dolfin/log/LogStream.h>
 #include <dolfin/common/Variable.h>
 #include "ublas.h"
 #include "GenericVector.h"
 
-#include "VectorNormType.h"
-
 namespace dolfin
 {
 
-#ifdef HAS_PETSC
-  class PETScVector;
-#endif
-
   namespace ublas = boost::numeric::ublas;
-  
-  //// Forward declarations
-  class LinearAlgebraFactory;
 
-  /// This class represents a dense vector of dimension N.
-  /// It is a simple wrapper for a Boost ublas vector.
+  /// This class provides a simple vector class based on uBLAS.
+  /// It is a simple wrapper for a uBLAS vector implementing the
+  /// GenericVector interface.
   ///
   /// The interface is intentionally simple. For advanced usage,
-  /// refer to the documentation for ublas which can be found at
+  /// access the underlying uBLAS vector and use the standard
+  /// uBLAS interface which is documented at
   /// http://www.boost.org/libs/numeric/ublas/doc/index.htm.
 
-  class uBlasVector : public GenericVector,
-                      public Variable
+  class uBlasVector : public GenericVector, public Variable
   {
   public:
 
-    /// Constructor
-    uBlasVector();
-    
-    /// Constructor
+    /// Create empty vector
+    explicit uBlasVector();
+
+    /// Create vector of size N
     explicit uBlasVector(uint N);
-    
-    /// Constructor from a uBlas vector_expression
+
+    /// Copy constructor
+    explicit uBlasVector(const uBlasVector& x);
+
+    /// Create vector from given uBLAS vector expression
     template <class E>
     explicit uBlasVector(const ublas::vector_expression<E>& x) : x(x) {}
 
     /// Destructor
     ~uBlasVector();
 
-    /// Initialize a vector of length N
-    void init(uint N);
+    //--- Implementation of the GenericTensor interface ---
 
-    /// Create uninitialized vector
-    uBlasVector* create() const;
-
-    /// Create copy of vector
+    /// Create copy of tensor
     uBlasVector* copy() const;
 
-    /// Set all entries to a single scalar value
-    const uBlasVector& operator= (real a);
+    /// Set all entries to zero and keep any sparse structure
+    void zero();
 
-    /// Assignment of vector
-    const uBlasVector& operator= (const GenericVector& x);
+    /// Finalize assembly of tensor
+    void apply();
 
-    /// Assignment of vector
-    const uBlasVector& operator= (const uBlasVector& x);
+    /// Display tensor
+    void disp(uint precision=2) const;    
 
-    /// Add vector
-    const uBlasVector& operator+= (const GenericVector& x);
+    //--- Implementation of the GenericVector interface ---
 
-    /// Subtract vector
-    const uBlasVector& operator-= (const GenericVector& x);
+    /// Initialize vector of size N
+    void init(uint N);
 
-    /// Multiply vector with scalar 
-    const uBlasVector& operator *= (real a);
-
-    /// Divide vector with scalar 
-    const uBlasVector& operator /= (real a);
-
-    /// Return size
+    /// Return size of vector
     uint size() const
     { return x.size(); }
-
-    /// Access value of given entry
-    virtual real& operator[] (uint i)
-    { return x(i); };
-
-    /// Access value of given entry
-    virtual real operator[] (uint i) const
-    { return x(i); };
-
-    /// Get values
-    void get(real* values) const;
-
-    /// Set values
-    void set(real* values);
-
-    /// Add values
-    void add(real* values);
 
     /// Get block of values
     void get(real* block, uint m, const uint* rows) const;
@@ -116,51 +83,70 @@ namespace dolfin
     /// Add block of values
     void add(const real* block, uint m, const uint* rows);
 
-    /// Apply changes to vector (dummy function for compatibility)
-    void apply();
+    /// Get all values
+    void get(real* values) const;
 
-    /// Set all entries to zero
-    void zero();
+    /// Set all values
+    void set(real* values);
 
-    /// Compute norm of vector
-    real norm(VectorNormType type = l2) const;
+    /// Add values to each entry
+    void add(real* values);
 
-    /// Compute sum of vector
-    real sum() const
-    { return ublas::sum(x); }
-    
-    /// Addition (AXPY)
+    /// Add multiple of given vector (AXPY operation)
     void axpy(real a, const GenericVector& x);
 
-    /// Scalar multiplication
-    void mult(real const a);
-
-    /// Inner product 
+    /// Return inner product with given vector
     real inner(const GenericVector& x) const;
 
-    /// Element-wise division
-    void div(const uBlasVector& x);
+    /// Compute norm of vector
+    real norm(VectorNormType type=l2) const;
 
-    /// Display vector
-    void disp(uint precision = 2) const;
+    /// Multiply vector by given number
+    const uBlasVector& operator *= (real a);
 
-    /// Output
-    friend LogStream& operator<< (LogStream& stream, const uBlasVector& x);
+    /// Assignment operator
+    const GenericVector& operator= (const GenericVector& x);
 
-    /// Return backend factory
+    /// Assignment operator
+    const uBlasVector& operator= (const uBlasVector& x);
+
+    //--- Convenience functions ---
+
+    /// Add given vector
+    const uBlasVector& operator+= (const GenericVector& x);
+
+    /// Subtract given vector
+    const uBlasVector& operator-= (const GenericVector& x);
+
+    /// Divide vector by given number
+    const uBlasVector& operator /= (real a);
+
+    //--- Special functions ---
+
+    /// Return linear algebra backend factory
     LinearAlgebraFactory& factory() const;
 
-    /// Return uBLAS ublas_vector reference
+    //--- Special uBLAS functions ---
+
+    /// Return reference to uBLAS vector (const version)
     const ublas_vector& vec() const
     { return x; }
 
-    /// Return uBLAS ublas_vector reference
+    /// Return reference to uBLAS vector (non-const version)
     ublas_vector& vec()
     { return x; }
 
+    /// Access value of given entry (const version)
+    virtual real operator[] (uint i) const
+    { return x(i); };
+
+    /// Access value of given entry (non-const version)
+    virtual real& operator[] (uint i)
+    { return x(i); };
+
   private:
 
-    // Underlying uBLAS vector object
+    // uBLAS vector object
     ublas_vector x;
 
   };

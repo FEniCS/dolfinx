@@ -7,7 +7,7 @@
 // Modified by Ola Skavhaug, 2008.
 //
 // First added:  2004-01-01
-// Last changed: 2008-04-22
+// Last changed: 2008-04-25
 
 #ifndef __PETSC_MATRIX_H
 #define __PETSC_MATRIX_H
@@ -47,7 +47,7 @@ namespace dolfin
       umfpack         // UMFPACK
     };
 
-    /// Create empy matrix
+    /// Create empty matrix
     explicit PETScMatrix(Type type=default_matrix);
 
     /// Create M x N matrix
@@ -137,7 +137,7 @@ namespace dolfin
 
     /// Return norm of matrix
     enum Norm {l1, linf, frobenius};
-    real norm(const Norm type = l1) const;
+    real norm(const Norm type=l1) const;
 
   private:
 

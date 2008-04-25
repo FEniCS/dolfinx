@@ -33,7 +33,7 @@ MonoAdaptiveNewtonSolver::MonoAdaptiveNewtonSolver
   if ( implicit )
   {
     Mu0.init(ts.N);
-    Mu0 = 0.0;
+    Mu0.zero();
   }
 
   // Choose linear solver

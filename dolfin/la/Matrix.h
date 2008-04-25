@@ -104,7 +104,7 @@ namespace dolfin
     { matrix->mult(x, y, transposed); }
 
     /// Multiply matrix by given number
-    virtual const Matrix& operator*= (real a)
+    const Matrix& operator*= (real a)
     { *matrix *= a; return *this; }
 
     /// Assignment operator
@@ -118,7 +118,7 @@ namespace dolfin
     //--- Convenience functions ---
 
     /// Divide matrix by given number
-    virtual const Matrix& operator/= (real a)
+    const Matrix& operator/= (real a)
     { *this /= a; return *this; }
 
     //--- Special functions ---
@@ -130,11 +130,11 @@ namespace dolfin
     //--- Special functions, intended for library use only ---
 
     /// Return concrete instance / unwrap (const version)
-    virtual const GenericMatrix* instance() const
+    const GenericMatrix* instance() const
     { return matrix; }
 
     /// Return concrete instance / unwrap (non-const version)
-    virtual GenericMatrix* instance() 
+    GenericMatrix* instance() 
     { return matrix; }
 
   private:

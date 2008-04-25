@@ -25,18 +25,22 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 uBlasVector::uBlasVector():
-    Variable("x", "a dense vector"),
-    x(0)
+    Variable("x", "uBLAS vector"), x(0)
 {
-  //Do nothing
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 uBlasVector::uBlasVector(uint N):
-    Variable("x", "a dense vector"),
-    x(N)
+    Variable("x", "uBLAS vector"), x(N)
 {
   // Clear vector
   x.clear();
+}
+//-----------------------------------------------------------------------------
+uBlasVector::uBlasVector(const uBlasVector& x) :
+  Variable("x", "uBLAS vector"), x(x.x)
+{
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 uBlasVector::~uBlasVector()
@@ -55,11 +59,6 @@ void uBlasVector::init(uint N)
   x.resize(N, false);
   x.clear();
 }
-//-----------------------------------------------------------------------------
-uBlasVector* uBlasVector::create() const
-{
-  return new uBlasVector();
-} 
 //-----------------------------------------------------------------------------
 uBlasVector* uBlasVector::copy() const
 {
@@ -127,11 +126,6 @@ real uBlasVector::norm(VectorNormType type) const
   return norm_inf(x);
 }
 //-----------------------------------------------------------------------------
-void uBlasVector::div(const uBlasVector& y)
-{
-  x = ublas::element_div(x, y.vec());
-}
-//-----------------------------------------------------------------------------
 void uBlasVector::axpy(real a, const GenericVector& y)
 {
   if ( size() != y.size() )  
@@ -140,24 +134,13 @@ void uBlasVector::axpy(real a, const GenericVector& y)
   x += a * y.down_cast<uBlasVector>().vec();
 }
 //-----------------------------------------------------------------------------
-void uBlasVector::mult(const real a)
-{
-  x *= a;
-}
-//-----------------------------------------------------------------------------
 real uBlasVector::inner(const GenericVector& y) const
 {
 
   return ublas::inner_prod(x, y.down_cast<uBlasVector>().vec());
 }
 //-----------------------------------------------------------------------------
-const uBlasVector& uBlasVector::operator= (real a) 
-{ 
-  x.ublas_vector::assign(ublas::scalar_vector<double> (x.size(), a));
-  return *this;
-}
-//-----------------------------------------------------------------------------
-const uBlasVector& uBlasVector::operator= (const GenericVector& y) 
+const GenericVector& uBlasVector::operator= (const GenericVector& y) 
 { 
   x = y.down_cast<uBlasVector>().vec();
   return *this; 

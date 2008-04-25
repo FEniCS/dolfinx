@@ -41,7 +41,7 @@ MultiAdaptiveTimeSlab::MultiAdaptiveTimeSlab(ODE& ode) :
 
   // Initialize vector for u
   u.init(N);
-  u = 0.0;
+  u.zero();
 
   // Initialize transpose of dependencies if necessary
   message("Computing transpose (inverse) of dependency pattern.");
