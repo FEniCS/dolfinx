@@ -26,8 +26,8 @@ namespace dolfin
   public:
 
     /// Create empty vector
-    Vector() : Variable("x", "DOLFIN vector"),
-               vector(new DefaultVector())
+    explicit Vector() : Variable("x", "DOLFIN vector"),
+                        vector(new DefaultVector())
     {}
     
     /// Create vector of size N

@@ -24,8 +24,6 @@
 namespace dolfin
 {
 
-  class uBlasVector;
-
   /// This class provides a simple vector class based on PETSc.
   /// It is a simple wrapper for a PETSc vector pointer (Vec)
   /// implementing the GenericVector interface.
@@ -39,16 +37,16 @@ namespace dolfin
   public:
 
     /// Create empty vector
-    PETScVector();
+    explicit PETScVector();
 
     /// Create vector of size N
     explicit PETScVector(uint N);
 
-    /// Create vector from given PETSc Vec pointer
-    explicit PETScVector(Vec x);
-
     /// Copy constructor
     explicit PETScVector(const PETScVector& x);
+
+    /// Create vector from given PETSc Vec pointer
+    explicit PETScVector(Vec x);
 
     /// Destructor
     ~PETScVector();
