@@ -198,7 +198,7 @@ void EpetraVector::axpy(real a, const GenericVector& y)
   if (size() != v.size())
     error("The vectors must be of the same size.");  
 
-  x->Update(1.0,  v.vec(), a); 
+  x->Update(a,  v.vec(), 1.0); 
 }
 //-----------------------------------------------------------------------------
 LinearAlgebraFactory& EpetraVector::factory() const
@@ -225,15 +225,17 @@ const EpetraVector& EpetraVector::operator= (const EpetraVector& v)
 }
 
 //-----------------------------------------------------------------------------
-const EpetraVector& EpetraVector::operator+= (const GenericVector& x)
+const EpetraVector& EpetraVector::operator+= (const GenericVector& y)
 {
-  this->axpy(1.0, x); 
+  dolfin_assert(this->x);
+  this->axpy(1.0, y); 
   return *this;
 }
 //-----------------------------------------------------------------------------
-const EpetraVector& EpetraVector::operator-= (const GenericVector& x)
+const EpetraVector& EpetraVector::operator-= (const GenericVector& y)
 {
-  this->axpy(-1.0, x); 
+  dolfin_assert(this->x);
+  this->axpy(-1.0, y); 
   return *this;
 }
 //-----------------------------------------------------------------------------
