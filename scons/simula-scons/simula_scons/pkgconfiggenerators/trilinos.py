@@ -214,6 +214,9 @@ def pkgTests(forceCompiler=None, sconsEnv=None,
         cflags = pkgCflags(sconsEnv=sconsEnv, **kwargs)
     if not libs:
         libs = pkgLibs(compiler=compiler, cflags=cflags, sconsEnv=sconsEnv)
+    else:
+        # Force a call to pkgLibs since this is the test for this package:
+        libs = pkgLibs(compiler=compiler, cflags=cflags, sconsEnv=sconsEnv)
     if not version:
         version = pkgVersion(**kwargs)
 
