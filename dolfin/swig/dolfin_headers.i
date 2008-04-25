@@ -30,6 +30,7 @@
 %include "dolfin/la/uBlasMatrix.h"
 %include "dolfin/la/PETScMatrix.h"
 %include "dolfin/la/EpetraMatrix.h"
+%include "dolfin/la/VectorNormType.h"
 %include "dolfin/la/GenericVector.h"
 %include "dolfin/la/PETScVector.h"
 %include "dolfin/la/uBlasVector.h"

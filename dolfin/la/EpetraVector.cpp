@@ -123,7 +123,7 @@ void EpetraVector::disp(uint precision) const
 LogStream& dolfin::operator<< (LogStream& stream, const EpetraVector& x)
 {
   // Check if matrix has been defined
-  if ( !x.x )
+  if ( x.size() == 0 )
   {
     stream << "[ Epetra vector (empty) ]";
     return stream;
