@@ -4,6 +4,8 @@
 // Generated list of include files for PyDOLFIN
 
 // DOLFIN headers included from common
+%include "dolfin/common/types.h"
+%include "dolfin/common/constants.h"
 %include "dolfin/common/timing.h"
 %include "dolfin/common/Array.h"
 %include "dolfin/common/List.h"
@@ -24,16 +26,16 @@
 
 // DOLFIN headers included from la
 %include "dolfin/la/default_la_types.h"
+%include "dolfin/la/VectorNormType.h"
 %include "dolfin/la/GenericTensor.h"
 %include "dolfin/la/GenericMatrix.h"
+%include "dolfin/la/GenericVector.h"
 %include "dolfin/la/PETScObject.h"
 %include "dolfin/la/uBlasMatrix.h"
 %include "dolfin/la/PETScMatrix.h"
 %include "dolfin/la/EpetraMatrix.h"
-%include "dolfin/la/VectorNormType.h"
-%include "dolfin/la/GenericVector.h"
-%include "dolfin/la/PETScVector.h"
 %include "dolfin/la/uBlasVector.h"
+%include "dolfin/la/PETScVector.h"
 %include "dolfin/la/EpetraVector.h"
 %include "dolfin/la/GenericSparsityPattern.h"
 %include "dolfin/la/SparsityPattern.h"
@@ -51,8 +53,8 @@
 %include "dolfin/la/uBlasLUSolver.h"
 %include "dolfin/la/uBlasPreconditioner.h"
 %include "dolfin/la/uBlasILUPreconditioner.h"
-%include "dolfin/la/Matrix.h"
 %include "dolfin/la/Vector.h"
+%include "dolfin/la/Matrix.h"
 %include "dolfin/la/Scalar.h"
 %include "dolfin/la/LinearSolver.h"
 %include "dolfin/la/KrylovSolver.h"
