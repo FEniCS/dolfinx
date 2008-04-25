@@ -113,6 +113,10 @@ namespace dolfin
     const uBlasMatrix<Mat>& operator*= (real a)
     { A *= a; return *this; }
 
+    /// Divide matrix by given number
+    const uBlasMatrix<Mat>& operator/= (real a)
+    { A /= a; return *this; }
+
     /// Assignment operator
     const GenericMatrix& operator= (const GenericMatrix& A)
     { this->A = A.down_cast< uBlasMatrix<Mat> >().mat(); return *this; }
@@ -120,12 +124,6 @@ namespace dolfin
     /// Assignment operator
     const uBlasMatrix<Mat>& operator= (const uBlasMatrix<Mat>& A)
     { this->A = A.mat(); return *this; }
-
-    //--- Convenience functions ---
-
-    /// Divide matrix by given number
-    const uBlasMatrix<Mat>& operator/= (real a)
-    { A /= a; return *this; }
 
     //--- Special functions ---
 

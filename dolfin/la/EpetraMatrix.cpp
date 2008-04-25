@@ -1,7 +1,10 @@
 // Copyright (C) 2008 Martin Sandve Alnes, Kent-Andre Mardal and Johannes Ring.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Anders Logg, 2008.
+//
 // First added:  2008-04-21
+// Last changed: 2008-04-25
 
 #ifdef HAS_TRILINOS
 
@@ -258,11 +261,18 @@ const EpetraMatrix& EpetraMatrix::operator*= (real a)
   return *this;
 }
 //-----------------------------------------------------------------------------
+const EpetraMatrix& EpetraMatrix::operator/= (real a)
+{
+  dolfin_assert(A);
+  A->Scale(1.0 / a);
+  return *this;
+}
+//-----------------------------------------------------------------------------
 LogStream& dolfin::operator<< (LogStream& stream, const Epetra_FECrsMatrix& A)
 {
   error("operator << EpetraMatrix not implemented yet"); 
   return stream;
 }
-
+//-----------------------------------------------------------------------------
 
 #endif

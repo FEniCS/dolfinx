@@ -1,18 +1,19 @@
 // Copyright (C) 2008 Martin Sandve Alnes, Kent-Andre Mardal and Johannes Ring.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Anders Logg, 2008.
+//
 // First added:  2008-04-21
+// Last changed: 2008-04-25
 
 #ifndef __EPETRA_MATRIX_H
 #define __EPETRA_MATRIX_H
 
 #ifdef HAS_TRILINOS
 
-#include <dolfin/common/types.h>
-#include <dolfin/log/dolfin_log.h>
+#include <dolfin/log/LogStream.h>
 #include <dolfin/common/Variable.h>
 #include "GenericMatrix.h"
-#include "LinearAlgebraFactory.h"
 
 class Epetra_FECrsMatrix; 
 class Epetra_CrsGraph;
@@ -20,15 +21,14 @@ class Epetra_CrsGraph;
 namespace dolfin
 {
 
-  /// Forward declarations
-  //class EpetraVector;
   class GenericSparsityPattern;
 
-  /// This class represents a sparse matrix of dimension M x N.
-  /// It is a simple wrapper for a Epetra matrix pointer (Epetra_FECrsMatrix).
+  /// This class provides a simple matrix class based on Epetra.
+  /// It is a simple wrapper for an Epetra matrix object (Epetra_FECrsMatrix)
+  /// implementing the GenericMatrix interface.
   ///
   /// The interface is intentionally simple. For advanced usage,
-  /// access the Epetra_FECrsMatrix pointer using the function mat() and
+  /// access the Epetra_FECrsMatrix object using the function mat() and
   /// use the standard Epetra interface.
 
   class EpetraMatrix: public GenericMatrix, public Variable
@@ -50,7 +50,7 @@ namespace dolfin
     /// Destructor
     virtual ~EpetraMatrix();
 
-    //--- Implementation of the GenericTensor interface --
+    //--- Implementation of the GenericTensor interface ---
     
     /// Initialize a matrix from the sparsity pattern
     void init(const GenericSparsityPattern& sparsity_pattern); 
@@ -70,7 +70,7 @@ namespace dolfin
     /// Display matrix (sparse output is default)
     void disp(uint precision = 2) const;
 
-    //--- Implementation of the GenericMatrix interface --
+    //--- Implementation of the GenericMatrix interface ---
 
     /// Initialize M x N matrix
     void init(uint M, uint N);
@@ -99,6 +99,9 @@ namespace dolfin
     /// Multiply matrix by given number
     const EpetraMatrix& operator*= (real a);
 
+    /// Divide matrix by given number
+    const EpetraMatrix& operator/= (real a);
+
     /// Assignment operator
     const GenericMatrix& operator= (const GenericMatrix& x)
     { error("Not implemented."); return *this; }
@@ -107,7 +110,7 @@ namespace dolfin
     const EpetraMatrix& operator= (const EpetraMatrix& x)
     { error("Not implemented."); return *this; }
 
-    //--- Special functions --
+    //--- Special Epetra functions ---
 
     /// Return factory object for backend
     LinearAlgebraFactory& factory() const;
@@ -117,11 +120,6 @@ namespace dolfin
 
     /// Create uninitialized matrix
     EpetraMatrix* create() const;
-
-    // --- Output ---
-
-    /// Output
-    friend LogStream& operator<< (LogStream& stream, const Epetra_FECrsMatrix& A);
 
   private:
 
@@ -134,6 +132,7 @@ namespace dolfin
   };
 
   LogStream& operator<< (LogStream& stream, const Epetra_FECrsMatrix& A);
+
 }
 
 #endif //HAS_TRILINOS

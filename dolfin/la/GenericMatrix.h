@@ -95,6 +95,9 @@ namespace dolfin
     /// Multiply matrix by given number
     virtual const GenericMatrix& operator*= (real a) = 0;
 
+    /// Divide matrix by given number
+    virtual const GenericMatrix& operator/= (real a) = 0;
+
     /// Assignment operator
     virtual const GenericMatrix& operator= (const GenericMatrix& x) = 0;
 
@@ -111,10 +114,6 @@ namespace dolfin
     /// Set given entry to value
     virtual void setitem(std::pair<uint, uint> ij, real value)
     { set(&value, 1, &ij.first, 1, &ij.second); }
-
-    /// Divide matrix by given number
-    virtual const GenericMatrix& operator/= (real a)
-    { *this *= 1.0 / a; return *this; }
 
   };
 

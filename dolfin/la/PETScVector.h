@@ -103,13 +103,8 @@ namespace dolfin
     /// Multiply vector by given number
     const PETScVector& operator*= (real a);
 
-    /// Assignment operator
-    const GenericVector& operator= (const GenericVector& x);
-
-    /// Assignment operator
-    const PETScVector& operator= (const PETScVector& x);
-
-    //--- Convenience functions ---
+    /// Divide vector by given number
+    const PETScVector& operator/= (real a);
 
     /// Add given vector
     const PETScVector& operator+= (const GenericVector& x);
@@ -117,8 +112,11 @@ namespace dolfin
     /// Subtract given vector
     const PETScVector& operator-= (const GenericVector& x);
 
-    /// Divide vector by given number
-    const PETScVector& operator/= (real a);
+    /// Assignment operator
+    const GenericVector& operator= (const GenericVector& x);
+
+    /// Assignment operator
+    const PETScVector& operator= (const PETScVector& x);
 
     //--- Special functions ---
 

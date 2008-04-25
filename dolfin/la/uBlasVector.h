@@ -104,13 +104,8 @@ namespace dolfin
     /// Multiply vector by given number
     const uBlasVector& operator *= (real a);
 
-    /// Assignment operator
-    const GenericVector& operator= (const GenericVector& x);
-
-    /// Assignment operator
-    const uBlasVector& operator= (const uBlasVector& x);
-
-    //--- Convenience functions ---
+    /// Divide vector by given number
+    const uBlasVector& operator /= (real a);
 
     /// Add given vector
     const uBlasVector& operator+= (const GenericVector& x);
@@ -118,8 +113,11 @@ namespace dolfin
     /// Subtract given vector
     const uBlasVector& operator-= (const GenericVector& x);
 
-    /// Divide vector by given number
-    const uBlasVector& operator /= (real a);
+    /// Assignment operator
+    const GenericVector& operator= (const GenericVector& x);
+
+    /// Assignment operator
+    const uBlasVector& operator= (const uBlasVector& x);
 
     //--- Special functions ---
 

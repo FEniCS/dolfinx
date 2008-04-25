@@ -103,6 +103,15 @@ namespace dolfin
     /// Multiply vector by given number
     virtual const GenericVector& operator*= (real a) = 0;
 
+    /// Divide vector by given number
+    virtual const GenericVector& operator/= (real a) = 0;
+
+    /// Add given vector
+    virtual const GenericVector& operator+= (const GenericVector& x) = 0;
+
+    /// Subtract given vector
+    virtual const GenericVector& operator-= (const GenericVector& x) = 0;
+
     /// Assignment operator
     virtual const GenericVector& operator= (const GenericVector& x) = 0;
 
@@ -119,18 +128,6 @@ namespace dolfin
     /// Set given entry to value
     virtual void setitem(uint i, real value)
     { set(&value, 1, &i); }
-
-    /// Add given vector
-    virtual const GenericVector& operator+= (const GenericVector& x)
-    { axpy(1.0, x); return *this; }
-
-    /// Subtract given vector
-    virtual const GenericVector& operator-= (const GenericVector& x)
-    { axpy(-1.0, x); return *this; }
-
-    /// Divide vector by given number
-    virtual const GenericVector& operator/= (real a)
-    { *this *= 1.0 / a; return *this; }
 
   };
 

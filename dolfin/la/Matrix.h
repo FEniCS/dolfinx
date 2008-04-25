@@ -107,6 +107,10 @@ namespace dolfin
     const Matrix& operator*= (real a)
     { *matrix *= a; return *this; }
 
+    /// Divide matrix by given number
+    const Matrix& operator/= (real a)
+    { *this /= a; return *this; }
+
     /// Assignment operator
     const GenericMatrix& operator= (const GenericMatrix& A)
     { *matrix = A; return *this; }
@@ -114,12 +118,6 @@ namespace dolfin
     /// Assignment operator
     const Matrix& operator= (const Matrix& A)
     { *matrix = *A.matrix; return *this; }
-
-    //--- Convenience functions ---
-
-    /// Divide matrix by given number
-    const Matrix& operator/= (real a)
-    { *this /= a; return *this; }
 
     //--- Special functions ---
 

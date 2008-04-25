@@ -1,37 +1,32 @@
 // Copyright (C) 2008 Martin Sandve Alnes, Kent-Andre Mardal and Johannes Ring.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Anders Logg, 2008.
+//
 // First added:  2008-04-21
-// Last changed:  2008-04-23
+// Last changed: 2008-04-25
 
 #ifndef __EPETRA_VECTOR_H
 #define __EPETRA_VECTOR_H
 
 #ifdef HAS_TRILINOS
 
-/*
-#include <Epetra_Map.h>
-#include <Epetra_MultiVector.h>
-#include <Epetra_FEVector.h>
-*/
-
-#include <dolfin/common/types.h>
-#include <dolfin/log/dolfin_log.h>
+#include <dolfin/log/LogStream.h>
 #include <dolfin/common/Variable.h>
 #include "GenericVector.h"
-#include "LinearAlgebraFactory.h"
-#include "VectorNormType.h"
 
 class Epetra_FEVector; 
 class Epetra_Map;
 
 namespace dolfin
 {
-  /// This class represents a vector of dimension N.
-  /// It is a simple wrapper for a Epetra vector pointer (Epetra_FEVector).
+
+  /// This class provides a simple vector class based on Epetra.
+  /// It is a simple wrapper for an Epetra vector object (Epetre_FEVector)
+  /// implementing the GenericVector interface.
   ///
   /// The interface is intentionally simple. For advanced usage,
-  /// access the Epetra_FEVector pointer using the function vec() and
+  /// access the Epetra_FEVector object using the function vec() and
   /// use the standard Epetra interface.
 
   class EpetraVector: public GenericVector, public Variable
@@ -105,8 +100,18 @@ namespace dolfin
     /// Return norm of vector
     virtual real norm(VectorNormType type = l2) const;  
 
-    /// Multiply vector with scalar
+    /// Multiply vector by given number
     const EpetraVector& operator*= (real a);
+
+    /// Divide vector by given number
+    virtual const EpetraVector& operator/= (real a)
+    { *this *= 1.0 / a; return *this; }
+
+    /// Add given vector
+    const EpetraVector& operator+= (const GenericVector& x);
+
+    /// Subtract given vector
+    const EpetraVector& operator-= (const GenericVector& x);
 
     /// Assignment operator 
     const EpetraVector& operator= (const GenericVector& x);
@@ -114,24 +119,12 @@ namespace dolfin
     /// Assignment operator 
     const EpetraVector& operator= (const EpetraVector& x);
 
-    //--- Convenience functions ---
-
-    /// Add vector x
-    const EpetraVector& operator+= (const GenericVector& x);
-
-    /// Subtract vector x
-    const EpetraVector& operator-= (const GenericVector& x);
-
-    /// Divide vector by given number
-    virtual const EpetraVector& operator/= (real a)
-    { *this *= 1.0 / a; return *this; }
-
     //--- Special functions ---
 
     /// Return backend factory
     LinearAlgebraFactory& factory() const;
 
-    //--- Special functions, intended for library use only ---
+    //--- Special Epetra functions ---
     
     /// Return Epetra_MultiVector reference
     Epetra_FEVector& vec() const;
@@ -139,12 +132,6 @@ namespace dolfin
     /// Create uninitialized vector
     EpetraVector* create() const;
 
-    //--- Output ---  
-
-    /// Output
-    friend LogStream& operator<< (LogStream& stream, const EpetraVector& A);
-
-    // Friends
     friend class EpetraMatrix;
 
   private:

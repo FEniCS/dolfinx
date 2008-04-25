@@ -112,15 +112,9 @@ namespace dolfin
     const Vector& operator*= (real a)
     { *vector *= a; return *this; }
 
-    /// Assignment operator
-    const GenericVector& operator= (const GenericVector& x)
-    { *vector = x; return *this; }
-
-    /// Assignment operator
-    const Vector& operator= (const Vector& x)
-    { *vector = *x.vector; return *this; }
-
-    //--- Convenience functions ---
+    /// Divide vector by given number
+    const Vector& operator/= (real a)
+    { *this *= 1.0 / a; return *this; }
 
     /// Add given vector
     const Vector& operator+= (const GenericVector& x)
@@ -130,9 +124,13 @@ namespace dolfin
     const Vector& operator-= (const GenericVector& x)
     { axpy(-1.0, x); return *this; }
 
-    /// Divide vector by given number
-    const Vector& operator/= (real a)
-    { *this *= 1.0 / a; return *this; }
+    /// Assignment operator
+    const GenericVector& operator= (const GenericVector& x)
+    { *vector = x; return *this; }
+
+    /// Assignment operator
+    const Vector& operator= (const Vector& x)
+    { *vector = *x.vector; return *this; }
 
     //--- Special functions ---
 

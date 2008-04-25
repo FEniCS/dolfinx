@@ -111,16 +111,14 @@ namespace dolfin
     /// Multiply matrix by given number
     const PETScMatrix& operator*= (real a);
 
+    /// Divide matrix by given number
+    virtual const PETScMatrix& operator/= (real a);
+
     /// Assignment operator
     const GenericMatrix& operator= (const GenericMatrix& A);
 
     /// Assignment operator
     const PETScMatrix& operator= (const PETScMatrix& A);
-
-    //--- Convenience functions ---
-
-    /// Divide matrix by given number
-    virtual const PETScMatrix& operator/= (real a);
 
     //--- Special functions ---
 
