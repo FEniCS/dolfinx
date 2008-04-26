@@ -20,7 +20,7 @@ public:
   
   void u0(uBlasVector& u)
   {
-    u = 0.0;
+    u.zero();
   }
 
   void f(const uBlasVector& u, real t, uBlasVector& y)
