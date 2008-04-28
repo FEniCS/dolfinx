@@ -11,14 +11,16 @@ __copyright__ = "Copyright (C) 2008 Kent-Andre Mardal"
 try: 
     # import Trilinos stuff
     from PyTrilinos import Epetra, AztecOO, TriUtils, ML 
+    from dolfin import *
+    EpetraMatrix
     trilinos_installed = True
 except: 
     print "You Need to have PyTrilinos with Epetra, AztecOO, TriUtils and ML installed for this demo to run"
     trilinos_installed = False 
 
+
 if trilinos_installed: 
 
-    from dolfin import *
 
     # Create mesh and finite element
     mesh = UnitSquare(20,20)
