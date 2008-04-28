@@ -45,15 +45,7 @@ void EpetraSparsityPattern::init(uint rank_, const uint* dims_){
     Epetra_SerialComm Comm = f.getSerialComm();
 
     Epetra_Map row_map(dims[0], 0, Comm);
-    Epetra_Map col_map(dims[1], 0, Comm);
-
-    
-    //Epetra_CrsGraph constuctor with fixed number of indices per row.
-    //Epetra_CrsGraph (Epetra_DataAccess CV, const Epetra_BlockMap &RowMap, const Epetra_BlockMap &ColMap, int NumIndicesPerRow, bool StaticProfile=false)
-    
-
-    //  epetra_graph = new Epetra_CrsGraph(Copy, row_map, col_map, num_indices_per_row );   
-    epetra_graph = new Epetra_FECrsGraph(Copy, row_map, col_map, 0);   
+    epetra_graph = new Epetra_FECrsGraph(Copy, row_map, 0);   
   }
 }
 //-----------------------------------------------------------------------------
@@ -100,9 +92,18 @@ uint EpetraSparsityPattern::numNonZero() const {
 //-----------------------------------------------------------------------------
 void EpetraSparsityPattern::apply() {
   dolfin_assert(epetra_graph); 
+
   // Could employ eg. OptimizeStorage. Not sure if this is wanted, 
   // the graph would then depend on the equations, not only the method. 
-  epetra_graph->FillComplete ();
+
+  EpetraFactory& f = dynamic_cast<EpetraFactory&>(factory());
+  Epetra_SerialComm Comm = f.getSerialComm();
+
+  Epetra_Map row_map(dims[0], 0, Comm);
+  Epetra_Map col_map(dims[1], 0, Comm);
+
+  epetra_graph->FillComplete (col_map, row_map);
+
 }
 //-----------------------------------------------------------------------------
 LinearAlgebraFactory& EpetraSparsityPattern::factory() const

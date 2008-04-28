@@ -94,9 +94,8 @@ EpetraVector* EpetraVector::copy() const
 //-----------------------------------------------------------------------------
 dolfin::uint EpetraVector::size() const
 {
-  if(!x)
-    return 0;
-  return x->GlobalLength();
+  if (x) return x->GlobalLength();
+  else return 0; 
 }
 //-----------------------------------------------------------------------------
 void EpetraVector::zero()
@@ -259,6 +258,8 @@ real EpetraVector::norm(VectorNormType type) const
   }
   return value;
 }
+
+
 //-----------------------------------------------------------------------------
 real EpetraVector::min() const
 {
