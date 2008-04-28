@@ -38,7 +38,7 @@ namespace dolfin
   public:
 
     /// Create empty vector
-    explicit PETScVector();
+    PETScVector();
 
     /// Create vector of size N
     explicit PETScVector(uint N);
@@ -50,56 +50,56 @@ namespace dolfin
     explicit PETScVector(Vec x);
 
     /// Destructor
-    ~PETScVector();
+    virtual ~PETScVector();
 
     //--- Implementation of the GenericTensor interface ---
 
     /// Return copy of tensor
-    PETScVector* copy() const;
+    virtual PETScVector* copy() const;
 
     /// Set all entries to zero and keep any sparse structure
-    void zero();
+    virtual void zero();
 
     /// Finalize assembly of tensor
-    void apply();
+    virtual void apply();
 
     /// Display tensor
-    void disp(uint precision=2) const;
+    virtual void disp(uint precision=2) const;
 
     //--- Implementation of the GenericVector interface ---
 
     /// Initialize vector of size N
-    void init(uint N);
+    virtual void init(uint N);
 
     /// Return size of vector
-    uint size() const;
+    virtual uint size() const;
 
     /// Get block of values
-    void get(real* block, uint m, const uint* rows) const;
+    virtual void get(real* block, uint m, const uint* rows) const;
 
     /// Set block of values
-    void set(const real* block, uint m, const uint* rows);
+    virtual void set(const real* block, uint m, const uint* rows);
 
     /// Add block of values
-    void add(const real* block, uint m, const uint* rows);
+    virtual void add(const real* block, uint m, const uint* rows);
 
     /// Get all values
-    void get(real* values) const;
+    virtual void get(real* values) const;
 
     /// Set all values
-    void set(real* values);
+    virtual void set(real* values);
 
     /// Add values to each entry
-    void add(real* values);
+    virtual void add(real* values);
 
     /// Add multiple of given vector (AXPY operation)
     virtual void axpy(real a, const GenericVector& x); 
 
     /// Return inner product with given vector
-    real inner(const GenericVector& v) const;
+    virtual real inner(const GenericVector& v) const;
 
     /// Return norm of vector
-    real norm(VectorNormType type=l2) const;
+    virtual real norm(VectorNormType type=l2) const;
 
     /// Return minimum value of vector
     virtual real min() const;
@@ -128,7 +128,7 @@ namespace dolfin
     //--- Special functions ---
 
     /// Return linear algebra backend factory
-    LinearAlgebraFactory& factory() const;
+    virtual LinearAlgebraFactory& factory() const;
 
     //--- Special PETScFunctions ---
 

@@ -31,14 +31,14 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 EpetraMatrix::EpetraMatrix():
     Variable("A", "Epetra matrix"),
-    A(0), _copy(false)
+    A(0), is_view(false)
 {
   // TODO: call Epetra_Init or something?
 }
 //-----------------------------------------------------------------------------
 EpetraMatrix::EpetraMatrix(uint M, uint N):
     Variable("A", "Epetra matrix"),
-    A(0), _copy(false)
+    A(0), is_view(false)
 {
   // TODO: call Epetra_Init or something?
   // Create Epetra matrix
@@ -47,21 +47,21 @@ EpetraMatrix::EpetraMatrix(uint M, uint N):
 //-----------------------------------------------------------------------------
 EpetraMatrix::EpetraMatrix(const EpetraMatrix& A):
   Variable("A", "Epetra matrix"),
-  A(0), _copy(true)
+  A(0), is_view(true)
 {
   error("Not implemented.");
 }
 //-----------------------------------------------------------------------------
 EpetraMatrix::EpetraMatrix(Epetra_FECrsMatrix* A):
     Variable("A", "a sparse matrix"),
-    A(A), _copy(true)
+    A(A), is_view(true)
 {
   // TODO: call Epetra_Init or something?
 }
 //-----------------------------------------------------------------------------
 EpetraMatrix::EpetraMatrix(const Epetra_CrsGraph& graph):
     Variable("A", "a sparse matrix"),
-    A(0), _copy(false)
+    A(0), is_view(false)
 {
   // TODO: call Epetra_Init or something?
   A = new Epetra_FECrsMatrix(Copy, graph);
@@ -70,7 +70,7 @@ EpetraMatrix::EpetraMatrix(const Epetra_CrsGraph& graph):
 EpetraMatrix::~EpetraMatrix()
 {
   // Free memory of matrix
-  if (!_copy) delete A;
+  if (!is_view) delete A;
 }
 //-----------------------------------------------------------------------------
 void EpetraMatrix::init(uint M, uint N)

@@ -10,6 +10,7 @@
 
 #include <sstream>
 #include <iomanip>
+#include <algorithm>
 
 #include <dolfin/log/dolfin_log.h>
 #include <boost/numeric/ublas/vector.hpp>
@@ -128,12 +129,12 @@ real uBlasVector::norm(VectorNormType type) const
 //-----------------------------------------------------------------------------
 real uBlasVector::min() const
 {
-  return x.min();
+  return *std::min_element(x.begin(), x.end());
 }
 //-----------------------------------------------------------------------------
 real uBlasVector::max() const
 {
-  return x.max();
+  return *std::max_element(x.begin(), x.end());
 }
 //-----------------------------------------------------------------------------
 void uBlasVector::axpy(real a, const GenericVector& y)

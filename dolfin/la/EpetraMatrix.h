@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2008.
 //
 // First added:  2008-04-21
-// Last changed: 2008-04-25
+// Last changed: 2008-04-28
 
 #ifndef __EPETRA_MATRIX_H
 #define __EPETRA_MATRIX_H
@@ -36,10 +36,10 @@ namespace dolfin
   public:
 
     /// Create empty matrix
-    explicit EpetraMatrix();
+    EpetraMatrix();
 
     /// Create M x N matrix
-    explicit EpetraMatrix(uint M, uint N);
+    EpetraMatrix(uint M, uint N);
 
     /// Copy constuctor
     explicit EpetraMatrix(const EpetraMatrix& A);
@@ -56,48 +56,48 @@ namespace dolfin
     //--- Implementation of the GenericTensor interface ---
 
     /// Initialize zero tensor using sparsity pattern
-    void init(const GenericSparsityPattern& sparsity_pattern);
+    virtual void init(const GenericSparsityPattern& sparsity_pattern);
 
     /// Return copy of tensor
-    EpetraMatrix* copy() const;
+    virtual EpetraMatrix* copy() const;
 
     /// Return size of given dimension
-    uint size(uint dim) const;
+    virtual uint size(uint dim) const;
 
     /// Set all entries to zero and keep any sparse structure
-    void zero();
+    virtual void zero();
 
     /// Finalize assembly of tensor
-    void apply();
+    virtual void apply();
 
     /// Display tensor
-    void disp(uint precision=2) const;
+    virtual void disp(uint precision=2) const;
 
     //--- Implementation of the GenericMatrix interface ---
 
     /// Initialize M x N matrix
-    void init(uint M, uint N);
+    virtual void init(uint M, uint N);
 
     /// Get block of values
-    void get(real* block, uint m, const uint* rows, uint n, const uint* cols) const;
+    virtual void get(real* block, uint m, const uint* rows, uint n, const uint* cols) const;
 
     /// Set block of values
-    void set(const real* block, uint m, const uint* rows, uint n, const uint* cols);
+    virtual void set(const real* block, uint m, const uint* rows, uint n, const uint* cols);
 
     /// Add block of values
-    void add(const real* block, uint m, const uint* rows, uint n, const uint* cols);
+    virtual void add(const real* block, uint m, const uint* rows, uint n, const uint* cols);
 
     /// Get non-zero values of given row
-    void getrow(uint row, Array<uint>& columns, Array<real>& values) const;
+    virtual void getrow(uint row, Array<uint>& columns, Array<real>& values) const;
 
     /// Set given rows to zero
-    void zero(uint m, const uint* rows);
+    virtual void zero(uint m, const uint* rows);
 
     /// Set given rows to identity matrix
-    void ident(uint m, const uint* rows);
+    virtual void ident(uint m, const uint* rows);
 
     // Matrix-vector product, y = Ax
-    void mult(const GenericVector& x, GenericVector& y, bool transposed=false) const;
+    virtual void mult(const GenericVector& x, GenericVector& y, bool transposed=false) const;
 
     /// Multiply matrix by given number
     const EpetraMatrix& operator*= (real a);
@@ -116,23 +116,20 @@ namespace dolfin
     //--- Special functions ---
 
     /// Return linear algebra backend factory
-    LinearAlgebraFactory& factory() const;
+    virtual LinearAlgebraFactory& factory() const;
 
     //--- Special Epetra functions ---
 
     /// Return Epetra_FECrsMatrix reference
     Epetra_FECrsMatrix& mat() const;
 
-    /// Create uninitialized matrix
-    EpetraMatrix* create() const;
-
   private:
 
     // Epetra_FECrsMatrix pointer
     Epetra_FECrsMatrix* A;
     
-    // True if the pointer is a copy of someone else's data
-    bool _copy;
+    // True if we don't own the matrix A points to
+    bool is_view;
     
   };
 
