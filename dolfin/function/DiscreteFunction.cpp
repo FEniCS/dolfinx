@@ -121,8 +121,6 @@ DiscreteFunction::DiscreteFunction(const DiscreteFunction& f)
   : GenericFunction(f.mesh),
     local_vector(0), local_dof_map(0), intersection_detector(0), scratch(0)
 {
-  cout << "Copy constructor for discrete function" << endl;
-
   // FIXME: Why don't we just copy the finite_element?
   // Create finite element
   finite_element = ElementLibrary::create_finite_element(f.finite_element->signature());
