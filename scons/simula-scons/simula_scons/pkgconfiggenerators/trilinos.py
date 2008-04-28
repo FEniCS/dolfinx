@@ -6,13 +6,12 @@ import commands
 
 from commonPkgConfigUtils import *
 
-def getTrilinosDir(**kwargs):
-    trilinos_dir = getPackageDir("trilinos",
-                                 sconsEnv=kwargs.get("sconsEnv", None),
+def getTrilinosDir(sconsEnv=None):
+    trilinos_dir = getPackageDir("trilinos", sconsEnv=sconsEnv,
                                  default=os.path.join(os.path.sep,"usr","local"))
     return trilinos_dir
 
-def pkgVersion(**kwargs):
+def pkgVersion(sconsEnv=None):
     # Try to figure out what version of Trilinos we have.
     # Some of these imports try to load NumPy, which is also present 
     # in the current directory. Hence we need to remove the current 
@@ -49,7 +48,7 @@ def pkgVersion(**kwargs):
     # the loading of PyTrilinos will fail. Add it and message user.
     pyversion = ".".join([str(s) for s in sys.version_info[0:2]])
     pytrilinos_dir = "%s/lib/python%s/site-packages" % \
-                     (getTrilinosDir(**kwargs),pyversion)
+                     (getTrilinosDir(sconsEnv=sconsEnv),pyversion)
     try: 
         sys.path.index(pytrilinos_dir)
     except:
@@ -93,12 +92,12 @@ LD_LIBRARY_PATH/DYLD_LIBRARY_PATH as well.
     
     return trilinos_version
 
-def pkgCflags(**kwargs):
-    include_dir = os.path.join(getTrilinosDir(**kwargs), "include")
+def pkgCflags(sconsEnv=None):
+    include_dir = os.path.join(getTrilinosDir(sconsEnv=sconsEnv), "include")
     cflags = "-I%s" % include_dir
     return cflags
 
-def pkgLibs(compiler=None, cflags=None, **kwargs):
+def pkgLibs(compiler=None, cflags=None, sconsEnv=None):
     cpp_file_str = r""" 
 #include <ml_config.h>
 #include <stdio.h>
@@ -151,9 +150,9 @@ printf("-lml\n");
     write_cppfile(cpp_file_str, "trilinos_config_test.cpp")
 
     if not compiler:
-        compiler = get_compiler(kwargs.get("sconsEnv", None))
+        compiler = get_compiler(sconsEnv)
     if not cflags:
-        cflags = pkgCflags(**kwargs)
+        cflags = pkgCflags(sconsEnv=sconsEnv)
 
     cmdstr = "%s %s trilinos_config_test.cpp" % (compiler,cflags)
     compileFailed, cmdoutput = commands.getstatusoutput(cmdstr)
@@ -167,7 +166,7 @@ printf("-lml\n");
         remove_cppfile("trilinos_config_test.cpp", execfile=True)
         raise UnableToRunException("Trilinos", errormsg=cmdoutput)
 
-    libs_dir = os.path.join(getTrilinosDir(**kwargs), "lib")
+    libs_dir = os.path.join(getTrilinosDir(sconsEnv=sconsEnv), "lib")
     libs_str = " -L%s %s" % (libs_dir,string.join(string.split(cmdoutput, '\n')))
     
     remove_cppfile("trilinos_config_test.cpp", execfile=True)
@@ -178,7 +177,7 @@ printf("-lml\n");
     if arch == "darwin":
     	libs_str += " -framework vecLib"
     else:
-        libs_str += " -L%s -lblas -llapack" % getAtlasDir(**kwargs)
+        libs_str += " -L%s -lblas -llapack" % getAtlasDir(sconsEnv=sconsEnv)
 
     return libs_str
 
@@ -211,14 +210,14 @@ def pkgTests(forceCompiler=None, sconsEnv=None,
         compiler, linker = set_forced_compiler(forceCompiler)
 
     if not cflags:
-        cflags = pkgCflags(sconsEnv=sconsEnv, **kwargs)
+        cflags = pkgCflags(sconsEnv=sconsEnv)
     if not libs:
         libs = pkgLibs(compiler=compiler, cflags=cflags, sconsEnv=sconsEnv)
     else:
         # Force a call to pkgLibs since this is the test for this package:
         libs = pkgLibs(compiler=compiler, cflags=cflags, sconsEnv=sconsEnv)
     if not version:
-        version = pkgVersion(**kwargs)
+        version = pkgVersion(sconsEnv=sconsEnv)
 
     return version, cflags, libs
 
