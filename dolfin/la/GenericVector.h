@@ -4,9 +4,10 @@
 // Modified by Anders Logg, 2006-2008.
 // Modified by Kent-Andre Mardal, 2008.
 // Modified by Ola Skavhaug, 2008.
+// Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2006-04-25
-// Last changed: 2008-04-23
+// Last changed: 2008-04-28
 
 #ifndef __GENERIC_VECTOR_H
 #define __GENERIC_VECTOR_H
@@ -99,6 +100,12 @@ namespace dolfin
 
     /// Return norm of vector
     virtual real norm(VectorNormType type=l2) const = 0;
+
+    /// Return minimum value of vector
+    virtual real min() const = 0;
+
+    /// Return maximum value of vector
+    virtual real max() const = 0;
 
     /// Multiply vector by given number
     virtual const GenericVector& operator*= (real a) = 0;

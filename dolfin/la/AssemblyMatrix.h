@@ -36,13 +36,13 @@ namespace dolfin
     { dims = new uint[2]; }
 
     /// Destructor
-    ~AssemblyMatrix()
+    virtual ~AssemblyMatrix()
     { delete [] dims; }
 
     ///--- Functions overloaded from GenericTensor ---
 
     /// Initialize zero tensor of given rank and dimensions
-    void init(uint rank, const uint* dims, bool reset = true)
+    virtual void init(uint rank, const uint* dims, bool reset = true)
     {
       // Check that the rank is 2
       if ( rank != 2 )
@@ -61,21 +61,21 @@ namespace dolfin
     { return dims[dim]; }
 
     /// Get block of values
-    void get(real* block, const uint* num_rows, const uint * const * rows) const
+    virtual void get(real* block, const uint* num_rows, const uint * const * rows) const
     { get(block, num_rows[0], rows[0], num_rows[1], rows[1]); }
 
     /// Set block of values
-    void set(const real* block, const uint* num_rows, const uint * const * rows)
+    virtual void set(const real* block, const uint* num_rows, const uint * const * rows)
     { set(block, num_rows[0], rows[0], num_rows[1], rows[1]); }
 
     /// Add block of values
-    void add(const real* block, const uint* num_rows, const uint * const * rows)
+    virtual void add(const real* block, const uint* num_rows, const uint * const * rows)
     { add(block, num_rows[0], rows[0], num_rows[1], rows[1]); }
 
     ///--- Specialized matrix functions ---
 
     /// Initialize M x N matrix
-    void init(uint M, uint N)
+    virtual void init(uint M, uint N)
     {
       // Set number of rows
       A.resize(M);
@@ -86,11 +86,11 @@ namespace dolfin
           it->second = 0.0;
     }
 
-    void init(const SparsityPattern& sparsity_pattern, bool reset = true)
+    virtual void init(const SparsityPattern& sparsity_pattern, bool reset = true)
     { init(sparsity_pattern.size(0), sparsity_pattern.size(1)); }
 
     /// Add entries to matrix
-    void add(const real* block, uint m, const uint* rows, uint n, const uint* cols)
+    virtual void add(const real* block, uint m, const uint* rows, uint n, const uint* cols)
     {
       uint pos = 0;
       for (uint i = 0; i < m; i++)
@@ -107,19 +107,18 @@ namespace dolfin
         }
       }
     }
-
     
-    void get(real* block, uint m, const uint* rows, uint n, const uint* cols) const
+    virtual void get(real* block, uint m, const uint* rows, uint n, const uint* cols) const
     { error("Not implemented"); }
 
-    void set(const real* block, uint m, const uint* rows, uint n, const uint* cols)
+    virtual void set(const real* block, uint m, const uint* rows, uint n, const uint* cols)
     { error("Not implemented"); }
 
     /// Finalise assembly
-    void apply() {}
+    virtual void apply() {}
 
     /// Display matrix
-    void disp(uint precision = 2)
+    virtual void disp(uint precision = 2)
     {
       for (uint i = 0; i < dims[0]; i++)
       {

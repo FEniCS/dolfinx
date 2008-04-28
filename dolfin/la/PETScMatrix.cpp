@@ -28,7 +28,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 PETScMatrix::PETScMatrix(const Type type):
     Variable("A", "a sparse matrix"),
-    A(0), _copy(false), _type(type)
+    A(0), is_view(false), _type(type)
 {
   // Check type
   checkType();
@@ -36,7 +36,7 @@ PETScMatrix::PETScMatrix(const Type type):
 //-----------------------------------------------------------------------------
 PETScMatrix::PETScMatrix(Mat A):
     Variable("A", "a sparse matrix"),
-    A(A), _copy(true), _type(default_matrix)
+    A(A), is_view(true), _type(default_matrix)
 {
   // FIXME: get PETSc matrix type and set
   _type = default_matrix;
@@ -44,7 +44,7 @@ PETScMatrix::PETScMatrix(Mat A):
 //-----------------------------------------------------------------------------
 PETScMatrix::PETScMatrix(uint M, uint N, Type type):
     Variable("A", "a sparse matrix"),
-    A(0), _copy(false), _type(type)
+    A(0), is_view(false), _type(type)
 {
   // Check type
   checkType();
@@ -55,14 +55,14 @@ PETScMatrix::PETScMatrix(uint M, uint N, Type type):
 //-----------------------------------------------------------------------------
 PETScMatrix::PETScMatrix(const PETScMatrix& A):
   Variable("A", "PETSc matrix"),
-  A(0), _copy(false), _type(A._type)
+  A(0), is_view(false), _type(A._type)
 {
   *this = A;
 }
 //-----------------------------------------------------------------------------
 PETScMatrix::~PETScMatrix()
 {
-  if (A && !_copy)
+  if (A && !is_view)
     MatDestroy(A);
 }
 //-----------------------------------------------------------------------------

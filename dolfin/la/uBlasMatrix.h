@@ -4,9 +4,10 @@
 // Modified by Anders Logg, 2006-2008.
 // Modified by Ola Skavhaug, 2007-2008.
 // Modified by Kent-Andre Mardal, 2008.
+// Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2006-07-05
-// Last changed: 2008-04-24
+// Last changed: 2008-04-28
 
 #ifndef __UBLAS_MATRIX_H
 #define __UBLAS_MATRIX_H
@@ -48,10 +49,10 @@ namespace dolfin
   public:
 
     /// Create empty matrix
-    explicit uBlasMatrix();
+    uBlasMatrix();
     
     /// Create M x N matrix
-    explicit uBlasMatrix(uint M, uint N);
+    uBlasMatrix(uint M, uint N);
 
     /// Copy constructor
     explicit uBlasMatrix(const uBlasMatrix& A);
@@ -61,7 +62,7 @@ namespace dolfin
     explicit uBlasMatrix(const ublas::matrix_expression<E>& A) : Mat(A) {}
 
     /// Destructor
-    ~uBlasMatrix();
+    virtual ~uBlasMatrix();
 
     //--- Implementation of the GenericTensor interface ---
 
@@ -124,7 +125,9 @@ namespace dolfin
     //--- Special functions ---
 
     /// Return linear algebra backend factory
-    LinearAlgebraFactory& factory() const;
+    virtual LinearAlgebraFactory& factory() const;
+
+    //--- Special uBLAS functions ---
     
     /// Return reference to uBLAS matrix (const version)
     const Mat& mat() const
@@ -133,8 +136,6 @@ namespace dolfin
     /// Return reference to uBLAS matrix (non-const version)
     Mat& mat()
     { return A; }
-
-    //--- Special uBLAS functions ---
 
     /// Solve Ax = b out-of-place (A is not destroyed)
     void solve(uBlasVector& x, const uBlasVector& b) const;

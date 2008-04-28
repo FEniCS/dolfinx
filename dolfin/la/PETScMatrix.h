@@ -51,7 +51,7 @@ namespace dolfin
     explicit PETScMatrix(Type type=default_matrix);
 
     /// Create M x N matrix
-    explicit PETScMatrix(uint M, uint N, Type type=default_matrix);
+    PETScMatrix(uint M, uint N, Type type=default_matrix);
 
     /// Copy constructor
     explicit PETScMatrix(const PETScMatrix& A);
@@ -60,53 +60,53 @@ namespace dolfin
     explicit PETScMatrix(Mat A);
 
     /// Destructor
-    ~PETScMatrix();
+    virtual ~PETScMatrix();
 
     //--- Implementation of the GenericTensor interface ---
 
     /// Initialize zero tensor using sparsity pattern
-    void init(const GenericSparsityPattern& sparsity_pattern);
+    virtual void init(const GenericSparsityPattern& sparsity_pattern);
 
     /// Return copy of tensor
-    PETScMatrix* copy() const;
+    virtual PETScMatrix* copy() const;
 
     /// Return size of given dimension
-    uint size(uint dim) const;
+    virtual uint size(uint dim) const;
 
     /// Set all entries to zero and keep any sparse structure
-    void zero();
+    virtual void zero();
 
     /// Finalize assembly of tensor
-    void apply();
+    virtual void apply();
 
     /// Display tensor
-    void disp(uint precision=2) const;
+    virtual void disp(uint precision=2) const;
 
     //--- Implementation of the GenericMatrix interface --
 
     /// Initialize M x N matrix
-    void init(uint M, uint N);
+    virtual void init(uint M, uint N);
 
     /// Get block of values
-    void get(real* block, uint m, const uint* rows, uint n, const uint* cols) const;
+    virtual void get(real* block, uint m, const uint* rows, uint n, const uint* cols) const;
 
     /// Set block of values
-    void set(const real* block, uint m, const uint* rows, uint n, const uint* cols);
+    virtual void set(const real* block, uint m, const uint* rows, uint n, const uint* cols);
 
     /// Add block of values
-    void add(const real* block, uint m, const uint* rows, uint n, const uint* cols);
+    virtual void add(const real* block, uint m, const uint* rows, uint n, const uint* cols);
 
     /// Get non-zero values of given row
-    void getrow(uint row, Array<uint>& columns, Array<real>& values) const;
+    virtual void getrow(uint row, Array<uint>& columns, Array<real>& values) const;
 
     /// Set given rows to zero
-    void zero(uint m, const uint* rows);
+    virtual void zero(uint m, const uint* rows);
 
     /// Set given rows to identity matrix
-    void ident(uint m, const uint* rows);
+    virtual void ident(uint m, const uint* rows);
 
     // Matrix-vector product, y = Ax
-    void mult(const GenericVector& x, GenericVector& y, bool transposed=false) const;
+    virtual void mult(const GenericVector& x, GenericVector& y, bool transposed=false) const;
 
     /// Multiply matrix by given number
     const PETScMatrix& operator*= (real a);
@@ -123,7 +123,7 @@ namespace dolfin
     //--- Special functions ---
 
     /// Return linear algebra backend factory
-    LinearAlgebraFactory& factory() const;
+    virtual LinearAlgebraFactory& factory() const;
 
     //--- Special PETScFunctions ---
 
@@ -157,8 +157,8 @@ namespace dolfin
     // PETSc Mat pointer
     Mat A;
 
-    // True if the pointer is a copy of someone else's data
-    bool _copy;
+    // True if we don't own the matrix A points to
+    bool is_view;
 
     // PETSc matrix type
     Type _type;
