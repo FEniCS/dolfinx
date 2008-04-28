@@ -94,7 +94,8 @@ EpetraVector* EpetraVector::copy() const
 //-----------------------------------------------------------------------------
 dolfin::uint EpetraVector::size() const
 {
-  dolfin_assert(x);
+  if(!x)
+    return 0;
   return x->GlobalLength();
 }
 //-----------------------------------------------------------------------------
