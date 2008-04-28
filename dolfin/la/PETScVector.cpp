@@ -280,14 +280,20 @@ real PETScVector::norm(VectorNormType type) const
 real PETScVector::min() const
 {
   real value = 0.0;
+  /*
   VecMin(x, &value);
+  */
+  dolfin::cout << "FIXME: PETScVector::min() isn't implemented." << dolfin::endl;
   return value;
 }
 //-----------------------------------------------------------------------------
 real PETScVector::max() const
 {
   real value = 0.0;
+  /*
   VecMax(x, &value);
+  */
+  dolfin::cout << "FIXME: PETScVector::max() isn't implemented." << dolfin::endl;
   return value;
 }
 //-----------------------------------------------------------------------------
