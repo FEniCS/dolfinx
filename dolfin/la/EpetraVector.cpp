@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-04-21
-// Last changed:  2008-04-23
+// Last changed:  2008-04-28
 
 #ifdef HAS_TRILINOS
 
@@ -27,7 +27,7 @@ using namespace dolfin;
 EpetraVector::EpetraVector():
     Variable("x", "a sparse vector"),
     x(0),
-    _copy(false)
+    is_view(false)
 {
   // Do nothing
 }
@@ -35,7 +35,7 @@ EpetraVector::EpetraVector():
 EpetraVector::EpetraVector(uint N):
     Variable("x", "a sparse vector"), 
     x(0),
-    _copy(false)
+    is_view(false)
 {
   // Create Epetra vector
   init(N);
@@ -44,7 +44,7 @@ EpetraVector::EpetraVector(uint N):
 EpetraVector::EpetraVector(Epetra_FEVector* x):
     Variable("x", "a vector"),
     x(x),
-    _copy(true)
+    is_view(true)
 {
   // Do nothing
 }
@@ -52,22 +52,22 @@ EpetraVector::EpetraVector(Epetra_FEVector* x):
 EpetraVector::EpetraVector(const Epetra_Map& map):
     Variable("x", "a vector"),
     x(0),
-    _copy(false)
+    is_view(false)
 {
   error("Not implemented yet");
 }
 //-----------------------------------------------------------------------------
-EpetraVector::EpetraVector(const EpetraVector& v)
-  : GenericVector(), 
+EpetraVector::EpetraVector(const EpetraVector& v):
     Variable("x", "a vector"),
-    x(0), _copy(false)
+    x(0),
+    is_view(false)
 {
   *this = v;
 }
 //-----------------------------------------------------------------------------
 EpetraVector::~EpetraVector()
 {
-  if (x && !_copy) delete x;
+  if (x && !is_view) delete x;
 }
 //-----------------------------------------------------------------------------
 void EpetraVector::init(uint N)
@@ -85,13 +85,9 @@ void EpetraVector::init(uint N)
   x = new Epetra_FEVector(map); 
 }
 //-----------------------------------------------------------------------------
-EpetraVector* EpetraVector::create() const
-{
-  return new EpetraVector();
-}
-//-----------------------------------------------------------------------------
 EpetraVector* EpetraVector::copy() const
 {
+  dolfin_assert(x); // Copying a non-initialized vector makes no sense.
   EpetraVector* v = new EpetraVector(*this); 
   return v;
 }
@@ -153,6 +149,7 @@ void EpetraVector::add(real* values)
 //-----------------------------------------------------------------------------
 void EpetraVector::get(real* block, uint m, const uint* rows) const
 {
+  //dolfin_assert(x); // Disabled for efficiency, uncomment if needed.
   // TODO: use Epetra_Vector function for efficiency and parallell handling
   for (uint i=0; i<m; i++)
     block[i] = (*x)[0][rows[i]];
@@ -206,7 +203,6 @@ LinearAlgebraFactory& EpetraVector::factory() const
   return EpetraFactory::instance();
 }
 //-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 const EpetraVector& EpetraVector::operator= (const GenericVector& v)
 {
   *this = v.down_cast<EpetraVector>();
@@ -227,15 +223,15 @@ const EpetraVector& EpetraVector::operator= (const EpetraVector& v)
 //-----------------------------------------------------------------------------
 const EpetraVector& EpetraVector::operator+= (const GenericVector& y)
 {
-  dolfin_assert(this->x);
-  this->axpy(1.0, y); 
+  dolfin_assert(x);
+  axpy(1.0, y); 
   return *this;
 }
 //-----------------------------------------------------------------------------
 const EpetraVector& EpetraVector::operator-= (const GenericVector& y)
 {
-  dolfin_assert(this->x);
-  this->axpy(-1.0, y); 
+  dolfin_assert(x);
+  axpy(-1.0, y); 
   return *this;
 }
 //-----------------------------------------------------------------------------
@@ -246,7 +242,9 @@ const EpetraVector& EpetraVector::operator*= (real a)
   return *this;
 }
 //-----------------------------------------------------------------------------
-real EpetraVector::norm(VectorNormType type) const {
+real EpetraVector::norm(VectorNormType type) const
+{
+  dolfin_assert(x);
   real value = 0.0;
   switch (type) {
   case l1:
@@ -260,6 +258,22 @@ real EpetraVector::norm(VectorNormType type) const {
   }
   return value;
 }
-
+//-----------------------------------------------------------------------------
+real EpetraVector::min() const
+{
+  dolfin_assert(x);
+  real value = 0.0;
+  x->MinValue(&value);
+  return value;
+}
+//-----------------------------------------------------------------------------
+real EpetraVector::max() const
+{
+  dolfin_assert(x);
+  real value = 0.0;
+  x->MaxValue(&value);
+  return value;
+}
+//-----------------------------------------------------------------------------
 
 #endif

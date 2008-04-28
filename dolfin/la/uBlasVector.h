@@ -7,7 +7,7 @@
 // Modified by Martin Alnæs, 2008.
 //
 // First added:  2006-03-04
-// Last changed: 2008-04-25
+// Last changed: 2008-04-28
 
 #ifndef __UBLAS_VECTOR_H
 #define __UBLAS_VECTOR_H
@@ -100,6 +100,12 @@ namespace dolfin
 
     /// Compute norm of vector
     real norm(VectorNormType type=l2) const;
+
+    /// Return minimum value of vector
+    virtual real min() const;
+
+    /// Return maximum value of vector
+    virtual real max() const;
 
     /// Multiply vector by given number
     const uBlasVector& operator *= (real a);

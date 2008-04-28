@@ -2,10 +2,10 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells 2005-2007.
-// Modified by Martin Alnæs 2008
+// Modified by Martin Sandve Alnes 2008
 //
 // First added:  2004
-// Last changed: 2008-04-23
+// Last changed: 2008-04-28
 
 // FIXME: Insert dolfin_assert() where appropriate
 
@@ -24,14 +24,14 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 PETScVector::PETScVector():
     Variable("x", "a sparse vector"),
-    x(0), _copy(false)
+    x(0), is_view(false)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 PETScVector::PETScVector(uint N):
     Variable("x", "a sparse vector"), 
-    x(0), _copy(false)
+    x(0), is_view(false)
 {
   // Create PETSc vector
   init(N);
@@ -39,21 +39,21 @@ PETScVector::PETScVector(uint N):
 //-----------------------------------------------------------------------------
 PETScVector::PETScVector(Vec x):
     Variable("x", "a vector"),
-    x(x), _copy(true)
+    x(x), is_view(true)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 PETScVector::PETScVector(const PETScVector& v):
     Variable("x", "a vector"),
-    x(0), _copy(false)
+    x(0), is_view(false)
 {
   *this = v;
 }
 //-----------------------------------------------------------------------------
 PETScVector::~PETScVector()
 {
-  if (x && !_copy)
+  if (x && !is_view)
     VecDestroy(x);
 }
 //-----------------------------------------------------------------------------
@@ -73,7 +73,7 @@ void PETScVector::init(uint N)
   }
   else
   {
-    if (x && !_copy)
+    if (x && !is_view)
       VecDestroy(x);
   }
 
@@ -274,6 +274,20 @@ real PETScVector::norm(VectorNormType type) const
     VecNorm(x, NORM_INFINITY, &value);
   }
   
+  return value;
+}
+//-----------------------------------------------------------------------------
+real PETScVector::min() const
+{
+  real value = 0.0;
+  VecMin(x, &value);
+  return value;
+}
+//-----------------------------------------------------------------------------
+real PETScVector::max() const
+{
+  real value = 0.0;
+  VecMax(x, &value);
   return value;
 }
 //-----------------------------------------------------------------------------

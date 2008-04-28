@@ -7,7 +7,8 @@
 // Modified by Martin Alnæs, 2008.
 //
 // First added:  2004-01-01
-// Last changed: 2008-04-14
+// Last changed: 2008-04-28
+
 
 #ifndef __PETSC_VECTOR_H
 #define __PETSC_VECTOR_H
@@ -100,6 +101,12 @@ namespace dolfin
     /// Return norm of vector
     real norm(VectorNormType type=l2) const;
 
+    /// Return minimum value of vector
+    virtual real min() const;
+
+    /// Return maximum value of vector
+    virtual real max() const;
+
     /// Multiply vector by given number
     const PETScVector& operator*= (real a);
 
@@ -135,8 +142,8 @@ namespace dolfin
     // PETSc Vec pointer
     Vec x;
     
-    // True if the pointer is a copy of someone else's data
-    bool _copy;
+    // True if we don't own the vector x points to
+    bool is_view;
 
   };
 

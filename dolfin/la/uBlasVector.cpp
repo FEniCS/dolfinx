@@ -3,10 +3,10 @@
 //
 // Modified by Anders Logg 2006-2008.
 // Modified by Kent-Andre Mardal 2008.
-// Modified by Martin Alnæs 2008.
+// Modified by Martin Sandve Alnes 2008.
 //
 // First added:  2006-04-04
-// Last changed: 2008-04-23
+// Last changed: 2008-04-28
 
 #include <sstream>
 #include <iomanip>
@@ -37,7 +37,7 @@ uBlasVector::uBlasVector(uint N):
   x.clear();
 }
 //-----------------------------------------------------------------------------
-uBlasVector::uBlasVector(const uBlasVector& x) :
+uBlasVector::uBlasVector(const uBlasVector& x):
   Variable("x", "uBLAS vector"), x(x.x)
 {
   // Do nothing
@@ -50,7 +50,7 @@ uBlasVector::~uBlasVector()
 //-----------------------------------------------------------------------------
 void uBlasVector::init(uint N)
 {
-  if( x.size() == N)
+  if(x.size() == N)
   {
     x.clear();
     return;
@@ -124,6 +124,16 @@ real uBlasVector::norm(VectorNormType type) const
     error("Requested vector norm type for uBlasVector unknown");
   }
   return norm_inf(x);
+}
+//-----------------------------------------------------------------------------
+real uBlasVector::min() const
+{
+  return x.min();
+}
+//-----------------------------------------------------------------------------
+real uBlasVector::max() const
+{
+  return x.max();
 }
 //-----------------------------------------------------------------------------
 void uBlasVector::axpy(real a, const GenericVector& y)
