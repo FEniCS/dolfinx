@@ -33,7 +33,7 @@ class Source(Function):
 # Sub domain for Dirichlet boundary condition
 class DirichletBoundary(SubDomain):
     def inside(self, x, on_boundary):
-        return bool(on_boundary) and x[0] < DOLFIN_EPS
+        return bool(on_boundary) and bool(x[0] < DOLFIN_EPS)
 
 # Define variational problem
 v = TestFunction(element)
