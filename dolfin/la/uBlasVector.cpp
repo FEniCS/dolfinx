@@ -8,6 +8,7 @@
 // First added:  2006-04-04
 // Last changed: 2008-04-28
 
+#include <iostream>
 #include <sstream>
 #include <iomanip>
 #include <algorithm>
@@ -28,12 +29,14 @@ using namespace dolfin;
 uBlasVector::uBlasVector():
     Variable("x", "uBLAS vector"), x(0)
 {
+  dolfin::cout << "uBlasVector::uBlasVector()" << dolfin::endl;
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 uBlasVector::uBlasVector(uint N):
     Variable("x", "uBLAS vector"), x(N)
 {
+  dolfin::cout << "uBlasVector::uBlasVector(uint)" << dolfin::endl;
   // Clear vector
   x.clear();
 }
@@ -41,16 +44,19 @@ uBlasVector::uBlasVector(uint N):
 uBlasVector::uBlasVector(const uBlasVector& x):
   Variable("x", "uBLAS vector"), x(x.x)
 {
+  dolfin::cout << "uBlasVector::uBlasVector(const uBlasVector&)" << dolfin::endl;
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 uBlasVector::~uBlasVector()
 {
+  dolfin::cout << "uBlasVector::~uBlasVector()" << dolfin::endl;
   //Do nothing
 }
 //-----------------------------------------------------------------------------
 void uBlasVector::init(uint N)
 {
+  dolfin::cout << "uBlasVector::init(N)" << dolfin::endl;
   if(x.size() == N)
   {
     x.clear();
@@ -109,6 +115,7 @@ void uBlasVector::apply()
 //-----------------------------------------------------------------------------
 void uBlasVector::zero()
 {
+  dolfin::cout << "in uBlasVector::zero()" << dolfin::endl;
   x.clear();
 }
 //-----------------------------------------------------------------------------
@@ -129,12 +136,16 @@ real uBlasVector::norm(VectorNormType type) const
 //-----------------------------------------------------------------------------
 real uBlasVector::min() const
 {
-  return *std::min_element(x.begin(), x.end());
+  real value = *std::min_element(x.begin(), x.end());
+  dolfin::cout << "in uBlasVector::min(), value = " << value << dolfin::endl;
+  return value;
 }
 //-----------------------------------------------------------------------------
 real uBlasVector::max() const
 {
-  return *std::max_element(x.begin(), x.end());
+  real value = *std::max_element(x.begin(), x.end());
+  dolfin::cout << "in uBlasVector::max(), value = " << value << dolfin::endl;
+  return value;
 }
 //-----------------------------------------------------------------------------
 void uBlasVector::axpy(real a, const GenericVector& y)
@@ -147,7 +158,6 @@ void uBlasVector::axpy(real a, const GenericVector& y)
 //-----------------------------------------------------------------------------
 real uBlasVector::inner(const GenericVector& y) const
 {
-
   return ublas::inner_prod(x, y.down_cast<uBlasVector>().vec());
 }
 //-----------------------------------------------------------------------------

@@ -40,3 +40,4 @@ namespace dolfin {
 }
 
 %rename(assign) dolfin::GenericVector::operator=;
+

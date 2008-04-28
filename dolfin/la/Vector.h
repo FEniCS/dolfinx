@@ -26,8 +26,8 @@ namespace dolfin
   public:
 
     /// Create empty vector
-    explicit Vector() : Variable("x", "DOLFIN vector"),
-                        vector(new DefaultVector())
+    Vector() : Variable("x", "DOLFIN vector"),
+               vector(new DefaultVector())
     {}
     
     /// Create vector of size N
@@ -37,7 +37,7 @@ namespace dolfin
 
     /// Copy constructor
     explicit Vector(const Vector& x) : Variable("x", "DOLFIN vector"),
-                                       vector(new DefaultVector((*x.vector).down_cast<DefaultVector>()))
+                                       vector(x.vector->copy())
     {}
 
     /// Destructor
