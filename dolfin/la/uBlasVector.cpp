@@ -131,14 +131,12 @@ real uBlasVector::norm(VectorNormType type) const
 real uBlasVector::min() const
 {
   real value = *std::min_element(x.begin(), x.end());
-  dolfin::cout << "FIXME: in uBlasVector::min(), value = " << value << dolfin::endl;
   return value;
 }
 //-----------------------------------------------------------------------------
 real uBlasVector::max() const
 {
   real value = *std::max_element(x.begin(), x.end());
-  dolfin::cout << "FIXME: in uBlasVector::max(), value = " << value << dolfin::endl;
   return value;
 }
 //-----------------------------------------------------------------------------
