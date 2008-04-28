@@ -38,3 +38,5 @@ namespace dolfin {
     // cols typemap
     $1 = PyArray_Check($input);
 }
+
+%rename(assign) dolfin::GenericVector::operator=;
