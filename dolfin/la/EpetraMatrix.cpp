@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2008.
 //
 // First added:  2008-04-21
-// Last changed: 2008-04-25
+// Last changed: 2008-04-28
 
 #ifdef HAS_TRILINOS
 
@@ -88,14 +88,9 @@ void EpetraMatrix::init(const GenericSparsityPattern& sparsity_pattern)
   A = new Epetra_FECrsMatrix(Copy, epetra_pattern.pattern());
 }
 //-----------------------------------------------------------------------------
-EpetraMatrix* EpetraMatrix::create() const
-{
-  return new EpetraMatrix();
-}
-//-----------------------------------------------------------------------------
 EpetraMatrix* EpetraMatrix::copy() const
 {
-  EpetraMatrix* mcopy = create();
+  EpetraMatrix* mcopy = EpetraFactory::instance().createMatrix();
 
   //MatDuplicate(A, MAT_COPY_VALUES, &(mcopy->A));
   // Not yet implemented
