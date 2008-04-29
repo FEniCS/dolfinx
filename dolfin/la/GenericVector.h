@@ -7,7 +7,7 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2006-04-25
-// Last changed: 2008-04-28
+// Last changed: 2008-04-29
 
 #ifndef __GENERIC_VECTOR_H
 #define __GENERIC_VECTOR_H
@@ -121,6 +121,10 @@ namespace dolfin
 
     /// Assignment operator
     virtual const GenericVector& operator= (const GenericVector& x) = 0;
+
+    /// Assignment operator
+    virtual const GenericVector& operator= (real a) = 0;
+
 
     //--- Convenience functions ---
 

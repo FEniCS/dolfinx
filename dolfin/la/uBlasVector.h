@@ -125,6 +125,11 @@ namespace dolfin
     /// Assignment operator
     const uBlasVector& operator= (const uBlasVector& x);
 
+    /// Assignment operator
+    const uBlasVector& operator= (real a);
+
+
+
     //--- Special functions ---
 
     /// Return linear algebra backend factory

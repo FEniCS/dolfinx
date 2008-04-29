@@ -7,7 +7,7 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2007-07-03
-// Last changed: 2008-04-28
+// Last changed: 2008-04-29
 
 #ifndef __VECTOR_H
 #define __VECTOR_H
@@ -139,6 +139,11 @@ namespace dolfin
     /// Assignment operator
     const Vector& operator= (const Vector& x)
     { *vector = *x.vector; return *this; }
+
+    /// Assignment operator
+    const Vector& operator= (real a)
+    { *vector = a; return *this; }
+
 
     //--- Special functions ---
 

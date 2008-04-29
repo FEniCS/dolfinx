@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2008.
 //
 // First added:  2008-04-21
-// Last changed: 2008-04-28
+// Last changed: 2008-04-29
 
 #ifndef __EPETRA_VECTOR_H
 #define __EPETRA_VECTOR_H
@@ -121,6 +121,11 @@ namespace dolfin
 
     /// Assignment operator
     const EpetraVector& operator= (const GenericVector& x);
+
+    /// Assignment operator
+    const EpetraVector& operator= (real a);
+
+
 
     /// Assignment operator 
     const EpetraVector& operator= (const EpetraVector& x);

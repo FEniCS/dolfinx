@@ -6,7 +6,7 @@
 // Modified by Martin Sandve Alnes 2008.
 //
 // First added:  2006-04-04
-// Last changed: 2008-04-28
+// Last changed: 2008-04-29
 
 #include <iostream>
 #include <sstream>
@@ -162,6 +162,12 @@ const GenericVector& uBlasVector::operator= (const GenericVector& y)
 const uBlasVector& uBlasVector::operator= (const uBlasVector& y) 
 { 
   x = y.vec();
+  return *this; 
+}
+//-----------------------------------------------------------------------------
+const uBlasVector& uBlasVector::operator= (real a) 
+{ 
+  x.ublas_vector::assign(ublas::scalar_vector<double> (x.size(), a));
   return *this; 
 }
 //-----------------------------------------------------------------------------

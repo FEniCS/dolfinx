@@ -5,7 +5,7 @@
 // Modified by Martin Sandve Alnes 2008
 //
 // First added:  2004
-// Last changed: 2008-04-28
+// Last changed: 2008-04-29
 
 // FIXME: Insert dolfin_assert() where appropriate
 
@@ -199,6 +199,14 @@ const PETScVector& PETScVector::operator= (const PETScVector& v)
 
   return *this; 
 }
+//-----------------------------------------------------------------------------
+const PETScVector& PETScVector::operator= (real a)
+{
+  dolfin_assert(x);
+  VecSet(x, a);
+  return *this; 
+}
+
 //-----------------------------------------------------------------------------
 const PETScVector& PETScVector::operator+= (const GenericVector& x)
 {

@@ -7,7 +7,7 @@
 // Modified by Martin Alnæs, 2008.
 //
 // First added:  2004-01-01
-// Last changed: 2008-04-28
+// Last changed: 2008-04-29
 
 
 #ifndef __PETSC_VECTOR_H
@@ -124,6 +124,9 @@ namespace dolfin
 
     /// Assignment operator
     const PETScVector& operator= (const PETScVector& x);
+
+    /// Assignment operator
+    const PETScVector& operator= (real a);
 
     //--- Special functions ---
 

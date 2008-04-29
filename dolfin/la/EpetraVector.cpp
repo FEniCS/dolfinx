@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-04-21
-// Last changed:  2008-04-28
+// Last changed:  2008-04-29
 
 #ifdef HAS_TRILINOS
 
@@ -206,6 +206,14 @@ LinearAlgebraFactory& EpetraVector::factory() const
 const EpetraVector& EpetraVector::operator= (const GenericVector& v)
 {
   *this = v.down_cast<EpetraVector>();
+  return *this; 
+}
+//-----------------------------------------------------------------------------
+const EpetraVector& EpetraVector::operator= (real a)
+{
+
+  dolfin_assert(x);
+  x->PutScalar(a);
   return *this; 
 }
 //-----------------------------------------------------------------------------
