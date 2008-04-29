@@ -108,35 +108,31 @@ namespace dolfin
     virtual real max() const;
 
     /// Multiply vector by given number
-    const PETScVector& operator*= (real a);
+    virtual const PETScVector& operator*= (real a);
 
     /// Divide vector by given number
-    const PETScVector& operator/= (real a);
+    virtual const PETScVector& operator/= (real a);
 
     /// Add given vector
-    const PETScVector& operator+= (const GenericVector& x);
+    virtual const PETScVector& operator+= (const GenericVector& x);
 
     /// Subtract given vector
-    const PETScVector& operator-= (const GenericVector& x);
+    virtual const PETScVector& operator-= (const GenericVector& x);
 
     /// Assignment operator
-    const GenericVector& operator= (const GenericVector& x);
-
-    /// Assignment operator
-    const PETScVector& operator= (const PETScVector& x);
-
-    /// Assignment operator
-    const PETScVector& operator= (real a);
+    virtual const GenericVector& operator= (const GenericVector& x);
 
     //--- Special functions ---
 
     /// Return linear algebra backend factory
     virtual LinearAlgebraFactory& factory() const;
 
-    //--- Special PETScFunctions ---
+    //--- Special PETSc functions ---
 
     /// Return PETSc Vec pointer
     Vec vec() const;
+    /// Assignment operator
+    const PETScVector& operator= (const PETScVector& x);
 
     friend class PETScMatrix;
 

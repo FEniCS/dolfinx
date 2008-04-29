@@ -107,28 +107,26 @@ namespace dolfin
     virtual real max() const;
 
     /// Multiply vector by given number
-    const EpetraVector& operator*= (real a);
+    virtual const EpetraVector& operator*= (real a);
 
     /// Divide vector by given number
     virtual const EpetraVector& operator/= (real a)
     { *this *= 1.0 / a; return *this; }
 
     /// Add given vector
-    const EpetraVector& operator+= (const GenericVector& x);
+    virtual const EpetraVector& operator+= (const GenericVector& x);
 
     /// Subtract given vector
-    const EpetraVector& operator-= (const GenericVector& x);
+    virtual const EpetraVector& operator-= (const GenericVector& x);
 
     /// Assignment operator
-    const EpetraVector& operator= (const GenericVector& x);
-
-    /// Assignment operator
-    const EpetraVector& operator= (real a);
-
-
+    virtual const EpetraVector& operator= (const GenericVector& x);
 
     /// Assignment operator 
     const EpetraVector& operator= (const EpetraVector& x);
+
+    /// Assignment operator
+    const EpetraVector& operator= (real a);
 
     //--- Special functions ---
 

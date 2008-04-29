@@ -7,7 +7,7 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2006-07-05
-// Last changed: 2008-04-28
+// Last changed: 2008-04-29
 
 #ifndef __UBLAS_MATRIX_H
 #define __UBLAS_MATRIX_H
@@ -119,9 +119,6 @@ namespace dolfin
     /// Assignment operator
     virtual const GenericMatrix& operator= (const GenericMatrix& A);
 
-    /// Assignment operator
-    const uBlasMatrix<Mat>& operator= (const uBlasMatrix<Mat>& A);
-
     //--- Special functions ---
 
     /// Return linear algebra backend factory
@@ -152,6 +149,9 @@ namespace dolfin
     /// Access value of given entry
     real operator() (uint i, uint j) const
     { return A(i, j); }
+
+    /// Assignment operator
+    const uBlasMatrix<Mat>& operator= (const uBlasMatrix<Mat>& A);
 
   private:
 

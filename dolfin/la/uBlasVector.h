@@ -7,7 +7,7 @@
 // Modified by Martin Alnæs, 2008.
 //
 // First added:  2006-03-04
-// Last changed: 2008-04-28
+// Last changed: 2008-04-29
 
 #ifndef __UBLAS_VECTOR_H
 #define __UBLAS_VECTOR_H
@@ -108,27 +108,19 @@ namespace dolfin
     virtual real max() const;
 
     /// Multiply vector by given number
-    const uBlasVector& operator *= (real a);
+    virtual const uBlasVector& operator *= (real a);
 
     /// Divide vector by given number
-    const uBlasVector& operator /= (real a);
+    virtual const uBlasVector& operator /= (real a);
 
     /// Add given vector
-    const uBlasVector& operator+= (const GenericVector& x);
+    virtual const uBlasVector& operator+= (const GenericVector& x);
 
     /// Subtract given vector
-    const uBlasVector& operator-= (const GenericVector& x);
+    virtual const uBlasVector& operator-= (const GenericVector& x);
 
     /// Assignment operator
-    const GenericVector& operator= (const GenericVector& x);
-
-    /// Assignment operator
-    const uBlasVector& operator= (const uBlasVector& x);
-
-    /// Assignment operator
-    const uBlasVector& operator= (real a);
-
-
+    virtual const GenericVector& operator= (const GenericVector& x);
 
     //--- Special functions ---
 
@@ -150,8 +142,13 @@ namespace dolfin
     { return x(i); };
 
     /// Access value of given entry (non-const version)
-    virtual real& operator[] (uint i)
+    real& operator[] (uint i)
     { return x(i); };
+    /// Assignment operator
+    const uBlasVector& operator= (const uBlasVector& x);
+
+    /// Assignment operator
+    const uBlasVector& operator= (real a);
 
   private:
 

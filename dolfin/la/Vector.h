@@ -117,33 +117,24 @@ namespace dolfin
     { return vector->max(); }
 
     /// Multiply vector by given number
-    const Vector& operator*= (real a)
+    virtual const Vector& operator*= (real a)
     { *vector *= a; return *this; }
 
     /// Divide vector by given number
-    const Vector& operator/= (real a)
+    virtual const Vector& operator/= (real a)
     { *this *= 1.0 / a; return *this; }
 
     /// Add given vector
-    const Vector& operator+= (const GenericVector& x)
+    virtual const Vector& operator+= (const GenericVector& x)
     { axpy(1.0, x); return *this; }
 
     /// Subtract given vector
-    const Vector& operator-= (const GenericVector& x)
+    virtual const Vector& operator-= (const GenericVector& x)
     { axpy(-1.0, x); return *this; }
 
     /// Assignment operator
-    const GenericVector& operator= (const GenericVector& x)
+    virtual const GenericVector& operator= (const GenericVector& x)
     { *vector = x; return *this; }
-
-    /// Assignment operator
-    const Vector& operator= (const Vector& x)
-    { *vector = *x.vector; return *this; }
-
-    /// Assignment operator
-    const Vector& operator= (real a)
-    { *vector = a; return *this; }
-
 
     //--- Special functions ---
 
@@ -160,6 +151,16 @@ namespace dolfin
     /// Return concrete instance / unwrap (non-const version)
     virtual GenericVector* instance()
     { return vector; }
+
+    //--- Special Vector functions ---
+
+    /// Assignment operator
+    const Vector& operator= (const Vector& x)
+    { *vector = *x.vector; return *this; }
+
+    /// Assignment operator
+    const Vector& operator= (real a)
+    { *vector = a; return *this; }
 
   private:
 
