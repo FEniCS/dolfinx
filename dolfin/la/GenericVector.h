@@ -125,7 +125,6 @@ namespace dolfin
     /// Assignment operator
     virtual const GenericVector& operator= (real a) = 0;
 
-
     //--- Convenience functions ---
 
     /// Get value of given entry

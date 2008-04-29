@@ -122,6 +122,12 @@ namespace dolfin
     /// Assignment operator
     virtual const GenericVector& operator= (const GenericVector& x);
 
+    /// Assignment operator
+    const uBlasVector& operator= (const uBlasVector& x);
+
+    /// Assignment operator
+    const uBlasVector& operator= (real a);
+
     //--- Special functions ---
 
     /// Return linear algebra backend factory
@@ -144,11 +150,6 @@ namespace dolfin
     /// Access value of given entry (non-const version)
     real& operator[] (uint i)
     { return x(i); };
-    /// Assignment operator
-    const uBlasVector& operator= (const uBlasVector& x);
-
-    /// Assignment operator
-    const uBlasVector& operator= (real a);
 
   private:
 
