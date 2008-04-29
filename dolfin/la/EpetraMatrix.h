@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2008.
 //
 // First added:  2008-04-21
-// Last changed: 2008-04-28
+// Last changed: 2008-04-29
 
 #ifndef __EPETRA_MATRIX_H
 #define __EPETRA_MATRIX_H
@@ -100,17 +100,13 @@ namespace dolfin
     virtual void mult(const GenericVector& x, GenericVector& y, bool transposed=false) const;
 
     /// Multiply matrix by given number
-    const EpetraMatrix& operator*= (real a);
+    virtual const EpetraMatrix& operator*= (real a);
 
     /// Divide matrix by given number
-    const EpetraMatrix& operator/= (real a);
+    virtual const EpetraMatrix& operator/= (real a);
 
     /// Assignment operator
-    const GenericMatrix& operator= (const GenericMatrix& x)
-    { error("Not implemented."); return *this; }
-
-    /// Assignment operator
-    const EpetraMatrix& operator= (const EpetraMatrix& x)
+    virtual const GenericMatrix& operator= (const GenericMatrix& x)
     { error("Not implemented."); return *this; }
 
     //--- Special functions ---
@@ -122,6 +118,10 @@ namespace dolfin
 
     /// Return Epetra_FECrsMatrix reference
     Epetra_FECrsMatrix& mat() const;
+
+    /// Assignment operator
+    const EpetraMatrix& operator= (const EpetraMatrix& x)
+    { error("Not implemented."); return *this; }
 
   private:
 

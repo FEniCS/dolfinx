@@ -7,7 +7,7 @@
 // Modified by Ola Skavhaug, 2008.
 //
 // First added:  2004-01-01
-// Last changed: 2008-04-25
+// Last changed: 2008-04-29
 
 #ifndef __PETSC_MATRIX_H
 #define __PETSC_MATRIX_H
@@ -109,16 +109,13 @@ namespace dolfin
     virtual void mult(const GenericVector& x, GenericVector& y, bool transposed=false) const;
 
     /// Multiply matrix by given number
-    const PETScMatrix& operator*= (real a);
+    virtual const PETScMatrix& operator*= (real a);
 
     /// Divide matrix by given number
     virtual const PETScMatrix& operator/= (real a);
 
     /// Assignment operator
-    const GenericMatrix& operator= (const GenericMatrix& A);
-
-    /// Assignment operator
-    const PETScMatrix& operator= (const PETScMatrix& A);
+    virtual const GenericMatrix& operator= (const GenericMatrix& A);
 
     //--- Special functions ---
 
@@ -136,6 +133,9 @@ namespace dolfin
     /// Return norm of matrix
     enum Norm {l1, linf, frobenius};
     real norm(const Norm type=l1) const;
+
+    /// Assignment operator
+    const PETScMatrix& operator= (const PETScMatrix& A);
 
   private:
 

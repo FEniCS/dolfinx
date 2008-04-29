@@ -6,7 +6,7 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2006-05-15
-// Last changed: 2008-04-28
+// Last changed: 2008-04-29
 
 #ifndef __MATRIX_H
 #define __MATRIX_H
@@ -104,20 +104,16 @@ namespace dolfin
     { matrix->mult(x, y, transposed); }
 
     /// Multiply matrix by given number
-    const Matrix& operator*= (real a)
+    virtual const Matrix& operator*= (real a)
     { *matrix *= a; return *this; }
 
     /// Divide matrix by given number
-    const Matrix& operator/= (real a)
+    virtual const Matrix& operator/= (real a)
     { *this /= a; return *this; }
 
     /// Assignment operator
-    const GenericMatrix& operator= (const GenericMatrix& A)
+    virtual const GenericMatrix& operator= (const GenericMatrix& A)
     { *matrix = A; return *this; }
-
-    /// Assignment operator
-    const Matrix& operator= (const Matrix& A)
-    { *matrix = *A.matrix; return *this; }
 
     //--- Special functions ---
 
@@ -134,6 +130,12 @@ namespace dolfin
     /// Return concrete instance / unwrap (non-const version)
     virtual GenericMatrix* instance() 
     { return matrix; }
+
+    //--- Special Matrix functions ---
+
+    /// Assignment operator
+    const Matrix& operator= (const Matrix& A)
+    { *matrix = *A.matrix; return *this; }
 
   private:
 

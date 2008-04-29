@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2008.
 //
 // First added:  2008-04-21
-// Last changed: 2008-04-28
+// Last changed: 2008-04-29
 
 #ifndef __EPETRA_VECTOR_H
 #define __EPETRA_VECTOR_H
@@ -107,23 +107,20 @@ namespace dolfin
     virtual real max() const;
 
     /// Multiply vector by given number
-    const EpetraVector& operator*= (real a);
+    virtual const EpetraVector& operator*= (real a);
 
     /// Divide vector by given number
     virtual const EpetraVector& operator/= (real a)
     { *this *= 1.0 / a; return *this; }
 
     /// Add given vector
-    const EpetraVector& operator+= (const GenericVector& x);
+    virtual const EpetraVector& operator+= (const GenericVector& x);
 
     /// Subtract given vector
-    const EpetraVector& operator-= (const GenericVector& x);
+    virtual const EpetraVector& operator-= (const GenericVector& x);
 
     /// Assignment operator
-    const EpetraVector& operator= (const GenericVector& x);
-
-    /// Assignment operator 
-    const EpetraVector& operator= (const EpetraVector& x);
+    virtual const EpetraVector& operator= (const GenericVector& x);
 
     //--- Special functions ---
 
@@ -134,6 +131,9 @@ namespace dolfin
 
     /// Return Epetra_FEVector reference
     Epetra_FEVector& vec() const;
+
+    /// Assignment operator
+    const EpetraVector& operator= (const EpetraVector& x);
 
     friend class EpetraMatrix;
 
