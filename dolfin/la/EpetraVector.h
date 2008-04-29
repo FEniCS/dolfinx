@@ -122,11 +122,8 @@ namespace dolfin
     /// Assignment operator
     virtual const EpetraVector& operator= (const GenericVector& x);
 
-    /// Assignment operator 
-    const EpetraVector& operator= (const EpetraVector& x);
-
     /// Assignment operator
-    const EpetraVector& operator= (real a);
+    virtual const EpetraVector& operator= (real a);
 
     //--- Special functions ---
 
@@ -137,6 +134,9 @@ namespace dolfin
 
     /// Return Epetra_FEVector reference
     Epetra_FEVector& vec() const;
+
+    /// Assignment operator
+    const EpetraVector& operator= (const EpetraVector& x);
 
     friend class EpetraMatrix;
 

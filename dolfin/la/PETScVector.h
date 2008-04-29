@@ -123,10 +123,7 @@ namespace dolfin
     virtual const GenericVector& operator= (const GenericVector& x);
 
     /// Assignment operator
-    const PETScVector& operator= (const PETScVector& x);
-
-    /// Assignment operator
-    const PETScVector& operator= (real a);
+    virtual const PETScVector& operator= (real a);
 
     //--- Special functions ---
 
@@ -137,6 +134,9 @@ namespace dolfin
 
     /// Return PETSc Vec pointer
     Vec vec() const;
+
+    /// Assignment operator
+    const PETScVector& operator= (const PETScVector& x);
 
     friend class PETScMatrix;
 
