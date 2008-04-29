@@ -7,16 +7,8 @@
 #
 # This script should be run from the top level directory.
                                                                                                     
-# Simple test to see where we are
-# FIXME: Does not work when typing ./scripts/...
-CHECK=`echo $0 | cut -d'/' -f1`
-if [ "$CHECK" != "scripts" ]; then
-        echo "This script must be run from the top level directory."
-        exit 1
-fi
-
-IMPL=`find src -name '*.cpp' | xargs wc -l | grep total | awk '{ printf "%d", $1/1000 }'`
-HEAD=`find src -name '*.h' | xargs wc -l | grep total | awk '{ printf "%d", $1/1000 }'`
+IMPL=`find dolfin -name '*.cpp' | xargs wc -l | grep total | awk '{ printf "%d", $1/1000 }'`
+HEAD=`find dolfin -name '*.h'   | xargs wc -l | grep total | awk '{ printf "%d", $1/1000 }'`
 
 TOTAL=`echo $IMPL $HEAD | awk '{ print $1 + $2 }'`
 
