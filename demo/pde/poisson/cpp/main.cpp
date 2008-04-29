@@ -14,9 +14,9 @@
 //
 // and boundary conditions given by
 //
-//     u(x, y)     = 0  for x = 0
-//     du/dn(x, y) = 1  for x = 1
-//     du/dn(x, y) = 0  otherwise
+//     u(x, y)     = 0               for x = 0
+//     du/dn(x, y) = 25 sin(5 pi y)  for x = 1
+//     du/dn(x, y) = 0               otherwise
 
 #include <dolfin.h>
 #include "Poisson.h"

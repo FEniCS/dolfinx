@@ -8,9 +8,9 @@ on the unit square with source f given by
 
 and boundary conditions given by
 
-    u(x, y)     = 0                for x = 0
-    du/dn(x, y) = 25 sin(5 \pi y)  for x = 1
-    du/dn(x, y) = 0                otherwise
+    u(x, y)     = 0               for x = 0
+    du/dn(x, y) = 25 sin(5 pi y)  for x = 1
+    du/dn(x, y) = 0               otherwise
 """
 
 __author__ = "Anders Logg (logg@simula.no)"
