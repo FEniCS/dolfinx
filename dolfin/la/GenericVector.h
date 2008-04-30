@@ -38,23 +38,23 @@ namespace dolfin
     virtual GenericVector* copy() const = 0;
 
     /// Return tensor rank (number of dimensions)
-    inline uint rank() const
+    virtual uint rank() const
     { return 1; }
 
     /// Return size of given dimension
-    inline uint size(uint dim) const
+    virtual uint size(uint dim) const
     { dolfin_assert(dim == 0); return size(); }
 
     /// Get block of values
-    inline void get(real* block, const uint* num_rows, const uint * const * rows) const
+    virtual void get(real* block, const uint* num_rows, const uint * const * rows) const
     { get(block, num_rows[0], rows[0]); }
 
     /// Set block of values
-    inline void set(const real* block, const uint* num_rows, const uint * const * rows)
+    virtual void set(const real* block, const uint* num_rows, const uint * const * rows)
     { set(block, num_rows[0], rows[0]); }
 
     /// Add block of values
-    inline void add(const real* block, const uint* num_rows, const uint * const * rows)
+    virtual void add(const real* block, const uint* num_rows, const uint * const * rows)
     { add(block, num_rows[0], rows[0]); }
 
     /// Set all entries to zero and keep any sparse structure

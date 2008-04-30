@@ -136,6 +136,10 @@ namespace dolfin
     virtual const GenericVector& operator= (const GenericVector& x)
     { *vector = x; return *this; }
 
+    /// Assignment operator
+    const Vector& operator= (real a)
+    { *vector = a; return *this; }
+
     //--- Special functions ---
 
     /// Return linear algebra backend factory
@@ -157,10 +161,6 @@ namespace dolfin
     /// Assignment operator
     const Vector& operator= (const Vector& x)
     { *vector = *x.vector; return *this; }
-
-    /// Assignment operator
-    const Vector& operator= (real a)
-    { *vector = a; return *this; }
 
   private:
 

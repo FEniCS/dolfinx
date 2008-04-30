@@ -8,7 +8,7 @@
 // Modified by Martin Alnæs, 2008.
 //
 // First added:  2006-04-24
-// Last changed: 2008-04-23
+// Last changed: 2008-04-29
 
 #ifndef __GENERIC_MATRIX_H
 #define __GENERIC_MATRIX_H
@@ -39,22 +39,22 @@ namespace dolfin
     virtual GenericMatrix* copy() const = 0;
 
     /// Return tensor rank (number of dimensions)
-    uint rank() const
+    virtual uint rank() const
     { return 2; }
 
     /// Return size of given dimension
     virtual uint size(uint dim) const = 0;
 
     /// Get block of values
-    void get(real* block, const uint* num_rows, const uint * const * rows) const
+    virtual void get(real* block, const uint* num_rows, const uint * const * rows) const
     { get(block, num_rows[0], rows[0], num_rows[1], rows[1]); }
 
     /// Set block of values
-    void set(const real* block, const uint* num_rows, const uint * const * rows)
+    virtual void set(const real* block, const uint* num_rows, const uint * const * rows)
     { set(block, num_rows[0], rows[0], num_rows[1], rows[1]); }
 
     /// Add block of values
-    void add(const real* block, const uint* num_rows, const uint * const * rows)
+    virtual void add(const real* block, const uint* num_rows, const uint * const * rows)
     { add(block, num_rows[0], rows[0], num_rows[1], rows[1]); }
 
     /// Set all entries to zero and keep any sparse structure
