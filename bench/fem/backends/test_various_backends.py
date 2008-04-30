@@ -1,3 +1,9 @@
+__author__ = "Kent-Andre Mardal (kent-and@simula.no)"
+__date__ = "2008-04-30"
+__copyright__ = "Copyright (C) 2007 Kent-Andre Mardal"
+__license__  = "GNU LGPL Version 2.1"
+
+
 
 from dolfin import *
 from time import time

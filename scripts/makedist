@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (C) Anders Logg 2002-2006
+# Copyright (C) Anders Logg 2002-2008
 # Licensed under the GNU LGPL Version 2.1
 #
 # This script creates a new release of DOLFIN
@@ -8,103 +8,51 @@
 # Make sure we have the current version
 echo '--- Synchronizing repository'
 sleep 1
-hg pull http://www.fenics.org/hg/dolfin
-hg update
 hg commit
+hg pull http://www.fenics.org/hg/dolfin
+hg merge
+hg commit
+hg update
 hg push ssh://dolfin@fenics.org/hg/dolfin
-echo '--- Repository synchronized, press return to continue'
-read
 
-# Update version number in ChangeLog
+# Update version numbers
 echo '--- Update version number in ChangeLog'
 sleep 1
 emacs -nw ChangeLog
-
-# Update version number in configure.ac
-echo '--- Update version number in configure.ac'
+echo '--- Update version number in dolfin/SConscript'
 sleep 1
-emacs -nw configure.ac
-
-# Regenerate build system
-echo '--- Regenerating build system'
-scripts/preconfigure
+emacs -nw dolfin/SConscript
+echo '--- Update version number in dolfin/scons.cfg'
+sleep 1
+emacs -nw dolfin/scons.cfg
 
 # Get the version number
-VERSION=`cat ./configure.ac | grep AC_INIT | cut -d ',' -f2 | cut -d' ' -f2`
+VERSION=`head -1 ChangeLog | cut -d' ' -f1`
 echo "--- Version number is $VERSION"
-sleep 1
 
 # Commit changes to hg
 echo '--- Pushing changes to parent repository'
+sleep 1
 hg commit
 hg push ssh://dolfin@fenics.org/hg/dolfin
-echo '--- Changes pushed, press return to continue'
-read
 
-# Write a message
+# Create archive
 echo "--- Creating release $VERSION of DOLFIN"
-
-# Create the directory
-DISTDIR=dolfin-$VERSION
-echo "--- Creating directory release/$DISTDIR"
-mkdir -p release
-cd release
-rm -rf $DISTDIR
-hg clone .. $DISTDIR
-rm -rf $DISTDIR/.hg
-rm -f $DISTDIR/.hgignore
-
-# Create the archive
-TARBALL="dolfin-$VERSION.tar.gz"
-echo "--- Creating arhive $TARBALL"
-tar zcf $TARBALL $DISTDIR
-
-# Remove the directory
-echo '--- Removing directory'
-rm -rf $DISTDIR
-
-# Unpack the tarball
-echo '--- Unpacking tarball to check if it compiles'
-tar zxf $TARBALL
-
-# Compile
-echo "--- Compiling in directory release/$DISTDIR (see make-'$VERSION'.log)"
-cd $DISTDIR
-MAKELOG="../make-$VERSION.log"
-rm -f $MAKELOG
-export PATH=`pwd`"/local/bin:$PATH"
-./configure.local --enable-debug >> $MAKELOG
-make all install demo >& $MAKELOG
-make -C src/demo clean
-make -C src/pydolfin maintainer-clean-generic
-make uninstall clean
-./configure.local --enable-debug --enable-petsc >> $MAKELOG
-make all install demo >& $MAKELOG
-
-# Show log
-echo '--- Compilation finished, check log'
-less $MAKELOG
-cd ../../
+hg archive -t tgz dolfin-$VERSION.tar.gz
 
 # Copy files to web server
 echo '--- Copying files to web server'
-scp release/$TARBALL fenics@fenics.org:www.fenics.org/pub/software/dolfin/v0.7
+scp dolfin-$VERSION.tar.gz fenics@fenics.org:www.fenics.org/pub/software/dolfin/v0.7
 scp ChangeLog fenics@fenics.org:www.fenics.org/pub/software/dolfin
 scp TODO fenics@fenics.org:www.fenics.org/pub/software/dolfin
-
-# Update on web server
-echo '--- Update web pages'
-echo '1. Update FFC page'
-echo '2. Update download page'
-#ssh -t fenics@fenics.org 'emacs -nw www.fenics.org/dolfin/index.cpp'
-#ssh -t fenics@fenics.org 'emacs -nw www.fenics.org/download/index.cpp'
-ssh -t fenics@fenics.org '/home/fenics/local/bin/news'
 
 # Notify dolfin-dev of the new version
 echo '--- Notifying mailing list'
 SUBJECT="Version "$VERSION" of DOLFIN released"
 cat ChangeLog | mail -s "$SUBJECT" dolfin-dev@fenics.org
 
-# Write a message
-echo ' '
-echo '--- Now update at freshmeat'
+# Edit web pages
+echo '--- Edit web pages'
+ssh -t fenics@fenics.org '/home/fenics/local/bin/news'
+firefox http://www.fenics.org/wiki/Download
+firefox http://freshmeat.net/projects/dolfin/

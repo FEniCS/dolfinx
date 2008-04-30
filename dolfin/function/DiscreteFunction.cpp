@@ -6,7 +6,9 @@
 // Modified by Kristen Kaasbjerg, 2008.
 //
 // First added:  2007-04-02
-// Last changed: 2008-04-22
+// Last changed: 2008-04-30
+
+#include <cstring>
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/mesh/Mesh.h>
