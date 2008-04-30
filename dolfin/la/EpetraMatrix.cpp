@@ -134,24 +134,17 @@ void EpetraMatrix::add(const real* block,
 		       uint n, const uint* cols)
 {
   dolfin_assert(A); 
-  /*
-  int err = A->InsertGlobalValues(m, reinterpret_cast<const int*>(rows), 
-                                   n, reinterpret_cast<const int*>(cols), block);
-
-  */
-
 
   int err = A->SumIntoGlobalValues(m, reinterpret_cast<const int*>(rows), 
-                                   n, reinterpret_cast<const int*>(cols), block);
-
+                                   n, reinterpret_cast<const int*>(cols), block, 
+                                   Epetra_FECrsMatrix::ROW_MAJOR
+                                   );
 
   if (err!= 0) error("Did not manage to put the values into the matrix"); 
-
 }
 //-----------------------------------------------------------------------------
 void EpetraMatrix::zero()
 {
-  std::cout <<"in zero "<<std::endl; 
   dolfin_assert(A); 
   A->PutScalar(0.0);
 }
