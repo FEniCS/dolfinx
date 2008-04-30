@@ -295,7 +295,7 @@ if env["enableDemos"] or env["enableTests"]:
 # sticking to the "old-style" (but renowed) for now:
 replacements = {}
 # set the dolfin-version. Bad place to have it, consider moving this!
-replacements['PACKAGE_VERSION'] = "0.7.2"
+replacements['PACKAGE_VERSION'] = "0.7.3"
 # make all dependencies into a list, based on the configured Packages.
 replacements['PACKAGE_REQUIRES'] = " ".join(configuredPackages.keys())
 # set CXX flags:
