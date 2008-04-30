@@ -222,27 +222,27 @@ void EpetraMatrix::mult(const GenericVector& x_, GenericVector& Ax_, bool transp
 //-----------------------------------------------------------------------------
 void EpetraMatrix::getrow(uint row, Array<uint>& columns, Array<real>& values) const
 {
-  //  int Epetra_CrsMatrix::ExtractGlobalRowCopy  	(int GlobalRow, int Length,int& NumEntries, double* Values, int *Indices) const
-
   dolfin_assert(A); 
-  int len= 10; 
-  int *cols = new int(len); 
-  double* vals = new double(len); 
 
-  int ncols = 0;
-  int err = A->ExtractGlobalRowCopy(row, len, ncols, vals, cols); 
+  // temporal variables
+  int *indices; 
+  double* vals; 
+  int* num_entries = new int; 
+
+  // extract data from Epetra matrix 
+  int err = A->ExtractMyRowView(row, *num_entries, vals, indices); 
   if (err!= 0) error("Did not manage to get a copy of the row."); 
 
+  // put data in columns and values
   columns.clear();
   values.clear(); 
-  for (int i=0; i< ncols; i++)
+  for (int i=0; i< *num_entries; i++)
   {
-    columns.push_back(cols[i]);
+    columns.push_back(indices[i]);
     values.push_back(vals[i]);
   }
 
-  delete cols; 
-  delete vals; 
+  delete num_entries; 
 }
 //-----------------------------------------------------------------------------
 LinearAlgebraFactory& EpetraMatrix::factory() const
