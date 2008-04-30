@@ -42,7 +42,7 @@ hg archive -t tgz dolfin-$VERSION.tar.gz
 
 # Copy files to web server
 echo '--- Copying files to web server'
-scp release/$TARBALL fenics@fenics.org:www.fenics.org/pub/software/dolfin/v0.7
+scp dolfin-$VERSION.tar.gz fenics@fenics.org:www.fenics.org/pub/software/dolfin/v0.7
 scp ChangeLog fenics@fenics.org:www.fenics.org/pub/software/dolfin
 scp TODO fenics@fenics.org:www.fenics.org/pub/software/dolfin
 
