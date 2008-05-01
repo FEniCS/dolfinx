@@ -4,6 +4,7 @@
 // First added:  2002-12-06
 // Last changed: 2006-10-16
 
+#include <cstring>
 #include <dolfin/log/dolfin_log.h>
 #include "XMLObject.h"
 
