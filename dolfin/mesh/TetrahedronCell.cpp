@@ -11,6 +11,7 @@
 // Rename of the former Tetrahedron.cpp
 //
 
+#include <algorithm>
 #include <dolfin/log/dolfin_log.h>
 #include "Cell.h"
 #include "MeshEditor.h"
