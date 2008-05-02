@@ -6,7 +6,7 @@
 // Modified by Garth N. Wells 2007.
 //
 // First added:  2006-05-08
-// Last changed: 2008-03-10
+// Last changed: 2008-05-02
 
 #ifndef __MESH_H
 #define __MESH_H
@@ -14,6 +14,7 @@
 #include <string>
 #include <dolfin/common/types.h>
 #include <dolfin/common/Variable.h>
+#include "ALEMethod.h"
 #include "MeshData.h"
 
 namespace dolfin
@@ -141,6 +142,9 @@ namespace dolfin
 
     /// Coarsen mesh according to cells marked for coarsening
     void coarsen(MeshFunction<bool>& cell_markers, bool coarsen_boundary = false);
+
+    /// Move coordinates of mesh according to new boundary coordinates
+    void move(Mesh& boundary, const MeshFunction<uint>& vertex_map, ALEMethod method = lagrange);
     
     /// Smooth mesh using Lagrangian mesh smoothing 
     void smooth();

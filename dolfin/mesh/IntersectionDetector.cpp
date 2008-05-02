@@ -8,6 +8,7 @@
 // First added:  2006-06-21
 // Last changed: 2008-02-18
 
+#include <algorithm>
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Array.h>
 #include "Mesh.h"

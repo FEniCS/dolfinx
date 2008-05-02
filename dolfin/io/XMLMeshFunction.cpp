@@ -1,10 +1,12 @@
 // Copyright (C) 2006 Ola Skavhaug.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Anders Logg, 2007.
+// Modified by Anders Logg, 2007-2008.
 //
 // First added:  2006-11-27
-// Last changed: 2007-05-08
+// Last changed: 2008-04-30
+
+#include <cstring>
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/mesh/CellType.h>

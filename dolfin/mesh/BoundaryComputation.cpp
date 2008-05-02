@@ -28,6 +28,12 @@ void BoundaryComputation::computeBoundary(Mesh& mesh, BoundaryMesh& boundary)
 }
 //-----------------------------------------------------------------------------
 void BoundaryComputation::computeBoundary(Mesh& mesh, BoundaryMesh& boundary,
+                                          MeshFunction<uint>& vertex_map)
+{
+  computeBoundaryCommon(mesh, boundary, &vertex_map, 0);
+}
+//-----------------------------------------------------------------------------
+void BoundaryComputation::computeBoundary(Mesh& mesh, BoundaryMesh& boundary,
                                           MeshFunction<uint>& vertex_map,
                                           MeshFunction<uint>& cell_map)
 {

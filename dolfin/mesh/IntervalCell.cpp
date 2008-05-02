@@ -9,7 +9,7 @@
 // Rename of the former Interval.cpp
 //
 
-#include <cmath>
+#include <algorithm>
 #include <dolfin/log/dolfin_log.h>
 #include "Cell.h"
 #include "MeshEditor.h"
