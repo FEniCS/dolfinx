@@ -5,11 +5,13 @@
 // Modified by Garth N. Wells 2007.
 //
 // First added:  2006-05-09
-// Last changed: 2008-02-04
+// Last changed: 2008-05-02
 
 #include <sstream>
 
 #include <dolfin/io/File.h>
+#include <dolfin/main/MPI.h>
+#include "ALE.h"
 #include "UniformMeshRefinement.h"
 #include "LocalMeshRefinement.h"
 #include "LocalMeshCoarsening.h"
@@ -17,12 +19,11 @@
 #include "MeshOrdering.h"
 #include "MeshFunction.h"
 #include "MeshPartition.h"
-#include "Mesh.h"
 #include "BoundaryMesh.h"
 #include "Cell.h"
 #include "Vertex.h"
-#include <dolfin/main/MPI.h>
 #include "MPIMeshCommunicator.h"
+#include "Mesh.h"
 
 using namespace dolfin;
 
@@ -111,6 +112,12 @@ void Mesh::coarsen(MeshFunction<bool>& cell_markers, bool coarsen_boundary)
 {
   LocalMeshCoarsening::coarsenMeshByEdgeCollapse(*this, cell_markers,
                                                  coarsen_boundary);
+}
+//-----------------------------------------------------------------------------
+void Mesh::move(Mesh& boundary, const MeshFunction<uint>& vertex_map,
+                ALEMethod method)
+{
+  ALE::move(*this, boundary, vertex_map, method);
 }
 //-----------------------------------------------------------------------------
 void Mesh::smooth() 
