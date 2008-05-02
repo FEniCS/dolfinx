@@ -224,6 +224,9 @@ void DirichletBC::apply(GenericMatrix& A, GenericVector& b,
   delete [] dofs;
   delete [] values;
 
+  // Finalise changes to A
+  A.apply();
+
   // Finalise changes to b
   b.apply();
 }
@@ -468,11 +471,14 @@ void DirichletBC::zero(GenericMatrix& A, const DofMap& dof_map, const ufc::form&
   uint i = 0;
   for (boundary_value = boundary_values.begin(); boundary_value != boundary_values.end(); ++boundary_value)
   {
-    dofs[i]     = boundary_value->first;
+    dofs[i++]     = boundary_value->first;
   }
 
   // Modify linear system (A_ii = 1)
   A.zero(boundary_values.size(), dofs);
+
+  // Finalise changes to A
+  A.apply();
 
   // Clear temporary arrays
   delete [] dofs;

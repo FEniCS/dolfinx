@@ -167,13 +167,14 @@ void EpetraMatrix::ident(uint m, const uint* rows)
   dolfin_assert(A); 
   double* values;
   int* indices; 
-  int row_size; 
+  int* row_size = new int; 
   int r;
 
   for (uint i=0; i<m; i++){
     r = rows[i]; 
-    A->ExtractMyRowView(r, row_size, values, indices); 
-    memset(values, 0,  row_size*sizeof(double)); 
+    int err = A->ExtractMyRowView(r, *row_size, values, indices); 
+    if (err!= 0) error("Trouble with ExtractMyRowView in EpetraMatrix::ident."); 
+    memset(values, 0,  (*row_size)*sizeof(double)); 
     for (uint j=0; j<m; j++) {
       if (r == indices[j]) {
         values[j] = 1.0; 
@@ -181,6 +182,7 @@ void EpetraMatrix::ident(uint m, const uint* rows)
       }
     }
   }
+  delete row_size; 
 }
 //-----------------------------------------------------------------------------
 void EpetraMatrix::zero(uint m, const uint* rows)
@@ -188,14 +190,16 @@ void EpetraMatrix::zero(uint m, const uint* rows)
   dolfin_assert(A); 
   double* values; 
   int* indices; 
-  int row_size; 
+  int* row_size = new int; 
   int r;
 
   for (uint i=0; i<m; i++){
     r = rows[i]; 
-    A->ExtractMyRowView(r, row_size, values, indices); 
-    memset(values, 0,  row_size*sizeof(double)); 
+    int err = A->ExtractMyRowView(r, *row_size, values, indices); 
+    if (err!= 0) error("Trouble with ExtractMyRowView in EpetraMatrix::ident."); 
+    memset(values, 0, (*row_size)*sizeof(double)); 
   }
+  delete row_size; 
 }
 
 //-----------------------------------------------------------------------------

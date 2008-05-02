@@ -157,7 +157,8 @@ void EpetraVector::get(real* block, uint m, const uint* rows) const
 //-----------------------------------------------------------------------------
 void EpetraVector::set(const real* block, uint m, const uint* rows)
 {
-  x->ReplaceGlobalValues(m, reinterpret_cast<const int*>(rows), block);
+  int err = x->ReplaceGlobalValues(m, reinterpret_cast<const int*>(rows), block);
+  if (err!= 0) error("EpetraVector::set: Did not manage to set the values into the vector"); 
 }
 //-----------------------------------------------------------------------------
 void EpetraVector::add(const real* block, uint m, const uint* rows)
@@ -165,7 +166,8 @@ void EpetraVector::add(const real* block, uint m, const uint* rows)
   if (!x) {  
     std::cout <<" x does not exist"<<std::endl; 
   }
-  x->SumIntoGlobalValues(m, reinterpret_cast<const int*>(rows), block);
+  int err = x->SumIntoGlobalValues(m, reinterpret_cast<const int*>(rows), block);
+  if (err!= 0) error("EpetraVector::add : Did not manage to add the values to the vector"); 
 }
 //-----------------------------------------------------------------------------
 Epetra_FEVector& EpetraVector::vec() const
@@ -195,7 +197,8 @@ void EpetraVector::axpy(real a, const GenericVector& y)
   if (size() != v.size())
     error("The vectors must be of the same size.");  
 
-  x->Update(a,  v.vec(), 1.0); 
+  int err = x->Update(a,  v.vec(), 1.0); 
+  if (err!= 0) error("EpetraVector::axpy: Did not manage to perform Update on Epetra vector."); 
 }
 //-----------------------------------------------------------------------------
 LinearAlgebraFactory& EpetraVector::factory() const
