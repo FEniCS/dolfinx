@@ -41,3 +41,21 @@ namespace dolfin {
 
 %rename(assign) dolfin::GenericVector::operator=;
 
+%newobject dolfin::GenericVector::copy;  
+%newobject dolfin::GenericMatrix::copy;  
+%newobject dolfin::Vector::copy;  
+%newobject dolfin::Matrix::copy;  
+%newobject dolfin::uBlasVector::copy;  
+%newobject dolfin::uBlasMatrix::copy;  
+%newobject dolfin::PETScVector::copy;  
+%newobject dolfin::PETScMatrix::copy;  
+%newobject dolfin::EpetraVector::copy;  
+%newobject dolfin::EpetraMatrix::copy;  
+
+
+
+
+
+
+
+
