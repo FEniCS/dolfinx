@@ -18,7 +18,8 @@ u0 = Function(scalar)
 b  = Function(vector)
 f  = Function(scalar)
 
-c = 0.005
+#c = 0.005
+c = 0.0
 k = 0.05
 
 a = v*u1*dx + 0.5*k*(v*dot(b, grad(u1))*dx + c*dot(grad(v), grad(u1))*dx)
