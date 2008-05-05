@@ -177,13 +177,15 @@ DofMap& DofMapSet::operator[] (uint i) const
 //-----------------------------------------------------------------------------
 void DofMapSet::assertFormMatchesMesh(const ufc::form& form, Mesh& mesh)
 {
+  /* FIXME: Enable this after FFC-generated code is updated to implement geometric_dimension, which is from UFC 1.1.
   if(form.rank() + form.num_coefficients())
   {
-    ufc::dof_map * dm = form.create_dof_map(0);
-    dolfin_assert(dm->geometric_dimension() == mesh.geometry().dim());
-    //dolfin_assert(dm->topological_dimension() == mesh.topology().dim());
-    delete dm;
+    ufc::dof_map * dofmap = form.create_dof_map(0);
+    if(dofmap->geometric_dimension() != mesh.geometry().dim())
+        error("Geometric dimension mismatch between mesh and form.");
+    delete dofmap;
   }
+  */
 }
 //-----------------------------------------------------------------------------
 
