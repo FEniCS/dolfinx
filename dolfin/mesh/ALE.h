@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-05-02
-// Last changed: 2008-05-02
+// Last changed: 2008-05-05
 
 #ifndef __ALE_H
 #define __ALE_H
@@ -39,8 +39,12 @@ namespace dolfin
                           Vertex& vertex);
 
     // Compute weights for transfinite meanvalue interpolation
-    static void computeWeights(real* w, real** u, real* d,
-                               uint dim, uint num_vertices);
+    static void computeWeights2D(real* w, real** u, real* d,
+                                 uint dim, uint num_vertices);
+
+    // Compute weights for transfinite meanvalue interpolation
+    static void computeWeights3D(real* w, real** u, real* d,
+                                 uint dim, uint num_vertices);
 
     // Return sign
     inline static real sgn(real v)
