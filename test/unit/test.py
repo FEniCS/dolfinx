@@ -12,7 +12,7 @@ import re
 
 # Tests to run
 #tests = ["function", "graph", "mesh"]
-tests = ["function", "mesh"]
+tests = ["function", "mesh", "meshconvert"]
 
 # FIXME: Graph tests disabled for now since SCOTCH is now required
 
