@@ -39,7 +39,7 @@ int main()
   {
     bool inside(const real* x, bool on_boundary) const
     {
-      return x[1] < DOLFIN_EPS || x[1] > (1.0 - DOLFIN_EPS) && on_boundary;
+      return (x[1] < DOLFIN_EPS || x[1] > (1.0 - DOLFIN_EPS)) && on_boundary;
     }
   };
 
