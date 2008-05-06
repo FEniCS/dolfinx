@@ -62,12 +62,44 @@ namespace dolfin
       error("No default LU solver for given backend");
       return 0;
     }
+
+    uint factorize(const GenericMatrix& A)
+    {
+      if (A.has_type<uBlasSparseMatrix>()) {
+        if (!ublassolver)
+	  ublassolver = new uBlasLUSolver();
+	return ublassolver->factorize(A.down_cast<uBlasSparseMatrix>());
+      }
+
+      if (A.has_type<uBlasDenseMatrix>()) {
+	error("Will only factorize sparse matrices");
+      }
+
+      error("No matrix factorization for given backend.");
+      return 0;
+    }
     
+    uint factorized_solve(GenericVector& x, const GenericVector& b)
+    {
+      if (b.has_type<uBlasVector>()) {
+        if (!ublassolver)
+	  ublassolver = new uBlasLUSolver();
+	return ublassolver->factorized_solve(x.down_cast<uBlasVector>(), b.down_cast<uBlasVector>());
+      }
+
+      if (b.has_type<uBlasVector>()) {
+	error("Factorized solve only for sparse matrices");
+      }
+
+      error("No factorized solve for given backend.");
+      return 0;
+    }
+
   private:
 
-      uBlasLUSolver* ublassolver;
+    uBlasLUSolver* ublassolver;
 #ifdef HAS_PETSC
-      PETScLUSolver* petscsolver;
+    PETScLUSolver* petscsolver;
 #endif
   };
 }

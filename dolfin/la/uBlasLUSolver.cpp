@@ -7,6 +7,7 @@
 // Last changed: 2007-07-13
 
 #include <dolfin/log/dolfin_log.h>
+#include <dolfin/common/timing.h>
 #include "uBlasLUSolver.h"
 #include "uBlasKrylovSolver.h"
 #include "uBlasSparseMatrix.h"
@@ -15,9 +16,9 @@
 
 extern "C" 
 {
-// Take care of different default locations
+  // Take care of different default locations
 #ifdef HAS_UMFPACK
-  #include <umfpack.h>
+#include <umfpack.h>
 #endif
 }
 
@@ -27,6 +28,12 @@ using namespace dolfin;
 uBlasLUSolver::uBlasLUSolver() : AA(0), ej(0), Aj(0)
 {
   // Do nothing
+#ifdef HAS_UMFPACK
+  Rp = 0;
+  Ri = 0;
+  Rx = 0;
+  has_factorized_matrix = false;
+#endif
 }
 //-----------------------------------------------------------------------------
 uBlasLUSolver::~uBlasLUSolver()
@@ -34,6 +41,17 @@ uBlasLUSolver::~uBlasLUSolver()
   if ( AA ) delete AA;
   if ( ej ) delete ej;
   if ( Aj ) delete Aj;
+
+#ifdef HAS_UMFPACK
+   if(Rp) delete [] Rp;
+   if(Ri) delete [] Ri;
+   if(Rx)
+     { 
+       delete [] Rx;
+       umfpack_dl_free_numeric(&Numeric);
+     }
+#endif
+
 }
 //-----------------------------------------------------------------------------
 dolfin::uint uBlasLUSolver::solve(const uBlasMatrix<ublas_dense_matrix>& A, 
@@ -56,9 +74,21 @@ dolfin::uint uBlasLUSolver::solve(const uBlasMatrix<ublas_dense_matrix>& A,
 dolfin::uint uBlasLUSolver::solve(const uBlasMatrix<ublas_sparse_matrix>& A, uBlasVector& x, 
                                   const uBlasVector& b)
 {
-  // Get underlying uBLAS vectors
-  ublas_vector& _x = x.vec(); 
-  const ublas_vector& _b = b.vec(); 
+  factorize(A);
+  factorized_solve(x,b);
+
+  umfpack_dl_free_numeric(&Numeric);
+  delete [] Rp; Rp = 0;
+  delete [] Ri; Ri = 0;
+  delete [] Rx; Rx = 0;
+  has_factorized_matrix = false;
+
+  return 0;
+}
+
+// Symbolic and numeric part of UMFPACK solve procedure
+dolfin::uint uBlasLUSolver::factorize(const uBlasMatrix<ublas_sparse_matrix>& A)
+{
   const ublas_sparse_matrix& _A = A.mat(); 
 
   // Check dimensions and get number of non-zeroes
@@ -67,72 +97,109 @@ dolfin::uint uBlasLUSolver::solve(const uBlasMatrix<ublas_sparse_matrix>& A, uBl
   const uint nz = _A.nnz();
 
   dolfin_assert(M == N);
-  dolfin_assert(nz >= N);
-
-  x.init(N);
+  dolfin_assert(nz >= N); 
 
   // Make sure matrix assembly is complete
   (const_cast< ublas_sparse_matrix& >(_A)).complete_index1_data(); 
 
-  message("Solving linear system of size %d x %d (UMFPACK LU solver).", M, N);
-
-  //FIXME: From UMFPACK v.5.0 onwards, UF_long is introduced and should be used 
-  //       in place of long int.
+  message("LU-factorizing linear system of size %d x %d (UMFPACK).", M, M);
 
   double* dnull = (double *) NULL;
-  long int*    inull = (long int *) NULL;
-  void *Symbolic, *Numeric;
+  long int* inull = (long int *) NULL;
+  void *Symbolic;
   const std::size_t* Ap = &(_A.index1_data() [0]);
   const std::size_t* Ai = &(_A.index2_data() [0]);
   const double* Ax = &(_A.value_data() [0]);
-  double* xx = &(_x.data() [0]);
-  const double* bb = &(_b.data() [0]);
 
-  // Solve for transpose since we use compressed row format, and UMFPACK 
-  // expects compressed column format
-
-  long int* Rp = new long int[M+1];
-  long int* Ri = new long int[nz];
-  double* Rx   = new double[nz];
-
+  if(has_factorized_matrix)
+    {
+      warning("LUSolver already contains a factorized matrix! Clearing and starting over.");
+      umfpack_dl_free_numeric(&Numeric);
+      delete [] Rp;
+      delete [] Ri;
+      delete [] Rx;
+    }
+  
+  Rp = new long int[M+1];
+  Ri = new long int[nz];
+  Rx = new double[nz];
+  
   long int status;
-
-  // Compute transpose
+  
+  // transpose of A
   status= umfpack_dl_transpose(M, M, (const long int*) Ap, (const long int*) Ai, Ax, inull, inull, Rp, Ri, Rx);
   check_status(status, "transpose");
 
-  // Solve procedure
+  // Symbolic step (reordering etc)
   status= umfpack_dl_symbolic(M, M, (const long int*) Rp, (const long int*) Ri, Rx, &Symbolic, dnull, dnull);
   check_status(status, "symbolic");
 
+  // Factorization step
   status = umfpack_dl_numeric( (const long int*) Rp, (const long int*) Ri, Rx, Symbolic, &Numeric, dnull, dnull);
   check_status(status, "numeric");
 
+  // Discard the symbolic part (since the factorization is complete.)
   umfpack_dl_free_symbolic(&Symbolic);
+
+  // Done!
+  has_factorized_matrix = true;
+  mat_dim = M;
+
+  return 1;
+}
+
+// Solve LU-factored system
+dolfin::uint uBlasLUSolver::factorized_solve(uBlasVector& x, const uBlasVector& b)
+{
+  const uint N  = b.size();
+
+  if(!has_factorized_matrix)
+    error("Factorized solve must be preceeded by call to factorize.");
+
+  if(N != mat_dim)
+    error("Vector does not match size of factored matrix");
+
+  x.init(N);
+  
+  message("Solving factorized linear system of size %d x %d (UMFPACK).", N, N);
+
+  ublas_vector& _x = x.vec(); 
+  const ublas_vector& _b = b.vec(); 
+  double* dnull = (double *) NULL;
+  double* xx = &(_x.data() [0]);
+  const double* bb = &(_b.data() [0]);
+
+  long int status;
 
   status = umfpack_dl_solve(UMFPACK_A, (const long int*) Rp, (const long int*) Ri, Rx, xx, bb, Numeric, dnull, dnull);
   check_status(status, "solve");
- 
-  umfpack_dl_free_numeric(&Numeric);
-
-  // Clean up
-  delete [] Rp;
-  delete [] Ri;
-  delete [] Rx;
-
+  
   return 1;
 }
 
 #else
 
 dolfin::uint uBlasLUSolver::solve(const uBlasMatrix<ublas_sparse_matrix>& A, uBlasVector& x, 
-    const uBlasVector& b)
+				  const uBlasVector& b)
 {
   warning("UMFPACK must be installed to peform a LU solve for uBlas matrices. A Krylov iterative solver will be used instead.");
 
   uBlasKrylovSolver solver;
   return solver.solve(A, x, b);
 }
+
+dolfin::uint uBlasLUSolver::factorize(const uBlasMatrix<ublas_sparse_matrix>& A)
+{
+  error("UMFPACK must be installed to perform sparse LU factorization.");
+  return 0;
+}
+
+dolfin::uint uBlasLUSolver::factorized_solve(uBlasVector& x, const uBlasVector& b)
+{
+  error("UMFPACK must be installed to perform sparse back and forward substitution");
+  return 0;
+}
+
 #endif
 //-----------------------------------------------------------------------------
 void uBlasLUSolver::solve(const uBlasKrylovMatrix& A, uBlasVector& x,
@@ -149,17 +216,17 @@ void uBlasLUSolver::solve(const uBlasKrylovMatrix& A, uBlasVector& x,
 
   // Initialize temporary data if not already done
   if ( !AA )
-  {
-    AA = new uBlasMatrix<ublas_dense_matrix>(M, N);
-    ej = new uBlasVector(N);
-    Aj = new uBlasVector(M);
-  }
+    {
+      AA = new uBlasMatrix<ublas_dense_matrix>(M, N);
+      ej = new uBlasVector(N);
+      Aj = new uBlasVector(M);
+    }
   else
-  {
-    AA->init(M, N);
-    ej->init(N);
-    Aj->init(N);
-  }
+    {
+      AA->init(M, N);
+      ej->init(N);
+      Aj->init(N);
+    }
 
   // Get underlying uBLAS vectors
   ublas_vector& _ej = ej->vec(); 
@@ -171,24 +238,24 @@ void uBlasLUSolver::solve(const uBlasKrylovMatrix& A, uBlasVector& x,
 
   // Compute columns of matrix
   for (uint j = 0; j < N; j++)
-  {
-    (_ej)(j) = 1.0;
+    {
+      (_ej)(j) = 1.0;
 
-    // Compute product Aj = Aej
-    A.mult(*ej, *Aj);
+      // Compute product Aj = Aej
+      A.mult(*ej, *Aj);
     
-    // Set column of A
-    column(_AA, j) = _Aj;
+      // Set column of A
+      column(_AA, j) = _Aj;
     
-    (_ej)(j) = 0.0;
-  }
+      (_ej)(j) = 0.0;
+    }
 
   // Solve linear system
   solve(*AA, x, b);
 }
 //-----------------------------------------------------------------------------
 dolfin::uint uBlasLUSolver::solveInPlaceUBlas(uBlasMatrix<ublas_dense_matrix>& A, 
-                                      uBlasVector& x, const uBlasVector& b) const
+					      uBlasVector& x, const uBlasVector& b) const
 {
   const uint M = A.size(0);
   dolfin_assert(M == b.size());

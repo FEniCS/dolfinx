@@ -43,6 +43,12 @@ namespace dolfin
     /// Solve linear system Ax = b for a sparse matrix using UMFPACK if installed
     virtual uint solve(const uBlasMatrix<ublas_sparse_matrix>& A, uBlasVector& x, const uBlasVector& b);
 
+    /// LU-factor sparse matrix A if UMFPACK is installed
+    virtual uint factorize(const uBlasMatrix<ublas_sparse_matrix>& A);
+
+    /// Solve factorized system (UMFPACK).
+    virtual uint factorized_solve(uBlasVector& x, const uBlasVector& b);
+
     /// Solve linear system Ax = b for a Krylov matrix
     void solve(const uBlasKrylovMatrix& A, uBlasVector& x, const uBlasVector& b);
 
@@ -61,6 +67,16 @@ namespace dolfin
     /// General uBlas LU solver which accepts both vector and matrix right-hand sides
     template<class Mat, class B>
     uint solveInPlace(Mat& A, B& X) const;
+
+    // Temporary data for LU factorization of sparse ublas matrix (umfpack only)
+#ifdef HAS_UMFPACK
+    bool has_factorized_matrix;
+    uint mat_dim;
+    void* Numeric;
+    long int* Rp;
+    long int* Ri;
+    double* Rx;   
+#endif
 
     // Temporary data for LU factorization of a uBlasKrylovMatrix
     uBlasMatrix<ublas_dense_matrix>* AA;
