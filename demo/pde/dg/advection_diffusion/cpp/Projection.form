@@ -1,0 +1,19 @@
+# Copyright (C) 2008 Kristian B. Oelgaard
+# Licensed under the GNU LGPL Version 2.1.
+#
+# First added:  2008-05-05
+# Last changed: 2008-05-05
+#
+
+DG = FiniteElement("Discontinuous Lagrange", "triangle", 2)
+CG = FiniteElement("Lagrange", "triangle", 2)
+
+# Test and trial functions
+v = TestFunction(CG)
+u = TrialFunction(CG)
+
+u0 = Function(DG)
+
+a = dot(v,u)*dx
+L = dot(v,u0)*dx
+

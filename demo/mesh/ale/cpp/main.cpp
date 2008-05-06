@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-05-02
-// Last changed: 2008-05-02
+// Last changed: 2008-05-05
 //
 // This demo demonstrates how to move the vertex coordinates
 // of a boundary mesh and then updating the interior vertex
@@ -17,7 +17,7 @@ using namespace dolfin;
 int main()
 {
   // Create mesh
-  UnitCube mesh(8, 8, 8);
+  UnitSquare mesh(32, 32);
   plot(mesh);
 
   // Create boundary mesh
@@ -28,8 +28,10 @@ int main()
   for (VertexIterator v(boundary); !v.end(); ++v)
   {
     real* x = v->x();
-    x[0] = x[0] + x[2];
+    x[0] *= 3.0;
+    x[1] += 0.1*sin(5.0*x[0]);
   }
+  plot(boundary);
 
   // Move mesh
   mesh.move(boundary, vertex_map);
