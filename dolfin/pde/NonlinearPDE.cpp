@@ -82,5 +82,7 @@ void NonlinearPDE::solve(Function& u, real& t, const real& T, const real& dt)
     t += dt;
     newton_solver.solve(*this ,x);
   }
+
+  end();
 }
 //-----------------------------------------------------------------------------

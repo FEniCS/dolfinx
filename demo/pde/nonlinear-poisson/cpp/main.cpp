@@ -17,7 +17,7 @@
 //
 // and boundary conditions given by
 //
-//     u(x, y)     = t  for x = 0
+//     u(x, y)     = t  for x = 1
 //     du/dn(x, y) = 0  otherwise
 //
 // where t is pseudo time.
