@@ -8,7 +8,7 @@
 
 #ifdef HAS_TRILINOS
 
-#include <string.h>
+#include <cstring>
 #include <iostream>
 #include <sstream>
 #include <iomanip>

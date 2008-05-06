@@ -4,7 +4,7 @@
 // First added:  2008-05-02
 // Last changed: 2008-05-05
 
-#include <string.h>
+#include <cstring>
 #include <dolfin/common/Array.h>
 #include <dolfin/common/constants.h>
 #include <dolfin/mesh/Mesh.h>
