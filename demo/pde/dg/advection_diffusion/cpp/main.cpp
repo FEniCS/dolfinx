@@ -93,7 +93,7 @@ public:
   Velocity velocity;
 };
 
-int main(char *argv[])
+int main(int argc, char *argv[])
 {
   // Set up problem
   Matrix A;
