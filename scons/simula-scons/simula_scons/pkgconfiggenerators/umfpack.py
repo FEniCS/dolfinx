@@ -35,10 +35,11 @@ def generate_dirs(base_dirs, *names):
 def find_dependency_file(dirs, filename, what="", package=""):
   found_file = False
   found_dir = ""
-  while not found_file and dirs:
-    found_dir = dirs.pop()
+  for d in dirs:
+    found_dir = d
     if os.path.isfile(os.path.join(found_dir, filename)):
       found_file = True
+      break
   if not found_file:
     raise UnableToFindPackageException(package)
   return found_dir
@@ -84,8 +85,14 @@ def getAMDDirs(sconsEnv):
   amd_include_dir = \
       find_dependency_file(all_include_dirs,
                            filename="amd.h", what="includes", package="AMD")
-  amd_lib_dir = \
-      find_dependency_file(all_lib_dirs, filename="libamd.a", what="libs", package="AMD")
+  try:
+    amd_lib_dir = \
+        find_dependency_file(all_lib_dirs, filename="libamd.a", what="libs", package="AMD")
+  except:
+    # Look for shared library libamd.so since we are unable to
+    # find static library libamd.a:
+    amd_lib_dir = \
+        find_dependency_file(all_lib_dirs, filename="libamd.so", what="libs", package="AMD")
   return amd_include_dir, amd_lib_dir
 
 def getAMDIncDir(sconsEnv):
@@ -132,9 +139,16 @@ def getUmfpackDirs(sconsEnv):
   umfpack_include_dir = \
       find_dependency_file(all_include_dirs,
                            filename="umfpack.h", what="includes", package="UMFPACK")
-  umfpack_lib_dir = \
-      find_dependency_file(all_lib_dirs,
-                           filename="libumfpack.a", what="libs", package="UMFPACK")
+  try:
+    umfpack_lib_dir = \
+        find_dependency_file(all_lib_dirs,
+                             filename="libumfpack.a", what="libs", package="UMFPACK")
+  except UnableToFindPackageException:
+    # Look for shared library libumfpack.so since we are unable to
+    # find static library libumfpack.a:
+    umfpack_lib_dir = \
+        find_dependency_file(all_lib_dirs,
+                             filename="libumfpack.so", what="libs", package="UMFPACK")
   
   return umfpack_include_dir, umfpack_lib_dir
 

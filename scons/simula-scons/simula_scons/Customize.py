@@ -43,13 +43,15 @@ def swigScanner(node, env, path):
             inc_fpath = m.group(1)
             # Strip off quotes
             inc_fpath = inc_fpath.strip("'").strip('"')
+            # Strip off site include marks
+            inc_fpath = inc_fpath.strip('<').strip('>')
             real_fpath = os.path.realpath(inc_fpath)
             if os.path.dirname(real_fpath) != os.path.dirname(path):
                 # Not in same directory as original swig file
                 if os.path.isfile(real_fpath):
                     found.append(real_fpath)
                     continue
-
+            
             # Look for unqualified filename on path
             for dpath in search_path:
                 abs_path = os.path.join(dpath, inc_fpath)
@@ -60,7 +62,7 @@ def swigScanner(node, env, path):
         for f in [f for f in found if os.path.splitext(f)[1] == ".i"]:
             found += recurse(f, search_path)
         return found
-
+    
     fpath = node.srcnode().path
     search_path = [os.path.abspath(d) for d in re.findall(r"-I(\S+)", " ".join(env["SWIGFLAGS"]))]
     search_path.insert(0, os.path.abspath(os.path.dirname(fpath)))
