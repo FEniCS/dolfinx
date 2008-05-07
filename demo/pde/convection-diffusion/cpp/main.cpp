@@ -43,9 +43,15 @@ int main()
   // Solution vector
   Function u1(mesh, x, a);
 
+  // LU
+  LUSolver lu;
+
   // Assemble matrix
   assemble(A, a, mesh);
-  
+  assemble(b, L, mesh);
+  bc.apply(A, b, a);
+  lu.factorize(A);
+
   // Parameters for time-stepping
   real T = 2.0;
   real k = 0.05;
@@ -63,7 +69,7 @@ int main()
     bc.apply(A, b, a);
     
     // Solve the linear system
-    solve(A, x, b);
+    lu.factorized_solve(x, b);
     
     // Save the solution to file
     file << u1;
