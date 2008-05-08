@@ -1,3 +1,5 @@
+ - Remove GMRES and LU classes, use solve() instead
+ - Improve solve() function, now handles both LU and Krylov + preconditioners
  - Add ALE mesh interpolation (moving mesh according to new boundary coordinates)
 0.7.3 [2008-04-30]
  - Bug fix for order of values in interpolate_vertex_values, now according to UFC

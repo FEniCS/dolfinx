@@ -39,8 +39,6 @@
 #include <dolfin/la/LinearSolver.h>
 #include <dolfin/la/KrylovSolver.h>
 #include <dolfin/la/LUSolver.h>
-#include <dolfin/la/GMRES.h>
-#include <dolfin/la/LU.h>
 #include <dolfin/la/solve.h>
 
 #endif
