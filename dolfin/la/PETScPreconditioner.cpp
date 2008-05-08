@@ -74,7 +74,7 @@ int PETScPreconditioner::PCCreate(PC pc)
   return 0;
 }
 //-----------------------------------------------------------------------------
-PCType PETScPreconditioner::getType(Preconditioner pc)
+PCType PETScPreconditioner::getType(PreconditionerType pc)
 {
   switch (pc)
   {

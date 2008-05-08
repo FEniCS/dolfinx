@@ -13,8 +13,8 @@
 #include <dolfin/la/Vector.h>
 #include <dolfin/parameter/Parametrized.h>
 #include <dolfin/la/LinearSolver.h>
-#include <dolfin/la/KrylovMethod.h>
-#include <dolfin/la/Preconditioner.h>
+#include <dolfin/la/SolverType.h>
+#include <dolfin/la/PreconditionerType.h>
 
 namespace dolfin
 {
@@ -37,7 +37,7 @@ namespace dolfin
 #endif
 */
     /// Initialise nonlinear solver and choose Krylov solver and preconditioner
-    NewtonSolver(KrylovMethod method, Preconditioner pc);
+    NewtonSolver(SolverType method, PreconditionerType pc);
 
     /// Destructor
     virtual ~NewtonSolver();

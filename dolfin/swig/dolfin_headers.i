@@ -43,8 +43,8 @@
 %include "dolfin/la/uBlasFactory.h"
 %include "dolfin/la/PETScFactory.h"
 %include "dolfin/la/EpetraFactory.h"
-%include "dolfin/la/KrylovMethod.h"
-%include "dolfin/la/Preconditioner.h"
+%include "dolfin/la/SolverType.h"
+%include "dolfin/la/PreconditionerType.h"
 %include "dolfin/la/PETScKrylovSolver.h"
 %include "dolfin/la/PETScLUSolver.h"
 %include "dolfin/la/SLEPcEigenvalueSolver.h"
@@ -99,6 +99,7 @@
 %include "dolfin/quadrature/LobattoQuadrature.h"
 
 // DOLFIN headers included from mesh
+%include "dolfin/mesh/ALE.h"
 %include "dolfin/mesh/Mesh.h"
 %include "dolfin/mesh/MeshEntity.h"
 %include "dolfin/mesh/MeshEntityIterator.h"

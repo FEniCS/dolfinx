@@ -1,10 +1,10 @@
 // Copyright (C) 2006 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Anders Logg 2006.
+// Modified by Anders Logg, 2006-2008.
 //
 // First added:  2006-05-31
-// Last changed: 2006-08-18
+// Last changed: 2008-05-08
 
 #ifndef __UBLAS_KRYLOV_SOLVER_H
 #define __UBLAS_KRYLOV_SOLVER_H
@@ -13,8 +13,8 @@
 #include "ublas.h"
 
 #include <dolfin/parameter/Parametrized.h>
-#include "Preconditioner.h"
-#include "KrylovMethod.h"
+#include "SolverType.h"
+#include "PreconditionerType.h"
 #include "uBlasKrylovMatrix.h"
 #include "uBlasMatrix.h"
 #include "uBlasVector.h"
@@ -31,16 +31,16 @@ namespace dolfin
   public:
 
     /// Create Krylov solver for a particular method and preconditioner
-    uBlasKrylovSolver(KrylovMethod method = default_method, Preconditioner pc = default_pc);
+    uBlasKrylovSolver(SolverType method=default_solver, PreconditionerType pc=default_pc);
 
     /// Create Krylov solver for a particular preconditioner (set by name)
-    uBlasKrylovSolver(Preconditioner pc);
+    uBlasKrylovSolver(PreconditionerType pc);
 
     /// Create Krylov solver for a particular uBlasPreconditioner
     uBlasKrylovSolver(uBlasPreconditioner& pc);
 
     /// Create Krylov solver for a particular method and uBlasPreconditioner
-    uBlasKrylovSolver(KrylovMethod method, uBlasPreconditioner& preconditioner);
+    uBlasKrylovSolver(SolverType method, uBlasPreconditioner& preconditioner);
 
     /// Destructor
     ~uBlasKrylovSolver();
@@ -73,13 +73,13 @@ namespace dolfin
                         bool& converged) const;
     
     /// Select and create named preconditioner
-    void selectPreconditioner(const Preconditioner preconditioner);
+    void selectPreconditioner(const PreconditionerType pc);
 
     /// Read solver parameters
     void readParameters();
 
     /// Krylov method
-    KrylovMethod method;
+    SolverType method;
 
     /// Preconditioner
     uBlasPreconditioner* pc;
@@ -135,7 +135,7 @@ namespace dolfin
     case bicgstab:
       iterations = solveBiCGStab(A, x, b, converged);
       break;
-    case default_method:
+    case default_solver:
       iterations = solveBiCGStab(A, x, b, converged);
       break;
     default:

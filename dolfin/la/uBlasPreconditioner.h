@@ -1,15 +1,14 @@
 // Copyright (C) 2006 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Anders Logg 2006.
+// Modified by Anders Logg, 2006-2008.
 //
 // First added:  2006-06-23
-// Last changed: 2006-08-15
+// Last changed: 2008-05-08
 
 #ifndef __UBLAS_PRECONDITIONER_H
 #define __UBLAS_PRECONDITIONER_H
 
-#include "Preconditioner.h"
 #include <dolfin/parameter/Parametrized.h>
 
 namespace dolfin

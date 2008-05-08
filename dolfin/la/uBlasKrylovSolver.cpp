@@ -1,10 +1,10 @@
 // Copyright (C) 2006 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Anders Logg 2006.
+// Modified by Anders Logg, 2006-2008.
 //
 // First added:  2006-05-31
-// Last changed: 2006-08-18
+// Last changed: 2008-05-08
 
 #include "uBlasILUPreconditioner.h"
 #include "uBlasDummyPreconditioner.h"
@@ -13,7 +13,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-uBlasKrylovSolver::uBlasKrylovSolver(KrylovMethod method, Preconditioner pc)
+uBlasKrylovSolver::uBlasKrylovSolver(SolverType solver, PreconditionerType pc)
   : Parametrized(),
     method(method), pc_user(false), report(false), parameters_read(false)
 {
@@ -21,9 +21,9 @@ uBlasKrylovSolver::uBlasKrylovSolver(KrylovMethod method, Preconditioner pc)
   selectPreconditioner(pc);
 }
 //-----------------------------------------------------------------------------
-uBlasKrylovSolver::uBlasKrylovSolver(Preconditioner pc)
+uBlasKrylovSolver::uBlasKrylovSolver(PreconditionerType pc)
   : Parametrized(),
-    method(default_method), pc_user(false), report(false), parameters_read(false)
+    method(default_solver), pc_user(false), report(false), parameters_read(false)
 {
   // Select and create default preconditioner
   selectPreconditioner(pc);
@@ -31,12 +31,12 @@ uBlasKrylovSolver::uBlasKrylovSolver(Preconditioner pc)
 //-----------------------------------------------------------------------------
 uBlasKrylovSolver::uBlasKrylovSolver(uBlasPreconditioner& pc)
   : Parametrized(),
-    method(default_method), pc(&pc), pc_user(true), report(false), parameters_read(false)
+    method(default_solver), pc(&pc), pc_user(true), report(false), parameters_read(false)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-uBlasKrylovSolver::uBlasKrylovSolver(KrylovMethod method, uBlasPreconditioner& pc)
+uBlasKrylovSolver::uBlasKrylovSolver(SolverType method, uBlasPreconditioner& pc)
   : Parametrized(),
     method(method), pc(&pc), pc_user(true), report(false), parameters_read(false)
 {
@@ -68,7 +68,7 @@ dolfin::uint uBlasKrylovSolver::solve(const uBlasKrylovMatrix& A, uBlasVector& x
   return solveKrylov(A, x, b); 
 }
 //-----------------------------------------------------------------------------
-void uBlasKrylovSolver::selectPreconditioner(const Preconditioner preconditioner)
+void uBlasKrylovSolver::selectPreconditioner(const PreconditionerType preconditioner)
 {
   switch(preconditioner)
   { 

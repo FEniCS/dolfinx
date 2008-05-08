@@ -11,14 +11,14 @@ using namespace dolfin;
 #ifdef HAS_PETSC
 //-----------------------------------------------------------------------------
 dolfin::uint GMRES::solve(const PETScMatrix& A, PETScVector& x,
-			  const PETScVector& b, Preconditioner pc)
+			  const PETScVector& b, PreconditionerType pc)
 {
   PETScKrylovSolver solver(gmres, pc);
   return solver.solve(A, x, b);
 }
 //-----------------------------------------------------------------------------
 dolfin::uint GMRES::solve(const PETScKrylovMatrix& A, PETScVector& x,
-			  const PETScVector& b, Preconditioner pc)
+			  const PETScVector& b, PreconditionerType pc)
 {
   PETScKrylovSolver solver(gmres, pc);
   return solver.solve(A, x, b);
@@ -43,7 +43,7 @@ dolfin::uint GMRES::solve(const PETScKrylovMatrix& A, PETScVector& x,
 //-----------------------------------------------------------------------------
 dolfin::uint GMRES::solve(const uBlasMatrix<ublas_dense_matrix>& A,
 			  uBlasVector& x, const uBlasVector& b,
-			  Preconditioner pc)
+			  PreconditionerType pc)
 {
   uBlasKrylovSolver solver(gmres, pc);
   return solver.solve(A, x, b);
@@ -51,14 +51,14 @@ dolfin::uint GMRES::solve(const uBlasMatrix<ublas_dense_matrix>& A,
 //-----------------------------------------------------------------------------
 dolfin::uint GMRES::solve(const uBlasMatrix<ublas_sparse_matrix>& A,
 			  uBlasVector& x, const uBlasVector& b,
-			  Preconditioner pc)
+			  PreconditionerType pc)
 {
   uBlasKrylovSolver solver(gmres, pc);
   return solver.solve(A, x, b);
 }
 //-----------------------------------------------------------------------------
 dolfin::uint GMRES::solve(const uBlasKrylovMatrix& A, uBlasVector& x,
-			  const uBlasVector& b, Preconditioner pc)
+			  const uBlasVector& b, PreconditionerType pc)
 {
   uBlasKrylovSolver solver(gmres, pc);
   return solver.solve(A, x, b);

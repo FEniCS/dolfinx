@@ -1,18 +1,18 @@
-// Copyright (C) 2006 Anders Logg.
+// Copyright (C) 2006-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-08-15
-// Last changed: 2006-08-15
+// Last changed: 2008-05-08
 
-#ifndef __PRECONDITIONER_H
-#define __PRECONDITIONER_H
+#ifndef __PRECONDITIONER_TYPE_H
+#define __PRECONDITIONER_TYPE_H
 
 namespace dolfin
 {
 
-  // List of predefined preconditioners.
+  /// List of predefined preconditioners
 
-  enum Preconditioner
+  enum PreconditionerType
   {
     none,      // No preconditioning
     jacobi,    // Jacobi

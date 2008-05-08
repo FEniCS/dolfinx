@@ -1,10 +1,11 @@
 // Copyright (C) 2007 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Ola Skavhaug 2008.
+// Modified by Ola Skavhaug, 2008.
+// Modified by Anders Logg, 2008.
 //
 // First added:  2007-07-03
-// Last changed: 2008-04-11
+// Last changed: 2008-05-08
 
 #ifndef __KRYLOV_SOLVER_H
 #define __KRYLOV_SOLVER_H
@@ -14,9 +15,8 @@
 #include "uBlasSparseMatrix.h"
 #include "uBlasDenseMatrix.h"
 #include "PETScMatrix.h"
-
-#include "KrylovMethod.h"
-#include "Preconditioner.h"
+#include "SolverType.h"
+#include "PreconditionerType.h"
 
 namespace dolfin
 {
@@ -29,8 +29,8 @@ namespace dolfin
   public:
     
     /// Create Krylov solver
-    KrylovSolver(KrylovMethod method=default_method, Preconditioner pc=default_pc)
-      : method(method), pc(pc), ublassolver(0), petscsolver(0) {}
+    KrylovSolver(SolverType solver=default_solver, PreconditionerType pc=default_pc)
+      : solver(solver), pc(pc), ublassolver(0), petscsolver(0) {}
     
     /// Destructor
     ~KrylovSolver()
@@ -45,14 +45,14 @@ namespace dolfin
       if (A.has_type<uBlasSparseMatrix>())
       {
         if (!ublassolver)
-          ublassolver = new uBlasKrylovSolver(method, pc);
+          ublassolver = new uBlasKrylovSolver(solver, pc);
         return ublassolver->solve(A.down_cast<uBlasSparseMatrix>(), x.down_cast<uBlasVector>(), b.down_cast<uBlasVector>());
       }
 
       if (A.has_type<uBlasDenseMatrix>())
       {
         if (!ublassolver)
-          ublassolver = new uBlasKrylovSolver(method, pc);
+          ublassolver = new uBlasKrylovSolver(solver, pc);
         return ublassolver->solve(A.down_cast<uBlasDenseMatrix>(), x.down_cast<uBlasVector>(), b.down_cast<uBlasVector>());
       }
 
@@ -60,7 +60,7 @@ namespace dolfin
       if (A.has_type<PETScMatrix>())
       {
         if (!petscsolver)
-          petscsolver = new PETScKrylovSolver(method, pc);
+          petscsolver = new PETScKrylovSolver(solver, pc);
         return petscsolver->solve(A.down_cast<PETScMatrix >(), x.down_cast<PETScVector>(), b.down_cast<PETScVector>());
       }
 #endif
@@ -72,11 +72,11 @@ namespace dolfin
   private:
     
     // Krylov method
-      KrylovMethod method;
-
+    SolverType solver;
+    
     // Preconditioner type
-    Preconditioner pc;
-
+    PreconditionerType pc;
+    
     // uBLAS solver
     uBlasKrylovSolver* ublassolver;
 

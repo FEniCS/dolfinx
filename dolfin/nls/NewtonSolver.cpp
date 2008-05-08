@@ -32,7 +32,7 @@ NewtonSolver::NewtonSolver(Matrix::Type matrix_type) : Parametrized()
 #endif
 */
 //-----------------------------------------------------------------------------
-NewtonSolver::NewtonSolver(KrylovMethod method, Preconditioner pc)
+NewtonSolver::NewtonSolver(SolverType method, PreconditionerType pc)
   : Parametrized()
 {
   solver = new KrylovSolver(method, pc);

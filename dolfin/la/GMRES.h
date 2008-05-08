@@ -24,11 +24,11 @@ namespace dolfin
     
     /// Solve linear system Ax = b and return number of iterations
     static uint solve(const PETScMatrix& A, PETScVector& x, const PETScVector& b,
-		      Preconditioner pc = default_pc);
+		      PreconditionerType pc = default_pc);
     
     /// Solve linear system Ax = b and return number of iterations
     static uint solve(const PETScKrylovMatrix& A, PETScVector& x, const PETScVector& b,
-		      Preconditioner pc = default_pc);
+		      PreconditionerType pc = default_pc);
 
     /// Solve linear system Ax = b and return number of iterations
     static uint solve(const PETScMatrix& A, PETScVector& x, const PETScVector& b,
@@ -42,15 +42,15 @@ namespace dolfin
 
     /// Solve linear system Ax = b and return number of iterations
     static uint solve(const uBlasMatrix<ublas_dense_matrix>& A, uBlasVector& x, const uBlasVector& b,
-		      Preconditioner pc = default_pc);
+		      PreconditionerType pc = default_pc);
     
     /// Solve linear system Ax = b and return number of iterations
     static uint solve(const uBlasMatrix<ublas_sparse_matrix>& A, uBlasVector& x, const uBlasVector& b,
-		      Preconditioner pc = default_pc);
+		      PreconditionerType pc = default_pc);
 
     /// Solve linear system Ax = b and return number of iterations
     static uint solve(const uBlasKrylovMatrix& A, uBlasVector& x, const uBlasVector& b,
-		      Preconditioner pc = default_pc);
+		      PreconditionerType pc = default_pc);
     
     /// Solve linear system Ax = b and return number of iterations
     static uint solve(const uBlasMatrix<ublas_dense_matrix>& A, uBlasVector& x, const uBlasVector& b,

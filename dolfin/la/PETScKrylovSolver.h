@@ -1,13 +1,13 @@
 // Copyright (C) 2004-2005 Johan Jansson.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Anders Logg 2005-2006.
-// Modified by Johan Hoffman 2005.
-// Modified by Andy R. Terrel 2005.
-// Modified by Garth N. Wells 2005-2007.
+// Modified by Anders Logg, 2005-2008.
+// Modified by Johan Hoffman, 2005.
+// Modified by Andy R. Terrel, 2005.
+// Modified by Garth N. Wells, 2005-2007.
 //
 // First added:  2005-12-02
-// Last changed: 2007-07-31
+// Last changed: 2008-05-08
 
 #ifndef __PETSC_KRYLOV_SOLVER_H
 #define __PETSC_KRYLOV_SOLVER_H
@@ -16,8 +16,8 @@
 
 #include <dolfin/common/types.h>
 #include <dolfin/parameter/Parametrized.h>
-#include "Preconditioner.h"
-#include "KrylovMethod.h"
+#include "SolverType.h"
+#include "PreconditionerType.h"
 #include "PETScPreconditioner.h"
 
 namespace dolfin
@@ -37,10 +37,10 @@ namespace dolfin
   public:
 
     /// Create Krylov solver for a particular method and preconditioner
-    PETScKrylovSolver(KrylovMethod method = default_method, Preconditioner pc = default_pc);
+    PETScKrylovSolver(SolverType method=default_solver, PreconditionerType pc=default_pc);
 
     /// Create Krylov solver for a particular method and PETScPreconditioner
-    PETScKrylovSolver(KrylovMethod method, PETScPreconditioner& PETScPreconditioner);
+    PETScKrylovSolver(SolverType method, PETScPreconditioner& PETScPreconditioner);
 
     /// Destructor
     ~PETScKrylovSolver();
@@ -72,13 +72,13 @@ namespace dolfin
     void writeReport(int num_iterations);
 
     /// Get PETSc method identifier 
-    KSPType getType(KrylovMethod method) const;
+    KSPType getType(SolverType method) const;
 
     /// Krylov method
-    KrylovMethod method;
+    SolverType method;
 
     /// PETSc PETScPreconditioner
-    Preconditioner pc_petsc;
+    PreconditionerType pc_petsc;
 
     /// DOLFIN PETScPreconditioner
     PETScPreconditioner* pc_dolfin;
