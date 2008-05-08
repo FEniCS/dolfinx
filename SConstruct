@@ -99,6 +99,7 @@ options = [
     #('usePackages','Override or add dependency packages, separate with comma', ""),
     #('customDefaultPackages','Override the default set of packages (%r), separate package names with commas' % (DefaultPackages,)),
     ("SSLOG", "Set Simula scons log file", os.path.join(os.getcwd(),"scons","simula_scons.log")),
+    BoolOption("enableResolveCompiler", "Run tests to verify compiler", 1),
     ]
 
 

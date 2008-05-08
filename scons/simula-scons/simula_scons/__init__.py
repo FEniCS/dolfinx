@@ -874,7 +874,9 @@ def resolveModuleDependencies(modules, configuredPackages, packcfgObjs,
     """
 
     # Find a common compiler for this package and it's external dependencies
-    configuredPackages = resolveCompiler(configuredPackages, packcfgObjs, sconsEnv)
+    if not sconsEnv.has_key("enableResolveCompiler") or \
+           sconsEnv["enableResolveCompiler"]:
+        configuredPackages = resolveCompiler(configuredPackages, packcfgObjs, sconsEnv)
     
     if not internalmodules:
       internalmodules = modules
