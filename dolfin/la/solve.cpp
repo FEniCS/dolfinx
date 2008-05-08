@@ -4,9 +4,10 @@
 // Modified by Ola Skavhaug 2008.
 //
 // First added:  2007-04-30
-// Last changed: 2008-04-11
+// Last changed: 2008-05-08
 
 #include "LUSolver.h"
+#include "KrylovSolver.h"
 #include "GenericMatrix.h"
 #include "GenericVector.h"
 #include "solve.h"
@@ -14,10 +15,19 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void dolfin::solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b)
+void dolfin::solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b,
+                   SolverType solver_type, PreconditionerType pc_type)
 {
-  LUSolver solver;
-  solver.solve(A, x, b);
+  if (solver_type == lu)
+  {
+    LUSolver solver;
+    solver.solve(A, x, b);
+  }
+  else
+  {
+    KrylovSolver solver(solver_type, pc_type);
+    solver.solve(A, x, b);
+  }
 }
 //-----------------------------------------------------------------------------  
 real dolfin::residual(const GenericMatrix& A, const GenericVector& x, const GenericVector& b)
