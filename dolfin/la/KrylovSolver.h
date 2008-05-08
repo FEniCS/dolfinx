@@ -23,70 +23,70 @@ namespace dolfin
 
   /// This class defines an interface for a Krylov solver. The underlying 
   /// Krylov solver type is defined in default_type.h.
-
+  
   class KrylovSolver : public LinearSolver, public Parametrized
   {
   public:
-
-    KrylovSolver() : 
-      method(default_method), pc(default_pc), ublassolver(0)
-#ifdef HAS_PETSC
-      , petscsolver(0) 
-#endif
-    {}
     
-    KrylovSolver(KrylovMethod method) : 
-      method(method), pc(default_pc), ublassolver(0)
-#ifdef HAS_PETSC
-      , petscsolver(0) 
-#endif
-    {}
+    /// Create Krylov solver
+    KrylovSolver(KrylovMethod method=default_method, Preconditioner pc=default_pc)
+      : method(method), pc(pc), ublassolver(0), petscsolver(0) {}
     
-    KrylovSolver(KrylovMethod method, Preconditioner pc) : 
-      method(method), pc(pc), ublassolver(0)
-#ifdef HAS_PETSC
-      , petscsolver(0) 
-#endif
-    {}
-    
-    ~KrylovSolver() {
+    /// Destructor
+    ~KrylovSolver()
+    {
       delete ublassolver; 
-#ifdef HAS_PETSC
       delete petscsolver; 
-#endif
     }
     
+    /// Solve linear system Ax = b
     uint solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b)
     { 
-      if (A.has_type<uBlasSparseMatrix>()) {
+      if (A.has_type<uBlasSparseMatrix>())
+      {
         if (!ublassolver)
           ublassolver = new uBlasKrylovSolver(method, pc);
         return ublassolver->solve(A.down_cast<uBlasSparseMatrix>(), x.down_cast<uBlasVector>(), b.down_cast<uBlasVector>());
       }
 
-      if (A.has_type<uBlasDenseMatrix>()) {
+      if (A.has_type<uBlasDenseMatrix>())
+      {
         if (!ublassolver)
           ublassolver = new uBlasKrylovSolver(method, pc);
         return ublassolver->solve(A.down_cast<uBlasDenseMatrix>(), x.down_cast<uBlasVector>(), b.down_cast<uBlasVector>());
       }
+
 #ifdef HAS_PETSC
-      if (A.has_type<PETScMatrix>()) {
+      if (A.has_type<PETScMatrix>())
+      {
         if (!petscsolver)
           petscsolver = new PETScKrylovSolver(method, pc);
         return petscsolver->solve(A.down_cast<PETScMatrix >(), x.down_cast<PETScVector>(), b.down_cast<PETScVector>());
       }
 #endif
+
       error("No default LU solver for given backend");
       return 0;
     }
     
   private:
+    
+    // Krylov method
       KrylovMethod method;
-      Preconditioner pc;
-      uBlasKrylovSolver* ublassolver;
+
+    // Preconditioner type
+    Preconditioner pc;
+
+    // uBLAS solver
+    uBlasKrylovSolver* ublassolver;
+
+    // PETSc solver
 #ifdef HAS_PETSC
-      PETScKrylovSolver* petscsolver;
+    PETScKrylovSolver* petscsolver;
+#else
+    int* petscsolver;
 #endif
+    
   };
 
 }
