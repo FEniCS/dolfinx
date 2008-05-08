@@ -2,9 +2,10 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells 2005-2007.
+// Modified by Martin Sandve Alnes 2008.
 //
 // First added:  2003-11-28
-// Last changed: 2008-03-11
+// Last changed: 2008-05-08
 //
 // The class Function serves as the envelope class and holds a pointer
 // to a letter class that is a subclass of GenericFunction. All the
@@ -14,6 +15,7 @@
 #include "UserFunction.h"
 #include "ConstantFunction.h"
 #include "DiscreteFunction.h"
+#include "UFCFunction.h"
 #include "Function.h"
 
 using namespace dolfin;
@@ -38,6 +40,13 @@ Function::Function(Mesh& mesh, real value)
     f(0), _type(constant), _cell(0), _facet(-1)
 {
   f = new ConstantFunction(mesh, value);
+}
+//-----------------------------------------------------------------------------
+Function::Function(Mesh& mesh, const ufc::function& function, uint size)
+  : Variable("u", "ufc function"),
+    f(0), _type(ufc), _cell(0), _facet(-1)
+{
+  f = new UFCFunction(mesh, function, size);
 }
 //-----------------------------------------------------------------------------
 Function::Function(Mesh& mesh, GenericVector& x, Form& form, uint i)

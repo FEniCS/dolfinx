@@ -3,9 +3,10 @@
 //
 // Modified by Garth N. Wells 2005-2007.
 // Modified by Kristian B. Oelgaard, 2007.
-
+// Modified by Martin Sandve Alnes, 2008.
+//
 // First added:  2003-11-28
-// Last changed: 2008-01-03
+// Last changed: 2008-05-08
 
 #ifndef __FUNCTION_H
 #define __FUNCTION_H
@@ -41,18 +42,21 @@ namespace dolfin
   public:
 
     /// Function types
-    enum Type {empty, user, constant, discrete};
+    enum Type {empty, user, constant, discrete, ufc};
 
     /// Create empty function (read data from file)
     Function();
 
     /// Create user-defined function (evaluation operator must be overloaded)
-    Function(Mesh& mesh);
+    explicit Function(Mesh& mesh);
 
     /// Create constant function from given value
     Function(Mesh& mesh, real value);
 
-    /// Create constant function from given value
+    /// Create function from given ufc::function
+    Function(Mesh& mesh, const ufc::function& function, uint size);
+
+    /// Create function from given GenericFunction
     //Function(Mesh& mesh, GenericFunction& function);
 
     /// Create discrete function for argument function i of form
@@ -62,13 +66,13 @@ namespace dolfin
     Function(Mesh& mesh, GenericVector& x, DofMap& dof_map, const ufc::form& form, uint i = 1);
 
     /// Create discrete function from sub function
-    Function(SubFunction sub_function);
+    explicit Function(SubFunction sub_function);
 
     /// Create function from data file
-    Function(const std::string filename);
+    explicit Function(const std::string filename);
 
     /// Copy constructor
-    Function(const Function& f);
+    explicit Function(const Function& f);
 
     /// Destructor
     virtual ~Function();
