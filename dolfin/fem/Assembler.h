@@ -46,6 +46,10 @@ namespace dolfin
     void assemble(GenericTensor& A, Form& form,
                   const SubDomain& sub_domain, bool reset_tensor = true);
 
+    /// Assemble tensor from given variational form over a sub domain
+    //void assemble(GenericTensor& A, Form& form,
+    //              const MeshFunction<uint>& domains, uint domain, bool reset_tensor = true);
+
     /// Assemble tensor from given variational form over sub domains
     void assemble(GenericTensor& A, Form& form,
                   const MeshFunction<uint>& cell_domains,

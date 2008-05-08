@@ -1,11 +1,11 @@
-// Copyright (C) 2007 Anders Logg.
+// Copyright (C) 2007-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells, 2007.
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2007-01-17
-// Last changed: 2008-05-05
+// Last changed: 2008-05-08
 
 #include <dolfin/log/dolfin_log.h>
 #include "DofMap.h"
@@ -70,12 +70,11 @@ void DofMapSet::update(const Form& form, Mesh& mesh, MeshFunction<uint>& partiti
 //-----------------------------------------------------------------------------
 void DofMapSet::update(const ufc::form& form, Mesh& mesh)
 {
-  assertFormMatchesMesh(form, mesh);
-
-  const uint num_arguments = form.rank() +
-    form.num_coefficients();
-
+  // Consistency checking
+  check(form, mesh);
+  
   // Resize array of dof maps
+  const uint num_arguments = form.rank() + form.num_coefficients();
   dof_map_set.resize(num_arguments);
 
   // Create dof maps and reuse previously computed dof maps
@@ -175,17 +174,15 @@ DofMap& DofMapSet::operator[] (uint i) const
   return *dof_map_set[i];
 }
 //-----------------------------------------------------------------------------
-void DofMapSet::assertFormMatchesMesh(const ufc::form& form, Mesh& mesh)
+void DofMapSet::check(const ufc::form& form, Mesh& mesh)
 {
-  /* FIXME: Enable this after FFC-generated code is updated to implement geometric_dimension, which is from UFC 1.1.
-  if(form.rank() + form.num_coefficients())
+  // Check that the form matches the mesh
+  if (form.rank() + form.num_coefficients() > 0)
   {
     ufc::dof_map * dofmap = form.create_dof_map(0);
     if(dofmap->geometric_dimension() != mesh.geometry().dim())
-        error("Geometric dimension mismatch between mesh and form.");
+      error("Geometric dimension mismatch between mesh and form.");
     delete dofmap;
   }
-  */
 }
 //-----------------------------------------------------------------------------
-

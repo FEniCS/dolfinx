@@ -77,7 +77,7 @@ namespace dolfin
   private:
 
     // Consistency checking
-    void assertFormMatchesMesh(const ufc::form& form, Mesh& mesh);
+    void check(const ufc::form& form, Mesh& mesh);
 
     // Cached precomputed dof maps
     std::map<const std::string, std::pair<ufc::dof_map*, DofMap*> > dof_map_cache;
