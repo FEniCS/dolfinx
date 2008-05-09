@@ -1,4 +1,4 @@
-// Copyright (C) 2007 Anders Logg.
+// Copyright (C) 2007-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells 2005-2007.
@@ -6,7 +6,7 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2003-11-28
-// Last changed: 2008-05-08
+// Last changed: 2008-05-09
 
 #ifndef __FUNCTION_H
 #define __FUNCTION_H
@@ -15,14 +15,15 @@
 #include <dolfin/common/types.h>
 #include <dolfin/common/simple_array.h>
 #include <dolfin/la/Vector.h>
-#include "SubFunction.h"
+#include <dolfin/mesh/Point.h>
+#include <dolfin/mesh/Cell.h>
 #include <dolfin/common/Variable.h>
+#include "SubFunction.h"
 
 namespace dolfin
 {
 
   class Mesh;
-  class Cell;
   class Form;
   class GenericFunction;
   class DofMap;
@@ -134,10 +135,13 @@ namespace dolfin
 
   protected:
     
-    // Access current cell (available during assembly for user-defined function)
+    /// Access current cell (available during assembly for user-defined function)
     const Cell& cell() const;
 
-    // Access current facet (available during assembly for user-defined functions)
+    /// Access current facet normal (available during assembly for user-defined function)
+    Point normal() const;
+
+    /// Access current facet (available during assembly for user-defined functions)
     int facet() const;
 
   private:

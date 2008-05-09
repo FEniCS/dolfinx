@@ -6,10 +6,7 @@
 // Modified by Kristian Oelgaard 2006.
 //
 // First added:  2006-06-05
-// Last changed: 2008-03-25
-//
-// Rename of the former Tetrahedron.cpp
-//
+// Last changed: 2008-05-08
 
 #include <algorithm>
 #include <dolfin/log/dolfin_log.h>
@@ -432,9 +429,14 @@ real TetrahedronCell::diameter(const MeshEntity& tetrahedron) const
 //-----------------------------------------------------------------------------
 real TetrahedronCell::normal(const Cell& cell, uint facet, uint i) const
 {
+  return normal(cell, facet)[i];
+}
+//-----------------------------------------------------------------------------
+Point TetrahedronCell::normal(const Cell& cell, uint facet) const
+{
   // This is a trick to be allowed to initialize a facet from the cell
   Cell& c = const_cast<Cell&>(cell);
-
+  
   // Create facet from the mesh and local facet number
   Facet f(c.mesh(), c.entities(2)[facet]);
 
@@ -469,13 +471,14 @@ real TetrahedronCell::normal(const Cell& cell, uint facet, uint i) const
   // Compute normal vector
   Point n = V1.cross(V2);
 
-  // Flip direction of normal so it points outward
-  if (n.dot(V0) < 0)
-    return n[i] / n.norm();
-  else
-    return -n[i] / n.norm();
+  // Normalize
+  n /= n.norm();
 
-  return 0.0;
+  // Flip direction of normal so it points outward
+  if (n.dot(V0) > 0)
+    n *= -1.0;
+
+  return n;
 }
 //-----------------------------------------------------------------------------
 bool TetrahedronCell::intersects(const MeshEntity& tetrahedron,

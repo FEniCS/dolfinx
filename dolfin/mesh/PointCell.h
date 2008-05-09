@@ -1,9 +1,10 @@
 // Copyright (C) 2007-2007 Kristian B. Oelgaard.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Anders Logg, 2008.
+//
 // First added:  2007-12-12
 // Last changed: 2007-12-12
-//
 
 #ifndef __POINT_CELL_H
 #define __POINT_CELL_H
@@ -51,6 +52,9 @@ namespace dolfin
 
     /// Compute component i of normal of given facet with respect to the cell
     real normal(const Cell& cell, uint facet, uint i) const;
+
+    /// Compute of given facet with respect to the cell
+    Point normal(const Cell& cell, uint facet) const;
 
     /// Check if point p intersects the cell
     bool intersects(const MeshEntity& entity, const Point& p) const;

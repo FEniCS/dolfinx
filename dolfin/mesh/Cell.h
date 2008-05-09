@@ -35,7 +35,7 @@ namespace dolfin
     /// Compute orientation of cell (0 is right, 1 is left)
     inline real orientation() const { return _mesh.type().orientation(*this); }
 
-   /// Compute (generalized) volume of cell
+    /// Compute (generalized) volume of cell
     inline real volume() const { return _mesh.type().volume(*this); }
 
     /// Compute diameter of cell
@@ -46,6 +46,9 @@ namespace dolfin
 
     /// Compute component i of normal of given facet with respect to the cell
     inline real normal(uint facet, uint i) const { return _mesh.type().normal(*this, facet, i); }
+
+    /// Compute normal of given facet with respect to the cell
+    inline Point normal(uint facet) const { return _mesh.type().normal(*this, facet); }
 
   };
 

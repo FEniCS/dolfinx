@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2007 Anders Logg.
+// Copyright (C) 2006-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells, 2006.
@@ -6,7 +6,7 @@
 // Modified by Dag Lindbo, 2008
 // 
 // First added:  2006-06-05
-// Last changed: 2007-07-20
+// Last changed: 2008-05-08
 //
 // Rename of the former Triangle.cpp
 //
@@ -250,16 +250,21 @@ real TriangleCell::diameter(const MeshEntity& triangle) const
 //-----------------------------------------------------------------------------
 real TriangleCell::normal(const Cell& cell, uint facet, uint i) const
 {
+  return normal(cell, facet)[i];
+}
+//-----------------------------------------------------------------------------
+Point TriangleCell::normal(const Cell& cell, uint facet) const
+{
   // This is a trick to be allowed to initialize a facet from the cell
   Cell& c = const_cast<Cell&>(cell);
-
+  
   // Create facet from the mesh and local facet number
   Facet f(c.mesh(), c.entities(1)[facet]);
-
+  
   // The normal vector is currently only defined for a triangle in R^2
-  if ( c.mesh().geometry().dim() != 2 )
+  if (c.mesh().geometry().dim() != 2)
     error("The normal vector is only defined when the triangle is in R^2");
-    
+  
   // Get global index of opposite vertex
   const uint v0 = cell.entities(0)[facet];
   
@@ -276,20 +281,18 @@ real TriangleCell::normal(const Cell& cell, uint facet, uint i) const
   const real* p2 = geometry.x(v2);
 
   // Vector normal to facet
-  real n[2];
+  Point n;
   n[0] = (p2[1] - p1[1]);
   n[1] = -(p2[0] - p1[0]);
 
-  // Compute length of normal
-  const real l = std::sqrt(n[0]*n[0] + n[1]*n[1]);
+  // Normalize
+  n /= std::sqrt(n[0]*n[0] + n[1]*n[1]);
 
   // Flip direction of normal so it points outward
-  if ( (n[0]*(p0[0] - p1[0]) + n[1]*(p0[1] - p1[1])) < 0 )
-    return n[i] / l;
-  else
-    return -n[i] / l;
+  if ( (n[0]*(p0[0] - p1[0]) + n[1]*(p0[1] - p1[1])) > 0 )
+    n *= -1.0;
 
-  return 0.0;
+  return n;
 }
 //-----------------------------------------------------------------------------
 bool TriangleCell::intersects(const MeshEntity& triangle, const Point& p) const

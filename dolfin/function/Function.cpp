@@ -280,8 +280,12 @@ const Cell& Function::cell() const
 {
   if (!_cell)
     error("Current cell is unknown (only available during assembly).");
-  
   return *_cell;
+}
+//-----------------------------------------------------------------------------
+Point Function::normal() const
+{
+  return cell().normal(_facet);
 }
 //-----------------------------------------------------------------------------
 int Function::facet() const
