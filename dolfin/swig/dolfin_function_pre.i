@@ -1,5 +1,7 @@
 // Rename Function --> cpp_Function (gets mapped in assembly.py)
 %rename(cpp_Function) dolfin::Function;
+%rename(old_cell) dolfin::Function::cell;
+%rename(cell) dolfin::Function::new_cell;
 %rename(sub) dolfin::Function::operator[];
 %rename(assign) dolfin::Function::operator=;
 %rename(cpp_FacetNormal) dolfin::FacetNormal;
