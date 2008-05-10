@@ -1,3 +1,4 @@
+ - LinearSolver now handles all backends and linear solvers
  - Add access to normal in Function, useful for inflow boundary conditions
  - Remove GMRES and LU classes, use solve() instead
  - Improve solve() function, now handles both LU and Krylov + preconditioners
