@@ -5,33 +5,48 @@
 // Modified by Ola Skavhaug 2008.
 //
 // First added:  2004-06-19
-// Last changed: 2008-04-11
+// Last changed: 2008-05-10
 
 #ifndef __LINEAR_SOLVER_H
 #define __LINEAR_SOLVER_H
 
 #include <dolfin/common/types.h>
-#include "Matrix.h"
-#include "Vector.h"
+#include <dolfin/parameter/Parametrized.h>
+#include "SolverType.h"
+#include "PreconditionerType.h"
 
 namespace dolfin
 {
 
-  /// This class defines the interfaces for default linear solvers for
-  /// systems of the form Ax = b.
+  class GenericMatrix;
+  class GenericVector;
+  class LUSolver;
+  class KrylovSolver;
 
-  class LinearSolver
+  /// This class provides a general solver for linear systems Ax = b.
+  /// Available methods are defined in SolverType.h and available
+  /// preconditioners are defined in PreconditionerType.h.
+
+  class LinearSolver : public Parametrized
   {
   public:
 
-    /// Constructor
-    LinearSolver() {}
+    /// Create linear solver
+    LinearSolver(SolverType solver_type=lu, PreconditionerType pc_type=ilu);
 
     /// Destructor
-    virtual ~LinearSolver() {}
+    ~LinearSolver();
 
     /// Solve linear system Ax = b
-    virtual uint solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b) = 0;
+    uint solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b);
+
+  private:
+
+    // LU solver
+    LUSolver* lu_solver;
+
+    // Krylov solver
+    KrylovSolver* krylov_solver;
 
   };
 

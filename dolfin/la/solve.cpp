@@ -4,12 +4,12 @@
 // Modified by Ola Skavhaug 2008.
 //
 // First added:  2007-04-30
-// Last changed: 2008-05-08
+// Last changed: 2008-05-09
 
-#include "LUSolver.h"
-#include "KrylovSolver.h"
+#include "LinearSolver.h"
 #include "GenericMatrix.h"
 #include "GenericVector.h"
+#include "LinearAlgebraFactory.h"
 #include "solve.h"
 
 using namespace dolfin;
@@ -18,21 +18,13 @@ using namespace dolfin;
 void dolfin::solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b,
                    SolverType solver_type, PreconditionerType pc_type)
 {
-  if (solver_type == lu)
-  {
-    LUSolver solver;
-    solver.solve(A, x, b);
-  }
-  else
-  {
-    KrylovSolver solver(solver_type, pc_type);
-    solver.solve(A, x, b);
-  }
+  LinearSolver solver(solver_type, pc_type);
+  solver.solve(A, x, b);
 }
 //-----------------------------------------------------------------------------  
 real dolfin::residual(const GenericMatrix& A, const GenericVector& x, const GenericVector& b)
 {
-  DefaultVector* y = dynamic_cast<DefaultVector*>(A.factory().createVector());
+  GenericVector* y = A.factory().createVector();
   A.mult(x, *y);
   *y -= b;
   const real norm = y->norm();

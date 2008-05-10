@@ -1,10 +1,10 @@
 // Copyright (C) 2005-2007 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Anders Logg, 2005-2006.
+// Modified by Anders Logg, 2005-2008.
 //
 // First added:  2005-10-23
-// Last changed: 2007-05-15
+// Last changed: 2008-05-10
 
 #include "NewtonSolver.h"
 #include "NonlinearProblem.h"
@@ -17,7 +17,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 NewtonSolver::NewtonSolver() : Parametrized()
 {
-  solver = new LUSolver();
+  solver = new LinearSolver(lu);
 }
 //-----------------------------------------------------------------------------
 /*
@@ -35,7 +35,7 @@ NewtonSolver::NewtonSolver(Matrix::Type matrix_type) : Parametrized()
 NewtonSolver::NewtonSolver(SolverType method, PreconditionerType pc)
   : Parametrized()
 {
-  solver = new KrylovSolver(method, pc);
+  solver = new LinearSolver(method, pc);
 }
 //-----------------------------------------------------------------------------
 NewtonSolver::~NewtonSolver()
