@@ -1,10 +1,10 @@
-// Copyright (C) 2006-2007 Anders Logg.
+// Copyright (C) 2006-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Kristian B. Oelgaard, 2007.
 //
 // First added:  2006-02-09
-// Last changed: 2007-05-29
+// Last changed: 2008-05-14
 
 #ifndef __SPECIAL_FUNCTIONS_H
 #define __SPECIAL_FUNCTIONS_H
@@ -26,6 +26,16 @@ namespace dolfin
     real eval(const real* x) const
     {
       return cell().diameter();
+    }
+    
+    /// Compute minimal cell diameter
+    real min() const
+    {
+      CellIterator c(mesh());
+      real hmin = c->diameter();
+      for (; !c.end(); ++c)
+        hmin = std::min(hmin, c->diameter());
+      return hmin;
     }
     
   };
