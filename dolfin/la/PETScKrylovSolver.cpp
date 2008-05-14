@@ -198,9 +198,11 @@ void PETScKrylovSolver::readParameters()
   {
     //FIXME: Decide on supported version of PETSc
 #if(PETSC_VERSION_SUBMINOR > 2)
-    KSPMonitorSet(ksp, monitor, 0, 0);
+    //KSPMonitorSet(ksp, monitor, 0, 0);
+    KSPMonitorSet(ksp, KSPMonitorTrueResidualNorm, 0, 0);
 #else
-    KSPSetMonitor(ksp, monitor, 0, 0);
+    //KSPSetMonitor(ksp, monitor, 0, 0);
+    KSPSetMonitor(ksp, KSPMonitorTrueResidualNorm, 0, 0);
 #endif
   }
 
@@ -268,6 +270,9 @@ void PETScKrylovSolver::setPETScPreconditioner()
 
   // Set preconditioner
   PCSetType(pc, PETScPreconditioner::getType(pc_petsc));
+
+  // Make sure options are set
+  PCSetFromOptions(pc);
 }
 //-----------------------------------------------------------------------------
 void PETScKrylovSolver::writeReport(int num_iterations)

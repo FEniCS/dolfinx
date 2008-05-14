@@ -93,6 +93,7 @@ void SubSystemsManager::initPETSc(int argc, char* argv[], bool cmd_line_args)
   // Get status of MPI before PETSc initialisation
   const bool mpi_init_status = MPIinitialized();
 
+  // FIXME: What does this do?
   if(cmd_line_args)
     message("Initializing PETSc with given command-line arguments.");
 
