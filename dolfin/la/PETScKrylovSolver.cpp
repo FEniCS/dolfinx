@@ -253,6 +253,9 @@ void PETScKrylovSolver::setPETScPreconditioner()
   PC pc;
   KSPGetPC(ksp, &pc);
 
+  // Make sure options are set
+  PCSetFromOptions(pc);
+
   // Treat special case Hypre AMG preconditioner
   if ( pc_petsc == amg )
   {  
@@ -270,9 +273,6 @@ void PETScKrylovSolver::setPETScPreconditioner()
 
   // Set preconditioner
   PCSetType(pc, PETScPreconditioner::getType(pc_petsc));
-
-  // Make sure options are set
-  PCSetFromOptions(pc);
 }
 //-----------------------------------------------------------------------------
 void PETScKrylovSolver::writeReport(int num_iterations)
