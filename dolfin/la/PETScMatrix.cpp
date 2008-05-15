@@ -7,7 +7,7 @@
 // Modified by Magnus Vikstrøm 2007-2008.
 //
 // First added:  2004
-// Last changed: 2008-04-22
+// Last changed: 2008-05-15
 
 #ifdef HAS_PETSC
 
@@ -213,7 +213,9 @@ void PETScMatrix::add(const real* block,
                block, ADD_VALUES);
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::getrow(uint row, Array<uint>& columns, Array<real>& values) const
+void PETScMatrix::getrow(uint row,
+                         Array<uint>& columns,
+                         Array<real>& values) const
 {
   const int *cols = 0;
   const double *vals = 0;
@@ -225,6 +227,36 @@ void PETScMatrix::getrow(uint row, Array<uint>& columns, Array<real>& values) co
   values.assign(vals, vals+ncols);
 
   MatRestoreRow(A, row, &ncols, &cols, &vals);
+}
+//-----------------------------------------------------------------------------
+void PETScMatrix::setrow(uint row,
+                         const Array<uint>& columns,
+                         const Array<real>& values)
+{
+  // Check size of arrays
+  if (columns.size() != values.size())
+    error("Number of columns and values don't match for setrow() operation.");
+
+  // Handle case n = 0
+  const uint n = columns.size();
+  if (n == 0)
+    return;
+
+  // Assign values to arrays
+  uint* cols = new uint[n];
+  real* vals = new real[n];
+  for (uint j = 0; j < n; j++)
+  {
+    cols[j] = columns[j];
+    vals[j] = values[j];
+  }
+  
+  // Set values
+  set(vals, 1, &row, n, cols);
+  
+  // Free temporary storage
+  delete [] cols;
+  delete [] vals;
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::zero(uint m, const uint* rows)

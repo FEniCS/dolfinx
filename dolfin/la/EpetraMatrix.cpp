@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2008.
 //
 // First added:  2008-04-21
-// Last changed: 2008-04-28
+// Last changed: 2008-05-15
 
 #ifdef HAS_TRILINOS
 
@@ -241,6 +241,11 @@ void EpetraMatrix::getrow(uint row, Array<uint>& columns, Array<real>& values) c
   }
 
   delete num_entries; 
+}
+//-----------------------------------------------------------------------------
+void EpetraMatrix::setrow(uint row, const Array<uint>& columns, const Array<real>& values)
+{
+  error("Not implemented.");
 }
 //-----------------------------------------------------------------------------
 LinearAlgebraFactory& EpetraMatrix::factory() const

@@ -7,7 +7,7 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2006-07-05
-// Last changed: 2008-04-29
+// Last changed: 2008-05-15
 
 #ifndef __UBLAS_MATRIX_H
 #define __UBLAS_MATRIX_H
@@ -100,6 +100,9 @@ namespace dolfin
 
     /// Get non-zero values of given row
     virtual void getrow(uint row, Array<uint>& columns, Array<real>& values) const;
+
+    /// Set values for given row
+    virtual void setrow(uint row, const Array<uint>& columns, const Array<real>& values);
 
     /// Set given rows to zero
     virtual void zero(uint m, const uint* rows);
@@ -212,13 +215,13 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <class Mat>
-  void uBlasMatrix< Mat >::getrow(uint row, Array<uint>& columns, Array<real>& values) const
+  void uBlasMatrix<Mat>::getrow(uint row, Array<uint>& columns, Array<real>& values) const
   {
     // Reference to matrix row (throw away const-ness and trust uBlas)
-    ublas::matrix_row< Mat > r( *(const_cast<Mat*>(&A)) , row);
-
-    typename ublas::matrix_row< Mat >::const_iterator component;
-
+    ublas::matrix_row<Mat> r( *(const_cast<Mat*>(&A)) , row);
+    
+    typename ublas::matrix_row<Mat>::const_iterator component;
+    
     // Insert values into Arrays
     columns.clear();
     values.clear();
@@ -227,6 +230,12 @@ namespace dolfin
       columns.push_back(component.index());
       values.push_back(*component );
     }
+  }
+  //-----------------------------------------------------------------------------
+  template <class Mat>
+  void uBlasMatrix<Mat>::setrow(uint row, const Array<uint>& columns, const Array<real>& values)
+  {
+    error("Not implemented.");
   }
   //-----------------------------------------------------------------------------
   template <class Mat>

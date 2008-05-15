@@ -6,7 +6,7 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2006-05-15
-// Last changed: 2008-04-29
+// Last changed: 2008-05-15
 
 #ifndef __MATRIX_H
 #define __MATRIX_H
@@ -90,6 +90,10 @@ namespace dolfin
     /// Get non-zero values of given row
     virtual void getrow(uint row, Array<uint>& columns, Array<real>& values) const
     { matrix->getrow(row, columns, values); }
+
+    /// Set values for given row
+    virtual void setrow(uint row, const Array<uint>& columns, const Array<real>& values)
+    { matrix->setrow(row, columns, values); }
 
     /// Set given rows to zero
     virtual void zero(uint m, const uint* rows)
