@@ -260,8 +260,15 @@ void PETScKrylovSolver::setPETScPreconditioner()
   if ( pc_petsc == amg )
   {  
 #if PETSC_HAVE_HYPRE
+    //PCSetFromOptions(pc);
+    //pc->ops->setfromoptions(pc);
     PCSetType(pc, PCHYPRE);
+    //pc->ops->setfromoptions(pc);
     PCHYPRESetType(pc, "boomeramg");
+    PCSetFromOptions(pc);
+
+    //pc->ops->setfromoptions(pc);
+    //PCHYPRESetFromOptions(pc);
 #else
     warning("PETSc has not been compiled with the HYPRE library for   "
                    "algerbraic multigrid. Default PETSc solver will be used. "
