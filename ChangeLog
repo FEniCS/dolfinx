@@ -1,3 +1,5 @@
+ - Add setrow() to matrix interface
+ - Add new solver SingularSolver for solving singular (pressure) systems
  - Add MeshSize::min() for easy computation of smallest mesh size
  - LinearSolver now handles all backends and linear solvers
  - Add access to normal in Function, useful for inflow boundary conditions
