@@ -1,10 +1,10 @@
 // Copyright (C) 2007 Garth N. Wells
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Anders Logg 2007.
+// Modified by Anders Logg, 2007-2008.
 //
 // First added:  2007-03-13
-// Last changed: 2007-04-03
+// Last changed: 2008-05-15
 
 #ifndef __SPARSITY_PATTERN_H
 #define __SPARSITY_PATTERN_H
@@ -27,9 +27,15 @@ namespace dolfin
   {
   public:
 
-    /// Constructor
+    /// Create empty sparsity pattern
     SparsityPattern();
-    
+  
+    /// Create sparsity pattern for matrix of given dimensions
+    SparsityPattern(uint M, uint N);
+
+    /// Create sparsity pattern for vector of given dimension
+    SparsityPattern(uint M);
+
     /// Destructor
     ~SparsityPattern();
 
@@ -39,8 +45,12 @@ namespace dolfin
     /// Initialise sparsity pattern for a parallel matrix with total number of rows and columns
     void pinit(uint rank, const uint* dims);
 
-    /// Insert non-zero entry
-    void insert(const uint* num_rows, const uint * const * rows);
+    /// Insert non-zero entries
+    void insert(uint m, const uint* rows, uint n, const uint* cols);
+
+    /// Insert non-zero entries
+    void insert(const uint* num_rows, const uint * const * rows)
+    { insert(num_rows[0], rows[0], num_rows[1], rows[1]); }
 
     /// Insert non-zero entry for parallel matrices
     void pinsert(const uint* num_rows, const uint * const * rows);

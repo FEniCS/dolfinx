@@ -1,10 +1,11 @@
 // Copyright (C) 2007 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Magnus Vikstrom 2008.
+// Modified by Magnus Vikstrom, 2008.
+// Modified by Anders Logg, 2008.
 //
 // First added:  2007-03-13
-// Last changed: 2008-01-24
+// Last changed: 2008-05-15
 
 #include <dolfin/log/dolfin_log.h>
 #include "SparsityPattern.h"
@@ -15,7 +16,23 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-SparsityPattern::SparsityPattern() 
+SparsityPattern::SparsityPattern(uint M, uint N) : range(0)
+{
+  uint dims[2];
+  dims[0] = M;
+  dims[1] = N;
+  init(2, dims);
+}
+//-----------------------------------------------------------------------------
+SparsityPattern::SparsityPattern(uint M) : range(0)
+{
+  uint dims[2];
+  dims[0] = M;
+  dims[1] = 0;
+  init(1, dims);
+}
+//-----------------------------------------------------------------------------
+  SparsityPattern::SparsityPattern() : range(0)
 {
   dim[0] = 0;
   dim[1] = 0;
@@ -25,7 +42,7 @@ SparsityPattern::SparsityPattern()
 //-----------------------------------------------------------------------------
 SparsityPattern::~SparsityPattern()
 {
-  //Do nothing
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::init(uint rank, const uint* dims)
@@ -51,11 +68,11 @@ void SparsityPattern::pinit(uint rank, const uint* dims)
   initRange();
 }
 //-----------------------------------------------------------------------------
-void SparsityPattern::insert(const uint* num_rows, const uint * const * rows)
+void SparsityPattern::insert(uint m, const uint* rows, uint n, const uint* cols)
 { 
-  for (unsigned int i = 0; i<num_rows[0];++i)
-    for (unsigned int j = 0; j<num_rows[1];++j)
-      sparsity_pattern[rows[0][i]].insert(rows[1][j]);
+  for (uint i = 0; i < m; ++i)
+    for (uint j = 0; j < n; ++j)
+      sparsity_pattern[rows[i]].insert(cols[j]);
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::pinsert(const uint* num_rows, const uint * const * rows)
@@ -171,3 +188,4 @@ void SparsityPattern::initRange()
   for(uint p=0; p<num_procs; ++p)
     range[p+1] = range[p] + dim[0]/num_procs + ((dim[0]%num_procs) > p ? 1 : 0);
 }
+//-----------------------------------------------------------------------------
