@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2006-2008.
 //
 // First added:  2006-05-31
-// Last changed: 2008-05-08
+// Last changed: 2008-05-15
 
 #ifndef __UBLAS_KRYLOV_SOLVER_H
 #define __UBLAS_KRYLOV_SOLVER_H
@@ -31,7 +31,7 @@ namespace dolfin
   public:
 
     /// Create Krylov solver for a particular method and preconditioner
-    uBlasKrylovSolver(SolverType method=default_solver, PreconditionerType pc=default_pc);
+    uBlasKrylovSolver(SolverType solver_type=default_solver, PreconditionerType pc_type=default_pc);
 
     /// Create Krylov solver for a particular preconditioner (set by name)
     uBlasKrylovSolver(PreconditionerType pc);
@@ -40,7 +40,7 @@ namespace dolfin
     uBlasKrylovSolver(uBlasPreconditioner& pc);
 
     /// Create Krylov solver for a particular method and uBlasPreconditioner
-    uBlasKrylovSolver(SolverType method, uBlasPreconditioner& preconditioner);
+    uBlasKrylovSolver(SolverType solver_type, uBlasPreconditioner& preconditioner);
 
     /// Destructor
     ~uBlasKrylovSolver();
@@ -73,13 +73,13 @@ namespace dolfin
                         bool& converged) const;
     
     /// Select and create named preconditioner
-    void selectPreconditioner(const PreconditionerType pc);
+    void selectPreconditioner(PreconditionerType pc_type);
 
     /// Read solver parameters
     void readParameters();
 
     /// Krylov method
-    SolverType method;
+    SolverType solver_type;
 
     /// Preconditioner
     uBlasPreconditioner* pc;
@@ -127,7 +127,7 @@ namespace dolfin
     // Choose solver
     bool converged;
     uint iterations;
-    switch (method)
+    switch (solver_type)
     { 
     case gmres:
       iterations = solveGMRES(A, x, b, converged);

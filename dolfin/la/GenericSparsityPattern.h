@@ -13,8 +13,10 @@
 
 namespace dolfin
 {
-  /// Base class for sparsity patterns of vectors/matrices. Concrete sub classes can 
-  /// be used to initialize vectors and sparse matrices.
+  
+  /// Base class for sparsity patterns of vectors/matrices. Concrete
+  /// sub classes can be used to initialize vectors and sparse
+  /// matrices.
 
   class GenericSparsityPattern
   {
