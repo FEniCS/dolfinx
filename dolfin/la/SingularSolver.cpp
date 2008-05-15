@@ -20,6 +20,8 @@ SingularSolver::SingularSolver(SolverType solver_type,
 {
   // Set parameters for linear solver
   linear_solver.set("parent", *this);
+
+  //linear_solver.set("Krylov monitor convergence", true);
 }
 //-----------------------------------------------------------------------------
 SingularSolver::~SingularSolver()
@@ -93,8 +95,6 @@ void SingularSolver::init(const GenericMatrix& A)
   if (B && B->size(0) == N + 1 && B->size(1) == N + 1)
     return;
 
-  cout << "Initializing" << endl;
-  
   // Delete any old data
   delete B;
   delete y;
@@ -151,6 +151,8 @@ void SingularSolver::create(const GenericMatrix& A, const GenericVector& b,
   dolfin_assert(B);
   dolfin_assert(c);
 
+  message("Creating extended hopefully non-singular system...");
+
   // Reset matrix
   B->zero();
 
@@ -174,7 +176,7 @@ void SingularSolver::create(const GenericMatrix& A, const GenericVector& b,
     ones->init(N);
     z->init(N);
     *ones = 1.0;
-    A.mult(*ones, *z);
+    M->mult(*ones, *z);
     for (uint i = 0; i < N; i++)
     {
       columns[i] = i;
