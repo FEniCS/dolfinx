@@ -13,7 +13,7 @@ __copyright__ = "Copyright (C) 2008 Kent-Andre Mardal"
 from dolfin import *
 
 # Create mesh and finite element
-mesh = UnitSquare(200,200)
+mesh = UnitSquare(20,20)
 element = FiniteElement("Lagrange", "triangle", 1)
 
 # Source term
@@ -66,7 +66,7 @@ bc.apply(A, b, a)
 x = b.copy()
 x.zero()
 
-solve(A,x,b, gmres)
+solve(A,x,b, gmres, amg)
 
 # plot the solution
 U = Function(element, mesh, x)

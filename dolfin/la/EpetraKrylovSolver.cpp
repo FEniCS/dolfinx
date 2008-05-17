@@ -10,17 +10,15 @@
 #include "EpetraMatrix.h"
 #include "EpetraVector.h"
 
-//FIXME ifdef
 #include "Epetra_FEVector.h"
 #include "Epetra_FECrsMatrix.h"
 #include "Epetra_LinearProblem.h"
 
-#ifdef HAVE_ML_AZTECOO 
 #include "AztecOO.h"
+#include "ml_config.h"
 #include "ml_include.h"
 #include "ml_MultiLevelOperator.h"
 #include "ml_epetra_utils.h"
-#endif 
 
 
 
@@ -46,7 +44,6 @@ dolfin::uint EpetraKrylovSolver::solve(const EpetraMatrix& A, EpetraVector& x, c
 
   if (pc_type == amg) 
   {  
-
 #ifdef HAVE_ML_AZTECOO
     // create linear system 
     Epetra_LinearProblem linear_system(&(A.mat()),&(x.vec()),&(b.vec()));
@@ -66,7 +63,7 @@ dolfin::uint EpetraKrylovSolver::solve(const EpetraMatrix& A, EpetraVector& x, c
     int N_levels = 10;
 
     // output level
-    //  ML_Set_PrintLevel(3);
+    ML_Set_PrintLevel(0);
 
     ML_Create(&ml_handle,N_levels);
 
