@@ -12,7 +12,7 @@
 #ifndef __VECTOR_H
 #define __VECTOR_H
 
-#include "default_la_types.h"
+#include <dolfin/common/Variable.h>
 #include "DefaultFactory.h"
 #include "GenericVector.h"
 

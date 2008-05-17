@@ -25,7 +25,6 @@
 %include "dolfin/log/Progress.h"
 
 // DOLFIN headers included from la
-%include "dolfin/la/default_la_types.h"
 %include "dolfin/la/VectorNormType.h"
 %include "dolfin/la/GenericTensor.h"
 %include "dolfin/la/GenericMatrix.h"

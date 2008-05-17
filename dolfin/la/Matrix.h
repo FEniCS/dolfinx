@@ -11,7 +11,7 @@
 #ifndef __MATRIX_H
 #define __MATRIX_H
 
-#include "default_la_types.h"
+#include <dolfin/common/Variable.h>
 #include "DefaultFactory.h"
 #include "GenericMatrix.h"
 
@@ -35,7 +35,7 @@ namespace dolfin
 
     /// Copy constructor
     explicit Matrix(const Matrix& A) : Variable("A", "DOLFIN matrix"),
-                                       matrix(new DefaultMatrix((*A.matrix).down_cast<DefaultMatrix>()))
+                                       matrix(A.matrix->copy())
     {}
 
     /// Destructor
