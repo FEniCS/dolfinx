@@ -14,10 +14,13 @@
 #include "Epetra_FEVector.h"
 #include "Epetra_FECrsMatrix.h"
 #include "Epetra_LinearProblem.h"
+
+#ifdef HAVE_ML_AZTECOO 
 #include "AztecOO.h"
 #include "ml_include.h"
 #include "ml_MultiLevelOperator.h"
 #include "ml_epetra_utils.h"
+#endif 
 
 
 
@@ -39,56 +42,66 @@ EpetraKrylovSolver::~EpetraKrylovSolver() {}
 //-----------------------------------------------------------------------------
 dolfin::uint EpetraKrylovSolver::solve(const EpetraMatrix& A, EpetraVector& x, const EpetraVector& b) {
 //FIXME need the ifdef AztecOO 
+//
 
+  if (pc_type == amg) 
+  {  
+
+#ifdef HAVE_ML_AZTECOO
     // create linear system 
-  Epetra_LinearProblem linear_system(&(A.mat()),&(x.vec()),&(b.vec()));
-  // create AztecOO instance
-  AztecOO linear_solver(linear_system);
+    Epetra_LinearProblem linear_system(&(A.mat()),&(x.vec()),&(b.vec()));
+    // create AztecOO instance
+    AztecOO linear_solver(linear_system);
 
-  linear_solver.SetAztecOption( AZ_solver, AZ_gmres);
+    linear_solver.SetAztecOption( AZ_solver, AZ_gmres);
 
-  //FIXME ifdef ML 
-  //FIXME if amg 
-  // Code from trilinos-8.0.3/packages/didasko/examples/ml/ex1.cpp 
-  
-  // Create and set an ML multilevel preconditioner
-  ML *ml_handle;
+    //FIXME ifdef ML 
+    //FIXME if amg 
+    // Code from trilinos-8.0.3/packages/didasko/examples/ml/ex1.cpp 
 
-  // Maximum number of levels
-  int N_levels = 10;
+    // Create and set an ML multilevel preconditioner
+    ML *ml_handle;
 
-  // output level
-//  ML_Set_PrintLevel(3);
+    // Maximum number of levels
+    int N_levels = 10;
 
-  ML_Create(&ml_handle,N_levels);
+    // output level
+    //  ML_Set_PrintLevel(3);
 
-  // wrap Epetra Matrix into ML matrix (data is NOT copied)
-  EpetraMatrix2MLMatrix(ml_handle, 0, &(A.mat()));
+    ML_Create(&ml_handle,N_levels);
 
-  // create a ML_Aggregate object to store the aggregates
-  ML_Aggregate *agg_object;
-  ML_Aggregate_Create(&agg_object);
+    // wrap Epetra Matrix into ML matrix (data is NOT copied)
+    EpetraMatrix2MLMatrix(ml_handle, 0, &(A.mat()));
 
-  // specify max coarse size 
-  ML_Aggregate_Set_MaxCoarseSize(agg_object,1);
+    // create a ML_Aggregate object to store the aggregates
+    ML_Aggregate *agg_object;
+    ML_Aggregate_Create(&agg_object);
 
-  // generate the hierady
-  N_levels = ML_Gen_MGHierarchy_UsingAggregation(ml_handle, 0, ML_INCREASING, agg_object);
+    // specify max coarse size 
+    ML_Aggregate_Set_MaxCoarseSize(agg_object,1);
 
-  // Set a symmetric Gauss-Seidel smoother for the MG method 
-  ML_Gen_Smoother_SymGaussSeidel(ml_handle, ML_ALL_LEVELS, ML_BOTH, 1, ML_DEFAULT);
+    // generate the hierady
+    N_levels = ML_Gen_MGHierarchy_UsingAggregation(ml_handle, 0, ML_INCREASING, agg_object);
 
-  // generate solver
-  ML_Gen_Solver(ml_handle, ML_MGV, 0, N_levels-1);
+    // Set a symmetric Gauss-Seidel smoother for the MG method 
+    ML_Gen_Smoother_SymGaussSeidel(ml_handle, ML_ALL_LEVELS, ML_BOTH, 1, ML_DEFAULT);
 
-  // wrap ML_Operator into Epetra_Operator
-  ML_Epetra::MultiLevelOperator  MLop(ml_handle,A.mat().Comm(),A.mat().DomainMap(),A.mat().RangeMap());
+    // generate solver
+    ML_Gen_Solver(ml_handle, ML_MGV, 0, N_levels-1);
 
-  // set this operator as preconditioner for AztecOO
-  linear_solver.SetPrecOperator(&MLop);
+    // wrap ML_Operator into Epetra_Operator
+    ML_Epetra::MultiLevelOperator  MLop(ml_handle,A.mat().Comm(),A.mat().DomainMap(),A.mat().RangeMap());
 
-  linear_solver.Iterate(1000,1E-9);
+    // set this operator as preconditioner for AztecOO
+    linear_solver.SetPrecOperator(&MLop);
 
+    linear_solver.Iterate(1000,1E-9);
+#else 
+    error("EpetraKrylovSolver::solve not compiled with ML support."); 
+#endif 
+  } else { 
+    error("EpetraKrylovSolver::solve only AMG preconditioner implemented."); 
+  }
   return 0; 
 }
 //-----------------------------------------------------------------------------
