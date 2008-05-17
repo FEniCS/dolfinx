@@ -58,39 +58,32 @@ dolfin::uint EpetraKrylovSolver::solve(const EpetraMatrix& A, EpetraVector& x, c
   int N_levels = 10;
 
   // output level
-  ML_Set_PrintLevel(3);
+//  ML_Set_PrintLevel(3);
 
   ML_Create(&ml_handle,N_levels);
 
   // wrap Epetra Matrix into ML matrix (data is NOT copied)
   EpetraMatrix2MLMatrix(ml_handle, 0, &(A.mat()));
 
-  // as we are interested in smoothed aggregation, create a ML_Aggregate object
-  // to store the aggregates
+  // create a ML_Aggregate object to store the aggregates
   ML_Aggregate *agg_object;
   ML_Aggregate_Create(&agg_object);
 
-  // specify max coarse size (ML will not coarse further is the matrix at a given level is
-  // smaller than specified here)
+  // specify max coarse size 
   ML_Aggregate_Set_MaxCoarseSize(agg_object,1);
 
   // generate the hierady
-  N_levels = ML_Gen_MGHierarchy_UsingAggregation(ml_handle, 0,
-                                                  ML_INCREASING, agg_object);
+  N_levels = ML_Gen_MGHierarchy_UsingAggregation(ml_handle, 0, ML_INCREASING, agg_object);
 
-  // Set a symmetric Gauss-Seidel smoother for the MG method (change
-  // if the matrix is not symmetric)
-  ML_Gen_Smoother_SymGaussSeidel(ml_handle, ML_ALL_LEVELS,
-                                  ML_BOTH, 1, ML_DEFAULT);
+  // Set a symmetric Gauss-Seidel smoother for the MG method 
+  ML_Gen_Smoother_SymGaussSeidel(ml_handle, ML_ALL_LEVELS, ML_BOTH, 1, ML_DEFAULT);
 
   // generate solver
-  ML_Gen_Solver    (ml_handle, ML_MGV, 0, N_levels-1);
+  ML_Gen_Solver(ml_handle, ML_MGV, 0, N_levels-1);
 
   // wrap ML_Operator into Epetra_Operator
   ML_Epetra::MultiLevelOperator  MLop(ml_handle,A.mat().Comm(),A.mat().DomainMap(),A.mat().RangeMap());
 
-  // ===================== E N D    O F  M L   S E C T I O N  ========================= //
-  
   // set this operator as preconditioner for AztecOO
   linear_solver.SetPrecOperator(&MLop);
 

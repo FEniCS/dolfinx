@@ -13,7 +13,7 @@ __copyright__ = "Copyright (C) 2008 Kent-Andre Mardal"
 from dolfin import *
 
 # Create mesh and finite element
-mesh = UnitSquare(20,20)
+mesh = UnitSquare(200,200)
 element = FiniteElement("Lagrange", "triangle", 1)
 
 # Source term
