@@ -4,6 +4,7 @@
 // Modified by Ola Skavhaug, 2008.
 // Modified by Dag Lindbo, 2008.
 // Modified by Anders Logg, 2008.
+// Modified by Kent-Andre Mardal, 2008.
 //
 // First added:  2007-07-03
 // Last changed: 2008-05-10
@@ -19,6 +20,8 @@
 #include "uBlasDenseMatrix.h"
 #include "PETScLUSolver.h"
 #include "PETScMatrix.h"
+#include "EpetraLUSolver.h"
+#include "EpetraMatrix.h"
 
 namespace dolfin
 {
@@ -30,12 +33,13 @@ namespace dolfin
     
   public:
 
-    LUSolver() : ublas_solver(0), petsc_solver(0) {}
+    LUSolver() : ublas_solver(0), petsc_solver(0), epetra_solver(0) {}
     
     ~LUSolver() 
     { 
       delete ublas_solver; 
       delete petsc_solver; 
+      delete epetra_solver; 
     }
     
     uint solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b)
@@ -71,6 +75,18 @@ namespace dolfin
         return petsc_solver->solve(A.down_cast<PETScMatrix>(), x.down_cast<PETScVector>(), b.down_cast<PETScVector>());
       }
 #endif
+#ifdef HAS_TRILINOS
+      if (A.has_type<EpetraMatrix>()) 
+      {
+        if (!epetra_solver)
+        {
+          epetra_solver = new EpetraLUSolver();
+          epetra_solver->set("parent", *this);
+        }
+        return epetra_solver->solve(A.down_cast<EpetraMatrix>(), x.down_cast<EpetraVector>(), b.down_cast<EpetraVector>());
+      }
+#endif
+
       error("No default LU solver for given backend");
       return 0;
     }
@@ -121,6 +137,13 @@ namespace dolfin
 #else
     int* petsc_solver;
 #endif
+#ifdef HAS_TRILINOS
+    EpetraLUSolver* epetra_solver;
+#else
+    int* epetra_solver;
+#endif
+
+
 
   };
 }
