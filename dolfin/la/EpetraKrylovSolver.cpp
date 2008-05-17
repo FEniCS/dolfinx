@@ -40,17 +40,26 @@ EpetraKrylovSolver::~EpetraKrylovSolver() {}
 //-----------------------------------------------------------------------------
 dolfin::uint EpetraKrylovSolver::solve(const EpetraMatrix& A, EpetraVector& x, const EpetraVector& b) {
 //FIXME need the ifdef AztecOO 
-//
+
+// create linear system 
+  Epetra_LinearProblem linear_system(&(A.mat()),&(x.vec()),&(b.vec()));
+  // create AztecOO instance
+  AztecOO linear_solver(linear_system);
+
+  if ( method == cg) { linear_solver.SetAztecOption( AZ_solver, AZ_cg); }
+  else if ( method == gmres) {linear_solver.SetAztecOption( AZ_solver, AZ_gmres); }
+  else if ( method == bicgstab) {linear_solver.SetAztecOption( AZ_solver, AZ_bicgstab); }
+  else if ( method == lu ) { error("EpetraKrylovSolver::solve LU not supported"); } 
+
+  if ( pc_type == jacobi) { linear_solver.SetAztecOption( AZ_precond, AZ_Jacobi); }
+  //FIXME GS or SSOR not a PreconditionerType not in 
+  else if ( pc_type == sor) {linear_solver.SetAztecOption( AZ_precond, AZ_sym_GS); }
+  else if ( pc_type == ilu) {linear_solver.SetAztecOption( AZ_precond, AZ_ilu); }
+  else if ( pc_type == icc) {linear_solver.SetAztecOption( AZ_precond, AZ_icc); }
 
   if (pc_type == amg) 
   {  
 #ifdef HAVE_ML_AZTECOO
-    // create linear system 
-    Epetra_LinearProblem linear_system(&(A.mat()),&(x.vec()),&(b.vec()));
-    // create AztecOO instance
-    AztecOO linear_solver(linear_system);
-
-    linear_solver.SetAztecOption( AZ_solver, AZ_gmres);
 
     //FIXME ifdef ML 
     //FIXME if amg 
@@ -92,14 +101,12 @@ dolfin::uint EpetraKrylovSolver::solve(const EpetraMatrix& A, EpetraVector& x, c
     // set this operator as preconditioner for AztecOO
     linear_solver.SetPrecOperator(&MLop);
 
-    linear_solver.Iterate(1000,1E-9);
 #else 
     error("EpetraKrylovSolver::solve not compiled with ML support."); 
 #endif 
-  } else { 
-    error("EpetraKrylovSolver::solve only AMG preconditioner implemented."); 
-  }
-  return 0; 
+  }   
+  linear_solver.Iterate(1000,1E-9);
+  return linear_solver.NumIters(); 
 }
 //-----------------------------------------------------------------------------
 void EpetraKrylovSolver::disp() const {

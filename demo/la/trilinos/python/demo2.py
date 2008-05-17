@@ -66,7 +66,8 @@ bc.apply(A, b, a)
 x = b.copy()
 x.zero()
 
-solve(A,x,b, gmres, amg)
+#solve(A,x,b, gmres, amg)
+solve(A,x,b, gmres, jacobi)
 
 # plot the solution
 U = Function(element, mesh, x)
