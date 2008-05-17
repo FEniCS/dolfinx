@@ -6,12 +6,13 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2006-05-15
-// Last changed: 2008-05-15
+// Last changed: 2008-05-17
 
 #ifndef __MATRIX_H
 #define __MATRIX_H
 
 #include "default_la_types.h"
+#include "DefaultFactory.h"
 #include "GenericMatrix.h"
 
 namespace dolfin
@@ -25,14 +26,12 @@ namespace dolfin
   public:
 
     /// Create empty matrix
-    Matrix() : Variable("A", "DOLFIN matrix"),
-               matrix(new DefaultMatrix())
-    {}
+    Matrix() : Variable("A", "DOLFIN matrix"), matrix(0)
+    { DefaultFactory factory; matrix = factory.createMatrix(); }
 
     /// Create M x N matrix
-    Matrix(uint M, uint N) : Variable("A", "DOLFIN matrix"),
-                             matrix(new DefaultMatrix(M, N))
-    {}
+    Matrix(uint M, uint N) : Variable("A", "DOLFIN matrix"), matrix(0)
+    { DefaultFactory factory; matrix = factory.createMatrix(); matrix->init(M, N); }
 
     /// Copy constructor
     explicit Matrix(const Matrix& A) : Variable("A", "DOLFIN matrix"),

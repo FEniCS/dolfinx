@@ -4,7 +4,6 @@
 // First added:  2007-12-06
 // Last changed: 2007-12-06
 
-
 #ifndef __UBLAS_FACTORY_H
 #define __UBLAS_FACTORY_H
 
@@ -26,20 +25,21 @@ namespace dolfin
     /// Create empty matrix
     uBlasMatrix<ublas_sparse_matrix>* createMatrix() const;
 
-    /// Create empty sparsity pattern 
-    SparsityPattern* createPattern() const;
-
     /// Create empty vector
     uBlasVector* createVector() const;
 
+    /// Create empty sparsity pattern 
+    SparsityPattern* createPattern() const;
+
     /// Return sigleton instance
-    static uBlasFactory& instance() { return ublasfactory; }
+    static uBlasFactory& instance()
+    { return factory; }
 
   private:
     /// Private Constructor
     uBlasFactory() {}
 
-    static uBlasFactory ublasfactory;
+    static uBlasFactory factory;
 
   };
 

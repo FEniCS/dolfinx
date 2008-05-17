@@ -8,19 +8,22 @@
 
 using namespace dolfin;
 
+//-----------------------------------------------------------------------------
 uBlasMatrix<ublas_sparse_matrix>* uBlasFactory::createMatrix() const 
 {
   return new uBlasMatrix<ublas_sparse_matrix>(); 
 }
-
+//-----------------------------------------------------------------------------
 SparsityPattern* uBlasFactory::createPattern() const 
 {
   return new SparsityPattern(); 
 }
-
+//-----------------------------------------------------------------------------
 uBlasVector* uBlasFactory::createVector() const 
 {
   return new uBlasVector(); 
 }
+//-----------------------------------------------------------------------------
 
-uBlasFactory uBlasFactory::ublasfactory;
+// Singleton instance
+uBlasFactory uBlasFactory::factory;

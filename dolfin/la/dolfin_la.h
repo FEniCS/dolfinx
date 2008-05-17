@@ -20,6 +20,7 @@
 #include <dolfin/la/GenericSparsityPattern.h>
 #include <dolfin/la/SparsityPattern.h>
 #include <dolfin/la/LinearAlgebraFactory.h>
+#include <dolfin/la/DefaultFactory.h>
 #include <dolfin/la/uBlasFactory.h>
 #include <dolfin/la/PETScFactory.h>
 #include <dolfin/la/EpetraFactory.h>
