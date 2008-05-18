@@ -48,6 +48,7 @@ namespace dolfin
     /// Private Constructor
     uBlasFactory() {}
 
+    // Singleton instanc
     static uBlasFactory<Mat> factory;
   };
 }
