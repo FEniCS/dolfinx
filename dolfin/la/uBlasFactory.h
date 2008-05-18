@@ -45,10 +45,10 @@ namespace dolfin
 
   private:
 
-    /// Private Constructor
+    // Private Constructor
     uBlasFactory() {}
 
-    // Singleton instanc
+    // Singleton instance
     static uBlasFactory<Mat> factory;
   };
 }

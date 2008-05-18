@@ -32,7 +32,7 @@ LinearAlgebraFactory& DefaultFactory::factory() const
 {
   // Fallback
   std::string default_backend = "uBLAS";
-  typedef uBlasFactory DefaultFactory;
+  typedef uBlasFactory<> DefaultFactory;
 
   // Get backend from parameter system
   std::string backend = dolfin_get("linear algebra backend");
@@ -40,7 +40,7 @@ LinearAlgebraFactory& DefaultFactory::factory() const
   // Choose backend
   if (backend == "uBLAS")
   {
-    return uBlasFactory::instance();
+    return uBlasFactory<>::instance();
   }
   else if (backend == "PETSc")
   {
