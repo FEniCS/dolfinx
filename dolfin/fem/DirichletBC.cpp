@@ -4,7 +4,7 @@
 // Modified by Kristian Oelgaard, 2007
 //
 // First added:  2007-04-10
-// Last changed: 2008-04-22
+// Last changed: 2008-05-18
 
 #include <dolfin/common/constants.h>
 #include <dolfin/log/log.h>
@@ -30,8 +30,8 @@ DirichletBC::DirichletBC(Function& g,
                          SubDomain& sub_domain,
                          BCMethod method)
   : BoundaryCondition(), g(g), _mesh(mesh),
-    sub_domains(0), sub_domain(0), sub_domains_local(false), method(method),
-    user_sub_domain(&sub_domain)
+    sub_domains(0), sub_domain(0), sub_domains_local(false),
+    method(method), user_sub_domain(&sub_domain)
 
 {
   // Initialize sub domain markers
@@ -44,7 +44,7 @@ DirichletBC::DirichletBC(Function& g,
                          BCMethod method)
   : BoundaryCondition(), g(g), _mesh(sub_domains.mesh()),
     sub_domains(&sub_domains), sub_domain(sub_domain), sub_domains_local(false),
-    method(method)
+    method(method), user_sub_domain(0)
 {
   // Do nothing
 }
@@ -69,7 +69,7 @@ DirichletBC::DirichletBC(Function& g,
                          BCMethod method)
   : BoundaryCondition(), g(g), _mesh(sub_domains.mesh()),
     sub_domains(&sub_domains), sub_domain(sub_domain), sub_domains_local(false),
-    sub_system(sub_system), method(method)
+    sub_system(sub_system), method(method), user_sub_domain(0)
 {
   // Do nothing
 }
@@ -78,8 +78,8 @@ DirichletBC::DirichletBC(Function& g,
                          Mesh& mesh,
                          BCMethod method)
   : BoundaryCondition(), g(g), _mesh(mesh),
-    sub_domains(0), sub_domain(0), sub_domains_local(false), method(method),
-    user_sub_domain(0)
+    sub_domains(0), sub_domain(0), sub_domains_local(false),
+    method(method), user_sub_domain(0)
 {
   // Create sub domain for entire boundary
   class EntireBoundary : public SubDomain
@@ -483,4 +483,9 @@ void DirichletBC::zero(GenericMatrix& A, const DofMap& dof_map, const ufc::form&
   // Clear temporary arrays
   delete [] dofs;
 }
-
+//-----------------------------------------------------------------------------
+void DirichletBC::setSubSystem(SubSystem sub_system)
+{
+  this->sub_system = sub_system;
+}
+//-----------------------------------------------------------------------------
