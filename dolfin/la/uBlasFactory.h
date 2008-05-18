@@ -36,9 +36,11 @@ namespace dolfin
     { return factory; }
 
   private:
-    /// Private Constructor
+
+    // Private constructor
     uBlasFactory() {}
 
+    // Singleton instance
     static uBlasFactory factory;
 
   };
