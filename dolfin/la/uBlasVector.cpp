@@ -224,6 +224,6 @@ LogStream& dolfin::operator<< (LogStream& stream, const uBlasVector& x)
 //-----------------------------------------------------------------------------
 LinearAlgebraFactory& uBlasVector::factory() const
 {
-  return uBlasFactory::instance();
+  return uBlasFactory<>::instance();
 }
 //-----------------------------------------------------------------------------
