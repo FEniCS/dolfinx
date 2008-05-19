@@ -103,11 +103,10 @@ void MeshTopology::init(uint dim, uint size)
 //-----------------------------------------------------------------------------
 void MeshTopology::disp() const
 {
-  cout << "Mesh topology" << endl;
-  cout << "-------------" << endl << endl;
-
   // Begin indentation
-  begin("");
+  cout << "Mesh topology" << endl;
+  begin("-------------");
+  cout << endl;
 
   // Check if empty
   if ( _dim == 0 )
@@ -121,7 +120,7 @@ void MeshTopology::disp() const
   cout << "Topological dimension: " << _dim << endl << endl;
   
   // Display number of entities for each topological dimension
-  cout << "Number of entities:" << endl << endl;
+  cout << "Number of entities:" << endl;
   begin("");
   for (uint d = 0; d <= _dim; d++)
     cout << "dim = " << d << ": " << num_entities[d] << endl;
@@ -129,7 +128,7 @@ void MeshTopology::disp() const
   cout << endl;
   
   // Display matrix of connectivities
-  cout << "Connectivity:" << endl << endl;
+  cout << "Connectivity:" << endl;
   begin("");
   cout << " ";
   for (uint d1 = 0; d1 <= _dim; d1++)
@@ -157,7 +156,7 @@ void MeshTopology::disp() const
     {
       if ( connectivity[d0][d1].size() == 0 )
 	continue;
-      cout << "Connectivity " << d0 << " -- " << d1 << ":" << endl << endl;
+      cout << "Connectivity " << d0 << " -- " << d1 << ":" << endl;
       begin("");
       connectivity[d0][d1].disp();
       end();

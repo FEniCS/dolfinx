@@ -7,12 +7,13 @@
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/mesh/CellType.h>
 #include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/MeshData.h>
 #include "XMLMesh.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-XMLMesh::XMLMesh(Mesh& mesh) : XMLObject(), _mesh(mesh), state(OUTSIDE)
+XMLMesh::XMLMesh(Mesh& mesh) : XMLObject(), _mesh(mesh), state(OUTSIDE), f(0)
 {
   // Do nothing
 }
@@ -48,6 +49,8 @@ void XMLMesh::startElement(const xmlChar *name, const xmlChar **attrs)
       readCells(name, attrs);
       state = INSIDE_CELLS;
     }
+    else if ( xmlStrcasecmp(name, (xmlChar *) "data") == 0 )
+      state = INSIDE_DATA;
     
     break;
     
@@ -68,7 +71,24 @@ void XMLMesh::startElement(const xmlChar *name, const xmlChar **attrs)
       readTetrahedron(name, attrs);
     
     break;
+
+  case INSIDE_DATA:
     
+    if ( xmlStrcasecmp(name, (xmlChar *) "meshfunction") == 0 )
+    {
+      readMeshFunction(name, attrs);
+      state = INSIDE_MESH_FUNCTION;
+    }
+
+    break;
+
+  case INSIDE_MESH_FUNCTION:
+    
+    if ( xmlStrcasecmp(name, (xmlChar *) "entity") == 0 )
+      readEntity(name, attrs);
+
+    break;
+
   default:
     ;
   }
@@ -101,7 +121,21 @@ void XMLMesh::endElement(const xmlChar *name)
       state = INSIDE_MESH;
     
     break;
-    
+
+  case INSIDE_DATA:
+
+    if ( xmlStrcasecmp(name, (xmlChar *) "data") == 0 )
+      state = INSIDE_MESH;
+
+    break;
+
+  case INSIDE_MESH_FUNCTION:
+
+    if ( xmlStrcasecmp(name, (xmlChar *) "meshfunction") == 0 )
+      state = INSIDE_DATA;
+
+    break;
+
   default:
     ;
   }
@@ -233,6 +267,39 @@ void XMLMesh::readTetrahedron(const xmlChar *name, const xmlChar **attrs)
   
   // Add cell
   editor.addCell(c, v0, v1, v2, v3);
+}
+//-----------------------------------------------------------------------------
+void XMLMesh::readMeshFunction(const xmlChar* name, const xmlChar** attrs)
+{
+  // Parse values
+  const std::string id = parseString(name, attrs, "name");
+  const std::string type = parseString(name, attrs, "type");
+  const uint dim = parseUnsignedInt(name, attrs,   "dim");
+  const uint size = parseUnsignedInt(name, attrs,   "size");
+
+  // Only uint supported at this point
+  if (strcmp(type.c_str(), "uint") != 0)
+    error("Only uint-valued mesh data is currently supported.");
+
+  // Register data
+  f = _mesh.data().create(id, dim);
+
+  // Check size
+  if (f->size() != size)
+    error("Wrong size of mesh data \"%s\", expecting \"%d\".",
+          id.c_str(), f->size());
+}
+//-----------------------------------------------------------------------------
+void XMLMesh::readEntity(const xmlChar* name, const xmlChar** attrs)
+{
+  // Read index
+  const uint index = parseUnsignedInt(name, attrs, "index");
+
+  // Read and set value
+  dolfin_assert(f);
+  dolfin_assert(index < f->size());
+  const uint value = parseUnsignedInt(name, attrs, "value");
+  f->set(index, value);
 }
 //-----------------------------------------------------------------------------
 void XMLMesh::closeMesh()

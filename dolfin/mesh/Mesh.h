@@ -23,6 +23,7 @@ namespace dolfin
 {
   
   template <class T> class MeshFunction;
+  class MeshData;
 
   /// A Mesh consists of a set of connected and numbered mesh entities.
   ///
@@ -100,17 +101,20 @@ namespace dolfin
     /// Return number of entities of given topological dimension
     inline uint size(uint dim) const { return _topology.size(dim); }
     
-    /// Return mesh topology
+    /// Return mesh topology (non-const version)
     inline MeshTopology& topology() { return _topology; }
 
-    /// Return mesh topology
+    /// Return mesh topology (const version)
     inline const MeshTopology& topology() const { return _topology; }
 
-    /// Return mesh geometry
+    /// Return mesh geometry (non-const version)
     inline MeshGeometry& geometry() { return _geometry; }
 
-    /// Return mesh geometry
+    /// Return mesh geometry (const version)
     inline const MeshGeometry& geometry() const { return _geometry; }
+
+    /// Return mesh data
+    MeshData& data();
 
     /// Return mesh cell type
     inline CellType& type() { dolfin_assert(_cell_type); return *_cell_type; }
@@ -177,6 +181,9 @@ namespace dolfin
 
     // Mesh geometry
     MeshGeometry _geometry;
+
+    // Auxiliary mesh data
+    MeshData* _data;
 
     // Cell type
     CellType* _cell_type;

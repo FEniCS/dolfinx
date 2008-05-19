@@ -1,22 +1,20 @@
-// Copyright (C) 2006 Anders Logg.
+// Copyright (C) 2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// First added:  2006-05-08
-// Last changed: 2006-06-22
+// First added:  2008-05-19
+// Last changed: 2008-05-19
 
 #include "MeshData.h"
 
 using namespace dolfin;
 
+typedef std::map<std::string, MeshFunction<dolfin::uint>*>::iterator iterator;
+typedef std::map<std::string, MeshFunction<dolfin::uint>*>::const_iterator const_iterator;
+
 //-----------------------------------------------------------------------------
-MeshData::MeshData() : cell_type(0)
+MeshData::MeshData(Mesh& mesh) : mesh(mesh)
 {
   // Do nothing
-}
-//-----------------------------------------------------------------------------
-MeshData::MeshData(const MeshData& data) : cell_type(0)
-{
-  *this = data;
 }
 //-----------------------------------------------------------------------------
 MeshData::~MeshData()
@@ -24,60 +22,58 @@ MeshData::~MeshData()
   clear();
 }
 //-----------------------------------------------------------------------------
-const MeshData& MeshData::operator= (const MeshData& data)
-{
-  // Clear old data if any
-  clear();
-
-  // Assign data
-  topology = data.topology;
-  geometry = data.geometry;
-
-  // Create new cell type
-  if ( data.cell_type )
-    cell_type = CellType::create(data.cell_type->cellType());
-  else
-    cell_type = 0;
-
-  return *this;
-}
-//-----------------------------------------------------------------------------
 void MeshData::clear()
 { 
-  // Clear mesh topology
-  topology.clear();
+  for (iterator it = data.begin(); it != data.end(); ++it)
+    delete it->second;
+  data.clear();
+}
+//-----------------------------------------------------------------------------
+MeshFunction<dolfin::uint>* MeshData::create(std::string name, uint dim)
+{
+  // Check if data already exists
+  iterator it = data.find(name);
+  if (it != data.end())
+  {
+    warning("Mesh data named \"%s\" already exists.", name.c_str());
+    return it->second;
+  }
 
-  // Clear mesh geometry
-  geometry.clear();
+  // Create new data
+  MeshFunction<uint>* f = new MeshFunction<uint>;
+  f->init(mesh, dim);
 
-  // Clear cell type
-  if ( cell_type )
-    delete cell_type;
-  cell_type = 0;
+  // Add to map
+  data[name] = f;
+
+  return f;
+}
+//-----------------------------------------------------------------------------
+MeshFunction<dolfin::uint>* MeshData::operator[] (std::string name)
+{
+  // Check if data exists
+  iterator it = data.find(name);
+  if (it == data.end())
+    error("No mesh data named \"%s\" exists.", name.c_str());
+  
+  return it->second;
 }
 //-----------------------------------------------------------------------------
 void MeshData::disp() const
 {
-  cout << "Mesh data" << endl;
-  cout << "---------" << endl << endl;
-  
   // Begin indentation
-  begin("");
-
-  // Display topology and geometry
-  topology.disp();
-  geometry.disp();
-
-  // Display cell type
-  cout << "Cell type" << endl;
-  cout << "---------" << endl << endl;
-  begin("");
-  if ( cell_type )
-    cout << cell_type->description() << endl;
-  else
-    cout << "undefined" << endl;
-  end();
+  cout << "Auxiliary mesh data" << endl;
+  begin("-------------------");
   cout << endl;
+
+  for (const_iterator it = data.begin(); it != data.end(); ++it)
+  {
+    cout << "MeshFunction<uint> of size "
+         << it->second->size()
+         << " on entities of topological dimension "
+         << it->second->dim()
+         << ": \"" << it->first << "\"" << endl;
+  }
   
   // End indentation
   end();
