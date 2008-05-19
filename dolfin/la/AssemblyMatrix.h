@@ -135,6 +135,7 @@ namespace dolfin
       }
     }
 
+
   private:
 
     // The matrix representation

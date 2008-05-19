@@ -6,7 +6,7 @@
 // Modified by Garth N. Wells 2007.
 //
 // First added:  2006-05-08
-// Last changed: 2008-05-02
+// Last changed: 2008-05-19
 
 #ifndef __MESH_H
 #define __MESH_H
@@ -15,14 +15,13 @@
 #include <dolfin/common/types.h>
 #include <dolfin/common/Variable.h>
 #include "ALEMethod.h"
-#include "MeshData.h"
+#include "MeshTopology.h"
+#include "MeshGeometry.h"
+#include "CellType.h"
 
 namespace dolfin
 {
   
-  class MeshTopology;
-  class MeshGeometry;
-  class CellType;
   template <class T> class MeshFunction;
 
   /// A Mesh consists of a set of connected and numbered mesh entities.
@@ -72,52 +71,52 @@ namespace dolfin
     const Mesh& operator=(const Mesh& mesh);
 
     /// Return number of vertices
-    inline uint numVertices() const { return data.topology.size(0); }
+    inline uint numVertices() const { return _topology.size(0); }
 
     /// Return number of edges
-    inline uint numEdges() const { return data.topology.size(1); }
+    inline uint numEdges() const { return _topology.size(1); }
 
     /// Return number of faces
-    inline uint numFaces() const { return data.topology.size(2); }
+    inline uint numFaces() const { return _topology.size(2); }
 
     /// Return number of facets
-    inline uint numFacets() const { return data.topology.size(data.topology.dim() - 1); }
+    inline uint numFacets() const { return _topology.size(_topology.dim() - 1); }
 
     /// Return number of cells
-    inline uint numCells() const { return data.topology.size(data.topology.dim()); }
+    inline uint numCells() const { return _topology.size(_topology.dim()); }
 
     /// Return coordinates of all vertices
-    inline real* coordinates() { return data.geometry.x(); }
+    inline real* coordinates() { return _geometry.x(); }
 
     /// Return coordinates of all vertices
-    inline const real* coordinates() const { return data.geometry.x(); }
+    inline const real* coordinates() const { return _geometry.x(); }
 
     /// Return connectivity for all cells
-    inline uint* cells() { return data.topology(data.topology.dim(), 0)(); }
+    inline uint* cells() { return _topology(_topology.dim(), 0)(); }
 
     /// Return connectivity for all cells
-    inline const uint* cells() const { return data.topology(data.topology.dim(), 0)(); }
+    inline const uint* cells() const { return _topology(_topology.dim(), 0)(); }
 
     /// Return number of entities of given topological dimension
-    inline uint size(uint dim) const { return data.topology.size(dim); }
+    inline uint size(uint dim) const { return _topology.size(dim); }
     
     /// Return mesh topology
-    inline MeshTopology& topology() { return data.topology; }
+    inline MeshTopology& topology() { return _topology; }
 
     /// Return mesh topology
-    inline const MeshTopology& topology() const { return data.topology; }
+    inline const MeshTopology& topology() const { return _topology; }
 
     /// Return mesh geometry
-    inline MeshGeometry& geometry() { return data.geometry; }
+    inline MeshGeometry& geometry() { return _geometry; }
 
     /// Return mesh geometry
-    inline const MeshGeometry& geometry() const { return data.geometry; }
+    inline const MeshGeometry& geometry() const { return _geometry; }
 
     /// Return mesh cell type
-    inline CellType& type() { dolfin_assert(data.cell_type); return *data.cell_type; }
+    inline CellType& type() { dolfin_assert(_cell_type); return *_cell_type; }
 
     /// Return mesh cell type
-    inline const CellType& type() const { dolfin_assert(data.cell_type); return *data.cell_type; }
+    inline const CellType& type() const { dolfin_assert(_cell_type); return *_cell_type; }
 
     /// Compute entities of given topological dimension and return number of entities
     uint init(uint dim);
@@ -127,6 +126,9 @@ namespace dolfin
 
     /// Compute all entities and connectivity
     void init();
+
+    /// Clear all mesh data
+    void clear();
 
     /// Order all mesh entities (not needed if "mesh order entities" is set)
     void order();
@@ -144,7 +146,7 @@ namespace dolfin
     void coarsen(MeshFunction<bool>& cell_markers, bool coarsen_boundary = false);
 
     /// Move coordinates of mesh according to new boundary coordinates
-    void move(Mesh& boundary, const MeshFunction<uint>& vertex_map, ALEMethod method = lagrange);
+    void move(Mesh& boundary, const MeshFunction<uint>& vertex_map, ALEMethod method=lagrange);
     
     /// Smooth mesh using Lagrangian mesh smoothing 
     void smooth();
@@ -170,9 +172,15 @@ namespace dolfin
     friend class MeshEditor;
     friend class MPIMeshCommunicator;
 
-    // Mesh data
-    MeshData data;
-    
+    // Mesh topology
+    MeshTopology _topology;
+
+    // Mesh geometry
+    MeshGeometry _geometry;
+
+    // Cell type
+    CellType* _cell_type;
+
   };
 
 }

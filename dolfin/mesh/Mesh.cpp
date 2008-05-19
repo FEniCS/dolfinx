@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells 2007.
 //
 // First added:  2006-05-09
-// Last changed: 2008-05-02
+// Last changed: 2008-05-19
 
 #include <sstream>
 
@@ -28,17 +28,17 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Mesh::Mesh() : Variable("mesh", "DOLFIN mesh")
+Mesh::Mesh() : Variable("mesh", "DOLFIN mesh"), _cell_type(0)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-Mesh::Mesh(const Mesh& mesh) : Variable("mesh", "DOLFIN mesh")
+Mesh::Mesh(const Mesh& mesh) : Variable("mesh", "DOLFIN mesh"), _cell_type(0)
 {
   *this = mesh;
 }
 //-----------------------------------------------------------------------------
-Mesh::Mesh(std::string filename) : Variable("mesh", "DOLFIN mesh")
+Mesh::Mesh(std::string filename) : Variable("mesh", "DOLFIN mesh"), _cell_type(0)
 {
   File file(filename);
   file >> *this;
@@ -51,8 +51,16 @@ Mesh::~Mesh()
 //-----------------------------------------------------------------------------
 const Mesh& Mesh::operator=(const Mesh& mesh)
 {
-  data = mesh.data;
+  clear();
+
+  _topology = mesh._topology;
+  _geometry = mesh._geometry;
+  
+  if (mesh._cell_type)
+    _cell_type = CellType::create(mesh._cell_type->cellType());
+  
   rename(mesh.name(), mesh.label());
+
   return *this;
 }
 //-----------------------------------------------------------------------------
@@ -76,6 +84,14 @@ void Mesh::init()
   for (uint d0 = 0; d0 <= topology().dim(); d0++)
     for (uint d1 = 0; d1 <= topology().dim(); d1++)
       init(d0, d1);
+}
+//-----------------------------------------------------------------------------
+void Mesh::clear()
+{
+  _topology.clear();
+  _geometry.clear();
+  delete _cell_type;
+  _cell_type = 0;
 }
 //-----------------------------------------------------------------------------
 void Mesh::order()
@@ -179,7 +195,29 @@ void Mesh::partition(MeshFunction<uint>& partitions, uint num_partitions)
 //-----------------------------------------------------------------------------
 void Mesh::disp() const
 {
-  data.disp();
+  cout << "Mesh data" << endl;
+  cout << "---------" << endl << endl;
+  
+  // Begin indentation
+  begin("");
+
+  // Display topology and geometry
+  _topology.disp();
+  _geometry.disp();
+
+  // Display cell type
+  cout << "Cell type" << endl;
+  cout << "---------" << endl << endl;
+  begin("");
+  if (_cell_type)
+    cout << _cell_type->description() << endl;
+  else
+    cout << "undefined" << endl;
+  end();
+  cout << endl;
+  
+  // End indentation
+  end();
 }
 //-----------------------------------------------------------------------------
 std::string Mesh::str() const

@@ -22,7 +22,7 @@ namespace dolfin
   
   class MeshData
   {
-  public:
+  private:
     
     /// Create empty mesh data
     MeshData();
@@ -50,9 +50,7 @@ namespace dolfin
 
     // Cell type
     CellType* cell_type;
-    
-  private:
-    friend class MPIMeshCommunicator;
+
   };
 
 }
