@@ -14,12 +14,12 @@
 #include "Epetra_FECrsMatrix.h"
 #include "Epetra_LinearProblem.h"
 
-#include "AztecOO.h"
-#include "ml_config.h"
+//#include "ml_config.h"
 #include "ml_include.h"
 #include "ml_MultiLevelOperator.h"
 #include "ml_epetra_utils.h"
 
+#include "AztecOO.h"
 
 
 
