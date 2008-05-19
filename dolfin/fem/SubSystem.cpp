@@ -33,8 +33,13 @@ SubSystem::SubSystem(const Array<uint>& sub_system) : sub_system(sub_system)
 //-----------------------------------------------------------------------------
 SubSystem::SubSystem(const SubSystem& sub_system)
 {
-  for (uint i = 0; i < sub_system.sub_system.size(); i++)
-    this->sub_system.push_back(sub_system.sub_system[i]);
+  this->sub_system = sub_system.sub_system;
+}
+//-----------------------------------------------------------------------------
+const SubSystem& SubSystem::operator= (const SubSystem& sub_system)
+{
+  this->sub_system = sub_system.sub_system;
+  return *this;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint SubSystem::depth() const

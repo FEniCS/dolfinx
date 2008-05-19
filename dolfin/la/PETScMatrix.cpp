@@ -90,8 +90,8 @@ void PETScMatrix::init(uint M, uint N)
     MatCreateSeqAIJ(PETSC_COMM_SELF, M, N, 50, PETSC_NULL, &A);
 
     setType();
-    MatSetFromOptions(A);
     MatSetOption(A, MAT_KEEP_ZEROED_ROWS);
+    MatSetFromOptions(A);
   }
 }
 //-----------------------------------------------------------------------------
@@ -119,9 +119,9 @@ void PETScMatrix::init(uint M, uint N, const uint* nz)
     MatCreate(PETSC_COMM_SELF, &A);
     MatSetSizes(A,  PETSC_DECIDE,  PETSC_DECIDE, M, N);
     setType();
-    MatSeqAIJSetPreallocation(A, PETSC_DEFAULT, (int*)nz);
-    MatSetFromOptions(A);
     MatSetOption(A, MAT_KEEP_ZEROED_ROWS);
+    MatSetFromOptions(A);
+    MatSeqAIJSetPreallocation(A, PETSC_DEFAULT, (int*)nz);
     MatZeroEntries(A);
   }
 }

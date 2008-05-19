@@ -1,8 +1,8 @@
-// Copyright (C) 2007 Anders Logg.
+// Copyright (C) 2007-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-04-24
-// Last changed: 2007-04-27
+// Last changed: 2008-05-18
 
 #ifndef __SUB_SYSTEM_H
 #define __SUB_SYSTEM_H
@@ -40,7 +40,10 @@ namespace dolfin
 
     /// Copy constructor
     SubSystem(const SubSystem& sub_system);
-    
+
+    /// Assignment operator
+    const SubSystem& operator= (const SubSystem& sub_system);
+
     /// Return number of levels for nested sub system
     uint depth() const;
     
@@ -50,10 +53,9 @@ namespace dolfin
 
     /// Return array which defines sub system
     const Array<uint>& array() const
-      { return sub_system; }
+    { return sub_system; }
 
   private:
-
 
     // Recursively extract sub finite element
     static ufc::finite_element* extractFiniteElement

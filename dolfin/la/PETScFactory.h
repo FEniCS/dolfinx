@@ -27,20 +27,21 @@ namespace dolfin
     /// Create empty matrix
     PETScMatrix* createMatrix() const;
 
-    /// Create empty sparsity pattern 
-    SparsityPattern* createPattern() const;
-
     /// Create empty vector
     PETScVector* createVector() const;
 
+    /// Create empty sparsity pattern 
+    SparsityPattern* createPattern() const;
+
+    /// Return singleton instance
     static PETScFactory& instance() 
-    { return petscfactory; }
+    { return factory; }
 
   private:
 
     /// Private Constructor
     PETScFactory() {}
-    static PETScFactory petscfactory;
+    static PETScFactory factory;
 
   };
 

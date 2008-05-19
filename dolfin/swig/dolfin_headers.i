@@ -25,7 +25,6 @@
 %include "dolfin/log/Progress.h"
 
 // DOLFIN headers included from la
-%include "dolfin/la/default_la_types.h"
 %include "dolfin/la/VectorNormType.h"
 %include "dolfin/la/GenericTensor.h"
 %include "dolfin/la/GenericMatrix.h"
@@ -40,6 +39,7 @@
 %include "dolfin/la/GenericSparsityPattern.h"
 %include "dolfin/la/SparsityPattern.h"
 %include "dolfin/la/LinearAlgebraFactory.h"
+%include "dolfin/la/DefaultFactory.h"
 %include "dolfin/la/uBlasFactory.h"
 %include "dolfin/la/PETScFactory.h"
 %include "dolfin/la/EpetraFactory.h"

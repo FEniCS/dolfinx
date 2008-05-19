@@ -12,7 +12,7 @@
 #include <private/pcimpl.h>
 
 #include "PETScPreconditioner.h"
-#include "Vector.h"
+#include "PETScVector.h"
 
 using namespace dolfin;
 

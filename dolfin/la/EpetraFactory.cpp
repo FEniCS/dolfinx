@@ -34,9 +34,14 @@ EpetraVector* EpetraFactory::createVector() const
   return new EpetraVector(); 
 }
 //-----------------------------------------------------------------------------
-EpetraFactory EpetraFactory::epetrafactory;
+Epetra_SerialComm& EpetraFactory::getSerialComm()
+{
+  return *comm;
+};
 //-----------------------------------------------------------------------------
-Epetra_SerialComm& EpetraFactory::getSerialComm() { return *comm;}; 
-//-----------------------------------------------------------------------------
+
+// Singleton instance
+EpetraFactory EpetraFactory::factory;
+
 
 #endif

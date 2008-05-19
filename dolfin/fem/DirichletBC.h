@@ -1,10 +1,10 @@
-// Copyright (C) 2007 Anders Logg and Garth N. Wells.
+// Copyright (C) 2007-2008 Anders Logg and Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Kristian Oelgaard, 2007
 //
 // First added:  2007-04-10
-// Last changed: 2008-01-02
+// Last changed: 2008-05-18
 
 #ifndef __DIRICHLET_BC_H
 #define __DIRICHLET_BC_H
@@ -112,6 +112,9 @@ namespace dolfin
 
     /// Make row associated with boundary conditions zero, useful for non-diagonal matrices in a block matrix. 
     void zero(GenericMatrix& A, const DofMap& dof_map, const ufc::form& form);
+
+    /// Set (or update) value for sub system
+    void setSubSystem(SubSystem sub_system);
 
     /// Return mesh
     Mesh& mesh();
