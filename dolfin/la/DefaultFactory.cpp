@@ -2,13 +2,14 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-05-17
-// Last changed: 2008-05-17
+// Last changed: 2008-05-19
 
 #include <dolfin/parameter/parameters.h>
 #include "uBlasFactory.h"
 #include "PETScFactory.h"
 #include "EpetraFactory.h"
 #include "DefaultFactory.h"
+//#include "AssemblyFactory.h"
 
 using namespace dolfin;
 
@@ -53,6 +54,12 @@ LinearAlgebraFactory& DefaultFactory::factory() const
 #ifdef HAS_TRILINOS
     return EpetraFactory::instance();
 #endif
+  }
+  else if (backend == "Assembly")
+  { 
+    message("Warning: AssemblyFactory not implemented");
+    message("         returning uBlasFactory instead");
+    return uBlasFactory<>::instance();
   }
 
   // Fallback

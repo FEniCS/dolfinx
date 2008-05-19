@@ -3,9 +3,10 @@
 //
 // Modified by Ola Skavhaug, 2007.
 // Modified by Garth N. Wells, 2007.
+// Modified by Ilmar Wilbers, 2008.
 //
 // First added:  2007-01-17
-// Last changed: 2007-07-20
+// Last changed: 2008-05-19
 
 #ifndef __ASSEMBLY_MATRIX_H
 #define __ASSEMBLY_MATRIX_H
@@ -15,19 +16,20 @@
 #include <sstream>
 #include <iomanip>
 
-#include <dolfin/common/types.h>
-#include <dolfin/log/dolfin_log.h>
-#include "GenericTensor.h"
-#include "SparsityPattern.h"
+//#include <dolfin/common/types.h>
+//#include <dolfin/log/dolfin_log.h>
+//#include <dolfin/common/Variable.h>
+#include "GenericMatrix.h"
+//#include "SparsityPattern.h"
 
 namespace dolfin
 {
 
-  /// Simple implementation of a GenericTensor for experimenting
+  /// Simple implementation of a GenericMatrix for experimenting
   /// with new assembly. Not sure this will be used later but it
   /// might be useful.
 
-  class AssemblyMatrix : public GenericTensor
+  class AssemblyMatrix : public GenericMatrix
   {
   public:
 
@@ -39,7 +41,7 @@ namespace dolfin
     virtual ~AssemblyMatrix()
     { delete [] dims; }
 
-    ///--- Functions overloaded from GenericTensor ---
+    ///--- Functions overloaded from GenericMatrix ---
 
     /// Initialize zero tensor of given rank and dimensions
     virtual void init(uint rank, const uint* dims, bool reset = true)
