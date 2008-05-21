@@ -283,10 +283,13 @@ void XMLMesh::readMeshFunction(const xmlChar* name, const xmlChar** attrs)
 
   // Register data
   f = _mesh.data().create(id, dim);
+  
+  // Set all values to zero
+  *f = 0;
 
   // Check size
-  if (f->size() != size)
-    error("Wrong size of mesh data \"%s\", expecting \"%d\".",
+  if (size >= f->size())
+    error("Wrong size of mesh data \"%s\", at most \"%d\" values may be specified.",
           id.c_str(), f->size());
 }
 //-----------------------------------------------------------------------------
