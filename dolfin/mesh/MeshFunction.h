@@ -1,10 +1,10 @@
-// Copyright (C) 2006-2007 Anders Logg.
+// Copyright (C) 2006-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Johan Hoffman 2007.
+// Modified by Johan Hoffman, 2007.
 //
 // First added:  2006-05-22
-// Last changed: 2007-11-30
+// Last changed: 2008-05-21
 
 #ifndef __MESH_FUNCTION_H
 #define __MESH_FUNCTION_H
@@ -53,7 +53,6 @@ namespace dolfin
     /// Destructor
     ~MeshFunction()
     {
-      if ( _values )
       delete [] _values;
     }
 
@@ -139,8 +138,7 @@ namespace dolfin
       _mesh = &mesh;
       _dim = dim;
       _size = size;
-      if (_values)
-        delete [] _values;
+      delete [] _values;
       _values = new T[size];
       std::fill(_values, _values + size, static_cast<T>(0));
     }
