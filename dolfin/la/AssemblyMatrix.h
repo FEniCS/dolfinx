@@ -53,7 +53,17 @@ namespace dolfin
 
     /// Initialize zero tensor using sparsity pattern
     virtual void init(const GenericSparsityPattern& sparsity_pattern)
-    { error("Not implemented."); }
+      //    { init(sparsity_pattern.size(0), sparsity_pattern.size(1); }
+    {
+      uint M = sparsity_pattern.size(0);
+      uint* nzrow = new uint[M];
+      sparsity_pattern.numNinZeroPerRow(nzrow);
+      A.resize(M);
+      for (uint i = 0; i < M; ++i)
+        A[i].reserve(nzrow[i]);
+      //init(M, sparsity_pattern.size(1), nzrow);
+      delete [] nzrow;
+    }
 
     /// Return copy of tensor
     virtual AssemblyMatrix* copy() const
@@ -65,7 +75,11 @@ namespace dolfin
 
     /// Set all entries to zero and keep any sparse structure
     virtual void zero()
-    { error("Not implemented."); } 
+    {
+      for (uint i = 0; i < A.size(); i++)
+        for (std::map<uint, real>::iterator it = A[i].begin(); it != A[i].end(); it++)
+          it->second = 0.0;
+    } 
     
     /// Finalize assembly of tensor
     virtual void apply()
@@ -97,10 +111,12 @@ namespace dolfin
       // Set number of rows
       A.resize(M);
       
+      /*
       // Initialize with zeros
       for (uint i = 0; i < M; i++)
         for (std::map<uint, real>::iterator it = A[i].begin(); it != A[i].end(); it++)
           it->second = 0.0;
+      */
     }
 
     /// Get block of values
