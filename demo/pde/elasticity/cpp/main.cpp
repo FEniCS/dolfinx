@@ -1,8 +1,10 @@
 // Copyright (C) 2006-2007 Johan Jansson and Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Garth N. Wells 2008
+//
 // First added:  2006-02-07
-// Last changed: 2007-08-20
+// Last changed: 2008-05-21
 //
 // This demo program solves the equations of static
 // linear elasticity for a gear clamped at two of its
@@ -28,7 +30,6 @@ int main()
       values[1] = 0.0;
       values[2] = 0.0;
     }
-
   };
 
   // Sub domain for clamp at left end
@@ -65,7 +66,6 @@ int main()
       values[1] = y - x[1];
       values[2] = z - x[2];
     }
-
   };
 
   // Sub domain for rotation at right end
@@ -98,8 +98,14 @@ int main()
   bcs.push_back(&bcl);
   bcs.push_back(&bcr);
 
+  // Set elasticity parameters
+  real E  = 10.0;
+  real nu = 0.3;
+  Function mu(mesh, E / (2*(1 + nu)));
+  Function lambda(mesh, E*nu / ((1 + nu)*(1 - 2*nu)));
+
   // Set up PDE
-  ElasticityBilinearForm a;
+  ElasticityBilinearForm a(mu, lambda);
   ElasticityLinearForm L(f);
   LinearPDE pde(a, L, mesh, bcs);
 
