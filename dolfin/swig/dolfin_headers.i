@@ -99,14 +99,15 @@
 
 // DOLFIN headers included from mesh
 %include "dolfin/mesh/ALE.h"
-%include "dolfin/mesh/Mesh.h"
 %include "dolfin/mesh/MeshEntity.h"
 %include "dolfin/mesh/MeshEntityIterator.h"
 %include "dolfin/mesh/MeshTopology.h"
 %include "dolfin/mesh/MeshGeometry.h"
+%include "dolfin/mesh/MeshData.h"
 %include "dolfin/mesh/MeshConnectivity.h"
 %include "dolfin/mesh/MeshEditor.h"
 %include "dolfin/mesh/MeshFunction.h"
+%include "dolfin/mesh/Mesh.h"
 %include "dolfin/mesh/MPIMeshCommunicator.h"
 %include "dolfin/mesh/Vertex.h"
 %include "dolfin/mesh/Edge.h"
