@@ -3,9 +3,10 @@
 //
 // Modified by Ola Skavhaug, 2007.
 // Modified by Garth N. Wells, 2007.
+// Modified by Ilmar Wilbers, 2008.
 //
 // First added:  2007-01-17
-// Last changed: 2007-07-20
+// Last changed: 2008-05-19
 
 #ifndef __ASSEMBLY_MATRIX_H
 #define __ASSEMBLY_MATRIX_H
@@ -15,31 +16,154 @@
 #include <sstream>
 #include <iomanip>
 
-#include <dolfin/common/types.h>
-#include <dolfin/log/dolfin_log.h>
-#include "GenericTensor.h"
+//#include <dolfin/common/types.h>
+//#include <dolfin/log/dolfin_log.h>
+#include <dolfin/common/Variable.h>
+#include "GenericMatrix.h"
 #include "SparsityPattern.h"
 
 namespace dolfin
 {
 
-  /// Simple implementation of a GenericTensor for experimenting
+  /// Simple implementation of a GenericMatrix for experimenting
   /// with new assembly. Not sure this will be used later but it
   /// might be useful.
 
-  class AssemblyMatrix : public GenericTensor
+  class AssemblyMatrix : public GenericMatrix
   {
   public:
 
-    /// Constructor
+    /// Create empty matrix
     AssemblyMatrix() : dims(0)
     { dims = new uint[2]; }
+
+    /// Create M x N matrix
+    AssemblyMatrix(uint M, uint N) : dims(0)
+    { dims ) new uint[2]; dims[0] = M; dims[1] = N;}
+  
+    /// Copy constructor
+    explicit AssemblyMatrix(const AssemblyMatrix& A)
+    { error("Not implemented."); }
 
     /// Destructor
     virtual ~AssemblyMatrix()
     { delete [] dims; }
 
-    ///--- Functions overloaded from GenericTensor ---
+    ///--- Implementation of the GenericTenson interface ---
+
+    /// Initialize zero tensor using sparsity pattern
+    virtual void init(const GenericSparsityPattern& sparsity_pattern)
+      //    { init(sparsity_pattern.size(0), sparsity_pattern.size(1); }
+    {
+      uint M = sparsity_pattern.size(0);
+      uint* nzrow = new uint[M];
+      sparsity_pattern.numNinZeroPerRow(nzrow);
+      A.resize(M);
+      for (uint i = 0; i < M; ++i)
+        A[i].reserve(nzrow[i]);
+      //init(M, sparsity_pattern.size(1), nzrow);
+      delete [] nzrow;
+    }
+
+    /// Return copy of tensor
+    virtual AssemblyMatrix* copy() const
+    { error("Not implemented."); }
+
+    /// Return size of given dimension
+    virtual uint size(uint dim) const
+    { return dims[dim]; }
+
+    /// Set all entries to zero and keep any sparse structure
+    virtual void zero()
+    {
+      for (uint i = 0; i < A.size(); i++)
+        for (std::map<uint, real>::iterator it = A[i].begin(); it != A[i].end(); it++)
+          it->second = 0.0;
+    } 
+    
+    /// Finalize assembly of tensor
+    virtual void apply()
+    { error("Not implemented."); }
+
+    /// Display tensor
+    virtual void disp(uint precision = 2) const
+    {
+      for (uint i = 0; i < dims[0]; i++)
+      {
+        std::stringstream line;
+        line << std::setiosflags(std::ios::scientific);
+        line << std::setprecision(precision);
+    
+        line << "|";
+        for (std::map<uint, real>::iterator it = A[i].begin(); it != A[i].end(); it++)
+          line << " (" << i << ", " << it->first << ", " << it->second << ")";
+        line << " |";
+        
+        dolfin::cout << line.str().c_str() << dolfin::endl;
+      }
+    }
+
+    //--- Implementation of the GenericMatrix interface ---
+    
+    /// Initialize M x N matrix
+    virtual void init(uint M, uint N)
+    {
+      // Set number of rows
+      A.resize(M);
+      
+      /*
+      // Initialize with zeros
+      for (uint i = 0; i < M; i++)
+        for (std::map<uint, real>::iterator it = A[i].begin(); it != A[i].end(); it++)
+          it->second = 0.0;
+      */
+    }
+
+    /// Get block of values
+    virtual void get(real* block, const uint* num_rows, const uint * const * rows) const
+    { get(block, num_rows[0], rows[0], num_rows[1], rows[1]); }
+
+    /// Set block of values
+    virtual void set(const real* block, const uint* num_rows, const uint * const * rows)
+    { set(block, num_rows[0], rows[0], num_rows[1], rows[1]); }
+
+    /// Add block of values
+    virtual void add(const real* block, const uint* num_rows, const uint * const * rows)
+    { add(block, num_rows[0], rows[0], num_rows[1], rows[1]); }
+
+    /// Get non-zero values of given row
+    virtual void getrow(uint row, Array<uint>& columns, Array<real>& values) const
+    { error("Not implemented."); }
+
+    /// Set values for given row
+    virtual void setrow(uint row, const Array<uint>& columns, const Array<real>& values)
+    { error("Not implemented."); }
+
+    /// Set given rows to zero
+    virtual void zero(uint m, const uint* rows)
+    { error("Not implemented."); }
+
+    /// Set given rows to identity matrix
+    virtual void ident(uint m, const uint* rows)
+    { error("Not implemented."); }
+
+    // Matrix-vector product, y = Ax
+    virtual void mult(const GenericVector& x, GenericVector& y, bool transposed=false) const
+    { error("Not implemented."); }
+
+    /// Multiply matrix by given number
+    virtual const Matrix& operator*= (real a)
+    { error("Not implemented."); }
+
+    /// Divide matrix by given number
+    virtual const Matrix& operator/= (real a)
+    { error("Not implemented."); }
+
+    /// Assignment operator
+    virtual const GenericMatrix& operator= (const GenericMatrix& A)
+    { error("Not implemented."); } 
+
+    ///--- Specialized matrix functions ---
 
     /// Initialize zero tensor of given rank and dimensions
     virtual void init(uint rank, const uint* dims, bool reset = true)
@@ -55,39 +179,6 @@ namespace dolfin
       this->dims[0] = dims[0];
       this->dims[1] = dims[1];
     }
-    
-    /// Return size of given dimension
-    virtual uint size(uint dim) const
-    { return dims[dim]; }
-
-    /// Get block of values
-    virtual void get(real* block, const uint* num_rows, const uint * const * rows) const
-    { get(block, num_rows[0], rows[0], num_rows[1], rows[1]); }
-
-    /// Set block of values
-    virtual void set(const real* block, const uint* num_rows, const uint * const * rows)
-    { set(block, num_rows[0], rows[0], num_rows[1], rows[1]); }
-
-    /// Add block of values
-    virtual void add(const real* block, const uint* num_rows, const uint * const * rows)
-    { add(block, num_rows[0], rows[0], num_rows[1], rows[1]); }
-
-    ///--- Specialized matrix functions ---
-
-    /// Initialize M x N matrix
-    virtual void init(uint M, uint N)
-    {
-      // Set number of rows
-      A.resize(M);
-      
-      // Initialize with zeros
-      for (uint i = 0; i < M; i++)
-        for (std::map<uint, real>::iterator it = A[i].begin(); it != A[i].end(); it++)
-          it->second = 0.0;
-    }
-
-    virtual void init(const SparsityPattern& sparsity_pattern, bool reset = true)
-    { init(sparsity_pattern.size(0), sparsity_pattern.size(1)); }
 
     /// Add entries to matrix
     virtual void add(const real* block, uint m, const uint* rows, uint n, const uint* cols)
@@ -113,28 +204,6 @@ namespace dolfin
 
     virtual void set(const real* block, uint m, const uint* rows, uint n, const uint* cols)
     { error("Not implemented"); }
-
-    /// Finalise assembly
-    virtual void apply() {}
-
-    /// Display matrix
-    virtual void disp(uint precision = 2)
-    {
-      for (uint i = 0; i < dims[0]; i++)
-      {
-        std::stringstream line;
-        line << std::setiosflags(std::ios::scientific);
-        line << std::setprecision(precision);
-    
-        line << "|";
-        for (std::map<uint, real>::iterator it = A[i].begin(); it != A[i].end(); it++)
-          line << " (" << i << ", " << it->first << ", " << it->second << ")";
-        line << " |";
-        
-        dolfin::cout << line.str().c_str() << dolfin::endl;
-      }
-    }
-
 
   private:
 
