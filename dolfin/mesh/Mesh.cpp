@@ -23,22 +23,26 @@
 #include "Cell.h"
 #include "Vertex.h"
 #include "MPIMeshCommunicator.h"
+#include "MeshData.h"
 #include "Mesh.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Mesh::Mesh() : Variable("mesh", "DOLFIN mesh"), _cell_type(0)
+Mesh::Mesh()
+  : Variable("mesh", "DOLFIN mesh"), _data(0), _cell_type(0)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-Mesh::Mesh(const Mesh& mesh) : Variable("mesh", "DOLFIN mesh"), _cell_type(0)
+Mesh::Mesh(const Mesh& mesh)
+  : Variable("mesh", "DOLFIN mesh"), _data(0), _cell_type(0)
 {
   *this = mesh;
 }
 //-----------------------------------------------------------------------------
-Mesh::Mesh(std::string filename) : Variable("mesh", "DOLFIN mesh"), _cell_type(0)
+Mesh::Mesh(std::string filename)
+  : Variable("mesh", "DOLFIN mesh"), _data(0), _cell_type(0)
 {
   File file(filename);
   file >> *this;
@@ -46,7 +50,7 @@ Mesh::Mesh(std::string filename) : Variable("mesh", "DOLFIN mesh"), _cell_type(0
 //-----------------------------------------------------------------------------
 Mesh::~Mesh()
 {
-  // Do nothing
+  clear();
 }
 //-----------------------------------------------------------------------------
 const Mesh& Mesh::operator=(const Mesh& mesh)
@@ -62,6 +66,14 @@ const Mesh& Mesh::operator=(const Mesh& mesh)
   rename(mesh.name(), mesh.label());
 
   return *this;
+}
+//-----------------------------------------------------------------------------
+MeshData& Mesh::data()
+{
+  if (!_data)
+    _data = new MeshData(*this);
+
+  return *_data;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint Mesh::init(uint dim)
@@ -92,6 +104,8 @@ void Mesh::clear()
   _geometry.clear();
   delete _cell_type;
   _cell_type = 0;
+  delete _data;
+  _data = 0;
 }
 //-----------------------------------------------------------------------------
 void Mesh::order()
@@ -195,11 +209,10 @@ void Mesh::partition(MeshFunction<uint>& partitions, uint num_partitions)
 //-----------------------------------------------------------------------------
 void Mesh::disp() const
 {
-  cout << "Mesh data" << endl;
-  cout << "---------" << endl << endl;
-  
   // Begin indentation
-  begin("");
+  cout << "Mesh data" << endl;
+  begin("---------");
+  cout << endl;
 
   // Display topology and geometry
   _topology.disp();
@@ -207,14 +220,20 @@ void Mesh::disp() const
 
   // Display cell type
   cout << "Cell type" << endl;
-  cout << "---------" << endl << endl;
+  cout << "---------" << endl;
   begin("");
   if (_cell_type)
     cout << _cell_type->description() << endl;
   else
     cout << "undefined" << endl;
   end();
-  cout << endl;
+
+  // Display mesh data
+  if (_data)
+  {
+    cout << endl;
+    _data->disp();
+  }
   
   // End indentation
   end();

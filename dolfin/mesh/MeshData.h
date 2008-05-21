@@ -1,55 +1,58 @@
-// Copyright (C) 2006 Anders Logg.
+// Copyright (C) 2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// First added:  2006-05-08
-// Last changed: 2006-11-30
+// First added:  2008-05-19
+// Last changed: 2008-05-19
 
 #ifndef __MESH_DATA_H
 #define __MESH_DATA_H
 
-#include "MeshTopology.h"
-#include "MeshGeometry.h"
-#include "CellType.h"
+#include <map>
+
+#include <dolfin/common/types.h>
+#include "MeshFunction.h"
 
 namespace dolfin
 {
 
-  /// The class MeshData is a container for mesh data, including
-  /// topology (mesh entities and connectivity) and geometry.
+  class Mesh;
+
+  /// The class MeshData is a container for auxiliary mesh data,
+  /// represented as MeshFunctions over topological mesh entities.
+  /// Each MeshFunction is identified by a unique user-specified
+  /// string.
   ///
-  /// For parallel meshes, each processor stores the local mesh
-  /// data in a local MeshData object.
-  
+  /// Currently, only uint-valued MeshFunctions are supported.
+
   class MeshData
   {
-  private:
+  public:
     
-    /// Create empty mesh data
-    MeshData();
+    /// Constructor
+    MeshData(Mesh& mesh);
 
-    /// Copy constructor
-    MeshData(const MeshData& data);
-    
     /// Destructor
     ~MeshData();
-
-    /// Assignment
-    const MeshData& operator= (const MeshData& data);
 
     /// Clear all data
     void clear();
 
+    /// Create data with given name on entities of given dimension
+    MeshFunction<uint>* create(std::string name, uint dim);
+
+    /// Return data for given name
+    MeshFunction<uint>* operator[] (std::string name);
+
     /// Display data
     void disp() const;
 
-    // Mesh topology
-    MeshTopology topology;
+  private:
 
-    // Mesh geometry
-    MeshGeometry geometry;
+    // The mesh
+    Mesh& mesh;
 
-    // Cell type
-    CellType* cell_type;
+    // A map from named mesh data to MeshFunctions
+    std::map<std::string, MeshFunction<uint>*> data;
 
   };
 

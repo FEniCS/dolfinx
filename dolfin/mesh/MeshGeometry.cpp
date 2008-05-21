@@ -90,11 +90,10 @@ void MeshGeometry::set(uint n, uint i, real x)
 //-----------------------------------------------------------------------------
 void MeshGeometry::disp() const
 {
-  cout << "Mesh geometry" << endl;
-  cout << "-------------" << endl << endl;
-
   // Begin indentation
-  begin("");
+  cout << "Mesh geometry" << endl;
+  begin("-------------");
+  cout << endl;
 
   // Check if empty
   if ( _dim == 0 )
