@@ -58,7 +58,7 @@ DirichletBC::DirichletBC(Function& g,
     method(method), user_sub_domain(0)
 {
   // Initialize sub domain markers
-  initFromMesh();
+  initFromMesh(sub_domain);
 }
 //-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(Function& g,
@@ -96,7 +96,7 @@ DirichletBC::DirichletBC(Function& g,
     sub_system(sub_system), method(method), user_sub_domain(0)
 {
   // Initialize sub domain markers
-  initFromMesh();
+  initFromMesh(sub_domain);
 }
 //-----------------------------------------------------------------------------
 DirichletBC::~DirichletBC()
@@ -133,14 +133,14 @@ void DirichletBC::apply(GenericMatrix& A, GenericVector& b,
                         const GenericVector* x, const DofMap& dof_map, const ufc::form& form)
 {
   // FIXME: How do we reuse the dof map for u?
-  
+
   // Simple check
   const uint N = dof_map.global_dimension();
   if (N != A.size(0) || N != A.size(1))
     error("Incorrect dimension of matrix for application of boundary conditions. Did you assemble it on a different mesh?");
   if (N != b.size())
     error("Incorrect dimension of matrix for application of boundary conditions. Did you assemble it on a different mesh?");
-  
+
   // Set message string
   std::string s;
   if (method == topological)
@@ -161,6 +161,7 @@ void DirichletBC::apply(GenericMatrix& A, GenericVector& b,
   // A map to hold the mapping from boundary dofs to boundary values
   std::map<uint, real> boundary_values;
 
+  // Choose strategy
   if (method == pointwise)
   {
     Progress p(s, _mesh.size(D));
@@ -254,10 +255,12 @@ void DirichletBC::initFromSubDomain(SubDomain& sub_domain)
   sub_domain.mark(*sub_domains, 0);
 }
 //-----------------------------------------------------------------------------
-void DirichletBC::initFromMesh()
+void DirichletBC::initFromMesh(uint sub_domain)
 {
+  dolfin_assert(facets.size() == 0);
+
   cout << "Creating sub domain markers for boundary condition." << endl;
-  
+
   // Get data
   Array<uint>* facet_cells   = _mesh.data().array("boundary facet cells");
   Array<uint>* facet_numbers = _mesh.data().array("boundary facet numbers");
@@ -276,32 +279,15 @@ void DirichletBC::initFromMesh()
   dolfin_assert(size == facet_numbers->size());
   dolfin_assert(size == indicators->size());
 
-  // Create mesh function for sub domain markers on facets
-  const uint dim = _mesh.topology().dim();
-  _mesh.init(dim - 1);
-  sub_domains = new MeshFunction<uint>(_mesh, dim - 1);
-  sub_domains_local = true;
-
-  // Compute the maximum boundary indicator
-  uint maxid = 0;
-  for (uint i = 0; i < size; i++)
-    maxid = std::max(maxid, (*indicators)[i]);
-  cout << "maxid = " << maxid << endl;
-
-  // Mark everything with the maximum value + 1
-  (*sub_domains) = maxid + 1;
-
-  // Mark facets according to data
+  // Build set of boundary facets
   for (uint i = 0; i < size; i++)
   {
-    // Get cell incident with facet
-    Cell cell(_mesh, (*facet_cells)[i]);
+    // Skip facets not on this boundary
+    if ((*indicators)[i] != sub_domain)
+      continue;
 
-    // Get facet
-    uint facet = cell.entities(dim - 1)[(*facet_numbers)[i]];
-
-    // Set marker
-    sub_domains->set(facet, (*indicators)[i]);
+    // Copy data
+    facets.push_back(std::pair<uint, uint>((*facet_cells)[i], (*facet_numbers)[i]));
   }
 }
 //-----------------------------------------------------------------------------
@@ -379,12 +365,13 @@ void DirichletBC::computeBCGeometrical(std::map<uint, real>& boundary_values,
 }
 //-----------------------------------------------------------------------------
 void DirichletBC::computeBCPointwise(std::map<uint, real>& boundary_values,
-                                       Cell& cell,
-                                       BoundaryCondition::LocalData& data)
+                                     Cell& cell,
+                                     BoundaryCondition::LocalData& data)
 {
-  UFCCell ufc_cell(cell);
+  dolfin_assert(user_sub_domain);
 
   // Interpolate function on cell
+  UFCCell ufc_cell(cell);
   g.interpolate(data.w, ufc_cell, *data.finite_element, cell);
       
   // Tabulate dofs on cell, and their coordinates

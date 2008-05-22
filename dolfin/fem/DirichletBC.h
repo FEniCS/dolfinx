@@ -150,7 +150,7 @@ namespace dolfin
     void initFromSubDomain(SubDomain& sub_domain);
 
     // Initialize sub domain markers from mesh
-    void initFromMesh();
+    void initFromMesh(uint sub_domain);
 
     /// Apply boundary conditions
     void apply(GenericMatrix& A, GenericVector& b,
@@ -197,6 +197,9 @@ namespace dolfin
     
     // Check if the point is in the same plane as the given facet
     static bool onFacet(real* coordinates, Facet& facet);
+
+    // Boundary facets, stored as pairs (cell, local facet number)
+    std::vector< std::pair<uint, uint> > facets;
     
   };
 
