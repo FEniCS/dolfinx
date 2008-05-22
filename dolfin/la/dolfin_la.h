@@ -13,6 +13,7 @@
 #include <dolfin/la/uBlasMatrix.h>
 #include <dolfin/la/PETScMatrix.h>
 #include <dolfin/la/EpetraMatrix.h>
+#include <dolfin/la/AssemblyMatrix.h>
 #include <dolfin/la/uBlasVector.h>
 #include <dolfin/la/PETScVector.h>
 #include <dolfin/la/EpetraVector.h>
@@ -23,6 +24,7 @@
 #include <dolfin/la/uBlasFactory.h>
 #include <dolfin/la/PETScFactory.h>
 #include <dolfin/la/EpetraFactory.h>
+#include <dolfin/la/AssemblyFactory.h>
 #include <dolfin/la/SolverType.h>
 #include <dolfin/la/PreconditionerType.h>
 #include <dolfin/la/PETScKrylovSolver.h>
