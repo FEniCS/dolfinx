@@ -4,7 +4,7 @@
 // Modified by Kristian Oelgaard, 2007
 //
 // First added:  2007-04-10
-// Last changed: 2008-05-21
+// Last changed: 2008-05-22
 //
 // FIXME: This class needs some cleanup, in particular collecting
 // FIXME: all data from different representations into a common
@@ -32,17 +32,17 @@ namespace dolfin
 
   /// The BCMethod variable may be used to specify the type of method
   /// used to identify degrees of freedom on the boundary. Available
-  /// methods are: topological approach (default), geometrical approach,
+  /// methods are: topological approach (default), geometric approach,
   /// and pointwise approach. The topological approach is faster,
   /// but will only identify degrees of freedom that are located on a
   /// facet that is entirely on the boundary. In particular, the
   /// topological approach will not identify degrees of freedom
   /// for discontinuous elements (which are all internal to the cell).
-  /// A remedy for this is to use the geometrical approach. To apply
+  /// A remedy for this is to use the geometric approach. To apply
   /// pointwise boundary conditions e.g. pointloads, one will have to
   /// use the pointwise approach which in turn is the slowest of the
   /// three possible methods.
-  enum BCMethod {topological, geometrical, pointwise};
+  enum BCMethod {topological, geometric, pointwise};
   
   /// This class specifies the interface for setting (strong)
   /// Dirichlet boundary conditions for partial differential
@@ -146,15 +146,37 @@ namespace dolfin
 
   private:
 
-    // Initialize sub domain markers from sub domain
-    void initFromSubDomain(SubDomain& sub_domain);
-
-    // Initialize sub domain markers from mesh
-    void initFromMesh(uint sub_domain);
-
     /// Apply boundary conditions
     void apply(GenericMatrix& A, GenericVector& b,
                const GenericVector* x, const DofMap& dof_map, const ufc::form& form);
+    
+    // Initialize sub domain markers from sub domain
+    void initFromSubDomain(SubDomain& sub_domain);
+    
+    // Initialize sub domain markers from MeshFunction
+    void initFromMeshFunction(MeshFunction<uint>& sub_domains, uint sub_domain);
+
+    // Initialize sub domain markers from mesh
+    void initFromMesh(uint sub_domain);
+    
+    // Compute dofs and values for application of boundary conditions
+    void computeBC(std::map<uint, real>& boundary_values,
+                   BoundaryCondition::LocalData& data);
+    
+    // Compute boundary values for facet (topological approach)
+    void computeBCTopological(std::map<uint, real>& boundary_values,
+                              BoundaryCondition::LocalData& data);
+    
+    // Compute boundary values for facet (geometrical approach)
+    void computeBCGeometric(std::map<uint, real>& boundary_values,
+                            BoundaryCondition::LocalData& data);
+    
+    // Compute boundary values for facet (pointwise approach)
+    void computeBCPointwise(std::map<uint, real>& boundary_values,
+                            BoundaryCondition::LocalData& data);
+    
+    // Check if the point is in the same plane as the given facet
+    static bool onFacet(real* coordinates, Facet& facet);
 
     // The function
     Function& g;
@@ -162,41 +184,14 @@ namespace dolfin
     // The mesh
     Mesh& _mesh;
 
-    // Sub domain markers (if any)
-    MeshFunction<uint>* sub_domains;
-
-    // The sub domain
-    uint sub_domain;
-
-    // True if sub domain markers are created locally
-    bool sub_domains_local;
-
-    // Sub system
-    SubSystem sub_system;
-
     // Search method
     BCMethod method;
 
     // User defined sub domain
     SubDomain* user_sub_domain;
 
-    // Compute boundary values for facet (topological approach)
-    void computeBCTopological(std::map<uint, real>& boundary_values,
-                              Facet& facet,
-                              BoundaryCondition::LocalData& data);
-    
-    // Compute boundary values for facet (geometrical approach)
-    void computeBCGeometrical(std::map<uint, real>& boundary_values,
-                              Facet& facet,
-                              BoundaryCondition::LocalData& data);
-
-    // Compute boundary values for facet (pointwise approach)
-    void computeBCPointwise(std::map<uint, real>& boundary_values,
-                              Cell& cell,
-                              BoundaryCondition::LocalData& data);
-    
-    // Check if the point is in the same plane as the given facet
-    static bool onFacet(real* coordinates, Facet& facet);
+    // Sub system
+    SubSystem sub_system;
 
     // Boundary facets, stored as pairs (cell, local facet number)
     std::vector< std::pair<uint, uint> > facets;
