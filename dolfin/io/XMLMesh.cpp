@@ -31,8 +31,6 @@ void XMLMesh::startElement(const xmlChar *name, const xmlChar **attrs)
     
     if ( xmlStrcasecmp(name, (xmlChar *) "mesh") == 0 )
     {
-      cout << "Reading mesh" << endl;
-
       readMesh(name, attrs);
       state = INSIDE_MESH;
     }
@@ -43,21 +41,16 @@ void XMLMesh::startElement(const xmlChar *name, const xmlChar **attrs)
     
     if ( xmlStrcasecmp(name, (xmlChar *) "vertices") == 0 )
     {
-      cout << "Reading vertices" << endl;
-
       readVertices(name, attrs);
       state = INSIDE_VERTICES;
     }
     else if ( xmlStrcasecmp(name, (xmlChar *) "cells") == 0 )
     {
-      cout << "Reading cells" << endl;
-
       readCells(name, attrs);
       state = INSIDE_CELLS;
     }
     else if ( xmlStrcasecmp(name, (xmlChar *) "data") == 0 )
     {
-      cout << "Reading data" << endl;
       state = INSIDE_DATA;
     }
 
@@ -85,13 +78,11 @@ void XMLMesh::startElement(const xmlChar *name, const xmlChar **attrs)
     
     if ( xmlStrcasecmp(name, (xmlChar *) "meshfunction") == 0 )
     {
-      cout << "Reading mesh function" << endl;
       readMeshFunction(name, attrs);
       state = INSIDE_MESH_FUNCTION;
     }
     if ( xmlStrcasecmp(name, (xmlChar *) "array") == 0 )
     {
-      cout << "Reading array" << endl;
       readArray(name, attrs);
       state = INSIDE_ARRAY;
     }
@@ -127,7 +118,6 @@ void XMLMesh::endElement(const xmlChar *name)
     {
       closeMesh();
       state = DONE;
-      cout << "End XML" << endl;
     }
     
     break;
@@ -137,7 +127,6 @@ void XMLMesh::endElement(const xmlChar *name)
     if ( xmlStrcasecmp(name, (xmlChar *) "vertices") == 0 )
     {
       state = INSIDE_MESH;    
-      cout << "End vertices" << endl;
     }
 
     break;
@@ -147,7 +136,6 @@ void XMLMesh::endElement(const xmlChar *name)
     if ( xmlStrcasecmp(name, (xmlChar *) "cells") == 0 )
     {
       state = INSIDE_MESH;
-      cout << "End cells" << endl;
     }
 
     break;
@@ -157,7 +145,6 @@ void XMLMesh::endElement(const xmlChar *name)
     if ( xmlStrcasecmp(name, (xmlChar *) "data") == 0 )
     {
       state = INSIDE_MESH;
-      cout << "End data" << endl;
     }
 
     break;
@@ -167,7 +154,6 @@ void XMLMesh::endElement(const xmlChar *name)
     if ( xmlStrcasecmp(name, (xmlChar *) "meshfunction") == 0 )
     {
       state = INSIDE_DATA;
-      cout << "End mesh function" << endl;
     }
 
     break;
@@ -177,7 +163,6 @@ void XMLMesh::endElement(const xmlChar *name)
     if ( xmlStrcasecmp(name, (xmlChar *) "array") == 0 )
     {
       state = INSIDE_DATA;
-      cout << "End array" << endl;
     }
 
     break;
@@ -369,8 +354,6 @@ void XMLMesh::readMeshEntity(const xmlChar* name, const xmlChar** attrs)
 //-----------------------------------------------------------------------------
 void XMLMesh::readArrayElement(const xmlChar* name, const xmlChar** attrs)
 {
-  return;
-
   // Read index
   const uint index = parseUnsignedInt(name, attrs, "index");
 

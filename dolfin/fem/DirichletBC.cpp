@@ -4,7 +4,7 @@
 // Modified by Kristian Oelgaard, 2007
 //
 // First added:  2007-04-10
-// Last changed: 2008-05-21
+// Last changed: 2008-05-22
 
 #include <dolfin/common/constants.h>
 #include <dolfin/log/log.h>
@@ -331,6 +331,13 @@ void DirichletBC::computeBC(std::map<uint, real>& boundary_values,
 void DirichletBC::computeBCTopological(std::map<uint, real>& boundary_values,
                                        BoundaryCondition::LocalData& data)
 {
+  // Special case
+  if (facets.size() == 0)
+  {
+    warning("Found no facets matching domain for boundary condition.");
+    return;
+  }
+
   // Iterate over facets
   Progress p("Computing Dirichlet boundary values, topological search", facets.size());
   for (uint f = 0; f < facets.size(); f++)
@@ -375,6 +382,13 @@ void DirichletBC::computeBCTopological(std::map<uint, real>& boundary_values,
 void DirichletBC::computeBCGeometric(std::map<uint, real>& boundary_values,
                                      BoundaryCondition::LocalData& data)
 {
+  // Special case
+  if (facets.size() == 0)
+  {
+    warning("Found no facets matching domain for boundary condition.");
+    return;
+  }
+
   // Initialize facets, needed for geometric search
   message("Computing facets, needed for geometric application of boundary conditions.");
   _mesh.init(_mesh.topology().dim() - 1);
