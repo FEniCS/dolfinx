@@ -9,7 +9,7 @@
 #include "PETScFactory.h"
 #include "EpetraFactory.h"
 #include "DefaultFactory.h"
-//#include "AssemblyFactory.h"
+#include "AssemblyFactory.h"
 
 using namespace dolfin;
 
@@ -57,9 +57,7 @@ LinearAlgebraFactory& DefaultFactory::factory() const
   }
   else if (backend == "Assembly")
   { 
-    message("Warning: AssemblyFactory not implemented");
-    message("         returning uBlasFactory instead");
-    return uBlasFactory<>::instance();
+    return AssemblyFactory::instance();
   }
 
   // Fallback

@@ -11,16 +11,18 @@
 #ifndef __ASSEMBLY_MATRIX_H
 #define __ASSEMBLY_MATRIX_H
 
-#include <vector>
-#include <map>
-#include <sstream>
-#include <iomanip>
+//#include <vector>
+//#include <map>
+//#include <sstream>
+//#include <iomanip>
 
-//#include <dolfin/common/types.h>
-//#include <dolfin/log/dolfin_log.h>
+#include <dolfin/common/types.h>
+#include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Variable.h>
 #include "GenericMatrix.h"
 #include "SparsityPattern.h"
+#include "LinearAlgebraFactory.h"
+#include "AssemblyFactory.h"
 
 namespace dolfin
 {
@@ -28,6 +30,9 @@ namespace dolfin
   /// Simple implementation of a GenericMatrix for experimenting
   /// with new assembly. Not sure this will be used later but it
   /// might be useful.
+
+  class uBlasVector;
+  class AssemblyFactory;
 
   class AssemblyMatrix : public GenericMatrix
   {
@@ -39,11 +44,16 @@ namespace dolfin
 
     /// Create M x N matrix
     AssemblyMatrix(uint M, uint N) : dims(0)
-    { dims ) new uint[2]; dims[0] = M; dims[1] = N;}
+    { dims = new uint[2]; dims[0] = M; dims[1] = N;}
   
     /// Copy constructor
     explicit AssemblyMatrix(const AssemblyMatrix& A)
-    { error("Not implemented."); }
+    { 
+      //dims = new uint[2]; 
+      //dims[0] = A.size(0);
+      //dims[1] = A.size(1);
+      error("Not implemented.");
+    }
 
     /// Destructor
     virtual ~AssemblyMatrix()
@@ -56,18 +66,30 @@ namespace dolfin
       //    { init(sparsity_pattern.size(0), sparsity_pattern.size(1); }
     {
       uint M = sparsity_pattern.size(0);
+      /// The comment directly below also makes the following 
+      /// two lines unnecessary:
+      /*
       uint* nzrow = new uint[M];
-      sparsity_pattern.numNinZeroPerRow(nzrow);
+      sparsity_pattern.numNonZeroPerRow(nzrow);
+      */
       A.resize(M);
+      /// Map does not support reserve. Also, allocating space for a std::map
+      /// is not needed as it does not need to copy an element because others 
+      /// are inserted.
+      /*
       for (uint i = 0; i < M; ++i)
         A[i].reserve(nzrow[i]);
-      //init(M, sparsity_pattern.size(1), nzrow);
       delete [] nzrow;
+      */
     }
 
     /// Return copy of tensor
-    virtual AssemblyMatrix* copy() const
-    { error("Not implemented."); }
+    virtual AssemblyMatrix* copy() const;
+    //    { 
+    //      AssemblyMatrix* mcopy = AssemblyFactory::instance().createMatrix();
+    //      error("Not implemented.");
+    //      return mcopy;
+    //    }
 
     /// Return size of given dimension
     virtual uint size(uint dim) const
@@ -93,9 +115,9 @@ namespace dolfin
         std::stringstream line;
         line << std::setiosflags(std::ios::scientific);
         line << std::setprecision(precision);
-    
+        
         line << "|";
-        for (std::map<uint, real>::iterator it = A[i].begin(); it != A[i].end(); it++)
+        for (std::map<uint, real>::const_iterator it = A[i].begin(); it != A[i].end(); it++)
           line << " (" << i << ", " << it->first << ", " << it->second << ")";
         line << " |";
         
@@ -152,18 +174,21 @@ namespace dolfin
     { error("Not implemented."); }
 
     /// Multiply matrix by given number
-    virtual const Matrix& operator*= (real a)
-    { error("Not implemented."); }
+    virtual const GenericMatrix& operator*= (real a);
+    //{ error("Not implemented."); }
 
     /// Divide matrix by given number
-    virtual const Matrix& operator/= (real a)
-    { error("Not implemented."); }
+    virtual const GenericMatrix& operator/= (real a);
+    //{ error("Not implemented."); }
 
     /// Assignment operator
-    virtual const GenericMatrix& operator= (const GenericMatrix& A)
-    { error("Not implemented."); } 
+    virtual const GenericMatrix& operator= (const GenericMatrix& A);
+    //{ error("Not implemented."); } 
 
     ///--- Specialized matrix functions ---
+
+    /// Return linear algebra backend factory
+    virtual LinearAlgebraFactory& factory() const;
 
     /// Initialize zero tensor of given rank and dimensions
     virtual void init(uint rank, const uint* dims, bool reset = true)
@@ -183,6 +208,7 @@ namespace dolfin
     /// Add entries to matrix
     virtual void add(const real* block, uint m, const uint* rows, uint n, const uint* cols)
     {
+      message("Test");
       uint pos = 0;
       for (uint i = 0; i < m; i++)
       {
