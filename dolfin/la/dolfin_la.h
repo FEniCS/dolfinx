@@ -13,10 +13,10 @@
 #include <dolfin/la/uBlasMatrix.h>
 #include <dolfin/la/PETScMatrix.h>
 #include <dolfin/la/EpetraMatrix.h>
+#include <dolfin/la/AssemblyMatrix.h>
 #include <dolfin/la/uBlasVector.h>
 #include <dolfin/la/PETScVector.h>
 #include <dolfin/la/EpetraVector.h>
-#include <dolfin/la/AssemblyMatrix.h>
 #include <dolfin/la/GenericSparsityPattern.h>
 #include <dolfin/la/SparsityPattern.h>
 #include <dolfin/la/LinearAlgebraFactory.h>
