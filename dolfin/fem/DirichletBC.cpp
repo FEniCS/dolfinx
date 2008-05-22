@@ -4,11 +4,12 @@
 // Modified by Kristian Oelgaard, 2007
 //
 // First added:  2007-04-10
-// Last changed: 2008-05-18
+// Last changed: 2008-05-21
 
 #include <dolfin/common/constants.h>
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/MeshData.h>
 #include <dolfin/mesh/Vertex.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Facet.h>
@@ -32,10 +33,9 @@ DirichletBC::DirichletBC(Function& g,
   : BoundaryCondition(), g(g), _mesh(mesh),
     sub_domains(0), sub_domain(0), sub_domains_local(false),
     method(method), user_sub_domain(&sub_domain)
-
 {
   // Initialize sub domain markers
-  init(sub_domain);
+  initFromSubDomain(sub_domain);
 }
 //-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(Function& g,
@@ -51,6 +51,18 @@ DirichletBC::DirichletBC(Function& g,
 //-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(Function& g,
                          Mesh& mesh,
+                         uint sub_domain,
+                         BCMethod method)
+  : BoundaryCondition(), g(g), _mesh(mesh),
+    sub_domains(0), sub_domain(sub_domain), sub_domains_local(false),
+    method(method), user_sub_domain(0)
+{
+  // Initialize sub domain markers
+  initFromMesh();
+}
+//-----------------------------------------------------------------------------
+DirichletBC::DirichletBC(Function& g,
+                         Mesh& mesh,
                          SubDomain& sub_domain,
                          const SubSystem& sub_system,
                          BCMethod method)
@@ -58,8 +70,8 @@ DirichletBC::DirichletBC(Function& g,
     sub_domains(0), sub_domain(0), sub_domains_local(false),
     sub_system(sub_system), method(method), user_sub_domain(&sub_domain)
 {
-  // Set sub domain markers
-  init(sub_domain);
+  // Initialize sub domain markers
+  initFromSubDomain(sub_domain);
 }
 //-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(Function& g,
@@ -76,25 +88,15 @@ DirichletBC::DirichletBC(Function& g,
 //-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(Function& g,
                          Mesh& mesh,
+                         uint sub_domain,
+                         const SubSystem& sub_system,
                          BCMethod method)
   : BoundaryCondition(), g(g), _mesh(mesh),
-    sub_domains(0), sub_domain(0), sub_domains_local(false),
-    method(method), user_sub_domain(0)
+    sub_domains(), sub_domain(sub_domain), sub_domains_local(false),
+    sub_system(sub_system), method(method), user_sub_domain(0)
 {
-  // Create sub domain for entire boundary
-  class EntireBoundary : public SubDomain
-  {
-  public:
-    bool inside(const real* x, bool on_boundary) const
-    {
-      return on_boundary;
-    }
-  };
-
-  EntireBoundary sub_domain;
-
   // Initialize sub domain markers
-  init(sub_domain);
+  initFromMesh();
 }
 //-----------------------------------------------------------------------------
 DirichletBC::~DirichletBC()
@@ -174,7 +176,7 @@ void DirichletBC::apply(GenericMatrix& A, GenericVector& b,
     Progress p(s, _mesh.size(D - 1));
     for (FacetIterator facet(_mesh); !facet.end(); ++facet)
     {
-      // Skip facets not inside the sub domain
+      // Skip facets not inside the sub domain      
       if ((*sub_domains)(*facet) != sub_domain)
       {
         p++;
@@ -236,7 +238,7 @@ Mesh& DirichletBC::mesh()
   return _mesh;
 }
 //-----------------------------------------------------------------------------
-void DirichletBC::init(SubDomain& sub_domain)
+void DirichletBC::initFromSubDomain(SubDomain& sub_domain)
 {
   cout << "Creating sub domain markers for boundary condition." << endl;
 
@@ -250,6 +252,57 @@ void DirichletBC::init(SubDomain& sub_domain)
   
   // Mark the sub domain as sub domain 0
   sub_domain.mark(*sub_domains, 0);
+}
+//-----------------------------------------------------------------------------
+void DirichletBC::initFromMesh()
+{
+  cout << "Creating sub domain markers for boundary condition." << endl;
+  
+  // Get data
+  Array<uint>* facet_cells   = _mesh.data().array("boundary facet cells");
+  Array<uint>* facet_numbers = _mesh.data().array("boundary facet numbers");
+  Array<uint>* indicators    = _mesh.data().array("boundary indicators");
+
+  // Check data
+  if (!facet_cells)
+    error("Mesh data \"boundary facet cells\" not available.");
+  if (!facet_numbers)
+    error("Mesh data \"boundary facet numbers\" not available.");
+  if (!indicators)
+    error("Mesh data \"boundary indicators\" not available.");
+
+  // Get size
+  const uint size = facet_cells->size();
+  dolfin_assert(size == facet_numbers->size());
+  dolfin_assert(size == indicators->size());
+
+  // Create mesh function for sub domain markers on facets
+  const uint dim = _mesh.topology().dim();
+  _mesh.init(dim - 1);
+  sub_domains = new MeshFunction<uint>(_mesh, dim - 1);
+  sub_domains_local = true;
+
+  // Compute the maximum boundary indicator
+  uint maxid = 0;
+  for (uint i = 0; i < size; i++)
+    maxid = std::max(maxid, (*indicators)[i]);
+  cout << "maxid = " << maxid << endl;
+
+  // Mark everything with the maximum value + 1
+  (*sub_domains) = maxid + 1;
+
+  // Mark facets according to data
+  for (uint i = 0; i < size; i++)
+  {
+    // Get cell incident with facet
+    Cell cell(_mesh, (*facet_cells)[i]);
+
+    // Get facet
+    uint facet = cell.entities(dim - 1)[(*facet_numbers)[i]];
+
+    // Set marker
+    sub_domains->set(facet, (*indicators)[i]);
+  }
 }
 //-----------------------------------------------------------------------------
 void DirichletBC::computeBCTopological(std::map<uint, real>& boundary_values,
@@ -470,9 +523,7 @@ void DirichletBC::zero(GenericMatrix& A, const DofMap& dof_map, const ufc::form&
   std::map<uint, real>::const_iterator boundary_value;
   uint i = 0;
   for (boundary_value = boundary_values.begin(); boundary_value != boundary_values.end(); ++boundary_value)
-  {
-    dofs[i++]     = boundary_value->first;
-  }
+    dofs[i++] = boundary_value->first;
 
   // Modify linear system (A_ii = 1)
   A.zero(boundary_values.size(), dofs);

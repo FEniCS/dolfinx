@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-05-19
-// Last changed: 2008-05-19
+// Last changed: 2008-05-21
 
 #ifndef __MESH_DATA_H
 #define __MESH_DATA_H
@@ -10,6 +10,7 @@
 #include <map>
 
 #include <dolfin/common/types.h>
+#include <dolfin/common/Array.h>
 #include "MeshFunction.h"
 
 namespace dolfin
@@ -18,11 +19,11 @@ namespace dolfin
   class Mesh;
 
   /// The class MeshData is a container for auxiliary mesh data,
-  /// represented as MeshFunctions over topological mesh entities.
-  /// Each MeshFunction is identified by a unique user-specified
-  /// string.
+  /// represented either as MeshFunctions over topological mesh
+  /// entities or Arrays. Each dataset is identified by a unique
+  /// user-specified string.
   ///
-  /// Currently, only uint-valued MeshFunctions are supported.
+  /// Currently, only uint-valued data is supported.
 
   class MeshData
   {
@@ -37,11 +38,17 @@ namespace dolfin
     /// Clear all data
     void clear();
 
-    /// Create data with given name on entities of given dimension
-    MeshFunction<uint>* create(std::string name, uint dim);
+    /// Create MeshFunction with given name on entities of given dimension
+    MeshFunction<uint>* createMeshFunction(std::string name, uint dim);
 
-    /// Return data for given name
-    MeshFunction<uint>* operator[] (std::string name);
+    /// Create Array with given name and size
+    Array<uint>* createArray(std::string name, uint size);
+    
+    /// Return MeshFunction with given name (returning zero if data is not available)
+    MeshFunction<uint>* meshfunction(std::string name);
+
+    /// Return Array with given name (returning zero if data is not available)
+    Array<uint>* array(std::string name);
 
     /// Display data
     void disp() const;
@@ -52,7 +59,10 @@ namespace dolfin
     Mesh& mesh;
 
     // A map from named mesh data to MeshFunctions
-    std::map<std::string, MeshFunction<uint>*> data;
+    std::map<std::string, MeshFunction<uint>*> meshfunctions;
+
+    // A map from named mesh data to Arrays
+    std::map<std::string, Array<uint>*> arrays;
 
   };
 
