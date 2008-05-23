@@ -21,6 +21,7 @@
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Point.h>
 #include <dolfin/mesh/SubDomain.h>
+#include <dolfin/mesh/DomainBoundary.h>
 #include <dolfin/mesh/BoundaryMesh.h>
 #include <dolfin/mesh/UnitCube.h>
 #include <dolfin/mesh/UnitInterval.h>
