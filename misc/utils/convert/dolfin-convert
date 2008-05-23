@@ -11,6 +11,7 @@
 # Modified by Bartosz Sawicki (diffpack function)
 # Modified by Gideon Simpson (Exodus II function)
 # Modified by Arve Knudsen (move logic into module meshconvert)
+# Modified by Kent-Andre Mardal (Star-CD function)
 #
 # Script for converting between various data formats
 
@@ -87,6 +88,7 @@ Supported formats:
   diffpack - Diffpack tetrahedral grid format
   abaqus   - Abaqus tetrahedral grid format
   ExodusII - Sandia Format (requires ncdump utility from NetCDF)
+  Star-CD  - Star-CD terahedral grid format
 
 If --input or --output are not specified, the format will
 be deduced from the suffix:
@@ -102,6 +104,7 @@ be deduced from the suffix:
   .e	- Exodus II
   .exo  - Exodus II
   .ncdf - ncdump'ed Exodus II
+  .vrt and .cell  - starcd 
 """
 if __name__ == "__main__":
     main(sys.argv[1:])
