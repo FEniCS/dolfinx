@@ -4,7 +4,7 @@
 // Modified by Ola Skavhaug 2008.
 //
 // First added:  2007-04-30
-// Last changed: 2008-05-09
+// Last changed: 2008-05-23
 
 #include "LinearSolver.h"
 #include "GenericMatrix.h"
@@ -31,7 +31,37 @@ real dolfin::residual(const GenericMatrix& A, const GenericVector& x, const Gene
   delete y;
   return norm;
 }
-//-----------------------------------------------------------------------------  
+//-----------------------------------------------------------------------------
+real dolfin::normalize(GenericVector& x, NormalizationType normalization_type)
+{
+  switch (normalization_type)
+  {
+  case norm:
+    {
+      const real c = x.norm();
+      x /= c;
+      return c;
+    }
+    break;
+  case average:
+    {
+      GenericVector* y = x.factory().createVector();
+      y->init(x.size());
+      (*y) = 1.0 / static_cast<real>(x.size());
+      const real c = x.inner(*y);
+      (*y) = c;
+      x -= (*y);
+      delete y;
+      return c;
+    }
+    break;
+  default:
+    error("Unknown normalization type.");
+  }
+
+  return 0.0;
+}
+//-----------------------------------------------------------------------------
 /*
 void dolfin::solve(const PETScKrylovMatrix& A,
                    PETScVector& x,
