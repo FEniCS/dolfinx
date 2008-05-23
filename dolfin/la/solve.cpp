@@ -36,9 +36,9 @@ real dolfin::normalize(GenericVector& x, NormalizationType normalization_type)
 {
   switch (normalization_type)
   {
-  case norm:
+  case l2norm:
     {
-      const real c = x.norm();
+      const real c = x.norm(l2);
       x /= c;
       return c;
     }

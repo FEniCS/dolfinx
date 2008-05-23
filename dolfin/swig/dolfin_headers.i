@@ -26,6 +26,9 @@
 
 // DOLFIN headers included from la
 %include "dolfin/la/VectorNormType.h"
+%include "dolfin/la/NormalizationType.h"
+%include "dolfin/la/SolverType.h"
+%include "dolfin/la/PreconditionerType.h"
 %include "dolfin/la/GenericTensor.h"
 %include "dolfin/la/GenericMatrix.h"
 %include "dolfin/la/GenericVector.h"
@@ -43,8 +46,6 @@
 %include "dolfin/la/uBlasFactory.h"
 %include "dolfin/la/PETScFactory.h"
 %include "dolfin/la/EpetraFactory.h"
-%include "dolfin/la/SolverType.h"
-%include "dolfin/la/PreconditionerType.h"
 %include "dolfin/la/PETScKrylovSolver.h"
 %include "dolfin/la/PETScLUSolver.h"
 %include "dolfin/la/SLEPcEigenvalueSolver.h"

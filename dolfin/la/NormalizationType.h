@@ -12,7 +12,7 @@ namespace dolfin
 
   /// Two different normalizations are available:
   /// 
-  /// norm:    Normalizes a vector x according to x --> x / ||x||
+  /// l2norm:  Normalizes a vector x according to x --> x / ||x||
   ///          where ||x|| is the l2 norm of x
   ///
   /// average: Normalizes a vector x according to x --> x - avg(x)
@@ -20,7 +20,7 @@ namespace dolfin
   ///          satisfy the compatibility condition for the Neumann
   ///          problem.
 
-  enum NormalizationType {norm, average};
+  enum NormalizationType {l2norm, average};
 
 }
 

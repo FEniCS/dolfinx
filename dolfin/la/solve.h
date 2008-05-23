@@ -28,7 +28,7 @@ namespace dolfin
   real residual(const GenericMatrix& A, const GenericVector& x, const GenericVector& b);
 
   /// Normalize vector according to given normalization type
-  real normalize(GenericVector& x, NormalizationType normalization_type=norm);
+  real normalize(GenericVector& x, NormalizationType normalization_type=l2norm);
   
   /// Solve linear system Ax = b
   //void solve(const PETScKrylovMatrix& A, PETScVector& x, const PETScVector& b);
