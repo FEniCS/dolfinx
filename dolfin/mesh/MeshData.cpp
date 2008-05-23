@@ -113,7 +113,7 @@ void MeshData::disp() const
   }
 
   for (a_const_iterator it = arrays.begin(); it != arrays.end(); ++it)
-    cout << "Array<uint> of size " << it->second->size()
+    cout << "Array<uint> of size " << static_cast<uint>(it->second->size())
          << ": \"" << it->first << "\"" << endl;
 
   // End indentation
