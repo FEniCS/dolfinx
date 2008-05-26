@@ -125,7 +125,7 @@ void DirichletBC::apply(GenericMatrix& A, GenericVector& b,
 {
   // Simple check
   const uint N = dof_map.global_dimension();
-  if (N != A.size(0) || N != A.size(1))
+  if (N != A.size(0) /*  || N != A.size(1) alow for rectangular matrices */)
     error("Incorrect dimension of matrix for application of boundary conditions. Did you assemble it on a different mesh?");
   if (N != b.size())
     error("Incorrect dimension of matrix for application of boundary conditions. Did you assemble it on a different mesh?");
@@ -187,7 +187,7 @@ void DirichletBC::zero(GenericMatrix& A, const DofMap& dof_map, const ufc::form&
 {
   // Simple check
   const uint N = dof_map.global_dimension();
-  if (N != A.size(0) || N != A.size(1))
+  if (N != A.size(0))
     error("Incorrect dimension of matrix for application of boundary conditions. Did you assemble it on a different mesh?");
 
   // A map to hold the mapping from boundary dofs to boundary values

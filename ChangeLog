@@ -1,3 +1,6 @@
+ - Add function normalize()
+ - Integration with VMTK for reading DOLFIN XML meshes produced by VMTK
+ - Extend mesh XML format to handle boundary indicators
  - Add support for attaching arbitrarily named data to meshes
  - Add support for dynamically choosing the linear algebra backend
  - Add Epetra/Trilinos linear solvers

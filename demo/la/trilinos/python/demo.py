@@ -60,7 +60,7 @@ u = TrialFunction(element)
 f = Source(element, mesh)
 g = Flux(element, mesh)
 
-a = u*v*dx + dot(grad(v), grad(u))*dx
+a = dot(grad(v), grad(u))*dx
 L = v*f*dx + v*g*ds
 
 # Create backend
