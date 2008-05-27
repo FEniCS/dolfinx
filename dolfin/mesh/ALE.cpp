@@ -46,8 +46,9 @@ void ALE::move(Mesh& mesh, Mesh& new_boundary,
     memcpy(v->x(), new_x + v->index()*dim, dim*sizeof(real));
   
   delete [] new_x;
-  for (uint i=0; i<new_boundary.numVertices(); i++) 
-    delete [] ghat[i];
+  if (method==hermite)
+    for (uint i=0; i<new_boundary.numVertices(); i++) 
+      delete [] ghat[i];
   delete [] ghat;
 }
 //-----------------------------------------------------------------------------
