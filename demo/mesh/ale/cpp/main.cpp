@@ -17,24 +17,26 @@ using namespace dolfin;
 int main()
 {
   // Create mesh
-  UnitSquare mesh(32, 32);
+  //UnitSquare mesh(3, 3);
+  UnitCube mesh(3, 3, 3);
   plot(mesh);
 
   // Create boundary mesh
   MeshFunction<unsigned int> vertex_map;
-  BoundaryMesh boundary(mesh, vertex_map);
+  MeshFunction<unsigned int> cell_map;
+  BoundaryMesh boundary(mesh, vertex_map, cell_map);
 
   // Move vertices in boundary
   for (VertexIterator v(boundary); !v.end(); ++v)
   {
     real* x = v->x();
     x[0] *= 3.0;
-    x[1] += 0.1*sin(5.0*x[0]);
+    //x[1] += 0.1*sin(5.0*x[0]);
   }
   plot(boundary);
-
+ 
   // Move mesh
-  mesh.move(boundary, vertex_map);
+  mesh.move(boundary, vertex_map, cell_map, hermite);
   plot(mesh);
 
   return 0;

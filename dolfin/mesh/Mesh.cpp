@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells 2007.
 //
 // First added:  2006-05-09
-// Last changed: 2008-05-19
+// Last changed: 2008-05-27
 
 #include <sstream>
 
@@ -144,10 +144,10 @@ void Mesh::coarsen(MeshFunction<bool>& cell_markers, bool coarsen_boundary)
                                                  coarsen_boundary);
 }
 //-----------------------------------------------------------------------------
-void Mesh::move(Mesh& boundary, const MeshFunction<uint>& vertex_map,
-                ALEMethod method)
+void Mesh::move(Mesh& boundary, const MeshFunction<uint>& vertex_map, 
+		const MeshFunction<uint>& cell_map, ALEMethod method)
 {
-  ALE::move(*this, boundary, vertex_map, method);
+  ALE::move(*this, boundary, vertex_map, cell_map, method);
 }
 //-----------------------------------------------------------------------------
 void Mesh::smooth() 

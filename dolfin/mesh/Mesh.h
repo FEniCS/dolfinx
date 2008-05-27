@@ -6,7 +6,7 @@
 // Modified by Garth N. Wells 2007.
 //
 // First added:  2006-05-08
-// Last changed: 2008-05-19
+// Last changed: 2008-05-27
 
 #ifndef __MESH_H
 #define __MESH_H
@@ -150,7 +150,7 @@ namespace dolfin
     void coarsen(MeshFunction<bool>& cell_markers, bool coarsen_boundary = false);
 
     /// Move coordinates of mesh according to new boundary coordinates
-    void move(Mesh& boundary, const MeshFunction<uint>& vertex_map, ALEMethod method=lagrange);
+    void move(Mesh& boundary, const MeshFunction<uint>& vertex_map, const MeshFunction<uint>& cell_map, ALEMethod method=lagrange);
     
     /// Smooth mesh using Lagrangian mesh smoothing 
     void smooth();
