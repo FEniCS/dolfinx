@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-06-21
-// Last changed: 2008-05-02
+// Last changed: 2008-05-28
 
 #include <iostream>
 
@@ -23,18 +23,6 @@ BoundaryMesh::BoundaryMesh(Mesh& mesh) : Mesh()
   init(mesh);
 }
 //-----------------------------------------------------------------------------
-BoundaryMesh::BoundaryMesh(Mesh& mesh, MeshFunction<uint>& vertex_map)
-{
-  init(mesh, vertex_map);
-}
-//-----------------------------------------------------------------------------
-BoundaryMesh::BoundaryMesh(Mesh& mesh,
-                           MeshFunction<uint>& vertex_map,
-                           MeshFunction<uint>& cell_map) : Mesh()
-{
-  init(mesh, vertex_map, cell_map);
-}
-//-----------------------------------------------------------------------------
 BoundaryMesh::~BoundaryMesh()
 {
   // Do nothing
@@ -43,18 +31,5 @@ BoundaryMesh::~BoundaryMesh()
 void BoundaryMesh::init(Mesh& mesh)
 {
   BoundaryComputation::computeBoundary(mesh, *this);
-}
-//-----------------------------------------------------------------------------
-void BoundaryMesh::init(Mesh& mesh,
-                        MeshFunction<uint>& vertex_map)
-{
-  BoundaryComputation::computeBoundary(mesh, *this, vertex_map);
-}
-//-----------------------------------------------------------------------------
-void BoundaryMesh::init(Mesh& mesh,
-                        MeshFunction<uint>& vertex_map,
-                        MeshFunction<uint>& cell_map)
-{
-  BoundaryComputation::computeBoundary(mesh, *this, vertex_map, cell_map);
 }
 //-----------------------------------------------------------------------------

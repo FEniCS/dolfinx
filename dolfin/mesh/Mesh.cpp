@@ -159,12 +159,12 @@ void Mesh::smooth()
   for (VertexIterator v(*this); !v.end(); ++v)
     bnd_vertex.set(v->index(),false);
 
-  MeshFunction<uint> bnd_vertex_map; 
-  MeshFunction<uint> bnd_cell_map; 
-  BoundaryMesh boundary(*this,bnd_vertex_map,bnd_cell_map);
+  BoundaryMesh boundary(*this);
+  MeshFunction<uint>* bnd_vertex_map = boundary.data().meshFunction("vertex map");
+  dolfin_assert(bnd_vertex_map);
 
   for (VertexIterator v(boundary); !v.end(); ++v)
-    bnd_vertex.set(bnd_vertex_map.get(v->index()),true);
+    bnd_vertex.set(bnd_vertex_map->get(v->index()),true);
 
   Point midpoint = 0.0; 
   uint num_neighbors = 0;

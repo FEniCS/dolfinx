@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-05-19
-// Last changed: 2008-05-21
+// Last changed: 2008-05-28
 
 #ifndef __MESH_DATA_H
 #define __MESH_DATA_H
@@ -45,7 +45,7 @@ namespace dolfin
     Array<uint>* createArray(std::string name, uint size);
     
     /// Return MeshFunction with given name (returning zero if data is not available)
-    MeshFunction<uint>* meshfunction(std::string name);
+    MeshFunction<uint>* meshFunction(std::string name);
 
     /// Return Array with given name (returning zero if data is not available)
     Array<uint>* array(std::string name);

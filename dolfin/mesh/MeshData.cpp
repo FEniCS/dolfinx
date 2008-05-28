@@ -76,7 +76,7 @@ Array<dolfin::uint>* MeshData::createArray(std::string name, uint size)
   return a;
 }
 //-----------------------------------------------------------------------------
-MeshFunction<dolfin::uint>* MeshData::meshfunction(std::string name)
+MeshFunction<dolfin::uint>* MeshData::meshFunction(std::string name)
 {
   // Check if data exists
   mf_iterator it = meshfunctions.find(name);
