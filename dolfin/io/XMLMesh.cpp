@@ -4,6 +4,7 @@
 // First added:  2003-10-21
 // Last changed: 2008-05-21
 
+#include <cstring>
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/mesh/CellType.h>
 #include <dolfin/mesh/Mesh.h>
