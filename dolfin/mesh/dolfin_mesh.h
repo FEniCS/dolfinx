@@ -4,6 +4,7 @@
 // DOLFIN mesh interface
 
 #include <dolfin/mesh/ALE.h>
+#include <dolfin/mesh/ALEType.h>
 #include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshEntityIterator.h>
 #include <dolfin/mesh/MeshTopology.h>

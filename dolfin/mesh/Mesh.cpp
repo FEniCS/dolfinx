@@ -144,10 +144,9 @@ void Mesh::coarsen(MeshFunction<bool>& cell_markers, bool coarsen_boundary)
                                                  coarsen_boundary);
 }
 //-----------------------------------------------------------------------------
-void Mesh::move(Mesh& boundary, const MeshFunction<uint>& vertex_map, 
-		const MeshFunction<uint>& cell_map, ALEMethod method)
+void Mesh::move(Mesh& boundary, ALEType method)
 {
-  ALE::move(*this, boundary, vertex_map, cell_map, method);
+  ALE::move(*this, boundary, method);
 }
 //-----------------------------------------------------------------------------
 void Mesh::smooth() 

@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-05-02
-// Last changed: 2008-05-05
+// Last changed: 2008-05-28
 
 #ifndef __ALE_H
 #define __ALE_H
@@ -10,7 +10,7 @@
 #include <dolfin/common/types.h>
 #include "MeshFunction.h"
 #include "Facet.h"
-#include "ALEMethod.h"
+#include "ALEType.h"
 
 namespace dolfin
 {
@@ -29,16 +29,14 @@ namespace dolfin
 
     /// Move coordinates of mesh according to new boundary coordinates
     static void move(Mesh& mesh, Mesh& new_boundary,
-                     const MeshFunction<uint>& vertex_map,
-		     const MeshFunction<uint>& cell_map,
-                     ALEMethod type = lagrange);
+                     ALEType type=lagrange);
     
   private:
     
     // Transfinite meanvalue interpolation
     static void meanValue(real* new_x, uint dim, Mesh& new_boundary,
                           Mesh& mesh, const MeshFunction<uint>& vertex_map,
-                          Vertex& vertex, real** ghat, ALEMethod type);
+                          Vertex& vertex, real** ghat, ALEType type);
 
     // Compute weights for transfinite meanvalue interpolation
     static void computeWeights2D(real* w, real** u, real* d,

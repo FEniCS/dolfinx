@@ -2,12 +2,13 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-05-02
-// Last changed: 2008-05-27
+// Last changed: 2008-05-28
 
 #include <string.h>
 #include <dolfin/common/Array.h>
 #include <dolfin/common/constants.h>
 #include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/MeshData.h>
 #include <dolfin/mesh/Vertex.h>
 #include <dolfin/mesh/Cell.h>
 #include "ALE.h"
@@ -15,14 +16,17 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void ALE::move(Mesh& mesh, Mesh& new_boundary,
-               const MeshFunction<uint>& vertex_map,
-	       const MeshFunction<uint>& cell_map,
-               ALEMethod method)
+void ALE::move(Mesh& mesh, Mesh& new_boundary, ALEType method)
 {
   // Only implemented in 2D and 3D so far
   if (mesh.topology().dim() < 2 || mesh.topology().dim() > 3 )
     error("Mesh interpolation only implemented in 2D and 3D so far.");
+
+  // Get vertex and cell maps
+  const MeshFunction<uint>* vertex_map = new_boundary.data().meshFunction("vertex map");
+  const MeshFunction<uint>* cell_map   = new_boundary.data().meshFunction("cell map");
+  dolfin_assert(vertex_map);
+  dolfin_assert(cell_map);
 
   // Extract old coordinates
   const uint dim = mesh.geometry().dim();
@@ -34,12 +38,12 @@ void ALE::move(Mesh& mesh, Mesh& new_boundary,
   if (method == hermite)
   {
     hermiteFunction(ghat, dim, new_boundary,
-		    mesh, vertex_map, cell_map);
+		    mesh, *vertex_map, *cell_map);
   }
 
   // Iterate over coordinates in mesh
   for (VertexIterator v(mesh); !v.end(); ++v)
-    meanValue(new_x + v->index()*dim, dim, new_boundary, mesh, vertex_map, *v, ghat, method);
+    meanValue(new_x + v->index()*dim, dim, new_boundary, mesh, *vertex_map, *v, ghat, method);
 
   // Update mesh coordinates
   for (VertexIterator v(mesh); !v.end(); ++v)
@@ -54,7 +58,7 @@ void ALE::move(Mesh& mesh, Mesh& new_boundary,
 //-----------------------------------------------------------------------------
 void ALE::meanValue(real* new_x, uint dim, Mesh& new_boundary,
                     Mesh& mesh, const MeshFunction<uint>& vertex_map,
-                    Vertex& vertex, real** ghat, ALEMethod method)
+                    Vertex& vertex, real** ghat, ALEType method)
 {
   // Check if the point is on the boundary (no need to compute new coordinate)
   for (VertexIterator v(new_boundary); !v.end(); ++v)
@@ -140,13 +144,17 @@ void ALE::meanValue(real* new_x, uint dim, Mesh& new_boundary,
   }
   // Scale by totalW
   if (method == lagrange) 
+  {
     for (uint i = 0; i < dim; i++)
       new_x[i] /= totalW;
+  }
   else
+  {
     for (uint i = 0; i < dim; i++)
       new_x[i] = new_x[i]/totalW + herm[i]/(totalW*totalW);
+  }
 
-  cout<<"  New x: " << new_x[0] << " " << new_x[1] << " " << new_x[2] << endl;
+  //cout << "  New x: " << new_x[0] << " " << new_x[1] << " " << new_x[2] << endl;
 
   // Free memory for d
   delete [] d;
@@ -222,7 +230,6 @@ void ALE::hermiteFunction(real ** ghat, uint dim, Mesh& new_boundary,
 			  Mesh& mesh, const MeshFunction<uint>& vertex_map, 
 			  const MeshFunction<uint>& cell_map)
 {
-  cout<< "hermite " << new_boundary.numVertices() << endl;
   real ** dfdn = new real * [new_boundary.numVertices()];
   normals(dfdn, dim, new_boundary,
 	  mesh, vertex_map, cell_map);
