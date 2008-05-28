@@ -70,14 +70,24 @@ void BoundaryComputation::computeBoundary(Mesh& mesh, BoundaryMesh& boundary)
   editor.initVertices(num_boundary_vertices);
   editor.initCells(num_boundary_cells);
 
-  // Initialize the mappings from boundary to mesh
-  MeshFunction<uint>* vertex_map = boundary.data().createMeshFunction("vertex map", 0);
-  MeshFunction<uint>* cell_map   = boundary.data().createMeshFunction("cell map", D - 1);
-  dolfin_assert(vertex_map);
-  dolfin_assert(cell_map);
-  vertex_map->init(boundary, 0, num_boundary_vertices);
-  cell_map->init(boundary, D - 1, num_boundary_cells);
-    
+  // Initialize mapping from vertices in boundary to vertices in mesh
+  MeshFunction<uint>* vertex_map = 0;
+  if (num_boundary_vertices > 0)
+  {
+    vertex_map = boundary.data().createMeshFunction("vertex map");
+    dolfin_assert(vertex_map);
+    vertex_map->init(boundary, 0, num_boundary_vertices);
+  }
+  
+  // Initialize mapping from cells in boundary to facets in mesh
+  MeshFunction<uint>* cell_map = 0;
+  if (num_boundary_cells > 0)
+  {
+    cell_map = boundary.data().createMeshFunction("cell map");
+    dolfin_assert(cell_map);
+    cell_map->init(boundary, D - 1, num_boundary_cells);
+  }
+
   // Create vertices
   for (VertexIterator v(mesh); !v.end(); ++v)
   {

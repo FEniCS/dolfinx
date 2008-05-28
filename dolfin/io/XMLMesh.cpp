@@ -318,8 +318,9 @@ void XMLMesh::readMeshFunction(const xmlChar* name, const xmlChar** attrs)
     error("Wrong number of values for MeshFunction, expecting %d.", _mesh.size(dim));
 
   // Register data
-  f = _mesh.data().createMeshFunction(id, dim);
+  f = _mesh.data().createMeshFunction(id);
   dolfin_assert(f);
+  f->init(_mesh, dim);
 
   // Set all values to zero
   *f = 0;

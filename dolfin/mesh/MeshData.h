@@ -38,8 +38,8 @@ namespace dolfin
     /// Clear all data
     void clear();
 
-    /// Create MeshFunction with given name on entities of given dimension
-    MeshFunction<uint>* createMeshFunction(std::string name, uint dim);
+    /// Create MeshFunction with given name (uninitialized)
+    MeshFunction<uint>* createMeshFunction(std::string name);
 
     /// Create Array with given name and size
     Array<uint>* createArray(std::string name, uint size);

@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-05-19
-// Last changed: 2008-05-21
+// Last changed: 2008-05-28
 
 #include "MeshData.h"
 
@@ -36,7 +36,7 @@ void MeshData::clear()
   arrays.clear();
 }
 //-----------------------------------------------------------------------------
-MeshFunction<dolfin::uint>* MeshData::createMeshFunction(std::string name, uint dim)
+MeshFunction<dolfin::uint>* MeshData::createMeshFunction(std::string name)
 {
   // Check if data already exists
   mf_iterator it = meshfunctions.find(name);
@@ -48,7 +48,7 @@ MeshFunction<dolfin::uint>* MeshData::createMeshFunction(std::string name, uint 
 
   // Create new data
   MeshFunction<uint>* f = new MeshFunction<uint>(mesh);
-  f->init(mesh, dim);
+  dolfin_assert(f);
 
   // Add to map
   meshfunctions[name] = f;
