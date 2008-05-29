@@ -4,7 +4,7 @@
 // Modified by Kristian B. Oelgaard, 2007.
 //
 // First added:  2006-02-09
-// Last changed: 2008-05-14
+// Last changed: 2008-05-29
 
 #ifndef __SPECIAL_FUNCTIONS_H
 #define __SPECIAL_FUNCTIONS_H
@@ -36,6 +36,16 @@ namespace dolfin
       for (; !c.end(); ++c)
         hmin = std::min(hmin, c->diameter());
       return hmin;
+    }
+
+    /// Compute maximal cell diameter
+    real max() const
+    {
+      CellIterator c(mesh());
+      real hmax = c->diameter();
+      for (; !c.end(); ++c)
+        hmax = std::max(hmax, c->diameter());
+      return hmax;
     }
     
   };
