@@ -17,7 +17,8 @@ using namespace dolfin;
 int main()
 {
   // Create mesh
-  UnitSquare mesh(20, 20);
+  //UnitSquare mesh(20, 20);
+  UnitCube mesh(20, 20, 20);
 
   // Create boundary mesh
   BoundaryMesh boundary(mesh);
@@ -29,7 +30,7 @@ int main()
     x[0] *= 3.0;
     x[1] += 0.1*sin(5.0*x[0]);
   }
- 
+  
   // Move mesh
   mesh.move(boundary);
 

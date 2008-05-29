@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-05-02
-// Last changed: 2008-05-28
+// Last changed: 2008-05-29
 
 #include <string.h>
 #include <dolfin/common/Array.h>
@@ -37,6 +37,7 @@ void ALE::move(Mesh& mesh, Mesh& new_boundary, ALEType method)
   // If hermite, create dgdn
   if (method == hermite)
   {
+    cout<<"hermite"<<endl;
     hermiteFunction(ghat, dim, new_boundary,
 		    mesh, *vertex_map, *cell_map);
   }
@@ -234,13 +235,19 @@ void ALE::hermiteFunction(real ** ghat, uint dim, Mesh& new_boundary,
   normals(dfdn, dim, new_boundary,
 	  mesh, vertex_map, cell_map);
 
-  //FAKTOREN før dfdn, HVA VELGER VI DER?
+  real c;
+  if (dim==2)
+    c=2;
+  else
+    c=M_PI;
+
+  //FAKTOREN c før dfdn, HVA VELGER VI DER?
   for (VertexIterator v(new_boundary); !v.end(); ++v) {
     ghat[v->index()]=new real [dim];
     integral(ghat[v->index()], dim, new_boundary,
 	     mesh, vertex_map, *v);
     for (uint i=0; i<dim;i++) 
-      ghat[v->index()][i]=2*dfdn[v->index()][i]-ghat[v->index()][i];
+      ghat[v->index()][i]=c*dfdn[v->index()][i]-ghat[v->index()][i];
   }
   for (uint i=0; i<new_boundary.numVertices(); i++)
     delete [] dfdn[i];
@@ -273,7 +280,7 @@ void ALE::normals(real** dfdn, uint dim, Mesh& new_boundary,
           Point n=mesh_cell.normal(facet_index);
           
           for (uint j=0; j<dim; j++)
-            dfdn[ind][j]+=n[j];
+            dfdn[ind][j]-=n[j];
           break;
         }
       }
