@@ -190,7 +190,7 @@ if env["enableMpi"]:
   # CXX=/path/to/mpi_cxx_compiler  - OK (use os.path.basename)
   # CXX="ccache cxx_compiler"      - OK (use mpi_cxx.split()[-1])
   # FIXME: Any other cases?
-  if not env.Detect("mpirun") or not \
+  if not env.Detect(["mpirun", "mpiexec", "orterun"]) or not \
          (mpi_cxx and \
           os.path.basename(mpi_cxx.split()[-1]) in mpi_cxx_compilers):
     print "MPI not found (might not work if PETSc uses MPI)."
