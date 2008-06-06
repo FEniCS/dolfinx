@@ -66,6 +66,7 @@ This gives convenient expand/collapse of bullets by pressing TAB.
 ** Input/output for time-series
 ** Tensor-valued functions
 ** 'quadrature' function
+** Adding a FunctionSpace class, collecting a Mesh, dof_map and finite_element.
 
 * Input/Output
 ** Figure out what to do with i/o when running in parallel
