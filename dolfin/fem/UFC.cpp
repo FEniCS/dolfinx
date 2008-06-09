@@ -1,8 +1,8 @@
-// Copyright (C) 2007 Anders Logg.
+// Copyright (C) 2007-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-01-17
-// Last changed: 2007-05-15
+// Last changed: 2008-06-09
 
 #include <dolfin/common/types.h>
 #include "DofMapSet.h"
@@ -49,7 +49,7 @@ UFC::UFC(const ufc::form& form, Mesh& mesh, const DofMapSet& dof_map_set) : form
   this->cell1.init(*cell);
 
   // Initialize local tensor
-  uint num_entries = 1;
+  num_entries = 1;
   for (uint i = 0; i < form.rank(); i++)
     num_entries *= dof_map_set[i].local_dimension();
   A = new real[num_entries];
