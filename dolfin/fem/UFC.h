@@ -41,7 +41,9 @@ namespace dolfin
     void update(Cell& cell0, Cell& cell1);
 
     /// Reset tensor to zero
-    inline void reset() { for (uint i = 0; i < num_entries; i++) A[i] = 0.0; }
+    inline void reset() {
+      //for (uint i = 0; i < num_entries; i++) A[i] = 0.0; 
+    }
 
     // Array of finite elements for primary arguments
     ufc::finite_element** finite_elements;
