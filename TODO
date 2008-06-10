@@ -21,20 +21,8 @@ This gives convenient expand/collapse of bullets by pressing TAB.
 *** operator[] etc --> Kent
 *** cleanup of all interfaces --> Anders
 ** Old items
-*** Refine initialisation of PETSc matrices for parallel case
-*** Refine PETSc wrappers for parallel assembly and solve
 *** Finalize GenericFoo interfaces and merge linear algebra with PyCC
    - Assigned to: Martin, Garth, Anders
-* Parallelisation
-** Reordering in DofMap
-** Generalise Assembler for parallel assembly
-   - Should be possible to do with minor changes
-   - Add something similar to what is done now for assembling
-     over subdomains:
-
-     if (partition(*cell) != this_process)
-       continue;
-** Figure out what to do with Functions in parallel
 ** Parallelize necessary parts of Mesh
    - Store both global and local indices for cell/vertex, add mesh
      functions for this
@@ -52,26 +40,11 @@ This gives convenient expand/collapse of bullets by pressing TAB.
 ** Write appendix on coding style
 ** Document Python interface
 
-* Assembly
-** Further develop and then merge parallel assembly
-
-* Mesh
-** 1D and 2D cells in R^3
-** Check coarsening
-** Continue work on refinement
-** Collect meshes on wiki
-
 * Function
 ** Assignment from other than discrete functions (use evaluate_dof)
 ** Input/output for time-series
-** Tensor-valued functions
-** 'quadrature' function
 ** Adding a FunctionSpace class, collecting a Mesh, dof_map and finite_element.
 
-* Input/Output
-** Figure out what to do with i/o when running in parallel
-* Solvers
-** Create template for users to create solvers that use the DOLFIN library
 * ODE solvers
 ** Solve dual and compute error estimate
 ** Automatic computation of stability factors as function of time T
