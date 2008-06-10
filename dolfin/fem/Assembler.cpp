@@ -5,7 +5,7 @@
 // Modified by Ola Skavhaug, 2007
 //
 // First added:  2007-01-17
-// Last changed: 2008-06-09
+// Last changed: 2008-06-10
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Array.h>
@@ -190,7 +190,6 @@ void Assembler::assembleCells(GenericTensor& A,
       dof_map_set[i].tabulate_dofs(ufc.dofs[i], ufc.cell, cell->index());
 
     // Tabulate cell tensor
-    ufc.reset();
     integral->tabulate_tensor(ufc.A, ufc.w, ufc.cell);
 
     // Add entries to global tensor
@@ -257,7 +256,6 @@ void Assembler::assembleExteriorFacets(GenericTensor& A,
       dof_map_set[i].tabulate_dofs(ufc.dofs[i], ufc.cell, mesh_cell.index());
 
     // Tabulate exterior facet tensor
-    ufc.reset();
     integral->tabulate_tensor(ufc.A, ufc.w, ufc.cell, local_facet);
     
     // Add entries to global tensor
@@ -334,7 +332,6 @@ void Assembler::assembleInteriorFacets(GenericTensor& A,
     }
 
     // Tabulate exterior interior facet tensor on macro element
-    ufc.reset();
     integral->tabulate_tensor(ufc.macro_A, ufc.macro_w, ufc.cell0, ufc.cell1, facet0, facet1);
 
     // Add entries to global tensor

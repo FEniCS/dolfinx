@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-01-17
-// Last changed: 2008-06-09
+// Last changed: 2008-06-10
 
 #ifndef __UFC_DATA_H
 #define __UFC_DATA_H
@@ -40,11 +40,6 @@ namespace dolfin
     /// Update current pair of cells for macro element
     void update(Cell& cell0, Cell& cell1);
 
-    /// Reset tensor to zero
-    inline void reset() {
-      //for (uint i = 0; i < num_entries; i++) A[i] = 0.0; 
-    }
-
     // Array of finite elements for primary arguments
     ufc::finite_element** finite_elements;
 
@@ -72,9 +67,6 @@ namespace dolfin
     // Current pair of cells of macro element
     UFCCell cell0;
     UFCCell cell1;
-
-    // Number of entries in local tensor
-    uint num_entries;
 
     // Local tensor
     real* A;
