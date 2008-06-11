@@ -50,10 +50,7 @@ void ODESolution::addSample(Sample& sample) {
 
 void ODESolution::makeIndex() {
   file.close();
-  file.open(filename, std::ios::in | std::ios::binary);
-
-  cout << "ODESolution size: " << bintree.size() << endl;
-  
+  file.open(filename, std::ios::in | std::ios::binary);  
 }
 
 void ODESolution::eval(const real t, uBlasVector& y) {

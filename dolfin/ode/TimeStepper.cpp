@@ -8,6 +8,7 @@
 #include <string>
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/timing.h>
+#include <dolfin/common/constants.h>
 #include <dolfin/parameter/parameters.h>
 #include "ODE.h"
 #include "ReducedModel.h"
@@ -123,7 +124,7 @@ real TimeStepper::step()
     warning("Solution stopped at t = %.3e.", t);
 
   // Update for next time slab
-  if ( !timeslab->shift() )
+  if ( !timeslab->shift(finished()) )
   {
     message("ODE solver stopped on user's request.");
     _stopped = true;

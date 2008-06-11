@@ -7,9 +7,8 @@
 #ifndef __ODE_SOLVER_H
 #define __ODE_SOLVER_H
 
-#include <dolfin/main/constants.h>
-
-namespace dolfin {
+namespace dolfin
+{
 
   class ODE;
   class ODESolution;

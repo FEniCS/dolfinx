@@ -13,7 +13,7 @@ using namespace dolfin;
 //------------------------------------------------------------------------
 Dual::Dual(ODE& primal, ODESolution& u) 
   : ODE(primal.size(), primal.endtime()),
-     prim(primal), sol(u)
+    prim(primal), sol(u)
 {
 
   //inherit parameters from primal problem
@@ -72,3 +72,4 @@ void Dual::f(const uBlasVector& phi, real t, uBlasVector& y)
   prim.JT(phi, y, tmp, endtime()-t);
   
 }
+//------------------------------------------------------------------------

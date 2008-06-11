@@ -74,6 +74,9 @@ namespace dolfin
     // Number of local iterations made (GMRES)
     uint num_local_iterations;
 
+    // Current maxnorm of solution
+    real xnorm;
+
   private:
 
     /// Choose tolerance

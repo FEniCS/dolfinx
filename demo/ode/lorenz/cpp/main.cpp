@@ -63,10 +63,10 @@ int main()
   dolfin_set("ODE number of samples", 500);
   dolfin_set("ODE initial time step", 0.01);
   dolfin_set("ODE fixed time step", true);
-  dolfin_set("ODE nonlinear solver", "newton");
+  //dolfin_set("ODE nonlinear solver", "newton");
   dolfin_set("ODE method", "cg");
-  dolfin_set("ODE order", 5);
-  dolfin_set("ODE discrete tolerance", 1e-12);
+  dolfin_set("ODE order", 1);
+  dolfin_set("ODE discrete tolerance", 1e-10);
   dolfin_set("ODE save solution", true);
   dolfin_set("ODE solve dual problem", true);
  

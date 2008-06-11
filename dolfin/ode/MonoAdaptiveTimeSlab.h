@@ -1,8 +1,8 @@
-// Copyright (C) 2005-2006 Anders Logg.
+// Copyright (C) 2005-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005-01-28
-// Last changed: 2006-07-06
+// Last changed: 2008-06-11
 
 #ifndef __MONO_ADAPTIVE_TIME_SLAB_H
 #define __MONO_ADAPTIVE_TIME_SLAB_H
@@ -44,7 +44,7 @@ namespace dolfin
     bool check(bool first);
 
     /// Shift time slab (prepare for next time slab)
-    bool shift();
+    bool shift(bool end);
 
     /// Prepare sample at time t
     void sample(real t);
