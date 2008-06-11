@@ -9,98 +9,70 @@
 #include "ODE.h"
 #include "TimeStepper.h"
 #include "ODESolver.h"
+#include "ODESolution.h"
+#include "Dual.h"
 
 using namespace dolfin;
 
-//-----------------------------------------------------------------------------
-void ODESolver::solve(ODE& ode)
-{
-  begin("Solving ODE on time interval (0, %g).", ode.endtime());
+//-----------------------------------------------------------------------
 
-  // Temporary fix until we fix the dual problem again
-  TimeStepper::solve(ode);
-
-  cout << "Not computing an error estimate. " 
-       << "The solution may be inaccurate." << endl;
-
-  end();
-}
-//-----------------------------------------------------------------------------
-
-// FIXME: BROKEN
-
-/*
-
-//-----------------------------------------------------------------------------
-void ODESolver::solve(ODE& ode)
-{
-  Function u, phi;
-  solve(ode, u, phi);
-}
-//-----------------------------------------------------------------------------
-void ODESolver::solve(ODE& ode, Function& u)
-{
-  Function phi;
-  solve(ode, u, phi);
-}
-//-----------------------------------------------------------------------------
-void ODESolver::solve(ODE& ode)
-{
-  // Check if we should solve the dual problem
-  bool solve_dual = get("ODE solve dual problem");
-
+void ODESolver::solve(ODE& ode, ODESolution& s) {
   begin("Solving ODE");  
 
   // Solve primal problem
-  solvePrimal(ode, u);
+  solvePrimal(ode, s);
 
-  // Solve dual problem
-  if ( solve_dual )
-    solveDual(ode, u, phi);
-  else
+  s.makeIndex();
+
+  // Check if we should solve the dual problem  
+  if ( ode.get("ODE solve dual problem") ) {
+    solveDual(ode, s);
+  }else {
     cout << "Not solving the dual problem as requested." << endl;
-
-  cout << "Not computing an error estimate. " 
-       << "The solution may be inaccurate." << endl;
+  }
 
   end();
+
 }
-//-----------------------------------------------------------------------------
-void ODESolver::solvePrimal(ODE& ode)
+
+//----------------------------------------------------------------------
+void ODESolver::solve(ODE& ode)
+{
+  //create dummy object to hold the solution
+  ODESolution s(ode);
+  solve(ode, s);
+
+}
+//------------------------------------------------------------------------
+void ODESolver::solvePrimal(ODE& ode, ODESolution& s)
 {
   begin("Solving primal problem");
   
-  // Initialize primal solution
-  //u.init(ode.size());
-  //u.rename("u", "primal");
-  
   // Solve primal problem
-  TimeStepper::solve(ode);
+  TimeStepper::solve(ode, s);
 
   end();
 }
-//-----------------------------------------------------------------------------
-void ODESolver::solveDual(ODE& ode, Function& u, Function& phi)
+//------------------------------------------------------------------------
+void ODESolver::solveDual(ODE& ode, ODESolution& u)
 { 
   begin("Solving dual problem");
-  
-  // FIXME: BROKEN
 
   // Create dual problem
   Dual dual(ode, u);
-  
-  // Initialize dual solution phi
-  phi.init(ode.size());
-  phi.rename("phi", "dual");
-  
+
+  dual.set("ODE solution file name", "solution_dual.py");
+  dual.set("ODE save final solution", true);
+
+
+  //create dummy objeect to hold the solution of the dual
+  ODESolution dual_solution(dual);
+
   // Solve dual problem
-  if ( get("ODE use new ode solver") )
-    TimeStepper::solve(ode);
-  else
-    TimeStepper::solve(dual, phi);
+  TimeStepper::solve(dual, dual_solution);
 
   end();
 }
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------
 
-*/
+

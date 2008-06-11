@@ -7,11 +7,12 @@
 #ifndef __ODE_SOLVER_H
 #define __ODE_SOLVER_H
 
-#include <dolfin/common/types.h>
+#include <dolfin/main/constants.h>
 
 namespace dolfin {
 
   class ODE;
+  class ODESolution;
 
   /// Solves a given ODE of the form
   ///
@@ -24,14 +25,15 @@ namespace dolfin {
   class ODESolver {
   public:
 
+     //solve ODE
     static void solve(ODE& ode);
-    //static void solve(ODE& ode, Function& u);
-    //static void solve(ODE& ode, Function& u, Function& phi);
+    //solve ODE and return ODESolution object
+    static void solve(ODE& ode, ODESolution& s); 
 
   private:
 
-    //static void solvePrimal(ODE& ode, Function& u);
-    //static void solveDual(ODE& ode, Function& u, Function& phi);
+    static void solvePrimal(ODE& ode, ODESolution& s);
+    static void solveDual(ODE& ode, ODESolution& u);
 
   };
 
