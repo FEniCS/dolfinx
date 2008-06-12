@@ -28,4 +28,4 @@ def sigma(v):
     return 2*mu*epsilon(v) + lmbda*mult(trace(epsilon(v)), Identity(len(v)))
 
 a = dot(grad(v), sigma(u))*dx
-L = dot(v, f)*dx
+#L = dot(v, f)*dx

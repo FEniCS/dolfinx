@@ -16,11 +16,11 @@ system = vector + scalar
 (v, q) = TestFunctions(system)
 (u, p) = TrialFunctions(system)
 
-f = Function(vector)
-h = Function(scalar)
+#f = Function(vector)
+h = Function(scalar, mesh, 1.0)
 
 beta  = 0.2
 delta = beta*h*h
 
 a = (dot(grad(v), grad(u)) - div(v)*p + q*div(u) + delta*dot(grad(q), grad(p)))*dx
-L = dot(v + mult(delta, grad(q)), f)*dx
+#L = dot(v + mult(delta, grad(q)), f)*dx
