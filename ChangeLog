@@ -1,10 +1,19 @@
- - Add MeshSize::min() for easy computation of smallest mesh size
+ - Add function normalize()
+ - Integration with VMTK for reading DOLFIN XML meshes produced by VMTK
+ - Extend mesh XML format to handle boundary indicators
+ - Add support for attaching arbitrarily named data to meshes
+ - Add support for dynamically choosing the linear algebra backend
+ - Add Epetra/Trilinos linear solvers
+ - Add setrow() to matrix interface
+ - Add new solver SingularSolver for solving singular (pressure) systems
+ - Add MeshSize::min(), max() for easy computation of smallest/largest mesh size
  - LinearSolver now handles all backends and linear solvers
  - Add access to normal in Function, useful for inflow boundary conditions
  - Remove GMRES and LU classes, use solve() instead
  - Improve solve() function, now handles both LU and Krylov + preconditioners
  - Add ALE mesh interpolation (moving mesh according to new boundary coordinates)
 0.7.3 [2008-04-30]
+ - Add support for Epetra/Trilinos
  - Bug fix for order of values in interpolate_vertex_values, now according to UFC
  - Boundary meshes are now always oriented with respect to outward facet normals
  - Improved linear algebra, both in C++ and Python

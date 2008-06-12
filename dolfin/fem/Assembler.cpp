@@ -5,7 +5,7 @@
 // Modified by Ola Skavhaug, 2007
 //
 // First added:  2007-01-17
-// Last changed: 2008-04-10
+// Last changed: 2008-06-10
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Array.h>
@@ -15,6 +15,7 @@
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Facet.h>
+#include <dolfin/mesh/MeshData.h>
 #include <dolfin/mesh/BoundaryMesh.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/SubDomain.h>
@@ -215,16 +216,16 @@ void Assembler::assembleExteriorFacets(GenericTensor& A,
   ufc::exterior_facet_integral* integral = ufc.exterior_facet_integrals[0];
 
   // Create boundary mesh
-  MeshFunction<uint> vertex_map;
-  MeshFunction<uint> cell_map;
-  BoundaryMesh boundary(mesh, vertex_map, cell_map);
-  
+  BoundaryMesh boundary(mesh);
+  MeshFunction<uint>* cell_map = boundary.data().meshFunction("cell map");
+  dolfin_assert(cell_map);
+
   // Assemble over exterior facets (the cells of the boundary)
   Progress p(progressMessage(A.rank(), "exterior facets"), boundary.numCells());
   for (CellIterator boundary_cell(boundary); !boundary_cell.end(); ++boundary_cell)
   {
     // Get mesh facet corresponding to boundary cell
-    Facet mesh_facet(mesh, cell_map(*boundary_cell));
+    Facet mesh_facet(mesh, (*cell_map)(*boundary_cell));
 
     // Get integral for sub domain (if any)
     if (domains && domains->size() > 0)
@@ -256,7 +257,7 @@ void Assembler::assembleExteriorFacets(GenericTensor& A,
 
     // Tabulate exterior facet tensor
     integral->tabulate_tensor(ufc.A, ufc.w, ufc.cell, local_facet);
-
+    
     // Add entries to global tensor
     A.add(ufc.A, ufc.local_dimensions, ufc.dofs);
 
@@ -331,7 +332,7 @@ void Assembler::assembleInteriorFacets(GenericTensor& A,
     }
 
     // Tabulate exterior interior facet tensor on macro element
-    ufc.interior_facet_integrals[0]->tabulate_tensor(ufc.macro_A, ufc.macro_w, ufc.cell0, ufc.cell1, facet0, facet1);
+    integral->tabulate_tensor(ufc.macro_A, ufc.macro_w, ufc.cell0, ufc.cell1, facet0, facet1);
 
     // Add entries to global tensor
     A.add(ufc.macro_A, ufc.macro_local_dimensions, ufc.macro_dofs);

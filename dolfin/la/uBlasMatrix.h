@@ -7,7 +7,7 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2006-07-05
-// Last changed: 2008-05-15
+// Last changed: 2008-05-18
 
 #ifndef __UBLAS_MATRIX_H
 #define __UBLAS_MATRIX_H
@@ -21,6 +21,7 @@
 #include "LinearAlgebraFactory.h"
 #include "SparsityPattern.h"
 #include "ublas.h"
+#include "uBlasFactory.h"
 #include "uBlasVector.h"
 #include "uBlasLUSolver.h"
 #include "GenericMatrix.h"
@@ -28,7 +29,10 @@
 namespace dolfin
 {
 
+  // Forward declarations
   class uBlasVector;
+  template< class T> class uBlasFactory;
+
   namespace ublas = boost::numeric::ublas;
 
   /// This class provides a simple matrix class based on uBLAS.
@@ -125,7 +129,8 @@ namespace dolfin
     //--- Special functions ---
 
     /// Return linear algebra backend factory
-    virtual LinearAlgebraFactory& factory() const;
+    virtual LinearAlgebraFactory& factory() const
+    { return uBlasFactory<Mat>::instance(); }
 
     //--- Special uBLAS functions ---
     

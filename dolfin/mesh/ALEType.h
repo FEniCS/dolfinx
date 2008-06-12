@@ -2,16 +2,16 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-05-02
-// Last changed: 2008-05-02
+// Last changed: 2008-05-28
 
-#ifndef __ALE_METHOD_H
-#define __ALE_METHOD_H
+#ifndef __ALE_TYPE_H
+#define __ALE_TYPE_H
 
 namespace dolfin
 {
 
   /// List of available methods for ALE mesh movement
-  enum ALEMethod {lagrange, hermite, harmonic, elastic};
+  enum ALEType {lagrange, hermite, harmonic, elastic};
 
 }
 

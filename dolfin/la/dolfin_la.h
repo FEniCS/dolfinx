@@ -5,8 +5,10 @@
 
 // Note that the order is important!
 
-#include <dolfin/la/default_la_types.h>
 #include <dolfin/la/VectorNormType.h>
+#include <dolfin/la/NormalizationType.h>
+#include <dolfin/la/SolverType.h>
+#include <dolfin/la/PreconditionerType.h>
 #include <dolfin/la/GenericTensor.h>
 #include <dolfin/la/GenericMatrix.h>
 #include <dolfin/la/GenericVector.h>
@@ -14,17 +16,18 @@
 #include <dolfin/la/uBlasMatrix.h>
 #include <dolfin/la/PETScMatrix.h>
 #include <dolfin/la/EpetraMatrix.h>
+#include <dolfin/la/AssemblyMatrix.h>
 #include <dolfin/la/uBlasVector.h>
 #include <dolfin/la/PETScVector.h>
 #include <dolfin/la/EpetraVector.h>
 #include <dolfin/la/GenericSparsityPattern.h>
 #include <dolfin/la/SparsityPattern.h>
 #include <dolfin/la/LinearAlgebraFactory.h>
+#include <dolfin/la/DefaultFactory.h>
 #include <dolfin/la/uBlasFactory.h>
 #include <dolfin/la/PETScFactory.h>
 #include <dolfin/la/EpetraFactory.h>
-#include <dolfin/la/SolverType.h>
-#include <dolfin/la/PreconditionerType.h>
+#include <dolfin/la/AssemblyFactory.h>
 #include <dolfin/la/PETScKrylovSolver.h>
 #include <dolfin/la/PETScLUSolver.h>
 #include <dolfin/la/SLEPcEigenvalueSolver.h>

@@ -94,6 +94,9 @@ real MonoAdaptiveNewtonSolver::iteration(real tol, uint iter, real d0, real d1)
     lu->solve(A.matrix(), dx, b);
   }
 
+  // Save norm of old solution
+  xnorm = ts.x.norm(linf);
+
   // Update solution x <- x + dx (note: b = -F)
   ts.x += dx;
   

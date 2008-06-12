@@ -5,7 +5,7 @@
 // Modified by Ola Skavhaug 2006.
 //
 // First added:  2006-06-21
-// Last changed: 2008-04-21
+// Last changed: 2008-05-28
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Array.h>
@@ -16,6 +16,7 @@
 #include "MeshEditor.h"
 #include "MeshTopology.h"
 #include "MeshGeometry.h"
+#include "MeshData.h"
 #include "BoundaryMesh.h"
 #include "BoundaryComputation.h"
 
@@ -24,27 +25,6 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 void BoundaryComputation::computeBoundary(Mesh& mesh, BoundaryMesh& boundary)
 {
-  computeBoundaryCommon(mesh, boundary, 0, 0);
-}
-//-----------------------------------------------------------------------------
-void BoundaryComputation::computeBoundary(Mesh& mesh, BoundaryMesh& boundary,
-                                          MeshFunction<uint>& vertex_map)
-{
-  computeBoundaryCommon(mesh, boundary, &vertex_map, 0);
-}
-//-----------------------------------------------------------------------------
-void BoundaryComputation::computeBoundary(Mesh& mesh, BoundaryMesh& boundary,
-                                          MeshFunction<uint>& vertex_map,
-                                          MeshFunction<uint>& cell_map)
-{
-  computeBoundaryCommon(mesh, boundary, &vertex_map, &cell_map);
-}
-//-----------------------------------------------------------------------------
-void BoundaryComputation::computeBoundaryCommon(Mesh& mesh,
-                                                BoundaryMesh& boundary,
-                                                MeshFunction<uint>* vertex_map,
-                                                MeshFunction<uint>* cell_map)
-{
   // We iterate over all facets in the mesh and check if they are on
   // the boundary. A facet is on the boundary if it is connected to
   // exactly one cell.
@@ -52,12 +32,13 @@ void BoundaryComputation::computeBoundaryCommon(Mesh& mesh,
   message(1, "Computing boundary mesh.");
 
   // Open boundary mesh for editing
+  const uint D = mesh.topology().dim();
   MeshEditor editor;
   editor.open(boundary, mesh.type().facetType(),
-	      mesh.topology().dim() - 1, mesh.geometry().dim());
+	      D - 1, mesh.geometry().dim());
 
   // Generate facet - cell connectivity if not generated
-  mesh.init(mesh.topology().dim() - 1, mesh.topology().dim());
+  mesh.init(D - 1, D);
 
   // Temporary array for assignment of indices to vertices on the boundary
   const uint num_vertices = mesh.numVertices();
@@ -70,7 +51,7 @@ void BoundaryComputation::computeBoundaryCommon(Mesh& mesh,
   for (FacetIterator f(mesh); !f.end(); ++f)
   {
     // Boundary facets are connected to exactly one cell
-    if (f->numEntities(mesh.topology().dim()) == 1)
+    if (f->numEntities(D) == 1)
     {
       // Count boundary vertices and assign indices
       for (VertexIterator v(*f); !v.end(); ++v)
@@ -89,12 +70,24 @@ void BoundaryComputation::computeBoundaryCommon(Mesh& mesh,
   editor.initVertices(num_boundary_vertices);
   editor.initCells(num_boundary_cells);
 
-  // Initialize the mappings from boundary to mesh if requested
-  if (vertex_map)
+  // Initialize mapping from vertices in boundary to vertices in mesh
+  MeshFunction<uint>* vertex_map = 0;
+  if (num_boundary_vertices > 0)
+  {
+    vertex_map = boundary.data().createMeshFunction("vertex map");
+    dolfin_assert(vertex_map);
     vertex_map->init(boundary, 0, num_boundary_vertices);
-  if (cell_map)
-    cell_map->init(boundary, mesh.topology().dim() - 1, num_boundary_cells);
-    
+  }
+  
+  // Initialize mapping from cells in boundary to facets in mesh
+  MeshFunction<uint>* cell_map = 0;
+  if (num_boundary_cells > 0)
+  {
+    cell_map = boundary.data().createMeshFunction("cell map");
+    dolfin_assert(cell_map);
+    cell_map->init(boundary, D - 1, num_boundary_cells);
+  }
+
   // Create vertices
   for (VertexIterator v(mesh); !v.end(); ++v)
   {
@@ -116,7 +109,7 @@ void BoundaryComputation::computeBoundaryCommon(Mesh& mesh,
   for (FacetIterator f(mesh); !f.end(); ++f)
   {
     // Boundary facets are connected to exactly one cell
-    if (f->numEntities(mesh.topology().dim()) == 1)
+    if (f->numEntities(D) == 1)
     {
       // Compute new vertex numbers for cell
       uint* vertices = f->entities(0);

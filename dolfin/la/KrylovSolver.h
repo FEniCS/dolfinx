@@ -17,6 +17,7 @@
 #include "uBlasSparseMatrix.h"
 #include "uBlasDenseMatrix.h"
 #include "PETScKrylovSolver.h"
+#include "EpetraKrylovSolver.h"
 #include "SolverType.h"
 #include "PreconditionerType.h"
 
@@ -32,13 +33,14 @@ namespace dolfin
     
     /// Create Krylov solver
     KrylovSolver(SolverType solver_type=default_solver, PreconditionerType pc_type=default_pc)
-      : solver_type(solver_type), pc_type(pc_type), ublas_solver(0), petsc_solver(0) {}
+      : solver_type(solver_type), pc_type(pc_type), ublas_solver(0), petsc_solver(0), epetra_solver(0) {}
     
     /// Destructor
     ~KrylovSolver()
     {
       delete ublas_solver; 
       delete petsc_solver; 
+      delete epetra_solver; 
     }
     
     /// Solve linear system Ax = b
@@ -75,6 +77,17 @@ namespace dolfin
         return petsc_solver->solve(A.down_cast<PETScMatrix >(), x.down_cast<PETScVector>(), b.down_cast<PETScVector>());
       }
 #endif
+#ifdef HAS_TRILINOS
+      if (A.has_type<EpetraMatrix>())
+      {
+        if (!epetra_solver)
+        {
+          epetra_solver = new EpetraKrylovSolver(solver_type, pc_type);
+          epetra_solver->set("parent", *this);
+        }
+        return epetra_solver->solve(A.down_cast<EpetraMatrix >(), x.down_cast<EpetraVector>(), b.down_cast<EpetraVector>());
+      }
+#endif
 
       error("No default LU solver for given backend");
       return 0;
@@ -97,9 +110,12 @@ namespace dolfin
 #else
     int* petsc_solver;
 #endif
-    
+ #ifdef HAS_TRILINOS
+    EpetraKrylovSolver* epetra_solver;
+#else
+    int* epetra_solver;
+#endif
   };
-
 }
 
 #endif

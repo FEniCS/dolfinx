@@ -1,58 +1,69 @@
-// Copyright (C) 2006 Anders Logg.
+// Copyright (C) 2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// First added:  2006-05-08
-// Last changed: 2006-11-30
+// First added:  2008-05-19
+// Last changed: 2008-05-28
 
 #ifndef __MESH_DATA_H
 #define __MESH_DATA_H
 
-#include "MeshTopology.h"
-#include "MeshGeometry.h"
-#include "CellType.h"
+#include <map>
+
+#include <dolfin/common/types.h>
+#include <dolfin/common/Array.h>
+#include "MeshFunction.h"
 
 namespace dolfin
 {
 
-  /// The class MeshData is a container for mesh data, including
-  /// topology (mesh entities and connectivity) and geometry.
+  class Mesh;
+
+  /// The class MeshData is a container for auxiliary mesh data,
+  /// represented either as MeshFunctions over topological mesh
+  /// entities or Arrays. Each dataset is identified by a unique
+  /// user-specified string.
   ///
-  /// For parallel meshes, each processor stores the local mesh
-  /// data in a local MeshData object.
-  
+  /// Currently, only uint-valued data is supported.
+
   class MeshData
   {
   public:
     
-    /// Create empty mesh data
-    MeshData();
+    /// Constructor
+    MeshData(Mesh& mesh);
 
-    /// Copy constructor
-    MeshData(const MeshData& data);
-    
     /// Destructor
     ~MeshData();
-
-    /// Assignment
-    const MeshData& operator= (const MeshData& data);
 
     /// Clear all data
     void clear();
 
+    /// Create MeshFunction with given name (uninitialized)
+    MeshFunction<uint>* createMeshFunction(std::string name);
+
+    /// Create Array with given name and size
+    Array<uint>* createArray(std::string name, uint size);
+    
+    /// Return MeshFunction with given name (returning zero if data is not available)
+    MeshFunction<uint>* meshFunction(std::string name);
+
+    /// Return Array with given name (returning zero if data is not available)
+    Array<uint>* array(std::string name);
+
     /// Display data
     void disp() const;
 
-    // Mesh topology
-    MeshTopology topology;
-
-    // Mesh geometry
-    MeshGeometry geometry;
-
-    // Cell type
-    CellType* cell_type;
-    
   private:
-    friend class MPIMeshCommunicator;
+
+    // The mesh
+    Mesh& mesh;
+
+    // A map from named mesh data to MeshFunctions
+    std::map<std::string, MeshFunction<uint>*> meshfunctions;
+
+    // A map from named mesh data to Arrays
+    std::map<std::string, Array<uint>*> arrays;
+
   };
 
 }

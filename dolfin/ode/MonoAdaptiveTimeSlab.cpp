@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005-01-28
-// Last changed: 2008-04-22
+// Last changed: 2008-06-11
 
 #include <string>
 #include <dolfin/common/constants.h>
@@ -123,14 +123,11 @@ bool MonoAdaptiveTimeSlab::check(bool first)
   return adaptivity.accept();
 }
 //-----------------------------------------------------------------------------
-bool MonoAdaptiveTimeSlab::shift()
+bool MonoAdaptiveTimeSlab::shift(bool end)
 {
   // Compute offsets
   const uint xoffset = (method->nsize() - 1) * N;
   const uint foffset = (method->qsize() - 1) * N;
-
-  // Check if we reached the end time
-  const bool end = (_b + DOLFIN_EPS) > ode.T;
 
   // Write solution at final time if we should
   if ( save_final && end )

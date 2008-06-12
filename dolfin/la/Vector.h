@@ -7,12 +7,13 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2007-07-03
-// Last changed: 2008-04-29
+// Last changed: 2008-05-17
 
 #ifndef __VECTOR_H
 #define __VECTOR_H
 
-#include "default_la_types.h"
+#include <dolfin/common/Variable.h>
+#include "DefaultFactory.h"
 #include "GenericVector.h"
 
 namespace dolfin
@@ -26,14 +27,12 @@ namespace dolfin
   public:
 
     /// Create empty vector
-    Vector() : Variable("x", "DOLFIN vector"),
-               vector(new DefaultVector())
-    {}
-    
+    Vector() : Variable("x", "DOLFIN vector"), vector(0)
+    { DefaultFactory factory; vector = factory.createVector(); }
+
     /// Create vector of size N
-    explicit Vector(uint N) : Variable("x", "DOLFIN vector"),
-                              vector(new DefaultVector(N))
-    {}
+    explicit Vector(uint N) : Variable("x", "DOLFIN vector"), vector(0)
+    { DefaultFactory factory; vector = factory.createVector(); vector->init(N); }
 
     /// Copy constructor
     explicit Vector(const Vector& x) : Variable("x", "DOLFIN vector"),

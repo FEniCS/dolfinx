@@ -93,6 +93,7 @@ options = [
     #("CXX", "Set C++ compiler", scons.defaultCxxCompiler()),
     #("FORTRAN", "Set FORTRAN compiler",scons.defaultFortranCompiler()),
     ("customCxxFlags", "Customize compilation of C++ code", ""),
+    ("customLinkFlags", "Customize linking of C++ code", ""),
     #("data", "Parameter to the 'fetch' target: comma-delimited list of directories/files to fetch, \
     #        relative to the `data' directory. An empty value means that everything will be fetched.", ""),
     #("sshUser", "Specify the user for the SSH connection used to retrieve data files", ""),
@@ -162,6 +163,16 @@ if env["enableProjectionLibrary"]:
 if env["customCxxFlags"]:
   env.Append(CXXFLAGS=" " + env["customCxxFlags"])
 
+# Append custom linker flags
+if env["customLinkFlags"]:
+  env.Append(LINKFLAGS=" " + env["customLinkFlags"])
+
+# Look for custom compiler and linker flags in os.environ
+if os.environ.has_key("CXXFLAGS"):
+  env.Append(CXXFLAGS=" %s" % os.environ["CXXFLAGS"])
+if os.environ.has_key("LINKFLAGS"):
+  env.Append(LINKFLAGS=" %s" % os.environ["LINKFLAGS"])
+
 # Determine which compiler to be used:
 cxx_compilers = ["c++", "g++", "CC"]
 # Use CXX from os.environ if available:
@@ -179,7 +190,7 @@ if env["enableMpi"]:
   # CXX=/path/to/mpi_cxx_compiler  - OK (use os.path.basename)
   # CXX="ccache cxx_compiler"      - OK (use mpi_cxx.split()[-1])
   # FIXME: Any other cases?
-  if not env.Detect("mpirun") or not \
+  if not env.Detect(["mpirun", "mpiexec", "orterun"]) or not \
          (mpi_cxx and \
           os.path.basename(mpi_cxx.split()[-1]) in mpi_cxx_compilers):
     print "MPI not found (might not work if PETSc uses MPI)."

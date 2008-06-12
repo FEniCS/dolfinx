@@ -89,7 +89,7 @@ namespace dolfin
 
     /// Return a factory for the default linear algebra backend
     inline LinearAlgebraFactory& factory() const 
-    { return dolfin::uBlasFactory::instance(); }
+    { return dolfin::uBlasFactory<>::instance(); }
 
     /// Get value
     real getval() const

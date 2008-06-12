@@ -4,15 +4,14 @@
 // Modified by Andy R. Terrel, 2005.
 //
 // First added:  2005-01-17
-// Last changed: 2006-05-15
+// Last changed: 2006-05-17
 
 #ifdef HAS_PETSC
 
 #include <iostream>
 
 #include <dolfin/log/dolfin_log.h>
-#include "Vector.h"
-#include "Matrix.h"
+#include "PETScVector.h"
 #include "PETScKrylovMatrix.h"
 
 using namespace dolfin;

@@ -13,22 +13,25 @@
 
 using namespace dolfin;
 
+//-----------------------------------------------------------------------------
 SparsityPattern* PETScFactory::createPattern() const 
 {
   return new SparsityPattern(); 
 }
-
+//-----------------------------------------------------------------------------
 PETScMatrix* PETScFactory::createMatrix() const 
 { 
   PETScMatrix* pm = new PETScMatrix();
   return pm;
 }
-
+//-----------------------------------------------------------------------------
 PETScVector* PETScFactory:: createVector() const 
 { 
   return new PETScVector(); 
 }
+//-----------------------------------------------------------------------------
 
-PETScFactory PETScFactory::petscfactory;
+// Singleton instance
+PETScFactory PETScFactory::factory;
 
 #endif

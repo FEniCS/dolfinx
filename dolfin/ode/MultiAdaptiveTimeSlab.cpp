@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells
 //
 // First added:  2005-01-27
-// Last changed: 2008-04-22
+// Last changed: 2008-06-11
 
 #include <string>
 #include <algorithm>
@@ -133,11 +133,8 @@ bool MultiAdaptiveTimeSlab::check(bool first)
   return adaptivity.accept();
 }
 //-----------------------------------------------------------------------------
-bool MultiAdaptiveTimeSlab::shift()
+bool MultiAdaptiveTimeSlab::shift(bool end)
 {
-  // Check if we reached the end time
-  const bool end = (_b + DOLFIN_EPS) > ode.T;
-
   // Cover end time
   coverTime(_b);
 

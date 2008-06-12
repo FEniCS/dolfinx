@@ -2,14 +2,15 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-05-02
-// Last changed: 2008-05-05
+// Last changed: 2008-05-28
 
 #ifndef __ALE_H
 #define __ALE_H
 
 #include <dolfin/common/types.h>
 #include "MeshFunction.h"
-#include "ALEMethod.h"
+#include "Facet.h"
+#include "ALEType.h"
 
 namespace dolfin
 {
@@ -28,15 +29,14 @@ namespace dolfin
 
     /// Move coordinates of mesh according to new boundary coordinates
     static void move(Mesh& mesh, Mesh& new_boundary,
-                     const MeshFunction<uint>& vertex_map,
-                     ALEMethod type = lagrange);
+                     ALEType type=lagrange);
     
   private:
     
     // Transfinite meanvalue interpolation
     static void meanValue(real* new_x, uint dim, Mesh& new_boundary,
                           Mesh& mesh, const MeshFunction<uint>& vertex_map,
-                          Vertex& vertex);
+                          Vertex& vertex, real** ghat, ALEType type);
 
     // Compute weights for transfinite meanvalue interpolation
     static void computeWeights2D(real* w, real** u, real* d,
@@ -45,6 +45,19 @@ namespace dolfin
     // Compute weights for transfinite meanvalue interpolation
     static void computeWeights3D(real* w, real** u, real* d,
                                  uint dim, uint num_vertices);
+
+    static void normals(real ** dfdn, uint dim, Mesh& new_boundary,
+			Mesh& mesh, const MeshFunction<uint>& vertex_map, 
+			const MeshFunction<uint>& cell_map);
+
+    static void hermiteFunction(real ** ghat, uint dim, Mesh& new_boundary,
+				Mesh& mesh, 
+				const MeshFunction<uint>& vertex_map, 
+				const MeshFunction<uint>& cell_map);
+    static void integral(real* new_x, uint dim, Mesh& new_boundary,
+                    Mesh& mesh, const MeshFunction<uint>& vertex_map,
+			 Vertex& vertex);
+
 
     // Return sign
     inline static real sgn(real v)
@@ -65,6 +78,8 @@ namespace dolfin
     // Return distance
     static real dist(const real* x, const real* y, uint dim);
 
+    // Return length
+    static real length(const real* x, uint dim);
   };
 
 }

@@ -86,6 +86,11 @@ real MonoAdaptiveFixedPointSolver::iteration(real tol, uint iter,
   const uint xoffset = (method.nsize() - 1) * ts.N;
   ts.copy(ts.x, xoffset, xold, 0, ts.N);
 
+  // Save norm of old solution
+  xnorm = 0.0;
+  for (uint j = 0; j < ts.nj; j++)
+    xnorm = std::max(xnorm, std::abs(ts.x[j]));
+
   // Evaluate right-hand side at all quadrature points
   for (uint m = 0; m < method.qsize(); m++)
     ts.feval(m);

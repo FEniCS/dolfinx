@@ -9,6 +9,7 @@
 
 #include <dolfin/common/types.h>
 #include <dolfin/io/File.h>
+#include "ODESolution.h"
 
 namespace dolfin
 {
@@ -39,13 +40,13 @@ namespace dolfin
   public:
 
     /// Constructor
-    TimeStepper(ODE& ode);
+    TimeStepper(ODE& ode, ODESolution& s);
 
     /// Destructor
     ~TimeStepper();
     
-    /// Solve given ODE
-    static void solve(ODE& ode);
+    /// Solve given ODE and store solution in ODESolution object
+    static void solve(ODE& ode, ODESolution& s);
 
     /// Step solution, return current time
     real step();
@@ -81,12 +82,14 @@ namespace dolfin
     // The ODE being solved
     ODE& ode;
 
+    ODESolution& solution;
+
     // The time slab
     TimeSlab* timeslab;
 
     // Storing the computed solution
     File file;
-    
+
     // Progress bar
     Progress p;
 

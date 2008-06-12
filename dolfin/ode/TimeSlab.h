@@ -1,8 +1,8 @@
-// Copyright (C) 2005 Anders Logg.
+// Copyright (C) 2005-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005-05-02
-// Last changed: 2006-08-21
+// Last changed: 2008-06-11
 
 #ifndef __TIME_SLAB_H
 #define __TIME_SLAB_H
@@ -40,7 +40,7 @@ namespace dolfin
     virtual bool check(bool first) = 0;
 
     /// Shift time slab (prepare for next time slab)
-    virtual bool shift() = 0;
+    virtual bool shift(bool end) = 0;
 
     /// Prepare sample at time t
     virtual void sample(real t) = 0;
