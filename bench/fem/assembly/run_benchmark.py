@@ -3,6 +3,10 @@ __date__ = "2008-06-04"
 __copyright__ = "Copyright (C) 2007 Ilmar Wilbers"
 __license__  = "GNU LGPL Version 2.1"
 
+# Be careful to first run the benchmark once in order for
+# the Python extensions to be created, or else the timings
+# will not be correct.
+
 from dolfin import *
 from time import time
 import sys
