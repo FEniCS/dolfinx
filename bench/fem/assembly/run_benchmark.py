@@ -3,23 +3,28 @@ __date__ = "2008-06-04"
 __copyright__ = "Copyright (C) 2007 Ilmar Wilbers"
 __license__  = "GNU LGPL Version 2.1"
 
+# Be careful to first run the benchmark once in order for
+# the Python extensions to be created, or else the timings
+# will not be correct.
+
 from dolfin import *
 from time import time
 import sys
 
-def make_form(name):
-    execfile(name + ".form", globals())
+def make_form(name, mesh):
+    globals()['mesh'] = mesh
+    execfile(name + '.form', globals())
     try:
         return a
     except:
         print "No object 'a' to return in file %s.form" %name
         return None
 
-def bench_form(form, mesh, nr_reasm=1, coeffs=[]):
+def bench_form(form, mesh, nr_reasm=1):
     totaltime = 0.0
     for i in range(nr_reasm):
         t0 = time()
-        A = assemble(form, mesh, coefficients=coeffs)
+        A = assemble(form, mesh)
         totaltime = time() - t0
     return totaltime/float(nr_reasm)
 
@@ -81,13 +86,13 @@ backends = ["uBLAS", "PETSc", "Epetra", "Assembly"]
 # forms consist of name of the form (same as file)
 # and a list of arguments to assembler (given to the constructor in cpp)
 # as a tuple.
-forms = [("Elasticity3D", None),
-         ("PoissonP1", None),
-         ("PoissonP2", None),
-         ("PoissonP3", None),
-         ("THStokes2D", None),
-#         ("NSEMomentum3D", [1., 1., 1., 1., 1.]),
-#         ("StabStokes2D", [1.]),
+forms = ["Elasticity3D",
+         "PoissonP1", 
+         "PoissonP2", 
+         "PoissonP3", 
+         "THStokes2D",
+         "NSEMomentum3D",
+         "StabStokes2D",
          ]
 results = {}
 for i in range(len(backends)):
@@ -95,12 +100,11 @@ for i in range(len(backends)):
     dolfin_set("linear algebra backend", backends[i])
     for j in range(len(forms)):
         form = forms[j]
-        dim = 2 if not form[0].find("3D") > -1 else 3
-        a = make_form(form[0])
-        m = make_mesh(form[0], dim)
-        print "Assembling %s with %s" %(form[0], backend)
-        results[(i, j)] = (backend, form[0], bench_form(a, m,
-                                                        nr_reasm=num_reasm,
-                                                        coeffs=form[1]))
+        dim = 2 if not form.find("3D") > -1 else 3
+        m = make_mesh(form, dim)
+        a = make_form(form, m)
+        print "Assembling %s with %s" %(form, backend)
+        results[(i, j)] = (backend, form, bench_form(a, m,
+                                                     nr_reasm=num_reasm))
 
 print_table(results, "Backend/Form")
