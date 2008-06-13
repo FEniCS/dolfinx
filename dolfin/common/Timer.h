@@ -1,0 +1,60 @@
+// Copyright (C) 2008 Anders Logg.
+// Licensed under the GNU LGPL Version 2.1.
+//
+// First added:  2008-06-13
+// Last changed: 2008-06-13
+
+#ifndef __TIMER_H
+#define __TIMER_H
+
+#include <dolfin/log/LogManager.h>
+#include "timing.h"
+
+namespace dolfin
+{
+
+  /// A timer can be used for timing tasks. The basic usage is
+  ///
+  ///   Timer timer("Assembling over cells");
+  ///
+  /// The timer is started at construction and timing ends
+  /// when the timer is destroyed (goes out of scope). It is
+  /// also possible to start and stop a timer explicitly by
+  ///
+  ///   timer.start();
+  ///   timer.stop();
+  ///
+  /// Timings are stored globally and a summary may be printed
+  /// by calling
+  ///
+  ///   summary();
+
+  class Timer
+  {
+  public:
+
+    /// Create timer
+    Timer(std::string task) : task(task), t(time()) {}
+
+    /// Destructor
+    ~Timer() { stop(); }
+
+    /// Start timer
+    inline void start() { t = time(); }
+    
+    /// Stop timer
+    void stop() { LogManager::logger.timing(task, time() - t); }
+
+  private:
+
+    // Name of task
+    std::string task;
+
+    // Start time
+    real t;
+
+  };
+
+}
+
+#endif
