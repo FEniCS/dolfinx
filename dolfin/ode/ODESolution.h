@@ -17,7 +17,6 @@ namespace dolfin
   public :
     
     ODESolution(ODE& ode);
-    ODESolution();
     ~ODESolution();
     
     void eval(const real t, uBlasVector& y);

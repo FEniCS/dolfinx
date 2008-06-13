@@ -1,4 +1,4 @@
-// Copyright (C) 2003-2007 Anders Logg.
+// Copyright (C) 2003-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Thanks to Jim Tilander for many helpful hints.
@@ -6,13 +6,14 @@
 // Modified by Ola Skavhaug, 2007.
 //
 // First added:  2003-03-13
-// Last changed: 2007-05-14
+// Last changed: 2008-06-13
 
 #ifndef __LOGGER_H
 #define __LOGGER_H
 
 #include <string>
 #include <ostream>
+#include <map>
 #include <dolfin/common/types.h>
 
 namespace dolfin
@@ -58,6 +59,12 @@ namespace dolfin
     /// Set debug level
     inline int getDebugLevel() { return debug_level; }
 
+    /// Register timing (for later summary)
+    void timing(std::string task, real elapsed_time);
+
+    /// Print summary of timings and tasks
+    void summary();
+
     /// Helper function for dolfin_debug macro
     void __debug(std::string msg);
 
@@ -79,7 +86,11 @@ namespace dolfin
     // Current indentation level
     int indentation_level;
 
+    // Optional stream for logging
     std::ostream* logstream;
+
+    // List of timings for tasks, map from string to (num_timings, total_time)
+    std::map<std::string, std::pair<uint, real> > timings;
 
   };
 

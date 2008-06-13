@@ -18,6 +18,8 @@
 
 using namespace dolfin;
 
+typedef std::map<std::string, std::pair<dolfin::uint, real> >::iterator map_iterator;
+
 //-----------------------------------------------------------------------------
 Logger::Logger()
   : destination(terminal), debug_level(0), indentation_level(0), logstream(0)
@@ -52,6 +54,7 @@ void Logger::error(std::string msg)
 //-----------------------------------------------------------------------------
 void Logger::begin(std::string msg, int debug_level)
 {
+  // Write a message
   message(msg, debug_level);
   indentation_level++;
 }
@@ -114,12 +117,55 @@ void Logger::setOutputDestination(std::string destination)
 void Logger::setOutputDestination(std::ostream& ostream)
 {
    logstream = &ostream;
-    this->destination = stream;
+   this->destination = stream;
 }
 //-----------------------------------------------------------------------------
 void Logger::setDebugLevel(int debug_level)
 {
   this->debug_level = debug_level;
+}
+//-----------------------------------------------------------------------------
+void Logger::timing(std::string task, real elapsed_time)
+{
+  // Print a message
+  std::stringstream line;
+  line << "Elapsed time: " << elapsed_time << " (" << task << ")";
+  message(line.str());
+
+  // Store values for summary
+  map_iterator it = timings.find(task);
+  if (it == timings.end())
+  {
+    std::pair<uint, real> timing(1, elapsed_time);
+    timings[task] = timing;
+  }
+  else
+  {
+    it->second.first += 1;
+    it->second.second += elapsed_time;
+  }
+}
+//-----------------------------------------------------------------------------
+void Logger::summary()
+{
+  if (timings.size() == 0)
+  {
+    message("Summary: no timings to report.");
+    return;
+  }
+
+  message("Summary of timings:");
+  for (map_iterator it = timings.begin(); it != timings.end(); ++it)
+  {
+    const std::string task  = it->first;
+    const uint num_timings  = it->second.first;
+    const real total_time   = it->second.second;
+    const real average_time = total_time / static_cast<real>(num_timings);
+
+    std::stringstream line;
+    line << "  " << task << ": " << total_time << " " << average_time << " " << num_timings;
+    message(line.str());
+  }
 }
 //-----------------------------------------------------------------------------
 void Logger::__debug(std::string msg)

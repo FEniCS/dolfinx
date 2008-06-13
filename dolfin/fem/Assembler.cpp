@@ -5,10 +5,11 @@
 // Modified by Ola Skavhaug, 2007
 //
 // First added:  2007-01-17
-// Last changed: 2008-06-10
+// Last changed: 2008-06-13
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Array.h>
+#include <dolfin/common/Timer.h>
 #include <dolfin/la/GenericTensor.h>
 #include <dolfin/la/Scalar.h>
 #include <dolfin/la/SparsityPattern.h>
@@ -157,6 +158,8 @@ void Assembler::assembleCells(GenericTensor& A,
                               UFC& ufc,
                               const MeshFunction<uint>* domains) const
 {
+  Timer timer("Assembly over cells");
+
   // Skip assembly if there are no cell integrals
   if (ufc.form.num_cell_integrals() == 0)
     return;

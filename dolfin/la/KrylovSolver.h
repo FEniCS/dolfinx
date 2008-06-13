@@ -5,12 +5,13 @@
 // Modified by Anders Logg, 2008.
 //
 // First added:  2007-07-03
-// Last changed: 2008-05-09
+// Last changed: 2008-06-13
 
 #ifndef __KRYLOV_SOLVER_H
 #define __KRYLOV_SOLVER_H
 
 #include <dolfin/parameter/Parametrized.h>
+#include <dolfin/common/Timer.h>
 #include "GenericMatrix.h"
 #include "GenericVector.h"
 #include "uBlasKrylovSolver.h"
@@ -46,6 +47,8 @@ namespace dolfin
     /// Solve linear system Ax = b
     uint solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b)
     { 
+      Timer timer("Krylov solver");
+
       if (A.has_type<uBlasSparseMatrix>())
       {
         if (!ublas_solver)

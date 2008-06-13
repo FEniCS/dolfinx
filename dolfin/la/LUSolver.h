@@ -7,12 +7,13 @@
 // Modified by Kent-Andre Mardal, 2008.
 //
 // First added:  2007-07-03
-// Last changed: 2008-05-10
+// Last changed: 2008-06-13
 
 #ifndef __LU_SOLVER_H
 #define __LU_SOLVER_H
 
 #include <dolfin/parameter/Parametrized.h>
+#include <dolfin/common/Timer.h>
 #include "GenericMatrix.h"
 #include "GenericVector.h"
 #include "uBlasLUSolver.h"
@@ -43,7 +44,9 @@ namespace dolfin
     }
     
     uint solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b)
-    { 
+    {
+      Timer timer("LU solver");
+
       if (A.has_type<uBlasSparseMatrix>()) 
       {
         if (!ublas_solver)

@@ -4,8 +4,9 @@
 // Modified by Ola Skavhaug 2008.
 //
 // First added:  2007-04-30
-// Last changed: 2008-05-23
+// Last changed: 2008-06-13
 
+#include <dolfin/common/Timer.h>
 #include "LinearSolver.h"
 #include "GenericMatrix.h"
 #include "GenericVector.h"
@@ -18,6 +19,7 @@ using namespace dolfin;
 void dolfin::solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b,
                    SolverType solver_type, PreconditionerType pc_type)
 {
+  Timer timer("Solving linear system");
   LinearSolver solver(solver_type, pc_type);
   solver.solve(A, x, b);
 }

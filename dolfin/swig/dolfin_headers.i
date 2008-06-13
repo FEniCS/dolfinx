@@ -10,6 +10,7 @@
 %include "dolfin/common/Array.h"
 %include "dolfin/common/List.h"
 %include "dolfin/common/simple_array.h"
+%include "dolfin/common/Timer.h"
 %include "dolfin/common/TimeDependent.h"
 %include "dolfin/common/Variable.h"
 
@@ -153,6 +154,7 @@
 %include "dolfin/ode/Method.h"
 %include "dolfin/ode/cGqMethod.h"
 %include "dolfin/ode/dGqMethod.h"
+%include "dolfin/ode/ODESolution.h"
 
 // DOLFIN headers included from pde
 %include "dolfin/pde/LinearPDE.h"

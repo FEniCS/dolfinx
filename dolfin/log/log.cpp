@@ -1,4 +1,4 @@
-// Copyright (C) 2003-2007 Anders Logg.
+// Copyright (C) 2003-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Thanks to Jim Tilander for many helpful hints.
@@ -6,7 +6,7 @@
 // Modified by Ola Skavhaug, 2007.
 //
 // First added:  2003-03-13
-// Last changed: 2007-05-15
+// Last changed: 2008-06-13
 
 #include <stdarg.h>
 #include <stdio.h>
@@ -68,6 +68,11 @@ void dolfin::begin(int debug_level, std::string msg, ...)
 void dolfin::end()
 {
   LogManager::logger.end();
+}
+//-----------------------------------------------------------------------------
+void dolfin::summary()
+{
+  LogManager::logger.summary();
 }
 //-----------------------------------------------------------------------------
 void dolfin::__debug(std::string file, unsigned long line,
