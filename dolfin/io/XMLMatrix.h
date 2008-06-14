@@ -1,12 +1,13 @@
-// Copyright (C) 2003-2006 Anders Logg.
+// Copyright (C) 2003-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2003-07-15
-// Last changed: 2006-05-07
+// Last changed: 2008-06-14
 
 #ifndef __XML_MATRIX_H
 #define __XML_MATRIX_H
 
+#include <dolfin/common/Array.h>
 #include <dolfin/la/GenericMatrix.h>
 #include "XMLObject.h"
 
@@ -29,11 +30,16 @@ namespace dolfin
     void readMatrix  (const xmlChar *name, const xmlChar **attrs);
     void readRow     (const xmlChar *name, const xmlChar **attrs);
     void readEntry   (const xmlChar *name, const xmlChar **attrs);
+
+    void setRow();
     
     GenericMatrix& A;
-    int row;
-    
     ParserState state;
+
+    // Data for row
+    uint row;
+    Array<uint> columns;
+    Array<real> values;
     
   };
   

@@ -1,3 +1,4 @@
+ - Fix input of matrix data from XML
  - Add function normalize()
  - Integration with VMTK for reading DOLFIN XML meshes produced by VMTK
  - Extend mesh XML format to handle boundary indicators
