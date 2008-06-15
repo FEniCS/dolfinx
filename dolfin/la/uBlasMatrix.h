@@ -5,6 +5,7 @@
 // Modified by Ola Skavhaug, 2007-2008.
 // Modified by Kent-Andre Mardal, 2008.
 // Modified by Martin Sandve Alnes, 2008.
+// Modified by Dag Lindbo, 2008
 //
 // First added:  2006-07-05
 // Last changed: 2008-05-18
@@ -106,7 +107,7 @@ namespace dolfin
     virtual void getrow(uint row, Array<uint>& columns, Array<real>& values) const;
 
     /// Set values for given row
-    virtual void setrow(uint row, const Array<uint>& columns, const Array<real>& values);
+    virtual void setrow(uint row_idx, const Array<uint>& columns, const Array<real>& values);
 
     /// Set given rows to zero
     virtual void zero(uint m, const uint* rows);
@@ -238,9 +239,14 @@ namespace dolfin
   }
   //-----------------------------------------------------------------------------
   template <class Mat>
-  void uBlasMatrix<Mat>::setrow(uint row, const Array<uint>& columns, const Array<real>& values)
+  void uBlasMatrix<Mat>::setrow(uint row_idx, const Array<uint>& columns, const Array<real>& values)
   {
-    error("Not implemented.");
+    dolfin_assert(columns.size() == values.size());
+
+    ublas::matrix_row<Mat> row(A,row_idx);
+    row *= 0; 
+    for(uint i=0; i<columns.size(); i++)
+      row(columns[i])=values[i];	
   }
   //-----------------------------------------------------------------------------
   template <class Mat>
