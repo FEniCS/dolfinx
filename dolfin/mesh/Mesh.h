@@ -6,7 +6,7 @@
 // Modified by Garth N. Wells 2007.
 //
 // First added:  2006-05-08
-// Last changed: 2008-05-28
+// Last changed: 2008-06-17
 
 #ifndef __MESH_H
 #define __MESH_H
@@ -137,6 +137,9 @@ namespace dolfin
     /// Order all mesh entities (not needed if "mesh order entities" is set)
     void order();
 
+    /// Return true iff topology is ordered according to the UFC numbering
+    bool ordered() const;
+
     /// Refine mesh uniformly
     void refine();
 
@@ -174,6 +177,8 @@ namespace dolfin
 
     // Friends
     friend class MeshEditor;
+    friend class TopologyComputation;
+    friend class MeshOrdering;
     friend class MPIMeshCommunicator;
 
     // Mesh topology
@@ -187,6 +192,9 @@ namespace dolfin
 
     // Cell type
     CellType* _cell_type;
+
+    /// Return true iff topology is ordered according to the UFC numbering
+    bool _ordered;
 
   };
 

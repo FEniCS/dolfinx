@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells 2007.
 //
 // First added:  2006-05-09
-// Last changed: 2008-05-27
+// Last changed: 2008-06-17
 
 #include <sstream>
 
@@ -30,19 +30,19 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 Mesh::Mesh()
-  : Variable("mesh", "DOLFIN mesh"), _data(0), _cell_type(0)
+  : Variable("mesh", "DOLFIN mesh"), _data(0), _cell_type(0), _ordered(false)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 Mesh::Mesh(const Mesh& mesh)
-  : Variable("mesh", "DOLFIN mesh"), _data(0), _cell_type(0)
+  : Variable("mesh", "DOLFIN mesh"), _data(0), _cell_type(0), _ordered(false)
 {
   *this = mesh;
 }
 //-----------------------------------------------------------------------------
 Mesh::Mesh(std::string filename)
-  : Variable("mesh", "DOLFIN mesh"), _data(0), _cell_type(0)
+  : Variable("mesh", "DOLFIN mesh"), _data(0), _cell_type(0), _ordered(false)
 {
   File file(filename);
   file >> *this;
@@ -110,7 +110,15 @@ void Mesh::clear()
 //-----------------------------------------------------------------------------
 void Mesh::order()
 {
-  MeshOrdering::order(*this);
+  if (_ordered)
+    message("Mesh has already been ordered, no need to reorder entities.");
+  else
+    MeshOrdering::order(*this);
+}
+//-----------------------------------------------------------------------------
+bool Mesh::ordered() const
+{
+  return _ordered;
 }
 //-----------------------------------------------------------------------------
 void Mesh::refine()

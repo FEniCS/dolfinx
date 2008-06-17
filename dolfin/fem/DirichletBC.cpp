@@ -230,6 +230,9 @@ void DirichletBC::initFromSubDomain(SubDomain& sub_domain)
   // FIXME: the entire mesh and then extracting the subset. This is done
   // FIXME: mainly for convenience (we may reuse mark() in SubDomain).
 
+  // Make sure the mesh has been ordered
+  _mesh.order();
+
   // Create mesh function for sub domain markers on facets
   const uint dim = _mesh.topology().dim();
   _mesh.init(dim - 1);
@@ -248,13 +251,14 @@ void DirichletBC::initFromSubDomain(SubDomain& sub_domain)
 void DirichletBC::initFromMeshFunction(MeshFunction<uint>& sub_domains,
                                        uint sub_domain)
 {
-  _mesh.order();
-
   dolfin_assert(facets.size() == 0);
 
   // Make sure we have the facet - cell connectivity
   const uint dim = _mesh.topology().dim();
   _mesh.init(dim - 1, dim);
+
+  // Make sure the mesh has been ordered
+  _mesh.order();
 
   // Build set of boundary facets
   for (FacetIterator facet(_mesh); !facet.end(); ++facet)
@@ -278,6 +282,12 @@ void DirichletBC::initFromMesh(uint sub_domain)
 {
   dolfin_assert(facets.size() == 0);
 
+  // For this to work, the mesh *needs* to be ordered according to
+  // the UFC ordering before it gets here. So reordering the mesh
+  // here will either have no effect (if the mesh is already ordered
+  // or it won't do anything good (since the markers are wrong anyway).
+  // In conclusion: we don't need to order the mesh here.
+  
   cout << "Creating sub domain markers for boundary condition." << endl;
 
   // Get data

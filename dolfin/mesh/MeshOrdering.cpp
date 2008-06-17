@@ -1,8 +1,8 @@
-// Copyright (C) 2007 Anders Logg.
+// Copyright (C) 2007-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-01-30
-// Last changed: 2007-05-16
+// Last changed: 2008-06-17
 
 #include <dolfin/log/log.h>
 #include "Mesh.h"
@@ -24,5 +24,7 @@ void MeshOrdering::order(Mesh& mesh)
   {
     cell_type.orderEntities(*cell);
   }
+  
+  mesh._ordered = true;
 }
 //-----------------------------------------------------------------------------
