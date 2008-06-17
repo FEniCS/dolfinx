@@ -34,16 +34,16 @@ namespace dolfin
   public:
 
     /// Create timer
-    Timer(std::string task) : task(task), t(time()) {}
+    Timer(std::string task) : task(task), t(time()), stopped(false) {}
 
     /// Destructor
-    ~Timer() { stop(); }
+    ~Timer() { if (!stopped) stop(); }
 
     /// Start timer
-    inline void start() { t = time(); }
+    inline void start() { t = time(); stopped = false; }
     
     /// Stop timer
-    void stop() { LogManager::logger.timing(task, time() - t); }
+    void stop() { LogManager::logger.timing(task, time() - t); stopped = true; }
 
   private:
 
@@ -52,6 +52,9 @@ namespace dolfin
 
     // Start time
     real t;
+
+    // True if timer has been stopped
+    bool stopped;
 
   };
 
