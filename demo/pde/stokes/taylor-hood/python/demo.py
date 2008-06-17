@@ -75,8 +75,7 @@ bc2 = DirichletBC(zero, sub_domains, 2, pressure)
 # Collect boundary conditions
 bcs = [bc0, bc1, bc2]
 
-
-# # Define variational problem
+# Define variational problem
 (v, q) = TestFunctions(system)
 (u, p) = TrialFunctions(system)
 f = Function(vector, mesh, 0.0)
@@ -101,9 +100,6 @@ ufile_pvd = File("velocity.pvd")
 ufile_pvd << U
 pfile_pvd = File("pressure.pvd")
 pfile_pvd << P
-
-
-
 
 # Plot solution
 plot(U)

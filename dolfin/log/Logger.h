@@ -6,7 +6,7 @@
 // Modified by Ola Skavhaug, 2007.
 //
 // First added:  2003-03-13
-// Last changed: 2008-06-13
+// Last changed: 2008-06-17
 
 #ifndef __LOGGER_H
 #define __LOGGER_H
@@ -65,6 +65,9 @@ namespace dolfin
     /// Print summary of timings and tasks, clearing stored timings
     void summary();
 
+    /// Return summary of timings
+    const std::map<std::string, std::pair<uint, real> >& timings() const;
+
     /// Helper function for dolfin_debug macro
     void __debug(std::string msg);
 
@@ -90,7 +93,7 @@ namespace dolfin
     std::ostream* logstream;
 
     // List of timings for tasks, map from string to (num_timings, total_time)
-    std::map<std::string, std::pair<uint, real> > timings;
+    std::map<std::string, std::pair<uint, real> > _timings;
 
   };
 

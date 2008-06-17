@@ -4,13 +4,15 @@
 // Modified by Ola Skavhaug, 2007.
 // 
 // First added:  2003-03-13
-// Last changed: 2008-05-14
+// Last changed: 2008-06-17
 
 #ifndef __LOG_H
 #define __LOG_H
 
 #include <string>
+#include <map>
 #include <stdarg.h>
+#include <dolfin/common/types.h>
 
 namespace dolfin
 {
@@ -57,6 +59,9 @@ namespace dolfin
 
   /// Print summary of timings and tasks, clearing stored timings
   void summary();
+
+  /// Return summary of timings
+  const std::map<std::string, std::pair<uint, real> > & timings();
 
   // Helper function for dolfin_debug macro
   void __debug(std::string file, unsigned long line, std::string function, std::string format, ...);

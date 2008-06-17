@@ -26,7 +26,6 @@ static char buffer[DOLFIN_LINELENGTH];
   va_start(aptr, msg); \
   vsnprintf(buffer, DOLFIN_LINELENGTH, msg.c_str(), aptr); \
   va_end(aptr);
-  
 
 //-----------------------------------------------------------------------------
 void dolfin::message(std::string msg, ...)
@@ -73,6 +72,11 @@ void dolfin::end()
 void dolfin::summary()
 {
   LogManager::logger.summary();
+}
+//-----------------------------------------------------------------------------
+const std::map<std::string, std::pair<dolfin::uint, dolfin::real> >& timings()
+{
+  return LogManager::logger.timings();
 }
 //-----------------------------------------------------------------------------
 void dolfin::__debug(std::string file, unsigned long line,

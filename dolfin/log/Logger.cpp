@@ -1,10 +1,10 @@
-// Copyright (C) 2003-2007 Anders Logg.
+// Copyright (C) 2003-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Ola Skavhaug, 2007.
 //
 // First added:  2003-03-13
-// Last changed: 2007-05-14
+// Last changed: 2008-06-17
 
 #include <string>
 #include <iostream>
@@ -133,11 +133,11 @@ void Logger::timing(std::string task, real elapsed_time)
   message(line.str());
 
   // Store values for summary
-  map_iterator it = timings.find(task);
-  if (it == timings.end())
+  map_iterator it = _timings.find(task);
+  if (it == _timings.end())
   {
     std::pair<uint, real> timing(1, elapsed_time);
-    timings[task] = timing;
+    _timings[task] = timing;
   }
   else
   {
@@ -148,14 +148,14 @@ void Logger::timing(std::string task, real elapsed_time)
 //-----------------------------------------------------------------------------
 void Logger::summary()
 {
-  if (timings.size() == 0)
+  if (_timings.size() == 0)
   {
     message("Summary: no timings to report.");
     return;
   }
 
   message("Summary of timings:");
-  for (map_iterator it = timings.begin(); it != timings.end(); ++it)
+  for (map_iterator it = _timings.begin(); it != _timings.end(); ++it)
   {
     const std::string task  = it->first;
     const uint num_timings  = it->second.first;
@@ -168,7 +168,12 @@ void Logger::summary()
   }
 
   // Clear timings
-  timings.clear();
+  _timings.clear();
+}
+//-----------------------------------------------------------------------------
+const std::map<std::string, std::pair<dolfin::uint, dolfin::real> >& Logger::timings() const
+{
+  return _timings;
 }
 //-----------------------------------------------------------------------------
 void Logger::__debug(std::string msg)
