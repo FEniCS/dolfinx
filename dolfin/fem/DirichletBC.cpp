@@ -248,7 +248,7 @@ void DirichletBC::initFromSubDomain(SubDomain& sub_domain)
 void DirichletBC::initFromMeshFunction(MeshFunction<uint>& sub_domains,
                                        uint sub_domain)
 {
-  //_mesh.order();
+  _mesh.order();
 
   dolfin_assert(facets.size() == 0);
 
