@@ -55,7 +55,7 @@ namespace dolfin
   /// End task (decrease indentation level)
   void end();
 
-  /// Print summary of timings and tasks
+  /// Print summary of timings and tasks, clearing stored timings
   void summary();
 
   // Helper function for dolfin_debug macro

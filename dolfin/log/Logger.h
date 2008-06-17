@@ -62,7 +62,7 @@ namespace dolfin
     /// Register timing (for later summary)
     void timing(std::string task, real elapsed_time);
 
-    /// Print summary of timings and tasks
+    /// Print summary of timings and tasks, clearing stored timings
     void summary();
 
     /// Helper function for dolfin_debug macro

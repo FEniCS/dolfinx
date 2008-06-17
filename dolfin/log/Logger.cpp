@@ -166,6 +166,9 @@ void Logger::summary()
     line << "  " << task << ": " << total_time << " " << average_time << " " << num_timings;
     message(line.str());
   }
+
+  // Clear timings
+  timings.clear();
 }
 //-----------------------------------------------------------------------------
 void Logger::__debug(std::string msg)
