@@ -1,3 +1,9 @@
+// Copyright (C) 2008 Benjamin Kehlet
+// Licensed under the GNU LGPL Version 2.1.
+//
+// First added:  2008-06-11
+// Last changed: 2008-06-17
+
 #include "ODESolution.h"
 #include "Sample.h"
 #include "ODE.h"
@@ -76,16 +82,21 @@ void ODESolution::eval(const real t, uBlasVector& y) {
   }
 
   //Not found in cache
-  uint a = 0;
-  uint b = bintree.size()-1;
-  
-  while (abs(b-a) > 1) {
-    //cout << "a: " << a << ", b: " << b << endl; 
-    uint mid = a+(b-a)/2;
-    if (bintree[mid] < t) a = mid;
-    else b = mid;   
+
+  std::vector<double>::iterator low = std::lower_bound(bintree.begin(), bintree.end(), t);
+  uint b = uint(low-bintree.begin());
+  uint a = b-1;
+
+  if (b >= bintree.size()) 
+  {
+    b = bintree.size() - 1;
+    a = bintree.size() - 2;
+  } 
+  else if (b < 1) 
+  {
+    b = 1;
+    a = 0;
   }
-  //cout << "Loop terminated" << endl;
 
   real t_a = bintree[a];
   real t_b = bintree[b];

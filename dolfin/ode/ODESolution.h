@@ -1,3 +1,10 @@
+// Copyright (C) 2008 Benjamin Kehlet
+// Licensed under the GNU LGPL Version 2.1.
+//
+// First added:  2008-06-11
+// Last changed: 2008-06-11
+
+
 #ifndef __ODESOLUTION_H
 #define __ODESOLUTION_H
 
