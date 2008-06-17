@@ -1,8 +1,10 @@
 // Copyright (C) 2003-2007 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Benjamin Kehlet 2008
+//
 // First added:  2003-07-02
-// Last changed: 2007-05-02
+// Last changed: 2008-06-17
 
 #include <stdio.h>
 #include <dolfin.h>
@@ -65,7 +67,7 @@ int main()
   dolfin_set("ODE fixed time step", true);
   //dolfin_set("ODE nonlinear solver", "newton");
   dolfin_set("ODE method", "cg");
-  dolfin_set("ODE order", 1);
+  dolfin_set("ODE order", 5);
   dolfin_set("ODE discrete tolerance", 1e-10);
   dolfin_set("ODE save solution", true);
   dolfin_set("ODE solve dual problem", true);
