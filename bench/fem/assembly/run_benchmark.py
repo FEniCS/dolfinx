@@ -25,7 +25,7 @@ def bench_form(form, mesh, nr_reasm=1):
     for i in range(nr_reasm):
         t0 = time()
         A = assemble(form, mesh)
-        totaltime = time() - t0
+        totaltime += time() - t0
     return totaltime/float(nr_reasm)
 
 def make_mesh(name, dim=2):
