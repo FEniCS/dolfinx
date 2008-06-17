@@ -74,7 +74,7 @@ void dolfin::summary()
   LogManager::logger.summary();
 }
 //-----------------------------------------------------------------------------
-const std::map<std::string, std::pair<dolfin::uint, dolfin::real> >& timings()
+const std::map<std::string, std::pair<dolfin::uint, dolfin::real> >& dolfin::timings()
 {
   return LogManager::logger.timings();
 }

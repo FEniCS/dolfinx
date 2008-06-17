@@ -61,7 +61,7 @@ namespace dolfin
   void summary();
 
   /// Return summary of timings
-  const std::map<std::string, std::pair<uint, real> > & timings();
+  const std::map<std::string, std::pair<dolfin::uint, dolfin::real> >& timings();
 
   // Helper function for dolfin_debug macro
   void __debug(std::string file, unsigned long line, std::string function, std::string format, ...);
