@@ -4,9 +4,10 @@
 // Modified by Garth N. Wells 2005, 2006.
 // Modified by Haiko Etzel 2005.
 // Modified by Magnus Vikstrom 2007.
+// Modified by Nuno Lopes 2008
 //
 // First added:  2002-11-12
-// Last changed: 2007-03-21
+// Last changed: 2007-06-17
 
 #include <string>
 #include <dolfin/log/dolfin_log.h>
@@ -18,6 +19,7 @@
 #include "OpenDXFile.h"
 #include "PythonFile.h"
 #include "VTKFile.h"
+#include "RAWFile.h"
 
 using namespace dolfin;
 
@@ -41,6 +43,8 @@ File::File(const std::string& filename)
     file = new PythonFile(filename);
   else if ( filename.rfind(".pvd") != filename.npos )
     file = new VTKFile(filename);
+  else if ( filename.rfind(".raw") != filename.npos )
+    file = new RAWFile(filename);
   else
   {
     file = 0;

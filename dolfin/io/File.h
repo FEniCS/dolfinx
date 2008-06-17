@@ -3,9 +3,10 @@
 //
 // Modified by Garth N. Wells, 2005, 2006.
 // Modified by Magnus Vikstrom 2007
+// Modified by Nuno Lopes 2008
 //
 // First added:  2002-11-12
-// Last changed: 2008-03-29
+// Last changed: 2008-06-17
 
 #ifndef __FILE_H
 #define __FILE_H
@@ -38,7 +39,7 @@ namespace dolfin
   public:
     
     /// File formats
-    enum Type { xml, matlab, octave, opendx, vtk, python };
+    enum Type { xml, matlab, octave, opendx, vtk, python ,raw };
     
     /// Create a file with given name
     File(const std::string& filename);
