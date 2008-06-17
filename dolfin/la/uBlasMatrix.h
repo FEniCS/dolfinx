@@ -221,17 +221,18 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <class Mat>
-  void uBlasMatrix<Mat>::getrow(uint row, Array<uint>& columns, Array<real>& values) const
+  void uBlasMatrix<Mat>::getrow(uint row_idx, Array<uint>& columns, Array<real>& values) const
   {
+    dolfin_assert(row_idx < this->size(0));
+
     // Reference to matrix row (throw away const-ness and trust uBlas)
-    ublas::matrix_row<Mat> r( *(const_cast<Mat*>(&A)) , row);
-    
-    typename ublas::matrix_row<Mat>::const_iterator component;
-    
+    ublas::matrix_row<Mat> row( *(const_cast<Mat*>(&A)) , row_idx);
+        
     // Insert values into Arrays
     columns.clear();
     values.clear();
-    for (component=r.begin(); component != r.end(); ++component) 
+    typename ublas::matrix_row<Mat>::const_iterator component;
+    for (component=row.begin(); component != row.end(); ++component) 
     {
       columns.push_back(component.index());
       values.push_back(*component );
@@ -242,17 +243,19 @@ namespace dolfin
   void uBlasMatrix<Mat>::setrow(uint row_idx, const Array<uint>& columns, const Array<real>& values)
   {
     dolfin_assert(columns.size() == values.size());
+    dolfin_assert(row_idx < this->size(0));
 
-    ublas::matrix_row<Mat> row(A,row_idx);
+    ublas::matrix_row<Mat> row(A, row_idx);
+    dolfin_assert(columns.size() <= row.size());
+
     row *= 0; 
-    for(uint i=0; i<columns.size(); i++)
+    for(uint i = 0; i < columns.size(); i++)
       row(columns[i])=values[i];	
   }
   //-----------------------------------------------------------------------------
   template <class Mat>
-  void uBlasMatrix<Mat>::set(const real* block,
-                                    uint m, const uint* rows,
-                                    uint n, const uint* cols)
+  void uBlasMatrix<Mat>::set(const real* block, uint m, const uint* rows,
+                                                uint n, const uint* cols)
   {
     for (uint i = 0; i < m; i++)
       for (uint j = 0; j < n; j++)
@@ -260,9 +263,8 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <class Mat>  
-  void uBlasMatrix<Mat>::add(const real* block,
-                                    uint m, const uint* rows,
-                                    uint n, const uint* cols)
+  void uBlasMatrix<Mat>::add(const real* block, uint m, const uint* rows,
+                                                uint n, const uint* cols)
   {
     for (uint i = 0; i < m; i++)
       for (uint j = 0; j < n; j++)
@@ -270,9 +272,8 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <class Mat>
-  void uBlasMatrix<Mat>::get(real* block,
-                                    uint m, const uint* rows,
-                                    uint n, const uint* cols) const
+  void uBlasMatrix<Mat>::get(real* block, uint m, const uint* rows,
+                                          uint n, const uint* cols) const
   {
     for(uint i = 0; i < m; ++i)
       for(uint j = 0; j < n; ++j)
