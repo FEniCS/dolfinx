@@ -14,7 +14,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 ODE::ODE(uint N, real T)
-  : N(N), T(T), dependencies(N), transpose(N), tmp(0),
+  : N(N), T(T), t_backwards(false), dependencies(N), transpose(N), tmp(0),
     not_impl_f("Warning: consider implementing mono-adaptive ODE::f() to improve efficiency."),
     not_impl_M("Warning: multiplication with M not implemented, assuming identity."),
     not_impl_J("Warning: consider implementing Jacobian ODE::J() to improve efficiency."),
