@@ -123,6 +123,7 @@ namespace dolfin
     friend class MultiAdaptivePreconditioner;
     friend class ReducedModel;
     friend class JacobianMatrix;
+    friend class TimeStepper;
 
   protected:
     
@@ -131,7 +132,10 @@ namespace dolfin
     
     // Final time
     real T;
-    
+
+    // ODE is a rewrite of an ODE to be solved backward in time, like the dual problem
+    // Will flip the t axis.
+    bool t_backwards;
     // Dependencies
     Dependencies dependencies;
 
