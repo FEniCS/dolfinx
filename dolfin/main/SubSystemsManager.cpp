@@ -66,19 +66,15 @@ void SubSystemsManager::initPETSc()
 
   message("Initializing PETSc (ignoring command-line arguments).");
 
-  // Prepare fake command-line arguments for PETSc. This is needed since
+  // Dummy command-line arguments for PETSc. This is needed since
   // PetscInitializeNoArguments() does not seem to work.
-  int argc = 1;
-  char** argv = new char * [1];
-  argv[0] = new char[DOLFIN_LINELENGTH];
-  snprintf(argv[0], DOLFIN_LINELENGTH, "%s", "unknown");
+
+  int argc = 0;
+  char** argv = NULL;
 
   // Initialize PETSc
   initPETSc(argc, argv, false);
 
-  // Cleanup
-  delete [] argv[0];
-  delete [] argv;
 #else
   error("DOLFIN has not been configured for PETSc.");
 #endif
