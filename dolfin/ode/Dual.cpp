@@ -1,8 +1,10 @@
 // Copyright (C) 2003-2005 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Benjamin Kehlet
+//
 // First added:  2003-11-28
-// Last changed: 2005
+// Last changed: 2008-06-18
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/math/dolfin_math.h>
@@ -13,15 +15,11 @@ using namespace dolfin;
 //------------------------------------------------------------------------
 Dual::Dual(ODE& primal, ODESolution& u) 
   : ODE(primal.size(), primal.endtime()),
-    prim(primal), sol(u)
+    primal(primal), u(u)
 {
 
   //inherit parameters from primal problem
-  set("parent", prim);
-
-  //Testing remove
-  //set("ODE initial time step", ((real) prim.get("ODE initial time step"))*5);
-  //set("ODE number of samples", ((uint)prim.get("ODE number of samples"))/5);
+  set("parent", primal);
 }
 //------------------------------------------------------------------------
 Dual::~Dual()
@@ -68,8 +66,8 @@ void Dual::f(const uBlasVector& phi, real t, uBlasVector& y)
   if (tmp.size() != size()) 
     tmp.init(size());
   
-  sol.eval(endtime()-t, tmp);
-  prim.JT(phi, y, tmp, endtime()-t);
+  u.eval(endtime()-t, tmp);
+  primal.JT(phi, y, tmp, endtime()-t);
   
 }
 //------------------------------------------------------------------------
