@@ -1,8 +1,10 @@
 // Copyright (C) 2003-2005 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Benjamin Kehlet
+//
 // First added:  2003-11-28
-// Last changed: 2005
+// Last changed: 2008-06-18
 
 #ifndef __DUAL_H
 #define __DUAL_H
@@ -50,8 +52,8 @@ namespace dolfin {
 
   private:
 
-    ODE& prim;
-    ODESolution& sol;
+    ODE& primal;
+    ODESolution& u;
 
   };
 
