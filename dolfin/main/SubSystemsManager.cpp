@@ -68,7 +68,6 @@ void SubSystemsManager::initPETSc()
 
   // Dummy command-line arguments for PETSc. This is needed since
   // PetscInitializeNoArguments() does not seem to work.
-
   int argc = 0;
   char** argv = NULL;
 
