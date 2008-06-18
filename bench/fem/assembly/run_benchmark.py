@@ -22,9 +22,12 @@ def make_form(name, mesh):
 
 def bench_form(form, mesh, nr_reasm=1):
     totaltime = 0.0
-    for i in range(nr_reasm):
+    t0 = time()
+    A = assemble(form, mesh)
+    totaltime += time() - t0
+    for i in range(nr_reasm - 1):
         t0 = time()
-        A = assemble(form, mesh)
+        assemble(form, mesh, tensor=A, reset_tensor=False)
         totaltime += time() - t0
     return totaltime/float(nr_reasm)
 
