@@ -192,6 +192,11 @@ void ODE::save(Sample& sample)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
+real ODE::time(real t) const
+{
+  return t;
+}
+//-----------------------------------------------------------------------------
 void ODE::sparse()
 {
   dependencies.detect(*this);

@@ -49,6 +49,8 @@ namespace dolfin {
     /// Right-hand side
     void f(const uBlasVector& phi, real t, uBlasVector& y);
 
+    /// Return real time (might be flipped backwards for dual)
+    real time(real t) const;
 
   private:
 

@@ -94,6 +94,9 @@ namespace dolfin
     /// Save sample (optional)
     virtual void save(Sample& sample);
 
+    /// Return real time (might be flipped backwards for dual)
+    virtual real time(real t) const;
+
     /// Automatically detect sparsity (optional)
     void sparse();
 
