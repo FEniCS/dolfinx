@@ -19,19 +19,25 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-DofMap::DofMap(ufc::dof_map& dof_map, Mesh& mesh) : dof_map(0), 
+DofMap::DofMap(ufc::dof_map& dof_map, Mesh& mesh, bool dof_map_local) : dof_map(0), 
                ufc_dof_map(&dof_map), ufc_dof_map_local(false), 
                dolfin_mesh(mesh), num_cells(mesh.numCells()), 
                partitions(0)
 {
+  // Assume responsibilty for ufc_dof_map
+  if(dof_map_local) 
+    ufc_dof_map_local = ufc_dof_map;
   init();
 }
 //-----------------------------------------------------------------------------
-DofMap::DofMap(ufc::dof_map& dof_map, Mesh& mesh, MeshFunction<uint>& partitions)
-             : dof_map(0), ufc_dof_map(&dof_map), ufc_dof_map_local(false), 
-               dolfin_mesh(mesh), num_cells(mesh.numCells()), 
+DofMap::DofMap(ufc::dof_map& dof_map, Mesh& mesh, MeshFunction<uint>& partitions,
+               bool dof_map_local) : dof_map(0), ufc_dof_map(&dof_map), 
+               ufc_dof_map_local(false), dolfin_mesh(mesh), num_cells(mesh.numCells()), 
                partitions(&partitions)
 {
+  // Assume responsibilty for ufc_dof_map
+  if(dof_map_local) 
+    ufc_dof_map_local = ufc_dof_map;
   init();
 }
 //-----------------------------------------------------------------------------
@@ -95,9 +101,9 @@ DofMap* DofMap::extractDofMap(const Array<uint>& sub_system, uint& offset) const
   message(2, "Offset for sub system: %d", offset);
 
   if (partitions)
-    return new DofMap(*sub_dof_map, dolfin_mesh, *partitions);
+    return new DofMap(*sub_dof_map, dolfin_mesh, *partitions, true);
   else
-    return new DofMap(*sub_dof_map, dolfin_mesh);
+    return new DofMap(*sub_dof_map, dolfin_mesh, true);
 }
 //-----------------------------------------------------------------------------
 ufc::dof_map* DofMap::extractDofMap(const ufc::dof_map& dof_map, uint& offset, const Array<uint>& sub_system) const

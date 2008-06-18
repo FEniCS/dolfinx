@@ -31,10 +31,11 @@ namespace dolfin
   public:
 
     /// Create dof map on mesh
-    DofMap(ufc::dof_map& dof_map, Mesh& mesh);
+    DofMap(ufc::dof_map& dof_map, Mesh& mesh, bool dof_map_local = false);
 
     /// Create dof map on mesh (parallel)
-    DofMap(ufc::dof_map& dof_map, Mesh& mesh, MeshFunction<uint>& partitions);
+    DofMap(ufc::dof_map& dof_map, Mesh& mesh, MeshFunction<uint>& partitions, 
+           bool dof_map_local = false);
 
     /// Create dof map on mesh
     DofMap(const std::string signature, Mesh& mesh);
