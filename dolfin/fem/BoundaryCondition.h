@@ -1,9 +1,9 @@
 // Copyright (C) 2007 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Garth N. Wells 2007
+// Modified by Garth N. Wells 2007, 2008.
 //
-// First added:  2007-07-11
+// First added:  2008-06-18
 // Last changed: 2007-12-09
 
 #ifndef __BOUNDARY_CONDITION_H
@@ -69,6 +69,9 @@ namespace dolfin
       
       // Dof map for sub system
       const DofMap* dof_map;
+
+      // Pointer to local DofMap if owned
+      const DofMap* dof_map_local;
 
       // Offset for sub system
       uint offset;

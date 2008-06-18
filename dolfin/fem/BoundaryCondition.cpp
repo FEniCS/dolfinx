@@ -1,9 +1,9 @@
 // Copyright (C) 2007 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Garth N. Wells 2007
+// Modified by Garth N. Wells 2007, 2008.
 //
-// First added:  2007-07-11
+// First added:  2008-06-18
 // Last changed: 2007-12-09
 
 #include "Form.h"
@@ -27,7 +27,7 @@ BoundaryCondition::~BoundaryCondition()
 BoundaryCondition::LocalData::LocalData(const ufc::form& form, Mesh& mesh, 
                                         const DofMap& global_dof_map, 
                                         const SubSystem& sub_system)
-  : ufc_mesh(mesh), finite_element(0), dof_map(0), offset(0),
+  : ufc_mesh(mesh), finite_element(0), dof_map(0), dof_map_local(0), offset(0),
     w(0), cell_dofs(0), facet_dofs(0)
 {
   // FIXME: Change behaviour of num_sub_elements() in FFC (return 0 when
@@ -50,6 +50,9 @@ BoundaryCondition::LocalData::LocalData(const ufc::form& form, Mesh& mesh,
 
     // Create sub dof map
     dof_map = global_dof_map.extractDofMap(sub_system.array(), offset);
+
+    // Take responsibility for dof_map
+    dof_map_local = dof_map;
   }
   else
     dof_map = &global_dof_map;
@@ -87,6 +90,9 @@ BoundaryCondition::LocalData::~LocalData()
 
   if (finite_element)
     delete finite_element;
+
+  if (dof_map_local)
+    delete dof_map_local;
 
   if (w)
     delete [] w;
