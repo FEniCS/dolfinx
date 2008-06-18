@@ -45,7 +45,7 @@ class Inflow(Function):
 
     def eval(self, values, x):
         values[0] = -sin(x[1]*DOLFIN_PI)
-q        values[1] = 0.0
+        values[1] = 0.0
 
     def rank(self):
         return 1
