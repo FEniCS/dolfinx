@@ -1,8 +1,10 @@
 // Copyright (C) 2003-2008 Johan Jansson and Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Benjamin Kehlet 2008
+//
 // First added:  2003
-// Last changed: 2008-04-08
+// Last changed: 2008-06-18
 
 #include <cmath>
 #include <string>
@@ -20,9 +22,9 @@
 using namespace dolfin;
 
 //--------------------------------------------------------------------------
-TimeStepper::TimeStepper(ODE& ode, ODESolution& s) :
+TimeStepper::TimeStepper(ODE& ode, ODESolution& u) :
   N(ode.size()), t(0), T(ode.endtime()),
-  ode(ode), solution(s),
+  ode(ode), u(u),
   timeslab(0), file(ode.get("ODE solution file name")),
   p("Time-stepping"), _stopped(false), _finished(false),
   save_solution(ode.get("ODE save solution")),
@@ -47,7 +49,7 @@ TimeStepper::~TimeStepper()
   if ( timeslab ) delete timeslab;
 }
 //----------------------------------------------------------------------
-void TimeStepper::solve(ODE& ode, ODESolution& s)
+void TimeStepper::solve(ODE& ode, ODESolution& u)
 {
   // Start timing
   tic();  
@@ -71,7 +73,7 @@ void TimeStepper::solve(ODE& ode, ODESolution& s)
   else
   {
     // Create a time stepper object
-    TimeStepper timeStepper(ode, s);
+    TimeStepper timeStepper(ode, u);
     
     // Do time stepping
 
@@ -172,7 +174,7 @@ void TimeStepper::saveFixedSamples()
     //Sample sample(*timeslab, 0.0, u.name(), u.label());
     Sample sample(*timeslab, 0.0, "u", "unknown");
     file << sample;
-    solution.addSample(sample);
+    u.addSample(sample);
     ode.save(sample);
   }
 
@@ -196,7 +198,7 @@ void TimeStepper::saveFixedSamples()
 
     Sample sample(*timeslab, t, "u", "unknown");
     file << sample;
-    solution.addSample(sample);
+    u.addSample(sample);
     ode.save(sample);
   }
 }
@@ -213,7 +215,7 @@ void TimeStepper::saveAdaptiveSamples()
     //Sample sample(*timeslab, 0.0, u.name(), u.label());
     Sample sample(*timeslab, 0.0, "u", "unknown");
     file << sample;
-    solution.addSample(sample);
+    u.addSample(sample);
     ode.save(sample);
   }
 
@@ -233,7 +235,7 @@ void TimeStepper::saveAdaptiveSamples()
     //Sample sample(*timeslab, t, u.name(), u.label());
     Sample sample(*timeslab, t, "u", "unknown");
     file << sample;
-    solution.addSample(sample);
+    u.addSample(sample);
     ode.save(sample);
   }
 }

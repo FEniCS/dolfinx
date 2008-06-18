@@ -22,13 +22,14 @@ namespace dolfin
   class ODESolution
   {
   public :
-    
+    /// Create solution data for given ODE
     ODESolution(ODE& ode);
     ~ODESolution();
-    
+
+    /// Evaluate (interpolate) value og solution at given time    
     void eval(const real t, uBlasVector& y);
     
-    //for testing
+    /// for testing
     void printVector(const uBlasVector& u);
     
   private :

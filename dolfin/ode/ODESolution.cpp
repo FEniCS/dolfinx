@@ -10,6 +10,7 @@
 
 using namespace dolfin;
 
+//-----------------------------------------------------------------------------
 ODESolution::ODESolution(ODE& ode) : 
   ode(ode),
   filename(tmpnam(0)),
@@ -32,7 +33,7 @@ ODESolution::ODESolution(ODE& ode) :
   ringbufcounter = 0;
 
 }
-
+//-----------------------------------------------------------------------------
 ODESolution::~ODESolution() {
   delete[] cache;
   file.close();
@@ -53,12 +54,12 @@ void ODESolution::addSample(Sample& sample) {
 
   ++count;
 }
-
+//-----------------------------------------------------------------------------
 void ODESolution::makeIndex() {
   file.close();
   file.open(filename, std::ios::in | std::ios::binary);  
 }
-
+//-----------------------------------------------------------------------------
 void ODESolution::eval(const real t, uBlasVector& y) {
   //cout << "eval(" << t << ")" << endl;
 
@@ -129,7 +130,7 @@ void ODESolution::eval(const real t, uBlasVector& y) {
   //printVector(y);
 
 }
-
+//-----------------------------------------------------------------------------
 void ODESolution::interpolate(const uBlasVector& v1, 
 			      const real t1, 
 			      const uBlasVector& v2, 
@@ -141,7 +142,7 @@ void ODESolution::interpolate(const uBlasVector& v1,
     result[i] = v1[i] + (t-t1)*((v2[i]-v1[i])/h);
   }
 }
-
+//-----------------------------------------------------------------------------
 //REMOVE AFTER TESTING
 void ODESolution::printVector(const uBlasVector& u) {
   for (unsigned int i=0; i < u.size(); i++) {
