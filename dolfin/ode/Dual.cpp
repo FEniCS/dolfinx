@@ -18,9 +18,6 @@ Dual::Dual(ODE& primal, ODESolution& u)
     primal(primal), u(u)
 {
 
-  // the Dual problem is computed backwards in time
-  t_backwards = true;
-
   // inherit parameters from primal problem
   set("parent", primal);
 }
