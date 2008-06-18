@@ -42,7 +42,7 @@ int main()
 
     void eval(real* values, const real* x) const
     {
-      values[0] = -1.0;
+      values[0] = -sin(x[1]*DOLFIN_PI);
       values[1] = 0.0;
     }
 
