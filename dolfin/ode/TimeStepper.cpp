@@ -172,7 +172,7 @@ void TimeStepper::saveFixedSamples()
   if ( t0 == 0.0 )
   {
     //Sample sample(*timeslab, 0.0, u.name(), u.label());
-    Sample sample(*timeslab, t_solution(0.0), "u", "unknown");
+    Sample sample(*timeslab, ode.time(0.0), "u", "unknown");
     file << sample;
     u.addSample(sample);
     ode.save(sample);
@@ -196,13 +196,13 @@ void TimeStepper::saveFixedSamples()
     if ( fabs(t - t1) < DOLFIN_EPS )
       t = t1;
 
-    Sample sample(*timeslab, t_solution(t), "u", "unknown");
+    Sample sample(*timeslab, ode.time(t), "u", "unknown");
     file << sample;
     u.addSample(sample);
     ode.save(sample);
   }
 }
-//------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 void TimeStepper::saveAdaptiveSamples()
 {
   // Get start time and end time of time slab
@@ -213,7 +213,7 @@ void TimeStepper::saveAdaptiveSamples()
   if ( t0 == 0.0 )
   {
     //Sample sample(*timeslab, 0.0, u.name(), u.label());
-    Sample sample(*timeslab, t_solution(0.0), "u", "unknown");
+    Sample sample(*timeslab, ode.time(0.0), "u", "unknown");
     file << sample;
     u.addSample(sample);
     ode.save(sample);
@@ -233,14 +233,10 @@ void TimeStepper::saveAdaptiveSamples()
     
     // Create and save the sample
     //Sample sample(*timeslab, t, u.name(), u.label());
-    Sample sample(*timeslab, t_solution(t), "u", "unknown");
+    Sample sample(*timeslab, ode.time(t), "u", "unknown");
     file << sample;
     u.addSample(sample);
     ode.save(sample);
   }
-}
-//-----------------------------------------------------------------------------
-real TimeStepper::t_solution(real t) {
-  return ode.t_backwards ? T-t : t;
 }
 //-----------------------------------------------------------------------------

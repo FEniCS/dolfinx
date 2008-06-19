@@ -71,9 +71,6 @@ namespace dolfin
     // Save using adaptive samples
     void saveAdaptiveSamples();
 
-    // Get the t value to be used in samples
-    real t_solution(real t);
-    
     //--- Time-stepping data ---
 
     // Size of system
