@@ -42,7 +42,8 @@ SparsityPattern::SparsityPattern(uint M) : range(0)
 //-----------------------------------------------------------------------------
 SparsityPattern::~SparsityPattern()
 {
-  // Do nothing
+  if(range)
+    delete [] range;
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::init(uint rank, const uint* dims)
