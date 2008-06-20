@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-06-05
-// Last changed: 2008-05-09
+// Last changed: 2008-06-20
 
 #ifndef __CELL_TYPE_H
 #define __CELL_TYPE_H
@@ -86,6 +86,9 @@ namespace dolfin
 
     /// Compute of given facet with respect to the cell
     virtual Point normal(const Cell& cell, uint facet) const = 0;
+
+    /// Compute the area/length of given facet with respect to the cell
+    virtual real facetArea(const Cell& cell, uint facet) const = 0;
 
     /// Check if point p intersects the cell
     virtual bool intersects(const MeshEntity& entity, const Point& p) const = 0;

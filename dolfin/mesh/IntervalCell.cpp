@@ -167,6 +167,11 @@ Point IntervalCell::normal(const Cell& cell, uint facet) const
   return n;
 }
 //-----------------------------------------------------------------------------
+dolfin::real IntervalCell::facetArea(const Cell& cell, uint facet) const
+{
+  return 0.0;
+}
+//-----------------------------------------------------------------------------
 bool IntervalCell::intersects(const MeshEntity& interval, const Point& p) const
 {
   // FIXME: Not implemented

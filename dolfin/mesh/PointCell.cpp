@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2008.
 //
 // First added:  2007-12-12
-// Last changed: 2008-05-09
+// Last changed: 2008-06-20
 
 #include <dolfin/log/dolfin_log.h>
 #include "Cell.h"
@@ -93,6 +93,12 @@ Point PointCell::normal(const Cell& cell, uint facet) const
   error("PointCell::normal() not defined.");
   Point p;
   return p;
+}
+//-----------------------------------------------------------------------------
+real PointCell::facetArea(const Cell& cell, uint facet) const
+{
+  error("PointCell::facetAread() not defined.");
+  return 0.0;
 }
 //-----------------------------------------------------------------------------
 bool PointCell::intersects(const MeshEntity& triangle, const Point& p) const

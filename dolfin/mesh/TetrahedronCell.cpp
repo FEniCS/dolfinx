@@ -6,7 +6,7 @@
 // Modified by Kristian Oelgaard 2006.
 //
 // First added:  2006-06-05
-// Last changed: 2008-05-08
+// Last changed: 2008-06-20
 
 #include <algorithm>
 #include <dolfin/log/dolfin_log.h>
@@ -481,8 +481,37 @@ Point TetrahedronCell::normal(const Cell& cell, uint facet) const
   return n;
 }
 //-----------------------------------------------------------------------------
+dolfin::real TetrahedronCell::facetArea(const Cell& cell, uint facet) const
+{
+  dolfin_assert(cell.mesh().topology().dim() == 3);
+  dolfin_assert(cell.mesh().geometry().dim() == 3);
+
+  // This is a trick to be allowed to initialize a facet from the cell
+  Cell& c = const_cast<Cell&>(cell);
+  
+  // Create facet from the mesh and local facet number
+  Facet f(c.mesh(), c.entities(2)[facet]);
+  
+  // Get mesh geometry
+  const MeshGeometry& geometry = cell.mesh().geometry();
+
+  // Get the coordinates of the three vertices
+  const uint* vertices = cell.entities(0);
+  const real* x0 = geometry.x(vertices[0]);
+  const real* x1 = geometry.x(vertices[1]);
+  const real* x2 = geometry.x(vertices[2]);
+  
+  // Compute area of triangle embedded in R^3
+  real v0 = (x0[1]*x1[2] + x0[2]*x2[1] + x1[1]*x2[2]) - (x2[1]*x1[2] + x2[2]*x0[1] + x1[1]*x0[2]);
+  real v1 = (x0[2]*x1[0] + x0[0]*x2[2] + x1[2]*x2[0]) - (x2[2]*x1[0] + x2[0]*x0[2] + x1[2]*x0[0]);
+  real v2 = (x0[0]*x1[1] + x0[1]*x2[0] + x1[0]*x2[1]) - (x2[0]*x1[1] + x2[1]*x0[0] + x1[0]*x0[1]);
+  
+  // Formula for area from http://mathworld.wolfram.com 
+  return  0.5 * sqrt(v0*v0 + v1*v1 + v2*v2);
+}
+//-----------------------------------------------------------------------------
 bool TetrahedronCell::intersects(const MeshEntity& tetrahedron,
-                             const Point& p) const
+                                 const Point& p) const
 {
   // Adapted from gts_point_is_in_triangle from GTS
 

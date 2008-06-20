@@ -5,6 +5,8 @@
 %rename(cpp_FacetNormal) dolfin::FacetNormal;
 %rename(cpp_MeshSize) dolfin::MeshSize;
 %rename(cpp_AvgMeshSize) dolfin::AvgMeshSize;
+%rename(cpp_FacetArea) dolfin::FacetArea;
+%rename(cpp_InvFacetArea) dolfin::InvFacetArea;
 
 // Trick to expose protected member cell() in Python
 %rename(old_cell) dolfin::Function::cell;

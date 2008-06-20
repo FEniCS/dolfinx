@@ -4,7 +4,7 @@
 // Modified by Kristian B. Oelgaard, 2007.
 //
 // First added:  2006-02-09
-// Last changed: 2008-05-29
+// Last changed: 2008-06-20
 
 #ifndef __SPECIAL_FUNCTIONS_H
 #define __SPECIAL_FUNCTIONS_H
@@ -117,6 +117,40 @@ namespace dolfin
         for (uint i = 0; i < cell().dim(); i++)
           values[i] = 0.0;
       }
+    }
+
+  };
+
+  /// This function represents the area/length of a mesh facet.
+  class FacetArea : public Function
+  {
+  public:
+
+    FacetArea(Mesh& mesh) : Function(mesh) {}
+
+    void eval(real* values, const real* x) const
+    {
+      if (facet() >= 0)
+        values[0] = cell().facetArea(facet());
+      else
+        values[0] = 0.0;
+    }
+
+  };
+
+  /// This function represents the inverse area/length of a mesh facet.
+  class InvFacetArea : public Function
+  {
+  public:
+
+    InvFacetArea(Mesh& mesh) : Function(mesh) {}
+
+    void eval(real* values, const real* x) const
+    {
+      if (facet() >= 0)
+        values[0] = 1.0 / cell().facetArea(facet());
+      else
+        values[0] = 0.0;
     }
 
   };

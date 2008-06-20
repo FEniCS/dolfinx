@@ -6,7 +6,7 @@
 // Modified by Dag Lindbo, 2008
 // 
 // First added:  2006-06-05
-// Last changed: 2008-05-08
+// Last changed: 2008-06-20
 //
 // Rename of the former Triangle.cpp
 //
@@ -213,7 +213,7 @@ real TriangleCell::volume(const MeshEntity& triangle) const
     }
   else
     error("Only know how to volume (area) of a triangle when embedded in R^2 or R^3.");
-
+ 
   return 0.0;
 }
 //-----------------------------------------------------------------------------
@@ -269,8 +269,8 @@ Point TriangleCell::normal(const Cell& cell, uint facet) const
   const uint v0 = cell.entities(0)[facet];
   
   // Get global index of vertices on the facet
-  uint v1 = f.entities(0)[0];
-  uint v2 = f.entities(0)[1];
+  const uint v1 = f.entities(0)[0];
+  const uint v2 = f.entities(0)[1];
   
   // Get mesh geometry
   const MeshGeometry& geometry = cell.mesh().geometry();
@@ -293,6 +293,36 @@ Point TriangleCell::normal(const Cell& cell, uint facet) const
     n *= -1.0;
 
   return n;
+}
+//-----------------------------------------------------------------------------
+dolfin::real TriangleCell::facetArea(const Cell& cell, uint facet) const
+{
+  // This is a trick to be allowed to initialize a facet from the cell
+  Cell& c = const_cast<Cell&>(cell);
+  
+  // Create facet from the mesh and local facet number
+  Facet f(c.mesh(), c.entities(1)[facet]);
+  
+  // Get global index of vertices on the facet
+  const uint v0 = f.entities(0)[0];
+  const uint v1 = f.entities(0)[1];
+  
+  // Get mesh geometry
+  const MeshGeometry& geometry = cell.mesh().geometry();
+
+  // Get the coordinates of the two vertices
+  const real* p0 = geometry.x(v0);
+  const real* p1 = geometry.x(v1);
+
+  // Compute distance between vertices
+  real d = 0.0;
+  for (uint i = 0; i < geometry.dim(); i++)
+  {
+    const real dp = p0[i] - p1[i];
+    d += dp*dp;
+  }
+  
+  return std::sqrt(d);
 }
 //-----------------------------------------------------------------------------
 bool TriangleCell::intersects(const MeshEntity& triangle, const Point& p) const

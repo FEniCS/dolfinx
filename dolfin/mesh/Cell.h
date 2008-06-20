@@ -1,10 +1,10 @@
-// Copyright (C) 2006-2007 Anders Logg.
+// Copyright (C) 2006-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Johan Hoffman 2006.
 //
 // First added:  2006-06-01
-// Last changed: 2007-07-20
+// Last changed: 2008-06-20
 
 #ifndef __CELL_H
 #define __CELL_H
@@ -49,6 +49,9 @@ namespace dolfin
 
     /// Compute normal of given facet with respect to the cell
     inline Point normal(uint facet) const { return _mesh.type().normal(*this, facet); }
+
+    /// Compute the area/length of given facet with respect to the cell
+    inline real facetArea(uint facet) const { return _mesh.type().facetArea(*this, facet); }
 
   };
 

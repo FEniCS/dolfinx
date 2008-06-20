@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-06-05
-// Last changed: 2008-05-07
+// Last changed: 2008-06-20
 //
 // Rename of the former Triangle.h
 //
@@ -56,6 +56,9 @@ namespace dolfin
 
     /// Compute of given facet with respect to the cell
     Point normal(const Cell& cell, uint facet) const;
+
+    /// Compute the area/length of given facet with respect to the cell
+    real facetArea(const Cell& cell, uint facet) const;
 
     /// Check if point p intersects the cell
     bool intersects(const MeshEntity& entity, const Point& p) const;
