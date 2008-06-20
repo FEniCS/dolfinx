@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-05-02
-// Last changed: 2008-05-29
+// Last changed: 2008-06-20
 
 #include <string.h>
 #include <dolfin/common/Array.h>
@@ -235,11 +235,11 @@ void ALE::hermiteFunction(real ** ghat, uint dim, Mesh& new_boundary,
   normals(dfdn, dim, new_boundary,
 	  mesh, vertex_map, cell_map);
 
-  real c;
-  if (dim==2)
-    c=2;
+  real c = 0.0;
+  if (dim == 2)
+    c = 2.0;
   else
-    c=M_PI;
+    c = DOLFIN_PI;
 
   //FAKTOREN c før dfdn, HVA VELGER VI DER?
   for (VertexIterator v(new_boundary); !v.end(); ++v) {
