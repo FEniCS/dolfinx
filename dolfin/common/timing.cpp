@@ -2,13 +2,11 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2003-12-21
-// Last changed: 2008-03-06
+// Last changed: 2008-06-20
 
 #include <ctime>
 #include <dolfin/log/dolfin_log.h>
 #include "timing.h"
-
-#include "utils.h"
 
 namespace dolfin
 {
@@ -36,8 +34,6 @@ real dolfin::tocd()
 {
   real elapsed_time = toc();
   
-  cout << "Current date: " << date() << endl;
-
   cout << "Elapsed time: " << elapsed_time << " seconds" << endl;
 
   return elapsed_time;
