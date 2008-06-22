@@ -51,7 +51,7 @@ for demo in cppdemos:
     if os.path.isfile(os.path.join(demo, 'demo')):
         output = getstatusoutput("cd %s && %s ./demo" % (demo, vg_comm) )
         noleak = re.findall('All heap blocks were freed',output[1])
-        success = output[0] != 9 and len(noleak) == 1 and not "error" in "".join([str(l) for l in output])
+        success = output[0] != 9 and len(noleak) == 1 and not "No such file or directory" in "".join([str(l) for l in output])
         if success:
             print "OK"
         else:
