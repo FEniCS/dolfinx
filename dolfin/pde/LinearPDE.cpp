@@ -68,14 +68,12 @@ void LinearPDE::solve(Function& u)
   const std::string solver_type = get("PDE linear solver");
   if ( solver_type == "direct" )
   {
-    cout << "Using direct solver." << endl;
     LUSolver solver;
     solver.set("parent", *this);
     solver.solve(A, *x, b);
   }
   else if ( solver_type == "iterative" )
   {
-    cout << "Using iterative solver (GMRES)." << endl;
     KrylovSolver solver(gmres);
     solver.set("parent", *this);
     solver.solve(A, *x, b);

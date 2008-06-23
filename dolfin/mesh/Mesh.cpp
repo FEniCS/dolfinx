@@ -111,7 +111,7 @@ void Mesh::clear()
 void Mesh::order()
 {
   if (_ordered)
-    message("Mesh has already been ordered, no need to reorder entities.");
+    message(1, "Mesh has already been ordered, no need to reorder entities.");
   else
     MeshOrdering::order(*this);
 }

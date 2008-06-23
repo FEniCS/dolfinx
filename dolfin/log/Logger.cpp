@@ -130,7 +130,7 @@ void Logger::timing(std::string task, real elapsed_time)
   // Print a message
   std::stringstream line;
   line << "Elapsed time: " << elapsed_time << " (" << task << ")";
-  message(line.str());
+  message(line.str(), 1);
 
   // Store values for summary
   map_iterator it = _timings.find(task);
