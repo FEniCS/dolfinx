@@ -38,7 +38,7 @@ class Source : public Function, public TimeDependent
 {
 public:
   
-    Source(Mesh& mesh, const real& t) : Function(mesh), TimeDependent(t) {}
+    Source(Mesh& mesh, const real* t) : Function(mesh), TimeDependent(t) {}
 
     real eval(const real* x) const
     {
@@ -51,7 +51,7 @@ public:
 class DirichletBoundaryCondition : public Function, public TimeDependent
 {
 public:
-  DirichletBoundaryCondition(Mesh& mesh, real& t) : Function(mesh), TimeDependent(t) {}
+  DirichletBoundaryCondition(Mesh& mesh, const real* t) : Function(mesh), TimeDependent(t) {}
   
   real eval(const real* x) const
   {
@@ -133,11 +133,11 @@ int main(int argc, char* argv[])
   real t = 0.0;
 
   // Create source function
-  Source f(mesh, t);
+  Source f(mesh, &t);
 
   // Dirichlet boundary conditions
   DirichletBoundary dirichlet_boundary;
-  DirichletBoundaryCondition g(mesh, t);
+  DirichletBoundaryCondition g(mesh, &t);
 
   Vector x;
   Function u;
