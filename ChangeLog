@@ -1,3 +1,4 @@
+0.8.0 [2008-06-23]
  - Fix input of matrix data from XML
  - Add function normalize()
  - Integration with VMTK for reading DOLFIN XML meshes produced by VMTK
