@@ -29,13 +29,12 @@ alpha = Constant("triangle")
 def upwind(u, b):
   return [b[i]('+')*(of('+')*u('+') + of('-')*u('-')) for i in range(len(b))]
 
-
 # Bilinear form
 a_int = dot( grad(v), mult(kappa, grad(u)) - mult(b,u) )*dx
 
-a_fac = kappa*alpha/h('+')*dot(jump(v, n), jump(u, n))*dS \
-      - kappa*dot(avg(grad(v)), jump(u, n))*dS \
-      - kappa*dot(jump(v, n), avg(grad(u)))*dS
+a_fac = kappa('+')*alpha('+')/h('+')*dot(jump(v, n), jump(u, n))*dS \
+      - kappa('+')*dot(avg(grad(v)), jump(u, n))*dS \
+      - kappa('+')*dot(jump(v, n), avg(grad(u)))*dS
 
 a_gd = kappa*alpha/h*v*u*ds \
      - kappa*dot(grad(v), mult(u,n))*ds \
