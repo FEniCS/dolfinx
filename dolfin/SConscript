@@ -21,6 +21,16 @@ python_version = "python-%d" % (sys.version_info[0])
 # Add non-standard paths with pkg-config
 #configuredPackages = {}
 
+# Make sure pkg-config is installed:
+print "Checking for pkg-config...",
+try: 
+    scons.runCommand("pkg-config", ["--version"])
+    print "yes"
+except:
+    print "no"
+    print " Please install pkg-config"
+    Exit()
+
 # determine which packages that should be disabled:
 disabled_packages = []
 if not env["enablePetsc"]:
@@ -63,6 +73,8 @@ modules, env = scons.resolveModuleDependencies(modules, configuredPackages, pack
 
 if env["PLATFORM"] == "darwin":
     env = scons.Customize.darwinCxx(env)
+elif env["PLATFORM"].startswith("win"):
+    env = scons.Customize.winCxx(env)
 
 if env["enablePydolfin"]:
     # Make sure we can find both SWIG and Python header files (Python.h):
@@ -73,7 +85,10 @@ if env["enablePydolfin"]:
         print "*** Install SWIG or disable PyDOLFIN with enablePydolfin=no"
         Exit(1)
     py_ver = "%s.%s" % (sys.version_info[0],sys.version_info[1])
-    py_inc = os.path.join(sys.prefix,"include","python"+py_ver)
+    if env["PLATFORM"].startswith("win"):
+        py_inc = os.path.join(sys.prefix,"include")
+    else:
+        py_inc = os.path.join(sys.prefix,"include","python"+py_ver)
     if not os.path.isfile(os.path.join(py_inc, "Python.h")):
         print "*** Unable to find Python development files on your system."
         print "*** Perhaps you need to install the package python%s-dev?" % py_ver
@@ -81,7 +96,8 @@ if env["enablePydolfin"]:
 
 if env["enablePydolfin"]:
     print "Enabling compilation of PyDOLFIN"
-    swigFlags = "-python -c++ -shadow -Iinclude/swig".split()
+    swigFlags = "-python -c++ -shadow -I%s" % os.path.join("include","swig")
+    swigFlags = swigFlags.split()
     out, err = scons.runCommand("swig", "-version")
     # Determine swig version, v 1.3.28 and later supports -O flag
     m = re.match(r"SWIG Version (.+)", out, re.M)
@@ -93,6 +109,8 @@ if env["enablePydolfin"]:
     swigEnv["SHLIBPREFIX"] = "_"
     if env["PLATFORM"] == "darwin":
         swigEnv = scons.Customize.darwinSwig(swigEnv)
+    elif env["PLATFORM"].startswith("win"):
+        swigEnv = scons.Customize.winSwig(swigEnv)
 
     cFileBldr, cxxFileBldr = swigEnv["BUILDERS"]["CFile"], swigEnv["BUILDERS"]["CXXFile"]
 

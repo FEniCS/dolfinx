@@ -39,14 +39,23 @@ env.SConsignFile(dolfin_sconsignfile)
 
 DefaultPackages = ""
 
+if env["PLATFORM"].startswith("win"):
+  default_prefix = os.path.join("c:","local")
+else:
+  default_prefix = os.path.join(os.path.sep,"usr","local")
+
 # Build the commandline options for SCons:
 options = [
     # configurable options for installation:
-    scons.PathOption("prefix", "Installation prefix", "/usr/local"),
-    scons.PathOption("binDir", "Binary installation directory", "$prefix/bin"),
-    scons.PathOption("libDir", "Library installation directory", "$prefix/lib"),
-    scons.PathOption("pkgConfDir", "Directory for installation of pkg-config files", "$prefix/lib/pkgconfig"),
-    scons.PathOption("includeDir", "C/C++ header installation directory", "$prefix/include"),
+    scons.PathOption("prefix", "Installation prefix", default_prefix),
+    scons.PathOption("binDir", "Binary installation directory",
+                     os.path.join("$prefix","bin")),
+    scons.PathOption("libDir", "Library installation directory",
+                     os.path.join("$prefix","lib")),
+    scons.PathOption("pkgConfDir", "Directory for installation of pkg-config files",
+                     os.path.join("$prefix","lib","pkgconfig")),
+    scons.PathOption("includeDir", "C/C++ header installation directory",
+                     os.path.join("$prefix","include")),
     scons.PathOption("pythonModuleDir", "Python module installation directory", 
                      scons.defaultPythonLib(prefix="$prefix")),
     scons.PathOption("pythonExtDir", "Python extension module installation directory", 
@@ -298,8 +307,8 @@ if env["enablePydolfin"]:
         buildDataHash["pythonPackageDirs"])
 
     for f in installfiles:
-        #installpath=os.path.sep.join(os.path.dirname(f).split(os.path.sep)[1:])
-        env.Install(os.path.join(env["pythonModuleDir"],"dolfin"), f)
+        installpath=os.path.sep.join(os.path.dirname(f).split(os.path.sep)[1:])
+        env.Install(os.path.join(env["pythonModuleDir"],installpath), f)
 
 #env = scons.installCommonFile(env, commonfile, prefix)
 
