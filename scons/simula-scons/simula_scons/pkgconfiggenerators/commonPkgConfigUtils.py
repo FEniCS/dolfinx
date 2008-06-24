@@ -263,9 +263,9 @@ int main()
     remove_cppfile("test_include_iostream.cpp")
     return False
 
-  runFailed, cmdoutput = getstatusoutput("./a.out")
+  runFailed, cmdoutput = getstatusoutput(os.path.join(os.getcwd(),"a.out"))
   if runFailed or cmdoutput != "ok":
-    remove_cppfile("test_include_iostream.cpp", ofile=True, execfile=True)
+    remove_cppfile("test_include_iostream.cpp", execfile=True)
     return False
   return True
 
