@@ -2,7 +2,6 @@
 import os,sys
 import string
 import os.path
-import commands
 
 from commonPkgConfigUtils import *
 
@@ -41,14 +40,15 @@ return 0;
     compiler = get_compiler(sconsEnv)
   if not cflags:
     cflags = pkgCflags(sconsEnv=sconsEnv)
-  cmdstr = "%s %s boost_config_test_version.cpp" % (compiler, cflags)
-  compileFailed, cmdoutput = commands.getstatusoutput(cmdstr)
+  cmdstr = "%s -o a.out %s boost_config_test_version.cpp" % (compiler, cflags)
+  compileFailed, cmdoutput = getstatusoutput(cmdstr)
   if compileFailed:
     remove_cppfile("boost_config_test_version.cpp")
     raise UnableToCompileException("Boost", cmd=cmdstr,
                                    program=cpp_version_str, errormsg=cmdoutput)
 
-  runFailed, cmdoutput = commands.getstatusoutput("./a.out")
+  cmdstr = os.path.join(os.getcwd(), "a.out")
+  runFailed, cmdoutput = getstatusoutput(cmdstr)
   if runFailed:
     remove_cppfile("boost_config_test_version.cpp", execfile=True)
     raise UnableToRunException("Boost", errormsg=cmdoutput)
@@ -66,8 +66,16 @@ def pkgLibs(sconsEnv=None):
   return ""
 
 def pkgCflags(sconsEnv=None):
-  include_dir = os.path.join(getBoostDir(sconsEnv=sconsEnv),"include")
-  return "-I%s" % include_dir
+  include_dir = None
+  boost_dir = getBoostDir(sconsEnv=sconsEnv)
+  for inc_dir in "", "include":
+    if os.path.isfile(os.path.join(boost_dir,inc_dir,"boost","version.hpp")):
+      include_dir = inc_dir
+      break
+  if include_dir is None:
+    raise UnableToFindPackageException("Boost")
+  #include_dir = os.path.join(getBoostDir(sconsEnv=sconsEnv),"include")
+  return "-I%s" % os.path.join(boost_dir,include_dir)
 
 def pkgTests(forceCompiler=None, sconsEnv=None,
              cflags=None, libs=None, version=None, **kwargs):
@@ -107,14 +115,15 @@ int main() {
 """
   write_cppfile(cpp_testublas_str, "boost_config_test_ublas.cpp")
 
-  cmdstr = "%s %s boost_config_test_ublas.cpp" % (compiler, cflags)
-  compileFailed, cmdoutput = commands.getstatusoutput(cmdstr)
+  cmdstr = "%s -o a.out %s boost_config_test_ublas.cpp" % (compiler, cflags)
+  compileFailed, cmdoutput = getstatusoutput(cmdstr)
   if compileFailed:
     remove_cppfile("boost_config_test_ublas.cpp")
     raise UnableToCompileException("Boost", cmd=cmdstr,
                                    program=cpp_testublas_str, errormsg=cmdoutput)
 
-  runFailed, cmdoutput = commands.getstatusoutput("./a.out")
+  cmdstr = os.path.join(os.getcwd(), "a.out")
+  runFailed, cmdoutput = getstatusoutput(cmdstr)
   if runFailed or cmdoutput != "ublas ok":
     remove_cppfile("boost_config_test_ublas.cpp", execfile=True)
     raise UnableToRunException("Boost", errormsg=cmdoutput)
@@ -132,7 +141,9 @@ Version: %s
 Description: The Boost library of template code
 Libs: %s
 Cflags: %s
-""" % (version, libs, cflags)
+""" % (version, libs, repr(cflags)[1:-1])
+  # FIXME:            ^^^^^^^^^^^^^^^^^^
+  # Is there a better way to handle this on Windows?
   
   pkg_file = open(os.path.join(directory,"boost.pc"), 'w')
   pkg_file.write(pkg_file_str)

@@ -17,11 +17,24 @@
 
 import os
 import os.path
-import commands
+
 
 class NoWritablePkgConfDir(Exception):
     def __init__(self, directory, msg=""):
         Exception.__init__(self," Unable to use '%s' as PKG_CONFIG directory. (%s)\nPlease, add a writeable directory in your PKG_CONFIG_PATH variable." % (directory,msg))
+
+def getstatusoutput(cmd):
+    """Return (status, output) of executing cmd in a shell."""
+    import os
+    if (os.name == 'nt'):
+        pipe = os.popen(cmd + ' 2>&1', 'r')
+    else:
+        pipe = os.popen('{ ' + cmd + '; } 2>&1', 'r')
+    text = pipe.read()
+    sts = pipe.close()
+    if sts is None: sts = 0
+    if text[-1:] == '\n': text = text[:-1]
+    return sts, text
 
 def suitablePkgConfDir():
     # try:
@@ -59,7 +72,7 @@ def suitablePkgConfDir():
         # The try/except should only be for the write-test
         if not os.path.isdir(directory):
           os.makedirs(directory)
-        testfilename = "%s/__testpkgconfwritablefile" % (directory)
+        testfilename = os.path.join(directory,"__testpkgconfwritablefile")
         tmpfile = open(testfilename,'w')
         tmpfile.write("test")
         tmpfile.close()
@@ -86,7 +99,7 @@ in your PKG_CONFIG_PATH permanently**""" % (directory)
     directory = os.path.dirname(__file__)
     # ensure that we can write in this directory (using someone else' src-tree?)
     try:
-        testfilename = "%s/__testpkgconfwritablefile" % (directory)
+        testfilename = os.path.join(directory, "__testpkgconfwritablefile")
         tmpfile = open(testfilename,'w')
         tmpfile.write("test")
         tmpfile.close()
@@ -245,12 +258,12 @@ int main()
   write_cppfile(test_include_iostream_str, "test_include_iostream.cpp")
 
   cmdstr = "%s test_include_iostream.cpp" % compiler
-  compileFailed, cmdoutput = commands.getstatusoutput(cmdstr)
+  compileFailed, cmdoutput = getstatusoutput(cmdstr)
   if compileFailed:
     remove_cppfile("test_include_iostream.cpp")
     return False
 
-  runFailed, cmdoutput = commands.getstatusoutput("./a.out")
+  runFailed, cmdoutput = getstatusoutput("./a.out")
   if runFailed or cmdoutput != "ok":
     remove_cppfile("test_include_iostream.cpp", ofile=True, execfile=True)
     return False

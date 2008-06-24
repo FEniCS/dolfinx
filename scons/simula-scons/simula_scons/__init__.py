@@ -70,6 +70,37 @@ def runCommand(command, args, captureOutput=True):
     if captureOutput:
         return out.strip(), err.strip()
 
+## def runCommand(command, args, captureOutput=True):
+##     """ Run command, returning its output on the stdout and stderr streams.
+
+##     If the command exits with a non-zero value, CommandError is raised.
+##     @param command: The name of the command
+##     @param args: The arguments to the command, either as an explicit sequence or as a whitespace delimited string.
+##     @return: A pair of strings, containing the command's output on stdout and stderr, respectively.
+##     """
+##     if isinstance(args, basestring):
+##         args = args.split()
+##     cl = "%s %s" % (command, " ".join(args))
+##     print cl
+##     if captureOutput:
+##         from popen2 import Popen3
+##         p = Popen3(cl, capturestderr=True)
+##         r = p.wait()
+##         try:
+##             out = p.fromchild.read().strip()
+##             err = p.childerr.read().strip()
+##         finally:
+##             p.tochild.close()
+##             p.fromchild.close()
+##             p.childerr.close()
+##         if r:
+##             raise CommandError(cl, r, err)
+##         return out, err
+##     else:
+##         r = os.spawnvp(os.P_WAIT, command, [command] + args)
+##         if r:
+##             raise CommandError(cl, r, "")
+
 def rsplit(toSplit, sub, max=None):
     s = toSplit[::-1] # Reverse string
     if max == None: l  = s.split(sub)

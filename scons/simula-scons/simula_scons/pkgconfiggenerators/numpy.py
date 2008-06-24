@@ -29,8 +29,8 @@ def restorePythonpath():
 
 def pkgVersion(**kwargs):
     #trickPythonpath()
-    cmdstr = "%s -c 'import numpy; print numpy.__version__'" % sys.executable
-    failure, cmdoutput = commands.getstatusoutput(cmdstr)
+    cmdstr = '%s -c "import numpy; print numpy.__version__"' % sys.executable
+    failure, cmdoutput = getstatusoutput(cmdstr)
     if failure:
         msg = "Unable to get numpy version.\nCommand was:\n%s" % cmdstr
         raise UnableToXXXException(msg, errormsg=cmdoutput)
@@ -41,8 +41,8 @@ def pkgVersion(**kwargs):
 
 def pkgCflags(**kwargs):
     #trickPythonpath()
-    cmdstr = "%s -c 'import numpy; print numpy.get_include()'" % sys.executable
-    failure, cmdoutput = commands.getstatusoutput(cmdstr)
+    cmdstr = '%s -c "import numpy; print numpy.get_include()"' % sys.executable
+    failure, cmdoutput = getstatusoutput(cmdstr)
     if failure:
         msg = "Unable to get numpy include folder.\nCommand was:\n%s" % cmdstr
         raise UnableToXXXException(msg, errormsg=cmdoutput)
@@ -80,7 +80,9 @@ Description: Numerical Python
 Version: %s
 Libs: %s
 Cflags: %s
-""" % (version, libs, cflags)
+""" % (version, repr(libs)[1:-1], repr(cflags)[1:-1])
+    # FIXME:    ^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^
+    # Is there a better way to handle this on Windows?
 
     """Write the content to file, using correct version number"""
     file = open(os.path.join(directory,"numpy-%s.pc" % major_version), "w")

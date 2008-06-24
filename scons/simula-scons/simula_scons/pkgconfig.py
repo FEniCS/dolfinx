@@ -40,8 +40,11 @@ def generate_pcFunc(replaceDict):
     try:
       includeDir = includeDir.replace("$prefix", "${prefix}")
       libDir = libDir.replace("$prefix", "${exec_prefix}")
-      header = ["prefix=%s\n" % prefix, "exec_prefix=${prefix}\n", "includedir=%s\n" % includeDir, \
-              "libdir=%s\n" % libDir, "compiler=%s\n" % compiler]
+      header = ["prefix=%s\n" % repr(prefix)[1:-1],
+                "exec_prefix=${prefix}\n",
+                "includedir=%s\n" % repr(includeDir)[1:-1], \
+                "libdir=%s\n" % repr(libDir)[1:-1],
+                "compiler=%s\n" % compiler]
       for i in range(len(lines)):
           if not lines[i].strip():
               break

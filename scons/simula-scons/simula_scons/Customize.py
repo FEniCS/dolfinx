@@ -18,6 +18,11 @@ def darwinCxx(env):
             pass
     return env
 
+def winCxx(env):
+    """Change the cxx parts of env for the Windows platform"""
+    env["SHLINKFLAGS"] += " -Wl,--enable-auto-import"
+    return env
+
 def darwinSwig(env):
     """Change the swig parts of env for the Darwin platform"""
     env['SHLINKFLAGS'] = env['LDMODULEFLAGS']
@@ -25,6 +30,12 @@ def darwinSwig(env):
     env["SHLIBSUFFIX"] = ".so"
     return env
 
+def winSwig(env):
+    """Change the swig parts of env for the Windows platform"""
+    env["SHLIBSUFFIX"] = ".pyd"
+    # FIXME: We could also use (should work on all platforms)
+    # env["SHLIBSUFFIX"] = distutils.sysconfig.get_config_var("SO")
+    return env
 
 def swigScanner(node, env, path):
     """SCons scanner hook to scan swig files for dependencies.
