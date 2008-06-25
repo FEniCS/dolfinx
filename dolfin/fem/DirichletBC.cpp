@@ -157,6 +157,7 @@ void DirichletBC::apply(GenericMatrix& A, GenericVector& b,
     x->get(x_values, boundary_values.size(), dofs);
     for (uint i = 0; i < boundary_values.size(); i++)
       values[i] -= x_values[i];
+    delete [] x_values;
   }
   
   message("Applying boundary conditions to linear system.");

@@ -79,9 +79,6 @@ DofMap::~DofMap()
   {
     delete [] *dof_map;
     delete [] dof_map;
-//    for (uint i = 0; i < num_cells; ++i)
-//      delete [] dof_map[i];
-//    delete [] dof_map;
   }
 
   if (ufc_dof_map_local)
