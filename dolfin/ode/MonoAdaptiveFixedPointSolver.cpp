@@ -29,7 +29,7 @@ MonoAdaptiveFixedPointSolver::MonoAdaptiveFixedPointSolver
 //-----------------------------------------------------------------------------
 MonoAdaptiveFixedPointSolver::~MonoAdaptiveFixedPointSolver()
 {
-  // Do nothing
+  delete [] xold;
 }
 //-----------------------------------------------------------------------------
 real MonoAdaptiveFixedPointSolver::iteration(real tol, uint iter,
