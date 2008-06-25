@@ -77,9 +77,11 @@ DofMap::~DofMap()
 {
   if (dof_map)
   {
-    for (uint i = 0; i < num_cells; ++i)
-      delete [] dof_map[i];
+    delete [] *dof_map;
     delete [] dof_map;
+//    for (uint i = 0; i < num_cells; ++i)
+//      delete [] dof_map[i];
+//    delete [] dof_map;
   }
 
   if (ufc_dof_map_local)
@@ -204,7 +206,11 @@ void DofMap::build(UFC& ufc)
 
   // Initialize new dof map
   if (dof_map)
-    delete dof_map;
+  {
+    delete [] *dof_map;
+    delete [] dof_map;
+  }
+
   dof_map = new uint*[dolfin_mesh.numCells()];
   
   // for all processes
