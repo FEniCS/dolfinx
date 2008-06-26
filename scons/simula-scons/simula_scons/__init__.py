@@ -352,7 +352,10 @@ def defaultPythonLib(prefix=None, plat_specific=False):
   python_lib = sysconfig.get_python_lib(prefix=prefix, plat_specific=plat_specific)
   if not prefix is None:
     if not python_lib.startswith(prefix):
-      python_lib = os.path.join(prefix,"lib","python" + sysconfig.get_python_version(),"site-packages")
+      if sys.platform.startswith("win"):
+        python_lib = os.path.join(prefix,"Lib","site-packages")
+      else:
+        python_lib = os.path.join(prefix,"lib","python" + sysconfig.get_python_version(),"site-packages")
   return python_lib
 
 def defaultFortranCompiler():
