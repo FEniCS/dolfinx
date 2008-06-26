@@ -169,6 +169,10 @@ void XMLFile::operator>>(Function& f)
     delete f.f;
   f.f = new DiscreteFunction(*mesh, *x, finite_element_signature, dof_map_signature);
   f._type = Function::discrete;
+
+  DiscreteFunction& ff = dynamic_cast<DiscreteFunction&>(*f.f);
+  ff.local_vector = x;  
+  
   f.rename("u", "discrete function from file data");
 }
 //-----------------------------------------------------------------------------

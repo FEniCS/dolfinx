@@ -22,12 +22,12 @@ NonlinearProblem::~NonlinearProblem()
 //-----------------------------------------------------------------------------
 void NonlinearProblem::form(GenericMatrix& A, GenericVector& b, const GenericVector& x)
 {
-  error("Nonlinear problem update for F(u) and J  has not been supplied by user.");
+  error("Nonlinear problem update for F(u) and J has not been supplied by user.");
 }
 //-----------------------------------------------------------------------------
 void NonlinearProblem::F(GenericVector& b, const GenericVector& x)
 {
-  error("Nonlinear problem update for F(u)  has not been supplied by user.");
+  error("Nonlinear problem update for F(u) has not been supplied by user.");
 }
 //-----------------------------------------------------------------------------
 void NonlinearProblem::J(GenericMatrix& A, const GenericVector& x)
