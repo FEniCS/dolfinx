@@ -326,6 +326,7 @@ void XMLMesh::readMeshFunction(const xmlChar* name, const xmlChar** attrs)
   // Set all values to zero
   *f = 0;
 }
+//-----------------------------------------------------------------------------
 void XMLMesh::readArray(const xmlChar* name, const xmlChar** attrs)
 {
   // Parse values
