@@ -1,49 +1,49 @@
-// Copyright (C) 2005-2007 Garth N. Wells.
+// Copyright (C) 2005-2008 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Anders Logg, 2005-2008.
 //
 // First added:  2005-10-23
-// Last changed: 2008-05-10
+// Last changed: 2008-06-29
 
 #include "NewtonSolver.h"
 #include "NonlinearProblem.h"
+#include <dolfin/la/Matrix.h>
+#include <dolfin/la/Vector.h>
 #include <dolfin/la/LUSolver.h>
-#include <dolfin/la/KrylovSolver.h>
 #include <iostream>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-NewtonSolver::NewtonSolver() : Parametrized()
+NewtonSolver::NewtonSolver() : Parametrized(), solver(new LinearSolver(lu)),
+              local_solver(solver), A(new Matrix), local_A(A), 
+              dx(new Vector), b(new Vector)
 {
-  solver = new LinearSolver(lu);
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
-/*
-#ifdef HAS_PETSC
-NewtonSolver::NewtonSolver(Matrix::Type matrix_type) : Parametrized()
+NewtonSolver::NewtonSolver(LinearSolver& solver, GenericMatrix& A) 
+            : Parametrized(), solver(&solver), local_solver(0), 
+              A(&A), local_A(0), dx(A.factory().createVector()), 
+              b(A.factory().createVector())
 {
-  solver = new LUSolver();
-  // FIXME: Need to select appropriate PETSc matrix
-  //A = new Matrix(matrix_type);
-  A = new Matrix;
-}
-#endif
-*/
-//-----------------------------------------------------------------------------
-NewtonSolver::NewtonSolver(SolverType method, PreconditionerType pc)
-  : Parametrized()
-{
-  solver = new LinearSolver(method, pc);
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 NewtonSolver::~NewtonSolver()
 {
-  delete solver; 
+  if(local_solver)
+    delete solver; 
+
+  if(local_A)
+    delete A;
+
+  delete dx;
+  delete b;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint NewtonSolver::solve(NonlinearProblem& nonlinear_problem, Vector& x)
+dolfin::uint NewtonSolver::solve(NonlinearProblem& nonlinear_problem, GenericVector& x)
 {
   const uint maxit= get("Newton maximum iterations");
 
@@ -53,7 +53,7 @@ dolfin::uint NewtonSolver::solve(NonlinearProblem& nonlinear_problem, Vector& x)
 
   // Compute F(u) and J
   set("output destination", "silent");
-  nonlinear_problem.form(A, b, x);
+  nonlinear_problem.form(*A, *b, x);
 
   uint krylov_iterations = 0;
   newton_iteration = 0;
@@ -65,27 +65,27 @@ dolfin::uint NewtonSolver::solve(NonlinearProblem& nonlinear_problem, Vector& x)
 
       set("output destination", "silent");
       // Perform linear solve and update total number of Krylov iterations
-      krylov_iterations += solver->solve(A, dx, b);
+      krylov_iterations += solver->solve(*A, *dx, *b);
       set("output destination", "terminal");
 
       // Compute initial residual
       if(newton_iteration == 0)
-        newton_converged = converged(b, dx, nonlinear_problem);
+        newton_converged = converged(*b, *dx, nonlinear_problem);
 
       // Update solution
-      x += dx;
+      x += (*dx);
 
       ++newton_iteration;
 
       set("output destination", "silent");
       //FIXME: this step is not needed if residual is based on dx and this has converged.
       // Compute F(u) and J
-      nonlinear_problem.form(A, b, x);
+      nonlinear_problem.form(*A, *b, x);
 
       set("output destination", "terminal");
 
       // Test for convergence 
-      newton_converged = converged(b, dx, nonlinear_problem);
+      newton_converged = converged(*b, *dx, nonlinear_problem);
   }
 
   if(newton_converged)
@@ -104,8 +104,8 @@ dolfin::uint NewtonSolver::getIteration() const
   return newton_iteration; 
 }
 //-----------------------------------------------------------------------------
-bool NewtonSolver::converged(const Vector& b, const Vector& dx, 
-      const NonlinearProblem& nonlinear_problem)
+bool NewtonSolver::converged(const GenericVector& b, const GenericVector& dx, 
+                             const NonlinearProblem& nonlinear_problem)
 {
   const std::string convergence_criterion = get("Newton convergence criterion");
   const real rtol   = get("Newton relative tolerance");

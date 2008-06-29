@@ -1,20 +1,18 @@
-// Copyright (C) 2005-2007 Garth N. Wells.
+// Copyright (C) 2005-2008 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Anders Logg 2006.
 //
 // First added:  2005-10-23
-// Last changed: 2007-05-15
+// Last changed: 2008-06-29
 
 #ifndef __NEWTON_SOLVER_H
 #define __NEWTON_SOLVER_H
 
-#include <dolfin/la/Matrix.h>
-#include <dolfin/la/Vector.h>
+#include <dolfin/la/GenericMatrix.h>
+#include <dolfin/la/GenericVector.h>
 #include <dolfin/parameter/Parametrized.h>
 #include <dolfin/la/LinearSolver.h>
-#include <dolfin/la/SolverType.h>
-#include <dolfin/la/PreconditionerType.h>
 
 namespace dolfin
 {
@@ -27,24 +25,20 @@ namespace dolfin
   {
   public:
 
-    /// Initialise nonlinear solver and choose LU solver
+    /// Create nonlinear solver with default linear solver and default 
+    /// linear algebra backend
     NewtonSolver();
 
-/*
-#ifdef HAS_PETSC
-    /// Initialise nonlinear solver and choose matrix type which defines LU solver
-    NewtonSolver(Matrix::Type matrix_type);
-#endif
-*/
-    /// Initialise nonlinear solver and choose Krylov solver and preconditioner
-    NewtonSolver(SolverType method, PreconditionerType pc);
+    /// Create nonlinear solver specified linear solver and linear algebra
+    /// backend determined by A 
+    NewtonSolver(LinearSolver& solver, GenericMatrix& A);
 
     /// Destructor
     virtual ~NewtonSolver();
 
     /// Solve abstract nonlinear problem F(x) = 0 for given vector F and 
     /// Jacobian dF/dx
-    uint solve(NonlinearProblem& nonlinear_function, Vector& x);
+    uint solve(NonlinearProblem& nonlinear_function, GenericVector& x);
 
     /// Return Newton iteration number
     uint getIteration() const;
@@ -52,8 +46,8 @@ namespace dolfin
   private:
 
     /// Convergence test 
-    virtual bool converged(const Vector& b, const Vector& dx, 
-        const NonlinearProblem& nonlinear_problem);
+    virtual bool converged(const GenericVector& b, const GenericVector& dx, 
+                           const NonlinearProblem& nonlinear_problem);
 
     /// Current number of Newton iterations
     uint newton_iteration;
@@ -63,15 +57,17 @@ namespace dolfin
 
     /// Solver
     LinearSolver* solver;
+    LinearSolver* local_solver;
 
     /// Jacobian matrix
-    Matrix A;
-
-    /// Resdiual vector
-    Vector b;
+    GenericMatrix* A;
+    GenericMatrix* local_A;
 
     /// Solution vector
-    Vector dx;
+    GenericVector* dx;
+
+    /// Resdiual vector
+    GenericVector* b;
   };
 
 }
