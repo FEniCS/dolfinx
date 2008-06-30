@@ -25,7 +25,7 @@ def forms(scalar, vector, constant):
     v  = TestFunction(scalar)
     u  = TrialFunction(scalar)
     
-    # Coeffisient functions
+    # Coefficient functions
     f  = ffc.Function(scalar)
     b  = ffc.Function(vector)    # Note: b('+') == b('-')
     of = ffc.Function(constant)  # This function is a switch that determines if a
@@ -67,28 +67,28 @@ scalar_CG = FiniteElement("Lagrange", "triangle", 2)
 vector_CG = VectorElement("Lagrange", "triangle", 2)
 constant  = FiniteElement("Discontinuous Lagrange", "triangle", 0)
 
-# Defining dolfin coeffisient functions
+# Defining dolfin coefficient functions
 file_string = open('functions2D.h').read()
-coeffisients = compile_functions(file_string,mesh)
+coefficients = compile_functions(file_string,mesh)
 
 # Extracting the compiled functions
-source   = coeffisients.pop(0)
-velocity = coeffisients[0]
-outflow_facet = coeffisients[1]
+source   = coefficients.pop(0)
+velocity = coefficients[0]
+outflow_facet = coefficients[1]
 
 # Setting members of the compiled functions
 outflow_facet.velocity = velocity
 source.C               = 0.0
 
-coeffisients.append(FacetNormal("triangle", mesh))
-coeffisients.append(AvgMeshSize("triangle", mesh)) 
-coeffisients.append(Function(constant,mesh,0.0))   # The diffusivity
-coeffisients.append(Function(constant,mesh,20.0))  # The penalty term
+coefficients.append(FacetNormal("triangle", mesh))
+coefficients.append(AvgMeshSize("triangle", mesh)) 
+coefficients.append(Function(constant,mesh,0.0))   # The diffusivity
+coefficients.append(Function(constant,mesh,20.0))  # The penalty term
 
 a, L = forms(scalar_DG, vector_CG, constant)
 
 # Assembly and solve system
-A = assemble(a, mesh, coeffisients)
+A = assemble(a, mesh, coefficients)
 b = assemble(L, mesh, [source])
 
 uh = Function(scalar_DG, mesh, Vector())
