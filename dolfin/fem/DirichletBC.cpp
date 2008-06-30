@@ -2,9 +2,10 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Kristian Oelgaard, 2007
+// Modified by Martin Sandve Alnes, 2008
 //
 // First added:  2007-04-10
-// Last changed: 2008-05-22
+// Last changed: 2008-06-30
 
 #include <dolfin/common/constants.h>
 #include <dolfin/log/log.h>
@@ -459,13 +460,13 @@ void DirichletBC::computeBCPointwise(std::map<uint, real>& boundary_values,
   Progress p("Computing Dirichlet boundary values, pointwise search", facets.size());
   for (CellIterator cell(_mesh); !cell.end(); ++cell)
   {
-    // Interpolate function on cell
     UFCCell ufc_cell(*cell);
-    g.interpolate(data.w, ufc_cell, *data.finite_element, *cell);
     
-    // Tabulate dofs on cell, and their coordinates
-    data.dof_map->tabulate_dofs(data.cell_dofs, ufc_cell);
+    // Tabulate coordinates of dofs on cell
     data.dof_map->tabulate_coordinates(data.coordinates, ufc_cell);
+    
+    // Interpolate function only once and only on cells where necessary
+    bool interpolated = false;
     
     // Loop all dofs on cell
     for (uint i = 0; i < data.dof_map->local_dimension(); ++i)
@@ -473,6 +474,15 @@ void DirichletBC::computeBCPointwise(std::map<uint, real>& boundary_values,
       // Check if the coordinates are part of the sub domain
       if ( !user_sub_domain->inside(data.coordinates[i], false) )
         continue;
+      
+      if(!interpolated)
+      {
+        interpolated = true;
+        // Tabulate dofs on cell
+        data.dof_map->tabulate_dofs(data.cell_dofs, ufc_cell);
+        // Interpolate function on cell
+        g.interpolate(data.w, ufc_cell, *data.finite_element, *cell);
+      }
       
       // Set boundary value
       const uint dof = data.offset + data.cell_dofs[i];
