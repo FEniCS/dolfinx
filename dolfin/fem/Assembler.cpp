@@ -367,19 +367,19 @@ void Assembler::check(const ufc::form& form,
       uint r = coefficients[i]->rank();
       uint fe_r = fe->value_rank();
       if(fe_r != r)
-        error("Invalid value rank of Function %d, got %d but expecting %d.", i, r, fe_r);
+        warning("Invalid value rank of Function %d, got %d but expecting %d.", i, r, fe_r);
       
       for(uint j=0; j<r; ++j)
       {
         uint dim = coefficients[i]->dim(j);
         uint fe_dim = fe->value_dimension(j);
         if(dim != fe_dim)
-          error("Invalid value dimension %d of Function %d, got %d but expecting %d.", j, i, dim, fe_dim);
+          warning("Invalid value dimension %d of Function %d, got %d but expecting %d.", j, i, dim, fe_dim);
       }
     }
     catch(std::exception & e)
     {
-      error("Function %d is invalid.", i);
+      warning("Function %d is invalid.", i);
     }
   }
   
