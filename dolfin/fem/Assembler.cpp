@@ -353,6 +353,36 @@ void Assembler::check(const ufc::form& form,
     error("Incorrect number of coefficients for form: %d given but %d required.",
           coefficients.size(), form.num_coefficients());
   
+  // Check that all coefficients have valid value dimensions
+  for(uint i=0; i<coefficients.size(); ++i)
+  {
+    if(!coefficients[i])
+      error("Got NULL Function as coefficient %d.", i);
+    
+    try
+    {
+      // auto_ptr deletes its object when it exits its scope
+      std::auto_ptr<ufc::finite_element> fe( form.create_finite_element(i+form.rank()) );
+      
+      uint r = coefficients[i]->rank();
+      uint fe_r = fe->value_rank();
+      if(fe_r != r)
+        error("Invalid value rank of Function %d, got %d but expecting %d.", i, r, fe_r);
+      
+      for(uint j=0; j<r; ++j)
+      {
+        uint dim = coefficients[i]->dim(j);
+        uint fe_dim = fe->value_dimension(j);
+        if(dim != fe_dim)
+          error("Invalid value dimension %d of Function %d, got %d but expecting %d.", j, i, dim, fe_dim);
+      }
+    }
+    catch(std::exception & e)
+    {
+      error("Function %d is invalid.", i);
+    }
+  }
+  
   // Check that the cell dimension matches the mesh dimension
   if (form.rank() + form.num_coefficients() > 0)
   {

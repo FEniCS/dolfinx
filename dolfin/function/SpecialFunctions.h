@@ -2,9 +2,10 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Kristian B. Oelgaard, 2007.
+// Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2006-02-09
-// Last changed: 2008-06-20
+// Last changed: 2008-07-01
 
 #ifndef __SPECIAL_FUNCTIONS_H
 #define __SPECIAL_FUNCTIONS_H
@@ -117,6 +118,18 @@ namespace dolfin
         for (uint i = 0; i < cell().dim(); i++)
           values[i] = 0.0;
       }
+    }
+
+    uint rank() const
+    {
+      return 1;
+    }
+    
+    uint dim(uint i) const
+    {
+      if(i > 0)
+        error("Invalid dimension %d in FacetNormal::dim.", i);
+      return mesh().geometry().dim();
     }
 
   };
