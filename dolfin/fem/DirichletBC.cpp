@@ -427,19 +427,25 @@ void DirichletBC::computeBCGeometric(std::map<uint, real>& boundary_values,
       {
         UFCCell ufc_cell(*c);
         
-        // Interpolate function on cell
-        g.interpolate(data.w, ufc_cell, *data.finite_element, *c);
+        bool interpolated = false;
         
-        // Tabulate dofs on cell, and their coordinates
-        data.dof_map->tabulate_dofs(data.cell_dofs, ufc_cell);
+        // Tabulate coordinates of dofs on cell
         data.dof_map->tabulate_coordinates(data.coordinates, ufc_cell);
         
-        // Loop all dofs on cell
+        // Loop over all dofs on cell
         for (uint i = 0; i < data.dof_map->local_dimension(); ++i)
         {
           // Check if the coordinates are on current facet and thus on boundary
           if (!onFacet(data.coordinates[i], facet))
             continue;
+          
+          if(!interpolated)
+          {
+            // Tabulate dofs on cell
+            data.dof_map->tabulate_dofs(data.cell_dofs, ufc_cell);
+            // Interpolate function on cell
+            g.interpolate(data.w, ufc_cell, *data.finite_element, *c);
+          }
           
           // Set boundary value
           const uint dof = data.offset + data.cell_dofs[i];
