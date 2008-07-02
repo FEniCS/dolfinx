@@ -463,7 +463,7 @@ void DirichletBC::computeBCPointwise(std::map<uint, real>& boundary_values,
   dolfin_assert(user_sub_domain);
 
   // Iterate over cells
-  Progress p("Computing Dirichlet boundary values, pointwise search", facets.size());
+  Progress p("Computing Dirichlet boundary values, pointwise search", _mesh.numCells());
   for (CellIterator cell(_mesh); !cell.end(); ++cell)
   {
     UFCCell ufc_cell(*cell);
