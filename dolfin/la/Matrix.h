@@ -61,8 +61,8 @@ namespace dolfin
     { matrix->zero(); }
 
     /// Finalize assembly of tensor
-    virtual void apply()
-    { matrix->apply(); }
+    virtual void apply(FinalizeType finaltype=FINALIZE)
+    { matrix->apply(finaltype); }
 
     /// Display tensor
     virtual void disp(uint precision=2) const

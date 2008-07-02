@@ -84,7 +84,7 @@ namespace dolfin
     virtual void zero();
 
     /// Finalize assembly of tensor
-    virtual void apply();
+    virtual void apply(FinalizeType final=FINALIZE);
 
     /// Display tensor
     virtual void disp(uint precision=2) const;
@@ -304,7 +304,7 @@ namespace dolfin
   }
 //-----------------------------------------------------------------------------
   template <class Mat>
-  void uBlasMatrix<Mat>::apply()
+  void uBlasMatrix<Mat>::apply(FinalizeType finaltype)
   {
     // Do nothing
   }

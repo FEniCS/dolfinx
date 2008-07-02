@@ -61,7 +61,7 @@ namespace dolfin
     virtual void zero() = 0;
 
     /// Finalize assembly of tensor
-    virtual void apply() = 0;
+    virtual void apply(FinalizeType finaltype=FINALIZE) = 0;
 
     /// Display tensor
     virtual void disp(uint precision=2) const = 0;

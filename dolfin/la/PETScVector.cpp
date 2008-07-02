@@ -162,7 +162,7 @@ void PETScVector::add(const real* block, uint m, const uint* rows)
                ADD_VALUES);
 }
 //-----------------------------------------------------------------------------
-void PETScVector::apply()
+void PETScVector::apply(FinalizeType finaltype)
 {
   VecAssemblyBegin(x);
   VecAssemblyEnd(x);

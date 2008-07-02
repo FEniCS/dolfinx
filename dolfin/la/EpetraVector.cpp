@@ -104,7 +104,7 @@ void EpetraVector::zero()
   x->PutScalar(0.0);
 }
 //-----------------------------------------------------------------------------
-void EpetraVector::apply()
+void EpetraVector::apply(FinalizeType finaltype)
 {
   x->GlobalAssemble();
   //x->OptimizeStorage(); // TODO: test this

@@ -186,7 +186,7 @@ void AssemblyMatrix::zero()
       it->second = 0.0;
 } 
 //-----------------------------------------------------------------------------
-void AssemblyMatrix::apply()
+void AssemblyMatrix::apply(FinalizeType finaltype)
 { 
   // Do nothing
 }

@@ -125,9 +125,10 @@ void EpetraMatrix::set(const real* block,
 		       uint n, const uint* cols)
 {
   dolfin_assert(A); 
-  A->ReplaceGlobalValues(m, reinterpret_cast<const int*>(rows),
+  int err = A->ReplaceGlobalValues(m, reinterpret_cast<const int*>(rows),
 			 n, reinterpret_cast<const int*>(cols), 
 			 block);
+  if (err!= 0) error("Did not manage to set the values into the matrix"); 
 }
 //-----------------------------------------------------------------------------
 void EpetraMatrix::add(const real* block,
@@ -150,10 +151,12 @@ void EpetraMatrix::zero()
   A->PutScalar(0.0);
 }
 //-----------------------------------------------------------------------------
-void EpetraMatrix::apply()
+void EpetraMatrix::apply(FinalizeType finaltype)
 {
-  dolfin_assert(A); 
-  A->GlobalAssemble();
+  if ( finaltype != PETSC_HACK) {
+    dolfin_assert(A); 
+    A->GlobalAssemble();
+  }
   //A->OptimizeStorage(); // TODO
 }
 //-----------------------------------------------------------------------------

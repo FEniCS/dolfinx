@@ -68,7 +68,7 @@ namespace dolfin
     { value = 0.0; }
 
     /// Finalize assembly of tensor
-    void apply()
+    void apply(FinalizeType finaltype=FINALIZE)
     {}
 
     /// Display tensor

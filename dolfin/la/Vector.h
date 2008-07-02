@@ -54,8 +54,8 @@ namespace dolfin
     { vector->zero(); }
 
     /// Finalize assembly of tensor
-    virtual void apply()
-    { vector->apply(); }
+    virtual void apply(FinalizeType finaltype=FINALIZE) 
+    { vector->apply(finaltype); }
 
     /// Display tensor
     virtual void disp(uint precision=2) const

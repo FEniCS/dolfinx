@@ -9,6 +9,7 @@
 
 #include <ufc.h>
 #include <dolfin/mesh/MeshFunction.h>
+#include "DirichletBC.h"
 
 namespace dolfin
 {
@@ -60,6 +61,16 @@ namespace dolfin
                 const MeshFunction<uint>* exterior_facet_domains,
                 const MeshFunction<uint>* interior_facet_domains, bool reset_tensor = true);  
 
+
+  /// Assemble tensor from given (UFC) form, mesh, coefficients and sub domains
+  void assemble_system( GenericTensor& A, const ufc::form& A_form, 
+                         const Array<Function*>& A_coefficients, const DofMapSet& A_dof_map_set,
+                         GenericTensor& b, const ufc::form& b_form, 
+                         const Array<Function*>& b_coefficients, const DofMapSet& b_dof_map_set,
+                         Mesh& mesh, 
+                         DirichletBC& bc, const MeshFunction<uint>* cell_domains, 
+                         const MeshFunction<uint>* exterior_facet_domains,
+                         const MeshFunction<uint>* interior_facet_domains, bool reset_tensors);
 }
 
 #endif

@@ -103,7 +103,7 @@ void uBlasVector::add(const real* block, uint m, const uint* rows)
     x(rows[i]) += block[i];
 }
 //-----------------------------------------------------------------------------
-void uBlasVector::apply()
+void uBlasVector::apply(FinalizeType finaltype)
 {
   // Do nothing
 }
