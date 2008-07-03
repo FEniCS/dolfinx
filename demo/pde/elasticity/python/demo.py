@@ -10,6 +10,7 @@ __copyright__ = "Copyright (C) 2007 Kristian B. Oelgaard"
 __license__  = "GNU LGPL Version 2.1"
 
 from dolfin import *
+from numpy import zeros
 
 # Load mesh and create finite element
 mesh = Mesh("../../../../data/meshes/gear.xml.gz")
@@ -70,7 +71,7 @@ class Right(SubDomain):
       return bool(x[0] > 0.9 and on_boundary)
 
 # Initialise source function
-f = Function(element, mesh, (0.0, 0.0, 0.0))
+f = Function(element, mesh, 3, zeros(3))
 
 # Define variational problem
 # Test and trial functions

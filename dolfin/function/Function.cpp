@@ -56,12 +56,12 @@ Function::Function(Mesh& mesh, uint size, const real* values)
   f = new ConstantFunction(mesh, size, values);
 }
 //-----------------------------------------------------------------------------
-Function::Function(Mesh& mesh, const simple_array<real>& values)
-  : Variable("u", "constant function"),
-    f(0), _type(constant), _cell(0), _facet(-1)
-{
-  f = new ConstantFunction(mesh, values.size, values.data);
-}
+//Function::Function(Mesh& mesh, const simple_array<real>& values)
+//  : Variable("u", "constant function"),
+//    f(0), _type(constant), _cell(0), _facet(-1)
+//{
+//  f = new ConstantFunction(mesh, values.size, values.data);
+//}
 //-----------------------------------------------------------------------------
 Function::Function(Mesh& mesh, uint rank, const uint* shape, const real* values)
   : Variable("u", "constant function"),

@@ -58,7 +58,7 @@ namespace dolfin
     Function(Mesh& mesh, uint size, real value);
 
     /// Create constant vector function from given size and values (for Python interface)
-    Function(Mesh& mesh, const simple_array<real>& values);
+    //Function(Mesh& mesh, const simple_array<real>& values);
 
     /// Create constant vector function from given size and values
     Function(Mesh& mesh, uint size, const real* values);
