@@ -78,7 +78,7 @@ bcs = [bc0, bc1, bc2]
 # Define variational problem
 (v, q) = TestFunctions(system)
 (u, p) = TrialFunctions(system)
-f = Function(vector, mesh, 0.0)
+f = Function(vector, mesh, (0.0, 0.0))
 
 a = (dot(grad(v), grad(u)) - div(v)*p + q*div(u))*dx
 L = dot(v, f)*dx

@@ -74,7 +74,7 @@ int main()
   Array <BoundaryCondition*> bcs(&bc0, &bc1, &bc2);
 
   // Set up PDE
-  Function f(mesh, 0.0);
+  Function f(mesh, 2, 0.0);
   StokesBilinearForm a;
   StokesLinearForm L(f);
   LinearPDE pde(a, L, mesh, bcs);

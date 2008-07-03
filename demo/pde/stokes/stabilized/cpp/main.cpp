@@ -74,7 +74,7 @@ int main()
 
   // Set up PDE
   MeshSize h(mesh);
-  Function f(mesh, 0.0);
+  Function f(mesh, 2, 0.0);
   StokesBilinearForm a(h);
   StokesLinearForm L(f, h);
   LinearPDE pde(a, L, mesh, bcs);

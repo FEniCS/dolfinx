@@ -5,7 +5,7 @@
 // Modified by Martin Sandve Alnes 2008.
 //
 // First added:  2003-11-28
-// Last changed: 2008-05-08
+// Last changed: 2008-07-03
 //
 // The class Function serves as the envelope class and holds a pointer
 // to a letter class that is a subclass of GenericFunction. All the
@@ -40,6 +40,34 @@ Function::Function(Mesh& mesh, real value)
     f(0), _type(constant), _cell(0), _facet(-1)
 {
   f = new ConstantFunction(mesh, value);
+}
+//-----------------------------------------------------------------------------
+Function::Function(Mesh& mesh, uint size, real value)
+  : Variable("u", "constant function"),
+    f(0), _type(constant), _cell(0), _facet(-1)
+{
+  f = new ConstantFunction(mesh, size, value);
+}
+//-----------------------------------------------------------------------------
+Function::Function(Mesh& mesh, uint size, const real* values)
+  : Variable("u", "constant function"),
+    f(0), _type(constant), _cell(0), _facet(-1)
+{
+  f = new ConstantFunction(mesh, size, values);
+}
+//-----------------------------------------------------------------------------
+Function::Function(Mesh& mesh, const simple_array<real>& values)
+  : Variable("u", "constant function"),
+    f(0), _type(constant), _cell(0), _facet(-1)
+{
+  f = new ConstantFunction(mesh, values.size, values.data);
+}
+//-----------------------------------------------------------------------------
+Function::Function(Mesh& mesh, uint rank, const uint* shape, const real* values)
+  : Variable("u", "constant function"),
+    f(0), _type(constant), _cell(0), _facet(-1)
+{
+  f = new ConstantFunction(mesh, rank, shape, values);
 }
 //-----------------------------------------------------------------------------
 Function::Function(Mesh& mesh, const ufc::function& function, uint size)

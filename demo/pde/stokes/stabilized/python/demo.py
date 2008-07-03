@@ -79,7 +79,7 @@ bcs = [bc0, bc1, bc2]
 (v, q) = TestFunctions(system)
 (u, p) = TrialFunctions(system)
 
-f = Function(vector, mesh, 0.0)
+f = Function(vector, mesh, (0.0, 0.0))
 h = MeshSize("triangle", mesh)
 
 beta  = 0.2

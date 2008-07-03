@@ -81,7 +81,7 @@ int main()
   Mesh mesh("../../../../data/meshes/gear.xml.gz");
 
   // Create right-hand side
-  Function f(mesh, 0.0);
+  Function f(mesh, 3, 0.0);
 
   // Set up boundary condition at left end
   Clamp c(mesh);

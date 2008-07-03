@@ -70,7 +70,7 @@ class Right(SubDomain):
       return bool(x[0] > 0.9 and on_boundary)
 
 # Initialise source function
-f = Function(element, mesh, 0.0)
+f = Function(element, mesh, (0.0, 0.0, 0.0))
 
 # Define variational problem
 # Test and trial functions
