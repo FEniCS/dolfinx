@@ -7,7 +7,7 @@
 // Modified by Martin Alnæs, 2008.
 //
 // First added:  2006-03-04
-// Last changed: 2008-04-29
+// Last changed: 2008-07-04
 
 #ifndef __UBLAS_VECTOR_H
 #define __UBLAS_VECTOR_H
@@ -71,8 +71,7 @@ namespace dolfin
     virtual void init(uint N);
 
     /// Return size of vector
-    uint size() const
-    { return x.size(); }
+    virtual uint size() const;
 
     /// Get block of values
     virtual void get(real* block, uint m, const uint* rows) const;

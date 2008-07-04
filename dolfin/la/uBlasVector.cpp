@@ -62,6 +62,11 @@ void uBlasVector::init(uint N)
   x.clear();
 }
 //-----------------------------------------------------------------------------
+dolfin::uint uBlasVector::size() const
+{
+  return x.size();
+}
+//-----------------------------------------------------------------------------
 uBlasVector* uBlasVector::copy() const
 {
   return new uBlasVector(*this);
