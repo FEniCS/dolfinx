@@ -14,7 +14,6 @@ __copyright__ = "Copyright (C) 2007 Kristian B. Oelgaard"
 __license__  = "GNU LGPL Version 2.1"
 
 from dolfin import *
-from numpy import zeros
 
 # Load mesh and create finite elements
 mesh = Mesh("../../../../../data/meshes/dolfin-2.xml.gz")
@@ -79,7 +78,7 @@ bcs = [bc0, bc1, bc2]
 # Define variational problem
 (v, q) = TestFunctions(system)
 (u, p) = TrialFunctions(system)
-f = Function(vector, mesh, 2, zeros(2))
+f = Function(vector, mesh, 2, 0.0)
 
 a = (dot(grad(v), grad(u)) - div(v)*p + q*div(u))*dx
 L = dot(v, f)*dx
