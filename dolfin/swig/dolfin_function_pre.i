@@ -16,8 +16,3 @@
 %rename(old_normal) dolfin::Function::normal;
 %rename(normal) dolfin::Function::new_normal;
 
-// Assign typemap for constant vector function constructor
-// TODO: Make (size,values) typemap work, preferably supporting both arrays and sequences (tuples):
-//%typemap(in) (dolfin::uint size, const dolfin::real* values) = (int _array_dim, double* _array);
-%typemap(in) (const dolfin::real* values) = (double* _array);
-

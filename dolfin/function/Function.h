@@ -6,7 +6,7 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2003-11-28
-// Last changed: 2008-07-03
+// Last changed: 2008-07-07
 
 #ifndef __FUNCTION_H
 #define __FUNCTION_H
@@ -57,14 +57,11 @@ namespace dolfin
     /// Create constant vector function from given size and value
     Function(Mesh& mesh, uint size, real value);
 
-    /// Create constant vector function from given size and values (for Python interface)
-    //Function(Mesh& mesh, const simple_array<real>& values);
-
     /// Create constant vector function from given size and values
-    Function(Mesh& mesh, uint size, const real* values);
+    Function(Mesh& mesh, const Array<real>& values);
 
     /// Create constant tensor function from given shape and values
-    Function(Mesh& mesh, uint rank, const uint* shape, const real* values);
+    Function(Mesh& mesh, const Array<uint>& shape, const Array<real>& values);
 
     /// Create function from given ufc::function
     Function(Mesh& mesh, const ufc::function& function, uint size);

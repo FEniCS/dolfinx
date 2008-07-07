@@ -4,7 +4,7 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2006-02-09
-// Last changed: 2008-07-03
+// Last changed: 2008-07-07
 
 
 #ifndef __CONSTANT_FUNCTION_H
@@ -29,10 +29,10 @@ namespace dolfin
     ConstantFunction(Mesh& mesh, uint size, real value);
 
     /// Create constant vector function from given size and values
-    ConstantFunction(Mesh& mesh, uint size, const real* values);
+    ConstantFunction(Mesh& mesh, const Array<real>& values);
 
     /// Create constant tensor function from given shape and values
-    ConstantFunction(Mesh& mesh, uint rank, const uint* shape, const real* values);
+    ConstantFunction(Mesh& mesh, const Array<uint>& shape, const Array<real>& values);
 
     /// Destructor
     ~ConstantFunction();

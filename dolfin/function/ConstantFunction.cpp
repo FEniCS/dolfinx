@@ -4,7 +4,7 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2006-02-09
-// Last changed: 2008-07-03
+// Last changed: 2008-07-07
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/mesh/Mesh.h>
@@ -34,9 +34,10 @@ ConstantFunction::ConstantFunction(Mesh& mesh, uint size, real value)
   }
 }
 //-----------------------------------------------------------------------------
-ConstantFunction::ConstantFunction(Mesh& mesh, uint size, const real* _values)
-  : GenericFunction(mesh), ufc::function(), values(0), value_rank(1), shape(0), size(size)
+ConstantFunction::ConstantFunction(Mesh& mesh, const Array<real>& _values)
+  : GenericFunction(mesh), ufc::function(), values(0), value_rank(1), shape(0), size(0)
 {
+  size = _values.size();
   shape = new uint[1];
   shape[0] = size;
   values = new real[size];
@@ -46,9 +47,10 @@ ConstantFunction::ConstantFunction(Mesh& mesh, uint size, const real* _values)
   }
 }
 //-----------------------------------------------------------------------------
-ConstantFunction::ConstantFunction(Mesh& mesh, uint rank, const uint* _shape, const real* _values)
-  : GenericFunction(mesh), ufc::function(), values(0), value_rank(rank), shape(0), size(0)
+ConstantFunction::ConstantFunction(Mesh& mesh, const Array<uint>& _shape, const Array<real>& _values)
+  : GenericFunction(mesh), ufc::function(), values(0), value_rank(0), shape(0), size(0)
 {
+  value_rank = _shape.size();
   shape = new uint[value_rank];
   size = 1;
   for(uint i=0; i<value_rank; i++)
@@ -56,6 +58,8 @@ ConstantFunction::ConstantFunction(Mesh& mesh, uint rank, const uint* _shape, co
     shape[i] = _shape[i];
     size *= shape[i];
   }
+  if(size != _values.size())
+    error("Size of given values does not match shape.");
   values = new real[size];
   for(uint i=0; i<size; i++)
   {
