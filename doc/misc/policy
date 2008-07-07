@@ -6,12 +6,12 @@ keep sort of the same style when writing the code.
 
 - Naming of classes:
 
-	GridGeometry
+    GridGeometry
 
 - Naming of files:
 
-	GridGeometry.h
-	GridGeometry.cpp	
+    GridGeometry.h
+    GridGeometry.cpp	
 
   Class files are named exactly the same as the class.
   Header files end with.h, implementation files with .cpp
@@ -27,35 +27,35 @@ keep sort of the same style when writing the code.
 
 - DOLFIN constants start with DOLFIN and large letters:
 
-	DOLFIN_PI
+    DOLFIN_PI
 
 - Header files start and end with something like
 
-	#ifndef __GRID_GEOMETRY_H
-	#define __GRID_GEOMETRY_H
+    #ifndef __GRID_GEOMETRY_H
+    #define __GRID_GEOMETRY_H
 
-	...
+    ...
 
-	#endif
+    #endif
 
 - Applying the LGPL should look something like this at the top
   of all source files:
 
-	// Copyright (C) 2004-2005 Johan Hoffman and Anders Logg.
-        // Licensed under the GNU LGPL Version 2.1.
-	//
-        // First added:  2004-01-01
-        // Last changed: 2005-11-15
+    // Copyright (C) 2004-2005 Johan Hoffman and Anders Logg.
+    // Licensed under the GNU LGPL Version 2.1.
+    //
+    // First added:  2004-01-01
+    // Last changed: 2005-11-15
   
   or
 
-	// Copyright (C) 2004-2005 Johan Hoffman and Anders Logg.
-        // Licensed under the GNU LGPL Version 2.1.
-        //
-        // Modified by Andy R. Terrel, 2005.
-        //
-        // First added:  2004-01-01
-        // Last changed: 2005-11-15
+    // Copyright (C) 2004-2005 Johan Hoffman and Anders Logg.
+    // Licensed under the GNU LGPL Version 2.1.
+    //
+    // Modified by Andy R. Terrel, 2005.
+    //
+    // First added:  2004-01-01
+    // Last changed: 2005-11-15
 
 - enum types are lowercase
 
@@ -69,3 +69,12 @@ keep sort of the same style when writing the code.
 
 - Classes should have methods str() and disp(). Perhaps these should be
   made virtual in Variable
+
+- Curly brackets following a control statement should appear in the next line,
+
+    for(int i=1; i < 10; ++i)
+    {
+      cout << i   << endl;
+      cout << 2*i << endl;
+    }
+
