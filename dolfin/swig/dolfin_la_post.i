@@ -24,6 +24,34 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
 }
 #endif
 
+%extend dolfin::GenericVector
+{
+  %pythoncode
+  %{
+    def array(self):
+        import numpy
+        v = numpy.zeros(self.size())
+        self.get(v)
+        return v
+  %}
+}
+
+%extend dolfin::GenericMatrix
+{
+  %pythoncode
+  %{
+    def array(self):
+        import numpy
+        A = numpy.zeros((self.size(0), self.size(1)))
+        c = ArrayUInt()
+        v = ArrayDouble()
+        for i in xrange(self.size(0)):
+            self.getrow(i, c, v)
+            A[i,c] = v
+        return A
+  %}
+}
+
 %extend dolfin::Matrix {
   %pythoncode %{
     def __mul__(self, other):
