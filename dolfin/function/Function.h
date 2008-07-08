@@ -82,7 +82,7 @@ namespace dolfin
     explicit Function(const std::string filename);
 
     /// Copy constructor
-    explicit Function(const Function& f);
+    Function(const Function& f);
 
     /// Destructor
     virtual ~Function();
