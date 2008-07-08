@@ -24,3 +24,4 @@
 %ignore dolfin::cout;
 %ignore dolfin::endl;
 %ignore *::operator<<(unsigned int);
+%ignore dolfin::MeshConnectivity::set(uint entity, uint* connections);
