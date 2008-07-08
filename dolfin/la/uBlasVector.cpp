@@ -211,7 +211,7 @@ void uBlasVector::disp(uint precision) const
     entry << *it << " ";
     dolfin::cout << entry.str().c_str() << dolfin::endl;
   }
-  dolfin::cout << " ]";
+  dolfin::cout << " ]" << endl;
 }
 //-----------------------------------------------------------------------------
 LogStream& dolfin::operator<< (LogStream& stream, const uBlasVector& x)
