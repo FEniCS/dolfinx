@@ -4,7 +4,7 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2006-02-09
-// Last changed: 2008-07-07
+// Last changed: 2008-07-08
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/mesh/Mesh.h>
@@ -13,8 +13,23 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
+ConstantFunction::ConstantFunction(const ConstantFunction& f)
+  : GenericFunction(f.mesh), values(0), value_rank(f.value_rank), shape(0), size(f.size)
+{
+  values = new real[size];
+  shape = new uint[value_rank];
+  for(uint i=0; i<value_rank; i++)
+  {
+    shape[i] = f.shape[i];
+  }
+  for(uint i=0; i<size; i++)
+  {
+    values[i] = f.values[i];
+  }
+}
+//-----------------------------------------------------------------------------
 ConstantFunction::ConstantFunction(Mesh& mesh, real value)
-  : GenericFunction(mesh), ufc::function(), values(0), value_rank(0), shape(0), size(1)
+  : GenericFunction(mesh), values(0), value_rank(0), shape(0), size(1)
 {
   values = new real[1];
   shape = new uint[1];
@@ -23,7 +38,7 @@ ConstantFunction::ConstantFunction(Mesh& mesh, real value)
 }
 //-----------------------------------------------------------------------------
 ConstantFunction::ConstantFunction(Mesh& mesh, uint size, real value)
-  : GenericFunction(mesh), ufc::function(), values(0), value_rank(1), shape(0), size(size)
+  : GenericFunction(mesh), values(0), value_rank(1), shape(0), size(size)
 {
   shape = new uint[1];
   shape[0] = size;
@@ -35,7 +50,7 @@ ConstantFunction::ConstantFunction(Mesh& mesh, uint size, real value)
 }
 //-----------------------------------------------------------------------------
 ConstantFunction::ConstantFunction(Mesh& mesh, const Array<real>& _values)
-  : GenericFunction(mesh), ufc::function(), values(0), value_rank(1), shape(0), size(0)
+  : GenericFunction(mesh), values(0), value_rank(1), shape(0), size(0)
 {
   size = _values.size();
   shape = new uint[1];
@@ -48,7 +63,7 @@ ConstantFunction::ConstantFunction(Mesh& mesh, const Array<real>& _values)
 }
 //-----------------------------------------------------------------------------
 ConstantFunction::ConstantFunction(Mesh& mesh, const Array<uint>& _shape, const Array<real>& _values)
-  : GenericFunction(mesh), ufc::function(), values(0), value_rank(0), shape(0), size(0)
+  : GenericFunction(mesh), values(0), value_rank(0), shape(0), size(0)
 {
   value_rank = _shape.size();
   shape = new uint[value_rank];

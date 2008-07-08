@@ -22,6 +22,9 @@ namespace dolfin
   {
   public:
 
+    /// Copy constructor
+    ConstantFunction(const ConstantFunction& f);
+
     /// Create constant scalar function from given value
     ConstantFunction(Mesh& mesh, real value);
 
