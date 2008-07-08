@@ -36,6 +36,21 @@ public:
     values[0] = -exp(x[0])*(x[1]*cos(x[1]) + sin(x[1]));
     values[1] = exp(x[0])*(x[1]*sin(x[1]));
   }
+
+  dolfin::uint rank() const
+  {
+    return 1;
+  }
+  
+  dolfin::uint dim(dolfin::uint i) const
+  {
+    if(i == 0)
+    {
+      return 2;
+    }
+    throw std::runtime_error("Invalid dimension i in dim(i).");
+  }
+
 };
 
 class OutflowFacet2D : public dolfin::Function
