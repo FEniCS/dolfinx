@@ -112,8 +112,12 @@ Function::Function(const Function& f) : f(0), _type(f.type()), _cell(0), _facet(
     this->f = new ConstantFunction(*static_cast<ConstantFunction*>(f.f));
     rename("x", "constant function");
   }
+  else if( f.type() == empty )
+  {
+    rename("x", "empty function");
+  }
   else
-    error("Copy constructor works for discrete and constant functions only (so far).");
+    error("Copy constructor works for discrete, constant and empty functions only (so far).");
 }
 //-----------------------------------------------------------------------------
 Function::~Function()
