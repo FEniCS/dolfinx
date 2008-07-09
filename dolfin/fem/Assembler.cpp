@@ -368,7 +368,7 @@ void Assembler::check(const ufc::form& form,
       uint fe_r = fe->value_rank();
       if(fe_r != r)
         warning("Invalid value rank of Function %d, got %d but expecting %d. \
-You may need to provide the rank of a user defined Function.", i, r, fe_r, "aa");
+You may need to provide the rank of a user defined Function.", i, r, fe_r);
       
       for(uint j=0; j<r; ++j)
       {
