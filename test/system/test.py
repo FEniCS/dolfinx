@@ -56,7 +56,16 @@ cppdemos.remove('./../../demo/ode/stiff/cpp')
 failed = []
 timing = []
 
+# Check if we should run only Python tests, use for quick testing
+if len(sys.argv) == 2 and sys.argv[1] == "--only-python":
+    only_python = True
+else:
+    only_python = False
+
 # Run C++ demos
+if only_python:
+    print "Skipping C++ demos"
+    cppdemos = []
 for demo in cppdemos:
     print "----------------------------------------------------------------------"
     print "Running C++ demo %s" % demo
