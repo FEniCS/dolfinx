@@ -9,6 +9,7 @@ __license__  = "GNU LGPL Version 2.1"
 
 import sys, os, re
 from commands import getstatusoutput
+from time import time
 
 # Demos to run
 cppdemos = []
@@ -36,6 +37,16 @@ pydemos.remove('./../../demo/pde/nonlinear-poisson/python')
 pydemos.remove('./../../demo/pde/lift-drag/python')
 pydemos.remove('./../../demo/ode/aliev-panfilov/python')
 
+# Push slow demos to the end
+pyslow = ['./../../demo/ode/lorenz/python']
+cppslow = ['./../../demo/nls/cahn-hilliard/cpp']
+for s in pyslow:
+    pydemos.remove(s) 
+    pydemos.append(s)
+for s in cppslow:
+    cppdemos.remove(s) 
+    cppdemos.append(s)
+
 # Demos that need command line arguments are treated seperately
 pydemos.remove('./../../demo/quadrature/python')
 cppdemos.remove('./../../demo/quadrature/cpp')
@@ -43,14 +54,27 @@ cppdemos.remove('./../../demo/ode/method-weights/cpp')
 cppdemos.remove('./../../demo/ode/stiff/cpp')
 
 failed = []
+timing = []
+
+# Check if we should run only Python tests, use for quick testing
+if len(sys.argv) == 2 and sys.argv[1] == "--only-python":
+    only_python = True
+else:
+    only_python = False
 
 # Run C++ demos
+if only_python:
+    print "Skipping C++ demos"
+    cppdemos = []
 for demo in cppdemos:
     print "----------------------------------------------------------------------"
     print "Running C++ demo %s" % demo
     print ""
     if os.path.isfile(os.path.join(demo, 'demo')):
+        t1 = time()
         output = getstatusoutput("cd %s && ./demo" % demo)
+        t2 = time()
+        timing += [(demo, t2-t1)]
         success = not output[0]
         if success:
             print "OK"
@@ -66,7 +90,10 @@ for demo in pydemos:
     print "Running Python demo %s" % demo
     print ""
     if os.path.isfile(os.path.join(demo, 'demo.py')):
+        t1 = time()
         output = getstatusoutput("cd %s && python ./demo.py" % demo)
+        t2 = time()
+        timing += [(demo, t2-t1)]
         success = not output[0]
         if success:
             print "OK"
@@ -75,6 +102,12 @@ for demo in pydemos:
             failed += [(demo, "Python", output[1])]
     else:
         print "*** Warning: missing demo"
+
+# Print summary of time to run demos
+if False:
+    print ""
+    print "Time to run demos:"
+    print "\n".join("%s: %.2fs" % t for t in timing)
 
 # Print output for failed tests
 print ""
