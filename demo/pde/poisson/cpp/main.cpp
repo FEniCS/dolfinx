@@ -86,7 +86,6 @@ int main()
 
   // Solve PDE
   Function u;
-  pde.set("PDE linear solver", "iterative");
   pde.solve(u);
 
   // Plot solution
