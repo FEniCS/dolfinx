@@ -14,7 +14,7 @@
 namespace dolfin
 {
 
-  /// Tetrahedral mesh of the 3D  rectangular prysm (a,b) x (c,d) x (e,f).
+  /// Tetrahedral mesh of the 3D  rectangular prism (a,b) x (c,d) x (e,f).
   /// Given the number of cells (nx, ny, nz) in each direction,
   /// the total number of tetrahedra will be 6*nx*ny*nz and the
   /// total number of vertices will be (nx + 1)*(ny + 1)*(nz + 1).

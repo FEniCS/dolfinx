@@ -38,7 +38,7 @@ Box::Box(real a, real b, real c, real d, real e, real f, uint nx, uint ny,
     const real z = e + (static_cast<real>(iz))*(f-e) / static_cast<real>(nz);
     for (uint iy = 0; iy <= ny; iy++)
     {
-      const real y = c + (static_cast<real>(iy))*(d-e) / static_cast<real>(ny);
+      const real y = c + (static_cast<real>(iy))*(d-c) / static_cast<real>(ny);
       for (uint ix = 0; ix <= nx; ix++)
       {
         const real x = a + (static_cast<real>(ix))*(b-a) / static_cast<real>(nx);
