@@ -15,9 +15,9 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-UnitCircle::UnitCircle(uint nx, Type type,Trans trans) : Mesh()
+UnitCircle::UnitCircle(uint nx, Type type, Transformation transformation) : Mesh()
 {
-  message("UnitCircle is Experimental: It could have a bad quality mesh");
+  warning("UnitCircle is Experimental: It may be of poor quality.");
 
   uint ny=nx;
   // Receive mesh according to parallel policy
@@ -46,17 +46,17 @@ UnitCircle::UnitCircle(uint nx, Type type,Trans trans) : Mesh()
   
   // Create main vertices:
   // variables for transformation
-  real trns_x=0.0;
-  real trns_y=0.0;
+  real trns_x = 0.0;
+  real trns_y = 0.0;
   uint vertex = 0;
   for (uint iy = 0; iy <= ny; iy++) 
   {
-    const real y = -1.+static_cast<real>(iy)*2. / static_cast<real>(ny);
+    const real y = -1.0 + static_cast<real>(iy)*2.0 / static_cast<real>(ny);
     for (uint ix = 0; ix <= nx; ix++) 
     {
-      const real x =-1.+ static_cast<real>(ix)*2. / static_cast<real>(nx);
-      trns_x=transformx(x,y,trans);
-      trns_y=transformy(x,y,trans);
+      const real x =-1.+ static_cast<real>(ix)*2.0 / static_cast<real>(nx);
+      trns_x = transformx(x, y, transformation);
+      trns_y = transformy(x, y, transformation);
       editor.addVertex(vertex++, trns_x, trns_y);
     }
   }
@@ -66,12 +66,12 @@ UnitCircle::UnitCircle(uint nx, Type type,Trans trans) : Mesh()
   {
     for (uint iy = 0; iy < ny; iy++) 
     {
-      const real y =-1.+ (static_cast<real>(iy) + 0.5)*2. / static_cast<real>(ny);
+      const real y = -1.0 + (static_cast<real>(iy) + 0.5)*2.0 / static_cast<real>(ny);
       for (uint ix = 0; ix < nx; ix++) 
       {
-        const real x =-1.+ (static_cast<real>(ix) + 0.5)*2. / static_cast<real>(nx);
-        trns_x=transformx(x,y,trans);
-        trns_y=transformy(x,y,trans);
+        const real x = -1.0 + (static_cast<real>(ix) + 0.5)*2.0 / static_cast<real>(nx);
+        trns_x = transformx(x, y, transformation);
+        trns_y = transformy(x, y, transformation);
         editor.addVertex(vertex++, trns_x, trns_y);
       }
     }
@@ -139,80 +139,75 @@ UnitCircle::UnitCircle(uint nx, Type type,Trans trans) : Mesh()
   if (MPI::broadcast()) { MPIMeshCommunicator::broadcast(*this); }
 }
 //-----------------------------------------------------------------------------
-real UnitCircle::transformx(real x,real y,Trans trans)
+real UnitCircle::transformx(real x, real y, Transformation transformation)
 {
-  real retrn=0.0;
   //maxn transformation
-  if(trans==maxn)
-    {
-      if (x||y) //in (0,0) (trns_x,trans_y)=(nan,nan)
-        retrn=x*max(fabs(x),fabs(y))/sqrt(x*x+y*y);
-      else
-        retrn=x;
-    }
+  if(transformation == maxn)
+  {
+    if (x||y) //in (0,0) (trns_x,trans_y)=(nan,nan)
+      return x*max(fabs(x),fabs(y))/sqrt(x*x+y*y);
+    else
+      return x;
+  }
   //sumn transformation
-  else if (trans==sumn)
-    {
-      if (x||y) //in (0,0) (trns_x,trans_y)=(nan,nan)
-        retrn=x*(fabs(x)+fabs(y))/sqrt(x*x+y*y);
-      else
-        retrn=x;
-    }
+  else if(transformation == sumn)
+  {
+    if (x||y) //in (0,0) (trns_x,trans_y)=(nan,nan)
+      return x*(fabs(x)+fabs(y))/sqrt(x*x+y*y);
+    else
+      return x;
+  }
   else 
-    {
-      if ((trans!=maxn)*(trans!=sumn)*(trans!=rotsumn))
-        { 
-          message("Implemented  transformations are: maxn,sumn and rotsumn");
-          message("Using rotsumn transformation");
-        }
-      if (x||y) //in (0,0) (trns_x,trans_y)=(nan,nan)
-        {
-          real xx=0.5*(x+y);
-          real yy=0.5*(-x+y);
-          retrn=xx*(fabs(xx)+fabs(yy))/sqrt(xx*xx+yy*yy);
-        }
-      else
-        retrn=y;
+  {
+    // FIXME: Use easier to understand check
+    if((transformation != maxn)*(transformation != sumn)*(transformation != rotsumn))
+    { 
+      message("Implemented  transformations are: maxn,sumn and rotsumn");
+      message("Using rotsumn transformation");
     }
-  
-  return retrn;
+    if(x||y) //in (0,0) (trns_x,trans_y)=(nan,nan)
+    {
+      real xx = 0.5*(x+y);
+      real yy = 0.5*(-x+y);
+      return xx*(fabs(xx)+fabs(yy))/sqrt(xx*xx+yy*yy);
+    }
+    else
+      return y;
+  }
 }
-
-real UnitCircle::transformy(real x,real y,Trans trans)
+//-----------------------------------------------------------------------------
+real UnitCircle::transformy(real x, real y, Transformation transformation)
 {
-  real retrn=0.0;
   //maxn transformation
-  if(trans==maxn)
-    {
-      if (x||y) //in (0,0) (trns_x,trans_y)=(nan,nan)
-        retrn=y*max(fabs(x),fabs(y))/sqrt(x*x+y*y);
-      else
-        retrn=y;
-    }
+  if(transformation == maxn)
+  {
+    if (x||y) //in (0,0) (trns_x,trans_y)=(nan,nan)
+      return y*max(fabs(x),fabs(y))/sqrt(x*x+y*y);
+    else
+      return y;
+  }
   //sumn transformation
-  else if (trans==sumn)
-    {
-      if (x||y) //in (0,0) (trns_x,trans_y)=(nan,nan)
-        retrn=y*(fabs(x)+fabs(y))/sqrt(x*x+y*y);
-      else
-        retrn=y;
-    }
+  else if (transformation == sumn)
+  {
+    if (x||y) //in (0,0) (trns_x,trans_y)=(nan,nan)
+      return y*(fabs(x)+fabs(y))/sqrt(x*x+y*y);
+    else
+      return y;
+  }
   else 
+  {
+    if ((transformation != maxn)*(transformation != sumn)*(transformation != rotsumn))
     {
-      if ((trans!=maxn)*(trans!=sumn)*(trans!=rotsumn))
-        {
-          message("Implemented  transformations are: maxn,sumn and rotsumn");
-          message("Using rotsumn transformation");
-        }
-      if (x||y) //in (0,0) (trns_x,trans_y)=(nan,nan)
-        {
-          real xx=0.5*(x+y);
-          real yy=0.5*(-x+y);
-          retrn=yy*(fabs(xx)+fabs(yy))/sqrt(xx*xx+yy*yy);
-        }
-      else
-        retrn=y;
+      message("Implemented  transformations for are: maxn, sumn and rotsumn");
+      message("Using rotsumn transformation");
     }
-  
-  return retrn;
+    if (x||y) //in (0,0) (trns_x,trans_y)=(nan,nan)
+    {
+      real xx = 0.5*(x+y);
+      real yy = 0.5*(-x+y);
+      return yy*(fabs(xx)+fabs(yy))/sqrt(xx*xx+yy*yy);
+    }
+    else
+      return y;
+  }
 }

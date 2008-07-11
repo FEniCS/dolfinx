@@ -1,7 +1,7 @@
 // Copyright (C) 2005-2006 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Nuno Lopes,2008
+// Modified by Nuno Lopes, 2008.
 //
 // First added:  2005-12-02
 // Last changed: 2006-08-07
@@ -23,7 +23,8 @@ namespace dolfin
   {
   public:
 
-    Box(const real a, const real b,const  real c,const real d,const real e,const real f,uint nx, uint ny, uint nz);
+    Box(real a, real b, real c, real d, real e, real f, uint nx, uint ny, 
+        uint nz);
 
   };
   

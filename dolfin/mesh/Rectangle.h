@@ -24,10 +24,11 @@ namespace dolfin
   class Rectangle : public Mesh
   {
   public:
+
     enum Type {right, left, crisscross};
     
-    //(a,b)x(c,d)
-    Rectangle(const real a,const real b,const real c,const real d, uint nx, uint ny, Type type = crisscross);
+    Rectangle(real a, real b, real c, real d, uint nx, uint ny, 
+              Type type = crisscross);
   };
   
 }

@@ -15,7 +15,8 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Rectangle::Rectangle(const real a, const real b, const real c, const real d,uint nx, uint ny, Type type) : Mesh()
+Rectangle::Rectangle(real a, real b, real c, real d, uint nx, uint ny, 
+                     Type type) : Mesh()
 {
   // Receive mesh according to parallel policy
   if (MPI::receive()) { MPIMeshCommunicator::receive(*this); return; }
@@ -44,10 +45,10 @@ Rectangle::Rectangle(const real a, const real b, const real c, const real d,uint
   uint vertex = 0;
   for (uint iy = 0; iy <= ny; iy++) 
   {
-    const real y = c+ ((static_cast<real> (iy))*(d-c) / static_cast<real>(ny));
+    const real y = c + ((static_cast<real> (iy))*(d-c) / static_cast<real>(ny));
     for (uint ix = 0; ix <= nx; ix++) 
     {
-      const real x =a+ ((static_cast<real>(ix))*(b-a) / static_cast<real>(nx));
+      const real x = a + ((static_cast<real>(ix))*(b-a) / static_cast<real>(nx));
       editor.addVertex(vertex++, x, y);
     }
   }
@@ -57,10 +58,10 @@ Rectangle::Rectangle(const real a, const real b, const real c, const real d,uint
   {
     for (uint iy = 0; iy < ny; iy++) 
     {
-      const real y = c+(static_cast<real>(iy) + 0.5)*(d-c)/ static_cast<real>(ny);
+      const real y = c +(static_cast<real>(iy) + 0.5)*(d-c)/ static_cast<real>(ny);
       for (uint ix = 0; ix < nx; ix++) 
       {
-        const real x = a+(static_cast<real>(ix) + 0.5)*(b-a)/ static_cast<real>(nx);
+        const real x = a + (static_cast<real>(ix) + 0.5)*(b-a)/ static_cast<real>(nx);
         editor.addVertex(vertex++, x, y);
       }
     }

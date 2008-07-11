@@ -26,15 +26,21 @@ namespace dolfin
   class UnitCircle : public Mesh
   {
   public:
-    enum Type {right, left, crisscross};
-    enum Trans {maxn,sumn,rotsumn};
 
-    UnitCircle(uint nx, Type type = crisscross,Trans trans=rotsumn);
+    enum Type {right, left, crisscross};
+    enum Transformation {maxn, sumn, rotsumn};
+
+    UnitCircle(uint nx, Type type = crisscross, 
+               Transformation transformation = rotsumn);
 
   private:
-    real transformx(real x,real y,Trans trans);
-    real transformy(real x,real y,Trans trans);
-    inline real max(real x,real y){return ((x>y)?x:y);};
+
+    real transformx(real x, real y, Transformation transformation);
+
+    real transformy(real x, real y, Transformation transformation);
+
+    inline real max(real x, real y)
+    { return ((x>y) ? x : y); };
   };
   
 }

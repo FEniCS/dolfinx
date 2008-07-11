@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells, 2007.
-// Modified by Nuno Lopes, 2008
+// Modified by Nuno Lopes, 2008.
 //
 // First added:  2005-12-02
 // Last changed: 2008-06-19
@@ -15,15 +15,16 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Box::Box(const real a,const  real b,const real c,const real d,const real e,const real f, uint nx, uint ny, uint nz) : Mesh()
+Box::Box(real a, real b, real c, real d, real e, real f, uint nx, uint ny, 
+         uint nz) : Mesh()
 {
   // Receive mesh according to parallel policy
   if (MPI::receive()) { MPIMeshCommunicator::receive(*this); return; }
 
   if ( nx < 1 || ny < 1 || nz < 1 )
-    error("Size of unit cube must be at least 1 in each dimension.");
+    error("Size of box must be at least 1 in each dimension.");
 
-  rename("mesh", "Mesh of the cuboid (a,b)x(c,d)x(e,f)");
+  rename("mesh", "Mesh of the cuboid (a,b) x (c,d) x (e,f)");
 
   // Open mesh for editing
   MeshEditor editor;
@@ -34,13 +35,13 @@ Box::Box(const real a,const  real b,const real c,const real d,const real e,const
   uint vertex = 0;
   for (uint iz = 0; iz <= nz; iz++)
   {
-    const real z = e+ (static_cast<real>(iz))*(f-e) / static_cast<real>(nz);
+    const real z = e + (static_cast<real>(iz))*(f-e) / static_cast<real>(nz);
     for (uint iy = 0; iy <= ny; iy++)
     {
-      const real y =c+ (static_cast<real>(iy))*(d-e) / static_cast<real>(ny);
+      const real y = c + (static_cast<real>(iy))*(d-e) / static_cast<real>(ny);
       for (uint ix = 0; ix <= nx; ix++)
       {
-        const real x = a+(static_cast<real>(ix))*(b-a) / static_cast<real>(nx);
+        const real x = a + (static_cast<real>(ix))*(b-a) / static_cast<real>(nx);
         editor.addVertex(vertex++, x, y, z);
       }
     }
