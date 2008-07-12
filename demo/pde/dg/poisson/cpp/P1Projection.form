@@ -17,6 +17,6 @@ w = TestFunction(P1)
 v = TrialFunction(P1)
 u = Function(E)
 
-a = dot(w, v)*dx
-L = dot(w, u)*dx
+a = w*v*dx
+L = w*u*dx
 
