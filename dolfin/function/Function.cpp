@@ -177,6 +177,17 @@ Mesh& Function::mesh() const
   return f->mesh;
 }
 //-----------------------------------------------------------------------------
+std::string Function::signature() const
+{
+  if (!f)
+    error("Function contains no data.");
+
+  if (_type != discrete)
+    error("A signature can only be returned by discrete functions.");
+
+  return (static_cast<DiscreteFunction*>(f))->signature();
+}
+//-----------------------------------------------------------------------------
 GenericVector& Function::vector() const
 {
   if (!f)

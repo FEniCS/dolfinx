@@ -105,6 +105,9 @@ namespace dolfin
     /// Return the mesh
     Mesh& mesh() const;
 
+    /// Return the signature of a DiscreteFunction
+    std::string signature() const;
+
     /// Return the vector associated with a DiscreteFunction
     GenericVector& vector() const;
 

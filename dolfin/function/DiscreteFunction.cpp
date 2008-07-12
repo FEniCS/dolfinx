@@ -294,6 +294,14 @@ void DiscreteFunction::eval(real* values, const real* x) const
   }
 }
 //-----------------------------------------------------------------------------
+std::string DiscreteFunction::signature() const
+{
+  if( !finite_element )
+    error("No finite element has been associated with this DiscreteFunction.");
+
+  return finite_element->signature();
+}
+//-----------------------------------------------------------------------------
 GenericVector& DiscreteFunction::vector() const
 {
   if( !x )
