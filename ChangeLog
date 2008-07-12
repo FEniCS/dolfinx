@@ -1,3 +1,4 @@
+ - Simple projection of functions in Python
  - New built-in meshes: UnitCircle, Box, Rectangle
 0.8.0 [2008-06-23]
  - Fix input of matrix data from XML

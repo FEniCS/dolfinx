@@ -66,17 +66,8 @@ f1 = File("u.xml")
 f0 << sigma
 f1 << u
 
-# Define projection operation for sigma onto P1 basis
-w = TestFunction(P1)
-s = TrialFunction(P1)
-a = dot(w, s)*dx
-L = dot(w, sigma)*dx
-
-# Define PDE for projecting sigma
-pde = LinearPDE(a, L, mesh)
-
 # Project sigma
-sigma_proj = pde.solve()
+sigma_proj = project(sigma, P1)
 
 # Save solution to pvd format
 f3 = File("sigma.pvd")
