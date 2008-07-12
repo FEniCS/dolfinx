@@ -1,0 +1,19 @@
+# Copyright (C) 2008 Garth N. Wells
+# Licensed under the GNU LGPL Version 2.1
+#
+# The bilinear form a(v, u) and linear form L(v) for projecting a function from 
+# a BDM (Brezzi-Douglas-Marini) space onto a vector P1 continuous Lagrange 
+# basis.
+
+# Compile this form with FFC: ffc -l dolfin P1Projection.form
+
+q = 1
+BDM = FiniteElement("Brezzi-Douglas-Marini", "triangle", q)
+P1  = VectorElement("Lagrange", "triangle", 1)
+
+w = TestFunction(P1)
+u = TrialFunction(P1)
+f = Function(BDM)
+
+a = dot(w, u)*dx
+L = dot(w, f)*dx
