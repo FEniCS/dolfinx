@@ -21,6 +21,7 @@
 
 #include <dolfin.h>
 #include "Poisson.h"
+#include "P1Projection.h"
 
 using namespace dolfin;
 
@@ -59,12 +60,19 @@ int main()
   Function u;
   pde.solve(u);
 
+  // Project solution onto continuous basis for post-processing
+  Function u_proj;
+  P1ProjectionBilinearForm a_proj;
+  P1ProjectionLinearForm L_proj(u);
+  LinearPDE pde_proj(a_proj, L_proj, mesh);
+  pde_proj.solve(u_proj);
+
   // Plot solution
-  plot(u);
+  plot(u_proj);
 
   // Save solution to file
   File file("poisson.pvd");
-  file << u;
+  file << u_proj;
 
   return 0;
 }
