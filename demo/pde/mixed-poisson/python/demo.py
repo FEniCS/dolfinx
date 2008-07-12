@@ -15,10 +15,10 @@
 #
 # Original implementation: ../cpp/main.cpp by Anders Logg and Marie Rognes
 #
-__author__ = "Kristian B. Oelgaard (k.b.oelgaard@tudelft.nl)"
-__date__ = "2007-11-14 -- 2007-11-28"
+__author__    = "Kristian B. Oelgaard (k.b.oelgaard@tudelft.nl)"
+__date__      = "2007-11-14 -- 2007-11-28"
 __copyright__ = "Copyright (C) 2007 Kristian B. Oelgaard"
-__license__  = "GNU LGPL Version 2.1"
+__license__   = "GNU LGPL Version 2.1"
 
 from dolfin import *
 
@@ -32,6 +32,7 @@ from dolfin import *
 q = 1
 BDM = FiniteElement("Brezzi-Douglas-Marini", "triangle", q)
 DG  = FiniteElement("Discontinuous Lagrange", "triangle", q - 1)
+P1  = VectorElement("Lagrange", "triangle", 1)
 mixed_element = BDM + DG
 
 mesh = UnitSquare(16, 16)
@@ -46,10 +47,9 @@ class Source(Function):
         dy = x[1] - 0.5
         values[0] =  500.0*exp(-(dx*dx + dy*dy)/0.02)
 
-(tau, w) = TestFunctions(mixed_element)
+(tau, w)   = TestFunctions(mixed_element)
 (sigma, u) = TrialFunctions(mixed_element)
 f = Source(DG, mesh)
-
 
 a = (dot(tau, sigma) - div(tau)*u + w*div(sigma))*dx
 L = w*f*dx
@@ -66,13 +66,25 @@ f1 = File("u.xml")
 f0 << sigma
 f1 << u
 
+# Define projection operation for sigma onto P1 basis
+w = TestFunction(P1)
+s = TrialFunction(P1)
+a = dot(w, s)*dx
+L = dot(w, sigma)*dx
+
+# Define PDE for projecting sigma
+pde = LinearPDE(a, L, mesh)
+
+# Project sigma
+sigma_proj = pde.solve()
+
 # Save solution to pvd format
 f3 = File("sigma.pvd")
 f4 = File("u.pvd")
-f3 << sigma
+f3 << sigma_proj
 f4 << u
 
 # Plot solution
-plot(sigma)
+plot(sigma_proj)
 plot(u)
 interactive()
