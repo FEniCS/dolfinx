@@ -18,25 +18,28 @@ class Source2D : public Function
 {
 public:
     
-  Source2D(Mesh& mesh, real _c) : Function(mesh), C(_c) {}
+  Source2D(Mesh& mesh, real c) : Function(mesh), c(c) {}
 
   real eval(const real* x) const
   {
 
-    real vx = -exp(x[0])*(x[1]*cos(x[1]) + sin(x[1]));
-    real vy = exp(x[0])*(x[1]*sin(x[1]));
+    real vx  = -exp(x[0])*(x[1]*cos(x[1]) + sin(x[1]));
+    real vy  =  exp(x[0])*(x[1]*sin(x[1]));
 
-    real ux = 5.0*DOLFIN_PI*cos(5.0*DOLFIN_PI*x[0])*sin(5.0*DOLFIN_PI*x[1]);
-    real uy = 5.0*DOLFIN_PI*sin(5.0*DOLFIN_PI*x[0])*cos(5.0*DOLFIN_PI*x[1]);
+    real ux  =  5.0*DOLFIN_PI*cos(5.0*DOLFIN_PI*x[0])*sin(5.0*DOLFIN_PI*x[1]);
+    real uy  =  5.0*DOLFIN_PI*sin(5.0*DOLFIN_PI*x[0])*cos(5.0*DOLFIN_PI*x[1]);
     real uxx = -25.0*DOLFIN_PI*DOLFIN_PI*sin(5.0*DOLFIN_PI*x[0])*sin(5.0*DOLFIN_PI*x[1]);
     real uyy = -25.0*DOLFIN_PI*DOLFIN_PI*sin(5.0*DOLFIN_PI*x[0])*sin(5.0*DOLFIN_PI*x[1]);
 
-    return vx*ux + vy*uy - C*(uxx + uyy);
+    return vx*ux + vy*uy - c*(uxx + uyy);
   }
-  real C;
+
+private:
+
+  real c;
 };
 
-// Velocity
+// Advective velocity
 class Velocity : public Function
 {
 public:
@@ -46,15 +49,21 @@ public:
   void eval(real* values, const real* x) const
   {
     values[0] = -exp(x[0])*(x[1]*cos(x[1]) + sin(x[1]));
-    values[1] = exp(x[0])*(x[1]*sin(x[1]));
+    values[1] =  exp(x[0])*(x[1]*sin(x[1]));
   }
+
+  dolfin::uint rank() const
+  { return 1; }
+
+  dolfin::uint dim(dolfin::uint i) const
+  { return 2; }
 };
 
 class OutflowFacet : public Function
 {
 public:
 
-  OutflowFacet(Mesh& mesh) : Function(mesh), velocity(mesh) {}
+  OutflowFacet(Function& velocity, Mesh& mesh) : Function(mesh), velocity(velocity) {}
 
   real eval(const real* x) const
   {
@@ -81,16 +90,15 @@ public:
       // If dot product is positive the facet is an outflow facet, meaning the contribution
       // from this cell is on the upwind side.
       if (dot > DOLFIN_EPS)
-      {
         return 1.0;
-      }
       else
-      {
         return 0.0;
-      }
     }
   }
-  Velocity velocity;
+
+private:
+
+  Function& velocity;
 };
 
 int main(int argc, char *argv[])
@@ -106,7 +114,7 @@ int main(int argc, char *argv[])
   Function c(mesh, 0.0); // Diffusivity constant
   FacetNormal N(mesh);
   AvgMeshSize h(mesh);
-  OutflowFacet of(mesh);
+  OutflowFacet of(velocity, mesh);
 
   Function alpha(mesh, 20.0);
 
