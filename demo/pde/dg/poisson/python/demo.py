@@ -34,7 +34,6 @@ class Source(Function):
 
 # Define variational problem
 element = FiniteElement("Discontinuous Lagrange", "triangle", 1)
-P1 = FiniteElement("Lagrange", "triangle", 1)
 v = TestFunction(element)
 u = TrialFunction(element)
 f = Source(element, mesh)
@@ -63,17 +62,9 @@ L = v*f*dx
 pde = LinearPDE(a, L, mesh)
 u = pde.solve()
 
-# Define projection operation for u onto P1 basis for post-processing
-q      = TestFunction(P1)
-u_proj = TrialFunction(P1)
-a      = dot(q, u_proj)*dx
-L      = dot(q, u)*dx
-
-# Define PDE for projecting sigma
-pde = LinearPDE(a, L, mesh)
-
-# Project sigma
-u_proj = pde.solve()
+# Project u
+P1 = FiniteElement("Lagrange", "triangle", 1)
+u_proj = project(u, P1)
 
 # Save solution to file
 file = File("poisson.pvd")

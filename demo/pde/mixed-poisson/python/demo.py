@@ -66,7 +66,7 @@ f1 = File("u.xml")
 f0 << sigma
 f1 << u
 
-# Project sigma
+# Project sigma for post-processing
 sigma_proj = project(sigma, P1)
 
 # Save solution to pvd format
@@ -79,3 +79,4 @@ f4 << u
 plot(sigma_proj)
 plot(u)
 interactive()
+
