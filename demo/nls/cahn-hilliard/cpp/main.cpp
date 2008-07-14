@@ -25,7 +25,7 @@ class CahnHilliardEquation : public NonlinearProblem, public Parametrized
     // Constructor 
     CahnHilliardEquation(Mesh& mesh, Function& u, Function& u0, Function& dt, 
                          Function& theta, Function& lambda, Function& muFactor) 
-         : mesh(mesh), dt(dt), theta(theta), lambda(lambda), muFactor(muFactor)
+         : assembler(mesh), reset_Jacobian(true)
     {
       // Create forms
       if(mesh.topology().dim() == 2)
@@ -65,25 +65,20 @@ class CahnHilliardEquation : public NonlinearProblem, public Parametrized
     void form(GenericMatrix& A, GenericVector& b, const GenericVector& x)
     {
       // Assemble system and RHS (Neumann boundary conditions)
-      Assembler assembler(mesh);
-      assembler.assemble(A, *a);
+      assembler.assemble(A, *a, reset_Jacobian);
+      reset_Jacobian  = false;
       assembler.assemble(b, *L);
+    
     }
 
   private:
 
-    // Pointers to forms and mesh
+    // Pointers to forms
     Form *a;
     Form *L;
-    Mesh& mesh;
 
-    // Time stepping parameters
-    Function& dt; 
-    Function& theta;
-
-    // Model parameters
-    Function& lambda; 
-    Function& muFactor;
+    Assembler assembler;
+    bool reset_Jacobian;
 };
 
 int main(int argc, char* argv[])
