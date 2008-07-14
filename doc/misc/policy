@@ -78,3 +78,10 @@ keep sort of the same style when writing the code.
       cout << 2*i << endl;
     }
 
+- Make all constructors (except copy constructors) explicit if there is no particular
+  reason not to do so:
+
+    class Foo
+    {
+       explicit Foo(int i);
+    };
