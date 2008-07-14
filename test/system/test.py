@@ -39,13 +39,16 @@ pydemos.remove('./../../demo/ode/aliev-panfilov/python')
 
 # Push slow demos to the end
 pyslow = []
-cppslow = ['./../../demo/nls/cahn-hilliard/cpp']
+cppslow = []
 for s in pyslow:
     pydemos.remove(s) 
     pydemos.append(s)
 for s in cppslow:
     cppdemos.remove(s) 
     cppdemos.append(s)
+
+# Remove overly slow demos
+cppdemos.remove('./../../demo/nls/cahn-hilliard/cpp')
 
 # Demos that need command line arguments are treated separately
 pydemos.remove('./../../demo/quadrature/python')
