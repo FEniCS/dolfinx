@@ -122,10 +122,11 @@ void OpenDXFile::writeMesh(FILE* fp, Mesh& mesh)
     float y = (float) p.y();
     float z = (float) p.z();
     
-    fwrite(&x, sizeof(float), 1, fp);
-    fwrite(&y, sizeof(float), 1, fp);
+    int err;
+    err = fwrite(&x, sizeof(float), 1, fp);
+    err =  fwrite(&y, sizeof(float), 1, fp);
     if ( mesh.type().cellType() == CellType::tetrahedron )
-      fwrite(&z, sizeof(float), 1, fp);
+      err = fwrite(&z, sizeof(float), 1, fp);
   }
   fprintf(fp,"\n\n");
 
@@ -139,7 +140,8 @@ void OpenDXFile::writeMesh(FILE* fp, Mesh& mesh)
     for (VertexIterator n(*c); !n.end(); ++n)
     {
       int id  = n->index();
-      fwrite(&id, sizeof(int), 1, fp);
+      int err;
+      err = fwrite(&id, sizeof(int), 1, fp);
     }
   }
   fprintf(fp, "\n");
@@ -169,8 +171,9 @@ void OpenDXFile::writeMeshData(FILE* fp, Mesh& mesh)
   
   for (CellIterator c(mesh); !c.end(); ++c)
   {
-    float value = static_cast<float>(c->diameter());
-    fwrite(&value, sizeof(float), 1, fp);
+    float value = static_cast<float>(c->diameter()); 
+    int err = fwrite(&value, sizeof(float), 1, fp);
+    dolfin_assert(err == 1);
   }
   fprintf(fp, "\n");
   fprintf(fp, "attribute \"dep\" string \"connections\"\n");

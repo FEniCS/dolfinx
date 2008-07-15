@@ -5,8 +5,8 @@
 # Last changed: 2008-05-05
 #
 
-DG = FiniteElement("Discontinuous Lagrange", "triangle", 2)
-CG = FiniteElement("Lagrange", "triangle", 2)
+DG = FiniteElement("Discontinuous Lagrange", "triangle", 1)
+CG = FiniteElement("Lagrange", "triangle", 1)
 
 # Test and trial functions
 v = TestFunction(CG)
