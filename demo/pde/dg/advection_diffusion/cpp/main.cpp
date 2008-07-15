@@ -2,42 +2,40 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-06-29
-// Last changed: 2008-05-05
+// Last changed: 2008-07-15
 //
 // Steady state advection-diffusion equation, discontinuous formulation using full upwinding.
-// Constant velocity field with homogeneous Dirichlet boundary conditions on all boundaries.
 
 #include <dolfin.h>
+#include <dolfin/fem/UFC.h>
+
 #include "AdvectionDiffusion.h"
+#include "OutflowFacet.h"
 #include "Projection.h"
 
 using namespace dolfin;
 
-// Source term
-class Source2D : public Function
+// Dirichlet boundary condition
+class BC : public Function
 {
 public:
-    
-  Source2D(Mesh& mesh, real c) : Function(mesh), c(c) {}
+
+  BC(Mesh& mesh) : Function(mesh) {}
 
   real eval(const real* x) const
   {
-
-    real vx  = -exp(x[0])*(x[1]*cos(x[1]) + sin(x[1]));
-    real vy  =  exp(x[0])*(x[1]*sin(x[1]));
-
-    real ux  =  5.0*DOLFIN_PI*cos(5.0*DOLFIN_PI*x[0])*sin(5.0*DOLFIN_PI*x[1]);
-    real uy  =  5.0*DOLFIN_PI*sin(5.0*DOLFIN_PI*x[0])*cos(5.0*DOLFIN_PI*x[1]);
-    real uxx = -25.0*DOLFIN_PI*DOLFIN_PI*sin(5.0*DOLFIN_PI*x[0])*sin(5.0*DOLFIN_PI*x[1]);
-    real uyy = -25.0*DOLFIN_PI*DOLFIN_PI*sin(5.0*DOLFIN_PI*x[0])*sin(5.0*DOLFIN_PI*x[1]);
-
-    return vx*ux + vy*uy - c*(uxx + uyy);
+    return sin(DOLFIN_PI*5.0*x[1]);
   }
-
-private:
-
-  real c;
 };
+
+  // Sub domain for Dirichlet boundary condition
+  class DirichletBoundary : public SubDomain
+  {
+    bool inside(const real* x, bool on_boundary) const
+    {
+      return std::abs(x[0] - 1.0) < DOLFIN_EPS && on_boundary;
+    }
+  };
 
 // Advective velocity
 class Velocity : public Function
@@ -48,8 +46,8 @@ public:
 
   void eval(real* values, const real* x) const
   {
-    values[0] = -exp(x[0])*(x[1]*cos(x[1]) + sin(x[1]));
-    values[1] =  exp(x[0])*(x[1]*sin(x[1]));
+    values[0] = -1.0;
+    values[1] = -0.4;
   }
 
   dolfin::uint rank() const
@@ -59,11 +57,12 @@ public:
   { return 2; }
 };
 
+// Determine if the current facet is an outflow facet with respect to the current cell
 class OutflowFacet : public Function
 {
 public:
 
-  OutflowFacet(Function& velocity, Mesh& mesh) : Function(mesh), velocity(velocity) {}
+  OutflowFacet(Function& velocity, Mesh& mesh, UFC& ufc, Form& form) : Function(mesh), velocity(velocity), ufc(ufc), form(form) {}
 
   real eval(const real* x) const
   {
@@ -72,62 +71,82 @@ public:
       return 0.0;
     else
     {
-      real normal_vector[2];
-      real velocities[2] = {0.0, 0.0};
+      // Copy cell, cannot call interpolate with const cell()
+      Cell cell0(cell());
+      ufc.update(cell0);
 
-      // Compute facet normal
-      for (dolfin::uint i = 0; i < cell().dim(); i++)
-        normal_vector[i] = cell().normal(facet(), i);
+      // Interpolate coefficients on cell and current facet
+      for (dolfin::uint i = 0; i < form.coefficients().size(); i++)
+        form.coefficients()[i]->interpolate(ufc.w[i], ufc.cell, *ufc.coefficient_elements[i], cell0, facet());
 
-      // Get velocities
-      velocity.eval(velocities, x);
+      // Get exterior facet integral (we need to be able to tabulate ALL facets of a given cell)
+      ufc::exterior_facet_integral* integral = ufc.exterior_facet_integrals[0];
 
-      // Compute dot product of the facet outward normal and the velocity vector
-      real dot = 0.0;
-      for (dolfin::uint i = 0; i < cell().dim(); i++)
-        dot += normal_vector[i]*velocities[i];
-
-      // If dot product is positive the facet is an outflow facet, meaning the contribution
-      // from this cell is on the upwind side.
-      if (dot > DOLFIN_EPS)
-        return 1.0;
-      else
-        return 0.0;
+      // Call tabulate_tensor on exterior facet integral, dot(velocity, facet_normal)
+      integral->tabulate_tensor(ufc.A, ufc.w, ufc.cell, facet());
     }
+
+    // If dot product is positive, the current facet is an outflow facet
+    if (ufc.A[0] > DOLFIN_EPS)
+    {
+      return 1.0;
+    }
+    else
+      return 0.0;
   }
 
 private:
 
   Function& velocity;
+  UFC& ufc;
+  Form& form;
+
 };
 
 int main(int argc, char *argv[])
 {
-  // Set up problem
-  Matrix A;
-  Vector b;
-  Vector x;
+  // Read simple velocity field (-1.0, -0.4)
+  // defined on a 64x64 unit square mesh and a quadratic vector Lagrange element
+  Function velocity("../velocity.xml.gz");
 
   UnitSquare mesh(64, 64);
-  Velocity velocity(mesh);
-  Source2D f(mesh, 0.0);
+
+  // Set up problem
+  Matrix A;
+  Vector x, b;
   Function c(mesh, 0.0); // Diffusivity constant
+  Function f(mesh, 0.0); // Source term
+
   FacetNormal N(mesh);
   AvgMeshSize h(mesh);
-  OutflowFacet of(velocity, mesh);
 
+  // Definitions for outflow facet function
+  OutflowFacetFunctional M_of(velocity, N);
+  M_of.updateDofMaps(mesh);
+  UFC ufc(M_of.form(), mesh, M_of.dofMaps());
+  OutflowFacet of(velocity, mesh, ufc, M_of);
+
+  // Penalty parameter
   Function alpha(mesh, 20.0);
 
   AdvectionDiffusionBilinearForm a(velocity, N, h, of, c, alpha);
   AdvectionDiffusionLinearForm L(f);
 
+  // Set up boundary condition (apply strong BCs)
+  BC g(mesh);
+  DirichletBoundary boundary;
+  DirichletBC bc(g, mesh, boundary, geometric);
+
   assemble(A, a, mesh);
   assemble(b, L, mesh);
+  bc.apply(A, b, a);
+
   solve(A, x, b);
 
+  // Discontinuous solution
   Function uh(mesh, x, a);
 
-  // Define PDE
+  // Define PDE for projection
   ProjectionBilinearForm ap;
   ProjectionLinearForm Lp(uh);
   LinearPDE pde(ap, Lp, mesh);
@@ -136,6 +155,10 @@ int main(int argc, char *argv[])
   Function up;
   pde.solve(up);
 
+  // Save projected solution
   File file("temperature.pvd");
   file << up;
+
+  // Plot projected solution
+  plot(up);
 }

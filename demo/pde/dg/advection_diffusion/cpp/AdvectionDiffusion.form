@@ -2,13 +2,13 @@
 # Licensed under the GNU LGPL Version 2.1.
 #
 # First added:  2007-06-29
-# Last changed: 2008-05-05
+# Last changed: 2008-07-15
 #
 # The bilinear form a(v, u) and linear form L(v) for
 # advection-diffusion. Discontinuous formulation with upwinding.
 #
 
-scalar = FiniteElement("Discontinuous Lagrange", "triangle", 2)
+scalar = FiniteElement("Discontinuous Lagrange", "triangle", 1)
 vector = VectorElement("Lagrange", "triangle", 2)
 constant = FiniteElement("Discontinuous Lagrange", "triangle", 0)
 
@@ -18,6 +18,7 @@ u = TrialFunction(scalar)
 
 b   = Function(vector) # Note: b('+') == b('-')
 f   = Function(scalar)
+g   = Function(scalar) # BC
 n   = FacetNormal("triangle")
 h   = MeshSize("triangle")
 of  = Function(constant)  # This function is a switch that determines if a facet is
@@ -36,14 +37,11 @@ a_fac = kappa('+')*alpha('+')/h('+')*dot(jump(v, n), jump(u, n))*dS \
       - kappa('+')*dot(avg(grad(v)), jump(u, n))*dS \
       - kappa('+')*dot(jump(v, n), avg(grad(u)))*dS
 
-a_gd = kappa*alpha/h*v*u*ds \
-     - kappa*dot(grad(v), mult(u,n))*ds \
-     - kappa*dot(mult(v,n), grad(u))*ds
-
 a_vel = dot(jump(v, n), upwind(u, b))*dS + dot(mult(v, n), mult(b, of*u))*ds
 
-a = a_int + a_fac + a_gd + a_vel
+a = a_int + a_fac + a_vel
 
 # Linear form
 L = v*f*dx
+
 
