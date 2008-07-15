@@ -39,7 +39,7 @@ namespace dolfin
   public:
     
     /// File formats
-    enum Type { xml, matlab, octave, opendx, vtk, python ,raw ,xyz };
+    enum Type {xml, matlab, octave, opendx, vtk, python ,raw, xyz};
     
     /// Create a file with given name
     File(const std::string& filename);

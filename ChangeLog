@@ -1,5 +1,6 @@
  - Simple projection of functions in Python
- - New built-in meshes: UnitCircle, Box, Rectangle
+ - New file format: XYZ for use with Xd3d
+ - New built-in meshes: UnitCircle, Box, Rectangle, UnitSphere
 0.8.0 [2008-06-23]
  - Fix input of matrix data from XML
  - Add function normalize()

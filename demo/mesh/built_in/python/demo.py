@@ -1,7 +1,7 @@
 # The demo illustrates the built-in mesh types.
 
 __author__    = "Garth N. Wells (gnw20@cam.ac.uk)"
-__date__      = "2008-07-11 -- 2008-07-14"
+__date__      = "2008-07-11 -- 2008-07-15"
 __copyright__ = "Copyright (C) 2008 Garth N. Wells"
 __license__   = "GNU LGPL Version 2.1"
 
@@ -33,6 +33,10 @@ plot(mesh)
 
 mesh = Box(0.0, 10.0, 0.0, 4.0, 0.0, 2.0, 10, 10, 10)
 print "Plotting a Box"
+plot(mesh)
+
+mesh = UnitSphere(10)
+print "Plotting a UnitSphere"
 plot(mesh)
 
 interactive()

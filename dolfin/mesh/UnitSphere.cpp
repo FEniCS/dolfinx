@@ -99,7 +99,7 @@ real UnitSphere::transformx(real x,real y,real z)
     retrn=x;
   return retrn;
 }
-
+//-----------------------------------------------------------------------------
 real UnitSphere::transformy(real x,real y,real z)
 {
   real retrn=0.0;
@@ -109,7 +109,7 @@ real UnitSphere::transformy(real x,real y,real z)
     retrn=y;
   return retrn;
 }
-
+//-----------------------------------------------------------------------------
 real UnitSphere::transformz(real x,real y,real z)
 {
   real retrn=0.0;
@@ -120,7 +120,7 @@ real UnitSphere::transformz(real x,real y,real z)
     retrn=z;
   return retrn;
 }
-
+//-----------------------------------------------------------------------------
 real UnitSphere::max(real x,real y, real z)
 {
   real rtrn=0.0;
@@ -133,3 +133,4 @@ real UnitSphere::max(real x,real y, real z)
     rtrn=z; 
   return rtrn;
 }
+//-----------------------------------------------------------------------------
