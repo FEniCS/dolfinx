@@ -160,6 +160,8 @@ void Mesh::move(Mesh& boundary, ALEType method)
 void Mesh::smooth() 
 {
   // FIXME: Move implementation to separate class and just call function here
+  // FIXME: May break down for conconvex meshes! Can we do something about that?
+  // FIXME: See post to mailing list 2008-07-16.
 
   MeshFunction<bool> bnd_vertex(*this); 
   bnd_vertex.init(0); 
