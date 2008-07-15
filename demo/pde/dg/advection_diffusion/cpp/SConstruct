@@ -13,4 +13,7 @@ env = Environment(ENV=os.environ, CXX=compiler)
 env.ParseConfig('pkg-config --cflags --libs dolfin')
 
 # Program name
-env.Program('demo', 'main.cpp')
+#env.Program('demo', 'main.cpp')
+env.Program('demo', ['main.cpp', 'TriangleCell.cpp'])
+
+
