@@ -12,6 +12,7 @@
 
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Facet.h>
+#include <dolfin/fem/UFC.h>
 #include "Function.h"
 
 namespace dolfin
@@ -167,6 +168,72 @@ namespace dolfin
     }
 
   };
+
+// Determine if the current facet is an outflow facet with respect to the current cell.
+// Accepts as argument the mesh and a form M = dot(n, v)*ds, a functional of the
+// normal vector to the facet and velocity vector integrated over the exterior of
+// the cell. Returns 1.0 if the dot product > 0, 0.0 otherwise.
+
+class OutflowFacet : public Function
+{
+public:
+
+  OutflowFacet(Mesh& mesh, Form& form) : Function(mesh), form(form)
+  {
+    // Some simple sanity checks on form
+    if (!(form.form().rank() == 0 && form.form().num_coefficients() == 2))
+      error("Invalid form: rank = %d, number of coefficients = %d. Must be rank 0 form with 2 coefficients.", form.form().rank(), form.form().num_coefficients());
+    if (!(form.form().num_cell_integrals() == 0 && form.form().num_exterior_facet_integrals() == 1 && form.form().num_interior_facet_integrals() == 0))
+      error("Invalid form: Must have exactly 1 exterior facet integral");
+
+    form.updateDofMaps(mesh);
+    ufc = new UFC(form.form(), mesh, form.dofMaps());
+  }
+
+  ~OutflowFacet()
+  {
+    delete ufc;
+  }
+
+  real eval(const real* x) const
+  {
+    // If there is no facet (assembling on interior), return 0.0
+    if (facet() < 0)
+      return 0.0;
+    else
+    {
+      // Copy cell, cannot call interpolate with const cell()
+      Cell cell0(cell());
+      ufc->update(cell0);
+
+      // Interpolate coefficients on cell and current facet
+      for (dolfin::uint i = 0; i < form.coefficients().size(); i++)
+        form.coefficients()[i]->interpolate(ufc->w[i], ufc->cell, *ufc->coefficient_elements[i], cell0, facet());
+
+      // Get exterior facet integral (we need to be able to tabulate ALL facets of a given cell)
+      ufc::exterior_facet_integral* integral = ufc->exterior_facet_integrals[0];
+
+      // Call tabulate_tensor on exterior facet integral, dot(velocity, facet_normal)
+      integral->tabulate_tensor(ufc->A, ufc->w, ufc->cell, facet());
+    }
+
+    // If dot product is positive, the current facet is an outflow facet
+    if (ufc->A[0] > DOLFIN_EPS)
+    {
+      return 1.0;
+    }
+    else
+      return 0.0;
+  }
+
+
+private:
+
+  UFC* ufc;
+  Form& form;
+
+};
+
 
 }
 

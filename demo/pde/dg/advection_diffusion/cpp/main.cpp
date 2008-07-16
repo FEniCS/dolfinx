@@ -7,7 +7,6 @@
 // Steady state advection-diffusion equation, discontinuous formulation using full upwinding.
 
 #include <dolfin.h>
-#include <dolfin/fem/UFC.h>
 
 #include "AdvectionDiffusion.h"
 #include "OutflowFacet.h"
@@ -57,52 +56,6 @@ public:
   { return 2; }
 };
 
-// Determine if the current facet is an outflow facet with respect to the current cell
-class OutflowFacet : public Function
-{
-public:
-
-  OutflowFacet(Function& velocity, Mesh& mesh, UFC& ufc, Form& form) : Function(mesh), velocity(velocity), ufc(ufc), form(form) {}
-
-  real eval(const real* x) const
-  {
-    // If there is no facet (assembling on interior), return 0.0
-    if (facet() < 0)
-      return 0.0;
-    else
-    {
-      // Copy cell, cannot call interpolate with const cell()
-      Cell cell0(cell());
-      ufc.update(cell0);
-
-      // Interpolate coefficients on cell and current facet
-      for (dolfin::uint i = 0; i < form.coefficients().size(); i++)
-        form.coefficients()[i]->interpolate(ufc.w[i], ufc.cell, *ufc.coefficient_elements[i], cell0, facet());
-
-      // Get exterior facet integral (we need to be able to tabulate ALL facets of a given cell)
-      ufc::exterior_facet_integral* integral = ufc.exterior_facet_integrals[0];
-
-      // Call tabulate_tensor on exterior facet integral, dot(velocity, facet_normal)
-      integral->tabulate_tensor(ufc.A, ufc.w, ufc.cell, facet());
-    }
-
-    // If dot product is positive, the current facet is an outflow facet
-    if (ufc.A[0] > DOLFIN_EPS)
-    {
-      return 1.0;
-    }
-    else
-      return 0.0;
-  }
-
-private:
-
-  Function& velocity;
-  UFC& ufc;
-  Form& form;
-
-};
-
 int main(int argc, char *argv[])
 {
   // Read simple velocity field (-1.0, -0.4)
@@ -122,9 +75,7 @@ int main(int argc, char *argv[])
 
   // Definitions for outflow facet function
   OutflowFacetFunctional M_of(velocity, N);
-  M_of.updateDofMaps(mesh);
-  UFC ufc(M_of.form(), mesh, M_of.dofMaps());
-  OutflowFacet of(velocity, mesh, ufc, M_of);
+  OutflowFacet of(mesh, M_of); // From SpecialFunctions.h
 
   // Penalty parameter
   Function alpha(mesh, 20.0);
