@@ -1,3 +1,4 @@
+ - Fix problem with mesh smoothing near nonconvex corners
  - Simple projection of functions in Python
  - New file format: XYZ for use with Xd3d
  - New built-in meshes: UnitCircle, Box, Rectangle, UnitSphere

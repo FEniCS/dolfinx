@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells 2007.
 //
 // First added:  2006-05-09
-// Last changed: 2008-06-17
+// Last changed: 2008-07-16
 
 #include <sstream>
 
@@ -16,6 +16,7 @@
 #include "LocalMeshRefinement.h"
 #include "LocalMeshCoarsening.h"
 #include "TopologyComputation.h"
+#include "MeshSmoothing.h"
 #include "MeshOrdering.h"
 #include "MeshFunction.h"
 #include "MeshPartition.h"
@@ -159,44 +160,7 @@ void Mesh::move(Mesh& boundary, ALEType method)
 //-----------------------------------------------------------------------------
 void Mesh::smooth() 
 {
-  // FIXME: Move implementation to separate class and just call function here
-  // FIXME: May break down for conconvex meshes! Can we do something about that?
-  // FIXME: See post to mailing list 2008-07-16.
-
-  MeshFunction<bool> bnd_vertex(*this); 
-  bnd_vertex.init(0); 
-  for (VertexIterator v(*this); !v.end(); ++v)
-    bnd_vertex.set(v->index(),false);
-
-  BoundaryMesh boundary(*this);
-  MeshFunction<uint>* bnd_vertex_map = boundary.data().meshFunction("vertex map");
-  dolfin_assert(bnd_vertex_map);
-
-  for (VertexIterator v(boundary); !v.end(); ++v)
-    bnd_vertex.set(bnd_vertex_map->get(v->index()),true);
-
-  Point midpoint = 0.0; 
-  uint num_neighbors = 0;
-  for (VertexIterator v(*this); !v.end(); ++v)
-  {
-    if ( !bnd_vertex.get(v->index()) )
-    {
-      midpoint = 0.0;
-      num_neighbors = 0;
-      for (VertexIterator vn(*v); !vn.end(); ++vn)
-      {
-        if ( v->index() != vn->index() )
-        {
-          midpoint += vn->point();
-          num_neighbors++;
-        }
-      }
-      midpoint /= real(num_neighbors);
-
-      for (uint sd = 0; sd < this->geometry().dim(); sd++)
-        this->geometry().set(v->index(), sd, midpoint[sd]);
-    }
-  }
+  MeshSmoothing::smooth(*this);
 }
 //-----------------------------------------------------------------------------
 void Mesh::partition(MeshFunction<uint>& partitions)
@@ -252,6 +216,8 @@ std::string Mesh::str() const
 {
   std::ostringstream stream;
   stream << "[Mesh of topological dimension "
+         << topology().dim()
+         << " with "
          << numVertices()
          << " and "
          << numCells()
