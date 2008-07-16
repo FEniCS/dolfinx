@@ -16,7 +16,6 @@
 #include "XMLFile.h"
 #include "MatlabFile.h"
 #include "OctaveFile.h"
-#include "OpenDXFile.h"
 #include "PythonFile.h"
 #include "VTKFile.h"
 #include "RAWFile.h"
@@ -37,8 +36,6 @@ File::File(const std::string& filename)
     file = new XMLFile(filename);
   else if ( filename.rfind(".m") != filename.npos )
     file = new OctaveFile(filename);
-  else if ( filename.rfind(".dx") != filename.npos )
-    file = new OpenDXFile(filename);
   else if ( filename.rfind(".py") != filename.npos )
     file = new PythonFile(filename);
   else if ( filename.rfind(".pvd") != filename.npos )
@@ -63,9 +60,6 @@ File::File(const std::string& filename, Type type)
     break;
   case octave:
     file = new OctaveFile(filename);
-    break;
-  case opendx:
-    file = new OpenDXFile(filename);
     break;
   case vtk:
     file = new VTKFile(filename);
