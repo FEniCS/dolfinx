@@ -7,7 +7,7 @@
 // Modified by Nuno Lopes 2008
 //
 // First added:  2002-11-12
-// Last changed: 2007-06-17
+// Last changed: 2008-07-16
 
 #include <string>
 #include <dolfin/log/dolfin_log.h>
@@ -19,6 +19,7 @@
 #include "PythonFile.h"
 #include "VTKFile.h"
 #include "RAWFile.h"
+#include "XYZFile.h"
 
 using namespace dolfin;
 
@@ -42,6 +43,8 @@ File::File(const std::string& filename)
     file = new VTKFile(filename);
   else if ( filename.rfind(".raw") != filename.npos )
     file = new RAWFile(filename);
+  else if ( filename.rfind(".xyz") != filename.npos )
+    file = new XYZFile(filename);
   else
   {
     file = 0;
