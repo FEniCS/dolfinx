@@ -8,6 +8,7 @@
 // First added:  2008-07-17
 // Last changed: 
 
+#include <dolfin/common/constants.h>
 #include <dolfin/mesh/Facet.h>
 #include <dolfin/fem/Form.h>
 #include <dolfin/fem/UFC.h>
@@ -78,7 +79,8 @@ real AvgMeshSize::eval(const real* x) const
 
       return (cell0.diameter() + cell1.diameter())/2.0;
     }
-    // Else there is only one cell connected to the facet and the average is the cell diameter
+    // Else there is only one cell connected to the facet and the average is 
+    // the cell diameter
     else
       return cell().diameter();
   }
@@ -176,18 +178,18 @@ real OutflowFacet::eval(const real* x) const
       form.coefficients()[i]->interpolate(ufc->w[i], ufc->cell, 
                                 *ufc->coefficient_elements[i], cell0, facet());
 
-    // Get exterior facet integral (we need to be able to tabulate ALL facets of a given cell)
+    // Get exterior facet integral (we need to be able to tabulate ALL facets 
+    // of a given cell)
     ufc::exterior_facet_integral* integral = ufc->exterior_facet_integrals[0];
 
-    // Call tabulate_tensor on exterior facet integral, dot(velocity, facet_normal)
+    // Call tabulate_tensor on exterior facet integral, 
+    // dot(velocity, facet_normal)
     integral->tabulate_tensor(ufc->A, ufc->w, ufc->cell, facet());
   }
 
    // If dot product is positive, the current facet is an outflow facet
-  if (ufc->A[0] > 1.0e-7)
-  {
+  if (ufc->A[0] > DOLFIN_EPS)
     return 1.0;
-  }
   else
     return 0.0;
 }
