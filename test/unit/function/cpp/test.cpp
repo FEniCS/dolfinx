@@ -64,7 +64,7 @@ public:
     const real tol = 1.0e-6;
     f1.eval(u, x);
     g.eval(v, x);
-    CPPUNIT_ASSERT( abs(u[0]-v[0]) < tol );
+    CPPUNIT_ASSERT( fabs(u[0]-v[0]) < tol );
 #endif
   }
 };
