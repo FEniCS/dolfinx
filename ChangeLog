@@ -1,3 +1,6 @@
+ - Add experimental MTL4 linear algebra backend
+ - Add OutflowFacet to SpecialFunctions for DG transport problems
+ - Remove unmaintained OpenDX file format
  - Fix problem with mesh smoothing near nonconvex corners
  - Simple projection of functions in Python
  - New file format: XYZ for use with Xd3d
