@@ -6,6 +6,11 @@
 
 #ifdef HAS_MTL4
 
+#include <cstring>
+#include <iostream>
+#include <sstream>
+#include <iomanip>
+
 #include <cmath>
 #include <dolfin/math/dolfin_math.h>
 #include <dolfin/log/dolfin_log.h>

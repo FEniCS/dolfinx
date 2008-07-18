@@ -18,6 +18,7 @@
 #include "MTL4Factory.h"
 
 using namespace dolfin;
+using namespace mtl;
 
 //-----------------------------------------------------------------------------
 MTL4Matrix::MTL4Matrix(): Variable("A", "MTL4 matrix"), ins(0), nnz_row(0)
@@ -124,7 +125,30 @@ void MTL4Matrix::disp(uint precision) const
 //-----------------------------------------------------------------------------
 void MTL4Matrix::ident(uint m, const uint* rows)
 {
-  error("MTL4Matrix::ident not yet implemented.");
+  dolfin_assert(size(0) == size(1));
+  mtl4_sparse_matrix I(size(0), size(0));
+  mtl4_sparse_matrix A_tmp(size(0), size(0));
+  I = 1.0;
+  mtl::matrix::inserter< mtl::compressed2D<double> > ins_I(I, 1);  
+
+  for(uint i = 0; i < m ; ++i)
+    ins_I[ rows[i] ][ rows[i] ] = 0.0;
+
+  A_tmp = I*A;
+
+  mtl::matrix::inserter< mtl::compressed2D<double> > ins_A(A_tmp, 1);  
+  for(uint i = 0; i < m ; ++i)
+    ins_A[ rows[i] ][ rows[i] ] = 1.0;
+
+  dolfin_assert(num_rows(A_tmp) == size(0));
+  dolfin_assert(num_cols(A_tmp) == size(1));
+
+  // Would like to swap, but this gives am error, so copy instead
+  A = A_tmp;
+
+  //swap(A_tmp, A);
+  
+//  error("MTL4Matrix::ident not yet implemented.");
 }
 //-----------------------------------------------------------------------------
 void MTL4Matrix::zero(uint m, const uint* rows)
