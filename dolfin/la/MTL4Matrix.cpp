@@ -86,9 +86,12 @@ void MTL4Matrix::add(const real* block,
 		     uint n, const uint* cols)
 {
   if(!ins)
-    ins = new mtl::matrix::
-      inserter<mtl4_sparse_matrix, mtl::update_plus<real> >(A, nnz_row);
-
+  {
+    if(nnz_row > 0)
+      ins = new mtl::matrix::inserter<mtl4_sparse_matrix, mtl::update_plus<real> >(A, nnz_row);
+    else
+      ins = new mtl::matrix::inserter<mtl4_sparse_matrix, mtl::update_plus<real> >(A);
+  }
   real val;
   for (uint i = 0; i < m; i++)
     for (uint j = 0; j < n; j++)
