@@ -73,14 +73,14 @@ options = [
     # disabled here, that will override scons.cfg. Remark that unless the
     # module is listed as OptDependencies in scons.cfg, the whole module
     # will be turned off.
-    BoolOption("enableMpi", "Compile with support for MPI", "no"),
-    BoolOption("enablePetsc", "Compile with support for PETSc linear algebra", "no"),
-    BoolOption("enableSlepc", "Compile with support for SLEPc", "no"),
-    BoolOption("enableScotch", "Compile with support for SCOTCH graph partitioning", "no"),
+    BoolOption("enableMpi", "Compile with support for MPI", "yes"),
+    BoolOption("enablePetsc", "Compile with support for PETSc linear algebra", "yes"),
+    BoolOption("enableSlepc", "Compile with support for SLEPc", "yes"),
+    BoolOption("enableScotch", "Compile with support for SCOTCH graph partitioning", "yes"),
     BoolOption("enableGts", "Compile with support for GTS", "yes"),
     BoolOption("enableUmfpack", "Compile with support for UMFPACK", "yes"),
-    BoolOption("enableTrilinos", "Compile with support for Trilinos", "no"),
-    BoolOption("enablePydolfin", "Compile the python wrappers of Dolfin", "no"),
+    BoolOption("enableTrilinos", "Compile with support for Trilinos", "yes"),
+    BoolOption("enablePydolfin", "Compile the python wrappers of Dolfin", "yes"),
     # some of the above may need extra options (like petscDir), should we
     # try to get that from pkg-config?
     # It may be neccessary to specify the installation path to the above packages.
@@ -101,7 +101,7 @@ options = [
     # to use mpicxx if that is available...:
     #("CXX", "Set C++ compiler", scons.defaultCxxCompiler()),
     #("FORTRAN", "Set FORTRAN compiler",scons.defaultFortranCompiler()),
-    ("customCxxFlags", "Customize compilation of C++ code", "-DHAS_MTL4"),
+    ("customCxxFlags", "Customize compilation of C++ code", ""),
     ("customLinkFlags", "Customize linking of C++ code", ""),
     #("data", "Parameter to the 'fetch' target: comma-delimited list of directories/files to fetch, \
     #        relative to the `data' directory. An empty value means that everything will be fetched.", ""),

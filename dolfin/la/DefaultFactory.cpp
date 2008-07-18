@@ -8,9 +8,7 @@
 #include "uBlasFactory.h"
 #include "PETScFactory.h"
 #include "EpetraFactory.h"
-#ifdef HAS_MTL4
 #include "MTL4Factory.h"
-#endif
 #include "DefaultFactory.h"
 #include "AssemblyFactory.h"
 
