@@ -5,8 +5,8 @@
 #include <boost/numeric/mtl/mtl.hpp>
 namespace dolfin
 {
-  typedef mtl::compressed2D<double> MTL4_sparse_matrix;
-  typedef mtl::dense_vector<double> MTL4_vector;
+  typedef mtl::compressed2D<double> mtl4_sparse_matrix;
+  typedef mtl::dense_vector<double> mtl4_vector;
 }
 #endif
 #endif

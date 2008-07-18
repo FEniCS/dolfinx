@@ -101,30 +101,41 @@ namespace dolfin
 
     /// Assignment operator
     virtual const GenericMatrix& operator= (const GenericMatrix& x)
-    { error("Not implemented."); return *this; }
+    { 
+      error("Not implemented."); 
+      return *this; 
+    }
 
     //--- Special functions ---
     virtual LinearAlgebraFactory& factory() const;
 
     //--- Special MTL4 functions ---
 
-    /// Return MTL4_sparse_matrix reference
-    const MTL4_sparse_matrix& mat() const;
+    /// Create M x N matrix with estimate of nonzeroes per row
+    MTL4Matrix(uint M, uint N, uint nz);
 
-    MTL4_sparse_matrix& mat();
+    /// Return mtl4_sparse_matrix reference
+    const mtl4_sparse_matrix& mat() const;
+
+    mtl4_sparse_matrix& mat();
 
     /// Assignment operator
     const MTL4Matrix& operator= (const MTL4Matrix& x)
-    { error("Not implemented."); return *this; }
+    { 
+      error("Not implemented."); 
+      return *this; 
+    }
 
   private:
 
-    MTL4_sparse_matrix A;
+    mtl4_sparse_matrix A;
 
-    mtl::matrix::inserter<MTL4_sparse_matrix, mtl::update_plus<real> >* ins;
+    mtl::matrix::inserter<mtl4_sparse_matrix, mtl::update_plus<real> >* ins;
+
+    uint nnz_row;
   };
 
-  LogStream& operator<< (LogStream& stream, const MTL4_sparse_matrix& A);
+  LogStream& operator<< (LogStream& stream, const mtl4_sparse_matrix& A);
 
 }
 

@@ -104,12 +104,12 @@ void MTL4Vector::add(const real* block, uint m, const uint* rows)
     x[ rows[i] ] += block[i];
 }
 //-----------------------------------------------------------------------------
-const MTL4_vector& MTL4Vector::vec() const
+const mtl4_vector& MTL4Vector::vec() const
 {
   return x;
 }
 //-----------------------------------------------------------------------------
-MTL4_vector& MTL4Vector::vec()
+mtl4_vector& MTL4Vector::vec()
 {
   return x;
 }

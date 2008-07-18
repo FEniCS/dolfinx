@@ -123,11 +123,11 @@ namespace dolfin
 
     //--- Special MTL4 functions ---
 
-    /// Return const MTL4_vector reference
-    const MTL4_vector& vec() const;
+    /// Return const mtl4_vector reference
+    const mtl4_vector& vec() const;
     
-    /// Return MTL4_vector reference
-    MTL4_vector& vec();
+    /// Return mtl4_vector reference
+    mtl4_vector& vec();
 
     /// Assignment operator
     const MTL4Vector& operator= (const MTL4Vector& x);
@@ -137,7 +137,7 @@ namespace dolfin
   private:
 
     // MTL4_vector pointer
-    MTL4_vector x;
+    mtl4_vector x;
   };  
 
   LogStream& operator<< (LogStream& stream, const MTL4Vector& A);

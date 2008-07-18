@@ -16,16 +16,12 @@
 #include <dolfin/la/uBlasMatrix.h>
 #include <dolfin/la/PETScMatrix.h>
 #include <dolfin/la/EpetraMatrix.h>
-#ifdef HAS_MTL4
 #include <dolfin/la/MTL4Matrix.h>
-#endif
 #include <dolfin/la/AssemblyMatrix.h>
 #include <dolfin/la/uBlasVector.h>
 #include <dolfin/la/PETScVector.h>
 #include <dolfin/la/EpetraVector.h>
-#ifdef HAS_MTL4
 #include <dolfin/la/MTL4Vector.h>
-#endif
 #include <dolfin/la/GenericSparsityPattern.h>
 #include <dolfin/la/SparsityPattern.h>
 #include <dolfin/la/LinearAlgebraFactory.h>
@@ -33,9 +29,7 @@
 #include <dolfin/la/uBlasFactory.h>
 #include <dolfin/la/PETScFactory.h>
 #include <dolfin/la/EpetraFactory.h>
-#ifdef HAS_MTL4
 #include <dolfin/la/MTL4Factory.h>
-#endif
 #include <dolfin/la/AssemblyFactory.h>
 #include <dolfin/la/PETScKrylovSolver.h>
 #include <dolfin/la/PETScLUSolver.h>

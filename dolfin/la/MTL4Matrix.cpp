@@ -21,26 +21,27 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 MTL4Matrix::MTL4Matrix():
-  Variable("A", "MTL4 matrix"), ins(0)
+  Variable("A", "MTL4 matrix"), ins(0), nnz_row(0)
 {
-
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 MTL4Matrix::MTL4Matrix(uint M, uint N):
-  Variable("A", "MTL4 matrix"), ins(0)
+  Variable("A", "MTL4 matrix"), ins(0), nnz_row(0)
 {
   init(M, N);
 }
 //-----------------------------------------------------------------------------
 MTL4Matrix::MTL4Matrix(const MTL4Matrix& A):
-  Variable("A", "MTL4 matrix"), ins(0)
+  Variable("A", "MTL4 matrix"), ins(0), nnz_row(0)
 {
   error("Not implemented.");
 }
 //-----------------------------------------------------------------------------
 MTL4Matrix::~MTL4Matrix()
 {
-  if(ins) delete ins;
+  if(ins) 
+    delete ins;
 }
 //-----------------------------------------------------------------------------
 void MTL4Matrix::init(uint M, uint N)
@@ -86,16 +87,16 @@ void MTL4Matrix::add(const real* block,
 {
   if(!ins)
     ins = new mtl::matrix::
-      inserter<MTL4_sparse_matrix, mtl::update_plus<real> >(A);
+      inserter<mtl4_sparse_matrix, mtl::update_plus<real> >(A, nnz_row);
 
   real val;
   for (uint i = 0; i < m; i++)
     for (uint j = 0; j < n; j++)
-      {
-	val = block[i*n +j];
-	if(val != 0.0)
-	  (*ins)[rows[i]][cols[j]] <<  val;
-      }
+    {
+      val = block[i*n +j];
+      if(val != 0.0)
+        (*ins)[rows[i]][cols[j]] <<  val;
+    }
 }
 //-----------------------------------------------------------------------------
 void MTL4Matrix::zero()
@@ -105,7 +106,8 @@ void MTL4Matrix::zero()
 //-----------------------------------------------------------------------------
 void MTL4Matrix::apply(FinalizeType finaltype)
 {
-  if(ins) delete ins;
+  if(ins) 
+    delete ins;
   ins = 0;
 }
 //-----------------------------------------------------------------------------
@@ -146,12 +148,18 @@ LinearAlgebraFactory& MTL4Matrix::factory() const
   return MTL4Factory::instance();
 }
 //-----------------------------------------------------------------------------
-const MTL4_sparse_matrix& MTL4Matrix::mat() const
+MTL4Matrix::MTL4Matrix(uint M, uint N, uint nz):
+  Variable("A", "MTL4 matrix"), ins(0), nnz_row(nz)
+{
+  init(M, N);
+}
+//-----------------------------------------------------------------------------
+const mtl4_sparse_matrix& MTL4Matrix::mat() const
 {
   return A;
 }
 //-----------------------------------------------------------------------------
-MTL4_sparse_matrix& MTL4Matrix::mat()
+mtl4_sparse_matrix& MTL4Matrix::mat()
 {
   return A;
 }
@@ -168,7 +176,7 @@ const MTL4Matrix& MTL4Matrix::operator/= (real a)
   return *this;
 }
 //-----------------------------------------------------------------------------
-LogStream& dolfin::operator<< (LogStream& stream, const MTL4_sparse_matrix& A)
+LogStream& dolfin::operator<< (LogStream& stream, const mtl4_sparse_matrix& A)
 {
   error("operator << MTL4Matrix not implemented yet"); 
   return stream;
