@@ -8,6 +8,9 @@
 #include "uBlasFactory.h"
 #include "PETScFactory.h"
 #include "EpetraFactory.h"
+#ifdef HAS_MTL4
+#include "MTL4Factory.h"
+#endif
 #include "DefaultFactory.h"
 #include "AssemblyFactory.h"
 
@@ -40,25 +43,31 @@ LinearAlgebraFactory& DefaultFactory::factory() const
 
   // Choose backend
   if (backend == "uBLAS")
-  {
-    return uBlasFactory<>::instance();
-  }
+    {
+      return uBlasFactory<>::instance();
+    }
   else if (backend == "PETSc")
-  {
+    {
 #ifdef HAS_PETSC
-    return PETScFactory::instance();
+      return PETScFactory::instance();
 #endif
-  }
+    }
   else if (backend == "Epetra")
-  {
+    {
 #ifdef HAS_TRILINOS
-    return EpetraFactory::instance();
+      return EpetraFactory::instance();
 #endif
-  }
+    }
+  else if (backend == "MTL4")
+    {
+#ifdef HAS_MTL4
+      return MTL4Factory::instance();
+#endif
+    }
   else if (backend == "Assembly")
-  { 
-    return AssemblyFactory::instance();
-  }
+    { 
+      return AssemblyFactory::instance();
+    }
 
   // Fallback
   message("Linear algebra backend \"" + backend + "\" not available, using " + default_backend + ".");
