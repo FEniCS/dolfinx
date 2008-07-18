@@ -16,7 +16,7 @@ namespace dolfin
 {
   
   class uBlasKrylovSolver;
-  class uBlasLUSolver;
+  class UmfpackLUSolver;
   class KrylovSolver;
   class LUSolver;
   class ODE;
@@ -74,7 +74,7 @@ namespace dolfin
     uBlasVector dx;              // Increment for Newton's method
     uBlasVector b;               // Right-hand side -F(x)
     uBlasKrylovSolver* krylov;   // Iterative linear solver
-    uBlasLUSolver* lu;           // Direct linear solver
+    UmfpackLUSolver* lu;           // Direct linear solver
     uBlasVector Mu0;             // Precomputed product M*u0 for implicit system
 
     KrylovSolver* krylov_g;      // Iterative linear solver (general)

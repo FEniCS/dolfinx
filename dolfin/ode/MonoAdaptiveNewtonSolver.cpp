@@ -9,7 +9,7 @@
 #include <dolfin/math/dolfin_math.h>
 #include <dolfin/parameter/parameters.h>
 #include <dolfin/la/uBlasKrylovSolver.h>
-#include <dolfin/la/uBlasLUSolver.h>
+#include <dolfin/la/UmfpackLUSolver.h>
 #include <dolfin/la/KrylovSolver.h>
 #include <dolfin/la/LUSolver.h>
 #include "Alloc.h"
@@ -236,8 +236,8 @@ void MonoAdaptiveNewtonSolver::chooseLinearSolver()
   // Initialize linear solver
   if ( direct )
   {
-    message("Using uBlas direct solver.");
-    lu = new uBlasLUSolver();
+    message("Using UMFPACK direct solver.");
+    lu = new UmfpackLUSolver();
   }
   else
   {

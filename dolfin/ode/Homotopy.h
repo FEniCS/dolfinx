@@ -12,6 +12,7 @@
 #include <dolfin/la/uBlasVector.h>
 #include <dolfin/la/uBlasKrylovSolver.h>
 #include <dolfin/la/uBlasPreconditioner.h>
+#include <dolfin/la/UmfpackLUSolver.h>
 
 namespace dolfin
 {
@@ -98,7 +99,7 @@ namespace dolfin
     bool monitor;             // True if we should monitor the homotopy
     bool random;              // True if we should choose random initial data
     //uBlasKrylovSolver solver; // Linear solver
-    uBlasLUSolver solver;     // Linear solver
+    UmfpackLUSolver solver;     // Linear solver
     std::string filename;     // Filename for saving solutions  
     uint* mi;                 // Array of local path numbers
     complex* ci;              // Array of constants for system G(z) = 0

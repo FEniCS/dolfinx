@@ -24,7 +24,7 @@
 #include "ublas.h"
 #include "uBlasFactory.h"
 #include "uBlasVector.h"
-#include "uBlasLUSolver.h"
+#include "UmfpackLUSolver.h"
 #include "GenericMatrix.h"
 
 namespace dolfin
@@ -292,14 +292,14 @@ namespace dolfin
   template <class Mat>  
   void uBlasMatrix<Mat>::solve(uBlasVector& x, const uBlasVector& b) const
   {    
-    uBlasLUSolver solver;
+    UmfpackLUSolver solver;
     solver.solve(*this, x, b);
   }
   //-----------------------------------------------------------------------------
   template <class Mat>  
   void uBlasMatrix<Mat>::invert()
   {
-    uBlasLUSolver solver;
+    UmfpackLUSolver solver;
     solver.invert(A);
   }
 //-----------------------------------------------------------------------------

@@ -16,7 +16,7 @@
 #include <dolfin/common/Timer.h>
 #include "GenericMatrix.h"
 #include "GenericVector.h"
-#include "uBlasLUSolver.h"
+#include "UmfpackLUSolver.h"
 #include "uBlasSparseMatrix.h"
 #include "uBlasDenseMatrix.h"
 #include "PETScLUSolver.h"
@@ -34,11 +34,11 @@ namespace dolfin
     
   public:
 
-    LUSolver() : ublas_solver(0), petsc_solver(0), epetra_solver(0) {}
+    LUSolver() : umfpack_solver(0), petsc_solver(0), epetra_solver(0) {}
     
     ~LUSolver() 
     { 
-      delete ublas_solver; 
+      delete umfpack_solver; 
       delete petsc_solver; 
       delete epetra_solver; 
     }
@@ -49,22 +49,22 @@ namespace dolfin
 
       if (A.has_type<uBlasSparseMatrix>()) 
       {
-        if (!ublas_solver)
+        if (!umfpack_solver)
         {
-          ublas_solver = new uBlasLUSolver();
-          ublas_solver->set("parent", *this);
+          umfpack_solver = new UmfpackLUSolver();
+          umfpack_solver->set("parent", *this);
         }
-        return ublas_solver->solve(A.down_cast<uBlasSparseMatrix>(), x.down_cast<uBlasVector>(), b.down_cast<uBlasVector>());
+        return umfpack_solver->solve(A.down_cast<uBlasSparseMatrix>(), x.down_cast<uBlasVector>(), b.down_cast<uBlasVector>());
       }
 
       if (A.has_type<uBlasDenseMatrix>()) 
       {
-        if (!ublas_solver)
+        if (!umfpack_solver)
         {
-          ublas_solver = new uBlasLUSolver();
-          ublas_solver->set("parent", *this);
+          umfpack_solver = new UmfpackLUSolver();
+          umfpack_solver->set("parent", *this);
         }
-        return ublas_solver->solve(A.down_cast<uBlasDenseMatrix >(), x.down_cast<uBlasVector>(), b.down_cast<uBlasVector>());
+        return umfpack_solver->solve(A.down_cast<uBlasDenseMatrix >(), x.down_cast<uBlasVector>(), b.down_cast<uBlasVector>());
       }
 
 #ifdef HAS_PETSC
@@ -98,12 +98,12 @@ namespace dolfin
     {
       if (A.has_type<uBlasSparseMatrix>()) 
       {
-        if (!ublas_solver)
+        if (!umfpack_solver)
         {
-          ublas_solver = new uBlasLUSolver();
-          ublas_solver->set("parent", *this);
+          umfpack_solver = new UmfpackLUSolver();
+          umfpack_solver->set("parent", *this);
         }
-        return ublas_solver->factorize(A.down_cast<uBlasSparseMatrix>());
+        return umfpack_solver->factorize(A.down_cast<uBlasSparseMatrix>());
       }
 
       if (A.has_type<uBlasDenseMatrix>())
@@ -117,12 +117,12 @@ namespace dolfin
     {
       if (b.has_type<uBlasVector>()) 
       {
-        if (!ublas_solver)
+        if (!umfpack_solver)
         {
-          ublas_solver = new uBlasLUSolver();
-          ublas_solver->set("parent", *this);
+          umfpack_solver = new UmfpackLUSolver();
+          umfpack_solver->set("parent", *this);
         }
-        return ublas_solver->factorized_solve(x.down_cast<uBlasVector>(), b.down_cast<uBlasVector>());
+        return umfpack_solver->factorized_solve(x.down_cast<uBlasVector>(), b.down_cast<uBlasVector>());
       }
 
       error("No factorized LU solver for given backend.");
@@ -132,7 +132,7 @@ namespace dolfin
   private:
 
     // uBLAS solver
-    uBlasLUSolver* ublas_solver;
+    UmfpackLUSolver* umfpack_solver;
 
     // PETSc Solver
 #ifdef HAS_PETSC

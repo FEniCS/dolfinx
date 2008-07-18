@@ -2,14 +2,14 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Anders Logg 2006.
-// Modified by Dah Lindbo 2008.
+// Modified by Daf Lindbo 2008.
 // 
 // First added:  2006-06-01
 // Last changed: 2008-05-07
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/timing.h>
-#include "uBlasLUSolver.h"
+#include "UmfpackLUSolver.h"
 #include "uBlasKrylovSolver.h"
 #include "uBlasSparseMatrix.h"
 #include "uBlasKrylovMatrix.h"
@@ -25,7 +25,7 @@ extern "C"
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-uBlasLUSolver::uBlasLUSolver() : AA(0), ej(0), Aj(0)
+UmfpackLUSolver::UmfpackLUSolver() : AA(0), ej(0), Aj(0)
 {
   // Do nothing
 #ifdef HAS_UMFPACK
@@ -36,7 +36,7 @@ uBlasLUSolver::uBlasLUSolver() : AA(0), ej(0), Aj(0)
 #endif
 }
 //-----------------------------------------------------------------------------
-uBlasLUSolver::~uBlasLUSolver()
+UmfpackLUSolver::~UmfpackLUSolver()
 {
   if ( AA ) 
     delete AA;
@@ -58,7 +58,7 @@ uBlasLUSolver::~uBlasLUSolver()
 #endif
 }
 //-----------------------------------------------------------------------------
-dolfin::uint uBlasLUSolver::solve(const uBlasMatrix<ublas_dense_matrix>& A, 
+dolfin::uint UmfpackLUSolver::solve(const uBlasMatrix<ublas_dense_matrix>& A, 
                                   uBlasVector& x, const uBlasVector& b)
 {    
   // Get underlying uBLAS vectors
@@ -75,7 +75,7 @@ dolfin::uint uBlasLUSolver::solve(const uBlasMatrix<ublas_dense_matrix>& A,
 }
 //-----------------------------------------------------------------------------
 #ifdef HAS_UMFPACK
-dolfin::uint uBlasLUSolver::solve(const uBlasMatrix<ublas_sparse_matrix>& A, uBlasVector& x, 
+dolfin::uint UmfpackLUSolver::solve(const uBlasMatrix<ublas_sparse_matrix>& A, uBlasVector& x, 
                                   const uBlasVector& b)
 {
   factorize(A);
@@ -90,7 +90,7 @@ dolfin::uint uBlasLUSolver::solve(const uBlasMatrix<ublas_sparse_matrix>& A, uBl
   return 0;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint uBlasLUSolver::factorize(const uBlasMatrix<ublas_sparse_matrix>& A)
+dolfin::uint UmfpackLUSolver::factorize(const uBlasMatrix<ublas_sparse_matrix>& A)
 {
 // Symbolic and numeric part of UMFPACK solve procedure
 
@@ -152,7 +152,7 @@ dolfin::uint uBlasLUSolver::factorize(const uBlasMatrix<ublas_sparse_matrix>& A)
   return 1;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint uBlasLUSolver::factorized_solve(uBlasVector& x, const uBlasVector& b)
+dolfin::uint UmfpackLUSolver::factorized_solve(uBlasVector& x, const uBlasVector& b)
 {
   const uint N  = b.size();
 
@@ -181,7 +181,7 @@ dolfin::uint uBlasLUSolver::factorized_solve(uBlasVector& x, const uBlasVector& 
 }
 //-----------------------------------------------------------------------------
 #else
-dolfin::uint uBlasLUSolver::solve(const uBlasMatrix<ublas_sparse_matrix>& A, uBlasVector& x, 
+dolfin::uint UmfpackLUSolver::solve(const uBlasMatrix<ublas_sparse_matrix>& A, uBlasVector& x, 
 				  const uBlasVector& b)
 {
   warning("UMFPACK must be installed to peform a LU solve for uBlas matrices. A Krylov iterative solver will be used instead.");
@@ -190,20 +190,20 @@ dolfin::uint uBlasLUSolver::solve(const uBlasMatrix<ublas_sparse_matrix>& A, uBl
   return solver.solve(A, x, b);
 }
 //-----------------------------------------------------------------------------
-dolfin::uint uBlasLUSolver::factorize(const uBlasMatrix<ublas_sparse_matrix>& A)
+dolfin::uint UmfpackLUSolver::factorize(const uBlasMatrix<ublas_sparse_matrix>& A)
 {
   error("UMFPACK must be installed to perform sparse LU factorization.");
   return 0;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint uBlasLUSolver::factorized_solve(uBlasVector& x, const uBlasVector& b)
+dolfin::uint UmfpackLUSolver::factorized_solve(uBlasVector& x, const uBlasVector& b)
 {
   error("UMFPACK must be installed to perform sparse back and forward substitution");
   return 0;
 }
 #endif
 //-----------------------------------------------------------------------------
-void uBlasLUSolver::solve(const uBlasKrylovMatrix& A, uBlasVector& x,
+void UmfpackLUSolver::solve(const uBlasKrylovMatrix& A, uBlasVector& x,
 			  const uBlasVector& b)
 {
   // The linear system is solved by computing a dense copy of the matrix,
@@ -255,7 +255,7 @@ void uBlasLUSolver::solve(const uBlasKrylovMatrix& A, uBlasVector& x,
   solve(*AA, x, b);
 }
 //-----------------------------------------------------------------------------
-dolfin::uint uBlasLUSolver::solveInPlaceUBlas(uBlasMatrix<ublas_dense_matrix>& A, 
+dolfin::uint UmfpackLUSolver::solveInPlaceUBlas(uBlasMatrix<ublas_dense_matrix>& A, 
 					      uBlasVector& x, const uBlasVector& b) const
 {
   const uint M = A.size(0);
@@ -275,7 +275,7 @@ dolfin::uint uBlasLUSolver::solveInPlaceUBlas(uBlasMatrix<ublas_dense_matrix>& A
   return solveInPlace(A.mat(), _x);
 }
 //-----------------------------------------------------------------------------
-void uBlasLUSolver::check_status(long int status, std::string function) const
+void UmfpackLUSolver::check_status(long int status, std::string function) const
 {
 #ifdef HAS_UMFPACK
   if(status == UMFPACK_OK)

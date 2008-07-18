@@ -2,13 +2,13 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Anders Logg 2006.
-// Modified by Dah Lindbo 2008.
+// Modified by Dag Lindbo 2008.
 // 
 // First added:  2006-05-31
 // Last changed: 2008-05-07
 
-#ifndef __UBLAS_LU_SOLVER_H
-#define __UBLAS_LU_SOLVER_H
+#ifndef __UMFPACK_LU_SOLVER_H
+#define __UMFPACK_LU_SOLVER_H
 
 #include "ublas.h"
 #include <dolfin/parameter/Parametrized.h>
@@ -27,16 +27,16 @@ namespace dolfin
   /// are solved using UMFPACK (http://www.cise.ufl.edu/research/sparse/umfpack/)
   /// is installed. Matrices can also be inverted.
     
-  class uBlasLUSolver : public Parametrized
+  class UmfpackLUSolver : public Parametrized
   {
 
   public:
     
     /// Constructor
-    uBlasLUSolver();
+    UmfpackLUSolver();
 
     /// Destructor
-    ~uBlasLUSolver();
+    ~UmfpackLUSolver();
 
     /// Solve linear system Ax = b for a dense matrix
     virtual uint solve(const uBlasMatrix<ublas_dense_matrix>& A, uBlasVector& x, const uBlasVector& b);
@@ -89,7 +89,7 @@ namespace dolfin
   // Implementation of template functions
   //---------------------------------------------------------------------------
   template<class Mat>
-  void uBlasLUSolver::invert(Mat& A) const
+  void UmfpackLUSolver::invert(Mat& A) const
   {
     const uint M = A.size1();
     dolfin_assert(M == A.size2());
@@ -105,7 +105,7 @@ namespace dolfin
   }
   //-----------------------------------------------------------------------------
   template<class Mat, class B>
-  dolfin::uint uBlasLUSolver::solveInPlace(Mat& A, B& X) const
+  dolfin::uint UmfpackLUSolver::solveInPlace(Mat& A, B& X) const
   {
     const uint M = A.size1();
     dolfin_assert( M == A.size2() );
