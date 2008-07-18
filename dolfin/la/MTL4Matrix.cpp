@@ -12,22 +12,21 @@
 #include <iomanip>
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Array.h>
+#include "GenericSparsityPattern.h"
 #include "MTL4Vector.h"
 #include "MTL4Matrix.h"
-#include "GenericSparsityPattern.h"
 #include "MTL4Factory.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-MTL4Matrix::MTL4Matrix():
-  Variable("A", "MTL4 matrix"), ins(0), nnz_row(0)
+MTL4Matrix::MTL4Matrix(): Variable("A", "MTL4 matrix"), ins(0), nnz_row(0)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-MTL4Matrix::MTL4Matrix(uint M, uint N):
-  Variable("A", "MTL4 matrix"), ins(0), nnz_row(0)
+MTL4Matrix::MTL4Matrix(uint M, uint N): Variable("A", "MTL4 matrix"), ins(0), 
+                                        nnz_row(0)
 {
   init(M, N);
 }
@@ -63,7 +62,11 @@ MTL4Matrix* MTL4Matrix::copy() const
 //-----------------------------------------------------------------------------
 dolfin::uint MTL4Matrix::size(uint dim) const
 {
-  error("MTL4Matrix::size not yet implemented.");
+  if(dim == 0)
+    return mtl::num_rows(A);
+  else if(dim == 1)
+    return mtl::num_cols(A);
+  error("dim not < 2 in MTL4Matrix::size.");
   return 0;
 }
 //-----------------------------------------------------------------------------

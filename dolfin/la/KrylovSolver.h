@@ -19,6 +19,7 @@
 #include "uBlasDenseMatrix.h"
 #include "PETScKrylovSolver.h"
 #include "EpetraKrylovSolver.h"
+#include "ITLKrylovSolver.h"
 #include "SolverType.h"
 #include "PreconditionerType.h"
 
@@ -42,6 +43,7 @@ namespace dolfin
       delete ublas_solver; 
       delete petsc_solver; 
       delete epetra_solver; 
+      delete itl_solver; 
     }
     
     /// Solve linear system Ax = b
@@ -91,6 +93,17 @@ namespace dolfin
         return epetra_solver->solve(A.down_cast<EpetraMatrix >(), x.down_cast<EpetraVector>(), b.down_cast<EpetraVector>());
       }
 #endif
+#ifdef HAS_TRILINOS
+      if (A.has_type<MTL4Matrix>())
+      {
+        if (!itl_solver)
+        {
+          itl_solver = new ITLKrylovSolver(solver_type, pc_type);
+          itl_solver->set("parent", *this);
+        }
+        return itl_solver->solve(A.down_cast<MTL4Matrix >(), x.down_cast<MTL4Vector>(), b.down_cast<MTL4Vector>());
+      }
+#endif
 
       error("No default LU solver for given backend");
       return 0;
@@ -113,10 +126,15 @@ namespace dolfin
 #else
     int* petsc_solver;
 #endif
- #ifdef HAS_TRILINOS
+#ifdef HAS_TRILINOS
     EpetraKrylovSolver* epetra_solver;
 #else
     int* epetra_solver;
+#endif
+#ifdef HAS_MTL4
+    ITLKrylovSolver* itl_solver;
+#else
+    int* itl_solver;
 #endif
   };
 }

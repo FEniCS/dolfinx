@@ -90,12 +90,13 @@ void MTL4Vector::add(real* values)
 //-----------------------------------------------------------------------------
 void MTL4Vector::get(real* block, uint m, const uint* rows) const
 {
-  error("MTL4::get not implemented yet");
+  error("MTL4Vector::get not implemented yet");
 }
 //-----------------------------------------------------------------------------
 void MTL4Vector::set(const real* block, uint m, const uint* rows)
 {
-  error("MTL4::set not implemented yet");
+  for (uint i = 0; i < m; i++)
+    x[ rows[i] ] = block[i];
 }
 //-----------------------------------------------------------------------------
 void MTL4Vector::add(const real* block, uint m, const uint* rows)
