@@ -76,29 +76,16 @@ dolfin::uint UmfpackLUSolver::factorize(const uBlasMatrix<ublas_sparse_matrix>& 
 {
   // Check dimensions and get number of non-zeroes
   const uint M  = A.size(0);
-  const uint N  = A.size(1);
-  const uint nz = A.mat().nnz();
-  dolfin_assert(M == N);
-  dolfin_assert(nz >= N); 
+  dolfin_assert(A.size(0) == A.size(1));
+  dolfin_assert(A.mat().nnz() >= M); 
 
   // Make sure matrix assembly is complete
   (const_cast< ublas_sparse_matrix& >(A.mat())).complete_index1_data(); 
-
-  // Allocate umfpack data
-  umfpack.N  = M;
-  umfpack.Rp = new long int[M+1];
-  umfpack.Ri = new long int[nz];
-  umfpack.Rx = new double[nz];
-
-  if(umfpack.factorized)
-  {
-    warning("LUSolver already contains a factorized matrix! Clearing and starting over.");
-    umfpack.clear();
-  }
     
-  // Transpose of A and set umfpack data
-  umfpack.transpose((const std::size_t*) &A.mat().index1_data()[0], 
-                    (const std::size_t*) &A.mat().index2_data()[0], &A.mat().value_data()[0]);
+  // Initialise umfpack data
+  umfpack.init((const long int*) &A.mat().index1_data()[0], 
+               (const long int*) &A.mat().index2_data()[0], 
+                &A.mat().value_data()[0], M, A.mat().nnz());
 
   // Factorize
   message("LU-factorizing linear system of size %d x %d (UMFPACK).", M, M);
@@ -112,6 +99,7 @@ dolfin::uint UmfpackLUSolver::factorize(const uBlasMatrix<ublas_sparse_matrix>& 
 dolfin::uint UmfpackLUSolver::factorizedSolve(uBlasVector& x, const uBlasVector& b)
 {
   const uint N  = b.size();
+  dolfin_assert(umfpack::M == N); 
 
   if(!umfpack.factorized)
     error("Factorized solve must be preceeded by call to factorize.");
@@ -121,8 +109,10 @@ dolfin::uint UmfpackLUSolver::factorizedSolve(uBlasVector& x, const uBlasVector&
 
   // Initialise solution vector and solve
   x.init(N);
+
   message("Solving factorized linear system of size %d x %d (UMFPACK).", N, N);
-  umfpack.factorizedSolve(&x.vec().data()[0], &b.vec().data()[0]);
+  // Solve for tranpose since we use compressed rows and UMFPACK expected compressed columns
+  umfpack.factorizedSolve(&x.vec().data()[0], &b.vec().data()[0], true);
 
   return 1;
 }
@@ -242,19 +232,53 @@ void UmfpackLUSolver::Umfpack::clear()
 #endif
     Numeric = 0;
   }
-  delete [] Rp; Rp = 0;
-  delete [] Ri; Ri = 0;
-  delete [] Rx; Rx = 0;
+  if(local_matrix)
+  {
+    delete [] Rp; Rp = 0;
+    delete [] Ri; Ri = 0;
+    delete [] Rx; Rx = 0;
+    local_matrix = false;
+  }
   factorized =  false;
   mat_dim = 0;
 }
 //-----------------------------------------------------------------------------
-void UmfpackLUSolver::Umfpack::transpose(const std::size_t* Ap, 
-                                      const std::size_t* Ai, const double* Ax)
+void UmfpackLUSolver::Umfpack::init(const long int* Ap, const long int* Ai, 
+                                         const double* Ax, uint M, uint nz)
+{  
+  if(factorized)
+    warning("LUSolver already contains a factorized matrix! Clearing and starting over.");
+
+  // Clear any data
+  clear();
+
+  // Set umfpack data
+  N  = M;
+  Rp = Ap;
+  Ri = Ai;
+  Rx = Ax;
+  local_matrix = false;
+  mat_dim      = M;
+}
+//-----------------------------------------------------------------------------
+void UmfpackLUSolver::Umfpack::initTranspose(const long int* Ap, const long int* Ai, 
+                                         const double* Ax, uint M, uint nz)
 {  
 #ifdef HAS_UMFPACK
-  long int status = umfpack_dl_transpose(N, N, (const long int*) Ap, 
-                           (const long int*) Ai, Ax, inull, inull, Rp, Ri, Rx);
+  if(Rp || Ri || Rx)
+    error("UmfpackLUSolver data already points to a matrix");
+
+  // Allocate memory and take ownership
+  clear();
+  Rp = new long int[M+1];
+  Ri = new long int[nz];
+  Rx = new double[nz];
+  local_matrix = true;
+  N  = M;
+
+  // Compute transpse
+  long int status = umfpack_dl_transpose(M, M, Ap, Ai, Ax, inull, inull, 
+                    const_cast<long int*>(Rp), const_cast<long int*>(Ri), const_cast<double*>(Rx));
   Umfpack::checkStatus(status, "transpose");
 #else
   error("UMFPACK not installed");
@@ -266,6 +290,8 @@ void UmfpackLUSolver::Umfpack::factorize()
   dolfin_assert(Rp);
   dolfin_assert(Ri);
   dolfin_assert(Rx);
+  dolfin_assert(Symbolic);
+  dolfin_assert(Numeric);
 
 #ifdef HAS_UMFPACK
   long int status;
@@ -288,7 +314,7 @@ void UmfpackLUSolver::Umfpack::factorize()
 #endif
 }
 //-----------------------------------------------------------------------------
-void UmfpackLUSolver::Umfpack::factorizedSolve(double*x, const double* b)
+void UmfpackLUSolver::Umfpack::factorizedSolve(double*x, const double* b, bool transpose)
 {
   dolfin_assert(Rp);
   dolfin_assert(Ri);
@@ -296,9 +322,12 @@ void UmfpackLUSolver::Umfpack::factorizedSolve(double*x, const double* b)
   dolfin_assert(Numeric);
 
 #ifdef HAS_UMFPACK
-  long int status  = umfpack_dl_solve(UMFPACK_A, (const long int*) Rp, 
-                                     (const long int*) Ri, Rx, x, b, Numeric, 
-                                     dnull, dnull);
+  long int status;
+  if(transpose)
+    status = umfpack_dl_solve(UMFPACK_At, Rp, Ri, Rx, x, b, Numeric, dnull, dnull);
+  else
+    status = umfpack_dl_solve(UMFPACK_A, Rp, Ri, Rx, x, b, Numeric, dnull, dnull);
+
   Umfpack::checkStatus(status, "solve");
 #else
   error("UMFPACK not installed");
@@ -311,7 +340,7 @@ void UmfpackLUSolver::Umfpack::checkStatus(long int status, std::string function
   if(status == UMFPACK_OK)
     return;
 
-  // Help out by printing which UMFPACK function is returning the warning/error
+  // Printing which UMFPACK function is returning an warning/error
   cout << "UMFPACK problem related to call to " << function << endl;
 
   if(status == UMFPACK_WARNING_singular_matrix)

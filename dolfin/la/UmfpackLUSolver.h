@@ -70,36 +70,43 @@ namespace dolfin
     class Umfpack
     {
       public:
-        Umfpack() : N(0), dnull(0), inull(0), Numeric(0), Rp(0), Ri(0), Rx(0), 
-                        factorized(false), mat_dim(0) {} 
-        ~Umfpack() 
-        { clear(); }
+ 
+        Umfpack() : dnull(0), inull(0), Symbolic(0), Numeric(0), local_matrix(0), Rp(0), Ri(0), Rx(0), 
+                     N(0), factorized(false), mat_dim(0) {} 
+
+        ~Umfpack() { clear(); }
 
         // Clear data
         void clear();
 
-        // Use UMFPACK to compute transpose
-        void transpose(const std::size_t* Ap, const std::size_t* Ai, const double* Ax);
+        // Initialise with matrix
+        void init(const long int* Ap, const long int* Ai, const double* Ax, uint M, uint nz);
+
+        // Initialise with transpose of matrix
+        void initTranspose(const long int* Ap, const long int* Ai, const double* Ax, uint M, uint nz);
 
         // Factorize
         void factorize();
 
         // Factorized solve
-        void factorizedSolve(double*x, const double* b);
+        void factorizedSolve(double*x, const double* b, bool transpose = false);
 
         /// Check status flag returned by an UMFPACK function
         void checkStatus(long int status, std::string function);
 
-        // Data for UMFPACK
-        uint N;
+        // UMFPACK data
         double*   dnull;
         long int* inull;
         void *Symbolic;
         void* Numeric;
-        long int* Rp;
-        long int* Ri;
-        double*   Rx;   
 
+        // Matrix data
+        bool local_matrix;
+        const long int* Rp;
+        const long int* Ri;
+        const double*   Rx;   
+
+        uint N;
         bool factorized;
         uint mat_dim;
     };

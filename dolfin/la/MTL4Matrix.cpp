@@ -125,6 +125,7 @@ void MTL4Matrix::disp(uint precision) const
 //-----------------------------------------------------------------------------
 void MTL4Matrix::ident(uint m, const uint* rows)
 {
+  // This is a rought hack until we figure out a better way
   dolfin_assert(size(0) == size(1));
   mtl4_sparse_matrix I(size(0), size(0));
   mtl4_sparse_matrix A_tmp(size(0), size(0));
@@ -132,12 +133,14 @@ void MTL4Matrix::ident(uint m, const uint* rows)
   mtl::matrix::inserter< mtl::compressed2D<double> > ins_I(I, 1);  
 
   for(uint i = 0; i < m ; ++i)
+    //I.lvalue(rows[i], rows[i]) = 0.0;
     ins_I[ rows[i] ][ rows[i] ] = 0.0;
 
   A_tmp = I*A;
 
   mtl::matrix::inserter< mtl::compressed2D<double> > ins_A(A_tmp, 1);  
   for(uint i = 0; i < m ; ++i)
+    //A_tmp.lvalue(rows[i], rows[i]) = 1.0;
     ins_A[ rows[i] ][ rows[i] ] = 1.0;
 
   dolfin_assert(num_rows(A_tmp) == size(0));
