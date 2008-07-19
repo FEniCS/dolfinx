@@ -88,18 +88,18 @@ namespace dolfin
         void factorizedSolve(double*x, const double* b);
 
         /// Check status flag returned by an UMFPACK function
-        static void checkStatus(long int status, std::string function);
+        void checkStatus(long int status, std::string function);
 
         // Data for UMFPACK
         uint N;
         double*   dnull;
         long int* inull;
-
         void *Symbolic;
         void* Numeric;
         long int* Rp;
         long int* Ri;
         double*   Rx;   
+
         bool factorized;
         uint mat_dim;
     };

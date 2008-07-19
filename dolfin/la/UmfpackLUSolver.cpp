@@ -222,6 +222,8 @@ dolfin::uint UmfpackLUSolver::solveInPlaceUBlas(uBlasMatrix<ublas_dense_matrix>&
   return solveInPlace(A.mat(), _x);
 }
 //-----------------------------------------------------------------------------
+// UmfpackLUSolver::Umfpack implementation
+//-----------------------------------------------------------------------------
 void UmfpackLUSolver::Umfpack::clear()
 {
   delete dnull; dnull = 0;
@@ -257,6 +259,10 @@ void UmfpackLUSolver::Umfpack::transpose(const std::size_t* Ap,
 //-----------------------------------------------------------------------------
 void UmfpackLUSolver::Umfpack::factorize()
 {
+  dolfin_assert(Rp);
+  dolfin_assert(Ri);
+  dolfin_assert(Rx);
+
   long int status;
 
   // Symbolic step (reordering etc)
@@ -276,6 +282,11 @@ void UmfpackLUSolver::Umfpack::factorize()
 //-----------------------------------------------------------------------------
 void UmfpackLUSolver::Umfpack::factorizedSolve(double*x, const double* b)
 {
+  dolfin_assert(Rp);
+  dolfin_assert(Ri);
+  dolfin_assert(Rx);
+  dolfin_assert(Numeric);
+
   long int status  = umfpack_dl_solve(UMFPACK_A, (const long int*) Rp, 
                                      (const long int*) Ri, Rx, x, b, Numeric, 
                                      dnull, dnull);
