@@ -19,7 +19,7 @@
 #include "uBlasDenseMatrix.h"
 #include "PETScKrylovSolver.h"
 #include "EpetraKrylovSolver.h"
-//#include "ITLKrylovSolver.h"
+#include "ITLKrylovSolver.h"
 #include "SolverType.h"
 #include "PreconditionerType.h"
 
