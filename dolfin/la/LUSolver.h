@@ -122,7 +122,7 @@ namespace dolfin
           umfpack_solver = new UmfpackLUSolver();
           umfpack_solver->set("parent", *this);
         }
-        return umfpack_solver->factorized_solve(x.down_cast<uBlasVector>(), b.down_cast<uBlasVector>());
+        return umfpack_solver->factorizedSolve(x.down_cast<uBlasVector>(), b.down_cast<uBlasVector>());
       }
 
       error("No factorized LU solver for given backend.");

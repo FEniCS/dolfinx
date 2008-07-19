@@ -2,10 +2,10 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Anders Logg 2006.
-// Modified by Daf Lindbo 2008.
+// Modified by Dag Lindbo 2008.
 // 
 // First added:  2006-06-01
-// Last changed: 2008-05-07
+// Last changed: 2008-07-19
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/timing.h>
@@ -28,12 +28,6 @@ using namespace dolfin;
 UmfpackLUSolver::UmfpackLUSolver() : AA(0), ej(0), Aj(0)
 {
   // Do nothing
-#ifdef HAS_UMFPACK
-  Rp = 0;
-  Ri = 0;
-  Rx = 0;
-  has_factorized_matrix = false;
-#endif
 }
 //-----------------------------------------------------------------------------
 UmfpackLUSolver::~UmfpackLUSolver()
@@ -44,18 +38,6 @@ UmfpackLUSolver::~UmfpackLUSolver()
     delete ej;
   if ( Aj ) 
     delete Aj;
-
-#ifdef HAS_UMFPACK
-   if(Rp) 
-    delete [] Rp;
-   if(Ri) 
-    delete [] Ri;
-   if(Rx)
-   { 
-      delete [] Rx;
-      umfpack_dl_free_numeric(&Numeric);
-   }
-#endif
 }
 //-----------------------------------------------------------------------------
 dolfin::uint UmfpackLUSolver::solve(const uBlasMatrix<ublas_dense_matrix>& A, 
@@ -75,114 +57,79 @@ dolfin::uint UmfpackLUSolver::solve(const uBlasMatrix<ublas_dense_matrix>& A,
 }
 //-----------------------------------------------------------------------------
 #ifdef HAS_UMFPACK
-dolfin::uint UmfpackLUSolver::solve(const uBlasMatrix<ublas_sparse_matrix>& A, uBlasVector& x, 
-                                  const uBlasVector& b)
+dolfin::uint UmfpackLUSolver::solve(const uBlasMatrix<ublas_sparse_matrix>& A, 
+                                    uBlasVector& x, const uBlasVector& b)
 {
+  // Factorize matrix
   factorize(A);
-  factorized_solve(x,b);
 
-  umfpack_dl_free_numeric(&Numeric);
-  delete [] Rp; Rp = 0;
-  delete [] Ri; Ri = 0;
-  delete [] Rx; Rx = 0;
-  has_factorized_matrix = false;
+  // Solve system
+  factorizedSolve(x, b);
+
+  // Clear data
+  umfpack.clear();
 
   return 0;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint UmfpackLUSolver::factorize(const uBlasMatrix<ublas_sparse_matrix>& A)
 {
-// Symbolic and numeric part of UMFPACK solve procedure
-
-  const ublas_sparse_matrix& _A = A.mat(); 
-
   // Check dimensions and get number of non-zeroes
   const uint M  = A.size(0);
   const uint N  = A.size(1);
-  const uint nz = _A.nnz();
-
+  const uint nz = A.mat().nnz();
   dolfin_assert(M == N);
   dolfin_assert(nz >= N); 
 
   // Make sure matrix assembly is complete
-  (const_cast< ublas_sparse_matrix& >(_A)).complete_index1_data(); 
+  (const_cast< ublas_sparse_matrix& >(A.mat())).complete_index1_data(); 
 
-  message("LU-factorizing linear system of size %d x %d (UMFPACK).", M, M);
+  // Allocate umfpack data
+  umfpack.N  = M;
+  umfpack.Rp = new long int[M+1];
+  umfpack.Ri = new long int[nz];
+  umfpack.Rx = new double[nz];
 
-  double* dnull = (double *) NULL;
-  long int* inull = (long int *) NULL;
-  void *Symbolic;
-  const std::size_t* Ap = &(_A.index1_data() [0]);
-  const std::size_t* Ai = &(_A.index2_data() [0]);
-  const double* Ax = &(_A.value_data() [0]);
-
-  if(has_factorized_matrix)
+  if(umfpack.factorized)
   {
     warning("LUSolver already contains a factorized matrix! Clearing and starting over.");
-    umfpack_dl_free_numeric(&Numeric);
-    delete [] Rp;
-    delete [] Ri;
-    delete [] Rx;
+    umfpack.clear();
   }
-  
-  Rp = new long int[M+1];
-  Ri = new long int[nz];
-  Rx = new double[nz];
-  
-  long int status;
-  
-  // Transpose of A
-  status= umfpack_dl_transpose(M, M, (const long int*) Ap, (const long int*) Ai, Ax, inull, inull, Rp, Ri, Rx);
-  check_status(status, "transpose");
+    
+  // Transpose of A and set umfpack data
+  umfpack.transpose((const std::size_t*) &A.mat().index1_data()[0], 
+                    (const std::size_t*) &A.mat().index2_data()[0], &A.mat().value_data()[0]);
 
-  // Symbolic step (reordering etc)
-  status= umfpack_dl_symbolic(M, M, (const long int*) Rp, (const long int*) Ri, Rx, &Symbolic, dnull, dnull);
-  check_status(status, "symbolic");
-
-  // Factorization step
-  status = umfpack_dl_numeric( (const long int*) Rp, (const long int*) Ri, Rx, Symbolic, &Numeric, dnull, dnull);
-  check_status(status, "numeric");
-
-  // Discard the symbolic part (since the factorization is complete.)
-  umfpack_dl_free_symbolic(&Symbolic);
-
-  has_factorized_matrix = true;
-  mat_dim = M;
+  // Factorize
+  message("LU-factorizing linear system of size %d x %d (UMFPACK).", M, M);
+  umfpack.factorize();
+  umfpack.factorized = true;
+  umfpack.mat_dim = M;
 
   return 1;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint UmfpackLUSolver::factorized_solve(uBlasVector& x, const uBlasVector& b)
+dolfin::uint UmfpackLUSolver::factorizedSolve(uBlasVector& x, const uBlasVector& b)
 {
   const uint N  = b.size();
 
-  if(!has_factorized_matrix)
+  if(!umfpack.factorized)
     error("Factorized solve must be preceeded by call to factorize.");
 
-  if(N != mat_dim)
+  if(N != umfpack.mat_dim)
     error("Vector does not match size of factored matrix");
 
+  // Initialise solution vector and solve
   x.init(N);
-  
   message("Solving factorized linear system of size %d x %d (UMFPACK).", N, N);
+  umfpack.factorizedSolve(&x.vec().data()[0], &b.vec().data()[0]);
 
-  ublas_vector& _x = x.vec(); 
-  const ublas_vector& _b = b.vec(); 
-  double* dnull = (double *) NULL;
-  double* xx = &(_x.data() [0]);
-  const double* bb = &(_b.data() [0]);
-
-  long int status;
-
-  status = umfpack_dl_solve(UMFPACK_A, (const long int*) Rp, (const long int*) Ri, Rx, xx, bb, Numeric, dnull, dnull);
-  check_status(status, "solve");
-  
   return 1;
 }
 //-----------------------------------------------------------------------------
 #else
-dolfin::uint UmfpackLUSolver::solve(const uBlasMatrix<ublas_sparse_matrix>& A, uBlasVector& x, 
-				  const uBlasVector& b)
+dolfin::uint UmfpackLUSolver::solve(const uBlasMatrix<ublas_sparse_matrix>& A, 
+                                    uBlasVector& x, const uBlasVector& b)
 {
   warning("UMFPACK must be installed to peform a LU solve for uBlas matrices. A Krylov iterative solver will be used instead.");
 
@@ -204,7 +151,7 @@ dolfin::uint UmfpackLUSolver::factorized_solve(uBlasVector& x, const uBlasVector
 #endif
 //-----------------------------------------------------------------------------
 void UmfpackLUSolver::solve(const uBlasKrylovMatrix& A, uBlasVector& x,
-			  const uBlasVector& b)
+			                      const uBlasVector& b)
 {
   // The linear system is solved by computing a dense copy of the matrix,
   // obtained through multiplication with unit vectors.
@@ -275,7 +222,67 @@ dolfin::uint UmfpackLUSolver::solveInPlaceUBlas(uBlasMatrix<ublas_dense_matrix>&
   return solveInPlace(A.mat(), _x);
 }
 //-----------------------------------------------------------------------------
-void UmfpackLUSolver::check_status(long int status, std::string function) const
+void UmfpackLUSolver::UmfpackData::clear()
+{
+  delete dnull; dnull = 0;
+  delete inull; inull = 0;
+  if(Symbolic)
+  {
+#ifdef HAS_UMFPACK
+    umfpack_dl_free_symbolic(&Symbolic);
+#endif
+    Symbolic = 0;
+  }
+  if(Numeric)
+  {
+#ifdef HAS_UMFPACK
+    umfpack_dl_free_numeric(&Numeric);
+#endif
+    Numeric = 0;
+  }
+  delete [] Rp; Rp = 0;
+  delete [] Ri; Ri = 0;
+  delete [] Rx; Rx = 0;
+  factorized =  false;
+  mat_dim = 0;
+}
+//-----------------------------------------------------------------------------
+void UmfpackLUSolver::UmfpackData::transpose(const std::size_t* Ap, const std::size_t* Ai, const double* Ax)
+{
+  long int status;
+  status= umfpack_dl_transpose(N, N, (const long int*) Ap, (const long int*) Ai, 
+                               Ax, inull, inull, Rp, Ri, Rx);
+  UmfpackData::checkStatus(status, "transpose");
+}
+//-----------------------------------------------------------------------------
+void UmfpackLUSolver::UmfpackData::factorize()
+{
+  long int status;
+
+  // Symbolic step (reordering etc)
+  status= umfpack_dl_symbolic(N, N, (const long int*) Rp,(const long int*) Ri, 
+                              Rx, &Symbolic, dnull, dnull);
+  checkStatus(status, "symbolic");
+
+  // Factorization step
+  status = umfpack_dl_numeric((const long int*) Rp,(const long int*) Ri, Rx, 
+                               Symbolic, &Numeric, dnull, dnull);
+  UmfpackData::checkStatus(status, "numeric");
+
+  // Discard the symbolic part (since the factorization is complete.)
+  umfpack_dl_free_symbolic(&Symbolic);
+  Symbolic = 0;
+}
+//-----------------------------------------------------------------------------
+void UmfpackLUSolver::UmfpackData::factorizedSolve(double*x, const double* b)
+{
+  long int status  = umfpack_dl_solve(UMFPACK_A, (const long int*) Rp, 
+                                     (const long int*) Ri, Rx, x, b, Numeric, 
+                                     dnull, dnull);
+  UmfpackData::checkStatus(status, "solve");
+}
+//-----------------------------------------------------------------------------
+void UmfpackLUSolver::UmfpackData::checkStatus(long int status, std::string function)
 {
 #ifdef HAS_UMFPACK
   if(status == UMFPACK_OK)

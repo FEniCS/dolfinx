@@ -5,7 +5,7 @@
 // Modified by Dag Lindbo 2008.
 // 
 // First added:  2006-05-31
-// Last changed: 2008-05-07
+// Last changed: 2008-07-19
 
 #ifndef __UMFPACK_LU_SOLVER_H
 #define __UMFPACK_LU_SOLVER_H
@@ -48,7 +48,7 @@ namespace dolfin
     virtual uint factorize(const uBlasMatrix<ublas_sparse_matrix>& A);
 
     /// Solve factorized system (UMFPACK).
-    virtual uint factorized_solve(uBlasVector& x, const uBlasVector& b);
+    virtual uint factorizedSolve(uBlasVector& x, const uBlasVector& b);
 
     /// Solve linear system Ax = b for a Krylov matrix
     void solve(const uBlasKrylovMatrix& A, uBlasVector& x, const uBlasVector& b);
@@ -62,22 +62,49 @@ namespace dolfin
 
   private:
     
-    /// Check status flag returned by an UMFPACK function
-    void check_status(long int status, std::string function) const;
-
     /// General uBlas LU solver which accepts both vector and matrix right-hand sides
     template<class Mat, class B>
     uint solveInPlace(Mat& A, B& X) const;
 
     // Temporary data for LU factorization of sparse ublas matrix (umfpack only)
-#ifdef HAS_UMFPACK
-    bool has_factorized_matrix;
-    uint mat_dim;
-    void* Numeric;
-    long int* Rp;
-    long int* Ri;
-    double* Rx;   
-#endif
+    class UmfpackData
+    {
+      public:
+        UmfpackData() : N(0), dnull(0), inull(0), Numeric(0), Rp(0), Ri(0), Rx(0), 
+                        factorized(false), mat_dim(0) {} 
+        ~UmfpackData() 
+        { clear(); }
+
+        // Clear data
+        void clear();
+
+        // Use UMFPACK to compute transpose
+        void transpose(const std::size_t* Ap, const std::size_t* Ai, const double* Ax);
+
+        // Factorize
+        void factorize();
+
+        // Factorized solve
+        void factorizedSolve(double*x, const double* b);
+
+        /// Check status flag returned by an UMFPACK function
+        static void checkStatus(long int status, std::string function);
+
+        // Data for UMFPACK
+        uint N;
+        double*   dnull;
+        long int* inull;
+
+        void *Symbolic;
+        void* Numeric;
+        long int* Rp;
+        long int* Ri;
+        double*   Rx;   
+        bool factorized;
+        uint mat_dim;
+    };
+
+    UmfpackData umfpack;
 
     // Temporary data for LU factorization of a uBlasKrylovMatrix
     uBlasMatrix<ublas_dense_matrix>* AA;
