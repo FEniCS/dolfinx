@@ -222,7 +222,7 @@ dolfin::uint UmfpackLUSolver::solveInPlaceUBlas(uBlasMatrix<ublas_dense_matrix>&
   return solveInPlace(A.mat(), _x);
 }
 //-----------------------------------------------------------------------------
-void UmfpackLUSolver::UmfpackData::clear()
+void UmfpackLUSolver::Umfpack::clear()
 {
   delete dnull; dnull = 0;
   delete inull; inull = 0;
@@ -247,15 +247,15 @@ void UmfpackLUSolver::UmfpackData::clear()
   mat_dim = 0;
 }
 //-----------------------------------------------------------------------------
-void UmfpackLUSolver::UmfpackData::transpose(const std::size_t* Ap, const std::size_t* Ai, const double* Ax)
-{
-  long int status;
-  status= umfpack_dl_transpose(N, N, (const long int*) Ap, (const long int*) Ai, 
-                               Ax, inull, inull, Rp, Ri, Rx);
-  UmfpackData::checkStatus(status, "transpose");
+void UmfpackLUSolver::Umfpack::transpose(const std::size_t* Ap, 
+                                      const std::size_t* Ai, const double* Ax)
+{  
+  long int status = umfpack_dl_transpose(N, N, (const long int*) Ap, 
+                           (const long int*) Ai, Ax, inull, inull, Rp, Ri, Rx);
+  Umfpack::checkStatus(status, "transpose");
 }
 //-----------------------------------------------------------------------------
-void UmfpackLUSolver::UmfpackData::factorize()
+void UmfpackLUSolver::Umfpack::factorize()
 {
   long int status;
 
@@ -267,22 +267,22 @@ void UmfpackLUSolver::UmfpackData::factorize()
   // Factorization step
   status = umfpack_dl_numeric((const long int*) Rp,(const long int*) Ri, Rx, 
                                Symbolic, &Numeric, dnull, dnull);
-  UmfpackData::checkStatus(status, "numeric");
+  Umfpack::checkStatus(status, "numeric");
 
   // Discard the symbolic part (since the factorization is complete.)
   umfpack_dl_free_symbolic(&Symbolic);
   Symbolic = 0;
 }
 //-----------------------------------------------------------------------------
-void UmfpackLUSolver::UmfpackData::factorizedSolve(double*x, const double* b)
+void UmfpackLUSolver::Umfpack::factorizedSolve(double*x, const double* b)
 {
   long int status  = umfpack_dl_solve(UMFPACK_A, (const long int*) Rp, 
                                      (const long int*) Ri, Rx, x, b, Numeric, 
                                      dnull, dnull);
-  UmfpackData::checkStatus(status, "solve");
+  Umfpack::checkStatus(status, "solve");
 }
 //-----------------------------------------------------------------------------
-void UmfpackLUSolver::UmfpackData::checkStatus(long int status, std::string function)
+void UmfpackLUSolver::Umfpack::checkStatus(long int status, std::string function)
 {
 #ifdef HAS_UMFPACK
   if(status == UMFPACK_OK)

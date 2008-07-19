@@ -67,12 +67,12 @@ namespace dolfin
     uint solveInPlace(Mat& A, B& X) const;
 
     // Temporary data for LU factorization of sparse ublas matrix (umfpack only)
-    class UmfpackData
+    class Umfpack
     {
       public:
-        UmfpackData() : N(0), dnull(0), inull(0), Numeric(0), Rp(0), Ri(0), Rx(0), 
+        Umfpack() : N(0), dnull(0), inull(0), Numeric(0), Rp(0), Ri(0), Rx(0), 
                         factorized(false), mat_dim(0) {} 
-        ~UmfpackData() 
+        ~Umfpack() 
         { clear(); }
 
         // Clear data
@@ -104,7 +104,7 @@ namespace dolfin
         uint mat_dim;
     };
 
-    UmfpackData umfpack;
+    Umfpack umfpack;
 
     // Temporary data for LU factorization of a uBlasKrylovMatrix
     uBlasMatrix<ublas_dense_matrix>* AA;
