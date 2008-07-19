@@ -89,7 +89,7 @@ int main()
   pde.solve(u);
 
   // Plot solution
-  plot(u);
+  //plot(u);
 
   // Save solution to file
   File file("poisson.pvd");

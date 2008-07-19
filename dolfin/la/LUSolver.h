@@ -57,16 +57,6 @@ namespace dolfin
         return umfpack_solver->solve(A.down_cast<uBlasSparseMatrix>(), x.down_cast<uBlasVector>(), b.down_cast<uBlasVector>());
       }
 
-      if (A.has_type<uBlasDenseMatrix>()) 
-      {
-        if (!umfpack_solver)
-        {
-          umfpack_solver = new UmfpackLUSolver();
-          umfpack_solver->set("parent", *this);
-        }
-        return umfpack_solver->solve(A.down_cast<uBlasDenseMatrix >(), x.down_cast<uBlasVector>(), b.down_cast<uBlasVector>());
-      }
-
 #ifdef HAS_PETSC
       if (A.has_type<PETScMatrix>()) 
       {

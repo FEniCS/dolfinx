@@ -5,7 +5,7 @@
 // Modified by Dag Lindbo 2008.
 // 
 // First added:  2006-05-31
-// Last changed: 2008-07-19
+// Last changed: 2008-07-20
 
 #ifndef __UMFPACK_LU_SOLVER_H
 #define __UMFPACK_LU_SOLVER_H
@@ -48,13 +48,11 @@ namespace dolfin
     virtual uint factorize(const uBlasMatrix<ublas_sparse_matrix>& A);
 
     /// Solve factorized system (UMFPACK).
-    virtual uint factorizedSolve(uBlasVector& x, const uBlasVector& b);
+    virtual uint factorizedSolve(uBlasVector& x, const uBlasVector& b) const;
 
     /// Solve linear system Ax = b for a Krylov matrix
+    /// FIXME: This function should be moved to uBlasKrylovMatrix
     void solve(const uBlasKrylovMatrix& A, uBlasVector& x, const uBlasVector& b);
-
-    /// Solve linear system Ax = b in place (A is dense)
-    uint solveInPlaceUBlas(uBlasMatrix<ublas_dense_matrix>& A, uBlasVector& x, const uBlasVector& b) const;
 
     /// Compute the inverse of A (A is dense or sparse)
     template<class Mat>
@@ -63,8 +61,8 @@ namespace dolfin
   private:
     
     /// General uBlas LU solver which accepts both vector and matrix right-hand sides
-    template<class Mat, class B>
-    uint solveInPlace(Mat& A, B& X) const;
+    //template<class Mat, class B>
+    //uint solveInPlace(Mat& A, B& X) const;
 
     // Temporary data for LU factorization of sparse ublas matrix (umfpack only)
     class Umfpack
@@ -89,10 +87,10 @@ namespace dolfin
         void factorize();
 
         // Factorized solve
-        void factorizedSolve(double*x, const double* b, bool transpose = false);
+        void factorizedSolve(double*x, const double* b, bool transpose = false) const;
 
         /// Check status flag returned by an UMFPACK function
-        void checkStatus(long int status, std::string function);
+        void checkStatus(long int status, std::string function) const;
 
         // UMFPACK data
         double*   dnull;
@@ -119,45 +117,6 @@ namespace dolfin
     uBlasVector* Aj;
     
   };
-  //---------------------------------------------------------------------------
-  // Implementation of template functions
-  //---------------------------------------------------------------------------
-  template<class Mat>
-  void UmfpackLUSolver::invert(Mat& A) const
-  {
-    const uint M = A.size1();
-    dolfin_assert(M == A.size2());
-  
-    // Create indentity matrix
-    Mat X(M, M);
-    X.assign(ublas::identity_matrix<real>(M));
-
-    // Solve
-    solveInPlace(A, X);
-
-    A.assign_temporary(X);
-  }
-  //-----------------------------------------------------------------------------
-  template<class Mat, class B>
-  dolfin::uint UmfpackLUSolver::solveInPlace(Mat& A, B& X) const
-  {
-    const uint M = A.size1();
-    dolfin_assert( M == A.size2() );
-  
-    // Create permutation matrix
-    ublas::permutation_matrix<std::size_t> pmatrix(M);
-
-    // Factorise (with pivoting)
-    uint singular = ublas::lu_factorize(A, pmatrix);
-    if( singular > 0)
-      error("Singularity detected in uBlas matrix factorization on line %u.", singular-1); 
-
-    // Back substitute 
-    ublas::lu_substitute(A, pmatrix, X);
-
-    return 1;
-  }
-  //-----------------------------------------------------------------------------
 
 }
 

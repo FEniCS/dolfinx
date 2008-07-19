@@ -5,7 +5,7 @@
 // Modified by Dag Lindbo 2008.
 // 
 // First added:  2006-06-01
-// Last changed: 2008-07-19
+// Last changed: 2008-07-20
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/timing.h>
@@ -43,17 +43,8 @@ UmfpackLUSolver::~UmfpackLUSolver()
 dolfin::uint UmfpackLUSolver::solve(const uBlasMatrix<ublas_dense_matrix>& A, 
                                   uBlasVector& x, const uBlasVector& b)
 {    
-  // Get underlying uBLAS vectors
-  ublas_vector& _x = x.vec(); 
-  const ublas_vector& _b = b.vec(); 
-
-  // Make copy of matrix and vector
-  ublas_dense_matrix Atemp(A.mat());
-  _x.resize(_b.size());
-  _x.assign(_b);
-
-  // Solve
-  return solveInPlace(Atemp, _x);
+  error("UmfpackLUSolver no longer solves dense matrices. Functionality is being transition to uBlasMatrix.");
+  return 0;
 }
 //-----------------------------------------------------------------------------
 #ifdef HAS_UMFPACK
@@ -90,21 +81,18 @@ dolfin::uint UmfpackLUSolver::factorize(const uBlasMatrix<ublas_sparse_matrix>& 
   // Factorize
   message("LU-factorizing linear system of size %d x %d (UMFPACK).", M, M);
   umfpack.factorize();
-  umfpack.factorized = true;
-  umfpack.mat_dim = M;
 
   return 1;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint UmfpackLUSolver::factorizedSolve(uBlasVector& x, const uBlasVector& b)
+dolfin::uint UmfpackLUSolver::factorizedSolve(uBlasVector& x, const uBlasVector& b) const
 {
-  const uint N  = b.size();
-  dolfin_assert(umfpack::M == N); 
+  const uint N = b.size();
 
   if(!umfpack.factorized)
     error("Factorized solve must be preceeded by call to factorize.");
 
-  if(N != umfpack.mat_dim)
+  if(N != umfpack.N)
     error("Vector does not match size of factored matrix");
 
   // Initialise solution vector and solve
@@ -189,27 +177,9 @@ void UmfpackLUSolver::solve(const uBlasKrylovMatrix& A, uBlasVector& x,
   }
 
   // Solve linear system
-  solve(*AA, x, b);
-}
-//-----------------------------------------------------------------------------
-dolfin::uint UmfpackLUSolver::solveInPlaceUBlas(uBlasMatrix<ublas_dense_matrix>& A, 
-					      uBlasVector& x, const uBlasVector& b) const
-{
-  const uint M = A.size(0);
-  dolfin_assert(M == b.size());
-  
-  // Get underlying uBLAS vectors
-  ublas_vector& _x = x.vec(); 
-  const ublas_vector& _b = b.vec(); 
-
-  if( _x.size() != M )
-    _x.resize(M);
-
-  // Initialise solution vector
-  _x.assign(_b);
-
-  // Solve
-  return solveInPlace(A.mat(), _x);
+  warning("UmfpackLUSolver no longer solves dense matrices. This function will be removed and probably added to uBlasKrylovSolver.");
+  warning("The uBlasKrylovSolver LU solver has been modified and has not yet been well tested. Please verify your results.");
+ (*AA).solve(x, b);
 }
 //-----------------------------------------------------------------------------
 // UmfpackLUSolver::Umfpack implementation
@@ -240,7 +210,7 @@ void UmfpackLUSolver::Umfpack::clear()
     local_matrix = false;
   }
   factorized =  false;
-  mat_dim = 0;
+  N = 0;
 }
 //-----------------------------------------------------------------------------
 void UmfpackLUSolver::Umfpack::init(const long int* Ap, const long int* Ai, 
@@ -258,7 +228,7 @@ void UmfpackLUSolver::Umfpack::init(const long int* Ap, const long int* Ai,
   Ri = Ai;
   Rx = Ax;
   local_matrix = false;
-  mat_dim      = M;
+  N = M;
 }
 //-----------------------------------------------------------------------------
 void UmfpackLUSolver::Umfpack::initTranspose(const long int* Ap, const long int* Ai, 
@@ -290,8 +260,8 @@ void UmfpackLUSolver::Umfpack::factorize()
   dolfin_assert(Rp);
   dolfin_assert(Ri);
   dolfin_assert(Rx);
-  dolfin_assert(Symbolic);
-  dolfin_assert(Numeric);
+  dolfin_assert(!Symbolic);
+  dolfin_assert(!Numeric);
 
 #ifdef HAS_UMFPACK
   long int status;
@@ -309,12 +279,14 @@ void UmfpackLUSolver::Umfpack::factorize()
   // Discard the symbolic part (since the factorization is complete.)
   umfpack_dl_free_symbolic(&Symbolic);
   Symbolic = 0;
+
+  factorized = true;
 #else
   error("UMFPACK not installed");
 #endif
 }
 //-----------------------------------------------------------------------------
-void UmfpackLUSolver::Umfpack::factorizedSolve(double*x, const double* b, bool transpose)
+void UmfpackLUSolver::Umfpack::factorizedSolve(double*x, const double* b, bool transpose) const
 {
   dolfin_assert(Rp);
   dolfin_assert(Ri);
@@ -334,7 +306,7 @@ void UmfpackLUSolver::Umfpack::factorizedSolve(double*x, const double* b, bool t
 #endif
 }
 //-----------------------------------------------------------------------------
-void UmfpackLUSolver::Umfpack::checkStatus(long int status, std::string function)
+void UmfpackLUSolver::Umfpack::checkStatus(long int status, std::string function) const
 {
 #ifdef HAS_UMFPACK
   if(status == UMFPACK_OK)

@@ -19,7 +19,7 @@
 #include "uBlasDenseMatrix.h"
 #include "PETScKrylovSolver.h"
 #include "EpetraKrylovSolver.h"
-#include "ITLKrylovSolver.h"
+//#include "ITLKrylovSolver.h"
 #include "SolverType.h"
 #include "PreconditionerType.h"
 
@@ -35,7 +35,8 @@ namespace dolfin
     
     /// Create Krylov solver
     KrylovSolver(SolverType solver_type=default_solver, PreconditionerType pc_type=default_pc)
-      : solver_type(solver_type), pc_type(pc_type), ublas_solver(0), petsc_solver(0), epetra_solver(0) {}
+      : solver_type(solver_type), pc_type(pc_type), ublas_solver(0), petsc_solver(0), 
+        epetra_solver(0), itl_solver(0) {}
     
     /// Destructor
     ~KrylovSolver()

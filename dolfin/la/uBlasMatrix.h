@@ -8,7 +8,7 @@
 // Modified by Dag Lindbo, 2008
 //
 // First added:  2006-07-05
-// Last changed: 2008-05-18
+// Last changed: 2008-07-19
 
 #ifndef __UBLAS_MATRIX_H
 #define __UBLAS_MATRIX_H
@@ -143,8 +143,11 @@ namespace dolfin
     Mat& mat()
     { return A; }
 
-    /// Solve Ax = b out-of-place (A is not destroyed)
+    /// Solve Ax = b out-of-place using uBLAS (A is not destroyed)
     void solve(uBlasVector& x, const uBlasVector& b) const;
+
+    /// Solve Ax = b in-place using uBLAS(A is destroyed)
+    void solveInPlace(uBlasVector& x, const uBlasVector& b);
 
     /// Compute inverse of matrix
     void invert();
@@ -163,6 +166,10 @@ namespace dolfin
     const uBlasMatrix<Mat>& operator= (const uBlasMatrix<Mat>& A);
 
   private:
+
+    /// General uBlas LU solver which accepts both vector and matrix right-hand sides
+    template<class B>
+    void solveInPlace(B& X);
 
     // uBLAS matrix object
     Mat A;
@@ -291,16 +298,46 @@ namespace dolfin
   //-----------------------------------------------------------------------------
   template <class Mat>  
   void uBlasMatrix<Mat>::solve(uBlasVector& x, const uBlasVector& b) const
-  {    
-    UmfpackLUSolver solver;
-    solver.solve(*this, x, b);
+  {
+    // Make copy of matrix and vector
+    uBlasMatrix<Mat> Atemp;
+    Atemp.mat().resize(size(0), size(1));
+    Atemp.mat().assign(A);
+    x.vec().resize(b.vec().size());
+    x.vec().assign(b.vec());
+
+    // Solve
+    Atemp.solveInPlace(x.vec());
+  }
+  //-----------------------------------------------------------------------------
+  template <class Mat>  
+  void uBlasMatrix<Mat>::solveInPlace(uBlasVector& x, const uBlasVector& b)
+  {
+    const uint M = A.size1();
+    dolfin_assert(M == b.size());
+  
+    // Initialise solution vector
+    if( x.vec().size() != M )
+      x.vec().resize(M);
+    x.vec().assign(b.vec());
+
+    // Solve
+    solveInPlace(x.vec());
   }
   //-----------------------------------------------------------------------------
   template <class Mat>  
   void uBlasMatrix<Mat>::invert()
   {
-    UmfpackLUSolver solver;
-    solver.invert(A);
+    const uint M = A.size1();
+    dolfin_assert(M == A.size2());
+  
+    // Create indentity matrix
+    Mat X(M, M);
+    X.assign(ublas::identity_matrix<real>(M));
+
+    // Solve
+    solveInPlace(X);
+    A.assign_temporary(X);
   }
 //-----------------------------------------------------------------------------
   template <class Mat>
@@ -426,6 +463,25 @@ namespace dolfin
         A.push_back(set - pattern.begin(), *element, 0.0);
   }
   //---------------------------------------------------------------------------
+  template<class Mat> template<class B>
+  void uBlasMatrix<Mat>::solveInPlace(B& X)
+  {
+    cout << "Hi in solver " << endl;
+    const uint M = A.size1();
+    dolfin_assert( M == A.size2() );
+  
+    // Create permutation matrix
+    ublas::permutation_matrix<std::size_t> pmatrix(M);
+
+    // Factorise (with pivoting)
+    uint singular = ublas::lu_factorize(A, pmatrix);
+    if( singular > 0)
+      error("Singularity detected in uBlas matrix factorization on line %u.", singular-1); 
+
+    // Back substitute 
+    ublas::lu_substitute(A, pmatrix, X);
+  }
+  //-----------------------------------------------------------------------------
   template <class Mat>  
   inline LogStream& operator<< (LogStream& stream, const uBlasMatrix<Mat>& B)
   {
@@ -443,7 +499,6 @@ namespace dolfin
     return stream;
   }
   //-----------------------------------------------------------------------------
-
 }
 
 #endif
