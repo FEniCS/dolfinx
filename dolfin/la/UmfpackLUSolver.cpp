@@ -143,7 +143,7 @@ dolfin::uint UmfpackLUSolver::factorize(const uBlasMatrix<ublas_sparse_matrix>& 
   return 0;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint UmfpackLUSolver::factorized_solve(uBlasVector& x, const uBlasVector& b)
+dolfin::uint UmfpackLUSolver::factorizedSolve(uBlasVector& x, const uBlasVector& b)
 {
   error("UMFPACK must be installed to perform sparse back and forward substitution");
   return 0;
@@ -252,9 +252,13 @@ void UmfpackLUSolver::Umfpack::clear()
 void UmfpackLUSolver::Umfpack::transpose(const std::size_t* Ap, 
                                       const std::size_t* Ai, const double* Ax)
 {  
+#ifdef HAS_UMFPACK
   long int status = umfpack_dl_transpose(N, N, (const long int*) Ap, 
                            (const long int*) Ai, Ax, inull, inull, Rp, Ri, Rx);
   Umfpack::checkStatus(status, "transpose");
+#else
+  error("UMFPACK not installed");
+#endif
 }
 //-----------------------------------------------------------------------------
 void UmfpackLUSolver::Umfpack::factorize()
@@ -263,6 +267,7 @@ void UmfpackLUSolver::Umfpack::factorize()
   dolfin_assert(Ri);
   dolfin_assert(Rx);
 
+#ifdef HAS_UMFPACK
   long int status;
 
   // Symbolic step (reordering etc)
@@ -278,6 +283,9 @@ void UmfpackLUSolver::Umfpack::factorize()
   // Discard the symbolic part (since the factorization is complete.)
   umfpack_dl_free_symbolic(&Symbolic);
   Symbolic = 0;
+#else
+  error("UMFPACK not installed");
+#endif
 }
 //-----------------------------------------------------------------------------
 void UmfpackLUSolver::Umfpack::factorizedSolve(double*x, const double* b)
@@ -287,10 +295,14 @@ void UmfpackLUSolver::Umfpack::factorizedSolve(double*x, const double* b)
   dolfin_assert(Rx);
   dolfin_assert(Numeric);
 
+#ifdef HAS_UMFPACK
   long int status  = umfpack_dl_solve(UMFPACK_A, (const long int*) Rp, 
                                      (const long int*) Ri, Rx, x, b, Numeric, 
                                      dnull, dnull);
   Umfpack::checkStatus(status, "solve");
+#else
+  error("UMFPACK not installed");
+#endif
 }
 //-----------------------------------------------------------------------------
 void UmfpackLUSolver::Umfpack::checkStatus(long int status, std::string function)
