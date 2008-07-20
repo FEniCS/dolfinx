@@ -120,17 +120,18 @@ void uBlasVector::zero()
 //-----------------------------------------------------------------------------
 real uBlasVector::norm(VectorNormType type) const
 {
-  switch (type) {
-  case l1:
-    return norm_1(x);
-  case l2:
-    return norm_2(x);
-  case linf:
-    return norm_inf(x);
-  default:
-    error("Requested vector norm type for uBlasVector unknown");
+  switch (type) 
+  {
+    case l1:
+      return norm_1(x);
+    case l2:
+      return norm_2(x);
+    case linf:
+      return norm_inf(x);
+    default:
+      error("Requested vector norm type for uBlasVector unknown");
   }
-  return norm_inf(x);
+  return 0.0;
 }
 //-----------------------------------------------------------------------------
 real uBlasVector::min() const

@@ -1,8 +1,10 @@
 // Copyright (C) 2008 Dag Lindbo
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Garth N. Wells, 2008.
+//
 // First added:  2008-07-06
-// Last changed:  2008-07-06
+// Last changed: 2008-07-20
 
 #ifdef HAS_MTL4
 
@@ -39,6 +41,7 @@ MTL4Vector::MTL4Vector(const MTL4Vector& v):
 //-----------------------------------------------------------------------------
 MTL4Vector::~MTL4Vector()
 {
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 void MTL4Vector::init(uint N)
@@ -65,11 +68,21 @@ void MTL4Vector::zero()
 //-----------------------------------------------------------------------------
 void MTL4Vector::apply(FinalizeType finaltype)
 {
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 void MTL4Vector::disp(uint precision) const
 {
-  error("MTL4::disp not implemented yet");
+  dolfin::cout << "[ ";
+  for (uint i = 0; i < size(); ++i)
+  {
+    std::stringstream entry;
+    entry << std::setiosflags(std::ios::scientific);
+    entry << std::setprecision(precision);
+    entry << x[i] << " ";
+    dolfin::cout << entry.str().c_str() << dolfin::endl;
+  }
+  dolfin::cout << " ]" << endl;
 }
 //-----------------------------------------------------------------------------
 LogStream& dolfin::operator<< (LogStream& stream, const MTL4Vector& x)
@@ -80,22 +93,26 @@ LogStream& dolfin::operator<< (LogStream& stream, const MTL4Vector& x)
 //-----------------------------------------------------------------------------
 void MTL4Vector::get(real* values) const
 {
-  error("MTL4::get not implemented yet");
+  for (uint i = 0; i < size(); i++)
+    values[i] = x[i];
 }
 //-----------------------------------------------------------------------------
 void MTL4Vector::set(real* values)
 {
-  error("MTL4::set not implemented yet");
+  for (uint i = 0; i < size(); i++)
+    x[i] = values[i];
 }
 //-----------------------------------------------------------------------------
 void MTL4Vector::add(real* values)
 {
-  error("MTL4::add not implemented yet");
+  for (uint i = 0; i < size(); i++)
+    x(i) += values[i];
 }
 //-----------------------------------------------------------------------------
 void MTL4Vector::get(real* block, uint m, const uint* rows) const
 {
-  error("MTL4Vector::get not implemented yet");
+  for (uint i = 0; i < m; i++)
+    block[i] = x[ rows[i] ];
 }
 //-----------------------------------------------------------------------------
 void MTL4Vector::set(const real* block, uint m, const uint* rows)
@@ -181,20 +198,28 @@ const MTL4Vector& MTL4Vector::operator-= (const GenericVector& y)
 //-----------------------------------------------------------------------------
 real MTL4Vector::norm(VectorNormType type) const
 {
-  error("MTL4::norm not implemented yet");
+  switch (type) 
+  {
+    case l1:
+      return mtl::one_norm(x);
+    case l2:
+      return mtl::two_norm(x);
+    case linf:
+      return mtl::infinity_norm(x);
+    default:
+      error("Requested vector norm type for uBlasVector unknown");
+  }
   return 0.0;
 }
 //-----------------------------------------------------------------------------
 real MTL4Vector::min() const
 {
-  error("MTL4::min not implemented yet");
-  return 0.0;
+  return mtl::min(x);
 }
 //-----------------------------------------------------------------------------
 real MTL4Vector::max() const
 {
-  error("MTL4::max not implemented yet");
-  return 0.0;
+  return mtl::max(x);
 }
 //-----------------------------------------------------------------------------
 
