@@ -50,6 +50,7 @@ dolfin::uint UmfpackLUSolver::solve(const uBlasMatrix<ublas_dense_matrix>& A,
 }
 //-----------------------------------------------------------------------------
 #ifdef HAS_MTL4
+#ifdef HAS_UMFPACK
 dolfin::uint UmfpackLUSolver::solve(const MTL4Matrix& A, MTL4Vector& x, 
                                     const MTL4Vector& b)
 {
@@ -99,7 +100,16 @@ dolfin::uint UmfpackLUSolver::solve(const MTL4Matrix& A, MTL4Vector& x,
 dolfin::uint UmfpackLUSolver::solve(const MTL4Matrix& A, MTL4Vector& x, 
                                     const MTL4Vector& b)
 {
-  error("UMFPACK and MTL4 must be installed.");  
+  error("UMFPACK not installed.");  
+  return 0;
+}
+#endif
+#else
+//-----------------------------------------------------------------------------
+dolfin::uint UmfpackLUSolver::solve(const MTL4Matrix& A, MTL4Vector& x, 
+                                    const MTL4Vector& b)
+{
+  error("MTL4 not installed.");  
   return 0;
 }
 #endif
@@ -178,7 +188,7 @@ dolfin::uint UmfpackLUSolver::factorize(const uBlasMatrix<ublas_sparse_matrix>& 
   return 0;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint UmfpackLUSolver::factorizedSolve(uBlasVector& x, const uBlasVector& b)
+dolfin::uint UmfpackLUSolver::factorizedSolve(uBlasVector& x, const uBlasVector& b) const
 {
   error("UMFPACK must be installed to perform sparse back and forward substitution");
   return 0;
