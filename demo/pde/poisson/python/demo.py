@@ -73,3 +73,5 @@ file << u
 
 # Hold plot
 interactive()
+
+summary()

@@ -21,7 +21,7 @@ namespace dolfin
   /// This class provides storage and pretty-printing for tables.
   /// Example usage:
   ///
-  ///   Table table;
+  ///   Table table("Timings");
   ///
   ///   table("uBLAS",  "Assemble") = 0.010;
   ///   table("uBLAS",  "Solve")    = 0.020;
@@ -37,7 +37,7 @@ namespace dolfin
   public:
 
     /// Create empty table
-    Table();
+    Table(std::string title="");
 
     /// Destructor
     ~Table();
@@ -55,6 +55,9 @@ namespace dolfin
     void disp() const;
 
   private:
+
+    // Table title
+    std::string title;
 
     // Rows
     std::vector<std::string> rows;

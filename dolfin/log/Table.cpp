@@ -13,7 +13,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Table::Table()
+Table::Table(std::string title) : title(title)
 {
   // Do nothing
 }
@@ -65,7 +65,7 @@ void Table::disp() const
   std::vector<uint> col_sizes;
   
   // Format values and compute column sizes
-  col_sizes.push_back(0);
+  col_sizes.push_back(title.size());
   for (uint j = 0; j < cols.size(); j++)
     col_sizes.push_back(cols[j].size());
   for (uint i = 0; i < rows.size(); i++)
@@ -86,7 +86,8 @@ void Table::disp() const
 
   // Write table
   std::stringstream output;
-  for (uint k = 0; k < col_sizes[0]; k++) output << " ";
+  output << title;
+  for (uint k = 0; k < col_sizes[0] - title.size(); k++) output << " ";
   output << "  |";
   for (uint j = 0; j < cols.size(); j++)
   {
