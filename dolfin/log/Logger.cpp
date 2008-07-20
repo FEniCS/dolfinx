@@ -4,7 +4,7 @@
 // Modified by Ola Skavhaug, 2007.
 //
 // First added:  2003-03-13
-// Last changed: 2008-06-17
+// Last changed: 2008-07-21
 
 #include <string>
 #include <iostream>
@@ -14,6 +14,7 @@
 
 #include <dolfin/common/constants.h>
 #include <dolfin/common/types.h>
+#include "Table.h"
 #include "Logger.h"
 
 using namespace dolfin;
@@ -154,7 +155,8 @@ void Logger::summary()
     return;
   }
 
-  message("Summary of timings:");
+  message("");
+  Table table("Summary of timings");
   for (map_iterator it = _timings.begin(); it != _timings.end(); ++it)
   {
     const std::string task  = it->first;
@@ -162,10 +164,11 @@ void Logger::summary()
     const real total_time   = it->second.second;
     const real average_time = total_time / static_cast<real>(num_timings);
 
-    std::stringstream line;
-    line << "  " << task << ": " << total_time << " " << average_time << " " << num_timings;
-    message(line.str());
+    table(task, "Average time") = average_time;
+    table(task, "Total time")   = total_time;
+    table(task, "Reps")         = num_timings;
   }
+  table.disp();
 
   // Clear timings
   _timings.clear();
