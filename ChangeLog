@@ -1,10 +1,11 @@
+ - Add class Table for pretty-printing of tables
  - Add experimental MTL4 linear algebra backend
  - Add OutflowFacet to SpecialFunctions for DG transport problems
  - Remove unmaintained OpenDX file format
  - Fix problem with mesh smoothing near nonconvex corners
  - Simple projection of functions in Python
- - New file format: XYZ for use with Xd3d
- - New built-in meshes: UnitCircle, Box, Rectangle, UnitSphere
+ - Add file format: XYZ for use with Xd3d
+ - Add built-in meshes: UnitCircle, Box, Rectangle, UnitSphere
 0.8.0 [2008-06-23]
  - Fix input of matrix data from XML
  - Add function normalize()
