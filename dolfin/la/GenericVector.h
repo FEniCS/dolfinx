@@ -125,6 +125,20 @@ namespace dolfin
     /// Assignment operator
     virtual const GenericVector& operator= (real a) = 0;
 
+    /// Return pointer to underlying data (const version)
+    virtual const real* data() const
+    { 
+      error("Unable to return pointer to underlying vector data."); 
+      return 0;
+    } 
+
+    /// Return pointer to underlying data
+    virtual real* data()
+    { 
+      error("Unable to return pointer to underlying vector data."); 
+      return 0;
+    } 
+
     //--- Convenience functions ---
 
     /// Get value of given entry

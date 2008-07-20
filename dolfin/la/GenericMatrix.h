@@ -107,10 +107,10 @@ namespace dolfin
 
     /// Return pointers to underlying compresssed storage data
     /// FIXME: Document what data each of the three pointers points to.
-    virtual boost::tuple<const std::size_t*, const std::size_t*, const double*> data() const
+    virtual boost::tuple<const std::size_t*, const std::size_t*, const double*, int> data() const
     { 
       error("Unable to return pointers to underlying matrix data."); 
-      return boost::tuple<const std::size_t*, const std::size_t*, const double*>(0, 0, 0);
+      return boost::tuple<const std::size_t*, const std::size_t*, const double*, int>(0, 0, 0, 0);
     } 
 
     //--- Convenience functions ---

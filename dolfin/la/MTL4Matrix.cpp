@@ -211,11 +211,12 @@ const MTL4Matrix& MTL4Matrix::operator/= (real a)
   return *this;
 }
 //-----------------------------------------------------------------------------
-boost::tuple<const std::size_t*, const std::size_t*, const double*> MTL4Matrix::data() const;
+boost::tuple<const std::size_t*, const std::size_t*, const double*, int> MTL4Matrix::data() const
 {
-  typedef boost::tuple<const std::size_t*, const std::size_t*, const double*> tuple;
-  return tuple(Atmp.mat().address_major(), Atmp.mat().address_minor(), 
-               Atmp.mat().address_data());
+  // Some tricks because MTL doesn't provide const versions of some functions
+  mtl4_sparse_matrix& Atmp = const_cast<mtl4_sparse_matrix&>(A);  
+  typedef boost::tuple<const std::size_t*, const std::size_t*, const double*, int> tuple;
+  return tuple(Atmp.address_major(), Atmp.address_minor(), Atmp.address_data(), Atmp.nnz());
 }
 //-----------------------------------------------------------------------------
 LogStream& dolfin::operator<< (LogStream& stream, const mtl4_sparse_matrix& A)

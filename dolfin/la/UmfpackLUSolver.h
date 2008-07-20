@@ -17,6 +17,8 @@ namespace dolfin
 {
 
   /// Forward declarations
+  class GenericVector;
+  class GenericMatrix;
   class MTL4Vector;
   class MTL4Matrix;
   class uBlasVector;
@@ -41,41 +43,34 @@ namespace dolfin
     ~UmfpackLUSolver();
 
     /// Solve linear system Ax = b for a dense matrix
+    /// FIXME: This function will be moved to uBlasMatrix
     virtual uint solve(const uBlasMatrix<ublas_dense_matrix>& A, uBlasVector& x, const uBlasVector& b);
 
     /// Solve MTL4 linear system Ax = b for a sparse matrix using UMFPACK if installed
     virtual uint solve(const MTL4Matrix& A, MTL4Vector& x, const MTL4Vector& b);
 
     /// Solve uBLAS linear system Ax = b for a sparse matrix using UMFPACK if installed
-    virtual uint solve(const uBlasMatrix<ublas_sparse_matrix>& A, uBlasVector& x, const uBlasVector& b);
+    virtual uint solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b);
 
     /// LU-factor sparse matrix A if UMFPACK is installed
-    virtual uint factorize(const uBlasMatrix<ublas_sparse_matrix>& A);
+    virtual uint factorize(const GenericMatrix& A);
 
     /// Solve factorized system (UMFPACK).
-    virtual uint factorizedSolve(uBlasVector& x, const uBlasVector& b) const;
+    virtual uint factorizedSolve(GenericVector& x, const GenericVector& b) const;
 
     /// Solve linear system Ax = b for a Krylov matrix
     /// FIXME: This function should be moved to uBlasKrylovMatrix
     void solve(const uBlasKrylovMatrix& A, uBlasVector& x, const uBlasVector& b);
 
-    /// Compute the inverse of A (A is dense or sparse)
-    template<class Mat>
-    void invert(Mat& A) const;
-
   private:
     
-    /// General uBlas LU solver which accepts both vector and matrix right-hand sides
-    //template<class Mat, class B>
-    //uint solveInPlace(Mat& A, B& X) const;
-
-    // Temporary data for LU factorization of sparse ublas matrix (umfpack only)
+    // Data for LU factorization of sparse ublas matrix (umfpack only)
     class Umfpack
     {
       public:
  
-        Umfpack() : dnull(0), inull(0), Symbolic(0), Numeric(0), local_matrix(0), Rp(0), Ri(0), Rx(0), 
-                     N(0), factorized(false), mat_dim(0) {} 
+        Umfpack() : dnull(0), inull(0), Symbolic(0), Numeric(0), local_matrix(0), 
+                    Rp(0), Ri(0), Rx(0), N(0), factorized(false), mat_dim(0) {} 
 
         ~Umfpack() { clear(); }
 

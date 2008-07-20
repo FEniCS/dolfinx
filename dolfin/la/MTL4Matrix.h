@@ -110,7 +110,7 @@ namespace dolfin
     }
 
     /// Return pointers to underlying compresssed storage data
-    virtual boost::tuple<const std::size_t*, const std::size_t*, const double*> data() const;
+    virtual boost::tuple<const std::size_t*, const std::size_t*, const double*, int> data() const;
 
     //--- Special functions ---
 
