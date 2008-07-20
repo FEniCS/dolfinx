@@ -14,6 +14,8 @@
 #include "uBlasSparseMatrix.h"
 #include "uBlasKrylovMatrix.h"
 #include "uBlasVector.h"
+#include "MTL4Matrix.h"
+#include "MTL4Vector.h"
 
 extern "C" 
 {
@@ -59,6 +61,51 @@ dolfin::uint UmfpackLUSolver::solve(const uBlasMatrix<ublas_sparse_matrix>& A,
 
   // Clear data
   umfpack.clear();
+
+  return 0;
+}
+//-----------------------------------------------------------------------------
+dolfin::uint UmfpackLUSolver::solve(const MTL4Matrix& A, MTL4Vector& x, 
+                                    const MTL4Vector& b)
+{
+  // Check dimensions and get number of non-zeroes
+  const uint M  = A.size(0);
+  dolfin_assert(A.size(0) == A.size(1));
+  dolfin_assert(A.mat().nnz() >= M); 
+
+  // Cast awat const-ness because MTL4 does have const versions.
+  MTL4Matrix& Atmp = const_cast<MTL4Matrix&>(A);  
+
+  // Initialise umfpack data
+  umfpack.init((const long int*) Atmp.mat().address_major(), 
+               (const long int*)Atmp.mat().address_minor(), 
+               Atmp.mat().address_data(), M, A.mat().nnz());
+
+  // Factorize
+  message("LU-factorizing linear system of size %d x %d (UMFPACK).", M, M);
+  umfpack.factorize();
+
+  // Initialise solution vector and solve
+  const uint N = b.size();
+  dolfin_assert(M == N);
+  x.init(N);
+
+  // Don't know how to get accesss to underlying MTL4 vector data, so need to copy for now
+  real* _b = new real[N];
+  real* _x = new real[N];
+  b.get(_b);  
+
+  // Solve for tranpose since we use compressed rows and UMFPACK expected compressed columns
+  message("Solving factorized linear system of size %d x %d (UMFPACK).", N, N);
+  umfpack.factorizedSolve(_x, _b, true);
+
+  x.set(_x);
+
+  // Clear data
+  umfpack.clear();
+
+  delete [] _b;
+  delete [] _x;
 
   return 0;
 }
