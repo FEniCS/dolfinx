@@ -1,8 +1,10 @@
 // Copyright (C) 2008 Dag Lindbo
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Garth N. Wells, 2008.
+//
 // First added:  2008-07-06
-// Last changed: 2008-07-06
+// Last changed: 2008-07-20
 
 #ifdef HAS_MTL4
 
@@ -10,6 +12,7 @@
 #define __MTL4_MATRIX_H
 
 #include <dolfin/log/LogStream.h>
+#include <boost/tuple/tuple.hpp>
 #include <dolfin/common/Variable.h>
 #include "mtl4.h"
 #include "GenericMatrix.h"
@@ -106,7 +109,11 @@ namespace dolfin
       return *this; 
     }
 
+    /// Return pointers to underlying compresssed storage data
+    virtual boost::tuple<const std::size_t*, const std::size_t*, const double*> data() const;
+
     //--- Special functions ---
+
     virtual LinearAlgebraFactory& factory() const;
 
     //--- Special MTL4 functions ---
@@ -128,8 +135,10 @@ namespace dolfin
 
   private:
 
+    // MTL4 matrix object
     mtl4_sparse_matrix A;
 
+    // MTL4 matrix inserter
     mtl::matrix::inserter<mtl4_sparse_matrix, mtl::update_plus<real> >* ins;
 
     uint nnz_row;

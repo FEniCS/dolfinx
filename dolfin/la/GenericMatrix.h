@@ -106,6 +106,7 @@ namespace dolfin
     virtual const GenericMatrix& operator= (const GenericMatrix& x) = 0;
 
     /// Return pointers to underlying compresssed storage data
+    /// FIXME: Document what data each of the three pointers points to.
     virtual boost::tuple<const std::size_t*, const std::size_t*, const double*> data() const
     { 
       error("Unable to return pointers to underlying matrix data."); 
