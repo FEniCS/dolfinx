@@ -43,11 +43,11 @@ namespace dolfin
     /// Solve linear system Ax = b for a dense matrix
     virtual uint solve(const uBlasMatrix<ublas_dense_matrix>& A, uBlasVector& x, const uBlasVector& b);
 
-    /// Solve uBLAS linear system Ax = b for a sparse matrix using UMFPACK if installed
-    virtual uint solve(const uBlasMatrix<ublas_sparse_matrix>& A, uBlasVector& x, const uBlasVector& b);
-
     /// Solve MTL4 linear system Ax = b for a sparse matrix using UMFPACK if installed
     virtual uint solve(const MTL4Matrix& A, MTL4Vector& x, const MTL4Vector& b);
+
+    /// Solve uBLAS linear system Ax = b for a sparse matrix using UMFPACK if installed
+    virtual uint solve(const uBlasMatrix<ublas_sparse_matrix>& A, uBlasVector& x, const uBlasVector& b);
 
     /// LU-factor sparse matrix A if UMFPACK is installed
     virtual uint factorize(const uBlasMatrix<ublas_sparse_matrix>& A);

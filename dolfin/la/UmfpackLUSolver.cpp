@@ -45,26 +45,11 @@ UmfpackLUSolver::~UmfpackLUSolver()
 dolfin::uint UmfpackLUSolver::solve(const uBlasMatrix<ublas_dense_matrix>& A, 
                                   uBlasVector& x, const uBlasVector& b)
 {    
-  error("UmfpackLUSolver no longer solves dense matrices. Functionality is being transition to uBlasMatrix.");
+  error("UmfpackLUSolver no longer solves dense matrices. Functionality is being transitioned to uBlasMatrix.");
   return 0;
 }
 //-----------------------------------------------------------------------------
-#ifdef HAS_UMFPACK
-dolfin::uint UmfpackLUSolver::solve(const uBlasMatrix<ublas_sparse_matrix>& A, 
-                                    uBlasVector& x, const uBlasVector& b)
-{
-  // Factorize matrix
-  factorize(A);
-
-  // Solve system
-  factorizedSolve(x, b);
-
-  // Clear data
-  umfpack.clear();
-
-  return 0;
-}
-//-----------------------------------------------------------------------------
+#ifdef HAS_MTL4
 dolfin::uint UmfpackLUSolver::solve(const MTL4Matrix& A, MTL4Vector& x, 
                                     const MTL4Vector& b)
 {
@@ -73,7 +58,7 @@ dolfin::uint UmfpackLUSolver::solve(const MTL4Matrix& A, MTL4Vector& x,
   dolfin_assert(A.size(0) == A.size(1));
   dolfin_assert(A.mat().nnz() >= M); 
 
-  // Cast awat const-ness because MTL4 does have const versions.
+  // Cast awat const-ness because MTL4 does have const versions for accessing underlying data
   MTL4Matrix& Atmp = const_cast<MTL4Matrix&>(A);  
 
   // Initialise umfpack data
@@ -106,6 +91,31 @@ dolfin::uint UmfpackLUSolver::solve(const MTL4Matrix& A, MTL4Vector& x,
 
   delete [] _b;
   delete [] _x;
+
+  return 0;
+}
+#else
+//-----------------------------------------------------------------------------
+dolfin::uint UmfpackLUSolver::solve(const MTL4Matrix& A, MTL4Vector& x, 
+                                    const MTL4Vector& b)
+{
+  error("UMFPACK and MTL4 must be installed.");  
+  return 0;
+}
+#endif
+//-----------------------------------------------------------------------------
+#ifdef HAS_UMFPACK
+dolfin::uint UmfpackLUSolver::solve(const uBlasMatrix<ublas_sparse_matrix>& A, 
+                                    uBlasVector& x, const uBlasVector& b)
+{
+  // Factorize matrix
+  factorize(A);
+
+  // Solve system
+  factorizedSolve(x, b);
+
+  // Clear data
+  umfpack.clear();
 
   return 0;
 }
