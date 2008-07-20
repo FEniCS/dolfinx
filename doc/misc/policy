@@ -4,6 +4,8 @@ Guidelines for writing DOLFIN code.
 In order to streamline the code a bit perhaps we should
 keep sort of the same style when writing the code.
 
+- Do not use tabs. Use spaces to ident.
+
 - Naming of classes:
 
     GridGeometry
