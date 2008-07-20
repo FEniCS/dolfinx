@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2007 Garth N. Wells.
+// Copyright (C) 2006-2008 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Johan Jansson, 2006.
@@ -8,11 +8,12 @@
 // Modified by Martin Alnæs, 2008.
 //
 // First added:  2006-04-24
-// Last changed: 2008-05-15
+// Last changed: 2008-07-20
 
 #ifndef __GENERIC_MATRIX_H
 #define __GENERIC_MATRIX_H
 
+#include <boost/tuple/tuple.hpp>
 #include "GenericTensor.h"
 
 namespace dolfin
@@ -104,6 +105,13 @@ namespace dolfin
     /// Assignment operator
     virtual const GenericMatrix& operator= (const GenericMatrix& x) = 0;
 
+    /// Return pointers to underlying compresssed storage data
+    virtual boost::tuple<const std::size_t*, const std::size_t*, const double*> data() const
+    { 
+      error("Unable to return pointers to underlying matrix data."); 
+      return boost::tuple<const std::size_t*, const std::size_t*, const double*>(0, 0, 0);
+    } 
+
     //--- Convenience functions ---
 
     /// Get value of given entry 
@@ -121,5 +129,4 @@ namespace dolfin
   };
 
 }
-
 #endif
