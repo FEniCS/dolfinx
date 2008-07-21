@@ -4,9 +4,12 @@
 // First added:  2008-07-19
 // Last changed: 2008-07-19
 
+#include <iostream>
+
 #include <sstream>
 #include <iomanip>
 
+#include <dolfin/log/LogStream.h>
 #include <dolfin/log/log.h>
 #include "Table.h"
 
@@ -88,32 +91,29 @@ void Table::disp() const
     row_size += col_sizes[j];
 
   // Write table
-  std::stringstream output;
-  output << title;
-  for (uint k = 0; k < col_sizes[0] - title.size(); k++) output << " ";
-  output << "  |";
+  cout << title;
+  for (uint k = 0; k < col_sizes[0] - title.size(); k++) cout << " ";
+  cout << "  |";
   for (uint j = 0; j < cols.size(); j++)
   {
-    for (uint k = 0; k < col_sizes[j + 1] - cols[j].size(); k++) output << " ";
-    output << "  " << cols[j];
+    for (uint k = 0; k < col_sizes[j + 1] - cols[j].size(); k++) cout << " ";
+    cout << "  " << cols[j];
   }
-  output << std::endl;
-  for (uint k = 0; k < row_size; k++) output << "-";
-  output << std::endl;
+  cout << endl;
+  for (uint k = 0; k < row_size; k++) cout << "-";
+  cout << endl;
   for (uint i = 0; i < rows.size(); i++)
   {
-    output << rows[i];
-    for (uint k = 0; k < col_sizes[0] - rows[i].size(); k++) output << " ";
-    output << "  |";
+    cout << rows[i];
+    for (uint k = 0; k < col_sizes[0] - rows[i].size(); k++) cout << " ";
+    cout << "  |";
     for (uint j = 0; j < cols.size(); j++)
     {
-      for (uint k = 0; k < col_sizes[j + 1] - formatted_values[i][j].size(); k++) output << " ";
-      output << "  " << formatted_values[i][j];
+      for (uint k = 0; k < col_sizes[j + 1] - formatted_values[i][j].size(); k++) cout << " ";
+      cout << "  " << formatted_values[i][j];
     }
-    output << std::endl;
+    cout << endl;
   }
-
-  message(output.str());
 }
 //-----------------------------------------------------------------------------
 TableEntry::TableEntry(std::string row, std::string col, Table& table)
