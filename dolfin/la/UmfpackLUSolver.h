@@ -5,7 +5,7 @@
 // Modified by Dag Lindbo 2008.
 // 
 // First added:  2006-05-31
-// Last changed: 2008-07-20
+// Last changed: 2008-07-21
 
 #ifndef __UMFPACK_LU_SOLVER_H
 #define __UMFPACK_LU_SOLVER_H
@@ -20,7 +20,6 @@ namespace dolfin
   class GenericVector;
   class GenericMatrix;
   class MTL4Vector;
-  class MTL4Matrix;
   class uBlasVector;
   class uBlasKrylovMatrix;
   template<class Mat> class uBlasMatrix;
@@ -47,7 +46,8 @@ namespace dolfin
     virtual uint solve(const uBlasMatrix<ublas_dense_matrix>& A, uBlasVector& x, const uBlasVector& b);
 
     /// Solve MTL4 linear system Ax = b for a sparse matrix using UMFPACK if installed
-    virtual uint solve(const MTL4Matrix& A, MTL4Vector& x, const MTL4Vector& b);
+    /// FIXME: This function will be removed when MTL4 supports some extra features
+    virtual uint solve(const GenericMatrix& A, MTL4Vector& x, const MTL4Vector& b);
 
     /// Solve uBLAS linear system Ax = b for a sparse matrix using UMFPACK if installed
     virtual uint solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b);

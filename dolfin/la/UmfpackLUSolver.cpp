@@ -5,18 +5,15 @@
 // Modified by Dag Lindbo 2008.
 // 
 // First added:  2006-06-01
-// Last changed: 2008-07-20
+// Last changed: 2008-07-21
 
 #include <dolfin/log/dolfin_log.h>
-#include <dolfin/common/timing.h>
 #include "UmfpackLUSolver.h"
 #include "GenericMatrix.h"
 #include "GenericVector.h"
 #include "KrylovSolver.h"
-#include "uBlasSparseMatrix.h"
 #include "uBlasKrylovMatrix.h"
 #include "uBlasVector.h"
-#include "MTL4Matrix.h"
 #include "MTL4Vector.h"
 
 extern "C" 
@@ -53,29 +50,15 @@ dolfin::uint UmfpackLUSolver::solve(const uBlasMatrix<ublas_dense_matrix>& A,
 //-----------------------------------------------------------------------------
 #ifdef HAS_MTL4
 #ifdef HAS_UMFPACK
-dolfin::uint UmfpackLUSolver::solve(const MTL4Matrix& A, MTL4Vector& x, 
+dolfin::uint UmfpackLUSolver::solve(const GenericMatrix& A, MTL4Vector& x, 
                                     const MTL4Vector& b)
 {
-  // Check dimensions and get number of non-zeroes
-  const uint M  = A.size(0);
-  dolfin_assert(A.size(0) == A.size(1));
-  dolfin_assert(A.mat().nnz() >= M); 
-
-  // Cast awat const-ness because MTL4 does have const versions for accessing underlying data
-  MTL4Matrix& Atmp = const_cast<MTL4Matrix&>(A);  
-
-  // Initialise umfpack data
-  umfpack.init((const long int*) Atmp.mat().address_major(), 
-               (const long int*)Atmp.mat().address_minor(), 
-               Atmp.mat().address_data(), M, A.mat().nnz());
-
-  // Factorize
-  message("LU-factorizing linear system of size %d x %d (UMFPACK).", M, M);
-  umfpack.factorize();
+  // Factorize matrix
+  factorize(A);
 
   // Initialise solution vector and solve
   const uint N = b.size();
-  dolfin_assert(M == N);
+  dolfin_assert(umfpack.N == N);
   x.init(N);
 
   // Don't know how to get accesss to underlying MTL4 vector data, so need to copy for now
@@ -86,34 +69,18 @@ dolfin::uint UmfpackLUSolver::solve(const MTL4Matrix& A, MTL4Vector& x,
   // Solve for tranpose since we use compressed rows and UMFPACK expected compressed columns
   message("Solving factorized linear system of size %d x %d (UMFPACK).", N, N);
   umfpack.factorizedSolve(_x, _b, true);
-
   x.set(_x);
 
   // Clear data
   umfpack.clear();
 
+  // Clean up
   delete [] _b;
   delete [] _x;
 
   return 0;
 }
-#else
-//-----------------------------------------------------------------------------
-dolfin::uint UmfpackLUSolver::solve(const MTL4Matrix& A, MTL4Vector& x, 
-                                    const MTL4Vector& b)
-{
-  error("UMFPACK not installed.");  
-  return 0;
-}
 #endif
-#else
-//-----------------------------------------------------------------------------
-dolfin::uint UmfpackLUSolver::solve(const MTL4Matrix& A, MTL4Vector& x, 
-                                    const MTL4Vector& b)
-{
-  error("MTL4 not installed.");  
-  return 0;
-}
 #endif
 //-----------------------------------------------------------------------------
 #ifdef HAS_UMFPACK
@@ -129,7 +96,7 @@ dolfin::uint UmfpackLUSolver::solve(const GenericMatrix& A, GenericVector& x,
   // Clear data
   umfpack.clear();
 
-  return 0;
+  return 1;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint UmfpackLUSolver::factorize(const GenericMatrix& A)
@@ -402,6 +369,4 @@ void UmfpackLUSolver::Umfpack::checkStatus(long int status, std::string function
 #endif
 }
 //-----------------------------------------------------------------------------
-
-
 
