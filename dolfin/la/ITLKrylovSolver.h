@@ -50,7 +50,6 @@ namespace dolfin
     //PreconditionerType pc_type; 
     //ITLPreconditioner* prec; 
 
-
   };
 
 }

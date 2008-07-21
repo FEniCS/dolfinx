@@ -7,7 +7,7 @@
 // Modified by Kent-Andre Mardal, 2008.
 //
 // First added:  2007-07-03
-// Last changed: 2008-06-13
+// Last changed: 2008-07-21
 
 #ifndef __LU_SOLVER_H
 #define __LU_SOLVER_H
@@ -23,6 +23,8 @@
 #include "PETScMatrix.h"
 #include "EpetraLUSolver.h"
 #include "EpetraMatrix.h"
+#include "MTL4Matrix.h"
+#include "MTL4Vector.h"
 
 namespace dolfin
 {
@@ -47,14 +49,14 @@ namespace dolfin
     {
       Timer timer("LU solver");
 
-      if (A.has_type<uBlasSparseMatrix>()) 
+      if (A.has_type<uBlasSparseMatrix>() || A.has_type<MTL4Matrix>()) 
       {
         if (!umfpack_solver)
         {
           umfpack_solver = new UmfpackLUSolver();
           umfpack_solver->set("parent", *this);
         }
-        return umfpack_solver->solve(A.down_cast<uBlasSparseMatrix>(), x.down_cast<uBlasVector>(), b.down_cast<uBlasVector>());
+        return umfpack_solver->solve(A, x, b);
       }
 
 #ifdef HAS_PETSC
@@ -86,33 +88,32 @@ namespace dolfin
 
     uint factorize(const GenericMatrix& A)
     {
-      if (A.has_type<uBlasSparseMatrix>()) 
+      if (A.has_type<uBlasSparseMatrix>() || A.has_type<MTL4Matrix>()) 
       {
         if (!umfpack_solver)
         {
           umfpack_solver = new UmfpackLUSolver();
           umfpack_solver->set("parent", *this);
         }
-        return umfpack_solver->factorize(A.down_cast<uBlasSparseMatrix>());
+        return umfpack_solver->factorize(A);
       }
-
-      if (A.has_type<uBlasDenseMatrix>())
-        error("Will only factorize sparse matrices");
-
-      error("No matrix factorization for given backend.");
-      return 0;
+      else
+      {
+        error("No matrix factorization for given backend.");
+        return 0;
+      }
     }
     
     uint factorized_solve(GenericVector& x, const GenericVector& b)
     {
-      if (b.has_type<uBlasVector>()) 
+      if (b.has_type<uBlasVector>() || b.has_type<MTL4Vector>()) 
       {
         if (!umfpack_solver)
         {
           umfpack_solver = new UmfpackLUSolver();
           umfpack_solver->set("parent", *this);
         }
-        return umfpack_solver->factorizedSolve(x.down_cast<uBlasVector>(), b.down_cast<uBlasVector>());
+        return umfpack_solver->factorizedSolve(x, b);
       }
 
       error("No factorized LU solver for given backend.");
@@ -135,8 +136,6 @@ namespace dolfin
 #else
     int* epetra_solver;
 #endif
-
-
 
   };
 }

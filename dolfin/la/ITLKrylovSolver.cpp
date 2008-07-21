@@ -1,10 +1,12 @@
 // Copyright (C) 2008 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Last changed: 2008-05-16
+// First added:  2008-05-16
+// Last changed: 2008-07-21
 
 #ifdef HAS_MTL4
 
+// Order of header files is important
 #include <dolfin/log/dolfin_log.h>
 #include "ITLKrylovSolver.h"
 #include "MTL4Matrix.h"

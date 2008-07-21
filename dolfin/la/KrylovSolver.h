@@ -14,16 +14,16 @@
 #include <dolfin/common/Timer.h>
 #include "GenericMatrix.h"
 #include "GenericVector.h"
+#include "SolverType.h"
+#include "PreconditionerType.h"
 #include "uBlasKrylovSolver.h"
 #include "uBlasSparseMatrix.h"
 #include "uBlasDenseMatrix.h"
-#include "PETScKrylovSolver.h"
 #include "EpetraKrylovSolver.h"
 #include "ITLKrylovSolver.h"
-#include "SolverType.h"
-#include "PreconditionerType.h"
 #include "MTL4Matrix.h"
 #include "MTL4Vector.h"
+#include "PETScKrylovSolver.h"
 #include "PETScMatrix.h"
 #include "PETScVector.h"
 #include "EpetraMatrix.h"
@@ -35,8 +35,6 @@ namespace dolfin
   /// This class defines an interface for a Krylov solver. The underlying 
   /// Krylov solver type is defined in default_type.h.
   
-  class PETScMatrix;
-
   class KrylovSolver : public Parametrized
   {
   public:
