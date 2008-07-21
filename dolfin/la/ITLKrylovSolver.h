@@ -13,7 +13,6 @@
 #include <dolfin/parameter/Parametrized.h>
 #include "SolverType.h"
 #include "PreconditionerType.h"
-#include "EpetraPreconditioner.h"
 
 namespace dolfin 
 {

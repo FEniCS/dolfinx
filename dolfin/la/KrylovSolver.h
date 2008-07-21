@@ -26,6 +26,8 @@
 #include "MTL4Vector.h"
 #include "PETScMatrix.h"
 #include "PETScVector.h"
+#include "EpetraMatrix.h"
+#include "EpetraVector.h"
 
 namespace dolfin
 {
