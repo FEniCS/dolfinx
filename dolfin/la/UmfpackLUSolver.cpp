@@ -12,7 +12,7 @@
 #include "UmfpackLUSolver.h"
 #include "GenericMatrix.h"
 #include "GenericVector.h"
-#include "uBlasKrylovSolver.h"
+#include "KrylovSolver.h"
 #include "uBlasSparseMatrix.h"
 #include "uBlasKrylovMatrix.h"
 #include "uBlasVector.h"
@@ -179,7 +179,7 @@ dolfin::uint UmfpackLUSolver::solve(const GenericMatrix& A, GenericVector& x,
 {
   warning("UMFPACK must be installed to peform a LU solve for uBlas matrices. A Krylov iterative solver will be used instead.");
 
-  uBlasKrylovSolver solver;
+  KrylovSolver solver;
   return solver.solve(A, x, b);
 }
 //-----------------------------------------------------------------------------
