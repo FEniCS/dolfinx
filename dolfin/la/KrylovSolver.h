@@ -22,6 +22,10 @@
 #include "ITLKrylovSolver.h"
 #include "SolverType.h"
 #include "PreconditionerType.h"
+#include "MTL4Matrix.h"
+#include "MTL4Vector.h"
+#include "PETScMatrix.h"
+#include "PETScVector.h"
 
 namespace dolfin
 {
@@ -29,6 +33,8 @@ namespace dolfin
   /// This class defines an interface for a Krylov solver. The underlying 
   /// Krylov solver type is defined in default_type.h.
   
+  class PETScMatrix;
+
   class KrylovSolver : public Parametrized
   {
   public:
@@ -94,7 +100,7 @@ namespace dolfin
         return epetra_solver->solve(A.down_cast<EpetraMatrix >(), x.down_cast<EpetraVector>(), b.down_cast<EpetraVector>());
       }
 #endif
-#ifdef HAS_TRILINOS
+#ifdef HAS_MTL4
       if (A.has_type<MTL4Matrix>())
       {
         if (!itl_solver)

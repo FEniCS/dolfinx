@@ -25,7 +25,6 @@
 #include "ublas.h"
 #include "uBlasFactory.h"
 #include "uBlasVector.h"
-#include "UmfpackLUSolver.h"
 #include "GenericMatrix.h"
 
 namespace dolfin

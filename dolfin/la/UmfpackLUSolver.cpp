@@ -14,7 +14,6 @@
 #include "KrylovSolver.h"
 #include "uBlasKrylovMatrix.h"
 #include "uBlasVector.h"
-#include "MTL4Vector.h"
 
 extern "C" 
 {
@@ -40,48 +39,6 @@ UmfpackLUSolver::~UmfpackLUSolver()
   if ( Aj ) 
     delete Aj;
 }
-//-----------------------------------------------------------------------------
-dolfin::uint UmfpackLUSolver::solve(const uBlasMatrix<ublas_dense_matrix>& A, 
-                                    uBlasVector& x, const uBlasVector& b)
-{    
-  error("UmfpackLUSolver no longer solves dense matrices. Functionality is being transitioned to uBlasMatrix.");
-  return 0;
-}
-//-----------------------------------------------------------------------------
-#ifdef HAS_MTL4
-#ifdef HAS_UMFPACK
-dolfin::uint UmfpackLUSolver::solve(const GenericMatrix& A, MTL4Vector& x, 
-                                    const MTL4Vector& b)
-{
-  // Factorize matrix
-  factorize(A);
-
-  // Initialise solution vector and solve
-  const uint N = b.size();
-  dolfin_assert(umfpack.N == N);
-  x.init(N);
-
-  // Don't know how to get accesss to underlying MTL4 vector data, so need to copy for now
-  real* _b = new real[N];
-  real* _x = new real[N];
-  b.get(_b);  
-
-  // Solve for tranpose since we use compressed rows and UMFPACK expected compressed columns
-  message("Solving factorized linear system of size %d x %d (UMFPACK).", N, N);
-  umfpack.factorizedSolve(_x, _b, true);
-  x.set(_x);
-
-  // Clear data
-  umfpack.clear();
-
-  // Clean up
-  delete [] _b;
-  delete [] _x;
-
-  return 0;
-}
-#endif
-#endif
 //-----------------------------------------------------------------------------
 #ifdef HAS_UMFPACK
 dolfin::uint UmfpackLUSolver::solve(const GenericMatrix& A, GenericVector& x, 

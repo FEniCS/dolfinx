@@ -125,7 +125,7 @@ namespace dolfin
     virtual const uBlasVector& operator= (real a);
 
     /// Return pointer to underlying data (const version)
-    virtual const real* data() const
+    virtual const real* data() const 
     { return &x.data()[0]; }
 
     /// Return pointer to underlying data

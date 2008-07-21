@@ -19,7 +19,6 @@ namespace dolfin
   /// Forward declarations
   class GenericVector;
   class GenericMatrix;
-  class MTL4Vector;
   class uBlasVector;
   class uBlasKrylovMatrix;
   template<class Mat> class uBlasMatrix;
@@ -40,14 +39,6 @@ namespace dolfin
 
     /// Destructor
     ~UmfpackLUSolver();
-
-    /// Solve linear system Ax = b for a dense matrix
-    /// FIXME: This function will be moved to uBlasMatrix
-    virtual uint solve(const uBlasMatrix<ublas_dense_matrix>& A, uBlasVector& x, const uBlasVector& b);
-
-    /// Solve MTL4 linear system Ax = b for a sparse matrix using UMFPACK if installed
-    /// FIXME: This function will be removed when MTL4 supports some extra features
-    virtual uint solve(const GenericMatrix& A, MTL4Vector& x, const MTL4Vector& b);
 
     /// Solve uBLAS linear system Ax = b for a sparse matrix using UMFPACK if installed
     virtual uint solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b);

@@ -127,33 +127,31 @@ void MTL4Matrix::disp(uint precision) const
 //-----------------------------------------------------------------------------
 void MTL4Matrix::ident(uint m, const uint* rows)
 {
-  // This is a rought hack until we figure out a better way
+  // This is a rought hack until we figure out a better way to zero rows
+  // A helper fucntion will apparently be added to MTL4
   dolfin_assert(size(0) == size(1));
   mtl4_sparse_matrix I(size(0), size(0));
   mtl4_sparse_matrix A_tmp(size(0), size(0));
   I = 1.0;
-  mtl::matrix::inserter< mtl::compressed2D<double> > ins_I(I, 1);  
 
+  mtl::matrix::inserter< mtl::compressed2D<double> > ins_I(I, 1);  
   for(uint i = 0; i < m ; ++i)
-    //I.lvalue(rows[i], rows[i]) = 0.0;
     ins_I[ rows[i] ][ rows[i] ] = 0.0;
 
+  // Left multiply matrix A
   A_tmp = I*A;
 
-  mtl::matrix::inserter< mtl::compressed2D<double> > ins_A(A_tmp, 1);  
-  for(uint i = 0; i < m ; ++i)
-    //A_tmp.lvalue(rows[i], rows[i]) = 1.0;
-    ins_A[ rows[i] ][ rows[i] ] = 1.0;
+  // Use control block since we want to destroy the inserter to finalise the matrix
+  {
+    mtl::matrix::inserter< mtl::compressed2D<double> > ins_A(A_tmp, 1);  
+    for(uint i = 0; i < m ; ++i)
+      ins_A[ rows[i] ][ rows[i] ] = 1.0;
+  }
 
   dolfin_assert(num_rows(A_tmp) == size(0));
   dolfin_assert(num_cols(A_tmp) == size(1));
 
-  // Would like to swap, but this gives am error, so copy instead
-  A = A_tmp;
-
-  //swap(A_tmp, A);
-  
-//  error("MTL4Matrix::ident not yet implemented.");
+  swap(A_tmp, A);
 }
 //-----------------------------------------------------------------------------
 void MTL4Matrix::zero(uint m, const uint* rows)
@@ -213,10 +211,12 @@ const MTL4Matrix& MTL4Matrix::operator/= (real a)
 //-----------------------------------------------------------------------------
 boost::tuple<const std::size_t*, const std::size_t*, const double*, int> MTL4Matrix::data() const
 {
-  // Some tricks because MTL doesn't provide const versions of some functions
-  mtl4_sparse_matrix& Atmp = const_cast<mtl4_sparse_matrix&>(A);  
+  // Make sure matrix is assembled
+  if(ins)
+    error("MTL4 matrix must be finalised by calling apply() before accessing data");
+
   typedef boost::tuple<const std::size_t*, const std::size_t*, const double*, int> tuple;
-  return tuple(Atmp.address_major(), Atmp.address_minor(), Atmp.address_data(), Atmp.nnz());
+  return tuple(A.address_major(), A.address_minor(), A.address_data(), A.nnz());
 }
 //-----------------------------------------------------------------------------
 LogStream& dolfin::operator<< (LogStream& stream, const mtl4_sparse_matrix& A)

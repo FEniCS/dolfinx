@@ -14,7 +14,6 @@
 #include "mtl4.h"
 #include "GenericVector.h"
 
-
 /*
   Developers note:
   
@@ -118,6 +117,14 @@ namespace dolfin
     /// Assignment operator
     virtual const MTL4Vector& operator= (const GenericVector& x);
 
+    /// Return pointer to underlying data (const version)
+    virtual const real* data() const
+    { return x.address_data(); }
+
+    /// Return pointer to underlying data (const version)
+    virtual real* data()
+    { return x.address_data(); }
+
     //--- Special functions ---
     virtual LinearAlgebraFactory& factory() const;
 
@@ -132,12 +139,13 @@ namespace dolfin
     /// Assignment operator
     const MTL4Vector& operator= (const MTL4Vector& x);
 
-    friend class MTL4Matrix;
+    //friend class MTL4Matrix;
 
   private:
 
-    // MTL4_vector pointer
+    // MTL4 vector object
     mtl4_vector x;
+
   };  
 
   LogStream& operator<< (LogStream& stream, const MTL4Vector& A);
