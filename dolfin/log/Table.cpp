@@ -61,6 +61,9 @@ void Table::set(std::string row, std::string col, real value)
 //-----------------------------------------------------------------------------
 void Table::disp() const
 {
+  if (rows.size() == 0 || cols.size() == 0)
+    return;
+
   std::vector<std::vector<std::string> > formatted_values;
   std::vector<uint> col_sizes;
   

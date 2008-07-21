@@ -6,7 +6,7 @@
 %ignore operator<<;
 %ignore operator int;
 %ignore operator dolfin::uint;
-%ignore operator dolfin::real;
+%ignore operator real;
 %ignore operator std::string;
 %ignore operator bool;
 
