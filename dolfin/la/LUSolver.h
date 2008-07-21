@@ -49,16 +49,6 @@ namespace dolfin
     {
       Timer timer("LU solver");
 
-      if (A.has_type<uBlasSparseMatrix>() || A.has_type<MTL4Matrix>()) 
-      {
-        if (!umfpack_solver)
-        {
-          umfpack_solver = new UmfpackLUSolver();
-          umfpack_solver->set("parent", *this);
-        }
-        return umfpack_solver->solve(A, x, b);
-      }
-
 #ifdef HAS_PETSC
       if (A.has_type<PETScMatrix>()) 
       {
@@ -82,47 +72,38 @@ namespace dolfin
       }
 #endif
 
-      error("No default LU solver for given backend");
-      return 0;
+      // Default LU solver (UMFPACK)
+      if (!umfpack_solver)
+      {
+        umfpack_solver = new UmfpackLUSolver();
+        umfpack_solver->set("parent", *this);
+      }
+      return umfpack_solver->solve(A, x, b);
     }
 
     uint factorize(const GenericMatrix& A)
     {
-      if (A.has_type<uBlasSparseMatrix>() || A.has_type<MTL4Matrix>()) 
-      {
-        if (!umfpack_solver)
+    if (!umfpack_solver)
         {
           umfpack_solver = new UmfpackLUSolver();
           umfpack_solver->set("parent", *this);
         }
         return umfpack_solver->factorize(A);
-      }
-      else
-      {
-        error("No matrix factorization for given backend.");
-        return 0;
-      }
     }
     
     uint factorized_solve(GenericVector& x, const GenericVector& b)
     {
-      if (b.has_type<uBlasVector>() || b.has_type<MTL4Vector>()) 
+      if (!umfpack_solver)
       {
-        if (!umfpack_solver)
-        {
-          umfpack_solver = new UmfpackLUSolver();
-          umfpack_solver->set("parent", *this);
-        }
-        return umfpack_solver->factorizedSolve(x, b);
+        umfpack_solver = new UmfpackLUSolver();
+        umfpack_solver->set("parent", *this);
       }
-
-      error("No factorized LU solver for given backend.");
-      return 0;
+      return umfpack_solver->factorizedSolve(x, b);
     }
 
   private:
 
-    // uBLAS solver
+    // UMFPACK solver
     UmfpackLUSolver* umfpack_solver;
 
     // PETSc Solver
