@@ -1,8 +1,10 @@
 // Copyright (C) 2008 Dag Lindbo
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Garth N. Wells, 2008.
+//
 // First added:  2008-07-06
-// Last changed: 2008-07-06
+// Last changed: 2008-07-20
 
 #ifdef HAS_MTL4
 
@@ -207,6 +209,14 @@ const MTL4Matrix& MTL4Matrix::operator/= (real a)
 {
   A /= a;
   return *this;
+}
+//-----------------------------------------------------------------------------
+boost::tuple<const std::size_t*, const std::size_t*, const double*, int> MTL4Matrix::data() const
+{
+  // Some tricks because MTL doesn't provide const versions of some functions
+  mtl4_sparse_matrix& Atmp = const_cast<mtl4_sparse_matrix&>(A);  
+  typedef boost::tuple<const std::size_t*, const std::size_t*, const double*, int> tuple;
+  return tuple(Atmp.address_major(), Atmp.address_minor(), Atmp.address_data(), Atmp.nnz());
 }
 //-----------------------------------------------------------------------------
 LogStream& dolfin::operator<< (LogStream& stream, const mtl4_sparse_matrix& A)

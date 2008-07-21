@@ -7,7 +7,7 @@
 // Modified by Martin Alnæs, 2008.
 //
 // First added:  2006-03-04
-// Last changed: 2008-07-04
+// Last changed: 2008-07-20
 
 #ifndef __UBLAS_VECTOR_H
 #define __UBLAS_VECTOR_H
@@ -123,6 +123,14 @@ namespace dolfin
 
     /// Assignment operator
     virtual const uBlasVector& operator= (real a);
+
+    /// Return pointer to underlying data (const version)
+    virtual const real* data() const
+    { return &x.data()[0]; }
+
+    /// Return pointer to underlying data
+    virtual real* data()
+    { return &x.data()[0]; }
 
     //--- Special functions ---
 

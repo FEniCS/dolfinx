@@ -10,6 +10,8 @@
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/timing.h>
 #include "UmfpackLUSolver.h"
+#include "GenericMatrix.h"
+#include "GenericVector.h"
 #include "uBlasKrylovSolver.h"
 #include "uBlasSparseMatrix.h"
 #include "uBlasKrylovMatrix.h"
@@ -43,7 +45,7 @@ UmfpackLUSolver::~UmfpackLUSolver()
 }
 //-----------------------------------------------------------------------------
 dolfin::uint UmfpackLUSolver::solve(const uBlasMatrix<ublas_dense_matrix>& A, 
-                                  uBlasVector& x, const uBlasVector& b)
+                                    uBlasVector& x, const uBlasVector& b)
 {    
   error("UmfpackLUSolver no longer solves dense matrices. Functionality is being transitioned to uBlasMatrix.");
   return 0;
@@ -115,8 +117,8 @@ dolfin::uint UmfpackLUSolver::solve(const MTL4Matrix& A, MTL4Vector& x,
 #endif
 //-----------------------------------------------------------------------------
 #ifdef HAS_UMFPACK
-dolfin::uint UmfpackLUSolver::solve(const uBlasMatrix<ublas_sparse_matrix>& A, 
-                                    uBlasVector& x, const uBlasVector& b)
+dolfin::uint UmfpackLUSolver::solve(const GenericMatrix& A, GenericVector& x, 
+                                    const GenericVector& b)
 {
   // Factorize matrix
   factorize(A);
@@ -130,20 +132,19 @@ dolfin::uint UmfpackLUSolver::solve(const uBlasMatrix<ublas_sparse_matrix>& A,
   return 0;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint UmfpackLUSolver::factorize(const uBlasMatrix<ublas_sparse_matrix>& A)
+dolfin::uint UmfpackLUSolver::factorize(const GenericMatrix& A)
 {
   // Check dimensions and get number of non-zeroes
-  const uint M  = A.size(0);
+  boost::tuple<const std::size_t*, const std::size_t*, const double*, int> data = A.data();
+  const uint M   = A.size(0);
+  const uint nnz = data.get<3>();
   dolfin_assert(A.size(0) == A.size(1));
-  dolfin_assert(A.mat().nnz() >= M); 
 
-  // Make sure matrix assembly is complete
-  (const_cast< ublas_sparse_matrix& >(A.mat())).complete_index1_data(); 
-    
+  dolfin_assert(nnz >= M); 
+
   // Initialise umfpack data
-  umfpack.init((const long int*) &A.mat().index1_data()[0], 
-               (const long int*) &A.mat().index2_data()[0], 
-                &A.mat().value_data()[0], M, A.mat().nnz());
+  umfpack.init((const long int*) data.get<0>(), (const long int*) data.get<1>(), 
+                data.get<2>(), M, nnz);
 
   // Factorize
   message("LU-factorizing linear system of size %d x %d (UMFPACK).", M, M);
@@ -152,7 +153,7 @@ dolfin::uint UmfpackLUSolver::factorize(const uBlasMatrix<ublas_sparse_matrix>& 
   return 1;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint UmfpackLUSolver::factorizedSolve(uBlasVector& x, const uBlasVector& b) const
+dolfin::uint UmfpackLUSolver::factorizedSolve(GenericVector& x, const GenericVector& b) const
 {
   const uint N = b.size();
 
@@ -167,14 +168,14 @@ dolfin::uint UmfpackLUSolver::factorizedSolve(uBlasVector& x, const uBlasVector&
 
   message("Solving factorized linear system of size %d x %d (UMFPACK).", N, N);
   // Solve for tranpose since we use compressed rows and UMFPACK expected compressed columns
-  umfpack.factorizedSolve(&x.vec().data()[0], &b.vec().data()[0], true);
+  umfpack.factorizedSolve(x.data(), b.data(), true);
 
   return 1;
 }
 //-----------------------------------------------------------------------------
 #else
-dolfin::uint UmfpackLUSolver::solve(const uBlasMatrix<ublas_sparse_matrix>& A, 
-                                    uBlasVector& x, const uBlasVector& b)
+dolfin::uint UmfpackLUSolver::solve(const GenericMatrix& A, GenericVector& x, 
+                                    const GenericVector& b)
 {
   warning("UMFPACK must be installed to peform a LU solve for uBlas matrices. A Krylov iterative solver will be used instead.");
 
@@ -182,13 +183,14 @@ dolfin::uint UmfpackLUSolver::solve(const uBlasMatrix<ublas_sparse_matrix>& A,
   return solver.solve(A, x, b);
 }
 //-----------------------------------------------------------------------------
-dolfin::uint UmfpackLUSolver::factorize(const uBlasMatrix<ublas_sparse_matrix>& A)
+dolfin::uint UmfpackLUSolver::factorize(const GenericMatrix& A)
 {
   error("UMFPACK must be installed to perform sparse LU factorization.");
   return 0;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint UmfpackLUSolver::factorizedSolve(uBlasVector& x, const uBlasVector& b) const
+dolfin::uint UmfpackLUSolver::factorizedSolve(GenericVector& x, 
+                                              const GenericVector& b) const
 {
   error("UMFPACK must be installed to perform sparse back and forward substitution");
   return 0;

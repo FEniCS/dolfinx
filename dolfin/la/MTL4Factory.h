@@ -28,7 +28,7 @@ namespace dolfin
     /// Create empty vector
     MTL4Vector* createVector() const;
 
-    /// dummy sparsity pattern
+    /// Dummy sparsity pattern
     MTL4SparsityPattern* createPattern() const;
 
     // Return singleton instance

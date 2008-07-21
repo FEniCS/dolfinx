@@ -8,13 +8,14 @@
 // Modified by Dag Lindbo, 2008
 //
 // First added:  2006-07-05
-// Last changed: 2008-07-19
+// Last changed: 2008-07-20
 
 #ifndef __UBLAS_MATRIX_H
 #define __UBLAS_MATRIX_H
 
 #include <sstream>
 #include <iomanip>
+#include <boost/tuple/tuple.hpp>
 
 #include <dolfin/log/LogStream.h>
 #include <dolfin/common/Variable.h>
@@ -126,6 +127,9 @@ namespace dolfin
 
     /// Assignment operator
     virtual const GenericMatrix& operator= (const GenericMatrix& A);
+
+    /// Return pointers to underlying compresssed storage data
+    virtual boost::tuple<const std::size_t*, const std::size_t*, const double*, int> data() const;
 
     //--- Special functions ---
 
@@ -438,13 +442,7 @@ namespace dolfin
   // Specialised member functions (must be inlined to avoid link errors)
   //-----------------------------------------------------------------------------
   template <> 
-  inline void uBlasMatrix<ublas_dense_matrix>::init(const GenericSparsityPattern& sparsity_pattern)
-  {
-    init(sparsity_pattern.size(0), sparsity_pattern.size(1));
-  }
-  //---------------------------------------------------------------------------
-  template <class Mat> 
-  inline void uBlasMatrix<Mat>::init(const GenericSparsityPattern& sparsity_pattern)
+  inline void uBlasMatrix<ublas_sparse_matrix>::init(const GenericSparsityPattern& sparsity_pattern)
   {
     init(sparsity_pattern.size(0), sparsity_pattern.size(1));
 
@@ -463,10 +461,32 @@ namespace dolfin
         A.push_back(set - pattern.begin(), *element, 0.0);
   }
   //---------------------------------------------------------------------------
+  template <class Mat> 
+  inline void uBlasMatrix<Mat>::init(const GenericSparsityPattern& sparsity_pattern)
+  {
+    init(sparsity_pattern.size(0), sparsity_pattern.size(1));
+  }
+  //---------------------------------------------------------------------------
+  template <>
+  inline boost::tuple<const std::size_t*, const std::size_t*, const double*, int> uBlasMatrix<ublas_sparse_matrix>::data() const
+  { 
+    // Make sure matrix assembly is complete
+    const_cast< ublas_sparse_matrix& >(A).complete_index1_data(); 
+
+    typedef boost::tuple<const std::size_t*, const std::size_t*, const double*, int> tuple;
+    return tuple(&A.index1_data()[0], &A.index2_data()[0], &A.value_data()[0], A.nnz());
+  } 
+  //---------------------------------------------------------------------------
+  template <class Mat>
+  inline boost::tuple<const std::size_t*, const std::size_t*, const double*, int> uBlasMatrix<Mat>::data() const
+  { 
+    error("Unable to return pointers to underlying data for this uBlasMatrix type."); 
+    return boost::tuple<const std::size_t*, const std::size_t*, const double*, int>(0, 0, 0, 0);
+  } 
+  //---------------------------------------------------------------------------
   template<class Mat> template<class B>
   void uBlasMatrix<Mat>::solveInPlace(B& X)
   {
-    cout << "Hi in solver " << endl;
     const uint M = A.size1();
     dolfin_assert( M == A.size2() );
   
