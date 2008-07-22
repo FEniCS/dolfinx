@@ -5,7 +5,7 @@
 // Modified by Ola Skavhaug, 2007
 //
 // First added:  2007-01-17
-// Last changed: 2008-07-09
+// Last changed: 2008-07-22
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Array.h>
@@ -48,8 +48,7 @@ void Assembler::assemble(GenericTensor& A, Form& form, bool reset_tensor)
   assemble(A, form.form(), form.coefficients(), form.dofMaps(), 0, 0, 0, reset_tensor);
 }
 //-----------------------------------------------------------------------------
-void Assembler::assemble(GenericTensor& A, Form& form,
-                         const SubDomain& sub_domain, bool reset_tensor)
+void Assembler::assemble(GenericTensor& A, Form& form, const SubDomain& sub_domain, bool reset_tensor)
 {
   // Extract cell domains
   MeshFunction<uint>* cell_domains = 0;
@@ -93,29 +92,32 @@ void Assembler::assemble(GenericTensor& A, Form& form,
            &exterior_facet_domains, &interior_facet_domains, reset_tensor);
 }
 //-----------------------------------------------------------------------------
-dolfin::real Assembler::assemble(Form& form)
+dolfin::real Assembler::assemble(Form& form,
+                                 bool reset_tensor)
 {
   Scalar value;
-  assemble(value, form);
+  assemble(value, form, reset_tensor);
   return value;
 }
 //-----------------------------------------------------------------------------
-dolfin::real Assembler::assemble(Form& form,
-                                 const SubDomain& sub_domain)
+dolfin::real Assembler::assemble(Form& form, const SubDomain& sub_domain,
+                                 bool reset_tensor)
 {
   Scalar value;
-  assemble(value, form, sub_domain);
+  assemble(value, form, sub_domain, reset_tensor);
   return value;
 }
 //-----------------------------------------------------------------------------
 dolfin::real Assembler::assemble(Form& form,
                                  const MeshFunction<uint>& cell_domains,
                                  const MeshFunction<uint>& exterior_facet_domains,
-                                 const MeshFunction<uint>& interior_facet_domains)
+                                 const MeshFunction<uint>& interior_facet_domains,
+                                 bool reset_tensor)
 {
   Scalar value;
   assemble(value, form,
-           cell_domains, exterior_facet_domains, interior_facet_domains);
+           cell_domains, exterior_facet_domains, interior_facet_domains,
+           reset_tensor);
   return value;
 }
 //-----------------------------------------------------------------------------

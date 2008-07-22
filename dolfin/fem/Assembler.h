@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2007
 //
 // First added:  2007-01-17
-// Last changed: 2008-04-08
+// Last changed: 2008-07-22
 
 #ifndef __ASSEMBLER_H
 #define __ASSEMBLER_H
@@ -41,11 +41,12 @@ namespace dolfin
     ~Assembler();
 
     /// Assemble tensor from given variational form
-    void assemble(GenericTensor& A, Form& form, bool reset_tensor = true);
+    void assemble(GenericTensor& A, Form& form,
+                  bool reset_tensor=true);
 
     /// Assemble tensor from given variational form over a sub domain
-    void assemble(GenericTensor& A, Form& form,
-                  const SubDomain& sub_domain, bool reset_tensor = true);
+    void assemble(GenericTensor& A, Form& form, const SubDomain& sub_domain,
+                  bool reset_tensor=true);
 
     /// Assemble tensor from given variational form over a sub domain
     //void assemble(GenericTensor& A, Form& form,
@@ -55,19 +56,23 @@ namespace dolfin
     void assemble(GenericTensor& A, Form& form,
                   const MeshFunction<uint>& cell_domains,
                   const MeshFunction<uint>& exterior_facet_domains,
-                  const MeshFunction<uint>& interior_facet_domains, bool reset_tensor = true);
+                  const MeshFunction<uint>& interior_facet_domains,
+                  bool reset_tensor=true);
     
     /// Assemble scalar from given variational form
-    real assemble(Form& form);
+    real assemble(Form& form,
+                  bool reset_tensor=true);
     
     /// Assemble scalar from given variational form over a sub domain
-    real assemble(Form& form, const SubDomain& sub_domain);
+    real assemble(Form& form, const SubDomain& sub_domain,
+                  bool reset_tensor);
     
     /// Assemble scalar from given variational form over sub domains
     real assemble(Form& form,
                   const MeshFunction<uint>& cell_domains,
                   const MeshFunction<uint>& exterior_facet_domains,
-                  const MeshFunction<uint>& interior_facet_domains);
+                  const MeshFunction<uint>& interior_facet_domains,
+                  bool reset_tensor);
     
     /// Assemble tensor from given (UFC) form, coefficients and sub domains.
     /// This is the main assembly function in DOLFIN. All other assembly functions
@@ -82,22 +87,25 @@ namespace dolfin
                   const DofMapSet& dof_map_set,
                   const MeshFunction<uint>* cell_domains,
                   const MeshFunction<uint>* exterior_facet_domains,
-                  const MeshFunction<uint>* interior_facet_domains, bool reset_tensor = true);
+                  const MeshFunction<uint>* interior_facet_domains,
+                  bool reset_tensor = true);
       
+    /// FIXME: Kent, please document this function
     void assemble_system(GenericTensor& A, const ufc::form& A_form, 
                          const Array<Function*>& A_coefficients, const DofMapSet& A_dof_map_set,
                          GenericTensor& b, const ufc::form& b_form, 
                          const Array<Function*>& b_coefficients, const DofMapSet& b_dof_map_set,
                          DirichletBC& bc, const MeshFunction<uint>* cell_domains, 
                          const MeshFunction<uint>* exterior_facet_domains,
-                         const MeshFunction<uint>* interior_facet_domains, bool reset_tensors);
+                         const MeshFunction<uint>* interior_facet_domains,
+                         bool reset_tensors=true);
 
-
-    void applyTraces( GenericTensor& globalA, GenericTensor& globalb, 
-        DirichletBC& bc,
-        const DofMapSet& A_dof_map_set, const DofMapSet& b_dof_map_set,
-        const ufc::form& A_form, const ufc::form& b_form, 
-        const MeshFunction<uint>* domains); 
+    /// FIXME: Kent, please document this function
+    void applyTraces(GenericTensor& globalA, GenericTensor& globalb, 
+                     DirichletBC& bc,
+                     const DofMapSet& A_dof_map_set, const DofMapSet& b_dof_map_set,
+                     const ufc::form& A_form, const ufc::form& b_form, 
+                     const MeshFunction<uint>* domains);
 
   private:
  
