@@ -4,7 +4,7 @@
 // Modified by Ola Skavhaug, 2007.
 // 
 // First added:  2003-03-13
-// Last changed: 2008-06-17
+// Last changed: 2008-07-21
 
 #ifndef __LOG_H
 #define __LOG_H
@@ -60,8 +60,8 @@ namespace dolfin
   /// Print summary of timings and tasks, clearing stored timings
   void summary();
 
-  /// Return summary of timings
-  const std::map<std::string, std::pair<dolfin::uint, dolfin::real> >& timings();
+  /// Return timing (average) for given task
+  real timing(std::string task);
 
   // Helper function for dolfin_debug macro
   void __debug(std::string file, unsigned long line, std::string function, std::string format, ...);

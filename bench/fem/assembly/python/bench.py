@@ -15,7 +15,7 @@ import sys
 
 def make_form(name, mesh):
     globals()['mesh'] = mesh
-    execfile(name + '.form', globals())
+    execfile("../forms/" + name + '.form', globals())
     try:
         return a
     except:

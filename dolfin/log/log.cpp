@@ -6,7 +6,7 @@
 // Modified by Ola Skavhaug, 2007.
 //
 // First added:  2003-03-13
-// Last changed: 2008-06-13
+// Last changed: 2008-07-21
 
 #include <stdarg.h>
 #include <stdio.h>
@@ -74,9 +74,9 @@ void dolfin::summary()
   LogManager::logger.summary();
 }
 //-----------------------------------------------------------------------------
-const std::map<std::string, std::pair<dolfin::uint, dolfin::real> >& dolfin::timings()
+dolfin::real dolfin::timing(std::string task)
 {
-  return LogManager::logger.timings();
+  return LogManager::logger.timing(task);
 }
 //-----------------------------------------------------------------------------
 void dolfin::__debug(std::string file, unsigned long line,

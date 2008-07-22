@@ -6,7 +6,7 @@
 // Modified by Ola Skavhaug, 2007.
 //
 // First added:  2003-03-13
-// Last changed: 2008-06-17
+// Last changed: 2008-07-21
 
 #ifndef __LOGGER_H
 #define __LOGGER_H
@@ -30,13 +30,13 @@ namespace dolfin
     ~Logger();
     
     /// Print message
-    void message(std::string msg, int debug_level = 0);
+    void message(std::string msg, int debug_level = 0) const;
 
     /// Print warning
-    void warning(std::string msg);
+    void warning(std::string msg) const;
 
     /// Print error message and throw exception
-    void error(std::string msg);
+    void error(std::string msg) const;
 
     /// Begin task (increase indentation level)
     void begin(std::string msg, int debug_level = 0);
@@ -45,7 +45,7 @@ namespace dolfin
     void end();
 
     /// Draw progress bar
-    void progress (std::string title, real p);
+    void progress (std::string title, real p) const;
 
     /// Set output destination ("terminal" or "silent")
     void setOutputDestination(std::string destination);
@@ -57,22 +57,22 @@ namespace dolfin
     void setDebugLevel(int debug_level);
 
     /// Set debug level
-    inline int getDebugLevel() { return debug_level; }
+    inline int getDebugLevel() const { return debug_level; }
 
     /// Register timing (for later summary)
-    void timing(std::string task, real elapsed_time);
+    void registerTiming(std::string task, real elapsed_time);
 
     /// Print summary of timings and tasks, clearing stored timings
     void summary();
 
-    /// Return summary of timings
-    const std::map<std::string, std::pair<uint, real> >& timings() const;
+    /// Return timing (average) for given task
+    real timing(std::string task) const;
 
     /// Helper function for dolfin_debug macro
-    void __debug(std::string msg);
+    void __debug(std::string msg) const;
 
     /// Helper function for dolfin_assert macro
-    void __assert(std::string msg);
+    void __assert(std::string msg) const;
 
   private:
 
@@ -81,7 +81,7 @@ namespace dolfin
     Destination destination;
 
     // Write message to current output destination
-    void write(int debug_level, std::string msg);
+    void write(int debug_level, std::string msg) const;
     
     // Current debug level
     int debug_level;
@@ -93,7 +93,7 @@ namespace dolfin
     std::ostream* logstream;
 
     // List of timings for tasks, map from string to (num_timings, total_time)
-    std::map<std::string, std::pair<uint, real> > _timings;
+    std::map<std::string, std::pair<uint, real> > timings;
 
   };
 

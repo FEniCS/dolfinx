@@ -20,6 +20,7 @@
 using namespace dolfin;
 
 typedef std::map<std::string, std::pair<dolfin::uint, real> >::iterator map_iterator;
+typedef std::map<std::string, std::pair<dolfin::uint, real> >::const_iterator const_map_iterator;
 
 //-----------------------------------------------------------------------------
 Logger::Logger()
@@ -33,7 +34,7 @@ Logger::~Logger()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void Logger::message(std::string msg, int debug_level)
+void Logger::message(std::string msg, int debug_level) const
 {
   if (debug_level > this->debug_level)
     return;
@@ -41,13 +42,13 @@ void Logger::message(std::string msg, int debug_level)
   write(debug_level, msg);
 }
 //-----------------------------------------------------------------------------
-void Logger::warning(std::string msg)
+void Logger::warning(std::string msg) const
 {
   std::string s = std::string("*** Warning: ") + msg;
   write(0, s);
 }
 //-----------------------------------------------------------------------------
-void Logger::error(std::string msg)
+void Logger::error(std::string msg) const
 {
   std::string s = std::string("*** Error: ") + msg;
   throw std::runtime_error(s);
@@ -65,7 +66,7 @@ void Logger::end()
   indentation_level--;
 }
 //-----------------------------------------------------------------------------
-void Logger::progress(std::string title, real p)
+void Logger::progress(std::string title, real p) const
 {
   int N = DOLFIN_TERM_WIDTH - 15;
   int n = static_cast<int>(p*static_cast<real>(N));
@@ -126,7 +127,7 @@ void Logger::setDebugLevel(int debug_level)
   this->debug_level = debug_level;
 }
 //-----------------------------------------------------------------------------
-void Logger::timing(std::string task, real elapsed_time)
+void Logger::registerTiming(std::string task, real elapsed_time)
 {
   // Print a message
   std::stringstream line;
@@ -134,11 +135,11 @@ void Logger::timing(std::string task, real elapsed_time)
   message(line.str(), 1);
 
   // Store values for summary
-  map_iterator it = _timings.find(task);
-  if (it == _timings.end())
+  map_iterator it = timings.find(task);
+  if (it == timings.end())
   {
     std::pair<uint, real> timing(1, elapsed_time);
-    _timings[task] = timing;
+    timings[task] = timing;
   }
   else
   {
@@ -149,7 +150,7 @@ void Logger::timing(std::string task, real elapsed_time)
 //-----------------------------------------------------------------------------
 void Logger::summary()
 {
-  if (_timings.size() == 0)
+  if (timings.size() == 0)
   {
     message("Summary: no timings to report.");
     return;
@@ -157,7 +158,7 @@ void Logger::summary()
 
   message("");
   Table table("Summary of timings");
-  for (map_iterator it = _timings.begin(); it != _timings.end(); ++it)
+  for (const_map_iterator it = timings.begin(); it != timings.end(); ++it)
   {
     const std::string task  = it->first;
     const uint num_timings  = it->second.first;
@@ -171,27 +172,36 @@ void Logger::summary()
   table.disp();
 
   // Clear timings
-  _timings.clear();
+  timings.clear();
 }
 //-----------------------------------------------------------------------------
-const std::map<std::string, std::pair<dolfin::uint, dolfin::real> >& Logger::timings() const
+dolfin::real Logger::timing(std::string task) const
 {
-  return _timings;
+  const_map_iterator it = timings.find(task);
+  if (it == timings.end())
+  {
+    std::stringstream line;
+    line << "No timings registered for task \"" << task << "\".";
+    error(line.str());
+  }
+  const uint num_timings  = it->second.first;
+  const real total_time   = it->second.second;
+  return total_time / static_cast<real>(num_timings);
 }
 //-----------------------------------------------------------------------------
-void Logger::__debug(std::string msg)
+void Logger::__debug(std::string msg) const
 {
   std::string s = std::string("Debug: ") + msg;
   write(0, s);
 }
 //-----------------------------------------------------------------------------
-void Logger::__assert(std::string msg)
+void Logger::__assert(std::string msg) const
 {
   std::string s = std::string("*** Assertion ") + msg;
   throw std::runtime_error(s);
 }
 //-----------------------------------------------------------------------------
-void Logger::write(int debug_level, std::string msg)
+void Logger::write(int debug_level, std::string msg) const
 {
   // Check debug level
   if (debug_level > this->debug_level)
