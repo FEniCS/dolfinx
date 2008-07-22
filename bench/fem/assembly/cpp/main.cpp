@@ -15,7 +15,7 @@ real assemble_form(Form& form, Mesh& mesh)
   // Assemble once
   const real t0 = time();
   Matrix A;
-  assemble(form, mesh);
+  assemble(A, form, mesh);
   return time() - t0;
 }
 
@@ -23,7 +23,7 @@ real reassemble_form(Form& form, Mesh& mesh)
 {
   // Assemble once
   Matrix A;
-  assemble(form, mesh);
+  assemble(A, form, mesh);
 
   // Reassemble
   const real t0 = time();
@@ -54,7 +54,8 @@ int main()
   forms.push_back("NSEMomentum3D");
 
   // Iterate over backends and forms
-  Table results("Assembly benchmark");
+  Table results_assemble("Assemble");
+  Table results_reassemble("Reassemble");
   for (unsigned int i = 0; i < backends.size(); i++)
   {
     dolfin_set("linear algebra backend", backends[i]);
@@ -62,13 +63,16 @@ int main()
     for (unsigned int j = 0; j < forms.size(); j++)
     {
       std::cout << "  Form: " << forms[j] << std::endl;
-      results(backends[i], forms[j]) = bench_form(forms[j], assemble_form);
+      results_assemble(backends[i], forms[j]) = bench_form(forms[j], assemble_form);
+      results_reassemble(backends[i], forms[j]) = bench_form(forms[j], reassemble_form);
     }
   }
 
   // Display results
   dolfin_set("output destination", "terminal");
-  results.disp();
+  message("");
+  results_assemble.disp();
+  results_reassemble.disp();
 
   return 0;
 }
