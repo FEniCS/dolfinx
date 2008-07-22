@@ -70,8 +70,9 @@ int main()
 
   // Display results
   dolfin_set("output destination", "terminal");
-  message("");
+  cout << endl;
   results_assemble.disp();
+  cout << endl;
   results_reassemble.disp();
 
   return 0;
