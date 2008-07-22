@@ -51,6 +51,7 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
     }
   }
 
+  // FIXME: The below note is not true when there are no cell integrals, e.g. finite volume method
   // Note: no need to iterate over exterior facets since those dofs
   // are included when tabulating dofs on all cells
 

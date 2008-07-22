@@ -11,10 +11,10 @@
 
 #include <dolfin/common/types.h>
 #include "GenericSparsityPattern.h"
-#include "LinearAlgebraFactory.h"
 
 namespace dolfin
 {
+  class LinearAlgebraFactory;
   class MTL4Vector; 
   class MTL4Factory; 
 
@@ -55,11 +55,10 @@ namespace dolfin
     /// Return factory object for backend
     LinearAlgebraFactory& factory() const;
 
-    //    MTL4_FECrsGraph& pattern() const;  
-
   private: 
-    uint                rank; 
-    uint*               dims; 
+
+    uint  rank; 
+    uint* dims; 
 
   };
 
