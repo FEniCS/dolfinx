@@ -4,7 +4,7 @@
 // Modified by Ola Skavhaug, 2007.
 //
 // First added:  2003-03-13
-// Last changed: 2008-07-21
+// Last changed: 2008-07-23
 
 #include <string>
 #include <iostream>
@@ -148,7 +148,7 @@ void Logger::registerTiming(std::string task, real elapsed_time)
   }
 }
 //-----------------------------------------------------------------------------
-void Logger::summary()
+void Logger::summary(bool reset)
 {
   if (timings.size() == 0)
   {
@@ -172,21 +172,30 @@ void Logger::summary()
   table.disp();
 
   // Clear timings
-  timings.clear();
+  if (reset)
+    timings.clear();
 }
 //-----------------------------------------------------------------------------
-dolfin::real Logger::timing(std::string task) const
+dolfin::real Logger::timing(std::string task, bool reset)
 {
-  const_map_iterator it = timings.find(task);
+  // Find timing
+  map_iterator it = timings.find(task);
   if (it == timings.end())
   {
     std::stringstream line;
     line << "No timings registered for task \"" << task << "\".";
     error(line.str());
   }
+
+  // Compute average
   const uint num_timings  = it->second.first;
   const real total_time   = it->second.second;
-  return total_time / static_cast<real>(num_timings);
+  const real average_time =total_time / static_cast<real>(num_timings);
+
+  // Clear timing
+  timings.erase(it);
+
+  return average_time;
 }
 //-----------------------------------------------------------------------------
 void Logger::__debug(std::string msg) const

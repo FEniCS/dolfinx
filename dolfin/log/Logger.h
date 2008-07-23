@@ -6,7 +6,7 @@
 // Modified by Ola Skavhaug, 2007.
 //
 // First added:  2003-03-13
-// Last changed: 2008-07-21
+// Last changed: 2008-07-23
 
 #ifndef __LOGGER_H
 #define __LOGGER_H
@@ -62,11 +62,11 @@ namespace dolfin
     /// Register timing (for later summary)
     void registerTiming(std::string task, real elapsed_time);
 
-    /// Print summary of timings and tasks, clearing stored timings
-    void summary();
-
-    /// Return timing (average) for given task
-    real timing(std::string task) const;
+    /// Print summary of timings and tasks, optionally clearing stored timings
+    void summary(bool reset=false);
+    
+    /// Return timing (average) for given task, optionally clearing timing for task
+    real timing(std::string task, bool reset=false);
 
     /// Helper function for dolfin_debug macro
     void __debug(std::string msg) const;

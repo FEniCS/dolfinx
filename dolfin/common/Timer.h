@@ -7,6 +7,8 @@
 #ifndef __TIMER_H
 #define __TIMER_H
 
+#include <iostream>
+
 #include <dolfin/parameter/parameters.h>
 #include <dolfin/log/LogManager.h>
 #include "timing.h"
@@ -35,8 +37,8 @@ namespace dolfin
   public:
 
     /// Create timer
-    Timer(std::string task) : task(task), t(time()), stopped(false)
-    { const std::string prefix = dolfin_get("timer prefix"); task = prefix + task; }
+    Timer(std::string task) : task(""), t(time()), stopped(false)
+    { const std::string prefix = dolfin_get("timer prefix"); this->task = prefix + task; }
 
     /// Destructor
     ~Timer()

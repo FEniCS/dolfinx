@@ -6,7 +6,7 @@
 // Modified by Ola Skavhaug, 2007.
 //
 // First added:  2003-03-13
-// Last changed: 2008-07-21
+// Last changed: 2008-07-23
 
 #include <stdarg.h>
 #include <stdio.h>
@@ -69,14 +69,14 @@ void dolfin::end()
   LogManager::logger.end();
 }
 //-----------------------------------------------------------------------------
-void dolfin::summary()
+void dolfin::summary(bool reset)
 {
-  LogManager::logger.summary();
+  LogManager::logger.summary(reset);
 }
 //-----------------------------------------------------------------------------
-dolfin::real dolfin::timing(std::string task)
+dolfin::real dolfin::timing(std::string task, bool reset)
 {
-  return LogManager::logger.timing(task);
+  return LogManager::logger.timing(task, reset);
 }
 //-----------------------------------------------------------------------------
 void dolfin::__debug(std::string file, unsigned long line,

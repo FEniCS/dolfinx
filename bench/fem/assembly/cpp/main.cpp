@@ -53,9 +53,15 @@ int main()
   forms.push_back("Elasticity3D");
   forms.push_back("NSEMomentum3D");
 
+  // Tables for results
+  Table t0("Assemble total");
+  Table t1("Reassemble total");
+  Table t2("Assemble cells");
+  Table t3("Build sparsity");
+  Table t4("Init tensor");
+  Table t5("Delete sparsity");
+  
   // Iterate over backends and forms
-  Table results_assemble("Assemble");
-  Table results_reassemble("Reassemble");
   for (unsigned int i = 0; i < backends.size(); i++)
   {
     dolfin_set("linear algebra backend", backends[i]);
@@ -64,19 +70,27 @@ int main()
     for (unsigned int j = 0; j < forms.size(); j++)
     {
       std::cout << "  Form: " << forms[j] << std::endl;
-      results_assemble(backends[i], forms[j]) = bench_form(forms[j], assemble_form);
-      results_reassemble(backends[i], forms[j]) = bench_form(forms[j], reassemble_form);
+
+      // Benchmark assembly
+      t0(backends[i], forms[j]) = bench_form(forms[j], assemble_form);
+      t2(backends[i], forms[j]) = timing(backends[i] + "Assemble over cells", true);
+      t3(backends[i], forms[j]) = timing(backends[i] + "Build sparsity pattern", true);
+      t4(backends[i], forms[j]) = timing(backends[i] + "Initialize tensor for assembly", true);
+      t5(backends[i], forms[j]) = timing(backends[i] + "Delete sparsity pattern", true);
+
+      // Benchmark reassembly
+      t1(backends[i], forms[j]) = bench_form(forms[j], reassemble_form);
     }
   }
 
   // Display results
   dolfin_set("output destination", "terminal");
-  cout << endl;
-  results_assemble.disp();
-  cout << endl;
-  results_reassemble.disp();
+  cout << endl; t0.disp();
+  cout << endl; t1.disp();
+  cout << endl; t2.disp();
+  cout << endl; t3.disp();
+  cout << endl; t4.disp();
+  cout << endl; t5.disp();
   
-  summary();
-
   return 0;
 }
