@@ -5,9 +5,9 @@
 
 //--- Linear algebra ---
 #ifdef HAS_PETSC
-add("linear algebra backend", "PETSc");
+add("linear algebra backend", "PETSc");   // Use PETSc if available
 #else
-add("linear algebra backend", "uBLAS");
+add("linear algebra backend", "uBLAS");   // Otherwise, use uBLAS
 #endif
 
 //--- JIT compiler ---
@@ -16,11 +16,11 @@ add("optimize use dof map cache", false); // Store dof maps in cache for reuse
 add("optimize use tensor cache", false);  // Store tensors in cache for reuse
 add("optimize", false);                   // All of the above
 
-// FIXME: Need to cleanup among parameters below
-
 //--- General parameters ---
 
-add("solution file name", "solution.pvd");
+add("timer prefix", "");                  // Prefix for timer tasks
+
+// FIXME: Need to cleanup among parameters below
 
 //--- Parameters for input/output ---
 

@@ -2,11 +2,12 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-06-13
-// Last changed: 2008-06-13
+// Last changed: 2008-07-23
 
 #ifndef __TIMER_H
 #define __TIMER_H
 
+#include <dolfin/parameter/parameters.h>
 #include <dolfin/log/LogManager.h>
 #include "timing.h"
 
@@ -34,16 +35,20 @@ namespace dolfin
   public:
 
     /// Create timer
-    Timer(std::string task) : task(task), t(time()), stopped(false) {}
+    Timer(std::string task) : task(task), t(time()), stopped(false)
+    { const std::string prefix = dolfin_get("timer prefix"); task = prefix + task; }
 
     /// Destructor
-    ~Timer() { if (!stopped) stop(); }
+    ~Timer()
+    { if (!stopped) stop(); }
 
     /// Start timer
-    inline void start() { t = time(); stopped = false; }
+    inline void start()
+    { t = time(); stopped = false; }
     
     /// Stop timer
-    void stop() { LogManager::logger.registerTiming(task, time() - t); stopped = true; }
+    void stop()
+    { LogManager::logger.registerTiming(task, time() - t); stopped = true; }
 
   private:
 

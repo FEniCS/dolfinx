@@ -160,11 +160,10 @@ void Assembler::assembleCells(GenericTensor& A,
                               UFC& ufc,
                               const MeshFunction<uint>* domains) const
 {
-  Timer timer("Assembly over cells");
-
   // Skip assembly if there are no cell integrals
   if (ufc.form.num_cell_integrals() == 0)
     return;
+  Timer timer("Assembly over cells");
 
   // Cell integral
   ufc::cell_integral* integral = ufc.cell_integrals[0];
@@ -216,6 +215,7 @@ void Assembler::assembleExteriorFacets(GenericTensor& A,
   // Skip assembly if there are no exterior facet integrals
   if (ufc.form.num_exterior_facet_integrals() == 0)
     return;
+  Timer timer("Assembly over exterior facets");
   
   // Exterior facet integral
   ufc::exterior_facet_integral* integral = ufc.exterior_facet_integrals[0];
@@ -279,6 +279,7 @@ void Assembler::assembleInteriorFacets(GenericTensor& A,
   // Skip assembly if there are no interior facet integrals
   if (ufc.form.num_interior_facet_integrals() == 0)
     return;
+  Timer timer("Assembly over interior facets");
   
   // Interior facet integral
   ufc::interior_facet_integral* integral = ufc.interior_facet_integrals[0];
@@ -407,10 +408,21 @@ void Assembler::initGlobalTensor(GenericTensor& A, const DofMapSet& dof_map_set,
 {
   if (reset_tensor)
   {
+    // Build sparsity pattern
+    Timer t0("Build sparsity pattern");
     GenericSparsityPattern* sparsity_pattern = A.factory().createPattern(); 
     SparsityPatternBuilder::build(*sparsity_pattern, mesh, ufc, dof_map_set);
+    t0.stop();
+    
+    // Initialize tensor
+    Timer t1("Initialize tensor for assembly");
     A.init(*sparsity_pattern);
+    t1.stop();
+
+    // Delete sparsity pattern
+    Timer t2("Delete sparsity pattern");
     delete sparsity_pattern;
+    t2.stop();
   }
   else
     A.zero();

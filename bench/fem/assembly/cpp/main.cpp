@@ -59,6 +59,7 @@ int main()
   for (unsigned int i = 0; i < backends.size(); i++)
   {
     dolfin_set("linear algebra backend", backends[i]);
+    dolfin_set("timer prefix", backends[i]);
     std::cout << "Backend: " << backends[i] << std::endl;
     for (unsigned int j = 0; j < forms.size(); j++)
     {
@@ -74,6 +75,8 @@ int main()
   results_assemble.disp();
   cout << endl;
   results_reassemble.disp();
+  
+  summary();
 
   return 0;
 }
