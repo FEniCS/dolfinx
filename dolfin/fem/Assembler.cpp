@@ -163,7 +163,7 @@ void Assembler::assembleCells(GenericTensor& A,
   // Skip assembly if there are no cell integrals
   if (ufc.form.num_cell_integrals() == 0)
     return;
-  Timer timer("Assembly over cells");
+  Timer timer("Assemble over cells");
 
   // Cell integral
   ufc::cell_integral* integral = ufc.cell_integrals[0];
@@ -215,7 +215,7 @@ void Assembler::assembleExteriorFacets(GenericTensor& A,
   // Skip assembly if there are no exterior facet integrals
   if (ufc.form.num_exterior_facet_integrals() == 0)
     return;
-  Timer timer("Assembly over exterior facets");
+  Timer timer("Assemble over exterior facets");
   
   // Exterior facet integral
   ufc::exterior_facet_integral* integral = ufc.exterior_facet_integrals[0];
@@ -279,7 +279,7 @@ void Assembler::assembleInteriorFacets(GenericTensor& A,
   // Skip assembly if there are no interior facet integrals
   if (ufc.form.num_interior_facet_integrals() == 0)
     return;
-  Timer timer("Assembly over interior facets");
+  Timer timer("Assemble over interior facets");
   
   // Interior facet integral
   ufc::interior_facet_integral* integral = ufc.interior_facet_integrals[0];
