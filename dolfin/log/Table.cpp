@@ -15,6 +15,8 @@
 
 using namespace dolfin;
 
+typedef std::vector<std::string>::const_iterator iterator;
+
 //-----------------------------------------------------------------------------
 Table::Table(std::string title) : title(title)
 {
@@ -60,6 +62,36 @@ void Table::set(std::string row, std::string col, real value)
   // Store value
   std::pair<std::string, std::string> key(row, col);
   values[key] = value;
+}
+//-----------------------------------------------------------------------------
+Table Table::operator+ (const Table& table) const
+{
+  // Check table sizes
+  if (rows.size() != table.rows.size() || cols.size() != table.cols.size())
+    error("Dimension mismatch for addition of tables.");
+
+  // Add tables
+  Table t;
+  for (iterator i = rows.begin(); i !=rows.end(); i++)
+    for (iterator j = cols.begin(); j != cols.end(); j++)
+      t.set(*i, *j, get(*i, *j) + table.get(*i, *j));
+
+  return t;
+}
+//-----------------------------------------------------------------------------
+Table Table::operator- (const Table& table) const
+{
+  // Check table sizes
+  if (rows.size() != table.rows.size() || cols.size() != table.cols.size())
+    error("Dimension mismatch for addition of tables.");
+
+  // Add tables
+  Table t;
+  for (iterator i = rows.begin(); i !=rows.end(); i++)
+    for (iterator j = cols.begin(); j != cols.end(); j++)
+      t.set(*i, *j, get(*i, *j) - table.get(*i, *j));
+
+  return t;
 }
 //-----------------------------------------------------------------------------
 void Table::disp() const

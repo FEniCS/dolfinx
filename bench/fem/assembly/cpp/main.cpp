@@ -60,6 +60,7 @@ int main()
   Table t3("Build sparsity");
   Table t4("Init tensor");
   Table t5("Delete sparsity");
+  Table t6("Overhead");
   
   // Iterate over backends and forms
   for (unsigned int i = 0; i < backends.size(); i++)
@@ -82,6 +83,9 @@ int main()
       t1(backends[i], forms[j]) = bench_form(forms[j], reassemble_form);
     }
   }
+  
+  // Compute overhead
+  t6 = t0 - t2 - t3 - t4 - t5;
 
   // Display results
   dolfin_set("output destination", "terminal");
@@ -91,6 +95,7 @@ int main()
   cout << endl; t3.disp();
   cout << endl; t4.disp();
   cout << endl; t5.disp();
+  cout << endl; t6.disp();
   
   return 0;
 }

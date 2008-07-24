@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-07-19
-// Last changed: 2008-07-19
+// Last changed: 2008-07-24
 
 #ifndef __TABLE_H
 #define __TABLE_H
@@ -50,6 +50,12 @@ namespace dolfin
 
     /// Set value of table entry
     void set(std::string row, std::string col, real value);
+
+    /// Addition of tables
+    Table operator+ (const Table& table) const;
+
+    /// Subtraction of tables
+    Table operator- (const Table& table) const;
 
     /// Display table
     void disp() const;
