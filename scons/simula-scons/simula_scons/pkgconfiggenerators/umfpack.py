@@ -291,7 +291,7 @@ int main (void)
     raise UnableToCompileException("UMFPACK", cmd=cmdstr,
                                    program=cpp_test_lib_str, errormsg=cmdoutput)
 
-  cmdstr = "%s %s umfpack_config_test_lib.o" % (linker, libs)
+  cmdstr = "%s umfpack_config_test_lib.o %s" % (linker, libs)
   linkFailed, cmdoutput = commands.getstatusoutput(cmdstr)
   if linkFailed:
     remove_cppfile("umfpack_config_test_lib.cpp", ofile=True)
