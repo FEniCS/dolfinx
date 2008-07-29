@@ -73,7 +73,22 @@ void SparsityPattern::insert(uint m, const uint* rows, uint n, const uint* cols)
 { 
   for (uint i = 0; i < m; ++i)
     for (uint j = 0; j < n; ++j)
-      sparsity_pattern[rows[i]].insert(cols[j]);
+    {
+      bool inserted = false;
+      uint k = 0;
+      while(k < sparsity_pattern[rows[i]].size() && !inserted)
+      {
+        if(cols[j] == sparsity_pattern[rows[i]][k])
+          inserted = true;
+        ++k;
+      }
+      if(!inserted)
+        sparsity_pattern[rows[i]].push_back(cols[j]);
+    }
+
+//  for (uint i = 0; i < m; ++i)
+//    for (uint j = 0; j < n; ++j)
+//      sparsity_pattern[rows[i]].insert(cols[j]);
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::pinsert(const uint* num_rows, const uint * const * rows)
@@ -93,8 +108,8 @@ void SparsityPattern::pinsert(const uint* num_rows, const uint * const * rows)
       if(global_col < range[process] || global_col >= range[process+1])
         o_sparsity_pattern[rows[0][i]].insert(rows[1][j]);
       // On the diagonal
-      else
-        sparsity_pattern[rows[0][i]].insert(rows[1][j]);
+//      else
+//        sparsity_pattern[rows[0][i]].insert(rows[1][j]);
     }
   }
 }
@@ -114,9 +129,12 @@ void SparsityPattern::numNonZeroPerRow(uint nzrow[]) const
     error("Sparsity pattern has not been computed.");
 
   // Compute number of nonzeros per row
-  std::vector< std::set<int> >::const_iterator set;
-  for(set = sparsity_pattern.begin(); set != sparsity_pattern.end(); ++set)
-    nzrow[set-sparsity_pattern.begin()] = set->size();
+  std::vector< std::vector<uint> >::const_iterator row;
+  for(row = sparsity_pattern.begin(); row != sparsity_pattern.end(); ++row)
+    nzrow[row - sparsity_pattern.begin()] = row->size();
+
+//  for(uint i=0; i < sparsity_pattern.size(); ++i)
+//    cout << "nz " << sparsity_pattern[i].size() << "  " << mysparsity_pattern[i].size() << endl; 
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::numNonZeroPerRow(uint process_number, uint d_nzrow[], uint o_nzrow[]) const
@@ -146,7 +164,7 @@ dolfin::uint SparsityPattern::numNonZero() const
 
   // Compute total number of nonzeros per row
   uint nz = 0;
-  std::vector< std::set<int> >::const_iterator set;
+  std::vector< std::vector<uint> >::const_iterator set;
   for(set = sparsity_pattern.begin(); set != sparsity_pattern.end(); ++set)
     nz += set->size();
   return nz;
@@ -154,6 +172,8 @@ dolfin::uint SparsityPattern::numNonZero() const
 //-----------------------------------------------------------------------------
 void SparsityPattern::disp() const
 { 
+  error("SparsityPattern::disp() needs to be updated.");
+/*
   if ( dim[1] == 0 )
     warning("Only matrix sparsity patterns can be displayed.");
 
@@ -167,6 +187,7 @@ void SparsityPattern::disp() const
       cout << *element << " ";
     cout << endl;
   }  
+*/
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::processRange(uint process_number, uint local_range[])

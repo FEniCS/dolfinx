@@ -68,7 +68,7 @@ namespace dolfin
     uint numNonZero() const;
 
     /// Return underlying sparsity pattern
-    const std::vector< std::set<int> >& pattern() const 
+    const std::vector< std::vector<uint> >& pattern() const 
     { return sparsity_pattern; };
 
     /// Display sparsity pattern
@@ -91,7 +91,7 @@ namespace dolfin
     /// Sparsity pattern represented as an vector of sets. Each set corresponds
     /// to a row, and the set contains the column positions of nonzero entries 
     /// When run in parallel this vector contains diagonal non-zeroes
-    std::vector< std::set<int> > sparsity_pattern;
+    std::vector< std::vector<uint> > sparsity_pattern;
 
     /// Sparsity pattern for off diagonal represented as vector of sets. Each
     /// set corresponds to a row, and the set contains the column positions of nonzero entries 
