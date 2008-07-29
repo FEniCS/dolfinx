@@ -451,13 +451,17 @@ namespace dolfin
     const SparsityPattern* pattern_pointer = dynamic_cast<const SparsityPattern*>(&sparsity_pattern);
     if (not pattern_pointer)
       error("Cannot convert GenericSparsityPattern to concrete SparsityPattern type. Aborting.");
-    const std::vector< std::set<int> >& pattern = pattern_pointer->pattern();
 
-    std::vector< std::set<int> >::const_iterator set;
-    std::set<int>::const_iterator element;
-    for(set = pattern.begin(); set != pattern.end(); ++set)
-      for(element = set->begin(); element != set->end(); ++element)
-        A.push_back(set - pattern.begin(), *element, 0.0);
+    const std::vector< std::vector<uint> >& pattern = pattern_pointer->pattern();
+
+    // Sort sparsity pattern
+    pattern_pointer->sort();
+
+    std::vector< std::vector<uint> >::const_iterator row;
+    std::vector<uint>::const_iterator element;
+    for(row = pattern.begin(); row != pattern.end(); ++row)
+      for(element = row->begin(); element != row->end(); ++element)
+        A.push_back(row - pattern.begin(), *element, 0.0);
   }
   //---------------------------------------------------------------------------
   template <class Mat> 

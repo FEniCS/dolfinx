@@ -114,6 +114,13 @@ void SparsityPattern::pinsert(const uint* num_rows, const uint * const * rows)
   }
 }
 //-----------------------------------------------------------------------------
+void SparsityPattern::sort() const
+{
+  std::vector< std::vector<uint> >::iterator row;
+  for(row = sparsity_pattern.begin(); row != sparsity_pattern.end(); ++row)
+    std::sort(row->begin(), row->end()); 
+}
+//-----------------------------------------------------------------------------
 dolfin::uint SparsityPattern::size(uint n) const
 {
   dolfin_assert(n < 2);

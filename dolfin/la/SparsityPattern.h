@@ -55,6 +55,9 @@ namespace dolfin
     /// Insert non-zero entry for parallel matrices
     void pinsert(const uint* num_rows, const uint * const * rows);
 
+    /// Sort entries for each row 
+    void sort() const;
+
     /// Return global size 
     uint size(uint n) const;
 
@@ -82,7 +85,6 @@ namespace dolfin
     /// Return number of local rows for process_number
     uint numLocalRows(uint process_number) const;
 
-
   private:
 
     /// Initialize range
@@ -91,7 +93,7 @@ namespace dolfin
     /// Sparsity pattern represented as an vector of sets. Each set corresponds
     /// to a row, and the set contains the column positions of nonzero entries 
     /// When run in parallel this vector contains diagonal non-zeroes
-    std::vector< std::vector<uint> > sparsity_pattern;
+    mutable std::vector< std::vector<uint> > sparsity_pattern;
 
     /// Sparsity pattern for off diagonal represented as vector of sets. Each
     /// set corresponds to a row, and the set contains the column positions of nonzero entries 
