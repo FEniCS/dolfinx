@@ -1,16 +1,15 @@
-// Copyright (C) 2007 Garth N. Wells.
+// Copyright (C) 2007-2008 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Magnus Vikstrom, 2008.
 // Modified by Anders Logg, 2008.
 //
 // First added:  2007-03-13
-// Last changed: 2008-05-15
+// Last changed: 2008-07-29
 
 #include <dolfin/log/dolfin_log.h>
 #include "SparsityPattern.h"
 #include <dolfin/main/MPI.h>
-//#include <dolfin/PETScObject.h>
 #include <iostream>
 
 using namespace dolfin;
@@ -85,10 +84,6 @@ void SparsityPattern::insert(uint m, const uint* rows, uint n, const uint* cols)
       if(!inserted)
         sparsity_pattern[rows[i]].push_back(cols[j]);
     }
-
-//  for (uint i = 0; i < m; ++i)
-//    for (uint j = 0; j < n; ++j)
-//      sparsity_pattern[rows[i]].insert(cols[j]);
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::pinsert(const uint* num_rows, const uint * const * rows)
@@ -139,9 +134,6 @@ void SparsityPattern::numNonZeroPerRow(uint nzrow[]) const
   std::vector< std::vector<uint> >::const_iterator row;
   for(row = sparsity_pattern.begin(); row != sparsity_pattern.end(); ++row)
     nzrow[row - sparsity_pattern.begin()] = row->size();
-
-//  for(uint i=0; i < sparsity_pattern.size(); ++i)
-//    cout << "nz " << sparsity_pattern[i].size() << "  " << mysparsity_pattern[i].size() << endl; 
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::numNonZeroPerRow(uint process_number, uint d_nzrow[], uint o_nzrow[]) const

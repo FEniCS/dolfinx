@@ -471,7 +471,8 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <>
-  inline boost::tuple<const std::size_t*, const std::size_t*, const double*, int> uBlasMatrix<ublas_sparse_matrix>::data() const
+  inline boost::tuple<const std::size_t*, const std::size_t*, const double*, int> 
+                                  uBlasMatrix<ublas_sparse_matrix>::data() const
   { 
     // Make sure matrix assembly is complete
     const_cast< ublas_sparse_matrix& >(A).complete_index1_data(); 
@@ -481,7 +482,8 @@ namespace dolfin
   } 
   //---------------------------------------------------------------------------
   template <class Mat>
-  inline boost::tuple<const std::size_t*, const std::size_t*, const double*, int> uBlasMatrix<Mat>::data() const
+  inline boost::tuple<const std::size_t*, const std::size_t*, const double*, int> 
+                                                    uBlasMatrix<Mat>::data() const
   { 
     error("Unable to return pointers to underlying data for this uBlasMatrix type."); 
     return boost::tuple<const std::size_t*, const std::size_t*, const double*, int>(0, 0, 0, 0);

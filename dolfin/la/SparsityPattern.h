@@ -1,10 +1,10 @@
-// Copyright (C) 2007 Garth N. Wells
+// Copyright (C) 2007-2008 Garth N. Wells
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Anders Logg, 2007-2008.
 //
 // First added:  2007-03-13
-// Last changed: 2008-05-15
+// Last changed: 2008-07-29
 
 #ifndef __SPARSITY_PATTERN_H
 #define __SPARSITY_PATTERN_H
@@ -90,9 +90,7 @@ namespace dolfin
     /// Initialize range
     void initRange();
 
-    /// Sparsity pattern represented as an vector of sets. Each set corresponds
-    /// to a row, and the set contains the column positions of nonzero entries 
-    /// When run in parallel this vector contains diagonal non-zeroes
+    /// Sparsity pattern represented as an vector of vectors 
     mutable std::vector< std::vector<uint> > sparsity_pattern;
 
     /// Sparsity pattern for off diagonal represented as vector of sets. Each
