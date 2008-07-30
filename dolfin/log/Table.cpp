@@ -109,13 +109,13 @@ void Table::disp() const
   for (uint i = 0; i < rows.size(); i++)
   {
     formatted_values.push_back(std::vector<std::string>());
-    col_sizes[0] = std::max(col_sizes[0], rows[i].size());
+    col_sizes[0] = std::max(col_sizes[0], (dolfin::uint)(rows[i].size()));
     for (uint j = 0; j < cols.size(); j++)
     {
       std::stringstream value;
       value << std::setprecision(5) << get(rows[i], cols[j]);
       formatted_values[i].push_back(value.str());
-      col_sizes[j + 1] = std::max(col_sizes[j + 1], value.str().size());
+      col_sizes[j + 1] = std::max(col_sizes[j + 1], (dolfin::uint)(value.str().size()));
     }
   }
   uint row_size = 2*col_sizes.size() + 1;
