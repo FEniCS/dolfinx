@@ -18,12 +18,12 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 void dolfin::tic()
 {
-  dolfin::__tic_time = clock();
+  dolfin::__tic_time = std::clock();
 }
 //-----------------------------------------------------------------------------
 real dolfin::toc()
 {
-  clock_t __toc_time = clock();
+  clock_t __toc_time = std::clock();
 
   real elapsed_time = ((real) (__toc_time - __tic_time)) / CLOCKS_PER_SEC;
 
@@ -41,7 +41,7 @@ real dolfin::tocd()
 //-----------------------------------------------------------------------------
 real dolfin::time()
 {
-  clock_t __toc_time = clock();
+  clock_t __toc_time = std::clock();
   return ((real) (__toc_time)) / CLOCKS_PER_SEC;
 }
 //-----------------------------------------------------------------------------

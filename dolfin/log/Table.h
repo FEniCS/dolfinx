@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-07-19
-// Last changed: 2008-07-24
+// Last changed: 2008-07-31
 
 #ifndef __TABLE_H
 #define __TABLE_H
@@ -57,8 +57,8 @@ namespace dolfin
     /// Subtraction of tables
     Table operator- (const Table& table) const;
 
-    /// Display table
-    void disp() const;
+    /// Display table, rounding small numbers to zero
+    void disp(bool round_to_zero=true) const;
 
   private:
 

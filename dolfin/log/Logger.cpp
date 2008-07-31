@@ -129,6 +129,10 @@ void Logger::setDebugLevel(int debug_level)
 //-----------------------------------------------------------------------------
 void Logger::registerTiming(std::string task, real elapsed_time)
 {
+  // Remove small or negative numbers
+  if (elapsed_time < DOLFIN_EPS)
+    elapsed_time = 0.0;
+
   // Print a message
   std::stringstream line;
   line << "Elapsed time: " << elapsed_time << " (" << task << ")";
@@ -190,7 +194,7 @@ dolfin::real Logger::timing(std::string task, bool reset)
   // Compute average
   const uint num_timings  = it->second.first;
   const real total_time   = it->second.second;
-  const real average_time =total_time / static_cast<real>(num_timings);
+  const real average_time = total_time / static_cast<real>(num_timings);
 
   // Clear timing
   timings.erase(it);
