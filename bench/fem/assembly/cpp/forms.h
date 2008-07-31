@@ -17,7 +17,7 @@
 //#define N_2D 256
 //#define N_3D 32
 
-#define N_2D 64
+#define N_2D 32
 #define N_3D 8
 
 using namespace dolfin;

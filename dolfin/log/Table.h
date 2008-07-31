@@ -57,6 +57,9 @@ namespace dolfin
     /// Subtraction of tables
     Table operator- (const Table& table) const;
 
+    /// Assignment operator
+    const Table& operator= (const Table& table);
+
     /// Display table, rounding small numbers to zero
     void disp(bool round_to_zero=true) const;
 

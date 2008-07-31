@@ -95,6 +95,21 @@ Table Table::operator- (const Table& table) const
   return t;
 }
 //-----------------------------------------------------------------------------
+const Table& Table::operator= (const Table& table)
+{
+  // Assign everything but the title
+  
+  rows = table.rows;
+  row_set = table.row_set;
+
+  cols = table.cols;
+  col_set = table.col_set;
+
+  values = table.values;
+
+  return *this;
+}
+//-----------------------------------------------------------------------------
 void Table::disp(bool round_to_zero) const
 {
   if (rows.size() == 0 || cols.size() == 0)

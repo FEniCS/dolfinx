@@ -38,20 +38,20 @@ int main()
   // Backends
   Array<std::string> backends;
   backends.push_back("uBLAS");
-  //backends.push_back("PETSc");
-  //backends.push_back("Epetra");
-  //backends.push_back("MTL4");
-  //backends.push_back("Assembly");
+  backends.push_back("PETSc");
+  backends.push_back("Epetra");
+  backends.push_back("MTL4");
+  backends.push_back("Assembly");
 
   // Forms
   Array<std::string> forms;
   forms.push_back("Poisson2DP1");
   forms.push_back("Poisson2DP2");
-  //forms.push_back("Poisson2DP3");
-  //forms.push_back("THStokes2D");
-  //forms.push_back("StabStokes2D");
-  //forms.push_back("Elasticity3D");
-  //forms.push_back("NSEMomentum3D");
+  forms.push_back("Poisson2DP3");
+  forms.push_back("THStokes2D");
+  forms.push_back("StabStokes2D");
+  forms.push_back("Elasticity3D");
+  forms.push_back("NSEMomentum3D");
 
   // Tables for results
   Table t0("Assemble total");
