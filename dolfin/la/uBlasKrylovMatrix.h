@@ -8,11 +8,13 @@
 #define __UBLAS_KRYLOV_MATRIX_H
 
 #include <dolfin/common/types.h>
+#include "ublas.h"
 
 namespace dolfin
 {
 
   class uBlasVector;
+  template<class Mat> class uBlasMatrix;
 
   /// This class provides an interface for matrices that define linear
   /// systems for the uBlasKrylovSolver. This interface is implemented
@@ -25,7 +27,7 @@ namespace dolfin
   public:
 
     /// Constructor
-    uBlasKrylovMatrix() {};
+    uBlasKrylovMatrix() : AA(0), ej(0), Aj(0) {};
 
     /// Destructor
     virtual ~uBlasKrylovMatrix() {};
@@ -36,8 +38,18 @@ namespace dolfin
     /// Compute product y = Ax
     virtual void mult(const uBlasVector& x, uBlasVector& y) const = 0;
 
+    /// Solve linear system Ax = b for a Krylov matrix using uBLAS and dense matrices
+    void solve(uBlasVector& x, const uBlasVector& b);
+
     /// Display matrix 
 //    void disp(const int precision = 2) const;
+
+  private:
+
+    // Temporary data for LU factorization of a uBlasKrylovMatrix
+    uBlasMatrix<ublas_dense_matrix>* AA;
+    uBlasVector* ej;
+    uBlasVector* Aj;
 
   };
 

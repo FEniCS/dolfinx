@@ -5,7 +5,7 @@
 // Modified by Dag Lindbo 2008.
 // 
 // First added:  2006-05-31
-// Last changed: 2008-07-21
+// Last changed: 2008-07-31
 
 #ifndef __UMFPACK_LU_SOLVER_H
 #define __UMFPACK_LU_SOLVER_H
@@ -48,10 +48,6 @@ namespace dolfin
 
     /// Solve factorized system (UMFPACK).
     virtual uint factorizedSolve(GenericVector& x, const GenericVector& b) const;
-
-    /// Solve linear system Ax = b for a Krylov matrix
-    /// FIXME: This function should be moved to uBlasKrylovMatrix
-    void solve(const uBlasKrylovMatrix& A, uBlasVector& x, const uBlasVector& b);
 
   private:
     
@@ -101,11 +97,6 @@ namespace dolfin
     };
 
     Umfpack umfpack;
-
-    // Temporary data for LU factorization of a uBlasKrylovMatrix
-    uBlasMatrix<ublas_dense_matrix>* AA;
-    uBlasVector* ej;
-    uBlasVector* Aj;
     
   };
 

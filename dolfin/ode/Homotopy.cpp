@@ -294,7 +294,7 @@ bool Homotopy::computeSolution(HomotopyODE& ode)
     }
 
     // Solve linear system
-    solver.solve(J, dx, F);
+    J.solve(dx, F);
 
     // Subtract increment
     x -= dx;
