@@ -2,13 +2,14 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-07-19
-// Last changed: 2008-07-19
+// Last changed: 2008-07-31
 
 #include <iostream>
 
 #include <sstream>
 #include <iomanip>
 
+#include <dolfin/common/constants.h>
 #include <dolfin/log/LogStream.h>
 #include <dolfin/log/log.h>
 #include "Table.h"
@@ -94,7 +95,7 @@ Table Table::operator- (const Table& table) const
   return t;
 }
 //-----------------------------------------------------------------------------
-void Table::disp() const
+void Table::disp(bool round_to_zero) const
 {
   if (rows.size() == 0 || cols.size() == 0)
     return;
@@ -112,10 +113,13 @@ void Table::disp() const
     col_sizes[0] = std::max(col_sizes[0], (dolfin::uint)(rows[i].size()));
     for (uint j = 0; j < cols.size(); j++)
     {
-      std::stringstream value;
-      value << std::setprecision(5) << get(rows[i], cols[j]);
-      formatted_values[i].push_back(value.str());
-      col_sizes[j + 1] = std::max(col_sizes[j + 1], (dolfin::uint)(value.str().size()));
+      real value = get(rows[i], cols[j]);
+      if (round_to_zero && std::abs(value) < DOLFIN_EPS)
+        value = 0.0;
+      std::stringstream string_value;
+      string_value << std::setprecision(5) << value;
+      formatted_values[i].push_back(string_value.str());
+      col_sizes[j + 1] = std::max(col_sizes[j + 1], (dolfin::uint)(string_value.str().size()));
     }
   }
   uint row_size = 2*col_sizes.size() + 1;
