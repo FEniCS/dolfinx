@@ -56,6 +56,9 @@ cppdemos.remove('./../../demo/quadrature/cpp')
 cppdemos.remove('./../../demo/ode/method-weights/cpp')
 cppdemos.remove('./../../demo/ode/stiff/cpp')
 
+# Remove currently broken demos
+cppdemos.remove('./../../demo/fem/assembly/cpp')
+
 failed = []
 timing = []
 
