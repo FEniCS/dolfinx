@@ -5,12 +5,13 @@
 // Modified by Anders Logg, 2008.
 //
 // First added:  2007-03-13
-// Last changed: 2008-07-29
+// Last changed: 2008-07-31
 
-#include <dolfin/log/dolfin_log.h>
-#include "SparsityPattern.h"
-#include <dolfin/main/MPI.h>
+#include <algorithm>
 #include <iostream>
+#include <dolfin/log/dolfin_log.h>
+#include <dolfin/main/MPI.h>
+#include "SparsityPattern.h"
 
 using namespace dolfin;
 
@@ -88,6 +89,8 @@ void SparsityPattern::insert(uint m, const uint* rows, uint n, const uint* cols)
 //-----------------------------------------------------------------------------
 void SparsityPattern::pinsert(const uint* num_rows, const uint * const * rows)
 { 
+  error("SparsityPattern::pinsert needs to be updated");
+
   uint process = dolfin::MPI::processNumber();
 
   for (unsigned int i = 0; i<num_rows[0];++i)
@@ -171,22 +174,22 @@ dolfin::uint SparsityPattern::numNonZero() const
 //-----------------------------------------------------------------------------
 void SparsityPattern::disp() const
 { 
-  error("SparsityPattern::disp() needs to be updated.");
-/*
   if ( dim[1] == 0 )
     warning("Only matrix sparsity patterns can be displayed.");
 
-  std::vector< std::set<int> >::const_iterator set;
-  std::set<int>::const_iterator element;
+  // Sort pattern
+  sort();
+
+  std::vector< std::vector<uint> >::const_iterator row;
+  std::vector<uint>::const_iterator element;
   
-  for(set = sparsity_pattern.begin(); set != sparsity_pattern.end(); ++set)
+  for(row = sparsity_pattern.begin(); row != sparsity_pattern.end(); ++row)
   {
     cout << "Row " << endl;
-    for(element = set->begin(); element != set->end(); ++element)
+    for(element = row->begin(); element != row->end(); ++element)
       cout << *element << " ";
     cout << endl;
   }  
-*/
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::processRange(uint process_number, uint local_range[])
