@@ -5,7 +5,7 @@
 // Modified by Ola Skavhaug, 2007
 //
 // First added:  2007-01-17
-// Last changed: 2008-07-22
+// Last changed: 2008-08-04
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Array.h>
@@ -163,7 +163,7 @@ void Assembler::assembleCells(GenericTensor& A,
   // Skip assembly if there are no cell integrals
   if (ufc.form.num_cell_integrals() == 0)
     return;
-  Timer timer("Assemble over cells");
+  Timer timer("Assemble cells");
 
   // Cell integral
   ufc::cell_integral* integral = ufc.cell_integrals[0];
@@ -215,7 +215,7 @@ void Assembler::assembleExteriorFacets(GenericTensor& A,
   // Skip assembly if there are no exterior facet integrals
   if (ufc.form.num_exterior_facet_integrals() == 0)
     return;
-  Timer timer("Assemble over exterior facets");
+  Timer timer("Assemble exterior facets");
   
   // Exterior facet integral
   ufc::exterior_facet_integral* integral = ufc.exterior_facet_integrals[0];
@@ -279,7 +279,7 @@ void Assembler::assembleInteriorFacets(GenericTensor& A,
   // Skip assembly if there are no interior facet integrals
   if (ufc.form.num_interior_facet_integrals() == 0)
     return;
-  Timer timer("Assemble over interior facets");
+  Timer timer("Assemble interior facets");
   
   // Interior facet integral
   ufc::interior_facet_integral* integral = ufc.interior_facet_integrals[0];
@@ -409,18 +409,18 @@ void Assembler::initGlobalTensor(GenericTensor& A, const DofMapSet& dof_map_set,
   if (reset_tensor)
   {
     // Build sparsity pattern
-    Timer t0("Build sparsity pattern");
+    Timer t0("Build sparsity");
     GenericSparsityPattern* sparsity_pattern = A.factory().createPattern(); 
     SparsityPatternBuilder::build(*sparsity_pattern, mesh, ufc, dof_map_set);
     t0.stop();
     
     // Initialize tensor
-    Timer t1("Initialize tensor for assembly");
+    Timer t1("Init tensor");
     A.init(*sparsity_pattern);
     t1.stop();
 
     // Delete sparsity pattern
-    Timer t2("Delete sparsity pattern");
+    Timer t2("Delete sparsity");
     delete sparsity_pattern;
     t2.stop();
   }

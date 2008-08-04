@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-07-19
-// Last changed: 2008-07-31
+// Last changed: 2008-08-04
 
 #ifndef __TABLE_H
 #define __TABLE_H
@@ -51,6 +51,9 @@ namespace dolfin
     /// Set value of table entry
     void set(std::string row, std::string col, real value);
 
+    /// Return table title
+    std::string title() const;
+
     /// Addition of tables
     Table operator+ (const Table& table) const;
 
@@ -66,7 +69,7 @@ namespace dolfin
   private:
 
     // Table title
-    std::string title;
+    std::string _title;
 
     // Rows
     std::vector<std::string> rows;

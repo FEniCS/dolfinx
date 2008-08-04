@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-07-22
-// Last changed: 2008-07-22
+// Last changed: 2008-08-04
 
 #include <iostream>
 #include <dolfin.h>
@@ -55,14 +55,14 @@ int main()
 
   // Tables for results
   Table t0("Assemble total");
-  Table t1("Reassemble total");
-  Table t2("Assemble cells");
-  Table t3("Build sparsity");
-  Table t4("Init tensor");
-  Table t5("Delete sparsity");
-  Table t6("Overhead");
+  Table t1("Build sparsity");
+  Table t2("Init tensor");
+  Table t3("Delete sparsity");
+  Table t4("Assemble cells");
+  Table t5("Overhead");
+  Table t6("Reassemble total");
   
-  // Iterate over backends and forms
+  // Benchmark assembly
   for (unsigned int i = 0; i < backends.size(); i++)
   {
     dolfin_set("linear algebra backend", backends[i]);
@@ -71,21 +71,29 @@ int main()
     for (unsigned int j = 0; j < forms.size(); j++)
     {
       std::cout << "  Form: " << forms[j] << std::endl;
-
-      // Benchmark assembly
       t0(backends[i], forms[j]) = bench_form(forms[j], assemble_form);
-      t2(backends[i], forms[j]) = timing(backends[i] + "Assemble over cells", true);
-      t3(backends[i], forms[j]) = timing(backends[i] + "Build sparsity pattern", true);
-      t4(backends[i], forms[j]) = timing(backends[i] + "Initialize tensor for assembly", true);
-      t5(backends[i], forms[j]) = timing(backends[i] + "Delete sparsity pattern", true);
+      t1(backends[i], forms[j]) = timing(backends[i] + t1.title(), true);
+      t2(backends[i], forms[j]) = timing(backends[i] + t2.title(), true);
+      t3(backends[i], forms[j]) = timing(backends[i] + t3.title(), true);
+      t4(backends[i], forms[j]) = timing(backends[i] + t4.title(), true);
+    }
+  }
 
-      // Benchmark reassembly
-      t1(backends[i], forms[j]) = bench_form(forms[j], reassemble_form);
+  // Benchmark reassembly
+  for (unsigned int i = 0; i < backends.size(); i++)
+  {
+    dolfin_set("linear algebra backend", backends[i]);
+    dolfin_set("timer prefix", backends[i]);
+    std::cout << "Backend: " << backends[i] << std::endl;
+    for (unsigned int j = 0; j < forms.size(); j++)
+    {
+      std::cout << "  Form: " << forms[j] << std::endl;
+      t6(backends[i], forms[j]) = bench_form(forms[j], reassemble_form);
     }
   }
   
   // Compute overhead
-  t6 = t0 - t2 - t3 - t4 - t5;
+  t5 = t0 - t1 - t2 - t3 - t4;
 
   // Display results
   dolfin_set("output destination", "terminal");

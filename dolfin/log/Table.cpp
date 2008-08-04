@@ -19,7 +19,7 @@ using namespace dolfin;
 typedef std::vector<std::string>::const_iterator iterator;
 
 //-----------------------------------------------------------------------------
-Table::Table(std::string title) : title(title)
+Table::Table(std::string title) : _title(title)
 {
   // Do nothing
 }
@@ -63,6 +63,11 @@ void Table::set(std::string row, std::string col, real value)
   // Store value
   std::pair<std::string, std::string> key(row, col);
   values[key] = value;
+}
+//-----------------------------------------------------------------------------
+std::string Table::title() const
+{
+  return _title;
 }
 //-----------------------------------------------------------------------------
 Table Table::operator+ (const Table& table) const
@@ -119,7 +124,7 @@ void Table::disp(bool round_to_zero) const
   std::vector<uint> col_sizes;
   
   // Format values and compute column sizes
-  col_sizes.push_back(title.size());
+  col_sizes.push_back(_title.size());
   for (uint j = 0; j < cols.size(); j++)
     col_sizes.push_back(cols[j].size());
   for (uint i = 0; i < rows.size(); i++)
@@ -142,8 +147,8 @@ void Table::disp(bool round_to_zero) const
     row_size += col_sizes[j];
 
   // Write table
-  cout << title;
-  for (uint k = 0; k < col_sizes[0] - title.size(); k++) cout << " ";
+  cout << _title;
+  for (uint k = 0; k < col_sizes[0] - _title.size(); k++) cout << " ";
   cout << "  |";
   for (uint j = 0; j < cols.size(); j++)
   {
