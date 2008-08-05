@@ -1,20 +1,21 @@
 // Copyright (C) 2007-2008 Anders Logg and Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
-
+//
 // Modified by Martin Alnes, 2008
-
+//
 // First added:  2007-03-01
-// Last changed: 2008-04-10
+// Last changed: 2008-08-05
 
+#include <dolfin/common/Timer.h>
 #include <dolfin/common/types.h>
 #include <dolfin/mesh/Cell.h>
+#include <dolfin/common/Array.h>
+#include <dolfin/elements/ElementLibrary.h>
+#include <dolfin/main/MPI.h>
 #include "UFCCell.h"
 #include "DofMap.h"
 #include "SubSystem.h"
-#include <dolfin/common/Array.h>
-#include <dolfin/elements/ElementLibrary.h>
 #include "UFC.h"
-#include <dolfin/main/MPI.h>
 
 using namespace dolfin;
 
@@ -152,6 +153,8 @@ ufc::dof_map* DofMap::extractDofMap(const ufc::dof_map& dof_map, uint& offset, c
 //-----------------------------------------------------------------------------
 void DofMap::init()
 {
+  Timer timer("Init dof map");
+
   //dolfin_debug("Initializing dof map...");
 
   // Order vertices, so entities will be created correctly according to convention

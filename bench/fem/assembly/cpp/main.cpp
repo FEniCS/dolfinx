@@ -55,12 +55,13 @@ int main()
 
   // Tables for results
   Table t0("Assemble total");
-  Table t1("Build sparsity");
-  Table t2("Init tensor");
-  Table t3("Delete sparsity");
-  Table t4("Assemble cells");
-  Table t5("Overhead");
-  Table t6("Reassemble total");
+  Table t1("Init dof map");
+  Table t2("Build sparsity");
+  Table t3("Init tensor");
+  Table t4("Delete sparsity");
+  Table t5("Assemble cells");
+  Table t6("Overhead");
+  Table t7("Reassemble total");
   
   // Benchmark assembly
   for (unsigned int i = 0; i < backends.size(); i++)
@@ -76,6 +77,7 @@ int main()
       t2(backends[i], forms[j]) = timing(backends[i] + t2.title(), true);
       t3(backends[i], forms[j]) = timing(backends[i] + t3.title(), true);
       t4(backends[i], forms[j]) = timing(backends[i] + t4.title(), true);
+      t5(backends[i], forms[j]) = timing(backends[i] + t5.title(), true);
     }
   }
 
@@ -88,12 +90,12 @@ int main()
     for (unsigned int j = 0; j < forms.size(); j++)
     {
       std::cout << "  Form: " << forms[j] << std::endl;
-      t6(backends[i], forms[j]) = bench_form(forms[j], reassemble_form);
+      t7(backends[i], forms[j]) = bench_form(forms[j], reassemble_form);
     }
   }
   
   // Compute overhead
-  t5 = t0 - t1 - t2 - t3 - t4;
+  t6 = t0 - t1 - t2 - t3 - t4 - t5;
 
   // Display results
   dolfin_set("output destination", "terminal");
@@ -104,6 +106,7 @@ int main()
   cout << endl; t4.disp();
   cout << endl; t5.disp();
   cout << endl; t6.disp();
+  cout << endl; t7.disp();
   
   return 0;
 }

@@ -36,7 +36,7 @@ double bench_form(std::string form_name, double (*bench_form)(Form&, Mesh&))
   else if (form_name == "Poisson2DP3")
   {
     UnitSquare mesh(N_2D, N_2D);
-    Poisson2DP2BilinearForm form;
+    Poisson2DP3BilinearForm form;
     return bench_form(form, mesh);
   }
   else if (form_name == "THStokes2D")
