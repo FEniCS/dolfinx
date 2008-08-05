@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-07-22
-// Last changed: 2008-07-22
+// Last changed: 2008-08-05
 
 #include <dolfin.h>
 
@@ -16,9 +16,6 @@
 
 #define N_2D 256
 #define N_3D 32
-
-//#define N_2D 64
-//#define N_3D 16
 
 using namespace dolfin;
 
