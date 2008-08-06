@@ -47,7 +47,7 @@ namespace dolfin
     /// Initialize zero tensor using sparsity pattern
     virtual void init(const GenericSparsityPattern& sparsity_pattern)
     { matrix->init(sparsity_pattern); }
-    
+
     /// Return copy of tensor
     virtual Matrix* copy() const
     { Matrix* A = new Matrix(); delete A->matrix; A->matrix = matrix->copy(); return A; }
@@ -118,6 +118,10 @@ namespace dolfin
     virtual const GenericMatrix& operator= (const GenericMatrix& A)
     { *matrix = A; return *this; }
 
+    /// Return pointers to underlying compressed storage data
+    virtual boost::tuple<const std::size_t*, const std::size_t*, const double*, int> data() const
+    { return matrix->data(); }
+
     //--- Special functions ---
 
     /// Return linear algebra backend factory
@@ -131,7 +135,7 @@ namespace dolfin
     { return matrix; }
 
     /// Return concrete instance / unwrap (non-const version)
-    virtual GenericMatrix* instance() 
+    virtual GenericMatrix* instance()
     { return matrix; }
 
     //--- Special Matrix functions ---
