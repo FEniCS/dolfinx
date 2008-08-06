@@ -54,7 +54,7 @@ namespace dolfin
     { vector->zero(); }
 
     /// Finalize assembly of tensor
-    virtual void apply(FinalizeType finaltype=FINALIZE) 
+    virtual void apply(FinalizeType finaltype=FINALIZE)
     { vector->apply(finaltype); }
 
     /// Display tensor
@@ -64,7 +64,7 @@ namespace dolfin
     //--- Implementation of the GenericVector interface ---
 
     /// Initialize vector of size N
-    virtual void init(uint N) 
+    virtual void init(uint N)
     { vector->init(N); }
 
     /// Return size of vector
@@ -74,7 +74,7 @@ namespace dolfin
     /// Get block of values
     virtual void get(real* block, uint m, const uint* rows) const
     { vector->get(block, m, rows); }
- 
+
     /// Set block of values
     virtual void set(const real* block, uint m, const uint* rows)
     { vector->set(block, m, rows); }
@@ -138,6 +138,14 @@ namespace dolfin
     /// Assignment operator
     const Vector& operator= (real a)
     { *vector = a; return *this; }
+
+    /// Return pointer to underlying data (const version)
+    virtual const real* data() const
+    { return vector->data(); }
+
+    /// Return pointer to underlying data
+    virtual real* data()
+    { return vector->data(); }
 
     //--- Special functions ---
 
