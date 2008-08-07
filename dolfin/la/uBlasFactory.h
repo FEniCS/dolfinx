@@ -14,11 +14,10 @@
 #include "SparsityPattern.h"
 #include "LinearAlgebraFactory.h"
 
-
 namespace dolfin
 {
   // Forward declaration
-  template< class T> class uBlasMatrix;
+  template<class T> class uBlasMatrix;
 
   template<class Mat = ublas_sparse_matrix>
   class uBlasFactory: public LinearAlgebraFactory
@@ -55,6 +54,5 @@ namespace dolfin
 
 // Initialise static data
 template<class Mat> dolfin::uBlasFactory<Mat> dolfin::uBlasFactory<Mat>::factory;
-
 
 #endif

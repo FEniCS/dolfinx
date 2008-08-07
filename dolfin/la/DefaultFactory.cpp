@@ -2,15 +2,15 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-05-17
-// Last changed: 2008-05-19
+// Last changed: 2008-08-07
 
 #include <dolfin/parameter/parameters.h>
 #include "uBlasFactory.h"
 #include "PETScFactory.h"
 #include "EpetraFactory.h"
 #include "MTL4Factory.h"
+#include "STLFactory.h"
 #include "DefaultFactory.h"
-#include "AssemblyFactory.h"
 
 using namespace dolfin;
 
@@ -62,9 +62,9 @@ LinearAlgebraFactory& DefaultFactory::factory() const
       return MTL4Factory::instance();
 #endif
     }
-  else if (backend == "Assembly")
+  else if (backend == "STL")
     { 
-      return AssemblyFactory::instance();
+      return STLFactory::instance();
     }
 
   // Fallback
