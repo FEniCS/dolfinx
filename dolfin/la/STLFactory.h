@@ -34,7 +34,7 @@ namespace dolfin
 
     /// Create empty sparsity pattern 
     SparsityPattern* createPattern() const
-    { return new SparsityPattern(); }
+    { return 0; }
 
     /// Return singleton instance
     static STLFactory& instance()
