@@ -603,8 +603,6 @@ void Assembler::applyTraces(GenericTensor& globalA, GenericTensor& globalb,
     std::cout <<"-------------------"<<std::endl; 
     */
 
-
-
     // for each dof, check if it is associated with Dirichlet condition   
     for (uint i=0; i<n; i++) 
     {  
@@ -651,4 +649,3 @@ void Assembler::applyTraces(GenericTensor& globalA, GenericTensor& globalb,
   delete [] x; 
 }
 //-----------------------------------------------------------------------------
-

@@ -17,7 +17,7 @@
 #include <dolfin/la/PETScMatrix.h>
 #include <dolfin/la/EpetraMatrix.h>
 #include <dolfin/la/MTL4Matrix.h>
-#include <dolfin/la/AssemblyMatrix.h>
+#include <dolfin/la/STLMatrix.h>
 #include <dolfin/la/uBlasVector.h>
 #include <dolfin/la/PETScVector.h>
 #include <dolfin/la/EpetraVector.h>
@@ -30,7 +30,7 @@
 #include <dolfin/la/PETScFactory.h>
 #include <dolfin/la/EpetraFactory.h>
 #include <dolfin/la/MTL4Factory.h>
-#include <dolfin/la/AssemblyFactory.h>
+#include <dolfin/la/STLFactory.h>
 #include <dolfin/la/PETScKrylovSolver.h>
 #include <dolfin/la/PETScLUSolver.h>
 #include <dolfin/la/SLEPcEigenvalueSolver.h>
