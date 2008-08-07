@@ -30,7 +30,7 @@ namespace dolfin
     /// Create empty vector
     virtual dolfin::GenericVector* createVector() const = 0;
 
-    /// Create empty sparsity pattern 
+    /// Create empty sparsity pattern (returning zero if not used/needed)
     virtual dolfin::GenericSparsityPattern * createPattern() const = 0;
 
   };

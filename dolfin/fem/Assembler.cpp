@@ -5,7 +5,7 @@
 // Modified by Ola Skavhaug, 2007
 //
 // First added:  2007-01-17
-// Last changed: 2008-08-04
+// Last changed: 2008-08-07
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Array.h>
@@ -410,13 +410,17 @@ void Assembler::initGlobalTensor(GenericTensor& A, const DofMapSet& dof_map_set,
   {
     // Build sparsity pattern
     Timer t0("Build sparsity");
-    GenericSparsityPattern* sparsity_pattern = A.factory().createPattern(); 
-    SparsityPatternBuilder::build(*sparsity_pattern, mesh, ufc, dof_map_set);
+    GenericSparsityPattern* sparsity_pattern = A.factory().createPattern();
+    if (sparsity_pattern)
+      SparsityPatternBuilder::build(*sparsity_pattern, mesh, ufc, dof_map_set);
     t0.stop();
     
     // Initialize tensor
     Timer t1("Init tensor");
-    A.init(*sparsity_pattern);
+    if (sparsity_pattern)
+      A.init(*sparsity_pattern);
+    else
+      A.init(ufc.form.rank(), ufc.global_dimensions);
     t1.stop();
 
     // Delete sparsity pattern

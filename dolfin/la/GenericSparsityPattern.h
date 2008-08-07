@@ -51,6 +51,8 @@ namespace dolfin
 
     /// Finalize sparsity pattern (needed by most parallel la backends)
     virtual void apply() = 0;
+    
+    
 
   };
 
