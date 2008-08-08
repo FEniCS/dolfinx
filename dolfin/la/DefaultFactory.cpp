@@ -48,27 +48,29 @@ LinearAlgebraFactory& DefaultFactory::factory() const
   {
 #ifdef HAS_PETSC
     return PETScFactory::instance();
+#else
+    error("PETSc linear algebra backend is not available.");
 #endif
   }
   else if (backend == "Epetra")
   {
 #ifdef HAS_TRILINOS
     return EpetraFactory::instance();
+#else
+    error("Trilinos linear algebra backend is not available.");
 #endif
   }
   else if (backend == "MTL4")
   {
 #ifdef HAS_MTL4
     return MTL4Factory::instance();
+#else
+    error("MTL4 linear algebra backend is not available.");
 #endif
   }
   else if (backend == "STL")
   { 
     return STLFactory::instance();
-  }
-  else
-  {
-    error("Requested linear algebra backend is not available.");
   }
 
   // Fallback
