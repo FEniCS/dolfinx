@@ -41,31 +41,37 @@ LinearAlgebraFactory& DefaultFactory::factory() const
 
   // Choose backend
   if (backend == "uBLAS")
-    {
-      return uBlasFactory<>::instance();
-    }
+  {
+    return uBlasFactory<>::instance();
+  }
   else if (backend == "PETSc")
-    {
+  {
 #ifdef HAS_PETSC
-      return PETScFactory::instance();
+    return PETScFactory::instance();
+#else
+    error("PETSc linear algebra backend is not available.");
 #endif
-    }
+  }
   else if (backend == "Epetra")
-    {
+  {
 #ifdef HAS_TRILINOS
-      return EpetraFactory::instance();
+    return EpetraFactory::instance();
+#else
+    error("Trilinos linear algebra backend is not available.");
 #endif
-    }
+  }
   else if (backend == "MTL4")
-    {
+  {
 #ifdef HAS_MTL4
-      return MTL4Factory::instance();
+    return MTL4Factory::instance();
+#else
+    error("MTL4 linear algebra backend is not available.");
 #endif
-    }
+  }
   else if (backend == "STL")
-    { 
-      return STLFactory::instance();
-    }
+  { 
+    return STLFactory::instance();
+  }
 
   // Fallback
   message("Linear algebra backend \"" + backend + "\" not available, using " + default_backend + ".");
