@@ -22,6 +22,8 @@ namespace dolfin
   {
   public:
 
+
+
     /// Destructor
     virtual ~MTL4Factory() {}
 
@@ -44,7 +46,7 @@ namespace dolfin
   private:
     
     // Private constructor
-    MTL4Factory();
+    MTL4Factory() {}
 
     // Singleton instance
     static MTL4Factory factory;
