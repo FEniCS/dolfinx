@@ -4,14 +4,10 @@
 // Modified by Garth N. Wells, 2008.
 //
 // First added:  2008-07-06
-// Last changed: 2008-07-20
+// Last changed: 2008-09-11
 
 #ifdef HAS_MTL4
 
-#include <cstring>
-#include <iostream>
-#include <sstream>
-#include <iomanip>
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Array.h>
 #include "GenericSparsityPattern.h"
@@ -69,6 +65,7 @@ dolfin::uint MTL4Matrix::size(uint dim) const
     return mtl::num_rows(A);
   else if(dim == 1)
     return mtl::num_cols(A);
+
   error("dim not < 2 in MTL4Matrix::size.");
   return 0;
 }
@@ -127,31 +124,37 @@ void MTL4Matrix::disp(uint precision) const
 //-----------------------------------------------------------------------------
 void MTL4Matrix::ident(uint m, const uint* rows)
 {
-  // This is a rought hack until we figure out a better way to zero rows
-  // A helper fucntion will apparently be added to MTL4
-  dolfin_assert(size(0) == size(1));
-  mtl4_sparse_matrix I(size(0), size(0));
-  mtl4_sparse_matrix A_tmp(size(0), size(0));
-  I = 1.0;
+  // Define cursors
+  typedef mtl::traits::range_generator<mtl::tag::row, mtl::compressed2D<double> >::type c_type;
+  typedef mtl::traits::range_generator<mtl::tag::nz, c_type>::type  ic_type;
 
-  mtl::matrix::inserter< mtl::compressed2D<double> > ins_I(I, 1);  
-  for(uint i = 0; i < m ; ++i)
-    ins_I[ rows[i] ][ rows[i] ] = 0.0;
+  mtl::traits::col<mtl::compressed2D<double> >::type   col(A); 
+  mtl::traits::value<mtl::compressed2D<double> >::type value(A);   
 
-  // Left multiply matrix A
-  A_tmp = I*A;
+  // Row cursors
+  c_type cursor(mtl::begin<mtl::tag::row>(A));
+  c_type cend(mtl::end<mtl::tag::row>(A));
 
-  // Use control block since we want to destroy the inserter to finalise the matrix
+  for(uint i = 0; i < m; ++i)
   {
-    mtl::matrix::inserter< mtl::compressed2D<double> > ins_A(A_tmp, 1);  
-    for(uint i = 0; i < m ; ++i)
-      ins_A[ rows[i] ][ rows[i] ] = 1.0;
-  }
+    // Increment cursor
+    if(i == 0)
+      cursor += rows[i];
+    else
+      cursor += rows[i] -rows[i-1];
 
-  dolfin_assert(num_rows(A_tmp) == size(0));
-  dolfin_assert(num_cols(A_tmp) == size(1));
+    // Check that we haven't gone beyond last row
+    dolfin_assert(*cursor <= *cend);
 
-  swap(A_tmp, A);
+    // Zero row and place one on the diagonal
+    for (ic_type icursor(mtl::begin<mtl::tag::nz>(cursor)), icend(mtl::end<mtl::tag::nz>(cursor)); icursor != icend; ++icursor)
+    {
+      if(col(*icursor) == rows[i])
+        value(*icursor, 1.0);
+      else
+        value(*icursor, 0.0);
+    }
+  }          
 }
 //-----------------------------------------------------------------------------
 void MTL4Matrix::zero(uint m, const uint* rows)
