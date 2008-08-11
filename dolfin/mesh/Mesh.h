@@ -6,7 +6,7 @@
 // Modified by Garth N. Wells 2007.
 //
 // First added:  2006-05-08
-// Last changed: 2008-06-17
+// Last changed: 2008-08-11
 
 #ifndef __MESH_H
 #define __MESH_H
@@ -155,8 +155,8 @@ namespace dolfin
     /// Move coordinates of mesh according to new boundary coordinates
     void move(Mesh& boundary, ALEType method=lagrange);
     
-    /// Smooth mesh using Lagrangian mesh smoothing 
-    void smooth();
+    /// Smooth mesh using Lagrangian mesh smoothing
+    void smooth(uint num_smoothings=1);
     
     /// Partition mesh into num_processes partitions
     void partition(MeshFunction<uint>& partitions);
