@@ -11,7 +11,7 @@
 
 #include "STLMatrix.h"
 #include "uBlasVector.h"
-#include "SparsityPattern.h"
+#include "GenericSparsityPattern.h"
 #include "LinearAlgebraFactory.h"
 
 namespace dolfin
@@ -33,7 +33,7 @@ namespace dolfin
     { return new uBlasVector(); }
 
     /// Create empty sparsity pattern 
-    SparsityPattern* createPattern() const
+    GenericSparsityPattern* createPattern() const
     { return 0; }
 
     /// Return singleton instance
