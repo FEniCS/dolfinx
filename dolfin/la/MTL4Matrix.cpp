@@ -43,6 +43,8 @@ MTL4Matrix::MTL4Matrix(uint M, uint N, uint nz):
 MTL4Matrix::MTL4Matrix(const MTL4Matrix& mat):
   Variable("A", "MTL4 matrix"), ins(0), nnz_row(0)
 {
+  assert_no_inserter();
+
   A = mat.mat(); // deep copy
   nnz_row = mat.nnz_row;
 }
@@ -62,6 +64,8 @@ MTL4Matrix::~MTL4Matrix()
 //-----------------------------------------------------------------------------
 void MTL4Matrix::init(uint M, uint N)
 {
+  assert_no_inserter();
+
   A.change_dim(M,N);
   A = 0;
 }
@@ -73,6 +77,8 @@ void MTL4Matrix::init(const GenericSparsityPattern& sparsity_pattern)
 //-----------------------------------------------------------------------------
 MTL4Matrix* MTL4Matrix::copy() const // why is this needed???
 {
+  assert_no_inserter();
+
   return new MTL4Matrix(*this); 
 }
 //-----------------------------------------------------------------------------
@@ -82,6 +88,7 @@ dolfin::uint MTL4Matrix::size(uint dim) const
     return mtl::num_rows(A);
   else if(dim == 1)
     return mtl::num_cols(A);
+
   error("dim not < 2 in MTL4Matrix::size.");
   return 0;
 }
@@ -90,6 +97,8 @@ void MTL4Matrix::get(real* block,
 		     uint m, const uint* rows,
 		     uint n, const uint* cols) const
 {
+  assert_no_inserter();
+
   for (uint i = 0; i < m; i++)
     for (uint j = 0; j < n; j++)
       block[i*n+j] = A[rows[i]][cols[j]];
@@ -121,6 +130,8 @@ void MTL4Matrix::add(const real* block,
 //-----------------------------------------------------------------------------
 void MTL4Matrix::zero()
 {
+  assert_no_inserter();
+
   A *= 0;
 }
 //-----------------------------------------------------------------------------
@@ -133,6 +144,8 @@ void MTL4Matrix::apply(FinalizeType finaltype)
 //-----------------------------------------------------------------------------
 void MTL4Matrix::disp(uint precision) const
 {
+  assert_no_inserter();
+
   // FIXME: This bypasses the dolfin log system!
   std::cout << A << std::endl;
 }
@@ -141,10 +154,6 @@ void MTL4Matrix::ident(uint m, const uint* rows)
 {
   zero(m, rows);
 
-  // Make sure there is no active inserter on A
-  if(ins)
-    error("MTL4 matrix must be finalised by calling apply() before setting rows to identity");
-
   mtl::matrix::inserter< mtl4_sparse_matrix > ins_A(A);  
   for(uint i = 0; i < m ; ++i)
     ins_A[ rows[i] ][ rows[i] ] << 1.0;
@@ -152,6 +161,8 @@ void MTL4Matrix::ident(uint m, const uint* rows)
 //-----------------------------------------------------------------------------
 void MTL4Matrix::zero(uint m, const uint* rows)
 {
+  assert_no_inserter();
+
   // Define cursors
   typedef mtl::traits::range_generator<mtl::tag::row, mtl4_sparse_matrix >::type c_type;
   typedef mtl::traits::range_generator<mtl::tag::nz, c_type>::type  ic_type;
@@ -187,6 +198,8 @@ void MTL4Matrix::zero(uint m, const uint* rows)
 //-----------------------------------------------------------------------------
 void MTL4Matrix::mult(const GenericVector& x_, GenericVector& Ax_, bool transposed) const
 {
+  assert_no_inserter();
+
   // FIXME: Transposed view multiply, e.g. y = trans(A)*x
   // does not work in const-declared member function.
 
@@ -199,6 +212,7 @@ void MTL4Matrix::mult(const GenericVector& x_, GenericVector& Ax_, bool transpos
 //-----------------------------------------------------------------------------
 void MTL4Matrix::getrow(uint row_idx, Array<uint>& columns, Array<real>& values) const
 {
+  assert_no_inserter();
   dolfin_assert(row_idx < this->size(0));
 
   columns.clear();
@@ -241,22 +255,26 @@ LinearAlgebraFactory& MTL4Matrix::factory() const
 //-----------------------------------------------------------------------------
 const mtl4_sparse_matrix& MTL4Matrix::mat() const
 {
+  assert_no_inserter();
   return A;
 }
 //-----------------------------------------------------------------------------
 mtl4_sparse_matrix& MTL4Matrix::mat()
 {
+  assert_no_inserter();
   return A;
 }
 //-----------------------------------------------------------------------------
 const MTL4Matrix& MTL4Matrix::operator*= (real a)
 {
+  assert_no_inserter();
   A *= a;
   return *this;
 }
 //-----------------------------------------------------------------------------
 const MTL4Matrix& MTL4Matrix::operator/= (real a)
 {
+  assert_no_inserter();
   A /= a;
   return *this;
 }
@@ -271,9 +289,7 @@ const MTL4Matrix& MTL4Matrix::operator= (const GenericMatrix& x)
 //-----------------------------------------------------------------------------
 boost::tuple<const std::size_t*, const std::size_t*, const double*, int> MTL4Matrix::data() const
 {
-  // Make sure matrix is assembled
-  if(ins)
-    error("MTL4 matrix must be finalised by calling apply() before accessing data");
+  assert_no_inserter();
 
   typedef boost::tuple<const std::size_t*, const std::size_t*, const double*, int> tuple;
   return tuple(A.address_major(), A.address_minor(), A.address_data(), A.nnz());
@@ -285,6 +301,13 @@ void MTL4Matrix::init_inserter(void)
     ins = new mtl::matrix::inserter<mtl4_sparse_matrix, mtl::update_plus<real> >(A, nnz_row);
   else
     ins = new mtl::matrix::inserter<mtl4_sparse_matrix, mtl::update_plus<real> >(A, 50);
+}
+
+//-----------------------------------------------------------------------------
+inline void MTL4Matrix::assert_no_inserter(void) const
+{
+  if(ins)
+    error("MTL4: Matrix read operation attempted while inserter active. Did you forget to apply()?");
 }
 
 //-----------------------------------------------------------------------------

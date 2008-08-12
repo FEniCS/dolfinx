@@ -48,6 +48,7 @@ void MTL4Vector::init(uint N)
 {
   if (this->size() != N) 
     x.change_dim(N);
+  x = 0.0;
 }
 //-----------------------------------------------------------------------------
 MTL4Vector* MTL4Vector::copy() const
