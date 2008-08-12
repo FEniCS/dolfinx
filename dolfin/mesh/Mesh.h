@@ -14,7 +14,7 @@
 #include <string>
 #include <dolfin/common/types.h>
 #include <dolfin/common/Variable.h>
-#include "ALEType.h"
+#include <dolfin/ale/ALEType.h>
 #include "MeshTopology.h"
 #include "MeshGeometry.h"
 #include "CellType.h"
