@@ -4,11 +4,12 @@
 // Modified by Martin Alnes, 2008
 //
 // First added:  2007-03-01
-// Last changed: 2008-08-05
+// Last changed: 2008-08-12
 
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/types.h>
 #include <dolfin/mesh/Cell.h>
+#include <dolfin/mesh/MeshData.h>
 #include <dolfin/common/Array.h>
 #include <dolfin/elements/ElementLibrary.h>
 #include <dolfin/main/MPI.h>
@@ -202,52 +203,33 @@ void DofMap::tabulate_dofs(uint* dofs, ufc::cell& ufc_cell, uint cell_index)
 //-----------------------------------------------------------------------------
 void DofMap::build(UFC& ufc)
 {
-  printf("BUILDING\n");
+  // Work in progress, to be based on Algorithm 5 in the paper
+  // http://home.simula.no/~logg/pub/papers/submitted-Log2008a.pdf
 
-  // Initialize new dof map
+  message("Building parallel dof map (in parallel)");
+
+  // Check that dof map has not been built
   if (dof_map)
-  {
-    delete [] *dof_map;
-    delete [] dof_map;
-  }
+    error("Local-to-global mapping has already been computed.");
 
-  dof_map = new uint*[dolfin_mesh.numCells()];
+  // Allocate dof map
+  dof_map = new uint * [dolfin_mesh.numCells()];
   
-  // for all processes
-  uint current_dof = 0;
-  for (uint p = 0; p < MPI::numProcesses(); ++p)
-  {
-    // for all cells
-    for (CellIterator c(dolfin_mesh); !c.end(); ++c)
-    {
-      // if cell in partition belonging to process p
-      if ((*partitions)(*c) != p)
-        continue;
- 
-      dof_map[c->index()] = new uint[local_dimension()];
-      //dolfin_debug2("cpu %d building cell %d", MPI::processNumber(), c->index());
-      ufc.update(*c);
-      ufc_dof_map->tabulate_dofs(ufc.dofs[0], ufc.mesh, ufc.cell);
+  error("Not implemented.");
 
-      for (uint i=0; i < ufc_dof_map->local_dimension(); ++i)
-      {
-        const uint dof = ufc.dofs[0][i];
-        //dolfin_debug3("ufc.dofs[%d][%d] = %d", 0, MPI::processNumber(), ufc.dofs[0][i]);
+  // Get mesh functions
+  MeshFunction<uint>* S = dolfin_mesh.data().meshFunction("bla bla");
+  MeshFunction<uint>* F = dolfin_mesh.data().meshFunction("bla bla");
+  dolfin_assert(S);
+  dolfin_assert(F);
 
-        std::map<uint, uint>::iterator it = map.find(dof);
-        if (it != map.end())
-        {
-          //dolfin_debug2("cpu %d dof %d already computed", MPI::processNumber(), it->second);
-          dof_map[c->index()][i] = it->second;
-        }
-        else
-        {
-          dof_map[c->index()][i] = current_dof;
-          map[dof] = current_dof++;
-        }
-      }
-    }  
-  }
+  // Stage 0: Compute offsets
+
+  // Stage 1: Compute mapping on shared facets
+
+  // Stage 2: Communicate mapping on shared facets
+
+  // Stage 3: Compute mapping for interior degrees of freedom
 }
 //-----------------------------------------------------------------------------
 std::map<dolfin::uint, dolfin::uint> DofMap::getMap() const
