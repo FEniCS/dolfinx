@@ -19,7 +19,8 @@
 
 namespace dolfin
 {
-  class SubSytem;
+
+  class SubSystem;
   class UFC;
 
   /// This class handles the mapping of degrees of freedom.
@@ -61,7 +62,7 @@ namespace dolfin
     
     /// Return the dimension of the global finite element function space
     unsigned int global_dimension() const
-      { return ufc_dof_map->global_dimension(); }
+    { return ufc_dof_map->global_dimension(); }
 
     /// Return the dimension of the local finite element function space
     unsigned int local_dimension() const
@@ -85,37 +86,40 @@ namespace dolfin
     // FIXME: Can this function eventually be removed?
     /// Tabulate the local-to-global mapping of dofs on a ufc cell
     void tabulate_dofs(uint* dofs, const ufc::cell& cell) const 
-      { ufc_dof_map->tabulate_dofs(dofs, ufc_mesh, cell); }
+    { ufc_dof_map->tabulate_dofs(dofs, ufc_mesh, cell); }
 
     void tabulate_coordinates(real** coordinates, const ufc::cell& ufc_cell) const
-      { ufc_dof_map->tabulate_coordinates(coordinates, ufc_cell); }
+    { ufc_dof_map->tabulate_coordinates(coordinates, ufc_cell); }
 
     /// Extract sub dof map
     DofMap* extractDofMap(const Array<uint>& sub_system, uint& offset) const;
 
     /// Return mesh associated with map
     Mesh& mesh() const
-      { return dolfin_mesh; }
+    { return dolfin_mesh; }
 
     /// Build parallel dof map
     void build(UFC& ufc);
-
+    
     /// Return renumbering (used for testing)
     std::map<uint, uint> getMap() const;
-
+    
     /// Display mapping
     void disp() const;
-
+   
   private:
+
+    /// Friends
+    friend class DofMapBuilder;
 
     /// Initialise DofMap
     void init();
-
+    
     /// Extract sub DofMap
     ufc::dof_map* extractDofMap(const ufc::dof_map& dof_map, uint& offset, const Array<uint>& sub_system) const;
 
-    // Parallel dof map
-    uint** dof_map;
+    // Precomputed dof map
+    uint* dof_map;
 
     // UFC dof map
     ufc::dof_map* ufc_dof_map;
