@@ -362,6 +362,21 @@ if env["enablePydolfin"]:
     f.write('export PYTHONPATH="'  + prefix + 'lib/python'    + pyversion + '/site-packages:$PYTHONPATH"\n')
 f.close()
 
+# Create helper file for Windows as well
+f = open('dolfin.bat', 'w')
+f.write('set PATH=%s\n' % \
+        os.pathsep.join([env.subst(env['binDir']),
+                         env.subst(env['libDir']),
+                         '%PATH%']))
+f.write('set PYTHONPATH=%s\n' % \
+        os.pathsep.join([env.subst(env['pythonModuleDir']),
+                         env.subst(env['pythonExtDir']),
+                         '%PYTHONPATH%']))
+f.write('set PKG_CONFIG_PATH=%s\n' % \
+        os.pathsep.join([env.subst(env['pkgConfDir']),
+                         '%PKG_CONFIG_PATH%']))
+f.close()
+
 def help():
     # TODO: The message below should only be printed if there were no
     # errors running scons. In SCons 0.98 we can do this by checking
@@ -416,6 +431,10 @@ this if you are using Bash-like shell is to source the
 file dolfin.conf:
 
     source dolfin.conf
+
+Windows users can simply run the file dolfin.bat:
+
+    dolfin.bat
 
 This will update the values for the environment variables
 PATH, LD_LIBRARY_PATH, PKG_CONFIG_PATH and PYTHONPATH.
