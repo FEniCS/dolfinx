@@ -31,7 +31,7 @@ int main()
   }
   
   // Move mesh
-  mesh.move(boundary);
+  mesh.move(boundary, lagrange);
 
   // Plot mesh
   plot(mesh);

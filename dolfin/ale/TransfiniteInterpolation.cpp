@@ -11,12 +11,12 @@
 #include <dolfin/mesh/MeshData.h>
 #include <dolfin/mesh/Vertex.h>
 #include <dolfin/mesh/Cell.h>
-#include "ALE.h"
+#include "TransfiniteInterpolation.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void ALE::move(Mesh& mesh, Mesh& new_boundary, ALEType method)
+void TransfiniteInterpolation::move(Mesh& mesh, Mesh& new_boundary, InterpolationType method)
 {
   // Only implemented in 2D and 3D so far
   if (mesh.topology().dim() < 2 || mesh.topology().dim() > 3 )
@@ -35,7 +35,7 @@ void ALE::move(Mesh& mesh, Mesh& new_boundary, ALEType method)
   real ** ghat = new real * [new_boundary.numVertices()];;
 
   // If hermite, create dgdn
-  if (method == hermite)
+  if (method == interpolation_hermite)
   {
     cout<<"hermite"<<endl;
     hermiteFunction(ghat, dim, new_boundary,
@@ -51,15 +51,15 @@ void ALE::move(Mesh& mesh, Mesh& new_boundary, ALEType method)
     memcpy(v->x(), new_x + v->index()*dim, dim*sizeof(real));
   
   delete [] new_x;
-  if (method==hermite)
+  if (method == interpolation_hermite)
     for (uint i=0; i<new_boundary.numVertices(); i++) 
       delete [] ghat[i];
   delete [] ghat;
 }
 //-----------------------------------------------------------------------------
-void ALE::meanValue(real* new_x, uint dim, Mesh& new_boundary,
+void TransfiniteInterpolation::meanValue(real* new_x, uint dim, Mesh& new_boundary,
                     Mesh& mesh, const MeshFunction<uint>& vertex_map,
-                    Vertex& vertex, real** ghat, ALEType method)
+                    Vertex& vertex, real** ghat, InterpolationType method)
 {
   // Check if the point is on the boundary (no need to compute new coordinate)
   for (VertexIterator v(new_boundary); !v.end(); ++v)
@@ -105,7 +105,7 @@ void ALE::meanValue(real* new_x, uint dim, Mesh& new_boundary,
   // Set new x to zero
   for (uint i = 0; i < dim; ++i) {
     new_x[i] = 0.0;
-    if (method == hermite)
+    if (method == interpolation_hermite)
       herm[i] = 0.0;
   }  
   // Iterate over all cells in boundary
@@ -119,7 +119,7 @@ void ALE::meanValue(real* new_x, uint dim, Mesh& new_boundary,
       new_p[ind] = v->x();
       uCell[ind] = u[v->index()];
       dCell[ind] = d[v->index()];
-      if (method == hermite)
+      if (method == interpolation_hermite)
 	ghatCell[ind]= ghat[v->index()];
     }
     
@@ -137,14 +137,14 @@ void ALE::meanValue(real* new_x, uint dim, Mesh& new_boundary,
     for (uint j=0; j<dim; j++) {
       for (uint i=0; i<num_vertices; i++) {
 	new_x[j] += w[i]*new_p[i][j];
-	if (method == hermite) {
+	if (method == interpolation_hermite) {
 	  herm[j] += w[i]*ghatCell[i][j];
 	}
       }
     }
   }
   // Scale by totalW
-  if (method == lagrange) 
+  if (method == interpolation_lagrange) 
   {
     for (uint i = 0; i < dim; i++)
       new_x[i] /= totalW;
@@ -174,14 +174,14 @@ void ALE::meanValue(real* new_x, uint dim, Mesh& new_boundary,
   delete [] ghatCell;
 }
 //-----------------------------------------------------------------------------
-void ALE::computeWeights2D(real* w, real** u, real* d,
+void TransfiniteInterpolation::computeWeights2D(real* w, real** u, real* d,
                            uint dim, uint num_vertices)
 {  
   for (uint i=0; i < num_vertices; i++)
     w[i] = tan(asin(u[0][0]*u[1][1] - u[0][1]*u[1][0])/2) / d[i];
 }
 //-----------------------------------------------------------------------------
-void ALE::computeWeights3D(real* w, real** u, real* d,
+void TransfiniteInterpolation::computeWeights3D(real* w, real** u, real* d,
                            uint dim, uint num_vertices)
 {
   Array<real> ell(num_vertices);
@@ -227,7 +227,7 @@ void ALE::computeWeights3D(real* w, real** u, real* d,
   } 
 }
 //-----------------------------------------------------------------------------
-void ALE::hermiteFunction(real ** ghat, uint dim, Mesh& new_boundary,
+void TransfiniteInterpolation::hermiteFunction(real ** ghat, uint dim, Mesh& new_boundary,
 			  Mesh& mesh, const MeshFunction<uint>& vertex_map, 
 			  const MeshFunction<uint>& cell_map)
 {
@@ -254,7 +254,7 @@ void ALE::hermiteFunction(real ** ghat, uint dim, Mesh& new_boundary,
   delete [] dfdn;
 }
 //-----------------------------------------------------------------------------
-void ALE::normals(real** dfdn, uint dim, Mesh& new_boundary,
+void TransfiniteInterpolation::normals(real** dfdn, uint dim, Mesh& new_boundary,
 		  Mesh& mesh, const MeshFunction<uint>& vertex_map, 
 		  const MeshFunction<uint>& cell_map){
   
@@ -295,7 +295,7 @@ void ALE::normals(real** dfdn, uint dim, Mesh& new_boundary,
   delete [] n;
 }
 //-----------------------------------------------------------------------------
-void ALE::integral(real* new_x, uint dim, Mesh& new_boundary,
+void TransfiniteInterpolation::integral(real* new_x, uint dim, Mesh& new_boundary,
                     Mesh& mesh, const MeshFunction<uint>& vertex_map,
                     Vertex& vertex)
 {
@@ -391,7 +391,7 @@ void ALE::integral(real* new_x, uint dim, Mesh& new_boundary,
   delete [] dCell;
 }
 //-----------------------------------------------------------------------------
-real ALE::dist(const real* x, const real* y, uint dim)
+real TransfiniteInterpolation::dist(const real* x, const real* y, uint dim)
 {
   real s = 0.0;
   for (uint i = 0; i < dim; i++)
@@ -399,7 +399,7 @@ real ALE::dist(const real* x, const real* y, uint dim)
   return sqrt(s);
 }
 //-----------------------------------------------------------------------------
-real ALE::length(const real* x, uint dim)
+real TransfiniteInterpolation::length(const real* x, uint dim)
 {
   real s = 0.0;
   for (uint i = 0; i < dim; i++)

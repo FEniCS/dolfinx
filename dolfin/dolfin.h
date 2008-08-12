@@ -16,6 +16,7 @@
 #include <dolfin/quadrature/dolfin_quadrature.h>
 #include <dolfin/mesh/dolfin_mesh.h>
 #include <dolfin/fem/dolfin_fem.h>
+#include <dolfin/ale/dolfin_ale.h>
 #include <dolfin/mf/dolfin_mf.h>
 #include <dolfin/nls/dolfin_nls.h>
 #include <dolfin/ode/dolfin_ode.h>

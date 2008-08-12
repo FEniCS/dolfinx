@@ -6,7 +6,7 @@
 // Modified by Garth N. Wells 2007.
 //
 // First added:  2006-05-08
-// Last changed: 2008-06-17
+// Last changed: 2008-08-11
 
 #ifndef __MESH_H
 #define __MESH_H
@@ -14,7 +14,7 @@
 #include <string>
 #include <dolfin/common/types.h>
 #include <dolfin/common/Variable.h>
-#include "ALEType.h"
+#include <dolfin/ale/ALEType.h>
 #include "MeshTopology.h"
 #include "MeshGeometry.h"
 #include "CellType.h"

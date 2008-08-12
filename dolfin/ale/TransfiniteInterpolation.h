@@ -2,15 +2,14 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-05-02
-// Last changed: 2008-05-28
+// Last changed: 2008-08-12
 
-#ifndef __ALE_H
-#define __ALE_H
+#ifndef __TRANSFINITE_INTERPOLATION_H
+#define __TRANSFINITE_INTERPOLATION_H
 
 #include <dolfin/common/types.h>
-#include "MeshFunction.h"
-#include "Facet.h"
-#include "ALEType.h"
+#include <dolfin/mesh/MeshFunction.h>
+#include <dolfin/mesh/Facet.h>
 
 namespace dolfin
 {
@@ -18,25 +17,25 @@ namespace dolfin
   class Mesh;
   class Vertex;
 
-  /// This class provides functionality useful for implementation of
-  /// ALE (Arbitrary Lagrangian-Eulerian) methods, in particular
-  /// moving the boundary vertices of a mesh and then interpolating
-  /// the new coordinates for the interior vertices accordingly.
+  /// This class implements mesh smoothing by transfinite meanvalue interpolation.
 
-  class ALE
+  class TransfiniteInterpolation
   {
   public:
 
+    /// Type of interpolation
+    enum InterpolationType {interpolation_lagrange, interpolation_hermite};
+
     /// Move coordinates of mesh according to new boundary coordinates
     static void move(Mesh& mesh, Mesh& new_boundary,
-                     ALEType type=lagrange);
+                     InterpolationType type=interpolation_lagrange);
     
   private:
     
     // Transfinite meanvalue interpolation
     static void meanValue(real* new_x, uint dim, Mesh& new_boundary,
                           Mesh& mesh, const MeshFunction<uint>& vertex_map,
-                          Vertex& vertex, real** ghat, ALEType type);
+                          Vertex& vertex, real** ghat, InterpolationType type);
 
     // Compute weights for transfinite meanvalue interpolation
     static void computeWeights2D(real* w, real** u, real* d,
