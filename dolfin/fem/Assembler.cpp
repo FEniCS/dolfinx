@@ -531,13 +531,13 @@ void Assembler::applyTraces(GenericTensor& globalA, GenericTensor& globalb,
   }
   bc.getBC(N, indicators, x, A_dof_map_set[1], A_form); 
 
-  /* // For debugging 
+  // For debugging 
   // print out BC indicator and values  
   for (uint k=0; k<N; k++) {
     std::cout <<" indicator        "<<k<<" has value "<<indicators[k]; 
     std::cout <<" corresponding bc "<<k<<" has value "<<x[k]<<std::endl; 
   }
-  */ 
+   
 
   // create local UFC data holders 
   UFC A_ufc(A_form, mesh, A_dof_map_set);
@@ -578,7 +578,6 @@ void Assembler::applyTraces(GenericTensor& globalA, GenericTensor& globalb,
     uint m = A_ufc.local_dimensions[0]; 
     uint n = A_ufc.local_dimensions[1]; 
 
-    /* 
     // For debugging 
     for (uint i=0; i<m; i++) {
       std::cout << "dof_map 0["<<i<<"]="<<A_ufc.dofs[0][i]<<std::endl; 
@@ -586,12 +585,10 @@ void Assembler::applyTraces(GenericTensor& globalA, GenericTensor& globalb,
     for (uint i=0; i<n; i++) {
       std::cout << "dof_map 1["<<i<<"]="<<A_ufc.dofs[1][i]<<std::endl; 
     }
-    */ 
 
     real* A = A_ufc.A; 
     real* b = b_ufc.A; 
 
-    /*
     // For debugging 
     std::cout <<"-------------------"<<std::endl; 
     std::cout <<"before enforcing bc "<<std::endl; 
@@ -605,7 +602,6 @@ void Assembler::applyTraces(GenericTensor& globalA, GenericTensor& globalb,
       std::cout <<"b["<<i<<"]="<<b[i]<<std::endl; 
     }
     std::cout <<"-------------------"<<std::endl; 
-    */
 
     // for each dof, check if it is associated with Dirichlet condition   
     for (uint i=0; i<n; i++) 
@@ -625,7 +621,6 @@ void Assembler::applyTraces(GenericTensor& globalA, GenericTensor& globalb,
       }
     }
 
-    /*
     // For debugging 
     std::cout <<"-------------------"<<std::endl; 
     std::cout <<"after enforcing bc "<<std::endl; 
@@ -639,7 +634,6 @@ void Assembler::applyTraces(GenericTensor& globalA, GenericTensor& globalb,
       std::cout <<"b["<<i<<"]="<<b[i]<<std::endl; 
     }
     std::cout <<"-------------------"<<std::endl; 
-    */ 
 
     // PETSc needs this
     globalA.apply(PETSC_HACK);
@@ -653,3 +647,161 @@ void Assembler::applyTraces(GenericTensor& globalA, GenericTensor& globalb,
   delete [] x; 
 }
 //-----------------------------------------------------------------------------
+void Assembler::assemble_system2(GenericTensor& A, const ufc::form& A_form, 
+                                const Array<Function*>& A_coefficients, 
+                                const DofMapSet& A_dof_map_set,
+                                GenericTensor& b, const ufc::form& b_form, 
+                                const Array<Function*>& b_coefficients, 
+                                const DofMapSet& b_dof_map_set, DirichletBC& bc, 
+                                const MeshFunction<uint>* cell_domains,
+                                const MeshFunction<uint>* exterior_facet_domains,
+                                const MeshFunction<uint>* interior_facet_domains,
+                                bool reset_tensors)
+{
+  // Note the importance of treating empty mesh functions as null pointers
+  // for the PyDOLFIN interface.
+
+  // Check arguments
+  check(A_form, A_coefficients, mesh);
+  check(b_form, b_coefficients, mesh);
+
+  // FIXME: consistency check between A_dof_map_set and b_dof_map_set 
+
+  // Create data structure for local assembly data
+  UFC A_ufc(A_form, mesh, A_dof_map_set);
+  UFC b_ufc(b_form, mesh, b_dof_map_set);
+
+  // Initialize global tensor
+  initGlobalTensor(A, A_dof_map_set, A_ufc, reset_tensors);
+  initGlobalTensor(b, b_dof_map_set, b_ufc, reset_tensors);
+
+
+  //--------------------------------get BC globally  
+  // get BC globally 
+  uint N = A_dof_map_set[1].global_dimension();  
+  //  uint M = A_dof_map_set[0].global_dimension();  
+  uint* indicators = new uint[N];
+  real* x = new real[N];
+  for (uint i = 0; i < N; i++) 
+  {
+    indicators[i] = 0; 
+    x[i] = 0.0; 
+  }
+  bc.getBC(N, indicators, x, A_dof_map_set[1], A_form); 
+  //--------------------------------done get BC globally  
+
+
+  for (CellIterator cell(mesh); !cell.end(); ++cell) {
+
+      // Update to current cell
+      A_ufc.update(*cell);
+
+      // Interpolate coefficients on cell
+      for (uint i = 0; i < A_coefficients.size(); i++)
+        A_coefficients[i]->interpolate(A_ufc.w[i], A_ufc.cell, *A_ufc.coefficient_elements[i], *cell);
+
+      // Tabulate dofs for each dimension
+      for (uint i = 0; i < A_ufc.form.rank(); i++)
+        A_dof_map_set[i].tabulate_dofs(A_ufc.dofs[i], A_ufc.cell, cell->index());
+
+
+      // Update to current cell
+      b_ufc.update(*cell);
+
+      // Interpolate coefficients on cell
+      for (uint i = 0; i < b_coefficients.size(); i++)
+        b_coefficients[i]->interpolate(b_ufc.w[i], b_ufc.cell, *b_ufc.coefficient_elements[i], *cell);
+
+      // Tabulate dofs for each dimension
+      for (uint i = 0; i < b_ufc.form.rank(); i++)
+        b_dof_map_set[i].tabulate_dofs(b_ufc.dofs[i], b_ufc.cell, cell->index());
+
+    // compute cell integrals ---------------------------------
+
+    // compute cell for A integral ---------------------------- 
+    if (A_ufc.num_cell_integrals() > 0) {
+      ufc::cell_integral* A_cell_integral =  A_cell_integral = A_ufc.cell_integrals[0];
+      if (cell_domains && cell_domains->size() > 0)
+      {
+        const uint cell_domain = (*cell_domains)(*cell);
+        if (cell_domain < A_ufc.form.num_cell_integrals()) {
+          A_cell_integral = A_ufc.cell_integrals[cell_domain];
+        } else 
+          continue;
+      }
+      // Tabulate cell tensor
+      A_cell_integral->tabulate_tensor(A_ufc.A, A_ufc.w, A_ufc.cell);
+    }
+    // compute cell A integral done ---------------------------- 
+
+    // compute cell b integral ---------------------------- 
+    if (b_ufc.num_cell_integrals() > 0) {
+      ufc::cell_integral* b_cell_integral = b_ufc.cell_integrals[0];
+      if (cell_domains && cell_domains->size() > 0) 
+      {
+        const uint cell_domain = (*cell_domains)(*cell);
+        if (cell_domain < b_ufc.form.num_cell_integrals()) {
+          b_cell_integral = b_ufc.cell_integrals[cell_domain];
+        } else 
+          continue;
+      }
+      // Tabulate cell tensor
+      b_cell_integral->tabulate_tensor(b_ufc.A, b_ufc.w, b_ufc.cell);
+    }
+    // compute cell b integral done ---------------------------- 
+    
+    // compute cell integral done ------------------------------ 
+
+    // compute exterior facet integral ------------------------- 
+
+    /*
+    if (A_ufc.num_exterior_facet_integrals() > 0) {
+
+      std::cout <<"new cell "<<std::endl; 
+      for (FacetIterator facet(*cell); !facet.end(); ++facet)
+      {
+        std::cout <<"running over all facets "<<std::endl; 
+      }
+    }
+    */
+
+
+
+
+    // enforce BC  ---------------------------------------
+    // for each dof, check if it is associated with Dirichlet condition   
+
+    uint m = A_ufc.local_dimensions[0]; 
+    uint n = A_ufc.local_dimensions[1]; 
+    real* Ae = A_ufc.A; 
+    real* be = b_ufc.A; 
+
+    for (uint i=0; i<n; i++) 
+    {  
+      uint ii = A_ufc.dofs[1][i]; 
+      if (indicators[ii]) 
+      {  
+        be[i] = x[ii]; 
+        for (uint k=0; k<n; k++) 
+          Ae[k+i*n] = 0.0; 
+        for (uint j=0; j<m; j++) 
+        {
+          be[j] -= Ae[i+j*n]*x[ii]; 
+          Ae[i+j*n] = 0.0; 
+        }
+        Ae[i+i*n] = 1.0; 
+      }
+    }
+
+    // enforce BC done  ------------------------------------------
+
+    // Add entries to global tensor
+    A.add(A_ufc.A, A_ufc.local_dimensions, A_ufc.dofs);
+    b.add(b_ufc.A, b_ufc.local_dimensions, b_ufc.dofs);
+  }
+  // -- Finalize tensors 
+  A.apply();
+  b.apply();
+}
+
+
