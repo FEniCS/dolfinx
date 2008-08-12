@@ -6,7 +6,7 @@
 // Modified by Magnus Vikstrøm, 2007
 //
 // First added:  2007-01-17
-// Last changed: 2008-05-28
+// Last changed: 2008-08-12
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Array.h>

@@ -4,7 +4,7 @@
 // Modified by Martin Alnes, 2008
 
 // First added:  2007-03-01
-// Last changed: 2008-04-10
+// Last changed: 2008-08-12
 
 #ifndef __DOF_MAP_H
 #define __DOF_MAP_H
