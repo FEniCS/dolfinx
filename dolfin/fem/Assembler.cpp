@@ -408,6 +408,8 @@ void Assembler::initGlobalTensor(GenericTensor& A, const DofMapSet& dof_map_set,
 {
   if (reset_tensor)
   {
+    //dof_map_set.build(ufc);
+
     // Build sparsity pattern
     Timer t0("Build sparsity");
     GenericSparsityPattern* sparsity_pattern = A.factory().createPattern();

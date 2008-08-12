@@ -14,31 +14,34 @@
 #include <dolfin/elements/ElementLibrary.h>
 #include <dolfin/main/MPI.h>
 #include "UFCCell.h"
-#include "DofMap.h"
 #include "SubSystem.h"
 #include "UFC.h"
+#include "DofMapBuilder.h"
+#include "DofMap.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-DofMap::DofMap(ufc::dof_map& dof_map, Mesh& mesh, bool dof_map_local) : dof_map(0), 
-               ufc_dof_map(&dof_map), ufc_dof_map_local(false), 
-               dolfin_mesh(mesh), num_cells(mesh.numCells()), 
-               partitions(0)
+DofMap::DofMap(ufc::dof_map& dof_map, Mesh& mesh, bool dof_map_local)
+  : dof_map(0), 
+    ufc_dof_map(&dof_map), ufc_dof_map_local(false), 
+    dolfin_mesh(mesh), num_cells(mesh.numCells()), 
+    partitions(0)
 {
   // Assume responsibilty for ufc_dof_map
-  if(dof_map_local) 
+  if (dof_map_local) 
     ufc_dof_map_local = ufc_dof_map;
   init();
 }
 //-----------------------------------------------------------------------------
 DofMap::DofMap(ufc::dof_map& dof_map, Mesh& mesh, MeshFunction<uint>& partitions,
-               bool dof_map_local) : dof_map(0), ufc_dof_map(&dof_map), 
-               ufc_dof_map_local(false), dolfin_mesh(mesh), num_cells(mesh.numCells()), 
-               partitions(&partitions)
+               bool dof_map_local)
+  : dof_map(0), ufc_dof_map(&dof_map), 
+    ufc_dof_map_local(false), dolfin_mesh(mesh), num_cells(mesh.numCells()), 
+    partitions(&partitions)
 {
   // Assume responsibilty for ufc_dof_map
-  if(dof_map_local) 
+  if (dof_map_local) 
     ufc_dof_map_local = ufc_dof_map;
   init();
 }
@@ -77,14 +80,8 @@ DofMap::DofMap(const std::string signature, Mesh& mesh,
 //-----------------------------------------------------------------------------
 DofMap::~DofMap()
 {
-  if (dof_map)
-  {
-    delete [] *dof_map;
-    delete [] dof_map;
-  }
-
-  if (ufc_dof_map_local)
-    delete ufc_dof_map_local;
+  delete [] dof_map;
+  delete ufc_dof_map_local;
 }
 //-----------------------------------------------------------------------------
 DofMap* DofMap::extractDofMap(const Array<uint>& sub_system, uint& offset) const
@@ -163,7 +160,7 @@ void DofMap::init()
 
   // Initialize mesh entities used by dof map
   for (uint d = 0; d <= dolfin_mesh.topology().dim(); d++)
-    if ( ufc_dof_map->needs_mesh_entities(d) )
+    if (ufc_dof_map->needs_mesh_entities(d))
       dolfin_mesh.init(d);
   
   // Initialize UFC mesh data (must be done after entities are created)
@@ -171,7 +168,7 @@ void DofMap::init()
 
   // Initialize UFC dof map
   const bool init_cells = ufc_dof_map->init_mesh(ufc_mesh);
-  if ( init_cells )
+  if (init_cells)
   {
     CellIterator cell(dolfin_mesh);
     UFCCell ufc_cell(*cell);
@@ -193,8 +190,10 @@ void DofMap::tabulate_dofs(uint* dofs, ufc::cell& ufc_cell, uint cell_index)
 
   if (dof_map)
   {
-    for (uint i = 0; i < local_dimension(); i++)
-      dofs[i] = dof_map[cell_index][i];
+    const uint n = local_dimension();
+    const uint offset = n*cell_index;
+    for (uint i = 0; i < n; i++)
+      dofs[i] = dof_map[offset + i];
     //memcpy(dofs, dof_map[cell_index], sizeof(uint)*local_dimension()); // FIXME: Maybe memcpy() can be used to speed this up? Test this!
   }
   else
@@ -203,33 +202,7 @@ void DofMap::tabulate_dofs(uint* dofs, ufc::cell& ufc_cell, uint cell_index)
 //-----------------------------------------------------------------------------
 void DofMap::build(UFC& ufc)
 {
-  // Work in progress, to be based on Algorithm 5 in the paper
-  // http://home.simula.no/~logg/pub/papers/submitted-Log2008a.pdf
-
-  message("Building parallel dof map (in parallel)");
-
-  // Check that dof map has not been built
-  if (dof_map)
-    error("Local-to-global mapping has already been computed.");
-
-  // Allocate dof map
-  dof_map = new uint * [dolfin_mesh.numCells()];
-  
-  error("Not implemented.");
-
-  // Get mesh functions
-  MeshFunction<uint>* S = dolfin_mesh.data().meshFunction("bla bla");
-  MeshFunction<uint>* F = dolfin_mesh.data().meshFunction("bla bla");
-  dolfin_assert(S);
-  dolfin_assert(F);
-
-  // Stage 0: Compute offsets
-
-  // Stage 1: Compute mapping on shared facets
-
-  // Stage 2: Communicate mapping on shared facets
-
-  // Stage 3: Compute mapping for interior degrees of freedom
+  DofMapBuilder::build(*this, ufc, dolfin_mesh);
 }
 //-----------------------------------------------------------------------------
 std::map<dolfin::uint, dolfin::uint> DofMap::getMap() const
