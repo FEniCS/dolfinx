@@ -153,7 +153,7 @@ namespace dolfin
     void coarsen(MeshFunction<bool>& cell_markers, bool coarsen_boundary = false);
 
     /// Move coordinates of mesh according to new boundary coordinates
-    void move(Mesh& boundary, ALEType method=lagrange);
+    void move(Mesh& boundary, dolfin::ALEType method=lagrange);
     
     /// Smooth mesh using Lagrangian mesh smoothing
     void smooth(uint num_smoothings=1);
