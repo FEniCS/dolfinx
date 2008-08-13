@@ -4,40 +4,44 @@
 // Modified by Martin Alnes, 2008
 //
 // First added:  2007-03-01
-// Last changed: 2008-08-05
+// Last changed: 2008-08-12
 
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/types.h>
 #include <dolfin/mesh/Cell.h>
+#include <dolfin/mesh/MeshData.h>
 #include <dolfin/common/Array.h>
 #include <dolfin/elements/ElementLibrary.h>
 #include <dolfin/main/MPI.h>
 #include "UFCCell.h"
-#include "DofMap.h"
 #include "SubSystem.h"
 #include "UFC.h"
+#include "DofMapBuilder.h"
+#include "DofMap.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-DofMap::DofMap(ufc::dof_map& dof_map, Mesh& mesh, bool dof_map_local) : dof_map(0), 
-               ufc_dof_map(&dof_map), ufc_dof_map_local(false), 
-               dolfin_mesh(mesh), num_cells(mesh.numCells()), 
-               partitions(0)
+DofMap::DofMap(ufc::dof_map& dof_map, Mesh& mesh, bool dof_map_local)
+  : dof_map(0), 
+    ufc_dof_map(&dof_map), ufc_dof_map_local(false), 
+    dolfin_mesh(mesh), num_cells(mesh.numCells()), 
+    partitions(0)
 {
   // Assume responsibilty for ufc_dof_map
-  if(dof_map_local) 
+  if (dof_map_local) 
     ufc_dof_map_local = ufc_dof_map;
   init();
 }
 //-----------------------------------------------------------------------------
 DofMap::DofMap(ufc::dof_map& dof_map, Mesh& mesh, MeshFunction<uint>& partitions,
-               bool dof_map_local) : dof_map(0), ufc_dof_map(&dof_map), 
-               ufc_dof_map_local(false), dolfin_mesh(mesh), num_cells(mesh.numCells()), 
-               partitions(&partitions)
+               bool dof_map_local)
+  : dof_map(0), ufc_dof_map(&dof_map), 
+    ufc_dof_map_local(false), dolfin_mesh(mesh), num_cells(mesh.numCells()), 
+    partitions(&partitions)
 {
   // Assume responsibilty for ufc_dof_map
-  if(dof_map_local) 
+  if (dof_map_local) 
     ufc_dof_map_local = ufc_dof_map;
   init();
 }
@@ -76,14 +80,8 @@ DofMap::DofMap(const std::string signature, Mesh& mesh,
 //-----------------------------------------------------------------------------
 DofMap::~DofMap()
 {
-  if (dof_map)
-  {
-    delete [] *dof_map;
-    delete [] dof_map;
-  }
-
-  if (ufc_dof_map_local)
-    delete ufc_dof_map_local;
+  delete [] dof_map;
+  delete ufc_dof_map_local;
 }
 //-----------------------------------------------------------------------------
 DofMap* DofMap::extractDofMap(const Array<uint>& sub_system, uint& offset) const
@@ -162,7 +160,7 @@ void DofMap::init()
 
   // Initialize mesh entities used by dof map
   for (uint d = 0; d <= dolfin_mesh.topology().dim(); d++)
-    if ( ufc_dof_map->needs_mesh_entities(d) )
+    if (ufc_dof_map->needs_mesh_entities(d))
       dolfin_mesh.init(d);
   
   // Initialize UFC mesh data (must be done after entities are created)
@@ -170,7 +168,7 @@ void DofMap::init()
 
   // Initialize UFC dof map
   const bool init_cells = ufc_dof_map->init_mesh(ufc_mesh);
-  if ( init_cells )
+  if (init_cells)
   {
     CellIterator cell(dolfin_mesh);
     UFCCell ufc_cell(*cell);
@@ -192,8 +190,10 @@ void DofMap::tabulate_dofs(uint* dofs, ufc::cell& ufc_cell, uint cell_index)
 
   if (dof_map)
   {
-    for (uint i = 0; i < local_dimension(); i++)
-      dofs[i] = dof_map[cell_index][i];
+    const uint n = local_dimension();
+    const uint offset = n*cell_index;
+    for (uint i = 0; i < n; i++)
+      dofs[i] = dof_map[offset + i];
     //memcpy(dofs, dof_map[cell_index], sizeof(uint)*local_dimension()); // FIXME: Maybe memcpy() can be used to speed this up? Test this!
   }
   else
@@ -202,52 +202,7 @@ void DofMap::tabulate_dofs(uint* dofs, ufc::cell& ufc_cell, uint cell_index)
 //-----------------------------------------------------------------------------
 void DofMap::build(UFC& ufc)
 {
-  printf("BUILDING\n");
-
-  // Initialize new dof map
-  if (dof_map)
-  {
-    delete [] *dof_map;
-    delete [] dof_map;
-  }
-
-  dof_map = new uint*[dolfin_mesh.numCells()];
-  
-  // for all processes
-  uint current_dof = 0;
-  for (uint p = 0; p < MPI::numProcesses(); ++p)
-  {
-    // for all cells
-    for (CellIterator c(dolfin_mesh); !c.end(); ++c)
-    {
-      // if cell in partition belonging to process p
-      if ((*partitions)(*c) != p)
-        continue;
- 
-      dof_map[c->index()] = new uint[local_dimension()];
-      //dolfin_debug2("cpu %d building cell %d", MPI::processNumber(), c->index());
-      ufc.update(*c);
-      ufc_dof_map->tabulate_dofs(ufc.dofs[0], ufc.mesh, ufc.cell);
-
-      for (uint i=0; i < ufc_dof_map->local_dimension(); ++i)
-      {
-        const uint dof = ufc.dofs[0][i];
-        //dolfin_debug3("ufc.dofs[%d][%d] = %d", 0, MPI::processNumber(), ufc.dofs[0][i]);
-
-        std::map<uint, uint>::iterator it = map.find(dof);
-        if (it != map.end())
-        {
-          //dolfin_debug2("cpu %d dof %d already computed", MPI::processNumber(), it->second);
-          dof_map[c->index()][i] = it->second;
-        }
-        else
-        {
-          dof_map[c->index()][i] = current_dof;
-          map[dof] = current_dof++;
-        }
-      }
-    }  
-  }
+  DofMapBuilder::build(*this, ufc, dolfin_mesh);
 }
 //-----------------------------------------------------------------------------
 std::map<dolfin::uint, dolfin::uint> DofMap::getMap() const

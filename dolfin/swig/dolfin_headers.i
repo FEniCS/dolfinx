@@ -105,9 +105,11 @@
 %include "dolfin/quadrature/RadauQuadrature.h"
 %include "dolfin/quadrature/LobattoQuadrature.h"
 
+// DOLFIN headers included from ale
+%include "dolfin/ale/ALEType.h"
+%include "dolfin/ale/ALE.h"
+
 // DOLFIN headers included from mesh
-%include "dolfin/mesh/ALE.h"
-%include "dolfin/mesh/ALEType.h"
 %include "dolfin/mesh/MeshEntity.h"
 %include "dolfin/mesh/MeshEntityIterator.h"
 %include "dolfin/mesh/MeshTopology.h"

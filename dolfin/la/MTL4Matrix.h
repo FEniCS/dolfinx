@@ -103,11 +103,7 @@ namespace dolfin
     virtual const MTL4Matrix& operator/= (real a);
 
     /// Assignment operator
-    virtual const GenericMatrix& operator= (const GenericMatrix& x)
-    { 
-      error("Not implemented."); 
-      return *this; 
-    }
+    virtual const MTL4Matrix& operator= (const GenericMatrix& x);
 
     /// Return pointers to underlying compresssed storage data
     virtual boost::tuple<const std::size_t*, const std::size_t*, const double*, int> data() const;
@@ -118,6 +114,9 @@ namespace dolfin
 
     //--- Special MTL4 functions ---
 
+    void init_inserter(void);
+    void assert_no_inserter(void) const;
+
     /// Create M x N matrix with estimate of nonzeroes per row
     MTL4Matrix(uint M, uint N, uint nz);
 
@@ -127,11 +126,7 @@ namespace dolfin
     mtl4_sparse_matrix& mat();
 
     /// Assignment operator
-    const MTL4Matrix& operator= (const MTL4Matrix& x)
-    { 
-      error("Not implemented."); 
-      return *this; 
-    }
+    //const MTL4Matrix& operator= (const MTL4Matrix& x);
 
   private:
 

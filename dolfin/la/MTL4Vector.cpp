@@ -48,12 +48,12 @@ void MTL4Vector::init(uint N)
 {
   if (this->size() != N) 
     x.change_dim(N);
+  x = 0.0;
 }
 //-----------------------------------------------------------------------------
 MTL4Vector* MTL4Vector::copy() const
 {
-  error("MTL4::copy not implemented yet");
-  return (MTL4Vector*) NULL;
+  return new MTL4Vector(*this);
 }
 //-----------------------------------------------------------------------------
 dolfin::uint MTL4Vector::size() const
@@ -137,15 +137,20 @@ mtl4_vector& MTL4Vector::vec()
   return x;
 }
 //-----------------------------------------------------------------------------
-real MTL4Vector::inner(const GenericVector& y) const
+real MTL4Vector::inner(const GenericVector& v) const
 {
-  error("MTL4::inner not implemented yet");
-  return 0.0;
+  // Developers note: The literal template arguments refers to the number 
+  // of levels of loop unrolling that is done at compile time.
+  return mtl::dot<6>(x, v.down_cast<MTL4Vector>().vec() );
 }
 //-----------------------------------------------------------------------------
-void MTL4Vector::axpy(real a, const GenericVector& y) 
+void MTL4Vector::axpy(real a, const GenericVector& v) 
 {
-  error("MTL4::axpy not implemented yet");
+  // Developers note: This is a hack. One would like:
+  // x += a*v.down_cast<MTL4Vector>().vec(); 
+  mtl4_vector vv =  v.down_cast<MTL4Vector>().vec();
+  vv *= a;
+  x += vv;
 }
 //-----------------------------------------------------------------------------
 LinearAlgebraFactory& MTL4Vector::factory() const
@@ -155,44 +160,43 @@ LinearAlgebraFactory& MTL4Vector::factory() const
 //-----------------------------------------------------------------------------
 const MTL4Vector& MTL4Vector::operator= (const GenericVector& v)
 {
-  error("MTL4::operator=(vec) not implemented yet");
+  x = v.down_cast<MTL4Vector>().vec();
   return *this; 
 }
 //-----------------------------------------------------------------------------
 const MTL4Vector& MTL4Vector::operator= (real a)
 {
-  error("MTL4::operator=(real) not implemented yet");
+  x = a;
   return *this; 
 }
 //-----------------------------------------------------------------------------
 const MTL4Vector& MTL4Vector::operator/= (real a)
 {
-  error("MTL4::operator/=(real) not implemented yet");
+  x /= a;
   return *this; 
 }
 //-----------------------------------------------------------------------------
 const MTL4Vector& MTL4Vector::operator*= (real a)
 {
-  error("MTL4::operator*= not implemented yet");
+  x *= a;
   return *this;
 }
 //-----------------------------------------------------------------------------
 const MTL4Vector& MTL4Vector::operator= (const MTL4Vector& v)
 {
-  error("MTL4::operator=(vec) not implemented yet");
+  x = v.vec();
   return *this; 
 }
-
 //-----------------------------------------------------------------------------
-const MTL4Vector& MTL4Vector::operator+= (const GenericVector& y)
+const MTL4Vector& MTL4Vector::operator+= (const GenericVector& v)
 {
-  error("MTL4::operator+= not implemented yet");
+  x += v.down_cast<MTL4Vector>().vec();
   return *this;
 }
 //-----------------------------------------------------------------------------
-const MTL4Vector& MTL4Vector::operator-= (const GenericVector& y)
+const MTL4Vector& MTL4Vector::operator-= (const GenericVector& v)
 {
-  error("MTL4::operator-= not implemented yet");
+  x -= v.down_cast<MTL4Vector>().vec();
   return *this;
 }
 //-----------------------------------------------------------------------------
