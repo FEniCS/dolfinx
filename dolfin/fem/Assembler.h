@@ -89,8 +89,9 @@ namespace dolfin
                   const MeshFunction<uint>* exterior_facet_domains,
                   const MeshFunction<uint>* interior_facet_domains,
                   bool reset_tensor = true);
-      
-    /// FIXME: Kent, please document this function
+
+    /// Assemble linear system Ax = b and enforce Dirichlet conditions.  
+    //  Notice that the Dirichlet conditions are enforced in a symmetric way.  
     void assemble_system(GenericTensor& A, const ufc::form& A_form, 
                          const Array<Function*>& A_coefficients, const DofMapSet& A_dof_map_set,
                          GenericTensor& b, const ufc::form& b_form, 
@@ -100,22 +101,6 @@ namespace dolfin
                          const MeshFunction<uint>* interior_facet_domains,
                          bool reset_tensors=true);
 
-    /// FIXME: Kent, please document this function
-    void assemble_system2(GenericTensor& A, const ufc::form& A_form, 
-                         const Array<Function*>& A_coefficients, const DofMapSet& A_dof_map_set,
-                         GenericTensor& b, const ufc::form& b_form, 
-                         const Array<Function*>& b_coefficients, const DofMapSet& b_dof_map_set,
-                         DirichletBC& bc, const MeshFunction<uint>* cell_domains, 
-                         const MeshFunction<uint>* exterior_facet_domains,
-                         const MeshFunction<uint>* interior_facet_domains,
-                         bool reset_tensors=true);
-
-    /// FIXME: Kent, please document this function
-    void applyTraces(GenericTensor& globalA, GenericTensor& globalb, 
-                     DirichletBC& bc,
-                     const DofMapSet& A_dof_map_set, const DofMapSet& b_dof_map_set,
-                     const ufc::form& A_form, const ufc::form& b_form, 
-                     const MeshFunction<uint>* domains);
 
   private:
  
