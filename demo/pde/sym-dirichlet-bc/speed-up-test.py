@@ -9,10 +9,6 @@ __license__  = "GNU LGPL Version 2.1"
 
 from dolfin import *
 
-# Create mesh and finite element
-mesh = UnitSquare(500,500)
-element = FiniteElement("Lagrange", "triangle", 1)
-
 # Source term
 class Source(Function):
     def __init__(self, element, mesh):
@@ -38,6 +34,10 @@ class DirichletBoundary(SubDomain):
     def inside(self, x, on_boundary):
         return bool(on_boundary and x[0] < DOLFIN_EPS)
 
+mesh = UnitSquare(500,500)
+element = FiniteElement("Lagrange", "triangle", 1)
+
+
 # Define variational problem
 v = TestFunction(element)
 u = TrialFunction(element)
@@ -56,22 +56,25 @@ u0 = Function(mesh, 0.0)
 boundary = DirichletBoundary()
 bc = DirichletBC(u0, mesh, boundary)
 
-# Solve PDE and plot solution
 
-import time
+backends = ["uBLAS", "PETSc", "Epetra"]
 
-t0 = time.time()
-A = assemble(a, mesh)
-b = assemble(L, mesh)
-bc.apply(A, b, a)
-t1 = time.time()
-print "time for standard assembly ", t1-t0
+for backend in backends: 
+    dolfin_set("linear algebra backend", backend)
 
+    import time
 
+    t0 = time.time()
+    A = assemble(a, mesh)
+    b = assemble(L, mesh)
+    bc.apply(A, b, a)
+    t1 = time.time()
+    print "time for standard assembly ", t1-t0, " using ", backend
 
-t0 = time.time()
-A, b = assemble_system(a, L, bc, mesh)
-t1 = time.time()
-print "time for new assembly ", t1-t0
+    t0 = time.time()
+    A, b = assemble_system(a, L, bc, mesh)
+    t1 = time.time()
+    print "time for new assembly      ", t1-t0, " using ", backend
+
 
 #summary()
