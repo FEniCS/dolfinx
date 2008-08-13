@@ -3,9 +3,10 @@
 //
 // Modified by Garth N. Wells, 2007, 2008.
 // Modified by Anders Logg, 2007.
+// Modified by Ola Skavhaug, 2008.
 //
 // First added:  2007-11-30
-// Last changed: 2008-01-07
+// Last changed: 2008-08-13
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/mesh/Mesh.h>
@@ -14,11 +15,10 @@
 #include "SubSystemsManager.h"
 
 #ifdef HAS_MPI
-  #include <mpi.h>
-#endif
+
+#include <mpi.h>
 
 //-----------------------------------------------------------------------------
-#ifdef HAS_MPI
 dolfin::uint dolfin::MPI::processNumber()
 {
   SubSystemsManager::initMPI();

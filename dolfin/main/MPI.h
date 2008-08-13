@@ -2,12 +2,15 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells, 2008.
+// Modified by Ola Skavhaug, 2008.
 //
 // First added:  2007-11-30
-// Last changed: 2008-01-07
+// Last changed: 2008-08-13
 
 #ifndef __MPI_helper_H
 #define __MPI_helper_H
+
+#include <dolfin/common/types.h>
 
 namespace dolfin
 {
