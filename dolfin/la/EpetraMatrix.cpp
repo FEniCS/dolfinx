@@ -151,12 +151,10 @@ void EpetraMatrix::zero()
   A->PutScalar(0.0);
 }
 //-----------------------------------------------------------------------------
-void EpetraMatrix::apply(FinalizeType finaltype)
+void EpetraMatrix::apply()
 {
-  if ( finaltype != PETSC_HACK) {
-    dolfin_assert(A); 
-    A->GlobalAssemble();
-  }
+  dolfin_assert(A); 
+  A->GlobalAssemble();
   //A->OptimizeStorage(); // TODO
 }
 //-----------------------------------------------------------------------------

@@ -315,15 +315,10 @@ real PETScMatrix::norm(const Norm type) const
   return value;
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::apply(FinalizeType finaltype)
+void PETScMatrix::apply()
 {
-  if (finaltype == FINALIZE or finaltype == PETSC_HACK) {
-    MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
-    MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
-  } else if ( finaltype == FLUSH ) {
-    MatAssemblyBegin(A, MAT_FLUSH_ASSEMBLY);
-    MatAssemblyEnd(A, MAT_FLUSH_ASSEMBLY);
-  }
+  MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
+  MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::zero()

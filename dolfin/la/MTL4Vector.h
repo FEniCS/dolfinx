@@ -53,7 +53,7 @@ namespace dolfin
     virtual void zero();
 
     /// Finalize assembly of tensor
-    virtual void apply(FinalizeType final=FINALIZE);
+    virtual void apply();
 
     /// Display vector
     virtual void disp(uint precision=2) const;
