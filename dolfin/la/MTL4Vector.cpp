@@ -8,10 +8,10 @@
 
 #ifdef HAS_MTL4
 
-#include <cstring>
-#include <iostream>
-#include <sstream>
-#include <iomanip>
+//#include <cstring>
+//#include <iostream>
+//#include <sstream>
+//#include <iomanip>
 
 #include <cmath>
 #include <dolfin/math/dolfin_math.h>
@@ -22,19 +22,17 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-MTL4Vector::MTL4Vector():
-  Variable("x", "a sparse vector")
+MTL4Vector::MTL4Vector(): Variable("x", "a sparse vector")
 {
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
-MTL4Vector::MTL4Vector(uint N):
-  Variable("x", "a sparse vector") 
+MTL4Vector::MTL4Vector(uint N): Variable("x", "a sparse vector") 
 {
   init(N);
 }
 //-----------------------------------------------------------------------------
-MTL4Vector::MTL4Vector(const MTL4Vector& v):
-  Variable("x", "a vector")
+MTL4Vector::MTL4Vector(const MTL4Vector& v): Variable("x", "a vector")
 {
   *this = v;
 }
@@ -150,7 +148,7 @@ void MTL4Vector::axpy(real a, const GenericVector& v)
   // x += a*v.down_cast<MTL4Vector>().vec(); 
   mtl4_vector vv =  v.down_cast<MTL4Vector>().vec();
   vv *= a;
-  x += vv;
+  x  += vv;
 }
 //-----------------------------------------------------------------------------
 LinearAlgebraFactory& MTL4Vector::factory() const
@@ -211,7 +209,7 @@ real MTL4Vector::norm(VectorNormType type) const
     case linf:
       return mtl::infinity_norm(x);
     default:
-      error("Requested vector norm type for uBlasVector unknown");
+      error("Requested vector norm type for MTL4Vector unknown");
   }
   return 0.0;
 }

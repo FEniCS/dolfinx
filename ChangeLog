@@ -1,3 +1,4 @@
+ - Improve efficiency of SparsityPattern
  - Allow a variable number of smoothings
  - Add class Table for pretty-printing of tables
  - Add experimental MTL4 linear algebra backend
