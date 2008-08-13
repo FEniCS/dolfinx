@@ -67,6 +67,9 @@ namespace dolfin
     /// Return array with number of non-zeroes per row diagonal and offdiagonal for process_number
     void numNonZeroPerRow(uint process_number, uint d_nzrow[], uint o_nzrow[]) const;
 
+    /// Return maximum number of non-zeroes for a row
+    uint numNonZeroPerRowMax() const;
+
     /// Return total number of non-zeroes
     uint numNonZero() const;
 

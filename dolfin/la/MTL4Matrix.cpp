@@ -8,10 +8,6 @@
 
 #ifdef HAS_MTL4
 
-#include <cstring>
-#include <iostream>
-#include <sstream>
-#include <iomanip>
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Array.h>
 #include "GenericSparsityPattern.h"
@@ -34,14 +30,14 @@ MTL4Matrix::MTL4Matrix(uint M, uint N): Variable("A", "MTL4 matrix"), ins(0),
   init(M, N);
 }
 //-----------------------------------------------------------------------------
-MTL4Matrix::MTL4Matrix(uint M, uint N, uint nz):
-  Variable("A", "MTL4 matrix"), ins(0), nnz_row(nz)
+MTL4Matrix::MTL4Matrix(uint M, uint N, uint nz): Variable("A", "MTL4 matrix"), 
+                                                 ins(0), nnz_row(nz)
 {
   init(M, N);
 }
 //-----------------------------------------------------------------------------
-MTL4Matrix::MTL4Matrix(const MTL4Matrix& mat):
-  Variable("A", "MTL4 matrix"), ins(0), nnz_row(0)
+MTL4Matrix::MTL4Matrix(const MTL4Matrix& mat): Variable("A", "MTL4 matrix"), 
+                                               ins(0), nnz_row(0)
 {
   assert_no_inserter();
 
