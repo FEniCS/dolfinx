@@ -14,8 +14,8 @@
 #include <boost/tuple/tuple.hpp>
 #include <dolfin/common/Variable.h>
 #include <dolfin/log/LogStream.h>
-#include "mtl4.h"
 #include "GenericMatrix.h"
+#include "mtl4.h"
 
 /*
   Developers note:

@@ -10,6 +10,7 @@
 // This demo solves the Courtemanche model for cardiac excitation.
 
 #include <dolfin.h>
+//#include "tentusscher.h"
 
 using namespace dolfin;
 
@@ -328,6 +329,7 @@ int main()
   //dolfin_set("ODE save solution", false);
 
   Courtemanche ode;
+  //tentusscher ode(500);
   ode.solve();
 
   return 0;
