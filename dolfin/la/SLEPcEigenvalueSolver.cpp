@@ -144,7 +144,7 @@ void SLEPcEigenvalueSolver::solve(const PETScMatrix& A, const PETScMatrix* B, ui
     EPSSetType(eps, eps_type);
 
   // Set algorithm type (Hermitian matrix)
-  EPSSetProblemType(eps, EPS_NHEP);
+  //EPSSetProblemType(eps, EPS_NHEP);
 
   // Set solver tolerance and max iterations
   if ( this->tolerance > 0 && maxiter > 0 ) {
