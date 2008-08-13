@@ -21,7 +21,7 @@ __license__  = "GNU LGPL Version 2.1"
 from dolfin import *
 
 # Create mesh and finite element
-mesh = UnitSquare(32, 32)
+mesh = UnitSquare(500,500)
 element = FiniteElement("Lagrange", "triangle", 1)
 
 # Source term
@@ -43,6 +43,7 @@ class Flux(Function):
         else:
             values[0] = 0.0
 
+
 # Sub domain for Dirichlet boundary condition
 class DirichletBoundary(SubDomain):
     def inside(self, x, on_boundary):
@@ -51,8 +52,12 @@ class DirichletBoundary(SubDomain):
 # Define variational problem
 v = TestFunction(element)
 u = TrialFunction(element)
-f = Source(element, mesh)
-g = Flux(element, mesh)
+#f = Source(element, mesh)
+#g = Flux(element, mesh)
+f = Function(element, mesh, 1.0)
+g = Function(element, mesh, 1.0)
+
+
 
 a = dot(grad(v), grad(u))*dx
 L = v*f*dx + v*g*ds
@@ -63,23 +68,21 @@ boundary = DirichletBoundary()
 bc = DirichletBC(u0, mesh, boundary)
 
 # Solve PDE and plot solution
-#pde = LinearPDE(a, L, mesh, bc)
-#u = pde.solve()
 
+import time
+
+t0 = time.time()
+A = assemble(a, mesh)
+b = assemble(L, mesh)
+bc.apply(A, b, a)
+t1 = time.time()
+print "time for standard assembly ", t1-t0
+
+
+
+t0 = time.time()
 A, b = assemble_system(a, L, bc, mesh)
-x = b.copy()
-x.zero()
-solve(A, x, b)
+t1 = time.time()
+print "time for new assembly ", t1-t0
 
-
-U = Function(element, mesh, x)
-plot(U)
-
-# Save solution to file
-file = File("poisson.pvd")
-file << U
-
-# Hold plot
-interactive()
-
-summary()
+#summary()
