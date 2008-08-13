@@ -2,9 +2,10 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells, 2007
+// Modified by Ola Skavhaug, 2008
 //
 // First added:  2007-01-17
-// Last changed: 2008-07-22
+// Last changed: 2008-08-13
 
 #ifndef __ASSEMBLER_H
 #define __ASSEMBLER_H
@@ -138,6 +139,9 @@ namespace dolfin
 
     // The mesh
     Mesh& mesh;
+
+    // Are we running in parallel?
+    bool parallel;
 
   };
 

@@ -1,8 +1,10 @@
 // Copyright (C) 2005-2006 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Ola Skavhaug 2008
+//
 // First added:  2005-08-31
-// Last changed: 2006-08-21
+// Last changed: 2008-08-13
 
 #ifndef __SLEPC_EIGENVALUE_SOLVER_H
 #define __SLEPC_EIGENVALUE_SOLVER_H
@@ -35,7 +37,7 @@ namespace dolfin
       lanczos,          // Lanczos
       lapack,           // LAPACK (all values, exact, only for small systems) 
       power,            // Power
-      subspace          // Subspace
+      subspace,         // Subspace
     };
 
     /// Create eigenvalue solver (use default solver type)
@@ -46,6 +48,9 @@ namespace dolfin
 
     /// Destructor
     ~SLEPcEigenvalueSolver();
+
+    /// Set solver tolerance and max iterations
+    void setTolerance(double tolerance, int maxiter);
 
     /// Compute all eigenpairs of the matrix A (solve Ax = \lambda x)
     void solve(const PETScMatrix& A);
@@ -83,6 +88,12 @@ namespace dolfin
 
     /// SLEPc solver type
     Type type;
+
+    /// Solver tolerance 
+    double tolerance;
+
+    /// Solver maximum iterations
+    int maxiter;
 
   };
 

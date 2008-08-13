@@ -2,11 +2,12 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells, 2007, 2008
-// Modified by Ola Skavhaug, 2007
+// Modified by Ola Skavhaug, 2007, 2008
 //
 // First added:  2007-01-17
-// Last changed: 2008-08-07
+// Last changed: 2008-08-13
 
+#include <dolfin/main/MPI.h>
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Array.h>
 #include <dolfin/common/Timer.h>
@@ -32,7 +33,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Assembler::Assembler(Mesh& mesh) : mesh(mesh)
+Assembler::Assembler(Mesh& mesh) : mesh(mesh), parallel(MPI::numProcesses()>0)
 {
   // Do nothing
 }

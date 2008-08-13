@@ -11,3 +11,9 @@ dolfin::Point new_normal() const{
     return self->normal();
 }
 }
+
+%extend dolfin::Parametrized {
+void dolfin_set(std::string key, std::string value) {
+    self->set(key, value);
+}
+}
