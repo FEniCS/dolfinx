@@ -168,7 +168,7 @@ dolfin::uint SparsityPattern::numNonZeroPerRowMax() const
   uint nzrow_max = 0;
   std::vector< std::vector<uint> >::const_iterator set;
   for(set = sparsity_pattern.begin(); set != sparsity_pattern.end(); ++set)
-    nzrow_max = std::max(nzrow_max, set->size());
+    nzrow_max = std::max(nzrow_max, (dolfin::uint)set->size());
   return nzrow_max;
 }
 //-----------------------------------------------------------------------------
