@@ -10,6 +10,7 @@
 // This demo solves the Courtemanche model for cardiac excitation.
 
 #include <dolfin.h>
+#include "tentusscher.h"
 
 using namespace dolfin;
 
@@ -319,7 +320,7 @@ private:
 
 int main()
 {
-  dolfin_set("ODE tolerance", 10.0);
+  dolfin_set("ODE tolerance", 1.0e-5);
   dolfin_set("ODE maximum time step", 100.0);
   dolfin_set("ODE nonlinear solver", "newton");
   dolfin_set("ODE linear solver", "iterative");
@@ -327,7 +328,8 @@ int main()
 
   //dolfin_set("ODE save solution", false);
 
-  Courtemanche ode;
+  //Courtemanche ode;
+  tentusscher ode(500);
   ode.solve();
 
   return 0;

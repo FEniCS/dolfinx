@@ -46,7 +46,7 @@ print ""
 
 # Create eigensolver of type LAPACK
 esolver = SLEPcEigenvalueSolver(SLEPcEigenvalueSolver.lapack)
-
+esolver.dolfin_set("Eigenvalues to compute", "largest")
 # Compute all eigenpairs of the generalised problem Ax = \lambda Bx
 esolver.solve(A, B)
 

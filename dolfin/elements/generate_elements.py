@@ -18,8 +18,10 @@ for i in range(len(elements)):
     
     # Don't generate all functions
     OPTIONS = FFC_OPTIONS.copy()
-    OPTIONS["no-evaluate_basis"] = True
-    OPTIONS["no-evaluate_basis_derivatives"] = True
+    print OPTIONS
+    OPTIONS["no-evaluate_basis"] = False
+    OPTIONS["no-evaluate_basis_derivatives"] = False
+    OPTIONS["Ola"] = "Stupid"
 
     # Generate code
     print "Compiling element %d out of %d..." % (i, len(elements))
