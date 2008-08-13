@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-01-07
-// Last changed: 
+// Last changed: 2008-08-13
 
 #ifndef __SUB_SYSTEMS_MANAGER_H
 #define __SUB_SYSTEMS_MANAGER_H
@@ -43,16 +43,12 @@ namespace dolfin
     /// Finalize PETSc
     static void finalizePETSc();
 
-    // Check if MPI has been initialised (returns true if MPI has been 
-    //   initialised, even if it is later finalised) 
-    static bool MPIinitialized();
-
     // Singleton instance
     static SubSystemsManager sub_systems_manager;
 
     // State variables
     bool petsc_initialized;
-    bool petsc_controls_mpi;
+    bool control_mpi;
 
   };
 
