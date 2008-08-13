@@ -135,7 +135,7 @@ void MTL4Matrix::zero()
   A *= 0;
 }
 //-----------------------------------------------------------------------------
-void MTL4Matrix::apply(FinalizeType finaltype)
+void MTL4Matrix::apply()
 {
   if(ins) 
     delete ins;

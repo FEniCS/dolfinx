@@ -105,7 +105,7 @@ void EpetraVector::zero()
   x->PutScalar(0.0);
 }
 //-----------------------------------------------------------------------------
-void EpetraVector::apply(FinalizeType finaltype)
+void EpetraVector::apply()
 {
   if (!x) error("Vector is not initialized.");
   x->GlobalAssemble();

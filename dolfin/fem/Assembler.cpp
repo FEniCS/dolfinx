@@ -3,6 +3,7 @@
 //
 // Modified by Garth N. Wells, 2007, 2008
 // Modified by Ola Skavhaug, 2007, 2008
+// Modified by Kent-Andre Mardal, 2008
 //
 // First added:  2007-01-17
 // Last changed: 2008-08-13
@@ -589,10 +590,10 @@ void Assembler::assemble_system(GenericTensor& A, const ufc::form& A_form,
       const uint D = mesh.topology().dim(); 
 
       if (A_ufc.form.num_exterior_facet_integrals() > 0) {
-        ufc::exterior_facet_integral* A_integral = A_ufc.exterior_facet_integrals[0]; 
         for (FacetIterator facet(*cell); !facet.end(); ++facet)
         {
           if (facet->numEntities(D) == 1) {
+            ufc::exterior_facet_integral* A_integral = A_ufc.exterior_facet_integrals[0]; 
             if (exterior_facet_domains && exterior_facet_domains->size() > 0)
             {
               const uint exterior_facet_domain= (*exterior_facet_domains)(*facet);
@@ -610,10 +611,10 @@ void Assembler::assemble_system(GenericTensor& A, const ufc::form& A_form,
 
 
       if (b_ufc.form.num_exterior_facet_integrals() > 0) {
-        ufc::exterior_facet_integral* b_integral = b_ufc.exterior_facet_integrals[0]; 
         for (FacetIterator facet(*cell); !facet.end(); ++facet)
         {
           if (facet->numEntities(D) == 1) {
+            ufc::exterior_facet_integral* b_integral = b_ufc.exterior_facet_integrals[0]; 
             if (exterior_facet_domains && exterior_facet_domains->size() > 0)
             {
               const uint exterior_facet_domain= (*exterior_facet_domains)(*facet);
@@ -629,11 +630,64 @@ void Assembler::assemble_system(GenericTensor& A, const ufc::form& A_form,
         }
       }
     }
+    /*
+    if (A_ufc.form.num_interior_facet_integrals() > 0) 
+    { 
+//      error("Assembler::assemble_system: interior facet integrals not implemented");
+      // FIXME might need some mesh.init( stuff ); 
+      for (FacetIterator facet(*cell); !facet.end(); ++facet)
+      {
+        if (facet->numEntities(D) == 2) {
+          ufc::interior_facet_integral* A_integral = A_ufc.interior_facet_integrals[0]; 
+          const uint interior_facet_domain= (*interior_facet_domains)(*facet);
+          if (interior_facet_domain < A_ufc.form.num_interior_facet_integrals())
+            A_integral = b_ufc.interior_facet_integrals[interior_facet_domain];
+          else
+            continue;
+        }
+        const uint local_facet = cell->index(*facet);
 
-    if (A_ufc.form.num_interior_facet_integrals() > 0 
-        or b_ufc.form.num_interior_facet_integrals() >0) 
+        // Get cells incident with facet
+        Cell cell0(mesh, facet->entities(mesh.topology().dim())[0]);
+        Cell cell1(mesh, facet->entities(mesh.topology().dim())[1]);
+
+        // Get local index of facet with respect to each cell
+        uint facet0 = cell0.index(*facet);
+        uint facet1 = cell1.index(*facet);
+
+        // Update to current pair of cells
+        A_ufc.update(cell0, cell1);
+
+        / * CODE from interior facets ... 
+    // Interpolate coefficients on cell
+    for (uint i = 0; i < coefficients.size(); i++)
     {
-      error("Assembler::assemble_system: interior facet integrals not implemented");
+      const uint offset = ufc.coefficient_elements[i]->space_dimension();
+      coefficients[i]->interpolate(ufc.macro_w[i], ufc.cell0, *ufc.coefficient_elements[i], cell0, facet0);
+      coefficients[i]->interpolate(ufc.macro_w[i] + offset, ufc.cell1, *ufc.coefficient_elements[i], cell1, facet1);
+    }
+
+    // Tabulate dofs for each dimension on macro element
+    for (uint i = 0; i < ufc.form.rank(); i++)
+    {
+      const uint offset = ufc.local_dimensions[i];
+      dof_map_set[i].tabulate_dofs(ufc.macro_dofs[i],          ufc.cell0, cell0.index());
+      dof_map_set[i].tabulate_dofs(ufc.macro_dofs[i] + offset, ufc.cell1, cell1.index());
+    }
+
+    // Tabulate exterior interior facet tensor on macro element
+    integral->tabulate_tensor(ufc.macro_A, ufc.macro_w, ufc.cell0, ufc.cell1, facet0, facet1);
+
+    // Add entries to global tensor
+    A.add(ufc.macro_A, ufc.macro_local_dimensions, ufc.macro_dofs);
+    * /
+
+      }
+    }
+    */
+    if (b_ufc.form.num_interior_facet_integrals() >0) 
+    {
+//      error("Assembler::assemble_system: interior facet integrals not implemented");
     }
 
 

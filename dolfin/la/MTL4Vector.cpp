@@ -66,7 +66,7 @@ void MTL4Vector::zero()
   x = 0.0;
 }
 //-----------------------------------------------------------------------------
-void MTL4Vector::apply(FinalizeType finaltype)
+void MTL4Vector::apply()
 {
   // Do nothing
 }
