@@ -1,8 +1,10 @@
 // Copyright (C) 2005-2006 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Ola Skavhaug 2008
+//
 // First added:  2005-08-31
-// Last changed: 2006-09-21
+// Last changed: 2008-08-13
 
 #ifdef HAS_SLEPC
 
@@ -14,7 +16,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-SLEPcEigenvalueSolver::SLEPcEigenvalueSolver(): eps(0), type(default_solver)
+SLEPcEigenvalueSolver::SLEPcEigenvalueSolver(): eps(0), type(default_solver), tolerance(-1), maxiter(-1)
 {
   // Set up solver environment
   EPSCreate(PETSC_COMM_SELF, &eps);
@@ -95,6 +97,12 @@ void SLEPcEigenvalueSolver::getEigenpair(real& xr, real& xc, PETScVector& r, PET
     error("Requested eigenvalue/vector has not been computed");
 }
 //-----------------------------------------------------------------------------
+void SLEPcEigenvalueSolver::setTolerance(double tolerance, int maxiter)
+{
+  this->tolerance = tolerance;
+  this->maxiter = maxiter;
+}
+//-----------------------------------------------------------------------------
 void SLEPcEigenvalueSolver::solve(const PETScMatrix& A, const PETScMatrix* B, uint n)
 {
   const std::string eigenvalues_compute = get("Eigenvalues to compute");
@@ -117,21 +125,31 @@ void SLEPcEigenvalueSolver::solve(const PETScMatrix& A, const PETScMatrix* B, ui
   // Compute n largest eigenpairs
   if (eigenvalues_compute == "largest")
     EPSSetWhichEigenpairs(eps, EPS_LARGEST_MAGNITUDE);
-
+  else if (eigenvalues_compute == "smallest")
+    EPSSetWhichEigenpairs(eps, EPS_SMALLEST_MAGNITUDE);
+  else if (eigenvalues_compute == "largest real")
+    EPSSetWhichEigenpairs(eps, EPS_LARGEST_REAL);
+  else if (eigenvalues_compute == "smallest real")
+    EPSSetWhichEigenpairs(eps, EPS_SMALLEST_REAL);
 // FIXME: Need to add some test here as most algorithms only compute largest eigenvalues
 //        Asking for smallest leads to a PETSc error.
 //  else if (eigenvalues_compute == "smallest")
 //    EPSSetWhichEigenpairs(eps, EPS_SMALLEST_MAGNITUDE);
-//  else
-//    error("Invalid choice if which eigenvalues to compute (smallest/largest)");
+  else
+    error("Invalid choice if which eigenvalues to compute (smallest/largest)");
   
   // Set algorithm type
   EPSType eps_type = getType(type);
   if(strcmp(eps_type, "default") != 0)
     EPSSetType(eps, eps_type);
 
-//  // Set algorithm type (Hermitian matrix)
-//  EPSSetProblemType(eps, EPS_HEP);
+  // Set algorithm type (Hermitian matrix)
+  EPSSetProblemType(eps, EPS_NHEP);
+
+  // Set solver tolerance and max iterations
+  if ( this->tolerance > 0 && maxiter > 0 ) {
+    EPSSetTolerances(eps, this->tolerance, this->maxiter);
+  }
 
   // Set options
   EPSSetFromOptions(eps);
