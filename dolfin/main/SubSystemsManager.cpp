@@ -49,7 +49,6 @@ SubSystemsManager::~SubSystemsManager()
 void SubSystemsManager::initMPI()
 {
 #ifdef HAS_MPI
-  std::cout << "MPI status in initMPI() " << MPI::Is_initialized() << std::endl;
   if( MPI::Is_initialized() )
     return;
 
@@ -86,8 +85,6 @@ void SubSystemsManager::initPETSc(int argc, char* argv[], bool cmd_line_args)
 #ifdef HAS_PETSC
   if ( sub_systems_manager.petsc_initialized )
     return;
-
-  std::cout << "MPI status in initPETSc() " << MPI::Is_initialized() << std::endl;
 
   // Get status of MPI before PETSc initialisation
   const bool mpi_init_status = MPI::Is_initialized();
