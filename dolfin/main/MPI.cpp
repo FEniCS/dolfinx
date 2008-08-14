@@ -6,11 +6,8 @@
 // Modified by Ola Skavhaug, 2008.
 //
 // First added:  2007-11-30
-// Last changed: 2008-08-13
+// Last changed: 2008-08-14
 
-#include <dolfin/log/dolfin_log.h>
-#include <dolfin/mesh/Mesh.h>
-#include <dolfin/mesh/MeshFunction.h>
 #include "MPI.h"
 #include "SubSystemsManager.h"
 
@@ -18,25 +15,19 @@
 
 #include <mpi.h>
 
+using MPI::COMM_WORLD;
+
 //-----------------------------------------------------------------------------
 dolfin::uint dolfin::MPI::processNumber()
 {
   SubSystemsManager::initMPI();
-
-  int this_process;
-  MPI_Comm_rank(MPI_COMM_WORLD, &this_process);
-
-  return static_cast<uint>(this_process);
+  return static_cast<uint>(COMM_WORLD.Get_rank());
 }
 //-----------------------------------------------------------------------------
 dolfin::uint dolfin::MPI::numProcesses()
 {
   SubSystemsManager::initMPI();
-
-  int num_processes;
-  MPI_Comm_size(MPI_COMM_WORLD, &num_processes);
-
-  return static_cast<uint>(num_processes);
+  return static_cast<uint>(COMM_WORLD.Get_size());
 }
 //-----------------------------------------------------------------------------
 bool dolfin::MPI::broadcast()
