@@ -112,8 +112,8 @@ namespace dolfin
     /// Return graph type
     inline Type type() const { return _type; }
     
-	 /// Partition a graph into num_part partitions
-	 void partition(uint num_part, uint* vtx_part);
+    /// Partition a graph into num_part partitions
+    void partition(uint num_part, uint* vtx_part);
 
     /// Return graph type as a string
     std::string typestr();
