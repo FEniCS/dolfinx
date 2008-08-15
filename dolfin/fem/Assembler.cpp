@@ -742,6 +742,8 @@ void Assembler::assemble_system(GenericTensor& A, const ufc::form& A_form,
 
   delete [] Ae;
   delete [] be;
+  delete [] x;
+  delete [] indicators;
 }
 
 
