@@ -1,8 +1,10 @@
 // Copyright (C) 2008 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Dag Lindbo, 2008
+//
 // First added:  2008-05-16
-// Last changed: 2008-07-21
+// Last changed: 2008-08-17
 
 #ifdef HAS_MTL4
 
@@ -18,15 +20,11 @@ using namespace itl;
 using namespace mtl;
 
 //-----------------------------------------------------------------------------
-ITLKrylovSolver::ITLKrylovSolver(SolverType method_, PreconditionerType pc_)
+ITLKrylovSolver::ITLKrylovSolver(SolverType method_, PreconditionerType pc_):
+  method(method_), pc_type(pc_)
 { 
   // Do nothing
 }
-//-----------------------------------------------------------------------------
-//ITLKrylovSolver::ITLKrylovSolver(SolverType method_, EpetraPreconditioner& prec_)
-//{ 
-//  // Do nothing
-//}
 //-----------------------------------------------------------------------------
 ITLKrylovSolver::~ITLKrylovSolver() 
 {
@@ -35,22 +33,64 @@ ITLKrylovSolver::~ITLKrylovSolver()
 //-----------------------------------------------------------------------------
 dolfin::uint ITLKrylovSolver::solve(const MTL4Matrix& A, MTL4Vector& x, const MTL4Vector& b)
 {
-  warning("ITLKrylovSolver is experimental.");
-
-  // Create preconditioner
-  itl::pc::ilu_0<mtl4_sparse_matrix> P(A.mat());
+  // Fall back in default method if unknown
+  if(method != cg && method != bicgstab)
+  {
+    warning("Requested ITL Krylov method unknown. Using BiCGStab.");
+    method = bicgstab;
+  }
+  // Fall back in default precond if unknown
+  if(pc_type != ilu && pc_type != icc && pc_type != none)
+  {
+    warning("Requested ITL preconditioner unknown. Using ilu.");
+    pc_type = ilu;
+  }
 
   // Set convergence criteria
-  itl::noisy_iteration<double> iter(b.vec(), 500, 1.e-6);
+  itl::basic_iteration<double> iter(b.vec(), 500, 1.e-6);
 
   // Solve
   x.init(b.size());
   x.vec() = 0.0;
-  int iterations = itl::bicgstab(A.mat(), x.vec(), b.vec(), P, iter);
-  cout << "Testing " << iterations << endl;
-  //return iterations; 
+  int errno = 0;
 
-  return 0; 
+  // Developers note: the following code is not very elegant.
+  // The problem is that ITL are all templates, but DOLFIN selects 
+  // solvers at runtime. All solvers and preconditioners are instantiated.
+  if(pc_type == ilu)
+  {
+    itl::pc::ilu_0<mtl4_sparse_matrix> P(A.mat());
+    if(method == cg)
+      errno = itl::cg(A.mat(), x.vec(), b.vec(), P, iter);
+    else if(method == bicgstab)
+      errno = itl::bicgstab(A.mat(), x.vec(), b.vec(), P, iter);
+  }
+  else if(pc_type == icc)
+  {
+    itl::pc::ic_0<mtl4_sparse_matrix> P(A.mat());
+    if(method == cg)
+      errno = itl::cg(A.mat(), x.vec(), b.vec(), P, iter);
+    else if(method == bicgstab)
+      errno = itl::bicgstab(A.mat(), x.vec(), b.vec(), P, iter);
+  }
+  else if(pc_type == none)
+  {
+    itl::pc::identity<mtl4_sparse_matrix> P(A.mat());
+    if(method == cg)
+      errno = itl::cg(A.mat(), x.vec(), b.vec(), P, iter);
+    else if(method == bicgstab)
+      errno = itl::bicgstab(A.mat(), x.vec(), b.vec(), P, iter);
+  }
+  
+  // Check exit condition
+  if(errno == 0)
+    message("ITLSolver (%d, %d) converged in %d iterations. Resid=%8.2e",
+	    method, pc_type, iter.iterations(), iter.resid());
+  else
+    error("ITLSolver Fatal: (%d, %d) failed to converge!\n\t%d iterations,"
+	  " Resid=%8.2e", method, pc_type, iter.iterations(), iter.resid());
+  
+  return errno; 
 }
 //-----------------------------------------------------------------------------
 void ITLKrylovSolver::disp() const 
