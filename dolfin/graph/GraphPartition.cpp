@@ -1,9 +1,12 @@
 // Copyright (C) 2007 Magnus Vikstrom.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Garth N. Wells, 2008.
+//
 // First added:  2007-04-03
-// Last changed: 2007-05-31
+// Last changed: 2008-08-17
 
+#include <dolfin/log/log.h>
 #include "GraphPartition.h"
 #include <iostream>
 
@@ -27,15 +30,24 @@ void GraphPartition::partition(Graph& graph, uint num_part, uint* vtx_part)
   SCOTCH_Graph grafdat;
   SCOTCH_Strat strat;
 
-  if (SCOTCH_graphInit (&grafdat) != 0) {
+  if (SCOTCH_graphInit(&grafdat) != 0) 
+  {
+    // FIXME: Why is do we have a control statement here?
   }
-  if (SCOTCH_graphBuild (&grafdat, 0, static_cast<int>(graph.numVertices()), reinterpret_cast<int*>(graph.offsets()), NULL, NULL, NULL, static_cast<int>(graph.numArches()), reinterpret_cast<int*>(graph.connectivity()), NULL) != 0) {
+  if (SCOTCH_graphBuild(&grafdat, 0, static_cast<int>(graph.numVertices()), 
+                        reinterpret_cast<int*>(graph.offsets()), NULL, NULL, 
+                        NULL, static_cast<int>(graph.numArches()), 
+                        reinterpret_cast<int*>(graph.connectivity()), NULL) != 0) 
+  {
+    // FIXME: Why is do we have a control statement here?
   }
 
   SCOTCH_stratInit(&strat);
 
   // Only some graphs successfully partitioned, why?
-  if (SCOTCH_graphPart (&grafdat, num_part, &strat, reinterpret_cast<int*>(vtx_part)) != 0) {
+  if (SCOTCH_graphPart (&grafdat, num_part, &strat, reinterpret_cast<int*>(vtx_part)) != 0) 
+  {
+    // FIXME: Why is do we have a control statement here?
   }
 
   SCOTCH_stratExit (&strat);
@@ -141,9 +153,7 @@ void GraphPartition::disp(Graph& graph, uint num_part, uint* vtx_part)
   std::cout << "Partition vector" << std::endl;
 
   for(uint i = 0; i < graph.numVertices(); ++i)
-  {
     std::cout << vtx_part[i] << " ";
-  }
   std::cout << std::endl;
 }
 //-----------------------------------------------------------------------------

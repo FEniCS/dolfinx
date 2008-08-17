@@ -1,18 +1,21 @@
 // Copyright (C) 2007 Magnus Vikstrom.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Garth N. Wells, 2008.
+//
 // First added:  2007-02-12
-// Last changed: 2007-03-21
+// Last changed: 2008-08-17
 
 #ifndef __GRAPH_H
 #define __GRAPH_H
 
 #include <dolfin/common/types.h>
 #include <dolfin/common/Variable.h>
-#include <dolfin/mesh/Mesh.h>
 
 namespace dolfin
 {
+  class LogStream;
+
   /// A Graph consists of a set of vertices and edges.
   ///
   /// The graph is stored in Compressed Sparse Row (CSR) format. This format
@@ -48,6 +51,7 @@ namespace dolfin
   class Graph : public Variable
   {
     friend class GraphEditor;
+    friend class GraphBuilder;
     
   public:
     
@@ -67,20 +71,11 @@ namespace dolfin
     /// Create graph from given file
     Graph(std::string filename);
     
-    /// Create graph from mesh
-    Graph(Mesh& mesh);
-
-    /// Create graph from mesh
-    Graph(Mesh& mesh, Representation type);
-    
-    /// Create graph from mesh
-    Graph(Mesh& mesh, std::string type);
-
     /// Destructor
     ~Graph();
     
-    /// Assignment
-    //const Graph& operator=(const Graph& graph);
+    /// Initialise graph data structures
+    void init(uint _num_vertices, uint _num_edges, uint _num_arches);
 
     /// Return number of vertices
     inline uint numVertices() const { return num_vertices; }
@@ -142,9 +137,6 @@ namespace dolfin
     Type _type;
 
     Representation _representation;
-
-    void createNodal(Mesh& mesh);
-    void createDual(Mesh& mesh);
   };
   
 }
