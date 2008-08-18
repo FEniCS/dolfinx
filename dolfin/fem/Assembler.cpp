@@ -630,64 +630,75 @@ void Assembler::assemble_system(GenericTensor& A, const ufc::form& A_form,
         }
       }
     }
-    /*
     if (A_ufc.form.num_interior_facet_integrals() > 0) 
     { 
-//      error("Assembler::assemble_system: interior facet integrals not implemented");
-      // FIXME might need some mesh.init( stuff ); 
+      //      error("Assembler::assemble_system: interior facet integrals not implemented");
+
+      // Compute facets and facet - cell connectivity if not already computed
+      mesh.init(mesh.topology().dim() - 1);
+      mesh.init(mesh.topology().dim() - 1, mesh.topology().dim());
+      mesh.order();
+
+      const uint D = mesh.topology().dim(); 
+
       for (FacetIterator facet(*cell); !facet.end(); ++facet)
       {
         if (facet->numEntities(D) == 2) {
           ufc::interior_facet_integral* A_integral = A_ufc.interior_facet_integrals[0]; 
-          const uint interior_facet_domain= (*interior_facet_domains)(*facet);
-          if (interior_facet_domain < A_ufc.form.num_interior_facet_integrals())
-            A_integral = b_ufc.interior_facet_integrals[interior_facet_domain];
-          else
-            continue;
+
+          // Get integral for sub domain (if any)
+          if (interior_facet_domains && interior_facet_domains->size() > 0)
+          {
+            const uint domain = (*interior_facet_domains)(*facet);
+            if (domain < A_ufc.form.num_interior_facet_integrals())
+              A_integral = A_ufc.interior_facet_integrals[domain];
+            else
+              continue;
+          }
+
+          // Get cells incident with facet
+          Cell cell0(mesh, facet->entities(mesh.topology().dim())[0]);
+          Cell cell1(mesh, facet->entities(mesh.topology().dim())[1]);
+
+          // Get local index of facet with respect to each cell
+          uint facet0 = cell0.index(*facet);
+          uint facet1 = cell1.index(*facet);
+
+          // Update to current pair of cells
+          A_ufc.update(cell0, cell1);
+
+          // Interpolate coefficients on cell
+          for (uint i = 0; i < A_coefficients.size(); i++)
+          {
+            const uint offset = A_ufc.coefficient_elements[i]->space_dimension();
+            A_coefficients[i]->interpolate(A_ufc.macro_w[i],          A_ufc.cell0, *A_ufc.coefficient_elements[i], cell0, facet0);
+            A_coefficients[i]->interpolate(A_ufc.macro_w[i] + offset, A_ufc.cell1, *A_ufc.coefficient_elements[i], cell1, facet1);
+          }
+
+          // Tabulate dofs for each dimension on macro element
+          for (uint i = 0; i < A_ufc.form.rank(); i++)
+          {
+            const uint offset = A_ufc.local_dimensions[i];
+            A_dof_map_set[i].tabulate_dofs(A_ufc.macro_dofs[i],          A_ufc.cell0, cell0.index());
+            A_dof_map_set[i].tabulate_dofs(A_ufc.macro_dofs[i] + offset, A_ufc.cell1, cell1.index());
+          }
+
+          // Tabulate exterior interior facet tensor on macro element
+          A_integral->tabulate_tensor(A_ufc.macro_A, A_ufc.macro_w, A_ufc.cell0, A_ufc.cell1, facet0, facet1);
+
+          uint offset = 0; 
+          if (cell1.index() == cell->index()) {
+            offset = A_num_entries;  
+          }
+          for (uint i=0; i<A_num_entries; i++) Ae[i] += A_ufc.macro_A[i + offset]; 
         }
-        const uint local_facet = cell->index(*facet);
-
-        // Get cells incident with facet
-        Cell cell0(mesh, facet->entities(mesh.topology().dim())[0]);
-        Cell cell1(mesh, facet->entities(mesh.topology().dim())[1]);
-
-        // Get local index of facet with respect to each cell
-        uint facet0 = cell0.index(*facet);
-        uint facet1 = cell1.index(*facet);
-
-        // Update to current pair of cells
-        A_ufc.update(cell0, cell1);
-
-        / * CODE from interior facets ... 
-    // Interpolate coefficients on cell
-    for (uint i = 0; i < coefficients.size(); i++)
-    {
-      const uint offset = ufc.coefficient_elements[i]->space_dimension();
-      coefficients[i]->interpolate(ufc.macro_w[i], ufc.cell0, *ufc.coefficient_elements[i], cell0, facet0);
-      coefficients[i]->interpolate(ufc.macro_w[i] + offset, ufc.cell1, *ufc.coefficient_elements[i], cell1, facet1);
-    }
-
-    // Tabulate dofs for each dimension on macro element
-    for (uint i = 0; i < ufc.form.rank(); i++)
-    {
-      const uint offset = ufc.local_dimensions[i];
-      dof_map_set[i].tabulate_dofs(ufc.macro_dofs[i],          ufc.cell0, cell0.index());
-      dof_map_set[i].tabulate_dofs(ufc.macro_dofs[i] + offset, ufc.cell1, cell1.index());
-    }
-
-    // Tabulate exterior interior facet tensor on macro element
-    integral->tabulate_tensor(ufc.macro_A, ufc.macro_w, ufc.cell0, ufc.cell1, facet0, facet1);
-
-    // Add entries to global tensor
-    A.add(ufc.macro_A, ufc.macro_local_dimensions, ufc.macro_dofs);
-    * /
-
       }
+      // back to normal 
+//      A_ufc.update(*cell);
     }
-    */
     if (b_ufc.form.num_interior_facet_integrals() >0) 
     {
-//      error("Assembler::assemble_system: interior facet integrals not implemented");
+      error("Assembler::assemble_system: interior facet integrals not implemented");
     }
 
 
