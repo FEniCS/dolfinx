@@ -27,10 +27,7 @@ void MeshPartition::partition(Mesh& mesh, MeshFunction<uint>& partitions,
   partitions.init(mesh, mesh.topology().dim());
 
   // Create graph
-  Graph graph;
-
-  // Build graph
-  GraphBuilder::build(graph, mesh);
+  Graph graph(mesh, Graph::dual);
 
   // Partition graph
   GraphPartition::partition(graph, num_partitions, partitions.values());
