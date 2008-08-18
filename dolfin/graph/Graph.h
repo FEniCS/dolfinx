@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2008.
 //
 // First added:  2007-02-12
-// Last changed: 2008-08-17
+// Last changed: 2008-08-18
 
 #ifndef __GRAPH_H
 #define __GRAPH_H
@@ -15,6 +15,7 @@
 namespace dolfin
 {
   class LogStream;
+  class Mesh;
 
   /// A Graph consists of a set of vertices and edges.
   ///
@@ -39,8 +40,8 @@ namespace dolfin
   ///
   /// Stored as:
   /// 
-  /// edges = [123030312]
-  /// vertices = [03579]
+  /// edges    = [1 2 3 0 3 0 3 0 1 2]
+  /// vertices = [0 3 5 7 10]
   ///
   /// Note that the last integer of vertices does not represent a vertex, but
   /// is there to support edge iteration as described above.
@@ -65,6 +66,9 @@ namespace dolfin
     /// Create empty graph
     Graph();
     
+    /// Create graph of mesh 
+    Graph(Mesh& mesh, Graph::Representation rep = dual);
+
     /// Copy constructor
     Graph(const Graph& graph);
     

@@ -15,25 +15,34 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 void GraphBuilder::build(Graph& graph, Mesh& mesh, Graph::Representation rep)
 {
+  // Clear graph
   graph.clear();
+
+  // Set type
+  graph._type = Graph::directed;
+
+  // Build
   if(rep == Graph::dual)
-    createDual(graph, mesh);
+    createMeshDual(graph, mesh);
   else if(rep == Graph::nodal)
-    createNodal(graph, mesh);
+    createMeshNodal(graph, mesh);
   else
     error("Graph type unknown");
 }
 //-----------------------------------------------------------------------------
-void GraphBuilder::createNodal(Graph& graph, Mesh& mesh)
+void GraphBuilder::createMeshNodal(Graph& graph, Mesh& mesh)
 {
+  error("Partitioning of nodal mesh graphs probably doesn't work. Please test and fix.");
+
   // Initialise mesh
-  mesh.init();
+  mesh.init(0, 0);
 
   // Get number of vertices, edges and arches
-  uint num_vertices = mesh.numVertices();
-  uint num_edges    = mesh.numEdges();
-  uint num_arches   = num_edges * 2;
+  uint num_vertices = mesh.init(0);
+  uint num_edges    = mesh.init(1);
+  uint num_arches   = 2*num_edges;
 
+  // Initialise graph
   graph.init(num_vertices, num_edges, num_arches);
 
   // Create nodal graph. Iterate over edges from all vertices
@@ -42,10 +51,8 @@ void GraphBuilder::createNodal(Graph& graph, Mesh& mesh)
   {
     graph.vertices[i++] = j;
     uint* entities = vertex->entities(0);
-    for (uint k=0; k<vertex->numEntities(0); k++)
-    {
+    for (uint k = 0; k < vertex->numEntities(0); k++)
       graph.edges[j++] = entities[k];
-    }
 
     // Replace with this?
     /*
@@ -57,14 +64,13 @@ void GraphBuilder::createNodal(Graph& graph, Mesh& mesh)
     }
     */
   }
-
 }
 //-----------------------------------------------------------------------------
-void GraphBuilder::createDual(Graph& graph, Mesh& mesh)
+void GraphBuilder::createMeshDual(Graph& graph, Mesh& mesh)
 {
   // Initialise mesh
   uint D = mesh.topology().dim();
-  mesh.init(D,D);
+  mesh.init(D, D);
   MeshConnectivity& connectivity = mesh.topology()(D,D);
 
   // Get number of vertices, edges and arches

@@ -7,8 +7,8 @@
 // Last changed: 2008-08-17
 
 #include <dolfin/log/log.h>
+#include <dolfin/log/LogStream.h>
 #include "GraphPartition.h"
-#include <iostream>
 
 #ifdef HAS_SCOTCH
 extern "C"
@@ -32,14 +32,14 @@ void GraphPartition::partition(Graph& graph, uint num_part, uint* vtx_part)
 
   if (SCOTCH_graphInit(&grafdat) != 0) 
   {
-    // FIXME: Why is do we have a control statement here?
+    // FIXME: Why do we have a control statement here?
   }
   if (SCOTCH_graphBuild(&grafdat, 0, static_cast<int>(graph.numVertices()), 
                         reinterpret_cast<int*>(graph.offsets()), NULL, NULL, 
                         NULL, static_cast<int>(graph.numArches()), 
                         reinterpret_cast<int*>(graph.connectivity()), NULL) != 0) 
   {
-    // FIXME: Why is do we have a control statement here?
+    // FIXME: Why do we have a control statement here?
   }
 
   SCOTCH_stratInit(&strat);
@@ -47,7 +47,7 @@ void GraphPartition::partition(Graph& graph, uint num_part, uint* vtx_part)
   // Only some graphs successfully partitioned, why?
   if (SCOTCH_graphPart (&grafdat, num_part, &strat, reinterpret_cast<int*>(vtx_part)) != 0) 
   {
-    // FIXME: Why is do we have a control statement here?
+    // FIXME: Why do we have a control statement here?
   }
 
   SCOTCH_stratExit (&strat);
@@ -60,10 +60,10 @@ void GraphPartition::partition(Graph& graph, uint num_part, uint* vtx_part)
 //-----------------------------------------------------------------------------
 void GraphPartition::check(Graph& graph, uint num_part, uint* vtx_part)
 {
-  std::cout << "Checking that all vertices are partitioned" << std::endl;
+  cout << "Checking that all vertices are partitioned" << endl;
 
   // Check that all vertices are partitioned
-  for(uint i=0; i<graph.numVertices(); ++i)
+  for(uint i=0; i < graph.numVertices(); ++i)
   {
     if(vtx_part[i] == num_part)
       error("Vertex %d not partitioned", i);
@@ -100,7 +100,7 @@ void GraphPartition::check(Graph& graph, uint num_part, uint* vtx_part)
 //-----------------------------------------------------------------------------
 void GraphPartition::eval(Graph& graph, uint num_part, uint* vtx_part)
 {
-  std::cout << "Evaluating partition quality" << std::endl;
+  cout << "Evaluating partition quality" << endl;
 
   // Number of vertices per partition
   uint* part_sizes = new uint[num_part];
@@ -116,11 +116,11 @@ void GraphPartition::eval(Graph& graph, uint num_part, uint* vtx_part)
   }
 
   // Print number of vertices per partition
-  std::cout << "partition\tnum_vtx" << std::endl;
+  cout << "partition\tnum_vtx" << endl;
   for(uint i=0; i<num_part; ++i)
-    std::cout << i << "\t\t" << part_sizes[i] << std::endl;
+    cout << i << "\t\t" << part_sizes[i] << endl;
 
-  std::cout << "edge-cut: " << edgecut(graph, num_part, vtx_part) << std::endl;
+  cout << "edge-cut: " << edgecut(graph, num_part, vtx_part) << endl;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint GraphPartition::edgecut(Graph& graph, uint num_part, uint* vtx_part)
@@ -149,11 +149,11 @@ dolfin::uint GraphPartition::edgecut(Graph& graph, uint num_part, uint* vtx_part
 //-----------------------------------------------------------------------------
 void GraphPartition::disp(Graph& graph, uint num_part, uint* vtx_part)
 {
-  std::cout << "Number of partitions: " << num_part << std::endl;
-  std::cout << "Partition vector" << std::endl;
+  cout << "Number of partitions: " << num_part << endl;
+  cout << "Partition vector" << endl;
 
   for(uint i = 0; i < graph.numVertices(); ++i)
-    std::cout << vtx_part[i] << " ";
-  std::cout << std::endl;
+    cout << vtx_part[i] << " ";
+  cout << endl;
 }
 //-----------------------------------------------------------------------------

@@ -7,6 +7,8 @@
 #ifndef __GRAPH_BUILDER_H
 #define __GRAPH_BUILDER_H
 
+#include "Graph.h"
+
 namespace dolfin
 {
 
@@ -27,9 +29,9 @@ namespace dolfin
     
   private:
     
-    static void createNodal(Graph& graph, Mesh& mesh);
+    static void createMeshNodal(Graph& graph, Mesh& mesh);
 
-    static void createDual(Graph& graph, Mesh& mesh);
+    static void createMeshDual(Graph& graph, Mesh& mesh);
   };
   
 }

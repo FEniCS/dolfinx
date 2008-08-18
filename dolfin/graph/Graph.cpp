@@ -5,11 +5,12 @@
 // Modified by Garth N. Wells, 2008.
 //
 // First added:  2007-02-12
-// Last changed: 2008-08-11
+// Last changed: 2008-08-18
 
 #include <dolfin/log/log.h>
 #include <dolfin/log/LogStream.h>
 #include <dolfin/io/File.h>
+#include "GraphBuilder.h"
 #include "GraphPartition.h"
 #include "Graph.h"
 
@@ -21,6 +22,14 @@ Graph::Graph() : Variable("graph", "DOLFIN graph"), num_edges(0),
                  edge_weights(0), vertex_weights(0)
 {
   // Do nothing
+}
+//-----------------------------------------------------------------------------
+Graph::Graph(Mesh& mesh, Representation rep) : Variable("graph", "DOLFIN graph"),
+                     num_edges(0), num_arches(0), num_vertices(0), edges(0), 
+                     vertices(0), edge_weights(0), vertex_weights(0)
+{
+  // Build graph
+  GraphBuilder::build(*this, mesh, rep);
 }
 //-----------------------------------------------------------------------------
 Graph::Graph(const Graph& graph) : Variable("graph", "DOLFIN graph")
@@ -72,18 +81,14 @@ void Graph::disp()
   {
     cout << i << ": ";
     for(uint j=vertices[i]; j<vertices[i+1]; ++j)
-    {
       cout << edges[j] << " ";
-    }
 
     cout << endl;
   }
   // last vertex
   cout << num_vertices-1 << ": ";
   for(uint i=vertices[num_vertices-1]; i<num_arches; ++i)
-  {
     cout << edges[i] << " ";
-  }
   cout << endl;
 }
 //-----------------------------------------------------------------------------
@@ -96,12 +101,12 @@ std::string Graph::typestr()
 {
   switch ( _type )
   {
-  case directed:
-    return "directed";
-  case undirected:
-    return "undirected";
-  default:
-    return "";
+    case directed:
+      return "directed";
+    case undirected:
+      return "undirected";
+    default:
+      return "";
   }
 
   return "";
