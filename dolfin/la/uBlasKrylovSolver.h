@@ -153,10 +153,8 @@ namespace dolfin
   }
   //-----------------------------------------------------------------------------
   template<class Mat> 
-  dolfin::uint uBlasKrylovSolver::solveGMRES(const Mat& A,
-					   uBlasVector& x, 
-					   const uBlasVector& b,
-					   bool& converged) const
+  dolfin::uint uBlasKrylovSolver::solveGMRES(const Mat& A, uBlasVector& x, 
+					                           const uBlasVector& b, bool& converged) const
   {
     // Get underlying uBLAS vectors
     ublas_vector& _x = x.vec(); 
