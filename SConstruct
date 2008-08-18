@@ -80,6 +80,7 @@ options = [
     BoolOption("enableGts", "Compile with support for GTS", "yes"),
     BoolOption("enableUmfpack", "Compile with support for UMFPACK", "yes"),
     BoolOption("enableTrilinos", "Compile with support for Trilinos", "yes"),
+    BoolOption("enableCholmod", "Compile with support for CHOLMOD", "yes"),
     BoolOption("enablePydolfin", "Compile the python wrappers of Dolfin", "yes"),
     # some of the above may need extra options (like petscDir), should we
     # try to get that from pkg-config?
@@ -91,6 +92,7 @@ options = [
     PathOption("withScotchDir", "Specify path to SCOTCH", None),
     PathOption("withUmfpackDir", "Specify path to UMFPACK", None),
     PathOption("withTrilinosDir", "Specify path to Trilinos", None),
+    PathOption("withCholmodDir", "Specify path to CHOLMOD", None),
     PathOption("withBoostDir", "Specify path to Boost", None),
     #
     # a few more options originally from PyCC:
