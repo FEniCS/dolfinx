@@ -91,8 +91,8 @@ def swigEmitter(target, source, env):
 
 class Dependency:
 
-    def __init__(self, cppPath=None, libPath=None, libs=None, linkOpts=None, version=None, compiler=None):
-        self.cppPath, self.libPath, self.libs, self.linkOpts, self.version, self.compiler  = cppPath, libPath, libs, linkOpts, version, compiler
+    def __init__(self, cppPath=None, compileOpts=None, libPath=None, libs=None, linkOpts=None, version=None, compiler=None):
+        self.cppPath, self.compileOpts, self.libPath, self.libs, self.linkOpts, self.version, self.compiler  = cppPath, compileOpts, libPath, libs, linkOpts, version, compiler
 
     def __str__(self):
         return "\ncppPath: %s\nlibPath: %s\nlibs: %s\nlibs: %s\ncompiler: %s\n" % \
