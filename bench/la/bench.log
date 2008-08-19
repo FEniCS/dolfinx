@@ -1,53 +1,53 @@
 tor okt 26 14:03:07 CEST 2006
 Vector benchmark timings
   Assign values to a vector of length N elementwise n times
-    uBlasVector (N=6, n=100000): 0
-    uBlasVector (N=6, n=100000000): 1.74
-    uBlasVector (N=100, n=1000000): 0.15
+    uBLASVector (N=6, n=100000): 0
+    uBLASVector (N=6, n=100000000): 1.74
+    uBLASVector (N=100, n=1000000): 0.15
   Access values of a vector of length n elementwise N times
-    uBlasVector (N=6, n=100000): 0
-    uBlasVector (N=6, n=100000000): 0.62
-    uBlasVector (N=100, n=1000000): 0.08
+    uBLASVector (N=6, n=100000): 0
+    uBLASVector (N=6, n=100000000): 0.62
+    uBLASVector (N=100, n=1000000): 0.08
 Sparse matrix benchmark timings
   Assemble a sparse matrix in quasi-random order (size = 2N x 2N)
-    uBlasSparseMatrix insert   (N=500000): 4.15
-    uBlasSparseMatrix finalise (N=500000): 2.11
+    uBLASSparseMatrix insert   (N=500000): 4.15
+    uBLASSparseMatrix finalise (N=500000): 2.11
   Assemble a sparse matrix for scalar Poisson equation on an square N x N mesh
-    uBlasSparseMatrix (N=50): 0.06
-    uBlasSparseMatrix (N=100): 0.22
-    uBlasSparseMatrix (N=400): 3.62
+    uBLASSparseMatrix (N=50): 0.06
+    uBLASSparseMatrix (N=100): 0.22
+    uBLASSparseMatrix (N=400): 3.62
   Assemble a sparse matrix for vector Poisson equation on an square N x N mesh
-    uBlasSparseMatrix (N=50): 0.09
-    uBlasSparseMatrix (N=100): 0.35
-    uBlasSparseMatrix (N=400): 5.65
+    uBLASSparseMatrix (N=50): 0.09
+    uBLASSparseMatrix (N=100): 0.35
+    uBLASSparseMatrix (N=400): 5.65
   Sparse matrix-vector multiplication (size N x N, repeated n times)
-    uBlasMatrix: (N=200, n=200): 1.07
+    uBLASMatrix: (N=200, n=200): 1.07
 Total CPU time: 22.2637
 ----------------------------------------
 0.6.2-1-dev
 tor okt 26 14:04:27 CEST 2006
 Vector benchmark timings
   Assign values to a vector of length N elementwise n times
-    uBlasVector (N=6, n=100000): 0
-    uBlasVector (N=6, n=100000000): 1.7
-    uBlasVector (N=100, n=1000000): 0.15
+    uBLASVector (N=6, n=100000): 0
+    uBLASVector (N=6, n=100000000): 1.7
+    uBLASVector (N=100, n=1000000): 0.15
   Access values of a vector of length n elementwise N times
-    uBlasVector (N=6, n=100000): 0
-    uBlasVector (N=6, n=100000000): 0.6
-    uBlasVector (N=100, n=1000000): 0.08
+    uBLASVector (N=6, n=100000): 0
+    uBLASVector (N=6, n=100000000): 0.6
+    uBLASVector (N=100, n=1000000): 0.08
 Sparse matrix benchmark timings
   Assemble a sparse matrix in quasi-random order (size = 2N x 2N)
-    uBlasSparseMatrix insert   (N=500000): 4.17
-    uBlasSparseMatrix finalise (N=500000): 2.09
+    uBLASSparseMatrix insert   (N=500000): 4.17
+    uBLASSparseMatrix finalise (N=500000): 2.09
   Assemble a sparse matrix for scalar Poisson equation on an square N x N mesh
-    uBlasSparseMatrix (N=50): 0.06
-    uBlasSparseMatrix (N=100): 0.23
-    uBlasSparseMatrix (N=400): 3.64
+    uBLASSparseMatrix (N=50): 0.06
+    uBLASSparseMatrix (N=100): 0.23
+    uBLASSparseMatrix (N=400): 3.64
   Assemble a sparse matrix for vector Poisson equation on an square N x N mesh
-    uBlasSparseMatrix (N=50): 0.08
-    uBlasSparseMatrix (N=100): 0.35
-    uBlasSparseMatrix (N=400): 5.66
+    uBLASSparseMatrix (N=50): 0.08
+    uBLASSparseMatrix (N=100): 0.35
+    uBLASSparseMatrix (N=400): 5.66
   Sparse matrix-vector multiplication (size N x N, repeated n times)
-    uBlasMatrix: (N=200, n=200): 1.06
+    uBLASMatrix: (N=200, n=200): 1.06
 Total CPU time: 22.3442
 ----------------------------------------
