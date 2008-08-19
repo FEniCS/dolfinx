@@ -46,6 +46,10 @@ if not env["enableUmfpack"]:
     disabled_packages.append("umfpack")
 if not env["enableTrilinos"]:
     disabled_packages.append("trilinos")
+if not env["enableCholmod"]:
+    disabled_packages.append("cholmod")
+if not env["enableMtl4"]:
+    disabled_packages.append("mtl4")
 
 # Find modules in the project and dependencies:
 # only modules and configuredPackages will be used in this code:
