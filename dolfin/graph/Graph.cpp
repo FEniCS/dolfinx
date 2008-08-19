@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells, 2008.
 //
 // First added:  2007-02-12
-// Last changed: 2008-08-18
+// Last changed: 2008-08-19
 
 #include <dolfin/log/log.h>
 #include <dolfin/log/LogStream.h>
@@ -18,14 +18,14 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 Graph::Graph() : Variable("graph", "DOLFIN graph"), num_edges(0), 
-                 num_arches(0), num_vertices(0), edges(0), vertices(0), 
-                 edge_weights(0), vertex_weights(0)
+                                        num_vertices(0), edges(0), vertices(0), 
+                                        edge_weights(0), vertex_weights(0)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 Graph::Graph(Mesh& mesh, Representation rep) : Variable("graph", "DOLFIN graph"),
-                     num_edges(0), num_arches(0), num_vertices(0), edges(0), 
+                     num_edges(0), num_vertices(0), edges(0), 
                      vertices(0), edge_weights(0), vertex_weights(0)
 {
   // Build graph
@@ -48,16 +48,17 @@ Graph::~Graph()
   clear();
 }
 //-----------------------------------------------------------------------------
-void Graph::init(uint _num_vertices, uint _num_edges, uint _num_arches)
+void Graph::init(uint _num_vertices, uint _num_edges)
 {
   clear();
 
   num_vertices = _num_vertices;
   num_edges    = _num_edges;
-  num_arches   = _num_arches;
-  edges    = new uint[num_arches];
+  edges    = new uint[num_edges];
   vertices = new uint[num_vertices + 1];
-  vertices[num_vertices] = num_arches;
+
+  // FIXME: is this needed?
+  vertices[num_vertices] = num_edges;
 }
 //-----------------------------------------------------------------------------
 bool Graph::adjacent(uint u, uint v)
@@ -87,7 +88,7 @@ void Graph::disp()
   }
   // last vertex
   cout << num_vertices-1 << ": ";
-  for(uint i=vertices[num_vertices-1]; i<num_arches; ++i)
+  for(uint i = vertices[num_vertices-1]; i < num_edges; ++i)
     cout << edges[i] << " ";
   cout << endl;
 }

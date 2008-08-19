@@ -1,8 +1,10 @@
 // Copyright (C) 2007 Magnus Vikstrom.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Garth N. Wells, 2008.
+//
 // First added:  2007-02-12
-// Last changed: 2007-03-19
+// Last changed: 2008-08-19
 
 #include <dolfin/log/dolfin_log.h>
 #include "Graph.h"
@@ -11,10 +13,9 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-GraphEditor::GraphEditor()
-  : next_vertex(0), next_arch(0), graph(0)
+GraphEditor::GraphEditor() : next_vertex(0), next_edge(0), graph(0)
 {
-  // Do nothing
+  warning("GraphEditor has been modified and not tested.");
 }
 //-----------------------------------------------------------------------------
 GraphEditor::~GraphEditor()
@@ -24,8 +25,10 @@ GraphEditor::~GraphEditor()
 //-----------------------------------------------------------------------------
 void GraphEditor::open(Graph& graph, Graph::Type type)
 {
-  // Clear old graph data
+  // Clear graph data
   graph.clear();
+
+  // Clear editor data
   clear();
 
   // Save graph and dimension
@@ -69,28 +72,23 @@ void GraphEditor::initEdges(uint num_edges)
   
   // Initialize graph data
   graph->num_edges = num_edges;
-  graph->num_arches = num_edges;
 
-  if ( graph->type() == Graph::undirected )
-    graph->num_arches = 2 * num_edges;
+  // Check if num_edges matches next_edge
+  if ( next_edge != graph->num_edges )
+    error("num_edges (%u) mismatch with sum of vertex edges (%u)", graph->num_edges, next_edge);
 
-  // Check if num_arches matches next_arch
-  if ( next_arch != graph->num_arches )
-    error("num_arches (%u) mismatch with sum of vertex edges (%u)",
-                  graph->num_arches, next_arch);
-
-  graph->edges = new uint[graph->num_arches];
-  graph->edge_weights = new uint[graph->num_arches];
+  graph->edges        = new uint[graph->num_edges];
+  graph->edge_weights = new uint[graph->num_edges];
   
   // Initialize arrays
-  for(uint i=0; i<graph->num_arches; ++i)
+  for(uint i=0; i<graph->num_edges; ++i)
   {
     graph->edges[i] = graph->num_vertices;
     graph->edge_weights[i] = 1;
   }
 
   // Update vertex array
-  graph->vertices[graph->numVertices()] = graph->numArches();
+  graph->vertices[graph->numVertices()] = graph->numEdges();
 }
 //-----------------------------------------------------------------------------
 void GraphEditor::addVertex(uint u, uint num_edges)
@@ -101,8 +99,7 @@ void GraphEditor::addVertex(uint u, uint num_edges)
 
   // Check value of vertex index
   if ( u >= graph->num_vertices )
-    error("Vertex index (%d) out of range [0, %d].",
-		  u, graph->num_vertices - 1);
+    error("Vertex index (%d) out of range [0, %d].", u, graph->num_vertices - 1);
 
   // Check if vertex added in correct order
   if ( u != next_vertex )
@@ -111,9 +108,9 @@ void GraphEditor::addVertex(uint u, uint num_edges)
   // Set offset and step to next vertex
   //dolfin_debug2("addVertex(%d, %d)", u, num_edges);
   //dolfin_debug1("adding num_edges: %d", num_edges);
-  graph->vertices[next_vertex++] = next_arch;
-  next_arch += num_edges;
-  //dolfin_debug1("next_arch = %d", next_arch);
+  graph->vertices[next_vertex++] = next_edge;
+  next_edge += num_edges;
+  //dolfin_debug1("next_edge = %d", next_edge);
 }
 //-----------------------------------------------------------------------------
 void GraphEditor::addEdge(uint u, uint v)
@@ -124,41 +121,18 @@ void GraphEditor::addEdge(uint u, uint v)
   if ( v > next_vertex )
     error("Cannot create edge to undefined vertex (%d).", v);
 
-  addArch(u, v);
-  if ( graph->type() == Graph::undirected )
-    addArch(v, u);
-}
-//-----------------------------------------------------------------------------
-void GraphEditor::addArch(uint u, uint v)
-{
-  //dolfin_debug2("addArch(%d, %d)", u, v);
-
-  // Check if we are currently editing a graph
-  if ( !graph )
-    error("No graph opened, unable to edit.");
-
-  // Check value of from vertex index
-  if ( u > next_vertex )
-    error("Cannot create edge from undefined vertex (%d).", u);
-
   // Loop edges not allowed
   if ( u == v )
     error("Cannot create edge from vertex %d to itself.", v);
 
   // Check that vertex u is correctly specified
-  if ( graph->vertices[u] < 0 || graph->vertices[u] > graph->num_arches )
-    error("Vertice \"%u\" undefined or incorrectly defined.\n", u);
+  if ( graph->vertices[u] < 0 || graph->vertices[u] > graph->num_edges )
+    error("Vertice \"%u\" undefined or incorrectly defined.", u);
 
   uint u_next = graph->vertices[u];
 
-  // if from vertex is last vertex stop at num_edges
-  uint stop = (u == graph->num_vertices - 1) ? 
-              graph->num_arches : graph->vertices[u+1];
-
-  while(u_next < stop && graph->edges[u_next] != graph->num_vertices)
-  {
-    u_next++;
-  }
+  // If from vertex is last vertex stop at num_edges
+  uint stop = (u == graph->num_vertices - 1) ? graph->num_edges : graph->vertices[u+1];
 
   // Check if vertex has room for edge
   if ( u_next == stop || u_next == graph->vertices[u+1] )
@@ -172,12 +146,10 @@ void GraphEditor::close()
   for(uint i=0; i<graph->num_vertices; ++i)
   {
     uint stop = graph->vertices[i] + graph->numEdges(i);
-    for(uint j=graph->vertices[i]; j<stop; ++j)
+    for(uint j = graph->vertices[i]; j < stop; ++j)
     {
       if ( graph->edges[j] == graph->num_vertices )
-      {
         error("Cannot close, vertex %u has undefined edges\n", i);
-      }
     }
   }
   // Clear data
@@ -187,7 +159,8 @@ void GraphEditor::close()
 void GraphEditor::clear()
 {
   next_vertex = 0;
-  next_arch = 0;
+  next_edge = 0;
   graph = 0;
 }
 //-----------------------------------------------------------------------------
+

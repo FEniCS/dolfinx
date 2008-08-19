@@ -14,6 +14,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 UndirectedClique::UndirectedClique(uint num_vertices) : Graph()
 {
+/*
   if ( num_vertices < 1 )
     error("Graph must have at least one vertex.");
 
@@ -42,5 +43,6 @@ UndirectedClique::UndirectedClique(uint num_vertices) : Graph()
 
   // Close graph editor
   editor.close();
+*/
 }
 //-----------------------------------------------------------------------------

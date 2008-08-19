@@ -37,13 +37,12 @@ void GraphBuilder::createMeshNodal(Graph& graph, Mesh& mesh)
   // Initialise mesh
   mesh.init(0, 0);
 
-  // Get number of vertices, edges and arches
+  // Get number of vertices and edges
   uint num_vertices = mesh.init(0);
-  uint num_edges    = mesh.init(1);
-  uint num_arches   = 2*num_edges;
+  uint num_edges    = 2*mesh.init(1);
 
   // Initialise graph
-  graph.init(num_vertices, num_edges, num_arches);
+  graph.init(num_vertices, num_edges);
 
   // Create nodal graph. Iterate over edges from all vertices
   uint i = 0, j = 0;
@@ -73,13 +72,12 @@ void GraphBuilder::createMeshDual(Graph& graph, Mesh& mesh)
   mesh.init(D, D);
   MeshConnectivity& connectivity = mesh.topology()(D,D);
 
-  // Get number of vertices, edges and arches
+  // Get number of vertices and edges
   uint num_vertices = mesh.numCells();
-  uint num_arches   = connectivity.size();
-  uint num_edges    = num_arches/2;
+  uint num_edges   = connectivity.size();
 
   // Initialise graph
-  graph.init(num_vertices, num_edges, num_arches);
+  graph.init(num_vertices, num_edges);
 
   // Create dual graph. Iterate over neighbors from all cells
   uint i = 0, j = 0;

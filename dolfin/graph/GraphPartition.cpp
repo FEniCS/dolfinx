@@ -36,7 +36,7 @@ void GraphPartition::partition(Graph& graph, uint num_part, uint* vtx_part)
   }
   if (SCOTCH_graphBuild(&grafdat, 0, static_cast<int>(graph.numVertices()), 
                         reinterpret_cast<int*>(graph.offsets()), NULL, NULL, 
-                        NULL, static_cast<int>(graph.numArches()), 
+                        NULL, static_cast<int>(graph.numEdges()), 
                         reinterpret_cast<int*>(graph.connectivity()), NULL) != 0) 
   {
     // FIXME: Why do we have a control statement here?

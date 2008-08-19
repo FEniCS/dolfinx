@@ -1,8 +1,11 @@
-// Copyright (C) 2006 Magnus Vikstrom.
+// Copyright (C) 2007 Magnus Vikstrom.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Garth N. Wells, 2008.
+//
 // First added:  2007-02-12
-// Last changed: 2007-03-09
+// Last changed: 2008-08-19
+
 
 #ifndef __GRAPH_EDITOR_H
 #define __GRAPH_EDITOR_H
@@ -12,8 +15,6 @@
 
 namespace dolfin
 {
-  
-  class Graph;
   
   /// A simple graph editor for creating graphs
 
@@ -50,17 +51,14 @@ namespace dolfin
 
   private:
 
-    /// Add arch from vertex u to vertex v
-    void addArch(uint u, uint v);
-
     // Clear all data
     void clear();
 
     // Next available vertex
     uint next_vertex;
 
-    // Next available arch
-    uint next_arch;
+    // Next available edge
+    uint next_edge;
 
     // The mesh
     Graph* graph;

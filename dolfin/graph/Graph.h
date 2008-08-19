@@ -79,7 +79,7 @@ namespace dolfin
     ~Graph();
     
     /// Initialise graph data structures
-    void init(uint _num_vertices, uint _num_edges, uint _num_arches);
+    void init(uint _num_vertices, uint _num_edges);
 
     /// Return number of vertices
     inline uint numVertices() const { return num_vertices; }
@@ -89,9 +89,6 @@ namespace dolfin
     
     /// Return number of edges incident to vertex u
     inline uint numEdges(uint u) const { return vertices[u+1] - vertices[u]; }
-
-    /// Return number of arches (outgoing edges)
-    inline uint numArches() const { return num_arches; }
 
     /// Check if vertex u is adjacent to vertex v
     bool adjacent(uint u, uint v);
@@ -129,7 +126,6 @@ namespace dolfin
   private:
     
     uint num_edges;
-    uint num_arches;
     uint num_vertices;
     
     uint* edges;
