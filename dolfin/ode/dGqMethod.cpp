@@ -9,8 +9,8 @@
 #include <dolfin/math/dolfin_math.h>
 #include <dolfin/math/Lagrange.h>
 #include <dolfin/quadrature/RadauQuadrature.h>
-#include <dolfin/la/uBlasVector.h>
-#include <dolfin/la/uBlasDenseMatrix.h>
+#include <dolfin/la/uBLASVector.h>
+#include <dolfin/la/uBLASDenseMatrix.h>
 #include "dGqMethod.h"
 
 using namespace dolfin;
@@ -38,7 +38,7 @@ real dGqMethod::ueval(real x0, real values[], real tau) const
   return sum;
 }
 //-----------------------------------------------------------------------------
-real dGqMethod::ueval(real x0, uBlasVector& values, uint offset, real tau) const
+real dGqMethod::ueval(real x0, uBLASVector& values, uint offset, real tau) const
 {
   // Note: x0 is not used, maybe this can be done differently
 
@@ -59,7 +59,7 @@ real dGqMethod::residual(real x0, real values[], real f, real k) const
   return sum / k - f;
 }
 //-----------------------------------------------------------------------------
-real dGqMethod::residual(real x0, uBlasVector& values, uint offset, real f, real k) const
+real dGqMethod::residual(real x0, uBLASVector& values, uint offset, real f, real k) const
 {
   // FIXME: Include jump term in residual
   real sum = 0.0;
@@ -164,7 +164,7 @@ void dGqMethod::computeBasis()
 //-----------------------------------------------------------------------------
 void dGqMethod::computeWeights()
 {
-  uBlasDenseMatrix A(nn, nn);
+  uBLASDenseMatrix A(nn, nn);
   ublas_dense_matrix& _A = A.mat();
   
   // Compute matrix coefficients
@@ -183,8 +183,8 @@ void dGqMethod::computeWeights()
     }
   }
 
-  uBlasVector b(nn);
-  uBlasVector w(nn);
+  uBLASVector b(nn);
+  uBLASVector w(nn);
   ublas_vector& _b = b.vec();
   ublas_vector& _w = w.vec();
 

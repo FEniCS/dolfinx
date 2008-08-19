@@ -6,7 +6,7 @@
 
 #include <dolfin/common/constants.h>
 #include <dolfin/math/dolfin_math.h>
-#include <dolfin/la/uBlasVector.h>
+#include <dolfin/la/uBLASVector.h>
 #include "ODESolver.h"
 #include "ODE.h"
 
@@ -28,7 +28,7 @@ ODE::~ODE()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void ODE::f(const uBlasVector& u, real t, uBlasVector& y)
+void ODE::f(const uBLASVector& u, real t, uBLASVector& y)
 {
   // If a user of the mono-adaptive solver does not supply this function,
   // then call f_i() for each component.
@@ -41,13 +41,13 @@ void ODE::f(const uBlasVector& u, real t, uBlasVector& y)
     y[i] = this->f(u, t, i);
 }
 //-----------------------------------------------------------------------------
-real ODE::f(const uBlasVector& u, real t, uint i)
+real ODE::f(const uBLASVector& u, real t, uint i)
 {
   error("Right-hand side for ODE not supplied by user.");
   return 0.0;
 }
 //-----------------------------------------------------------------------------
-void ODE::M(const uBlasVector& x, uBlasVector& y, const uBlasVector& u, real t)
+void ODE::M(const uBLASVector& x, uBLASVector& y, const uBLASVector& u, real t)
 {
   // Display a warning, implicit system but M is not implemented
   not_impl_M();
@@ -56,7 +56,7 @@ void ODE::M(const uBlasVector& x, uBlasVector& y, const uBlasVector& u, real t)
   y = x;
 }
 //-----------------------------------------------------------------------------
-void ODE::J(const uBlasVector& x, uBlasVector& y, const uBlasVector& u, real t)
+void ODE::J(const uBLASVector& x, uBLASVector& y, const uBLASVector& u, real t)
 {
   // If a user does not supply J, then compute it by the approximation
   //
@@ -75,7 +75,7 @@ void ODE::J(const uBlasVector& x, uBlasVector& y, const uBlasVector& u, real t)
 
   // We are not allowed to change u, but we restore it afterwards,
   // so maybe we can cheat a little...
-  uBlasVector& uu = const_cast<uBlasVector&>(u);
+  uBLASVector& uu = const_cast<uBLASVector&>(u);
 
   // Initialize temporary array if necessary
   if ( tmp.size() != N )
@@ -98,7 +98,7 @@ void ODE::J(const uBlasVector& x, uBlasVector& y, const uBlasVector& u, real t)
 }
 //------------------------------------------------------------------------
 
-void ODE::JT(const uBlasVector& x, uBlasVector& y, const uBlasVector& u, real t) {
+void ODE::JT(const uBLASVector& x, uBLASVector& y, const uBLASVector& u, real t) {
 
   //Display warning
   not_impl_JT();
@@ -109,12 +109,12 @@ void ODE::JT(const uBlasVector& x, uBlasVector& y, const uBlasVector& u, real t)
     umax = std::max(umax, std::abs(u[i]));
   real h = std::max(DOLFIN_SQRT_EPS, DOLFIN_SQRT_EPS * umax);
 
-  uBlasVector& uu = const_cast<uBlasVector&>(u);
+  uBLASVector& uu = const_cast<uBLASVector&>(u);
 
   if ( tmp.size() != N )
     tmp.init(N);
 
-  uBlasVector tmp2(N);
+  uBLASVector tmp2(N);
 
   for (uint i = 0; i < N; ++i) {
     uu[i] += h; //small change component i
@@ -135,7 +135,7 @@ void ODE::JT(const uBlasVector& x, uBlasVector& y, const uBlasVector& u, real t)
 
 //------------------------------------------------------------------------
 
-real ODE::dfdu(const uBlasVector& u, real t, uint i, uint j)
+real ODE::dfdu(const uBLASVector& u, real t, uint i, uint j)
 {
   // Compute Jacobian numerically if dfdu() is not implemented by user
   
@@ -143,7 +143,7 @@ real ODE::dfdu(const uBlasVector& u, real t, uint i, uint j)
 
   // We are not allowed to change u, but we restore it afterwards,
   // so maybe we can cheat a little...
-  uBlasVector& uu = const_cast<uBlasVector&>(u);
+  uBLASVector& uu = const_cast<uBLASVector&>(u);
 
   // Save value of u_j
   real uj = uu[j];
@@ -182,7 +182,7 @@ real ODE::timestep(real t, uint i, real k0) const
   return k0;
 }
 //-----------------------------------------------------------------------------
-bool ODE::update(const uBlasVector& u, real t, bool end)
+bool ODE::update(const uBLASVector& u, real t, bool end)
 {
   return true;
 }
@@ -202,7 +202,7 @@ void ODE::sparse()
   dependencies.detect(*this);
 }
 //-----------------------------------------------------------------------------
-void ODE::sparse(const uBlasSparseMatrix& A)
+void ODE::sparse(const uBLASSparseMatrix& A)
 {
   dependencies.set(A);
 }

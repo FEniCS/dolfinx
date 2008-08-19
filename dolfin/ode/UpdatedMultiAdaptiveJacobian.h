@@ -32,7 +32,7 @@ namespace dolfin
     uint size(uint dim) const;
 
     /// Compute product y = Ax
-    void mult(const uBlasVector& x, uBlasVector& y) const;
+    void mult(const uBLASVector& x, uBLASVector& y) const;
 
     /// (Re-)initialize computation of Jacobian
     void init();

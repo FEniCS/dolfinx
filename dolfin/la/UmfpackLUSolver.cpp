@@ -12,8 +12,8 @@
 #include "GenericMatrix.h"
 #include "GenericVector.h"
 #include "KrylovSolver.h"
-#include "uBlasKrylovMatrix.h"
-#include "uBlasVector.h"
+#include "uBLASKrylovMatrix.h"
+#include "uBLASVector.h"
 
 extern "C" 
 {
@@ -96,7 +96,7 @@ dolfin::uint UmfpackLUSolver::factorizedSolve(GenericVector& x, const GenericVec
 dolfin::uint UmfpackLUSolver::solve(const GenericMatrix& A, GenericVector& x, 
                                     const GenericVector& b)
 {
-  warning("UMFPACK must be installed to peform a LU solve for uBlas matrices. A Krylov iterative solver will be used instead.");
+  warning("UMFPACK must be installed to peform a LU solve for uBLAS matrices. A Krylov iterative solver will be used instead.");
 
   KrylovSolver solver;
   return solver.solve(A, x, b);

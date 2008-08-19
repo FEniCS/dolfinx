@@ -54,6 +54,65 @@ def getBaseDirs(sconsEnv):
   base_dirs.insert(0, cholmod_dir)
   return base_dirs
 
+def getColamdDirs(sconsEnv):
+  base_dirs = getBaseDirs(sconsEnv)
+  all_include_dirs, all_lib_dirs = \
+      generate_dirs(base_dirs, "suitesparse",
+                    "ufsparse", "UFSPARSE", "colamd", "COLAMD")
+  colamd_include_dir = \
+      find_dependency_file(all_include_dirs,
+                           filename="colamd.h", package="COLAMD")
+  try:
+    colamd_lib_dir = \
+        find_dependency_file(all_lib_dirs,
+                             filename="libcolamd.a", package="COLAMD")
+  except:
+    # Look for shared library libamd.so since we are unable to
+    # find static library libamd.a:
+    colamd_lib_dir = \
+        find_dependency_file(all_lib_dirs,
+                             filename="libcolamd.so", package="COLAMD")
+  return colamd_include_dir, colamd_lib_dir
+
+def getColamdIncDir(sconsEnv):
+  return getColamdDirs(sconsEnv)[0]
+
+def getColamdLibDir(sconsEnv):
+  return getColamdDirs(sconsEnv)[1]
+
+def getAmdDirs(sconsEnv):
+  base_dirs = getBaseDirs(sconsEnv)
+  all_include_dirs, all_lib_dirs = \
+      generate_dirs(base_dirs, "suitesparse",
+                    "ufsparse", "UFSPARSE", "amd", "AMD")
+  amd_include_dir = \
+      find_dependency_file(all_include_dirs, filename="amd.h", package="AMD")
+  try:
+    amd_lib_dir = \
+        find_dependency_file(all_lib_dirs, filename="libamd.a", package="AMD")
+  except:
+    # Look for shared library libamd.so since we are unable to
+    # find static library libamd.a:
+    amd_lib_dir = \
+        find_dependency_file(all_lib_dirs, filename="libamd.so", package="AMD")
+  return amd_include_dir, amd_lib_dir
+
+def getAmdIncDir(sconsEnv):
+  return getAmdDirs(sconsEnv)[0]
+
+def getAmdLibDir(sconsEnv):
+  return getAmdDirs(sconsEnv)[1]
+
+def getUFconfigIncDir(sconsEnv):
+  base_dirs = getBaseDirs(sconsEnv)
+  all_include_dirs, all_lib_dirs = \
+      generate_dirs(base_dirs, "suitesparse",
+                    "ufsparse", "UFSPARSE", "ufconfig", "UFconfig")
+  ufconfig_include_dir = \
+      find_dependency_file(all_include_dirs,
+                           filename="UFconfig.h", package="UFconfig")
+  return ufconfig_include_dir
+
 def getCholmodDirs(sconsEnv):
   # There are several ways CHOLMOD can be installed:
   # 1. As part of suitesparse/ufsparse (e.g. the ubuntu package). 
@@ -144,8 +203,11 @@ int main() {
   return cholmod_version
 
 def pkgCflags(sconsEnv=None):
-  cflags = "-I%s" % getCholmodIncDir(sconsEnv)
-  return cflags
+  cflags = ""
+  for inc_dir in set([getCholmodIncDir(sconsEnv), getAmdIncDir(sconsEnv),
+                      getColamdIncDir(sconsEnv), getUFconfigIncDir(sconsEnv)]):
+    cflags += " -I%s" % inc_dir
+  return cflags.strip()
 
 def pkgLibs(sconsEnv=None):
   libs = ""
@@ -155,6 +217,8 @@ def pkgLibs(sconsEnv=None):
     libs += "-L%s -llapack -L%s -lblas" % \
             (getLapackDir(sconsEnv=sconsEnv), getBlasDir(sconsEnv=sconsEnv))
   libs += " -L%s -lcholmod" % getCholmodLibDir(sconsEnv)
+  libs += " -L%s -lamd" % getAmdLibDir(sconsEnv)
+  libs += " -L%s -lcolamd" % getColamdLibDir(sconsEnv)
   return libs
 
 def pkgTests(forceCompiler=None, sconsEnv=None,

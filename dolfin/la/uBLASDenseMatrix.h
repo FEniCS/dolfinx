@@ -7,12 +7,12 @@
 #ifndef __UBLAS_DENSE_MATRIX_H
 #define __UBLAS_DENSE_MATRIX_H
 
-#include "uBlasMatrix.h"
+#include "uBLASMatrix.h"
 
 namespace dolfin
 {
 
-  typedef uBlasMatrix<ublas_dense_matrix> uBlasDenseMatrix;
+  typedef uBLASMatrix<ublas_dense_matrix> uBLASDenseMatrix;
 
 }
 

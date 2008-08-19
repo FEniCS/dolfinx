@@ -59,7 +59,7 @@ void TimeSlabJacobian::update()
   }
 }
 //-----------------------------------------------------------------------------
-const uBlasDenseMatrix& TimeSlabJacobian::matrix() const
+const uBLASDenseMatrix& TimeSlabJacobian::matrix() const
 {
   dolfin_assert(A.size(0) == ode.size());
   return A;

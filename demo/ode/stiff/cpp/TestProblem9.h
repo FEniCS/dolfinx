@@ -19,14 +19,14 @@ public:
     lambda = 1000.0;
   }
 
-  void u0(uBlasVector& u)
+  void u0(uBLASVector& u)
   {
     u[0] = 0.0;
     u[1] = 1.0;
     u[2] = 1.0;
   }
   
-  void f(const uBlasVector& u, real t, uBlasVector& y)
+  void f(const uBLASVector& u, real t, uBLASVector& y)
   {
     y[0] = u[1];
     y[1] = -(1.0 - u[2])*u[0];

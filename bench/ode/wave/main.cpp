@@ -27,7 +27,7 @@ public:
     w = 0.25;
 
     // Lump mass matrix
-    uBlasMassMatrix M(mesh);
+    uBLASMassMatrix M(mesh);
     M.lump(m);
 
     // Set dependencies
@@ -68,7 +68,7 @@ public:
   }
 
   // Initial condition: a wave coming in from the right
-  void u0(uBlasVector& u)
+  void u0(uBLASVector& u)
   {
     for (unsigned int i = 0; i < N; i++)
     {
@@ -103,7 +103,7 @@ public:
   }
 
   // Right-hand side, mono-adaptive version
-  void f(const uBlasVector& u, real t, uBlasVector& y)
+  void f(const uBLASVector& u, real t, uBLASVector& y)
   {
     // First half of system
     for (unsigned int i = 0; i < offset; i++)
@@ -120,7 +120,7 @@ public:
   }
 
   // Right-hand side, multi-adaptive version
-  real f(const uBlasVector& u, real t, unsigned int i)
+  real f(const uBLASVector& u, real t, unsigned int i)
   {
     // First half of system
     if ( i < offset )
@@ -135,8 +135,8 @@ public:
 private:
 
   Mesh& mesh;             // The mesh
-  uBlasStiffnessMatrix A; // Stiffness matrix
-  uBlasVector m;          // Lumped mass matrix
+  uBLASStiffnessMatrix A; // Stiffness matrix
+  uBLASVector m;          // Lumped mass matrix
   unsigned int offset;    // N/2, number of vertices
   Array<real> h;          // Local mesh size
   real hmin;              // Minimum mesh size

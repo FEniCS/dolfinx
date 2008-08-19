@@ -4,7 +4,7 @@
 // Modified by Ola Skavhaug 2008.
 //
 // First added:  2007-04-30
-// Last changed: 2008-06-13
+// Last changed: 2008-08-19
 
 #include <dolfin/common/Timer.h>
 #include "LinearSolver.h"
@@ -38,14 +38,14 @@ real dolfin::normalize(GenericVector& x, NormalizationType normalization_type)
 {
   switch (normalization_type)
   {
-  case l2norm:
+  case normalize_l2norm:
     {
       const real c = x.norm(l2);
       x /= c;
       return c;
     }
     break;
-  case average:
+  case normalize_average:
     {
       GenericVector* y = x.factory().createVector();
       y->init(x.size());

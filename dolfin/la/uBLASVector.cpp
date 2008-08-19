@@ -15,8 +15,8 @@
 
 #include <dolfin/log/dolfin_log.h>
 #include <boost/numeric/ublas/vector.hpp>
-#include "uBlasVector.h"
-#include "uBlasFactory.h"
+#include "uBLASVector.h"
+#include "uBLASFactory.h"
 #include "LinearAlgebraFactory.h"
 
 #ifdef HAS_PETSC
@@ -26,31 +26,31 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-uBlasVector::uBlasVector():
+uBLASVector::uBLASVector():
     Variable("x", "uBLAS vector"), x(0)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-uBlasVector::uBlasVector(uint N):
+uBLASVector::uBLASVector(uint N):
     Variable("x", "uBLAS vector"), x(N)
 {
   // Clear vector
   x.clear();
 }
 //-----------------------------------------------------------------------------
-uBlasVector::uBlasVector(const uBlasVector& x):
+uBLASVector::uBLASVector(const uBLASVector& x):
   Variable("x", "uBLAS vector"), x(x.x)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-uBlasVector::~uBlasVector()
+uBLASVector::~uBLASVector()
 {
   //Do nothing
 }
 //-----------------------------------------------------------------------------
-void uBlasVector::init(uint N)
+void uBLASVector::init(uint N)
 {
   if(x.size() == N)
   {
@@ -62,63 +62,63 @@ void uBlasVector::init(uint N)
   x.clear();
 }
 //-----------------------------------------------------------------------------
-dolfin::uint uBlasVector::size() const
+dolfin::uint uBLASVector::size() const
 {
   return x.size();
 }
 //-----------------------------------------------------------------------------
-uBlasVector* uBlasVector::copy() const
+uBLASVector* uBLASVector::copy() const
 {
-  return new uBlasVector(*this);
+  return new uBLASVector(*this);
 }
 //-----------------------------------------------------------------------------
-void uBlasVector::get(real* values) const
+void uBLASVector::get(real* values) const
 {
   for (uint i = 0; i < size(); i++)
     values[i] = x(i);
 }
 //-----------------------------------------------------------------------------
-void uBlasVector::set(real* values)
+void uBLASVector::set(real* values)
 {
   for (uint i = 0; i < size(); i++)
     x(i) = values[i];
 }
 //-----------------------------------------------------------------------------
-void uBlasVector::add(real* values)
+void uBLASVector::add(real* values)
 {
   for (uint i = 0; i < size(); i++)
     x(i) += values[i];
 }
 //-----------------------------------------------------------------------------
-void uBlasVector::get(real* block, uint m, const uint* rows) const
+void uBLASVector::get(real* block, uint m, const uint* rows) const
 {
   for (uint i = 0; i < m; i++)
     block[i] = x(rows[i]);
 }
 //-----------------------------------------------------------------------------
-void uBlasVector::set(const real* block, uint m, const uint* rows)
+void uBLASVector::set(const real* block, uint m, const uint* rows)
 {
   for (uint i = 0; i < m; i++)
     x(rows[i]) = block[i];
 }
 //-----------------------------------------------------------------------------
-void uBlasVector::add(const real* block, uint m, const uint* rows)
+void uBLASVector::add(const real* block, uint m, const uint* rows)
 {
   for (uint i = 0; i < m; i++)
     x(rows[i]) += block[i];
 }
 //-----------------------------------------------------------------------------
-void uBlasVector::apply()
+void uBLASVector::apply()
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void uBlasVector::zero()
+void uBLASVector::zero()
 {
   x.clear();
 }
 //-----------------------------------------------------------------------------
-real uBlasVector::norm(VectorNormType type) const
+real uBLASVector::norm(VectorNormType type) const
 {
   switch (type) 
   {
@@ -129,79 +129,79 @@ real uBlasVector::norm(VectorNormType type) const
     case linf:
       return norm_inf(x);
     default:
-      error("Requested vector norm type for uBlasVector unknown");
+      error("Requested vector norm type for uBLASVector unknown");
   }
   return 0.0;
 }
 //-----------------------------------------------------------------------------
-real uBlasVector::min() const
+real uBLASVector::min() const
 {
   real value = *std::min_element(x.begin(), x.end());
   return value;
 }
 //-----------------------------------------------------------------------------
-real uBlasVector::max() const
+real uBLASVector::max() const
 {
   real value = *std::max_element(x.begin(), x.end());
   return value;
 }
 //-----------------------------------------------------------------------------
-void uBlasVector::axpy(real a, const GenericVector& y)
+void uBLASVector::axpy(real a, const GenericVector& y)
 {
   if ( size() != y.size() )  
     error("Vectors must be of same size.");
 
-  x += a * y.down_cast<uBlasVector>().vec();
+  x += a * y.down_cast<uBLASVector>().vec();
 }
 //-----------------------------------------------------------------------------
-real uBlasVector::inner(const GenericVector& y) const
+real uBLASVector::inner(const GenericVector& y) const
 {
-  return ublas::inner_prod(x, y.down_cast<uBlasVector>().vec());
+  return ublas::inner_prod(x, y.down_cast<uBLASVector>().vec());
 }
 //-----------------------------------------------------------------------------
-const GenericVector& uBlasVector::operator= (const GenericVector& y) 
+const GenericVector& uBLASVector::operator= (const GenericVector& y) 
 { 
-  x = y.down_cast<uBlasVector>().vec();
+  x = y.down_cast<uBLASVector>().vec();
   return *this; 
 }
 //-----------------------------------------------------------------------------
-const uBlasVector& uBlasVector::operator= (const uBlasVector& y) 
+const uBLASVector& uBLASVector::operator= (const uBLASVector& y) 
 { 
   x = y.vec();
   return *this; 
 }
 //-----------------------------------------------------------------------------
-const uBlasVector& uBlasVector::operator= (real a) 
+const uBLASVector& uBLASVector::operator= (real a) 
 { 
   x.ublas_vector::assign(ublas::scalar_vector<double> (x.size(), a));
   return *this; 
 }
 //-----------------------------------------------------------------------------
-const uBlasVector& uBlasVector::operator*= (const real a) 
+const uBLASVector& uBLASVector::operator*= (const real a) 
 { 
   x *= a;
   return *this;     
 }
 //-----------------------------------------------------------------------------
-const uBlasVector& uBlasVector::operator/= (const real a) 
+const uBLASVector& uBLASVector::operator/= (const real a) 
 { 
   x /= a;
   return *this;     
 }
 //-----------------------------------------------------------------------------
-const uBlasVector& uBlasVector::operator+= (const GenericVector& y) 
+const uBLASVector& uBLASVector::operator+= (const GenericVector& y) 
 { 
-  x += y.down_cast<uBlasVector>().vec();
+  x += y.down_cast<uBLASVector>().vec();
   return *this; 
 }
 //-----------------------------------------------------------------------------
-const uBlasVector& uBlasVector::operator-= (const GenericVector& y) 
+const uBLASVector& uBLASVector::operator-= (const GenericVector& y) 
 { 
-  x -= y.down_cast<uBlasVector>().vec();
+  x -= y.down_cast<uBLASVector>().vec();
   return *this; 
 }
 //-----------------------------------------------------------------------------
-void uBlasVector::disp(uint precision) const
+void uBLASVector::disp(uint precision) const
 {
   dolfin::cout << "[ ";
   for (ublas_vector::const_iterator it = x.begin(); it != x.end(); ++it)
@@ -215,21 +215,21 @@ void uBlasVector::disp(uint precision) const
   dolfin::cout << " ]" << endl;
 }
 //-----------------------------------------------------------------------------
-LogStream& dolfin::operator<< (LogStream& stream, const uBlasVector& x)
+LogStream& dolfin::operator<< (LogStream& stream, const uBLASVector& x)
 {
   // Check if vector has been defined
   if ( x.size() == 0 )
   {
-    stream << "[ uBlasVector (empty) ]";
+    stream << "[ uBLASVector (empty) ]";
     return stream;
   }
-  stream << "[ uBlasVector of size " << x.size() << " ]";
+  stream << "[ uBLASVector of size " << x.size() << " ]";
 
   return stream;
 }
 //-----------------------------------------------------------------------------
-LinearAlgebraFactory& uBlasVector::factory() const
+LinearAlgebraFactory& uBLASVector::factory() const
 {
-  return uBlasFactory<>::instance();
+  return uBLASFactory<>::instance();
 }
 //-----------------------------------------------------------------------------
