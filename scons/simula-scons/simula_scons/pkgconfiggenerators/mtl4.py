@@ -27,10 +27,14 @@ def pkgLibs(sconsEnv=None):
 def pkgCflags(sconsEnv=None):
   include_dir = None
   mtl4_dir = getMtl4Dir(sconsEnv=sconsEnv)
-  if not os.path.isfile(os.path.join(mtl4_dir, "boost",
-                                     "numeric", "mtl", "mtl.hpp")):
+  for inc_dir in "", "include":
+    if os.path.isfile(os.path.join(mtl4_dir, inc_dir,
+                                   "boost", "numeric", "mtl", "mtl.hpp")):
+      include_dir = inc_dir
+      break
+  if include_dir is None:
     raise UnableToFindPackageException("MTL4")
-  return "-I%s" % mtl4_dir
+  return "-I%s" % os.path.join(mtl4_dir, include_dir)
 
 def pkgTests(forceCompiler=None, sconsEnv=None,
              cflags=None, libs=None, version=None, **kwargs):
