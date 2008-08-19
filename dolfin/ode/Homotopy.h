@@ -9,9 +9,9 @@
 
 #include <dolfin/common/types.h>
 #include <dolfin/common/Array.h>
-#include <dolfin/la/uBlasVector.h>
-#include <dolfin/la/uBlasKrylovSolver.h>
-#include <dolfin/la/uBlasPreconditioner.h>
+#include <dolfin/la/uBLASVector.h>
+#include <dolfin/la/uBLASKrylovSolver.h>
+#include <dolfin/la/uBLASPreconditioner.h>
 #include <dolfin/la/UmfpackLUSolver.h>
 
 namespace dolfin
@@ -88,7 +88,7 @@ namespace dolfin
     void randomize();
 
     // Evaluate right-hand side
-    void feval(uBlasVector& F, ComplexODE& ode);
+    void feval(uBLASVector& F, ComplexODE& ode);
 
     uint n;                   // Size of system
     uint M;                   // Number of paths
@@ -98,12 +98,12 @@ namespace dolfin
     real divtol;              // Tolerance for divergence of homotopy path
     bool monitor;             // True if we should monitor the homotopy
     bool random;              // True if we should choose random initial data
-    //uBlasKrylovSolver solver; // Linear solver
+    //uBLASKrylovSolver solver; // Linear solver
     std::string filename;     // Filename for saving solutions  
     uint* mi;                 // Array of local path numbers
     complex* ci;              // Array of constants for system G(z) = 0
     complex* tmp;             // Array used for temporary storage
-    uBlasVector x;            // Real-valued vector x corresponding to solution z of F(z) = 0
+    uBLASVector x;            // Real-valued vector x corresponding to solution z of F(z) = 0
     Array<complex*> zs;       // Array of solutions
     Event degree_adjusted;    // Message if degree has to be adjusted
 

@@ -7,26 +7,26 @@
 #ifndef __UBLAS_DUMMY_PRECONDITIONER_H
 #define __UBLAS_DUMMY_PRECONDITIONER_H
 
-#include "uBlasPreconditioner.h"
+#include "uBLASPreconditioner.h"
 
 namespace dolfin
 {
 
   /// This class provides a dummy (do nothing) preconditioner for the
-  /// uBlas Krylov solver.
+  /// uBLAS Krylov solver.
 
-  class uBlasDummyPreconditioner : public uBlasPreconditioner
+  class uBLASDummyPreconditioner : public uBLASPreconditioner
   {
   public:
 
     /// Constructor
-    uBlasDummyPreconditioner();
+    uBLASDummyPreconditioner();
 
     /// Destructor
-    ~uBlasDummyPreconditioner();
+    ~uBLASDummyPreconditioner();
 
     /// Solve linear system Ax = b approximately
-    void solve(uBlasVector& x, const uBlasVector& b) const;
+    void solve(uBLASVector& x, const uBLASVector& b) const;
 
   };
 

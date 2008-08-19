@@ -31,30 +31,30 @@ namespace dolfin
   /// uBLAS interface which is documented at
   /// http://www.boost.org/libs/numeric/ublas/doc/index.htm.
 
-  class uBlasVector : public GenericVector, public Variable
+  class uBLASVector : public GenericVector, public Variable
   {
   public:
 
     /// Create empty vector
-    uBlasVector();
+    uBLASVector();
 
     /// Create vector of size N
-    explicit uBlasVector(uint N);
+    explicit uBLASVector(uint N);
 
     /// Copy constructor
-    explicit uBlasVector(const uBlasVector& x);
+    explicit uBLASVector(const uBLASVector& x);
 
     /// Create vector from given uBLAS vector expression
     template <class E>
-    explicit uBlasVector(const ublas::vector_expression<E>& x) : x(x) {}
+    explicit uBLASVector(const ublas::vector_expression<E>& x) : x(x) {}
 
     /// Destructor
-    virtual ~uBlasVector();
+    virtual ~uBLASVector();
 
     //--- Implementation of the GenericTensor interface ---
 
     /// Create copy of tensor
-    virtual uBlasVector* copy() const;
+    virtual uBLASVector* copy() const;
 
     /// Set all entries to zero and keep any sparse structure
     virtual void zero();
@@ -107,22 +107,22 @@ namespace dolfin
     virtual real max() const;
 
     /// Multiply vector by given number
-    virtual const uBlasVector& operator *= (real a);
+    virtual const uBLASVector& operator *= (real a);
 
     /// Divide vector by given number
-    virtual const uBlasVector& operator /= (real a);
+    virtual const uBLASVector& operator /= (real a);
 
     /// Add given vector
-    virtual const uBlasVector& operator+= (const GenericVector& x);
+    virtual const uBLASVector& operator+= (const GenericVector& x);
 
     /// Subtract given vector
-    virtual const uBlasVector& operator-= (const GenericVector& x);
+    virtual const uBLASVector& operator-= (const GenericVector& x);
 
     /// Assignment operator
     virtual const GenericVector& operator= (const GenericVector& x);
 
     /// Assignment operator
-    virtual const uBlasVector& operator= (real a);
+    virtual const uBLASVector& operator= (real a);
 
     /// Return pointer to underlying data (const version)
     virtual const real* data() const 
@@ -156,7 +156,7 @@ namespace dolfin
     { return x(i); };
 
     /// Assignment operator
-    const uBlasVector& operator= (const uBlasVector& x);
+    const uBLASVector& operator= (const uBLASVector& x);
 
   private:
 
@@ -165,7 +165,7 @@ namespace dolfin
 
   };
 
-  LogStream& operator<< (LogStream& stream, const uBlasVector& x);
+  LogStream& operator<< (LogStream& stream, const uBLASVector& x);
  
 }
 

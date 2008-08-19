@@ -33,7 +33,7 @@ namespace dolfin
     uint size(uint dim) const;
 
     /// Compute product y = Ax
-    void mult(const uBlasVector& x, uBlasVector& y) const;
+    void mult(const uBLASVector& x, uBLASVector& y) const;
 
     /// (Re-)initialize computation of Jacobian
     void init();
@@ -44,10 +44,10 @@ namespace dolfin
   private:
 
     // Compute product for mcG(q)
-    void cGmult(const uBlasVector& x, uBlasVector& y) const;
+    void cGmult(const uBLASVector& x, uBLASVector& y) const;
 
     // Compute product for mdG(q)
-    void dGmult(const uBlasVector& x, uBlasVector& y) const;
+    void dGmult(const uBLASVector& x, uBLASVector& y) const;
 
     // The Newton solver
     MultiAdaptiveNewtonSolver& newton;

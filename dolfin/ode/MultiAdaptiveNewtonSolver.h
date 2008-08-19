@@ -8,8 +8,8 @@
 #define __MULTI_ADAPTIVE_NEWTON_SOLVER_H
 
 #include <dolfin/common/types.h>
-#include <dolfin/la/uBlasKrylovSolver.h>
-#include <dolfin/la/uBlasVector.h>
+#include <dolfin/la/uBLASKrylovSolver.h>
+#include <dolfin/la/uBLASVector.h>
 #include "MultiAdaptivePreconditioner.h"
 #include "TimeSlabJacobian.h"
 #include "TimeSlabSolver.h"
@@ -57,7 +57,7 @@ namespace dolfin
   private:
 
     // Evaluate -F(x) at current x
-    void Feval(uBlasVector& F);
+    void Feval(uBLASVector& F);
 
     // Numerical evaluation of the Jacobian used for testing
     void debug();
@@ -65,11 +65,11 @@ namespace dolfin
     MultiAdaptiveTimeSlab& ts;       // The time slab;
     TimeSlabJacobian* A;             // Jacobian of time slab system
     MultiAdaptivePreconditioner mpc; // Preconditioner
-    uBlasKrylovSolver solver;        // Linear solver
+    uBLASKrylovSolver solver;        // Linear solver
     real* f;                         // Values of right-hand side at quadrature points
     real* u;                         // Degrees of freedom on local element
-    uBlasVector dx;                  // Increment for Newton's method
-    uBlasVector b;                   // Right-hand side -F(x)
+    uBLASVector dx;                  // Increment for Newton's method
+    uBLASVector b;                   // Right-hand side -F(x)
     uint num_elements;               // Total number of elements
     real num_elements_mono;          // Estimated number of elements for mono-adaptive system
     bool updated_jacobian;           // Update Jacobian in each iteration

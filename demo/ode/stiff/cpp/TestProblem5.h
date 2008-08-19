@@ -28,7 +28,7 @@ public:
     H   = 737.0;
   }
 
-  void u0(uBlasVector& u)
+  void u0(uBLASVector& u)
   {
     u[0] = 0.444;
     u[1] = 0.00123;
@@ -38,7 +38,7 @@ public:
     u[5] = 0.36;
   }
 
-  void f(const uBlasVector& u, real t, uBlasVector& y)
+  void f(const uBLASVector& u, real t, uBLASVector& y)
   {
     y[0] = -2.0*r1(u) + r2(u) - r3(u) - r4(u);
     y[1] = -0.5*r1(u) - r4(u) - 0.5*r5(u) + F(u);
@@ -50,32 +50,32 @@ public:
 
 private:
 
-  real r1(const uBlasVector& u)
+  real r1(const uBLASVector& u)
   {
     return k1*pow(u[0], 4.0)*sqrt(u[1]);
   }
   
-  real r2(const uBlasVector& u)
+  real r2(const uBLASVector& u)
   {
     return k2*u[2]*u[3];
   }
 
-  real r3(const uBlasVector& u)
+  real r3(const uBLASVector& u)
   {
     return (k2/K)*u[0]*u[4];
   }
 
-  real r4(const uBlasVector& u)
+  real r4(const uBLASVector& u)
   {
     return k3*u[0]*pow(u[3], 2.0);
   }
 
-  real r5(const uBlasVector& u)
+  real r5(const uBLASVector& u)
   {
     return k4*pow(u[5], 2.0)*sqrt(u[1]);
   }
 
-  real F(const uBlasVector& u)
+  real F(const uBLASVector& u)
   {
     return klA * (p/H - u[1]);
   }

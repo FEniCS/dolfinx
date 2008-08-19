@@ -19,13 +19,13 @@ namespace dolfin
   /// Forward declarations
   class GenericVector;
   class GenericMatrix;
-  class uBlasVector;
-  class uBlasKrylovMatrix;
-  template<class Mat> class uBlasMatrix;
+  class uBLASVector;
+  class uBLASKrylovMatrix;
+  template<class Mat> class uBLASMatrix;
 
   /// This class implements the direct solution (LU factorization) of
-  /// linear systems of the form Ax = b using uBlas data types. Dense
-  /// matrices are solved using uBlas LU factorisation, and sparse matrices
+  /// linear systems of the form Ax = b using uBLAS data types. Dense
+  /// matrices are solved using uBLAS LU factorisation, and sparse matrices
   /// are solved using UMFPACK (http://www.cise.ufl.edu/research/sparse/umfpack/)
   /// is installed. Matrices can also be inverted.
     

@@ -8,7 +8,7 @@
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/math/dolfin_math.h>
 #include <dolfin/parameter/parameters.h>
-#include <dolfin/la/uBlasKrylovSolver.h>
+#include <dolfin/la/uBLASKrylovSolver.h>
 #include <dolfin/la/UmfpackLUSolver.h>
 #include <dolfin/la/KrylovSolver.h>
 #include <dolfin/la/LUSolver.h>
@@ -109,7 +109,7 @@ dolfin::uint MonoAdaptiveNewtonSolver::size() const
   return ts.nj;
 }
 //-----------------------------------------------------------------------------
-void MonoAdaptiveNewtonSolver::Feval(uBlasVector& F)
+void MonoAdaptiveNewtonSolver::Feval(uBLASVector& F)
 {
   if ( implicit )
     FevalImplicit(F);
@@ -117,7 +117,7 @@ void MonoAdaptiveNewtonSolver::Feval(uBlasVector& F)
     FevalExplicit(F);
 }
 //-----------------------------------------------------------------------------
-void MonoAdaptiveNewtonSolver::FevalExplicit(uBlasVector& F)
+void MonoAdaptiveNewtonSolver::FevalExplicit(uBLASVector& F)
 {
   // Compute size of time step
   const real k = ts.length();
@@ -149,11 +149,11 @@ void MonoAdaptiveNewtonSolver::FevalExplicit(uBlasVector& F)
   F -= ts.x;
 }
 //-----------------------------------------------------------------------------
-void MonoAdaptiveNewtonSolver::FevalImplicit(uBlasVector& F)
+void MonoAdaptiveNewtonSolver::FevalImplicit(uBLASVector& F)
 {
   // Use vectors from Jacobian for storing multiplication
-  uBlasVector& xx = A.xx;
-  uBlasVector& yy = A.yy;
+  uBLASVector& xx = A.xx;
+  uBLASVector& yy = A.yy;
 
   // Compute size of time step
   const real a = ts.starttime();
@@ -241,11 +241,11 @@ void MonoAdaptiveNewtonSolver::chooseLinearSolver()
   }
   else
   {
-    message("Using uBlas Krylov solver with no preconditioning.");
+    message("Using uBLAS Krylov solver with no preconditioning.");
     const real ktol = ode.get("ODE discrete Krylov tolerance factor");
 
     // FIXME: Check choice of tolerances
-    krylov = new uBlasKrylovSolver(none);
+    krylov = new uBLASKrylovSolver(none);
     krylov->set("Krylov report", monitor);
     krylov->set("Krylov relative tolerance", ktol);
     krylov->set("Krylov absolute tolerance", ktol*tol);
@@ -261,9 +261,9 @@ void MonoAdaptiveNewtonSolver::chooseLinearSolver()
 void MonoAdaptiveNewtonSolver::debug()
 {
   const uint n = ts.nj;
-  uBlasSparseMatrix B(n, n);
+  uBLASSparseMatrix B(n, n);
   ublas_sparse_matrix& _B = B.mat();
-  uBlasVector F1(n), F2(n);
+  uBLASVector F1(n), F2(n);
 
   // Iterate over the columns of B
   for (uint j = 0; j < n; j++)

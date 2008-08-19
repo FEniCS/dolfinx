@@ -11,7 +11,7 @@
 #include <iostream>
 #include <fstream>
 #include <dolfin/common/types.h>
-#include <dolfin/la/uBlasVector.h>
+#include <dolfin/la/uBLASVector.h>
 
 namespace dolfin
 {
@@ -27,17 +27,17 @@ namespace dolfin
     ~ODESolution();
 
     /// Evaluate (interpolate) value og solution at given time    
-    void eval(const real t, uBlasVector& y);
+    void eval(const real t, uBLASVector& y);
     
     /// for testing
-    void printVector(const uBlasVector& u);
+    void printVector(const uBLASVector& u);
     
   private :
     
     ODE& ode;
     char *filename;
     std::fstream file;
-    std::pair<real, uBlasVector> *cache;
+    std::pair<real, uBLASVector> *cache;
     uint count;
     
     uint cachesize;
@@ -48,12 +48,12 @@ namespace dolfin
     
     uint step;
     
-    void interpolate(const uBlasVector& v1,
+    void interpolate(const uBLASVector& v1,
                      const real t1, 
-                     const uBlasVector& v2, 
+                     const uBLASVector& v2, 
                      const real t2, 
                      const real t, 
-                     uBlasVector& result);
+                     uBLASVector& result);
     
     void addSample(Sample& sample);
     

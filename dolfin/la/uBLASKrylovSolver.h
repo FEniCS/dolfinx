@@ -15,61 +15,61 @@
 #include <dolfin/parameter/Parametrized.h>
 #include "SolverType.h"
 #include "PreconditionerType.h"
-#include "uBlasKrylovMatrix.h"
-#include "uBlasMatrix.h"
-#include "uBlasVector.h"
-#include "uBlasPreconditioner.h"
+#include "uBLASKrylovMatrix.h"
+#include "uBLASMatrix.h"
+#include "uBLASVector.h"
+#include "uBLASPreconditioner.h"
 
 namespace dolfin
 {
 
   /// This class implements Krylov methods for linear systems
-  /// of the form Ax = b using uBlas data types.
+  /// of the form Ax = b using uBLAS data types.
 
-  class uBlasKrylovSolver : public Parametrized
+  class uBLASKrylovSolver : public Parametrized
   {
   public:
 
     /// Create Krylov solver for a particular method and preconditioner
-    uBlasKrylovSolver(SolverType solver_type=default_solver, PreconditionerType pc_type=default_pc);
+    uBLASKrylovSolver(SolverType solver_type=default_solver, PreconditionerType pc_type=default_pc);
 
     /// Create Krylov solver for a particular preconditioner (set by name)
-    uBlasKrylovSolver(PreconditionerType pc);
+    uBLASKrylovSolver(PreconditionerType pc);
 
-    /// Create Krylov solver for a particular uBlasPreconditioner
-    uBlasKrylovSolver(uBlasPreconditioner& pc);
+    /// Create Krylov solver for a particular uBLASPreconditioner
+    uBLASKrylovSolver(uBLASPreconditioner& pc);
 
-    /// Create Krylov solver for a particular method and uBlasPreconditioner
-    uBlasKrylovSolver(SolverType solver_type, uBlasPreconditioner& preconditioner);
+    /// Create Krylov solver for a particular method and uBLASPreconditioner
+    uBLASKrylovSolver(SolverType solver_type, uBLASPreconditioner& preconditioner);
 
     /// Destructor
-    ~uBlasKrylovSolver();
+    ~uBLASKrylovSolver();
 
     /// Solve linear system Ax = b and return number of iterations (dense matrix)
-    uint solve(const uBlasMatrix<ublas_dense_matrix>& A, uBlasVector& x, 
-               const uBlasVector& b);
+    uint solve(const uBLASMatrix<ublas_dense_matrix>& A, uBLASVector& x, 
+               const uBLASVector& b);
 
     /// Solve linear system Ax = b and return number of iterations (sparse matrix)
-    uint solve(const uBlasMatrix<ublas_sparse_matrix>& A, uBlasVector& x, 
-               const uBlasVector& b);
+    uint solve(const uBLASMatrix<ublas_sparse_matrix>& A, uBLASVector& x, 
+               const uBLASVector& b);
     
     /// Solve linear system Ax = b and return number of iterations (virtual matrix)
-    uint solve(const uBlasKrylovMatrix& A, uBlasVector& x, const uBlasVector& b);
+    uint solve(const uBLASKrylovMatrix& A, uBLASVector& x, const uBLASVector& b);
 
   private:
 
     /// Select solver and solve linear system Ax = b and return number of iterations
     template<class Mat>
-    uint solveKrylov(const Mat& A, uBlasVector& x, const uBlasVector& b);
+    uint solveKrylov(const Mat& A, uBLASVector& x, const uBLASVector& b);
 
     /// Solve linear system Ax = b using restarted GMRES
     template<class Mat>    
-    uint solveGMRES(const Mat& A, uBlasVector& x, const uBlasVector& b, 
+    uint solveGMRES(const Mat& A, uBLASVector& x, const uBLASVector& b, 
                         bool& converged) const;
 
     /// Solve linear system Ax = b using BiCGStab
     template<class Mat>    
-    uint solveBiCGStab(const Mat& A, uBlasVector& x, const uBlasVector& b, 
+    uint solveBiCGStab(const Mat& A, uBLASVector& x, const uBLASVector& b, 
                         bool& converged) const;
     
     /// Select and create named preconditioner
@@ -82,7 +82,7 @@ namespace dolfin
     SolverType solver_type;
 
     /// Preconditioner
-    uBlasPreconditioner* pc;
+    uBLASPreconditioner* pc;
 
     /// True if a user has provided a preconditioner
     bool pc_user;
@@ -100,8 +100,8 @@ namespace dolfin
   // Implementation of template functions
   //---------------------------------------------------------------------------
   template<class Mat>
-  dolfin::uint uBlasKrylovSolver::solveKrylov(const Mat& A, uBlasVector& x, 
-        const uBlasVector& b)
+  dolfin::uint uBLASKrylovSolver::solveKrylov(const Mat& A, uBLASVector& x, 
+        const uBLASVector& b)
   {
     // Check dimensions
     uint M = A.size(0);
@@ -119,7 +119,7 @@ namespace dolfin
 
     // Write a message
     if ( report )
-      message("Solving linear system of size %d x %d (uBlas Krylov solver).", M, N);
+      message("Solving linear system of size %d x %d (uBLAS Krylov solver).", M, N);
 
     // Initialise preconditioner if necessary
     pc->init(A);
@@ -153,8 +153,8 @@ namespace dolfin
   }
   //-----------------------------------------------------------------------------
   template<class Mat> 
-  dolfin::uint uBlasKrylovSolver::solveGMRES(const Mat& A, uBlasVector& x, 
-					                           const uBlasVector& b, bool& converged) const
+  dolfin::uint uBLASKrylovSolver::solveGMRES(const Mat& A, uBLASVector& x, 
+					                           const uBLASVector& b, bool& converged) const
   {
     // Get underlying uBLAS vectors
     ublas_vector& _x = x.vec(); 
@@ -164,7 +164,7 @@ namespace dolfin
     const uint size = A.size(0);
 
     // Create residual vector
-    uBlasVector r(size);
+    uBLASVector r(size);
     ublas_vector& _r = r.vec(); 
 
     // Create H matrix and h vector
@@ -178,7 +178,7 @@ namespace dolfin
     ublas_matrix_cmajor V(size, restart+1);
 
     // w vector    
-    uBlasVector w(size);
+    uBLASVector w(size);
     ublas_vector& _w = w.vec(); 
 
     // Givens vectors
@@ -247,7 +247,7 @@ namespace dolfin
         noalias(column(V,j+1)) = _w/_h(j+1);
 
         // Apply previous Givens rotations to the "new" column 
-        // (this could be improved? - use more uBlas functions. 
+        // (this could be improved? - use more uBLAS functions. 
         //  The below has been taken from old DOLFIN code.)
         for(uint i=0; i<j; ++i)
         {
@@ -280,7 +280,7 @@ namespace dolfin
 
         // Add h to H matrix. Would ne nice to use  
         //   noalias(column(H, j)) = subrange(h, 0, restart);
-        // but this gives an error when uBlas debugging is turned onand H 
+        // but this gives an error when uBLAS debugging is turned onand H 
         // is a triangular matrix
         for(uint i=0; i<j+1; ++i)
           H(i,j) = _h(i);
@@ -309,9 +309,9 @@ namespace dolfin
   }
   //-----------------------------------------------------------------------------
   template<class Mat> 
-  dolfin::uint uBlasKrylovSolver::solveBiCGStab(const Mat& A,
-					      uBlasVector& x,
-					      const uBlasVector& b,
+  dolfin::uint uBLASKrylovSolver::solveBiCGStab(const Mat& A,
+					      uBLASVector& x,
+					      const uBLASVector& b,
 					      bool& converged) const
   {
     // Get uderlying uBLAS vectors
@@ -322,7 +322,7 @@ namespace dolfin
     const uint size = A.size(0);
 
     // Allocate vectors
-    uBlasVector r(size), rstar(size), p(size), s(size), v(size), t(size), y(size), z(size);
+    uBLASVector r(size), rstar(size), p(size), s(size), v(size), t(size), y(size), z(size);
     ublas_vector& _r = r.vec(); 
     ublas_vector& _rstar = rstar.vec(); 
     ublas_vector& _p = p.vec(); 

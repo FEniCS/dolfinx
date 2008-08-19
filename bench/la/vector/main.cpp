@@ -53,10 +53,10 @@ int main()
 
   begin("Vector benchmark timings");
 
-  // Perform uBlas benchmarks
-  ublas_timing[0] = VectorAssign<uBlasVector>::benchVectorAssign(N[0], n[0]);
-  ublas_timing[1] = VectorAssign<uBlasVector>::benchVectorAssign(N[1], n[1]);
-  ublas_timing[2] = VectorAssign<uBlasVector>::benchVectorAssign(N[2], n[2]);
+  // Perform uBLAS benchmarks
+  ublas_timing[0] = VectorAssign<uBLASVector>::benchVectorAssign(N[0], n[0]);
+  ublas_timing[1] = VectorAssign<uBLASVector>::benchVectorAssign(N[1], n[1]);
+  ublas_timing[2] = VectorAssign<uBLASVector>::benchVectorAssign(N[2], n[2]);
 
 #ifdef HAS_PETSC  
   // Perform PETSc benchmarks
@@ -70,7 +70,7 @@ int main()
   cout << "PETScVector (N="<< N[0] << ", n=" << n[0] << "): " << get<0>(petsc_timing[0]) << endl;
 #endif
   for(dolfin::uint i=0; i< 3; ++i)
-    cout << "uBlasVector (N="<< N[i] << ", n=" << n[i] << "): " << get<0>(ublas_timing[i]) << endl;
+    cout << "uBLASVector (N="<< N[i] << ", n=" << n[i] << "): " << get<0>(ublas_timing[i]) << endl;
 
   end();
 
@@ -80,7 +80,7 @@ int main()
   cout << "PETScVector (N="<< N[0] << ", n=" << n[0] << "): " << get<0>(petsc_timing[0]) << endl;
 #endif
   for(dolfin::uint i=0; i< 3; ++i)
-    cout << "uBlasVector (N="<< N[i] << ", n=" << n[i] << "): " << get<1>(ublas_timing[i]) << endl;
+    cout << "uBLASVector (N="<< N[i] << ", n=" << n[i] << "): " << get<1>(ublas_timing[i]) << endl;
 
   end();
   end();

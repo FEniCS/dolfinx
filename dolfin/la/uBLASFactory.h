@@ -9,50 +9,50 @@
 #ifndef __UBLAS_FACTORY_H
 #define __UBLAS_FACTORY_H
 
-#include "uBlasMatrix.h"
-#include "uBlasVector.h"
+#include "uBLASMatrix.h"
+#include "uBLASVector.h"
 #include "SparsityPattern.h"
 #include "LinearAlgebraFactory.h"
 
 namespace dolfin
 {
   // Forward declaration
-  template<class T> class uBlasMatrix;
+  template<class T> class uBLASMatrix;
 
   template<class Mat = ublas_sparse_matrix>
-  class uBlasFactory: public LinearAlgebraFactory
+  class uBLASFactory: public LinearAlgebraFactory
   {
   public:
 
     /// Destructor
-    virtual ~uBlasFactory() {}
+    virtual ~uBLASFactory() {}
 
     /// Create empty matrix
-    uBlasMatrix<Mat>* createMatrix() const
-    { return new uBlasMatrix<Mat>(); }
+    uBLASMatrix<Mat>* createMatrix() const
+    { return new uBLASMatrix<Mat>(); }
 
     /// Create empty sparsity pattern 
     SparsityPattern* createPattern() const
     { return new SparsityPattern(); }
 
     /// Create empty vector
-    uBlasVector* createVector() const
-    { return new uBlasVector(); }
+    uBLASVector* createVector() const
+    { return new uBLASVector(); }
 
-    static uBlasFactory<Mat>& instance() 
+    static uBLASFactory<Mat>& instance() 
     { return factory; }
 
   private:
 
     // Private Constructor
-    uBlasFactory() {}
+    uBLASFactory() {}
 
     // Singleton instance
-    static uBlasFactory<Mat> factory;
+    static uBLASFactory<Mat> factory;
   };
 }
 
 // Initialise static data
-template<class Mat> dolfin::uBlasFactory<Mat> dolfin::uBlasFactory<Mat>::factory;
+template<class Mat> dolfin::uBLASFactory<Mat> dolfin::uBLASFactory<Mat>::factory;
 
 #endif

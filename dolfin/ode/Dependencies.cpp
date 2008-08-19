@@ -9,7 +9,7 @@
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/math/dolfin_math.h>
 #include <dolfin/parameter/parameters.h>
-#include <dolfin/la/uBlasVector.h>
+#include <dolfin/la/uBLASVector.h>
 #include "ODE.h"
 #include "Dependencies.h"
 
@@ -61,7 +61,7 @@ void Dependencies::set(uint i, uint j, bool checknew)
   sdep[i].push_back(j);
 }
 //-----------------------------------------------------------------------------
-void Dependencies::set(const uBlasSparseMatrix& A)
+void Dependencies::set(const uBLASSparseMatrix& A)
 {
   // Prepare sparse pattern if necessary
   makeSparse();
@@ -132,7 +132,7 @@ void Dependencies::detect(ODE& ode)
   makeSparse();
 
   // Randomize solution vector
-  uBlasVector u(N);
+  uBLASVector u(N);
   for (uint i = 0; i < N; i++)
     u[i] = rand();
   
@@ -188,7 +188,7 @@ void Dependencies::disp() const
     message("Dependency pattern: dense");
 }
 //-----------------------------------------------------------------------------
-bool Dependencies::checkDependency(ODE& ode, uBlasVector& u, real f0,
+bool Dependencies::checkDependency(ODE& ode, uBLASVector& u, real f0,
 				   uint i, uint j)
 {
   // Save original value

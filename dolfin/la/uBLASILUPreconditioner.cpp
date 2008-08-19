@@ -7,31 +7,31 @@
 // Last changed: 2008-04-22
 
 #include <dolfin/common/constants.h>
-#include "uBlasVector.h"
-#include "uBlasSparseMatrix.h"
-#include "uBlasILUPreconditioner.h"
+#include "uBLASVector.h"
+#include "uBLASSparseMatrix.h"
+#include "uBLASILUPreconditioner.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-uBlasILUPreconditioner::uBlasILUPreconditioner() : uBlasPreconditioner()
+uBLASILUPreconditioner::uBLASILUPreconditioner() : uBLASPreconditioner()
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-uBlasILUPreconditioner::uBlasILUPreconditioner(const uBlasMatrix<ublas_sparse_matrix>& A)
-  : uBlasPreconditioner()
+uBLASILUPreconditioner::uBLASILUPreconditioner(const uBLASMatrix<ublas_sparse_matrix>& A)
+  : uBLASPreconditioner()
 {
   // Initialize preconditioner
   init(A);
 }
 //-----------------------------------------------------------------------------
-uBlasILUPreconditioner::~uBlasILUPreconditioner()
+uBLASILUPreconditioner::~uBLASILUPreconditioner()
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void uBlasILUPreconditioner::solve(uBlasVector& x, const uBlasVector& b) const
+void uBLASILUPreconditioner::solve(uBLASVector& x, const uBLASVector& b) const
 {
   // Get uderlying uBLAS matrices and vectors
   ublas_vector& _x = x.vec(); 
@@ -61,7 +61,7 @@ void uBlasILUPreconditioner::solve(uBlasVector& x, const uBlasVector& b) const
   }
 }
 //-----------------------------------------------------------------------------
-void uBlasILUPreconditioner::init(const uBlasMatrix<ublas_sparse_matrix>& A)
+void uBLASILUPreconditioner::init(const uBLASMatrix<ublas_sparse_matrix>& A)
 {
   ublas_sparse_matrix & _M = M.mat();
 
@@ -95,13 +95,13 @@ void uBlasILUPreconditioner::init(const uBlasMatrix<ublas_sparse_matrix>& A)
   }
   */
   
-  // This approach using uBlas iterators is simple and quite fast.
+  // This approach using uBLAS iterators is simple and quite fast.
   // Is it possible to remove the M(.,.) calls? This would speed it up a lot.
 
   /*
   // Sparse matrix iterators
-  typedef uBlasMatrix<ublas_sparse_matrix>::iterator1 it1;
-  typedef uBlasMatrix<ublas_sparse_matrix>::iterator2 it2;
+  typedef uBLASMatrix<ublas_sparse_matrix>::iterator1 it1;
+  typedef uBLASMatrix<ublas_sparse_matrix>::iterator2 it2;
   it2 ij;
   for (it1 i1 = M.begin1(); i1 != M.end1(); ++i1)  // iterate over rows  i=0 -> size
   {
@@ -162,7 +162,7 @@ void uBlasILUPreconditioner::init(const uBlasMatrix<ublas_sparse_matrix>& A)
     diagonal[k] = j;
 
     if( jrow != k || fabs( _M.value_data() [j] ) < DOLFIN_EPS )
-      error("Zero pivot detected in uBlas ILU preconditioner in row %u.", k);
+      error("Zero pivot detected in uBLAS ILU preconditioner in row %u.", k);
 
     for(uint i=j0; i <= j1; ++i)
       iw[ _M.index2_data () [i] ] = 0;        

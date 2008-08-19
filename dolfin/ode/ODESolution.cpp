@@ -25,7 +25,7 @@ ODESolution::ODESolution(ODE& ode) :
   std::string m = ode.get("ODE method") ;
   if (m == "dg") ++cachesize;
 
-  cache = new std::pair<real, uBlasVector>[cachesize];
+  cache = new std::pair<real, uBLASVector>[cachesize];
   for (uint i = 0; i < cachesize; ++i) {
     cache[i].first = -1;
     cache[i].second.init(ode.size());
@@ -60,7 +60,7 @@ void ODESolution::makeIndex() {
   file.open(filename, std::ios::in | std::ios::binary);  
 }
 //-----------------------------------------------------------------------------
-void ODESolution::eval(const real t, uBlasVector& y) {
+void ODESolution::eval(const real t, uBLASVector& y) {
   //cout << "eval(" << t << ")" << endl;
 
   //scan the cache
@@ -72,7 +72,7 @@ void ODESolution::eval(const real t, uBlasVector& y) {
     if (cache[i].first == t) {
       //found return cache[i]
       for (uint j = 0; j < ode.size(); j++) {
-        uBlasVector& c = cache[i].second;
+        uBLASVector& c = cache[i].second;
         y[j] = c[j];
       }
       //std::cout << "t=" << t << " " << std::flush;
@@ -101,7 +101,7 @@ void ODESolution::eval(const real t, uBlasVector& y) {
 
   real t_a = bintree[a];
   real t_b = bintree[b];
-  uBlasVector tmp(ode.size());
+  uBLASVector tmp(ode.size());
   
   file.seekg(a*step+sizeof(real), std::ios_base::beg);
   for (unsigned int i = 0; i < ode.size(); i++) {
@@ -131,12 +131,12 @@ void ODESolution::eval(const real t, uBlasVector& y) {
 
 }
 //-----------------------------------------------------------------------------
-void ODESolution::interpolate(const uBlasVector& v1, 
+void ODESolution::interpolate(const uBLASVector& v1, 
 			      const real t1, 
-			      const uBlasVector& v2, 
+			      const uBLASVector& v2, 
 			      const real t2, 
 			      const real t, 
-			      uBlasVector& result) {
+			      uBLASVector& result) {
   real h = t2-t1;
   for (uint i = 0; i < ode.size(); i++) {
     result[i] = v1[i] + (t-t1)*((v2[i]-v1[i])/h);
@@ -144,7 +144,7 @@ void ODESolution::interpolate(const uBlasVector& v1,
 }
 //-----------------------------------------------------------------------------
 //REMOVE AFTER TESTING
-void ODESolution::printVector(const uBlasVector& u) {
+void ODESolution::printVector(const uBLASVector& u) {
   for (unsigned int i=0; i < u.size(); i++) {
     printf("%.15f ", u[i]);
   }

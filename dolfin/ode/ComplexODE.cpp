@@ -75,7 +75,7 @@ bool ComplexODE::update(const complex z[], real t, bool end)
   return true;
 }
 //-----------------------------------------------------------------------------
-void ComplexODE::u0(uBlasVector& u)
+void ComplexODE::u0(uBLASVector& u)
 {
   // Translate initial value from complex to real
   z0(zvalues);
@@ -86,7 +86,7 @@ void ComplexODE::u0(uBlasVector& u)
   }
 }
 //-----------------------------------------------------------------------------
-real ComplexODE::f(const uBlasVector& u, real t, uint i)
+real ComplexODE::f(const uBLASVector& u, real t, uint i)
 {
   // Translate right-hand side from complex to real, assuming that if
   // u_i depends on u_j, then u_i depends on both the real and
@@ -114,7 +114,7 @@ real ComplexODE::f(const uBlasVector& u, real t, uint i)
   return ( i % 2 == 0 ? fvalue.real() : fvalue.imag() );
 }
 //-----------------------------------------------------------------------------
-void ComplexODE::f(const uBlasVector& u, real t, uBlasVector& y)
+void ComplexODE::f(const uBLASVector& u, real t, uBLASVector& y)
 {
   // Update zvalues for all components
   for (uint i = 0; i < n; i++)
@@ -135,8 +135,8 @@ void ComplexODE::f(const uBlasVector& u, real t, uBlasVector& y)
   }
 }
 //-----------------------------------------------------------------------------
-void ComplexODE::M(const uBlasVector& x, uBlasVector& y,
-		   const uBlasVector& u, real t)
+void ComplexODE::M(const uBLASVector& x, uBLASVector& y,
+		   const uBLASVector& u, real t)
 {
   // Update zvalues and fvalues for all components
   for (uint i = 0; i < n; i++)
@@ -167,8 +167,8 @@ void ComplexODE::M(const uBlasVector& x, uBlasVector& y,
   }
 }
 //-----------------------------------------------------------------------------
-void ComplexODE::J(const uBlasVector& x, uBlasVector& y,
-		   const uBlasVector& u, real t)
+void ComplexODE::J(const uBLASVector& x, uBLASVector& y,
+		   const uBLASVector& u, real t)
 {
   // Update zvalues and fvalues for all components
   for (uint i = 0; i < n; i++)
@@ -205,7 +205,7 @@ real ComplexODE::timestep(uint i)
   return k(i / 2);
 }
 //-----------------------------------------------------------------------------
-bool ComplexODE::update(const uBlasVector& u, real t, bool end)
+bool ComplexODE::update(const uBLASVector& u, real t, bool end)
 {
   // Update zvalues for all components
   for (uint i = 0; i < n; i++)

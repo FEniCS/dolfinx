@@ -27,7 +27,7 @@ Dual::~Dual()
   // Do nothing
 }
 //------------------------------------------------------------------------
-void Dual::u0(uBlasVector& y)
+void Dual::u0(uBLASVector& y)
 {
   // TODO
   // Should be able to use different choices of initial data to the dual
@@ -38,7 +38,7 @@ void Dual::u0(uBlasVector& y)
   
 }
 //------------------------------------------------------------------------
-void Dual::f(const uBlasVector& phi, real t, uBlasVector& y)
+void Dual::f(const uBLASVector& phi, real t, uBLASVector& y)
 {
   // FIXME: Here we can do some optimization. Since we compute the sum
   // FIXME: over all dual dependencies of i we will do the update of

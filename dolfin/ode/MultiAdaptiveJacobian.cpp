@@ -6,7 +6,7 @@
 
 #include <dolfin/common/constants.h>
 #include <dolfin/math/dolfin_math.h>
-#include <dolfin/la/uBlasVector.h>
+#include <dolfin/la/uBLASVector.h>
 #include "ODE.h"
 #include "Method.h"
 #include "MultiAdaptiveTimeSlab.h"
@@ -64,7 +64,7 @@ dolfin::uint MultiAdaptiveJacobian::size(uint dim) const
   return ts.nj;
 }
 //-----------------------------------------------------------------------------
-void MultiAdaptiveJacobian::mult(const uBlasVector& x, uBlasVector& y) const
+void MultiAdaptiveJacobian::mult(const uBLASVector& x, uBLASVector& y) const
 {
   // We iterate over all degrees of freedom j in the time slab and compute
   // y_j = (Ax)_j for each degree of freedom of the system.
@@ -108,7 +108,7 @@ void MultiAdaptiveJacobian::init()
   */
 }
 //-----------------------------------------------------------------------------
-void MultiAdaptiveJacobian::cGmult(const uBlasVector& x, uBlasVector& y) const
+void MultiAdaptiveJacobian::cGmult(const uBLASVector& x, uBLASVector& y) const
 {
   // Reset current sub slab
   int s0 = -1;
@@ -306,7 +306,7 @@ void MultiAdaptiveJacobian::cGmult(const uBlasVector& x, uBlasVector& y) const
   }
 }
 //-----------------------------------------------------------------------------
-void MultiAdaptiveJacobian::dGmult(const uBlasVector& x, uBlasVector& y) const
+void MultiAdaptiveJacobian::dGmult(const uBLASVector& x, uBLASVector& y) const
 {
   // Reset current sub slab
   int s0 = -1;
