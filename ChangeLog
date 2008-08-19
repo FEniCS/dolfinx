@@ -1,3 +1,6 @@
+ - Refinements of Graph class
+ - Add CholmodCholeskySlover (direct solver for symmetric matrices)
+ - Implement application of Dirichlet boundary conditions within assembly loop
  - Improve efficiency of SparsityPattern
  - Allow a variable number of smoothings
  - Add class Table for pretty-printing of tables
