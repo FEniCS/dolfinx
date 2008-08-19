@@ -16,9 +16,9 @@
 #include "GenericVector.h"
 #include "SolverType.h"
 #include "PreconditionerType.h"
-#include "uBlasKrylovSolver.h"
-#include "uBlasSparseMatrix.h"
-#include "uBlasDenseMatrix.h"
+#include "uBLASKrylovSolver.h"
+#include "uBLASSparseMatrix.h"
+#include "uBLASDenseMatrix.h"
 #include "EpetraKrylovSolver.h"
 #include "ITLKrylovSolver.h"
 #include "MTL4Matrix.h"
@@ -58,24 +58,24 @@ namespace dolfin
     { 
       Timer timer("Krylov solver");
 
-      if (A.has_type<uBlasSparseMatrix>())
+      if (A.has_type<uBLASSparseMatrix>())
       {
         if (!ublas_solver)
         {
-          ublas_solver = new uBlasKrylovSolver(solver_type, pc_type);
+          ublas_solver = new uBLASKrylovSolver(solver_type, pc_type);
           ublas_solver->set("parent", *this);
         }
-        return ublas_solver->solve(A.down_cast<uBlasSparseMatrix>(), x.down_cast<uBlasVector>(), b.down_cast<uBlasVector>());
+        return ublas_solver->solve(A.down_cast<uBLASSparseMatrix>(), x.down_cast<uBLASVector>(), b.down_cast<uBLASVector>());
       }
 
-      if (A.has_type<uBlasDenseMatrix>())
+      if (A.has_type<uBLASDenseMatrix>())
       {
         if (!ublas_solver)
         {
-          ublas_solver = new uBlasKrylovSolver(solver_type, pc_type);
+          ublas_solver = new uBLASKrylovSolver(solver_type, pc_type);
           ublas_solver->set("parent", *this);
         }
-        return ublas_solver->solve(A.down_cast<uBlasDenseMatrix>(), x.down_cast<uBlasVector>(), b.down_cast<uBlasVector>());
+        return ublas_solver->solve(A.down_cast<uBLASDenseMatrix>(), x.down_cast<uBLASVector>(), b.down_cast<uBLASVector>());
       }
 
 #ifdef HAS_PETSC
@@ -125,7 +125,7 @@ namespace dolfin
     PreconditionerType pc_type;
     
     // uBLAS solver
-    uBlasKrylovSolver* ublas_solver;
+    uBLASKrylovSolver* ublas_solver;
 
     // PETSc solver
 #ifdef HAS_PETSC

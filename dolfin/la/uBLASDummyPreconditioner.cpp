@@ -4,23 +4,23 @@
 // First added:  2006-07-04
 // Last changed: 2006-07-04
 
-#include "uBlasVector.h"
-#include "uBlasDummyPreconditioner.h"
+#include "uBLASVector.h"
+#include "uBLASDummyPreconditioner.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-uBlasDummyPreconditioner::uBlasDummyPreconditioner() : uBlasPreconditioner()
+uBLASDummyPreconditioner::uBLASDummyPreconditioner() : uBLASPreconditioner()
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-uBlasDummyPreconditioner::~uBlasDummyPreconditioner()
+uBLASDummyPreconditioner::~uBLASDummyPreconditioner()
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void uBlasDummyPreconditioner::solve(uBlasVector& x, const uBlasVector& b) const
+void uBLASDummyPreconditioner::solve(uBLASVector& x, const uBLASVector& b) const
 {
   x.vec().assign(b.vec());
 }

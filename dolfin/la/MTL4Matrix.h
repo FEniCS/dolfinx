@@ -114,9 +114,6 @@ namespace dolfin
 
     //--- Special MTL4 functions ---
 
-    void init_inserter(void);
-    void assert_no_inserter(void) const;
-
     /// Create M x N matrix with estimate of nonzeroes per row
     MTL4Matrix(uint M, uint N, uint nz);
 
@@ -129,6 +126,9 @@ namespace dolfin
     //const MTL4Matrix& operator= (const MTL4Matrix& x);
 
   private:
+
+    void init_inserter(void);
+    void assert_no_inserter(void) const;
 
     // MTL4 matrix object
     mtl4_sparse_matrix A;

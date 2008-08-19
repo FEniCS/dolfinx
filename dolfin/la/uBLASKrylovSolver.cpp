@@ -6,14 +6,14 @@
 // First added:  2006-05-31
 // Last changed: 2008-05-15
 
-#include "uBlasILUPreconditioner.h"
-#include "uBlasDummyPreconditioner.h"
-#include "uBlasKrylovSolver.h"
+#include "uBLASILUPreconditioner.h"
+#include "uBLASDummyPreconditioner.h"
+#include "uBLASKrylovSolver.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-uBlasKrylovSolver::uBlasKrylovSolver(SolverType solver_type, PreconditionerType pc_type)
+uBLASKrylovSolver::uBLASKrylovSolver(SolverType solver_type, PreconditionerType pc_type)
   : Parametrized(),
     solver_type(solver_type), pc_user(false), report(false), parameters_read(false)
 {
@@ -21,7 +21,7 @@ uBlasKrylovSolver::uBlasKrylovSolver(SolverType solver_type, PreconditionerType 
   selectPreconditioner(pc_type);
 }
 //-----------------------------------------------------------------------------
-uBlasKrylovSolver::uBlasKrylovSolver(PreconditionerType pc_type)
+uBLASKrylovSolver::uBLASKrylovSolver(PreconditionerType pc_type)
   : Parametrized(),
     solver_type(default_solver), pc_user(false), report(false), parameters_read(false)
 {
@@ -29,65 +29,65 @@ uBlasKrylovSolver::uBlasKrylovSolver(PreconditionerType pc_type)
   selectPreconditioner(pc_type);
 }
 //-----------------------------------------------------------------------------
-uBlasKrylovSolver::uBlasKrylovSolver(uBlasPreconditioner& pc)
+uBLASKrylovSolver::uBLASKrylovSolver(uBLASPreconditioner& pc)
   : Parametrized(),
     solver_type(default_solver), pc(&pc), pc_user(true), report(false), parameters_read(false)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-uBlasKrylovSolver::uBlasKrylovSolver(SolverType solver_type, uBlasPreconditioner& pc)
+uBLASKrylovSolver::uBLASKrylovSolver(SolverType solver_type, uBLASPreconditioner& pc)
   : Parametrized(),
     solver_type(solver_type), pc(&pc), pc_user(true), report(false), parameters_read(false)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-uBlasKrylovSolver::~uBlasKrylovSolver()
+uBLASKrylovSolver::~uBLASKrylovSolver()
 {
   // Delete preconditioner if it was not created by user
   if( !pc_user )
     delete pc;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint uBlasKrylovSolver::solve(const uBlasMatrix<ublas_dense_matrix>& A, 
-    uBlasVector& x, const uBlasVector& b)
+dolfin::uint uBLASKrylovSolver::solve(const uBLASMatrix<ublas_dense_matrix>& A, 
+    uBLASVector& x, const uBLASVector& b)
 { 
   return solveKrylov(A, x, b); 
 }
 //-----------------------------------------------------------------------------
-dolfin::uint uBlasKrylovSolver::solve(const uBlasMatrix<ublas_sparse_matrix>& A, 
-    uBlasVector& x, const uBlasVector& b)
+dolfin::uint uBLASKrylovSolver::solve(const uBLASMatrix<ublas_sparse_matrix>& A, 
+    uBLASVector& x, const uBLASVector& b)
 { 
   return solveKrylov(A, x, b); 
 }
 //-----------------------------------------------------------------------------
-dolfin::uint uBlasKrylovSolver::solve(const uBlasKrylovMatrix& A, uBlasVector& x, 
-    const uBlasVector& b)
+dolfin::uint uBLASKrylovSolver::solve(const uBLASKrylovMatrix& A, uBLASVector& x, 
+    const uBLASVector& b)
 { 
   return solveKrylov(A, x, b); 
 }
 //-----------------------------------------------------------------------------
-void uBlasKrylovSolver::selectPreconditioner(PreconditionerType pc_type)
+void uBLASKrylovSolver::selectPreconditioner(PreconditionerType pc_type)
 {
   switch (pc_type)
   { 
     case none:
-      pc = new uBlasDummyPreconditioner();
+      pc = new uBLASDummyPreconditioner();
       break;
     case ilu:
-      pc = new uBlasILUPreconditioner();
+      pc = new uBLASILUPreconditioner();
       break;
     case default_pc:
-      pc = new uBlasILUPreconditioner();
+      pc = new uBLASILUPreconditioner();
       break;
     default:
-      warning("Requested preconditioner is not available for uBlas Krylov solver. Using ILU.");
-      pc = new uBlasILUPreconditioner();
+      warning("Requested preconditioner is not available for uBLAS Krylov solver. Using ILU.");
+      pc = new uBLASILUPreconditioner();
   }
 }
 //-----------------------------------------------------------------------------
-void uBlasKrylovSolver::readParameters()
+void uBLASKrylovSolver::readParameters()
 {
   // Set tolerances and other parameters
   rtol    = get("Krylov relative tolerance");

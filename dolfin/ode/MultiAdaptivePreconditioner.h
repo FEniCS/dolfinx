@@ -7,7 +7,7 @@
 #ifndef __MULTI_ADAPTIVE_PRECONDITIONER_H
 #define __MULTI_ADAPTIVE_PRECONDITIONER_H
 
-#include <dolfin/la/uBlasPreconditioner.h>
+#include <dolfin/la/uBLASPreconditioner.h>
 
 namespace dolfin
 {
@@ -20,7 +20,7 @@ namespace dolfin
   /// does simple forward propagation of values on internal elements
   /// of the time slab (without so much as looking at the Jacobian).
 
-  class MultiAdaptivePreconditioner : public uBlasPreconditioner
+  class MultiAdaptivePreconditioner : public uBLASPreconditioner
   {
   public:
 
@@ -31,7 +31,7 @@ namespace dolfin
     ~MultiAdaptivePreconditioner();
     
     /// Solve linear system approximately for given right-hand side b
-    void solve(uBlasVector& x, const uBlasVector& b) const;
+    void solve(uBLASVector& x, const uBLASVector& b) const;
     
   private:
 

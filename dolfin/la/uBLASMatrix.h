@@ -23,16 +23,16 @@
 #include "LinearAlgebraFactory.h"
 #include "SparsityPattern.h"
 #include "ublas.h"
-#include "uBlasFactory.h"
-#include "uBlasVector.h"
+#include "uBLASFactory.h"
+#include "uBLASVector.h"
 #include "GenericMatrix.h"
 
 namespace dolfin
 {
 
   // Forward declarations
-  class uBlasVector;
-  template< class T> class uBlasFactory;
+  class uBLASVector;
+  template< class T> class uBLASFactory;
 
   namespace ublas = boost::numeric::ublas;
 
@@ -49,25 +49,25 @@ namespace dolfin
   /// inlined to avoid link errors.
 
   template<class Mat>
-  class uBlasMatrix : public GenericMatrix, public Variable
+  class uBLASMatrix : public GenericMatrix, public Variable
   {
   public:
 
     /// Create empty matrix
-    uBlasMatrix();
+    uBLASMatrix();
     
     /// Create M x N matrix
-    uBlasMatrix(uint M, uint N);
+    uBLASMatrix(uint M, uint N);
 
     /// Copy constructor
-    explicit uBlasMatrix(const uBlasMatrix& A);
+    explicit uBLASMatrix(const uBLASMatrix& A);
 
     /// Create matrix from given uBLAS matrix expression
     template <class E>
-    explicit uBlasMatrix(const ublas::matrix_expression<E>& A) : Mat(A) {}
+    explicit uBLASMatrix(const ublas::matrix_expression<E>& A) : Mat(A) {}
 
     /// Destructor
-    virtual ~uBlasMatrix();
+    virtual ~uBLASMatrix();
 
     //--- Implementation of the GenericTensor interface ---
 
@@ -75,7 +75,7 @@ namespace dolfin
     virtual void init(const GenericSparsityPattern& sparsity_pattern);
 
     /// Return copy of tensor
-    virtual uBlasMatrix<Mat>* copy() const;
+    virtual uBLASMatrix<Mat>* copy() const;
 
     /// Return size of given dimension
     virtual uint size(uint dim) const;
@@ -119,10 +119,10 @@ namespace dolfin
     virtual void mult(const GenericVector& x, GenericVector& y, bool transposed=false) const; 
 
     /// Multiply matrix by given number
-    virtual const uBlasMatrix<Mat>& operator*= (real a);
+    virtual const uBLASMatrix<Mat>& operator*= (real a);
 
     /// Divide matrix by given number
-    virtual const uBlasMatrix<Mat>& operator/= (real a);
+    virtual const uBLASMatrix<Mat>& operator/= (real a);
 
     /// Assignment operator
     virtual const GenericMatrix& operator= (const GenericMatrix& A);
@@ -134,7 +134,7 @@ namespace dolfin
 
     /// Return linear algebra backend factory
     virtual LinearAlgebraFactory& factory() const
-    { return uBlasFactory<Mat>::instance(); }
+    { return uBLASFactory<Mat>::instance(); }
 
     //--- Special uBLAS functions ---
     
@@ -147,16 +147,16 @@ namespace dolfin
     { return A; }
 
     /// Solve Ax = b out-of-place using uBLAS (A is not destroyed)
-    void solve(uBlasVector& x, const uBlasVector& b) const;
+    void solve(uBLASVector& x, const uBLASVector& b) const;
 
     /// Solve Ax = b in-place using uBLAS(A is destroyed)
-    void solveInPlace(uBlasVector& x, const uBlasVector& b);
+    void solveInPlace(uBLASVector& x, const uBLASVector& b);
 
     /// Compute inverse of matrix
     void invert();
 
     /// Lump matrix into vector m
-    void lump(uBlasVector& m) const;
+    void lump(uBLASVector& m) const;
 
     /// Compress matrix (eliminate all non-zeros from a sparse matrix) 
     void compress();
@@ -166,11 +166,11 @@ namespace dolfin
     { return A(i, j); }
 
     /// Assignment operator
-    const uBlasMatrix<Mat>& operator= (const uBlasMatrix<Mat>& A);
+    const uBLASMatrix<Mat>& operator= (const uBLASMatrix<Mat>& A);
 
   private:
 
-    /// General uBlas LU solver which accepts both vector and matrix right-hand sides
+    /// General uBLAS LU solver which accepts both vector and matrix right-hand sides
     template<class B>
     void solveInPlace(B& X);
 
@@ -180,34 +180,34 @@ namespace dolfin
   };
 
   //---------------------------------------------------------------------------
-  // Implementation of uBlasMatrix
+  // Implementation of uBLASMatrix
   //---------------------------------------------------------------------------
   template <class Mat> 
-  uBlasMatrix<Mat>::uBlasMatrix() : GenericMatrix(), A(0, 0)
+  uBLASMatrix<Mat>::uBLASMatrix() : GenericMatrix(), A(0, 0)
   { 
     // Do nothing 
   }
   //---------------------------------------------------------------------------
   template <class Mat> 
-  uBlasMatrix<Mat>::uBlasMatrix(uint M, uint N) : GenericMatrix(), A(M, N)
+  uBLASMatrix<Mat>::uBLASMatrix(uint M, uint N) : GenericMatrix(), A(M, N)
   { 
     // Do nothing 
   }
   //---------------------------------------------------------------------------
   template <class Mat> 
-  uBlasMatrix<Mat>::uBlasMatrix(const uBlasMatrix& A) : GenericMatrix(), A(A.A)
+  uBLASMatrix<Mat>::uBLASMatrix(const uBLASMatrix& A) : GenericMatrix(), A(A.A)
   { 
     // Do nothing 
   }
   //---------------------------------------------------------------------------
   template <class Mat>
-  uBlasMatrix<Mat>::~uBlasMatrix()
+  uBLASMatrix<Mat>::~uBLASMatrix()
   { 
     // Do nothing 
   }
   //---------------------------------------------------------------------------
   template <class Mat>
-  void uBlasMatrix< Mat >::init(uint M, uint N)
+  void uBLASMatrix< Mat >::init(uint M, uint N)
   {
     // Resize matrix
     if( size(0) != M || size(1) != N )
@@ -218,24 +218,24 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <class Mat>
-  uBlasMatrix<Mat>* uBlasMatrix<Mat>::copy() const
+  uBLASMatrix<Mat>* uBLASMatrix<Mat>::copy() const
   {
-    return new uBlasMatrix<Mat>(*this);
+    return new uBLASMatrix<Mat>(*this);
   }
   //---------------------------------------------------------------------------
   template <class Mat> 
-  uint uBlasMatrix<Mat>::size(uint dim) const
+  uint uBLASMatrix<Mat>::size(uint dim) const
   {
     dolfin_assert( dim < 2 );
     return (dim == 0 ? A.Mat::size1() : A.Mat::size2());  
   }
   //---------------------------------------------------------------------------
   template <class Mat>
-  void uBlasMatrix<Mat>::getrow(uint row_idx, Array<uint>& columns, Array<real>& values) const
+  void uBLASMatrix<Mat>::getrow(uint row_idx, Array<uint>& columns, Array<real>& values) const
   {
     dolfin_assert(row_idx < this->size(0));
 
-    // Reference to matrix row (throw away const-ness and trust uBlas)
+    // Reference to matrix row (throw away const-ness and trust uBLAS)
     ublas::matrix_row<Mat> row( *(const_cast<Mat*>(&A)) , row_idx);
         
     // Insert values into Arrays
@@ -250,7 +250,7 @@ namespace dolfin
   }
   //-----------------------------------------------------------------------------
   template <class Mat>
-  void uBlasMatrix<Mat>::setrow(uint row_idx, const Array<uint>& columns, const Array<real>& values)
+  void uBLASMatrix<Mat>::setrow(uint row_idx, const Array<uint>& columns, const Array<real>& values)
   {
     dolfin_assert(columns.size() == values.size());
     dolfin_assert(row_idx < this->size(0));
@@ -264,7 +264,7 @@ namespace dolfin
   }
   //-----------------------------------------------------------------------------
   template <class Mat>
-  void uBlasMatrix<Mat>::set(const real* block, uint m, const uint* rows,
+  void uBLASMatrix<Mat>::set(const real* block, uint m, const uint* rows,
                                                 uint n, const uint* cols)
   {
     for (uint i = 0; i < m; i++)
@@ -273,7 +273,7 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <class Mat>  
-  void uBlasMatrix<Mat>::add(const real* block, uint m, const uint* rows,
+  void uBLASMatrix<Mat>::add(const real* block, uint m, const uint* rows,
                                                 uint n, const uint* cols)
   {
     for (uint i = 0; i < m; i++)
@@ -282,7 +282,7 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <class Mat>
-  void uBlasMatrix<Mat>::get(real* block, uint m, const uint* rows,
+  void uBLASMatrix<Mat>::get(real* block, uint m, const uint* rows,
                                           uint n, const uint* cols) const
   {
     for(uint i = 0; i < m; ++i)
@@ -291,7 +291,7 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <class Mat>  
-  void uBlasMatrix<Mat>::lump(uBlasVector& m) const
+  void uBLASMatrix<Mat>::lump(uBLASVector& m) const
   {
     const uint n = size(1);
     m.init(n);
@@ -300,10 +300,10 @@ namespace dolfin
   }
   //-----------------------------------------------------------------------------
   template <class Mat>  
-  void uBlasMatrix<Mat>::solve(uBlasVector& x, const uBlasVector& b) const
+  void uBLASMatrix<Mat>::solve(uBLASVector& x, const uBLASVector& b) const
   {
     // Make copy of matrix and vector
-    uBlasMatrix<Mat> Atemp;
+    uBLASMatrix<Mat> Atemp;
     Atemp.mat().resize(size(0), size(1));
     Atemp.mat().assign(A);
     x.vec().resize(b.vec().size());
@@ -314,7 +314,7 @@ namespace dolfin
   }
   //-----------------------------------------------------------------------------
   template <class Mat>  
-  void uBlasMatrix<Mat>::solveInPlace(uBlasVector& x, const uBlasVector& b)
+  void uBLASMatrix<Mat>::solveInPlace(uBLASVector& x, const uBLASVector& b)
   {
     const uint M = A.size1();
     dolfin_assert(M == b.size());
@@ -329,7 +329,7 @@ namespace dolfin
   }
   //-----------------------------------------------------------------------------
   template <class Mat>  
-  void uBlasMatrix<Mat>::invert()
+  void uBLASMatrix<Mat>::invert()
   {
     const uint M = A.size1();
     dolfin_assert(M == A.size2());
@@ -344,13 +344,13 @@ namespace dolfin
   }
 //-----------------------------------------------------------------------------
   template <class Mat>
-  void uBlasMatrix<Mat>::apply()
+  void uBLASMatrix<Mat>::apply()
   {
     // Do nothing
   }
   //---------------------------------------------------------------------------
   template <class Mat>  
-  void uBlasMatrix<Mat>::zero()
+  void uBLASMatrix<Mat>::zero()
   {
     // Set all non-zero values to zero without detroying non-zero pattern
     // It might be faster to iterate throught entries?
@@ -358,14 +358,14 @@ namespace dolfin
   }
   //-----------------------------------------------------------------------------
   template <class Mat>  
-  void uBlasMatrix<Mat>::zero(uint m, const uint* rows) 
+  void uBLASMatrix<Mat>::zero(uint m, const uint* rows) 
   {
     for(uint i = 0; i < m; ++i) 
       ublas::row(A, rows[i]) *= 0.0;  
   }
   //-----------------------------------------------------------------------------
   template <class Mat>  
-  void uBlasMatrix<Mat>::ident(uint m, const uint* rows) 
+  void uBLASMatrix<Mat>::ident(uint m, const uint* rows) 
   {
     const uint n = this->size(1);
     for(uint i = 0; i < m; ++i)
@@ -373,44 +373,44 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <class Mat>
-  void uBlasMatrix<Mat>::mult(const GenericVector& x, GenericVector& y, bool transposed) const
+  void uBLASMatrix<Mat>::mult(const GenericVector& x, GenericVector& y, bool transposed) const
   {
     if (transposed == true) 
       error("The transposed version of the uBLAS matrix-vector product is not yet implemented");
 
-    ublas::axpy_prod(A, x.down_cast<uBlasVector>().vec(), y.down_cast<uBlasVector>().vec(), true);
+    ublas::axpy_prod(A, x.down_cast<uBLASVector>().vec(), y.down_cast<uBLASVector>().vec(), true);
   }
   //-----------------------------------------------------------------------------
   template <class Mat>
-  const uBlasMatrix<Mat>& uBlasMatrix<Mat>::operator*= (real a)
+  const uBLASMatrix<Mat>& uBLASMatrix<Mat>::operator*= (real a)
    { 
     A *= a; 
     return *this; 
   }
   //-----------------------------------------------------------------------------
   template <class Mat>  
-  const uBlasMatrix<Mat>& uBlasMatrix<Mat>::operator/= (real a)
+  const uBLASMatrix<Mat>& uBLASMatrix<Mat>::operator/= (real a)
   { 
     A /= a; 
     return *this; 
   }
   //-----------------------------------------------------------------------------
   template <class Mat>  
-  const GenericMatrix& uBlasMatrix<Mat>::operator= (const GenericMatrix& A)
+  const GenericMatrix& uBLASMatrix<Mat>::operator= (const GenericMatrix& A)
   { 
-    this->A = A.down_cast< uBlasMatrix<Mat> >().mat(); 
+    this->A = A.down_cast< uBLASMatrix<Mat> >().mat(); 
     return *this;
   }
   //-----------------------------------------------------------------------------
   template <class Mat>  
-  inline const uBlasMatrix<Mat>& uBlasMatrix<Mat>::operator= (const uBlasMatrix<Mat>& A)
+  inline const uBLASMatrix<Mat>& uBLASMatrix<Mat>::operator= (const uBLASMatrix<Mat>& A)
   {
     this->A = A.mat(); 
     return *this;
   }
   //-----------------------------------------------------------------------------
   template <class Mat>  
-  inline void uBlasMatrix<Mat>::compress()
+  inline void uBLASMatrix<Mat>::compress()
   {
     Mat A_temp(this->size(0), this->size(1));
     A_temp.assign(A);
@@ -418,7 +418,7 @@ namespace dolfin
   }
   //-----------------------------------------------------------------------------
   template <class Mat>  
-  void uBlasMatrix<Mat>::disp(uint precision) const
+  void uBLASMatrix<Mat>::disp(uint precision) const
   {
     typename Mat::const_iterator1 it1;  // Iterator over rows
     typename Mat::const_iterator2 it2;  // Iterator over entries
@@ -441,7 +441,7 @@ namespace dolfin
   // Specialised member functions (must be inlined to avoid link errors)
   //-----------------------------------------------------------------------------
   template <> 
-  inline void uBlasMatrix<ublas_sparse_matrix>::init(const GenericSparsityPattern& sparsity_pattern)
+  inline void uBLASMatrix<ublas_sparse_matrix>::init(const GenericSparsityPattern& sparsity_pattern)
   {
     init(sparsity_pattern.size(0), sparsity_pattern.size(1));
 
@@ -465,14 +465,14 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <class Mat> 
-  inline void uBlasMatrix<Mat>::init(const GenericSparsityPattern& sparsity_pattern)
+  inline void uBLASMatrix<Mat>::init(const GenericSparsityPattern& sparsity_pattern)
   {
     init(sparsity_pattern.size(0), sparsity_pattern.size(1));
   }
   //---------------------------------------------------------------------------
   template <>
   inline boost::tuple<const std::size_t*, const std::size_t*, const double*, int> 
-                                  uBlasMatrix<ublas_sparse_matrix>::data() const
+                                  uBLASMatrix<ublas_sparse_matrix>::data() const
   { 
     // Make sure matrix assembly is complete
     const_cast< ublas_sparse_matrix& >(A).complete_index1_data(); 
@@ -483,14 +483,14 @@ namespace dolfin
   //---------------------------------------------------------------------------
   template <class Mat>
   inline boost::tuple<const std::size_t*, const std::size_t*, const double*, int> 
-                                                    uBlasMatrix<Mat>::data() const
+                                                    uBLASMatrix<Mat>::data() const
   { 
-    error("Unable to return pointers to underlying data for this uBlasMatrix type."); 
+    error("Unable to return pointers to underlying data for this uBLASMatrix type."); 
     return boost::tuple<const std::size_t*, const std::size_t*, const double*, int>(0, 0, 0, 0);
   } 
   //---------------------------------------------------------------------------
   template<class Mat> template<class B>
-  void uBlasMatrix<Mat>::solveInPlace(B& X)
+  void uBLASMatrix<Mat>::solveInPlace(B& X)
   {
     const uint M = A.size1();
     dolfin_assert( M == A.size2() );
@@ -501,25 +501,25 @@ namespace dolfin
     // Factorise (with pivoting)
     uint singular = ublas::lu_factorize(A, pmatrix);
     if( singular > 0)
-      error("Singularity detected in uBlas matrix factorization on line %u.", singular-1); 
+      error("Singularity detected in uBLAS matrix factorization on line %u.", singular-1); 
 
     // Back substitute 
     ublas::lu_substitute(A, pmatrix, X);
   }
   //-----------------------------------------------------------------------------
   template <class Mat>  
-  inline LogStream& operator<< (LogStream& stream, const uBlasMatrix<Mat>& B)
+  inline LogStream& operator<< (LogStream& stream, const uBLASMatrix<Mat>& B)
   {
     // Check if matrix has been defined
     if ( B.size(0) == 0 || B.size(1) == 0 )
     {
-      stream << "[ uBlasMatrix matrix (empty) ]";
+      stream << "[ uBLASMatrix matrix (empty) ]";
       return stream;
     }
 
     uint M = B.size(0);
     uint N = B.size(1);
-    stream << "[ uBlasMatrix matrix of size " << M << " x " << N << " ]";
+    stream << "[ uBLASMatrix matrix of size " << M << " x " << N << " ]";
 
     return stream;
   }

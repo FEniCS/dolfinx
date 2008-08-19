@@ -5,7 +5,7 @@
 // Last changed: 2008-08-07
 
 #include <dolfin/parameter/parameters.h>
-#include "uBlasFactory.h"
+#include "uBLASFactory.h"
 #include "PETScFactory.h"
 #include "EpetraFactory.h"
 #include "MTL4Factory.h"
@@ -34,7 +34,7 @@ LinearAlgebraFactory& DefaultFactory::factory() const
 {
   // Fallback
   std::string default_backend = "uBLAS";
-  typedef uBlasFactory<> DefaultFactory;
+  typedef uBLASFactory<> DefaultFactory;
 
   // Get backend from parameter system
   std::string backend = dolfin_get("linear algebra backend");
@@ -42,7 +42,7 @@ LinearAlgebraFactory& DefaultFactory::factory() const
   // Choose backend
   if (backend == "uBLAS")
   {
-    return uBlasFactory<>::instance();
+    return uBLASFactory<>::instance();
   }
   else if (backend == "PETSc")
   {

@@ -17,19 +17,19 @@ public:
   
   Harmonic() : ODE(2, 4.0 * DOLFIN_PI), e(0.0) {}
 
-  void u0(uBlasVector& u)
+  void u0(uBLASVector& u)
   {
     u[0] = 0.0;
     u[1] = 1.0;
   }
 
-  void f(const uBlasVector& u, real t, uBlasVector& y)
+  void f(const uBLASVector& u, real t, uBLASVector& y)
   {
     y[0] = u[1];
     y[1] = - u[0];
   }
 
-  bool update(const uBlasVector& u, real t, bool end)
+  bool update(const uBLASVector& u, real t, bool end)
   {
     if ( !end )
       return true;

@@ -10,7 +10,7 @@
 #include <dolfin/common/types.h>
 #include <dolfin/la/Vector.h>
 #include <dolfin/la/PETScVector.h>
-#include <dolfin/la/uBlasVector.h>
+#include <dolfin/la/uBLASVector.h>
 #include "MatrixFactory.h"
 
 namespace dolfin
@@ -53,15 +53,15 @@ namespace dolfin
 #endif
 
   /// This class represents the standard load vector with constant
-  /// load c on a given mesh, represented as a sparse DOLFIN uBlas
+  /// load c on a given mesh, represented as a sparse DOLFIN uBLAS
   /// vector.
 
-  class uBlasLoadVector : public uBlasVector
+  class uBLASLoadVector : public uBLASVector
   {
   public:
   
     /// Construct load vector with constant load c on a given mesh
-    uBlasLoadVector(Mesh& mesh, real c = 1.0) : uBlasVector()
+    uBLASLoadVector(Mesh& mesh, real c = 1.0) : uBLASVector()
     {
       MatrixFactory::computeLoadVector(*this, mesh, c);
     }

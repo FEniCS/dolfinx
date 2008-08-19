@@ -18,12 +18,12 @@ public:
     message("The heat equation on [0,1] with h = %f", h);
   }
   
-  void u0(uBlasVector& u)
+  void u0(uBLASVector& u)
   {
     u.zero();
   }
 
-  void f(const uBlasVector& u, real t, uBlasVector& y)
+  void f(const uBLASVector& u, real t, uBLASVector& y)
   {
     // Boundary values
     y[0]   = 0.0;

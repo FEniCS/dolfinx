@@ -7,12 +7,12 @@
 #ifndef __UBLAS_SPARSE_MATRIX_H
 #define __UBLAS_SPARSE_MATRIX_H
 
-#include "uBlasMatrix.h"
+#include "uBLASMatrix.h"
 
 namespace dolfin
 {
 
-  typedef uBlasMatrix<ublas_sparse_matrix> uBlasSparseMatrix;
+  typedef uBLASMatrix<ublas_sparse_matrix> uBLASSparseMatrix;
 
 }
 

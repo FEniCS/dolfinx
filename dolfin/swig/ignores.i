@@ -21,7 +21,7 @@
 %ignore dolfin::ElementLibrary::create_finite_element(char const *);
 %ignore dolfin::ElementLibrary::create_dof_map(char const *);
 %ignore dolfin::MeshGeometry::x(uint n, uint i) const;
-%ignore dolfin::uBlasVector::operator ()(uint i) const;
+%ignore dolfin::uBLASVector::operator ()(uint i) const;
 %ignore dolfin::Scalar::operator real;
 %ignore dolfin::cout;
 %ignore dolfin::endl;

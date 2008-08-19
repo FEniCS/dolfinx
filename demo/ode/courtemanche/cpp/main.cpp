@@ -78,7 +78,7 @@ public:
     message("Potential at end time: %.6f", VT);
   }
 
-  void u0(uBlasVector& u)
+  void u0(uBLASVector& u)
   {
     // Set initial data
     u[0]  = -85.0; 
@@ -107,7 +107,7 @@ public:
     u[0] = -25.0;
   }
   
-  void f(const uBlasVector& u, real t, uBlasVector& y)
+  void f(const uBLASVector& u, real t, uBLASVector& y)
   {
     computeCurrents(u);
     computeGateCoefficients(u);
@@ -137,7 +137,7 @@ public:
     num_fevals++;
   }
 
-  void computeCurrents(const uBlasVector& u)
+  void computeCurrents(const uBLASVector& u)
   {
     V      = u[0];
     m      = u[1];
@@ -189,7 +189,7 @@ public:
     B2       = 1.0 + Trpn_max*K_mTrpn/((Ca_i + K_mTrpn)*(Ca_i + K_mTrpn)) + Cmdn_max*K_mCmdn/((Ca_i + K_mCmdn)*(Ca_i + K_mCmdn));
   }
   
-  void computeGateCoefficients(const uBlasVector& u)
+  void computeGateCoefficients(const uBLASVector& u)
   {
     V = u[0];
     
@@ -272,7 +272,7 @@ public:
     w_inf    = 1.0 - 1.0/(1.0 + exp((V - 40.0)/-17.0));
   }
   
-  bool update(const uBlasVector& u, real t, bool end)
+  bool update(const uBLASVector& u, real t, bool end)
   {
     if ( end )
       VT = u[0];

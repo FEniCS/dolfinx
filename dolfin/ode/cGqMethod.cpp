@@ -9,8 +9,8 @@
 #include <dolfin/math/dolfin_math.h>
 #include <dolfin/math/Lagrange.h>
 #include <dolfin/quadrature/LobattoQuadrature.h>
-#include <dolfin/la/uBlasVector.h>
-#include <dolfin/la/uBlasDenseMatrix.h>
+#include <dolfin/la/uBLASVector.h>
+#include <dolfin/la/uBLASDenseMatrix.h>
 #include "cGqMethod.h"
 
 using namespace dolfin;
@@ -36,7 +36,7 @@ real cGqMethod::ueval(real x0, real values[], real tau) const
   return sum;
 }
 //-----------------------------------------------------------------------------
-real cGqMethod::ueval(real x0, uBlasVector& values, uint offset, real tau) const
+real cGqMethod::ueval(real x0, uBLASVector& values, uint offset, real tau) const
 {
   real sum = x0 * trial->eval(0, tau);
   for (uint i = 0; i < nn; i++)
@@ -54,7 +54,7 @@ real cGqMethod::residual(real x0, real values[], real f, real k) const
   return sum / k - f;
 }
 //-----------------------------------------------------------------------------
-real cGqMethod::residual(real x0, uBlasVector& values, uint offset, real f, real k) const
+real cGqMethod::residual(real x0, uBLASVector& values, uint offset, real f, real k) const
 {
   real sum = x0 * derivatives[0];
   for (uint i = 0; i < nn; i++)
@@ -162,7 +162,7 @@ void cGqMethod::computeBasis()
 //-----------------------------------------------------------------------------
 void cGqMethod::computeWeights()
 {
-  uBlasDenseMatrix A(q, q);
+  uBLASDenseMatrix A(q, q);
   ublas_dense_matrix& _A = A.mat();
   
   // Compute matrix coefficients
@@ -181,8 +181,8 @@ void cGqMethod::computeWeights()
     }
   }
 
-  uBlasVector b(q);
-  uBlasVector w(q);
+  uBLASVector b(q);
+  uBLASVector w(q);
   ublas_vector& _b = b.vec();
   ublas_vector& _w = w.vec();
 

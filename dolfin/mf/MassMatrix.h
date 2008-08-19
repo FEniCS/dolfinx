@@ -10,7 +10,7 @@
 #include <dolfin/common/types.h>
 #include <dolfin/la/Matrix.h>
 #include <dolfin/la/PETScMatrix.h>
-#include <dolfin/la/uBlasSparseMatrix.h>
+#include <dolfin/la/uBLASSparseMatrix.h>
 #include "MatrixFactory.h"
 
 namespace dolfin
@@ -53,14 +53,14 @@ namespace dolfin
 #endif
 
   /// This class represents the standard mass matrix on a given mesh,
-  /// represented as a sparse DOLFIN uBlas matrix.
+  /// represented as a sparse DOLFIN uBLAS matrix.
 
-  class uBlasMassMatrix : public uBlasSparseMatrix
+  class uBLASMassMatrix : public uBLASSparseMatrix
   {
   public:
   
     /// Construct mass matrix on a given mesh
-    uBlasMassMatrix(Mesh& mesh) : uBlasSparseMatrix()
+    uBLASMassMatrix(Mesh& mesh) : uBLASSparseMatrix()
     {
       MatrixFactory::computeMassMatrix(*this, mesh);
     }

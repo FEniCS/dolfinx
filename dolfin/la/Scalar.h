@@ -10,7 +10,7 @@
 #ifndef __SCALAR_H
 #define __SCALAR_H
 
-#include "uBlasFactory.h"
+#include "uBLASFactory.h"
 #include "GenericTensor.h"
 
 namespace dolfin
@@ -93,7 +93,7 @@ namespace dolfin
 
     /// Return a factory for the default linear algebra backend
     inline LinearAlgebraFactory& factory() const 
-    { return dolfin::uBlasFactory<>::instance(); }
+    { return dolfin::uBLASFactory<>::instance(); }
 
     /// Get value
     real getval() const
