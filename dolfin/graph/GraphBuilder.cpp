@@ -83,17 +83,9 @@ void GraphBuilder::createMeshDual(Graph& graph, Mesh& mesh)
   uint i = 0, j = 0;
   for (CellIterator c0(mesh); !c0.end(); ++c0)
   {
-    //dolfin_debug1("Cell no %d", i);
-    //dolfin_debug1("Cell no %d", c0->index());
     graph.vertices[i++] = j;
-
     for (CellIterator c1(*c0); !c1.end(); ++c1)
-    {
-      //dolfin_debug2("Cell no %d connected to cell no %d", c0->index(), c1->index());
-      //dolfin_debug2("edges[%d] = %d", j, c1->index());
       graph.edges[j++] = c1->index();
-
-    }
   }
 }
 //-----------------------------------------------------------------------------

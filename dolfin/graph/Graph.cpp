@@ -54,8 +54,8 @@ void Graph::init(uint _num_vertices, uint _num_edges)
 
   num_vertices = _num_vertices;
   num_edges    = _num_edges;
-  edges    = new uint[num_edges];
-  vertices = new uint[num_vertices + 1];
+  edges        = new uint[num_edges];
+  vertices     = new uint[num_vertices + 1];
 
   // FIXME: is this needed?
   vertices[num_vertices] = num_edges;

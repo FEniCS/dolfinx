@@ -30,9 +30,9 @@ public:
     editor.open(graph, "undirected");
     editor.initVertices(4);
     editor.addVertex(0, 2);
-    editor.addVertex(1, 3);
-    editor.addVertex(2, 2);
-    editor.addVertex(3, 3);
+    editor.addVertex(1, 2);
+    editor.addVertex(2, 1);
+    editor.addVertex(3, 0);
     editor.initEdges(5);
     editor.addEdge(0, 1);
     editor.addEdge(1, 2);
@@ -43,7 +43,6 @@ public:
 
     CPPUNIT_ASSERT(graph.numVertices() == 4);
     CPPUNIT_ASSERT(graph.numEdges() == 5);
-    CPPUNIT_ASSERT(graph.numArches() == 10);
   }
    
   void testDirected()
@@ -67,7 +66,6 @@ public:
 
     CPPUNIT_ASSERT(graph.numVertices() == 4);
     CPPUNIT_ASSERT(graph.numEdges() == 5);
-    CPPUNIT_ASSERT(graph.numArches() == 5);
   }
 };
 
@@ -96,6 +94,7 @@ public:
 
     CPPUNIT_ASSERT(graph_out.numVertices() == graph_in.numVertices());
     CPPUNIT_ASSERT(graph_out.numEdges() == graph_in.numEdges());
+
   }
 
   void testDirectedGraphXML()
@@ -136,7 +135,7 @@ public:
     file >> graph;
 
     CPPUNIT_ASSERT(graph.numVertices() == 3);
-    CPPUNIT_ASSERT(graph.numEdges() == 3);
+    CPPUNIT_ASSERT(graph.numEdges() == 6);
   }
 
   void testScotchGraphConvertion()
@@ -162,7 +161,7 @@ public:
     file >> graph;
 
     CPPUNIT_ASSERT(graph.numVertices() == 3);
-    CPPUNIT_ASSERT(graph.numEdges() == 3);
+    CPPUNIT_ASSERT(graph.numEdges() == 6);
   }
 };
 
@@ -194,14 +193,14 @@ public:
     editor.open(graph, "undirected");
     editor.initVertices(nn);
     editor.addVertex(0, 1);
-    editor.addVertex(1, 3);
-    editor.addVertex(2, 2);
-    editor.addVertex(3, 5);
-    editor.addVertex(4, 2);
-    editor.addVertex(5, 2);
-    editor.addVertex(6, 2);
-    editor.addVertex(7, 1);
-    editor.addVertex(8, 2);
+    editor.addVertex(1, 2);
+    editor.addVertex(2, 1);
+    editor.addVertex(3, 3);
+    editor.addVertex(4, 1);
+    editor.addVertex(5, 1);
+    editor.addVertex(6, 1);
+    editor.addVertex(7, 0);
+    editor.addVertex(8, 0);
     editor.initEdges(10);
     editor.addEdge(0, 1);
     editor.addEdge(1, 2);

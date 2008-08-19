@@ -27,28 +27,28 @@ void GraphPartition::partition(Graph& graph, uint num_part, uint* vtx_part)
 
 #ifdef HAS_SCOTCH
 
+  if(graph.type() == Graph::undirected)
+    warning("Check that undirected graphs are suitable for SCOTCH.");
+
   SCOTCH_Graph grafdat;
   SCOTCH_Strat strat;
 
   if (SCOTCH_graphInit(&grafdat) != 0) 
-  {
-    // FIXME: Why do we have a control statement here?
-  }
+    error("Error initialising SCOTCH graph.");
+
   if (SCOTCH_graphBuild(&grafdat, 0, static_cast<int>(graph.numVertices()), 
                         reinterpret_cast<int*>(graph.offsets()), NULL, NULL, 
                         NULL, static_cast<int>(graph.numEdges()), 
                         reinterpret_cast<int*>(graph.connectivity()), NULL) != 0) 
   {
-    // FIXME: Why do we have a control statement here?
+    error("Error building SCOTCH graph.");
   }
 
   SCOTCH_stratInit(&strat);
 
   // Only some graphs successfully partitioned, why?
   if (SCOTCH_graphPart (&grafdat, num_part, &strat, reinterpret_cast<int*>(vtx_part)) != 0) 
-  {
-    // FIXME: Why do we have a control statement here?
-  }
+    error("Error partitioning SCOTCH graph.");
 
   SCOTCH_stratExit (&strat);
   SCOTCH_graphExit (&grafdat);
@@ -111,9 +111,7 @@ void GraphPartition::eval(Graph& graph, uint num_part, uint* vtx_part)
 
   // Count number of vertices per partition
   for(uint i=0; i<graph.numVertices(); ++i)
-  {
     part_sizes[vtx_part[i]]++;
-  }
 
   // Print number of vertices per partition
   cout << "partition\tnum_vtx" << endl;

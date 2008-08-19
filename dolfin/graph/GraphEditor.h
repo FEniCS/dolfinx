@@ -40,7 +40,8 @@ namespace dolfin
     /// Specify number of edges
     void initEdges(uint num_edges);
 
-    /// Add vertex v
+    /// Add vertex u with num_edges = number of outgoing edges. For undirected 
+    /// graphs, edge must "belong" to a vertex and not be counted twice.
     void addVertex(uint u, uint num_edges);
 
     /// Add edge from vertex u to vertex v
@@ -57,8 +58,8 @@ namespace dolfin
     // Next available vertex
     uint next_vertex;
 
-    // Next available edge
-    uint next_edge;
+    // Count number of edges from addtion of vertices
+    uint edge_count;
 
     // The mesh
     Graph* graph;
