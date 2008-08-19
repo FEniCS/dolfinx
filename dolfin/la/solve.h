@@ -4,7 +4,7 @@
 // Modified by Ola Skavhaug 2008.
 //
 // First added:  2007-04-30
-// Last changed: 2008-05-23
+// Last changed: 2008-08-19
 
 #ifndef __SOLVE_H
 #define __SOLVE_H
@@ -28,7 +28,7 @@ namespace dolfin
   real residual(const GenericMatrix& A, const GenericVector& x, const GenericVector& b);
 
   /// Normalize vector according to given normalization type
-  real normalize(GenericVector& x, NormalizationType normalization_type=l2norm);
+  real normalize(GenericVector& x, NormalizationType normalization_type=normalize_average);
   
   /// Solve linear system Ax = b
   //void solve(const PETScKrylovMatrix& A, PETScVector& x, const PETScVector& b);

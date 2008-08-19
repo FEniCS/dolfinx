@@ -42,6 +42,7 @@ namespace dolfin
     void overlap(Array<Point>& points, Array<uint>& overlap);
 
   private:
+
     IntersectionDetector();
     IntersectionDetector(const IntersectionDetector&);
 
