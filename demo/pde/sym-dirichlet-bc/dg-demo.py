@@ -29,10 +29,8 @@ class Source(Function):
 
 # Sub domain for Dirichlet boundary condition
 class DirichletBoundary(SubDomain):
-#    def inside(self, x, on_boundary):
-#        return bool(on_boundary) 
     def inside(self, x, on_boundary):
-        return False 
+        return bool(on_boundary) 
 
 
 

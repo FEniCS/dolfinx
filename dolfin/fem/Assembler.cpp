@@ -268,35 +268,6 @@ void Assembler::assembleExteriorFacets(GenericTensor& A,
     // Add entries to global tensor
     A.add(ufc.A, ufc.local_dimensions, ufc.dofs);
 
-
-    std::cout <<"cell number "<<mesh_cell.index()<<std::endl; 
-    std::cout <<"local_facet "<<local_facet<<std::endl; 
-
-    for (uint i=0; i<3; i++) { 
-      for (uint j=0; j<2; j++) {
-        std::cout <<" cell ["<<i<<","<<j<<"]="<<ufc.cell.coordinates[i][j]<<std::endl; 
-      }
-    }
-
-
-
-    std::cout <<" writing out the coefficients "<<std::endl; 
-    for (uint i=0; i< ufc.form.num_coefficients(); i++) {
-      for (uint j=0; j< ufc.coefficient_elements[i]->space_dimension(); j++) { 
-        std::cout <<" w["<<i<<","<<j<<"]="<<ufc.w[i][j]<<std::endl; 
-      }
-    }
-
-
-
-    for (uint i=0; i<ufc.local_dimensions[0]; i++) {  
-      for (uint j=0; j<ufc.local_dimensions[1]; j++) {  
-        uint n = ufc.local_dimensions[0];
-        std::cout <<"check i "<< i<< " Ae "<<ufc.A[i+n*j]<<" dof  "<<ufc.dofs[0][i]<<" "<<ufc.dofs[1][j]<<std::endl; 
-      }
-    }
-
-
     p++;  
   }
 }
@@ -366,10 +337,6 @@ void Assembler::assembleInteriorFacets(GenericTensor& A,
       const uint offset = ufc.local_dimensions[i];
       dof_map_set[i].tabulate_dofs(ufc.macro_dofs[i],          ufc.cell0, cell0.index());
       dof_map_set[i].tabulate_dofs(ufc.macro_dofs[i] + offset, ufc.cell1, cell1.index());
-    }
-
-    for (uint i=0; i< ufc.local_dimensions[0]*2; i++) {
-      std::cout <<"dofs "<<i<<" "<< ufc.macro_dofs[0][i]<<std::endl; 
     }
 
     // Tabulate exterior interior facet tensor on macro element
@@ -691,119 +658,11 @@ void Assembler::assemble_system(GenericTensor& A, const ufc::form& A_form,
 
       // enforce BC done  ------------------------------------------
 
-
-      /* // For debugging 
-         std::cout <<"-------------------"<<std::endl; 
-         std::cout <<"after enforcing bc "<<std::endl; 
-         for (uint i=0; i<n; i++) {  
-         for (uint j=0; j<m; j++) {
-         std::cout <<"i+j*n ="<<j+i*n; 
-         std::cout <<" A["<<j<<","<<i<<"]="<<Ae[j+i*n]<<std::endl; 
-         }
-         }
-         for (uint i=0; i<n; i++) {  
-         std::cout <<"b["<<i<<"]="<<be[i]<<std::endl; 
-         }
-         std::cout <<"-------------------"<<std::endl; 
-         */
-
-
       // Add entries to global tensor
       A.add(Ae, A_ufc.local_dimensions, A_ufc.dofs);
       b.add(be, b_ufc.local_dimensions, b_ufc.dofs);
     }
   }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
   if (A_ufc.form.num_interior_facet_integrals() > 0 || b_ufc.form.num_interior_facet_integrals() > 0) 
@@ -843,8 +702,6 @@ void Assembler::assemble_system(GenericTensor& A, const ufc::form& A_form,
         // Update to current pair of cells
         A_macro_ufc.update(cell0, cell1);
         b_macro_ufc.update(cell0, cell1);
-
-
 
         // Get local index of facet with respect to each cell
         uint facet0 = cell0.index(*facet);
@@ -1115,23 +972,6 @@ void Assembler::assemble_system(GenericTensor& A, const ufc::form& A_form,
         // Interpolate coefficients on cell
         for (uint i = 0; i < A_coefficients.size(); i++)
           A_coefficients[i]->interpolate(A_ufc.w[i], A_ufc.cell, *A_ufc.coefficient_elements[i], cell, local_facet);
-
-        std::cout <<"cell index "<< cell.index()<<std::endl; 
-        std::cout <<"local_facet "<<local_facet<<std::endl; 
-
-        for (uint i=0; i<3; i++) { 
-          for (uint j=0; j<2; j++) {
-            std::cout <<" cell ["<<i<<","<<j<<"]="<<A_ufc.cell.coordinates[i][j]<<std::endl; 
-          }
-        }
-
-        std::cout <<" writing out the coefficients "<<std::endl; 
-        for (uint i=0; i< A_ufc.form.num_coefficients(); i++) {
-          for (uint j=0; j< A_ufc.coefficient_elements[i]->space_dimension(); j++) { 
-            std::cout <<" w["<<i<<","<<j<<"]="<<A_ufc.w[i][j]<<std::endl; 
-          }
-        }
-
         // Tabulate dofs for each dimension
         for (uint i = 0; i < A_ufc.form.rank(); i++)
           A_dof_map_set[i].tabulate_dofs(A_ufc.dofs[i], A_ufc.cell, cell.index());
@@ -1202,31 +1042,8 @@ void Assembler::assemble_system(GenericTensor& A, const ufc::form& A_form,
               else
                 continue;
             }
-
-  
-            /*
-            std::cout <<" before -----------------"<<std::endl; 
-            for (uint i=0; i<A_num_entries; i++) { 
-              std::cout <<"A_ufc.A["<<i<<"]="<<A_ufc.A[i]<<std::endl; 
-            }
-            std::cout <<" before done-------------"<<std::endl; 
-            */
-
-            std::cout <<" writing out the coefficients "<<std::endl; 
-            for (uint i=0; i< A_ufc.form.num_coefficients(); i++) {
-              for (uint j=0; j< A_ufc.coefficient_elements[i]->space_dimension(); j++) { 
-                std::cout <<" w["<<i<<","<<j<<"]="<<A_ufc.w[i][j]<<std::endl; 
-              }
-            }
-
-
-
             A_integral->tabulate_tensor(A_ufc.A, A_ufc.w, A_ufc.cell, local_facet);
-
             for (uint i=0; i<A_num_entries; i++) Ae[i] += A_ufc.A[i]; 
-            for (uint i=0; i<A_num_entries; i++) { 
-              std::cout <<"A_ufc.A["<<i<<"]="<<A_ufc.A[i]<<std::endl; 
-            }
           }
         }
 
@@ -1271,33 +1088,9 @@ void Assembler::assemble_system(GenericTensor& A, const ufc::form& A_form,
 
         // enforce BC done  ------------------------------------------
 
-
-        /*
-        // For debugging 
-        std::cout <<"-------------------"<<std::endl; 
-        std::cout <<"after enforcing bc "<<std::endl; 
-        for (uint i=0; i<n; i++) {  
-          for (uint j=0; j<m; j++) {
-            std::cout <<"i+j*n ="<<j+i*n; 
-            std::cout <<" A["<<j<<","<<i<<"]="<<Ae[j+i*n]<<std::endl; 
-          }
-        }
-        for (uint i=0; i<n; i++) {  
-          std::cout <<"b["<<i<<"]="<<be[i]<<std::endl; 
-        }
-        std::cout <<"-------------------"<<std::endl; 
-        */
-
         // Add entries to global tensor
         A.add(Ae, A_ufc.local_dimensions, A_ufc.dofs);
         b.add(be, b_ufc.local_dimensions, b_ufc.dofs);
-
-        for (uint i=0; i<n; i++) {  
-          for (uint j=0; j<m; j++) {  
-          std::cout <<"check i "<< i<< " Ae "<<Ae[i+j*n]<<" dof  "<<A_ufc.dofs[0][i]<<" "<<A_ufc.dofs[1][j]<<std::endl; 
-          }
-        }
-
       }
     }
   }
