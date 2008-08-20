@@ -8,11 +8,14 @@
 // First added:  2007-01-17
 // Last changed: 2008-08-13
 
+#include <ufc.h>
 #include <dolfin/main/MPI.h>
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Array.h>
 #include <dolfin/common/Timer.h>
+#include <dolfin/la/GenericMatrix.h>
 #include <dolfin/la/GenericTensor.h>
+#include <dolfin/la/GenericVector.h>
 #include <dolfin/la/Scalar.h>
 #include <dolfin/la/SparsityPattern.h>
 #include <dolfin/mesh/Mesh.h>
@@ -28,6 +31,7 @@
 #include "Assembler.h"
 #include "SparsityPatternBuilder.h"
 #include "DofMapSet.h"
+#include "DirichletBC.h"
 
 #include <dolfin/common/timing.h>
 
@@ -462,10 +466,10 @@ std::string Assembler::progressMessage(uint rank, std::string integral_type) con
   return s.str();
 }
 //-----------------------------------------------------------------------------
-void Assembler::assemble_system(GenericTensor& A, const ufc::form& A_form, 
+void Assembler::assemble_system(GenericMatrix& A, const ufc::form& A_form, 
                                 const Array<Function*>& A_coefficients, 
                                 const DofMapSet& A_dof_map_set,
-                                GenericTensor& b, const ufc::form& b_form, 
+                                GenericVector& b, const ufc::form& b_form, 
                                 const Array<Function*>& b_coefficients, 
                                 const DofMapSet& b_dof_map_set, DirichletBC& bc, 
                                 const MeshFunction<uint>* cell_domains,

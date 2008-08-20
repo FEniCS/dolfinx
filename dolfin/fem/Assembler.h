@@ -1,31 +1,39 @@
 // Copyright (C) 2007-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Garth N. Wells, 2007
-// Modified by Ola Skavhaug, 2008
+// Modified by Garth N. Wells, 2007, 2008.
+// Modified by Ola Skavhaug, 2008.
 //
 // First added:  2007-01-17
-// Last changed: 2008-08-13
+// Last changed: 2008-08-20
 
 #ifndef __ASSEMBLER_H
 #define __ASSEMBLER_H
 
-#include <ufc.h>
+#include <dolfin/common/types.h>
 
-#include <dolfin/common/Array.h>
-#include <dolfin/mesh/MeshFunction.h>
-#include "DirichletBC.h"
+// Forward declaration
+namespace ufc 
+{
+  class form; 
+}
 
 namespace dolfin
 {
 
+  // Forward declarations
+  class DirichletBC;
   class DofMapSet;
+  class GenericMatrix;
   class GenericTensor;
+  class GenericVector;
   class Function;
   class Form;
   class Mesh;
   class SubDomain;
   class UFC;
+  template<class T> class Array;
+  template<class T> class MeshFunction;
 
   /// This class provides automated assembly of linear systems, or
   /// more generally, assembly of a sparse tensor from a given
@@ -45,6 +53,11 @@ namespace dolfin
     void assemble(GenericTensor& A, Form& form,
                   bool reset_tensor=true);
 
+    /// Assemble system (A, b) and apply Dirichlet boundary conditions from 
+    /// given variational forms
+    //void assemble(GenericMatrix& A, Form& A_form, GenericVector& b, 
+    //              Form& b_form, DirichletBC& bc, bool reset_tensor=true);
+
     /// Assemble tensor from given variational form over a sub domain
     void assemble(GenericTensor& A, Form& form, const SubDomain& sub_domain,
                   bool reset_tensor=true);
@@ -61,12 +74,10 @@ namespace dolfin
                   bool reset_tensor=true);
     
     /// Assemble scalar from given variational form
-    real assemble(Form& form,
-                  bool reset_tensor=true);
+    real assemble(Form& form, bool reset_tensor=true);
     
     /// Assemble scalar from given variational form over a sub domain
-    real assemble(Form& form, const SubDomain& sub_domain,
-                  bool reset_tensor);
+    real assemble(Form& form, const SubDomain& sub_domain, bool reset_tensor);
     
     /// Assemble scalar from given variational form over sub domains
     real assemble(Form& form,
@@ -93,9 +104,9 @@ namespace dolfin
 
     /// Assemble linear system Ax = b and enforce Dirichlet conditions.  
     //  Notice that the Dirichlet conditions are enforced in a symmetric way.  
-    void assemble_system(GenericTensor& A, const ufc::form& A_form, 
+    void assemble_system(GenericMatrix& A, const ufc::form& A_form, 
                          const Array<Function*>& A_coefficients, const DofMapSet& A_dof_map_set,
-                         GenericTensor& b, const ufc::form& b_form, 
+                         GenericVector& b, const ufc::form& b_form, 
                          const Array<Function*>& b_coefficients, const DofMapSet& b_dof_map_set,
                          DirichletBC& bc, const MeshFunction<uint>* cell_domains, 
                          const MeshFunction<uint>* exterior_facet_domains,

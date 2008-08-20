@@ -1,8 +1,10 @@
 // Copyright (C) 2007-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Garth N. Wells, 2008.
+//
 // First added:  2007-01-17
-// Last changed: 2008-07-22
+// Last changed: 2008-08-20
 
 #include "Assembler.h"
 #include "assemble.h"
@@ -81,9 +83,9 @@ void dolfin::assemble(GenericTensor& A, const ufc::form& form, Mesh& mesh,
                      reset_tensor);
 }
 //----------------------------------------------------------------------------
-void dolfin::assemble_system(GenericTensor& A, const ufc::form& A_form, 
+void dolfin::assemble_system(GenericMatrix& A, const ufc::form& A_form, 
                              const Array<Function*>& A_coefficients, const DofMapSet& A_dof_map_set,
-                             GenericTensor& b, const ufc::form& b_form, 
+                             GenericVector& b, const ufc::form& b_form, 
                              const Array<Function*>& b_coefficients, const DofMapSet& b_dof_map_set,
                              Mesh& mesh, 
                              DirichletBC& bc, const MeshFunction<uint>* cell_domains, 
