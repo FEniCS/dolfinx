@@ -70,7 +70,7 @@ int main()
   DirichletBC bc2(zero, sub_domains, 2, pressure);
 
   // Collect boundary conditions
-  Array <BoundaryCondition*> bcs(&bc0, &bc1, &bc2);
+  Array<DirichletBC*> bcs(&bc0, &bc1, &bc2);
 
   // Set up PDE
   MeshSize h(mesh);

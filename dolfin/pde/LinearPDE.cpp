@@ -1,13 +1,13 @@
 // Copyright (C) 2004-2007 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Garth N. Wells, 2006, 2007
+// Modified by Garth N. Wells, 2006-2008.
 //
 // First added:  2004
-// Last changed: 2007-12-28
+// Last changed: 2008-08-20
 
 #include <dolfin/la/Matrix.h>
-#include <dolfin/fem/BoundaryCondition.h>
+#include <dolfin/fem/DirichletBC.h>
 #include <dolfin/fem/Assembler.h>
 #include <dolfin/la/LUSolver.h>
 #include <dolfin/la/KrylovSolver.h>
@@ -26,14 +26,14 @@ LinearPDE::LinearPDE(Form& a, Form& L, Mesh& mesh)
   message("Creating linear PDE.");
 }
 //-----------------------------------------------------------------------------
-LinearPDE::LinearPDE(Form& a, Form& L, Mesh& mesh, BoundaryCondition& bc)
+LinearPDE::LinearPDE(Form& a, Form& L, Mesh& mesh, DirichletBC& bc)
   : a(a), L(L), mesh(mesh)
 {
   message("Creating linear PDE with one boundary condition.");
   bcs.push_back(&bc);
 } 
 //-----------------------------------------------------------------------------
-LinearPDE::LinearPDE(Form& a, Form& L, Mesh& mesh, Array<BoundaryCondition*>& bcs)
+LinearPDE::LinearPDE(Form& a, Form& L, Mesh& mesh, Array<DirichletBC*>& bcs)
   : a(a), L(L), mesh(mesh)
 {
   message("Creating linear PDE with %d boundary condition(s).", bcs.size());
@@ -55,14 +55,16 @@ void LinearPDE::solve(Function& u)
   Vector b;
   Vector* x = new Vector();
 
-  // Assemble linear system
-  Assembler assembler(mesh);
-  assembler.assemble(A, a);
-  assembler.assemble(b, L);
+  // Assemble linear system and apply boundary conditions
+  Assembler assembler(mesh);  
+  assembler.assemble(A, a, b, L, bcs);
 
-  // Apply boundary conditions
-  for (uint i = 0; i < bcs.size(); i++)
-    bcs[i]->apply(A, b, a);
+  // Assemble linear system and apply boundary conditions
+  //Assembler assembler(mesh);  
+  //assembler.assemble(A, a);
+  //assembler.assemble(b, L);
+  //for (uint i = 0; i < bcs.size(); i++)
+  //  bcs[i]->apply(A, b, a);
 
   // Solve linear system
   const std::string solver_type = get("PDE linear solver");

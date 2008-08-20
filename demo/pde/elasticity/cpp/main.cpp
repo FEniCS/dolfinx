@@ -94,7 +94,7 @@ int main()
   DirichletBC bcr(r, mesh, right);
 
   // Set up boundary conditions
-  Array<BoundaryCondition*> bcs;
+  Array<DirichletBC*> bcs;
   bcs.push_back(&bcl);
   bcs.push_back(&bcr);
 
@@ -122,7 +122,7 @@ int main()
   vtk_file << u;
 
   // Save solution to XML format
-  File xml_file("elasticity.xml");
+  File xml_file("displacement.xml");
   xml_file << u;
 
   return 0;
