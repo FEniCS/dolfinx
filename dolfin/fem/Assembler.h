@@ -55,8 +55,8 @@ namespace dolfin
 
     /// Assemble system (A, b) and apply Dirichlet boundary conditions from 
     /// given variational forms
-    //void assemble(GenericMatrix& A, Form& A_form, GenericVector& b, 
-    //              Form& b_form, DirichletBC& bc, bool reset_tensor=true);
+    void assemble(GenericMatrix& A, Form& A_form, GenericVector& b, 
+                  Form& b_form, DirichletBC& bc, bool reset_tensor=true);
 
     /// Assemble tensor from given variational form over a sub domain
     void assemble(GenericTensor& A, Form& form, const SubDomain& sub_domain,

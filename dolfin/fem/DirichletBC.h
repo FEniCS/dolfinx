@@ -15,20 +15,21 @@
 
 #include <dolfin/common/types.h>
 #include "SubSystem.h"
-#include <dolfin/mesh/MeshFunction.h>
 #include "BoundaryCondition.h"
-#include <dolfin/mesh/Facet.h>
-#include <dolfin/mesh/SubDomain.h>
 
 namespace dolfin
 {
 
+  class BoundaryCondition;
   class DofMap;
   class Function;
   class Mesh;
+  class Facet;
   class Form;
   class GenericMatrix;
   class GenericVector;
+  class SubDomain;
+  template<class T> class MeshFunction; 
 
   /// The BCMethod variable may be used to specify the type of method
   /// used to identify degrees of freedom on the boundary. Available

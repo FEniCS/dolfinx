@@ -54,6 +54,15 @@ void Assembler::assemble(GenericTensor& A, Form& form, bool reset_tensor)
   assemble(A, form.form(), form.coefficients(), form.dofMaps(), 0, 0, 0, reset_tensor);
 }
 //-----------------------------------------------------------------------------
+void Assembler::assemble(GenericMatrix& A, Form& A_form, 
+                         GenericVector& b, Form& b_form, 
+                         DirichletBC& bc, bool reset_tensor)
+{
+  assemble_system(A, A_form.form(), A_form.coefficients(), A_form.dofMaps(), 
+                  b, b_form.form(), b_form.coefficients(), b_form.dofMaps(),
+                  bc, 0, 0 , 0, reset_tensor); 
+}
+//-----------------------------------------------------------------------------
 void Assembler::assemble(GenericTensor& A, Form& form, const SubDomain& sub_domain, bool reset_tensor)
 {
   // Extract cell domains
