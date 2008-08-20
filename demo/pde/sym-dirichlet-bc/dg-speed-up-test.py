@@ -65,7 +65,6 @@ for backend in backends:
     t1 = time.time()
     print "time for new assembly      ", t1-t0, " with ", backend
 
-
     t0 = time.time()
     A = assemble(a, mesh)
     b = assemble(L, mesh)
