@@ -56,11 +56,13 @@ void Assembler::assemble(GenericTensor& A, Form& form, bool reset_tensor)
 //-----------------------------------------------------------------------------
 void Assembler::assemble(GenericMatrix& A, Form& A_form, 
                          GenericVector& b, Form& b_form, 
-                         DirichletBC& bc, bool reset_tensor)
+                         Array<DirichletBC*>& bcs, bool reset_tensor)
 {
+  A_form.updateDofMaps(mesh);
+  b_form.updateDofMaps(mesh);
   assemble_system(A, A_form.form(), A_form.coefficients(), A_form.dofMaps(), 
                   b, b_form.form(), b_form.coefficients(), b_form.dofMaps(),
-                  0, bc, 0, 0 , 0, reset_tensor); 
+                  0, bcs, 0, 0 , 0, reset_tensor); 
 }
 //-----------------------------------------------------------------------------
 void Assembler::assemble(GenericTensor& A, Form& form, const SubDomain& sub_domain, bool reset_tensor)
@@ -216,9 +218,6 @@ void Assembler::assembleCells(GenericTensor& A,
     
     p++;
   }
-
-  //t = toc() - t;
-  //printf("assembly loop (s): %.3e\n", t);
 }
 //-----------------------------------------------------------------------------
 void Assembler::assembleExteriorFacets(GenericTensor& A,
@@ -488,6 +487,26 @@ void Assembler::assemble_system(GenericMatrix& A, const ufc::form& A_form,
                                 const MeshFunction<uint>* interior_facet_domains,
                                 bool reset_tensors)
 {
+  Array<DirichletBC*> bcs;
+  bcs.push_back(&bc);
+  assemble_system(A, A_form, A_coefficients, A_dof_map_set,b, b_form, 
+                  b_coefficients, b_dof_map_set, x0, bcs, cell_domains,
+                  exterior_facet_domains, interior_facet_domains, reset_tensors);
+}
+//-----------------------------------------------------------------------------
+void Assembler::assemble_system(GenericMatrix& A, const ufc::form& A_form, 
+                                const Array<Function*>& A_coefficients, 
+                                const DofMapSet& A_dof_map_set,
+                                GenericVector& b, const ufc::form& b_form, 
+                                const Array<Function*>& b_coefficients, 
+                                const DofMapSet& b_dof_map_set, 
+                                const GenericVector* x0,
+                                Array<DirichletBC*> bcs, 
+                                const MeshFunction<uint>* cell_domains,
+                                const MeshFunction<uint>* exterior_facet_domains,
+                                const MeshFunction<uint>* interior_facet_domains,
+                                bool reset_tensors)
+{
   // Note the importance of treating empty mesh functions as null pointers
   // for the PyDOLFIN interface.
 
@@ -518,7 +537,8 @@ void Assembler::assemble_system(GenericMatrix& A, const ufc::form& A_form,
     indicators[i] = 0; 
     g[i]          = 0.0; 
   }
-  bc.getBC(N, indicators, g, A_dof_map_set[1], A_form); 
+  for(uint i = 0; i < bcs.size(); ++i)
+    bcs[i]->getBC(N, indicators, g, A_dof_map_set[1], A_form); 
 
   // Modify boundary values for incremental (typically nonlinear) problems
   if (x0)
@@ -535,7 +555,6 @@ void Assembler::assemble_system(GenericMatrix& A, const ufc::form& A_form,
   // If there are no interior facet integrals
   if (A_ufc.form.num_interior_facet_integrals() == 0 && b_ufc.form.num_interior_facet_integrals() == 0) 
   {
-
     // Allocate memory for Ae and be 
     uint A_num_entries = 1;
     for (uint i = 0; i < A_form.rank(); i++)
@@ -598,7 +617,8 @@ void Assembler::assemble_system(GenericMatrix& A, const ufc::form& A_form,
       // compute cell A integral done ---------------------------- 
 
       // Compute cell b integral ---------------------------- 
-      if (b_ufc.form.num_cell_integrals() > 0) {
+      if (b_ufc.form.num_cell_integrals() > 0) 
+      {
         ufc::cell_integral* b_cell_integral = b_ufc.cell_integrals[0];
         if (cell_domains && cell_domains->size() > 0) 
         {
@@ -675,7 +695,7 @@ void Assembler::assemble_system(GenericMatrix& A, const ufc::form& A_form,
       for (uint i=0; i<n; i++) 
       {  
         uint ii = A_ufc.dofs[1][i]; 
-        if (indicators[ii]) 
+        if (indicators[ii] > 0) 
         {  
           be[i] = g[ii]; 
           for (uint k=0; k<n; k++) 
@@ -862,8 +882,8 @@ void Assembler::assemble_system(GenericMatrix& A, const ufc::form& A_form,
               for (uint j=0; j<nn; j++) 
                 Ae_macro[2*i*nn+j] += A_ufc.A[i*nn+j]; 
           }
-          if (b_ufc.form.num_cell_integrals() > 0) {
-
+          if (b_ufc.form.num_cell_integrals() > 0) 
+          {
             // Update to cell0 
             b_ufc.update(cell0);
 
@@ -962,7 +982,7 @@ void Assembler::assemble_system(GenericMatrix& A, const ufc::form& A_form,
         for (uint i=0; i<n; i++) 
         {  
           uint ii = A_macro_ufc.macro_dofs[1][i]; 
-          if (indicators[ii]) 
+          if (indicators[ii] > 0) 
           {  
             be[i] = g[ii]; 
             for (uint k=0; k<n; k++) 
@@ -1110,7 +1130,7 @@ void Assembler::assemble_system(GenericMatrix& A, const ufc::form& A_form,
         for (uint i=0; i<n; i++) 
         {  
           uint ii = A_ufc.dofs[1][i]; 
-          if (indicators[ii]) 
+          if (indicators[ii] > 0) 
           {  
             be[i] = g[ii]; 
             for (uint k=0; k<n; k++) 
