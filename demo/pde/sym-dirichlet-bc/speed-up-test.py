@@ -7,6 +7,7 @@ __date__ = "2008-08-13"
 __copyright__ = "Copyright (C) 2008 Kent-Andre Mardal"
 __license__  = "GNU LGPL Version 2.1"
 
+import time
 from dolfin import *
 
 # Source term
@@ -61,8 +62,6 @@ backends = ["uBLAS", "PETSc", "Epetra"]
 
 for backend in backends: 
     dolfin_set("linear algebra backend", backend)
-
-    import time
 
     t0 = time.time()
     A = assemble(a, mesh)

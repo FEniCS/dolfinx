@@ -5,6 +5,7 @@ __date__      = "2008"
 __copyright__ = "Copyright (C) 2008 Kent-Andre Mardal"
 __license__   = "GNU LGPL Version 2.1"
 
+import time
 from dolfin import *
 
 # Create mesh and finite element
@@ -55,18 +56,22 @@ a = dot(grad(v), grad(u))*dx \
 # Linear form
 L = v*f*dx
 
-import time
+backends = ["uBLAS", "PETSc", "Epetra"]
+for backend in backends: 
+    dolfin_set("linear algebra backend", backend)
 
-t0 = time.time()
-A = assemble(a, mesh)
-b = assemble(L, mesh)
-bc.apply(A, b, a)
-t1 = time.time()
-print "time for standard assembly ", t1-t0
- 
+    t0 = time.time()
+    A, b = assemble_system(a, L, bc, mesh)
+    t1 = time.time()
+    print "time for new assembly      ", t1-t0, " with ", backend
 
-t0 = time.time()
-A, b = assemble_system(a, L, bc, mesh)
-t1 = time.time()
-print "time for new assembly      ", t1-t0
+
+    t0 = time.time()
+    A = assemble(a, mesh)
+    b = assemble(L, mesh)
+    bc.apply(A, b, a)
+    t1 = time.time()
+    print "time for standard assembly ", t1-t0, " with ", backend
+     
+
 
