@@ -13,7 +13,9 @@ __license__   = "GNU LGPL Version 2.1"
 from dolfin import *
 
 # Create mesh and finite element
-mesh = UnitSquare(16, 16)
+mesh = UnitSquare(10,10)
+
+dolfin_set("linear algebra backend", "uBLAS")
 
 # Source term
 class Source(Function):
@@ -22,12 +24,17 @@ class Source(Function):
     def eval(self, values, x):
         dx = x[0] - 0.5
         dy = x[1] - 0.5
-        values[0] = 500.0*exp(-(dx*dx + dy*dy)/0.02)
+#        values[0] = 500.0*exp(-(dx*dx + dy*dy)/0.02)
+        values[0] = 1.0 
 
 # Sub domain for Dirichlet boundary condition
 class DirichletBoundary(SubDomain):
+#    def inside(self, x, on_boundary):
+#        return bool(on_boundary) 
     def inside(self, x, on_boundary):
-        return bool(on_boundary) 
+        return False 
+
+
 
 # Define variational problem
 element = FiniteElement("Discontinuous Lagrange", "triangle", 1)
@@ -49,6 +56,7 @@ boundary = DirichletBoundary()
 bc = DirichletBC(u0, mesh, boundary)
 
 # Bilinear form
+
 a = dot(grad(v), grad(u))*dx \
    - dot(avg(grad(v)), jump(u, n))*dS \
    - dot(jump(v, n), avg(grad(u)))*dS \
@@ -56,6 +64,8 @@ a = dot(grad(v), grad(u))*dx \
    - dot(grad(v), mult(u, n))*ds \
    - dot(mult(v, n), grad(u))*ds \
    + gamma/h*v*u*ds
+
+
 
 # Linear form
 L = v*f*dx
@@ -66,6 +76,8 @@ b = assemble(L, mesh)
 x = b.copy()
 x.zero()
 solve(A, x, b)
+file = File("A1.m") ; file << A; 
+file = File("b1.m") ; file << b; 
 
 # Project u
 u = Function(element, mesh, x)
@@ -84,6 +96,8 @@ A, b = assemble_system(a, L, bc, mesh)
 x = b.copy()
 x.zero()
 solve(A, x, b)
+file = File("A2.m") ; file << A; 
+file = File("b2.m") ; file << b; 
 
 # Project u
 u = Function(element, mesh, x)
