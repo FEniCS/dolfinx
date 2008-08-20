@@ -87,7 +87,7 @@ void SubSystemsManager::initPETSc(int argc, char* argv[], bool cmd_line_args)
     return;
 
   // Get status of MPI before PETSc initialisation
-  const bool mpi_init_status = MPI::Is_initialized();
+  const bool mpi_init_status = MPIinitialized();
 
   // Print message if PETSc is intialised with command line arguments
   if(cmd_line_args)
@@ -104,7 +104,7 @@ void SubSystemsManager::initPETSc(int argc, char* argv[], bool cmd_line_args)
   sub_systems_manager.petsc_initialized = true;
 
   // Determine if PETSc initialised MPI (and is therefore responsible for MPI finalization)
-  if(MPI::Is_initialized() and !mpi_init_status)
+  if(MPIinitialized() and !mpi_init_status)
     sub_systems_manager.control_mpi = false;
 #else
   error("DOLFIN has not been configured for PETSc.");
@@ -135,6 +135,20 @@ void SubSystemsManager::finalizePETSc()
   }
 #else
   // Do nothing
+#endif
+}
+//-----------------------------------------------------------------------------
+bool SubSystemsManager::MPIinitialized()
+{
+  // This function not affected if MPI_Finalize has been called. It returns 
+  // true if MPI_Init has been called at any point, even if MPI_Finalize has
+  // been called.
+ 
+#ifdef HAS_MPI
+  return MPI::Is_initialized();
+#else
+  // DOLFIN is not configured for MPI (it might be through PETSc)
+  return false;
 #endif
 }
 //-----------------------------------------------------------------------------
