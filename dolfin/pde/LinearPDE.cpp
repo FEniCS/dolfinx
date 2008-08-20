@@ -20,21 +20,21 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-LinearPDE::LinearPDE(Form& a, Form& L, Mesh& mesh)
-  : a(a), L(L), mesh(mesh)
+LinearPDE::LinearPDE(Form& a, Form& L, Mesh& mesh, bool symmetric)
+                   : a(a), L(L), mesh(mesh), symmetric(symmetric)
 {
   message("Creating linear PDE.");
 }
 //-----------------------------------------------------------------------------
-LinearPDE::LinearPDE(Form& a, Form& L, Mesh& mesh, DirichletBC& bc)
-  : a(a), L(L), mesh(mesh)
+LinearPDE::LinearPDE(Form& a, Form& L, Mesh& mesh, DirichletBC& bc, 
+                 bool symmetric) : a(a), L(L), mesh(mesh), symmetric(symmetric)
 {
   message("Creating linear PDE with one boundary condition.");
   bcs.push_back(&bc);
 } 
 //-----------------------------------------------------------------------------
-LinearPDE::LinearPDE(Form& a, Form& L, Mesh& mesh, Array<DirichletBC*>& bcs)
-  : a(a), L(L), mesh(mesh)
+LinearPDE::LinearPDE(Form& a, Form& L, Mesh& mesh, Array<DirichletBC*>& bcs, 
+                 bool symmetric) : a(a), L(L), mesh(mesh), symmetric(symmetric)
 {
   message("Creating linear PDE with %d boundary condition(s).", bcs.size());
   for (uint i = 0; i < bcs.size(); i++)
