@@ -142,8 +142,8 @@ namespace dolfin
     /// Set (or update) value for sub system
     void setSubSystem(SubSystem sub_system);
 
-    /// get Dirichlet values and indicators 
-    void getBC(uint n, uint* indicators, double* values, const DofMap& dof_map, const ufc::form& form); 
+    /// Get Dirichlet values and indicators 
+    void getBC(uint n, uint* indicators, real* values, const DofMap& dof_map, const ufc::form& form); 
 
     /// Return mesh
     Mesh& mesh();

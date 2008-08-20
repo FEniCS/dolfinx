@@ -558,7 +558,8 @@ void DirichletBC::setSubSystem(SubSystem sub_system)
   this->sub_system = sub_system;
 }
 //-----------------------------------------------------------------------------
-void DirichletBC::getBC(uint n, uint* indicators, double* values, const DofMap& dof_map, const ufc::form& form)
+void DirichletBC::getBC(uint n, uint* indicators, real* values, 
+                        const DofMap& dof_map, const ufc::form& form)
 {
   // A map to hold the mapping from boundary dofs to boundary values
   std::map<uint, real> boundary_values;
