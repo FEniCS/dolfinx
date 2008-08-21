@@ -72,7 +72,7 @@ void LinearPDE::solve(Function& u)
   {
     LUSolver solver;
     solver.set("parent", *this);
-    solver.solve(A, *x, b);
+    solver.solve(A, *x, b, symmetric);
   }
   else if ( solver_type == "iterative" )
   {

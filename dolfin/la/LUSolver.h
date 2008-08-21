@@ -7,7 +7,7 @@
 // Modified by Kent-Andre Mardal, 2008.
 //
 // First added:  2007-07-03
-// Last changed: 2008-07-21
+// Last changed: 2008-08-21
 
 #ifndef __LU_SOLVER_H
 #define __LU_SOLVER_H
@@ -16,6 +16,7 @@
 #include <dolfin/common/Timer.h>
 #include "GenericMatrix.h"
 #include "GenericVector.h"
+#include "CholmodCholeskySolver.h"
 #include "UmfpackLUSolver.h"
 #include "uBLASSparseMatrix.h"
 #include "uBLASDenseMatrix.h"
@@ -36,16 +37,18 @@ namespace dolfin
     
   public:
 
-    LUSolver() : umfpack_solver(0), petsc_solver(0), epetra_solver(0) {}
+    LUSolver() : cholmod_solver(0), umfpack_solver(0), petsc_solver(0), 
+                 epetra_solver(0) {}
     
     ~LUSolver() 
     { 
+      delete cholmod_solver; 
       delete umfpack_solver; 
       delete petsc_solver; 
       delete epetra_solver; 
     }
     
-    uint solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b)
+    uint solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b, bool symmetric = false)
     {
       Timer timer("LU solver");
 
@@ -72,13 +75,25 @@ namespace dolfin
       }
 #endif
 
-      // Default LU solver (UMFPACK)
-      if (!umfpack_solver)
+      // Default LU solvers
+      if (symmetric)
       {
-        umfpack_solver = new UmfpackLUSolver();
-        umfpack_solver->set("parent", *this);
+        if (!cholmod_solver)
+        {
+          cholmod_solver = new CholmodCholeskySolver();
+          cholmod_solver->set("parent", *this);
+        }
+        return cholmod_solver->solve(A, x, b);
       }
-      return umfpack_solver->solve(A, x, b);
+      else
+      {
+        if (!umfpack_solver)
+        {
+          umfpack_solver = new UmfpackLUSolver();
+          umfpack_solver->set("parent", *this);
+        }
+        return umfpack_solver->solve(A, x, b);
+      }
     }
 
     uint factorize(const GenericMatrix& A)
@@ -102,6 +117,9 @@ namespace dolfin
     }
 
   private:
+
+    // CHOLMOD solver
+    CholmodCholeskySolver* cholmod_solver;
 
     // UMFPACK solver
     UmfpackLUSolver* umfpack_solver;
