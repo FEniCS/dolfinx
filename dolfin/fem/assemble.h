@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2008.
 //
 // First added:  2007-01-17
-// Last changed: 2008-08-20
+// Last changed: 2008-08-21
 
 #ifndef __ASSEMBLE_H
 #define __ASSEMBLE_H
@@ -43,6 +43,16 @@ namespace dolfin
   void assemble(GenericTensor& A, Form& form, Mesh& mesh,
                 bool reset_tensor=true);
   
+  /// Assemble system (A, b) and apply Dirichlet boundary condition from 
+  /// given variational forms
+  void assemble(GenericMatrix& A, Form& a, GenericVector& b, Form& L, 
+                DirichletBC& bc, Mesh& mesh, bool reset_tensor=true);
+
+  /// Assemble system (A, b) and apply Dirichlet boundary conditions from 
+  /// given variational forms
+  void assemble(GenericMatrix& A, Form& a, GenericVector& b, Form& L, 
+                Array<DirichletBC*>& bcs, Mesh& mesh, bool reset_tensor=true);
+
   /// Assemble tensor from given variational form and mesh over a sub domain
   void assemble(GenericTensor& A, Form& form, Mesh& mesh, const SubDomain& sub_domain,
                 bool reset_tensor=true);

@@ -12,7 +12,6 @@
 #include <ufc.h>
 #include <dolfin/common/types.h>
 #include "UFCMesh.h"
-#include "DofMap.h"
 
 namespace dolfin
 {

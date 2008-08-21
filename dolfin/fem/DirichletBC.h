@@ -14,13 +14,12 @@
 #define __DIRICHLET_BC_H
 
 #include <dolfin/common/types.h>
-#include "SubSystem.h"
 #include "BoundaryCondition.h"
+#include "SubSystem.h"
 
 namespace dolfin
 {
 
-  class BoundaryCondition;
   class DofMap;
   class Function;
   class Mesh;

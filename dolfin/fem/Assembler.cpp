@@ -1,12 +1,12 @@
 // Copyright (C) 2007-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Garth N. Wells, 2007, 2008
-// Modified by Ola Skavhaug, 2007, 2008
+// Modified by Garth N. Wells, 2007,-2008
+// Modified by Ola Skavhaug, 2007-2008
 // Modified by Kent-Andre Mardal, 2008
 //
 // First added:  2007-01-17
-// Last changed: 2008-08-13
+// Last changed: 2008-08-21
 
 #include <ufc.h>
 #include <dolfin/main/MPI.h>
@@ -54,14 +54,21 @@ void Assembler::assemble(GenericTensor& A, Form& form, bool reset_tensor)
   assemble(A, form.form(), form.coefficients(), form.dofMaps(), 0, 0, 0, reset_tensor);
 }
 //-----------------------------------------------------------------------------
-void Assembler::assemble(GenericMatrix& A, Form& A_form, 
-                         GenericVector& b, Form& b_form, 
+void Assembler::assemble(GenericMatrix& A, Form& a, GenericVector& b, Form& L, 
+                         DirichletBC& bc, bool reset_tensor)
+{
+  Array<DirichletBC*> bcs;
+  bcs.push_back(&bc);
+  assemble(A, a, b, L, bcs, reset_tensor); 
+}
+//-----------------------------------------------------------------------------
+void Assembler::assemble(GenericMatrix& A, Form& a, GenericVector& b, Form& L, 
                          Array<DirichletBC*>& bcs, bool reset_tensor)
 {
-  A_form.updateDofMaps(mesh);
-  b_form.updateDofMaps(mesh);
-  assemble_system(A, A_form.form(), A_form.coefficients(), A_form.dofMaps(), 
-                  b, b_form.form(), b_form.coefficients(), b_form.dofMaps(),
+  a.updateDofMaps(mesh);
+  L.updateDofMaps(mesh);
+  assemble_system(A, a.form(), a.coefficients(), a.dofMaps(), 
+                  b, L.form(), L.coefficients(), L.dofMaps(),
                   0, bcs, 0, 0 , 0, reset_tensor); 
 }
 //-----------------------------------------------------------------------------

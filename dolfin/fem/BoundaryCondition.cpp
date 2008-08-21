@@ -6,9 +6,10 @@
 // First added:  2008-06-18
 // Last changed: 2007-12-09
 
+#include <dolfin/mesh/Mesh.h>
+#include "DofMap.h"
 #include "Form.h"
 #include "SubSystem.h"
-#include <dolfin/mesh/Mesh.h>
 #include "BoundaryCondition.h"
 
 using namespace dolfin;

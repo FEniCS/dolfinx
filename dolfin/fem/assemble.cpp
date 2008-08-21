@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2008.
 //
 // First added:  2007-01-17
-// Last changed: 2008-08-20
+// Last changed: 2008-08-21
 
 #include "Assembler.h"
 #include "assemble.h"
@@ -17,6 +17,20 @@ void dolfin::assemble(GenericTensor& A, Form& form, Mesh& mesh,
 {
   Assembler assembler(mesh);
   assembler.assemble(A, form, reset_tensor);
+}
+//-----------------------------------------------------------------------------
+void dolfin::assemble(GenericMatrix& A, Form& a, GenericVector& b, Form& L, 
+                      DirichletBC& bc, Mesh& mesh, bool reset_tensor)
+{
+  Assembler assembler(mesh);
+  assembler.assemble(A, a, b, L, bc, reset_tensor); 
+}
+//-----------------------------------------------------------------------------
+void dolfin::assemble(GenericMatrix& A, Form& a, GenericVector& b, Form& L, 
+                         Array<DirichletBC*>& bcs, Mesh& mesh, bool reset_tensor)
+{
+  Assembler assembler(mesh);
+  assembler.assemble(A, a, b, L, bcs, reset_tensor); 
 }
 //-----------------------------------------------------------------------------
 void dolfin::assemble(GenericTensor& A, Form& form, Mesh& mesh,

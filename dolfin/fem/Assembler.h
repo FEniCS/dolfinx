@@ -1,11 +1,11 @@
 // Copyright (C) 2007-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Garth N. Wells, 2007, 2008.
+// Modified by Garth N. Wells, 2007-2008.
 // Modified by Ola Skavhaug, 2008.
 //
 // First added:  2007-01-17
-// Last changed: 2008-08-20
+// Last changed: 2008-08-21
 
 #ifndef __ASSEMBLER_H
 #define __ASSEMBLER_H
@@ -50,13 +50,17 @@ namespace dolfin
     ~Assembler();
 
     /// Assemble tensor from given variational form
-    void assemble(GenericTensor& A, Form& form,
-                  bool reset_tensor=true);
+    void assemble(GenericTensor& A, Form& form, bool reset_tensor=true);
+
+    /// Assemble system (A, b) and apply Dirichlet boundary condition from 
+    /// given variational forms
+    void assemble(GenericMatrix& A, Form& a, GenericVector& b, Form& L, 
+                  DirichletBC& bc, bool reset_tensor=true);
 
     /// Assemble system (A, b) and apply Dirichlet boundary conditions from 
     /// given variational forms
-    void assemble(GenericMatrix& A, Form& A_form, GenericVector& b, 
-                  Form& b_form, Array<DirichletBC*>& bcs, bool reset_tensor=true);
+    void assemble(GenericMatrix& A, Form& a, GenericVector& b, Form& L, 
+                  Array<DirichletBC*>& bcs, bool reset_tensor=true);
 
     /// Assemble tensor from given variational form over a sub domain
     void assemble(GenericTensor& A, Form& form, const SubDomain& sub_domain,
