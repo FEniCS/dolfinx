@@ -190,8 +190,13 @@ int main() {
   cmdstr = "%s %s umfpack_config_test_include.cpp %s" % (compiler, cflags, libs)
   compileFailed, cmdoutput = commands.getstatusoutput(cmdstr)
   if compileFailed:
-    remove_cppfile("umfpack_config_test_include.cpp")
-    raise UnableToCompileException("UMFPACK", cmd=cmdstr,
+    # Try adding -lgfortran so get arounf Ubuntu Hardy libatlas-base-dev issue
+    libs += " -lgfortran"
+    cmdstr = "%s %s umfpack_config_test_include.cpp %s" % (compiler, cflags, libs)
+    compileFailed, cmdoutput = commands.getstatusoutput(cmdstr)
+    if compileFailed:
+      remove_cppfile("umfpack_config_test_include.cpp")
+      raise UnableToCompileException("UMFPACK", cmd=cmdstr,
                                    program=cpp_test_include_str, errormsg=cmdoutput)
   runFailed, cmdoutput = commands.getstatusoutput("./a.out")
   if runFailed:
@@ -294,11 +299,16 @@ int main (void)
   cmdstr = "%s umfpack_config_test_lib.o %s" % (linker, libs)
   linkFailed, cmdoutput = commands.getstatusoutput(cmdstr)
   if linkFailed:
-    remove_cppfile("umfpack_config_test_lib.cpp", ofile=True)
-    errormsg = ("Using '%s' for BLAS, consider setting the environment " + \
+    # Try adding -lgfortran so get arounf Ubuntu Hardy libatlas-base-dev issue
+    libs += " -lgfortran"
+    cmdstr = "%s umfpack_config_test_lib.o %s" % (linker, libs)
+    linkFailed, cmdoutput = commands.getstatusoutput(cmdstr)
+    if linkFailed:
+      remove_cppfile("umfpack_config_test_lib.cpp", ofile=True)
+      errormsg = ("Using '%s' for BLAS, consider setting the environment " + \
                 "variable ATLAS_DIR if this is wrong.\n") % getAtlasDir()
-    errormsg += cmdoutput
-    raise UnableToLinkException("UMFPACK", cmd=cmdstr,
+      errormsg += cmdoutput
+      raise UnableToLinkException("UMFPACK", cmd=cmdstr,
                                 program=cpp_test_lib_str, errormsg=errormsg)
 
   runFailed, cmdoutput = commands.getstatusoutput("./a.out")

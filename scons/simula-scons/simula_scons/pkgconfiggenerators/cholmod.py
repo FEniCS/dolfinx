@@ -189,8 +189,13 @@ int main() {
   cmdstr = "%s %s cholmod_config_test_include.cpp %s" % (compiler, cflags, libs)
   compileFailed, cmdoutput = commands.getstatusoutput(cmdstr)
   if compileFailed:
-    remove_cppfile("cholmod_config_test_include.cpp")
-    raise UnableToCompileException("CHOLMOD", cmd=cmdstr,
+    # Try adding -lgfortran so get around Ubuntu Hardy libatlas-base-dev issue
+    libs += " -lgfortran"
+    cmdstr = "%s %s cholmod_config_test_include.cpp %s" % (compiler, cflags, libs)
+    compileFailed, cmdoutput = commands.getstatusoutput(cmdstr)
+    if compileFailed:
+      remove_cppfile("cholmod_config_test_include.cpp")
+      raise UnableToCompileException("CHOLMOD", cmd=cmdstr,
                                    program=cpp_test_include_str, errormsg=cmdoutput)
   runFailed, cmdoutput = commands.getstatusoutput("./a.out")
   if runFailed:
@@ -269,12 +274,17 @@ int main (void)
   cmdstr = "%s %s cholmod_config_test_lib.o" % (linker, libs)
   linkFailed, cmdoutput = commands.getstatusoutput(cmdstr)
   if linkFailed:
-    remove_cppfile("cholmod_config_test_lib.cpp", ofile=True)
-    errormsg = ("Using '%s' for LAPACK and '%s' BLAS. Consider setting the " + \
+    # Try adding -lgfortran so get around Ubuntu Hardy libatlas-base-dev issue
+    libs += " -lgfortran"
+    cmdstr = "%s %s cholmod_config_test_lib.o" % (linker, libs)
+    linkFailed, cmdoutput = commands.getstatusoutput(cmdstr)
+    if linkFailed:
+      remove_cppfile("cholmod_config_test_lib.cpp", ofile=True)
+      errormsg = ("Using '%s' for LAPACK and '%s' BLAS. Consider setting the " + \
                 "environment variables LAPACK_DIR and BLAS_DIR if this is " + \
                 "wrong.\n") % (getLapackDir(sconsEnv), getBlasDir(sconsEnv))
-    errormsg += cmdoutput
-    raise UnableToLinkException("CHOLMOD", cmd=cmdstr,
+      errormsg += cmdoutput
+      raise UnableToLinkException("CHOLMOD", cmd=cmdstr,
                                 program=cpp_test_lib_str, errormsg=errormsg)
 
   runFailed, cmdoutput = commands.getstatusoutput("./a.out")
