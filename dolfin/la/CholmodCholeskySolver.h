@@ -79,7 +79,7 @@ namespace dolfin
       cholmod_dense* residual(cholmod_dense* x, cholmod_dense* b);
       
       /// Compute residual norm
-      double residual_norm(cholmod_dense* r, cholmod_dense* r, 
+      double residual_norm(cholmod_dense* r, cholmod_dense* x, 
 			   cholmod_dense* b);
 
       /// Perform one refinement
