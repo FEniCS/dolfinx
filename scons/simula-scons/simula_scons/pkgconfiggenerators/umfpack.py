@@ -190,7 +190,7 @@ int main() {
   cmdstr = "%s %s umfpack_config_test_include.cpp %s" % (compiler, cflags, libs)
   compileFailed, cmdoutput = commands.getstatusoutput(cmdstr)
   if compileFailed:
-    # Try adding -lgfortran so get arounf Ubuntu Hardy libatlas-base-dev issue
+    # Try adding -lgfortran so get around Ubuntu Hardy libatlas-base-dev issue
     libs += " -lgfortran"
     cmdstr = "%s %s umfpack_config_test_include.cpp %s" % (compiler, cflags, libs)
     compileFailed, cmdoutput = commands.getstatusoutput(cmdstr)
@@ -299,7 +299,7 @@ int main (void)
   cmdstr = "%s umfpack_config_test_lib.o %s" % (linker, libs)
   linkFailed, cmdoutput = commands.getstatusoutput(cmdstr)
   if linkFailed:
-    # Try adding -lgfortran so get arounf Ubuntu Hardy libatlas-base-dev issue
+    # Try adding -lgfortran so get around Ubuntu Hardy libatlas-base-dev issue
     libs += " -lgfortran"
     cmdstr = "%s umfpack_config_test_lib.o %s" % (linker, libs)
     linkFailed, cmdoutput = commands.getstatusoutput(cmdstr)
