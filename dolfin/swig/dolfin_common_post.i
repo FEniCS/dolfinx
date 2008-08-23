@@ -1,3 +1,4 @@
+%template(STLVectorDirichletBCPtr) std::vector<dolfin::DirichletBC *>;
 %template(ArrayDirichletBCPtr) dolfin::Array<dolfin::DirichletBC *>;
 %template(STLVectorFunctionPtr) std::vector<dolfin::Function *>;
 %template(ArrayFunctionPtr) dolfin::Array<dolfin::Function *>;
