@@ -95,7 +95,7 @@ namespace dolfin
                        const Array<Function*>& b_coefficients, const DofMapSet& b_dof_map_set,
                        const GenericVector* x0,
                        Mesh& mesh, 
-                       DirichletBC& bc, const MeshFunction<uint>* cell_domains, 
+                       Array<DirichletBC*>& bcs, const MeshFunction<uint>* cell_domains, 
                        const MeshFunction<uint>* exterior_facet_domains,
                        const MeshFunction<uint>* interior_facet_domains,
                        bool reset_tensors=true);
