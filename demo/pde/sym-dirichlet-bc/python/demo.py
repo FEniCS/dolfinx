@@ -63,7 +63,6 @@ x = b.copy()
 x.zero()
 solve(A, x, b)
 
-
 U = Function(element, mesh, x)
 plot(U)
 

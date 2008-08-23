@@ -10,6 +10,7 @@
 #ifndef __ASSEMBLER_H
 #define __ASSEMBLER_H
 
+#include <dolfin/common/Array.h>
 #include <dolfin/common/types.h>
 
 // Forward declaration
@@ -32,7 +33,6 @@ namespace dolfin
   class Mesh;
   class SubDomain;
   class UFC;
-  template<class T> class Array;
   template<class T> class MeshFunction;
 
   /// This class provides automated assembly of linear systems, or
