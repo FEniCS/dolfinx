@@ -6,6 +6,7 @@
 // First added:  2007-01-17
 // Last changed: 2008-08-21
 
+#include <dolfin/common/Array.h>
 #include "Assembler.h"
 #include "assemble.h"
 
