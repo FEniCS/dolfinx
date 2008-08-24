@@ -113,16 +113,6 @@ namespace dolfin
                          GenericVector& b, const ufc::form& b_form, 
                          const Array<Function*>& b_coefficients, const DofMapSet& b_dof_map_set,
                          const GenericVector* x0,
-                         DirichletBC& bc, const MeshFunction<uint>* cell_domains, 
-                         const MeshFunction<uint>* exterior_facet_domains,
-                         const MeshFunction<uint>* interior_facet_domains,
-                         bool reset_tensors=true);
-
-    void assemble_system(GenericMatrix& A, const ufc::form& A_form, 
-                         const Array<Function*>& A_coefficients, const DofMapSet& A_dof_map_set,
-                         GenericVector& b, const ufc::form& b_form, 
-                         const Array<Function*>& b_coefficients, const DofMapSet& b_dof_map_set,
-                         const GenericVector* x0,
                          Array<DirichletBC*> bcs, const MeshFunction<uint>* cell_domains, 
                          const MeshFunction<uint>* exterior_facet_domains,
                          const MeshFunction<uint>* interior_facet_domains,
