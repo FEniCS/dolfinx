@@ -13,8 +13,7 @@
 #include "ublas.h"
 
 #include <dolfin/parameter/Parametrized.h>
-#include "SolverType.h"
-#include "PreconditionerType.h"
+#include "enums_la.h"
 #include "uBLASKrylovMatrix.h"
 #include "uBLASMatrix.h"
 #include "uBLASVector.h"

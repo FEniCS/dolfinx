@@ -14,8 +14,7 @@
 #include <dolfin/common/Timer.h>
 #include "GenericMatrix.h"
 #include "GenericVector.h"
-#include "SolverType.h"
-#include "PreconditionerType.h"
+#include "enums_la.h"
 #include "uBLASKrylovSolver.h"
 #include "uBLASSparseMatrix.h"
 #include "uBLASDenseMatrix.h"

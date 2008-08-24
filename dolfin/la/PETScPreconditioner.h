@@ -15,7 +15,7 @@
 #include <petscksp.h>
 #include <petscpc.h>
 
-#include "PreconditionerType.h"
+#include "enums_la.h"
 #include "PETScObject.h"
 
 namespace dolfin

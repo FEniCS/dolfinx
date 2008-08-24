@@ -27,10 +27,6 @@
 %include "dolfin/log/Table.h"
 
 // DOLFIN headers included from la
-%include "dolfin/la/VectorNormType.h"
-%include "dolfin/la/NormalizationType.h"
-%include "dolfin/la/SolverType.h"
-%include "dolfin/la/PreconditionerType.h"
 %include "dolfin/la/GenericTensor.h"
 %include "dolfin/la/GenericMatrix.h"
 %include "dolfin/la/GenericVector.h"
@@ -70,6 +66,7 @@
 %include "dolfin/la/LUSolver.h"
 %include "dolfin/la/SingularSolver.h"
 %include "dolfin/la/solve.h"
+%include "dolfin/la/enums_la.h"
 
 // DOLFIN headers included from elements
 %include "dolfin/elements/ElementLibrary.h"

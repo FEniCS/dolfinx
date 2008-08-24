@@ -10,8 +10,7 @@
 
 #include <dolfin/common/types.h>
 #include <dolfin/parameter/Parametrized.h>
-#include "SolverType.h"
-#include "PreconditionerType.h"
+#include "enums_la.h"
 #include "EpetraPreconditioner.h"
 
 namespace dolfin 

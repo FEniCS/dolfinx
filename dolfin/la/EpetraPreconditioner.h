@@ -5,15 +5,12 @@
 
 #ifdef HAS_TRILINOS
 
-
 #ifndef __EPETRA_PRECONDITIONER_SOLVER_H
 #define __EPETRA_PRECONDITIONER_SOLVER_H
 
 #include <dolfin/common/types.h>
 #include <dolfin/parameter/Parametrized.h>
-#include "SolverType.h"
-#include "PreconditionerType.h"
-
+#include "enums_la.h"
 
 #endif 
 

@@ -10,9 +10,7 @@
 #define __SOLVE_H
 
 #include <dolfin/common/types.h>
-#include "SolverType.h"
-#include "PreconditionerType.h"
-#include "NormalizationType.h"
+#include "enums_la.h"
 
 namespace dolfin
 {  
