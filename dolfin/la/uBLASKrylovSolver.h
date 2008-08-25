@@ -129,6 +129,10 @@ namespace dolfin
     uint iterations;
     switch (solver_type)
     { 
+    case cg:
+      warning("Conjugate-gradient method not programmed for uBLASKrylovSolver. Using GMRES.");
+      iterations = solveGMRES(A, x, b, converged);
+      break;
     case gmres:
       iterations = solveGMRES(A, x, b, converged);
       break;

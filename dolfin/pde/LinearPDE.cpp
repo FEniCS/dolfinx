@@ -13,6 +13,7 @@
 #include <dolfin/la/Vector.h>
 #include <dolfin/la/LUSolver.h>
 #include <dolfin/la/KrylovSolver.h>
+#include <dolfin/la/enums_la.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/DiscreteFunction.h>
 #include <dolfin/io/dolfin_io.h>
@@ -21,14 +22,14 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-LinearPDE::LinearPDE(Form& a, Form& L, Mesh& mesh, dolfin::MatrixType matrix_type)
+LinearPDE::LinearPDE(Form& a, Form& L, Mesh& mesh, MatrixType matrix_type)
                    : a(a), L(L), mesh(mesh), matrix_type(matrix_type)
 {
   message("Creating linear PDE.");
 }
 //-----------------------------------------------------------------------------
 LinearPDE::LinearPDE(Form& a, Form& L, Mesh& mesh, DirichletBC& bc, 
-                     dolfin::MatrixType type) : a(a), L(L), mesh(mesh), 
+                     MatrixType matrix_type) : a(a), L(L), mesh(mesh), 
                      matrix_type(matrix_type)
 {
   message("Creating linear PDE with one boundary condition.");
@@ -36,7 +37,7 @@ LinearPDE::LinearPDE(Form& a, Form& L, Mesh& mesh, DirichletBC& bc,
 } 
 //-----------------------------------------------------------------------------
 LinearPDE::LinearPDE(Form& a, Form& L, Mesh& mesh, Array<DirichletBC*>& bcs, 
-                     dolfin::MatrixType matrix_type) : a(a), L(L), mesh(mesh), 
+                     MatrixType matrix_type) : a(a), L(L), mesh(mesh), 
                      matrix_type(matrix_type)
 {
   message("Creating linear PDE with %d boundary condition(s).", bcs.size());
@@ -79,9 +80,18 @@ void LinearPDE::solve(Function& u)
   }
   else if ( solver_type == "iterative" )
   {
-    KrylovSolver solver(gmres);
-    solver.set("parent", *this);
-    solver.solve(A, *x, b);
+    if( matrix_type == symmetric)
+    {
+      KrylovSolver solver(cg);
+      solver.set("parent", *this);
+      solver.solve(A, *x, b);
+    }
+    else
+    {
+      KrylovSolver solver(gmres);
+      solver.set("parent", *this);
+      solver.solve(A, *x, b);
+    }
   }
   else
     error("Unknown solver type \"%s\".", solver_type.c_str());
