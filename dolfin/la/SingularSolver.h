@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005-09-19
-// Last changed: 2008-05-10
+// Last changed: 2008-08-25
 
 #ifndef __SINGULAR_SOLVER_H
 #define __SINGULAR_SOLVER_H
@@ -36,7 +36,8 @@ namespace dolfin
   public:
 
     /// Create linear solver
-    SingularSolver(SolverType solver_type=lu, PreconditionerType pc_type=ilu);
+    SingularSolver(dolfin::SolverType solver_type=lu,
+                   dolfin::PreconditionerType pc_type=ilu);
 
     /// Destructor
     ~SingularSolver();

@@ -7,7 +7,7 @@
 // Modified by Garth N. Wells, 2005-2007.
 //
 // First added:  2005-12-02
-// Last changed: 2008-05-08
+// Last changed: 2008-08-25
 
 #ifndef __PETSC_KRYLOV_SOLVER_H
 #define __PETSC_KRYLOV_SOLVER_H
@@ -36,10 +36,11 @@ namespace dolfin
   public:
 
     /// Create Krylov solver for a particular method and preconditioner
-    PETScKrylovSolver(SolverType method=default_solver, PreconditionerType pc=default_pc);
+    PETScKrylovSolver(dolfin::SolverType method=default_solver,
+                      dolfin::PreconditionerType pc=default_pc);
 
     /// Create Krylov solver for a particular method and PETScPreconditioner
-    PETScKrylovSolver(SolverType method, PETScPreconditioner& PETScPreconditioner);
+    PETScKrylovSolver(dolfin::SolverType method, PETScPreconditioner& PETScPreconditioner);
 
     /// Destructor
     ~PETScKrylovSolver();
@@ -71,7 +72,7 @@ namespace dolfin
     void writeReport(int num_iterations);
 
     /// Get PETSc method identifier 
-    KSPType getType(SolverType method) const;
+    KSPType getType(dolfin::SolverType method) const;
 
     /// Krylov method
     SolverType method;

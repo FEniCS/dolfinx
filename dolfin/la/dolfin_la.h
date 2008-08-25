@@ -5,6 +5,7 @@
 
 // Note that the order is important!
 
+#include <dolfin/la/enums_la.h>
 #include <dolfin/la/GenericTensor.h>
 #include <dolfin/la/GenericMatrix.h>
 #include <dolfin/la/GenericVector.h>
@@ -44,6 +45,5 @@
 #include <dolfin/la/LUSolver.h>
 #include <dolfin/la/SingularSolver.h>
 #include <dolfin/la/solve.h>
-#include <dolfin/la/enums_la.h>
 
 #endif

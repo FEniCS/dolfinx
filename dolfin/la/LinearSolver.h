@@ -5,7 +5,7 @@
 // Modified by Ola Skavhaug 2008.
 //
 // First added:  2004-06-19
-// Last changed: 2008-05-10
+// Last changed: 2008-08-25
 
 #ifndef __LINEAR_SOLVER_H
 #define __LINEAR_SOLVER_H
@@ -31,7 +31,8 @@ namespace dolfin
   public:
 
     /// Create linear solver
-    LinearSolver(SolverType solver_type=lu, PreconditionerType pc_type=ilu);
+    LinearSolver(dolfin::SolverType solver_type=lu,
+                 dolfin::PreconditionerType pc_type=ilu);
 
     /// Destructor
     ~LinearSolver();

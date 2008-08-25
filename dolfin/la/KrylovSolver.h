@@ -5,7 +5,7 @@
 // Modified by Anders Logg, 2008.
 //
 // First added:  2007-07-03
-// Last changed: 2008-06-13
+// Last changed: 2008-08-25
 
 #ifndef __KRYLOV_SOLVER_H
 #define __KRYLOV_SOLVER_H
@@ -39,7 +39,8 @@ namespace dolfin
   public:
     
     /// Create Krylov solver
-    KrylovSolver(SolverType solver_type=default_solver, PreconditionerType pc_type=default_pc)
+    KrylovSolver(dolfin::SolverType solver_type=default_solver,
+                 dolfin::PreconditionerType pc_type=default_pc)
       : solver_type(solver_type), pc_type(pc_type), ublas_solver(0), petsc_solver(0), 
         epetra_solver(0), itl_solver(0) {}
     

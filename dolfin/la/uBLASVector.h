@@ -7,7 +7,7 @@
 // Modified by Martin Alnæs, 2008.
 //
 // First added:  2006-03-04
-// Last changed: 2008-07-20
+// Last changed: 2008-08-25
 
 #ifndef __UBLAS_VECTOR_H
 #define __UBLAS_VECTOR_H
@@ -98,7 +98,7 @@ namespace dolfin
     virtual real inner(const GenericVector& x) const;
 
     /// Compute norm of vector
-    virtual real norm(VectorNormType type=l2) const;
+    virtual real norm(dolfin::VectorNormType type=l2) const;
 
     /// Return minimum value of vector
     virtual real min() const;

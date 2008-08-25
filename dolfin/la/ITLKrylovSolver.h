@@ -1,10 +1,11 @@
 // Copyright (C) 2008 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Dag Lindbo, 2008
+// Modified by Dag Lindbo, 2008.
+// Modified by Anders Logg, 2008.
 //
 // First added:  2008-07-16
-// Last changed: 2008-08-17
+// Last changed: 2008-08-25
 
 #ifdef HAS_MTL4
 
@@ -31,10 +32,11 @@ namespace dolfin
   public:
 
     /// Create Krylov solver for a particular method and preconditioner
-    ITLKrylovSolver(SolverType method=default_solver, PreconditionerType pc=default_pc);
+    ITLKrylovSolver(dolfin::SolverType method=default_solver,
+                    dolfin::PreconditionerType pc=default_pc);
 
     /// Create Krylov solver for a particular method and EpetraPreconditioner
-    //ITLKrylovSolver(SolverType method, ITLPreconditioner& prec);
+    //ITLKrylovSolver(dolfin::SolverType method, ITLPreconditioner& prec);
 
     /// Destructor
     ~ITLKrylovSolver();
@@ -55,9 +57,6 @@ namespace dolfin
 
 }
 
+#endif
 
-#endif 
-
-#endif 
-
-
+#endif
