@@ -12,34 +12,47 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-BlockMatrix::BlockMatrix(uint n_, uint m_): n(n_), m(m_) {
-//  matrices.clear(); 
+BlockMatrix::BlockMatrix(uint n_, uint m_, bool owner_): owner(owner_), n(n_), m(m_)
+{
+  matrices = new Matrix*[n*m]; 
+  for (uint i=0; i<n; i++) 
+  {
+    for (uint j=0; j<m; j++) 
+    {
+      matrices[i*n + j] = new Matrix(); 
+    }
+  }
 } 
 //-----------------------------------------------------------------------------
-const GenericMatrix& BlockMatrix::mat(uint i, uint j) const 
+BlockMatrix::~BlockMatrix() 
 {
-  /*
-  if (i < 0 || i >= n || j < 0 || j >= m) {  
-    throw(std::out_of_range("The index is out of range!"));
-  }
-  std::map<std::pair<int,int>, GenericMatrix*>::iterator iter = matrices.find(std::pair<int,int>(i,j));
-  if (iter != matrices.end())  
+  if (owner) 
   {
-    return *(iter->second);  
+    for (uint i=0; i<n; i++) 
+    {
+      for (uint j=0; j<m; j++) 
+      {
+        delete matrices[i*n + j];
+      }
+    }
   }
-  */
-  if (i >= n || j >= m) {  
-    error("The index is out of range!");
-  }
-  return matrices[i*n+j];
+  delete [] matrices;  
 }
 //-----------------------------------------------------------------------------
-GenericMatrix& BlockMatrix::mat(uint i, uint j) 
+const Matrix& BlockMatrix::mat(uint i, uint j) const 
 {
   if (i >= n || j >= m) {  
     error("The index is out of range!");
   }
-  return matrices[i*n+j];
+  return *(matrices[i*n+j]);
+}
+//-----------------------------------------------------------------------------
+Matrix& BlockMatrix::mat(uint i, uint j) 
+{
+  if (i >= n || j >= m) {  
+    error("The index is out of range!");
+  }
+  return *(matrices[i*n+j]);
 }
 //-----------------------------------------------------------------------------
 dolfin::uint BlockMatrix::size(uint dim) const {

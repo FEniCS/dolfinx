@@ -8,26 +8,31 @@
 #define __BLOCKMATRIX_H
 
 #include <map>
-#include "GenericMatrix.h"
+#include "Matrix.h"
 
 namespace dolfin
 {
   class BlockMatrix 
   {
     private:
+      bool owner; 
       uint n, m; 
-      //    std::map<std::pair<int,int>, GenericMatrix*> matrices; 
-      GenericMatrix* matrices; 
+      //    std::map<std::pair<int,int>, Matrix*> matrices; 
+      Matrix** matrices; 
 
     public:
 
-      BlockMatrix(uint n_=0, uint m_=0); 
+      // Constructor
+      BlockMatrix(uint n=0, uint m=0, bool owner=true); 
 
-      /// Return GenericMatrix reference number (i,j) 
+      // Destructor
+      ~BlockMatrix(); 
+
+      /// Return Matrix reference number (i,j) 
       /* FIXME these functions should probably be inline
        * and all the LA function should rely on these */
-      const GenericMatrix& mat(uint i, uint j) const; 
-      GenericMatrix& mat(uint i, uint j); 
+      const Matrix& mat(uint i, uint j) const; 
+      Matrix& mat(uint i, uint j); 
 
       /// Return size of given dimension
       uint size(uint dim) const;

@@ -4,7 +4,7 @@
 // First added:  2008-08-25
 
 #include <stdexcept>
-#include "GenericVector.h"
+#include "Vector.h"
 #include "BlockVector.h"
 #include <iostream>
 #include "math.h"
@@ -12,29 +12,33 @@
 
 using namespace dolfin;
 //-----------------------------------------------------------------------------
-BlockVector::BlockVector(uint n_): n(n_) 
+BlockVector::BlockVector(uint n_, bool owner_): owner(owner_), n(n_)
 { 
-  // FIXME should BlockVector own the memory ? 
-//  vectors.clear(); 
-//  vectors = new backend.createVector[n]; 
+  vectors = new Vector*[n]; 
+  for (uint i=0; i<n; i++) 
+  {
+    vectors[i] = new Vector(); 
+  }
 }
 BlockVector::~BlockVector() 
 {
-  /*
-  for (uint i=0; i<n; i++) {
-    delete vector[i]; 
+  if (owner)
+  {
+    for (uint i=0; i<n; i++) 
+    {
+      delete vectors[i]; 
+    }
   }
   delete [] vectors; 
-  */
 }
 //-----------------------------------------------------------------------------
-const GenericVector& BlockVector::vec(uint i) const 
+const Vector& BlockVector::vec(uint i) const 
 {  
   /*
   if (i < 0 || i >= n) {  
     throw(std::out_of_range("The index is out of range!"));
   }
-  std::map<int, GenericVector*>::iterator iter = vectors.find(i);
+  std::map<int, Vector*>::iterator iter = vectors.find(i);
   if (iter != vectors.end())  
   {
     return *(iter->second);  
@@ -43,15 +47,15 @@ const GenericVector& BlockVector::vec(uint i) const
   if (i >= n) {  
     error("The index is out of range!");
   }
-  return vectors[i]; 
+  return *(vectors[i]); 
 }
 //-----------------------------------------------------------------------------
-GenericVector& BlockVector::vec(uint i) 
+Vector& BlockVector::vec(uint i) 
 {  
   if (i < 0 || i >= n) {  
     error("The index is out of range!");
   }
-  return vectors[i]; 
+  return *(vectors[i]); 
 }
 //-----------------------------------------------------------------------------
 dolfin::uint BlockVector::size() const 

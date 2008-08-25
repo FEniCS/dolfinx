@@ -8,8 +8,8 @@
 #define __BLOCKVECTOR_H
 
 #include <map>
-#include "GenericVector.h"
 #include "VectorNormType.h"
+#include "Vector.h"
 
 namespace dolfin
 {
@@ -17,23 +17,23 @@ namespace dolfin
   class BlockVector 
   {
     private: 
+      bool owner; 
       uint n; 
-      //    std::map<int, const GenericVector*> vectors; 
-      GenericVector* vectors;  
+      Vector** vectors;  
 
     public:
 
       /// Constructor  
-      BlockVector(uint n_=0);  
+      BlockVector(uint n_=0, bool owner=true);  
 
       /// Destructor
       ~BlockVector(); 
 
-      /// Return GenericVector reference number i 
+      /// Return Vector reference number i 
       /* FIXME these functions should probably be inline
        * and all the LA function should rely on these */
-      const GenericVector& vec(uint i) const; 
-      GenericVector& vec(uint i); 
+      const Vector& vec(uint i) const; 
+      Vector& vec(uint i); 
 
       /// Add multiple of given vector (AXPY operation)
       void axpy(real a, const BlockVector& x);
