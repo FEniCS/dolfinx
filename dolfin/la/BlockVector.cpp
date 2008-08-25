@@ -15,10 +15,13 @@ using namespace dolfin;
 BlockVector::BlockVector(uint n_, bool owner_): owner(owner_), n(n_)
 { 
   vectors = new Vector*[n]; 
-  for (uint i=0; i<n; i++) 
-  {
-    vectors[i] = new Vector(); 
-  }
+//  if (owner) 
+//  {
+    for (uint i=0; i<n; i++) 
+    {
+      vectors[i] = new Vector(); 
+    }
+ // }
 }
 BlockVector::~BlockVector() 
 {
@@ -30,6 +33,16 @@ BlockVector::~BlockVector()
     }
   }
   delete [] vectors; 
+}
+//-----------------------------------------------------------------------------
+BlockVector* BlockVector::copy() const
+{
+  BlockVector* x= new BlockVector(n); 
+  for (uint i=0; i<n; i++)   
+  {
+    x->set(i,*(this->vec(i).copy())); 
+  }
+  return x; 
 }
 //-----------------------------------------------------------------------------
 const Vector& BlockVector::vec(uint i) const 
@@ -193,6 +206,11 @@ void BlockVector::disp(uint precision) const
     std::cout <<"BlockVector("<<i<<"):"<<std::endl;  
     this->vec(i).disp(precision); 
   }
+}
+//-----------------------------------------------------------------------------
+void BlockVector::set(uint i, Vector& v){
+//  matrices[i*n+j] = m.copy(); //FIXME. not obvious that copy is the right thing
+  vectors[i] = &v; //FIXME. not obvious that copy is the right thing
 }
 //-----------------------------------------------------------------------------
 

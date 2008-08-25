@@ -29,11 +29,16 @@ namespace dolfin
       /// Destructor
       ~BlockVector(); 
 
+      /// Return copy of tensor
+      virtual BlockVector* copy() const;
+
       /// Return Vector reference number i 
       /* FIXME these functions should probably be inline
        * and all the LA function should rely on these */
       const Vector& vec(uint i) const; 
-      Vector& vec(uint i); 
+            Vector& vec(uint i); 
+
+      void set(uint i, Vector& v);
 
       /// Add multiple of given vector (AXPY operation)
       void axpy(real a, const BlockVector& x);
@@ -72,7 +77,7 @@ namespace dolfin
       uint size() const; 
 
       /// Display vectors 
-      virtual void disp(uint precision=2) const = 0;
+      virtual void disp(uint precision=2) const;
   }; 
 }
 

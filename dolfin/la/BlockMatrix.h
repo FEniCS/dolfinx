@@ -32,7 +32,9 @@ namespace dolfin
       /* FIXME these functions should probably be inline
        * and all the LA function should rely on these */
       const Matrix& mat(uint i, uint j) const; 
-      Matrix& mat(uint i, uint j); 
+            Matrix& mat(uint i, uint j); 
+
+      void set(uint i, uint j, Matrix& m); 
 
       /// Return size of given dimension
       uint size(uint dim) const;

@@ -15,12 +15,15 @@ using namespace dolfin;
 BlockMatrix::BlockMatrix(uint n_, uint m_, bool owner_): owner(owner_), n(n_), m(m_)
 {
   matrices = new Matrix*[n*m]; 
-  for (uint i=0; i<n; i++) 
-  {
-    for (uint j=0; j<m; j++) 
+//  if (owner) //FIXME what to do if not owner (nothing ? Can then not use operator= later on)  
+//  {
+    for (uint i=0; i<n; i++) 
     {
-      matrices[i*n + j] = new Matrix(); 
-    }
+      for (uint j=0; j<m; j++) 
+      {
+        matrices[i*n + j] = new Matrix(); 
+      }
+//    }
   }
 } 
 //-----------------------------------------------------------------------------
@@ -47,8 +50,15 @@ const Matrix& BlockMatrix::mat(uint i, uint j) const
   return *(matrices[i*n+j]);
 }
 //-----------------------------------------------------------------------------
+void BlockMatrix::set(uint i, uint j, Matrix& m){
+//  matrices[i*n+j] = m.copy(); //FIXME. not obvious that copy is the right thing
+  matrices[i*n+j] = &m; //FIXME. not obvious that copy is the right thing
+}
+//-----------------------------------------------------------------------------
 Matrix& BlockMatrix::mat(uint i, uint j) 
 {
+  // FIXME this function does not work because operator= is not implemented in the
+  // various Matrix classes, should it be ? 
   if (i >= n || j >= m) {  
     error("The index is out of range!");
   }
@@ -103,6 +113,7 @@ void BlockMatrix::mult(const BlockVector& x, BlockVector& y, bool transposed) co
   vec = factory.createVector();
   for(uint i=0; i<n; i++) 
   {
+    y.vec(i).init(this->mat(i,0).size(0));
     vec->init(y.vec(i).size()); 
     for(uint j=0; j<n; j++) 
     {
@@ -111,6 +122,8 @@ void BlockMatrix::mult(const BlockVector& x, BlockVector& y, bool transposed) co
     }
   }
 }
+//-----------------------------------------------------------------------------
+//FIXME there are numerous functions that should be added  
 
 
 
