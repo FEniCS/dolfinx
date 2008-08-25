@@ -8,7 +8,6 @@
 #define __BLOCKVECTOR_H
 
 #include <map>
-#include "VectorNormType.h"
 #include "Vector.h"
 
 namespace dolfin
@@ -47,7 +46,7 @@ namespace dolfin
       real inner(const BlockVector& x) const;
 
       /// Return norm of vector
-      real norm(VectorNormType type=l2) const;
+      real norm(NormType type=l2) const;
 
       /// Return minimum value of vector
       real min() const;

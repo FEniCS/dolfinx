@@ -94,7 +94,7 @@ real BlockVector::inner(const BlockVector& x) const
   return value; 
 }
 //-----------------------------------------------------------------------------
-real BlockVector::norm(VectorNormType type) const
+real BlockVector::norm(NormType type) const
 {
   real value = 0.0; 
   switch (type) { 

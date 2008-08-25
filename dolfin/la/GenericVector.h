@@ -7,12 +7,12 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2006-04-25
-// Last changed: 2008-08-07
+// Last changed: 2008-08-25
 
 #ifndef __GENERIC_VECTOR_H
 #define __GENERIC_VECTOR_H
 
-#include "VectorNormType.h"
+#include "enums_la.h"
 #include "GenericSparsityPattern.h"
 #include "GenericTensor.h"
 
@@ -103,7 +103,7 @@ namespace dolfin
     virtual real inner(const GenericVector& x) const = 0;
 
     /// Return norm of vector
-    virtual real norm(VectorNormType type=l2) const = 0;
+    virtual real norm(dolfin::NormType type) const = 0;
 
     /// Return minimum value of vector
     virtual real min() const = 0;

@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2006-2008.
 //
 // First added:  2006-05-31
-// Last changed: 2008-05-15
+// Last changed: 2008-08-25
 
 #ifndef __UBLAS_KRYLOV_SOLVER_H
 #define __UBLAS_KRYLOV_SOLVER_H
@@ -13,8 +13,7 @@
 #include "ublas.h"
 
 #include <dolfin/parameter/Parametrized.h>
-#include "SolverType.h"
-#include "PreconditionerType.h"
+#include "enums_la.h"
 #include "uBLASKrylovMatrix.h"
 #include "uBLASMatrix.h"
 #include "uBLASVector.h"
@@ -31,16 +30,17 @@ namespace dolfin
   public:
 
     /// Create Krylov solver for a particular method and preconditioner
-    uBLASKrylovSolver(SolverType solver_type=default_solver, PreconditionerType pc_type=default_pc);
+    uBLASKrylovSolver(dolfin::SolverType solver_type=default_solver,
+                      dolfin::PreconditionerType pc_type=default_pc);
 
     /// Create Krylov solver for a particular preconditioner (set by name)
-    uBLASKrylovSolver(PreconditionerType pc);
+    uBLASKrylovSolver(dolfin::PreconditionerType pc);
 
     /// Create Krylov solver for a particular uBLASPreconditioner
     uBLASKrylovSolver(uBLASPreconditioner& pc);
 
     /// Create Krylov solver for a particular method and uBLASPreconditioner
-    uBLASKrylovSolver(SolverType solver_type, uBLASPreconditioner& preconditioner);
+    uBLASKrylovSolver(dolfin::SolverType solver_type, uBLASPreconditioner& preconditioner);
 
     /// Destructor
     ~uBLASKrylovSolver();
@@ -73,7 +73,7 @@ namespace dolfin
                         bool& converged) const;
     
     /// Select and create named preconditioner
-    void selectPreconditioner(PreconditionerType pc_type);
+    void selectPreconditioner(dolfin::PreconditionerType pc_type);
 
     /// Read solver parameters
     void readParameters();

@@ -264,7 +264,7 @@ const EpetraVector& EpetraVector::operator/= (real a)
   return *this;
 }
 //-----------------------------------------------------------------------------
-real EpetraVector::norm(VectorNormType type) const
+real EpetraVector::norm(NormType type) const
 {
   if (!x) error("Vector is not initialized.");
   real value = 0.0;

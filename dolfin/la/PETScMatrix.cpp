@@ -165,15 +165,16 @@ void PETScMatrix::init(const GenericSparsityPattern& sparsity_pattern)
 //-----------------------------------------------------------------------------
 PETScMatrix* PETScMatrix::copy() const
 {
+  dolfin_assert(A);
+
   PETScMatrix* mcopy = new PETScMatrix();
-
   MatDuplicate(A, MAT_COPY_VALUES, &(mcopy->A));
-
   return mcopy;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint PETScMatrix::size(uint dim) const
 {
+  dolfin_assert(A);
   int M = 0;
   int N = 0;
   MatGetSize(A, &M, &N);
@@ -217,6 +218,8 @@ void PETScMatrix::getrow(uint row,
                          Array<uint>& columns,
                          Array<real>& values) const
 {
+  dolfin_assert(A);
+
   const int *cols = 0;
   const double *vals = 0;
   int ncols = 0;
@@ -233,6 +236,8 @@ void PETScMatrix::setrow(uint row,
                          const Array<uint>& columns,
                          const Array<real>& values)
 {
+  dolfin_assert(A);
+
   // Check size of arrays
   if (columns.size() != values.size())
     error("Number of columns and values don't match for setrow() operation.");
@@ -261,6 +266,8 @@ void PETScMatrix::setrow(uint row,
 //-----------------------------------------------------------------------------
 void PETScMatrix::zero(uint m, const uint* rows)
 {
+  dolfin_assert(A);
+
   IS is = 0;
   ISCreateGeneral(PETSC_COMM_SELF, static_cast<int>(m), reinterpret_cast<int*>(const_cast<uint*>(rows)), &is);
   PetscScalar null = 0.0;
@@ -270,6 +277,8 @@ void PETScMatrix::zero(uint m, const uint* rows)
 //-----------------------------------------------------------------------------
 void PETScMatrix::ident(uint m, const uint* rows)
 {
+  dolfin_assert(A);
+
   IS is = 0;
   ISCreateGeneral(PETSC_COMM_SELF, static_cast<int>(m), reinterpret_cast<int*>(const_cast<uint*>(rows)), &is);
   PetscScalar one = 1.0;
@@ -279,6 +288,8 @@ void PETScMatrix::ident(uint m, const uint* rows)
 //-----------------------------------------------------------------------------
 void PETScMatrix::mult(const GenericVector& x, GenericVector& y, bool transposed) const
 {
+  dolfin_assert(A);
+
   const PETScVector& xx = x.down_cast<PETScVector>();  
   PETScVector& yy = y.down_cast<PETScVector>();
 
@@ -295,34 +306,38 @@ void PETScMatrix::mult(const GenericVector& x, GenericVector& y, bool transposed
   }
 }
 //-----------------------------------------------------------------------------
-real PETScMatrix::norm(const Norm type) const
+real PETScMatrix::norm(const NormType type) const
 {
+  dolfin_assert(A);
+
   real value = 0.0;
   switch ( type )
   {
-  case l1:
-    MatNorm(A, NORM_1, &value);
-    break;
-  case linf:
-    MatNorm(A, NORM_INFINITY, &value);
-    break;
-  case frobenius:
-    MatNorm(A, NORM_FROBENIUS, &value);
-    break;
-  default:
-    error("Unknown norm type.");
+    case l1:
+      MatNorm(A, NORM_1, &value);
+      break;
+    case linf:
+      MatNorm(A, NORM_INFINITY, &value);
+      break;
+    case frobenius:
+      MatNorm(A, NORM_FROBENIUS, &value);
+      break;
+    default:
+      error("Unknown norm type.");
   }
   return value;
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::apply()
 {
+  dolfin_assert(A);
   MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
   MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::zero()
 {
+  dolfin_assert(A);
   MatZeroEntries(A);
 }
 //-----------------------------------------------------------------------------
@@ -359,6 +374,8 @@ PETScMatrix::Type PETScMatrix::type() const
 //-----------------------------------------------------------------------------
 void PETScMatrix::disp(uint precision) const
 {
+  dolfin_assert(A);
+
   // FIXME: Maybe this could be an option?
   if(MPI::numProcesses() > 1)
     MatView(A, PETSC_VIEWER_STDOUT_WORLD);
@@ -414,11 +431,13 @@ LinearAlgebraFactory& PETScMatrix::factory() const
 //-----------------------------------------------------------------------------
 Mat PETScMatrix::mat() const
 {
+  dolfin_assert(A);
   return A;
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::setType() 
 {
+  dolfin_assert(A);
   MatType mat_type = getPETScType();
   MatSetType(A, mat_type);
 }

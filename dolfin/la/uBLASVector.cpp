@@ -118,7 +118,7 @@ void uBLASVector::zero()
   x.clear();
 }
 //-----------------------------------------------------------------------------
-real uBLASVector::norm(VectorNormType type) const
+real uBLASVector::norm(NormType type) const
 {
   switch (type) 
   {

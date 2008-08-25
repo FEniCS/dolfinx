@@ -116,9 +116,9 @@ bool NewtonSolver::converged(const GenericVector& b, const GenericVector& dx,
 
   // Compute resdiual
   if(convergence_criterion == "residual")
-    residual = b.norm();
+    residual = b.norm(l2);
   else if (convergence_criterion == "incremental")
-    residual = dx.norm();
+    residual = dx.norm(l2);
   else
     error("Unknown Newton convergence criterion");
 

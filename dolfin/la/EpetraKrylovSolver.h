@@ -1,7 +1,9 @@
 // Copyright (C) 2008 Kent-Andre Mardal.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Last changed: 2008-05-16
+// Modified by Anders Logg, 2008.
+//
+// Last changed: 2008-08-25
 
 #ifdef HAS_TRILINOS
 
@@ -10,8 +12,7 @@
 
 #include <dolfin/common/types.h>
 #include <dolfin/parameter/Parametrized.h>
-#include "SolverType.h"
-#include "PreconditionerType.h"
+#include "enums_la.h"
 #include "EpetraPreconditioner.h"
 
 namespace dolfin 
@@ -31,10 +32,11 @@ namespace dolfin
   public:
 
     /// Create Krylov solver for a particular method and preconditioner
-    EpetraKrylovSolver(SolverType method=default_solver, PreconditionerType pc=default_pc);
+    EpetraKrylovSolver(dolfin::SolverType method=default_solver,
+                       dolfin::PreconditionerType pc=default_pc);
 
     /// Create Krylov solver for a particular method and EpetraPreconditioner
-    EpetraKrylovSolver(SolverType method, EpetraPreconditioner& prec);
+    EpetraKrylovSolver(dolfin::SolverType method, EpetraPreconditioner& prec);
 
     /// Destructor
     ~EpetraKrylovSolver();
@@ -44,19 +46,17 @@ namespace dolfin
     
     /// Display solver data
     void disp() const;
-  private: 
+
+  private:
+
     SolverType         method; 
     PreconditionerType pc_type; 
     EpetraPreconditioner* prec; 
-
 
   };
 
 }
 
-
 #endif 
 
 #endif 
-
-
