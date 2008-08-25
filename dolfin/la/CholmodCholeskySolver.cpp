@@ -4,6 +4,7 @@
 // First added:  2008-08-15
 // Last changed: 2008-08-17
 
+#include <cstring>
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/la/GenericMatrix.h>
 #include <dolfin/la/GenericVector.h>

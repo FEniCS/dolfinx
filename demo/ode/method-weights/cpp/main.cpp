@@ -4,7 +4,8 @@
 // First added:  2003-10-21
 // Last changed: 2005-12-12
 
-#include <stdlib.h>
+//#include <stdlib.h>
+#include <cstring>
 #include <dolfin.h>
 
 using namespace dolfin;
