@@ -26,16 +26,18 @@ namespace dolfin
       BlockVector(uint n_=0, bool owner=true);  
 
       /// Destructor
-      ~BlockVector(); 
+      virtual ~BlockVector(); 
 
       /// Return copy of tensor
       virtual BlockVector* copy() const;
 
-      /// Return Vector reference number i 
       /* FIXME these functions should probably be inline
        * and all the LA function should rely on these */
+      /// Return Vector reference number i (const version)
       const Vector& vec(uint i) const; 
-            Vector& vec(uint i); 
+
+      /// Return Vector reference number i
+      Vector& vec(uint i); 
 
       void set(uint i, Vector& v);
 
@@ -46,7 +48,7 @@ namespace dolfin
       real inner(const BlockVector& x) const;
 
       /// Return norm of vector
-      real norm(NormType type=l2) const;
+      real norm(NormType type) const;
 
       /// Return minimum value of vector
       real min() const;

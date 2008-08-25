@@ -4,13 +4,14 @@
 // First added:  2008-08-25
 
 #include <stdexcept>
+#include <iostream>
+#include <cmath>
+#include <climits>
 #include "Vector.h"
 #include "BlockVector.h"
-#include <iostream>
-#include "math.h"
-#include "limits.h"
 
 using namespace dolfin;
+
 //-----------------------------------------------------------------------------
 BlockVector::BlockVector(uint n_, bool owner_): owner(owner_), n(n_)
 { 
@@ -18,9 +19,7 @@ BlockVector::BlockVector(uint n_, bool owner_): owner(owner_), n(n_)
 //  if (owner) 
 //  {
     for (uint i=0; i<n; i++) 
-    {
       vectors[i] = new Vector(); 
-    }
  // }
 }
 BlockVector::~BlockVector() 
@@ -28,9 +27,7 @@ BlockVector::~BlockVector()
   if (owner)
   {
     for (uint i=0; i<n; i++) 
-    {
       delete vectors[i]; 
-    }
   }
   delete [] vectors; 
 }
@@ -39,9 +36,7 @@ BlockVector* BlockVector::copy() const
 {
   BlockVector* x= new BlockVector(n); 
   for (uint i=0; i<n; i++)   
-  {
     x->set(i,*(this->vec(i).copy())); 
-  }
   return x; 
 }
 //-----------------------------------------------------------------------------
@@ -57,17 +52,15 @@ const Vector& BlockVector::vec(uint i) const
     return *(iter->second);  
   }
   */
-  if (i >= n) {  
+  if (i >= n)  
     error("The index is out of range!");
-  }
   return *(vectors[i]); 
 }
 //-----------------------------------------------------------------------------
 Vector& BlockVector::vec(uint i) 
 {  
-  if (i < 0 || i >= n) {  
+  if (i < 0 || i >= n)
     error("The index is out of range!");
-  }
   return *(vectors[i]); 
 }
 //-----------------------------------------------------------------------------
@@ -79,36 +72,29 @@ dolfin::uint BlockVector::size() const
 void BlockVector::axpy(real a, const BlockVector& x) 
 {
   for (uint i=0; i<n; i++) 
-  { 
     this->vec(i).axpy(a, x.vec(i)); 
-  }
 }
 //-----------------------------------------------------------------------------
 real BlockVector::inner(const BlockVector& x) const 
 {
   real value = 0.0; 
   for (uint i=0; i<n; i++) 
-  { 
     value += this->vec(i).inner(x.vec(i)); 
-  }
   return value; 
 }
 //-----------------------------------------------------------------------------
 real BlockVector::norm(NormType type) const
 {
   real value = 0.0; 
-  switch (type) { 
+  switch (type) 
+  { 
     case l1: 
       for (uint i=0; i<n; i++)  
-      {
         value += this->vec(i).norm(type); 
-      }
       break; 
     case l2: 
       for (uint i=0; i<n; i++)  
-      {
         value += pow(this->vec(i).norm(type), 2); 
-      }
       value = sqrt(value); 
       break; 
     default: 
@@ -117,9 +103,7 @@ real BlockVector::norm(NormType type) const
       {
         tmp = this->vec(i).norm(type); 
         if (tmp > value) 
-        {
           value = tmp;    
-        }
       }
   }
   return value; 
@@ -133,9 +117,7 @@ real BlockVector::min() const
   {
     tmp = this->vec(i).min(); 
     if (tmp < value)
-    {
       value = tmp; 
-    }
   }
   return value;
 }
@@ -148,26 +130,22 @@ real BlockVector::max() const
   {
     tmp = this->vec(i).min(); 
     if (tmp > value)
-    {
       value = tmp; 
-    }
   }
   return value; 
 }
 //-----------------------------------------------------------------------------
 const BlockVector& BlockVector::operator*= (real a) 
 {
-  for(uint i=0; i<n; i++) { 
+  for(uint i=0; i<n; i++) 
     this->vec(i) *= a; 
-  }
   return *this; 
 }
 //-----------------------------------------------------------------------------
 const BlockVector& BlockVector::operator/= (real a) 
 {
-  for(uint i=0; i<n; i++) { 
+  for(uint i=0; i<n; i++)
     this->vec(i) /= a; 
-  }
   return *this; 
 }
 //-----------------------------------------------------------------------------
@@ -185,17 +163,15 @@ const BlockVector& BlockVector::operator-= (const BlockVector& y)
 //-----------------------------------------------------------------------------
 const BlockVector& BlockVector::operator= (const BlockVector& x)
 {
-  for(uint i=0; i<n; i++) { 
+  for(uint i=0; i<n; i++)
     this->vec(i) = x.vec(i); 
-  }
   return *this; 
 }
 //-----------------------------------------------------------------------------
 const BlockVector& BlockVector::operator= (real a)
 {
-  for(uint i=0; i<n; i++) { 
+  for(uint i=0; i<n; i++)
     this->vec(i) = a; 
-  }
   return *this; 
 }
 //-----------------------------------------------------------------------------
@@ -208,7 +184,8 @@ void BlockVector::disp(uint precision) const
   }
 }
 //-----------------------------------------------------------------------------
-void BlockVector::set(uint i, Vector& v){
+void BlockVector::set(uint i, Vector& v)
+{
 //  matrices[i*n+j] = m.copy(); //FIXME. not obvious that copy is the right thing
   vectors[i] = &v; //FIXME. not obvious that copy is the right thing
 }
