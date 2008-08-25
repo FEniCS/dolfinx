@@ -55,15 +55,9 @@ boundary = DirichletBoundary()
 bc = DirichletBC(u0, mesh, boundary)
 
 # Solve PDE and plot solution
-#pde = LinearPDE(a, L, mesh, bc)
-#u = pde.solve()
+pde = LinearPDE(a, L, mesh, bc, symmetric)
+U = pde.solve()
 
-A, b = assemble_system(a, L, bc, mesh)
-x = b.copy()
-x.zero()
-solve(A, x, b)
-
-U = Function(element, mesh, x)
 plot(U)
 
 # Save solution to file

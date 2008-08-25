@@ -77,8 +77,6 @@ int main()
     }
   };
 
-  dolfin_set("linear algebra backend", "uBLAS");
-
   // Read mesh
   Mesh mesh("../../../../data/meshes/gear.xml.gz");
 
@@ -109,7 +107,7 @@ int main()
   // Set up PDE (symmetric)
   ElasticityBilinearForm a(mu, lambda);
   ElasticityLinearForm L(f);
-  LinearPDE pde(a, L, mesh, bcs, true);
+  LinearPDE pde(a, L, mesh, bcs, symmetric);
 
   // Solve PDE (using direct solver)
   Function u;

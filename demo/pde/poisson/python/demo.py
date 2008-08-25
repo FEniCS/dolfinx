@@ -63,7 +63,7 @@ boundary = DirichletBoundary()
 bc = DirichletBC(u0, mesh, boundary)
 
 # Solve PDE and plot solution
-pde = LinearPDE(a, L, mesh, bc)
+pde = LinearPDE(a, L, mesh, bc, symmetric)
 u = pde.solve()
 plot(u, warpscalar=True, rescale=True)
 

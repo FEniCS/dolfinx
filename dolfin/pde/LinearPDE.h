@@ -12,8 +12,8 @@
 
 #include <dolfin/common/Array.h>
 #include <dolfin/parameter/Parametrized.h>
-#include <dolfin/la/Vector.h>
-#include <dolfin/fem/DofMapSet.h>
+#include <dolfin/la/enums_la.h>
+//#include <dolfin/fem/DofMapSet.h>
 
 namespace dolfin
 {
@@ -35,13 +35,16 @@ namespace dolfin
   public:
 
     /// Define a linear PDE with natural boundary conditions
-    LinearPDE(Form& a, Form& L, Mesh& mesh, bool symmetric = false);
+    LinearPDE(Form& a, Form& L, Mesh& mesh, 
+              dolfin::MatrixType matrix_type = symmetric);
     
     /// Define a linear PDE with a single Dirichlet boundary condition
-    LinearPDE(Form& a, Form& L, Mesh& mesh, DirichletBC& bc, bool symmetric = false);
+    LinearPDE(Form& a, Form& L, Mesh& mesh, DirichletBC& bc, 
+              dolfin::MatrixType matrix_type = symmetric);
     
     /// Define a linear PDE with a set of Dirichlet boundary conditions
-    LinearPDE(Form& a, Form& L, Mesh& mesh, Array<DirichletBC*>& bcs, bool symmetric = false);
+    LinearPDE(Form& a, Form& L, Mesh& mesh, Array<DirichletBC*>& bcs, 
+              dolfin::MatrixType matrix_type = symmetric);
 
     /// Destructor
     ~LinearPDE();
@@ -70,7 +73,7 @@ namespace dolfin
     Array<DirichletBC*> bcs;
   
     // Symmetry of the bilinear form
-    bool symmetric;
+    dolfin::MatrixType matrix_type;
   };
 }
 

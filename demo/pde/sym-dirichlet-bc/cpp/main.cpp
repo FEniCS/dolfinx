@@ -105,8 +105,8 @@ int main()
   table.disp();  
  
    // Solve system
-  LUSolver solver;
-  solver.solve(A, x, b, true);
+  LUSolver solver(symmetric);
+  solver.solve(A, x, b);
 
   // Create function
   Function u(mesh, x, a);

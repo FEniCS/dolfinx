@@ -6,35 +6,38 @@
 // First added:  2004
 // Last changed: 2008-08-20
 
-#include <dolfin/la/Matrix.h>
-#include <dolfin/fem/DirichletBC.h>
 #include <dolfin/fem/Assembler.h>
+#include <dolfin/fem/DirichletBC.h>
+#include <dolfin/fem/Form.h>
+#include <dolfin/la/Matrix.h>
+#include <dolfin/la/Vector.h>
 #include <dolfin/la/LUSolver.h>
 #include <dolfin/la/KrylovSolver.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/DiscreteFunction.h>
-#include "LinearPDE.h"
 #include <dolfin/io/dolfin_io.h>
-#include <dolfin/fem/Form.h>
+#include "LinearPDE.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-LinearPDE::LinearPDE(Form& a, Form& L, Mesh& mesh, bool symmetric)
-                   : a(a), L(L), mesh(mesh), symmetric(symmetric)
+LinearPDE::LinearPDE(Form& a, Form& L, Mesh& mesh, dolfin::MatrixType matrix_type)
+                   : a(a), L(L), mesh(mesh), matrix_type(matrix_type)
 {
   message("Creating linear PDE.");
 }
 //-----------------------------------------------------------------------------
 LinearPDE::LinearPDE(Form& a, Form& L, Mesh& mesh, DirichletBC& bc, 
-                 bool symmetric) : a(a), L(L), mesh(mesh), symmetric(symmetric)
+                     dolfin::MatrixType type) : a(a), L(L), mesh(mesh), 
+                     matrix_type(matrix_type)
 {
   message("Creating linear PDE with one boundary condition.");
   bcs.push_back(&bc);
 } 
 //-----------------------------------------------------------------------------
 LinearPDE::LinearPDE(Form& a, Form& L, Mesh& mesh, Array<DirichletBC*>& bcs, 
-                 bool symmetric) : a(a), L(L), mesh(mesh), symmetric(symmetric)
+                     dolfin::MatrixType matrix_type) : a(a), L(L), mesh(mesh), 
+                     matrix_type(matrix_type)
 {
   message("Creating linear PDE with %d boundary condition(s).", bcs.size());
   for (uint i = 0; i < bcs.size(); i++)
@@ -70,9 +73,9 @@ void LinearPDE::solve(Function& u)
   const std::string solver_type = get("PDE linear solver");
   if ( solver_type == "direct" )
   {
-    LUSolver solver;
+    LUSolver solver(matrix_type);
     solver.set("parent", *this);
-    solver.solve(A, *x, b, symmetric);
+    solver.solve(A, *x, b);
   }
   else if ( solver_type == "iterative" )
   {
@@ -83,15 +86,7 @@ void LinearPDE::solve(Function& u)
   else
     error("Unknown solver type \"%s\".", solver_type.c_str());
 
-  //cout << "Matrix:" << endl;
-  //A.disp();
-
-  //cout << "Vector:" << endl;
-  //b.disp();
-
-  //cout << "Solution vector:" << endl;
-  //x.disp();
-
+  // Create Function
   u.init(mesh, *x, a, 1);
   DiscreteFunction& uu = dynamic_cast<DiscreteFunction&>(*u.f);
   uu.local_vector = x;

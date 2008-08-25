@@ -37,8 +37,9 @@ namespace dolfin
     
   public:
 
-    LUSolver() : cholmod_solver(0), umfpack_solver(0), petsc_solver(0), 
-                 epetra_solver(0) {}
+    LUSolver(MatrixType matrix_type = nonsymmetric) : cholmod_solver(0), 
+             umfpack_solver(0), petsc_solver(0), epetra_solver(0), 
+             matrix_type(matrix_type) {}
     
     ~LUSolver() 
     { 
@@ -48,7 +49,7 @@ namespace dolfin
       delete epetra_solver; 
     }
     
-    uint solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b, bool symmetric = false)
+    uint solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b)
     {
       Timer timer("LU solver");
 
@@ -76,7 +77,7 @@ namespace dolfin
 #endif
 
       // Default LU solvers
-      if (symmetric)
+      if (matrix_type == symmetric)
       {
         if (!cholmod_solver)
         {
@@ -135,6 +136,8 @@ namespace dolfin
 #else
     int* epetra_solver;
 #endif
+
+    dolfin::MatrixType matrix_type;
 
   };
 }
