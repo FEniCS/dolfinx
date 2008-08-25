@@ -198,7 +198,7 @@ const MTL4Vector& MTL4Vector::operator-= (const GenericVector& v)
   return *this;
 }
 //-----------------------------------------------------------------------------
-real MTL4Vector::norm(VectorNormType type) const
+real MTL4Vector::norm(NormType type) const
 {
   switch (type) 
   {

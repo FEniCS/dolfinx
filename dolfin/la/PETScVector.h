@@ -98,7 +98,7 @@ namespace dolfin
     virtual real inner(const GenericVector& v) const;
 
     /// Return norm of vector
-    virtual real norm(dolfin::VectorNormType type=l2) const;
+    virtual real norm(dolfin::NormType) const;
 
     /// Return minimum value of vector
     virtual real min() const;

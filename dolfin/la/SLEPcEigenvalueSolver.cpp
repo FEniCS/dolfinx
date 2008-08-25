@@ -23,7 +23,6 @@ SLEPcEigenvalueSolver::SLEPcEigenvalueSolver(): eps(0), type(default_solver), to
 
   // Set which eigenvalues to compute
   set("Eigenvalues to compute", "largest");
-
 }
 //-----------------------------------------------------------------------------
 SLEPcEigenvalueSolver::SLEPcEigenvalueSolver(Type solver): eps(0), type(solver)
@@ -33,7 +32,6 @@ SLEPcEigenvalueSolver::SLEPcEigenvalueSolver(Type solver): eps(0), type(solver)
 
   // Set which eigenvalues to compute
   set("Eigenvalues to compute", "largest");
-
 }
 //-----------------------------------------------------------------------------
 SLEPcEigenvalueSolver::~SLEPcEigenvalueSolver()

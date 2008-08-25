@@ -10,8 +10,11 @@
 namespace dolfin
 {
 
-  /// List of predefined vector  norm types
-  enum VectorNormType {l1, l2, linf};
+  /// List of norm types for vectors and matrices
+  enum NormType {l1, l2, linf, frobenius};
+
+  /// List of norm types for vectors and matrices
+  enum MatrixType {symmetric, nonsymmetric};
 
   /// List of predefined solvers
   enum SolverType
