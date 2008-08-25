@@ -20,6 +20,7 @@
 #include "EpetraSparsityPattern.h"
 #include "EpetraFactory.h"
 //#include <dolfin/MPI.h>
+#include <dolfin/common/Timer.h>
 
 #include <Epetra_CrsGraph.h>
 #include <Epetra_FECrsGraph.h>
@@ -91,12 +92,8 @@ void EpetraMatrix::init(const GenericSparsityPattern& sparsity_pattern)
 //-----------------------------------------------------------------------------
 EpetraMatrix* EpetraMatrix::copy() const
 {
-  EpetraMatrix* mcopy = EpetraFactory::instance().createMatrix();
-
-  //MatDuplicate(A, MAT_COPY_VALUES, &(mcopy->A));
-  // Not yet implemented
-  error("EpetraMatrix::copy not yet implemented.");
-
+  Epetra_FECrsMatrix* copy = new Epetra_FECrsMatrix(*A); 
+  EpetraMatrix* mcopy = new EpetraMatrix(copy);
   return mcopy;
 }
 //-----------------------------------------------------------------------------
@@ -135,6 +132,7 @@ void EpetraMatrix::add(const real* block,
 		       uint m, const uint* rows,
 		       uint n, const uint* cols)
 {
+  Timer t0("Matrix add"); 
   dolfin_assert(A); 
 
   int err = A->SumIntoGlobalValues(m, reinterpret_cast<const int*>(rows), 
@@ -280,5 +278,4 @@ LogStream& dolfin::operator<< (LogStream& stream, const Epetra_FECrsMatrix& A)
   return stream;
 }
 //-----------------------------------------------------------------------------
-
 #endif

@@ -205,6 +205,74 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
 #endif
 
 
+%extend dolfin::BlockVector {
+    Vector& getitem(int i) 
+    { 
+      return self->vec(i);
+    }
+    void setitem(int i, Vector& v)
+    {
+      self->vec(i) = v; 
+    }
+}
+
+%extend dolfin::BlockVector {
+  %pythoncode %{
+
+    def __add__(self, v): 
+      a = self.copy() 
+      a += v
+      return a
+
+    def __sub__(self, v): 
+      a = self.copy() 
+      a -= v
+      return a
+
+    def __mul__(self, v): 
+      a = self.copy() 
+      a *= v
+      return a
+
+    def __rmul__(self, v):
+      return self.__mul__(v)
+  %}
+}
+
+%extend dolfin::BlockMatrix {
+    Matrix& get(int i, int j)
+    { 
+      return self->mat(i,j);
+    }
+}
+
+
+
+%extend dolfin::BlockMatrix {
+%pythoncode
+%{
+    def __mul__(self, other):
+      v = BlockVector(self.size(0))
+      self.mult(other, v)
+      return v
+%}
+}
+
+%pythoncode
+%{
+  def BlockMatrix_get(self,t):
+    i,j = t
+    return self.get(i,j)
+
+  def BlockMatrix_set(self,t,m): 
+    i,j = t 
+    return self.set(i,j,m)
+
+  BlockMatrix.__getitem__ = BlockMatrix_get
+  BlockMatrix.__setitem__ = BlockMatrix_set
+%}
+
+
 
 // Initialize tensor type map
 %pythoncode %{
