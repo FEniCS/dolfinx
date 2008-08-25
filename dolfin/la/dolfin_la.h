@@ -48,5 +48,7 @@
 #include <dolfin/la/LUSolver.h>
 #include <dolfin/la/SingularSolver.h>
 #include <dolfin/la/solve.h>
+#include <dolfin/la/BlockVector.h>
+#include <dolfin/la/BlockMatrix.h>
 
 #endif
