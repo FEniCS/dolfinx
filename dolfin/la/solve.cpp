@@ -29,7 +29,7 @@ real dolfin::residual(const GenericMatrix& A, const GenericVector& x, const Gene
   GenericVector* y = A.factory().createVector();
   A.mult(x, *y);
   *y -= b;
-  const real norm = y->norm();
+  const real norm = y->norm(l2);
   delete y;
   return norm;
 }
