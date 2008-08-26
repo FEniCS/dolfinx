@@ -4,7 +4,7 @@
 // Modified by Kristian Oelgaard, 2007
 //
 // First added:  2007-04-10
-// Last changed: 2008-05-22
+// Last changed: 2008-08-26
 //
 // FIXME: This class needs some cleanup, in particular collecting
 // FIXME: all data from different representations into a common
@@ -121,6 +121,12 @@ namespace dolfin
     ~DirichletBC();
 
     /// Apply boundary condition to linear system
+    void apply(GenericMatrix& A, const Form& form);
+
+    /// Apply boundary condition to a vector
+    void apply(GenericVector& b, const GenericVector& x, const Form& form);
+
+    /// Apply boundary condition to linear system
     void apply(GenericMatrix& A, GenericVector& b, const Form& form);
 
     /// Apply boundary condition to linear system
@@ -150,7 +156,7 @@ namespace dolfin
   private:
 
     /// Apply boundary conditions
-    void apply(GenericMatrix& A, GenericVector& b,
+    void apply(GenericMatrix* A, GenericVector* b,
                const GenericVector* x, const DofMap& dof_map, const ufc::form& form);
     
     // Initialize sub domain markers from sub domain

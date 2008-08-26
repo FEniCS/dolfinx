@@ -13,6 +13,9 @@
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/parameter/Parametrized.h>
 #include <dolfin/la/LinearSolver.h>
+#include <dolfin/la/LinearAlgebraFactory.h>
+//#include <dolfin/la/Preconditioner.h>
+#include <dolfin/la/enums_la.h>
 
 namespace dolfin
 {
@@ -27,11 +30,12 @@ namespace dolfin
 
     /// Create nonlinear solver with default linear solver and default 
     /// linear algebra backend
-    NewtonSolver();
+    NewtonSolver(dolfin::SolverType solver_type = lu, 
+                 dolfin::PreconditionerType pc_type = default_pc);
 
     /// Create nonlinear solver specified linear solver and linear algebra
     /// backend determined by A 
-    NewtonSolver(LinearSolver& solver, GenericMatrix& A);
+    NewtonSolver(LinearSolver& solver, LinearAlgebraFactory& factory);
 
     /// Destructor
     virtual ~NewtonSolver();
@@ -59,9 +63,12 @@ namespace dolfin
     LinearSolver* solver;
     LinearSolver* local_solver;
 
+    /// Solver
+    dolfin::PreconditionerType pc;
+    //Preconditioner* local_pc;
+
     /// Jacobian matrix
     GenericMatrix* A;
-    GenericMatrix* local_A;
 
     /// Solution vector
     GenericVector* dx;

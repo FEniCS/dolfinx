@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2005-2008.
 //
 // First added:  2005-10-23
-// Last changed: 2008-06-29
+// Last changed: 2008-08-26
 
 #include "NewtonSolver.h"
 #include "NonlinearProblem.h"
@@ -16,17 +16,18 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-NewtonSolver::NewtonSolver() : Parametrized(), solver(new LinearSolver(lu)),
-              local_solver(solver), A(new Matrix), local_A(A), 
-              dx(new Vector), b(new Vector)
+NewtonSolver::NewtonSolver(SolverType solver_type, PreconditionerType pc_type) 
+             : Parametrized(), solver(new LinearSolver(solver_type)),
+               local_solver(solver), pc(default_pc), A(new Matrix), 
+               dx(new Vector), b(new Vector)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-NewtonSolver::NewtonSolver(LinearSolver& solver, GenericMatrix& A) 
-            : Parametrized(), solver(&solver), local_solver(0), 
-              A(&A), local_A(0), dx(A.factory().createVector()), 
-              b(A.factory().createVector())
+NewtonSolver::NewtonSolver(LinearSolver& solver, LinearAlgebraFactory& factory) 
+            : Parametrized(), solver(&solver), local_solver(0), pc(default_pc),
+              A(factory.createMatrix()), dx(factory.createVector()), 
+              b(factory.createVector())
 {
   // Do nothing
 }
@@ -36,24 +37,25 @@ NewtonSolver::~NewtonSolver()
   if(local_solver)
     delete solver; 
 
-  if(local_A)
-    delete A;
-
   delete dx;
   delete b;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint NewtonSolver::solve(NonlinearProblem& nonlinear_problem, GenericVector& x)
 {
-  const uint maxit= get("Newton maximum iterations");
+  dolfin_assert(A);
+  dolfin_assert(b);
+  dolfin_assert(dx);
 
-  // FIXME: add option to compute F(u) anf J together or separately
+  const uint maxit= get("Newton maximum iterations");
 
   begin("Starting Newton solve.");
 
-  // Compute F(u) and J
   set("output destination", "silent");
-  nonlinear_problem.form(*A, *b, x);
+
+  // Compute F(u) and J
+  nonlinear_problem.F(*b, x);
+  nonlinear_problem.J(*A, x);
 
   uint krylov_iterations = 0;
   newton_iteration = 0;
@@ -77,12 +79,10 @@ dolfin::uint NewtonSolver::solve(NonlinearProblem& nonlinear_problem, GenericVec
 
       ++newton_iteration;
 
-      set("output destination", "silent");
       //FIXME: this step is not needed if residual is based on dx and this has converged.
       // Compute F(u) and J
-      nonlinear_problem.form(*A, *b, x);
-
-      set("output destination", "terminal");
+      nonlinear_problem.F(*b, x);
+      nonlinear_problem.J(*A, x);
 
       // Test for convergence 
       newton_converged = converged(*b, *dx, nonlinear_problem);
