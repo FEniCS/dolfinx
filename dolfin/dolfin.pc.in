@@ -13,5 +13,5 @@ Description: Dynamic Object-oriented Library for FINite element computation
 Version: @PACKAGE_VERSION@
 Requires: @PACKAGE_REQUIRES@
 Conflicts:
-Libs: -L${libdir} -ldolfin 
+Libs: @PACKAGE_LINKFLAGS@ -L${libdir} -ldolfin 
 Cflags: @PACKAGE_CXXFLAGS@ -I${includedir} 
