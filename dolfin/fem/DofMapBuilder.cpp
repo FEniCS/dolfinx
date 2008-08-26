@@ -33,10 +33,10 @@ void DofMapBuilder::build(DofMap& dof_map, UFC& ufc, Mesh& mesh)
   error("Not implemented.");
 
   // Get mesh functions
-  MeshFunction<uint>* S = mesh.data().meshFunction("subdomain overlap");
-  MeshFunction<uint>* F = mesh.data().meshFunction("facet overlap");
-  dolfin_assert(S);
-  dolfin_assert(F);
+  //MeshFunction<uint>* S = mesh.data().meshFunction("subdomain overlap");
+  //MeshFunction<uint>* F = mesh.data().meshFunction("facet overlap");
+  //dolfin_assert(S);
+  //dolfin_assert(F);
 
   // Get number of this process
   const uint this_process = MPI::processNumber();
