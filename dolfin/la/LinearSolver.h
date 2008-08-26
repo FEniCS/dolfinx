@@ -11,7 +11,7 @@
 #define __LINEAR_SOLVER_H
 
 #include <dolfin/common/types.h>
-#include <dolfin/parameter/Parametrized.h>
+#include "GenericLinearSolver.h"
 #include "enums_la.h"
 
 namespace dolfin
@@ -26,7 +26,7 @@ namespace dolfin
   /// Available methods are defined in SolverType.h and available
   /// preconditioners are defined in PreconditionerType.h.
 
-  class LinearSolver : public Parametrized
+  class LinearSolver : public GenericLinearSolver
   {
   public:
 
@@ -53,3 +53,4 @@ namespace dolfin
 }
 
 #endif
+

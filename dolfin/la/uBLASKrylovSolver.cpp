@@ -14,31 +14,27 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 uBLASKrylovSolver::uBLASKrylovSolver(SolverType solver_type, PreconditionerType pc_type)
-  : Parametrized(),
-    solver_type(solver_type), pc_user(false), report(false), parameters_read(false)
+  : solver_type(solver_type), pc_user(false), report(false), parameters_read(false)
 {
   // Select and create default preconditioner
   selectPreconditioner(pc_type);
 }
 //-----------------------------------------------------------------------------
 uBLASKrylovSolver::uBLASKrylovSolver(PreconditionerType pc_type)
-  : Parametrized(),
-    solver_type(default_solver), pc_user(false), report(false), parameters_read(false)
+  : solver_type(default_solver), pc_user(false), report(false), parameters_read(false)
 {
   // Select and create default preconditioner
   selectPreconditioner(pc_type);
 }
 //-----------------------------------------------------------------------------
 uBLASKrylovSolver::uBLASKrylovSolver(uBLASPreconditioner& pc)
-  : Parametrized(),
-    solver_type(default_solver), pc(&pc), pc_user(true), report(false), parameters_read(false)
+  : solver_type(default_solver), pc(&pc), pc_user(true), report(false), parameters_read(false)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 uBLASKrylovSolver::uBLASKrylovSolver(SolverType solver_type, uBLASPreconditioner& pc)
-  : Parametrized(),
-    solver_type(solver_type), pc(&pc), pc_user(true), report(false), parameters_read(false)
+  : solver_type(solver_type), pc(&pc), pc_user(true), report(false), parameters_read(false)
 {
   // Do nothing
 }
@@ -48,6 +44,13 @@ uBLASKrylovSolver::~uBLASKrylovSolver()
   // Delete preconditioner if it was not created by user
   if( !pc_user )
     delete pc;
+}
+//-----------------------------------------------------------------------------
+dolfin::uint uBLASKrylovSolver::solve(const GenericMatrix& A, GenericVector& x, 
+                                       const GenericVector& b) 
+{
+  return solve(A.down_cast<uBLASMatrix<ublas_sparse_matrix> >(), 
+               x.down_cast<uBLASVector>(),  b.down_cast<uBLASVector>());
 }
 //-----------------------------------------------------------------------------
 dolfin::uint uBLASKrylovSolver::solve(const uBLASMatrix<ublas_dense_matrix>& A, 

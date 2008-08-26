@@ -13,13 +13,15 @@
 #define __ITL_KRYLOV_SOLVER_H
 
 #include <dolfin/common/types.h>
-#include <dolfin/parameter/Parametrized.h>
+#include "GenericLinearSolver.h"
 #include "enums_la.h"
 
 namespace dolfin 
 {
 
   /// Forward declarations
+  class GenericMatrix;
+  class GenericVector;
   class MTL4Matrix;
   class MTL4Vector;
 
@@ -27,7 +29,7 @@ namespace dolfin
   /// of the form Ax = b. It is a wrapper for the Krylov solvers
   /// of ITL.
   
-  class ITLKrylovSolver : public Parametrized
+  class ITLKrylovSolver : public GenericLinearSolver
   {
   public:
 
@@ -40,6 +42,9 @@ namespace dolfin
 
     /// Destructor
     ~ITLKrylovSolver();
+
+    /// Solve linear system Ax = b and return number of iterations
+    uint solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b);
 
     /// Solve linear system Ax = b and return number of iterations
     uint solve(const MTL4Matrix& A, MTL4Vector& x, const MTL4Vector& b);

@@ -15,7 +15,7 @@
 #ifdef HAS_PETSC
 
 #include <dolfin/common/types.h>
-#include <dolfin/parameter/Parametrized.h>
+#include "GenericLinearSolver.h"
 #include "enums_la.h"
 #include "PETScPreconditioner.h"
 
@@ -23,6 +23,8 @@ namespace dolfin
 {
 
   /// Forward declarations
+  class GenericMatrix;
+  class GenericVector;
   class PETScMatrix;
   class PETScVector;
   class PETScKrylovMatrix;
@@ -31,7 +33,7 @@ namespace dolfin
   /// of the form Ax = b. It is a wrapper for the Krylov solvers
   /// of PETSc.
   
-  class PETScKrylovSolver : public Parametrized
+  class PETScKrylovSolver : public GenericLinearSolver
   {
   public:
 
@@ -44,6 +46,9 @@ namespace dolfin
 
     /// Destructor
     ~PETScKrylovSolver();
+
+    /// Solve linear system Ax = b and return number of iterations
+    uint solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b);
 
     /// Solve linear system Ax = b and return number of iterations
     uint solve(const PETScMatrix& A, PETScVector& x, const PETScVector& b);

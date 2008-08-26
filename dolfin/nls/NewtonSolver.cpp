@@ -10,24 +10,22 @@
 #include "NonlinearProblem.h"
 #include <dolfin/la/Matrix.h>
 #include <dolfin/la/Vector.h>
-#include <dolfin/la/LUSolver.h>
+#include <dolfin/la/GenericLinearSolver.h>
 #include <iostream>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 NewtonSolver::NewtonSolver(SolverType solver_type, PreconditionerType pc_type) 
-             : Parametrized(), solver(new LinearSolver(solver_type)),
-               local_solver(solver), pc(default_pc), A(new Matrix), 
-               dx(new Vector), b(new Vector)
+             : solver(new LinearSolver(solver_type, pc_type)), local_solver(solver), 
+               A(new Matrix), dx(new Vector), b(new Vector)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-NewtonSolver::NewtonSolver(LinearSolver& solver, LinearAlgebraFactory& factory) 
-            : Parametrized(), solver(&solver), local_solver(0), pc(default_pc),
-              A(factory.createMatrix()), dx(factory.createVector()), 
-              b(factory.createVector())
+NewtonSolver::NewtonSolver(GenericLinearSolver& solver, LinearAlgebraFactory& factory) 
+            : solver(&solver), local_solver(0), A(factory.createMatrix()), 
+              dx(factory.createVector()), b(factory.createVector())
 {
   // Do nothing
 }

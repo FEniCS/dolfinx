@@ -11,7 +11,7 @@
 #define __EPETRA_KRYLOV_SOLVER_H
 
 #include <dolfin/common/types.h>
-#include <dolfin/parameter/Parametrized.h>
+#include "GenericLinearSolver.h"
 #include "enums_la.h"
 #include "EpetraPreconditioner.h"
 
@@ -19,6 +19,8 @@ namespace dolfin
 {
 
   /// Forward declarations
+  class GenericMatrix;
+  class GenericVector;
   class EpetraMatrix;
   class EpetraVector;
   class EpetraKrylovMatrix;
@@ -27,7 +29,7 @@ namespace dolfin
   /// of the form Ax = b. It is a wrapper for the Krylov solvers
   /// of Epetra.
   
-  class EpetraKrylovSolver : public Parametrized
+  class EpetraKrylovSolver : public GenericLinearSolver
   {
   public:
 
@@ -40,6 +42,9 @@ namespace dolfin
 
     /// Destructor
     ~EpetraKrylovSolver();
+
+    /// Solve linear system Ax = b and return number of iterations
+    uint solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b);
 
     /// Solve linear system Ax = b and return number of iterations
     uint solve(const EpetraMatrix& A, EpetraVector& x, const EpetraVector& b);

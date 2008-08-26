@@ -50,6 +50,7 @@
 %include "dolfin/la/EpetraFactory.h"
 %include "dolfin/la/MTL4Factory.h"
 %include "dolfin/la/STLFactory.h"
+%include "dolfin/la/GenericLinearSolver.h"
 %include "dolfin/la/PETScKrylovSolver.h"
 %include "dolfin/la/PETScLUSolver.h"
 %include "dolfin/la/SLEPcEigenvalueSolver.h"

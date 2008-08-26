@@ -12,7 +12,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 LinearSolver::LinearSolver(SolverType solver_type, PreconditionerType pc_type)
-  : Parametrized(), lu_solver(0), krylov_solver(0)
+                         : lu_solver(0), krylov_solver(0)
 {
   if (solver_type == lu)
   {

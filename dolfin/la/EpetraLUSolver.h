@@ -7,20 +7,21 @@
 #ifndef __EPETRA_LU_SOLVER_H
 #define __EPETRA_LU_SOLVER_H
 
-#include <dolfin/parameter/Parametrized.h>
-#include "EpetraVector.h"
+#include "GenericLinearSolver.h"
 
 namespace dolfin
 {
   /// Forward declarations
+  class GenericMatrix;
+  class GenericVector;
   class EpetraMatrix;
-  class EpetraKrylovMatrix;
+  class EpetraVector;
 
   /// This class implements the direct solution (LU factorization) for
   /// linear systems of the form Ax = b. It is a wrapper for the LU
   /// solver of Epetra.
   
-  class EpetraLUSolver : public Parametrized
+  class EpetraLUSolver : public GenericLinearSolver
   {
   public:
     
@@ -29,6 +30,9 @@ namespace dolfin
 
     /// Destructor
     ~EpetraLUSolver();
+
+    /// Solve linear system Ax = b
+    uint solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b);
 
     /// Solve linear system Ax = b
     uint solve(const EpetraMatrix& A, EpetraVector& x, const EpetraVector& b);

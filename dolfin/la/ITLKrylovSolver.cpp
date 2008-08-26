@@ -20,8 +20,8 @@ using namespace itl;
 using namespace mtl;
 
 //-----------------------------------------------------------------------------
-ITLKrylovSolver::ITLKrylovSolver(SolverType method_, PreconditionerType pc_):
-  method(method_), pc_type(pc_)
+ITLKrylovSolver::ITLKrylovSolver(SolverType method_, PreconditionerType pc_) 
+                               : method(method_), pc_type(pc_)
 { 
   // Do nothing
 }
@@ -31,7 +31,15 @@ ITLKrylovSolver::~ITLKrylovSolver()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-dolfin::uint ITLKrylovSolver::solve(const MTL4Matrix& A, MTL4Vector& x, const MTL4Vector& b)
+dolfin::uint ITLKrylovSolver::solve(const GenericMatrix& A, GenericVector& x, 
+                                    const GenericVector& b) 
+{
+  return solve(A.down_cast<MTL4Matrix>(), x.down_cast<MTL4Vector>(), 
+               b.down_cast<MTL4Vector>());
+}
+//-----------------------------------------------------------------------------
+dolfin::uint ITLKrylovSolver::solve(const MTL4Matrix& A, MTL4Vector& x, 
+                                    const MTL4Vector& b)
 {
   // Fall back in default method if unknown
   if(method != cg && method != bicgstab)

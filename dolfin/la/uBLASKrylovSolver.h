@@ -12,7 +12,7 @@
 #include <dolfin/common/types.h>
 #include "ublas.h"
 
-#include <dolfin/parameter/Parametrized.h>
+#include "GenericLinearSolver.h"
 #include "enums_la.h"
 #include "uBLASKrylovMatrix.h"
 #include "uBLASMatrix.h"
@@ -25,7 +25,7 @@ namespace dolfin
   /// This class implements Krylov methods for linear systems
   /// of the form Ax = b using uBLAS data types.
 
-  class uBLASKrylovSolver : public Parametrized
+  class uBLASKrylovSolver : public GenericLinearSolver
   {
   public:
 
@@ -44,6 +44,9 @@ namespace dolfin
 
     /// Destructor
     ~uBLASKrylovSolver();
+
+    /// Solve linear system Ax = b and return number of iterations
+    uint solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b);
 
     /// Solve linear system Ax = b and return number of iterations (dense matrix)
     uint solve(const uBLASMatrix<ublas_dense_matrix>& A, uBLASVector& x, 

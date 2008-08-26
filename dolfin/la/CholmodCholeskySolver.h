@@ -7,7 +7,7 @@
 #ifndef __CHOLMOD_CHOLESKY_SOLVER_H
 #define __CHOLMOD_CHOLESKY_SOLVER_H
 
-#include <dolfin/parameter/Parametrized.h>
+#include "GenericLinearSolver.h"
 
 extern "C" 
 {
@@ -27,7 +27,7 @@ namespace dolfin
   /// are solved using CHOLMOD http://www.cise.ufl.edu/research/sparse/cholmod/
   /// is installed.
     
-  class CholmodCholeskySolver : public Parametrized
+  class CholmodCholeskySolver : public GenericLinearSolver
   {
 
   public:

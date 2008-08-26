@@ -61,7 +61,7 @@ namespace dolfin
           petsc_solver = new PETScLUSolver();
           petsc_solver->set("parent", *this);
         }
-        return petsc_solver->solve(A.down_cast<PETScMatrix>(), x.down_cast<PETScVector>(), b.down_cast<PETScVector>());
+        return petsc_solver->solve(A, x, b);
       }
 #endif
 #ifdef HAS_TRILINOS
@@ -72,7 +72,7 @@ namespace dolfin
           epetra_solver = new EpetraLUSolver();
           epetra_solver->set("parent", *this);
         }
-        return epetra_solver->solve(A.down_cast<EpetraMatrix>(), x.down_cast<EpetraVector>(), b.down_cast<EpetraVector>());
+        return epetra_solver->solve(A, x, b);
       }
 #endif
 

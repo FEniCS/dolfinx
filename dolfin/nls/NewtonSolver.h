@@ -14,11 +14,11 @@
 #include <dolfin/parameter/Parametrized.h>
 #include <dolfin/la/LinearSolver.h>
 #include <dolfin/la/LinearAlgebraFactory.h>
-//#include <dolfin/la/Preconditioner.h>
 #include <dolfin/la/enums_la.h>
 
 namespace dolfin
 {
+  class GenericLinearSolver;
   class Mesh;
   class NonlinearProblem;
 
@@ -33,9 +33,9 @@ namespace dolfin
     NewtonSolver(dolfin::SolverType solver_type = lu, 
                  dolfin::PreconditionerType pc_type = default_pc);
 
-    /// Create nonlinear solver specified linear solver and linear algebra
-    /// backend determined by A 
-    NewtonSolver(LinearSolver& solver, LinearAlgebraFactory& factory);
+    /// Create nonlinear solver using provided linear solver and linear algebra
+    /// backend determined by factory 
+    NewtonSolver(GenericLinearSolver& solver, LinearAlgebraFactory& factory);
 
     /// Destructor
     virtual ~NewtonSolver();
@@ -60,8 +60,8 @@ namespace dolfin
     real residual0;
 
     /// Solver
-    LinearSolver* solver;
-    LinearSolver* local_solver;
+    GenericLinearSolver* solver;
+    GenericLinearSolver* local_solver;
 
     /// Solver
     dolfin::PreconditionerType pc;
