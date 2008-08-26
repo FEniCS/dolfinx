@@ -150,6 +150,9 @@ if env.GetOption("clean"):
 env["CXXFLAGS"] = "-Wall -pipe -ansi" # -Werror"
 #env["SHFORTRANFLAGS"] = "-Wall -pipe -fPIC"
 
+# Default link flags
+env["LINKFLAGS"] = ""  # FIXME: is it safe to start with an empty string?
+
 # If Debug is enabled, add -g:
 if env["enableDebug"]:
   env.Append(CXXFLAGS=" -DDEBUG -g -Werror")

@@ -325,7 +325,7 @@ cxxflags = ""
 linkflags = ""
 for mod in modules.values():
     cxxflags += " " + mod.cxxFlags
-    linkflags += " " + env.subst(mod.linkFlags[0]) + " ".join(mod.linkFlags[1:])
+    linkflags += " " + " ".join(mod.linkFlags)
 replacements['PACKAGE_CXXFLAGS'] = cxxflags
 replacements['PACKAGE_LINKFLAGS'] = linkflags
 # set CXX compiler:
