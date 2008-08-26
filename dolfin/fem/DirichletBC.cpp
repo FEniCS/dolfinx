@@ -126,17 +126,24 @@ void DirichletBC::apply(GenericMatrix& A, GenericVector& b,
   apply(&A, &b, &x, form.dofMaps()[1], form.form());
 }
 //-----------------------------------------------------------------------------
+void DirichletBC::apply(GenericMatrix& A, const DofMap& dof_map, 
+                        const ufc::form& form)
+{
+  apply(&A, 0, 0, dof_map, form);
+}
+//-----------------------------------------------------------------------------
+void DirichletBC::apply(GenericVector& b, const GenericVector& x, 
+                        const DofMap& dof_map, const ufc::form& form)
+{
+  apply(0, &b, &x, dof_map, form);
+}
+//-----------------------------------------------------------------------------
 void DirichletBC::apply(GenericMatrix& A, GenericVector& b,
-                        const GenericVector& x, const DofMap& dof_map, const ufc::form& form)
+                        const GenericVector& x, const DofMap& dof_map, 
+                        const ufc::form& form)
 {
   apply(&A, &b, &x, dof_map, form);
 }
-//-----------------------------------------------------------------------------
-//void DirichletBC::apply(GenericMatrix& A, GenericVector& b,
-//                        const GenericVector* x, const DofMap& dof_map, const ufc::form& form)
-//{
-//  applyA, b, x, dof_map, form);
-//}
 //-----------------------------------------------------------------------------
 void DirichletBC::apply(GenericMatrix* A, GenericVector* b,
                         const GenericVector* x, const DofMap& dof_map, const ufc::form& form)

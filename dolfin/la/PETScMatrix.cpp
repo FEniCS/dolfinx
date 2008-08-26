@@ -431,13 +431,13 @@ LinearAlgebraFactory& PETScMatrix::factory() const
 //-----------------------------------------------------------------------------
 Mat PETScMatrix::mat() const
 {
-  dolfin_assert(A);
+  //dolfin_assert(A);
   return A;
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::setType() 
 {
-  dolfin_assert(A);
+  //dolfin_assert(A);
   MatType mat_type = getPETScType();
   MatSetType(A, mat_type);
 }

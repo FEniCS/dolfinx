@@ -90,9 +90,9 @@ dolfin::uint CholmodCholeskySolver::solve(const GenericMatrix& A,
 					  GenericVector& x, 
 					  const GenericVector& b)
 {
-  warning("CHOLMOD must be installed to peform a Cholesky solve for the current backend. A Krylov iterative solver will be used instead.");
+  warning("CHOLMOD must be installed to peform a Cholesky solve for the current backend. Attemping to use UMFPACK solver.");
 
-  KrylovSolver solver;
+  UmfpackLUSolver solver;
   return solver.solve(A, x, b);
 }
 //-----------------------------------------------------------------------------
