@@ -116,7 +116,8 @@ int main(int argc, char* argv[])
   u0.init(mesh, x0, cahn_hilliard.form(1), 1);
 
   // Create nonlinear solver and set parameters
-  NewtonSolver newton_solver;
+  //NewtonSolver newton_solver;
+  NewtonSolver newton_solver(lu);
   newton_solver.set("Newton convergence criterion", "incremental");
   newton_solver.set("Newton maximum iterations", 10);
   newton_solver.set("Newton relative tolerance", 1e-6);
