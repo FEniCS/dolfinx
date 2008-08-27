@@ -6,13 +6,14 @@
 // First added:  2005-08-31
 // Last changed: 2008-08-13
 
-#ifndef __SLEPC_EIGENVALUE_SOLVER_H
-#define __SLEPC_EIGENVALUE_SOLVER_H
+#ifndef __SLEPC_EIGEN_SOLVER_H
+#define __SLEPC_EIGEN_SOLVER_H
 
 #ifdef HAS_SLEPC
 
 #include <slepceps.h>
 #include <dolfin/parameter/Parametrized.h>
+#include "enums_la.h"
 #include "PETScObject.h"
 
 namespace dolfin
@@ -23,34 +24,17 @@ namespace dolfin
   class PETScVector;
 
   /// This class computes eigenvalues of a matrix. It is 
-	/// a wrapper for the eigenvalue solver SLEPc.
+  /// a wrapper for the eigenvalue solver SLEPc.
   
-  class SLEPcEigenvalueSolver : public Parametrized, public PETScObject
+  class SLEPcEigenSolver : public Parametrized, public PETScObject
   {
   public:
 
-    /// Eigensolver methods
-    enum Type
-    { 
-      arnoldi,          // Arnoldi
-      default_solver,   // Default SLEPc solver (use when setting method from command line)
-      lanczos,          // Lanczos
-      lapack,           // LAPACK (all values, exact, only for small systems) 
-      power,            // Power
-      subspace,         // Subspace
-    };
-
-    /// Create eigenvalue solver (use default solver type)
-    SLEPcEigenvalueSolver();
-
-    /// Create eigenvalue solver (specify solver type)
-    SLEPcEigenvalueSolver(Type solver);
-
+    /// Create eigenvalue solver
+    SLEPcEigenSolver();
+    
     /// Destructor
-    ~SLEPcEigenvalueSolver();
-
-    /// Set solver tolerance and max iterations
-    void setTolerance(double tolerance, int maxiter);
+    ~SLEPcEigenSolver();
 
     /// Compute all eigenpairs of the matrix A (solve Ax = \lambda x)
     void solve(const PETScMatrix& A);
@@ -81,19 +65,20 @@ namespace dolfin
     /// Compute eigenvalues
     void solve(const PETScMatrix& A, const PETScMatrix* B, uint n);
 
-    EPSType getType(const Type type) const;
+    /// Callback for changes in parameter values
+    void readParameters();
+    
+    // Set spectrum to compute
+    void setSpectrum(EigenspectrumType type);
+
+    // Set solver type
+    void setSolver(EigenvalueSolverType type);
+
+    // Set tolerance
+    void setTolerance(double tolerance, uint maxiter);
 
     // SLEPc solver pointer
     EPS eps;
-
-    /// SLEPc solver type
-    Type type;
-
-    /// Solver tolerance 
-    double tolerance;
-
-    /// Solver maximum iterations
-    int maxiter;
 
   };
 

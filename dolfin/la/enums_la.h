@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-08-24
-// Last changed: 2008-08-25
+// Last changed: 2008-08-27
 
 #ifndef __ENUMS_LA_H
 #define __ENUMS_LA_H
@@ -16,7 +16,7 @@ namespace dolfin
   /// List of norm types for vectors and matrices
   enum MatrixType {symmetric, nonsymmetric};
 
-  /// List of predefined solvers
+  /// List of linear solvers
   enum SolverType
   {
     lu,            // LU factorization
@@ -26,7 +26,7 @@ namespace dolfin
     default_solver // Default Krylov solver
   };
 
-  /// List of predefined preconditioners
+  /// List of preconditioners
   enum PreconditionerType
   {
     none,      // No preconditioning
@@ -35,9 +35,33 @@ namespace dolfin
     ilu,       // Incomplete LU factorization
     icc,       // Incomplete Cholesky factorization
     amg,       // Algebraic multigrid (through Hypre when available)
-    default_pc // Default choice of preconditioner
+    default_pc // Default preconditioner
   };
 
+  /// List of eigenvalue spectrums
+  enum EigenSpectrumType
+  {
+    largest_magnitude,  // Eigenvalues with largest magnitude
+    smallest_magnitude, // Eigenvalues with smallest magnitude
+    largest_real,       // Eigenvalues with largest real part
+    smallest_real,      // Eigenvalues with smallest real part
+    largest_imaginary,  // Eigenvalues with largest imaginary part
+    smallest_imaginary, // Eigenvalues with smallest imaginary part
+    default_spectrum    // Default spectrum
+  }
+
+  /// List of eigenvalue solvers
+  enum EigenSolverType
+  {
+    power,              // Power iteration
+    subspace,           // Subspace iteration
+    arnoldi,            // Arnoldi
+    lanczos,            // Lanczos
+    krylov_schur,       // Krylov-Schur
+    lapack,             // LAPACK (all values, direct, only for small systems)
+    default_eigensolver // Default algorithm (Krylov-Schur or defined from command-line)
+  };
+  
   /// Two different normalizations are available:
   /// 
   /// normalize_average: Normalizes a vector x according to x --> x - avg(x)
