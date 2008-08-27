@@ -37,19 +37,19 @@ element = FiniteElement("Lagrange", "triangle", 1)
 class Source(Function):
     def __init__(self, element, mesh, t):
         Function.__init__(self, element, mesh)
-        self.time = t
+        self.t = t
 
     def eval(self, values, x):
-        values[0] = self.time.t*x[0]*sin(x[1])
+        values[0] = self.t()*x[0]*sin(x[1])
 
 # Dirichlet boundary condition
 class DirichletBoundaryCondition(Function):
     def __init__(self, element, mesh, t):
         Function.__init__(self, element, mesh)
-        self.time = t
+        self.t = t
 
     def eval(self, values, x):
-        values[0] = self.time.t*1.0
+        values[0] = self.t()*1.0
 
 # Sub domain for Dirichlet boundary condition
 class DirichletBoundary(SubDomain):
@@ -86,22 +86,30 @@ class MyNonlinearProblem(NonlinearProblem):
         dof_maps = dolfin.DofMapSet(compiled_form, self.mesh)
         dolfin.cpp_DirichletBC.apply(self.bc, A, dof_maps.sub(1), compiled_form)
 
-# Solve nonlinear problem in a series of steps using pseudo time 
 class Time:
-    t  = 0.0
+    def  __init__(self, value):
+        self.value = value
+    def __iadd__(self, value):
+        self.value += value
+        return self
+    def __lt__(self, value):
+        return self.value < value
+    def __call__(self):
+        return self.value
+    def __float__(self):
+        return self.value
     
+# Solve nonlinear problem in a series of steps using pseudo time 
+t = Time(0.0)
 dt = 1.0
 T  = 3.0
 
-# Create time object
-time = Time()
-
 # Create source function
-f = Source(element, mesh, time)
+f = Source(element, mesh, t)
 
 # Dirichlet boundary conditions
 dirichlet_boundary = DirichletBoundary()
-g  = DirichletBoundaryCondition(element, mesh, time)
+g  = DirichletBoundaryCondition(element, mesh, t)
 bc = DirichletBC(g, mesh, dirichlet_boundary)
 
 # Create solution Function
@@ -118,8 +126,8 @@ nonlinear_solver.set("Newton relative tolerance", 1e-10)
 nonlinear_solver.set("Newton absolute tolerance", 1e-10)
 
 # Solve 
-while( time.t < T):
-    time.t += dt
+while( t < T):
+    t += dt
     nonlinear_solver.solve(nonlinear_problem, x)
 
 # Plot solution
