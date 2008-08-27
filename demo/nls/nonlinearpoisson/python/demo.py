@@ -27,42 +27,29 @@ __date__ = "2007-11-15 -- 2008-08-26"
 __copyright__ = "Copyright (C) 2007-2008 Kristian B. Oelgaard and Garth N. Wells"
 __license__  = "GNU LGPL Version 2.1"
 
-from ffc import *
 from dolfin import *
-
-import sys
 
 # Create mesh and create finite element
 mesh = UnitSquare(64, 64)
 element = FiniteElement("Lagrange", "triangle", 1)
 
 # Right-hand side
-#class Source(Function, TimeDependent):
 class Source(Function):
     def __init__(self, element, mesh, t):
         Function.__init__(self, element, mesh)
-#        TimeDependent.__init__(self, t)
-        self.t = t
-
-    def time(self):
-        return self.t
+        self.time = t
 
     def eval(self, values, x):
-        values[0] = self.time()*x[0]*sin(x[1])
+        values[0] = self.time.t*x[0]*sin(x[1])
 
 # Dirichlet boundary condition
-#class DirichletBoundaryCondition(Function, TimeDependent):
 class DirichletBoundaryCondition(Function):
     def __init__(self, element, mesh, t):
         Function.__init__(self, element, mesh)
-#        TimeDependent.__init__(self, t)
-        self.t = t
+        self.time = t
 
-    def time(self):
-        return self.t
-  
     def eval(self, values, x):
-        values[0] = self.time()*1.0
+        values[0] = self.time.t*1.0
 
 # Sub domain for Dirichlet boundary condition
 class DirichletBoundary(SubDomain):
@@ -77,7 +64,6 @@ class MyNonlinearProblem(NonlinearProblem):
         # Define variational problem
         v = TestFunction(element)
         u = TrialFunction(element)
-
         a = (1.0 + u0*u0)*dot(grad(v), grad(u))*dx + 2.0*u0*u*dot(grad(v), grad(u0))*dx
         L = v*f*dx - (1.0 + u0*u0)*dot(grad(v), grad(u0))*dx
 
@@ -100,44 +86,47 @@ class MyNonlinearProblem(NonlinearProblem):
         dof_maps = dolfin.DofMapSet(compiled_form, self.mesh)
         dolfin.cpp_DirichletBC.apply(self.bc, A, dof_maps.sub(1), compiled_form)
 
-
-# Pseudo time
-t = 0.0
-
-# Create source function
-f = Source(element, mesh, t)
-
-# Dirichlet boundary conditions
-dirichlet_boundary = DirichletBoundary()
-g  = DirichletBoundaryCondition(element, mesh, t)
-bc = DirichletBC(g, mesh, dirichlet_boundary)
-
-x  = Vector()
-u0 = Function(element, mesh, x)
-
-# Create user-defined nonlinear problem
-nonlinear_problem = MyNonlinearProblem(element, mesh, bc, u0, f)
-
-# Create nonlinear solver and set parameters
-nonlinear_solver = NewtonSolver()
-#nonlinear_solver.set("Newton maximum iterations", 50)
-#nonlinear_solver.set("Newton relative tolerance", 1e-10)
-# nonlinear_solver.set("Newton absolute tolerance", 1e-10)
-
-# Solve nonlinear problem in a series of steps
+# Solve nonlinear problem in a series of steps using pseudo time 
+class Time:
+    t  = 0.0
+    
 dt = 1.0
 T  = 3.0
 
-while( f.t < T):
-    f.t += dt
-    g.t += dt
+# Create time object
+time = Time()
+
+# Create source function
+f = Source(element, mesh, time)
+
+# Dirichlet boundary conditions
+dirichlet_boundary = DirichletBoundary()
+g  = DirichletBoundaryCondition(element, mesh, time)
+bc = DirichletBC(g, mesh, dirichlet_boundary)
+
+# Create solution Function
+x = Vector()
+u = Function(element, mesh, x)
+
+# Create user-defined nonlinear problem
+nonlinear_problem = MyNonlinearProblem(element, mesh, bc, u, f)
+
+# Create nonlinear solver and set parameters
+nonlinear_solver = NewtonSolver(bicgstab, amg)
+nonlinear_solver.set("Newton maximum iterations", 50)
+nonlinear_solver.set("Newton relative tolerance", 1e-10)
+nonlinear_solver.set("Newton absolute tolerance", 1e-10)
+
+# Solve 
+while( time.t < T):
+    time.t += dt
     nonlinear_solver.solve(nonlinear_problem, x)
 
 # Plot solution
-plot(u0)
+plot(u, interactive=True)
 interactive()
 
 # Save function to file
 file = File("nonlinear_poisson.pvd")
-file << u0
+file << u
 
