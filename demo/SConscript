@@ -42,7 +42,11 @@ for modName, mod in modules.items():
   for dpath, dnames, fnames in os.walk(os.curdir):
     if os.path.basename(dpath) == 'cpp':
       if "main.cpp" in fnames:
-        demoSource = os.path.join(dpath,"main.cpp")
+        demoSource = [os.path.join(dpath,"main.cpp")]
+        if 'cahn-hilliard' in dpath:
+          # the cahn-hillard demo requires some additional sources:
+          demoSource.append(os.path.join(dpath,'CahnHilliard2D.cpp'))
+          demoSource.append(os.path.join(dpath,'CahnHilliard3D.cpp'))
         demos += modEnv.Program(target=os.path.join(dpath,"demo"),
                                 source=demoSource)
         # Adding VTK format files from the cpp and python demos to clean target
