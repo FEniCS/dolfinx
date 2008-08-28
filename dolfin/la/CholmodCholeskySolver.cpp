@@ -9,6 +9,7 @@
 #include <dolfin/la/GenericMatrix.h>
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/la/KrylovSolver.h>
+#include "UmfpackLUSolver.h"
 #include "CholmodCholeskySolver.h"
 
 using namespace dolfin;
