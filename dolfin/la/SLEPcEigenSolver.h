@@ -50,7 +50,7 @@ namespace dolfin
   ///   "subspace"            (subspace iteration)
   ///   "arnoldi"             (Arnoldi)
   ///   "lanczos"             (Lanczos)
-  ///   "krylov_schur"        (Krylov-Schur)
+  ///   "krylov-schur"        (Krylov-Schur)
   ///   "lapack"              (LAPACK, all values, direct, only for small systems)
   ///   "default"             (default algorithm)
   ///
