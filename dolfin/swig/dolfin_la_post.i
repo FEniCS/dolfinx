@@ -7,7 +7,7 @@
 
 
 #ifdef HAS_SLEPC
-%extend dolfin::SLEPcEigenvalueSolver{
+%extend dolfin::SLEPcEigenSolver {
 
 PyObject* getEigenvalue(const int emode) {
     dolfin::real err, ecc;

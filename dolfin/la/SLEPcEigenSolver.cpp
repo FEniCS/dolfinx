@@ -1,10 +1,11 @@
 // Copyright (C) 2005-2006 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Ola Skavhaug 2008
+// Modified by Ola Skavhaug, 2008.
+// Modified by Anders Logg, 2008.
 //
 // First added:  2005-08-31
-// Last changed: 2008-08-13
+// Last changed: 2008-08-27
 
 #ifdef HAS_SLEPC
 
@@ -53,30 +54,31 @@ void SLEPcEigenSolver::getEigenvalue(real& xr, real& xc)
   getEigenvalue(xr, xc, 0);
 }
 //-----------------------------------------------------------------------------
-void SLEPcEigenSolver::getEigenpair(real& xr, real& xc, PETScVector& r,  PETScVector& c)
+void SLEPcEigenSolver::getEigenpair(real& xr, real& xc, PETScVector& r, PETScVector& c)
 {
   getEigenpair(xr, xc, r, c, 0);
 }
 //-----------------------------------------------------------------------------
-void SLEPcEigenSolver::getEigenvalue(real& xr, real& xc, const int i)
+void SLEPcEigenSolver::getEigenvalue(real& xr, real& xc, uint i)
 {
   // Get number of computed values
   int num_computed_eigenvalues;
   EPSGetConverged(eps, &num_computed_eigenvalues);
 
-  if( i < num_computed_eigenvalues )
+  if ( i < num_computed_eigenvalues)
     EPSGetValue(eps, i, &xr, &xc);
   else
     error("Requested eigenvalue has not been computed");
 }
 //-----------------------------------------------------------------------------
-void SLEPcEigenSolver::getEigenpair(real& xr, real& xc, PETScVector& r, PETScVector& c, const int i)
+void SLEPcEigenSolver::getEigenpair(real& xr, real& xc,
+                                    PETScVector& r, PETScVector& c, const int i)
 {
   // Get number of computed eigenvectors/values
   int num_computed_eigenvalues;
   EPSGetConverged(eps, &num_computed_eigenvalues);
 
-  if( i < num_computed_eigenvalues )
+  if (i < num_computed_eigenvalues)
     EPSGetEigenpair(eps, i, &xr, &xc, r.vec(), c.vec());
   else
     error("Requested eigenvalue/vector has not been computed");
@@ -105,13 +107,13 @@ void SLEPcEigenSolver::solve(const PETScMatrix* A,
 
   // Set algorithm type (Hermitian matrix)
   //EPSSetProblemType(eps, EPS_NHEP);
-  
+
   // Set options from database
   EPSSetFromOptions(eps);
-  
+
   // Solve
   EPSSolve(eps);
-  
+
   // Check for convergence
   EPSConvergedReason reason;
   EPSGetConvergedReason(eps, &reason);
@@ -140,24 +142,24 @@ void SLEPcEigenSolver::readParameters()
     setTolerance(get("eigenvalue tolerance"), get("eigenvalue spectrum"));
 }
 //-----------------------------------------------------------------------------
-void SLEPcEigenSolver::setSpectrum(EigenspectrumType type)
+void SLEPcEigenSolver::setSpectrum(std::string spectrum)
 {
   // Do nothing if default type is specified
-  if (type == "default")
+  if (spectrum == "default")
     return;
 
   // Choose spectrum
-  if (type == "largest magnitude")
+  if (spectrum == "largest magnitude")
     EPSSetWhichEigenpairs(eps, EPS_LARGEST_MAGNITUDE);
-  else if (type == "smallest magnitude")
+  else if (spectrum == "smallest magnitude")
     EPSSetWhichEigenpairs(eps, EPS_SMALLEST_MAGNITUDE);
-  else if (type == "largest real")
+  else if (spectrum == "largest real")
     EPSSetWhichEigenpairs(eps, EPS_LARGEST_REAL);
-  else if (type == "smallest real")
+  else if (spectrum == "smallest real")
     EPSSetWhichEigenpairs(eps, EPS_SMALLEST_REAL);
-  else if (type == "largest imaginary")
+  else if (spectrum == "largest imaginary")
     EPSSetWhichEigenpairs(eps, EPS_LARGEST_IMAGINARY);
-  else if (type == "smallest imaginary")
+  else if (spectrum == "smallest imaginary")
     EPSSetWhichEigenpairs(eps, EPS_SMALLEST_IMAGINARY);
   else
   {
@@ -169,23 +171,25 @@ void SLEPcEigenSolver::setSpectrum(EigenspectrumType type)
   // FIXME: largest eigenvalues. Asking for smallest leads to a PETSc error.
 }
 //-----------------------------------------------------------------------------
-void SLEPcEigenSolver::setSolver(EigenvalueSolverType type)
+void SLEPcEigenSolver::setSolver(std::string solver)
 {
   // Do nothing if default type is specified
-  if (type == "default")
+  if (solver == "default")
     return;
 
   // Choose solver
-  if (type == "power")
+  if (solver == "power")
     EPSSetType(eps, EPSPOWER);
-  else if (type == "subspace")
+  else if (solver == "subspace")
     EPSSetType(eps, EPSSUBSPACE);
-  else if (type == "arnoldi")
+  else if (solver == "arnoldi")
     EPSSetType(eps, EPSARNOLDI);
-  else if (type == "lanczos")
+  else if (solver == "lanczos")
     EPSSetType(eps, EPSLANCZOS);
-  else if (type == "krylov-schur")
+  else if (solver == "krylov-schur")
     EPSSetType(eps, EPSKRYLOVSCHUR);
+  else if (solver == "lapack")
+    EPSSetType(eps, EPSLAPACK);
   else
   {
     warning("Requested Krylov method unknown. Using Krylov-Schur.");

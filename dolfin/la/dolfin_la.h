@@ -31,7 +31,7 @@
 #include <dolfin/la/GenericLinearSolver.h>
 #include <dolfin/la/PETScKrylovSolver.h>
 #include <dolfin/la/PETScLUSolver.h>
-#include <dolfin/la/SLEPcEigenvalueSolver.h>
+#include <dolfin/la/SLEPcEigenSolver.h>
 #include <dolfin/la/uBLASDenseMatrix.h>
 #include <dolfin/la/uBLASKrylovSolver.h>
 #include <dolfin/la/CholmodCholeskySolver.h>

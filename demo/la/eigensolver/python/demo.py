@@ -1,9 +1,11 @@
 # This simple program illustrates the use of the PETScEigenvalueSolver
 
 __author__ = "Kristian B. Oelgaard (k.b.oelgaard@tudelft.nl)"
-__date__ = "2007-11-28 -- 2007-11-28"
+__date__ = "2007-11-28 -- 2008-08-27"
 __copyright__ = "Copyright (C) 2007 Kristian B. Oelgaard"
 __license__  = "GNU LGPL Version 2.1"
+
+# Modified by Anders Logg, 2008
 
 from dolfin import *
 import numpy
@@ -15,11 +17,10 @@ except:
     print "PyDOLFIN has not been configured with PETSc. Exiting."
     exit()
 try:
-    dolfin.SLEPcEigenvalueSolver
+    dolfin.SLEPcEigenSolver
 except:
     print "PyDOLFIN has not been configured with SLEPc. Exiting."
     exit()
-
 
 A = dolfin.PETScMatrix(2,2)
 A[0, 0] = 4.0
@@ -45,7 +46,7 @@ B.disp()
 print ""
 
 # Create eigensolver of type LAPACK
-esolver = SLEPcEigenvalueSolver(SLEPcEigenvalueSolver.lapack)
+esolver = SLEPcEigenSolver(SLEPcEigenSolver.lapack)
 esolver.dolfin_set("Eigenvalues to compute", "largest")
 # Compute all eigenpairs of the generalised problem Ax = \lambda Bx
 esolver.solve(A, B)
