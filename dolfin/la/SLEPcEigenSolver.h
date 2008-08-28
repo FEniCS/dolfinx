@@ -90,21 +90,21 @@ namespace dolfin
     void solve(const PETScMatrix& A, const PETScMatrix& B, uint n);
 
     /// Get the first eigenvalue
-    void getEigenvalue(real& xr, real& xc);
+    void getEigenvalue(real& lr, real& lc);
 
     /// Get the first eigenpair
-    void getEigenpair(real& xr, real& xc, PETScVector& r, PETScVector& c);
+    void getEigenpair(real& lr, real& lc, PETScVector& r, PETScVector& c);
 
     /// Get eigenvalue i
-    void getEigenvalue(real& xr, real& xc, uint i);
+    void getEigenvalue(real& lr, real& lc, uint i);
 
     /// Get eigenpair i
-    void getEigenpair(real& xr, real& xc, PETScVector& r, PETScVector& c, uint i);
+    void getEigenpair(real& lr, real& lc, PETScVector& r, PETScVector& c, uint i);
 
   private:
 
     /// Compute eigenpairs
-    void solve(const PETScMatrix& A, const PETScMatrix* B, uint n);
+    void solve(const PETScMatrix* A, const PETScMatrix* B, uint n);
 
     /// Callback for changes in parameter values
     void readParameters();

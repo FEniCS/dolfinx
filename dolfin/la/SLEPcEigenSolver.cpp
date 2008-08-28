@@ -46,40 +46,45 @@ void SLEPcEigenSolver::solve(const PETScMatrix& A, const PETScMatrix& B)
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::solve(const PETScMatrix& A, const PETScMatrix& B, uint n)
 {
-  solve(A, &B, n);
+  solve(&A, &B, n);
 }
 //-----------------------------------------------------------------------------
-void SLEPcEigenSolver::getEigenvalue(real& xr, real& xc)
+void SLEPcEigenSolver::getEigenvalue(real& lr, real& lc)
 {
-  getEigenvalue(xr, xc, 0);
+  getEigenvalue(lr, lc, 0);
 }
 //-----------------------------------------------------------------------------
-void SLEPcEigenSolver::getEigenpair(real& xr, real& xc, PETScVector& r, PETScVector& c)
+void SLEPcEigenSolver::getEigenpair(real& lr, real& lc, PETScVector& r, PETScVector& c)
 {
-  getEigenpair(xr, xc, r, c, 0);
+  getEigenpair(lr, lc, r, c, 0);
 }
 //-----------------------------------------------------------------------------
-void SLEPcEigenSolver::getEigenvalue(real& xr, real& xc, uint i)
+void SLEPcEigenSolver::getEigenvalue(real& lr, real& lc, uint i)
 {
+  const int ii = static_cast<int>(i);
+  
   // Get number of computed values
   int num_computed_eigenvalues;
   EPSGetConverged(eps, &num_computed_eigenvalues);
-
-  if ( i < num_computed_eigenvalues)
-    EPSGetValue(eps, i, &xr, &xc);
+  
+  if (ii < num_computed_eigenvalues)
+    EPSGetValue(eps, ii, &lr, &lc);
   else
     error("Requested eigenvalue has not been computed");
 }
 //-----------------------------------------------------------------------------
-void SLEPcEigenSolver::getEigenpair(real& xr, real& xc,
-                                    PETScVector& r, PETScVector& c, const int i)
+void SLEPcEigenSolver::getEigenpair(real& lr, real& lc,
+                                    PETScVector& r, PETScVector& c,
+                                    uint i)
 {
+  const int ii = static_cast<int>(i);
+
   // Get number of computed eigenvectors/values
   int num_computed_eigenvalues;
   EPSGetConverged(eps, &num_computed_eigenvalues);
 
-  if (i < num_computed_eigenvalues)
-    EPSGetEigenpair(eps, i, &xr, &xc, r.vec(), c.vec());
+  if (ii < num_computed_eigenvalues)
+    EPSGetEigenpair(eps, ii, &lr, &lc, r.vec(), c.vec());
   else
     error("Requested eigenvalue/vector has not been computed");
 }
@@ -90,7 +95,7 @@ void SLEPcEigenSolver::solve(const PETScMatrix* A,
 {
   // Associate matrix (matrices) with eigenvalue solver
   dolfin_assert(A);
-  dolfin_assert(A.size(0) == A.size(1));
+  dolfin_assert(A->size(0) == A->size(1));
   if (B)
   {
     dolfin_assert(B->size(0) == B->size(1) && B->size(0) == A->size(0));
@@ -102,8 +107,9 @@ void SLEPcEigenSolver::solve(const PETScMatrix* A,
   }
   
   // Set number of eigenpairs to compute
-  dolfin_assert(n <= A.size(0));
-  EPSSetDimensions(eps, n, PETSC_DECIDE);
+  dolfin_assert(n <= A->size(0));
+  const uint nn = static_cast<int>(n);
+  EPSSetDimensions(eps, nn, PETSC_DECIDE);
 
   // Set algorithm type (Hermitian matrix)
   //EPSSetProblemType(eps, EPS_NHEP);
