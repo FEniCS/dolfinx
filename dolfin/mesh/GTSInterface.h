@@ -7,6 +7,8 @@
 #ifndef __GTS_INTERFACE_H
 #define __GTS_INTERFACE_H
 
+#ifdef HAS_PETSC
+
 #include <dolfin/common/types.h>
 
 // Forward declarations
@@ -27,8 +29,11 @@ namespace dolfin
   {
   public:
 
+    /// Create GTS interface for mesh
     GTSInterface(Mesh& m);
-    ~GTSInterface(void);
+
+    /// Destructor
+    ~GTSInterface();
 
     /// Compute cells overlapping c
     void overlap(Cell& c, Array<uint>& cells);
@@ -41,9 +46,6 @@ namespace dolfin
 
   private:
 
-    GTSInterface(void);
-    GTSInterface(const GTSInterface&);
-
     /// Construct bounding box of cell
     GtsBBox* bboxCell(Cell&);
 
@@ -54,10 +56,18 @@ namespace dolfin
     GtsBBox* bboxPoint(const Point&, const Point&);
 
     /// Construct hierarchical space partition tree of mesh
-    void buildCellTree(void);
+    void buildCellTree();
 
+    // The mesh
     Mesh& mesh;
+
+    // GTS tree
     GNode* tree;
+
   };
+
 }
+
+#endif
+
 #endif

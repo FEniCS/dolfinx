@@ -1,4 +1,4 @@
-// Copyright (C) 2006 Anders Logg.
+// Copyright (C) 2006-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Johan Jansson 2006.
@@ -6,7 +6,7 @@
 // Modified by Dag Lindbo 2008.
 //
 // First added:  2006-06-21
-// Last changed: 2008-02-18
+// Last changed: 2008-08-29
 
 #include <algorithm>
 #include <dolfin/log/dolfin_log.h>
@@ -20,27 +20,35 @@
 
 using namespace dolfin;
 
+#ifdef HAS_GTS
+
 //-----------------------------------------------------------------------------
-IntersectionDetector::IntersectionDetector(Mesh& mesh) : gts(mesh) {}
+IntersectionDetector::IntersectionDetector(Mesh& mesh) : gts(0)
+{
+  gts = new GTSInterface(mesh);
+}
 //-----------------------------------------------------------------------------
-IntersectionDetector::~IntersectionDetector() {}
+IntersectionDetector::~IntersectionDetector()
+{
+  delete gts;
+}
 //-----------------------------------------------------------------------------
 void IntersectionDetector::overlap(Cell& c, Array<uint>& cells)
 {
   cells.clear();
-  gts.overlap(c, cells);
+  gts->overlap(c, cells);
 }
 //-----------------------------------------------------------------------------
 void IntersectionDetector::overlap(Point& p, Array<uint>& cells)
 {
   cells.clear();
-  gts.overlap(p, cells);
+  gts->overlap(p, cells);
 }
 //-----------------------------------------------------------------------------
 void IntersectionDetector::overlap(Point& p1, Point& p2, Array<uint>& cells)
 {
   cells.clear();
-  gts.overlap(p1, p2, cells);
+  gts->overlap(p1, p2, cells);
 }
 //-----------------------------------------------------------------------------
 void IntersectionDetector::overlap(Array<Point>& points, 
@@ -48,15 +56,14 @@ void IntersectionDetector::overlap(Array<Point>& points,
 {
   // Intersect each segment with mesh
   Array<uint> cc;
-  for (uint i = 0; i < points.size() - 1; i++)
-    gts.overlap(points[i],points[i+1],cc);
+  for (uint i = 1; i < points.size(); i++)
+    gts->overlap(points[i - 1], points[i], cc);
 
-  // sort cells
-  std::sort(cc.begin(),cc.end());
+  // Sort cells
+  std::sort(cc.begin(), cc.end());
 
-  // remove repeated cells
+  // Remove repeated cells
   cells.clear();
-  //uint k = 0;
   cells.push_back(cc[0]);
   uint k = cc[0];
   for (uint i = 1; i < cc.size(); i++)
@@ -69,3 +76,24 @@ void IntersectionDetector::overlap(Array<Point>& points,
   }
 }
 //-----------------------------------------------------------------------------
+
+#else
+
+//-----------------------------------------------------------------------------
+IntersectionDetector::IntersectionDetector(Mesh& mesh)
+{
+  error("DOLFIN has been compiled without GTS, intersection detection not available.");
+}
+//-----------------------------------------------------------------------------
+IntersectionDetector::~IntersectionDetector() {}
+//-----------------------------------------------------------------------------
+void IntersectionDetector::overlap(Cell& c, Array<uint>& overlap) {}
+//-----------------------------------------------------------------------------
+void IntersectionDetector::overlap(Point& p, Array<uint>& overlap) {}
+//-----------------------------------------------------------------------------
+void IntersectionDetector::overlap(Point& p1, Point& p2, Array<uint>& overlap) {}
+//-----------------------------------------------------------------------------
+void IntersectionDetector::overlap(Array<Point>& points, Array<uint>& overlap) {}
+//-----------------------------------------------------------------------------
+
+#endif
