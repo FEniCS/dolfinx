@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2008.
 //
 // First added:  2007-12-12
-// Last changed: 2008-06-20
+// Last changed: 2008-08-29
 
 #include <dolfin/log/dolfin_log.h>
 #include "Cell.h"
@@ -101,16 +101,17 @@ real PointCell::facetArea(const Cell& cell, uint facet) const
   return 0.0;
 }
 //-----------------------------------------------------------------------------
-bool PointCell::intersects(const MeshEntity& triangle, const Point& p) const
+bool PointCell::intersects(const MeshEntity& entity, const Point& p) const
 {
-  error("PointCell::intersects() not implemented.");
-  return true;
+  error("Not implemented.");
+  return false;
 }
 //-----------------------------------------------------------------------------
-bool PointCell::intersects(const MeshEntity& triangle, const Point& p1, const Point& p2) const
+bool PointCell::intersects(const MeshEntity& entity,
+                           const Point& p0, const Point& p1) const
 {
-  error("PointCell::intersects() not implemented.");
-  return true;
+  error("Not implemented.");
+  return false;
 }
 //-----------------------------------------------------------------------------
 std::string PointCell::description() const

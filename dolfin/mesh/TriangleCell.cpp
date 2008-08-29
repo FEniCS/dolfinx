@@ -6,10 +6,7 @@
 // Modified by Dag Lindbo, 2008
 // 
 // First added:  2006-06-05
-// Last changed: 2008-06-20
-//
-// Rename of the former Triangle.cpp
-//
+// Last changed: 2008-08-29
 
 #include <algorithm>
 #include <dolfin/log/dolfin_log.h>
@@ -339,12 +336,12 @@ bool TriangleCell::intersects(const MeshEntity& triangle, const Point& p) const
 
   // Check orientation
   dolfin::uint vtmp;
-  if(orientation((Cell&)triangle) == 1)
-    {
-      vtmp = v2;
-      v2 = v1;
-      v1 = vtmp;
-    }
+  if (orientation((Cell&)triangle) == 1)
+  {
+    vtmp = v2;
+    v2 = v1;
+    v1 = vtmp;
+  }
 
   // Get the coordinates of the three vertices
   const real* x0 = geometry.x(v0);
@@ -382,26 +379,25 @@ bool TriangleCell::intersects(const MeshEntity& triangle, const Point& p) const
   return true;
 }
 //-----------------------------------------------------------------------------
-bool TriangleCell::intersects(const MeshEntity& tri,const Point& p1,const Point& p2) const
+bool TriangleCell::intersects(const MeshEntity& triangle, const Point& p0, const Point& p1) const
 {
   // Adapted from gts_point_is_in_triangle from GTS
 
   // Get mesh geometry
-  const MeshGeometry& geometry = tri.mesh().geometry();
+  const MeshGeometry& geometry = triangle.mesh().geometry();
 
   // Get global index of vertices of the triangle
-  uint v0 = tri.entities(0)[0];
-  uint v1 = tri.entities(0)[1];
-  uint v2 = tri.entities(0)[2];
+  uint v0 = triangle.entities(0)[0];
+  uint v1 = triangle.entities(0)[1];
+  uint v2 = triangle.entities(0)[2];
 
   // Check orientation
-  dolfin::uint vtmp;
-  if(orientation((Cell&)tri) == 1)
-    {
-      vtmp = v2;
-      v2 = v1;
-      v1 = vtmp;
-    }
+  if(orientation((Cell&)triangle) == 1)
+  {
+    const uint vtmp = v2;
+    v2 = v1;
+    v1 = vtmp;
+  }
 
   // Get the coordinates of the three vertices
   const real* x0 = geometry.x(v0);
@@ -409,20 +405,20 @@ bool TriangleCell::intersects(const MeshEntity& tri,const Point& p1,const Point&
   const real* x2 = geometry.x(v2);
 
   // point a
-  real p1coordinates[3];
-  real* pa = p1coordinates;
+  real p0coordinates[3];
+  real* pa = p0coordinates;
 
-  pa[0] = p1[0];
-  pa[1] = p1[1];
-  pa[2] = p1[2];
+  pa[0] = p0[0];
+  pa[1] = p0[1];
+  pa[2] = p0[2];
 
   // point b
-  real p2coordinates[3];
-  real* pb = p2coordinates;
+  real p1coordinates[3];
+  real* pb = p1coordinates;
 
-  pb[0] = p2[0];
-  pb[1] = p2[1];
-  pb[2] = p2[2];
+  pb[0] = p1[0];
+  pb[1] = p1[1];
+  pb[2] = p1[2];
 
   real d1, d2, d3;
 

@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-06-05
-// Last changed: 2008-06-20
+// Last changed: 2008-08-29
 
 #ifndef __CELL_TYPE_H
 #define __CELL_TYPE_H
@@ -90,14 +90,14 @@ namespace dolfin
     /// Compute the area/length of given facet with respect to the cell
     virtual real facetArea(const Cell& cell, uint facet) const = 0;
 
-    /// Check if point p intersects the cell
+    /// Check for intersection with point
     virtual bool intersects(const MeshEntity& entity, const Point& p) const = 0;
 
-    /// Check if points line connecting p1 and p2 cuts the cell
-    virtual bool intersects(const MeshEntity& entity, const Point& p1, const Point& p2) const = 0;
+    /// Check for intersection with line defined by points
+    virtual bool intersects(const MeshEntity& entity, const Point& p0, const Point& p1) const = 0;
 
-    /// Check if cell c intersects the cell
-    virtual bool intersects(MeshEntity& entity, Cell& c) const;
+    /// Check for intersection with cell
+    virtual bool intersects(MeshEntity& entity, Cell& cell) const;
 
     /// Return description of cell type
     virtual std::string description() const = 0;
