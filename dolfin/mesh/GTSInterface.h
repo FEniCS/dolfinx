@@ -40,7 +40,7 @@ namespace dolfin
     void overlap(const Point& p, Array<uint>& cells);
 
     /// Compute cells overlapping line defined by points
-    void overlap(const Point& p1, const Point& p2, Array<uint>& cells);
+    void overlap(const Point& p0, const Point& p1, Array<uint>& cells);
 
     /// Compute cells overlapping cell
     void overlap(Cell& cell, Array<uint>& cells);

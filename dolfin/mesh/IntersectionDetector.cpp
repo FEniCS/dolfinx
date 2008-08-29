@@ -33,26 +33,25 @@ IntersectionDetector::~IntersectionDetector()
   delete gts;
 }
 //-----------------------------------------------------------------------------
-void IntersectionDetector::overlap(Cell& c, Array<uint>& cells)
+void IntersectionDetector::overlap(const Point& p, Array<uint>& cells)
 {
-  cells.clear();
-  gts->overlap(c, cells);
-}
-//-----------------------------------------------------------------------------
-void IntersectionDetector::overlap(Point& p, Array<uint>& cells)
-{
-  cells.clear();
+  dolfin_assert(gts);
   gts->overlap(p, cells);
 }
 //-----------------------------------------------------------------------------
-void IntersectionDetector::overlap(Point& p1, Point& p2, Array<uint>& cells)
+void IntersectionDetector::overlap(const Point& p0, const Point& p1, Array<uint>& cells)
 {
-  cells.clear();
-  gts->overlap(p1, p2, cells);
+  dolfin_assert(gts);
+  gts->overlap(p0, p1, cells);
 }
 //-----------------------------------------------------------------------------
-void IntersectionDetector::overlap(Array<Point>& points, 
-				   Array<uint>& cells) 
+void IntersectionDetector::overlap(Cell& c, Array<uint>& cells)
+{
+  dolfin_assert(gts);
+  gts->overlap(c, cells);
+}
+//-----------------------------------------------------------------------------
+void IntersectionDetector::overlap(Array<Point>& points, Array<uint>& cells) 
 {
   // Intersect each segment with mesh
   Array<uint> cc;
@@ -87,11 +86,11 @@ IntersectionDetector::IntersectionDetector(Mesh& mesh)
 //-----------------------------------------------------------------------------
 IntersectionDetector::~IntersectionDetector() {}
 //-----------------------------------------------------------------------------
+void IntersectionDetector::overlap(const Point& p, Array<uint>& overlap) {}
+//-----------------------------------------------------------------------------
+void IntersectionDetector::overlap(const Point& p0, Point& p1, Array<uint>& overlap) {}
+//-----------------------------------------------------------------------------
 void IntersectionDetector::overlap(Cell& c, Array<uint>& overlap) {}
-//-----------------------------------------------------------------------------
-void IntersectionDetector::overlap(Point& p, Array<uint>& overlap) {}
-//-----------------------------------------------------------------------------
-void IntersectionDetector::overlap(Point& p1, Point& p2, Array<uint>& overlap) {}
 //-----------------------------------------------------------------------------
 void IntersectionDetector::overlap(Array<Point>& points, Array<uint>& overlap) {}
 //-----------------------------------------------------------------------------
