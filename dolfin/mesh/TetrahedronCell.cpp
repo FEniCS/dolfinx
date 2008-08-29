@@ -6,7 +6,7 @@
 // Modified by Kristian Oelgaard 2006.
 //
 // First added:  2006-06-05
-// Last changed: 2008-06-20
+// Last changed: 2008-08-29
 
 #include <algorithm>
 #include <dolfin/log/dolfin_log.h>
@@ -525,10 +525,9 @@ bool TetrahedronCell::intersects(const MeshEntity& tetrahedron,
   uint v3 = tetrahedron.entities(0)[3];
 
   // Check orientation
-  dolfin::uint vtmp;
-  if(orientation((Cell&)tetrahedron) == 1)
+  if (orientation((Cell&)tetrahedron) == 1)
   {
-    vtmp = v3;
+    const uint vtmp = v3;
     v3 = v2;
     v2 = vtmp;
   }
@@ -555,30 +554,28 @@ bool TetrahedronCell::intersects(const MeshEntity& tetrahedron,
   d4 = orient3d((double *)x1, (double *)x2, (double *)x3, x);
 
   // FIXME: Need to check the predicates for correctness
-//   if(fabs(d1) == DOLFIN_EPS ||
-//      fabs(d2) == DOLFIN_EPS ||
-//      fabs(d3) == DOLFIN_EPS ||
-//      fabs(d4) == DOLFIN_EPS)
-//   {
-//     return true;
-//   }
-  if(d1 < 0.0)
+  //   if(fabs(d1) == DOLFIN_EPS ||
+  //      fabs(d2) == DOLFIN_EPS ||
+  //      fabs(d3) == DOLFIN_EPS ||
+  //      fabs(d4) == DOLFIN_EPS)
+  //   {
+  //     return true;
+  //   }
+  if (d1 < 0.0)
     return false;
-  if(d2 < 0.0)
+  if (d2 < 0.0)
     return false;
-  if(d3 < 0.0)
+  if (d3 < 0.0)
     return false;
-  if(d4 < 0.0)
+  if (d4 < 0.0)
     return false;
 
   return true;
 }
 //-----------------------------------------------------------------------------
-bool TetrahedronCell::intersects(const MeshEntity& interval, const Point& p1, const Point& p2) const
+bool TetrahedronCell::intersects(const MeshEntity& interval, const Point& p0, const Point& p1) const
 {
-  // FIXME: Not implemented
-  error("Interval::intersects() not implemented");
-
+  error("Not implemented.");
   return false;
 }
 //-----------------------------------------------------------------------------

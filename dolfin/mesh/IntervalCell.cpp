@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-06-05
-// Last changed: 2008-05-09
+// Last changed: 2008-08-29
 //
 // Modified by Kristian Oelgaard, 2007.
 
@@ -172,19 +172,16 @@ dolfin::real IntervalCell::facetArea(const Cell& cell, uint facet) const
   return 0.0;
 }
 //-----------------------------------------------------------------------------
-bool IntervalCell::intersects(const MeshEntity& interval, const Point& p) const
+bool IntervalCell::intersects(const MeshEntity& entity, const Point& p) const
 {
-  // FIXME: Not implemented
-  error("Interval::intersects() not implemented");
-
+  error("Not implemented.");
   return false;
 }
 //-----------------------------------------------------------------------------
-bool IntervalCell::intersects(const MeshEntity& interval, const Point& p1, const Point& p2) const
+bool IntervalCell::intersects(const MeshEntity& entity,
+                              const Point& p0, const Point& p1) const
 {
-  // FIXME: Not implemented
-  error("Interval::intersects() not implemented");
-
+  error("Not implemented.");
   return false;
 }
 //-----------------------------------------------------------------------------

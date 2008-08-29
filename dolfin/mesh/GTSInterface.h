@@ -1,8 +1,8 @@
-// Copyright (C) 2006 Anders Logg.
+// Copyright (C) 2006-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-06-21
-// Last changed: 2006-06-22
+// Last changed: 2008-08-29
 
 #ifndef __GTS_INTERFACE_H
 #define __GTS_INTERFACE_H
@@ -20,6 +20,7 @@ typedef _GNode GNode;
 namespace dolfin
 {
 
+  // Forward declarations
   class Mesh;
   class Point;
   class Cell;
@@ -30,32 +31,32 @@ namespace dolfin
   public:
 
     /// Create GTS interface for mesh
-    GTSInterface(Mesh& m);
+    GTSInterface(Mesh& mesh);
 
     /// Destructor
     ~GTSInterface();
 
-    /// Compute cells overlapping c
-    void overlap(Cell& c, Array<uint>& cells);
+    /// Compute cells overlapping point
+    void overlap(const Point& p, Array<uint>& cells);
 
-    /// Compute cells overlapping p
-    void overlap(Point& p, Array<uint>& cells);
+    /// Compute cells overlapping line defined by points
+    void overlap(const Point& p0, const Point& p1, Array<uint>& cells);
 
-    /// Compute cells overlapping bounding box constructed from p1 and p2
-    void overlap(Point& p1, Point& p2, Array<uint>& cells);
+    /// Compute cells overlapping cell
+    void overlap(Cell& cell, Array<uint>& cells);
 
   private:
 
-    /// Construct bounding box of cell
-    GtsBBox* bboxCell(Cell&);
+    /// Create bounding box for a single point
+    GtsBBox* createBox(const Point& p);
 
-    /// Construct bounding box of a single point
-    GtsBBox* bboxPoint(const Point&);
+    /// Create bounding box for a pair of points
+    GtsBBox* createBox(const Point& p0, const Point& p1);
 
-    /// Construct bounding box of a pair of points
-    GtsBBox* bboxPoint(const Point&, const Point&);
+    /// Create bounding box for cell
+    GtsBBox* createBox(Cell& cell);
 
-    /// Construct hierarchical space partition tree of mesh
+    // Build tree (hierarchy) of bounding boxes
     void buildCellTree();
 
     // The mesh

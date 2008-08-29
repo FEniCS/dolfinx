@@ -11,11 +11,12 @@
 
 namespace dolfin
 {
+
+  // Forward declarations
   class Mesh;
   class Cell;
   class Point;
   class GTSInterface;
-
   template <class T> class Array;
 
   class IntersectionDetector
@@ -28,14 +29,14 @@ namespace dolfin
     /// Destructor
     ~IntersectionDetector();
 
-    /// Compute overlap with cell
-    void overlap(Cell& c, Array<uint>& overlap);
+    /// Compute cells overlapping point
+    void overlap(const Point& p, Array<uint>& cells);
 
-    /// Compute overlap with point
-    void overlap(Point& p, Array<uint>& overlap);
+    /// Compute cells overlapping line defined by points
+    void overlap(const Point& p1, const Point& p2, Array<uint>& cells);
 
-    /// Compute overlap with bounding box defined by two points
-    void overlap(Point& p1, Point& p2, Array<uint>& overlap);
+    /// Compute cells overlapping cell
+    void overlap(Cell& cell, Array<uint>& cells);
 
     /// Compute overlap with curve defined by points
     void overlap(Array<Point>& points, Array<uint>& overlap);

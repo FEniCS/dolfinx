@@ -66,19 +66,19 @@ CellType::Type CellType::string2type(std::string type)
   return interval;
 }
 //-----------------------------------------------------------------------------
-bool CellType::intersects(MeshEntity& entity, Cell& c) const
+bool CellType::intersects(MeshEntity& entity, Cell& cell) const
 {
-  for(VertexIterator vi(entity); !vi.end(); ++vi)
+  for (VertexIterator v(entity); !v.end(); ++v)
   {
-    Point p = vi->point();
+    Point p = v->point();
 
-    if(intersects(c, p))
+    if (intersects(cell, p))
       return true;
   }
 
-  for(VertexIterator vi(c); !vi.end(); ++vi)
+  for (VertexIterator v(cell); !v.end(); ++v)
   {
-    Point p = vi->point();
+    Point p = v->point();
 
     if(intersects(entity, p))
       return true;

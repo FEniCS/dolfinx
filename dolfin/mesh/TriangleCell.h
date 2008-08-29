@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-06-05
-// Last changed: 2008-06-20
+// Last changed: 2008-08-29
 //
 // Rename of the former Triangle.h
 //
@@ -60,11 +60,11 @@ namespace dolfin
     /// Compute the area/length of given facet with respect to the cell
     real facetArea(const Cell& cell, uint facet) const;
 
-    /// Check if point p intersects the cell
+    /// Check for intersection with point
     bool intersects(const MeshEntity& entity, const Point& p) const;
 
-    /// Check if points line connecting p1 and p2 cuts the cell
-    bool intersects(const MeshEntity& entity, const Point& p1, const Point& p2) const;
+    /// Check for intersection with line defined by points
+    bool intersects(const MeshEntity& entity, const Point& p0, const Point& p1) const;
 
     /// Return description of cell type
     std::string description() const;

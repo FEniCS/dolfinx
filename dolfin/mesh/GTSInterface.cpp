@@ -1,4 +1,4 @@
-// Copyright (C) 2006 Anders Logg.
+// Copyright (C) 2006-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Johan Jansson 2006.
@@ -23,197 +23,189 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-GTSInterface::GTSInterface(Mesh& m) : mesh(m), tree(0) 
+GTSInterface::GTSInterface(Mesh& mesh) : mesh(mesh), tree(0)
 {
-  if (m.geometry().dim() > 3)
-    error("Sorry, GTS interface not implemented for meshes of dimension %d.", m.geometry().dim());
+  if (mesh.geometry().dim() > 3)
+    error("Sorry, GTS interface not implemented for meshes of dimension %d.",
+          mesh.geometry().dim());
 
+  // Build tree (hierarchy) of bounding boxes
   buildCellTree();
 }
 //-----------------------------------------------------------------------------
 GTSInterface::~GTSInterface() 
 {
-  gts_bb_tree_destroy(tree, 1);
+  // Delete tree, including leaves (the bounding boxes)
+  gts_bb_tree_destroy(tree, true);
 }
 //-----------------------------------------------------------------------------
-void GTSInterface::overlap(Cell& c, Array<uint>& cells)
+void GTSInterface::overlap(const Point& p, Array<uint>& cells)
 {
-  GtsBBox* bbprobe;
-  GtsBBox* bb;
-  GSList* overlaps = 0, *overlaps_base;
-  uint boundedcell;
+  // Clear list of cells
+  cells.clear();
 
-  CellType& type = mesh.type();
+  // Create probe for point
+  GtsBBox* probe = createBox(p);
 
-  bbprobe = bboxCell(c);
-
-  overlaps = gts_bb_tree_overlap(tree, bbprobe);
-  overlaps_base = overlaps;
-
-  while(overlaps)
+  // Compute overlap with probe
+  GSList* overlaps = gts_bb_tree_overlap(tree, probe);
+  
+  // Iterate over overlap
+  while (overlaps)
   {
-    bb = (GtsBBox *)overlaps->data;
-    boundedcell = (uint)(long)bb->bounded;
+    // Extract cell index for bounding box
+    const GtsBBox* box = (GtsBBox *) overlaps->data;
+    const uint cell_index = (uint)(long) box->bounded;
     
-    Cell close(mesh, boundedcell);
+    // Check for intersection with cell
+    Cell c(mesh, cell_index);
+    if (c.intersects(p))
+      cells.push_back(cell_index);
     
-    if(type.intersects(c, close))
-    {
-      cells.push_back(boundedcell);
-    }
+    // Go to next bounding box
     overlaps = overlaps->next;
   }
   
-  g_slist_free(overlaps_base);
-  gts_object_destroy(GTS_OBJECT(bbprobe));
+  // Delete overlap and probe
+  g_slist_free(overlaps);
+  gts_object_destroy(GTS_OBJECT(probe));
 }
 //-----------------------------------------------------------------------------
-void GTSInterface::overlap(Point& p, Array<uint>& cells)
+void GTSInterface::overlap(const Point& p0, const Point& p1, Array<uint>& cells)
 {
-  GtsBBox* bbprobe;
-  GtsBBox* bb;
-  GSList* overlaps = 0, *overlaps_base;
-  uint boundedcell;
+  // Clear list of cells
+  cells.clear();
 
-  CellType& type = mesh.type();
+  // Create probe for line
+  GtsBBox* probe = createBox(p0, p1);
 
-  bbprobe = bboxPoint(p);
+  // Compute overlap with probe
+  GSList* overlaps = gts_bb_tree_overlap(tree, probe);
 
-  overlaps = gts_bb_tree_overlap(tree, bbprobe);
-  overlaps_base = overlaps;
-
-  while(overlaps)
+  // Iterate over overlap
+  while (overlaps)
   {
-    bb = (GtsBBox *)overlaps->data;
-    boundedcell = (uint)(long)bb->bounded;
-    
-    Cell close(mesh, boundedcell);
-    
-    if (type.intersects(close, p))
-      cells.push_back(boundedcell);
-    
-    overlaps = overlaps->next;
-  }
-  
-  g_slist_free(overlaps_base);
-  gts_object_destroy(GTS_OBJECT(bbprobe));
-}
-//-----------------------------------------------------------------------------
-void GTSInterface::overlap(Point& p1, Point& p2, Array<uint>& cells)
-{
-  GtsBBox* bbprobe;
-  GtsBBox* bb;
-  GSList* overlaps = 0,*overlaps_base;
-  uint boundedcell;
+    // Extract cell index for bounding box
+    const GtsBBox* box = (GtsBBox *) overlaps->data;
+    const uint cell_index = (uint)(long) box->bounded;
 
-  CellType& type = mesh.type();
+    // Check for intersection with cell
+    Cell c(mesh, cell_index);
+    if (c.intersects(p0, p1))
+      cells.push_back(cell_index);
 
-  bbprobe = bboxPoint(p1,p2);
-
-  overlaps = gts_bb_tree_overlap(tree, bbprobe);
-  overlaps_base = overlaps;
-
-  while(overlaps)
-  {
-    bb = (GtsBBox *)overlaps->data;
-    boundedcell = (uint)(long)bb->bounded;
-    
-    Cell close(mesh, boundedcell);
-    
-    if( type.intersects(close, p1, p2) )
-      cells.push_back(boundedcell);
-    
+    // Go to next bounding box
     overlaps = overlaps->next;
   }
 
-  g_slist_free(overlaps_base);
-  gts_object_destroy(GTS_OBJECT(bbprobe));
+  // Delete overlap and probe
+  g_slist_free(overlaps);
+  gts_object_destroy(GTS_OBJECT(probe));
 }
 //-----------------------------------------------------------------------------
-GtsBBox* GTSInterface::bboxCell(Cell& c)
+void GTSInterface::overlap(Cell& cell, Array<uint>& cells)
 {
-  GtsBBox* bbox;
-  Point p;
+  // Clear list of cells
+  cells.clear();
 
-  VertexIterator v(c);
-  p = v->point();
+  // Create probe for cell
+  GtsBBox* probe = createBox(cell);
 
-  bbox = gts_bbox_new(gts_bbox_class(), (void *)c.index(),
-		      p.x(), p.y(), p.z(),
-		      p.x(), p.y(), p.z());
+  // Compute overlap with probe
+  GSList* overlaps = gts_bb_tree_overlap(tree, probe);
+
+  // Iterate over overlap
+  while (overlaps)
+  {
+    // Extract cell index for bounding box
+    const GtsBBox* box = (GtsBBox *) overlaps->data;
+    const uint cell_index = (uint)(long) box->bounded;
+
+    // Check for intersection with cell
+    Cell c(mesh, cell_index);
+    if (c.intersects(cell))
+      cells.push_back(cell_index);
+
+    // Go to next bounding box
+    overlaps = overlaps->next;
+  }
   
-  for(++v; !v.end(); ++v)
+  // Delete overlap and probe
+  g_slist_free(overlaps);
+  gts_object_destroy(GTS_OBJECT(probe));
+}
+//-----------------------------------------------------------------------------
+GtsBBox* GTSInterface::createBox(const Point& p)
+{
+  // Create bounding box
+  GtsBBox* box = gts_bbox_new(gts_bbox_class(), 0,
+                               p.x(), p.y(), p.z(),
+                               p.x(), p.y(), p.z());
+  
+  return box;
+}
+//-----------------------------------------------------------------------------
+GtsBBox* GTSInterface::createBox(const Point& p0, const Point& p1)
+{
+  // Compute coordinates for bounding box
+  const real x0 = std::min(p0.x(), p1.x());
+  const real y0 = std::min(p0.y(), p1.y());
+  const real z0 = std::min(p0.z(), p1.z());
+  const real x1 = std::max(p0.x(), p1.x());
+  const real y1 = std::max(p0.y(), p1.y());
+  const real z1 = std::max(p0.z(), p1.z());
+  
+  // Create bounding box
+  GtsBBox* box = gts_bbox_new(gts_bbox_class(), 0,
+                              x0, y0, z0, x1, y1, z1);
+  
+  return box;
+}
+//-----------------------------------------------------------------------------
+GtsBBox* GTSInterface::createBox(Cell& cell)
+{
+  // Pick first vertex
+  VertexIterator v(cell);
+  Point p = v->point();
+
+  // Compute coordinates for bounding box
+  real x0 = p.x();
+  real y0 = p.y(); 
+  real z0 = p.z();
+  real x1 = x0;
+  real y1 = y0; 
+  real z1 = z0;
+  for (++v; !v.end(); ++v)
   {
     p = v->point();
-    if (p.x() > bbox->x2) bbox->x2 = p.x();
-    if (p.x() < bbox->x1) bbox->x1 = p.x();
-    if (p.y() > bbox->y2) bbox->y2 = p.y();
-    if (p.y() < bbox->y1) bbox->y1 = p.y();
-    if (p.z() > bbox->z2) bbox->z2 = p.z();
-    if (p.z() < bbox->z1) bbox->z1 = p.z();
+    x0 = std::min(x0, p.x());
+    x1 = std::max(x1, p.x());
+    y0 = std::min(y0, p.y());
+    y1 = std::max(y1, p.y());
+    z0 = std::min(z0, p.z());
+    z1 = std::max(z1, p.z());
   }
-  return bbox;
-}
-//-----------------------------------------------------------------------------
-GtsBBox* GTSInterface::bboxPoint(const Point& p)
-{
-  GtsBBox* bbox;
 
-  bbox = gts_bbox_new(gts_bbox_class(), (void *)0,
-		      p.x(), p.y(), p.z(),
-		      p.x(), p.y(), p.z());
+  // Create bounding box
+  GtsBBox* box = gts_bbox_new(gts_bbox_class(), (void *) cell.index(),
+                               x0, y0, z0, x1, y1, z1);
   
-  return bbox;
-}
-//-----------------------------------------------------------------------------
-GtsBBox* GTSInterface::bboxPoint(const Point& p1, const Point& p2)
-{
-  GtsBBox* bbox;
-
-  real x1, x2; 
-  real y1, y2;
-  real z1, z2;
-
-  if(p1.x()<p2.x()){
-    x1 = p1.x();
-    x2 = p2.x(); }
-  else {
-    x1 = p2.x();
-    x2 = p1.x(); }
-  if(p1.y()<p2.y()){
-    y1 = p1.y();
-    y2 = p2.y(); }
-  else {
-    y1 = p2.y();
-    y2 = p1.y(); }
-  if(p1.z()<p2.z()){
-    z1 = p1.z();
-    z2 = p2.z(); }
-  else {
-    z1 = p2.z();
-    z2 = p1.z(); }
-
-  bbox = gts_bbox_new(gts_bbox_class(), (void *)0,
-		      x1, y1, z1,
-		      x2, y2, z2);
-  
-  return bbox;
+  return box;
 }
 //-----------------------------------------------------------------------------
 void GTSInterface::buildCellTree()
 {
-  if (tree)
-    warning("tree already initialized");
+  dolfin_assert(tree == 0);
 
-  GSList* bboxes = NULL;
- 
-  for(CellIterator ci(mesh); !ci.end(); ++ci)
-  {
-    Cell& c = *ci;
-    bboxes = g_slist_prepend(bboxes, bboxCell(c));
-  }
+  // Build list of bounding boxes for cells
+  GSList* bboxes = 0; 
+  for (CellIterator c(mesh); !c.end(); ++c)
+    bboxes = g_slist_prepend(bboxes, createBox(*c));
   
+  // Build tree (hierarchy) of bounding boxes
   tree = gts_bb_tree_new(bboxes);
+
+  // Delete list of bounding boxes
   g_slist_free(bboxes);
 }
 //-----------------------------------------------------------------------------
