@@ -86,19 +86,6 @@ class MyNonlinearProblem(NonlinearProblem):
         dof_maps = dolfin.DofMapSet(compiled_form, self.mesh)
         dolfin.cpp_DirichletBC.apply(self.bc, A, dof_maps.sub(1), compiled_form)
 
-class Time:
-    def  __init__(self, value):
-        self.value = value
-    def __iadd__(self, value):
-        self.value += value
-        return self
-    def __lt__(self, value):
-        return self.value < value
-    def __call__(self):
-        return self.value
-    def __float__(self):
-        return self.value
-    
 # Solve nonlinear problem in a series of steps using pseudo time 
 t = Time(0.0)
 dt = 1.0
