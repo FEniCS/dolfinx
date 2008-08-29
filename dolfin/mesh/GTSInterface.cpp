@@ -41,9 +41,6 @@ GTSInterface::~GTSInterface()
 //-----------------------------------------------------------------------------
 void GTSInterface::overlap(const Point& p, Array<uint>& cells)
 {
-  // Clear list of cells
-  cells.clear();
-
   // Create probe for point
   GtsBBox* probe = createBox(p);
 
@@ -73,9 +70,6 @@ void GTSInterface::overlap(const Point& p, Array<uint>& cells)
 //-----------------------------------------------------------------------------
 void GTSInterface::overlap(const Point& p0, const Point& p1, Array<uint>& cells)
 {
-  // Clear list of cells
-  cells.clear();
-
   // Create probe for line
   GtsBBox* probe = createBox(p0, p1);
 
@@ -105,9 +99,6 @@ void GTSInterface::overlap(const Point& p0, const Point& p1, Array<uint>& cells)
 //-----------------------------------------------------------------------------
 void GTSInterface::overlap(Cell& cell, Array<uint>& cells)
 {
-  // Clear list of cells
-  cells.clear();
-
   // Create probe for cell
   GtsBBox* probe = createBox(cell);
 
