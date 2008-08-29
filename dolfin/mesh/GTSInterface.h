@@ -7,7 +7,7 @@
 #ifndef __GTS_INTERFACE_H
 #define __GTS_INTERFACE_H
 
-#ifdef HAS_PETSC
+#ifdef HAS_GTS
 
 #include <dolfin/common/types.h>
 
