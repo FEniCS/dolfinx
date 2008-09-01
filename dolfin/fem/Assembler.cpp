@@ -6,7 +6,7 @@
 // Modified by Kent-Andre Mardal, 2008
 //
 // First added:  2007-01-17
-// Last changed: 2008-08-21
+// Last changed: 2008-08-29
 
 #include <ufc.h>
 #include <dolfin/main/MPI.h>
@@ -166,13 +166,13 @@ void Assembler::assemble(GenericTensor& A, const ufc::form& form,
   initGlobalTensor(A, dof_map_set, ufc, reset_tensor);
 
   // Assemble over cells
-  assembleCells(A, coefficients, dof_map_set, ufc, cell_domains);
+  assembleCells(A, coefficients, dof_map_set, ufc, cell_domains, 0);
 
   // Assemble over exterior facets 
-  assembleExteriorFacets(A, coefficients, dof_map_set, ufc, exterior_facet_domains);
+  assembleExteriorFacets(A, coefficients, dof_map_set, ufc, exterior_facet_domains, 0);
 
   // Assemble over interior facets
-  assembleInteriorFacets(A, coefficients, dof_map_set, ufc, interior_facet_domains);
+  assembleInteriorFacets(A, coefficients, dof_map_set, ufc, interior_facet_domains, 0);
 
   // Finalise assembly of global tensor
   A.apply();
@@ -182,7 +182,8 @@ void Assembler::assembleCells(GenericTensor& A,
                               const Array<Function*>& coefficients,
                               const DofMapSet& dof_map_set,
                               UFC& ufc,
-                              const MeshFunction<uint>* domains) const
+                              const MeshFunction<uint>* domains,
+                              Array<real>* values) const
 {
   // Skip assembly if there are no cell integrals
   if (ufc.form.num_cell_integrals() == 0)
@@ -221,7 +222,10 @@ void Assembler::assembleCells(GenericTensor& A,
     integral->tabulate_tensor(ufc.A, ufc.w, ufc.cell);
 
     // Add entries to global tensor
-    A.add(ufc.A, ufc.local_dimensions, ufc.dofs);
+    if (values && ufc.form.rank() == 0)
+      (*values)[cell->index()] = ufc.A[0];
+    else
+      A.add(ufc.A, ufc.local_dimensions, ufc.dofs);
     
     p++;
   }
@@ -231,7 +235,8 @@ void Assembler::assembleExteriorFacets(GenericTensor& A,
                                        const Array<Function*>& coefficients,
                                        const DofMapSet& dof_map_set,
                                        UFC& ufc,
-                                       const MeshFunction<uint>* domains) const
+                                       const MeshFunction<uint>* domains,
+                                       Array<real>* values) const
 {
   // Skip assembly if there are no exterior facet integrals
   if (ufc.form.num_exterior_facet_integrals() == 0)
@@ -295,7 +300,8 @@ void Assembler::assembleInteriorFacets(GenericTensor& A,
                                        const Array<Function*>& coefficients,
                                        const DofMapSet& dof_map_set,
                                        UFC& ufc,
-                                       const MeshFunction<uint>* domains) const
+                                       const MeshFunction<uint>* domains,
+                                       Array<real>* values) const
 {
   // Skip assembly if there are no interior facet integrals
   if (ufc.form.num_interior_facet_integrals() == 0)

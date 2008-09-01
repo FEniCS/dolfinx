@@ -6,7 +6,7 @@
 // Modified by Dag Lindbo 2008.
 //
 // First added:  2006-06-21
-// Last changed: 2008-08-29
+// Last changed: 2008-09-01
 
 #include <algorithm>
 #include <dolfin/log/dolfin_log.h>
@@ -88,7 +88,7 @@ IntersectionDetector::~IntersectionDetector() {}
 //-----------------------------------------------------------------------------
 void IntersectionDetector::overlap(const Point& p, Array<uint>& overlap) {}
 //-----------------------------------------------------------------------------
-void IntersectionDetector::overlap(const Point& p0, Point& p1, Array<uint>& overlap) {}
+void IntersectionDetector::overlap(const Point& p0, const Point& p1, Array<uint>& overlap) {}
 //-----------------------------------------------------------------------------
 void IntersectionDetector::overlap(Cell& c, Array<uint>& overlap) {}
 //-----------------------------------------------------------------------------

@@ -5,7 +5,7 @@
 // Modified by Ola Skavhaug, 2008.
 //
 // First added:  2007-01-17
-// Last changed: 2008-08-21
+// Last changed: 2008-08-29
 
 #ifndef __ASSEMBLER_H
 #define __ASSEMBLER_H
@@ -126,21 +126,24 @@ namespace dolfin
                        const Array<Function*>& coefficients,
                        const DofMapSet& dof_set_map,
                        UFC& data,
-                       const MeshFunction<uint>* domains) const;
-
+                       const MeshFunction<uint>* domains,
+                       Array<real>* values) const;
+    
     // Assemble over exterior facets
     void assembleExteriorFacets(GenericTensor& A,
                                 const Array<Function*>& coefficients,
                                 const DofMapSet& dof_set_map,
                                 UFC& data,
-                                const MeshFunction<uint>* domains) const;
+                                const MeshFunction<uint>* domains,
+                                Array<real>* values) const;
 
     // Assemble over interior facets
     void assembleInteriorFacets(GenericTensor& A,
                                 const Array<Function*>& coefficients,
                                 const DofMapSet& dof_set_map,
                                 UFC& data,
-                                const MeshFunction<uint>* domains) const;
+                                const MeshFunction<uint>* domains,
+                                Array<real>* values) const;
 
     // Check arguments
     void check(const ufc::form& form,
