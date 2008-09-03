@@ -81,6 +81,11 @@ namespace dolfin
     /// Create function from data file
     explicit Function(const std::string filename);
 
+    /// Create discrete function from arguments that were read from an xml file
+    /// (see XMLFile.cpp for a similar function)
+    Function(Mesh& mesh, GenericVector& x, const std::string finite_element_signature,
+                                           const std::string        dof_map_signature);
+    
     /// Copy constructor
     Function(const Function& f);
 

@@ -11,6 +11,9 @@
 #include <dolfin/mesh/MeshFunction.h>
 #include "XMLObject.h"
 
+#include "XMLVector.h"
+#include <dolfin/la/Vector.h>
+
 namespace dolfin
 {
   
@@ -32,13 +35,14 @@ namespace dolfin
   private:
     
     enum ParserState {OUTSIDE,
-                      INSIDE_MESH, INSIDE_VERTICES, INSIDE_CELLS,
-                      INSIDE_DATA, INSIDE_MESH_FUNCTION, INSIDE_ARRAY,
+                      INSIDE_MESH, INSIDE_VERTICES, INSIDE_CELLS, INSIDE_COORDINATES,
+                      INSIDE_DATA, INSIDE_MESH_FUNCTION, INSIDE_ARRAY, INSIDE_VECTOR,
                       DONE};
     
     void readMesh        (const xmlChar* name, const xmlChar** attrs);
     void readVertices    (const xmlChar* name, const xmlChar** attrs);
     void readCells       (const xmlChar* name, const xmlChar** attrs);
+    void readCoordinates (const xmlChar* name, const xmlChar** attrs);
     void readVertex      (const xmlChar* name, const xmlChar** attrs);
     void readInterval    (const xmlChar* name, const xmlChar** attrs);
     void readTriangle    (const xmlChar* name, const xmlChar** attrs);
@@ -47,6 +51,9 @@ namespace dolfin
     void readArray       (const xmlChar* name, const xmlChar** attrs);
     void readMeshEntity  (const xmlChar* name, const xmlChar** attrs);
     void readArrayElement(const xmlChar* name, const xmlChar** attrs);
+
+    void readFEsignature    (const xmlChar* name, const xmlChar** attrs);
+    void readDofMapsignature(const xmlChar* name, const xmlChar** attrs);
     
     void closeMesh();
 
@@ -55,6 +62,10 @@ namespace dolfin
     MeshEditor editor;
     MeshFunction<uint>* f;
     Array<uint>* a;
+    
+    // variables for reading in higher order mesh coordinates from vector data
+    Vector *mesh_coord_vec;
+    XMLVector *xml_vec;
     
   };
   

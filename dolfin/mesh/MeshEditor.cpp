@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-05-16
-// Last changed: 2008-05-19
+// Last changed: 2008-08-19
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/parameter/dolfin_parameter.h>
@@ -43,7 +43,7 @@ void MeshEditor::open(Mesh& mesh, CellType::Type type, uint tdim, uint gdim)
 
   // Initialize topological dimension
   mesh._topology.init(tdim);
-
+  
   // Initialize temporary storage for local cell data
   vertices.reserve(mesh.type().numVertices(tdim));
   for (uint i = 0; i < mesh.type().numVertices(tdim); i++)
@@ -86,6 +86,31 @@ void MeshEditor::initCells(uint num_cells)
   this->num_cells = num_cells;
   mesh->_topology.init(tdim, num_cells);
   mesh->_topology(tdim, 0).init(num_cells, mesh->type().numVertices(tdim));
+  
+  // init a boolean array that indicates whether cells are affinely mapped or not
+  mesh->_geometry.initAffineIndicator(num_cells);
+}
+//-----------------------------------------------------------------------------
+void MeshEditor::setMeshCoordinates(Vector *mesh_coord_vec)
+{
+  // Check if we are currently editing a mesh
+  if ( !mesh )
+    error("No mesh opened, unable to edit.");
+
+  mesh->_geometry.set_mesh_coordinates(mesh, mesh_coord_vec,
+                                       mcv_finite_element_signature,
+                                       mcv_dof_map_signature);
+}
+//-----------------------------------------------------------------------------
+void MeshEditor::setAffineCellIndicator(uint c, const std::string affine_str)
+{
+  bool affine_value = true; // init
+  
+  if ( affine_str=="false" )
+    affine_value = false;
+  
+  // set affine indicator for specific cell
+  mesh->_geometry.setAffineIndicator(c, affine_value);
 }
 //-----------------------------------------------------------------------------
 void MeshEditor::addVertex(uint v, const Point& p)

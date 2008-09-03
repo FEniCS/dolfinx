@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-05-16
-// Last changed: 2006-11-17
+// Last changed: 2008-08-19
 
 #ifndef __MESH_EDITOR_H
 #define __MESH_EDITOR_H
@@ -16,6 +16,7 @@ namespace dolfin
   
   class Mesh;
   class Point;
+  class Vector;
   
   /// A simple mesh editor for creating simplicial meshes in 1D, 2D and 3D.
 
@@ -34,13 +35,29 @@ namespace dolfin
 
     /// Open mesh of given cell type, topological and geometrical dimension
     void open(Mesh& mesh, std::string type, uint tdim, uint gdim);
-
+    
     /// Specify number of vertices
     void initVertices(uint num_vertices);
 
     /// Specify number of cells
     void initCells(uint num_cells);
+    
+    /// Set the finite element signature for the type of parametric mapping used for the local
+    /// elements in the mesh
+    void setMeshCoordFEsignature(const std::string FE_signature)
+        {mcv_finite_element_signature = FE_signature;}
 
+    /// Set the dofmap signature for the type of parametric mapping used for the local
+    /// elements in the mesh
+    void setMeshCoordDofMapsignature(const std::string dofmap_signature)
+        {mcv_dof_map_signature = dofmap_signature;}
+    
+    /// Set higher order mesh coordinates
+    void setMeshCoordinates(Vector *mesh_coord_vec);
+    
+    /// Set boolean indicator inside MeshGeometry
+    void setAffineCellIndicator(uint c, const std::string affine_str);
+    
     /// Add vertex v at given point p
     void addVertex(uint v, const Point& p);
 
@@ -102,7 +119,12 @@ namespace dolfin
 
     // Temporary storage for local cell data
     Array<uint> vertices;
-   
+    
+    // stores the type of mesh mapping,
+    // i.e. strings that specify the type of finite element function that represents the local mesh mapping
+    std::string mcv_finite_element_signature;
+    std::string mcv_dof_map_signature;
+
   };
 
 }

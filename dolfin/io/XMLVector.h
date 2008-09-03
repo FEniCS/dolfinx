@@ -12,7 +12,9 @@
 
 namespace dolfin
 {
-  
+
+  class XMLMesh;
+
   class XMLVector : public XMLObject
   {
   public:
@@ -21,6 +23,9 @@ namespace dolfin
     
     void startElement (const xmlChar *name, const xmlChar **attrs);
     void endElement   (const xmlChar *name);
+    
+    /// Friends
+    friend class XMLMesh;
     
   private:
     

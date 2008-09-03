@@ -92,6 +92,18 @@ Function::Function(const std::string filename)
   file >> *this;
 }
 //-----------------------------------------------------------------------------
+Function::Function(Mesh& mesh, GenericVector& x, const std::string finite_element_signature,
+                                                 const std::string        dof_map_signature)
+  : Variable("u", "discrete function"),
+    f(0), _type(empty), _cell(0), _facet(-1)
+{
+  f = new DiscreteFunction(mesh, x, finite_element_signature, dof_map_signature);
+  _type = discrete;
+
+  DiscreteFunction& ff = dynamic_cast<DiscreteFunction&>(*f);
+  ff.local_vector = &x;
+}
+//-----------------------------------------------------------------------------
 Function::Function(SubFunction f)
   : Variable("u", "discrete function"),
     f(0), _type(discrete), _cell(0), _facet(-1)

@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2003-10-21
-// Last changed: 2008-05-21
+// Last changed: 2008-08-19
 
 #include <cstring>
 #include <dolfin/log/dolfin_log.h>
@@ -14,9 +14,11 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-XMLMesh::XMLMesh(Mesh& mesh) : XMLObject(), _mesh(mesh), state(OUTSIDE), f(0), a(0)
+XMLMesh::XMLMesh(Mesh& mesh) : XMLObject(), _mesh(mesh), state(OUTSIDE), f(0), a(0),
+                               mesh_coord_vec(0), xml_vec(0)
 {
   // Do nothing
+  
 }
 //-----------------------------------------------------------------------------
 XMLMesh::~XMLMesh()
@@ -54,6 +56,11 @@ void XMLMesh::startElement(const xmlChar *name, const xmlChar **attrs)
     {
       state = INSIDE_DATA;
     }
+    else if ( xmlStrcasecmp(name, (xmlChar *) "coordinates") == 0 )
+    {
+      readCoordinates(name, attrs);
+      state = INSIDE_COORDINATES;
+    }
 
     break;
     
@@ -90,6 +97,24 @@ void XMLMesh::startElement(const xmlChar *name, const xmlChar **attrs)
 
     break;
 
+  case INSIDE_COORDINATES:
+    
+    if ( xmlStrcasecmp(name, (xmlChar *) "vector") == 0 )
+    {
+      xml_vec->startVector(name, attrs);
+      state = INSIDE_VECTOR;
+    }
+    if ( xmlStrcasecmp(name, (xmlChar *) "finiteelement") == 0 )
+    {
+	  readFEsignature(name, attrs);
+    }
+    if ( xmlStrcasecmp(name, (xmlChar *) "dofmap") == 0 )
+    {
+	  readDofMapsignature(name, attrs);
+    }
+
+    break;
+
   case INSIDE_MESH_FUNCTION:
     
     if ( xmlStrcasecmp(name, (xmlChar *) "entity") == 0 )
@@ -104,6 +129,12 @@ void XMLMesh::startElement(const xmlChar *name, const xmlChar **attrs)
 
     break;
 
+  case INSIDE_VECTOR:
+    
+    if ( xmlStrcasecmp(name, (xmlChar *) "entry") == 0 )
+      xml_vec->readEntry(name, attrs);
+    break;
+    
   default:
     ;
   }
@@ -150,6 +181,15 @@ void XMLMesh::endElement(const xmlChar *name)
 
     break;
 
+  case INSIDE_COORDINATES:
+
+    if ( xmlStrcasecmp(name, (xmlChar *) "coordinates") == 0 )
+    {
+      state = INSIDE_MESH;
+    }
+
+    break;
+
   case INSIDE_MESH_FUNCTION:
 
     if ( xmlStrcasecmp(name, (xmlChar *) "meshfunction") == 0 )
@@ -164,6 +204,16 @@ void XMLMesh::endElement(const xmlChar *name)
     if ( xmlStrcasecmp(name, (xmlChar *) "array") == 0 )
     {
       state = INSIDE_DATA;
+    }
+
+    break;
+
+  case INSIDE_VECTOR:
+
+    if ( xmlStrcasecmp(name, (xmlChar *) "vector") == 0 )
+    {
+      xml_vec->endVector();
+      state = INSIDE_COORDINATES;
     }
 
     break;
@@ -216,6 +266,13 @@ void XMLMesh::readCells(const xmlChar *name, const xmlChar **attrs)
   editor.initCells(num_cells);
 }
 //-----------------------------------------------------------------------------
+void XMLMesh::readCoordinates(const xmlChar *name, const xmlChar **attrs)
+{
+  // setup variables to store vector data
+  mesh_coord_vec = new Vector();
+  xml_vec = new XMLVector(*mesh_coord_vec);
+}
+//-----------------------------------------------------------------------------
 void XMLMesh::readVertex(const xmlChar *name, const xmlChar **attrs)
 {
   // Read index
@@ -264,6 +321,10 @@ void XMLMesh::readInterval(const xmlChar *name, const xmlChar **attrs)
   
   // Add cell
   editor.addCell(c, v0, v1);
+  
+  // set affine indicator
+  const std::string affine_str = parseStringOptional(name, attrs, "affine");
+  editor.setAffineCellIndicator(c, affine_str);
 }
 //-----------------------------------------------------------------------------
 void XMLMesh::readTriangle(const xmlChar *name, const xmlChar **attrs)
@@ -281,6 +342,10 @@ void XMLMesh::readTriangle(const xmlChar *name, const xmlChar **attrs)
   
   // Add cell
   editor.addCell(c, v0, v1, v2);
+  
+  // set affine indicator
+  const std::string affine_str = parseStringOptional(name, attrs, "affine");
+  editor.setAffineCellIndicator(c, affine_str);
 }
 //-----------------------------------------------------------------------------
 void XMLMesh::readTetrahedron(const xmlChar *name, const xmlChar **attrs)
@@ -299,6 +364,10 @@ void XMLMesh::readTetrahedron(const xmlChar *name, const xmlChar **attrs)
   
   // Add cell
   editor.addCell(c, v0, v1, v2, v3);
+  
+  // set affine indicator
+  const std::string affine_str = parseStringOptional(name, attrs, "affine");
+  editor.setAffineCellIndicator(c, affine_str);
 }
 //-----------------------------------------------------------------------------
 void XMLMesh::readMeshFunction(const xmlChar* name, const xmlChar** attrs)
@@ -367,8 +436,27 @@ void XMLMesh::readArrayElement(const xmlChar* name, const xmlChar** attrs)
   (*a)[index] = value;
 }
 //-----------------------------------------------------------------------------
+void XMLMesh::readFEsignature(const xmlChar* name, const xmlChar** attrs)
+{
+  // Read string for the finite element signature
+  const std::string FE_signature = parseStringOptional(name, attrs, "signature");
+  editor.setMeshCoordFEsignature(FE_signature);
+}
+//-----------------------------------------------------------------------------
+void XMLMesh::readDofMapsignature(const xmlChar* name, const xmlChar** attrs)
+{
+  // Read string for the dofmap signature
+  const std::string dofmap_signature = parseStringOptional(name, attrs, "signature");
+  editor.setMeshCoordDofMapsignature(dofmap_signature);
+}
+//-----------------------------------------------------------------------------
 void XMLMesh::closeMesh()
 {
+  delete(xml_vec);
+  
+  // setup higher order mesh coordinate data
+  editor.setMeshCoordinates(mesh_coord_vec);   
+
   editor.close();
 }
 //-----------------------------------------------------------------------------
