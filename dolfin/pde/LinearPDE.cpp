@@ -1,40 +1,44 @@
 // Copyright (C) 2004-2007 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Garth N. Wells, 2006, 2007
+// Modified by Garth N. Wells, 2006-2008.
 //
 // First added:  2004
-// Last changed: 2007-12-28
+// Last changed: 2008-08-20
 
-#include <dolfin/la/Matrix.h>
-#include <dolfin/fem/BoundaryCondition.h>
 #include <dolfin/fem/Assembler.h>
+#include <dolfin/fem/DirichletBC.h>
+#include <dolfin/fem/Form.h>
+#include <dolfin/la/Matrix.h>
+#include <dolfin/la/Vector.h>
 #include <dolfin/la/LUSolver.h>
 #include <dolfin/la/KrylovSolver.h>
+#include <dolfin/la/enums_la.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/DiscreteFunction.h>
-#include "LinearPDE.h"
 #include <dolfin/io/dolfin_io.h>
-#include <dolfin/fem/Form.h>
+#include "LinearPDE.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-LinearPDE::LinearPDE(Form& a, Form& L, Mesh& mesh)
-  : a(a), L(L), mesh(mesh)
+LinearPDE::LinearPDE(Form& a, Form& L, Mesh& mesh, MatrixType matrix_type)
+                   : a(a), L(L), mesh(mesh), matrix_type(matrix_type)
 {
   message("Creating linear PDE.");
 }
 //-----------------------------------------------------------------------------
-LinearPDE::LinearPDE(Form& a, Form& L, Mesh& mesh, BoundaryCondition& bc)
-  : a(a), L(L), mesh(mesh)
+LinearPDE::LinearPDE(Form& a, Form& L, Mesh& mesh, DirichletBC& bc, 
+                     MatrixType matrix_type) : a(a), L(L), mesh(mesh), 
+                     matrix_type(matrix_type)
 {
   message("Creating linear PDE with one boundary condition.");
   bcs.push_back(&bc);
 } 
 //-----------------------------------------------------------------------------
-LinearPDE::LinearPDE(Form& a, Form& L, Mesh& mesh, Array<BoundaryCondition*>& bcs)
-  : a(a), L(L), mesh(mesh)
+LinearPDE::LinearPDE(Form& a, Form& L, Mesh& mesh, Array<DirichletBC*>& bcs, 
+                     MatrixType matrix_type) : a(a), L(L), mesh(mesh), 
+                     matrix_type(matrix_type)
 {
   message("Creating linear PDE with %d boundary condition(s).", bcs.size());
   for (uint i = 0; i < bcs.size(); i++)
@@ -55,41 +59,44 @@ void LinearPDE::solve(Function& u)
   Vector b;
   Vector* x = new Vector();
 
-  // Assemble linear system
-  Assembler assembler(mesh);
-  assembler.assemble(A, a);
-  assembler.assemble(b, L);
+  // Assemble linear system and apply boundary conditions
+  Assembler assembler(mesh);  
+  assembler.assemble(A, a, b, L, bcs);
 
-  // Apply boundary conditions
-  for (uint i = 0; i < bcs.size(); i++)
-    bcs[i]->apply(A, b, a);
+  // Assemble linear system and apply boundary conditions
+  //Assembler assembler(mesh);  
+  //assembler.assemble(A, a);
+  //assembler.assemble(b, L);
+  //for (uint i = 0; i < bcs.size(); i++)
+  //  bcs[i]->apply(A, b, a);
 
   // Solve linear system
   const std::string solver_type = get("PDE linear solver");
   if ( solver_type == "direct" )
   {
-    LUSolver solver;
+    LUSolver solver(matrix_type);
     solver.set("parent", *this);
     solver.solve(A, *x, b);
   }
   else if ( solver_type == "iterative" )
   {
-    KrylovSolver solver(gmres);
-    solver.set("parent", *this);
-    solver.solve(A, *x, b);
+    if( matrix_type == symmetric)
+    {
+      KrylovSolver solver(cg);
+      solver.set("parent", *this);
+      solver.solve(A, *x, b);
+    }
+    else
+    {
+      KrylovSolver solver(gmres);
+      solver.set("parent", *this);
+      solver.solve(A, *x, b);
+    }
   }
   else
     error("Unknown solver type \"%s\".", solver_type.c_str());
 
-  //cout << "Matrix:" << endl;
-  //A.disp();
-
-  //cout << "Vector:" << endl;
-  //b.disp();
-
-  //cout << "Solution vector:" << endl;
-  //x.disp();
-
+  // Create Function
   u.init(mesh, *x, a, 1);
   DiscreteFunction& uu = dynamic_cast<DiscreteFunction&>(*u.f);
   uu.local_vector = x;

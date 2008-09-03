@@ -65,25 +65,25 @@ namespace dolfin
     virtual bool update(const complex z[], real t, bool end);
 
     /// Return initial value for real-valued ODE
-    void u0(uBlasVector& u);
+    void u0(uBLASVector& u);
 
     /// Return right-hand side for real-valued ODE
-    real f(const uBlasVector& u, real t, uint i);
+    real f(const uBLASVector& u, real t, uint i);
 
     /// Evaluate right-hand side for real-valued ODE
-    void f(const uBlasVector& u, real t, uBlasVector& y);
+    void f(const uBLASVector& u, real t, uBLASVector& y);
 
     /// Compute product y = Mx for real-valued ODE
-    void M(const uBlasVector& x, uBlasVector& y, const uBlasVector& u, real t);
+    void M(const uBLASVector& x, uBLASVector& y, const uBLASVector& u, real t);
 
     /// Compute product y = Jx for real-valued ODE
-    void J(const uBlasVector& x, uBlasVector& y, const uBlasVector& u, real t);
+    void J(const uBLASVector& x, uBLASVector& y, const uBLASVector& u, real t);
 
     /// Return time step for real-valued ODE
     real timestep(uint i);
 
     /// Update for real-valued ODE
-    bool update(const uBlasVector& u, real t, bool end);
+    bool update(const uBLASVector& u, real t, bool end);
 
   protected:
 

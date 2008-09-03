@@ -7,7 +7,7 @@
 // Modified by Kent-Andre Mardal, 2008.
 //
 // First added:  2007-07-03
-// Last changed: 2008-07-21
+// Last changed: 2008-08-21
 
 #ifndef __LU_SOLVER_H
 #define __LU_SOLVER_H
@@ -16,9 +16,10 @@
 #include <dolfin/common/Timer.h>
 #include "GenericMatrix.h"
 #include "GenericVector.h"
+#include "CholmodCholeskySolver.h"
 #include "UmfpackLUSolver.h"
-#include "uBlasSparseMatrix.h"
-#include "uBlasDenseMatrix.h"
+#include "uBLASSparseMatrix.h"
+#include "uBLASDenseMatrix.h"
 #include "PETScLUSolver.h"
 #include "PETScMatrix.h"
 #include "EpetraLUSolver.h"
@@ -36,10 +37,13 @@ namespace dolfin
     
   public:
 
-    LUSolver() : umfpack_solver(0), petsc_solver(0), epetra_solver(0) {}
+    LUSolver(MatrixType matrix_type = nonsymmetric) : cholmod_solver(0), 
+             umfpack_solver(0), petsc_solver(0), epetra_solver(0), 
+             matrix_type(matrix_type) {}
     
     ~LUSolver() 
     { 
+      delete cholmod_solver; 
       delete umfpack_solver; 
       delete petsc_solver; 
       delete epetra_solver; 
@@ -57,7 +61,7 @@ namespace dolfin
           petsc_solver = new PETScLUSolver();
           petsc_solver->set("parent", *this);
         }
-        return petsc_solver->solve(A.down_cast<PETScMatrix>(), x.down_cast<PETScVector>(), b.down_cast<PETScVector>());
+        return petsc_solver->solve(A, x, b);
       }
 #endif
 #ifdef HAS_TRILINOS
@@ -68,17 +72,29 @@ namespace dolfin
           epetra_solver = new EpetraLUSolver();
           epetra_solver->set("parent", *this);
         }
-        return epetra_solver->solve(A.down_cast<EpetraMatrix>(), x.down_cast<EpetraVector>(), b.down_cast<EpetraVector>());
+        return epetra_solver->solve(A, x, b);
       }
 #endif
 
-      // Default LU solver (UMFPACK)
-      if (!umfpack_solver)
+      // Default LU solvers
+      if (matrix_type == symmetric)
       {
-        umfpack_solver = new UmfpackLUSolver();
-        umfpack_solver->set("parent", *this);
+        if (!cholmod_solver)
+        {
+          cholmod_solver = new CholmodCholeskySolver();
+          cholmod_solver->set("parent", *this);
+        }
+        return cholmod_solver->solve(A, x, b);
       }
-      return umfpack_solver->solve(A, x, b);
+      else
+      {
+        if (!umfpack_solver)
+        {
+          umfpack_solver = new UmfpackLUSolver();
+          umfpack_solver->set("parent", *this);
+        }
+        return umfpack_solver->solve(A, x, b);
+      }
     }
 
     uint factorize(const GenericMatrix& A)
@@ -103,6 +119,9 @@ namespace dolfin
 
   private:
 
+    // CHOLMOD solver
+    CholmodCholeskySolver* cholmod_solver;
+
     // UMFPACK solver
     UmfpackLUSolver* umfpack_solver;
 
@@ -117,6 +136,8 @@ namespace dolfin
 #else
     int* epetra_solver;
 #endif
+
+    dolfin::MatrixType matrix_type;
 
   };
 }

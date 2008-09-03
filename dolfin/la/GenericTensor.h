@@ -6,20 +6,13 @@
 // Modified by Martin Alnæs, 2008.
 //
 // First added:  2007-01-17
-// Last changed: 2008-04-23
+// Last changed: 2008-08-07
 
 #ifndef __GENERIC_TENSOR_H
 #define __GENERIC_TENSOR_H
 
 #include <dolfin/common/types.h>
 #include <dolfin/log/log.h>
-
-enum FinalizeType { 
-  FINALIZE, 
-  FLUSH, 
-  PETSC_HACK
-};
-
 
 namespace dolfin
 {
@@ -37,6 +30,9 @@ namespace dolfin
     virtual ~GenericTensor() {}
 
     //--- Basic GenericTensor interface ---
+
+    /// Initialize zero tensor with given dimensions
+    virtual void init(uint rank, const uint* dims) = 0;
 
     /// Initialize zero tensor using sparsity pattern
     virtual void init(const GenericSparsityPattern& sparsity_pattern) = 0;
@@ -63,7 +59,7 @@ namespace dolfin
     virtual void zero() = 0;
 
     /// Finalize assembly of tensor
-    virtual void apply(FinalizeType finaltype=FINALIZE) = 0;
+    virtual void apply() = 0;
 
     /// Display tensor
     virtual void disp(uint precision=2) const = 0;

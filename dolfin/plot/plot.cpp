@@ -14,8 +14,11 @@
 #include <dolfin/io/File.h>
 #include "plot.h"
 
-using namespace dolfin;
+#ifdef __WIN32__
+#include <windows.h>  // neccessary to create temporary files on Windows
+#endif
 
+using namespace dolfin;
 namespace dolfin
 {
 
@@ -25,11 +28,33 @@ namespace dolfin
     message("Plotting %s, press q to continue...", class_name.c_str());
     
     // Open temporary script file
+#ifdef __WIN32__
+    char buffer[MAX_PATH];
+    std::string tmppath;
+    if (GetTempPath(512, buffer) == 0) 
+      tmppath = ".";  // use current directory instead
+    else
+      tmppath = std::string(buffer);
+    std::string script_name;
+    if (GetTempFileName(tmppath.c_str(), "", 0, buffer) == 0) 
+      error("Unable to create temporary plotting script in %s.", tmppath.c_str());
+    else
+      script_name = std::string(buffer) + ".py";
+#else
     std::string script_name = std::string(tmpnam(0)) + ".py";
+#endif
     FILE* script_file = fopen(script_name.c_str(), "w");
     
     // Save data to temporary file
+#ifdef __WIN32__
+    std::string data_name;
+    if (GetTempFileName(tmppath.c_str(), "", 0, buffer) == 0)
+      error("Unable to create temporary xml file in %s.", tmppath.c_str());
+    else
+      data_name = std::string(buffer) + ".xml";
+#else
     std::string data_name = std::string(tmpnam(0)) + ".xml";
+#endif
     dolfin_set("output destination", "silent");
     File file(data_name);
     file << t;
@@ -38,7 +63,7 @@ namespace dolfin
     // Write script file
     fprintf(script_file, "try:\n");
     fprintf(script_file, "    from dolfin import *\n\n");
-    fprintf(script_file, "    object = %s(\"%s\")\n", class_name.c_str(), data_name.c_str());
+    fprintf(script_file, "    object = %s(r\"%s\")\n", class_name.c_str(), data_name.c_str());
     if (mode == "")
       fprintf(script_file, "    plot(object)\n");
     else
@@ -50,7 +75,11 @@ namespace dolfin
     fclose(script_file);
     
     // Run script
+#ifdef __WIN32__
+    std::string command = "python " + script_name + " > nul";
+#else
     std::string command = "python " + script_name + " > /dev/null";
+#endif
     if ( system(command.c_str()) != 0 )
       message("Unable to plot (PyDOLFIN or Viper plotter not available).");
   }

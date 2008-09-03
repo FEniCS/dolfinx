@@ -46,6 +46,10 @@ if not env["enableUmfpack"]:
     disabled_packages.append("umfpack")
 if not env["enableTrilinos"]:
     disabled_packages.append("trilinos")
+if not env["enableCholmod"]:
+    disabled_packages.append("cholmod")
+if not env["enableMtl4"]:
+    disabled_packages.append("mtl4")
 
 # Find modules in the project and dependencies:
 # only modules and configuredPackages will be used in this code:
@@ -316,19 +320,24 @@ replacements = {}
 replacements['PACKAGE_VERSION'] = "0.8.0"
 # make all dependencies into a list, based on the configured Packages.
 replacements['PACKAGE_REQUIRES'] = " ".join(configuredPackages.keys())
-# set CXX flags:
+# set compiler and link flags:
 cxxflags = ""
+linkflags = ""
 for mod in modules.values():
     cxxflags += " " + mod.cxxFlags
+    linkflags += " " + " ".join(mod.linkFlags)
 replacements['PACKAGE_CXXFLAGS'] = cxxflags
+replacements['PACKAGE_LINKFLAGS'] = linkflags
 # set CXX compiler:
 replacements['CXX'] = env["CXX"]
 
 scons.pkgconfig.generate(env, replace=replacements)
 ret["pkgconfig"] = env.PkgConfigGenerator("%s.pc.in" % (env["projectname"]))
 # the dolfin.pc file needs to be regenerated if there are changes to the
-# configured packages, installation prefix, any CXXFLAGS, or the compiler
-pkgconfig_deps = [configuredPackages.keys(),env["prefix"],cxxflags,env["CXX"]]
+# configured packages, installation prefix, any compiler/link flags,
+# or the compiler
+pkgconfig_deps = [configuredPackages.keys(), env["prefix"],
+                  cxxflags, linkflags, env["CXX"]]
 env.Depends(ret["pkgconfig"][0], Value(pkgconfig_deps))
 
 # We also like to install all generated pkg-config files. 

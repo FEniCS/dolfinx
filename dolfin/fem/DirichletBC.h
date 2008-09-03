@@ -4,7 +4,7 @@
 // Modified by Kristian Oelgaard, 2007
 //
 // First added:  2007-04-10
-// Last changed: 2008-05-22
+// Last changed: 2008-08-26
 //
 // FIXME: This class needs some cleanup, in particular collecting
 // FIXME: all data from different representations into a common
@@ -14,11 +14,8 @@
 #define __DIRICHLET_BC_H
 
 #include <dolfin/common/types.h>
-#include "SubSystem.h"
-#include <dolfin/mesh/MeshFunction.h>
 #include "BoundaryCondition.h"
-#include <dolfin/mesh/Facet.h>
-#include <dolfin/mesh/SubDomain.h>
+#include "SubSystem.h"
 
 namespace dolfin
 {
@@ -26,9 +23,12 @@ namespace dolfin
   class DofMap;
   class Function;
   class Mesh;
+  class Facet;
   class Form;
   class GenericMatrix;
   class GenericVector;
+  class SubDomain;
+  template<class T> class MeshFunction; 
 
   /// The BCMethod variable may be used to specify the type of method
   /// used to identify degrees of freedom on the boundary. Available
@@ -121,6 +121,12 @@ namespace dolfin
     ~DirichletBC();
 
     /// Apply boundary condition to linear system
+    void apply(GenericMatrix& A, const Form& form);
+
+    /// Apply boundary condition to a vector
+    void apply(GenericVector& b, const GenericVector& x, const Form& form);
+
+    /// Apply boundary condition to linear system
     void apply(GenericMatrix& A, GenericVector& b, const Form& form);
 
     /// Apply boundary condition to linear system
@@ -128,6 +134,12 @@ namespace dolfin
 
     /// Apply boundary condition to linear system for a nonlinear problem
     void apply(GenericMatrix& A, GenericVector& b, const GenericVector& x, const Form& form);
+
+    /// Apply boundary condition to linear system for a nonlinear problem
+    void apply(GenericMatrix& A, const DofMap& dof_map, const ufc::form& form);
+
+    /// Apply boundary condition to linear system for a nonlinear problem
+    void apply(GenericVector& b, const GenericVector& x, const DofMap& dof_map, const ufc::form& form);
 
     /// Apply boundary condition to linear system for a nonlinear problem
     void apply(GenericMatrix& A, GenericVector& b, const GenericVector& x, const DofMap& dof_map, const ufc::form& form);
@@ -141,8 +153,8 @@ namespace dolfin
     /// Set (or update) value for sub system
     void setSubSystem(SubSystem sub_system);
 
-    /// get Dirichlet values and indicators 
-    void getBC(uint n, uint* indicators, double* values, const DofMap& dof_map, const ufc::form& form); 
+    /// Get Dirichlet values and indicators 
+    void getBC(uint n, uint* indicators, real* values, const DofMap& dof_map, const ufc::form& form); 
 
     /// Return mesh
     Mesh& mesh();
@@ -150,7 +162,7 @@ namespace dolfin
   private:
 
     /// Apply boundary conditions
-    void apply(GenericMatrix& A, GenericVector& b,
+    void apply(GenericMatrix* A, GenericVector* b,
                const GenericVector* x, const DofMap& dof_map, const ufc::form& form);
     
     // Initialize sub domain markers from sub domain

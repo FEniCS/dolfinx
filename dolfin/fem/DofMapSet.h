@@ -1,10 +1,10 @@
-// Copyright (C) 2007 Anders Logg.
+// Copyright (C) 2007-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modifies by Garth N. Wells, 2007.
 //
 // First added:  2007-01-17
-// Last changed: 2007-05-24
+// Last changed: 2008-08-12
 
 #ifndef __DOF_MAP_SET_H
 #define __DOF_MAP_SET_H
@@ -72,8 +72,8 @@ namespace dolfin
     void build(UFC& ufc) const;
 
     bool parallel() const
-      { return _parallel; }
-
+    { return _parallel; }
+    
   private:
 
     // Consistency checking

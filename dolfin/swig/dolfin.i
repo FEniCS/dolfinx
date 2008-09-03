@@ -15,11 +15,11 @@ using namespace dolfin;
   import_array();
 %}
 
-// Ignores
-%include "ignores.i"
-
 // Renames
 %include "renames.i"
+
+// Ignores
+%include "ignores.i"
 
 // Typemaps
 %include "typemaps.i"

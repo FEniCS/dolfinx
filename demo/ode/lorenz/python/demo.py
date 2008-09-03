@@ -19,7 +19,7 @@ class Lorenz(ODE):
         
     def __init__(self, N=3, T=50.):
         ODE.__init__(self, N, T)
-        # Work arrays corresponding to uBlasVectors
+        # Work arrays corresponding to uBLASVectors
         self.u = empty(N)
         self.x = empty(N)
         self.y = empty(N)

@@ -61,8 +61,8 @@ namespace dolfin
     { matrix->zero(); }
 
     /// Finalize assembly of tensor
-    virtual void apply(FinalizeType finaltype=FINALIZE)
-    { matrix->apply(finaltype); }
+    virtual void apply()
+    { matrix->apply(); }
 
     /// Display tensor
     virtual void disp(uint precision=2) const
@@ -112,7 +112,7 @@ namespace dolfin
 
     /// Divide matrix by given number
     virtual const Matrix& operator/= (real a)
-    { *this /= a; return *this; }
+    { *matrix /= a; return *this; }
 
     /// Assignment operator
     virtual const GenericMatrix& operator= (const GenericMatrix& A)

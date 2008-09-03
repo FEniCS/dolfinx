@@ -5,13 +5,13 @@
 // Modified by Garth N. Wells 2007.
 //
 // First added:  2006-05-09
-// Last changed: 2008-07-16
+// Last changed: 2008-08-11
 
 #include <sstream>
 
 #include <dolfin/io/File.h>
 #include <dolfin/main/MPI.h>
-#include "ALE.h"
+#include <dolfin/ale/ALE.h>
 #include "UniformMeshRefinement.h"
 #include "LocalMeshRefinement.h"
 #include "LocalMeshCoarsening.h"
@@ -158,9 +158,10 @@ void Mesh::move(Mesh& boundary, ALEType method)
   ALE::move(*this, boundary, method);
 }
 //-----------------------------------------------------------------------------
-void Mesh::smooth() 
+void Mesh::smooth(uint num_smoothings)
 {
-  MeshSmoothing::smooth(*this);
+  for (uint i = 0; i < num_smoothings; i++)
+    MeshSmoothing::smooth(*this);
 }
 //-----------------------------------------------------------------------------
 void Mesh::partition(MeshFunction<uint>& partitions)

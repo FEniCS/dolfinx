@@ -1,10 +1,12 @@
 // Copyright (C) 2007 Kristian B. Oelgaard and Garth N. Wells
 // Licensed under the GNU LGPL Version 2.1.
 //
-// First added:  2007-03-08
-// Last changed: 2007-05-16
+// Modified by Anders Logg, 2008.
 //
-// This simple program illustrates the use of the PETScEigenvalueSolver
+// First added:  2007-03-08
+// Last changed: 2008-08-28
+//
+// This simple program illustrates the use of the SLEPc eigenvalue solver.
 
 #include <dolfin.h>
   
@@ -14,51 +16,30 @@ int main()
 {
   #ifdef HAS_SLEPC
 
-  // Set up two simple test matrices (2 x 2)
-  real A_array[2][2];
-  real B_array[2][2];
+  // Make sure we use the PETSc backend
+  dolfin_set("linear algebra backend", "PETSc");
 
-  A_array[0][0] = 4;  A_array[0][1] = 1;
-  A_array[1][0] = 3;  A_array[1][1] = 2;
+  // Build stiftness matrix
+  UnitSquare mesh(64, 64);
+  StiffnessMatrix A(mesh);
 
-  B_array[0][0] = 4;  B_array[0][1] = 0;
-  B_array[1][0] = 0;  B_array[1][1] = 1;
+  // Get PETSc matrix
+  PETScMatrix& AA(A.down_cast<PETScMatrix>());
+  cout << AA << endl;
 
-  unsigned int position[] = {0, 1};
+  // Compute the first n eigenvalues
+  unsigned int n = 10;
+  SLEPcEigenSolver esolver;
+  esolver.set("eigenvalue spectrum", "smallest magnitude");
+  esolver.solve(AA, n);
 
-  PETScMatrix A(2,2);
-  A.set(*A_array, 2, position, 2, position);  
-  A.apply();
-  cout << "Matrix A:" << endl;
-  A.disp();
-
-  PETScMatrix B(2,2);
-  B.set(*B_array, 2, position, 2, position);  
-  B.apply();
-  cout << "Matrix B:" << endl;
-  B.disp();
-
-  // Create eigensolver of type LAPACK
-  SLEPcEigenvalueSolver esolver(SLEPcEigenvalueSolver::lapack);
-
-  // Compute all eigenpairs of the generalised problem Ax = \lambda Bx
-  esolver.solve(A, B);
-
-  // Real and imaginary parts of an eigenvalue  
-  real err, ecc;        
-
-  // Real and imaginary parts of an eigenvectora;  
-  PETScVector rr(2), cc(2);  
-
-  // Get the first eigenpair from the solver
-  const dolfin::uint emode = 0; 
-  esolver.getEigenpair(err, ecc, rr, cc, emode);
-
-  // Display result
-  cout<< "Eigenvalue, mode: "<< emode << ", real: " << err << ", imag: " << ecc << endl;
-  cout<< "Eigenvalue vectors (real and complex parts): "<< endl;
-  rr.disp();
-  cc.disp();
+  // Display eigenvalues
+  for (unsigned int i = 0; i < n; i++)
+  {
+    real lr, lc;
+    esolver.getEigenvalue(lr, lc, i);
+    cout << "Eigenvalue " << i << ": " << lr << endl;
+  }
 
   #else
 
@@ -67,4 +48,5 @@ int main()
   #endif
 
   return 0;
+
 }

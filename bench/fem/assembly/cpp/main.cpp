@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-07-22
-// Last changed: 2008-08-05
+// Last changed: 2008-08-07
 
 #include <iostream>
 #include <dolfin.h>
@@ -41,7 +41,7 @@ int main()
   backends.push_back("PETSc");
   backends.push_back("Epetra");
   backends.push_back("MTL4");
-  backends.push_back("Assembly");
+  backends.push_back("STL");
 
   // Forms
   Array<std::string> forms;

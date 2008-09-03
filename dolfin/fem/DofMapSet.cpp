@@ -5,7 +5,7 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2007-01-17
-// Last changed: 2008-05-08
+// Last changed: 2008-08-12
 
 #include <dolfin/log/dolfin_log.h>
 #include "DofMap.h"
@@ -159,7 +159,7 @@ void DofMapSet::update(const ufc::form& form, Mesh& mesh,
 //-----------------------------------------------------------------------------
 void DofMapSet::build(UFC& ufc) const
 {
-  for (uint i=0; i<dof_map_set.size(); ++i)
+  for (uint i=0; i < dof_map_set.size(); i++)
     dof_map_set[i]->build(ufc);
 }
 //-----------------------------------------------------------------------------

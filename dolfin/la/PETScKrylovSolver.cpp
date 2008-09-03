@@ -51,7 +51,15 @@ PETScKrylovSolver::~PETScKrylovSolver()
   if ( ksp ) KSPDestroy(ksp);
 }
 //-----------------------------------------------------------------------------
-dolfin::uint PETScKrylovSolver::solve(const PETScMatrix& A, PETScVector& x, const PETScVector& b)
+dolfin::uint PETScKrylovSolver::solve(const GenericMatrix& A, GenericVector& x, 
+                                       const GenericVector& b) 
+{
+  return  solve(A.down_cast<PETScMatrix>(), x.down_cast<PETScVector>(), 
+                b.down_cast<PETScVector>());
+}
+//-----------------------------------------------------------------------------
+dolfin::uint PETScKrylovSolver::solve(const PETScMatrix& A, PETScVector& x, 
+                                      const PETScVector& b)
 {
   // Check dimensions
   uint M = A.size(0);
@@ -300,7 +308,7 @@ void PETScKrylovSolver::writeReport(int num_iterations)
   PCGetType(pc, &pc_type);
 
   // Report number of iterations and solver type
-  message("Krylov solver (%s, %s) converged in %d iterations.",
+  message("PETSc Krylov solver (%s, %s) converged in %d iterations.",
 	      ksp_type, pc_type, num_iterations);
 }
 //-----------------------------------------------------------------------------

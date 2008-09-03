@@ -94,7 +94,7 @@ int main()
   DirichletBC bcr(r, mesh, right);
 
   // Set up boundary conditions
-  Array<BoundaryCondition*> bcs;
+  Array<DirichletBC*> bcs;
   bcs.push_back(&bcl);
   bcs.push_back(&bcr);
 
@@ -104,10 +104,10 @@ int main()
   Function mu(mesh, E / (2*(1 + nu)));
   Function lambda(mesh, E*nu / ((1 + nu)*(1 - 2*nu)));
 
-  // Set up PDE
+  // Set up PDE (symmetric)
   ElasticityBilinearForm a(mu, lambda);
   ElasticityLinearForm L(f);
-  LinearPDE pde(a, L, mesh, bcs);
+  LinearPDE pde(a, L, mesh, bcs, symmetric);
 
   // Solve PDE (using direct solver)
   Function u;
@@ -122,7 +122,7 @@ int main()
   vtk_file << u;
 
   // Save solution to XML format
-  File xml_file("elasticity.xml");
+  File xml_file("displacement.xml");
   xml_file << u;
 
   return 0;

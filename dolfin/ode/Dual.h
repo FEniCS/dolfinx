@@ -44,10 +44,10 @@ namespace dolfin {
     ~Dual();
 
     /// Initial value
-    void u0(uBlasVector& u);
+    void u0(uBLASVector& u);
 
     /// Right-hand side
-    void f(const uBlasVector& phi, real t, uBlasVector& y);
+    void f(const uBLASVector& phi, real t, uBLASVector& y);
 
     /// Return real time (might be flipped backwards for dual)
     real time(real t) const;

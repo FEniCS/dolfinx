@@ -80,6 +80,8 @@ options = [
     BoolOption("enableGts", "Compile with support for GTS", "yes"),
     BoolOption("enableUmfpack", "Compile with support for UMFPACK", "yes"),
     BoolOption("enableTrilinos", "Compile with support for Trilinos", "yes"),
+    BoolOption("enableCholmod", "Compile with support for CHOLMOD", "yes"),
+    BoolOption("enableMtl4", "Compile with support for MTL4", "yes"),
     BoolOption("enablePydolfin", "Compile the python wrappers of Dolfin", "yes"),
     # some of the above may need extra options (like petscDir), should we
     # try to get that from pkg-config?
@@ -91,6 +93,8 @@ options = [
     PathOption("withScotchDir", "Specify path to SCOTCH", None),
     PathOption("withUmfpackDir", "Specify path to UMFPACK", None),
     PathOption("withTrilinosDir", "Specify path to Trilinos", None),
+    PathOption("withCholmodDir", "Specify path to CHOLMOD", None),
+    PathOption("withMtl4Dir", "Specify path to MTL4", None),
     PathOption("withBoostDir", "Specify path to Boost", None),
     #
     # a few more options originally from PyCC:
@@ -145,6 +149,9 @@ if env.GetOption("clean"):
 # Default CXX and FORTRAN flags
 env["CXXFLAGS"] = "-Wall -pipe -ansi" # -Werror"
 #env["SHFORTRANFLAGS"] = "-Wall -pipe -fPIC"
+
+# Default link flags
+env["LINKFLAGS"] = ""  # FIXME: is it safe to start with an empty string?
 
 # If Debug is enabled, add -g:
 if env["enableDebug"]:
@@ -362,6 +369,21 @@ if env["enablePydolfin"]:
     f.write('export PYTHONPATH="'  + prefix + 'lib/python'    + pyversion + '/site-packages:$PYTHONPATH"\n')
 f.close()
 
+# Create helper file for Windows as well
+f = open('dolfin.bat', 'w')
+f.write('set PATH=%s\n' % \
+        os.pathsep.join([env.subst(env['binDir']),
+                         env.subst(env['libDir']),
+                         '%PATH%']))
+f.write('set PYTHONPATH=%s\n' % \
+        os.pathsep.join([env.subst(env['pythonModuleDir']),
+                         env.subst(env['pythonExtDir']),
+                         '%PYTHONPATH%']))
+f.write('set PKG_CONFIG_PATH=%s\n' % \
+        os.pathsep.join([env.subst(env['pkgConfDir']),
+                         '%PKG_CONFIG_PATH%']))
+f.close()
+
 def help():
     # TODO: The message below should only be printed if there were no
     # errors running scons. In SCons 0.98 we can do this by checking
@@ -416,6 +438,10 @@ this if you are using Bash-like shell is to source the
 file dolfin.conf:
 
     source dolfin.conf
+
+Windows users can simply run the file dolfin.bat:
+
+    dolfin.bat
 
 This will update the values for the environment variables
 PATH, LD_LIBRARY_PATH, PKG_CONFIG_PATH and PYTHONPATH.

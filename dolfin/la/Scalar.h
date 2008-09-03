@@ -5,12 +5,12 @@
 // Modified by Ola Skavhaug, 2007.
 //
 // First added:  2007-03-15
-// Last changed: 2008-04-23
+// Last changed: 2008-08-07
 
 #ifndef __SCALAR_H
 #define __SCALAR_H
 
-#include "uBlasFactory.h"
+#include "uBLASFactory.h"
 #include "GenericTensor.h"
 
 namespace dolfin
@@ -34,6 +34,10 @@ namespace dolfin
     {}
 
     //--- Implementation of the GenericTensor interface ---
+
+    /// Initialize zero tensor with given dimensions
+    virtual void init(uint rank, const uint* dims)
+    { dolfin_assert(rank == 0); value = 0.0; }
 
     /// Initialize zero tensor using sparsity pattern
     void init(const GenericSparsityPattern& sparsity_pattern)
@@ -68,7 +72,7 @@ namespace dolfin
     { value = 0.0; }
 
     /// Finalize assembly of tensor
-    void apply(FinalizeType finaltype=FINALIZE)
+    void apply()
     {}
 
     /// Display tensor
@@ -89,7 +93,7 @@ namespace dolfin
 
     /// Return a factory for the default linear algebra backend
     inline LinearAlgebraFactory& factory() const 
-    { return dolfin::uBlasFactory<>::instance(); }
+    { return dolfin::uBLASFactory<>::instance(); }
 
     /// Get value
     real getval() const

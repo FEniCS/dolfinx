@@ -174,11 +174,8 @@ class PkgConfig(object):
 
     def includeDirs(self):
         out = self._pkgconfig("--cflags-only-I")
-        dirs = []
-        opts = out.split()
-        for o in opts:
-            dirs.append(o[2:])
-        return dirs
+        # Note that pkgconfig will not have spaces between -I and its argument
+        return [i[2:] for i in out.split()]
 
     def libDirs(self):
         out = self._pkgconfig("--libs-only-L")
@@ -189,8 +186,19 @@ class PkgConfig(object):
         return dirs
 
     def linkOpts(self):
-      link_opts = self._pkgconfig("--libs-only-other").split()
-      return link_opts
+      return self.__extract_opts("--libs-only-other")
+
+    def compileOpts(self, filter=["-D"]):
+      opts = self.__extract_opts("--cflags-only-other")
+      if not filter:
+        return opts
+      filtered = []
+      for f in filter:
+        filtered += [o for o in opts if o.startswith(f)]
+      return filtered
+
+    def __extract_opts(self, name):
+      return [o.strip() for o in self._pkgconfig(name).split()]
 
     def compiler(self):
       # If the compiler, and maybe the compilertype variable is set, read and 

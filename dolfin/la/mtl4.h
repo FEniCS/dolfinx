@@ -10,5 +10,3 @@ namespace dolfin
 }
 #endif
 #endif
-
-

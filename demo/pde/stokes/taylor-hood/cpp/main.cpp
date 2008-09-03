@@ -71,7 +71,7 @@ int main()
   DirichletBC bc2(zero, sub_domains, 2, pressure);
 
   // Collect boundary conditions
-  Array <BoundaryCondition*> bcs(&bc0, &bc1, &bc2);
+  Array<DirichletBC*> bcs(&bc0, &bc1, &bc2);
 
   // Set up PDE
   Function f(mesh, 2, 0.0);
@@ -101,3 +101,4 @@ int main()
   File pfile_pvd("pressure.pvd");
   pfile_pvd << p;
 }
+

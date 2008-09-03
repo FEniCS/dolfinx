@@ -18,6 +18,7 @@
 
 #include <dolfin/log/LogStream.h>
 #include <dolfin/common/Variable.h>
+#include "enums_la.h"
 #include "PETScObject.h"
 #include "GenericMatrix.h"
 
@@ -77,7 +78,7 @@ namespace dolfin
     virtual void zero();
 
     /// Finalize assembly of tensor
-    virtual void apply(FinalizeType final=FINALIZE);
+    virtual void apply();
 
     /// Display tensor
     virtual void disp(uint precision=2) const;
@@ -134,8 +135,7 @@ namespace dolfin
     Type type() const;
 
     /// Return norm of matrix
-    enum Norm {l1, linf, frobenius};
-    real norm(const Norm type=l1) const;
+    real norm(const dolfin::NormType) const;
 
     /// Assignment operator
     const PETScMatrix& operator= (const PETScMatrix& A);

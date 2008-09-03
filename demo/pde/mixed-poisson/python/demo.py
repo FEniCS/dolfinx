@@ -67,7 +67,7 @@ f0 << sigma
 f1 << u
 
 # Project sigma for post-processing
-sigma_proj = project(sigma, P1)
+sigma_proj = project(sigma, P1, cg)
 
 # Save solution to pvd format
 f3 = File("sigma.pvd")

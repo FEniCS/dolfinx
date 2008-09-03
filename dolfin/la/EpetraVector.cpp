@@ -10,7 +10,7 @@
 #include <dolfin/math/dolfin_math.h>
 #include <dolfin/log/dolfin_log.h>
 #include "EpetraVector.h"
-#include "uBlasVector.h"
+#include "uBLASVector.h"
 #include "PETScVector.h"
 #include "EpetraFactory.h"
 //#include <dolfin/MPI.h>
@@ -105,7 +105,7 @@ void EpetraVector::zero()
   x->PutScalar(0.0);
 }
 //-----------------------------------------------------------------------------
-void EpetraVector::apply(FinalizeType finaltype)
+void EpetraVector::apply()
 {
   if (!x) error("Vector is not initialized.");
   x->GlobalAssemble();
@@ -264,7 +264,7 @@ const EpetraVector& EpetraVector::operator/= (real a)
   return *this;
 }
 //-----------------------------------------------------------------------------
-real EpetraVector::norm(VectorNormType type) const
+real EpetraVector::norm(NormType type) const
 {
   if (!x) error("Vector is not initialized.");
   real value = 0.0;

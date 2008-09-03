@@ -287,9 +287,18 @@ def getPackageDir(package,
     return package_dir
 
 def getAtlasDir(sconsEnv=None):
+    default_dir = os.path.join(os.path.sep,"usr","lib","atlas")
     atlas_dir = getPackageDir("atlas", sconsEnv=sconsEnv,
-                              default=os.path.join(os.path.sep,"usr","lib","atlas"))
+                              default=default_dir)
     return atlas_dir
+
+def getLapackDir(sconsEnv=None):
+    return getPackageDir("lapack", sconsEnv=sconsEnv,
+                         default=getAtlasDir(sconsEnv))
+
+def getBlasDir(sconsEnv=None):
+    return getPackageDir("blas", sconsEnv=sconsEnv,
+                         default=getAtlasDir(sconsEnv))
 
 class UnableToXXXException(Exception):
   def __init__(self, msg="", errormsg=""):

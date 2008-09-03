@@ -61,14 +61,19 @@ class CahnHilliardEquation : public NonlinearProblem, public Parametrized
       return *L;
     }
 
-    // User defined assemble of Jacobian and residual vector 
-    void form(GenericMatrix& A, GenericVector& b, const GenericVector& x)
+    // User defined residual vector 
+    void F(GenericVector& b, const GenericVector& x)
+    {
+      // Assemble RHS (Neumann boundary conditions)
+      assembler.assemble(b, *L);
+    }
+
+    // User defined assemble of Jacobian 
+    void J(GenericMatrix& A, const GenericVector& x)
     {
       // Assemble system and RHS (Neumann boundary conditions)
       assembler.assemble(A, *a, reset_Jacobian);
       reset_Jacobian  = false;
-      assembler.assemble(b, *L);
-    
     }
 
   private:
@@ -89,7 +94,7 @@ int main(int argc, char* argv[])
   UnitSquare mesh(80, 80);
 
   // Time stepping and model parameters
-  real delta_t = 1.0e-5;
+  real delta_t = 5.0e-6;
   Function dt(mesh, delta_t); 
   Function theta(mesh, 0.5); 
   Function lambda(mesh, 1.0e-2); 
@@ -111,7 +116,8 @@ int main(int argc, char* argv[])
   u0.init(mesh, x0, cahn_hilliard.form(1), 1);
 
   // Create nonlinear solver and set parameters
-  NewtonSolver newton_solver;
+  //NewtonSolver newton_solver;
+  NewtonSolver newton_solver(lu);
   newton_solver.set("Newton convergence criterion", "incremental");
   newton_solver.set("Newton maximum iterations", 10);
   newton_solver.set("Newton relative tolerance", 1e-6);

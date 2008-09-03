@@ -156,6 +156,22 @@ void SparsityPattern::numNonZeroPerRow(uint process_number, uint d_nzrow[], uint
   }
 }
 //-----------------------------------------------------------------------------
+dolfin::uint SparsityPattern::numNonZeroPerRowMax() const
+{
+  if ( dim[1] == 0 )
+    error("Total non-zeros entries can be computed for matrices only.");
+
+  if ( sparsity_pattern.size() == 0 )
+    error("Sparsity pattern has not been computed.");
+
+  // Compute total number of nonzeros per row
+  uint nzrow_max = 0;
+  std::vector< std::vector<uint> >::const_iterator set;
+  for(set = sparsity_pattern.begin(); set != sparsity_pattern.end(); ++set)
+    nzrow_max = std::max(nzrow_max, (dolfin::uint)set->size());
+  return nzrow_max;
+}
+//-----------------------------------------------------------------------------
 dolfin::uint SparsityPattern::numNonZero() const
 {
   if ( dim[1] == 0 )

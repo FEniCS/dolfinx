@@ -1,11 +1,11 @@
-// Copyright (C) 2007 Garth N. Wells.
+// Copyright (C) 2007-2008 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Ola Skavhaug, 2008.
 // Modified by Anders Logg, 2008.
 //
 // First added:  2007-07-03
-// Last changed: 2008-06-13
+// Last changed: 2008-08-26
 
 #ifndef __KRYLOV_SOLVER_H
 #define __KRYLOV_SOLVER_H
@@ -14,11 +14,10 @@
 #include <dolfin/common/Timer.h>
 #include "GenericMatrix.h"
 #include "GenericVector.h"
-#include "SolverType.h"
-#include "PreconditionerType.h"
-#include "uBlasKrylovSolver.h"
-#include "uBlasSparseMatrix.h"
-#include "uBlasDenseMatrix.h"
+#include "enums_la.h"
+#include "uBLASKrylovSolver.h"
+#include "uBLASSparseMatrix.h"
+#include "uBLASDenseMatrix.h"
 #include "EpetraKrylovSolver.h"
 #include "ITLKrylovSolver.h"
 #include "MTL4Matrix.h"
@@ -40,7 +39,8 @@ namespace dolfin
   public:
     
     /// Create Krylov solver
-    KrylovSolver(SolverType solver_type=default_solver, PreconditionerType pc_type=default_pc)
+    KrylovSolver(dolfin::SolverType solver_type=default_solver,
+                 dolfin::PreconditionerType pc_type=default_pc)
       : solver_type(solver_type), pc_type(pc_type), ublas_solver(0), petsc_solver(0), 
         epetra_solver(0), itl_solver(0) {}
     
@@ -58,24 +58,24 @@ namespace dolfin
     { 
       Timer timer("Krylov solver");
 
-      if (A.has_type<uBlasSparseMatrix>())
+      if (A.has_type<uBLASSparseMatrix>())
       {
         if (!ublas_solver)
         {
-          ublas_solver = new uBlasKrylovSolver(solver_type, pc_type);
+          ublas_solver = new uBLASKrylovSolver(solver_type, pc_type);
           ublas_solver->set("parent", *this);
         }
-        return ublas_solver->solve(A.down_cast<uBlasSparseMatrix>(), x.down_cast<uBlasVector>(), b.down_cast<uBlasVector>());
+        return ublas_solver->solve(A, x, b);
       }
 
-      if (A.has_type<uBlasDenseMatrix>())
+      if (A.has_type<uBLASDenseMatrix>())
       {
         if (!ublas_solver)
         {
-          ublas_solver = new uBlasKrylovSolver(solver_type, pc_type);
+          ublas_solver = new uBLASKrylovSolver(solver_type, pc_type);
           ublas_solver->set("parent", *this);
         }
-        return ublas_solver->solve(A.down_cast<uBlasDenseMatrix>(), x.down_cast<uBlasVector>(), b.down_cast<uBlasVector>());
+        return ublas_solver->solve(A.down_cast<uBLASDenseMatrix>(), x.down_cast<uBLASVector>(), b.down_cast<uBLASVector>());
       }
 
 #ifdef HAS_PETSC
@@ -86,7 +86,7 @@ namespace dolfin
           petsc_solver = new PETScKrylovSolver(solver_type, pc_type);
           petsc_solver->set("parent", *this);
         }
-        return petsc_solver->solve(A.down_cast<PETScMatrix >(), x.down_cast<PETScVector>(), b.down_cast<PETScVector>());
+        return petsc_solver->solve(A, x, b);
       }
 #endif
 #ifdef HAS_TRILINOS
@@ -97,7 +97,7 @@ namespace dolfin
           epetra_solver = new EpetraKrylovSolver(solver_type, pc_type);
           epetra_solver->set("parent", *this);
         }
-        return epetra_solver->solve(A.down_cast<EpetraMatrix >(), x.down_cast<EpetraVector>(), b.down_cast<EpetraVector>());
+        return epetra_solver->solve(A, x, b);
       }
 #endif
 #ifdef HAS_MTL4
@@ -108,11 +108,11 @@ namespace dolfin
           itl_solver = new ITLKrylovSolver(solver_type, pc_type);
           itl_solver->set("parent", *this);
         }
-        return itl_solver->solve(A.down_cast<MTL4Matrix >(), x.down_cast<MTL4Vector>(), b.down_cast<MTL4Vector>());
+        return itl_solver->solve(A, x, b);
       }
 #endif
 
-      error("No default LU solver for given backend");
+      error("No default Krylov solver for given backend");
       return 0;
     }
     
@@ -125,7 +125,7 @@ namespace dolfin
     PreconditionerType pc_type;
     
     // uBLAS solver
-    uBlasKrylovSolver* ublas_solver;
+    uBLASKrylovSolver* ublas_solver;
 
     // PETSc solver
 #ifdef HAS_PETSC

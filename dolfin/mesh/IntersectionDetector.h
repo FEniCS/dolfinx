@@ -1,52 +1,53 @@
-// Copyright (C) 2006 Anders Logg.
+// Copyright (C) 2006-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-06-21
-// Last changed: 2008-02-18
+// Last changed: 2008-08-29
 
 #ifndef __INTERSECTION_DETECTOR_H
 #define __INTERSECTION_DETECTOR_H
 
 #include <dolfin/common/types.h>
 
-#include "GTSInterface.h"
-
 namespace dolfin
 {
+
+  // Forward declarations
   class Mesh;
   class Cell;
   class Point;
-  //class GTSInterface;
+  class GTSInterface;
   template <class T> class Array;
 
   class IntersectionDetector
   {
   public:
 
-    /// Constructor
+    /// Create intersection detector for mesh
     IntersectionDetector(Mesh& mesh);
 
     /// Destructor
     ~IntersectionDetector();
 
-    /// Compute overlap with mesh
-    void overlap(Cell& c, Array<uint>& overlap);
+    /// Compute cells overlapping point
+    void overlap(const Point& p, Array<uint>& cells);
 
-    /// Compute overlap with point
-    void overlap(Point& p, Array<uint>& overlap);
+    /// Compute cells overlapping line defined by points
+    void overlap(const Point& p1, const Point& p2, Array<uint>& cells);
 
-    /// Compute overlap with bounding box
-    void overlap(Point& p1, Point& p2, Array<uint>& overlap);
+    /// Compute cells overlapping cell
+    void overlap(Cell& cell, Array<uint>& cells);
 
-    /// Compute which cells are intersected by a polygon (defined by points)
+    /// Compute overlap with curve defined by points
     void overlap(Array<Point>& points, Array<uint>& overlap);
 
   private:
-    IntersectionDetector();
-    IntersectionDetector(const IntersectionDetector&);
 
-    GTSInterface gts;
+    // Interface to GTS
+    GTSInterface* gts;
+
   };
+
 }
 
 #endif

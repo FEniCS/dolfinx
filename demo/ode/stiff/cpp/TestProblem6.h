@@ -20,13 +20,13 @@ public:
     mu = 10.0;
   }
 
-  void u0(uBlasVector& u)
+  void u0(uBLASVector& u)
   {
     u[0] = 2.0;
     u[1] = 0.0;
   }
 
-  void f(const uBlasVector& u, real t, uBlasVector& y)
+  void f(const uBLASVector& u, real t, uBLASVector& y)
   {
     y[0] = u[1];
     y[1] = mu*(1.0 - u[0]*u[0])*u[1] - u[0];

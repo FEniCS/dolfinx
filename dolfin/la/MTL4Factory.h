@@ -1,7 +1,10 @@
 // Copyright (C) 2008 Dag Lindbo
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Anders Logg, 2008.
+//
 // First added:  2008-07-06
+// Last changed: 2008-08-11
 
 #ifdef HAS_MTL4
 
@@ -10,8 +13,8 @@
 
 #include "MTL4Matrix.h"
 #include "MTL4Vector.h"
+#include "GenericSparsityPattern.h"
 #include "LinearAlgebraFactory.h"
-#include "MTL4SparsityPattern.h"
 
 namespace dolfin
 {
@@ -19,17 +22,22 @@ namespace dolfin
   {
   public:
 
+
+
     /// Destructor
     virtual ~MTL4Factory() {}
 
     /// Create empty matrix
-    MTL4Matrix* createMatrix() const;
+    MTL4Matrix* createMatrix() const
+    { return new MTL4Matrix(); }
 
     /// Create empty vector
-    MTL4Vector* createVector() const;
+    MTL4Vector* createVector() const
+    { return new MTL4Vector(); }
 
     /// Dummy sparsity pattern
-    MTL4SparsityPattern* createPattern() const;
+    GenericSparsityPattern* createPattern() const
+    { return 0; }
 
     // Return singleton instance
     static MTL4Factory& instance()
@@ -38,10 +46,11 @@ namespace dolfin
   private:
     
     // Private constructor
-    MTL4Factory();
+    MTL4Factory() {}
 
     // Singleton instance
     static MTL4Factory factory;
+
   };
 }
 

@@ -76,7 +76,7 @@ class MyNonlinearProblem : public NonlinearProblem
     // Constructor 
     MyNonlinearProblem(Mesh& mesh, Vector& x, SubDomain& dirichlet_boundary, 
                        Function& g, Function& f, Function& u)  
-                       : NonlinearProblem(), mesh(mesh)
+                       : assembler(mesh)
     {
       // Create forms
       a = new NonlinearPoissonBilinearForm(u);
@@ -100,24 +100,32 @@ class MyNonlinearProblem : public NonlinearProblem
       delete bc;
     }
  
-    // User defined assemble of Jacobian and residual vector 
-    void form(GenericMatrix& A, GenericVector& b, const GenericVector& x)
+    // User defined assemble of residual vector 
+    void F(GenericVector& b, const GenericVector& x)
     {
-      dolfin_set("output destination", "silent");
-      Assembler assembler(mesh);
-      assembler.assemble(A, *a);
+      //dolfin_set("output destination", "silent");
       assembler.assemble(b, *L);
-      bc->apply(A, b, x, *a);
-      dolfin_set("output destination", "terminal");
+      bc->apply(b, x, *a);
+      //dolfin_set("output destination", "terminal");
+    }
+
+    // User defined assemble of Jacobian matrix 
+    void J(GenericMatrix& A, const GenericVector& x)
+    {
+      //dolfin_set("output destination", "silent");
+      assembler.assemble(A, *a);
+      bc->apply(A, *a);
+      //dolfin_set("output destination", "terminal");
     }
 
 
   private:
 
+    Assembler assembler;
+
     // Pointers to forms, mesh and boundary conditions
     Form *a;
     Form *L;
-    Mesh& mesh;
     DirichletBC* bc;
     DofMapSet dof_map_set;
 };

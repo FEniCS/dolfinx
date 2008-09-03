@@ -10,7 +10,7 @@
 #include <dolfin/common/types.h>
 #include <dolfin/la/Matrix.h>
 #include <dolfin/la/PETScMatrix.h>
-#include <dolfin/la/uBlasSparseMatrix.h>
+#include <dolfin/la/uBLASSparseMatrix.h>
 #include "MatrixFactory.h"
 
 namespace dolfin
@@ -56,14 +56,14 @@ namespace dolfin
 
   /// This class represents the standard stiffness matrix for
   /// homogeneous Neumann boundary conditions on a given mesh,
-  /// represented as a sparse DOLFIN uBlas matrix.
+  /// represented as a sparse DOLFIN uBLAS matrix.
 
-  class uBlasStiffnessMatrix : public uBlasSparseMatrix
+  class uBLASStiffnessMatrix : public uBLASSparseMatrix
   {
   public:
   
     /// Construct stiffness matrix with constant diffusivity c on a given mesh
-    uBlasStiffnessMatrix(Mesh& mesh, real c = 1.0) : uBlasSparseMatrix()
+    uBLASStiffnessMatrix(Mesh& mesh, real c = 1.0) : uBLASSparseMatrix()
     {
       MatrixFactory::computeStiffnessMatrix(*this, mesh, c);
     }

@@ -5,12 +5,13 @@
 // Modified by Martin Sandve Alnes, 2008
 //
 // First added:  2007-04-10
-// Last changed: 2008-06-30
+// Last changed: 2008-08-26
 
 #include <dolfin/common/constants.h>
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshData.h>
+#include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/Vertex.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Facet.h>
@@ -98,38 +99,67 @@ DirichletBC::~DirichletBC()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
+void DirichletBC::apply(GenericMatrix& A, const Form& form)
+{
+  apply(&A, 0, 0, form.dofMaps()[1], form.form());
+}
+//-----------------------------------------------------------------------------
+void DirichletBC::apply(GenericVector& b, const GenericVector& x, const Form& form)
+{
+  apply(0, &b, &x, form.dofMaps()[1], form.form());
+}
+//-----------------------------------------------------------------------------
 void DirichletBC::apply(GenericMatrix& A, GenericVector& b, const Form& form)
 {
-  apply(A, b, 0, form.dofMaps()[1], form.form());
+  apply(&A, &b, 0, form.dofMaps()[1], form.form());
 }
 //-----------------------------------------------------------------------------
 void DirichletBC::apply(GenericMatrix& A, GenericVector& b, const DofMap& dof_map,
                         const ufc::form& form)
 {
-  apply(A, b, 0, dof_map, form);
+  apply(&A, &b, 0, dof_map, form);
 }
 //-----------------------------------------------------------------------------
 void DirichletBC::apply(GenericMatrix& A, GenericVector& b,
                         const GenericVector& x, const Form& form)
 {
-  apply(A, b, &x, form.dofMaps()[1], form.form());
+  apply(&A, &b, &x, form.dofMaps()[1], form.form());
 }
 //-----------------------------------------------------------------------------
-void DirichletBC::apply(GenericMatrix& A, GenericVector& b,
-                        const GenericVector& x, const DofMap& dof_map, const ufc::form& form)
+void DirichletBC::apply(GenericMatrix& A, const DofMap& dof_map, 
+                        const ufc::form& form)
 {
-  apply(A, b, &x, dof_map, form);
+  apply(&A, 0, 0, dof_map, form);
+}
+//-----------------------------------------------------------------------------
+void DirichletBC::apply(GenericVector& b, const GenericVector& x, 
+                        const DofMap& dof_map, const ufc::form& form)
+{
+  apply(0, &b, &x, dof_map, form);
 }
 //-----------------------------------------------------------------------------
 void DirichletBC::apply(GenericMatrix& A, GenericVector& b,
+                        const GenericVector& x, const DofMap& dof_map, 
+                        const ufc::form& form)
+{
+  apply(&A, &b, &x, dof_map, form);
+}
+//-----------------------------------------------------------------------------
+void DirichletBC::apply(GenericMatrix* A, GenericVector* b,
                         const GenericVector* x, const DofMap& dof_map, const ufc::form& form)
 {
   // Simple check
   const uint N = dof_map.global_dimension();
-  if (N != A.size(0) /*  || N != A.size(1) alow for rectangular matrices */)
-    error("Incorrect dimension of matrix for application of boundary conditions. Did you assemble it on a different mesh?");
-  if (N != b.size())
-    error("Incorrect dimension of matrix for application of boundary conditions. Did you assemble it on a different mesh?");
+  if(A)
+  {
+    if (N != A->size(0) /*  || N != A.size(1) alow for rectangular matrices */)
+      error("Incorrect dimension of matrix for application of boundary conditions. Did you assemble it on a different mesh?");
+  }
+  if(b)
+  {
+    if (N != b->size())
+      error("Incorrect dimension of matrix for application of boundary conditions. Did you assemble it on a different mesh?");
+  }
 
   // A map to hold the mapping from boundary dofs to boundary values
   std::map<uint, real> boundary_values;
@@ -141,7 +171,7 @@ void DirichletBC::apply(GenericMatrix& A, GenericVector& b,
   computeBC(boundary_values, data);
 
   // Copy boundary value data to arrays
-  uint* dofs = new uint[boundary_values.size()];
+  uint* dofs   = new uint[boundary_values.size()];
   real* values = new real[boundary_values.size()];
   std::map<uint, real>::const_iterator boundary_value;
   uint i = 0;
@@ -163,21 +193,23 @@ void DirichletBC::apply(GenericMatrix& A, GenericVector& b,
   
   message("Applying boundary conditions to linear system.");
   
-  // Modify RHS vector (b[i] = value)
-  b.set(values, boundary_values.size(), dofs);
+  // Modify RHS vector (b[i] = value) and apply changes
+  if (b)
+  {
+    b->set(values, boundary_values.size(), dofs);
+    b->apply();
+  }
   
-  // Modify linear system (A_ii = 1)
-  A.ident(boundary_values.size(), dofs);
+  // Modify linear system (A_ii = 1) and apply changes
+  if (A)
+  {
+    A->ident(boundary_values.size(), dofs);
+    A->apply();
+  }
   
   // Clear temporary arrays
   delete [] dofs;
   delete [] values;
-  
-  // Finalise changes to A
-  A.apply();
-  
-  // Finalise changes to b
-  b.apply();
 }
 //-----------------------------------------------------------------------------
 void DirichletBC::zero(GenericMatrix& A, const Form& form)
@@ -557,7 +589,8 @@ void DirichletBC::setSubSystem(SubSystem sub_system)
   this->sub_system = sub_system;
 }
 //-----------------------------------------------------------------------------
-void DirichletBC::getBC(uint n, uint* indicators, double* values, const DofMap& dof_map, const ufc::form& form)
+void DirichletBC::getBC(uint n, uint* indicators, real* values, 
+                        const DofMap& dof_map, const ufc::form& form)
 {
   // A map to hold the mapping from boundary dofs to boundary values
   std::map<uint, real> boundary_values;
@@ -568,17 +601,16 @@ void DirichletBC::getBC(uint n, uint* indicators, double* values, const DofMap& 
   // Compute dofs and values
   computeBC(boundary_values, data);
 
-  if ( n != dof_map.global_dimension()) {
+  if ( n != dof_map.global_dimension() )
     error("The n should be the same as dof_map.global_dimension()");  
-  }
 
   std::map<uint, real>::const_iterator boundary_value;
   uint i = 0;
   for (boundary_value = boundary_values.begin(); boundary_value != boundary_values.end(); ++boundary_value)
   {
     i = boundary_value->first; 
-    indicators[i]     = 1;  
-    values[i] = boundary_value->second;
+    indicators[i] = 1;  
+    values[i]     = boundary_value->second;
   }
 }
 //-----------------------------------------------------------------------------

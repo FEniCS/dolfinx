@@ -7,7 +7,7 @@
 // Modified by Garth N. Wells, 2005-2007.
 //
 // First added:  2005-12-02
-// Last changed: 2008-05-08
+// Last changed: 2008-08-25
 
 #ifndef __PETSC_KRYLOV_SOLVER_H
 #define __PETSC_KRYLOV_SOLVER_H
@@ -15,15 +15,16 @@
 #ifdef HAS_PETSC
 
 #include <dolfin/common/types.h>
-#include <dolfin/parameter/Parametrized.h>
-#include "SolverType.h"
-#include "PreconditionerType.h"
+#include "GenericLinearSolver.h"
+#include "enums_la.h"
 #include "PETScPreconditioner.h"
 
 namespace dolfin
 {
 
   /// Forward declarations
+  class GenericMatrix;
+  class GenericVector;
   class PETScMatrix;
   class PETScVector;
   class PETScKrylovMatrix;
@@ -32,18 +33,22 @@ namespace dolfin
   /// of the form Ax = b. It is a wrapper for the Krylov solvers
   /// of PETSc.
   
-  class PETScKrylovSolver : public Parametrized
+  class PETScKrylovSolver : public GenericLinearSolver
   {
   public:
 
     /// Create Krylov solver for a particular method and preconditioner
-    PETScKrylovSolver(SolverType method=default_solver, PreconditionerType pc=default_pc);
+    PETScKrylovSolver(dolfin::SolverType method=default_solver,
+                      dolfin::PreconditionerType pc=default_pc);
 
     /// Create Krylov solver for a particular method and PETScPreconditioner
-    PETScKrylovSolver(SolverType method, PETScPreconditioner& PETScPreconditioner);
+    PETScKrylovSolver(dolfin::SolverType method, PETScPreconditioner& PETScPreconditioner);
 
     /// Destructor
     ~PETScKrylovSolver();
+
+    /// Solve linear system Ax = b and return number of iterations
+    uint solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b);
 
     /// Solve linear system Ax = b and return number of iterations
     uint solve(const PETScMatrix& A, PETScVector& x, const PETScVector& b);
@@ -72,7 +77,7 @@ namespace dolfin
     void writeReport(int num_iterations);
 
     /// Get PETSc method identifier 
-    KSPType getType(SolverType method) const;
+    KSPType getType(dolfin::SolverType method) const;
 
     /// Krylov method
     SolverType method;

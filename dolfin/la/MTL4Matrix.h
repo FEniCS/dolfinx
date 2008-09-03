@@ -11,11 +11,11 @@
 #ifndef __MTL4_MATRIX_H
 #define __MTL4_MATRIX_H
 
-#include <dolfin/log/LogStream.h>
 #include <boost/tuple/tuple.hpp>
 #include <dolfin/common/Variable.h>
-#include "mtl4.h"
+#include <dolfin/log/LogStream.h>
 #include "GenericMatrix.h"
+#include "mtl4.h"
 
 /*
   Developers note:
@@ -62,7 +62,7 @@ namespace dolfin
     virtual void zero();
 
     /// Finalize assembly of tensor
-    virtual void apply(FinalizeType final=FINALIZE);
+    virtual void apply();
 
     /// Display tensor
     virtual void disp(uint precision=2) const;
@@ -103,11 +103,7 @@ namespace dolfin
     virtual const MTL4Matrix& operator/= (real a);
 
     /// Assignment operator
-    virtual const GenericMatrix& operator= (const GenericMatrix& x)
-    { 
-      error("Not implemented."); 
-      return *this; 
-    }
+    virtual const MTL4Matrix& operator= (const GenericMatrix& x);
 
     /// Return pointers to underlying compresssed storage data
     virtual boost::tuple<const std::size_t*, const std::size_t*, const double*, int> data() const;
@@ -127,13 +123,12 @@ namespace dolfin
     mtl4_sparse_matrix& mat();
 
     /// Assignment operator
-    const MTL4Matrix& operator= (const MTL4Matrix& x)
-    { 
-      error("Not implemented."); 
-      return *this; 
-    }
+    //const MTL4Matrix& operator= (const MTL4Matrix& x);
 
   private:
+
+    void init_inserter(void);
+    void assert_no_inserter(void) const;
 
     // MTL4 matrix object
     mtl4_sparse_matrix A;
