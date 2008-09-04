@@ -42,6 +42,7 @@ BlockMatrix::~BlockMatrix()
   delete [] matrices;  
 }
 //-----------------------------------------------------------------------------
+/*
 const Matrix& BlockMatrix::mat(uint i, uint j) const 
 {
   if (i >= n || j >= m) {  
@@ -49,12 +50,26 @@ const Matrix& BlockMatrix::mat(uint i, uint j) const
   }
   return *(matrices[i*n+j]);
 }
+*/
 //-----------------------------------------------------------------------------
-void BlockMatrix::set(uint i, uint j, Matrix& m){
+void BlockMatrix::set(uint i, uint j, Matrix& m)
+{
 //  matrices[i*n+j] = m.copy(); //FIXME. not obvious that copy is the right thing
-  matrices[i*n+j] = &m; //FIXME. not obvious that copy is the right thing
+  matrices[i*n+j] = &m;         //FIXME. not obvious that copy is the right thing
 }
 //-----------------------------------------------------------------------------
+const Matrix& BlockMatrix::getc(uint i, uint j) const
+{
+  return *(matrices[i*n+j]); 
+}
+//-----------------------------------------------------------------------------
+Matrix& BlockMatrix::get(uint i, uint j)
+{
+  return *(matrices[i*n+j]); 
+}
+
+//-----------------------------------------------------------------------------
+/*
 Matrix& BlockMatrix::mat(uint i, uint j) 
 {
   // FIXME this function does not work because operator= is not implemented in the
@@ -64,6 +79,7 @@ Matrix& BlockMatrix::mat(uint i, uint j)
   }
   return *(matrices[i*n+j]);
 }
+*/
 //-----------------------------------------------------------------------------
 dolfin::uint BlockMatrix::size(uint dim) const {
   if (dim==0) return n; 
@@ -77,7 +93,7 @@ void BlockMatrix::zero()
   {
     for(uint j=0; j<n; j++) 
     {
-      this->mat(i,j).zero(); 
+      this->get(i,j).zero(); 
     }
   }
 }
@@ -88,7 +104,7 @@ void BlockMatrix::apply()
   {
     for(uint j=0; j<n; j++) 
     {
-      this->mat(i,j).apply(); 
+      this->get(i,j).apply(); 
     }
   }
 }
@@ -100,7 +116,7 @@ void BlockMatrix::disp(uint precision) const
     for(uint j=0; j<n; j++) 
     {
       std::cout <<"BlockMatrix("<<i<<","<<j<<"):"<<std::endl;  
-      this->mat(i,j).disp(precision); 
+      this->getc(i,j).disp(precision); 
     }
   }
 }
@@ -113,17 +129,51 @@ void BlockMatrix::mult(const BlockVector& x, BlockVector& y, bool transposed) co
   vec = factory.createVector();
   for(uint i=0; i<n; i++) 
   {
-    y.vec(i).init(this->mat(i,0).size(0));
+    y.vec(i).init(this->getc(i,0).size(0));
     vec->init(y.vec(i).size()); 
     for(uint j=0; j<n; j++) 
     {
-      this->mat(i,j).mult(x.vec(j), *vec);   
+      this->getc(i,j).mult(x.vec(j), *vec);   
       y.vec(i) += *vec; 
     }
   }
 }
 //-----------------------------------------------------------------------------
+SubMatrix BlockMatrix::operator()(uint i, uint j)
+{
+  SubMatrix sm(i,j,*this); 
+  return sm; 
+}
+//-----------------------------------------------------------------------------
 //FIXME there are numerous functions that should be added  
+
+//-----------------------------------------------------------------------------
+// SubMatrix
+//-----------------------------------------------------------------------------
+SubMatrix::SubMatrix(uint col_, uint row_, BlockMatrix& bm_) 
+  : row(row_), col(col_), bm(bm_)
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+SubMatrix::~SubMatrix()
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+const SubMatrix& SubMatrix::operator=(Matrix& m) 
+{
+  bm.set(row, col, m);  
+  return *this; 
+}
+/*
+//-----------------------------------------------------------------------------
+Matrix& SubMatrix::operator()
+{
+  return bm.get(row, col); 
+}
+*/
+//-----------------------------------------------------------------------------
 
 
 

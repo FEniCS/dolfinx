@@ -12,6 +12,7 @@
 
 namespace dolfin
 {
+  class SubVector; 
 
   class BlockVector 
   {
@@ -33,13 +34,20 @@ namespace dolfin
 
       /* FIXME these functions should probably be inline
        * and all the LA function should rely on these */
-      /// Return Vector reference number i (const version)
+      /// Return Vector reference number i (const version).
       const Vector& vec(uint i) const; 
 
       /// Return Vector reference number i
       Vector& vec(uint i); 
 
+      SubVector operator() (uint i); 
+
+      // Set function 
       void set(uint i, Vector& v);
+
+      // Get functions (const and non-const) 
+      const Vector& getc(uint i) const; 
+            Vector& get(uint); 
 
       /// Add multiple of given vector (AXPY operation)
       void axpy(real a, const BlockVector& x);
@@ -80,6 +88,20 @@ namespace dolfin
       /// Display vectors 
       virtual void disp(uint precision=2) const;
   }; 
+
+  class SubVector
+  {
+  public:
+    SubVector(uint n, BlockVector& bv);
+    ~SubVector(); 
+
+    const SubVector& operator= (Vector& v); 
+
+  private: 
+    uint n; 
+    BlockVector& bv; 
+  }; 
+
 }
 
 #endif 
