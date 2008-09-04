@@ -6,14 +6,17 @@ using namespace dolfin;
 
 int main() 
 {
-  Matrix A(12,12); 
+  UnitSquare mesh(12,12); 
+  StiffnessMatrix A(mesh); 
 
   BlockMatrix AA(2,2); 
   AA(0,0) = A; 
   AA(1,0) = A; 
   AA(0,1) = A; 
+  AA(1,1) = A; 
 
   Vector x(A.size(0)); 
+  x.zero(); 
   BlockVector xx(2); 
   xx(0) = x; 
   xx(1) = x; 
