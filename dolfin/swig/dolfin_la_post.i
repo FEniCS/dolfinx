@@ -239,13 +239,6 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
   %}
 }
 
-%extend dolfin::BlockMatrix {
-    Matrix& get(int i, int j)
-    { 
-      return self->mat(i,j);
-    }
-}
-
 
 
 %extend dolfin::BlockMatrix {

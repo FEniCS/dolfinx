@@ -64,6 +64,12 @@ Vector& BlockVector::vec(uint i)
   return *(vectors[i]); 
 }
 //-----------------------------------------------------------------------------
+SubVector BlockVector::operator()(uint i)
+{
+  SubVector sv(i,*this);  
+  return sv; 
+}
+//-----------------------------------------------------------------------------
 dolfin::uint BlockVector::size() const 
 {  
   return n; 
@@ -190,10 +196,30 @@ void BlockVector::set(uint i, Vector& v)
   vectors[i] = &v; //FIXME. not obvious that copy is the right thing
 }
 //-----------------------------------------------------------------------------
-
-
-
-
-
-
-
+//-----------------------------------------------------------------------------
+// SubVector
+//-----------------------------------------------------------------------------
+SubVector::SubVector(uint n_, BlockVector& bv_) 
+  : n(n_),bv(bv_)
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+SubVector::~SubVector()
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+const SubVector& SubVector::operator=(Vector& v) 
+{
+  bv.set(n, v);  
+  return *this; 
+}
+/*
+//-----------------------------------------------------------------------------
+Vector& SubVector::operator()
+{
+  return bm.get(row, col); 
+}
+*/
+//-----------------------------------------------------------------------------
