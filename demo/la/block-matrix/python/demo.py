@@ -7,7 +7,7 @@ element = FiniteElement("Lagrange", "triangle", 1)
 v = TestFunction(element)
 u = TrialFunction(element)
 a = dot(grad(v), grad(u))*dx
-A = assemble(mesh, a)
+A = assemble(a, mesh)
 
 AA = BlockMatrix(2,2)
 AA[0,0] = A
