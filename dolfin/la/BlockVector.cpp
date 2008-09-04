@@ -196,6 +196,15 @@ void BlockVector::set(uint i, Vector& v)
   vectors[i] = &v; //FIXME. not obvious that copy is the right thing
 }
 //-----------------------------------------------------------------------------
+const Vector& BlockVector::getc(uint i) const
+{
+  return *(vectors[i]); 
+}
+//-----------------------------------------------------------------------------
+Vector& BlockVector::get(uint i) 
+{
+  return *(vectors[i]); 
+}
 //-----------------------------------------------------------------------------
 // SubVector
 //-----------------------------------------------------------------------------
