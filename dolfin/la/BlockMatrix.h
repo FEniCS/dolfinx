@@ -27,7 +27,7 @@ namespace dolfin
     public:
 
       // Constructor
-      BlockMatrix(uint n=0, uint m=0, bool owner=true); 
+      BlockMatrix(uint n=0, uint m=0, bool owner=false); 
 
       // Destructor
       ~BlockMatrix(); 

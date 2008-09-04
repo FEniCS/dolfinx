@@ -15,15 +15,15 @@ using namespace dolfin;
 BlockMatrix::BlockMatrix(uint n_, uint m_, bool owner_): owner(owner_), n(n_), m(m_)
 {
   matrices = new Matrix*[n*m]; 
-//  if (owner) //FIXME what to do if not owner (nothing ? Can then not use operator= later on)  
-//  {
+  if (owner) 
+  {
     for (uint i=0; i<n; i++) 
     {
       for (uint j=0; j<m; j++) 
       {
         matrices[i*n + j] = new Matrix(); 
       }
-//    }
+    }
   }
 } 
 //-----------------------------------------------------------------------------
@@ -129,12 +129,12 @@ void BlockMatrix::mult(const BlockVector& x, BlockVector& y, bool transposed) co
   vec = factory.createVector();
   for(uint i=0; i<n; i++) 
   {
-    y.vec(i).init(this->getc(i,0).size(0));
-    vec->init(y.vec(i).size()); 
+    y.get(i).init(this->getc(i,0).size(0));
+    vec->init(y.getc(i).size()); 
     for(uint j=0; j<n; j++) 
     {
-      this->getc(i,j).mult(x.vec(j), *vec);   
-      y.vec(i) += *vec; 
+      this->getc(i,j).mult(x.getc(j), *vec);   
+      y.get(i) += *vec; 
     }
   }
 }

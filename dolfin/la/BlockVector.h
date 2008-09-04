@@ -24,7 +24,7 @@ namespace dolfin
     public:
 
       /// Constructor  
-      BlockVector(uint n_=0, bool owner=true);  
+      BlockVector(uint n_=0, bool owner=false);  
 
       /// Destructor
       virtual ~BlockVector(); 
@@ -32,13 +32,15 @@ namespace dolfin
       /// Return copy of tensor
       virtual BlockVector* copy() const;
 
-      /* FIXME these functions should probably be inline
-       * and all the LA function should rely on these */
+      /*
+      / *  FIXME these functions should probably be inline
+       * and all the LA function should rely on these * /
       /// Return Vector reference number i (const version).
       const Vector& vec(uint i) const; 
 
       /// Return Vector reference number i
       Vector& vec(uint i); 
+      */
 
       SubVector operator() (uint i); 
 

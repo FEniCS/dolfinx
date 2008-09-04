@@ -208,11 +208,11 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
 %extend dolfin::BlockVector {
     Vector& getitem(int i) 
     { 
-      return self->vec(i);
+      return self->get(i);
     }
     void setitem(int i, Vector& v)
     {
-      self->vec(i) = v; 
+      self->set(i,v); 
     }
 }
 
