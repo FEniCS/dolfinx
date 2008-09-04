@@ -39,34 +39,6 @@ BlockVector* BlockVector::copy() const
     x->set(i,*(this->getc(i).copy())); 
   return x; 
 }
-/*
-//-----------------------------------------------------------------------------
-const Vector& BlockVector::vec(uint i) const 
-{  
-  / *
-  if (i < 0 || i >= n) {  
-    throw(std::out_of_range("The index is out of range!"));
-  }
-  std::map<int, Vector*>::iterator iter = vectors.find(i);
-  if (iter != vectors.end())  
-  {
-    return *(iter->second);  
-  }
-  * /
-  if (i >= n)  
-    error("The index is out of range!");
-  return *(vectors[i]); 
-}
-*/
-//-----------------------------------------------------------------------------
-/*
-Vector& BlockVector::vec(uint i) 
-{  
-  if (i < 0 || i >= n)
-    error("The index is out of range!");
-  return *(vectors[i]); 
-}
-*/
 //-----------------------------------------------------------------------------
 SubVector BlockVector::operator()(uint i)
 {
@@ -134,7 +106,7 @@ real BlockVector::min() const
 //-----------------------------------------------------------------------------
 real BlockVector::max() const
 {
-  double value = 0.0; //FIXME use MINFLOAT or something  
+  double value = -1.0; //FIXME use MINFLOAT or something  
   double tmp = 0.0;
   for (uint i=0; i<n; i++)  
   {

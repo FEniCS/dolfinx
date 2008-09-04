@@ -42,16 +42,6 @@ BlockMatrix::~BlockMatrix()
   delete [] matrices;  
 }
 //-----------------------------------------------------------------------------
-/*
-const Matrix& BlockMatrix::mat(uint i, uint j) const 
-{
-  if (i >= n || j >= m) {  
-    error("The index is out of range!");
-  }
-  return *(matrices[i*n+j]);
-}
-*/
-//-----------------------------------------------------------------------------
 void BlockMatrix::set(uint i, uint j, Matrix& m)
 {
 //  matrices[i*n+j] = m.copy(); //FIXME. not obvious that copy is the right thing
@@ -67,19 +57,6 @@ Matrix& BlockMatrix::get(uint i, uint j)
 {
   return *(matrices[i*n+j]); 
 }
-
-//-----------------------------------------------------------------------------
-/*
-Matrix& BlockMatrix::mat(uint i, uint j) 
-{
-  // FIXME this function does not work because operator= is not implemented in the
-  // various Matrix classes, should it be ? 
-  if (i >= n || j >= m) {  
-    error("The index is out of range!");
-  }
-  return *(matrices[i*n+j]);
-}
-*/
 //-----------------------------------------------------------------------------
 dolfin::uint BlockMatrix::size(uint dim) const {
   if (dim==0) return n; 

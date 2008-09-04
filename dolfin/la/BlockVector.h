@@ -3,7 +3,6 @@
 //
 // First added:  2008-08-25
 
-
 #ifndef __BLOCKVECTOR_H
 #define __BLOCKVECTOR_H
 
@@ -31,16 +30,6 @@ namespace dolfin
 
       /// Return copy of tensor
       virtual BlockVector* copy() const;
-
-      /*
-      / *  FIXME these functions should probably be inline
-       * and all the LA function should rely on these * /
-      /// Return Vector reference number i (const version).
-      const Vector& vec(uint i) const; 
-
-      /// Return Vector reference number i
-      Vector& vec(uint i); 
-      */
 
       SubVector operator() (uint i); 
 
