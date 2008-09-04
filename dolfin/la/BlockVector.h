@@ -3,7 +3,6 @@
 //
 // First added:  2008-08-25
 
-
 #ifndef __BLOCKVECTOR_H
 #define __BLOCKVECTOR_H
 
@@ -12,6 +11,7 @@
 
 namespace dolfin
 {
+  class SubVector; 
 
   class BlockVector 
   {
@@ -23,7 +23,7 @@ namespace dolfin
     public:
 
       /// Constructor  
-      BlockVector(uint n_=0, bool owner=true);  
+      BlockVector(uint n_=0, bool owner=false);  
 
       /// Destructor
       virtual ~BlockVector(); 
@@ -31,15 +31,14 @@ namespace dolfin
       /// Return copy of tensor
       virtual BlockVector* copy() const;
 
-      /* FIXME these functions should probably be inline
-       * and all the LA function should rely on these */
-      /// Return Vector reference number i (const version)
-      const Vector& vec(uint i) const; 
+      SubVector operator() (uint i); 
 
-      /// Return Vector reference number i
-      Vector& vec(uint i); 
-
+      // Set function 
       void set(uint i, Vector& v);
+
+      // Get functions (const and non-const) 
+      const Vector& getc(uint i) const; 
+            Vector& get(uint); 
 
       /// Add multiple of given vector (AXPY operation)
       void axpy(real a, const BlockVector& x);
@@ -80,6 +79,20 @@ namespace dolfin
       /// Display vectors 
       virtual void disp(uint precision=2) const;
   }; 
+
+  class SubVector
+  {
+  public:
+    SubVector(uint n, BlockVector& bv);
+    ~SubVector(); 
+
+    const SubVector& operator= (Vector& v); 
+
+  private: 
+    uint n; 
+    BlockVector& bv; 
+  }; 
+
 }
 
 #endif 
