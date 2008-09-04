@@ -80,7 +80,10 @@ dolfin::uint EpetraKrylovSolver::solve(const EpetraMatrix& A, EpetraVector& x,
   else if ( pc_type == sor) 
     linear_solver.SetAztecOption( AZ_precond, AZ_sym_GS);
   else if ( pc_type == ilu) 
-    linear_solver.SetAztecOption( AZ_precond, AZ_ilu);
+  {
+    linear_solver.SetAztecOption( AZ_precond, AZ_dom_decomp);
+    linear_solver.SetAztecOption( AZ_subdomain_solve, AZ_ilu); 
+  }
   else if ( pc_type == icc) 
     linear_solver.SetAztecOption( AZ_precond, AZ_icc);
   else if ( pc_type == amg) 
