@@ -202,15 +202,15 @@ void CholmodCholeskySolver::Cholmod::factorizedSolve(double*x, const double* b)
   b_chol->xtype = A_chol->xtype;
   b_chol->dtype = A_chol->dtype;
   
-  // solve
+  // Solve
   x_chol = cholmod_l_solve(CHOLMOD_A, L_chol, b_chol, &c);
 
-  // compute residual and residual norm
+  // Compute residual and residual norm
   cholmod_dense* r_chol = residual(x_chol,b_chol);
   double residn = residual_norm(r_chol, x_chol, b_chol);
   
-  // iterative refinement
-  if(residn > 1e-14)
+  // Iterative refinement
+  if(residn > 1.0e-14)
   {
     refine_once(x_chol, r_chol);
 
@@ -220,15 +220,15 @@ void CholmodCholeskySolver::Cholmod::factorizedSolve(double*x, const double* b)
     residn = residual_norm(r_chol, x_chol,b_chol);
   }
 
-  // solution vector
+  // Solution vector
   // FIXME: Cholmod allocates its own solution vector.
   memcpy(x, x_chol->x, N*sizeof(double));
   cholmod_l_free_dense(&x_chol, &c);
 
-  // clear rhs
+  // Clear rhs
   cholmod_l_free(1, sizeof(cholmod_dense), b_chol, &c);
 
-  // clear residual
+  // Clear residual
   cholmod_l_free_dense(&r_chol, &c);
 
   checkStatus("factorizedSolve()");
@@ -257,10 +257,7 @@ double CholmodCholeskySolver::Cholmod::residual_norm(cholmod_dense* r,
   double A_norm = cholmod_l_norm_sparse(A_chol, 0, &c);
   double Axb_norm = A_norm*x_norm+b_norm;
 
-  double residn = r_norm/Axb_norm;
-
-  // printf("CHOLMOD: Residual norm: %8.8e\n", residn);
-  return residn;
+  return r_norm/Axb_norm;
 }
 //-----------------------------------------------------------------------------
 void CholmodCholeskySolver::Cholmod::refine_once(cholmod_dense* x, 
@@ -272,10 +269,8 @@ void CholmodCholeskySolver::Cholmod::refine_once(cholmod_dense* x,
   double* xx = (double*) x->x;
   double* rx = (double*) r_iter->x;
 
-  for(uint i=0; i<N; i++)
-  {
+  for(uint i = 0; i < N; i++)
     xx[i] = xx[i] + rx[i];
-  }
 
   cholmod_l_free_dense(&r_iter, &c);
 }
@@ -287,14 +282,14 @@ void CholmodCholeskySolver::Cholmod::checkStatus(std::string function)
   if( status < 0)
   {
     cout << "\nCHOLMOD Warning: problem related to call to " << function
-	 << ".\nFull CHOLMOD common dump:" << endl;
+	    << ".\nFull CHOLMOD common dump:" << endl;
 
     cholmod_l_print_common(NULL, &c);
   }
   else if(status > 0)
   {
     cout << "\nCHOLMOD Fatal error: problem related to call to " << function
-	 << ".\nFull CHOLMOD common dump:" << endl;
+	    << ".\nFull CHOLMOD common dump:" << endl;
     cholmod_l_print_common(NULL, &c);
   }
 }
