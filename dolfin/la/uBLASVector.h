@@ -7,7 +7,7 @@
 // Modified by Martin Alnæs, 2008.
 //
 // First added:  2006-03-04
-// Last changed: 2008-08-25
+// Last changed: 2008-09-07
 
 #ifndef __UBLAS_VECTOR_H
 #define __UBLAS_VECTOR_H
@@ -47,7 +47,7 @@ namespace dolfin
 
     /// Create vector from given uBLAS vector expression
     template <class E>
-    explicit uBLASVector(const ublas::vector_expression<E>& x) : x(&x) {}
+    explicit uBLASVector(const ublas::vector_expression<E>& x) : x(new ublas_vector(x)) {}
 
     /// Destructor
     virtual ~uBLASVector();

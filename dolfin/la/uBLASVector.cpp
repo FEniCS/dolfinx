@@ -6,7 +6,7 @@
 // Modified by Martin Sandve Alnes 2008.
 //
 // First added:  2006-04-04
-// Last changed: 2008-04-29
+// Last changed: 2008-09-07
 
 #include <iostream>
 #include <sstream>
