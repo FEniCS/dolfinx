@@ -273,10 +273,10 @@ const MTL4Matrix& MTL4Matrix::operator= (const GenericMatrix& x)
   return *this;
 }
 //-----------------------------------------------------------------------------
-boost::tuple<const std::size_t*, const std::size_t*, const double*, int> MTL4Matrix::data() const
+std::tr1::tuple<const std::size_t*, const std::size_t*, const double*, int> MTL4Matrix::data() const
 {
   assert_no_inserter();
-  typedef boost::tuple<const std::size_t*, const std::size_t*, const double*, int> tuple;
+  typedef std::tr1::tuple<const std::size_t*, const std::size_t*, const double*, int> tuple;
   return tuple(A.address_major(), A.address_minor(), A.address_data(), A.nnz());
 }
 //-----------------------------------------------------------------------------

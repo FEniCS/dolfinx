@@ -11,6 +11,7 @@
 #ifndef __MATRIX_H
 #define __MATRIX_H
 
+#include <tr1/tuple>
 #include <dolfin/common/Variable.h>
 #include "DefaultFactory.h"
 #include "GenericMatrix.h"
@@ -118,8 +119,9 @@ namespace dolfin
     virtual const GenericMatrix& operator= (const GenericMatrix& A)
     { *matrix = A; return *this; }
 
-    /// Return pointers to underlying compressed storage data
-    virtual boost::tuple<const std::size_t*, const std::size_t*, const double*, int> data() const
+    /// Return pointers to underlying compressed storage data. 
+    /// See GenericMatrix for documentation.
+    virtual std::tr1::tuple<const std::size_t*, const std::size_t*, const double*, int> data() const
     { return matrix->data(); }
 
     //--- Special functions ---

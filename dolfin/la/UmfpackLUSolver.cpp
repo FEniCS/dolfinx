@@ -54,16 +54,16 @@ dolfin::uint UmfpackLUSolver::solve(const GenericMatrix& A, GenericVector& x,
 dolfin::uint UmfpackLUSolver::factorize(const GenericMatrix& A)
 {
   // Check dimensions and get number of non-zeroes
-  boost::tuple<const std::size_t*, const std::size_t*, const double*, int> data = A.data();
+  std::tr1::tuple<const std::size_t*, const std::size_t*, const double*, int> data = A.data();
   const uint M   = A.size(0);
-  const uint nnz = data.get<3>();
+  const uint nnz = std::tr1::get<3>(data);
   dolfin_assert(A.size(0) == A.size(1));
 
   dolfin_assert(nnz >= M); 
 
   // Initialise umfpack data
-  umfpack.init((const long int*) data.get<0>(), (const long int*) data.get<1>(), 
-                data.get<2>(), M, nnz);
+  umfpack.init((const long int*) std::tr1::get<0>(data), 
+    (const long int*) std::tr1::get<1>(data), std::tr1::get<2>(data), M, nnz);
 
   // Factorize
   message("LU-factorizing linear system of size %d x %d (UMFPACK).", M, M);

@@ -15,7 +15,7 @@
 
 #include <sstream>
 #include <iomanip>
-#include <boost/tuple/tuple.hpp>
+#include <tr1/tuple>
 
 #include <dolfin/log/LogStream.h>
 #include <dolfin/common/Variable.h>
@@ -128,7 +128,8 @@ namespace dolfin
     virtual const GenericMatrix& operator= (const GenericMatrix& A);
 
     /// Return pointers to underlying compresssed storage data
-    virtual boost::tuple<const std::size_t*, const std::size_t*, const double*, int> data() const;
+    /// See GenericMatrix for documentation.
+    virtual std::tr1::tuple<const std::size_t*, const std::size_t*, const double*, int> data() const;
 
     //--- Special functions ---
 
@@ -471,22 +472,22 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <>
-  inline boost::tuple<const std::size_t*, const std::size_t*, const double*, int> 
-                                  uBLASMatrix<ublas_sparse_matrix>::data() const
+  inline std::tr1::tuple<const std::size_t*, const std::size_t*, 
+             const double*, int> uBLASMatrix<ublas_sparse_matrix>::data() const
   { 
     // Make sure matrix assembly is complete
     const_cast< ublas_sparse_matrix& >(A).complete_index1_data(); 
 
-    typedef boost::tuple<const std::size_t*, const std::size_t*, const double*, int> tuple;
+    typedef std::tr1::tuple<const std::size_t*, const std::size_t*, const double*, int> tuple;
     return tuple(&A.index1_data()[0], &A.index2_data()[0], &A.value_data()[0], A.nnz());
   } 
   //---------------------------------------------------------------------------
   template <class Mat>
-  inline boost::tuple<const std::size_t*, const std::size_t*, const double*, int> 
+  inline std::tr1::tuple<const std::size_t*, const std::size_t*, const double*, int> 
                                                     uBLASMatrix<Mat>::data() const
   { 
     error("Unable to return pointers to underlying data for this uBLASMatrix type."); 
-    return boost::tuple<const std::size_t*, const std::size_t*, const double*, int>(0, 0, 0, 0);
+    return std::tr1::tuple<const std::size_t*, const std::size_t*, const double*, int>(0, 0, 0, 0);
   } 
   //---------------------------------------------------------------------------
   template<class Mat> template<class B>

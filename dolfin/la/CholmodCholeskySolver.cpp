@@ -46,17 +46,17 @@ dolfin::uint CholmodCholeskySolver::solve(const GenericMatrix& A,
 dolfin::uint CholmodCholeskySolver::factorize(const GenericMatrix& A)
 {
   // Check dimensions and get number of non-zeroes
-  boost::tuple<const std::size_t*, const std::size_t*, const double*, int> data = A.data();
+  std::tr1::tuple<const std::size_t*, const std::size_t*, const double*, int> data = A.data();
   const uint M   = A.size(0);
-  const uint nnz = data.get<3>();
+  const uint nnz = std::tr1::get<3>(data);
   dolfin_assert(A.size(0) == A.size(1));
 
   dolfin_assert(nnz >= M); 
 
   // Initialise cholmod data
   // NOTE: Casting away const here
-  cholmod.init((UF_long*) data.get<0>(),(UF_long*) data.get<1>(), 
-	       (double*) data.get<2>(), M, nnz);
+  cholmod.init((UF_long*) std::tr1::get<0>(data),(UF_long*) std::tr1::get<1>(data), 
+	             (double*) std::tr1::get<2>(data), M, nnz);
 
   // Factorize
   message("Cholesky-factorizing linear system of size %d x %d (CHOLMOD).",M,M);
