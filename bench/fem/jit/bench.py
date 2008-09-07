@@ -42,12 +42,16 @@ F = (1.0/k)*dot(v, u - u0) + dot(v, mult(grad(U), W)) + nu*dot(grad(v), grad(U))
 a = lhs(F*dx)
 
 # Assemble once
+t0 = time()
 A = assemble(a, mesh)
+t1 = time()
 
 # Then assemble some more
-t = time()
-for i in range(100):
+n = 10
+for i in range(n):
     A = assemble(a, mesh)
-t = time() - t
+t2 = time()
 
-print "Elapsed time: " + str(t)
+print ""
+print "Disk cache:      " + str(t1 - t0)
+print "In-memory cache: " + str((t2 - t1) / float(n))
