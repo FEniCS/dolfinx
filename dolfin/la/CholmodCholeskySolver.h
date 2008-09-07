@@ -9,12 +9,12 @@
 
 #include "GenericLinearSolver.h"
 
+#ifdef HAS_CHOLMOD
 extern "C" 
 {
-#ifdef HAS_CHOLMOD
-#include <cholmod.h>
-#endif
+  #include <cholmod.h>
 }
+#endif
 
 namespace dolfin
 {
@@ -92,14 +92,10 @@ namespace dolfin
       cholmod_sparse* A_chol;
       cholmod_factor* L_chol;
       cholmod_common c;
-
     };
-#else
-    // Dummy
-    class Cholmod{};
-#endif
 
     Cholmod cholmod;
+#endif
   };
 
 }

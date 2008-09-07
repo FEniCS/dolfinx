@@ -1,10 +1,10 @@
-// Copyright (C) 2005-2007 Garth N. Wells.
+// Copyright (C) 2005-2008 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Anders Logg, 2007
 //
 // First added:  2005-10-24
-// Last changed: 2007-05-15
+// Last changed: 2008-09-03
 
 #ifndef __NONLINEAR_PDE_H
 #define __NONLINEAR_PDE_H
@@ -12,10 +12,16 @@
 #include <dolfin/nls/NonlinearProblem.h>
 #include <dolfin/nls/NewtonSolver.h>
 #include <dolfin/fem/Assembler.h>
-#include <dolfin/fem/DofMapSet.h>
+#include <dolfin/la/Vector.h>
 
 namespace dolfin
 {
+  // Forward declarations
+  class Form;
+  class Mesh;
+  class DirichletBC;
+  class GenericMatrix;
+  class GenericVector;
 
   /// This class provides automated solution of nonlinear PDEs.
   
@@ -24,10 +30,10 @@ namespace dolfin
   public:
 
     /// Constructor
-    NonlinearPDE(Form& a, Form& L, Mesh& mesh, BoundaryCondition& bc);
+    NonlinearPDE(Form& a, Form& L, Mesh& mesh, DirichletBC& bc);
 
     /// Constructor
-    NonlinearPDE(Form& a, Form& L, Mesh& mesh, Array<BoundaryCondition*>& bcs);
+    NonlinearPDE(Form& a, Form& L, Mesh& mesh, Array<DirichletBC*>& bcs);
 
     /// Destructor
     ~NonlinearPDE();
@@ -36,8 +42,11 @@ namespace dolfin
     /// can supply this function to perform updates.
     virtual void update(const GenericVector& x);
 
-    /// User-defined function to compute F(u) its Jacobian
-    void form(GenericMatrix& A, GenericVector& b, const GenericVector& x); 
+    /// Compute F(u)
+    void F(GenericVector& b, const GenericVector& x); 
+
+    /// Compute Jacobian of F(u)
+    void J(GenericMatrix& A, const GenericVector& x); 
 
     /// Solve PDE
     void solve(Function& u, real& t, const real& T, const real& dt);
@@ -54,7 +63,7 @@ namespace dolfin
     Mesh& mesh;
 
     // The boundary conditions
-    Array<BoundaryCondition*> bcs;
+    Array<DirichletBC*> bcs;
 
     // The solution vector
     Vector x;

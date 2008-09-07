@@ -5,7 +5,7 @@
 // Modified by Dag Lindbo 2008.
 // 
 // First added:  2006-06-01
-// Last changed: 2008-07-31
+// Last changed: 2008-09-05
 
 #include <dolfin/log/dolfin_log.h>
 #include "UmfpackLUSolver.h"
@@ -54,16 +54,16 @@ dolfin::uint UmfpackLUSolver::solve(const GenericMatrix& A, GenericVector& x,
 dolfin::uint UmfpackLUSolver::factorize(const GenericMatrix& A)
 {
   // Check dimensions and get number of non-zeroes
-  boost::tuple<const std::size_t*, const std::size_t*, const double*, int> data = A.data();
+  std::tr1::tuple<const std::size_t*, const std::size_t*, const double*, int> data = A.data();
   const uint M   = A.size(0);
-  const uint nnz = data.get<3>();
+  const uint nnz = std::tr1::get<3>(data);
   dolfin_assert(A.size(0) == A.size(1));
 
   dolfin_assert(nnz >= M); 
 
   // Initialise umfpack data
-  umfpack.init((const long int*) data.get<0>(), (const long int*) data.get<1>(), 
-                data.get<2>(), M, nnz);
+  umfpack.init((const long int*) std::tr1::get<0>(data), 
+    (const long int*) std::tr1::get<1>(data), std::tr1::get<2>(data), M, nnz);
 
   // Factorize
   message("LU-factorizing linear system of size %d x %d (UMFPACK).", M, M);
@@ -111,11 +111,12 @@ dolfin::uint UmfpackLUSolver::factorize(const GenericMatrix& A)
 dolfin::uint UmfpackLUSolver::factorizedSolve(GenericVector& x, 
                                               const GenericVector& b) const
 {
-  error("UMFPACK must be installed to perform sparse back and forward substitution");
+  error("UMFPACK must be installed to perform sparse backward and forward substitutions.");
   return 0;
 }
 #endif
 //-----------------------------------------------------------------------------
+#ifdef HAS_UMFPACK
 // UmfpackLUSolver::Umfpack implementation
 //-----------------------------------------------------------------------------
 void UmfpackLUSolver::Umfpack::clear()
@@ -124,16 +125,12 @@ void UmfpackLUSolver::Umfpack::clear()
   delete inull; inull = 0;
   if(Symbolic)
   {
-#ifdef HAS_UMFPACK
     umfpack_dl_free_symbolic(&Symbolic);
-#endif
     Symbolic = 0;
   }
   if(Numeric)
   {
-#ifdef HAS_UMFPACK
     umfpack_dl_free_numeric(&Numeric);
-#endif
     Numeric = 0;
   }
   if(local_matrix)
@@ -161,14 +158,13 @@ void UmfpackLUSolver::Umfpack::init(const long int* Ap, const long int* Ai,
   Rp = Ap;
   Ri = Ai;
   Rx = Ax;
+  N  = M;
   local_matrix = false;
-  N = M;
 }
 //-----------------------------------------------------------------------------
 void UmfpackLUSolver::Umfpack::initTranspose(const long int* Ap, const long int* Ai, 
                                          const double* Ax, uint M, uint nz)
 {  
-#ifdef HAS_UMFPACK
   if(Rp || Ri || Rx)
     error("UmfpackLUSolver data already points to a matrix");
 
@@ -184,9 +180,6 @@ void UmfpackLUSolver::Umfpack::initTranspose(const long int* Ap, const long int*
   long int status = umfpack_dl_transpose(M, M, Ap, Ai, Ax, inull, inull, 
                     const_cast<long int*>(Rp), const_cast<long int*>(Ri), const_cast<double*>(Rx));
   Umfpack::checkStatus(status, "transpose");
-#else
-  error("UMFPACK not installed");
-#endif
 }
 //-----------------------------------------------------------------------------
 void UmfpackLUSolver::Umfpack::factorize()
@@ -197,7 +190,6 @@ void UmfpackLUSolver::Umfpack::factorize()
   dolfin_assert(!Symbolic);
   dolfin_assert(!Numeric);
 
-#ifdef HAS_UMFPACK
   long int status;
 
   // Symbolic step (reordering etc)
@@ -215,9 +207,6 @@ void UmfpackLUSolver::Umfpack::factorize()
   Symbolic = 0;
 
   factorized = true;
-#else
-  error("UMFPACK not installed");
-#endif
 }
 //-----------------------------------------------------------------------------
 void UmfpackLUSolver::Umfpack::factorizedSolve(double*x, const double* b, bool transpose) const
@@ -227,7 +216,6 @@ void UmfpackLUSolver::Umfpack::factorizedSolve(double*x, const double* b, bool t
   dolfin_assert(Rx);
   dolfin_assert(Numeric);
 
-#ifdef HAS_UMFPACK
   long int status;
   if(transpose)
     status = umfpack_dl_solve(UMFPACK_At, Rp, Ri, Rx, x, b, Numeric, dnull, dnull);
@@ -235,14 +223,10 @@ void UmfpackLUSolver::Umfpack::factorizedSolve(double*x, const double* b, bool t
     status = umfpack_dl_solve(UMFPACK_A, Rp, Ri, Rx, x, b, Numeric, dnull, dnull);
 
   Umfpack::checkStatus(status, "solve");
-#else
-  error("UMFPACK not installed");
-#endif
 }
 //-----------------------------------------------------------------------------
 void UmfpackLUSolver::Umfpack::checkStatus(long int status, std::string function) const
 {
-#ifdef HAS_UMFPACK
   if(status == UMFPACK_OK)
     return;
 
@@ -261,10 +245,7 @@ void UmfpackLUSolver::Umfpack::checkStatus(long int status, std::string function
     error("UMFPACK reports an invalid Symbolic object.");
   else if(status != UMFPACK_OK)
     warning("UMFPACK is reporting an unknown error.");
-
-#else
-  error("Problem with DOLFIN build configuration for using UMFPACK.");   
-#endif
 }
+#endif
 //-----------------------------------------------------------------------------
 

@@ -5,7 +5,7 @@
 // Modified by Anders Logg, 2008.
 //
 // First added:  2005-08-31
-// Last changed: 2008-08-27
+// Last changed: 2008-09-07
 
 #ifdef HAS_SLEPC
 
@@ -145,7 +145,7 @@ void SLEPcEigenSolver::readParameters()
   if (has("eigenvalue solver"))
     setSolver(get("eigenvalue solver"));
   if (has("eigenvalue tolerance") && has("eigenvalue iterations"))
-    setTolerance(get("eigenvalue tolerance"), get("eigenvalue spectrum"));
+    setTolerance(get("eigenvalue tolerance"), get("eigenvalue iterations"));
 }
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::setSpectrum(std::string spectrum)

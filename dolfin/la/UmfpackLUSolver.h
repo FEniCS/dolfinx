@@ -5,7 +5,7 @@
 // Modified by Dag Lindbo 2008.
 // 
 // First added:  2006-05-31
-// Last changed: 2008-07-31
+// Last changed: 2008-09-05
 
 #ifndef __UMFPACK_LU_SOLVER_H
 #define __UMFPACK_LU_SOLVER_H
@@ -50,15 +50,18 @@ namespace dolfin
     virtual uint factorizedSolve(GenericVector& x, const GenericVector& b) const;
 
   private:
-    
-    // Data for LU factorization of sparse ublas matrix (umfpack only)
+
+#ifdef HAS_UMFPACK
+    /// Data for LU factorization of sparse ublas matrix (umfpack only)
     class Umfpack
     {
       public:
  
-        Umfpack() : dnull(0), inull(0), Symbolic(0), Numeric(0), local_matrix(0), 
-                    Rp(0), Ri(0), Rx(0), N(0), factorized(false), mat_dim(0) {} 
+        // Constructor
+        Umfpack() : dnull(0), inull(0), Symbolic(0), Numeric(0), local_matrix(false), 
+                    Rp(0), Ri(0), Rx(0), N(0), factorized(false) {} 
 
+        // Destructor
         ~Umfpack() { clear(); }
 
         // Clear data
@@ -93,10 +96,10 @@ namespace dolfin
 
         uint N;
         bool factorized;
-        uint mat_dim;
     };
 
     Umfpack umfpack;
+#endif
     
   };
 

@@ -11,7 +11,7 @@
 #ifndef __MTL4_MATRIX_H
 #define __MTL4_MATRIX_H
 
-#include <boost/tuple/tuple.hpp>
+#include <tr1/tuple>
 #include <dolfin/common/Variable.h>
 #include <dolfin/log/LogStream.h>
 #include "GenericMatrix.h"
@@ -106,7 +106,8 @@ namespace dolfin
     virtual const MTL4Matrix& operator= (const GenericMatrix& x);
 
     /// Return pointers to underlying compresssed storage data
-    virtual boost::tuple<const std::size_t*, const std::size_t*, const double*, int> data() const;
+    /// See GenericMatrix for documentation.
+    virtual std::tr1::tuple<const std::size_t*, const std::size_t*, const double*, int> data() const;
 
     //--- Special functions ---
 
