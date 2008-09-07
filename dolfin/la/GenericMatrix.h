@@ -13,7 +13,7 @@
 #ifndef __GENERIC_MATRIX_H
 #define __GENERIC_MATRIX_H
 
-#include <boost/tuple/tuple.hpp>
+#include <tr1/tuple>
 #include "GenericTensor.h"
 
 namespace dolfin
@@ -109,12 +109,12 @@ namespace dolfin
     /// Assignment operator
     virtual const GenericMatrix& operator= (const GenericMatrix& x) = 0;
 
-    /// Return pointers to underlying compresssed storage data
-    /// FIXME: Document what data each of the three pointers points to.
-    virtual boost::tuple<const std::size_t*, const std::size_t*, const double*, int> data() const
+    /// Return pointers to underlying compresssed row/column storage data 
+    /// For compressed row storage, data = (row_pointer[#rows +1], column_index[#nz], matrix_values[#nz], nz)
+    virtual std::tr1::tuple<const std::size_t*, const std::size_t*, const double*, int> data() const
     { 
       error("Unable to return pointers to underlying matrix data."); 
-      return boost::tuple<const std::size_t*, const std::size_t*, const double*, int>(0, 0, 0, 0);
+      return std::tr1::tuple<const std::size_t*, const std::size_t*, const double*, int>(0, 0, 0, 0);
     } 
 
     //--- Convenience functions ---
