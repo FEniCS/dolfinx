@@ -81,6 +81,8 @@ assemble(L, mesh, tensor=T)
 # now solve the eigen system
 esolver = SLEPcEigenSolver()
 esolver.set("eigenvalue spectrum", "smallest real")
+esolver.set("eigenvalue tolerance", 10e-7)
+esolver.set("eigenvalue iterations", 10)
 esolver.solve(S, T)
 
 # the result should have real eigenvalues but due to rounding errors, some of 
