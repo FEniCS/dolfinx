@@ -12,6 +12,7 @@
 #ifndef __UBLAS_VECTOR_H
 #define __UBLAS_VECTOR_H
 
+#include <tr1/memory>
 #include <dolfin/log/LogStream.h>
 #include <dolfin/common/Variable.h>
 #include "ublas.h"
@@ -46,7 +47,7 @@ namespace dolfin
 
     /// Create vector from given uBLAS vector expression
     template <class E>
-    explicit uBLASVector(const ublas::vector_expression<E>& x) : x(x) {}
+    explicit uBLASVector(const ublas::vector_expression<E>& x) : x(&x) {}
 
     /// Destructor
     virtual ~uBLASVector();
@@ -126,11 +127,11 @@ namespace dolfin
 
     /// Return pointer to underlying data (const version)
     virtual const real* data() const 
-    { return &x.data()[0]; }
+    { return &x->data()[0]; }
 
     /// Return pointer to underlying data
     virtual real* data()
-    { return &x.data()[0]; }
+    { return &x->data()[0]; }
 
     //--- Special functions ---
 
@@ -141,27 +142,27 @@ namespace dolfin
 
     /// Return reference to uBLAS vector (const version)
     const ublas_vector& vec() const
-    { return x; }
+    { return *x; }
 
     /// Return reference to uBLAS vector (non-const version)
     ublas_vector& vec()
-    { return x; }
+    { return *x; }
 
     /// Access value of given entry (const version)
     virtual real operator[] (uint i) const
-    { return x(i); };
+    { return (*x)(i); };
 
     /// Access value of given entry (non-const version)
     real& operator[] (uint i)
-    { return x(i); };
+    { return (*x)(i); };
 
     /// Assignment operator
     const uBLASVector& operator= (const uBLASVector& x);
 
   private:
 
-    // uBLAS vector object
-    ublas_vector x;
+    // Smart pointer to uBLAS vector object
+    std::tr1::shared_ptr<ublas_vector> x;
 
   };
 
