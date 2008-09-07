@@ -44,6 +44,11 @@ uBLASVector::uBLASVector(const uBLASVector& x): Variable("x", "uBLAS vector"),
   //Do nothing
 }
 //-----------------------------------------------------------------------------
+uBLASVector::uBLASVector(const std::tr1::shared_ptr<ublas_vector> x) : x(x)
+{
+  //Do nothing
+}
+//-----------------------------------------------------------------------------
 uBLASVector::~uBLASVector()
 {
   //Do nothing

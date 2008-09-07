@@ -45,9 +45,12 @@ namespace dolfin
     /// Copy constructor
     explicit uBLASVector(const uBLASVector& x);
 
-    /// Create vector from given uBLAS vector expression
-    template <class E>
-    explicit uBLASVector(const ublas::vector_expression<E>& x) : x(new ublas_vector(x)) {}
+    /// Construct vector from a ublas_vector
+    explicit uBLASVector(const std::tr1::shared_ptr<ublas_vector> x);
+
+    // Create vector from given uBLAS vector expression
+    //template <class E>
+    //explicit uBLASVector(const ublas::vector_expression<E>& x) : x(new ublas_vector(x)) {}
 
     /// Destructor
     virtual ~uBLASVector();
