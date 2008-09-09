@@ -57,7 +57,6 @@ void Assembler::assemble(GenericTensor& A, Form& form, bool reset_tensor)
 void Assembler::assemble(GenericMatrix& A, Form& a, GenericVector& b, Form& L, 
                          DirichletBC& bc, bool reset_tensor)
 {
-  cout << "Ass 1 " << endl;
   Array<DirichletBC*> bcs;
   bcs.push_back(&bc);
   assemble(A, a, b, L, bcs, reset_tensor); 
@@ -66,7 +65,6 @@ void Assembler::assemble(GenericMatrix& A, Form& a, GenericVector& b, Form& L,
 void Assembler::assemble(GenericMatrix& A, Form& a, GenericVector& b, Form& L, 
                          Array<DirichletBC*>& bcs, bool reset_tensor)
 {
-  cout << "Ass 2 " << endl;
   a.updateDofMaps(mesh);
   L.updateDofMaps(mesh);
   assemble_system(A, a.form(), a.coefficients(), a.dofMaps(), 
