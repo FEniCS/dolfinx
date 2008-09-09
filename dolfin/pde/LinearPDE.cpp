@@ -23,7 +23,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 LinearPDE::LinearPDE(Form& a, Form& L, Mesh& mesh, MatrixType matrix_type)
-                   : a(a), L(L), mesh(mesh), matrix_type(matrix_type)
+                   : a(a), L(L), mesh(mesh), bcs(0), matrix_type(matrix_type)
 {
   message("Creating linear PDE.");
 }
@@ -60,26 +60,31 @@ void LinearPDE::solve(Function& u)
   Vector* x = new Vector();
 
   // Assemble linear system and apply boundary conditions
-  Assembler assembler(mesh);  
-  assembler.assemble(A, a, b, L, bcs);
+  //Assembler assembler(mesh);  
+  //assembler.assemble(A, a, b, L, bcs);
 
   // Assemble linear system and apply boundary conditions
-  //Assembler assembler(mesh);  
-  //assembler.assemble(A, a);
-  //assembler.assemble(b, L);
-  //for (uint i = 0; i < bcs.size(); i++)
-  //  bcs[i]->apply(A, b, a);
+  Assembler assembler(mesh);  
+  assembler.assemble(A, a);
+  assembler.assemble(b, L);
+  for (uint i = 0; i < bcs.size(); i++)
+    bcs[i]->apply(A, b, a);
 
   // Solve linear system
   const std::string solver_type = get("PDE linear solver");
   if ( solver_type == "direct" )
   {
-    LUSolver solver(matrix_type);
+    //LUSolver solver(matrix_type);
+    LUSolver solver;
     solver.set("parent", *this);
     solver.solve(A, *x, b);
   }
   else if ( solver_type == "iterative" )
   {
+    KrylovSolver solver(gmres);
+    solver.set("parent", *this);
+    solver.solve(A, *x, b);
+/*
     if( matrix_type == symmetric)
     {
       KrylovSolver solver(cg);
@@ -92,6 +97,7 @@ void LinearPDE::solve(Function& u)
       solver.set("parent", *this);
       solver.solve(A, *x, b);
     }
+*/
   }
   else
     error("Unknown solver type \"%s\".", solver_type.c_str());

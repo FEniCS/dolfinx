@@ -57,6 +57,7 @@ void Assembler::assemble(GenericTensor& A, Form& form, bool reset_tensor)
 void Assembler::assemble(GenericMatrix& A, Form& a, GenericVector& b, Form& L, 
                          DirichletBC& bc, bool reset_tensor)
 {
+  cout << "Ass 1 " << endl;
   Array<DirichletBC*> bcs;
   bcs.push_back(&bc);
   assemble(A, a, b, L, bcs, reset_tensor); 
@@ -65,6 +66,7 @@ void Assembler::assemble(GenericMatrix& A, Form& a, GenericVector& b, Form& L,
 void Assembler::assemble(GenericMatrix& A, Form& a, GenericVector& b, Form& L, 
                          Array<DirichletBC*>& bcs, bool reset_tensor)
 {
+  cout << "Ass 2 " << endl;
   a.updateDofMaps(mesh);
   L.updateDofMaps(mesh);
   assemble_system(A, a.form(), a.coefficients(), a.dofMaps(), 
@@ -559,8 +561,8 @@ void Assembler::assemble_system(GenericMatrix& A, const ufc::form& A_form,
       b_num_entries *= b_dof_map_set[i].local_dimension();
     be = new real[b_num_entries];
 
-    for (CellIterator cell(mesh); !cell.end(); ++cell) {
-
+    for (CellIterator cell(mesh); !cell.end(); ++cell) 
+    {
       for (uint i = 0; i < A_num_entries; i++) 
         Ae[i] = 0.0; 
       for (uint i = 0; i < b_num_entries; i++) 
@@ -588,9 +590,7 @@ void Assembler::assemble_system(GenericMatrix& A, const ufc::form& A_form,
       for (uint i = 0; i < b_ufc.form.rank(); i++)
         b_dof_map_set[i].tabulate_dofs(b_ufc.dofs[i], b_ufc.cell, cell->index());
 
-      // compute cell integrals ---------------------------------
-
-      // compute cell for A integral ---------------------------- 
+      // Compute cell integral for A 
       if (A_ufc.form.num_cell_integrals() > 0) 
       {
         ufc::cell_integral* A_cell_integral =  A_ufc.cell_integrals[0];
@@ -607,9 +607,8 @@ void Assembler::assemble_system(GenericMatrix& A, const ufc::form& A_form,
         for (uint i=0; i<A_num_entries; i++) 
           Ae[i] += A_ufc.A[i]; 
       }
-      // compute cell A integral done ---------------------------- 
 
-      // Compute cell b integral ---------------------------- 
+      // Compute cell integral for b 
       if (b_ufc.form.num_cell_integrals() > 0) 
       {
         ufc::cell_integral* b_cell_integral = b_ufc.cell_integrals[0];
@@ -623,15 +622,12 @@ void Assembler::assemble_system(GenericMatrix& A, const ufc::form& A_form,
         }
         // Tabulate cell tensor
         b_cell_integral->tabulate_tensor(b_ufc.A, b_ufc.w, b_ufc.cell);
-        for (uint i=0; i<b_num_entries; i++) be[i] += b_ufc.A[i]; 
+        for (uint i=0; i<b_num_entries; i++) 
+          be[i] += b_ufc.A[i]; 
       }
-      // compute cell b integral done ---------------------------- 
 
-      // compute cell integral done ------------------------------ 
-
-      // Compute exterior facet integral ------------------------- 
-      if (A_ufc.form.num_exterior_facet_integrals() > 0 
-          || b_ufc.form.num_exterior_facet_integrals() > 0) 
+      // Compute exterior facet integral
+      if (A_ufc.form.num_exterior_facet_integrals() > 0 || b_ufc.form.num_exterior_facet_integrals() > 0) 
       {
         const uint D = mesh.topology().dim(); 
 
@@ -658,7 +654,6 @@ void Assembler::assemble_system(GenericMatrix& A, const ufc::form& A_form,
           }
         }
 
-
         if (b_ufc.form.num_exterior_facet_integrals() > 0) 
         {
           for (FacetIterator facet(*cell); !facet.end(); ++facet)
@@ -676,7 +671,8 @@ void Assembler::assemble_system(GenericMatrix& A, const ufc::form& A_form,
               }
               const uint local_facet = cell->index(*facet);
               b_integral->tabulate_tensor(b_ufc.A, b_ufc.w, b_ufc.cell, local_facet);
-              for (uint i=0; i<b_num_entries; i++) be[i] += b_ufc.A[i]; 
+              for (uint i=0; i<b_num_entries; i++) 
+                be[i] += b_ufc.A[i]; 
             }
           }
         }
@@ -806,7 +802,8 @@ void Assembler::assemble_system(GenericMatrix& A, const ufc::form& A_form,
           // Tabulate interior facet tensor on macro element
           interior_facet_integral->tabulate_tensor(A_macro_ufc.macro_A, A_macro_ufc.macro_w, 
                                       A_macro_ufc.cell0, A_macro_ufc.cell1, facet0, facet1);
-          for (uint i=0; i<A_macro_num_entries; i++) Ae_macro[i] += A_macro_ufc.macro_A[i]; 
+          for (uint i=0; i<A_macro_num_entries; i++) 
+            Ae_macro[i] += A_macro_ufc.macro_A[i]; 
         }
 
         if ( b_ufc.form.num_interior_facet_integrals() > 0 ) 
@@ -999,8 +996,10 @@ void Assembler::assemble_system(GenericMatrix& A, const ufc::form& A_form,
       if ( facet->numEntities(mesh.topology().dim()) == 1 )  
       {
         // set element matrix and vector to zero 
-        for (uint i=0; i<A_num_entries; i++) Ae[i] = 0.0; 
-        for (uint i=0; i<b_num_entries; i++) be[i] = 0.0; 
+        for (uint i=0; i<A_num_entries; i++) 
+          Ae[i] = 0.0; 
+        for (uint i=0; i<b_num_entries; i++) 
+          be[i] = 0.0; 
 
         // Get mesh cell to which mesh facet belongs (pick first, there is only one)
         Cell cell(mesh, facet->entities(mesh.topology().dim())[0]);
