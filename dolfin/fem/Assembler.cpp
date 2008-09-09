@@ -633,7 +633,7 @@ void Assembler::assemble_system(GenericMatrix& A, const ufc::form& A_form,
         {
           for (FacetIterator facet(*cell); !facet.end(); ++facet)
           {
-            if (facet->numEntities(D) == 1) 
+            if (facet->numEntities(D) != 2) 
             {
               ufc::exterior_facet_integral* A_integral = A_ufc.exterior_facet_integrals[0]; 
               if (exterior_facet_domains && exterior_facet_domains->size() > 0)
@@ -656,7 +656,7 @@ void Assembler::assemble_system(GenericMatrix& A, const ufc::form& A_form,
         {
           for (FacetIterator facet(*cell); !facet.end(); ++facet)
           {
-            if (facet->numEntities(D) == 1) 
+            if (facet->numEntities(D) != 2) 
             {
               ufc::exterior_facet_integral* b_integral = b_ufc.exterior_facet_integrals[0]; 
               if (exterior_facet_domains && exterior_facet_domains->size() > 0)
