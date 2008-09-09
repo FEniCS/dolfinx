@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2006-2008.
 //
 // First added:  2004
-// Last changed: 2008-08-20
+// Last changed: 2008-09-09
 
 #include <dolfin/fem/Assembler.h>
 #include <dolfin/fem/DirichletBC.h>
@@ -54,10 +54,13 @@ void LinearPDE::solve(Function& u)
 {
   begin("Solving linear PDE.");
 
+  // Create Function
+  u.init(mesh, a, 1);
+
   // Create matrix and vector for assembly
   Matrix A;
   Vector b;
-  Vector* x = new Vector();
+  GenericVector& x = u.vector();
 
   // Assemble linear system and apply boundary conditions
   //Assembler assembler(mesh);  
@@ -77,13 +80,13 @@ void LinearPDE::solve(Function& u)
     //LUSolver solver(matrix_type);
     LUSolver solver;
     solver.set("parent", *this);
-    solver.solve(A, *x, b);
+    solver.solve(A, x, b);
   }
   else if ( solver_type == "iterative" )
   {
     KrylovSolver solver(gmres);
     solver.set("parent", *this);
-    solver.solve(A, *x, b);
+    solver.solve(A, x, b);
 /*
     if( matrix_type == symmetric)
     {
@@ -101,11 +104,6 @@ void LinearPDE::solve(Function& u)
   }
   else
     error("Unknown solver type \"%s\".", solver_type.c_str());
-
-  // Create Function
-  u.init(mesh, *x, a, 1);
-  DiscreteFunction& uu = dynamic_cast<DiscreteFunction&>(*u.f);
-  uu.local_vector = x;
 
   end();
 }

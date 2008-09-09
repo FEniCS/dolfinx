@@ -1,12 +1,12 @@
 // Copyright (C) 2007-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Garth N. Wells, 2007.
+// Modified by Garth N. Wells, 2007-2008.
 // Modified by Dag Lindbo, 2008.
 // Modified by Kristen Kaasbjerg, 2008.
 //
 // First added:  2007-04-02
-// Last changed: 2008-04-30
+// Last changed: 2008-09-09
 
 #include <cstring>
 
@@ -26,6 +26,19 @@
 
 using namespace dolfin;
 
+//-----------------------------------------------------------------------------
+DiscreteFunction::DiscreteFunction(Mesh& mesh, Form& form, uint i)
+  : GenericFunction(mesh),
+    x(new Vector), finite_element(0), dof_map(0),
+    local_vector(x), local_dof_map(0), intersection_detector(0), scratch(0)
+{
+  // Update dof maps
+  form.updateDofMaps(mesh);
+  dof_map = &form.dofMaps()[i];
+
+  // Initialise function
+  init(mesh, *x, form.form(), i);
+}
 //-----------------------------------------------------------------------------
 DiscreteFunction::DiscreteFunction(Mesh& mesh, GenericVector& x, Form& form, uint i)
   : GenericFunction(mesh),
