@@ -991,7 +991,7 @@ void Assembler::assemble_system(GenericMatrix& A, const ufc::form& A_form,
       }
 
       // Check if we have an exterior facet
-      if ( facet->numEntities(mesh.topology().dim()) == 1 )  
+      if ( facet->numEntities(mesh.topology().dim()) != 2 )  
       {
         // set element matrix and vector to zero 
         for (uint i=0; i<A_num_entries; i++) 
@@ -1074,7 +1074,7 @@ void Assembler::assemble_system(GenericMatrix& A, const ufc::form& A_form,
         if (A_ufc.form.num_exterior_facet_integrals() > 0 ) 
         {
           const uint D = mesh.topology().dim(); 
-          if (facet->numEntities(D) == 1) 
+          if (facet->numEntities(D) != 2) 
           {
             ufc::exterior_facet_integral* A_integral = A_ufc.exterior_facet_integrals[0]; 
 
@@ -1095,7 +1095,7 @@ void Assembler::assemble_system(GenericMatrix& A, const ufc::form& A_form,
         if (b_ufc.form.num_exterior_facet_integrals() > 0) 
         {
           const uint D = mesh.topology().dim(); 
-          if (facet->numEntities(D) == 1) 
+          if (facet->numEntities(D) != 2) 
           {
             ufc::exterior_facet_integral* b_integral = b_ufc.exterior_facet_integrals[0]; 
             if (exterior_facet_domains && exterior_facet_domains->size() > 0)
