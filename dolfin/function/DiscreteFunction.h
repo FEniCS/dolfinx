@@ -1,10 +1,10 @@
 // Copyright (C) 2007-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Garth N. Wells, 2007.
+// Modified by Garth N. Wells, 2007-2008.
 //
 // First added:  2007-04-02
-// Last changed: 2008-03-17
+// Last changed: 2008-09-09
 
 #ifndef __DISCRETE_FUNCTION_H
 #define __DISCRETE_FUNCTION_H
@@ -32,6 +32,9 @@ namespace dolfin
   class DiscreteFunction : public GenericFunction
   {
   public:
+
+    /// Create discrete function for argument function i of form
+    DiscreteFunction(Mesh& mesh, Form& form, uint i);
 
     /// Create discrete function for argument function i of form
     DiscreteFunction(Mesh& mesh, GenericVector& x, Form& form, uint i);
