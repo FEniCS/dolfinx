@@ -86,8 +86,8 @@ namespace dolfin
 
     /// Create discrete function from arguments that were read from an xml file
     /// (see XMLFile.cpp for a similar function)
-    Function(Mesh& mesh, GenericVector& x, const std::string finite_element_signature,
-                                           const std::string        dof_map_signature);
+    Function(Mesh& mesh, const std::string finite_element_signature,
+                         const std::string dof_map_signature);
     
     /// Copy constructor
     Function(const Function& f);
@@ -103,6 +103,10 @@ namespace dolfin
 
     /// Create discrete function for argument function i of form
     void init(Mesh& mesh, GenericVector& x, DofMap& dof_map, const ufc::form& form, uint i = 1);
+
+    /// Create discrete function from strings 
+    void init(Mesh& mesh, const std::string finite_element_signature, 
+              const std::string dof_map_signature);
 
     /// Return the type of function
     Type type() const;

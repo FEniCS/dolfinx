@@ -53,7 +53,7 @@ namespace dolfin
         {mcv_dof_map_signature = dofmap_signature;}
     
     /// Set higher order mesh coordinates
-    void setMeshCoordinates(Vector *mesh_coord_vec);
+    void setMeshCoordinates(Vector& mesh_coord);
     
     /// Set boolean indicator inside MeshGeometry
     void setAffineCellIndicator(uint c, const std::string affine_str);

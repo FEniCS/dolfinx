@@ -42,8 +42,8 @@ namespace dolfin
     /// Create discrete function for argument function i of form
     DiscreteFunction(Mesh& mesh, GenericVector& x, DofMap& dof_map, const ufc::form& form, uint i);
 
-    /// Create discrete function from given data and assume responsibility for data
-    DiscreteFunction(Mesh& mesh, GenericVector& x, std::string finite_element_signature, std::string dof_map_signature);
+    /// Create discrete function from given data
+    DiscreteFunction(Mesh& mesh, std::string finite_element_signature, std::string dof_map_signature);
 
     /// Create discrete function from sub function
     DiscreteFunction(SubFunction& sub_function);

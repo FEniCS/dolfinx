@@ -62,12 +62,12 @@ DiscreteFunction::DiscreteFunction(Mesh& mesh, GenericVector& x, DofMap& dof_map
   init(mesh, x, form, i);
 }
 //-----------------------------------------------------------------------------
-DiscreteFunction::DiscreteFunction(Mesh& mesh, GenericVector& x,
+DiscreteFunction::DiscreteFunction(Mesh& mesh,
                                    std::string finite_element_signature,
                                    std::string dof_map_signature)
   : GenericFunction(mesh),
-    x(&x), finite_element(0), dof_map(0),
-    local_vector(0), local_dof_map(0), intersection_detector(0), scratch(0)
+    x(new Vector), finite_element(0), dof_map(0),
+    local_vector(x), local_dof_map(0), intersection_detector(0), scratch(0)
 {
   // Create finite element
   finite_element = ElementLibrary::create_finite_element(finite_element_signature);
@@ -80,9 +80,8 @@ DiscreteFunction::DiscreteFunction(Mesh& mesh, GenericVector& x,
   // Create dof map from signature
   dof_map = new DofMap(dof_map_signature, mesh);
 
-  // Check size of vector
-  if (x.size() != dof_map->global_dimension())
-    error("Size of vector does not match global dimension of finite element space.");
+  // Allocate memory for vector
+  x->init(dof_map->global_dimension());  
 
   // Assume responsibility for data
   local_dof_map = dof_map;
