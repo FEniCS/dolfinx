@@ -66,7 +66,7 @@ int main(int argc, char *argv[])
 
   // Set up problem
   Matrix A;
-  Vector x, b;
+  Vector b;
   Function c(mesh, 0.0); // Diffusivity constant
   Function f(mesh, 0.0); // Source term
 
@@ -83,6 +83,9 @@ int main(int argc, char *argv[])
   AdvectionDiffusionBilinearForm a(velocity, N, h, of, c, alpha);
   AdvectionDiffusionLinearForm L(f);
 
+  // Solution function
+  Function uh(mesh, a);
+
   // Set up boundary condition (apply strong BCs)
   BC g(mesh);
   DirichletBoundary boundary;
@@ -92,10 +95,8 @@ int main(int argc, char *argv[])
   assemble(b, L, mesh);
   bc.apply(A, b, a);
 
+  GenericVector& x = uh.vector(); 
   solve(A, x, b);
-
-  // Discontinuous solution
-  Function uh(mesh, x, a);
 
   // Define PDE for projection
   ProjectionBilinearForm ap;

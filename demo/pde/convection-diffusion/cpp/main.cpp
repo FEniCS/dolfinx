@@ -36,12 +36,13 @@ int main(int argc, char *argv[])
   Function g(mesh, 1.0);
   DirichletBC bc(g, sub_domains, 1);
 
+  // Solution vector
+  Function u1(mesh, a);
+
   // Linear system
   Matrix A;
-  Vector x, b;
-
-  // Solution vector
-  Function u1(mesh, x, a);
+  Vector b;
+  GenericVector& x = u1.vector();
 
   // LU
   LUSolver lu;
