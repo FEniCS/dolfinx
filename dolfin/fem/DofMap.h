@@ -10,6 +10,7 @@
 #define __DOF_MAP_H
 
 #include <map>
+#include <tr1/memory>
 #include <ufc.h>
 #include <dolfin/common/types.h>
 #include <dolfin/mesh/Mesh.h>
@@ -32,18 +33,22 @@ namespace dolfin
   public:
 
     /// Create dof map on mesh
-    DofMap(ufc::dof_map& dof_map, Mesh& mesh, bool dof_map_local = false);
+    DofMap(ufc::dof_map& dof_map, Mesh& mesh);
+
+    /// Create dof map on mesh (may share ufc::dof_map)
+    DofMap(std::tr1::shared_ptr<ufc::dof_map> dof_map, Mesh& mesh);
 
     /// Create dof map on mesh (parallel)
-    DofMap(ufc::dof_map& dof_map, Mesh& mesh, MeshFunction<uint>& partitions, 
-           bool dof_map_local = false);
+    DofMap(ufc::dof_map& dof_map, Mesh& mesh, MeshFunction<uint>& partitions);
+
+    /// Create dof map on mesh (may share ufc::dof_map) (parallel)
+    DofMap(std::tr1::shared_ptr<ufc::dof_map> dof_map, Mesh& mesh, MeshFunction<uint>& partitions);
 
     /// Create dof map on mesh
     DofMap(const std::string signature, Mesh& mesh);
 
     /// Create dof map on mesh (parallel)
-    DofMap(const std::string signature, Mesh& mesh, 
-        MeshFunction<uint>& partitions);
+    DofMap(const std::string signature, Mesh& mesh, MeshFunction<uint>& partitions);
 
     /// Destructor
     ~DofMap();
@@ -122,10 +127,7 @@ namespace dolfin
     uint* dof_map;
 
     // UFC dof map
-    ufc::dof_map* ufc_dof_map;
-
-    // Local UFC dof map
-    ufc::dof_map* ufc_dof_map_local;
+    std::tr1::shared_ptr<ufc::dof_map> ufc_dof_map;
 
     // UFC mesh
     UFCMesh ufc_mesh;

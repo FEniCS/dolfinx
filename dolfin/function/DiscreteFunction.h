@@ -17,6 +17,7 @@ namespace dolfin
 {
 
   class Mesh;
+  class FiniteElement;
   class Form;
   class DofMap;
   class SubFunction;
@@ -126,6 +127,9 @@ namespace dolfin
 
     // The vector of dofs
     std::tr1::shared_ptr<GenericVector> x;
+
+    // The finite element
+    //FiniteElement* finite_element;
 
     // The finite element
     ufc::finite_element* finite_element;
