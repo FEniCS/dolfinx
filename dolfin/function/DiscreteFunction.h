@@ -126,11 +126,7 @@ namespace dolfin
     ufc::finite_element* finite_element;
     
     // The dof map
-    DofMap* dof_map;
-
-    // Pointers to local data if owned
-    GenericVector* local_vector;
-    DofMap* local_dof_map;
+    std::tr1::shared_ptr<DofMap> dof_map;
 
     // Intersection detector
     mutable IntersectionDetector* intersection_detector;
