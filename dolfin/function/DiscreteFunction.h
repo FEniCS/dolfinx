@@ -9,6 +9,7 @@
 #ifndef __DISCRETE_FUNCTION_H
 #define __DISCRETE_FUNCTION_H
 
+#include <tr1/memory>
 #include <dolfin/la/Vector.h>
 #include "GenericFunction.h"
 
@@ -119,7 +120,7 @@ namespace dolfin
     void init(Mesh& mesh, GenericVector& x, const ufc::form& form, uint i);
 
     // The vector of dofs
-    GenericVector* x;
+    std::tr1::shared_ptr<GenericVector> x;
 
     // The finite element
     ufc::finite_element* finite_element;
@@ -136,6 +137,7 @@ namespace dolfin
 
     // Scratch space
     Scratch* scratch;
+
 
   };
 

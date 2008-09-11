@@ -10,6 +10,7 @@
 
 #include <cstring>
 
+#include <dolfin/common/NoDeleter.h>
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/Vertex.h>
@@ -28,9 +29,8 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 DiscreteFunction::DiscreteFunction(Mesh& mesh, Form& form, uint i)
-  : GenericFunction(mesh),
-    x(new Vector), finite_element(0), dof_map(0),
-    local_vector(x), local_dof_map(0), intersection_detector(0), scratch(0)
+  : GenericFunction(mesh), x(new Vector), finite_element(0), dof_map(0),
+    local_dof_map(0), intersection_detector(0), scratch(0)
 {
   // Update dof maps
   form.updateDofMaps(mesh);
@@ -42,8 +42,8 @@ DiscreteFunction::DiscreteFunction(Mesh& mesh, Form& form, uint i)
 //-----------------------------------------------------------------------------
 DiscreteFunction::DiscreteFunction(Mesh& mesh, GenericVector& x, Form& form, uint i)
   : GenericFunction(mesh),
-    x(&x), finite_element(0), dof_map(0),
-    local_vector(0), local_dof_map(0), intersection_detector(0), scratch(0)
+    x(&x, NoDeleter<GenericVector>()), finite_element(0), dof_map(0),
+    local_dof_map(0), intersection_detector(0), scratch(0)
 {
   // Update dof maps
   form.updateDofMaps(mesh);
@@ -56,8 +56,8 @@ DiscreteFunction::DiscreteFunction(Mesh& mesh, GenericVector& x, Form& form, uin
 DiscreteFunction::DiscreteFunction(Mesh& mesh, GenericVector& x, DofMap& dof_map,
                                    const ufc::form& form, uint i)
   : GenericFunction(mesh),
-    x(&x), finite_element(0), dof_map(&dof_map),
-    local_vector(0), local_dof_map(0), intersection_detector(0), scratch(0)
+    x(&x, NoDeleter<GenericVector>()), finite_element(0), dof_map(&dof_map),
+    local_dof_map(0), intersection_detector(0), scratch(0)
 {
   init(mesh, x, form, i);
 }
@@ -65,17 +65,14 @@ DiscreteFunction::DiscreteFunction(Mesh& mesh, GenericVector& x, DofMap& dof_map
 DiscreteFunction::DiscreteFunction(Mesh& mesh,
                                    std::string finite_element_signature,
                                    std::string dof_map_signature)
-  : GenericFunction(mesh),
-    x(new Vector), finite_element(0), dof_map(0),
-    local_vector(x), local_dof_map(0), intersection_detector(0), scratch(0)
+  : GenericFunction(mesh), x(new Vector), finite_element(0), dof_map(0),
+    local_dof_map(0), intersection_detector(0), scratch(0)
 {
   // Create finite element
   finite_element = ElementLibrary::create_finite_element(finite_element_signature);
   if (!finite_element)
-  {
     error("Unable to find finite element in library: \"%s\".",
                   finite_element_signature.c_str());
-  }
 
   // Create dof map from signature
   dof_map = new DofMap(dof_map_signature, mesh);
@@ -92,8 +89,8 @@ DiscreteFunction::DiscreteFunction(Mesh& mesh,
 //-----------------------------------------------------------------------------
 DiscreteFunction::DiscreteFunction(SubFunction& sub_function)
   : GenericFunction(sub_function.f->mesh),
-    x(0), finite_element(0), dof_map(0),
-    local_vector(0), local_dof_map(0), intersection_detector(0), scratch(0)
+    finite_element(0), dof_map(0),
+    local_dof_map(0), intersection_detector(0), scratch(0)
 {
   // Create sub system
   SubSystem sub_system(sub_function.i);
@@ -107,7 +104,7 @@ DiscreteFunction::DiscreteFunction(SubFunction& sub_function)
 
   // Create vector of dofs and copy values
   const uint n = dof_map->global_dimension();
-  x = new Vector(n);
+  std::tr1::shared_ptr<GenericVector> _x(new Vector(n));
   real* values = new real[n];
   uint* get_rows = new uint[n];
   uint* set_rows = new uint[n];
@@ -117,15 +114,15 @@ DiscreteFunction::DiscreteFunction(SubFunction& sub_function)
     set_rows[i] = i;
   }
   sub_function.f->x->get(values, n, get_rows);
-  x->set(values, n, set_rows);
-  x->apply();
+  _x->set(values, n, set_rows);
+  _x->apply();
   delete [] values;
   delete [] get_rows;
   delete [] set_rows;
 
   // Assume responsibility for vector and dof map
-  local_vector = x;
   local_dof_map = dof_map;
+  x.swap(_x);
 
   // Initialize scratch space
   scratch = new Scratch(*finite_element);
@@ -133,7 +130,7 @@ DiscreteFunction::DiscreteFunction(SubFunction& sub_function)
 //-----------------------------------------------------------------------------
 DiscreteFunction::DiscreteFunction(const DiscreteFunction& f)
   : GenericFunction(f.mesh),
-    local_vector(0), local_dof_map(0), intersection_detector(0), scratch(0)
+    local_dof_map(0), intersection_detector(0), scratch(0)
 {
   // FIXME: Why don't we just copy the finite_element?
   // Create finite element
@@ -146,11 +143,11 @@ DiscreteFunction::DiscreteFunction(const DiscreteFunction& f)
   dof_map = new DofMap(f.dof_map->signature(), mesh); 
 
   // Create vector and copy values
-  x  = new Vector(dof_map->global_dimension());
-  *x = *f.x;
+  std::tr1::shared_ptr<GenericVector> _x(new Vector(dof_map->global_dimension()));
+  *_x = *f.x;
 
   // Assume responsibility for vector and dof map
-  local_vector = x;
+  x.swap(_x);
   local_dof_map = dof_map;
 
   // Initialize scratch space
@@ -162,9 +159,6 @@ DiscreteFunction::~DiscreteFunction()
   if (finite_element)
     delete finite_element;
       
-  if (local_vector)
-    delete local_vector;
-
   if (local_dof_map)
     delete local_dof_map;
   
@@ -198,7 +192,7 @@ const DiscreteFunction& DiscreteFunction::operator= (const DiscreteFunction& f)
   // Check that data matches
   if (strcmp(finite_element->signature(), f.finite_element->signature()) != 0 ||
        strcmp(dof_map->signature(), f.dof_map->signature()) != 0              ||
-      x->size() != f.x->size())
+       x->size() != f.x->size())
   {
     error("Assignment of discrete function failed. Finite element spaces or dimensions don't match.");
   }
