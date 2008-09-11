@@ -17,3 +17,4 @@ namespace dolfin
   class FiniteElement : public ufc::finite_element {};
 
 }
+#endif
