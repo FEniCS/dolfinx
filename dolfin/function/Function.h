@@ -83,7 +83,7 @@ namespace dolfin
     /// Create function from data file
     explicit Function(const std::string filename);
 
-    /// Create discrete function from based on signatures
+    /// Create discrete function based on signatures
     Function(std::tr1::shared_ptr<Mesh> mesh, const std::string finite_element_signature,
              const std::string dof_map_signature);
     
