@@ -46,6 +46,16 @@ DiscreteFunction::DiscreteFunction(Mesh& mesh, GenericVector& x, DofMap& dof_map
     x(&x, NoDeleter<GenericVector>()), finite_element(0), 
     dof_map(&dof_map, NoDeleter<DofMap>()), intersection_detector(0), scratch(0)
 {
+  // Initialise function
+  init(form, i);
+}
+//-----------------------------------------------------------------------------
+DiscreteFunction::DiscreteFunction(std::tr1::shared_ptr<Mesh> mesh, 
+    std::tr1::shared_ptr<GenericVector> x, std::tr1::shared_ptr<DofMap> dof_map,
+    const ufc::form& form, uint i) : GenericFunction(mesh), x(x), finite_element(0), 
+    dof_map(dof_map), intersection_detector(0), scratch(0)
+{
+  // Initialise function
   init(form, i);
 }
 //-----------------------------------------------------------------------------

@@ -161,8 +161,9 @@ void XMLFile::operator>>(Function& f)
   xmlObject = new XMLFunction(f);
   parseFile(); 
   
-  // Initialise Function
-  f.init(mesh, finite_element_signature, dof_map_signature);
+  // Create Function
+  Function _f(mesh, finite_element_signature, dof_map_signature);  
+  f = _f;  
 
   // Read the vector
   *this >> f.vector();

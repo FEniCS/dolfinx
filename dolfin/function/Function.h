@@ -73,13 +73,17 @@ namespace dolfin
     /// Create discrete function for argument function i of form
     Function(Mesh& mesh, GenericVector& x, DofMap& dof_map, const ufc::form& form, uint i = 1);
 
+    /// Create discrete function for argument function i of form (data may be shared)
+    Function(std::tr1::shared_ptr<Mesh> mesh, std::tr1::shared_ptr<GenericVector> x, 
+             std::tr1::shared_ptr<DofMap> dof_map, const ufc::form& form, uint i = 1);
+
     /// Create discrete function from sub function
     explicit Function(SubFunction sub_function);
 
     /// Create function from data file
     explicit Function(const std::string filename);
 
-    /// Create discrete function from arguments that were read from an xml file
+    /// Create discrete function from based on signatures
     Function(std::tr1::shared_ptr<Mesh> mesh, const std::string finite_element_signature,
              const std::string dof_map_signature);
     
@@ -94,10 +98,6 @@ namespace dolfin
 
     /// Create discrete function for argument function i of form
     void init(Mesh& mesh, GenericVector& x, DofMap& dof_map, const ufc::form& form, uint i = 1);
-
-    /// Create discrete function from strings 
-    void init(std::tr1::shared_ptr<Mesh> mesh, const std::string finite_element_signature, 
-              const std::string dof_map_signature);
 
     /// Return the type of function
     Type type() const;

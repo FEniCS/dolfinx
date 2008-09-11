@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2007-2008.
 //
 // First added:  2007-04-02
-// Last changed: 2008-09-09
+// Last changed: 2008-09-11
 
 #ifndef __DISCRETE_FUNCTION_H
 #define __DISCRETE_FUNCTION_H
@@ -41,9 +41,14 @@ namespace dolfin
     /// Create discrete function for argument function i of form
     DiscreteFunction(Mesh& mesh, GenericVector& x, DofMap& dof_map, const ufc::form& form, uint i);
 
+    /// Create discrete function for argument function i of form
+    DiscreteFunction(std::tr1::shared_ptr<Mesh> mesh, std::tr1::shared_ptr<GenericVector> x, 
+                     std::tr1::shared_ptr<DofMap> dof_map, const ufc::form& form, uint i);
+
     /// Create discrete function from given data. The Discrete may or may not 
     /// own the mesh.
-    DiscreteFunction(std::tr1::shared_ptr<Mesh> mesh, std::string finite_element_signature, std::string dof_map_signature);
+    DiscreteFunction(std::tr1::shared_ptr<Mesh> mesh, 
+        std::string finite_element_signature, std::string dof_map_signature);
 
     /// Create discrete function from sub function
     DiscreteFunction(SubFunction& sub_function);
