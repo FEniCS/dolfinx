@@ -34,17 +34,16 @@ namespace dolfin
   {
   public:
 
-    /// Create discrete function for argument function i of form
+    /// Create discrete function for argument function i of form. The 
+    /// DiscreteFunction does not own its constructor arguments.
     DiscreteFunction(Mesh& mesh, Form& form, uint i);
-
-    /// Create discrete function for argument function i of form
-    DiscreteFunction(Mesh& mesh, GenericVector& x, Form& form, uint i);
 
     /// Create discrete function for argument function i of form
     DiscreteFunction(Mesh& mesh, GenericVector& x, DofMap& dof_map, const ufc::form& form, uint i);
 
-    /// Create discrete function from given data
-    DiscreteFunction(Mesh& mesh, std::string finite_element_signature, std::string dof_map_signature);
+    /// Create discrete function from given data. The Discrete may or may not 
+    /// own the mesh.
+    DiscreteFunction(std::tr1::shared_ptr<Mesh> mesh, std::string finite_element_signature, std::string dof_map_signature);
 
     /// Create discrete function from sub function
     DiscreteFunction(SubFunction& sub_function);
@@ -78,6 +77,9 @@ namespace dolfin
     /// Evaluate function at given point
     void eval(real* values, const real* x) const;
 
+    /// Return DofMap
+    DofMap& dofMap() const;
+
     /// Return signature
     std::string signature() const;
 
@@ -85,8 +87,6 @@ namespace dolfin
     GenericVector& vector() const;
 
     /// Friends
-    friend class XMLFile;
-    friend class LinearPDE;
     friend class Function;
 
   private:
@@ -117,7 +117,7 @@ namespace dolfin
     };
 
     // Initialize discrete function
-    void init(Mesh& mesh, GenericVector& x, const ufc::form& form, uint i);
+    void init(const ufc::form& form, uint i);
 
     // The vector of dofs
     std::tr1::shared_ptr<GenericVector> x;

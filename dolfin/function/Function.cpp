@@ -5,7 +5,7 @@
 // Modified by Martin Sandve Alnes 2008.
 //
 // First added:  2003-11-28
-// Last changed: 2008-09-09
+// Last changed: 2008-09-11
 //
 // The class Function serves as the envelope class and holds a pointer
 // to a letter class that is a subclass of GenericFunction. All the
@@ -77,13 +77,6 @@ Function::Function(Mesh& mesh, Form& form, uint i)
   f = new DiscreteFunction(mesh, form, i);
 }
 //-----------------------------------------------------------------------------
-Function::Function(Mesh& mesh, GenericVector& x, Form& form, uint i)
-  : Variable("u", "discrete function"),
-    f(0), _type(discrete), _cell(0), _facet(-1)
-{
-  f = new DiscreteFunction(mesh, x, form, i);
-}
-//-----------------------------------------------------------------------------
 Function::Function(Mesh& mesh, GenericVector& x, DofMap& dof_map, const ufc::form& form, uint i)
   : Variable("u", "discrete function"),
     f(0), _type(discrete), _cell(0), _facet(-1)
@@ -99,8 +92,9 @@ Function::Function(const std::string filename)
   file >> *this;
 }
 //-----------------------------------------------------------------------------
-Function::Function(Mesh& mesh, const std::string finite_element_signature,
-                               const std::string dof_map_signature)
+Function::Function(std::tr1::shared_ptr<Mesh> mesh, 
+                   const std::string finite_element_signature,
+                   const std::string dof_map_signature)
   : Variable("u", "discrete function"),
     f(0), _type(empty), _cell(0), _facet(-1)
 {
@@ -153,17 +147,6 @@ void Function::init(Mesh& mesh, Form& form, uint i)
   _type = discrete;
 }
 //-----------------------------------------------------------------------------
-void Function::init(Mesh& mesh, GenericVector& x, Form& form, uint i)
-{
-  if (f)
-    delete f;
-
-  f = new DiscreteFunction(mesh, x, form, i);
-  
-  rename("u", "discrete function");
-  _type = discrete;
-}
-//-----------------------------------------------------------------------------
 void Function::init(Mesh& mesh, GenericVector& x, DofMap& dof_map, const ufc::form& form, uint i)
 {
   if (f)
@@ -175,7 +158,7 @@ void Function::init(Mesh& mesh, GenericVector& x, DofMap& dof_map, const ufc::fo
   _type = discrete;
 }
 //-----------------------------------------------------------------------------
-void Function::init(Mesh& mesh, const std::string finite_element_signature, 
+void Function::init(std::tr1::shared_ptr<Mesh> mesh, const std::string finite_element_signature, 
               const std::string dof_map_signature)
 {
   if (f)
@@ -212,8 +195,18 @@ Mesh& Function::mesh() const
 {
   if (!f)
     error("Function contains no data.");
-
   return *(f->mesh);
+}
+//-----------------------------------------------------------------------------
+DofMap& Function::dofMap() const
+{
+  if (!f)
+    error("Function contains no data.");
+
+  if (_type != discrete)
+    error("A signature can only be returned by discrete functions.");
+
+  return (static_cast<DiscreteFunction*>(f))->dofMap();
 }
 //-----------------------------------------------------------------------------
 std::string Function::signature() const
