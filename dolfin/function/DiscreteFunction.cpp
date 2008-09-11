@@ -6,7 +6,7 @@
 // Modified by Kristen Kaasbjerg, 2008.
 //
 // First added:  2007-04-02
-// Last changed: 2008-09-09
+// Last changed: 2008-09-11
 
 #include <cstring>
 
@@ -137,7 +137,7 @@ DiscreteFunction::DiscreteFunction(const DiscreteFunction& f)
                   f.finite_element->signature());
 
   // Create dof map
-  std::tr1::shared_ptr<DofMap> _dof_map(new DofMap(f.dof_map->signature(), mesh));
+  std::tr1::shared_ptr<DofMap> _dof_map(new DofMap(f.dof_map->signature(), *mesh));
   dof_map.swap(_dof_map);
 
   // Initialise vector and copy values
@@ -202,9 +202,9 @@ void DiscreteFunction::interpolate(real* values) const
   dolfin_assert(scratch);
   
   // Local data for interpolation on each cell
-  CellIterator cell(mesh);
+  CellIterator cell(*mesh);
   UFCCell ufc_cell(*cell);
-  const uint num_cell_vertices = mesh.type().numVertices(mesh.topology().dim());
+  const uint num_cell_vertices = mesh->type().numVertices(mesh->topology().dim());
   real* vertex_values = new real[scratch->size*num_cell_vertices];
 
   // Interpolate vertex values on each cell and pick the last value
@@ -226,7 +226,7 @@ void DiscreteFunction::interpolate(real* values) const
     // Copy values to array of vertex values
     for (VertexIterator vertex(*cell); !vertex.end(); ++vertex)
       for (uint i = 0; i < scratch->size; ++i)
-        values[i*mesh.numVertices() + vertex->index()] = vertex_values[vertex.pos()*scratch->size + i];
+        values[i*mesh->numVertices() + vertex->index()] = vertex_values[vertex.pos()*scratch->size + i];
   }
 
   // Delete local data
@@ -261,10 +261,10 @@ void DiscreteFunction::eval(real* values, const real* x) const
 
   // Initialize intersection detector if not done before
   if (!intersection_detector)
-    intersection_detector = new IntersectionDetector(mesh);
+    intersection_detector = new IntersectionDetector(*mesh);
 
   // Find the cell that contains x
-  const uint gdim = mesh.geometry().dim();
+  const uint gdim = mesh->geometry().dim();
   if (gdim > 3)
     error("Sorry, point evaluation of functions not implemented for meshes of dimension %d.", gdim);
   Point p;
@@ -274,7 +274,7 @@ void DiscreteFunction::eval(real* values, const real* x) const
   intersection_detector->overlap(p, cells);
   if (cells.size() < 1)
     error("Unable to evaluate function at given point (not inside domain).");
-  Cell cell(mesh, cells[0]);
+  Cell cell(*mesh, cells[0]);
   UFCCell ufc_cell(cell);
   
   // Get expansion coefficients on cell

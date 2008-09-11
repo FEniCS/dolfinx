@@ -45,12 +45,12 @@ void UFCFunction::interpolate(real* values) const
   real * local_values = new real[size];
 
   // Optimization to avoid duplicated function calls
-  bool * visited_vertex = new bool[mesh.numVertices()];
-  for(uint i=0; i<mesh.numVertices(); i++)
+  bool * visited_vertex = new bool[mesh->numVertices()];
+  for(uint i=0; i < mesh->numVertices(); i++)
     visited_vertex[i] = false;
   
   // Call function at each vertex
-  for(CellIterator cell(mesh); !cell.end(); ++cell)
+  for(CellIterator cell(*mesh); !cell.end(); ++cell)
   {
     UFCCell ufc_cell(*cell);
     //ufc_cell.update(*cell);
@@ -66,7 +66,7 @@ void UFCFunction::interpolate(real* values) const
 
         // Copy local values to array of vertex values
         for (uint i = 0; i < size; i++)
-          values[i*mesh.numVertices() + vertex->index()] = local_values[i];
+          values[i*mesh->numVertices() + vertex->index()] = local_values[i];
       }
     }
   }

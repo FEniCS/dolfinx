@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Erik Svensson 2003.
-// Modified by Garth N. Wells 2006.
+// Modified by Garth N. Wells 2006-2008.
 // Modified by Ola Skavhaug 2006.
 // Modified by Magnus Vikstrom 2007.
 //
@@ -451,7 +451,7 @@ void XMLFile::operator<<(Function& f)
   closeFile(fp);
 
   // Write the mesh
-  *this << df->mesh;
+  *this << *(df->mesh);
   
   // Write the vector
   *this << *df->x;

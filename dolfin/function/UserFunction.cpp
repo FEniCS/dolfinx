@@ -52,15 +52,15 @@ void UserFunction::interpolate(real* values) const
   // Call overloaded eval function at each vertex
   simple_array<real> local_values(size, new real[size]);
   
-  for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
+  for (VertexIterator vertex(*mesh); !vertex.end(); ++vertex)
   {
     // Evaluate at function at vertex
-    simple_array<real> x(mesh.geometry().dim(), vertex->x());
+    simple_array<real> x(mesh->geometry().dim(), vertex->x());
     f->eval(local_values, x);
 
     // Copy values to array of vertex values
     for (uint i = 0; i < size; i++)
-      values[i*mesh.numVertices() + vertex->index()] = local_values[i];
+      values[i*mesh->numVertices() + vertex->index()] = local_values[i];
   }
   delete [] local_values.data;
 }

@@ -213,7 +213,7 @@ Mesh& Function::mesh() const
   if (!f)
     error("Function contains no data.");
 
-  return f->mesh;
+  return *(f->mesh);
 }
 //-----------------------------------------------------------------------------
 std::string Function::signature() const
