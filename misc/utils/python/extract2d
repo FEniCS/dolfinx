@@ -5,7 +5,7 @@
 # Usage: extract2d mesh.xml
 
 __author__ = "Anders Logg (logg@simula.no)"
-__date__ = "2007-09-02 -- 2008-09-02"
+__date__ = "2007-09-02 -- 2008-09-12"
 __copyright__ = "Copyright (C) 2008 Anders Logg"
 __license__  = "GNU LGPL Version 2.1"
 
@@ -54,7 +54,7 @@ file.write("""\
 <dolfin xmlns:dolfin="http://www.fenics.org/dolfin/">
   <mesh celltype="triangle" dim="2">
     <vertices size="%d">
-""" % boundary.numVertices())
+""" % len(vertex_map))
 for i in range(len(vertex_map)):
     x = vertex_coordinates[i]
     file.write('      <vertex index="%d" x="%.16e" y="%.16e"/>\n' % (i, x[0], x[1]))

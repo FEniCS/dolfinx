@@ -5,7 +5,7 @@
 # Modified by Garth N. Wells 2008
 #
 # First added:  2005
-# Last changed: 2008-05-21
+# Last changed: 2008-09-12
 #
 # The bilinear form for classical linear elasticity (Navier).
 # Compile this form with FFC: ffc -l dolfin Elasticity.form.
@@ -25,5 +25,5 @@ def epsilon(v):
 def sigma(v):
     return 2*mult(mu, epsilon(v)) + mult(lmbda, mult(trace(epsilon(v)), Identity(len(v))))
 
-a = dot(grad(v), sigma(u))*dx
+a = dot(epsilon(v), sigma(u))*dx
 L = dot(v, f)*dx
