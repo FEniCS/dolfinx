@@ -6,7 +6,7 @@
 // Modified by Kristen Kaasbjerg, 2008.
 //
 // First added:  2007-04-02
-// Last changed: 2008-09-11
+// Last changed: 2008-09-13
 
 #include <cstring>
 
@@ -319,7 +319,9 @@ void DiscreteFunction::init(const ufc::form& form, uint i)
   finite_element = form.create_finite_element(i);
 
   // Initialize vector
-  x->init(dof_map->global_dimension());
+  const uint N = dof_map->global_dimension();
+  if (x->size() != N)
+    x->init(N);
 
   // Initialize scratch space
   if (!scratch)
