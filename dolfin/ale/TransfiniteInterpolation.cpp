@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-05-02
-// Last changed: 2008-06-20
+// Last changed: 2008-09-11
 
 #include <string.h>
 #include <dolfin/common/Array.h>
@@ -37,7 +37,6 @@ void TransfiniteInterpolation::move(Mesh& mesh, Mesh& new_boundary, Interpolatio
   // If hermite, create dgdn
   if (method == interpolation_hermite)
   {
-    cout<<"hermite"<<endl;
     hermiteFunction(ghat, dim, new_boundary,
 		    mesh, *vertex_map, *cell_map);
   }
