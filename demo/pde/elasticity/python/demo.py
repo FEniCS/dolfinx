@@ -89,7 +89,7 @@ def epsilon(v):
 def sigma(v):
     return 2.0*mu*epsilon(v) + lmbda*mult(trace(epsilon(v)), Identity(len(v)))
 
-a = dot(grad(v), sigma(u))*dx
+a = dot(epsilon(v), sigma(u))*dx
 L = dot(v, f)*dx
 
 # Set up boundary condition at left end
