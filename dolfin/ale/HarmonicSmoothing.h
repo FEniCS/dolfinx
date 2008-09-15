@@ -12,7 +12,10 @@ namespace dolfin
 
   class Mesh;
 
-  /// Documentation of class
+  /// This class implements harmonic mesh smoothing. Poisson's equation
+  /// is solved with zero right-hand side (Laplace's equation) for each
+  /// coordinate direction to compute new coordinates for all vertices,
+  /// given new locations for the coordinates of the boundary.
 
   class HarmonicSmoothing
   {

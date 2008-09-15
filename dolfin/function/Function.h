@@ -1,16 +1,17 @@
 // Copyright (C) 2007-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Garth N. Wells 2005-2007.
+// Modified by Garth N. Wells 2005-2008.
 // Modified by Kristian B. Oelgaard, 2007.
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2003-11-28
-// Last changed: 2008-07-07
+// Last changed: 2008-09-11
 
 #ifndef __FUNCTION_H
 #define __FUNCTION_H
 
+#include <tr1/memory>
 #include <ufc.h>
 #include <dolfin/common/types.h>
 #include <dolfin/common/simple_array.h>
@@ -66,14 +67,15 @@ namespace dolfin
     /// Create function from given ufc::function
     Function(Mesh& mesh, const ufc::function& function, uint size);
 
-    /// Create function from given GenericFunction
-    //Function(Mesh& mesh, GenericFunction& function);
+    /// Create discrete function for argument function i of form
+    Function(Mesh& mesh, Form& form, uint i = 1);
 
     /// Create discrete function for argument function i of form
-    Function(Mesh& mesh, GenericVector& x, Form& form, uint i = 1);
+    Function(Mesh& mesh, DofMap& dof_map, const ufc::form& form, uint i = 1);
 
-    /// Create discrete function for argument function i of form
-    Function(Mesh& mesh, GenericVector& x, DofMap& dof_map, const ufc::form& form, uint i = 1);
+    /// Create discrete function for argument function i of form (data may be shared)
+    Function(std::tr1::shared_ptr<Mesh> mesh, std::tr1::shared_ptr<GenericVector> x, 
+             std::tr1::shared_ptr<DofMap> dof_map, const ufc::form& form, uint i = 1);
 
     /// Create discrete function from sub function
     explicit Function(SubFunction sub_function);
@@ -81,10 +83,9 @@ namespace dolfin
     /// Create function from data file
     explicit Function(const std::string filename);
 
-    /// Create discrete function from arguments that were read from an xml file
-    /// (see XMLFile.cpp for a similar function)
-    Function(Mesh& mesh, GenericVector& x, const std::string finite_element_signature,
-                                           const std::string        dof_map_signature);
+    /// Create discrete function based on signatures
+    Function(std::tr1::shared_ptr<Mesh> mesh, const std::string finite_element_signature,
+             const std::string dof_map_signature);
     
     /// Copy constructor
     Function(const Function& f);
@@ -93,10 +94,10 @@ namespace dolfin
     virtual ~Function();
 
     /// Create discrete function for argument function i of form
-    void init(Mesh& mesh, GenericVector& x, Form& form, uint i = 1);
+    void init(Mesh& mesh, Form& form, uint i = 1);
 
     /// Create discrete function for argument function i of form
-    void init(Mesh& mesh, GenericVector& x, DofMap& dof_map, const ufc::form& form, uint i = 1);
+    void init(Mesh& mesh, DofMap& dof_map, const ufc::form& form, uint i = 1);
 
     /// Return the type of function
     Type type() const;
@@ -109,6 +110,9 @@ namespace dolfin
     
     /// Return the mesh
     Mesh& mesh() const;
+
+    /// Return the DofMap
+    DofMap& dofMap() const;
 
     /// Return the signature of a DiscreteFunction
     std::string signature() const;
@@ -145,10 +149,6 @@ namespace dolfin
 
     /// Evaluate scalar function at given point (overload for scalar user-defined function)
     virtual real eval(const real* x) const;
-
-    /// Friends
-    friend class XMLFile;
-    friend class LinearPDE;
 
   protected:
     

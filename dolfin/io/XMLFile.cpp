@@ -2,14 +2,15 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Erik Svensson 2003.
-// Modified by Garth N. Wells 2006.
+// Modified by Garth N. Wells 2006-2008.
 // Modified by Ola Skavhaug 2006.
 // Modified by Magnus Vikstrom 2007.
 //
 // First added:  2002-12-03
-// Last changed: 2008-04-22
+// Last changed: 2008-09-11
 
 #include <stdarg.h>
+#include <tr1/memory>
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/constants.h>
@@ -136,12 +137,8 @@ void XMLFile::operator>>(Function& f)
 
   message(1, "Reading function from %s.", filename.c_str());
 
-  // Read the vector
-  Vector* x = new Vector();
-  *this >> *x;
-
   // Read the mesh
-  Mesh* mesh = new Mesh();
+  std::tr1::shared_ptr<Mesh> mesh(new Mesh());
   *this >> *mesh;
 
   // Read the finite element specification
@@ -164,15 +161,13 @@ void XMLFile::operator>>(Function& f)
   xmlObject = new XMLFunction(f);
   parseFile(); 
   
-  // Create the function (we're all friends here)
-  if ( f.f )
-    delete f.f;
-  f.f = new DiscreteFunction(*mesh, *x, finite_element_signature, dof_map_signature);
-  f._type = Function::discrete;
+  // Create Function
+  Function _f(mesh, finite_element_signature, dof_map_signature);  
+  f = _f;  
 
-  DiscreteFunction& ff = dynamic_cast<DiscreteFunction&>(*f.f);
-  ff.local_vector = x;  
-  
+  // Read the vector
+  *this >> f.vector();
+
   f.rename("u", "discrete function from file data");
 }
 //-----------------------------------------------------------------------------
@@ -441,28 +436,25 @@ void XMLFile::operator<<(Function& f)
   if ( f.type() != Function::discrete )
     error("Only discrete functions can be saved in XML format.");
 
-  // Get discrete function (we're all friends here)
-  DiscreteFunction* df = static_cast<DiscreteFunction*>(f.f);
-  
   // Begin function
   FILE *fp = openFile();
   fprintf(fp, "  <function> \n");
   closeFile(fp);
 
   // Write the mesh
-  *this << df->mesh;
+  *this << f.mesh();
   
   // Write the vector
-  *this << *df->x;
+  *this << f.vector();
 
   // Write the finite element
   fp = openFile();
-  fprintf(fp, "  <finiteelement signature=\"%s\"/>\n", df->finite_element->signature());
+  fprintf(fp, "  <finiteelement signature=\"%s\"/>\n", f.signature().c_str());
   closeFile(fp);
 
   // Write the dof map
   fp = openFile();
-  fprintf(fp, "  <dofmap signature=\"%s\"/>\n", df->dof_map->signature());
+  fprintf(fp, "  <dofmap signature=\"%s\"/>\n", f.dofMap().signature());
   closeFile(fp);
 
   // End function

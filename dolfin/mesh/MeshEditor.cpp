@@ -91,15 +91,17 @@ void MeshEditor::initCells(uint num_cells)
   mesh->_geometry.initAffineIndicator(num_cells);
 }
 //-----------------------------------------------------------------------------
-void MeshEditor::setMeshCoordinates(Vector *mesh_coord_vec)
+void MeshEditor::setMeshCoordinates(Vector& mesh_coord)
 {
   // Check if we are currently editing a mesh
   if ( !mesh )
     error("No mesh opened, unable to edit.");
 
-  mesh->_geometry.set_mesh_coordinates(mesh, mesh_coord_vec,
-                                       mcv_finite_element_signature,
-                                       mcv_dof_map_signature);
+  // FIXME: 'mcv' is not informative
+
+  mesh->_geometry.setMeshCoordinates(*mesh, mesh_coord,
+                                     mcv_finite_element_signature,
+                                     mcv_dof_map_signature);
 }
 //-----------------------------------------------------------------------------
 void MeshEditor::setAffineCellIndicator(uint c, const std::string affine_str)
@@ -109,7 +111,7 @@ void MeshEditor::setAffineCellIndicator(uint c, const std::string affine_str)
   if ( affine_str=="false" )
     affine_value = false;
   
-  // set affine indicator for specific cell
+  // Set affine indicator for specific cell
   mesh->_geometry.setAffineIndicator(c, affine_value);
 }
 //-----------------------------------------------------------------------------

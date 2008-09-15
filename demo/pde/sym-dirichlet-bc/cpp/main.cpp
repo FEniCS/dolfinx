@@ -85,12 +85,15 @@ int main()
   PoissonBilinearForm a;
   PoissonLinearForm L(f, g);
 
+  // Create function
+  Function u(mesh, a);
+
   // Create table
   Table table("Assembly and application of bcs");
 
   // Assemble system
   Matrix A;
-  Vector x, b;
+  Vector b;
 
   tic();
   assemble(A, a, mesh);
@@ -104,12 +107,10 @@ int main()
 
   table.disp();  
  
-   // Solve system
+  // Solve system
+  GenericVector& x = u.vector();
   LUSolver solver(symmetric);
   solver.solve(A, x, b);
-
-  // Create function
-  Function u(mesh, x, a);
 
   // Plot solution
   plot(u);

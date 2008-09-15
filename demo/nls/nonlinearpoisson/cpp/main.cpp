@@ -74,7 +74,7 @@ class MyNonlinearProblem : public NonlinearProblem
   public:
 
     // Constructor 
-    MyNonlinearProblem(Mesh& mesh, Vector& x, SubDomain& dirichlet_boundary, 
+    MyNonlinearProblem(Mesh& mesh, SubDomain& dirichlet_boundary, 
                        Function& g, Function& f, Function& u)  
                        : assembler(mesh)
     {
@@ -89,7 +89,7 @@ class MyNonlinearProblem : public NonlinearProblem
       dof_map_set.update(a->form(), mesh);
 
       // Initialise solution vector u
-      u.init(mesh, x, *a, 1);
+      u.init(mesh, *a, 1);
     }
 
     // Destructor 
@@ -147,11 +147,11 @@ int main(int argc, char* argv[])
   DirichletBoundary dirichlet_boundary;
   DirichletBoundaryCondition g(mesh, &t);
 
-  Vector x;
+  // Solution vector
   Function u;
 
   // Create user-defined nonlinear problem
-  MyNonlinearProblem nonlinear_problem(mesh, x, dirichlet_boundary, g, f, u);
+  MyNonlinearProblem nonlinear_problem(mesh, dirichlet_boundary, g, f, u);
 
   // Create nonlinear solver (using GMRES linear solver) and set parameters
   // NewtonSolver nonlinear_solver(gmres);
@@ -161,6 +161,7 @@ int main(int argc, char* argv[])
   nonlinear_solver.set("Newton absolute tolerance", 1e-10);
 
   // Solve nonlinear problem in a series of steps
+  GenericVector& x = u.vector();
   real dt = 1.0; real T  = 3.0;
   while( t < T)
   {

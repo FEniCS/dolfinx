@@ -1,3 +1,4 @@
+ - Add harmonic ALE mesh smoothing
  - Refinements of Graph class
  - Add CholmodCholeskySlover (direct solver for symmetric matrices)
  - Implement application of Dirichlet boundary conditions within assembly loop

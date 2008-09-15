@@ -80,18 +80,19 @@ int main()
   PoissonBilinearForm a;
   PoissonLinearForm L(f);
 
-
   // Solve PDE
   Matrix A;
-  Vector x, b;
+  Vector b;
   assemble(A, a, mesh);
   assemble(b, L, mesh);
   for (dolfin::uint i = 0; i < bcs.size(); i++)
     bcs[i]->apply(A, b, a);
 
+  Function u(mesh, a);
+  GenericVector& x = u.vector(); 
+
   LUSolver solver;
   solver.solve(A, x, b);
-  Function u(mesh, x, a);
 
 /*
   // Define PDE

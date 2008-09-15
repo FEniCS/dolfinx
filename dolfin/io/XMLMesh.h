@@ -63,9 +63,9 @@ namespace dolfin
     MeshFunction<uint>* f;
     Array<uint>* a;
     
-    // variables for reading in higher order mesh coordinates from vector data
-    Vector *mesh_coord_vec;
-    XMLVector *xml_vec;
+    // Variables for reading in higher order mesh coordinates from vector data
+    Vector *mesh_coord;
+    XMLVector *xml_vector;
     
   };
   

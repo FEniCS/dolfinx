@@ -15,7 +15,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 XMLMesh::XMLMesh(Mesh& mesh) : XMLObject(), _mesh(mesh), state(OUTSIDE), f(0), a(0),
-                               mesh_coord_vec(0), xml_vec(0)
+                               mesh_coord(0), xml_vector(0)
 {
   // Do nothing
   
@@ -101,7 +101,7 @@ void XMLMesh::startElement(const xmlChar *name, const xmlChar **attrs)
     
     if ( xmlStrcasecmp(name, (xmlChar *) "vector") == 0 )
     {
-      xml_vec->startVector(name, attrs);
+      xml_vector->startVector(name, attrs);
       state = INSIDE_VECTOR;
     }
     if ( xmlStrcasecmp(name, (xmlChar *) "finiteelement") == 0 )
@@ -132,7 +132,7 @@ void XMLMesh::startElement(const xmlChar *name, const xmlChar **attrs)
   case INSIDE_VECTOR:
     
     if ( xmlStrcasecmp(name, (xmlChar *) "entry") == 0 )
-      xml_vec->readEntry(name, attrs);
+      xml_vector->readEntry(name, attrs);
     break;
     
   default:
@@ -212,7 +212,7 @@ void XMLMesh::endElement(const xmlChar *name)
 
     if ( xmlStrcasecmp(name, (xmlChar *) "vector") == 0 )
     {
-      xml_vec->endVector();
+      xml_vector->endVector();
       state = INSIDE_COORDINATES;
     }
 
@@ -269,8 +269,8 @@ void XMLMesh::readCells(const xmlChar *name, const xmlChar **attrs)
 void XMLMesh::readCoordinates(const xmlChar *name, const xmlChar **attrs)
 {
   // setup variables to store vector data
-  mesh_coord_vec = new Vector();
-  xml_vec = new XMLVector(*mesh_coord_vec);
+  mesh_coord = new Vector();
+  xml_vector = new XMLVector(*mesh_coord);
 }
 //-----------------------------------------------------------------------------
 void XMLMesh::readVertex(const xmlChar *name, const xmlChar **attrs)
@@ -452,10 +452,12 @@ void XMLMesh::readDofMapsignature(const xmlChar* name, const xmlChar** attrs)
 //-----------------------------------------------------------------------------
 void XMLMesh::closeMesh()
 {
-  delete(xml_vec);
+  delete(xml_vector);
   
-  // setup higher order mesh coordinate data
-  editor.setMeshCoordinates(mesh_coord_vec);   
+  // Setup higher order mesh coordinate data
+  // FIXME: This will introduce a memory leak
+  //error("XMLMesh::closeMesh() introduces a memory leak. Please fix.");
+  editor.setMeshCoordinates(*mesh_coord);   
 
   editor.close();
 }

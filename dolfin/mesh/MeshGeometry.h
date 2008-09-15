@@ -1,8 +1,10 @@
 // Copyright (C) 2006 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Garth N. Wells, 2008.
+//
 // First added:  2006-05-08
-// Last changed: 2007-11-30
+// Last changed: 2008-09-10
 
 #ifndef __MESH_GEOMETRY_H
 #define __MESH_GEOMETRY_H
@@ -86,9 +88,9 @@ namespace dolfin
     void set(uint n, uint i, real x);
     
     /// Set higher order mesh coordinates
-    void set_mesh_coordinates(Mesh* mesh,  Vector* mesh_coord_vec,
-                              const std::string      FE_signature,
-                              const std::string  dofmap_signature);
+    void setMeshCoordinates(Mesh& mesh, Vector& mesh_coord,
+                              const std::string FE_signature,
+                              const std::string dofmap_signature);
 
     /// Display data
     void disp() const;

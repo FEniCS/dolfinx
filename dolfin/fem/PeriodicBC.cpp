@@ -209,14 +209,17 @@ void PeriodicBC::apply(GenericMatrix& A, GenericVector& b, const DofMap& dof_map
     p++;
   }
 
+/*
   // Insert 1 at (dof0, dof1)
   uint* rows = new uint[coordinate_dofs.size()];
   uint i = 0;
   for (iterator it = coordinate_dofs.begin(); it != coordinate_dofs.end(); ++it)
     rows[i++] = static_cast<uint>(it->second.first);
   A.ident(coordinate_dofs.size(), rows);
+*/
 
   // Insert -1 at (dof0, dof1) and 0 on right-hand side
+  uint* rows = new uint[1];
   uint* cols = new uint[1];
   real* vals = new real[1];
   real* zero = new real[1];
@@ -225,6 +228,9 @@ void PeriodicBC::apply(GenericMatrix& A, GenericVector& b, const DofMap& dof_map
     // Check that we got both dofs
     const int dof0 = it->second.first;
     const int dof1 = it->second.second;
+    
+    cout <<dof0<< " " << dof1<<endl;
+    
     if (dof0 == -1 || dof1 == -1)
     {
       cout << "At coordinate: x =";
@@ -247,6 +253,20 @@ void PeriodicBC::apply(GenericMatrix& A, GenericVector& b, const DofMap& dof_map
     vals[0] = -1;
     zero[0] = 0.0;
 
+    Array<uint> columns;
+    Array<real> values;
+    
+    // Add slave-dof-row to master-dof-row  
+    A.getrow(dof0, columns, values);
+    A.add(&values[0], 1, &cols[0], columns.size(), &columns[0]);
+
+    // Add slave-dof-entry to master-dof-entry 
+    values.resize(1);
+    b.get(&values[0], 1, &rows[0]);
+    b.add(&values[0], 1, &cols[0]);
+
+    // Replace slave-dof equation by relation enforcing periodicity
+    A.ident(1, rows);
     A.set(vals, 1, rows, 1, cols);
     b.set(zero, 1, rows);
   }
@@ -270,7 +290,12 @@ void PeriodicBC::apply(GenericMatrix& A, GenericVector& b,
 void PeriodicBC::apply(GenericMatrix& A, GenericVector& b,
                        const GenericVector& x, const DofMap& dof_map, const ufc::form& form)
 {
-  // FIXME: Implement this (Garth?)
-  error("Periodic boundary conditions not implemented for nonlinear systems.");
+  cout << "Applying periodic boundary conditions to nonlinear system." << endl;
+
+  //FIXME: Consistency of x should be checked! 
+  //FIXME: Only the increment is periodic!!!!! 
+  
+  apply(A, b, dof_map, form);
+
 }
 //-----------------------------------------------------------------------------
