@@ -41,7 +41,7 @@ DiscreteFunction::DiscreteFunction(Mesh& mesh, Form& form, uint i)
   x->init(dof_map->global_dimension());
 
   // Initialise finite element and scratch space
-  init(form, i);
+  init(form.form(), i);
 }
 //-----------------------------------------------------------------------------
 DiscreteFunction::DiscreteFunction(Mesh& mesh, DofMap& dof_map, 
@@ -50,7 +50,7 @@ DiscreteFunction::DiscreteFunction(Mesh& mesh, DofMap& dof_map,
     intersection_detector(0), scratch(0)
 {
   // Initialize vector
-  x->init(dof_map->global_dimension());
+  x->init(dof_map.global_dimension());
 
   // Initialise finite element and scratch space
   init(form, i);
