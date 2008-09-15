@@ -71,7 +71,7 @@ namespace dolfin
     Function(Mesh& mesh, Form& form, uint i = 1);
 
     /// Create discrete function for argument function i of form
-    Function(Mesh& mesh, GenericVector& x, DofMap& dof_map, const ufc::form& form, uint i = 1);
+    Function(Mesh& mesh, DofMap& dof_map, const ufc::form& form, uint i = 1);
 
     /// Create discrete function for argument function i of form (data may be shared)
     Function(std::tr1::shared_ptr<Mesh> mesh, std::tr1::shared_ptr<GenericVector> x, 
@@ -97,7 +97,7 @@ namespace dolfin
     void init(Mesh& mesh, Form& form, uint i = 1);
 
     /// Create discrete function for argument function i of form
-    void init(Mesh& mesh, GenericVector& x, DofMap& dof_map, const ufc::form& form, uint i = 1);
+    void init(Mesh& mesh, DofMap& dof_map, const ufc::form& form, uint i = 1);
 
     /// Return the type of function
     Type type() const;

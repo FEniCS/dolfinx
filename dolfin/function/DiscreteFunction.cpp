@@ -37,16 +37,22 @@ DiscreteFunction::DiscreteFunction(Mesh& mesh, Form& form, uint i)
   std::tr1::shared_ptr<DofMap> _dof_map(&form.dofMaps()[i], NoDeleter<DofMap>()); 
   dof_map.swap(_dof_map);
 
-  // Initialise function
-  init(form.form(), i);
+  // Initialize vector
+  x->init(dof_map->global_dimension());
+
+  // Initialise finite element and scratch space
+  init(form, i);
 }
 //-----------------------------------------------------------------------------
-DiscreteFunction::DiscreteFunction(Mesh& mesh, GenericVector& x, DofMap& dof_map,
-    const ufc::form& form, uint i) : GenericFunction(mesh), 
-    x(&x, NoDeleter<GenericVector>()), finite_element(0), 
-    dof_map(&dof_map, NoDeleter<DofMap>()), intersection_detector(0), scratch(0)
+DiscreteFunction::DiscreteFunction(Mesh& mesh, DofMap& dof_map, 
+    const ufc::form& form, uint i) : GenericFunction(mesh), x(new Vector), 
+    finite_element(0), dof_map(&dof_map, NoDeleter<DofMap>()), 
+    intersection_detector(0), scratch(0)
 {
-  // Initialise function
+  // Initialize vector
+  x->init(dof_map->global_dimension());
+
+  // Initialise finite element and scratch space
   init(form, i);
 }
 //-----------------------------------------------------------------------------
@@ -55,7 +61,12 @@ DiscreteFunction::DiscreteFunction(std::tr1::shared_ptr<Mesh> mesh,
     const ufc::form& form, uint i) : GenericFunction(mesh), x(x), finite_element(0), 
     dof_map(dof_map), intersection_detector(0), scratch(0)
 {
-  // Initialise function
+  // Initialize vector if necessary
+  const uint N = dof_map->global_dimension();
+  if (x->size() != N)
+    x->init(N);
+
+  // Initialise finite element and scratch space
   init(form, i);
 }
 //-----------------------------------------------------------------------------
@@ -317,11 +328,6 @@ void DiscreteFunction::init(const ufc::form& form, uint i)
 
   // Create finite element
   finite_element = form.create_finite_element(i);
-
-  // Initialize vector
-  const uint N = dof_map->global_dimension();
-  if (x->size() != N)
-    x->init(N);
 
   // Initialize scratch space
   if (!scratch)

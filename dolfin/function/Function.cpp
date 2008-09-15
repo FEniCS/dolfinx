@@ -69,10 +69,10 @@ Function::Function(Mesh& mesh, Form& form, uint i)
   f = new DiscreteFunction(mesh, form, i);
 }
 //-----------------------------------------------------------------------------
-Function::Function(Mesh& mesh, GenericVector& x, DofMap& dof_map, const ufc::form& form, uint i)
+Function::Function(Mesh& mesh, DofMap& dof_map, const ufc::form& form, uint i)
   : Variable("u", "discrete function"), f(0), _type(discrete), _cell(0), _facet(-1)
 {
-  f = new DiscreteFunction(mesh, x, dof_map, form, i);
+  f = new DiscreteFunction(mesh, dof_map, form, i);
 }
 //-----------------------------------------------------------------------------
 Function::Function(std::tr1::shared_ptr<Mesh> mesh, std::tr1::shared_ptr<GenericVector> x, 
@@ -142,12 +142,12 @@ void Function::init(Mesh& mesh, Form& form, uint i)
   _type = discrete;
 }
 //-----------------------------------------------------------------------------
-void Function::init(Mesh& mesh, GenericVector& x, DofMap& dof_map, const ufc::form& form, uint i)
+void Function::init(Mesh& mesh, DofMap& dof_map, const ufc::form& form, uint i)
 {
   if (f)
     delete f;
 
-  f = new DiscreteFunction(mesh, x, dof_map, form, i);
+  f = new DiscreteFunction(mesh, dof_map, form, i);
   
   rename("u", "discrete function");
   _type = discrete;

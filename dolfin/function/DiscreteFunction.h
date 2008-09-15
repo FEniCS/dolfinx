@@ -40,7 +40,7 @@ namespace dolfin
     DiscreteFunction(Mesh& mesh, Form& form, uint i);
 
     /// Create discrete function for argument function i of form
-    DiscreteFunction(Mesh& mesh, GenericVector& x, DofMap& dof_map, const ufc::form& form, uint i);
+    DiscreteFunction(Mesh& mesh, DofMap& dof_map, const ufc::form& form, uint i);
 
     /// Create discrete function for argument function i of form
     DiscreteFunction(std::tr1::shared_ptr<Mesh> mesh, std::tr1::shared_ptr<GenericVector> x, 
