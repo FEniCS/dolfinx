@@ -40,7 +40,7 @@ width = 1
 height = 0.5
 
 # specify the mode of interest. moi = 1 : dominant (TM_{11}) mode
-moi = 1
+moi = 2
 
 # create the mesh using a Rectangle
 nx = int(width/height)
@@ -50,7 +50,7 @@ if nx == 0:
 mesh = Rectangle(0, width, 0, height, nx, 1, 0)
 
 # refine if desired
-mesh.refine()
+# mesh.refine()
 
 # define the finite element.  For vector electromagnetic problems Nedelec vector 
 # elements are used.
@@ -98,7 +98,7 @@ esolver.solve(S, T)
 dominant_mode_index = -1
 for i in range(S.size(1)):
     (lr, lc) = esolver.getEigenvalue(i)
-    #print "Eigenvalue " + str(i) + ": " + str(lr) + " + i" + str(lc)
+    # print "Eigenvalue " + str(i) + ": " + str(lr) + " + i" + str(lc)
     # ensure that the real part is large enough and that the complex part is zero
     if (lr > 1) and (lc == 0):
         print "Dominant mode found"
