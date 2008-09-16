@@ -397,7 +397,7 @@ void DirichletBC::computeBCTopological(std::map<uint, real>& boundary_values,
     UFCCell ufc_cell(cell);
 
     // Interpolate function on cell
-    g.interpolate(data.w, ufc_cell, *data.finite_element, cell, facet_number);
+    g.interpolate(data.w, ufc_cell, *(data.finite_element), cell, facet_number);
     
     // Tabulate dofs on cell
     data.dof_map->tabulate_dofs(data.cell_dofs, ufc_cell);

@@ -24,6 +24,7 @@
 namespace dolfin
 {
 
+  class FiniteElement;
   class Mesh;
   class Form;
   class GenericFunction;
@@ -138,7 +139,7 @@ namespace dolfin
     /// Interpolate function to finite element space on cell
     void interpolate(real* coefficients,
                      const ufc::cell& ufc_cell,
-                     const ufc::finite_element& finite_element,
+                     const FiniteElement& finite_element,
                      Cell& cell, int facet = -1);
 
     /// Evaluate function at given point (used for subclassing through SWIG interface)

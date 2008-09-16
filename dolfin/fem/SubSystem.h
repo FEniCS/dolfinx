@@ -48,8 +48,7 @@ namespace dolfin
     uint depth() const;
     
     /// Extract sub finite element of given finite element
-    ufc::finite_element* extractFiniteElement
-    (const ufc::finite_element& finite_element) const;
+    ufc::finite_element* extractFiniteElement(const ufc::finite_element& finite_element) const;
 
     /// Return array which defines sub system
     const Array<uint>& array() const

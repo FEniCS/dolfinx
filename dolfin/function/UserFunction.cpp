@@ -7,6 +7,7 @@
 // Note: this breaks the standard envelope-letter idiom slightly,
 // since we call the envelope class from one of the letter classes.
 
+#include <dolfin/fem/FiniteElement.h>
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/Vertex.h>
@@ -67,13 +68,13 @@ void UserFunction::interpolate(real* values) const
 //-----------------------------------------------------------------------------
 void UserFunction::interpolate(real* coefficients,
                                const ufc::cell& cell,
-                               const ufc::finite_element& finite_element) const
+                               const FiniteElement& finite_element) const
 {
   dolfin_assert(coefficients);
 
   // Evaluate each dof to get coefficients for nodal basis expansion
-  for (uint i = 0; i < finite_element.space_dimension(); i++)
-    coefficients[i] = finite_element.evaluate_dof(i, *this, cell);
+  for (uint i = 0; i < finite_element.spaceDimension(); i++)
+    coefficients[i] = finite_element.evaluateDof(i, *this, cell);
 }
 //-----------------------------------------------------------------------------
 void UserFunction::eval(real* values, const real* x) const

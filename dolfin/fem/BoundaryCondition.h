@@ -17,6 +17,7 @@ namespace dolfin
 {
 
   class DofMap;
+  class FiniteElement;
   class GenericMatrix;
   class GenericVector;
   class SubSystem;
@@ -64,7 +65,7 @@ namespace dolfin
       UFCMesh ufc_mesh;
       
       // Finite element for sub system
-      ufc::finite_element* finite_element;
+      FiniteElement* finite_element;
       
       // Dof map for sub system
       const DofMap* dof_map;

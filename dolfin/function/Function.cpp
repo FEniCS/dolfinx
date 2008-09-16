@@ -274,7 +274,7 @@ void Function::interpolate(real* values)
 }
 //-----------------------------------------------------------------------------
 void Function::interpolate(real* coefficients, const ufc::cell& ufc_cell,
-              const ufc::finite_element& finite_element, Cell& cell, int facet)
+              const FiniteElement& finite_element, Cell& cell, int facet)
 {
   if (!f)
     error("Function contains no data.");

@@ -14,6 +14,7 @@
 namespace dolfin
 {
 
+  class FiniteElement;
   class Mesh;
   class Cell;
   class DofMapSet;
@@ -41,10 +42,10 @@ namespace dolfin
     void update(Cell& cell0, Cell& cell1);
 
     // Array of finite elements for primary arguments
-    ufc::finite_element** finite_elements;
+    FiniteElement** finite_elements;
 
     // Array of finite elements for coefficients
-    ufc::finite_element** coefficient_elements;
+    FiniteElement** coefficient_elements;
 
     // Array of cell integrals
     ufc::cell_integral** cell_integrals;

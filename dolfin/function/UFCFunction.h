@@ -11,7 +11,8 @@
 
 namespace dolfin
 {
-  // TODO: Take rank and shape instead of size in constructor. Or better: add rank() and dim(i) to ufc::function in next version.
+  // TODO: Take rank and shape instead of size in constructor. 
+  // Or better: add rank() and dim(i) to ufc::function in next version.
 
   /// This class implements the functionality for functions
   /// that take a single constant value.
@@ -38,7 +39,7 @@ namespace dolfin
     /// Interpolate function to finite element space on cell
     void interpolate(real* coefficients,
                      const ufc::cell& cell,
-                     const ufc::finite_element& finite_element) const;
+                     const FiniteElement& finite_element) const;
 
     /// Evaluate function at given point
     void eval(real* values, const real* x) const;
@@ -51,7 +52,7 @@ namespace dolfin
   private:
 
     // Underlying ufc::function
-    const ufc::function & function;
+    const ufc::function& function;
 
     // Size of value (number of entries in tensor value)
     uint size;

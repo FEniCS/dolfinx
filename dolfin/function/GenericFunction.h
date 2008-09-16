@@ -17,6 +17,7 @@
 namespace dolfin
 {
 
+  class FiniteElement;
   class Mesh;
   
   /// This class serves as a base class/interface for implementations
@@ -47,7 +48,7 @@ namespace dolfin
     /// Interpolate function to finite element space on cell
     virtual void interpolate(real* coefficients,
                              const ufc::cell& cell,
-                             const ufc::finite_element& finite_element) const = 0;
+                             const FiniteElement& finite_element) const = 0;
 
     /// Evaluate function at given point
     virtual void eval(real* values, const real* x) const = 0;

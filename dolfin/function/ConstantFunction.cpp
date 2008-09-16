@@ -6,6 +6,7 @@
 // First added:  2006-02-09
 // Last changed: 2008-07-08
 
+#include <dolfin/fem/FiniteElement.h>
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/mesh/Mesh.h>
 #include "ConstantFunction.h"
@@ -107,19 +108,19 @@ void ConstantFunction::interpolate(real* _values) const
 //-----------------------------------------------------------------------------
 void ConstantFunction::interpolate(real* coefficients,
                                    const ufc::cell& cell,
-                                   const ufc::finite_element& finite_element) const
+                                   const FiniteElement& finite_element) const
 {
   dolfin_assert(coefficients);
   
   // Assert same value shape (TODO: Slow to do this for every element, should probably remove later)
-  dolfin_assert(value_rank == finite_element.value_rank());
+  dolfin_assert(value_rank == finite_element.valueRank());
   for (uint i = 0; i < value_rank; i++)
-    dolfin_assert(shape[i] == finite_element.value_dimension(i));
+    dolfin_assert(shape[i] == finite_element.valueDimension(i));
   
   // UFC 1.0 version:
   // Evaluate each dof to get coefficients for nodal basis expansion
-  for (uint i = 0; i < finite_element.space_dimension(); i++)
-    coefficients[i] = finite_element.evaluate_dof(i, *this, cell);
+  for (uint i = 0; i < finite_element.spaceDimension(); i++)
+    coefficients[i] = finite_element.evaluateDof(i, *this, cell);
   
   // UFC 1.1 version:
   /// Evaluate linear functionals for all dofs on the function f

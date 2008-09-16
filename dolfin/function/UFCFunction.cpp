@@ -9,6 +9,7 @@
 #include <dolfin/mesh/Vertex.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/IntersectionDetector.h>
+#include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/UFCCell.h>
 #include "UFCFunction.h"
 
@@ -76,19 +77,19 @@ void UFCFunction::interpolate(real* values) const
 //-----------------------------------------------------------------------------
 void UFCFunction::interpolate(real* coefficients,
                               const ufc::cell& cell,
-                              const ufc::finite_element& finite_element) const
+                              const FiniteElement& finite_element) const
 {
   dolfin_assert(coefficients);
   
   // Compute size of value (number of entries in tensor value)
   uint fesize = 1;
-  for (uint i = 0; i < finite_element.value_rank(); i++)
-    fesize *= finite_element.value_dimension(i);
+  for (uint i = 0; i < finite_element.valueRank(); i++)
+    fesize *= finite_element.valueDimension(i);
   dolfin_assert(fesize == size);
   
   // Evaluate each dof to get coefficients for nodal basis expansion
-  for (uint i = 0; i < finite_element.space_dimension(); i++)
-    coefficients[i] = finite_element.evaluate_dof(i, function, cell);
+  for (uint i = 0; i < finite_element.spaceDimension(); i++)
+    coefficients[i] = finite_element.evaluateDof(i, function, cell);
 }
 //-----------------------------------------------------------------------------
 void UFCFunction::eval(real* values, const real* x) const

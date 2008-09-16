@@ -6,6 +6,7 @@
 // First added:  2008-06-18
 // Last changed: 2007-12-09
 
+#include <dolfin/fem/FiniteElement.h>
 #include <dolfin/mesh/Mesh.h>
 #include "DofMap.h"
 #include "Form.h"
@@ -39,13 +40,13 @@ BoundaryCondition::LocalData::LocalData(const ufc::form& form, Mesh& mesh,
     error("Form must be bilinear for application of boundary conditions.");
 
   // Create finite element (second argument of form)
-  finite_element = form.create_finite_element(1);
+  finite_element = new FiniteElement(form.create_finite_element(1));
   
   // Extract sub element and sub dof map if we have a sub system
   if (sub_system.depth() > 0)
   {
     // Finite element
-    ufc::finite_element* sub_finite_element = sub_system.extractFiniteElement(*finite_element);
+    FiniteElement* sub_finite_element = new FiniteElement(sub_system.extractFiniteElement(finite_element->ufc_element()));
     delete finite_element;
     finite_element = sub_finite_element;
 
@@ -59,9 +60,9 @@ BoundaryCondition::LocalData::LocalData(const ufc::form& form, Mesh& mesh,
     dof_map = &global_dof_map;
 
   // Create local data used to set boundary conditions
-  w = new real[finite_element->space_dimension()];
-  cell_dofs = new uint[finite_element->space_dimension()];
-  for (uint i = 0; i < finite_element->space_dimension(); i++)
+  w = new real[finite_element->spaceDimension()];
+  cell_dofs = new uint[finite_element->spaceDimension()];
+  for (uint i = 0; i < finite_element->spaceDimension(); i++)
   {
     w[i] = 0.0;
     cell_dofs[i] = 0;

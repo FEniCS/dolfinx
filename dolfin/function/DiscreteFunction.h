@@ -12,6 +12,7 @@
 #include <tr1/memory>
 #include <dolfin/la/Vector.h>
 #include "GenericFunction.h"
+#include <dolfin/fem/FiniteElement.h>
 
 namespace dolfin
 {
@@ -78,7 +79,7 @@ namespace dolfin
     /// Interpolate function to finite element space on cell
     void interpolate(real* coefficients,
                      const ufc::cell& cell,
-                     const ufc::finite_element& finite_element) const;
+                     const FiniteElement& finite_element) const;
 
     /// Evaluate function at given point
     void eval(real* values, const real* x) const;
@@ -103,7 +104,7 @@ namespace dolfin
     public:
 
       // Constructor
-      Scratch(ufc::finite_element& finite_element);
+      Scratch(FiniteElement& finite_element);
 
       // Destructor
       ~Scratch();
@@ -122,17 +123,17 @@ namespace dolfin
 
     };
 
-    // Initialize discrete function
-    void init(const ufc::form& form, uint i);
+    // Check discrete function
+    void check(const ufc::form& form, uint i);
 
     // The vector of dofs
     std::tr1::shared_ptr<GenericVector> x;
 
     // The finite element
-    //FiniteElement* finite_element;
+    std::tr1::shared_ptr<FiniteElement> finite_element;
 
     // The finite element
-    ufc::finite_element* finite_element;
+    //ufc::finite_element* finite_element;
     
     // The dof map
     std::tr1::shared_ptr<DofMap> dof_map;
