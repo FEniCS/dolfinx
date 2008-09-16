@@ -19,13 +19,9 @@ ConstantFunction::ConstantFunction(const ConstantFunction& f)
   values = new real[size];
   shape = new uint[value_rank];
   for(uint i=0; i<value_rank; i++)
-  {
     shape[i] = f.shape[i];
-  }
-  for(uint i=0; i<size; i++)
-  {
+  for(uint i=0; i<size; i++)  
     values[i] = f.values[i];
-  }
 }
 //-----------------------------------------------------------------------------
 ConstantFunction::ConstantFunction(Mesh& mesh, real value)
@@ -44,9 +40,7 @@ ConstantFunction::ConstantFunction(Mesh& mesh, uint size, real value)
   shape[0] = size;
   values = new real[size];
   for(uint i=0; i<size; i++)
-  {
     values[i] = value;
-  }
 }
 //-----------------------------------------------------------------------------
 ConstantFunction::ConstantFunction(Mesh& mesh, const Array<real>& _values)
@@ -57,9 +51,7 @@ ConstantFunction::ConstantFunction(Mesh& mesh, const Array<real>& _values)
   shape[0] = size;
   values = new real[size];
   for(uint i=0; i<size; i++)
-  {
     values[i] = _values[i];
-  }
 }
 //-----------------------------------------------------------------------------
 ConstantFunction::ConstantFunction(Mesh& mesh, const Array<uint>& _shape, const Array<real>& _values)
@@ -77,9 +69,7 @@ ConstantFunction::ConstantFunction(Mesh& mesh, const Array<uint>& _shape, const 
     error("Size of given values does not match shape.");
   values = new real[size];
   for(uint i=0; i<size; i++)
-  {
     values[i] = _values[i];
-  }
 }
 //-----------------------------------------------------------------------------
 ConstantFunction::~ConstantFunction()
