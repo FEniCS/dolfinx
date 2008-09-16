@@ -64,6 +64,9 @@ namespace dolfin
     
   private:
     
+    // Initialize vector
+    void init();
+
     // The function space
     std::tr1::shared_ptr<FunctionSpace> _V;
 

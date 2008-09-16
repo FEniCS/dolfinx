@@ -9,6 +9,10 @@
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/NoDeleter.h>
+#include <dolfin/la/GenericVector.h>
+#include <dolfin/la/DefaultFactory.h>
+#include <dolfin/fem/DofMap.h>
+#include "FunctionSpace.h"
 #include "NewFunction.h"
 
 using namespace dolfin;
@@ -57,13 +61,19 @@ const FunctionSpace& NewFunction::V() const
 //-----------------------------------------------------------------------------
 GenericVector& NewFunction::U()
 {
-  dolfin_assert(_U);
+  // Initialize vector if not initialized
+  if (!_U)
+    init();
+
   return *_U;
 }
 //-----------------------------------------------------------------------------
 const GenericVector& NewFunction::U() const
 {
-  dolfin_assert(_U);
+  // Check if vector has been initialized
+  if (!_U)
+    error("Requesting vector of degrees of freedom for function, but vector has not been initialized.");
+
   return *_U;
 }
 //-----------------------------------------------------------------------------
@@ -74,5 +84,21 @@ const NewFunction& NewFunction::operator= (const NewFunction& v)
   //*_U = *u._V;
   
   return *this;
+}
+//-----------------------------------------------------------------------------
+void NewFunction::init()
+{
+  // Get size
+  const uint N = _V->dofmap().global_dimension();
+
+  // Create vector
+  if (!_U)
+  {
+    DefaultFactory factory;
+    _U = std::tr1::shared_ptr<GenericVector>(factory.createVector());
+  }
+
+  // Initialize vector
+  _U->init(N);
 }
 //-----------------------------------------------------------------------------
