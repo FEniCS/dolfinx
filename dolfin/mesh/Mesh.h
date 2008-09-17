@@ -4,9 +4,10 @@
 // Modified by Johan Hoffman 2007.
 // Modified by Magnus Vikstrøm 2007.
 // Modified by Garth N. Wells 2007.
+// Modified by Niclas Jansson 2008.
 //
 // First added:  2006-05-08
-// Last changed: 2008-08-11
+// Last changed: 2008-09-16
 
 #ifndef __MESH_H
 #define __MESH_H
@@ -164,6 +165,12 @@ namespace dolfin
     /// Partition mesh into num_partitions partitions
     void partition(MeshFunction<uint>& partitions, uint num_partitions);
 
+    /// Partition mesh into num_partitions partitions (geometric)
+    void partitionGeom(MeshFunction<uint>& partitions);
+
+    // Distribute mesh according to mesh function
+    void distribute(MeshFunction<uint>& partitions);
+
     /// Display mesh data
     void disp() const;
     
@@ -192,7 +199,7 @@ namespace dolfin
 
     // Cell type
     CellType* _cell_type;
-
+    
     /// Return true iff topology is ordered according to the UFC numbering
     bool _ordered;
 

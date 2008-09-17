@@ -1,8 +1,10 @@
 // Copyright (C) 2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Niclas Jansson, 2008.
+// 
 // First added:  2008-05-19
-// Last changed: 2008-05-28
+// Last changed: 2008-09-16
 
 #include "MeshData.h"
 
@@ -13,6 +15,8 @@ typedef std::map<std::string, MeshFunction<dolfin::uint>*>::const_iterator mf_co
 
 typedef std::map<std::string, Array<dolfin::uint>*>::iterator a_iterator;
 typedef std::map<std::string, Array<dolfin::uint>*>::const_iterator a_const_iterator;
+
+typedef std::map<std::string, std::map<dolfin::uint, dolfin::uint>*>::iterator m_iterator;
 
 //-----------------------------------------------------------------------------
 MeshData::MeshData(Mesh& mesh) : mesh(mesh)
@@ -76,6 +80,26 @@ Array<dolfin::uint>* MeshData::createArray(std::string name, uint size)
   return a;
 }
 //-----------------------------------------------------------------------------
+std::map<dolfin::uint, dolfin::uint>* MeshData::createMap(std::string name)
+{
+  // Check if data already exists
+  m_iterator it = maps.find(name);
+  if (it != maps.end())
+  {
+    warning("Mesh data named \"%s\" already exists.", name.c_str());
+    return it->second;
+  }
+
+  // Create new data
+  std::map<uint, uint>* m = new std::map<uint, uint>;
+  //*m = 0;
+  
+  // Add to map
+  maps[name] = m;
+
+  return m;
+}
+//-----------------------------------------------------------------------------
 MeshFunction<dolfin::uint>* MeshData::meshFunction(std::string name)
 {
   // Check if data exists
@@ -94,6 +118,17 @@ Array<dolfin::uint>* MeshData::array(std::string name)
     return 0;
   
   return it->second;
+}
+//-----------------------------------------------------------------------------
+std::map<dolfin::uint, dolfin::uint>* MeshData::mapping(std::string name)
+{
+  // Check if data exists
+  m_iterator it = maps.find(name);
+  if (it == maps.end())
+    return 0;
+
+  return it->second;
+
 }
 //-----------------------------------------------------------------------------
 void MeshData::disp() const

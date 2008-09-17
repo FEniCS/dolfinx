@@ -5,9 +5,10 @@
 // Modified by Garth N. Wells 2006-2008.
 // Modified by Ola Skavhaug 2006.
 // Modified by Magnus Vikstrom 2007.
+// Modified by Niclas Jansson 2008.
 //
 // First added:  2002-12-03
-// Last changed: 2008-09-11
+// Last changed: 2008-09-16
 
 #include <stdarg.h>
 #include <tr1/memory>
@@ -40,6 +41,11 @@
 #include "XMLBLASFormData.h"
 #include "XMLGraph.h"
 #include "XMLFile.h"
+
+#ifdef HAS_MPI 
+#include <dolfin/main/MPI.h>
+#include "PXMLMesh.h"
+#endif
 
 using namespace dolfin;
 
@@ -84,7 +90,11 @@ void XMLFile::operator>>(Mesh& mesh)
 
   if ( xmlObject )
     delete xmlObject;
-  xmlObject = new XMLMesh(mesh);
+  
+  if(MPI::numProcesses() > 1)
+    xmlObject = new PXMLMesh(mesh);
+  else
+    xmlObject = new XMLMesh(mesh);
   parseFile();
 }
 //-----------------------------------------------------------------------------

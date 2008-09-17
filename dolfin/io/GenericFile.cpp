@@ -1,12 +1,15 @@
 // Copyright (C) 2002-2008 Johan Hoffman and Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Niclas Jansson, 2008.
+//
 // First added:  2002-11-12
-// Last changed: 2008-03-29
+// Last changed: 2008-09-16
 
 // FIXME: Use streams instead of stdio
 #include <stdio.h>
 
+#include <dolfin/main/MPI.h>
 #include <dolfin/log/dolfin_log.h>
 #include "GenericFile.h"
 
@@ -168,6 +171,11 @@ void GenericFile::read()
 //-----------------------------------------------------------------------------
 void GenericFile::write()
 {
+
+  //FIXME .pvd files should only be cleared by one processor
+  if ( type == "VTK" && MPI::processNumber() > 0)
+    opened_write = true;
+
   if ( !opened_write ) {
     // Clear file
     FILE* fp = fopen(filename.c_str(), "w");

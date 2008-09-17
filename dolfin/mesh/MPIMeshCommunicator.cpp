@@ -3,19 +3,28 @@
 //
 // Modified by Magnus Vikstrøm, 2007.
 // Modified by Anders Logg, 2007.
+// Modified by Niclas Jansson, 2008.
 //
 // First added:  2007-05-30
-// Last changed: 2007-12-02
+// Last changed: 2008-09-04
 
 #include <dolfin/log/dolfin_log.h>
+
+
 #include "Mesh.h"
 #include "MeshFunction.h"
+#include "Vertex.h"
 #include "MPIMeshCommunicator.h"
 #include <dolfin/main/MPI.h>
 
+#include "MeshData.h"
+#include "MeshEditor.h"
+
 #ifdef HAS_MPI
   #include <mpi.h>
+  #include <map>
 #endif
+
 
 using namespace dolfin;
 
@@ -230,7 +239,162 @@ void MPIMeshCommunicator::receive(MeshFunction<unsigned int>& mesh_function)
   mesh_function._values = values;
 }
 //-----------------------------------------------------------------------------
+void MPIMeshCommunicator::distribute(Mesh& mesh,
+				     MeshFunction<uint>& distribution)
+{
+  distributeCommon(mesh, distribution, 0, 0);
+}
+//-----------------------------------------------------------------------------
+  void MPIMeshCommunicator::distribute(Mesh& mesh, 
+				       MeshFunction<uint>& distribution, 
+				       MeshFunction<bool>& old_cell_marker,
+				       MeshFunction<bool>& cell_marker) 
+{
+  distributeCommon(mesh, distribution, &old_cell_marker, &cell_marker);
+}
+//-----------------------------------------------------------------------------
+  void MPIMeshCommunicator::distributeCommon(Mesh& mesh, 
+				       MeshFunction<uint>& distribution, 
+				       MeshFunction<bool>* old_cell_marker,
+				       MeshFunction<bool>* cell_marker) 
+{
 
+
+  MeshFunction<uint>* global = mesh.data().meshFunction("vertex numbering");
+  MeshFunction<uint>* ghost = mesh.data().meshFunction("ghosted vertices");
+  
+  std::map<uint, uint> tmp_local_map, tmp_global_map;
+
+  uint rank = MPI::processNumber();
+  uint pe_size = MPI::numProcesses();
+  uint vi = 0;
+  uint src, dest, k;
+
+  Array<real> coords;
+  Array<real> *send_buff_coords = new Array<real>[pe_size];
+  Array<uint> *send_buff_map = new Array<uint>[pe_size];
+
+  // Process distribution
+  if(distribution.dim() == 0) {
+    for(VertexIterator v(mesh); !v.end(); ++v) {
+      if(!ghost->get(*v)) {
+	if(distribution.get(*v) != rank) {
+	  dest = distribution.get(*v);
+	  send_buff_map[dest].push_back(global->get(*v));
+	  send_buff_coords[dest].push_back(v->point().x());
+	  send_buff_coords[dest].push_back(v->point().y());
+	  if( mesh.geometry().dim() > 2 )
+	    send_buff_coords[dest].push_back(v->point().z());	    
+	}
+	else {
+	  coords.push_back(v->point().x());
+	  coords.push_back(v->point().y());
+	  if( mesh.geometry().dim() > 2 )
+	    coords.push_back(v->point().z());
+	  tmp_local_map[vi] = global->get(*v);
+	  tmp_global_map[global->get(*v)] = vi++;
+	}
+      }
+    }
+  }
+  else
+    error("Not implemented"); //FIXME add code for cell based distribution
+
+  // Exchange mesh entities
+  int recv_count, recv_size, send_size;  
+  for(uint i = 0; i < pe_size; i++) {
+    send_size = send_buff_coords[i].size();
+    MPI_Reduce(&send_size, &recv_count, 1, MPI_INT, MPI_MAX, i, MPI_COMM_WORLD);
+  }
+  
+  uint recv_count_map = recv_count / mesh.geometry().dim();
+  
+  double *recv_buff = new double[recv_count];
+  uint* recv_buff_map = new uint[recv_count_map];
+
+  MPI_Status status;
+  for(uint i = 1; i < pe_size; i++) {
+    
+    src = (rank - i + pe_size) % pe_size;
+    dest = (rank + i) % pe_size;
+    
+    MPI_Sendrecv(&send_buff_map[dest][0], send_buff_map[dest].size(),
+		 MPI_UNSIGNED, dest, 0, recv_buff_map, recv_count_map, 
+		 MPI_UNSIGNED, src, 0, MPI_COMM_WORLD, &status);
+    
+    MPI_Sendrecv(&send_buff_coords[dest][0], send_buff_coords[dest].size(),
+		 MPI_DOUBLE, dest, 1, recv_buff, recv_count, MPI_DOUBLE, src,
+		 1, MPI_COMM_WORLD, &status);
+    MPI_Get_count(&status,MPI_DOUBLE,&recv_size);
+    
+    k = 0;
+    for(int j = 0; j < recv_size; j += mesh.geometry().dim()) {
+      if(tmp_global_map.find(recv_buff_map[k]) == tmp_global_map.end()) {
+	tmp_local_map[vi] = recv_buff_map[k]; 
+	tmp_global_map[recv_buff_map[k]] = vi++;
+	coords.push_back(recv_buff[j]); 
+	coords.push_back(recv_buff[j+1]);
+	if( mesh.geometry().dim() > 2 )
+	   coords.push_back(recv_buff[j+2]);
+	k++;
+      }
+    }
+    //FIXME add code for cell based distribution
+  }
+
+
+  for(uint i=0; i<pe_size; i++) {
+    send_buff_map[i].clear();
+    send_buff_coords[i].clear();
+  }
+
+  delete[] send_buff_map;
+  delete[] send_buff_coords;
+
+  uint num_vertices = coords.size() / mesh.geometry().dim();
+  
+  Mesh new_mesh;
+  MeshEditor editor;
+  editor.open(new_mesh, mesh.type().cellType(),
+	      mesh.topology().dim(), mesh.geometry().dim());
+
+
+  editor.initVertices(num_vertices);
+  editor.initCells(1);
+
+  // Add vertices
+  vi=0;
+  for(uint i=0; i<coords.size(); i += mesh.geometry().dim(), vi++)
+    switch( mesh.geometry().dim() ) {
+    case 2:
+      editor.addVertex(vi, coords[i], coords[i+1]); break;
+    case 3:
+      editor.addVertex(vi, coords[i], coords[i+1], coords[i+2]); break;
+    }
+  coords.clear();
+
+  // FIXME add cells
+
+  editor.close();
+
+  // Overwrite old mesh
+  mesh = new_mesh;
+
+
+  // Recreate auxiliary mesh data.
+  global = mesh.data().createMeshFunction("vertex numbering");
+  std::map<uint, uint>* glb_map = mesh.data().createMap("global to local");
+  global->init(mesh, 0);
+
+  std::map<uint, uint>::iterator it;
+  for(it = tmp_local_map.begin(); it != tmp_local_map.end(); ++it)
+    global->set(it->first, it->second);
+
+  for(it = tmp_global_map.begin(); it != tmp_global_map.end(); ++it)
+    (*glb_map)[it->first] = it->second;
+
+}
+//-----------------------------------------------------------------------------
 #else
 
 //-----------------------------------------------------------------------------

@@ -3,9 +3,10 @@
 //
 // Modified by Johan Hoffman, 2007.
 // Modified by Garth N. Wells 2007.
+// Modified by Niclas Jansson 2008.
 //
 // First added:  2006-05-09
-// Last changed: 2008-08-11
+// Last changed: 2008-09-16
 
 #include <sstream>
 
@@ -166,7 +167,8 @@ void Mesh::smooth(uint num_smoothings)
 //-----------------------------------------------------------------------------
 void Mesh::partition(MeshFunction<uint>& partitions)
 {
-  partition(partitions, MPI::numProcesses());
+  //  partition(partitions, MPI::numProcesses());
+  MeshPartition::partition(*this, partitions);
 }
 //-----------------------------------------------------------------------------
 void Mesh::partition(MeshFunction<uint>& partitions, uint num_partitions)
@@ -179,6 +181,16 @@ void Mesh::partition(MeshFunction<uint>& partitions, uint num_partitions)
 
   // Broadcast mesh according to parallel policy
   if (MPI::broadcast()) { MPIMeshCommunicator::broadcast(partitions); }
+}
+//-----------------------------------------------------------------------------
+void Mesh::partitionGeom(MeshFunction<uint>& partitions)
+{
+  MeshPartition::partitionGeom(*this, partitions);
+}
+//-----------------------------------------------------------------------------
+void Mesh::distribute(MeshFunction<uint>& distribution)
+{
+  MPIMeshCommunicator::distribute(*this, distribution);
 }
 //-----------------------------------------------------------------------------
 void Mesh::disp() const
