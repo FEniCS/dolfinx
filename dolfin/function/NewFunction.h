@@ -8,10 +8,11 @@
 // First added:  2003-11-28
 // Last changed: 2008-09-11
 
-#ifndef __FUNCTION_H
-#define __FUNCTION_H
+#ifndef __NEW_FUNCTION_H
+#define __NEW_FUNCTION_H
 
 #include <tr1/memory>
+#include <dolfin/common/simple_array.h>
 #include <dolfin/common/Variable.h>
 
 namespace dolfin
@@ -44,6 +45,9 @@ namespace dolfin
     /// Copy constructor
     NewFunction(const NewFunction& v);
 
+    /// Assignment operator
+    const NewFunction& operator= (const NewFunction& v);
+
     /// Destructor
     virtual ~NewFunction();
 
@@ -59,8 +63,14 @@ namespace dolfin
     /// Return the vector of degrees of freedom
     const GenericVector& vector() const;
 
-    /// Assignment operator
-    const NewFunction& operator= (const NewFunction& v);
+    /// Evaluate function at given point x (overload for user-defined function)
+    virtual void eval(real* values, const real* x) const;
+
+    /// Evaluate function at given point x (overload for scalar user-defined function)
+    virtual real eval(const real* x) const;
+
+    /// Evaluate function at given point (used for subclassing through SWIG interface)
+    void eval(simple_array<real>& values, const simple_array<real>& x) const;
 
   private:
 

@@ -11,6 +11,7 @@
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/la/DefaultFactory.h>
+#include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/DofMap.h>
 #include "FunctionSpace.h"
 #include "NewFunction.h"
@@ -47,6 +48,15 @@ NewFunction::~NewFunction()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
+const NewFunction& NewFunction::operator= (const NewFunction& v)
+{
+  // FIXME: Need to check pointers here and check if _U is nonzero
+  //*_V = *v._V;
+  //*_U = *u._V;
+  
+  return *this;
+}
+//-----------------------------------------------------------------------------
 FunctionSpace& NewFunction::function_space()
 {
   dolfin_assert(V);
@@ -77,13 +87,59 @@ const GenericVector& NewFunction::vector() const
   return *x;
 }
 //-----------------------------------------------------------------------------
-const NewFunction& NewFunction::operator= (const NewFunction& v)
+void NewFunction::eval(real* values, const real* x) const
 {
-  // FIXME: Need to check pointers here and check if _U is nonzero
-  //*_V = *v._V;
-  //*_U = *u._V;
+  // Check if we have a vector of degrees of freedom
+  if (x)
+  {
+    /*
+    // Find the cell that contains x
+    const uint gdim = mesh->geometry().dim();
+    if (gdim > 3)
+      error("Sorry, point evaluation of functions not implemented for meshes of dimension %d.", gdim);
+    Point p;
+    for (uint i = 0; i < gdim; i++)
+      p[i] = x[i];
+    Array<uint> cells;
+    intersection_detector->overlap(p, cells);
+    if (cells.size() < 1)
+      error("Unable to evaluate function at given point (not inside domain).");
+    Cell cell(*mesh, cells[0]);
+    UFCCell ufc_cell(cell);
   
-  return *this;
+    // Get expansion coefficients on cell
+    this->interpolate(scratch->coefficients, ufc_cell, *finite_element);
+
+    // Compute linear combination
+    for (uint j = 0; j < scratch->size; j++)
+      values[j] = 0.0;
+    for (uint i = 0; i < finite_element->spaceDimension(); i++)
+    {
+      finite_element->evaluateBasis(i, scratch->values, x, ufc_cell);
+      for (uint j = 0; j < scratch->size; j++)
+        values[j] += scratch->coefficients[i] * scratch->values[j];
+    }
+    */
+  }
+
+  // Try calling scalar eval() for scalar-valued function
+  if (V->element().valueRank() == 0)
+    values[0] = eval(x);
+
+  // Missing eval function
+  error("Missing eval() for user-defined function (must be overloaded).");
+}
+//-----------------------------------------------------------------------------
+dolfin::real NewFunction::eval(const real* x) const
+{
+  // Missing eval function
+  error("Missing eval() for user-defined function (must be overloaded).");
+  return 0.0;
+}
+//-----------------------------------------------------------------------------
+void NewFunction::eval(simple_array<real>& values, const simple_array<real>& x) const
+{
+  eval(values.data, x.data);
 }
 //-----------------------------------------------------------------------------
 void NewFunction::init()
