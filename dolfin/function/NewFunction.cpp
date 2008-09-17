@@ -19,15 +19,15 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 NewFunction::NewFunction(FunctionSpace& V)
-  : _V(&V, NoDeleter<FunctionSpace>()),
-    _U(std::tr1::shared_ptr<GenericVector>())
+  : V(&V, NoDeleter<FunctionSpace>()),
+    x(std::tr1::shared_ptr<GenericVector>())
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 NewFunction::NewFunction(std::tr1::shared_ptr<FunctionSpace> V)
-  : _V(V),
-    _U(std::tr1::shared_ptr<GenericVector>())
+  : V(V),
+    x(std::tr1::shared_ptr<GenericVector>())
 {
   // Do nothing
 }
@@ -37,7 +37,7 @@ NewFunction::NewFunction(const std::string filename)
   error("Not implemented.");
 }
 //-----------------------------------------------------------------------------
-NewFunction::NewFunction(const NewFunction& f)
+NewFunction::NewFunction(const NewFunction& v)
 {
   error("Not implemented.");
 }
@@ -47,34 +47,34 @@ NewFunction::~NewFunction()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-FunctionSpace& NewFunction::V()
+FunctionSpace& NewFunction::function_space()
 {
-  dolfin_assert(_V);
-  return *_V;
+  dolfin_assert(V);
+  return *V;
 }
 //-----------------------------------------------------------------------------
-const FunctionSpace& NewFunction::V() const
+const FunctionSpace& NewFunction::function_space() const
 {
-  dolfin_assert(_V);
-  return *_V;
+  dolfin_assert(V);
+  return *V;
 }
 //-----------------------------------------------------------------------------
-GenericVector& NewFunction::U()
+GenericVector& NewFunction::vector()
 {
   // Initialize vector if not initialized
-  if (!_U)
+  if (!x)
     init();
 
-  return *_U;
+  return *x;
 }
 //-----------------------------------------------------------------------------
-const GenericVector& NewFunction::U() const
+const GenericVector& NewFunction::vector() const
 {
   // Check if vector has been initialized
-  if (!_U)
+  if (!x)
     error("Requesting vector of degrees of freedom for function, but vector has not been initialized.");
 
-  return *_U;
+  return *x;
 }
 //-----------------------------------------------------------------------------
 const NewFunction& NewFunction::operator= (const NewFunction& v)
@@ -89,16 +89,16 @@ const NewFunction& NewFunction::operator= (const NewFunction& v)
 void NewFunction::init()
 {
   // Get size
-  const uint N = _V->dofmap().global_dimension();
+  const uint N = V->dofmap().global_dimension();
 
   // Create vector
-  if (!_U)
+  if (!x)
   {
     DefaultFactory factory;
-    _U = std::tr1::shared_ptr<GenericVector>(factory.createVector());
+    x = std::tr1::shared_ptr<GenericVector>(factory.createVector());
   }
 
   // Initialize vector
-  _U->init(N);
+  x->init(N);
 }
 //-----------------------------------------------------------------------------

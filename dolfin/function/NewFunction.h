@@ -20,58 +20,58 @@ namespace dolfin
   class FunctionSpace;
   class GenericVector;
 
-  /// This class represents a function u_h on a finite element
+  /// This class represents a function v in a finite element
   /// function space V,
   ///
-  ///   u_h = sum_i U_i phi_i
+  ///   v = sum_i x_i phi_i
   ///
-  /// where {phi_i}_i is a basis for V, and U is a vector of
-  /// degrees of freedom for u_h.
+  /// where {phi_i}_i is a basis for V, and x is a vector of
+  /// degrees of freedom for v.
 
   class NewFunction : public Variable
   {
   public:
 
     /// Create function on given function space
-    NewFunction(FunctionSpace& V);
+    explicit NewFunction(FunctionSpace& V);
 
     /// Create function on given function space (may be shared)
-    NewFunction(std::tr1::shared_ptr<FunctionSpace> V);
+    explicit NewFunction(std::tr1::shared_ptr<FunctionSpace> V);
 
     /// Create function from file
     explicit NewFunction(const std::string filename);
     
     /// Copy constructor
-    NewFunction(const NewFunction& f);
+    NewFunction(const NewFunction& v);
 
     /// Destructor
     virtual ~NewFunction();
 
     /// Return the function space
-    FunctionSpace& V();
+    FunctionSpace& function_space();
 
     /// Return the function space (const version)
-    const FunctionSpace& V() const;
+    const FunctionSpace& function_space() const;
 
     /// Return the vector of degrees of freedom
-    GenericVector& U();
+    GenericVector& vector();
 
     /// Return the vector of degrees of freedom
-    const GenericVector& U() const;
+    const GenericVector& vector() const;
 
     /// Assignment operator
     const NewFunction& operator= (const NewFunction& v);
-    
+
   private:
-    
+
     // Initialize vector
     void init();
 
     // The function space
-    std::tr1::shared_ptr<FunctionSpace> _V;
+    std::tr1::shared_ptr<FunctionSpace> V;
 
     // The vector of degrees of freedom
-    std::tr1::shared_ptr<GenericVector> _U;
+    std::tr1::shared_ptr<GenericVector> x;
 
   };
 
