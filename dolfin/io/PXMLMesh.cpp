@@ -91,15 +91,15 @@ void PXMLMesh::startElement(const xmlChar *name, const xmlChar **attrs)
     
     if ( xmlStrcasecmp(name, (xmlChar *) "meshfunction") == 0 )
     {
-      error("Not implemented");
-      readMeshFunction(name, attrs);
-      state = INSIDE_MESH_FUNCTION;
+      error("Not implemented.");
+      //readMeshFunction(name, attrs);
+      //state = INSIDE_MESH_FUNCTION;
     }
     if ( xmlStrcasecmp(name, (xmlChar *) "array") == 0 )
     {
-      error("Not implemented");
-      readArray(name, attrs);
-      state = INSIDE_ARRAY;
+      error("Not implemented.");
+      //readArray(name, attrs);
+      //state = INSIDE_ARRAY;
     }
 
     break;
@@ -210,23 +210,23 @@ void PXMLMesh::readMesh(const xmlChar *name, const xmlChar **attrs)
 
   // Open mesh for editing
   editor.open(_mesh, CellType::string2type(type), tdim, gdim);
-    
 }
 //-----------------------------------------------------------------------------
 void PXMLMesh::readVertices(const xmlChar *name, const xmlChar **attrs)
 {
-  // Parse values
-  uint num_vertices = parseUnsignedInt(name, attrs, "size");
+  // Parse the number of vertices
+  const uint num_vertices = parseUnsignedInt(name, attrs, "size");
 
-  uint pe_size = MPI::num_processes();
-  uint rank = MPI::process_number();
+  // Get process number and number of processes
+  const uint num_processes = MPI::num_processes();
+  const uint process_number = MPI::process_number();
 
   // Linear data distribution
-  uint L = floor( (real) num_vertices / (real) pe_size);
-  uint R =  num_vertices % pe_size;
-  uint num_local = (num_vertices + pe_size - rank - 1) / pe_size;
+  const uint L = floor( (real) num_vertices / (real) num_processes);
+  const uint R = num_vertices % num_processes;
+  const uint num_local = (num_vertices + num_processes - process_number - 1) / num_processes;
   
-  start_index = rank * L + std::min(rank, R);
+  start_index = process_number * L + std::min(process_number, R);
   end_index = start_index + ( num_local - 1);
 
   num_parsed_v = 0;
@@ -240,8 +240,6 @@ void PXMLMesh::readVertices(const xmlChar *name, const xmlChar **attrs)
   local_to_global = _mesh.data().createMap("global to local");
   
   global_numbering->init(_mesh, 0);
-
-
 }
 //-----------------------------------------------------------------------------
 void PXMLMesh::readCells(const xmlChar *name, const xmlChar **attrs)
@@ -479,8 +477,8 @@ void PXMLMesh::closeMesh()
   editor.open(new_mesh, _mesh.type().cellType(), 
 	      _mesh.topology().dim(), _mesh.geometry().dim());
 
-  uint rank = MPI::process_number();
-  uint pe_size = MPI::num_processes();
+  uint process_number = MPI::process_number();
+  uint num_processes = MPI::num_processes();
 
   Array<uint> send_buff, send_indices, send_orphan;
   Array<real> send_coords;
@@ -516,9 +514,9 @@ void PXMLMesh::closeMesh()
   // Exchange shared mesh entities
   MPI_Status status;
   int num_recv, src, dest;
-  for(uint j = 1; j < pe_size ; j++){
-    src = (rank - j + pe_size) % pe_size;
-    dest = (rank + j) % pe_size;
+  for(uint j = 1; j < num_processes ; j++){
+    src = (process_number - j + num_processes) % num_processes;
+    dest = (process_number + j) % num_processes;
 
     MPI_Sendrecv(&send_buff[0], send_buff.size(), MPI_UNSIGNED, dest, 1,
 		 recv_shared, max_nsh, MPI_UNSIGNED, src, 1, 
@@ -526,7 +524,9 @@ void PXMLMesh::closeMesh()
     MPI_Get_count(&status, MPI_UNSIGNED, &num_recv);
 
     for(int k = 0; k < num_recv; k++) 
-      if( local_vertex.find( recv_shared[k] ) != local_vertex.end()) {
+    {
+      if( local_vertex.find( recv_shared[k] ) != local_vertex.end())
+      {
 	Vertex v(_mesh, (*local_to_global)[ recv_shared[k] ] );
 	send_coords.push_back(v.point().x());
 	send_coords.push_back(v.point().y());
@@ -536,7 +536,8 @@ void PXMLMesh::closeMesh()
 	send_indices.push_back( recv_shared[k] );       
 
 	if(used_vertex.find( recv_shared[k] ) == used_vertex.end() &&
-	   shared_vertex.find( recv_shared[k] ) != shared_vertex.end()) {
+	   shared_vertex.find( recv_shared[k] ) != shared_vertex.end())
+        {
 	  
 	  send_orphan.push_back(1);
 	  shared_vertex.erase(recv_shared[k]);
@@ -547,6 +548,7 @@ void PXMLMesh::closeMesh()
        	ghosted.set( (*local_to_global)[ recv_shared[k] ], true);
 	
       }
+    }
     
     MPI_Sendrecv(&send_indices[0], send_indices.size(), MPI_UNSIGNED, 
 		 src, 1, rip, num_shared, MPI_UNSIGNED, dest, 1,
@@ -591,7 +593,8 @@ void PXMLMesh::closeMesh()
   }
 
   uint ii = 0;
-  for(uint i = 0; i < send_buff.size(); i++, ii += _mesh.geometry().dim(), vi++) {    
+  for(uint i = 0; i < send_buff.size(); i++, ii += _mesh.geometry().dim(), vi++)
+  {    
     new_gl[ recv_indices[i] ] = vi;
     new_lg[ vi ] = recv_indices[i];
     if( recv_orphans[i] == 0 ) 
