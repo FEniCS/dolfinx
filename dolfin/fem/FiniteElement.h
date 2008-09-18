@@ -58,6 +58,9 @@ namespace dolfin
     real evaluateDof(uint i, const ufc::function& function, const ufc::cell& cell) const
     { return element->evaluate_dof(i, function, cell); }
 
+    FiniteElement* createSubElement(uint i) const
+    { return new FiniteElement(element->create_sub_element(i)); }
+
     ufc::finite_element& ufc_element() const
     { return *element; } 
 

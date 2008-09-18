@@ -7,12 +7,12 @@
 #ifndef __SUB_SYSTEM_H
 #define __SUB_SYSTEM_H
 
-#include <ufc.h>
 #include <dolfin/common/Array.h>
 
 namespace dolfin
 {
 
+  class FiniteElement;
   class Mesh;
 
   /// This class represents a sub system that may be specified as a
@@ -48,7 +48,7 @@ namespace dolfin
     uint depth() const;
     
     /// Extract sub finite element of given finite element
-    ufc::finite_element* extractFiniteElement(const ufc::finite_element& finite_element) const;
+    FiniteElement* extractFiniteElement(const FiniteElement& finite_element) const;
 
     /// Return array which defines sub system
     const Array<uint>& array() const
@@ -57,8 +57,8 @@ namespace dolfin
   private:
 
     // Recursively extract sub finite element
-    static ufc::finite_element* extractFiniteElement
-    (const ufc::finite_element& finite_element, const Array<uint>& sub_system);
+    static FiniteElement* extractFiniteElement(const FiniteElement& finite_element, 
+                                               const Array<uint>& sub_system);
 
     // The array specifying the sub system
     Array<uint> sub_system;

@@ -132,9 +132,6 @@ namespace dolfin
     // The finite element
     std::tr1::shared_ptr<FiniteElement> finite_element;
 
-    // The finite element
-    //ufc::finite_element* finite_element;
-    
     // The dof map
     std::tr1::shared_ptr<DofMap> dof_map;
 

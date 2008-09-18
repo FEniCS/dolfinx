@@ -99,8 +99,7 @@ DiscreteFunction::DiscreteFunction(SubFunction& sub_function)
   SubSystem sub_system(sub_function.i);
 
   // Extract sub element
-  ufc::finite_element* _finite_element = sub_system.extractFiniteElement(sub_function.f->finite_element->ufc_element());
-  std::tr1::shared_ptr<FiniteElement> _element(new FiniteElement(_finite_element));
+  std::tr1::shared_ptr<FiniteElement> _element(sub_system.extractFiniteElement(*(sub_function.f->finite_element)));
   finite_element.swap(_element);
 
   // Initialize scratch space

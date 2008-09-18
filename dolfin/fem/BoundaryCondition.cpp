@@ -46,7 +46,7 @@ BoundaryCondition::LocalData::LocalData(const ufc::form& form, Mesh& mesh,
   if (sub_system.depth() > 0)
   {
     // Finite element
-    FiniteElement* sub_finite_element = new FiniteElement(sub_system.extractFiniteElement(finite_element->ufc_element()));
+    FiniteElement* sub_finite_element = sub_system.extractFiniteElement(*finite_element);
     delete finite_element;
     finite_element = sub_finite_element;
 
