@@ -44,7 +44,6 @@
 #include "XMLFile.h"
 #include "PXMLMesh.h"
 
-
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
@@ -58,7 +57,7 @@ XMLFile::XMLFile(const std::string filename) : GenericFile(filename),
 //-----------------------------------------------------------------------------
 XMLFile::~XMLFile()
 {
-  if ( xmlObject )
+  if (xmlObject)
     delete xmlObject;
 }
 //-----------------------------------------------------------------------------
@@ -66,7 +65,7 @@ void XMLFile::operator>>(GenericVector& x)
 {
   message(1, "Reading vector from file %s.", filename.c_str());
 
-  if ( xmlObject )
+  if (xmlObject)
     delete xmlObject;
   xmlObject = new XMLVector(x);
   parseFile();
@@ -76,7 +75,7 @@ void XMLFile::operator>>(GenericMatrix& A)
 {
   message(1, "Reading matrix from file %s.", filename.c_str());
 
-  if ( xmlObject )
+  if (xmlObject)
     delete xmlObject;
   xmlObject = new XMLMatrix(A);
   parseFile();
@@ -86,10 +85,10 @@ void XMLFile::operator>>(Mesh& mesh)
 {
   message(1, "Reading mesh from file %s.", filename.c_str());
 
-  if ( xmlObject )
+  if (xmlObject)
     delete xmlObject;
   
-  if(MPI::numProcesses() > 1)
+  if (MPI::numProcesses() > 1)
     xmlObject = new PXMLMesh(mesh);
   else
     xmlObject = new XMLMesh(mesh);
@@ -100,7 +99,7 @@ void XMLFile::operator>>(MeshFunction<int>& meshfunction)
 {
   message(1, "Reading int-valued mesh function from file %s.", filename.c_str());
 
-  if ( xmlObject )
+  if (xmlObject)
     delete xmlObject;
   xmlObject = new XMLMeshFunction(meshfunction);
   parseFile();
@@ -110,7 +109,7 @@ void XMLFile::operator>>(MeshFunction<unsigned int>& meshfunction)
 {
   message(1, "Reading uint-valued mesh function from file %s.", filename.c_str());
 
-  if ( xmlObject )
+  if (xmlObject)
     delete xmlObject;
   xmlObject = new XMLMeshFunction(meshfunction);
   parseFile();
@@ -120,7 +119,7 @@ void XMLFile::operator>>(MeshFunction<double>& meshfunction)
 {
   message(1, "Reading real-valued mesh function from file %s.", filename.c_str());
 
-  if ( xmlObject )
+  if (xmlObject)
     delete xmlObject;
   xmlObject = new XMLMeshFunction(meshfunction);
   parseFile();
@@ -130,7 +129,7 @@ void XMLFile::operator>>(MeshFunction<bool>& meshfunction)
 {
   message(1, "Reading bool-valued mesh function from file %s.", filename.c_str());
 
-  if ( xmlObject )
+  if (xmlObject)
     delete xmlObject;
   xmlObject = new XMLMeshFunction(meshfunction);
   parseFile();
@@ -151,20 +150,20 @@ void XMLFile::operator>>(Function& f)
 
   // Read the finite element specification
   std::string finite_element_signature;
-  if ( xmlObject )
+  if (xmlObject)
     delete xmlObject;
   xmlObject = new XMLFiniteElement(finite_element_signature);
   parseFile(); 
 
   // Read the dof map specification
   std::string dof_map_signature;
-  if ( xmlObject )
+  if (xmlObject)
     delete xmlObject;
   xmlObject = new XMLDofMap(dof_map_signature);
   parseFile(); 
 
   // Read the function
-  if ( xmlObject )
+  if (xmlObject)
     delete xmlObject;
   xmlObject = new XMLFunction(f);
   parseFile(); 
@@ -183,7 +182,7 @@ void XMLFile::operator>>(ParameterList& parameters)
 {
   message(1, "Reading parameter list from file %s.", filename.c_str());
 
-  if ( xmlObject )
+  if (xmlObject)
     delete xmlObject;
   xmlObject = new XMLParameterList(parameters);
   parseFile();
@@ -191,7 +190,7 @@ void XMLFile::operator>>(ParameterList& parameters)
 //-----------------------------------------------------------------------------
 void XMLFile::operator>>(BLASFormData& blas)
 {
-  if ( xmlObject )
+  if (xmlObject)
     delete xmlObject;
   xmlObject = new XMLBLASFormData(blas);
   parseFile();
@@ -201,7 +200,7 @@ void XMLFile::operator>>(Graph& graph)
 {
   message(1, "Reading graph from file %s.", filename.c_str());
 
-  if ( xmlObject )
+  if (xmlObject)
     delete xmlObject;
   xmlObject = new XMLGraph(graph);
   parseFile();
@@ -441,7 +440,7 @@ void XMLFile::operator<<(MeshFunction<bool>& meshfunction)
 void XMLFile::operator<<(Function& f)
 {
   // Can only save discrete functions
-  if ( f.type() != Function::discrete )
+  if (f.type() != Function::discrete)
     error("Only discrete functions can be saved in XML format.");
 
   // Begin function
@@ -496,7 +495,7 @@ void XMLFile::operator<<(ParameterList& parameters)
 	      it->first.c_str(), static_cast<real>(parameter));
       break;
     case Parameter::type_bool:
-      if ( static_cast<bool>(parameter) )
+      if (static_cast<bool>(parameter))
 	fprintf(fp, "    <parameter name=\"%s\" type=\"bool\" value=\"true\"/>\n",
 		it->first.c_str());
       else
@@ -564,7 +563,7 @@ void XMLFile::operator<<(Graph& graph)
     {
       // In undirected graphs an edge (v1, v2) is the same as edge (v2, v1)
       // and should not be stored twice
-      if ( graph.type() == Graph::directed || i < connections[j] )
+      if (graph.type() == Graph::directed || i < connections[j])
         fprintf(fp, 
         "      <edge v1=\"%u\" v2=\"%u\" weight=\"%u\"/>\n",
         i, connections[j], edge_weights[j]);
@@ -590,7 +589,7 @@ FILE* XMLFile::openFile()
   fflush(fp);
   
   // Write DOLFIN XML format header
-  if ( !header_written )
+  if (!header_written)
   {
     fprintf(fp, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n\n" );
     fprintf(fp, "<dolfin xmlns:dolfin=\"http://www.fenics.org/dolfin/\">\n" );
@@ -608,7 +607,7 @@ void XMLFile::closeFile(FILE* fp)
   //printf("Position in file before writing footer: %ld\n", mark);
 
   // Write DOLFIN XML format footer
-  if ( header_written )
+  if (header_written)
     fprintf(fp, "</dolfin>\n");
 
   // Close file
@@ -624,7 +623,7 @@ void XMLFile::parseFile()
   parseSAX();
   
   // Notify that file is being closed
-  if ( !xmlObject->close() )
+  if (!xmlObject->close())
     error("Unable to find data in XML file.");
 }
 //-----------------------------------------------------------------------------

@@ -7,7 +7,7 @@
 // Last changed: 2008-09-18
 
 #include <cstring>
-#include <dolfin/log/dolfin_log.h>
+#include <dolfin/log/log.h>
 #include <dolfin/main/MPI.h>
 #include <dolfin/mesh/CellType.h>
 #include <dolfin/mesh/Mesh.h>
@@ -28,7 +28,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 PXMLMesh::PXMLMesh(Mesh& mesh) : XMLObject(), _mesh(mesh), state(OUTSIDE), f(0), a(0)
 {
-  // Do nothing
+  dolfin_debug1("Creating parallel XML parser on processor %d.", MPI::processNumber());
 }
 //-----------------------------------------------------------------------------
 PXMLMesh::~PXMLMesh()
@@ -475,7 +475,6 @@ void PXMLMesh::readArrayElement(const xmlChar* name, const xmlChar** attrs)
 //-----------------------------------------------------------------------------
 void PXMLMesh::closeMesh()
 {
-
   Mesh new_mesh;
   editor.open(new_mesh, _mesh.type().cellType(), 
 	      _mesh.topology().dim(), _mesh.geometry().dim());
@@ -489,7 +488,6 @@ void PXMLMesh::closeMesh()
   std::set<uint>::iterator it;
   for(it = shared_vertex.begin(); it != shared_vertex.end(); ++it)
       send_buff.push_back( *it );
-
 
   uint num_orphan = _mesh.numVertices() - used_vertex.size();
   uint num_shared = send_buff.size();
@@ -591,8 +589,6 @@ void PXMLMesh::closeMesh()
       editor.addVertex(vi++, v->point());
     }
   }
-  
-
 
   uint ii = 0;
   for(uint i = 0; i < send_buff.size(); i++, ii += _mesh.geometry().dim(), vi++) {    
@@ -658,42 +654,26 @@ void PXMLMesh::closeMesh()
   
   for(mit = new_gl.begin(); mit != new_gl.end(); ++mit)
     (*local_to_global)[mit->first] = mit->second;
-    
 }
 //-----------------------------------------------------------------------------
 
 #else
 
 //-----------------------------------------------------------------------------
-PXMLMesh::PXMLMesh(Mesh& mesh) : XMLObject(), _mesh(mesh), state(OUTSIDE), f(0), a(0)
+PXMLMesh::PXMLMesh(Mesh& mesh)
 {
-  // Do nothing
+  error("Missing MPI for parallel XML parser.");
 }
 //-----------------------------------------------------------------------------
-PXMLMesh::~PXMLMesh()
-{
-  // Do nothing
-}
+PXMLMesh::~PXMLMesh() {}
 //-----------------------------------------------------------------------------
-void PXMLMesh::startElement(const xmlChar *name, const xmlChar **attrs)
-{
-  // Do nothing
-}
+void PXMLMesh::startElement(const xmlChar *name, const xmlChar **attrs) {}
 //-----------------------------------------------------------------------------
-void PXMLMesh::endElement(const xmlChar *name)
-{
-  // Do nothing
-}
+void PXMLMesh::endElement(const xmlChar *name) {}
 //-----------------------------------------------------------------------------
-void PXMLMesh::open(std::string filename)
-{
-  // Do nothing
-}
+void PXMLMesh::open(std::string filename) {}
 //-----------------------------------------------------------------------------
-bool PXMLMesh::close()
-{
-  return state == DONE;
-}
+bool PXMLMesh::close() { return false; }
 //-----------------------------------------------------------------------------
 
 #endif

@@ -7,8 +7,9 @@
 // Modified by Niclas Jansson, 2008.
 //
 // First added:  2007-04-03
-// Last changed: 2008-09-16
+// Last changed: 2008-09-18
 
+#include <dolfin/log/log.h>
 #include <dolfin/main/MPI.h>
 #include <dolfin/graph/Graph.h>
 #include <dolfin/graph/GraphBuilder.h>
@@ -94,6 +95,8 @@ void MeshPartition::partitionGeom(Mesh& mesh, MeshFunction<uint>& partitions)
 
   uint size = MPI::numProcesses();
   uint rank = MPI::processNumber();
+
+  dolfin_debug2("Geometric partitioning of mesh for %d processors on processor number %d.", size, rank);
   
   // Create the vertex distribution array (vtxdist) 
   idxtype *vtxdist = new idxtype[size+1];  
@@ -111,9 +114,9 @@ void MeshPartition::partitionGeom(Mesh& mesh, MeshFunction<uint>& partitions)
     sum = tmp + sum;
   }
 
-  int gdim = static_cast<idxtype>(mesh.geometry().dim());
+  idxtype gdim = static_cast<idxtype>(mesh.geometry().dim());
   idxtype *part = new idxtype[mesh.numVertices()];
-  float *xdy = new float[gdim * mesh.numVertices()];
+  float *xdy = new float[gdim*mesh.numVertices()];
 
   int i = 0;
   for (VertexIterator vertex(mesh); !vertex.end(); i += gdim, ++vertex)
@@ -123,6 +126,9 @@ void MeshPartition::partitionGeom(Mesh& mesh, MeshFunction<uint>& partitions)
     if(gdim > 2)
       xdy[i+2] = static_cast<float>(vertex->point().z());
   }
+
+  // FIXME: We can probably extract the array from the MeshFunction
+  // FIXME: here and use it directly without needing to copy later.
 
   // Call ParMETIS to partition vertex distribution array
   ParMETIS_V3_PartGeom(vtxdist, &gdim, xdy, part, &comm);
