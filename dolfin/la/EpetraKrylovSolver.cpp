@@ -13,15 +13,17 @@
 #include "EpetraVector.h"
 
 #include "Epetra_FEVector.h"
+#include "Epetra_RowMatrix.h"
 #include "Epetra_FECrsMatrix.h"
 #include "Epetra_LinearProblem.h"
+
+#include "AztecOO.h"
 
 //#include "ml_config.h"
 #include "ml_include.h"
 #include "ml_MultiLevelOperator.h"
 #include "ml_epetra_utils.h"
 
-#include "AztecOO.h"
 
 
 
@@ -57,14 +59,29 @@ dolfin::uint EpetraKrylovSolver::solve(const EpetraMatrix& A, EpetraVector& x,
 {
   //FIXME need the ifdef AztecOO 
 
+  // cast matrix and vectors to proper type
+  Epetra_RowMatrix* row_matrix =  dynamic_cast<Epetra_RowMatrix*>(&(A.mat()));
+  Epetra_MultiVector* x_vec = dynamic_cast<Epetra_MultiVector*>(&x.vec());
+  Epetra_MultiVector* b_vec = dynamic_cast<Epetra_MultiVector*>(&b.vec());
+
+  /* OLD CODE
   // Create linear system 
-  Epetra_LinearProblem linear_system(&(A.mat()),&(x.vec()),&(b.vec()));
+  Epetra_LinearProblem linear_system; 
+  linear_system.SetOperator(row_matrix); 
+  linear_system.SetLHS(x_vec); 
+  linear_system.SetRHS(b_vec); 
+  AztecOO linear_solver(linear_system);;
+  */
 
-  // Create AztecOO instance
-  AztecOO linear_solver(linear_system);
+  // Create solver 
+  AztecOO linear_solver;
+  linear_solver.SetUserMatrix(row_matrix);
+  linear_solver.SetLHS(x_vec); 
+  linear_solver.SetRHS(b_vec); 
 
-  if ( method == cg) 
+  if ( method == cg) { 
     linear_solver.SetAztecOption( AZ_solver, AZ_cg);
+  }
   else if ( method == gmres) 
     linear_solver.SetAztecOption( AZ_solver, AZ_gmres);
   else if ( method == bicgstab) 
@@ -93,10 +110,8 @@ dolfin::uint EpetraKrylovSolver::solve(const EpetraMatrix& A, EpetraVector& x,
 
   if (pc_type == amg) 
   {  
-#ifdef HAVE_ML_AZTECOO
-
+//#ifdef HAVE_ML_AZTECOO
     //FIXME ifdef ML 
-    //FIXME if amg 
     // Code from trilinos-8.0.3/packages/didasko/examples/ml/ex1.cpp 
 
     // Create and set an ML multilevel preconditioner
@@ -135,9 +150,9 @@ dolfin::uint EpetraKrylovSolver::solve(const EpetraMatrix& A, EpetraVector& x,
     // set this operator as preconditioner for AztecOO
     linear_solver.SetPrecOperator(&MLop);
 
-#else 
-    error("EpetraKrylovSolver::solve not compiled with ML support."); 
-#endif 
+//#else 
+//    error("EpetraKrylovSolver::solve not compiled with ML support."); 
+//#endif 
   }   
   linear_solver.Iterate(1000, 1.0e-9);
   return linear_solver.NumIters(); 
