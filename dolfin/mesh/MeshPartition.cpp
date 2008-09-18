@@ -102,34 +102,37 @@ void MeshPartition::partitionGeom(Mesh& mesh, MeshFunction<uint>& partitions)
   MPI_Allgather(&vtxdist[rank], 1, MPI_INT, vtxdist, 1, 
 		MPI_INT, MPI_COMM_WORLD);
 
-  int tmp;
   int sum = vtxdist[0];  
   vtxdist[0] = 0;
-  for(uint i = 1; i < size + 1; i++) {    
-    tmp = vtxdist[i];
+  for (uint i = 1; i < size + 1; i++)
+  {
+    const int tmp = vtxdist[i];
     vtxdist[i] = sum;
     sum = tmp + sum;
   }
-  
 
   int gdim = static_cast<idxtype>(mesh.geometry().dim());
   idxtype *part = new idxtype[mesh.numVertices()];
   float *xdy = new float[gdim * mesh.numVertices()];
 
   int i = 0;
-  for(VertexIterator vertex(mesh); !vertex.end(); i += gdim, ++vertex) {
+  for (VertexIterator vertex(mesh); !vertex.end(); i += gdim, ++vertex)
+  {
     xdy[i] = static_cast<float>(vertex->point().x());
     xdy[i+1] = static_cast<float>(vertex->point().y());
     if(gdim > 2)
       xdy[i+2] = static_cast<float>(vertex->point().z());
   }
 
+  // Call ParMETIS to partition vertex distribution array
   ParMETIS_V3_PartGeom(vtxdist, &gdim, xdy, part, &comm);
 
+  // Copy partition data to MeshFunction
   partitions.init(mesh,0);
-  for(VertexIterator vertex(mesh); !vertex.end(); ++vertex)
-    partitions.set(*vertex, static_cast<uint>( part[vertex->index()]) );
+  for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
+    partitions.set(*vertex, static_cast<uint>(part[vertex->index()]));
 
+  // Clean up
   delete[] xdy;
   delete[] part;
   delete[] vtxdist;
