@@ -501,6 +501,8 @@ void Assembler::assemble_system(GenericMatrix& A, const ufc::form& A_form,
                                 const MeshFunction<uint>* interior_facet_domains,
                                 bool reset_tensors)
 {
+   Timer timer("Assemble system");
+
   // Note the importance of treating empty mesh functions as null pointers
   // for the PyDOLFIN interface.
 
