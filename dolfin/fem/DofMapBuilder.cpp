@@ -39,7 +39,7 @@ void DofMapBuilder::build(DofMap& dof_map, UFC& ufc, Mesh& mesh)
   //dolfin_assert(F);
 
   // Get number of this process
-  const uint this_process = MPI::processNumber();
+  const uint this_process = MPI::process_number();
   message("Building dof map on processor %d.", this_process);
 
   // Build stage 0: Compute offsets

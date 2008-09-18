@@ -88,7 +88,7 @@ void XMLFile::operator>>(Mesh& mesh)
   if (xmlObject)
     delete xmlObject;
   
-  if (MPI::numProcesses() > 1)
+  if (MPI::num_processes() > 1)
     xmlObject = new PXMLMesh(mesh);
   else
     xmlObject = new XMLMesh(mesh);

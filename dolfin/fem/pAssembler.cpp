@@ -181,7 +181,7 @@ void pAssembler::assembleCells(GenericTensor& A,
   real t = toc();
   printf("pAssembler: start\n");
 
-  const uint this_process = MPI::processNumber();
+  const uint this_process = MPI::process_number();
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     // Assemble only cells in this processors partition

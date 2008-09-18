@@ -4,7 +4,7 @@
 // Modified by Ola Skavhaug, 2007.
 //
 // First added:  2003-03-13
-// Last changed: 2008-07-23
+// Last changed: 2008-09-18
 
 #include <string>
 #include <iostream>
@@ -12,6 +12,7 @@
 #include <iomanip>
 #include <stdexcept>
 
+#include <dolfin/main/MPI.h>
 #include <dolfin/common/constants.h>
 #include <dolfin/common/types.h>
 #include "Table.h"
@@ -24,9 +25,11 @@ typedef std::map<std::string, std::pair<dolfin::uint, real> >::const_iterator co
 
 //-----------------------------------------------------------------------------
 Logger::Logger()
-  : destination(terminal), debug_level(0), indentation_level(0), logstream(0)
+  : destination(terminal), debug_level(0), indentation_level(0), logstream(0),
+    process_number(-1)
 {
-  // Do nothing
+  if (MPI::num_processes() > 1)
+    process_number = MPI::process_number();
 }
 //-----------------------------------------------------------------------------
 Logger::~Logger()
@@ -219,6 +222,14 @@ void Logger::write(int debug_level, std::string msg) const
   // Check debug level
   if (debug_level > this->debug_level)
     return;
+
+  // Prefix with process number if running in parallel
+  if (process_number >= 0)
+  {
+    std::stringstream prefix;
+    prefix << "Process " << process_number << ": ";
+    msg = prefix.str() + msg;
+  }
 
   // Add indentation
   for (int i = 0; i < indentation_level; i++)

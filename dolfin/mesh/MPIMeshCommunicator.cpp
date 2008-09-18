@@ -265,8 +265,8 @@ void MPIMeshCommunicator::distribute(Mesh& mesh,
   
   std::map<uint, uint> tmp_local_map, tmp_global_map;
 
-  uint rank = MPI::processNumber();
-  uint pe_size = MPI::numProcesses();
+  uint rank = MPI::process_number();
+  uint pe_size = MPI::num_processes();
   uint vi = 0;
   uint src, dest, k;
 

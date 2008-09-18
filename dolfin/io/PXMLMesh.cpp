@@ -28,7 +28,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 PXMLMesh::PXMLMesh(Mesh& mesh) : XMLObject(), _mesh(mesh), state(OUTSIDE), f(0), a(0)
 {
-  dolfin_debug1("Creating parallel XML parser on processor %d.", MPI::processNumber());
+  dolfin_debug("Creating parallel XML parser");
 }
 //-----------------------------------------------------------------------------
 PXMLMesh::~PXMLMesh()
@@ -218,8 +218,8 @@ void PXMLMesh::readVertices(const xmlChar *name, const xmlChar **attrs)
   // Parse values
   uint num_vertices = parseUnsignedInt(name, attrs, "size");
 
-  uint pe_size = MPI::numProcesses();
-  uint rank = MPI::processNumber();
+  uint pe_size = MPI::num_processes();
+  uint rank = MPI::process_number();
 
   // Linear data distribution
   uint L = floor( (real) num_vertices / (real) pe_size);
@@ -479,8 +479,8 @@ void PXMLMesh::closeMesh()
   editor.open(new_mesh, _mesh.type().cellType(), 
 	      _mesh.topology().dim(), _mesh.geometry().dim());
 
-  uint rank = MPI::processNumber();
-  uint pe_size = MPI::numProcesses();
+  uint rank = MPI::process_number();
+  uint pe_size = MPI::num_processes();
 
   Array<uint> send_buff, send_indices, send_orphan;
   Array<real> send_coords;

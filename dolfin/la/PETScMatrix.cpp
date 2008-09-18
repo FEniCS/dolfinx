@@ -76,7 +76,7 @@ void PETScMatrix::init(uint M, uint N)
   // FIXME: it should definitely be a parameter
 
   // Create a sparse matrix in compressed row format
-  if (dolfin::MPI::numProcesses() > 1)
+  if (dolfin::MPI::num_processes() > 1)
   {
     // Create PETSc parallel matrix with a guess for number of diagonal (50 in this case) 
     // and number of off-diagonal non-zeroes (50 in this case).
@@ -102,7 +102,7 @@ void PETScMatrix::init(uint M, uint N, const uint* nz)
     MatDestroy(A);
 
   // Create a sparse matrix in compressed row format
-  if (dolfin::MPI::numProcesses() > 1)
+  if (dolfin::MPI::num_processes() > 1)
   {
     // Create PETSc parallel matrix with a guess for number of diagonal (50 in this case) 
     // and number of off-diagonal non-zeroes (50 in this case).
@@ -141,9 +141,9 @@ void PETScMatrix::init(uint M, uint N, const uint* d_nzrow, const uint* o_nzrow)
 //-----------------------------------------------------------------------------
 void PETScMatrix::init(const GenericSparsityPattern& sparsity_pattern)
 {
-  if (dolfin::MPI::numProcesses() > 1)
+  if (dolfin::MPI::num_processes() > 1)
   {
-    uint p = dolfin::MPI::processNumber();
+    uint p = dolfin::MPI::process_number();
     const SparsityPattern& spattern = reinterpret_cast<const SparsityPattern&>(sparsity_pattern);
     uint local_size = spattern.numLocalRows(p);
     uint* d_nzrow = new uint[local_size];
@@ -377,7 +377,7 @@ void PETScMatrix::disp(uint precision) const
   dolfin_assert(A);
 
   // FIXME: Maybe this could be an option?
-  if(MPI::numProcesses() > 1)
+  if(MPI::num_processes() > 1)
     MatView(A, PETSC_VIEWER_STDOUT_WORLD);
   else
     MatView(A, PETSC_VIEWER_STDOUT_SELF);
@@ -477,7 +477,7 @@ MatType PETScMatrix::getPETScType() const
   switch ( _type )
   {
   case default_matrix:
-    if (MPI::numProcesses() > 1)
+    if (MPI::num_processes() > 1)
       return MATMPIAIJ;
     else
       return MATSEQAIJ;

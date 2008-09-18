@@ -50,7 +50,7 @@ int main(int argc, char* argv[])
   int cells = 400;
   int cells_3D = 40;
   int num_iterations = 1;
-  int num_part = dolfin::MPI::numProcesses();
+  int num_part = dolfin::MPI::num_processes();
   int debug = -1;
   bool check = false;
   bool sequential = false;
@@ -200,7 +200,7 @@ int main(int argc, char* argv[])
   {
     std::cout << "Appending results to " << resultfile << std::endl;
     std::ofstream outfile(resultfile.c_str(), std::ofstream::app);
-    outfile << dolfin::MPI::numProcesses() << " " << time << std::endl;
+    outfile << dolfin::MPI::num_processes() << " " << time << std::endl;
     outfile.close();
   }
   else

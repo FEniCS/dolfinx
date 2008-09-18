@@ -39,7 +39,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Assembler::Assembler(Mesh& mesh) : mesh(mesh), parallel(MPI::numProcesses()>0)
+Assembler::Assembler(Mesh& mesh) : mesh(mesh), parallel(MPI::num_processes()>0)
 {
   // Do nothing
 }

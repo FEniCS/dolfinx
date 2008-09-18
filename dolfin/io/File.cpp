@@ -43,7 +43,7 @@ File::File(const std::string& filename)
   else if ( filename.rfind(".py") != filename.npos )
     file = new PythonFile(filename);
   else if ( filename.rfind(".pvd") != filename.npos )
-    if(MPI::numProcesses() > 1)
+    if(MPI::num_processes() > 1)
       file = new PVTKFile(filename);
     else
       file = new VTKFile(filename);

@@ -6,7 +6,7 @@
 // Modified by Ola Skavhaug, 2007.
 //
 // First added:  2003-03-13
-// Last changed: 2008-07-23
+// Last changed: 2008-09-18
 
 #ifndef __LOGGER_H
 #define __LOGGER_H
@@ -94,6 +94,9 @@ namespace dolfin
 
     // List of timings for tasks, map from string to (num_timings, total_time)
     std::map<std::string, std::pair<uint, real> > timings;
+
+    // Process number (-1 if we are not running in parallel)
+    int process_number;
 
   };
 

@@ -91,7 +91,7 @@ void SparsityPattern::pinsert(const uint* num_rows, const uint * const * rows)
 { 
   error("SparsityPattern::pinsert needs to be updated");
 
-  uint process = dolfin::MPI::processNumber();
+  uint process = dolfin::MPI::process_number();
 
   for (unsigned int i = 0; i<num_rows[0];++i)
   {
@@ -221,7 +221,7 @@ dolfin::uint SparsityPattern::numLocalRows(uint process_number) const
 //-----------------------------------------------------------------------------
 void SparsityPattern::initRange()
 {
-  uint num_procs = dolfin::MPI::numProcesses();
+  uint num_procs = dolfin::MPI::num_processes();
   range = new uint[num_procs+1];
   range[0] = 0;
 

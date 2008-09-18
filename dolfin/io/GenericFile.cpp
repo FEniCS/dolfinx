@@ -173,7 +173,7 @@ void GenericFile::write()
 {
 
   //FIXME .pvd files should only be cleared by one processor
-  if ( type == "VTK" && MPI::processNumber() > 0)
+  if ( type == "VTK" && MPI::process_number() > 0)
     opened_write = true;
 
   if ( !opened_write ) {

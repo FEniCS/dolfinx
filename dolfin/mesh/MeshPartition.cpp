@@ -93,10 +93,10 @@ void MeshPartition::partitionGeom(Mesh& mesh, MeshFunction<uint>& partitions)
   MPI_Comm comm; 
   MPI_Comm_dup(MPI_COMM_WORLD, &comm);
 
-  uint size = MPI::numProcesses();
-  uint rank = MPI::processNumber();
+  uint size = MPI::num_processes();
+  uint rank = MPI::process_number();
 
-  dolfin_debug2("Geometric partitioning of mesh for %d processors on processor number %d.", size, rank);
+  dolfin_debug("Geometric partitioning of mesh");
   
   // Create the vertex distribution array (vtxdist) 
   idxtype *vtxdist = new idxtype[size+1];  

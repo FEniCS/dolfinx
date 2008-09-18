@@ -103,7 +103,7 @@ namespace dolfin
     // Dimensions
     uint dim[2];
 
-    //range -array of size + 1 where size is numProcesses + 1. 
+    //range -array of size + 1 where size is num_processes + 1. 
     //range[rank], range[rank+1] is the range for processor
     uint* range;
   };

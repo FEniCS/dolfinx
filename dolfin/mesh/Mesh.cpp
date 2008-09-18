@@ -167,7 +167,7 @@ void Mesh::smooth(uint num_smoothings)
 //-----------------------------------------------------------------------------
 void Mesh::partition(MeshFunction<uint>& partitions)
 {
-  //  partition(partitions, MPI::numProcesses());
+  //  partition(partitions, MPI::num_processes());
   MeshPartition::partition(*this, partitions);
 }
 //-----------------------------------------------------------------------------

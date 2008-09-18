@@ -78,7 +78,7 @@ void PETScVector::init(uint N)
   }
 
   // Create vector
-  if (MPI::numProcesses() > 1)
+  if (MPI::num_processes() > 1)
   {
     dolfin_debug("PETScVector::init(N) - VecCreateMPI");
     VecCreateMPI(PETSC_COMM_WORLD, PETSC_DECIDE, N, &x);

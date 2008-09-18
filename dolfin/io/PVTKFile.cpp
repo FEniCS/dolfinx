@@ -36,7 +36,7 @@ void PVTKFile::operator<<(Mesh& mesh)
   vtuNameUpdate(counter);
 
   // Only the root updates the pvd file
-  if(MPI::processNumber() == 0) {    
+  if(MPI::process_number() == 0) {    
 
     // Update pvtu file name and clear file
     pvtuNameUpdate(counter);
@@ -87,7 +87,7 @@ void PVTKFile::operator<<(Function& u)
   // Write pvd file
 
   // Only the root updates the pvd file
-  if(MPI::processNumber() == 0) {
+  if(MPI::process_number() == 0) {
     
     // Update pvtu file name and clear file
     pvtuNameUpdate(counter);
@@ -302,7 +302,7 @@ void PVTKFile::pvtuFileWrite()
   // Remove rank from vtu filename ( <rank>.vtu)
   std::string fname;
   fname.assign(vtu_filename, filename.find_last_of("/") + 1, vtu_filename.size() - 5 ); 
-  for(uint i=0; i< MPI::numProcesses(); i++)
+  for(uint i=0; i< MPI::num_processes(); i++)
     pvtuFile << "<Piece Source=\"" << fname << i << ".vtu\"/>" << std::endl; 
     
   pvtuFile << "</PUnstructuredGrid>" << std::endl;
@@ -347,7 +347,7 @@ void PVTKFile::pvtuFileWrite_func(Function& u)
   std::string fname;
   // Remove rank from vtu filename ( <rank>.vtu)
   fname.assign(vtu_filename, filename.find_last_of("/") + 1, vtu_filename.size() - 5 ); 
-  for(uint i=0; i< MPI::numProcesses(); i++)
+  for(uint i=0; i< MPI::num_processes(); i++)
     pvtuFile << "<Piece Source=\"" << fname << i << ".vtu\"/>" << std::endl; 
   
   
@@ -396,7 +396,7 @@ void PVTKFile::vtuNameUpdate(const int counter)
   extension.assign(filename, filename.find("."), filename.size());
   
   fileid << counter;
-   newfilename << filestart << fileid.str() << "_" << MPI::processNumber() <<".vtu";
+   newfilename << filestart << fileid.str() << "_" << MPI::process_number() <<".vtu";
   vtu_filename = newfilename.str();
   
   // Make sure file is empty
@@ -432,7 +432,7 @@ void PVTKFile::MeshFunctionWrite(T& meshfunction)
   vtuNameUpdate(counter);
 
   // Write pvd file
-  if(MPI::processNumber() == 0) 
+  if(MPI::process_number() == 0) 
     pvdFileWrite(counter);
 
   Mesh& mesh = meshfunction.mesh(); 
