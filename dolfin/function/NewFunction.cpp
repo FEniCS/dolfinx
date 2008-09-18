@@ -151,7 +151,7 @@ void NewFunction::init()
   if (!x)
   {
     DefaultFactory factory;
-    x = std::tr1::shared_ptr<GenericVector>(factory.createVector());
+    x = std::tr1::shared_ptr<GenericVector>(factory.create_vector());
   }
 
   // Initialize vector

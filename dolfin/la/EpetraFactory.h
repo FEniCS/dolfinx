@@ -27,13 +27,13 @@ namespace dolfin
     virtual ~EpetraFactory() {}
 
     /// Create empty matrix
-    EpetraMatrix* createMatrix() const;
+    EpetraMatrix* create_matrix() const;
 
     /// Create empty vector
-    EpetraVector* createVector() const;
+    EpetraVector* create_vector() const;
 
     /// Create empty sparsity pattern 
-    EpetraSparsityPattern* createPattern() const;
+    EpetraSparsityPattern* create_pattern() const;
 
     // Return Epetra Communicator  
     Epetra_SerialComm& getSerialComm(); 

@@ -24,8 +24,8 @@ NewtonSolver::NewtonSolver(SolverType solver_type, PreconditionerType pc_type)
 }
 //-----------------------------------------------------------------------------
 NewtonSolver::NewtonSolver(GenericLinearSolver& solver, LinearAlgebraFactory& factory) 
-            : solver(&solver), local_solver(0), A(factory.createMatrix()), 
-              dx(factory.createVector()), b(factory.createVector())
+            : solver(&solver), local_solver(0), A(factory.create_matrix()), 
+              dx(factory.create_vector()), b(factory.create_vector())
 {
   // Do nothing
 }

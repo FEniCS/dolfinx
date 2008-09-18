@@ -28,11 +28,11 @@ namespace dolfin
 
     /// Create empty matrix
     Matrix() : Variable("A", "DOLFIN matrix"), matrix(0)
-    { DefaultFactory factory; matrix = factory.createMatrix(); }
+    { DefaultFactory factory; matrix = factory.create_matrix(); }
 
     /// Create M x N matrix
     Matrix(uint M, uint N) : Variable("A", "DOLFIN matrix"), matrix(0)
-    { DefaultFactory factory; matrix = factory.createMatrix(); matrix->init(M, N); }
+    { DefaultFactory factory; matrix = factory.create_matrix(); matrix->init(M, N); }
 
     /// Copy constructor
     explicit Matrix(const Matrix& A) : Variable("A", "DOLFIN matrix"),

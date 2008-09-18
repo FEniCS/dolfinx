@@ -379,7 +379,7 @@ void pAssembler::initGlobalTensor(GenericTensor& A, const DofMapSet& dof_map_set
     dof_map_set.build(ufc);
     
     // Build sparsity pattern from dof map
-    GenericSparsityPattern* sparsity_pattern = A.factory().createPattern(); 
+    GenericSparsityPattern* sparsity_pattern = A.factory().create_pattern(); 
     SparsityPatternBuilder::build(*sparsity_pattern, mesh, ufc, dof_map_set);
     A.init(*sparsity_pattern);
     delete sparsity_pattern;

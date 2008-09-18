@@ -103,7 +103,7 @@ void BlockMatrix::mult(const BlockVector& x, BlockVector& y, bool transposed) co
   if (transposed) error("BlockMatrix::mult: transposed not implemented");  
   DefaultFactory factory; 
   GenericVector* vec; 
-  vec = factory.createVector();
+  vec = factory.create_vector();
   for(uint i=0; i<n; i++) 
   {
     y.get(i).init(this->getc(i,0).size(0));

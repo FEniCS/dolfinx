@@ -137,9 +137,9 @@ void SingularSolver::init(const GenericMatrix& A)
   delete [] cols;
 
   // Create matrix and vector
-  B = A.factory().createMatrix();
-  y = A.factory().createVector();
-  c = A.factory().createVector();
+  B = A.factory().create_matrix();
+  y = A.factory().create_vector();
+  c = A.factory().create_vector();
   B->init(s);
   y->init(N + 1);
   c->init(N + 1);
@@ -171,8 +171,8 @@ void SingularSolver::create(const GenericMatrix& A, const GenericVector& b,
   values.resize(N);
   if (M)
   {
-    GenericVector* ones = A.factory().createVector();
-    GenericVector* z = A.factory().createVector();
+    GenericVector* ones = A.factory().create_vector();
+    GenericVector* z = A.factory().create_vector();
     ones->init(N);
     z->init(N);
     *ones = 1.0;

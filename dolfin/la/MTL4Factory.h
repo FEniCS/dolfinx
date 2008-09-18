@@ -28,15 +28,15 @@ namespace dolfin
     virtual ~MTL4Factory() {}
 
     /// Create empty matrix
-    MTL4Matrix* createMatrix() const
+    MTL4Matrix* create_matrix() const
     { return new MTL4Matrix(); }
 
     /// Create empty vector
-    MTL4Vector* createVector() const
+    MTL4Vector* create_vector() const
     { return new MTL4Vector(); }
 
     /// Dummy sparsity pattern
-    GenericSparsityPattern* createPattern() const
+    GenericSparsityPattern* create_pattern() const
     { return 0; }
 
     // Return singleton instance

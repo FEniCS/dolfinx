@@ -26,7 +26,7 @@ void dolfin::solve(const GenericMatrix& A, GenericVector& x, const GenericVector
 //-----------------------------------------------------------------------------  
 real dolfin::residual(const GenericMatrix& A, const GenericVector& x, const GenericVector& b)
 {
-  GenericVector* y = A.factory().createVector();
+  GenericVector* y = A.factory().create_vector();
   A.mult(x, *y);
   *y -= b;
   const real norm = y->norm(l2);
@@ -47,7 +47,7 @@ real dolfin::normalize(GenericVector& x, NormalizationType normalization_type)
     break;
   case normalize_average:
     {
-      GenericVector* y = x.factory().createVector();
+      GenericVector* y = x.factory().create_vector();
       y->init(x.size());
       (*y) = 1.0 / static_cast<real>(x.size());
       const real c = x.inner(*y);

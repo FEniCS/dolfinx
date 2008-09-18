@@ -28,15 +28,15 @@ namespace dolfin
     virtual ~uBLASFactory() {}
 
     /// Create empty matrix
-    uBLASMatrix<Mat>* createMatrix() const
+    uBLASMatrix<Mat>* create_matrix() const
     { return new uBLASMatrix<Mat>(); }
 
     /// Create empty sparsity pattern 
-    SparsityPattern* createPattern() const
+    SparsityPattern* create_pattern() const
     { return new SparsityPattern(); }
 
     /// Create empty vector
-    uBLASVector* createVector() const
+    uBLASVector* create_vector() const
     { return new uBLASVector(); }
 
     static uBLASFactory<Mat>& instance() 

@@ -19,17 +19,17 @@ EpetraFactory:: EpetraFactory() {
   comm = new Epetra_SerialComm(); 
 }
 //-----------------------------------------------------------------------------
-EpetraMatrix* EpetraFactory::createMatrix() const 
+EpetraMatrix* EpetraFactory::create_matrix() const 
 { 
   return new EpetraMatrix();
 }
 //-----------------------------------------------------------------------------
-EpetraSparsityPattern* EpetraFactory::createPattern() const 
+EpetraSparsityPattern* EpetraFactory::create_pattern() const 
 {
   return new EpetraSparsityPattern(); 
 }
 //-----------------------------------------------------------------------------
-EpetraVector* EpetraFactory::createVector() const 
+EpetraVector* EpetraFactory::create_vector() const 
 { 
   return new EpetraVector(); 
 }

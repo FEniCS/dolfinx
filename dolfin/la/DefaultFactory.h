@@ -23,13 +23,13 @@ namespace dolfin
     virtual ~DefaultFactory() {}
 
     /// Create empty matrix
-    virtual dolfin::GenericMatrix* createMatrix() const;
+    virtual dolfin::GenericMatrix* create_matrix() const;
 
     /// Create empty vector
-    virtual dolfin::GenericVector* createVector() const;
+    virtual dolfin::GenericVector* create_vector() const;
 
     /// Create empty sparsity pattern 
-    virtual dolfin::GenericSparsityPattern * createPattern() const;
+    virtual dolfin::GenericSparsityPattern * create_pattern() const;
 
   private:
 

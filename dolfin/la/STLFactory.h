@@ -25,15 +25,15 @@ namespace dolfin
     virtual ~STLFactory() {}
 
     /// Create empty matrix
-    STLMatrix* createMatrix() const
+    STLMatrix* create_matrix() const
     { return new STLMatrix(); }
 
     /// Create empty vector
-    uBLASVector* createVector() const
+    uBLASVector* create_vector() const
     { return new uBLASVector(); }
 
     /// Create empty sparsity pattern 
-    GenericSparsityPattern* createPattern() const
+    GenericSparsityPattern* create_pattern() const
     { return 0; }
 
     /// Return singleton instance

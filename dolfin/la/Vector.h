@@ -28,11 +28,11 @@ namespace dolfin
 
     /// Create empty vector
     Vector() : Variable("x", "DOLFIN vector"), vector(0)
-    { DefaultFactory factory; vector = factory.createVector(); }
+    { DefaultFactory factory; vector = factory.create_vector(); }
 
     /// Create vector of size N
     explicit Vector(uint N) : Variable("x", "DOLFIN vector"), vector(0)
-    { DefaultFactory factory; vector = factory.createVector(); vector->init(N); }
+    { DefaultFactory factory; vector = factory.create_vector(); vector->init(N); }
 
     /// Copy constructor
     explicit Vector(const Vector& x) : Variable("x", "DOLFIN vector"),

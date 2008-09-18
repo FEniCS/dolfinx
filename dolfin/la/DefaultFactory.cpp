@@ -15,19 +15,19 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-GenericMatrix* DefaultFactory::createMatrix() const
+GenericMatrix* DefaultFactory::create_matrix() const
 {
-  return factory().createMatrix();
+  return factory().create_matrix();
 }
 //-----------------------------------------------------------------------------
-GenericVector* DefaultFactory::createVector() const
+GenericVector* DefaultFactory::create_vector() const
 {
-  return factory().createVector();
+  return factory().create_vector();
 }
 //-----------------------------------------------------------------------------
-GenericSparsityPattern * DefaultFactory::createPattern() const
+GenericSparsityPattern * DefaultFactory::create_pattern() const
 {
-  return factory().createPattern();
+  return factory().create_pattern();
 }
 //-----------------------------------------------------------------------------
 LinearAlgebraFactory& DefaultFactory::factory() const

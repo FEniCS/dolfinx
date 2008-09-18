@@ -25,13 +25,13 @@ namespace dolfin
     virtual ~PETScFactory() {}
 
     /// Create empty matrix
-    PETScMatrix* createMatrix() const;
+    PETScMatrix* create_matrix() const;
 
     /// Create empty vector
-    PETScVector* createVector() const;
+    PETScVector* create_vector() const;
 
     /// Create empty sparsity pattern 
-    SparsityPattern* createPattern() const;
+    SparsityPattern* create_pattern() const;
 
     /// Return singleton instance
     static PETScFactory& instance() 
