@@ -30,6 +30,9 @@ emacs -nw dolfin/scons.cfg
 VERSION=`head -1 ChangeLog | cut -d' ' -f1`
 echo "--- Version number is $VERSION"
 
+# Tag repository
+hg tag $VERSION
+
 # Commit changes to hg
 echo '--- Pushing changes to parent repository'
 sleep 1
