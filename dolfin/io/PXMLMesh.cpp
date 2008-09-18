@@ -4,7 +4,7 @@
 // Modified by Niclas Jansson, 2008.
 //
 // First added:  2003-10-21
-// Last changed: 2008-09-16
+// Last changed: 2008-09-18
 
 #include <cstring>
 #include <dolfin/log/dolfin_log.h>
@@ -15,10 +15,15 @@
 #include <dolfin/mesh/Vertex.h>
 #include "PXMLMesh.h"
 
+#ifdef HAS_MPI
 #include <mpi.h>
+#endif
+
 #include <map>
 
 using namespace dolfin;
+
+#ifdef HAS_MPI
 
 //-----------------------------------------------------------------------------
 PXMLMesh::PXMLMesh(Mesh& mesh) : XMLObject(), _mesh(mesh), state(OUTSIDE), f(0), a(0)
@@ -656,3 +661,39 @@ void PXMLMesh::closeMesh()
     
 }
 //-----------------------------------------------------------------------------
+
+#else
+
+//-----------------------------------------------------------------------------
+PXMLMesh::PXMLMesh(Mesh& mesh) : XMLObject(), _mesh(mesh), state(OUTSIDE), f(0), a(0)
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+PXMLMesh::~PXMLMesh()
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+void PXMLMesh::startElement(const xmlChar *name, const xmlChar **attrs)
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+void PXMLMesh::endElement(const xmlChar *name)
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+void PXMLMesh::open(std::string filename)
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+bool PXMLMesh::close()
+{
+  return state == DONE;
+}
+//-----------------------------------------------------------------------------
+
+#endif

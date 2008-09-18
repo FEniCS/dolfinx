@@ -6,7 +6,7 @@
 // Modified by Niclas Jansson, 2008.
 //
 // First added:  2007-05-30
-// Last changed: 2008-09-04
+// Last changed: 2008-09-18
 
 #include <dolfin/log/dolfin_log.h>
 
@@ -426,6 +426,20 @@ void MPIMeshCommunicator::broadcast(const MeshFunction<unsigned int>& mesh_funct
 void MPIMeshCommunicator::receive(MeshFunction<unsigned int>& mesh_function) 
 { 
   error("Cannot receive mesh functions without MPI.");
+}
+//-----------------------------------------------------------------------------
+void MPIMeshCommunicator::distribute(Mesh& mesh,
+				     MeshFunction<uint>& distribution)
+{
+  error("Cannot distribute mesh without MPI.");
+}
+//-----------------------------------------------------------------------------
+void MPIMeshCommunicator::distribute(Mesh& mesh, 
+				     MeshFunction<uint>& distribution, 
+				     MeshFunction<bool>& old_cell_marker,
+				     MeshFunction<bool>& cell_marker) 
+{
+  error("Cannot distribute mesh without MPI.");
 }
 //-----------------------------------------------------------------------------
 

@@ -25,6 +25,8 @@ namespace dolfin
     PXMLMesh(Mesh& mesh);
     ~PXMLMesh();
     
+
+
     void startElement (const xmlChar* name, const xmlChar** attrs);
     void endElement   (const xmlChar* name);
     
@@ -69,7 +71,9 @@ namespace dolfin
     std::set<uint> local_vertex, shared_vertex, used_vertex;
 
     std::set<uint>::iterator it;
-    
+
+
+
   };
   
 }

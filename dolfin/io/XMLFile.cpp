@@ -8,7 +8,7 @@
 // Modified by Niclas Jansson 2008.
 //
 // First added:  2002-12-03
-// Last changed: 2008-09-16
+// Last changed: 2008-09-18
 
 #include <stdarg.h>
 #include <tr1/memory>
@@ -18,6 +18,7 @@
 #include <dolfin/common/Array.h>
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/la/GenericMatrix.h>
+#include <dolfin/main/MPI.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/Vertex.h>
 #include <dolfin/mesh/Cell.h>
@@ -41,11 +42,8 @@
 #include "XMLBLASFormData.h"
 #include "XMLGraph.h"
 #include "XMLFile.h"
-
-#ifdef HAS_MPI 
-#include <dolfin/main/MPI.h>
 #include "PXMLMesh.h"
-#endif
+
 
 using namespace dolfin;
 
