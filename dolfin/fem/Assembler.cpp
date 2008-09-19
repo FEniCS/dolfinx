@@ -352,7 +352,7 @@ void Assembler::assembleInteriorFacets(GenericTensor& A,
     // Interpolate coefficients on cell
     for (uint i = 0; i < coefficients.size(); i++)
     {
-      const uint offset = ufc.coefficient_elements[i]->spaceDimension();
+      const uint offset = ufc.coefficient_elements[i]->space_dimension();
       coefficients[i]->interpolate(ufc.macro_w[i], ufc.cell0, *ufc.coefficient_elements[i], cell0, facet0);
       coefficients[i]->interpolate(ufc.macro_w[i] + offset, ufc.cell1, *ufc.coefficient_elements[i], cell1, facet1);
     }
@@ -782,7 +782,7 @@ void Assembler::assemble_system(GenericMatrix& A, const ufc::form& A_form,
           // Interpolate coefficients on cell
           for (uint i = 0; i < A_coefficients.size(); i++)
           {
-            const uint offset = A_macro_ufc.coefficient_elements[i]->spaceDimension();
+            const uint offset = A_macro_ufc.coefficient_elements[i]->space_dimension();
             A_coefficients[i]->interpolate(A_macro_ufc.macro_w[i],          A_macro_ufc.cell0, 
                 *A_macro_ufc.coefficient_elements[i], cell0, facet0);
             A_coefficients[i]->interpolate(A_macro_ufc.macro_w[i] + offset, A_macro_ufc.cell1, 
@@ -816,7 +816,7 @@ void Assembler::assemble_system(GenericMatrix& A, const ufc::form& A_form,
           // Interpolate coefficients on cell
           for (uint i = 0; i < b_coefficients.size(); i++)
           {
-            const uint offset = b_macro_ufc.coefficient_elements[i]->spaceDimension();
+            const uint offset = b_macro_ufc.coefficient_elements[i]->space_dimension();
             b_coefficients[i]->interpolate(b_macro_ufc.macro_w[i],          b_macro_ufc.cell0, 
                 *b_macro_ufc.coefficient_elements[i], cell0, facet0);
             b_coefficients[i]->interpolate(b_macro_ufc.macro_w[i] + offset, b_macro_ufc.cell1, 

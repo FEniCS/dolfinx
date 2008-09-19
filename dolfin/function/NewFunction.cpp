@@ -123,7 +123,7 @@ void NewFunction::eval(real* values, const real* x) const
   }
 
   // Try calling scalar eval() for scalar-valued function
-  if (V->element().valueRank() == 0)
+  if (V->element().value_rank() == 0)
     values[0] = eval(x);
 
   // Missing eval function

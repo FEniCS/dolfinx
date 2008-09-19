@@ -60,9 +60,9 @@ BoundaryCondition::LocalData::LocalData(const ufc::form& form, Mesh& mesh,
     dof_map = &global_dof_map;
 
   // Create local data used to set boundary conditions
-  w = new real[finite_element->spaceDimension()];
-  cell_dofs = new uint[finite_element->spaceDimension()];
-  for (uint i = 0; i < finite_element->spaceDimension(); i++)
+  w = new real[finite_element->space_dimension()];
+  cell_dofs = new uint[finite_element->space_dimension()];
+  for (uint i = 0; i < finite_element->space_dimension(); i++)
   {
     w[i] = 0.0;
     cell_dofs[i] = 0;

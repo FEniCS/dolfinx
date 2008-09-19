@@ -48,7 +48,6 @@ dolfin::uint SubSystem::depth() const
   return sub_system.size();
 }
 //-----------------------------------------------------------------------------
-//ufc::finite_element* SubSystem::extractFiniteElement(const ufc::finite_element& finite_element) const
 FiniteElement* SubSystem::extractFiniteElement(const FiniteElement& finite_element) const
 {
   // Recursively extract sub element
@@ -58,13 +57,11 @@ FiniteElement* SubSystem::extractFiniteElement(const FiniteElement& finite_eleme
   return sub_finite_element;
 }
 //-----------------------------------------------------------------------------
-//ufc::finite_element* SubSystem::extractFiniteElement
-//      (const ufc::finite_element& finite_element, const Array<uint>& sub_system)
 FiniteElement* SubSystem::extractFiniteElement
       (const FiniteElement& finite_element, const Array<uint>& sub_system)
 {
   // Check if there are any sub systems
-  if (finite_element.numSubElements() == 0)
+  if (finite_element.num_sub_elements() == 0)
     error("Unable to extract sub system (there are no sub systems).");
 
   // Check that a sub system has been specified
@@ -72,12 +69,12 @@ FiniteElement* SubSystem::extractFiniteElement
     error("Unable to extract sub system (no sub system specified).");
   
   // Check the number of available sub systems
-  if (sub_system[0] >= finite_element.numSubElements())
+  if (sub_system[0] >= finite_element.num_sub_elements())
     error("Unable to extract sub system %d (only %d sub systems defined).",
-                  sub_system[0], finite_element.numSubElements());
+                  sub_system[0], finite_element.num_sub_elements());
   
   // Create sub system
-  FiniteElement* sub_element = finite_element.createSubElement(sub_system[0]);
+  FiniteElement* sub_element = finite_element.create_sub_element(sub_system[0]);
   
   // Return sub system if sub sub system should not be extracted
   if (sub_system.size() == 1)

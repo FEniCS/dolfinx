@@ -26,7 +26,7 @@ namespace dolfin
     FiniteElement(ufc::finite_element* element) : element(element) 
     { /* Do nothing */ }
 
-    /// Create FiniteElement. ufc_element may be shared
+    /// Create FiniteElement. Object may share ufc::finite_element
     FiniteElement(std::tr1::shared_ptr<ufc::finite_element> element) : element(element)
     { /* Do nothing */ }
 
@@ -37,28 +37,28 @@ namespace dolfin
     std::string signature() const
     { return element->signature(); }
 
-    uint valueRank() const
+    uint value_rank() const
     { return element->value_rank(); }
    
-    uint valueDimension(uint i) const
+    uint value_dimension(uint i) const
     { return element->value_dimension(i); }
 
-    uint numSubElements() const
+    uint num_sub_elements() const
     { return element->num_sub_elements(); }
 
-    uint spaceDimension() const
+    uint space_dimension() const
     { return element->space_dimension(); }
 
-    void interpolateVertexValues(real* vertex_values, real* coefficients, const UFCCell& cell) const
+    void interpolate_vertex_values(real* vertex_values, real* coefficients, const UFCCell& cell) const
     { element->interpolate_vertex_values(vertex_values, coefficients, cell); }
 
-    void evaluateBasis(uint i, real* values, const real* x, const UFCCell& cell) const
+    void evaluate_basis(uint i, real* values, const real* x, const UFCCell& cell) const
     { element->evaluate_basis(i, values, x, cell); }
   
-    real evaluateDof(uint i, const ufc::function& function, const ufc::cell& cell) const
+    real evaluate_dof(uint i, const ufc::function& function, const ufc::cell& cell) const
     { return element->evaluate_dof(i, function, cell); }
 
-    FiniteElement* createSubElement(uint i) const
+    FiniteElement* create_sub_element(uint i) const
     { return new FiniteElement(element->create_sub_element(i)); }
 
     ufc::finite_element& ufc_element() const
@@ -66,6 +66,7 @@ namespace dolfin
 
   private:
 
+    // UFC finite element
     std::tr1::shared_ptr<ufc::finite_element> element;
   };
 

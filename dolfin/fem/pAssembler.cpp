@@ -338,7 +338,7 @@ void pAssembler::assembleInteriorFacets(GenericTensor& A,
     // Interpolate coefficients on cell
     for (uint i = 0; i < coefficients.size(); i++)
     {
-      const uint offset = ufc.coefficient_elements[i]->spaceDimension();
+      const uint offset = ufc.coefficient_elements[i]->space_dimension();
       coefficients[i]->interpolate(ufc.macro_w[i], ufc.cell0, *ufc.coefficient_elements[i], cell0, facet0);
       coefficients[i]->interpolate(ufc.macro_w[i] + offset, ufc.cell1, *ufc.coefficient_elements[i], cell1, facet1);
     }

@@ -73,8 +73,8 @@ void UserFunction::interpolate(real* coefficients,
   dolfin_assert(coefficients);
 
   // Evaluate each dof to get coefficients for nodal basis expansion
-  for (uint i = 0; i < finite_element.spaceDimension(); i++)
-    coefficients[i] = finite_element.evaluateDof(i, *this, cell);
+  for (uint i = 0; i < finite_element.space_dimension(); i++)
+    coefficients[i] = finite_element.evaluate_dof(i, *this, cell);
 }
 //-----------------------------------------------------------------------------
 void UserFunction::eval(real* values, const real* x) const

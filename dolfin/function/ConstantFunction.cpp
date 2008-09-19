@@ -113,14 +113,14 @@ void ConstantFunction::interpolate(real* coefficients,
   dolfin_assert(coefficients);
   
   // Assert same value shape (TODO: Slow to do this for every element, should probably remove later)
-  dolfin_assert(value_rank == finite_element.valueRank());
+  dolfin_assert(value_rank == finite_element.value_rank());
   for (uint i = 0; i < value_rank; i++)
-    dolfin_assert(shape[i] == finite_element.valueDimension(i));
+    dolfin_assert(shape[i] == finite_element.value_dimension(i));
   
   // UFC 1.0 version:
   // Evaluate each dof to get coefficients for nodal basis expansion
-  for (uint i = 0; i < finite_element.spaceDimension(); i++)
-    coefficients[i] = finite_element.evaluateDof(i, *this, cell);
+  for (uint i = 0; i < finite_element.space_dimension(); i++)
+    coefficients[i] = finite_element.evaluate_dof(i, *this, cell);
   
   // UFC 1.1 version:
   /// Evaluate linear functionals for all dofs on the function f

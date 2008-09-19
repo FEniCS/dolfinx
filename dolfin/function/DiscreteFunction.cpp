@@ -169,19 +169,19 @@ DiscreteFunction::~DiscreteFunction()
 dolfin::uint DiscreteFunction::rank() const
 {
   dolfin_assert(finite_element);
-  return finite_element->valueRank();
+  return finite_element->value_rank();
 }
 //-----------------------------------------------------------------------------
 dolfin::uint DiscreteFunction::dim(uint i) const
 {
   dolfin_assert(finite_element);
-  return finite_element->valueDimension(i);
+  return finite_element->value_dimension(i);
 }
 //-----------------------------------------------------------------------------
 dolfin::uint DiscreteFunction::numSubFunctions() const
 {
   dolfin_assert(finite_element);
-  return finite_element->numSubElements();
+  return finite_element->num_sub_elements();
 }
 //-----------------------------------------------------------------------------
 const DiscreteFunction& DiscreteFunction::operator= (const DiscreteFunction& f)
@@ -227,7 +227,7 @@ void DiscreteFunction::interpolate(real* values) const
     x->get(scratch->coefficients, dof_map->local_dimension(), scratch->dofs);
 
     // Interpolate values at the vertices
-    finite_element->interpolateVertexValues(vertex_values, scratch->coefficients, ufc_cell);
+    finite_element->interpolate_vertex_values(vertex_values, scratch->coefficients, ufc_cell);
 
     // Copy values to array of vertex values
     for (VertexIterator vertex(*cell); !vertex.end(); ++vertex)
@@ -250,7 +250,7 @@ void DiscreteFunction::interpolate(real* coefficients, const ufc::cell& cell,
   // FIXME: Better test here, compare against the local element
 
   // Check dimension
-  if (finite_element.spaceDimension() != dof_map->local_dimension())
+  if (finite_element.space_dimension() != dof_map->local_dimension())
     error("Finite element does not match for interpolation of discrete function.");
 
   // Tabulate dofs
@@ -288,9 +288,9 @@ void DiscreteFunction::eval(real* values, const real* x) const
   // Compute linear combination
   for (uint j = 0; j < scratch->size; j++)
     values[j] = 0.0;
-  for (uint i = 0; i < finite_element->spaceDimension(); i++)
+  for (uint i = 0; i < finite_element->space_dimension(); i++)
   {
-    finite_element->evaluateBasis(i, scratch->values, x, ufc_cell);
+    finite_element->evaluate_basis(i, scratch->values, x, ufc_cell);
     for (uint j = 0; j < scratch->size; j++)
       values[j] += scratch->coefficients[i] * scratch->values[j];
   }
@@ -334,17 +334,17 @@ DiscreteFunction::Scratch::Scratch(FiniteElement& finite_element)
 {
   // Compute size of value (number of entries in tensor value)
   size = 1;
-  for (uint i = 0; i < finite_element.valueRank(); i++)
-    size *= finite_element.valueDimension(i);
+  for (uint i = 0; i < finite_element.value_rank(); i++)
+    size *= finite_element.value_dimension(i);
 
   // Initialize local array for mapping of dofs
-  dofs = new uint[finite_element.spaceDimension()];
-  for (uint i = 0; i < finite_element.spaceDimension(); i++)
+  dofs = new uint[finite_element.space_dimension()];
+  for (uint i = 0; i < finite_element.space_dimension(); i++)
     dofs[i] = 0;
 
   // Initialize local array for expansion coefficients
-  coefficients = new real[finite_element.spaceDimension()];
-  for (uint i = 0; i < finite_element.spaceDimension(); i++)
+  coefficients = new real[finite_element.space_dimension()];
+  for (uint i = 0; i < finite_element.space_dimension(); i++)
     coefficients[i] = 0.0;
 
   // Initialize local array for values

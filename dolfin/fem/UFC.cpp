@@ -102,7 +102,7 @@ UFC::UFC(const ufc::form& form, Mesh& mesh, const DofMapSet& dof_map_set) : form
   w = new real*[form.num_coefficients()];
   for (uint i = 0; i < form.num_coefficients(); i++)
   {
-    const uint n = coefficient_elements[i]->spaceDimension();
+    const uint n = coefficient_elements[i]->space_dimension();
     w[i] = new real[n];
     for (uint j = 0; j < n; j++)
       w[i][j] = 0.0;
@@ -112,7 +112,7 @@ UFC::UFC(const ufc::form& form, Mesh& mesh, const DofMapSet& dof_map_set) : form
   macro_w = new real*[form.num_coefficients()];
   for (uint i = 0; i < form.num_coefficients(); i++)
   {
-    const uint n = 2*coefficient_elements[i]->spaceDimension();
+    const uint n = 2*coefficient_elements[i]->space_dimension();
     macro_w[i] = new real[n];
     for (uint j = 0; j < n; j++)
       macro_w[i][j] = 0.0;
