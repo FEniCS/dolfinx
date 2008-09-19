@@ -82,6 +82,7 @@ options = [
     BoolOption("enableTrilinos", "Compile with support for Trilinos", "yes"),
     BoolOption("enableCholmod", "Compile with support for CHOLMOD", "yes"),
     BoolOption("enableMtl4", "Compile with support for MTL4", "yes"),
+    BoolOption("enableParmetis", "Compile with support for ParMETIS", "yes"),
     BoolOption("enablePydolfin", "Compile the python wrappers of Dolfin", "yes"),
     # some of the above may need extra options (like petscDir), should we
     # try to get that from pkg-config?
@@ -95,6 +96,7 @@ options = [
     PathOption("withTrilinosDir", "Specify path to Trilinos", None),
     PathOption("withCholmodDir", "Specify path to CHOLMOD", None),
     PathOption("withMtl4Dir", "Specify path to MTL4", None),
+    PathOption("withParmetisDir", "Specify path to ParMETIS", None),
     PathOption("withBoostDir", "Specify path to Boost", None),
     #
     # a few more options originally from PyCC:

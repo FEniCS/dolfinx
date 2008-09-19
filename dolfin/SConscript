@@ -50,6 +50,8 @@ if not env["enableCholmod"]:
     disabled_packages.append("cholmod")
 if not env["enableMtl4"]:
     disabled_packages.append("mtl4")
+if not env["enableMtl4"]:
+    disabled_packages.append("parmetis")
 
 # Find modules in the project and dependencies:
 # only modules and configuredPackages will be used in this code:

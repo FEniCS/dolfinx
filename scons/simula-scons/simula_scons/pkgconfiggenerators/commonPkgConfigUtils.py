@@ -205,7 +205,7 @@ def get_linker(sconsEnv):
     if os.environ.has_key("LD"):
       linker = os.environ["LD"]
     else:
-      linker = "g++"
+      linker = get_compiler(sconsEnv)
   return linker
 
 def set_forced_compiler(forceCompiler):
