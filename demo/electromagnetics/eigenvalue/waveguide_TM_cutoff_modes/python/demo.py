@@ -40,7 +40,7 @@ width = 1
 height = 0.5
 
 # specify the mode of interest. moi = 1 : dominant (TM_{11}) mode
-moi = 2
+moi = 1
 
 # create the mesh using a Rectangle
 nx = int(width/height)
@@ -129,7 +129,8 @@ if lc != 0:
 #  dolfin Vector
 
 # initialize the function
-magnetic_field = Function(element, mesh, h_e)
+magnetic_field = Function(element, mesh, Vector())
+magnetic_field.vector().assign(h_e)
 
 # now specify the points where the field must be calculated and calculate
 # number of points per unit length
