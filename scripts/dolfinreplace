@@ -1,0 +1,122 @@
+#!/usr/bin/python
+#
+# Replace string in dolfin files
+#
+#     dolfinreplace s0 s1 [-s]
+#
+# Example:
+#
+#     dolfinreplace foo bar 
+#
+# Johan hake, 2008-19-09
+
+from os import path
+
+# File post fixes to look in
+post_fixes = ['.h','.cpp','.i','.tex','.py']
+
+# Directories to explude
+exclude_dir = []
+
+# Global variables
+count         = 0
+changed_files = []
+dolfin_root   = path.abspath(path.join(path.dirname(path.abspath(__file__)),
+                                       path.pardir))
+
+# Output strings
+post_fix_string = ", ".join( "'%s'"%s for s in post_fixes)
+
+start_str = """
+Replaceing '%s' with '%s' in all
+
+    %s
+
+files..."""
+
+report_str = """
+Done
+        
+%d word replaced in:
+
+    %s
+%s"""
+
+def replace(args, dirname, filenames):
+    """ Replace replaces[0] with replaces[1]
+
+    In all fnames with post fixes in 'post_fixes' replace replaces[0] with replaces[1]
+    """
+    global count, changed_files
+    s0, s1, simulate = args
+    for exclude in exclude_dir:
+        if exclude in filenames: filenames.remove(exclude)
+    
+    for filename in filenames:
+        if path.splitext(filename)[1] in post_fixes:
+            fullpath_filename = path.join(dirname,filename)
+            if path.isfile(fullpath_filename):
+                file = open(fullpath_filename, "r")
+                input = file.read()
+                num_changed = input.count(s0)
+                count += num_changed
+                output = input.replace(s0, s1)
+                file.close()
+                
+                if not simulate:
+                    file = open(fullpath_filename, "w")
+                    file.write(output)
+                    file.close()
+                
+                if num_changed > 0:
+                    changed_files.append(path.basename(fullpath_filename))
+
+def usage():
+    print """Usage: dolfinreplace s0 s1 [-s]
+
+Replaces string 's0' with 's1' in all
+
+   %s
+
+files in the dolfin directory tree.
+
+  -s : Simulate
+"""%post_fix_string
+
+def main():
+    import sys
+    num_arg = len(sys.argv) -1
+    if  num_arg < 2 or num_arg > 3:
+        usage()
+        sys.exit(1)
+
+    # The replace info
+    s0 = sys.argv[1]
+    s1 = sys.argv[2]
+
+    # If a third argument
+    if num_arg == 3:
+        if '-s' in sys.argv[3]:
+            simulate = True
+        else:
+            usage()
+            sys.exit(1)
+    else:
+        simulate = False
+    
+    print start_str%(s0,s1,post_fix_string)
+
+    # Do it!
+    path.walk(dolfin_root,replace,(s0,s1,simulate))
+    if count > 0:
+        if simulate:
+            simulate_str = "\nSimulating, no replacement done..."
+        else:
+            simulate_str = ""
+            
+        print report_str%(count,", ".join(changed_files),simulate_str)
+    else:
+        print "\nDone\nNo occurens of %s found"%sys.argv[1]
+    
+if __name__ == "__main__":
+    main()
