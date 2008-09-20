@@ -221,16 +221,28 @@ void PXMLMesh::readVertices(const xmlChar *name, const xmlChar **attrs)
   const uint num_processes = MPI::num_processes();
   const uint process_number = MPI::process_number();
 
-  // Linear data distribution
-  const uint L = floor( (real) num_vertices / (real) num_processes);
-  const uint R = num_vertices % num_processes;
-  const uint num_local = (num_vertices + num_processes - process_number - 1) / num_processes;
-  
-  start_index = process_number * L + std::min(process_number, R);
-  end_index = start_index + ( num_local - 1);
+  // Compute number of vertices per process and remainder
+  const uint n = num_vertices / num_processes;
+  const uint r = num_vertices % num_processes;
+
+  // Distribute remainder evenly among first r processes
+  uint num_local = 0;
+  if (process_number < r)
+  {
+    num_local   = n + 1;
+    start_index = process_number*n + process_number;
+  }
+  else
+  {
+    num_local   = n;
+    start_index = process_number*n + r;
+  }
+  end_index = start_index + num_local - 1;
 
   num_parsed_v = 0;
   
+  cout << start_index << " " << end_index << endl;
+
   // Set number of vertices
   editor.initVertices(num_local);
   
