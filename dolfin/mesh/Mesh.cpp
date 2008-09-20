@@ -6,7 +6,7 @@
 // Modified by Niclas Jansson 2008.
 //
 // First added:  2006-05-09
-// Last changed: 2008-09-16
+// Last changed: 2008-09-20
 
 #include <sstream>
 
@@ -232,7 +232,7 @@ std::string Mesh::str() const
          << topology().dim()
          << " with "
          << numVertices()
-         << " and "
+         << " vertices and "
          << numCells()
          << " cells]";
   return stream.str();
