@@ -240,11 +240,10 @@ void PXMLMesh::readVertices(const xmlChar *name, const xmlChar **attrs)
   end_index = start_index + num_local - 1;
 
   num_parsed_v = 0;
-  
-  cout << start_index << " " << end_index << endl;
 
   // Set number of vertices
   editor.initVertices(num_local);
+  dolfin_debug2("Reading %d vertices out of %d", num_local, num_vertices);
   
   editor.initCells(1);
   global_numbering = _mesh.data().createMeshFunction("vertex numbering");
@@ -675,7 +674,7 @@ void PXMLMesh::closeMesh()
 #else
 
 //-----------------------------------------------------------------------------
-PXMLMesh::PXMLMesh(Mesh& mesh)
+PXMLMesh::PXMLMesh(Mesh& mesh) : _mesh(mesh)
 {
   error("Missing MPI for parallel XML parser.");
 }
