@@ -7,12 +7,12 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2006-04-25
-// Last changed: 2008-04-29
+// Last changed: 2008-08-25
 
 #ifndef __GENERIC_VECTOR_H
 #define __GENERIC_VECTOR_H
 
-#include "VectorNormType.h"
+#include "enums_la.h"
 #include "GenericSparsityPattern.h"
 #include "GenericTensor.h"
 
@@ -29,6 +29,10 @@ namespace dolfin
     virtual ~GenericVector() {}
 
     //--- Implementation of the GenericTensor interface ---
+
+    /// Initialize zero tensor with given dimensions
+    virtual void init(uint rank, const uint* dims)
+    { dolfin_assert(rank == 1); init(dims[0]); }
 
     /// Initialize zero tensor using sparsity pattern
     inline void init(const GenericSparsityPattern& sparsity_pattern)
@@ -99,7 +103,7 @@ namespace dolfin
     virtual real inner(const GenericVector& x) const = 0;
 
     /// Return norm of vector
-    virtual real norm(VectorNormType type=l2) const = 0;
+    virtual real norm(dolfin::NormType type) const = 0;
 
     /// Return minimum value of vector
     virtual real min() const = 0;
@@ -124,6 +128,20 @@ namespace dolfin
 
     /// Assignment operator
     virtual const GenericVector& operator= (real a) = 0;
+
+    /// Return pointer to underlying data (const version)
+    virtual const real* data() const
+    { 
+      error("Unable to return pointer to underlying vector data."); 
+      return 0;
+    } 
+
+    /// Return pointer to underlying data
+    virtual real* data()
+    { 
+      error("Unable to return pointer to underlying vector data."); 
+      return 0;
+    } 
 
     //--- Convenience functions ---
 

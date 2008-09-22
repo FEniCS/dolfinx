@@ -1,15 +1,15 @@
-// Copyright (C) 2005-2006 Anders Logg.
+// Copyright (C) 2005-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005-01-27
-// Last changed: 2006-07-05
+// Last changed: 2008-06-11
 
 #ifndef __MULTI_ADAPTIVE_TIME_SLAB_H
 #define __MULTI_ADAPTIVE_TIME_SLAB_H
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/types.h>
-#include <dolfin/la/uBlasVector.h>
+#include <dolfin/la/uBLASVector.h>
 #include "Alloc.h"
 #include "Partition.h"
 #include "MultiAdaptivity.h"
@@ -46,7 +46,7 @@ namespace dolfin
     bool check(bool first);
     
     /// Shift time slab (prepare for next time slab)
-    bool shift();
+    bool shift(bool end);
 
     /// Reset to initial data
     void reset();
@@ -171,7 +171,7 @@ namespace dolfin
     uint emax;                  // Last covered element for sample
     real kmin;                  // Minimum time step (exluding threshold modified)
 
-    uBlasVector u; // The interpolated solution at a given time
+    uBLASVector u; // The interpolated solution at a given time
 
   };
 

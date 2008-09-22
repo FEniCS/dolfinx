@@ -100,6 +100,11 @@ real MultiAdaptiveFixedPointSolver::iteration(real tol, uint iter,
   for (uint i = 0; i < ts.N; i++)
     ts.elast[i] = -1;
 
+  // Save norm of old solution
+  xnorm = 0.0;
+  for (uint j = 0; j < ts.nj; j++)
+    xnorm = std::max(xnorm, std::abs(ts.jx[j]));
+
   // Reset maximum increment
   real increment_max = 0.0;
 

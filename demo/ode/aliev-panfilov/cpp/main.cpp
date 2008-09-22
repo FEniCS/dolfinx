@@ -25,13 +25,13 @@ public:
     mu2  = 0.3;
   }
   
-  void u0(uBlasVector& u)
+  void u0(uBLASVector& u)
   {
     u[0] = 0.2;
     u[1] = 0.0;
   }
   
-  void f(const uBlasVector& u, real t, uBlasVector& y)
+  void f(const uBLASVector& u, real t, uBLASVector& y)
   {
     const real eps = eps0 + mu1*u[1] / (u[0] + mu2);
 

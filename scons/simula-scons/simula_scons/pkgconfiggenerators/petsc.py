@@ -94,6 +94,10 @@ get_petsc_ld:
 def getPetscDir(sconsEnv=None):
     petsc_dir = getPackageDir("petsc", sconsEnv=sconsEnv, default=None)
     if not petsc_dir:
+        petsc_locations = ["/usr/lib/petscdir/2.3.3"]
+        for petsc_location in petsc_locations:
+            if os.access(petsc_location, os.F_OK) == True:
+                return petsc_location
         raise UnableToFindPackageException("PETSc")
     return petsc_dir
 

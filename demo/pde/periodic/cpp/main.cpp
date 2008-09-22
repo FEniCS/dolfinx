@@ -39,7 +39,7 @@ int main()
   {
     bool inside(const real* x, bool on_boundary) const
     {
-      return x[1] < DOLFIN_EPS || x[1] > (1.0 - DOLFIN_EPS) && on_boundary;
+      return (x[1] < DOLFIN_EPS || x[1] > (1.0 - DOLFIN_EPS)) && on_boundary;
     }
   };
 
@@ -79,11 +79,29 @@ int main()
   // Define PDE
   PoissonBilinearForm a;
   PoissonLinearForm L(f);
+
+  // Solve PDE
+  Matrix A;
+  Vector b;
+  assemble(A, a, mesh);
+  assemble(b, L, mesh);
+  for (dolfin::uint i = 0; i < bcs.size(); i++)
+    bcs[i]->apply(A, b, a);
+
+  Function u(mesh, a);
+  GenericVector& x = u.vector(); 
+
+  LUSolver solver;
+  solver.solve(A, x, b);
+
+/*
+  // Define PDE
   LinearPDE pde(a, L, mesh, bcs);
 
   // Solve PDE
   Function u;
   pde.solve(u);
+*/
 
   // Plot solution
   plot(u);

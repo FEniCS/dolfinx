@@ -25,7 +25,7 @@ class CahnHilliardEquation : public NonlinearProblem, public Parametrized
     // Constructor 
     CahnHilliardEquation(Mesh& mesh, Function& u, Function& u0, Function& dt, 
                          Function& theta, Function& lambda, Function& muFactor) 
-         : mesh(mesh), dt(dt), theta(theta), lambda(lambda), muFactor(muFactor)
+                       : assembler(mesh), reset_Jacobian(true)
     {
       // Create forms
       if(mesh.topology().dim() == 2)
@@ -61,29 +61,29 @@ class CahnHilliardEquation : public NonlinearProblem, public Parametrized
       return *L;
     }
 
-    // User defined assemble of Jacobian and residual vector 
-    void form(GenericMatrix& A, GenericVector& b, const GenericVector& x)
+    // User defined residual vector 
+    void F(GenericVector& b, const GenericVector& x)
+    {
+      // Assemble RHS (Neumann boundary conditions)
+      assembler.assemble(b, *L);
+    }
+
+    // User defined assemble of Jacobian 
+    void J(GenericMatrix& A, const GenericVector& x)
     {
       // Assemble system and RHS (Neumann boundary conditions)
-      Assembler assembler(mesh);
-      assembler.assemble(A, *a);
-      assembler.assemble(b, *L);
+      assembler.assemble(A, *a, reset_Jacobian);
+      reset_Jacobian  = false;
     }
 
   private:
 
-    // Pointers to forms and mesh
+    // Pointers to forms
     Form *a;
     Form *L;
-    Mesh& mesh;
 
-    // Time stepping parameters
-    Function& dt; 
-    Function& theta;
-
-    // Model parameters
-    Function& lambda; 
-    Function& muFactor;
+    Assembler assembler;
+    bool reset_Jacobian;
 };
 
 int main(int argc, char* argv[])
@@ -94,7 +94,7 @@ int main(int argc, char* argv[])
   UnitSquare mesh(80, 80);
 
   // Time stepping and model parameters
-  real delta_t = 1.0e-5;
+  real delta_t = 5.0e-6;
   Function dt(mesh, delta_t); 
   Function theta(mesh, 0.5); 
   Function lambda(mesh, 1.0e-2); 
@@ -111,12 +111,12 @@ int main(int argc, char* argv[])
   CahnHilliardEquation cahn_hilliard(mesh, u, u0, dt, theta, lambda, muFactor);
 
   // Initialise discrete functions
-  Vector x, x0;
-  u.init(mesh,   x, cahn_hilliard.form(1), 1);
-  u0.init(mesh, x0, cahn_hilliard.form(1), 1);
+  u.init(mesh, cahn_hilliard.form(1), 1);
+  u0.init(mesh, cahn_hilliard.form(1), 1);
 
   // Create nonlinear solver and set parameters
-  NewtonSolver newton_solver;
+  //NewtonSolver newton_solver;
+  NewtonSolver newton_solver(lu);
   newton_solver.set("Newton convergence criterion", "incremental");
   newton_solver.set("Newton maximum iterations", 10);
   newton_solver.set("Newton relative tolerance", 1e-6);
@@ -132,8 +132,8 @@ int main(int argc, char* argv[])
      x_init[i] = 0.63 + 0.02*(0.5-dolfin::rand());
      x_pos[i]  = i + size;
   }
-  x.set(x_init, size, x_pos);
-  x.apply();
+  u.vector().set(x_init, size, x_pos);
+  u.vector().apply();
   delete [] x_init;
   delete [] x_pos;
 
@@ -150,7 +150,7 @@ int main(int argc, char* argv[])
     u0 = u;
     
     // Solve
-    newton_solver.solve(cahn_hilliard, x);
+    newton_solver.solve(cahn_hilliard, u.vector());
 
     // Save function to file
     c = u[1];

@@ -1,7 +1,10 @@
 // Copyright (C) 2006 Johan Hoffman.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Anders Logg, 2008.
+// 
 // First added:  2006-11-01
+// Last changed: 2008-05-28
 
 #include <list>
 
@@ -10,6 +13,7 @@
 #include "Mesh.h"
 #include "MeshTopology.h"
 #include "MeshGeometry.h"
+#include "MeshData.h"
 #include "MeshConnectivity.h"
 #include "MeshEditor.h"
 #include "MeshFunction.h"
@@ -203,21 +207,18 @@ bool LocalMeshCoarsening::coarsenCell(Mesh& mesh, Mesh& coarse_mesh,
   for (VertexIterator v(mesh); !v.end(); ++v)
     vertex_boundary.set(v->index(),false);
 
-  MeshFunction<uint> bnd_vertex_map; 
-  MeshFunction<uint> bnd_cell_map; 
-  BoundaryMesh boundary(mesh,bnd_vertex_map,bnd_cell_map);
+  BoundaryMesh boundary(mesh);
+  MeshFunction<uint>* bnd_vertex_map = boundary.data().meshFunction("vertex map");
+  dolfin_assert(bnd_vertex_map);
   for (VertexIterator v(boundary); !v.end(); ++v)
-    vertex_boundary.set(bnd_vertex_map.get(v->index()),true);
+    vertex_boundary.set(bnd_vertex_map->get(v->index()),true);
 
   // If coarsen boundary is forbidden 
   if ( coarsen_boundary == false )
   {
     for (VertexIterator v(boundary); !v.end(); ++v)
-      vertex_forbidden.set(bnd_vertex_map.get(v->index()),true);
+      vertex_forbidden.set(bnd_vertex_map->get(v->index()),true);
   }
-
-
-
   // Initialise data for finding which vertex to remove   
   bool collapse_edge = false;
   uint* edge_vertex;

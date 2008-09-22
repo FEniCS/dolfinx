@@ -8,9 +8,9 @@
 #define __TIME_SLAB_JACOBIAN_H
 
 #include <dolfin/log/dolfin_log.h>
-#include <dolfin/la/uBlasDenseMatrix.h>
-#include <dolfin/la/uBlasVector.h>
-#include <dolfin/la/uBlasKrylovMatrix.h>
+#include <dolfin/la/uBLASDenseMatrix.h>
+#include <dolfin/la/uBLASVector.h>
+#include <dolfin/la/uBLASKrylovMatrix.h>
 #include <dolfin/la/Matrix.h>
 
 namespace dolfin
@@ -23,7 +23,7 @@ namespace dolfin
   /// This is the base class for Jacobians defined on mono- or
   /// multi-adaptive time slabs.
 
-  class TimeSlabJacobian : public uBlasKrylovMatrix
+  class TimeSlabJacobian : public uBLASKrylovMatrix
   {
   public:
 
@@ -37,7 +37,7 @@ namespace dolfin
     virtual uint size(uint dim) const = 0;
     
     /// Compute product y = Ax
-    virtual void mult(const uBlasVector& x, uBlasVector& y) const = 0;
+    virtual void mult(const uBLASVector& x, uBLASVector& y) const = 0;
 
     /// (Re-)initialize computation of Jacobian
     virtual void init();
@@ -46,7 +46,7 @@ namespace dolfin
     void update();
 
     /// Return dense copy of Jacobian
-    const uBlasDenseMatrix& matrix() const;
+    const uBLASDenseMatrix& matrix() const;
 
   protected:
     
@@ -57,10 +57,10 @@ namespace dolfin
     const Method& method;
 
     // Dense copy of the Jacobian
-    uBlasDenseMatrix A;
+    uBLASDenseMatrix A;
 
     // Vectors used to compute dense copy of the Jacobian
-    uBlasVector ej, Aj;
+    uBLASVector ej, Aj;
 
   };
 

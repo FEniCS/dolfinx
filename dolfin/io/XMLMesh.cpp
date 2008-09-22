@@ -1,20 +1,24 @@
-// Copyright (C) 2003-2006 Anders Logg.
+// Copyright (C) 2003-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2003-10-21
-// Last changed: 2006-06-22
+// Last changed: 2008-08-19
 
+#include <cstring>
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/mesh/CellType.h>
 #include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/MeshData.h>
 #include "XMLMesh.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-XMLMesh::XMLMesh(Mesh& mesh) : XMLObject(), _mesh(mesh), state(OUTSIDE)
+XMLMesh::XMLMesh(Mesh& mesh) : XMLObject(), _mesh(mesh), state(OUTSIDE), f(0), a(0),
+                               mesh_coord(0), xml_vector(0)
 {
   // Do nothing
+  
 }
 //-----------------------------------------------------------------------------
 XMLMesh::~XMLMesh()
@@ -48,7 +52,16 @@ void XMLMesh::startElement(const xmlChar *name, const xmlChar **attrs)
       readCells(name, attrs);
       state = INSIDE_CELLS;
     }
-    
+    else if ( xmlStrcasecmp(name, (xmlChar *) "data") == 0 )
+    {
+      state = INSIDE_DATA;
+    }
+    else if ( xmlStrcasecmp(name, (xmlChar *) "coordinates") == 0 )
+    {
+      readCoordinates(name, attrs);
+      state = INSIDE_COORDINATES;
+    }
+
     break;
     
   case INSIDE_VERTICES:
@@ -67,6 +80,59 @@ void XMLMesh::startElement(const xmlChar *name, const xmlChar **attrs)
     else if ( xmlStrcasecmp(name, (xmlChar *) "tetrahedron") == 0 )
       readTetrahedron(name, attrs);
     
+    break;
+
+  case INSIDE_DATA:
+    
+    if ( xmlStrcasecmp(name, (xmlChar *) "meshfunction") == 0 )
+    {
+      readMeshFunction(name, attrs);
+      state = INSIDE_MESH_FUNCTION;
+    }
+    if ( xmlStrcasecmp(name, (xmlChar *) "array") == 0 )
+    {
+      readArray(name, attrs);
+      state = INSIDE_ARRAY;
+    }
+
+    break;
+
+  case INSIDE_COORDINATES:
+    
+    if ( xmlStrcasecmp(name, (xmlChar *) "vector") == 0 )
+    {
+      xml_vector->startVector(name, attrs);
+      state = INSIDE_VECTOR;
+    }
+    if ( xmlStrcasecmp(name, (xmlChar *) "finiteelement") == 0 )
+    {
+	  readFEsignature(name, attrs);
+    }
+    if ( xmlStrcasecmp(name, (xmlChar *) "dofmap") == 0 )
+    {
+	  readDofMapsignature(name, attrs);
+    }
+
+    break;
+
+  case INSIDE_MESH_FUNCTION:
+    
+    if ( xmlStrcasecmp(name, (xmlChar *) "entity") == 0 )
+      readMeshEntity(name, attrs);
+
+    break;
+
+  case INSIDE_ARRAY:
+    
+    if ( xmlStrcasecmp(name, (xmlChar *) "element") == 0 )
+      readArrayElement(name, attrs);
+
+    break;
+
+  case INSIDE_VECTOR:
+    
+    if ( xmlStrcasecmp(name, (xmlChar *) "entry") == 0 )
+      xml_vector->readEntry(name, attrs);
     break;
     
   default:
@@ -91,17 +157,67 @@ void XMLMesh::endElement(const xmlChar *name)
   case INSIDE_VERTICES:
     
     if ( xmlStrcasecmp(name, (xmlChar *) "vertices") == 0 )
-      state = INSIDE_MESH;
-    
+    {
+      state = INSIDE_MESH;    
+    }
+
     break;
 
   case INSIDE_CELLS:
 	 
     if ( xmlStrcasecmp(name, (xmlChar *) "cells") == 0 )
+    {
       state = INSIDE_MESH;
-    
+    }
+
     break;
-    
+
+  case INSIDE_DATA:
+
+    if ( xmlStrcasecmp(name, (xmlChar *) "data") == 0 )
+    {
+      state = INSIDE_MESH;
+    }
+
+    break;
+
+  case INSIDE_COORDINATES:
+
+    if ( xmlStrcasecmp(name, (xmlChar *) "coordinates") == 0 )
+    {
+      state = INSIDE_MESH;
+    }
+
+    break;
+
+  case INSIDE_MESH_FUNCTION:
+
+    if ( xmlStrcasecmp(name, (xmlChar *) "meshfunction") == 0 )
+    {
+      state = INSIDE_DATA;
+    }
+
+    break;
+
+  case INSIDE_ARRAY:
+
+    if ( xmlStrcasecmp(name, (xmlChar *) "array") == 0 )
+    {
+      state = INSIDE_DATA;
+    }
+
+    break;
+
+  case INSIDE_VECTOR:
+
+    if ( xmlStrcasecmp(name, (xmlChar *) "vector") == 0 )
+    {
+      xml_vector->endVector();
+      state = INSIDE_COORDINATES;
+    }
+
+    break;
+
   default:
     ;
   }
@@ -148,6 +264,13 @@ void XMLMesh::readCells(const xmlChar *name, const xmlChar **attrs)
 
   // Set number of vertices
   editor.initCells(num_cells);
+}
+//-----------------------------------------------------------------------------
+void XMLMesh::readCoordinates(const xmlChar *name, const xmlChar **attrs)
+{
+  // setup variables to store vector data
+  mesh_coord = new Vector();
+  xml_vector = new XMLVector(*mesh_coord);
 }
 //-----------------------------------------------------------------------------
 void XMLMesh::readVertex(const xmlChar *name, const xmlChar **attrs)
@@ -198,6 +321,10 @@ void XMLMesh::readInterval(const xmlChar *name, const xmlChar **attrs)
   
   // Add cell
   editor.addCell(c, v0, v1);
+  
+  // set affine indicator
+  const std::string affine_str = parseStringOptional(name, attrs, "affine");
+  editor.setAffineCellIndicator(c, affine_str);
 }
 //-----------------------------------------------------------------------------
 void XMLMesh::readTriangle(const xmlChar *name, const xmlChar **attrs)
@@ -215,6 +342,10 @@ void XMLMesh::readTriangle(const xmlChar *name, const xmlChar **attrs)
   
   // Add cell
   editor.addCell(c, v0, v1, v2);
+  
+  // set affine indicator
+  const std::string affine_str = parseStringOptional(name, attrs, "affine");
+  editor.setAffineCellIndicator(c, affine_str);
 }
 //-----------------------------------------------------------------------------
 void XMLMesh::readTetrahedron(const xmlChar *name, const xmlChar **attrs)
@@ -233,10 +364,101 @@ void XMLMesh::readTetrahedron(const xmlChar *name, const xmlChar **attrs)
   
   // Add cell
   editor.addCell(c, v0, v1, v2, v3);
+  
+  // set affine indicator
+  const std::string affine_str = parseStringOptional(name, attrs, "affine");
+  editor.setAffineCellIndicator(c, affine_str);
+}
+//-----------------------------------------------------------------------------
+void XMLMesh::readMeshFunction(const xmlChar* name, const xmlChar** attrs)
+{
+  // Parse values
+  const std::string id = parseString(name, attrs, "name");
+  const std::string type = parseString(name, attrs, "type");
+  const uint dim = parseUnsignedInt(name, attrs, "dim");
+  const uint size = parseUnsignedInt(name, attrs, "size");
+
+  // Only uint supported at this point
+  if (strcmp(type.c_str(), "uint") != 0)
+    error("Only uint-valued mesh data is currently supported.");
+
+  // Check size
+  _mesh.init(dim);
+  if (_mesh.size(dim) != size)
+    error("Wrong number of values for MeshFunction, expecting %d.", _mesh.size(dim));
+
+  // Register data
+  f = _mesh.data().createMeshFunction(id);
+  dolfin_assert(f);
+  f->init(_mesh, dim);
+
+  // Set all values to zero
+  *f = 0;
+}
+//-----------------------------------------------------------------------------
+void XMLMesh::readArray(const xmlChar* name, const xmlChar** attrs)
+{
+  // Parse values
+  const std::string id = parseString(name, attrs, "name");
+  const std::string type = parseString(name, attrs, "type");
+  const uint size = parseUnsignedInt(name, attrs, "size");
+
+  // Only uint supported at this point
+  if (strcmp(type.c_str(), "uint") != 0)
+    error("Only uint-valued mesh data is currently supported.");
+
+  // Register data
+  a = _mesh.data().createArray(id, size);
+  dolfin_assert(a);
+}
+//-----------------------------------------------------------------------------
+void XMLMesh::readMeshEntity(const xmlChar* name, const xmlChar** attrs)
+{
+  // Read index
+  const uint index = parseUnsignedInt(name, attrs, "index");
+
+  // Read and set value
+  dolfin_assert(f);
+  dolfin_assert(index < f->size());
+  const uint value = parseUnsignedInt(name, attrs, "value");
+  f->set(index, value);
+}
+//-----------------------------------------------------------------------------
+void XMLMesh::readArrayElement(const xmlChar* name, const xmlChar** attrs)
+{
+  // Read index
+  const uint index = parseUnsignedInt(name, attrs, "index");
+
+  // Read and set value
+  dolfin_assert(a);
+  dolfin_assert(index < a->size());
+  const uint value = parseUnsignedInt(name, attrs, "value");
+  (*a)[index] = value;
+}
+//-----------------------------------------------------------------------------
+void XMLMesh::readFEsignature(const xmlChar* name, const xmlChar** attrs)
+{
+  // Read string for the finite element signature
+  const std::string FE_signature = parseStringOptional(name, attrs, "signature");
+  editor.setMeshCoordFEsignature(FE_signature);
+}
+//-----------------------------------------------------------------------------
+void XMLMesh::readDofMapsignature(const xmlChar* name, const xmlChar** attrs)
+{
+  // Read string for the dofmap signature
+  const std::string dofmap_signature = parseStringOptional(name, attrs, "signature");
+  editor.setMeshCoordDofMapsignature(dofmap_signature);
 }
 //-----------------------------------------------------------------------------
 void XMLMesh::closeMesh()
 {
+  delete(xml_vector);
+  
+  // Setup higher order mesh coordinate data
+  // FIXME: This will introduce a memory leak
+  //error("XMLMesh::closeMesh() introduces a memory leak. Please fix.");
+  editor.setMeshCoordinates(*mesh_coord);   
+
   editor.close();
 }
 //-----------------------------------------------------------------------------

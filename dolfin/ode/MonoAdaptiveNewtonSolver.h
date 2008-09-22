@@ -8,15 +8,15 @@
 #define __MONO_ADAPTIVE_NEWTON_SOLVER_H
 
 #include <dolfin/common/types.h>
-#include <dolfin/la/uBlasVector.h>
+#include <dolfin/la/uBLASVector.h>
 #include "MonoAdaptiveJacobian.h"
 #include "TimeSlabSolver.h"
 
 namespace dolfin
 {
   
-  class uBlasKrylovSolver;
-  class uBlasLUSolver;
+  class uBLASKrylovSolver;
+  class UmfpackLUSolver;
   class KrylovSolver;
   class LUSolver;
   class ODE;
@@ -52,13 +52,13 @@ namespace dolfin
   private:
 
     // Evaluate -F(x) at current x
-    void Feval(uBlasVector& F);
+    void Feval(uBLASVector& F);
 
     // Evaluate -F(x) for explicit system: u' = f
-    void FevalExplicit(uBlasVector& F);
+    void FevalExplicit(uBLASVector& F);
 
     // Evaluate -F(x) for implicit system: Mu' = f
-    void FevalImplicit(uBlasVector& F);
+    void FevalImplicit(uBLASVector& F);
 	
     // Choose  linear solver
     void chooseLinearSolver();
@@ -71,11 +71,11 @@ namespace dolfin
 
     MonoAdaptiveTimeSlab& ts;    // The time slab;
     MonoAdaptiveJacobian A;      // Jacobian of time slab system
-    uBlasVector dx;              // Increment for Newton's method
-    uBlasVector b;               // Right-hand side -F(x)
-    uBlasKrylovSolver* krylov;   // Iterative linear solver
-    uBlasLUSolver* lu;           // Direct linear solver
-    uBlasVector Mu0;             // Precomputed product M*u0 for implicit system
+    uBLASVector dx;              // Increment for Newton's method
+    uBLASVector b;               // Right-hand side -F(x)
+    uBLASKrylovSolver* krylov;   // Iterative linear solver
+    UmfpackLUSolver* lu;           // Direct linear solver
+    uBLASVector Mu0;             // Precomputed product M*u0 for implicit system
 
     KrylovSolver* krylov_g;      // Iterative linear solver (general)
     LUSolver* lu_g;              // Direct linear solver (general)

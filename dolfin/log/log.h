@@ -1,16 +1,18 @@
-// Copyright (C) 2003-2007 Anders Logg and Jim Tilander.
+// Copyright (C) 2003-2008 Anders Logg and Jim Tilander.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Ola Skavhaug, 2007.
 // 
 // First added:  2003-03-13
-// Last changed: 2007-05-14
+// Last changed: 2008-07-23
 
 #ifndef __LOG_H
 #define __LOG_H
 
 #include <string>
+#include <map>
 #include <stdarg.h>
+#include <dolfin/common/types.h>
 
 namespace dolfin
 {
@@ -54,6 +56,12 @@ namespace dolfin
 
   /// End task (decrease indentation level)
   void end();
+
+  /// Print summary of timings and tasks, optionally clearing stored timings
+  void summary(bool reset=false);
+
+  /// Return timing (average) for given task, optionally clearing timing for task
+  real timing(std::string task, bool reset=false);
 
   // Helper function for dolfin_debug macro
   void __debug(std::string file, unsigned long line, std::string function, std::string format, ...);

@@ -37,3 +37,13 @@ print "f(x) =", values[0]
 # Evaluate discrete function g (projection of f)
 g.eval(values, x)
 print "g(x) =", values[0]
+
+file = File("saved.xml.gz")
+file  << g
+file = File("saved.xml.gz")
+file  >> g
+values[:] = 0.0
+print values
+g.eval(values, x)
+print values
+

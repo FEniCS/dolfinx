@@ -1,15 +1,12 @@
-// Copyright (C) 2006 Anders Logg.
+// Copyright (C) 2006-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-06-05
-// Last changed: 2007-07-20
+// Last changed: 2008-08-29
 //
-// Modified by Kristian Oelgaard 2007.
-//
-// Rename of the former Interval.cpp
-//
+// Modified by Kristian Oelgaard, 2007.
 
-#include <cmath>
+#include <algorithm>
 #include <dolfin/log/dolfin_log.h>
 #include "Cell.h"
 #include "MeshEditor.h"
@@ -142,6 +139,11 @@ real IntervalCell::diameter(const MeshEntity& interval) const
 //-----------------------------------------------------------------------------
 real IntervalCell::normal(const Cell& cell, uint facet, uint i) const
 {
+  return normal(cell, facet)[i];
+}
+//-----------------------------------------------------------------------------
+Point IntervalCell::normal(const Cell& cell, uint facet) const
+{
   // Get mesh geometry
   const MeshGeometry& geometry = cell.mesh().geometry();
 
@@ -149,51 +151,37 @@ real IntervalCell::normal(const Cell& cell, uint facet, uint i) const
   if ( geometry.dim() != 1 )
     error("The normal vector is only defined when the interval is in R^1");
 
-  // Currently only the x coordinate can be returned
-  if ( i != 0 )
-    error("IntervalCell::normal() can currently only return the x-component.");
-
   // Get the two vertices as points
   const uint* vertices = cell.entities(0);
   Point p0 = geometry.point(vertices[0]);
   Point p1 = geometry.point(vertices[1]);
 
-  // Compute normal for the two facet
-  if (facet == 0)
-  {
-    // Represent interval as a vector
-    Point iv = p0-p1;
+  // Compute normal
+  Point n = p0 - p1;
+  if (facet == 1)
+    n *= -1.0;
 
-    // Divide by norm of vector and get component
-    return (iv/iv.norm()).x();
-  }
-  else if (facet == 1)
-  {
-    // Represent interval as a vector
-    Point iv = p1-p0;
+  // Normalize
+  n /= n.norm();
 
-    // Divide by norm of vector and get component
-    return (iv/iv.norm()).x();
-  }
-  else
-    error("Local facet number must be either 0 or 1");
-
+  return n;
+}
+//-----------------------------------------------------------------------------
+dolfin::real IntervalCell::facetArea(const Cell& cell, uint facet) const
+{
   return 0.0;
 }
 //-----------------------------------------------------------------------------
-bool IntervalCell::intersects(const MeshEntity& interval, const Point& p) const
+bool IntervalCell::intersects(const MeshEntity& entity, const Point& p) const
 {
-  // FIXME: Not implemented
-  error("Interval::intersects() not implemented");
-
+  error("Not implemented.");
   return false;
 }
 //-----------------------------------------------------------------------------
-bool IntervalCell::intersects(const MeshEntity& interval, const Point& p1, const Point& p2) const
+bool IntervalCell::intersects(const MeshEntity& entity,
+                              const Point& p0, const Point& p1) const
 {
-  // FIXME: Not implemented
-  error("Interval::intersects() not implemented");
-
+  error("Not implemented.");
   return false;
 }
 //-----------------------------------------------------------------------------

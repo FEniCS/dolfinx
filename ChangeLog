@@ -1,3 +1,35 @@
+ - Add harmonic ALE mesh smoothing
+ - Refinements of Graph class
+ - Add CholmodCholeskySlover (direct solver for symmetric matrices)
+ - Implement application of Dirichlet boundary conditions within assembly loop
+ - Improve efficiency of SparsityPattern
+ - Allow a variable number of smoothings
+ - Add class Table for pretty-printing of tables
+ - Add experimental MTL4 linear algebra backend
+ - Add OutflowFacet to SpecialFunctions for DG transport problems
+ - Remove unmaintained OpenDX file format
+ - Fix problem with mesh smoothing near nonconvex corners
+ - Simple projection of functions in Python
+ - Add file format: XYZ for use with Xd3d
+ - Add built-in meshes: UnitCircle, Box, Rectangle, UnitSphere
+0.8.0 [2008-06-23]
+ - Fix input of matrix data from XML
+ - Add function normalize()
+ - Integration with VMTK for reading DOLFIN XML meshes produced by VMTK
+ - Extend mesh XML format to handle boundary indicators
+ - Add support for attaching arbitrarily named data to meshes
+ - Add support for dynamically choosing the linear algebra backend
+ - Add Epetra/Trilinos linear solvers
+ - Add setrow() to matrix interface
+ - Add new solver SingularSolver for solving singular (pressure) systems
+ - Add MeshSize::min(), max() for easy computation of smallest/largest mesh size
+ - LinearSolver now handles all backends and linear solvers
+ - Add access to normal in Function, useful for inflow boundary conditions
+ - Remove GMRES and LU classes, use solve() instead
+ - Improve solve() function, now handles both LU and Krylov + preconditioners
+ - Add ALE mesh interpolation (moving mesh according to new boundary coordinates)
+0.7.3 [2008-04-30]
+ - Add support for Epetra/Trilinos
  - Bug fix for order of values in interpolate_vertex_values, now according to UFC
  - Boundary meshes are now always oriented with respect to outward facet normals
  - Improved linear algebra, both in C++ and Python
@@ -81,9 +113,9 @@
  - Remove unused classes PArray, PList, Table, Tensor	
  - Visualization of 2D solutions in OpenDX is now supported (3D supported before)
  - Add support for evaluation of functionals
- - Fix bug in Vector::sum() for uBlas vectors
+ - Fix bug in Vector::sum() for uBLAS vectors
 0.6.2-1 [2006-09-06]
- - Fix compilation error when using --enable-petsc (dolfin::uBlasVector::PETScVector undefined)
+ - Fix compilation error when using --enable-petsc (dolfin::uBLASVector::PETScVector undefined)
 0.6.2 [2006-09-05]
  - Finish chapter in manual on linear algebra
  - Enable PyDOLFIN by default, use --disable-pydolfin to disable
@@ -97,15 +129,15 @@
  - Enable use of direct solver for ODE solver (experimental)
  - Remove demo bistable
  - Restructure and cleanup linear algebra
- - Use UMFPACK for LU solver with uBlas matrix types
- - Add templated wrapper class for different uBlas matrix types
- - Add ILU preconditioning for uBlas matrices
- - Add Krylov solver for uBlas sparse matrices (GMRES and BICGSTAB)
+ - Use UMFPACK for LU solver with uBLAS matrix types
+ - Add templated wrapper class for different uBLAS matrix types
+ - Add ILU preconditioning for uBLAS matrices
+ - Add Krylov solver for uBLAS sparse matrices (GMRES and BICGSTAB)
  - Add first version of new mesh library (NewMesh, experimental)
  - Add Parametrized::readParameters() to trigger reading of values on set()
  - Remove output of zeros in Octave matrix file format
- - Use uBlas-based vector for Vector if PETSc disabled
- - Add wrappers for uBlas compressed_matrix class
+ - Use uBLAS-based vector for Vector if PETSc disabled
+ - Add wrappers for uBLAS compressed_matrix class
  - Compute eigenvalues using SLEPc (an extension of PETSc)
  - Clean up assembly and linear algebra
  - Add function to solve Ax = b for dense matrices and dense vectors

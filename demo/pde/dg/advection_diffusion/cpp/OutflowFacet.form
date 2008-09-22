@@ -1,0 +1,13 @@
+# Copyright (C) 2008 Kristian B. Oelgaard
+# Licensed under the GNU LGPL Version 2.1.
+#
+# First added:  2008-07-15
+# Last changed: 2008-07-15
+#
+
+element = VectorElement("Lagrange", "triangle", 2)
+
+velocity = Function(element)
+n = FacetNormal("triangle")
+
+M = dot(velocity, n)*ds

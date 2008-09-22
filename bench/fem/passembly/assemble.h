@@ -6,7 +6,7 @@ using namespace dolfin;
 std::string appendRank(std::string base, std::string ext)
 {
   std::stringstream stream;
-  stream << base << dolfin::MPI::processNumber() << "." << ext;
+  stream << base << dolfin::MPI::process_number() << "." << ext;
   return stream.str();
 }
 
@@ -22,7 +22,7 @@ void check_assembly(Mesh& mesh, MeshFunction<dolfin::uint>& partitions)
   PoissonBilinearForm b;
   Matrix A, B;
 
-  if(dolfin::MPI::numProcesses() == 1)
+  if(dolfin::MPI::num_processes() == 1)
   {
     Assembler assembler(mesh);
     assembler.assemble(A, a, true);

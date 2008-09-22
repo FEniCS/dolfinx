@@ -269,7 +269,7 @@ void Homotopy::computePath(uint m)
 bool Homotopy::computeSolution(HomotopyODE& ode)
 {
   // Create right-hand side and increment vector
-  uBlasVector F(2*n), dx(2*n);
+  uBLASVector F(2*n), dx(2*n);
 
   // Create matrix-free Jacobian
   HomotopyJacobian J(ode, x);
@@ -294,7 +294,7 @@ bool Homotopy::computeSolution(HomotopyODE& ode)
     }
 
     // Solve linear system
-    solver.solve(J, dx, F);
+    J.solve(dx, F);
 
     // Subtract increment
     x -= dx;
@@ -366,7 +366,7 @@ void Homotopy::randomize()
   fclose(fp);
 }
 //-----------------------------------------------------------------------------
-void Homotopy::feval(uBlasVector& F, ComplexODE& ode)
+void Homotopy::feval(uBLASVector& F, ComplexODE& ode)
 {
   // Reuse the right-hand side of the ODE so we don't have to reimplement
   // the mapping from complex to real numbers

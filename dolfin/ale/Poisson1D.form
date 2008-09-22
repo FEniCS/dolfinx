@@ -1,0 +1,9 @@
+# Copyright (C) 2008 Anders Logg.
+# Licensed under the GNU LGPL Version 2.1.
+
+element = FiniteElement("Lagrange", "interval", 1)
+
+v = TestFunction(element)
+u = TrialFunction(element)
+
+a = dot(grad(v), grad(u))*dx

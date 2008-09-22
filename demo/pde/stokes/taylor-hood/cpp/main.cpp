@@ -42,7 +42,7 @@ int main()
 
     void eval(real* values, const real* x) const
     {
-      values[0] = -1.0;
+      values[0] = -sin(x[1]*DOLFIN_PI);
       values[1] = 0.0;
     }
 
@@ -71,10 +71,10 @@ int main()
   DirichletBC bc2(zero, sub_domains, 2, pressure);
 
   // Collect boundary conditions
-  Array <BoundaryCondition*> bcs(&bc0, &bc1, &bc2);
+  Array<DirichletBC*> bcs(&bc0, &bc1, &bc2);
 
   // Set up PDE
-  Function f(mesh, 0.0);
+  Function f(mesh, 2, 0.0);
   StokesBilinearForm a;
   StokesLinearForm L(f);
   LinearPDE pde(a, L, mesh, bcs);
@@ -101,3 +101,4 @@ int main()
   File pfile_pvd("pressure.pvd");
   pfile_pvd << p;
 }
+

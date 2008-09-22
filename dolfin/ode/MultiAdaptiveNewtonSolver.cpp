@@ -8,7 +8,7 @@
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/math/dolfin_math.h>
 #include <dolfin/parameter/parameters.h>
-#include <dolfin/la/uBlasSparseMatrix.h>
+#include <dolfin/la/uBLASSparseMatrix.h>
 #include "Alloc.h"
 #include "ODE.h"
 #include "Method.h"
@@ -89,7 +89,12 @@ real MultiAdaptiveNewtonSolver::iteration(real tol, uint iter,
   // Evaluate b = -F(x) at current x
   Feval(b);
  
-  // FIXME: Scaling needed for PETSc Krylov solver, but maybe not for uBlas?
+  // FIXME: Scaling needed for PETSc Krylov solver, but maybe not for uBLAS?
+
+  // Save norm of old solution
+  xnorm = 0.0;
+  for (uint j = 0; j < ts.nj; j++)
+    xnorm = std::max(xnorm, std::abs(ts.jx[j]));
   
   // Solve linear system
   const real r = b.norm(linf) + DOLFIN_EPS;
@@ -118,7 +123,7 @@ dolfin::uint MultiAdaptiveNewtonSolver::size() const
   return ts.nj;
 }
 //-----------------------------------------------------------------------------
-void MultiAdaptiveNewtonSolver::Feval(uBlasVector& F)
+void MultiAdaptiveNewtonSolver::Feval(uBLASVector& F)
 {
   // Reset dof
   uint j = 0;
@@ -168,8 +173,8 @@ void MultiAdaptiveNewtonSolver::Feval(uBlasVector& F)
 void MultiAdaptiveNewtonSolver::debug()
 {
   const uint n = ts.nj;
-  uBlasSparseMatrix B(n, n);
-  uBlasVector F1(n), F2(n);
+  uBLASSparseMatrix B(n, n);
+  uBLASVector F1(n), F2(n);
   ublas_sparse_matrix& _B = B.mat();
 
   // Iterate over the columns of B

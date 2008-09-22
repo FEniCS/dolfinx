@@ -1,22 +1,27 @@
-// Copyright (C) 2006 Anders Logg.
+// Copyright (C) 2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// First added:  2006-05-08
-// Last changed: 2006-06-22
+// Modified by Niclas Jansson, 2008.
+// 
+// First added:  2008-05-19
+// Last changed: 2008-09-16
 
 #include "MeshData.h"
 
 using namespace dolfin;
 
+typedef std::map<std::string, MeshFunction<dolfin::uint>*>::iterator mf_iterator;
+typedef std::map<std::string, MeshFunction<dolfin::uint>*>::const_iterator mf_const_iterator;
+
+typedef std::map<std::string, Array<dolfin::uint>*>::iterator a_iterator;
+typedef std::map<std::string, Array<dolfin::uint>*>::const_iterator a_const_iterator;
+
+typedef std::map<std::string, std::map<dolfin::uint, dolfin::uint>*>::iterator m_iterator;
+
 //-----------------------------------------------------------------------------
-MeshData::MeshData() : cell_type(0)
+MeshData::MeshData(Mesh& mesh) : mesh(mesh)
 {
   // Do nothing
-}
-//-----------------------------------------------------------------------------
-MeshData::MeshData(const MeshData& data) : cell_type(0)
-{
-  *this = data;
 }
 //-----------------------------------------------------------------------------
 MeshData::~MeshData()
@@ -24,61 +29,127 @@ MeshData::~MeshData()
   clear();
 }
 //-----------------------------------------------------------------------------
-const MeshData& MeshData::operator= (const MeshData& data)
-{
-  // Clear old data if any
-  clear();
-
-  // Assign data
-  topology = data.topology;
-  geometry = data.geometry;
-
-  // Create new cell type
-  if ( data.cell_type )
-    cell_type = CellType::create(data.cell_type->cellType());
-  else
-    cell_type = 0;
-
-  return *this;
-}
-//-----------------------------------------------------------------------------
 void MeshData::clear()
 { 
-  // Clear mesh topology
-  topology.clear();
+  for (mf_iterator it = meshfunctions.begin(); it != meshfunctions.end(); ++it)
+    delete it->second;
+  meshfunctions.clear();
 
-  // Clear mesh geometry
-  geometry.clear();
+  for (a_iterator it = arrays.begin(); it != arrays.end(); ++it)
+    delete it->second;
+  arrays.clear();
+}
+//-----------------------------------------------------------------------------
+MeshFunction<dolfin::uint>* MeshData::createMeshFunction(std::string name)
+{
+  // Check if data already exists
+  mf_iterator it = meshfunctions.find(name);
+  if (it != meshfunctions.end())
+  {
+    warning("Mesh data named \"%s\" already exists.", name.c_str());
+    return it->second;
+  }
 
-  // Clear cell type
-  if ( cell_type )
-    delete cell_type;
-  cell_type = 0;
+  // Create new data
+  MeshFunction<uint>* f = new MeshFunction<uint>(mesh);
+  dolfin_assert(f);
+
+  // Add to map
+  meshfunctions[name] = f;
+
+  return f;
+}
+//-----------------------------------------------------------------------------
+Array<dolfin::uint>* MeshData::createArray(std::string name, uint size)
+{
+  // Check if data already exists
+  a_iterator it = arrays.find(name);
+  if (it != arrays.end())
+  {
+    warning("Mesh data named \"%s\" already exists.", name.c_str());
+    return it->second;
+  }
+
+  // Create new data
+  Array<uint>* a = new Array<uint>(size);
+  *a = 0;
+
+  // Add to map
+  arrays[name] = a;
+
+  return a;
+}
+//-----------------------------------------------------------------------------
+std::map<dolfin::uint, dolfin::uint>* MeshData::createMapping(std::string name)
+{
+  // Check if data already exists
+  m_iterator it = maps.find(name);
+  if (it != maps.end())
+  {
+    warning("Mesh data named \"%s\" already exists.", name.c_str());
+    return it->second;
+  }
+
+  // Create new data
+  std::map<uint, uint>* m = new std::map<uint, uint>;
+  //*m = 0;
+  
+  // Add to map
+  maps[name] = m;
+
+  return m;
+}
+//-----------------------------------------------------------------------------
+MeshFunction<dolfin::uint>* MeshData::meshFunction(std::string name)
+{
+  // Check if data exists
+  mf_iterator it = meshfunctions.find(name);
+  if (it == meshfunctions.end())
+    return 0;
+  
+  return it->second;
+}
+//-----------------------------------------------------------------------------
+Array<dolfin::uint>* MeshData::array(std::string name)
+{
+  // Check if data exists
+  a_iterator it = arrays.find(name);
+  if (it == arrays.end())
+    return 0;
+  
+  return it->second;
+}
+//-----------------------------------------------------------------------------
+std::map<dolfin::uint, dolfin::uint>* MeshData::mapping(std::string name)
+{
+  // Check if data exists
+  m_iterator it = maps.find(name);
+  if (it == maps.end())
+    return 0;
+
+  return it->second;
 }
 //-----------------------------------------------------------------------------
 void MeshData::disp() const
 {
-  cout << "Mesh data" << endl;
-  cout << "---------" << endl << endl;
-  
   // Begin indentation
-  begin("");
-
-  // Display topology and geometry
-  topology.disp();
-  geometry.disp();
-
-  // Display cell type
-  cout << "Cell type" << endl;
-  cout << "---------" << endl << endl;
-  begin("");
-  if ( cell_type )
-    cout << cell_type->description() << endl;
-  else
-    cout << "undefined" << endl;
-  end();
+  cout << "Auxiliary mesh data" << endl;
+  begin("-------------------");
   cout << endl;
-  
+
+  for (mf_const_iterator it = meshfunctions.begin(); it != meshfunctions.end(); ++it)
+  {
+    cout << "MeshFunction<uint> of size "
+         << it->second->size()
+         << " on entities of topological dimension "
+         << it->second->dim()
+         << ": \"" << it->first << "\"" << endl;
+  }
+
+  for (a_const_iterator it = arrays.begin(); it != arrays.end(); ++it)
+    cout << "Array<uint> of size " << static_cast<uint>(it->second->size())
+         << ": \"" << it->first << "\"" << endl;
+
   // End indentation
   end();
 }

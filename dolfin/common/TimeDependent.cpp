@@ -1,8 +1,8 @@
-// Copyright (C) 2005-2007 Garth N. Wells.
+// Copyright (C) 2005-2008 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005-09-02
-// Last changed: 2007-04-27
+// Last changed: 2008-06-23
 
 #include "TimeDependent.h"
 
@@ -14,7 +14,7 @@ TimeDependent::TimeDependent() : t(0)
  // Do nothing
 }
 //-----------------------------------------------------------------------------
-TimeDependent::TimeDependent(const real& t) : t(&t)
+TimeDependent::TimeDependent(const real* t) : t(t)
 {
  // Do nothing
 }
@@ -24,9 +24,8 @@ TimeDependent::~TimeDependent()
  // Do nothing
 }
 //-----------------------------------------------------------------------------
-void TimeDependent::sync(const real& t)
+void TimeDependent::sync(const real* t)
 {
-  this->t  = &t;
+  this->t  = t;
 }
 //-----------------------------------------------------------------------------
-

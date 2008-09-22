@@ -1,18 +1,22 @@
 // Copyright (C) 2007 Magnus Vikstrom.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Garth N. Wells, 2008.
+//
 // First added:  2007-02-12
-// Last changed: 2007-03-21
+// Last changed: 2008-08-18
 
 #ifndef __GRAPH_H
 #define __GRAPH_H
 
 #include <dolfin/common/types.h>
 #include <dolfin/common/Variable.h>
-#include <dolfin/mesh/Mesh.h>
 
 namespace dolfin
 {
+  class LogStream;
+  class Mesh;
+
   /// A Graph consists of a set of vertices and edges.
   ///
   /// The graph is stored in Compressed Sparse Row (CSR) format. This format
@@ -36,8 +40,8 @@ namespace dolfin
   ///
   /// Stored as:
   /// 
-  /// edges = [123030312]
-  /// vertices = [03579]
+  /// edges    = [1 2 3 0 3 0 3 0 1 2]
+  /// vertices = [0 3 5 7 10]
   ///
   /// Note that the last integer of vertices does not represent a vertex, but
   /// is there to support edge iteration as described above.
@@ -48,6 +52,7 @@ namespace dolfin
   class Graph : public Variable
   {
     friend class GraphEditor;
+    friend class GraphBuilder;
     
   public:
     
@@ -61,26 +66,20 @@ namespace dolfin
     /// Create empty graph
     Graph();
     
+    /// Create graph of mesh 
+    Graph(Mesh& mesh, Graph::Representation rep = dual);
+
     /// Copy constructor
     Graph(const Graph& graph);
     
     /// Create graph from given file
     Graph(std::string filename);
     
-    /// Create graph from mesh
-    Graph(Mesh& mesh);
-
-    /// Create graph from mesh
-    Graph(Mesh& mesh, Representation type);
-    
-    /// Create graph from mesh
-    Graph(Mesh& mesh, std::string type);
-
     /// Destructor
     ~Graph();
     
-    /// Assignment
-    //const Graph& operator=(const Graph& graph);
+    /// Initialise graph data structures
+    void init(uint _num_vertices, uint _num_edges);
 
     /// Return number of vertices
     inline uint numVertices() const { return num_vertices; }
@@ -90,9 +89,6 @@ namespace dolfin
     
     /// Return number of edges incident to vertex u
     inline uint numEdges(uint u) const { return vertices[u+1] - vertices[u]; }
-
-    /// Return number of arches (outgoing edges)
-    inline uint numArches() const { return num_arches; }
 
     /// Check if vertex u is adjacent to vertex v
     bool adjacent(uint u, uint v);
@@ -112,8 +108,8 @@ namespace dolfin
     /// Return graph type
     inline Type type() const { return _type; }
     
-	 /// Partition a graph into num_part partitions
-	 void partition(uint num_part, uint* vtx_part);
+    /// Partition a graph into num_part partitions
+    void partition(uint num_part, uint* vtx_part);
 
     /// Return graph type as a string
     std::string typestr();
@@ -130,7 +126,6 @@ namespace dolfin
   private:
     
     uint num_edges;
-    uint num_arches;
     uint num_vertices;
     
     uint* edges;
@@ -142,9 +137,6 @@ namespace dolfin
     Type _type;
 
     Representation _representation;
-
-    void createNodal(Mesh& mesh);
-    void createDual(Mesh& mesh);
   };
   
 }

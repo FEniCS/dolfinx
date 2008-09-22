@@ -1,8 +1,8 @@
-// Copyright (C) 2006-2007 Anders Logg.
+// Copyright (C) 2006-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-05-16
-// Last changed: 2007-02-27
+// Last changed: 2008-08-19
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/parameter/dolfin_parameter.h>
@@ -30,7 +30,7 @@ MeshEditor::~MeshEditor()
 void MeshEditor::open(Mesh& mesh, CellType::Type type, uint tdim, uint gdim)
 {
   // Clear old mesh data
-  mesh.data.clear();
+  mesh.clear();
   clear();
 
   // Save mesh and dimension
@@ -39,11 +39,11 @@ void MeshEditor::open(Mesh& mesh, CellType::Type type, uint tdim, uint gdim)
   this->tdim = tdim;
 
   // Set cell type
-  mesh.data.cell_type = CellType::create(type);
+  mesh._cell_type = CellType::create(type);
 
   // Initialize topological dimension
-  mesh.data.topology.init(tdim);
-
+  mesh._topology.init(tdim);
+  
   // Initialize temporary storage for local cell data
   vertices.reserve(mesh.type().numVertices(tdim));
   for (uint i = 0; i < mesh.type().numVertices(tdim); i++)
@@ -72,8 +72,8 @@ void MeshEditor::initVertices(uint num_vertices)
   
   // Initialize mesh data
   this->num_vertices = num_vertices;
-  mesh->data.topology.init(0,    num_vertices);
-  mesh->data.geometry.init(gdim, num_vertices);
+  mesh->_topology.init(0,    num_vertices);
+  mesh->_geometry.init(gdim, num_vertices);
 }
 //-----------------------------------------------------------------------------
 void MeshEditor::initCells(uint num_cells)
@@ -84,8 +84,35 @@ void MeshEditor::initCells(uint num_cells)
 
   // Initialize mesh data
   this->num_cells = num_cells;
-  mesh->data.topology.init(tdim, num_cells);
-  mesh->data.topology(tdim, 0).init(num_cells, mesh->type().numVertices(tdim));
+  mesh->_topology.init(tdim, num_cells);
+  mesh->_topology(tdim, 0).init(num_cells, mesh->type().numVertices(tdim));
+  
+  // init a boolean array that indicates whether cells are affinely mapped or not
+  mesh->_geometry.initAffineIndicator(num_cells);
+}
+//-----------------------------------------------------------------------------
+void MeshEditor::setMeshCoordinates(Vector& mesh_coord)
+{
+  // Check if we are currently editing a mesh
+  if ( !mesh )
+    error("No mesh opened, unable to edit.");
+
+  // FIXME: 'mcv' is not informative
+
+  mesh->_geometry.setMeshCoordinates(*mesh, mesh_coord,
+                                     mcv_finite_element_signature,
+                                     mcv_dof_map_signature);
+}
+//-----------------------------------------------------------------------------
+void MeshEditor::setAffineCellIndicator(uint c, const std::string affine_str)
+{
+  bool affine_value = true; // init
+  
+  if ( affine_str=="false" )
+    affine_value = false;
+  
+  // Set affine indicator for specific cell
+  mesh->_geometry.setAffineIndicator(c, affine_value);
 }
 //-----------------------------------------------------------------------------
 void MeshEditor::addVertex(uint v, const Point& p)
@@ -95,7 +122,7 @@ void MeshEditor::addVertex(uint v, const Point& p)
   
   // Set coordinate
   for (uint i = 0; i < mesh->geometry().dim(); i++)
-    mesh->data.geometry.set(v, i, p[i]);
+    mesh->_geometry.set(v, i, p[i]);
 }
 //-----------------------------------------------------------------------------
 void MeshEditor::addVertex(uint v, real x)
@@ -104,10 +131,10 @@ void MeshEditor::addVertex(uint v, real x)
   addVertexCommon(v, 1);
 
   // Set coordinate, next_vertex doesn't seem to work right
-//  mesh->data.geometry.set(next_vertex, 0, x);
+//  mesh->_geometry.set(next_vertex, 0, x);
 
   // Set coordinate
-  mesh->data.geometry.set(v, 0, x);
+  mesh->_geometry.set(v, 0, x);
 }
 //-----------------------------------------------------------------------------
 void MeshEditor::addVertex(uint v, real x, real y)
@@ -116,8 +143,8 @@ void MeshEditor::addVertex(uint v, real x, real y)
   addVertexCommon(v, 2);
 
   // Set coordinate
-  mesh->data.geometry.set(v, 0, x);
-  mesh->data.geometry.set(v, 1, y);
+  mesh->_geometry.set(v, 0, x);
+  mesh->_geometry.set(v, 1, y);
 }
 //-----------------------------------------------------------------------------
 void MeshEditor::addVertex(uint v, real x, real y, real z)
@@ -126,9 +153,9 @@ void MeshEditor::addVertex(uint v, real x, real y, real z)
   addVertexCommon(v, 3);
 
   // Set coordinate
-  mesh->data.geometry.set(v, 0, x);
-  mesh->data.geometry.set(v, 1, y);
-  mesh->data.geometry.set(v, 2, z);
+  mesh->_geometry.set(v, 0, x);
+  mesh->_geometry.set(v, 1, y);
+  mesh->_geometry.set(v, 2, z);
 }
 //-----------------------------------------------------------------------------
 void MeshEditor::addCell(uint c, const Array<uint>& v)
@@ -137,7 +164,7 @@ void MeshEditor::addCell(uint c, const Array<uint>& v)
   addCellCommon(c, tdim);
 
   // Set data
-  mesh->data.topology(tdim, 0).set(c, v);
+  mesh->_topology(tdim, 0).set(c, v);
 }
 //-----------------------------------------------------------------------------
 void MeshEditor::addCell(uint c, uint v0, uint v1)
@@ -148,7 +175,7 @@ void MeshEditor::addCell(uint c, uint v0, uint v1)
   // Set data
   vertices[0] = v0;
   vertices[1] = v1;
-  mesh->data.topology(tdim, 0).set(c, vertices);
+  mesh->_topology(tdim, 0).set(c, vertices);
 }
 //-----------------------------------------------------------------------------
 void MeshEditor::addCell(uint c, uint v0, uint v1, uint v2)
@@ -160,7 +187,7 @@ void MeshEditor::addCell(uint c, uint v0, uint v1, uint v2)
   vertices[0] = v0;
   vertices[1] = v1;
   vertices[2] = v2;
-  mesh->data.topology(tdim, 0).set(c, vertices);
+  mesh->_topology(tdim, 0).set(c, vertices);
 }
 //-----------------------------------------------------------------------------
 void MeshEditor::addCell(uint c, uint v0, uint v1, uint v2, uint v3)
@@ -173,7 +200,7 @@ void MeshEditor::addCell(uint c, uint v0, uint v1, uint v2, uint v3)
   vertices[1] = v1;
   vertices[2] = v2;
   vertices[3] = v3;
-  mesh->data.topology(tdim, 0).set(c, vertices);
+  mesh->_topology(tdim, 0).set(c, vertices);
 }
 //-----------------------------------------------------------------------------
 void MeshEditor::close()

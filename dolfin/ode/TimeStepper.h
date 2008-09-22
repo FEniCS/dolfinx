@@ -1,14 +1,18 @@
 // Copyright (C) 2003-2008 Johan Jansson and Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Benjamin Kehlet 2008
+//
+//
 // First added:  2003
-// Last changed: 2008-01-16
+// Last changed: 2008-06-18
 
 #ifndef __TIME_STEPPER_H
 #define __TIME_STEPPER_H
 
 #include <dolfin/common/types.h>
 #include <dolfin/io/File.h>
+#include "ODESolution.h"
 
 namespace dolfin
 {
@@ -39,13 +43,13 @@ namespace dolfin
   public:
 
     /// Constructor
-    TimeStepper(ODE& ode);
+    TimeStepper(ODE& ode, ODESolution& u);
 
     /// Destructor
     ~TimeStepper();
     
-    /// Solve given ODE
-    static void solve(ODE& ode);
+    /// Solve given ODE and store solution in ODESolution object
+    static void solve(ODE& ode, ODESolution& u);
 
     /// Step solution, return current time
     real step();
@@ -66,7 +70,7 @@ namespace dolfin
     
     // Save using adaptive samples
     void saveAdaptiveSamples();
-    
+
     //--- Time-stepping data ---
 
     // Size of system
@@ -81,12 +85,14 @@ namespace dolfin
     // The ODE being solved
     ODE& ode;
 
+    ODESolution& u;
+
     // The time slab
     TimeSlab* timeslab;
 
     // Storing the computed solution
     File file;
-    
+
     // Progress bar
     Progress p;
 

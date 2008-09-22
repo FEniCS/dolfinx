@@ -6,12 +6,14 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2006-05-15
-// Last changed: 2008-04-29
+// Last changed: 2008-05-17
 
 #ifndef __MATRIX_H
 #define __MATRIX_H
 
-#include "default_la_types.h"
+#include <tr1/tuple>
+#include <dolfin/common/Variable.h>
+#include "DefaultFactory.h"
 #include "GenericMatrix.h"
 
 namespace dolfin
@@ -25,18 +27,16 @@ namespace dolfin
   public:
 
     /// Create empty matrix
-    Matrix() : Variable("A", "DOLFIN matrix"),
-               matrix(new DefaultMatrix())
-    {}
+    Matrix() : Variable("A", "DOLFIN matrix"), matrix(0)
+    { DefaultFactory factory; matrix = factory.create_matrix(); }
 
     /// Create M x N matrix
-    Matrix(uint M, uint N) : Variable("A", "DOLFIN matrix"),
-                             matrix(new DefaultMatrix(M, N))
-    {}
+    Matrix(uint M, uint N) : Variable("A", "DOLFIN matrix"), matrix(0)
+    { DefaultFactory factory; matrix = factory.create_matrix(); matrix->init(M, N); }
 
     /// Copy constructor
     explicit Matrix(const Matrix& A) : Variable("A", "DOLFIN matrix"),
-                                       matrix(new DefaultMatrix((*A.matrix).down_cast<DefaultMatrix>()))
+                                       matrix(A.matrix->copy())
     {}
 
     /// Destructor
@@ -48,7 +48,7 @@ namespace dolfin
     /// Initialize zero tensor using sparsity pattern
     virtual void init(const GenericSparsityPattern& sparsity_pattern)
     { matrix->init(sparsity_pattern); }
-    
+
     /// Return copy of tensor
     virtual Matrix* copy() const
     { Matrix* A = new Matrix(); delete A->matrix; A->matrix = matrix->copy(); return A; }
@@ -91,6 +91,10 @@ namespace dolfin
     virtual void getrow(uint row, Array<uint>& columns, Array<real>& values) const
     { matrix->getrow(row, columns, values); }
 
+    /// Set values for given row
+    virtual void setrow(uint row, const Array<uint>& columns, const Array<real>& values)
+    { matrix->setrow(row, columns, values); }
+
     /// Set given rows to zero
     virtual void zero(uint m, const uint* rows)
     { matrix->zero(m, rows); }
@@ -109,11 +113,16 @@ namespace dolfin
 
     /// Divide matrix by given number
     virtual const Matrix& operator/= (real a)
-    { *this /= a; return *this; }
+    { *matrix /= a; return *this; }
 
     /// Assignment operator
     virtual const GenericMatrix& operator= (const GenericMatrix& A)
     { *matrix = A; return *this; }
+
+    /// Return pointers to underlying compressed storage data. 
+    /// See GenericMatrix for documentation.
+    virtual std::tr1::tuple<const std::size_t*, const std::size_t*, const double*, int> data() const
+    { return matrix->data(); }
 
     //--- Special functions ---
 
@@ -128,7 +137,7 @@ namespace dolfin
     { return matrix; }
 
     /// Return concrete instance / unwrap (non-const version)
-    virtual GenericMatrix* instance() 
+    virtual GenericMatrix* instance()
     { return matrix; }
 
     //--- Special Matrix functions ---

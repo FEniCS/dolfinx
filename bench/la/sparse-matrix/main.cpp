@@ -4,7 +4,7 @@
 // First added:  2006-08-18
 // Last changed:
 //
-// Benchmarks for uBlas matrices
+// Benchmarks for uBLAS matrices
 
 #include <dolfin.h>
 #include <boost/tuple/tuple.hpp>
@@ -15,7 +15,7 @@ using namespace dolfin;
 using namespace boost::tuples;
 
 //-----------------------------------------------------------------------------
-template<class Mat, class Vec = uBlasVector>
+template<class Mat, class Vec = uBLASVector>
 struct MatrixAssemble
 {
   //---------------------------------------------------------------------------
@@ -108,9 +108,9 @@ void AssemblePoissonMatrix()
 #endif
   for(dolfin::uint i =0; i < n; ++i)
   {
-    time = MatrixAssemble< uBlasMatrix<ublas_sparse_matrix> >::assemble(a, N[i]);
+    time = MatrixAssemble< uBLASMatrix<ublas_sparse_matrix> >::assemble(a, N[i]);
     dolfin_set("output destination", "terminal");
-    cout << "uBlasSparseMatrix (N=" << N[i] << "): " << time << endl;
+    cout << "uBLASSparseMatrix (N=" << N[i] << "): " << time << endl;
   }
   end();
 
@@ -125,9 +125,9 @@ void AssemblePoissonMatrix()
 #endif
   for(dolfin::uint i =0; i < n; ++i)
   {
-    time = MatrixAssemble< uBlasMatrix<ublas_sparse_matrix> >::assemble(a_vector, N[i]);
+    time = MatrixAssemble< uBLASMatrix<ublas_sparse_matrix> >::assemble(a_vector, N[i]);
     dolfin_set("output destination", "terminal");
-    cout << "uBlasSparseMatrix (N=" << N[i] << "): " << time << endl;
+    cout << "uBLASSparseMatrix (N=" << N[i] << "): " << time << endl;
   }
   end();
 }
@@ -146,10 +146,10 @@ void AssembleSparseMatrices()
   cout << "PETScMatrix insert         (N=" << N << "): " << get<0>(timing) << endl;
   cout << "PETScMatrix finalise       (N=" << N << "): " << get<1>(timing) << endl;
 #endif
-  timing = MatrixAssemble< uBlasMatrix<ublas_sparse_matrix> >::assemble(N);
+  timing = MatrixAssemble< uBLASMatrix<ublas_sparse_matrix> >::assemble(N);
   dolfin_set("output destination", "terminal");
-  cout << "uBlasSparseMatrix insert   (N=" << N << "): " << get<0>(timing) << endl;
-  cout << "uBlasSparseMatrix finalise (N=" << N << "): " << get<01>(timing) << endl;
+  cout << "uBLASSparseMatrix insert   (N=" << N << "): " << get<0>(timing) << endl;
+  cout << "uBLASSparseMatrix finalise (N=" << N << "): " << get<01>(timing) << endl;
         
   end();
 }
@@ -168,9 +168,9 @@ void MatrixVectorMultiply()
   dolfin_set("output destination", "terminal");
   cout << "PETScMatrix: (N=" << N << ", n=" << n << "): " << time << endl;
 #endif
-  time = MatrixAssemble< uBlasMatrix<ublas_sparse_matrix>, uBlasVector >::vector_multiply(N, n);
+  time = MatrixAssemble< uBLASMatrix<ublas_sparse_matrix>, uBLASVector >::vector_multiply(N, n);
   dolfin_set("output destination", "terminal");
-  cout << "uBlasMatrix: (N=" << N << ", n=" << n << "): " << time << endl;
+  cout << "uBLASMatrix: (N=" << N << ", n=" << n << "): " << time << endl;
 
   end();
 }

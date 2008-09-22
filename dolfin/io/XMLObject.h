@@ -50,7 +50,10 @@ namespace dolfin
     
     // Parse a string
     std::string parseString(const xmlChar* name, const xmlChar** attrs, const char* attribute);
-
+    
+    // Parse a string with some forgiveness!
+    std::string parseStringOptional(const xmlChar* name, const xmlChar** attrs, const char* attribute);
+    
     // Parse a bool 
     bool parseBool(const xmlChar* name, const xmlChar** attrs, const char* attribute);
 

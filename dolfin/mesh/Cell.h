@@ -1,10 +1,10 @@
-// Copyright (C) 2006-2007 Anders Logg.
+// Copyright (C) 2006-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Johan Hoffman 2006.
 //
 // First added:  2006-06-01
-// Last changed: 2007-07-20
+// Last changed: 2008-08-29
 
 #ifndef __CELL_H
 #define __CELL_H
@@ -33,19 +33,43 @@ namespace dolfin
     inline CellType::Type type() const { return _mesh.type().cellType(); }
     
     /// Compute orientation of cell (0 is right, 1 is left)
-    inline real orientation() const { return _mesh.type().orientation(*this); }
+    inline real orientation() const
+    { return _mesh.type().orientation(*this); }
 
-   /// Compute (generalized) volume of cell
-    inline real volume() const { return _mesh.type().volume(*this); }
+    /// Compute (generalized) volume of cell
+    inline real volume() const
+    { return _mesh.type().volume(*this); }
 
     /// Compute diameter of cell
-    inline real diameter() const { return _mesh.type().diameter(*this); }
+    inline real diameter() const
+    { return _mesh.type().diameter(*this); }
 
     /// Compute midpoint of cell
     Point midpoint(); 
 
     /// Compute component i of normal of given facet with respect to the cell
-    inline real normal(uint facet, uint i) const { return _mesh.type().normal(*this, facet, i); }
+    inline real normal(uint facet, uint i) const
+    { return _mesh.type().normal(*this, facet, i); }
+
+    /// Compute normal of given facet with respect to the cell
+    inline Point normal(uint facet) const
+    { return _mesh.type().normal(*this, facet); }
+
+    /// Compute the area/length of given facet with respect to the cell
+    inline real facetArea(uint facet) const
+    { return _mesh.type().facetArea(*this, facet); }
+
+    /// Check for intersection with point
+    inline bool intersects(const Point& p) const
+    { return _mesh.type().intersects(*this, p); }
+
+    /// Check for intersection with line defined by points
+    inline bool intersects(const Point& p0, const Point& p1) const
+    { return _mesh.type().intersects(*this, p0, p1); }
+
+    /// Check for intersection with cell
+    inline bool intersects(Cell& cell)
+    { return _mesh.type().intersects(*this, cell); }
 
   };
 

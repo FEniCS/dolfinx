@@ -1,11 +1,8 @@
-// Copyright (C) 2006-2007 Anders Logg.
+// Copyright (C) 2006-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-06-05
-// Last changed: 2007-07-20
-//
-// Rename of the former Interval.h
-//
+// Last changed: 2008-08-29
 
 #ifndef __INTERVAL_CELL_H
 #define __INTERVAL_CELL_H
@@ -54,12 +51,18 @@ namespace dolfin
     /// Compute component i of normal of given facet with respect to the cell
     real normal(const Cell& cell, uint facet, uint i) const;
 
-    /// Check if point p intersects the cell
+    /// Compute of given facet with respect to the cell
+    Point normal(const Cell& cell, uint facet) const;
+
+    /// Compute the area/length of given facet with respect to the cell
+    real facetArea(const Cell& cell, uint facet) const;
+
+    /// Check for intersection with point
     bool intersects(const MeshEntity& entity, const Point& p) const;
 
-    /// Check if points line connecting p1 and p2 cuts the cell
-    bool intersects(const MeshEntity& entity, const Point& p1, const Point& p2) const;
-
+    /// Check for intersection with line defined by points
+    bool intersects(const MeshEntity& entity, const Point& p0, const Point& p1) const;
+    
     /// Return description of cell type
     std::string description() const;
 

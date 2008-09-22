@@ -12,9 +12,15 @@ import re
 
 # Tests to run
 #tests = ["function", "graph", "mesh"]
-tests = ["function", "mesh"]
+tests = ["function", "mesh", "meshconvert"]
 
 # FIXME: Graph tests disabled for now since SCOTCH is now required
+
+# Check if we should run only Python tests, use for quick testing
+if len(sys.argv) == 2 and sys.argv[1] == "--only-python":
+    only_python = True
+else:
+    only_python = False
 
 # Run tests
 failed = []
@@ -23,13 +29,16 @@ for test in tests:
     print "----------------------------------------------------------------------"
 
     print "C++:   ",
-    output = getoutput("cd %s/cpp && ./test" % test)
-    if "OK" in output:
-        num_tests = int(re.search("OK \((\d+)\)", output).groups()[0])
-        print "OK (%d tests)" % num_tests
+    if not only_python:
+        output = getoutput("cd %s/cpp && ./test" % test)
+        if "OK" in output:
+            num_tests = int(re.search("OK \((\d+)\)", output).groups()[0])
+            print "OK (%d tests)" % num_tests
+        else:
+            print "*** Failed"
+            failed += [(test, "C++", output)]
     else:
-        print "*** Failed"
-        failed += [(test, "C++", output)]
+        print "Skipping"
     
     print "Python:",
     output = getoutput("cd %s/python && python ./test.py" % test)

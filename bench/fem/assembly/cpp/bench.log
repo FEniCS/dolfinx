@@ -1,0 +1,21 @@
+Backend: uBLAS
+  Form: Poisson2DP1
+  Form: Poisson2DP2
+  Form: Poisson2DP3
+  Form: THStokes2D
+  Form: StabStokes2D
+  Form: Elasticity3D
+  Form: NSEMomentum3D
+Backend: PETSc
+  Form: Poisson2DP1
+  Form: Poisson2DP2
+  Form: Poisson2DP3
+  Form: THStokes2D
+  Form: StabStokes2D
+  Form: Elasticity3D
+  Form: NSEMomentum3D
+Backend: Epetra
+  Form: Poisson2DP1
+  Form: Poisson2DP2
+  Form: Poisson2DP3
+  Form: THStokes2D

@@ -1,0 +1,47 @@
+# Copyright (C) 2007 Kristian B. Oelgaard and Garth N. Wells.
+# Licensed under the GNU LGPL Version 2.1.
+#
+# First added:  2007-06-29
+# Last changed: 2008-07-15
+#
+# The bilinear form a(v, u) and linear form L(v) for
+# advection-diffusion. Discontinuous formulation with upwinding.
+#
+
+scalar = FiniteElement("Discontinuous Lagrange", "triangle", 1)
+vector = VectorElement("Lagrange", "triangle", 2)
+constant = FiniteElement("Discontinuous Lagrange", "triangle", 0)
+
+# Test and trial functions
+v = TestFunction(scalar)
+u = TrialFunction(scalar)
+
+b   = Function(vector) # Note: b('+') == b('-')
+f   = Function(scalar)
+g   = Function(scalar) # BC
+n   = FacetNormal("triangle")
+h   = MeshSize("triangle")
+of  = Function(constant)  # This function is a switch that determines if a facet is
+                            # an outflow facet or not 1.0 or 0.0
+
+kappa = Constant("triangle")
+alpha = Constant("triangle")
+
+def upwind(u, b):
+  return [b[i]('+')*(of('+')*u('+') + of('-')*u('-')) for i in range(len(b))]
+
+# Bilinear form
+a_int = dot( grad(v), mult(kappa, grad(u)) - mult(b,u) )*dx
+
+a_fac = kappa('+')*alpha('+')/h('+')*dot(jump(v, n), jump(u, n))*dS \
+      - kappa('+')*dot(avg(grad(v)), jump(u, n))*dS \
+      - kappa('+')*dot(jump(v, n), avg(grad(u)))*dS
+
+a_vel = dot(jump(v, n), upwind(u, b))*dS + dot(mult(v, n), mult(b, of*u))*ds
+
+a = a_int + a_fac + a_vel
+
+# Linear form
+L = v*f*dx
+
+

@@ -39,14 +39,23 @@ env.SConsignFile(dolfin_sconsignfile)
 
 DefaultPackages = ""
 
+if env["PLATFORM"].startswith("win"):
+  default_prefix = os.path.join("c:","local")
+else:
+  default_prefix = os.path.join(os.path.sep,"usr","local")
+
 # Build the commandline options for SCons:
 options = [
     # configurable options for installation:
-    scons.PathOption("prefix", "Installation prefix", "/usr/local"),
-    scons.PathOption("binDir", "Binary installation directory", "$prefix/bin"),
-    scons.PathOption("libDir", "Library installation directory", "$prefix/lib"),
-    scons.PathOption("pkgConfDir", "Directory for installation of pkg-config files", "$prefix/lib/pkgconfig"),
-    scons.PathOption("includeDir", "C/C++ header installation directory", "$prefix/include"),
+    scons.PathOption("prefix", "Installation prefix", default_prefix),
+    scons.PathOption("binDir", "Binary installation directory",
+                     os.path.join("$prefix","bin")),
+    scons.PathOption("libDir", "Library installation directory",
+                     os.path.join("$prefix","lib")),
+    scons.PathOption("pkgConfDir", "Directory for installation of pkg-config files",
+                     os.path.join("$prefix","lib","pkgconfig")),
+    scons.PathOption("includeDir", "C/C++ header installation directory",
+                     os.path.join("$prefix","include")),
     scons.PathOption("pythonModuleDir", "Python module installation directory", 
                      scons.defaultPythonLib(prefix="$prefix")),
     scons.PathOption("pythonExtDir", "Python extension module installation directory", 
@@ -71,6 +80,9 @@ options = [
     BoolOption("enableGts", "Compile with support for GTS", "yes"),
     BoolOption("enableUmfpack", "Compile with support for UMFPACK", "yes"),
     BoolOption("enableTrilinos", "Compile with support for Trilinos", "yes"),
+    BoolOption("enableCholmod", "Compile with support for CHOLMOD", "yes"),
+    BoolOption("enableMtl4", "Compile with support for MTL4", "yes"),
+    BoolOption("enableParmetis", "Compile with support for ParMETIS", "yes"),
     BoolOption("enablePydolfin", "Compile the python wrappers of Dolfin", "yes"),
     # some of the above may need extra options (like petscDir), should we
     # try to get that from pkg-config?
@@ -82,6 +94,9 @@ options = [
     PathOption("withScotchDir", "Specify path to SCOTCH", None),
     PathOption("withUmfpackDir", "Specify path to UMFPACK", None),
     PathOption("withTrilinosDir", "Specify path to Trilinos", None),
+    PathOption("withCholmodDir", "Specify path to CHOLMOD", None),
+    PathOption("withMtl4Dir", "Specify path to MTL4", None),
+    PathOption("withParmetisDir", "Specify path to ParMETIS", None),
     PathOption("withBoostDir", "Specify path to Boost", None),
     #
     # a few more options originally from PyCC:
@@ -93,12 +108,14 @@ options = [
     #("CXX", "Set C++ compiler", scons.defaultCxxCompiler()),
     #("FORTRAN", "Set FORTRAN compiler",scons.defaultFortranCompiler()),
     ("customCxxFlags", "Customize compilation of C++ code", ""),
+    ("customLinkFlags", "Customize linking of C++ code", ""),
     #("data", "Parameter to the 'fetch' target: comma-delimited list of directories/files to fetch, \
     #        relative to the `data' directory. An empty value means that everything will be fetched.", ""),
     #("sshUser", "Specify the user for the SSH connection used to retrieve data files", ""),
     #('usePackages','Override or add dependency packages, separate with comma', ""),
     #('customDefaultPackages','Override the default set of packages (%r), separate package names with commas' % (DefaultPackages,)),
     ("SSLOG", "Set Simula scons log file", os.path.join(os.getcwd(),"scons","simula_scons.log")),
+    BoolOption("enableResolveCompiler", "Run tests to verify compiler", 1),
     ]
 
 
@@ -135,6 +152,9 @@ if env.GetOption("clean"):
 env["CXXFLAGS"] = "-Wall -pipe -ansi" # -Werror"
 #env["SHFORTRANFLAGS"] = "-Wall -pipe -fPIC"
 
+# Default link flags
+env["LINKFLAGS"] = ""  # FIXME: is it safe to start with an empty string?
+
 # If Debug is enabled, add -g:
 if env["enableDebug"]:
   env.Append(CXXFLAGS=" -DDEBUG -g -Werror")
@@ -161,6 +181,16 @@ if env["enableProjectionLibrary"]:
 if env["customCxxFlags"]:
   env.Append(CXXFLAGS=" " + env["customCxxFlags"])
 
+# Append custom linker flags
+if env["customLinkFlags"]:
+  env.Append(LINKFLAGS=" " + env["customLinkFlags"])
+
+# Look for custom compiler and linker flags in os.environ
+if os.environ.has_key("CXXFLAGS"):
+  env.Append(CXXFLAGS=" %s" % os.environ["CXXFLAGS"])
+if os.environ.has_key("LINKFLAGS"):
+  env.Append(LINKFLAGS=" %s" % os.environ["LINKFLAGS"])
+
 # Determine which compiler to be used:
 cxx_compilers = ["c++", "g++", "CC"]
 # Use CXX from os.environ if available:
@@ -178,7 +208,7 @@ if env["enableMpi"]:
   # CXX=/path/to/mpi_cxx_compiler  - OK (use os.path.basename)
   # CXX="ccache cxx_compiler"      - OK (use mpi_cxx.split()[-1])
   # FIXME: Any other cases?
-  if not env.Detect("mpirun") or not \
+  if not env.Detect(["mpirun", "mpiexec", "orterun"]) or not \
          (mpi_cxx and \
           os.path.basename(mpi_cxx.split()[-1]) in mpi_cxx_compilers):
     print "MPI not found (might not work if PETSc uses MPI)."
@@ -286,8 +316,8 @@ if env["enablePydolfin"]:
         buildDataHash["pythonPackageDirs"])
 
     for f in installfiles:
-        #installpath=os.path.sep.join(os.path.dirname(f).split(os.path.sep)[1:])
-        env.Install(os.path.join(env["pythonModuleDir"],"dolfin"), f)
+        installpath=os.path.sep.join(os.path.dirname(f).split(os.path.sep)[1:])
+        env.Install(os.path.join(env["pythonModuleDir"],installpath), f)
 
 #env = scons.installCommonFile(env, commonfile, prefix)
 
@@ -339,6 +369,21 @@ f.write('export PKG_CONFIG_PATH="' + prefix + 'lib/pkgconfig:$PKG_CONFIG_PATH"\n
 if env["enablePydolfin"]:
     pyversion=".".join([str(s) for s in sys.version_info[0:2]])
     f.write('export PYTHONPATH="'  + prefix + 'lib/python'    + pyversion + '/site-packages:$PYTHONPATH"\n')
+f.close()
+
+# Create helper file for Windows as well
+f = open('dolfin.bat', 'w')
+f.write('set PATH=%s\n' % \
+        os.pathsep.join([env.subst(env['binDir']),
+                         env.subst(env['libDir']),
+                         '%PATH%']))
+f.write('set PYTHONPATH=%s\n' % \
+        os.pathsep.join([env.subst(env['pythonModuleDir']),
+                         env.subst(env['pythonExtDir']),
+                         '%PYTHONPATH%']))
+f.write('set PKG_CONFIG_PATH=%s\n' % \
+        os.pathsep.join([env.subst(env['pkgConfDir']),
+                         '%PKG_CONFIG_PATH%']))
 f.close()
 
 def help():
@@ -396,6 +441,10 @@ file dolfin.conf:
 
     source dolfin.conf
 
+Windows users can simply run the file dolfin.bat:
+
+    dolfin.bat
+
 This will update the values for the environment variables
 PATH, LD_LIBRARY_PATH, PKG_CONFIG_PATH and PYTHONPATH.
 ---------------------------------------------------------"""
@@ -415,3 +464,4 @@ if not env.GetOption("clean"):
 scons.logClose()
 
 # vim:ft=python ts=2 sw=2
+

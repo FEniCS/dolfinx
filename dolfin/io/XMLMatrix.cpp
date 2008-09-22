@@ -1,9 +1,8 @@
-// Copyright (C) 2003-2006 Anders Logg.
+// Copyright (C) 2003-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2003-02-17
-// Last changed: 2006-05-23
-
+// Last changed: 2008-06-15
 
 #include <dolfin/la/GenericMatrix.h>
 #include <dolfin/log/dolfin_log.h>
@@ -12,10 +11,10 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-XMLMatrix::XMLMatrix(GenericMatrix& matrix) : XMLObject(), A(matrix)
+XMLMatrix::XMLMatrix(GenericMatrix& matrix)
+  : XMLObject(), A(matrix), state(OUTSIDE), row(0)
 {
-  state = OUTSIDE;
-  row = 0;
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 void XMLMatrix::startElement(const xmlChar *name, const xmlChar **attrs)
@@ -24,7 +23,7 @@ void XMLMatrix::startElement(const xmlChar *name, const xmlChar **attrs)
   {
   case OUTSIDE:
     
-    if ( xmlStrcasecmp(name, (xmlChar *) "sparsematrix") == 0 )
+    if ( xmlStrcasecmp(name, (xmlChar *) "matrix") == 0 )
     {
       readMatrix(name, attrs);
       state = INSIDE_MATRIX;
@@ -44,7 +43,7 @@ void XMLMatrix::startElement(const xmlChar *name, const xmlChar **attrs)
     
   case INSIDE_ROW:
     
-    if ( xmlStrcasecmp(name, (xmlChar *) "element") == 0 )
+    if ( xmlStrcasecmp(name, (xmlChar *) "entry") == 0 )
       readEntry(name, attrs);
     
     break;
@@ -60,15 +59,21 @@ void XMLMatrix::endElement(const xmlChar *name)
   {
   case INSIDE_MATRIX:
     
-    if ( xmlStrcasecmp(name,(xmlChar *) "sparsematrix") == 0 )
+    if ( xmlStrcasecmp(name,(xmlChar *) "matrix") == 0 )
+    {
+      A.apply();
       state = DONE;
+    }
     
     break;
     
   case INSIDE_ROW:
     
     if ( xmlStrcasecmp(name,(xmlChar *) "row") == 0 )
+    {
+      setRow();
       state = INSIDE_MATRIX;
+    }
     
     break;
     
@@ -89,34 +94,30 @@ void XMLMatrix::readMatrix(const xmlChar *name, const xmlChar **attrs)
 //-----------------------------------------------------------------------------
 void XMLMatrix::readRow(const xmlChar *name, const xmlChar **attrs)
 {
-  // FIXME: update to new format
-  error("This function needs to be updated to the new format.");
-
-  /*
-  // Set default values
-  row = 0;
-  int size = 0;
-  
   // Parse values
-  parseIntegerRequired(name, attrs, "row",  row);
-  parseIntegerRequired(name, attrs, "size", size);
+  row = parseUnsignedInt(name, attrs, "row");
+  const uint size = parseUnsignedInt(name, attrs, "size");
 
-  // Set values
-  A.initrow(row, size);
-  */
+  // Reset data for row
+  columns.clear();
+  values.clear();
+  columns.reserve(size);
+  values.reserve(size);
 }
 //-----------------------------------------------------------------------------
 void XMLMatrix::readEntry(const xmlChar *name, const xmlChar **attrs)
 {
-  error("XMLMatrix::readEntry needs to updated for new matrix element access.");
-/*
   // Parse values
-  uint column = parseUnsignedInt(name, attrs, "column");
-  real value  = parseReal(name, attrs, "value");
+  const uint column = parseUnsignedInt(name, attrs, "column");
+  const real value  = parseReal(name, attrs, "value");
   
-  // FIXME: update to matrix element access
   // Set values
-  A(row, column) = value;
-*/
+  columns.push_back(column);
+  values.push_back(value);
+}
+//-----------------------------------------------------------------------------
+void XMLMatrix::setRow()
+{
+  A.setrow(row, columns, values);
 }
 //-----------------------------------------------------------------------------

@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2008.
 //
 // First added:  2008-01-07
-// Last changed: 2008-02-15
+// Last changed: 2008-08-13
 
 #ifdef HAS_PETSC
 #include <petsc.h>
@@ -29,7 +29,7 @@ dolfin::SubSystemsManager dolfin::SubSystemsManager::sub_systems_manager;
 
 //-----------------------------------------------------------------------------
 SubSystemsManager::SubSystemsManager() : petsc_initialized(false),
-                                         petsc_controls_mpi(false)
+                                         control_mpi(false)
 {
   // Do nothing
 }
@@ -49,10 +49,12 @@ SubSystemsManager::~SubSystemsManager()
 void SubSystemsManager::initMPI()
 {
 #ifdef HAS_MPI
-  if( MPIinitialized() )
+  if( MPI::Is_initialized() )
     return;
 
-  MPI_Init(0, 0);
+  // Initialise MPI and take responsibility
+  MPI::Init();
+  sub_systems_manager.control_mpi = true;
 #else
   // Do nothing
 #endif
@@ -64,21 +66,15 @@ void SubSystemsManager::initPETSc()
   if ( sub_systems_manager.petsc_initialized )
     return;
 
-  message("Initializing PETSc (ignoring command-line arguments).");
+  message(1, "Initializing PETSc (ignoring command-line arguments).");
 
-  // Prepare fake command-line arguments for PETSc. This is needed since
+  // Dummy command-line arguments for PETSc. This is needed since
   // PetscInitializeNoArguments() does not seem to work.
-  int argc = 1;
-  char** argv = new char * [1];
-  argv[0] = new char[DOLFIN_LINELENGTH];
-  snprintf(argv[0], DOLFIN_LINELENGTH, "%s", "unknown");
+  int argc = 0;
+  char** argv = NULL;
 
   // Initialize PETSc
   initPETSc(argc, argv, false);
-
-  // Cleanup
-  delete [] argv[0];
-  delete [] argv;
 #else
   error("DOLFIN has not been configured for PETSc.");
 #endif
@@ -93,8 +89,9 @@ void SubSystemsManager::initPETSc(int argc, char* argv[], bool cmd_line_args)
   // Get status of MPI before PETSc initialisation
   const bool mpi_init_status = MPIinitialized();
 
+  // Print message if PETSc is intialised with command line arguments
   if(cmd_line_args)
-    message("Initializing PETSc with given command-line arguments.");
+    message(1, "Initializing PETSc with given command-line arguments.");
 
   // Initialize PETSc
   PetscInitialize(&argc, &argv, PETSC_NULL, PETSC_NULL);
@@ -106,9 +103,9 @@ void SubSystemsManager::initPETSc(int argc, char* argv[], bool cmd_line_args)
 
   sub_systems_manager.petsc_initialized = true;
 
-  // Determine if PETSc initialised MPI and is then responsible for MPI finalization
-  if(!mpi_init_status && MPIinitialized())
-    sub_systems_manager.petsc_controls_mpi = true;
+  // Determine if PETSc initialised MPI (and is therefore responsible for MPI finalization)
+  if(MPIinitialized() and !mpi_init_status)
+    sub_systems_manager.control_mpi = false;
 #else
   error("DOLFIN has not been configured for PETSc.");
 #endif
@@ -118,8 +115,8 @@ void SubSystemsManager::finalizeMPI()
 {
 #ifdef HAS_MPI
   //Finalise MPI if required
-  if ( MPIinitialized() && !sub_systems_manager.petsc_controls_mpi )
-    MPI_Finalize();
+  if ( MPI::Is_initialized() and sub_systems_manager.control_mpi )
+    MPI::Finalize();
 #else
   // Do nothing
 #endif
@@ -146,23 +143,13 @@ bool SubSystemsManager::MPIinitialized()
   // This function not affected if MPI_Finalize has been called. It returns 
   // true if MPI_Init has been called at any point, even if MPI_Finalize has
   // been called.
-
+ 
 #ifdef HAS_MPI
-  int initialized;
-  MPI_Initialized(&initialized);
-
-  if (initialized)
-    return true;
-  else if (!initialized)
-    return false;
-  else
-  {
-    error("MPI_Initialized has returned an unknown initialization status");
-    return false;
-  }
+  return MPI::Is_initialized();
 #else
   // DOLFIN is not configured for MPI (it might be through PETSc)
   return false;
 #endif
 }
 //-----------------------------------------------------------------------------
+

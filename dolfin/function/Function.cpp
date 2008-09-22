@@ -1,10 +1,11 @@
 // Copyright (C) 2007-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Garth N. Wells 2005-2007.
+// Modified by Garth N. Wells 2005-2008.
+// Modified by Martin Sandve Alnes 2008.
 //
 // First added:  2003-11-28
-// Last changed: 2008-03-11
+// Last changed: 2008-09-11
 //
 // The class Function serves as the envelope class and holds a pointer
 // to a letter class that is a subclass of GenericFunction. All the
@@ -14,57 +15,91 @@
 #include "UserFunction.h"
 #include "ConstantFunction.h"
 #include "DiscreteFunction.h"
+#include "UFCFunction.h"
 #include "Function.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Function::Function()
-  : Variable("u", "empty function"),
-    f(0), _type(empty), _cell(0), _facet(-1)
+Function::Function() : Variable("u", "empty function"), f(0), _type(empty),
+                       _cell(0), _facet(-1)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-Function::Function(Mesh& mesh)
-  : Variable("u", "user-defined function"),
-    f(0), _type(user), _cell(0), _facet(-1)
+Function::Function(Mesh& mesh) : Variable("u", "user-defined function"), f(0), 
+                                 _type(user), _cell(0), _facet(-1)
 {
   f = new UserFunction(mesh, this);
 }
 //-----------------------------------------------------------------------------
-Function::Function(Mesh& mesh, real value)
-  : Variable("u", "constant function"),
+Function::Function(Mesh& mesh, real value) : Variable("u", "constant function"),
     f(0), _type(constant), _cell(0), _facet(-1)
 {
   f = new ConstantFunction(mesh, value);
 }
 //-----------------------------------------------------------------------------
-Function::Function(Mesh& mesh, GenericVector& x, Form& form, uint i)
-  : Variable("u", "discrete function"),
-    f(0), _type(discrete), _cell(0), _facet(-1)
+Function::Function(Mesh& mesh, uint size, real value)
+  : Variable("u", "constant function"), f(0), _type(constant), _cell(0), _facet(-1)
 {
-  f = new DiscreteFunction(mesh, x, form, i);
+  f = new ConstantFunction(mesh, size, value);
 }
 //-----------------------------------------------------------------------------
-Function::Function(Mesh& mesh, GenericVector& x, DofMap& dof_map, const ufc::form& form, uint i)
-  : Variable("u", "discrete function"),
-    f(0), _type(discrete), _cell(0), _facet(-1)
+Function::Function(Mesh& mesh, const Array<real>& values)
+  : Variable("u", "constant function"), f(0), _type(constant), _cell(0), _facet(-1)
+{
+  f = new ConstantFunction(mesh, values);
+}
+//-----------------------------------------------------------------------------
+Function::Function(Mesh& mesh, const Array<uint>& shape, const Array<real>& values)
+  : Variable("u", "constant function"), f(0), _type(constant), _cell(0), _facet(-1)
+{
+  f = new ConstantFunction(mesh, shape, values);
+}
+//-----------------------------------------------------------------------------
+Function::Function(Mesh& mesh, const ufc::function& function, uint size)
+  : Variable("u", "ufc function"), f(0), _type(ufc), _cell(0), _facet(-1)
+{
+  f = new UFCFunction(mesh, function, size);
+}
+//-----------------------------------------------------------------------------
+Function::Function(Mesh& mesh, Form& form, uint i)
+  : Variable("u", "discrete function"), f(0), _type(discrete), _cell(0), _facet(-1)
+{
+  f = new DiscreteFunction(mesh, form, i);
+}
+//-----------------------------------------------------------------------------
+Function::Function(Mesh& mesh, DofMap& dof_map, const ufc::form& form, uint i)
+  : Variable("u", "discrete function"), f(0), _type(discrete), _cell(0), _facet(-1)
+{
+  f = new DiscreteFunction(mesh, dof_map, form, i);
+}
+//-----------------------------------------------------------------------------
+Function::Function(std::tr1::shared_ptr<Mesh> mesh, std::tr1::shared_ptr<GenericVector> x, 
+   std::tr1::shared_ptr<DofMap> dof_map, const ufc::form& form, uint i)
+ : Variable("u", "discrete function"), f(0), _type(discrete), _cell(0), _facet(-1)
 {
   f = new DiscreteFunction(mesh, x, dof_map, form, i);
 }
 //-----------------------------------------------------------------------------
 Function::Function(const std::string filename)
-  : Variable("u", "discrete function from data file"),
-    f(0), _type(empty), _cell(0), _facet(-1)
+  : Variable("u", "discrete function from data file"), f(0), _type(empty), 
+    _cell(0), _facet(-1)
 {
   File file(filename);
   file >> *this;
 }
 //-----------------------------------------------------------------------------
-Function::Function(SubFunction f)
-  : Variable("u", "discrete function"),
-    f(0), _type(discrete), _cell(0), _facet(-1)
+Function::Function(std::tr1::shared_ptr<Mesh> mesh, 
+  const std::string finite_element_signature, const std::string dof_map_signature)
+  : Variable("u", "discrete function"), f(0), _type(empty), _cell(0), _facet(-1)
+{
+  f = new DiscreteFunction(mesh, finite_element_signature, dof_map_signature);
+  _type = discrete;
+}
+//-----------------------------------------------------------------------------
+Function::Function(SubFunction f) : Variable("u", "discrete function"), f(0),
+     _type(discrete), _cell(0), _facet(-1)
 {
   cout << "Extracting sub function." << endl;
   this->f = new DiscreteFunction(f);
@@ -82,8 +117,12 @@ Function::Function(const Function& f) : f(0), _type(f.type()), _cell(0), _facet(
     this->f = new ConstantFunction(*static_cast<ConstantFunction*>(f.f));
     rename("x", "constant function");
   }
+  else if( f.type() == empty )
+  {
+    rename("x", "empty function");
+  }
   else
-    error("Copy constructor works for discrete and constant functions only (so far).");
+    error("Copy constructor works for discrete, constant and empty functions only (so far).");
 }
 //-----------------------------------------------------------------------------
 Function::~Function()
@@ -92,23 +131,23 @@ Function::~Function()
     delete f;
 }
 //-----------------------------------------------------------------------------
-void Function::init(Mesh& mesh, GenericVector& x, Form& form, uint i)
+void Function::init(Mesh& mesh, Form& form, uint i)
 {
   if (f)
     delete f;
 
-  f = new DiscreteFunction(mesh, x, form, i);
+  f = new DiscreteFunction(mesh, form, i);
   
   rename("u", "discrete function");
   _type = discrete;
 }
 //-----------------------------------------------------------------------------
-void Function::init(Mesh& mesh, GenericVector& x, DofMap& dof_map, const ufc::form& form, uint i)
+void Function::init(Mesh& mesh, DofMap& dof_map, const ufc::form& form, uint i)
 {
   if (f)
     delete f;
 
-  f = new DiscreteFunction(mesh, x, dof_map, form, i);
+  f = new DiscreteFunction(mesh, dof_map, form, i);
   
   rename("u", "discrete function");
   _type = discrete;
@@ -139,8 +178,29 @@ Mesh& Function::mesh() const
 {
   if (!f)
     error("Function contains no data.");
+  return *(f->mesh);
+}
+//-----------------------------------------------------------------------------
+DofMap& Function::dofMap() const
+{
+  if (!f)
+    error("Function contains no data.");
 
-  return f->mesh;
+  if (_type != discrete)
+    error("A signature can only be returned by discrete functions.");
+
+  return (static_cast<DiscreteFunction*>(f))->dofMap();
+}
+//-----------------------------------------------------------------------------
+std::string Function::signature() const
+{
+  if (!f)
+    error("Function contains no data.");
+
+  if (_type != discrete)
+    error("A signature can only be returned by discrete functions.");
+
+  return (static_cast<DiscreteFunction*>(f))->signature();
 }
 //-----------------------------------------------------------------------------
 GenericVector& Function::vector() const
@@ -213,16 +273,14 @@ void Function::interpolate(real* values)
   f->interpolate(values);
 }
 //-----------------------------------------------------------------------------
-void Function::interpolate(real* coefficients,
-                           const ufc::cell& ufc_cell,
-                           const ufc::finite_element& finite_element,
-                           Cell& cell, int facet)
+void Function::interpolate(real* coefficients, const ufc::cell& ufc_cell,
+              const FiniteElement& finite_element, Cell& cell, int facet)
 {
   if (!f)
     error("Function contains no data.");
 
   // Make current cell and facet are available to user-defined function
-  _cell = &cell;
+  _cell  = &cell;
   _facet = facet;
 
   // Interpolate function
@@ -271,8 +329,12 @@ const Cell& Function::cell() const
 {
   if (!_cell)
     error("Current cell is unknown (only available during assembly).");
-  
   return *_cell;
+}
+//-----------------------------------------------------------------------------
+Point Function::normal() const
+{
+  return cell().normal(_facet);
 }
 //-----------------------------------------------------------------------------
 int Function::facet() const

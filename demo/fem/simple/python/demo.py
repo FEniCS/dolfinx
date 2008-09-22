@@ -40,7 +40,6 @@ M0.apply()
 # Display matrices
 print ""
 print "Assembled stiffness matrix:"
-print A
 A.disp()
 print ""
 

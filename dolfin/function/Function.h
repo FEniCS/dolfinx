@@ -1,27 +1,31 @@
-// Copyright (C) 2007 Anders Logg.
+// Copyright (C) 2007-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Garth N. Wells 2005-2007.
+// Modified by Garth N. Wells 2005-2008.
 // Modified by Kristian B. Oelgaard, 2007.
-
+// Modified by Martin Sandve Alnes, 2008.
+//
 // First added:  2003-11-28
-// Last changed: 2008-01-03
+// Last changed: 2008-09-11
 
 #ifndef __FUNCTION_H
 #define __FUNCTION_H
 
+#include <tr1/memory>
 #include <ufc.h>
 #include <dolfin/common/types.h>
 #include <dolfin/common/simple_array.h>
 #include <dolfin/la/Vector.h>
-#include "SubFunction.h"
+#include <dolfin/mesh/Point.h>
+#include <dolfin/mesh/Cell.h>
 #include <dolfin/common/Variable.h>
+#include "SubFunction.h"
 
 namespace dolfin
 {
 
+  class FiniteElement;
   class Mesh;
-  class Cell;
   class Form;
   class GenericFunction;
   class DofMap;
@@ -41,32 +45,49 @@ namespace dolfin
   public:
 
     /// Function types
-    enum Type {empty, user, constant, discrete};
+    enum Type {empty, user, constant, discrete, ufc};
 
     /// Create empty function (read data from file)
     Function();
 
     /// Create user-defined function (evaluation operator must be overloaded)
-    Function(Mesh& mesh);
+    explicit Function(Mesh& mesh);
 
-    /// Create constant function from given value
+    /// Create constant scalar function from given value
     Function(Mesh& mesh, real value);
 
-    /// Create constant function from given value
-    //Function(Mesh& mesh, GenericFunction& function);
+    /// Create constant vector function from given size and value
+    Function(Mesh& mesh, uint size, real value);
+
+    /// Create constant vector function from given size and values
+    Function(Mesh& mesh, const Array<real>& values);
+
+    /// Create constant tensor function from given shape and values
+    Function(Mesh& mesh, const Array<uint>& shape, const Array<real>& values);
+
+    /// Create function from given ufc::function
+    Function(Mesh& mesh, const ufc::function& function, uint size);
 
     /// Create discrete function for argument function i of form
-    Function(Mesh& mesh, GenericVector& x, Form& form, uint i = 1);
+    Function(Mesh& mesh, Form& form, uint i = 1);
 
     /// Create discrete function for argument function i of form
-    Function(Mesh& mesh, GenericVector& x, DofMap& dof_map, const ufc::form& form, uint i = 1);
+    Function(Mesh& mesh, DofMap& dof_map, const ufc::form& form, uint i = 1);
+
+    /// Create discrete function for argument function i of form (data may be shared)
+    Function(std::tr1::shared_ptr<Mesh> mesh, std::tr1::shared_ptr<GenericVector> x, 
+             std::tr1::shared_ptr<DofMap> dof_map, const ufc::form& form, uint i = 1);
 
     /// Create discrete function from sub function
-    Function(SubFunction sub_function);
+    explicit Function(SubFunction sub_function);
 
     /// Create function from data file
-    Function(const std::string filename);
+    explicit Function(const std::string filename);
 
+    /// Create discrete function based on signatures
+    Function(std::tr1::shared_ptr<Mesh> mesh, const std::string finite_element_signature,
+             const std::string dof_map_signature);
+    
     /// Copy constructor
     Function(const Function& f);
 
@@ -74,10 +95,10 @@ namespace dolfin
     virtual ~Function();
 
     /// Create discrete function for argument function i of form
-    void init(Mesh& mesh, GenericVector& x, Form& form, uint i = 1);
+    void init(Mesh& mesh, Form& form, uint i = 1);
 
     /// Create discrete function for argument function i of form
-    void init(Mesh& mesh, GenericVector& x, DofMap& dof_map, const ufc::form& form, uint i = 1);
+    void init(Mesh& mesh, DofMap& dof_map, const ufc::form& form, uint i = 1);
 
     /// Return the type of function
     Type type() const;
@@ -86,10 +107,16 @@ namespace dolfin
     virtual uint rank() const;
 
     /// Return the dimension of the value space for axis i
-    virtual uint dim(unsigned int i) const;
+    virtual uint dim(uint i) const;
     
     /// Return the mesh
     Mesh& mesh() const;
+
+    /// Return the DofMap
+    DofMap& dofMap() const;
+
+    /// Return the signature of a DiscreteFunction
+    std::string signature() const;
 
     /// Return the vector associated with a DiscreteFunction
     GenericVector& vector() const;
@@ -112,7 +139,7 @@ namespace dolfin
     /// Interpolate function to finite element space on cell
     void interpolate(real* coefficients,
                      const ufc::cell& ufc_cell,
-                     const ufc::finite_element& finite_element,
+                     const FiniteElement& finite_element,
                      Cell& cell, int facet = -1);
 
     /// Evaluate function at given point (used for subclassing through SWIG interface)
@@ -124,16 +151,15 @@ namespace dolfin
     /// Evaluate scalar function at given point (overload for scalar user-defined function)
     virtual real eval(const real* x) const;
 
-    /// Friends
-    friend class XMLFile;
-    friend class LinearPDE;
-
   protected:
     
-    // Access current cell (available during assembly for user-defined function)
+    /// Access current cell (available during assembly for user-defined function)
     const Cell& cell() const;
 
-    // Access current facet (available during assembly for user-defined functions)
+    /// Access current facet normal (available during assembly for user-defined function)
+    Point normal() const;
+
+    /// Access current facet (available during assembly for user-defined functions)
     int facet() const;
 
   private:

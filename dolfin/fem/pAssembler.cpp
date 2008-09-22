@@ -1,4 +1,4 @@
-// Copyright (C) 2007 Anders Logg.
+// Copyright (C) 2007-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells, 2007
@@ -6,7 +6,7 @@
 // Modified by Magnus Vikstrøm, 2007
 //
 // First added:  2007-01-17
-// Last changed: 2007-12-07
+// Last changed: 2008-08-12
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Array.h>
@@ -18,6 +18,7 @@
 #include <dolfin/mesh/BoundaryMesh.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/SubDomain.h>
+#include <dolfin/mesh/MeshData.h>
 #include <dolfin/function/Function.h>
 #include "Form.h"
 #include "UFC.h"
@@ -25,6 +26,7 @@
 #include <dolfin/la/SparsityPattern.h>
 #include "SparsityPatternBuilder.h"
 #include "DofMapSet.h"
+#include "FiniteElement.h"
 #include <dolfin/main/MPI.h>
 
 #include <dolfin/common/timing.h>
@@ -179,7 +181,7 @@ void pAssembler::assembleCells(GenericTensor& A,
   real t = toc();
   printf("pAssembler: start\n");
 
-  const uint this_process = MPI::processNumber();
+  const uint this_process = MPI::process_number();
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     // Assemble only cells in this processors partition
@@ -234,9 +236,9 @@ void pAssembler::assembleExteriorFacets(GenericTensor& A,
   ufc::exterior_facet_integral* integral = ufc.exterior_facet_integrals[0];
 
   // Create boundary mesh
-  MeshFunction<uint> vertex_map;
-  MeshFunction<uint> cell_map;
-  BoundaryMesh boundary(mesh, vertex_map, cell_map);
+  BoundaryMesh boundary(mesh);
+  MeshFunction<uint>* cell_map = boundary.data().meshFunction("cell map");
+  dolfin_assert(cell_map);
   
   // Assemble over exterior facets (the cells of the boundary)
   message("Assembling over %d exterior facets.", boundary.numCells());
@@ -244,7 +246,7 @@ void pAssembler::assembleExteriorFacets(GenericTensor& A,
   for (CellIterator boundary_cell(boundary); !boundary_cell.end(); ++boundary_cell)
   {
     // Get mesh facet corresponding to boundary cell
-    Facet mesh_facet(mesh, cell_map(*boundary_cell));
+    Facet mesh_facet(mesh, (*cell_map)(*boundary_cell));
 
     // Get integral for sub domain (if any)
     if (domains && domains->size() > 0)
@@ -377,7 +379,7 @@ void pAssembler::initGlobalTensor(GenericTensor& A, const DofMapSet& dof_map_set
     dof_map_set.build(ufc);
     
     // Build sparsity pattern from dof map
-    GenericSparsityPattern* sparsity_pattern = A.factory().createPattern(); 
+    GenericSparsityPattern* sparsity_pattern = A.factory().create_pattern(); 
     SparsityPatternBuilder::build(*sparsity_pattern, mesh, ufc, dof_map_set);
     A.init(*sparsity_pattern);
     delete sparsity_pattern;

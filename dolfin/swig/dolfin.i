@@ -3,6 +3,8 @@
 %feature("autodoc", "1");
 
 %{
+#define protected public
+
 #include <dolfin/dolfin.h>
 #include <numpy/arrayobject.h>
 using namespace dolfin;
@@ -13,11 +15,11 @@ using namespace dolfin;
   import_array();
 %}
 
-// Ignores
-%include "ignores.i"
-
 // Renames
 %include "renames.i"
+
+// Ignores
+%include "ignores.i"
 
 // Typemaps
 %include "typemaps.i"
@@ -57,6 +59,7 @@ using namespace dolfin;
 %include "dolfin_mesh_post.i"
 %include "dolfin_log_post.i"
 %include "dolfin_common_post.i"
+%include "dolfin_function_post.i"
 
 //%typedef         std::map<dolfin::uint, dolfin::uint> iimap; //FIXME: Make this work
 //%template(iimap) std::map<dolfin::uint, dolfin::uint>; //FIXME: Make this work

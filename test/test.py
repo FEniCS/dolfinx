@@ -14,15 +14,16 @@ tests = ["unit", "system"]
 
 failed = []
 
+# Command to run
+command = "cd %s; python test.py" + " " + " ".join(sys.argv[1:])
+
 # Run tests
 for test in tests:
     print "Running tests: %s" % test
     print "----------------------------------------------------------------------"
-    fail = system("cd %s; python test.py" % test)
+    fail = system(command % test)
     if fail:
         failed.append(fail)
     print ""
 
 sys.exit(len(failed))
-
-    

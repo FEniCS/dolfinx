@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-01-07
-// Last changed: 
+// Last changed: 2008-08-13
 
 #ifndef __SUB_SYSTEMS_MANAGER_H
 #define __SUB_SYSTEMS_MANAGER_H
@@ -52,7 +52,7 @@ namespace dolfin
 
     // State variables
     bool petsc_initialized;
-    bool petsc_controls_mpi;
+    bool control_mpi;
 
   };
 

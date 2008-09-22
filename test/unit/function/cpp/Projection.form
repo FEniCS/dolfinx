@@ -1,0 +1,19 @@
+# Copyright (C) 2008 Anders Logg.
+# Licensed under the GNU LGPL Version 2.1.
+#
+# First added:  2008-03-17
+# Last changed: 2008-03-17
+#
+# The bilinear form a(v, u) and linear form L(v) for
+# projection onto piecewise quadratics.
+#
+# Compile this form with FFC: ffc -l dolfin Projection.form.
+
+element = FiniteElement("Lagrange", "tetrahedron", 2)
+
+v = TestFunction(element)
+u = TrialFunction(element)
+f = Function(element)
+
+a = v*u*dx
+L = v*f*dx

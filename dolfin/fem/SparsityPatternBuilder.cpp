@@ -22,7 +22,7 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
 				   Mesh& mesh, UFC& ufc, const DofMapSet& dof_map_set)
 {
   // Initialise sparsity pattern
-  if( dof_map_set.parallel() )
+  if (dof_map_set.parallel())
     sparsity_pattern.pinit(ufc.form.rank(), ufc.global_dimensions);
   else
     sparsity_pattern.init(ufc.form.rank(), ufc.global_dimensions);
@@ -51,6 +51,7 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
     }
   }
 
+  // FIXME: The below note is not true when there are no cell integrals, e.g. finite volume method
   // Note: no need to iterate over exterior facets since those dofs
   // are included when tabulating dofs on all cells
 

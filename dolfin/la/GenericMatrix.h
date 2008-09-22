@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2007 Garth N. Wells.
+// Copyright (C) 2006-2008 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Johan Jansson, 2006.
@@ -8,11 +8,12 @@
 // Modified by Martin Alnæs, 2008.
 //
 // First added:  2006-04-24
-// Last changed: 2008-04-29
+// Last changed: 2008-08-07
 
 #ifndef __GENERIC_MATRIX_H
 #define __GENERIC_MATRIX_H
 
+#include <tr1/tuple>
 #include "GenericTensor.h"
 
 namespace dolfin
@@ -31,6 +32,10 @@ namespace dolfin
     virtual ~GenericMatrix() {}
     
     //--- Implementation of the GenericTensor interface ---
+
+    /// Initialize zero tensor with given dimensions
+    virtual void init(uint rank, const uint* dims)
+    { dolfin_assert(rank == 2); init(dims[0], dims[1]); }
 
     /// Initialize zero tensor using sparsity pattern
     virtual void init(const GenericSparsityPattern& sparsity_pattern) = 0;
@@ -83,6 +88,9 @@ namespace dolfin
     /// Get non-zero values of given row
     virtual void getrow(uint row, Array<uint>& columns, Array<real>& values) const = 0;
 
+    /// Set values for given row
+    virtual void setrow(uint row, const Array<uint>& columns, const Array<real>& values) = 0;
+
     /// Set given rows to zero
     virtual void zero(uint m, const uint* rows) = 0;
 
@@ -101,6 +109,14 @@ namespace dolfin
     /// Assignment operator
     virtual const GenericMatrix& operator= (const GenericMatrix& x) = 0;
 
+    /// Return pointers to underlying compresssed row/column storage data 
+    /// For compressed row storage, data = (row_pointer[#rows +1], column_index[#nz], matrix_values[#nz], nz)
+    virtual std::tr1::tuple<const std::size_t*, const std::size_t*, const double*, int> data() const
+    { 
+      error("Unable to return pointers to underlying matrix data."); 
+      return std::tr1::tuple<const std::size_t*, const std::size_t*, const double*, int>(0, 0, 0, 0);
+    } 
+
     //--- Convenience functions ---
 
     /// Get value of given entry 
@@ -118,5 +134,4 @@ namespace dolfin
   };
 
 }
-
 #endif

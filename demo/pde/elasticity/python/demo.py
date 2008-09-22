@@ -70,7 +70,7 @@ class Right(SubDomain):
       return bool(x[0] > 0.9 and on_boundary)
 
 # Initialise source function
-f = Function(element, mesh, 0.0)
+f = Function(element, mesh, 3, 0.0)
 
 # Define variational problem
 # Test and trial functions
@@ -89,7 +89,7 @@ def epsilon(v):
 def sigma(v):
     return 2.0*mu*epsilon(v) + lmbda*mult(trace(epsilon(v)), Identity(len(v)))
 
-a = dot(grad(v), sigma(u))*dx
+a = dot(epsilon(v), sigma(u))*dx
 L = dot(v, f)*dx
 
 # Set up boundary condition at left end

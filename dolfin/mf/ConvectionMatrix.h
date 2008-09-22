@@ -10,7 +10,7 @@
 #include <dolfin/common/types.h>
 #include <dolfin/la/Matrix.h>
 #include <dolfin/la/PETScMatrix.h>
-#include <dolfin/la/uBlasSparseMatrix.h>
+#include <dolfin/la/uBLASSparseMatrix.h>
 #include "MatrixFactory.h"
 
 namespace dolfin
@@ -56,14 +56,14 @@ namespace dolfin
 
   /// This class represents the standard convection matrix with
   /// constant velocity field c = (cx, cy) or c = (cx, cy, cz) on a
-  /// given mesh, represented as a sparse DOLFIN uBlas matrix.
+  /// given mesh, represented as a sparse DOLFIN uBLAS matrix.
 
-  class uBlasConvectionMatrix : public uBlasSparseMatrix
+  class uBLASConvectionMatrix : public uBLASSparseMatrix
   {
   public:
   
     /// Construct convection matrix with constant velocity c on a given mesh
-    uBlasConvectionMatrix(Mesh& mesh, real cx = 1.0, real cy = 0.0, real cz = 0.0) : uBlasSparseMatrix()
+    uBLASConvectionMatrix(Mesh& mesh, real cx = 1.0, real cy = 0.0, real cz = 0.0) : uBLASSparseMatrix()
     {
       MatrixFactory::computeConvectionMatrix(*this, mesh, cx, cy, cz);
     }

@@ -1,10 +1,10 @@
-// Copyright (C) 2007 Garth N. Wells
+// Copyright (C) 2007-2008 Garth N. Wells
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Anders Logg 2007.
+// Modified by Anders Logg, 2007-2008.
 //
 // First added:  2007-03-13
-// Last changed: 2007-04-03
+// Last changed: 2008-07-29
 
 #ifndef __SPARSITY_PATTERN_H
 #define __SPARSITY_PATTERN_H
@@ -27,9 +27,15 @@ namespace dolfin
   {
   public:
 
-    /// Constructor
+    /// Create empty sparsity pattern
     SparsityPattern();
-    
+  
+    /// Create sparsity pattern for matrix of given dimensions
+    SparsityPattern(uint M, uint N);
+
+    /// Create sparsity pattern for vector of given dimension
+    SparsityPattern(uint M);
+
     /// Destructor
     ~SparsityPattern();
 
@@ -39,11 +45,18 @@ namespace dolfin
     /// Initialise sparsity pattern for a parallel matrix with total number of rows and columns
     void pinit(uint rank, const uint* dims);
 
-    /// Insert non-zero entry
-    void insert(const uint* num_rows, const uint * const * rows);
+    /// Insert non-zero entries
+    void insert(uint m, const uint* rows, uint n, const uint* cols);
+
+    /// Insert non-zero entries
+    void insert(const uint* num_rows, const uint * const * rows)
+    { insert(num_rows[0], rows[0], num_rows[1], rows[1]); }
 
     /// Insert non-zero entry for parallel matrices
     void pinsert(const uint* num_rows, const uint * const * rows);
+
+    /// Sort entries for each row 
+    void sort() const;
 
     /// Return global size 
     uint size(uint n) const;
@@ -54,11 +67,14 @@ namespace dolfin
     /// Return array with number of non-zeroes per row diagonal and offdiagonal for process_number
     void numNonZeroPerRow(uint process_number, uint d_nzrow[], uint o_nzrow[]) const;
 
+    /// Return maximum number of non-zeroes for a row
+    uint numNonZeroPerRowMax() const;
+
     /// Return total number of non-zeroes
     uint numNonZero() const;
 
     /// Return underlying sparsity pattern
-    const std::vector< std::set<int> >& pattern() const 
+    const std::vector< std::vector<uint> >& pattern() const 
     { return sparsity_pattern; };
 
     /// Display sparsity pattern
@@ -72,16 +88,13 @@ namespace dolfin
     /// Return number of local rows for process_number
     uint numLocalRows(uint process_number) const;
 
-
   private:
 
     /// Initialize range
     void initRange();
 
-    /// Sparsity pattern represented as an vector of sets. Each set corresponds
-    /// to a row, and the set contains the column positions of nonzero entries 
-    /// When run in parallel this vector contains diagonal non-zeroes
-    std::vector< std::set<int> > sparsity_pattern;
+    /// Sparsity pattern represented as an vector of vectors 
+    mutable std::vector< std::vector<uint> > sparsity_pattern;
 
     /// Sparsity pattern for off diagonal represented as vector of sets. Each
     /// set corresponds to a row, and the set contains the column positions of nonzero entries 
@@ -90,7 +103,7 @@ namespace dolfin
     // Dimensions
     uint dim[2];
 
-    //range -array of size + 1 where size is numProcesses + 1. 
+    //range -array of size + 1 where size is num_processes + 1. 
     //range[rank], range[rank+1] is the range for processor
     uint* range;
   };

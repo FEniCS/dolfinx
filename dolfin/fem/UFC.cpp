@@ -1,12 +1,13 @@
-// Copyright (C) 2007 Anders Logg.
+// Copyright (C) 2007-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-01-17
-// Last changed: 2007-05-15
+// Last changed: 2008-06-10
 
 #include <dolfin/common/types.h>
 #include "DofMapSet.h"
 #include "DofMap.h"
+#include "FiniteElement.h"
 #include "UFC.h"
 
 using namespace dolfin;
@@ -15,14 +16,14 @@ using namespace dolfin;
 UFC::UFC(const ufc::form& form, Mesh& mesh, const DofMapSet& dof_map_set) : form(form)
 {
   // Create finite elements
-  finite_elements = new ufc::finite_element*[form.rank()];
+  finite_elements = new FiniteElement*[form.rank()];
   for (uint i = 0; i < form.rank(); i++)
-    finite_elements[i] = form.create_finite_element(i);
+    finite_elements[i] = new FiniteElement(form.create_finite_element(i));
 
   // Create finite elements for coefficients
-  coefficient_elements = new ufc::finite_element*[form.num_coefficients()];
+  coefficient_elements = new FiniteElement*[form.num_coefficients()];
   for (uint i = 0; i < form.num_coefficients(); i++)
-    coefficient_elements[i] = form.create_finite_element(form.rank() + i);
+    coefficient_elements[i] = new FiniteElement(form.create_finite_element(form.rank() + i));
 
   // Create cell integrals
   cell_integrals = new ufc::cell_integral*[form.num_cell_integrals()];

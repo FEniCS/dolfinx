@@ -10,6 +10,11 @@ syntax: glob
 *.pyc
 *.so{,.0}
 *.pc
+*.pyd
+*.def
+*.dll
+*.exe
+*.dylib
 
 syntax: regexp
 ^\.hg/

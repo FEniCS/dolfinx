@@ -1,8 +1,10 @@
 // Copyright (C) 2007 Anders Logg and Marie Rognes.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Garth N. Wells, 2008.
+//
 // First added:  2007-04-20
-// Last changed: 2007-05-17
+// Last changed: 2008-07-12
 //
 // This demo program solves the mixed formulation of
 // Poisson's equation:
@@ -21,6 +23,7 @@
 
 #include <dolfin.h>
 #include "MixedPoisson.h"
+#include "P1Projection.h"
 
 using namespace dolfin;
 
@@ -56,8 +59,15 @@ int main()
   Function u;
   pde.solve(sigma, u);
 
+  // Project sigma onto P1 continuous Lagrange for post-processing
+  Function sigma_projected;
+  P1ProjectionBilinearForm a_projection;
+  P1ProjectionLinearForm L_projection(sigma);
+  LinearPDE pde_project(a_projection, L_projection, mesh);
+  pde_project.solve(sigma_projected);
+
   // Plot solution
-  plot(sigma);
+  plot(sigma_projected);
   plot(u);
 
   // Save solution to file
@@ -69,7 +79,7 @@ int main()
   // Save solution to pvd format
   File f3("sigma.pvd");
   File f4("u.pvd");
-  f3 << sigma;
+  f3 << sigma_projected;
   f4 << u;
 
   return 0;

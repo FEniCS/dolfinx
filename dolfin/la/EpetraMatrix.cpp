@@ -4,10 +4,11 @@
 // Modified by Anders Logg, 2008.
 //
 // First added:  2008-04-21
-// Last changed: 2008-04-28
+// Last changed: 2008-05-15
 
 #ifdef HAS_TRILINOS
 
+#include <cstring>
 #include <iostream>
 #include <sstream>
 #include <iomanip>
@@ -19,6 +20,7 @@
 #include "EpetraSparsityPattern.h"
 #include "EpetraFactory.h"
 //#include <dolfin/MPI.h>
+#include <dolfin/common/Timer.h>
 
 #include <Epetra_CrsGraph.h>
 #include <Epetra_FECrsGraph.h>
@@ -90,12 +92,8 @@ void EpetraMatrix::init(const GenericSparsityPattern& sparsity_pattern)
 //-----------------------------------------------------------------------------
 EpetraMatrix* EpetraMatrix::copy() const
 {
-  EpetraMatrix* mcopy = EpetraFactory::instance().createMatrix();
-
-  //MatDuplicate(A, MAT_COPY_VALUES, &(mcopy->A));
-  // Not yet implemented
-  error("EpetraMatrix::copy not yet implemented.");
-
+  Epetra_FECrsMatrix* copy = new Epetra_FECrsMatrix(*A); 
+  EpetraMatrix* mcopy = new EpetraMatrix(copy);
   return mcopy;
 }
 //-----------------------------------------------------------------------------
@@ -124,15 +122,17 @@ void EpetraMatrix::set(const real* block,
 		       uint n, const uint* cols)
 {
   dolfin_assert(A); 
-  A->ReplaceGlobalValues(m, reinterpret_cast<const int*>(rows),
+  int err = A->ReplaceGlobalValues(m, reinterpret_cast<const int*>(rows),
 			 n, reinterpret_cast<const int*>(cols), 
 			 block);
+  if (err!= 0) error("Did not manage to set the values into the matrix"); 
 }
 //-----------------------------------------------------------------------------
 void EpetraMatrix::add(const real* block,
 		       uint m, const uint* rows,
 		       uint n, const uint* cols)
 {
+  Timer t0("Matrix add"); 
   dolfin_assert(A); 
 
   int err = A->SumIntoGlobalValues(m, reinterpret_cast<const int*>(rows), 
@@ -242,6 +242,11 @@ void EpetraMatrix::getrow(uint row, Array<uint>& columns, Array<real>& values) c
   delete num_entries; 
 }
 //-----------------------------------------------------------------------------
+void EpetraMatrix::setrow(uint row, const Array<uint>& columns, const Array<real>& values)
+{
+  error("Not implemented.");
+}
+//-----------------------------------------------------------------------------
 LinearAlgebraFactory& EpetraMatrix::factory() const
 {
   return EpetraFactory::instance();
@@ -273,5 +278,4 @@ LogStream& dolfin::operator<< (LogStream& stream, const Epetra_FECrsMatrix& A)
   return stream;
 }
 //-----------------------------------------------------------------------------
-
 #endif
