@@ -1,21 +1,24 @@
 // Copyright (C) 2007-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Garth N. Wells, 2007.
+// Modified by Garth N. Wells, 2007-2008.
 //
 // First added:  2007-04-02
-// Last changed: 2008-03-17
+// Last changed: 2008-09-11
 
 #ifndef __DISCRETE_FUNCTION_H
 #define __DISCRETE_FUNCTION_H
 
+#include <tr1/memory>
 #include <dolfin/la/Vector.h>
 #include "GenericFunction.h"
+#include <dolfin/fem/FiniteElement.h>
 
 namespace dolfin
 {
 
   class Mesh;
+  class FiniteElement;
   class Form;
   class DofMap;
   class SubFunction;
@@ -33,14 +36,21 @@ namespace dolfin
   {
   public:
 
-    /// Create discrete function for argument function i of form
-    DiscreteFunction(Mesh& mesh, GenericVector& x, Form& form, uint i);
+    /// Create discrete function for argument function i of form. The 
+    /// DiscreteFunction does not own its constructor arguments.
+    DiscreteFunction(Mesh& mesh, Form& form, uint i);
 
     /// Create discrete function for argument function i of form
-    DiscreteFunction(Mesh& mesh, GenericVector& x, DofMap& dof_map, const ufc::form& form, uint i);
+    DiscreteFunction(Mesh& mesh, DofMap& dof_map, const ufc::form& form, uint i);
 
-    /// Create discrete function from given data and assume responsibility for data
-    DiscreteFunction(Mesh& mesh, GenericVector& x, std::string finite_element_signature, std::string dof_map_signature);
+    /// Create discrete function for argument function i of form
+    DiscreteFunction(std::tr1::shared_ptr<Mesh> mesh, std::tr1::shared_ptr<GenericVector> x, 
+                     std::tr1::shared_ptr<DofMap> dof_map, const ufc::form& form, uint i);
+
+    /// Create discrete function from given data. The Discrete may or may not 
+    /// own the mesh.
+    DiscreteFunction(std::tr1::shared_ptr<Mesh> mesh, 
+        std::string finite_element_signature, std::string dof_map_signature);
 
     /// Create discrete function from sub function
     DiscreteFunction(SubFunction& sub_function);
@@ -69,17 +79,22 @@ namespace dolfin
     /// Interpolate function to finite element space on cell
     void interpolate(real* coefficients,
                      const ufc::cell& cell,
-                     const ufc::finite_element& finite_element) const;
+                     const FiniteElement& finite_element) const;
 
     /// Evaluate function at given point
     void eval(real* values, const real* x) const;
+
+    /// Return DofMap
+    DofMap& dofMap() const;
+
+    /// Return signature
+    std::string signature() const;
 
     /// Return vector
     GenericVector& vector() const;
 
     /// Friends
-    friend class XMLFile;
-    friend class LinearPDE;
+    friend class Function;
 
   private:
 
@@ -89,7 +104,7 @@ namespace dolfin
     public:
 
       // Constructor
-      Scratch(ufc::finite_element& finite_element);
+      Scratch(FiniteElement& finite_element);
 
       // Destructor
       ~Scratch();
@@ -108,27 +123,24 @@ namespace dolfin
 
     };
 
-    // Initialize discrete function
-    void init(Mesh& mesh, GenericVector& x, const ufc::form& form, uint i);
+    // Check discrete function
+    void check(const ufc::form& form, uint i);
 
     // The vector of dofs
-    GenericVector* x;
+    std::tr1::shared_ptr<GenericVector> x;
 
     // The finite element
-    ufc::finite_element* finite_element;
-    
-    // The dof map
-    DofMap* dof_map;
+    std::tr1::shared_ptr<FiniteElement> finite_element;
 
-    // Pointers to local data if owned
-    GenericVector* local_vector;
-    DofMap* local_dof_map;
+    // The dof map
+    std::tr1::shared_ptr<DofMap> dof_map;
 
     // Intersection detector
     mutable IntersectionDetector* intersection_detector;
 
     // Scratch space
     Scratch* scratch;
+
 
   };
 

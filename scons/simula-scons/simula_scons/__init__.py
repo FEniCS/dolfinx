@@ -70,6 +70,37 @@ def runCommand(command, args, captureOutput=True):
     if captureOutput:
         return out.strip(), err.strip()
 
+## def runCommand(command, args, captureOutput=True):
+##     """ Run command, returning its output on the stdout and stderr streams.
+
+##     If the command exits with a non-zero value, CommandError is raised.
+##     @param command: The name of the command
+##     @param args: The arguments to the command, either as an explicit sequence or as a whitespace delimited string.
+##     @return: A pair of strings, containing the command's output on stdout and stderr, respectively.
+##     """
+##     if isinstance(args, basestring):
+##         args = args.split()
+##     cl = "%s %s" % (command, " ".join(args))
+##     print cl
+##     if captureOutput:
+##         from popen2 import Popen3
+##         p = Popen3(cl, capturestderr=True)
+##         r = p.wait()
+##         try:
+##             out = p.fromchild.read().strip()
+##             err = p.childerr.read().strip()
+##         finally:
+##             p.tochild.close()
+##             p.fromchild.close()
+##             p.childerr.close()
+##         if r:
+##             raise CommandError(cl, r, err)
+##         return out, err
+##     else:
+##         r = os.spawnvp(os.P_WAIT, command, [command] + args)
+##         if r:
+##             raise CommandError(cl, r, "")
+
 def rsplit(toSplit, sub, max=None):
     s = toSplit[::-1] # Reverse string
     if max == None: l  = s.split(sub)
@@ -321,7 +352,10 @@ def defaultPythonLib(prefix=None, plat_specific=False):
   python_lib = sysconfig.get_python_lib(prefix=prefix, plat_specific=plat_specific)
   if not prefix is None:
     if not python_lib.startswith(prefix):
-      python_lib = os.path.join(prefix,"lib","python" + sysconfig.get_python_version(),"site-packages")
+      if sys.platform.startswith("win"):
+        python_lib = os.path.join(prefix,"Lib","site-packages")
+      else:
+        python_lib = os.path.join(prefix,"lib","python" + sysconfig.get_python_version(),"site-packages")
   return python_lib
 
 def defaultFortranCompiler():
@@ -644,6 +678,7 @@ def getModulesAndDependencies(directory=".",
         try:
           packcfg = pkgconfig.PkgConfig(d, env=_defaultEnv)
           configuredPackages[d] = Customize.Dependency(cppPath=packcfg.includeDirs(), \
+                                    compileOpts=packcfg.compileOpts(),
                                     libPath=packcfg.libDirs(),\
                                     libs=packcfg.libs(),\
                                     linkOpts=packcfg.linkOpts(),\
@@ -874,7 +909,9 @@ def resolveModuleDependencies(modules, configuredPackages, packcfgObjs,
     """
 
     # Find a common compiler for this package and it's external dependencies
-    configuredPackages = resolveCompiler(configuredPackages, packcfgObjs, sconsEnv)
+    if not sconsEnv.has_key("enableResolveCompiler") or \
+           sconsEnv["enableResolveCompiler"]:
+        configuredPackages = resolveCompiler(configuredPackages, packcfgObjs, sconsEnv)
     
     if not internalmodules:
       internalmodules = modules

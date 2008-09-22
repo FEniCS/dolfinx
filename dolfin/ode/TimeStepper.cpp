@@ -1,14 +1,16 @@
 // Copyright (C) 2003-2008 Johan Jansson and Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Benjamin Kehlet 2008
+//
 // First added:  2003
-// Last changed: 2008-04-22
+// Last changed: 2008-06-18
 
 #include <cmath>
 #include <string>
-#include <dolfin/common/constants.h>
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/timing.h>
+#include <dolfin/common/constants.h>
 #include <dolfin/parameter/parameters.h>
 #include "ODE.h"
 #include "ReducedModel.h"
@@ -19,10 +21,11 @@
 
 using namespace dolfin;
 
-//-----------------------------------------------------------------------------
-TimeStepper::TimeStepper(ODE& ode) :
+//--------------------------------------------------------------------------
+TimeStepper::TimeStepper(ODE& ode, ODESolution& u) :
   N(ode.size()), t(0), T(ode.endtime()),
-  ode(ode), timeslab(0), file(ode.get("ODE solution file name")),
+  ode(ode), u(u),
+  timeslab(0), file(ode.get("ODE solution file name")),
   p("Time-stepping"), _stopped(false), _finished(false),
   save_solution(ode.get("ODE save solution")),
   adaptive_samples(ode.get("ODE adaptive samples")),
@@ -40,13 +43,13 @@ TimeStepper::TimeStepper(ODE& ode) :
     timeslab = new MonoAdaptiveTimeSlab(ode);
   }
 }
-//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------
 TimeStepper::~TimeStepper()
 {
   if ( timeslab ) delete timeslab;
 }
-//-----------------------------------------------------------------------------
-void TimeStepper::solve(ODE& ode)
+//----------------------------------------------------------------------
+void TimeStepper::solve(ODE& ode, ODESolution& u)
 {
   // Start timing
   tic();  
@@ -70,7 +73,7 @@ void TimeStepper::solve(ODE& ode)
   else
   {
     // Create a time stepper object
-    TimeStepper timeStepper(ode);
+    TimeStepper timeStepper(ode, u);
     
     // Do time stepping
 
@@ -81,7 +84,7 @@ void TimeStepper::solve(ODE& ode)
   // Report elapsed time
   message("Solution computed in %.3f seconds.", toc());
 }
-//-----------------------------------------------------------------------------
+//-------------------------------------------------------------------------
 real TimeStepper::step()
 {
   // FIXME: Change type of time slab if solution does not converge
@@ -123,7 +126,7 @@ real TimeStepper::step()
     warning("Solution stopped at t = %.3e.", t);
 
   // Update for next time slab
-  if ( !timeslab->shift() )
+  if ( !timeslab->shift(finished()) )
   {
     message("ODE solver stopped on user's request.");
     _stopped = true;
@@ -169,8 +172,9 @@ void TimeStepper::saveFixedSamples()
   if ( t0 == 0.0 )
   {
     //Sample sample(*timeslab, 0.0, u.name(), u.label());
-    Sample sample(*timeslab, 0.0, "u", "unknown");
+    Sample sample(*timeslab, ode.time(0.0), "u", "unknown");
     file << sample;
+    u.addSample(sample);
     ode.save(sample);
   }
 
@@ -192,9 +196,9 @@ void TimeStepper::saveFixedSamples()
     if ( fabs(t - t1) < DOLFIN_EPS )
       t = t1;
 
-    //Sample sample(*timeslab, t, u.name(), u.label());
-    Sample sample(*timeslab, t, "u", "unknown");
+    Sample sample(*timeslab, ode.time(t), "u", "unknown");
     file << sample;
+    u.addSample(sample);
     ode.save(sample);
   }
 }
@@ -209,8 +213,9 @@ void TimeStepper::saveAdaptiveSamples()
   if ( t0 == 0.0 )
   {
     //Sample sample(*timeslab, 0.0, u.name(), u.label());
-    Sample sample(*timeslab, 0.0, "u", "unknown");
+    Sample sample(*timeslab, ode.time(0.0), "u", "unknown");
     file << sample;
+    u.addSample(sample);
     ode.save(sample);
   }
 
@@ -228,8 +233,9 @@ void TimeStepper::saveAdaptiveSamples()
     
     // Create and save the sample
     //Sample sample(*timeslab, t, u.name(), u.label());
-    Sample sample(*timeslab, t, "u", "unknown");
+    Sample sample(*timeslab, ode.time(t), "u", "unknown");
     file << sample;
+    u.addSample(sample);
     ode.save(sample);
   }
 }

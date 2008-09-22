@@ -1,17 +1,17 @@
 // Copyright (C) 2003-2005 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Benjamin Kehlet
+//
 // First added:  2003-11-28
-// Last changed: 2005
+// Last changed: 2008-06-18
 
 #ifndef __DUAL_H
 #define __DUAL_H
 
 #include "ODE.h"
-
+#include "ODESolution.h"
 namespace dolfin {
-
-  class RHS;
 
   /// A Dual represents an initial value problem of the form
   ///
@@ -33,34 +33,33 @@ namespace dolfin {
   ///
   /// where w(t) = phi(T-t).
 
-  // FIXME: BROKEN
-
   class Dual : public ODE
   {
   public:
 
-    Dual() : ODE(1, 1.0) {}
-
     /// Constructor
-    //Dual(ODE& primal);
-    //Dual(ODE& primal, Function& u);
+    Dual(ODE& primal, ODESolution& u); 
 
     /// Destructor
-    //~Dual();
+    ~Dual();
 
     /// Initial value
-    //real u0(unsigned int i);
+    void u0(uBLASVector& u);
 
     /// Right-hand side
-    //real f(const Vector& phi, real t, unsigned int i);
+    void f(const uBLASVector& phi, real t, uBLASVector& y);
+
+    /// Return real time (might be flipped backwards for dual)
+    real time(real t) const;
 
   private:
 
-    // Right-hand side for primal problem
-    //RHS rhs;
+    ODE& primal;
+    ODESolution& u;
 
   };
 
-}
+}  //end namespace dolfin
 
 #endif
+

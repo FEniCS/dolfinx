@@ -1,15 +1,15 @@
-// Copyright (C) 2005-2006 Anders Logg.
+// Copyright (C) 2005-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005-01-28
-// Last changed: 2006-07-06
+// Last changed: 2008-06-11
 
 #ifndef __MONO_ADAPTIVE_TIME_SLAB_H
 #define __MONO_ADAPTIVE_TIME_SLAB_H
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/types.h>
-#include <dolfin/la/uBlasVector.h>
+#include <dolfin/la/uBLASVector.h>
 #include "MonoAdaptivity.h"
 #include "TimeSlab.h"
 
@@ -44,7 +44,7 @@ namespace dolfin
     bool check(bool first);
 
     /// Shift time slab (prepare for next time slab)
-    bool shift();
+    bool shift(bool end);
 
     /// Prepare sample at time t
     void sample(real t);
@@ -84,9 +84,9 @@ namespace dolfin
     real* fq;                  // Values of right-hand side at all quadrature points
     real rmax;                 // Previously computed maximum norm of residual
 
-    uBlasVector x; // Degrees of freedom for the solution on the time slab
-    uBlasVector u; // The solution at a given stage
-    uBlasVector f; // The right-hand side at a given stage
+    uBLASVector x; // Degrees of freedom for the solution on the time slab
+    uBLASVector u; // The solution at a given stage
+    uBLASVector f; // The right-hand side at a given stage
     
   };
 

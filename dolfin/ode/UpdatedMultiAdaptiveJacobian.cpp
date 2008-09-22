@@ -6,7 +6,7 @@
 
 #include <dolfin/common/constants.h>
 #include <dolfin/math/dolfin_math.h>
-#include <dolfin/la/uBlasVector.h>
+#include <dolfin/la/uBLASVector.h>
 #include "ODE.h"
 #include "Method.h"
 #include "MultiAdaptiveTimeSlab.h"
@@ -33,8 +33,8 @@ dolfin::uint UpdatedMultiAdaptiveJacobian::size(uint dim) const
   return ts.nj;
 }
 //-----------------------------------------------------------------------------
-void UpdatedMultiAdaptiveJacobian::mult(const uBlasVector& x,
-					uBlasVector& y) const
+void UpdatedMultiAdaptiveJacobian::mult(const uBLASVector& x,
+					uBLASVector& y) const
 {
   // Compute product by the approximation y = J(u) x = (F(u + hx) - F(u)) / h.
   // Since Feval() compute -F rather than F, we compute according to

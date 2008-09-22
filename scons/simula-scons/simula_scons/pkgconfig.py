@@ -40,8 +40,11 @@ def generate_pcFunc(replaceDict):
     try:
       includeDir = includeDir.replace("$prefix", "${prefix}")
       libDir = libDir.replace("$prefix", "${exec_prefix}")
-      header = ["prefix=%s\n" % prefix, "exec_prefix=${prefix}\n", "includedir=%s\n" % includeDir, \
-              "libdir=%s\n" % libDir, "compiler=%s\n" % compiler]
+      header = ["prefix=%s\n" % repr(prefix)[1:-1],
+                "exec_prefix=${prefix}\n",
+                "includedir=%s\n" % repr(includeDir)[1:-1], \
+                "libdir=%s\n" % repr(libDir)[1:-1],
+                "compiler=%s\n" % compiler]
       for i in range(len(lines)):
           if not lines[i].strip():
               break
@@ -171,11 +174,8 @@ class PkgConfig(object):
 
     def includeDirs(self):
         out = self._pkgconfig("--cflags-only-I")
-        dirs = []
-        opts = out.split()
-        for o in opts:
-            dirs.append(o[2:])
-        return dirs
+        # Note that pkgconfig will not have spaces between -I and its argument
+        return [i[2:] for i in out.split()]
 
     def libDirs(self):
         out = self._pkgconfig("--libs-only-L")
@@ -186,8 +186,19 @@ class PkgConfig(object):
         return dirs
 
     def linkOpts(self):
-      link_opts = self._pkgconfig("--libs-only-other").split()
-      return link_opts
+      return self.__extract_opts("--libs-only-other")
+
+    def compileOpts(self, filter=["-D"]):
+      opts = self.__extract_opts("--cflags-only-other")
+      if not filter:
+        return opts
+      filtered = []
+      for f in filter:
+        filtered += [o for o in opts if o.startswith(f)]
+      return filtered
+
+    def __extract_opts(self, name):
+      return [o.strip() for o in self._pkgconfig(name).split()]
 
     def compiler(self):
       # If the compiler, and maybe the compilertype variable is set, read and 

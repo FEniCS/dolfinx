@@ -9,13 +9,13 @@
 
 #include <dolfin/common/types.h>
 #include <dolfin/common/Array.h>
-#include <dolfin/la/uBlasSparseMatrix.h>
+#include <dolfin/la/uBLASSparseMatrix.h>
 
 namespace dolfin
 {
 
   class ODE;
-  class uBlasVector;
+  class uBLASVector;
 
   /// This class keeps track of the dependencies between different
   /// components of an ODE system. For a large ODE, it is important
@@ -40,7 +40,7 @@ namespace dolfin
     void set(uint i, uint j, bool checknew = false);
     
     /// Set dependencies according to given sparse matrix
-    void set(const uBlasSparseMatrix& A);
+    void set(const uBLASSparseMatrix& A);
 
     /// Set dependencies to transpose of given dependencies
     void transp(const Dependencies& dependencies);
@@ -63,7 +63,7 @@ namespace dolfin
   private:
     
     // Check given dependency
-    bool checkDependency(ODE& ode, uBlasVector& u, real f0, uint i, uint j);
+    bool checkDependency(ODE& ode, uBLASVector& u, real f0, uint i, uint j);
 
     // Make pattern sparse
     void makeSparse();

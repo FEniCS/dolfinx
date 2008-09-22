@@ -1,104 +1,124 @@
-// Copyright (C) 2006-2007 Anders Logg.
+// Copyright (C) 2006-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Kristian B. Oelgaard, 2007.
+// Modified by Martin Sandve Alnes, 2008.
+// Modified by Garth N. Wells, 2008.
 //
 // First added:  2006-02-09
-// Last changed: 2007-05-29
+// Last changed: 2008-07-17
 
 #ifndef __SPECIAL_FUNCTIONS_H
 #define __SPECIAL_FUNCTIONS_H
 
-#include <dolfin/mesh/Cell.h>
-#include <dolfin/mesh/Facet.h>
 #include "Function.h"
 
 namespace dolfin
 {
 
-  /// This function represents the local mesh size on a given mesh.
+  class Form;
+  class UFC;
+
+
+  /// This Function represents the local mesh size on a given mesh.
   class MeshSize : public Function
   {
   public:
 
-    MeshSize(Mesh& mesh) : Function(mesh) {}
+    /// Constructor
+    MeshSize(Mesh& mesh);
 
-    real eval(const real* x) const
-    {
-      return cell().diameter();
-    }
+    /// Return cell size
+    real eval(const real* x) const;
     
+    /// Compute minimal cell diameter
+    real min() const;
+
+    /// Compute maximal cell diameter
+    real max() const;    
   };
 
-  /// This function represents the inverse of the local mesh size on a given mesh.
+  /// This Function represents the inverse of the local cell size on a given 
+  /// mesh.
   class InvMeshSize : public Function
   {
   public:
 
-    InvMeshSize(Mesh& mesh) : Function(mesh) {}
+    /// Constructor
+    InvMeshSize(Mesh& mesh);
 
-    real eval(const real* x) const
-    {
-      return 1.0 / cell().diameter();
-    }
-
+    /// Return inverse of cell size
+    real eval(const real* x) const;
   };
 
-  /// This function represents the average of the local mesh size on a given mesh.
+  /// This Function represents the average of the local cell size (average of 
+  /// cell sharing a facet) on a given mesh.
   class AvgMeshSize : public Function
   {
   public:
 
-    AvgMeshSize(Mesh& mesh) : Function(mesh) {}
+    /// Constructor
+    AvgMeshSize(Mesh& mesh);
 
-    real eval(const real* x) const
-    {
-      // If there is no facet (assembling on interior), return cell diameter
-      if (facet() < 0)
-        return cell().diameter();
-      else
-      {
-        // Create facet from the global facet number
-        Facet facet0(mesh(), cell().entities(cell().mesh().topology().dim() - 1)[facet()]);
-
-        // If there are two cells connected to the facet
-        if (facet0.numEntities(cell().mesh().topology().dim()) == 2)
-        {
-          // Create the two connected cells and return the average of their diameter
-          Cell cell0(mesh(), facet0.entities(cell().mesh().topology().dim())[0]);
-          Cell cell1(mesh(), facet0.entities(cell().mesh().topology().dim())[1]);
-
-          return (cell0.diameter() + cell1.diameter())/2.0;
-        }
-        // Else there is only one cell connected to the facet and the average is the cell diameter
-        else
-          return cell().diameter();
-      }
-    }
+    /// Return average cell size
+    real eval(const real* x) const;
   };
 
-  /// This function represents the outward unit normal on mesh facets.
+  /// This Function represents the outward unit normal on cell facets.
   /// Note that it is only nonzero on cell facets (not on cells).
   class FacetNormal : public Function
   {
   public:
 
-    FacetNormal(Mesh& mesh) : Function(mesh) {}
+    FacetNormal(Mesh& mesh);
 
-    void eval(real* values, const real* x) const
-    {
-      if (facet() >= 0)
-      {
-        for (uint i = 0; i < cell().dim(); i++)
-          values[i] = cell().normal(facet(), i);
-      }
-      else
-      {
-        for (uint i = 0; i < cell().dim(); i++)
-          values[i] = 0.0;
-      }
-    }
+    void eval(real* values, const real* x) const;
 
+    uint rank() const;
+    
+    uint dim(uint i) const;
+  };
+
+  /// This function represents the area/length of a cell facet.
+  class FacetArea : public Function
+  {
+  public:
+
+    FacetArea(Mesh& mesh);
+
+    void eval(real* values, const real* x) const;
+  };
+
+  /// This function represents the inverse area/length of a cell facet.
+  class InvFacetArea : public Function
+  {
+  public:
+
+    InvFacetArea(Mesh& mesh);
+
+    void eval(real* values, const real* x) const;
+  };
+
+  /// This function determines if the current facet is an outflow facet with
+  /// respect to the current cell. It accepts as argument the mesh and a form
+  /// M = dot(n, v)*ds, a functional, defined on the normal vector to the
+  /// facet and velocity vector integrated over the exterior of the cell.
+  /// The function returns 1.0 if the dot product > 0, 0.0 otherwise.
+  class OutflowFacet : public Function
+  {
+  public:
+
+    // Constructor
+    OutflowFacet(Mesh& mesh, Form& form);
+
+    ~OutflowFacet();
+
+    real eval(const real* x) const;
+
+  private:
+
+    Form& form;
+    UFC* ufc;
   };
 
 }

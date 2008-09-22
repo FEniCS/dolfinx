@@ -7,7 +7,7 @@
 // Modified by Magnus Vikstrøm 2007-2008.
 //
 // First added:  2004
-// Last changed: 2008-04-22
+// Last changed: 2008-05-15
 
 #ifdef HAS_PETSC
 
@@ -76,7 +76,7 @@ void PETScMatrix::init(uint M, uint N)
   // FIXME: it should definitely be a parameter
 
   // Create a sparse matrix in compressed row format
-  if (dolfin::MPI::numProcesses() > 1)
+  if (dolfin::MPI::num_processes() > 1)
   {
     // Create PETSc parallel matrix with a guess for number of diagonal (50 in this case) 
     // and number of off-diagonal non-zeroes (50 in this case).
@@ -90,8 +90,8 @@ void PETScMatrix::init(uint M, uint N)
     MatCreateSeqAIJ(PETSC_COMM_SELF, M, N, 50, PETSC_NULL, &A);
 
     setType();
-    MatSetFromOptions(A);
     MatSetOption(A, MAT_KEEP_ZEROED_ROWS);
+    MatSetFromOptions(A);
   }
 }
 //-----------------------------------------------------------------------------
@@ -102,7 +102,7 @@ void PETScMatrix::init(uint M, uint N, const uint* nz)
     MatDestroy(A);
 
   // Create a sparse matrix in compressed row format
-  if (dolfin::MPI::numProcesses() > 1)
+  if (dolfin::MPI::num_processes() > 1)
   {
     // Create PETSc parallel matrix with a guess for number of diagonal (50 in this case) 
     // and number of off-diagonal non-zeroes (50 in this case).
@@ -119,9 +119,9 @@ void PETScMatrix::init(uint M, uint N, const uint* nz)
     MatCreate(PETSC_COMM_SELF, &A);
     MatSetSizes(A,  PETSC_DECIDE,  PETSC_DECIDE, M, N);
     setType();
-    MatSeqAIJSetPreallocation(A, PETSC_DEFAULT, (int*)nz);
-    MatSetFromOptions(A);
     MatSetOption(A, MAT_KEEP_ZEROED_ROWS);
+    MatSetFromOptions(A);
+    MatSeqAIJSetPreallocation(A, PETSC_DEFAULT, (int*)nz);
     MatZeroEntries(A);
   }
 }
@@ -141,9 +141,9 @@ void PETScMatrix::init(uint M, uint N, const uint* d_nzrow, const uint* o_nzrow)
 //-----------------------------------------------------------------------------
 void PETScMatrix::init(const GenericSparsityPattern& sparsity_pattern)
 {
-  if (dolfin::MPI::numProcesses() > 1)
+  if (dolfin::MPI::num_processes() > 1)
   {
-    uint p = dolfin::MPI::processNumber();
+    uint p = dolfin::MPI::process_number();
     const SparsityPattern& spattern = reinterpret_cast<const SparsityPattern&>(sparsity_pattern);
     uint local_size = spattern.numLocalRows(p);
     uint* d_nzrow = new uint[local_size];
@@ -165,15 +165,16 @@ void PETScMatrix::init(const GenericSparsityPattern& sparsity_pattern)
 //-----------------------------------------------------------------------------
 PETScMatrix* PETScMatrix::copy() const
 {
+  dolfin_assert(A);
+
   PETScMatrix* mcopy = new PETScMatrix();
-
   MatDuplicate(A, MAT_COPY_VALUES, &(mcopy->A));
-
   return mcopy;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint PETScMatrix::size(uint dim) const
 {
+  dolfin_assert(A);
   int M = 0;
   int N = 0;
   MatGetSize(A, &M, &N);
@@ -213,8 +214,12 @@ void PETScMatrix::add(const real* block,
                block, ADD_VALUES);
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::getrow(uint row, Array<uint>& columns, Array<real>& values) const
+void PETScMatrix::getrow(uint row,
+                         Array<uint>& columns,
+                         Array<real>& values) const
 {
+  dolfin_assert(A);
+
   const int *cols = 0;
   const double *vals = 0;
   int ncols = 0;
@@ -227,8 +232,42 @@ void PETScMatrix::getrow(uint row, Array<uint>& columns, Array<real>& values) co
   MatRestoreRow(A, row, &ncols, &cols, &vals);
 }
 //-----------------------------------------------------------------------------
+void PETScMatrix::setrow(uint row,
+                         const Array<uint>& columns,
+                         const Array<real>& values)
+{
+  dolfin_assert(A);
+
+  // Check size of arrays
+  if (columns.size() != values.size())
+    error("Number of columns and values don't match for setrow() operation.");
+
+  // Handle case n = 0
+  const uint n = columns.size();
+  if (n == 0)
+    return;
+
+  // Assign values to arrays
+  uint* cols = new uint[n];
+  real* vals = new real[n];
+  for (uint j = 0; j < n; j++)
+  {
+    cols[j] = columns[j];
+    vals[j] = values[j];
+  }
+  
+  // Set values
+  set(vals, 1, &row, n, cols);
+  
+  // Free temporary storage
+  delete [] cols;
+  delete [] vals;
+}
+//-----------------------------------------------------------------------------
 void PETScMatrix::zero(uint m, const uint* rows)
 {
+  dolfin_assert(A);
+
   IS is = 0;
   ISCreateGeneral(PETSC_COMM_SELF, static_cast<int>(m), reinterpret_cast<int*>(const_cast<uint*>(rows)), &is);
   PetscScalar null = 0.0;
@@ -238,6 +277,8 @@ void PETScMatrix::zero(uint m, const uint* rows)
 //-----------------------------------------------------------------------------
 void PETScMatrix::ident(uint m, const uint* rows)
 {
+  dolfin_assert(A);
+
   IS is = 0;
   ISCreateGeneral(PETSC_COMM_SELF, static_cast<int>(m), reinterpret_cast<int*>(const_cast<uint*>(rows)), &is);
   PetscScalar one = 1.0;
@@ -247,6 +288,8 @@ void PETScMatrix::ident(uint m, const uint* rows)
 //-----------------------------------------------------------------------------
 void PETScMatrix::mult(const GenericVector& x, GenericVector& y, bool transposed) const
 {
+  dolfin_assert(A);
+
   const PETScVector& xx = x.down_cast<PETScVector>();  
   PETScVector& yy = y.down_cast<PETScVector>();
 
@@ -263,34 +306,38 @@ void PETScMatrix::mult(const GenericVector& x, GenericVector& y, bool transposed
   }
 }
 //-----------------------------------------------------------------------------
-real PETScMatrix::norm(const Norm type) const
+real PETScMatrix::norm(const NormType type) const
 {
+  dolfin_assert(A);
+
   real value = 0.0;
   switch ( type )
   {
-  case l1:
-    MatNorm(A, NORM_1, &value);
-    break;
-  case linf:
-    MatNorm(A, NORM_INFINITY, &value);
-    break;
-  case frobenius:
-    MatNorm(A, NORM_FROBENIUS, &value);
-    break;
-  default:
-    error("Unknown norm type.");
+    case l1:
+      MatNorm(A, NORM_1, &value);
+      break;
+    case linf:
+      MatNorm(A, NORM_INFINITY, &value);
+      break;
+    case frobenius:
+      MatNorm(A, NORM_FROBENIUS, &value);
+      break;
+    default:
+      error("Unknown norm type.");
   }
   return value;
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::apply()
 {
+  dolfin_assert(A);
   MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
   MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::zero()
 {
+  dolfin_assert(A);
   MatZeroEntries(A);
 }
 //-----------------------------------------------------------------------------
@@ -327,8 +374,10 @@ PETScMatrix::Type PETScMatrix::type() const
 //-----------------------------------------------------------------------------
 void PETScMatrix::disp(uint precision) const
 {
+  dolfin_assert(A);
+
   // FIXME: Maybe this could be an option?
-  if(MPI::numProcesses() > 1)
+  if(MPI::num_processes() > 1)
     MatView(A, PETSC_VIEWER_STDOUT_WORLD);
   else
     MatView(A, PETSC_VIEWER_STDOUT_SELF);
@@ -382,11 +431,13 @@ LinearAlgebraFactory& PETScMatrix::factory() const
 //-----------------------------------------------------------------------------
 Mat PETScMatrix::mat() const
 {
+  //dolfin_assert(A);
   return A;
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::setType() 
 {
+  //dolfin_assert(A);
   MatType mat_type = getPETScType();
   MatSetType(A, mat_type);
 }
@@ -426,7 +477,7 @@ MatType PETScMatrix::getPETScType() const
   switch ( _type )
   {
   case default_matrix:
-    if (MPI::numProcesses() > 1)
+    if (MPI::num_processes() > 1)
       return MATMPIAIJ;
     else
       return MATSEQAIJ;

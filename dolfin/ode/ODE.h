@@ -9,8 +9,8 @@
 
 #include <dolfin/common/types.h>
 #include <dolfin/log/Event.h>
-#include <dolfin/la/uBlasVector.h>
-#include <dolfin/la/uBlasSparseMatrix.h>
+#include <dolfin/la/uBLASVector.h>
+#include <dolfin/la/uBLASSparseMatrix.h>
 #include <dolfin/la/Matrix.h>
 #include <dolfin/parameter/Parametrized.h>
 #include "Dependencies.h"
@@ -61,26 +61,26 @@ namespace dolfin
     virtual ~ODE();
 
     /// Set initial values
-    virtual void u0(uBlasVector& u) = 0;
+    virtual void u0(uBLASVector& u) = 0;
 
     /// Evaluate right-hand side y = f(u, t), mono-adaptive version (default, optional)
-    virtual void f(const uBlasVector& u, real t, uBlasVector& y);
+    virtual void f(const uBLASVector& u, real t, uBLASVector& y);
 
     /// Evaluate right-hand side f_i(u, t), multi-adaptive version (optional)
-    virtual real f(const uBlasVector& u, real t, uint i);
+    virtual real f(const uBLASVector& u, real t, uint i);
 
     /// Compute product y = Mx for implicit system (optional)
-    virtual void M(const uBlasVector& x, uBlasVector& y, const uBlasVector& u, real t);
+    virtual void M(const uBLASVector& x, uBLASVector& y, const uBLASVector& u, real t);
 
     /// Compute product y = Jx for Jacobian J (optional)
-    virtual void J(const uBlasVector& x, uBlasVector& y, const uBlasVector& u, real t);
+    virtual void J(const uBLASVector& x, uBLASVector& y, const uBLASVector& u, real t);
 
     /// Compute product y = tranpose(J)x for Jacobian J (optional)
     /// Used when computing error estimate only
-    virtual void JT(const uBlasVector& x, uBlasVector& y, const uBlasVector& u, real t);
+    virtual void JT(const uBLASVector& x, uBLASVector& y, const uBLASVector& u, real t);
 
     /// Compute entry of Jacobian (optional)
-    virtual real dfdu(const uBlasVector& u, real t, uint i, uint j);
+    virtual real dfdu(const uBLASVector& u, real t, uint i, uint j);
 
     /// Time step to use for the whole system at a given time t (optional)
     virtual real timestep(real t, real k0) const;
@@ -89,16 +89,19 @@ namespace dolfin
     virtual real timestep(real t, uint i, real k0) const;
 
     /// Update ODE, return false to stop (optional)
-    virtual bool update(const uBlasVector& u, real t, bool end);
+    virtual bool update(const uBLASVector& u, real t, bool end);
 
     /// Save sample (optional)
     virtual void save(Sample& sample);
+
+    /// Return real time (might be flipped backwards for dual)
+    virtual real time(real t) const;
 
     /// Automatically detect sparsity (optional)
     void sparse();
 
     /// Compute sparsity from given matrix (optional)
-    void sparse(const uBlasSparseMatrix& A);
+    void sparse(const uBLASSparseMatrix& A);
 
     /// Return number of components N
     uint size() const;
@@ -123,6 +126,7 @@ namespace dolfin
     friend class MultiAdaptivePreconditioner;
     friend class ReducedModel;
     friend class JacobianMatrix;
+    friend class TimeStepper;
 
   protected:
     
@@ -131,7 +135,7 @@ namespace dolfin
     
     // Final time
     real T;
-    
+
     // Dependencies
     Dependencies dependencies;
 
@@ -144,7 +148,7 @@ namespace dolfin
   private:
 
     // Temporary vector used for computing Jacobian
-    uBlasVector tmp;
+    uBLASVector tmp;
 
     // Events
     Event not_impl_f;

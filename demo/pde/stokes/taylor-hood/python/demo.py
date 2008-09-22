@@ -45,7 +45,7 @@ class Inflow(Function):
         Function.__init__(self, mesh)
 
     def eval(self, values, x):
-        values[0] = -1.0
+        values[0] = -sin(x[1]*DOLFIN_PI)
         values[1] = 0.0
 
     def rank(self):
@@ -75,11 +75,10 @@ bc2 = DirichletBC(zero, sub_domains, 2, pressure)
 # Collect boundary conditions
 bcs = [bc0, bc1, bc2]
 
-
-# # Define variational problem
+# Define variational problem
 (v, q) = TestFunctions(system)
 (u, p) = TrialFunctions(system)
-f = Function(vector, mesh, 0.0)
+f = Function(vector, mesh, 2, 0.0)
 
 a = (dot(grad(v), grad(u)) - div(v)*p + q*div(u))*dx
 L = dot(v, f)*dx
@@ -101,9 +100,6 @@ ufile_pvd = File("velocity.pvd")
 ufile_pvd << U
 pfile_pvd = File("pressure.pvd")
 pfile_pvd << P
-
-
-
 
 # Plot solution
 plot(U)

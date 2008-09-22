@@ -1,11 +1,11 @@
-"""
-Lorenz demo
-"""
+"Lorenz demo"
 
 __author__ = "Rolv Erlend Bredesen <rolv@simula.no>"
-__date__ = "2008-04-03 -- 2008-04-03"
+__date__ = "2008-04-03 -- 2008-07-14"
 __copyright__ = "Copyright (C) 2008 Rolv Erlend Bredesen"
 __license__  = "GNU LGPL Version 2.1"
+
+# Modified by Anders Logg, 2008.
 
 from numpy import empty
 from dolfin import *
@@ -19,7 +19,7 @@ class Lorenz(ODE):
         
     def __init__(self, N=3, T=50.):
         ODE.__init__(self, N, T)
-        # Work arrays corresponding to uBlasVectors
+        # Work arrays corresponding to uBLASVectors
         self.u = empty(N)
         self.x = empty(N)
         self.y = empty(N)
@@ -51,7 +51,6 @@ class Lorenz(ODE):
         y[2] = u[1]*x[0] + u[0]*x[1] - self.b*x[2];
         y_.set(y)
 
-        
 def myplot():
     import matplotlib
     import pylab
@@ -73,17 +72,16 @@ def myplot():
     pylab.savefig('lorenz.png', dpi=100)
     print "Generated plot: lorenz.png"
     pylab.show()
-   
-dolfin_set("ODE number of samples", 6000);
-dolfin_set("ODE initial time step", 0.02);
-dolfin_set("ODE fixed time step", True);
-dolfin_set("ODE nonlinear solver", "newton");
-dolfin_set("ODE method", "dg"); # cg/dg
-dolfin_set("ODE order", 18); # Convergence order 37!
-dolfin_set("ODE discrete tolerance", 1e-13);
-#dolfin_set("ODE save solution", True)
 
-lorenz = Lorenz(T=60)
+dolfin_set("ODE number of samples", 500);
+dolfin_set("ODE initial time step", 0.01);
+dolfin_set("ODE fixed time step", True);
+dolfin_set("ODE method", "cg");
+dolfin_set("ODE order", 5);
+dolfin_set("ODE discrete tolerance", 1e-10);
+dolfin_set("ODE save solution", True);
+
+lorenz = Lorenz(T=50)
 lorenz.solve();
 
 #myplot()

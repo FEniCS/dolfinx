@@ -1,0 +1,73 @@
+#!/usr/bin/env python
+#
+# Extract two-dimensional DOLFIN mesh from three-dimensional DOLFIN mesh.
+#
+# Usage: extract2d mesh.xml
+
+__author__ = "Anders Logg (logg@simula.no)"
+__date__ = "2007-09-02 -- 2008-09-12"
+__copyright__ = "Copyright (C) 2008 Anders Logg"
+__license__  = "GNU LGPL Version 2.1"
+
+import sys
+
+if not len(sys.argv) == 2:
+    print "Usage: extract2D mesh.xml"
+    sys.exit(1)
+
+from dolfin import *
+
+# Read mesh
+filename = sys.argv[1]
+mesh = Mesh(filename)
+
+# Check geometry
+if not mesh.geometry().dim() == 3:
+    print "Not a 3D mesh"
+    sys.exit(1)
+
+# Create boundary mesh
+boundary = BoundaryMesh(mesh)
+
+# Extract cells and vertices on the boundary
+eps = 1e-12
+cells = []
+coordinates = boundary.coordinates()
+vertex_map = {}
+vertex_coordinates = []
+k = 0
+for cell in boundary.cells():
+    xs = coordinates[cell]
+    if all([x[2] < eps for x in xs]):
+        cells.append(cell)
+        for vertex in cell:
+            if not vertex in vertex_map:
+                vertex_map[vertex] = k
+                vertex_coordinates.append(coordinates[vertex])
+                k += 1
+
+# Write mesh
+file = open(filename.split(".")[0] + "-2d.xml", "w")
+file.write("""\
+<?xml version="1.0" encoding="UTF-8"?>
+
+<dolfin xmlns:dolfin="http://www.fenics.org/dolfin/">
+  <mesh celltype="triangle" dim="2">
+    <vertices size="%d">
+""" % len(vertex_map))
+for i in range(len(vertex_map)):
+    x = vertex_coordinates[i]
+    file.write('      <vertex index="%d" x="%.16e" y="%.16e"/>\n' % (i, x[0], x[1]))
+file.write("""\
+    </vertices>
+    <cells size="%d">
+""" % len(cells))
+for i in range(len(cells)):
+    v = [vertex_map[v] for v in cells[i]]
+    file.write('      <triangle index="%d" v0="%d" v1="%d" v2="%d"/>\n' % (i, v[0], v[1], v[2]))
+file.write("""
+    </cells>
+  </mesh>
+</dolfin>
+""")
+file.close()

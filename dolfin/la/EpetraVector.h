@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2008.
 //
 // First added:  2008-04-21
-// Last changed: 2008-04-29
+// Last changed: 2008-08-25
 
 #ifndef __EPETRA_VECTOR_H
 #define __EPETRA_VECTOR_H
@@ -98,7 +98,7 @@ namespace dolfin
     virtual real inner(const GenericVector& vector) const;
 
     /// Return norm of vector
-    virtual real norm(VectorNormType type = l2) const;
+    virtual real norm(dolfin::NormType type) const;
 
     /// Return minimum value of vector
     virtual real min() const;
@@ -110,8 +110,7 @@ namespace dolfin
     virtual const EpetraVector& operator*= (real a);
 
     /// Divide vector by given number
-    virtual const EpetraVector& operator/= (real a)
-    { *this *= 1.0 / a; return *this; }
+    virtual const EpetraVector& operator/= (real a);
 
     /// Add given vector
     virtual const EpetraVector& operator+= (const GenericVector& x);

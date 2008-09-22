@@ -1,4 +1,4 @@
-// Copyright (C) 2003-2007 Anders Logg.
+// Copyright (C) 2003-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Thanks to Jim Tilander for many helpful hints.
@@ -6,7 +6,7 @@
 // Modified by Ola Skavhaug, 2007.
 //
 // First added:  2003-03-13
-// Last changed: 2007-05-15
+// Last changed: 2008-07-23
 
 #include <stdarg.h>
 #include <stdio.h>
@@ -26,7 +26,6 @@ static char buffer[DOLFIN_LINELENGTH];
   va_start(aptr, msg); \
   vsnprintf(buffer, DOLFIN_LINELENGTH, msg.c_str(), aptr); \
   va_end(aptr);
-  
 
 //-----------------------------------------------------------------------------
 void dolfin::message(std::string msg, ...)
@@ -68,6 +67,16 @@ void dolfin::begin(int debug_level, std::string msg, ...)
 void dolfin::end()
 {
   LogManager::logger.end();
+}
+//-----------------------------------------------------------------------------
+void dolfin::summary(bool reset)
+{
+  LogManager::logger.summary(reset);
+}
+//-----------------------------------------------------------------------------
+dolfin::real dolfin::timing(std::string task, bool reset)
+{
+  return LogManager::logger.timing(task, reset);
 }
 //-----------------------------------------------------------------------------
 void dolfin::__debug(std::string file, unsigned long line,

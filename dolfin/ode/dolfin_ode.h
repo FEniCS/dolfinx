@@ -9,5 +9,5 @@
 #include <dolfin/ode/Method.h>
 #include <dolfin/ode/cGqMethod.h>
 #include <dolfin/ode/dGqMethod.h>
-
+#include <dolfin/ode/ODESolution.h>
 #endif

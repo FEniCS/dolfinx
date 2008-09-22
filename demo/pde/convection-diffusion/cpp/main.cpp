@@ -15,7 +15,7 @@
 
 using namespace dolfin;
 
-int main()
+int main(int argc, char *argv[])
 {
   // Read mesh and sub domain markers
   Mesh mesh("../../../../data/meshes/dolfin-2.xml.gz");
@@ -36,16 +36,23 @@ int main()
   Function g(mesh, 1.0);
   DirichletBC bc(g, sub_domains, 1);
 
+  // Solution vector
+  Function u1(mesh, a);
+
   // Linear system
   Matrix A;
-  Vector x, b;
+  Vector b;
+  GenericVector& x = u1.vector();
 
-  // Solution vector
-  Function u1(mesh, x, a);
+  // LU
+  LUSolver lu;
 
   // Assemble matrix
   assemble(A, a, mesh);
-  
+  assemble(b, L, mesh);
+  bc.apply(A, b, a);
+  //lu.factorize(A);
+
   // Parameters for time-stepping
   real T = 2.0;
   real k = 0.05;
@@ -63,7 +70,8 @@ int main()
     bc.apply(A, b, a);
     
     // Solve the linear system
-    solve(A, x, b);
+    //lu.factorized_solve(x, b);
+    lu.solve(A, x, b);
     
     // Save the solution to file
     file << u1;

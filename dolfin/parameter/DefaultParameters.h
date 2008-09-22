@@ -1,11 +1,26 @@
 // Default values for the DOLFIN parameter system.
 //
 // First added:  2005-12-19
-// Last changed: 2007-02-27
+// Last changed: 2008-05-31
+
+//--- Linear algebra ---
+#ifdef HAS_PETSC
+add("linear algebra backend", "PETSc");   // Use PETSc if available
+#else
+add("linear algebra backend", "uBLAS");   // Otherwise, use uBLAS
+#endif
+
+//--- JIT compiler ---
+add("optimize form", false);              // Use optimization -O2 when compiling generated code
+add("optimize use dof map cache", false); // Store dof maps in cache for reuse
+add("optimize use tensor cache", false);  // Store tensors in cache for reuse
+add("optimize", false);                   // All of the above
 
 //--- General parameters ---
 
-add("solution file name", "solution.pvd");
+add("timer prefix", "");                  // Prefix for timer tasks
+
+// FIXME: Need to cleanup among parameters below
 
 //--- Parameters for input/output ---
 

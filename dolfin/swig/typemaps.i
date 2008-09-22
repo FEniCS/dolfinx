@@ -27,6 +27,69 @@
     $1 = PyArray_Check($input) ? 1 : 0;
 }
 
+// Typemap check
+%typecheck(SWIG_TYPECHECK_DOUBLE_ARRAY) dolfin::Array<dolfin::real>& {
+    // General typemap
+    $1 = PySequence_Check($input) ? 1 : 0;
+}
+
+// Typemap check
+%typecheck(SWIG_TYPECHECK_DOUBLE_ARRAY) dolfin::Array<dolfin::uint>& {
+    // General typemap
+    $1 = PySequence_Check($input) ? 1 : 0;
+}
+
+// Typemap for sending any sequence as input to functions expecting an Array of real
+%typemap(in) const dolfin::Array<dolfin::real>& (dolfin::Array<dolfin::real> tmp) {
+  int i;
+  if (!PySequence_Check($input)) {
+    PyErr_SetString(PyExc_ValueError,"*** Error: Expected a sequence");
+    return NULL;
+  }
+  int pyseq_length = PySequence_Size($input);
+  if (!pyseq_length > 0){
+    PyErr_SetString(PyExc_RuntimeError,"*** Error: Supply a sequence with length > 0");	
+    return NULL;
+  }
+  tmp.reserve(pyseq_length);
+  for (i = 0; i < pyseq_length; i++) {
+    PyObject *o = PySequence_GetItem($input,i);
+    if (PyNumber_Check(o)) {
+      tmp.push_back(static_cast<dolfin::real>(PyFloat_AsDouble(o)));
+    } else {
+      PyErr_SetString(PyExc_ValueError,"*** Error: Sequence elements must be numbers");
+      return NULL;
+    }
+
+  }
+  $1 = &tmp;
+}
+
+// Typemap for sending any sequence as input to functions expecting an Array of uint
+%typemap(in) const dolfin::Array<dolfin::uint>& (dolfin::Array<dolfin::uint> tmp) {
+  int i;
+  if (!PySequence_Check($input)) {
+    PyErr_SetString(PyExc_ValueError,"*** Error: Expected a sequence");
+    return NULL;
+  }
+  int pyseq_length = PySequence_Size($input);
+  if (!pyseq_length > 0){
+    PyErr_SetString(PyExc_RuntimeError,"*** Error: Supply a sequence with length > 0");	
+    return NULL;
+  }
+  tmp.reserve(pyseq_length);
+  for (i = 0; i < pyseq_length; i++) {
+    PyObject *o = PySequence_GetItem($input,i);
+    if (PyNumber_Check(o)) {
+      tmp.push_back(static_cast<dolfin::uint>(PyInt_AsLong(o)));
+    } else {
+      PyErr_SetString(PyExc_ValueError,"*** Error: Sequence elements must be integers");
+      return NULL;
+    }
+  }
+  $1 = &tmp;
+}
+
 // Typemap for sending numpy arrays as input to functions expecting a C array of real
 %typemap(in) dolfin::real* {
     if PyArray_Check($input) {

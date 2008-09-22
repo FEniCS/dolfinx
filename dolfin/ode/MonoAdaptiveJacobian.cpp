@@ -32,7 +32,7 @@ dolfin::uint MonoAdaptiveJacobian::size(uint dim) const
   return ts.x.size();
 }
 //-----------------------------------------------------------------------------
-void MonoAdaptiveJacobian::mult(const uBlasVector& x, uBlasVector& y) const
+void MonoAdaptiveJacobian::mult(const uBLASVector& x, uBLASVector& y) const
 {
   // Start with y = x, accounting for the derivative dF_j/dx_j = 1
   if ( !implicit )

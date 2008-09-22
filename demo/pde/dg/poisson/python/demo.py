@@ -13,16 +13,15 @@
 #
 # using a discontinuous Galerkin formulation (interior penalty method).
 
-__author__ = "Kristian B. Oelgaard (k.b.oelgaard@tudelft.nl)"
-__date__ = "2007-10-02 -- 2007-10-02"
+__author__    = "Kristian B. Oelgaard (k.b.oelgaard@tudelft.nl)"
+__date__      = "2007-10-02 -- 2007-10-02"
 __copyright__ = "Copyright (C) 2007 Kristian B. Oelgaard"
-__license__  = "GNU LGPL Version 2.1"
+__license__   = "GNU LGPL Version 2.1"
 
 from dolfin import *
 
 # Create mesh and finite element
-mesh = UnitSquare(64, 64)
-element = FiniteElement("Discontinuous Lagrange", "triangle", 1)
+mesh = UnitSquare(16, 16)
 
 # Source term
 class Source(Function):
@@ -34,7 +33,7 @@ class Source(Function):
         values[0] = 500.0*exp(-(dx*dx + dy*dy)/0.02)
 
 # Define variational problem
-# Test and trial functions
+element = FiniteElement("Discontinuous Lagrange", "triangle", 1)
 v = TestFunction(element)
 u = TrialFunction(element)
 f = Source(element, mesh)
@@ -63,9 +62,14 @@ L = v*f*dx
 pde = LinearPDE(a, L, mesh)
 u = pde.solve()
 
+# Project u
+P1 = FiniteElement("Lagrange", "triangle", 1)
+u_proj = project(u, P1)
+
 # Save solution to file
 file = File("poisson.pvd")
-file << u
+file << u_proj
 
 # Plot solution
-plot(u, interactive=True)
+plot(u_proj, interactive=True)
+

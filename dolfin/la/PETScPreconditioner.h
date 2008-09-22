@@ -15,7 +15,7 @@
 #include <petscksp.h>
 #include <petscpc.h>
 
-#include "Preconditioner.h"
+#include "enums_la.h"
 #include "PETScObject.h"
 
 namespace dolfin
@@ -56,7 +56,7 @@ namespace dolfin
     static int PCCreate(PC pc);
 
     /// Return PETSc PETScPreconditioner type
-    static PCType getType(Preconditioner pc);
+    static PCType getType(PreconditionerType pc);
 
   };
 

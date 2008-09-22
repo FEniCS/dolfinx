@@ -3,19 +3,21 @@
 //
 // Modified by Johan Hoffman, 2007.
 // Modified by Garth N. Wells 2007.
+// Modified by Niclas Jansson 2008.
 //
 // First added:  2006-05-09
-// Last changed: 2008-05-02
+// Last changed: 2008-09-20
 
 #include <sstream>
 
 #include <dolfin/io/File.h>
 #include <dolfin/main/MPI.h>
-#include "ALE.h"
+#include <dolfin/ale/ALE.h>
 #include "UniformMeshRefinement.h"
 #include "LocalMeshRefinement.h"
 #include "LocalMeshCoarsening.h"
 #include "TopologyComputation.h"
+#include "MeshSmoothing.h"
 #include "MeshOrdering.h"
 #include "MeshFunction.h"
 #include "MeshPartition.h"
@@ -23,22 +25,26 @@
 #include "Cell.h"
 #include "Vertex.h"
 #include "MPIMeshCommunicator.h"
+#include "MeshData.h"
 #include "Mesh.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Mesh::Mesh() : Variable("mesh", "DOLFIN mesh")
+Mesh::Mesh()
+  : Variable("mesh", "DOLFIN mesh"), _data(0), _cell_type(0), _ordered(false)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-Mesh::Mesh(const Mesh& mesh) : Variable("mesh", "DOLFIN mesh")
+Mesh::Mesh(const Mesh& mesh)
+  : Variable("mesh", "DOLFIN mesh"), _data(0), _cell_type(0), _ordered(false)
 {
   *this = mesh;
 }
 //-----------------------------------------------------------------------------
-Mesh::Mesh(std::string filename) : Variable("mesh", "DOLFIN mesh")
+Mesh::Mesh(std::string filename)
+  : Variable("mesh", "DOLFIN mesh"), _data(0), _cell_type(0), _ordered(false)
 {
   File file(filename);
   file >> *this;
@@ -46,14 +52,30 @@ Mesh::Mesh(std::string filename) : Variable("mesh", "DOLFIN mesh")
 //-----------------------------------------------------------------------------
 Mesh::~Mesh()
 {
-  // Do nothing
+  clear();
 }
 //-----------------------------------------------------------------------------
 const Mesh& Mesh::operator=(const Mesh& mesh)
 {
-  data = mesh.data;
+  clear();
+
+  _topology = mesh._topology;
+  _geometry = mesh._geometry;
+  
+  if (mesh._cell_type)
+    _cell_type = CellType::create(mesh._cell_type->cellType());
+  
   rename(mesh.name(), mesh.label());
+
   return *this;
+}
+//-----------------------------------------------------------------------------
+MeshData& Mesh::data()
+{
+  if (!_data)
+    _data = new MeshData(*this);
+
+  return *_data;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint Mesh::init(uint dim)
@@ -78,9 +100,27 @@ void Mesh::init()
       init(d0, d1);
 }
 //-----------------------------------------------------------------------------
+void Mesh::clear()
+{
+  _topology.clear();
+  _geometry.clear();
+  delete _cell_type;
+  _cell_type = 0;
+  delete _data;
+  _data = 0;
+}
+//-----------------------------------------------------------------------------
 void Mesh::order()
 {
-  MeshOrdering::order(*this);
+  if (_ordered)
+    message(1, "Mesh has already been ordered, no need to reorder entities.");
+  else
+    MeshOrdering::order(*this);
+}
+//-----------------------------------------------------------------------------
+bool Mesh::ordered() const
+{
+  return _ordered;
 }
 //-----------------------------------------------------------------------------
 void Mesh::refine()
@@ -114,55 +154,21 @@ void Mesh::coarsen(MeshFunction<bool>& cell_markers, bool coarsen_boundary)
                                                  coarsen_boundary);
 }
 //-----------------------------------------------------------------------------
-void Mesh::move(Mesh& boundary, const MeshFunction<uint>& vertex_map,
-                ALEMethod method)
+void Mesh::move(Mesh& boundary, ALEType method)
 {
-  ALE::move(*this, boundary, vertex_map, method);
+  ALE::move(*this, boundary, method);
 }
 //-----------------------------------------------------------------------------
-void Mesh::smooth() 
+void Mesh::smooth(uint num_smoothings)
 {
-  // FIXME: Move implementation to separate class and just call function here
-
-  MeshFunction<bool> bnd_vertex(*this); 
-  bnd_vertex.init(0); 
-  for (VertexIterator v(*this); !v.end(); ++v)
-    bnd_vertex.set(v->index(),false);
-
-  MeshFunction<uint> bnd_vertex_map; 
-  MeshFunction<uint> bnd_cell_map; 
-  BoundaryMesh boundary(*this,bnd_vertex_map,bnd_cell_map);
-
-  for (VertexIterator v(boundary); !v.end(); ++v)
-    bnd_vertex.set(bnd_vertex_map.get(v->index()),true);
-
-  Point midpoint = 0.0; 
-  uint num_neighbors = 0;
-  for (VertexIterator v(*this); !v.end(); ++v)
-  {
-    if ( !bnd_vertex.get(v->index()) )
-    {
-      midpoint = 0.0;
-      num_neighbors = 0;
-      for (VertexIterator vn(*v); !vn.end(); ++vn)
-      {
-        if ( v->index() != vn->index() )
-        {
-          midpoint += vn->point();
-          num_neighbors++;
-        }
-      }
-      midpoint /= real(num_neighbors);
-
-      for (uint sd = 0; sd < this->geometry().dim(); sd++)
-        this->geometry().set(v->index(), sd, midpoint[sd]);
-    }
-  }
+  for (uint i = 0; i < num_smoothings; i++)
+    MeshSmoothing::smooth(*this);
 }
 //-----------------------------------------------------------------------------
 void Mesh::partition(MeshFunction<uint>& partitions)
 {
-  partition(partitions, MPI::numProcesses());
+  //  partition(partitions, MPI::num_processes());
+  MeshPartition::partition(*this, partitions);
 }
 //-----------------------------------------------------------------------------
 void Mesh::partition(MeshFunction<uint>& partitions, uint num_partitions)
@@ -177,17 +183,56 @@ void Mesh::partition(MeshFunction<uint>& partitions, uint num_partitions)
   if (MPI::broadcast()) { MPIMeshCommunicator::broadcast(partitions); }
 }
 //-----------------------------------------------------------------------------
+void Mesh::partitionGeom(MeshFunction<uint>& partitions)
+{
+  MeshPartition::partitionGeom(*this, partitions);
+}
+//-----------------------------------------------------------------------------
+void Mesh::distribute(MeshFunction<uint>& distribution)
+{
+  MPIMeshCommunicator::distribute(*this, distribution);
+}
+//-----------------------------------------------------------------------------
 void Mesh::disp() const
 {
-  data.disp();
+  // Begin indentation
+  cout << "Mesh data" << endl;
+  begin("---------");
+  cout << endl;
+
+  // Display topology and geometry
+  _topology.disp();
+  _geometry.disp();
+
+  // Display cell type
+  cout << "Cell type" << endl;
+  cout << "---------" << endl;
+  begin("");
+  if (_cell_type)
+    cout << _cell_type->description() << endl;
+  else
+    cout << "undefined" << endl;
+  end();
+
+  // Display mesh data
+  if (_data)
+  {
+    cout << endl;
+    _data->disp();
+  }
+  
+  // End indentation
+  end();
 }
 //-----------------------------------------------------------------------------
 std::string Mesh::str() const
 {
   std::ostringstream stream;
   stream << "[Mesh of topological dimension "
+         << topology().dim()
+         << " with "
          << numVertices()
-         << " and "
+         << " vertices and "
          << numCells()
          << " cells]";
   return stream.str();

@@ -77,7 +77,7 @@ dolfin::LogStream& dolfin::operator<<(LogStream& stream,
   return stream;
 }
 //-----------------------------------------------------------------------------
-void TimeSlab::write(const uBlasVector& u)
+void TimeSlab::write(const uBLASVector& u)
 {
   // FIXME: Make this a parameter?
   std::string filename = "solution.data";
@@ -99,19 +99,19 @@ void TimeSlab::copy(const real x[], uint xoffset, real y[], uint yoffset, uint n
     y[yoffset + i] = x[xoffset + i];
 }
 //-----------------------------------------------------------------------------
-void TimeSlab::copy(const uBlasVector& x, uint xoffset, real y[], uint yoffset, uint n)
+void TimeSlab::copy(const uBLASVector& x, uint xoffset, real y[], uint yoffset, uint n)
 {
   for (uint i = 0; i < n; i++)
     y[yoffset + i] = x[xoffset + i];
 }
 //-----------------------------------------------------------------------------
-void TimeSlab::copy(const real x[], uint xoffset, uBlasVector& y, uint yoffset, uint n)
+void TimeSlab::copy(const real x[], uint xoffset, uBLASVector& y, uint yoffset, uint n)
 {
   for (uint i = 0; i < n; i++)
     y[yoffset + i] = x[xoffset + i];
 }
 //-----------------------------------------------------------------------------
-void TimeSlab::copy(const uBlasVector& x, uint xoffset, uBlasVector& y, uint yoffset, uint n)
+void TimeSlab::copy(const uBLASVector& x, uint xoffset, uBLASVector& y, uint yoffset, uint n)
 {
   for (uint i = 0; i < n; i++)
     y[yoffset + i] = x[xoffset + i];

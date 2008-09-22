@@ -1,8 +1,10 @@
 // Copyright (C) 2006 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Garth N. Wells, 2008.
+//
 // First added:  2006-05-08
-// Last changed: 2007-11-30
+// Last changed: 2008-09-10
 
 #ifndef __MESH_GEOMETRY_H
 #define __MESH_GEOMETRY_H
@@ -16,6 +18,10 @@ namespace dolfin
   /// MeshGeometry stores the geometry imposed on a mesh. Currently,
   /// the geometry is represented by the set of coordinates for the
   /// vertices of a mesh, but other representations are possible.
+  
+  class Mesh;
+  class Function;
+  class Vector;
   
   class MeshGeometry
   {
@@ -60,14 +66,31 @@ namespace dolfin
     /// Return coordinate n as a 3D point value
     Point point(uint n) const;
     
+    /// Return pointer to Function for higher order mesh coordinates
+    inline Function* mesh_coord_function() { return mesh_coordinates; }
+    
+    /// Return pointer to boolean affine indicator array
+    inline bool* affine_cell_bool() { return affine_cell; }
+
     /// Clear all data
     void clear();
 
     /// Initialize coordinate list to given dimension and size
     void init(uint dim, uint size);
-
+    
+    /// Initialize the affine indicator array
+    void initAffineIndicator(uint num_cells);    
+    
+    /// set affine indicator at index i
+    void setAffineIndicator(uint i, bool value);
+    
     /// Set value of coordinate n in direction i
     void set(uint n, uint i, real x);
+    
+    /// Set higher order mesh coordinates
+    void setMeshCoordinates(Mesh& mesh, Vector& mesh_coord,
+                              const std::string FE_signature,
+                              const std::string dofmap_signature);
 
     /// Display data
     void disp() const;
@@ -85,6 +108,13 @@ namespace dolfin
     // Coordinates for all vertices stored as a contiguous array
     real* coordinates;
     
+    // Higher order mesh coordinates (stored as a discrete function)
+    Function* mesh_coordinates;
+    
+    // Boolean indicator for whether a cell is affinely mapped (or not)
+    // note: this is used in conjunction with mesh_coordinates
+    bool* affine_cell;
+
   };
 
 }

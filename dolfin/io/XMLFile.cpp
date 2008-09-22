@@ -2,20 +2,23 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Erik Svensson 2003.
-// Modified by Garth N. Wells 2006.
+// Modified by Garth N. Wells 2006-2008.
 // Modified by Ola Skavhaug 2006.
 // Modified by Magnus Vikstrom 2007.
+// Modified by Niclas Jansson 2008.
 //
 // First added:  2002-12-03
-// Last changed: 2008-04-22
+// Last changed: 2008-09-18
 
 #include <stdarg.h>
+#include <tr1/memory>
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/constants.h>
 #include <dolfin/common/Array.h>
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/la/GenericMatrix.h>
+#include <dolfin/main/MPI.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/Vertex.h>
 #include <dolfin/mesh/Cell.h>
@@ -39,6 +42,7 @@
 #include "XMLBLASFormData.h"
 #include "XMLGraph.h"
 #include "XMLFile.h"
+#include "PXMLMesh.h"
 
 using namespace dolfin;
 
@@ -53,7 +57,7 @@ XMLFile::XMLFile(const std::string filename) : GenericFile(filename),
 //-----------------------------------------------------------------------------
 XMLFile::~XMLFile()
 {
-  if ( xmlObject )
+  if (xmlObject)
     delete xmlObject;
 }
 //-----------------------------------------------------------------------------
@@ -61,7 +65,7 @@ void XMLFile::operator>>(GenericVector& x)
 {
   message(1, "Reading vector from file %s.", filename.c_str());
 
-  if ( xmlObject )
+  if (xmlObject)
     delete xmlObject;
   xmlObject = new XMLVector(x);
   parseFile();
@@ -71,7 +75,7 @@ void XMLFile::operator>>(GenericMatrix& A)
 {
   message(1, "Reading matrix from file %s.", filename.c_str());
 
-  if ( xmlObject )
+  if (xmlObject)
     delete xmlObject;
   xmlObject = new XMLMatrix(A);
   parseFile();
@@ -81,9 +85,13 @@ void XMLFile::operator>>(Mesh& mesh)
 {
   message(1, "Reading mesh from file %s.", filename.c_str());
 
-  if ( xmlObject )
+  if (xmlObject)
     delete xmlObject;
-  xmlObject = new XMLMesh(mesh);
+  
+  if (MPI::num_processes() > 1)
+    xmlObject = new PXMLMesh(mesh);
+  else
+    xmlObject = new XMLMesh(mesh);
   parseFile();
 }
 //-----------------------------------------------------------------------------
@@ -91,7 +99,7 @@ void XMLFile::operator>>(MeshFunction<int>& meshfunction)
 {
   message(1, "Reading int-valued mesh function from file %s.", filename.c_str());
 
-  if ( xmlObject )
+  if (xmlObject)
     delete xmlObject;
   xmlObject = new XMLMeshFunction(meshfunction);
   parseFile();
@@ -101,7 +109,7 @@ void XMLFile::operator>>(MeshFunction<unsigned int>& meshfunction)
 {
   message(1, "Reading uint-valued mesh function from file %s.", filename.c_str());
 
-  if ( xmlObject )
+  if (xmlObject)
     delete xmlObject;
   xmlObject = new XMLMeshFunction(meshfunction);
   parseFile();
@@ -111,7 +119,7 @@ void XMLFile::operator>>(MeshFunction<double>& meshfunction)
 {
   message(1, "Reading real-valued mesh function from file %s.", filename.c_str());
 
-  if ( xmlObject )
+  if (xmlObject)
     delete xmlObject;
   xmlObject = new XMLMeshFunction(meshfunction);
   parseFile();
@@ -121,7 +129,7 @@ void XMLFile::operator>>(MeshFunction<bool>& meshfunction)
 {
   message(1, "Reading bool-valued mesh function from file %s.", filename.c_str());
 
-  if ( xmlObject )
+  if (xmlObject)
     delete xmlObject;
   xmlObject = new XMLMeshFunction(meshfunction);
   parseFile();
@@ -136,39 +144,37 @@ void XMLFile::operator>>(Function& f)
 
   message(1, "Reading function from %s.", filename.c_str());
 
-  // Read the vector
-  Vector* x = new Vector();
-  *this >> *x;
-
   // Read the mesh
-  Mesh* mesh = new Mesh();
+  std::tr1::shared_ptr<Mesh> mesh(new Mesh());
   *this >> *mesh;
 
   // Read the finite element specification
   std::string finite_element_signature;
-  if ( xmlObject )
+  if (xmlObject)
     delete xmlObject;
   xmlObject = new XMLFiniteElement(finite_element_signature);
   parseFile(); 
 
   // Read the dof map specification
   std::string dof_map_signature;
-  if ( xmlObject )
+  if (xmlObject)
     delete xmlObject;
   xmlObject = new XMLDofMap(dof_map_signature);
   parseFile(); 
 
   // Read the function
-  if ( xmlObject )
+  if (xmlObject)
     delete xmlObject;
   xmlObject = new XMLFunction(f);
   parseFile(); 
   
-  // Create the function (we're all friends here)
-  if ( f.f )
-    delete f.f;
-  f.f = new DiscreteFunction(*mesh, *x, finite_element_signature, dof_map_signature);
-  f._type = Function::discrete;
+  // Create Function
+  Function _f(mesh, finite_element_signature, dof_map_signature);  
+  f = _f;  
+
+  // Read the vector
+  *this >> f.vector();
+
   f.rename("u", "discrete function from file data");
 }
 //-----------------------------------------------------------------------------
@@ -176,7 +182,7 @@ void XMLFile::operator>>(ParameterList& parameters)
 {
   message(1, "Reading parameter list from file %s.", filename.c_str());
 
-  if ( xmlObject )
+  if (xmlObject)
     delete xmlObject;
   xmlObject = new XMLParameterList(parameters);
   parseFile();
@@ -184,7 +190,7 @@ void XMLFile::operator>>(ParameterList& parameters)
 //-----------------------------------------------------------------------------
 void XMLFile::operator>>(BLASFormData& blas)
 {
-  if ( xmlObject )
+  if (xmlObject)
     delete xmlObject;
   xmlObject = new XMLBLASFormData(blas);
   parseFile();
@@ -194,7 +200,7 @@ void XMLFile::operator>>(Graph& graph)
 {
   message(1, "Reading graph from file %s.", filename.c_str());
 
-  if ( xmlObject )
+  if (xmlObject)
     delete xmlObject;
   xmlObject = new XMLGraph(graph);
   parseFile();
@@ -434,31 +440,28 @@ void XMLFile::operator<<(MeshFunction<bool>& meshfunction)
 void XMLFile::operator<<(Function& f)
 {
   // Can only save discrete functions
-  if ( f.type() != Function::discrete )
+  if (f.type() != Function::discrete)
     error("Only discrete functions can be saved in XML format.");
 
-  // Get discrete function (we're all friends here)
-  DiscreteFunction* df = static_cast<DiscreteFunction*>(f.f);
-  
   // Begin function
   FILE *fp = openFile();
   fprintf(fp, "  <function> \n");
   closeFile(fp);
 
   // Write the mesh
-  *this << df->mesh;
+  *this << f.mesh();
   
   // Write the vector
-  *this << *df->x;
+  *this << f.vector();
 
   // Write the finite element
   fp = openFile();
-  fprintf(fp, "  <finiteelement signature=\"%s\"/>\n", df->finite_element->signature());
+  fprintf(fp, "  <finiteelement signature=\"%s\"/>\n", f.signature().c_str());
   closeFile(fp);
 
   // Write the dof map
   fp = openFile();
-  fprintf(fp, "  <dofmap signature=\"%s\"/>\n", df->dof_map->signature());
+  fprintf(fp, "  <dofmap signature=\"%s\"/>\n", f.dofMap().signature());
   closeFile(fp);
 
   // End function
@@ -492,7 +495,7 @@ void XMLFile::operator<<(ParameterList& parameters)
 	      it->first.c_str(), static_cast<real>(parameter));
       break;
     case Parameter::type_bool:
-      if ( static_cast<bool>(parameter) )
+      if (static_cast<bool>(parameter))
 	fprintf(fp, "    <parameter name=\"%s\" type=\"bool\" value=\"true\"/>\n",
 		it->first.c_str());
       else
@@ -560,7 +563,7 @@ void XMLFile::operator<<(Graph& graph)
     {
       // In undirected graphs an edge (v1, v2) is the same as edge (v2, v1)
       // and should not be stored twice
-      if ( graph.type() == Graph::directed || i < connections[j] )
+      if (graph.type() == Graph::directed || i < connections[j])
         fprintf(fp, 
         "      <edge v1=\"%u\" v2=\"%u\" weight=\"%u\"/>\n",
         i, connections[j], edge_weights[j]);
@@ -586,7 +589,7 @@ FILE* XMLFile::openFile()
   fflush(fp);
   
   // Write DOLFIN XML format header
-  if ( !header_written )
+  if (!header_written)
   {
     fprintf(fp, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n\n" );
     fprintf(fp, "<dolfin xmlns:dolfin=\"http://www.fenics.org/dolfin/\">\n" );
@@ -604,7 +607,7 @@ void XMLFile::closeFile(FILE* fp)
   //printf("Position in file before writing footer: %ld\n", mark);
 
   // Write DOLFIN XML format footer
-  if ( header_written )
+  if (header_written)
     fprintf(fp, "</dolfin>\n");
 
   // Close file
@@ -620,7 +623,7 @@ void XMLFile::parseFile()
   parseSAX();
   
   // Notify that file is being closed
-  if ( !xmlObject->close() )
+  if (!xmlObject->close())
     error("Unable to find data in XML file.");
 }
 //-----------------------------------------------------------------------------

@@ -4,9 +4,10 @@
 // Modified by Johan Hoffman 2007.
 // Modified by Magnus Vikstrøm 2007.
 // Modified by Garth N. Wells 2007.
+// Modified by Niclas Jansson 2008.
 //
 // First added:  2006-05-08
-// Last changed: 2008-05-02
+// Last changed: 2008-09-16
 
 #ifndef __MESH_H
 #define __MESH_H
@@ -14,16 +15,16 @@
 #include <string>
 #include <dolfin/common/types.h>
 #include <dolfin/common/Variable.h>
-#include "ALEMethod.h"
-#include "MeshData.h"
+#include <dolfin/ale/ALEType.h>
+#include "MeshTopology.h"
+#include "MeshGeometry.h"
+#include "CellType.h"
 
 namespace dolfin
 {
   
-  class MeshTopology;
-  class MeshGeometry;
-  class CellType;
   template <class T> class MeshFunction;
+  class MeshData;
 
   /// A Mesh consists of a set of connected and numbered mesh entities.
   ///
@@ -72,52 +73,55 @@ namespace dolfin
     const Mesh& operator=(const Mesh& mesh);
 
     /// Return number of vertices
-    inline uint numVertices() const { return data.topology.size(0); }
+    inline uint numVertices() const { return _topology.size(0); }
 
     /// Return number of edges
-    inline uint numEdges() const { return data.topology.size(1); }
+    inline uint numEdges() const { return _topology.size(1); }
 
     /// Return number of faces
-    inline uint numFaces() const { return data.topology.size(2); }
+    inline uint numFaces() const { return _topology.size(2); }
 
     /// Return number of facets
-    inline uint numFacets() const { return data.topology.size(data.topology.dim() - 1); }
+    inline uint numFacets() const { return _topology.size(_topology.dim() - 1); }
 
     /// Return number of cells
-    inline uint numCells() const { return data.topology.size(data.topology.dim()); }
+    inline uint numCells() const { return _topology.size(_topology.dim()); }
 
     /// Return coordinates of all vertices
-    inline real* coordinates() { return data.geometry.x(); }
+    inline real* coordinates() { return _geometry.x(); }
 
     /// Return coordinates of all vertices
-    inline const real* coordinates() const { return data.geometry.x(); }
+    inline const real* coordinates() const { return _geometry.x(); }
 
     /// Return connectivity for all cells
-    inline uint* cells() { return data.topology(data.topology.dim(), 0)(); }
+    inline uint* cells() { return _topology(_topology.dim(), 0)(); }
 
     /// Return connectivity for all cells
-    inline const uint* cells() const { return data.topology(data.topology.dim(), 0)(); }
+    inline const uint* cells() const { return _topology(_topology.dim(), 0)(); }
 
     /// Return number of entities of given topological dimension
-    inline uint size(uint dim) const { return data.topology.size(dim); }
+    inline uint size(uint dim) const { return _topology.size(dim); }
     
-    /// Return mesh topology
-    inline MeshTopology& topology() { return data.topology; }
+    /// Return mesh topology (non-const version)
+    inline MeshTopology& topology() { return _topology; }
 
-    /// Return mesh topology
-    inline const MeshTopology& topology() const { return data.topology; }
+    /// Return mesh topology (const version)
+    inline const MeshTopology& topology() const { return _topology; }
 
-    /// Return mesh geometry
-    inline MeshGeometry& geometry() { return data.geometry; }
+    /// Return mesh geometry (non-const version)
+    inline MeshGeometry& geometry() { return _geometry; }
 
-    /// Return mesh geometry
-    inline const MeshGeometry& geometry() const { return data.geometry; }
+    /// Return mesh geometry (const version)
+    inline const MeshGeometry& geometry() const { return _geometry; }
+
+    /// Return mesh data
+    MeshData& data();
 
     /// Return mesh cell type
-    inline CellType& type() { dolfin_assert(data.cell_type); return *data.cell_type; }
+    inline CellType& type() { dolfin_assert(_cell_type); return *_cell_type; }
 
     /// Return mesh cell type
-    inline const CellType& type() const { dolfin_assert(data.cell_type); return *data.cell_type; }
+    inline const CellType& type() const { dolfin_assert(_cell_type); return *_cell_type; }
 
     /// Compute entities of given topological dimension and return number of entities
     uint init(uint dim);
@@ -128,8 +132,14 @@ namespace dolfin
     /// Compute all entities and connectivity
     void init();
 
+    /// Clear all mesh data
+    void clear();
+
     /// Order all mesh entities (not needed if "mesh order entities" is set)
     void order();
+
+    /// Return true iff topology is ordered according to the UFC numbering
+    bool ordered() const;
 
     /// Refine mesh uniformly
     void refine();
@@ -144,16 +154,22 @@ namespace dolfin
     void coarsen(MeshFunction<bool>& cell_markers, bool coarsen_boundary = false);
 
     /// Move coordinates of mesh according to new boundary coordinates
-    void move(Mesh& boundary, const MeshFunction<uint>& vertex_map, ALEMethod method = lagrange);
+    void move(Mesh& boundary, dolfin::ALEType method=lagrange);
     
-    /// Smooth mesh using Lagrangian mesh smoothing 
-    void smooth();
+    /// Smooth mesh using Lagrangian mesh smoothing
+    void smooth(uint num_smoothings=1);
     
     /// Partition mesh into num_processes partitions
     void partition(MeshFunction<uint>& partitions);
 
     /// Partition mesh into num_partitions partitions
     void partition(MeshFunction<uint>& partitions, uint num_partitions);
+
+    /// Partition mesh into num_partitions partitions (geometric)
+    void partitionGeom(MeshFunction<uint>& partitions);
+
+    // Distribute mesh according to mesh function
+    void distribute(MeshFunction<uint>& partitions);
 
     /// Display mesh data
     void disp() const;
@@ -168,11 +184,25 @@ namespace dolfin
 
     // Friends
     friend class MeshEditor;
+    friend class TopologyComputation;
+    friend class MeshOrdering;
     friend class MPIMeshCommunicator;
 
-    // Mesh data
-    MeshData data;
+    // Mesh topology
+    MeshTopology _topology;
+
+    // Mesh geometry
+    MeshGeometry _geometry;
+
+    // Auxiliary mesh data
+    MeshData* _data;
+
+    // Cell type
+    CellType* _cell_type;
     
+    /// Return true iff topology is ordered according to the UFC numbering
+    bool _ordered;
+
   };
 
 }

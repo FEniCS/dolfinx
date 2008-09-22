@@ -1,8 +1,8 @@
-// Copyright (C) 2005 Garth N. Wells.
+// Copyright (C) 2005-2008 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005-10-24
-// Last changed: 2006-09-02
+// Last changed: 2008-08-26
 
 #ifndef __NONLINEAR_PROBLEM_H
 #define __NONLINEAR_PROBLEM_H

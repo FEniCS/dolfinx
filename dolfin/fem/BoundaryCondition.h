@@ -1,9 +1,9 @@
 // Copyright (C) 2007 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Garth N. Wells 2007
+// Modified by Garth N. Wells 2007, 2008.
 //
-// First added:  2007-07-11
+// First added:  2008-06-18
 // Last changed: 2007-12-09
 
 #ifndef __BOUNDARY_CONDITION_H
@@ -12,12 +12,12 @@
 #include <ufc.h>
 #include <dolfin/common/types.h>
 #include "UFCMesh.h"
-#include "DofMap.h"
 
 namespace dolfin
 {
 
   class DofMap;
+  class FiniteElement;
   class GenericMatrix;
   class GenericVector;
   class SubSystem;
@@ -65,10 +65,13 @@ namespace dolfin
       UFCMesh ufc_mesh;
       
       // Finite element for sub system
-      ufc::finite_element* finite_element;
+      FiniteElement* finite_element;
       
       // Dof map for sub system
       const DofMap* dof_map;
+
+      // Pointer to local DofMap if owned
+      const DofMap* dof_map_local;
 
       // Offset for sub system
       uint offset;

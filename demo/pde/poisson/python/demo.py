@@ -63,9 +63,9 @@ boundary = DirichletBoundary()
 bc = DirichletBC(u0, mesh, boundary)
 
 # Solve PDE and plot solution
-pde = LinearPDE(a, L, mesh, bc)
+pde = LinearPDE(a, L, mesh, bc, symmetric)
 u = pde.solve()
-plot(u)
+plot(u, warpscalar=True, rescale=True)
 
 # Save solution to file
 file = File("poisson.pvd")
@@ -73,3 +73,5 @@ file << u
 
 # Hold plot
 interactive()
+
+summary()

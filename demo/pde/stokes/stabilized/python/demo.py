@@ -44,7 +44,7 @@ class Inflow(Function):
         Function.__init__(self, mesh)
 
     def eval(self, values, x):
-        values[0] = -1.0
+        values[0] = -sin(x[1]*DOLFIN_PI)
         values[1] = 0.0
 
     def rank(self):
@@ -79,7 +79,7 @@ bcs = [bc0, bc1, bc2]
 (v, q) = TestFunctions(system)
 (u, p) = TrialFunctions(system)
 
-f = Function(vector, mesh, 0.0)
+f = Function(vector, mesh, 2, 0.0)
 h = MeshSize("triangle", mesh)
 
 beta  = 0.2

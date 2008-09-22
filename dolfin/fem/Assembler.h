@@ -1,29 +1,39 @@
 // Copyright (C) 2007-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Garth N. Wells, 2007
+// Modified by Garth N. Wells, 2007-2008.
+// Modified by Ola Skavhaug, 2008.
 //
 // First added:  2007-01-17
-// Last changed: 2008-04-08
+// Last changed: 2008-08-29
 
 #ifndef __ASSEMBLER_H
 #define __ASSEMBLER_H
 
-#include <ufc.h>
-
 #include <dolfin/common/Array.h>
-#include <dolfin/mesh/MeshFunction.h>
+#include <dolfin/common/types.h>
+
+// Forward declaration
+namespace ufc 
+{
+  class form; 
+}
 
 namespace dolfin
 {
 
+  // Forward declarations
+  class DirichletBC;
   class DofMapSet;
+  class GenericMatrix;
   class GenericTensor;
+  class GenericVector;
   class Function;
   class Form;
   class Mesh;
   class SubDomain;
   class UFC;
+  template<class T> class MeshFunction;
 
   /// This class provides automated assembly of linear systems, or
   /// more generally, assembly of a sparse tensor from a given
@@ -40,29 +50,45 @@ namespace dolfin
     ~Assembler();
 
     /// Assemble tensor from given variational form
-    void assemble(GenericTensor& A, Form& form, bool reset_tensor = true);
+    void assemble(GenericTensor& A, Form& form, bool reset_tensor=true);
+
+    /// Assemble system (A, b) and apply Dirichlet boundary condition from 
+    /// given variational forms
+    void assemble(GenericMatrix& A, Form& a, GenericVector& b, Form& L, 
+                  DirichletBC& bc, bool reset_tensor=true);
+
+    /// Assemble system (A, b) and apply Dirichlet boundary conditions from 
+    /// given variational forms
+    void assemble(GenericMatrix& A, Form& a, GenericVector& b, Form& L, 
+                  Array<DirichletBC*>& bcs, bool reset_tensor=true);
 
     /// Assemble tensor from given variational form over a sub domain
-    void assemble(GenericTensor& A, Form& form,
-                  const SubDomain& sub_domain, bool reset_tensor = true);
+    void assemble(GenericTensor& A, Form& form, const SubDomain& sub_domain,
+                  bool reset_tensor=true);
+
+    /// Assemble tensor from given variational form over a sub domain
+    //void assemble(GenericTensor& A, Form& form,
+    //              const MeshFunction<uint>& domains, uint domain, bool reset_tensor = true);
 
     /// Assemble tensor from given variational form over sub domains
     void assemble(GenericTensor& A, Form& form,
                   const MeshFunction<uint>& cell_domains,
                   const MeshFunction<uint>& exterior_facet_domains,
-                  const MeshFunction<uint>& interior_facet_domains, bool reset_tensor = true);
+                  const MeshFunction<uint>& interior_facet_domains,
+                  bool reset_tensor=true);
     
     /// Assemble scalar from given variational form
-    real assemble(Form& form);
+    real assemble(Form& form, bool reset_tensor=true);
     
     /// Assemble scalar from given variational form over a sub domain
-    real assemble(Form& form, const SubDomain& sub_domain);
+    real assemble(Form& form, const SubDomain& sub_domain, bool reset_tensor);
     
     /// Assemble scalar from given variational form over sub domains
     real assemble(Form& form,
                   const MeshFunction<uint>& cell_domains,
                   const MeshFunction<uint>& exterior_facet_domains,
-                  const MeshFunction<uint>& interior_facet_domains);
+                  const MeshFunction<uint>& interior_facet_domains,
+                  bool reset_tensor);
     
     /// Assemble tensor from given (UFC) form, coefficients and sub domains.
     /// This is the main assembly function in DOLFIN. All other assembly functions
@@ -77,8 +103,22 @@ namespace dolfin
                   const DofMapSet& dof_map_set,
                   const MeshFunction<uint>* cell_domains,
                   const MeshFunction<uint>* exterior_facet_domains,
-                  const MeshFunction<uint>* interior_facet_domains, bool reset_tensor = true);
-      
+                  const MeshFunction<uint>* interior_facet_domains,
+                  bool reset_tensor = true);
+
+    /// Assemble linear system Ax = b and enforce Dirichlet conditions.  
+    //  Notice that the Dirichlet conditions are enforced in a symmetric way.  
+    void assemble_system(GenericMatrix& A, const ufc::form& A_form, 
+                         const Array<Function*>& A_coefficients, const DofMapSet& A_dof_map_set,
+                         GenericVector& b, const ufc::form& b_form, 
+                         const Array<Function*>& b_coefficients, const DofMapSet& b_dof_map_set,
+                         const GenericVector* x0,
+                         Array<DirichletBC*> bcs, const MeshFunction<uint>* cell_domains, 
+                         const MeshFunction<uint>* exterior_facet_domains,
+                         const MeshFunction<uint>* interior_facet_domains,
+                         bool reset_tensors=true);
+
+
   private:
  
     // Assemble over cells
@@ -86,21 +126,24 @@ namespace dolfin
                        const Array<Function*>& coefficients,
                        const DofMapSet& dof_set_map,
                        UFC& data,
-                       const MeshFunction<uint>* domains) const;
-
+                       const MeshFunction<uint>* domains,
+                       Array<real>* values) const;
+    
     // Assemble over exterior facets
     void assembleExteriorFacets(GenericTensor& A,
                                 const Array<Function*>& coefficients,
                                 const DofMapSet& dof_set_map,
                                 UFC& data,
-                                const MeshFunction<uint>* domains) const;
+                                const MeshFunction<uint>* domains,
+                                Array<real>* values) const;
 
     // Assemble over interior facets
     void assembleInteriorFacets(GenericTensor& A,
                                 const Array<Function*>& coefficients,
                                 const DofMapSet& dof_set_map,
                                 UFC& data,
-                                const MeshFunction<uint>* domains) const;
+                                const MeshFunction<uint>* domains,
+                                Array<real>* values) const;
 
     // Check arguments
     void check(const ufc::form& form,
@@ -115,6 +158,9 @@ namespace dolfin
 
     // The mesh
     Mesh& mesh;
+
+    // Are we running in parallel?
+    bool parallel;
 
   };
 

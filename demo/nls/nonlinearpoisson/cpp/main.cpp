@@ -38,7 +38,7 @@ class Source : public Function, public TimeDependent
 {
 public:
   
-    Source(Mesh& mesh, const real& t) : Function(mesh), TimeDependent(t) {}
+    Source(Mesh& mesh, const real* t) : Function(mesh), TimeDependent(t) {}
 
     real eval(const real* x) const
     {
@@ -51,7 +51,7 @@ public:
 class DirichletBoundaryCondition : public Function, public TimeDependent
 {
 public:
-  DirichletBoundaryCondition(Mesh& mesh, real& t) : Function(mesh), TimeDependent(t) {}
+  DirichletBoundaryCondition(Mesh& mesh, const real* t) : Function(mesh), TimeDependent(t) {}
   
   real eval(const real* x) const
   {
@@ -74,9 +74,9 @@ class MyNonlinearProblem : public NonlinearProblem
   public:
 
     // Constructor 
-    MyNonlinearProblem(Mesh& mesh, Vector& x, SubDomain& dirichlet_boundary, 
+    MyNonlinearProblem(Mesh& mesh, SubDomain& dirichlet_boundary, 
                        Function& g, Function& f, Function& u)  
-                       : NonlinearProblem(), mesh(mesh)
+                       : assembler(mesh)
     {
       // Create forms
       a = new NonlinearPoissonBilinearForm(u);
@@ -89,7 +89,7 @@ class MyNonlinearProblem : public NonlinearProblem
       dof_map_set.update(a->form(), mesh);
 
       // Initialise solution vector u
-      u.init(mesh, x, *a, 1);
+      u.init(mesh, *a, 1);
     }
 
     // Destructor 
@@ -100,24 +100,32 @@ class MyNonlinearProblem : public NonlinearProblem
       delete bc;
     }
  
-    // User defined assemble of Jacobian and residual vector 
-    void form(GenericMatrix& A, GenericVector& b, const GenericVector& x)
+    // User defined assemble of residual vector 
+    void F(GenericVector& b, const GenericVector& x)
     {
-      dolfin_set("output destination", "silent");
-      Assembler assembler(mesh);
-      assembler.assemble(A, *a);
+      //dolfin_set("output destination", "silent");
       assembler.assemble(b, *L);
-      bc->apply(A, b, x, *a);
-      dolfin_set("output destination", "terminal");
+      bc->apply(b, x, *a);
+      //dolfin_set("output destination", "terminal");
+    }
+
+    // User defined assemble of Jacobian matrix 
+    void J(GenericMatrix& A, const GenericVector& x)
+    {
+      //dolfin_set("output destination", "silent");
+      assembler.assemble(A, *a);
+      bc->apply(A, *a);
+      //dolfin_set("output destination", "terminal");
     }
 
 
   private:
 
+    Assembler assembler;
+
     // Pointers to forms, mesh and boundary conditions
     Form *a;
     Form *L;
-    Mesh& mesh;
     DirichletBC* bc;
     DofMapSet dof_map_set;
 };
@@ -133,17 +141,17 @@ int main(int argc, char* argv[])
   real t = 0.0;
 
   // Create source function
-  Source f(mesh, t);
+  Source f(mesh, &t);
 
   // Dirichlet boundary conditions
   DirichletBoundary dirichlet_boundary;
-  DirichletBoundaryCondition g(mesh, t);
+  DirichletBoundaryCondition g(mesh, &t);
 
-  Vector x;
+  // Solution vector
   Function u;
 
   // Create user-defined nonlinear problem
-  MyNonlinearProblem nonlinear_problem(mesh, x, dirichlet_boundary, g, f, u);
+  MyNonlinearProblem nonlinear_problem(mesh, dirichlet_boundary, g, f, u);
 
   // Create nonlinear solver (using GMRES linear solver) and set parameters
   // NewtonSolver nonlinear_solver(gmres);
@@ -153,6 +161,7 @@ int main(int argc, char* argv[])
   nonlinear_solver.set("Newton absolute tolerance", 1e-10);
 
   // Solve nonlinear problem in a series of steps
+  GenericVector& x = u.vector();
   real dt = 1.0; real T  = 3.0;
   while( t < T)
   {

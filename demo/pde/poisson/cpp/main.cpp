@@ -82,11 +82,10 @@ int main()
   // Define PDE
   PoissonBilinearForm a;
   PoissonLinearForm L(f, g);
-  LinearPDE pde(a, L, mesh, bc);
+  LinearPDE pde(a, L, mesh, bc, symmetric);
 
   // Solve PDE
   Function u;
-  pde.set("PDE linear solver", "iterative");
   pde.solve(u);
 
   // Plot solution

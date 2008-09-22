@@ -7,8 +7,7 @@
 // Modified by Martin Alnæs, 2008.
 //
 // First added:  2004-01-01
-// Last changed: 2008-04-29
-
+// Last changed: 2008-05-25
 
 #ifndef __PETSC_VECTOR_H
 #define __PETSC_VECTOR_H
@@ -99,7 +98,7 @@ namespace dolfin
     virtual real inner(const GenericVector& v) const;
 
     /// Return norm of vector
-    virtual real norm(VectorNormType type=l2) const;
+    virtual real norm(dolfin::NormType type) const;
 
     /// Return minimum value of vector
     virtual real min() const;

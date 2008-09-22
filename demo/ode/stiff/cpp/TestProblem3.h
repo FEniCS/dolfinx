@@ -23,19 +23,19 @@ public:
     A.mat()(1,1) = -200.0;
   }
 
-  void u0(uBlasVector& u)
+  void u0(uBLASVector& u)
   {
     u[0] = 1.0;
     u[1] = 1.0;
   }
 
-  void f(const uBlasVector& u, real t, uBlasVector& y)
+  void f(const uBLASVector& u, real t, uBLASVector& y)
   {
     A.mult(u, y);
   }
 
 private:
   
-  uBlasDenseMatrix A;
+  uBLASDenseMatrix A;
 
 };

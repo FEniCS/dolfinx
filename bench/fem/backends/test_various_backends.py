@@ -31,7 +31,7 @@ print "time ", t1-t0
 
 a = dot(v, u)*dx 
 t0 = time()
-backend = uBlasFactory.instance()
+backend = uBLASFactory.instance()
 A = assemble(a, mesh, backend=backend)
 t1 = time()
 print "time ", t1-t0

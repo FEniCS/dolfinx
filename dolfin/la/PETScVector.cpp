@@ -15,7 +15,7 @@
 #include <dolfin/math/dolfin_math.h>
 #include <dolfin/log/dolfin_log.h>
 #include "PETScVector.h"
-#include "uBlasVector.h"
+#include "uBLASVector.h"
 #include "PETScFactory.h"
 #include <dolfin/main/MPI.h>
 
@@ -78,7 +78,7 @@ void PETScVector::init(uint N)
   }
 
   // Create vector
-  if (MPI::numProcesses() > 1)
+  if (MPI::num_processes() > 1)
   {
     dolfin_debug("PETScVector::init(N) - VecCreateMPI");
     VecCreateMPI(PETSC_COMM_WORLD, PETSC_DECIDE, N, &x);
@@ -265,23 +265,25 @@ void PETScVector::axpy(real a, const GenericVector& y)
   VecAXPY(x, a, v.x);
 }
 //-----------------------------------------------------------------------------
-real PETScVector::norm(VectorNormType type) const
+real PETScVector::norm(NormType type) const
 {
   dolfin_assert(x);
-
   real value = 0.0;
 
-  switch (type) {
-  case l1:
-    VecNorm(x, NORM_1, &value);
-    break;
-  case l2:
-    VecNorm(x, NORM_2, &value);
-    break;
-  default:
-    VecNorm(x, NORM_INFINITY, &value);
+  switch (type) 
+  {
+    case l1:
+      VecNorm(x, NORM_1, &value);
+      break;
+    case l2:
+      VecNorm(x, NORM_2, &value);
+      break;
+    case linf:
+      VecNorm(x, NORM_INFINITY, &value);
+      break;
+    default:
+      error("Norm type for PETScVector unknown.");
   }
-  
   return value;
 }
 //-----------------------------------------------------------------------------

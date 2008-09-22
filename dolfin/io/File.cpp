@@ -4,20 +4,25 @@
 // Modified by Garth N. Wells 2005, 2006.
 // Modified by Haiko Etzel 2005.
 // Modified by Magnus Vikstrom 2007.
+// Modified by Nuno Lopes 2008
+// Modified by Niclas Jansson 2008.
 //
 // First added:  2002-11-12
-// Last changed: 2007-03-21
+// Last changed: 2008-09-16
 
 #include <string>
+#include <dolfin/main/MPI.h>
 #include <dolfin/log/dolfin_log.h>
 #include "File.h"
 #include "GenericFile.h"
 #include "XMLFile.h"
 #include "MatlabFile.h"
 #include "OctaveFile.h"
-#include "OpenDXFile.h"
 #include "PythonFile.h"
+#include "PVTKFile.h"
 #include "VTKFile.h"
+#include "RAWFile.h"
+#include "XYZFile.h"
 
 using namespace dolfin;
 
@@ -35,12 +40,17 @@ File::File(const std::string& filename)
     file = new XMLFile(filename);
   else if ( filename.rfind(".m") != filename.npos )
     file = new OctaveFile(filename);
-  else if ( filename.rfind(".dx") != filename.npos )
-    file = new OpenDXFile(filename);
   else if ( filename.rfind(".py") != filename.npos )
     file = new PythonFile(filename);
   else if ( filename.rfind(".pvd") != filename.npos )
-    file = new VTKFile(filename);
+    if(MPI::num_processes() > 1)
+      file = new PVTKFile(filename);
+    else
+      file = new VTKFile(filename);
+  else if ( filename.rfind(".raw") != filename.npos )
+    file = new RAWFile(filename);
+  else if ( filename.rfind(".xyz") != filename.npos )
+    file = new XYZFile(filename);
   else
   {
     file = 0;
@@ -59,9 +69,6 @@ File::File(const std::string& filename, Type type)
     break;
   case octave:
     file = new OctaveFile(filename);
-    break;
-  case opendx:
-    file = new OpenDXFile(filename);
     break;
   case vtk:
     file = new VTKFile(filename);

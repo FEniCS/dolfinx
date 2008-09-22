@@ -1,0 +1,219 @@
+\chapter{Coding style}
+\label{sec:codingstyle}
+\index{coding style}
+
+To streamline the \dolfin{} source code and ease the job for
+maintainers that need to read and edit large amounts of code,
+developers should try to follow the below coding style when submitting
+patches to \dolfin{}.
+
+The guideline below is for C++ but may in some cases be extrapolated
+to Python.
+
+\section{Naming conventions}
+
+\subsection{Class names}
+
+Use camel caps for class names:
+\begin{code}
+class FooBar
+{
+  ...
+};
+\end{code}
+
+\subsection{Function names}
+
+Use lower-case for function names and underscore to separate words:
+\begin{code}
+void foo();
+void bar();
+void foo_bar(...);
+\end{code}
+
+\subsection{Variable names}
+
+Use lower-case for variable names and underscore to separate words:
+\begin{code}
+Foo foo;
+Bar bar;
+FooBar foo_bar;
+\end{code}
+
+\subsection{Enum variables and constants}
+
+Enum variables should be lower-case with underscore to separate words:
+\begin{code}
+enum Type {foo, bar, foo_bar};
+\end{code}
+
+We try to avoid using \texttt{\#define} to define constants, but when
+necessary constants should be capitalized:
+\begin{code}
+#define FOO 3.14159265358979
+\end{code}
+
+\subsection{File names}
+
+Use camel caps for file names if they contain the
+declaration/definition of a class. Header files should have the
+suffix~\texttt{.h} and implementation files should have the
+suffix~\texttt{.cpp}:
+\begin{code}
+FooBar.h
+FooBar.cpp
+\end{code}
+
+Use lower-case for file names that contain utilities/functions (not
+classes).
+
+\section{Miscellaneous}
+
+\subsection{Comments}
+
+Comment your code, and do it often. Capitalize the first letter and
+don't use punctuation (unless the comment runs over several
+sentences). Here's a good example from \texttt{TopologyComputation.cpp}:
+\begin{code}
+// Check if connectivity has already been computed
+if (connectivity.size() > 0)
+  return;
+
+// Invalidate ordering
+mesh._ordered = false;
+
+// Compute entities if they don't exist
+if (topology.size(d0) == 0)
+  computeEntities(mesh, d0);
+if (topology.size(d1) == 0)
+  computeEntities(mesh, d1);
+
+// Check if connectivity still needs to be computed
+if (connectivity.size() > 0)
+  return;
+
+...
+\end{code}
+
+\subsection{Integers and reals}
+
+Use \texttt{dolfin::uint} instead of \texttt{int} (unless you really
+want to use negative integers which is rare) and \texttt{dolfin::real}
+instead of \texttt{double}:
+\begin{code}
+uint i = 0;
+real x = 0.0;
+\end{code}
+These are typedefs for the standard C++ types \texttt{unsigned int}
+and \texttt{double} (defined in \texttt{dolfin/common/types.h}).
+
+\subsection{Placement of brackets}
+
+Curly brackets following a control statement should appear in the next
+line and not be indented:
+\begin{code}
+for (uint i = 0; i < 10; i++)
+{
+  ...
+}
+\end{code}
+
+\subsection{Indentation}
+
+Indentation should be two spaces and it should be spaces, \emph{not}
+tab(s).
+
+\subsection{Header file layout}
+
+Header files should follow the below template:
+\vspace{-0.5cm}
+\begin{code}
+// Copyright (C) 2008 Foo Bar.
+// Licensed under the GNU LGPL Version 2.1.
+//
+// Modified by Bar Foo, 2008.
+//
+// First added:  2008-01-01
+// Last changed: 2008-02-01
+
+#ifndef __FOO_H
+#define __FOO_H
+
+namespace dolfin
+{
+
+  class Bar; // Forward declarations here
+
+  /// Documentation of class
+
+  class Foo
+  {
+  public:
+
+    ...
+
+  private:
+
+    ...
+
+  };
+
+}
+
+#endif
+\end{code}
+
+\subsection{Implementation file layout}
+
+Implementation files should follow the below template:
+\begin{code}
+// Copyright (C) 2008 Foo Bar.
+// Licensed under the GNU LGPL Version 2.1.
+//
+// Modified by Bar Foo, 2008.
+//
+// First added:  2008-01-01
+// Last changed: 2008-02-01
+
+#include <dolfin/Foo.h>
+
+using namespace dolfin;
+
+//-----------------------------------------------------------
+Foo::Foo() : // variable initialization here
+{
+  ...
+}
+//-----------------------------------------------------------
+Foo::~Foo()
+{
+  // Do nothing
+}
+//-----------------------------------------------------------
+\end{code}
+
+The horizontal lines above should be exactly~79 characters
+wide but have been shortened here to fit the page.
+
+\subsection{Including header files}
+
+Don't use \texttt{\#include <dolfin.h>} or \texttt{\#include
+  <dolfin/dolfin\_foo.h>} inside the DOLFIN kernel. Only include the
+portions of DOLFIN you are actually using.
+
+\subsection{Forward declarations}
+
+Actually, try to include as little as possible and use forward
+declarations whenever possible (in header files). Put the
+\texttt{\#include} in the implementation file.
+
+\subsection{Explicit constructors}
+
+Make all constructors (except copy constructors) explicit if there is no particular
+reason not to do so:
+\begin{code}
+class Foo
+{
+  explicit Foo(uint i);
+};
+\end{code}

@@ -35,10 +35,11 @@ def generate_dirs(base_dirs, *names):
 def find_dependency_file(dirs, filename, what="", package=""):
   found_file = False
   found_dir = ""
-  while not found_file and dirs:
-    found_dir = dirs.pop()
+  for d in dirs:
+    found_dir = d
     if os.path.isfile(os.path.join(found_dir, filename)):
       found_file = True
+      break
   if not found_file:
     raise UnableToFindPackageException(package)
   return found_dir
@@ -84,8 +85,14 @@ def getAMDDirs(sconsEnv):
   amd_include_dir = \
       find_dependency_file(all_include_dirs,
                            filename="amd.h", what="includes", package="AMD")
-  amd_lib_dir = \
-      find_dependency_file(all_lib_dirs, filename="libamd.a", what="libs", package="AMD")
+  try:
+    amd_lib_dir = \
+        find_dependency_file(all_lib_dirs, filename="libamd.a", what="libs", package="AMD")
+  except:
+    # Look for shared library libamd.so since we are unable to
+    # find static library libamd.a:
+    amd_lib_dir = \
+        find_dependency_file(all_lib_dirs, filename="libamd.so", what="libs", package="AMD")
   return amd_include_dir, amd_lib_dir
 
 def getAMDIncDir(sconsEnv):
@@ -132,9 +139,16 @@ def getUmfpackDirs(sconsEnv):
   umfpack_include_dir = \
       find_dependency_file(all_include_dirs,
                            filename="umfpack.h", what="includes", package="UMFPACK")
-  umfpack_lib_dir = \
-      find_dependency_file(all_lib_dirs,
-                           filename="libumfpack.a", what="libs", package="UMFPACK")
+  try:
+    umfpack_lib_dir = \
+        find_dependency_file(all_lib_dirs,
+                             filename="libumfpack.a", what="libs", package="UMFPACK")
+  except UnableToFindPackageException:
+    # Look for shared library libumfpack.so since we are unable to
+    # find static library libumfpack.a:
+    umfpack_lib_dir = \
+        find_dependency_file(all_lib_dirs,
+                             filename="libumfpack.so", what="libs", package="UMFPACK")
   
   return umfpack_include_dir, umfpack_lib_dir
 
@@ -176,8 +190,13 @@ int main() {
   cmdstr = "%s %s umfpack_config_test_include.cpp %s" % (compiler, cflags, libs)
   compileFailed, cmdoutput = commands.getstatusoutput(cmdstr)
   if compileFailed:
-    remove_cppfile("umfpack_config_test_include.cpp")
-    raise UnableToCompileException("UMFPACK", cmd=cmdstr,
+    # Try adding -lgfortran so get around Ubuntu Hardy libatlas-base-dev issue
+    libs += " -lgfortran"
+    cmdstr = "%s %s umfpack_config_test_include.cpp %s" % (compiler, cflags, libs)
+    compileFailed, cmdoutput = commands.getstatusoutput(cmdstr)
+    if compileFailed:
+      remove_cppfile("umfpack_config_test_include.cpp")
+      raise UnableToCompileException("UMFPACK", cmd=cmdstr,
                                    program=cpp_test_include_str, errormsg=cmdoutput)
   runFailed, cmdoutput = commands.getstatusoutput("./a.out")
   if runFailed:
@@ -277,14 +296,19 @@ int main (void)
     raise UnableToCompileException("UMFPACK", cmd=cmdstr,
                                    program=cpp_test_lib_str, errormsg=cmdoutput)
 
-  cmdstr = "%s %s umfpack_config_test_lib.o" % (linker, libs)
+  cmdstr = "%s umfpack_config_test_lib.o %s" % (linker, libs)
   linkFailed, cmdoutput = commands.getstatusoutput(cmdstr)
   if linkFailed:
-    remove_cppfile("umfpack_config_test_lib.cpp", ofile=True)
-    errormsg = ("Using '%s' for BLAS, consider setting the environment " + \
+    # Try adding -lgfortran so get around Ubuntu Hardy libatlas-base-dev issue
+    libs += " -lgfortran"
+    cmdstr = "%s umfpack_config_test_lib.o %s" % (linker, libs)
+    linkFailed, cmdoutput = commands.getstatusoutput(cmdstr)
+    if linkFailed:
+      remove_cppfile("umfpack_config_test_lib.cpp", ofile=True)
+      errormsg = ("Using '%s' for BLAS, consider setting the environment " + \
                 "variable ATLAS_DIR if this is wrong.\n") % getAtlasDir()
-    errormsg += cmdoutput
-    raise UnableToLinkException("UMFPACK", cmd=cmdstr,
+      errormsg += cmdoutput
+      raise UnableToLinkException("UMFPACK", cmd=cmdstr,
                                 program=cpp_test_lib_str, errormsg=errormsg)
 
   runFailed, cmdoutput = commands.getstatusoutput("./a.out")

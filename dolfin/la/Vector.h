@@ -7,12 +7,13 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2007-07-03
-// Last changed: 2008-04-29
+// Last changed: 2008-08-25
 
 #ifndef __VECTOR_H
 #define __VECTOR_H
 
-#include "default_la_types.h"
+#include <dolfin/common/Variable.h>
+#include "DefaultFactory.h"
 #include "GenericVector.h"
 
 namespace dolfin
@@ -26,14 +27,12 @@ namespace dolfin
   public:
 
     /// Create empty vector
-    Vector() : Variable("x", "DOLFIN vector"),
-               vector(new DefaultVector())
-    {}
-    
+    Vector() : Variable("x", "DOLFIN vector"), vector(0)
+    { DefaultFactory factory; vector = factory.create_vector(); }
+
     /// Create vector of size N
-    explicit Vector(uint N) : Variable("x", "DOLFIN vector"),
-                              vector(new DefaultVector(N))
-    {}
+    explicit Vector(uint N) : Variable("x", "DOLFIN vector"), vector(0)
+    { DefaultFactory factory; vector = factory.create_vector(); vector->init(N); }
 
     /// Copy constructor
     explicit Vector(const Vector& x) : Variable("x", "DOLFIN vector"),
@@ -65,7 +64,7 @@ namespace dolfin
     //--- Implementation of the GenericVector interface ---
 
     /// Initialize vector of size N
-    virtual void init(uint N) 
+    virtual void init(uint N)
     { vector->init(N); }
 
     /// Return size of vector
@@ -75,7 +74,7 @@ namespace dolfin
     /// Get block of values
     virtual void get(real* block, uint m, const uint* rows) const
     { vector->get(block, m, rows); }
- 
+
     /// Set block of values
     virtual void set(const real* block, uint m, const uint* rows)
     { vector->set(block, m, rows); }
@@ -105,7 +104,7 @@ namespace dolfin
     { return vector->inner(x); }
 
     /// Return norm of vector
-    virtual real norm(VectorNormType type=l2) const
+    virtual real norm(dolfin::NormType type=l2) const
     { return vector->norm(type); }
 
     /// Return minimum value of vector
@@ -139,6 +138,14 @@ namespace dolfin
     /// Assignment operator
     const Vector& operator= (real a)
     { *vector = a; return *this; }
+
+    /// Return pointer to underlying data (const version)
+    virtual const real* data() const
+    { return vector->data(); }
+
+    /// Return pointer to underlying data
+    virtual real* data()
+    { return vector->data(); }
 
     //--- Special functions ---
 

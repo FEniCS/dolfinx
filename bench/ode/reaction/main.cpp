@@ -39,7 +39,7 @@ public:
   }
 
   /// Initial condition
-  void u0(uBlasVector& u)
+  void u0(uBLASVector& u)
   {
     for (unsigned int i = 0; i < N; i++)
     {
@@ -49,7 +49,7 @@ public:
   }
 
   /// Right-hand side, mono-adaptive version
-  void f(const uBlasVector& u, real t, uBlasVector& y)
+  void f(const uBLASVector& u, real t, uBLASVector& y)
   {
     printf("MONO!\n");
     for (unsigned int i = 0; i < N; i++)
@@ -69,7 +69,7 @@ public:
   }
 
   /// Right-hand side, multi-adaptive version
-  real f(const uBlasVector& u, real t, unsigned int i)
+  real f(const uBLASVector& u, real t, unsigned int i)
   {
     printf("MULTI!\n");
     const real ui = u(i);

@@ -27,24 +27,30 @@ namespace dolfin
     virtual ~EpetraFactory() {}
 
     /// Create empty matrix
-    EpetraMatrix* createMatrix() const;
-
-    /// Create empty sparsity pattern 
-    EpetraSparsityPattern* createPattern() const;
+    EpetraMatrix* create_matrix() const;
 
     /// Create empty vector
-    EpetraVector* createVector() const;
+    EpetraVector* create_vector() const;
+
+    /// Create empty sparsity pattern 
+    EpetraSparsityPattern* create_pattern() const;
 
     // Return Epetra Communicator  
     Epetra_SerialComm& getSerialComm(); 
 
-    static EpetraFactory& instance() { return epetrafactory; }
+    // Return singleton instance
+    static EpetraFactory& instance()
+    { return factory; }
 
   private:
-
-    /// Private Constructor
+    
+    // Private constructor
     EpetraFactory();
-    static EpetraFactory epetrafactory;
+
+    // Singleton instance
+    static EpetraFactory factory;
+
+    // Communicator
     Epetra_SerialComm* comm;
 
   };

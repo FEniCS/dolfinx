@@ -1,11 +1,11 @@
 // Copyright (C) 2005 Johan Jansson.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Anders Logg 2005-2006.
-// Modified by Garth N. Wells 2005-2006.
+// Modified by Anders Logg, 2005-2008.
+// Modified by Garth N. Wells, 2005-2006.
 //
 // First added:  2005-12-02
-// Last changed: 2007-07-31
+// Last changed: 2008-05-08
 
 #ifdef HAS_PETSC
 
@@ -13,7 +13,6 @@
 
 #include <dolfin/log/dolfin_log.h>
 #include "PETScKrylovSolver.h"
-
 #include "PETScMatrix.h"
 #include "PETScVector.h"
 #include "PETScKrylovMatrix.h"
@@ -31,14 +30,14 @@ namespace dolfin
 }
 
 //-----------------------------------------------------------------------------
-PETScKrylovSolver::PETScKrylovSolver(KrylovMethod method, Preconditioner pc)
+PETScKrylovSolver::PETScKrylovSolver(SolverType method, PreconditionerType pc)
   : method(method), pc_petsc(pc), pc_dolfin(0),
     ksp(0), M(0), N(0), parameters_read(false), pc_set(false)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-PETScKrylovSolver::PETScKrylovSolver(KrylovMethod method,
+PETScKrylovSolver::PETScKrylovSolver(SolverType method,
 				     PETScPreconditioner& preconditioner)
   : method(method), pc_petsc(default_pc), pc_dolfin(&preconditioner),
     ksp(0), M(0), N(0), parameters_read(false), pc_set(false)
@@ -52,7 +51,15 @@ PETScKrylovSolver::~PETScKrylovSolver()
   if ( ksp ) KSPDestroy(ksp);
 }
 //-----------------------------------------------------------------------------
-dolfin::uint PETScKrylovSolver::solve(const PETScMatrix& A, PETScVector& x, const PETScVector& b)
+dolfin::uint PETScKrylovSolver::solve(const GenericMatrix& A, GenericVector& x, 
+                                       const GenericVector& b) 
+{
+  return  solve(A.down_cast<PETScMatrix>(), x.down_cast<PETScVector>(), 
+                b.down_cast<PETScVector>());
+}
+//-----------------------------------------------------------------------------
+dolfin::uint PETScKrylovSolver::solve(const PETScMatrix& A, PETScVector& x, 
+                                      const PETScVector& b)
 {
   // Check dimensions
   uint M = A.size(0);
@@ -199,9 +206,11 @@ void PETScKrylovSolver::readParameters()
   {
     //FIXME: Decide on supported version of PETSc
 #if(PETSC_VERSION_SUBMINOR > 2)
-    KSPMonitorSet(ksp, monitor, 0, 0);
+    //KSPMonitorSet(ksp, monitor, 0, 0);
+    KSPMonitorSet(ksp, KSPMonitorTrueResidualNorm, 0, 0);
 #else
-    KSPSetMonitor(ksp, monitor, 0, 0);
+    //KSPSetMonitor(ksp, monitor, 0, 0);
+    KSPSetMonitor(ksp, KSPMonitorTrueResidualNorm, 0, 0);
 #endif
   }
 
@@ -227,7 +236,7 @@ void PETScKrylovSolver::readParameters()
 void PETScKrylovSolver::setSolver()
 {
   // Don't do anything for default method
-  if ( method == default_method )
+  if (method == default_solver)
     return;
   
   // Set PETSc Krylov solver
@@ -245,19 +254,29 @@ void PETScKrylovSolver::setPETScPreconditioner()
   }
 
   // Treat special case default preconditioner (do nothing)
-  if ( pc_petsc == default_pc )
+  if (pc_petsc == default_pc)
     return;
 
   // Get PETSc PC pointer
   PC pc;
   KSPGetPC(ksp, &pc);
 
+  // Make sure options are set
+  PCSetFromOptions(pc);
+
   // Treat special case Hypre AMG preconditioner
   if ( pc_petsc == amg )
   {  
 #if PETSC_HAVE_HYPRE
+    //PCSetFromOptions(pc);
+    //pc->ops->setfromoptions(pc);
     PCSetType(pc, PCHYPRE);
+    //pc->ops->setfromoptions(pc);
     PCHYPRESetType(pc, "boomeramg");
+    PCSetFromOptions(pc);
+
+    //pc->ops->setfromoptions(pc);
+    //PCHYPRESetFromOptions(pc);
 #else
     warning("PETSc has not been compiled with the HYPRE library for   "
                    "algerbraic multigrid. Default PETSc solver will be used. "
@@ -289,11 +308,11 @@ void PETScKrylovSolver::writeReport(int num_iterations)
   PCGetType(pc, &pc_type);
 
   // Report number of iterations and solver type
-  message("Krylov solver (%s, %s) converged in %d iterations.",
+  message("PETSc Krylov solver (%s, %s) converged in %d iterations.",
 	      ksp_type, pc_type, num_iterations);
 }
 //-----------------------------------------------------------------------------
-KSPType PETScKrylovSolver::getType(KrylovMethod method) const
+KSPType PETScKrylovSolver::getType(SolverType method) const
 {
   switch (method)
   {
@@ -301,7 +320,7 @@ KSPType PETScKrylovSolver::getType(KrylovMethod method) const
     return KSPBCGS;
   case cg:
     return KSPCG;
-  case default_method:
+  case default_solver:
     return "default";
   case gmres:
     return KSPGMRES;

@@ -10,11 +10,14 @@
 #define __GENERIC_SPARSITY_PATTERN_H
 
 #include <dolfin/common/types.h>
+#include <dolfin/log/dolfin_log.h>
 
 namespace dolfin
 {
-  /// Base class for sparsity patterns of vectors/matrices. Concrete sub classes can 
-  /// be used to initialize vectors and sparse matrices.
+  
+  /// Base class for sparsity patterns of vectors/matrices. Concrete
+  /// sub classes can be used to initialize vectors and sparse
+  /// matrices.
 
   class GenericSparsityPattern
   {
@@ -42,13 +45,20 @@ namespace dolfin
     virtual uint size(uint n) const = 0;
 
     /// Return array with number of non-zeroes per row
-    virtual void numNonZeroPerRow(uint nzrow[]) const = 0;
+    virtual void numNonZeroPerRow(uint nzrow[]) const
+      { error("numNonZeroPerRow not implemented for this sparsity pattern object."); }
+
+    /// Return maximum number of non-zeroes for a row
+    virtual uint numNonZeroPerRowMax() const
+      { error("numNonZeroPerRowMax not implemented for this sparsity pattern object."); return 0; }
 
     /// Return total number of non-zeroes
     virtual uint numNonZero() const = 0;
 
     /// Finalize sparsity pattern (needed by most parallel la backends)
     virtual void apply() = 0;
+    
+    
 
   };
 

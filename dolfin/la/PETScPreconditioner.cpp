@@ -12,7 +12,7 @@
 #include <private/pcimpl.h>
 
 #include "PETScPreconditioner.h"
-#include "Vector.h"
+#include "PETScVector.h"
 
 using namespace dolfin;
 
@@ -74,7 +74,7 @@ int PETScPreconditioner::PCCreate(PC pc)
   return 0;
 }
 //-----------------------------------------------------------------------------
-PCType PETScPreconditioner::getType(Preconditioner pc)
+PCType PETScPreconditioner::getType(PreconditionerType pc)
 {
   switch (pc)
   {

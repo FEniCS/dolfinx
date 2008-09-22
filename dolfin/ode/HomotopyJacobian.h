@@ -8,7 +8,7 @@
 #define __HOMOTOPY_JACOBIAN_H
 
 #include <dolfin/common/types.h>
-#include <dolfin/la/uBlasKrylovMatrix.h>
+#include <dolfin/la/uBLASKrylovMatrix.h>
 
 namespace dolfin
 {
@@ -20,12 +20,12 @@ namespace dolfin
   /// implemented for the ODE system so we don't have to worry about
   /// the translation between real and complex vectors.
 
-  class HomotopyJacobian : public uBlasKrylovMatrix
+  class HomotopyJacobian : public uBLASKrylovMatrix
   {
   public:
 
     /// Constructor
-    HomotopyJacobian(ComplexODE& ode, uBlasVector& u);
+    HomotopyJacobian(ComplexODE& ode, uBLASVector& u);
 
     /// Destructor
     ~HomotopyJacobian();
@@ -34,7 +34,7 @@ namespace dolfin
     uint size(uint dim) const;
 
     /// Compute product y = Ax
-    void mult(const uBlasVector& x, uBlasVector& y) const;
+    void mult(const uBLASVector& x, uBLASVector& y) const;
 
   private:
     
@@ -42,7 +42,7 @@ namespace dolfin
     ComplexODE& ode;
 
     // Current solution to linearize around
-    uBlasVector& u;
+    uBLASVector& u;
 
   };
 

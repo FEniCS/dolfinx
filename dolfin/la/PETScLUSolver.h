@@ -12,13 +12,15 @@
 #include <petscmat.h>
 #include <petscksp.h>
 
-#include <dolfin/parameter/Parametrized.h>
+#include "GenericLinearSolver.h"
 #include "PETScVector.h"
 
 namespace dolfin
 {
 
   /// Forward declarations
+  class GenericMatrix;
+  class GenericVector;
   class PETScManager;
   class PETScMatrix;
   class PETScKrylovMatrix;
@@ -27,7 +29,7 @@ namespace dolfin
   /// linear systems of the form Ax = b. It is a wrapper for the LU
   /// solver of PETSc.
   
-  class PETScLUSolver : public Parametrized
+  class PETScLUSolver : public GenericLinearSolver
   {
   public:
     
@@ -36,6 +38,9 @@ namespace dolfin
 
     /// Destructor
     ~PETScLUSolver();
+
+    /// Solve linear system Ax = b
+    uint solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b);
 
     /// Solve linear system Ax = b
     uint solve(const PETScMatrix& A, PETScVector& x, const PETScVector& b);

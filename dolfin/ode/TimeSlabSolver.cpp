@@ -1,10 +1,11 @@
-// Copyright (C) 2005-2006 Anders Logg.
+// Copyright (C) 2005-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005-01-05
-// Last changed: 2006-04-20
+// Last changed: 2008-06-11
 
 #include <cmath>
+#include <dolfin/common/constants.h>
 #include <dolfin/parameter/parameters.h>
 #include "TimeSlab.h"
 #include "TimeSlabSolver.h"
@@ -15,7 +16,8 @@ using namespace dolfin;
 TimeSlabSolver::TimeSlabSolver(TimeSlab& timeslab)
   : ode(timeslab.ode), method(*timeslab.method), tol(0.0), maxiter(0),
     monitor(ode.get("ODE monitor convergence")),
-    num_timeslabs(0), num_global_iterations(0), num_local_iterations(0)
+    num_timeslabs(0), num_global_iterations(0), num_local_iterations(0),
+    xnorm(0.0)
 {
   // Choose tolerance
   chooseTolerance();
@@ -67,6 +69,11 @@ bool TimeSlabSolver::solve(uint attempt)
   {
     // Do one iteration
     real d2 = iteration(tol, iter, d0, d1);
+
+    // Use relative increment
+    d2 /= xnorm + DOLFIN_EPS;
+    
+    // For debugging convergence
     if ( monitor )
       message("--- iter = %d: increment = %.3e", iter, d2);
     
@@ -77,7 +84,7 @@ bool TimeSlabSolver::solve(uint attempt)
       num_timeslabs += 1;
       num_global_iterations += iter + 1;
       if ( monitor )
-	message("Time slab system of size %d converged in %d iterations.", size(), iter + 1);
+	message("Time slab system of size %d converged in %d iterations.\n", size(), iter + 1);
       return true;
     }
 

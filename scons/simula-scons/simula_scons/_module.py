@@ -212,6 +212,11 @@ def readModuleConfig(dirPath, modulePath, env):
 
     swigDeps = _checkSequence(ns.get("SwigDependencies", []), InvalidSwigDependencies)
 
+    # We always have to link extension modules with libpython on
+    # Windows (win32):
+    if env["PLATFORM"].startswith("win"):
+        swigDeps.append("python-2")
+
     # We may have optional dependencies. 
     # If an optional dependency is found on the compiling system, an extra 
     # compileflag -DHAS_<dependency> should be set. It is up to the implementer

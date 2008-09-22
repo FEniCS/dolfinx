@@ -1,8 +1,8 @@
-// Copyright (C) 2006-2007 Anders Logg.
+// Copyright (C) 2006-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-06-02
-// Last changed: 2007-03-13
+// Last changed: 2008-06-17
 
 #include <set>
 #include <dolfin/log/dolfin_log.h>
@@ -49,14 +49,15 @@ dolfin::uint TopologyComputation::computeEntities(Mesh& mesh, uint dim)
       error("Entities of topological dimension %d exist but connectivity is missing.", dim);
     return topology.size(dim);
   }
-  else
-  {
-    // Make sure connectivity does not already exist
-    if ( ce.size() > 0 || ev.size() > 0 )
-      error("Connectivity for topological dimension %d exists but entities are missing.", dim);
-  }
+
+  // Make sure connectivity does not already exist
+  if ( ce.size() > 0 || ev.size() > 0 )
+    error("Connectivity for topological dimension %d exists but entities are missing.", dim);
 
   //message("Computing mesh entities of topological dimension %d.", dim);
+
+  // Invalidate ordering
+  mesh._ordered = false;
 
   // Compute connectivity dim - dim if not already computed
   computeConnectivity(mesh, mesh.topology().dim(), mesh.topology().dim());
@@ -141,6 +142,9 @@ void TopologyComputation::computeConnectivity(Mesh& mesh, uint d0, uint d1)
   // Check if connectivity has already been computed
   if ( connectivity.size() > 0 )
     return;
+
+  // Invalidate ordering
+  mesh._ordered = false;
 
   //message("Computing mesh connectivity %d - %d.", d0, d1);
 

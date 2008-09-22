@@ -43,8 +43,15 @@ PETScLUSolver::~PETScLUSolver()
   if ( idxn ) delete [] idxn;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint PETScLUSolver::solve(const PETScMatrix& A,
-		       PETScVector& x, const PETScVector& b)
+dolfin::uint PETScLUSolver::solve(const GenericMatrix& A, GenericVector& x, 
+                                       const GenericVector& b) 
+{
+  return solve(A.down_cast<PETScMatrix>(), x.down_cast<PETScVector>(), 
+               b.down_cast<PETScVector>());
+}
+//-----------------------------------------------------------------------------
+dolfin::uint PETScLUSolver::solve(const PETScMatrix& A, PETScVector& x, 
+                                  const PETScVector& b)
 {
   MatType mat_type;
   MatGetType(A.mat(), &mat_type);

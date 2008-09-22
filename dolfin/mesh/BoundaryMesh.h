@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-06-21
-// Last changed: 2008-05-02
+// Last changed: 2008-05-28
 
 #ifndef __BOUNDARY_MESH_H
 #define __BOUNDARY_MESH_H
@@ -26,32 +26,11 @@ namespace dolfin
     /// Create boundary mesh from given mesh
     BoundaryMesh(Mesh& mesh);
 
-    /// Create boundary mesh from given mesh and a mapping
-    /// from the vertices of the boundary to the corresponding
-    /// mesh entities in the original mesh
-    BoundaryMesh(Mesh& mesh, MeshFunction<uint>& vertex_map);
-
-    /// Create boundary mesh from given mesh and compute a pair
-    /// of mappings from the vertices and cells of the boundary to
-    /// the corresponding mesh entities in the original mesh
-    BoundaryMesh(Mesh& mesh,
-                 MeshFunction<uint>& vertex_map,
-                 MeshFunction<uint>& cell_map);
-
     /// Destructor
     ~BoundaryMesh();
 
     /// Initialize boundary mesh
     void init(Mesh& mesh);
-
-    /// Initialize boundary mesh
-    void init(Mesh& mesh,
-              MeshFunction<uint>& vertex_map);
-
-    /// Initialize boundary mesh
-    void init(Mesh& mesh,
-              MeshFunction<uint>& vertex_map,
-              MeshFunction<uint>& cell_map);
 
   };
 

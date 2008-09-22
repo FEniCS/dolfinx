@@ -7,8 +7,8 @@
 #include <cmath>
 #include <dolfin/common/constants.h>
 #include <dolfin/log/dolfin_log.h>
-#include <dolfin/la/uBlasVector.h>
-#include <dolfin/la/uBlasDenseMatrix.h>
+#include <dolfin/la/uBLASVector.h>
+#include <dolfin/la/uBLASDenseMatrix.h>
 #include <dolfin/math/Legendre.h>
 #include "GaussianQuadrature.h"
 
@@ -44,9 +44,9 @@ void GaussianQuadrature::computeWeights()
     return;
   }
 
-  uBlasDenseMatrix A(n, n);
+  uBLASDenseMatrix A(n, n);
   ublas_dense_matrix& _A = A.mat();
-  uBlasVector x(n), b(n);
+  uBLASVector x(n), b(n);
   ublas_vector& _x = x.vec();
   ublas_vector& _b = b.vec();
 
