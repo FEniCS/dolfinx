@@ -4,9 +4,15 @@
 // Modified by Niclas Jansson, 2008.
 //
 // First added:  2003-10-21
-// Last changed: 2008-09-18
+// Last changed: 2008-09-22
 
+#ifdef HAS_MPI
+#include <mpi.h>
+#endif
+
+#include <map>
 #include <cstring>
+
 #include <dolfin/log/log.h>
 #include <dolfin/main/MPI.h>
 #include <dolfin/mesh/CellType.h>
@@ -15,18 +21,13 @@
 #include <dolfin/mesh/Vertex.h>
 #include "PXMLMesh.h"
 
-#ifdef HAS_MPI
-#include <mpi.h>
-#endif
-
-#include <map>
-
 using namespace dolfin;
 
 #ifdef HAS_MPI
 
 //-----------------------------------------------------------------------------
-PXMLMesh::PXMLMesh(Mesh& mesh) : XMLObject(), _mesh(mesh), state(OUTSIDE), f(0), a(0)
+PXMLMesh::PXMLMesh(Mesh& mesh)
+  : XMLObject(), _mesh(mesh), state(OUTSIDE), f(0), a(0)
 {
   dolfin_debug("Creating parallel XML parser");
 }
@@ -38,11 +39,11 @@ PXMLMesh::~PXMLMesh()
 //-----------------------------------------------------------------------------
 void PXMLMesh::startElement(const xmlChar *name, const xmlChar **attrs)
 {
-  switch ( state )
+  switch (state)
   {
   case OUTSIDE:
     
-    if ( xmlStrcasecmp(name, (xmlChar *) "mesh") == 0 )
+    if (xmlStrcasecmp(name, (xmlChar *) "mesh") == 0)
     {
       readMesh(name, attrs);
       state = INSIDE_MESH;
@@ -52,18 +53,19 @@ void PXMLMesh::startElement(const xmlChar *name, const xmlChar **attrs)
 
   case INSIDE_MESH:
     
-    if ( xmlStrcasecmp(name, (xmlChar *) "vertices") == 0 )
+    if (xmlStrcasecmp(name, (xmlChar *) "vertices") == 0)
     {
       readVertices(name, attrs);
       state = INSIDE_VERTICES;
     }
-    else if ( xmlStrcasecmp(name, (xmlChar *) "cells") == 0 )
+    else if (xmlStrcasecmp(name, (xmlChar *) "cells") == 0)
     {
       readCells(name, attrs);
       state = INSIDE_CELLS;
     }
-    else if ( xmlStrcasecmp(name, (xmlChar *) "data") == 0 )
+    else if (xmlStrcasecmp(name, (xmlChar *) "data") == 0)
     {
+      error("Unable to read auxiliary mesh data in parallel, not implemented (yet).");
       state = INSIDE_DATA;
     }
 
@@ -71,49 +73,47 @@ void PXMLMesh::startElement(const xmlChar *name, const xmlChar **attrs)
     
   case INSIDE_VERTICES:
     
-    if ( xmlStrcasecmp(name, (xmlChar *) "vertex") == 0 )
+    if (xmlStrcasecmp(name, (xmlChar *) "vertex") == 0)
       readVertex(name, attrs);
 
     break;
     
   case INSIDE_CELLS:
     
-    if ( xmlStrcasecmp(name, (xmlChar *) "interval") == 0 )
+    if (xmlStrcasecmp(name, (xmlChar *) "interval") == 0)
       readInterval(name, attrs);
-    else if ( xmlStrcasecmp(name, (xmlChar *) "triangle") == 0 )
+    else if (xmlStrcasecmp(name, (xmlChar *) "triangle") == 0)
       readTriangle(name, attrs);
-    else if ( xmlStrcasecmp(name, (xmlChar *) "tetrahedron") == 0 )
+    else if (xmlStrcasecmp(name, (xmlChar *) "tetrahedron") == 0)
       readTetrahedron(name, attrs);
     
     break;
 
   case INSIDE_DATA:
     
-    if ( xmlStrcasecmp(name, (xmlChar *) "meshfunction") == 0 )
+    if (xmlStrcasecmp(name, (xmlChar *) "meshfunction") == 0)
     {
-      error("Not implemented.");
-      //readMeshFunction(name, attrs);
-      //state = INSIDE_MESH_FUNCTION;
+      readMeshFunction(name, attrs);
+      state = INSIDE_MESH_FUNCTION;
     }
-    if ( xmlStrcasecmp(name, (xmlChar *) "array") == 0 )
+    if (xmlStrcasecmp(name, (xmlChar *) "array") == 0)
     {
-      error("Not implemented.");
-      //readArray(name, attrs);
-      //state = INSIDE_ARRAY;
+      readArray(name, attrs);
+      state = INSIDE_ARRAY;
     }
 
     break;
 
   case INSIDE_MESH_FUNCTION:
     
-    if ( xmlStrcasecmp(name, (xmlChar *) "entity") == 0 )
+    if (xmlStrcasecmp(name, (xmlChar *) "entity") == 0)
       readMeshEntity(name, attrs);
 
     break;
 
   case INSIDE_ARRAY:
     
-    if ( xmlStrcasecmp(name, (xmlChar *) "element") == 0 )
+    if (xmlStrcasecmp(name, (xmlChar *) "element") == 0)
       readArrayElement(name, attrs);
 
     break;
@@ -125,11 +125,11 @@ void PXMLMesh::startElement(const xmlChar *name, const xmlChar **attrs)
 //-----------------------------------------------------------------------------
 void PXMLMesh::endElement(const xmlChar *name)
 {
-  switch ( state )
+  switch (state)
   {
   case INSIDE_MESH:
     
-    if ( xmlStrcasecmp(name, (xmlChar *) "mesh") == 0 )
+    if (xmlStrcasecmp(name, (xmlChar *) "mesh") == 0)
     {
       closeMesh();
       state = DONE;
@@ -139,7 +139,7 @@ void PXMLMesh::endElement(const xmlChar *name)
     
   case INSIDE_VERTICES:
     
-    if ( xmlStrcasecmp(name, (xmlChar *) "vertices") == 0 )
+    if (xmlStrcasecmp(name, (xmlChar *) "vertices") == 0)
     {
       state = INSIDE_MESH;    
     }
@@ -148,7 +148,7 @@ void PXMLMesh::endElement(const xmlChar *name)
 
   case INSIDE_CELLS:
 	 
-    if ( xmlStrcasecmp(name, (xmlChar *) "cells") == 0 )
+    if (xmlStrcasecmp(name, (xmlChar *) "cells") == 0)
     {
       state = INSIDE_MESH;
     }
@@ -157,7 +157,7 @@ void PXMLMesh::endElement(const xmlChar *name)
 
   case INSIDE_DATA:
 
-    if ( xmlStrcasecmp(name, (xmlChar *) "data") == 0 )
+    if (xmlStrcasecmp(name, (xmlChar *) "data") == 0)
     {
       state = INSIDE_MESH;
     }
@@ -166,7 +166,7 @@ void PXMLMesh::endElement(const xmlChar *name)
 
   case INSIDE_MESH_FUNCTION:
 
-    if ( xmlStrcasecmp(name, (xmlChar *) "meshfunction") == 0 )
+    if (xmlStrcasecmp(name, (xmlChar *) "meshfunction") == 0)
     {
       state = INSIDE_DATA;
     }
@@ -175,7 +175,7 @@ void PXMLMesh::endElement(const xmlChar *name)
 
   case INSIDE_ARRAY:
 
-    if ( xmlStrcasecmp(name, (xmlChar *) "array") == 0 )
+    if (xmlStrcasecmp(name, (xmlChar *) "array") == 0)
     {
       state = INSIDE_DATA;
     }
@@ -270,7 +270,7 @@ void PXMLMesh::readCells(const xmlChar *name, const xmlChar **attrs)
 
   global_numbering = _mesh.data().meshFunction("vertex numbering");
 
-  for(VertexIterator v(_mesh); !v.end(); ++v) 
+  for (VertexIterator v(_mesh); !v.end(); ++v) 
     local_vertex.insert(global_numbering->get(*v));
   it = local_vertex.end();
 
@@ -285,7 +285,7 @@ void PXMLMesh::readVertex(const xmlChar *name, const xmlChar **attrs)
     return;
   
   // Handle differently depending on geometric dimension
-  switch ( _mesh.geometry().dim() )
+  switch (_mesh.geometry().dim())
   {
   case 1:
     {
@@ -319,7 +319,7 @@ void PXMLMesh::readVertex(const xmlChar *name, const xmlChar **attrs)
 void PXMLMesh::readInterval(const xmlChar *name, const xmlChar **attrs)
 {
   // Check dimension
-  if ( _mesh.topology().dim() != 1 )
+  if (_mesh.topology().dim() != 1)
     error("Mesh entity (interval) does not match dimension of mesh (%d).",
 		 _mesh.topology().dim());
 
@@ -335,7 +335,7 @@ void PXMLMesh::readInterval(const xmlChar *name, const xmlChar **attrs)
 void PXMLMesh::readTriangle(const xmlChar *name, const xmlChar **attrs)
 {
   // Check dimension
-  if ( _mesh.topology().dim() != 2 )
+  if (_mesh.topology().dim() != 2)
     error("Mesh entity (triangle) does not match dimension of mesh (%d).",
 		 _mesh.topology().dim());
 
@@ -350,20 +350,21 @@ void PXMLMesh::readTriangle(const xmlChar *name, const xmlChar **attrs)
     return;
 
   used_vertex.insert(v0);
-  if( local_vertex.find(v1) != it )
+  if (local_vertex.find(v1) != it)
     used_vertex.insert(v1);
-  if( local_vertex.find(v2) != it )
+  if (local_vertex.find(v2) != it)
     used_vertex.insert(v2); 
 
 
   if(!(local_vertex.find(v1) != it && local_vertex.find(v2) != it &&
-       local_vertex.find(v0) != it)) {
+       local_vertex.find(v0) != it))
+  {
     if(local_vertex.find(v1) == it)
       shared_vertex.insert(v1);
     if(local_vertex.find(v2) == it)
       shared_vertex.insert(v2);
   }
-
+  
   // Add cell to buffer
   cell_buffer.push_back(v0);
   cell_buffer.push_back(v1);
@@ -373,7 +374,7 @@ void PXMLMesh::readTriangle(const xmlChar *name, const xmlChar **attrs)
 void PXMLMesh::readTetrahedron(const xmlChar *name, const xmlChar **attrs)
 {
   // Check dimension
-  if ( _mesh.topology().dim() != 3 )
+  if (_mesh.topology().dim() != 3)
     error("Mesh entity (tetrahedron) does not match dimension of mesh (%d).",
 		 _mesh.topology().dim());
 
@@ -390,16 +391,17 @@ void PXMLMesh::readTetrahedron(const xmlChar *name, const xmlChar **attrs)
     return;
 
   used_vertex.insert(v0);
-  if( local_vertex.find(v1) != it)
+  if (local_vertex.find(v1) != it)
     used_vertex.insert(v1);
-  if( local_vertex.find(v2) != it)
+  if (local_vertex.find(v2) != it)
     used_vertex.insert(v2);
-  if( local_vertex.find(v3) != it)
+  if (local_vertex.find(v3) != it)
     used_vertex.insert(v3);
 
 
   if(!(local_vertex.find(v3) != it && local_vertex.find(v2) != it &&
-       local_vertex.find(v1) != it && local_vertex.find(v0) != it)) {
+       local_vertex.find(v1) != it && local_vertex.find(v0) != it))
+  {
     if(local_vertex.find(v1) == it)
       shared_vertex.insert(v1);
     if(local_vertex.find(v2) == it)
@@ -495,8 +497,8 @@ void PXMLMesh::closeMesh()
   Array<real> send_coords;
 
   std::set<uint>::iterator it;
-  for(it = shared_vertex.begin(); it != shared_vertex.end(); ++it)
-      send_buff.push_back( *it );
+  for (it = shared_vertex.begin(); it != shared_vertex.end(); ++it)
+      send_buff.push_back(*it);
 
   uint num_orphan = _mesh.numVertices() - used_vertex.size();
   uint num_shared = send_buff.size();
@@ -525,7 +527,7 @@ void PXMLMesh::closeMesh()
   // Exchange shared mesh entities
   MPI_Status status;
   int num_recv, src, dest;
-  for(uint j = 1; j < num_processes ; j++){
+  for (uint j = 1; j < num_processes ; j++){
     src = (process_number - j + num_processes) % num_processes;
     dest = (process_number + j) % num_processes;
 
@@ -534,20 +536,20 @@ void PXMLMesh::closeMesh()
 		 MPI_COMM_WORLD, &status);
     MPI_Get_count(&status, MPI_UNSIGNED, &num_recv);
 
-    for(int k = 0; k < num_recv; k++) 
+    for (int k = 0; k < num_recv; k++) 
     {
-      if( local_vertex.find( recv_shared[k] ) != local_vertex.end())
+      if (local_vertex.find(recv_shared[k]) != local_vertex.end())
       {
-	Vertex v(_mesh, (*local_to_global)[ recv_shared[k] ] );
+	Vertex v(_mesh, (*local_to_global)[ recv_shared[k] ]);
 	send_coords.push_back(v.point().x());
 	send_coords.push_back(v.point().y());
-	if( _mesh.geometry().dim() > 2) 
+	if (_mesh.geometry().dim() > 2) 
 	  send_coords.push_back(v.point().z());
 	
-	send_indices.push_back( recv_shared[k] );       
+	send_indices.push_back(recv_shared[k]);
 
-	if(used_vertex.find( recv_shared[k] ) == used_vertex.end() &&
-	   shared_vertex.find( recv_shared[k] ) != shared_vertex.end())
+	if (used_vertex.find(recv_shared[k]) == used_vertex.end() &&
+            shared_vertex.find(recv_shared[k]) != shared_vertex.end())
         {
 	  
 	  send_orphan.push_back(1);
@@ -556,7 +558,7 @@ void PXMLMesh::closeMesh()
 	else
 	  send_orphan.push_back(0);
 
-       	ghosted.set( (*local_to_global)[ recv_shared[k] ], true);
+       	ghosted.set((*local_to_global)[recv_shared[k]], true);
 	
       }
     }
@@ -593,24 +595,26 @@ void PXMLMesh::closeMesh()
   std::set<uint> new_ghost;
 
   uint vi = 0;
-  for(VertexIterator v(_mesh); !v.end(); ++v) {
-    if(used_vertex.count(global_numbering->get(*v)) ) {
+  for (VertexIterator v(_mesh); !v.end(); ++v)
+  {
+    if(used_vertex.count(global_numbering->get(*v)))
+    {
       new_gl[ global_numbering->get(*v) ] = vi;
       new_lg[ vi ]  = global_numbering->get(*v);
-      if( ghosted.get(*v) )
+      if (ghosted.get(*v))
 	new_ghost.insert(vi);	
       editor.addVertex(vi++, v->point());
     }
   }
 
   uint ii = 0;
-  for(uint i = 0; i < send_buff.size(); i++, ii += _mesh.geometry().dim(), vi++)
+  for (uint i = 0; i < send_buff.size(); i++, ii += _mesh.geometry().dim(), vi++)
   {    
     new_gl[ recv_indices[i] ] = vi;
     new_lg[ vi ] = recv_indices[i];
-    if( recv_orphans[i] == 0 ) 
+    if (recv_orphans[i] == 0)
       new_ghost.insert(vi);
-    switch( _mesh.geometry().dim())
+    switch(_mesh.geometry().dim())
     {
     case 2:
       editor.addVertex(vi, recv_coords[ii], recv_coords[ii+1]); break;
@@ -621,10 +625,11 @@ void PXMLMesh::closeMesh()
   }
 
   uint num_cvert = _mesh.type().numVertices(_mesh.topology().dim());
-  editor.initCells( cell_buffer.size() / num_cvert );
+  editor.initCells(cell_buffer.size() / num_cvert);
   
   uint ci = 0;
-  for(uint i = 0; i < cell_buffer.size(); i += num_cvert, ci++) {
+  for (uint i = 0; i < cell_buffer.size(); i += num_cvert, ci++)
+  {
     switch (num_cvert) 
     {
     case 2:
@@ -655,7 +660,7 @@ void PXMLMesh::closeMesh()
   ghost->init(_mesh, 0);
   (*ghost) = 0;
    
-  for(it = new_ghost.begin(); it != new_ghost.end(); ++it)
+  for (it = new_ghost.begin(); it != new_ghost.end(); ++it)
     ghost->set(*it, 1);
 
   global_numbering = _mesh.data().createMeshFunction("vertex numbering");
@@ -663,10 +668,10 @@ void PXMLMesh::closeMesh()
   global_numbering->init(_mesh, 0);
 
   std::map<uint, uint>::iterator mit;
-  for(mit = new_lg.begin(); mit != new_lg.end(); ++mit)
+  for (mit = new_lg.begin(); mit != new_lg.end(); ++mit)
     global_numbering->set(mit->first, mit->second);
   
-  for(mit = new_gl.begin(); mit != new_gl.end(); ++mit)
+  for (mit = new_gl.begin(); mit != new_gl.end(); ++mit)
     (*local_to_global)[mit->first] = mit->second;
 }
 //-----------------------------------------------------------------------------

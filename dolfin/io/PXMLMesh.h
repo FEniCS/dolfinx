@@ -32,12 +32,14 @@ namespace dolfin
     bool close();
     
   private:
-    
+
+    // Possible parser states
     enum ParserState {OUTSIDE,
                       INSIDE_MESH, INSIDE_VERTICES, INSIDE_CELLS,
                       INSIDE_DATA, INSIDE_MESH_FUNCTION, INSIDE_ARRAY,
                       DONE};
     
+    // Callbacks for reading XML data
     void readMesh        (const xmlChar* name, const xmlChar** attrs);
     void readVertices    (const xmlChar* name, const xmlChar** attrs);
     void readCells       (const xmlChar* name, const xmlChar** attrs);
@@ -50,23 +52,34 @@ namespace dolfin
     void readMeshEntity  (const xmlChar* name, const xmlChar** attrs);
     void readArrayElement(const xmlChar* name, const xmlChar** attrs);
     
+    // Close mesh, called when finished reading data
     void closeMesh();
 
+    // Reference to the mesh
     Mesh& _mesh;
+
+    // Parser state
     ParserState state;
+
+    // Mesh editor
     MeshEditor editor;
+
+    // Pointer to current mesh function, used when reading mesh function data
     MeshFunction<uint>* f;
+
+    // Pointer to current array, used when reading array data
     Array<uint>* a;
 
+    // FIXME: Initialize all these in constructor
+
+    // Data for parallel parsing
     std::map<uint, uint>* local_to_global;    
     uint start_index, end_index, num_parsed_v;
-
     MeshFunction<uint>* global_numbering;
     Array<uint> cell_buffer;
 
     // FIXME replace these with hash tables
     std::set<uint> local_vertex, shared_vertex, used_vertex;
-
     std::set<uint>::iterator it;
 
   };
