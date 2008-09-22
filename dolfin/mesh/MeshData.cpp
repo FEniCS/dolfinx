@@ -80,7 +80,7 @@ Array<dolfin::uint>* MeshData::createArray(std::string name, uint size)
   return a;
 }
 //-----------------------------------------------------------------------------
-std::map<dolfin::uint, dolfin::uint>* MeshData::createMap(std::string name)
+std::map<dolfin::uint, dolfin::uint>* MeshData::createMapping(std::string name)
 {
   // Check if data already exists
   m_iterator it = maps.find(name);
@@ -128,7 +128,6 @@ std::map<dolfin::uint, dolfin::uint>* MeshData::mapping(std::string name)
     return 0;
 
   return it->second;
-
 }
 //-----------------------------------------------------------------------------
 void MeshData::disp() const

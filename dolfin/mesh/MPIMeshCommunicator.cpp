@@ -8,23 +8,19 @@
 // First added:  2007-05-30
 // Last changed: 2008-09-18
 
-#include <dolfin/log/dolfin_log.h>
-
-
-#include "Mesh.h"
-#include "MeshFunction.h"
-#include "Vertex.h"
-#include "MPIMeshCommunicator.h"
-#include <dolfin/main/MPI.h>
-
-#include "MeshData.h"
-#include "MeshEditor.h"
-
 #ifdef HAS_MPI
   #include <mpi.h>
   #include <map>
 #endif
 
+#include <dolfin/log/dolfin_log.h>
+#include <dolfin/main/MPI.h>
+#include "Mesh.h"
+#include "MeshFunction.h"
+#include "Vertex.h"
+#include "MPIMeshCommunicator.h"
+#include "MeshData.h"
+#include "MeshEditor.h"
 
 using namespace dolfin;
 
@@ -383,7 +379,7 @@ void MPIMeshCommunicator::distribute(Mesh& mesh,
 
   // Recreate auxiliary mesh data.
   global = mesh.data().createMeshFunction("vertex numbering");
-  std::map<uint, uint>* glb_map = mesh.data().createMap("global to local");
+  std::map<uint, uint>* glb_map = mesh.data().createMapping("global to local");
   global->init(mesh, 0);
 
   std::map<uint, uint>::iterator it;

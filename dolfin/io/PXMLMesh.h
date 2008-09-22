@@ -55,6 +55,10 @@ namespace dolfin
     // Close mesh, called when finished reading data
     void closeMesh();
 
+    // Check if vertex is local
+    inline bool is_local(uint vertex) const
+    { return local_vertices.find(vertex) != local_vertices.end(); }
+
     // Reference to the mesh
     Mesh& _mesh;
 
@@ -70,17 +74,18 @@ namespace dolfin
     // Pointer to current array, used when reading array data
     Array<uint>* a;
 
-    // FIXME: Initialize all these in constructor
+    //--- Data below used for parallel parsing ---
+    
+    // Vertex range for this process
+    uint first_vertex, last_vertex, current_vertex;
 
     // Data for parallel parsing
-    std::map<uint, uint>* local_to_global;    
-    uint start_index, end_index, num_parsed_v;
+    std::map<uint, uint>* global_to_local;
     MeshFunction<uint>* global_numbering;
     Array<uint> cell_buffer;
 
     // FIXME replace these with hash tables
-    std::set<uint> local_vertex, shared_vertex, used_vertex;
-    std::set<uint>::iterator it;
+    std::set<uint> local_vertices, shared_vertex, used_vertex;
 
   };
   

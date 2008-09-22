@@ -27,7 +27,8 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 PXMLMesh::PXMLMesh(Mesh& mesh)
-  : XMLObject(), _mesh(mesh), state(OUTSIDE), f(0), a(0)
+  : XMLObject(), _mesh(mesh), state(OUTSIDE), f(0), a(0),
+    first_vertex(0), last_vertex(0), current_vertex(0)
 {
   dolfin_debug("Creating parallel XML parser");
 }
@@ -229,17 +230,15 @@ void PXMLMesh::readVertices(const xmlChar *name, const xmlChar **attrs)
   uint num_local = 0;
   if (process_number < r)
   {
-    num_local   = n + 1;
-    start_index = process_number*n + process_number;
+    num_local    = n + 1;
+    first_vertex = process_number*n + process_number;
   }
   else
   {
-    num_local   = n;
-    start_index = process_number*n + r;
+    num_local    = n;
+    first_vertex = process_number*n + r;
   }
-  end_index = start_index + num_local - 1;
-
-  num_parsed_v = 0;
+  last_vertex = first_vertex + num_local - 1;
 
   // Set number of vertices
   editor.initVertices(num_local);
@@ -248,7 +247,7 @@ void PXMLMesh::readVertices(const xmlChar *name, const xmlChar **attrs)
   editor.initCells(1);
   global_numbering = _mesh.data().createMeshFunction("vertex numbering");
 
-  local_to_global = _mesh.data().createMap("global to local");
+  global_to_local = _mesh.data().createMapping("global to local");
   
   global_numbering->init(_mesh, 0);
 }
@@ -269,19 +268,18 @@ void PXMLMesh::readCells(const xmlChar *name, const xmlChar **attrs)
   _mesh.distribute(geom_partition);
 
   global_numbering = _mesh.data().meshFunction("vertex numbering");
-
-  for (VertexIterator v(_mesh); !v.end(); ++v) 
-    local_vertex.insert(global_numbering->get(*v));
-  it = local_vertex.end();
-
 }
 //-----------------------------------------------------------------------------
 void PXMLMesh::readVertex(const xmlChar *name, const xmlChar **attrs)
 {
   // Read index
-  uint v = parseUnsignedInt(name, attrs, "index");
+  const uint v = parseUnsignedInt(name, attrs, "index");
 
-  if(v < start_index || v > end_index) 
+  // FIXME: We could optimize here so that we don't need to
+  // FIXME: parse the entire mesh on each processor
+
+  // Skip vertices not in range for this process
+  if (v < first_vertex || v > last_vertex)
     return;
   
   // Handle differently depending on geometric dimension
@@ -290,14 +288,14 @@ void PXMLMesh::readVertex(const xmlChar *name, const xmlChar **attrs)
   case 1:
     {
       real x = parseReal(name, attrs, "x");
-      editor.addVertex(num_parsed_v, x);
+      editor.addVertex(current_vertex, x);
     }
     break;
   case 2:
     {
       real x = parseReal(name, attrs, "x");
       real y = parseReal(name, attrs, "y");
-      editor.addVertex(num_parsed_v, x, y);
+      editor.addVertex(current_vertex, x, y);
     }
     break;
   case 3:
@@ -305,15 +303,21 @@ void PXMLMesh::readVertex(const xmlChar *name, const xmlChar **attrs)
       real x = parseReal(name, attrs, "x");
       real y = parseReal(name, attrs, "y");
       real z = parseReal(name, attrs, "z");
-      editor.addVertex(num_parsed_v, x, y, z);
+      editor.addVertex(current_vertex, x, y, z);
     }
     break;
   default:
     error("Dimension of mesh must be 1, 2 or 3.");
   }
 
-  global_numbering->set(num_parsed_v, v); 
-  (*local_to_global)[v] = num_parsed_v++;
+  // Store global vertex numbering (mapping from local vertex to global vertex)
+  global_numbering->set(current_vertex, v); 
+  local_vertices.insert(v);
+
+  // FIXME: Is this used outside of PXMLMesh?
+
+  // Store mapping from global vertex number to global vertex number
+  (*global_to_local)[v] = current_vertex++;
 }
 //-----------------------------------------------------------------------------
 void PXMLMesh::readInterval(const xmlChar *name, const xmlChar **attrs)
@@ -321,8 +325,8 @@ void PXMLMesh::readInterval(const xmlChar *name, const xmlChar **attrs)
   // Check dimension
   if (_mesh.topology().dim() != 1)
     error("Mesh entity (interval) does not match dimension of mesh (%d).",
-		 _mesh.topology().dim());
-
+          _mesh.topology().dim());
+  
   // Parse values
   uint c  = parseUnsignedInt(name, attrs, "index");
   uint v0 = parseUnsignedInt(name, attrs, "v0");
@@ -337,7 +341,7 @@ void PXMLMesh::readTriangle(const xmlChar *name, const xmlChar **attrs)
   // Check dimension
   if (_mesh.topology().dim() != 2)
     error("Mesh entity (triangle) does not match dimension of mesh (%d).",
-		 _mesh.topology().dim());
+          _mesh.topology().dim());
 
   // Parse values
   uint v0 = parseUnsignedInt(name, attrs, "v0");
@@ -345,23 +349,20 @@ void PXMLMesh::readTriangle(const xmlChar *name, const xmlChar **attrs)
   uint v2 = parseUnsignedInt(name, attrs, "v2");
   
   // Skip triangle if no vertices are local
-  if(!(local_vertex.find(v2) != it || local_vertex.find(v1) != it ||
-       local_vertex.find(v0) != it) || local_vertex.find(v0) == it)
+  if (!(is_local(v2) || is_local(v1) || is_local(v0)) || !is_local(v0))
     return;
 
   used_vertex.insert(v0);
-  if (local_vertex.find(v1) != it)
+  if (is_local(v1))
     used_vertex.insert(v1);
-  if (local_vertex.find(v2) != it)
+  if (is_local(v2))
     used_vertex.insert(v2); 
 
-
-  if(!(local_vertex.find(v1) != it && local_vertex.find(v2) != it &&
-       local_vertex.find(v0) != it))
+  if (!(is_local(v1) && is_local(v2) && is_local(v0)))
   {
-    if(local_vertex.find(v1) == it)
+    if (!is_local(v1))
       shared_vertex.insert(v1);
-    if(local_vertex.find(v2) == it)
+    if (!is_local(v2))
       shared_vertex.insert(v2);
   }
   
@@ -385,28 +386,24 @@ void PXMLMesh::readTetrahedron(const xmlChar *name, const xmlChar **attrs)
   uint v3 = parseUnsignedInt(name, attrs, "v3");
 
   // Skip tetrahedron if no vertices are local
-  if(!(local_vertex.find(v3) != it || local_vertex.find(v2) != it ||
-       local_vertex.find(v1) != it || local_vertex.find(v0) != it) ||
-     local_vertex.find(v0) == it)
+  if (!(is_local(v3) || is_local(v2) || is_local(v1) || is_local(v0)) || !is_local(v0))
     return;
 
   used_vertex.insert(v0);
-  if (local_vertex.find(v1) != it)
+  if (is_local(v1))
     used_vertex.insert(v1);
-  if (local_vertex.find(v2) != it)
+  if (is_local(v2))
     used_vertex.insert(v2);
-  if (local_vertex.find(v3) != it)
+  if (is_local(v3))
     used_vertex.insert(v3);
 
-
-  if(!(local_vertex.find(v3) != it && local_vertex.find(v2) != it &&
-       local_vertex.find(v1) != it && local_vertex.find(v0) != it))
+  if (!(is_local(v3) && is_local(v2) && is_local(v1) && is_local(v0)))
   {
-    if(local_vertex.find(v1) == it)
+    if (!is_local(v1))
       shared_vertex.insert(v1);
-    if(local_vertex.find(v2) == it)
+    if (!is_local(v2))
       shared_vertex.insert(v2);
-    if(local_vertex.find(v3) == it)
+    if (!is_local(v3))
       shared_vertex.insert(v3);
   }
         
@@ -415,7 +412,6 @@ void PXMLMesh::readTetrahedron(const xmlChar *name, const xmlChar **attrs)
   cell_buffer.push_back(v1);
   cell_buffer.push_back(v2);
   cell_buffer.push_back(v3);
-
 }
 //-----------------------------------------------------------------------------
 void PXMLMesh::readMeshFunction(const xmlChar* name, const xmlChar** attrs)
@@ -521,7 +517,7 @@ void PXMLMesh::closeMesh()
   ghosted = false;  
 
   global_numbering = _mesh.data().meshFunction("vertex numbering");
-  local_to_global =  _mesh.data().mapping("global to local");
+  global_to_local =  _mesh.data().mapping("global to local");
   num_orphan = num_shared;
    
   // Exchange shared mesh entities
@@ -538,9 +534,9 @@ void PXMLMesh::closeMesh()
 
     for (int k = 0; k < num_recv; k++) 
     {
-      if (local_vertex.find(recv_shared[k]) != local_vertex.end())
+      if (is_local(recv_shared[k]))
       {
-	Vertex v(_mesh, (*local_to_global)[ recv_shared[k] ]);
+	Vertex v(_mesh, (*global_to_local)[ recv_shared[k] ]);
 	send_coords.push_back(v.point().x());
 	send_coords.push_back(v.point().y());
 	if (_mesh.geometry().dim() > 2) 
@@ -558,7 +554,7 @@ void PXMLMesh::closeMesh()
 	else
 	  send_orphan.push_back(0);
 
-       	ghosted.set((*local_to_global)[recv_shared[k]], true);
+       	ghosted.set((*global_to_local)[recv_shared[k]], true);
 	
       }
     }
@@ -588,7 +584,6 @@ void PXMLMesh::closeMesh()
     send_indices.clear();
     send_coords.clear();
     send_orphan.clear();
-    
   }
 
   std::map<uint, uint> new_lg, new_gl;
@@ -597,7 +592,7 @@ void PXMLMesh::closeMesh()
   uint vi = 0;
   for (VertexIterator v(_mesh); !v.end(); ++v)
   {
-    if(used_vertex.count(global_numbering->get(*v)))
+    if (used_vertex.count(global_numbering->get(*v)))
     {
       new_gl[ global_numbering->get(*v) ] = vi;
       new_lg[ vi ]  = global_numbering->get(*v);
@@ -664,7 +659,7 @@ void PXMLMesh::closeMesh()
     ghost->set(*it, 1);
 
   global_numbering = _mesh.data().createMeshFunction("vertex numbering");
-  local_to_global =  _mesh.data().createMap("global to local");
+  global_to_local =  _mesh.data().createMapping("global to local");
   global_numbering->init(_mesh, 0);
 
   std::map<uint, uint>::iterator mit;
@@ -672,7 +667,7 @@ void PXMLMesh::closeMesh()
     global_numbering->set(mit->first, mit->second);
   
   for (mit = new_gl.begin(); mit != new_gl.end(); ++mit)
-    (*local_to_global)[mit->first] = mit->second;
+    (*global_to_local)[mit->first] = mit->second;
 }
 //-----------------------------------------------------------------------------
 

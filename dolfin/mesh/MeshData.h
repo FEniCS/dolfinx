@@ -4,7 +4,7 @@
 // Modified by Niclas Jansson, 2008.
 //
 // First added:  2008-05-19
-// Last changed: 2008-09-16
+// Last changed: 2008-09-22
 
 #ifndef __MESH_DATA_H
 #define __MESH_DATA_H
@@ -46,13 +46,14 @@ namespace dolfin
     /// Create Array with given name and size
     Array<uint>* createArray(std::string name, uint size);
 
-    std::map<uint, uint>* createMap(std::string name);
-    
-    /// Return MeshFunction with given name (returning zero if data is not available)
-    MeshFunction<uint>* meshFunction(std::string name);
+    /// Create map with given name and size
+    std::map<uint, uint>* createMapping(std::string name);
 
     /// Return Array with given name (returning zero if data is not available)
     Array<uint>* array(std::string name);
+    
+    /// Return MeshFunction with given name (returning zero if data is not available)
+    MeshFunction<uint>* meshFunction(std::string name);
 
     /// Return Map with given name (returning zero if data is not available)
     std::map<uint, uint>* mapping(std::string name);
