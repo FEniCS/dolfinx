@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-05-16
-// Last changed: 2008-08-19
+// Last changed: 2008-08-22
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/parameter/dolfin_parameter.h>
@@ -14,10 +14,9 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 MeshEditor::MeshEditor()
-  : tdim(0), gdim(0),
+  : mesh(0), tdim(0), gdim(0),
     num_vertices(0), num_cells(0),
-    next_vertex(0), next_cell(0),
-    mesh(0)
+    next_vertex(0), next_cell(0)
 {
   // Do nothing
 }
