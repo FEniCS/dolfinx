@@ -1,8 +1,8 @@
-// Copyright (C) 2006 Anders Logg.
+// Copyright (C) 2006-20008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-05-16
-// Last changed: 2008-08-19
+// Last changed: 2008-08-22
 
 #ifndef __MESH_EDITOR_H
 #define __MESH_EDITOR_H
@@ -45,12 +45,12 @@ namespace dolfin
     /// Set the finite element signature for the type of parametric mapping used for the local
     /// elements in the mesh
     void setMeshCoordFEsignature(const std::string FE_signature)
-        {mcv_finite_element_signature = FE_signature;}
+    {mcv_finite_element_signature = FE_signature;}
 
     /// Set the dofmap signature for the type of parametric mapping used for the local
     /// elements in the mesh
     void setMeshCoordDofMapsignature(const std::string dofmap_signature)
-        {mcv_dof_map_signature = dofmap_signature;}
+    {mcv_dof_map_signature = dofmap_signature;}
     
     /// Set higher order mesh coordinates
     void setMeshCoordinates(Vector& mesh_coord);
@@ -96,6 +96,9 @@ namespace dolfin
     // Clear all data
     void clear();
 
+    // The mesh
+    Mesh* mesh;
+
     // Topological dimension
     uint tdim;
     
@@ -113,9 +116,6 @@ namespace dolfin
 
     // Next available cell
     uint next_cell;
-
-    // The mesh
-    Mesh* mesh;
 
     // Temporary storage for local cell data
     Array<uint> vertices;

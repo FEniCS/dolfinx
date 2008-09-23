@@ -1,3 +1,4 @@
+ - Add new function errornorm()
  - Add harmonic ALE mesh smoothing
  - Refinements of Graph class
  - Add CholmodCholeskySlover (direct solver for symmetric matrices)
