@@ -5,24 +5,30 @@
 
 #ifdef HAS_TRILINOS
 
+#include "Epetra_ConfigDefs.h"
+#include "Epetra_Vector.h"
+#include "Epetra_FEVector.h"
+#include "Epetra_RowMatrix.h"
+#include "Epetra_CrsMatrix.h"
+#include "Epetra_FECrsMatrix.h"
+#include "Epetra_LinearProblem.h"
+#include "Epetra_Map.h"
+
+
+#include "AztecOO.h"
+
+//#include "ml_config.h"
+#include "ml_include.h"
+#include "Epetra_LinearProblem.h"
+#include "ml_MultiLevelOperator.h"
+#include "ml_epetra_utils.h"
+
 #include <dolfin/log/dolfin_log.h>
 #include "GenericMatrix.h"
 #include "GenericVector.h"
 #include "EpetraKrylovSolver.h"
 #include "EpetraMatrix.h"
 #include "EpetraVector.h"
-
-#include "Epetra_FEVector.h"
-#include "Epetra_RowMatrix.h"
-#include "Epetra_FECrsMatrix.h"
-#include "Epetra_LinearProblem.h"
-
-#include "AztecOO.h"
-
-//#include "ml_config.h"
-#include "ml_include.h"
-#include "ml_MultiLevelOperator.h"
-#include "ml_epetra_utils.h"
 
 
 
@@ -64,7 +70,7 @@ dolfin::uint EpetraKrylovSolver::solve(const EpetraMatrix& A, EpetraVector& x,
   Epetra_MultiVector* x_vec = dynamic_cast<Epetra_MultiVector*>(&x.vec());
   Epetra_MultiVector* b_vec = dynamic_cast<Epetra_MultiVector*>(&b.vec());
 
-  /* OLD CODE
+  /*
   // Create linear system 
   Epetra_LinearProblem linear_system; 
   linear_system.SetOperator(row_matrix); 
@@ -154,6 +160,7 @@ dolfin::uint EpetraKrylovSolver::solve(const EpetraMatrix& A, EpetraVector& x,
 //    error("EpetraKrylovSolver::solve not compiled with ML support."); 
 //#endif 
   }   
+  std::cout <<"starting to iterate "<<std::endl; 
   linear_solver.Iterate(1000, 1.0e-9);
   return linear_solver.NumIters(); 
 }

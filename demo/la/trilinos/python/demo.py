@@ -19,6 +19,7 @@ except:
     exit()
 
 from dolfin import *
+dolfin_set("linear algebra backend", "Epetra")
 try:
     dolfin.EpetraMatrix
 except:
@@ -63,22 +64,22 @@ g = Flux(element, mesh)
 a = dot(grad(v), grad(u))*dx
 L = v*f*dx + v*g*ds
 
-# Create backend
-backend = EpetraFactory.instance()
-
-# Assemble matrices
-A = assemble(a, mesh, backend=backend)
-b = assemble(L, mesh, backend=backend) 
 
 # Define boundary condition
 u0 = Function(mesh, 0.0)
 boundary = DirichletBoundary()
 bc = DirichletBC(u0, mesh, boundary)
-bc.apply(A, b, a)
 
-# Create solution vector (also used as start vector) 
-x = b.copy()
-x.zero()
+# Create linear system
+A, b = assemble_system(a, L, bc, mesh) 
+
+# Solution   
+U = Function(element, mesh, Vector())
+
+# Fetch underlying epetra objects 
+A_epetra = dolfin.down_cast_epetra_matrix(A.instance()).mat() 
+b_epetra = dolfin.down_cast_epetra_vector(b.instance()).vec() 
+x_epetra = dolfin.down_cast_epetra_vector(U.vector().instance()).vec() 
 
 # Sets up the parameters for ML using a python dictionary
 MLList = {"max levels"        : 3, 
@@ -89,19 +90,18 @@ MLList = {"max levels"        : 3,
 }
 
 # Create the preconditioner 
-Prec = ML.MultiLevelPreconditioner(A.mat(), False)
+Prec = ML.MultiLevelPreconditioner(A_epetra, False)
 Prec.SetParameterList(MLList)
 Prec.ComputePreconditioner()
 
 # Create solver and solve system 
-Solver = AztecOO.AztecOO(A.mat(), x.vec(), b.vec())
+Solver = AztecOO.AztecOO(A_epetra, x_epetra, b_epetra)
 Solver.SetPrecOperator(Prec)
 Solver.SetAztecOption(AztecOO.AZ_solver, AztecOO.AZ_cg)
 Solver.SetAztecOption(AztecOO.AZ_output, 16)
 Solver.Iterate(1550, 1e-5)
 
-# plot the solution
-U = Function(element, mesh, x)
+# Plot the solution 
 plot(U)
 interactive()
 

@@ -12,6 +12,8 @@ __copyright__ = "Copyright (C) 2008 Kent-Andre Mardal"
 
 from dolfin import *
 
+dolfin_set("linear algebra backend", "Epetra")
+
 # Create mesh and finite element
 mesh = UnitSquare(20,20)
 element = FiniteElement("Lagrange", "triangle", 1)
@@ -49,28 +51,20 @@ g = Flux(element, mesh)
 a = dot(grad(v), grad(u))*dx
 L = v*f*dx + v*g*ds
 
-# Create backend
-backend = EpetraFactory.instance()
-
-# Assemble matrices
-A = assemble(a, mesh, backend=backend)
-b = assemble(L, mesh, backend=backend) 
-
 # Define boundary condition
 u0 = Function(mesh, 0.0)
 boundary = DirichletBoundary()
 bc = DirichletBC(u0, mesh, boundary)
-bc.apply(A, b, a)
+
+# Create linear system
+A, b = assemble_system(a, L, bc, mesh) 
 
 # Create solution vector (also used as start vector) 
-x = b.copy()
-x.zero()
+U = Function(element, mesh, Vector())
 
-#solve(A,x,b, gmres, amg)
-solve(A,x,b, gmres, jacobi)
+solve(A, U.vector(), b, cg, ilu)
 
 # plot the solution
-U = Function(element, mesh, x)
 plot(U)
 interactive()
 
