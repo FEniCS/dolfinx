@@ -1,5 +1,6 @@
 
 from dolfin import *
+dolfin_set("linear algebra backend", "Epetra")
 
 mesh = UnitSquare(12,12)
 
