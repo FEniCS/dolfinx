@@ -309,7 +309,7 @@ void PETScKrylovSolver::writeReport(int num_iterations)
 
   // Report number of iterations and solver type
   message("PETSc Krylov solver (%s, %s) converged in %d iterations.",
-	      ksp_type, pc_type, num_iterations);
+          ksp_type, pc_type, num_iterations);
 }
 //-----------------------------------------------------------------------------
 KSPType PETScKrylovSolver::getType(SolverType method) const
