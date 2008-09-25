@@ -63,7 +63,7 @@ const FunctionSpace& NewFunction::function_space() const
 //-----------------------------------------------------------------------------
 GenericVector& NewFunction::vector()
 {
-  // Initialize vector if not initialized
+  // Initialize vector of dofs if not initialized
   if (!x)
     init();
 
@@ -73,7 +73,7 @@ GenericVector& NewFunction::vector()
 //-----------------------------------------------------------------------------
 const GenericVector& NewFunction::vector() const
 {
-  // Check if vector has been initialized
+  // Check if vector of dofs has been initialized
   if (!x)
     error("Requesting vector of degrees of freedom for function, but vector has not been initialized.");
 
@@ -81,55 +81,23 @@ const GenericVector& NewFunction::vector() const
   return *x;
 }
 //-----------------------------------------------------------------------------
-void NewFunction::eval(real* values, const real* x) const
+void NewFunction::eval(real* values, const real* p) const
 {
   dolfin_assert(values);
-  dolfin_assert(x);
+  dolfin_assert(p);
   dolfin_assert(V);
 
-  // Check if we have a vector of degrees of freedom
-  if (x)
+  // Use vector of dofs if available
+  if (this->x)
   {
-
-    /*
-  // Initialize intersection detector if not done before
-  if (!intersection_detector)
-    intersection_detector = new IntersectionDetector(*mesh);
-
-  // Find the cell that contains x
-  const uint gdim = mesh->geometry().dim();
-  if (gdim > 3)
-    error("Sorry, point evaluation of functions not implemented for meshes of dimension %d.", gdim);
-  Point p;
-  for (uint i = 0; i < gdim; i++)
-    p[i] = x[i];
-  Array<uint> cells;
-  intersection_detector->overlap(p, cells);
-  if (cells.size() < 1)
-    error("Unable to evaluate function at given point (not inside domain).");
-  Cell cell(*mesh, cells[0]);
-  UFCCell ufc_cell(cell);
-  
-  // Get expansion coefficients on cell
-  this->interpolate(scratch->coefficients, ufc_cell, *finite_element);
-
-  // Compute linear combination
-  for (uint j = 0; j < scratch->size; j++)
-    values[j] = 0.0;
-  for (uint i = 0; i < finite_element->space_dimension(); i++)
-  {
-    finite_element->evaluate_basis(i, scratch->values, x, ufc_cell);
-    for (uint j = 0; j < scratch->size; j++)
-      values[j] += scratch->coefficients[i] * scratch->values[j];
-  }
-    */
-
+    V->eval(values, p, *x);
+    return;
   }
 
-  // Try calling scalar eval() for scalar-valued function
+  // Use scalar eval() if available
   if (V->element().value_rank() == 0)
   {
-    values[0] = eval(x);
+    values[0] = eval(p);
     return;
   }
 
@@ -155,14 +123,14 @@ void NewFunction::init()
   dolfin_assert(V);
   const uint N = V->dofmap().global_dimension();
 
-  // Create vector
+  // Create vector of dofs
   if (!x)
   {
     DefaultFactory factory;
     x = factory.create_vector();
   }
 
-  // Initialize vector
+  // Initialize vector of dofs
   dolfin_assert(x);
   x->resize(N);
   x->zero();

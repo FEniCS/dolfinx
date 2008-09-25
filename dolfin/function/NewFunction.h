@@ -27,7 +27,7 @@ namespace dolfin
   ///   v = sum_i x_i phi_i
   ///
   /// where {phi_i}_i is a basis for V, and x is a vector of
-  /// degrees of freedom for v.
+  /// degrees of freedom (dofs) for v.
 
   class NewFunction : public Variable
   {
@@ -60,14 +60,14 @@ namespace dolfin
     /// Return the vector of degrees of freedom (const version)
     const GenericVector& vector() const;
 
-    /// Evaluate function at given point x (overload for user-defined function)
-    virtual void eval(real* values, const real* x) const;
+    /// Evaluate function at given point p (overload for user-defined function)
+    virtual void eval(real* values, const real* p) const;
 
-    /// Evaluate function at given point x (overload for scalar user-defined function)
-    virtual real eval(const real* x) const;
+    /// Evaluate function at given point p (overload for scalar user-defined function)
+    virtual real eval(const real* p) const;
 
     /// Evaluate function at given point (used for subclassing through SWIG interface)
-    void eval(simple_array<real>& values, const simple_array<real>& x) const;
+    void eval(simple_array<real>& values, const simple_array<real>& p) const;
 
   private:
 

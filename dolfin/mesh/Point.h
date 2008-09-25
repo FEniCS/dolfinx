@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2006.
 //
 // First added:  2006-06-12
-// Last changed: 2008-05-08
+// Last changed: 2008-09-25
 
 #ifndef __POINT_H
 #define __POINT_H
@@ -26,6 +26,10 @@ namespace dolfin
     /// Create a point at (x, y, z)
     Point(const real x = 0.0, const real y = 0.0, const real z =0.0) 
     { _x[0] = x; _x[1] = y; _x[2] = z; }
+
+    /// Create point from array
+    Point(uint dim, const real* x)
+    { dolfin_assert(dim <= 3); for (uint i = 0; i < dim; i++) _x[i] = x[i]; }
 
     /// Copy constructor
     Point(const Point& p)
