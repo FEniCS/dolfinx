@@ -75,8 +75,8 @@ namespace dolfin
 
     //--- Implementation of the GenericMatrix interface ---
 
-    /// Initialize M x N matrix
-    virtual void init(uint M, uint N);
+    /// Resize matrix to M x N
+    virtual void resize(uint M, uint N);
 
     /// Get block of values
     virtual void get(real* block, uint m, const uint* rows, uint n, const uint* cols) const;

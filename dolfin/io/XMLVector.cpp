@@ -78,7 +78,7 @@ void XMLVector::endVector()
 {
   // Copy values to vector
   dolfin_assert(values);
-  x.init(size);
+  x.resize(size);
   x.set(values);
   delete [] values;
   values = 0;

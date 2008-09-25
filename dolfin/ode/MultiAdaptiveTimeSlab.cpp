@@ -40,7 +40,7 @@ MultiAdaptiveTimeSlab::MultiAdaptiveTimeSlab(ODE& ode) :
     f0 = new real[N];
 
   // Initialize vector for u
-  u.init(N);
+  u.resize(N);
   u.zero();
 
   // Initialize transpose of dependencies if necessary

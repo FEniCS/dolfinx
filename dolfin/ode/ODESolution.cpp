@@ -28,7 +28,7 @@ ODESolution::ODESolution(ODE& ode) :
   cache = new std::pair<real, uBLASVector>[cachesize];
   for (uint i = 0; i < cachesize; ++i) {
     cache[i].first = -1;
-    cache[i].second.init(ode.size());
+    cache[i].second.resize(ode.size());
   }
   ringbufcounter = 0;
 

@@ -32,7 +32,7 @@ namespace dolfin
 
     /// Create vector of size N
     explicit Vector(uint N) : Variable("x", "DOLFIN vector"), vector(0)
-    { DefaultFactory factory; vector = factory.create_vector(); vector->init(N); }
+    { DefaultFactory factory; vector = factory.create_vector(); vector->resize(N); }
 
     /// Copy constructor
     explicit Vector(const Vector& x) : Variable("x", "DOLFIN vector"),
@@ -63,9 +63,9 @@ namespace dolfin
 
     //--- Implementation of the GenericVector interface ---
 
-    /// Initialize vector of size N
-    virtual void init(uint N)
-    { vector->init(N); }
+    /// Resize vector to size N
+    virtual void resize(uint N)
+    { vector->resize(N); }
 
     /// Return size of vector
     virtual uint size() const

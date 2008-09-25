@@ -32,7 +32,7 @@ MonoAdaptiveNewtonSolver::MonoAdaptiveNewtonSolver
   // Initialize product M*u0 for implicit system
   if ( implicit )
   {
-    Mu0.init(ts.N);
+    Mu0.resize(ts.N);
     Mu0.zero();
   }
 
@@ -58,10 +58,12 @@ void MonoAdaptiveNewtonSolver::start()
   int nj = static_cast<int>(ts.nj);
 
   // Initialize increment vector
-  dx.init(nj);
+  dx.resize(nj);
+  dx.zero();
 
   // Initialize right-hand side
-  b.init(nj);
+  b.resize(nj);
+  b.zero();
 
   // Initialize computation of Jacobian
   A.init();

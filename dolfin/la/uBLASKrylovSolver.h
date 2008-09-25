@@ -113,8 +113,11 @@ namespace dolfin
       error("Non-matching dimensions for linear system.");
 
     // Reinitialise x if necessary 
-    // FIXME: this erases initial guess
-    x.init(b.size());
+    if(x.size() != b.size())
+    {
+      x.resize(b.size());
+      x.zero();
+    }
 
     // Read parameters if not done
     if ( !parameters_read )

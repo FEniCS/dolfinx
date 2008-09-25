@@ -123,8 +123,8 @@ error("This function needs to be updated to the new format.");
   real w = 1.0 / static_cast<real>(samples);
 
   // Initialize averages
-  ubar.init(ode.size()); // Average on first half (and then both...)
-  fbar.init(ode.size()); // Average on both intervals
+  ubar.resize(ode.size()); // Average on first half (and then both...)
+  fbar.resize(ode.size()); // Average on both intervals
   ubar = 0.0;
   fbar = 0.0;
 

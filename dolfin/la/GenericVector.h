@@ -30,13 +30,13 @@ namespace dolfin
 
     //--- Implementation of the GenericTensor interface ---
 
-    /// Initialize zero tensor with given dimensions
-    virtual void init(uint rank, const uint* dims)
-    { dolfin_assert(rank == 1); init(dims[0]); }
+    /// Resize tensor with given dimensions
+    virtual void resize(uint rank, const uint* dims)
+    { dolfin_assert(rank == 1); resize(dims[0]); }
 
     /// Initialize zero tensor using sparsity pattern
     inline void init(const GenericSparsityPattern& sparsity_pattern)
-    { init(sparsity_pattern.size(0)); }
+    { resize(sparsity_pattern.size(0)); }
 
     /// Return copy of tensor
     virtual GenericVector* copy() const = 0;
@@ -72,8 +72,8 @@ namespace dolfin
 
     //--- Vector interface ---
 
-    /// Initialize vector of size N
-    virtual void init(uint N) = 0;
+    /// Resize vector to size N
+    virtual void resize(uint N) = 0;
 
     /// Return size of vector
     virtual uint size() const = 0;

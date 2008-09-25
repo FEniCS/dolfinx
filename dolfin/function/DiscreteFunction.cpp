@@ -39,7 +39,8 @@ DiscreteFunction::DiscreteFunction(Mesh& mesh, Form& form, uint i)
   dof_map.swap(_dof_map);
 
   // Initialize vector
-  x->init(dof_map->global_dimension());
+  x->resize(dof_map->global_dimension());
+  x->zero();
 
   // Check finite element
   check(form.form(), i);
@@ -52,7 +53,8 @@ DiscreteFunction::DiscreteFunction(Mesh& mesh, DofMap& dof_map,
     intersection_detector(0), scratch(new Scratch(*finite_element))
 {
   // Initialize vector
-  x->init(dof_map.global_dimension());
+  x->resize(dof_map.global_dimension());
+  x->zero();
 
   // Check finite element
   check(form, i);
@@ -67,7 +69,10 @@ DiscreteFunction::DiscreteFunction(std::tr1::shared_ptr<Mesh> mesh,
   // Initialize vector if necessary
   const uint N = dof_map->global_dimension();
   if (x->size() != N)
-    x->init(N);
+  {
+    x->resize(N);
+    x->zero();
+  }
 
   // Check finite element
   check(form, i);
@@ -88,7 +93,8 @@ DiscreteFunction::DiscreteFunction(std::tr1::shared_ptr<Mesh> mesh,
   dof_map.swap(_dof_map);
 
   // Allocate memory for vector
-  x->init(dof_map->global_dimension());  
+  x->resize(dof_map->global_dimension());  
+  x->zero();
 }
 //-----------------------------------------------------------------------------
 DiscreteFunction::DiscreteFunction(SubFunction& sub_function)
@@ -112,7 +118,7 @@ DiscreteFunction::DiscreteFunction(SubFunction& sub_function)
 
   // Create vector of dofs and copy values
   const uint n = dof_map->global_dimension();
-  x->init(n);
+  x->resize(n);
   real* values   = new real[n];
   uint* get_rows = new uint[n];
   uint* set_rows = new uint[n];
@@ -150,7 +156,7 @@ DiscreteFunction::DiscreteFunction(const DiscreteFunction& f)
   dof_map.swap(_dof_map);
 
   // Initialise vector and copy values
-  x->init((dof_map->global_dimension()));
+  x->resize((dof_map->global_dimension()));
   *x = *f.x;
 }
 //-----------------------------------------------------------------------------

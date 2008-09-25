@@ -71,32 +71,30 @@ void PETScKrylovMatrix::init(const PETScVector& x, const PETScVector& y)
     if ( mm == m && nn == n && MM == M && NN == N )
       return;
     else
-    {
       MatDestroy(A);
-    }
   }
   
   MatCreateShell(PETSC_COMM_WORLD, m, n, M, N, (void*) this, &A);
   MatShellSetOperation(A, MATOP_MULT, (void (*)()) usermult);
 }
 //-----------------------------------------------------------------------------
-void PETScKrylovMatrix::init(int M, int N)
+void PETScKrylovMatrix::resize(int M, int N)
 {
   // Put here to set up arbitrary Shell of global size M,N.
   // Analagous to the matrix being on one processor. 
 
   // Free previously allocated memory if necessary
   if ( A )
-    {
-      // Get size and local size of existing matrix                                                            
-      int MM(0), NN(0);
-      MatGetSize(A, &MM, &NN);
+  {
+    // Get size and local size of existing matrix                                                            
+    int MM(0), NN(0);
+    MatGetSize(A, &MM, &NN);
 
-      if ( MM == M && NN == N )
-	return;
-      else
-	MatDestroy(A);
-    }
+    if ( MM == M && NN == N )
+      return;
+    else
+      MatDestroy(A);
+  }
 
   MatCreateShell(PETSC_COMM_WORLD, M, N, M, N, (void*) this, &A);
   MatShellSetOperation(A, MATOP_MULT, (void (*)()) usermult);

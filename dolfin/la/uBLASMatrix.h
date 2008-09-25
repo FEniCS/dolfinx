@@ -91,8 +91,8 @@ namespace dolfin
 
     //--- Implementation of the GenericMatrix interface ---
 
-    /// Initialize M x N matrix
-    virtual void init(uint M, uint N);
+    /// Resize matrix to M x N
+    virtual void resize(uint M, uint N);
 
     /// Get block of values
     virtual void get(real* block, uint m, const uint* rows, uint n, const uint* cols) const;
@@ -208,14 +208,11 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <class Mat>
-  void uBLASMatrix< Mat >::init(uint M, uint N)
+  void uBLASMatrix< Mat >::resize(uint M, uint N)
   {
     // Resize matrix
     if( size(0) != M || size(1) != N )
       A.Mat::resize(M, N, false);  
-
-    // Clear matrix (detroys any structure)
-    A.Mat::clear();
   }
   //---------------------------------------------------------------------------
   template <class Mat>
@@ -295,7 +292,8 @@ namespace dolfin
   void uBLASMatrix<Mat>::lump(uBLASVector& m) const
   {
     const uint n = size(1);
-    m.init(n);
+    m.resize(n);
+    m.zero();
     ublas::scalar_vector<double> one(n, 1.0);
     ublas::axpy_prod(A, one, m.vec(), true);
   }
@@ -444,7 +442,7 @@ namespace dolfin
   template <> 
   inline void uBLASMatrix<ublas_sparse_matrix>::init(const GenericSparsityPattern& sparsity_pattern)
   {
-    init(sparsity_pattern.size(0), sparsity_pattern.size(1));
+    resize(sparsity_pattern.size(0), sparsity_pattern.size(1));
 
     // Reserve space for non-zeroes
     A.reserve(sparsity_pattern.numNonZero());
@@ -468,7 +466,7 @@ namespace dolfin
   template <class Mat> 
   inline void uBLASMatrix<Mat>::init(const GenericSparsityPattern& sparsity_pattern)
   {
-    init(sparsity_pattern.size(0), sparsity_pattern.size(1));
+    resize(sparsity_pattern.size(0), sparsity_pattern.size(1));
   }
   //---------------------------------------------------------------------------
   template <>

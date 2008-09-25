@@ -76,7 +76,7 @@ dolfin::uint CholmodCholeskySolver::factorizedSolve(GenericVector& x, const Gene
     error("Vector does not match size of factored matrix");
 
   // Initialise solution vector and solve
-  x.init(N);
+  x.resize(N);
 
   message("Solving factorized linear system of size %d x %d (CHOLMOD).", N, N);
 

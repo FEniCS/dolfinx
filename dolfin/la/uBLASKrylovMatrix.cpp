@@ -31,9 +31,9 @@ void uBLASKrylovMatrix::solve(uBLASVector& x, const uBLASVector& b)
   }
   else
   {
-    AA->init(M, N);
-    ej->init(N);
-    Aj->init(N);
+    AA->resize(M, N);
+    ej->resize(N);
+    Aj->resize(N);
   }
 
   // Get underlying uBLAS vectors

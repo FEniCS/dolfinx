@@ -29,7 +29,7 @@ MTL4Vector::MTL4Vector(): Variable("x", "a sparse vector")
 //-----------------------------------------------------------------------------
 MTL4Vector::MTL4Vector(uint N): Variable("x", "a sparse vector") 
 {
-  init(N);
+  resize(N);
 }
 //-----------------------------------------------------------------------------
 MTL4Vector::MTL4Vector(const MTL4Vector& v): Variable("x", "a vector")
@@ -42,11 +42,10 @@ MTL4Vector::~MTL4Vector()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void MTL4Vector::init(uint N)
+void MTL4Vector::resize(uint N)
 {
   if (this->size() != N) 
     x.change_dim(N);
-  x = 0.0;
 }
 //-----------------------------------------------------------------------------
 MTL4Vector* MTL4Vector::copy() const

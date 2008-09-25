@@ -37,7 +37,9 @@ MonoAdaptiveTimeSlab::MonoAdaptiveTimeSlab(ODE& ode)
     fq[j] = 0.0;
 
   // Initialize solution
-  x.init(nj);
+  x.resize(nj);
+  // FIXME: Do we need to zero x?
+  x.zero();
 
   // Evaluate f at initial data for cG(q)
   if ( method->type() == Method::cG )
@@ -49,9 +51,12 @@ MonoAdaptiveTimeSlab::MonoAdaptiveTimeSlab(ODE& ode)
 //-----------------------------------------------------------------------------
 MonoAdaptiveTimeSlab::~MonoAdaptiveTimeSlab()
 {
-  if ( solver ) delete solver;
-  if ( dofs ) delete [] dofs;
-  if ( fq ) delete [] fq;
+  if ( solver ) 
+    delete solver;
+  if ( dofs ) 
+    delete [] dofs;
+  if ( fq ) 
+    delete [] fq;
 }
 //-----------------------------------------------------------------------------
 real MonoAdaptiveTimeSlab::build(real a, real b)

@@ -46,7 +46,7 @@ dolfin::uint SingularSolver::solve(const GenericMatrix& A,
   const uint num_iterations = linear_solver.solve(*B, *y, *c);
 
   // Extract solution
-  x.init(y->size() - 1);
+  x.resize(y->size() - 1);
   real* vals = new real[y->size()];
   y->get(vals);
   x.set(vals);
@@ -71,7 +71,7 @@ dolfin::uint SingularSolver::solve(const GenericMatrix& A,
   const uint num_iterations = linear_solver.solve(*B, *y, *c);
 
   // Extract solution
-  x.init(y->size() - 1);
+  x.resize(y->size() - 1);
   real* vals = new real[y->size()];
   y->get(vals);
   x.set(vals);
@@ -141,8 +141,12 @@ void SingularSolver::init(const GenericMatrix& A)
   y = A.factory().create_vector();
   c = A.factory().create_vector();
   B->init(s);
-  y->init(N + 1);
-  c->init(N + 1);
+  y->resize(N + 1);
+  c->resize(N + 1);
+
+  // FIXME: Do these need to be zeroed?
+  y->zero();
+  c->zero();
 }
 //-----------------------------------------------------------------------------
 void SingularSolver::create(const GenericMatrix& A, const GenericVector& b,
@@ -173,9 +177,11 @@ void SingularSolver::create(const GenericMatrix& A, const GenericVector& b,
   {
     GenericVector* ones = A.factory().create_vector();
     GenericVector* z = A.factory().create_vector();
-    ones->init(N);
-    z->init(N);
+    ones->resize(N);
     *ones = 1.0;
+    z->resize(N);
+    // FIXME: Do we need to zero z?
+    z->zero();
     M->mult(*ones, *z);
     for (uint i = 0; i < N; i++)
     {

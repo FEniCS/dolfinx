@@ -71,10 +71,12 @@ void MultiAdaptiveNewtonSolver::start()
   int nj = static_cast<int>(ts.nj);
 
   // Initialize increment vector
-  dx.init(nj);
+  dx.resize(nj);
+  dx.zero();
 
   // Initialize right-hand side
-  b.init(nj);
+  b.resize(nj);
+  b.zero();
   
   // Recompute Jacobian on each time slab
   A->init();

@@ -36,7 +36,7 @@ namespace dolfin
 
     /// Create M x N matrix
     STLMatrix(uint M, uint N) 
-    { init(M, N); }
+    { resize(M, N); }
   
     /// Copy constructor
     explicit STLMatrix(const STLMatrix& A)
@@ -49,7 +49,7 @@ namespace dolfin
 
     /// Initialize zero tensor using sparsity pattern
     virtual void init(const GenericSparsityPattern& sparsity_pattern)
-    { init(sparsity_pattern.size(0), sparsity_pattern.size(1)); }
+    { resize(sparsity_pattern.size(0), sparsity_pattern.size(1)); }
 
     /// Return copy of tensor
     virtual STLMatrix* copy() const
@@ -76,8 +76,8 @@ namespace dolfin
     //--- Implementation of the GenericMatrix interface ---
     
     /// Initialize M x N matrix
-    virtual void init(uint M, uint N)
-    { dims[0] = M; dims[1] = N; A.clear(); A.resize(M); }
+    virtual void resize(uint M, uint N)
+    { dims[0] = M; dims[1] = N; A.resize(M); }
 
     /// Get block of values
     virtual void get(real* block, uint m, const uint* rows, uint n, const uint* cols) const
@@ -152,15 +152,15 @@ namespace dolfin
     /// Return linear algebra backend factory
     virtual LinearAlgebraFactory& factory() const;
 
-    /// Initialize zero tensor of given rank and dimensions
-    virtual void init(uint rank, const uint* dims, bool reset=true)
+    /// Resize tensor of given rank and dimensions
+    virtual void resize(uint rank, const uint* dims, bool reset=true)
     {
       // Check that the rank is 2
       if ( rank != 2 )
         error("Illegal tensor rank (%d) for matrix. Rank must be 2.", rank);
       
       // Initialize matrix
-      init(dims[0], dims[1]);
+      resize(dims[0], dims[1]);
       
       // Save dimensions
       this->dims[0] = dims[0];

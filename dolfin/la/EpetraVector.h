@@ -67,8 +67,8 @@ namespace dolfin
 
     //--- Implementation of the GenericVector interface ---
 
-    /// Initialize vector of size N
-    virtual void init(uint N);
+    /// Resize vector to size N
+    virtual void resize(uint N);
 
     /// Return size of vector
     virtual uint size() const;

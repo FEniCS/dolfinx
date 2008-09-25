@@ -70,7 +70,7 @@ dolfin::uint PETScLUSolver::solve(const PETScMatrix& A, PETScVector& x,
   const bool report = get("LU report");
 
   // Initialize solution vector (remains untouched if dimensions match)
-  x.init(A.size(1));
+  x.resize(A.size(1));
 
   // Write a message
   if ( report )
@@ -109,7 +109,7 @@ dolfin::uint PETScLUSolver::solve(const PETScKrylovMatrix& A,
   const real Anorm = copyToDense(A);
   
   // Initialize solution vector (remains untouched if dimensions match)
-  x.init(A.size(1));
+  x.resize(A.size(1));
 
   // Write a message
   if ( report )
@@ -157,8 +157,8 @@ real PETScLUSolver::copyToDense(const PETScKrylovMatrix& A)
     for (uint i = 0; i < M; i++)
       idxm[i] = i;
     idxn[0] = 0;
-    e.init(M);
-    y.init(M);
+    e.resize(M);
+    y.resize(M);
 
   }
   else

@@ -155,6 +155,7 @@ void NewFunction::init()
   }
 
   // Initialize vector
-  x->init(N);
+  x->resize(N);
+  x->zero();
 }
 //-----------------------------------------------------------------------------
