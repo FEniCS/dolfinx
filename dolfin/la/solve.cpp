@@ -48,7 +48,7 @@ real dolfin::normalize(GenericVector& x, NormalizationType normalization_type)
   case normalize_average:
     {
       GenericVector* y = x.factory().create_vector();
-      y->init(x.size());
+      y->resize(x.size());
       (*y) = 1.0 / static_cast<real>(x.size());
       const real c = x.inner(*y);
       (*y) = c;

@@ -58,9 +58,14 @@ dolfin::uint ITLKrylovSolver::solve(const MTL4Matrix& A, MTL4Vector& x,
   // FIXME: These should come from the paramters system
   itl::basic_iteration<double> iter(b.vec(), 500, 1.0e-6);
 
+  // Check vector size
+  if( x.size() != b.size() )
+  {
+    x.resize(b.size());
+    x.zero();
+  }
+
   // Solve
-  x.init(b.size());
-  x.vec() = 0.0;
   int errno = 0;
 
   // Developers note: the following code is not very elegant.

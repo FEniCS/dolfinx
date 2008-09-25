@@ -44,7 +44,7 @@ EpetraMatrix::EpetraMatrix(uint M, uint N):
 {
   // TODO: call Epetra_Init or something?
   // Create Epetra matrix
-  init(M, N);
+  resize(M, N);
 }
 //-----------------------------------------------------------------------------
 EpetraMatrix::EpetraMatrix(const EpetraMatrix& A):
@@ -72,16 +72,14 @@ EpetraMatrix::EpetraMatrix(const Epetra_CrsGraph& graph):
 EpetraMatrix::~EpetraMatrix()
 {
   // Free memory of matrix
-  if (!is_view) delete A;
+  if (!is_view) 
+    delete A;
 }
 //-----------------------------------------------------------------------------
-void EpetraMatrix::init(uint M, uint N)
+void EpetraMatrix::resize(uint M, uint N)
 {
-  // Free previously allocated memory if necessary
-  if (A) delete A;
-
   // Not yet implemented
-  error("EpetraMatrix::init(uint, unit) not yet implemented.");
+  error("EpetraMatrix::resize(uint, unit) not yet implemented.");
 }
 //-----------------------------------------------------------------------------
 void EpetraMatrix::init(const GenericSparsityPattern& sparsity_pattern)

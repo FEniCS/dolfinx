@@ -40,7 +40,7 @@ EpetraVector::EpetraVector(uint N):
     is_view(false)
 {
   // Create Epetra vector
-  init(N);
+  resize(N);
 }
 //-----------------------------------------------------------------------------
 EpetraVector::EpetraVector(Epetra_FEVector* x):
@@ -69,16 +69,14 @@ EpetraVector::EpetraVector(const EpetraVector& v):
 //-----------------------------------------------------------------------------
 EpetraVector::~EpetraVector()
 {
-  if (x && !is_view) delete x;
+  if (x && !is_view) 
+    delete x;
 }
 //-----------------------------------------------------------------------------
-void EpetraVector::init(uint N)
+void EpetraVector::resize(uint N)
 {
   if (x && this->size() == N) 
-  {
-    zero();
     return;
-  }
 
   EpetraFactory& f = dynamic_cast<EpetraFactory&>(factory());
   Epetra_SerialComm Comm = f.getSerialComm();
@@ -89,7 +87,9 @@ void EpetraVector::init(uint N)
 //-----------------------------------------------------------------------------
 EpetraVector* EpetraVector::copy() const
 {
-  if (!x) error("Vector is not initialized.");
+  if (!x) 
+    error("Vector is not initialized.");
+
   EpetraVector* v = new EpetraVector(*this); 
   return v;
 }

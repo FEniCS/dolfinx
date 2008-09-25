@@ -32,7 +32,7 @@ namespace dolfin
 
     /// Create M x N matrix
     Matrix(uint M, uint N) : Variable("A", "DOLFIN matrix"), matrix(0)
-    { DefaultFactory factory; matrix = factory.create_matrix(); matrix->init(M, N); }
+    { DefaultFactory factory; matrix = factory.create_matrix(); matrix->resize(M, N); }
 
     /// Copy constructor
     explicit Matrix(const Matrix& A) : Variable("A", "DOLFIN matrix"),
@@ -71,9 +71,9 @@ namespace dolfin
 
     //--- Implementation of the GenericMatrix interface ---
 
-    /// Initialize M x N matrix
-    virtual void init(uint M, uint N)
-    { matrix->init(M, N); }
+    /// Resize matrix to M x N
+    virtual void resize(uint M, uint N)
+    { matrix->resize(M, N); }
 
     /// Get block of values
     virtual void get(real* block, uint m, const uint* rows, uint n, const uint* cols) const

@@ -34,9 +34,9 @@ void TimeSlabJacobian::update()
 
   // Initialize matrix if not already done
   const uint N = ode.size();
-  A.init(N, N);
-  ej.init(N);
-  Aj.init(N);
+  A.resize(N, N);
+  ej.resize(N);
+  Aj.resize(N);
 
   // Reset unit vector
   ej.zero();

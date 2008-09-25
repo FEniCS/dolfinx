@@ -79,8 +79,11 @@ void ODE::J(const uBLASVector& x, uBLASVector& y, const uBLASVector& u, real t)
 
   // Initialize temporary array if necessary
   if ( tmp.size() != N )
-    tmp.init(N);
-  
+  {
+    tmp.resize(N);
+    tmp.zero();
+  }
+
   // Evaluate at u + hx
   ublas::noalias(uu.vec()) += h*x.vec();
   f(uu, t, y);
@@ -112,7 +115,10 @@ void ODE::JT(const uBLASVector& x, uBLASVector& y, const uBLASVector& u, real t)
   uBLASVector& uu = const_cast<uBLASVector&>(u);
 
   if ( tmp.size() != N )
-    tmp.init(N);
+  {
+    tmp.resize(N);
+    tmp.zero();
+  }  
 
   uBLASVector tmp2(N);
 

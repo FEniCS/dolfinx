@@ -34,7 +34,7 @@ PETScVector::PETScVector(uint N):
     x(0), is_view(false)
 {
   // Create PETSc vector
-  init(N);
+  resize(N);
 }
 //-----------------------------------------------------------------------------
 PETScVector::PETScVector(Vec x):
@@ -57,7 +57,7 @@ PETScVector::~PETScVector()
     VecDestroy(x);
 }
 //-----------------------------------------------------------------------------
-void PETScVector::init(uint N)
+void PETScVector::resize(uint N)
 {
   // Two cases:
   //
@@ -67,10 +67,7 @@ void PETScVector::init(uint N)
   // Otherwise do nothing
   
   if (x && this->size() == N)
-  {
-    VecZeroEntries(x);
     return;      
-  }
   else
   {
     if (x && !is_view)
@@ -88,10 +85,6 @@ void PETScVector::init(uint N)
 
   VecSetSizes(x, PETSC_DECIDE, N);
   VecSetFromOptions(x);
-
-  // Set all entries to zero
-  PetscScalar a = 0.0;
-  VecSet(x, a);
 }
 //-----------------------------------------------------------------------------
 PETScVector* PETScVector::copy() const
@@ -194,7 +187,7 @@ const PETScVector& PETScVector::operator= (const PETScVector& v)
 {
   dolfin_assert(v.x);
 
-  init(v.size());
+  resize(v.size());
   VecCopy(v.x, x);
 
   return *this; 

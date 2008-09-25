@@ -88,8 +88,8 @@ void XMLMatrix::readMatrix(const xmlChar *name, const xmlChar **attrs)
   uint M = parseInt(name, attrs, "rows");
   uint N = parseInt(name, attrs, "columns");
 
-  // Set values
-  A.init(M, N);
+  // Set size
+  A.resize(M, N);
 }
 //-----------------------------------------------------------------------------
 void XMLMatrix::readRow(const xmlChar *name, const xmlChar **attrs)

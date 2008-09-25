@@ -50,7 +50,7 @@ PETScMatrix::PETScMatrix(uint M, uint N, Type type):
   checkType();
 
   // Create PETSc matrix
-  init(M, N);
+  resize(M, N);
 }
 //-----------------------------------------------------------------------------
 PETScMatrix::PETScMatrix(const PETScMatrix& A):
@@ -66,7 +66,7 @@ PETScMatrix::~PETScMatrix()
     MatDestroy(A);
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::init(uint M, uint N)
+void PETScMatrix::resize(uint M, uint N)
 {
   // Free previously allocated memory if necessary
   if ( A )
@@ -296,12 +296,12 @@ void PETScMatrix::mult(const GenericVector& x, GenericVector& y, bool transposed
   if (transposed)
   { 
     if (size(0) != xx.size()) error("Matrix and vector dimensions don't match for matrix-vector product.");
-    yy.init(size(1));
+    yy.resize(size(1));
     MatMultTranspose(A, xx.vec(), yy.vec());
   }
   else {
     if (size(1) != xx.size()) error("Matrix and vector dimensions don't match for matrix-vector product.");
-    yy.init(size(0));
+    yy.resize(size(0));
     MatMult(A, xx.vec(), yy.vec());
   }
 }

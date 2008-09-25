@@ -450,7 +450,10 @@ void Assembler::initGlobalTensor(GenericTensor& A, const DofMapSet& dof_map_set,
     if (sparsity_pattern)
       A.init(*sparsity_pattern);
     else
-      A.init(ufc.form.rank(), ufc.global_dimensions);
+    {
+      A.resize(ufc.form.rank(), ufc.global_dimensions);
+      A.zero();
+    }
     t1.stop();
 
     // Delete sparsity pattern

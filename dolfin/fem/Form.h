@@ -9,7 +9,9 @@
 #ifndef __FORM_H
 #define __FORM_H
 
+#include <vector>
 #include <tr1/memory>
+#include <dolfin/fem/FiniteElement.h>
 #include "DofMapSet.h"
 
 // Forward declaration
@@ -23,7 +25,6 @@ namespace dolfin
 
   // Forward declarations
   class Function;
-  template<class T> class Array;
   template<class T> class MeshFunction;
 
 
@@ -48,6 +49,9 @@ namespace dolfin
     /// Create degree of freedom maps 
     void updateDofMaps(Mesh& mesh);
 
+    /// Create finite elements 
+    void updateFiniteElements();
+
     /// Create degree of freedom maps
     void updateDofMaps(Mesh& mesh, MeshFunction<uint>& partitions);
 
@@ -57,7 +61,13 @@ namespace dolfin
     /// Return DofMapSet
     DofMapSet& dofMaps() const;
 
+    /// Return FiniteElement
+    FiniteElement& finite_element(uint i);
+
   private:
+
+    // Finite elements
+    std::vector<FiniteElement*> finite_elements;
 
     // Degree of freedom maps
     std::tr1::shared_ptr<DofMapSet> dof_map_set;

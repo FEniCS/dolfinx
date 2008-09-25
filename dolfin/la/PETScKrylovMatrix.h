@@ -51,8 +51,8 @@ namespace dolfin
     /// Initialize virtual matrix matching the given vectors
     void init(const PETScVector& x, const PETScVector& y);
 
-    /// Initialize virtual matrix of given size, all on one processor
-    void init(int M, int N);
+    /// Resize virtual matrix, all on one processor
+    void resize(int M, int N);
 
     /// Return number of rows (dim = 0) or columns (dim = 1) along dimension dim
     uint size(uint dim) const;

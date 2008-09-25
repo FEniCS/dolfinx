@@ -27,13 +27,13 @@ MTL4Matrix::MTL4Matrix(): Variable("A", "MTL4 matrix"), ins(0), nnz_row(0)
 MTL4Matrix::MTL4Matrix(uint M, uint N): Variable("A", "MTL4 matrix"), ins(0), 
                                         nnz_row(0)
 {
-  init(M, N);
+  resize(M, N);
 }
 //-----------------------------------------------------------------------------
 MTL4Matrix::MTL4Matrix(uint M, uint N, uint nz): Variable("A", "MTL4 matrix"), 
                                                  ins(0), nnz_row(nz)
 {
-  init(M, N);
+  resize(M, N);
 }
 //-----------------------------------------------------------------------------
 MTL4Matrix::MTL4Matrix(const MTL4Matrix& mat): Variable("A", "MTL4 matrix"), 
@@ -60,16 +60,16 @@ MTL4Matrix::~MTL4Matrix()
     delete ins;
 }
 //-----------------------------------------------------------------------------
-void MTL4Matrix::init(uint M, uint N)
+void MTL4Matrix::resize(uint M, uint N)
 {
   assert_no_inserter();
-  A.change_dim(M,N);
-  A = 0;
+  A.change_dim(M, N);
 }
 //-----------------------------------------------------------------------------
 void MTL4Matrix::init(const GenericSparsityPattern& sparsity_pattern)
 {
-  init(sparsity_pattern.size(0), sparsity_pattern.size(1));
+  resize(sparsity_pattern.size(0), sparsity_pattern.size(1));
+  zero();
 }
 //-----------------------------------------------------------------------------
 MTL4Matrix* MTL4Matrix::copy() const 

@@ -65,6 +65,10 @@ dolfin::uint EpetraKrylovSolver::solve(const EpetraMatrix& A, EpetraVector& x,
 {
   //FIXME need the ifdef AztecOO 
 
+
+  // FIXME: check vector size
+  // FIXME: permit initial guess
+
   // cast matrix and vectors to proper type
   Epetra_RowMatrix* row_matrix =  dynamic_cast<Epetra_RowMatrix*>(&(A.mat()));
   Epetra_MultiVector* x_vec = dynamic_cast<Epetra_MultiVector*>(&x.vec());
@@ -85,9 +89,8 @@ dolfin::uint EpetraKrylovSolver::solve(const EpetraMatrix& A, EpetraVector& x,
   linear_solver.SetLHS(x_vec); 
   linear_solver.SetRHS(b_vec); 
 
-  if ( method == cg) { 
+  if ( method == cg) 
     linear_solver.SetAztecOption( AZ_solver, AZ_cg);
-  }
   else if ( method == gmres) 
     linear_solver.SetAztecOption( AZ_solver, AZ_gmres);
   else if ( method == bicgstab) 

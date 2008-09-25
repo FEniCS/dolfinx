@@ -75,7 +75,11 @@ dolfin::uint PETScKrylovSolver::solve(const PETScMatrix& A, PETScVector& x,
   init(M, N);
 
   // Reinitialize solution vector if necessary
-  x.init(M);
+  if( x.size() != M )
+  {
+    x.resize(M);
+    x.zero();
+  }
 
   // Read parameters if not done
   if ( !parameters_read )
@@ -126,7 +130,11 @@ dolfin::uint PETScKrylovSolver::solve(const PETScKrylovMatrix& A, PETScVector& x
   init(M, N);
 
   // Reinitialize solution vector if necessary
-  x.init(M);
+  if( x.size() != M )
+  {
+    x.resize(M);
+    x.zero();
+  }
 
   // Read parameters if not done
   if ( !parameters_read )

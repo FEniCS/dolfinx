@@ -90,34 +90,40 @@ void NewFunction::eval(real* values, const real* x) const
   // Check if we have a vector of degrees of freedom
   if (x)
   {
-    /*
-    // Find the cell that contains x
-    const uint gdim = mesh->geometry().dim();
-    if (gdim > 3)
-      error("Sorry, point evaluation of functions not implemented for meshes of dimension %d.", gdim);
-    Point p;
-    for (uint i = 0; i < gdim; i++)
-      p[i] = x[i];
-    Array<uint> cells;
-    intersection_detector->overlap(p, cells);
-    if (cells.size() < 1)
-      error("Unable to evaluate function at given point (not inside domain).");
-    Cell cell(*mesh, cells[0]);
-    UFCCell ufc_cell(cell);
-  
-    // Get expansion coefficients on cell
-    this->interpolate(scratch->coefficients, ufc_cell, *finite_element);
 
-    // Compute linear combination
+    /*
+  // Initialize intersection detector if not done before
+  if (!intersection_detector)
+    intersection_detector = new IntersectionDetector(*mesh);
+
+  // Find the cell that contains x
+  const uint gdim = mesh->geometry().dim();
+  if (gdim > 3)
+    error("Sorry, point evaluation of functions not implemented for meshes of dimension %d.", gdim);
+  Point p;
+  for (uint i = 0; i < gdim; i++)
+    p[i] = x[i];
+  Array<uint> cells;
+  intersection_detector->overlap(p, cells);
+  if (cells.size() < 1)
+    error("Unable to evaluate function at given point (not inside domain).");
+  Cell cell(*mesh, cells[0]);
+  UFCCell ufc_cell(cell);
+  
+  // Get expansion coefficients on cell
+  this->interpolate(scratch->coefficients, ufc_cell, *finite_element);
+
+  // Compute linear combination
+  for (uint j = 0; j < scratch->size; j++)
+    values[j] = 0.0;
+  for (uint i = 0; i < finite_element->space_dimension(); i++)
+  {
+    finite_element->evaluate_basis(i, scratch->values, x, ufc_cell);
     for (uint j = 0; j < scratch->size; j++)
-      values[j] = 0.0;
-    for (uint i = 0; i < finite_element->spaceDimension(); i++)
-    {
-      finite_element->evaluateBasis(i, scratch->values, x, ufc_cell);
-      for (uint j = 0; j < scratch->size; j++)
-        values[j] += scratch->coefficients[i] * scratch->values[j];
-    }
+      values[j] += scratch->coefficients[i] * scratch->values[j];
+  }
     */
+
   }
 
   // Try calling scalar eval() for scalar-valued function
@@ -158,6 +164,7 @@ void NewFunction::init()
 
   // Initialize vector
   dolfin_assert(x);
-  x->init(N);
+  x->resize(N);
+  x->zero();
 }
 //-----------------------------------------------------------------------------

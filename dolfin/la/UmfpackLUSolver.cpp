@@ -83,7 +83,7 @@ dolfin::uint UmfpackLUSolver::factorizedSolve(GenericVector& x, const GenericVec
     error("Vector does not match size of factored matrix");
 
   // Initialise solution vector and solve
-  x.init(N);
+  x.resize(N);
 
   message("Solving factorized linear system of size %d x %d (UMFPACK).", N, N);
   // Solve for tranpose since we use compressed rows and UMFPACK expected compressed columns

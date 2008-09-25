@@ -54,16 +54,12 @@ uBLASVector::~uBLASVector()
   //Do nothing
 }
 //-----------------------------------------------------------------------------
-void uBLASVector::init(uint N)
+void uBLASVector::resize(uint N)
 {
   if(x->size() == N)
-  {
-    x->clear();
     return;
-  }
  
   x->resize(N, false);
-  x->clear();
 }
 //-----------------------------------------------------------------------------
 dolfin::uint uBLASVector::size() const

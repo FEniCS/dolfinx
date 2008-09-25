@@ -64,8 +64,11 @@ void Dual::f(const uBLASVector& phi, real t, uBLASVector& y)
   return sum;
   */
   if (tmp.size() != size()) 
-    tmp.init(size());
-  
+  {
+    tmp.resize(size());
+    // FIXME: Do we need to zero tmp?
+    tmp.zero();
+  }
   u.eval(endtime()-t, tmp);
   primal.JT(phi, y, tmp, endtime()-t);
   

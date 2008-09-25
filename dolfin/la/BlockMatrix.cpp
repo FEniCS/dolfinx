@@ -18,12 +18,8 @@ BlockMatrix::BlockMatrix(uint n_, uint m_, bool owner_): owner(owner_), n(n_), m
   if (owner) 
   {
     for (uint i=0; i<n; i++) 
-    {
       for (uint j=0; j<m; j++) 
-      {
         matrices[i*n + j] = new Matrix(); 
-      }
-    }
   }
 } 
 //-----------------------------------------------------------------------------
@@ -32,12 +28,8 @@ BlockMatrix::~BlockMatrix()
   if (owner) 
   {
     for (uint i=0; i<n; i++) 
-    {
       for (uint j=0; j<m; j++) 
-      {
         delete matrices[i*n + j];
-      }
-    }
   }
   delete [] matrices;  
 }
@@ -58,7 +50,8 @@ Matrix& BlockMatrix::get(uint i, uint j)
   return *(matrices[i*n+j]); 
 }
 //-----------------------------------------------------------------------------
-dolfin::uint BlockMatrix::size(uint dim) const {
+dolfin::uint BlockMatrix::size(uint dim) const 
+{
   if (dim==0) return n; 
   if (dim==1) return m; 
   error("BlockMatrix has rank 2!"); return 0; 
@@ -67,23 +60,15 @@ dolfin::uint BlockMatrix::size(uint dim) const {
 void BlockMatrix::zero()  
 {
   for(uint i=0; i<n; i++) 
-  {
     for(uint j=0; j<n; j++) 
-    {
       this->get(i,j).zero(); 
-    }
-  }
 }
 //-----------------------------------------------------------------------------
 void BlockMatrix::apply()  
 {
   for(uint i=0; i<n; i++) 
-  {
     for(uint j=0; j<n; j++) 
-    {
       this->get(i,j).apply(); 
-    }
-  }
 }
 //-----------------------------------------------------------------------------
 void BlockMatrix::disp(uint precision) const  
@@ -106,8 +91,11 @@ void BlockMatrix::mult(const BlockVector& x, BlockVector& y, bool transposed) co
   vec = factory.create_vector();
   for(uint i=0; i<n; i++) 
   {
-    y.get(i).init(this->getc(i,0).size(0));
-    vec->init(y.getc(i).size()); 
+    y.get(i).resize(this->getc(i,0).size(0));
+    vec->resize(y.getc(i).size()); 
+    // FIXME: Do we need to zero the vector?
+    y.get(i).zero();
+    vec->zero();
     for(uint j=0; j<n; j++) 
     {
       this->getc(i,j).mult(x.getc(j), *vec);   

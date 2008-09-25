@@ -31,8 +31,8 @@ namespace dolfin
 
     //--- Basic GenericTensor interface ---
 
-    /// Initialize zero tensor with given dimensions
-    virtual void init(uint rank, const uint* dims) = 0;
+    /// Resize tensor with given dimensions
+    virtual void resize(uint rank, const uint* dims) = 0;
 
     /// Initialize zero tensor using sparsity pattern
     virtual void init(const GenericSparsityPattern& sparsity_pattern) = 0;
@@ -81,7 +81,8 @@ namespace dolfin
     template<class T> T& down_cast()
     {
       T* t = dynamic_cast<T*>(instance());
-      if (!t) error("GenericTensor cannot be cast to the requested type.");
+      if (!t) 
+        error("GenericTensor cannot be cast to the requested type.");
       return *t;
     }
 

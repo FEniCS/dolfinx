@@ -75,7 +75,7 @@ namespace dolfin
     const Array& operator=(const T& t)
     {
       for (uint i = 0; i < std::vector<T>::size(); i++)
-      (*this)[i] = t;
+        (*this)[i] = t;
       return *this;
     }
 
