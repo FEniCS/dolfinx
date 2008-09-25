@@ -19,16 +19,14 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-NewFunction::NewFunction(FunctionSpace& V)
-  : V(&V, NoDeleter<FunctionSpace>()),
-    x(std::tr1::shared_ptr<GenericVector>())
+NewFunction::NewFunction(const FunctionSpace& V)
+  : V(&V, NoDeleter<const FunctionSpace>()), x(0)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-NewFunction::NewFunction(std::tr1::shared_ptr<FunctionSpace> V)
-  : V(V),
-    x(std::tr1::shared_ptr<GenericVector>())
+NewFunction::NewFunction(const std::tr1::shared_ptr<FunctionSpace> V)
+  : V(V), x(0)
 {
   // Do nothing
 }
@@ -57,12 +55,6 @@ const NewFunction& NewFunction::operator= (const NewFunction& v)
   return *this;
 }
 //-----------------------------------------------------------------------------
-FunctionSpace& NewFunction::function_space()
-{
-  dolfin_assert(V);
-  return *V;
-}
-//-----------------------------------------------------------------------------
 const FunctionSpace& NewFunction::function_space() const
 {
   dolfin_assert(V);
@@ -75,6 +67,7 @@ GenericVector& NewFunction::vector()
   if (!x)
     init();
 
+  dolfin_assert(x);
   return *x;
 }
 //-----------------------------------------------------------------------------
@@ -84,11 +77,16 @@ const GenericVector& NewFunction::vector() const
   if (!x)
     error("Requesting vector of degrees of freedom for function, but vector has not been initialized.");
 
+  dolfin_assert(x);
   return *x;
 }
 //-----------------------------------------------------------------------------
 void NewFunction::eval(real* values, const real* x) const
 {
+  dolfin_assert(values);
+  dolfin_assert(x);
+  dolfin_assert(V);
+
   // Check if we have a vector of degrees of freedom
   if (x)
   {
@@ -124,7 +122,10 @@ void NewFunction::eval(real* values, const real* x) const
 
   // Try calling scalar eval() for scalar-valued function
   if (V->element().value_rank() == 0)
+  {
     values[0] = eval(x);
+    return;
+  }
 
   // Missing eval function
   error("Missing eval() for user-defined function (must be overloaded).");
@@ -145,16 +146,18 @@ void NewFunction::eval(simple_array<real>& values, const simple_array<real>& x) 
 void NewFunction::init()
 {
   // Get size
+  dolfin_assert(V);
   const uint N = V->dofmap().global_dimension();
 
   // Create vector
   if (!x)
   {
     DefaultFactory factory;
-    x = std::tr1::shared_ptr<GenericVector>(factory.create_vector());
+    x = factory.create_vector();
   }
 
   // Initialize vector
+  dolfin_assert(x);
   x->init(N);
 }
 //-----------------------------------------------------------------------------

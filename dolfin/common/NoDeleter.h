@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-09-11
-// Last changed:
+// Last changed: 2008-09-25
 
 #ifndef __NO_DELETER_H
 #define __NO_DELETER_H
@@ -15,7 +15,7 @@ namespace dolfin
   template <class T>
   class NoDeleter
   {
-    public:
+  public:
       void operator() (T *p) {}
   };
 

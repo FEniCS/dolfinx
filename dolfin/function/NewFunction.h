@@ -6,7 +6,7 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2003-11-28
-// Last changed: 2008-09-11
+// Last changed: 2008-09-25
 
 #ifndef __NEW_FUNCTION_H
 #define __NEW_FUNCTION_H
@@ -34,10 +34,10 @@ namespace dolfin
   public:
 
     /// Create function on given function space
-    explicit NewFunction(FunctionSpace& V);
+    explicit NewFunction(const FunctionSpace& V);
 
     /// Create function on given function space (may be shared)
-    explicit NewFunction(std::tr1::shared_ptr<FunctionSpace> V);
+    explicit NewFunction(const std::tr1::shared_ptr<FunctionSpace> V);
 
     /// Create function from file
     explicit NewFunction(const std::string filename);
@@ -45,22 +45,19 @@ namespace dolfin
     /// Copy constructor
     NewFunction(const NewFunction& v);
 
-    /// Assignment operator
-    const NewFunction& operator= (const NewFunction& v);
-
     /// Destructor
     virtual ~NewFunction();
 
-    /// Return the function space
-    FunctionSpace& function_space();
+    /// Assignment operator
+    const NewFunction& operator= (const NewFunction& v);
 
-    /// Return the function space (const version)
+    /// Return the function space
     const FunctionSpace& function_space() const;
 
-    /// Return the vector of degrees of freedom
+    /// Return the vector of degrees of freedom (non-const version)
     GenericVector& vector();
 
-    /// Return the vector of degrees of freedom
+    /// Return the vector of degrees of freedom (const version)
     const GenericVector& vector() const;
 
     /// Evaluate function at given point x (overload for user-defined function)
@@ -78,10 +75,10 @@ namespace dolfin
     void init();
 
     // The function space
-    std::tr1::shared_ptr<FunctionSpace> V;
+    const std::tr1::shared_ptr<const FunctionSpace> V;
 
     // The vector of degrees of freedom
-    std::tr1::shared_ptr<GenericVector> x;
+    GenericVector* x;
 
   };
 
