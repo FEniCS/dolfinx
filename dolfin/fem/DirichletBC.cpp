@@ -8,6 +8,7 @@
 // Last changed: 2008-08-26
 
 #include <dolfin/common/constants.h>
+#include <dolfin/function/Function.h>
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshData.h>
