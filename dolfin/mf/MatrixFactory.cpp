@@ -6,6 +6,7 @@
 
 #include <dolfin/fem/assemble.h>
 #include <dolfin/fem/DofMapSet.h>
+#include <dolfin/function/Function.h>
 #include <dolfin/la/GenericMatrix.h>
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/mesh/Mesh.h>
@@ -37,9 +38,7 @@ void MatrixFactory::computeMassMatrix(GenericMatrix& A, Mesh& mesh)
     assemble(A, a, mesh);
   }
   else
-  {
     error("Unknown mesh type.");
-  }
 }
 //-----------------------------------------------------------------------------
 void MatrixFactory::computeStiffnessMatrix(GenericMatrix& A, Mesh& mesh, real c)
@@ -58,9 +57,7 @@ void MatrixFactory::computeStiffnessMatrix(GenericMatrix& A, Mesh& mesh, real c)
     assemble(A, a, mesh);
   }
   else
-  {
     error("Unknown mesh type.");
-  } 
 }
 //-----------------------------------------------------------------------------
 void MatrixFactory::computeConvectionMatrix(GenericMatrix& A, Mesh& mesh,

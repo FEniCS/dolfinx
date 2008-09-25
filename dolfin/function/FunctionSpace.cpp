@@ -24,9 +24,7 @@ FunctionSpace::FunctionSpace(std::tr1::shared_ptr<Mesh> mesh,
                              std::tr1::shared_ptr<DofMap> dofmap)
   : _mesh(mesh), _element(element), _dofmap(dofmap)
 {
-  
-
-
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 FunctionSpace::~FunctionSpace()
