@@ -4,7 +4,7 @@
 // Modified by Niclas Jansson, 2008.
 //
 // First added:  2003-10-21
-// Last changed: 2008-09-22
+// Last changed: 2008-09-26
 
 #ifdef HAS_MPI
 #include <mpi.h>
@@ -245,29 +245,35 @@ void PXMLMesh::readVertices(const xmlChar *name, const xmlChar **attrs)
   dolfin_debug2("Reading %d vertices out of %d", num_local, num_vertices);
   
   editor.initCells(1);
-  global_numbering = _mesh.data().createMeshFunction("vertex numbering");
 
-  global_to_local = _mesh.data().createMapping("global to local");
-  
+  // Create global numbering (mapping from local vertex to global vertex)
+  global_numbering = _mesh.data().createMeshFunction("vertex numbering");
   global_numbering->init(_mesh, 0);
+
+  // Create mapping from global vertex to local vertex
+  global_to_local = _mesh.data().createMapping("global to local");
+
 }
 //-----------------------------------------------------------------------------
 void PXMLMesh::readCells(const xmlChar *name, const xmlChar **attrs)
 {
-  // Parse values
 
   editor.close();
-
+  
   MeshFunction<uint> *ghost = _mesh.data().createMeshFunction("ghosted vertices");
   ghost->init(_mesh, 0);
   (*ghost) = 0;
 
-
+  // Geometric partitioning of vertices
   MeshFunction<uint> geom_partition;
   _mesh.partitionGeom(geom_partition);
   _mesh.distribute(geom_partition);
 
+  // Create the set of global numbers in the local part of the partitioned mesh
   global_numbering = _mesh.data().meshFunction("vertex numbering");
+  for(VertexIterator v(_mesh); !v.end(); ++v)
+    local_vertices.insert( global_numbering->get(*v));
+  
 }
 //-----------------------------------------------------------------------------
 void PXMLMesh::readVertex(const xmlChar *name, const xmlChar **attrs)
@@ -312,11 +318,11 @@ void PXMLMesh::readVertex(const xmlChar *name, const xmlChar **attrs)
 
   // Store global vertex numbering (mapping from local vertex to global vertex)
   global_numbering->set(current_vertex, v); 
-  local_vertices.insert(v);
 
   // FIXME: Is this used outside of PXMLMesh?
+  // Yes, mesh partitioning (dual graph) for example
 
-  // Store mapping from global vertex number to global vertex number
+  // Store mapping from global vertex number to local vertex number
   (*global_to_local)[v] = current_vertex++;
 }
 //-----------------------------------------------------------------------------
@@ -348,23 +354,22 @@ void PXMLMesh::readTriangle(const xmlChar *name, const xmlChar **attrs)
   uint v1 = parseUnsignedInt(name, attrs, "v1");
   uint v2 = parseUnsignedInt(name, attrs, "v2");
   
-  // Skip triangle if no vertices are local
-  if (!(is_local(v2) || is_local(v1) || is_local(v0)) || !is_local(v0))
+  // Skip triangle if vertex v0 is not local
+  if (!is_local(v0))
     return;
 
+  // Mark which (local) vertices a cell is using
   used_vertex.insert(v0);
   if (is_local(v1))
     used_vertex.insert(v1);
   if (is_local(v2))
     used_vertex.insert(v2); 
 
-  if (!(is_local(v1) && is_local(v2) && is_local(v0)))
-  {
-    if (!is_local(v1))
-      shared_vertex.insert(v1);
-    if (!is_local(v2))
-      shared_vertex.insert(v2);
-  }
+  // Mark vertices which are not present on the processor
+  if (!is_local(v1))
+    shared_vertex.insert(v1);
+  if (!is_local(v2))
+    shared_vertex.insert(v2);
   
   // Add cell to buffer
   cell_buffer.push_back(v0);
@@ -385,10 +390,11 @@ void PXMLMesh::readTetrahedron(const xmlChar *name, const xmlChar **attrs)
   uint v2 = parseUnsignedInt(name, attrs, "v2");
   uint v3 = parseUnsignedInt(name, attrs, "v3");
 
-  // Skip tetrahedron if no vertices are local
-  if (!(is_local(v3) || is_local(v2) || is_local(v1) || is_local(v0)) || !is_local(v0))
+  // Skip tetrahedron if vertex v0 is not local
+  if (!is_local(v0))
     return;
 
+  // Mark which (local) vertices a cell is using
   used_vertex.insert(v0);
   if (is_local(v1))
     used_vertex.insert(v1);
@@ -397,15 +403,13 @@ void PXMLMesh::readTetrahedron(const xmlChar *name, const xmlChar **attrs)
   if (is_local(v3))
     used_vertex.insert(v3);
 
-  if (!(is_local(v3) && is_local(v2) && is_local(v1) && is_local(v0)))
-  {
-    if (!is_local(v1))
-      shared_vertex.insert(v1);
-    if (!is_local(v2))
-      shared_vertex.insert(v2);
-    if (!is_local(v3))
-      shared_vertex.insert(v3);
-  }
+  // Mark vertices which are not present on the processor
+  if (!is_local(v1))
+    shared_vertex.insert(v1);
+  if (!is_local(v2))
+    shared_vertex.insert(v2);
+  if (!is_local(v3))
+    shared_vertex.insert(v3);
         
   // Add cell to buffer
   cell_buffer.push_back(v0);
@@ -492,41 +496,51 @@ void PXMLMesh::closeMesh()
   Array<uint> send_buff, send_indices, send_orphan;
   Array<real> send_coords;
 
+  // Construct send buffer with missing (shared) vertices global number 
   std::set<uint>::iterator it;
   for (it = shared_vertex.begin(); it != shared_vertex.end(); ++it)
       send_buff.push_back(*it);
 
+  // Number of locally unused vertices
   uint num_orphan = _mesh.numVertices() - used_vertex.size();
+  
+  // Number of locally "missing" vertices
   uint num_shared = send_buff.size();
+
+  // Number of locally missing coordinates
   uint num_coords = _mesh.geometry().dim() * num_shared;
 
+  // Setup mesh editor for the final mesh
   editor.initVertices(_mesh.numVertices() + num_shared - num_orphan);
 
+  // Calculate maximum number of shared vertices to be received
   uint max_nsh;
   MPI_Allreduce(&num_shared, &max_nsh, 1, MPI_UNSIGNED, MPI_MAX, MPI_COMM_WORLD);
+
+  // Allocate receive buffers
   uint *recv_shared  = new uint[max_nsh];
   real *recv_coords = new real[num_coords];
   uint *recv_indices = new uint[num_shared];
   uint *recv_orphans = new uint[num_shared];
 
+  // Pointers pointing to the current position in the receive buffers
   real *rcp = &recv_coords[0];
   uint *rip = &recv_indices[0];
   uint *rop = &recv_orphans[0];
   
-  MeshFunction<bool> ghosted(_mesh, 0);
-  ghosted = false;  
-
   global_numbering = _mesh.data().meshFunction("vertex numbering");
   global_to_local =  _mesh.data().mapping("global to local");
   num_orphan = num_shared;
    
-  // Exchange shared mesh entities
+  std::set<uint> assigned_orphan;
+  
   MPI_Status status;
   int num_recv, src, dest;
   for (uint j = 1; j < num_processes ; j++){
     src = (process_number - j + num_processes) % num_processes;
     dest = (process_number + j) % num_processes;
 
+    // Exchange shared global numbers
     MPI_Sendrecv(&send_buff[0], send_buff.size(), MPI_UNSIGNED, dest, 1,
 		 recv_shared, max_nsh, MPI_UNSIGNED, src, 1, 
 		 MPI_COMM_WORLD, &status);
@@ -534,6 +548,8 @@ void PXMLMesh::closeMesh()
 
     for (int k = 0; k < num_recv; k++) 
     {
+      // If the receiving processor has the shared vertex, 
+      // send back the coordinates
       if (is_local(recv_shared[k]))
       {
 	Vertex v(_mesh, (*global_to_local)[ recv_shared[k] ]);
@@ -544,21 +560,23 @@ void PXMLMesh::closeMesh()
 	
 	send_indices.push_back(recv_shared[k]);
 
-	if (used_vertex.find(recv_shared[k]) == used_vertex.end() &&
-            shared_vertex.find(recv_shared[k]) != shared_vertex.end())
-        {
-	  
+	// If the vertex is unused (orphaned) at the processor, 
+	// transfer ownership to the receiving processor
+	if (used_vertex.find(recv_shared[k]) == used_vertex.end()  &&
+	    assigned_orphan.find(recv_shared[k]) == assigned_orphan.end())
+        {	  
 	  send_orphan.push_back(1);
-	  shared_vertex.erase(recv_shared[k]);
+
+	  // Mark orphaned as assigned
+	  assigned_orphan.insert(recv_shared[k]);	  
 	}
 	else
 	  send_orphan.push_back(0);
-
-       	ghosted.set((*global_to_local)[recv_shared[k]], true);
 	
       }
     }
     
+    // Send back coordinates, indices and ownership information
     MPI_Sendrecv(&send_indices[0], send_indices.size(), MPI_UNSIGNED, 
 		 src, 1, rip, num_shared, MPI_UNSIGNED, dest, 1,
 		 MPI_COMM_WORLD, &status);
@@ -581,34 +599,46 @@ void PXMLMesh::closeMesh()
     num_orphan -= num_recv;
     rop += num_recv;
     
+    // Clear temporary send buffers
     send_indices.clear();
     send_coords.clear();
     send_orphan.clear();
   }
-
+  
+  // New mappings from global to local and local to global vertex number
   std::map<uint, uint> new_lg, new_gl;
+
+  // Set of ghosted vertices in final mesh
   std::set<uint> new_ghost;
 
+  // Add all locally used vertices
   uint vi = 0;
   for (VertexIterator v(_mesh); !v.end(); ++v)
   {
     if (used_vertex.count(global_numbering->get(*v)))
     {
+
+      // Store new mappings 
       new_gl[ global_numbering->get(*v) ] = vi;
       new_lg[ vi ]  = global_numbering->get(*v);
-      if (ghosted.get(*v))
-	new_ghost.insert(vi);	
+
       editor.addVertex(vi++, v->point());
     }
   }
 
+  // Add shared vertices
   uint ii = 0;
   for (uint i = 0; i < send_buff.size(); i++, ii += _mesh.geometry().dim(), vi++)
   {    
+    
+    // Store new mappings
     new_gl[ recv_indices[i] ] = vi;
     new_lg[ vi ] = recv_indices[i];
+
+    // Mark shared vertices as ghosted
     if (recv_orphans[i] == 0)
       new_ghost.insert(vi);
+
     switch(_mesh.geometry().dim())
     {
     case 2:
@@ -619,6 +649,7 @@ void PXMLMesh::closeMesh()
     }
   }
 
+  // Add local cells, using the new global to local mapping for vertex numbers
   uint num_cvert = _mesh.type().numVertices(_mesh.topology().dim());
   editor.initCells(cell_buffer.size() / num_cvert);
   
@@ -650,14 +681,17 @@ void PXMLMesh::closeMesh()
   delete[] recv_orphans;
   
   // Recreate auxiliary mesh data
+
+  // Mark ghosted vertices in the mesh
   MeshFunction<uint> *ghost = _mesh.data().createMeshFunction("ghosted vertices");
   dolfin_assert(ghost);
   ghost->init(_mesh, 0);
   (*ghost) = 0;
-   
+  
   for (it = new_ghost.begin(); it != new_ghost.end(); ++it)
     ghost->set(*it, 1);
 
+  // Set global numbering and mapping data for the final mesh
   global_numbering = _mesh.data().createMeshFunction("vertex numbering");
   global_to_local =  _mesh.data().createMapping("global to local");
   global_numbering->init(_mesh, 0);
