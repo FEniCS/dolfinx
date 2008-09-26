@@ -2,10 +2,10 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Anders Logg, 2005-2008.
-// Modified by Garth N. Wells, 2005-2006.
+// Modified by Garth N. Wells, 2005-2008.
 //
 // First added:  2005-12-02
-// Last changed: 2008-05-08
+// Last changed: 2008-09-26
 
 #ifdef HAS_PETSC
 
@@ -190,7 +190,7 @@ void PETScKrylovSolver::init(uint M, uint N)
   // Set up solver environment
   KSPCreate(PETSC_COMM_SELF, &ksp);
   KSPSetFromOptions(ksp);  
-  //KSPSetInitialGuessNonzero(ksp, PETSC_TRUE);
+  KSPSetInitialGuessNonzero(ksp, PETSC_TRUE);
 
   // Set solver
   setSolver();
