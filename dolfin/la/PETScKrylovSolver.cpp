@@ -48,7 +48,8 @@ PETScKrylovSolver::PETScKrylovSolver(SolverType method,
 PETScKrylovSolver::~PETScKrylovSolver()
 {
   // Destroy solver environment.
-  if ( ksp ) KSPDestroy(ksp);
+  if ( ksp ) 
+    KSPDestroy(ksp);
 }
 //-----------------------------------------------------------------------------
 dolfin::uint PETScKrylovSolver::solve(const GenericMatrix& A, GenericVector& x, 

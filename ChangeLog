@@ -1,3 +1,4 @@
+ - Use x as initial guess in Krylov solvers (PETSc, uBLAS, ITL)
  - Add new function errornorm()
  - Add harmonic ALE mesh smoothing
  - Refinements of Graph class

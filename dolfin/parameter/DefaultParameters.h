@@ -90,7 +90,7 @@ add("homotopy solution file name", "solution.data");
 
 add("Newton maximum iterations", 50);
 add("Newton relative tolerance", 1e-9);
-add("Newton absolute tolerance", 1e-20);
+add("Newton absolute tolerance", 1e-10);
 add("Newton convergence criterion", "residual");
 add("Newton method", "full");
 add("Newton report", true);
@@ -98,7 +98,7 @@ add("Newton report", true);
 //--- Parameters for Krylov solvers ---
 
 add("Krylov relative tolerance", 1e-9);
-add("Krylov absolute tolerance", 1e-20);
+add("Krylov absolute tolerance", 1e-10);
 add("Krylov divergence limit",   1e4);
 add("Krylov maximum iterations", 10000);
 add("Krylov GMRES restart", 30);

@@ -9,7 +9,7 @@
 #
 # Compile this form with FFC: ffc -l dolfin Poisson.form.
 
-element = FiniteElement("Lagrange", "triangle", 5)
+element = FiniteElement("Lagrange", "triangle", 1)
 
 v = TestFunction(element)
 u = TrialFunction(element)
