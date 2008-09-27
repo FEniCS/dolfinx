@@ -36,7 +36,7 @@ namespace dolfin
 
     /// Initialize zero tensor using sparsity pattern
     inline void init(const GenericSparsityPattern& sparsity_pattern)
-    { resize(sparsity_pattern.size(0)); }
+    { resize(sparsity_pattern.size(0)); zero(); }
 
     /// Return copy of tensor
     virtual GenericVector* copy() const = 0;
