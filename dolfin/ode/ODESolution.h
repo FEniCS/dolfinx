@@ -13,6 +13,9 @@
 #include <dolfin/common/types.h>
 #include <dolfin/la/uBLASVector.h>
 
+#define ODESOLUTION_INITIAL_ALLOC 5000
+#define ODESOLUTION_MAX_ALLOC     10000
+
 namespace dolfin
 {
   //forward declarations
@@ -38,17 +41,21 @@ namespace dolfin
     char *filename;
     std::fstream file;
     std::pair<real, uBLASVector> *cache;
-    uint count;
+    uint count; // TODO rename to 'index' or so
     
     uint cachesize;
     uint ringbufcounter;
     
-    //binary tree with mapping from t value to index in file
+    //binary tree with mapping from t value to index in file/buffer
     std::vector<real> bintree;
-    
     uint step;
     
-    void interpolate(const uBLASVector& v1,
+    real* buffer;
+    uint buffersize;
+    uint bufferoffset;
+    bool dataondisk;
+
+    void lerp(const uBLASVector& v1,
                      const real t1, 
                      const uBLASVector& v2, 
                      const real t2, 
@@ -62,7 +69,6 @@ namespace dolfin
     friend class TimeStepper;
     friend class ODESolver;
   };
-
 }
 
 #endif
