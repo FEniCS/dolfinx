@@ -207,21 +207,12 @@ void PETScKrylovSolver::init(uint M, uint N)
 void PETScKrylovSolver::readParameters()
 {
   // Don't do anything if not initialized
-  if ( !ksp )
+  if( !ksp )
     return;
 
   // Set monitor
-  if ( get("Krylov monitor convergence") )
-  {
-    //FIXME: Decide on supported version of PETSc
-#if(PETSC_VERSION_SUBMINOR > 2)
-    //KSPMonitorSet(ksp, monitor, 0, 0);
+  if( get("Krylov monitor convergence") )
     KSPMonitorSet(ksp, KSPMonitorTrueResidualNorm, 0, 0);
-#else
-    //KSPSetMonitor(ksp, monitor, 0, 0);
-    KSPSetMonitor(ksp, KSPMonitorTrueResidualNorm, 0, 0);
-#endif
-  }
 
   // Set tolerances
   KSPSetTolerances(ksp,
