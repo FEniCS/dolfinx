@@ -24,7 +24,7 @@ namespace dolfin
   public:
 
     /// Destructor
-    virtual ~EpetraFactory() {}
+    virtual ~EpetraFactory();
 
     /// Create empty matrix
     EpetraMatrix* create_matrix() const;
