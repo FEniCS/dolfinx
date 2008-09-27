@@ -19,6 +19,10 @@ EpetraFactory:: EpetraFactory() {
   comm = new Epetra_SerialComm(); 
 }
 //-----------------------------------------------------------------------------
+EpetraFactory:: ~EpetraFactory() {
+  delete comm;
+}
+//-----------------------------------------------------------------------------
 EpetraMatrix* EpetraFactory::create_matrix() const 
 { 
   return new EpetraMatrix();
