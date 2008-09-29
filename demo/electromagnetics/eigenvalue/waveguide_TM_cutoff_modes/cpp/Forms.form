@@ -1,0 +1,14 @@
+# Copyright (C) 2008 Evan Lezar.
+#
+# Forms for solving the transverse magnetic (TM) cutoff modes of a waveguide
+#
+# Compile this form with FFC: ffc -l dolfin Forms.form
+
+element = FiniteElement("Nedelec", "triangle", 2)
+
+v = TestFunction(element)
+u = TrialFunction(element)
+
+
+a = dot(curl_t(v), curl_t(u))*dx
+L = dot(v, u)*dx
