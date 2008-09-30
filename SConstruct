@@ -147,17 +147,18 @@ if env.GetOption("clean"):
   if env["veryClean"]:
     os.unlink("%s.dblite" % (dolfin_sconsignfile))
     # FIXME: should we also remove the file scons/options.cache?
-    
-# Default CXX and FORTRAN flags
-env["CXXFLAGS"] = "-Wall -pipe -ansi" # -Werror"
-#env["SHFORTRANFLAGS"] = "-Wall -pipe -fPIC"
 
-# Default link flags
-env["LINKFLAGS"] = ""  # FIXME: is it safe to start with an empty string?
+# Set default compiler and linker flags (defining CXXFLAGS/LINKFLAGS
+# will override this)
+env['CXXFLAGS'] = os.environ.get("CXXFLAGS", "-Wall -pipe -ansi -Werror")
+env["LINKFLAGS"] = os.environ.get("LINKFLAGS", "")  # FIXME: "" OK as default?
+
+# Default FORTRAN flags
+#env["SHFORTRANFLAGS"] = "-Wall -pipe -fPIC"
 
 # If Debug is enabled, add -g:
 if env["enableDebug"]:
-  env.Append(CXXFLAGS=" -DDEBUG -g -Werror")
+  env.Append(CXXFLAGS=" -DDEBUG -g")
 
 if not env["enableDebugUblas"]:
   env.Append(CXXFLAGS=" -DNDEBUG")
@@ -184,12 +185,6 @@ if env["customCxxFlags"]:
 # Append custom linker flags
 if env["customLinkFlags"]:
   env.Append(LINKFLAGS=" " + env["customLinkFlags"])
-
-# Look for custom compiler and linker flags in os.environ
-if os.environ.has_key("CXXFLAGS"):
-  env.Append(CXXFLAGS=" %s" % os.environ["CXXFLAGS"])
-if os.environ.has_key("LINKFLAGS"):
-  env.Append(LINKFLAGS=" %s" % os.environ["LINKFLAGS"])
 
 # Determine which compiler to be used:
 cxx_compilers = ["c++", "g++", "CC"]
