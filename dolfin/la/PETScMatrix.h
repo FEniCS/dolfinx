@@ -55,7 +55,7 @@ namespace dolfin
     PETScMatrix(uint M, uint N, Type type=default_matrix);
 
     /// Copy constructor
-    PETScMatrix(const PETScMatrix& A);
+    explicit PETScMatrix(const PETScMatrix& A);
 
     /// Create matrix from given PETSc Mat pointer
     explicit PETScMatrix(Mat A);
