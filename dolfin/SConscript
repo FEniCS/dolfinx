@@ -105,11 +105,14 @@ if env["enablePydolfin"]:
     swigFlags = "-python -c++ -shadow -I%s" % os.path.join("include","swig")
     swigFlags = swigFlags.split()
     out, err = scons.runCommand("swig", "-version")
-    # Determine swig version, v 1.3.28 and later supports -O flag
-    m = re.match(r"SWIG Version (.+)", out, re.M)
-    #if scons.checkVersion(m.group(1), "1.3.28"):
+
+    # Determine swig version
+    swig_version = re.match(r"SWIG Version (.+)", out, re.M).group(1)
+    
+    #if scons.checkVersion(swig_version, "1.3.28"):
     #    swigFlags.append("-O")
 
+    # Ths swig environment
     swigEnv = env.Copy()
     swigEnv["SWIGFLAGS"] = swigFlags
     swigEnv["SHLIBPREFIX"] = "_"
@@ -203,8 +206,11 @@ for modName, mod in modules.items():
         modEnv = swigEnv.Copy(CXXFLAGS=mod.cxxFlags, LINKFLAGS=mod.linkFlags + linkOpts)
         modEnv.Append(SWIGFLAGS=mod.swigFlags + ["-I%s" % i for i in swigcppPath])
         
-        ### uncomment the following line to remove -Werror from the CXXFLAGS:
-        #modEnv["CXXFLAGS"] = re.sub("-Werror","",modEnv["CXXFLAGS"])
+        # Version previous to 1.3.36 together with gcc version 4.3 and later
+        # produce warnings that are treated as error using -werror flag
+        # FIXME: Is this correct? If so maybee we should insert a chek for gcc version?
+        if not scons.checkVersion(swig_version, "1.3.36"):
+            modEnv["CXXFLAGS"] = modEnv["CXXFLAGS"].replace(" -Werror","")
             
         # Add python dependency (always required in python wrappers)
         pyPkg = configuredPackages[python_version]
