@@ -443,6 +443,7 @@ namespace dolfin
   inline void uBLASMatrix<ublas_sparse_matrix>::init(const GenericSparsityPattern& sparsity_pattern)
   {
     resize(sparsity_pattern.size(0), sparsity_pattern.size(1));
+    A.clear();
 
     // Reserve space for non-zeroes
     A.reserve(sparsity_pattern.numNonZero());
@@ -467,6 +468,7 @@ namespace dolfin
   inline void uBLASMatrix<Mat>::init(const GenericSparsityPattern& sparsity_pattern)
   {
     resize(sparsity_pattern.size(0), sparsity_pattern.size(1));
+    A.clear();
   }
   //---------------------------------------------------------------------------
   template <>
