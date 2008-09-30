@@ -106,6 +106,10 @@ namespace dolfin
       }
     }
 
+    /// Add multiple of given matrix (AXPY operation)
+    virtual void axpy(real a, const GenericMatrix& A)
+    { error("Not implemented."); }
+
     /// Get non-zero values of given row
     virtual void getrow(uint row, Array<uint>& columns, Array<real>& values) const
     {

@@ -103,6 +103,9 @@ namespace dolfin
     /// Add block of values
     virtual void add(const real* block, uint m, const uint* rows, uint n, const uint* cols);
 
+    /// Add multiple of given matrix (AXPY operation)
+    virtual void axpy(real a, const GenericMatrix& A);
+
     /// Get non-zero values of given row
     virtual void getrow(uint row, Array<uint>& columns, Array<real>& values) const;
 
@@ -397,14 +400,20 @@ namespace dolfin
   template <class Mat>  
   const GenericMatrix& uBLASMatrix<Mat>::operator= (const GenericMatrix& A)
   { 
-    this->A = A.down_cast< uBLASMatrix<Mat> >().mat(); 
+    *this = A.down_cast< uBLASMatrix<Mat> >();
     return *this;
   }
   //-----------------------------------------------------------------------------
   template <class Mat>  
   inline const uBLASMatrix<Mat>& uBLASMatrix<Mat>::operator= (const uBLASMatrix<Mat>& A)
   {
-    this->A = A.mat(); 
+    // Check for self-assignment
+    if (this != &A)
+    {
+      // Assume uBLAS take care of deleting an existing Matrix 
+      // using its assignment operator
+      this->A = A.mat();
+    }
     return *this;
   }
   //-----------------------------------------------------------------------------
@@ -467,6 +476,32 @@ namespace dolfin
   inline void uBLASMatrix<Mat>::init(const GenericSparsityPattern& sparsity_pattern)
   {
     resize(sparsity_pattern.size(0), sparsity_pattern.size(1));
+  }
+  //---------------------------------------------------------------------------
+//  template <> 
+//  inline void uBLASMatrix<ublas_sparse_matrix>::axpy(real a, const GenericMatrix& A)
+//  {
+//    // Check for same size
+//    if ( size(0) != A.size(0) or size(1) != A.size(1) )  
+//      error("Matrices must be of same size.");
+//    
+//    // Check for same sparsity pattern
+//    // FIXME: Is this nesessary? Does ublas do it for us
+//    const uBLASMatrix* AA = &A.down_cast<uBLASMatrix>();
+//    if ( AA->mat().nnz() != this->A.nnz())
+//      error("Matrices must have the same sparsity pattern.");
+//    
+//    this->A += a * AA->mat();
+//  }
+  //---------------------------------------------------------------------------
+  template <class Mat> 
+  inline void uBLASMatrix<Mat>::axpy(real a, const GenericMatrix& A)
+  {
+    // Check for same size
+    if ( size(0) != A.size(0) or size(1) != A.size(1) )  
+      error("Matrices must be of same size.");
+    
+    this->A += a * A.down_cast<uBLASMatrix>().mat();
   }
   //---------------------------------------------------------------------------
   template <>

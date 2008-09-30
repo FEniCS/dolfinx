@@ -87,6 +87,10 @@ namespace dolfin
     virtual void add(const real* block, uint m, const uint* rows, uint n, const uint* cols)
     { matrix->add(block, m, rows, n, cols); }
 
+    /// Add multiple of given matrix (AXPY operation)
+    virtual void axpy(real a, const GenericMatrix& A)
+    { matrix->axpy(a,A); }
+
     /// Get non-zero values of given row
     virtual void getrow(uint row, Array<uint>& columns, Array<real>& values) const
     { matrix->getrow(row, columns, values); }

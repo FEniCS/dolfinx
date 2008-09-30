@@ -57,7 +57,8 @@ PETScMatrix::PETScMatrix(const PETScMatrix& A):
   Variable("A", "PETSc matrix"),
   A(0), is_view(false), _type(A._type)
 {
-  *this = A;
+  if (A.mat())
+    MatDuplicate(A.mat(), MAT_COPY_VALUES, &(this->A));
 }
 //-----------------------------------------------------------------------------
 PETScMatrix::~PETScMatrix()
@@ -214,6 +215,15 @@ void PETScMatrix::add(const real* block,
                block, ADD_VALUES);
 }
 //-----------------------------------------------------------------------------
+void PETScMatrix::axpy(real a, const GenericMatrix& A)
+{
+  const PETScMatrix *AA = &A.down_cast<PETScMatrix>();
+  dolfin_assert(this->A);
+  dolfin_assert(AA->mat());
+  dolfin_assert(sameNonzeroPattern(*AA));
+  MatAXPY(this->A,a,AA->mat(),SAME_NONZERO_PATTERN);
+}
+//-----------------------------------------------------------------------------
 void PETScMatrix::getrow(uint row,
                          Array<uint>& columns,
                          Array<real>& values) const
@@ -357,14 +367,31 @@ const PETScMatrix& PETScMatrix::operator/= (real a)
 //-----------------------------------------------------------------------------
 const GenericMatrix& PETScMatrix::operator= (const GenericMatrix& A)
 {
-  error("Not implemented.");
+  *this = A.down_cast<PETScMatrix>();
   return *this;
 }
 //-----------------------------------------------------------------------------
 const PETScMatrix& PETScMatrix::operator= (const PETScMatrix& A)
 {
-  error("Not implemented.");
-  return *this; 
+  dolfin_assert(A.mat());
+  // Check for self-assignment
+  if (this != &A)
+  {
+    if (sameNonzeroPattern(A))
+      // If the NonzeroPattern is the same we just copy the values
+      MatCopy(A.mat(), this->A, SAME_NONZERO_PATTERN);
+    
+    else
+    {
+      // Destroy A
+      if (this->A && !this->is_view)
+	MatDestroy(this->A);
+      
+      // Creating a new A, with the same pattern as A.A
+      MatDuplicate(A.mat(), MAT_COPY_VALUES, &(this->A));
+    }
+  }
+  return *this;
 }
 //-----------------------------------------------------------------------------
 PETScMatrix::Type PETScMatrix::type() const
@@ -470,6 +497,20 @@ void PETScMatrix::checkType()
     warning("Requested matrix type unknown. Using default.");
     _type = default_matrix;
   }
+}
+//-----------------------------------------------------------------------------
+bool PETScMatrix::sameNonzeroPattern(const PETScMatrix& A) const
+{
+  // FIXME: This function does not assert for zero pointers. Should it?
+  if (this->A==0 or A.mat()==0)
+    return false;
+  // FIXME: Is this check sufficient? 
+  MatInfo this_info, other_info;
+  MatGetInfo(this->A,MAT_GLOBAL_SUM,&this_info);
+  MatGetInfo(A.mat(),MAT_GLOBAL_SUM,&other_info);
+  return this_info.nz_allocated   == other_info.nz_allocated   and \
+         this_info.columns_global == other_info.columns_global and \
+         this_info.rows_global    == other_info.rows_global;
 }
 //-----------------------------------------------------------------------------
 MatType PETScMatrix::getPETScType() const

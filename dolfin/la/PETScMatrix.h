@@ -55,7 +55,7 @@ namespace dolfin
     PETScMatrix(uint M, uint N, Type type=default_matrix);
 
     /// Copy constructor
-    explicit PETScMatrix(const PETScMatrix& A);
+    PETScMatrix(const PETScMatrix& A);
 
     /// Create matrix from given PETSc Mat pointer
     explicit PETScMatrix(Mat A);
@@ -97,6 +97,9 @@ namespace dolfin
     /// Add block of values
     virtual void add(const real* block, uint m, const uint* rows, uint n, const uint* cols);
 
+    /// Add multiple of given matrix (AXPY operation)
+    virtual void axpy(real a, const GenericMatrix& A);
+
     /// Get non-zero values of given row
     virtual void getrow(uint row, Array<uint>& columns, Array<real>& values) const;
 
@@ -114,7 +117,7 @@ namespace dolfin
 
     /// Multiply matrix by given number
     virtual const PETScMatrix& operator*= (real a);
-
+    
     /// Divide matrix by given number
     virtual const PETScMatrix& operator/= (real a);
 
@@ -156,6 +159,9 @@ namespace dolfin
 
     // Check that requested type has been compiled into PETSc
     void checkType();
+
+    // Check for same size and sparsity pattern of this and another matrix
+    bool sameNonzeroPattern(const PETScMatrix& A) const;
 
     // PETSc Mat pointer
     Mat A;

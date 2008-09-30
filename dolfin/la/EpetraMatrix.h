@@ -87,6 +87,9 @@ namespace dolfin
     /// Add block of values
     virtual void add(const real* block, uint m, const uint* rows, uint n, const uint* cols);
 
+    /// Add multiple of given matrix (AXPY operation)
+    virtual void axpy(real a, const GenericMatrix& A);
+
     /// Get non-zero values of given row
     virtual void getrow(uint row, Array<uint>& columns, Array<real>& values) const;
 
@@ -109,8 +112,8 @@ namespace dolfin
     virtual const EpetraMatrix& operator/= (real a);
 
     /// Assignment operator
-    virtual const GenericMatrix& operator= (const GenericMatrix& x)
-    { error("Not implemented."); return *this; }
+    virtual const GenericMatrix& operator= (const GenericMatrix& x);
+    //{ error("Not implemented."); return *this; }
 
     //--- Special functions ---
 
@@ -123,8 +126,8 @@ namespace dolfin
     Epetra_FECrsMatrix& mat() const;
 
     /// Assignment operator
-    const EpetraMatrix& operator= (const EpetraMatrix& x)
-    { error("Not implemented."); return *this; }
+    const EpetraMatrix& operator= (const EpetraMatrix& x);
+    //{ error("Not implemented."); return *this; }
 
   private:
 
@@ -136,7 +139,7 @@ namespace dolfin
     
   };
 
-  LogStream& operator<< (LogStream& stream, const Epetra_FECrsMatrix& A);
+  LogStream& operator<< (LogStream& stream, const EpetraMatrix& A);
 
 }
 

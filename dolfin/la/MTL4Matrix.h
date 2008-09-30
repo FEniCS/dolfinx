@@ -81,6 +81,9 @@ namespace dolfin
     /// Add block of values
     virtual void add(const real* block, uint m, const uint* rows, uint n, const uint* cols);
 
+    /// Add multiple of given matrix (AXPY operation)
+    virtual void axpy(real a, const GenericMatrix& A);
+
     /// Get non-zero values of given row
     virtual void getrow(uint row, Array<uint>& columns, Array<real>& values) const;
 
@@ -103,7 +106,7 @@ namespace dolfin
     virtual const MTL4Matrix& operator/= (real a);
 
     /// Assignment operator
-    virtual const MTL4Matrix& operator= (const GenericMatrix& x);
+    virtual const GenericMatrix& operator= (const GenericMatrix& A);
 
     /// Return pointers to underlying compresssed storage data
     /// See GenericMatrix for documentation.
@@ -124,7 +127,7 @@ namespace dolfin
     mtl4_sparse_matrix& mat();
 
     /// Assignment operator
-    //const MTL4Matrix& operator= (const MTL4Matrix& x);
+    const MTL4Matrix& operator= (const MTL4Matrix& A);
 
   private:
 
@@ -140,7 +143,7 @@ namespace dolfin
     uint nnz_row;
   };
 
-  LogStream& operator<< (LogStream& stream, const mtl4_sparse_matrix& A);
+  LogStream& operator<< (LogStream& stream, const MTL4Matrix& A);
 
 }
 

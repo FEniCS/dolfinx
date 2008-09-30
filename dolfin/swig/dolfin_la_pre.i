@@ -39,18 +39,57 @@ namespace dolfin {
     $1 = PyArray_Check($input);
 }
 
-%rename(assign) dolfin::GenericVector::operator=;
+// Define a macros for the linear algebra interface
+%define LA_PRE_INTERFACE(VEC_TYPE,MAT_TYPE)
+%rename(assign) dolfin::VEC_TYPE::operator=;
 
-%newobject dolfin::GenericVector::copy;  
-%newobject dolfin::GenericMatrix::copy;  
-%newobject dolfin::Vector::copy;  
-%newobject dolfin::Matrix::copy;  
-%newobject dolfin::uBLASVector::copy;  
-%newobject dolfin::uBLASMatrix::copy;  
-%newobject dolfin::PETScVector::copy;  
-%newobject dolfin::PETScMatrix::copy;  
-%newobject dolfin::EpetraVector::copy;  
-%newobject dolfin::EpetraMatrix::copy;  
+%ignore dolfin::VEC_TYPE::operator*=;
+%ignore dolfin::VEC_TYPE::operator/=;
+%ignore dolfin::VEC_TYPE::operator+=;
+%ignore dolfin::VEC_TYPE::operator-=;
+
+%ignore dolfin::MAT_TYPE::operator*=;
+%ignore dolfin::MAT_TYPE::operator/=;
+%ignore dolfin::MAT_TYPE::operator+=;
+%ignore dolfin::MAT_TYPE::operator-=;
+
+%newobject dolfin::VEC_TYPE::copy;
+%newobject dolfin::MAT_TYPE::copy;
+%newobject dolfin::MAT_TYPE::copy;
+
+%enddef
+
+// Define a macros for the linear algebra factory interface
+%define LA_FACTORY(FACTORY_TYPE)
+%newobject dolfin::FACTORY_TYPE::create_matrix();
+%newobject dolfin::FACTORY_TYPE::create_pattern(); 
+%newobject dolfin::FACTORY_TYPE::create_vector();
+
+%enddef
+
+// Run the macros with different types
+LA_PRE_INTERFACE(GenericVector,GenericMatrix)
+LA_PRE_INTERFACE(Vector,Matrix)
+LA_PRE_INTERFACE(uBLASVector,uBLASMatrix)
+
+LA_FACTORY(LinearAlgebraFactory)
+LA_FACTORY(DefaultFactory)
+
+#ifdef HAS_PETSC
+LA_PRE_INTERFACE(PETScVector,PETScMatrix)
+LA_FACTORY(PETScFactory)
+#endif
+
+#ifdef HAS_TRILINOS
+LA_PRE_INTERFACE(EpetraVector,EpetraMatrix)
+LA_FACTORY(EpetraFactory)
+#endif
+
+#ifdef HAS_MTL4
+LA_PRE_INTERFACE(MTL4Vector,MTL4Matrix)
+LA_FACTORY(MTL4Factory)
+#endif
+
 
 
 
