@@ -2,6 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-04-21
+// Last changed: 2008-09-28
 
 #ifdef HAS_TRILINOS
 
@@ -15,11 +16,13 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-EpetraFactory:: EpetraFactory() {
+EpetraFactory:: EpetraFactory()
+{
   comm = new Epetra_SerialComm(); 
 }
 //-----------------------------------------------------------------------------
-EpetraFactory:: ~EpetraFactory() {
+EpetraFactory:: ~EpetraFactory()
+{
   delete comm;
 }
 //-----------------------------------------------------------------------------
