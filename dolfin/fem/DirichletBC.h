@@ -4,7 +4,7 @@
 // Modified by Kristian Oelgaard, 2007
 //
 // First added:  2007-04-10
-// Last changed: 2008-08-26
+// Last changed: 2008-10-01
 //
 // FIXME: This class needs some cleanup, in particular collecting
 // FIXME: all data from different representations into a common
@@ -155,6 +155,9 @@ namespace dolfin
 
     /// Get Dirichlet values and indicators 
     void getBC(uint n, uint* indicators, real* values, const DofMap& dof_map, const ufc::form& form); 
+
+    /// Check if given function is compatible with boundary condition (checking only vertex values)
+    bool is_compatible(Function& v) const;
 
     /// Return mesh
     Mesh& mesh();

@@ -6,7 +6,7 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2003-11-28
-// Last changed: 2008-09-11
+// Last changed: 2008-10-02
 
 #ifndef __FUNCTION_H
 #define __FUNCTION_H
@@ -140,7 +140,10 @@ namespace dolfin
     void interpolate(real* coefficients,
                      const ufc::cell& ufc_cell,
                      const FiniteElement& finite_element,
-                     Cell& cell, int facet = -1);
+                     Cell& cell, int facet=-1);
+
+    /// Make current cell and facet available to user-defined function
+    void update(Cell& cell, int facet=-1);
 
     /// Evaluate function at given point (used for subclassing through SWIG interface)
     virtual void eval(simple_array<real>& values, const simple_array<real>& x) const { eval(values.data, x.data); }

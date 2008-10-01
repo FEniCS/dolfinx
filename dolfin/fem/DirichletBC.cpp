@@ -5,7 +5,7 @@
 // Modified by Martin Sandve Alnes, 2008
 //
 // First added:  2007-04-10
-// Last changed: 2008-08-26
+// Last changed: 2008-10-01
 
 #include <dolfin/common/constants.h>
 #include <dolfin/function/Function.h>
@@ -249,6 +249,64 @@ void DirichletBC::zero(GenericMatrix& A, const DofMap& dof_map, const ufc::form&
 
   // Clear temporary arrays
   delete [] dofs;
+}
+//-----------------------------------------------------------------------------
+bool DirichletBC::is_compatible(Function& v) const
+{
+  // This function only checks the values at vertices when it should
+  // really check that the dof functionals agree. The check here is
+  // neither necessary nor sufficient to guarantee compatible boundary
+  // boundary conditions but a more robust test requires access to the
+  // function space.
+
+  // Compute value size
+  uint size = 1;
+  for (uint i = 0; i < g.rank(); i++)
+    size *= g.dim(i);
+  simple_array<real> g_values(size, new real[size]);
+  simple_array<real> v_values(size, new real[size]);
+
+  // Iterate over facets
+  for (uint f = 0; f < facets.size(); f++)
+  {
+    // Create cell and facet
+    uint cell_number  = facets[f].first;
+    uint facet_number = facets[f].second;
+    Cell cell(_mesh, cell_number);
+    Facet facet(_mesh, facet_number);
+
+    // Make cell and facet available to user-defined function
+    g.update(cell, facet_number);
+    v.update(cell, facet_number);
+
+    // Iterate over facet vertices
+    for (VertexIterator vertex(facet); !vertex.end(); ++vertex)
+    {
+      // Get facet coordinates
+      simple_array<real> x(_mesh.geometry().dim(), vertex->x());
+      
+      // Evaluate g and v at vertex
+      g.eval(g_values, x);
+      v.eval(v_values, x);
+
+      // Check values
+      for (uint i = 0; i < size; i++)
+      {
+        if (std::abs(g_values[i] - v_values[i]) > DOLFIN_EPS)
+        {
+          Point p(_mesh.geometry().dim(), x.data);
+          cout << "Incompatible function value " << v_values[i] << " at p = " << p << ", should be " << g_values[i] << "." << endl;
+          delete [] g_values.data;
+          delete [] v_values.data;
+          return false;
+        }
+      }
+    }
+  }
+
+  delete [] g_values.data;
+  delete [] v_values.data;
+  return true;
 }
 //-----------------------------------------------------------------------------
 Mesh& DirichletBC::mesh()

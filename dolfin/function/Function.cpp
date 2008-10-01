@@ -5,7 +5,7 @@
 // Modified by Martin Sandve Alnes 2008.
 //
 // First added:  2003-11-28
-// Last changed: 2008-09-11
+// Last changed: 2008-10-02
 //
 // The class Function serves as the envelope class and holds a pointer
 // to a letter class that is a subclass of GenericFunction. All the
@@ -274,7 +274,7 @@ void Function::interpolate(real* values)
 }
 //-----------------------------------------------------------------------------
 void Function::interpolate(real* coefficients, const ufc::cell& ufc_cell,
-              const FiniteElement& finite_element, Cell& cell, int facet)
+                           const FiniteElement& finite_element, Cell& cell, int facet)
 {
   if (!f)
     error("Function contains no data.");
@@ -289,6 +289,12 @@ void Function::interpolate(real* coefficients, const ufc::cell& ufc_cell,
   // Make cell and facet unavailable
   _cell = 0;
   _facet = -1;
+}
+//-----------------------------------------------------------------------------
+void Function::update(Cell& cell, int facet)
+{
+  _cell  = &cell;
+  _facet = facet;
 }
 //-----------------------------------------------------------------------------
 void Function::eval(real* values, const real* x) const

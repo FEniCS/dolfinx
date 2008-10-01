@@ -1,10 +1,10 @@
-// Copyright (C) 2006 Anders Logg.
+// Copyright (C) 2006-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells, 2006.
 //
 // First added:  2006-06-12
-// Last changed: 2006-10-23
+// Last changed: 2008-10-01
 
 #include <cmath>
 #include "Point.h"
@@ -44,7 +44,7 @@ real Point::dot(const Point& p) const
 //-----------------------------------------------------------------------------
 dolfin::LogStream& dolfin::operator<< (LogStream& stream, const Point& p)
 {
-   stream << "[ Point x = " << p.x() << " y = " << p.y() << " z = " << p.z() << " ]";
+   stream << "[Point x = " << p.x() << " y = " << p.y() << " z = " << p.z() << "]";
    return stream;
 }
 //-----------------------------------------------------------------------------
