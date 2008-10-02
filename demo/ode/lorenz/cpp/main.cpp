@@ -69,6 +69,7 @@ int main()
   dolfin_set("ODE order", 5);
   dolfin_set("ODE discrete tolerance", 1e-10);
   dolfin_set("ODE save solution", true);
+  dolfin_set("ODE solve dual problem", true);
  
   Lorenz lorenz;
   lorenz.solve();
