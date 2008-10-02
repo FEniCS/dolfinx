@@ -9,6 +9,8 @@
 #     dolfinreplace foo bar 
 #
 # Johan hake, 2008-19-09
+#
+# Modified by Anders Logg, 2008.
 
 from os import path
 
@@ -16,7 +18,7 @@ from os import path
 post_fixes = ['.h','.cpp','.i','.tex','.py']
 
 # Directories to explude
-exclude_dir = []
+exclude_dir = [".hg"]
 
 # Global variables
 count         = 0
@@ -27,19 +29,12 @@ dolfin_root   = path.abspath(path.join(path.dirname(path.abspath(__file__)),
 # Output strings
 post_fix_string = ", ".join( "'%s'"%s for s in post_fixes)
 
-start_str = """
-Replaceing '%s' with '%s' in all
-
-    %s
-
-files..."""
+start_str = """Replacing '%s' with '%s' in all %s files..."""
 
 report_str = """
-Done
-        
-%d word replaced in:
+%d occurences replaced in %d files:
 
-    %s
+%s
 %s"""
 
 def replace(args, dirname, filenames):
@@ -114,7 +109,7 @@ def main():
         else:
             simulate_str = ""
             
-        print report_str%(count,", ".join(changed_files),simulate_str)
+        print report_str % (count, len(changed_files), ", ".join(changed_files), simulate_str)
     else:
         print "\nDone\nNo occurens of %s found"%sys.argv[1]
     
