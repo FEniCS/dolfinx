@@ -22,7 +22,7 @@ try :
   xlabel('t')
   ylabel('phi(t)')
   title('Lorenz (dual)')
-except ImportError :
-  pass
+except :
+  print "Not plotting dual solution"
 
 show()
