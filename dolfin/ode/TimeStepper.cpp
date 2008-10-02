@@ -55,7 +55,7 @@ void TimeStepper::solve(ODE& ode, ODESolution& u)
   tic();  
   
   // Check if we should create a reduced model (automatic modeling)
-  if ( ode.get("ODE automatic modeling") )
+  if (ode.get("ODE automatic modeling"))
   {
     message("Creating reduced model (automatic modeling).");
     error("Automatic modeling temporarily broken.");
@@ -76,11 +76,10 @@ void TimeStepper::solve(ODE& ode, ODESolution& u)
     TimeStepper timeStepper(ode, u);
     
     // Do time stepping
-
-    while ( !timeStepper.finished() && !timeStepper.stopped() )
+    while (!timeStepper.finished() && !timeStepper.stopped())
       timeStepper.step();
   }
-
+  
   // Report elapsed time
   message("Solution computed in %.3f seconds.", toc());
 }
@@ -97,7 +96,7 @@ real TimeStepper::step()
 
   // Iterate until solution is accepted
   const real a = t;
-  while ( true )
+  while (true)
   {
     // Build time slab
     t = timeslab->build(a, T);
@@ -152,11 +151,11 @@ bool TimeStepper::stopped() const
 void TimeStepper::save()
 {
   // Check if we should save the solution
-  if ( !save_solution )
+  if (!save_solution)
     return;
 
   // Choose method for saving the solution
-  if ( adaptive_samples )
+  if (adaptive_samples)
     saveAdaptiveSamples();
   else
     saveFixedSamples();
@@ -169,7 +168,7 @@ void TimeStepper::saveFixedSamples()
   real t1 = timeslab->endtime();
 
   // Save initial value
-  if ( t0 == 0.0 )
+  if (t0 == 0.0)
   {
     //Sample sample(*timeslab, 0.0, u.name(), u.label());
     Sample sample(*timeslab, ode.time(0.0), "u", "unknown");
@@ -183,7 +182,7 @@ void TimeStepper::saveFixedSamples()
   real t = floor(t0/K - 0.5) * K;
 
   // Save samples
-  while ( true )
+  while (true)
   {
     t += K;
 
@@ -197,6 +196,16 @@ void TimeStepper::saveFixedSamples()
       t = t1;
 
     Sample sample(*timeslab, ode.time(t), "u", "unknown");
+    file << sample;
+    u.add_sample(sample);
+    ode.save(sample);
+  }
+
+  // Save final value
+  if (t1 == T)
+  {
+    //Sample sample(*timeslab, 0.0, u.name(), u.label());
+    Sample sample(*timeslab, ode.time(T), "u", "unknown");
     file << sample;
     u.add_sample(sample);
     ode.save(sample);

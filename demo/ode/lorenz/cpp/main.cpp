@@ -49,7 +49,6 @@ public:
     y[1] = s*x[0] - x[1] + u[0]*x[2];
     y[2] = -u[0]*x[1] - b*x[2];
   }
-
  
 private:
 
@@ -69,8 +68,8 @@ int main()
   dolfin_set("ODE order", 5);
   dolfin_set("ODE discrete tolerance", 1e-10);
   dolfin_set("ODE save solution", true);
-  dolfin_set("ODE solve dual problem", true);
- 
+  //dolfin_set("ODE solve dual problem", true);
+  
   Lorenz lorenz;
   lorenz.solve();
   
