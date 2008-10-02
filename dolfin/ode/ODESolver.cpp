@@ -4,7 +4,7 @@
 // Modified by Benjamin Kehlet 2008
 //
 // First added:  2003
-// Last changed: 2008-06-18
+// Last changed: 2008-10-02
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/parameter/parameters.h>
@@ -17,36 +17,33 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------
-
-void ODESolver::solve(ODE& ode, ODESolution& u) {
+void ODESolver::solve(ODE& ode, ODESolution& u)
+{
   begin("Solving ODE");  
 
   // Solve primal problem
-  solvePrimal(ode, u);
-
-  u.makeIndex();
+  solve_primal(ode, u);
+  u.flush();
 
   // Check if we should solve the dual problem  
-  if ( ode.get("ODE solve dual problem") ) {
-    solveDual(ode, u);
-  }else {
+  if ( ode.get("ODE solve dual problem") )
+    solve_dual(ode, u);
+  else
     cout << "Not solving the dual problem as requested." << endl;
-  }
 
   end();
-
 }
-
 //----------------------------------------------------------------------
 void ODESolver::solve(ODE& ode)
 {
-  //create dummy object to hold the solution
+  // Create dummy object to hold the solution
   ODESolution u(ode);
-  solve(ode, u);
 
+  // Solve primal problem
+  solve(ode, u);
 }
 //------------------------------------------------------------------------
-void ODESolver::solvePrimal(ODE& ode, ODESolution& u)
+void ODESolver::solve_primal(ODE& ode, ODESolution& u)
 {
   begin("Solving primal problem");
   
@@ -56,18 +53,16 @@ void ODESolver::solvePrimal(ODE& ode, ODESolution& u)
   end();
 }
 //------------------------------------------------------------------------
-void ODESolver::solveDual(ODE& ode, ODESolution& u)
+void ODESolver::solve_dual(ODE& ode, ODESolution& u)
 { 
   begin("Solving dual problem");
 
   // Create dual problem
   Dual dual(ode, u);
-
   dual.set("ODE solution file name", "solution_dual.py");
   dual.set("ODE save final solution", true);
 
-
-  //create dummy objeect to hold the solution of the dual
+  // Create dummy objeect to hold the solution of the dual
   ODESolution u_dual(dual);
 
   // Solve dual problem
@@ -76,5 +71,3 @@ void ODESolver::solveDual(ODE& ode, ODESolution& u)
   end();
 }
 //------------------------------------------------------------------------
-
-

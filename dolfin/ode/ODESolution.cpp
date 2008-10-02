@@ -1,13 +1,15 @@
 // Copyright (C) 2008 Benjamin Kehlet
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Anders Logg, 2008.
+//
 // First added:  2008-06-11
 // Last changed: 2008-08-08
 
+#include <algorithm>
 #include "ODESolution.h"
 #include "Sample.h"
 #include "ODE.h"
-#include <algorithm>
 
 using namespace dolfin;
 
@@ -18,27 +20,26 @@ ODESolution::ODESolution(ODE& ode) :
   file(filename.c_str(), std::ios::out | std::ios::binary),
   bintree(std::vector<real>()),
   step(sizeof(real)*ode.size()),
-  buffercount(0),
+  buffer_count(0),
   dataondisk(false)
 {
-  //initalize the cache
-  cachesize = ode.get("ODE order");
+  // Initalize cache
+  cache_size = ode.get("ODE order");
   std::string m = ode.get("ODE method") ;
-  if (m == "dg") ++cachesize;
+  if (m == "dg") ++cache_size;
 
-  cache = new std::pair<real, uBLASVector>[cachesize];
-  for (uint i = 0; i < cachesize; ++i) 
+  cache = new std::pair<real, uBLASVector>[cache_size];
+  for (uint i = 0; i < cache_size; ++i) 
   {
     cache[i].first = -1;
     cache[i].second.resize(ode.size());
   }
   ringbufcounter = 0;
 
-  //initialize buffer
-  buffersize = ODESOLUTION_INITIAL_ALLOC - (ODESOLUTION_INITIAL_ALLOC % step);
-  buffer = (real *) malloc(buffersize);
-  bufferoffset = 0;
-
+  // Initialize buffer
+  buffer_size = ODESOLUTION_INITIAL_ALLOC - (ODESOLUTION_INITIAL_ALLOC % step);
+  buffer = (real *) malloc(buffer_size);
+  buffer_offset = 0;
 }
 //-----------------------------------------------------------------------------
 ODESolution::~ODESolution() 
@@ -48,57 +49,11 @@ ODESolution::~ODESolution()
   remove(filename.c_str());
   free(buffer);
 }
-
-void ODESolution::addSample(Sample& sample) 
-{  
-  cout << "Addsample t = " << sample.t() << endl;
-
-  bintree.push_back(sample.t());
-  
-  //check if there is allocated memory for another entry in the buffer
-  if (step*(buffercount+1) > buffersize) 
-  {
-    //check if we can just extend the allocated memory
-    if (buffersize*2 <= ODESOLUTION_MAX_ALLOC) 
-    {
-      //extend the memory
-      buffersize *= 2;
-      buffer = (real *) realloc(buffer, buffersize);
-    } else 
-    {
-      // No more memory available. Dump to disk
-      cout << "ODESolution: Writing to disk" << endl;
-      file.write((char *) buffer, step*buffercount);
-      bufferoffset += buffercount;
-      buffercount = 0;
-      dataondisk = true;
-    }
-  }
-
-  for (uint i = 0; i < sample.size(); ++i) 
-  {
-    buffer[buffercount*ode.size()+i] = sample.u(i);
-  }
-
-  ++buffercount;
-}
-//-----------------------------------------------------------------------------
-void ODESolution::makeIndex() 
-{
-  if (dataondisk && buffercount > 0) 
-  {
-    cout << "ODESolution: Writing last chunk to disk" << endl;
-    file.write((char *) buffer, buffercount*step);
-  }
-
-  file.close();
-  file.open(filename.c_str(), std::ios::in | std::ios::binary);  
-}
 //-----------------------------------------------------------------------------
 void ODESolution::eval(const real t, uBLASVector& y) 
 {
-  //scan the cache
-  for (uint i = 0; i < cachesize; ++i) 
+  // Scan the cache
+  for (uint i = 0; i < cache_size; ++i) 
   {
     if (cache[i].first < 0) continue;
     
@@ -114,12 +69,12 @@ void ODESolution::eval(const real t, uBLASVector& y)
     }
   }
 
-  //Not found in cache
+  // Not found in cache
   std::vector<real>::iterator low = std::lower_bound(bintree.begin(), 
 						     bintree.end(), 
 						     t);
   uint b = uint(low-bintree.begin());
-  uint a = b-1;
+  uint a = b - 1;
 
   if ( b >= bintree.size() || b < 1 ) 
   {
@@ -129,45 +84,89 @@ void ODESolution::eval(const real t, uBLASVector& y)
   real t_a = bintree[a];
   real t_b = bintree[b];
 
-  //check if we need to read from disk
-  if (a < bufferoffset || b > bufferoffset + buffercount) 
+  // Check if we need to read from disk
+  if (a < buffer_offset || b > buffer_offset + buffer_count) 
   {  
     cout << "ODESolution: Fetching from disk" << endl;
 
     //put a in the middle of the buffer
-    bufferoffset = (uint) std::max((int) (a - buffersize/(step*2)), 0);
-    buffercount = std::min(buffersize/step, bintree.size()-bufferoffset); 
-    file.seekg(bufferoffset*step);
-    file.read( (char *) buffer, buffercount*step);
+    buffer_offset = (uint) std::max((int) (a - buffer_size/(step*2)), 0);
+    buffer_count = std::min(buffer_size / step, static_cast<uint>(bintree.size() - static_cast<uint>(buffer_offset)));
+    file.seekg(buffer_offset*step);
+    file.read( (char *) buffer, buffer_count*step);
   }
 
   uBLASVector tmp(ode.size());
-  
   for (unsigned int i = 0; i < ode.size(); i++) 
   {
-    y[i]   = buffer[(a - bufferoffset)*ode.size() + i];
-    tmp[i] = buffer[(b - bufferoffset)*ode.size() + i];
+    y[i]   = buffer[(a - buffer_offset)*ode.size() + i];
+    tmp[i] = buffer[(b - buffer_offset)*ode.size() + i];
   }
 
-  lerp(y, t_a, tmp, t_b, t, y);
+  // Do linear interpolation
+  interpolate(y, t_a, tmp, t_b, t, y);
 
-  //cache y
+  // Cache y
   cache[ringbufcounter].first = t;
   for (uint i = 0; i < ode.size(); i++) 
   {
     cache[ringbufcounter].second[i] = y[i];
   }
 
-  ringbufcounter = (ringbufcounter+1)%cachesize;
-  
+  ringbufcounter = (ringbufcounter + 1) % cache_size;
 }
 //-----------------------------------------------------------------------------
-void ODESolution::lerp(const uBLASVector& v1, 
-		       const real t1, 
-		       const uBLASVector& v2, 
-		       const real t2, 
-		       const real t, 
-		       uBLASVector& result) 
+void ODESolution::add_sample(Sample& sample) 
+{  
+  cout << "Adding sample at t = " << sample.t() << endl;
+  
+  bintree.push_back(sample.t());
+  
+  // Check if there is allocated memory for another entry in the buffer
+  if (step*(buffer_count+1) > buffer_size) 
+  {
+    // Check if we can just extend the allocated memory
+    if (buffer_size*2 <= ODESOLUTION_MAX_ALLOC) 
+    {
+      // Extend the memory
+      buffer_size *= 2;
+      buffer = (real *) realloc(buffer, buffer_size);
+    }
+    else
+    {
+      // No more memory available, dump to disk
+      cout << "ODESolution: Writing to disk" << endl;
+      file.write((char *) buffer, step*buffer_count);
+      buffer_offset += buffer_count;
+      buffer_count = 0;
+      dataondisk = true;
+    }
+  }
+
+  for (uint i = 0; i < sample.size(); ++i) 
+    buffer[buffer_count*ode.size()+i] = sample.u(i);
+
+  ++buffer_count;
+}
+//-----------------------------------------------------------------------------
+void ODESolution::flush() 
+{
+  if (dataondisk && buffer_count > 0) 
+  {
+    cout << "ODESolution: Writing last chunk to disk" << endl;
+    file.write((char *) buffer, buffer_count*step);
+  }
+
+  file.close();
+  file.open(filename.c_str(), std::ios::in | std::ios::binary);  
+}
+//-----------------------------------------------------------------------------
+void ODESolution::interpolate(const uBLASVector& v1, 
+                              const real t1, 
+                              const uBLASVector& v2, 
+                              const real t2, 
+                              const real t, 
+                              uBLASVector& result) 
 {
   real h = t2-t1;
   for (uint i = 0; i < ode.size(); i++) 

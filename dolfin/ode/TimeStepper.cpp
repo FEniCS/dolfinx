@@ -4,7 +4,7 @@
 // Modified by Benjamin Kehlet 2008
 //
 // First added:  2003
-// Last changed: 2008-06-18
+// Last changed: 2008-10-02
 
 #include <cmath>
 #include <string>
@@ -46,7 +46,7 @@ TimeStepper::TimeStepper(ODE& ode, ODESolution& u) :
 //-----------------------------------------------------------------------
 TimeStepper::~TimeStepper()
 {
-  if ( timeslab ) delete timeslab;
+  delete timeslab;
 }
 //----------------------------------------------------------------------
 void TimeStepper::solve(ODE& ode, ODESolution& u)
@@ -174,7 +174,7 @@ void TimeStepper::saveFixedSamples()
     //Sample sample(*timeslab, 0.0, u.name(), u.label());
     Sample sample(*timeslab, ode.time(0.0), "u", "unknown");
     file << sample;
-    u.addSample(sample);
+    u.add_sample(sample);
     ode.save(sample);
   }
 
@@ -198,7 +198,7 @@ void TimeStepper::saveFixedSamples()
 
     Sample sample(*timeslab, ode.time(t), "u", "unknown");
     file << sample;
-    u.addSample(sample);
+    u.add_sample(sample);
     ode.save(sample);
   }
 }
@@ -215,7 +215,7 @@ void TimeStepper::saveAdaptiveSamples()
     //Sample sample(*timeslab, 0.0, u.name(), u.label());
     Sample sample(*timeslab, ode.time(0.0), "u", "unknown");
     file << sample;
-    u.addSample(sample);
+    u.add_sample(sample);
     ode.save(sample);
   }
 
@@ -235,7 +235,7 @@ void TimeStepper::saveAdaptiveSamples()
     //Sample sample(*timeslab, t, u.name(), u.label());
     Sample sample(*timeslab, ode.time(t), "u", "unknown");
     file << sample;
-    u.addSample(sample);
+    u.add_sample(sample);
     ode.save(sample);
   }
 }
