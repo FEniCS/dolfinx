@@ -124,7 +124,7 @@ void MeshEditor::addVertex(uint v, const Point& p)
     mesh->_geometry.set(v, i, p[i]);
 }
 //-----------------------------------------------------------------------------
-void MeshEditor::addVertex(uint v, real x)
+void MeshEditor::addVertex(uint v, double x)
 {
   // Add vertex
   addVertexCommon(v, 1);
@@ -136,7 +136,7 @@ void MeshEditor::addVertex(uint v, real x)
   mesh->_geometry.set(v, 0, x);
 }
 //-----------------------------------------------------------------------------
-void MeshEditor::addVertex(uint v, real x, real y)
+void MeshEditor::addVertex(uint v, double x, double y)
 {
   // Add vertex
   addVertexCommon(v, 2);
@@ -146,7 +146,7 @@ void MeshEditor::addVertex(uint v, real x, real y)
   mesh->_geometry.set(v, 1, y);
 }
 //-----------------------------------------------------------------------------
-void MeshEditor::addVertex(uint v, real x, real y, real z)
+void MeshEditor::addVertex(uint v, double x, double y, double z)
 {
   // Add vertex
   addVertexCommon(v, 3);

@@ -77,10 +77,10 @@ namespace dolfin
       uint offset;
       
       // Local data used to set boundary conditions
-      real* w;
+      double* w;
       uint* cell_dofs;
       uint* facet_dofs;
-      real** coordinates;
+      double** coordinates;
 
     };
 

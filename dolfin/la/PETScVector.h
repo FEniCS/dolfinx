@@ -74,43 +74,43 @@ namespace dolfin
     virtual uint size() const;
 
     /// Get block of values
-    virtual void get(real* block, uint m, const uint* rows) const;
+    virtual void get(double* block, uint m, const uint* rows) const;
 
     /// Set block of values
-    virtual void set(const real* block, uint m, const uint* rows);
+    virtual void set(const double* block, uint m, const uint* rows);
 
     /// Add block of values
-    virtual void add(const real* block, uint m, const uint* rows);
+    virtual void add(const double* block, uint m, const uint* rows);
 
     /// Get all values
-    virtual void get(real* values) const;
+    virtual void get(double* values) const;
 
     /// Set all values
-    virtual void set(real* values);
+    virtual void set(double* values);
 
     /// Add values to each entry
-    virtual void add(real* values);
+    virtual void add(double* values);
 
     /// Add multiple of given vector (AXPY operation)
-    virtual void axpy(real a, const GenericVector& x); 
+    virtual void axpy(double a, const GenericVector& x); 
 
     /// Return inner product with given vector
-    virtual real inner(const GenericVector& v) const;
+    virtual double inner(const GenericVector& v) const;
 
     /// Return norm of vector
-    virtual real norm(dolfin::NormType type) const;
+    virtual double norm(dolfin::NormType type) const;
 
     /// Return minimum value of vector
-    virtual real min() const;
+    virtual double min() const;
 
     /// Return maximum value of vector
-    virtual real max() const;
+    virtual double max() const;
 
     /// Multiply vector by given number
-    virtual const PETScVector& operator*= (real a);
+    virtual const PETScVector& operator*= (double a);
 
     /// Divide vector by given number
-    virtual const PETScVector& operator/= (real a);
+    virtual const PETScVector& operator/= (double a);
 
     /// Add given vector
     virtual const PETScVector& operator+= (const GenericVector& x);
@@ -122,7 +122,7 @@ namespace dolfin
     virtual const GenericVector& operator= (const GenericVector& x);
 
     /// Assignment operator
-    virtual const PETScVector& operator= (real a);
+    virtual const PETScVector& operator= (double a);
 
     //--- Special functions ---
 

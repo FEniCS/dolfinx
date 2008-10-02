@@ -88,10 +88,10 @@ namespace dolfin
     inline uint numCells() const { return _topology.size(_topology.dim()); }
 
     /// Return coordinates of all vertices
-    inline real* coordinates() { return _geometry.x(); }
+    inline double* coordinates() { return _geometry.x(); }
 
     /// Return coordinates of all vertices
-    inline const real* coordinates() const { return _geometry.x(); }
+    inline const double* coordinates() const { return _geometry.x(); }
 
     /// Return connectivity for all cells
     inline uint* cells() { return _topology(_topology.dim(), 0)(); }

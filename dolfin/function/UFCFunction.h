@@ -34,19 +34,19 @@ namespace dolfin
     uint dim(uint i) const;
 
     /// Interpolate function to vertices of mesh
-    void interpolate(real* values) const;
+    void interpolate(double* values) const;
 
     /// Interpolate function to finite element space on cell
-    void interpolate(real* coefficients,
+    void interpolate(double* coefficients,
                      const ufc::cell& cell,
                      const FiniteElement& finite_element) const;
 
     /// Evaluate function at given point
-    void eval(real* values, const real* x) const;
+    void eval(double* values, const double* x) const;
 
     /// Evaluate function at given point in cell (UFC function interface)
-    void evaluate(real* values,
-                  const real* coordinates,
+    void evaluate(double* values,
+                  const double* coordinates,
                   const ufc::cell& cell) const;
 
   private:

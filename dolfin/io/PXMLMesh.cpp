@@ -293,22 +293,22 @@ void PXMLMesh::readVertex(const xmlChar *name, const xmlChar **attrs)
   {
   case 1:
     {
-      real x = parseReal(name, attrs, "x");
+      double x = parseReal(name, attrs, "x");
       editor.addVertex(current_vertex, x);
     }
     break;
   case 2:
     {
-      real x = parseReal(name, attrs, "x");
-      real y = parseReal(name, attrs, "y");
+      double x = parseReal(name, attrs, "x");
+      double y = parseReal(name, attrs, "y");
       editor.addVertex(current_vertex, x, y);
     }
     break;
   case 3:
     {
-      real x = parseReal(name, attrs, "x");
-      real y = parseReal(name, attrs, "y");
-      real z = parseReal(name, attrs, "z");
+      double x = parseReal(name, attrs, "x");
+      double y = parseReal(name, attrs, "y");
+      double z = parseReal(name, attrs, "z");
       editor.addVertex(current_vertex, x, y, z);
     }
     break;
@@ -494,7 +494,7 @@ void PXMLMesh::closeMesh()
   uint num_processes = MPI::num_processes();
 
   Array<uint> send_buff, send_indices, send_orphan;
-  Array<real> send_coords;
+  Array<double> send_coords;
 
   // Construct send buffer with missing (shared) vertices global number 
   std::set<uint>::iterator it;
@@ -519,12 +519,12 @@ void PXMLMesh::closeMesh()
 
   // Allocate receive buffers
   uint *recv_shared  = new uint[max_nsh];
-  real *recv_coords = new real[num_coords];
+  double *recv_coords = new double[num_coords];
   uint *recv_indices = new uint[num_shared];
   uint *recv_orphans = new uint[num_shared];
 
   // Pointers pointing to the current position in the receive buffers
-  real *rcp = &recv_coords[0];
+  double *rcp = &recv_coords[0];
   uint *rip = &recv_indices[0];
   uint *rop = &recv_orphans[0];
   

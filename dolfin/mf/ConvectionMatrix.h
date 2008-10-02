@@ -27,7 +27,7 @@ namespace dolfin
   public:
   
     /// Construct convection matrix with constant velocity c on a given mesh
-    ConvectionMatrix(Mesh& mesh, real cx = 1.0, real cy = 0.0, real cz = 0.0) : Matrix()
+    ConvectionMatrix(Mesh& mesh, double cx = 1.0, double cy = 0.0, double cz = 0.0) : Matrix()
     {
       MatrixFactory::computeConvectionMatrix(*this, mesh, cx, cy, cz);
     }
@@ -45,7 +45,7 @@ namespace dolfin
   public:
   
     /// Construct convection matrix with constant velocity c on a given mesh
-    PETScConvectionMatrix(Mesh& mesh, real cx = 1.0, real cy = 0.0, real cz = 0.0) : PETScMatrix()
+    PETScConvectionMatrix(Mesh& mesh, double cx = 1.0, double cy = 0.0, double cz = 0.0) : PETScMatrix()
     {
       MatrixFactory::computeConvectionMatrix(*this, mesh, cx, cy, cz);
     }
@@ -63,7 +63,7 @@ namespace dolfin
   public:
   
     /// Construct convection matrix with constant velocity c on a given mesh
-    uBLASConvectionMatrix(Mesh& mesh, real cx = 1.0, real cy = 0.0, real cz = 0.0) : uBLASSparseMatrix()
+    uBLASConvectionMatrix(Mesh& mesh, double cx = 1.0, double cy = 0.0, double cz = 0.0) : uBLASSparseMatrix()
     {
       MatrixFactory::computeConvectionMatrix(*this, mesh, cx, cy, cz);
     }

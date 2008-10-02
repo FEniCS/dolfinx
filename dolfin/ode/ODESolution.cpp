@@ -18,8 +18,8 @@ ODESolution::ODESolution(ODE& ode) :
   ode(ode),
   filename(tmpnam(0)),
   file(filename.c_str(), std::ios::out | std::ios::binary),
-  bintree(std::vector<real>()),
-  step(sizeof(real)*ode.size()),
+  bintree(std::vector<double>()),
+  step(sizeof(double)*ode.size()),
   buffer_count(0),
   dataondisk(false)
 {
@@ -28,7 +28,7 @@ ODESolution::ODESolution(ODE& ode) :
   std::string m = ode.get("ODE method") ;
   if (m == "dg") ++cache_size;
 
-  cache = new std::pair<real, uBLASVector>[cache_size];
+  cache = new std::pair<double, uBLASVector>[cache_size];
   for (uint i = 0; i < cache_size; ++i) 
   {
     cache[i].first = -1;
@@ -38,7 +38,7 @@ ODESolution::ODESolution(ODE& ode) :
 
   // Initialize buffer
   buffer_size = ODESOLUTION_INITIAL_ALLOC - (ODESOLUTION_INITIAL_ALLOC % step);
-  buffer = (real *) malloc(buffer_size);
+  buffer = (double *) malloc(buffer_size);
   buffer_offset = 0;
 }
 //-----------------------------------------------------------------------------
@@ -50,7 +50,7 @@ ODESolution::~ODESolution()
   free(buffer);
 }
 //-----------------------------------------------------------------------------
-void ODESolution::eval(const real t, uBLASVector& y) 
+void ODESolution::eval(const double t, uBLASVector& y) 
 {
   // Scan the cache
   for (uint i = 0; i < cache_size; ++i) 
@@ -70,7 +70,7 @@ void ODESolution::eval(const real t, uBLASVector& y)
   }
 
   // Not found in cache
-  std::vector<real>::iterator low = std::lower_bound(bintree.begin(), 
+  std::vector<double>::iterator low = std::lower_bound(bintree.begin(), 
 						     bintree.end(), 
 						     t);
   uint b = uint(low-bintree.begin());
@@ -81,8 +81,8 @@ void ODESolution::eval(const real t, uBLASVector& y)
     error("ODESolution, eval(%g) out of range", t);
   } 
 
-  real t_a = bintree[a];
-  real t_b = bintree[b];
+  double t_a = bintree[a];
+  double t_b = bintree[b];
 
   // Check if we need to read from disk
   if (a < buffer_offset || b > buffer_offset + buffer_count) 
@@ -130,7 +130,7 @@ void ODESolution::add_sample(Sample& sample)
     {
       // Extend the memory
       buffer_size *= 2;
-      buffer = (real *) realloc(buffer, buffer_size);
+      buffer = (double *) realloc(buffer, buffer_size);
     }
     else
     {
@@ -162,13 +162,13 @@ void ODESolution::flush()
 }
 //-----------------------------------------------------------------------------
 void ODESolution::interpolate(const uBLASVector& v1, 
-                              const real t1, 
+                              const double t1, 
                               const uBLASVector& v2, 
-                              const real t2, 
-                              const real t, 
+                              const double t2, 
+                              const double t, 
                               uBLASVector& result) 
 {
-  real h = t2-t1;
+  double h = t2-t1;
   for (uint i = 0; i < ode.size(); i++) 
   {
     result[i] = v1[i] + (t-t1)*((v2[i]-v1[i])/h);

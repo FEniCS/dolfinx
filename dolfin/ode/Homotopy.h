@@ -65,7 +65,7 @@ namespace dolfin
 
   protected:
     
-    real tol; // Tolerance for Newton's method
+    double tol; // Tolerance for Newton's method
 
   private:
 
@@ -95,7 +95,7 @@ namespace dolfin
     uint maxiter;             // Maximum number of iterations
     uint maxpaths;            // Maximum number of paths
     uint maxdegree;           // Maximum degree for a single equation
-    real divtol;              // Tolerance for divergence of homotopy path
+    double divtol;              // Tolerance for divergence of homotopy path
     bool monitor;             // True if we should monitor the homotopy
     bool random;              // True if we should choose random initial data
     //uBLASKrylovSolver solver; // Linear solver

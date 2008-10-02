@@ -54,9 +54,9 @@ int main(int argc, char *argv[])
   //lu.factorize(A);
 
   // Parameters for time-stepping
-  real T = 2.0;
-  real k = 0.05;
-  real t = k;
+  double T = 2.0;
+  double k = 0.05;
+  double t = k;
   
   // Output file
   File file("temperature.pvd");

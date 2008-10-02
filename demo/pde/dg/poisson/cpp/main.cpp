@@ -34,10 +34,10 @@ int main()
     
     Source(Mesh& mesh) : Function(mesh) {}
 
-    real eval(const real* x) const
+    double eval(const double* x) const
     {
-      real dx = x[0] - 0.5;
-      real dy = x[1] - 0.5;
+      double dx = x[0] - 0.5;
+      double dy = x[1] - 0.5;
       return 500.0*exp(-(dx*dx + dy*dy)/0.02);
     }
 

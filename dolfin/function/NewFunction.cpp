@@ -81,7 +81,7 @@ const GenericVector& NewFunction::vector() const
   return *x;
 }
 //-----------------------------------------------------------------------------
-void NewFunction::eval(real* values, const real* p) const
+void NewFunction::eval(double* values, const double* p) const
 {
   dolfin_assert(values);
   dolfin_assert(p);
@@ -105,14 +105,14 @@ void NewFunction::eval(real* values, const real* p) const
   error("Missing eval() for user-defined function (must be overloaded).");
 }
 //-----------------------------------------------------------------------------
-dolfin::real NewFunction::eval(const real* x) const
+double NewFunction::eval(const double* x) const
 {
   // Missing eval function
   error("Missing eval() for user-defined function (must be overloaded).");
   return 0.0;
 }
 //-----------------------------------------------------------------------------
-void NewFunction::eval(simple_array<real>& values, const simple_array<real>& x) const
+void NewFunction::eval(simple_array<double>& values, const simple_array<double>& x) const
 {
   eval(values.data, x.data);
 }

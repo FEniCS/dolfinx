@@ -27,57 +27,57 @@ cGqMethod::cGqMethod(unsigned int q) : Method(q, q + 1, q)
   p = 2*q;
 }
 //-----------------------------------------------------------------------------
-real cGqMethod::ueval(real x0, real values[], real tau) const
+double cGqMethod::ueval(double x0, double values[], double tau) const
 {
-  real sum = x0 * trial->eval(0, tau);
+  double sum = x0 * trial->eval(0, tau);
   for (uint i = 0; i < nn; i++)
     sum += values[i] * trial->eval(i + 1, tau);
   
   return sum;
 }
 //-----------------------------------------------------------------------------
-real cGqMethod::ueval(real x0, uBLASVector& values, uint offset, real tau) const
+double cGqMethod::ueval(double x0, uBLASVector& values, uint offset, double tau) const
 {
-  real sum = x0 * trial->eval(0, tau);
+  double sum = x0 * trial->eval(0, tau);
   for (uint i = 0; i < nn; i++)
     sum += values[offset + i] * trial->eval(i + 1, tau);
   
   return sum;
 }
 //-----------------------------------------------------------------------------
-real cGqMethod::residual(real x0, real values[], real f, real k) const
+double cGqMethod::residual(double x0, double values[], double f, double k) const
 {
-  real sum = x0 * derivatives[0];
+  double sum = x0 * derivatives[0];
   for (uint i = 0; i < nn; i++)
     sum += values[i] * derivatives[i + 1];
 
   return sum / k - f;
 }
 //-----------------------------------------------------------------------------
-real cGqMethod::residual(real x0, uBLASVector& values, uint offset, real f, real k) const
+double cGqMethod::residual(double x0, uBLASVector& values, uint offset, double f, double k) const
 {
-  real sum = x0 * derivatives[0];
+  double sum = x0 * derivatives[0];
   for (uint i = 0; i < nn; i++)
     sum += values[offset + i] * derivatives[i + 1];
 
   return sum / k - f;
 }
 //-----------------------------------------------------------------------------
-real cGqMethod::timestep(real r, real tol, real k0, real kmax) const
+double cGqMethod::timestep(double r, double tol, double k0, double kmax) const
 {
   // FIXME: Missing stability factor and interpolation constant
 
   if ( fabs(r) < DOLFIN_EPS )
     return kmax;
 
-  const real qq = static_cast<real>(q);
+  const double qq = static_cast<double>(q);
   return pow(tol * pow(k0, qq) / fabs(r), 0.5 / qq);
 }
 //-----------------------------------------------------------------------------
-real cGqMethod::error(real k, real r) const
+double cGqMethod::error(double k, double r) const
 {
   // FIXME: Missing interpolation constant
-  return pow(k, static_cast<real>(q)) * fabs(r);
+  return pow(k, static_cast<double>(q)) * fabs(r);
 }
 //-----------------------------------------------------------------------------
 void cGqMethod::disp() const
@@ -171,10 +171,10 @@ void cGqMethod::computeWeights()
     for (unsigned int j = 0; j < nn; j++)
     {
       // Use Lobatto quadrature which is exact for the order we need, 2q-1
-      real integral = 0.0;
+      double integral = 0.0;
       for (unsigned int k = 0; k < nq; k++)
       {
-	      real x = qpoints[k];
+	      double x = qpoints[k];
 	      integral += qweights[k] * trial->ddx(j + 1, x) * test->eval(i, x);
       }
       _A(i, j) = integral;
@@ -190,7 +190,7 @@ void cGqMethod::computeWeights()
   for (unsigned int i = 0; i < nq; i++)
   {
     // Get nodal point
-    real x = qpoints[i];
+    double x = qpoints[i];
     
     // Evaluate test functions at current nodal point
     for (unsigned int j = 0; j < nn; j++)

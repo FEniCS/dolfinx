@@ -107,7 +107,7 @@ public:
     u[0] = -25.0;
   }
   
-  void f(const uBLASVector& u, real t, uBLASVector& y)
+  void f(const uBLASVector& u, double t, uBLASVector& y)
   {
     computeCurrents(u);
     computeGateCoefficients(u);
@@ -272,7 +272,7 @@ public:
     w_inf    = 1.0 - 1.0/(1.0 + exp((V - 40.0)/-17.0));
   }
   
-  bool update(const uBLASVector& u, real t, bool end)
+  bool update(const uBLASVector& u, double t, bool end)
   {
     if ( end )
       VT = u[0];
@@ -282,38 +282,38 @@ public:
 private:
   
   // State varibles
-  real m, h, j, oa, oi, ua, ui, xr, xs, d, ff, fca, uu, v, w, Na_i, Ca_i;
-  real Ca_rel, Ca_up, K_i, V;
+  double m, h, j, oa, oi, ua, ui, xr, xs, d, ff, fca, uu, v, w, Na_i, Ca_i;
+  double Ca_rel, Ca_up, K_i, V;
   
   // Ionic currents and gating variables
-  real alpha_m, beta_m, tau_m, m_inf, alpha_h, beta_h, tau_h, h_inf;
-  real alpha_j, beta_j, tau_j, j_inf, alpha_oa, beta_oa, tau_oa, oa_inf;
-  real alpha_oi, beta_oi, tau_oi, oi_inf, alpha_ua, beta_ua, tau_ua, ua_inf;
-  real alpha_ui, beta_ui, tau_ui, ui_inf, alpha_xr, beta_xr, tau_xr, xr_inf;
-  real alpha_xs, beta_xs, tau_xs, xs_inf, tau_d, d_inf, tau_f, f_inf;
-  real fca_inf, u_inf, tau_v, v_inf, tau_w, w_inf, B1, B2;
+  double alpha_m, beta_m, tau_m, m_inf, alpha_h, beta_h, tau_h, h_inf;
+  double alpha_j, beta_j, tau_j, j_inf, alpha_oa, beta_oa, tau_oa, oa_inf;
+  double alpha_oi, beta_oi, tau_oi, oi_inf, alpha_ua, beta_ua, tau_ua, ua_inf;
+  double alpha_ui, beta_ui, tau_ui, ui_inf, alpha_xr, beta_xr, tau_xr, xr_inf;
+  double alpha_xs, beta_xs, tau_xs, xs_inf, tau_d, d_inf, tau_f, f_inf;
+  double fca_inf, u_inf, tau_v, v_inf, tau_w, w_inf, B1, B2;
   
   // Membrane currents
-  real I_rel, I_CaL, I_NaCa, Fn, sigma, f_NaK, I_NaK, E_Na, I_bNa;
-  real I_Na, I_pCa, E_Ca, I_bCa, I_upleak, I_up, I_tr, E_K, I_K1;
-  real I_to, g_Kur, I_Kur, I_Kr, I_Ks, I_ion;
+  double I_rel, I_CaL, I_NaCa, Fn, sigma, f_NaK, I_NaK, E_Na, I_bNa;
+  double I_Na, I_pCa, E_Ca, I_bCa, I_upleak, I_up, I_tr, E_K, I_K1;
+  double I_to, g_Kur, I_Kur, I_Kr, I_Ks, I_ion;
   
   // Gate coefficients
-  real Cm, R, T, F, z_Na, z_K, z_Ca, Na_o, K_o, Ca_o, K_Q10, tau_fca;
-  real k_rel, g_CaL, gamma, I_NaCamax, K_mNa, K_mCa, k_sat, Vrel, tau_u;
-  real Vi, I_NaKmax, K_mNai, K_mKo, g_bNa, g_Na, Vup, I_pCamax, g_bCa;
-  real I_upmax, K_up, Ca_upmax, Trpn_max, K_mTrpn, Cmdn_max, K_mCmdn;
-  real tau_tr, Csqn_max, K_mCsqn, g_K1, g_to, g_Kr, g_Ks;
-  real Na_e, Ca_e, K_e;
+  double Cm, R, T, F, z_Na, z_K, z_Ca, Na_o, K_o, Ca_o, K_Q10, tau_fca;
+  double k_rel, g_CaL, gamma, I_NaCamax, K_mNa, K_mCa, k_sat, Vrel, tau_u;
+  double Vi, I_NaKmax, K_mNai, K_mKo, g_bNa, g_Na, Vup, I_pCamax, g_bCa;
+  double I_upmax, K_up, Ca_upmax, Trpn_max, K_mTrpn, Cmdn_max, K_mCmdn;
+  double tau_tr, Csqn_max, K_mCsqn, g_K1, g_to, g_Kr, g_Ks;
+  double Na_e, Ca_e, K_e;
 
   // Stimulus current
-  real ist;
+  double ist;
   
   // Number of function evaluations
   unsigned int num_fevals;
 
   // Value at end time
-  real VT;
+  double VT;
 
 };
 

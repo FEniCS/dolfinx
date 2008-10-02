@@ -126,7 +126,7 @@ def oldrsplit(toSplit, sub, max):
 
 _SshHost = "gogmagog.simula.no"
 if "SUDO_USER" in os.environ:
-    # Use real user in case PyCC is install with 'sudo scons install'
+    # Use double user in case PyCC is install with 'sudo scons install'
     _SshHost = "%s@%s" % (os.environ["SUDO_USER"], _SshHost)
 _SshDir = "/srl/phulius/pycc"
 

@@ -70,10 +70,10 @@ namespace dolfin
     UFCCell cell1;
 
     // Local tensor
-    real* A;
+    double* A;
 
     // Local tensor for macro element
-    real* macro_A;
+    double* macro_A;
 
     // Array of local dimensions for each argument
     uint* local_dimensions;
@@ -91,10 +91,10 @@ namespace dolfin
     uint** macro_dofs;
 
     // Array of coefficients
-    real** w;
+    double** w;
 
     // Array of coefficients on macro element
-    real** macro_w;
+    double** macro_w;
 
   };
 

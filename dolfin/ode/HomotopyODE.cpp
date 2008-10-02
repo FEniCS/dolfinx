@@ -11,7 +11,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-HomotopyODE::HomotopyODE(Homotopy& homotopy, uint n, real T)
+HomotopyODE::HomotopyODE(Homotopy& homotopy, uint n, double T)
   : ComplexODE(n, T), homotopy(homotopy), n(n), _state(ode), tmp(0)
 {
   tmp = new complex[n];
@@ -29,7 +29,7 @@ void HomotopyODE::z0(complex z[])
   homotopy.z0(z);
 }
 //-----------------------------------------------------------------------------  
-void HomotopyODE::f(const complex z[], real t, complex y[])
+void HomotopyODE::f(const complex z[], double t, complex y[])
 {
   // Need to compute f(z) = G(z) - F(z)
 
@@ -48,7 +48,7 @@ void HomotopyODE::f(const complex z[], real t, complex y[])
     y[i] = tmp[i] - y[i];
 }
 //-----------------------------------------------------------------------------
-void HomotopyODE::M(const complex x[], complex y[], const complex z[], real t)
+void HomotopyODE::M(const complex x[], complex y[], const complex z[], double t)
 {
   // Need to compute ((1 - t) G' + t F')*x
 
@@ -63,7 +63,7 @@ void HomotopyODE::M(const complex x[], complex y[], const complex z[], real t)
     y[i] = (1.0 - t)*tmp[i] + t*y[i];
 }
 //-----------------------------------------------------------------------------
-void HomotopyODE::J(const complex x[], complex y[], const complex z[], real t)
+void HomotopyODE::J(const complex x[], complex y[], const complex z[], double t)
 {
   // Need to compute (G' - F')*x
 
@@ -82,10 +82,10 @@ void HomotopyODE::J(const complex x[], complex y[], const complex z[], real t)
     y[i] = tmp[i] - y[i];
 }
 //-----------------------------------------------------------------------------
-bool HomotopyODE::update(const complex z[], real t, bool end)
+bool HomotopyODE::update(const complex z[], double t, bool end)
 {
   // FIXME: Maybe this should be a parameter?
-  const real epsilon = 0.5;
+  const double epsilon = 0.5;
 
   // Check if we should monitor the homotopy
   if ( homotopy.monitor )
@@ -95,7 +95,7 @@ bool HomotopyODE::update(const complex z[], real t, bool end)
   homotopy.G(z, tmp);
   for (uint i = 0; i < n; i++)
   {
-    real r = std::abs(pow((1.0 - t), 1.0 - epsilon) * tmp[i]);
+    double r = std::abs(pow((1.0 - t), 1.0 - epsilon) * tmp[i]);
     //cout << "checking: r = " << r << endl;
     
     if ( r > homotopy.divtol )
@@ -127,7 +127,7 @@ HomotopyODE::State HomotopyODE::state()
   return _state;
 }
 //-----------------------------------------------------------------------------
-void HomotopyODE::monitor(const complex z[], real t)
+void HomotopyODE::monitor(const complex z[], double t)
 {
   dolfin_assert(tmp);
 
@@ -138,7 +138,7 @@ void HomotopyODE::monitor(const complex z[], real t)
 
   // Evaluate F
   homotopy.F(z, tmp);
-  real Fnorm = 0.0;
+  double Fnorm = 0.0;
   for (uint i = 0; i < n; i++)
   {
     h[i] = t*tmp[i];
@@ -147,7 +147,7 @@ void HomotopyODE::monitor(const complex z[], real t)
 
   // Evaluate G
   homotopy.G(z, tmp);
-  real Gnorm = 0.0;
+  double Gnorm = 0.0;
   for (uint i = 0; i < n; i++)
   {
     h[i] += (1.0 - t)*tmp[i];
@@ -155,7 +155,7 @@ void HomotopyODE::monitor(const complex z[], real t)
   }
   
   // Compute norm of H
-  real Hnorm = 0.0;
+  double Hnorm = 0.0;
   for (uint i = 0; i < n; i++)
     Hnorm = std::max(Hnorm, std::abs(h[i]));
   

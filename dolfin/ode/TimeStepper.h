@@ -21,7 +21,7 @@ namespace dolfin
   class TimeSlab;
 
   /// TimeStepper computes the solution of a given ODE. This is where
-  /// the real work takes place (most of it takes place in the time
+  /// the double work takes place (most of it takes place in the time
   /// slab or even in the local elements), whereas the responsibility
   /// of the ODE solver is also to solve the dual problem (using this
   /// class), compute stability factors and compute error estimates.
@@ -52,7 +52,7 @@ namespace dolfin
     static void solve(ODE& ode, ODESolution& u);
 
     /// Step solution, return current time
-    real step();
+    double step();
 
     /// Check if we have reached the end time
     bool finished() const;
@@ -77,10 +77,10 @@ namespace dolfin
     unsigned int N;
 
     // Current time
-    real t;
+    double t;
 
     // End time of computation
-    real T;
+    double T;
 
     // The ODE being solved
     ODE& ode;

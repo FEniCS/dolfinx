@@ -78,7 +78,7 @@ void RAWFile::ResultsWrite(Function& u) const
   uint size = mesh.numVertices();
   for (uint i = 0; i < u.rank(); i++)
     size *= u.dim(i);
-  real* values = new real[size];
+  double* values = new double[size];
 
   // Get function values at vertices
   u.interpolate(values);

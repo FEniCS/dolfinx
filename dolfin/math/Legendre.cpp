@@ -20,22 +20,22 @@ Legendre::Legendre(int n)
   this->n = n;
 }
 //-----------------------------------------------------------------------------
-real Legendre::operator() (real x)
+double Legendre::operator() (double x)
 {
   return eval(n, x);
 }
 //-----------------------------------------------------------------------------
-real Legendre::ddx(real x)
+double Legendre::ddx(double x)
 {
   return ddx(n, x);
 }
 //-----------------------------------------------------------------------------
-real Legendre::d2dx(real x)
+double Legendre::d2dx(double x)
 {
   return d2dx(n, x);
 }
 //-----------------------------------------------------------------------------
-real Legendre::eval(int n, real x)
+double Legendre::eval(int n, double x)
 {
   // Special case n = 0
   if ( n == 0 )
@@ -46,11 +46,11 @@ real Legendre::eval(int n, real x)
     return x;
   
   // Recurrence, BETA page 254
-  real nn = real(n);
+  double nn = double(n);
   return ( (2.0*nn-1.0)*x*eval(n-1, x) - (nn-1.0)*eval(n-2, x) ) / nn;
 }
 //-----------------------------------------------------------------------------
-real Legendre::ddx(int n, real x)
+double Legendre::ddx(int n, double x)
 {
   // Special case n = 0
   if ( n == 0 )
@@ -67,11 +67,11 @@ real Legendre::ddx(int n, real x)
     x += 2.0*DOLFIN_EPS;
   
   // Formula, BETA page 254
-  real nn = real(n);
+  double nn = double(n);
   return nn * (x*eval(n, x) - eval(n-1, x)) / (x*x - 1.0);
 }
 //-----------------------------------------------------------------------------
-real Legendre::d2dx(int, real x)
+double Legendre::d2dx(int, double x)
 {
   // Special case n = 0
   if ( n == 0 )
@@ -88,7 +88,7 @@ real Legendre::d2dx(int, real x)
     x += 2.0*DOLFIN_EPS;
 
   // Formula, BETA page 254
-  real nn = real(n);
+  double nn = double(n);
   return ( 2.0*x*ddx(n, x) - nn*(nn+1)*eval(n, x) ) / (1.0-x*x);
 }
 //-----------------------------------------------------------------------------

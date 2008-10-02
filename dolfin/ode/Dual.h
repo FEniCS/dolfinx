@@ -47,10 +47,10 @@ namespace dolfin {
     void u0(uBLASVector& u);
 
     /// Right-hand side
-    void f(const uBLASVector& phi, real t, uBLASVector& y);
+    void f(const uBLASVector& phi, double t, uBLASVector& y);
 
-    /// Return real time (might be flipped backwards for dual)
-    real time(real t) const;
+    /// Return double time (might be flipped backwards for dual)
+    double time(double t) const;
 
   private:
 

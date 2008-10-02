@@ -75,7 +75,7 @@ void Dependencies::set(const uBLASSparseMatrix& A)
   {
     // FIXME: Could add function to return sparsity pattern
     Array<uint> columns;
-    Array<real> values;
+    Array<double> values;
     A.getrow(i, columns, values); 
     setsize(i, columns.size());
     for (uint j = 0; j < columns.size(); j++)
@@ -143,7 +143,7 @@ void Dependencies::detect(ODE& ode)
   {
     // Count the number of dependencies
     uint size = 0;
-    real f0 = ode.f(u, 0.0, i);
+    double f0 = ode.f(u, 0.0, i);
     for (uint j = 0; j < N; j++)
       if ( checkDependency(ode, u, f0, i, j) )
         size++;
@@ -188,15 +188,15 @@ void Dependencies::disp() const
     message("Dependency pattern: dense");
 }
 //-----------------------------------------------------------------------------
-bool Dependencies::checkDependency(ODE& ode, uBLASVector& u, real f0,
+bool Dependencies::checkDependency(ODE& ode, uBLASVector& u, double f0,
 				   uint i, uint j)
 {
   // Save original value
-  real uj = u[j];
+  double uj = u[j];
 
   // Change value and compute new value for f_i
   u[j] += increment;
-  real f = ode.f(u, 0.0, i);
+  double f = ode.f(u, 0.0, i);
 
   // Restore the value
   u[j] = uj;

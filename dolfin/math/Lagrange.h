@@ -39,7 +39,7 @@ namespace dolfin
     ~Lagrange();
     
     /// Specify point
-    void set(unsigned int i, real x);
+    void set(unsigned int i, double x);
 
     /// Return number of points
     unsigned int size() const;
@@ -48,19 +48,19 @@ namespace dolfin
     unsigned int degree() const;
     
     /// Return point
-    real point(unsigned int i) const;
+    double point(unsigned int i) const;
     
     /// Return value of polynomial i at given point x
-    real operator() (unsigned int i, real x);
+    double operator() (unsigned int i, double x);
     
     /// Return value of polynomial i at given point x
-    real eval(unsigned int i, real x);
+    double eval(unsigned int i, double x);
 
     /// Return derivate of polynomial i at given point x
-    real ddx(unsigned int i, real x);
+    double ddx(unsigned int i, double x);
 
     /// Return derivative q (a constant) of polynomial
-    real dqdx(unsigned int i);
+    double dqdx(unsigned int i);
 
     /// Output
     friend LogStream& operator<<(LogStream& stream, const Lagrange& p);
@@ -72,8 +72,8 @@ namespace dolfin
     
     unsigned int q;
     unsigned int n;
-    real* points; 
-    real* constants;
+    double* points; 
+    double* constants;
 
   };
 

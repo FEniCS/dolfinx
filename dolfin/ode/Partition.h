@@ -37,7 +37,7 @@ namespace dolfin
     uint index(uint pos) const;
 
     /// Update partition (reorder components starting at offset)
-    real update(uint offset, uint& end, MultiAdaptivity& adaptivity, real K);
+    double update(uint offset, uint& end, MultiAdaptivity& adaptivity, double K);
 
     /// Debug partition
     void debug(uint offset, uint end) const;
@@ -45,24 +45,24 @@ namespace dolfin
   private:
 
     // Compute time step for partitioning
-    real maxstep(uint offset, MultiAdaptivity& adaptivity) const;
+    double maxstep(uint offset, MultiAdaptivity& adaptivity) const;
 
     // Compute largest time step
-    real maximum(uint offset, MultiAdaptivity& adaptivity) const;
+    double maximum(uint offset, MultiAdaptivity& adaptivity) const;
 
     // Compute smallest time step
-    real minimum(uint offset, uint end, MultiAdaptivity& adaptivity) const;
+    double minimum(uint offset, uint end, MultiAdaptivity& adaptivity) const;
 
     // Update time steps
-    void update(uint offset, uint end, MultiAdaptivity& adaptivity, real k) const;
+    void update(uint offset, uint end, MultiAdaptivity& adaptivity, double k) const;
     
     // Comparison operator for the partition
     struct Less : public std::unary_function<uint, bool> 
     {
-      Less(real& K, MultiAdaptivity& adaptivity);
+      Less(double& K, MultiAdaptivity& adaptivity);
       bool operator()(uint index) const;
       
-      real K;
+      double K;
       MultiAdaptivity& adaptivity;
     };
 
@@ -70,7 +70,7 @@ namespace dolfin
     Array<uint> indices;
     
     // Threshold for partition
-    real threshold;
+    double threshold;
     
   };
 

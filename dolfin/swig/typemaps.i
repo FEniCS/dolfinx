@@ -1,14 +1,14 @@
 // Type maps for PyDOLFIN
 
 // Basic typemaps
-%typemap(in)  dolfin::real = double;
-%typemap(out) dolfin::real = double;
+%typemap(in)  double = double;
+%typemap(out) double = double;
 %typemap(in)  dolfin::uint = int;
 %typemap(out) dolfin::uint = int;
 
 // Typemap for dolfin::arrays as input arguments to overloaded functions.
 // This converts a C++ dolfin::simple_array to a numpy array in Python.
-%typemap(directorin) dolfin::simple_array<dolfin::real>& {
+%typemap(directorin) dolfin::simple_array<double>& {
   {
     npy_intp dims[1] = {$1_name.size};
     $input = PyArray_SimpleNewFromData(1, dims, NPY_DOUBLE, reinterpret_cast<char *>($1_name.data));
@@ -16,7 +16,7 @@
 }
 
 // Typemap check
-%typecheck(SWIG_TYPECHECK_DOUBLE_ARRAY) dolfin::real* {
+%typecheck(SWIG_TYPECHECK_DOUBLE_ARRAY) double* {
     // General typemap
     $1 = PyArray_Check($input) ? 1 : 0;
 }
@@ -28,7 +28,7 @@
 }
 
 // Typemap check
-%typecheck(SWIG_TYPECHECK_DOUBLE_ARRAY) dolfin::Array<dolfin::real>& {
+%typecheck(SWIG_TYPECHECK_DOUBLE_ARRAY) dolfin::Array<double>& {
     // General typemap
     $1 = PySequence_Check($input) ? 1 : 0;
 }
@@ -40,7 +40,7 @@
 }
 
 // Typemap for sending any sequence as input to functions expecting an Array of real
-%typemap(in) const dolfin::Array<dolfin::real>& (dolfin::Array<dolfin::real> tmp) {
+%typemap(in) const dolfin::Array<double>& (dolfin::Array<double> tmp) {
   int i;
   if (!PySequence_Check($input)) {
     PyErr_SetString(PyExc_ValueError,"*** Error: Expected a sequence");
@@ -55,7 +55,7 @@
   for (i = 0; i < pyseq_length; i++) {
     PyObject *o = PySequence_GetItem($input,i);
     if (PyNumber_Check(o)) {
-      tmp.push_back(static_cast<dolfin::real>(PyFloat_AsDouble(o)));
+      tmp.push_back(static_cast<double>(PyFloat_AsDouble(o)));
     } else {
       PyErr_SetString(PyExc_ValueError,"*** Error: Sequence elements must be numbers");
       return NULL;
@@ -91,7 +91,7 @@
 }
 
 // Typemap for sending numpy arrays as input to functions expecting a C array of real
-%typemap(in) dolfin::real* {
+%typemap(in) double* {
     if PyArray_Check($input) {
         PyArrayObject *xa = (PyArrayObject*)($input);
         if (xa->descr->type == 'd')

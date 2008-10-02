@@ -26,7 +26,7 @@ namespace dolfin
   public:
   
     /// Construct load vector with constant load c on a given mesh
-    LoadVector(Mesh& mesh, real c = 1.0) : Vector()
+    LoadVector(Mesh& mesh, double c = 1.0) : Vector()
     {
       MatrixFactory::computeLoadVector(*this, mesh, c);
     }
@@ -43,7 +43,7 @@ namespace dolfin
   public:
   
     /// Construct load vector with constant load c on a given mesh
-    PETScLoadVector(Mesh& mesh, real c = 1.0) : PETScVector()
+    PETScLoadVector(Mesh& mesh, double c = 1.0) : PETScVector()
     {
       MatrixFactory::computeLoadVector(*this, mesh, c);
     }
@@ -61,7 +61,7 @@ namespace dolfin
   public:
   
     /// Construct load vector with constant load c on a given mesh
-    uBLASLoadVector(Mesh& mesh, real c = 1.0) : uBLASVector()
+    uBLASLoadVector(Mesh& mesh, double c = 1.0) : uBLASVector()
     {
       MatrixFactory::computeLoadVector(*this, mesh, c);
     }

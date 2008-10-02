@@ -65,15 +65,15 @@ namespace dolfin
                 bool reset_tensor=true);
 
   /// Assemble scalar from given variational form and mesh
-  real assemble(Form& form, Mesh& mesh,
+  double assemble(Form& form, Mesh& mesh,
                 bool reset_tensor=true);
 
   /// Assemble scalar from given variational form and mesh over a sub domain
-  real assemble(Form& form, Mesh& mesh, const SubDomain& sub_domain,
+  double assemble(Form& form, Mesh& mesh, const SubDomain& sub_domain,
                 bool reset_tensor=true);
 
   /// Assemble scalar from given variational form and mesh over sub domains
-  real assemble(Form& form, Mesh& mesh,
+  double assemble(Form& form, Mesh& mesh,
                 const MeshFunction<uint>& cell_domains,
                 const MeshFunction<uint>& exterior_facet_domains,
                 const MeshFunction<uint>& interior_facet_domains,

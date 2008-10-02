@@ -25,7 +25,7 @@ using namespace dolfin;
 // Boundary condition
 class DirichletBoundary : public SubDomain
 {
-  bool inside(const real* x, bool on_boundary) const
+  bool inside(const double* x, bool on_boundary) const
   {
     return (std::abs(x[0]) < DOLFIN_EPS);
   }
@@ -38,7 +38,7 @@ public:
     
   Source(Mesh& mesh) : Function(mesh) {}
 
-  real eval(const real* x) const
+  double eval(const double* x) const
   {
       return 9.0*DOLFIN_PI*DOLFIN_PI*sin(3.0*DOLFIN_PI*x[0]);
   }

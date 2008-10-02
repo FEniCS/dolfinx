@@ -36,7 +36,7 @@ int main()
   // Display eigenvalues
   for (unsigned int i = 0; i < n; i++)
   {
-    real lr, lc;
+    double lr, lc;
     esolver.getEigenvalue(lr, lc, i);
     cout << "Eigenvalue " << i << ": " << lr << endl;
   }

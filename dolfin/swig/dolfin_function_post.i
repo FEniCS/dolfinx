@@ -17,7 +17,7 @@ void dolfin_set(std::string key, std::string value) {
     self->set(key, value);
 }
 
-void dolfin_set(std::string key, dolfin::real value) {
+void dolfin_set(std::string key, double value) {
     self->set(key, value);
 }
 

@@ -49,14 +49,14 @@ void GaussQuadrature::computePoints()
   }
 
   Legendre p(n);
-  real x, dx;
+  double x, dx;
   
   // Compute the points by Newton's method
   for (unsigned int i = 0; i <= ((n-1)/2); i++) 
   {
     
     // Initial guess
-    x = cos(DOLFIN_PI*(real(i+1)-0.25)/(real(n)+0.5));
+    x = cos(DOLFIN_PI*(double(i+1)-0.25)/(double(n)+0.5));
     
     // Newton's method
     do {

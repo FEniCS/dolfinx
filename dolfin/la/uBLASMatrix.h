@@ -95,22 +95,22 @@ namespace dolfin
     virtual void resize(uint M, uint N);
 
     /// Get block of values
-    virtual void get(real* block, uint m, const uint* rows, uint n, const uint* cols) const;
+    virtual void get(double* block, uint m, const uint* rows, uint n, const uint* cols) const;
 
     /// Set block of values
-    virtual void set(const real* block, uint m, const uint* rows, uint n, const uint* cols);
+    virtual void set(const double* block, uint m, const uint* rows, uint n, const uint* cols);
 
     /// Add block of values
-    virtual void add(const real* block, uint m, const uint* rows, uint n, const uint* cols);
+    virtual void add(const double* block, uint m, const uint* rows, uint n, const uint* cols);
 
     /// Add multiple of given matrix (AXPY operation)
-    virtual void axpy(real a, const GenericMatrix& A);
+    virtual void axpy(double a, const GenericMatrix& A);
 
     /// Get non-zero values of given row
-    virtual void getrow(uint row, Array<uint>& columns, Array<real>& values) const;
+    virtual void getrow(uint row, Array<uint>& columns, Array<double>& values) const;
 
     /// Set values for given row
-    virtual void setrow(uint row_idx, const Array<uint>& columns, const Array<real>& values);
+    virtual void setrow(uint row_idx, const Array<uint>& columns, const Array<double>& values);
 
     /// Set given rows to zero
     virtual void zero(uint m, const uint* rows);
@@ -122,10 +122,10 @@ namespace dolfin
     virtual void mult(const GenericVector& x, GenericVector& y, bool transposed=false) const; 
 
     /// Multiply matrix by given number
-    virtual const uBLASMatrix<Mat>& operator*= (real a);
+    virtual const uBLASMatrix<Mat>& operator*= (double a);
 
     /// Divide matrix by given number
-    virtual const uBLASMatrix<Mat>& operator/= (real a);
+    virtual const uBLASMatrix<Mat>& operator/= (double a);
 
     /// Assignment operator
     virtual const GenericMatrix& operator= (const GenericMatrix& A);
@@ -166,7 +166,7 @@ namespace dolfin
     void compress();
 
     /// Access value of given entry
-    real operator() (uint i, uint j) const
+    double operator() (uint i, uint j) const
     { return A(i, j); }
 
     /// Assignment operator
@@ -232,7 +232,7 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <class Mat>
-  void uBLASMatrix<Mat>::getrow(uint row_idx, Array<uint>& columns, Array<real>& values) const
+  void uBLASMatrix<Mat>::getrow(uint row_idx, Array<uint>& columns, Array<double>& values) const
   {
     dolfin_assert(row_idx < this->size(0));
 
@@ -251,7 +251,7 @@ namespace dolfin
   }
   //-----------------------------------------------------------------------------
   template <class Mat>
-  void uBLASMatrix<Mat>::setrow(uint row_idx, const Array<uint>& columns, const Array<real>& values)
+  void uBLASMatrix<Mat>::setrow(uint row_idx, const Array<uint>& columns, const Array<double>& values)
   {
     dolfin_assert(columns.size() == values.size());
     dolfin_assert(row_idx < this->size(0));
@@ -265,7 +265,7 @@ namespace dolfin
   }
   //-----------------------------------------------------------------------------
   template <class Mat>
-  void uBLASMatrix<Mat>::set(const real* block, uint m, const uint* rows,
+  void uBLASMatrix<Mat>::set(const double* block, uint m, const uint* rows,
                                                 uint n, const uint* cols)
   {
     for (uint i = 0; i < m; i++)
@@ -274,7 +274,7 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <class Mat>  
-  void uBLASMatrix<Mat>::add(const real* block, uint m, const uint* rows,
+  void uBLASMatrix<Mat>::add(const double* block, uint m, const uint* rows,
                                                 uint n, const uint* cols)
   {
     for (uint i = 0; i < m; i++)
@@ -283,7 +283,7 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <class Mat>
-  void uBLASMatrix<Mat>::get(real* block, uint m, const uint* rows,
+  void uBLASMatrix<Mat>::get(double* block, uint m, const uint* rows,
                                           uint n, const uint* cols) const
   {
     for(uint i = 0; i < m; ++i)
@@ -338,7 +338,7 @@ namespace dolfin
   
     // Create indentity matrix
     Mat X(M, M);
-    X.assign(ublas::identity_matrix<real>(M));
+    X.assign(ublas::identity_matrix<double>(M));
 
     // Solve
     solveInPlace(X);
@@ -384,14 +384,14 @@ namespace dolfin
   }
   //-----------------------------------------------------------------------------
   template <class Mat>
-  const uBLASMatrix<Mat>& uBLASMatrix<Mat>::operator*= (real a)
+  const uBLASMatrix<Mat>& uBLASMatrix<Mat>::operator*= (double a)
    { 
     A *= a; 
     return *this; 
   }
   //-----------------------------------------------------------------------------
   template <class Mat>  
-  const uBLASMatrix<Mat>& uBLASMatrix<Mat>::operator/= (real a)
+  const uBLASMatrix<Mat>& uBLASMatrix<Mat>::operator/= (double a)
   { 
     A /= a; 
     return *this; 
@@ -481,7 +481,7 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
 //  template <> 
-//  inline void uBLASMatrix<ublas_sparse_matrix>::axpy(real a, const GenericMatrix& A)
+//  inline void uBLASMatrix<ublas_sparse_matrix>::axpy(double a, const GenericMatrix& A)
 //  {
 //    // Check for same size
 //    if ( size(0) != A.size(0) or size(1) != A.size(1) )  
@@ -497,7 +497,7 @@ namespace dolfin
 //  }
   //---------------------------------------------------------------------------
   template <class Mat> 
-  inline void uBLASMatrix<Mat>::axpy(real a, const GenericMatrix& A)
+  inline void uBLASMatrix<Mat>::axpy(double a, const GenericMatrix& A)
   {
     // Check for same size
     if ( size(0) != A.size(0) or size(1) != A.size(1) )  

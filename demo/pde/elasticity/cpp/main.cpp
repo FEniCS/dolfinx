@@ -24,7 +24,7 @@ int main()
 
     Clamp(Mesh& mesh) : Function(mesh) {}
 
-    void eval(real* values, const real* x) const
+    void eval(double* values, const double* x) const
     {
       values[0] = 0.0;
       values[1] = 0.0;
@@ -35,7 +35,7 @@ int main()
   // Sub domain for clamp at left end
   class Left : public SubDomain
   {
-    bool inside(const real* x, bool on_boundary) const
+    bool inside(const double* x, bool on_boundary) const
     {
       return x[0] < 0.5 && on_boundary;
     }
@@ -48,18 +48,18 @@ int main()
 
     Rotation(Mesh& mesh) : Function(mesh) {}
 
-    void eval(real* values, const real* x) const
+    void eval(double* values, const double* x) const
     {
       // Center of rotation
-      real y0 = 0.5;
-      real z0 = 0.219;
+      double y0 = 0.5;
+      double z0 = 0.219;
       
       // Angle of rotation (30 degrees)
-      real theta = 0.5236;
+      double theta = 0.5236;
       
       // New coordinates
-      real y = y0 + (x[1] - y0)*cos(theta) - (x[2] - z0)*sin(theta);
-      real z = z0 + (x[1] - y0)*sin(theta) + (x[2] - z0)*cos(theta);
+      double y = y0 + (x[1] - y0)*cos(theta) - (x[2] - z0)*sin(theta);
+      double z = z0 + (x[1] - y0)*sin(theta) + (x[2] - z0)*cos(theta);
       
       // Clamp at right end
       values[0] = 0.0;
@@ -71,7 +71,7 @@ int main()
   // Sub domain for rotation at right end
   class Right : public SubDomain
   {
-    bool inside(const real* x, bool on_boundary) const
+    bool inside(const double* x, bool on_boundary) const
     {
       return x[0] > 0.9 && on_boundary;
     }
@@ -99,8 +99,8 @@ int main()
   bcs.push_back(&bcr);
 
   // Set elasticity parameters
-  real E  = 10.0;
-  real nu = 0.3;
+  double E  = 10.0;
+  double nu = 0.3;
   Function mu(mesh, E / (2*(1 + nu)));
   Function lambda(mesh, E*nu / ((1 + nu)*(1 - 2*nu)));
 

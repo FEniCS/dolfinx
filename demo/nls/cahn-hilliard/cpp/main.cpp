@@ -94,14 +94,14 @@ int main(int argc, char* argv[])
   UnitSquare mesh(80, 80);
 
   // Time stepping and model parameters
-  real delta_t = 5.0e-6;
+  double delta_t = 5.0e-6;
   Function dt(mesh, delta_t); 
   Function theta(mesh, 0.5); 
   Function lambda(mesh, 1.0e-2); 
   Function muFactor(mesh, 100.0); 
 
-  real t = 0.0; 
-  real T = 50*delta_t;
+  double t = 0.0; 
+  double T = 50*delta_t;
 
   // Solution functions
   Function u; 
@@ -125,7 +125,7 @@ int main(int argc, char* argv[])
   // Randomly perturbed intitial conditions
   dolfin::seed(2);
   dolfin::uint size = mesh.numVertices();
-  real* x_init = new real[size];
+  double* x_init = new double[size];
   unsigned int* x_pos = new unsigned int[size];
   for(dolfin::uint i=0; i < size; ++i)
   {

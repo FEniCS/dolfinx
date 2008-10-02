@@ -53,7 +53,7 @@ NonMatchingFunction::NonMatchingFunction(Mesh& mesh, Function& fA) :
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void NonMatchingFunction::eval(real* values, const real* x) const
+void NonMatchingFunction::eval(double* values, const double* x) const
 {
   // Evaluate discrete function fA pointwise
   fA.eval(values, x);

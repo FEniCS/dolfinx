@@ -27,7 +27,7 @@ public:
     u[2] = 0.0;
   }
   
-  void f(const uBLASVector& u, real t, uBLASVector& y)
+  void f(const uBLASVector& u, double t, uBLASVector& y)
   {
     y[0] = -0.04 * u[0] + 1.0e4 * u[1] * u[2];
     y[1] = 0.04 * u[0] - 1.0e4 * u[1] * u[2] - 3.0e7 * u[1] * u[1];

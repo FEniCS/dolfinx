@@ -31,7 +31,7 @@ namespace dolfin
     virtual const ParameterValue& operator= (uint value);
 
     /// Assignment of real
-    virtual const ParameterValue& operator= (real value);
+    virtual const ParameterValue& operator= (double value);
 
     /// Assignment of bool
     virtual const ParameterValue& operator= (bool value);
@@ -46,7 +46,7 @@ namespace dolfin
     virtual operator uint() const;
 
     /// Cast to real
-    virtual operator real() const;
+    virtual operator double() const;
 
     /// Cast to bool
     virtual operator bool() const;
@@ -102,23 +102,23 @@ namespace dolfin
   public:
 
     /// Constructor
-    RealValue(real value) : ParameterValue(), value(value) {}
+    RealValue(double value) : ParameterValue(), value(value) {}
     
     /// Destructor
     ~RealValue() {}
 
     /// Assignment of real
-    const ParameterValue& operator= (real value) { this->value = value; return *this; }
+    const ParameterValue& operator= (double value) { this->value = value; return *this; }
 
     /// Cast to real
-    operator real() const { return value; }
+    operator double() const { return value; }
 
     /// Name of value type
     std::string type() const { return "real"; }
 
   private:
 
-    real value;
+    double value;
 
   };
 

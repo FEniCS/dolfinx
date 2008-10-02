@@ -27,7 +27,7 @@ Adaptivity::Adaptivity(const ODE& ode, const Method& method)
   _accept = true;
 
   // Scale tolerance with the square root of the number of components
-  //tol /= sqrt(static_cast<real>(ode.size()));
+  //tol /= sqrt(static_cast<double>(ode.size()));
 }
 //-----------------------------------------------------------------------------
 Adaptivity::~Adaptivity()
@@ -65,12 +65,12 @@ bool Adaptivity::accept()
   return _accept;
 }
 //-----------------------------------------------------------------------------
-real Adaptivity::threshold() const
+double Adaptivity::threshold() const
 {
   return beta;
 }
 //-----------------------------------------------------------------------------
-real Adaptivity::kmax() const
+double Adaptivity::kmax() const
 {
   return _kmax;
 }

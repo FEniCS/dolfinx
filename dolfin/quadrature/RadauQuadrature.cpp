@@ -51,10 +51,10 @@ void RadauQuadrature::computePoints()
   }
 
   Legendre p1(n-1), p2(n);
-  real x, dx, step, sign;
+  double x, dx, step, sign;
   
   // Set size of stepping for seeking starting points
-  step = 2.0 / ( real(n-1) * 10.0 );
+  step = 2.0 / ( double(n-1) * 10.0 );
   
   // Set the first nodal point which is -1
   points[0] = -1.0;

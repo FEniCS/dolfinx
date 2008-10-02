@@ -32,10 +32,10 @@ int main()
     
     Source(Mesh& mesh) : Function(mesh) {}
 
-    real eval(const real* x) const
+    double eval(const double* x) const
     {
-      real dx = x[0] - 0.5;
-      real dy = x[1] - 0.5;
+      double dx = x[0] - 0.5;
+      double dy = x[1] - 0.5;
       return 500.0*exp(-(dx*dx + dy*dy)/0.02);
     }
 
@@ -48,7 +48,7 @@ int main()
 
     Flux(Mesh& mesh) : Function(mesh) {}
 
-    real eval(const real* x) const
+    double eval(const double* x) const
     {
       if (x[0] > DOLFIN_EPS)
         return 25.0*sin(5.0*DOLFIN_PI*x[1]);
@@ -61,7 +61,7 @@ int main()
   // Sub domain for Dirichlet boundary condition
   class DirichletBoundary : public SubDomain
   {
-    bool inside(const real* x, bool on_boundary) const
+    bool inside(const double* x, bool on_boundary) const
     {
       return x[0] < DOLFIN_EPS && on_boundary;
     }

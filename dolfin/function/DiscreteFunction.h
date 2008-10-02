@@ -74,15 +74,15 @@ namespace dolfin
     const DiscreteFunction& operator= (const DiscreteFunction& f);
 
     /// Interpolate function to vertices of mesh
-    void interpolate(real* values) const;
+    void interpolate(double* values) const;
 
     /// Interpolate function to finite element space on cell
-    void interpolate(real* coefficients,
+    void interpolate(double* coefficients,
                      const ufc::cell& cell,
                      const FiniteElement& finite_element) const;
 
     /// Evaluate function at given point
-    void eval(real* values, const real* x) const;
+    void eval(double* values, const double* x) const;
 
     /// Return DofMap
     DofMap& dofMap() const;
@@ -116,10 +116,10 @@ namespace dolfin
       uint* dofs;
       
       // Local array for expansion coefficients
-      real* coefficients;
+      double* coefficients;
       
       // Local array for values
-      real* values;
+      double* values;
 
     };
 

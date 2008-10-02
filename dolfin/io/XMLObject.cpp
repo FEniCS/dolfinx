@@ -87,7 +87,7 @@ dolfin::uint XMLObject::parseUnsignedInt(const xmlChar* name,
   return 0;
 }
 //-----------------------------------------------------------------------------
-real XMLObject::parseReal(const xmlChar* name, const xmlChar** attrs,
+double XMLObject::parseReal(const xmlChar* name, const xmlChar** attrs,
 			  const char* attribute)
 {
   // Check that we got the data
@@ -105,7 +105,7 @@ real XMLObject::parseReal(const xmlChar* name, const xmlChar** attrs,
         error("Value for attribute \"%s\" of <%s>  missing in XML file.",
 		      attribute, name);
     
-      real value = static_cast<real>(atof((const char *) (attrs[i+1])));
+      double value = static_cast<double>(atof((const char *) (attrs[i+1])));
       return value;
     }
   }

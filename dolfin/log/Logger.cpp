@@ -20,8 +20,8 @@
 
 using namespace dolfin;
 
-typedef std::map<std::string, std::pair<dolfin::uint, real> >::iterator map_iterator;
-typedef std::map<std::string, std::pair<dolfin::uint, real> >::const_iterator const_map_iterator;
+typedef std::map<std::string, std::pair<dolfin::uint, double> >::iterator map_iterator;
+typedef std::map<std::string, std::pair<dolfin::uint, double> >::const_iterator const_map_iterator;
 
 //-----------------------------------------------------------------------------
 Logger::Logger()
@@ -69,10 +69,10 @@ void Logger::end()
   indentation_level--;
 }
 //-----------------------------------------------------------------------------
-void Logger::progress(std::string title, real p) const
+void Logger::progress(std::string title, double p) const
 {
   int N = DOLFIN_TERM_WIDTH - 15;
-  int n = static_cast<int>(p*static_cast<real>(N));
+  int n = static_cast<int>(p*static_cast<double>(N));
   
   // Print the title
   std::string s = "| " + title;
@@ -130,7 +130,7 @@ void Logger::setDebugLevel(int debug_level)
   this->debug_level = debug_level;
 }
 //-----------------------------------------------------------------------------
-void Logger::registerTiming(std::string task, real elapsed_time)
+void Logger::registerTiming(std::string task, double elapsed_time)
 {
   // Remove small or negative numbers
   if (elapsed_time < DOLFIN_EPS)
@@ -145,7 +145,7 @@ void Logger::registerTiming(std::string task, real elapsed_time)
   map_iterator it = timings.find(task);
   if (it == timings.end())
   {
-    std::pair<uint, real> timing(1, elapsed_time);
+    std::pair<uint, double> timing(1, elapsed_time);
     timings[task] = timing;
   }
   else
@@ -169,8 +169,8 @@ void Logger::summary(bool reset)
   {
     const std::string task  = it->first;
     const uint num_timings  = it->second.first;
-    const real total_time   = it->second.second;
-    const real average_time = total_time / static_cast<real>(num_timings);
+    const double total_time   = it->second.second;
+    const double average_time = total_time / static_cast<double>(num_timings);
 
     table(task, "Average time") = average_time;
     table(task, "Total time")   = total_time;
@@ -183,7 +183,7 @@ void Logger::summary(bool reset)
     timings.clear();
 }
 //-----------------------------------------------------------------------------
-dolfin::real Logger::timing(std::string task, bool reset)
+double Logger::timing(std::string task, bool reset)
 {
   // Find timing
   map_iterator it = timings.find(task);
@@ -196,8 +196,8 @@ dolfin::real Logger::timing(std::string task, bool reset)
 
   // Compute average
   const uint num_timings  = it->second.first;
-  const real total_time   = it->second.second;
-  const real average_time = total_time / static_cast<real>(num_timings);
+  const double total_time   = it->second.second;
+  const double average_time = total_time / static_cast<double>(num_timings);
 
   // Clear timing
   timings.erase(it);

@@ -32,7 +32,7 @@ namespace dolfin
     Parameter(uint value);
 
     /// Create real-valued parameter
-    Parameter(real value);
+    Parameter(double value);
 
     /// Create bool-valued parameter
     Parameter(bool value);
@@ -56,7 +56,7 @@ namespace dolfin
     const Parameter& operator= (uint value);
 
     /// Assignment of real
-    const Parameter& operator= (real value);
+    const Parameter& operator= (double value);
 
     /// Assignment of bool
     const Parameter& operator= (bool value);
@@ -74,7 +74,7 @@ namespace dolfin
     operator uint() const;
 
     /// Cast parameter to real
-    operator real() const;
+    operator double() const;
     
     /// Cast parameter to bool
     operator bool() const;

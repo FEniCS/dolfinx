@@ -55,21 +55,21 @@ void dolfin::assemble(GenericTensor& A, Form& form, Mesh& mesh,
                      reset_tensor);
 }
 //-----------------------------------------------------------------------------
-dolfin::real dolfin::assemble(Form& form, Mesh& mesh,
+double dolfin::assemble(Form& form, Mesh& mesh,
                               bool reset_tensor)
 {
   Assembler assembler(mesh);
   return assembler.assemble(form, reset_tensor);
 }
 //-----------------------------------------------------------------------------
-dolfin::real dolfin::assemble(Form& form, Mesh& mesh, const SubDomain& sub_domain,
+double dolfin::assemble(Form& form, Mesh& mesh, const SubDomain& sub_domain,
                               bool reset_tensor)
 {
   Assembler assembler(mesh);
   return assembler.assemble(form, sub_domain, reset_tensor);
 }
 //-----------------------------------------------------------------------------
-dolfin::real dolfin::assemble(Form& form, Mesh& mesh,
+double dolfin::assemble(Form& form, Mesh& mesh,
                               const MeshFunction<dolfin::uint>& cell_domains,
                               const MeshFunction<dolfin::uint>& exterior_facet_domains,
                               const MeshFunction<dolfin::uint>& interior_facet_domains,

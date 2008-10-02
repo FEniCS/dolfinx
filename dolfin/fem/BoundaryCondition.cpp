@@ -60,7 +60,7 @@ BoundaryCondition::LocalData::LocalData(const ufc::form& form, Mesh& mesh,
     dof_map = &global_dof_map;
 
   // Create local data used to set boundary conditions
-  w = new real[finite_element->space_dimension()];
+  w = new double[finite_element->space_dimension()];
   cell_dofs = new uint[finite_element->space_dimension()];
   for (uint i = 0; i < finite_element->space_dimension(); i++)
   {
@@ -72,10 +72,10 @@ BoundaryCondition::LocalData::LocalData(const ufc::form& form, Mesh& mesh,
     facet_dofs[i] = 0;
 
   // Create local coordinate data
-  coordinates = new real*[dof_map->local_dimension()];
+  coordinates = new double*[dof_map->local_dimension()];
   for (uint i = 0; i < dof_map->local_dimension(); i++)
   {
-    coordinates[i] = new real[mesh.geometry().dim()];
+    coordinates[i] = new double[mesh.geometry().dim()];
     for (uint j = 0; j < mesh.geometry().dim(); j++)
       coordinates[i][j] = 0.0;
   }

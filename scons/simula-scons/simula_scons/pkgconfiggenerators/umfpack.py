@@ -252,7 +252,7 @@ def pkgTests(forceCompiler=None, sconsEnv=None,
   if not version:
     version = pkgVersion(compiler=compiler, cflags=cflags, libs=libs, sconsEnv=sconsEnv)
 
-  # a program that do a real umfpack test.
+  # a program that do a double umfpack test.
   cpp_test_lib_str = r"""
 /* -------------------------------------------------------------------------- */
 /* UMFPACK Copyright (c) Timothy A. Davis, CISE,                              */

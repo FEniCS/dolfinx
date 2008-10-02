@@ -27,7 +27,7 @@ public:
     u[1] = 1.0;
   }
   
-  void f(const uBLASVector& u, real t, uBLASVector& y)
+  void f(const uBLASVector& u, double t, uBLASVector& y)
   {
     A.mult(u, y);
   }

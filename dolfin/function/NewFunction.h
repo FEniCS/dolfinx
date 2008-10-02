@@ -61,13 +61,13 @@ namespace dolfin
     const GenericVector& vector() const;
 
     /// Evaluate function at given point p (overload for user-defined function)
-    virtual void eval(real* values, const real* p) const;
+    virtual void eval(double* values, const double* p) const;
 
     /// Evaluate function at given point p (overload for scalar user-defined function)
-    virtual real eval(const real* p) const;
+    virtual double eval(const double* p) const;
 
     /// Evaluate function at given point (used for subclassing through SWIG interface)
-    void eval(simple_array<real>& values, const simple_array<real>& p) const;
+    void eval(simple_array<double>& values, const simple_array<double>& p) const;
 
   private:
 

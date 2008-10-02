@@ -39,7 +39,7 @@ const MeshGeometry& MeshGeometry::operator= (const MeshGeometry& geometry)
   _dim = geometry._dim;
   _size = geometry._size;
   const uint n = _dim*_size;
-  coordinates = new real[n];
+  coordinates = new double[n];
 
   // Copy data
   for (uint i = 0; i < n; i++)
@@ -50,9 +50,9 @@ const MeshGeometry& MeshGeometry::operator= (const MeshGeometry& geometry)
 //-----------------------------------------------------------------------------
 Point MeshGeometry::point(uint n) const
 {
-  real _x = 0.0;
-  real _y = 0.0;
-  real _z = 0.0;
+  double _x = 0.0;
+  double _y = 0.0;
+  double _z = 0.0;
   
   if ( _dim > 0 )
     _x = x(n, 0);
@@ -86,7 +86,7 @@ void MeshGeometry::init(uint dim, uint size)
   clear();
 
   // Allocate new data
-  coordinates = new real[dim*size];
+  coordinates = new double[dim*size];
 
   // Save dimension and size
   _dim = dim;
@@ -112,7 +112,7 @@ void MeshGeometry::setAffineIndicator(uint i, bool value)
   affine_cell[i] = value;
 }
 //-----------------------------------------------------------------------------
-void MeshGeometry::set(uint n, uint i, real x)
+void MeshGeometry::set(uint n, uint i, double x)
 {
   coordinates[n*_dim + i] = x;
 }

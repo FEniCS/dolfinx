@@ -24,31 +24,31 @@ Method::Method(unsigned int q, unsigned int nq, unsigned int nn)
   this->nn = nn;
 
   // Allocate quadrature points
-  qpoints  = new real[nq];
+  qpoints  = new double[nq];
   for (unsigned int i = 0; i < nq; i++)
     qpoints[i] = 0.0;
 
   // Allocate nodal points
-  npoints  = new real[nn];
+  npoints  = new double[nn];
   for (unsigned int i = 0; i < nn; i++)
     npoints[i] = 0.0;
 
   // Allocate quadrature weights
-  qweights = new real[nq];
+  qweights = new double[nq];
   for (unsigned int i = 0; i < nq; i++)
     qweights[i] = 0.0;
 
   // Allocate weights
-  nweights = new real*[nn];
+  nweights = new double*[nn];
   for (unsigned int i = 0; i < nn; i++)
   {
-    nweights[i] = new real[nq];
+    nweights[i] = new double[nq];
     for (unsigned int j = 0; j < nq; j++)
       nweights[i][j] = 0.0;
   }
 
   // Allocate derivatives
-  derivatives = new real[nq];
+  derivatives = new double[nq];
   for (unsigned int i = 0; i < nq; i++)
     derivatives[i] = 0.0;
 
@@ -85,24 +85,24 @@ void Method::init()
   computeDerivatives();
 }
 //-----------------------------------------------------------------------------
-void Method::update(real x0, real f[], real k, real values[]) const
+void Method::update(double x0, double f[], double k, double values[]) const
 {
   // Update values
   for (uint i = 0; i < nn; i++)
   {
-    real sum = 0.0;
+    double sum = 0.0;
     for (uint j = 0; j < nq; j++)
       sum += nweights[i][j] * f[j];
     values[i] = x0 + k*sum;
   }
 }
 //-----------------------------------------------------------------------------
-void Method::update(real x0, real f[], real k, real values[], real alpha) const
+void Method::update(double x0, double f[], double k, double values[], double alpha) const
 {
   // Update values
   for (uint i = 0; i < nn; i++)
   {
-    real sum = 0.0;
+    double sum = 0.0;
     for (uint j = 0; j < nq; j++)
       sum += nweights[i][j] * f[j];
     values[i] += alpha*(x0 + k*sum - values[i]);

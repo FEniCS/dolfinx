@@ -106,7 +106,7 @@ dolfin::uint PETScLUSolver::solve(const PETScKrylovMatrix& A,
   //cout << "b = "; b.disp();
 
   // Copy data to dense matrix
-  const real Anorm = copyToDense(A);
+  const double Anorm = copyToDense(A);
   
   // Initialize solution vector (remains untouched if dimensions match)
   x.resize(A.size(1));
@@ -121,9 +121,9 @@ dolfin::uint PETScLUSolver::solve(const PETScKrylovMatrix& A,
   KSPSolve(ksp, b.vec(), x.vec());
 
   // Estimate condition number for l1 norm
-  const real xnorm = x.norm(l1);
-  const real bnorm = b.norm(l1) + DOLFIN_EPS;
-  const real kappa = Anorm * xnorm / bnorm;
+  const double xnorm = x.norm(l1);
+  const double bnorm = b.norm(l1) + DOLFIN_EPS;
+  const double kappa = Anorm * xnorm / bnorm;
   if ( kappa > 0.001 / DOLFIN_EPS )
   {
     if ( kappa > 1.0 / DOLFIN_EPS )
@@ -140,7 +140,7 @@ void PETScLUSolver::disp() const
   KSPView(ksp, PETSC_VIEWER_STDOUT_WORLD);
 }
 //-----------------------------------------------------------------------------
-real PETScLUSolver::copyToDense(const PETScKrylovMatrix& A)
+double PETScLUSolver::copyToDense(const PETScKrylovMatrix& A)
 {
   error("PETScLUSolver::copyToDense needs to be fixed");
 /*
@@ -173,21 +173,21 @@ real PETScLUSolver::copyToDense(const PETScKrylovMatrix& A)
   }
 
   // Multiply matrix with unit vectors to get the values
-  real maxcolsum = 0.0;
+  double maxcolsum = 0.0;
   e = 0.0;
   for (uint j = 0; j < M; j++)
   {
     // Multiply with unit vector and set column
     e(j) = 1.0;
     A.mult(e, y);
-    real* values = y.array(); // assumes uniprocessor case
+    double* values = y.array(); // assumes uniprocessor case
     idxn[0] = j;
     MatSetValues(B, M, idxm, 1, idxn, values, INSERT_VALUES);
     y.restore(values);
     e(j) = 0.0;
     
     // Compute l1 norm of matrix (maximum column sum)
-    const real colsum = y.norm(PETScVector::l1);
+    const double colsum = y.norm(PETScVector::l1);
     if ( colsum > maxcolsum )
       maxcolsum = colsum;
   }

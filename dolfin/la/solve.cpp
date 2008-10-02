@@ -24,23 +24,23 @@ void dolfin::solve(const GenericMatrix& A, GenericVector& x, const GenericVector
   solver.solve(A, x, b);
 }
 //-----------------------------------------------------------------------------  
-real dolfin::residual(const GenericMatrix& A, const GenericVector& x, const GenericVector& b)
+double dolfin::residual(const GenericMatrix& A, const GenericVector& x, const GenericVector& b)
 {
   GenericVector* y = A.factory().create_vector();
   A.mult(x, *y);
   *y -= b;
-  const real norm = y->norm(l2);
+  const double norm = y->norm(l2);
   delete y;
   return norm;
 }
 //-----------------------------------------------------------------------------
-real dolfin::normalize(GenericVector& x, NormalizationType normalization_type)
+double dolfin::normalize(GenericVector& x, NormalizationType normalization_type)
 {
   switch (normalization_type)
   {
   case normalize_l2norm:
     {
-      const real c = x.norm(l2);
+      const double c = x.norm(l2);
       x /= c;
       return c;
     }
@@ -49,8 +49,8 @@ real dolfin::normalize(GenericVector& x, NormalizationType normalization_type)
     {
       GenericVector* y = x.factory().create_vector();
       y->resize(x.size());
-      (*y) = 1.0 / static_cast<real>(x.size());
-      const real c = x.inner(*y);
+      (*y) = 1.0 / static_cast<double>(x.size());
+      const double c = x.inner(*y);
       (*y) = c;
       x -= (*y);
       delete y;

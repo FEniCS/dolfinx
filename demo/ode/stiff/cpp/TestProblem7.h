@@ -14,7 +14,7 @@ public:
   
   TestProblem7() : ODE(101, 1.0)
   {
-    h = 1.0 / (static_cast<real>(N) - 1);
+    h = 1.0 / (static_cast<double>(N) - 1);
     message("The heat equation on [0,1] with h = %f", h);
   }
   
@@ -23,7 +23,7 @@ public:
     u.zero();
   }
 
-  void f(const uBLASVector& u, real t, uBLASVector& y)
+  void f(const uBLASVector& u, double t, uBLASVector& y)
   {
     // Boundary values
     y[0]   = 0.0;
@@ -33,7 +33,7 @@ public:
     for (unsigned int i = 1; i < N - 1; i++)
     {
       // Heat source
-      real source = 0.0;
+      double source = 0.0;
       if ( i == N/2 )
 	source = 100.0;
       
@@ -43,6 +43,6 @@ public:
   
 private:
   
-  real h;
+  double h;
 
 };

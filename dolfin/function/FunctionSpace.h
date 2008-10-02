@@ -50,7 +50,7 @@ namespace dolfin
     const DofMap& dofmap() const;
 
     /// Evaluate function with given vector of dofs at given point
-    void eval(real* values, const real* p, const GenericVector& x) const;
+    void eval(double* values, const double* p, const GenericVector& x) const;
     
   private:
 
@@ -72,10 +72,10 @@ namespace dolfin
       uint* dofs;
       
       // Local array for expansion coefficients
-      real* coefficients;
+      double* coefficients;
       
       // Local array for values
-      real* values;
+      double* values;
 
     };
 

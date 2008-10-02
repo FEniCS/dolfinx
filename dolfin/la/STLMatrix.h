@@ -63,7 +63,7 @@ namespace dolfin
     virtual void zero()
     {
       for (uint i = 0; i < A.size(); i++)
-        for (std::map<uint, real>::iterator it = A[i].begin(); it != A[i].end(); it++)
+        for (std::map<uint, double>::iterator it = A[i].begin(); it != A[i].end(); it++)
           it->second = 0.0;
     }
 
@@ -80,26 +80,26 @@ namespace dolfin
     { dims[0] = M; dims[1] = N; A.resize(M); }
 
     /// Get block of values
-    virtual void get(real* block, uint m, const uint* rows, uint n, const uint* cols) const
+    virtual void get(double* block, uint m, const uint* rows, uint n, const uint* cols) const
     { error("Not implemented."); }
 
     /// Set block of values
-    virtual void set(const real* block, uint m, const uint* rows, uint n, const uint* cols)
+    virtual void set(const double* block, uint m, const uint* rows, uint n, const uint* cols)
     { error("Not implemented."); }
 
     /// Add block of values
-    virtual void add(const real* block, uint m, const uint* rows, uint n, const uint* cols)
+    virtual void add(const double* block, uint m, const uint* rows, uint n, const uint* cols)
     {
       uint pos = 0;
       for (uint i = 0; i < m; i++)
       {
-        std::map<uint, real>& row = A[rows[i]];
+        std::map<uint, double>& row = A[rows[i]];
         for (uint j = 0; j < n; j++)
         {
           const uint col = cols[j];
-          const std::map<uint, real>::iterator it = row.find(col);
+          const std::map<uint, double>::iterator it = row.find(col);
           if ( it == row.end() )
-            row.insert(it, std::map<uint, real>::value_type(col, block[pos++]));
+            row.insert(it, std::map<uint, double>::value_type(col, block[pos++]));
           else
             it->second += block[pos++];
         }
@@ -107,16 +107,16 @@ namespace dolfin
     }
 
     /// Add multiple of given matrix (AXPY operation)
-    virtual void axpy(real a, const GenericMatrix& A)
+    virtual void axpy(double a, const GenericMatrix& A)
     { error("Not implemented."); }
 
     /// Get non-zero values of given row
-    virtual void getrow(uint row, Array<uint>& columns, Array<real>& values) const
+    virtual void getrow(uint row, Array<uint>& columns, Array<double>& values) const
     {
       columns.clear();
       values.clear();
-      const std::map<uint, real>& rowid = A[row];
-      for (std::map<uint, real>::const_iterator it = rowid.begin(); it != rowid.end(); it++)
+      const std::map<uint, double>& rowid = A[row];
+      for (std::map<uint, double>::const_iterator it = rowid.begin(); it != rowid.end(); it++)
       {
         columns.push_back(it->first);
         values.push_back(it->second);
@@ -124,7 +124,7 @@ namespace dolfin
     }
 
     /// Set values for given row
-    virtual void setrow(uint row, const Array<uint>& columns, const Array<real>& values)
+    virtual void setrow(uint row, const Array<uint>& columns, const Array<double>& values)
     { error("Not implemented."); }
 
     /// Set given rows to zero
@@ -140,11 +140,11 @@ namespace dolfin
     { error("Not implemented."); }
 
     /// Multiply matrix by given number
-    virtual const STLMatrix& operator*= (real a)
+    virtual const STLMatrix& operator*= (double a)
     { error("Not implemented."); return *this; }
 
     /// Divide matrix by given number
-    virtual const STLMatrix& operator/= (real a)
+    virtual const STLMatrix& operator/= (double a)
     { error("Not implemented."); return *this; }
 
     /// Assignment operator
@@ -174,7 +174,7 @@ namespace dolfin
   private:
 
     // The matrix representation
-    std::vector<std::map<uint, real> > A;
+    std::vector<std::map<uint, double> > A;
 
     // The size of the matrix
     uint dims[2];

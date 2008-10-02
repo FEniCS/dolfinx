@@ -55,7 +55,7 @@ namespace dolfin
   public:
 
     /// Create an ODE of size N with final time T
-    ODE(uint N, real T);
+    ODE(uint N, double T);
     
     /// Destructor
     virtual ~ODE();
@@ -64,38 +64,38 @@ namespace dolfin
     virtual void u0(uBLASVector& u) = 0;
 
     /// Evaluate right-hand side y = f(u, t), mono-adaptive version (default, optional)
-    virtual void f(const uBLASVector& u, real t, uBLASVector& y);
+    virtual void f(const uBLASVector& u, double t, uBLASVector& y);
 
     /// Evaluate right-hand side f_i(u, t), multi-adaptive version (optional)
-    virtual real f(const uBLASVector& u, real t, uint i);
+    virtual double f(const uBLASVector& u, double t, uint i);
 
     /// Compute product y = Mx for implicit system (optional)
-    virtual void M(const uBLASVector& x, uBLASVector& y, const uBLASVector& u, real t);
+    virtual void M(const uBLASVector& x, uBLASVector& y, const uBLASVector& u, double t);
 
     /// Compute product y = Jx for Jacobian J (optional)
-    virtual void J(const uBLASVector& x, uBLASVector& y, const uBLASVector& u, real t);
+    virtual void J(const uBLASVector& x, uBLASVector& y, const uBLASVector& u, double t);
 
     /// Compute product y = tranpose(J)x for Jacobian J (optional)
     /// Used when computing error estimate only
-    virtual void JT(const uBLASVector& x, uBLASVector& y, const uBLASVector& u, real t);
+    virtual void JT(const uBLASVector& x, uBLASVector& y, const uBLASVector& u, double t);
 
     /// Compute entry of Jacobian (optional)
-    virtual real dfdu(const uBLASVector& u, real t, uint i, uint j);
+    virtual double dfdu(const uBLASVector& u, double t, uint i, uint j);
 
     /// Time step to use for the whole system at a given time t (optional)
-    virtual real timestep(real t, real k0) const;
+    virtual double timestep(double t, double k0) const;
     
     /// Time step to use for a given component at a given time t (optional)
-    virtual real timestep(real t, uint i, real k0) const;
+    virtual double timestep(double t, uint i, double k0) const;
 
     /// Update ODE, return false to stop (optional)
-    virtual bool update(const uBLASVector& u, real t, bool end);
+    virtual bool update(const uBLASVector& u, double t, bool end);
 
     /// Save sample (optional)
     virtual void save(Sample& sample);
 
-    /// Return real time (might be flipped backwards for dual)
-    virtual real time(real t) const;
+    /// Return double time (might be flipped backwards for dual)
+    virtual double time(double t) const;
 
     /// Automatically detect sparsity (optional)
     void sparse();
@@ -107,7 +107,7 @@ namespace dolfin
     uint size() const;
 
     /// Return end time (final time T)
-    real endtime() const;
+    double endtime() const;
 
     /// Solve ODE
     void solve();
@@ -134,7 +134,7 @@ namespace dolfin
     uint N;
     
     // Final time
-    real T;
+    double T;
 
     // Dependencies
     Dependencies dependencies;
@@ -143,7 +143,7 @@ namespace dolfin
     Dependencies transpose;
 
     // Default time step
-    real default_timestep;
+    double default_timestep;
 
   private:
 

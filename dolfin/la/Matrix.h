@@ -76,27 +76,27 @@ namespace dolfin
     { matrix->resize(M, N); }
 
     /// Get block of values
-    virtual void get(real* block, uint m, const uint* rows, uint n, const uint* cols) const
+    virtual void get(double* block, uint m, const uint* rows, uint n, const uint* cols) const
     { matrix->get(block, m, rows, n, cols); }
 
     /// Set block of values
-    virtual void set(const real* block, uint m, const uint* rows, uint n, const uint* cols)
+    virtual void set(const double* block, uint m, const uint* rows, uint n, const uint* cols)
     { matrix->set(block, m, rows, n, cols); }
 
     /// Add block of values
-    virtual void add(const real* block, uint m, const uint* rows, uint n, const uint* cols)
+    virtual void add(const double* block, uint m, const uint* rows, uint n, const uint* cols)
     { matrix->add(block, m, rows, n, cols); }
 
     /// Add multiple of given matrix (AXPY operation)
-    virtual void axpy(real a, const GenericMatrix& A)
+    virtual void axpy(double a, const GenericMatrix& A)
     { matrix->axpy(a,A); }
 
     /// Get non-zero values of given row
-    virtual void getrow(uint row, Array<uint>& columns, Array<real>& values) const
+    virtual void getrow(uint row, Array<uint>& columns, Array<double>& values) const
     { matrix->getrow(row, columns, values); }
 
     /// Set values for given row
-    virtual void setrow(uint row, const Array<uint>& columns, const Array<real>& values)
+    virtual void setrow(uint row, const Array<uint>& columns, const Array<double>& values)
     { matrix->setrow(row, columns, values); }
 
     /// Set given rows to zero
@@ -112,11 +112,11 @@ namespace dolfin
     { matrix->mult(x, y, transposed); }
 
     /// Multiply matrix by given number
-    virtual const Matrix& operator*= (real a)
+    virtual const Matrix& operator*= (double a)
     { *matrix *= a; return *this; }
 
     /// Divide matrix by given number
-    virtual const Matrix& operator/= (real a)
+    virtual const Matrix& operator/= (double a)
     { *matrix /= a; return *this; }
 
     /// Assignment operator

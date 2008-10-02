@@ -84,7 +84,7 @@ void TimeStepper::solve(ODE& ode, ODESolution& u)
   message("Solution computed in %.3f seconds.", toc());
 }
 //-------------------------------------------------------------------------
-real TimeStepper::step()
+double TimeStepper::step()
 {
   // FIXME: Change type of time slab if solution does not converge
 
@@ -95,7 +95,7 @@ real TimeStepper::step()
   _stopped = false;
 
   // Iterate until solution is accepted
-  const real a = t;
+  const double a = t;
   while (true)
   {
     // Build time slab
@@ -164,8 +164,8 @@ void TimeStepper::save()
 void TimeStepper::saveFixedSamples()
 {
   // Get start time and end time of time slab
-  real t0 = timeslab->starttime();
-  real t1 = timeslab->endtime();
+  double t0 = timeslab->starttime();
+  double t1 = timeslab->endtime();
 
   // Save initial value
   if (t0 == 0.0)
@@ -178,8 +178,8 @@ void TimeStepper::saveFixedSamples()
   }
 
   // Compute distance between samples
-  real K = T / static_cast<real>(no_samples);
-  real t = floor(t0/K - 0.5) * K;
+  double K = T / static_cast<double>(no_samples);
+  double t = floor(t0/K - 0.5) * K;
 
   // Save samples
   while (true)
@@ -215,8 +215,8 @@ void TimeStepper::saveFixedSamples()
 void TimeStepper::saveAdaptiveSamples()
 {
   // Get start time and end time of time slab
-  real t0 = timeslab->starttime();
-  real t1 = timeslab->endtime();
+  double t0 = timeslab->starttime();
+  double t1 = timeslab->endtime();
 
   // Save initial value
   if ( t0 == 0.0 )
@@ -230,13 +230,13 @@ void TimeStepper::saveAdaptiveSamples()
 
   // Compute distance between samples
   dolfin_assert(sample_density >= 1);
-  real k = (t1 - t0) / static_cast<real>(sample_density);
+  double k = (t1 - t0) / static_cast<double>(sample_density);
   
   // Save samples
   for (unsigned int n = 0; n < sample_density; ++n)
   {
     // Compute time of sample, and make sure we get the end time right
-    real t = t0 + static_cast<real>(n + 1)*k;
+    double t = t0 + static_cast<double>(n + 1)*k;
     if ( n == (sample_density - 1) )
       t = t1;
     

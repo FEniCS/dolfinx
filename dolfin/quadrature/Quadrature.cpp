@@ -16,8 +16,8 @@ Quadrature::Quadrature(unsigned int n)
 {
   this->n = n;
   
-  points = new real[n];
-  weights = new real[n];
+  points = new double[n];
+  weights = new double[n];
   
   for (unsigned int i = 0; i < n; i++)
     weights[i] = 0;
@@ -41,19 +41,19 @@ int Quadrature::size() const
   return n;
 }
 //-----------------------------------------------------------------------------
-real Quadrature::point(unsigned int i) const
+double Quadrature::point(unsigned int i) const
 {
   dolfin_assert(i < n);
   return points[i];
 }
 //-----------------------------------------------------------------------------
-real Quadrature::weight(unsigned int i) const
+double Quadrature::weight(unsigned int i) const
 {
   dolfin_assert(i < n);
   return weights[i];
 }
 //-----------------------------------------------------------------------------
-real Quadrature::measure() const
+double Quadrature::measure() const
 {
   return m;
 }

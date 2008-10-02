@@ -1,3 +1,4 @@
+ - Remove typedef real, now using plain double instead
  - Add various operators -=, += tp GenericMatrix
  - Don't use -Werror when compiling SWIG generated code
  - Remove init(n) and init(m, n) from GenericVector/Matrix. Use resize and zero instead

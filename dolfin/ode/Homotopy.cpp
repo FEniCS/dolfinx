@@ -150,13 +150,13 @@ void Homotopy::z0(complex z[])
 {
   for (uint i = 0; i < n; i++)
   {
-    const real pp = static_cast<real>(adjustedDegree(i));
-    const real mm = static_cast<real>(mi[i]);
+    const double pp = static_cast<double>(adjustedDegree(i));
+    const double mm = static_cast<double>(mi[i]);
     const complex c = ci[i];
     
     // Pick root number m of equation z_i^(p + 1) = c_i
-    real r = std::pow(std::abs(c), 1.0/(pp + 1.0));
-    real a = std::arg(c) / (pp + 1.0);
+    double r = std::pow(std::abs(c), 1.0/(pp + 1.0));
+    double a = std::arg(c) / (pp + 1.0);
     z[i] = std::polar(r, a + mm/(pp + 1.0)*2.0*DOLFIN_PI);
   }
 }
@@ -210,7 +210,7 @@ bool Homotopy::verify(const complex z[])
   F(z, tmp);
 
   // Check size of y
-  real Fmax = 0.0;
+  double Fmax = 0.0;
   for (unsigned int i = 0; i < n; i++)
     Fmax = std::max(Fmax, std::abs(tmp[i]));
   
@@ -284,7 +284,7 @@ bool Homotopy::computeSolution(HomotopyODE& ode)
     feval(F, ode);
 
     // Check convergence
-    real r = F.norm(linf);
+    double r = F.norm(linf);
     //cout << "r = " << r << ": x = "; x.disp();
     if ( r < tol )
     {
@@ -342,15 +342,15 @@ void Homotopy::randomize()
     if ( random )
     {
       // Randomize each c in the unit circle
-      const real r = rand();
-      const real a = 2.0*DOLFIN_PI*rand();
+      const double r = rand();
+      const double a = 2.0*DOLFIN_PI*rand();
       const complex c = std::polar(r, a);
       ci[i] = c;
     }
     else
     {
       // Choice from Morgan's paper
-      const complex c(0.00143289 + static_cast<real>(i), 0.983727);
+      const complex c(0.00143289 + static_cast<double>(i), 0.983727);
       ci[i] = c;
     }
   }
@@ -369,7 +369,7 @@ void Homotopy::randomize()
 void Homotopy::feval(uBLASVector& F, ComplexODE& ode)
 {
   // Reuse the right-hand side of the ODE so we don't have to reimplement
-  // the mapping from complex to real numbers
+  // the mapping from complex to double numbers
 
   // Evaluate F at current x
   ode.f(x, 0.0, F);

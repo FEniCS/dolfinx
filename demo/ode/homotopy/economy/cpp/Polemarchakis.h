@@ -18,8 +18,8 @@ public:
 
   Polemarchakis() : Homotopy(2), lambda(0), gamma(0)
   {
-    lambda = new real[3];
-    gamma = new real[3];
+    lambda = new double[3];
+    gamma = new double[3];
 
     lambda[0] = 7.0/5.0; lambda[1] = 7.0/10.0; lambda[2] = 13.0/5.0;
     gamma[0]= -22.0/5.0; gamma[1] = 13.0/5.0;  gamma[2]  = 93.0/85.0;
@@ -68,8 +68,8 @@ public:
   
 private:
 
-  real* lambda;
-  real* gamma;
+  double* lambda;
+  double* gamma;
 
 };
 
@@ -82,8 +82,8 @@ public:
 
   PolynomialPolemarchakis() : Homotopy(2), lambda(0), gamma(0)
   {
-    lambda = new real[3];
-    gamma = new real[3];
+    lambda = new double[3];
+    gamma = new double[3];
 
     lambda[0] = 7.0/5.0; lambda[1] = 7.0/10.0; lambda[2] = 13.0/5.0;
     gamma[0]= -22.0/5.0; gamma[1] = 13.0/5.0;  gamma[2]  = 93.0/85.0;
@@ -127,8 +127,8 @@ public:
   
 private:
 
-  real* lambda;
-  real* gamma;
+  double* lambda;
+  double* gamma;
 
 };
 

@@ -43,15 +43,15 @@ namespace dolfin
     virtual uint dim(uint i) const = 0;
 
     /// Interpolate function to vertices of mesh
-    virtual void interpolate(real* values) const = 0;
+    virtual void interpolate(double* values) const = 0;
 
     /// Interpolate function to finite element space on cell
-    virtual void interpolate(real* coefficients,
+    virtual void interpolate(double* coefficients,
                              const ufc::cell& cell,
                              const FiniteElement& finite_element) const = 0;
 
     /// Evaluate function at given point
-    virtual void eval(real* values, const real* x) const = 0;
+    virtual void eval(double* values, const double* x) const = 0;
 
     /// The mesh
     std::tr1::shared_ptr<Mesh> mesh;

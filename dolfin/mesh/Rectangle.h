@@ -27,7 +27,7 @@ namespace dolfin
 
     enum Type {right, left, crisscross};
     
-    Rectangle(real a, real b, real c, real d, uint nx, uint ny, 
+    Rectangle(double a, double b, double c, double d, uint nx, uint ny, 
               Type type = crisscross);
   };
   

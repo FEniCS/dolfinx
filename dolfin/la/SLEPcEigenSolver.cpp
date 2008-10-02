@@ -49,17 +49,17 @@ void SLEPcEigenSolver::solve(const PETScMatrix& A, const PETScMatrix& B, uint n)
   solve(&A, &B, n);
 }
 //-----------------------------------------------------------------------------
-void SLEPcEigenSolver::getEigenvalue(real& lr, real& lc)
+void SLEPcEigenSolver::getEigenvalue(double& lr, double& lc)
 {
   getEigenvalue(lr, lc, 0);
 }
 //-----------------------------------------------------------------------------
-void SLEPcEigenSolver::getEigenpair(real& lr, real& lc, PETScVector& r, PETScVector& c)
+void SLEPcEigenSolver::getEigenpair(double& lr, double& lc, PETScVector& r, PETScVector& c)
 {
   getEigenpair(lr, lc, r, c, 0);
 }
 //-----------------------------------------------------------------------------
-void SLEPcEigenSolver::getEigenvalue(real& lr, real& lc, uint i)
+void SLEPcEigenSolver::getEigenvalue(double& lr, double& lc, uint i)
 {
   const int ii = static_cast<int>(i);
   
@@ -73,7 +73,7 @@ void SLEPcEigenSolver::getEigenvalue(real& lr, real& lc, uint i)
     error("Requested eigenvalue has not been computed");
 }
 //-----------------------------------------------------------------------------
-void SLEPcEigenSolver::getEigenpair(real& lr, real& lc,
+void SLEPcEigenSolver::getEigenpair(double& lr, double& lc,
                                     PETScVector& r, PETScVector& c,
                                     uint i)
 {
@@ -203,7 +203,7 @@ void SLEPcEigenSolver::setSolver(std::string solver)
   }
 }
 //-----------------------------------------------------------------------------
-void SLEPcEigenSolver::setTolerance(real tolerance, uint maxiter)
+void SLEPcEigenSolver::setTolerance(double tolerance, uint maxiter)
 {
   dolfin_assert(tolerance > 0.0);
   EPSSetTolerances(eps, tolerance, static_cast<int>(maxiter));

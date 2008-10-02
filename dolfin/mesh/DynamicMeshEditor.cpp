@@ -65,19 +65,19 @@ void DynamicMeshEditor::addVertex(uint v, const Point& p)
     vertex_coordinates[offset + i] = p[i];
 }
 //-----------------------------------------------------------------------------
-void DynamicMeshEditor::addVertex(uint v, real x)
+void DynamicMeshEditor::addVertex(uint v, double x)
 {
   Point p(x);
   addVertex(v, p);
 }
 //-----------------------------------------------------------------------------
-void DynamicMeshEditor::addVertex(uint v, real x, real y)
+void DynamicMeshEditor::addVertex(uint v, double x, double y)
 {
   Point p(x, y);
   addVertex(v, p);
 }
 //-----------------------------------------------------------------------------
-void DynamicMeshEditor::addVertex(uint v, real x, real y, real z)
+void DynamicMeshEditor::addVertex(uint v, double x, double y, double z)
 {
   Point p(x, y, z);
   addVertex(v, p);

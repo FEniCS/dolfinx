@@ -91,7 +91,7 @@ namespace dolfin
     bool pc_user;
 
     /// Solver parameters
-    real rtol, atol, div_tol;
+    double rtol, atol, div_tol;
     uint max_it, restart;
     bool report;
 
@@ -195,7 +195,7 @@ namespace dolfin
     ublas_vector _c(restart), _s(restart);
 
     // Miscellaneous storage
-    real nu, temp1, temp2, r_norm = 0.0, beta0 = 0;
+    double nu, temp1, temp2, r_norm = 0.0, beta0 = 0;
 
     converged = false;
     uint iteration = 0;
@@ -213,7 +213,7 @@ namespace dolfin
       pc->solve(r, w);
 
       // L2 norm of residual (for most recent restart)
-      const real beta = norm_2(_r);
+      const double beta = norm_2(_r);
  
      // Save intial residual (from restart 0)
      if(iteration == 0)
@@ -342,8 +342,8 @@ namespace dolfin
     ublas_vector& _y = y.vec(); 
     ublas_vector& _z = z.vec(); 
 
-    real alpha = 1.0, beta = 0.0, omega = 1.0, r_norm = 0.0; 
-    real rho_old = 1.0, rho = 1.0;
+    double alpha = 1.0, beta = 0.0, omega = 1.0, r_norm = 0.0; 
+    double rho_old = 1.0, rho = 1.0;
 
     // Compute residual r = b -A*x
     //r.assign(b);
@@ -352,7 +352,7 @@ namespace dolfin
     r *= -1.0;
     noalias(_r) += _b;
 
-    const real r0_norm = norm_2(_r);
+    const double r0_norm = norm_2(_r);
     if( r0_norm < atol )  
     {
       converged = true;    

@@ -19,7 +19,7 @@ template<class Mat, class Vec = uBLASVector>
 struct MatrixAssemble
 {
   //---------------------------------------------------------------------------
-  static real assemble(Form& a, const dolfin::uint N)
+  static double assemble(Form& a, const dolfin::uint N)
   {
     dolfin_set("output destination", "silent");  
     UnitSquare mesh(N, N);
@@ -30,7 +30,7 @@ struct MatrixAssemble
     return toc();
   }
   //---------------------------------------------------------------------------
-  static real assemble(Form& a, Mat& A, const dolfin::uint N)
+  static double assemble(Form& a, Mat& A, const dolfin::uint N)
   {
     dolfin_set("output destination", "silent");  
     UnitSquare mesh(N, N);
@@ -40,15 +40,15 @@ struct MatrixAssemble
     return toc();
   }
   //---------------------------------------------------------------------------
-  static tuple<real, real> assemble(dolfin::uint N)
+  static tuple<double, double> assemble(dolfin::uint N)
   {
     dolfin_set("output destination", "silent");
-    tuple<real, real> timing;
+    tuple<double, double> timing;
     Mat A;
     A.init(2*N, 2*N);
     A.zero();
     
-    real block[8] = {1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0}; 
+    double block[8] = {1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0}; 
     dolfin::uint ipos[4] = {0, 0, 0, 0};
     dolfin::uint jpos[4] = {0, 0, 0, 0};
 
@@ -69,7 +69,7 @@ struct MatrixAssemble
     return timing;    
   }
   //---------------------------------------------------------------------------
-  static real vector_multiply(const dolfin::uint N, const dolfin::uint n)
+  static double vector_multiply(const dolfin::uint N, const dolfin::uint n)
   {
     dolfin_set("output destination", "silent");
     VectorPoissonBilinearForm a;
@@ -91,7 +91,7 @@ struct MatrixAssemble
 void AssemblePoissonMatrix()
 {
   // Assembly of sparse matrices on a N x N unit mesh
-  real time;
+  double time;
   const dolfin::uint n = 3;
   const dolfin::uint N[n] = {5, 10, 40};
   PoissonBilinearForm a;
@@ -136,7 +136,7 @@ void AssembleSparseMatrices()
 {
   // Assemble of sparse matrices of size 2*N x 2*N
   const dolfin::uint N = 5000;
-  tuple<real, real> timing;
+  tuple<double, double> timing;
 
   dolfin_set("output destination", "terminal");
   begin("Assemble a sparse matrix in quasi-random order (size = 2N x 2N)" );
@@ -159,7 +159,7 @@ void MatrixVectorMultiply()
   // Assembly of sparse matrices on a N x N unit mesh
   const dolfin::uint n = 20;
   const dolfin::uint N = 20;
-  real time;
+  double time;
 
   dolfin_set("output destination", "terminal");
   begin("Sparse matrix-vector multiplication (size N x N, repeated n times)");

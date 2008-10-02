@@ -15,7 +15,7 @@ void __add(int incr) {
         (*self)++;
 }
 
-void __set(real value) {
+void __set(double value) {
     *self = value;
 }
 

@@ -33,25 +33,25 @@ Function::Function(Mesh& mesh) : Variable("u", "user-defined function"), f(0),
   f = new UserFunction(mesh, this);
 }
 //-----------------------------------------------------------------------------
-Function::Function(Mesh& mesh, real value) : Variable("u", "constant function"),
+Function::Function(Mesh& mesh, double value) : Variable("u", "constant function"),
     f(0), _type(constant), _cell(0), _facet(-1)
 {
   f = new ConstantFunction(mesh, value);
 }
 //-----------------------------------------------------------------------------
-Function::Function(Mesh& mesh, uint size, real value)
+Function::Function(Mesh& mesh, uint size, double value)
   : Variable("u", "constant function"), f(0), _type(constant), _cell(0), _facet(-1)
 {
   f = new ConstantFunction(mesh, size, value);
 }
 //-----------------------------------------------------------------------------
-Function::Function(Mesh& mesh, const Array<real>& values)
+Function::Function(Mesh& mesh, const Array<double>& values)
   : Variable("u", "constant function"), f(0), _type(constant), _cell(0), _facet(-1)
 {
   f = new ConstantFunction(mesh, values);
 }
 //-----------------------------------------------------------------------------
-Function::Function(Mesh& mesh, const Array<uint>& shape, const Array<real>& values)
+Function::Function(Mesh& mesh, const Array<uint>& shape, const Array<double>& values)
   : Variable("u", "constant function"), f(0), _type(constant), _cell(0), _facet(-1)
 {
   f = new ConstantFunction(mesh, shape, values);
@@ -265,7 +265,7 @@ const Function& Function::operator= (SubFunction sub_function)
   return *this;
 }
 //-----------------------------------------------------------------------------
-void Function::interpolate(real* values)
+void Function::interpolate(double* values)
 {
   if (!f)
     error("Function contains no data.");
@@ -273,7 +273,7 @@ void Function::interpolate(real* values)
   f->interpolate(values);
 }
 //-----------------------------------------------------------------------------
-void Function::interpolate(real* coefficients, const ufc::cell& ufc_cell,
+void Function::interpolate(double* coefficients, const ufc::cell& ufc_cell,
                            const FiniteElement& finite_element, Cell& cell, int facet)
 {
   if (!f)
@@ -297,7 +297,7 @@ void Function::update(Cell& cell, int facet)
   _facet = facet;
 }
 //-----------------------------------------------------------------------------
-void Function::eval(real* values, const real* x) const
+void Function::eval(double* values, const double* x) const
 {
   if (!f)
     error("Function contains no data.");
@@ -313,7 +313,7 @@ void Function::eval(real* values, const real* x) const
     f->eval(values, x);
 }
 //-----------------------------------------------------------------------------
-dolfin::real Function::eval(const real* x) const
+double Function::eval(const double* x) const
 {
   // Try vector-version for non-user-defined function if not
   // overloaded. Otherwise, raise an exception. Note that we must
@@ -322,7 +322,7 @@ dolfin::real Function::eval(const real* x) const
 
   if (_type != user)
   {
-    real values[1] = {0.0};
+    double values[1] = {0.0};
     eval(values, x);
     return values[0];
   }

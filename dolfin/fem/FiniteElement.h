@@ -49,13 +49,13 @@ namespace dolfin
     uint space_dimension() const
     { return element->space_dimension(); }
 
-    void interpolate_vertex_values(real* vertex_values, real* coefficients, const UFCCell& cell) const
+    void interpolate_vertex_values(double* vertex_values, double* coefficients, const UFCCell& cell) const
     { element->interpolate_vertex_values(vertex_values, coefficients, cell); }
 
-    void evaluate_basis(uint i, real* values, const real* x, const UFCCell& cell) const
+    void evaluate_basis(uint i, double* values, const double* x, const UFCCell& cell) const
     { element->evaluate_basis(i, values, x, cell); }
   
-    real evaluate_dof(uint i, const ufc::function& function, const ufc::cell& cell) const
+    double evaluate_dof(uint i, const ufc::function& function, const ufc::cell& cell) const
     { return element->evaluate_dof(i, function, cell); }
 
     FiniteElement* create_sub_element(uint i) const

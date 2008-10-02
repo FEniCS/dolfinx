@@ -283,22 +283,22 @@ void XMLMesh::readVertex(const xmlChar *name, const xmlChar **attrs)
   {
   case 1:
     {
-      real x = parseReal(name, attrs, "x");
+      double x = parseReal(name, attrs, "x");
       editor.addVertex(v, x);
     }
     break;
   case 2:
     {
-      real x = parseReal(name, attrs, "x");
-      real y = parseReal(name, attrs, "y");
+      double x = parseReal(name, attrs, "x");
+      double y = parseReal(name, attrs, "y");
       editor.addVertex(v, x, y);
     }
     break;
   case 3:
     {
-      real x = parseReal(name, attrs, "x");
-      real y = parseReal(name, attrs, "y");
-      real z = parseReal(name, attrs, "z");
+      double x = parseReal(name, attrs, "x");
+      double y = parseReal(name, attrs, "y");
+      double z = parseReal(name, attrs, "z");
       editor.addVertex(v, x, y, z);
     }
     break;

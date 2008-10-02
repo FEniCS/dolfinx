@@ -33,7 +33,7 @@ namespace dolfin
     ~Edge() {}
 
     /// Compute Euclidian length of edge 
-    real length();
+    double length();
 
     /// Compute coordinates of edge midpoint as a 3D point value
     Point midpoint();

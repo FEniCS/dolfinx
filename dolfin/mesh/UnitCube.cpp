@@ -33,13 +33,13 @@ UnitCube::UnitCube(uint nx, uint ny, uint nz) : Mesh()
   uint vertex = 0;
   for (uint iz = 0; iz <= nz; iz++)
   {
-    const real z = static_cast<real>(iz) / static_cast<real>(nz);
+    const double z = static_cast<double>(iz) / static_cast<double>(nz);
     for (uint iy = 0; iy <= ny; iy++)
     {
-      const real y = static_cast<real>(iy) / static_cast<real>(ny);
+      const double y = static_cast<double>(iy) / static_cast<double>(ny);
       for (uint ix = 0; ix <= nx; ix++)
       {
-        const real x = static_cast<real>(ix) / static_cast<real>(nx);
+        const double x = static_cast<double>(ix) / static_cast<double>(nx);
         editor.addVertex(vertex++, x, y, z);
       }
     }

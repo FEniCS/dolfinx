@@ -46,22 +46,22 @@ namespace dolfin
     inline uint size() const { return _size; }
     
     /// Return value of coordinate n in direction i
-    inline real& x(uint n, uint i) { dolfin_assert(n < _size && i < _dim); return coordinates[n*_dim + i]; }
+    inline double& x(uint n, uint i) { dolfin_assert(n < _size && i < _dim); return coordinates[n*_dim + i]; }
 
     /// Return value of coordinate n in direction i
-    inline real x(uint n, uint i) const { dolfin_assert(n < _size && i < _dim); return coordinates[n*_dim + i]; }
+    inline double x(uint n, uint i) const { dolfin_assert(n < _size && i < _dim); return coordinates[n*_dim + i]; }
     
     /// Return array of values for coordinate n
-    inline real* x(uint n) { return coordinates + n*_dim; }
+    inline double* x(uint n) { return coordinates + n*_dim; }
 
     /// Return array of values for coordinate n
-    inline const real* x(uint n) const { return coordinates + n*_dim; }
+    inline const double* x(uint n) const { return coordinates + n*_dim; }
 
     /// Return array of values for all coordinates
-    inline real* x() { return coordinates; }
+    inline double* x() { return coordinates; }
 
     /// Return array of values for all coordinates
-    inline const real* x() const { return coordinates; }
+    inline const double* x() const { return coordinates; }
 
     /// Return coordinate n as a 3D point value
     Point point(uint n) const;
@@ -85,7 +85,7 @@ namespace dolfin
     void setAffineIndicator(uint i, bool value);
     
     /// Set value of coordinate n in direction i
-    void set(uint n, uint i, real x);
+    void set(uint n, uint i, double x);
     
     /// Set higher order mesh coordinates
     void setMeshCoordinates(Mesh& mesh, Vector& mesh_coord,
@@ -106,7 +106,7 @@ namespace dolfin
     uint _size;
 
     // Coordinates for all vertices stored as a contiguous array
-    real* coordinates;
+    double* coordinates;
     
     // Higher order mesh coordinates (stored as a discrete function)
     Function* mesh_coordinates;

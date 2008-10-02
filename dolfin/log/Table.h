@@ -46,10 +46,10 @@ namespace dolfin
     TableEntry operator() (std::string row, std::string col);
 
     /// Get value of table entry
-    real get(std::string row, std::string col) const;
+    double get(std::string row, std::string col) const;
 
     /// Set value of table entry
-    void set(std::string row, std::string col, real value);
+    void set(std::string row, std::string col, double value);
 
     /// Return table title
     std::string title() const;
@@ -80,7 +80,7 @@ namespace dolfin
     std::set<std::string> col_set;
 
     // Table values
-    std::map<std::pair<std::string, std::string>, real> values;
+    std::map<std::pair<std::string, std::string>, double> values;
 
   };
 
@@ -97,10 +97,10 @@ namespace dolfin
     ~TableEntry();
 
     /// Assign value to table entry
-    const TableEntry& operator= (real value);
+    const TableEntry& operator= (double value);
 
     /// Cast to entry value
-    operator real() const;
+    operator double() const;
 
   private:
 

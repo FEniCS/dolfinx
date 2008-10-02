@@ -38,7 +38,7 @@ namespace dolfin
     GenericVector& x;
     ParserState state;
 
-    real* values;
+    double* values;
     uint size;
 
   };

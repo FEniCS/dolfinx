@@ -26,13 +26,13 @@ namespace dolfin
     int size() const;
 
     /// Return quadrature point
-    real point(unsigned int i) const;
+    double point(unsigned int i) const;
 
     /// Return quadrature weight
-    real weight(unsigned int i) const;
+    double weight(unsigned int i) const;
 
     /// Return sum of weights (length, area, volume)
-    real measure() const;
+    double measure() const;
     
     /// Display quadrature data
     virtual void disp() const = 0;
@@ -40,9 +40,9 @@ namespace dolfin
   protected:
     
     uint n;        // Number of quadrature points
-    real* points;  // Quadrature points
-    real* weights; // Quadrature weights
-    real m;        // Sum of weights
+    double* points;  // Quadrature points
+    double* weights; // Quadrature weights
+    double m;        // Sum of weights
     
   };
   

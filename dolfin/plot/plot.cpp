@@ -140,7 +140,7 @@ void dolfin::plot(MeshFunction<uint>& f, std::string mode)
   plot(f, "uint", mode);
 }
 //-----------------------------------------------------------------------------
-void dolfin::plot(MeshFunction<real>& f, std::string mode)
+void dolfin::plot(MeshFunction<double>& f, std::string mode)
 {
   plot(f, "real", mode);
 }

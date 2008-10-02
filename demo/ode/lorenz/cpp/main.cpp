@@ -30,21 +30,21 @@ public:
     u[2] = 0.0;
   }
 
-  void f(const uBLASVector& u, real t, uBLASVector& y)
+  void f(const uBLASVector& u, double t, uBLASVector& y)
   {
     y[0] = s*(u[1] - u[0]);
     y[1] = r*u[0] - u[1] - u[0]*u[2];
     y[2] = u[0]*u[1] - b*u[2];
   }
 
-  void J(const uBLASVector& x, uBLASVector& y, const uBLASVector& u, real t)
+  void J(const uBLASVector& x, uBLASVector& y, const uBLASVector& u, double t)
   {
     y[0] = s*(x[1] - x[0]);
     y[1] = (r - u[2])*x[0] - x[1] - u[0]*x[2];
     y[2] = u[1]*x[0] + u[0]*x[1] - b*x[2];
   }
 
-  void JT(const uBLASVector& x, uBLASVector& y, const uBLASVector& u, real t) {
+  void JT(const uBLASVector& x, uBLASVector& y, const uBLASVector& u, double t) {
     y[0] = -x[0]*s + (r-u[2])*x[1] + u[1]*x[2];
     y[1] = s*x[0] - x[1] + u[0]*x[2];
     y[2] = -u[0]*x[1] - b*x[2];
@@ -53,9 +53,9 @@ public:
 private:
 
   // Parameters
-  real s;
-  real b;
-  real r;
+  double s;
+  double b;
+  double r;
 
 };
 

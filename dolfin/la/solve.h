@@ -23,10 +23,10 @@ namespace dolfin
              dolfin::SolverType solver_type=lu, dolfin::PreconditionerType pc_type=ilu);
 
   /// Compute residual ||Ax - b||
-  real residual(const GenericMatrix& A, const GenericVector& x, const GenericVector& b);
+  double residual(const GenericMatrix& A, const GenericVector& x, const GenericVector& b);
 
   /// Normalize vector according to given normalization type
-  real normalize(GenericVector& x, dolfin::NormalizationType normalization_type=normalize_average);
+  double normalize(GenericVector& x, dolfin::NormalizationType normalization_type=normalize_average);
   
   /// Solve linear system Ax = b
   //void solve(const PETScKrylovMatrix& A, PETScVector& x, const PETScVector& b);

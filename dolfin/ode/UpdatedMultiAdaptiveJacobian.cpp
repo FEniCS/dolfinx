@@ -60,7 +60,7 @@ void UpdatedMultiAdaptiveJacobian::mult(const uBLASVector& x,
 void UpdatedMultiAdaptiveJacobian::init()
 {
   // Compute size of increment
-  real umax = 0.0;
+  double umax = 0.0;
   for (unsigned int i = 0; i < ts.N; i++)
     umax = std::max(umax, std::abs(ts.u0[i]));
   h = std::max(DOLFIN_SQRT_EPS, DOLFIN_SQRT_EPS * umax);

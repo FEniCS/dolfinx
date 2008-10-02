@@ -38,9 +38,9 @@ class Source : public Function, public TimeDependent
 {
 public:
   
-    Source(Mesh& mesh, const real* t) : Function(mesh), TimeDependent(t) {}
+    Source(Mesh& mesh, const double* t) : Function(mesh), TimeDependent(t) {}
 
-    real eval(const real* x) const
+    double eval(const double* x) const
     {
       return time()*x[0]*sin(x[1]);
     }
@@ -51,9 +51,9 @@ public:
 class DirichletBoundaryCondition : public Function, public TimeDependent
 {
 public:
-  DirichletBoundaryCondition(Mesh& mesh, const real* t) : Function(mesh), TimeDependent(t) {}
+  DirichletBoundaryCondition(Mesh& mesh, const double* t) : Function(mesh), TimeDependent(t) {}
   
-  real eval(const real* x) const
+  double eval(const double* x) const
   {
     return 1.0*time();
   }
@@ -62,7 +62,7 @@ public:
 // Sub domain for Dirichlet boundary condition
 class DirichletBoundary : public SubDomain
 {
-  bool inside(const real* x, bool on_boundary) const
+  bool inside(const double* x, bool on_boundary) const
   {
     return std::abs(x[0] - 1.0) < DOLFIN_EPS && on_boundary;
   }
@@ -138,7 +138,7 @@ int main(int argc, char* argv[])
   UnitSquare mesh(64, 64);
 
   // Pseudo time
-  real t = 0.0;
+  double t = 0.0;
 
   // Create source function
   Source f(mesh, &t);
@@ -162,7 +162,7 @@ int main(int argc, char* argv[])
 
   // Solve nonlinear problem in a series of steps
   GenericVector& x = u.vector();
-  real dt = 1.0; real T  = 3.0;
+  double dt = 1.0; double T  = 3.0;
   while( t < T)
   {
     t += dt;

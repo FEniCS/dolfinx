@@ -223,7 +223,7 @@ bool LocalMeshCoarsening::coarsenCell(Mesh& mesh, Mesh& coarse_mesh,
   bool collapse_edge = false;
   uint* edge_vertex;
   uint shortest_edge_index = 0;
-  real lmin, l;
+  double lmin, l;
   uint num_cells_to_remove = 0;
   
   // Get cell type
@@ -399,7 +399,7 @@ bool LocalMeshCoarsening::coarsenCell(Mesh& mesh, Mesh& coarse_mesh,
 
   // Set volume tolerance. This parameter detemines a quality criterion 
   // for the new mesh: higher value indicates a sharper criterion. 
-  real vol_tol = 1.0e-3; 
+  double vol_tol = 1.0e-3; 
 
   bool mesh_ok = true;
 
@@ -415,7 +415,7 @@ bool LocalMeshCoarsening::coarsenCell(Mesh& mesh, Mesh& coarse_mesh,
     if(nid != -1)
     {
       Cell cn(coarse_mesh, nid);
-      real qm = cn.volume() / cn.diameter();
+      double qm = cn.volume() / cn.diameter();
       if(qm < vol_tol)
       {
 	warning("Cell quality too low");

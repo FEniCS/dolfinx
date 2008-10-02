@@ -27,8 +27,8 @@ MultiAdaptiveNewtonSolver::MultiAdaptiveNewtonSolver
     updated_jacobian(ode.get("ODE updated jacobian"))
 {
   // Initialize local arrays
-  f = new real[method.qsize()];
-  u = new real[method.nsize()];
+  f = new double[method.qsize()];
+  u = new double[method.nsize()];
   
   // Don't report number of GMRES iteration if not asked to
   solver.set("Krylov report", monitor);
@@ -47,7 +47,7 @@ MultiAdaptiveNewtonSolver::~MultiAdaptiveNewtonSolver()
   // Compute multi-adaptive efficiency index
   if ( num_elements > 0 )
   {
-    const real alpha = num_elements_mono / static_cast<real>(num_elements);
+    const double alpha = num_elements_mono / static_cast<double>(num_elements);
     message("Multi-adaptive efficiency index: %.3f", alpha);
   }
   
@@ -62,7 +62,7 @@ MultiAdaptiveNewtonSolver::~MultiAdaptiveNewtonSolver()
 void MultiAdaptiveNewtonSolver::end()
 {
   num_elements += ts.ne;
-  num_elements_mono += ts.length() / ts.kmin * static_cast<real>(ts.ode.size());
+  num_elements_mono += ts.length() / ts.kmin * static_cast<double>(ts.ode.size());
 }
 //-----------------------------------------------------------------------------
 void MultiAdaptiveNewtonSolver::start()
@@ -85,8 +85,8 @@ void MultiAdaptiveNewtonSolver::start()
   //A->disp(true, 10);
 }
 //-----------------------------------------------------------------------------
-real MultiAdaptiveNewtonSolver::iteration(real tol, uint iter,
-					  real d0, real d1)
+double MultiAdaptiveNewtonSolver::iteration(double tol, uint iter,
+					  double d0, double d1)
 {
   // Evaluate b = -F(x) at current x
   Feval(b);
@@ -99,7 +99,7 @@ real MultiAdaptiveNewtonSolver::iteration(real tol, uint iter,
     xnorm = std::max(xnorm, std::abs(ts.jx[j]));
   
   // Solve linear system
-  const real r = b.norm(linf) + DOLFIN_EPS;
+  const double r = b.norm(linf) + DOLFIN_EPS;
   b /= r;
   num_local_iterations += solver.solve(*A, dx, b);
   dx *= r;
@@ -109,10 +109,10 @@ real MultiAdaptiveNewtonSolver::iteration(real tol, uint iter,
     ts.jx[j] += dx[j];
 
   // Compute maximum increment
-  real max_increment = 0.0;
+  double max_increment = 0.0;
   for (uint j = 0; j < ts.nj; j++)
   {
-    const real increment = fabs(dx[j]);
+    const double increment = fabs(dx[j]);
     if ( increment > max_increment )
       max_increment = increment;
   }
@@ -145,13 +145,13 @@ void MultiAdaptiveNewtonSolver::Feval(uBLASVector& F)
 
     // Get element data
     const uint i = ts.ei[e];
-    const real a = ts.sa[s];
-    const real b = ts.sb[s];
-    const real k = b - a;
+    const double a = ts.sa[s];
+    const double b = ts.sb[s];
+    const double k = b - a;
 
     // Get initial value for element
     const int ep = ts.ee[e];
-    const real x0 = ( ep != -1 ? ts.jx[ep*method.nsize() + method.nsize() - 1] : ts.u0[i] );
+    const double x0 = ( ep != -1 ? ts.jx[ep*method.nsize() + method.nsize() - 1] : ts.u0[i] );
 
     // Evaluate right-hand side at quadrature points of element
     if ( method.type() == Method::cG )
@@ -182,8 +182,8 @@ void MultiAdaptiveNewtonSolver::debug()
   // Iterate over the columns of B
   for (uint j = 0; j < n; j++)
   {
-    const real xj = ts.jx[j];
-    real dx = std::max(DOLFIN_SQRT_EPS, DOLFIN_SQRT_EPS * std::abs(xj));
+    const double xj = ts.jx[j];
+    double dx = std::max(DOLFIN_SQRT_EPS, DOLFIN_SQRT_EPS * std::abs(xj));
 		  
     ts.jx[j] -= 0.5*dx;
     Feval(F1);
@@ -195,7 +195,7 @@ void MultiAdaptiveNewtonSolver::debug()
 
     for (uint i = 0; i < n; i++)
     {
-      real dFdx = (F1[i] - F2[i]) / dx;
+      double dFdx = (F1[i] - F2[i]) / dx;
       if ( fabs(dFdx) > DOLFIN_EPS )
         _B(i, j) = dFdx;
     }

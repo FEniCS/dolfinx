@@ -35,7 +35,7 @@ void MeshSmoothing::smooth(Mesh& mesh)
 
   // Iterate over all vertices
   const uint d = mesh.geometry().dim();
-  Array<real> xx(d);
+  Array<double> xx(d);
   for (VertexIterator v(mesh); !v.end(); ++v)
   {
     // Skip vertices on the boundary
@@ -43,7 +43,7 @@ void MeshSmoothing::smooth(Mesh& mesh)
       continue;
     
     // Get coordinates of vertex
-    real* x = v->x();
+    double* x = v->x();
     const Point p = v->point();
     
     // Compute center of mass of neighboring vertices
@@ -57,15 +57,15 @@ void MeshSmoothing::smooth(Mesh& mesh)
       num_neighbors += 1;
 
       // Compute center of mass
-      const real* xn = vn->x();
+      const double* xn = vn->x();
       for (uint i = 0; i < d; i++)
         xx[i] += xn[i];
     }
     for (uint i = 0; i < d; i++)
-      xx[i] /= static_cast<real>(num_neighbors);
+      xx[i] /= static_cast<double>(num_neighbors);
 
     // Compute closest distance to boundary of star
-    real rmin = 0.0;
+    double rmin = 0.0;
     for (CellIterator c(*v); !c.end(); ++c)
     {
       // Get local number of vertex relative to facet
@@ -79,7 +79,7 @@ void MeshSmoothing::smooth(Mesh& mesh)
       VertexIterator fv(f);
 
       // Compute length of projection of v - fv onto normal
-      const real r = std::abs(n.dot(p - fv->point()));
+      const double r = std::abs(n.dot(p - fv->point()));
       if (rmin == 0.0)
         rmin = r;
       else
@@ -87,10 +87,10 @@ void MeshSmoothing::smooth(Mesh& mesh)
     }
 
     // Move vertex at most a distance rmin / 2
-    real r = 0.0;
+    double r = 0.0;
     for (uint i = 0; i < d; i++)
     {
-      const real dx = xx[i] - x[i];
+      const double dx = xx[i] - x[i];
       r += dx*dx;
     }
     r = std::sqrt(r);

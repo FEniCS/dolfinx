@@ -46,7 +46,7 @@ namespace dolfin
     ~ODESolution();
 
     /// Evaluate (interpolate) value of solution at given time    
-    void eval(const real t, uBLASVector& y);
+    void eval(const double t, uBLASVector& y);
 
     // Add sample
     void add_sample(Sample& sample);
@@ -59,16 +59,16 @@ namespace dolfin
     ODE& ode;
     std::string filename;
     std::fstream file;
-    std::pair<real, uBLASVector> *cache;
+    std::pair<double, uBLASVector> *cache;
     
     uint cache_size;
     uint ringbufcounter;
     
     // Sorted vector with pair. Each entry representents a mapping from t value to index in file/buffer
-    std::vector<real> bintree;
+    std::vector<double> bintree;
     uint step;
     
-    real* buffer;
+    double* buffer;
     uint buffer_size;
     uint buffer_offset;
     uint buffer_count; //actual number of entries in buffer
@@ -76,10 +76,10 @@ namespace dolfin
 
     // Linear interpolation
     void interpolate(const uBLASVector& v1,
-                     const real t1, 
+                     const double t1, 
                      const uBLASVector& v2, 
-                     const real t2, 
-                     const real t, 
+                     const double t2, 
+                     const double t, 
                      uBLASVector& result);
     
   };

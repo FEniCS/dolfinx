@@ -31,9 +31,9 @@ public:
     u[1] = 0.0;
   }
   
-  void f(const uBLASVector& u, real t, uBLASVector& y)
+  void f(const uBLASVector& u, double t, uBLASVector& y)
   {
-    const real eps = eps0 + mu1*u[1] / (u[0] + mu2);
+    const double eps = eps0 + mu1*u[1] / (u[0] + mu2);
 
     y[0] = -k*u[0]*(u[0] - a)*(u[0] - 1.0) - u[0]*u[1];
     y[1] = eps*(-u[1] - k*u[0]*(u[0] - a - 1.0));
@@ -41,11 +41,11 @@ public:
   
 private:
   
-  real a;
-  real eps0;
-  real k;
-  real mu1;
-  real mu2;
+  double a;
+  double eps0;
+  double k;
+  double mu1;
+  double mu2;
 
 };
 

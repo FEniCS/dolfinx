@@ -27,10 +27,10 @@ namespace dolfin
 
   private:
 
-    real transformx(real x,real y,real z);
-    real transformy(real x,real y,real z);
-    real transformz(real x,real y,real z);
-    real max(real x,real y,real z);
+    double transformx(double x,double y,double z);
+    double transformy(double x,double y,double z);
+    double transformz(double x,double y,double z);
+    double max(double x,double y,double z);
 
   };
   
