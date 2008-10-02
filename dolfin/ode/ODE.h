@@ -2,12 +2,13 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2003-10-21
-// Last changed: 2008-04-08
+// Last changed: 2008-10-02
 
 #ifndef __ODE_H
 #define __ODE_H
 
 #include <dolfin/common/types.h>
+#include <dolfin/common/real.h>
 #include <dolfin/log/Event.h>
 #include <dolfin/la/uBLASVector.h>
 #include <dolfin/la/uBLASSparseMatrix.h>
@@ -155,6 +156,7 @@ namespace dolfin
     Event not_impl_M;
     Event not_impl_J;
     Event not_impl_JT;
+
   };
 
 }

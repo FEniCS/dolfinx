@@ -14,9 +14,6 @@
 namespace dolfin
 {
 
-  // Real numbers
-  //typedef double real;
-
   // Unsigned integers
   typedef unsigned int uint;
 
