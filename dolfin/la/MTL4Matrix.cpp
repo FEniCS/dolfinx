@@ -41,18 +41,10 @@ MTL4Matrix::MTL4Matrix(const MTL4Matrix& mat): Variable("A", "MTL4 matrix"),
 {
   assert_no_inserter();
 
-  // Deep copy  
+  // Deep copy
   A = mat.mat(); 
   nnz_row = mat.nnz_row;
 }
-//-----------------------------------------------------------------------------
-// const MTL4Matrix& MTL4Matrix::operator= (const MTL4Matrix& mat)
-// {
-//   // Deep copy
-//   A = mat.mat(); 
-//   nnz_row = mat.nnz_row;
-//   return *this;
-// }
 //-----------------------------------------------------------------------------
 MTL4Matrix::~MTL4Matrix()
 {
@@ -120,6 +112,16 @@ void MTL4Matrix::add(const real* block, uint m, const uint* rows, uint n, const 
     for (uint j = 0; j < n; j++)
       (*ins)[rows[i]][cols[j]] << block[i*n +j];
 }
+//-----------------------------------------------------------------------------
+void MTL4Matrix::MTL4Matrix::axpy(real a, const GenericMatrix& A)
+  {
+    // Check for same size
+    if ( size(0) != A.size(0) or size(1) != A.size(1) )  
+      error("Matrices must be of same size.");
+    
+    // Do we need to check for same sparsity pattern?
+    this->A += a * A.down_cast<MTL4Matrix>().mat();
+  }
 //-----------------------------------------------------------------------------
 void MTL4Matrix::zero()
 {
@@ -266,10 +268,22 @@ const MTL4Matrix& MTL4Matrix::operator/= (real a)
   return *this;
 }
 //-----------------------------------------------------------------------------
-const MTL4Matrix& MTL4Matrix::operator= (const GenericMatrix& x)
+const GenericMatrix& MTL4Matrix::operator= (const GenericMatrix& A)
 {
-  // FIXME: What about nnz_row???
-  A = x.down_cast<MTL4Matrix>().mat();
+  *this = A.down_cast<MTL4Matrix>();
+  return *this;
+}
+//-----------------------------------------------------------------------------
+const MTL4Matrix& MTL4Matrix::operator= (const MTL4Matrix& A)
+{
+  // Check for self-assignment
+  if (this != &A)
+  {
+    // Assume MTL4 take care of deleting an existing Matrix 
+    // using its assignment operator
+    this->A = A.mat();
+  }
+  nnz_row = A.nnz_row;
   return *this;
 }
 //-----------------------------------------------------------------------------
@@ -294,12 +308,12 @@ inline void MTL4Matrix::assert_no_inserter(void) const
     error("MTL4: Matrix read operation attempted while inserter active. Did you forget to apply()?");
 }
 //-----------------------------------------------------------------------------
-LogStream& dolfin::operator<< (LogStream& stream, const mtl4_sparse_matrix& A)
+LogStream& dolfin::operator<< (LogStream& stream, const  MTL4Matrix& A)
 {
   // FIXME: "Redirect" mtl::matix::op<< to the dolfin log stream
 
-  int M = num_rows(A);
-  int N = num_cols(A);
+  int M = num_rows(A.mat());
+  int N = num_cols(A.mat());
 
   stream << "MTL4 Matrix of size " << M << "x" << N;
   return stream;

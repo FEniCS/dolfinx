@@ -85,6 +85,9 @@ namespace dolfin
     /// Add block of values
     virtual void add(const real* block, uint m, const uint* rows, uint n, const uint* cols) = 0;
 
+    /// Add multiple of given matrix (AXPY operation)
+    virtual void axpy(real a, const GenericMatrix& A) = 0;
+
     /// Get non-zero values of given row
     virtual void getrow(uint row, Array<uint>& columns, Array<real>& values) const = 0;
 
@@ -105,6 +108,20 @@ namespace dolfin
 
     /// Divide matrix by given number
     virtual const GenericMatrix& operator/= (real a) = 0;
+
+    /// Add given matrix
+    const GenericMatrix& operator+= (const GenericMatrix& A)
+    { 
+      axpy(1.0,A); 
+      return *this;
+    }
+
+    /// Subtract given matrix
+    const GenericMatrix& operator-= (const GenericMatrix& A)
+    { 
+      axpy(-1.0,A); 
+      return *this;
+    }
 
     /// Assignment operator
     virtual const GenericMatrix& operator= (const GenericMatrix& x) = 0;

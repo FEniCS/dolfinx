@@ -27,6 +27,7 @@
 #include <Epetra_CrsMatrix.h>
 #include <Epetra_FECrsMatrix.h>
 #include <Epetra_FEVector.h>
+#include <EpetraExt_MatrixMatrix.h>
 
 using namespace dolfin;
 
@@ -49,9 +50,10 @@ EpetraMatrix::EpetraMatrix(uint M, uint N):
 //-----------------------------------------------------------------------------
 EpetraMatrix::EpetraMatrix(const EpetraMatrix& A):
   Variable("A", "Epetra matrix"),
-  A(0), is_view(true)
+  A(0), is_view(false)
 {
-  error("Not implemented.");
+  if (&A.mat())
+    this->A = new Epetra_FECrsMatrix(A.mat());
 }
 //-----------------------------------------------------------------------------
 EpetraMatrix::EpetraMatrix(Epetra_FECrsMatrix* A):
@@ -90,8 +92,8 @@ void EpetraMatrix::init(const GenericSparsityPattern& sparsity_pattern)
 //-----------------------------------------------------------------------------
 EpetraMatrix* EpetraMatrix::copy() const
 {
-  Epetra_FECrsMatrix* copy = new Epetra_FECrsMatrix(*A); 
-  EpetraMatrix* mcopy = new EpetraMatrix(copy);
+  //Epetra_FECrsMatrix* copy = new Epetra_FECrsMatrix(*A); 
+  EpetraMatrix* mcopy = new EpetraMatrix(*this);
   return mcopy;
 }
 //-----------------------------------------------------------------------------
@@ -107,12 +109,37 @@ void EpetraMatrix::get(real* block,
 		       uint m, const uint* rows,
 		       uint n, const uint* cols) const
 {
-  dolfin_assert(A); 
-  // for each row in rows
-  //A->ExtractGlobalRowCopy(...)
-
-  // Not yet implemented
-  error("EpetraMatrix::get not yet implemented.");
+  dolfin_assert(A);
+  
+  int max_num_indices = A->MaxNumEntries();
+  int num_entities = 0;
+  int * indices  = new int[max_num_indices];
+  double * values  = new double[max_num_indices];
+  
+  // For each row in rows
+  for(uint i = 0; i < m; ++i)
+  {
+    // Extract the values and indices from row: rows[i]
+    if (A->IndicesAreLocal())
+      A->ExtractMyRowView(rows[i], num_entities, values, indices);
+    else
+      A->ExtractGlobalRowView(rows[i], num_entities, values, indices);
+    int k = 0;
+    // Step the indices to the start of cols
+    while (indices[k] < static_cast<int>(cols[0]))
+      k++;
+    // Fill the collumns in the block 
+    for (uint j = 0; j < n; j++)
+    {
+      if (k < num_entities and indices[k] == static_cast<int>(cols[j]))
+      {
+	block[i*n + j] = values[k];
+	k++;
+      }
+      else
+	block[i*n + j] = 0.0;
+    }
+  }
 }
 //-----------------------------------------------------------------------------
 void EpetraMatrix::set(const real* block,
@@ -141,9 +168,18 @@ void EpetraMatrix::add(const real* block,
   if (err!= 0) error("Did not manage to put the values into the matrix"); 
 }
 //-----------------------------------------------------------------------------
+void EpetraMatrix::axpy(real a, const GenericMatrix& A)
+{
+  const EpetraMatrix* AA = &A.down_cast<EpetraMatrix>();
+  dolfin_assert(AA->mat().NumGlobalNonzeros() == this->A->NumGlobalNonzeros() and
+		AA->mat().NumGlobalCols() == this->A->NumGlobalCols() and
+		AA->mat().NumGlobalRows() == this->A->NumGlobalRows() );
+  EpetraExt::MatrixMatrix::Add(AA->mat(),false,a,*(this->A),1.0);
+}
+//-----------------------------------------------------------------------------
 void EpetraMatrix::zero()
 {
-  dolfin_assert(A); 
+  dolfin_assert(A);
   A->PutScalar(0.0);
 }
 //-----------------------------------------------------------------------------
@@ -252,6 +288,7 @@ LinearAlgebraFactory& EpetraMatrix::factory() const
 //-----------------------------------------------------------------------------
 Epetra_FECrsMatrix& EpetraMatrix::mat() const
 {
+  // FIXME: Shouldn't this function just return A, not a dereferenced version?
   dolfin_assert(A); 
   return *A;
 }
@@ -270,9 +307,22 @@ const EpetraMatrix& EpetraMatrix::operator/= (real a)
   return *this;
 }
 //-----------------------------------------------------------------------------
-LogStream& dolfin::operator<< (LogStream& stream, const Epetra_FECrsMatrix& A)
+const GenericMatrix& EpetraMatrix::operator= (const GenericMatrix& A)
 {
-  error("operator << EpetraMatrix not implemented yet"); 
+  *this = A.down_cast<EpetraMatrix>();
+  return *this;
+}
+//-----------------------------------------------------------------------------
+const EpetraMatrix& EpetraMatrix::operator= (const EpetraMatrix& A)
+{
+  dolfin_assert(&A.mat());
+  *(this->A) = A.mat();
+  return *this;
+}
+//-----------------------------------------------------------------------------
+LogStream& dolfin::operator<< (LogStream& stream, const EpetraMatrix& A)
+{
+  stream << "[ Epetra matrix of size " << A.size(0) << " x " << A.size(1) << " ]";
   return stream;
 }
 //-----------------------------------------------------------------------------
