@@ -355,7 +355,7 @@ namespace dolfin
   void uBLASMatrix<Mat>::zero()
   {
     // Set all non-zero values to zero without detroying non-zero pattern
-    // It might be faster to iterate throught entries?
+    // It might be faster to iterate through entries?
     A *= 0.0;
   }
   //-----------------------------------------------------------------------------
