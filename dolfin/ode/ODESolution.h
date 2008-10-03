@@ -81,6 +81,8 @@ namespace dolfin
                      const double t2, 
                      const double t, 
                      uBLASVector& result);
+    //read entry from buffer, fetch from disk if necessary
+    void getFromBuffer(uBLASVector& u, uint index);
     
   };
 

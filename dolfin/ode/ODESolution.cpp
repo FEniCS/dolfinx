@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2008.
 //
 // First added:  2008-06-11
-// Last changed: 2008-08-08
+// Last changed: 2008-10-03
 
 #include <algorithm>
 #include "ODESolution.h"
@@ -70,38 +70,31 @@ void ODESolution::eval(const double t, uBLASVector& y)
   }
 
   // Not found in cache
-  std::vector<double>::iterator low = std::lower_bound(bintree.begin(), 
+  std::vector<double>::iterator upper = std::upper_bound(bintree.begin(), 
 						     bintree.end(), 
 						     t);
-  uint b = uint(low-bintree.begin());
+  uint b = uint(upper-bintree.begin());
   uint a = b - 1;
 
-  if ( b >= bintree.size() || b < 1 ) 
+  if ( b >= bintree.size() - 1 ) 
   {
-    error("ODESolution, eval(%g) out of range", t);
+    if ( t > bintree[bintree.size()-1] ) 
+    {
+      error("ODESolution, eval(%g) out of range", t);
+    }
+    else {
+      //t = max(t_in_solution)
+      getFromBuffer(y, bintree.size()-1);
+    }
   } 
 
-  double t_a = bintree[a];
   double t_b = bintree[b];
-
-  // Check if we need to read from disk
-  if (a < buffer_offset || b > buffer_offset + buffer_count) 
-  {  
-    cout << "ODESolution: Fetching from disk" << endl;
-
-    //put a in the middle of the buffer
-    buffer_offset = (uint) std::max((int) (a - buffer_size/(step*2)), 0);
-    buffer_count = std::min(buffer_size / step, static_cast<uint>(bintree.size() - static_cast<uint>(buffer_offset)));
-    file.seekg(buffer_offset*step);
-    file.read( (char *) buffer, buffer_count*step);
-  }
+  double t_a = bintree[a];
 
   uBLASVector tmp(ode.size());
-  for (unsigned int i = 0; i < ode.size(); i++) 
-  {
-    y[i]   = buffer[(a - buffer_offset)*ode.size() + i];
-    tmp[i] = buffer[(b - buffer_offset)*ode.size() + i];
-  }
+
+  getFromBuffer(y, a);
+  getFromBuffer(tmp, b);
 
   // Do linear interpolation
   interpolate(y, t_a, tmp, t_b, t, y);
@@ -118,7 +111,7 @@ void ODESolution::eval(const double t, uBLASVector& y)
 //-----------------------------------------------------------------------------
 void ODESolution::add_sample(Sample& sample) 
 {  
-  cout << "Adding sample at t = " << sample.t() << endl;
+  //cout << "Adding sample at t = " << sample.t() << endl;
   
   bintree.push_back(sample.t());
   
@@ -175,3 +168,23 @@ void ODESolution::interpolate(const uBLASVector& v1,
   }
 }
 //-----------------------------------------------------------------------------
+void ODESolution::getFromBuffer(uBLASVector& u, uint index) {
+  // Check if we need to read from disk
+  if (index < buffer_offset || index > buffer_offset + buffer_count) 
+  {  
+    cout << "ODESolution: Fetching from disk" << endl;
+
+    //put index in the middle of the buffer
+    buffer_offset = (uint) std::max((int) (index - buffer_size/(step*2)), 0);
+    buffer_count = std::min(buffer_size / step, 
+			    static_cast<uint>(bintree.size() - static_cast<uint>(buffer_offset)));
+    file.seekg(buffer_offset*step);
+    file.read( (char *) buffer, buffer_count*step);
+  }
+
+  //read from buffer
+  for (unsigned int i = 0; i < ode.size(); ++i) 
+  {
+    u[i] = buffer[(index - buffer_offset)*ode.size() + i];
+  }
+}
