@@ -1,6 +1,5 @@
-""" 
-This demo demonstrates the calculation and visualization of a TM (Transverse 
-Magnetic) cutoff mode of a rectangular waveguide.
+""" This demo demonstrates the calculation and visualization of a TM
+(Transverse Magnetic) cutoff mode of a rectangular waveguide.
 
 For more information regarding waveguides see 
 
@@ -15,7 +14,7 @@ Jianming Jin [7.2.1 - 7.2.2]
 __author__ = "Evan Lezar evanlezar@gmail.com"
 __date__ = "2008-08-22"
 __copyright__ = "Copyright (C) 2008 Evan Lezar"
-
+__license__  = "GNU LGPL Version 2.1"
 
 from dolfin import *
 import numpy as N
@@ -35,57 +34,52 @@ except:
 # Make sure we use the PETSc backend
 dolfin_set("linear algebra backend", "PETSc")
 
-# specify the waveguide width and height in metres
+# Specify the waveguide width and height in metres
 width = 1
 height = 0.5
 
-# specify the mode of interest. moi = 1 : dominant (TM_{11}) mode
+# Specify the mode of interest. moi = 1 : dominant (TM_{11}) mode
 moi = 1
 
-# create the mesh using a Rectangle
+# Create the mesh using a Rectangle
 nx = int(width/height)
 if nx == 0:
     nx = 1
-            
 mesh = Rectangle(0, width, 0, height, nx, 1, 0)
 
-# refine if desired
+# Refine if desired
 # mesh.refine()
 
-# define the finite element.  For vector electromagnetic problems Nedelec vector 
-# elements are used.
-# Specify the degree of the approximation
+# Define the finite element
 degree = 2
 element = FiniteElement("Nedelec", "triangle", degree)
 
-# define the test and trial functions
+# Define the test and trial functions
 v = TestFunction(element)
 u = TrialFunction(element)
 
-# define the forms - gererates an generalized eigenproblem of the form 
+# Define the forms - gererates an generalized eigenproblem of the form 
 # [S]{h} = k_o^2[T]{h}
 # with the eigenvalues k_o^2 representing the square of the cutoff wavenumber 
 # and the corresponding right-eigenvector giving the coefficients of the 
 # discrete system used to obtain the approximate field anywhere in the domain   
- 
-a = dot(curl_t(v), curl_t(u))*dx
+ a = dot(curl_t(v), curl_t(u))*dx
 L = dot(v, u)*dx
 
-# Assemble the system matrices
-# stiffness (S) and mass matrices (T)
+# Assemble the system matrices stiffness (S) and mass matrices (T)
 S = PETScMatrix()
 T = PETScMatrix()
 assemble(a, mesh, tensor=S)
 assemble(L, mesh, tensor=T)
 
-# now solve the eigen system
+# Solve the eigensystem
 esolver = SLEPcEigenSolver()
 esolver.set("eigenvalue spectrum", "smallest real")
 esolver.set("eigenvalue tolerance", 10e-7)
 esolver.set("eigenvalue iterations", 10)
 esolver.solve(S, T)
 
-# the result should have real eigenvalues but due to rounding errors, some of 
+# The result should have real eigenvalues but due to rounding errors, some of 
 # the resultant eigenvalues may be small complex values. 
 # only consider the real part
 
@@ -109,7 +103,7 @@ for i in range(S.size(1)):
 if dominant_mode_index < 0:
     print "Dominant mode not found"
     
-# now get the mode of interest
+# Now get the mode of interest
 mode_of_interest_index = dominant_mode_index + moi - 1
 
 h_e = PETScVector(S.size(1))
@@ -121,7 +115,7 @@ print "Cutoff wavenumber squared: %f" % k_o_squared
 if lc != 0: 
     print "WARNING:  Wavenumber is complex: %f +i%f" % (k_o_squared, lc) 
 
-# now to visualize the magnetic field we need to calculate the field at a number 
+# To visualize the magnetic field we need to calculate the field at a number 
 # of points
 # first define a discrete function using the eigenvector values as basis 
 # function coefficients
@@ -132,11 +126,11 @@ if lc != 0:
 magnetic_field = Function(element, mesh, Vector())
 magnetic_field.vector().assign(h_e)
 
-# now specify the points where the field must be calculated and calculate
+# Specify the points where the field must be calculated and calculate
 # number of points per unit length
 n = 20 
 
-# allocate numpy arrays for the magnetic field (H - x and y components) and the 
+# Allocate numpy arrays for the magnetic field (H - x and y components) and the 
 # position where the field is calculated 
 H = N.zeros(((n+1)*(n+1), 2),dtype=N.float64)
 XY = N.zeros(((n+1)*(n+1), 2),dtype=N.float64)
@@ -149,7 +143,7 @@ for i in range(n+1):
         # evaluate the magnetic field.  Result is stored in H[p_idx,:]
         magnetic_field.eval(H[p_idx,:], XY[p_idx,:])
 
-# now plot the result
+# Plot the result
 try:
     import pylab as P
     P.figure()
