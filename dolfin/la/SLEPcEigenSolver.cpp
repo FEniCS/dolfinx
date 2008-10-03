@@ -62,11 +62,11 @@ void SLEPcEigenSolver::getEigenpair(double& lr, double& lc, PETScVector& r, PETS
 void SLEPcEigenSolver::getEigenvalue(double& lr, double& lc, uint i)
 {
   const int ii = static_cast<int>(i);
-  
+
   // Get number of computed values
   int num_computed_eigenvalues;
   EPSGetConverged(eps, &num_computed_eigenvalues);
-  
+
   if (ii < num_computed_eigenvalues)
     EPSGetValue(eps, ii, &lr, &lc);
   else
@@ -105,7 +105,7 @@ void SLEPcEigenSolver::solve(const PETScMatrix* A,
   {
     EPSSetOperators(eps, A->mat(), PETSC_NULL);
   }
-  
+
   // Set number of eigenpairs to compute
   dolfin_assert(n <= A->size(0));
   const uint nn = static_cast<int>(n);
@@ -129,7 +129,7 @@ void SLEPcEigenSolver::solve(const PETScMatrix* A,
     return;
   }
 
-  // Report solver status  
+  // Report solver status
   int num_iterations = 0;
   EPSGetIterationNumber(eps, &num_iterations);
   EPSType eps_type = 0;
