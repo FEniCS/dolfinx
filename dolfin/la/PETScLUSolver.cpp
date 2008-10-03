@@ -153,4 +153,16 @@ void PETScLUSolver::init()
   PCFactorSetShiftNonzero(pc, PETSC_DECIDE);
 }
 //-----------------------------------------------------------------------------
+void PETScLUSolver::clear()
+{
+  if ( ksp ) 
+    KSPDestroy(ksp);
+  if ( B ) 
+    MatDestroy(B);
+  if ( idxm ) 
+    delete [] idxm;
+  if ( idxn ) 
+    delete [] idxn;
+}
+//-----------------------------------------------------------------------------
 #endif
