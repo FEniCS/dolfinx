@@ -51,7 +51,6 @@ int main(int argc, char *argv[])
   assemble(A, a, mesh);
   assemble(b, L, mesh);
   bc.apply(A, b, a);
-  //lu.factorize(A);
 
   // Parameters for time-stepping
   double T = 2.0;
@@ -70,7 +69,6 @@ int main(int argc, char *argv[])
     bc.apply(A, b, a);
     
     // Solve the linear system
-    //lu.factorized_solve(x, b);
     lu.solve(A, x, b);
     
     // Save the solution to file

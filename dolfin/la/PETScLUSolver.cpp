@@ -19,28 +19,12 @@ using namespace dolfin;
 PETScLUSolver::PETScLUSolver()
   : ksp(0), B(0), idxm(0), idxn(0)
 {
-  // Set up solver environment to use only preconditioner
-  KSPCreate(PETSC_COMM_SELF, &ksp);
-  //KSPSetType(ksp, KSPPREONLY);
-  
-  // Set preconditioner to LU factorization
-  PC pc;
-  KSPGetPC(ksp, &pc);
-  PCSetType(pc, PCLU);
-
-  // Allow matrices with zero diagonals to be solved
-  PCFactorSetShiftNonzero(pc, PETSC_DECIDE);
-
-  // Do LU factorization in-place (saves memory)
-  PCASMSetUseInPlace(pc);
+  init();
 }
 //-----------------------------------------------------------------------------
 PETScLUSolver::~PETScLUSolver()
 {
-  if ( ksp ) KSPDestroy(ksp);
-  if ( B ) MatDestroy(B);
-  if ( idxm ) delete [] idxm;
-  if ( idxn ) delete [] idxn;
+  clear();
 }
 //-----------------------------------------------------------------------------
 dolfin::uint PETScLUSolver::solve(const GenericMatrix& A, GenericVector& x, 
@@ -53,6 +37,9 @@ dolfin::uint PETScLUSolver::solve(const GenericMatrix& A, GenericVector& x,
 dolfin::uint PETScLUSolver::solve(const PETScMatrix& A, PETScVector& x, 
                                   const PETScVector& b)
 {
+  // Initialise solver
+  init();
+
   MatType mat_type;
   MatGetType(A.mat(), &mat_type);
 
@@ -92,18 +79,20 @@ dolfin::uint PETScLUSolver::solve(const PETScMatrix& A, PETScVector& x,
   PCGetType(pc, &pc_type);
   MatGetType(A.mat(), &mat_type);
 
+  // Clear data
+  clear();
+
   return 1;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint PETScLUSolver::solve(const PETScKrylovMatrix& A,
 		       PETScVector& x, const PETScVector& b)
 {
+  // Initialise solver
+  init();
+
   // Get parameters
   const bool report = get("LU report");
-
-  //cout << "LU got matrix:" << endl;
-  //cout << "A = "; A.disp(false);
-  //cout << "b = "; b.disp();
 
   // Copy data to dense matrix
   const double Anorm = copyToDense(A);
@@ -132,6 +121,9 @@ dolfin::uint PETScLUSolver::solve(const PETScKrylovMatrix& A,
       warning("Matrix has large condition number (%.1e).", kappa);
   }
 
+  // Clear data
+  clear();
+
   return 1;
 }
 //-----------------------------------------------------------------------------
@@ -143,66 +135,22 @@ void PETScLUSolver::disp() const
 double PETScLUSolver::copyToDense(const PETScKrylovMatrix& A)
 {
   error("PETScLUSolver::copyToDense needs to be fixed");
-/*
-  // Get size
-  uint M = A.size(0);
-  dolfin_assert(M = A.size(1));
 
-  if ( !B )
-  {
-    // Create matrix if it has not been created before
-    MatCreateSeqDense(PETSC_COMM_SELF, M, M, PETSC_NULL, &B);
-    idxm = new int[M];
-    idxn = new int[1];
-    for (uint i = 0; i < M; i++)
-      idxm[i] = i;
-    idxn[0] = 0;
-    e.resize(M);
-    y.resize(M);
-
-  }
-  else
-  {
-    // Check dimensions of existing matrix
-    int MM = 0;
-    int NN = 0;
-    MatGetSize(B, &MM, &NN);
-
-    if ( MM != static_cast<int>(M) || NN != static_cast<int>(M) )
-      error("FIXME: Matrix dimensions changed, not implemented (should be).");
-  }
-
-  // Multiply matrix with unit vectors to get the values
-  double maxcolsum = 0.0;
-  e = 0.0;
-  for (uint j = 0; j < M; j++)
-  {
-    // Multiply with unit vector and set column
-    e(j) = 1.0;
-    A.mult(e, y);
-    double* values = y.array(); // assumes uniprocessor case
-    idxn[0] = j;
-    MatSetValues(B, M, idxm, 1, idxn, values, INSERT_VALUES);
-    y.restore(values);
-    e(j) = 0.0;
-    
-    // Compute l1 norm of matrix (maximum column sum)
-    const double colsum = y.norm(PETScVector::l1);
-    if ( colsum > maxcolsum )
-      maxcolsum = colsum;
-  }
-
-  MatAssemblyBegin(B, MAT_FINAL_ASSEMBLY);
-  MatAssemblyEnd(B, MAT_FINAL_ASSEMBLY);
-
-  //cout << "Copied to dense matrix:" << endl;
-  //A.disp();
-  //MatView(B, PETSC_VIEWER_STDOUT_SELF);
-
-  return maxcolsum;
-*/
   return 0;
 }
 //-----------------------------------------------------------------------------
+void PETScLUSolver::init()
+{
+  // Set up solver environment to use only preconditioner
+  KSPCreate(PETSC_COMM_SELF, &ksp);
+  
+  // Set preconditioner to LU factorization
+  PC pc;
+  KSPGetPC(ksp, &pc);
+  PCSetType(pc, PCLU);
 
+  // Allow matrices with zero diagonals to be solved
+  PCFactorSetShiftNonzero(pc, PETSC_DECIDE);
+}
+//-----------------------------------------------------------------------------
 #endif

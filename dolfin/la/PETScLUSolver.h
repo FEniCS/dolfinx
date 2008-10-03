@@ -53,6 +53,12 @@ namespace dolfin
 
   private:
     
+    // Initialise solver
+    void init();
+    
+    // Clear data
+    void clear();
+
     // Create dense copy of virtual matrix
     double copyToDense(const PETScKrylovMatrix& A);
 
@@ -64,7 +70,6 @@ namespace dolfin
 
     PETScVector e;
     PETScVector y;
-
   };
 
 }
