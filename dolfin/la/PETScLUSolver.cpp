@@ -151,18 +151,19 @@ void PETScLUSolver::init()
 
   // Allow matrices with zero diagonals to be solved
   PCFactorSetShiftNonzero(pc, PETSC_DECIDE);
+
+  // Do LU factorization in-place (saves memory)
+  PCASMSetUseInPlace(pc);
 }
 //-----------------------------------------------------------------------------
 void PETScLUSolver::clear()
 {
   if ( ksp ) 
-    KSPDestroy(ksp);
+    KSPDestroy(ksp); ksp=0;
   if ( B ) 
-    MatDestroy(B);
-  if ( idxm ) 
-    delete [] idxm;
-  if ( idxn ) 
-    delete [] idxn;
+    MatDestroy(B); ; ksp=0;
+  delete [] idxm; idxm=0;
+  delete [] idxn; idxn=0;
 }
 //-----------------------------------------------------------------------------
 #endif
