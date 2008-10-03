@@ -63,7 +63,7 @@ u = TrialFunction(element)
 # with the eigenvalues k_o^2 representing the square of the cutoff wavenumber 
 # and the corresponding right-eigenvector giving the coefficients of the 
 # discrete system used to obtain the approximate field anywhere in the domain   
- a = dot(curl_t(v), curl_t(u))*dx
+a = dot(curl_t(v), curl_t(u))*dx
 L = dot(v, u)*dx
 
 # Assemble the system matrices stiffness (S) and mass matrices (T)
@@ -98,7 +98,7 @@ for i in range(S.size(1)):
         print "Dominant mode found"
         dominant_mode_index = i
         break
-        
+       
 
 if dominant_mode_index < 0:
     print "Dominant mode not found"
@@ -115,14 +115,13 @@ print "Cutoff wavenumber squared: %f" % k_o_squared
 if lc != 0: 
     print "WARNING:  Wavenumber is complex: %f +i%f" % (k_o_squared, lc) 
 
-# To visualize the magnetic field we need to calculate the field at a number 
-# of points
-# first define a discrete function using the eigenvector values as basis 
-# function coefficients
-# NOTE:  The coefficients need to be passed to the Function constructor as a 
-#  dolfin Vector
+# To visualize the magnetic field we need to calculate the field at a
+# number of points first define a discrete function using the
+# eigenvector values as basis function coefficients NOTE: The
+# coefficients need to be passed to the Function constructor as a
+# dolfin Vector
 
-# initialize the function
+# Initialize the function
 magnetic_field = Function(element, mesh, Vector())
 magnetic_field.vector().assign(h_e)
 
