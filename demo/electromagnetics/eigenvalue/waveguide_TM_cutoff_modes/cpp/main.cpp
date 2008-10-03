@@ -21,6 +21,8 @@
 
 using namespace dolfin;
 
+#ifdef HAS_PETSC
+
 int main()
 {
   float width = 1.0;
@@ -74,3 +76,13 @@ int main()
   
   return 0;
 }
+
+#else
+
+int main()
+{
+  message("Sorry, this demo is not available when DOLFIN is compiled without PETSc.");
+  return 0;
+}
+
+#endif
