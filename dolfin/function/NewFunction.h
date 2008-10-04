@@ -60,14 +60,23 @@ namespace dolfin
     /// Return the vector of degrees of freedom (const version)
     const GenericVector& vector() const;
 
-    /// Evaluate function at given point p (overload for user-defined function)
-    virtual void eval(double* values, const double* p) const;
+    /// Return the current time
+    double time() const;
 
-    /// Evaluate function at given point p (overload for scalar user-defined function)
-    virtual double eval(const double* p) const;
+    /// Evaluate function at point x (overload for user-defined function)
+    virtual void eval(double* values, const double* x) const;
+
+    /// Evaluate function at point x and time t (overload for user-defined function)
+    virtual void eval(double* values, const double* x, double t) const;
+
+    /// Evaluate function at point x (overload for scalar user-defined function)
+    virtual double eval(const double* x) const;
+
+    /// Evaluate function at point x and time t (overload for scalar user-defined function)
+    virtual double eval(const double* x, double t) const;
 
     /// Evaluate function at given point (used for subclassing through SWIG interface)
-    void eval(simple_array<double>& values, const simple_array<double>& p) const;
+    void eval(simple_array<double>& values, const simple_array<double>& x) const;
 
   private:
 
@@ -75,10 +84,13 @@ namespace dolfin
     void init();
 
     // The function space
-    const std::tr1::shared_ptr<const FunctionSpace> V;
+    const std::tr1::shared_ptr<const FunctionSpace> _function_space;
 
     // The vector of degrees of freedom
-    GenericVector* x;
+    GenericVector* _vector;
+
+    // The current time
+    double _time;
 
   };
 
