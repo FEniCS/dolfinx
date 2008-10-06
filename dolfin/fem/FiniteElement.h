@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-09-11
-// Last changed: 2008-09-16
+// Last changed: 2008-10-06
 
 #ifndef __FINITE_ELEMENT_H
 #define __FINITE_ELEMENT_H
@@ -11,7 +11,6 @@
 #include <ufc.h>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/elements/ElementLibrary.h>
-#include <dolfin/fem/UFCCell.h>
 
 namespace dolfin
 {
@@ -49,10 +48,10 @@ namespace dolfin
     uint space_dimension() const
     { return element->space_dimension(); }
 
-    void interpolate_vertex_values(double* vertex_values, double* coefficients, const UFCCell& cell) const
+    void interpolate_vertex_values(double* vertex_values, double* coefficients, const ufc::cell& cell) const
     { element->interpolate_vertex_values(vertex_values, coefficients, cell); }
 
-    void evaluate_basis(uint i, double* values, const double* x, const UFCCell& cell) const
+    void evaluate_basis(uint i, double* values, const double* x, const ufc::cell& cell) const
     { element->evaluate_basis(i, values, x, cell); }
   
     double evaluate_dof(uint i, const ufc::function& function, const ufc::cell& cell) const
