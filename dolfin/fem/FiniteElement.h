@@ -10,6 +10,7 @@
 #include <tr1/memory>
 #include <ufc.h>
 #include <dolfin/common/NoDeleter.h>
+#include <dolfin/common/types.h>
 #include <dolfin/elements/ElementLibrary.h>
 
 namespace dolfin
