@@ -57,7 +57,7 @@ namespace dolfin
     uint newton_iteration;
 
     /// Residual
-    real residual0;
+    double residual0;
 
     /// Solver
     GenericLinearSolver* solver;

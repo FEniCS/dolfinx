@@ -33,7 +33,7 @@ MultiAdaptiveJacobian::MultiAdaptiveJacobian(MultiAdaptiveNewtonSolver& newton,
   }
 
   // Allocate Jacobian values
-  Jvalues = new real[sum];
+  Jvalues = new double[sum];
   for (uint pos = 0; pos < sum; pos++)
     Jvalues[pos] = 0.0;
 
@@ -49,7 +49,7 @@ MultiAdaptiveJacobian::MultiAdaptiveJacobian(MultiAdaptiveNewtonSolver& newton,
   }
 
   // Allocate lookup table for dependencies to components with small time steps
-  Jlookup = new real[std::max(static_cast<unsigned int>(1), maxsize - 1)];
+  Jlookup = new double[std::max(static_cast<unsigned int>(1), maxsize - 1)];
 }
 //-----------------------------------------------------------------------------
 MultiAdaptiveJacobian::~MultiAdaptiveJacobian()
@@ -82,7 +82,7 @@ void MultiAdaptiveJacobian::mult(const uBLASVector& x, uBLASVector& y) const
 void MultiAdaptiveJacobian::init()
 {
   // Compute Jacobian at the beginning of the slab
-  real t = ts.starttime();
+  double t = ts.starttime();
   //message("Recomputing Jacobian matrix at t = %f.", t);
   
   // Compute Jacobian
@@ -95,7 +95,7 @@ void MultiAdaptiveJacobian::init()
 
   /*
   // Compute Jacobian at the end of the slab
-  real t = ts.endtime();
+  double t = ts.endtime();
   //message("Recomputing Jacobian matrix at t = %f.", t);
   
   // Compute Jacobian
@@ -125,16 +125,16 @@ void MultiAdaptiveJacobian::cGmult(const uBLASVector& x, uBLASVector& y) const
     
     // Get element data
     const uint i0 = ts.ei[e0];
-    const real a0 = ts.sa[s0];
-    const real b0 = ts.sb[s0];
-    const real k0 = b0 - a0;
+    const double a0 = ts.sa[s0];
+    const double b0 = ts.sb[s0];
+    const double k0 = b0 - a0;
     const uint j0 = e0 * method.nsize();
     
     // Add dependency on predecessor for all dofs of element
     const int ep = ts.ee[e0];
     if ( ep != -1 )
     {
-      const real xp = x[ep*method.nsize() + method.nsize() - 1];
+      const double xp = x[ep*method.nsize() + method.nsize() - 1];
       for (uint n = 0; n < method.nsize(); n++)
 	y[j0 + n] -= xp;
     }
@@ -147,7 +147,7 @@ void MultiAdaptiveJacobian::cGmult(const uBLASVector& x, uBLASVector& y) const
     for (uint pos = 0; pos < deps.size(); pos++)
     {
       // Get derivative
-      const real dfdu = Jvalues[Jindices[i0] + pos];
+      const double dfdu = Jvalues[Jindices[i0] + pos];
 
       // Skip elements which have not been covered
       const uint i1 = deps[pos];
@@ -161,14 +161,14 @@ void MultiAdaptiveJacobian::cGmult(const uBLASVector& x, uBLASVector& y) const
 
       // Skip elements with smaller time steps
       const uint s1 = ts.es[e1];
-      const real b1 = ts.sb[s1];
+      const double b1 = ts.sb[s1];
       if ( b1 < (a0 + DOLFIN_EPS) )
       {
 	// Save dependency for later
 	Jlookup[Jpos++] = dfdu;
 
 	// Add dependency to initial value for all dofs
-	const real tmp = k0 * dfdu * x[e1 * method.nsize() + method.nsize() - 1];
+	const double tmp = k0 * dfdu * x[e1 * method.nsize() + method.nsize() - 1];
 	for (uint n = 0; n < method.nsize(); n++)
 	  y[j0 + n] -= tmp * method.nweight(n, 0);
 
@@ -183,10 +183,10 @@ void MultiAdaptiveJacobian::cGmult(const uBLASVector& x, uBLASVector& y) const
       {
 	// Add dependency to dof of initial value if any
 	const int ep = ts.ee[e1];
-	const real tmp0 = k0 * dfdu;
+	const double tmp0 = k0 * dfdu;
 	if ( ep != -1 )
 	{
-	  const real tmp1 = tmp0 * x[ep * method.nsize() + method.nsize() - 1];
+	  const double tmp1 = tmp0 * x[ep * method.nsize() + method.nsize() - 1];
 	  for (uint n = 0; n < method.nsize(); n++)
 	    y[j0 + n] -= tmp1 * method.nweight(n, 0);
 	}
@@ -194,7 +194,7 @@ void MultiAdaptiveJacobian::cGmult(const uBLASVector& x, uBLASVector& y) const
 	// Add dependencies to internal dofs
 	for (uint n = 0; n < method.nsize(); n++)
 	{
-	  real sum = 0.0;
+	  double sum = 0.0;
 	  for (uint m = 0; m < method.nsize(); m++)
 	    sum += method.nweight(n, m + 1) * x[j1 + m];
 	  y[j0 + n] -= tmp0 * sum;
@@ -202,19 +202,19 @@ void MultiAdaptiveJacobian::cGmult(const uBLASVector& x, uBLASVector& y) const
       }
       else
       {
-	const real a1 = ts.sa[s1];
-	const real k1 = b1 - a1;
+	const double a1 = ts.sa[s1];
+	const double k1 = b1 - a1;
 	
 	// Iterate over dofs of element
-	const real tmp0 = k0 * dfdu;
+	const double tmp0 = k0 * dfdu;
 	for (uint n = 0; n < method.nsize(); n++)
 	{
 	  // Iterate over quadrature points
-	  real sum = 0.0;
+	  double sum = 0.0;
 	  for (uint m = 0; m < method.qsize(); m++)
 	  {
-	    const real tau = (a0 + k0*method.qpoint(m) - a1) / k1;
-	    const real tmp1 = method.nweight(n, m);
+	    const double tau = (a0 + k0*method.qpoint(m) - a1) / k1;
+	    const double tmp1 = method.nweight(n, m);
 	    dolfin_assert(tau >= -DOLFIN_EPS);
 	    dolfin_assert(tau <= 1.0 + DOLFIN_EPS);
 	    
@@ -222,7 +222,7 @@ void MultiAdaptiveJacobian::cGmult(const uBLASVector& x, uBLASVector& y) const
 	    const int ep = ts.ee[e1];
 	    if ( ep != -1 )
 	    {
-	      const real x0 = x[ep * method.nsize() + method.nsize() - 1];
+	      const double x0 = x[ep * method.nsize() + method.nsize() - 1];
 	      sum += tmp1 * method.eval(0, tau) * x0;
 	    }
 	    
@@ -256,7 +256,7 @@ void MultiAdaptiveJacobian::cGmult(const uBLASVector& x, uBLASVector& y) const
     for (uint m = 1; m < method.qsize(); m++)
     {
       // Compute quadrature point
-      const real t = a0 + k0*method.qpoint(m);
+      const double t = a0 + k0*method.qpoint(m);
 
       // Iterate over dependencies
       for (uint dep = 0; dep < ndep; dep++)
@@ -266,22 +266,22 @@ void MultiAdaptiveJacobian::cGmult(const uBLASVector& x, uBLASVector& y) const
 	const uint j1 = e1 * method.nsize();
 	const uint s1 = ts.es[e1];
 	//const uint i1 = ts.ei[e1];
-	const real a1 = ts.sa[s1];
-	const real b1 = ts.sb[s1];
-	const real k1 = b1 - a1;
-	const real tau = (t - a1) / k1;
+	const double a1 = ts.sa[s1];
+	const double b1 = ts.sb[s1];
+	const double k1 = b1 - a1;
+	const double tau = (t - a1) / k1;
 	
 	// We don't know how to index Jvalues here and want to avoid
 	// searching, but we were clever enough to pick out the value
 	// before when we had the chance... :-)
-	const real dfdu = Jlookup[dep];
+	const double dfdu = Jlookup[dep];
 	//message("Looks like df_%d/du_%d = %f", i0, i1, dfdu);      
 	
 	// Iterate over quadrature points of other element
-	const real tmp0 = k0 * dfdu;
+	const double tmp0 = k0 * dfdu;
 	for (uint l = 0; l < method.qsize(); l++)
 	{
-	  real tmp1 = tmp0 * method.eval(l, tau);
+	  double tmp1 = tmp0 * method.eval(l, tau);
 	  if ( l == 0 )
 	  {
 	    const int ep = ts.ee[e1];
@@ -323,16 +323,16 @@ void MultiAdaptiveJacobian::dGmult(const uBLASVector& x, uBLASVector& y) const
     
     // Get element data
     const uint i0 = ts.ei[e0];
-    const real a0 = ts.sa[s0];
-    const real b0 = ts.sb[s0];
-    const real k0 = b0 - a0;
+    const double a0 = ts.sa[s0];
+    const double b0 = ts.sb[s0];
+    const double k0 = b0 - a0;
     const uint j0 = e0 * method.nsize();
     
     // Add dependency on predecessor for all dofs of element
     const int ep = ts.ee[e0];
     if ( ep != -1 )
     {
-      const real xp = x[ep*method.nsize() + method.nsize() - 1];
+      const double xp = x[ep*method.nsize() + method.nsize() - 1];
       for (uint n = 0; n < method.nsize(); n++)
 	y[j0 + n] -= xp;
     }
@@ -345,7 +345,7 @@ void MultiAdaptiveJacobian::dGmult(const uBLASVector& x, uBLASVector& y) const
     for (uint pos = 0; pos < deps.size(); pos++)
     {
       // Get derivative
-      const real dfdu = Jvalues[Jindices[i0] + pos];
+      const double dfdu = Jvalues[Jindices[i0] + pos];
 
       // Skip elements which have not been covered
       const uint i1 = deps[pos];
@@ -359,7 +359,7 @@ void MultiAdaptiveJacobian::dGmult(const uBLASVector& x, uBLASVector& y) const
 
       // Skip elements with smaller time steps
       const uint s1 = ts.es[e1];
-      const real b1 = ts.sb[s1];
+      const double b1 = ts.sb[s1];
       if ( b1 < (a0 + DOLFIN_EPS) )
       {
 	// Save dependency for later
@@ -373,10 +373,10 @@ void MultiAdaptiveJacobian::dGmult(const uBLASVector& x, uBLASVector& y) const
       // Use fast evaluation for elements in the same sub slab
       if ( s0 == static_cast<int>(s1) )
       {
-	const real tmp = k0 * dfdu;
+	const double tmp = k0 * dfdu;
 	for (uint n = 0; n < method.nsize(); n++)
 	{
-	  real sum = 0.0;
+	  double sum = 0.0;
 	  for (uint m = 0; m < method.qsize(); m++)
 	    sum += method.nweight(n, m) * x[j1 + m];
 	  y[j0 + n] -= tmp * sum;
@@ -384,19 +384,19 @@ void MultiAdaptiveJacobian::dGmult(const uBLASVector& x, uBLASVector& y) const
       }
       else
       {
-	const real a1 = ts.sa[s1];
-	const real k1 = b1 - a1;
+	const double a1 = ts.sa[s1];
+	const double k1 = b1 - a1;
 	
 	// Iterate over dofs of element
-	const real tmp0 = k0 * dfdu;
+	const double tmp0 = k0 * dfdu;
 	for (uint n = 0; n < method.nsize(); n++)
 	{
 	  // Iterate over quadrature points
-	  real sum = 0.0;
+	  double sum = 0.0;
 	  for (uint m = 0; m < method.qsize(); m++)
 	  {
-	    const real tau = (a0 + k0*method.qpoint(m) - a1) / k1;
-	    const real tmp1 = method.nweight(n, m);
+	    const double tau = (a0 + k0*method.qpoint(m) - a1) / k1;
+	    const double tmp1 = method.nweight(n, m);
 	    
 	    // Iterate over dofs of other element and add dependencies
 	    for (uint l = 0; l < method.nsize(); l++)
@@ -428,7 +428,7 @@ void MultiAdaptiveJacobian::dGmult(const uBLASVector& x, uBLASVector& y) const
     for (uint m = 0; m < method.qsize(); m++)
     {
       // Compute quadrature point
-      const real t = a0 + k0*method.qpoint(m);
+      const double t = a0 + k0*method.qpoint(m);
 
       // Iterate over dependencies
       for (uint dep = 0; dep < ndep; dep++)
@@ -438,22 +438,22 @@ void MultiAdaptiveJacobian::dGmult(const uBLASVector& x, uBLASVector& y) const
 	const uint j1 = e1 * method.nsize();
 	const uint s1 = ts.es[e1];
 	//const uint i1 = ts.ei[e1];
-	const real a1 = ts.sa[s1];
-	const real b1 = ts.sb[s1];
-	const real k1 = b1 - a1;
-	const real tau = (t - a1) / k1;
+	const double a1 = ts.sa[s1];
+	const double b1 = ts.sb[s1];
+	const double k1 = b1 - a1;
+	const double tau = (t - a1) / k1;
 	
 	// We don't know how to index Jvalues here and want to avoid
 	// searching, but we were clever enough to pick out the value
 	// before when we had the chance... :-)
-	const real dfdu = Jlookup[dep];
+	const double dfdu = Jlookup[dep];
 	//message("Looks like df_%d/du_%d = %f", i0, i1, dfdu);      
 	
 	// Iterate over quadrature points of other element
-	const real tmp0 = k0 * dfdu;
+	const double tmp0 = k0 * dfdu;
 	for (uint l = 0; l < method.qsize(); l++)
 	{
-	  real tmp1 = tmp0 * method.eval(l, tau) * x[j1 + l];
+	  double tmp1 = tmp0 * method.eval(l, tau) * x[j1 + l];
 	  for (uint n = 0; n < method.nsize(); n++)
 	    y[j0 + n] -= tmp1 * method.nweight(n, m);
 	}

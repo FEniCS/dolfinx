@@ -17,7 +17,7 @@
 
 using namespace dolfin;
 
-real timer(Mesh& mesh, int num_iterations, Form& a)
+double timer(Mesh& mesh, int num_iterations, Form& a)
 {
   std::cout << "Assembling with sequential assembler." << std::endl;
   Matrix A;
@@ -27,10 +27,10 @@ real timer(Mesh& mesh, int num_iterations, Form& a)
   tic();
   for(int i=0; i<num_iterations; ++i)
     assembler.assemble(A, a, false);
-  return toc()/static_cast<real>(num_iterations);
+  return toc()/static_cast<double>(num_iterations);
 }
 
-real p_timer(Mesh& mesh, MeshFunction<dolfin::uint>& partitions, int num_iterations, Form& a)
+double p_timer(Mesh& mesh, MeshFunction<dolfin::uint>& partitions, int num_iterations, Form& a)
 {
   std::cout << "Assembling with parallel assembler." << std::endl;
   Matrix B;
@@ -40,7 +40,7 @@ real p_timer(Mesh& mesh, MeshFunction<dolfin::uint>& partitions, int num_iterati
   tic();
   for(int i=0; i<num_iterations; ++i)
     passembler.assemble(B, a, false);
-  return toc()/static_cast<real>(num_iterations);
+  return toc()/static_cast<double>(num_iterations);
 }
 
 int main(int argc, char* argv[])
@@ -145,7 +145,7 @@ int main(int argc, char* argv[])
       std::cout << "Finished creating UnitCube" << std::endl;
     }
   }
-  real time = 0;
+  double time = 0;
   if(sequential)
   {
     Form* a;

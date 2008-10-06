@@ -49,7 +49,7 @@ namespace dolfin
     MultiAdaptiveTimeSlab& ts;
 
     // Size of increment
-    real h;
+    double h;
     
   };
 

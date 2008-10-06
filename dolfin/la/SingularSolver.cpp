@@ -47,7 +47,7 @@ dolfin::uint SingularSolver::solve(const GenericMatrix& A,
 
   // Extract solution
   x.resize(y->size() - 1);
-  real* vals = new real[y->size()];
+  double* vals = new double[y->size()];
   y->get(vals);
   x.set(vals);
   delete [] vals;
@@ -72,7 +72,7 @@ dolfin::uint SingularSolver::solve(const GenericMatrix& A,
 
   // Extract solution
   x.resize(y->size() - 1);
-  real* vals = new real[y->size()];
+  double* vals = new double[y->size()];
   y->get(vals);
   x.set(vals);
   delete [] vals;
@@ -105,7 +105,7 @@ void SingularSolver::init(const GenericMatrix& A)
 
   // Copy sparsity pattern for A and last column
   Array<uint> columns;
-  Array<real> dummy;
+  Array<double> dummy;
   for (uint i = 0; i < N; i++)
   {
     // Get row
@@ -163,7 +163,7 @@ void SingularSolver::create(const GenericMatrix& A, const GenericVector& b,
   // Copy rows from A into B
   const uint N = A.size(0);
   Array<uint> columns;
-  Array<real> values;
+  Array<double> values;
   for (uint i = 0; i < N; i++)
   {
     A.getrow(i, columns, values);
@@ -208,7 +208,7 @@ void SingularSolver::create(const GenericMatrix& A, const GenericVector& b,
     B->set(&values[i], 1, &i, 1, &N);
 
   // Copy values from b into c
-  real* vals = new real[N + 1];
+  double* vals = new double[N + 1];
   b.get(vals);
   vals[N] = 0.0;
   c->set(vals);

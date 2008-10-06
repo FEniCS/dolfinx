@@ -18,7 +18,7 @@ namespace dolfin
   /// This class implements a matrix-free Jacobian for a homotopy
   /// system. It uses the fact that the Jacobian is already
   /// implemented for the ODE system so we don't have to worry about
-  /// the translation between real and complex vectors.
+  /// the translation between double and complex vectors.
 
   class HomotopyJacobian : public uBLASKrylovMatrix
   {

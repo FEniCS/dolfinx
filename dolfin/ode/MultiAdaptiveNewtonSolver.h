@@ -49,7 +49,7 @@ namespace dolfin
     void end();
     
     // Make an iteration
-    real iteration(real tol, uint iter, real d0, real d1);
+    double iteration(double tol, uint iter, double d0, double d1);
 
     /// Size of system
     uint size() const;
@@ -66,12 +66,12 @@ namespace dolfin
     TimeSlabJacobian* A;             // Jacobian of time slab system
     MultiAdaptivePreconditioner mpc; // Preconditioner
     uBLASKrylovSolver solver;        // Linear solver
-    real* f;                         // Values of right-hand side at quadrature points
-    real* u;                         // Degrees of freedom on local element
+    double* f;                         // Values of right-hand side at quadrature points
+    double* u;                         // Degrees of freedom on local element
     uBLASVector dx;                  // Increment for Newton's method
     uBLASVector b;                   // Right-hand side -F(x)
     uint num_elements;               // Total number of elements
-    real num_elements_mono;          // Estimated number of elements for mono-adaptive system
+    double num_elements_mono;          // Estimated number of elements for mono-adaptive system
     bool updated_jacobian;           // Update Jacobian in each iteration
 
   };

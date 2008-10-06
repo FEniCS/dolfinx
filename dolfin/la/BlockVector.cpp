@@ -51,23 +51,23 @@ dolfin::uint BlockVector::size() const
   return n; 
 } 
 //-----------------------------------------------------------------------------
-void BlockVector::axpy(real a, const BlockVector& x) 
+void BlockVector::axpy(double a, const BlockVector& x) 
 {
   for (uint i=0; i<n; i++) 
     this->get(i).axpy(a, x.getc(i)); 
 }
 //-----------------------------------------------------------------------------
-real BlockVector::inner(const BlockVector& x) const 
+double BlockVector::inner(const BlockVector& x) const 
 {
-  real value = 0.0; 
+  double value = 0.0; 
   for (uint i=0; i<n; i++) 
     value += this->getc(i).inner(x.getc(i)); 
   return value; 
 }
 //-----------------------------------------------------------------------------
-real BlockVector::norm(NormType type) const
+double BlockVector::norm(NormType type) const
 {
-  real value = 0.0; 
+  double value = 0.0; 
   switch (type) 
   { 
     case l1: 
@@ -91,7 +91,7 @@ real BlockVector::norm(NormType type) const
   return value; 
 }
 //-----------------------------------------------------------------------------
-real BlockVector::min() const
+double BlockVector::min() const
 {
   double value = 100000000; //FIXME use MAXFLOAT or something  
   double tmp = 0.0;
@@ -104,7 +104,7 @@ real BlockVector::min() const
   return value;
 }
 //-----------------------------------------------------------------------------
-real BlockVector::max() const
+double BlockVector::max() const
 {
   double value = -1.0; //FIXME use MINFLOAT or something  
   double tmp = 0.0;
@@ -117,14 +117,14 @@ real BlockVector::max() const
   return value; 
 }
 //-----------------------------------------------------------------------------
-const BlockVector& BlockVector::operator*= (real a) 
+const BlockVector& BlockVector::operator*= (double a) 
 {
   for(uint i=0; i<n; i++) 
     this->get(i) *= a; 
   return *this; 
 }
 //-----------------------------------------------------------------------------
-const BlockVector& BlockVector::operator/= (real a) 
+const BlockVector& BlockVector::operator/= (double a) 
 {
   for(uint i=0; i<n; i++)
     this->get(i) /= a; 
@@ -150,7 +150,7 @@ const BlockVector& BlockVector::operator= (const BlockVector& x)
   return *this; 
 }
 //-----------------------------------------------------------------------------
-const BlockVector& BlockVector::operator= (real a)
+const BlockVector& BlockVector::operator= (double a)
 {
   for(uint i=0; i<n; i++)
     this->get(i) = a; 

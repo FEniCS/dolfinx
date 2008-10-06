@@ -75,7 +75,7 @@ LogStream& LogStream::operator<<(unsigned int a)
   return *this;
 }
 //-----------------------------------------------------------------------------
-LogStream& LogStream::operator<<(real a)
+LogStream& LogStream::operator<<(double a)
 {
   char tmp[DOLFIN_LINELENGTH];
   /*

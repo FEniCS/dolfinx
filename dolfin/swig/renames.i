@@ -4,4 +4,4 @@
 
 %rename(__setitem__) *::setitem;
 %rename(__getitem__) *::getitem;
-%rename(__float__) *::operator real;
+%rename(__float__) *::operator double;

@@ -238,7 +238,7 @@ public:
 
   void testMeshMatlab2D()
   {
-    // Write matlab format (no real test)
+    // Write matlab format (no double test)
     UnitSquare mesh(5, 5);
     File file("unitsquare.m");
     file << mesh;

@@ -52,17 +52,17 @@ dolfin::uint TimeSlab::size() const
   return N;
 }
 //-----------------------------------------------------------------------------
-real TimeSlab::starttime() const
+double TimeSlab::starttime() const
 {
   return _a;
 }
 //-----------------------------------------------------------------------------
-real TimeSlab::endtime() const
+double TimeSlab::endtime() const
 {
   return _b;
 }
 //-----------------------------------------------------------------------------
-real TimeSlab::length() const
+double TimeSlab::length() const
 {
   return _b - _a;
 }
@@ -93,19 +93,19 @@ void TimeSlab::write(const uBLASVector& u)
   fclose(fp);
 }
 //-----------------------------------------------------------------------------
-void TimeSlab::copy(const real x[], uint xoffset, real y[], uint yoffset, uint n)
+void TimeSlab::copy(const double x[], uint xoffset, double y[], uint yoffset, uint n)
 {
   for (uint i = 0; i < n; i++)
     y[yoffset + i] = x[xoffset + i];
 }
 //-----------------------------------------------------------------------------
-void TimeSlab::copy(const uBLASVector& x, uint xoffset, real y[], uint yoffset, uint n)
+void TimeSlab::copy(const uBLASVector& x, uint xoffset, double y[], uint yoffset, uint n)
 {
   for (uint i = 0; i < n; i++)
     y[yoffset + i] = x[xoffset + i];
 }
 //-----------------------------------------------------------------------------
-void TimeSlab::copy(const real x[], uint xoffset, uBLASVector& y, uint yoffset, uint n)
+void TimeSlab::copy(const double x[], uint xoffset, uBLASVector& y, uint yoffset, uint n)
 {
   for (uint i = 0; i < n; i++)
     y[yoffset + i] = x[xoffset + i];

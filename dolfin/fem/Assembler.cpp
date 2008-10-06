@@ -117,7 +117,7 @@ void Assembler::assemble(GenericTensor& A, Form& form,
            &exterior_facet_domains, &interior_facet_domains, reset_tensor);
 }
 //-----------------------------------------------------------------------------
-dolfin::real Assembler::assemble(Form& form,
+double Assembler::assemble(Form& form,
                                  bool reset_tensor)
 {
   Scalar value;
@@ -125,7 +125,7 @@ dolfin::real Assembler::assemble(Form& form,
   return value;
 }
 //-----------------------------------------------------------------------------
-dolfin::real Assembler::assemble(Form& form, const SubDomain& sub_domain,
+double Assembler::assemble(Form& form, const SubDomain& sub_domain,
                                  bool reset_tensor)
 {
   Scalar value;
@@ -133,7 +133,7 @@ dolfin::real Assembler::assemble(Form& form, const SubDomain& sub_domain,
   return value;
 }
 //-----------------------------------------------------------------------------
-dolfin::real Assembler::assemble(Form& form,
+double Assembler::assemble(Form& form,
                                  const MeshFunction<uint>& cell_domains,
                                  const MeshFunction<uint>& exterior_facet_domains,
                                  const MeshFunction<uint>& interior_facet_domains,
@@ -184,7 +184,7 @@ void Assembler::assembleCells(GenericTensor& A,
                               const DofMapSet& dof_map_set,
                               UFC& ufc,
                               const MeshFunction<uint>* domains,
-                              Array<real>* values) const
+                              Array<double>* values) const
 {
   // Skip assembly if there are no cell integrals
   if (ufc.form.num_cell_integrals() == 0)
@@ -237,7 +237,7 @@ void Assembler::assembleExteriorFacets(GenericTensor& A,
                                        const DofMapSet& dof_map_set,
                                        UFC& ufc,
                                        const MeshFunction<uint>* domains,
-                                       Array<real>* values) const
+                                       Array<double>* values) const
 {
   // Skip assembly if there are no exterior facet integrals
   if (ufc.form.num_exterior_facet_integrals() == 0)
@@ -302,7 +302,7 @@ void Assembler::assembleInteriorFacets(GenericTensor& A,
                                        const DofMapSet& dof_map_set,
                                        UFC& ufc,
                                        const MeshFunction<uint>* domains,
-                                       Array<real>* values) const
+                                       Array<double>* values) const
 {
   // Skip assembly if there are no interior facet integrals
   if (ufc.form.num_interior_facet_integrals() == 0)
@@ -524,13 +524,13 @@ void Assembler::assemble_system(GenericMatrix& A, const ufc::form& A_form,
   initGlobalTensor(b, b_dof_map_set, b_ufc, reset_tensors);
 
   // Pointers to element matrix and vector
-  real* Ae = 0; 
-  real* be = 0; 
+  double* Ae = 0; 
+  double* be = 0; 
 
   // Get boundary values (global) 
   const uint N = A_dof_map_set[1].global_dimension();  
   uint* indicators = new uint[N];
-  real* g  = new real[N];
+  double* g  = new double[N];
   for (uint i = 0; i < N; i++) 
   {
     indicators[i] = 0; 
@@ -544,7 +544,7 @@ void Assembler::assemble_system(GenericMatrix& A, const ufc::form& A_form,
   {
     warning("Symmetric application of Dirichlet boundary conditions for incremental problems is untested.");
     dolfin_assert( x0->size() == N);
-    real* x0_values = new real[N];
+    double* x0_values = new double[N];
     x0->get(x0_values);
     for (uint i = 0; i < N; i++)
       g[i] -= x0_values[i];
@@ -558,12 +558,12 @@ void Assembler::assemble_system(GenericMatrix& A, const ufc::form& A_form,
     uint A_num_entries = 1;
     for (uint i = 0; i < A_form.rank(); i++)
       A_num_entries *= A_dof_map_set[i].local_dimension();
-    Ae = new real[A_num_entries];
+    Ae = new double[A_num_entries];
 
     uint b_num_entries = 1;
     for (uint i = 0; i < b_form.rank(); i++)
       b_num_entries *= b_dof_map_set[i].local_dimension();
-    be = new real[b_num_entries];
+    be = new double[b_num_entries];
 
     for (CellIterator cell(mesh); !cell.end(); ++cell) 
     {
@@ -720,16 +720,16 @@ void Assembler::assemble_system(GenericMatrix& A, const ufc::form& A_form,
     for (uint i = 0; i < A_form.rank(); i++)
       A_num_entries *= A_dof_map_set[i].local_dimension();
     uint A_macro_num_entries = A_num_entries*4; 
-    Ae = new real[A_num_entries];
-    real* Ae_macro = new real[A_macro_num_entries]; 
+    Ae = new double[A_num_entries];
+    double* Ae_macro = new double[A_macro_num_entries]; 
 
     // ---create some temporal storage for be, be_macro 
     uint b_num_entries = 1;
     for (uint i = 0; i < b_form.rank(); i++)
       b_num_entries *= b_dof_map_set[i].local_dimension();
     uint b_macro_num_entries = b_num_entries*2; 
-    be = new real[b_num_entries];
-    real* be_macro = new real[b_macro_num_entries]; 
+    be = new double[b_num_entries];
+    double* be_macro = new double[b_macro_num_entries]; 
 
     for (FacetIterator facet(mesh); !facet.end(); ++facet)
     {

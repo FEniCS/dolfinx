@@ -74,7 +74,7 @@ void dolfin::summary(bool reset)
   LogManager::logger.summary(reset);
 }
 //-----------------------------------------------------------------------------
-dolfin::real dolfin::timing(std::string task, bool reset)
+double dolfin::timing(std::string task, bool reset)
 {
   return LogManager::logger.timing(task, reset);
 }

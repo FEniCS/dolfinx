@@ -38,7 +38,7 @@ void MatlabFile::operator<<(GenericMatrix& A)
   fprintf(fp, "A = [");
 
   Array<uint> columns;
-  Array<real> values;
+  Array<double> values;
   
   for (uint i = 0; i < A.size(0); i++)
   {

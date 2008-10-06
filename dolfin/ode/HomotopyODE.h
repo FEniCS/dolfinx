@@ -26,7 +26,7 @@ namespace dolfin
     enum State { ode, endgame };
 
     /// Constructor
-    HomotopyODE(Homotopy& homotopy, uint n, real T);
+    HomotopyODE(Homotopy& homotopy, uint n, double T);
 
     /// Destructor
     ~HomotopyODE();
@@ -35,16 +35,16 @@ namespace dolfin
     void z0(complex z[]);
 
     /// Evaluate right-hand side
-    void f(const complex z[], real t, complex y[]);
+    void f(const complex z[], double t, complex y[]);
     
     /// Compute product y = Mx for implicit system
-    void M(const complex x[], complex y[], const complex z[], real t);
+    void M(const complex x[], complex y[], const complex z[], double t);
 
     /// Compute product y = Jx for Jacobian J
-    void J(const complex x[], complex y[], const complex u[], real t);
+    void J(const complex x[], complex y[], const complex u[], double t);
 
     /// Update ODE, return false to stop (optional)
-    bool update(const complex z[], real t, bool end);
+    bool update(const complex z[], double t, bool end);
 
     /// Get state, solving ODE or playing end game
     State state();
@@ -52,7 +52,7 @@ namespace dolfin
   private:
 
     // Monitor homotopy
-    void monitor(const complex z[], real t);
+    void monitor(const complex z[], double t);
 
     // The homotopy
     Homotopy& homotopy;

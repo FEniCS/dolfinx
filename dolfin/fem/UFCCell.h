@@ -78,7 +78,7 @@ namespace dolfin
 
       /// Set vertex coordinates
       uint* vertices = cell.entities(0);
-      coordinates = new real*[num_vertices];
+      coordinates = new double*[num_vertices];
       for (uint i = 0; i < num_vertices; i++)
         coordinates[i] = cell.mesh().geometry().x(vertices[i]);
     }

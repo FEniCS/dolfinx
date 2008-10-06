@@ -131,13 +131,13 @@ LogStream& dolfin::operator<< (LogStream& stream, const EpetraVector& x)
   return stream;
 }
 //-----------------------------------------------------------------------------
-void EpetraVector::get(real* values) const
+void EpetraVector::get(double* values) const
 {
   if (!x) error("Vector is not initialized.");
   x->ExtractCopy(values, 0); // TODO: Are these global or local values?
 }
 //-----------------------------------------------------------------------------
-void EpetraVector::set(real* values)
+void EpetraVector::set(double* values)
 {
   if (!x) error("Vector is not initialized.");
   double *data = 0;
@@ -145,7 +145,7 @@ void EpetraVector::set(real* values)
   memcpy(data, values, size()*sizeof(double));
 }
 //-----------------------------------------------------------------------------
-void EpetraVector::add(real* values)
+void EpetraVector::add(double* values)
 {
   if (!x) error("Vector is not initialized.");
   double *data = 0; 
@@ -154,7 +154,7 @@ void EpetraVector::add(real* values)
     data[i] += values[i]; // TODO: Use an Epetra function for this!
 }
 //-----------------------------------------------------------------------------
-void EpetraVector::get(real* block, uint m, const uint* rows) const
+void EpetraVector::get(double* block, uint m, const uint* rows) const
 {
   dolfin_assert(x);
   // TODO: use Epetra_Vector function for efficiency and parallell handling
@@ -162,14 +162,14 @@ void EpetraVector::get(real* block, uint m, const uint* rows) const
     block[i] = (*x)[0][rows[i]];
 }
 //-----------------------------------------------------------------------------
-void EpetraVector::set(const real* block, uint m, const uint* rows)
+void EpetraVector::set(const double* block, uint m, const uint* rows)
 {
   dolfin_assert(x);
   int err = x->ReplaceGlobalValues(m, reinterpret_cast<const int*>(rows), block);
   if (err!= 0) error("EpetraVector::set: Did not manage to set the values into the vector"); 
 }
 //-----------------------------------------------------------------------------
-void EpetraVector::add(const real* block, uint m, const uint* rows)
+void EpetraVector::add(const double* block, uint m, const uint* rows)
 {
   dolfin_assert(x);
   int err = x->SumIntoGlobalValues(m, reinterpret_cast<const int*>(rows), block);
@@ -182,19 +182,19 @@ Epetra_FEVector& EpetraVector::vec() const
   return *x;
 }
 //-----------------------------------------------------------------------------
-real EpetraVector::inner(const GenericVector& y) const
+double EpetraVector::inner(const GenericVector& y) const
 {
   if (!x) error("Vector is not initialized.");
 
   const EpetraVector& v = y.down_cast<EpetraVector>();
   if (!v.x) error("Given vector is not initialized.");
 
-  real a;
+  double a;
   x->Dot(*(v.x), &a); 
   return a;
 }
 //-----------------------------------------------------------------------------
-void EpetraVector::axpy(real a, const GenericVector& y) 
+void EpetraVector::axpy(double a, const GenericVector& y) 
 {
   if (!x) error("Vector is not initialized.");
 
@@ -219,7 +219,7 @@ const EpetraVector& EpetraVector::operator= (const GenericVector& v)
   return *this; 
 }
 //-----------------------------------------------------------------------------
-const EpetraVector& EpetraVector::operator= (real a)
+const EpetraVector& EpetraVector::operator= (double a)
 {
   if (!x) error("Vector is not initialized.");
   x->PutScalar(a);
@@ -251,23 +251,23 @@ const EpetraVector& EpetraVector::operator-= (const GenericVector& y)
   return *this;
 }
 //-----------------------------------------------------------------------------
-const EpetraVector& EpetraVector::operator*= (real a)
+const EpetraVector& EpetraVector::operator*= (double a)
 {
   if (!x) error("Vector is not initialized.");
   x->Scale(a);
   return *this;
 }
 //-----------------------------------------------------------------------------
-const EpetraVector& EpetraVector::operator/= (real a)
+const EpetraVector& EpetraVector::operator/= (double a)
 {
   *this *= 1.0 / a;
   return *this;
 }
 //-----------------------------------------------------------------------------
-real EpetraVector::norm(NormType type) const
+double EpetraVector::norm(NormType type) const
 {
   if (!x) error("Vector is not initialized.");
-  real value = 0.0;
+  double value = 0.0;
   switch (type) {
   case l1:
     x->Norm1(&value);
@@ -281,18 +281,18 @@ real EpetraVector::norm(NormType type) const
   return value;
 }
 //-----------------------------------------------------------------------------
-real EpetraVector::min() const
+double EpetraVector::min() const
 {
   if (!x) error("Vector is not initialized.");
-  real value = 0.0;
+  double value = 0.0;
   x->MinValue(&value);
   return value;
 }
 //-----------------------------------------------------------------------------
-real EpetraVector::max() const
+double EpetraVector::max() const
 {
   if (!x) error("Vector is not initialized.");
-  real value = 0.0;
+  double value = 0.0;
   x->MaxValue(&value);
   return value;
 }

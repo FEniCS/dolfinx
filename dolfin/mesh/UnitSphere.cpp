@@ -40,16 +40,16 @@ UnitSphere::UnitSphere(uint nx) : Mesh()
   uint vertex = 0;
   for (uint iz = 0; iz <= nz; iz++)
   {
-    const real z = -1.0+ static_cast<real>(iz)*2.0 / static_cast<real>(nz);
+    const double z = -1.0+ static_cast<double>(iz)*2.0 / static_cast<double>(nz);
     for (uint iy = 0; iy <= ny; iy++)
     {
-      const real y =-1.0+ static_cast<real>(iy)*2.0 / static_cast<real>(ny);
+      const double y =-1.0+ static_cast<double>(iy)*2.0 / static_cast<double>(ny);
       for (uint ix = 0; ix <= nx; ix++)
       {
-        const real x = -1.0+static_cast<real>(ix)*2.0 / static_cast<real>(nx);
-        real trns_x=transformx(x,y,z);
-        real trns_y=transformy(x,y,z);
-        real trns_z=transformz(x,y,z);
+        const double x = -1.0+static_cast<double>(ix)*2.0 / static_cast<double>(nx);
+        double trns_x=transformx(x,y,z);
+        double trns_y=transformy(x,y,z);
+        double trns_z=transformz(x,y,z);
         editor.addVertex(vertex++, trns_x, trns_y, trns_z);
       }
     }
@@ -90,9 +90,9 @@ UnitSphere::UnitSphere(uint nx) : Mesh()
   if (MPI::broadcast()) { MPIMeshCommunicator::broadcast(*this); }
 }
 //-----------------------------------------------------------------------------
-real UnitSphere::transformx(real x,real y,real z)
+double UnitSphere::transformx(double x,double y,double z)
 {
-  real retrn=0.0;
+  double retrn=0.0;
   if (x||y||z) 
     retrn=x*max(fabs(x),fabs(y),fabs(z))/sqrt(x*x+y*y+z*z);
   else
@@ -100,9 +100,9 @@ real UnitSphere::transformx(real x,real y,real z)
   return retrn;
 }
 //-----------------------------------------------------------------------------
-real UnitSphere::transformy(real x,real y,real z)
+double UnitSphere::transformy(double x,double y,double z)
 {
-  real retrn=0.0;
+  double retrn=0.0;
   if (x||y||z) 
     retrn=y*max(fabs(x),fabs(y),fabs(z))/sqrt(x*x+y*y+z*z);
   else
@@ -110,9 +110,9 @@ real UnitSphere::transformy(real x,real y,real z)
   return retrn;
 }
 //-----------------------------------------------------------------------------
-real UnitSphere::transformz(real x,real y,real z)
+double UnitSphere::transformz(double x,double y,double z)
 {
-  real retrn=0.0;
+  double retrn=0.0;
   //maxn transformation
   if (x||y||z)
     retrn=z*max(fabs(x),fabs(y),fabs(z))/sqrt(x*x+y*y+z*z);
@@ -121,9 +121,9 @@ real UnitSphere::transformz(real x,real y,real z)
   return retrn;
 }
 //-----------------------------------------------------------------------------
-real UnitSphere::max(real x,real y, real z)
+double UnitSphere::max(double x,double y, double z)
 {
-  real rtrn=0.0;
+  double rtrn=0.0;
 
   if ((x>=y)*(x>=z))
     rtrn=x;

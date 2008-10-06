@@ -17,7 +17,7 @@ using namespace dolfin;
 ConstantFunction::ConstantFunction(const ConstantFunction& f)
   : GenericFunction(f.mesh), values(0), value_rank(f.value_rank), shape(0), size(f.size)
 {
-  values = new real[size];
+  values = new double[size];
   shape = new uint[value_rank];
   for(uint i=0; i<value_rank; i++)
     shape[i] = f.shape[i];
@@ -25,37 +25,37 @@ ConstantFunction::ConstantFunction(const ConstantFunction& f)
     values[i] = f.values[i];
 }
 //-----------------------------------------------------------------------------
-ConstantFunction::ConstantFunction(Mesh& mesh, real value)
+ConstantFunction::ConstantFunction(Mesh& mesh, double value)
   : GenericFunction(mesh), values(0), value_rank(0), shape(0), size(1)
 {
-  values = new real[1];
+  values = new double[1];
   shape = new uint[1];
   values[0] = value;
   shape[0] = 1;
 }
 //-----------------------------------------------------------------------------
-ConstantFunction::ConstantFunction(Mesh& mesh, uint size, real value)
+ConstantFunction::ConstantFunction(Mesh& mesh, uint size, double value)
   : GenericFunction(mesh), values(0), value_rank(1), shape(0), size(size)
 {
   shape = new uint[1];
   shape[0] = size;
-  values = new real[size];
+  values = new double[size];
   for(uint i=0; i<size; i++)
     values[i] = value;
 }
 //-----------------------------------------------------------------------------
-ConstantFunction::ConstantFunction(Mesh& mesh, const Array<real>& _values)
+ConstantFunction::ConstantFunction(Mesh& mesh, const Array<double>& _values)
   : GenericFunction(mesh), values(0), value_rank(1), shape(0), size(0)
 {
   size = _values.size();
   shape = new uint[1];
   shape[0] = size;
-  values = new real[size];
+  values = new double[size];
   for(uint i=0; i<size; i++)
     values[i] = _values[i];
 }
 //-----------------------------------------------------------------------------
-ConstantFunction::ConstantFunction(Mesh& mesh, const Array<uint>& _shape, const Array<real>& _values)
+ConstantFunction::ConstantFunction(Mesh& mesh, const Array<uint>& _shape, const Array<double>& _values)
   : GenericFunction(mesh), values(0), value_rank(0), shape(0), size(0)
 {
   value_rank = _shape.size();
@@ -68,7 +68,7 @@ ConstantFunction::ConstantFunction(Mesh& mesh, const Array<uint>& _shape, const 
   }
   if(size != _values.size())
     error("Size of given values does not match shape.");
-  values = new real[size];
+  values = new double[size];
   for(uint i=0; i<size; i++)
     values[i] = _values[i];
 }
@@ -91,7 +91,7 @@ dolfin::uint ConstantFunction::dim(uint i) const
   return shape[i];
 }
 //-----------------------------------------------------------------------------
-void ConstantFunction::interpolate(real* _values) const
+void ConstantFunction::interpolate(double* _values) const
 {
   dolfin_assert(_values);
 
@@ -106,7 +106,7 @@ void ConstantFunction::interpolate(real* _values) const
   }
 }
 //-----------------------------------------------------------------------------
-void ConstantFunction::interpolate(real* coefficients,
+void ConstantFunction::interpolate(double* coefficients,
                                    const ufc::cell& cell,
                                    const FiniteElement& finite_element) const
 {
@@ -127,7 +127,7 @@ void ConstantFunction::interpolate(real* coefficients,
   //finite_element.evaluate_dofs(coefficients, *this, cell);
 }
 //-----------------------------------------------------------------------------
-void ConstantFunction::eval(real* _values, const real* x) const
+void ConstantFunction::eval(double* _values, const double* x) const
 {
   dolfin_assert(_values);
 
@@ -136,8 +136,8 @@ void ConstantFunction::eval(real* _values, const real* x) const
     _values[i] = values[i];
 }
 //-----------------------------------------------------------------------------
-void ConstantFunction::evaluate(real* _values,
-                                const real* coordinates,
+void ConstantFunction::evaluate(double* _values,
+                                const double* coordinates,
                                 const ufc::cell& cell) const
 {
   // Call eval(), cell ignored

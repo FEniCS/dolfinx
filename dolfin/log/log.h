@@ -61,7 +61,7 @@ namespace dolfin
   void summary(bool reset=false);
 
   /// Return timing (average) for given task, optionally clearing timing for task
-  real timing(std::string task, bool reset=false);
+  double timing(std::string task, bool reset=false);
 
   // Helper function for dolfin_debug macro
   void __debug(std::string file, unsigned long line, std::string function, std::string format, ...);

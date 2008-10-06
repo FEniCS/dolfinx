@@ -72,7 +72,7 @@ void NonlinearPDE::J(GenericMatrix& A, const GenericVector& x)
     bcs[i]->apply(A, a);
 }
 //-----------------------------------------------------------------------------
-void NonlinearPDE::solve(Function& u, real& t, const real& T, const real& dt)
+void NonlinearPDE::solve(Function& u, double& t, const double& T, const double& dt)
 {
   begin("Solving nonlinear PDE.");  
 

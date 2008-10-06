@@ -45,7 +45,7 @@ namespace dolfin
     void end();
 
     /// Draw progress bar
-    void progress (std::string title, real p) const;
+    void progress (std::string title, double p) const;
 
     /// Set output destination ("terminal" or "silent")
     void setOutputDestination(std::string destination);
@@ -60,13 +60,13 @@ namespace dolfin
     inline int getDebugLevel() const { return debug_level; }
 
     /// Register timing (for later summary)
-    void registerTiming(std::string task, real elapsed_time);
+    void registerTiming(std::string task, double elapsed_time);
 
     /// Print summary of timings and tasks, optionally clearing stored timings
     void summary(bool reset=false);
     
     /// Return timing (average) for given task, optionally clearing timing for task
-    real timing(std::string task, bool reset=false);
+    double timing(std::string task, bool reset=false);
 
     /// Helper function for dolfin_debug macro
     void __debug(std::string msg) const;
@@ -93,7 +93,7 @@ namespace dolfin
     std::ostream* logstream;
 
     // List of timings for tasks, map from string to (num_timings, total_time)
-    std::map<std::string, std::pair<uint, real> > timings;
+    std::map<std::string, std::pair<uint, double> > timings;
 
     // Process number (-1 if we are not running in parallel)
     int process_number;

@@ -39,11 +39,11 @@ dolfin::uint UFCFunction::dim(uint i) const
   return size;
 }
 //-----------------------------------------------------------------------------
-void UFCFunction::interpolate(real* values) const
+void UFCFunction::interpolate(double* values) const
 {
   dolfin_assert(values);
 
-  real * local_values = new real[size];
+  double * local_values = new double[size];
 
   // Optimization to avoid duplicated function calls
   bool * visited_vertex = new bool[mesh->numVertices()];
@@ -75,7 +75,7 @@ void UFCFunction::interpolate(real* values) const
   delete [] visited_vertex;
 }
 //-----------------------------------------------------------------------------
-void UFCFunction::interpolate(real* coefficients,
+void UFCFunction::interpolate(double* coefficients,
                               const ufc::cell& cell,
                               const FiniteElement& finite_element) const
 {
@@ -92,7 +92,7 @@ void UFCFunction::interpolate(real* coefficients,
     coefficients[i] = finite_element.evaluate_dof(i, function, cell);
 }
 //-----------------------------------------------------------------------------
-void UFCFunction::eval(real* values, const real* x) const
+void UFCFunction::eval(double* values, const double* x) const
 {
   dolfin_assert(values);
   dolfin_assert(x);
@@ -101,8 +101,8 @@ void UFCFunction::eval(real* values, const real* x) const
   error("Not implemented.");
 }
 //-----------------------------------------------------------------------------
-void UFCFunction::evaluate(real* values,
-                           const real* coordinates,
+void UFCFunction::evaluate(double* values,
+                           const double* coordinates,
                            const ufc::cell& cell) const
 {
   function.evaluate(values, coordinates, cell);

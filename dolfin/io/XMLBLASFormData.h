@@ -48,8 +48,8 @@ namespace dolfin
 
     BLASFormData& blas;
 
-    Array<Array<real> > data_interior;
-    Array<Array<real> > data_boundary;
+    Array<Array<double> > data_interior;
+    Array<Array<double> > data_boundary;
     int mi, ni, mb, nb;
 
     ParserState state;

@@ -20,7 +20,7 @@ namespace dolfin
 }
 
 //-----------------------------------------------------------------------------
-real dolfin::sqr(real x)
+double dolfin::sqr(double x)
 {
   return x*x;
 }
@@ -33,7 +33,7 @@ dolfin::uint dolfin::ipow(uint a, uint n)
   return p;
 }
 //-----------------------------------------------------------------------------
-real dolfin::rand()
+double dolfin::rand()
 {
   if ( !rand_seeded )
   {
@@ -42,7 +42,7 @@ real dolfin::rand()
     rand_seeded = true;
   }
   
-  return static_cast<real>(std::rand()) / static_cast<real>(RAND_MAX);
+  return static_cast<double>(std::rand()) / static_cast<double>(RAND_MAX);
 }
 //-----------------------------------------------------------------------------
 void dolfin::seed(unsigned int s)

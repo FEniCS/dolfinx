@@ -33,7 +33,7 @@ namespace dolfin
   void plot(MeshFunction<uint>& f, std::string mode = "");
 
   /// Plot mesh function
-  void plot(MeshFunction<real>& f, std::string mode = "");
+  void plot(MeshFunction<double>& f, std::string mode = "");
 
   /// Plot mesh function
   void plot(MeshFunction<bool>& f, std::string mode = "");

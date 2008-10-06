@@ -6,7 +6,7 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2003-11-28
-// Last changed: 2008-09-11
+// Last changed: 2008-10-02
 
 #ifndef __FUNCTION_H
 #define __FUNCTION_H
@@ -54,16 +54,16 @@ namespace dolfin
     explicit Function(Mesh& mesh);
 
     /// Create constant scalar function from given value
-    Function(Mesh& mesh, real value);
+    Function(Mesh& mesh, double value);
 
     /// Create constant vector function from given size and value
-    Function(Mesh& mesh, uint size, real value);
+    Function(Mesh& mesh, uint size, double value);
 
     /// Create constant vector function from given size and values
-    Function(Mesh& mesh, const Array<real>& values);
+    Function(Mesh& mesh, const Array<double>& values);
 
     /// Create constant tensor function from given shape and values
-    Function(Mesh& mesh, const Array<uint>& shape, const Array<real>& values);
+    Function(Mesh& mesh, const Array<uint>& shape, const Array<double>& values);
 
     /// Create function from given ufc::function
     Function(Mesh& mesh, const ufc::function& function, uint size);
@@ -134,22 +134,25 @@ namespace dolfin
     const Function& operator= (SubFunction f);
     
     /// Interpolate function to vertices of mesh
-    void interpolate(real* values);
+    void interpolate(double* values);
 
     /// Interpolate function to finite element space on cell
-    void interpolate(real* coefficients,
+    void interpolate(double* coefficients,
                      const ufc::cell& ufc_cell,
                      const FiniteElement& finite_element,
-                     Cell& cell, int facet = -1);
+                     Cell& cell, int facet=-1);
+
+    /// Make current cell and facet available to user-defined function
+    void update(Cell& cell, int facet=-1);
 
     /// Evaluate function at given point (used for subclassing through SWIG interface)
-    virtual void eval(simple_array<real>& values, const simple_array<real>& x) const { eval(values.data, x.data); }
+    virtual void eval(simple_array<double>& values, const simple_array<double>& x) const { eval(values.data, x.data); }
 
     /// Evaluate function at given point (overload for scalar user-defined function)
-    virtual void eval(real* values, const real* x) const;
+    virtual void eval(double* values, const double* x) const;
 
     /// Evaluate scalar function at given point (overload for scalar user-defined function)
-    virtual real eval(const real* x) const;
+    virtual double eval(const double* x) const;
 
   protected:
     

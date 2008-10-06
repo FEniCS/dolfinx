@@ -56,15 +56,15 @@ namespace dolfin
     { error("The size() function is not available for scalars."); return 0; }
 
     /// Get block of values
-    void get(real* block, const uint* num_rows, const uint * const * rows) const
+    void get(double* block, const uint* num_rows, const uint * const * rows) const
     { block[0] = value; }
 
     /// Set block of values
-    void set(const real* block, const uint* num_rows, const uint * const * rows)
+    void set(const double* block, const uint* num_rows, const uint * const * rows)
     { value = block[0]; }
 
     /// Add block of values
-    void add(const real* block, const uint* num_rows, const uint * const * rows)
+    void add(const double* block, const uint* num_rows, const uint * const * rows)
     { value += block[0]; }
 
     /// Set all entries to zero and keep any sparse structure
@@ -82,11 +82,11 @@ namespace dolfin
     //--- Scalar interface ---
 
     /// Cast to real
-    operator real() const
+    operator double() const
     { return value; }
 
     /// Assignment from real
-    const Scalar& operator= (real value)
+    const Scalar& operator= (double value)
     { this->value = value; return *this; }
 
     //--- Special functions
@@ -96,13 +96,13 @@ namespace dolfin
     { return dolfin::uBLASFactory<>::instance(); }
 
     /// Get value
-    real getval() const
+    double getval() const
     { return value; }
 
   private:
     
     // Value of scalar
-    real value;
+    double value;
 
   };
 

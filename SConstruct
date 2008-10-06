@@ -50,6 +50,8 @@ options = [
     scons.PathOption("prefix", "Installation prefix", default_prefix),
     scons.PathOption("binDir", "Binary installation directory",
                      os.path.join("$prefix","bin")),
+    scons.PathOption("manDir", "Manual page installation directory",
+                     os.path.join("$prefix", "share", "man")),
     scons.PathOption("libDir", "Library installation directory",
                      os.path.join("$prefix","lib")),
     scons.PathOption("pkgConfDir", "Directory for installation of pkg-config files",
@@ -259,6 +261,10 @@ for n in buildDataHash["shlibs"] + buildDataHash["extModules"] + \
 # install dolfin-convert into binDir:
 env.Install(env["binDir"], os.path.join("misc","utils","convert","dolfin-convert"))
 
+# install dolfin-convert manual page into manDir/man1:
+env.Install(os.path.join(env["manDir"], "man1"),
+            os.path.join("doc", "man", "man1", "dolfin-convert.1.gz"))
+
 # shared libraries goes into our libDir:
 for l in buildDataHash["shlibs"]:
   env.Install(env["libDir"], l)
@@ -339,7 +345,8 @@ env = scons.addInstallTargets(env, sourcefiles=buildDataHash["docs"],
                               targetdir=_targetdir)
 
 # Instruct scons what to do when user requests 'install'
-targets = [env["binDir"], env["libDir"], env["includeDir"], env["pkgConfDir"]]
+targets = [env["binDir"], env["manDir"],
+           env["libDir"], env["includeDir"], env["pkgConfDir"]]
 if env["enablePydolfin"]:
     targets.append(env["pythonModuleDir"])
     targets.append(env["pythonExtDir"])
@@ -364,6 +371,7 @@ f.write('export PKG_CONFIG_PATH="' + prefix + 'lib/pkgconfig:$PKG_CONFIG_PATH"\n
 if env["enablePydolfin"]:
     pyversion=".".join([str(s) for s in sys.version_info[0:2]])
     f.write('export PYTHONPATH="'  + prefix + 'lib/python'    + pyversion + '/site-packages:$PYTHONPATH"\n')
+f.write('export MANPATH="' + env.subst(env['manDir']) + ':$MANPATH"\n')
 f.close()
 
 # Create helper file for Windows as well
@@ -379,6 +387,8 @@ f.write('set PYTHONPATH=%s\n' % \
 f.write('set PKG_CONFIG_PATH=%s\n' % \
         os.pathsep.join([env.subst(env['pkgConfDir']),
                          '%PKG_CONFIG_PATH%']))
+f.write('set MANPATH=%s\n' % \
+        os.pathsep.join([env.subst(env['manDir']), '%MANPATH%']))
 f.close()
 
 def help():

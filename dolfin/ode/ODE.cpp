@@ -13,7 +13,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-ODE::ODE(uint N, real T)
+ODE::ODE(uint N, double T)
   : N(N), T(T), dependencies(N), transpose(N), tmp(0),
     not_impl_f("Warning: consider implementing mono-adaptive ODE::f() to improve efficiency."),
     not_impl_M("Warning: multiplication with M not implemented, assuming identity."),
@@ -28,7 +28,7 @@ ODE::~ODE()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void ODE::f(const uBLASVector& u, real t, uBLASVector& y)
+void ODE::f(const uBLASVector& u, double t, uBLASVector& y)
 {
   // If a user of the mono-adaptive solver does not supply this function,
   // then call f_i() for each component.
@@ -41,13 +41,13 @@ void ODE::f(const uBLASVector& u, real t, uBLASVector& y)
     y[i] = this->f(u, t, i);
 }
 //-----------------------------------------------------------------------------
-real ODE::f(const uBLASVector& u, real t, uint i)
+double ODE::f(const uBLASVector& u, double t, uint i)
 {
   error("Right-hand side for ODE not supplied by user.");
   return 0.0;
 }
 //-----------------------------------------------------------------------------
-void ODE::M(const uBLASVector& x, uBLASVector& y, const uBLASVector& u, real t)
+void ODE::M(const uBLASVector& x, uBLASVector& y, const uBLASVector& u, double t)
 {
   // Display a warning, implicit system but M is not implemented
   not_impl_M();
@@ -56,7 +56,7 @@ void ODE::M(const uBLASVector& x, uBLASVector& y, const uBLASVector& u, real t)
   y = x;
 }
 //-----------------------------------------------------------------------------
-void ODE::J(const uBLASVector& x, uBLASVector& y, const uBLASVector& u, real t)
+void ODE::J(const uBLASVector& x, uBLASVector& y, const uBLASVector& u, double t)
 {
   // If a user does not supply J, then compute it by the approximation
   //
@@ -68,10 +68,10 @@ void ODE::J(const uBLASVector& x, uBLASVector& y, const uBLASVector& u, real t)
   not_impl_J();
 
   // Small change in u
-  real umax = 0.0;
+  double umax = 0.0;
   for (unsigned int i = 0; i < N; i++)
     umax = std::max(umax, std::abs(u[i]));
-  real h = std::max(DOLFIN_SQRT_EPS, DOLFIN_SQRT_EPS * umax);
+  double h = std::max(DOLFIN_SQRT_EPS, DOLFIN_SQRT_EPS * umax);
 
   // We are not allowed to change u, but we restore it afterwards,
   // so maybe we can cheat a little...
@@ -101,16 +101,16 @@ void ODE::J(const uBLASVector& x, uBLASVector& y, const uBLASVector& u, real t)
 }
 //------------------------------------------------------------------------
 
-void ODE::JT(const uBLASVector& x, uBLASVector& y, const uBLASVector& u, real t) {
+void ODE::JT(const uBLASVector& x, uBLASVector& y, const uBLASVector& u, double t) {
 
   //Display warning
   not_impl_JT();
 
   // Similar to J()
-  real umax = 0.0;
+  double umax = 0.0;
   for (unsigned int i = 0; i < N; i++)
     umax = std::max(umax, std::abs(u[i]));
-  real h = std::max(DOLFIN_SQRT_EPS, DOLFIN_SQRT_EPS * umax);
+  double h = std::max(DOLFIN_SQRT_EPS, DOLFIN_SQRT_EPS * umax);
 
   uBLASVector& uu = const_cast<uBLASVector&>(u);
 
@@ -141,7 +141,7 @@ void ODE::JT(const uBLASVector& x, uBLASVector& y, const uBLASVector& u, real t)
 
 //------------------------------------------------------------------------
 
-real ODE::dfdu(const uBLASVector& u, real t, uint i, uint j)
+double ODE::dfdu(const uBLASVector& u, double t, uint i, uint j)
 {
   // Compute Jacobian numerically if dfdu() is not implemented by user
   
@@ -152,17 +152,17 @@ real ODE::dfdu(const uBLASVector& u, real t, uint i, uint j)
   uBLASVector& uu = const_cast<uBLASVector&>(u);
 
   // Save value of u_j
-  real uj = uu[j];
+  double uj = uu[j];
   
   // Small change in u_j
-  real h = std::max(DOLFIN_SQRT_EPS, DOLFIN_SQRT_EPS * std::abs(uj));
+  double h = std::max(DOLFIN_SQRT_EPS, DOLFIN_SQRT_EPS * std::abs(uj));
   
   // Compute F values
   uu[j] -= 0.5 * h;
-  real f1 = f(uu, t, i);
+  double f1 = f(uu, t, i);
   
   uu[j] = uj + 0.5*h;
-  real f2 = f(uu, t, i);
+  double f2 = f(uu, t, i);
          
   // Reset value of uj
   uu[j] = uj;
@@ -174,21 +174,21 @@ real ODE::dfdu(const uBLASVector& u, real t, uint i, uint j)
   return (f2 - f1) / h;
 }
 //-----------------------------------------------------------------------------
-real ODE::timestep(real t, real k0) const
+double ODE::timestep(double t, double k0) const
 {
   // Keep old time step by default when "fixed time step" is set
   // and user has not overloaded this function
   return k0;
 }
 //-----------------------------------------------------------------------------
-real ODE::timestep(real t, uint i, real k0) const
+double ODE::timestep(double t, uint i, double k0) const
 {
   // Keep old time step by default when "fixed time step" is set
   // and user has not overloaded this function
   return k0;
 }
 //-----------------------------------------------------------------------------
-bool ODE::update(const uBLASVector& u, real t, bool end)
+bool ODE::update(const uBLASVector& u, double t, bool end)
 {
   return true;
 }
@@ -198,7 +198,7 @@ void ODE::save(Sample& sample)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-real ODE::time(real t) const
+double ODE::time(double t) const
 {
   return t;
 }
@@ -218,7 +218,7 @@ dolfin::uint ODE::size() const
   return N;  
 }
 //-----------------------------------------------------------------------------
-real ODE::endtime() const
+double ODE::endtime() const
 {
   return T;
 }

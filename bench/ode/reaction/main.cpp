@@ -20,11 +20,11 @@ class Reaction : public ODE
 public:
 
   /// Constructor
-  Reaction(unsigned int N, real T, real L, real epsilon, real gamma)
+  Reaction(unsigned int N, double T, double L, double epsilon, double gamma)
     : ODE(N, T), L(L), epsilon(epsilon), gamma(gamma)
   {
     // Compute parameters
-    h = L / static_cast<real>(N - 1);
+    h = L / static_cast<double>(N - 1);
     lambda = 0.5*sqrt(2.0*gamma/epsilon);
     v = 0.5*sqrt(2.0*gamma*epsilon);
     
@@ -43,20 +43,20 @@ public:
   {
     for (unsigned int i = 0; i < N; i++)
     {
-      const real x = static_cast<real>(i)*h;
+      const double x = static_cast<double>(i)*h;
       u(i) = 1.0 / (1.0 + exp(lambda*(x - 1.0)));
     }
   }
 
   /// Right-hand side, mono-adaptive version
-  void f(const uBLASVector& u, real t, uBLASVector& y)
+  void f(const uBLASVector& u, double t, uBLASVector& y)
   {
     printf("MONO!\n");
     for (unsigned int i = 0; i < N; i++)
     {
-      const real ui = u(i);
+      const double ui = u(i);
 
-      real sum = 0.0;
+      double sum = 0.0;
       if ( i == 0 )
 	sum = u(i + 1) - ui;
       else if ( i == (N - 1) )
@@ -69,12 +69,12 @@ public:
   }
 
   /// Right-hand side, multi-adaptive version
-  real f(const uBLASVector& u, real t, unsigned int i)
+  double f(const uBLASVector& u, double t, unsigned int i)
   {
     printf("MULTI!\n");
-    const real ui = u(i);
+    const double ui = u(i);
     
-    real sum = 0.0;
+    double sum = 0.0;
     if ( i == 0 )
       sum = u(i + 1) - ui;
     else if ( i == (N - 1) )
@@ -87,12 +87,12 @@ public:
 
 public:
 
-  real L;       // Length of domain
-  real epsilon; // Diffusivity
-  real gamma;   // Reaction rate
-  real h;       // Mesh size
-  real lambda;  // Parameter for initial data
-  real v;       // Speed of reaction front
+  double L;       // Length of domain
+  double epsilon; // Diffusivity
+  double gamma;   // Reaction rate
+  double h;       // Mesh size
+  double lambda;  // Parameter for initial data
+  double v;       // Speed of reaction front
 
 };
 
@@ -113,9 +113,9 @@ int main(int argc, char* argv[])
   }
   const char* method = argv[1];
   const char* solver = argv[2];
-  const real tol = static_cast<real>(atof(argv[3]));
+  const double tol = static_cast<double>(atof(argv[3]));
   const unsigned int N = static_cast<unsigned int>(atoi(argv[4]));
-  const real L = static_cast<unsigned int>(atof(argv[5]));
+  const double L = static_cast<unsigned int>(atof(argv[5]));
   const char* params = argv[6];
   
   // Load solver parameters from file
@@ -128,9 +128,9 @@ int main(int argc, char* argv[])
   set("ODE tolerance", tol);
 
   // Set fixed parameters for test problem
-  const real T = 1.0;
-  const real epsilon = 0.01;
-  const real gamma = 1000.0;
+  const double T = 1.0;
+  const double epsilon = 0.01;
+  const double gamma = 1000.0;
 
   // Solve system of ODEs
   Reaction ode(N, T, L, epsilon, gamma);

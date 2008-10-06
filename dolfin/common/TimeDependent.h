@@ -20,16 +20,16 @@ namespace dolfin
     
     /// Constructors
     TimeDependent();
-    TimeDependent(const real* t);
+    TimeDependent(const double* t);
     
     /// Destructor
     ~TimeDependent();
 
     /// Associate object with time t
-    void sync(const real* t);
+    void sync(const double* t);
     
     /// Return the current time t
-    real time() const
+    double time() const
     {
 	    if( !t )
         error("Time has not been associated with object.");		
@@ -39,7 +39,7 @@ namespace dolfin
   private:
     
     // Pointer to the current time
-    const real* t;
+    const double* t;
 
   };
   

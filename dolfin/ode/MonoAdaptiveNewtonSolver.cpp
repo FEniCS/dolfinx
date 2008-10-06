@@ -76,14 +76,14 @@ void MonoAdaptiveNewtonSolver::start()
   //A.disp(true, 10);
 }
 //-----------------------------------------------------------------------------
-real MonoAdaptiveNewtonSolver::iteration(real tol, uint iter, real d0, real d1)
+double MonoAdaptiveNewtonSolver::iteration(double tol, uint iter, double d0, double d1)
 {
   // Evaluate b = -F(x) at current x
   Feval(b);
 
   if (krylov)
   {
-    const real r = b.norm(linf) + DOLFIN_EPS;
+    const double r = b.norm(linf) + DOLFIN_EPS;
     b /= r;
     num_local_iterations += krylov->solve(A, dx, b);
     dx *= r;
@@ -122,7 +122,7 @@ void MonoAdaptiveNewtonSolver::Feval(uBLASVector& F)
 void MonoAdaptiveNewtonSolver::FevalExplicit(uBLASVector& F)
 {
   // Compute size of time step
-  const real k = ts.length();
+  const double k = ts.length();
 
   // Evaluate right-hand side at all quadrature points
   for (uint m = 0; m < method.qsize(); m++)
@@ -140,7 +140,7 @@ void MonoAdaptiveNewtonSolver::FevalExplicit(uBLASVector& F)
     // Add weights of right-hand side
     for (uint m = 0; m < method.qsize(); m++)
     {
-      const real tmp = k * method.nweight(n, m);
+      const double tmp = k * method.nweight(n, m);
       const uint moffset = m * ts.N;
       for (uint i = 0; i < ts.N; i++)
         F[noffset + i] += tmp * ts.fq[moffset + i];
@@ -158,8 +158,8 @@ void MonoAdaptiveNewtonSolver::FevalImplicit(uBLASVector& F)
   uBLASVector& yy = A.yy;
 
   // Compute size of time step
-  const real a = ts.starttime();
-  const real k = ts.length();
+  const double a = ts.starttime();
+  const double k = ts.length();
 
   // Evaluate right-hand side at all quadrature points
   for (uint m = 0; m < method.qsize(); m++)
@@ -177,7 +177,7 @@ void MonoAdaptiveNewtonSolver::FevalImplicit(uBLASVector& F)
     // Add weights of right-hand side
     for (uint m = 0; m < method.qsize(); m++)
     {
-      const real tmp = k * method.nweight(n, m);
+      const double tmp = k * method.nweight(n, m);
       const uint moffset = m * ts.N;
       for (uint i = 0; i < ts.N; i++)
         F[noffset + i] += tmp * ts.fq[moffset + i];
@@ -199,7 +199,7 @@ void MonoAdaptiveNewtonSolver::FevalImplicit(uBLASVector& F)
     }
     else
     {
-      const real t = a + method.npoint(n) * k;
+      const double t = a + method.npoint(n) * k;
       ts.copy(ts.x, noffset, ts.u, 0, ts.N);
       ode.M(xx, yy, ts.u, t);
     }
@@ -244,7 +244,7 @@ void MonoAdaptiveNewtonSolver::chooseLinearSolver()
   else
   {
     message("Using uBLAS Krylov solver with no preconditioning.");
-    const real ktol = ode.get("ODE discrete Krylov tolerance factor");
+    const double ktol = ode.get("ODE discrete Krylov tolerance factor");
 
     // FIXME: Check choice of tolerances
     krylov = new uBLASKrylovSolver(none);
@@ -270,8 +270,8 @@ void MonoAdaptiveNewtonSolver::debug()
   // Iterate over the columns of B
   for (uint j = 0; j < n; j++)
   {
-    const real xj = ts.x[j];
-    real dx = std::max(DOLFIN_SQRT_EPS, DOLFIN_SQRT_EPS * std::abs(xj));
+    const double xj = ts.x[j];
+    double dx = std::max(DOLFIN_SQRT_EPS, DOLFIN_SQRT_EPS * std::abs(xj));
 		  
     ts.x[j] -= 0.5*dx;
     Feval(F1);
@@ -283,7 +283,7 @@ void MonoAdaptiveNewtonSolver::debug()
 
     for (uint i = 0; i < n; i++)
     {
-      real dFdx = (F1[i] - F2[i]) / dx;
+      double dFdx = (F1[i] - F2[i]) / dx;
       if ( fabs(dFdx) > DOLFIN_EPS )
         _B(i, j) = dFdx;
     }

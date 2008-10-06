@@ -105,7 +105,7 @@ dolfin::uint EpetraMatrix::size(uint dim) const
   return (dim == 0 ? M : N);
 }
 //-----------------------------------------------------------------------------
-void EpetraMatrix::get(real* block,
+void EpetraMatrix::get(double* block,
 		       uint m, const uint* rows,
 		       uint n, const uint* cols) const
 {
@@ -142,7 +142,7 @@ void EpetraMatrix::get(real* block,
   }
 }
 //-----------------------------------------------------------------------------
-void EpetraMatrix::set(const real* block,
+void EpetraMatrix::set(const double* block,
 		       uint m, const uint* rows,
 		       uint n, const uint* cols)
 {
@@ -153,7 +153,7 @@ void EpetraMatrix::set(const real* block,
   if (err!= 0) error("Did not manage to set the values into the matrix"); 
 }
 //-----------------------------------------------------------------------------
-void EpetraMatrix::add(const real* block,
+void EpetraMatrix::add(const double* block,
 		       uint m, const uint* rows,
 		       uint n, const uint* cols)
 {
@@ -168,7 +168,7 @@ void EpetraMatrix::add(const real* block,
   if (err!= 0) error("Did not manage to put the values into the matrix"); 
 }
 //-----------------------------------------------------------------------------
-void EpetraMatrix::axpy(real a, const GenericMatrix& A)
+void EpetraMatrix::axpy(double a, const GenericMatrix& A)
 {
   const EpetraMatrix* AA = &A.down_cast<EpetraMatrix>();
   dolfin_assert(AA->mat().NumGlobalNonzeros() == this->A->NumGlobalNonzeros() and
@@ -251,7 +251,7 @@ void EpetraMatrix::mult(const GenericVector& x_, GenericVector& Ax_, bool transp
 }
 
 //-----------------------------------------------------------------------------
-void EpetraMatrix::getrow(uint row, Array<uint>& columns, Array<real>& values) const
+void EpetraMatrix::getrow(uint row, Array<uint>& columns, Array<double>& values) const
 {
   dolfin_assert(A); 
 
@@ -276,7 +276,7 @@ void EpetraMatrix::getrow(uint row, Array<uint>& columns, Array<real>& values) c
   delete num_entries; 
 }
 //-----------------------------------------------------------------------------
-void EpetraMatrix::setrow(uint row, const Array<uint>& columns, const Array<real>& values)
+void EpetraMatrix::setrow(uint row, const Array<uint>& columns, const Array<double>& values)
 {
   error("Not implemented.");
 }
@@ -293,14 +293,14 @@ Epetra_FECrsMatrix& EpetraMatrix::mat() const
   return *A;
 }
 //-----------------------------------------------------------------------------
-const EpetraMatrix& EpetraMatrix::operator*= (real a)
+const EpetraMatrix& EpetraMatrix::operator*= (double a)
 {
   dolfin_assert(A);
   A->Scale(a);
   return *this;
 }
 //-----------------------------------------------------------------------------
-const EpetraMatrix& EpetraMatrix::operator/= (real a)
+const EpetraMatrix& EpetraMatrix::operator/= (double a)
 {
   dolfin_assert(A);
   A->Scale(1.0 / a);

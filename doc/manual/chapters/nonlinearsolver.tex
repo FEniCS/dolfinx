@@ -199,7 +199,7 @@ MyNonlinearProblem F(u,x); // Initialise u with the vector x
 NewtonSolver nonlinear_solver;
 
 // Solve nonlinear problem in a series of steps
-real dt = 1.0; real t  = 0.0; real T  = 3.0;
+double dt = 1.0; double t  = 0.0; double T  = 3.0;
 while( t < T)
 {
   t += dt;

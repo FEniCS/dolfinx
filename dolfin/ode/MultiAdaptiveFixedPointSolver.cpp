@@ -23,14 +23,14 @@ MultiAdaptiveFixedPointSolver::MultiAdaptiveFixedPointSolver
     diagonal_newton_damping(ode.get("ODE diagonal newton damping")), dfdu(0)
 {
   // Initialize local array for quadrature
-  f = new real[method.qsize()];
+  f = new double[method.qsize()];
   for (unsigned int i = 0; i < method.qsize(); i++)
     f[i] = 0.0;
   
   // Initialize diagonal of Jacobian df/du for diagonal Newton damping
   if ( diagonal_newton_damping )
   {
-    dfdu = new real[ts.N];
+    dfdu = new double[ts.N];
     for (uint i = 0; i < ts.N; i++)
       dfdu[i] = 0.0;
   }
@@ -41,7 +41,7 @@ MultiAdaptiveFixedPointSolver::~MultiAdaptiveFixedPointSolver()
   // Compute multi-adaptive efficiency index
   if ( num_elements > 0 )
   {
-    const real alpha = num_elements_mono / static_cast<real>(num_elements);
+    const double alpha = num_elements_mono / static_cast<double>(num_elements);
     message("Multi-adaptive efficiency index: %.3f", alpha);
   }
 
@@ -61,7 +61,7 @@ bool MultiAdaptiveFixedPointSolver::retry()
   // Otherwise, use damping
   dolfin_assert(dfdu == 0);
   diagonal_newton_damping = true;
-  dfdu = new real[ts.N];
+  dfdu = new double[ts.N];
   for (uint i = 0; i < ts.N; i++)
     dfdu[i] = 0.0;
 
@@ -87,11 +87,11 @@ void MultiAdaptiveFixedPointSolver::end()
 {
   // Count the number of elements
   num_elements += ts.ne;
-  num_elements_mono += ts.length() / ts.kmin * static_cast<real>(ts.ode.size());
+  num_elements_mono += ts.length() / ts.kmin * static_cast<double>(ts.ode.size());
 }
 //-----------------------------------------------------------------------------
-real MultiAdaptiveFixedPointSolver::iteration(real tol, uint iter,
-					      real d0, real d1)
+double MultiAdaptiveFixedPointSolver::iteration(double tol, uint iter,
+					      double d0, double d1)
 {
   // Reset dof
   uint j = 0;
@@ -106,10 +106,10 @@ real MultiAdaptiveFixedPointSolver::iteration(real tol, uint iter,
     xnorm = std::max(xnorm, std::abs(ts.jx[j]));
 
   // Reset maximum increment
-  real increment_max = 0.0;
+  double increment_max = 0.0;
 
   // Keep track of the number of local iterations
-  real num_local = 0.0;
+  double num_local = 0.0;
 
   // Iterate over all sub slabs
   uint e0 = 0;
@@ -120,15 +120,15 @@ real MultiAdaptiveFixedPointSolver::iteration(real tol, uint iter,
     e1 = ts.coverSlab(s, e0);
     
     // Get data for sub slab
-    const real a = ts.sa[s];
-    const real b = ts.sb[s];
-    const real k = b - a;
+    const double a = ts.sa[s];
+    const double b = ts.sb[s];
+    const double k = b - a;
 
     // Save current dof
     uint j0 = j;
 
     // Iterate on each sub slab
-    real increment_local = 0.0;
+    double increment_local = 0.0;
     for (uint iter_local = 0; iter_local < maxiter_local; iter_local++)
     {
       // Reset current dof
@@ -141,11 +141,11 @@ real MultiAdaptiveFixedPointSolver::iteration(real tol, uint iter,
 	const uint i = ts.ei[e];
 	
 	// Save old end-point value
-	const real x1 = ts.jx[j + method.nsize() - 1];
+	const double x1 = ts.jx[j + method.nsize() - 1];
 	
 	// Get initial value for element
 	const int ep = ts.ee[e];
-	const real x0 = ( ep != -1 ? ts.jx[ep*method.nsize() + method.nsize() - 1] : ts.u0[i] );
+	const double x0 = ( ep != -1 ? ts.jx[ep*method.nsize() + method.nsize() - 1] : ts.u0[i] );
 	
 	// Evaluate right-hand side at quadrature points of element
 	if ( method.type() == Method::cG )
@@ -158,7 +158,7 @@ real MultiAdaptiveFixedPointSolver::iteration(real tol, uint iter,
 	if ( diagonal_newton_damping )
 	{
 	  // FIXME: Parameter 0.5 most suited for cG(1)
-	  const real alpha = 1.0 / (1.0 - 0.5*k*dfdu[i]);
+	  const double alpha = 1.0 / (1.0 - 0.5*k*dfdu[i]);
 	  method.update(x0, f, k, ts.jx + j, alpha);
 	}
 	else
@@ -168,7 +168,7 @@ real MultiAdaptiveFixedPointSolver::iteration(real tol, uint iter,
 	//cout << "x = "; Alloc::disp(ts.jx + j, method.nsize());
 
 	// Compute increment
-	const real increment = std::abs(ts.jx[j + method.nsize() - 1] - x1);
+	const double increment = std::abs(ts.jx[j + method.nsize() - 1] - x1);
 	
 	// Update sub slab increment
 	increment_local = std::max(increment_local, increment);
@@ -181,7 +181,7 @@ real MultiAdaptiveFixedPointSolver::iteration(real tol, uint iter,
       }
 
       // Update counter of local iterations
-      num_local += static_cast<real>(e1 - e0) / static_cast<real>(ts.ne);
+      num_local += static_cast<double>(e1 - e0) / static_cast<double>(ts.ne);
       
       // Check if we are done
       if ( increment_local < tol )

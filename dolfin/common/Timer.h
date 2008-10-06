@@ -58,7 +58,7 @@ namespace dolfin
     std::string task;
 
     // Start time
-    real t;
+    double t;
 
     // True if timer has been stopped
     bool stopped;

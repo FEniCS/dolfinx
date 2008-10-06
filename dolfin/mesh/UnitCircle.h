@@ -35,11 +35,11 @@ namespace dolfin
 
   private:
 
-    real transformx(real x, real y, Transformation transformation);
+    double transformx(double x, double y, Transformation transformation);
 
-    real transformy(real x, real y, Transformation transformation);
+    double transformy(double x, double y, Transformation transformation);
 
-    inline real max(real x, real y)
+    inline double max(double x, double y)
     { return ((x>y) ? x : y); };
   };
   

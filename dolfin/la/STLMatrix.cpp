@@ -26,7 +26,7 @@ void STLMatrix::disp(uint precision) const
     line << std::setprecision(precision);
     
     line << "|";
-    for (std::map<uint, real>::const_iterator it = A[i].begin(); it != A[i].end(); it++)
+    for (std::map<uint, double>::const_iterator it = A[i].begin(); it != A[i].end(); it++)
       line << " (" << i << ", " << it->first << ", " << it->second << ")";
     line << " |";
     

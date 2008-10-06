@@ -44,10 +44,10 @@ UnitSquare::UnitSquare(uint nx, uint ny, Type type) : Mesh()
   uint vertex = 0;
   for (uint iy = 0; iy <= ny; iy++) 
   {
-    const real y = static_cast<real>(iy) / static_cast<real>(ny);
+    const double y = static_cast<double>(iy) / static_cast<double>(ny);
     for (uint ix = 0; ix <= nx; ix++) 
     {
-      const real x = static_cast<real>(ix) / static_cast<real>(nx);
+      const double x = static_cast<double>(ix) / static_cast<double>(nx);
       editor.addVertex(vertex++, x, y);
     }
   }
@@ -57,10 +57,10 @@ UnitSquare::UnitSquare(uint nx, uint ny, Type type) : Mesh()
   {
     for (uint iy = 0; iy < ny; iy++) 
     {
-      const real y = (static_cast<real>(iy) + 0.5) / static_cast<real>(ny);
+      const double y = (static_cast<double>(iy) + 0.5) / static_cast<double>(ny);
       for (uint ix = 0; ix < nx; ix++) 
       {
-        const real x = (static_cast<real>(ix) + 0.5) / static_cast<real>(nx);
+        const double x = (static_cast<double>(ix) + 0.5) / static_cast<double>(nx);
         editor.addVertex(vertex++, x, y);
       }
     }

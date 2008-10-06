@@ -28,7 +28,7 @@ public:
     {
     public:
       F0(Mesh& mesh) : Function(mesh) {}
-      void eval(real* values, const real* x) const
+      void eval(double* values, const double* x) const
       { values[0] = sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2]); } 
     };
  
@@ -36,14 +36,14 @@ public:
     {
     public:
       F1(Mesh& mesh) : Function(mesh) {}
-      void eval(real* values, const real* x) const
+      void eval(double* values, const double* x) const
       { values[0] = 1.0 + 3.0*x[0] + 4.0*x[1] + 0.5*x[2]; } 
     };
 
     UnitCube mesh(8, 8, 8);
-    real x[3] = {0.3, 0.3, 0.3};
-    real u[1] = {0.0};
-    real v[1] = {0.0};
+    double x[3] = {0.3, 0.3, 0.3};
+    double u[1] = {0.0};
+    double v[1] = {0.0};
   
     // User-defined functions (one from finite element space, one not)
     F0 f0(mesh);
@@ -61,7 +61,7 @@ public:
     Function g;
     pde.solve(g);
 
-    const real tol = 1.0e-6;
+    const double tol = 1.0e-6;
     f1.eval(u, x);
     g.eval(v, x);
     CPPUNIT_ASSERT( std::abs(u[0]-v[0]) < tol );

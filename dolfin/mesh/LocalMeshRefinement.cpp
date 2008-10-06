@@ -92,7 +92,7 @@ void LocalMeshRefinement::refineMeshByEdgeBisection(Mesh& mesh,
   
   // Initialise data for finding longest edge   
   uint longest_edge_index = 0;
-  real lmax, l;
+  double lmax, l;
 
   // Compute number of vertices and cells 
   for (CellIterator c(mesh); !c.end(); ++c)

@@ -31,7 +31,7 @@ public:
     z[0] = 1.0;
   }
 
-  void f(const complex z[], real t, complex y[])
+  void f(const complex z[], double t, complex y[])
   {
     y[0] = j*z[0];
   }

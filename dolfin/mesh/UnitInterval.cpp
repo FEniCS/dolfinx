@@ -28,7 +28,7 @@ UnitInterval::UnitInterval(uint nx) : Mesh()
   // Create main vertices:
   for (uint ix = 0; ix <= nx; ix++)
   {
-    const real x = static_cast<real>(ix) / static_cast<real>(nx);
+    const double x = static_cast<double>(ix) / static_cast<double>(nx);
     editor.addVertex(ix, x);
   }
 

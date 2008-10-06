@@ -53,7 +53,7 @@ UFC::UFC(const ufc::form& form, Mesh& mesh, const DofMapSet& dof_map_set) : form
   uint num_entries = 1;
   for (uint i = 0; i < form.rank(); i++)
     num_entries *= dof_map_set[i].local_dimension();
-  A = new real[num_entries];
+  A = new double[num_entries];
   for (uint i = 0; i < num_entries; i++)
     A[i] = 0.0;
 
@@ -61,7 +61,7 @@ UFC::UFC(const ufc::form& form, Mesh& mesh, const DofMapSet& dof_map_set) : form
   num_entries = 1;
   for (uint i = 0; i < form.rank(); i++)
     num_entries *= 2*dof_map_set[i].local_dimension();
-  macro_A = new real[num_entries];
+  macro_A = new double[num_entries];
   for (uint i = 0; i < num_entries; i++)
     macro_A[i] = 0.0;  
 
@@ -99,21 +99,21 @@ UFC::UFC(const ufc::form& form, Mesh& mesh, const DofMapSet& dof_map_set) : form
   }
 
   // Initialize coefficients
-  w = new real*[form.num_coefficients()];
+  w = new double*[form.num_coefficients()];
   for (uint i = 0; i < form.num_coefficients(); i++)
   {
     const uint n = coefficient_elements[i]->space_dimension();
-    w[i] = new real[n];
+    w[i] = new double[n];
     for (uint j = 0; j < n; j++)
       w[i][j] = 0.0;
   }
 
   // Initialize coefficients on macro element
-  macro_w = new real*[form.num_coefficients()];
+  macro_w = new double*[form.num_coefficients()];
   for (uint i = 0; i < form.num_coefficients(); i++)
   {
     const uint n = 2*coefficient_elements[i]->space_dimension();
-    macro_w[i] = new real[n];
+    macro_w[i] = new double[n];
     for (uint j = 0; j < n; j++)
       macro_w[i][j] = 0.0;
   }

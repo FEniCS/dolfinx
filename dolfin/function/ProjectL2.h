@@ -29,7 +29,7 @@ namespace dolfin
     
     NonMatchingFunction(Mesh& mesh, Function& fA);
     
-    virtual void eval(real* values, const real* x) const;
+    virtual void eval(double* values, const double* x) const;
     
     Function& fA;
   };

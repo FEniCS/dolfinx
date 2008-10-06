@@ -11,7 +11,7 @@
 
 namespace dolfin {
   
-  /// Gaussian-type quadrature rule on the real line,
+  /// Gaussian-type quadrature rule on the double line,
   /// including Gauss, Radau, and Lobatto quadrature.
   ///
   /// Points and weights are computed to be exact within a tolerance

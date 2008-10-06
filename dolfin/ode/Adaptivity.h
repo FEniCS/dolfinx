@@ -33,10 +33,10 @@ namespace dolfin
     bool accept();
 
     /// Return threshold for reaching end of interval
-    real threshold() const;
+    double threshold() const;
 
     /// Return maximum allowed time step
-    real kmax() const;
+    double kmax() const;
 
   protected:
 
@@ -47,22 +47,22 @@ namespace dolfin
     const Method& method;
 
     // Tolerance
-    real tol;
+    double tol;
 
     // Maximum allowed time step
-    real _kmax;
+    double _kmax;
 
     // Threshold for reaching end of interval
-    real beta;
+    double beta;
 
     // Safety factor for tolerance
-    real safety;
+    double safety;
 
     // Previous safety factor for tolerance
-    real safety_old;
+    double safety_old;
 
     // Maximum allowed safety factor for tolerance
-    real safety_max;
+    double safety_max;
 
     // Total number of rejected time steps
     uint num_rejected;

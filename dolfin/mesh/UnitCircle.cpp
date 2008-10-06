@@ -46,15 +46,15 @@ UnitCircle::UnitCircle(uint nx, Type type, Transformation transformation) : Mesh
   
   // Create main vertices:
   // variables for transformation
-  real trns_x = 0.0;
-  real trns_y = 0.0;
+  double trns_x = 0.0;
+  double trns_y = 0.0;
   uint vertex = 0;
   for (uint iy = 0; iy <= ny; iy++) 
   {
-    const real y = -1.0 + static_cast<real>(iy)*2.0 / static_cast<real>(ny);
+    const double y = -1.0 + static_cast<double>(iy)*2.0 / static_cast<double>(ny);
     for (uint ix = 0; ix <= nx; ix++) 
     {
-      const real x =-1.+ static_cast<real>(ix)*2.0 / static_cast<real>(nx);
+      const double x =-1.+ static_cast<double>(ix)*2.0 / static_cast<double>(nx);
       trns_x = transformx(x, y, transformation);
       trns_y = transformy(x, y, transformation);
       editor.addVertex(vertex++, trns_x, trns_y);
@@ -66,10 +66,10 @@ UnitCircle::UnitCircle(uint nx, Type type, Transformation transformation) : Mesh
   {
     for (uint iy = 0; iy < ny; iy++) 
     {
-      const real y = -1.0 + (static_cast<real>(iy) + 0.5)*2.0 / static_cast<real>(ny);
+      const double y = -1.0 + (static_cast<double>(iy) + 0.5)*2.0 / static_cast<double>(ny);
       for (uint ix = 0; ix < nx; ix++) 
       {
-        const real x = -1.0 + (static_cast<real>(ix) + 0.5)*2.0 / static_cast<real>(nx);
+        const double x = -1.0 + (static_cast<double>(ix) + 0.5)*2.0 / static_cast<double>(nx);
         trns_x = transformx(x, y, transformation);
         trns_y = transformy(x, y, transformation);
         editor.addVertex(vertex++, trns_x, trns_y);
@@ -139,7 +139,7 @@ UnitCircle::UnitCircle(uint nx, Type type, Transformation transformation) : Mesh
   if (MPI::broadcast()) { MPIMeshCommunicator::broadcast(*this); }
 }
 //-----------------------------------------------------------------------------
-real UnitCircle::transformx(real x, real y, Transformation transformation)
+double UnitCircle::transformx(double x, double y, Transformation transformation)
 {
   //maxn transformation
   if(transformation == maxn)
@@ -167,8 +167,8 @@ real UnitCircle::transformx(real x, real y, Transformation transformation)
     }
     if(x||y) //in (0,0) (trns_x,trans_y)=(nan,nan)
     {
-      real xx = 0.5*(x+y);
-      real yy = 0.5*(-x+y);
+      double xx = 0.5*(x+y);
+      double yy = 0.5*(-x+y);
       return xx*(fabs(xx)+fabs(yy))/sqrt(xx*xx+yy*yy);
     }
     else
@@ -176,7 +176,7 @@ real UnitCircle::transformx(real x, real y, Transformation transformation)
   }
 }
 //-----------------------------------------------------------------------------
-real UnitCircle::transformy(real x, real y, Transformation transformation)
+double UnitCircle::transformy(double x, double y, Transformation transformation)
 {
   //maxn transformation
   if(transformation == maxn)
@@ -203,8 +203,8 @@ real UnitCircle::transformy(real x, real y, Transformation transformation)
     }
     if (x||y) //in (0,0) (trns_x,trans_y)=(nan,nan)
     {
-      real xx = 0.5*(x+y);
-      real yy = 0.5*(-x+y);
+      double xx = 0.5*(x+y);
+      double yy = 0.5*(-x+y);
       return yy*(fabs(xx)+fabs(yy))/sqrt(xx*xx+yy*yy);
     }
     else

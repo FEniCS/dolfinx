@@ -4,7 +4,7 @@
 // Modified by Kristian Oelgaard, 2007
 //
 // First added:  2007-04-10
-// Last changed: 2008-08-26
+// Last changed: 2008-10-01
 //
 // FIXME: This class needs some cleanup, in particular collecting
 // FIXME: all data from different representations into a common
@@ -154,7 +154,10 @@ namespace dolfin
     void setSubSystem(SubSystem sub_system);
 
     /// Get Dirichlet values and indicators 
-    void getBC(uint n, uint* indicators, real* values, const DofMap& dof_map, const ufc::form& form); 
+    void getBC(uint n, uint* indicators, double* values, const DofMap& dof_map, const ufc::form& form); 
+
+    /// Check if given function is compatible with boundary condition (checking only vertex values)
+    bool is_compatible(Function& v) const;
 
     /// Return mesh
     Mesh& mesh();
@@ -175,23 +178,23 @@ namespace dolfin
     void initFromMesh(uint sub_domain);
     
     // Compute dofs and values for application of boundary conditions
-    void computeBC(std::map<uint, real>& boundary_values,
+    void computeBC(std::map<uint, double>& boundary_values,
                    BoundaryCondition::LocalData& data);
     
     // Compute boundary values for facet (topological approach)
-    void computeBCTopological(std::map<uint, real>& boundary_values,
+    void computeBCTopological(std::map<uint, double>& boundary_values,
                               BoundaryCondition::LocalData& data);
     
     // Compute boundary values for facet (geometrical approach)
-    void computeBCGeometric(std::map<uint, real>& boundary_values,
+    void computeBCGeometric(std::map<uint, double>& boundary_values,
                             BoundaryCondition::LocalData& data);
     
     // Compute boundary values for facet (pointwise approach)
-    void computeBCPointwise(std::map<uint, real>& boundary_values,
+    void computeBCPointwise(std::map<uint, double>& boundary_values,
                             BoundaryCondition::LocalData& data);
     
     // Check if the point is in the same plane as the given facet
-    static bool onFacet(real* coordinates, Facet& facet);
+    static bool onFacet(double* coordinates, Facet& facet);
 
     // The function
     Function& g;

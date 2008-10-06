@@ -78,43 +78,43 @@ namespace dolfin
     virtual uint size() const;
 
     /// Get block of values
-    virtual void get(real* block, uint m, const uint* rows) const;
+    virtual void get(double* block, uint m, const uint* rows) const;
 
     /// Set block of values
-    virtual void set(const real* block, uint m, const uint* rows);
+    virtual void set(const double* block, uint m, const uint* rows);
 
     /// Add block of values
-    virtual void add(const real* block, uint m, const uint* rows);
+    virtual void add(const double* block, uint m, const uint* rows);
 
     /// Get all values
-    virtual void get(real* values) const;
+    virtual void get(double* values) const;
 
     /// Set all values
-    virtual void set(real* values);
+    virtual void set(double* values);
 
     /// Add values to each entry
-    virtual void add(real* values);
+    virtual void add(double* values);
 
     /// Add multiple of given vector (AXPY operation)
-    virtual void axpy(real a, const GenericVector& x);
+    virtual void axpy(double a, const GenericVector& x);
 
     /// Return inner product with given vector
-    virtual real inner(const GenericVector& x) const;
+    virtual double inner(const GenericVector& x) const;
 
     /// Compute norm of vector
-    virtual real norm(dolfin::NormType type) const;
+    virtual double norm(dolfin::NormType type) const;
 
     /// Return minimum value of vector
-    virtual real min() const;
+    virtual double min() const;
 
     /// Return maximum value of vector
-    virtual real max() const;
+    virtual double max() const;
 
     /// Multiply vector by given number
-    virtual const uBLASVector& operator *= (real a);
+    virtual const uBLASVector& operator *= (double a);
 
     /// Divide vector by given number
-    virtual const uBLASVector& operator /= (real a);
+    virtual const uBLASVector& operator /= (double a);
 
     /// Add given vector
     virtual const uBLASVector& operator+= (const GenericVector& x);
@@ -126,14 +126,14 @@ namespace dolfin
     virtual const GenericVector& operator= (const GenericVector& x);
 
     /// Assignment operator
-    virtual const uBLASVector& operator= (real a);
+    virtual const uBLASVector& operator= (double a);
 
     /// Return pointer to underlying data (const version)
-    virtual const real* data() const 
+    virtual const double* data() const 
     { return &x->data()[0]; }
 
     /// Return pointer to underlying data
-    virtual real* data()
+    virtual double* data()
     { return &x->data()[0]; }
 
     //--- Special functions ---
@@ -152,11 +152,11 @@ namespace dolfin
     { return *x; }
 
     /// Access value of given entry (const version)
-    virtual real operator[] (uint i) const
+    virtual double operator[] (uint i) const
     { return (*x)(i); };
 
     /// Access value of given entry (non-const version)
-    real& operator[] (uint i)
+    double& operator[] (uint i)
     { return (*x)(i); };
 
     /// Assignment operator

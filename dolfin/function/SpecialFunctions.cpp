@@ -22,24 +22,24 @@ MeshSize::MeshSize(Mesh& mesh) : Function(mesh)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-real MeshSize::eval(const real* x) const
+double MeshSize::eval(const double* x) const
 {
   return cell().diameter();
 }
 //-----------------------------------------------------------------------------
-real MeshSize::min() const
+double MeshSize::min() const
 {
   CellIterator c(mesh());
-  real hmin = c->diameter();
+  double hmin = c->diameter();
   for (; !c.end(); ++c)
     hmin = std::min(hmin, c->diameter());
   return hmin;
 }
 //-----------------------------------------------------------------------------
-real MeshSize::max() const
+double MeshSize::max() const
 {
   CellIterator c(mesh());
-  real hmax = c->diameter();
+  double hmax = c->diameter();
   for (; !c.end(); ++c)
     hmax = std::max(hmax, c->diameter());
   return hmax;
@@ -50,7 +50,7 @@ InvMeshSize::InvMeshSize(Mesh& mesh) : Function(mesh)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-real InvMeshSize::eval(const real* x) const
+double InvMeshSize::eval(const double* x) const
 {
   return 1.0 / cell().diameter();
 }
@@ -60,7 +60,7 @@ AvgMeshSize::AvgMeshSize(Mesh& mesh) : Function(mesh)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-real AvgMeshSize::eval(const real* x) const
+double AvgMeshSize::eval(const double* x) const
 {
   // If there is no facet (assembling on interior), return cell diameter
   if (facet() < 0)
@@ -91,7 +91,7 @@ FacetNormal::FacetNormal(Mesh& mesh) : Function(mesh)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void FacetNormal::eval(real* values, const real* x) const
+void FacetNormal::eval(double* values, const double* x) const
 {
   if (facet() >= 0)
   {
@@ -122,7 +122,7 @@ FacetArea::FacetArea(Mesh& mesh) : Function(mesh)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void FacetArea::eval(real* values, const real* x) const
+void FacetArea::eval(double* values, const double* x) const
 {
   if (facet() >= 0)
     values[0] = cell().facetArea(facet());
@@ -135,7 +135,7 @@ InvFacetArea::InvFacetArea(Mesh& mesh) : Function(mesh)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void InvFacetArea::eval(real* values, const real* x) const
+void InvFacetArea::eval(double* values, const double* x) const
 {
   if (facet() >= 0)
     values[0] = 1.0 / cell().facetArea(facet());
@@ -162,7 +162,7 @@ OutflowFacet::~OutflowFacet()
   delete ufc;
 }
 //-----------------------------------------------------------------------------
-real OutflowFacet::eval(const real* x) const
+double OutflowFacet::eval(const double* x) const
 {
   // If there is no facet (assembling on interior), return 0.0
   if (facet() < 0)

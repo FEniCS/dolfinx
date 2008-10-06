@@ -31,14 +31,14 @@ void Dual::u0(uBLASVector& y)
 {
   // TODO
   // Should be able to use different choices of initial data to the dual
-  //return 1.0 / sqrt(static_cast<real>(N));
+  //return 1.0 / sqrt(static_cast<double>(N));
 
   y[0] = 1.0;
   for (uint i = 1; i < size(); ++i)  y[i] = 0.0;
   
 }
 //------------------------------------------------------------------------
-void Dual::f(const uBLASVector& phi, real t, uBLASVector& y)
+void Dual::f(const uBLASVector& phi, double t, uBLASVector& y)
 {
   // FIXME: Here we can do some optimization. Since we compute the sum
   // FIXME: over all dual dependencies of i we will do the update of
@@ -47,7 +47,7 @@ void Dual::f(const uBLASVector& phi, real t, uBLASVector& y)
   // FIXME: dependencies into account and then updating the buffer values
   // FIXME: outside the sum.
   /*
-  real sum = 0.0;  
+  double sum = 0.0;  
   
   if ( sparsity.sparse() )
   {
@@ -74,7 +74,7 @@ void Dual::f(const uBLASVector& phi, real t, uBLASVector& y)
   
 }
 //------------------------------------------------------------------------
-real Dual::time(real t) const
+double Dual::time(double t) const
 {
   return endtime() - t;
 }

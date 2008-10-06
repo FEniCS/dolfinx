@@ -21,27 +21,27 @@ void dolfin::tic()
   dolfin::__tic_time = std::clock();
 }
 //-----------------------------------------------------------------------------
-real dolfin::toc()
+double dolfin::toc()
 {
   clock_t __toc_time = std::clock();
 
-  real elapsed_time = ((real) (__toc_time - __tic_time)) / CLOCKS_PER_SEC;
+  double elapsed_time = ((double) (__toc_time - __tic_time)) / CLOCKS_PER_SEC;
 
   return elapsed_time;
 }
 //-----------------------------------------------------------------------------
-real dolfin::tocd()
+double dolfin::tocd()
 {
-  real elapsed_time = toc();
+  double elapsed_time = toc();
   
   cout << "Elapsed time: " << elapsed_time << " seconds" << endl;
 
   return elapsed_time;
 }
 //-----------------------------------------------------------------------------
-real dolfin::time()
+double dolfin::time()
 {
   clock_t __toc_time = std::clock();
-  return ((real) (__toc_time)) / CLOCKS_PER_SEC;
+  return ((double) (__toc_time)) / CLOCKS_PER_SEC;
 }
 //-----------------------------------------------------------------------------

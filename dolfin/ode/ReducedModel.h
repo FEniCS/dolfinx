@@ -48,16 +48,16 @@ namespace dolfin
     ~ReducedModel();
 
     /// The right-hand side, including model
-    real f(const Vector& u, real t, unsigned int i);
+    double f(const Vector& u, double t, unsigned int i);
 
     /// Map initial data
-    real u0(unsigned int i);
+    double u0(unsigned int i);
 
     /// Map update function
-    void update(RHS& f, Function& u, real t);
+    void update(RHS& f, Function& u, double t);
 
     /// Map update function
-    void update(Solution& u, Adaptivity& adaptivity, real t);
+    void update(Solution& u, Adaptivity& adaptivity, double t);
 
     /// Map the save function
     void save(Sample& sample);
@@ -76,7 +76,7 @@ namespace dolfin
       ~Model();
 
       /// Evaluate model
-      real operator() () const;
+      double operator() () const;
 
       /// Return state
       bool active() const;
@@ -86,10 +86,10 @@ namespace dolfin
 
       /// Compute model
       void computeModel(Vector& ubar, Vector& fbar, unsigned int i, 
-			real tau, ODE& ode);
+			double tau, ODE& ode);
     private:
 
-      real g;
+      double g;
       bool _active;
 
     };
@@ -107,13 +107,13 @@ namespace dolfin
     bool reduced;
 
     // Length of running average
-    real tau;
+    double tau;
 
     // Number of samples for running average
     unsigned int samples;
 
     // Tolerance for active components
-    real tol;
+    double tol;
     
     // Averages of u and f
     //Vector ubar;

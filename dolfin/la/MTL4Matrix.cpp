@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2008.
 //
 // First added:  2008-07-06
-// Last changed: 2008-08-13
+// Last changed: 2008-10-04
 
 #ifdef HAS_MTL4
 
@@ -74,15 +74,15 @@ MTL4Matrix* MTL4Matrix::copy() const
 dolfin::uint MTL4Matrix::size(uint dim) const
 {
   if(dim == 0)
-    return mtl::num_rows(A);
+    return mtl::matrix::num_rows(A);
   else if(dim == 1)
-    return mtl::num_cols(A);
+    return mtl::matrix::num_cols(A);
 
   error("dim not < 2 in MTL4Matrix::size.");
   return 0;
 }
 //-----------------------------------------------------------------------------
-void MTL4Matrix::get(real* block, uint m, const uint* rows, uint n, 
+void MTL4Matrix::get(double* block, uint m, const uint* rows, uint n, 
                      const uint* cols) const
 {
   assert_no_inserter();
@@ -92,7 +92,7 @@ void MTL4Matrix::get(real* block, uint m, const uint* rows, uint n,
       block[i*n+j] = A[rows[i]][cols[j]];
 }
 //-----------------------------------------------------------------------------
-void MTL4Matrix::set(const real* block, uint m, const uint* rows, uint n, 
+void MTL4Matrix::set(const double* block, uint m, const uint* rows, uint n, 
                      const uint* cols)
 {
   if(!ins)
@@ -103,7 +103,7 @@ void MTL4Matrix::set(const real* block, uint m, const uint* rows, uint n,
       (*ins)[rows[i]][cols[j]] = block[i*n +j];
 }
 //-----------------------------------------------------------------------------
-void MTL4Matrix::add(const real* block, uint m, const uint* rows, uint n, const uint* cols)
+void MTL4Matrix::add(const double* block, uint m, const uint* rows, uint n, const uint* cols)
 {
   if(!ins)
     init_inserter();
@@ -113,7 +113,7 @@ void MTL4Matrix::add(const real* block, uint m, const uint* rows, uint n, const 
       (*ins)[rows[i]][cols[j]] << block[i*n +j];
 }
 //-----------------------------------------------------------------------------
-void MTL4Matrix::MTL4Matrix::axpy(real a, const GenericMatrix& A)
+void MTL4Matrix::MTL4Matrix::axpy(double a, const GenericMatrix& A)
   {
     // Check for same size
     if ( size(0) != A.size(0) or size(1) != A.size(1) )  
@@ -141,7 +141,8 @@ void MTL4Matrix::disp(uint precision) const
   assert_no_inserter();
 
   // FIXME: This bypasses the dolfin log system!
-  std::cout << A << std::endl;
+  //std::cout << A << std::endl;
+  warning("MTL4Matrix::disp is not working du to broken MTL4.");
 }
 //-----------------------------------------------------------------------------
 void MTL4Matrix::ident(uint m, const uint* rows)
@@ -199,7 +200,7 @@ void MTL4Matrix::mult(const GenericVector& x_, GenericVector& Ax_, bool transpos
     Ax_.down_cast<MTL4Vector>().vec() = A*x_.down_cast<MTL4Vector>().vec();
 }
 //-----------------------------------------------------------------------------
-void MTL4Matrix::getrow(uint row_idx, Array<uint>& columns, Array<real>& values) const
+void MTL4Matrix::getrow(uint row_idx, Array<uint>& columns, Array<double>& values) const
 {
   assert_no_inserter();
   dolfin_assert(row_idx < this->size(0));
@@ -225,7 +226,7 @@ void MTL4Matrix::getrow(uint row_idx, Array<uint>& columns, Array<real>& values)
   }
 }
 //-----------------------------------------------------------------------------
-void MTL4Matrix::setrow(uint row, const Array<uint>& columns, const Array<real>& values)
+void MTL4Matrix::setrow(uint row, const Array<uint>& columns, const Array<double>& values)
 {
   dolfin_assert(columns.size() == values.size());
   dolfin_assert(row < this->size(0));
@@ -254,14 +255,14 @@ mtl4_sparse_matrix& MTL4Matrix::mat()
   return A;
 }
 //-----------------------------------------------------------------------------
-const MTL4Matrix& MTL4Matrix::operator*= (real a)
+const MTL4Matrix& MTL4Matrix::operator*= (double a)
 {
   assert_no_inserter();
   A *= a;
   return *this;
 }
 //-----------------------------------------------------------------------------
-const MTL4Matrix& MTL4Matrix::operator/= (real a)
+const MTL4Matrix& MTL4Matrix::operator/= (double a)
 {
   assert_no_inserter();
   A /= a;
@@ -297,9 +298,9 @@ std::tr1::tuple<const std::size_t*, const std::size_t*, const double*, int> MTL4
 void MTL4Matrix::init_inserter(void)
 {
   if(nnz_row > 0)
-    ins = new mtl::matrix::inserter<mtl4_sparse_matrix, mtl::update_plus<real> >(A, nnz_row);
+    ins = new mtl::matrix::inserter<mtl4_sparse_matrix, mtl::update_plus<double> >(A, nnz_row);
   else
-    ins = new mtl::matrix::inserter<mtl4_sparse_matrix, mtl::update_plus<real> >(A, 50);
+    ins = new mtl::matrix::inserter<mtl4_sparse_matrix, mtl::update_plus<double> >(A, 50);
 }
 //-----------------------------------------------------------------------------
 inline void MTL4Matrix::assert_no_inserter(void) const
@@ -312,8 +313,8 @@ LogStream& dolfin::operator<< (LogStream& stream, const  MTL4Matrix& A)
 {
   // FIXME: "Redirect" mtl::matix::op<< to the dolfin log stream
 
-  int M = num_rows(A.mat());
-  int N = num_cols(A.mat());
+  int M = mtl::matrix::num_rows(A.mat());
+  int N = mtl::matrix::num_cols(A.mat());
 
   stream << "MTL4 Matrix of size " << M << "x" << N;
   return stream;

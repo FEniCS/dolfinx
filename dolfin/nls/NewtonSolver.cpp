@@ -106,11 +106,11 @@ bool NewtonSolver::converged(const GenericVector& b, const GenericVector& dx,
                              const NonlinearProblem& nonlinear_problem)
 {
   const std::string convergence_criterion = get("Newton convergence criterion");
-  const real rtol   = get("Newton relative tolerance");
-  const real atol   = get("Newton absolute tolerance");
+  const double rtol   = get("Newton relative tolerance");
+  const double atol   = get("Newton absolute tolerance");
   const bool report = get("Newton report");
 
-  real residual = 1.0;
+  double residual = 1.0;
 
   // Compute resdiual
   if(convergence_criterion == "residual")
@@ -125,7 +125,7 @@ bool NewtonSolver::converged(const GenericVector& b, const GenericVector& dx,
     residual0 = residual;
 
   // Relative residual
-  real relative_residual = residual/residual0;
+  double relative_residual = residual/residual0;
 
   // Output iteration number and residual
   //FIXME: allow precision to be set for dolfin::cout<<

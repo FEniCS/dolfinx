@@ -39,8 +39,8 @@ void MonoAdaptiveJacobian::mult(const uBLASVector& x, uBLASVector& y) const
     y = x;
 
   // Compute size of time step
-  const real a = ts.starttime();
-  const real k = ts.length();
+  const double a = ts.starttime();
+  const double k = ts.length();
 
   // Compute product y = Mx for each stage for implicit system
   if ( implicit )
@@ -60,7 +60,7 @@ void MonoAdaptiveJacobian::mult(const uBLASVector& x, uBLASVector& y) const
       }
       else
       {
-        const real t = a + method.npoint(n) * k;
+        const double t = a + method.npoint(n) * k;
         ts.copy(ts.x, noffset, ts.u, 0, ts.N);
         ode.M(xx, yy, ts.u, t);
       }
@@ -73,14 +73,14 @@ void MonoAdaptiveJacobian::mult(const uBLASVector& x, uBLASVector& y) const
   // Iterate over the stages
   for (uint n = 0; n < method.nsize(); n++)
   {
-    const real t = a + method.npoint(n) * k;
+    const double t = a + method.npoint(n) * k;
     const uint noffset = n * ts.N;
 
     /*
     // Compute yy = df/du * x for current stage
     for (uint i = 0; i < ts.N; i++)
     {
-      real sum = 0.0;
+      double sum = 0.0;
       const Array<uint>& deps = ode.dependencies[i];
       const uint Joffset = Jindices[i];
       for (uint pos = 0; pos < deps.size(); pos++)
@@ -105,7 +105,7 @@ void MonoAdaptiveJacobian::mult(const uBLASVector& x, uBLASVector& y) const
       const uint moffset = m * ts.N;
 
       // Get correct weight
-      real w = 0.0;
+      double w = 0.0;
       if ( method.type() == Method::cG )
         w = - k * method.nweight(m, n + 1);
       else

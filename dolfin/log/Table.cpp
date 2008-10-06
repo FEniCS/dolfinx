@@ -35,16 +35,16 @@ TableEntry Table::operator() (std::string row, std::string col)
   return entry;
 }
 //-----------------------------------------------------------------------------
-dolfin::real Table::get(std::string row, std::string col) const
+double Table::get(std::string row, std::string col) const
 {
   std::pair<std::string, std::string> key(row, col);
-  std::map<std::pair<std::string, std::string>, real>::const_iterator it = values.find(key);
+  std::map<std::pair<std::string, std::string>, double>::const_iterator it = values.find(key);
   if (it == values.end())
     error("Missing table value for entry (\"%s\", \"%s\").", row.c_str(), col.c_str());
   return it->second;
 }
 //-----------------------------------------------------------------------------
-void Table::set(std::string row, std::string col, real value)
+void Table::set(std::string row, std::string col, double value)
 {
   // Add row
   if (row_set.find(row) == row_set.end())
@@ -133,7 +133,7 @@ void Table::disp(bool round_to_zero) const
     col_sizes[0] = std::max(col_sizes[0], (dolfin::uint)(rows[i].size()));
     for (uint j = 0; j < cols.size(); j++)
     {
-      real value = get(rows[i], cols[j]);
+      double value = get(rows[i], cols[j]);
       if (round_to_zero && std::abs(value) < DOLFIN_EPS)
         value = 0.0;
       std::stringstream string_value;
@@ -183,13 +183,13 @@ TableEntry::~TableEntry()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-const TableEntry& TableEntry::operator= (dolfin::real value)
+const TableEntry& TableEntry::operator= (double value)
 {
   table.set(row, col, value);
   return *this;
 }
 //-----------------------------------------------------------------------------
-TableEntry::operator dolfin::real() const
+TableEntry::operator double() const
 {
   return table.get(row, col);
 }

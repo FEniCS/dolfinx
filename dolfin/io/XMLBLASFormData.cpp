@@ -232,7 +232,7 @@ void XMLBLASFormData::readBoundary(const xmlChar *name, const xmlChar **attrs)
 //-----------------------------------------------------------------------------
 void XMLBLASFormData::readTerm(const xmlChar *name, const xmlChar **attrs)
 {
-  Array<real> tensor;
+  Array<double> tensor;
 
   // Add new term and read number of rows
   switch ( state )
@@ -276,7 +276,7 @@ void XMLBLASFormData::readRefTensor(const xmlChar *name, const xmlChar **attrs)
 void XMLBLASFormData::readEntry(const xmlChar *name, const xmlChar **attrs)
 {
   // Read value
-  real value = parseReal(name, attrs, "value");
+  double value = parseReal(name, attrs, "value");
 
   // Append value to tensor
   switch ( state )

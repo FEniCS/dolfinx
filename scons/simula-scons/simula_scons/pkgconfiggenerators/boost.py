@@ -18,7 +18,7 @@ def pkgVersion(compiler=None, cflags=None, sconsEnv=None):
   """Find the Boost version."""
   # This is a bit special. It is given in the library as
   # a 6 digit number, like 103301. We have to do some arithmetics
-  # to find the real version:
+  # to find the double version:
   # VERSION / 100000 => major version (1 in this case)
   # VERSION / 100 % 1000 => minor version (33 in this case)
   # VERSION % 100 => sub-minor version (1 in this case).

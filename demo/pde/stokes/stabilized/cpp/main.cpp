@@ -24,7 +24,7 @@ int main()
 
     Noslip(Mesh& mesh) : Function(mesh) {}
 
-    void eval(real* values, const real* x) const
+    void eval(double* values, const double* x) const
     {
       values[0] = 0.0;
       values[1] = 0.0;
@@ -39,7 +39,7 @@ int main()
 
     Inflow(Mesh& mesh) : Function(mesh) {}
 
-    void eval(real* values, const real* x) const
+    void eval(double* values, const double* x) const
     {
       values[0] = -sin(x[1]*DOLFIN_PI);
       values[1] = 0.0;

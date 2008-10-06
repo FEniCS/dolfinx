@@ -21,12 +21,12 @@ public:
     Homotopy(n), m(m), n(n), a(0), w(0),
     tmp0(0), tmp1(0), tmp2(0), tmp3(0)
   {
-    a = new real * [m];
-    w = new real * [m];
+    a = new double * [m];
+    w = new double * [m];
     for (unsigned int i = 0; i < m; i++)
     {
-      a[i] = new real[n];
-      w[i] = new real[n];
+      a[i] = new double[n];
+      w[i] = new double[n];
       for (unsigned int j = 0; j < n; j++)
       {
 	a[i][j] = dolfin::rand();
@@ -79,10 +79,10 @@ public:
   unsigned int n;
   
   // Matrix of traders' preferences
-  real** a;
+  double** a;
   
   // Matrix of traders' initial endowments
-  real** w;
+  double** w;
 
 protected:
 
@@ -105,7 +105,7 @@ protected:
   }
 
   // Compute scalar product x . y
-  complex dot(const real x[], const complex y[]) const
+  complex dot(const double x[], const complex y[]) const
   {
     complex sum = 0.0;
     for (unsigned int j = 0; j < n; j++)
@@ -114,7 +114,7 @@ protected:
   }
 
   // Compute special scalar product x . y.^b
-  complex bdot(const real x[], const complex y[], unsigned int b) const
+  complex bdot(const double x[], const complex y[], unsigned int b) const
   {
     complex sum = 0.0;
     for (unsigned int j = 0; j < n; j++)
@@ -123,7 +123,7 @@ protected:
   }
 
   // Compute special scalar product x . y.^b
-  complex bdot(const real x[], const complex y[], real b) const
+  complex bdot(const double x[], const complex y[], double b) const
   {
     complex sum = 0.0;
     for (unsigned int j = 0; j < n; j++)
@@ -141,7 +141,7 @@ protected:
   }
 
   // Compute special scalar product x . y. z^b
-  complex bdot(const real x[], const complex y[], const complex z[], unsigned int b) const
+  complex bdot(const double x[], const complex y[], const complex z[], unsigned int b) const
   {
     complex sum = 0.0;
     for (unsigned int j = 0; j < n; j++)
@@ -150,7 +150,7 @@ protected:
   }
 
   // Compute special scalar product x . y. z^b
-  complex bdot(const real x[], const complex y[], const complex z[], real b) const
+  complex bdot(const double x[], const complex y[], const complex z[], double b) const
   {
     complex sum = 0.0;
     for (unsigned int j = 0; j < n; j++)
@@ -159,7 +159,7 @@ protected:
   }
   
   // Display values
-  void disp(const real x[], const char* name)
+  void disp(const double x[], const char* name)
   {
     dolfin::cout << name << " = [";
     for (unsigned int j = 0; j < n; j++)

@@ -28,7 +28,7 @@ ReducedModel::ReducedModel(ODE& ode)
   //sparsity = ode.sparsity;
 
   // Adjust the maximum allowed time step to the initial time step
-  real kmax = get("ODE initial time step");
+  double kmax = get("ODE initial time step");
   set("ODE maximum time step", kmax);
 }
 //-----------------------------------------------------------------------------
@@ -37,7 +37,7 @@ ReducedModel::~ReducedModel()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-real ReducedModel::f(const Vector& u, real t, unsigned int i)
+double ReducedModel::f(const Vector& u, double t, unsigned int i)
 {
   if ( g[i].active() )
     return ode.f(u, t, i) + g[i]();
@@ -47,12 +47,12 @@ real ReducedModel::f(const Vector& u, real t, unsigned int i)
   return 0.0;
 }
 //-----------------------------------------------------------------------------
-real ReducedModel::u0(unsigned int i)
+double ReducedModel::u0(unsigned int i)
 {
   return ode.u0(i);
 }
 //-----------------------------------------------------------------------------
-void ReducedModel::update(RHS& f, Function& u, real t)
+void ReducedModel::update(RHS& f, Function& u, double t)
 {
   // Update for the given model if used
   ode.update(f, u, t);
@@ -76,7 +76,7 @@ void ReducedModel::update(RHS& f, Function& u, real t)
     g[i].computeModel(ubar, fbar, i, tau, ode);
 }
 //-----------------------------------------------------------------------------
-void ReducedModel::update(Solution& u, Adaptivity& adaptivity, real t)
+void ReducedModel::update(Solution& u, Adaptivity& adaptivity, double t)
 {
   // Update for the given model if used
   ode.update(u, adaptivity, t);
@@ -117,10 +117,10 @@ void ReducedModel::computeAverages(RHS& f, Function& u,
 error("This function needs to be updated to the new format.");
 
   // Sample length
-  real k = tau / static_cast<real>(samples);
+  double k = tau / static_cast<double>(samples);
 
   // Weight for each sample
-  real w = 1.0 / static_cast<real>(samples);
+  double w = 1.0 / static_cast<double>(samples);
 
   // Initialize averages
   ubar.resize(ode.size()); // Average on first half (and then both...)
@@ -146,11 +146,11 @@ error("This function needs to be updated to the new format.");
     for (unsigned int i = 0; i < ode.size(); i++)
     {
       // Sample time
-      real t = 0.5*k + static_cast<real>(j)*k;
+      double t = 0.5*k + static_cast<double>(j)*k;
       
       // Compute u and f
-      real uu = u(i, t);
-      real ff = f(i, t);
+      double uu = u(i, t);
+      double ff = f(i, t);
 
       // Compute average values of u and f
       ubar(i) += w * uu;
@@ -178,11 +178,11 @@ error("This function needs to be updated to the new format.");
     for (unsigned int i = 0; i < ode.size(); i++)
     {
       // Sample time
-      real t = tau + 0.5*k + static_cast<real>(j)*k;
+      double t = tau + 0.5*k + static_cast<double>(j)*k;
       
       // Compute u and f
-      real uu = u(i, t);
-      real ff = f(i, t);
+      double uu = u(i, t);
+      double ff = f(i, t);
       
       // Compute average values of u and f
       ubar2(i) += w * uu;
@@ -199,7 +199,7 @@ error("This function needs to be updated to the new format.");
   // Compute relative changes in u
   for (unsigned int i = 0; i < ode.size(); i++)
   {
-    real du = fabs(ubar(i) - ubar2(i)) / (umax(i) - umin(i) + DOLFIN_EPS);
+    double du = fabs(ubar(i) - ubar2(i)) / (umax(i) - umin(i) + DOLFIN_EPS);
 
     cout << "Component " << i << ":" << endl;
     cout << "  ubar1 = " << ubar(i) << endl;
@@ -232,7 +232,7 @@ ReducedModel::Model::~Model()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-real ReducedModel::Model::operator() () const
+double ReducedModel::Model::operator() () const
 {
   return g;
 }
@@ -248,7 +248,7 @@ void ReducedModel::Model::inactivate()
 }
 //-----------------------------------------------------------------------------
 void ReducedModel::Model::computeModel(Vector& ubar, Vector& fbar,
-				       unsigned int i, real tau, ODE& ode)
+				       unsigned int i, double tau, ODE& ode)
 {
   // FIXME: BROKEN
   //g = fbar(i) - ode.f(ubar, tau, i);

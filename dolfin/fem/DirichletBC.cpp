@@ -5,7 +5,7 @@
 // Modified by Martin Sandve Alnes, 2008
 //
 // First added:  2007-04-10
-// Last changed: 2008-08-26
+// Last changed: 2008-10-01
 
 #include <dolfin/common/constants.h>
 #include <dolfin/function/Function.h>
@@ -163,7 +163,7 @@ void DirichletBC::apply(GenericMatrix* A, GenericVector* b,
   }
 
   // A map to hold the mapping from boundary dofs to boundary values
-  std::map<uint, real> boundary_values;
+  std::map<uint, double> boundary_values;
 
   // Create local data for application of boundary conditions
   BoundaryCondition::LocalData data(form, _mesh, dof_map, sub_system);
@@ -173,8 +173,8 @@ void DirichletBC::apply(GenericMatrix* A, GenericVector* b,
 
   // Copy boundary value data to arrays
   uint* dofs   = new uint[boundary_values.size()];
-  real* values = new real[boundary_values.size()];
-  std::map<uint, real>::const_iterator boundary_value;
+  double* values = new double[boundary_values.size()];
+  std::map<uint, double>::const_iterator boundary_value;
   uint i = 0;
   for (boundary_value = boundary_values.begin(); boundary_value != boundary_values.end(); ++boundary_value)
   {
@@ -185,7 +185,7 @@ void DirichletBC::apply(GenericMatrix* A, GenericVector* b,
   // Modify boundary values for nonlinear problems
   if (x)
   {
-    real* x_values = new real[boundary_values.size()];
+    double* x_values = new double[boundary_values.size()];
     x->get(x_values, boundary_values.size(), dofs);
     for (uint i = 0; i < boundary_values.size(); i++)
       values[i] -= x_values[i];
@@ -226,7 +226,7 @@ void DirichletBC::zero(GenericMatrix& A, const DofMap& dof_map, const ufc::form&
     error("Incorrect dimension of matrix for application of boundary conditions. Did you assemble it on a different mesh?");
 
   // A map to hold the mapping from boundary dofs to boundary values
-  std::map<uint, real> boundary_values;
+  std::map<uint, double> boundary_values;
 
   // Create local data for application of boundary conditions
   BoundaryCondition::LocalData data(form, _mesh, dof_map, sub_system);
@@ -236,7 +236,7 @@ void DirichletBC::zero(GenericMatrix& A, const DofMap& dof_map, const ufc::form&
 
   // Copy boundary value data to arrays
   uint* dofs = new uint[boundary_values.size()];
-  std::map<uint, real>::const_iterator boundary_value;
+  std::map<uint, double>::const_iterator boundary_value;
   uint i = 0;
   for (boundary_value = boundary_values.begin(); boundary_value != boundary_values.end(); ++boundary_value)
     dofs[i++] = boundary_value->first;
@@ -249,6 +249,64 @@ void DirichletBC::zero(GenericMatrix& A, const DofMap& dof_map, const ufc::form&
 
   // Clear temporary arrays
   delete [] dofs;
+}
+//-----------------------------------------------------------------------------
+bool DirichletBC::is_compatible(Function& v) const
+{
+  // This function only checks the values at vertices when it should
+  // really check that the dof functionals agree. The check here is
+  // neither necessary nor sufficient to guarantee compatible boundary
+  // boundary conditions but a more robust test requires access to the
+  // function space.
+
+  // Compute value size
+  uint size = 1;
+  for (uint i = 0; i < g.rank(); i++)
+    size *= g.dim(i);
+  simple_array<double> g_values(size, new double[size]);
+  simple_array<double> v_values(size, new double[size]);
+
+  // Iterate over facets
+  for (uint f = 0; f < facets.size(); f++)
+  {
+    // Create cell and facet
+    uint cell_number  = facets[f].first;
+    uint facet_number = facets[f].second;
+    Cell cell(_mesh, cell_number);
+    Facet facet(_mesh, facet_number);
+
+    // Make cell and facet available to user-defined function
+    g.update(cell, facet_number);
+    v.update(cell, facet_number);
+
+    // Iterate over facet vertices
+    for (VertexIterator vertex(facet); !vertex.end(); ++vertex)
+    {
+      // Get facet coordinates
+      simple_array<double> x(_mesh.geometry().dim(), vertex->x());
+      
+      // Evaluate g and v at vertex
+      g.eval(g_values, x);
+      v.eval(v_values, x);
+
+      // Check values
+      for (uint i = 0; i < size; i++)
+      {
+        if (std::abs(g_values[i] - v_values[i]) > DOLFIN_EPS)
+        {
+          Point p(_mesh.geometry().dim(), x.data);
+          cout << "Incompatible function value " << v_values[i] << " at p = " << p << ", should be " << g_values[i] << "." << endl;
+          delete [] g_values.data;
+          delete [] v_values.data;
+          return false;
+        }
+      }
+    }
+  }
+
+  delete [] g_values.data;
+  delete [] v_values.data;
+  return true;
 }
 //-----------------------------------------------------------------------------
 Mesh& DirichletBC::mesh()
@@ -355,7 +413,7 @@ void DirichletBC::initFromMesh(uint sub_domain)
   }
 }
 //-----------------------------------------------------------------------------
-void DirichletBC::computeBC(std::map<uint, real>& boundary_values,
+void DirichletBC::computeBC(std::map<uint, double>& boundary_values,
                             BoundaryCondition::LocalData& data)
 {
   // Choose strategy
@@ -375,7 +433,7 @@ void DirichletBC::computeBC(std::map<uint, real>& boundary_values,
   }
 }
 //-----------------------------------------------------------------------------
-void DirichletBC::computeBCTopological(std::map<uint, real>& boundary_values,
+void DirichletBC::computeBCTopological(std::map<uint, double>& boundary_values,
                                        BoundaryCondition::LocalData& data)
 {
   // Special case
@@ -417,7 +475,7 @@ void DirichletBC::computeBCTopological(std::map<uint, real>& boundary_values,
     for (uint i = 0; i < data.dof_map->num_facet_dofs(); i++)
     {
       const uint dof = data.offset + data.cell_dofs[data.facet_dofs[i]];
-      const real value = data.w[data.facet_dofs[i]];
+      const double value = data.w[data.facet_dofs[i]];
       boundary_values[dof] = value;
       //cout << "Setting BC value: i = " << i << ", dof = " << dof << ", value = " << value << endl;
     }
@@ -426,7 +484,7 @@ void DirichletBC::computeBCTopological(std::map<uint, real>& boundary_values,
   }
 }
 //-----------------------------------------------------------------------------
-void DirichletBC::computeBCGeometric(std::map<uint, real>& boundary_values,
+void DirichletBC::computeBCGeometric(std::map<uint, double>& boundary_values,
                                      BoundaryCondition::LocalData& data)
 {
   // Special case
@@ -482,7 +540,7 @@ void DirichletBC::computeBCGeometric(std::map<uint, real>& boundary_values,
           
           // Set boundary value
           const uint dof = data.offset + data.cell_dofs[i];
-          const real value = data.w[i];
+          const double value = data.w[i];
           boundary_values[dof] = value;
         }
       }
@@ -490,7 +548,7 @@ void DirichletBC::computeBCGeometric(std::map<uint, real>& boundary_values,
   }
 }
 //-----------------------------------------------------------------------------
-void DirichletBC::computeBCPointwise(std::map<uint, real>& boundary_values,
+void DirichletBC::computeBCPointwise(std::map<uint, double>& boundary_values,
                                      BoundaryCondition::LocalData& data)
 {
   dolfin_assert(user_sub_domain);
@@ -525,7 +583,7 @@ void DirichletBC::computeBCPointwise(std::map<uint, real>& boundary_values,
       
       // Set boundary value
       const uint dof = data.offset + data.cell_dofs[i];
-      const real value = data.w[i];
+      const double value = data.w[i];
       boundary_values[dof] = value;
     }
 
@@ -533,7 +591,7 @@ void DirichletBC::computeBCPointwise(std::map<uint, real>& boundary_values,
   }
 }
 //-----------------------------------------------------------------------------
-bool DirichletBC::onFacet(real* coordinates, Facet& facet)
+bool DirichletBC::onFacet(double* coordinates, Facet& facet)
 {
   // Check if the coordinates are on the same line as the line segment
   if ( facet.dim() == 1 )
@@ -590,11 +648,11 @@ void DirichletBC::setSubSystem(SubSystem sub_system)
   this->sub_system = sub_system;
 }
 //-----------------------------------------------------------------------------
-void DirichletBC::getBC(uint n, uint* indicators, real* values, 
+void DirichletBC::getBC(uint n, uint* indicators, double* values, 
                         const DofMap& dof_map, const ufc::form& form)
 {
   // A map to hold the mapping from boundary dofs to boundary values
-  std::map<uint, real> boundary_values;
+  std::map<uint, double> boundary_values;
 
   // Create local data for application of boundary conditions
   BoundaryCondition::LocalData data(form, _mesh, dof_map, sub_system);
@@ -605,7 +663,7 @@ void DirichletBC::getBC(uint n, uint* indicators, real* values,
   if ( n != dof_map.global_dimension() )
     error("The n should be the same as dof_map.global_dimension()");  
 
-  std::map<uint, real>::const_iterator boundary_value;
+  std::map<uint, double>::const_iterator boundary_value;
   uint i = 0;
   for (boundary_value = boundary_values.begin(); boundary_value != boundary_values.end(); ++boundary_value)
   {

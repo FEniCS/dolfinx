@@ -72,55 +72,55 @@ namespace dolfin
     { return vector->size(); }
 
     /// Get block of values
-    virtual void get(real* block, uint m, const uint* rows) const
+    virtual void get(double* block, uint m, const uint* rows) const
     { vector->get(block, m, rows); }
 
     /// Set block of values
-    virtual void set(const real* block, uint m, const uint* rows)
+    virtual void set(const double* block, uint m, const uint* rows)
     { vector->set(block, m, rows); }
 
     /// Add block of values
-    virtual void add(const real* block, uint m, const uint* rows)
+    virtual void add(const double* block, uint m, const uint* rows)
     { vector->add(block, m, rows); }
 
     /// Get all values
-    virtual void get(real* values) const
+    virtual void get(double* values) const
     { vector->get(values); }
 
     /// Set all values
-    virtual void set(real* values)
+    virtual void set(double* values)
     { vector->set(values); }
 
     /// Add values to each entry
-    virtual void add(real* values)
+    virtual void add(double* values)
     { vector->add(values); }
 
     /// Add multiple of given vector (AXPY operation)
-    virtual void axpy(real a, const GenericVector& x)
+    virtual void axpy(double a, const GenericVector& x)
     { vector->axpy(a, x); }
 
     /// Return inner product with given vector
-    virtual real inner(const GenericVector& x) const
+    virtual double inner(const GenericVector& x) const
     { return vector->inner(x); }
 
     /// Return norm of vector
-    virtual real norm(dolfin::NormType type=l2) const
+    virtual double norm(dolfin::NormType type=l2) const
     { return vector->norm(type); }
 
     /// Return minimum value of vector
-    virtual real min() const
+    virtual double min() const
     { return vector->min(); }
 
     /// Return maximum value of vector
-    virtual real max() const
+    virtual double max() const
     { return vector->max(); }
 
     /// Multiply vector by given number
-    virtual const Vector& operator*= (real a)
+    virtual const Vector& operator*= (double a)
     { *vector *= a; return *this; }
 
     /// Divide vector by given number
-    virtual const Vector& operator/= (real a)
+    virtual const Vector& operator/= (double a)
     { *this *= 1.0 / a; return *this; }
 
     /// Add given vector
@@ -136,15 +136,15 @@ namespace dolfin
     { *vector = x; return *this; }
 
     /// Assignment operator
-    const Vector& operator= (real a)
+    const Vector& operator= (double a)
     { *vector = a; return *this; }
 
     /// Return pointer to underlying data (const version)
-    virtual const real* data() const
+    virtual const double* data() const
     { return vector->data(); }
 
     /// Return pointer to underlying data
-    virtual real* data()
+    virtual double* data()
     { return vector->data(); }
 
     //--- Special functions ---

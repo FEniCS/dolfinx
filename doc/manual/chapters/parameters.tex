@@ -30,7 +30,7 @@ The value of the parameter is automatically cast to the correct type
 when assigning the value of \texttt{dolfin\_get()} to a variable, as
 illustrated by the following examples:
 \begin{code}
-real TOL = dolfin_get("tolerance");
+double TOL = dolfin_get("tolerance");
 int num_samples = dolfin_get("number of samples");
 bool solve_dual = dolfin_get("solve dual problem");
 std::string filename = dolfin_get("file name");

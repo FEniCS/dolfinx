@@ -7,6 +7,8 @@
 #ifndef __UBLAS_H
 #define __UBLAS_H
 
+#include <dolfin/common/types.h>
+
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/vector.hpp>
 #include <boost/numeric/ublas/vector_of_vector.hpp>
@@ -32,7 +34,7 @@ namespace dolfin
   typedef ublas::vector_range<ublas_vector> ublas_vector_range;
 
   // uBLAS dense matrix
-  typedef ublas::matrix< double > ublas_dense_matrix;
+  typedef ublas::matrix<double> ublas_dense_matrix;
   typedef ublas::matrix_range<ublas_dense_matrix> ublas_matrix_range;
 
   // uBLAS dense matrix (column major format)
@@ -46,11 +48,11 @@ namespace dolfin
   typedef ublas::compressed_matrix<double, ublas::column_major> ublas_sparse_matrix_cmajor;
 
   // uBLAS sparse matrix for temporary assembly
-  typedef ublas::generalized_vector_of_vector< double, ublas::row_major, 
+  typedef ublas::generalized_vector_of_vector<double, ublas::row_major, 
             ublas::vector<ublas::compressed_vector<double> > > ublas_assembly_matrix;
 
   // uBLAS sparse matrix for temporary assembly (column major format)
-  typedef ublas::generalized_vector_of_vector< double, ublas::column_major, 
+  typedef ublas::generalized_vector_of_vector<double, ublas::column_major, 
             ublas::vector<ublas::compressed_vector<double> > > ublas_assembly_matrix_cmajor;
 
   // uBLAS upper triangular matrix (column major format)

@@ -37,7 +37,7 @@ void OctaveFile::operator<<(GenericMatrix& A)
 
   uint M = A.size(0);
   uint N = A.size(1);
-  real* row = new real[N];
+  double* row = new double[N];
   
   FILE *fp = fopen(filename.c_str(), "a");
 //  fprintf(fp, "%s = zeros(%u, %u);\n", A.name().c_str(), M, N);
@@ -47,7 +47,7 @@ void OctaveFile::operator<<(GenericMatrix& A)
   {
     // Get nonzero entries
     Array<uint> columns;
-    Array<real> values;
+    Array<double> values;
     A.getrow(i, columns, values);
 
     // Write nonzero entries

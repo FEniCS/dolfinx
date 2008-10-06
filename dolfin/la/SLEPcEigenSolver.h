@@ -35,8 +35,8 @@ namespace dolfin
   ///
   ///   "largest magnitude"   (eigenvalues with largest magnitude)
   ///   "smallest magnitude"  (eigenvalues with smallest magnitude)
-  ///   "largest real"        (eigenvalues with largest real part)
-  ///   "smallest real"       (eigenvalues with smallest real part)
+  ///   "largest real"        (eigenvalues with largest double part)
+  ///   "smallest real"       (eigenvalues with smallest double part)
   ///   "largest imaginary"   (eigenvalues with largest imaginary part)
   ///   "smallest imaginary"  (eigenvalues with smallest imaginary part)
   ///   "default spectrum"    (default spectrum)
@@ -57,7 +57,7 @@ namespace dolfin
   /// 3. "eigenvalue tolerance"
   ///
   /// This parameter controls the tolerance used by SLEPc.
-  /// Possible values are positive real numbers.
+  /// Possible values are positive double numbers.
   ///
   /// 4. "eigenvalue iterations"
   ///
@@ -90,16 +90,16 @@ namespace dolfin
     void solve(const PETScMatrix& A, const PETScMatrix& B, uint n);
 
     /// Get the first eigenvalue
-    void getEigenvalue(real& lr, real& lc);
+    void getEigenvalue(double& lr, double& lc);
 
     /// Get the first eigenpair
-    void getEigenpair(real& lr, real& lc, PETScVector& r, PETScVector& c);
+    void getEigenpair(double& lr, double& lc, PETScVector& r, PETScVector& c);
 
     /// Get eigenvalue i
-    void getEigenvalue(real& lr, real& lc, uint i);
+    void getEigenvalue(double& lr, double& lc, uint i);
 
     /// Get eigenpair i
-    void getEigenpair(real& lr, real& lc, PETScVector& r, PETScVector& c, uint i);
+    void getEigenpair(double& lr, double& lc, PETScVector& r, PETScVector& c, uint i);
 
   private:
 

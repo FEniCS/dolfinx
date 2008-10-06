@@ -30,7 +30,7 @@ using namespace dolfin;
 // coordinates are considered equal if equal to within round-off.
 struct lt_coordinate
 {
-  bool operator() (const std::vector<real>& x, const std::vector<real>& y) const
+  bool operator() (const std::vector<double>& x, const std::vector<double>& y) const
   {
     if (x.size() > (y.size() + DOLFIN_EPS))
       return false;
@@ -82,12 +82,12 @@ void PeriodicBC::apply(GenericMatrix& A, GenericVector& b, const DofMap& dof_map
   // FIXME: more than one dof per coordinate (for conforming elements).
 
   // Table of mappings from coordinates to dofs
-  std::map<std::vector<real>, std::pair<int, int>, lt_coordinate> coordinate_dofs;
-  typedef std::map<std::vector<real>, std::pair<int, int>, lt_coordinate>::iterator iterator;
-  std::vector<real> xx(mesh.geometry().dim());
+  std::map<std::vector<double>, std::pair<int, int>, lt_coordinate> coordinate_dofs;
+  typedef std::map<std::vector<double>, std::pair<int, int>, lt_coordinate>::iterator iterator;
+  std::vector<double> xx(mesh.geometry().dim());
   
   // Array used for mapping coordinates
-  simple_array<real> y(mesh.geometry().dim(), new real[mesh.geometry().dim()]);
+  simple_array<double> y(mesh.geometry().dim(), new double[mesh.geometry().dim()]);
   for (uint i = 0; i < mesh.geometry().dim(); i++)
     y[i] = 0.0;
 
@@ -127,7 +127,7 @@ void PeriodicBC::apply(GenericMatrix& A, GenericVector& b, const DofMap& dof_map
       // Get dof and coordinate of dof
       const uint local_dof = data.facet_dofs[i];
       const int global_dof = static_cast<int>(data.offset + data.cell_dofs[local_dof]);
-      const simple_array<real> x(mesh.geometry().dim(), data.coordinates[local_dof]);
+      const simple_array<double> x(mesh.geometry().dim(), data.coordinates[local_dof]);
 
       // Map coordinate from H to G
       for (uint j = 0; j < mesh.geometry().dim(); j++)
@@ -221,8 +221,8 @@ void PeriodicBC::apply(GenericMatrix& A, GenericVector& b, const DofMap& dof_map
   // Insert -1 at (dof0, dof1) and 0 on right-hand side
   uint* rows = new uint[1];
   uint* cols = new uint[1];
-  real* vals = new real[1];
-  real* zero = new real[1];
+  double* vals = new double[1];
+  double* zero = new double[1];
   for (iterator it = coordinate_dofs.begin(); it != coordinate_dofs.end(); ++it)
   {
     // Check that we got both dofs
@@ -254,7 +254,7 @@ void PeriodicBC::apply(GenericMatrix& A, GenericVector& b, const DofMap& dof_map
     zero[0] = 0.0;
 
     Array<uint> columns;
-    Array<real> values;
+    Array<double> values;
     
     // Add slave-dof-row to master-dof-row  
     A.getrow(dof0, columns, values);

@@ -23,7 +23,7 @@ namespace dolfin
   {
   public:
 
-    Box(real a, real b, real c, real d, real e, real f, uint nx, uint ny, 
+    Box(double a, double b, double c, double d, double e, double f, uint nx, uint ny, 
         uint nz);
 
   };

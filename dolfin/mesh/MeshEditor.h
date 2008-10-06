@@ -62,13 +62,13 @@ namespace dolfin
     void addVertex(uint v, const Point& p);
 
     /// Add vertex v at given coordinate x
-    void addVertex(uint v, real x);
+    void addVertex(uint v, double x);
 
     /// Add vertex v at given coordinate (x, y)
-    void addVertex(uint v, real x, real y);
+    void addVertex(uint v, double x, double y);
 
     /// Add vertex v at given coordinate (x, y, z)
-    void addVertex(uint v, real x, real y, real z);
+    void addVertex(uint v, double x, double y, double z);
 
     /// Add cell with given vertices
     void addCell(uint c, const Array<uint>& v);

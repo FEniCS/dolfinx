@@ -41,7 +41,7 @@ void MatrixFactory::computeMassMatrix(GenericMatrix& A, Mesh& mesh)
     error("Unknown mesh type.");
 }
 //-----------------------------------------------------------------------------
-void MatrixFactory::computeStiffnessMatrix(GenericMatrix& A, Mesh& mesh, real c)
+void MatrixFactory::computeStiffnessMatrix(GenericMatrix& A, Mesh& mesh, double c)
 {
   Function f(mesh, c);
 
@@ -61,7 +61,7 @@ void MatrixFactory::computeStiffnessMatrix(GenericMatrix& A, Mesh& mesh, real c)
 }
 //-----------------------------------------------------------------------------
 void MatrixFactory::computeConvectionMatrix(GenericMatrix& A, Mesh& mesh,
-					    real cx, real cy, real cz)
+					    double cx, double cy, double cz)
 {
   Function fx(mesh, cx);
   Function fy(mesh, cy);
@@ -84,7 +84,7 @@ void MatrixFactory::computeConvectionMatrix(GenericMatrix& A, Mesh& mesh,
   }
 }
 //-----------------------------------------------------------------------------
-void MatrixFactory::computeLoadVector(GenericVector& x, Mesh& mesh, real c)
+void MatrixFactory::computeLoadVector(GenericVector& x, Mesh& mesh, double c)
 {
   Function f(mesh, c);
 

@@ -21,7 +21,7 @@ Parameter::Parameter(uint value) : value(0), _type(type_int)
   this->value = new IntValue(static_cast<int>(value));
 }
 //-----------------------------------------------------------------------------
-Parameter::Parameter(real value) : value(0), _type(type_real)
+Parameter::Parameter(double value) : value(0), _type(type_real)
 {
   this->value = new RealValue(value);
 }
@@ -76,7 +76,7 @@ const Parameter& Parameter::operator= (dolfin::uint value)
   return *this;
 }
 //-----------------------------------------------------------------------------
-const Parameter& Parameter::operator= (real value)
+const Parameter& Parameter::operator= (double value)
 {
   *(this->value) = value;
   return *this;
@@ -136,7 +136,7 @@ Parameter::operator dolfin::uint() const
   return *value;
 }
 //-----------------------------------------------------------------------------
-Parameter::operator real() const
+Parameter::operator double() const
 {
   return *value;
 }
@@ -167,7 +167,7 @@ dolfin::LogStream& dolfin::operator<<(LogStream& stream,
     break;
   case Parameter::type_real:
     stream << "[Parameter: value = "
-	   << static_cast<real>(parameter) << " (real)]";
+	   << static_cast<double>(parameter) << " (double)]";
     break;
   case Parameter::type_bool:
     if ( static_cast<bool>(parameter) )

@@ -40,7 +40,7 @@ public:
       // Dependencies for second half of system
       int ncols = 0;
       Array<int> columns;
-      Array<real> values;
+      Array<double> values;
       A.getrow(i, ncols, columns, values);
       dependencies.setsize(i + offset, ncols);
       for (int j = 0; j < ncols; j++)
@@ -52,10 +52,10 @@ public:
     mesh.init(0, mesh.topology().dim());
     for (VertexIterator v(mesh); !v.end(); ++v)
     {
-      real dmin = 1.0;
+      double dmin = 1.0;
       for (CellIterator c(*v); !c.end(); ++c)
       {
-	const real d = c->diameter();
+	const double d = c->diameter();
 	if ( d < dmin )
 	  dmin = d;
       }
@@ -72,18 +72,18 @@ public:
   {
     for (unsigned int i = 0; i < N; i++)
     {
-      const real x0 = 1.0 - 0.5*w;
+      const double x0 = 1.0 - 0.5*w;
       u(i) = 0.0;
 
       if ( i < offset )
       {
-        const real x = mesh.geometry().x(i, 0);
+        const double x = mesh.geometry().x(i, 0);
 	if ( std::abs(x - x0) < 0.5*w )
 	  u(i) = 0.5*(cos(2.0*DOLFIN_PI*(x - x0)/w) + 1.0);
       }
       else
       {
-        const real x = mesh.geometry().x(i - offset, 0);
+        const double x = mesh.geometry().x(i - offset, 0);
 	if ( std::abs(x - x0) < 0.5*w )
 	  u(i) = -(DOLFIN_PI/w)*sin(2.0*DOLFIN_PI*(x - x0)/w);
       }
@@ -91,19 +91,19 @@ public:
   }
 
   // Global time step
-  real timestep(real t, real k0) const
+  double timestep(double t, double k0) const
   {
     return 0.1*hmin;
   }
   
   // Local time step
-  real timestep(real t, unsigned int i, real k0) const
+  double timestep(double t, unsigned int i, double k0) const
   {
     return 0.1*h[i % offset];
   }
 
   // Right-hand side, mono-adaptive version
-  void f(const uBLASVector& u, real t, uBLASVector& y)
+  void f(const uBLASVector& u, double t, uBLASVector& y)
   {
     // First half of system
     for (unsigned int i = 0; i < offset; i++)
@@ -120,7 +120,7 @@ public:
   }
 
   // Right-hand side, multi-adaptive version
-  real f(const uBLASVector& u, real t, unsigned int i)
+  double f(const uBLASVector& u, double t, unsigned int i)
   {
     // First half of system
     if ( i < offset )
@@ -138,9 +138,9 @@ private:
   uBLASStiffnessMatrix A; // Stiffness matrix
   uBLASVector m;          // Lumped mass matrix
   unsigned int offset;    // N/2, number of vertices
-  Array<real> h;          // Local mesh size
-  real hmin;              // Minimum mesh size
-  real w;                 // Width of initial wave
+  Array<double> h;          // Local mesh size
+  double hmin;              // Minimum mesh size
+  double w;                 // Width of initial wave
 
 };
 

@@ -38,7 +38,7 @@ using namespace dolfin;
 //%include "std_map.i" // FIXME: Make this work
 %include "stl.i"
 %include "carrays.i"
-%array_functions(dolfin::real, realArray);
+%array_functions(double, doubleArray);
 %array_functions(int, intArray);
 %pointer_class(int, intp);
 %pointer_class(double, doublep);

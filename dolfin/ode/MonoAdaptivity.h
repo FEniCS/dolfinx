@@ -29,10 +29,10 @@ namespace dolfin
     ~MonoAdaptivity();
     
     /// Return time step
-    real timestep() const;
+    double timestep() const;
 
     /// Update time step
-    void update(real k0, real r, const Method& method, real t, bool first);
+    void update(double k0, double r, const Method& method, double t, bool first);
 
   private:
 
@@ -40,7 +40,7 @@ namespace dolfin
     Controller controller;
 
     // Mono-adaptive time step
-    real k;
+    double k;
 
   };
 

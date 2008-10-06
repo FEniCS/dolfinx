@@ -24,32 +24,32 @@ public:
     u[1] = 1.0;
   }
 
-  void f(const uBLASVector& u, real t, uBLASVector& y)
+  void f(const uBLASVector& u, double t, uBLASVector& y)
   {
     y[0] = u[1];
     y[1] = - u[0];
   }
 
-  bool update(const uBLASVector& u, real t, bool end)
+  bool update(const uBLASVector& u, double t, bool end)
   {
     if ( !end )
       return true;
 
-    real e0 = u[0] - 0.0;
-    real e1 = u[1] - 1.0;
+    double e0 = u[0] - 0.0;
+    double e1 = u[1] - 1.0;
     e = std::max(std::abs(e0), std::abs(e1));
 
     return true;
   }
   
-  real error()
+  double error()
   {
     return e;
   }
   
 private:
 
-  real e;
+  double e;
 
 };
 

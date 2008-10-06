@@ -39,7 +39,7 @@ namespace dolfin
     // Data for row
     uint row;
     Array<uint> columns;
-    Array<real> values;
+    Array<double> values;
     
   };
   

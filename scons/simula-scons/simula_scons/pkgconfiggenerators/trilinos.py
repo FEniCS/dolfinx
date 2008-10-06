@@ -34,7 +34,7 @@ def pkgVersion(sconsEnv=None):
             remove_path = False
     while remove_realpath:
       try:
-        del sys.path[sys.path.index(realfile_abspath)]
+        del sys.path[sys.path.index(doublefile_abspath)]
       except:
         # not in sys.path anymore!
         remove_realpath = False
@@ -42,7 +42,7 @@ def pkgVersion(sconsEnv=None):
     #while file_abspath in sys.path:
     #    del sys.path[sys.path.index(file_abspath)]
     #while realfile_abspath in sys.path:
-    #    del sys.path[sys.path.index(realfile_abspath)]
+    #    del sys.path[sys.path.index(doublefile_abspath)]
 
     # If TRILINOS_DIR/lib/python{version}/site_packages is not in PYTHONPATH
     # the loading of PyTrilinos will fail. Add it and message user.
@@ -191,7 +191,7 @@ def pkgTests(forceCompiler=None, sconsEnv=None,
     """
     
     # play tricks with pythonpath to avoid mixing up 
-    # the real numpy with the one in this directory.
+    # the double numpy with the one in this directory.
     file_abspath = os.path.abspath(os.path.dirname(__file__))
     restore_environ = False
     try:

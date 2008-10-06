@@ -25,10 +25,10 @@ int main()
     
     Source(Mesh& mesh) : Function(mesh) {}
 
-    real eval(const real* x) const
+    double eval(const double* x) const
     {
-      real dx = x[0] - 0.5;
-      real dy = x[1] - 0.5;
+      double dx = x[0] - 0.5;
+      double dy = x[1] - 0.5;
       return x[0]*sin(5.0*DOLFIN_PI*x[1]) + 1.0*exp(-(dx*dx + dy*dy)/0.02);
     }
 
@@ -37,7 +37,7 @@ int main()
   // Sub domain for Dirichlet boundary condition
   class DirichletBoundary : public SubDomain
   {
-    bool inside(const real* x, bool on_boundary) const
+    bool inside(const double* x, bool on_boundary) const
     {
       return (x[1] < DOLFIN_EPS || x[1] > (1.0 - DOLFIN_EPS)) && on_boundary;
     }
@@ -46,12 +46,12 @@ int main()
   // Sub domain for Periodic boundary condition
   class PeriodicBoundary : public SubDomain
   {
-    bool inside(const real* x, bool on_boundary) const
+    bool inside(const double* x, bool on_boundary) const
     {
       return x[0] < DOLFIN_EPS && x[0] > -DOLFIN_EPS && on_boundary;
     }
 
-    void map(const real* x, real* y) const
+    void map(const double* x, double* y) const
     {
       y[0] = x[0] - 1.0;
       y[1] = x[1];

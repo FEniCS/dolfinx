@@ -27,9 +27,9 @@ const ParameterValue& ParameterValue::operator= (int value)
   return *this;
 }
 //-----------------------------------------------------------------------------
-const ParameterValue& ParameterValue::operator= (real value)
+const ParameterValue& ParameterValue::operator= (double value)
 {
-  error("Cannot assign real value to parameter of type %s.",
+  error("Cannot assign double value to parameter of type %s.",
 		type().c_str());
   return *this;
 }
@@ -63,7 +63,7 @@ ParameterValue::operator int() const
   return 0;
 }
 //-----------------------------------------------------------------------------
-ParameterValue::operator real() const
+ParameterValue::operator double() const
 {
   error("Unable to convert parameter of type %s to real.",
 		type().c_str());

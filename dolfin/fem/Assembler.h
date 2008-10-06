@@ -78,13 +78,13 @@ namespace dolfin
                   bool reset_tensor=true);
     
     /// Assemble scalar from given variational form
-    real assemble(Form& form, bool reset_tensor=true);
+    double assemble(Form& form, bool reset_tensor=true);
     
     /// Assemble scalar from given variational form over a sub domain
-    real assemble(Form& form, const SubDomain& sub_domain, bool reset_tensor);
+    double assemble(Form& form, const SubDomain& sub_domain, bool reset_tensor);
     
     /// Assemble scalar from given variational form over sub domains
-    real assemble(Form& form,
+    double assemble(Form& form,
                   const MeshFunction<uint>& cell_domains,
                   const MeshFunction<uint>& exterior_facet_domains,
                   const MeshFunction<uint>& interior_facet_domains,
@@ -127,7 +127,7 @@ namespace dolfin
                        const DofMapSet& dof_set_map,
                        UFC& data,
                        const MeshFunction<uint>* domains,
-                       Array<real>* values) const;
+                       Array<double>* values) const;
     
     // Assemble over exterior facets
     void assembleExteriorFacets(GenericTensor& A,
@@ -135,7 +135,7 @@ namespace dolfin
                                 const DofMapSet& dof_set_map,
                                 UFC& data,
                                 const MeshFunction<uint>* domains,
-                                Array<real>* values) const;
+                                Array<double>* values) const;
 
     // Assemble over interior facets
     void assembleInteriorFacets(GenericTensor& A,
@@ -143,7 +143,7 @@ namespace dolfin
                                 const DofMapSet& dof_set_map,
                                 UFC& data,
                                 const MeshFunction<uint>* domains,
-                                Array<real>* values) const;
+                                Array<double>* values) const;
 
     // Check arguments
     void check(const ufc::form& form,

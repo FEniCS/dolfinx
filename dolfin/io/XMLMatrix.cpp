@@ -109,7 +109,7 @@ void XMLMatrix::readEntry(const xmlChar *name, const xmlChar **attrs)
 {
   // Parse values
   const uint column = parseUnsignedInt(name, attrs, "column");
-  const real value  = parseReal(name, attrs, "value");
+  const double value  = parseReal(name, attrs, "value");
   
   // Set values
   columns.push_back(column);

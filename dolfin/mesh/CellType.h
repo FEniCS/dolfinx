@@ -76,19 +76,19 @@ namespace dolfin
     virtual void orderEntities(Cell& cell) const = 0;
 
     /// Compute (generalized) volume of mesh entity
-    virtual real volume(const MeshEntity& entity) const = 0;
+    virtual double volume(const MeshEntity& entity) const = 0;
 
     /// Compute diameter of mesh entity
-    virtual real diameter(const MeshEntity& entity) const = 0;
+    virtual double diameter(const MeshEntity& entity) const = 0;
     
     /// Compute component i of normal of given facet with respect to the cell
-    virtual real normal(const Cell& cell, uint facet, uint i) const = 0;
+    virtual double normal(const Cell& cell, uint facet, uint i) const = 0;
 
     /// Compute of given facet with respect to the cell
     virtual Point normal(const Cell& cell, uint facet) const = 0;
 
     /// Compute the area/length of given facet with respect to the cell
-    virtual real facetArea(const Cell& cell, uint facet) const = 0;
+    virtual double facetArea(const Cell& cell, uint facet) const = 0;
 
     /// Check for intersection with point
     virtual bool intersects(const MeshEntity& entity, const Point& p) const = 0;

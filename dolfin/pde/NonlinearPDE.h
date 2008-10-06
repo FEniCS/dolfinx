@@ -49,7 +49,7 @@ namespace dolfin
     void J(GenericMatrix& A, const GenericVector& x); 
 
     /// Solve PDE
-    void solve(Function& u, real& t, const real& T, const real& dt);
+    void solve(Function& u, double& t, const double& T, const double& dt);
 
   private:
 

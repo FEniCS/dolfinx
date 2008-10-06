@@ -10,23 +10,23 @@
 
 using namespace dolfin;
 
-real assemble_form(Form& form, Mesh& mesh)
+double assemble_form(Form& form, Mesh& mesh)
 {
   // Assemble once
-  const real t0 = time();
+  const double t0 = time();
   Matrix A;
   assemble(A, form, mesh);
   return time() - t0;
 }
 
-real reassemble_form(Form& form, Mesh& mesh)
+double reassemble_form(Form& form, Mesh& mesh)
 {
   // Assemble once
   Matrix A;
   assemble(A, form, mesh);
 
   // Reassemble
-  const real t0 = time();
+  const double t0 = time();
   assemble(A, form, mesh, false);
   return time() - t0;
 }
