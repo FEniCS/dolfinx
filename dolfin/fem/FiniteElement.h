@@ -21,17 +21,23 @@ namespace dolfin
   {
   public:
 
-    /// Create FiniteElement. Object owns ufc::finite_element
-    FiniteElement(ufc::finite_element* element) : element(element) 
-    { /* Do nothing */ }
+    // FIXME: This constructor should be removed!
+    /// Create finite element from UFC finite element pointer
+    FiniteElement(ufc::finite_element* element) : element(element) {}
 
-    /// Create FiniteElement. Object may share ufc::finite_element
-    FiniteElement(std::tr1::shared_ptr<ufc::finite_element> element) : element(element)
-    { /* Do nothing */ }
+    // FIXME: This constructor should be removed!
+    /// Create finite element from UFC finite element
+    FiniteElement(ufc::finite_element& element, uint dummy) : element(&element, NoDeleter<ufc::finite_element>()) {}
+
+    // FIXME: This constructor should be added!
+    /// Create finite element from UFC finite element
+    //FiniteElement(const ufc::finite_element& element, uint dummy) : element(&element, NoDeleter<const ufc::finite_element>()) {}
+
+    /// Create finite element from UFC finite element (data may be shared)
+    FiniteElement(std::tr1::shared_ptr<ufc::finite_element> element) : element(element) {}
 
     /// Create FiniteElement from a signature
-    FiniteElement(std::string signature) : element(ElementLibrary::create_finite_element(signature))
-    { /* Do nothing */ }
+    FiniteElement(std::string signature) : element(ElementLibrary::create_finite_element(signature)) {}
 
     std::string signature() const
     { return element->signature(); }
@@ -56,10 +62,14 @@ namespace dolfin
   
     double evaluate_dof(uint i, const ufc::function& function, const ufc::cell& cell) const
     { return element->evaluate_dof(i, function, cell); }
-
+    
+    // FIXME: Use shared_ptr
+    // FIXNE: Return-value should be const
     FiniteElement* create_sub_element(uint i) const
     { return new FiniteElement(element->create_sub_element(i)); }
 
+    // FIXME: Use shared_ptr
+    // FIXNE: Return-value should be const
     ufc::finite_element& ufc_element() const
     { return *element; } 
 
@@ -67,6 +77,7 @@ namespace dolfin
 
     // UFC finite element
     std::tr1::shared_ptr<ufc::finite_element> element;
+
   };
 
 }

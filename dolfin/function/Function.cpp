@@ -310,13 +310,13 @@ void Function::interpolate(GenericVector& x,
   double* coefficients = new double[n];
 
   // Iterate over mesh and interpolate on each cell
-  UFCCell ufc_cell;
+  UFCCell ufc_cell(mesh);
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     // Interpolate on cell
     ufc_cell.update(*cell);
     interpolate(coefficients, ufc_cell, finite_element, *cell);
-    
+
     // Tabulate dofs
     dof_map.tabulate_dofs(dofs, ufc_cell, cell->index());
 
