@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2008.
 //
 // First added:  2008-07-06
-// Last changed: 2008-08-13
+// Last changed: 2008-10-04
 
 #ifdef HAS_MTL4
 
@@ -74,9 +74,9 @@ MTL4Matrix* MTL4Matrix::copy() const
 dolfin::uint MTL4Matrix::size(uint dim) const
 {
   if(dim == 0)
-    return mtl::num_rows(A);
+    return mtl::matrix::num_rows(A);
   else if(dim == 1)
-    return mtl::num_cols(A);
+    return mtl::matrix::num_cols(A);
 
   error("dim not < 2 in MTL4Matrix::size.");
   return 0;
@@ -141,7 +141,8 @@ void MTL4Matrix::disp(uint precision) const
   assert_no_inserter();
 
   // FIXME: This bypasses the dolfin log system!
-  std::cout << A << std::endl;
+  //std::cout << A << std::endl;
+  warning("MTL4Matrix::disp is not working du to broken MTL4.");
 }
 //-----------------------------------------------------------------------------
 void MTL4Matrix::ident(uint m, const uint* rows)
@@ -312,8 +313,8 @@ LogStream& dolfin::operator<< (LogStream& stream, const  MTL4Matrix& A)
 {
   // FIXME: "Redirect" mtl::matix::op<< to the dolfin log stream
 
-  int M = num_rows(A.mat());
-  int N = num_cols(A.mat());
+  int M = mtl::matrix::num_rows(A.mat());
+  int N = mtl::matrix::num_cols(A.mat());
 
   stream << "MTL4 Matrix of size " << M << "x" << N;
   return stream;
