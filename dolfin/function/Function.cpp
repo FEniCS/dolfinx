@@ -12,6 +12,7 @@
 // functionality is handled by the specific implementation (subclass).
 
 #include <dolfin/io/File.h>
+#include <dolfin/fem/DofMap.h>
 #include "UserFunction.h"
 #include "ConstantFunction.h"
 #include "DiscreteFunction.h"
@@ -289,6 +290,43 @@ void Function::interpolate(double* coefficients, const ufc::cell& ufc_cell,
   // Make cell and facet unavailable
   _cell = 0;
   _facet = -1;
+}
+//-----------------------------------------------------------------------------
+void Function::interpolate(GenericVector& x,
+                           Mesh& mesh,
+                           const FiniteElement& finite_element,
+                           DofMap& dof_map)
+{
+  if (!f)
+    error("Function contains no data.");
+
+  // Initialize vector
+  x.resize(dof_map.global_dimension());
+  x.zero();
+
+  // Initialize local arrays for dofs and coefficients
+  const uint n = dof_map.local_dimension();
+  uint* dofs = new uint[n];
+  double* coefficients = new double[n];
+
+  // Iterate over mesh and interpolate on each cell
+  UFCCell ufc_cell;
+  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  {
+    // Interpolate on cell
+    ufc_cell.update(*cell);
+    interpolate(coefficients, ufc_cell, finite_element, *cell);
+    
+    // Tabulate dofs
+    dof_map.tabulate_dofs(dofs, ufc_cell, cell->index());
+
+    // Copy dofs to vector
+    x.set(coefficients, n, dofs);
+  }
+
+  // Clean up
+  delete [] dofs;
+  delete [] coefficients;
 }
 //-----------------------------------------------------------------------------
 void Function::update(Cell& cell, int facet)

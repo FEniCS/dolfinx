@@ -6,7 +6,7 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2003-11-28
-// Last changed: 2008-10-02
+// Last changed: 2008-10-06
 
 #ifndef __FUNCTION_H
 #define __FUNCTION_H
@@ -136,11 +136,17 @@ namespace dolfin
     /// Interpolate function to vertices of mesh
     void interpolate(double* values);
 
-    /// Interpolate function to finite element space on cell
+    /// Interpolate function to given local finite element space
     void interpolate(double* coefficients,
                      const ufc::cell& ufc_cell,
                      const FiniteElement& finite_element,
                      Cell& cell, int facet=-1);
+
+    /// Interpolate function to given global finite element space
+    void interpolate(GenericVector& x,
+                     Mesh& mesh,
+                     const FiniteElement& finite_element,
+                     DofMap& dof_map);
 
     /// Make current cell and facet available to user-defined function
     void update(Cell& cell, int facet=-1);
