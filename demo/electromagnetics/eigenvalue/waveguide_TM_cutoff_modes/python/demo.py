@@ -35,17 +35,11 @@ except:
 dolfin_set("linear algebra backend", "PETSc")
 
 # Specify the waveguide width and height in metres
-width = 1
+width = 1.0
 height = 0.5
 
-# Specify the mode of interest. moi = 1 : dominant (TM_{11}) mode
-moi = 1
-
 # Create the mesh using a Rectangle
-nx = int(width/height)
-if nx == 0:
-    nx = 1
-mesh = Rectangle(0, width, 0, height, nx, 1, 0)
+mesh = Rectangle(0, width, 0, height, 2, 1, 0)
 
 # Refine if desired
 # mesh.refine()
@@ -63,20 +57,19 @@ u = TrialFunction(element)
 # with the eigenvalues k_o^2 representing the square of the cutoff wavenumber 
 # and the corresponding right-eigenvector giving the coefficients of the 
 # discrete system used to obtain the approximate field anywhere in the domain   
-a = dot(curl_t(v), curl_t(u))*dx
-L = dot(v, u)*dx
+s = dot(curl_t(v), curl_t(u))*dx
+t = dot(v, u)*dx
 
 # Assemble the system matrices stiffness (S) and mass matrices (T)
 S = PETScMatrix()
 T = PETScMatrix()
-assemble(a, mesh, tensor=S)
-assemble(L, mesh, tensor=T)
+assemble(s, mesh, tensor=S)
+assemble(t, mesh, tensor=T)
 
 # Solve the eigensystem
 esolver = SLEPcEigenSolver()
 esolver.set("eigenvalue spectrum", "smallest real")
-esolver.set("eigenvalue tolerance", 10e-7)
-esolver.set("eigenvalue iterations", 10)
+esolver.set("eigenvalue solver", "lapack");
 esolver.solve(S, T)
 
 # The result should have real eigenvalues but due to rounding errors, some of 
@@ -100,60 +93,9 @@ for i in range(S.size(1)):
         break
        
 
-if dominant_mode_index < 0:
-    print "Dominant mode not found"
-    
-# Now get the mode of interest
-mode_of_interest_index = dominant_mode_index + moi - 1
-
-h_e = PETScVector(S.size(1))
-h_e_complex = PETScVector(S.size(1))
-
-(k_o_squared, lc) = esolver.getEigenpair(h_e, h_e_complex, mode_of_interest_index)
-
-print "Cutoff wavenumber squared: %f" % k_o_squared
-if lc != 0: 
-    print "WARNING:  Wavenumber is complex: %f +i%f" % (k_o_squared, lc) 
-
-# To visualize the magnetic field we need to calculate the field at a
-# number of points first define a discrete function using the
-# eigenvector values as basis function coefficients NOTE: The
-# coefficients need to be passed to the Function constructor as a
-# dolfin Vector
-
-# Initialize the function
-magnetic_field = Function(element, mesh, Vector())
-magnetic_field.vector().assign(h_e)
-
-# Specify the points where the field must be calculated and calculate
-# number of points per unit length
-n = 20 
-
-# Allocate numpy arrays for the magnetic field (H - x and y components) and the 
-# position where the field is calculated 
-H = N.zeros(((n+1)*(n+1), 2),dtype=N.float64)
-XY = N.zeros(((n+1)*(n+1), 2),dtype=N.float64)
-for i in range(n+1):
-    for j in range(n+1):
-        p_idx = i*(n+1) + j # the index of the point in the array
-        XY[p_idx, 0] = float(width*i)/n
-        XY[p_idx, 1] = float(height*j)/n
-        
-        # evaluate the magnetic field.  Result is stored in H[p_idx,:]
-        magnetic_field.eval(H[p_idx,:], XY[p_idx,:])
-
-# Plot the result
-try:
-    import pylab as P
-    P.figure()
-    P.quiver(XY[:,0],XY[:,1],H[:,0],H[:,1])
-    
-    
-    P.xlabel('x')
-    P.ylabel('y')
-    
-    P.axis('equal')
-    print 'Plot saved as "TM_mode"'
-    P.savefig('TM_mode')
-except:
-    print "pylab not found.  No image displayed"
+if dominant_mode_index >= 0:
+    print ("Dominant mode found.  Cutoff Squared: %f\n" % lr)
+    if ( lc != 0 ):
+        print "WARNING: Cutoff mode is complex (%f + i%f)\n" % (lr, lc)
+else:
+    print "ERROR: Dominant mode not found"
