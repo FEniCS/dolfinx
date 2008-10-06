@@ -177,7 +177,7 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
             ret = self.copy()
             ret._scale(other)
             return ret
-        elif isinstance(other,VEC_TYPE):
+        elif isinstance(other,GenericVector):
             ret = other.copy()
             self.mult(other, ret)
             return ret
