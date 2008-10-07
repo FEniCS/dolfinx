@@ -1,8 +1,8 @@
-// Copyright (C) 2004-2006 Anders Logg.
+// Copyright (C) 2004-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2004
-// Last changed: 2006-08-21
+// Last changed: 2008-10-07
 
 #include <dolfin.h>
 
@@ -12,28 +12,21 @@ class TestProblem2 : public ODE
 {
 public:
   
-  TestProblem2() : ODE(2, 10.0), A(2, 2)
+  TestProblem2() : ODE(2, 10.0)
   {
     message("The simple test system.");
-
-    A.mat()(0, 0) = -100.0;
-    A.mat()(0, 0) = -100.0;
-    A.mat()(1, 1) = -1000.0;
   }
 
-  void u0(uBLASVector& u)
+  void u0(double* u)
   {
     u[0] = 1.0;
     u[1] = 1.0;
   }
   
-  void f(const uBLASVector& u, double t, uBLASVector& y)
+  void f(const double* u, double t, double* y)
   {
-    A.mult(u, y);
+    y[0] = -100.0*u[0];
+    y[1] = -1000.0*u[1];
   }
-
-private:
-
-  uBLASDenseMatrix A;
   
 };

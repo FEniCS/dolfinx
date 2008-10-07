@@ -5,7 +5,7 @@
 // Modified by Anders Logg 2006.
 //
 // First added:  2006-05-24
-// Last changed: 2006-08-21
+// Last changed: 2008-10-07
 //
 // This demo solves the Courtemanche model for cardiac excitation.
 

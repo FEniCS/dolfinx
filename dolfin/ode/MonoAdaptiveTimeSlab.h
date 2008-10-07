@@ -9,7 +9,6 @@
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/types.h>
-#include <dolfin/la/uBLASVector.h>
 #include "MonoAdaptivity.h"
 #include "TimeSlab.h"
 
@@ -80,13 +79,13 @@ namespace dolfin
     TimeSlabSolver* solver;    // The solver
     MonoAdaptivity adaptivity; // Adaptive time step regulation
     uint nj;                   // Number of dofs
-    double* dofs;                // Local dofs for an element used for interpolation
-    double* fq;                  // Values of right-hand side at all quadrature points
-    double rmax;                 // Previously computed maximum norm of residual
+    double* dofs;              // Local dofs for an element used for interpolation
+    double* fq;                // Values of right-hand side at all quadrature points
+    double rmax;               // Previously computed maximum norm of residual
 
-    uBLASVector x; // Degrees of freedom for the solution on the time slab
-    uBLASVector u; // The solution at a given stage
-    uBLASVector f; // The right-hand side at a given stage
+    double* x; // Degrees of freedom for the solution on the time slab
+    double* u; // The solution at a given stage
+    double* f; // The right-hand side at a given stage
     
   };
 

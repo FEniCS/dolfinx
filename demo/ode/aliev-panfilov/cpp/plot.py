@@ -1,8 +1,8 @@
-# Import matplotlib
-from pylab import *
-
 # Import solution
 from solution import *
+
+# Import matplotlib
+from pylab import *
 
 # Plot first component of solution
 subplot(211)

@@ -1,8 +1,8 @@
-// Copyright (C) 2005-2006 Anders Logg.
+// Copyright (C) 2005-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005-05-02
-// Last changed: 2006-07-07
+// Last changed: 2008-10-07
 
 #ifndef __METHOD_H
 #define __METHOD_H
@@ -14,7 +14,6 @@ namespace dolfin
 {
 
   class Lagrange;
-  class uBLASVector;
   
   /// Base class for cGqMethod and dGqMethod, which contain all numeric constants,
   /// such as nodal points and nodal weights, needed for the method.
@@ -73,17 +72,11 @@ namespace dolfin
     /// Evaluate solution at given point
     virtual double ueval(double x0, double values[], double tau) const = 0;
 
-    /// Evaluate solution at given point
-    virtual double ueval(double x0, uBLASVector& values, uint offset, double tau) const = 0;
-
     /// Evaluate solution at given node
     virtual double ueval(double x0, double values[], uint i) const = 0;
 
     /// Compute residual at right end-point
     virtual double residual(double x0, double values[], double f, double k) const = 0;
-
-    /// Compute residual at right end-point
-    virtual double residual(double x0, uBLASVector& values, uint offset, double f, double k) const = 0;
   
     /// Compute new time step based on the given residual
     virtual double timestep(double r, double tol, double k0, double kmax) const = 0;

@@ -1,12 +1,13 @@
-// Copyright (C) 2005-2006 Anders Logg.
+// Copyright (C) 2005-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005-05-02
-// Last changed: 2008-02-11
+// Last changed: 2008-10-06
 
 #include <stdio.h>
 #include <string>
 #include <dolfin/parameter/parameters.h>
+#include <dolfin/la/uBLASVector.h>
 #include "ODE.h"
 #include "cGqMethod.h"
 #include "dGqMethod.h"
@@ -16,7 +17,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 TimeSlab::TimeSlab(ODE& ode) : 
-  N(ode.size()), _a(0.0), _b(0.0), ode(ode), method(0), u0(ode.size()),
+  N(ode.size()), _a(0.0), _b(0.0), ode(ode), method(0), u0(0),
   save_final(ode.get("ODE save final solution"))
 {
   // Choose method
@@ -37,14 +38,16 @@ TimeSlab::TimeSlab(ODE& ode) :
   else
     error("Unknown ODE method: %s", m.c_str());
 
-  // Get initial data
-  u0.zero();
+  // Get iinitial data
+  u0 = new double[ode.size()];
+  real_zero(ode.size(), u0);
   ode.u0(u0);
 }
 //-----------------------------------------------------------------------------
 TimeSlab::~TimeSlab()
 {
-  if ( method ) delete method;
+  delete method;
+  delete [] u0;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint TimeSlab::size() const
@@ -77,18 +80,15 @@ dolfin::LogStream& dolfin::operator<<(LogStream& stream,
   return stream;
 }
 //-----------------------------------------------------------------------------
-void TimeSlab::write(const uBLASVector& u)
+void TimeSlab::write(uint N, const double* u)
 {
   // FIXME: Make this a parameter?
   std::string filename = "solution.data";
-  message("Saving solution at final time to file \"%s\".",
-	      filename.c_str());
+  message("Saving solution at final time to file \"%s\".", filename.c_str());
 
   FILE* fp = fopen(filename.c_str(), "w");
-  for (uint i = 0; i < u.size(); i++)
-  {
+  for (uint i = 0; i < N; i++)
     fprintf(fp, "%.15e ", u[i]);
-  }
   fprintf(fp, "\n");
   fclose(fp);
 }

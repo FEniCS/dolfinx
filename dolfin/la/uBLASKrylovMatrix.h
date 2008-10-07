@@ -42,7 +42,7 @@ namespace dolfin
     void solve(uBLASVector& x, const uBLASVector& b);
 
     /// Display matrix 
-//    void disp(const int precision = 2) const;
+    //void disp(const int precision = 2) const;
 
   private:
 

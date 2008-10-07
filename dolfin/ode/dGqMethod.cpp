@@ -38,33 +38,12 @@ double dGqMethod::ueval(double x0, double values[], double tau) const
   return sum;
 }
 //-----------------------------------------------------------------------------
-double dGqMethod::ueval(double x0, uBLASVector& values, uint offset, double tau) const
-{
-  // Note: x0 is not used, maybe this can be done differently
-
-  double sum = 0.0;
-  for (unsigned int i = 0; i < nn; i++)
-    sum += values[offset + i] * trial->eval(i, tau);
-  
-  return sum;
-}
-//-----------------------------------------------------------------------------
 double dGqMethod::residual(double x0, double values[], double f, double k) const
 {
   // FIXME: Include jump term in residual
   double sum = 0.0;
   for (uint i = 0; i < nn; i++)
     sum += values[i] * derivatives[i];
-
-  return sum / k - f;
-}
-//-----------------------------------------------------------------------------
-double dGqMethod::residual(double x0, uBLASVector& values, uint offset, double f, double k) const
-{
-  // FIXME: Include jump term in residual
-  double sum = 0.0;
-  for (uint i = 0; i < nn; i++)
-    sum += values[offset + i] * derivatives[i];
 
   return sum / k - f;
 }

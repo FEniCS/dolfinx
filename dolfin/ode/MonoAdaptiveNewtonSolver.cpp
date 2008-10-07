@@ -26,14 +26,14 @@ MonoAdaptiveNewtonSolver::MonoAdaptiveNewtonSolver
 (MonoAdaptiveTimeSlab& timeslab, bool implicit)
   : TimeSlabSolver(timeslab), implicit(implicit),
     piecewise(ode.get("ODE matrix piecewise constant")),
-    ts(timeslab), A(timeslab, implicit, piecewise),
+    ts(timeslab), A(timeslab, implicit, piecewise), btmp(0), Mu0(0),
     krylov(0), lu(0), krylov_g(0), lu_g(0)
 {
   // Initialize product M*u0 for implicit system
-  if ( implicit )
+  if (implicit)
   {
-    Mu0.resize(ts.N);
-    Mu0.zero();
+    Mu0 = new double[ts.N];
+    real_zero(ts.N, Mu0);
   }
 
   // Choose linear solver
@@ -42,14 +42,12 @@ MonoAdaptiveNewtonSolver::MonoAdaptiveNewtonSolver
 //-----------------------------------------------------------------------------
 MonoAdaptiveNewtonSolver::~MonoAdaptiveNewtonSolver()
 {
-  if ( krylov )
-    delete krylov;
-  if ( lu )
-    delete lu;
-  if ( krylov_g )
-    delete krylov_g;
-  if ( lu_g )
-    delete lu_g;
+  delete [] btmp;
+  delete [] Mu0;
+  delete krylov;
+  delete lu;
+  delete krylov_g;
+  delete lu_g;
 }
 //-----------------------------------------------------------------------------
 void MonoAdaptiveNewtonSolver::start()
@@ -64,6 +62,9 @@ void MonoAdaptiveNewtonSolver::start()
   // Initialize right-hand side
   b.resize(nj);
   b.zero();
+  delete btmp;
+  btmp = new double[nj];
+  real_zero(nj, btmp);
 
   // Initialize computation of Jacobian
   A.init();
@@ -79,8 +80,10 @@ void MonoAdaptiveNewtonSolver::start()
 double MonoAdaptiveNewtonSolver::iteration(double tol, uint iter, double d0, double d1)
 {
   // Evaluate b = -F(x) at current x
-  Feval(b);
+  Feval(btmp);
+  for (uint j = 0; j < ts.nj; j++) b[j] = btmp[j];
 
+  // Solve linear system
   if (krylov)
   {
     const double r = b.norm(linf) + DOLFIN_EPS;
@@ -97,10 +100,11 @@ double MonoAdaptiveNewtonSolver::iteration(double tol, uint iter, double d0, dou
   }
 
   // Save norm of old solution
-  xnorm = ts.x.norm(linf);
+  xnorm = real_max_abs(ts.nj, ts.x);
 
   // Update solution x <- x + dx (note: b = -F)
-  ts.x += dx;
+  for (uint j = 0; j < ts.nj; j++)
+    ts.x[j] += dx[j];
   
   // Return maximum increment
   return dx.norm(linf);
@@ -111,15 +115,15 @@ dolfin::uint MonoAdaptiveNewtonSolver::size() const
   return ts.nj;
 }
 //-----------------------------------------------------------------------------
-void MonoAdaptiveNewtonSolver::Feval(uBLASVector& F)
+void MonoAdaptiveNewtonSolver::Feval(double* F)
 {
-  if ( implicit )
+  if (implicit)
     FevalImplicit(F);
   else
     FevalExplicit(F);
 }
 //-----------------------------------------------------------------------------
-void MonoAdaptiveNewtonSolver::FevalExplicit(uBLASVector& F)
+void MonoAdaptiveNewtonSolver::FevalExplicit(double* F)
 {
   // Compute size of time step
   const double k = ts.length();
@@ -127,7 +131,7 @@ void MonoAdaptiveNewtonSolver::FevalExplicit(uBLASVector& F)
   // Evaluate right-hand side at all quadrature points
   for (uint m = 0; m < method.qsize(); m++)
     ts.feval(m);
-
+  
   // Update the values at each stage
   for (uint n = 0; n < method.nsize(); n++)
   {
@@ -136,7 +140,7 @@ void MonoAdaptiveNewtonSolver::FevalExplicit(uBLASVector& F)
     // Reset values to initial data
     for (uint i = 0; i < ts.N; i++)
       F[noffset + i] = ts.u0[i];
-    
+
     // Add weights of right-hand side
     for (uint m = 0; m < method.qsize(); m++)
     {
@@ -148,14 +152,14 @@ void MonoAdaptiveNewtonSolver::FevalExplicit(uBLASVector& F)
   }
 
   // Subtract current values
-  F -= ts.x;
+  real_sub(ts.nj, F, ts.x);
 }
 //-----------------------------------------------------------------------------
-void MonoAdaptiveNewtonSolver::FevalImplicit(uBLASVector& F)
+void MonoAdaptiveNewtonSolver::FevalImplicit(double* F)
 {
   // Use vectors from Jacobian for storing multiplication
-  uBLASVector& xx = A.xx;
-  uBLASVector& yy = A.yy;
+  double* xx = A.xx;
+  double* yy = A.yy;
 
   // Compute size of time step
   const double a = ts.starttime();
@@ -252,7 +256,7 @@ void MonoAdaptiveNewtonSolver::chooseLinearSolver()
     krylov->set("Krylov relative tolerance", ktol);
     krylov->set("Krylov absolute tolerance", ktol*tol);
 
-    message("Using BiCGStab Krylov solver for matrix Jacobian");
+    message("Using BiCGStab Krylov solver for matrix Jacobian.");
     krylov_g = new KrylovSolver(bicgstab, ilu);
     krylov_g->set("Krylov report", monitor);
     krylov_g->set("Krylov relative tolerance", ktol);
@@ -265,7 +269,10 @@ void MonoAdaptiveNewtonSolver::debug()
   const uint n = ts.nj;
   uBLASSparseMatrix B(n, n);
   ublas_sparse_matrix& _B = B.mat();
-  uBLASVector F1(n), F2(n);
+  double* F1 = new double[n];
+  double* F2 = new double[n];
+  real_zero(n, F1);
+  real_zero(n, F2);
 
   // Iterate over the columns of B
   for (uint j = 0; j < n; j++)
@@ -288,6 +295,9 @@ void MonoAdaptiveNewtonSolver::debug()
         _B(i, j) = dFdx;
     }
   }
+
+  delete [] F1;
+  delete [] F2;
 
   B.disp();
 }

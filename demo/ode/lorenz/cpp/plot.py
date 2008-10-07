@@ -1,10 +1,9 @@
-# Import matplotlib
-from pylab import *
-
-import os.path
-
 # Import solution
 from solution import *
+import solution_dual as dual
+
+# Import matplotlib
+from pylab import *
 
 # Plot solution
 figure(1)
@@ -13,16 +12,11 @@ xlabel('t')
 ylabel('U(t)')
 title('Lorenz')
 
-
-try :
-  # import dual solution if it exists
-  import solution_dual as dual
-  figure(2)
-  semilogy(dual.t, dual.u[:, 0], dual.t, dual.u[:, 1], dual.t, dual.u[:, 2])
-  xlabel('t')
-  ylabel('phi(t)')
-  title('Lorenz (dual)')
-except :
-  print "Not plotting dual solution"
+# Plot dual solution
+figure(2)
+semilogy(dual.t, abs(dual.u[:, 0]), dual.t, abs(dual.u[:, 1]), dual.t, abs(dual.u[:, 2]))
+xlabel('t')
+ylabel('phi(t)')
+title('Lorenz (dual)')
 
 show()

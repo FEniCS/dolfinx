@@ -2,10 +2,10 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Original code copied from PyCC.
-// Modified by Anders Logg 2006.
+// Modified by Anders Logg, 2006-2008.
 //
 // First added:  2006-05-24
-// Last changed: 2006-08-21
+// Last changed: 2008-10-07
 //
 // This demo solves the Courtemanche model for cardiac excitation.
 
@@ -78,7 +78,7 @@ public:
     message("Potential at end time: %.6f", VT);
   }
 
-  void u0(uBLASVector& u)
+  void u0(double* u)
   {
     // Set initial data
     u[0]  = -85.0; 
@@ -107,7 +107,7 @@ public:
     u[0] = -25.0;
   }
   
-  void f(const uBLASVector& u, double t, uBLASVector& y)
+  void f(const double* u, double t, double* y)
   {
     computeCurrents(u);
     computeGateCoefficients(u);
@@ -137,7 +137,7 @@ public:
     num_fevals++;
   }
 
-  void computeCurrents(const uBLASVector& u)
+  void computeCurrents(const double* u)
   {
     V      = u[0];
     m      = u[1];
@@ -189,7 +189,7 @@ public:
     B2       = 1.0 + Trpn_max*K_mTrpn/((Ca_i + K_mTrpn)*(Ca_i + K_mTrpn)) + Cmdn_max*K_mCmdn/((Ca_i + K_mCmdn)*(Ca_i + K_mCmdn));
   }
   
-  void computeGateCoefficients(const uBLASVector& u)
+  void computeGateCoefficients(const double* u)
   {
     V = u[0];
     
@@ -272,7 +272,7 @@ public:
     w_inf    = 1.0 - 1.0/(1.0 + exp((V - 40.0)/-17.0));
   }
   
-  bool update(const uBLASVector& u, double t, bool end)
+  bool update(const double* u, double t, bool end)
   {
     if ( end )
       VT = u[0];

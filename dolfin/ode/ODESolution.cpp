@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2008.
 //
 // First added:  2008-06-11
-// Last changed: 2008-10-03
+// Last changed: 2008-10-06
 
 #include <algorithm>
 #include "ODESolution.h"
@@ -18,8 +18,10 @@ ODESolution::ODESolution(ODE& ode) :
   ode(ode),
   filename(tmpnam(0)),
   file(filename.c_str(), std::ios::out | std::ios::binary),
+  cache(0),
   bintree(std::vector<double>()),
   step(sizeof(double)*ode.size()),
+  buffer(0), tmp(0),
   buffer_count(0),
   dataondisk(false)
 {
@@ -28,11 +30,11 @@ ODESolution::ODESolution(ODE& ode) :
   std::string m = ode.get("ODE method") ;
   if (m == "dg") ++cache_size;
 
-  cache = new std::pair<double, uBLASVector>[cache_size];
+  cache = new std::pair<double, double*>[cache_size];
   for (uint i = 0; i < cache_size; ++i) 
   {
     cache[i].first = -1;
-    cache[i].second.resize(ode.size());
+    cache[i].second = new double[ode.size()];
   }
   ringbufcounter = 0;
 
@@ -40,61 +42,64 @@ ODESolution::ODESolution(ODE& ode) :
   buffer_size = ODESOLUTION_INITIAL_ALLOC - (ODESOLUTION_INITIAL_ALLOC % step);
   buffer = (double *) malloc(buffer_size);
   buffer_offset = 0;
+
+  // Initialize temporary array
+  tmp = new double[ode.size()];
 }
 //-----------------------------------------------------------------------------
 ODESolution::~ODESolution() 
 {
-  delete[] cache;
+  for (uint i = 0; i < cache_size; ++i)
+    delete [] cache[i].second;
+  delete [] cache;
   file.close();
   remove(filename.c_str());
   free(buffer);
+  delete [] tmp;
 }
 //-----------------------------------------------------------------------------
-void ODESolution::eval(const double t, uBLASVector& y) 
+void ODESolution::eval(const double t, double* y)
 {
   // Scan the cache
   for (uint i = 0; i < cache_size; ++i) 
   {
-    if (cache[i].first < 0) continue;
+    // Empty position, skip
+    if (cache[i].first < 0)
+      continue;
     
+    // Copy values
     if (cache[i].first == t) 
     {
-      //found return cache[i]
-      for (uint j = 0; j < ode.size(); j++) 
-      {
-        uBLASVector& c = cache[i].second;
-        y[j] = c[j];
-      }
+      real_set(ode.size(), y, cache[i].second);
       return;
     }
   }
 
-  // Not found in cache
+  // Find position in buffer
   std::vector<double>::iterator upper = std::upper_bound(bintree.begin(), 
-						     bintree.end(), 
-						     t);
-  uint b = uint(upper-bintree.begin());
+                                                         bintree.end(), 
+                                                         t);
+  uint b = uint(upper - bintree.begin());
   uint a = b - 1;
 
-  if ( b >= bintree.size() - 1 ) 
+  if (b >= bintree.size() - 1)
   {
-    if ( t > bintree[bintree.size()-1] ) 
+    if (t > bintree[bintree.size()-1])
     {
       error("ODESolution, eval(%g) out of range", t);
     }
-    else {
+    else
+    {
       //t = max(t_in_solution)
-      getFromBuffer(y, bintree.size()-1);
+      get_from_buffer(y, bintree.size() - 1);
     }
   } 
 
+  // Read from buffer
   double t_b = bintree[b];
   double t_a = bintree[a];
-
-  uBLASVector tmp(ode.size());
-
-  getFromBuffer(y, a);
-  getFromBuffer(tmp, b);
+  get_from_buffer(y, a);
+  get_from_buffer(tmp, b);
 
   // Do linear interpolation
   interpolate(y, t_a, tmp, t_b, t, y);
@@ -105,7 +110,6 @@ void ODESolution::eval(const double t, uBLASVector& y)
   {
     cache[ringbufcounter].second[i] = y[i];
   }
-
   ringbufcounter = (ringbufcounter + 1) % cache_size;
 }
 //-----------------------------------------------------------------------------
@@ -154,26 +158,24 @@ void ODESolution::flush()
   file.open(filename.c_str(), std::ios::in | std::ios::binary);  
 }
 //-----------------------------------------------------------------------------
-void ODESolution::interpolate(const uBLASVector& v1, 
-                              const double t1, 
-                              const uBLASVector& v2, 
-                              const double t2, 
-                              const double t, 
-                              uBLASVector& result) 
+void ODESolution::interpolate(const double* v0, const double t0,
+                              const double* v1, const double t1,
+                              const double t, double* result)
 {
-  double h = t2-t1;
-  for (uint i = 0; i < ode.size(); i++) 
+  const double h = t1 - t0;
+  for (uint i = 0; i < ode.size(); i++)
   {
-    result[i] = v1[i] + (t-t1)*((v2[i]-v1[i])/h);
+    result[i] = v0[i] + (t - t0) * (v1[i] - v0[i]) / h;
   }
 }
 //-----------------------------------------------------------------------------
-void ODESolution::getFromBuffer(uBLASVector& u, uint index) {
+void ODESolution::get_from_buffer(double* u, uint index)
+{
   // Check if we need to read from disk
   if (index < buffer_offset || index > buffer_offset + buffer_count) 
   {  
     cout << "ODESolution: Fetching from disk" << endl;
-
+    
     //put index in the middle of the buffer
     buffer_offset = (uint) std::max((int) (index - buffer_size/(step*2)), 0);
     buffer_count = std::min(buffer_size / step, 
@@ -182,9 +184,8 @@ void ODESolution::getFromBuffer(uBLASVector& u, uint index) {
     file.read( (char *) buffer, buffer_count*step);
   }
 
-  //read from buffer
+  // Read from buffer
   for (unsigned int i = 0; i < ode.size(); ++i) 
-  {
     u[i] = buffer[(index - buffer_offset)*ode.size() + i];
-  }
 }
+//-----------------------------------------------------------------------------

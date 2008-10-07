@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005-01-28
-// Last changed: 2008-06-11
+// Last changed: 2008-10-06
 
 #include <string>
 #include <dolfin/common/constants.h>
@@ -19,7 +19,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 MonoAdaptiveTimeSlab::MonoAdaptiveTimeSlab(ODE& ode)
   : TimeSlab(ode), solver(0), adaptivity(ode, *method), nj(0), dofs(0), 
-    fq(0), rmax(0), u(N), f(N)
+    fq(0), rmax(0), x(0), u(0), f(0)
 {
   // Choose solver
   solver = chooseSolver();
@@ -37,12 +37,15 @@ MonoAdaptiveTimeSlab::MonoAdaptiveTimeSlab(ODE& ode)
     fq[j] = 0.0;
 
   // Initialize solution
-  x.resize(nj);
-  // FIXME: Do we need to zero x?
-  x.zero();
+  x = new double[nj];
+  real_zero(nj, x);
+
+  // Initialize arrays for u and f
+  u = new double[N];
+  f = new double[N];
 
   // Evaluate f at initial data for cG(q)
-  if ( method->type() == Method::cG )
+  if (method->type() == Method::cG)
   {
     ode.f(u0, 0.0, f);
     copy(f, 0, fq, 0, N);
@@ -51,12 +54,12 @@ MonoAdaptiveTimeSlab::MonoAdaptiveTimeSlab(ODE& ode)
 //-----------------------------------------------------------------------------
 MonoAdaptiveTimeSlab::~MonoAdaptiveTimeSlab()
 {
-  if ( solver ) 
-    delete solver;
-  if ( dofs ) 
-    delete [] dofs;
-  if ( fq ) 
-    delete [] fq;
+  delete solver;
+  delete [] dofs;
+  delete [] fq;
+  delete [] x;
+  delete [] u;
+  delete [] f;
 }
 //-----------------------------------------------------------------------------
 double MonoAdaptiveTimeSlab::build(double a, double b)
@@ -71,7 +74,7 @@ double MonoAdaptiveTimeSlab::build(double a, double b)
 
   // Choose time step
   const double k = adaptivity.timestep();
-  if ( k < adaptivity.threshold() * (b - a) )
+  if (k < adaptivity.threshold() * (b - a))
     b = a + k;
 
   // Save start and end time
@@ -82,7 +85,7 @@ double MonoAdaptiveTimeSlab::build(double a, double b)
   //     << a << " and " << b << ": K = " << b - a << endl;
 
   // Update at t = 0.0
-  if ( a < DOLFIN_EPS )
+  if (a < DOLFIN_EPS)
     ode.update(u0, a, false);
 
   return b;
@@ -117,7 +120,7 @@ bool MonoAdaptiveTimeSlab::check(bool first)
     const double r = fabs(method->residual(x0, dofs, fq[foffset + i], k));
     
     // Compute maximum
-    if ( r > rmax )
+    if (r > rmax)
       rmax = r;
   }
 
@@ -135,15 +138,15 @@ bool MonoAdaptiveTimeSlab::shift(bool end)
   const uint foffset = (method->qsize() - 1) * N;
 
   // Write solution at final time if we should
-  if ( save_final && end )
+  if (save_final && end)
   {
     copy(x, xoffset, u, 0, N);
-    write(u);
+    write(N, u);
   }
 
   // Let user update ODE
   copy(x, xoffset, u, 0, N);
-  if ( !ode.update(u, _b, end) )
+  if (!ode.update(u, _b, end))
     return false;
 
   // Set initial value to end-time value
@@ -151,7 +154,7 @@ bool MonoAdaptiveTimeSlab::shift(bool end)
     u0[i] = x[xoffset + i];
 
   // Set f at first quadrature point to f at end-time for cG(q)
-  if ( method->type() == Method::cG )
+  if (method->type() == Method::cG)
   {
     for (uint i = 0; i < N; i++)
       fq[i] = fq[foffset + i];
@@ -222,10 +225,10 @@ void MonoAdaptiveTimeSlab::disp() const
 void MonoAdaptiveTimeSlab::feval(uint m)
 {
   // Evaluation depends on the choice of method
-  if ( method->type() == Method::cG )
+  if (method->type() == Method::cG)
   {
     // Special case: m = 0
-    if ( m == 0 )
+    if (m == 0)
     {
       // We don't need to evaluate f at t = a since we evaluated
       // f at t = b for the previous time slab
@@ -251,17 +254,17 @@ TimeSlabSolver* MonoAdaptiveTimeSlab::chooseSolver()
   bool implicit = ode.get("ODE implicit");
   std::string solver = ode.get("ODE nonlinear solver");
 
-  if ( solver == "fixed-point" )
+  if (solver == "fixed-point")
   {
-    if ( implicit )
+    if (implicit)
       error("Newton solver must be used for implicit ODE.");
 
     message("Using mono-adaptive fixed-point solver.");
     return new MonoAdaptiveFixedPointSolver(*this);
   }
-  else if ( solver == "newton" )
+  else if (solver == "newton")
   {
-    if ( implicit )
+    if (implicit)
     {
       message("Using mono-adaptive Newton solver for implicit ODE.");
       return new MonoAdaptiveNewtonSolver(*this, implicit);
@@ -272,9 +275,9 @@ TimeSlabSolver* MonoAdaptiveTimeSlab::chooseSolver()
       return new MonoAdaptiveNewtonSolver(*this, implicit);
     }
   }
-  else if ( solver == "default" )
+  else if (solver == "default")
   {
-    if ( implicit )
+    if (implicit)
     {      
       message("Using mono-adaptive Newton solver (default for implicit ODEs).");
       return new MonoAdaptiveNewtonSolver(*this, implicit);
@@ -301,7 +304,7 @@ double* MonoAdaptiveTimeSlab::tmp()
   // needs to be done differently for cG and dG, since cG does not
   // recompute the right-hand side at the first quadrature point.
 
-  if ( method->type() == Method::cG )
+  if (method->type() == Method::cG)
     return fq + N;
   else
     return fq;

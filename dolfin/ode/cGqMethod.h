@@ -1,8 +1,8 @@
-// Copyright (C) 2003-2006 Anders Logg.
+// Copyright (C) 2003-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005-05-02
-// Last changed: 2006-07-07
+// Last changed: 2008-10-07
 
 #ifndef __CGQ_METHOD_H
 #define __CGQ_METHOD_H
@@ -26,18 +26,12 @@ namespace dolfin
     /// Evaluate solution at given point
     double ueval(double x0, double values[], double tau) const;
 
-    /// Evaluate solution at given point
-    double ueval(double x0, uBLASVector& values, uint offset, double tau) const;
-
     /// Evaluate solution at given node (inline optimized)
     inline double ueval(double x0, double values[], uint i) const
     { return ( i == 0 ? x0 : values[i - 1] ); }
 
     /// Compute residual at right end-point    
     double residual(double x0, double values[], double f, double k) const;
-
-    /// Compute residual at right end-point
-    double residual(double x0, uBLASVector& values, uint offset, double f, double k) const;
 
     /// Compute new time step based on the given residual
     double timestep(double r, double tol, double k0, double kmax) const;
