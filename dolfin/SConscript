@@ -52,6 +52,8 @@ if not env["enableMtl4"]:
     disabled_packages.append("mtl4")
 if not env["enableParmetis"]:
     disabled_packages.append("parmetis")
+if not env["enableGmp"]:
+    disabled_packages.append("gmp")
 
 # Find modules in the project and dependencies:
 # only modules and configuredPackages will be used in this code:
