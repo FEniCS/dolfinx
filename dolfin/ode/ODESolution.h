@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2008.
 // 
 // First added:  2008-06-11
-// Last changed: 2008-10-02
+// Last changed: 2008-10-06
 
 #ifndef __ODESOLUTION_H
 #define __ODESOLUTION_H
@@ -23,7 +23,6 @@ namespace dolfin
   // Forward declarations
   class ODE;
   class Sample;
-  class uBLASVector;
 
   /// ODESolution stores the samples from the ODE solver, primarily to
   /// be able to solve the dual problem. To be able to evaluate the
@@ -46,7 +45,7 @@ namespace dolfin
     ~ODESolution();
 
     /// Evaluate (interpolate) value of solution at given time    
-    void eval(const double t, uBLASVector& y);
+    void eval(const double t, double* y);
 
     // Add sample
     void add_sample(Sample& sample);
@@ -59,7 +58,7 @@ namespace dolfin
     ODE& ode;
     std::string filename;
     std::fstream file;
-    std::pair<double, uBLASVector> *cache;
+    std::pair<double, double*>* cache;
     
     uint cache_size;
     uint ringbufcounter;
@@ -69,20 +68,19 @@ namespace dolfin
     uint step;
     
     double* buffer;
+    double* tmp;
     uint buffer_size;
     uint buffer_offset;
     uint buffer_count; //actual number of entries in buffer
     bool dataondisk;
 
     // Linear interpolation
-    void interpolate(const uBLASVector& v1,
-                     const double t1, 
-                     const uBLASVector& v2, 
-                     const double t2, 
-                     const double t, 
-                     uBLASVector& result);
-    //read entry from buffer, fetch from disk if necessary
-    void getFromBuffer(uBLASVector& u, uint index);
+    void interpolate(const double* v0, const double t0, 
+                     const double* v1, const double t1,
+                     const double t, double* result);
+
+    // Read entry from buffer, fetch from disk if necessary
+    void get_from_buffer(double* u, uint index);
     
   };
 

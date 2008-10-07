@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells
 //
 // First added:  2005-01-27
-// Last changed: 2008-06-11
+// Last changed: 2008-10-07
 
 #include <string>
 #include <algorithm>
@@ -25,7 +25,7 @@ MultiAdaptiveTimeSlab::MultiAdaptiveTimeSlab(ODE& ode) :
   TimeSlab(ode),
   sa(0), sb(0), ei(0), es(0), ee(0), ed(0), jx(0), de(0),
   ns(0), ne(0), nj(0), nd(0), solver(0), adaptivity(ode, *method), partition(N),
-  elast(0), f0(0), emax(0), kmin(0)
+  elast(0), f0(0), u(0), emax(0), kmin(0)
 {
   // Choose solver
   solver = chooseSolver();
@@ -40,8 +40,8 @@ MultiAdaptiveTimeSlab::MultiAdaptiveTimeSlab(ODE& ode) :
     f0 = new double[N];
 
   // Initialize vector for u
-  u.resize(N);
-  u.zero();
+  u = new double[N];
+  real_zero(N, u);
 
   // Initialize transpose of dependencies if necessary
   message("Computing transpose (inverse) of dependency pattern.");
@@ -51,19 +51,20 @@ MultiAdaptiveTimeSlab::MultiAdaptiveTimeSlab(ODE& ode) :
 //-----------------------------------------------------------------------------
 MultiAdaptiveTimeSlab::~MultiAdaptiveTimeSlab()
 {
-  if ( sa ) delete [] sa;
-  if ( sb ) delete [] sb;
-  if ( ei ) delete [] ei;
-  if ( es ) delete [] es;
-  if ( ee ) delete [] ee;
-  if ( ed ) delete [] ed;
-  if ( jx ) delete [] jx;
-  if ( de ) delete [] de;
+  delete [] sa;
+  delete [] sb;
+  delete [] ei;
+  delete [] es;
+  delete [] ee;
+  delete [] ed;
+  delete [] jx;
+  delete [] de;
 
-  if ( solver ) delete solver;
+  delete solver;
 
-  if ( elast ) delete [] elast;
-  if ( f0 ) delete [] f0;
+  delete [] elast;
+  delete [] f0;
+  delete [] u;
 }
 //-----------------------------------------------------------------------------
 double MultiAdaptiveTimeSlab::build(double a, double b)
@@ -153,7 +154,7 @@ bool MultiAdaptiveTimeSlab::shift(bool end)
 
   // Write solution at final time if we should
   if ( save_final && end )
-    write(u);
+    write(N, u);
 
   // Let user update ODE
   if ( !ode.update(u, _b, end) )

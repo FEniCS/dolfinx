@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005-01-28
-// Last changed: 2008-02-11
+// Last changed: 2008-10-07
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/parameter/parameters.h>
@@ -33,48 +33,37 @@ MonoAdaptiveFixedPointSolver::~MonoAdaptiveFixedPointSolver()
 }
 //-----------------------------------------------------------------------------
 double MonoAdaptiveFixedPointSolver::iteration(double tol, uint iter,
-					     double d0, double d1)
+                                               double d0, double d1)
 {
-//   double K = ts.endtime() - ts.starttime();
-
+  //   double K = ts.endtime() - ts.starttime();
   double alpha_orig = alpha;
-
   if(stabilize)
   {
-
-    if(iter == 0)
+    if (iter == 0)
     {
       ramp = 1.0;
       mi = 0;
       li = 0;
     }
     
-    if(iter == 0 || (d1 > d0 && li == 0))
+    if (iter == 0 || (d1 > d0 && li == 0))
     {
-      // stabilize
-      
       ramp = 1.0;
       mi = ode.get("ODE fixed-point stabilization m");
       //mi = (int)ceil(log10(K * 1.0e4));
-
-      //cout << "stabilize: " << mi << endl;
     }  
     
-    if(mi == 0 && li == 0)
+    if (mi == 0 && li == 0)
     {
       // Choose number of ramping iterations
       li = ode.get("ODE fixed-point stabilization l");
-
-      //cout << "ramp: " << li << endl;
     }
     
-    if(mi == 0)
+    if (mi == 0)
     {
-      // ramping
-      
+      // Ramping
       ramp = ramp * rampfactor;
     }
-    
 
     alpha *= ramp;
   }
@@ -123,13 +112,13 @@ double MonoAdaptiveFixedPointSolver::iteration(double tol, uint iter,
       max_increment = increment;
   }
 
-  if(stabilize)
+  if (stabilize)
   {
     alpha = alpha_orig;
 
-    if(mi > 0)
+    if (mi > 0)
       mi -= 1;
-    if(li > 0)
+    if (li > 0)
       li -= 1;
   }
 

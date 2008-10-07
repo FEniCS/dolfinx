@@ -36,29 +36,11 @@ double cGqMethod::ueval(double x0, double values[], double tau) const
   return sum;
 }
 //-----------------------------------------------------------------------------
-double cGqMethod::ueval(double x0, uBLASVector& values, uint offset, double tau) const
-{
-  double sum = x0 * trial->eval(0, tau);
-  for (uint i = 0; i < nn; i++)
-    sum += values[offset + i] * trial->eval(i + 1, tau);
-  
-  return sum;
-}
-//-----------------------------------------------------------------------------
 double cGqMethod::residual(double x0, double values[], double f, double k) const
 {
   double sum = x0 * derivatives[0];
   for (uint i = 0; i < nn; i++)
     sum += values[i] * derivatives[i + 1];
-
-  return sum / k - f;
-}
-//-----------------------------------------------------------------------------
-double cGqMethod::residual(double x0, uBLASVector& values, uint offset, double f, double k) const
-{
-  double sum = x0 * derivatives[0];
-  for (uint i = 0; i < nn; i++)
-    sum += values[offset + i] * derivatives[i + 1];
 
   return sum / k - f;
 }

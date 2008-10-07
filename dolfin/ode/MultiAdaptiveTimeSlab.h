@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005-01-27
-// Last changed: 2008-06-11
+// Last changed: 2008-10-06
 
 #ifndef __MULTI_ADAPTIVE_TIME_SLAB_H
 #define __MULTI_ADAPTIVE_TIME_SLAB_H
@@ -165,13 +165,12 @@ namespace dolfin
     MultiAdaptivity adaptivity; // Adaptive time step regulation (size 3N)
     Partition partition;        // Time step partitioning (size N)
     int* elast;                 // Last element for each component (size N)
-    double* f0;                   // Right-hand side at left end-point for cG (size N)
+    double* f0;                 // Right-hand side at left end-point for cG (size N)
+    double* u;                  // The interpolated solution at a given time
 
     //--- Auxiliary data ---
     uint emax;                  // Last covered element for sample
     double kmin;                  // Minimum time step (exluding threshold modified)
-
-    uBLASVector u; // The interpolated solution at a given time
 
   };
 

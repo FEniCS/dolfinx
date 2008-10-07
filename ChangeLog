@@ -1,3 +1,4 @@
+ - Remove homotopy solver
  - Remove typedef real, now using plain double instead
  - Add various operators -=, += to GenericMatrix
  - Don't use -Werror when compiling SWIG generated code

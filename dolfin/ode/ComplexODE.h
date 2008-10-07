@@ -1,8 +1,8 @@
-// Copyright (C) 2005-2006 Anders Logg.
+// Copyright (C) 2005-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005-02-02
-// Last changed: 2006-08-21
+// Last changed: 2008-10-06
 
 #ifndef __COMPLEX_ODE_H
 #define __COMPLEX_ODE_H
@@ -65,25 +65,25 @@ namespace dolfin
     virtual bool update(const complex z[], double t, bool end);
 
     /// Return initial value for real-valued ODE
-    void u0(uBLASVector& u);
+    void u0(double* u);
 
     /// Return right-hand side for real-valued ODE
-    double f(const uBLASVector& u, double t, uint i);
+    double f(const double* u, double t, uint i);
 
     /// Evaluate right-hand side for real-valued ODE
-    void f(const uBLASVector& u, double t, uBLASVector& y);
+    void f(const double* u, double t, double* y);
 
     /// Compute product y = Mx for real-valued ODE
-    void M(const uBLASVector& x, uBLASVector& y, const uBLASVector& u, double t);
+    void M(const double* x, double* y, const double* u, double t);
 
     /// Compute product y = Jx for real-valued ODE
-    void J(const uBLASVector& x, uBLASVector& y, const uBLASVector& u, double t);
+    void J(const double* x, double* y, const double* u, double t);
 
     /// Return time step for real-valued ODE
     double timestep(uint i);
 
     /// Update for real-valued ODE
-    bool update(const uBLASVector& u, double t, bool end);
+    bool update(const double* u, double t, bool end);
 
   protected:
 

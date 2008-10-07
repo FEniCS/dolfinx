@@ -1,8 +1,8 @@
-// Copyright (C) 2002 Anders Logg.
+// Copyright (C) 2002-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2002
-// Last changed: 2006-08-22
+// Last changed: 2008-10-07
 //
 // This demo solves the harmonic oscillator on
 // the time interval (0, 4*pi) and computes the
@@ -18,19 +18,19 @@ public:
   
   Harmonic() : ODE(2, 4.0 * DOLFIN_PI), e(0.0) {}
 
-  void u0(uBLASVector& u)
+  void u0(double* u)
   {
     u[0] = 0.0;
     u[1] = 1.0;
   }
 
-  void f(const uBLASVector& u, double t, uBLASVector& y)
+  void f(const double* u, double t, double* y)
   {
     y[0] = u[1];
     y[1] = - u[0];
   }
 
-  bool update(const uBLASVector& u, double t, bool end)
+  bool update(const double* u, double t, bool end)
   {
     if ( !end )
       return true;

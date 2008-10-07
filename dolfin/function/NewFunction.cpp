@@ -47,7 +47,7 @@ NewFunction::NewFunction(const NewFunction& v)
 //-----------------------------------------------------------------------------
 NewFunction::~NewFunction()
 {
-  // Do nothing
+  delete _vector;
 }
 //-----------------------------------------------------------------------------
 const NewFunction& NewFunction::operator= (const NewFunction& v)

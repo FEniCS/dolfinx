@@ -4,7 +4,7 @@
 // Modified by Benjamin Kehlet 2008
 //
 // First added:  2003
-// Last changed: 2008-10-02
+// Last changed: 2008-10-06
 
 #include <cmath>
 #include <string>
@@ -13,7 +13,6 @@
 #include <dolfin/common/constants.h>
 #include <dolfin/parameter/parameters.h>
 #include "ODE.h"
-#include "ReducedModel.h"
 #include "Sample.h"
 #include "MonoAdaptiveTimeSlab.h"
 #include "MultiAdaptiveTimeSlab.h"
@@ -54,31 +53,12 @@ void TimeStepper::solve(ODE& ode, ODESolution& u)
   // Start timing
   tic();  
   
-  // Check if we should create a reduced model (automatic modeling)
-  if (ode.get("ODE automatic modeling"))
-  {
-    message("Creating reduced model (automatic modeling).");
-    error("Automatic modeling temporarily broken.");
-
-    // Create the reduced model
-    //ReducedModel reducedModel(ode);
-
-    // Create a time stepper object
-    //TimeStepper timeStepper(reducedModel, u);
+  // Create a time stepper object
+  TimeStepper timeStepper(ode, u);
     
-    // Do time stepping
-    //while ( !timeStepper.finished() )
-    //  timeStepper.step();
-  }
-  else
-  {
-    // Create a time stepper object
-    TimeStepper timeStepper(ode, u);
-    
-    // Do time stepping
-    while (!timeStepper.finished() && !timeStepper.stopped())
-      timeStepper.step();
-  }
+  // Do time stepping
+  while (!timeStepper.finished() && !timeStepper.stopped())
+    timeStepper.step();
   
   // Report elapsed time
   message("Solution computed in %.3f seconds.", toc());

@@ -1,21 +1,19 @@
-// Copyright (C) 2003-2006 Anders Logg.
+// Copyright (C) 2003-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005-01-06
-// Last changed: 2006-07-05
+// Last changed: 2008-10-07
 
 #ifndef __DEPENDENCIES_H
 #define __DEPENDENCIES_H
 
 #include <dolfin/common/types.h>
 #include <dolfin/common/Array.h>
-#include <dolfin/la/uBLASSparseMatrix.h>
 
 namespace dolfin
 {
 
   class ODE;
-  class uBLASVector;
 
   /// This class keeps track of the dependencies between different
   /// components of an ODE system. For a large ODE, it is important
@@ -39,9 +37,6 @@ namespace dolfin
     /// Add dependency (component i depends on component j)
     void set(uint i, uint j, bool checknew = false);
     
-    /// Set dependencies according to given sparse matrix
-    void set(const uBLASSparseMatrix& A);
-
     /// Set dependencies to transpose of given dependencies
     void transp(const Dependencies& dependencies);
     
@@ -63,10 +58,10 @@ namespace dolfin
   private:
     
     // Check given dependency
-    bool checkDependency(ODE& ode, uBLASVector& u, double f0, uint i, uint j);
+    bool check_dependency(ODE& ode, double* u, double f0, uint i, uint j);
 
     // Make pattern sparse
-    void makeSparse();
+    void make_sparse();
 
     // Number of components
     uint N;

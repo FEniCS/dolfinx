@@ -26,9 +26,6 @@ namespace dolfin
     /// Evaluate solution at given point
     double ueval(double x0, double values[], double tau) const;
 
-    /// Evaluate solution at given point
-    double ueval(double x0, uBLASVector& values, uint offset, double tau) const;
-
     /// Evaluate solution at given node (inline optimized)
     double ueval(double x0, double values[], uint i) const
     { return values[i]; }
@@ -36,9 +33,6 @@ namespace dolfin
     /// Compute residual at right end-point
     double residual(double x0, double values[], double f, double k) const;
 
-    /// Compute residual at right end-point
-    double residual(double x0, uBLASVector& values, uint offset, double f, double k) const;
-  
     /// Compute new time step based on the given residual
     double timestep(double r, double tol, double k0, double kmax) const;
 

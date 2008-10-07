@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2003-10-21
-// Last changed: 2008-10-02
+// Last changed: 2008-10-06
 
 #ifndef __ODE_H
 #define __ODE_H
@@ -10,9 +10,6 @@
 #include <dolfin/common/types.h>
 #include <dolfin/common/real.h>
 #include <dolfin/log/Event.h>
-#include <dolfin/la/uBLASVector.h>
-#include <dolfin/la/uBLASSparseMatrix.h>
-#include <dolfin/la/Matrix.h>
 #include <dolfin/parameter/Parametrized.h>
 #include "Dependencies.h"
 #include "Sample.h"
@@ -62,26 +59,25 @@ namespace dolfin
     virtual ~ODE();
 
     /// Set initial values
-    virtual void u0(uBLASVector& u) = 0;
+    virtual void u0(double* u) = 0;
 
     /// Evaluate right-hand side y = f(u, t), mono-adaptive version (default, optional)
-    virtual void f(const uBLASVector& u, double t, uBLASVector& y);
+    virtual void f(const double* u, double t, double* y);
 
     /// Evaluate right-hand side f_i(u, t), multi-adaptive version (optional)
-    virtual double f(const uBLASVector& u, double t, uint i);
+    virtual double f(const double* u, double t, uint i);
 
     /// Compute product y = Mx for implicit system (optional)
-    virtual void M(const uBLASVector& x, uBLASVector& y, const uBLASVector& u, double t);
+    virtual void M(const double* x, double* y, const double* u, double t);
 
     /// Compute product y = Jx for Jacobian J (optional)
-    virtual void J(const uBLASVector& x, uBLASVector& y, const uBLASVector& u, double t);
+    virtual void J(const double* x, double* y, const double* u, double t);
 
-    /// Compute product y = tranpose(J)x for Jacobian J (optional)
-    /// Used when computing error estimate only
-    virtual void JT(const uBLASVector& x, uBLASVector& y, const uBLASVector& u, double t);
+    /// Compute product y = tranpose(J)x for Jacobian J (optional, for dual problem)
+    virtual void JT(const double* x, double* y, const double* u, double t);
 
     /// Compute entry of Jacobian (optional)
-    virtual double dfdu(const uBLASVector& u, double t, uint i, uint j);
+    virtual double dfdu(const double* u, double t, uint i, uint j);
 
     /// Time step to use for the whole system at a given time t (optional)
     virtual double timestep(double t, double k0) const;
@@ -90,7 +86,7 @@ namespace dolfin
     virtual double timestep(double t, uint i, double k0) const;
 
     /// Update ODE, return false to stop (optional)
-    virtual bool update(const uBLASVector& u, double t, bool end);
+    virtual bool update(const double* u, double t, bool end);
 
     /// Save sample (optional)
     virtual void save(Sample& sample);
@@ -100,9 +96,6 @@ namespace dolfin
 
     /// Automatically detect sparsity (optional)
     void sparse();
-
-    /// Compute sparsity from given matrix (optional)
-    void sparse(const uBLASSparseMatrix& A);
 
     /// Return number of components N
     uint size() const;
@@ -148,8 +141,9 @@ namespace dolfin
 
   private:
 
-    // Temporary vector used for computing Jacobian
-    uBLASVector tmp;
+    // Temporary vectors used for computing Jacobian
+    double* tmp0;
+    double* tmp1;
 
     // Events
     Event not_impl_f;
