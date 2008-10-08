@@ -95,28 +95,21 @@ def pkgTests(forceCompiler=None, sconsEnv=None,
         version = pkgVersion(sconsEnv=sconsEnv, compiler=compiler,
                              linker=linker, cflags=cflags, libs=libs)
 
-    # A program that do a real GMP test (from the GMP manual)
+    # A program that do a real GMP test (thanks to Benjamin Kehlet)
     cpp_test_lib_str = r"""
+#include <iostream>
 #include <gmpxx.h>
 
-void
-foo (mpz_t result, const mpz_t param, unsigned long n)
+int main (void)
 {
-  unsigned long  i;
-  mpz_mul_ui (result, param, n);
-  for (i = 1; i < n; i++)
-    mpz_add_ui (result, result, i*7);
-}
+  mpz_class integer1("1000000023457323");
+  mpz_class integer2("54367543212");
+  mpz_class int_result = integer1*integer2;
 
-int
-main (void)
-{
-  mpz_t  r, n;
-  mpz_init (r);
-  mpz_init_set_str (n, "123456", 0);
-  foo (r, n, 20L);
-  gmp_printf ("%Zd\n", r);
-  return 0;
+  std::cout << integer1 << " * " << integer2 << " = "
+            << int_result << std::endl;
+
+  return EXIT_SUCCESS;
 }
 """
     cpp_file = "gmp_config_test_lib.cpp"
@@ -145,8 +138,10 @@ main (void)
     if runFailed:
         remove_cppfile(cpp_file, ofile=True, execfile=True)
         raise UnableToRunException("GMP", errormsg=cmdoutput)
-    value = cmdoutput.split("\n")[0]
-    if value != '2470450':
+    try:
+        value = cmdoutput.split("=")[1].strip()
+        assert value == '54367544487317021840341476'
+    except:
         errormsg = "GMP test does not produce correct result, " \
                    "check your GMP installation."
         errormsg += "\n%s" % cmdoutput
