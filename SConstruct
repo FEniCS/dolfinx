@@ -20,10 +20,13 @@ except ImportError:
 from simula_scons.Errors import PkgconfigError, PkgconfigMissing
 
 # Create a SCons Environment based on the main os environment
-env = Environment(ENV=os.environ)
+env = scons.ExtendedEnvironment(ENV=os.environ)
 
 # Set a projectname. Used in some places, like pkg-config generator
 env["projectname"] = "dolfin"
+
+# Set version
+env["PACKAGE_VERSION"] = "0.8.0"
 
 scons.setDefaultEnv(env)
 
@@ -269,7 +272,7 @@ env.Install(os.path.join(env["manDir"], "man1"),
 
 # shared libraries goes into our libDir:
 for l in buildDataHash["shlibs"]:
-  env.Install(env["libDir"], l)
+  env.InstallVersionedSharedLibrary(env["libDir"], l)
 
 # install header files in the same structure as in the source tree, within
 # includeDir/dolfin:

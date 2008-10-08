@@ -10,7 +10,7 @@ from commonPkgConfigUtils import *
 
 def trickPythonpath():
     # play tricks with pythonpath to avoid mixing up 
-    # the double numpy with this file.
+    # the real numpy with this file.
     file_abspath = abspath(dirname(__file__))
     try:
         splitpythonpath = os.environ['PYTHONPATH'].split(os.pathsep)

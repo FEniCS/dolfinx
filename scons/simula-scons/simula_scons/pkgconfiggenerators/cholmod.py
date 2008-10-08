@@ -252,7 +252,7 @@ def pkgTests(forceCompiler=None, sconsEnv=None,
     version = pkgVersion(compiler=compiler, cflags=cflags,
                          libs=libs, sconsEnv=sconsEnv)
 
-  # FIXME: add a program that do a double CHOLMOD test.
+  # FIXME: add a program that do a real CHOLMOD test.
   cpp_test_lib_str = r"""
 #include "cholmod.h"
 int main (void)

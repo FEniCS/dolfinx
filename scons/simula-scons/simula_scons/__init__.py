@@ -8,6 +8,7 @@ from SCons.Builder import Builder
 from SCons.Action import Action
 from SCons.Options import Options
 from SCons.Environment import Environment
+from ExtendedEnvironment import ExtendedEnvironment
 
 # Import module configuration logic
 from _module import *
@@ -126,7 +127,7 @@ def oldrsplit(toSplit, sub, max):
 
 _SshHost = "gogmagog.simula.no"
 if "SUDO_USER" in os.environ:
-    # Use double user in case PyCC is install with 'sudo scons install'
+    # Use real user in case PyCC is install with 'sudo scons install'
     _SshHost = "%s@%s" % (os.environ["SUDO_USER"], _SshHost)
 _SshDir = "/srl/phulius/pycc"
 
@@ -541,7 +542,8 @@ def checkVersion(v_check, v_required):
     return True
 
 # Find modules ( srcnode must be updated ) 
-def getModules(configuredPackages, resolve_deps=True, directory="."):
+def getModules(configuredPackages, resolve_deps=True,
+               directory=".", disabled_modules=[]):
     """Generate module objects from specification files in module directories. Directories starting with a dot,
        e.g. ".ShadowModule" will not be processed
        
@@ -549,6 +551,7 @@ def getModules(configuredPackages, resolve_deps=True, directory="."):
        @param A flag indicating whether dependencies should be resolved; if True, 
               modules with dependencies not present in configuredPackages will be 
               removed from the list
+       @param A list of module names that should be disabled
        @return A dictionary of L{module<_Module>} objects.
     """
     modules = {}
@@ -558,7 +561,7 @@ def getModules(configuredPackages, resolve_deps=True, directory="."):
     for dpath, dnames, fnames in os.walk(srcDir):
         dpath = dpath[len(srcDir):] # Make relative to source dir
         for d in dnames[:]:
-            if d.startswith("."):
+            if d.startswith(".") or d in disabled_modules:
                 # Ignore dirs starting with '.'
                 dnames.remove(d)
                 continue
@@ -593,7 +596,8 @@ def getModulesAndDependencies(directory=".",
 
     # Find all modules:
 
-    modules = getModules({}, resolve_deps=False, directory=directory)
+    modules = getModules({}, resolve_deps=False, directory=directory,
+                         disabled_modules=disabled_packages)
 
     # next, build a list of all external dependencies for each module.
     # We also include the optional dependencies, as those are separated
