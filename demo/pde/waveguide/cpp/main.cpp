@@ -21,7 +21,7 @@
 
 using namespace dolfin;
 
-#ifdef HAS_PETSC
+#if defined(HAS_PETSC) && defined(HAS_SLEPC)
 
 int main()
 {
@@ -95,7 +95,7 @@ int main()
 
 int main()
 {
-  message("Sorry, this demo is not available when DOLFIN is compiled without PETSc.");
+  message("Sorry, this demo is only available when DOLFIN is compiled with PETSc and SLEPc.");
   return 0;
 }
 
