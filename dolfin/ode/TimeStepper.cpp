@@ -4,7 +4,7 @@
 // Modified by Benjamin Kehlet 2008
 //
 // First added:  2003
-// Last changed: 2008-06-18
+// Last changed: 2008-10-06
 
 #include <cmath>
 #include <string>
@@ -13,7 +13,6 @@
 #include <dolfin/common/constants.h>
 #include <dolfin/parameter/parameters.h>
 #include "ODE.h"
-#include "ReducedModel.h"
 #include "Sample.h"
 #include "MonoAdaptiveTimeSlab.h"
 #include "MultiAdaptiveTimeSlab.h"
@@ -46,7 +45,7 @@ TimeStepper::TimeStepper(ODE& ode, ODESolution& u) :
 //-----------------------------------------------------------------------
 TimeStepper::~TimeStepper()
 {
-  if ( timeslab ) delete timeslab;
+  delete timeslab;
 }
 //----------------------------------------------------------------------
 void TimeStepper::solve(ODE& ode, ODESolution& u)
@@ -54,38 +53,18 @@ void TimeStepper::solve(ODE& ode, ODESolution& u)
   // Start timing
   tic();  
   
-  // Check if we should create a reduced model (automatic modeling)
-  if ( ode.get("ODE automatic modeling") )
-  {
-    message("Creating reduced model (automatic modeling).");
-    error("Automatic modeling temporarily broken.");
-
-    // Create the reduced model
-    //ReducedModel reducedModel(ode);
-
-    // Create a time stepper object
-    //TimeStepper timeStepper(reducedModel, u);
+  // Create a time stepper object
+  TimeStepper timeStepper(ode, u);
     
-    // Do time stepping
-    //while ( !timeStepper.finished() )
-    //  timeStepper.step();
-  }
-  else
-  {
-    // Create a time stepper object
-    TimeStepper timeStepper(ode, u);
-    
-    // Do time stepping
-
-    while ( !timeStepper.finished() && !timeStepper.stopped() )
-      timeStepper.step();
-  }
-
+  // Do time stepping
+  while (!timeStepper.finished() && !timeStepper.stopped())
+    timeStepper.step();
+  
   // Report elapsed time
   message("Solution computed in %.3f seconds.", toc());
 }
 //-------------------------------------------------------------------------
-real TimeStepper::step()
+double TimeStepper::step()
 {
   // FIXME: Change type of time slab if solution does not converge
 
@@ -96,8 +75,8 @@ real TimeStepper::step()
   _stopped = false;
 
   // Iterate until solution is accepted
-  const real a = t;
-  while ( true )
+  const double a = t;
+  while (true)
   {
     // Build time slab
     t = timeslab->build(a, T);
@@ -152,11 +131,11 @@ bool TimeStepper::stopped() const
 void TimeStepper::save()
 {
   // Check if we should save the solution
-  if ( !save_solution )
+  if (!save_solution)
     return;
 
   // Choose method for saving the solution
-  if ( adaptive_samples )
+  if (adaptive_samples)
     saveAdaptiveSamples();
   else
     saveFixedSamples();
@@ -165,25 +144,25 @@ void TimeStepper::save()
 void TimeStepper::saveFixedSamples()
 {
   // Get start time and end time of time slab
-  real t0 = timeslab->starttime();
-  real t1 = timeslab->endtime();
+  double t0 = timeslab->starttime();
+  double t1 = timeslab->endtime();
 
   // Save initial value
-  if ( t0 == 0.0 )
+  if (t0 == 0.0)
   {
     //Sample sample(*timeslab, 0.0, u.name(), u.label());
     Sample sample(*timeslab, ode.time(0.0), "u", "unknown");
     file << sample;
-    u.addSample(sample);
+    u.add_sample(sample);
     ode.save(sample);
   }
 
   // Compute distance between samples
-  real K = T / static_cast<real>(no_samples);
-  real t = floor(t0/K - 0.5) * K;
+  double K = T / static_cast<double>(no_samples);
+  double t = floor(t0/K - 0.5) * K;
 
   // Save samples
-  while ( true )
+  while (true)
   {
     t += K;
 
@@ -198,7 +177,17 @@ void TimeStepper::saveFixedSamples()
 
     Sample sample(*timeslab, ode.time(t), "u", "unknown");
     file << sample;
-    u.addSample(sample);
+    u.add_sample(sample);
+    ode.save(sample);
+  }
+
+  // Save final value
+  if (t1 == T)
+  {
+    //Sample sample(*timeslab, 0.0, u.name(), u.label());
+    Sample sample(*timeslab, ode.time(T), "u", "unknown");
+    file << sample;
+    u.add_sample(sample);
     ode.save(sample);
   }
 }
@@ -206,8 +195,8 @@ void TimeStepper::saveFixedSamples()
 void TimeStepper::saveAdaptiveSamples()
 {
   // Get start time and end time of time slab
-  real t0 = timeslab->starttime();
-  real t1 = timeslab->endtime();
+  double t0 = timeslab->starttime();
+  double t1 = timeslab->endtime();
 
   // Save initial value
   if ( t0 == 0.0 )
@@ -215,19 +204,19 @@ void TimeStepper::saveAdaptiveSamples()
     //Sample sample(*timeslab, 0.0, u.name(), u.label());
     Sample sample(*timeslab, ode.time(0.0), "u", "unknown");
     file << sample;
-    u.addSample(sample);
+    u.add_sample(sample);
     ode.save(sample);
   }
 
   // Compute distance between samples
   dolfin_assert(sample_density >= 1);
-  real k = (t1 - t0) / static_cast<real>(sample_density);
+  double k = (t1 - t0) / static_cast<double>(sample_density);
   
   // Save samples
   for (unsigned int n = 0; n < sample_density; ++n)
   {
     // Compute time of sample, and make sure we get the end time right
-    real t = t0 + static_cast<real>(n + 1)*k;
+    double t = t0 + static_cast<double>(n + 1)*k;
     if ( n == (sample_density - 1) )
       t = t1;
     
@@ -235,7 +224,7 @@ void TimeStepper::saveAdaptiveSamples()
     //Sample sample(*timeslab, t, u.name(), u.label());
     Sample sample(*timeslab, ode.time(t), "u", "unknown");
     file << sample;
-    u.addSample(sample);
+    u.add_sample(sample);
     ode.save(sample);
   }
 }

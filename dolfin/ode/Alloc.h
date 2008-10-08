@@ -32,7 +32,7 @@ namespace dolfin
     static void realloc(uint** data, uint oldsize, uint newsize);
 
     /// (Re-)allocate an array of reals
-    static void realloc(real** data, uint oldsize, uint newsize);
+    static void realloc(double** data, uint oldsize, uint newsize);
 
     /// Display array of ints
     static void disp(uint* data, uint size);
@@ -41,7 +41,7 @@ namespace dolfin
     static void disp(int* data, uint size);
 
     /// Display array of reals
-    static void disp(real* data, uint size);
+    static void disp(double* data, uint size);
 
     uint size; // Allocated size
     uint next; // Next available position (used size)

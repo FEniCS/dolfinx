@@ -25,7 +25,7 @@ int main()
   // Move vertices in boundary
   for (VertexIterator v(boundary); !v.end(); ++v)
   {
-    real* x = v->x();
+    double* x = v->x();
     x[0] *= 3.0;
     x[1] += 0.1*sin(5.0*x[0]);
   }

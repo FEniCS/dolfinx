@@ -71,19 +71,19 @@ void PointCell::refineCell(Cell& cell, MeshEditor& editor,
   error("PointCell::refineCell() not defined.");
 }
 //-----------------------------------------------------------------------------
-real PointCell::volume(const MeshEntity& triangle) const
+double PointCell::volume(const MeshEntity& triangle) const
 {
   error("PointCell::volume() not defined.");
   return 0.0;
 }
 //-----------------------------------------------------------------------------
-real PointCell::diameter(const MeshEntity& triangle) const
+double PointCell::diameter(const MeshEntity& triangle) const
 {
   error("PointCell::diameter() not defined.");
   return 0.0;
 }
 //-----------------------------------------------------------------------------
-real PointCell::normal(const Cell& cell, uint facet, uint i) const
+double PointCell::normal(const Cell& cell, uint facet, uint i) const
 {
   error("PointCell::normal() not defined.");
   return 0.0;
@@ -96,7 +96,7 @@ Point PointCell::normal(const Cell& cell, uint facet) const
   return p;
 }
 //-----------------------------------------------------------------------------
-real PointCell::facetArea(const Cell& cell, uint facet) const
+double PointCell::facetArea(const Cell& cell, uint facet) const
 {
   error("PointCell::facetAread() not defined.");
   return 0.0;

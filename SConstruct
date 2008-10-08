@@ -20,10 +20,13 @@ except ImportError:
 from simula_scons.Errors import PkgconfigError, PkgconfigMissing
 
 # Create a SCons Environment based on the main os environment
-env = Environment(ENV=os.environ)
+env = scons.ExtendedEnvironment(ENV=os.environ)
 
 # Set a projectname. Used in some places, like pkg-config generator
 env["projectname"] = "dolfin"
+
+# Set version
+env["PACKAGE_VERSION"] = "0.8.0"
 
 scons.setDefaultEnv(env)
 
@@ -50,6 +53,8 @@ options = [
     scons.PathOption("prefix", "Installation prefix", default_prefix),
     scons.PathOption("binDir", "Binary installation directory",
                      os.path.join("$prefix","bin")),
+    scons.PathOption("manDir", "Manual page installation directory",
+                     os.path.join("$prefix", "share", "man")),
     scons.PathOption("libDir", "Library installation directory",
                      os.path.join("$prefix","lib")),
     scons.PathOption("pkgConfDir", "Directory for installation of pkg-config files",
@@ -83,6 +88,7 @@ options = [
     BoolOption("enableCholmod", "Compile with support for CHOLMOD", "yes"),
     BoolOption("enableMtl4", "Compile with support for MTL4", "yes"),
     BoolOption("enableParmetis", "Compile with support for ParMETIS", "yes"),
+    BoolOption("enableGmp", "Compile with support for GMP", "no"),
     BoolOption("enablePydolfin", "Compile the python wrappers of Dolfin", "yes"),
     # some of the above may need extra options (like petscDir), should we
     # try to get that from pkg-config?
@@ -97,6 +103,7 @@ options = [
     PathOption("withCholmodDir", "Specify path to CHOLMOD", None),
     PathOption("withMtl4Dir", "Specify path to MTL4", None),
     PathOption("withParmetisDir", "Specify path to ParMETIS", None),
+    PathOption("withGmpDir", "Specify path to GMP", None),
     PathOption("withBoostDir", "Specify path to Boost", None),
     #
     # a few more options originally from PyCC:
@@ -259,9 +266,13 @@ for n in buildDataHash["shlibs"] + buildDataHash["extModules"] + \
 # install dolfin-convert into binDir:
 env.Install(env["binDir"], os.path.join("misc","utils","convert","dolfin-convert"))
 
+# install dolfin-convert manual page into manDir/man1:
+env.Install(os.path.join(env["manDir"], "man1"),
+            os.path.join("doc", "man", "man1", "dolfin-convert.1.gz"))
+
 # shared libraries goes into our libDir:
 for l in buildDataHash["shlibs"]:
-  env.Install(env["libDir"], l)
+  env.InstallVersionedSharedLibrary(env["libDir"], l)
 
 # install header files in the same structure as in the source tree, within
 # includeDir/dolfin:
@@ -339,7 +350,8 @@ env = scons.addInstallTargets(env, sourcefiles=buildDataHash["docs"],
                               targetdir=_targetdir)
 
 # Instruct scons what to do when user requests 'install'
-targets = [env["binDir"], env["libDir"], env["includeDir"], env["pkgConfDir"]]
+targets = [env["binDir"], env["manDir"],
+           env["libDir"], env["includeDir"], env["pkgConfDir"]]
 if env["enablePydolfin"]:
     targets.append(env["pythonModuleDir"])
     targets.append(env["pythonExtDir"])
@@ -364,6 +376,7 @@ f.write('export PKG_CONFIG_PATH="' + prefix + 'lib/pkgconfig:$PKG_CONFIG_PATH"\n
 if env["enablePydolfin"]:
     pyversion=".".join([str(s) for s in sys.version_info[0:2]])
     f.write('export PYTHONPATH="'  + prefix + 'lib/python'    + pyversion + '/site-packages:$PYTHONPATH"\n')
+f.write('export MANPATH="' + env.subst(env['manDir']) + ':$MANPATH"\n')
 f.close()
 
 # Create helper file for Windows as well
@@ -379,6 +392,8 @@ f.write('set PYTHONPATH=%s\n' % \
 f.write('set PKG_CONFIG_PATH=%s\n' % \
         os.pathsep.join([env.subst(env['pkgConfDir']),
                          '%PKG_CONFIG_PATH%']))
+f.write('set MANPATH=%s\n' % \
+        os.pathsep.join([env.subst(env['manDir']), '%MANPATH%']))
 f.close()
 
 def help():

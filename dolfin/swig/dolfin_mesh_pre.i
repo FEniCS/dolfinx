@@ -64,7 +64,7 @@
 
 ALL_COORDINATES(dolfin::Mesh)
 ALL_CELLS(dolfin::Mesh)
-ALL_VALUES(dolfin::MeshFunction<real>, NPY_DOUBLE)
+ALL_VALUES(dolfin::MeshFunction<double>, NPY_DOUBLE)
 ALL_VALUES(dolfin::MeshFunction<int>, NPY_INT)
 ALL_VALUES(dolfin::MeshFunction<bool>, NPY_BOOL)
 ALL_VALUES(dolfin::MeshFunction<unsigned int>, NPY_UINT)

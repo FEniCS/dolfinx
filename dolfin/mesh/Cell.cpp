@@ -16,9 +16,9 @@ Point Cell::midpoint()
 {
   uint num_vertices = 0; 
   
-  real x = 0.0;
-  real y = 0.0;
-  real z = 0.0;
+  double x = 0.0;
+  double y = 0.0;
+  double z = 0.0;
   
   for (VertexIterator v(*this); !v.end(); ++v)
   {
@@ -29,9 +29,9 @@ Point Cell::midpoint()
     num_vertices++;
   }
 
-  x /= real(num_vertices);
-  y /= real(num_vertices);
-  z /= real(num_vertices);
+  x /= double(num_vertices);
+  y /= double(num_vertices);
+  z /= double(num_vertices);
 
   Point p(x, y, z);
   return p;

@@ -33,22 +33,22 @@ namespace dolfin
     inline CellType::Type type() const { return _mesh.type().cellType(); }
     
     /// Compute orientation of cell (0 is right, 1 is left)
-    inline real orientation() const
+    inline double orientation() const
     { return _mesh.type().orientation(*this); }
 
     /// Compute (generalized) volume of cell
-    inline real volume() const
+    inline double volume() const
     { return _mesh.type().volume(*this); }
 
     /// Compute diameter of cell
-    inline real diameter() const
+    inline double diameter() const
     { return _mesh.type().diameter(*this); }
 
     /// Compute midpoint of cell
     Point midpoint(); 
 
     /// Compute component i of normal of given facet with respect to the cell
-    inline real normal(uint facet, uint i) const
+    inline double normal(uint facet, uint i) const
     { return _mesh.type().normal(*this, facet, i); }
 
     /// Compute normal of given facet with respect to the cell
@@ -56,7 +56,7 @@ namespace dolfin
     { return _mesh.type().normal(*this, facet); }
 
     /// Compute the area/length of given facet with respect to the cell
-    inline real facetArea(uint facet) const
+    inline double facetArea(uint facet) const
     { return _mesh.type().facetArea(*this, facet); }
 
     /// Check for intersection with point

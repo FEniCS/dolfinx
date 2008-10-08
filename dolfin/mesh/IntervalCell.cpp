@@ -103,7 +103,7 @@ void IntervalCell::refineCell(Cell& cell, MeshEditor& editor,
   editor.addCell(current_cell++, e0, v1);
 }
 //-----------------------------------------------------------------------------
-real IntervalCell::volume(const MeshEntity& interval) const
+double IntervalCell::volume(const MeshEntity& interval) const
 {
   // Check that we get an interval
   if ( interval.dim() != 1 )
@@ -114,21 +114,21 @@ real IntervalCell::volume(const MeshEntity& interval) const
 
   // Get the coordinates of the two vertices
   const uint* vertices = interval.entities(0);
-  const real* x0 = geometry.x(vertices[0]);
-  const real* x1 = geometry.x(vertices[1]);
+  const double* x0 = geometry.x(vertices[0]);
+  const double* x1 = geometry.x(vertices[1]);
   
   // Compute length of interval (line segment)
-  real sum = 0.0;
+  double sum = 0.0;
   for (uint i = 0; i < geometry.dim(); ++i)
   {
-    const real dx = x1[i] - x0[i];
+    const double dx = x1[i] - x0[i];
     sum += dx*dx;
   }
 
   return std::sqrt(sum);
 }
 //-----------------------------------------------------------------------------
-real IntervalCell::diameter(const MeshEntity& interval) const
+double IntervalCell::diameter(const MeshEntity& interval) const
 {
   // Check that we get an interval
   if ( interval.dim() != 1 )
@@ -138,7 +138,7 @@ real IntervalCell::diameter(const MeshEntity& interval) const
   return volume(interval);
 }
 //-----------------------------------------------------------------------------
-real IntervalCell::normal(const Cell& cell, uint facet, uint i) const
+double IntervalCell::normal(const Cell& cell, uint facet, uint i) const
 {
   return normal(cell, facet)[i];
 }
@@ -168,7 +168,7 @@ Point IntervalCell::normal(const Cell& cell, uint facet) const
   return n;
 }
 //-----------------------------------------------------------------------------
-dolfin::real IntervalCell::facetArea(const Cell& cell, uint facet) const
+double IntervalCell::facetArea(const Cell& cell, uint facet) const
 {
   return 0.0;
 }

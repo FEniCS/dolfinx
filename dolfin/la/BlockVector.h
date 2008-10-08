@@ -41,25 +41,25 @@ namespace dolfin
             Vector& get(uint); 
 
       /// Add multiple of given vector (AXPY operation)
-      void axpy(real a, const BlockVector& x);
+      void axpy(double a, const BlockVector& x);
 
       /// Return inner product with given vector
-      real inner(const BlockVector& x) const;
+      double inner(const BlockVector& x) const;
 
       /// Return norm of vector
-      real norm(NormType type) const;
+      double norm(NormType type) const;
 
       /// Return minimum value of vector
-      real min() const;
+      double min() const;
 
       /// Return maximum value of vector
-      real max() const;
+      double max() const;
 
       /// Multiply vector by given number
-      const BlockVector& operator*= (real a);
+      const BlockVector& operator*= (double a);
 
       /// Divide vector by given number
-      const BlockVector& operator/= (real a);
+      const BlockVector& operator/= (double a);
 
       /// Add given vector
       const BlockVector& operator+= (const BlockVector& x);
@@ -71,7 +71,7 @@ namespace dolfin
       const BlockVector& operator= (const BlockVector& x);
 
       /// Assignment operator
-      const BlockVector& operator= (real a);
+      const BlockVector& operator= (double a);
 
       /// Number of vectors
       uint size() const; 

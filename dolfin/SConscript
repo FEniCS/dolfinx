@@ -52,6 +52,8 @@ if not env["enableMtl4"]:
     disabled_packages.append("mtl4")
 if not env["enableParmetis"]:
     disabled_packages.append("parmetis")
+if not env["enableGmp"]:
+    disabled_packages.append("gmp")
 
 # Find modules in the project and dependencies:
 # only modules and configuredPackages will be used in this code:
@@ -194,7 +196,8 @@ for modName, mod in modules.items():
         modEnv.Append(LINKFLAGS=linkOpts)
         if env["PLATFORM"] == "darwin":
             modEnv.Append(FRAMEWORKS=frameworks)
-        shlib = modEnv.SharedLibrary(target=os.path.join(mod.path, modName), source=\
+        shlib = modEnv.VersionedSharedLibrary(os.path.join(mod.path, modName),
+                env["PACKAGE_VERSION"],
                 [os.path.join(mod.path, s) for s in mod.libSources])
         # The builder returns a node list
         ret["shlibs"].append(shlib[0])
@@ -325,7 +328,7 @@ if env["enableDemos"] or env["enableTests"]:
 # sticking to the "old-style" (but renowed) for now:
 replacements = {}
 # set the dolfin-version. Bad place to have it, consider moving this!
-replacements['PACKAGE_VERSION'] = "0.8.0"
+replacements['PACKAGE_VERSION'] = env["PACKAGE_VERSION"]
 # make all dependencies into a list, based on the configured Packages.
 replacements['PACKAGE_REQUIRES'] = " ".join(configuredPackages.keys())
 # set compiler and link flags:

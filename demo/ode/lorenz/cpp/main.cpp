@@ -4,7 +4,7 @@
 // Modified by Benjamin Kehlet, 2008.
 //
 // First added:  2003-07-02
-// Last changed: 2008-07-14
+// Last changed: 2008-10-07
 
 #include <stdio.h>
 #include <dolfin.h>
@@ -23,40 +23,40 @@ public:
     r = 28.0;
   }
   
-  void u0(uBLASVector& u)
+  void u0(double* u)
   {
     u[0] = 1.0;
     u[1] = 0.0;
     u[2] = 0.0;
   }
 
-  void f(const uBLASVector& u, real t, uBLASVector& y)
+  void f(const double* u, double t, double* y)
   {
     y[0] = s*(u[1] - u[0]);
     y[1] = r*u[0] - u[1] - u[0]*u[2];
     y[2] = u[0]*u[1] - b*u[2];
   }
 
-  void J(const uBLASVector& x, uBLASVector& y, const uBLASVector& u, real t)
+  void J(const double* x, double* y, const double* u, double t)
   {
     y[0] = s*(x[1] - x[0]);
     y[1] = (r - u[2])*x[0] - x[1] - u[0]*x[2];
     y[2] = u[1]*x[0] + u[0]*x[1] - b*x[2];
   }
 
-  void JT(const uBLASVector& x, uBLASVector& y, const uBLASVector& u, real t) {
+  void JT(const double* x, double* y, const double* u, double t)
+  {
     y[0] = -x[0]*s + (r-u[2])*x[1] + u[1]*x[2];
     y[1] = s*x[0] - x[1] + u[0]*x[2];
     y[2] = -u[0]*x[1] - b*x[2];
   }
-
  
 private:
 
   // Parameters
-  real s;
-  real b;
-  real r;
+  double s;
+  double b;
+  double r;
 
 };
 
@@ -69,7 +69,8 @@ int main()
   dolfin_set("ODE order", 5);
   dolfin_set("ODE discrete tolerance", 1e-10);
   dolfin_set("ODE save solution", true);
- 
+  dolfin_set("ODE solve dual problem", true);
+  
   Lorenz lorenz;
   lorenz.solve();
   

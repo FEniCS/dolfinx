@@ -40,7 +40,7 @@ dolfin::uint UserFunction::dim(uint i) const
   return 1;
 }
 //-----------------------------------------------------------------------------
-void UserFunction::interpolate(real* values) const
+void UserFunction::interpolate(double* values) const
 {
   dolfin_assert(values);
   dolfin_assert(f);
@@ -51,12 +51,12 @@ void UserFunction::interpolate(real* values) const
     size *= f->dim(i);
 
   // Call overloaded eval function at each vertex
-  simple_array<real> local_values(size, new real[size]);
+  simple_array<double> local_values(size, new double[size]);
   
   for (VertexIterator vertex(*mesh); !vertex.end(); ++vertex)
   {
     // Evaluate at function at vertex
-    simple_array<real> x(mesh->geometry().dim(), vertex->x());
+    simple_array<double> x(mesh->geometry().dim(), vertex->x());
     f->eval(local_values, x);
 
     // Copy values to array of vertex values
@@ -66,7 +66,7 @@ void UserFunction::interpolate(real* values) const
   delete [] local_values.data;
 }
 //-----------------------------------------------------------------------------
-void UserFunction::interpolate(real* coefficients,
+void UserFunction::interpolate(double* coefficients,
                                const ufc::cell& cell,
                                const FiniteElement& finite_element) const
 {
@@ -77,7 +77,7 @@ void UserFunction::interpolate(real* coefficients,
     coefficients[i] = finite_element.evaluate_dof(i, *this, cell);
 }
 //-----------------------------------------------------------------------------
-void UserFunction::eval(real* values, const real* x) const
+void UserFunction::eval(double* values, const double* x) const
 {
   message("Calling user function");
 
@@ -85,8 +85,8 @@ void UserFunction::eval(real* values, const real* x) const
   f->eval(values, x);
 }
 //-----------------------------------------------------------------------------
-void UserFunction::evaluate(real* values,
-                            const real* coordinates,
+void UserFunction::evaluate(double* values,
+                            const double* coordinates,
                             const ufc::cell& cell) const
 {
   dolfin_assert(values);
@@ -99,8 +99,8 @@ void UserFunction::evaluate(real* values,
     size *= f->dim(i);
 
   // Call user-overloaded eval function in Function
-  simple_array<real> v(size, values);
-  simple_array<real> x(cell.geometric_dimension, const_cast<real*>(coordinates));
+  simple_array<double> v(size, values);
+  simple_array<double> x(cell.geometric_dimension, const_cast<double*>(coordinates));
   f->eval(v, x);
 }
 //-----------------------------------------------------------------------------

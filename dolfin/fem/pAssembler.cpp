@@ -100,14 +100,14 @@ void pAssembler::assemble(GenericTensor& A, Form& form,
            &exterior_facet_domains, &interior_facet_domains, reset_tensor);
 }
 //-----------------------------------------------------------------------------
-dolfin::real pAssembler::assemble(Form& form)
+double pAssembler::assemble(Form& form)
 {
   Scalar value;
   assemble(value, form);
   return value;
 }
 //-----------------------------------------------------------------------------
-dolfin::real pAssembler::assemble(Form& form,
+double pAssembler::assemble(Form& form,
                                  const SubDomain& sub_domain)
 {
   Scalar value;
@@ -115,7 +115,7 @@ dolfin::real pAssembler::assemble(Form& form,
   return value;
 }
 //-----------------------------------------------------------------------------
-dolfin::real pAssembler::assemble(Form& form,
+double pAssembler::assemble(Form& form,
                                  const MeshFunction<uint>& cell_domains,
                                  const MeshFunction<uint>& exterior_facet_domains,
                                  const MeshFunction<uint>& interior_facet_domains)
@@ -178,7 +178,7 @@ void pAssembler::assembleCells(GenericTensor& A,
   message("Assembling over %d cells.", mesh.numCells());
   Progress p("Assembling over cells", mesh.numCells());
   
-  real t = toc();
+  double t = toc();
   printf("pAssembler: start\n");
 
   const uint this_process = MPI::process_number();

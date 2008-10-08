@@ -72,37 +72,37 @@ uBLASVector* uBLASVector::copy() const
   return new uBLASVector(*this);
 }
 //-----------------------------------------------------------------------------
-void uBLASVector::get(real* values) const
+void uBLASVector::get(double* values) const
 {
   for (uint i = 0; i < size(); i++)
     values[i] = (*x)(i);
 }
 //-----------------------------------------------------------------------------
-void uBLASVector::set(real* values)
+void uBLASVector::set(double* values)
 {
   for (uint i = 0; i < size(); i++)
     (*x)(i) = values[i];
 }
 //-----------------------------------------------------------------------------
-void uBLASVector::add(real* values)
+void uBLASVector::add(double* values)
 {
   for (uint i = 0; i < size(); i++)
     (*x)(i) += values[i];
 }
 //-----------------------------------------------------------------------------
-void uBLASVector::get(real* block, uint m, const uint* rows) const
+void uBLASVector::get(double* block, uint m, const uint* rows) const
 {
   for (uint i = 0; i < m; i++)
     block[i] = (*x)(rows[i]);
 }
 //-----------------------------------------------------------------------------
-void uBLASVector::set(const real* block, uint m, const uint* rows)
+void uBLASVector::set(const double* block, uint m, const uint* rows)
 {
   for (uint i = 0; i < m; i++)
     (*x)(rows[i]) = block[i];
 }
 //-----------------------------------------------------------------------------
-void uBLASVector::add(const real* block, uint m, const uint* rows)
+void uBLASVector::add(const double* block, uint m, const uint* rows)
 {
   for (uint i = 0; i < m; i++)
     (*x)(rows[i]) += block[i];
@@ -118,7 +118,7 @@ void uBLASVector::zero()
   x->clear();
 }
 //-----------------------------------------------------------------------------
-real uBLASVector::norm(NormType type) const
+double uBLASVector::norm(NormType type) const
 {
   switch (type) 
   {
@@ -134,19 +134,19 @@ real uBLASVector::norm(NormType type) const
   return 0.0;
 }
 //-----------------------------------------------------------------------------
-real uBLASVector::min() const
+double uBLASVector::min() const
 {
-  real value = *std::min_element(x->begin(), x->end());
+  double value = *std::min_element(x->begin(), x->end());
   return value;
 }
 //-----------------------------------------------------------------------------
-real uBLASVector::max() const
+double uBLASVector::max() const
 {
-  real value = *std::max_element(x->begin(), x->end());
+  double value = *std::max_element(x->begin(), x->end());
   return value;
 }
 //-----------------------------------------------------------------------------
-void uBLASVector::axpy(real a, const GenericVector& y)
+void uBLASVector::axpy(double a, const GenericVector& y)
 {
   if ( size() != y.size() )  
     error("Vectors must be of same size.");
@@ -154,7 +154,7 @@ void uBLASVector::axpy(real a, const GenericVector& y)
   (*x) += a * y.down_cast<uBLASVector>().vec();
 }
 //-----------------------------------------------------------------------------
-real uBLASVector::inner(const GenericVector& y) const
+double uBLASVector::inner(const GenericVector& y) const
 {
   return ublas::inner_prod(*x, y.down_cast<uBLASVector>().vec());
 }
@@ -171,19 +171,19 @@ const uBLASVector& uBLASVector::operator= (const uBLASVector& y)
   return *this; 
 }
 //-----------------------------------------------------------------------------
-const uBLASVector& uBLASVector::operator= (real a) 
+const uBLASVector& uBLASVector::operator= (double a) 
 { 
   x->ublas_vector::assign(ublas::scalar_vector<double> (x->size(), a));
   return *this; 
 }
 //-----------------------------------------------------------------------------
-const uBLASVector& uBLASVector::operator*= (const real a) 
+const uBLASVector& uBLASVector::operator*= (const double a) 
 { 
   (*x) *= a;
   return *this;     
 }
 //-----------------------------------------------------------------------------
-const uBLASVector& uBLASVector::operator/= (const real a) 
+const uBLASVector& uBLASVector::operator/= (const double a) 
 { 
   (*x) /= a;
   return *this;     

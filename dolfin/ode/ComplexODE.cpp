@@ -1,8 +1,8 @@
-// Copyright (C) 2005-2006 Anders Logg.
+// Copyright (C) 2005-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005-02-02
-// Last changed: 2006-08-21
+// Last changed: 2008-10-06
 
 #include <dolfin/common/Array.h>
 #include "ComplexODE.h"
@@ -10,8 +10,8 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-ComplexODE::ComplexODE(uint n, real T) : ODE(2*n, T), n(n), j(0.0, 1.0),
-					 zvalues(0), fvalues(0), yvalues(0)
+ComplexODE::ComplexODE(uint n, double T) : ODE(2*n, T), n(n), j(0.0, 1.0),
+                                           zvalues(0), fvalues(0), yvalues(0)
 {
   message("Creating complex ODE of size %d (%d complex components).", N, n);
   
@@ -32,7 +32,7 @@ ComplexODE::~ComplexODE()
   if ( yvalues ) delete [] yvalues;
 }
 //-----------------------------------------------------------------------------
-complex ComplexODE::f(const complex z[], real t, uint i)
+complex ComplexODE::f(const complex z[], double t, uint i)
 {
   error("Right-hand side for complex ODE not supplied by user.");
   
@@ -40,7 +40,7 @@ complex ComplexODE::f(const complex z[], real t, uint i)
   return zvalue;
 }
 //-----------------------------------------------------------------------------
-void ComplexODE::f(const complex z[], real t, complex y[])
+void ComplexODE::f(const complex z[], double t, complex y[])
 {
   // If a user of the mono-adaptive solver does not supply this function,
   // then call f() for each component.
@@ -49,14 +49,14 @@ void ComplexODE::f(const complex z[], real t, complex y[])
     y[i] = this->f(z, t, i);
 }
 //-----------------------------------------------------------------------------
-void ComplexODE::M(const complex x[], complex y[], const complex z[], real t)
+void ComplexODE::M(const complex x[], complex y[], const complex z[], double t)
 {
   // Assume M is the identity if not supplied by user: y = x
   for (uint i = 0; i < n; i++)
     y[i] = x[i];
 }
 //-----------------------------------------------------------------------------
-void ComplexODE::J(const complex x[], complex y[], const complex z[], real t)
+void ComplexODE::J(const complex x[], complex y[], const complex z[], double t)
 {
   // If a user does not supply J, then compute it by the approximation
   //
@@ -65,17 +65,17 @@ void ComplexODE::J(const complex x[], complex y[], const complex z[], real t)
   error("Not implemented yet...");
 }
 //-----------------------------------------------------------------------------
-real ComplexODE::k(uint i)
+double ComplexODE::k(uint i)
 {
   return default_timestep;
 }
 //-----------------------------------------------------------------------------
-bool ComplexODE::update(const complex z[], real t, bool end)
+bool ComplexODE::update(const complex z[], double t, bool end)
 {
   return true;
 }
 //-----------------------------------------------------------------------------
-void ComplexODE::u0(uBLASVector& u)
+void ComplexODE::u0(double* u)
 {
   // Translate initial value from complex to real
   z0(zvalues);
@@ -86,10 +86,10 @@ void ComplexODE::u0(uBLASVector& u)
   }
 }
 //-----------------------------------------------------------------------------
-real ComplexODE::f(const uBLASVector& u, real t, uint i)
+double ComplexODE::f(const double* u, double t, uint i)
 {
   // Translate right-hand side from complex to real, assuming that if
-  // u_i depends on u_j, then u_i depends on both the real and
+  // u_i depends on u_j, then u_i depends on both the double and
   // imaginary parts of the corresponding z_i
 
   // Update zvalues for correct components
@@ -114,7 +114,7 @@ real ComplexODE::f(const uBLASVector& u, real t, uint i)
   return ( i % 2 == 0 ? fvalue.real() : fvalue.imag() );
 }
 //-----------------------------------------------------------------------------
-void ComplexODE::f(const uBLASVector& u, real t, uBLASVector& y)
+void ComplexODE::f(const double* u, double t, double* y)
 {
   // Update zvalues for all components
   for (uint i = 0; i < n; i++)
@@ -135,8 +135,8 @@ void ComplexODE::f(const uBLASVector& u, real t, uBLASVector& y)
   }
 }
 //-----------------------------------------------------------------------------
-void ComplexODE::M(const uBLASVector& x, uBLASVector& y,
-		   const uBLASVector& u, real t)
+void ComplexODE::M(const double* x, double* y,
+		   const double* u, double t)
 {
   // Update zvalues and fvalues for all components
   for (uint i = 0; i < n; i++)
@@ -167,8 +167,8 @@ void ComplexODE::M(const uBLASVector& x, uBLASVector& y,
   }
 }
 //-----------------------------------------------------------------------------
-void ComplexODE::J(const uBLASVector& x, uBLASVector& y,
-		   const uBLASVector& u, real t)
+void ComplexODE::J(const double* x, double* y,
+		   const double* u, double t)
 {
   // Update zvalues and fvalues for all components
   for (uint i = 0; i < n; i++)
@@ -199,13 +199,13 @@ void ComplexODE::J(const uBLASVector& x, uBLASVector& y,
   }
 }
 //-----------------------------------------------------------------------------
-real ComplexODE::timestep(uint i)
+double ComplexODE::timestep(uint i)
 {
   // Translate time step
   return k(i / 2);
 }
 //-----------------------------------------------------------------------------
-bool ComplexODE::update(const uBLASVector& u, real t, bool end)
+bool ComplexODE::update(const double* u, double t, bool end)
 {
   // Update zvalues for all components
   for (uint i = 0; i < n; i++)

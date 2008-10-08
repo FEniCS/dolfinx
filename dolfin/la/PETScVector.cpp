@@ -93,7 +93,7 @@ PETScVector* PETScVector::copy() const
   return v; 
 }
 //-----------------------------------------------------------------------------
-void PETScVector::get(real* values) const
+void PETScVector::get(double* values) const
 {
   dolfin_assert(x);
   
@@ -107,7 +107,7 @@ void PETScVector::get(real* values) const
   delete [] rows;
 }
 //-----------------------------------------------------------------------------
-void PETScVector::set(real* values)
+void PETScVector::set(double* values)
 {
   dolfin_assert(x);
   
@@ -121,7 +121,7 @@ void PETScVector::set(real* values)
   delete [] rows;
 }
 //-----------------------------------------------------------------------------
-void PETScVector::add(real* values)
+void PETScVector::add(double* values)
 {
   dolfin_assert(x);
   
@@ -135,20 +135,20 @@ void PETScVector::add(real* values)
   delete [] rows;
 }
 //-----------------------------------------------------------------------------
-void PETScVector::get(real* block, uint m, const uint* rows) const
+void PETScVector::get(double* block, uint m, const uint* rows) const
 {
   dolfin_assert(x);
   VecGetValues(x, static_cast<int>(m), reinterpret_cast<int*>(const_cast<uint*>(rows)), block);
 }
 //-----------------------------------------------------------------------------
-void PETScVector::set(const real* block, uint m, const uint* rows)
+void PETScVector::set(const double* block, uint m, const uint* rows)
 {
   dolfin_assert(x);
   VecSetValues(x, static_cast<int>(m), reinterpret_cast<int*>(const_cast<uint*>(rows)), block,
                INSERT_VALUES);
 }
 //-----------------------------------------------------------------------------
-void PETScVector::add(const real* block, uint m, const uint* rows)
+void PETScVector::add(const double* block, uint m, const uint* rows)
 {
   dolfin_assert(x);
   VecSetValues(x, static_cast<int>(m), reinterpret_cast<int*>(const_cast<uint*>(rows)), block,
@@ -164,7 +164,7 @@ void PETScVector::apply()
 void PETScVector::zero()
 {
   dolfin_assert(x);
-  real a = 0.0;
+  double a = 0.0;
   VecSet(x, a);
 }
 //-----------------------------------------------------------------------------
@@ -193,7 +193,7 @@ const PETScVector& PETScVector::operator= (const PETScVector& v)
   return *this; 
 }
 //-----------------------------------------------------------------------------
-const PETScVector& PETScVector::operator= (real a)
+const PETScVector& PETScVector::operator= (double a)
 {
   dolfin_assert(x);
   VecSet(x, a);
@@ -213,7 +213,7 @@ const PETScVector& PETScVector::operator-= (const GenericVector& x)
   return *this;
 }
 //-----------------------------------------------------------------------------
-const PETScVector& PETScVector::operator*= (const real a)
+const PETScVector& PETScVector::operator*= (const double a)
 {
   dolfin_assert(x);
   VecScale(x, a);
@@ -221,31 +221,31 @@ const PETScVector& PETScVector::operator*= (const real a)
   return *this;
 }
 //-----------------------------------------------------------------------------
-const PETScVector& PETScVector::operator/= (const real a)
+const PETScVector& PETScVector::operator/= (const double a)
 {
   dolfin_assert(x);
   dolfin_assert(a != 0.0);
 
-  const real b = 1.0 / a;
+  const double b = 1.0 / a;
   VecScale(x, b);
   
   return *this;
 }
 //-----------------------------------------------------------------------------
-real PETScVector::inner(const GenericVector& y) const
+double PETScVector::inner(const GenericVector& y) const
 {
   dolfin_assert(x);
 
   const PETScVector& v = y.down_cast<PETScVector>();
   dolfin_assert(v.x);
 
-  real a;
+  double a;
   VecDot(v.x, x, &a);
 
   return a;
 }
 //-----------------------------------------------------------------------------
-void PETScVector::axpy(real a, const GenericVector& y) 
+void PETScVector::axpy(double a, const GenericVector& y) 
 {
   dolfin_assert(x);
 
@@ -258,10 +258,10 @@ void PETScVector::axpy(real a, const GenericVector& y)
   VecAXPY(x, a, v.x);
 }
 //-----------------------------------------------------------------------------
-real PETScVector::norm(NormType type) const
+double PETScVector::norm(NormType type) const
 {
   dolfin_assert(x);
-  real value = 0.0;
+  double value = 0.0;
 
   switch (type) 
   {
@@ -280,9 +280,9 @@ real PETScVector::norm(NormType type) const
   return value;
 }
 //-----------------------------------------------------------------------------
-real PETScVector::min() const
+double PETScVector::min() const
 {
-  real value = 0.0;
+  double value = 0.0;
   /*
   VecMin(x, &value);
   */
@@ -290,9 +290,9 @@ real PETScVector::min() const
   return value;
 }
 //-----------------------------------------------------------------------------
-real PETScVector::max() const
+double PETScVector::max() const
 {
-  real value = 0.0;
+  double value = 0.0;
   /*
   VecMax(x, &value);
   */

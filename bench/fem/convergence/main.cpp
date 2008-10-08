@@ -21,7 +21,7 @@ using namespace dolfin;
 // Boundary condition
 class DirichletBoundary : public SubDomain
 {
-  bool inside(const real* x, bool on_boundary) const
+  bool inside(const double* x, bool on_boundary) const
   {
     return on_boundary;
   }
@@ -34,7 +34,7 @@ public:
 
   Source2D(Mesh& mesh) : Function(mesh) {}
 
-  real eval(const real* x) const
+  double eval(const double* x) const
   {
     return 2.0*DOLFIN_PI*DOLFIN_PI*sin(DOLFIN_PI*x[0])*sin(DOLFIN_PI*x[1]);
   }
@@ -48,7 +48,7 @@ public:
   
   Source3D(Mesh& mesh) : Function(mesh) {}
 
-  real eval(const real* x) const
+  double eval(const double* x) const
   {
     return 3.0*DOLFIN_PI*DOLFIN_PI*sin(DOLFIN_PI*x[0])*sin(DOLFIN_PI*x[1])*sin(DOLFIN_PI*x[2]);
   }
@@ -56,7 +56,7 @@ public:
 };
 
 // Solve equation and compute error, 2D
-real solve2D(int q, int n)
+double solve2D(int q, int n)
 {
   message("--------------------------------------------------");
   message("Solving Poisson's equation in 2D for q = %d, n = %d.", q, n);
@@ -111,14 +111,14 @@ real solve2D(int q, int n)
   solver.solve(A, x, b);
 
   // Compute maximum norm of error
-  real emax = 0.0;
-  real* U = new real[x.size()];
+  double emax = 0.0;
+  double* U = new double[x.size()];
   x.get(U);
   for (VertexIterator v(mesh); !v.end(); ++v)
   {
     const Point p = v->point();
-    const real u = sin(DOLFIN_PI*p.x())*sin(DOLFIN_PI*p.y());
-    const real e = std::abs(U[v->index()] - u);
+    const double u = sin(DOLFIN_PI*p.x())*sin(DOLFIN_PI*p.y());
+    const double e = std::abs(U[v->index()] - u);
     emax = std::max(emax, e);
   }
   delete [] U;
@@ -130,7 +130,7 @@ real solve2D(int q, int n)
 }
 
 // Solve equation and compute error, 3D
-real solve3D(int q, int n)
+double solve3D(int q, int n)
 {
   message("--------------------------------------------------");
   message("Solving Poisson's equation in 3D for q = %d, n = %d.", q, n);
@@ -185,14 +185,14 @@ real solve3D(int q, int n)
   solver.solve(A, x, b);
 
   // Compute maximum norm of error
-  real emax = 0.0;
-  real* U = new real[x.size()];
+  double emax = 0.0;
+  double* U = new double[x.size()];
   x.get(U);
   for (VertexIterator v(mesh); !v.end(); ++v)
   {
     const Point p = v->point();
-    const real u = sin(DOLFIN_PI*p.x())*sin(DOLFIN_PI*p.y())*sin(DOLFIN_PI*p.z());
-    const real e = std::abs(U[v->index()] - u);
+    const double u = sin(DOLFIN_PI*p.x())*sin(DOLFIN_PI*p.y())*sin(DOLFIN_PI*p.z());
+    const double e = std::abs(U[v->index()] - u);
     emax = std::max(emax, e);
   }
   delete [] U;
@@ -207,8 +207,8 @@ int main()
 {
   const int qmax = 5;
   const int num_meshes = 3;
-  real e2D[qmax][num_meshes];
-  real e3D[qmax][num_meshes];
+  double e2D[qmax][num_meshes];
+  double e3D[qmax][num_meshes];
 
   // Compute errors in 2D
   for (int q = 1; q <= qmax; q++)

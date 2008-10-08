@@ -50,9 +50,9 @@ namespace dolfin
 
     // FIXME: Maybe we can reuse some other vectors?
 
-    // Temporary vectors for storing multiplication
-    mutable uBLASVector xx;
-    mutable uBLASVector yy;
+    // Temporary arrays for storing multiplication
+    mutable double* xx;
+    mutable double* yy;
 
   };
 

@@ -15,7 +15,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Rectangle::Rectangle(real a, real b, real c, real d, uint nx, uint ny, 
+Rectangle::Rectangle(double a, double b, double c, double d, uint nx, uint ny, 
                      Type type) : Mesh()
 {
   // Receive mesh according to parallel policy
@@ -45,10 +45,10 @@ Rectangle::Rectangle(real a, real b, real c, real d, uint nx, uint ny,
   uint vertex = 0;
   for (uint iy = 0; iy <= ny; iy++) 
   {
-    const real y = c + ((static_cast<real> (iy))*(d-c) / static_cast<real>(ny));
+    const double y = c + ((static_cast<double> (iy))*(d-c) / static_cast<double>(ny));
     for (uint ix = 0; ix <= nx; ix++) 
     {
-      const real x = a + ((static_cast<real>(ix))*(b-a) / static_cast<real>(nx));
+      const double x = a + ((static_cast<double>(ix))*(b-a) / static_cast<double>(nx));
       editor.addVertex(vertex++, x, y);
     }
   }
@@ -58,10 +58,10 @@ Rectangle::Rectangle(real a, real b, real c, real d, uint nx, uint ny,
   {
     for (uint iy = 0; iy < ny; iy++) 
     {
-      const real y = c +(static_cast<real>(iy) + 0.5)*(d-c)/ static_cast<real>(ny);
+      const double y = c +(static_cast<double>(iy) + 0.5)*(d-c)/ static_cast<double>(ny);
       for (uint ix = 0; ix < nx; ix++) 
       {
-        const real x = a + (static_cast<real>(ix) + 0.5)*(b-a)/ static_cast<real>(nx);
+        const double x = a + (static_cast<double>(ix) + 0.5)*(b-a)/ static_cast<double>(nx);
         editor.addVertex(vertex++, x, y);
       }
     }

@@ -93,7 +93,7 @@ namespace dolfin
     void tabulate_dofs(uint* dofs, const ufc::cell& cell) const 
     { ufc_dof_map->tabulate_dofs(dofs, ufc_mesh, cell); }
 
-    void tabulate_coordinates(real** coordinates, const ufc::cell& ufc_cell) const
+    void tabulate_coordinates(double** coordinates, const ufc::cell& ufc_cell) const
     { ufc_dof_map->tabulate_coordinates(coordinates, ufc_cell); }
 
     /// Extract sub dof map

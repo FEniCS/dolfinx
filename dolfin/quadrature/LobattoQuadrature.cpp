@@ -59,7 +59,7 @@ void LobattoQuadrature::computePoints()
   }
 
   Legendre p(n-1);
-  real x, dx;
+  double x, dx;
 
   // Set the first and last nodal points which are 0 and 1
   points[0] = -1.0;
@@ -69,7 +69,7 @@ void LobattoQuadrature::computePoints()
   for (unsigned int i = 1; i <= ((n-1)/2); i++) {
     
     // Initial guess
-    x = cos(DOLFIN_PI*real(i)/real(n-1));
+    x = cos(DOLFIN_PI*double(i)/double(n-1));
     
     // Newton's method
     do

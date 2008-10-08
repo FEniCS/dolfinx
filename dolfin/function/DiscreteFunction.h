@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2007-2008.
 //
 // First added:  2007-04-02
-// Last changed: 2008-09-11
+// Last changed: 2008-10-06
 
 #ifndef __DISCRETE_FUNCTION_H
 #define __DISCRETE_FUNCTION_H
@@ -32,7 +32,7 @@ namespace dolfin
   /// the dof map determines how the degrees of freedom are
   /// distributed on the mesh.
 
-  class DiscreteFunction : public GenericFunction
+  class DiscreteFunction : public GenericFunction, ufc::function
   {
   public:
 
@@ -74,15 +74,18 @@ namespace dolfin
     const DiscreteFunction& operator= (const DiscreteFunction& f);
 
     /// Interpolate function to vertices of mesh
-    void interpolate(real* values) const;
+    void interpolate(double* values) const;
 
     /// Interpolate function to finite element space on cell
-    void interpolate(real* coefficients,
+    void interpolate(double* coefficients,
                      const ufc::cell& cell,
                      const FiniteElement& finite_element) const;
 
     /// Evaluate function at given point
-    void eval(real* values, const real* x) const;
+    void eval(double* values, const double* x) const;
+
+    /// Evaluate function at given point in cell (UFC function interface)
+    void evaluate(double* values, const double* coordinates, const ufc::cell& cell) const;
 
     /// Return DofMap
     DofMap& dofMap() const;
@@ -116,10 +119,10 @@ namespace dolfin
       uint* dofs;
       
       // Local array for expansion coefficients
-      real* coefficients;
+      double* coefficients;
       
       // Local array for values
-      real* values;
+      double* values;
 
     };
 

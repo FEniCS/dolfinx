@@ -20,14 +20,14 @@ public:
     message("Hairer and Wanner, page 3.");
   }
 
-  void u0(uBLASVector& u)
+  void u0(double* u)
   {
     u[0] = 1.0;
     u[1] = 0.0;
     u[2] = 0.0;
   }
   
-  void f(const uBLASVector& u, real t, uBLASVector& y)
+  void f(const double* u, double t, double* y)
   {
     y[0] = -0.04 * u[0] + 1.0e4 * u[1] * u[2];
     y[1] = 0.04 * u[0] - 1.0e4 * u[1] * u[2] - 3.0e7 * u[1] * u[1];

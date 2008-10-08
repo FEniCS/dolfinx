@@ -120,7 +120,7 @@ DiscreteFunction::DiscreteFunction(SubFunction& sub_function)
   // Create vector of dofs and copy values
   const uint n = dof_map->global_dimension();
   x->resize(n);
-  real* values   = new real[n];
+  double* values   = new double[n];
   uint* get_rows = new uint[n];
   uint* set_rows = new uint[n];
   for (uint i = 0; i < n; i++)
@@ -207,7 +207,7 @@ const DiscreteFunction& DiscreteFunction::operator= (const DiscreteFunction& f)
   return *this;
 }
 //-----------------------------------------------------------------------------
-void DiscreteFunction::interpolate(real* values) const
+void DiscreteFunction::interpolate(double* values) const
 {
   dolfin_assert(values);
   dolfin_assert(finite_element);
@@ -218,7 +218,7 @@ void DiscreteFunction::interpolate(real* values) const
   CellIterator cell(*mesh);
   UFCCell ufc_cell(*cell);
   const uint num_cell_vertices = mesh->type().numVertices(mesh->topology().dim());
-  real* vertex_values = new real[scratch->size*num_cell_vertices];
+  double* vertex_values = new double[scratch->size*num_cell_vertices];
 
   // Interpolate vertex values on each cell and pick the last value
   // if two or more cells disagree on the vertex values
@@ -246,28 +246,37 @@ void DiscreteFunction::interpolate(real* values) const
   delete [] vertex_values;
 }
 //-----------------------------------------------------------------------------
-void DiscreteFunction::interpolate(real* coefficients, const ufc::cell& cell,
+void DiscreteFunction::interpolate(double* coefficients, const ufc::cell& cell,
                                    const FiniteElement& finite_element) const
 {
   dolfin_assert(coefficients);
   dolfin_assert(this->finite_element);
   dolfin_assert(this->dof_map);
   dolfin_assert(scratch);
+ 
+  // Either pick values (if spaces are the same) or evaluate dofs
+  if (finite_element.signature() == this->finite_element->signature())
+  {
+    // Tabulate dofs
+    dof_map->tabulate_dofs(scratch->dofs, cell);
+    
+    // Pick values from global vector
+    x->get(coefficients, dof_map->local_dimension(), scratch->dofs);
+  }
+  else
+  {
+    // FIXME: This will eventually call the eval() function below, which
+    // FIXME: involves searching for the cell containing any given point.
+    // FIXME: This is unecessary work since we already know the cell, but
+    // FIXME: on the other hand it works when the meshes are different.
 
-  // FIXME: Better test here, compare against the local element
-
-  // Check dimension
-  if (finite_element.space_dimension() != dof_map->local_dimension())
-    error("Finite element does not match for interpolation of discrete function.");
-
-  // Tabulate dofs
-  dof_map->tabulate_dofs(scratch->dofs, cell);
-  
-  // Pick values from global vector
-  x->get(coefficients, dof_map->local_dimension(), scratch->dofs);
+    // Evaluate each dof to get coefficients for nodal basis expansion
+    for (uint i = 0; i < finite_element.space_dimension(); i++)
+      coefficients[i] = finite_element.evaluate_dof(i, *this, cell);
+  }
 }
 //-----------------------------------------------------------------------------
-void DiscreteFunction::eval(real* values, const real* x) const
+void DiscreteFunction::eval(double* values, const double* x) const
 {
   dolfin_assert(scratch);
 
@@ -289,15 +298,23 @@ void DiscreteFunction::eval(real* values, const real* x) const
   Cell cell(*mesh, cells[0]);
   UFCCell ufc_cell(cell);
   
+  // Evaluate function on cell
+  evaluate(values, x, ufc_cell);
+}
+//-----------------------------------------------------------------------------
+void DiscreteFunction::evaluate(double* values,
+                                const double* coordinates,
+                                const ufc::cell& cell) const
+{
   // Get expansion coefficients on cell
-  this->interpolate(scratch->coefficients, ufc_cell, *finite_element);
-
+  this->interpolate(scratch->coefficients, cell, *finite_element);
+  
   // Compute linear combination
   for (uint j = 0; j < scratch->size; j++)
     values[j] = 0.0;
   for (uint i = 0; i < finite_element->space_dimension(); i++)
   {
-    finite_element->evaluate_basis(i, scratch->values, x, ufc_cell);
+    finite_element->evaluate_basis(i, scratch->values, coordinates, cell);
     for (uint j = 0; j < scratch->size; j++)
       values[j] += scratch->coefficients[i] * scratch->values[j];
   }
@@ -350,12 +367,12 @@ DiscreteFunction::Scratch::Scratch(FiniteElement& finite_element)
     dofs[i] = 0;
 
   // Initialize local array for expansion coefficients
-  coefficients = new real[finite_element.space_dimension()];
+  coefficients = new double[finite_element.space_dimension()];
   for (uint i = 0; i < finite_element.space_dimension(); i++)
     coefficients[i] = 0.0;
 
   // Initialize local array for values
-  values = new real[size];
+  values = new double[size];
   for (uint i = 0; i < size; i++)
     values[i] = 0.0;  
 }

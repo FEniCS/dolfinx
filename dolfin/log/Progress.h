@@ -49,7 +49,7 @@ namespace dolfin
     ~Progress();
     
     /// Set current position
-    void operator=(real p);
+    void operator=(double p);
 
     /// Increment progress
     void operator++(int);
@@ -57,7 +57,7 @@ namespace dolfin
   private:
     
     // Update progress
-    void update(real p);
+    void update(double p);
     
     // Title of progress bar
     std::string title;
@@ -69,16 +69,16 @@ namespace dolfin
     uint i;
 
     // Minimum progress increment
-    real p_step;
+    double p_step;
 
     // Minimum time increment
-    real t_step;
+    double t_step;
 
     // Current progress
-    real p;
+    double p;
     
     // Current time
-    real t;
+    double t;
     
   };
   

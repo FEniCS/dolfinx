@@ -144,6 +144,7 @@
 // DOLFIN headers included from fem
 %include "dolfin/fem/DofMap.h"
 %include "dolfin/fem/DofMapSet.h"
+%include "dolfin/fem/FiniteElement.h"
 %include "dolfin/fem/SubSystem.h"
 %include "dolfin/fem/BoundaryCondition.h"
 %include "dolfin/fem/DirichletBC.h"
@@ -163,7 +164,6 @@
 // DOLFIN headers included from ode
 %include "dolfin/ode/ODE.h"
 %include "dolfin/ode/ComplexODE.h"
-%include "dolfin/ode/Homotopy.h"
 %include "dolfin/ode/Method.h"
 %include "dolfin/ode/cGqMethod.h"
 %include "dolfin/ode/dGqMethod.h"

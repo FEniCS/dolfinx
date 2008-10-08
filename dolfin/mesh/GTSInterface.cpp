@@ -140,12 +140,12 @@ GtsBBox* GTSInterface::createBox(const Point& p)
 GtsBBox* GTSInterface::createBox(const Point& p0, const Point& p1)
 {
   // Compute coordinates for bounding box
-  const real x0 = std::min(p0.x(), p1.x());
-  const real y0 = std::min(p0.y(), p1.y());
-  const real z0 = std::min(p0.z(), p1.z());
-  const real x1 = std::max(p0.x(), p1.x());
-  const real y1 = std::max(p0.y(), p1.y());
-  const real z1 = std::max(p0.z(), p1.z());
+  const double x0 = std::min(p0.x(), p1.x());
+  const double y0 = std::min(p0.y(), p1.y());
+  const double z0 = std::min(p0.z(), p1.z());
+  const double x1 = std::max(p0.x(), p1.x());
+  const double y1 = std::max(p0.y(), p1.y());
+  const double z1 = std::max(p0.z(), p1.z());
   
   // Create bounding box
   GtsBBox* box = gts_bbox_new(gts_bbox_class(), 0,
@@ -161,12 +161,12 @@ GtsBBox* GTSInterface::createBox(Cell& cell)
   Point p = v->point();
 
   // Compute coordinates for bounding box
-  real x0 = p.x();
-  real y0 = p.y(); 
-  real z0 = p.z();
-  real x1 = x0;
-  real y1 = y0; 
-  real z1 = z0;
+  double x0 = p.x();
+  double y0 = p.y(); 
+  double z0 = p.z();
+  double x1 = x0;
+  double y1 = y0; 
+  double z1 = z0;
   for (++v; !v.end(); ++v)
   {
     p = v->point();

@@ -20,13 +20,17 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 NewFunction::NewFunction(const FunctionSpace& V)
-  : V(&V, NoDeleter<const FunctionSpace>()), x(0)
+  : _function_space(&V, NoDeleter<const FunctionSpace>()),
+    _vector(0),
+    _time(0)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 NewFunction::NewFunction(const std::tr1::shared_ptr<FunctionSpace> V)
-  : V(V), x(0)
+  : _function_space(V),
+    _vector(0),
+    _time(0)
 {
   // Do nothing
 }
@@ -43,7 +47,7 @@ NewFunction::NewFunction(const NewFunction& v)
 //-----------------------------------------------------------------------------
 NewFunction::~NewFunction()
 {
-  // Do nothing
+  delete _vector;
 }
 //-----------------------------------------------------------------------------
 const NewFunction& NewFunction::operator= (const NewFunction& v)
@@ -57,62 +61,79 @@ const NewFunction& NewFunction::operator= (const NewFunction& v)
 //-----------------------------------------------------------------------------
 const FunctionSpace& NewFunction::function_space() const
 {
-  dolfin_assert(V);
-  return *V;
+  dolfin_assert(_function_space);
+  return *_function_space;
 }
 //-----------------------------------------------------------------------------
 GenericVector& NewFunction::vector()
 {
   // Initialize vector of dofs if not initialized
-  if (!x)
+  if (!_vector)
     init();
 
-  dolfin_assert(x);
-  return *x;
+  dolfin_assert(_vector);
+  return *_vector;
 }
 //-----------------------------------------------------------------------------
 const GenericVector& NewFunction::vector() const
 {
   // Check if vector of dofs has been initialized
-  if (!x)
+  if (!_vector)
     error("Requesting vector of degrees of freedom for function, but vector has not been initialized.");
 
-  dolfin_assert(x);
-  return *x;
+  dolfin_assert(_vector);
+  return *_vector;
 }
 //-----------------------------------------------------------------------------
-void NewFunction::eval(real* values, const real* p) const
+double NewFunction::time() const
+{
+  return _time;
+}
+//-----------------------------------------------------------------------------
+void NewFunction::eval(double* values, const double* x) const
 {
   dolfin_assert(values);
-  dolfin_assert(p);
-  dolfin_assert(V);
+  dolfin_assert(x);
+  dolfin_assert(_function_space);
 
   // Use vector of dofs if available
-  if (this->x)
+  if (_vector)
   {
-    V->eval(values, p, *x);
+    _function_space->eval(values, x, *_vector);
     return;
   }
 
   // Use scalar eval() if available
-  if (V->element().value_rank() == 0)
+  if (_function_space->element().value_rank() == 0)
   {
-    values[0] = eval(p);
+    values[0] = eval(x);
     return;
   }
 
-  // Missing eval function
+  // Use time-dependent eval if available
+  eval(values, x, _time);
+}
+//-----------------------------------------------------------------------------
+void NewFunction::eval(double* values, const double* x, double t) const
+{
+  // Missing eval() function if we get here
   error("Missing eval() for user-defined function (must be overloaded).");
 }
 //-----------------------------------------------------------------------------
-dolfin::real NewFunction::eval(const real* x) const
+double NewFunction::eval(const double* x) const
 {
-  // Missing eval function
-  error("Missing eval() for user-defined function (must be overloaded).");
+  // Use time-dependent eval if available
+  return eval(x, _time);
+}
+//-----------------------------------------------------------------------------
+double NewFunction::eval(const double* x, double t) const
+{
+  // Missing eval() function if we get here
+  error("Missing eval() for scalar user-defined function (must be overloaded).");
   return 0.0;
 }
 //-----------------------------------------------------------------------------
-void NewFunction::eval(simple_array<real>& values, const simple_array<real>& x) const
+void NewFunction::eval(simple_array<double>& values, const simple_array<double>& x) const
 {
   eval(values.data, x.data);
 }
@@ -120,19 +141,19 @@ void NewFunction::eval(simple_array<real>& values, const simple_array<real>& x) 
 void NewFunction::init()
 {
   // Get size
-  dolfin_assert(V);
-  const uint N = V->dofmap().global_dimension();
+  dolfin_assert(_function_space);
+  const uint N = _function_space->dofmap().global_dimension();
 
   // Create vector of dofs
-  if (!x)
+  if (!_vector)
   {
     DefaultFactory factory;
-    x = factory.create_vector();
+    _vector = factory.create_vector();
   }
 
   // Initialize vector of dofs
-  dolfin_assert(x);
-  x->resize(N);
-  x->zero();
+  dolfin_assert(_vector);
+  _vector->resize(N);
+  _vector->zero();
 }
 //-----------------------------------------------------------------------------

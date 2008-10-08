@@ -8,20 +8,20 @@ public:
     C = 1.0;
   }
 
-  dolfin::real eval(const dolfin::real* x) const
+  double eval(const double* x) const
   {
 
-    dolfin::real vx = -exp(x[0])*(x[1]*cos(x[1]) + sin(x[1]));
-    dolfin::real vy = exp(x[0])*(x[1]*sin(x[1]));
+    double vx = -exp(x[0])*(x[1]*cos(x[1]) + sin(x[1]));
+    double vy = exp(x[0])*(x[1]*sin(x[1]));
 
-    dolfin::real ux = 5.0*DOLFIN_PI*cos(5.0*DOLFIN_PI*x[0])*sin(5.0*DOLFIN_PI*x[1]);
-    dolfin::real uy = 5.0*DOLFIN_PI*sin(5.0*DOLFIN_PI*x[0])*cos(5.0*DOLFIN_PI*x[1]);
-    dolfin::real uxx = -25.0*DOLFIN_PI*DOLFIN_PI*sin(5.0*DOLFIN_PI*x[0])*sin(5.0*DOLFIN_PI*x[1]);
-    dolfin::real uyy = -25.0*DOLFIN_PI*DOLFIN_PI*sin(5.0*DOLFIN_PI*x[0])*sin(5.0*DOLFIN_PI*x[1]);
+    double ux = 5.0*DOLFIN_PI*cos(5.0*DOLFIN_PI*x[0])*sin(5.0*DOLFIN_PI*x[1]);
+    double uy = 5.0*DOLFIN_PI*sin(5.0*DOLFIN_PI*x[0])*cos(5.0*DOLFIN_PI*x[1]);
+    double uxx = -25.0*DOLFIN_PI*DOLFIN_PI*sin(5.0*DOLFIN_PI*x[0])*sin(5.0*DOLFIN_PI*x[1]);
+    double uyy = -25.0*DOLFIN_PI*DOLFIN_PI*sin(5.0*DOLFIN_PI*x[0])*sin(5.0*DOLFIN_PI*x[1]);
 
     return vx*ux + vy*uy - C*(uxx + uyy);
   }
-  dolfin::real C;
+  double C;
 };
 
 // Velocity
@@ -31,7 +31,7 @@ public:
 
   Velocity2D(dolfin::Mesh& mesh) : dolfin::Function(mesh) {}
 
-  void eval(dolfin::real* values, const dolfin::real* x) const
+  void eval(double* values, const double* x) const
   {
     values[0] = -exp(x[0])*(x[1]*cos(x[1]) + sin(x[1]));
     values[1] = exp(x[0])*(x[1]*sin(x[1]));
@@ -62,7 +62,7 @@ public:
     velocity = 0;
   }
 
-  dolfin::real eval(const dolfin::real* x) const
+  double eval(const double* x) const
   {
     // If there is no facet (assembling on interior), return 0.0
     if (facet() < 0)
@@ -71,8 +71,8 @@ public:
     {
       if (!velocity)
         dolfin::error("Attach a velocity function.");
-      dolfin::real normal_vector[2];
-      dolfin::real velocities[2] = {0.0, 0.0};
+      double normal_vector[2];
+      double velocities[2] = {0.0, 0.0};
 
       // Compute facet normal
       for (dolfin::uint i = 0; i < cell().dim(); i++)
@@ -82,7 +82,7 @@ public:
       velocity->eval(velocities, x);
 
       // Compute dot product of the facet outward normal and the velocity vector
-      dolfin::real dot = 0.0;
+      double dot = 0.0;
       for (dolfin::uint i = 0; i < cell().dim(); i++)
         dot += normal_vector[i]*velocities[i];
 

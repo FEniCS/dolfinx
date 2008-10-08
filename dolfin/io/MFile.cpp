@@ -37,7 +37,7 @@ void MFile::operator<<(GenericVector& x)
   
   // Write vector
   fprintf(fp, "x = [");
-  real temp; 
+  double temp; 
   for (unsigned int i = 0; i < x.size(); i++)
   {
     // FIXME: This is a slow way to access PETSc vectors. Need a fast way 

@@ -2,14 +2,13 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005-01-06
-// Last changed: 2008-04-22
+// Last changed: 2008-10-06
 
 #include <cmath>
 #include <dolfin/common/constants.h>
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/math/dolfin_math.h>
 #include <dolfin/parameter/parameters.h>
-#include <dolfin/la/uBLASVector.h>
 #include "ODE.h"
 #include "Dependencies.h"
 
@@ -34,7 +33,7 @@ Dependencies::~Dependencies()
 void Dependencies::setsize(uint i, uint size)
 {
   // Prepare sparse pattern if necessary
-  makeSparse();
+  make_sparse();
   
   // Set size of row
   sdep[i].reserve(size);
@@ -43,7 +42,7 @@ void Dependencies::setsize(uint i, uint size)
 void Dependencies::set(uint i, uint j, bool checknew)
 {
   // Prepare sparse pattern if necessary
-  makeSparse();
+  make_sparse();
 
   // Check if the size has been specified
   if ( sdep[i].size() == sdep[i].capacity() )
@@ -61,10 +60,11 @@ void Dependencies::set(uint i, uint j, bool checknew)
   sdep[i].push_back(j);
 }
 //-----------------------------------------------------------------------------
+/*
 void Dependencies::set(const uBLASSparseMatrix& A)
 {
   // Prepare sparse pattern if necessary
-  makeSparse();
+  make_sparse();
 
   // Check dimension of matrix
   if ( A.size(0) != N )
@@ -75,13 +75,14 @@ void Dependencies::set(const uBLASSparseMatrix& A)
   {
     // FIXME: Could add function to return sparsity pattern
     Array<uint> columns;
-    Array<real> values;
+    Array<double> values;
     A.getrow(i, columns, values); 
     setsize(i, columns.size());
     for (uint j = 0; j < columns.size(); j++)
       set(i, columns[j]);
   }
 }
+*/
 //-----------------------------------------------------------------------------
 void Dependencies::transp(const Dependencies& dependencies)
 {
@@ -101,7 +102,7 @@ void Dependencies::transp(const Dependencies& dependencies)
   }
 
   // Prepare sparse pattern if necessary
-  makeSparse();
+  make_sparse();
 
   // Count the number of dependencies
   Array<uint> rowsizes(N);
@@ -129,10 +130,10 @@ void Dependencies::transp(const Dependencies& dependencies)
 void Dependencies::detect(ODE& ode)
 {
   // Prepare sparse pattern if necessary
-  makeSparse();
+  make_sparse();
 
   // Randomize solution vector
-  uBLASVector u(N);
+  double* u = new double[N];
   for (uint i = 0; i < N; i++)
     u[i] = rand();
   
@@ -143,9 +144,9 @@ void Dependencies::detect(ODE& ode)
   {
     // Count the number of dependencies
     uint size = 0;
-    real f0 = ode.f(u, 0.0, i);
+    double f0 = ode.f(u, 0.0, i);
     for (uint j = 0; j < N; j++)
-      if ( checkDependency(ode, u, f0, i, j) )
+      if (check_dependency(ode, u, f0, i, j))
         size++;
     
     // Compute total number of dependencies
@@ -156,12 +157,15 @@ void Dependencies::detect(ODE& ode)
 
     // Set the dependencies
     for (uint j = 0; j < N; j++)
-      if ( checkDependency(ode, u, f0, i, j) )
+      if ( check_dependency(ode, u, f0, i, j) )
 	set(i, j);
     
     // Update progress
     p = i;
   }
+
+  // Clean up
+  delete [] u;
 
   message("Automatically detected %d dependencies.", sum);
 }
@@ -188,15 +192,15 @@ void Dependencies::disp() const
     message("Dependency pattern: dense");
 }
 //-----------------------------------------------------------------------------
-bool Dependencies::checkDependency(ODE& ode, uBLASVector& u, real f0,
-				   uint i, uint j)
+bool Dependencies::check_dependency(ODE& ode, double* u, double f0,
+                                    uint i, uint j)
 {
   // Save original value
-  real uj = u[j];
+  double uj = u[j];
 
   // Change value and compute new value for f_i
   u[j] += increment;
-  real f = ode.f(u, 0.0, i);
+  double f = ode.f(u, 0.0, i);
 
   // Restore the value
   u[j] = uj;
@@ -205,7 +209,7 @@ bool Dependencies::checkDependency(ODE& ode, uBLASVector& u, real f0,
   return fabs(f - f0) > DOLFIN_EPS;
 }
 //-----------------------------------------------------------------------------
-void Dependencies::makeSparse()
+void Dependencies::make_sparse()
 {
   if ( _sparse )
     return;
@@ -215,6 +219,6 @@ void Dependencies::makeSparse()
   
   ddep.clear();
     
-    _sparse = true;
+  _sparse = true;
 }
 //-----------------------------------------------------------------------------

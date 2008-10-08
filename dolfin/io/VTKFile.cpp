@@ -206,7 +206,7 @@ void VTKFile::ResultsWrite(Function& u) const
     uint size = mesh.numCells();
     for (uint i = 0; i < u.rank(); i++)
       size *= u.dim(i);
-    real* values = new real[size];
+    double* values = new double[size];
 
     // Get function values on cells
     u.vector().get(values);
@@ -248,7 +248,7 @@ void VTKFile::ResultsWrite(Function& u) const
     uint size = mesh.numVertices();
     for (uint i = 0; i < u.rank(); i++)
       size *= u.dim(i);
-    real* values = new real[size];
+    double* values = new double[size];
 
     // Get function values at vertices
     u.interpolate(values);

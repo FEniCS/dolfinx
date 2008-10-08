@@ -137,7 +137,7 @@ void PETScKrylovMatrix::disp(bool sparse, int precision) const
     mult(x, y);
     for (unsigned int i = 0; i < M; i++)
     {
-      const real value = y(i);
+      const double value = y(i);
       if ( fabs(value) > DOLFIN_EPS )
 	      A(i, j) = value;
     }

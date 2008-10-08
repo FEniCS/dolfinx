@@ -9,7 +9,6 @@
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/types.h>
-#include <dolfin/la/uBLASVector.h>
 #include "MonoAdaptivity.h"
 #include "TimeSlab.h"
 
@@ -35,7 +34,7 @@ namespace dolfin
     ~MonoAdaptiveTimeSlab();
     
     /// Build time slab, return end time
-    real build(real a, real b);
+    double build(double a, double b);
 
     /// Solve time slab system
     bool solve();
@@ -47,16 +46,16 @@ namespace dolfin
     bool shift(bool end);
 
     /// Prepare sample at time t
-    void sample(real t);
+    void sample(double t);
 
     /// Sample solution value of given component at given time
-    real usample(uint i, real t);
+    double usample(uint i, double t);
 
     /// Sample time step size for given component at given time
-    real ksample(uint i, real t);
+    double ksample(uint i, double t);
 
     /// Sample residual for given component at given time
-    real rsample(uint i, real t);
+    double rsample(uint i, double t);
 
     /// Display time slab data
     void disp() const;
@@ -75,18 +74,18 @@ namespace dolfin
     TimeSlabSolver* chooseSolver();
 
     // Temporary data array used to store multiplications
-    real* tmp();
+    double* tmp();
 
     TimeSlabSolver* solver;    // The solver
     MonoAdaptivity adaptivity; // Adaptive time step regulation
     uint nj;                   // Number of dofs
-    real* dofs;                // Local dofs for an element used for interpolation
-    real* fq;                  // Values of right-hand side at all quadrature points
-    real rmax;                 // Previously computed maximum norm of residual
+    double* dofs;              // Local dofs for an element used for interpolation
+    double* fq;                // Values of right-hand side at all quadrature points
+    double rmax;               // Previously computed maximum norm of residual
 
-    uBLASVector x; // Degrees of freedom for the solution on the time slab
-    uBLASVector u; // The solution at a given stage
-    uBLASVector f; // The right-hand side at a given stage
+    double* x; // Degrees of freedom for the solution on the time slab
+    double* u; // The solution at a given stage
+    double* f; // The right-hand side at a given stage
     
   };
 

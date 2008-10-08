@@ -15,7 +15,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Box::Box(real a, real b, real c, real d, real e, real f, uint nx, uint ny, 
+Box::Box(double a, double b, double c, double d, double e, double f, uint nx, uint ny, 
          uint nz) : Mesh()
 {
   // Receive mesh according to parallel policy
@@ -35,13 +35,13 @@ Box::Box(real a, real b, real c, real d, real e, real f, uint nx, uint ny,
   uint vertex = 0;
   for (uint iz = 0; iz <= nz; iz++)
   {
-    const real z = e + (static_cast<real>(iz))*(f-e) / static_cast<real>(nz);
+    const double z = e + (static_cast<double>(iz))*(f-e) / static_cast<double>(nz);
     for (uint iy = 0; iy <= ny; iy++)
     {
-      const real y = c + (static_cast<real>(iy))*(d-c) / static_cast<real>(ny);
+      const double y = c + (static_cast<double>(iy))*(d-c) / static_cast<double>(ny);
       for (uint ix = 0; ix <= nx; ix++)
       {
-        const real x = a + (static_cast<real>(ix))*(b-a) / static_cast<real>(nx);
+        const double x = a + (static_cast<double>(ix))*(b-a) / static_cast<double>(nx);
         editor.addVertex(vertex++, x, y, z);
       }
     }

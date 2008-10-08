@@ -27,49 +27,28 @@ dGqMethod::dGqMethod(unsigned int q) : Method(q, q + 1, q + 1)
   p = 2*q + 1;
 }
 //-----------------------------------------------------------------------------
-real dGqMethod::ueval(real x0, real values[], real tau) const
+double dGqMethod::ueval(double x0, double values[], double tau) const
 {
   // Note: x0 is not used, maybe this can be done differently
 
-  real sum = 0.0;
+  double sum = 0.0;
   for (unsigned int i = 0; i < nn; i++)
     sum += values[i] * trial->eval(i, tau);
   
   return sum;
 }
 //-----------------------------------------------------------------------------
-real dGqMethod::ueval(real x0, uBLASVector& values, uint offset, real tau) const
-{
-  // Note: x0 is not used, maybe this can be done differently
-
-  real sum = 0.0;
-  for (unsigned int i = 0; i < nn; i++)
-    sum += values[offset + i] * trial->eval(i, tau);
-  
-  return sum;
-}
-//-----------------------------------------------------------------------------
-real dGqMethod::residual(real x0, real values[], real f, real k) const
+double dGqMethod::residual(double x0, double values[], double f, double k) const
 {
   // FIXME: Include jump term in residual
-  real sum = 0.0;
+  double sum = 0.0;
   for (uint i = 0; i < nn; i++)
     sum += values[i] * derivatives[i];
 
   return sum / k - f;
 }
 //-----------------------------------------------------------------------------
-real dGqMethod::residual(real x0, uBLASVector& values, uint offset, real f, real k) const
-{
-  // FIXME: Include jump term in residual
-  real sum = 0.0;
-  for (uint i = 0; i < nn; i++)
-    sum += values[offset + i] * derivatives[i];
-
-  return sum / k - f;
-}
-//-----------------------------------------------------------------------------
-real dGqMethod::timestep(real r, real tol, real k0, real kmax) const
+double dGqMethod::timestep(double r, double tol, double k0, double kmax) const
 {
   // FIXME: Missing stability factor and interpolation constant
   // FIXME: Missing jump term
@@ -77,16 +56,16 @@ real dGqMethod::timestep(real r, real tol, real k0, real kmax) const
   if ( fabs(r) < DOLFIN_EPS )
     return kmax;
 
-  //return pow(tol / fabs(r), 1.0 / static_cast<real>(q+1));
+  //return pow(tol / fabs(r), 1.0 / static_cast<double>(q+1));
 
-  const real qq = static_cast<real>(q);
+  const double qq = static_cast<double>(q);
   return pow(tol * pow(k0, qq) / fabs(r), 1.0 / (2.0*qq + 1.0));
 }
 //-----------------------------------------------------------------------------
-real dGqMethod::error(real k, real r) const
+double dGqMethod::error(double k, double r) const
 {
   // FIXME: Missing jump term and interpolation constant
-  return pow(k, static_cast<real>(q + 1)) * fabs(r);
+  return pow(k, static_cast<double>(q + 1)) * fabs(r);
 }
 //-----------------------------------------------------------------------------
 void dGqMethod::disp() const
@@ -173,10 +152,10 @@ void dGqMethod::computeWeights()
     for (unsigned int j = 0; j < nn; j++)
     {
       // Use Radau quadrature which is exact for the order we need, 2q
-      real integral = 0.0;
+      double integral = 0.0;
       for (unsigned int k = 0; k < nq; k++)
       {
-        real x = qpoints[k];
+        double x = qpoints[k];
         integral += qweights[k] * trial->ddx(j, x) * test->eval(i, x);
       }     
       _A(i, j) = integral + trial->eval(j, 0.0) * test->eval(i, 0.0);
@@ -192,7 +171,7 @@ void dGqMethod::computeWeights()
   for (unsigned int i = 0; i < nq; i++)
   {
     // Get nodal point
-    real x = qpoints[i];
+    double x = qpoints[i];
     
     // Evaluate test functions at current nodal point
     for (unsigned int j = 0; j < nn; j++)

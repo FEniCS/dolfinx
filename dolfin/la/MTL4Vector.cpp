@@ -88,37 +88,37 @@ LogStream& dolfin::operator<< (LogStream& stream, const MTL4Vector& x)
   return stream;
 }
 //-----------------------------------------------------------------------------
-void MTL4Vector::get(real* values) const
+void MTL4Vector::get(double* values) const
 {
   for (uint i = 0; i < size(); i++)
     values[i] = x[i];
 }
 //-----------------------------------------------------------------------------
-void MTL4Vector::set(real* values)
+void MTL4Vector::set(double* values)
 {
   for (uint i = 0; i < size(); i++)
     x[i] = values[i];
 }
 //-----------------------------------------------------------------------------
-void MTL4Vector::add(real* values)
+void MTL4Vector::add(double* values)
 {
   for (uint i = 0; i < size(); i++)
     x(i) += values[i];
 }
 //-----------------------------------------------------------------------------
-void MTL4Vector::get(real* block, uint m, const uint* rows) const
+void MTL4Vector::get(double* block, uint m, const uint* rows) const
 {
   for (uint i = 0; i < m; i++)
     block[i] = x[ rows[i] ];
 }
 //-----------------------------------------------------------------------------
-void MTL4Vector::set(const real* block, uint m, const uint* rows)
+void MTL4Vector::set(const double* block, uint m, const uint* rows)
 {
   for (uint i = 0; i < m; i++)
     x[ rows[i] ] = block[i];
 }
 //-----------------------------------------------------------------------------
-void MTL4Vector::add(const real* block, uint m, const uint* rows)
+void MTL4Vector::add(const double* block, uint m, const uint* rows)
 {
   for (uint i = 0; i < m; i++)
     x[ rows[i] ] += block[i];
@@ -134,14 +134,14 @@ mtl4_vector& MTL4Vector::vec()
   return x;
 }
 //-----------------------------------------------------------------------------
-real MTL4Vector::inner(const GenericVector& v) const
+double MTL4Vector::inner(const GenericVector& v) const
 {
   // Developers note: The literal template arguments refers to the number 
   // of levels of loop unrolling that is done at compile time.
   return mtl::dot<6>(x, v.down_cast<MTL4Vector>().vec() );
 }
 //-----------------------------------------------------------------------------
-void MTL4Vector::axpy(real a, const GenericVector& v) 
+void MTL4Vector::axpy(double a, const GenericVector& v) 
 {
   // Developers note: This is a hack. One would like:
   // x += a*v.down_cast<MTL4Vector>().vec(); 
@@ -161,19 +161,19 @@ const MTL4Vector& MTL4Vector::operator= (const GenericVector& v)
   return *this; 
 }
 //-----------------------------------------------------------------------------
-const MTL4Vector& MTL4Vector::operator= (real a)
+const MTL4Vector& MTL4Vector::operator= (double a)
 {
   x = a;
   return *this; 
 }
 //-----------------------------------------------------------------------------
-const MTL4Vector& MTL4Vector::operator/= (real a)
+const MTL4Vector& MTL4Vector::operator/= (double a)
 {
   x /= a;
   return *this; 
 }
 //-----------------------------------------------------------------------------
-const MTL4Vector& MTL4Vector::operator*= (real a)
+const MTL4Vector& MTL4Vector::operator*= (double a)
 {
   x *= a;
   return *this;
@@ -197,7 +197,7 @@ const MTL4Vector& MTL4Vector::operator-= (const GenericVector& v)
   return *this;
 }
 //-----------------------------------------------------------------------------
-real MTL4Vector::norm(NormType type) const
+double MTL4Vector::norm(NormType type) const
 {
   switch (type) 
   {
@@ -213,12 +213,12 @@ real MTL4Vector::norm(NormType type) const
   return 0.0;
 }
 //-----------------------------------------------------------------------------
-real MTL4Vector::min() const
+double MTL4Vector::min() const
 {
   return mtl::min(x);
 }
 //-----------------------------------------------------------------------------
-real MTL4Vector::max() const
+double MTL4Vector::max() const
 {
   return mtl::max(x);
 }

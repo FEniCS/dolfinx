@@ -17,7 +17,7 @@ MonoAdaptivity::MonoAdaptivity(const ODE& ode, const Method& method)
   : Adaptivity(ode, method), k(0)
 {
   // Specify initial time step
-  real k0 = ode.get("ODE initial time step");
+  double k0 = ode.get("ODE initial time step");
   if ( kfixed )
   {
     k = ode.timestep(0.0, k0);
@@ -41,12 +41,12 @@ MonoAdaptivity::~MonoAdaptivity()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-real MonoAdaptivity::timestep() const
+double MonoAdaptivity::timestep() const
 {
   return k;
 }
 //-----------------------------------------------------------------------------
-void MonoAdaptivity::update(real k0, real r, const Method& method, real t,
+void MonoAdaptivity::update(double k0, double r, const Method& method, double t,
 			    bool first)
 {
   // Check if time step is fixed
@@ -58,7 +58,7 @@ void MonoAdaptivity::update(real k0, real r, const Method& method, real t,
   }
 
   // Compute local error estimate
-  const real error = method.error(k0, r);
+  const double error = method.error(k0, r);
   
   // Let controller choose new time step
   k = controller.update(error, safety*tol);

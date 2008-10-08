@@ -22,7 +22,7 @@ using namespace dolfin;
 // Monitor function
 namespace dolfin
 {
-  int monitor(KSP ksp, int iteration, real rnorm, void *mctx)
+  int monitor(KSP ksp, int iteration, double rnorm, void *mctx)
   {
     message("Iteration %d: residual = %g", iteration, rnorm);
     return 0;

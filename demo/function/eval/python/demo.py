@@ -46,4 +46,3 @@ values[:] = 0.0
 print values
 g.eval(values, x)
 print values
-

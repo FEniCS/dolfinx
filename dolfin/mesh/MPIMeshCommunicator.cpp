@@ -59,9 +59,9 @@ void MPIMeshCommunicator::broadcast(const Mesh& mesh)
   MPI_Bcast(&dim, 1, MPI_UNSIGNED, this_process, MPI_COMM_WORLD);
 
   // Send the coordinates
-  const real* coordinates = mesh.coordinates(); 
+  const double* coordinates = mesh.coordinates(); 
   //dolfin_debug1("sending geometry %d coordinates", dim*size);
-  MPI_Bcast(const_cast<real *>(coordinates), dim*size, MPI_DOUBLE, this_process, MPI_COMM_WORLD);
+  MPI_Bcast(const_cast<double *>(coordinates), dim*size, MPI_DOUBLE, this_process, MPI_COMM_WORLD);
 
   // Mesh topology
   uint D = mesh.topology().dim();
@@ -127,7 +127,7 @@ void MPIMeshCommunicator::receive(Mesh& mesh)
   //dolfin_debug1("received geometry dim %d", dim);
 
   // Receiving coordinates
-  real* coordinates = new real[dim*size];
+  double* coordinates = new double[dim*size];
   MPI_Bcast(coordinates, dim*size, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
   // Receiving topology
@@ -266,8 +266,8 @@ void MPIMeshCommunicator::distribute(Mesh& mesh,
   uint vi = 0;
   uint src, dest, k;
 
-  Array<real> coords;
-  Array<real> *send_buff_coords = new Array<real>[pe_size];
+  Array<double> coords;
+  Array<double> *send_buff_coords = new Array<double>[pe_size];
   Array<uint> *send_buff_map = new Array<uint>[pe_size];
 
   // Process distribution

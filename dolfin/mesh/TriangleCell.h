@@ -48,19 +48,19 @@ namespace dolfin
     void refineCell(Cell& cell, MeshEditor& editor, uint& current_cell) const;
 
     /// Compute (generalized) volume (area) of triangle
-    real volume(const MeshEntity& triangle) const;
+    double volume(const MeshEntity& triangle) const;
 
     /// Compute diameter of triangle
-    real diameter(const MeshEntity& triangle) const;
+    double diameter(const MeshEntity& triangle) const;
 
     /// Compute component i of normal of given facet with respect to the cell
-    real normal(const Cell& cell, uint facet, uint i) const;
+    double normal(const Cell& cell, uint facet, uint i) const;
 
     /// Compute of given facet with respect to the cell
     Point normal(const Cell& cell, uint facet) const;
 
     /// Compute the area/length of given facet with respect to the cell
-    real facetArea(const Cell& cell, uint facet) const;
+    double facetArea(const Cell& cell, uint facet) const;
 
     /// Check for intersection with point
     bool intersects(const MeshEntity& entity, const Point& p) const;

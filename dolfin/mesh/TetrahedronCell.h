@@ -53,19 +53,19 @@ namespace dolfin
 			     uint refinement_rule, uint* marked_edges) const;
 
     /// Compute volume of tetrahedron
-    real volume(const MeshEntity& tetrahedron) const;
+    double volume(const MeshEntity& tetrahedron) const;
 
     /// Compute diameter of tetrahedron
-    real diameter(const MeshEntity& tetrahedron) const;
+    double diameter(const MeshEntity& tetrahedron) const;
 
     /// Compute component i of normal of given facet with respect to the cell
-    real normal(const Cell& cell, uint facet, uint i) const;
+    double normal(const Cell& cell, uint facet, uint i) const;
 
     /// Compute of given facet with respect to the cell
     Point normal(const Cell& cell, uint facet) const;
 
     /// Compute the area/length of given facet with respect to the cell
-    real facetArea(const Cell& cell, uint facet) const;
+    double facetArea(const Cell& cell, uint facet) const;
 
     /// Check for intersection with point
     bool intersects(const MeshEntity& entity, const Point& p) const;

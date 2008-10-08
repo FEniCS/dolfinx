@@ -17,7 +17,7 @@ public:
     message("The HIRES problem.");
   }
 
-  void u0(uBLASVector& u)
+  void u0(double* u)
   {
     u[0] = 1.0;
     u[1] = 0.0;
@@ -29,7 +29,7 @@ public:
     u[7] = 0.0057;
   }
 
-  void f(const uBLASVector& u, real t, uBLASVector& y)
+  void f(const double* u, double t, double* y)
   {
     y[0] = -1.71*u[0] + 0.43*u[1] + 8.32*u[2] + 0.0007;
     y[1] = 1.71*u[0] - 8.75*u[1];

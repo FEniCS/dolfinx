@@ -27,7 +27,7 @@ namespace dolfin
     virtual ~DomainBoundary() {}
 
     /// Return true for points on the boundary
-    virtual bool inside(const real* x, bool on_boundary) const { return on_boundary; }
+    virtual bool inside(const double* x, bool on_boundary) const { return on_boundary; }
 
   };
 

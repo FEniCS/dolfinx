@@ -53,8 +53,8 @@ dolfin::uint MeshEntity::index(const MeshEntity& entity) const
 dolfin::LogStream& dolfin::operator<< (LogStream& stream,
 				       const MeshEntity& entity)
 {
-  stream << "[ Mesh entity " << entity.index()
-	 << " of topological dimension " << entity.dim() << " ]";
+  stream << "[Mesh entity " << entity.index()
+	 << " of topological dimension " << entity.dim() << "]";
   return stream;
 }
 //-----------------------------------------------------------------------------

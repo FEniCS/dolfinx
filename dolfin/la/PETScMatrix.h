@@ -89,22 +89,22 @@ namespace dolfin
     virtual void resize(uint M, uint N);
 
     /// Get block of values
-    virtual void get(real* block, uint m, const uint* rows, uint n, const uint* cols) const;
+    virtual void get(double* block, uint m, const uint* rows, uint n, const uint* cols) const;
 
     /// Set block of values
-    virtual void set(const real* block, uint m, const uint* rows, uint n, const uint* cols);
+    virtual void set(const double* block, uint m, const uint* rows, uint n, const uint* cols);
 
     /// Add block of values
-    virtual void add(const real* block, uint m, const uint* rows, uint n, const uint* cols);
+    virtual void add(const double* block, uint m, const uint* rows, uint n, const uint* cols);
 
     /// Add multiple of given matrix (AXPY operation)
-    virtual void axpy(real a, const GenericMatrix& A);
+    virtual void axpy(double a, const GenericMatrix& A);
 
     /// Get non-zero values of given row
-    virtual void getrow(uint row, Array<uint>& columns, Array<real>& values) const;
+    virtual void getrow(uint row, Array<uint>& columns, Array<double>& values) const;
 
     /// Set values for given row
-    virtual void setrow(uint row, const Array<uint>& columns, const Array<real>& values);
+    virtual void setrow(uint row, const Array<uint>& columns, const Array<double>& values);
 
     /// Set given rows to zero
     virtual void zero(uint m, const uint* rows);
@@ -116,10 +116,10 @@ namespace dolfin
     virtual void mult(const GenericVector& x, GenericVector& y, bool transposed=false) const;
 
     /// Multiply matrix by given number
-    virtual const PETScMatrix& operator*= (real a);
+    virtual const PETScMatrix& operator*= (double a);
     
     /// Divide matrix by given number
-    virtual const PETScMatrix& operator/= (real a);
+    virtual const PETScMatrix& operator/= (double a);
 
     /// Assignment operator
     virtual const GenericMatrix& operator= (const GenericMatrix& A);
@@ -138,7 +138,7 @@ namespace dolfin
     Type type() const;
 
     /// Return norm of matrix
-    real norm(const dolfin::NormType) const;
+    double norm(const dolfin::NormType) const;
 
     /// Assignment operator
     const PETScMatrix& operator= (const PETScMatrix& A);

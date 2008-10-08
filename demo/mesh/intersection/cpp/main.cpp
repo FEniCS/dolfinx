@@ -24,8 +24,8 @@ int main()
   }
 
   // Iterate over angle
-  const real dtheta = 0.10*2*DOLFIN_PI;
-  for (real theta = 0; theta < 2*DOLFIN_PI; theta += dtheta)
+  const double dtheta = 0.10*2*DOLFIN_PI;
+  for (double theta = 0; theta < 2*DOLFIN_PI; theta += dtheta)
   {
     // Compute intersection with boundary of square
     BoundaryMesh boundary(omega1);   

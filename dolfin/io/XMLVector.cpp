@@ -71,7 +71,7 @@ void XMLVector::startVector(const xmlChar *name, const xmlChar **attrs)
   // Initialize vector
   if (values)
     delete [] values;
-  values = new real[size];
+  values = new double[size];
 }
 //-----------------------------------------------------------------------------
 void XMLVector::endVector()
@@ -88,7 +88,7 @@ void XMLVector::readEntry(const xmlChar *name, const xmlChar **attrs)
 {
   // Parse values
   uint row   = parseUnsignedInt(name, attrs, "row");
-  real value = parseReal(name, attrs, "value");
+  double value = parseReal(name, attrs, "value");
   
   // Check values
   if (row >= size)

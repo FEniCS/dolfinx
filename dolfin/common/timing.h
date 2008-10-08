@@ -19,13 +19,13 @@ namespace dolfin
   void tic();
 
   /// Return elapsed CPU time
-  real toc();
+  double toc();
 
   /// Return and display elapsed CPU time
-  real tocd();
+  double tocd();
 
   /// Return current CPU time used by process
-  real time();
+  double time();
 
 }
 

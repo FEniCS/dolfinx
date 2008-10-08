@@ -56,13 +56,13 @@ namespace dolfin
     MultiAdaptiveTimeSlab& ts;
 
     // Values of the Jacobian df/du of the right-hand side
-    real* Jvalues;
+    double* Jvalues;
 
     // Indices for first element of each row for the Jacobian df/du
     uint* Jindices;
     
     // Lookup table for dependencies to components with smaller time steps
-    real* Jlookup;
+    double* Jlookup;
     
   };
 

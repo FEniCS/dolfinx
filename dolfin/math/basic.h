@@ -14,13 +14,13 @@ namespace dolfin
 {
 
   /// Return the square of x
-  real sqr(real x);
+  double sqr(double x);
 
   /// Return a to the power n
   uint ipow(uint a, uint n);
 
   /// Return a random number, uniformly distributed between [0.0, 1.0)
-  real rand();
+  double rand();
 
   /// Seed random number generator
   void seed(unsigned int s);

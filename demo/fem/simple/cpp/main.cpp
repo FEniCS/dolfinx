@@ -24,8 +24,8 @@ int main()
   MassMatrix M(mesh);
 
   // Create reference matrices
-  real A0_array[4][4];
-  real M0_array[4][4];
+  double A0_array[4][4];
+  double M0_array[4][4];
 
   A0_array[0][0] = 1.0/2.0;   A0_array[0][1] =-1.0/6.0;   A0_array[0][2] =-1.0/6.0;   A0_array[0][3] =-1.0/6.0;
   A0_array[1][0] =-1.0/6.0;   A0_array[1][1] = 1.0/6.0;   A0_array[1][2] = 0.0;       A0_array[1][3] = 0.0;

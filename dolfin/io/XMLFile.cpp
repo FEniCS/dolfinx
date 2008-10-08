@@ -212,7 +212,7 @@ void XMLFile::operator<<(GenericVector& x)
   FILE* fp = openFile();
 
   // Get vector values
-  real* values = new real[x.size()];
+  double* values = new double[x.size()];
   x.get(values);
   
   // Write vector in XML format
@@ -243,7 +243,7 @@ void XMLFile::operator<<(GenericMatrix& A)
   fprintf(fp, "  <matrix rows=\"%u\" columns=\"%u\">\n", A.size(0), A.size(1));
         
   Array<uint> columns;
-  Array<real> values;
+  Array<double> values;
 
   for (unsigned int i = 0; i < A.size(0); i++)
   {
@@ -253,7 +253,7 @@ void XMLFile::operator<<(GenericMatrix& A)
     for (uint pos = 0; pos < columns.size(); pos++)
     {
       unsigned int j = columns[pos];
-      real aij = values[pos];
+      double aij = values[pos];
       fprintf(fp, "      <entry column=\"%u\" value=\"%.15g\"/>\n", j, aij);
     }
     if (columns.size() > 0 )
@@ -492,7 +492,7 @@ void XMLFile::operator<<(ParameterList& parameters)
       break;
     case Parameter::type_real:
       fprintf(fp, "    <parameter name=\"%s\" type=\"real\" value=\"%.16e\"/>\n",
-	      it->first.c_str(), static_cast<real>(parameter));
+	      it->first.c_str(), static_cast<double>(parameter));
       break;
     case Parameter::type_bool:
       if (static_cast<bool>(parameter))

@@ -79,7 +79,7 @@ void XMLParameterList::readParameter(const xmlChar *name, const xmlChar **attrs)
   // Set parameter
   if ( ptype == "real" )
   {
-    real val = atof(pvalue.c_str());
+    double val = atof(pvalue.c_str());
     parameters.set(pname.c_str(), val);
   }
   else if ( ptype == "int" )

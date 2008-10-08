@@ -21,7 +21,7 @@ public:
 
   BC(Mesh& mesh) : Function(mesh) {}
 
-  real eval(const real* x) const
+  double eval(const double* x) const
   {
     return sin(DOLFIN_PI*5.0*x[1]);
   }
@@ -30,7 +30,7 @@ public:
   // Sub domain for Dirichlet boundary condition
   class DirichletBoundary : public SubDomain
   {
-    bool inside(const real* x, bool on_boundary) const
+    bool inside(const double* x, bool on_boundary) const
     {
       return std::abs(x[0] - 1.0) < DOLFIN_EPS && on_boundary;
     }
@@ -43,7 +43,7 @@ public:
     
   Velocity(Mesh& mesh) : Function(mesh) {}
 
-  void eval(real* values, const real* x) const
+  void eval(double* values, const double* x) const
   {
     values[0] = -1.0;
     values[1] = -0.4;

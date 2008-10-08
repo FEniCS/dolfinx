@@ -10,7 +10,7 @@
 %extend dolfin::SLEPcEigenSolver {
 
 PyObject* getEigenvalue(const int emode) {
-    dolfin::real err, ecc;
+    double err, ecc;
     self->getEigenvalue(err, ecc, emode);
 
     PyObject* result = PyTuple_New(2);
@@ -21,7 +21,7 @@ PyObject* getEigenvalue(const int emode) {
 }
 
 PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const int emode) {
-    dolfin::real err, ecc;
+    double err, ecc;
     self->getEigenpair(err, ecc, rr, cc, emode);
 
     PyObject* result = PyTuple_New(2);
@@ -38,7 +38,7 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
 %define LA_POST_INTERFACE(VEC_TYPE,MAT_TYPE)
 %extend dolfin::VEC_TYPE
 {
-  void _scale(dolfin::real a)
+  void _scale(double a)
   {
     (*self)*=a;
   }
@@ -137,7 +137,7 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
 
 %extend dolfin::MAT_TYPE
 {
-  void _scale(dolfin::real a)
+  void _scale(double a)
   {
     (*self)*=a;
   }
@@ -177,7 +177,7 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
             ret = self.copy()
             ret._scale(other)
             return ret
-        elif isinstance(other,VEC_TYPE):
+        elif isinstance(other,GenericVector):
             ret = other.copy()
             self.mult(other, ret)
             return ret

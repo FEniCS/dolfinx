@@ -58,8 +58,8 @@ void HarmonicSmoothing::move(Mesh& mesh, Mesh& new_boundary)
   A.apply();
 
   // Solve system for each dimension
-  real* values = new real[num_dofs];
-  real* new_coordinates = new real[d*N];
+  double* values = new double[num_dofs];
+  double* new_coordinates = new double[d*N];
   Vector x;
   for (uint dim = 0; dim < d; dim++)
   {

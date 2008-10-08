@@ -50,15 +50,15 @@ namespace dolfin
     { dolfin_assert(dim == 0); return size(); }
 
     /// Get block of values
-    virtual void get(real* block, const uint* num_rows, const uint * const * rows) const
+    virtual void get(double* block, const uint* num_rows, const uint * const * rows) const
     { get(block, num_rows[0], rows[0]); }
 
     /// Set block of values
-    virtual void set(const real* block, const uint* num_rows, const uint * const * rows)
+    virtual void set(const double* block, const uint* num_rows, const uint * const * rows)
     { set(block, num_rows[0], rows[0]); }
 
     /// Add block of values
-    virtual void add(const real* block, const uint* num_rows, const uint * const * rows)
+    virtual void add(const double* block, const uint* num_rows, const uint * const * rows)
     { add(block, num_rows[0], rows[0]); }
 
     /// Set all entries to zero and keep any sparse structure
@@ -79,43 +79,43 @@ namespace dolfin
     virtual uint size() const = 0;
 
     /// Get block of values
-    virtual void get(real* block, uint m, const uint* rows) const = 0;
+    virtual void get(double* block, uint m, const uint* rows) const = 0;
 
     /// Set block of values
-    virtual void set(const real* block, uint m, const uint* rows) = 0;
+    virtual void set(const double* block, uint m, const uint* rows) = 0;
 
     /// Add block of values
-    virtual void add(const real* block, uint m, const uint* rows) = 0;
+    virtual void add(const double* block, uint m, const uint* rows) = 0;
 
     /// Get all values
-    virtual void get(real* values) const = 0;
+    virtual void get(double* values) const = 0;
 
     /// Set all values
-    virtual void set(real* values) = 0;
+    virtual void set(double* values) = 0;
 
     /// Add values to each entry
-    virtual void add(real* values) = 0;
+    virtual void add(double* values) = 0;
 
     /// Add multiple of given vector (AXPY operation)
-    virtual void axpy(real a, const GenericVector& x) = 0;
+    virtual void axpy(double a, const GenericVector& x) = 0;
 
     /// Return inner product with given vector
-    virtual real inner(const GenericVector& x) const = 0;
+    virtual double inner(const GenericVector& x) const = 0;
 
     /// Return norm of vector
-    virtual real norm(dolfin::NormType type) const = 0;
+    virtual double norm(dolfin::NormType type) const = 0;
 
     /// Return minimum value of vector
-    virtual real min() const = 0;
+    virtual double min() const = 0;
 
     /// Return maximum value of vector
-    virtual real max() const = 0;
+    virtual double max() const = 0;
 
     /// Multiply vector by given number
-    virtual const GenericVector& operator*= (real a) = 0;
+    virtual const GenericVector& operator*= (double a) = 0;
 
     /// Divide vector by given number
-    virtual const GenericVector& operator/= (real a) = 0;
+    virtual const GenericVector& operator/= (double a) = 0;
 
     /// Add given vector
     virtual const GenericVector& operator+= (const GenericVector& x) = 0;
@@ -127,17 +127,17 @@ namespace dolfin
     virtual const GenericVector& operator= (const GenericVector& x) = 0;
 
     /// Assignment operator
-    virtual const GenericVector& operator= (real a) = 0;
+    virtual const GenericVector& operator= (double a) = 0;
 
     /// Return pointer to underlying data (const version)
-    virtual const real* data() const
+    virtual const double* data() const
     { 
       error("Unable to return pointer to underlying vector data."); 
       return 0;
     } 
 
     /// Return pointer to underlying data
-    virtual real* data()
+    virtual double* data()
     { 
       error("Unable to return pointer to underlying vector data."); 
       return 0;
@@ -146,15 +146,15 @@ namespace dolfin
     //--- Convenience functions ---
 
     /// Get value of given entry
-    virtual real operator[] (uint i) const
-    { real value(0); get(&value, 1, &i); return value; }
+    virtual double operator[] (uint i) const
+    { double value(0); get(&value, 1, &i); return value; }
 
     /// Get value of given entry 
-    virtual real getitem(uint i) const
-    { real value(0); get(&value, 1, &i); return value; }
+    virtual double getitem(uint i) const
+    { double value(0); get(&value, 1, &i); return value; }
 
     /// Set given entry to value
-    virtual void setitem(uint i, real value)
+    virtual void setitem(uint i, double value)
     { set(&value, 1, &i); }
 
   };

@@ -182,7 +182,7 @@ dolfin::uint PETScMatrix::size(uint dim) const
   return (dim == 0 ? M : N);
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::get(real* block,
+void PETScMatrix::get(double* block,
                       uint m, const uint* rows,
                       uint n, const uint* cols) const
 {
@@ -193,7 +193,7 @@ void PETScMatrix::get(real* block,
                block);
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::set(const real* block,
+void PETScMatrix::set(const double* block,
                       uint m, const uint* rows,
                       uint n, const uint* cols)
 {
@@ -204,7 +204,7 @@ void PETScMatrix::set(const real* block,
                block, INSERT_VALUES);
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::add(const real* block,
+void PETScMatrix::add(const double* block,
                       uint m, const uint* rows,
                       uint n, const uint* cols)
 {
@@ -215,7 +215,7 @@ void PETScMatrix::add(const real* block,
                block, ADD_VALUES);
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::axpy(real a, const GenericMatrix& A)
+void PETScMatrix::axpy(double a, const GenericMatrix& A)
 {
   const PETScMatrix *AA = &A.down_cast<PETScMatrix>();
   dolfin_assert(this->A);
@@ -226,7 +226,7 @@ void PETScMatrix::axpy(real a, const GenericMatrix& A)
 //-----------------------------------------------------------------------------
 void PETScMatrix::getrow(uint row,
                          Array<uint>& columns,
-                         Array<real>& values) const
+                         Array<double>& values) const
 {
   dolfin_assert(A);
 
@@ -244,7 +244,7 @@ void PETScMatrix::getrow(uint row,
 //-----------------------------------------------------------------------------
 void PETScMatrix::setrow(uint row,
                          const Array<uint>& columns,
-                         const Array<real>& values)
+                         const Array<double>& values)
 {
   dolfin_assert(A);
 
@@ -259,7 +259,7 @@ void PETScMatrix::setrow(uint row,
 
   // Assign values to arrays
   uint* cols = new uint[n];
-  real* vals = new real[n];
+  double* vals = new double[n];
   for (uint j = 0; j < n; j++)
   {
     cols[j] = columns[j];
@@ -316,11 +316,11 @@ void PETScMatrix::mult(const GenericVector& x, GenericVector& y, bool transposed
   }
 }
 //-----------------------------------------------------------------------------
-real PETScMatrix::norm(const NormType type) const
+double PETScMatrix::norm(const NormType type) const
 {
   dolfin_assert(A);
 
-  real value = 0.0;
+  double value = 0.0;
   switch ( type )
   {
     case l1:
@@ -351,14 +351,14 @@ void PETScMatrix::zero()
   MatZeroEntries(A);
 }
 //-----------------------------------------------------------------------------
-const PETScMatrix& PETScMatrix::operator*= (real a)
+const PETScMatrix& PETScMatrix::operator*= (double a)
 {
   dolfin_assert(A);
   MatScale(A, a);
   return *this;
 }
 //-----------------------------------------------------------------------------
-const PETScMatrix& PETScMatrix::operator/= (real a)
+const PETScMatrix& PETScMatrix::operator/= (double a)
 {
   dolfin_assert(A);
   MatScale(A, 1.0 / a);
@@ -438,7 +438,7 @@ void PETScMatrix::disp(uint precision) const
     {
       for (uint j = 0; j < N; j++)
       {
-        real value = get(i, j);
+        double value = get(i, j);
         if ( fabs(value) < DOLFIN_EPS )
         value = 0.0;	
         line << " " << value;

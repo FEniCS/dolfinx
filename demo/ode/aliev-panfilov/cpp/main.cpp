@@ -1,8 +1,8 @@
-// Copyright (C) 2006 Anders Logg.
+// Copyright (C) 2006-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-05-24
-// Last changed: 2006-08-21
+// Last changed: 2008-10-07
 //
 // This demo solves a simple model for cardiac excitation,
 // proposed in a 1995 paper by Aliev and Panfilov.
@@ -25,15 +25,15 @@ public:
     mu2  = 0.3;
   }
   
-  void u0(uBLASVector& u)
+  void u0(real* u)
   {
     u[0] = 0.2;
     u[1] = 0.0;
   }
   
-  void f(const uBLASVector& u, real t, uBLASVector& y)
+  void f(const real* u, double t, real* y)
   {
-    const real eps = eps0 + mu1*u[1] / (u[0] + mu2);
+    const double eps = eps0 + mu1*u[1] / (u[0] + mu2);
 
     y[0] = -k*u[0]*(u[0] - a)*(u[0] - 1.0) - u[0]*u[1];
     y[1] = eps*(-u[1] - k*u[0]*(u[0] - a - 1.0));
@@ -41,11 +41,11 @@ public:
   
 private:
   
-  real a;
-  real eps0;
-  real k;
-  real mu1;
-  real mu2;
+  double a;
+  double eps0;
+  double k;
+  double mu1;
+  double mu2;
 
 };
 

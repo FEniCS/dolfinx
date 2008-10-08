@@ -1,8 +1,8 @@
-// Copyright (C) 2003-2006 Anders Logg.
+// Copyright (C) 2003-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005-05-02
-// Last changed: 2006-07-07
+// Last changed: 2008-10-07
 
 #ifndef __CGQ_METHOD_H
 #define __CGQ_METHOD_H
@@ -24,26 +24,20 @@ namespace dolfin
     cGqMethod(unsigned int q);
 
     /// Evaluate solution at given point
-    real ueval(real x0, real values[], real tau) const;
-
-    /// Evaluate solution at given point
-    real ueval(real x0, uBLASVector& values, uint offset, real tau) const;
+    double ueval(double x0, double values[], double tau) const;
 
     /// Evaluate solution at given node (inline optimized)
-    inline real ueval(real x0, real values[], uint i) const
+    inline double ueval(double x0, double values[], uint i) const
     { return ( i == 0 ? x0 : values[i - 1] ); }
 
     /// Compute residual at right end-point    
-    real residual(real x0, real values[], real f, real k) const;
-
-    /// Compute residual at right end-point
-    real residual(real x0, uBLASVector& values, uint offset, real f, real k) const;
+    double residual(double x0, double values[], double f, double k) const;
 
     /// Compute new time step based on the given residual
-    real timestep(real r, real tol, real k0, real kmax) const;
+    double timestep(double r, double tol, double k0, double kmax) const;
 
     /// Compute error estimate (modulo stability factor)
-    real error(real k, real r) const;
+    double error(double k, double r) const;
 
     /// Display method data
     void disp() const;

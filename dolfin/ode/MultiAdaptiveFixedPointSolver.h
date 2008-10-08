@@ -43,7 +43,7 @@ namespace dolfin
     void end();
 
     // Make an iteration
-    real iteration(real tol, uint iter, real d0, real d1);
+    double iteration(double tol, uint iter, double d0, double d1);
 
     /// Size of system
     uint size() const;
@@ -54,13 +54,13 @@ namespace dolfin
     MultiAdaptiveTimeSlab& ts;
 
     // Values of right-hand side at quadrature points
-    real* f; 
+    double* f; 
 
     // Total number of elements
     uint num_elements;
     
     // Estimated number of elements for mono-adaptive system
-    real num_elements_mono;
+    double num_elements_mono;
 
     // Maximum number of local iterations
     uint maxiter_local;
@@ -69,7 +69,7 @@ namespace dolfin
     bool diagonal_newton_damping;
 
     // Diagonal of Jacobian df/du
-    real* dfdu;
+    double* dfdu;
 
   };
 

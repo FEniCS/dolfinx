@@ -34,7 +34,7 @@ def next(self):
 
 %template(MeshFunctionInt) dolfin::MeshFunction<int>;
 %template(MeshFunctionUInt) dolfin::MeshFunction<unsigned int>;
-%template(MeshFunctionReal) dolfin::MeshFunction<real>;
+%template(MeshFunctionReal) dolfin::MeshFunction<double>;
 %template(MeshFunctionBool) dolfin::MeshFunction<bool>;
 
 %pythoncode
@@ -70,8 +70,8 @@ MeshFunctionBool.__call__ = MeshFunctionBool.get
 //--- Extend Point interface with Python selectors ---
 
 %extend dolfin::Point {
-  real get(int i) { return (*self)[i]; }
-  void set(int i, real val) { (*self)[i] = val; }
+  double get(int i) { return (*self)[i]; }
+  void set(int i, double val) { (*self)[i] = val; }
 }
 
 %pythoncode

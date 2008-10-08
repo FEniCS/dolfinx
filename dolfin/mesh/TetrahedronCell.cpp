@@ -368,7 +368,7 @@ void TetrahedronCell::refineCellIrregular(Cell& cell, MeshEditor& editor,
   */
 }
 //-----------------------------------------------------------------------------
-real TetrahedronCell::volume(const MeshEntity& tetrahedron) const
+double TetrahedronCell::volume(const MeshEntity& tetrahedron) const
 {
   // Get mesh geometry
   const MeshGeometry& geometry = tetrahedron.mesh().geometry();
@@ -379,13 +379,13 @@ real TetrahedronCell::volume(const MeshEntity& tetrahedron) const
 
   // Get the coordinates of the four vertices
   const uint* vertices = tetrahedron.entities(0);
-  const real* x0 = geometry.x(vertices[0]);
-  const real* x1 = geometry.x(vertices[1]);
-  const real* x2 = geometry.x(vertices[2]);
-  const real* x3 = geometry.x(vertices[3]);
+  const double* x0 = geometry.x(vertices[0]);
+  const double* x1 = geometry.x(vertices[1]);
+  const double* x2 = geometry.x(vertices[2]);
+  const double* x3 = geometry.x(vertices[3]);
 
   // Formula for volume from http://mathworld.wolfram.com
-  real v = ( x0[0] * ( x1[1]*x2[2] + x3[1]*x1[2] + x2[1]*x3[2] - x2[1]*x1[2] - x1[1]*x3[2] - x3[1]*x2[2] ) -
+  double v = ( x0[0] * ( x1[1]*x2[2] + x3[1]*x1[2] + x2[1]*x3[2] - x2[1]*x1[2] - x1[1]*x3[2] - x3[1]*x2[2] ) -
              x1[0] * ( x0[1]*x2[2] + x3[1]*x0[2] + x2[1]*x3[2] - x2[1]*x0[2] - x0[1]*x3[2] - x3[1]*x2[2] ) +
              x2[0] * ( x0[1]*x1[2] + x3[1]*x0[2] + x1[1]*x3[2] - x1[1]*x0[2] - x0[1]*x3[2] - x3[1]*x1[2] ) -
              x3[0] * ( x0[1]*x1[2] + x1[1]*x2[2] + x2[1]*x0[2] - x1[1]*x0[2] - x2[1]*x1[2] - x0[1]*x2[2] ) );
@@ -393,7 +393,7 @@ real TetrahedronCell::volume(const MeshEntity& tetrahedron) const
   return std::abs(v) / 6.0;
 }
 //-----------------------------------------------------------------------------
-real TetrahedronCell::diameter(const MeshEntity& tetrahedron) const
+double TetrahedronCell::diameter(const MeshEntity& tetrahedron) const
 {
   // Get mesh geometry
   const MeshGeometry& geometry = tetrahedron.mesh().geometry();
@@ -410,25 +410,25 @@ real TetrahedronCell::diameter(const MeshEntity& tetrahedron) const
   Point p3 = geometry.point(vertices[3]);
 
   // Compute side lengths
-  real a  = p1.distance(p2);
-  real b  = p0.distance(p2);
-  real c  = p0.distance(p1);
-  real aa = p0.distance(p3);
-  real bb = p1.distance(p3);
-  real cc = p2.distance(p3);
+  double a  = p1.distance(p2);
+  double b  = p0.distance(p2);
+  double c  = p0.distance(p1);
+  double aa = p0.distance(p3);
+  double bb = p1.distance(p3);
+  double cc = p2.distance(p3);
                                 
   // Compute "area" of triangle with strange side lengths
-  real la   = a*aa;
-  real lb   = b*bb;
-  real lc   = c*cc;
-  real s    = 0.5*(la+lb+lc);
-  real area = sqrt(s*(s-la)*(s-lb)*(s-lc));
+  double la   = a*aa;
+  double lb   = b*bb;
+  double lc   = c*cc;
+  double s    = 0.5*(la+lb+lc);
+  double area = sqrt(s*(s-la)*(s-lb)*(s-lc));
                                 
   // Formula for diameter (2*circumradius) from http://mathworld.wolfram.com
   return area / ( 3.0*volume(tetrahedron) );
 }
 //-----------------------------------------------------------------------------
-real TetrahedronCell::normal(const Cell& cell, uint facet, uint i) const
+double TetrahedronCell::normal(const Cell& cell, uint facet, uint i) const
 {
   return normal(cell, facet)[i];
 }
@@ -453,10 +453,10 @@ Point TetrahedronCell::normal(const Cell& cell, uint facet) const
   const MeshGeometry& geometry = cell.mesh().geometry();
   
   // Get the coordinates of the four vertices
-  const real* p0 = geometry.x(v0);
-  const real* p1 = geometry.x(v1);
-  const real* p2 = geometry.x(v2);
-  const real* p3 = geometry.x(v3);
+  const double* p0 = geometry.x(v0);
+  const double* p1 = geometry.x(v1);
+  const double* p2 = geometry.x(v2);
+  const double* p3 = geometry.x(v3);
 
   // Create points from vertex coordinates
   Point P0(p0[0], p0[1], p0[2]);
@@ -482,7 +482,7 @@ Point TetrahedronCell::normal(const Cell& cell, uint facet) const
   return n;
 }
 //-----------------------------------------------------------------------------
-dolfin::real TetrahedronCell::facetArea(const Cell& cell, uint facet) const
+double TetrahedronCell::facetArea(const Cell& cell, uint facet) const
 {
   dolfin_assert(cell.mesh().topology().dim() == 3);
   dolfin_assert(cell.mesh().geometry().dim() == 3);
@@ -498,14 +498,14 @@ dolfin::real TetrahedronCell::facetArea(const Cell& cell, uint facet) const
 
   // Get the coordinates of the three vertices
   const uint* vertices = cell.entities(0);
-  const real* x0 = geometry.x(vertices[0]);
-  const real* x1 = geometry.x(vertices[1]);
-  const real* x2 = geometry.x(vertices[2]);
+  const double* x0 = geometry.x(vertices[0]);
+  const double* x1 = geometry.x(vertices[1]);
+  const double* x2 = geometry.x(vertices[2]);
   
   // Compute area of triangle embedded in R^3
-  real v0 = (x0[1]*x1[2] + x0[2]*x2[1] + x1[1]*x2[2]) - (x2[1]*x1[2] + x2[2]*x0[1] + x1[1]*x0[2]);
-  real v1 = (x0[2]*x1[0] + x0[0]*x2[2] + x1[2]*x2[0]) - (x2[2]*x1[0] + x2[0]*x0[2] + x1[2]*x0[0]);
-  real v2 = (x0[0]*x1[1] + x0[1]*x2[0] + x1[0]*x2[1]) - (x2[0]*x1[1] + x2[1]*x0[0] + x1[0]*x0[1]);
+  double v0 = (x0[1]*x1[2] + x0[2]*x2[1] + x1[1]*x2[2]) - (x2[1]*x1[2] + x2[2]*x0[1] + x1[1]*x0[2]);
+  double v1 = (x0[2]*x1[0] + x0[0]*x2[2] + x1[2]*x2[0]) - (x2[2]*x1[0] + x2[0]*x0[2] + x1[2]*x0[0]);
+  double v2 = (x0[0]*x1[1] + x0[1]*x2[0] + x1[0]*x2[1]) - (x2[0]*x1[1] + x2[1]*x0[0] + x1[0]*x0[1]);
   
   // Formula for area from http://mathworld.wolfram.com 
   return  0.5 * sqrt(v0*v0 + v1*v1 + v2*v2);
@@ -534,19 +534,19 @@ bool TetrahedronCell::intersects(const MeshEntity& tetrahedron,
   }
 
   // Get the coordinates of the four vertices
-  const real* x0 = geometry.x(v0);
-  const real* x1 = geometry.x(v1);
-  const real* x2 = geometry.x(v2);
-  const real* x3 = geometry.x(v3);
+  const double* x0 = geometry.x(v0);
+  const double* x1 = geometry.x(v1);
+  const double* x2 = geometry.x(v2);
+  const double* x3 = geometry.x(v3);
 
-  real xcoordinates[3];
-  real* x = xcoordinates;
+  double xcoordinates[3];
+  double* x = xcoordinates;
 
   x[0] = p[0];
   x[1] = p[1];
   x[2] = p[2];
 
-  real d1, d2, d3, d4;
+  double d1, d2, d3, d4;
 
   // Test orientation of p w.r.t. each face
   d1 = orient3d((double *)x2, (double *)x1, (double *)x0, x);

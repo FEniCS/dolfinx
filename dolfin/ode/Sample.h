@@ -23,7 +23,7 @@ namespace dolfin
   public:
     
     /// Constructor
-    Sample(TimeSlab& timeslab, real t, std::string name, std::string label);
+    Sample(TimeSlab& timeslab, double t, std::string name, std::string label);
 
     /// Destructor
     ~Sample();
@@ -32,21 +32,21 @@ namespace dolfin
     uint size() const;
 
     /// Return time t
-    real t() const;
+    double t() const;
 
     /// Return value of component with given index
-    real u(uint index);
+    double u(uint index);
 
     /// Return time step for component with given index
-    real k(uint index);
+    double k(uint index);
 
     /// Return residual for component with given index
-    real r(uint index);
+    double r(uint index);
     
   private:
 
     TimeSlab& timeslab;
-    real time;
+    double time;
 
   };
 

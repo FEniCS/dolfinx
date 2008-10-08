@@ -11,8 +11,8 @@ using namespace dolfin;
 // Run a few simple tests
 void bench(unsigned int n, unsigned int M)
 {
-  real t = 0.0;
-  real MM = static_cast<real>(M);
+  double t = 0.0;
+  double MM = static_cast<double>(M);
 
   UnitCube mesh(n, n, n);
   cout << "n = " << n << ": " << mesh << endl;

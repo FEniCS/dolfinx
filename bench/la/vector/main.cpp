@@ -16,11 +16,11 @@ using namespace boost::tuples;
 template<class Vec>
 struct VectorAssign
 {
-  static tuple<real, real> benchVectorAssign(const dolfin::uint N, const dolfin::uint n)
+  static tuple<double, double> benchVectorAssign(const dolfin::uint N, const dolfin::uint n)
   {
     dolfin_set("output destination", "silent");
 
-    tuple<real, real> timing;
+    tuple<double, double> timing;
     Vec x(N);
 
     tic();
@@ -30,7 +30,7 @@ struct VectorAssign
     get<0>(timing) = toc();
 
     tic();
-    real xtemp = 0.0;
+    double xtemp = 0.0;
     for(dolfin::uint i=0; i < n; ++i)
       for(dolfin::uint j=0; j < N; ++j)
         xtemp = x(j);      
@@ -46,9 +46,9 @@ int main()
   const dolfin::uint N[3] = {6, 6, 100};
   const dolfin::uint n[3] = {100000, 100000000, 1000000};
 
-  tuple<real, real> ublas_timing[3];
+  tuple<double, double> ublas_timing[3];
 #ifdef HAS_PETSC  
-  tuple<real, real> petsc_timing[2];
+  tuple<double, double> petsc_timing[2];
 #endif
 
   begin("Vector benchmark timings");

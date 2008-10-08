@@ -24,48 +24,48 @@ namespace dolfin
     Controller();
 
     /// Create controller with given initial state
-    Controller(real k, real tol, uint p, real kmax);
+    Controller(double k, double tol, uint p, double kmax);
 
     /// Destructor
     ~Controller();
 
     /// Initialize controller
-    void init(real k, real tol, uint p, real kmax);
+    void init(double k, double tol, uint p, double kmax);
 
     /// Reset controller
-    void reset(real k);
+    void reset(double k);
 
     /// Default controller
-    real update(real e, real tol);
+    double update(double e, double tol);
 
     /// Controller H0211
-    real updateH0211(real e, real tol);
+    double updateH0211(double e, double tol);
 
     /// Controller H211PI
-    real updateH211PI(real e, real tol);
+    double updateH211PI(double e, double tol);
 
     /// No control, simple formula
-    real updateSimple(real e, real tol);
+    double updateSimple(double e, double tol);
 
     /// Control by harmonic mean value
-    real updateHarmonic(real e, real tol);
+    double updateHarmonic(double e, double tol);
 
     /// Control by harmonic mean value (no history supplied)
-    static real updateHarmonic(real knew, real kold, real kmax);
+    static double updateHarmonic(double knew, double kold, double kmax);
 
   private:
 
     // Time step history
-    real k0, k1;
+    double k0, k1;
 
     // Error history
-    real e0;
+    double e0;
 
     // Asymptotics: e ~ k^p
-    real p;
+    double p;
 
     // Maximum time step
-    real kmax;
+    double kmax;
 
   };
 

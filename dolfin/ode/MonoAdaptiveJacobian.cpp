@@ -1,15 +1,15 @@
-// Copyright (C) 2005-2006 Anders Logg.
+// Copyright (C) 2005-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005-01-28
-// Last changed: 2006-08-21
+// Last changed: 2008-10-06
 
+#include <dolfin/common/timing.h>
 #include <dolfin/math/dolfin_math.h>
 #include "ODE.h"
 #include "Method.h"
 #include "MonoAdaptiveTimeSlab.h"
 #include "MonoAdaptiveJacobian.h"
-#include <dolfin/common/timing.h>
 
 using namespace dolfin;
 
@@ -17,33 +17,37 @@ using namespace dolfin;
 MonoAdaptiveJacobian::MonoAdaptiveJacobian(MonoAdaptiveTimeSlab& timeslab,
 					   bool implicit, bool piecewise)
   : TimeSlabJacobian(timeslab), ts(timeslab),
-    implicit(implicit), piecewise(piecewise), xx(timeslab.N), yy(timeslab.N)
+    implicit(implicit), piecewise(piecewise), xx(0), yy(0)
 {
-  // Do nothing
+  xx = new double[timeslab.N];
+  yy = new double[timeslab.N];
+  real_zero(timeslab.N, xx);
+  real_zero(timeslab.N, yy);
 }
 //-----------------------------------------------------------------------------
 MonoAdaptiveJacobian::~MonoAdaptiveJacobian()
 {
-  // Do nothing
+  delete [] xx;
+  delete [] yy;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint MonoAdaptiveJacobian::size(uint dim) const
 {
-  return ts.x.size();
+  return ts.nj;
 }
 //-----------------------------------------------------------------------------
 void MonoAdaptiveJacobian::mult(const uBLASVector& x, uBLASVector& y) const
 {
   // Start with y = x, accounting for the derivative dF_j/dx_j = 1
-  if ( !implicit )
+  if (!implicit)
     y = x;
 
   // Compute size of time step
-  const real a = ts.starttime();
-  const real k = ts.length();
+  const double a = ts.starttime();
+  const double k = ts.length();
 
   // Compute product y = Mx for each stage for implicit system
-  if ( implicit )
+  if (implicit)
   {
     // Iterate over stages
     for (uint n = 0; n < method.nsize(); n++)
@@ -54,13 +58,13 @@ void MonoAdaptiveJacobian::mult(const uBLASVector& x, uBLASVector& y) const
       ts.copy(x, noffset, xx, 0, ts.N);
 
       // Do multiplication
-      if ( piecewise )
+      if (piecewise)
       {
         ode.M(xx, yy, ts.u0, a);
       }
       else
       {
-        const real t = a + method.npoint(n) * k;
+        const double t = a + method.npoint(n) * k;
         ts.copy(ts.x, noffset, ts.u, 0, ts.N);
         ode.M(xx, yy, ts.u, t);
       }
@@ -73,14 +77,14 @@ void MonoAdaptiveJacobian::mult(const uBLASVector& x, uBLASVector& y) const
   // Iterate over the stages
   for (uint n = 0; n < method.nsize(); n++)
   {
-    const real t = a + method.npoint(n) * k;
+    const double t = a + method.npoint(n) * k;
     const uint noffset = n * ts.N;
 
     /*
     // Compute yy = df/du * x for current stage
     for (uint i = 0; i < ts.N; i++)
     {
-      real sum = 0.0;
+      double sum = 0.0;
       const Array<uint>& deps = ode.dependencies[i];
       const uint Joffset = Jindices[i];
       for (uint pos = 0; pos < deps.size(); pos++)
@@ -105,8 +109,8 @@ void MonoAdaptiveJacobian::mult(const uBLASVector& x, uBLASVector& y) const
       const uint moffset = m * ts.N;
 
       // Get correct weight
-      real w = 0.0;
-      if ( method.type() == Method::cG )
+      double w = 0.0;
+      if (method.type() == Method::cG)
         w = - k * method.nweight(m, n + 1);
       else
         w = - k * method.nweight(m, n);

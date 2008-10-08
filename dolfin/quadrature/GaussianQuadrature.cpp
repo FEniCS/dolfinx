@@ -80,7 +80,7 @@ bool GaussianQuadrature::check(unsigned int q) const
   
   Legendre p(q);
   
-  real sum = 0.0;
+  double sum = 0.0;
   for (unsigned int i = 0; i < n; i++)
     sum += weights[i] * p(points[i]);
   

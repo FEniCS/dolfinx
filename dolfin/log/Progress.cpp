@@ -42,7 +42,7 @@ Progress::~Progress()
     LogManager::logger.progress(title, 1.0);
 }
 //-----------------------------------------------------------------------------
-void Progress::operator=(real p)
+void Progress::operator=(double p)
 {
   if (n != 0)
     error("Cannot specify value for progress session with given number of steps.");
@@ -58,15 +58,15 @@ void Progress::operator++(int)
   if (i < n)
     i++;
 
-  update(static_cast<real>(i) / static_cast<real>(n));
+  update(static_cast<double>(i) / static_cast<double>(n));
 }
 //-----------------------------------------------------------------------------
-void Progress::update(real p)
+void Progress::update(double p)
 {
   //p = std::max(std::min(p, 1.0), 0.0);
   //const bool p_check = p - this->p >= p_step - DOLFIN_EPS;
 
-  const real t = time();
+  const double t = time();
   const bool t_check = t - this->t >= t_step - DOLFIN_EPS;
 
   // Only update when the increase is significant

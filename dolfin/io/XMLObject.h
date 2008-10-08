@@ -45,8 +45,8 @@ namespace dolfin
     // Parse an unsigned integer value
     uint parseUnsignedInt(const xmlChar* name, const xmlChar** attrs, const char *attribute);
     
-    // Parse a real value
-    real parseReal(const xmlChar* name, const xmlChar** attrs, const char* attribute);
+    // Parse a double value
+    double parseReal(const xmlChar* name, const xmlChar** attrs, const char* attribute);
     
     // Parse a string
     std::string parseString(const xmlChar* name, const xmlChar** attrs, const char* attribute);

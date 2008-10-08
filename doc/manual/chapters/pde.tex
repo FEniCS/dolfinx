@@ -186,7 +186,7 @@
 % \begin{code}
 %   class MyFunction : public Function
 %   \{
-%     real operator() (const Point& p) const
+%     double operator() (const Point& p) const
 %     \{
 %       return p.x*p.z*sin(p.y);
 %     \}
@@ -216,7 +216,7 @@
 % which generates a file \texttt{Heat.h} when compiled with \ffc{}. 
 % To initializations the corresponding forms we write:  
 % \begin{code}
-% real k;                  // time step
+% double k;                  // time step
 % Vector x0;               // vector containing dofs for u0
 % Function u0(x0, mesh);   // solution at previous time step 
 

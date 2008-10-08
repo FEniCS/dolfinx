@@ -1,10 +1,10 @@
-// Copyright (C) 2003-2005 Anders Logg.
+// Copyright (C) 2003-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Benjamin Kehlet
 //
 // First added:  2003-11-28
-// Last changed: 2008-06-18
+// Last changed: 2008-10-06
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/math/dolfin_math.h>
@@ -18,7 +18,7 @@ Dual::Dual(ODE& primal, ODESolution& u)
     primal(primal), u(u)
 {
 
-  // inherit parameters from primal problem
+  // Inherit parameters from primal problem
   set("parent", primal);
 }
 //------------------------------------------------------------------------
@@ -27,18 +27,16 @@ Dual::~Dual()
   // Do nothing
 }
 //------------------------------------------------------------------------
-void Dual::u0(uBLASVector& y)
+void Dual::u0(double* psi)
 {
-  // TODO
-  // Should be able to use different choices of initial data to the dual
-  //return 1.0 / sqrt(static_cast<real>(N));
+  // FIXME: Enable different choices of initial data to the dual
+  //return 1.0 / sqrt(static_cast<double>(N));
 
-  y[0] = 1.0;
-  for (uint i = 1; i < size(); ++i)  y[i] = 0.0;
-  
+  real_zero(size(), psi);
+  psi[0] = 1.0;
 }
 //------------------------------------------------------------------------
-void Dual::f(const uBLASVector& phi, real t, uBLASVector& y)
+void Dual::f(const double* phi, double t, double* y)
 {
   // FIXME: Here we can do some optimization. Since we compute the sum
   // FIXME: over all dual dependencies of i we will do the update of
@@ -46,8 +44,9 @@ void Dual::f(const uBLASVector& phi, real t, uBLASVector& y)
   // FIXME: we could precompute a new sparsity pattern taking all these
   // FIXME: dependencies into account and then updating the buffer values
   // FIXME: outside the sum.
+
   /*
-  real sum = 0.0;  
+  double sum = 0.0;  
   
   if ( sparsity.sparse() )
   {
@@ -63,18 +62,19 @@ void Dual::f(const uBLASVector& phi, real t, uBLASVector& y)
 
   return sum;
   */
-  if (tmp.size() != size()) 
-  {
-    tmp.resize(size());
-    // FIXME: Do we need to zero tmp?
-    tmp.zero();
-  }
-  u.eval(endtime()-t, tmp);
-  primal.JT(phi, y, tmp, endtime()-t);
-  
+
+  // Initialize temporary array if necessary
+  if (!tmp0) tmp0 = new double[size()];
+  real_zero(size(), tmp0);
+
+  // Evaluate primal at T - t
+  u.eval(endtime() - t, tmp0);
+
+  // Evaluate right-hand side
+  primal.JT(phi, y, tmp0, endtime() - t);
 }
 //------------------------------------------------------------------------
-real Dual::time(real t) const
+double Dual::time(double t) const
 {
   return endtime() - t;
 }

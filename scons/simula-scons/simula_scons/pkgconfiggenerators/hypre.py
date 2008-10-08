@@ -11,7 +11,7 @@ def getHypreDir(sconsEnv=None):
     hypre_dir = getPackageDir("hypre", sconsEnv=sconsEnv, default=default)
     return hypre_dir
 
-def pkgVersion(compiler=None, cflags=None, sconsEnv=None):
+def pkgVersion(compiler=None, linker=None, cflags=None, sconsEnv=None):
   # A test for checking the hypre version
   cpp_version_str = r"""
 #include <stdio.h>
@@ -30,9 +30,11 @@ int main() {
   if not compiler:
     # FIXME: get_compiler() returns a C++ compiler. Should be a C compiler.
     compiler = get_compiler(sconsEnv)
+  if not linker:
+    linker = get_linker(sconsEnv)
   if not cflags:
     cflags = pkgCflags()
-  cmdstr = "%s %s hypre_config_test_version.c" % (compiler,cflags)
+  cmdstr = "%s %s hypre_config_test_version.c" % (compiler, cflags)
   compileFailed, cmdoutput = commands.getstatusoutput(cmdstr)
   if compileFailed:
     remove_cfile("hypre_config_test_version.c")
@@ -121,10 +123,6 @@ def pkgTests(forceCompiler=None, sconsEnv=None,
     linker = get_linker(sconsEnv)
   else:
     compiler, linker = set_forced_compiler(forceCompiler)
-  # FIXME: should we have, e.g., a get_c_compiler that returns gcc as default?
-  # using gcc as compiler and linker for now
-  compiler = 'gcc'
-  linker = 'gcc'
 
   if not cflags:
     cflags = pkgCflags(sconsEnv=sconsEnv)
@@ -140,12 +138,24 @@ def pkgTests(forceCompiler=None, sconsEnv=None,
 #include <HYPRE_config.h>
 #include <_hypre_IJ_mv.h>
 
-int main() {
+int main(int argc, char *argv[])
+{
+#ifdef HYPRE_SEQUENTIAL
   MPI_Comm comm = MPI_COMM_NULL;
   HYPRE_IJMatrix A;
   HYPRE_IJMatrixCreate(comm, 0, 10, 0, 10, &A);
+#else
+  int rank, nprocs;
+
+  MPI_Init(&argc,&argv);
+  MPI_Comm_size(MPI_COMM_WORLD,&nprocs);
+  MPI_Comm_rank(MPI_COMM_WORLD,&rank);
+  HYPRE_IJMatrix A;
+  HYPRE_IJMatrixCreate(MPI_COMM_WORLD, 0, 10, 0, 10, &A);
+  MPI_Finalize();
+#endif
   return 0;
-}
+} 
 """
   write_cppfile(cpp_testlib_str, "hypre_config_test_libstest.c")
 

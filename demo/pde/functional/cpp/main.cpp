@@ -28,7 +28,7 @@ int main()
 
     MyFunction(Mesh& mesh) : Function(mesh) {}
     
-    real eval(const real* x) const
+    double eval(const double* x) const
     {
       return sin(x[0]) + cos(x[1]);
     }
@@ -39,10 +39,10 @@ int main()
   UnitSquare mesh(16, 16);
   MyFunction v(mesh);
   EnergyNormFunctional M(v);
-  real value = assemble(M, mesh);
+  double value = assemble(M, mesh);
 
   // Compute exact value
-  real exact_value = 2.0 + 2.0*sin(1.0)*(1.0 - cos(1.0));
+  double exact_value = 2.0 + 2.0*sin(1.0)*(1.0 - cos(1.0));
 
   message("The energy norm of v is %.15g (should be %.15g).", value, exact_value);
   

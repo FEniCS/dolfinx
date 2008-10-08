@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005-01-28
-// Last changed: 2008-02-11
+// Last changed: 2008-10-07
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/parameter/parameters.h>
@@ -22,7 +22,7 @@ MonoAdaptiveFixedPointSolver::MonoAdaptiveFixedPointSolver
     rampfactor(ode.get("ODE fixed-point stabilization ramp"))
 {
   // Initialize old values at right end-point
-  xold = new real[ts.N];
+  xold = new double[ts.N];
   for (uint i = 0; i < ts.N; i++)
     xold[i] = 0.0;
 }
@@ -32,55 +32,44 @@ MonoAdaptiveFixedPointSolver::~MonoAdaptiveFixedPointSolver()
   delete [] xold;
 }
 //-----------------------------------------------------------------------------
-real MonoAdaptiveFixedPointSolver::iteration(real tol, uint iter,
-					     real d0, real d1)
+double MonoAdaptiveFixedPointSolver::iteration(double tol, uint iter,
+                                               double d0, double d1)
 {
-//   real K = ts.endtime() - ts.starttime();
-
-  real alpha_orig = alpha;
-
+  //   double K = ts.endtime() - ts.starttime();
+  double alpha_orig = alpha;
   if(stabilize)
   {
-
-    if(iter == 0)
+    if (iter == 0)
     {
       ramp = 1.0;
       mi = 0;
       li = 0;
     }
     
-    if(iter == 0 || (d1 > d0 && li == 0))
+    if (iter == 0 || (d1 > d0 && li == 0))
     {
-      // stabilize
-      
       ramp = 1.0;
       mi = ode.get("ODE fixed-point stabilization m");
       //mi = (int)ceil(log10(K * 1.0e4));
-
-      //cout << "stabilize: " << mi << endl;
     }  
     
-    if(mi == 0 && li == 0)
+    if (mi == 0 && li == 0)
     {
       // Choose number of ramping iterations
       li = ode.get("ODE fixed-point stabilization l");
-
-      //cout << "ramp: " << li << endl;
     }
     
-    if(mi == 0)
+    if (mi == 0)
     {
-      // ramping
-      
+      // Ramping
       ramp = ramp * rampfactor;
     }
-    
 
     alpha *= ramp;
   }
 
   // Compute size of time step
-  const real k = ts.length();
+  const double k = ts.length();
 
   // Save old values
   const uint xoffset = (method.nsize() - 1) * ts.N;
@@ -107,7 +96,7 @@ real MonoAdaptiveFixedPointSolver::iteration(real tol, uint iter,
     // Add weights of right-hand side
     for (uint m = 0; m < method.qsize(); m++)
     {
-      const real tmp = k * method.nweight(n, m);
+      const double tmp = k * method.nweight(n, m);
       const uint moffset = m * ts.N;
       for (uint i = 0; i < ts.N; i++)
 	ts.x[noffset + i] += alpha*tmp*ts.fq[moffset + i];
@@ -115,21 +104,21 @@ real MonoAdaptiveFixedPointSolver::iteration(real tol, uint iter,
   }
   
   // Compute size of increment
-  real max_increment = 0.0;
+  double max_increment = 0.0;
   for (uint i = 0; i < ts.N; i++)
   {
-    const real increment = fabs(ts.x[xoffset + i] - xold[i]);
+    const double increment = fabs(ts.x[xoffset + i] - xold[i]);
     if ( increment > max_increment )
       max_increment = increment;
   }
 
-  if(stabilize)
+  if (stabilize)
   {
     alpha = alpha_orig;
 
-    if(mi > 0)
+    if (mi > 0)
       mi -= 1;
-    if(li > 0)
+    if (li > 0)
       li -= 1;
   }
 

@@ -22,13 +22,13 @@ SubDomain::~SubDomain()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-bool SubDomain::inside(const real* x, bool on_boundary) const
+bool SubDomain::inside(const double* x, bool on_boundary) const
 {
   error("Unable to determine if point is inside subdomain, function inside() not implemented by user.");
   return false;
 }
 //-----------------------------------------------------------------------------
-void SubDomain::map(const real* x, real* y) const
+void SubDomain::map(const double* x, double* y) const
 {
   error("Mapping between subdomains missing for periodic boundary conditions, function map() not implemented by user.");
 }
@@ -65,7 +65,7 @@ void SubDomain::mark(MeshFunction<uint>& sub_domains, uint sub_domain) const
     {
       for (VertexIterator vertex(*entity); !vertex.end(); ++vertex)
       {
-        simple_array<real> x(mesh.geometry().dim(), vertex->x());
+        simple_array<double> x(mesh.geometry().dim(), vertex->x());
         if (!inside(x, on_boundary))
         {
           all_vertices_inside = false;
@@ -76,7 +76,7 @@ void SubDomain::mark(MeshFunction<uint>& sub_domains, uint sub_domain) const
     // Dimension of facet == 0, so just check the vertex itself
     else
     {
-      simple_array<real> x(mesh.geometry().dim(), mesh.geometry().x(entity->index()));
+      simple_array<double> x(mesh.geometry().dim(), mesh.geometry().x(entity->index()));
       if (!inside(x, on_boundary))
       {
         all_vertices_inside = false;

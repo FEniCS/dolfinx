@@ -42,14 +42,14 @@ dolfin::uint Partition::index(uint i) const
   return indices[i];
 }
 //-----------------------------------------------------------------------------
-real Partition::update(uint offset, uint& end, MultiAdaptivity& adaptivity,
-		       real K)
+double Partition::update(uint offset, uint& end, MultiAdaptivity& adaptivity,
+		       double K)
 {
   // Compute time steps for partition. We partition the components into two
   // groups, one group with k < Kpivot and one with k >= Kpivot.
 
   // Compute time step for partitioning
-  real Kpivot = threshold * maximum(offset, adaptivity);
+  double Kpivot = threshold * maximum(offset, adaptivity);
 
   // Comparison operator
   Less less(Kpivot, adaptivity);
@@ -95,9 +95,9 @@ void Partition::debug(uint offset, uint end) const
   cout << endl;
 }
 //-----------------------------------------------------------------------------
-real Partition::maximum(uint offset, MultiAdaptivity& adaptivity) const
+double Partition::maximum(uint offset, MultiAdaptivity& adaptivity) const
 {
-  real K = 0.0;
+  double K = 0.0;
 
   for (uint i = offset; i < indices.size(); i++)
     K = std::max(adaptivity.timestep(indices[i]), K);
@@ -105,10 +105,10 @@ real Partition::maximum(uint offset, MultiAdaptivity& adaptivity) const
   return K;
 }
 //-----------------------------------------------------------------------------
-real Partition::minimum(uint offset, uint end,
+double Partition::minimum(uint offset, uint end,
 			   MultiAdaptivity& adaptivity) const
 {
-  real k = adaptivity.timestep(indices[offset]);
+  double k = adaptivity.timestep(indices[offset]);
 
   for (uint i = offset + 1; i < end; i++)
     k = std::min(adaptivity.timestep(indices[i]), k);
@@ -116,7 +116,7 @@ real Partition::minimum(uint offset, uint end,
   return k;
 }
 //-----------------------------------------------------------------------------
-Partition::Less::Less(real& K, MultiAdaptivity& adaptivity)
+Partition::Less::Less(double& K, MultiAdaptivity& adaptivity)
   : K(K), adaptivity(adaptivity)
 {
   // Do nothing

@@ -19,7 +19,7 @@ Lagrange::Lagrange(unsigned int q)
   this->q = q;
   n = q + 1;
   
-  points = new real[n];
+  points = new double[n];
   for (unsigned int i = 0; i < n; i++)
     points[i] = 0.0;
 
@@ -32,7 +32,7 @@ Lagrange::Lagrange(const Lagrange& p)
   this->q = p.q;
   n = p.n;
 
-  points = new real[p.n];
+  points = new double[p.n];
   for (unsigned int i = 0; i < p.n; i++)
     points[i] = p.points[i];
 
@@ -51,7 +51,7 @@ Lagrange::~Lagrange()
   constants = 0;
 }
 //-----------------------------------------------------------------------------
-void Lagrange::set(unsigned int i, real x)
+void Lagrange::set(unsigned int i, double x)
 {
   dolfin_assert(i <= q);
 
@@ -69,23 +69,23 @@ unsigned int Lagrange::degree() const
   return q;
 }
 //-----------------------------------------------------------------------------
-real Lagrange::point(unsigned int i) const
+double Lagrange::point(unsigned int i) const
 {
   dolfin_assert(i <= q);
 
   return points[i];
 }
 //-----------------------------------------------------------------------------
-real Lagrange::operator() (unsigned int i, real x)
+double Lagrange::operator() (unsigned int i, double x)
 {
   return eval(i,x);
 }
 //-----------------------------------------------------------------------------
-real Lagrange::eval(unsigned int i, real x)
+double Lagrange::eval(unsigned int i, double x)
 {
   dolfin_assert(i <= q);
 
-  real product(constants[i]);
+  double product(constants[i]);
   for (unsigned int j = 0; j < n; j++)
     if ( j != i )
       product *= x - points[j];
@@ -93,14 +93,14 @@ real Lagrange::eval(unsigned int i, real x)
   return product;
 }
 //-----------------------------------------------------------------------------
-real Lagrange::ddx(unsigned int i, real x)
+double Lagrange::ddx(unsigned int i, double x)
 {
   dolfin_assert(i <= q);
   
-  real sum(0);
+  double sum(0);
   for (unsigned int j = 0; j < n; j++) {
     if ( j != i ) {
-      real product = 1.0;
+      double product = 1.0;
       for (unsigned int k = 0; k < n; k++)
 	if ( k != i && k != j )
 	  product *= x - points[k];
@@ -111,12 +111,12 @@ real Lagrange::ddx(unsigned int i, real x)
   return sum * constants[i];
 }
 //-----------------------------------------------------------------------------
-real Lagrange::dqdx(unsigned int i)
+double Lagrange::dqdx(unsigned int i)
 {
-  real product = constants[i];
+  double product = constants[i];
   
   for (unsigned int j = 1; j <= q; j++)
-    product *= (real) j;
+    product *= (double) j;
   
   return product;
 }
@@ -145,11 +145,11 @@ void Lagrange::init()
   // computed.
 
   if ( constants == 0 )
-    constants = new real[n];
+    constants = new double[n];
 
   // Compute constants
   for (unsigned int i = 0; i < n; i++) {
-    real product = 1.0;
+    double product = 1.0;
     for (unsigned int j = 0; j < n; j++)
       if ( j != i )
 	product *= points[i] - points[j];

@@ -30,10 +30,10 @@ TimeSlabSolver::~TimeSlabSolver()
 {
   if ( num_timeslabs > 0 )
   {
-    const real n = static_cast<real>(num_timeslabs);
-    const real global_average = static_cast<real>(num_global_iterations) / n;
-    const real local_average = static_cast<real>(num_local_iterations) / 
-      static_cast<real>(num_global_iterations);
+    const double n = static_cast<double>(num_timeslabs);
+    const double global_average = static_cast<double>(num_global_iterations) / n;
+    const double local_average = static_cast<double>(num_local_iterations) / 
+      static_cast<double>(num_global_iterations);
     message("Average number of global iterations per step: %.3f",
 		global_average);
     message("Average number of local iterations per global iteration: %.3f",
@@ -63,12 +63,12 @@ bool TimeSlabSolver::solve(uint attempt)
 {
   start();
 
-  real d0 = 0.0;
-  real d1 = 0.0;
+  double d0 = 0.0;
+  double d1 = 0.0;
   for (uint iter = 0; iter < maxiter; iter++)
   {
     // Do one iteration
-    real d2 = iteration(tol, iter, d0, d1);
+    double d2 = iteration(tol, iter, d0, d1);
 
     // Use relative increment
     d2 /= xnorm + DOLFIN_EPS;
@@ -122,8 +122,8 @@ void TimeSlabSolver::end()
 //-----------------------------------------------------------------------------
 void TimeSlabSolver::chooseTolerance()
 {
-  const real TOL   = ode.get("ODE tolerance");
-  const real alpha = ode.get("ODE discrete tolerance factor");
+  const double TOL   = ode.get("ODE tolerance");
+  const double alpha = ode.get("ODE discrete tolerance factor");
 
   tol = ode.get("ODE discrete tolerance");
   if ( !ode.get("ODE fixed time step") )

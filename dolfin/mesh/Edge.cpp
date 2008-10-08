@@ -14,7 +14,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-real Edge::length()
+double Edge::length()
 {
   uint* vertices = entities(0);
   dolfin_assert(vertices);
@@ -25,7 +25,7 @@ real Edge::length()
   const Point p0 = v0.point();
   const Point p1 = v1.point();
 
-  real length(sqrt((p1.x()-p0.x())*(p1.x()-p0.x()) + 
+  double length(sqrt((p1.x()-p0.x())*(p1.x()-p0.x()) + 
 		   (p1.y()-p0.y())*(p1.y()-p0.y()) + 
 		   (p1.z()-p0.z())*(p1.z()-p0.z())));
 

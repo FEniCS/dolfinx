@@ -64,7 +64,7 @@ const DofMap& FunctionSpace::dofmap() const
   return *_dofmap;
 }
 //-----------------------------------------------------------------------------
-void FunctionSpace::eval(real* values, const real* p, const GenericVector& x) const
+void FunctionSpace::eval(double* values, const double* p, const GenericVector& x) const
 {
   dolfin_assert(_mesh);
   dolfin_assert(_element);
@@ -116,12 +116,12 @@ FunctionSpace::Scratch::Scratch(const FiniteElement& element)
     dofs[i] = 0;
 
   // Initialize local array for expansion coefficients
-  coefficients = new real[element.space_dimension()];
+  coefficients = new double[element.space_dimension()];
   for (uint i = 0; i < element.space_dimension(); i++)
     coefficients[i] = 0.0;
 
   // Initialize local array for values
-  values = new real[size];
+  values = new double[size];
   for (uint i = 0; i < size; i++)
     values[i] = 0.0;  
 }

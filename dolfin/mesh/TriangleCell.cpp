@@ -176,7 +176,7 @@ void TriangleCell::refineCell(Cell& cell, MeshEditor& editor,
   editor.addCell(current_cell++, e0, e1, e2);
 }
 //-----------------------------------------------------------------------------
-real TriangleCell::volume(const MeshEntity& triangle) const
+double TriangleCell::volume(const MeshEntity& triangle) const
 {
   // Check that we get a triangle
   if ( triangle.dim() != 2 )
@@ -187,14 +187,14 @@ real TriangleCell::volume(const MeshEntity& triangle) const
 
   // Get the coordinates of the three vertices
   const uint* vertices = triangle.entities(0);
-  const real* x0 = geometry.x(vertices[0]);
-  const real* x1 = geometry.x(vertices[1]);
-  const real* x2 = geometry.x(vertices[2]);
+  const double* x0 = geometry.x(vertices[0]);
+  const double* x1 = geometry.x(vertices[1]);
+  const double* x2 = geometry.x(vertices[2]);
   
   if ( geometry.dim() == 2 )
     {
       // Compute area of triangle embedded in R^2
-      real v2 = (x0[0]*x1[1] + x0[1]*x2[0] + x1[0]*x2[1]) - (x2[0]*x1[1] + x2[1]*x0[0] + x1[0]*x0[1]);
+      double v2 = (x0[0]*x1[1] + x0[1]*x2[0] + x1[0]*x2[1]) - (x2[0]*x1[1] + x2[1]*x0[0] + x1[0]*x0[1]);
     
       // Formula for volume from http://mathworld.wolfram.com 
       return v2 = 0.5 * std::abs(v2);
@@ -202,9 +202,9 @@ real TriangleCell::volume(const MeshEntity& triangle) const
   else if ( geometry.dim() == 3 )
     { 
       // Compute area of triangle embedded in R^3
-      real v0 = (x0[1]*x1[2] + x0[2]*x2[1] + x1[1]*x2[2]) - (x2[1]*x1[2] + x2[2]*x0[1] + x1[1]*x0[2]);
-      real v1 = (x0[2]*x1[0] + x0[0]*x2[2] + x1[2]*x2[0]) - (x2[2]*x1[0] + x2[0]*x0[2] + x1[2]*x0[0]);
-      real v2 = (x0[0]*x1[1] + x0[1]*x2[0] + x1[0]*x2[1]) - (x2[0]*x1[1] + x2[1]*x0[0] + x1[0]*x0[1]);
+      double v0 = (x0[1]*x1[2] + x0[2]*x2[1] + x1[1]*x2[2]) - (x2[1]*x1[2] + x2[2]*x0[1] + x1[1]*x0[2]);
+      double v1 = (x0[2]*x1[0] + x0[0]*x2[2] + x1[2]*x2[0]) - (x2[2]*x1[0] + x2[0]*x0[2] + x1[2]*x0[0]);
+      double v2 = (x0[0]*x1[1] + x0[1]*x2[0] + x1[0]*x2[1]) - (x2[0]*x1[1] + x2[1]*x0[0] + x1[0]*x0[1]);
   
       // Formula for volume from http://mathworld.wolfram.com 
       return  0.5 * sqrt(v0*v0 + v1*v1 + v2*v2);
@@ -215,7 +215,7 @@ real TriangleCell::volume(const MeshEntity& triangle) const
   return 0.0;
 }
 //-----------------------------------------------------------------------------
-real TriangleCell::diameter(const MeshEntity& triangle) const
+double TriangleCell::diameter(const MeshEntity& triangle) const
 {
   // Check that we get a triangle
   if ( triangle.dim() != 2 )
@@ -238,15 +238,15 @@ real TriangleCell::diameter(const MeshEntity& triangle) const
   // FIXME: if we assumed 2D coordinates in 2D
 
   // Compute side lengths
-  real a  = p1.distance(p2);
-  real b  = p0.distance(p2);
-  real c  = p0.distance(p1);
+  double a  = p1.distance(p2);
+  double b  = p0.distance(p2);
+  double c  = p0.distance(p1);
 
   // Formula for diameter (2*circumradius) from http://mathworld.wolfram.com
   return 0.5 * a*b*c / volume(triangle);
 }
 //-----------------------------------------------------------------------------
-real TriangleCell::normal(const Cell& cell, uint facet, uint i) const
+double TriangleCell::normal(const Cell& cell, uint facet, uint i) const
 {
   return normal(cell, facet)[i];
 }
@@ -274,9 +274,9 @@ Point TriangleCell::normal(const Cell& cell, uint facet) const
   const MeshGeometry& geometry = cell.mesh().geometry();
   
   // Get the coordinates of the three vertices
-  const real* p0 = geometry.x(v0);
-  const real* p1 = geometry.x(v1);
-  const real* p2 = geometry.x(v2);
+  const double* p0 = geometry.x(v0);
+  const double* p1 = geometry.x(v1);
+  const double* p2 = geometry.x(v2);
 
   // Vector normal to facet
   Point n;
@@ -293,7 +293,7 @@ Point TriangleCell::normal(const Cell& cell, uint facet) const
   return n;
 }
 //-----------------------------------------------------------------------------
-dolfin::real TriangleCell::facetArea(const Cell& cell, uint facet) const
+double TriangleCell::facetArea(const Cell& cell, uint facet) const
 {
   // This is a trick to be allowed to initialize a facet from the cell
   Cell& c = const_cast<Cell&>(cell);
@@ -309,14 +309,14 @@ dolfin::real TriangleCell::facetArea(const Cell& cell, uint facet) const
   const MeshGeometry& geometry = cell.mesh().geometry();
 
   // Get the coordinates of the two vertices
-  const real* p0 = geometry.x(v0);
-  const real* p1 = geometry.x(v1);
+  const double* p0 = geometry.x(v0);
+  const double* p1 = geometry.x(v1);
 
   // Compute distance between vertices
-  real d = 0.0;
+  double d = 0.0;
   for (uint i = 0; i < geometry.dim(); i++)
   {
-    const real dp = p0[i] - p1[i];
+    const double dp = p0[i] - p1[i];
     d += dp*dp;
   }
   
@@ -345,18 +345,18 @@ bool TriangleCell::intersects(const MeshEntity& triangle, const Point& p) const
   }
 
   // Get the coordinates of the three vertices
-  const real* x0 = geometry.x(v0);
-  const real* x1 = geometry.x(v1);
-  const real* x2 = geometry.x(v2);
+  const double* x0 = geometry.x(v0);
+  const double* x1 = geometry.x(v1);
+  const double* x2 = geometry.x(v2);
 
-  real xcoordinates[3];
-  real* x = xcoordinates;
+  double xcoordinates[3];
+  double* x = xcoordinates;
 
   x[0] = p[0];
   x[1] = p[1];
   x[2] = p[2];
 
-  real d1, d2, d3;
+  double d1, d2, d3;
 
   // Test orientation of p w.r.t. each edge
   d1 = orient2d((double *)x0, (double *)x1, x);
@@ -401,36 +401,36 @@ bool TriangleCell::intersects(const MeshEntity& triangle, const Point& p0, const
   }
 
   // Get the coordinates of the three vertices
-  const real* x0 = geometry.x(v0);
-  const real* x1 = geometry.x(v1);
-  const real* x2 = geometry.x(v2);
+  const double* x0 = geometry.x(v0);
+  const double* x1 = geometry.x(v1);
+  const double* x2 = geometry.x(v2);
 
   // point a
-  real p0coordinates[3];
-  real* pa = p0coordinates;
+  double p0coordinates[3];
+  double* pa = p0coordinates;
 
   pa[0] = p0[0];
   pa[1] = p0[1];
   pa[2] = p0[2];
 
   // point b
-  real p1coordinates[3];
-  real* pb = p1coordinates;
+  double p1coordinates[3];
+  double* pb = p1coordinates;
 
   pb[0] = p1[0];
   pb[1] = p1[1];
   pb[2] = p1[2];
 
-  real d1, d2, d3;
+  double d1, d2, d3;
 
   // Test orientation of each vertex w.r.t. pa-pb
   d1 = orient2d((double *)pa, (double *)pb, (double*) x0);
   d2 = orient2d((double *)pa, (double *)pb, (double*) x1);
   d3 = orient2d((double *)pa, (double *)pb, (double*) x2);
 
-  if( d1<0 && d2<0 && d3<0)
+  if (d1 < 0 && d2 < 0 && d3 < 0)
     return false;
-  if( d1>0 && d2>0 && d3>0)
+  if (d1 > 0 && d2 > 0 && d3 > 0)
     return false;
 
   // Line pa-pb intersects triangle but both pa and pb are
@@ -438,7 +438,7 @@ bool TriangleCell::intersects(const MeshEntity& triangle, const Point& p0, const
   d1 = orient2d((double*)x0, (double*)x1, (double*) pa);
   d2 = orient2d((double*)x0, (double*)x1, (double*) pb);
 
-  if( d1<0 && d2<0)
+  if (d1 < 0 && d2 < 0)
     return false;
 
   // Line pa-pb intersects triangle but both pa and pb are
@@ -446,7 +446,7 @@ bool TriangleCell::intersects(const MeshEntity& triangle, const Point& p0, const
   d1 = orient2d((double*)x1, (double*)x2, (double*) pa);
   d2 = orient2d((double*)x1, (double*)x2, (double*) pb);
 
-  if( d1<0 && d2<0)
+  if (d1 < 0 && d2 < 0)
     return false;
   
   // Line pa-pb intersects triangle but both pa and pb are
@@ -454,7 +454,7 @@ bool TriangleCell::intersects(const MeshEntity& triangle, const Point& p0, const
   d1 = orient2d((double*)x2, (double*)x0, (double*) pa);
   d2 = orient2d((double*)x2, (double*)x0, (double*) pb);
 
-  if( d1<0 && d2<0)
+  if (d1 < 0 && d2 < 0)
     return false;
   
   return true;
@@ -500,13 +500,13 @@ dolfin::uint TriangleCell::findEdge(uint i, const Cell& cell) const
   
   // Look for edge satisfying ordering convention
   for (uint j = 0; j < 3; j++)
-    {
-      const uint* ev = cell.mesh().topology()(1, 0)(e[j]);
-      dolfin_assert(ev);
-      if (ev[0] != v[i] && ev[1] != v[i])
-	return j;
-    }
-
+  {
+    const uint* ev = cell.mesh().topology()(1, 0)(e[j]);
+    dolfin_assert(ev);
+    if (ev[0] != v[i] && ev[1] != v[i])
+      return j;
+  }
+  
   // We should not reach this
   error("Unable to find edge.");
 

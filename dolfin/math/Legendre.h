@@ -27,19 +27,19 @@ namespace dolfin {
     Legendre(int n);
 
     /// Evaluation at given point
-    real operator() (real x);
+    double operator() (double x);
     
     /// Evaluation of derivative at given point
-    real ddx(real x);
+    double ddx(double x);
 
     /// Evaluation of second derivative at given point
-    real d2dx(real x);
+    double d2dx(double x);
 
   private:
     
-    real eval (int n, real x);
-    real ddx  (int n, real x);
-    real d2dx (int n, real x);
+    double eval (int n, double x);
+    double ddx  (int n, double x);
+    double d2dx (int n, double x);
 
     int n;
 

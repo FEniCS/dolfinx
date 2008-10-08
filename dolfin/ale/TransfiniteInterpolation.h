@@ -33,37 +33,37 @@ namespace dolfin
   private:
     
     // Transfinite meanvalue interpolation
-    static void meanValue(real* new_x, uint dim, Mesh& new_boundary,
+    static void meanValue(double* new_x, uint dim, Mesh& new_boundary,
                           Mesh& mesh, const MeshFunction<uint>& vertex_map,
-                          Vertex& vertex, real** ghat, InterpolationType type);
+                          Vertex& vertex, double** ghat, InterpolationType type);
 
     // Compute weights for transfinite meanvalue interpolation
-    static void computeWeights2D(real* w, real** u, real* d,
+    static void computeWeights2D(double* w, double** u, double* d,
                                  uint dim, uint num_vertices);
 
     // Compute weights for transfinite meanvalue interpolation
-    static void computeWeights3D(real* w, real** u, real* d,
+    static void computeWeights3D(double* w, double** u, double* d,
                                  uint dim, uint num_vertices);
 
-    static void normals(real ** dfdn, uint dim, Mesh& new_boundary,
+    static void normals(double ** dfdn, uint dim, Mesh& new_boundary,
 			Mesh& mesh, const MeshFunction<uint>& vertex_map, 
 			const MeshFunction<uint>& cell_map);
 
-    static void hermiteFunction(real ** ghat, uint dim, Mesh& new_boundary,
+    static void hermiteFunction(double ** ghat, uint dim, Mesh& new_boundary,
 				Mesh& mesh, 
 				const MeshFunction<uint>& vertex_map, 
 				const MeshFunction<uint>& cell_map);
-    static void integral(real* new_x, uint dim, Mesh& new_boundary,
+    static void integral(double* new_x, uint dim, Mesh& new_boundary,
                     Mesh& mesh, const MeshFunction<uint>& vertex_map,
 			 Vertex& vertex);
 
 
     // Return sign
-    inline static real sgn(real v)
+    inline static double sgn(double v)
     { return (v < 0.0 ? -1.0 : 1.0); }
 
     // Return determinant
-    inline static real det(real* u, real* v, real* w)
+    inline static double det(double* u, double* v, double* w)
     { return u[0]*(v[1]*w[2] - v[2]*w[1]) - u[1]*(v[0]*w[2] - v[2]*w[0]) + u[2]*(v[0]*w[1] - v[1]*w[0]); }
 
     // Return next index
@@ -75,10 +75,10 @@ namespace dolfin
     { return (i == 0 ? dim - 1 : i - 1); }
 
     // Return distance
-    static real dist(const real* x, const real* y, uint dim);
+    static double dist(const double* x, const double* y, uint dim);
 
     // Return length
-    static real length(const real* x, uint dim);
+    static double length(const double* x, uint dim);
   };
 
 }

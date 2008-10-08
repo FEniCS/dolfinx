@@ -1,8 +1,8 @@
-// Copyright (C) 2007 Anders Logg.
+// Copyright (C) 2007-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-03-01
-// Last changed: 2007-03-13
+// Last changed: 2008-10-06
 
 #ifndef __UFC_CELL_H
 #define __UFC_CELL_H
@@ -30,6 +30,13 @@ namespace dolfin
     UFCCell(Cell& cell) : ufc::cell(), num_vertices(0)
     {
       init(cell);
+    }
+
+    /// Create UFC cell for first DOLFIN cell in mesh
+    UFCCell(Mesh& mesh) : ufc::cell(), num_vertices(0)
+    {
+      CellIterator cell(mesh);
+      init(*cell);
     }
 
     /// Destructor
@@ -78,7 +85,7 @@ namespace dolfin
 
       /// Set vertex coordinates
       uint* vertices = cell.entities(0);
-      coordinates = new real*[num_vertices];
+      coordinates = new double*[num_vertices];
       for (uint i = 0; i < num_vertices; i++)
         coordinates[i] = cell.mesh().geometry().x(vertices[i]);
     }
@@ -86,14 +93,14 @@ namespace dolfin
     // Clear UFC cell data
     void clear()
     {
-      if ( entity_indices )
+      if (entity_indices)
       {
         delete [] entity_indices[topological_dimension];
         delete [] entity_indices;
       }
       entity_indices = 0;
 
-      if ( coordinates )
+      if (coordinates)
         delete [] coordinates;
       coordinates = 0;
 

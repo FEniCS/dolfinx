@@ -29,13 +29,13 @@ namespace dolfin
     MeshSize(Mesh& mesh);
 
     /// Return cell size
-    real eval(const real* x) const;
+    double eval(const double* x) const;
     
     /// Compute minimal cell diameter
-    real min() const;
+    double min() const;
 
     /// Compute maximal cell diameter
-    real max() const;    
+    double max() const;    
   };
 
   /// This Function represents the inverse of the local cell size on a given 
@@ -48,7 +48,7 @@ namespace dolfin
     InvMeshSize(Mesh& mesh);
 
     /// Return inverse of cell size
-    real eval(const real* x) const;
+    double eval(const double* x) const;
   };
 
   /// This Function represents the average of the local cell size (average of 
@@ -61,7 +61,7 @@ namespace dolfin
     AvgMeshSize(Mesh& mesh);
 
     /// Return average cell size
-    real eval(const real* x) const;
+    double eval(const double* x) const;
   };
 
   /// This Function represents the outward unit normal on cell facets.
@@ -72,7 +72,7 @@ namespace dolfin
 
     FacetNormal(Mesh& mesh);
 
-    void eval(real* values, const real* x) const;
+    void eval(double* values, const double* x) const;
 
     uint rank() const;
     
@@ -86,7 +86,7 @@ namespace dolfin
 
     FacetArea(Mesh& mesh);
 
-    void eval(real* values, const real* x) const;
+    void eval(double* values, const double* x) const;
   };
 
   /// This function represents the inverse area/length of a cell facet.
@@ -96,7 +96,7 @@ namespace dolfin
 
     InvFacetArea(Mesh& mesh);
 
-    void eval(real* values, const real* x) const;
+    void eval(double* values, const double* x) const;
   };
 
   /// This function determines if the current facet is an outflow facet with
@@ -113,7 +113,7 @@ namespace dolfin
 
     ~OutflowFacet();
 
-    real eval(const real* x) const;
+    double eval(const double* x) const;
 
   private:
 

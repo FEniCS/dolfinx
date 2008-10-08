@@ -26,7 +26,7 @@ int main()
   // Define sub domain for the dolphin
   class Fish : public SubDomain
   {
-    bool inside(const real* x, bool on_boundary) const
+    bool inside(const double* x, bool on_boundary) const
     {
       return (x[0] > DOLFIN_EPS && x[0] < (1.0 - DOLFIN_EPS) && 
               x[1] > DOLFIN_EPS && x[1] < (1.0 - DOLFIN_EPS) &&
@@ -43,8 +43,8 @@ int main()
 
   // Assemble functionals over sub domain
   Fish fish;
-  real lift = assemble(L, mesh, fish);
-  real drag = assemble(D, mesh, fish);
+  double lift = assemble(L, mesh, fish);
+  double drag = assemble(D, mesh, fish);
 
   message("Lift: %f", lift);
   message("Drag: %f", drag);

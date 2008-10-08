@@ -14,7 +14,7 @@ TimeDependent::TimeDependent() : t(0)
  // Do nothing
 }
 //-----------------------------------------------------------------------------
-TimeDependent::TimeDependent(const real* t) : t(t)
+TimeDependent::TimeDependent(const double* t) : t(t)
 {
  // Do nothing
 }
@@ -24,7 +24,7 @@ TimeDependent::~TimeDependent()
  // Do nothing
 }
 //-----------------------------------------------------------------------------
-void TimeDependent::sync(const real* t)
+void TimeDependent::sync(const double* t)
 {
   this->t  = t;
 }
