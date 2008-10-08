@@ -1,13 +1,14 @@
 // Copyright (C) 2006-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Johan Hoffman 2007.
-// Modified by Magnus Vikstrøm 2007.
-// Modified by Garth N. Wells 2007.
-// Modified by Niclas Jansson 2008.
+// Modified by Johan Hoffman, 2007.
+// Modified by Magnus Vikstrøm, 2007.
+// Modified by Garth N. Wells, 2007.
+// Modified by Niclas Jansson, 2008.
+// Modified by Kristoffer Selim, 2008.
 //
 // First added:  2006-05-08
-// Last changed: 2008-09-16
+// Last changed: 2008-10-08
 
 #ifndef __MESH_H
 #define __MESH_H
@@ -25,6 +26,7 @@ namespace dolfin
   
   template <class T> class MeshFunction;
   class MeshData;
+  class IntersectionDetector;
 
   /// A Mesh consists of a set of connected and numbered mesh entities.
   ///
@@ -157,8 +159,23 @@ namespace dolfin
     void move(Mesh& boundary, dolfin::ALEType method=lagrange);
     
     /// Smooth mesh using Lagrangian mesh smoothing
-    void smooth(uint num_smoothings=1);
+    void smooth(uint num_smoothings=1);\
     
+    /// Compute cells intersecting point
+    void intersection(const Point& p, Array<uint>& cells, bool fixed_mesh=true);
+
+    /// Compute cells overlapping line defined by points
+    void intersection(const Point& p1, const Point& p2, Array<uint>& cells, bool fixed_mesh=true);
+    
+    /// Compute cells overlapping cell
+    void intersection(Cell& cell, Array<uint>& cells, bool fixed_mesh=true);
+    
+    /// Compute intersection with curve defined by points
+    void intersection(Array<Point>& points, Array<uint>& intersection, bool fixed_mesh=true);
+    
+    /// Compute intersection with mesh
+    void intersection(Mesh& mesh, Array<unsigned int>& cells, bool fixed_mesh=true);
+
     /// Partition mesh into num_processes partitions
     void partition(MeshFunction<uint>& partitions);
 
@@ -203,6 +220,9 @@ namespace dolfin
     /// Return true iff topology is ordered according to the UFC numbering
     bool _ordered;
 
+    // Intersection detector
+    IntersectionDetector* detector;
+    
   };
 
 }

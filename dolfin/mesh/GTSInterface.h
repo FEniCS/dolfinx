@@ -1,8 +1,10 @@
 // Copyright (C) 2006-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Kristoffer Selim, 2008.
+//
 // First added:  2006-06-21
-// Last changed: 2008-08-29
+// Last changed: 2008-10-08
 
 #ifndef __GTS_INTERFACE_H
 #define __GTS_INTERFACE_H
@@ -37,13 +39,13 @@ namespace dolfin
     ~GTSInterface();
 
     /// Compute cells overlapping point
-    void overlap(const Point& p, Array<uint>& cells);
+    void intersection(const Point& p, Array<uint>& cells);
 
     /// Compute cells overlapping line defined by points
-    void overlap(const Point& p0, const Point& p1, Array<uint>& cells);
+    void intersection(const Point& p0, const Point& p1, Array<uint>& cells);
 
     /// Compute cells overlapping cell
-    void overlap(Cell& cell, Array<uint>& cells);
+    void intersection(Cell& cell, Array<uint>& cells);
 
   private:
 

@@ -1,12 +1,13 @@
 // Copyright (C) 2006-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Johan Jansson 2006.
-// Modified by Ola Skavhaug 2006.
-// Modified by Dag Lindbo 2008.
+// Modified by Johan Jansson, 2006.
+// Modified by Ola Skavhaug, 2006.
+// Modified by Dag Lindbo, 2008.
+// Modified by Kristoffer Selim, 2008.
 //
 // First added:  2006-06-21
-// Last changed: 2008-09-01
+// Last changed: 2008-10-08
 
 #include <algorithm>
 #include <dolfin/log/dolfin_log.h>
@@ -33,46 +34,49 @@ IntersectionDetector::~IntersectionDetector()
   delete gts;
 }
 //-----------------------------------------------------------------------------
-void IntersectionDetector::overlap(const Point& p, Array<uint>& cells)
+void IntersectionDetector::intersection(const Point& p, Array<uint>& cells)
 {
   dolfin_assert(gts);
-  gts->overlap(p, cells);
+  gts->intersection(p, cells);
 }
 //-----------------------------------------------------------------------------
-void IntersectionDetector::overlap(const Point& p0, const Point& p1, Array<uint>& cells)
+void IntersectionDetector::intersection(const Point& p0, const Point& p1, Array<uint>& cells)
 {
   dolfin_assert(gts);
-  gts->overlap(p0, p1, cells);
+  gts->intersection(p0, p1, cells);
 }
 //-----------------------------------------------------------------------------
-void IntersectionDetector::overlap(Cell& c, Array<uint>& cells)
+void IntersectionDetector::intersection(Cell& c, Array<uint>& cells)
 {
   dolfin_assert(gts);
-  gts->overlap(c, cells);
+  gts->intersection(c, cells);
 }
 //-----------------------------------------------------------------------------
-void IntersectionDetector::overlap(Array<Point>& points, Array<uint>& cells) 
+void IntersectionDetector::intersection(Array<Point>& points, Array<uint>& cells) 
 {
   // Intersect each segment with mesh
   Array<uint> cc;
   for (uint i = 1; i < points.size(); i++)
-    gts->overlap(points[i - 1], points[i], cc);
-
-  // Sort cells
-  std::sort(cc.begin(), cc.end());
+    gts->intersection(points[i - 1], points[i], cc);
 
   // Remove repeated cells
-  cells.clear();
-  cells.push_back(cc[0]);
-  uint k = cc[0];
-  for (uint i = 1; i < cc.size(); i++)
-  {
-    if (cc[i] > k)
-    {
-      cells.push_back(cc[i]);
-      k = cc[i];
-    }
-  }
+  std::sort(cc.begin(), cc.end());
+  Array<unsigned int>::iterator it;
+  it = std::unique(cc.begin(), cc.end());
+  cc.resize(it - cc.begin());  
+}
+//-----------------------------------------------------------------------------
+void IntersectionDetector::intersection(Mesh& mesh, Array<uint>& cells)
+{
+  // Intersect each cell with mesh
+  for (CellIterator cell(mesh); !cell.end(); ++cell)
+    intersection(*cell, cells);
+  
+  // Remove repeated cells
+  std::sort(cells.begin(), cells.end());
+  Array<unsigned int>::iterator it;
+  it = std::unique(cells.begin(), cells.end());
+  cells.resize(it - cells.begin());  
 }
 //-----------------------------------------------------------------------------
 
@@ -86,13 +90,13 @@ IntersectionDetector::IntersectionDetector(Mesh& mesh)
 //-----------------------------------------------------------------------------
 IntersectionDetector::~IntersectionDetector() {}
 //-----------------------------------------------------------------------------
-void IntersectionDetector::overlap(const Point& p, Array<uint>& overlap) {}
+void IntersectionDetector::intersection(const Point& p, Array<uint>& intersection) {}
 //-----------------------------------------------------------------------------
-void IntersectionDetector::overlap(const Point& p0, const Point& p1, Array<uint>& overlap) {}
+void IntersectionDetector::intersection(const Point& p0, const Point& p1, Array<uint>& intersection) {}
 //-----------------------------------------------------------------------------
-void IntersectionDetector::overlap(Cell& c, Array<uint>& overlap) {}
+void IntersectionDetector::intersection(Cell& c, Array<uint>& intersection) {}
 //-----------------------------------------------------------------------------
-void IntersectionDetector::overlap(Array<Point>& points, Array<uint>& overlap) {}
+void IntersectionDetector::intersection(Array<Point>& points, Array<uint>& intersection) {}
 //-----------------------------------------------------------------------------
 
 #endif

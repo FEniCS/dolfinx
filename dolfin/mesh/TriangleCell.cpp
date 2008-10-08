@@ -4,9 +4,10 @@
 // Modified by Garth N. Wells, 2006.
 // Modified by Kristian Oelgaard, 2006-2007.
 // Modified by Dag Lindbo, 2008
-// 
+// Modified by Kristoffer Selim, 2008
+//
 // First added:  2006-06-05
-// Last changed: 2008-08-29
+// Last changed: 2008-10-08
 
 #include <algorithm>
 #include <dolfin/log/dolfin_log.h>
@@ -457,6 +458,30 @@ bool TriangleCell::intersects(const MeshEntity& triangle, const Point& p0, const
     return false;
   
   return true;
+}
+//-----------------------------------------------------------------------------
+bool TriangleCell::intersects(const MeshEntity& triangle, const Cell& cell) const
+{
+  dolfin_assert(triangle.dim() == 2);
+  
+  if (cell.dim() == 1)
+  {
+    // Get vertices
+    const uint *vertices = cell.entities(0);
+    const uint v0 = vertices[0];
+    const uint v1 = vertices[1];
+    
+    // Get points
+    const MeshGeometry& geometry = cell.mesh().geometry();
+    const Point p0 = geometry.point(v0);
+    const Point p1 = geometry.point(v1);
+    
+    return intersects(triangle, p0, p1);
+  } 
+  else
+    error("Not implemented");
+
+  return false;
 }
 //-----------------------------------------------------------------------------
 std::string TriangleCell::description() const

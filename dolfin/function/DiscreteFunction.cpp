@@ -4,9 +4,10 @@
 // Modified by Garth N. Wells, 2007-2008.
 // Modified by Dag Lindbo, 2008.
 // Modified by Kristen Kaasbjerg, 2008.
+// Modified by Kristoffer Selim, 2008.
 //
 // First added:  2007-04-02
-// Last changed: 2008-09-13
+// Last changed: 2008-10-03
 
 #include <cstring>
 
@@ -282,7 +283,7 @@ void DiscreteFunction::eval(real* values, const real* x) const
   for (uint i = 0; i < gdim; i++)
     p[i] = x[i];
   Array<uint> cells;
-  intersection_detector->overlap(p, cells);
+  intersection_detector->intersection(p, cells);
   if (cells.size() < 1)
     error("Unable to evaluate function at given point (not inside domain).");
   Cell cell(*mesh, cells[0]);

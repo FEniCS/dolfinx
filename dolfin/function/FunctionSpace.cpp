@@ -1,8 +1,10 @@
 // Copyright (C) 2008 Anders Logg (and others?).
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Kristoffer Selim, 2008.
+//
 // First added:  2008-09-11
-// Last changed: 2008-09-25
+// Last changed: 2008-10-03
 
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/log/log.h>
@@ -75,7 +77,7 @@ void FunctionSpace::eval(real* values, const real* p, const GenericVector& x) co
   // Find the cell that contains p
   Point point(_mesh->geometry().dim(), p);
   Array<uint> cells;
-  intersection_detector->overlap(point, cells);
+  intersection_detector->intersection(point, cells);
   if (cells.size() < 1)
     error("Unable to evaluate function at given point (not inside domain).");
   else if (cells.size() > 1)

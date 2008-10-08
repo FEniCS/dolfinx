@@ -2,9 +2,10 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Anders Logg, 2008.
+// Modified by Kristoffer Selim, 2008.
 //
 // First added:  2007-12-12
-// Last changed: 2008-08-29
+// Last changed: 2008-10-08
 
 #ifndef __POINT_CELL_H
 #define __POINT_CELL_H
@@ -65,6 +66,9 @@ namespace dolfin
     /// Check for intersection with line defined by points
     bool intersects(const MeshEntity& entity, const Point& p0, const Point& p1) const;
     
+    /// Check for intersection with cell 
+    bool intersects(const MeshEntity& entity, const Cell& cell) const;
+
     /// Return description of cell type
     std::string description() const;
 

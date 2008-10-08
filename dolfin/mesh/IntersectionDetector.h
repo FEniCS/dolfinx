@@ -1,8 +1,10 @@
 // Copyright (C) 2006-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Kristoffer Selim, 2008.
+//
 // First added:  2006-06-21
-// Last changed: 2008-08-29
+// Last changed: 2008-10-08
 
 #ifndef __INTERSECTION_DETECTOR_H
 #define __INTERSECTION_DETECTOR_H
@@ -30,17 +32,20 @@ namespace dolfin
     ~IntersectionDetector();
 
     /// Compute cells overlapping point
-    void overlap(const Point& p, Array<uint>& cells);
+    void intersection(const Point& p, Array<uint>& cells);
 
     /// Compute cells overlapping line defined by points
-    void overlap(const Point& p1, const Point& p2, Array<uint>& cells);
+    void intersection(const Point& p1, const Point& p2, Array<uint>& cells);
 
     /// Compute cells overlapping cell
-    void overlap(Cell& cell, Array<uint>& cells);
+    void intersection(Cell& cell, Array<uint>& cells);
 
     /// Compute overlap with curve defined by points
-    void overlap(Array<Point>& points, Array<uint>& overlap);
+    void intersection(Array<Point>& points, Array<uint>& intersection);
 
+    /// Compute overlap with mesh
+    void intersection(Mesh& mesh, Array<uint>& intersection);    
+    
   private:
 
     // Interface to GTS

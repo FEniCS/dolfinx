@@ -1,8 +1,11 @@
 // Copyright (C) 2006 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Kristoffer Selim, 2008. 
+//
 // First added:  2006-06-05
-// Last changed: 2006-10-16
+// Last changed: 2008-10-08
+//
 
 #include <dolfin/log/dolfin_log.h>
 #include "PointCell.h"
@@ -64,27 +67,6 @@ CellType::Type CellType::string2type(std::string type)
     error("Unknown cell type: \"%s\".", type.c_str());
   
   return interval;
-}
-//-----------------------------------------------------------------------------
-bool CellType::intersects(MeshEntity& entity, Cell& cell) const
-{
-  for (VertexIterator v(entity); !v.end(); ++v)
-  {
-    Point p = v->point();
-
-    if (intersects(cell, p))
-      return true;
-  }
-
-  for (VertexIterator v(cell); !v.end(); ++v)
-  {
-    Point p = v->point();
-
-    if(intersects(entity, p))
-      return true;
-  }
-
-  return false;
 }
 //-----------------------------------------------------------------------------
 std::string CellType::type2string(Type type)

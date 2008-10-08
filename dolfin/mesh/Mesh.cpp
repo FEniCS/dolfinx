@@ -4,9 +4,10 @@
 // Modified by Johan Hoffman, 2007.
 // Modified by Garth N. Wells 2007.
 // Modified by Niclas Jansson 2008.
+// Modified by Kristoffer Selim 2008.
 //
 // First added:  2006-05-09
-// Last changed: 2008-09-20
+// Last changed: 2008-10-08
 
 #include <sstream>
 
@@ -16,6 +17,7 @@
 #include "UniformMeshRefinement.h"
 #include "LocalMeshRefinement.h"
 #include "LocalMeshCoarsening.h"
+#include "IntersectionDetector.h"
 #include "TopologyComputation.h"
 #include "MeshSmoothing.h"
 #include "MeshOrdering.h"
@@ -32,19 +34,22 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 Mesh::Mesh()
-  : Variable("mesh", "DOLFIN mesh"), _data(0), _cell_type(0), _ordered(false)
+  : Variable("mesh", "DOLFIN mesh"), _data(0), _cell_type(0), _ordered(false), 
+    detector(0)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 Mesh::Mesh(const Mesh& mesh)
-  : Variable("mesh", "DOLFIN mesh"), _data(0), _cell_type(0), _ordered(false)
+  : Variable("mesh", "DOLFIN mesh"), _data(0), _cell_type(0), _ordered(false),
+    detector(0)
 {
   *this = mesh;
 }
 //-----------------------------------------------------------------------------
 Mesh::Mesh(std::string filename)
-  : Variable("mesh", "DOLFIN mesh"), _data(0), _cell_type(0), _ordered(false)
+  : Variable("mesh", "DOLFIN mesh"), _data(0), _cell_type(0), _ordered(false),
+    detector(0)
 {
   File file(filename);
   file >> *this;
@@ -108,6 +113,9 @@ void Mesh::clear()
   _cell_type = 0;
   delete _data;
   _data = 0;
+  delete detector;
+  detector = 0;
+  
 }
 //-----------------------------------------------------------------------------
 void Mesh::order()
@@ -186,6 +194,86 @@ void Mesh::partition(MeshFunction<uint>& partitions, uint num_partitions)
 void Mesh::partitionGeom(MeshFunction<uint>& partitions)
 {
   MeshPartition::partitionGeom(*this, partitions);
+}
+//-----------------------------------------------------------------------------
+void Mesh::intersection(const Point& p, Array<uint>& cells, bool fixed_mesh)
+{
+  // Don't reuse detector if mesh has moved
+  if (!fixed_mesh)
+  {
+    delete detector;
+    detector = 0;
+  }
+
+  // Create detector if necessary
+  if (!detector)
+    detector = new IntersectionDetector(*this);
+
+  detector->intersection(p, cells);
+}
+//-----------------------------------------------------------------------------
+void Mesh::intersection(const Point& p1, const Point& p2, Array<uint>& cells, bool fixed_mesh)
+{
+  // Don't reuse detector if the mesh has moved
+  if (!fixed_mesh)
+  {
+    delete detector;
+    detector = 0;
+  }
+
+  // Create detector if necessary
+  if (!detector)
+    detector = new IntersectionDetector(*this);
+
+  detector->intersection(p1, p2, cells);
+}
+//-----------------------------------------------------------------------------
+void Mesh::intersection(Cell& cell, Array<uint>& cells, bool fixed_mesh)
+{
+  // Don't reuse detector if the has has moved
+  if (!fixed_mesh)
+  {
+    delete detector;
+    detector = 0;
+  }
+
+  // Create detector if necessary
+  if (!detector)
+    detector = new IntersectionDetector(*this);
+
+  detector->intersection(cell, cells);
+}
+//-----------------------------------------------------------------------------
+void Mesh::intersection(Array<Point>& points, Array<uint>& intersection, bool fixed_mesh)
+{
+  // Don't reuse detector if the mesh has moved
+  if (!fixed_mesh)
+  {
+    delete detector;
+    detector = 0;
+  }
+
+  // Create detector if necessary
+  if (!detector)
+    detector = new IntersectionDetector(*this);
+
+  detector->intersection(points, intersection);
+}
+//-----------------------------------------------------------------------------
+void Mesh::intersection(Mesh& mesh, Array<uint>& intersection, bool fixed_mesh)
+{
+  // Don't reuse detector if the mesh has moved
+  if (!fixed_mesh)
+  {
+    delete detector;
+    detector = 0;
+  }
+
+  // Create detector if necessary
+  if (!detector)
+    detector = new IntersectionDetector(*this);
+
+  detector->intersection(mesh, intersection);
 }
 //-----------------------------------------------------------------------------
 void Mesh::distribute(MeshFunction<uint>& distribution)

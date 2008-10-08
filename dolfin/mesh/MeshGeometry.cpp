@@ -2,9 +2,10 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells, 2008.
+// Modified by Kristoffer Selim, 2008.
 //
 // First added:  2006-05-19
-// Last changed: 2008-09-10
+// Last changed: 2008-10-08
 
 #include <dolfin/log/dolfin_log.h>
 #include "MeshGeometry.h"
@@ -60,7 +61,7 @@ Point MeshGeometry::point(uint n) const
     _y = x(n, 1);
   if ( _dim > 2 )
     _z = x(n, 2);
-
+  
   Point p(_x, _y, _z);
   return p;
 }

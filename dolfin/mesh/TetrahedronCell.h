@@ -1,11 +1,12 @@
 // Copyright (C) 2006-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Johan Hoffman 2006.
-// Modified by Garth N. Wells 2006.
+// Modified by Johan Hoffman, 2006.
+// Modified by Garth N. Wells, 2006.
+// Modified by Kristoffer Selim, 2008.
 //
 // First added:  2006-06-05
-// Last changed: 2008-08-29
+// Last changed: 2008-10-08
 
 #ifndef __TETRAHEDRON_CELL_H
 #define __TETRAHEDRON_CELL_H
@@ -68,10 +69,13 @@ namespace dolfin
 
     /// Check for intersection with point
     bool intersects(const MeshEntity& entity, const Point& p) const;
-
+    
     /// Check for intersection with line defined by points
     bool intersects(const MeshEntity& entity, const Point& p0, const Point& p1) const;
     
+    /// Check for intersection with cell
+    bool intersects(const MeshEntity& entity, const Cell& cell) const;    
+ 
     /// Return description of cell type
     std::string description() const;
 

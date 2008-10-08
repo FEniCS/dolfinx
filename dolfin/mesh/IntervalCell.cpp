@@ -1,10 +1,11 @@
 // Copyright (C) 2006-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// First added:  2006-06-05
-// Last changed: 2008-08-29
-//
 // Modified by Kristian Oelgaard, 2007.
+// Modified by Kristoffer Selim, 2008.
+//
+// First added:  2006-06-05
+// Last changed: 2008-10-08
 
 #include <algorithm>
 #include <dolfin/log/dolfin_log.h>
@@ -184,6 +185,13 @@ bool IntervalCell::intersects(const MeshEntity& entity,
   error("Not implemented.");
   return false;
 }
+//-----------------------------------------------------------------------------
+bool IntervalCell::intersects(const MeshEntity& entity, const Cell& cell) const
+
+{
+  error("Not implemented.");
+  return false;
+} 
 //-----------------------------------------------------------------------------
 std::string IntervalCell::description() const
 {

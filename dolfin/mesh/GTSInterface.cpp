@@ -1,12 +1,13 @@
 // Copyright (C) 2006-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Johan Jansson 2006.
-// Modified by Ola Skavhaug 2006.
-// Modified by Dag Lindbo 2008.
+// Modified by Johan Jansson, 2006.
+// Modified by Ola Skavhaug, 2006.
+// Modified by Dag Lindbo, 2008.
+// Modified by Kristoffer Selim, 2008.
 //
 // First added:  2006-06-21
-// Last changed: 2008-08-29
+// Last changed: 2008-10-08
 
 #ifdef HAS_GTS
 
@@ -39,7 +40,7 @@ GTSInterface::~GTSInterface()
   gts_bb_tree_destroy(tree, true);
 }
 //-----------------------------------------------------------------------------
-void GTSInterface::overlap(const Point& p, Array<uint>& cells)
+void GTSInterface::intersection(const Point& p, Array<uint>& cells)
 {
   // Create probe for point
   GtsBBox* probe = createBox(p);
@@ -68,7 +69,7 @@ void GTSInterface::overlap(const Point& p, Array<uint>& cells)
   gts_object_destroy(GTS_OBJECT(probe));
 }
 //-----------------------------------------------------------------------------
-void GTSInterface::overlap(const Point& p0, const Point& p1, Array<uint>& cells)
+void GTSInterface::intersection(const Point& p0, const Point& p1, Array<uint>& cells)
 {
   // Create probe for line
   GtsBBox* probe = createBox(p0, p1);
@@ -97,7 +98,7 @@ void GTSInterface::overlap(const Point& p0, const Point& p1, Array<uint>& cells)
   gts_object_destroy(GTS_OBJECT(probe));
 }
 //-----------------------------------------------------------------------------
-void GTSInterface::overlap(Cell& cell, Array<uint>& cells)
+void GTSInterface::intersection(Cell& cell, Array<uint>& cells)
 {
   // Create probe for cell
   GtsBBox* probe = createBox(cell);
@@ -116,7 +117,7 @@ void GTSInterface::overlap(Cell& cell, Array<uint>& cells)
     Cell c(mesh, cell_index);
     if (c.intersects(cell))
       cells.push_back(cell_index);
-
+    
     // Go to next bounding box
     overlaps = overlaps->next;
   }
