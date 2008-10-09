@@ -98,5 +98,7 @@ void IntersectionDetector::intersection(Cell& c, Array<uint>& intersection) {}
 //-----------------------------------------------------------------------------
 void IntersectionDetector::intersection(Array<Point>& points, Array<uint>& intersection) {}
 //-----------------------------------------------------------------------------
+void IntersectionDetector::intersection(Mesh& mesh, Array<uint>& intersection) {}
+//-----------------------------------------------------------------------------
 
 #endif

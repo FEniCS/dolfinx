@@ -44,7 +44,7 @@ namespace dolfin
     void intersection(Array<Point>& points, Array<uint>& intersection);
 
     /// Compute overlap with mesh
-    void intersection(Mesh& mesh, Array<uint>& intersection);    
+    void intersection(Mesh& mesh, Array<uint>& intersection);
     
   private:
 
