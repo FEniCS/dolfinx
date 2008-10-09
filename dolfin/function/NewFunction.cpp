@@ -20,27 +20,29 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 NewFunction::NewFunction(const FunctionSpace& V)
-  : _function_space(&V, NoDeleter<const FunctionSpace>()),
-    _vector(0),
-    _time(0)
+  : _function_space(&V, NoDeleter<const FunctionSpace>()), _vector(0),
+    _cell(0), _facet(-1), _time(0)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 NewFunction::NewFunction(const std::tr1::shared_ptr<FunctionSpace> V)
-  : _function_space(V),
-    _vector(0),
-    _time(0)
+  : _function_space(V), _vector(0),
+    _cell(0), _facet(-1), _time(0)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 NewFunction::NewFunction(const std::string filename)
+  : _function_space(static_cast<FunctionSpace*>(0)), _vector(0),
+    _cell(0), _facet(-1), _time(0)
 {
   error("Not implemented.");
 }
 //-----------------------------------------------------------------------------
 NewFunction::NewFunction(const NewFunction& v)
+  : _function_space(static_cast<FunctionSpace*>(0)), _vector(0),
+    _cell(0), _facet(-1), _time(0)
 {
   error("Not implemented.");
 }
@@ -80,7 +82,7 @@ const GenericVector& NewFunction::vector() const
   // Check if vector of dofs has been initialized
   if (!_vector)
     error("Requesting vector of degrees of freedom for function, but vector has not been initialized.");
-
+  
   dolfin_assert(_vector);
   return *_vector;
 }
@@ -136,6 +138,27 @@ double NewFunction::eval(const double* x, double t) const
 void NewFunction::eval(simple_array<double>& values, const simple_array<double>& x) const
 {
   eval(values.data, x.data);
+}
+//-----------------------------------------------------------------------------
+const Cell& NewFunction::cell() const
+{
+  if (!_cell)
+    error("Current cell is unknown.");
+
+  return *_cell;
+}
+//-----------------------------------------------------------------------------
+dolfin::uint NewFunction::facet() const
+{
+  if (_facet < 0)
+    error("Current facet is unknown.");
+
+  return static_cast<uint>(_facet);
+}
+//-----------------------------------------------------------------------------
+Point NewFunction::normal() const
+{
+  return cell().normal(facet());
 }
 //-----------------------------------------------------------------------------
 void NewFunction::init()

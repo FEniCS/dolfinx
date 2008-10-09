@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-09-11
-// Last changed: 2008-09-25
+// Last changed: 2008-10-09
 
 #ifndef __FUNCTION_SPACE_H
 #define __FUNCTION_SPACE_H
@@ -18,15 +18,15 @@ namespace dolfin
   class IntersectionDetector;
   class GenericVector;
 
-  /// This class represents a finite element function space
-  /// defined by a mesh, a finite element, and local-to-global
-  /// mapping (dof map).
+  /// This class represents a finite element function space defined by
+  /// a mesh, a finite element, and a local-to-global mapping of the
+  /// degrees of freedom (dofmap).
 
   class FunctionSpace
   {
   public:
 
-    /// Create function space for given mesh, finite element and dof map
+    /// Create function space for given data
     FunctionSpace(Mesh& mesh, const FiniteElement &element, const DofMap& dofmap);
 
     /// Create function space for given data (possibly shared)
@@ -37,7 +37,7 @@ namespace dolfin
     /// Destructor
     ~FunctionSpace();
 
-    /// Return mesh (non-const version)
+    /// Return mesh
     Mesh& mesh();
 
     /// Return mesh (const version)
@@ -49,8 +49,8 @@ namespace dolfin
     /// Return dof map (const version)
     const DofMap& dofmap() const;
 
-    /// Evaluate function with given vector of dofs at given point
-    void eval(double* values, const double* p, const GenericVector& x) const;
+    /// Evaluate function with given vector of expansion coefficients at given point
+    void eval(double* values, const double* x, const GenericVector& vector) const;
     
   private:
 
@@ -91,7 +91,7 @@ namespace dolfin
     // Scratch space, used for storing temporary local data
     mutable Scratch scratch;
 
-    // Intersection detector
+    // Intersection detector, used for evaluation at arbitrary points
     mutable IntersectionDetector* intersection_detector;
 
   };

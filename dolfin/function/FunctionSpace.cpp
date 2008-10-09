@@ -4,12 +4,12 @@
 // Modified by Kristoffer Selim, 2008.
 //
 // First added:  2008-09-11
-// Last changed: 2008-10-03
+// Last changed: 2008-10-09
 
-#include <dolfin/common/NoDeleter.h>
 #include <dolfin/log/log.h>
-#include <dolfin/mesh/IntersectionDetector.h>
+#include <dolfin/common/NoDeleter.h>
 #include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/IntersectionDetector.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/DofMap.h>
 #include "FunctionSpace.h"
@@ -17,7 +17,9 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-FunctionSpace::FunctionSpace(Mesh& mesh, const FiniteElement &element, const DofMap& dofmap)
+FunctionSpace::FunctionSpace(Mesh& mesh,
+                             const FiniteElement &element,
+                             const DofMap& dofmap)
   : _mesh(&mesh, NoDeleter<Mesh>()),
     _element(&element, NoDeleter<const FiniteElement>()),
     _dofmap(&dofmap, NoDeleter<const DofMap>()),
@@ -64,18 +66,23 @@ const DofMap& FunctionSpace::dofmap() const
   return *_dofmap;
 }
 //-----------------------------------------------------------------------------
-void FunctionSpace::eval(double* values, const double* p, const GenericVector& x) const
+void FunctionSpace::eval(double* values,
+                         const double* x,
+                         const GenericVector& vector) const
 {
+  dolfin_assert(values);
+  dolfin_assert(x);
   dolfin_assert(_mesh);
   dolfin_assert(_element);
   dolfin_assert(_dofmap);
-
+  dolfin_assert(_dofmap->global_dimension() == vector.size());
+  
   // Initialize intersection detector if not done before
   if (!intersection_detector)
     intersection_detector = new IntersectionDetector(*_mesh);
-
-  // Find the cell that contains p
-  Point point(_mesh->geometry().dim(), p);
+  
+  // Find the cell that contains x
+  Point point(_mesh->geometry().dim(), x);
   Array<uint> cells;
   intersection_detector->intersection(point, cells);
   if (cells.size() < 1)
@@ -89,14 +96,14 @@ void FunctionSpace::eval(double* values, const double* p, const GenericVector& x
   _dofmap->tabulate_dofs(scratch.dofs, ufc_cell);
   
   // Pick values from vector of dofs
-  x.get(scratch.coefficients, _dofmap->local_dimension(), scratch.dofs);
+  vector.get(scratch.coefficients, _dofmap->local_dimension(), scratch.dofs);
 
   // Compute linear combination
   for (uint j = 0; j < scratch.size; j++)
     values[j] = 0.0;
   for (uint i = 0; i < _element->space_dimension(); i++)
   {
-    _element->evaluate_basis(i, scratch.values, p, ufc_cell);
+    _element->evaluate_basis(i, scratch.values, x, ufc_cell);
     for (uint j = 0; j < scratch.size; j++)
       values[j] += scratch.coefficients[i] * scratch.values[j];
   }
@@ -123,7 +130,7 @@ FunctionSpace::Scratch::Scratch(const FiniteElement& element)
   // Initialize local array for values
   values = new double[size];
   for (uint i = 0; i < size; i++)
-    values[i] = 0.0;  
+    values[i] = 0.0;
 }
 //-----------------------------------------------------------------------------
 FunctionSpace::Scratch::~Scratch()

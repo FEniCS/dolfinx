@@ -6,7 +6,7 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2003-11-28
-// Last changed: 2008-09-25
+// Last changed: 2008-10-09
 
 #ifndef __NEW_FUNCTION_H
 #define __NEW_FUNCTION_H
@@ -21,13 +21,13 @@ namespace dolfin
   class FunctionSpace;
   class GenericVector;
 
-  /// This class represents a function v in a finite element
-  /// function space V,
+  /// This class represents a function u_h in a finite element
+  /// function space V_h, given by
   ///
-  ///   v = sum_i x_i phi_i
+  ///   u_h = sum_i U_i phi_i
   ///
-  /// where {phi_i}_i is a basis for V, and x is a vector of
-  /// degrees of freedom (dofs) for v.
+  /// where {phi_i}_i is a basis for V_h, and U is a vector of
+  /// expansion coefficients for u_h.
 
   class NewFunction : public Variable
   {
@@ -54,10 +54,10 @@ namespace dolfin
     /// Return the function space
     const FunctionSpace& function_space() const;
 
-    /// Return the vector of degrees of freedom (non-const version)
+    /// Return the vector of expansion coefficients
     GenericVector& vector();
 
-    /// Return the vector of degrees of freedom (const version)
+    /// Return the vector of expansion coefficients (const version)
     const GenericVector& vector() const;
 
     /// Return the current time
@@ -78,6 +78,61 @@ namespace dolfin
     /// Evaluate function at given point (used for subclassing through SWIG interface)
     void eval(simple_array<double>& values, const simple_array<double>& x) const;
 
+    /* FIXME: Functions below should be added somehow
+    
+    /// Create discrete function from sub function
+    explicit Function(SubFunction sub_function);
+    
+
+    /// Return the rank of the value space
+    virtual uint rank() const;
+
+    /// Return the dimension of the value space for axis i
+    virtual uint dim(uint i) const;
+
+    /// Return the signature of a DiscreteFunction
+    std::string signature() const;
+
+    /// Return the number of sub functions (only for discrete functions)
+    uint numSubFunctions() const;
+    
+    /// Extract sub function/slice (only for discrete function)
+    SubFunction operator[] (uint i);
+
+    /// Assign sub function/slice
+    const Function& operator= (SubFunction f);
+    
+    /// Interpolate function to vertices of mesh
+    void interpolate(double* values);
+
+    /// Interpolate function to given local finite element space
+    void interpolate(double* coefficients,
+                     const ufc::cell& ufc_cell,
+                     const FiniteElement& finite_element,
+                     Cell& cell, int facet=-1);
+
+    /// Interpolate function to given global finite element space
+    void interpolate(GenericVector& x,
+                     Mesh& mesh,
+                     const FiniteElement& finite_element,
+                     DofMap& dof_map);
+
+    /// Make current cell and facet available to user-defined function
+    void update(Cell& cell, int facet=-1);
+
+    */
+
+  protected:
+
+    /// Access current cell (available during assembly for user-defined function)
+    const Cell& cell() const;
+
+    /// Access current facet (available during assembly for user-defined function)
+    uint facet() const;
+
+    /// Access current facet normal (available during assembly for user-defined function)
+    Point normal() const;
+
   private:
 
     // Initialize vector
@@ -86,8 +141,14 @@ namespace dolfin
     // The function space
     const std::tr1::shared_ptr<const FunctionSpace> _function_space;
 
-    // The vector of degrees of freedom
+    // The vector of expansion coefficients
     GenericVector* _vector;
+
+    // The current cell (if any, otherwise 0)
+    Cell* _cell;
+
+    // The current facet (if any, otherwise -1)
+    int _facet;
 
     // The current time
     double _time;
