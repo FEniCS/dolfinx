@@ -81,7 +81,9 @@ dolfin_set("ODE order", 5);
 dolfin_set("ODE discrete tolerance", 1e-10);
 dolfin_set("ODE save solution", True);
 
-lorenz = Lorenz(T=50)
-lorenz.solve();
+print "This demo is currently broken (SWIG wrappers need to be updated to the new ODE solver interface)."
+
+#lorenz = Lorenz(T=50)
+#lorenz.solve();
 
 #myplot()

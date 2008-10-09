@@ -36,6 +36,7 @@ pydemos.remove('./../../demo/nls/nonlinearpoisson/python')
 pydemos.remove('./../../demo/pde/nonlinear-poisson/python')
 pydemos.remove('./../../demo/pde/lift-drag/python')
 pydemos.remove('./../../demo/ode/aliev-panfilov/python')
+pydemos.remove('./../../demo/ode/lorenz/python')
 
 # Push slow demos to the end
 pyslow = []
