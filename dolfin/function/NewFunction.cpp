@@ -87,6 +87,11 @@ const GenericVector& NewFunction::vector() const
   return *_vector;
 }
 //-----------------------------------------------------------------------------
+bool NewFunction::in(const FunctionSpace& V) const
+{
+  return &function_space() == &V;
+}
+//-----------------------------------------------------------------------------
 double NewFunction::time() const
 {
   return _time;
@@ -101,7 +106,7 @@ void NewFunction::eval(double* values, const double* x) const
   // Use vector of dofs if available
   if (_vector)
   {
-    _function_space->eval(values, x, *_vector);
+    _function_space->eval(values, x, *this);
     return;
   }
 
@@ -138,6 +143,25 @@ double NewFunction::eval(const double* x, double t) const
 void NewFunction::eval(simple_array<double>& values, const simple_array<double>& x) const
 {
   eval(values.data, x.data);
+}
+//-----------------------------------------------------------------------------
+void NewFunction::interpolate(double* coefficients, Cell& cell)
+{
+
+
+}
+//-----------------------------------------------------------------------------
+void NewFunction::interpolate(GenericVector& coefficients, FunctionSpace& V)
+{
+
+}
+//-----------------------------------------------------------------------------
+void NewFunction::interpolate(double* vertex_values)
+{
+  dolfin_assert(vertex_values);
+  dolfin_assert(_function_space);
+
+
 }
 //-----------------------------------------------------------------------------
 const Cell& NewFunction::cell() const

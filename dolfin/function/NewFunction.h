@@ -41,7 +41,7 @@ namespace dolfin
 
     /// Create function from file
     explicit NewFunction(const std::string filename);
-    
+
     /// Copy constructor
     NewFunction(const NewFunction& v);
 
@@ -59,6 +59,9 @@ namespace dolfin
 
     /// Return the vector of expansion coefficients (const version)
     const GenericVector& vector() const;
+
+    /// Check if function is a member of the given function space
+    bool in(const FunctionSpace& V) const;
 
     /// Return the current time
     double time() const;
@@ -78,12 +81,20 @@ namespace dolfin
     /// Evaluate function at given point (used for subclassing through SWIG interface)
     void eval(simple_array<double>& values, const simple_array<double>& x) const;
 
+    /// Interpolate function to local finite element space
+    void interpolate(double* coefficients, Cell& cell);
+
+    /// Interpolate function to given global finite element space
+    void interpolate(GenericVector& coefficients, FunctionSpace& V);
+
+    /// Interpolate function to vertices of mesh
+    void interpolate(double* vertex_values);
+
     /* FIXME: Functions below should be added somehow
     
     /// Create discrete function from sub function
     explicit Function(SubFunction sub_function);
     
-
     /// Return the rank of the value space
     virtual uint rank() const;
 
@@ -102,21 +113,6 @@ namespace dolfin
     /// Assign sub function/slice
     const Function& operator= (SubFunction f);
     
-    /// Interpolate function to vertices of mesh
-    void interpolate(double* values);
-
-    /// Interpolate function to given local finite element space
-    void interpolate(double* coefficients,
-                     const ufc::cell& ufc_cell,
-                     const FiniteElement& finite_element,
-                     Cell& cell, int facet=-1);
-
-    /// Interpolate function to given global finite element space
-    void interpolate(GenericVector& x,
-                     Mesh& mesh,
-                     const FiniteElement& finite_element,
-                     DofMap& dof_map);
-
     /// Make current cell and facet available to user-defined function
     void update(Cell& cell, int facet=-1);
 

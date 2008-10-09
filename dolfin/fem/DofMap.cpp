@@ -184,7 +184,7 @@ void DofMap::init()
   //dolfin_debug("Dof map initialized");
 }
 //-----------------------------------------------------------------------------
-void DofMap::tabulate_dofs(uint* dofs, ufc::cell& ufc_cell, uint cell_index)
+void DofMap::tabulate_dofs(uint* dofs, ufc::cell& ufc_cell, uint cell_index) const
 {
   // Either lookup pretabulated values (if build() has been called)
   // or ask the ufc::dof_map to tabulate the values
@@ -195,7 +195,8 @@ void DofMap::tabulate_dofs(uint* dofs, ufc::cell& ufc_cell, uint cell_index)
     const uint offset = n*cell_index;
     for (uint i = 0; i < n; i++)
       dofs[i] = dof_map[offset + i];
-    //memcpy(dofs, dof_map[cell_index], sizeof(uint)*local_dimension()); // FIXME: Maybe memcpy() can be used to speed this up? Test this!
+    // FIXME: Maybe memcpy() can be used to speed this up? Test this!
+    //memcpy(dofs, dof_map[cell_index], sizeof(uint)*local_dimension()); 
   }
   else
     ufc_dof_map->tabulate_dofs(dofs, ufc_mesh, ufc_cell);
