@@ -2,7 +2,6 @@
 import os,sys
 import string
 import os.path
-import commands
 
 from commonPkgConfigUtils import *
 
@@ -26,6 +25,8 @@ def pkgTests(forceCompiler=None, sconsEnv=None, **kwargs):
      or just a string, which in that case will be used as both
   """
   arch = get_architecture()
+  petsc_dir = getPetscDir(sconsEnv=sconsEnv)
+  slepc_dir = getSlepcDir(sconsEnv=sconsEnv)
 
   # make sure that "directory" is contained in PKG_CONFIG_PATH, only relevant 
   # for test-cases where directory="."
@@ -39,26 +40,19 @@ def pkgTests(forceCompiler=None, sconsEnv=None, **kwargs):
   # prototype - make this a utility in commonPkgConfigUtils
   dep_module_name = "PETSc"
   dep_module = "petsc"
-  notexist, cmdoutput = commands.getstatusoutput("pkg-config --exists petsc")
+  notexist, cmdoutput = getstatusoutput("pkg-config --exists petsc")
   if notexist:
     # Try to generate petsc:
-    # Are we running "globally"?
-    try:
-      packgen = __import__("simula_scons.pkgconfiggenerators", globals(), locals())
-    except:
-      print "[scons/pkgconfiggenerators/slepc.py. l. 40] Unable to find pkgconfiggenerators"
-      raise UnableToXXXException("Unable to find the pkgconfiggenerators")
     ns = {}
-    exec "from simula_scons.pkgconfiggenerators import %s" % (dep_module) in ns
+    exec "import %s" % (dep_module) in ns
     packgen = ns.get("%s" % (dep_module))
-    #packgen.generatePkgConf(directory=directory, sconsEnv=sconsEnv)
-    packgen.generatePkgConf(sconsEnv=sconsEnv)
+    packgen.generatePkgConf(directory=os.getcwd(), sconsEnv=sconsEnv)
   # now the dep_module pkg-config should exist!
-  failure,dep_mod_cflags = commands.getstatusoutput("pkg-config %s --cflags" % (dep_module))
+  failure,dep_mod_cflags = getstatusoutput("pkg-config %s --cflags" % (dep_module))
   if failure:
     # some strange unknown error, report something!
     raise UnableToXXXException("Unable to read CFLAGS for %s" % (dep_module_name))
-  failure,dep_mod_libs = commands.getstatusoutput("pkg-config %s --libs" % (dep_module))
+  failure,dep_mod_libs = getstatusoutput("pkg-config %s --libs" % (dep_module))
   if failure:
     # some strange unknown error, report something!
     raise UnableToXXXException("Unable to read LDFLAGS for %s" % (dep_module_name))
@@ -77,14 +71,17 @@ get_slepc_include:
 
 get_slepc_libs:
 	-@echo ${CC_LINKER_SLFLAG}${SLEPC_LIB_DIR} -L${SLEPC_LIB_DIR} -lslepc
-""" % (getPetscDir(sconsEnv=sconsEnv),getSlepcDir(sconsEnv=sconsEnv))
+
+get_petsc_arch:
+	-@echo  ${PETSC_ARCH}
+""" % (petsc_dir, slepc_dir)
   slepc_make_file = open("slepc_makefile","w")
   slepc_make_file.write(slepc_makefile_str)
   slepc_make_file.close()
   slepc_includes = ""
   slepc_libs = ""
   cmdstr = "make -s -f slepc_makefile get_slepc_include"
-  runFailed, cmdoutput = commands.getstatusoutput(cmdstr)
+  runFailed, cmdoutput = getstatusoutput(cmdstr)
   if runFailed:
     os.unlink("slepc_makefile")
     msg = "Unable to read SLEPc includes through make"
@@ -92,23 +89,31 @@ get_slepc_libs:
   slepc_includes = cmdoutput
 
   cmdstr = "make -s -f slepc_makefile get_slepc_libs"
-  runFailed, cmdoutput = commands.getstatusoutput(cmdstr)
+  runFailed, cmdoutput = getstatusoutput(cmdstr)
   if runFailed:
     os.unlink("slepc_makefile")
     msg = "Unable to read SLEPc libs through make"
     raise UnableToXXXException(msg, errormsg=cmdoutput)
   slepc_libs = cmdoutput
 
+  cmdstr = "make -s -f slepc_makefile get_petsc_arch"
+  runFailed, cmdoutput = getstatusoutput(cmdstr)
+  if runFailed:
+    os.unlink("slepc_makefile")
+    msg = "Unable to read SLEPc libs through make"
+    raise UnableToXXXException(msg, errormsg=cmdoutput)
+  petsc_arch = cmdoutput
+
   # Try to get compiler and linker from petsc
   cmdstr = "pkg-config petsc --variable=compiler"
-  failure, cmdoutput = commands.getstatusoutput(cmdstr)
+  failure, cmdoutput = getstatusoutput(cmdstr)
   if failure:
     compiler = get_compiler(sconsEnv)
     print "Unable to get compiler from petsc.pc; using %s instead." % compiler
   else:
     compiler = cmdoutput
   cmdstr = "pkg-config petsc --variable=linker"
-  failure, cmdoutput = commands.getstatusoutput(cmdstr)
+  failure, cmdoutput = getstatusoutput(cmdstr)
   if failure:
     linker = get_linker(sconsEnv)
     print "Unable to get linker from petsc.pc; using %s instead." % linker
@@ -140,18 +145,26 @@ int main() {
   write_cppfile(cpp_test_version_str, "slepc_config_test_version.cpp");
 
   cmdstr = "%s %s %s -c slepc_config_test_version.cpp" % (compiler, dep_mod_cflags, slepc_includes)
-  compileFailed, cmdoutput = commands.getstatusoutput(cmdstr)
+  compileFailed, cmdoutput = getstatusoutput(cmdstr)
   if compileFailed:
     remove_cppfile("slepc_config_test_version.cpp")
     raise UnableToCompileException("SLEPc", cmd=cmdstr,
                                    program=cpp_test_version_str, errormsg=cmdoutput)
   cmdstr = "%s %s %s slepc_config_test_version.o" % (linker, dep_mod_libs, slepc_libs)
-  linkFailed, cmdoutput = commands.getstatusoutput(cmdstr)
+  linkFailed, cmdoutput = getstatusoutput(cmdstr)
   if linkFailed:
     remove_cppfile("slepc_config_test_version.cpp", ofile=True)
     raise UnableToLinkException("SLEPc", cmd=cmdstr,
                                 program=cpp_test_version_str, errormsg=cmdoutput)
-  runFailed, cmdoutput = commands.getstatusoutput("./a.out")
+  if arch == 'darwin':
+    os.putenv('DYLD_LIBRARY_PATH',
+              os.pathsep.join([os.getenv('DYLD_LIBRARY_PATH', ''),
+                               os.path.join(slepc_dir, 'lib', petsc_arch)]))
+  else:
+    os.putenv('LD_LIBRARY_PATH',
+              os.pathsep.join([os.getenv('LD_LIBRARY_PATH', ''),
+                               os.path.join(slepc_dir, 'lib', petsc_arch)]))
+  runFailed, cmdoutput = getstatusoutput("./a.out")
   if runFailed:
     remove_cppfile("slepc_config_test_version.cpp", ofile=True, execfile=True)
     raise UnableToRunException("SLEPc", errormsg=cmdoutput)
