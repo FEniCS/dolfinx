@@ -159,7 +159,7 @@ namespace dolfin
     void move(Mesh& boundary, dolfin::ALEType method=lagrange);
     
     /// Smooth mesh using Lagrangian mesh smoothing
-    void smooth(uint num_smoothings=1);\
+    void smooth(uint num_smoothings=1);
     
     /// Compute cells intersecting point
     void intersection(const Point& p, Array<uint>& cells, bool fixed_mesh=true);
