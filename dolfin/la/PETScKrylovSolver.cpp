@@ -265,23 +265,31 @@ void PETScKrylovSolver::setPETScPreconditioner()
   PCSetFromOptions(pc);
 
   // Treat special case Hypre AMG preconditioner
-  if ( pc_petsc == amg )
+  if ( pc_petsc == amg_hypre )
   {  
 #if PETSC_HAVE_HYPRE
-    //PCSetFromOptions(pc);
-    //pc->ops->setfromoptions(pc);
     PCSetType(pc, PCHYPRE);
-    //pc->ops->setfromoptions(pc);
     PCHYPRESetType(pc, "boomeramg");
     PCSetFromOptions(pc);
-
-    //pc->ops->setfromoptions(pc);
-    //PCHYPRESetFromOptions(pc);
 #else
     warning("PETSc has not been compiled with the HYPRE library for   "
                    "algerbraic multigrid. Default PETSc solver will be used. "
                    "For performance, installation of HYPRE is recommended.   "
                    "See the DOLFIN user manual for more information.");
+#endif
+    return;
+  }
+
+  // Treat special case ML AMG preconditioner
+  if ( pc_petsc == amg_ml )
+  {  
+#if PETSC_HAVE_ML
+  PCSetType(pc, PETScPreconditioner::getType(pc_petsc));
+  PCFactorSetShiftNonzero(pc, PETSC_DECIDE);
+#else
+    warning("PETSc has not been compiled with the ML library for   "
+                   "algerbraic multigrid. Default PETSc solver will be used. "
+                   "For performance, installation of ML is recommended.");
 #endif
     return;
   }

@@ -80,8 +80,10 @@ PCType PETScPreconditioner::getType(PreconditionerType pc)
   {
   case default_pc:
     return "default";
-  case amg:
+  case amg_hypre:
     return PCHYPRE;
+  case amg_ml:
+    return PCML;
   case icc:
     return PCICC;
   case ilu:

@@ -48,6 +48,8 @@ int main()
 
   };
 
+  dolfin_set("linear algebra backend", "PETSc");
+
   // Read mesh and sub domain markers
   Mesh mesh("../../../../../data/meshes/dolfin-2.xml.gz");
   MeshFunction<unsigned int> sub_domains(mesh, "../subdomains.xml.gz");

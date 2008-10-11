@@ -34,7 +34,8 @@ namespace dolfin
     sor,       // SOR (successive over relaxation)
     ilu,       // Incomplete LU factorization
     icc,       // Incomplete Cholesky factorization
-    amg,       // Algebraic multigrid (through Hypre when available)
+    amg_hypre, // Algebraic multigrid (through Hypre when available)
+    amg_ml,    // Algebraic multigrid (through ML when available)
     default_pc // Default preconditioner
   };
 

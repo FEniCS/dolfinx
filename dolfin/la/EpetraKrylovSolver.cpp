@@ -112,12 +112,12 @@ dolfin::uint EpetraKrylovSolver::solve(const EpetraMatrix& A, EpetraVector& x,
   }
   else if ( pc_type == icc) 
     linear_solver.SetAztecOption( AZ_precond, AZ_icc);
-  else if ( pc_type == amg) 
+  else if ( pc_type == amg_ml) 
     ;// Do nothing. Confiugured below    
   else
     error("EpetraKrylovSolver::solve pc type not supported."); 
 
-  if (pc_type == amg) 
+  if (pc_type == amg_ml) 
   {  
 //#ifdef HAVE_ML_AZTECOO
     //FIXME ifdef ML 

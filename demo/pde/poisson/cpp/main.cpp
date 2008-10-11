@@ -67,7 +67,6 @@ int main()
     }
   };
 
-  dolfin_set("linear algebra backend", "uBLAS");
   //dolfin_set("linear algebra backend", "PETSc");
 
   // Create mesh
@@ -89,7 +88,6 @@ int main()
 
   // Solve PDE
   Function u;
-  pde.set("PDE linear solver", "iterative");
   pde.solve(u);
 
   // Plot solution
