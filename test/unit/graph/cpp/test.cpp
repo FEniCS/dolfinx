@@ -8,8 +8,9 @@
 
 #include <dolfin.h>
 #include <dolfin/common/unittest.h>
+#include <cstdlib>
 //#include <iostream>
-#include <fstream>
+//#include <fstream>
 
 using namespace dolfin;
 
@@ -128,7 +129,8 @@ public:
     mfile.close();
 
     // Create dolfin xml file from metis graph
-    system("dolfin-convert metis_graph.gra mgraph.xml");
+    if( system("dolfin-convert metis_graph.gra mgraph.xml") )
+      error("'dolfin-convert metis_graph.gra mgraph.xml' failed");
 
     Graph graph;
     File file("mgraph.xml");
@@ -154,7 +156,8 @@ public:
     sfile.close();
 
     // Create dolfin xml file from scotch graph
-    system("dolfin-convert scotch_graph.grf sgraph.xml");
+    if( system("dolfin-convert scotch_graph.grf sgraph.xml") )
+      error("'dolfin-convert scotch_graph.grf sgraph.xml' failed");
 
     Graph graph;
     File file("sgraph.xml");
