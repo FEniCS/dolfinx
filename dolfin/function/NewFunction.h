@@ -140,14 +140,14 @@ namespace dolfin
     // The vector of expansion coefficients
     GenericVector* _vector;
 
+    // The current time
+    double _time;
+
     // The current cell (if any, otherwise 0)
     Cell* _cell;
 
     // The current facet (if any, otherwise -1)
     int _facet;
-
-    // The current time
-    double _time;
 
   };
 

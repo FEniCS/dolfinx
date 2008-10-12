@@ -9,6 +9,7 @@
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/NoDeleter.h>
+#include <dolfin/io/File.h>
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/la/DefaultFactory.h>
 #include <dolfin/fem/FiniteElement.h>
@@ -21,30 +22,46 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 NewFunction::NewFunction(const FunctionSpace& V)
   : _function_space(&V, NoDeleter<const FunctionSpace>()), _vector(0),
-    _cell(0), _facet(-1), _time(0)
+    _time(0), _cell(0), _facet(-1)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 NewFunction::NewFunction(const std::tr1::shared_ptr<FunctionSpace> V)
   : _function_space(V), _vector(0),
-    _cell(0), _facet(-1), _time(0)
+    _time(0), _cell(0), _facet(-1)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 NewFunction::NewFunction(const std::string filename)
   : _function_space(static_cast<FunctionSpace*>(0)), _vector(0),
-    _cell(0), _facet(-1), _time(0)
+    _time(0), _cell(0), _facet(-1)
 {
-  error("Not implemented.");
+  // FIXME: Uncomment when renamed to Function
+  //File file(filename);
+  //file >> *this;
 }
 //-----------------------------------------------------------------------------
 NewFunction::NewFunction(const NewFunction& v)
-  : _function_space(static_cast<FunctionSpace*>(0)), _vector(0),
-    _cell(0), _facet(-1), _time(0)
+  : _function_space(v._function_space), _vector(0),
+    _time(0), _cell(0), _facet(-1)
 {
-  error("Not implemented.");
+  // Note 1: function space initialized above (shared)
+  // Note 2: vector needs special handling
+  // Note 3: don't assign cell and facet
+  
+  // Check that vector exists
+  if (!v._vector)
+    error("Unable to initialize function, missing coefficients (user-defined function).");
+  
+  // Assign vector
+  init();
+  dolfin_assert(_vector);
+  *_vector = *v._vector;
+
+  // Assign time
+  _time = v._time;
 }
 //-----------------------------------------------------------------------------
 NewFunction::~NewFunction()
@@ -54,10 +71,26 @@ NewFunction::~NewFunction()
 //-----------------------------------------------------------------------------
 const NewFunction& NewFunction::operator= (const NewFunction& v)
 {
-  // FIXME: Need to check pointers here and check if _U is nonzero
-  //*_V = *v._V;
-  //*_U = *u._V;
+  // Note 1: function spaces must be the same
+  // Note 2: vector needs special handling
+  // Note 3: don't assign cell and facet
+
+  // Check if functions spaces are the same
+  if (!v.in(function_space()))
+    error("Unable to assign to function, not in the same function space.");
+
+  // Check that vector exists
+  if (!v._vector)
+    error("Unable to initialize function, missing coefficients (user-defined function).");
   
+  // Assign vector
+  init();
+  dolfin_assert(_vector);
+  *_vector = *v._vector;
+
+  // Assign time
+  _time = v._time;
+
   return *this;
 }
 //-----------------------------------------------------------------------------
