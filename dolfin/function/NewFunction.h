@@ -19,6 +19,7 @@ namespace dolfin
 {
 
   class FunctionSpace;
+  class NewSubFunction;
   class GenericVector;
 
   /// This class represents a function u_h in a finite element
@@ -42,14 +43,23 @@ namespace dolfin
     /// Create function from file
     explicit NewFunction(const std::string filename);
 
+    /// Create function from sub function
+    explicit NewFunction(const NewSubFunction& v);
+
     /// Copy constructor
     NewFunction(const NewFunction& v);
 
     /// Destructor
     virtual ~NewFunction();
 
-    /// Assignment operator
+    /// Assignment from function
     const NewFunction& operator= (const NewFunction& v);
+
+    /// Assignment from sub function
+    const NewFunction& operator= (const NewSubFunction& v);
+
+    /// Extract sub function
+    NewSubFunction operator[] (uint i);
 
     /// Return the function space
     const FunctionSpace& function_space() const;
@@ -92,9 +102,6 @@ namespace dolfin
 
     /* FIXME: Functions below should be added somehow
     
-    /// Create discrete function from sub function
-    explicit Function(SubFunction sub_function);
-    
     /// Return the rank of the value space
     virtual uint rank() const;
 
@@ -106,12 +113,6 @@ namespace dolfin
 
     /// Return the number of sub functions (only for discrete functions)
     uint numSubFunctions() const;
-    
-    /// Extract sub function/slice (only for discrete function)
-    SubFunction operator[] (uint i);
-
-    /// Assign sub function/slice
-    const Function& operator= (SubFunction f);
     
     /// Make current cell and facet available to user-defined function
     void update(Cell& cell, int facet=-1);

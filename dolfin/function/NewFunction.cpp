@@ -15,6 +15,7 @@
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/DofMap.h>
 #include "FunctionSpace.h"
+#include "NewSubFunction.h"
 #include "NewFunction.h"
 
 using namespace dolfin;
@@ -43,25 +44,18 @@ NewFunction::NewFunction(const std::string filename)
   //file >> *this;
 }
 //-----------------------------------------------------------------------------
+NewFunction::NewFunction(const NewSubFunction& v)
+  : _function_space(static_cast<FunctionSpace*>(0)), _vector(0),
+    _time(0), _cell(0), _facet(-1)
+{
+  *this = v;
+}
+//-----------------------------------------------------------------------------
 NewFunction::NewFunction(const NewFunction& v)
   : _function_space(v._function_space), _vector(0),
     _time(0), _cell(0), _facet(-1)
 {
-  // Note 1: function space initialized above (shared)
-  // Note 2: vector needs special handling
-  // Note 3: don't assign cell and facet
-  
-  // Check that vector exists
-  if (!v._vector)
-    error("Unable to initialize function, missing coefficients (user-defined function).");
-  
-  // Assign vector
-  init();
-  dolfin_assert(_vector);
-  *_vector = *v._vector;
-
-  // Assign time
-  _time = v._time;
+  *this = v;
 }
 //-----------------------------------------------------------------------------
 NewFunction::~NewFunction()
@@ -75,13 +69,13 @@ const NewFunction& NewFunction::operator= (const NewFunction& v)
   // Note 2: vector needs special handling
   // Note 3: don't assign cell and facet
 
-  // Check if functions spaces are the same
+  // Check that function spaces are the same
   if (!v.in(function_space()))
     error("Unable to assign to function, not in the same function space.");
 
   // Check that vector exists
   if (!v._vector)
-    error("Unable to initialize function, missing coefficients (user-defined function).");
+    error("Unable to assign to function, missing coefficients (user-defined function).");
   
   // Assign vector
   init();
@@ -92,6 +86,60 @@ const NewFunction& NewFunction::operator= (const NewFunction& v)
   _time = v._time;
 
   return *this;
+}
+//-----------------------------------------------------------------------------
+const NewFunction& NewFunction::operator= (const NewSubFunction& v)
+{
+  // Check that vector exists
+  //if (!v._vector)
+  //  error("Unable to assign to function, missing coefficients (user-defined function).");
+
+  /*
+  // Create sub system
+  SubSystem sub_system(sub_function.i);
+
+  // Extract sub element
+  std::tr1::shared_ptr<FiniteElement> _element(sub_system.extractFiniteElement(*(sub_function.f->finite_element)));
+  finite_element.swap(_element);
+
+  // Initialize scratch space
+  scratch = new Scratch(*finite_element);
+
+  // Extract sub dof map and offset
+  uint offset = 0;
+  std::tr1::shared_ptr<DofMap> _dof_map(sub_function.f->dof_map->extractDofMap(sub_system.array(), offset));
+  dof_map.swap(_dof_map);
+
+  // Create vector of dofs and copy values
+  init();
+  double* values   = new double[n];
+  uint* get_rows = new uint[n];
+  uint* set_rows = new uint[n];
+  for (uint i = 0; i < n; i++)
+  {
+    get_rows[i] = offset + i;
+    set_rows[i] = i;
+  }
+  sub_function.f->x->get(values, n, get_rows);
+  x->set(values, n, set_rows);
+  x->apply();
+
+  delete [] values;
+  delete [] get_rows;
+  delete [] set_rows;
+  */
+  
+  return *this;
+}
+//-----------------------------------------------------------------------------
+NewSubFunction NewFunction::operator[] (uint i)
+{
+  // Check that vector exists
+  if (!_vector)
+    error("Unable to extract sub function, missing coefficients (user-defined function).");
+
+  NewSubFunction sub_function(*this, i);
+  return sub_function;
 }
 //-----------------------------------------------------------------------------
 const FunctionSpace& NewFunction::function_space() const
