@@ -1,16 +1,16 @@
-// Copyright (C) 2008 Anders Logg (and others?).
+// Copyright (C) 2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Kristoffer Selim, 2008.
 //
 // First added:  2008-09-11
-// Last changed: 2008-10-09
+// Last changed: 2008-10-12
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/NoDeleter.h>
-#include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/Vertex.h>
 #include <dolfin/mesh/IntersectionDetector.h>
+#include <dolfin/mesh/Mesh.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/DofMap.h>
 #include "NewFunction.h"
@@ -74,15 +74,15 @@ void FunctionSpace::eval(double* values,
 {
   dolfin_assert(values);
   dolfin_assert(x);
+  dolfin_assert(v.in(*this));
   dolfin_assert(_mesh);
   dolfin_assert(_element);
   dolfin_assert(_dofmap);
-  dolfin_assert(v.in(*this));
 
   // Initialize intersection detector if not done before
   if (!intersection_detector)
     intersection_detector = new IntersectionDetector(*_mesh);
-  
+
   // Find the cell that contains x
   Point point(_mesh->geometry().dim(), x);
   Array<uint> cells;
@@ -93,16 +93,15 @@ void FunctionSpace::eval(double* values,
     warning("Point belongs to more than one cell, picking first.");
   Cell cell(*_mesh, cells[0]);
   UFCCell ufc_cell(cell);
-  
+
   // Tabulate dofs
   _dofmap->tabulate_dofs(scratch.dofs, ufc_cell);
-  
+
   // Pick values from vector of dofs
   v.vector().get(scratch.coefficients, _dofmap->local_dimension(), scratch.dofs);
 
   // Compute linear combination
-  for (uint j = 0; j < scratch.size; j++)
-    values[j] = 0.0;
+  for (uint j = 0; j < scratch.size; j++) values[j] = 0.0;
   for (uint i = 0; i < _element->space_dimension(); i++)
   {
     _element->evaluate_basis(i, scratch.values, x, ufc_cell);
@@ -112,44 +111,33 @@ void FunctionSpace::eval(double* values,
 }
 //-----------------------------------------------------------------------------
 void FunctionSpace::interpolate(double* coefficients,
-                                const ufc::cell& cell,
-                                const NewFunction& v)
+                                const ufc::cell& ufc_cell,
+                                const NewFunction& v) const
 {
   dolfin_assert(coefficients);
+  dolfin_assert(v.in(*this));
   dolfin_assert(_mesh);
   dolfin_assert(_element);
   dolfin_assert(_dofmap);
-  dolfin_assert(v.in(*this));
 
   // Tabulate dofs
-  _dofmap->tabulate_dofs(scratch.dofs, cell);
+  _dofmap->tabulate_dofs(scratch.dofs, ufc_cell);
 
   // Pick values from global vector
   v.vector().get(coefficients, _dofmap->local_dimension(), scratch.dofs);
-
-  // FIXME: When do we do this?
-  // Evaluate each dof to get coefficients for nodal basis expansion
-  //for (uint i = 0; i < _element->space_dimension(); i++)
-  //  coefficients[i] = _element->evaluate_dof(i, v, cell);
 }
 //-----------------------------------------------------------------------------
 void FunctionSpace::interpolate(GenericVector& coefficients,
-                                const FunctionSpace& V,
-                                const NewFunction& v)
+                                const NewFunction& v) const
 {
   dolfin_assert(_mesh);
   dolfin_assert(_element);
   dolfin_assert(_dofmap);
-  dolfin_assert(v.in(*this));
-  
-  // Initialize vector of coefficients
-  coefficients.resize(V.dofmap().global_dimension());
-  coefficients.zero();
+  dolfin_assert(&v.function_space().mesh() == &mesh());
 
-  // Initialize local arrays for dofs and coefficients
-  const uint n = _dofmap->local_dimension();
-  uint* dofs = new uint[n];
-  double* local_coefficients = new double[n];
+  // Initialize vector of coefficients
+  coefficients.resize(_dofmap->global_dimension());
+  coefficients.zero();
 
   // Iterate over mesh and interpolate on each cell
   UFCCell ufc_cell(*_mesh);
@@ -159,35 +147,30 @@ void FunctionSpace::interpolate(GenericVector& coefficients,
     ufc_cell.update(*cell);
 
     // Interpolate on cell
-    //interpolate(coefficients, ufc_cell, v);
+    v.interpolate(scratch.coefficients, ufc_cell);
 
     // Tabulate dofs
-    _dofmap->tabulate_dofs(dofs, ufc_cell, cell->index());
+    _dofmap->tabulate_dofs(scratch.dofs, ufc_cell);
 
     // Copy dofs to vector
-    coefficients.set(local_coefficients, n, dofs);
+    coefficients.set(scratch.coefficients, _dofmap->local_dimension(), scratch.dofs);
   }
-
-  // Clean up
-  delete [] dofs;
-  delete [] local_coefficients;
 }
 //-----------------------------------------------------------------------------
 void FunctionSpace::interpolate(double* vertex_values,
-                                const NewFunction& v)
+                                const NewFunction& v) const
 {
   dolfin_assert(vertex_values);
+  dolfin_assert(v.in(*this));
   dolfin_assert(_mesh);
   dolfin_assert(_element);
   dolfin_assert(_dofmap);
-  dolfin_assert(v.in(*this));
 
   // Local data for interpolation on each cell
   const uint num_cell_vertices = _mesh->type().numVertices(_mesh->topology().dim());
   double* local_vertex_values = new double[scratch.size*num_cell_vertices];
 
-  // Interpolate vertex values on each cell and pick the last value
-  // if two or more cells disagree on the vertex values
+  // Interpolate vertex values on each cell (using latest value if not continuous)
   UFCCell ufc_cell(*_mesh);
   for (CellIterator cell(*_mesh); !cell.end(); ++cell)
   {
@@ -196,7 +179,7 @@ void FunctionSpace::interpolate(double* vertex_values,
 
     // Tabulate dofs
     _dofmap->tabulate_dofs(scratch.dofs, ufc_cell);
-    
+
     // Pick values from global vector
     v.vector().get(scratch.coefficients, _dofmap->local_dimension(), scratch.dofs);
 

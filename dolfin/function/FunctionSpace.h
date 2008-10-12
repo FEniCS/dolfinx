@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-09-11
-// Last changed: 2008-10-09
+// Last changed: 2008-10-12
 
 #ifndef __FUNCTION_SPACE_H
 #define __FUNCTION_SPACE_H
@@ -15,9 +15,9 @@ namespace dolfin
   class Mesh;
   class FiniteElement;
   class DofMap;
+  class NewFunction;
   class IntersectionDetector;
   class GenericVector;
-  class NewFunction;
 
   /// This class represents a finite element function space defined by
   /// a mesh, a finite element, and a local-to-global mapping of the
@@ -30,7 +30,7 @@ namespace dolfin
     /// Create function space for given mesh, element and dofmap
     FunctionSpace(Mesh& mesh, const FiniteElement &element, const DofMap& dofmap);
 
-    /// Create function space for given mesh, element and dofmap (may be shared)
+    /// Create function space for given mesh, element and dofmap (shared data)
     FunctionSpace(std::tr1::shared_ptr<Mesh> mesh,
                   std::tr1::shared_ptr<const FiniteElement> element,
                   std::tr1::shared_ptr<const DofMap> dofmap);
@@ -47,7 +47,7 @@ namespace dolfin
     /// Return finite element
     const FiniteElement& element() const;
 
-    /// Return dof map
+    /// Return dofmap
     const DofMap& dofmap() const;
 
     /// Evaluate function v in function space at given point
@@ -55,19 +55,18 @@ namespace dolfin
               const double* x,
               const NewFunction& v) const;
 
+    /// Interpolate function v to function space
+    void interpolate(GenericVector& coefficients,
+                     const NewFunction& v) const;
+
     /// Interpolate function v in function space to local function space on cell
     void interpolate(double* coefficients,
-                     const ufc::cell& cell,
-                     const NewFunction& v);
-
-    /// Interpolate function v in function space to global function space V
-    void interpolate(GenericVector& coefficients,
-                     const FunctionSpace& V,
-                     const NewFunction& v);
+                     const ufc::cell& ufc_cell,
+                     const NewFunction& v) const;
 
     /// Interpolate function v in function space to vertices of mesh
     void interpolate(double* vertex_values,
-                     const NewFunction& v);
+                     const NewFunction& v) const;
 
   private:
 
@@ -84,13 +83,13 @@ namespace dolfin
 
       // Value size (number of entries in tensor value)
       uint size;
-      
+
       // Local array for mapping of dofs
       uint* dofs;
-      
+
       // Local array for expansion coefficients
       double* coefficients;
-      
+
       // Local array for values
       double* values;
 
@@ -102,7 +101,7 @@ namespace dolfin
     // The finite element
     std::tr1::shared_ptr<const FiniteElement> _element;
 
-    // The dof map
+    // The dofmap
     std::tr1::shared_ptr<const DofMap> _dofmap;
 
     // Scratch space, used for storing temporary local data
