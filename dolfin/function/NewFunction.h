@@ -6,7 +6,7 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2003-11-28
-// Last changed: 2008-10-09
+// Last changed: 2008-10-12
 
 #ifndef __NEW_FUNCTION_H
 #define __NEW_FUNCTION_H
@@ -36,7 +36,7 @@ namespace dolfin
     /// Create function on given function space
     explicit NewFunction(const FunctionSpace& V);
 
-    /// Create function on given function space (may be shared)
+    /// Create function on given function space (shared data)
     explicit NewFunction(const std::tr1::shared_ptr<FunctionSpace> V);
 
     /// Create function from file
@@ -60,11 +60,11 @@ namespace dolfin
     /// Return the vector of expansion coefficients (const version)
     const GenericVector& vector() const;
 
-    /// Check if function is a member of the given function space
-    bool in(const FunctionSpace& V) const;
-
     /// Return the current time
     double time() const;
+
+    /// Check if function is a member of the given function space
+    bool in(const FunctionSpace& V) const;
 
     /// Evaluate function at point x (overload for user-defined function)
     virtual void eval(double* values, const double* x) const;
@@ -81,14 +81,14 @@ namespace dolfin
     /// Evaluate function at given point (used for subclassing through SWIG interface)
     void eval(simple_array<double>& values, const simple_array<double>& x) const;
 
-    /// Interpolate function to local finite element space
-    void interpolate(double* coefficients, Cell& cell);
+    /// Interpolate function to given function space
+    void interpolate(GenericVector& coefficients, const FunctionSpace& V) const;
 
-    /// Interpolate function to given global finite element space
-    void interpolate(GenericVector& coefficients, FunctionSpace& V);
+    /// Interpolate function to local function space on cell
+    void interpolate(double* coefficients, const ufc::cell& ufc_cell) const;
 
     /// Interpolate function to vertices of mesh
-    void interpolate(double* vertex_values);
+    void interpolate(double* vertex_values) const;
 
     /* FIXME: Functions below should be added somehow
     

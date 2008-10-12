@@ -5,7 +5,7 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2003-11-28
-// Last changed: 2008-09-11
+// Last changed: 2008-10-12
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/NoDeleter.h>
@@ -82,19 +82,19 @@ const GenericVector& NewFunction::vector() const
   // Check if vector of dofs has been initialized
   if (!_vector)
     error("Requesting vector of degrees of freedom for function, but vector has not been initialized.");
-  
+
   dolfin_assert(_vector);
   return *_vector;
-}
-//-----------------------------------------------------------------------------
-bool NewFunction::in(const FunctionSpace& V) const
-{
-  return &function_space() == &V;
 }
 //-----------------------------------------------------------------------------
 double NewFunction::time() const
 {
   return _time;
+}
+//-----------------------------------------------------------------------------
+bool NewFunction::in(const FunctionSpace& V) const
+{
+  return &function_space() == &V;
 }
 //-----------------------------------------------------------------------------
 void NewFunction::eval(double* values, const double* x) const
@@ -145,23 +145,23 @@ void NewFunction::eval(simple_array<double>& values, const simple_array<double>&
   eval(values.data, x.data);
 }
 //-----------------------------------------------------------------------------
-void NewFunction::interpolate(double* coefficients, Cell& cell)
+void NewFunction::interpolate(GenericVector& coefficients, const FunctionSpace& V) const
 {
-
-
+  V.interpolate(coefficients, *this);
 }
 //-----------------------------------------------------------------------------
-void NewFunction::interpolate(GenericVector& coefficients, FunctionSpace& V)
+void NewFunction::interpolate(double* coefficients, const ufc::cell& ufc_cell) const
 {
-
+  dolfin_assert(coefficients);
+  dolfin_assert(_function_space);
+  _function_space->interpolate(coefficients, ufc_cell, *this);
 }
 //-----------------------------------------------------------------------------
-void NewFunction::interpolate(double* vertex_values)
+void NewFunction::interpolate(double* vertex_values) const
 {
   dolfin_assert(vertex_values);
   dolfin_assert(_function_space);
-
-
+  _function_space->interpolate(vertex_values, *this);
 }
 //-----------------------------------------------------------------------------
 const Cell& NewFunction::cell() const
