@@ -5,7 +5,7 @@
 // Modified by Martin Sandve Alnes, 2008
 //
 // First added:  2007-04-10
-// Last changed: 2008-10-01
+// Last changed: 2008-10-13
 
 #include <dolfin/common/constants.h>
 #include <dolfin/function/Function.h>
@@ -569,7 +569,8 @@ void DirichletBC::computeBCPointwise(std::map<uint, double>& boundary_values,
     for (uint i = 0; i < data.dof_map->local_dimension(); ++i)
     {
       // Check if the coordinates are part of the sub domain
-      if ( !user_sub_domain->inside(data.coordinates[i], false) )
+      simple_array<double> x(data.ufc_mesh.geometric_dimension, data.coordinates[i]);
+      if ( !user_sub_domain->inside(x, false) )
         continue;
       
       if(!interpolated)
