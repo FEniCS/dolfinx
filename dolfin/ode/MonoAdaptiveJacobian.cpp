@@ -4,6 +4,7 @@
 // First added:  2005-01-28
 // Last changed: 2008-10-06
 
+#include <dolfin/common/real.h>
 #include <dolfin/common/timing.h>
 #include <dolfin/math/dolfin_math.h>
 #include "ODE.h"
@@ -19,16 +20,19 @@ MonoAdaptiveJacobian::MonoAdaptiveJacobian(MonoAdaptiveTimeSlab& timeslab,
   : TimeSlabJacobian(timeslab), ts(timeslab),
     implicit(implicit), piecewise(piecewise), xx(0), yy(0)
 {
-  xx = new double[timeslab.N];
-  yy = new double[timeslab.N];
-  real_zero(timeslab.N, xx);
-  real_zero(timeslab.N, yy);
+  //Do nothing
+  xx = new real[ts.N];
+  yy = new real[ts.N];
+  
+  real_zero(ts.N, xx);
+  real_zero(ts.N, yy);
 }
 //-----------------------------------------------------------------------------
 MonoAdaptiveJacobian::~MonoAdaptiveJacobian()
 {
-  delete [] xx;
-  delete [] yy;
+  delete xx;
+  delete yy;
+
 }
 //-----------------------------------------------------------------------------
 dolfin::uint MonoAdaptiveJacobian::size(uint dim) const
@@ -43,8 +47,8 @@ void MonoAdaptiveJacobian::mult(const uBLASVector& x, uBLASVector& y) const
     y = x;
 
   // Compute size of time step
-  const double a = ts.starttime();
-  const double k = ts.length();
+  const real a = to_double(ts.starttime());
+  const real k = to_double(ts.length());
 
   // Compute product y = Mx for each stage for implicit system
   if (implicit)
@@ -64,7 +68,7 @@ void MonoAdaptiveJacobian::mult(const uBLASVector& x, uBLASVector& y) const
       }
       else
       {
-        const double t = a + method.npoint(n) * k;
+        const real t = a + method.npoint(n) * k;
         ts.copy(ts.x, noffset, ts.u, 0, ts.N);
         ode.M(xx, yy, ts.u, t);
       }
@@ -77,7 +81,7 @@ void MonoAdaptiveJacobian::mult(const uBLASVector& x, uBLASVector& y) const
   // Iterate over the stages
   for (uint n = 0; n < method.nsize(); n++)
   {
-    const double t = a + method.npoint(n) * k;
+    const real t = a + method.npoint(n) * k;
     const uint noffset = n * ts.N;
 
     /*
@@ -109,7 +113,7 @@ void MonoAdaptiveJacobian::mult(const uBLASVector& x, uBLASVector& y) const
       const uint moffset = m * ts.N;
 
       // Get correct weight
-      double w = 0.0;
+      real w = 0.0;
       if (method.type() == Method::cG)
         w = - k * method.nweight(m, n + 1);
       else
@@ -117,7 +121,8 @@ void MonoAdaptiveJacobian::mult(const uBLASVector& x, uBLASVector& y) const
 
       // Add w*yy to y
       for (uint i = 0; i < ts.N; i++)
-        y[moffset + i] += w * yy[i];
+	// Note: Precision lost if working with GMP
+        y[moffset + i] += to_double((w * yy[i]));
     }
   }
 }

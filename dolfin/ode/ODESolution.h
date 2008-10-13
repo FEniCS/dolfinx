@@ -13,6 +13,7 @@
 #include <fstream>
 #include <vector>
 #include <dolfin/common/types.h>
+#include <dolfin/common/real.h>
 
 #define ODESOLUTION_INITIAL_ALLOC 1000000
 #define ODESOLUTION_MAX_ALLOC     16000000
@@ -45,7 +46,7 @@ namespace dolfin
     ~ODESolution();
 
     /// Evaluate (interpolate) value of solution at given time    
-    void eval(const double t, double* y);
+    void eval(const real t, real* y);
 
     // Add sample
     void add_sample(Sample& sample);
@@ -58,29 +59,29 @@ namespace dolfin
     ODE& ode;
     std::string filename;
     std::fstream file;
-    std::pair<double, double*>* cache;
+    std::pair<real, real*>* cache;
     
     uint cache_size;
     uint ringbufcounter;
     
     // Sorted vector with pair. Each entry representents a mapping from t value to index in file/buffer
-    std::vector<double> bintree;
+    std::vector<real> bintree;
     uint step;
     
-    double* buffer;
-    double* tmp;
+    real* buffer;
+    real* tmp;
     uint buffer_size;
     uint buffer_offset;
     uint buffer_count; //actual number of entries in buffer
     bool dataondisk;
 
     // Linear interpolation
-    void interpolate(const double* v0, const double t0, 
-                     const double* v1, const double t1,
-                     const double t, double* result);
+    void interpolate(const real* v0, const real t0, 
+                     const real* v1, const real t1,
+                     const real t, real* result);
 
     // Read entry from buffer, fetch from disk if necessary
-    void get_from_buffer(double* u, uint index);
+    void get_from_buffer(real* u, uint index);
     
   };
 

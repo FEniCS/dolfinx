@@ -11,7 +11,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Sample::Sample(TimeSlab& timeslab, double t,
+Sample::Sample(TimeSlab& timeslab, real t,
 	       std::string name, std::string label) : 
   Variable(name, label), timeslab(timeslab), time(t)
 {
@@ -29,22 +29,22 @@ unsigned int Sample::size() const
   return timeslab.size();
 }
 //-----------------------------------------------------------------------------
-double Sample::t() const
+real Sample::t() const
 {
   return time;
 }
 //-----------------------------------------------------------------------------
-double Sample::u(unsigned int index)
+real Sample::u(unsigned int index)
 {
   return timeslab.usample(index, time);
 }
 //-----------------------------------------------------------------------------
-double Sample::k(unsigned int index)
+real Sample::k(unsigned int index)
 {
   return timeslab.ksample(index, time);
 }
 //-----------------------------------------------------------------------------
-double Sample::r(unsigned int index)
+real Sample::r(unsigned int index)
 {
   return timeslab.rsample(index, time);
 }

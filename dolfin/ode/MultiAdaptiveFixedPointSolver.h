@@ -8,6 +8,7 @@
 #define __MULTI_ADAPTIVE_FIXED_POINT_SOLVER_H
 
 #include <dolfin/common/types.h>
+#include <dolfin/common/real.h>
 #include "TimeSlabSolver.h"
 
 namespace dolfin
@@ -43,7 +44,7 @@ namespace dolfin
     void end();
 
     // Make an iteration
-    double iteration(double tol, uint iter, double d0, double d1);
+    real iteration(real tol, uint iter, real d0, real d1);
 
     /// Size of system
     uint size() const;
@@ -54,13 +55,13 @@ namespace dolfin
     MultiAdaptiveTimeSlab& ts;
 
     // Values of right-hand side at quadrature points
-    double* f; 
+    real* f; 
 
     // Total number of elements
     uint num_elements;
     
     // Estimated number of elements for mono-adaptive system
-    double num_elements_mono;
+    real num_elements_mono;
 
     // Maximum number of local iterations
     uint maxiter_local;
@@ -69,7 +70,7 @@ namespace dolfin
     bool diagonal_newton_damping;
 
     // Diagonal of Jacobian df/du
-    double* dfdu;
+    real* dfdu;
 
   };
 

@@ -6,13 +6,14 @@
 
 #include <dolfin/common/constants.h>
 #include <dolfin/math/dolfin_math.h>
+#include <dolfin/parameter/parameters.h>
 #include "ODESolver.h"
 #include "ODE.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-ODE::ODE(uint N, double T)
+ODE::ODE(uint N, real T)
   : N(N), T(T), dependencies(N), transpose(N), tmp0(0), tmp1(0),
     not_impl_f("Warning: consider implementing mono-adaptive ODE::f() to improve efficiency."),
     not_impl_M("Warning: multiplication with M not implemented, assuming identity."),
@@ -20,6 +21,13 @@ ODE::ODE(uint N, double T)
     not_impl_JT("Warning: consider implementing Jacobian transpose ODE::JT() to improve efficiency")
 {
   message("Creating ODE of size %d.", N);
+
+ #ifdef HAS_GMP
+  char msg[100];
+  gmp_sprintf(msg, "ODE::epsilon=%Fe", ODE::get_epsilon().get_mpf_t());
+  message(msg);
+  message("GMP: Using %d bits pr number", mpf_get_default_prec());
+ #endif
 }
 //-----------------------------------------------------------------------------
 ODE::~ODE()
@@ -28,7 +36,7 @@ ODE::~ODE()
   delete [] tmp1;
 }
 //-----------------------------------------------------------------------------
-void ODE::f(const double* u, double t, double* y)
+void ODE::f(const real* u, real t, real* y)
 {
   // If a user of the mono-adaptive solver does not supply this function,
   // then call f_i() for each component.
@@ -41,13 +49,13 @@ void ODE::f(const double* u, double t, double* y)
     y[i] = this->f(u, t, i);
 }
 //-----------------------------------------------------------------------------
-double ODE::f(const double* u, double t, uint i)
+real ODE::f(const real* u, real t, uint i)
 {
   error("Right-hand side for ODE not supplied by user.");
   return 0.0;
 }
 //-----------------------------------------------------------------------------
-void ODE::M(const double* x, double* y, const double* u, double t)
+void ODE::M(const real* x, real* y, const real* u, real t)
 {
   // Display a warning, implicit system but M is not implemented
   not_impl_M();
@@ -56,7 +64,7 @@ void ODE::M(const double* x, double* y, const double* u, double t)
   real_set(N, y, x);
 }
 //-----------------------------------------------------------------------------
-void ODE::J(const double* x, double* y, const double* u, double t)
+void ODE::J(const real* x, real* y, const real* u, real t)
 {
   // If a user does not supply J, then compute it by the approximation
   //
@@ -68,17 +76,17 @@ void ODE::J(const double* x, double* y, const double* u, double t)
   not_impl_J();
 
   // Small change in u
-  double umax = 0.0;
+  real umax = 0.0;
   for (unsigned int i = 0; i < N; i++)
-    umax = std::max(umax, std::abs(u[i]));
-  double h = std::max(DOLFIN_SQRT_EPS, DOLFIN_SQRT_EPS * umax);
+    umax = max(umax, abs(u[i]));
+  real h = max(DOLFIN_SQRT_EPS, DOLFIN_SQRT_EPS * umax);
 
   // We are not allowed to change u, but we restore it afterwards,
   // so maybe we can cheat a little...
-  double* uu = const_cast<double*>(u);
+  real* uu = const_cast<real*>(u);
 
   // Initialize temporary array if necessary
-  if (!tmp0) tmp0 = new double[N];
+  if (!tmp0) tmp0 = new real[N];
   real_zero(N, tmp0);
 
   // Evaluate at u + hx
@@ -97,25 +105,25 @@ void ODE::J(const double* x, double* y, const double* u, double t)
   real_mult(N, y, 0.5/h);
 }
 //------------------------------------------------------------------------
-void ODE::JT(const double* x, double* y, const double* u, double t)
+void ODE::JT(const real* x, real* y, const real* u, real t)
 {
   // Display warning
   not_impl_JT();
 
   // Small change in u
-  double umax = 0.0;
+  real umax = 0.0;
   for (unsigned int i = 0; i < N; i++)
-    umax = std::max(umax, std::abs(u[i]));
-  double h = std::max(DOLFIN_SQRT_EPS, DOLFIN_SQRT_EPS * umax);
+    umax = max(umax, abs(u[i]));
+  real h = max(DOLFIN_SQRT_EPS, DOLFIN_SQRT_EPS * umax);
 
   // We are not allowed to change u, but we restore it afterwards,
   // so maybe we can cheat a little...
-  double* uu = const_cast<double*>(u);
+  real* uu = const_cast<real*>(u);
 
   // Initialize temporary arrays if necessary
-  if (!tmp0) tmp0 = new double[N];
+  if (!tmp0) tmp0 = new real[N];
   real_zero(N, tmp0);
-  if (!tmp1) tmp1 = new double[N];
+  if (!tmp1) tmp1 = new real[N];
   real_zero(N, tmp1);
 
   // Compute action of transpose of Jacobian
@@ -136,7 +144,7 @@ void ODE::JT(const double* x, double* y, const double* u, double t)
   }
 }
 //------------------------------------------------------------------------
-double ODE::dfdu(const double* u, double t, uint i, uint j)
+real ODE::dfdu(const real* u, real t, uint i, uint j)
 {
   // Compute Jacobian numerically if dfdu() is not implemented by user
   
@@ -144,46 +152,46 @@ double ODE::dfdu(const double* u, double t, uint i, uint j)
 
   // We are not allowed to change u, but we restore it afterwards,
   // so maybe we can cheat a little...
-  double* uu = const_cast<double*>(u);
+  real* uu = const_cast<real*>(u);
 
   // Save value of u_j
-  double uj = uu[j];
+  real uj = uu[j];
   
   // Small change in u_j
-  double h = std::max(DOLFIN_SQRT_EPS, DOLFIN_SQRT_EPS * std::abs(uj));
+  real h = max(DOLFIN_SQRT_EPS, DOLFIN_SQRT_EPS * abs(uj));
   
   // Compute F values
   uu[j] -= 0.5 * h;
-  double f1 = f(uu, t, i);
+  real f1 = f(uu, t, i);
   
   uu[j] = uj + 0.5*h;
-  double f2 = f(uu, t, i);
+  real f2 = f(uu, t, i);
          
   // Reset value of uj
   uu[j] = uj;
 
   // Compute derivative
-  if ( std::abs(f1 - f2) < DOLFIN_EPS * std::max(std::abs(f1), std::abs(f2)) )
+  if ( abs(f1 - f2) < DOLFIN_EPS * max(abs(f1), abs(f2)) )
     return 0.0;
 
   return (f2 - f1) / h;
 }
 //-----------------------------------------------------------------------------
-double ODE::timestep(double t, double k0) const
+real ODE::timestep(real t, real k0) const
 {
   // Keep old time step by default when "fixed time step" is set
   // and user has not overloaded this function
   return k0;
 }
 //-----------------------------------------------------------------------------
-double ODE::timestep(double t, uint i, double k0) const
+real ODE::timestep(real t, uint i, real k0) const
 {
   // Keep old time step by default when "fixed time step" is set
   // and user has not overloaded this function
   return k0;
 }
 //-----------------------------------------------------------------------------
-bool ODE::update(const double* u, double t, bool end)
+bool ODE::update(const real* u, real t, bool end)
 {
   return true;
 }
@@ -193,7 +201,7 @@ void ODE::save(Sample& sample)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-double ODE::time(double t) const
+real ODE::time(real t) const
 {
   return t;
 }
@@ -208,7 +216,7 @@ dolfin::uint ODE::size() const
   return N;  
 }
 //-----------------------------------------------------------------------------
-double ODE::endtime() const
+real ODE::endtime() const
 {
   return T;
 }
@@ -218,3 +226,9 @@ void ODE::solve()
   ODESolver::solve(*this);
 }
 //-----------------------------------------------------------------------------
+#ifdef HAS_GMP
+void ODE::set_epsilon(real eps) {
+  epsilon = eps;
+}
+real ODE::epsilon = real("0.0000000000000000000000000000001");//define epsilon
+#endif

@@ -11,6 +11,7 @@
 #define __TIME_STEPPER_H
 
 #include <dolfin/common/types.h>
+#include <dolfin/common/real.h>
 #include <dolfin/io/File.h>
 #include "ODESolution.h"
 
@@ -52,7 +53,7 @@ namespace dolfin
     static void solve(ODE& ode, ODESolution& u);
 
     /// Step solution, return current time
-    double step();
+    real step();
 
     /// Check if we have reached the end time
     bool finished() const;
@@ -77,10 +78,10 @@ namespace dolfin
     unsigned int N;
 
     // Current time
-    double t;
+    real t;
 
     // End time of computation
-    double T;
+    real T;
 
     // The ODE being solved
     ODE& ode;

@@ -7,6 +7,7 @@
 #ifndef __CGQ_METHOD_H
 #define __CGQ_METHOD_H
 
+#include <dolfin/common/real.h>
 #include "Method.h"
 
 namespace dolfin
@@ -24,20 +25,20 @@ namespace dolfin
     cGqMethod(unsigned int q);
 
     /// Evaluate solution at given point
-    double ueval(double x0, double values[], double tau) const;
+    real ueval(real x0, real values[], real tau) const;
 
     /// Evaluate solution at given node (inline optimized)
-    inline double ueval(double x0, double values[], uint i) const
+    inline real ueval(real x0, real values[], uint i) const
     { return ( i == 0 ? x0 : values[i - 1] ); }
 
     /// Compute residual at right end-point    
-    double residual(double x0, double values[], double f, double k) const;
+    real residual(real x0, real values[], real f, real k) const;
 
     /// Compute new time step based on the given residual
-    double timestep(double r, double tol, double k0, double kmax) const;
+    real timestep(real r, real tol, real k0, real kmax) const;
 
     /// Compute error estimate (modulo stability factor)
-    double error(double k, double r) const;
+    real error(real k, real r) const;
 
     /// Display method data
     void disp() const;

@@ -17,12 +17,16 @@ using namespace dolfin;
 MonoAdaptiveFixedPointSolver::MonoAdaptiveFixedPointSolver
 (MonoAdaptiveTimeSlab& timeslab)
   : TimeSlabSolver(timeslab), ts(timeslab), xold(0),
-    alpha(ode.get("ODE fixed-point damping")),
-    stabilize(ode.get("ODE fixed-point stabilize")), mi(0), li(0), ramp(1.0),
-    rampfactor(ode.get("ODE fixed-point stabilization ramp"))
+    stabilize(ode.get("ODE fixed-point stabilize")), mi(0), li(0), ramp(1.0)
 {
+  double tmp = ode.get("ODE fixed-point stabilization ramp");
+  rampfactor = tmp;
+
+  tmp = ode.get("ODE fixed-point damping");
+  alpha = tmp;
+
   // Initialize old values at right end-point
-  xold = new double[ts.N];
+  xold = new real[ts.N];
   for (uint i = 0; i < ts.N; i++)
     xold[i] = 0.0;
 }
@@ -32,11 +36,11 @@ MonoAdaptiveFixedPointSolver::~MonoAdaptiveFixedPointSolver()
   delete [] xold;
 }
 //-----------------------------------------------------------------------------
-double MonoAdaptiveFixedPointSolver::iteration(double tol, uint iter,
-                                               double d0, double d1)
+real MonoAdaptiveFixedPointSolver::iteration(real tol, uint iter,
+                                               real d0, real d1)
 {
-  //   double K = ts.endtime() - ts.starttime();
-  double alpha_orig = alpha;
+  //   real K = ts.endtime() - ts.starttime();
+  real alpha_orig = alpha;
   if(stabilize)
   {
     if (iter == 0)
@@ -69,7 +73,7 @@ double MonoAdaptiveFixedPointSolver::iteration(double tol, uint iter,
   }
 
   // Compute size of time step
-  const double k = ts.length();
+  const real k = ts.length();
 
   // Save old values
   const uint xoffset = (method.nsize() - 1) * ts.N;
@@ -78,7 +82,7 @@ double MonoAdaptiveFixedPointSolver::iteration(double tol, uint iter,
   // Save norm of old solution
   xnorm = 0.0;
   for (uint j = 0; j < ts.nj; j++)
-    xnorm = std::max(xnorm, std::abs(ts.x[j]));
+    xnorm = max(xnorm, abs(ts.x[j]));
 
   // Evaluate right-hand side at all quadrature points
   for (uint m = 0; m < method.qsize(); m++)
@@ -96,7 +100,7 @@ double MonoAdaptiveFixedPointSolver::iteration(double tol, uint iter,
     // Add weights of right-hand side
     for (uint m = 0; m < method.qsize(); m++)
     {
-      const double tmp = k * method.nweight(n, m);
+      const real tmp = k * method.nweight(n, m);
       const uint moffset = m * ts.N;
       for (uint i = 0; i < ts.N; i++)
 	ts.x[noffset + i] += alpha*tmp*ts.fq[moffset + i];
@@ -104,10 +108,10 @@ double MonoAdaptiveFixedPointSolver::iteration(double tol, uint iter,
   }
   
   // Compute size of increment
-  double max_increment = 0.0;
+  real max_increment = 0.0;
   for (uint i = 0; i < ts.N; i++)
   {
-    const double increment = fabs(ts.x[xoffset + i] - xold[i]);
+    const real increment = abs(ts.x[xoffset + i] - xold[i]);
     if ( increment > max_increment )
       max_increment = increment;
   }

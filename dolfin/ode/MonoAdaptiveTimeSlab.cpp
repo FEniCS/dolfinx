@@ -25,24 +25,24 @@ MonoAdaptiveTimeSlab::MonoAdaptiveTimeSlab(ODE& ode)
   solver = chooseSolver();
 
   // Initialize dofs
-  dofs = new double[method->nsize()];
+  dofs = new real[method->nsize()];
 
   // Compute the number of dofs
   nj = method->nsize() * N;
 
   // Initialize values of right-hand side
   const uint fsize = method->qsize() * N;
-  fq = new double[fsize];
+  fq = new real[fsize];
   for (uint j = 0; j < fsize; j++)
     fq[j] = 0.0;
 
   // Initialize solution
-  x = new double[nj];
+  x = new real[nj];
   real_zero(nj, x);
 
   // Initialize arrays for u and f
-  u = new double[N];
-  f = new double[N];
+  u = new real[N];
+  f = new real[N];
 
   // Evaluate f at initial data for cG(q)
   if (method->type() == Method::cG)
@@ -62,7 +62,7 @@ MonoAdaptiveTimeSlab::~MonoAdaptiveTimeSlab()
   delete [] f;
 }
 //-----------------------------------------------------------------------------
-double MonoAdaptiveTimeSlab::build(double a, double b)
+real MonoAdaptiveTimeSlab::build(real a, real b)
 {
   //cout << "Mono-adaptive time slab: building between "
   //     << a << " and " << b << endl;
@@ -73,7 +73,7 @@ double MonoAdaptiveTimeSlab::build(double a, double b)
       x[n*N + i] = u0[i];
 
   // Choose time step
-  const double k = adaptivity.timestep();
+  const real k = adaptivity.timestep();
   if (k < adaptivity.threshold() * (b - a))
     b = a + k;
 
@@ -107,17 +107,17 @@ bool MonoAdaptiveTimeSlab::check(bool first)
   feval(method->qsize() - 1);
 
   // Compute maximum norm of residual at end-time
-  const double k = length();
+  const real k = length();
   rmax = 0.0;
   for (uint i = 0; i < N; i++)
   {
     // Prepare data for computation of derivative
-    const double x0 = u0[i];
+    const real x0 = u0[i];
     for (uint n = 0; n < method->nsize(); n++)
       dofs[n] = x[n*N + i];
 
     // Compute residual
-    const double r = fabs(method->residual(x0, dofs, fq[foffset + i], k));
+    const real r = abs(method->residual(x0, dofs, fq[foffset + i], k));
     
     // Compute maximum
     if (r > rmax)
@@ -163,46 +163,46 @@ bool MonoAdaptiveTimeSlab::shift(bool end)
   return true;
 }
 //-----------------------------------------------------------------------------
-void MonoAdaptiveTimeSlab::sample(double t)
+void MonoAdaptiveTimeSlab::sample(real t)
 {
   // Compute f at end-time
   feval(method->qsize() - 1);
 }
 //-----------------------------------------------------------------------------
-double MonoAdaptiveTimeSlab::usample(uint i, double t)
+real MonoAdaptiveTimeSlab::usample(uint i, real t)
 {
   // Prepare data
-  const double x0 = u0[i];
-  const double tau = (t - _a) / (_b - _a);  
+  const real x0 = u0[i];
+  const real tau = (t - _a) / (_b - _a);  
 
   // Prepare array of values
   for (uint n = 0; n < method->nsize(); n++)
     dofs[n] = x[n*N + i];
 
   // Interpolate value
-  const double value = method->ueval(x0, dofs, tau);
+  const real value = method->ueval(x0, dofs, tau);
   
   return value;
 }
 //-----------------------------------------------------------------------------
-double MonoAdaptiveTimeSlab::ksample(uint i, double t)
+real MonoAdaptiveTimeSlab::ksample(uint i, real t)
 {
   return length();
 }
 //-----------------------------------------------------------------------------
-double MonoAdaptiveTimeSlab::rsample(uint i, double t)
+real MonoAdaptiveTimeSlab::rsample(uint i, real t)
 {
   // Right-hand side at end-point already computed
 
   // Prepare data for computation of derivative
-  const double x0 = u0[i];
+  const real x0 = u0[i];
   for (uint n = 0; n < method->nsize(); n++)
     dofs[n] = x[n*N + i];
   
   // Compute residual
-  const double k = length();
+  const real k = length();
   const uint foffset = (method->qsize() - 1) * N;
-  const double r = method->residual(x0, dofs, fq[foffset + i], k);
+  const real r = method->residual(x0, dofs, fq[foffset + i], k);
 
   return r;
 }
@@ -235,14 +235,14 @@ void MonoAdaptiveTimeSlab::feval(uint m)
       return;
     }
 
-    const double t = _a + method->qpoint(m) * (_b - _a);    
+    const real t = _a + method->qpoint(m) * (_b - _a);    
     copy(x, (m - 1)*N, u, 0, N);
     ode.f(u, t, f);
     copy(f, 0, fq, m*N, N);
   }
   else
   {
-    const double t = _a + method->qpoint(m) * (_b - _a);    
+    const real t = _a + method->qpoint(m) * (_b - _a);    
     copy(x, m*N, u, 0, N);
     ode.f(u, t, f);
     copy(f, 0, fq, m*N, N);
@@ -296,7 +296,7 @@ TimeSlabSolver* MonoAdaptiveTimeSlab::chooseSolver()
   return 0;
 }
 //-----------------------------------------------------------------------------
-double* MonoAdaptiveTimeSlab::tmp()
+real* MonoAdaptiveTimeSlab::tmp()
 {
   // This function provides access to an array that can be used for
   // temporary data storage by the Newton solver. We can reuse the

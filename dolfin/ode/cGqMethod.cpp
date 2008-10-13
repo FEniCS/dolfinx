@@ -1,8 +1,10 @@
 // Copyright (C) 2003-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Benjamin Kehlet 
+//
 // First added:  2005-05-02
-// Last changed: 2008-04-22
+// Last changed: 2008-10-12
 
 #include <dolfin/common/constants.h>
 #include <dolfin/log/dolfin_log.h>
@@ -11,6 +13,8 @@
 #include <dolfin/quadrature/LobattoQuadrature.h>
 #include <dolfin/la/uBLASVector.h>
 #include <dolfin/la/uBLASDenseMatrix.h>
+#include <dolfin/ode/ODE.h>
+#include <dolfin/ode/SORSolver.h>
 #include "cGqMethod.h"
 
 using namespace dolfin;
@@ -27,39 +31,39 @@ cGqMethod::cGqMethod(unsigned int q) : Method(q, q + 1, q)
   p = 2*q;
 }
 //-----------------------------------------------------------------------------
-double cGqMethod::ueval(double x0, double values[], double tau) const
+real cGqMethod::ueval(real x0, real values[], real tau) const
 {
-  double sum = x0 * trial->eval(0, tau);
+  real sum = x0 * trial->eval(0, tau);
   for (uint i = 0; i < nn; i++)
     sum += values[i] * trial->eval(i + 1, tau);
   
   return sum;
 }
 //-----------------------------------------------------------------------------
-double cGqMethod::residual(double x0, double values[], double f, double k) const
+real cGqMethod::residual(real x0, real values[], real f, real k) const
 {
-  double sum = x0 * derivatives[0];
+  real sum = x0 * derivatives[0];
   for (uint i = 0; i < nn; i++)
     sum += values[i] * derivatives[i + 1];
 
   return sum / k - f;
 }
 //-----------------------------------------------------------------------------
-double cGqMethod::timestep(double r, double tol, double k0, double kmax) const
+real cGqMethod::timestep(real r, real tol, real k0, real kmax) const
 {
   // FIXME: Missing stability factor and interpolation constant
 
-  if ( fabs(r) < DOLFIN_EPS )
+  if ( abs(r) < DOLFIN_EPS )
     return kmax;
 
-  const double qq = static_cast<double>(q);
-  return pow(tol * pow(k0, qq) / fabs(r), 0.5 / qq);
+  const real qq = static_cast<real>(q);
+  return pow(tol * pow(k0, q) / abs(r), 0.5 / qq);
 }
 //-----------------------------------------------------------------------------
-double cGqMethod::error(double k, double r) const
+real cGqMethod::error(real k, real r) const
 {
   // FIXME: Missing interpolation constant
-  return pow(k, static_cast<double>(q)) * fabs(r);
+  return pow(k, static_cast<real>(q)) * abs(r);
 }
 //-----------------------------------------------------------------------------
 void cGqMethod::disp() const
@@ -74,7 +78,7 @@ void cGqMethod::disp() const
   message("----------------------------------------------------");
   
   for (unsigned int i = 0; i < nq; i++)
-    message("%2d   %.15e   %.15e", i, qpoints[i], qweights[i]);
+    message("%2d   %.15e   %.15e", i, to_double(qpoints[i]), to_double(qweights[i]));
   message("");
 
   for (unsigned int i = 0; i < nn; i++)
@@ -85,7 +89,7 @@ void cGqMethod::disp() const
     message(" i   weights");
     message("---------------------------");
     for (unsigned int j = 0; j < nq; j++)
-      message("%2d   %.15e", j, nweights[i][j]);
+      message("%2d   %.15e", j, to_double(nweights[i][j]));
   }
   message("");
   
@@ -146,20 +150,25 @@ void cGqMethod::computeWeights()
 {
   uBLASDenseMatrix A(q, q);
   ublas_dense_matrix& _A = A.mat();
+
+  real* A_real = new real[q*q];
   
   // Compute matrix coefficients
-  for (unsigned int i = 0; i < nn; i++)
+  for (uint i = 0; i < nn; i++)
   {
-    for (unsigned int j = 0; j < nn; j++)
+    for (uint j = 0; j < nn; j++)
     {
       // Use Lobatto quadrature which is exact for the order we need, 2q-1
-      double integral = 0.0;
-      for (unsigned int k = 0; k < nq; k++)
+      real integral = 0.0;
+      for (uint k = 0; k < nq; k++)
       {
-	      double x = qpoints[k];
+	      real x = qpoints[k];
 	      integral += qweights[k] * trial->ddx(j + 1, x) * test->eval(i, x);
       }
-      _A(i, j) = integral;
+      //Note: Precision lost if working with GMP. Conversion to double
+      A_real[i*q+j] = integral;
+      _A(i, j) = to_double(integral);
+
     }
   }
 
@@ -168,23 +177,45 @@ void cGqMethod::computeWeights()
   ublas_vector& _b = b.vec();
   ublas_vector& _w = w.vec();
 
+  real* b_real = new real[q];
+  real* w_real = new real[q];
+  real_zero(q, w_real);
+
   // Compute nodal weights for each degree of freedom (loop over points)
-  for (unsigned int i = 0; i < nq; i++)
+  for (uint i = 0; i < nq; i++)
   {
     // Get nodal point
-    double x = qpoints[i];
+    real x = qpoints[i];
     
     // Evaluate test functions at current nodal point
-    for (unsigned int j = 0; j < nn; j++)
-      _b[j] = test->eval(j, x);
-    
+    for (uint j = 0; j < nn; j++)
+    {
+      b_real[j] = test->eval(j, x);
+      _b[j] = to_double(b_real[j]);
+    }
     // Solve for the weight functions at the nodal point
     // FIXME: Do we get high enough precision?
     A.solve(w, b);
 
-    // Save weights including quadrature
-    for (unsigned int j = 0; j < nn; j++)
-      nweights[j][i] = qweights[i] * _w[j];
+    
+    #ifndef HAS_GMP
+      // Save weights including quadrature
+      for (uint j = 0; j < nn; j++)
+        nweights[j][i] = qweights[i] * _w[j];
+
+    #else 
+
+      // Use the double precision solution as initial guess for the SOR iterator
+      for (uint j = 0; j < q; ++j)
+        w_real[j] = _w[j];
+    
+
+      SORSolver::SOR(q, A_real, w_real, b_real, ODE::get_epsilon());
+    
+      for (uint j = 0; j < nn; ++j)
+        nweights[j][i] = qweights[i] * w_real[j];
+
+    #endif
   }
 }
 //-----------------------------------------------------------------------------

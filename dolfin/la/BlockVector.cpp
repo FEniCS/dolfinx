@@ -76,7 +76,7 @@ double BlockVector::norm(NormType type) const
       break; 
     case l2: 
       for (uint i=0; i<n; i++)  
-        value += pow(this->getc(i).norm(type), 2); 
+        value += std::pow(this->getc(i).norm(type), 2); 
       value = sqrt(value); 
       break; 
     default: 

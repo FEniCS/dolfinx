@@ -82,7 +82,7 @@ void MultiAdaptiveJacobian::mult(const uBLASVector& x, uBLASVector& y) const
 void MultiAdaptiveJacobian::init()
 {
   // Compute Jacobian at the beginning of the slab
-  double t = ts.starttime();
+  double t = to_double(ts.starttime());
   //message("Recomputing Jacobian matrix at t = %f.", t);
   
   // Compute Jacobian
@@ -90,7 +90,7 @@ void MultiAdaptiveJacobian::init()
   {
     const Array<uint>& deps = ode.dependencies[i];
     for (uint pos = 0; pos < deps.size(); pos++)
-      Jvalues[Jindices[i] + pos] = ode.dfdu(ts.u0, t, i, deps[pos]);
+      Jvalues[Jindices[i] + pos] = to_double(ode.dfdu(ts.u0, t, i, deps[pos]));
   }
 
   /*
@@ -125,8 +125,8 @@ void MultiAdaptiveJacobian::cGmult(const uBLASVector& x, uBLASVector& y) const
     
     // Get element data
     const uint i0 = ts.ei[e0];
-    const double a0 = ts.sa[s0];
-    const double b0 = ts.sb[s0];
+    const double a0 = to_double(ts.sa[s0]);
+    const double b0 = to_double(ts.sb[s0]);
     const double k0 = b0 - a0;
     const uint j0 = e0 * method.nsize();
     
@@ -161,7 +161,7 @@ void MultiAdaptiveJacobian::cGmult(const uBLASVector& x, uBLASVector& y) const
 
       // Skip elements with smaller time steps
       const uint s1 = ts.es[e1];
-      const double b1 = ts.sb[s1];
+      const double b1 = to_double(ts.sb[s1]);
       if ( b1 < (a0 + DOLFIN_EPS) )
       {
 	// Save dependency for later
@@ -170,7 +170,7 @@ void MultiAdaptiveJacobian::cGmult(const uBLASVector& x, uBLASVector& y) const
 	// Add dependency to initial value for all dofs
 	const double tmp = k0 * dfdu * x[e1 * method.nsize() + method.nsize() - 1];
 	for (uint n = 0; n < method.nsize(); n++)
-	  y[j0 + n] -= tmp * method.nweight(n, 0);
+	  y[j0 + n] -= tmp * to_double(method.nweight(n, 0));
 
        	continue;
       }
@@ -188,7 +188,7 @@ void MultiAdaptiveJacobian::cGmult(const uBLASVector& x, uBLASVector& y) const
 	{
 	  const double tmp1 = tmp0 * x[ep * method.nsize() + method.nsize() - 1];
 	  for (uint n = 0; n < method.nsize(); n++)
-	    y[j0 + n] -= tmp1 * method.nweight(n, 0);
+	    y[j0 + n] -= tmp1 * to_double(method.nweight(n, 0));
 	}
 	
 	// Add dependencies to internal dofs
@@ -196,13 +196,13 @@ void MultiAdaptiveJacobian::cGmult(const uBLASVector& x, uBLASVector& y) const
 	{
 	  double sum = 0.0;
 	  for (uint m = 0; m < method.nsize(); m++)
-	    sum += method.nweight(n, m + 1) * x[j1 + m];
+	    sum += to_double(method.nweight(n, m + 1)) * x[j1 + m];
 	  y[j0 + n] -= tmp0 * sum;
 	}
       }
       else
       {
-	const double a1 = ts.sa[s1];
+	const double a1 = to_double( ts.sa[s1] );
 	const double k1 = b1 - a1;
 	
 	// Iterate over dofs of element
@@ -213,8 +213,8 @@ void MultiAdaptiveJacobian::cGmult(const uBLASVector& x, uBLASVector& y) const
 	  double sum = 0.0;
 	  for (uint m = 0; m < method.qsize(); m++)
 	  {
-	    const double tau = (a0 + k0*method.qpoint(m) - a1) / k1;
-	    const double tmp1 = method.nweight(n, m);
+	    const double tau = (a0 + k0* to_double(method.qpoint(m))  - a1) / k1;
+	    const double tmp1 = to_double( method.nweight(n, m) );
 	    dolfin_assert(tau >= -DOLFIN_EPS);
 	    dolfin_assert(tau <= 1.0 + DOLFIN_EPS);
 	    
@@ -223,12 +223,12 @@ void MultiAdaptiveJacobian::cGmult(const uBLASVector& x, uBLASVector& y) const
 	    if ( ep != -1 )
 	    {
 	      const double x0 = x[ep * method.nsize() + method.nsize() - 1];
-	      sum += tmp1 * method.eval(0, tau) * x0;
+	      sum += tmp1 * to_double( method.eval(0, tau)) * x0;
 	    }
 	    
 	    // Iterate over dofs of other element and add dependencies
 	    for (uint l = 0; l < method.nsize(); l++)
-	      sum += tmp1 * method.eval(l + 1, tau) * x[j1 + l];
+	      sum += tmp1 * to_double(method.eval(l + 1, tau)) * x[j1 + l];
 	  }
 	    
 	  // Add dependencies
@@ -256,7 +256,7 @@ void MultiAdaptiveJacobian::cGmult(const uBLASVector& x, uBLASVector& y) const
     for (uint m = 1; m < method.qsize(); m++)
     {
       // Compute quadrature point
-      const double t = a0 + k0*method.qpoint(m);
+      const double t = a0 + k0* to_double(method.qpoint(m));
 
       // Iterate over dependencies
       for (uint dep = 0; dep < ndep; dep++)
@@ -266,8 +266,8 @@ void MultiAdaptiveJacobian::cGmult(const uBLASVector& x, uBLASVector& y) const
 	const uint j1 = e1 * method.nsize();
 	const uint s1 = ts.es[e1];
 	//const uint i1 = ts.ei[e1];
-	const double a1 = ts.sa[s1];
-	const double b1 = ts.sb[s1];
+	const double a1 = to_double( ts.sa[s1] );
+	const double b1 = to_double( ts.sb[s1] );
 	const double k1 = b1 - a1;
 	const double tau = (t - a1) / k1;
 	
@@ -281,7 +281,7 @@ void MultiAdaptiveJacobian::cGmult(const uBLASVector& x, uBLASVector& y) const
 	const double tmp0 = k0 * dfdu;
 	for (uint l = 0; l < method.qsize(); l++)
 	{
-	  double tmp1 = tmp0 * method.eval(l, tau);
+	  double tmp1 = tmp0 * to_double( method.eval(l, tau) );
 	  if ( l == 0 )
 	  {
 	    const int ep = ts.ee[e1];
@@ -290,7 +290,7 @@ void MultiAdaptiveJacobian::cGmult(const uBLASVector& x, uBLASVector& y) const
 	      // Iterate over dofs of current element
 	      tmp1 *= x[ep*method.nsize() + method.nsize() - 1];
 	      for (uint n = 0; n < method.nsize(); n++)
-		y[j0 + n] -= tmp1 * method.nweight(n, m);		
+		y[j0 + n] -= tmp1 * to_double( method.nweight(n, m));		
 	    }
 	  }
 	  else
@@ -298,7 +298,7 @@ void MultiAdaptiveJacobian::cGmult(const uBLASVector& x, uBLASVector& y) const
 	    // Iterate over dofs of current element
 	    tmp1 *= x[j1 + l - 1];
 	    for (uint n = 0; n < method.nsize(); n++)
-	      y[j0 + n] -= tmp1 * method.nweight(n, m);		
+	      y[j0 + n] -= tmp1 * to_double(method.nweight(n, m));
 	  }
 	}
       }
@@ -323,8 +323,8 @@ void MultiAdaptiveJacobian::dGmult(const uBLASVector& x, uBLASVector& y) const
     
     // Get element data
     const uint i0 = ts.ei[e0];
-    const double a0 = ts.sa[s0];
-    const double b0 = ts.sb[s0];
+    const double a0 = to_double( ts.sa[s0] );
+    const double b0 = to_double( ts.sb[s0] );
     const double k0 = b0 - a0;
     const uint j0 = e0 * method.nsize();
     
@@ -359,7 +359,7 @@ void MultiAdaptiveJacobian::dGmult(const uBLASVector& x, uBLASVector& y) const
 
       // Skip elements with smaller time steps
       const uint s1 = ts.es[e1];
-      const double b1 = ts.sb[s1];
+      const double b1 = to_double( ts.sb[s1] );
       if ( b1 < (a0 + DOLFIN_EPS) )
       {
 	// Save dependency for later
@@ -378,13 +378,13 @@ void MultiAdaptiveJacobian::dGmult(const uBLASVector& x, uBLASVector& y) const
 	{
 	  double sum = 0.0;
 	  for (uint m = 0; m < method.qsize(); m++)
-	    sum += method.nweight(n, m) * x[j1 + m];
+	    sum += to_double( method.nweight(n, m) ) * x[j1 + m];
 	  y[j0 + n] -= tmp * sum;
 	}
       }
       else
       {
-	const double a1 = ts.sa[s1];
+	const double a1 = to_double( ts.sa[s1] );
 	const double k1 = b1 - a1;
 	
 	// Iterate over dofs of element
@@ -395,12 +395,12 @@ void MultiAdaptiveJacobian::dGmult(const uBLASVector& x, uBLASVector& y) const
 	  double sum = 0.0;
 	  for (uint m = 0; m < method.qsize(); m++)
 	  {
-	    const double tau = (a0 + k0*method.qpoint(m) - a1) / k1;
-	    const double tmp1 = method.nweight(n, m);
+	    const double tau = (a0 + k0* to_double(method.qpoint(m)) - a1) / k1;
+	    const double tmp1 = to_double(method.nweight(n, m));
 	    
 	    // Iterate over dofs of other element and add dependencies
 	    for (uint l = 0; l < method.nsize(); l++)
-	      sum += tmp1 * method.eval(l, tau) * x[j1 + l];
+	      sum += tmp1 * to_double(method.eval(l, tau)) * x[j1 + l];
 	  }
 	  
 	  // Add dependencies
@@ -428,7 +428,7 @@ void MultiAdaptiveJacobian::dGmult(const uBLASVector& x, uBLASVector& y) const
     for (uint m = 0; m < method.qsize(); m++)
     {
       // Compute quadrature point
-      const double t = a0 + k0*method.qpoint(m);
+      const double t = a0 + k0*to_double(method.qpoint(m));
 
       // Iterate over dependencies
       for (uint dep = 0; dep < ndep; dep++)
@@ -438,8 +438,8 @@ void MultiAdaptiveJacobian::dGmult(const uBLASVector& x, uBLASVector& y) const
 	const uint j1 = e1 * method.nsize();
 	const uint s1 = ts.es[e1];
 	//const uint i1 = ts.ei[e1];
-	const double a1 = ts.sa[s1];
-	const double b1 = ts.sb[s1];
+	const double a1 = to_double(ts.sa[s1]);
+	const double b1 = to_double(ts.sb[s1]);
 	const double k1 = b1 - a1;
 	const double tau = (t - a1) / k1;
 	
@@ -453,9 +453,9 @@ void MultiAdaptiveJacobian::dGmult(const uBLASVector& x, uBLASVector& y) const
 	const double tmp0 = k0 * dfdu;
 	for (uint l = 0; l < method.qsize(); l++)
 	{
-	  double tmp1 = tmp0 * method.eval(l, tau) * x[j1 + l];
+	  double tmp1 = tmp0 * to_double(method.eval(l, tau)) * x[j1 + l];
 	  for (uint n = 0; n < method.nsize(); n++)
-	    y[j0 + n] -= tmp1 * method.nweight(n, m);
+	    y[j0 + n] -= tmp1 * to_double(method.nweight(n, m));
 	}
       }
     }

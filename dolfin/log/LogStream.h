@@ -11,6 +11,8 @@
 
 #include <string>
 #include <dolfin/common/types.h>
+#include <dolfin/common/real.h>
+
 
 namespace dolfin
 {
@@ -31,6 +33,11 @@ namespace dolfin
     LogStream& operator<<(double a);
     LogStream& operator<<(complex z);
     LogStream& operator<<(const LogStream& stream);
+#ifdef HAS_GMP
+    LogStream& operator<<(real a);
+#endif
+
+
 
     void disp() const;
     

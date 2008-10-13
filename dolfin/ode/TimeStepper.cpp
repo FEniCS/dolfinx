@@ -64,7 +64,7 @@ void TimeStepper::solve(ODE& ode, ODESolution& u)
   message("Solution computed in %.3f seconds.", toc());
 }
 //-------------------------------------------------------------------------
-double TimeStepper::step()
+real TimeStepper::step()
 {
   // FIXME: Change type of time slab if solution does not converge
 
@@ -75,7 +75,7 @@ double TimeStepper::step()
   _stopped = false;
 
   // Iterate until solution is accepted
-  const double a = t;
+  const real a = t;
   while (true)
   {
     // Build time slab
@@ -94,7 +94,7 @@ double TimeStepper::step()
     if ( timeslab->check(first) )
       break;
     
-    message("Rejecting time slab K = %.3e, trying again.", timeslab->length());
+    message("Rejecting time slab K = %.3e, trying again.", to_double( timeslab->length() ));
   }
 
   // Save solution
@@ -102,7 +102,7 @@ double TimeStepper::step()
 
   // Check if solution was stopped
   if ( _stopped )
-    warning("Solution stopped at t = %.3e.", t);
+    warning("Solution stopped at t = %.3e.", to_double(t));
 
   // Update for next time slab
   if ( !timeslab->shift(finished()) )
@@ -113,7 +113,7 @@ double TimeStepper::step()
 
   // Update progress
   if (!_stopped)
-    p = t / T;
+    p = to_double(t / T);
 
   return t;
 }
@@ -144,8 +144,8 @@ void TimeStepper::save()
 void TimeStepper::saveFixedSamples()
 {
   // Get start time and end time of time slab
-  double t0 = timeslab->starttime();
-  double t1 = timeslab->endtime();
+  real t0 = timeslab->starttime();
+  real t1 = timeslab->endtime();
 
   // Save initial value
   if (t0 == 0.0)
@@ -158,8 +158,8 @@ void TimeStepper::saveFixedSamples()
   }
 
   // Compute distance between samples
-  double K = T / static_cast<double>(no_samples);
-  double t = floor(t0/K - 0.5) * K;
+  real K = T / static_cast<real>(no_samples);
+  real t = floor(t0/K - 0.5) * K;
 
   // Save samples
   while (true)
@@ -172,7 +172,7 @@ void TimeStepper::saveFixedSamples()
     if ( (t - DOLFIN_EPS) > t1 )
       break;
 
-    if ( fabs(t - t1) < DOLFIN_EPS )
+    if ( abs(t - t1) < DOLFIN_EPS )
       t = t1;
 
     Sample sample(*timeslab, ode.time(t), "u", "unknown");
@@ -195,8 +195,8 @@ void TimeStepper::saveFixedSamples()
 void TimeStepper::saveAdaptiveSamples()
 {
   // Get start time and end time of time slab
-  double t0 = timeslab->starttime();
-  double t1 = timeslab->endtime();
+  real t0 = timeslab->starttime();
+  real t1 = timeslab->endtime();
 
   // Save initial value
   if ( t0 == 0.0 )
@@ -210,13 +210,13 @@ void TimeStepper::saveAdaptiveSamples()
 
   // Compute distance between samples
   dolfin_assert(sample_density >= 1);
-  double k = (t1 - t0) / static_cast<double>(sample_density);
+  real k = (t1 - t0) / static_cast<real>(sample_density);
   
   // Save samples
   for (unsigned int n = 0; n < sample_density; ++n)
   {
     // Compute time of sample, and make sure we get the end time right
-    double t = t0 + static_cast<double>(n + 1)*k;
+    real t = t0 + static_cast<real>(n + 1)*k;
     if ( n == (sample_density - 1) )
       t = t1;
     

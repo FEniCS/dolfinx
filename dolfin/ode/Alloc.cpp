@@ -55,12 +55,12 @@ void Alloc::realloc(uint** data, uint oldsize, uint newsize)
   *data = newdata;
 }
 //-----------------------------------------------------------------------------
-void Alloc::realloc(double** data, uint oldsize, uint newsize)
+void Alloc::realloc(real** data, uint oldsize, uint newsize)
 {
   dolfin_assert(newsize > oldsize);
 
   // Allocate new data
-  double* newdata = new double[newsize];
+  real* newdata = new real[newsize];
 
   // Copy old data
   for (uint i = 0; i < oldsize; i++)
@@ -91,7 +91,7 @@ void Alloc::disp(int* data, uint size)
   cout << "]" << endl;
 }
 //-----------------------------------------------------------------------------
-void Alloc::disp(double* data, uint size)
+void Alloc::disp(real* data, uint size)
 {
   cout << "[ ";
   for (uint i = 0; i < size; i++)

@@ -20,17 +20,17 @@ MultiAdaptivity::MultiAdaptivity(const ODE& ode, const Method& method)
     timesteps(0), residuals(0), ktmp(0), f(0), rmax(0), emax(0)
 {
   // Initialize time steps and residuals
-  timesteps = new double[ode.size()];
-  residuals = new double[ode.size()];
-  ktmp = new double[ode.size()];
+  timesteps = new real[ode.size()];
+  residuals = new real[ode.size()];
+  ktmp = new real[ode.size()];
 
   // Initialize local array for quadrature
-  f = new double[method.qsize()];
+  f = new real[method.qsize()];
   for (unsigned int i = 0; i < method.qsize(); i++)
     f[i] = 0.0;
 
   // Set initial time steps
-  double k0 = ode.get("ODE initial time step");
+  real k0 = static_cast<double>(ode.get("ODE initial time step"));
   if ( kfixed )
   {
     for (uint i = 0; i < ode.size(); i++)
@@ -40,11 +40,11 @@ MultiAdaptivity::MultiAdaptivity(const ODE& ode, const Method& method)
   }
   else
   {
-    double k = k0;
+    real k = k0;
     if ( k > _kmax )
     {
       k = _kmax;
-      warning("Initial time step larger than maximum time step, using k = %.3e.", k);
+      warning("Initial time step larger than maximum time step, using k = %.3e.", to_double(k));
     }
     for (uint i = 0; i < ode.size(); i++)
       timesteps[i] = k;
@@ -65,17 +65,17 @@ MultiAdaptivity::~MultiAdaptivity()
   if ( ktmp ) delete [] ktmp;
 }
 //-----------------------------------------------------------------------------
-double MultiAdaptivity::timestep(uint i) const
+real MultiAdaptivity::timestep(uint i) const
 {
   return timesteps[i];
 }
 //-----------------------------------------------------------------------------
-double MultiAdaptivity::residual(uint i) const
+real MultiAdaptivity::residual(uint i) const
 {
   return residuals[i];
 }
 //-----------------------------------------------------------------------------
-void MultiAdaptivity::update(MultiAdaptiveTimeSlab& ts, double t, bool first)
+void MultiAdaptivity::update(MultiAdaptiveTimeSlab& ts, real t, bool first)
 {
   _accept = false;
 
@@ -100,13 +100,13 @@ void MultiAdaptivity::update(MultiAdaptiveTimeSlab& ts, double t, bool first)
   for (uint i = 0; i < ode.size(); i++)
   {
     // Previous time step
-    const double k0 = timesteps[i];
+    const real k0 = timesteps[i];
     
     // Include dynamic safety factor
-    double used_tol = safety*tol;
+    real used_tol = safety*tol;
     
     // Compute new time step
-    double k = method.timestep(residuals[i], used_tol, k0, _kmax);
+    real k = method.timestep(residuals[i], used_tol, k0, _kmax);
 
     // Apply time step regulation
     k = Controller::updateHarmonic(k, timesteps[i], _kmax);
@@ -114,7 +114,7 @@ void MultiAdaptivity::update(MultiAdaptiveTimeSlab& ts, double t, bool first)
     // Make sure to decrease the time step if not accepted
     if ( !_accept )
     {
-      k = std::min(k, 0.9*k0);
+      k = min(k, 0.9*k0);
     }
     
     // Save time step for component
@@ -151,9 +151,9 @@ void MultiAdaptivity::computeResiduals(MultiAdaptiveTimeSlab& ts)
     e1 = ts.coverSlab(s, e0);
     
     // Get data for sub slab
-    const double a = ts.sa[s];
-    const double b = ts.sb[s];
-    const double k = b - a;
+    const real a = ts.sa[s];
+    const real b = ts.sb[s];
+    const real k = b - a;
 
     // Iterate over all elements in current sub slab
     for (uint e = e0; e < e1; e++)
@@ -163,7 +163,7 @@ void MultiAdaptivity::computeResiduals(MultiAdaptiveTimeSlab& ts)
 
       // Get initial value for element
       const int ep = ts.ee[e];
-      const double x0 = ( ep != -1 ? ts.jx[ep*method.nsize() + method.nsize() - 1] : ts.u0[i] );
+      const real x0 = ( ep != -1 ? ts.jx[ep*method.nsize() + method.nsize() - 1] : ts.u0[i] );
       
       // Evaluate right-hand side at quadrature points of element
       if ( method.type() == Method::cG )
@@ -172,12 +172,12 @@ void MultiAdaptivity::computeResiduals(MultiAdaptiveTimeSlab& ts)
 	ts.dGfeval(f, s, e, i, a, b, k);
 
       // Update maximum residual for component
-      const double r = method.residual(x0, ts.jx + j, f[method.nsize()], k);
-      residuals[i] = std::max(residuals[i], fabs(r));
+      const real r = method.residual(x0, ts.jx + j, f[method.nsize()], k);
+      residuals[i] = max(residuals[i], abs(r));
 
       // Update maximum residual and error
-      rmax = std::max(rmax, r);
-      emax = std::max(emax, method.error(k, r));
+      rmax = max(rmax, r);
+      emax = max(emax, method.error(k, r));
 
       // Update dof
       j += method.nsize();
@@ -210,7 +210,7 @@ void MultiAdaptivity::propagateDependencies()
   for (uint i = 0; i < ode.size(); i++)
   {
     // Get time step for current component
-    const double k = ktmp[i];
+    const real k = ktmp[i];
 
     // Propagate time step to dependencies
     const Array<uint>& deps = ode.dependencies[i];
