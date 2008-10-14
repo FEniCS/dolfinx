@@ -51,8 +51,8 @@ namespace dolfin
     // FIXME: Maybe we can reuse some other vectors?
 
     // Temporary arrays for storing multiplication
-    mutable double* xx;
-    mutable double* yy;
+    mutable real* xx;
+    mutable real* yy;
 
   };
 

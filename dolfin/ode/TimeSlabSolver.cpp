@@ -30,14 +30,14 @@ TimeSlabSolver::~TimeSlabSolver()
 {
   if ( num_timeslabs > 0 )
   {
-    const double n = static_cast<double>(num_timeslabs);
-    const double global_average = static_cast<double>(num_global_iterations) / n;
-    const double local_average = static_cast<double>(num_local_iterations) / 
-      static_cast<double>(num_global_iterations);
+    const real n = static_cast<real>(num_timeslabs);
+    const real global_average = static_cast<real>(num_global_iterations) / n;
+    const real local_average = static_cast<real>(num_local_iterations) / 
+      static_cast<real>(num_global_iterations);
     message("Average number of global iterations per step: %.3f",
-		global_average);
+	    to_double(global_average));
     message("Average number of local iterations per global iteration: %.3f",
-		local_average);
+	    to_double(local_average));
   }
 
   message("Total number of (macro) time steps: %d", num_timeslabs);
@@ -63,19 +63,19 @@ bool TimeSlabSolver::solve(uint attempt)
 {
   start();
 
-  double d0 = 0.0;
-  double d1 = 0.0;
+  real d0 = 0.0;
+  real d1 = 0.0;
   for (uint iter = 0; iter < maxiter; iter++)
   {
     // Do one iteration
-    double d2 = iteration(tol, iter, d0, d1);
+    real d2 = iteration(tol, iter, d0, d1);
 
     // Use relative increment
     d2 /= xnorm + DOLFIN_EPS;
     
     // For debugging convergence
     if ( monitor )
-      message("--- iter = %d: increment = %.3e", iter, d2);
+      message("--- iter = %d: increment = %.3e", iter, to_double(d2));
     
     // Check convergenge
     if ( d2 < tol )
@@ -90,7 +90,8 @@ bool TimeSlabSolver::solve(uint attempt)
 
     // Check divergence
     // FIXME: implement better check and make this a parameter
-    if ( (iter > 0 && d2 > 1000.0 * d1) || !std::isnormal(d2) )
+    // Is it ok to convert a gmp type to double and then check if it is normal?
+    if ( (iter > 0 && d2 > 1000.0 * d1) || !std::isnormal(to_double(d2)) )
     {
       warning("Time slab system seems to be diverging.");
       return false;
@@ -125,9 +126,14 @@ void TimeSlabSolver::chooseTolerance()
   const double TOL   = ode.get("ODE tolerance");
   const double alpha = ode.get("ODE discrete tolerance factor");
 
-  tol = ode.get("ODE discrete tolerance");
+  double tmp = ode.get("ODE discrete tolerance");
+
+  tol = tmp;
   if ( !ode.get("ODE fixed time step") )
-    tol = std::min(tol, alpha*TOL);
+  {
+    tmp = std::min(tmp, alpha*TOL);
+    tol = tmp;
+  }
   cout << "Using discrete tolerance tol = " << tol << "." << endl;
 }
 //-----------------------------------------------------------------------------

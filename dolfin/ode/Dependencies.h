@@ -58,7 +58,7 @@ namespace dolfin
   private:
     
     // Check given dependency
-    bool check_dependency(ODE& ode, double* u, double f0, uint i, uint j);
+    bool check_dependency(ODE& ode, real* u, real f0, uint i, uint j);
 
     // Make pattern sparse
     void make_sparse();
@@ -67,7 +67,7 @@ namespace dolfin
     uint N;
     
     // Increment for automatic detection of sparsity
-    double increment;
+    real increment;
 
     // True if sparsity pattern is sparse
     bool _sparse;

@@ -39,7 +39,7 @@ TimeSlab::TimeSlab(ODE& ode) :
     error("Unknown ODE method: %s", m.c_str());
 
   // Get iinitial data
-  u0 = new double[ode.size()];
+  u0 = new real[ode.size()];
   real_zero(ode.size(), u0);
   ode.u0(u0);
 }
@@ -55,17 +55,17 @@ dolfin::uint TimeSlab::size() const
   return N;
 }
 //-----------------------------------------------------------------------------
-double TimeSlab::starttime() const
+real TimeSlab::starttime() const
 {
   return _a;
 }
 //-----------------------------------------------------------------------------
-double TimeSlab::endtime() const
+real TimeSlab::endtime() const
 {
   return _b;
 }
 //-----------------------------------------------------------------------------
-double TimeSlab::length() const
+real TimeSlab::length() const
 {
   return _b - _a;
 }
@@ -80,35 +80,45 @@ dolfin::LogStream& dolfin::operator<<(LogStream& stream,
   return stream;
 }
 //-----------------------------------------------------------------------------
-void TimeSlab::write(uint N, const double* u)
+void TimeSlab::write(uint N, const real* u)
 {
   // FIXME: Make this a parameter?
   std::string filename = "solution.data";
+  
   message("Saving solution at final time to file \"%s\".", filename.c_str());
+  #ifdef HAS_GMP
+    warning("Precision in solution file lost. Saving with double precision");
+  #endif
 
   FILE* fp = fopen(filename.c_str(), "w");
   for (uint i = 0; i < N; i++)
-    fprintf(fp, "%.15e ", u[i]);
+  {  
+    fprintf(fp, "%.15e ", to_double(u[i]));
+  }
   fprintf(fp, "\n");
   fclose(fp);
 }
 //-----------------------------------------------------------------------------
-void TimeSlab::copy(const double x[], uint xoffset, double y[], uint yoffset, uint n)
+void TimeSlab::copy(const real x[], uint xoffset, real y[], uint yoffset, uint n)
 {
   for (uint i = 0; i < n; i++)
     y[yoffset + i] = x[xoffset + i];
 }
 //-----------------------------------------------------------------------------
-void TimeSlab::copy(const uBLASVector& x, uint xoffset, double y[], uint yoffset, uint n)
+void TimeSlab::copy(const uBLASVector& x, uint xoffset, real y[], uint yoffset, uint n)
 {
   for (uint i = 0; i < n; i++)
+  {
+    //Note: Precision lost if working with GMP
     y[yoffset + i] = x[xoffset + i];
+  }
 }
 //-----------------------------------------------------------------------------
-void TimeSlab::copy(const double x[], uint xoffset, uBLASVector& y, uint yoffset, uint n)
+void TimeSlab::copy(const real x[], uint xoffset, uBLASVector& y, uint yoffset, uint n)
 {
   for (uint i = 0; i < n; i++)
-    y[yoffset + i] = x[xoffset + i];
+    y[yoffset + i] = to_double(x[xoffset + i]);
+
 }
 //-----------------------------------------------------------------------------
 void TimeSlab::copy(const uBLASVector& x, uint xoffset, uBLASVector& y, uint yoffset, uint n)

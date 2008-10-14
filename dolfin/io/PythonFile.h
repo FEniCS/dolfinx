@@ -8,6 +8,7 @@
 #define __PYTHON_FILE_H
 
 #include <dolfin/common/types.h>
+#include <dolfin/common/real.h>
 #include "GenericFile.h"
 
 namespace dolfin

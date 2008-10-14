@@ -34,7 +34,7 @@ namespace dolfin
     ~MonoAdaptiveTimeSlab();
     
     /// Build time slab, return end time
-    double build(double a, double b);
+    real build(real a, real b);
 
     /// Solve time slab system
     bool solve();
@@ -46,16 +46,16 @@ namespace dolfin
     bool shift(bool end);
 
     /// Prepare sample at time t
-    void sample(double t);
+    void sample(real t);
 
     /// Sample solution value of given component at given time
-    double usample(uint i, double t);
+    real usample(uint i, real t);
 
     /// Sample time step size for given component at given time
-    double ksample(uint i, double t);
+    real ksample(uint i, real t);
 
     /// Sample residual for given component at given time
-    double rsample(uint i, double t);
+    real rsample(uint i, real t);
 
     /// Display time slab data
     void disp() const;
@@ -74,18 +74,18 @@ namespace dolfin
     TimeSlabSolver* chooseSolver();
 
     // Temporary data array used to store multiplications
-    double* tmp();
+    real* tmp();
 
     TimeSlabSolver* solver;    // The solver
     MonoAdaptivity adaptivity; // Adaptive time step regulation
     uint nj;                   // Number of dofs
-    double* dofs;              // Local dofs for an element used for interpolation
-    double* fq;                // Values of right-hand side at all quadrature points
-    double rmax;               // Previously computed maximum norm of residual
+    real* dofs;              // Local dofs for an element used for interpolation
+    real* fq;                // Values of right-hand side at all quadrature points
+    real rmax;               // Previously computed maximum norm of residual
 
-    double* x; // Degrees of freedom for the solution on the time slab
-    double* u; // The solution at a given stage
-    double* f; // The right-hand side at a given stage
+    real* x; // Degrees of freedom for the solution on the time slab
+    real* u; // The solution at a given stage
+    real* f; // The right-hand side at a given stage
     
   };
 

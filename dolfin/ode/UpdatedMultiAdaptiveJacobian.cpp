@@ -62,7 +62,7 @@ void UpdatedMultiAdaptiveJacobian::init()
   // Compute size of increment
   double umax = 0.0;
   for (unsigned int i = 0; i < ts.N; i++)
-    umax = std::max(umax, std::abs(ts.u0[i]));
+    umax = std::max(umax, std::abs(to_double(ts.u0[i]))); //Ok to convert to double here?
   h = std::max(DOLFIN_SQRT_EPS, DOLFIN_SQRT_EPS * umax);
 }
 //-----------------------------------------------------------------------------

@@ -8,6 +8,7 @@
 #define __MONO_ADAPTIVITY_H
 
 #include <dolfin/common/types.h>
+#include <dolfin/common/real.h>
 #include "Controller.h"
 #include "Adaptivity.h"
 
@@ -29,10 +30,10 @@ namespace dolfin
     ~MonoAdaptivity();
     
     /// Return time step
-    double timestep() const;
+    real timestep() const;
 
     /// Update time step
-    void update(double k0, double r, const Method& method, double t, bool first);
+    void update(real k0, real r, const Method& method, real t, bool first);
 
   private:
 
@@ -40,7 +41,7 @@ namespace dolfin
     Controller controller;
 
     // Mono-adaptive time step
-    double k;
+    real k;
 
   };
 

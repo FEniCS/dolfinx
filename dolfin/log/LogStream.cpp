@@ -9,6 +9,7 @@
 #include <string>
 #include <dolfin/common/constants.h>
 #include <dolfin/common/types.h>
+#include <dolfin/common/real.h>
 #include "log.h"
 #include "LogManager.h"
 #include "LogStream.h"
@@ -88,7 +89,21 @@ LogStream& LogStream::operator<<(double a)
   add(tmp);
   return *this;
 }
+
 //-----------------------------------------------------------------------------
+#ifdef HAS_GMP
+LogStream& LogStream::operator<<(real a)
+{
+  char tmp[DOLFIN_LINELENGTH];
+  gmp_snprintf(tmp, DOLFIN_LINELENGTH, "%.3g", a.get_mpf_t());
+  
+  add(tmp);
+  return *this;
+}
+#endif
+//-----------------------------------------------------------------------------
+
+
 LogStream& LogStream::operator<<(complex z)
 {
   char tmp[DOLFIN_LINELENGTH];

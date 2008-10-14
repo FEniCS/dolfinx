@@ -4,6 +4,7 @@
 // First added:  2005-01-28
 // Last changed: 2008-04-22
 
+#include <dolfin/common/real.h>
 #include <dolfin/common/constants.h>
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/math/dolfin_math.h>
@@ -29,10 +30,15 @@ MonoAdaptiveNewtonSolver::MonoAdaptiveNewtonSolver
     ts(timeslab), A(timeslab, implicit, piecewise), btmp(0), Mu0(0),
     krylov(0), lu(0), krylov_g(0), lu_g(0)
 {
+  #ifdef HAS_GMP
+  warning("Extended precision monoadaptive Newton solver not implemented. Using double precision");
+  #endif
+
+
   // Initialize product M*u0 for implicit system
   if (implicit)
   {
-    Mu0 = new double[ts.N];
+    Mu0 = new real[ts.N];
     real_zero(ts.N, Mu0);
   }
 
@@ -63,7 +69,7 @@ void MonoAdaptiveNewtonSolver::start()
   b.resize(nj);
   b.zero();
   delete btmp;
-  btmp = new double[nj];
+  btmp = new real[nj];
   real_zero(nj, btmp);
 
   // Initialize computation of Jacobian
@@ -77,11 +83,13 @@ void MonoAdaptiveNewtonSolver::start()
   //A.disp(true, 10);
 }
 //-----------------------------------------------------------------------------
-double MonoAdaptiveNewtonSolver::iteration(double tol, uint iter, double d0, double d1)
+real MonoAdaptiveNewtonSolver::iteration(real tol, uint iter, real d0, real d1)
 {
   // Evaluate b = -F(x) at current x
   Feval(btmp);
-  for (uint j = 0; j < ts.nj; j++) b[j] = btmp[j];
+  for (uint j = 0; j < ts.nj; j++) 
+    //Note: Precision lost if working with GMP
+    b[j] = to_double(btmp[j]);
 
   // Solve linear system
   if (krylov)
@@ -115,7 +123,7 @@ dolfin::uint MonoAdaptiveNewtonSolver::size() const
   return ts.nj;
 }
 //-----------------------------------------------------------------------------
-void MonoAdaptiveNewtonSolver::Feval(double* F)
+void MonoAdaptiveNewtonSolver::Feval(real* F)
 {
   if (implicit)
     FevalImplicit(F);
@@ -123,10 +131,10 @@ void MonoAdaptiveNewtonSolver::Feval(double* F)
     FevalExplicit(F);
 }
 //-----------------------------------------------------------------------------
-void MonoAdaptiveNewtonSolver::FevalExplicit(double* F)
+void MonoAdaptiveNewtonSolver::FevalExplicit(real* F)
 {
   // Compute size of time step
-  const double k = ts.length();
+  const real k = ts.length();
 
   // Evaluate right-hand side at all quadrature points
   for (uint m = 0; m < method.qsize(); m++)
@@ -144,7 +152,7 @@ void MonoAdaptiveNewtonSolver::FevalExplicit(double* F)
     // Add weights of right-hand side
     for (uint m = 0; m < method.qsize(); m++)
     {
-      const double tmp = k * method.nweight(n, m);
+      const real tmp = k * method.nweight(n, m);
       const uint moffset = m * ts.N;
       for (uint i = 0; i < ts.N; i++)
         F[noffset + i] += tmp * ts.fq[moffset + i];
@@ -155,15 +163,15 @@ void MonoAdaptiveNewtonSolver::FevalExplicit(double* F)
   real_sub(ts.nj, F, ts.x);
 }
 //-----------------------------------------------------------------------------
-void MonoAdaptiveNewtonSolver::FevalImplicit(double* F)
+void MonoAdaptiveNewtonSolver::FevalImplicit(real* F)
 {
   // Use vectors from Jacobian for storing multiplication
-  double* xx = A.xx;
-  double* yy = A.yy;
+  real* xx = A.xx;
+  real* yy = A.yy;
 
   // Compute size of time step
-  const double a = ts.starttime();
-  const double k = ts.length();
+  const real a = ts.starttime();
+  const real k = ts.length();
 
   // Evaluate right-hand side at all quadrature points
   for (uint m = 0; m < method.qsize(); m++)
@@ -181,7 +189,7 @@ void MonoAdaptiveNewtonSolver::FevalImplicit(double* F)
     // Add weights of right-hand side
     for (uint m = 0; m < method.qsize(); m++)
     {
-      const double tmp = k * method.nweight(n, m);
+      const real tmp = k * method.nweight(n, m);
       const uint moffset = m * ts.N;
       for (uint i = 0; i < ts.N; i++)
         F[noffset + i] += tmp * ts.fq[moffset + i];
@@ -203,7 +211,7 @@ void MonoAdaptiveNewtonSolver::FevalImplicit(double* F)
     }
     else
     {
-      const double t = a + method.npoint(n) * k;
+      const real t = a + method.npoint(n) * k;
       ts.copy(ts.x, noffset, ts.u, 0, ts.N);
       ode.M(xx, yy, ts.u, t);
     }
@@ -249,18 +257,20 @@ void MonoAdaptiveNewtonSolver::chooseLinearSolver()
   {
     message("Using uBLAS Krylov solver with no preconditioning.");
     const double ktol = ode.get("ODE discrete Krylov tolerance factor");
+    const double _tol = to_double(tol);
 
     // FIXME: Check choice of tolerances
     krylov = new uBLASKrylovSolver(none);
     krylov->set("Krylov report", monitor);
     krylov->set("Krylov relative tolerance", ktol);
-    krylov->set("Krylov absolute tolerance", ktol*tol);
+    //Note: Precision lost if working with GMP types
+    krylov->set("Krylov absolute tolerance", ktol*_tol);
 
     message("Using BiCGStab Krylov solver for matrix Jacobian.");
     krylov_g = new KrylovSolver(bicgstab, ilu);
     krylov_g->set("Krylov report", monitor);
     krylov_g->set("Krylov relative tolerance", ktol);
-    krylov_g->set("Krylov absolute tolerance", ktol*tol);
+    krylov_g->set("Krylov absolute tolerance", ktol*_tol);
   }
 }
 //-----------------------------------------------------------------------------
@@ -269,16 +279,16 @@ void MonoAdaptiveNewtonSolver::debug()
   const uint n = ts.nj;
   uBLASSparseMatrix B(n, n);
   ublas_sparse_matrix& _B = B.mat();
-  double* F1 = new double[n];
-  double* F2 = new double[n];
+  real* F1 = new real[n];
+  real* F2 = new real[n];
   real_zero(n, F1);
   real_zero(n, F2);
 
   // Iterate over the columns of B
   for (uint j = 0; j < n; j++)
   {
-    const double xj = ts.x[j];
-    double dx = std::max(DOLFIN_SQRT_EPS, DOLFIN_SQRT_EPS * std::abs(xj));
+    const real xj = ts.x[j];
+    real dx = max(DOLFIN_SQRT_EPS, DOLFIN_SQRT_EPS * abs(xj));
 		  
     ts.x[j] -= 0.5*dx;
     Feval(F1);
@@ -290,9 +300,9 @@ void MonoAdaptiveNewtonSolver::debug()
 
     for (uint i = 0; i < n; i++)
     {
-      double dFdx = (F1[i] - F2[i]) / dx;
-      if ( fabs(dFdx) > DOLFIN_EPS )
-        _B(i, j) = dFdx;
+      real dFdx = (F1[i] - F2[i]) / dx;
+      if ( abs(dFdx) > DOLFIN_EPS )
+        _B(i, j) = to_double(dFdx);
     }
   }
 

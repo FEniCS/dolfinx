@@ -7,7 +7,10 @@
 #ifndef __COMPLEX_ODE_H
 #define __COMPLEX_ODE_H
 
+#ifndef HAS_GMP
+
 #include <dolfin/common/types.h>
+#include <dolfin/common/real.h>
 #include "ODE.h"
 
 namespace dolfin
@@ -38,7 +41,7 @@ namespace dolfin
   public:
 
     /// Constructor
-    ComplexODE(uint n, double T);
+    ComplexODE(uint n, real T);
 
     /// Destructor
     ~ComplexODE();
@@ -47,43 +50,43 @@ namespace dolfin
     virtual void z0(complex z[]) = 0;
 
     /// Evaluate right-hand side (multi-adaptive version)
-    virtual complex f(const complex z[], double t, uint i);
+    virtual complex f(const complex z[], real t, uint i);
 
     /// Evaluate right-hand side (mono-adaptive version)
-    virtual void f(const complex z[], double t, complex y[]);
+    virtual void f(const complex z[], real t, complex y[]);
     
     /// Compute product y = Mx for implicit system
-    virtual void M(const complex x[], complex y[], const complex z[], double t);
+    virtual void M(const complex x[], complex y[], const complex z[], real t);
 
     /// Compute product y = Jx for Jacobian J
-    virtual void J(const complex x[], complex y[], const complex u[], double t);
+    virtual void J(const complex x[], complex y[], const complex u[], real t);
 
     /// Return time step for component i (optional)
-    virtual double k(uint i);
+    virtual real k(uint i);
 
     /// Update ODE, return false to stop (optional)
-    virtual bool update(const complex z[], double t, bool end);
+    virtual bool update(const complex z[], real t, bool end);
 
     /// Return initial value for real-valued ODE
-    void u0(double* u);
+    void u0(real* u);
 
     /// Return right-hand side for real-valued ODE
-    double f(const double* u, double t, uint i);
+    real f(const real* u, real t, uint i);
 
     /// Evaluate right-hand side for real-valued ODE
-    void f(const double* u, double t, double* y);
+    void f(const real* u, real t, real* y);
 
     /// Compute product y = Mx for real-valued ODE
-    void M(const double* x, double* y, const double* u, double t);
+    void M(const real* x, real* y, const real* u, real t);
 
     /// Compute product y = Jx for real-valued ODE
-    void J(const double* x, double* y, const double* u, double t);
+    void J(const real* x, real* y, const real* u, real t);
 
     /// Return time step for real-valued ODE
-    double timestep(uint i);
+    real timestep(uint i);
 
     /// Update for real-valued ODE
-    bool update(const double* u, double t, bool end);
+    bool update(const real* u, real t, bool end);
 
   protected:
 
@@ -108,4 +111,5 @@ namespace dolfin
 
 }
 
+#endif
 #endif

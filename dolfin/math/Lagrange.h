@@ -9,6 +9,7 @@
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/types.h>
+#include <dolfin/common/real.h>
 
 namespace dolfin
 {
@@ -39,7 +40,7 @@ namespace dolfin
     ~Lagrange();
     
     /// Specify point
-    void set(unsigned int i, double x);
+    void set(unsigned int i, real x);
 
     /// Return number of points
     unsigned int size() const;
@@ -48,19 +49,19 @@ namespace dolfin
     unsigned int degree() const;
     
     /// Return point
-    double point(unsigned int i) const;
+    real point(unsigned int i) const;
     
     /// Return value of polynomial i at given point x
-    double operator() (unsigned int i, double x);
+    real operator() (unsigned int i, real x);
     
     /// Return value of polynomial i at given point x
-    double eval(unsigned int i, double x);
+    real eval(unsigned int i, real x);
 
     /// Return derivate of polynomial i at given point x
-    double ddx(unsigned int i, double x);
+    real ddx(unsigned int i, real x);
 
     /// Return derivative q (a constant) of polynomial
-    double dqdx(unsigned int i);
+    real dqdx(unsigned int i);
 
     /// Output
     friend LogStream& operator<<(LogStream& stream, const Lagrange& p);
@@ -72,8 +73,8 @@ namespace dolfin
     
     unsigned int q;
     unsigned int n;
-    double* points; 
-    double* constants;
+    real* points; 
+    real* constants;
 
   };
 

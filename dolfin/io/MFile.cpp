@@ -23,6 +23,10 @@ MFile::MFile(const std::string filename) :
   GenericFile(filename)
 {
   type = "Octave/MATLAB";
+  #ifdef HAS_GMP
+    warning("MFile: Precision lost. Values will be saved with double precision");
+  #endif
+
 }
 //-----------------------------------------------------------------------------
 MFile::~MFile()
@@ -215,12 +219,12 @@ void MFile::operator<<(Sample& sample)
   }
   
   // Save time
-  fprintf(fp, "t = [t %.15e];\n", sample.t());
+  fprintf(fp, "t = [t %.15e];\n", to_double(sample.t()));
 
   // Save solution
   fprintf(fp, "tmp = [ ");
   for (unsigned int i = 0; i < sample.size(); i++)
-    fprintf(fp, "%.15e ", sample.u(i));  
+    fprintf(fp, "%.15e ", to_double(sample.u(i)));  
   fprintf(fp, "];\n");
   fprintf(fp, "%s = [%s tmp'];\n", 
 	  sample.name().c_str(), sample.name().c_str());
@@ -229,7 +233,7 @@ void MFile::operator<<(Sample& sample)
   // Save time steps
   fprintf(fp, "tmp = [ ");
   for (unsigned int i = 0; i < sample.size(); i++)
-    fprintf(fp, "%.15e ", sample.k(i));
+    fprintf(fp, "%.15e ", to_double(sample.k(i)));
 
   fprintf(fp, "];\n");
   fprintf(fp, "k = [k tmp'];\n");
@@ -238,7 +242,7 @@ void MFile::operator<<(Sample& sample)
   // Save residuals
   fprintf(fp, "tmp = [ ");
   for (unsigned int i = 0; i < sample.size(); i++)
-    fprintf(fp, "%.15e ", sample.r(i));
+    fprintf(fp, "%.15e ", to_double(sample.r(i)));
 
   fprintf(fp, "];\n");
   fprintf(fp, "r = [r tmp'];\n");

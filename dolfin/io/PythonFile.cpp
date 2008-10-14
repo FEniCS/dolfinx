@@ -28,6 +28,10 @@ PythonFile::PythonFile(const std::string filename) : GenericFile(filename)
   filename_u = prefix + "_u.data";
   filename_k = prefix + "_k.data";
   filename_r = prefix + "_r.data";
+
+  #ifdef HAS_GMP
+  warning("PythonFile: Precision lost. Values will be saved with double precision");  
+  #endif
 }
 //-----------------------------------------------------------------------------
 PythonFile::~PythonFile()
@@ -80,26 +84,26 @@ void PythonFile::operator<<(Sample& sample)
   }
 
   // Save time
-  fprintf(fp_t, "%.15e\n", sample.t());
+  fprintf(fp_t, "%.15e\n", to_double(sample.t()));
 
   // Save solution
   for (unsigned int i = 0; i < sample.size(); i++)
   {
-    fprintf(fp_u, "%.15e ", sample.u(i));  
+    fprintf(fp_u, "%.15e ", to_double(sample.u(i)));  
   }
   fprintf(fp_u, "\n");
 
   // Save time steps
   for (unsigned int i = 0; i < sample.size(); i++)
   {
-    fprintf(fp_k, "%.15e ", sample.k(i));  
+    fprintf(fp_k, "%.15e ", to_double(sample.k(i)));  
   }
   fprintf(fp_k, "\n");
 
   // Save residuals
   for (unsigned int i = 0; i < sample.size(); i++)
   {
-    fprintf(fp_r, "%.15e ", sample.r(i));  
+    fprintf(fp_r, "%.15e ", to_double(sample.r(i)));  
   }
   fprintf(fp_r, "\n");
 

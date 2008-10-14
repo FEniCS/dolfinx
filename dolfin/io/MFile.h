@@ -8,7 +8,11 @@
 #define __M_FILE_H
 
 #include <dolfin/common/types.h>
+#include <dolfin/common/real.h>
 #include "GenericFile.h"
+
+/// Note: This M file  generator will save the values only with double precision, even if 
+/// dolfin is working with GMP types (extended precision)
 
 namespace dolfin
 {

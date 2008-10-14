@@ -4,7 +4,7 @@
 // First added:  2005-01-06
 // Last changed: 2008-10-06
 
-#include <cmath>
+#include <dolfin/common/real.h>
 #include <dolfin/common/constants.h>
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/math/dolfin_math.h>
@@ -16,8 +16,11 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 Dependencies::Dependencies(uint N) :
-  N(N), increment(dolfin_get("ODE sparsity check increment")), _sparse(false)
+  N(N), _sparse(false)
 {
+  double tmp = dolfin_get("ODE sparsity check increment");
+  increment = tmp;
+
   // Use dense dependency pattern by default
   ddep.reserve(N);
   ddep.resize(N);
@@ -75,7 +78,7 @@ void Dependencies::set(const uBLASSparseMatrix& A)
   {
     // FIXME: Could add function to return sparsity pattern
     Array<uint> columns;
-    Array<double> values;
+    Array<real> values;
     A.getrow(i, columns, values); 
     setsize(i, columns.size());
     for (uint j = 0; j < columns.size(); j++)
@@ -133,7 +136,7 @@ void Dependencies::detect(ODE& ode)
   make_sparse();
 
   // Randomize solution vector
-  double* u = new double[N];
+  real* u = new real[N];
   for (uint i = 0; i < N; i++)
     u[i] = rand();
   
@@ -144,7 +147,7 @@ void Dependencies::detect(ODE& ode)
   {
     // Count the number of dependencies
     uint size = 0;
-    double f0 = ode.f(u, 0.0, i);
+    real f0 = ode.f(u, 0.0, i);
     for (uint j = 0; j < N; j++)
       if (check_dependency(ode, u, f0, i, j))
         size++;
@@ -192,21 +195,21 @@ void Dependencies::disp() const
     message("Dependency pattern: dense");
 }
 //-----------------------------------------------------------------------------
-bool Dependencies::check_dependency(ODE& ode, double* u, double f0,
+bool Dependencies::check_dependency(ODE& ode, real* u, real f0,
                                     uint i, uint j)
 {
   // Save original value
-  double uj = u[j];
+  real uj = u[j];
 
   // Change value and compute new value for f_i
   u[j] += increment;
-  double f = ode.f(u, 0.0, i);
+  real f = ode.f(u, 0.0, i);
 
   // Restore the value
   u[j] = uj;
 
   // Compare function values
-  return fabs(f - f0) > DOLFIN_EPS;
+  return abs(f - f0) > DOLFIN_EPS;
 }
 //-----------------------------------------------------------------------------
 void Dependencies::make_sparse()

@@ -17,7 +17,7 @@ MonoAdaptivity::MonoAdaptivity(const ODE& ode, const Method& method)
   : Adaptivity(ode, method), k(0)
 {
   // Specify initial time step
-  double k0 = ode.get("ODE initial time step");
+  real k0 = static_cast<double>(ode.get("ODE initial time step"));
   if ( kfixed )
   {
     k = ode.timestep(0.0, k0);
@@ -28,7 +28,7 @@ MonoAdaptivity::MonoAdaptivity(const ODE& ode, const Method& method)
     if ( k > _kmax )
     {
       k = _kmax;
-      warning("Initial time step larger than maximum time step, using k = %.3e.", k);
+      warning("Initial time step larger than maximum time step, using k = %.3e.", to_double(k));
     }
   }
 
@@ -41,12 +41,12 @@ MonoAdaptivity::~MonoAdaptivity()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-double MonoAdaptivity::timestep() const
+real MonoAdaptivity::timestep() const
 {
   return k;
 }
 //-----------------------------------------------------------------------------
-void MonoAdaptivity::update(double k0, double r, const Method& method, double t,
+void MonoAdaptivity::update(real k0, real r, const Method& method, real t,
 			    bool first)
 {
   // Check if time step is fixed
@@ -58,7 +58,7 @@ void MonoAdaptivity::update(double k0, double r, const Method& method, double t,
   }
 
   // Compute local error estimate
-  const double error = method.error(k0, r);
+  const real error = method.error(k0, r);
   
   // Let controller choose new time step
   k = controller.update(error, safety*tol);
@@ -69,9 +69,9 @@ void MonoAdaptivity::update(double k0, double r, const Method& method, double t,
   {
     // Extra reduction if this is the first time step
     if ( first )
-      k = std::min(k, 0.1*k0);
+      k = min(k, 0.1*k0);
     else
-      k = std::min(k, 0.5*k0);
+      k = min(k, 0.5*k0);
     
     controller.reset(k);
     _accept = false;

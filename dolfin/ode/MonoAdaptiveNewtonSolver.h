@@ -44,7 +44,7 @@ namespace dolfin
     void start();
     
     // Make an iteration
-    double iteration(double tol, uint iter, double d0, double d1);
+    real iteration(real tol, uint iter, real d0, real d1);
 
     /// Size of system
     uint size() const;
@@ -52,13 +52,13 @@ namespace dolfin
   private:
 
     // Evaluate -F(x) at current x
-    void Feval(double*  F);
+    void Feval(real* F);
 
     // Evaluate -F(x) for explicit system: u' = f
-    void FevalExplicit(double* F);
+    void FevalExplicit(real* F);
 
     // Evaluate -F(x) for implicit system: Mu' = f
-    void FevalImplicit(double* F);
+    void FevalImplicit(real* F);
 	
     // Choose  linear solver
     void chooseLinearSolver();
@@ -73,8 +73,8 @@ namespace dolfin
     MonoAdaptiveJacobian A;      // Jacobian of time slab system
     uBLASVector dx;              // Increment for Newton's method
     uBLASVector b;               // Right-hand side b = -F(x)
-    double* btmp;                // Copy of right-hand side b = -F(x)
-    double* Mu0;                 // Precomputed product M*u0 for implicit system
+    real* btmp;                // Copy of right-hand side b = -F(x)
+    real* Mu0;                 // Precomputed product M*u0 for implicit system
     uBLASKrylovSolver* krylov;   // Iterative linear solver
     UmfpackLUSolver* lu;         // Direct linear solver
     KrylovSolver* krylov_g;      // Iterative linear solver (general)

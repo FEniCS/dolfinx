@@ -9,6 +9,7 @@
 
 #include <dolfin/math/Lagrange.h>
 #include <dolfin/common/types.h>
+#include <dolfin/common/real.h>
 
 namespace dolfin
 {
@@ -46,43 +47,43 @@ namespace dolfin
     inline unsigned int qsize() const { return nq; }
 
     /// Return nodal point (inline optimized)
-    inline double npoint(unsigned int i) const { return npoints[i]; }
+    inline real npoint(unsigned int i) const { return npoints[i]; }
     
     /// Return quadrature point (inline optimized)
-    inline double qpoint(unsigned int i) const { return qpoints[i]; }
+    inline real qpoint(unsigned int i) const { return qpoints[i]; }
     
     /// Return nodal weight j for node i, including quadrature (inline optimized)
-    inline double nweight(unsigned int i, unsigned int j) const { return nweights[i][j]; }
+    inline real nweight(unsigned int i, unsigned int j) const { return nweights[i][j]; }
 
     /// Return quadrature weight, including only quadrature (inline optimized)
-    inline double qweight(unsigned int i) const { return qweights[i]; }
+    inline real qweight(unsigned int i) const { return qweights[i]; }
 
     /// Evaluation of trial space basis function i at given tau (inline optimized)
-    inline double eval(unsigned int i, double tau) const { return trial->eval(i, tau); }
+    inline real eval(unsigned int i, real tau) const { return trial->eval(i, tau); }
     
     /// Evaluation of derivative of basis function i at t = 1 (inline optimized)
-    inline double derivative(unsigned int i) const { return derivatives[i]; }
+    inline real derivative(unsigned int i) const { return derivatives[i]; }
 
     /// Update solution values using fixed-point iteration
-    void update(double x0, double f[], double k, double values[]) const;
+    void update(real x0, real f[], real k, real values[]) const;
 
     /// Update solution values using fixed-point iteration (damped version)
-    void update(double x0, double f[], double k, double values[], double alpha) const;
+    void update(real x0, real f[], real k, real values[], real alpha) const;
 
     /// Evaluate solution at given point
-    virtual double ueval(double x0, double values[], double tau) const = 0;
+    virtual real ueval(real x0, real values[], real tau) const = 0;
 
     /// Evaluate solution at given node
-    virtual double ueval(double x0, double values[], uint i) const = 0;
+    virtual real ueval(real x0, real values[], uint i) const = 0;
 
     /// Compute residual at right end-point
-    virtual double residual(double x0, double values[], double f, double k) const = 0;
+    virtual real residual(real x0, real values[], real f, real k) const = 0;
   
     /// Compute new time step based on the given residual
-    virtual double timestep(double r, double tol, double k0, double kmax) const = 0;
+    virtual real timestep(real r, real tol, real k0, real kmax) const = 0;
 
     /// Compute error estimate (modulo stability factor)
-    virtual double error(double k, double r) const = 0;
+    virtual real error(real k, real r) const = 0;
     
     /// Display method data
     virtual void disp() const = 0;
@@ -102,11 +103,11 @@ namespace dolfin
     unsigned int nq; // Number of quadrature points
     unsigned int nn; // Number of nodal points
 
-    double*  qpoints;     // Quadrature points
-    double*  npoints;     // Nodal points
-    double*  qweights;    // Quadrature weights
-    double** nweights;    // Nodal weights
-    double*  derivatives; // Weights for derivative at end-point
+    real*  qpoints;     // Quadrature points
+    real*  npoints;     // Nodal points
+    real*  qweights;    // Quadrature weights
+    real** nweights;    // Nodal weights
+    real*  derivatives; // Weights for derivative at end-point
 
     Lagrange* trial;
     Lagrange* test;

@@ -45,7 +45,7 @@ namespace dolfin
     virtual void end();
 
     /// Make an iteration, return increment
-    virtual double iteration(double tol, uint itera, double d0, double d1) = 0;
+    virtual real iteration(real tol, uint itera, real d0, real d1) = 0;
 
     /// Size of system
     virtual uint size() const = 0;
@@ -57,7 +57,7 @@ namespace dolfin
     const Method& method;
     
     // Tolerance for iterations (max-norm)
-    double tol;
+    real tol;
 
     // Maximum number of iterations
     uint maxiter;
@@ -75,7 +75,7 @@ namespace dolfin
     uint num_local_iterations;
 
     // Current maxnorm of solution
-    double xnorm;
+    real xnorm;
 
   private:
 

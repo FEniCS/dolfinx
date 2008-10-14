@@ -11,6 +11,8 @@
 #include <dolfin/quadrature/RadauQuadrature.h>
 #include <dolfin/la/uBLASVector.h>
 #include <dolfin/la/uBLASDenseMatrix.h>
+#include <dolfin/ode/ODE.h>
+#include <dolfin/ode/SORSolver.h>
 #include "dGqMethod.h"
 
 using namespace dolfin;
@@ -27,45 +29,45 @@ dGqMethod::dGqMethod(unsigned int q) : Method(q, q + 1, q + 1)
   p = 2*q + 1;
 }
 //-----------------------------------------------------------------------------
-double dGqMethod::ueval(double x0, double values[], double tau) const
+real dGqMethod::ueval(real x0, real values[], real tau) const
 {
   // Note: x0 is not used, maybe this can be done differently
 
-  double sum = 0.0;
+  real sum = 0.0;
   for (unsigned int i = 0; i < nn; i++)
     sum += values[i] * trial->eval(i, tau);
   
   return sum;
 }
 //-----------------------------------------------------------------------------
-double dGqMethod::residual(double x0, double values[], double f, double k) const
+real dGqMethod::residual(real x0, real values[], real f, real k) const
 {
   // FIXME: Include jump term in residual
-  double sum = 0.0;
+  real sum = 0.0;
   for (uint i = 0; i < nn; i++)
     sum += values[i] * derivatives[i];
 
   return sum / k - f;
 }
 //-----------------------------------------------------------------------------
-double dGqMethod::timestep(double r, double tol, double k0, double kmax) const
+real dGqMethod::timestep(real r, real tol, real k0, real kmax) const
 {
   // FIXME: Missing stability factor and interpolation constant
   // FIXME: Missing jump term
   
-  if ( fabs(r) < DOLFIN_EPS )
+  if ( abs(r) < DOLFIN_EPS )
     return kmax;
 
-  //return pow(tol / fabs(r), 1.0 / static_cast<double>(q+1));
+  //return pow(tol / fabs(r), 1.0 / static_cast<real>(q+1));
 
-  const double qq = static_cast<double>(q);
-  return pow(tol * pow(k0, qq) / fabs(r), 1.0 / (2.0*qq + 1.0));
+  const real qq = static_cast<real>(q);
+  return pow(tol * pow(k0, q) / abs(r), 1.0 / (2.0*qq + 1.0));
 }
 //-----------------------------------------------------------------------------
-double dGqMethod::error(double k, double r) const
+real dGqMethod::error(real k, real r) const
 {
   // FIXME: Missing jump term and interpolation constant
-  return pow(k, static_cast<double>(q + 1)) * fabs(r);
+  return pow(k, static_cast<real>(q + 1)) * abs(r);
 }
 //-----------------------------------------------------------------------------
 void dGqMethod::disp() const
@@ -80,7 +82,7 @@ void dGqMethod::disp() const
   message("----------------------------------------------------");
   
   for (unsigned int i = 0; i < nq; i++)
-    message("%2d   %.15e   %.15e", i, qpoints[i], qweights[i]);
+    message("%2d   %.15e   %.15e", i, to_double(qpoints[i]), to_double(qweights[i]));
   message("");
 
   for (unsigned int i = 0; i < nn; i++)
@@ -91,7 +93,7 @@ void dGqMethod::disp() const
     message(" i   weights");
     message("---------------------------");
     for (unsigned int j = 0; j < nq; j++)
-      message("%2d   %.15e", j, nweights[i][j]);
+      message("%2d   %.15e", j, to_double(nweights[i][j]));
   }
   message("");
 
@@ -145,6 +147,8 @@ void dGqMethod::computeWeights()
 {
   uBLASDenseMatrix A(nn, nn);
   ublas_dense_matrix& _A = A.mat();
+
+  real* A_real = new real[q*q];
   
   // Compute matrix coefficients
   for (unsigned int i = 0; i < nn; i++)
@@ -152,13 +156,15 @@ void dGqMethod::computeWeights()
     for (unsigned int j = 0; j < nn; j++)
     {
       // Use Radau quadrature which is exact for the order we need, 2q
-      double integral = 0.0;
+      real integral = 0.0;
       for (unsigned int k = 0; k < nq; k++)
       {
-        double x = qpoints[k];
+        real x = qpoints[k];
         integral += qweights[k] * trial->ddx(j, x) * test->eval(i, x);
       }     
-      _A(i, j) = integral + trial->eval(j, 0.0) * test->eval(i, 0.0);
+
+      A_real[i*q+j] = integral + trial->eval(j, 0.0) * test->eval(i, 0.0);
+      _A(i, j) = to_double(A_real[i*q+j]);
     }
   }
 
@@ -167,23 +173,49 @@ void dGqMethod::computeWeights()
   ublas_vector& _b = b.vec();
   ublas_vector& _w = w.vec();
 
+  real* b_real = new real[q];
+  real* w_real = new real[q];
+  real_zero(q, w_real);
+
+
   // Compute nodal weights for each degree of freedom (loop over points)
   for (unsigned int i = 0; i < nq; i++)
   {
     // Get nodal point
-    double x = qpoints[i];
+    real x = qpoints[i];
     
     // Evaluate test functions at current nodal point
     for (unsigned int j = 0; j < nn; j++)
-      _b[j] = test->eval(j, x);
+    {
+      b_real[j] = test->eval(j, x);
+      _b[j] = to_double(b_real[j]);
+    }
 
     // Solve for the weight functions at the nodal point
     // FIXME: Do we get high enough precision?
     A.solve(w, b);
 
+
+
+    #ifndef HAS_GMP
     // Save weights including quadrature
-    for (unsigned int j = 0; j < nn; j++)
+    for (uint j = 0; j < nn; j++)
       nweights[j][i] = qweights[i] * _w[j];
+
+    #else 
+
+    // Use the double precision solution as initial guess for the SOR iterator
+    for (uint j = 0; j < q; ++j)
+      w_real[j] = _w[j];
+    
+
+    SORSolver::SOR(q, A_real, w_real, b_real, ODE::get_epsilon());
+    
+    for (uint j = 0; j < nn; ++j)
+      nweights[j][i] = qweights[i] * w_real[j];
+
+    #endif
+
   }
 }
 //-----------------------------------------------------------------------------

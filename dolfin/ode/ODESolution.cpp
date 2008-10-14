@@ -19,8 +19,8 @@ ODESolution::ODESolution(ODE& ode) :
   filename(tmpnam(0)),
   file(filename.c_str(), std::ios::out | std::ios::binary),
   cache(0),
-  bintree(std::vector<double>()),
-  step(sizeof(double)*ode.size()),
+  bintree(std::vector<real>()),
+  step(sizeof(real)*ode.size()),
   buffer(0), tmp(0),
   buffer_count(0),
   dataondisk(false)
@@ -30,21 +30,21 @@ ODESolution::ODESolution(ODE& ode) :
   std::string m = ode.get("ODE method") ;
   if (m == "dg") ++cache_size;
 
-  cache = new std::pair<double, double*>[cache_size];
+  cache = new std::pair<real, real*>[cache_size];
   for (uint i = 0; i < cache_size; ++i) 
   {
     cache[i].first = -1;
-    cache[i].second = new double[ode.size()];
+    cache[i].second = new real[ode.size()];
   }
   ringbufcounter = 0;
 
   // Initialize buffer
   buffer_size = ODESOLUTION_INITIAL_ALLOC - (ODESOLUTION_INITIAL_ALLOC % step);
-  buffer = (double *) malloc(buffer_size);
+  buffer = (real *) malloc(buffer_size);
   buffer_offset = 0;
 
   // Initialize temporary array
-  tmp = new double[ode.size()];
+  tmp = new real[ode.size()];
 }
 //-----------------------------------------------------------------------------
 ODESolution::~ODESolution() 
@@ -58,7 +58,7 @@ ODESolution::~ODESolution()
   delete [] tmp;
 }
 //-----------------------------------------------------------------------------
-void ODESolution::eval(const double t, double* y)
+void ODESolution::eval(const real t, real* y)
 {
   // Scan the cache
   for (uint i = 0; i < cache_size; ++i) 
@@ -76,7 +76,7 @@ void ODESolution::eval(const double t, double* y)
   }
 
   // Find position in buffer
-  std::vector<double>::iterator upper = std::upper_bound(bintree.begin(), 
+  std::vector<real>::iterator upper = std::upper_bound(bintree.begin(), 
                                                          bintree.end(), 
                                                          t);
   uint b = uint(upper - bintree.begin());
@@ -86,7 +86,7 @@ void ODESolution::eval(const double t, double* y)
   {
     if (t > bintree[bintree.size()-1])
     {
-      error("ODESolution, eval(%g) out of range", t);
+      error("ODESolution, eval(%g) out of range", to_double(t));
     }
     else
     {
@@ -96,8 +96,8 @@ void ODESolution::eval(const double t, double* y)
   } 
 
   // Read from buffer
-  double t_b = bintree[b];
-  double t_a = bintree[a];
+  real t_b = bintree[b];
+  real t_a = bintree[a];
   get_from_buffer(y, a);
   get_from_buffer(tmp, b);
 
@@ -127,7 +127,7 @@ void ODESolution::add_sample(Sample& sample)
     {
       // Extend the memory
       buffer_size *= 2;
-      buffer = (double *) realloc(buffer, buffer_size);
+      buffer = (real *) realloc(buffer, buffer_size);
     }
     else
     {
@@ -141,7 +141,12 @@ void ODESolution::add_sample(Sample& sample)
   }
 
   for (uint i = 0; i < sample.size(); ++i) 
-    buffer[buffer_count*ode.size()+i] = sample.u(i);
+  {
+    #ifndef HAS_GMP
+      //TODO: Fix this so it works with GMP
+      buffer[buffer_count*ode.size()+i] = sample.u(i);
+    #endif
+  }
 
   ++buffer_count;
 }
@@ -158,18 +163,18 @@ void ODESolution::flush()
   file.open(filename.c_str(), std::ios::in | std::ios::binary);  
 }
 //-----------------------------------------------------------------------------
-void ODESolution::interpolate(const double* v0, const double t0,
-                              const double* v1, const double t1,
-                              const double t, double* result)
+void ODESolution::interpolate(const real* v0, const real t0,
+                              const real* v1, const real t1,
+                              const real t, real* result)
 {
-  const double h = t1 - t0;
+  const real h = t1 - t0;
   for (uint i = 0; i < ode.size(); i++)
   {
     result[i] = v0[i] + (t - t0) * (v1[i] - v0[i]) / h;
   }
 }
 //-----------------------------------------------------------------------------
-void ODESolution::get_from_buffer(double* u, uint index)
+void ODESolution::get_from_buffer(real* u, uint index)
 {
   // Check if we need to read from disk
   if (index < buffer_offset || index > buffer_offset + buffer_count) 

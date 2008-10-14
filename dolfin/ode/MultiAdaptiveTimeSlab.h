@@ -9,6 +9,7 @@
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/types.h>
+#include <dolfin/common/real.h>
 #include <dolfin/la/uBLASVector.h>
 #include "Alloc.h"
 #include "Partition.h"
@@ -37,7 +38,7 @@ namespace dolfin
     ~MultiAdaptiveTimeSlab();
     
     /// Build time slab, return end time
-    double build(double a, double b);
+    real build(real a, real b);
 
     /// Solve time slab system
     bool solve();
@@ -52,16 +53,16 @@ namespace dolfin
     void reset();
     
     /// Prepare sample at time t
-    void sample(double t);
+    void sample(real t);
 
     /// Sample solution value of given component at given time
-    double usample(uint i, double t);
+    real usample(uint i, real t);
 
     /// Sample time step size for given component at given time
-    double ksample(uint i, double t);
+    real ksample(uint i, real t);
 
     /// Sample residual for given component at given time
-    double rsample(uint i, double t);
+    real rsample(uint i, real t);
 
     /// Display time slab data
     void disp() const;
@@ -77,16 +78,16 @@ namespace dolfin
   private:
 
     // Reallocate all data
-    void allocData(double a, double b);
+    void allocData(real a, real b);
 
     // Create time slab
-    double createTimeSlab(double a, double b, uint offset);
+    real createTimeSlab(real a, real b, uint offset);
 
     // Create time slab data
-    void create_s(double t0, double t1, uint offset, uint end);
-    void create_e(uint index, uint subslab, double a, double b);
+    void create_s(real t0, real t1, uint offset, uint end);
+    void create_e(uint index, uint subslab, real a, real b);
     void create_j(uint index);
-    void create_d(uint index, uint element, uint subslab, double a0, double b0);
+    void create_d(uint index, uint element, uint subslab, real a0, real b0);
    
     // Reallocation of data
     void alloc_s(uint newsize);
@@ -95,22 +96,22 @@ namespace dolfin
     void alloc_d(uint newsize);
 
     // Compute length of time slab
-    double computeEndTime(double a, double b, uint offset, uint& end);
+    real computeEndTime(real a, real b, uint offset, uint& end);
 
     // Compute size of data
-    double computeDataSize(double a, double b, uint offset);
+    real computeDataSize(real a, real b, uint offset);
     
     // Compute number of dependencies to components with smaller time steps
     uint countDependencies(uint i0);
 
     // Compute number of dependencies to components with smaller time steps
-    uint countDependencies(uint i0, double b0);
+    uint countDependencies(uint i0, real b0);
 
     // Check if the given time is within the given interval
-    bool within(double t, double a, double b) const;
+    bool within(real t, real a, real b) const;
 
     // Check if the first given interval is within the second interval
-    bool within(double a0, double b0, double a1, double b1) const;
+    bool within(real a0, real b0, real a1, real b1) const;
 
     // Cover all elements in sub slab and return e1, with e0 <= e < e1
     uint coverSlab(int subslab, uint e0);
@@ -119,31 +120,31 @@ namespace dolfin
     uint coverNext(int subslab, uint element);
 
     // Cover given time for all components
-    void coverTime(double t);
+    void coverTime(real t);
 
     // Compute maximum of all element residuals
-    double computeMaxResiduals();
+    real computeMaxResiduals();
 
     // Evaluate right-hand side at quadrature points of given element (cG)
-    void cGfeval(double* f, uint s0, uint e0, uint i0, double a0, double b0, double k0);
+    void cGfeval(real* f, uint s0, uint e0, uint i0, real a0, real b0, real k0);
 
     // Evaluate right-hand side at quadrature points of given element (dG)
-    void dGfeval(double* f, uint s0, uint e0, uint i0, double a0, double b0, double k0);
+    void dGfeval(real* f, uint s0, uint e0, uint i0, real a0, real b0, real k0);
 
     // Choose solver
     TimeSlabSolver* chooseSolver();
 
     //--- Time slab data ---
 
-    double* sa; // Mapping s --> start time t of sub slab s
-    double* sb; // Mapping s --> end time t of sub slab s
+    real* sa; // Mapping s --> start time t of sub slab s
+    real* sb; // Mapping s --> end time t of sub slab s
         
     uint* ei; // Mapping e --> component index i of element e
     uint* es; // Mapping e --> time slab s containing element e
     uint* ee; // Mapping e --> previous element e of element e
     uint* ed; // Mapping e --> first dependency d of element e
     
-    double* jx; // Mapping j --> value of dof j
+    real* jx; // Mapping j --> value of dof j
     
     int* de;  // Mapping d --> element e of dependency d
         
@@ -165,12 +166,12 @@ namespace dolfin
     MultiAdaptivity adaptivity; // Adaptive time step regulation (size 3N)
     Partition partition;        // Time step partitioning (size N)
     int* elast;                 // Last element for each component (size N)
-    double* f0;                 // Right-hand side at left end-point for cG (size N)
-    double* u;                  // The interpolated solution at a given time
+    real* f0;                 // Right-hand side at left end-point for cG (size N)
+    real* u;                  // The interpolated solution at a given time
 
     //--- Auxiliary data ---
     uint emax;                  // Last covered element for sample
-    double kmin;                  // Minimum time step (exluding threshold modified)
+    real kmin;                  // Minimum time step (exluding threshold modified)
 
   };
 

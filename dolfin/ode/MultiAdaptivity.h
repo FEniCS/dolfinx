@@ -30,13 +30,13 @@ namespace dolfin
     ~MultiAdaptivity();
 
     /// Return time step for given component
-    double timestep(uint i) const;
+    real timestep(uint i) const;
 
     /// Return residual for given component
-    double residual(uint i) const;
+    real residual(uint i) const;
 
     /// Update time steps
-    void update(MultiAdaptiveTimeSlab& ts, double t, bool first);
+    void update(MultiAdaptiveTimeSlab& ts, real t, bool first);
 
   private:
 
@@ -47,22 +47,22 @@ namespace dolfin
     void propagateDependencies();
 
     // Multi-adaptive time steps (size N)
-    double* timesteps;
+    real* timesteps;
 
     // Multi-adaptive residuals (size N)
-    double* residuals;
+    real* residuals;
 
     // Array for storing temporary data during propagation of time steps (size N)
-    double* ktmp;
+    real* ktmp;
     
     // Values of right-hand side at quadrature points (size m)
-    double* f;
+    real* f;
 
     // Maximum local residual on time slab
-    double rmax;
+    real rmax;
 
     // Maximum local error on time slab
-    double emax;
+    real emax;
 
   };
 

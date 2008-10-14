@@ -27,16 +27,16 @@ Dual::~Dual()
   // Do nothing
 }
 //------------------------------------------------------------------------
-void Dual::u0(double* psi)
+void Dual::u0(real* psi)
 {
   // FIXME: Enable different choices of initial data to the dual
-  //return 1.0 / sqrt(static_cast<double>(N));
+  //return 1.0 / sqrt(static_cast<real>(N));
 
   real_zero(size(), psi);
   psi[0] = 1.0;
 }
 //------------------------------------------------------------------------
-void Dual::f(const double* phi, double t, double* y)
+void Dual::f(const real* phi, real t, real* y)
 {
   // FIXME: Here we can do some optimization. Since we compute the sum
   // FIXME: over all dual dependencies of i we will do the update of
@@ -46,7 +46,7 @@ void Dual::f(const double* phi, double t, double* y)
   // FIXME: outside the sum.
 
   /*
-  double sum = 0.0;  
+  real sum = 0.0;  
   
   if ( sparsity.sparse() )
   {
@@ -64,7 +64,7 @@ void Dual::f(const double* phi, double t, double* y)
   */
 
   // Initialize temporary array if necessary
-  if (!tmp0) tmp0 = new double[size()];
+  if (!tmp0) tmp0 = new real[size()];
   real_zero(size(), tmp0);
 
   // Evaluate primal at T - t
@@ -74,7 +74,7 @@ void Dual::f(const double* phi, double t, double* y)
   primal.JT(phi, y, tmp0, endtime() - t);
 }
 //------------------------------------------------------------------------
-double Dual::time(double t) const
+real Dual::time(real t) const
 {
   return endtime() - t;
 }

@@ -8,6 +8,7 @@
 #define __CONTROLLER_H
 
 #include <dolfin/common/types.h>
+#include <dolfin/common/real.h>
 
 namespace dolfin
 {
@@ -24,34 +25,34 @@ namespace dolfin
     Controller();
 
     /// Create controller with given initial state
-    Controller(double k, double tol, uint p, double kmax);
+    Controller(real k, real tol, uint p, real kmax);
 
     /// Destructor
     ~Controller();
 
     /// Initialize controller
-    void init(double k, double tol, uint p, double kmax);
+    void init(real k, real tol, uint p, real kmax);
 
     /// Reset controller
-    void reset(double k);
+    void reset(real k);
 
     /// Default controller
-    double update(double e, double tol);
+    real update(real e, real tol);
 
     /// Controller H0211
-    double updateH0211(double e, double tol);
+    real updateH0211(real e, real tol);
 
     /// Controller H211PI
-    double updateH211PI(double e, double tol);
+    real updateH211PI(real e, real tol);
 
     /// No control, simple formula
-    double updateSimple(double e, double tol);
+    real updateSimple(real e, real tol);
 
     /// Control by harmonic mean value
-    double updateHarmonic(double e, double tol);
+    real updateHarmonic(real e, real tol);
 
     /// Control by harmonic mean value (no history supplied)
-    static double updateHarmonic(double knew, double kold, double kmax);
+    static real updateHarmonic(real knew, real kold, real kmax);
 
   private:
 

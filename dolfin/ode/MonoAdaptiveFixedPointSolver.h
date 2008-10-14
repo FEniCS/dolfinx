@@ -8,6 +8,7 @@
 #define __MONO_ADAPTIVE_FIXED_POINT_SOLVER_H
 
 #include <dolfin/common/types.h>
+#include <dolfin/common/real.h>
 #include "TimeSlabSolver.h"
 
 namespace dolfin
@@ -34,7 +35,7 @@ namespace dolfin
   protected:
 
     // Make an iteration
-    double iteration(double tol, uint iter, double d0, double d1);
+    real iteration(real tol, uint iter, real d0, real d1);
 
     /// Size of system
     uint size() const;
@@ -45,10 +46,10 @@ namespace dolfin
     MonoAdaptiveTimeSlab& ts;
 
     // Old values at right end-point used to compute the increment
-    double* xold;
+    real* xold;
 
     // Damping (alpha = 1.0 for no damping)
-    double alpha;
+    real alpha;
 
     // Stabilization
     bool stabilize;
@@ -62,10 +63,10 @@ namespace dolfin
     uint li;
 
     // Ramping coefficient
-    double ramp;
+    real ramp;
 
     // Ramping factor
-    double rampfactor;
+    real rampfactor;
 
   };
 

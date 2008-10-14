@@ -31,7 +31,7 @@ namespace dolfin
     virtual ~TimeSlab();
     
     /// Build time slab, return end time
-    virtual double build(double a, double b) = 0;
+    virtual real build(real a, real b) = 0;
 
     /// Solve time slab system
     virtual bool solve() = 0;
@@ -43,28 +43,28 @@ namespace dolfin
     virtual bool shift(bool end) = 0;
 
     /// Prepare sample at time t
-    virtual void sample(double t) = 0;
+    virtual void sample(real t) = 0;
 
     /// Return number of components
     uint size() const;
 
     /// Return start time of time slab
-    double starttime() const;
+    real starttime() const;
     
     /// Return end time of time slab
-    double endtime() const;
+    real endtime() const;
 
     /// Return length of time slab
-    double length() const;
+    real length() const;
 
     /// Sample solution value of given component at given time
-    virtual double usample(uint i, double t) = 0;
+    virtual real usample(uint i, real t) = 0;
 
     /// Sample time step size for given component at given time
-    virtual double ksample(uint i, double t) = 0;
+    virtual real ksample(uint i, real t) = 0;
 
     /// Sample residual for given component at given time
-    virtual double rsample(uint i, double t) = 0;
+    virtual real rsample(uint i, real t) = 0;
 
     /// Display time slab data
     virtual void disp() const = 0;
@@ -79,27 +79,27 @@ namespace dolfin
   protected:
 
     // Write given solution vector to file
-    static void write(uint N, const double* u);
+    static void write(uint N, const real* u);
 
     // Copy data of given size between vectors with given offsets
-    static void copy(const double* x, uint xoffset, double* y, uint yoffset, uint n);
+    static void copy(const real* x, uint xoffset, real* y, uint yoffset, uint n);
 
     // Copy data of given size between vectors with given offsets
-    static void copy(const uBLASVector& x, uint xoffset, double* y, uint yoffset, uint n);
+    static void copy(const uBLASVector& x, uint xoffset, real* y, uint yoffset, uint n);
 
     // Copy data of given size between vectors with given offsets
-    static void copy(const double* x, uint xoffset, uBLASVector& y, uint yoffset, uint n);
+    static void copy(const real* x, uint xoffset, uBLASVector& y, uint yoffset, uint n);
 
     // Copy data of given size between vectors with given offsets
     static void copy(const uBLASVector& x, uint xoffset, uBLASVector& y, uint yoffset, uint n);
     
     uint N;    // Size of system
-    double _a; // Start time of time slab
-    double _b; // End time of time slab
+    real _a; // Start time of time slab
+    real _b; // End time of time slab
     
     ODE& ode;             // The ODE
     const Method* method; // Method, mcG(q) or mdG(q)  
-    double* u0;           // Initial values
+    real* u0;           // Initial values
     
     bool save_final; // True if we should save the solution at final time
 

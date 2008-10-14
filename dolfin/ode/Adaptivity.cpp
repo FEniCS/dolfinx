@@ -13,10 +13,10 @@ using namespace dolfin;
 Adaptivity::Adaptivity(const ODE& ode, const Method& method)
   : ode(ode), method(method)
 {
-  tol    = ode.get("ODE tolerance");
-  _kmax  = ode.get("ODE maximum time step");
-  beta   = ode.get("ODE interval threshold");
-  safety = ode.get("ODE safety factor");
+  double tmp = ode.get("ODE tolerance");   tol    = tmp;
+  tmp = ode.get("ODE maximum time step");  _kmax  = tmp;
+  tmp = ode.get("ODE interval threshold"); beta   = tmp;
+  tmp =  ode.get("ODE safety factor");     safety = tmp;
   kfixed = ode.get("ODE fixed time step");
    
   safety_old = safety;
@@ -27,7 +27,7 @@ Adaptivity::Adaptivity(const ODE& ode, const Method& method)
   _accept = true;
 
   // Scale tolerance with the square root of the number of components
-  //tol /= sqrt(static_cast<double>(ode.size()));
+  //tol /= sqrt(static_cast<real>(ode.size()));
 }
 //-----------------------------------------------------------------------------
 Adaptivity::~Adaptivity()
@@ -65,12 +65,12 @@ bool Adaptivity::accept()
   return _accept;
 }
 //-----------------------------------------------------------------------------
-double Adaptivity::threshold() const
+real Adaptivity::threshold() const
 {
   return beta;
 }
 //-----------------------------------------------------------------------------
-double Adaptivity::kmax() const
+real Adaptivity::kmax() const
 {
   return _kmax;
 }
