@@ -52,11 +52,8 @@ namespace dolfin
     /// Destructor
     virtual ~NewFunction();
 
-    /// Assignment from function in the same function space
+    /// Assignment from function
     const NewFunction& operator= (const NewFunction& v);
-
-    /// Assignment from sub function
-    const NewFunction& operator= (const NewSubFunction& v);
 
     /// Extract sub function
     NewSubFunction operator[] (uint i);
@@ -99,25 +96,6 @@ namespace dolfin
 
     /// Interpolate function to vertices of mesh
     void interpolate(double* vertex_values) const;
-
-    /* FIXME: Functions below might need to be added
-    
-    /// Return the rank of the value space
-    virtual uint rank() const;
-
-    /// Return the dimension of the value space for axis i
-    virtual uint dim(uint i) const;
-
-    /// Return the signature of a DiscreteFunction
-    std::string signature() const;
-
-    /// Return the number of sub functions (only for discrete functions)
-    uint numSubFunctions() const;
-    
-    /// Make current cell and facet available to user-defined function
-    void update(Cell& cell, int facet=-1);
-
-    */
 
   protected:
 

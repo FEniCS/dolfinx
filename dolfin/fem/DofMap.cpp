@@ -23,16 +23,17 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-DofMap::DofMap(ufc::dof_map& dof_map, Mesh& mesh) : dof_map(0), 
+DofMap::DofMap(ufc::dof_map& dof_map, Mesh& mesh)
+  : dof_map(0), 
     ufc_dof_map(&dof_map, NoDeleter<ufc::dof_map>()), dolfin_mesh(mesh), 
-    num_cells(mesh.numCells()),  partitions(0)
+    num_cells(mesh.numCells()), partitions(0), _offset(0)
 {
   init();
 }
 //-----------------------------------------------------------------------------
 DofMap::DofMap(std::tr1::shared_ptr<ufc::dof_map> dof_map, Mesh& mesh)
   : dof_map(0), ufc_dof_map(dof_map), dolfin_mesh(mesh), num_cells(mesh.numCells()), 
-    partitions(0)
+    partitions(0), _offset(0)
 {
   init();
 }
@@ -40,7 +41,7 @@ DofMap::DofMap(std::tr1::shared_ptr<ufc::dof_map> dof_map, Mesh& mesh)
 DofMap::DofMap(ufc::dof_map& dof_map, Mesh& mesh, MeshFunction<uint>& partitions)
   : dof_map(0), ufc_dof_map(&dof_map, NoDeleter<ufc::dof_map>()), 
     dolfin_mesh(mesh), num_cells(mesh.numCells()), 
-    partitions(&partitions)
+    partitions(&partitions), _offset(0)
 {
   init();
 }
@@ -48,13 +49,14 @@ DofMap::DofMap(ufc::dof_map& dof_map, Mesh& mesh, MeshFunction<uint>& partitions
 DofMap::DofMap(std::tr1::shared_ptr<ufc::dof_map> dof_map, Mesh& mesh, MeshFunction<uint>& partitions)
   : dof_map(0), ufc_dof_map(dof_map), 
     dolfin_mesh(mesh), num_cells(mesh.numCells()), 
-    partitions(&partitions)
+    partitions(&partitions), _offset(0)
 {
   init();
 }
 //-----------------------------------------------------------------------------
 DofMap::DofMap(const std::string signature, Mesh& mesh) 
-  : dof_map(0), dolfin_mesh(mesh), num_cells(mesh.numCells()), partitions(0)
+  : dof_map(0), dolfin_mesh(mesh), num_cells(mesh.numCells()),
+    partitions(0), _offset(0)
 {
   // Create ufc dof map from signature
   std::tr1::shared_ptr<ufc::dof_map> _ufc_dof_map(ElementLibrary::create_dof_map(signature));
@@ -66,9 +68,10 @@ DofMap::DofMap(const std::string signature, Mesh& mesh)
   init();
 }
 //-----------------------------------------------------------------------------
-DofMap::DofMap(const std::string signature, Mesh& mesh, 
-               MeshFunction<uint>& partitions) : dof_map(0), dolfin_mesh(mesh), 
-               num_cells(mesh.numCells()), partitions(&partitions)
+DofMap::DofMap(const std::string signature, Mesh& mesh,
+               MeshFunction<uint>& partitions)
+  : dof_map(0), dolfin_mesh(mesh),
+    num_cells(mesh.numCells()), partitions(&partitions), _offset(0)
 {
   // Create ufc dof map from signature
   std::tr1::shared_ptr<ufc::dof_map> _ufc_dof_map(ElementLibrary::create_dof_map(signature));
@@ -94,15 +97,22 @@ DofMap* DofMap::extract_sub_dofmap(const Array<uint>& sub_system, uint& offset) 
   // Reset offset
   offset = 0;
 
-  // Recursively extract sub dof map
+  // Recursively extract sub dofmap
   std::tr1::shared_ptr<ufc::dof_map> sub_dof_map(extract_sub_dofmap(*ufc_dof_map, offset, sub_system));
   message(2, "Extracted dof map for sub system: %s", sub_dof_map->signature());
   message(2, "Offset for sub system: %d", offset);
 
+  // Create dofmap
+  DofMap* dofmap = 0;
   if (partitions)
-    return new DofMap(sub_dof_map, dolfin_mesh, *partitions);
+    dofmap = new DofMap(sub_dof_map, dolfin_mesh, *partitions);
   else
-    return new DofMap(sub_dof_map, dolfin_mesh);
+    dofmap = new DofMap(sub_dof_map, dolfin_mesh);
+
+  // Set offset
+  dofmap->_offset = offset;
+
+  return dofmap;
 }
 //-----------------------------------------------------------------------------
 ufc::dof_map* DofMap::extract_sub_dofmap(const ufc::dof_map& dof_map, uint& offset,
@@ -210,6 +220,11 @@ void DofMap::build(UFC& ufc)
 std::map<dolfin::uint, dolfin::uint> DofMap::getMap() const
 {
   return map;
+}
+//-----------------------------------------------------------------------------
+dolfin::uint DofMap::offset() const
+{
+  return _offset;
 }
 //-----------------------------------------------------------------------------
 void DofMap::disp() const
