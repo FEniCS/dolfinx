@@ -52,7 +52,7 @@ private:
 
   double r1(const double* u)
   {
-    return k1*pow(u[0], 4.0)*sqrt(u[1]);
+    return k1*dolfin::pow(u[0], 4.0)*sqrt(u[1]);
   }
   
   double r2(const double* u)
@@ -67,12 +67,12 @@ private:
 
   double r4(const double* u)
   {
-    return k3*u[0]*pow(u[3], 2.0);
+    return k3*u[0]*dolfin::pow(u[3], 2.0);
   }
 
   double r5(const double* u)
   {
-    return k4*pow(u[5], 2.0)*sqrt(u[1]);
+    return k4*dolfin::pow(u[5], 2.0)*sqrt(u[1]);
   }
 
   double F(const double* u)

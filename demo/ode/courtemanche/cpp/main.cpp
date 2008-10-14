@@ -167,7 +167,7 @@ public:
     //Fn = 1e-12*Vrel*I_rel - 5e-13/F*(0.5*I_CaL - 0.2*I_NaCa);
     sigma    = (1.0/7.0)*(exp(Na_o/67.3) - 1.0);
     f_NaK    = 1.0/(1.0 + 0.1245*exp(-0.1*F*V/(R*T))+ 0.0365*sigma*exp(-F*V/(R*T)));
-    I_NaK    = Cm*I_NaKmax*f_NaK/(1.0 + pow((K_mNai/Na_i),1.5))*(K_o/(K_o + K_mKo));
+    I_NaK    = Cm*I_NaKmax*f_NaK/(1.0 + dolfin::pow((K_mNai/Na_i),1.5))*(K_o/(K_o + K_mKo));
     E_Na     = R*T/(z_Na*F)*log(Na_o/Na_i);
     I_bNa    = Cm*g_bNa*(V - E_Na);
     I_Na     = Cm*g_Na*m*m*m*h*j*(V - E_Na);
@@ -252,7 +252,7 @@ public:
     alpha_xs = 4e-05*(V - 19.9)/(1.0 - exp((V - 19.9)/-17.0));
     beta_xs  = 3.5e-05*(V - 19.9)/(exp((V - 19.9)/9.0) - 1.0);
     tau_xs   = 0.5/(alpha_xs + beta_xs);
-    xs_inf   = pow((1.0 + exp((V - 19.9)/-12.7)),-0.5);
+    xs_inf   = dolfin::pow((1.0 + exp((V - 19.9)/-12.7)),-0.5);
      
     tau_d    = (1.0 - exp((V + 10.0)/-6.24))/(0.035*(V + 10.0)*(1.0 + exp((V + 10.0)/-6.24))); 
     d_inf    = 1.0/(1.0 + exp((V +10.0)/-8.0));
