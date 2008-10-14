@@ -107,9 +107,8 @@ namespace dolfin
     void solve();
 
     #ifdef HAS_GMP
-    inline static real& get_epsilon(){
-      return epsilon;
-    }
+    inline static real& get_epsilon()
+    { return epsilon; }
 
     static void  set_epsilon (real eps);
     #endif
@@ -162,6 +161,7 @@ namespace dolfin
     #ifdef HAS_GMP
     static real epsilon;
     #endif
+
   };
 }
 

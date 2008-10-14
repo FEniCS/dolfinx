@@ -17,33 +17,33 @@
 #include <dolfin/common/real.h>
 #include <iostream>
 
-
 #define SOR_MAX_ITERATIONS 5
 
 namespace dolfin
 {
 
-  class SORSolver {
-
+  class SORSolver
+  {
   public:
 
-    //Will replace the initial guess in x
+    // Will replace the initial guess in x
     static void SOR(uint n, const real* A, 
 		    real* x, const real* b, 
 		    const real& epsilon); 
-
 
     static void printMatrix(const uint n, const real* A);
     static void printVector(const uint n, const real* x);
 
   private:
+
     static void _SOR_iteration(uint n, 
 			       const real* A, 
 			       const real* b, 
 			       real* x_new, 
-			       const real* x_prev) ;
+			       const real* x_prev);
 
-  }; //end class SORSolver
-} //end namespace dolfin
+  };
+
+}
 
 #endif
