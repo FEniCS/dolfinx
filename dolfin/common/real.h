@@ -45,7 +45,7 @@ namespace dolfin
   
   // Absolute value
   inline real abs (real x) 
-  { return x >= 0 ? x : -1*y; }
+  { return x >= 0 ? x : -1*x; }
   
   // Maximum
   inline real max (real x, real y)
