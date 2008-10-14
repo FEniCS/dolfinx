@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-09-11
-// Last changed: 2008-10-12
+// Last changed: 2008-10-14
 
 #ifndef __FUNCTION_SPACE_H
 #define __FUNCTION_SPACE_H
@@ -35,8 +35,14 @@ namespace dolfin
                   std::tr1::shared_ptr<const FiniteElement> element,
                   std::tr1::shared_ptr<const DofMap> dofmap);
 
+    /// Copy constructor
+    FunctionSpace(const FunctionSpace& V);
+
     /// Destructor
     ~FunctionSpace();
+
+    /// Assignment operator
+    const FunctionSpace& operator= (const FunctionSpace& V);
 
     /// Return mesh
     Mesh& mesh();
@@ -68,6 +74,9 @@ namespace dolfin
     void interpolate(double* vertex_values,
                      const NewFunction& v) const;
 
+    /// Extract sub finite element for sub system
+    FunctionSpace* extract_sub_space(const Array<uint>& sub_system) const;
+    
   private:
 
     // Scratch space, used for storing temporary local data
@@ -77,9 +86,15 @@ namespace dolfin
 
       // Constructor
       Scratch(const FiniteElement& element);
+      
+      // Constructor
+      Scratch();
 
       // Destructor
       ~Scratch();
+
+      // Initialize scratch space
+      void init(const FiniteElement& element);
 
       // Value size (number of entries in tensor value)
       uint size;

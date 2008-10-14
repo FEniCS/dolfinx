@@ -4,7 +4,7 @@
 // Modified by Kristoffer Selim, 2008.
 //
 // First added:  2008-09-11
-// Last changed: 2008-10-12
+// Last changed: 2008-10-14
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/NoDeleter.h>
@@ -39,9 +39,33 @@ FunctionSpace::FunctionSpace(std::tr1::shared_ptr<Mesh> mesh,
   // Do nothing
 }
 //-----------------------------------------------------------------------------
+FunctionSpace::FunctionSpace(const FunctionSpace& V)
+  : _mesh(static_cast<Mesh*>(0)),
+    _element(static_cast<FiniteElement*>(0)),
+    _dofmap(static_cast<DofMap*>(0)),
+    scratch(), intersection_detector(0)
+{
+  *this = V;
+}
+//-----------------------------------------------------------------------------
 FunctionSpace::~FunctionSpace()
 {
   delete intersection_detector;
+}
+//-----------------------------------------------------------------------------
+const FunctionSpace& FunctionSpace::operator= (const FunctionSpace& V)
+{
+  // Assign data (will be shared)
+  _mesh = V._mesh;
+  _element = V._element;
+  _dofmap = V._dofmap;
+
+  // Reinitialize scratch space and intersection detector
+  scratch.init(*_element);
+  delete intersection_detector;
+  intersection_detector = 0;
+
+  return *this;
 }
 //-----------------------------------------------------------------------------
 Mesh& FunctionSpace::mesh()
@@ -202,28 +226,32 @@ void FunctionSpace::interpolate(double* vertex_values,
   delete [] local_vertex_values;
 }
 //-----------------------------------------------------------------------------
+FunctionSpace* FunctionSpace::extract_sub_space(const Array<uint>& sub_system) const
+{
+  dolfin_assert(_mesh);
+  dolfin_assert(_element);
+  dolfin_assert(_dofmap);
+
+  // Extract sub element
+  std::tr1::shared_ptr<FiniteElement> element(_element->extract_sub_element(sub_system));
+
+  // Extract sub dofmap and offset
+  uint offset = 0;
+  std::tr1::shared_ptr<DofMap> dofmap(_dofmap->extract_sub_dofmap(sub_system, offset));
+  
+  return new FunctionSpace(_mesh, element, dofmap);
+}
+//-----------------------------------------------------------------------------
 FunctionSpace::Scratch::Scratch(const FiniteElement& element)
   : size(0), dofs(0), coefficients(0), values(0)
 {
-  // Compute size of value (number of entries in tensor value)
-  size = 1;
-  for (uint i = 0; i < element.value_rank(); i++)
-    size *= element.value_dimension(i);
-
-  // Initialize local array for mapping of dofs
-  dofs = new uint[element.space_dimension()];
-  for (uint i = 0; i < element.space_dimension(); i++)
-    dofs[i] = 0;
-
-  // Initialize local array for expansion coefficients
-  coefficients = new double[element.space_dimension()];
-  for (uint i = 0; i < element.space_dimension(); i++)
-    coefficients[i] = 0.0;
-
-  // Initialize local array for values
-  values = new double[size];
-  for (uint i = 0; i < size; i++)
-    values[i] = 0.0;
+  init(element);
+}
+//-----------------------------------------------------------------------------
+FunctionSpace::Scratch::Scratch()
+  : size(0), dofs(0), coefficients(0), values(0)
+{
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 FunctionSpace::Scratch::~Scratch()
@@ -231,5 +259,31 @@ FunctionSpace::Scratch::~Scratch()
   delete [] dofs;
   delete [] coefficients;
   delete [] values;
+}
+//-----------------------------------------------------------------------------
+void FunctionSpace::Scratch::init(const FiniteElement& element)
+{
+  // Compute size of value (number of entries in tensor value)
+  size = 1;
+  for (uint i = 0; i < element.value_rank(); i++)
+    size *= element.value_dimension(i);
+
+  // Initialize local array for mapping of dofs
+  delete [] dofs;
+  dofs = new uint[element.space_dimension()];
+  for (uint i = 0; i < element.space_dimension(); i++)
+    dofs[i] = 0;
+
+  // Initialize local array for expansion coefficients
+  delete coefficients;
+  coefficients = new double[element.space_dimension()];
+  for (uint i = 0; i < element.space_dimension(); i++)
+    coefficients[i] = 0.0;
+
+  // Initialize local array for values
+  delete values;
+  values = new double[size];
+  for (uint i = 0; i < size; i++)
+    values[i] = 0.0;
 }
 //-----------------------------------------------------------------------------

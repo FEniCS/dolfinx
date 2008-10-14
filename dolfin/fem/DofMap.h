@@ -109,6 +109,9 @@ namespace dolfin
     /// Extract sub dofmap and offset for sub system
     DofMap* extract_sub_dofmap(const Array<uint>& sub_system, uint& offset) const;
     
+    /// Return offset into parent's vector of coefficients
+    uint offset() const;
+
     /// Display mapping
     void disp() const;
    
@@ -145,6 +148,9 @@ namespace dolfin
 
     // Provide easy access to map for testing
     std::map<uint, uint> map;
+
+    // Offset into parent's vector of coefficients
+    uint _offset;
 
   };
 

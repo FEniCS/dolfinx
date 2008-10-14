@@ -22,21 +22,24 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 NewFunction::NewFunction(const FunctionSpace& V)
-  : _function_space(&V, NoDeleter<const FunctionSpace>()), _vector(0),
+  : _function_space(&V, NoDeleter<const FunctionSpace>()),
+    _vector(0),
     _time(0), _cell(0), _facet(-1)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 NewFunction::NewFunction(const std::tr1::shared_ptr<FunctionSpace> V)
-  : _function_space(V), _vector(0),
+  : _function_space(V),
+    _vector(0),
     _time(0), _cell(0), _facet(-1)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 NewFunction::NewFunction(const std::string filename)
-  : _function_space(static_cast<FunctionSpace*>(0)), _vector(0),
+  : _function_space(static_cast<FunctionSpace*>(0)),
+    _vector(0),
     _time(0), _cell(0), _facet(-1)
 {
   // FIXME: Uncomment when renamed to Function
@@ -45,10 +48,27 @@ NewFunction::NewFunction(const std::string filename)
 }
 //-----------------------------------------------------------------------------
 NewFunction::NewFunction(const NewSubFunction& v)
-  : _function_space(static_cast<FunctionSpace*>(0)), _vector(0),
+  : _function_space(v.v.function_space().extract_sub_space(Array<uint>(v.i))),
+    _vector(0),
     _time(0), _cell(0), _facet(-1)
 {
-  *this = v;
+  // Initialize vector
+  init();
+
+  // Copy subset of coefficients
+  const uint n = _vector->size();
+  const uint offset = function_space().dofmap().offset();
+  uint* rows = new uint[n];
+  double* values = new double[n];
+  for (uint i = 0; i < n; i++)
+    rows[i] = offset + i;
+  v.v.vector().get(values, n, rows);
+  _vector->set(values);
+  _vector->apply();
+  
+  // Clean up
+  delete [] rows;
+  delete [] values;
 }
 //-----------------------------------------------------------------------------
 NewFunction::NewFunction(const NewFunction& v)
@@ -85,59 +105,6 @@ const NewFunction& NewFunction::operator= (const NewFunction& v)
   // Assign time
   _time = v._time;
 
-  return *this;
-}
-//-----------------------------------------------------------------------------
-const NewFunction& NewFunction::operator= (const NewSubFunction& v)
-{
-  // Check that vector exists
-  if (!v.v._vector)
-    error("Unable to assign to function, missing coefficients (user-defined function).");
-
-  // Get function space
-  //const FunctionSpace& V = v.v.function_space();
-
-  // Create sub system
-  //SubSystem sub_system(v.i);
-
-  // Extract sub element
-  //FiniteElement* element = sub_system.extract_finite_element(V.element());
-
-  /*
-  // Create sub system
-  SubSystem sub_system(sub_function.i);
-
-  // Extract sub element
-  std::tr1::shared_ptr<FiniteElement> _element(sub_system.extractFiniteElement(*(sub_function.f->finite_element)));
-  finite_element.swap(_element);
-
-  // Initialize scratch space
-  scratch = new Scratch(*finite_element);
-
-  // Extract sub dof map and offset
-  uint offset = 0;
-  std::tr1::shared_ptr<DofMap> _dof_map(sub_function.f->dof_map->extractDofMap(sub_system.array(), offset));
-  dof_map.swap(_dof_map);
-
-  // Create vector of dofs and copy values
-  init();
-  double* values   = new double[n];
-  uint* get_rows = new uint[n];
-  uint* set_rows = new uint[n];
-  for (uint i = 0; i < n; i++)
-  {
-    get_rows[i] = offset + i;
-    set_rows[i] = i;
-  }
-  sub_function.f->x->get(values, n, get_rows);
-  x->set(values, n, set_rows);
-  x->apply();
-
-  delete [] values;
-  delete [] get_rows;
-  delete [] set_rows;
-  */
-  
   return *this;
 }
 //-----------------------------------------------------------------------------
