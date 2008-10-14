@@ -106,15 +106,15 @@ DiscreteFunction::DiscreteFunction(SubFunction& sub_function)
   SubSystem sub_system(sub_function.i);
 
   // Extract sub element
-  std::tr1::shared_ptr<FiniteElement> _element(sub_system.extractFiniteElement(*(sub_function.f->finite_element)));
+  std::tr1::shared_ptr<FiniteElement> _element(sub_function.f->finite_element->extract_sub_element(sub_system.array()));
   finite_element.swap(_element);
 
   // Initialize scratch space
   scratch = new Scratch(*finite_element);
 
-  // Extract sub dof map and offset
+  // Extract sub dofmap and offset
   uint offset = 0;
-  std::tr1::shared_ptr<DofMap> _dof_map(sub_function.f->dof_map->extractDofMap(sub_system.array(), offset));
+  std::tr1::shared_ptr<DofMap> _dof_map(sub_function.f->dof_map->extract_sub_dofmap(sub_system.array(), offset));
   dof_map.swap(_dof_map);
 
   // Create vector of dofs and copy values

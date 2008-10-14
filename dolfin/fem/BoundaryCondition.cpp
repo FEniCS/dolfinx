@@ -1,10 +1,10 @@
-// Copyright (C) 2007 Anders Logg.
+// Copyright (C) 2007-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells 2007, 2008.
 //
 // First added:  2008-06-18
-// Last changed: 2007-12-09
+// Last changed: 2008-10-14
 
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/mesh/Mesh.h>
@@ -46,12 +46,12 @@ BoundaryCondition::LocalData::LocalData(const ufc::form& form, Mesh& mesh,
   if (sub_system.depth() > 0)
   {
     // Finite element
-    FiniteElement* sub_finite_element = sub_system.extractFiniteElement(*finite_element);
+    FiniteElement* sub_finite_element = finite_element->extract_sub_element(sub_system.array());
     delete finite_element;
     finite_element = sub_finite_element;
 
     // Create sub dof map
-    dof_map = global_dof_map.extractDofMap(sub_system.array(), offset);
+    dof_map = global_dof_map.extract_sub_dofmap(sub_system.array(), offset);
 
     // Take responsibility for dof_map
     dof_map_local = dof_map;

@@ -5,7 +5,7 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2003-11-28
-// Last changed: 2008-10-12
+// Last changed: 2008-10-14
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/NoDeleter.h>
@@ -91,8 +91,17 @@ const NewFunction& NewFunction::operator= (const NewFunction& v)
 const NewFunction& NewFunction::operator= (const NewSubFunction& v)
 {
   // Check that vector exists
-  //if (!v._vector)
-  //  error("Unable to assign to function, missing coefficients (user-defined function).");
+  if (!v.v._vector)
+    error("Unable to assign to function, missing coefficients (user-defined function).");
+
+  // Get function space
+  //const FunctionSpace& V = v.v.function_space();
+
+  // Create sub system
+  //SubSystem sub_system(v.i);
+
+  // Extract sub element
+  //FiniteElement* element = sub_system.extract_finite_element(V.element());
 
   /*
   // Create sub system

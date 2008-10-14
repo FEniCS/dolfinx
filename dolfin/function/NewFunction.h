@@ -6,7 +6,7 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2003-11-28
-// Last changed: 2008-10-12
+// Last changed: 2008-10-14
 
 #ifndef __NEW_FUNCTION_H
 #define __NEW_FUNCTION_H
@@ -52,7 +52,7 @@ namespace dolfin
     /// Destructor
     virtual ~NewFunction();
 
-    /// Assignment from function
+    /// Assignment from function in the same function space
     const NewFunction& operator= (const NewFunction& v);
 
     /// Assignment from sub function
@@ -100,7 +100,7 @@ namespace dolfin
     /// Interpolate function to vertices of mesh
     void interpolate(double* vertex_values) const;
 
-    /* FIXME: Functions below should be added somehow
+    /* FIXME: Functions below might need to be added
     
     /// Return the rank of the value space
     virtual uint rank() const;

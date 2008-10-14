@@ -4,7 +4,7 @@
 // Modified by Martin Alnes, 2008
 //
 // First added:  2007-03-01
-// Last changed: 2008-08-12
+// Last changed: 2008-10-14
 
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/common/Timer.h>
@@ -85,7 +85,7 @@ DofMap::~DofMap()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-DofMap* DofMap::extractDofMap(const Array<uint>& sub_system, uint& offset) const
+DofMap* DofMap::extract_sub_dofmap(const Array<uint>& sub_system, uint& offset) const
 {
   // Check that dof map has not be re-ordered
   if (dof_map)
@@ -95,7 +95,7 @@ DofMap* DofMap::extractDofMap(const Array<uint>& sub_system, uint& offset) const
   offset = 0;
 
   // Recursively extract sub dof map
-  std::tr1::shared_ptr<ufc::dof_map> sub_dof_map(extractDofMap(*ufc_dof_map, offset, sub_system));
+  std::tr1::shared_ptr<ufc::dof_map> sub_dof_map(extract_sub_dofmap(*ufc_dof_map, offset, sub_system));
   message(2, "Extracted dof map for sub system: %s", sub_dof_map->signature());
   message(2, "Offset for sub system: %d", offset);
 
@@ -105,7 +105,8 @@ DofMap* DofMap::extractDofMap(const Array<uint>& sub_system, uint& offset) const
     return new DofMap(sub_dof_map, dolfin_mesh);
 }
 //-----------------------------------------------------------------------------
-ufc::dof_map* DofMap::extractDofMap(const ufc::dof_map& dof_map, uint& offset, const Array<uint>& sub_system) const
+ufc::dof_map* DofMap::extract_sub_dofmap(const ufc::dof_map& dof_map, uint& offset,
+                                         const Array<uint>& sub_system) const
 {
   // Check if there are any sub systems
   if (dof_map.num_sub_dof_maps() == 0)
@@ -124,8 +125,7 @@ ufc::dof_map* DofMap::extractDofMap(const ufc::dof_map& dof_map, uint& offset, c
   for (uint i = 0; i < sub_system[0]; i++)
   {
     ufc::dof_map* ufc_dof_map = dof_map.create_sub_dof_map(i);
-    // FIXME: Can we avoid creating a DofMap here just for getting the global dimension?
-    if(partitions)
+    if (partitions)
       DofMap dof_map_test(*ufc_dof_map, dolfin_mesh, *partitions);
     else
       DofMap dof_map_test(*ufc_dof_map, dolfin_mesh);
@@ -144,7 +144,7 @@ ufc::dof_map* DofMap::extractDofMap(const ufc::dof_map& dof_map, uint& offset, c
   Array<uint> sub_sub_system;
   for (uint i = 1; i < sub_system.size(); i++)
     sub_sub_system.push_back(sub_system[i]);
-  ufc::dof_map* sub_sub_dof_map = extractDofMap(*sub_dof_map, offset, sub_sub_system);
+  ufc::dof_map* sub_sub_dof_map = extract_sub_dofmap(*sub_dof_map, offset, sub_sub_system);
   delete sub_dof_map;
 
   return sub_sub_dof_map;

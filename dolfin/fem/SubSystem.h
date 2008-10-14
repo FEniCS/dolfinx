@@ -12,7 +12,6 @@
 namespace dolfin
 {
 
-  class FiniteElement;
   class Mesh;
 
   /// This class represents a sub system that may be specified as a
@@ -47,18 +46,11 @@ namespace dolfin
     /// Return number of levels for nested sub system
     uint depth() const;
     
-    /// Extract sub finite element of given finite element
-    FiniteElement* extractFiniteElement(const FiniteElement& finite_element) const;
-
     /// Return array which defines sub system
     const Array<uint>& array() const
     { return sub_system; }
 
   private:
-
-    // Recursively extract sub finite element
-    static FiniteElement* extractFiniteElement(const FiniteElement& finite_element, 
-                                               const Array<uint>& sub_system);
 
     // The array specifying the sub system
     Array<uint> sub_system;

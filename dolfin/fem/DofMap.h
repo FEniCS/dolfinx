@@ -4,7 +4,7 @@
 // Modified by Martin Alnes, 2008
 
 // First added:  2007-03-01
-// Last changed: 2008-10-09
+// Last changed: 2008-10-14
 
 #ifndef __DOF_MAP_H
 #define __DOF_MAP_H
@@ -96,9 +96,6 @@ namespace dolfin
     void tabulate_coordinates(double** coordinates, const ufc::cell& ufc_cell) const
     { ufc_dof_map->tabulate_coordinates(coordinates, ufc_cell); }
 
-    /// Extract sub dof map
-    DofMap* extractDofMap(const Array<uint>& sub_system, uint& offset) const;
-
     /// Return mesh associated with map
     Mesh& mesh() const
     { return dolfin_mesh; }
@@ -108,6 +105,9 @@ namespace dolfin
     
     /// Return renumbering (used for testing)
     std::map<uint, uint> getMap() const;
+
+    /// Extract sub dofmap and offset for sub system
+    DofMap* extract_sub_dofmap(const Array<uint>& sub_system, uint& offset) const;
     
     /// Display mapping
     void disp() const;
@@ -120,8 +120,10 @@ namespace dolfin
     /// Initialise DofMap
     void init();
     
-    /// Extract sub DofMap
-    ufc::dof_map* extractDofMap(const ufc::dof_map& dof_map, uint& offset, const Array<uint>& sub_system) const;
+    // Recursively extract sub dofmap
+    ufc::dof_map* extract_sub_dofmap(const ufc::dof_map& dof_map,
+                                     uint& offset,
+                                     const Array<uint>& sub_system) const;
 
     // Precomputed dof map
     uint* dof_map;
