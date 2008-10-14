@@ -100,14 +100,14 @@ g  = DirichletBoundaryCondition(element, mesh, t)
 bc = DirichletBC(g, mesh, dirichlet_boundary)
 
 # Create solution Function
-x = Vector()
-u = Function(element, mesh, x)
+u = Function(element, mesh, Vector())
+x = u.vector()
 
 # Create user-defined nonlinear problem
 nonlinear_problem = MyNonlinearProblem(element, mesh, bc, u, f)
 
 # Create nonlinear solver and set parameters
-nonlinear_solver = NewtonSolver(bicgstab, amg)
+nonlinear_solver = NewtonSolver(bicgstab, amg_hypre)
 nonlinear_solver.set("Newton maximum iterations", 50)
 nonlinear_solver.set("Newton relative tolerance", 1e-10)
 nonlinear_solver.set("Newton absolute tolerance", 1e-10)
