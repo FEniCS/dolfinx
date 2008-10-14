@@ -56,12 +56,23 @@ namespace dolfin
   { return x < y ? x : y; }
     
   // Power function
-  inline real pow(const real x, uint y) 
+  inline real pow(real x, uint y) 
   { 
 #ifdef HAS_GMP
     real res;
     mpf_pow_ui(res.get_mpf_t(), x.get_mpf_t(), y);
     return res;
+#else
+    return std::pow(to_double(x), to_double(y));
+#endif
+  }
+
+  // Power function
+  inline real pow(real x, real y)
+  {
+#ifdef HAS_GMP
+    error("Not implemented.");
+    return 0.0;
 #else
     return std::pow(to_double(x), to_double(y));
 #endif
