@@ -1,8 +1,10 @@
 // Copyright (C) 2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Benjamin Kehlet, 2008.
+//
 // First added:  2008-10-02
-// Last changed: 2008-10-06
+// Last changed: 2008-10-14
 //
 // This file provides utilities for working with variable-precision
 // floating-point numbers. It defines a datatype "real" which defaults
@@ -12,70 +14,63 @@
 #ifndef __REAL_H
 #define __REAL_H
 
+#ifdef HAS_GMP
+#include <gmpxx.h>
+#endif
+
 #include "types.h"
 #include <dolfin/log/log.h>
 #include <cmath>
 #include <iostream>
 
+namespace dolfin
+{
 
-  // Real number
+  // Real type
 #ifdef HAS_GMP
-
-
-#include <gmpxx.h>
-
-namespace dolfin
-{
-typedef mpf_class real;
+  typedef mpf_class real;
 #else
-
-namespace dolfin
-{
   typedef double real;
 #endif
 
-
   // Convert to double (if necessary)
-  inline double to_double(const real x) {
-    #ifdef HAS_GMP 
-      return x.get_d();
-    #else
-      return x;
-    #endif
+  inline double to_double(const real x)
+  {
+#ifdef HAS_GMP 
+    return x.get_d();
+#else
+    return x;
+#endif
   }
-
-
-  // Abs
+  
+  // Absolute value
   inline real abs (real a) 
   { return a >= 0 ? a : -1*a; }
- 
-  // max
+  
+  // Maximum
   inline real max (real a, real b) 
   { return a > b ? a : b; }
-
-  // min
+  
+  // Minimum
   inline real min (real a, real b)
   { return a < b ? a : b; }
-
-#ifdef HAS_GMP
-  //  pow 
+    
+  // Power function
   inline real pow(const real x, uint y) 
   { 
-      real res;
-      mpf_pow_ui(res.get_mpf_t(), x.get_mpf_t(), y);
-      return res;
-  }
-#endif
-
-  inline real pow(const real x, const real y) {
-    //Should we use mpfr instead? It has a pow function.
+#ifdef HAS_GMP
+    real res;
+    mpf_pow_ui(res.get_mpf_t(), x.get_mpf_t(), y);
+    return res;
+#else
     return std::pow(to_double(x), to_double(y));
+#endif
   }
 
   // Set array to given array (copy values)
   inline void real_set(uint n, real* x, const real* y)
   { for (uint i = 0; i < n; i++) x[i] = y[i]; }
-  
+
   // Set array to given number
   inline void real_set(uint n, real* x, real value)
   { for (uint i = 0; i < n; i++) x[i] = value; }
@@ -107,9 +102,7 @@ namespace dolfin
   // Compute maximum absolute value of array
   inline real real_max_abs(uint n, const real* x)
   { real _max = 0.0; for (uint i = 0; i < n; i++) _max = max(abs(x[i]), _max); return _max; }
-
-
-
-} //end namespace dolfin
+  
+}
 
 #endif
