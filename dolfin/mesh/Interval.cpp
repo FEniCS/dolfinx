@@ -1,7 +1,7 @@
 // Copyright (C) 2007 Kristian B. Oelgaard.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by N.Lopes:2008-10-13 
+// Modified by N. Lopes, 2008.
 //
 // First added:  2007-11-23
 // Last changed: 2008-10-13
@@ -35,14 +35,14 @@ Interval::Interval(uint nx,double a,double b) : Mesh()
   }
 
   // Create intervals
-  for (uint ix = 0; ix < nx; ix++) {
-  	const uint v0 = ix;
-  	const uint v1 = v0 + 1;
-  	editor.addCell(ix, v0, v1);
+  for (uint ix = 0; ix < nx; ix++)
+  {
+    const uint v0 = ix;
+    const uint v1 = v0 + 1;
+    editor.addCell(ix, v0, v1);
   }
 
   // Close mesh editor
   editor.close();
-
 }
 //-----------------------------------------------------------------------------

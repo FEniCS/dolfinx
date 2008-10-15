@@ -1,7 +1,7 @@
 // Copyright (C) 2007 Kristian B. Oelgaard.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by N.Lopes: 2008-10-13
+// Modified by N. Lopes, 2008.
 //
 // First added:  2007-11-23
 // Last changed: 2008-10-13
