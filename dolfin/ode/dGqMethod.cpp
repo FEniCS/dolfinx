@@ -55,7 +55,7 @@ real dGqMethod::timestep(real r, real tol, real k0, real kmax) const
   // FIXME: Missing stability factor and interpolation constant
   // FIXME: Missing jump term
   
-  if ( abs(r) < DOLFIN_EPS )
+  if ( abs(r) < ODE::epsilon() )
     return kmax;
 
   //return pow(tol / fabs(r), 1.0 / static_cast<real>(q+1));
@@ -148,7 +148,7 @@ void dGqMethod::computeWeights()
   uBLASDenseMatrix A(nn, nn);
   ublas_dense_matrix& _A = A.mat();
 
-  real* A_real = new real[q*q];
+  real A_real[q*q];;
   
   // Compute matrix coefficients
   for (unsigned int i = 0; i < nn; i++)
@@ -173,10 +173,7 @@ void dGqMethod::computeWeights()
   ublas_vector& _b = b.vec();
   ublas_vector& _w = w.vec();
 
-  real* b_real = new real[q];
-  real* w_real = new real[q];
-  real_zero(q, w_real);
-
+  real b_real[q];
 
   // Compute nodal weights for each degree of freedom (loop over points)
   for (unsigned int i = 0; i < nq; i++)
@@ -195,8 +192,6 @@ void dGqMethod::computeWeights()
     // FIXME: Do we get high enough precision?
     A.solve(w, b);
 
-
-
     #ifndef HAS_GMP
     // Save weights including quadrature
     for (uint j = 0; j < nn; j++)
@@ -205,11 +200,18 @@ void dGqMethod::computeWeights()
     #else 
 
     // Use the double precision solution as initial guess for the SOR iterator
+    real w_real[q];
+
     for (uint j = 0; j < q; ++j)
       w_real[j] = _w[j];
-    
 
-    SORSolver::SOR(q, A_real, w_real, b_real, ODE::get_epsilon());
+
+    uBLASDenseMatrix A_inv(A);
+    A_inv.invert();
+    
+    SORSolver::precondition(q, A_inv, A_real, b_real);
+
+    SORSolver::SOR(q, A_real, w_real, b_real, ODE::epsilon());
     
     for (uint j = 0; j < nn; ++j)
       nweights[j][i] = qweights[i] * w_real[j];

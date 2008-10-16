@@ -106,12 +106,8 @@ namespace dolfin
     /// Solve ODE
     void solve();
 
-    #ifdef HAS_GMP
-    inline static real& get_epsilon()
-    { return epsilon; }
-
-    static void  set_epsilon (real eps);
-    #endif
+    static real& epsilon();
+    static void set_epsilon (real eps);
 
     /// Friends
     friend class Dual;
@@ -147,6 +143,9 @@ namespace dolfin
     real default_timestep;
 
   private:
+    // epsilon value. Defaults to DOLFIN_EPS, but can 
+    // be changed to allow extended precision
+    static real _epsilon;
 
     // Temporary vectors used for computing Jacobian
     real* tmp0;
@@ -157,11 +156,6 @@ namespace dolfin
     Event not_impl_M;
     Event not_impl_J;
     Event not_impl_JT;
-
-    #ifdef HAS_GMP
-    static real epsilon;
-    #endif
-
   };
 }
 

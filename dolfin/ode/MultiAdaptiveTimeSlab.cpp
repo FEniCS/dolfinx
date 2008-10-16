@@ -93,7 +93,7 @@ real MultiAdaptiveTimeSlab::build(real a, real b)
   //     << a << " and " << b << ": K = " << b - a << ", nj = " << nj << endl;
 
   // Update at t = 0.0
-  if ( a < DOLFIN_EPS )
+  if ( a < ODE::epsilon() )
     ode.update(u0, a, false);
 
   return b;
@@ -626,7 +626,7 @@ dolfin::uint MultiAdaptiveTimeSlab::countDependencies(uint i0)
     const uint i1 = deps[pos];
     
     // Use u to keep track of the latest time value for each component here
-    if ( u[i0] > (u[i1] + DOLFIN_EPS) )
+    if ( u[i0] > (u[i1] + ODE::epsilon()) )
       n += method->nsize();
   }
   
@@ -666,7 +666,7 @@ dolfin::uint MultiAdaptiveTimeSlab::countDependencies(uint i0, real b0)
     const real b1 = sb[s1];
     
     // Check if the component has reached b0
-    if ( b1 < (b0 - DOLFIN_EPS) )
+    if ( b1 < (b0 - ODE::epsilon()) )
     {
       n += method->nsize();
     }
@@ -680,14 +680,14 @@ bool MultiAdaptiveTimeSlab::within(real t, real a, real b) const
   // Check if time is within the given interval, choosing the left interval
   // if we are close to the edge
 
-  return (a + DOLFIN_EPS) < t && t <= (b + DOLFIN_EPS);
+  return (a + ODE::epsilon()) < t && t <= (b + ODE::epsilon());
 }
 //-----------------------------------------------------------------------------
 bool MultiAdaptiveTimeSlab::within(real a0, real b0, real a1, real b1) const
 {
   // Check if [a0, b0] is contained in [a1, b1]
 
-  return a1 <= (a0 + DOLFIN_EPS) && (b0 - DOLFIN_EPS) <= b1;
+  return a1 <= (a0 + ODE::epsilon()) && (b0 - ODE::epsilon()) <= b1;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint MultiAdaptiveTimeSlab::coverSlab(int subslab, uint e0)
@@ -754,7 +754,7 @@ void MultiAdaptiveTimeSlab::coverTime(real t)
     const real b = sb[s];
 
     // Check if we need to start from the beginning
-    if ( t < (a + DOLFIN_EPS) )
+    if ( t < (a + ODE::epsilon()) )
     {
       emax = 0;
       ok = false;
@@ -762,14 +762,14 @@ void MultiAdaptiveTimeSlab::coverTime(real t)
     }
 
     // Check if we need to search forward, starting at e = emax
-    if ( t > (b + DOLFIN_EPS) )
+    if ( t > (b + ODE::epsilon()) )
     {
       ok = false;
       break;
     }
   }
 
-  // If ok is true, then a + DOLFIN_EPS <= t <= b + DOLFIN_EPS for all components
+  // If ok is true, then a + ODE::epsilon() <= t <= b + ODE::epsilon() for all components
   if ( ok )
     return;
 
@@ -781,7 +781,7 @@ void MultiAdaptiveTimeSlab::coverTime(real t)
     const uint s = es[emax];
     const real a = sa[s];
     
-    if ( t < (a + DOLFIN_EPS) )
+    if ( t < (a + ODE::epsilon()) )
       emax = 0;
   }
 
@@ -794,7 +794,7 @@ void MultiAdaptiveTimeSlab::coverTime(real t)
     const real a = sa[s];
 
     // Check if we have stepped far enough
-    if ( t < (a + DOLFIN_EPS) && _a < (a - DOLFIN_EPS) )
+    if ( t < (a + ODE::epsilon()) && _a < (a - ODE::epsilon()) )
       break;
 
     // Cover element
@@ -813,7 +813,7 @@ void MultiAdaptiveTimeSlab::cGfeval(real* f, uint s0, uint e0, uint i0,
   const Array<uint>& deps = ode.dependencies[i0];
 
   // First evaluate at left end-point
-  if ( a0 < (_a + DOLFIN_EPS) )
+  if ( a0 < (_a + ODE::epsilon()) )
   {
     // Use previously computed value
     f[0] = f0[i0];
@@ -846,7 +846,7 @@ void MultiAdaptiveTimeSlab::cGfeval(real* f, uint s0, uint e0, uint i0,
       else
       {
 	const real b1 = sb[s1];
-	if ( b1 < (a0 + DOLFIN_EPS) )
+	if ( b1 < (a0 + ODE::epsilon()) )
 	{
 	  // k1 < k0 (smaller time step)
 	  u[i1] = jx[e1 * nn + last];
@@ -906,7 +906,7 @@ void MultiAdaptiveTimeSlab::cGfeval(real* f, uint s0, uint e0, uint i0,
 
       // Skip components with smaller time steps
       const real b1 = sb[s1];
-      if ( b1 < (a0 + DOLFIN_EPS) )
+      if ( b1 < (a0 + ODE::epsilon()) )
        	continue;
       
       // Interpolate value from larger element
@@ -991,7 +991,7 @@ void MultiAdaptiveTimeSlab::dGfeval(real* f, uint s0, uint e0, uint i0,
 
       // Skip components with smaller time steps
       const real b1 = sb[s1];
-      if ( b1 < (a0 + DOLFIN_EPS) )
+      if ( b1 < (a0 + ODE::epsilon()) )
        	continue;
       
       // Interpolate value from larger element

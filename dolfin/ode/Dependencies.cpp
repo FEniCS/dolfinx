@@ -209,7 +209,7 @@ bool Dependencies::check_dependency(ODE& ode, real* u, real f0,
   u[j] = uj;
 
   // Compare function values
-  return abs(f - f0) > DOLFIN_EPS;
+  return abs(f - f0) > ODE::epsilon();
 }
 //-----------------------------------------------------------------------------
 void Dependencies::make_sparse()
