@@ -99,7 +99,7 @@ real MultiAdaptiveNewtonSolver::iteration(real tol, uint iter,
     xnorm = max(xnorm, abs(ts.jx[j]));
   
   // Solve linear system
-  const double r = b.norm(linf) + ODE::epsilon();
+  const double r = b.norm(linf) + to_double( ODE::epsilon() );
   b /= r;
   num_local_iterations += solver.solve(*A, dx, b);
   dx *= r;

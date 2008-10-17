@@ -94,7 +94,7 @@ real MonoAdaptiveNewtonSolver::iteration(real tol, uint iter, real d0, real d1)
   // Solve linear system
   if (krylov)
   {
-    const double r = b.norm(linf) + ODE::epsilon();
+    const double r = b.norm(linf) + to_double( ODE::epsilon() );
     b /= r;
     num_local_iterations += krylov->solve(A, dx, b);
     dx *= r;
