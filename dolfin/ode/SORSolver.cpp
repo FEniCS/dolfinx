@@ -66,30 +66,22 @@ void SORSolver::_SOR_iteration(uint n,
 }
 //-----------------------------------------------------------------------------
 void SORSolver::precondition(uint n, const uBLASDenseMatrix& A_inv, 
-			     real* A, real* b) {
+			     real* A, real* b,
+			     real* Ainv_A, real* Ainv_b) {
   
-      //Compute A*A.invert() and b_real = A.invert()*b_real
-      //with extended precision
-
-      real A_inv_A[n*n];
-      real A_inv_b[n];
-
-      for (uint i=0; i<n; ++i) {
-	A_inv_b[i] = 0.0;
-	for (uint j=0; j<n; ++j) {
-	  A_inv_b[i] += A_inv(i,j)*b[j];
-
-
-	  A_inv_A[i*n+j] = 0.0;
-	  for (uint k=0; k<n; ++k) {
-	    A_inv_A[i*n+j] += A[i*n+k]*A_inv(k,j);
-	  }
-	}
+  //Compute A*A_inv and A_inv*b
+  //with extended precision
+  for (uint i=0; i<n; ++i) {
+    Ainv_b[i] = 0.0;
+    for (uint j=0; j<n; ++j) {
+      Ainv_b[i] += A_inv(i,j)*b[j];
+      
+      Ainv_A[i*n+j] = 0.0;
+      for (uint k=0; k<n; ++k) {
+	Ainv_A[i*n+j] += A[i*n+k]*A_inv(k,j);
       }
-      //copy back
-      real_set(n*n, A_inv_A, A);
-      real_set(n, A_inv_b, b);
-
+    }
+  }
 }
 //-----------------------------------------------------------------------------
 void SORSolver::printMatrix(const uint n, const real* A)

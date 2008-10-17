@@ -209,9 +209,13 @@ void dGqMethod::computeWeights()
     uBLASDenseMatrix A_inv(A);
     A_inv.invert();
     
-    SORSolver::precondition(q, A_inv, A_real, b_real);
+    //Allocate memory for the preconditioned system
+    real Ainv_A[q*q];
+    real Ainv_b[q];
 
-    SORSolver::SOR(q, A_real, w_real, b_real, ODE::epsilon());
+    SORSolver::precondition(q, A_inv, A_real, b_real, Ainv_A, Ainv_b);
+
+    SORSolver::SOR(q, Ainv_A, w_real, Ainv_b, ODE::epsilon());
     
     for (uint j = 0; j < nn; ++j)
       nweights[j][i] = qweights[i] * w_real[j];

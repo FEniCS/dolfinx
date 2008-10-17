@@ -18,7 +18,7 @@
 #include <iostream>
 #include <dolfin/la/uBLASDenseMatrix.h>
 
-#define SOR_MAX_ITERATIONS 5
+#define SOR_MAX_ITERATIONS 1000
 
 namespace dolfin
 {
@@ -31,10 +31,11 @@ namespace dolfin
 		    real* x, const real* b, 
 		    const real& epsilon); 
 
-    // Replace A with A_inv*A and b with Ainv*b
+    // Compute A_inv*A and Ainv*b
     static void precondition(uint n, 
 			     const uBLASDenseMatrix& Ainv, 
-			     real* A, real* b);
+			     real* A, real* b,
+			     real* Ainv_A, real* Ainv_b);
 
     static void printMatrix(const uint n, const real* A);
     static void printVector(const uint n, const real* x);

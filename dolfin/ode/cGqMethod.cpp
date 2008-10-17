@@ -213,8 +213,12 @@ void cGqMethod::computeWeights()
       uBLASDenseMatrix A_inv(A);
       A_inv.invert();
 
-      SORSolver::precondition(q, A_inv, A_real, b_real);
+      //Allocate memory for holdgin the preconditioned system
+      real Ainv_A[q*q];
+      real Ainv_b[q];
 
+      SORSolver::precondition(q, A_inv, A_real, b_real, Ainv_A, Ainv_b);
+      
       //solve the preconditioned system
       SORSolver::SOR(q, Ainv_A, w_real, Ainv_b, ODE::epsilon());
     
