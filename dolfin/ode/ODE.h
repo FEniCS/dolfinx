@@ -104,10 +104,12 @@ namespace dolfin
     real endtime() const;
     
     /// Return precision
-    static real& epsilon();
+    static inline real& epsilon()
+    { return _epsilon; }
 
     /// Set precision
-    static void set_epsilon (real eps);
+    static inline void set_epsilon (real eps)
+    { _epsilon = eps; }
 
     /// Solve ODE
     void solve();
