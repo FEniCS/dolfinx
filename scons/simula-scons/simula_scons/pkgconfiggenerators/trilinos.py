@@ -2,7 +2,6 @@
 import os,sys
 import string
 import os.path
-import commands
 
 from commonPkgConfigUtils import *
 
@@ -154,14 +153,15 @@ printf("-lml\n");
     if not cflags:
         cflags = pkgCflags(sconsEnv=sconsEnv)
 
-    cmdstr = "%s %s trilinos_config_test.cpp" % (compiler,cflags)
-    compileFailed, cmdoutput = commands.getstatusoutput(cmdstr)
+    cmdstr = "%s -o a.out %s trilinos_config_test.cpp" % (compiler,cflags)
+    compileFailed, cmdoutput = getstatusoutput(cmdstr)
     if compileFailed:
         remove_cppfile("trilinos_config_test.cpp")
         raise UnableToCompileException("Trilinos", cmd=cmdstr,
                                        program=cpp_file_str, errormsg=cmdoutput)
 
-    runFailed, cmdoutput = commands.getstatusoutput("./a.out")
+    cmdstr = os.path.join(os.getcwd(), "a.out")
+    runFailed, cmdoutput = getstatusoutput(cmdstr)
     if runFailed:
         remove_cppfile("trilinos_config_test.cpp", execfile=True)
         raise UnableToRunException("Trilinos", errormsg=cmdoutput)

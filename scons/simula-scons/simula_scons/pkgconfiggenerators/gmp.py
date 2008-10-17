@@ -50,14 +50,17 @@ int main() {
     raise UnableToCompileException("GMP", cmd=cmdstr,
                                    program=cpp_test_version_str,
                                    errormsg=cmdoutput)
-  cmdstr = "%s %s %s" % (linker, libs, cppfile.replace('.cpp', '.o'))
+
+  cmdstr = "%s -o a.out %s %s" % (linker, libs, cppfile.replace('.cpp', '.o'))
   linkFailed, cmdoutput = getstatusoutput(cmdstr)
   if linkFailed:
     remove_cppfile(cppfile, ofile=True)
     raise UnableToLinkException("GMP", cmd=cmdstr,
                                 program=cpp_test_version_str,
                                 errormsg=cmdoutput)
-  runFailed, cmdoutput = getstatusoutput("./a.out")
+
+  cmdstr = os.path.join(os.getcwd(), "a.out")
+  runFailed, cmdoutput = getstatusoutput(cmdstr)
   if runFailed:
     remove_cppfile(cppfile, ofile=True, execfile=True)
     raise UnableToRunException("GMP", errormsg=cmdoutput)

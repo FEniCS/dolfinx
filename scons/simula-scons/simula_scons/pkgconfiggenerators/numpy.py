@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import os, sys
-import commands
 from os.path import sep, join, dirname, abspath
 
 from commonPkgConfigUtils import *

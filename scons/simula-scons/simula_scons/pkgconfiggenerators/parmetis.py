@@ -2,7 +2,6 @@
 import os,sys
 import string
 import os.path
-import commands
 
 from commonPkgConfigUtils import *
 
@@ -41,20 +40,23 @@ int main() {
     libs = pkgLibs(sconsEnv=sconsEnv)
 
   cmdstr = "%s %s -c %s" % (compiler, cflags, cppfile)
-  compileFailed, cmdoutput = commands.getstatusoutput(cmdstr)
+  compileFailed, cmdoutput = getstatusoutput(cmdstr)
   if compileFailed:
     remove_cppfile(cppfile)
     raise UnableToCompileException("ParMETIS", cmd=cmdstr,
                                    program=cpp_test_version_str,
                                    errormsg=cmdoutput)
-  cmdstr = "%s %s %s" % (linker, libs, cppfile.replace('.cpp', '.o'))
-  linkFailed, cmdoutput = commands.getstatusoutput(cmdstr)
+
+  cmdstr = "%s -o a.out %s %s" % (linker, libs, cppfile.replace('.cpp', '.o'))
+  linkFailed, cmdoutput = getstatusoutput(cmdstr)
   if linkFailed:
     remove_cppfile(cppfile, ofile=True)
     raise UnableToLinkException("ParMETIS", cmd=cmdstr,
                                 program=cpp_test_version_str,
                                 errormsg=cmdoutput)
-  runFailed, cmdoutput = commands.getstatusoutput("./a.out")
+
+  cmdstr = os.path.join(os.getcwd(), "a.out")
+  runFailed, cmdoutput = getstatusoutput(cmdstr)
   if runFailed:
     remove_cppfile(cppfile, ofile=True, execfile=True)
     raise UnableToRunException("ParMETIS", errormsg=cmdoutput)

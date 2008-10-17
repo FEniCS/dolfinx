@@ -150,7 +150,8 @@ int main() {
     remove_cppfile("slepc_config_test_version.cpp")
     raise UnableToCompileException("SLEPc", cmd=cmdstr,
                                    program=cpp_test_version_str, errormsg=cmdoutput)
-  cmdstr = "%s %s %s slepc_config_test_version.o" % (linker, dep_mod_libs, slepc_libs)
+  cmdstr = "%s -o a.out %s %s slepc_config_test_version.o" % \
+           (linker, dep_mod_libs, slepc_libs)
   linkFailed, cmdoutput = getstatusoutput(cmdstr)
   if linkFailed:
     remove_cppfile("slepc_config_test_version.cpp", ofile=True)
@@ -164,7 +165,8 @@ int main() {
     os.putenv('LD_LIBRARY_PATH',
               os.pathsep.join([os.getenv('LD_LIBRARY_PATH', ''),
                                os.path.join(slepc_dir, 'lib', petsc_arch)]))
-  runFailed, cmdoutput = getstatusoutput("./a.out")
+  cmdstr = os.path.join(os.getcwd(), "a.out")
+  runFailed, cmdoutput = getstatusoutput(cmdstr)
   if runFailed:
     remove_cppfile("slepc_config_test_version.cpp", ofile=True, execfile=True)
     raise UnableToRunException("SLEPc", errormsg=cmdoutput)

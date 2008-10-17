@@ -2,7 +2,6 @@
 import os,sys
 import string
 import os.path
-import commands
 
 from commonPkgConfigUtils import *
 
@@ -158,7 +157,7 @@ int main() {
                                     errormsg=cmdoutput)
    
     # test that we can run the binary:
-    runFailed, cmdoutput = commands.getstatusoutput(app)
+    runFailed, cmdoutput = getstatusoutput(app)
     remove_cppfile(cpp_file, ofile=True, execfile=True)
     if runFailed or not cmdoutput == "success":
         raise UnableToRunException("SCOTCH", errormsg=cmdoutput)

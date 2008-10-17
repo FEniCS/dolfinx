@@ -2,7 +2,6 @@
 import os,sys
 import string
 import os.path
-import commands
 
 from commonPkgConfigUtils import *
 
@@ -38,7 +37,7 @@ get_petsc_ld:
   petsc_includes = None
   if 'includes' in variables: 
     cmdstr = "make -s -f %s get_petsc_include" % filename
-    runFailed, cmdoutput = commands.getstatusoutput(cmdstr)
+    runFailed, cmdoutput = getstatusoutput(cmdstr)
     if runFailed:
       os.unlink(filename)
       msg = "Unable to read PETSc includes through make."
@@ -48,7 +47,7 @@ get_petsc_ld:
   petsc_libs = None
   if 'libs' in variables:
     cmdstr = "make -s -f %s get_petsc_libs" % filename
-    runFailed, cmdoutput = commands.getstatusoutput(cmdstr)
+    runFailed, cmdoutput = getstatusoutput(cmdstr)
     if runFailed:
       os.unlink(filename)
       msg = "Unable to read PETSc libs through make."
@@ -58,7 +57,7 @@ get_petsc_ld:
   petsc_cc = None
   if 'compiler' in variables:
     cmdstr = "make -s -f %s get_petsc_cc" % filename
-    runFailed, cmdoutput = commands.getstatusoutput(cmdstr)
+    runFailed, cmdoutput = getstatusoutput(cmdstr)
     if runFailed:
       os.unlink(filename)
       msg = "Unable to figure out correct PETSc compiler."
@@ -72,7 +71,7 @@ get_petsc_ld:
   petsc_ld = None
   if 'linker' in variables:
     cmdstr = "make -s -f %s get_petsc_ld" % filename
-    runFailed, cmdoutput = commands.getstatusoutput(cmdstr)
+    runFailed, cmdoutput = getstatusoutput(cmdstr)
     if runFailed:
       os.unlink(filename)
       msg = "Unable to figure out correct PETSc linker"
@@ -133,18 +132,19 @@ int main() {
     libs = pkgLibs(sconsEnv=sconsEnv)
 
   cmdstr = "%s %s -c petsc_config_test_version.cpp" % (compiler, cflags)
-  compileFailed, cmdoutput = commands.getstatusoutput(cmdstr)
+  compileFailed, cmdoutput = getstatusoutput(cmdstr)
   if compileFailed:
     remove_cppfile("petsc_config_test_version.cpp")
     raise UnableToCompileException("PETSc", cmd=cmdstr,
                                    program=cpp_test_version_str, errormsg=cmdoutput)
-  cmdstr = "%s %s petsc_config_test_version.o" % (linker, libs)
-  linkFailed, cmdoutput = commands.getstatusoutput(cmdstr)
+  cmdstr = "%s -o a.out %s petsc_config_test_version.o" % (linker, libs)
+  linkFailed, cmdoutput = getstatusoutput(cmdstr)
   if linkFailed:
     remove_cppfile("petsc_config_test_version.cpp", ofile=True)
     raise UnableToLinkException("PETSc", cmd=cmdstr,
                                 program=cpp_test_version_str, errormsg=cmdoutput)
-  runFailed, cmdoutput = commands.getstatusoutput("./a.out")
+  cmdstr = os.path.join(os.getcwd(), "a.out")
+  runFailed, cmdoutput = getstatusoutput(cmdstr)
   if runFailed:
     remove_cppfile("petsc_config_test_version.cpp", ofile=True, execfile=True)
     raise UnableToRunException("PETSc", errormsg=cmdoutput)

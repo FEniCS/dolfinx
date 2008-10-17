@@ -2,7 +2,6 @@
 import os,sys
 import string
 import os.path
-import commands
 
 from commonPkgConfigUtils import *
 
@@ -186,18 +185,22 @@ int main() {
     libs = pkgLibs(sconsEnv)
   if not cflags:
     cflags = pkgCflags(sconsEnv)
-  cmdstr = "%s %s cholmod_config_test_include.cpp %s" % (compiler, cflags, libs)
-  compileFailed, cmdoutput = commands.getstatusoutput(cmdstr)
+  cmdstr = "%s -o a.out %s cholmod_config_test_include.cpp %s" % \
+           (compiler, cflags, libs)
+  compileFailed, cmdoutput = getstatusoutput(cmdstr)
   if compileFailed:
     # Try adding -lgfortran so get around Ubuntu Hardy libatlas-base-dev issue
     libs += " -lgfortran"
-    cmdstr = "%s %s cholmod_config_test_include.cpp %s" % (compiler, cflags, libs)
-    compileFailed, cmdoutput = commands.getstatusoutput(cmdstr)
+    cmdstr = "%s -o a.out %s cholmod_config_test_include.cpp %s" % \
+             (compiler, cflags, libs)
+    compileFailed, cmdoutput = getstatusoutput(cmdstr)
     if compileFailed:
       remove_cppfile("cholmod_config_test_include.cpp")
       raise UnableToCompileException("CHOLMOD", cmd=cmdstr,
-                                   program=cpp_test_include_str, errormsg=cmdoutput)
-  runFailed, cmdoutput = commands.getstatusoutput("./a.out")
+                                     program=cpp_test_include_str,
+                                     errormsg=cmdoutput)
+  cmdstr = os.path.join(os.getcwd(), "a.out")
+  runFailed, cmdoutput = getstatusoutput(cmdstr)
   if runFailed:
     remove_cppfile("cholmod_config_test_include.cpp", execfile=True)
     raise UnableToRunException("CHOLMOD", errormsg=cmdoutput)
@@ -265,29 +268,30 @@ int main (void)
 
   # try to compile the simple CHOLMOD test
   cmdstr = "%s %s -c cholmod_config_test_lib.cpp" % (compiler, cflags)
-  compileFailed, cmdoutput = commands.getstatusoutput(cmdstr)
+  compileFailed, cmdoutput = getstatusoutput(cmdstr)
   if compileFailed:
     remove_cppfile("cholmod_config_test_lib.cpp")
     raise UnableToCompileException("CHOLMOD", cmd=cmdstr,
                                    program=cpp_test_lib_str, errormsg=cmdoutput)
 
-  cmdstr = "%s %s cholmod_config_test_lib.o" % (linker, libs)
-  linkFailed, cmdoutput = commands.getstatusoutput(cmdstr)
+  cmdstr = "%s -o a.out %s cholmod_config_test_lib.o" % (linker, libs)
+  linkFailed, cmdoutput = getstatusoutput(cmdstr)
   if linkFailed:
     # Try adding -lgfortran so get around Ubuntu Hardy libatlas-base-dev issue
     libs += " -lgfortran"
-    cmdstr = "%s %s cholmod_config_test_lib.o" % (linker, libs)
-    linkFailed, cmdoutput = commands.getstatusoutput(cmdstr)
+    cmdstr = "%s -o a.out %s cholmod_config_test_lib.o" % (linker, libs)
+    linkFailed, cmdoutput = getstatusoutput(cmdstr)
     if linkFailed:
       remove_cppfile("cholmod_config_test_lib.cpp", ofile=True)
-      errormsg = ("Using '%s' for LAPACK and '%s' BLAS. Consider setting the " + \
-                "environment variables LAPACK_DIR and BLAS_DIR if this is " + \
-                "wrong.\n") % (getLapackDir(sconsEnv), getBlasDir(sconsEnv))
+      errormsg = ("Using '%s' for LAPACK and '%s' BLAS. Consider setting the " \
+                  "environment variables LAPACK_DIR and BLAS_DIR if this is " \
+                  "wrong.\n") % (getLapackDir(sconsEnv), getBlasDir(sconsEnv))
       errormsg += cmdoutput
       raise UnableToLinkException("CHOLMOD", cmd=cmdstr,
-                                program=cpp_test_lib_str, errormsg=errormsg)
+                                  program=cpp_test_lib_str, errormsg=errormsg)
 
-  runFailed, cmdoutput = commands.getstatusoutput("./a.out")
+  cmdstr = os.path.join(os.getcwd(), "a.out")
+  runFailed, cmdoutput = getstatusoutput(cmdstr)
   if runFailed:
     remove_cppfile("cholmod_config_test_lib.cpp", ofile=True, execfile=True)
     raise UnableToRunException("CHOLMOD", errormsg=cmdoutput)

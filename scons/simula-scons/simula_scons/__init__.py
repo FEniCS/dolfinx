@@ -3,6 +3,7 @@ import os.path
 import datetime
 import sys
 from distutils import sysconfig
+from subprocess import Popen, PIPE
 
 from SCons.Builder import Builder
 from SCons.Action import Action
@@ -61,9 +62,8 @@ def runCommand(command, args, captureOutput=True):
     """
     if isinstance(args, basestring):
         args = args.split()
-    cl = "%s %s" % (command, " ".join(args))
-    from subprocess import Popen, PIPE
-    p = Popen(cl.split(), stdout=PIPE, stderr=PIPE, bufsize=-1)
+    cl = [command] + args
+    p = Popen(cl, stdout=PIPE, stderr=PIPE, bufsize=-1)
     r = p.wait()
     out, err = p.communicate()
     if r:

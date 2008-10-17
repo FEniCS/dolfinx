@@ -2,7 +2,6 @@
 import os,sys
 import string
 import os.path
-import commands
 
 from commonPkgConfigUtils import *
 
@@ -34,13 +33,14 @@ int main() {
     linker = get_linker(sconsEnv)
   if not cflags:
     cflags = pkgCflags()
-  cmdstr = "%s %s hypre_config_test_version.c" % (compiler, cflags)
-  compileFailed, cmdoutput = commands.getstatusoutput(cmdstr)
+  cmdstr = "%s -o a.out %s hypre_config_test_version.c" % (compiler, cflags)
+  compileFailed, cmdoutput = getstatusoutput(cmdstr)
   if compileFailed:
     remove_cfile("hypre_config_test_version.c")
     raise UnableToCompileException("Hypre", cmd=cmdstr,
                                    program=cpp_version_str, errormsg=cmdoutput)
-  runFailed, cmdoutput = commands.getstatusoutput("./a.out")
+  cmdstr = os.path.join(os.getcwd(), "a.out")
+  runFailed, cmdoutput = getstatusoutput(cmdstr)
   if runFailed:
     remove_cfile("hypre_config_test_version.c", execfile=True)
     raise UnableToRunException("Hypre", errormsg=cmdoutput)
@@ -74,14 +74,15 @@ int main() {
     compiler = get_compiler(sconsEnv)
   if not cflags:
     cflags = pkgCflags()
-  cmdstr = "%s %s hypre_config_test_libs.c" % (compiler,cflags)
-  compileFailed, cmdoutput = commands.getstatusoutput(cmdstr)
+  cmdstr = "%s -o a.out %s hypre_config_test_libs.c" % (compiler,cflags)
+  compileFailed, cmdoutput = getstatusoutput(cmdstr)
   if compileFailed:
     remove_cfile("hypre_config_test_libs.c")
     raise UnableToCompileException("Hypre", cmd=cmdstr,
                                    program=cpp_libs_str, errormsg=cmdoutput)
-  
-  runFailed, cmdoutput = commands.getstatusoutput("./a.out")
+
+  cmdstr = os.path.join(os.getcwd(), "a.out")
+  runFailed, cmdoutput = getstatusoutput(cmdstr)
   if runFailed:
     remove_cfile("hypre_config_test_libs.c", execfile=True)
     raise UnableToRunException("Hypre", errormsg=cmdoutput)
@@ -160,19 +161,21 @@ int main(int argc, char *argv[])
   write_cppfile(cpp_testlib_str, "hypre_config_test_libstest.c")
 
   cmdstr = "%s %s -c hypre_config_test_libstest.c" % (compiler,cflags)
-  compileFailed, cmdoutput = commands.getstatusoutput(cmdstr)
+  compileFailed, cmdoutput = getstatusoutput(cmdstr)
   if compileFailed:
     remove_cfile("hypre_config_test_libstest.c")
     raise UnableToCompileException("Hypre", cmd=cmdstr,
                                    program=cpp_testlib_str, errormsg=cmdoutput)
   
-  cmdstr = "%s %s hypre_config_test_libstest.o" % (linker,libs)
-  linkFailed, cmdoutput = commands.getstatusoutput(cmdstr)
+  cmdstr = "%s -o a.out %s hypre_config_test_libstest.o" % (linker,libs)
+  linkFailed, cmdoutput = getstatusoutput(cmdstr)
   if linkFailed:
     remove_cfile("hypre_config_test_libstest.c", ofile=True)
     raise UnableToLinkException("Hypre", cmd=cmdstr,
                                 program=cpp_testlib_str, errormsg=cmdoutput)
-  runFailed, cmdoutput = commands.getstatusoutput("./a.out")
+
+  cmdstr = os.path.join(os.getcwd(), "a.out")
+  runFailed, cmdoutput = getstatusoutput(cmdstr)
   if runFailed:
     remove_cfile("hypre_config_test_libstest.c", execfile=True, ofile=True)
     raise UnableToRunException("Hypre", errormsg=cmdoutput)
