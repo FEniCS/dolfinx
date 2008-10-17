@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2003-10-21
-// Last changed: 2008-10-06
+// Last changed: 2008-10-18
 
 #include <dolfin/common/constants.h>
 #include <dolfin/math/dolfin_math.h>
@@ -226,14 +226,16 @@ void ODE::solve()
   ODESolver::solve(*this);
 }
 //-----------------------------------------------------------------------------
-
-real& ODE::epsilon(){
+real& ODE::epsilon(
+{
   return _epsilon;
 }
-
-void ODE::set_epsilon (real eps){
+//-----------------------------------------------------------------------------
+void ODE::set_epsilon (real eps)
+{
   _epsilon = eps;
 }
+//-----------------------------------------------------------------------------
 
 #ifdef HAS_GMP
 //initialize to 10e-30

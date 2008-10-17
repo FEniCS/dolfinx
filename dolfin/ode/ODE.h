@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2003-10-21
-// Last changed: 2008-10-06
+// Last changed: 2008-10-18
 
 #ifndef __ODE_H
 #define __ODE_H
@@ -102,12 +102,15 @@ namespace dolfin
 
     /// Return end time (final time T)
     real endtime() const;
+    
+    /// Return precision
+    static real& epsilon();
+
+    /// Set precision
+    static void set_epsilon (real eps);
 
     /// Solve ODE
     void solve();
-
-    static real& epsilon();
-    static void set_epsilon (real eps);
 
     /// Friends
     friend class Dual;
@@ -143,8 +146,8 @@ namespace dolfin
     real default_timestep;
 
   private:
-    // epsilon value. Defaults to DOLFIN_EPS, but can 
-    // be changed to allow extended precision
+
+    // The precision defaults DOLFIN_EPS, but can be changed to allow extended precision
     static real _epsilon;
 
     // Temporary vectors used for computing Jacobian
@@ -156,7 +159,9 @@ namespace dolfin
     Event not_impl_M;
     Event not_impl_J;
     Event not_impl_JT;
+
   };
+
 }
 
 #endif

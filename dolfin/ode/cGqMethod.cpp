@@ -172,14 +172,12 @@ void cGqMethod::computeWeights()
     }
   }
 
-
   uBLASVector b(q);
   ublas_vector& _b = b.vec();
   real b_real[q];
 
   uBLASVector w(q);
   ublas_vector& _w = w.vec();
-
 
   // Compute nodal weights for each degree of freedom (loop over points)
   for (uint i = 0; i < nq; i++)
