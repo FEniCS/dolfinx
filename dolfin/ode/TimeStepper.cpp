@@ -69,7 +69,7 @@ real TimeStepper::step()
   // FIXME: Change type of time slab if solution does not converge
 
   // Check if this is the first time step
-  const bool first = t < DOLFIN_EPS;
+  const bool first = t < ODE::epsilon();
 
   // Reset stopped flag
   _stopped = false;
@@ -166,13 +166,13 @@ void TimeStepper::saveFixedSamples()
   {
     t += K;
 
-    if ( (t - DOLFIN_EPS) < t0 )
+    if ( (t - ODE::epsilon()) < t0 )
       continue;
 
-    if ( (t - DOLFIN_EPS) > t1 )
+    if ( (t - ODE::epsilon()) > t1 )
       break;
 
-    if ( abs(t - t1) < DOLFIN_EPS )
+    if ( abs(t - t1) < ODE::epsilon() )
       t = t1;
 
     Sample sample(*timeslab, ode.time(t), "u", "unknown");

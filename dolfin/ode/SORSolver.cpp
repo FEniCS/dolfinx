@@ -5,6 +5,7 @@
 // Last changed: 2008-10-11
 
 #include "SORSolver.h"
+#include <dolfin/la/uBLASDenseMatrix.h>
 
 using namespace dolfin;
 
@@ -15,11 +16,6 @@ void SORSolver::SOR(uint n,
 		    const real* b, 
 		    const real& epsilon) 
 {
-  #ifdef HAS_GMP
-    char msg[100];
-    gmp_sprintf(msg, "SORSolver: Epsilon=%Fe", epsilon.get_mpf_t());
-    message(msg);
-  #endif
   real prev[n];
     
   uint iterations = 0;
@@ -45,7 +41,6 @@ void SORSolver::SOR(uint n,
     ++iterations;
 
   }
-
   //printf ("Iterations: %d\n", count);
 }
 //-----------------------------------------------------------------------------
@@ -67,6 +62,25 @@ void SORSolver::_SOR_iteration(uint n,
     // j > i
     for (uint j = i+1; j < n; ++j) 
     { x_new[i] -= (A[i*n+j]/A[i*n+i])*x_prev[j]; }
+  }
+}
+//-----------------------------------------------------------------------------
+void SORSolver::precondition(uint n, const uBLASDenseMatrix& A_inv, 
+			     real* A, real* b,
+			     real* Ainv_A, real* Ainv_b) {
+  
+  //Compute A*A_inv and A_inv*b
+  //with extended precision
+  for (uint i=0; i<n; ++i) {
+    Ainv_b[i] = 0.0;
+    for (uint j=0; j<n; ++j) {
+      Ainv_b[i] += A_inv(i,j)*b[j];
+      
+      Ainv_A[i*n+j] = 0.0;
+      for (uint k=0; k<n; ++k) {
+	Ainv_A[i*n+j] += A[i*n+k]*A_inv(k,j);
+      }
+    }
   }
 }
 //-----------------------------------------------------------------------------

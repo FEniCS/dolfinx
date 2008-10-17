@@ -8,6 +8,7 @@
 
 #include <stdio.h>
 #include <dolfin.h>
+#include <dolfin/common/real.h>
 
 using namespace dolfin;
 
@@ -23,28 +24,28 @@ public:
     r = 28.0;
   }
   
-  void u0(double* u)
+  void u0(real* u)
   {
     u[0] = 1.0;
     u[1] = 0.0;
     u[2] = 0.0;
   }
 
-  void f(const double* u, double t, double* y)
+  void f(const real* u, real t, real* y)
   {
     y[0] = s*(u[1] - u[0]);
     y[1] = r*u[0] - u[1] - u[0]*u[2];
     y[2] = u[0]*u[1] - b*u[2];
   }
 
-  void J(const double* x, double* y, const double* u, double t)
+  void J(const real* x, real* y, const real* u, real t)
   {
     y[0] = s*(x[1] - x[0]);
     y[1] = (r - u[2])*x[0] - x[1] - u[0]*x[2];
     y[2] = u[1]*x[0] + u[0]*x[1] - b*x[2];
   }
 
-  void JT(const double* x, double* y, const double* u, double t)
+  void JT(const real* x, real* y, const real* u, real t)
   {
     y[0] = -x[0]*s + (r-u[2])*x[1] + u[1]*x[2];
     y[1] = s*x[0] - x[1] + u[0]*x[2];
@@ -54,14 +55,18 @@ public:
 private:
 
   // Parameters
-  double s;
-  double b;
-  double r;
+  real s;
+  real b;
+  real r;
 
 };
 
 int main()
 {
+  #ifdef HAS_GMP
+    mpf_set_default_prec(500);
+  #endif
+
   dolfin_set("ODE number of samples", 500);
   dolfin_set("ODE initial time step", 0.01);
   dolfin_set("ODE fixed time step", true);

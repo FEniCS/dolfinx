@@ -53,7 +53,7 @@ real cGqMethod::timestep(real r, real tol, real k0, real kmax) const
 {
   // FIXME: Missing stability factor and interpolation constant
 
-  if ( abs(r) < DOLFIN_EPS )
+  if ( abs(r) < ODE::epsilon() )
     return kmax;
 
   const real qq = static_cast<real>(q);
@@ -150,9 +150,9 @@ void cGqMethod::computeWeights()
 {
   uBLASDenseMatrix A(q, q);
   ublas_dense_matrix& _A = A.mat();
-
-  real* A_real = new real[q*q];
   
+  real A_real[q*q];
+
   // Compute matrix coefficients
   for (uint i = 0; i < nn; i++)
   {
@@ -165,21 +165,21 @@ void cGqMethod::computeWeights()
 	      real x = qpoints[k];
 	      integral += qweights[k] * trial->ddx(j + 1, x) * test->eval(i, x);
       }
-      //Note: Precision lost if working with GMP. Conversion to double
+
       A_real[i*q+j] = integral;
       _A(i, j) = to_double(integral);
 
     }
   }
 
+
   uBLASVector b(q);
-  uBLASVector w(q);
   ublas_vector& _b = b.vec();
+  real b_real[q];
+
+  uBLASVector w(q);
   ublas_vector& _w = w.vec();
 
-  real* b_real = new real[q];
-  real* w_real = new real[q];
-  real_zero(q, w_real);
 
   // Compute nodal weights for each degree of freedom (loop over points)
   for (uint i = 0; i < nq; i++)
@@ -205,11 +205,22 @@ void cGqMethod::computeWeights()
     #else 
 
       // Use the double precision solution as initial guess for the SOR iterator
+      real w_real[q];
+
       for (uint j = 0; j < q; ++j)
         w_real[j] = _w[j];
-    
 
-      SORSolver::SOR(q, A_real, w_real, b_real, ODE::get_epsilon());
+      uBLASDenseMatrix A_inv(A);
+      A_inv.invert();
+
+      //Allocate memory for holdgin the preconditioned system
+      real Ainv_A[q*q];
+      real Ainv_b[q];
+
+      SORSolver::precondition(q, A_inv, A_real, b_real, Ainv_A, Ainv_b);
+      
+      //solve the preconditioned system
+      SORSolver::SOR(q, Ainv_A, w_real, Ainv_b, ODE::epsilon());
     
       for (uint j = 0; j < nn; ++j)
         nweights[j][i] = qweights[i] * w_real[j];

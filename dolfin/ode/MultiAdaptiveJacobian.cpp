@@ -162,7 +162,7 @@ void MultiAdaptiveJacobian::cGmult(const uBLASVector& x, uBLASVector& y) const
       // Skip elements with smaller time steps
       const uint s1 = ts.es[e1];
       const double b1 = to_double(ts.sb[s1]);
-      if ( b1 < (a0 + DOLFIN_EPS) )
+      if ( b1 < (a0 + ODE::epsilon()) )
       {
 	// Save dependency for later
 	Jlookup[Jpos++] = dfdu;
@@ -215,8 +215,8 @@ void MultiAdaptiveJacobian::cGmult(const uBLASVector& x, uBLASVector& y) const
 	  {
 	    const double tau = (a0 + k0* to_double(method.qpoint(m))  - a1) / k1;
 	    const double tmp1 = to_double( method.nweight(n, m) );
-	    dolfin_assert(tau >= -DOLFIN_EPS);
-	    dolfin_assert(tau <= 1.0 + DOLFIN_EPS);
+	    dolfin_assert(tau >= -ODE::epsilon());
+	    dolfin_assert(tau <= 1.0 + ODE::epsilon());
 	    
 	    // Add dependency to dof of initial value if any
 	    const int ep = ts.ee[e1];
@@ -360,7 +360,7 @@ void MultiAdaptiveJacobian::dGmult(const uBLASVector& x, uBLASVector& y) const
       // Skip elements with smaller time steps
       const uint s1 = ts.es[e1];
       const double b1 = to_double( ts.sb[s1] );
-      if ( b1 < (a0 + DOLFIN_EPS) )
+      if ( b1 < (a0 + ODE::epsilon()) )
       {
 	// Save dependency for later
 	Jlookup[Jpos++] = dfdu;

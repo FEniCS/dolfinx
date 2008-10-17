@@ -16,20 +16,26 @@
 #include <dolfin/log/log.h>
 #include <dolfin/common/real.h>
 #include <iostream>
+#include <dolfin/la/uBLASDenseMatrix.h>
 
-#define SOR_MAX_ITERATIONS 5
+#define SOR_MAX_ITERATIONS 1000
 
 namespace dolfin
 {
 
-  class SORSolver
-  {
-  public:
+  class SORSolver {
+   public:
 
     // Will replace the initial guess in x
     static void SOR(uint n, const real* A, 
 		    real* x, const real* b, 
 		    const real& epsilon); 
+
+    // Compute A_inv*A and Ainv*b
+    static void precondition(uint n, 
+			     const uBLASDenseMatrix& Ainv, 
+			     real* A, real* b,
+			     real* Ainv_A, real* Ainv_b);
 
     static void printMatrix(const uint n, const real* A);
     static void printVector(const uint n, const real* x);
@@ -43,7 +49,6 @@ namespace dolfin
 			       const real* x_prev);
 
   };
-
 }
 
 #endif
