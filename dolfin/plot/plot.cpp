@@ -61,6 +61,7 @@ namespace dolfin
     dolfin_set("output destination", "terminal");
     
     // Write script file
+    fprintf(script_file, "exitcode = 0\n");
     fprintf(script_file, "try:\n");
     fprintf(script_file, "    from dolfin import *\n\n");
     fprintf(script_file, "    object = %s(r\"%s\")\n", class_name.c_str(), data_name.c_str());
@@ -70,8 +71,11 @@ namespace dolfin
       fprintf(script_file, "    plot(object, mode=\"%s\")\n", mode.c_str());
     fprintf(script_file, "    interactive()\n");
     fprintf(script_file, "except:\n");
-    fprintf(script_file, "    import sys\n");
-    fprintf(script_file, "    sys.exit(1)\n");
+    fprintf(script_file, "    exitcode = 1\n");
+    fprintf(script_file, "import os, sys\n");
+    fprintf(script_file, "os.remove('%s')\n", data_name.c_str());
+    fprintf(script_file, "os.remove('%s')\n", script_name.c_str());
+    fprintf(script_file, "sys.exit(exitcode)\n");
     fclose(script_file);
     
     // Run script
