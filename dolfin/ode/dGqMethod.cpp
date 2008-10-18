@@ -148,8 +148,9 @@ void dGqMethod::computeWeights()
   uBLASDenseMatrix A(nn, nn);
   ublas_dense_matrix& _A = A.mat();
 
-  real A_real[q*q];;
-  
+  real A_real[nn*nn];
+  real_zero(nn*nn, A_real);
+
   // Compute matrix coefficients
   for (unsigned int i = 0; i < nn; i++)
   {
@@ -191,7 +192,7 @@ void dGqMethod::computeWeights()
     // Solve for the weight functions at the nodal point
     // FIXME: Do we get high enough precision?
     A.solve(w, b);
-
+    
     #ifndef HAS_GMP
     // Save weights including quadrature
     for (uint j = 0; j < nn; j++)

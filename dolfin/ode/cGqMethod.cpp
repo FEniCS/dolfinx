@@ -152,6 +152,7 @@ void cGqMethod::computeWeights()
   ublas_dense_matrix& _A = A.mat();
   
   real A_real[q*q];
+  real_zero(q*q, A_real);
 
   // Compute matrix coefficients
   for (uint i = 0; i < nn; i++)
