@@ -192,7 +192,7 @@ void dGqMethod::computeWeights()
     // Solve for the weight functions at the nodal point
     // FIXME: Do we get high enough precision?
     A.solve(w, b);
-    
+
     #ifndef HAS_GMP
     // Save weights including quadrature
     for (uint j = 0; j < nn; j++)

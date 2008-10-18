@@ -226,6 +226,7 @@ void ODE::solve()
   ODESolver::solve(*this);
 }
 //-----------------------------------------------------------------------------
+
 #ifdef HAS_GMP
 //initialize to 10e-30
 real ODE::_epsilon = real("0.000000000000000000000000000001");
