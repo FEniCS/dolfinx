@@ -147,7 +147,7 @@ void dGqMethod::computeWeights()
 {
   uBLASDenseMatrix A(nn, nn);
   ublas_dense_matrix& _A = A.mat();
-
+  
   real A_real[nn*nn];
   real_zero(nn*nn, A_real);
 
@@ -163,7 +163,7 @@ void dGqMethod::computeWeights()
         real x = qpoints[k];
         integral += qweights[k] * trial->ddx(j, x) * test->eval(i, x);
       }     
-
+      
       A_real[i*q+j] = integral + trial->eval(j, 0.0) * test->eval(i, 0.0);
       _A(i, j) = to_double(A_real[i*q+j]);
     }
@@ -190,38 +190,36 @@ void dGqMethod::computeWeights()
     }
 
     // Solve for the weight functions at the nodal point
-    // FIXME: Do we get high enough precision?
     A.solve(w, b);
 
-    #ifndef HAS_GMP
+#ifndef HAS_GMP
+
     // Save weights including quadrature
     for (uint j = 0; j < nn; j++)
       nweights[j][i] = qweights[i] * _w[j];
 
-    #else 
-
+#else 
+    
     // Use the double precision solution as initial guess for the SOR iterator
     real w_real[q];
-
+    
     for (uint j = 0; j < q; ++j)
       w_real[j] = _w[j];
-
-
+    
     uBLASDenseMatrix A_inv(A);
     A_inv.invert();
     
-    //Allocate memory for the preconditioned system
+    // Allocate memory for the preconditioned system
     real Ainv_A[q*q];
     real Ainv_b[q];
-
+    
     SORSolver::precondition(q, A_inv, A_real, b_real, Ainv_A, Ainv_b);
-
     SORSolver::SOR(q, Ainv_A, w_real, Ainv_b, ODE::epsilon());
     
     for (uint j = 0; j < nn; ++j)
       nweights[j][i] = qweights[i] * w_real[j];
-
-    #endif
+    
+#endif
 
   }
 }

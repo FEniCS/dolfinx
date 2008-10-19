@@ -163,10 +163,10 @@ void cGqMethod::computeWeights()
       real integral = 0.0;
       for (uint k = 0; k < nq; k++)
       {
-	      real x = qpoints[k];
-	      integral += qweights[k] * trial->ddx(j + 1, x) * test->eval(i, x);
+        real x = qpoints[k];
+        integral += qweights[k] * trial->ddx(j + 1, x) * test->eval(i, x);
       }
-
+      
       A_real[i*q+j] = integral;
       _A(i, j) = to_double(integral);
 
@@ -176,7 +176,7 @@ void cGqMethod::computeWeights()
   uBLASVector b(q);
   ublas_vector& _b = b.vec();
   real b_real[q];
-
+  
   uBLASVector w(q);
   ublas_vector& _w = w.vec();
 
@@ -192,39 +192,41 @@ void cGqMethod::computeWeights()
       b_real[j] = test->eval(j, x);
       _b[j] = to_double(b_real[j]);
     }
+
     // Solve for the weight functions at the nodal point
-    // FIXME: Do we get high enough precision?
     A.solve(w, b);
     
-    #ifndef HAS_GMP
-      // Save weights including quadrature
-      for (uint j = 0; j < nn; j++)
-        nweights[j][i] = qweights[i] * _w[j];
+#ifndef HAS_GMP
 
-    #else 
+    // Save weights including quadrature
+    for (uint j = 0; j < nn; j++)
+      nweights[j][i] = qweights[i] * _w[j];
 
-      // Use the double precision solution as initial guess for the SOR iterator
-      real w_real[q];
-
-      for (uint j = 0; j < q; ++j)
-        w_real[j] = _w[j];
-
-      uBLASDenseMatrix A_inv(A);
-      A_inv.invert();
-
-      //Allocate memory for holdgin the preconditioned system
-      real Ainv_A[q*q];
-      real Ainv_b[q];
-
-      SORSolver::precondition(q, A_inv, A_real, b_real, Ainv_A, Ainv_b);
-      
-      //solve the preconditioned system
-      SORSolver::SOR(q, Ainv_A, w_real, Ainv_b, ODE::epsilon());
+#else 
     
-      for (uint j = 0; j < nn; ++j)
-        nweights[j][i] = qweights[i] * w_real[j];
+    // Use the double precision solution as initial guess for the SOR iterator
+    real w_real[q];
+    
+    for (uint j = 0; j < q; ++j)
+      w_real[j] = _w[j];
+    
+    uBLASDenseMatrix A_inv(A);
+    A_inv.invert();
+    
+    // Allocate memory for holding the preconditioned system
+    real Ainv_A[q*q];
+    real Ainv_b[q];
+    
+    SORSolver::precondition(q, A_inv, A_real, b_real, Ainv_A, Ainv_b);
+    
+    // Solve the preconditioned system
+    SORSolver::SOR(q, Ainv_A, w_real, Ainv_b, ODE::epsilon());
+    
+    for (uint j = 0; j < nn; ++j)
+      nweights[j][i] = qweights[i] * w_real[j];
+    
+#endif
 
-    #endif
   }
 }
 //-----------------------------------------------------------------------------
