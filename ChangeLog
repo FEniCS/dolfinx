@@ -1,3 +1,4 @@
+0.8.1 [2008-10-20]
  - Add option to use ML multigrid preconditioner through PETSc
  - Interface change for ODE solvers: uBLASVector --> double*
  - Remove homotopy solver

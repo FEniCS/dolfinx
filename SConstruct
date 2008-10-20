@@ -26,7 +26,7 @@ env = scons.ExtendedEnvironment(ENV=os.environ)
 env["projectname"] = "dolfin"
 
 # Set version
-env["PACKAGE_VERSION"] = "0.8.0"
+env["PACKAGE_VERSION"] = "0.8.1"
 
 scons.setDefaultEnv(env)
 
