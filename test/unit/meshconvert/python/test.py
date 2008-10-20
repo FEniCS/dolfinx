@@ -2,7 +2,7 @@
 """
 from unittest import TestCase as _TestCase
 import unittest
-import os.path
+import os
 import tempfile
 
 from dolfin import meshconvert
@@ -140,6 +140,7 @@ class AbaqusTest(_ConverterTest):
                 self.assert_(handler.test_warnings)
             else:
                 self.assertRaises(meshconvert.ParseError, self.__convert, fname)
+            os.remove(fname)
 
         fname = self._get_tempfname(suffix=".inp")
 
