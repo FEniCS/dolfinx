@@ -19,9 +19,9 @@ hg push ssh://dolfin@fenics.org/hg/dolfin
 echo '--- Update version number in ChangeLog'
 sleep 1
 emacs -nw ChangeLog
-echo '--- Update version number in dolfin/SConscript'
+echo '--- Update version number in SConstruct'
 sleep 1
-emacs -nw dolfin/SConscript
+emacs -nw SConstruct
 echo '--- Update version number in dolfin/scons.cfg'
 sleep 1
 emacs -nw dolfin/scons.cfg
