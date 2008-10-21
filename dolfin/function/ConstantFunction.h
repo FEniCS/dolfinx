@@ -18,7 +18,7 @@ namespace dolfin
   /// This class implements the functionality for functions
   /// that take a single constant value.
 
-  class ConstantFunction : public GenericFunction, public ufc::function
+  class ConstantFunction : public Function, public ufc::function
   {
   public:
 

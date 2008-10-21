@@ -15,9 +15,10 @@ namespace dolfin
   class Mesh;
   class FiniteElement;
   class DofMap;
-  class NewFunction;
+  class Function;
   class IntersectionDetector;
   class GenericVector;
+  template<class X> class Array;
 
   /// This class represents a finite element function space defined by
   /// a mesh, a finite element, and a local-to-global mapping of the
@@ -59,20 +60,20 @@ namespace dolfin
     /// Evaluate function v in function space at given point
     void eval(double* values,
               const double* x,
-              const NewFunction& v) const;
+              const Function& v) const;
 
     /// Interpolate function v to function space
     void interpolate(GenericVector& coefficients,
-                     const NewFunction& v) const;
+                     const Function& v) const;
 
     /// Interpolate function v in function space to local function space on cell
     void interpolate(double* coefficients,
                      const ufc::cell& ufc_cell,
-                     const NewFunction& v) const;
+                     const Function& v) const;
 
     /// Interpolate function v in function space to vertices of mesh
     void interpolate(double* vertex_values,
-                     const NewFunction& v) const;
+                     const Function& v) const;
 
     /// Extract sub finite element for sub system
     FunctionSpace* extract_sub_space(const Array<uint>& sub_system) const;

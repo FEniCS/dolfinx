@@ -9,6 +9,7 @@
 
 #include <dolfin/common/constants.h>
 #include <dolfin/function/Function.h>
+#include <dolfin/function/FunctionSpace.h>
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshData.h>
@@ -261,8 +262,9 @@ bool DirichletBC::is_compatible(Function& v) const
 
   // Compute value size
   uint size = 1;
-  for (uint i = 0; i < g.rank(); i++)
-    size *= g.dim(i);
+  const uint rank = g.function_space().element().value_rank();
+  for (uint i = 0; i < rank ; i++)
+    size *= g.function_space().element().value_dimension(i);
   simple_array<double> g_values(size, new double[size]);
   simple_array<double> v_values(size, new double[size]);
 
@@ -276,8 +278,9 @@ bool DirichletBC::is_compatible(Function& v) const
     Facet facet(_mesh, facet_number);
 
     // Make cell and facet available to user-defined function
-    g.update(cell, facet_number);
-    v.update(cell, facet_number);
+    error("Does the new Function class need an 'update' function?");
+    //g.update(cell, facet_number);
+    //v.update(cell, facet_number);
 
     // Iterate over facet vertices
     for (VertexIterator vertex(facet); !vertex.end(); ++vertex)
@@ -456,7 +459,8 @@ void DirichletBC::computeBCTopological(std::map<uint, double>& boundary_values,
     UFCCell ufc_cell(cell);
 
     // Interpolate function on cell
-    g.interpolate(data.w, ufc_cell, *(data.finite_element), cell, facet_number);
+    error("Need an interpolate function in Function which takes cell/facet as input."); 
+    //g.interpolate(data.w, ufc_cell, *(data.finite_element), cell, facet_number);
     
     // Tabulate dofs on cell
     data.dof_map->tabulate_dofs(data.cell_dofs, ufc_cell);
@@ -535,7 +539,8 @@ void DirichletBC::computeBCGeometric(std::map<uint, double>& boundary_values,
             // Tabulate dofs on cell
             data.dof_map->tabulate_dofs(data.cell_dofs, ufc_cell);
             // Interpolate function on cell
-            g.interpolate(data.w, ufc_cell, *data.finite_element, *c);
+            error("Need an interpolate function in Function which takes cell as input."); 
+            //g.interpolate(data.w, ufc_cell, *data.finite_element, *c);
           }
           
           // Set boundary value
@@ -579,7 +584,8 @@ void DirichletBC::computeBCPointwise(std::map<uint, double>& boundary_values,
         // Tabulate dofs on cell
         data.dof_map->tabulate_dofs(data.cell_dofs, ufc_cell);
         // Interpolate function on cell
-        g.interpolate(data.w, ufc_cell, *data.finite_element, *cell);
+        error("Need an interpolate function in Function which takes cell as input."); 
+        //g.interpolate(data.w, ufc_cell, *data.finite_element, *cell);
       }
       
       // Set boundary value
