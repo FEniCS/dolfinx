@@ -6,6 +6,7 @@
 // First added:  2004
 // Last changed: 2008-09-09
 
+#include <tr1/memory>
 #include <dolfin/fem/Assembler.h>
 #include <dolfin/fem/DirichletBC.h>
 #include <dolfin/fem/Form.h>
@@ -15,7 +16,7 @@
 #include <dolfin/la/KrylovSolver.h>
 #include <dolfin/la/enums_la.h>
 #include <dolfin/function/Function.h>
-#include <dolfin/function/DiscreteFunction.h>
+#include <dolfin/function/FunctionSpace.h>
 #include <dolfin/io/dolfin_io.h>
 #include "LinearPDE.h"
 
@@ -53,9 +54,6 @@ LinearPDE::~LinearPDE()
 void LinearPDE::solve(Function& u)
 {
   begin("Solving linear PDE.");
-
-  // Create Function
-  u.init(mesh, a, 1);
 
   // Create matrix and vector for assembly
   Matrix A;
@@ -110,6 +108,8 @@ void LinearPDE::solve(Function& u)
 //-----------------------------------------------------------------------------
 void LinearPDE::solve(Function& u0, Function& u1)
 {
+  error("Need to fix LinearPDE for sub-functions.");
+/*
   // Solve system
   Function u;
   solve(u);
@@ -117,10 +117,13 @@ void LinearPDE::solve(Function& u0, Function& u1)
   // Extract sub functions
   u0 = u[0];
   u1 = u[1];
+*/
 }
 //-----------------------------------------------------------------------------
 void LinearPDE::solve(Function& u0, Function& u1, Function& u2)
 {
+  error("Need to fix LinearPDE for sub-functions.");
+/*
   // Solve system
   Function u;
   solve(u);
@@ -129,5 +132,6 @@ void LinearPDE::solve(Function& u0, Function& u1, Function& u2)
   u0 = u[0];
   u1 = u[1];
   u2 = u[2];
+*/
 }
 //-----------------------------------------------------------------------------

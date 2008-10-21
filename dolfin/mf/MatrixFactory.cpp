@@ -43,6 +43,8 @@ void MatrixFactory::computeMassMatrix(GenericMatrix& A, Mesh& mesh)
 //-----------------------------------------------------------------------------
 void MatrixFactory::computeStiffnessMatrix(GenericMatrix& A, Mesh& mesh, double c)
 {
+  error("MatrixFactory need to be updated for new Function interface.");
+/*
   Function f(mesh, c);
 
   warning("Using default dof map in MatrixFactory");
@@ -58,11 +60,14 @@ void MatrixFactory::computeStiffnessMatrix(GenericMatrix& A, Mesh& mesh, double 
   }
   else
     error("Unknown mesh type.");
+*/
 }
 //-----------------------------------------------------------------------------
 void MatrixFactory::computeConvectionMatrix(GenericMatrix& A, Mesh& mesh,
 					    double cx, double cy, double cz)
 {
+  error("MatrixFactory need to be updated for new Function interface.");
+/*
   Function fx(mesh, cx);
   Function fy(mesh, cy);
   Function fz(mesh, cz);
@@ -82,10 +87,14 @@ void MatrixFactory::computeConvectionMatrix(GenericMatrix& A, Mesh& mesh,
   {
     error("Unknown mesh type.");
   }
+*/
 }
 //-----------------------------------------------------------------------------
 void MatrixFactory::computeLoadVector(GenericVector& x, Mesh& mesh, double c)
 {
+  error("MatrixFactory need to be updated for new Function interface.");
+
+/*
   Function f(mesh, c);
 
   error("MF forms need to be updated to new mesh format.");
@@ -104,5 +113,6 @@ void MatrixFactory::computeLoadVector(GenericVector& x, Mesh& mesh, double c)
   {
     error("Unknown mesh type.");
   } 
+*/
 }
 //-----------------------------------------------------------------------------

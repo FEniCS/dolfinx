@@ -76,8 +76,7 @@ void NonlinearPDE::solve(Function& u, double& t, const double& T, const double& 
 {
   begin("Solving nonlinear PDE.");  
 
-  // Initialise function
-  u.init(mesh, a, 1);
+  // Get vector associated with Function
   GenericVector& x = u.vector();
 
   // Solve
