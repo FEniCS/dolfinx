@@ -213,7 +213,7 @@ void Assembler::assembleCells(GenericTensor& A,
 
     // Interpolate coefficients on cell
     for (uint i = 0; i < coefficients.size(); i++)
-      coefficients[i]->interpolate(ufc.w[i], ufc.cell, *ufc.coefficient_elements[i], *cell);
+      coefficients[i]->interpolate(ufc.w[i], ufc.cell);
     
     // Tabulate dofs for each dimension
     for (uint i = 0; i < ufc.form.rank(); i++)
@@ -281,7 +281,8 @@ void Assembler::assembleExteriorFacets(GenericTensor& A,
 
     // Interpolate coefficients on cell
     for (uint i = 0; i < coefficients.size(); i++)
-      coefficients[i]->interpolate(ufc.w[i], ufc.cell, *ufc.coefficient_elements[i], mesh_cell, local_facet);
+      error("Need to extend Function interface.");
+      //coefficients[i]->interpolate(ufc.w[i], ufc.cell, *ufc.coefficient_elements[i], mesh_cell, local_facet);
 
     // Tabulate dofs for each dimension
     for (uint i = 0; i < ufc.form.rank(); i++)
@@ -352,9 +353,10 @@ void Assembler::assembleInteriorFacets(GenericTensor& A,
     // Interpolate coefficients on cell
     for (uint i = 0; i < coefficients.size(); i++)
     {
-      const uint offset = ufc.coefficient_elements[i]->space_dimension();
-      coefficients[i]->interpolate(ufc.macro_w[i], ufc.cell0, *ufc.coefficient_elements[i], cell0, facet0);
-      coefficients[i]->interpolate(ufc.macro_w[i] + offset, ufc.cell1, *ufc.coefficient_elements[i], cell1, facet1);
+      //const uint offset = ufc.coefficient_elements[i]->space_dimension();
+      error("Need to update Function interface.");
+      //coefficients[i]->interpolate(ufc.macro_w[i], ufc.cell0, *ufc.coefficient_elements[i], cell0, facet0);
+      //coefficients[i]->interpolate(ufc.macro_w[i] + offset, ufc.cell1, *ufc.coefficient_elements[i], cell1, facet1);
     }
 
     // Tabulate dofs for each dimension on macro element
@@ -395,7 +397,7 @@ void Assembler::check(const ufc::form& form,
       // auto_ptr deletes its object when it exits its scope
       std::auto_ptr<ufc::finite_element> fe( form.create_finite_element(i+form.rank()) );
       
-      uint r = coefficients[i]->rank();
+      uint r = coefficients[i]->element().value_rank();
       uint fe_r = fe->value_rank();
       if(fe_r != r)
         warning("Invalid value rank of Function %d, got %d but expecting %d. \
@@ -403,7 +405,7 @@ You may need to provide the rank of a user defined Function.", i, r, fe_r);
       
       for(uint j=0; j<r; ++j)
       {
-        uint dim = coefficients[i]->dim(j);
+        uint dim = coefficients[i]->element().value_dimension(j);
         uint fe_dim = fe->value_dimension(j);
         if(dim != fe_dim)
           warning("Invalid value dimension %d of Function %d, got %d but expecting %d. \
@@ -577,7 +579,7 @@ void Assembler::assemble_system(GenericMatrix& A, const ufc::form& A_form,
 
       // Interpolate coefficients on cell
       for (uint i = 0; i < A_coefficients.size(); i++)
-        A_coefficients[i]->interpolate(A_ufc.w[i], A_ufc.cell, *A_ufc.coefficient_elements[i], *cell);
+        A_coefficients[i]->interpolate(A_ufc.w[i], A_ufc.cell);
 
       // Tabulate dofs for each dimension
       for (uint i = 0; i < A_ufc.form.rank(); i++)
@@ -588,7 +590,7 @@ void Assembler::assemble_system(GenericMatrix& A, const ufc::form& A_form,
 
       // Interpolate coefficients on cell
       for (uint i = 0; i < b_coefficients.size(); i++)
-        b_coefficients[i]->interpolate(b_ufc.w[i], b_ufc.cell, *b_ufc.coefficient_elements[i], *cell);
+        b_coefficients[i]->interpolate(b_ufc.w[i], b_ufc.cell);
 
       // Tabulate dofs for each dimension
       for (uint i = 0; i < b_ufc.form.rank(); i++)
@@ -785,11 +787,12 @@ void Assembler::assemble_system(GenericMatrix& A, const ufc::form& A_form,
           // Interpolate coefficients on cell
           for (uint i = 0; i < A_coefficients.size(); i++)
           {
-            const uint offset = A_macro_ufc.coefficient_elements[i]->space_dimension();
-            A_coefficients[i]->interpolate(A_macro_ufc.macro_w[i],          A_macro_ufc.cell0, 
-                *A_macro_ufc.coefficient_elements[i], cell0, facet0);
-            A_coefficients[i]->interpolate(A_macro_ufc.macro_w[i] + offset, A_macro_ufc.cell1, 
-                *A_macro_ufc.coefficient_elements[i], cell1, facet1);
+            error("Need to extend Function interface.");
+            //const uint offset = A_macro_ufc.coefficient_elements[i]->space_dimension();
+            //A_coefficients[i]->interpolate(A_macro_ufc.macro_w[i], A_macro_ufc.cell0, 
+            //    *A_macro_ufc.coefficient_elements[i], cell0, facet0);
+            //A_coefficients[i]->interpolate(A_macro_ufc.macro_w[i] + offset, A_macro_ufc.cell1, 
+            //    *A_macro_ufc.coefficient_elements[i], cell1, facet1);
           }
 
 
@@ -819,11 +822,12 @@ void Assembler::assemble_system(GenericMatrix& A, const ufc::form& A_form,
           // Interpolate coefficients on cell
           for (uint i = 0; i < b_coefficients.size(); i++)
           {
-            const uint offset = b_macro_ufc.coefficient_elements[i]->space_dimension();
-            b_coefficients[i]->interpolate(b_macro_ufc.macro_w[i],          b_macro_ufc.cell0, 
-                *b_macro_ufc.coefficient_elements[i], cell0, facet0);
-            b_coefficients[i]->interpolate(b_macro_ufc.macro_w[i] + offset, b_macro_ufc.cell1, 
-                *b_macro_ufc.coefficient_elements[i], cell1, facet1);
+            error("Need to extend Function interface.");
+            //const uint offset = b_macro_ufc.coefficient_elements[i]->space_dimension();
+            //b_coefficients[i]->interpolate(b_macro_ufc.macro_w[i],          b_macro_ufc.cell0, 
+            //    *b_macro_ufc.coefficient_elements[i], cell0, facet0);
+            //b_coefficients[i]->interpolate(b_macro_ufc.macro_w[i] + offset, b_macro_ufc.cell1, 
+            //    *b_macro_ufc.coefficient_elements[i], cell1, facet1);
           }
 
           // Get integral for sub domain (if any)
@@ -851,7 +855,7 @@ void Assembler::assemble_system(GenericMatrix& A, const ufc::form& A_form,
 
             // Interpolate coefficients on cell
             for (uint i = 0; i < A_coefficients.size(); i++)
-              A_coefficients[i]->interpolate(A_ufc.w[i], A_ufc.cell, *A_ufc.coefficient_elements[i], cell0);
+              A_coefficients[i]->interpolate(A_ufc.w[i], A_ufc.cell);
 
             // Tabulate dofs for each dimension
             for (uint i = 0; i < A_ufc.form.rank(); i++)
@@ -883,7 +887,7 @@ void Assembler::assemble_system(GenericMatrix& A, const ufc::form& A_form,
 
             // Interpolate coefficients on cell
             for (uint i = 0; i < b_coefficients.size(); i++)
-              b_coefficients[i]->interpolate(b_ufc.w[i], b_ufc.cell, *b_ufc.coefficient_elements[i], cell0);
+              b_coefficients[i]->interpolate(b_ufc.w[i], b_ufc.cell);
 
             // Tabulate dofs for each dimension
             for (uint i = 0; i < b_ufc.form.rank(); i++)
@@ -914,7 +918,7 @@ void Assembler::assemble_system(GenericMatrix& A, const ufc::form& A_form,
 
             // Interpolate coefficients on cell
             for (uint i = 0; i < A_coefficients.size(); i++)
-              A_coefficients[i]->interpolate(A_ufc.w[i], A_ufc.cell, *A_ufc.coefficient_elements[i], cell1);
+              A_coefficients[i]->interpolate(A_ufc.w[i], A_ufc.cell);
 
             // Tabulate dofs for each dimension
             for (uint i = 0; i < A_ufc.form.rank(); i++)
@@ -946,7 +950,7 @@ void Assembler::assemble_system(GenericMatrix& A, const ufc::form& A_form,
 
             // Interpolate coefficients on cell
             for (uint i = 0; i < b_coefficients.size(); i++)
-              b_coefficients[i]->interpolate(b_ufc.w[i], b_ufc.cell, *b_ufc.coefficient_elements[i], cell1);
+              b_coefficients[i]->interpolate(b_ufc.w[i], b_ufc.cell);
 
             // Tabulate dofs for each dimension
             for (uint i = 0; i < b_ufc.form.rank(); i++)
@@ -1016,15 +1020,17 @@ void Assembler::assemble_system(GenericMatrix& A, const ufc::form& A_form,
         b_ufc.update(cell);
 
         // Interpolate coefficients on cell
-        for (uint i = 0; i < A_coefficients.size(); i++)
-          A_coefficients[i]->interpolate(A_ufc.w[i], A_ufc.cell, *A_ufc.coefficient_elements[i], cell, local_facet);
+        error("Need to extend Function interface.");
+        //for (uint i = 0; i < A_coefficients.size(); i++)
+        //  A_coefficients[i]->interpolate(A_ufc.w[i], A_ufc.cell, *A_ufc.coefficient_elements[i], cell, local_facet);
         // Tabulate dofs for each dimension
         for (uint i = 0; i < A_ufc.form.rank(); i++)
           A_dof_map_set[i].tabulate_dofs(A_ufc.dofs[i], A_ufc.cell, cell.index());
 
         // Interpolate coefficients on cell
-        for (uint i = 0; i < b_coefficients.size(); i++)
-          b_coefficients[i]->interpolate(b_ufc.w[i], b_ufc.cell, *b_ufc.coefficient_elements[i], cell, local_facet);
+        error("Need to extend Function interface.");
+        //for (uint i = 0; i < b_coefficients.size(); i++)
+        //  b_coefficients[i]->interpolate(b_ufc.w[i], b_ufc.cell, *b_ufc.coefficient_elements[i], cell, local_facet);
 
         // Tabulate dofs for each dimension
         for (uint i = 0; i < b_ufc.form.rank(); i++)
