@@ -5,11 +5,13 @@
 //
 // First added:  2008-07-02
 
+#include <dolfin/fem/FiniteElement.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/Vertex.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/function/Function.h>
+#include <dolfin/function/FunctionSpace.h>
 #include <dolfin/la/Vector.h>
 #include "XYZFile.h"
 
@@ -34,7 +36,6 @@ void XYZFile::operator<<(Function& u)
   // Write results
   ResultsWrite(u);
   
-  
   // Increase the number of times we have saved the function
   counter++;
   
@@ -47,20 +48,19 @@ void XYZFile::ResultsWrite(Function& u) const
   // Open file
   FILE *fp = fopen(xyz_filename.c_str(), "a");
   
- 
-  const uint rank = u.rank();
+  const uint rank = u.element().value_rank();
   if(rank > 1)
     error("Only scalar functions can be saved in xyz format.");
 
   // Get number of components
-  const uint dim = u.dim(0);
+  const uint dim = u.element().value_dimension(0);
 
-  Mesh& mesh = u.mesh();
+  Mesh& mesh = const_cast<Mesh&>(u.function_space().mesh());
   
   // Allocate memory for function values at vertices
   uint size = mesh.numVertices();
-  for (uint i = 0; i < u.rank(); i++)
-    size *= u.dim(i);
+  for (uint i = 0; i < u.element().value_rank(); i++)
+    size *= u.element().value_dimension(i);
   double* values = new double[size];
 
   // Get function values at vertices

@@ -11,7 +11,9 @@
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/Vertex.h>
 #include <dolfin/mesh/Cell.h>
+#include <dolfin/fem/FiniteElement.h>
 #include <dolfin/function/Function.h>
+#include <dolfin/function/FunctionSpace.h>
 #include <dolfin/la/Vector.h>
 #include "VTKFile.h"
 
@@ -76,7 +78,7 @@ void VTKFile::operator<<(Function& u)
   // Write pvd file
   pvdFileWrite(counter);
     
-  Mesh& mesh = u.mesh(); 
+  Mesh& mesh = const_cast<Mesh&>(u.function_space().mesh()); 
 
   // Write headers
   VTKHeaderOpen(mesh);
@@ -162,29 +164,32 @@ void VTKFile::ResultsWrite(Function& u) const
   std::string data_type = "point";
 
   // Check that we have a Function that can be handled
-  if(u.type() == Function::empty || u.type() == Function::ufc)
-    error("Function type cannot be written in VTK format.");
+  error("Need to add test for function type in Function.");
+  //if(u.type() == Function::empty || u.type() == Function::ufc)
+  //  error("Function type cannot be written in VTK format.");
  
   // Get rank of Function
-  const uint rank = u.rank();
+  const uint rank = u.element().value_rank();
   if(rank > 1)
     error("Only scalar and vectors functions can be saved in VTK format.");
 
   // Get number of components
-  const uint dim = u.dim(0);
+  const uint dim = u.element().value_dimension(0);
   if ( dim > 3 )
     warning("Cannot handle VTK file with number of components > 3. Writing first three components only");
 
   // Test for DiscreteFunction finite element type by signature
+  error("Need to add test for function type");
+/*
   if(u.type() == Function::discrete)
   {
     if(rank == 0)
     {
       // Test for P0 element
-      if(u.signature().substr(0, 49) == "Discontinuous Lagrange finite element of degree 0")
+      if(u.elemen().signature().substr(0, 49) == "Discontinuous Lagrange finite element of degree 0")
         data_type = "cell";
       // Test for non-Lagrane element
-      else if(u.signature().substr(0, 8) != "Lagrange")
+      else if(u.element().signature().substr(0, 8) != "Lagrange")
         error("Only Lagrange functions or order k > 0 can be written in VTK format. You may need to project your function."); 
     }
     else
@@ -192,20 +197,21 @@ void VTKFile::ResultsWrite(Function& u) const
       // FIXME: Add test for other rank elements 
     }
   }
+*/
 
   // Open file
   FILE *fp = fopen(vtu_filename.c_str(), "a");
   
   // Get mesh
-  Mesh& mesh = u.mesh();
+  Mesh& mesh = const_cast<Mesh&>(u.function_space().mesh());
 
   // Write function data at mesh cells
   if(data_type == "cell")
   {
     // Allocate memory for function values at vertices
     uint size = mesh.numCells();
-    for (uint i = 0; i < u.rank(); i++)
-      size *= u.dim(i);
+    for (uint i = 0; i < u.element().value_rank(); i++)
+      size *= u.element().value_dimension(i);
     double* values = new double[size];
 
     // Get function values on cells
@@ -227,7 +233,7 @@ void VTKFile::ResultsWrite(Function& u) const
     {    
       if ( rank == 0 ) 
         fprintf(fp," %e ", values[ cell->index() ] );
-      else if ( u.dim(0) == 2 ) 
+      else if ( u.element().value_dimension(0) == 2 ) 
         fprintf(fp," %e %e  0.0", values[ cell->index() ], 
                                   values[ cell->index() + mesh.numCells() ] );
       else  
@@ -246,8 +252,8 @@ void VTKFile::ResultsWrite(Function& u) const
   {
     // Allocate memory for function values at vertices
     uint size = mesh.numVertices();
-    for (uint i = 0; i < u.rank(); i++)
-      size *= u.dim(i);
+    for (uint i = 0; i < u.element().value_rank(); i++)
+      size *= u.element().value_dimension(i);
     double* values = new double[size];
 
     // Get function values at vertices
@@ -268,7 +274,7 @@ void VTKFile::ResultsWrite(Function& u) const
     {    
       if ( rank == 0 ) 
         fprintf(fp," %e ", values[ vertex->index() ] );
-      else if ( u.dim(0) == 2 ) 
+      else if ( u.element().value_dimension(0) == 2 ) 
         fprintf(fp," %e %e  0.0", values[ vertex->index() ], 
                                   values[ vertex->index() + mesh.numVertices() ] );
       else  

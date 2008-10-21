@@ -25,7 +25,6 @@
 #include <dolfin/graph/Graph.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/function/Function.h>
-#include <dolfin/function/DiscreteFunction.h>
 #include <dolfin/fem/DofMap.h>
 #include <dolfin/parameter/Parameter.h>
 #include <dolfin/parameter/ParameterList.h>
@@ -169,8 +168,9 @@ void XMLFile::operator>>(Function& f)
   parseFile(); 
   
   // Create Function
-  Function _f(mesh, finite_element_signature, dof_map_signature);  
-  f = _f;  
+  error("Need to update MLFile::operator>>(Function& f) for new Function interface.");
+  //Function _f(mesh, finite_element_signature, dof_map_signature);  
+  //f = _f;  
 
   // Read the vector
   *this >> f.vector();
@@ -439,7 +439,9 @@ void XMLFile::operator<<(MeshFunction<bool>& meshfunction)
 //-----------------------------------------------------------------------------
 void XMLFile::operator<<(Function& f)
 {
+  error("Need to update XMLFile::operator<<(Function& f) for new Function interface.");
   // Can only save discrete functions
+/*
   if (f.type() != Function::discrete)
     error("Only discrete functions can be saved in XML format.");
 
@@ -470,6 +472,7 @@ void XMLFile::operator<<(Function& f)
   closeFile(fp);
 
   message(1, "Saved function to file %s in DOLFIN XML format.", filename.c_str());
+*/
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator<<(ParameterList& parameters)
