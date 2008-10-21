@@ -8,11 +8,13 @@
 // First added:  2005-07-05
 // Last changed: 2008-06-26
 
+#include <dolfin/fem/FiniteElement.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/Vertex.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/function/Function.h>
+#include <dolfin/function/FunctionSpace.h>
 #include <dolfin/la/Vector.h>
 #include "PVTKFile.h"
 
@@ -99,7 +101,8 @@ void PVTKFile::operator<<(Function& u)
     pvtuFileWrite_func(u);
   }
     
-  Mesh& mesh = u.mesh(); 
+  // FIXME: need to fix const-ness
+  Mesh& mesh = const_cast<Mesh&>(u.function_space().mesh()); 
 
   // Write headers
   VTKHeaderOpen(mesh);
@@ -184,19 +187,19 @@ void PVTKFile::ResultsWrite(Function& u) const
   // Open file
   FILE *fp = fopen(vtu_filename.c_str(), "a");
   
-  Mesh& mesh = u.mesh();
+  Mesh& mesh = const_cast<Mesh&>(u.function_space().mesh());
 
-  const uint rank = u.rank();
+  const uint rank = u.element().value_rank();
   if(rank > 1)
     error("Only scalar and vectors functions can be saved in VTK format.");
 
   // Get number of components
-  const uint dim = u.dim(0);
+  const uint dim = u.element().value_dimension(0);
 
   // Allocate memory for function values at vertices
   uint size = mesh.numVertices();
-  for (uint i = 0; i < u.rank(); i++)
-    size *= u.dim(i);
+  for (uint i = 0; i < u.element().value_rank(); i++)
+    size *= u.element().value_dimension(i);
   double* values = new double[size];
 
   // Get function values at vertices
@@ -221,7 +224,7 @@ void PVTKFile::ResultsWrite(Function& u) const
   {    
     if ( rank == 0 ) 
       fprintf(fp," %e ", values[ vertex->index() ] );
-    else if ( u.dim(0) == 2 ) 
+    else if ( u.element().value_dimension(0) == 2 ) 
       fprintf(fp," %e %e  0.0", values[ vertex->index() ], 
                                 values[ vertex->index() + mesh.numVertices() ] );
     else  
@@ -322,7 +325,7 @@ void PVTKFile::pvtuFileWrite_func(Function& u)
   pvtuFile << "<VTKFile type=\"PUnstructuredGrid\" version=\"0.1\">" << std::endl;
   pvtuFile << "<PUnstructuredGrid GhostLevel=\"0\">" << std::endl;
   
-  if(u.rank() == 0) {
+  if(u.element().value_rank() == 0) {
     pvtuFile << "<PPointData Scalars=\"U\">" << std::endl;    
     pvtuFile << "<PDataArray  type=\"Float64\"  Name=\"U\"  format=\"ascii\"/>" << std::endl;
   }

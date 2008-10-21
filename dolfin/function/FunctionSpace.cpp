@@ -13,7 +13,7 @@
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/DofMap.h>
-#include "NewFunction.h"
+#include "Function.h"
 #include "FunctionSpace.h"
 
 using namespace dolfin;
@@ -94,7 +94,7 @@ const DofMap& FunctionSpace::dofmap() const
 //-----------------------------------------------------------------------------
 void FunctionSpace::eval(double* values,
                          const double* x,
-                         const NewFunction& v) const
+                         const Function& v) const
 {
   dolfin_assert(values);
   dolfin_assert(x);
@@ -136,7 +136,7 @@ void FunctionSpace::eval(double* values,
 //-----------------------------------------------------------------------------
 void FunctionSpace::interpolate(double* coefficients,
                                 const ufc::cell& ufc_cell,
-                                const NewFunction& v) const
+                                const Function& v) const
 {
   dolfin_assert(coefficients);
   dolfin_assert(v.in(*this));
@@ -152,7 +152,7 @@ void FunctionSpace::interpolate(double* coefficients,
 }
 //-----------------------------------------------------------------------------
 void FunctionSpace::interpolate(GenericVector& coefficients,
-                                const NewFunction& v) const
+                                const Function& v) const
 {
   dolfin_assert(_mesh);
   dolfin_assert(_element);
@@ -182,7 +182,7 @@ void FunctionSpace::interpolate(GenericVector& coefficients,
 }
 //-----------------------------------------------------------------------------
 void FunctionSpace::interpolate(double* vertex_values,
-                                const NewFunction& v) const
+                                const Function& v) const
 {
   dolfin_assert(vertex_values);
   dolfin_assert(v.in(*this));

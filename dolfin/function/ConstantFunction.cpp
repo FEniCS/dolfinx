@@ -12,11 +12,12 @@
 #include "ConstantFunction.h"
 
 using namespace dolfin;
-
+/*
 //-----------------------------------------------------------------------------
 ConstantFunction::ConstantFunction(const ConstantFunction& f)
-  : GenericFunction(f.mesh), values(0), value_rank(f.value_rank), shape(0), size(f.size)
+  : values(0), value_rank(f.value_rank), shape(0), size(f.size)
 {
+  error("Needs updating for new Function interface.");
   values = new double[size];
   shape = new uint[value_rank];
   for(uint i=0; i<value_rank; i++)
@@ -26,8 +27,9 @@ ConstantFunction::ConstantFunction(const ConstantFunction& f)
 }
 //-----------------------------------------------------------------------------
 ConstantFunction::ConstantFunction(Mesh& mesh, double value)
-  : GenericFunction(mesh), values(0), value_rank(0), shape(0), size(1)
+  : values(0), value_rank(0), shape(0), size(1)
 {
+  error("Needs updating for new Function interface.");
   values = new double[1];
   shape = new uint[1];
   values[0] = value;
@@ -35,8 +37,9 @@ ConstantFunction::ConstantFunction(Mesh& mesh, double value)
 }
 //-----------------------------------------------------------------------------
 ConstantFunction::ConstantFunction(Mesh& mesh, uint size, double value)
-  : GenericFunction(mesh), values(0), value_rank(1), shape(0), size(size)
+  : values(0), value_rank(1), shape(0), size(size)
 {
+  error("Needs updating for new Function interface.");
   shape = new uint[1];
   shape[0] = size;
   values = new double[size];
@@ -45,7 +48,7 @@ ConstantFunction::ConstantFunction(Mesh& mesh, uint size, double value)
 }
 //-----------------------------------------------------------------------------
 ConstantFunction::ConstantFunction(Mesh& mesh, const Array<double>& _values)
-  : GenericFunction(mesh), values(0), value_rank(1), shape(0), size(0)
+  : values(0), value_rank(1), shape(0), size(0)
 {
   size = _values.size();
   shape = new uint[1];
@@ -144,3 +147,4 @@ void ConstantFunction::evaluate(double* _values,
   eval(_values, coordinates);
 }
 //-----------------------------------------------------------------------------
+*/

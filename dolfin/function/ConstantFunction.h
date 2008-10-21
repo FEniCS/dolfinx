@@ -10,7 +10,7 @@
 #ifndef __CONSTANT_FUNCTION_H
 #define __CONSTANT_FUNCTION_H
 
-#include "GenericFunction.h"
+#include "Function.h"
 
 namespace dolfin
 {
@@ -22,6 +22,7 @@ namespace dolfin
   {
   public:
 
+    /*
     /// Copy constructor
     ConstantFunction(const ConstantFunction& f);
 
@@ -39,28 +40,7 @@ namespace dolfin
 
     /// Destructor
     ~ConstantFunction();
-
-    /// Return the rank of the value space
-    uint rank() const;
-
-    /// Return the dimension of the value space for axis i
-    uint dim(uint i) const;
-
-    /// Interpolate function to vertices of mesh
-    void interpolate(double* values) const;
-
-    /// Interpolate function to finite element space on cell
-    void interpolate(double* coefficients,
-                     const ufc::cell& cell,
-                     const FiniteElement& finite_element) const;
-
-    /// Evaluate function at given point
-    void eval(double* values, const double* x) const;
-
-    /// Evaluate function at given point in cell (UFC function interface)
-    void evaluate(double* values,
-                  const double* coordinates,
-                  const ufc::cell& cell) const;
+    */
 
   private:
 

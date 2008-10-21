@@ -9,6 +9,7 @@
 // Last changed: 
 
 #include <dolfin/common/constants.h>
+#include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/Facet.h>
 #include <dolfin/fem/Form.h>
 #include <dolfin/fem/UFC.h>
@@ -17,7 +18,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-MeshSize::MeshSize(Mesh& mesh) : Function(mesh) 
+MeshSize::MeshSize(Mesh& mesh) : Function(), mesh(mesh)
 {
   // Do nothing
 }
@@ -29,7 +30,7 @@ double MeshSize::eval(const double* x) const
 //-----------------------------------------------------------------------------
 double MeshSize::min() const
 {
-  CellIterator c(mesh());
+  CellIterator c(mesh);
   double hmin = c->diameter();
   for (; !c.end(); ++c)
     hmin = std::min(hmin, c->diameter());
@@ -38,14 +39,14 @@ double MeshSize::min() const
 //-----------------------------------------------------------------------------
 double MeshSize::max() const
 {
-  CellIterator c(mesh());
+  CellIterator c(mesh);
   double hmax = c->diameter();
   for (; !c.end(); ++c)
     hmax = std::max(hmax, c->diameter());
   return hmax;
 }
 //-----------------------------------------------------------------------------
-InvMeshSize::InvMeshSize(Mesh& mesh) : Function(mesh) 
+InvMeshSize::InvMeshSize(Mesh& mesh) : Function(), mesh(mesh) 
 {
   // Do nothing
 }
@@ -55,7 +56,7 @@ double InvMeshSize::eval(const double* x) const
   return 1.0 / cell().diameter();
 }
 //-----------------------------------------------------------------------------
-AvgMeshSize::AvgMeshSize(Mesh& mesh) : Function(mesh) 
+AvgMeshSize::AvgMeshSize(Mesh& mesh) : Function(), mesh(mesh)
 {
   // Do nothing
 }
@@ -68,14 +69,14 @@ double AvgMeshSize::eval(const double* x) const
   else
   {
     // Create facet from the global facet number
-    Facet facet0(mesh(), cell().entities(cell().mesh().topology().dim() - 1)[facet()]);
+    Facet facet0(mesh, cell().entities(cell().mesh().topology().dim() - 1)[facet()]);
 
     // If there are two cells connected to the facet
     if (facet0.numEntities(cell().mesh().topology().dim()) == 2)
     {
       // Create the two connected cells and return the average of their diameter
-      Cell cell0(mesh(), facet0.entities(cell().mesh().topology().dim())[0]);
-      Cell cell1(mesh(), facet0.entities(cell().mesh().topology().dim())[1]);
+      Cell cell0(mesh, facet0.entities(cell().mesh().topology().dim())[0]);
+      Cell cell1(mesh, facet0.entities(cell().mesh().topology().dim())[1]);
 
       return (cell0.diameter() + cell1.diameter())/2.0;
     }
@@ -86,7 +87,7 @@ double AvgMeshSize::eval(const double* x) const
   }
 }
 //-----------------------------------------------------------------------------
-FacetNormal::FacetNormal(Mesh& mesh) : Function(mesh) 
+FacetNormal::FacetNormal(Mesh& mesh) : Function(), mesh(mesh)
 {
   // Do nothing
 }
@@ -114,10 +115,10 @@ dolfin::uint FacetNormal::dim(uint i) const
 {
   if(i > 0)
     error("Invalid dimension %d in FacetNormal::dim.", i);
-  return mesh().geometry().dim();
+  return mesh.geometry().dim();
 }
 //-----------------------------------------------------------------------------
-FacetArea::FacetArea(Mesh& mesh) : Function(mesh) 
+FacetArea::FacetArea(Mesh& mesh) : Function(), mesh(mesh)
 {
   // Do nothing
 }
@@ -130,7 +131,7 @@ void FacetArea::eval(double* values, const double* x) const
     values[0] = 0.0;
 }
 //-----------------------------------------------------------------------------
-InvFacetArea::InvFacetArea(Mesh& mesh) : Function(mesh) 
+InvFacetArea::InvFacetArea(Mesh& mesh) : Function(), mesh(mesh)
 {
   // Do nothing
 }
@@ -143,7 +144,7 @@ void InvFacetArea::eval(double* values, const double* x) const
     values[0] = 0.0;
 }
 //-----------------------------------------------------------------------------
-OutflowFacet::OutflowFacet(Mesh& mesh, Form& form) : Function(mesh), form(form)                            
+OutflowFacet::OutflowFacet(Mesh& mesh, Form& form) : Function(), form(form), mesh(mesh)                           
 {
   // Some simple sanity checks on form
   if (!(form.form().rank() == 0 && form.form().num_coefficients() == 2))
@@ -174,9 +175,10 @@ double OutflowFacet::eval(const double* x) const
     ufc->update(cell0);
 
     // Interpolate coefficients on cell and current facet
-    for (dolfin::uint i = 0; i < form.coefficients().size(); i++)
-      form.coefficients()[i]->interpolate(ufc->w[i], ufc->cell, 
-                                *ufc->coefficient_elements[i], cell0, facet());
+    error("Need to extend Function interface.");
+    //for (dolfin::uint i = 0; i < form.coefficients().size(); i++)
+    //  form.coefficients()[i]->interpolate(ufc->w[i], ufc->cell, 
+    //                            *ufc->coefficient_elements[i], cell0, facet());
 
     // Get exterior facet integral (we need to be able to tabulate ALL facets 
     // of a given cell)
