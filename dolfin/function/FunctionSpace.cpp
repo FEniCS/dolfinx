@@ -4,7 +4,7 @@
 // Modified by Kristoffer Selim, 2008.
 //
 // First added:  2008-09-11
-// Last changed: 2008-10-14
+// Last changed: 2008-10-21
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/NoDeleter.h>
@@ -163,23 +163,6 @@ void FunctionSpace::interpolate(GenericVector& coefficients,
     // Copy dofs to vector
     coefficients.set(scratch.coefficients, _dofmap->local_dimension(), scratch.dofs);
   }
-}
-//-----------------------------------------------------------------------------
-void FunctionSpace::interpolate(double* coefficients,
-                                const ufc::cell& ufc_cell,
-                                const Function& v) const
-{
-  dolfin_assert(coefficients);
-  dolfin_assert(v.in(*this));
-  dolfin_assert(_mesh);
-  dolfin_assert(_element);
-  dolfin_assert(_dofmap);
-
-  // Tabulate dofs
-  _dofmap->tabulate_dofs(scratch.dofs, ufc_cell);
-
-  // Pick values from global vector
-  v.vector().get(coefficients, _dofmap->local_dimension(), scratch.dofs);
 }
 //-----------------------------------------------------------------------------
 void FunctionSpace::interpolate(double* vertex_values,

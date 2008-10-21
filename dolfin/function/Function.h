@@ -6,22 +6,16 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2003-11-28
-// Last changed: 2008-10-14
+// Last changed: 2008-10-21
 
 #ifndef __FUNCTION_H
 #define __FUNCTION_H
 
+#include <ufc.h>
 #include <tr1/memory>
 #include <dolfin/common/simple_array.h>
 #include <dolfin/common/Variable.h>
 #include <dolfin/log/log.h>
-
-
-// Forward declaration
-namespace ufc 
-{
-  class cell; 
-}
 
 namespace dolfin
 {
@@ -41,7 +35,7 @@ namespace dolfin
   /// where {phi_i}_i is a basis for V_h, and U is a vector of
   /// expansion coefficients for u_h.
 
-  class Function : public Variable
+  class Function : public Variable, public ufc::function
   {
   public:
 
@@ -104,6 +98,9 @@ namespace dolfin
 
     /// Evaluate function at given point (used for subclassing through SWIG interface)
     void eval(simple_array<double>& values, const simple_array<double>& x) const;
+
+    /// Evaluate function (needed for ufc::function interface)
+    void evaluate(double* values, const double* coordinates, const ufc::cell& cell) const;
 
     /// Interpolate function to given function space
     void interpolate(GenericVector& coefficients, const FunctionSpace& V) const;

@@ -6,7 +6,6 @@
 // First added:  2006-02-09
 // Last changed: 2008-07-07
 
-
 #ifndef __CONSTANT_FUNCTION_H
 #define __CONSTANT_FUNCTION_H
 
@@ -18,7 +17,7 @@ namespace dolfin
   /// This class implements the functionality for functions
   /// that take a single constant value.
 
-  class ConstantFunction : public Function, public ufc::function
+  class ConstantFunction : public Function
   {
   public:
 
@@ -40,6 +39,9 @@ namespace dolfin
     /// Destructor
     ~ConstantFunction();
 
+    // FIXME: Why are the interpolate functions needed? Shouldn't it be
+    // FIXME: enough to implement eval()?
+
     /// Interpolate function to vertices of mesh
     void interpolate(double* values, const FunctionSpace& V) const;
 
@@ -50,11 +52,6 @@ namespace dolfin
 
     /// Evaluate function at given point
     void eval(double* values, const double* x) const;
-
-    /// Evaluate function at given point in cell (UFC function interface)
-    void evaluate(double* values,
-                  const double* coordinates,
-                  const ufc::cell& cell) const;
 
   private:
 

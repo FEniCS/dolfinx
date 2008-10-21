@@ -142,11 +142,3 @@ void ConstantFunction::eval(double* _values, const double* x) const
     _values[i] = values[i];
 }
 //-----------------------------------------------------------------------------
-void ConstantFunction::evaluate(double* _values,
-                                const double* coordinates,
-                                const ufc::cell& cell) const
-{
-  // Call eval(), cell ignored
-  eval(_values, coordinates);
-}
-//-----------------------------------------------------------------------------

@@ -208,6 +208,11 @@ void Function::eval(simple_array<double>& values, const simple_array<double>& x)
   eval(values.data, x.data);
 }
 //-----------------------------------------------------------------------------
+void Function::evaluate(double* values, const double* coordinates, const ufc::cell& cell) const
+{
+  error("Not implemented, need to think about how to handle it when not user-defined.");
+}
+//-----------------------------------------------------------------------------
 void Function::interpolate(GenericVector& coefficients, const FunctionSpace& V) const
 {
   V.interpolate(coefficients, *this);
@@ -217,7 +222,30 @@ void Function::interpolate(double* coefficients, const ufc::cell& ufc_cell) cons
 {
   dolfin_assert(coefficients);
   dolfin_assert(_function_space);
-  _function_space->interpolate(coefficients, ufc_cell, *this);
+
+  // Either pick values or evaluate dof functionals
+  if (_vector)
+  {
+    // Get dofmap
+    const DofMap& dofmap = _function_space->dofmap();
+
+    // Tabulate dofs
+    uint* dofs = new uint[dofmap.local_dimension()];
+    dofmap.tabulate_dofs(dofs, ufc_cell);
+    
+    // Pick values from global vector
+    _vector->get(coefficients, dofmap.local_dimension(), dofs);
+    delete [] dofs;
+  }
+  else
+  {
+    // Get element
+    const FiniteElement& element = _function_space->element();
+
+    // Evaluate each dof to get coefficients for nodal basis expansion
+    for (uint i = 0; i < element.space_dimension(); i++)
+      coefficients[i] = element.evaluate_dof(i, *this, ufc_cell);
+  }
 }
 //-----------------------------------------------------------------------------
 void Function::interpolate(double* vertex_values) const
