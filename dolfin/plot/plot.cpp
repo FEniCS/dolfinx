@@ -1,8 +1,10 @@
-// Copyright (C) 2007 Anders Logg.
+// Copyright (C) 2007-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Joachim Berdal Haga, 2008.
+//
 // First added:  2007-05-02
-// Last changed: 2007-06-13
+// Last changed: 2008-10-21
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -75,7 +77,8 @@ namespace dolfin
     fprintf(script_file, "import os, sys\n");
     fprintf(script_file, "try:\n");
     fprintf(script_file, "    from dolfin import *\n\n");
-    if (mesh) {
+    if (mesh)
+    {
       fprintf(script_file, "    mesh = Mesh('%s')\n", data_name.c_str());
       fprintf(script_file, "    f = MeshFunction('%s', mesh, '%s')\n\n", type.c_str(), data_name.c_str());
     }
@@ -100,7 +103,7 @@ namespace dolfin
 #else
     std::string command = "python " + script_name + " > /dev/null";
 #endif
-    if ( system(command.c_str()) != 0 )
+    if (system(command.c_str()) != 0)
       message("Unable to plot (PyDOLFIN or Viper plotter not available).");
   }
 
