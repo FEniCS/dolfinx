@@ -135,23 +135,6 @@ void FunctionSpace::eval(double* values,
   }
 }
 //-----------------------------------------------------------------------------
-void FunctionSpace::interpolate(double* coefficients,
-                                const ufc::cell& ufc_cell,
-                                const Function& v) const
-{
-  dolfin_assert(coefficients);
-  dolfin_assert(v.in(*this));
-  dolfin_assert(_mesh);
-  dolfin_assert(_element);
-  dolfin_assert(_dofmap);
-
-  // Tabulate dofs
-  _dofmap->tabulate_dofs(scratch.dofs, ufc_cell);
-
-  // Pick values from global vector
-  v.vector().get(coefficients, _dofmap->local_dimension(), scratch.dofs);
-}
-//-----------------------------------------------------------------------------
 void FunctionSpace::interpolate(GenericVector& coefficients,
                                 const Function& v) const
 {
@@ -180,6 +163,23 @@ void FunctionSpace::interpolate(GenericVector& coefficients,
     // Copy dofs to vector
     coefficients.set(scratch.coefficients, _dofmap->local_dimension(), scratch.dofs);
   }
+}
+//-----------------------------------------------------------------------------
+void FunctionSpace::interpolate(double* coefficients,
+                                const ufc::cell& ufc_cell,
+                                const Function& v) const
+{
+  dolfin_assert(coefficients);
+  dolfin_assert(v.in(*this));
+  dolfin_assert(_mesh);
+  dolfin_assert(_element);
+  dolfin_assert(_dofmap);
+
+  // Tabulate dofs
+  _dofmap->tabulate_dofs(scratch.dofs, ufc_cell);
+
+  // Pick values from global vector
+  v.vector().get(coefficients, _dofmap->local_dimension(), scratch.dofs);
 }
 //-----------------------------------------------------------------------------
 void FunctionSpace::interpolate(double* vertex_values,
