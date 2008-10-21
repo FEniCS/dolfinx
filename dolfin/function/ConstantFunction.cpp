@@ -10,10 +10,12 @@
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/mesh/Mesh.h>
 #include "ConstantFunction.h"
+#include "FunctionSpace.h"
 
 using namespace dolfin;
-/*
+
 //-----------------------------------------------------------------------------
+/*
 ConstantFunction::ConstantFunction(const ConstantFunction& f)
   : values(0), value_rank(f.value_rank), shape(0), size(f.size)
 {
@@ -25,8 +27,9 @@ ConstantFunction::ConstantFunction(const ConstantFunction& f)
   for(uint i=0; i<size; i++)  
     values[i] = f.values[i];
 }
+*/
 //-----------------------------------------------------------------------------
-ConstantFunction::ConstantFunction(Mesh& mesh, double value)
+ConstantFunction::ConstantFunction(double value)
   : values(0), value_rank(0), shape(0), size(1)
 {
   error("Needs updating for new Function interface.");
@@ -36,7 +39,7 @@ ConstantFunction::ConstantFunction(Mesh& mesh, double value)
   shape[0] = 1;
 }
 //-----------------------------------------------------------------------------
-ConstantFunction::ConstantFunction(Mesh& mesh, uint size, double value)
+ConstantFunction::ConstantFunction(uint size, double value)
   : values(0), value_rank(1), shape(0), size(size)
 {
   error("Needs updating for new Function interface.");
@@ -47,7 +50,7 @@ ConstantFunction::ConstantFunction(Mesh& mesh, uint size, double value)
     values[i] = value;
 }
 //-----------------------------------------------------------------------------
-ConstantFunction::ConstantFunction(Mesh& mesh, const Array<double>& _values)
+ConstantFunction::ConstantFunction(const Array<double>& _values)
   : values(0), value_rank(1), shape(0), size(0)
 {
   size = _values.size();
@@ -58,8 +61,8 @@ ConstantFunction::ConstantFunction(Mesh& mesh, const Array<double>& _values)
     values[i] = _values[i];
 }
 //-----------------------------------------------------------------------------
-ConstantFunction::ConstantFunction(Mesh& mesh, const Array<uint>& _shape, const Array<double>& _values)
-  : GenericFunction(mesh), values(0), value_rank(0), shape(0), size(0)
+ConstantFunction::ConstantFunction(const Array<uint>& _shape, const Array<double>& _values)
+  : values(0), value_rank(0), shape(0), size(0)
 {
   value_rank = _shape.size();
   shape = new uint[value_rank];
@@ -82,24 +85,24 @@ ConstantFunction::~ConstantFunction()
   delete [] values;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint ConstantFunction::rank() const
-{
-  return value_rank;
-}
+//dolfin::uint ConstantFunction::rank() const
+//{
+//  return value_rank;
+//}
 //-----------------------------------------------------------------------------
-dolfin::uint ConstantFunction::dim(uint i) const
-{
-  if(i >= value_rank)
-    error("Too large dimension in dim.");
-  return shape[i];
-}
+//dolfin::uint ConstantFunction::dim(uint i) const
+//{
+//  if(i >= value_rank)
+//    error("Too large dimension in dim.");
+//  return shape[i];
+//}
 //-----------------------------------------------------------------------------
-void ConstantFunction::interpolate(double* _values) const
+void ConstantFunction::interpolate(double* _values, const FunctionSpace& V) const
 {
   dolfin_assert(_values);
 
   // Set all vertex values to the constant tensor value
-  for (uint i = 0; i < mesh->numVertices(); i++)
+  for (uint i = 0; i < V.mesh().numVertices(); i++)
   {
     for (uint j = 0; j < size; j++)
     {
@@ -111,19 +114,19 @@ void ConstantFunction::interpolate(double* _values) const
 //-----------------------------------------------------------------------------
 void ConstantFunction::interpolate(double* coefficients,
                                    const ufc::cell& cell,
-                                   const FiniteElement& finite_element) const
+                                   const FunctionSpace& V) const
 {
   dolfin_assert(coefficients);
   
   // Assert same value shape (TODO: Slow to do this for every element, should probably remove later)
-  dolfin_assert(value_rank == finite_element.value_rank());
+  dolfin_assert(value_rank == V.element().value_rank());
   for (uint i = 0; i < value_rank; i++)
-    dolfin_assert(shape[i] == finite_element.value_dimension(i));
+    dolfin_assert(shape[i] == V.element().value_dimension(i));
   
   // UFC 1.0 version:
   // Evaluate each dof to get coefficients for nodal basis expansion
-  for (uint i = 0; i < finite_element.space_dimension(); i++)
-    coefficients[i] = finite_element.evaluate_dof(i, *this, cell);
+  for (uint i = 0; i < V.element().space_dimension(); i++)
+    coefficients[i] = V.element().evaluate_dof(i, *this, cell);
   
   // UFC 1.1 version:
   /// Evaluate linear functionals for all dofs on the function f
@@ -147,4 +150,3 @@ void ConstantFunction::evaluate(double* _values,
   eval(_values, coordinates);
 }
 //-----------------------------------------------------------------------------
-*/

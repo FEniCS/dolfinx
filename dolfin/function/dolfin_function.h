@@ -4,6 +4,7 @@
 // DOLFIN function interface
 
 #include <dolfin/function/Function.h>
+#include <dolfin/function/FunctionSpace.h>
 #include <dolfin/function/SpecialFunctions.h>
 #include <dolfin/function/ProjectL2.h>
 

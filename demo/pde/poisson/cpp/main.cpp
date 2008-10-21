@@ -28,10 +28,7 @@ int main()
   // Source term
   class Source : public Function
   {
-  public:
-    
-    Source(Mesh& mesh) : Function(mesh) {}
-
+  public:    
     double eval(const double* x) const
     {
       double dx = x[0] - 0.5;
@@ -45,9 +42,6 @@ int main()
   class Flux : public Function
   {
   public:
-
-    Flux(Mesh& mesh) : Function(mesh) {}
-
     double eval(const double* x) const
     {
       if (x[0] > DOLFIN_EPS)
@@ -67,27 +61,27 @@ int main()
     }
   };
 
-  //dolfin_set("linear algebra backend", "PETSc");
-
   // Create mesh
   UnitSquare mesh(32, 32);
 
   // Create functions
-  Source f(mesh);
-  Flux g(mesh);
+  Source f;
+  Flux   g;
 
   // Create boundary condition
-  Function u0(mesh, 0.0);
-  DirichletBoundary boundary;
-  DirichletBC bc(u0, mesh, boundary);
+  //Function u0(mesh, 0.0);
+  //DirichletBoundary boundary;
+  //DirichletBC bc(u0, mesh, boundary);
   
   // Define PDE
   PoissonBilinearForm a;
   PoissonLinearForm L(f, g);
-  LinearPDE pde(a, L, mesh, bc, symmetric);
+  //LinearPDE pde(a, L, mesh, bc, symmetric);
+  LinearPDE pde(a, L, mesh, symmetric);
 
   // Solve PDE
-  Function u;
+  FunctionSpace V(mesh, a.finite_element(1), a.dofMaps()[1]);
+  Function u(V);
   pde.solve(u);
 
   // Plot solution

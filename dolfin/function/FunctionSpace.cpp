@@ -56,9 +56,9 @@ FunctionSpace::~FunctionSpace()
 const FunctionSpace& FunctionSpace::operator= (const FunctionSpace& V)
 {
   // Assign data (will be shared)
-  _mesh = V._mesh;
+  _mesh    = V._mesh;
   _element = V._element;
-  _dofmap = V._dofmap;
+  _dofmap  = V._dofmap;
 
   // Reinitialize scratch space and intersection detector
   scratch.init(*_element);
@@ -125,7 +125,8 @@ void FunctionSpace::eval(double* values,
   v.vector().get(scratch.coefficients, _dofmap->local_dimension(), scratch.dofs);
 
   // Compute linear combination
-  for (uint j = 0; j < scratch.size; j++) values[j] = 0.0;
+  for (uint j = 0; j < scratch.size; j++) 
+    values[j] = 0.0;
   for (uint i = 0; i < _element->space_dimension(); i++)
   {
     _element->evaluate_basis(i, scratch.values, x, ufc_cell);

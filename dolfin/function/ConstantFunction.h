@@ -22,25 +22,39 @@ namespace dolfin
   {
   public:
 
-    /*
     /// Copy constructor
-    ConstantFunction(const ConstantFunction& f);
+    //ConstantFunction(const ConstantFunction& f);
 
     /// Create constant scalar function from given value
-    ConstantFunction(Mesh& mesh, double value);
+    explicit ConstantFunction(double value);
 
     /// Create constant vector function from given size and value
-    ConstantFunction(Mesh& mesh, uint size, double value);
+    ConstantFunction(uint size, double value);
 
     /// Create constant vector function from given size and values
-    ConstantFunction(Mesh& mesh, const Array<double>& values);
+    ConstantFunction(const Array<double>& values);
 
     /// Create constant tensor function from given shape and values
-    ConstantFunction(Mesh& mesh, const Array<uint>& shape, const Array<double>& values);
+    ConstantFunction(const Array<uint>& shape, const Array<double>& values);
 
     /// Destructor
     ~ConstantFunction();
-    */
+
+    /// Interpolate function to vertices of mesh
+    void interpolate(double* values, const FunctionSpace& V) const;
+
+    /// Interpolate function to finite element space on cell
+    void interpolate(double* coefficients,
+                     const ufc::cell& cell,
+                     const FunctionSpace& V) const;
+
+    /// Evaluate function at given point
+    void eval(double* values, const double* x) const;
+
+    /// Evaluate function at given point in cell (UFC function interface)
+    void evaluate(double* values,
+                  const double* coordinates,
+                  const ufc::cell& cell) const;
 
   private:
 
