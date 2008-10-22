@@ -42,9 +42,8 @@ Function::Function(const std::string filename)
     _vector(0),
     _time(0), _cell(0), _facet(-1)
 {
-  // FIXME: Uncomment when renamed to Function
-  //File file(filename);
-  //file >> *this;
+  File file(filename);
+  file >> *this;
 }
 //-----------------------------------------------------------------------------
 Function::Function(const SubFunction& v)
@@ -246,6 +245,15 @@ void Function::interpolate(double* coefficients, const ufc::cell& ufc_cell) cons
     for (uint i = 0; i < element.space_dimension(); i++)
       coefficients[i] = element.evaluate_dof(i, *this, ufc_cell);
   }
+}
+//-----------------------------------------------------------------------------
+void Function::interpolate(double* coefficients, const FunctionSpace& V,
+                           const ufc::cell& ufc_cell) const
+{
+  dolfin_assert(coefficients);
+  dolfin_assert(_function_space);
+  
+  error("Function::interpolate not yet programmed.");
 }
 //-----------------------------------------------------------------------------
 void Function::interpolate(double* vertex_values) const

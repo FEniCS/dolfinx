@@ -108,8 +108,8 @@ namespace dolfin
     /// Interpolate function to local function space on cell
     void interpolate(double* coefficients, const ufc::cell& ufc_cell) const;
 
-    /// Interpolate function to local function space on cell
-    //void interpolate(double* coefficients, const FunctionSpace& V, const ufc::cell& ufc_cell) const;
+    /// Interpolate function to local function space on cell (with check on function space)
+    void interpolate(double* coefficients, const FunctionSpace& V, const ufc::cell& ufc_cell) const;
 
     /// Interpolate function to vertices of mesh
     void interpolate(double* vertex_values) const;
