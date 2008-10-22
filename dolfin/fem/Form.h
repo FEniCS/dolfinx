@@ -12,6 +12,7 @@
 #include <vector>
 #include <tr1/memory>
 #include <dolfin/fem/FiniteElement.h>
+#include <dolfin/function/FunctionSpace.h>
 #include "DofMapSet.h"
 
 // Forward declaration
@@ -35,7 +36,13 @@ namespace dolfin
   public:
 
     /// Constructor
-    Form() {}
+    Form() : {}
+
+    /// Constructor
+    //Form(std::vector<FunctionSpace*>& > V) : V(V) {}
+
+    /// Constructor
+    //Form(std::vector< std::tr1::shared_ptr<FunctionSpace> > V) : V(V) {}
 
     /// Destructor
     virtual ~Form();
@@ -65,6 +72,9 @@ namespace dolfin
     FiniteElement& finite_element(uint i);
 
   private:
+
+    // Shared pointer to function spaces
+    //std::vector< std::tr1::shared_ptr<FunctionSpace> > function_spaces;
 
     // Finite elements
     std::vector<FiniteElement*> finite_elements;
