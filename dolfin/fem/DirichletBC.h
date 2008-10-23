@@ -120,6 +120,8 @@ namespace dolfin
     /// Destructor
     ~DirichletBC();
 
+    // FIXME: Should we pass a FunctionSpace or FiniteElement instead of a Form?
+
     /// Apply boundary condition to linear system
     void apply(GenericMatrix& A, const Form& form);
 

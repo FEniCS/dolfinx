@@ -21,6 +21,8 @@
 #include <dolfin/mesh/SubDomain.h>
 #include <dolfin/la/GenericMatrix.h>
 #include <dolfin/la/GenericVector.h>
+#include "DofMap.h"
+#include "FiniteElement.h"
 #include "Form.h"
 #include "UFCMesh.h"
 #include "UFCCell.h"
@@ -103,17 +105,17 @@ DirichletBC::~DirichletBC()
 //-----------------------------------------------------------------------------
 void DirichletBC::apply(GenericMatrix& A, const Form& form)
 {
-  apply(&A, 0, 0, form.dofMaps()[1], form.form());
+  apply(&A, 0, 0, form.function_space(1).dofmap(), form.ufc_form());
 }
 //-----------------------------------------------------------------------------
 void DirichletBC::apply(GenericVector& b, const GenericVector& x, const Form& form)
 {
-  apply(0, &b, &x, form.dofMaps()[1], form.form());
+  apply(0, &b, &x, form.function_space(1).dofmap(), form.ufc_form());
 }
 //-----------------------------------------------------------------------------
 void DirichletBC::apply(GenericMatrix& A, GenericVector& b, const Form& form)
 {
-  apply(&A, &b, 0, form.dofMaps()[1], form.form());
+  apply(&A, &b, 0, form.function_space(1).dofmap(), form.ufc_form());
 }
 //-----------------------------------------------------------------------------
 void DirichletBC::apply(GenericMatrix& A, GenericVector& b, const DofMap& dof_map,
@@ -125,7 +127,7 @@ void DirichletBC::apply(GenericMatrix& A, GenericVector& b, const DofMap& dof_ma
 void DirichletBC::apply(GenericMatrix& A, GenericVector& b,
                         const GenericVector& x, const Form& form)
 {
-  apply(&A, &b, &x, form.dofMaps()[1], form.form());
+  apply(&A, &b, &x, form.function_space(1).dofmap(), form.ufc_form());
 }
 //-----------------------------------------------------------------------------
 void DirichletBC::apply(GenericMatrix& A, const DofMap& dof_map, 
@@ -216,7 +218,7 @@ void DirichletBC::apply(GenericMatrix* A, GenericVector* b,
 //-----------------------------------------------------------------------------
 void DirichletBC::zero(GenericMatrix& A, const Form& form)
 {
-  zero(A, form.dofMaps()[1], form.form());
+  zero(A, form.function_space(1).dofmap(), form.ufc_form());
 }
 //-----------------------------------------------------------------------------
 void DirichletBC::zero(GenericMatrix& A, const DofMap& dof_map, const ufc::form& form)
