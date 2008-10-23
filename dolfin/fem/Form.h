@@ -11,6 +11,7 @@
 
 #include <vector>
 #include <tr1/memory>
+#include <dolfin/common/NoDeleter.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/function/FunctionSpace.h>
 #include "DofMapSet.h"
@@ -36,19 +37,43 @@ namespace dolfin
   public:
 
     /// Constructor
-    Form() : {}
+    Form(FunctionSpace& V0) : function_spaces(0)
+      { 
+        std::tr1::shared_ptr<FunctionSpace> _V0(&V0, NoDeleter<FunctionSpace>());
+        function_spaces.push_back(_V0);
+      }
 
     /// Constructor
-    //Form(std::vector<FunctionSpace*>& > V) : V(V) {}
+    Form(FunctionSpace& V0, FunctionSpace& V1) : function_spaces(0)
+      {
+        std::tr1::shared_ptr<FunctionSpace> _V0(&V0, NoDeleter<FunctionSpace>());
+        std::tr1::shared_ptr<FunctionSpace> _V1(&V1, NoDeleter<FunctionSpace>());
+        function_spaces.push_back(_V0);
+        function_spaces.push_back(_V1);
+      }
 
     /// Constructor
-    //Form(std::vector< std::tr1::shared_ptr<FunctionSpace> > V) : V(V) {}
+    Form(std::vector<FunctionSpace*>& V) : function_spaces(0)
+      {
+        for(uint i=0; i < V.size(); ++i)
+        {
+          std::tr1::shared_ptr<FunctionSpace> _V(V[i], NoDeleter<FunctionSpace>());
+          function_spaces.push_back(_V);
+        }
+      }
+
+    /// Constructor
+    //Form(std::vector< std::tr1::shared_ptr<FunctionSpace> >& V) : function_spaces(V) {}
 
     /// Destructor
     virtual ~Form();
 
     /// Return UFC form
     virtual const ufc::form& form() const = 0;
+
+    /// Return function space
+    //const FunctionSpace& function_space(uint i) const
+    //  { return *(function_spaces[i]); )
 
     /// Return array of coefficients
     virtual const Array<Function*>& coefficients() const = 0;
@@ -73,8 +98,8 @@ namespace dolfin
 
   private:
 
-    // Shared pointer to function spaces
-    //std::vector< std::tr1::shared_ptr<FunctionSpace> > function_spaces;
+    // Shared pointers to function spaces
+    std::vector< std::tr1::shared_ptr<FunctionSpace> > function_spaces;
 
     // Finite elements
     std::vector<FiniteElement*> finite_elements;

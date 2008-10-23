@@ -20,6 +20,8 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 void HarmonicSmoothing::move(Mesh& mesh, Mesh& new_boundary)
 {
+  error("HarmonicSmoothing::move needs updating for new Function interface.");
+/*
   // Choose form
   Form* form = 0;
   const uint D = mesh.topology().dim();
@@ -88,5 +90,6 @@ void HarmonicSmoothing::move(Mesh& mesh, Mesh& new_boundary)
   delete form;
   delete [] values;
   delete [] new_coordinates;
+*/
 }
 //-----------------------------------------------------------------------------
