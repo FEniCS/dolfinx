@@ -47,6 +47,9 @@ namespace dolfin
     /// Return function for given coefficient
     const Function& coefficient(uint i) const;
 
+    /// Return coefficients
+    const std::vector<Function*> _coefficients() const;
+
     /// Return UFC form
     const ufc::form& ufc_form() const;
 
