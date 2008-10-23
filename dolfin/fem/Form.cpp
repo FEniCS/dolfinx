@@ -82,6 +82,6 @@ FiniteElement& Form::finite_element(uint i)
 //-----------------------------------------------------------------------------
 void Form::check() const
 {
-  error("Not implemented.");
+  error("Form::check() not implemented.");
 }
 //-----------------------------------------------------------------------------
