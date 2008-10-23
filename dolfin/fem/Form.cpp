@@ -29,20 +29,30 @@ const FunctionSpace& Form::function_space(uint i) const
   return *function_spaces[i];
 }
 //-----------------------------------------------------------------------------
-const std::vector<FunctionSpace*> Form::function_spaces const
+const std::vector<FunctionSpace*> Form::function_spaces() const
 {
-  dolfin_assert(function_spaces);
-  std::vector<FunctionSpace*> spaces;
-  for(uint i=0; i < function_spaces.size(); ++i)
-    spaces.push_back(function_spaces[i]);   
+  dolfin_assert(_function_spaces);
+  std::vector<FunctionSpace*> V;
+  for (uint i = 0; i < _function_spaces.size(); ++i)
+    V.push_back(_function_spaces[i]);
 
-  return spaces;
+  return V;
 }
 //-----------------------------------------------------------------------------
 const Function& Form::coefficient(uint i) const
 {
   dolfin_assert(i < coefficients.size());
   return *coefficients[i];
+}
+//-----------------------------------------------------------------------------
+const std::vector<const Functions*> coefficients() const
+{
+  dolfin_assert(_coefficients);
+  std::vector<Function*> v;
+  for (uint i = 0; i < _coefficients.size(); ++i)
+    v.push_back(_coefficients[i]);
+
+  return v;
 }
 //-----------------------------------------------------------------------------
 const ufc::form& Form::ufc_form() const

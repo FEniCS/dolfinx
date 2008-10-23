@@ -42,10 +42,13 @@ namespace dolfin
     const FunctionSpace& function_space(uint i) const;
 
     /// Return function spaces
-    const std::vector<FunctionSpace*> spaces() const;
+    const std::vector<FunctionSpace*> function_spaces() const;
 
     /// Return function for given coefficient
     const Function& coefficient(uint i) const;
+
+    /// Return coefficient functions
+    const std::vector<Functions*> coefficients() const;
 
     /// Return UFC form
     const ufc::form& ufc_form() const;
@@ -53,10 +56,10 @@ namespace dolfin
   protected:
 
     // Function spaces (one for each argument)
-    std::vector<std::tr1::shared_ptr<FunctionSpace> > function_spaces;
+    std::vector<std::tr1::shared_ptr<FunctionSpace> > _function_spaces;
 
     // Coefficients
-    std::vector<std::tr1::shared_ptr<Function> > coefficients;
+    std::vector<std::tr1::shared_ptr<Function> > _coefficients;
 
     // Check that function spaces match the form
     void check() const;
