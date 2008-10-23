@@ -45,14 +45,14 @@ const Function& Form::coefficient(uint i) const
   return *coefficients[i];
 }
 //-----------------------------------------------------------------------------
-const std::vector<const Functions*> coefficients() const
+const std::vector<const Function*> coefficients() const
 {
   dolfin_assert(_coefficients);
-  std::vector<Function*> v;
+  std::vector<Function*> V;
   for (uint i = 0; i < _coefficients.size(); ++i)
-    v.push_back(_coefficients[i]);
+    V.push_back(_coefficients[i]);
 
-  return v;
+  return V;
 }
 //-----------------------------------------------------------------------------
 const ufc::form& Form::ufc_form() const
