@@ -43,6 +43,6 @@ const ufc::form& Form::ufc_form() const
 //-----------------------------------------------------------------------------
 void Form::check() const
 {
-  error("Not implemented.");
+  error("Form::check() not implemented.");
 }
 //-----------------------------------------------------------------------------
