@@ -50,9 +50,6 @@ namespace dolfin
     /// Return coefficient functions
     const std::vector<Functions*> coefficients() const;
 
-    /// Return coefficients
-    const std::vector<Function*> _coefficients() const;
-
     /// Return UFC form
     const ufc::form& ufc_form() const;
 
