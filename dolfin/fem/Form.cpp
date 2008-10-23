@@ -80,4 +80,8 @@ FiniteElement& Form::finite_element(uint i)
   return *(finite_elements[i]);
 }
 //-----------------------------------------------------------------------------
-
+void Form::check() const
+{
+  error("Not implemented.");
+}
+//-----------------------------------------------------------------------------
