@@ -29,6 +29,16 @@ const FunctionSpace& Form::function_space(uint i) const
   return *function_spaces[i];
 }
 //-----------------------------------------------------------------------------
+const std::vector<FunctionSpace*> Form::function_spaces const
+{
+  dolfin_assert(function_spaces);
+  std::vector<FunctionSpace*> spaces;
+  for(uint i=0; i < function_spaces.size(); ++i)
+    spaces.push_back(function_spaces[i]);   
+
+  return spaces;
+}
+//-----------------------------------------------------------------------------
 const Function& Form::coefficient(uint i) const
 {
   dolfin_assert(i < coefficients.size());

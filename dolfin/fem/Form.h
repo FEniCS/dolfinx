@@ -41,6 +41,9 @@ namespace dolfin
     /// Return function space for given argument
     const FunctionSpace& function_space(uint i) const;
 
+    /// Return function spaces
+    const std::vector<FunctionSpace*> spaces() const;
+
     /// Return function for given coefficient
     const Function& coefficient(uint i) const;
 
