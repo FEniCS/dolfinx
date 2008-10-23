@@ -10,10 +10,12 @@
 #ifndef __SPARSITY_PATTERN_BUILDER_H
 #define __SPARSITY_PATTERN_BUILDER_H
 
+#include <vector>
+
 namespace dolfin
 {
 
-  class DofMapSet;
+  class DofMap;
   class Mesh;
   class GenericSparsityPattern;
   class UFC;
@@ -26,7 +28,7 @@ namespace dolfin
     
     /// Build sparsity pattern
     static void build(GenericSparsityPattern& sparsity_pattern, Mesh& mesh,
-                      UFC& ufc, const DofMapSet& dof_map_set);
+                      UFC& ufc, const std::vector<const DofMap*> dof_maps);
 
   };
 

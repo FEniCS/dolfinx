@@ -18,15 +18,15 @@ Form::Form() : _ufc_form(0)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-virtual Form::~Form()
+Form::~Form()
 {
   delete _ufc_form;
 }
 //-----------------------------------------------------------------------------
 const FunctionSpace& Form::function_space(uint i) const
 {
-  dolfin_assert(i < function_spaces.size());
-  return *function_spaces[i];
+  dolfin_assert(i < _function_spaces.size());
+  return *_function_spaces[i];
 }
 //-----------------------------------------------------------------------------
 const std::vector<FunctionSpace*> Form::function_spaces() const
@@ -41,7 +41,7 @@ const std::vector<FunctionSpace*> Form::function_spaces() const
 //-----------------------------------------------------------------------------
 const Function& Form::coefficient(uint i) const
 {
-  dolfin_assert(i < coefficients.size());
+  dolfin_assert(i < _coefficients.size());
   return *coefficients[i];
 }
 //-----------------------------------------------------------------------------
