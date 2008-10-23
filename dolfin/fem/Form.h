@@ -53,11 +53,11 @@ namespace dolfin
       }
 
     /// Constructor
-    Form(std::vector<FunctionSpace*>& V) : function_spaces(0)
+    Form(std::vector<FunctionSpace&>& V) : function_spaces(0)
       {
         for(uint i=0; i < V.size(); ++i)
         {
-          std::tr1::shared_ptr<FunctionSpace> _V(V[i], NoDeleter<FunctionSpace>());
+          std::tr1::shared_ptr<FunctionSpace> _V(&V[i], NoDeleter<FunctionSpace>());
           function_spaces.push_back(_V);
         }
       }
