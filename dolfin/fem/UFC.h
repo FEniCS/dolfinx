@@ -7,6 +7,7 @@
 #ifndef __UFC_DATA_H
 #define __UFC_DATA_H
 
+#include <vector>
 #include <ufc.h>
 #include "UFCMesh.h"
 #include "UFCCell.h"
@@ -15,9 +16,9 @@ namespace dolfin
 {
 
   class FiniteElement;
+  class FunctionSpace;
   class Mesh;
   class Cell;
-  class DofMapSet;
 
   /// This class is a simple data structure that holds data used
   /// during assembly of a given UFC form. Data is created for each
@@ -30,7 +31,7 @@ namespace dolfin
   public:
 
     /// Constructor
-    UFC(const ufc::form& form, Mesh& mesh, const DofMapSet& dof_map_set);
+    UFC(const ufc::form& form, std::vector<FunctionSpace*>& V);
 
     /// Destructor
     ~UFC();

@@ -5,7 +5,7 @@
 // Last changed: 2008-06-10
 
 #include <dolfin/common/types.h>
-#include "DofMapSet.h"
+#include <dolfin/function/FunctionSpace.h>
 #include "DofMap.h"
 #include "FiniteElement.h"
 #include "UFC.h"
@@ -13,8 +13,11 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-UFC::UFC(const ufc::form& form, Mesh& mesh, const DofMapSet& dof_map_set) : form(form)
+UFC::UFC(const ufc::form& form, std::vector<FunctionSpace*>& V) : form(form)
 {
+  // FIXME: This is a temporay fix during the new Function transition
+  Mesh& mesh = V[0]->mesh();
+  
   // Create finite elements
   finite_elements = new FiniteElement*[form.rank()];
   for (uint i = 0; i < form.rank(); i++)
@@ -52,7 +55,7 @@ UFC::UFC(const ufc::form& form, Mesh& mesh, const DofMapSet& dof_map_set) : form
   // Initialize local tensor
   uint num_entries = 1;
   for (uint i = 0; i < form.rank(); i++)
-    num_entries *= dof_map_set[i].local_dimension();
+    num_entries *= V[i]->dofmap().local_dimension();
   A = new double[num_entries];
   for (uint i = 0; i < num_entries; i++)
     A[i] = 0.0;
@@ -60,7 +63,7 @@ UFC::UFC(const ufc::form& form, Mesh& mesh, const DofMapSet& dof_map_set) : form
   // Initialize local tensor for macro element
   num_entries = 1;
   for (uint i = 0; i < form.rank(); i++)
-    num_entries *= 2*dof_map_set[i].local_dimension();
+    num_entries *= 2*V[i]->dofmap().local_dimension();
   macro_A = new double[num_entries];
   for (uint i = 0; i < num_entries; i++)
     macro_A[i] = 0.0;  
@@ -68,17 +71,17 @@ UFC::UFC(const ufc::form& form, Mesh& mesh, const DofMapSet& dof_map_set) : form
   // Initialize local dimensions
   local_dimensions = new uint[form.rank()];
   for (uint i = 0; i < form.rank(); i++)
-    local_dimensions[i] = dof_map_set[i].local_dimension();
+    local_dimensions[i] = V[i]->dofmap().local_dimension();
 
   // Initialize local dimensions for macro element
   macro_local_dimensions = new uint[form.rank()];
   for (uint i = 0; i < form.rank(); i++)
-    macro_local_dimensions[i] = 2*dof_map_set[i].local_dimension();
+    macro_local_dimensions[i] = 2*V[i]->dofmap().local_dimension();
 
   // Initialize global dimensions
   global_dimensions = new uint[form.rank()];
   for (uint i = 0; i < form.rank(); i++)
-    global_dimensions[i] = dof_map_set[i].global_dimension();
+    global_dimensions[i] = V[i]->dofmap().local_dimension();
 
   // Initialize dofs
   dofs = new uint*[form.rank()];
