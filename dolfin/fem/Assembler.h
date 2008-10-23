@@ -10,7 +10,7 @@
 #ifndef __ASSEMBLER_H
 #define __ASSEMBLER_H
 
-#include <dolfin/common/Array.h>
+#include <vector>
 #include <dolfin/common/types.h>
 
 // Forward declaration
@@ -59,7 +59,7 @@ namespace dolfin
     /// Assemble system (A, b) and apply Dirichlet boundary conditions from 
     /// given variational forms
     void assemble(GenericMatrix& A, Form& a, GenericVector& b, Form& L, 
-                  Array<DirichletBC*>& bcs, bool reset_tensor=true);
+                  std::vector<DirichletBC*>& bcs, bool reset_tensor=true);
 
     /// Assemble tensor from given variational form over a sub domain
     void assemble(GenericTensor& A, Form& form, const SubDomain& sub_domain,
@@ -98,7 +98,7 @@ namespace dolfin
     /// or an empty MeshFunction may be used to specify that the tensor should be
     /// assembled over the entire set of cells or facets.
     void assemble(GenericTensor& A, const ufc::form& form,
-                  const Array<Function*>& coefficients,
+                  const std::vector<Function*>& coefficients,
                   const DofMapSet& dof_map_set,
                   const MeshFunction<uint>* cell_domains,
                   const MeshFunction<uint>* exterior_facet_domains,
@@ -108,11 +108,11 @@ namespace dolfin
     /// Assemble linear system Ax = b and enforce Dirichlet conditions.  
     //  Notice that the Dirichlet conditions are enforced in a symmetric way.  
     void assemble_system(GenericMatrix& A, const ufc::form& A_form, 
-                         const Array<Function*>& A_coefficients, const DofMapSet& A_dof_map_set,
+                         const std::vector<Function*>& A_coefficients, const DofMapSet& A_dof_map_set,
                          GenericVector& b, const ufc::form& b_form, 
-                         const Array<Function*>& b_coefficients, const DofMapSet& b_dof_map_set,
+                         const std::vector<Function*>& b_coefficients, const DofMapSet& b_dof_map_set,
                          const GenericVector* x0,
-                         Array<DirichletBC*> bcs, const MeshFunction<uint>* cell_domains, 
+                         std::vector<DirichletBC*> bcs, const MeshFunction<uint>* cell_domains, 
                          const MeshFunction<uint>* exterior_facet_domains,
                          const MeshFunction<uint>* interior_facet_domains,
                          bool reset_tensors=true);
@@ -122,31 +122,31 @@ namespace dolfin
  
     // Assemble over cells
     void assembleCells(GenericTensor& A,
-                       const Array<Function*>& coefficients,
+                       const std::vector<Function*>& coefficients,
                        const DofMapSet& dof_set_map,
                        UFC& data,
                        const MeshFunction<uint>* domains,
-                       Array<double>* values) const;
+                       std::vector<double>* values) const;
     
     // Assemble over exterior facets
     void assembleExteriorFacets(GenericTensor& A,
-                                const Array<Function*>& coefficients,
+                                const std::vector<Function*>& coefficients,
                                 const DofMapSet& dof_set_map,
                                 UFC& data,
                                 const MeshFunction<uint>* domains,
-                                Array<double>* values) const;
+                                std::vector<double>* values) const;
 
     // Assemble over interior facets
     void assembleInteriorFacets(GenericTensor& A,
-                                const Array<Function*>& coefficients,
+                                const std::vector<Function*>& coefficients,
                                 const DofMapSet& dof_set_map,
                                 UFC& data,
                                 const MeshFunction<uint>* domains,
-                                Array<double>* values) const;
+                                std::vector<double>* values) const;
 
     // Check arguments
     void check(const ufc::form& form,
-               const Array<Function*>& coefficients,
+               const std::vector<Function*>& coefficients,
                const Mesh& mesh) const;
 
     // Initialize global tensor

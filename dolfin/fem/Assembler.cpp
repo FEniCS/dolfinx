@@ -11,7 +11,6 @@
 #include <ufc.h>
 #include <dolfin/main/MPI.h>
 #include <dolfin/log/dolfin_log.h>
-#include <dolfin/common/Array.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/la/GenericMatrix.h>
 #include <dolfin/la/GenericTensor.h>
@@ -30,7 +29,6 @@
 #include "UFC.h"
 #include "Assembler.h"
 #include "SparsityPatternBuilder.h"
-#include "DofMapSet.h"
 #include "DirichletBC.h"
 #include "FiniteElement.h"
 
@@ -58,13 +56,13 @@ void Assembler::assemble(GenericTensor& A, Form& form, bool reset_tensor)
 void Assembler::assemble(GenericMatrix& A, Form& a, GenericVector& b, Form& L, 
                          DirichletBC& bc, bool reset_tensor)
 {
-  Array<DirichletBC*> bcs;
+  std::vector<DirichletBC*> bcs;
   bcs.push_back(&bc);
   assemble(A, a, b, L, bcs, reset_tensor); 
 }
 //-----------------------------------------------------------------------------
 void Assembler::assemble(GenericMatrix& A, Form& a, GenericVector& b, Form& L, 
-                         Array<DirichletBC*>& bcs, bool reset_tensor)
+                         std::vector<DirichletBC*>& bcs, bool reset_tensor)
 {
   a.updateDofMaps(mesh);
   L.updateDofMaps(mesh);
@@ -147,7 +145,7 @@ double Assembler::assemble(Form& form,
 }
 //-----------------------------------------------------------------------------
 void Assembler::assemble(GenericTensor& A, const ufc::form& form,
-                         const Array<Function*>& coefficients,
+                         const std::vector<Function*>& coefficients,
                          const DofMapSet& dof_map_set,
                          const MeshFunction<uint>* cell_domains,
                          const MeshFunction<uint>* exterior_facet_domains,
@@ -180,11 +178,11 @@ void Assembler::assemble(GenericTensor& A, const ufc::form& form,
 }
 //-----------------------------------------------------------------------------
 void Assembler::assembleCells(GenericTensor& A,
-                              const Array<Function*>& coefficients,
+                              const std::vector<Function*>& coefficients,
                               const DofMapSet& dof_map_set,
                               UFC& ufc,
                               const MeshFunction<uint>* domains,
-                              Array<double>* values) const
+                              std::vector<double>* values) const
 {
   // Skip assembly if there are no cell integrals
   if (ufc.form.num_cell_integrals() == 0)
@@ -233,11 +231,11 @@ void Assembler::assembleCells(GenericTensor& A,
 }
 //-----------------------------------------------------------------------------
 void Assembler::assembleExteriorFacets(GenericTensor& A,
-                                       const Array<Function*>& coefficients,
+                                       const std::vector<Function*>& coefficients,
                                        const DofMapSet& dof_map_set,
                                        UFC& ufc,
                                        const MeshFunction<uint>* domains,
-                                       Array<double>* values) const
+                                       std::vector<double>* values) const
 {
   // Skip assembly if there are no exterior facet integrals
   if (ufc.form.num_exterior_facet_integrals() == 0)
@@ -299,11 +297,11 @@ void Assembler::assembleExteriorFacets(GenericTensor& A,
 }
 //-----------------------------------------------------------------------------
 void Assembler::assembleInteriorFacets(GenericTensor& A,
-                                       const Array<Function*>& coefficients,
+                                       const std::vector<Function*>& coefficients,
                                        const DofMapSet& dof_map_set,
                                        UFC& ufc,
                                        const MeshFunction<uint>* domains,
-                                       Array<double>* values) const
+                                       std::vector<double>* values) const
 {
   // Skip assembly if there are no interior facet integrals
   if (ufc.form.num_interior_facet_integrals() == 0)
@@ -378,7 +376,7 @@ void Assembler::assembleInteriorFacets(GenericTensor& A,
 }
 //-----------------------------------------------------------------------------
 void Assembler::check(const ufc::form& form, 
-                      const Array<Function*>& coefficients, 
+                      const std::vector<Function*>& coefficients, 
                       const Mesh& mesh) const
 {
   // Check that we get the correct number of coefficients
@@ -494,13 +492,13 @@ std::string Assembler::progressMessage(uint rank, std::string integral_type) con
 }
 //-----------------------------------------------------------------------------
 void Assembler::assemble_system(GenericMatrix& A, const ufc::form& A_form, 
-                                const Array<Function*>& A_coefficients, 
+                                const std::vector<Function*>& A_coefficients, 
                                 const DofMapSet& A_dof_map_set,
                                 GenericVector& b, const ufc::form& b_form, 
-                                const Array<Function*>& b_coefficients, 
+                                const std::vector<Function*>& b_coefficients, 
                                 const DofMapSet& b_dof_map_set, 
                                 const GenericVector* x0,
-                                Array<DirichletBC*> bcs, 
+                                std::vector<DirichletBC*> bcs, 
                                 const MeshFunction<uint>* cell_domains,
                                 const MeshFunction<uint>* exterior_facet_domains,
                                 const MeshFunction<uint>* interior_facet_domains,
