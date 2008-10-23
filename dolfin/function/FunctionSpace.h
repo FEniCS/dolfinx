@@ -8,6 +8,7 @@
 #define __FUNCTION_SPACE_H
 
 #include <tr1/memory>
+#include <dolfin/common/types.h>
 
 namespace dolfin
 {

@@ -7,12 +7,12 @@
 // First added:  2007-05-24
 // Last changed: 2008-02-15
 
-#include "DofMapSet.h"
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Facet.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/la/GenericSparsityPattern.h>
 #include "SparsityPatternBuilder.h"
+#include "DofMap.h"
 #include "UFC.h"
 
 using namespace dolfin;
@@ -47,10 +47,13 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
         dof_maps[i]->tabulate_dofs(ufc.dofs[i], ufc.cell, cell->index());
  
       // Fill sparsity pattern.
+      /*
       if( dof_map_set.parallel() )
         sparsity_pattern.pinsert(ufc.local_dimensions, ufc.dofs);
       else
         sparsity_pattern.insert(ufc.local_dimensions, ufc.dofs);
+      */
+      sparsity_pattern.insert(ufc.local_dimensions, ufc.dofs);
     }
   }
 
@@ -82,9 +85,9 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
       // Tabulate dofs for each dimension on macro element
       for (uint i = 0; i < ufc.form.rank(); ++i)
       {
-        const uint offset = dof_map_set[i].local_dimension();
-        dof_maps[i].tabulate_dofs(ufc.macro_dofs[i], ufc.cell0, cell0.index());
-        dof_maps[i].tabulate_dofs(ufc.macro_dofs[i] + offset, ufc.cell1, cell1.index());
+        const uint offset = dof_maps[i]->local_dimension();
+        dof_maps[i]->tabulate_dofs(ufc.macro_dofs[i], ufc.cell0, cell0.index());
+        dof_maps[i]->tabulate_dofs(ufc.macro_dofs[i] + offset, ufc.cell1, cell1.index());
       }
 
       // Fill sparsity pattern.

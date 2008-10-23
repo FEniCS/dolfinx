@@ -10,6 +10,7 @@
 #include <map>
 
 #include <dolfin/common/constants.h>
+#include <dolfin/function/FunctionSpace.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/Vertex.h>
 #include <dolfin/mesh/Cell.h>
@@ -17,6 +18,7 @@
 #include <dolfin/mesh/SubDomain.h>
 #include <dolfin/la/GenericMatrix.h>
 #include <dolfin/la/GenericVector.h>
+#include "DofMap.h"
 #include "Form.h"
 #include "UFCMesh.h"
 #include "UFCCell.h"
@@ -68,7 +70,7 @@ PeriodicBC::~PeriodicBC()
 //-----------------------------------------------------------------------------
 void PeriodicBC::apply(GenericMatrix& A, GenericVector& b, const Form& form)
 {
-  apply(A, b, form.dofMaps()[0], form.form());
+  apply(A, b, form.function_space(0).dofmap(), form.ufc_form());
 }
 //-----------------------------------------------------------------------------
 void PeriodicBC::apply(GenericMatrix& A, GenericVector& b, const DofMap& dof_map,
@@ -284,7 +286,7 @@ void PeriodicBC::apply(GenericMatrix& A, GenericVector& b, const DofMap& dof_map
 void PeriodicBC::apply(GenericMatrix& A, GenericVector& b,
                        const GenericVector& x, const Form& form)
 {
-  apply(A, b, x, form.dofMaps()[0], form.form());
+  apply(A, b, x, form.function_space(0).dofmap(), form.ufc_form());
 }
 //-----------------------------------------------------------------------------
 void PeriodicBC::apply(GenericMatrix& A, GenericVector& b,
