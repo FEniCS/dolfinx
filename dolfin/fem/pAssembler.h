@@ -30,6 +30,8 @@ namespace dolfin
   /// more generally, assembly of a sparse tensor from a given
   /// variational form.
 
+  /*
+
   class pAssembler
   {
   public:
@@ -120,6 +122,8 @@ namespace dolfin
     MeshFunction<uint>* partitions;
 
   };
+
+  */
 
 }
 

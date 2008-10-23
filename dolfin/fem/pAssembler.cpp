@@ -33,6 +33,8 @@
 
 using namespace dolfin;
 
+/*
+
 //-----------------------------------------------------------------------------
 pAssembler::pAssembler(Mesh& mesh, MeshFunction<uint>& partitions) : mesh(mesh), partitions(&partitions)
 {
@@ -390,3 +392,5 @@ void pAssembler::initGlobalTensor(GenericTensor& A, const DofMapSet& dof_map_set
     A.zero();
 }
 //-----------------------------------------------------------------------------
+
+*/
