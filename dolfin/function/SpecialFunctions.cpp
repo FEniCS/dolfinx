@@ -147,15 +147,16 @@ void InvFacetArea::eval(double* values, const double* x) const
 OutflowFacet::OutflowFacet(Mesh& mesh, Form& form) : Function(), form(form), mesh(mesh)                           
 {
   // Some simple sanity checks on form
-  if (!(form.form().rank() == 0 && form.form().num_coefficients() == 2))
+  if (!(form.rank() == 0 && form.ufc_form().num_coefficients() == 2))
     error("Invalid form: rank = %d, number of coefficients = %d. Must be rank 0 form with 2 coefficients.", 
-              form.form().rank(), form.form().num_coefficients());
-  if (!(form.form().num_cell_integrals() == 0 && form.form().num_exterior_facet_integrals() == 1 
-        && form.form().num_interior_facet_integrals() == 0))
+              form.rank(), form.ufc_form().num_coefficients());
+  if (!(form.ufc_form().num_cell_integrals() == 0 && form.ufc_form().num_exterior_facet_integrals() == 1 
+        && form.ufc_form().num_interior_facet_integrals() == 0))
     error("Invalid form: Must have exactly 1 exterior facet integral");
 
-  form.updateDofMaps(mesh);
-  ufc = new UFC(form.form(), mesh, form.dofMaps());
+   error("Need to fix special function OutflowFacet::OutflowFacet for new interface.");
+  //form.updateDofMaps(mesh);
+  //ufc = new UFC(form.form(), mesh, form.dofMaps());
 }
 //-----------------------------------------------------------------------------
 OutflowFacet::~OutflowFacet()

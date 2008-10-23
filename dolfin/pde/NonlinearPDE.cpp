@@ -21,10 +21,10 @@ NonlinearPDE::NonlinearPDE(Form& a, Form& L, Mesh& mesh, DirichletBC& bc)
   message("Creating nonlinear PDE with %d boundary condition(s).", bcs.size());
 
   // Check ranks of forms
-  if ( a.form().rank() != 2 )
-    error("Expected a bilinear form but rank is %d.", a.form().rank());
-  if ( L.form().rank() != 1 )
-    error("Expected a linear form but rank is %d.", L.form().rank());
+  if ( a.rank() != 2 )
+    error("Expected a bilinear form but rank is %d.", a.rank());
+  if ( L.rank() != 1 )
+    error("Expected a linear form but rank is %d.", L.rank());
 
   // Create array with one boundary condition
   bcs.push_back(&bc);
@@ -36,10 +36,10 @@ NonlinearPDE::NonlinearPDE(Form& a, Form& L, Mesh& mesh,
   message("Creating nonlinear PDE with %d boundary condition(s).", bcs.size());
 
   // Check ranks of forms
-  if ( a.form().rank() != 2 )
-    error("Expected a bilinear form but rank is %d.", a.form().rank());
-  if ( L.form().rank() != 1 )
-    error("Expected a linear form but rank is %d.", L.form().rank());
+  if ( a.rank() != 2 )
+    error("Expected a bilinear form but rank is %d.", a.rank());
+  if ( L.rank() != 1 )
+    error("Expected a linear form but rank is %d.", L.rank());
 }
 //-----------------------------------------------------------------------------
 NonlinearPDE::~NonlinearPDE()

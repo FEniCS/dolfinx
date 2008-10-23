@@ -5,7 +5,6 @@
 // Last changed: 2006-10-26
 
 #include <dolfin/fem/assemble.h>
-#include <dolfin/fem/DofMapSet.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/la/GenericMatrix.h>
 #include <dolfin/la/GenericVector.h>
@@ -26,6 +25,8 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 void MatrixFactory::computeMassMatrix(GenericMatrix& A, Mesh& mesh)
 {
+  error("MatrixFactory::computeMassMatrix need updating for new Function interface.");
+  /*
   warning("Using default dof map in MatrixFactory");
   if (mesh.type().cellType() == CellType::triangle)
   {
@@ -39,6 +40,7 @@ void MatrixFactory::computeMassMatrix(GenericMatrix& A, Mesh& mesh)
   }
   else
     error("Unknown mesh type.");
+  */
 }
 //-----------------------------------------------------------------------------
 void MatrixFactory::computeStiffnessMatrix(GenericMatrix& A, Mesh& mesh, double c)
