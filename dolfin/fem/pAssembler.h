@@ -18,7 +18,6 @@
 namespace dolfin
 {
 
-  class DofMapSet;
   class GenericTensor;
   class Function;
   class Form;

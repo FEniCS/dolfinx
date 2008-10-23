@@ -9,6 +9,7 @@
 #ifndef __ASSEMBLE_H
 #define __ASSEMBLE_H
 
+#include <vector>
 #include <dolfin/common/types.h>
 
 // Forward declaration
@@ -22,7 +23,6 @@ namespace dolfin
 
   // Forward declarations
   class DirichletBC;
-  class DofMapSet;
   class GenericMatrix;
   class GenericTensor;
   class GenericVector;
@@ -30,7 +30,6 @@ namespace dolfin
   class Form;
   class SubDomain;
   class Mesh;
-  template<class T> class Array;
   template<class T> class MeshFunction;
 
   /// These functions provide automated assembly of linear systems,
@@ -51,7 +50,7 @@ namespace dolfin
   /// Assemble system (A, b) and apply Dirichlet boundary conditions from 
   /// given variational forms
   void assemble(GenericMatrix& A, Form& a, GenericVector& b, Form& L, 
-                Array<DirichletBC*>& bcs, Mesh& mesh, bool reset_tensor=true);
+                std::vector<DirichletBC*>& bcs, Mesh& mesh, bool reset_tensor=true);
 
   /// Assemble tensor from given variational form and mesh over a sub domain
   void assemble(GenericTensor& A, Form& form, Mesh& mesh, const SubDomain& sub_domain,
@@ -80,22 +79,21 @@ namespace dolfin
                 bool reset_tensor=true);
 
   /// Assemble tensor from given (UFC) form, mesh, coefficients and sub domains
-  void assemble(GenericTensor& A, const ufc::form& form, Mesh& mesh,
-                Array<Function*>& coefficients,
-                DofMapSet& dof_map_set,
+  void assemble(GenericTensor& A, const Form& form, Mesh& mesh,
+                std::vector<Function*>& coefficients,
                 const MeshFunction<uint>* cell_domains,
                 const MeshFunction<uint>* exterior_facet_domains,
                 const MeshFunction<uint>* interior_facet_domains,
                 bool reset_tensor = true);
 
   /// Assemble tensor from given (UFC) form, mesh, coefficients and sub domains
-  void assemble_system(GenericMatrix& A, const ufc::form& A_form, 
-                       const Array<Function*>& A_coefficients, const DofMapSet& A_dof_map_set,
-                       GenericVector& b, const ufc::form& b_form, 
-                       const Array<Function*>& b_coefficients, const DofMapSet& b_dof_map_set,
+  void assemble_system(GenericMatrix& A, const Form& A_form, 
+                       const std::vector<Function*>& A_coefficients,
+                       GenericVector& b, const Form& b_form, 
+                       const std::vector<Function*>& b_coefficients,
                        const GenericVector* x0,
                        Mesh& mesh, 
-                       Array<DirichletBC*>& bcs, const MeshFunction<uint>* cell_domains, 
+                       std::vector<DirichletBC*>& bcs, const MeshFunction<uint>* cell_domains, 
                        const MeshFunction<uint>* exterior_facet_domains,
                        const MeshFunction<uint>* interior_facet_domains,
                        bool reset_tensors=true);

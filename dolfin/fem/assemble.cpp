@@ -12,7 +12,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void dolfin::assemble(GenericTensor& A, Form& form, Mesh& mesh,
+void dolfin::assemble(GenericTensor& A, Form& form, Mesh& mesh, 
                       bool reset_tensor)
 {
   Assembler assembler(mesh);
@@ -27,7 +27,7 @@ void dolfin::assemble(GenericMatrix& A, Form& a, GenericVector& b, Form& L,
 }
 //-----------------------------------------------------------------------------
 void dolfin::assemble(GenericMatrix& A, Form& a, GenericVector& b, Form& L, 
-                         Array<DirichletBC*>& bcs, Mesh& mesh, bool reset_tensor)
+                         std::vector<DirichletBC*>& bcs, Mesh& mesh, bool reset_tensor)
 {
   Assembler assembler(mesh);
   assembler.assemble(A, a, b, L, bcs, reset_tensor); 
@@ -55,8 +55,7 @@ void dolfin::assemble(GenericTensor& A, Form& form, Mesh& mesh,
                      reset_tensor);
 }
 //-----------------------------------------------------------------------------
-double dolfin::assemble(Form& form, Mesh& mesh,
-                              bool reset_tensor)
+double dolfin::assemble(Form& form, Mesh& mesh, bool reset_tensor)
 {
   Assembler assembler(mesh);
   return assembler.assemble(form, reset_tensor);
@@ -83,35 +82,35 @@ double dolfin::assemble(Form& form, Mesh& mesh,
                             reset_tensor);
 }
 //----------------------------------------------------------------------------
-void dolfin::assemble(GenericTensor& A, const ufc::form& form, Mesh& mesh, 
-                      Array<Function*>& coefficients,
-                      DofMapSet& dof_map_set,
+void dolfin::assemble(GenericTensor& A, const Form& form, Mesh& mesh, 
+                      std::vector<Function*>& coefficients,
                       const MeshFunction<uint>* cell_domains,
                       const MeshFunction<uint>* exterior_facet_domains,
                       const MeshFunction<uint>* interior_facet_domains,
                       bool reset_tensor)
 {
   Assembler assembler(mesh);
-  assembler.assemble(A, form, coefficients, dof_map_set,
-                     cell_domains, exterior_facet_domains, interior_facet_domains,
+  assembler.assemble(A, form, coefficients, cell_domains, 
+                     exterior_facet_domains, interior_facet_domains,
                      reset_tensor);
 }
 //----------------------------------------------------------------------------
-void dolfin::assemble_system(GenericMatrix& A, const ufc::form& A_form, 
-                             const Array<Function*>& A_coefficients, const DofMapSet& A_dof_map_set,
-                             GenericVector& b, const ufc::form& b_form, 
-                             const Array<Function*>& b_coefficients, const DofMapSet& b_dof_map_set,
+void dolfin::assemble_system(GenericMatrix& A, const Form& A_form, 
+                             const std::vector<Function*>& A_coefficients,
+                             GenericVector& b, const Form& b_form, 
+                             const std::vector<Function*>& b_coefficients,
                              const GenericVector* x0,
                              Mesh& mesh, 
-                             Array<DirichletBC*>& bcs, const MeshFunction<uint>* cell_domains, 
+                             std::vector<DirichletBC*>& bcs, const MeshFunction<uint>* cell_domains, 
                              const MeshFunction<uint>* exterior_facet_domains,
                              const MeshFunction<uint>* interior_facet_domains,
                              bool reset_tensors)
 {
   Assembler assembler(mesh);
-  assembler.assemble_system(A, A_form, A_coefficients, A_dof_map_set,
-                            b, b_form, b_coefficients, b_dof_map_set,
+  assembler.assemble_system(A, A_form, A_coefficients,
+                            b, b_form, b_coefficients,
                             x0, bcs, cell_domains, exterior_facet_domains, 
                             interior_facet_domains, reset_tensors);
 }
 //----------------------------------------------------------------------------
+

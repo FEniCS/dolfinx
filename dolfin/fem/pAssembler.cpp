@@ -25,7 +25,6 @@
 #include "pAssembler.h"
 #include <dolfin/la/SparsityPattern.h>
 #include "SparsityPatternBuilder.h"
-#include "DofMapSet.h"
 #include "FiniteElement.h"
 #include <dolfin/main/MPI.h>
 
