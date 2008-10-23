@@ -5,7 +5,7 @@
 // Modified by Ola Skavhaug, 2008.
 //
 // First added:  2007-01-17
-// Last changed: 2008-08-29
+// Last changed: 2008-10-23
 
 #ifndef __ASSEMBLER_H
 #define __ASSEMBLER_H
@@ -24,7 +24,6 @@ namespace dolfin
 
   // Forward declarations
   class DirichletBC;
-  class DofMapSet;
   class GenericMatrix;
   class GenericTensor;
   class GenericVector;
