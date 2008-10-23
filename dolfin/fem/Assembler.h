@@ -97,9 +97,8 @@ namespace dolfin
     /// of the mesh cells, exterior facets and interior facets. Either a null pointer
     /// or an empty MeshFunction may be used to specify that the tensor should be
     /// assembled over the entire set of cells or facets.
-    void assemble(GenericTensor& A, const ufc::form& form,
+    void assemble(GenericTensor& A, const Form& form,
                   const std::vector<Function*>& coefficients,
-                  const DofMapSet& dof_map_set,
                   const MeshFunction<uint>* cell_domains,
                   const MeshFunction<uint>* exterior_facet_domains,
                   const MeshFunction<uint>* interior_facet_domains,
@@ -107,10 +106,10 @@ namespace dolfin
 
     /// Assemble linear system Ax = b and enforce Dirichlet conditions.  
     //  Notice that the Dirichlet conditions are enforced in a symmetric way.  
-    void assemble_system(GenericMatrix& A, const ufc::form& A_form, 
-                         const std::vector<Function*>& A_coefficients, const DofMapSet& A_dof_map_set,
-                         GenericVector& b, const ufc::form& b_form, 
-                         const std::vector<Function*>& b_coefficients, const DofMapSet& b_dof_map_set,
+    void assemble_system(GenericMatrix& A, const Form& A_form, 
+                         const std::vector<Function*>& A_coefficients,
+                         GenericVector& b, const Form& b_form, 
+                         const std::vector<Function*>& b_coefficients,
                          const GenericVector* x0,
                          std::vector<DirichletBC*> bcs, const MeshFunction<uint>* cell_domains, 
                          const MeshFunction<uint>* exterior_facet_domains,
@@ -122,35 +121,35 @@ namespace dolfin
  
     // Assemble over cells
     void assembleCells(GenericTensor& A,
+                       const Form& form,
                        const std::vector<Function*>& coefficients,
-                       const DofMapSet& dof_set_map,
                        UFC& data,
                        const MeshFunction<uint>* domains,
                        std::vector<double>* values) const;
     
     // Assemble over exterior facets
     void assembleExteriorFacets(GenericTensor& A,
+                                const Form& form,
                                 const std::vector<Function*>& coefficients,
-                                const DofMapSet& dof_set_map,
                                 UFC& data,
                                 const MeshFunction<uint>* domains,
                                 std::vector<double>* values) const;
 
     // Assemble over interior facets
     void assembleInteriorFacets(GenericTensor& A,
+                                const Form& form,
                                 const std::vector<Function*>& coefficients,
-                                const DofMapSet& dof_set_map,
                                 UFC& data,
                                 const MeshFunction<uint>* domains,
                                 std::vector<double>* values) const;
 
     // Check arguments
-    void check(const ufc::form& form,
+    void check(const Form& form,
                const std::vector<Function*>& coefficients,
                const Mesh& mesh) const;
 
     // Initialize global tensor
-    void initGlobalTensor(GenericTensor& A, const DofMapSet& dof_map_set, UFC& ufc, bool reset_tensor) const;
+    void initGlobalTensor(GenericTensor& A, const Form& form, UFC& ufc, bool reset_tensor) const;
 
     // Pretty-printing for progress bar
     std::string progressMessage(uint rank, std::string integral_type) const;

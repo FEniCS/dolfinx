@@ -38,6 +38,10 @@ namespace dolfin
     /// Destructor
     virtual ~Form();
 
+    /// Return rank of form (bilinear form = 2, linear form = 1, etc)
+    uint rank() const
+      { dolfin_assert(_ufc_form); return _ufc_form->rank(); }
+
     /// Return function space for given argument
     const FunctionSpace& function_space(uint i) const;
 
