@@ -23,6 +23,12 @@ Form::~Form()
   delete _ufc_form;
 }
 //-----------------------------------------------------------------------------
+uint Form::rank() const
+{ 
+  dolfin_assert(_ufc_form); 
+  return _ufc_form->rank(); 
+}
+//-----------------------------------------------------------------------------
 const FunctionSpace& Form::function_space(uint i) const
 {
   dolfin_assert(i < _function_spaces.size());
@@ -31,10 +37,9 @@ const FunctionSpace& Form::function_space(uint i) const
 //-----------------------------------------------------------------------------
 const std::vector<FunctionSpace*> Form::function_spaces() const
 {
-  dolfin_assert(_function_spaces);
   std::vector<FunctionSpace*> V;
   for (uint i = 0; i < _function_spaces.size(); ++i)
-    V.push_back(_function_spaces[i]);
+    V.push_back(_function_spaces[i].get());
 
   return V;
 }
@@ -42,15 +47,14 @@ const std::vector<FunctionSpace*> Form::function_spaces() const
 const Function& Form::coefficient(uint i) const
 {
   dolfin_assert(i < _coefficients.size());
-  return *coefficients[i];
+  return *_coefficients[i];
 }
 //-----------------------------------------------------------------------------
-const std::vector<const Function*> coefficients() const
+const std::vector<Function*> Form::coefficients() const
 {
-  dolfin_assert(_coefficients);
   std::vector<Function*> V;
   for (uint i = 0; i < _coefficients.size(); ++i)
-    V.push_back(_coefficients[i]);
+    V.push_back(_coefficients[i].get());
 
   return V;
 }
