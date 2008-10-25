@@ -38,13 +38,13 @@ namespace dolfin
     MeshFunction(const Mesh& mesh) : _values(0), _mesh(&mesh), _dim(0), _size(0) {}
 
     /// Create mesh function on given mesh of given dimension
-    MeshFunction(const Mesh& mesh, uint dim) : _values(0), _mesh(&mesh), _dim(0), _size(0)
+    MeshFunction(Mesh& mesh, uint dim) : _values(0), _mesh(&mesh), _dim(0), _size(0)
     {
       init(dim);
     }
 
     /// Create function from data file
-    MeshFunction(const Mesh& mesh, const std::string filename) : _values(0), _mesh(&mesh), _dim(0), _size(0)
+    MeshFunction(Mesh& mesh, const std::string filename) : _values(0), _mesh(&mesh), _dim(0), _size(0)
     {
       File file(filename);
       file >> *this;
@@ -189,7 +189,7 @@ namespace dolfin
     T* _values;
 
     /// The mesh
-    const Mesh* _mesh;
+    Mesh* _mesh;
 
     /// Topological dimension
     uint _dim;

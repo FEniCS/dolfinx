@@ -68,7 +68,7 @@ void Assembler::assemble(GenericTensor& A, Form& form, const SubDomain& sub_doma
   MeshFunction<uint>* cell_domains = 0;
   if (form.ufc_form().num_cell_integrals() > 0)
   {
-    cell_domains = new MeshFunction<uint>(mesh, mesh.topology().dim());
+    cell_domains = new MeshFunction<uint>(const_cast<Mesh&>(mesh), mesh.topology().dim());
     (*cell_domains) = 1;
     sub_domain.mark(*cell_domains, 0);
   }
@@ -78,7 +78,7 @@ void Assembler::assemble(GenericTensor& A, Form& form, const SubDomain& sub_doma
   if (form.ufc_form().num_exterior_facet_integrals() > 0 ||
       form.ufc_form().num_interior_facet_integrals() > 0)
   {
-    facet_domains = new MeshFunction<uint>(mesh, mesh.topology().dim() - 1);
+    facet_domains = new MeshFunction<uint>(const_cast<Mesh&>(mesh), mesh.topology().dim() - 1);
     (*facet_domains) = 1;
     sub_domain.mark(*facet_domains, 0);
   }
