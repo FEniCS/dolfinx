@@ -37,10 +37,10 @@ namespace dolfin
     ~UFC();
     
     /// Update current cell
-    void update(Cell& cell);
+    void update(const Cell& cell);
 
     /// Update current pair of cells for macro element
-    void update(Cell& cell0, Cell& cell1);
+    void update(const Cell& cell0, const Cell& cell1);
 
     // Array of finite elements for primary arguments
     FiniteElement** finite_elements;

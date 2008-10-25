@@ -24,7 +24,7 @@ namespace dolfin
     BoundaryMesh();
 
     /// Create boundary mesh from given mesh
-    BoundaryMesh(Mesh& mesh);
+    BoundaryMesh(const Mesh& mesh);
 
     /// Destructor
     ~BoundaryMesh();

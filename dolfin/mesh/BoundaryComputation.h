@@ -25,7 +25,7 @@ namespace dolfin
   public:
     
     /// Compute the boundary of a given mesh
-    static void computeBoundary(Mesh& mesh, BoundaryMesh& boundary);
+    static void computeBoundary(const Mesh& mesh, BoundaryMesh& boundary);
 
   private:
 

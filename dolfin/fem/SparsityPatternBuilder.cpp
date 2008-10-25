@@ -19,7 +19,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
-				   Mesh& mesh, UFC& ufc, const std::vector<const DofMap*> dof_maps)
+				   const Mesh& mesh, UFC& ufc, const std::vector<const DofMap*> dof_maps)
 {
   // Initialise sparsity pattern
   /*

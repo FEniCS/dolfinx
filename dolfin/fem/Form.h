@@ -42,7 +42,7 @@ namespace dolfin
     /// Return rank of form (bilinear form = 2, linear form = 1, etc)
     uint rank() const;
 
-    /// Return the mesh
+    /// Return the mesh (const version)
     const Mesh& mesh() const;
 
     /// Return function space for given argument

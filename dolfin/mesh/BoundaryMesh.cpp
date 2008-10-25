@@ -18,7 +18,7 @@ BoundaryMesh::BoundaryMesh() : Mesh()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-BoundaryMesh::BoundaryMesh(Mesh& mesh) : Mesh()
+BoundaryMesh::BoundaryMesh(const Mesh& mesh) : Mesh()
 {
   init(mesh);
 }
@@ -28,7 +28,7 @@ BoundaryMesh::~BoundaryMesh()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void BoundaryMesh::init(Mesh& mesh)
+void BoundaryMesh::init(const Mesh& mesh)
 {
   BoundaryComputation::computeBoundary(mesh, *this);
 }

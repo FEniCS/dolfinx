@@ -185,7 +185,7 @@ UFC::~UFC()
   delete [] macro_w;
 }
 //-----------------------------------------------------------------------------
-void UFC::update(Cell& cell)
+void UFC::update(const Cell& cell)
 {
   // Update UFC cell
   this->cell.update(cell);
@@ -193,7 +193,7 @@ void UFC::update(Cell& cell)
   // FIXME: Update coefficients
 }
 //-----------------------------------------------------------------------------
-void UFC::update(Cell& cell0, Cell& cell1)
+void UFC::update(const Cell& cell0, const Cell& cell1)
 {
   // Update UFC cells
   this->cell0.update(cell0);

@@ -140,6 +140,9 @@ void Assembler::assemble(GenericTensor& A, const Form& form,
   // Note the importance of treating empty mesh functions as null pointers
   // for the PyDOLFIN interface.
   
+  // Extract mesh
+  const Mesh& mesh = form.mesh();
+
   // Check arguments
   check(form, coefficients, mesh);
 
@@ -174,6 +177,9 @@ void Assembler::assembleCells(GenericTensor& A,
   if (ufc.form.num_cell_integrals() == 0)
     return;
   Timer timer("Assemble cells");
+
+  // Extract mesh
+  const Mesh& mesh = form.mesh();
 
   // Cell integral
   ufc::cell_integral* integral = ufc.cell_integrals[0];
@@ -228,6 +234,9 @@ void Assembler::assembleExteriorFacets(GenericTensor& A,
     return;
   Timer timer("Assemble exterior facets");
   
+  // Extract mesh
+  const Mesh& mesh = form.mesh();
+
   // Exterior facet integral
   ufc::exterior_facet_integral* integral = ufc.exterior_facet_integrals[0];
 
@@ -294,16 +303,19 @@ void Assembler::assembleInteriorFacets(GenericTensor& A,
     return;
   Timer timer("Assemble interior facets");
   
+  // Extract mesh
+  const Mesh& mesh = form.mesh();
+
   // Interior facet integral
   ufc::interior_facet_integral* integral = ufc.interior_facet_integrals[0];
 
   // Compute facets and facet - cell connectivity if not already computed
   mesh.init(mesh.topology().dim() - 1);
   mesh.init(mesh.topology().dim() - 1, mesh.topology().dim());
-  mesh.order();
+  const_cast<Mesh&>(mesh).order();
   
   // Assemble over interior facets (the facets of the mesh)
-  Progress p(progressMessage(A.rank(), "interior facets"), mesh.numFacets());
+  Progress p(progressMessage(A.rank(), "interior facets"), form.mesh().numFacets());
   for (FacetIterator facet(mesh); !facet.end(); ++facet)
   {
     // Check if we have an interior facet
@@ -430,7 +442,7 @@ void Assembler::initGlobalTensor(GenericTensor& A, const Form& form,
       std::vector<const DofMap*> dof_maps(0);
       for(uint i=0; i < form.rank(); ++i) 
       dof_maps.push_back(&(form.function_space(i).dofmap()));
-      SparsityPatternBuilder::build(*sparsity_pattern, mesh, ufc, dof_maps);
+      SparsityPatternBuilder::build(*sparsity_pattern, form.mesh(), ufc, dof_maps);
     }
     t0.stop();
     
