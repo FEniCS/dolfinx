@@ -24,7 +24,7 @@ namespace dolfin
     UFCMesh() : ufc::mesh() {}
 
     /// Create UFC mesh from DOLFIN mesh
-    UFCMesh(Mesh& mesh) : ufc::mesh()
+    UFCMesh(const Mesh& mesh) : ufc::mesh()
     {
       init(mesh);
     }
@@ -36,7 +36,7 @@ namespace dolfin
     }
 
     /// Initialize UFC cell data
-    void init(Mesh& mesh)
+    void init(const Mesh& mesh)
     {
       // Clear old data
       clear();

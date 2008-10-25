@@ -13,7 +13,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void GraphBuilder::build(Graph& graph, Mesh& mesh, Graph::Representation rep)
+void GraphBuilder::build(Graph& graph, const Mesh& mesh, Graph::Representation rep)
 {
   // Clear graph
   graph.clear();
@@ -30,7 +30,7 @@ void GraphBuilder::build(Graph& graph, Mesh& mesh, Graph::Representation rep)
     error("Graph type unknown");
 }
 //-----------------------------------------------------------------------------
-void GraphBuilder::createMeshNodal(Graph& graph, Mesh& mesh)
+void GraphBuilder::createMeshNodal(Graph& graph, const Mesh& mesh)
 {
   error("Partitioning of nodal mesh graphs probably doesn't work. Please test and fix.");
 
@@ -49,7 +49,7 @@ void GraphBuilder::createMeshNodal(Graph& graph, Mesh& mesh)
   for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
   {
     graph.vertices[i++] = j;
-    uint* entities = vertex->entities(0);
+    const uint* entities = vertex->entities(0);
     for (uint k = 0; k < vertex->numEntities(0); k++)
       graph.edges[j++] = entities[k];
 
@@ -65,12 +65,12 @@ void GraphBuilder::createMeshNodal(Graph& graph, Mesh& mesh)
   }
 }
 //-----------------------------------------------------------------------------
-void GraphBuilder::createMeshDual(Graph& graph, Mesh& mesh)
+void GraphBuilder::createMeshDual(Graph& graph, const Mesh& mesh)
 {
   // Initialise mesh
   uint D = mesh.topology().dim();
   mesh.init(D, D);
-  MeshConnectivity& connectivity = mesh.topology()(D,D);
+  const MeshConnectivity& connectivity = mesh.topology()(D,D);
 
   // Get number of vertices and edges
   uint num_vertices = mesh.numCells();

@@ -116,6 +116,9 @@ namespace dolfin
     /// Return mesh data
     MeshData& data();
 
+    /// Return mesh data (const version)
+    const MeshData& data() const;
+
     /// Return mesh cell type
     inline CellType& type() { dolfin_assert(_cell_type); return *_cell_type; }
 

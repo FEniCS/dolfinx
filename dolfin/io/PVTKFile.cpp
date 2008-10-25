@@ -124,7 +124,7 @@ void PVTKFile::operator<<(Function& u)
 
 }
 //----------------------------------------------------------------------------
-void PVTKFile::MeshWrite(Mesh& mesh) const
+void PVTKFile::MeshWrite(const Mesh& mesh) const
 {
   // Open file
   FILE* fp = fopen(vtu_filename.c_str(), "a");
@@ -360,7 +360,7 @@ void PVTKFile::pvtuFileWrite_func(Function& u)
     
 }
 //----------------------------------------------------------------------------
-void PVTKFile::VTKHeaderOpen(Mesh& mesh) const
+void PVTKFile::VTKHeaderOpen(const Mesh& mesh) const
 {
   // Open file
   FILE *fp = fopen(vtu_filename.c_str(), "a");
@@ -438,7 +438,7 @@ void PVTKFile::MeshFunctionWrite(T& meshfunction)
   if(MPI::process_number() == 0) 
     pvdFileWrite(counter);
 
-  Mesh& mesh = meshfunction.mesh(); 
+  const Mesh& mesh = meshfunction.mesh(); 
 
   if( meshfunction.dim() != mesh.topology().dim() )
     error("VTK output of mesh functions is implemenetd for cell-based functions only.");    

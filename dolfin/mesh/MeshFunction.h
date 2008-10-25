@@ -57,19 +57,19 @@ namespace dolfin
     }
 
     /// Return mesh associated with mesh function
-    inline const Mesh& mesh() { dolfin_assert(_mesh); return *_mesh; }
+    const Mesh& mesh() const { dolfin_assert(_mesh); return *_mesh; }
 
     /// Return topological dimension
-    inline uint dim() const { return _dim; }
+    uint dim() const { return _dim; }
 
     /// Return size (number of entities)
-    inline uint size() const { return _size; }
+    uint size() const { return _size; }
 
     /// Return array of values
-    inline const T* values() const { return _values; }
+    const T* values() const { return _values; }
 
     /// Return array of values
-    inline T* values() { return _values; }
+    T* values() { return _values; }
 
     /// Return value at given entity
     inline const T& operator() (const MeshEntity& entity) const

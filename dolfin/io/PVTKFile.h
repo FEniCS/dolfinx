@@ -32,12 +32,12 @@ namespace dolfin
     void write();
   private:
 
-    void MeshWrite(Mesh& mesh) const;
+    void MeshWrite(const Mesh& mesh) const;
     void ResultsWrite(Function& u) const;
     void pvdFileWrite(uint u);
     void pvtuFileWrite();
     void pvtuFileWrite_func(Function& u);
-    void VTKHeaderOpen(Mesh& mesh) const;
+    void VTKHeaderOpen(const Mesh& mesh) const;
     void VTKHeaderClose() const;
     void vtuNameUpdate(const int counter);
     void pvtuNameUpdate(const int counter);

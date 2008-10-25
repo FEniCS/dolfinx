@@ -55,17 +55,17 @@ void VTKFile::operator<<(Mesh& mesh)
           mesh.name().c_str(), mesh.label().c_str(), filename.c_str());
 }
 //----------------------------------------------------------------------------
-void VTKFile::operator<<(MeshFunction<int>& meshfunction)
+void VTKFile::operator<<(const MeshFunction<int>& meshfunction)
 {
   MeshFunctionWrite(meshfunction);
 }
 //----------------------------------------------------------------------------
-void VTKFile::operator<<(MeshFunction<unsigned int>& meshfunction)
+void VTKFile::operator<<(const MeshFunction<unsigned int>& meshfunction)
 {
   MeshFunctionWrite(meshfunction);
 }
 //----------------------------------------------------------------------------
-void VTKFile::operator<<(MeshFunction<double>& meshfunction)
+void VTKFile::operator<<(const MeshFunction<double>& meshfunction)
 {
   MeshFunctionWrite(meshfunction);
 }
@@ -78,7 +78,7 @@ void VTKFile::operator<<(Function& u)
   // Write pvd file
   pvdFileWrite(counter);
     
-  Mesh& mesh = const_cast<Mesh&>(u.function_space().mesh()); 
+  const Mesh& mesh = u.function_space().mesh(); 
 
   // Write headers
   VTKHeaderOpen(mesh);
@@ -100,7 +100,7 @@ void VTKFile::operator<<(Function& u)
 
 }
 //----------------------------------------------------------------------------
-void VTKFile::MeshWrite(Mesh& mesh) const
+void VTKFile::MeshWrite(const Mesh& mesh) const
 {
   // Open file
   FILE* fp = fopen(vtu_filename.c_str(), "a");
@@ -333,7 +333,7 @@ void VTKFile::pvdFileWrite(uint num)
 
 }
 //----------------------------------------------------------------------------
-void VTKFile::VTKHeaderOpen(Mesh& mesh) const
+void VTKFile::VTKHeaderOpen(const Mesh& mesh) const
 {
   // Open file
   FILE *fp = fopen(vtu_filename.c_str(), "a");
@@ -390,7 +390,7 @@ void VTKFile::MeshFunctionWrite(T& meshfunction)
   // Write pvd file
   pvdFileWrite(counter);
 
-  Mesh& mesh = meshfunction.mesh(); 
+  const Mesh& mesh = meshfunction.mesh(); 
 
   if( meshfunction.dim() != mesh.topology().dim() )
     error("VTK output of mesh functions is implemenetd for cell-based functions only.");    

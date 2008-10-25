@@ -162,7 +162,7 @@ namespace dolfin
     bool is_compatible(Function& v) const;
 
     /// Return mesh
-    Mesh& mesh();
+    const Mesh& mesh() const;
 
   private:
 

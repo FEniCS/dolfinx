@@ -50,7 +50,7 @@ namespace dolfin
     std::map<uint, uint>* createMapping(std::string name);
 
     /// Return Array with given name (returning zero if data is not available)
-    Array<uint>* array(std::string name);
+    Array<uint>* array(std::string name) const;
     
     /// Return MeshFunction with given name (returning zero if data is not available)
     MeshFunction<uint>* meshFunction(std::string name);

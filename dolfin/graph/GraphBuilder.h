@@ -25,13 +25,13 @@ namespace dolfin
   public:
     
     /// Build Graph of a mesh
-    static void build(Graph& graph, Mesh& mesh, Graph::Representation rep = Graph::dual);
+    static void build(Graph& graph, const Mesh& mesh, Graph::Representation rep = Graph::dual);
     
   private:
     
-    static void createMeshNodal(Graph& graph, Mesh& mesh);
+    static void createMeshNodal(Graph& graph, const Mesh& mesh);
 
-    static void createMeshDual(Graph& graph, Mesh& mesh);
+    static void createMeshDual(Graph& graph, const Mesh& mesh);
   };
   
 }

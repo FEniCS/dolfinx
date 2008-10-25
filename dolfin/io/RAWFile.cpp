@@ -29,22 +29,22 @@ RAWFile::~RAWFile()
   // Do nothing
 }
 //----------------------------------------------------------------------------
-void RAWFile::operator<<(MeshFunction<int>& meshfunction)
+void RAWFile::operator<<(const MeshFunction<int>& meshfunction)
 {
   MeshFunctionWrite(meshfunction);
 }
 //----------------------------------------------------------------------------
-void RAWFile::operator<<(MeshFunction<unsigned int>& meshfunction)
+void RAWFile::operator<<(const MeshFunction<unsigned int>& meshfunction)
 {
   MeshFunctionWrite(meshfunction);
 }
 //----------------------------------------------------------------------------
-void RAWFile::operator<<(MeshFunction<double>& meshfunction)
+void RAWFile::operator<<(const MeshFunction<double>& meshfunction)
 {
   MeshFunctionWrite(meshfunction);
 }
 //----------------------------------------------------------------------------
-void RAWFile::operator<<(Function& u)
+void RAWFile::operator<<(const Function& u)
 {
   // Update raw file name and clear file
   rawNameUpdate(counter);
@@ -60,7 +60,7 @@ void RAWFile::operator<<(Function& u)
 
 }
 //----------------------------------------------------------------------------
-void RAWFile::ResultsWrite(Function& u) const
+void RAWFile::ResultsWrite(const Function& u) const
 {
   // Open file
   FILE *fp = fopen(raw_filename.c_str(), "a");
@@ -130,20 +130,17 @@ void RAWFile::rawNameUpdate(const int counter)
   fclose(fp);
 }
 //----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
 template<class T>
 void RAWFile::MeshFunctionWrite(T& meshfunction) 
 {
   // Update raw file name and clear file
   rawNameUpdate(counter);
 
- 
-  Mesh& mesh = meshfunction.mesh(); 
+  const Mesh& mesh = meshfunction.mesh(); 
 
   if( meshfunction.dim() != mesh.topology().dim() )
     error("RAW output of mesh functions is implemenetd for cell-based functions only.");    
 
-  
   // Open file
   std::ofstream fp(raw_filename.c_str(), std::ios_base::app);
   
@@ -153,7 +150,6 @@ void RAWFile::MeshFunctionWrite(T& meshfunction)
   
   // Close file
   fp.close();
-
  
   // Increase the number of times we have saved the mesh function
   counter++;

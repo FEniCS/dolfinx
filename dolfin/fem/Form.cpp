@@ -31,52 +31,6 @@ dolfin::uint Form::rank() const
   return _ufc_form->rank(); 
 }
 //-----------------------------------------------------------------------------
-Mesh& Form::mesh() const
-{
-  const Mesh* _mesh = 0;
-
-  // Check function spaces
-  for (uint i = 0; i < _function_spaces.size(); i++)
-  {
-    const Mesh* m = &_function_spaces[i]->mesh();
-
-    // Pick mesh
-    if (!_mesh)
-    {
-      _mesh = m;
-      continue;
-    }
-
-    // Check that meshes match
-    if (_mesh != m)
-      error("Unable to extract mesh from form, nonmatching meshes for function spaces.");
-  }
-
-  // Check coefficients
-  for (uint i = 0; i < _coefficients.size(); i++)
-  {
-    const Mesh* m = &_coefficients[i]->function_space().mesh();
-
-    // Pick mesh
-    if (!_mesh)
-    {
-      _mesh = m;
-      continue;
-    }
-
-    // Check that meshes match
-    if (_mesh != m)
-      error("Unable to extract mesh from form, nonmatching meshes for function spaces.");
-  }
-
-  // Check that we got a mesh
-  if (!_mesh)
-    error("Unable to extract mesh from form.");
-
-  return *_mesh;
-}
-//-----------------------------------------------------------------------------
-/*
 const Mesh& Form::mesh() const
 {
   const Mesh* _mesh = 0;
@@ -121,7 +75,6 @@ const Mesh& Form::mesh() const
 
   return *_mesh;
 }
-*/
 //-----------------------------------------------------------------------------
 const FunctionSpace& Form::function_space(uint i) const
 {

@@ -308,7 +308,7 @@ void XMLFile::operator<<(Mesh& mesh)
 
   for (CellIterator c(mesh); !c.end(); ++c)
   {
-    uint* vertices = c->entities(0);
+    const uint* vertices = c->entities(0);
     dolfin_assert(vertices);
 
     switch ( cell_type )
@@ -339,7 +339,7 @@ void XMLFile::operator<<(Mesh& mesh)
   message(1, "Saved mesh to file %s in DOLFIN XML format.", filename.c_str());
 }
 //-----------------------------------------------------------------------------
-void XMLFile::operator<<(MeshFunction<int>& meshfunction)
+void XMLFile::operator<<(const MeshFunction<int>& meshfunction)
 {
   // Open file
   FILE *fp = openFile();
@@ -348,7 +348,7 @@ void XMLFile::operator<<(MeshFunction<int>& meshfunction)
   fprintf(fp, "  <meshfunction type=\"int\" dim=\"%u\" size=\"%u\">\n",
           meshfunction.dim(), meshfunction.size());
   
-  Mesh& mesh = meshfunction.mesh();
+  const Mesh& mesh = meshfunction.mesh();
   for(MeshEntityIterator e(mesh, meshfunction.dim()); !e.end(); ++e)
   {
       fprintf(fp, "    <entity index=\"%u\" value=\"%d\"/>\n",
@@ -363,7 +363,7 @@ void XMLFile::operator<<(MeshFunction<int>& meshfunction)
   message(1, "Saved mesh function to file %s in DOLFIN XML format.", filename.c_str());
 }
 //-----------------------------------------------------------------------------
-void XMLFile::operator<<(MeshFunction<unsigned int>& meshfunction)
+void XMLFile::operator<<(const MeshFunction<unsigned int>& meshfunction)
 {
   // Open file
   FILE *fp = openFile();
@@ -372,7 +372,7 @@ void XMLFile::operator<<(MeshFunction<unsigned int>& meshfunction)
   fprintf(fp, "  <meshfunction type=\"uint\" dim=\"%u\" size=\"%u\">\n",
           meshfunction.dim(), meshfunction.size());
   
-  Mesh& mesh = meshfunction.mesh();
+  const Mesh& mesh = meshfunction.mesh();
   for(MeshEntityIterator e(mesh, meshfunction.dim()); !e.end(); ++e)
   {
       fprintf(fp, "    <entity index=\"%u\" value=\"%d\"/>\n",
@@ -387,7 +387,7 @@ void XMLFile::operator<<(MeshFunction<unsigned int>& meshfunction)
   message(1, "Saved mesh function to file %s in DOLFIN XML format.", filename.c_str());
 }
 //-----------------------------------------------------------------------------
-void XMLFile::operator<<(MeshFunction<double>& meshfunction)
+void XMLFile::operator<<(const MeshFunction<double>& meshfunction)
 {
   // Open file
   FILE *fp = openFile();
@@ -396,7 +396,7 @@ void XMLFile::operator<<(MeshFunction<double>& meshfunction)
   fprintf(fp, "  <meshfunction type=\"double\" dim=\"%u\" size=\"%u\">\n",
           meshfunction.dim(), meshfunction.size());
 
-  Mesh& mesh = meshfunction.mesh();
+  const Mesh& mesh = meshfunction.mesh();
   for(MeshEntityIterator e(mesh, meshfunction.dim()); !e.end(); ++e)
   {
       fprintf(fp, "    <entity index=\"%u\" value=\"%g\"/>\n",
@@ -411,7 +411,7 @@ void XMLFile::operator<<(MeshFunction<double>& meshfunction)
   message(1, "Saved mesh function to file %s in DOLFIN XML format.", filename.c_str());
 }
 //-----------------------------------------------------------------------------
-void XMLFile::operator<<(MeshFunction<bool>& meshfunction)
+void XMLFile::operator<<(const MeshFunction<bool>& meshfunction)
 {
   // Open file
   FILE *fp = openFile();
@@ -420,7 +420,7 @@ void XMLFile::operator<<(MeshFunction<bool>& meshfunction)
   fprintf(fp, "  <meshfunction type=\"bool\" dim=\"%u\" size=\"%u\">\n",
           meshfunction.dim(), meshfunction.size());
 
-  Mesh& mesh = meshfunction.mesh();
+  const Mesh& mesh = meshfunction.mesh();
   std::string value;
   for (MeshEntityIterator e(mesh, meshfunction.dim()); !e.end(); ++e)
   {

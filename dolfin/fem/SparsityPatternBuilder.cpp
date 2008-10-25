@@ -67,7 +67,7 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
     // Compute facets and facet - cell connectivity if not already computed
     mesh.init(mesh.topology().dim() - 1);
     mesh.init(mesh.topology().dim() - 1, mesh.topology().dim());
-    mesh.order();
+    const_cast<Mesh&>(mesh).order();
 
     for (FacetIterator facet(mesh); !facet.end(); ++facet)
     {

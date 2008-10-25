@@ -57,10 +57,10 @@ namespace dolfin
     void operator<< (Mesh& mesh);
     void operator<< (Graph& graph);
 // Todo:
-    void operator<< (MeshFunction<int>& mesh);
-    void operator<< (MeshFunction<unsigned int>& mesh);
-    void operator<< (MeshFunction<double>& mesh);
-    void operator<< (MeshFunction<bool>& mesh);
+    void operator<< (const MeshFunction<int>& mesh);
+    void operator<< (const MeshFunction<unsigned int>& mesh);
+    void operator<< (const MeshFunction<double>& mesh);
+    void operator<< (const MeshFunction<bool>& mesh);
     void operator<< (Function& f);
     void operator<< (ParameterList& parameters);
     

@@ -288,11 +288,12 @@ bool DirichletBC::is_compatible(Function& v) const
     for (VertexIterator vertex(facet); !vertex.end(); ++vertex)
     {
       // Get facet coordinates
-      simple_array<double> x(_mesh.geometry().dim(), vertex->x());
+      simple_array<const double> x(_mesh.geometry().dim(), vertex->x());
       
       // Evaluate g and v at vertex
-      g.eval(g_values, x);
-      v.eval(v_values, x);
+      error("New Function class need simple_array interface.");
+      //g.eval(g_values, x);
+      //v.eval(v_values, x);
 
       // Check values
       for (uint i = 0; i < size; i++)
@@ -314,7 +315,7 @@ bool DirichletBC::is_compatible(Function& v) const
   return true;
 }
 //-----------------------------------------------------------------------------
-const Mesh& DirichletBC::mesh()
+const Mesh& DirichletBC::mesh() const
 {
   return _mesh;
 }
@@ -329,12 +330,12 @@ void DirichletBC::initFromSubDomain(SubDomain& sub_domain)
   // FIXME: mainly for convenience (we may reuse mark() in SubDomain).
 
   // Make sure the mesh has been ordered
-  _mesh.order();
+  const_cast<Mesh&>(_mesh).order();
 
   // Create mesh function for sub domain markers on facets
   const uint dim = _mesh.topology().dim();
   _mesh.init(dim - 1);
-  MeshFunction<uint> sub_domains(_mesh, dim - 1);
+  MeshFunction<uint> sub_domains(const_cast<Mesh&>(_mesh), dim - 1);
 
   // Mark everything as sub domain 1
   sub_domains = 1;
@@ -356,7 +357,7 @@ void DirichletBC::initFromMeshFunction(MeshFunction<uint>& sub_domains,
   _mesh.init(dim - 1, dim);
 
   // Make sure the mesh has been ordered
-  _mesh.order();
+  const_cast<Mesh&>(_mesh).order();
 
   // Build set of boundary facets
   for (FacetIterator facet(_mesh); !facet.end(); ++facet)
@@ -388,10 +389,10 @@ void DirichletBC::initFromMesh(uint sub_domain)
   
   cout << "Creating sub domain markers for boundary condition." << endl;
 
-  // Get data
-  Array<uint>* facet_cells   = _mesh.data().array("boundary facet cells");
-  Array<uint>* facet_numbers = _mesh.data().array("boundary facet numbers");
-  Array<uint>* indicators    = _mesh.data().array("boundary indicators");
+  // Get data 
+  Array<uint>* facet_cells   = const_cast<Mesh&>(_mesh).data().array("boundary facet cells");
+  Array<uint>* facet_numbers = const_cast<Mesh&>(_mesh).data().array("boundary facet numbers");
+  Array<uint>* indicators    = const_cast<Mesh&>(_mesh).data().array("boundary indicators");
 
   // Check data
   if (!facet_cells)
