@@ -45,17 +45,18 @@ namespace dolfin
     static void computeWeights3D(double* w, double** u, double* d,
                                  uint dim, uint num_vertices);
 
-    static void normals(double ** dfdn, uint dim, Mesh& new_boundary,
+    static void normals(double** dfdn, uint dim, Mesh& new_boundary,
 			Mesh& mesh, const MeshFunction<uint>& vertex_map, 
 			const MeshFunction<uint>& cell_map);
 
-    static void hermiteFunction(double ** ghat, uint dim, Mesh& new_boundary,
+    static void hermiteFunction(double** ghat, uint dim, Mesh& new_boundary,
 				Mesh& mesh, 
 				const MeshFunction<uint>& vertex_map, 
 				const MeshFunction<uint>& cell_map);
+
     static void integral(double* new_x, uint dim, Mesh& new_boundary,
                     Mesh& mesh, const MeshFunction<uint>& vertex_map,
-			 Vertex& vertex);
+                    const Vertex& vertex);
 
 
     // Return sign
