@@ -80,14 +80,14 @@ namespace dolfin
       entity_indices = new uint*[topological_dimension + 1];
       entity_indices[topological_dimension] = new uint[1];
       for (uint d = 0; d < topological_dimension; d++)
-        entity_indices[d] = cell.entities(d);
+        entity_indices[d] = const_cast<uint*>(cell.entities(d));
       entity_indices[topological_dimension][0] = cell.index();
 
       /// Set vertex coordinates
-      uint* vertices = cell.entities(0);
+      const uint* vertices = cell.entities(0);
       coordinates = new double*[num_vertices];
       for (uint i = 0; i < num_vertices; i++)
-        coordinates[i] = cell.mesh().geometry().x(vertices[i]);
+        coordinates[i] = const_cast<double*> (cell.mesh().geometry().x(vertices[i]));
     }
 
     // Clear UFC cell data
@@ -114,13 +114,13 @@ namespace dolfin
     {
       // Set entity indices
       for (uint d = 0; d < topological_dimension; d++)
-        entity_indices[d] = cell.entities(d);
+        entity_indices[d] =  const_cast<uint*>(cell.entities(d));
       entity_indices[topological_dimension][0] = cell.index();
 
       /// Set vertex coordinates
       const uint* vertices = cell.entities(0);
       for (uint i = 0; i < num_vertices; i++)
-        coordinates[i] = cell.mesh().geometry().x(vertices[i]);
+        coordinates[i] =  const_cast<double*>(cell.mesh().geometry().x(vertices[i]));
     }
 
   private:
