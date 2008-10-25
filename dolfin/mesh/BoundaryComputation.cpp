@@ -112,7 +112,7 @@ void BoundaryComputation::computeBoundary(const Mesh& mesh, BoundaryMesh& bounda
     if (f->numEntities(D) == 1)
     {
       // Compute new vertex numbers for cell
-      uint* vertices = f->entities(0);
+      const uint* vertices = f->entities(0);
       for (uint i = 0; i < cell.size(); i++)
         cell[i] = boundary_vertices[vertices[i]];
 
