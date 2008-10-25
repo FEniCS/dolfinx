@@ -35,7 +35,7 @@ namespace dolfin
     // Transfinite meanvalue interpolation
     static void meanValue(double* new_x, uint dim, Mesh& new_boundary,
                           Mesh& mesh, const MeshFunction<uint>& vertex_map,
-                          Vertex& vertex, double** ghat, InterpolationType type);
+                          const Vertex& vertex, double** ghat, InterpolationType type);
 
     // Compute weights for transfinite meanvalue interpolation
     static void computeWeights2D(double* w, double** u, double* d,

@@ -46,8 +46,9 @@ void TransfiniteInterpolation::move(Mesh& mesh, Mesh& new_boundary, Interpolatio
     meanValue(new_x + v->index()*dim, dim, new_boundary, mesh, *vertex_map, *v, ghat, method);
 
   // Update mesh coordinates
-  for (VertexIterator v(mesh); !v.end(); ++v)
-    memcpy(v->x(), new_x + v->index()*dim, dim*sizeof(double));
+  MeshGeometry& geometry = mesh.geometry();
+  for (uint i = 0; i < geometry.size(); i++)
+    memcpy(geometry.x(i), new_x + i*dim, dim*sizeof(double));
   
   delete [] new_x;
   if (method == interpolation_hermite)
@@ -57,8 +58,8 @@ void TransfiniteInterpolation::move(Mesh& mesh, Mesh& new_boundary, Interpolatio
 }
 //-----------------------------------------------------------------------------
 void TransfiniteInterpolation::meanValue(double* new_x, uint dim, Mesh& new_boundary,
-                    Mesh& mesh, const MeshFunction<uint>& vertex_map,
-                    Vertex& vertex, double** ghat, InterpolationType method)
+                                         Mesh& mesh, const MeshFunction<uint>& vertex_map,
+                                         const Vertex& vertex, double** ghat, InterpolationType method)
 {
   // Check if the point is on the boundary (no need to compute new coordinate)
   for (VertexIterator v(new_boundary); !v.end(); ++v)

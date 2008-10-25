@@ -56,7 +56,7 @@ namespace dolfin
     public:
       
       // Constructor
-      LocalData(const ufc::form& form, Mesh& mesh, const DofMap& global_dof_map, const SubSystem& sub_system);
+      LocalData(const ufc::form& form, const Mesh& mesh, const DofMap& global_dof_map, const SubSystem& sub_system);
       
       // Destructor
       ~LocalData();

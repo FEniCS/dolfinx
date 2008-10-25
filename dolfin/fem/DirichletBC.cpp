@@ -33,7 +33,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(Function& g,
-                         Mesh& mesh,
+                         const Mesh& mesh,
                          SubDomain& sub_domain,
                          BCMethod method)
   : BoundaryCondition(), g(g), _mesh(mesh),
@@ -53,7 +53,7 @@ DirichletBC::DirichletBC(Function& g,
 }
 //-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(Function& g,
-                         Mesh& mesh,
+                         const Mesh& mesh,
                          uint sub_domain,
                          BCMethod method)
   : BoundaryCondition(), g(g), _mesh(mesh),
@@ -63,7 +63,7 @@ DirichletBC::DirichletBC(Function& g,
 }
 //-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(Function& g,
-                         Mesh& mesh,
+                         const Mesh& mesh,
                          SubDomain& sub_domain,
                          const SubSystem& sub_system,
                          BCMethod method)
@@ -87,7 +87,7 @@ DirichletBC::DirichletBC(Function& g,
 }
 //-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(Function& g,
-                         Mesh& mesh,
+                         const Mesh& mesh,
                          uint sub_domain,
                          const SubSystem& sub_system,
                          BCMethod method)
@@ -314,7 +314,7 @@ bool DirichletBC::is_compatible(Function& v) const
   return true;
 }
 //-----------------------------------------------------------------------------
-Mesh& DirichletBC::mesh()
+const Mesh& DirichletBC::mesh()
 {
   return _mesh;
 }

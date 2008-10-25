@@ -8,7 +8,7 @@
 // Modified by Kristoffer Selim, 2008.
 //
 // First added:  2006-05-08
-// Last changed: 2008-10-08
+// Last changed: 2008-10-23
 
 #ifndef __MESH_H
 #define __MESH_H
@@ -96,9 +96,6 @@ namespace dolfin
     inline const double* coordinates() const { return _geometry.x(); }
 
     /// Return connectivity for all cells
-    inline uint* cells() { return _topology(_topology.dim(), 0)(); }
-
-    /// Return connectivity for all cells
     inline const uint* cells() const { return _topology(_topology.dim(), 0)(); }
 
     /// Return number of entities of given topological dimension
@@ -126,13 +123,13 @@ namespace dolfin
     inline const CellType& type() const { dolfin_assert(_cell_type); return *_cell_type; }
 
     /// Compute entities of given topological dimension and return number of entities
-    uint init(uint dim);
+    uint init(uint dim) const;
 
     /// Compute connectivity between given pair of dimensions
-    void init(uint d0, uint d1);
+    void init(uint d0, uint d1) const;
 
     /// Compute all entities and connectivity
-    void init();
+    void init() const;
 
     /// Clear all mesh data
     void clear();

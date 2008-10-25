@@ -27,13 +27,13 @@ namespace dolfin
     UFCCell() : ufc::cell(), num_vertices(0) {}
 
     /// Create UFC cell from DOLFIN cell
-    UFCCell(Cell& cell) : ufc::cell(), num_vertices(0)
+    UFCCell(const Cell& cell) : ufc::cell(), num_vertices(0)
     {
       init(cell);
     }
 
     /// Create UFC cell for first DOLFIN cell in mesh
-    UFCCell(Mesh& mesh) : ufc::cell(), num_vertices(0)
+    UFCCell(const Mesh& mesh) : ufc::cell(), num_vertices(0)
     {
       CellIterator cell(mesh);
       init(*cell);
@@ -46,7 +46,7 @@ namespace dolfin
     }
     
     /// Initialize UFC cell data
-    void init(Cell& cell)
+    void init(const Cell& cell)
     {
       // Clear old data
       clear();
@@ -110,7 +110,7 @@ namespace dolfin
     }
 
     // Update cell entities and coordinates
-    inline void update(Cell& cell)
+    inline void update(const Cell& cell)
     {
       // Set entity indices
       for (uint d = 0; d < topological_dimension; d++)

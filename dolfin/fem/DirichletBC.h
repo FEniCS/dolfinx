@@ -81,7 +81,7 @@ namespace dolfin
 
     /// Create boundary condition for sub domain
     DirichletBC(Function& g,
-                Mesh& mesh,
+                const Mesh& mesh,
                 SubDomain& sub_domain,
                 BCMethod method = topological);
 
@@ -92,13 +92,13 @@ namespace dolfin
     
     /// Create boundary condition for boundary data included in the mesh
     DirichletBC(Function& g,
-                Mesh& mesh,
+                const Mesh& mesh,
                 uint sub_domain,
                 BCMethod method = topological);
 
     /// Create sub system boundary condition for sub domain
     DirichletBC(Function& g,
-                Mesh& mesh,
+                const Mesh& mesh,
                 SubDomain& sub_domain,
                 const SubSystem& sub_system,
                 BCMethod method = topological);
@@ -112,7 +112,7 @@ namespace dolfin
 
     /// Create sub system boundary condition for boundary data included in the mesh
     DirichletBC(Function& g,
-                Mesh& mesh,
+                const Mesh& mesh,
                 uint sub_domain,
                 const SubSystem& sub_system,
                 BCMethod method = topological);
@@ -202,7 +202,7 @@ namespace dolfin
     Function& g;
 
     // The mesh
-    Mesh& _mesh;
+    const Mesh& _mesh;
 
     // Search method
     BCMethod method;

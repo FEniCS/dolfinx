@@ -83,17 +83,29 @@ MeshData& Mesh::data()
   return *_data;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint Mesh::init(uint dim)
+dolfin::uint Mesh::init(uint dim) const
 {
-  return TopologyComputation::computeEntities(*this, dim);
+  // This function is obviously not const since it may potentially compute
+  // new connectivity. However, in a sense all connectivity of a mesh always
+  // exists, it just hasn't been computed yet. The const_cast is also needed
+  // to allow iterators over a const Mesh to create new connectivity.
+  Mesh* mesh = const_cast<Mesh*>(this);
+
+  return TopologyComputation::computeEntities(*mesh, dim);
 }
 //-----------------------------------------------------------------------------
-void Mesh::init(uint d0, uint d1)
+void Mesh::init(uint d0, uint d1) const
 {
-  TopologyComputation::computeConnectivity(*this, d0, d1);
+  // This function is obviously not const since it may potentially compute
+  // new connectivity. However, in a sense all connectivity of a mesh always
+  // exists, it just hasn't been computed yet. The const_cast is also needed
+  // to allow iterators over a const Mesh to create new connectivity.
+  Mesh* mesh = const_cast<Mesh*>(this);
+
+  TopologyComputation::computeConnectivity(*mesh, d0, d1);
 }
 //-----------------------------------------------------------------------------
-void Mesh::init()
+void Mesh::init() const
 {
   // Compute all entities
   for (uint d = 0; d <= topology().dim(); d++)
@@ -115,7 +127,6 @@ void Mesh::clear()
   _data = 0;
   delete detector;
   detector = 0;
-  
 }
 //-----------------------------------------------------------------------------
 void Mesh::order()

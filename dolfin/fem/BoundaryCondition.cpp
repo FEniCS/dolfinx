@@ -26,7 +26,7 @@ BoundaryCondition::~BoundaryCondition()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-BoundaryCondition::LocalData::LocalData(const ufc::form& form, Mesh& mesh, 
+BoundaryCondition::LocalData::LocalData(const ufc::form& form, const Mesh& mesh, 
                                         const DofMap& global_dof_map, 
                                         const SubSystem& sub_system)
   : ufc_mesh(mesh), finite_element(0), dof_map(0), dof_map_local(0), offset(0),
@@ -90,19 +90,10 @@ BoundaryCondition::LocalData::~LocalData()
     delete [] coordinates;
   }
 
-  if (finite_element)
-    delete finite_element;
-
-  if (dof_map_local)
-    delete dof_map_local;
-
-  if (w)
-    delete [] w;
-
-  if (cell_dofs)
-    delete [] cell_dofs;
-
-  if (facet_dofs)
-    delete [] facet_dofs;
+  delete finite_element;
+  delete dof_map_local;
+  delete [] w;
+  delete [] cell_dofs;
+  delete [] facet_dofs;
 }
 //-----------------------------------------------------------------------------

@@ -39,16 +39,6 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Assembler::Assembler(Mesh& mesh) : mesh(mesh), parallel(MPI::num_processes()>0)
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-Assembler::~Assembler()
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
 void Assembler::assemble(GenericTensor& A, Form& form, bool reset_tensor)
 {
   assemble(A, form, form.coefficients(), 0, 0, 0, reset_tensor);
@@ -71,6 +61,9 @@ void Assembler::assemble(GenericMatrix& A, Form& a, GenericVector& b, Form& L,
 //-----------------------------------------------------------------------------
 void Assembler::assemble(GenericTensor& A, Form& form, const SubDomain& sub_domain, bool reset_tensor)
 {
+  // Extract mesh
+  const Mesh& mesh = form.mesh();
+
   // Extract cell domains
   MeshFunction<uint>* cell_domains = 0;
   if (form.ufc_form().num_cell_integrals() > 0)
@@ -79,7 +72,7 @@ void Assembler::assemble(GenericTensor& A, Form& form, const SubDomain& sub_doma
     (*cell_domains) = 1;
     sub_domain.mark(*cell_domains, 0);
   }
-
+  
   // Extract facet domains
   MeshFunction<uint>* facet_domains = 0;
   if (form.ufc_form().num_exterior_facet_integrals() > 0 ||
@@ -175,7 +168,7 @@ void Assembler::assembleCells(GenericTensor& A,
                               const std::vector<Function*>& coefficients,
                               UFC& ufc,
                               const MeshFunction<uint>* domains,
-                              std::vector<double>* values) const
+                              std::vector<double>* values)
 {
   // Skip assembly if there are no cell integrals
   if (ufc.form.num_cell_integrals() == 0)
@@ -228,7 +221,7 @@ void Assembler::assembleExteriorFacets(GenericTensor& A,
                                        const std::vector<Function*>& coefficients,
                                        UFC& ufc,
                                        const MeshFunction<uint>* domains,
-                                       std::vector<double>* values) const
+                                       std::vector<double>* values)
 {
   // Skip assembly if there are no exterior facet integrals
   if (ufc.form.num_exterior_facet_integrals() == 0)
@@ -294,7 +287,7 @@ void Assembler::assembleInteriorFacets(GenericTensor& A,
                                        const std::vector<Function*>& coefficients,
                                        UFC& ufc,
                                        const MeshFunction<uint>* domains,
-                                       std::vector<double>* values) const
+                                       std::vector<double>* values)
 {
   // Skip assembly if there are no interior facet integrals
   if (ufc.form.num_interior_facet_integrals() == 0)
@@ -370,7 +363,7 @@ void Assembler::assembleInteriorFacets(GenericTensor& A,
 //-----------------------------------------------------------------------------
 void Assembler::check(const Form& form, 
                       const std::vector<Function*>& coefficients, 
-                      const Mesh& mesh) const
+                      const Mesh& mesh)
 {
   // Check that we get the correct number of coefficients
   if (coefficients.size() != form.ufc_form().num_coefficients())
@@ -425,7 +418,7 @@ You may need to provide the dimension of a user defined Function.", j, i, dim, f
 }
 //-----------------------------------------------------------------------------
 void Assembler::initGlobalTensor(GenericTensor& A, const Form& form, 
-                                 UFC& ufc, bool reset_tensor) const
+                                 UFC& ufc, bool reset_tensor)
 {
   if (reset_tensor)
   {
@@ -461,7 +454,7 @@ void Assembler::initGlobalTensor(GenericTensor& A, const Form& form,
     A.zero();
 }
 //-----------------------------------------------------------------------------
-std::string Assembler::progressMessage(uint rank, std::string integral_type) const
+std::string Assembler::progressMessage(uint rank, std::string integral_type)
 {
   std::stringstream s;
   s << "Assembling ";

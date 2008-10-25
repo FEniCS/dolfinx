@@ -13,12 +13,6 @@
 #include <vector>
 #include <dolfin/common/types.h>
 
-// Forward declaration
-namespace ufc 
-{
-  class form; 
-}
-
 namespace dolfin
 {
 
@@ -42,52 +36,46 @@ namespace dolfin
   {
   public:
 
-    /// Constructor
-    Assembler(Mesh& mesh);
-
-    /// Destructor
-    ~Assembler();
-
     /// Assemble tensor from given variational form
-    void assemble(GenericTensor& A, Form& form, bool reset_tensor=true);
+    static void assemble(GenericTensor& A, Form& form, bool reset_tensor=true);
 
     /// Assemble system (A, b) and apply Dirichlet boundary condition from 
     /// given variational forms
-    void assemble(GenericMatrix& A, Form& a, GenericVector& b, Form& L, 
-                  DirichletBC& bc, bool reset_tensor=true);
+    static void assemble(GenericMatrix& A, Form& a, GenericVector& b, Form& L, 
+                         DirichletBC& bc, bool reset_tensor=true);
 
     /// Assemble system (A, b) and apply Dirichlet boundary conditions from 
     /// given variational forms
-    void assemble(GenericMatrix& A, Form& a, GenericVector& b, Form& L, 
-                  std::vector<DirichletBC*>& bcs, bool reset_tensor=true);
+    static void assemble(GenericMatrix& A, Form& a, GenericVector& b, Form& L, 
+                         std::vector<DirichletBC*>& bcs, bool reset_tensor=true);
 
     /// Assemble tensor from given variational form over a sub domain
-    void assemble(GenericTensor& A, Form& form, const SubDomain& sub_domain,
-                  bool reset_tensor=true);
+    static void assemble(GenericTensor& A, Form& form, const SubDomain& sub_domain,
+                         bool reset_tensor=true);
 
     /// Assemble tensor from given variational form over a sub domain
     //void assemble(GenericTensor& A, Form& form,
     //              const MeshFunction<uint>& domains, uint domain, bool reset_tensor = true);
 
     /// Assemble tensor from given variational form over sub domains
-    void assemble(GenericTensor& A, Form& form,
-                  const MeshFunction<uint>& cell_domains,
-                  const MeshFunction<uint>& exterior_facet_domains,
-                  const MeshFunction<uint>& interior_facet_domains,
-                  bool reset_tensor=true);
+    static void assemble(GenericTensor& A, Form& form,
+                         const MeshFunction<uint>& cell_domains,
+                         const MeshFunction<uint>& exterior_facet_domains,
+                         const MeshFunction<uint>& interior_facet_domains,
+                         bool reset_tensor=true);
     
     /// Assemble scalar from given variational form
-    double assemble(Form& form, bool reset_tensor=true);
+    static double assemble(Form& form, bool reset_tensor=true);
     
     /// Assemble scalar from given variational form over a sub domain
-    double assemble(Form& form, const SubDomain& sub_domain, bool reset_tensor);
+    static double assemble(Form& form, const SubDomain& sub_domain, bool reset_tensor);
     
     /// Assemble scalar from given variational form over sub domains
-    double assemble(Form& form,
-                  const MeshFunction<uint>& cell_domains,
-                  const MeshFunction<uint>& exterior_facet_domains,
-                  const MeshFunction<uint>& interior_facet_domains,
-                  bool reset_tensor);
+    static double assemble(Form& form,
+                           const MeshFunction<uint>& cell_domains,
+                           const MeshFunction<uint>& exterior_facet_domains,
+                           const MeshFunction<uint>& interior_facet_domains,
+                           bool reset_tensor);
     
     /// Assemble tensor from given (UFC) form, coefficients and sub domains.
     /// This is the main assembly function in DOLFIN. All other assembly functions
@@ -97,68 +85,61 @@ namespace dolfin
     /// of the mesh cells, exterior facets and interior facets. Either a null pointer
     /// or an empty MeshFunction may be used to specify that the tensor should be
     /// assembled over the entire set of cells or facets.
-    void assemble(GenericTensor& A, const Form& form,
-                  const std::vector<Function*>& coefficients,
-                  const MeshFunction<uint>* cell_domains,
-                  const MeshFunction<uint>* exterior_facet_domains,
-                  const MeshFunction<uint>* interior_facet_domains,
-                  bool reset_tensor = true);
+    static void assemble(GenericTensor& A, const Form& form,
+                         const std::vector<Function*>& coefficients,
+                         const MeshFunction<uint>* cell_domains,
+                         const MeshFunction<uint>* exterior_facet_domains,
+                         const MeshFunction<uint>* interior_facet_domains,
+                         bool reset_tensor = true);
 
     /// Assemble linear system Ax = b and enforce Dirichlet conditions.  
     //  Notice that the Dirichlet conditions are enforced in a symmetric way.  
-    void assemble_system(GenericMatrix& A, const Form& A_form, 
-                         const std::vector<Function*>& A_coefficients,
-                         GenericVector& b, const Form& b_form, 
-                         const std::vector<Function*>& b_coefficients,
-                         const GenericVector* x0,
-                         std::vector<DirichletBC*> bcs, const MeshFunction<uint>* cell_domains, 
-                         const MeshFunction<uint>* exterior_facet_domains,
-                         const MeshFunction<uint>* interior_facet_domains,
-                         bool reset_tensors=true);
-
+    static void assemble_system(GenericMatrix& A, const Form& A_form, 
+                                const std::vector<Function*>& A_coefficients,
+                                GenericVector& b, const Form& b_form, 
+                                const std::vector<Function*>& b_coefficients,
+                                const GenericVector* x0,
+                                std::vector<DirichletBC*> bcs, const MeshFunction<uint>* cell_domains, 
+                                const MeshFunction<uint>* exterior_facet_domains,
+                                const MeshFunction<uint>* interior_facet_domains,
+                                bool reset_tensors=true);
 
   private:
  
     // Assemble over cells
-    void assembleCells(GenericTensor& A,
-                       const Form& form,
-                       const std::vector<Function*>& coefficients,
-                       UFC& data,
-                       const MeshFunction<uint>* domains,
-                       std::vector<double>* values) const;
+    static void assembleCells(GenericTensor& A,
+                              const Form& form,
+                              const std::vector<Function*>& coefficients,
+                              UFC& data,
+                              const MeshFunction<uint>* domains,
+                              std::vector<double>* values);
     
     // Assemble over exterior facets
-    void assembleExteriorFacets(GenericTensor& A,
-                                const Form& form,
-                                const std::vector<Function*>& coefficients,
-                                UFC& data,
-                                const MeshFunction<uint>* domains,
-                                std::vector<double>* values) const;
+    static void assembleExteriorFacets(GenericTensor& A,
+                                       const Form& form,
+                                       const std::vector<Function*>& coefficients,
+                                       UFC& data,
+                                       const MeshFunction<uint>* domains,
+                                       std::vector<double>* values);
 
     // Assemble over interior facets
-    void assembleInteriorFacets(GenericTensor& A,
-                                const Form& form,
-                                const std::vector<Function*>& coefficients,
-                                UFC& data,
-                                const MeshFunction<uint>* domains,
-                                std::vector<double>* values) const;
+    static void assembleInteriorFacets(GenericTensor& A,
+                                       const Form& form,
+                                       const std::vector<Function*>& coefficients,
+                                       UFC& data,
+                                       const MeshFunction<uint>* domains,
+                                       std::vector<double>* values);
 
     // Check arguments
-    void check(const Form& form,
-               const std::vector<Function*>& coefficients,
-               const Mesh& mesh) const;
-
+    static void check(const Form& form,
+                      const std::vector<Function*>& coefficients,
+                      const Mesh& mesh);
+    
     // Initialize global tensor
-    void initGlobalTensor(GenericTensor& A, const Form& form, UFC& ufc, bool reset_tensor) const;
+    static void initGlobalTensor(GenericTensor& A, const Form& form, UFC& ufc, bool reset_tensor);
 
     // Pretty-printing for progress bar
-    std::string progressMessage(uint rank, std::string integral_type) const;
-
-    // The mesh
-    Mesh& mesh;
-
-    // Are we running in parallel?
-    bool parallel;
+    static std::string progressMessage(uint rank, std::string integral_type);
 
   };
 

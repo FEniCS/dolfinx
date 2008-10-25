@@ -4,7 +4,7 @@
 // Modified by Johan Hoffman, 2007.
 //
 // First added:  2006-05-22
-// Last changed: 2008-05-21
+// Last changed: 2008-10-24
 
 #ifndef __MESH_FUNCTION_H
 #define __MESH_FUNCTION_H
@@ -35,10 +35,10 @@ namespace dolfin
     MeshFunction() : _values(0), _mesh(0), _dim(0), _size(0) {}
 
     /// Create empty mesh function on given mesh
-    MeshFunction(Mesh& mesh) : _values(0), _mesh(&mesh), _dim(0), _size(0) {}
+    MeshFunction(const Mesh& mesh) : _values(0), _mesh(&mesh), _dim(0), _size(0) {}
 
     /// Create mesh function on given mesh of given dimension
-    MeshFunction(Mesh& mesh, uint dim) : _values(0), _mesh(&mesh), _dim(0), _size(0)
+    MeshFunction(const Mesh& mesh, uint dim) : _values(0), _mesh(&mesh), _dim(0), _size(0)
     {
       init(dim);
     }
@@ -57,7 +57,7 @@ namespace dolfin
     }
 
     /// Return mesh associated with mesh function
-    inline Mesh& mesh() { dolfin_assert(_mesh); return *_mesh; }
+    inline const Mesh& mesh() { dolfin_assert(_mesh); return *_mesh; }
 
     /// Return topological dimension
     inline uint dim() const { return _dim; }
@@ -72,19 +72,7 @@ namespace dolfin
     inline T* values() { return _values; }
 
     /// Return value at given entity
-    inline T& operator() (MeshEntity& entity)
-    {
-      // FIXME: Removed temporarily, to get parallel assembly working
-      //dolfin_assert(&entity.mesh() == _mesh);
-      
-      dolfin_assert(_values);
-      dolfin_assert(entity.dim() == _dim);
-      dolfin_assert(entity.index() < _size);
-      return _values[entity.index()];
-    }
-
-    /// Return value at given entity
-    inline const T& operator() (MeshEntity& entity) const
+    inline const T& operator() (const MeshEntity& entity) const
     {
       dolfin_assert(_values);
       dolfin_assert(&entity.mesh() == _mesh);
@@ -201,7 +189,7 @@ namespace dolfin
     T* _values;
 
     /// The mesh
-    Mesh* _mesh;
+    const Mesh* _mesh;
 
     /// Topological dimension
     uint _dim;

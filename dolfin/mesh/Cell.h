@@ -4,7 +4,7 @@
 // Modified by Johan Hoffman 2006.
 //
 // First added:  2006-06-01
-// Last changed: 2008-08-29
+// Last changed: 2008-10-23
 
 #ifndef __CELL_H
 #define __CELL_H
@@ -24,7 +24,7 @@ namespace dolfin
   public:
 
     /// Constructor
-    Cell(Mesh& mesh, uint index) : MeshEntity(mesh, mesh.topology().dim(), index) {}
+    Cell(const Mesh& mesh, uint index) : MeshEntity(mesh, mesh.topology().dim(), index) {}
 
     /// Destructor
     ~Cell() {}
@@ -79,11 +79,11 @@ namespace dolfin
   {
   public:
     
-    CellIterator(Mesh& mesh) : MeshEntityIterator(mesh, mesh.topology().dim()) {}
-    CellIterator(MeshEntity& entity) : MeshEntityIterator(entity, entity.mesh().topology().dim()) {}
+    CellIterator(const Mesh& mesh) : MeshEntityIterator(mesh, mesh.topology().dim()) {}
+    CellIterator(const MeshEntity& entity) : MeshEntityIterator(entity, entity.mesh().topology().dim()) {}
 
-    inline Cell& operator*() { return *operator->(); }
-    inline Cell* operator->() { return static_cast<Cell*>(MeshEntityIterator::operator->()); }
+    inline const Cell& operator*() { return *operator->(); }
+    inline const Cell* operator->() { return static_cast<Cell*>(MeshEntityIterator::operator->()); }
 
   };    
 
