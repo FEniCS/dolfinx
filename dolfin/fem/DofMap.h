@@ -4,7 +4,7 @@
 // Modified by Martin Alnes, 2008
 
 // First added:  2007-03-01
-// Last changed: 2008-10-14
+// Last changed: 2008-10-26
 
 #ifndef __DOF_MAP_H
 #define __DOF_MAP_H
@@ -33,22 +33,22 @@ namespace dolfin
   public:
 
     /// Create dof map on mesh
-    DofMap(ufc::dof_map& dof_map, Mesh& mesh);
+    DofMap(ufc::dof_map& dof_map, const Mesh& mesh);
 
     /// Create dof map on mesh (may share ufc::dof_map)
-    DofMap(std::tr1::shared_ptr<ufc::dof_map> dof_map, Mesh& mesh);
+    DofMap(std::tr1::shared_ptr<ufc::dof_map> dof_map, const Mesh& mesh);
 
     /// Create dof map on mesh (parallel)
-    DofMap(ufc::dof_map& dof_map, Mesh& mesh, MeshFunction<uint>& partitions);
+    DofMap(ufc::dof_map& dof_map, const Mesh& mesh, MeshFunction<uint>& partitions);
 
     /// Create dof map on mesh (may share ufc::dof_map) (parallel)
-    DofMap(std::tr1::shared_ptr<ufc::dof_map> dof_map, Mesh& mesh, MeshFunction<uint>& partitions);
+    DofMap(std::tr1::shared_ptr<ufc::dof_map> dof_map, const Mesh& mesh, MeshFunction<uint>& partitions);
 
     /// Create dof map on mesh
-    DofMap(const std::string signature, Mesh& mesh);
+    DofMap(const std::string signature, const Mesh& mesh);
 
     /// Create dof map on mesh (parallel)
-    DofMap(const std::string signature, Mesh& mesh, MeshFunction<uint>& partitions);
+    DofMap(const std::string signature, const Mesh& mesh, MeshFunction<uint>& partitions);
 
     /// Destructor
     ~DofMap();
@@ -97,7 +97,7 @@ namespace dolfin
     { ufc_dof_map->tabulate_coordinates(coordinates, ufc_cell); }
 
     /// Return mesh associated with map
-    Mesh& mesh() const
+    const Mesh& mesh() const
     { return dolfin_mesh; }
 
     /// Build parallel dof map
@@ -138,7 +138,7 @@ namespace dolfin
     UFCMesh ufc_mesh;
 
     // DOLFIN mesh
-    Mesh& dolfin_mesh;
+    const Mesh& dolfin_mesh;
 
     // Number of cells in the mesh
     uint num_cells;

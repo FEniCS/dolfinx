@@ -15,7 +15,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void DofMapBuilder::build(DofMap& dof_map, UFC& ufc, Mesh& mesh)
+void DofMapBuilder::build(DofMap& dof_map, UFC& ufc, const Mesh& mesh)
 {
   // Work in progress, to be based on Algorithm 5 in the paper
   // http://home.simula.no/~logg/pub/papers/submitted-Log2008a.pdf

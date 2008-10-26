@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-08-12
-// Last changed: 2008-08-12
+// Last changed: 2008-10-26
 
 #ifndef __DOF_MAP_BUILDER_H
 #define __DOF_MAP_BUILDER_H
@@ -21,7 +21,7 @@ namespace dolfin
   public:
 
     /// Build dof map
-    static void build(DofMap& dof_map, UFC& ufc, Mesh& mesh);
+    static void build(DofMap& dof_map, UFC& ufc, const Mesh& mesh);
 
   private:
 

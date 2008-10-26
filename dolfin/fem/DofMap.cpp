@@ -4,7 +4,7 @@
 // Modified by Martin Alnes, 2008
 //
 // First added:  2007-03-01
-// Last changed: 2008-10-14
+// Last changed: 2008-10-26
 
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/common/Timer.h>
@@ -23,7 +23,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-DofMap::DofMap(ufc::dof_map& dof_map, Mesh& mesh)
+DofMap::DofMap(ufc::dof_map& dof_map, const Mesh& mesh)
   : dof_map(0), 
     ufc_dof_map(&dof_map, NoDeleter<ufc::dof_map>()), dolfin_mesh(mesh), 
     num_cells(mesh.numCells()), partitions(0), _offset(0)
@@ -31,14 +31,14 @@ DofMap::DofMap(ufc::dof_map& dof_map, Mesh& mesh)
   init();
 }
 //-----------------------------------------------------------------------------
-DofMap::DofMap(std::tr1::shared_ptr<ufc::dof_map> dof_map, Mesh& mesh)
+DofMap::DofMap(std::tr1::shared_ptr<ufc::dof_map> dof_map, const Mesh& mesh)
   : dof_map(0), ufc_dof_map(dof_map), dolfin_mesh(mesh), num_cells(mesh.numCells()), 
     partitions(0), _offset(0)
 {
   init();
 }
 //-----------------------------------------------------------------------------
-DofMap::DofMap(ufc::dof_map& dof_map, Mesh& mesh, MeshFunction<uint>& partitions)
+DofMap::DofMap(ufc::dof_map& dof_map, const Mesh& mesh, MeshFunction<uint>& partitions)
   : dof_map(0), ufc_dof_map(&dof_map, NoDeleter<ufc::dof_map>()), 
     dolfin_mesh(mesh), num_cells(mesh.numCells()), 
     partitions(&partitions), _offset(0)
@@ -46,7 +46,7 @@ DofMap::DofMap(ufc::dof_map& dof_map, Mesh& mesh, MeshFunction<uint>& partitions
   init();
 }
 //-----------------------------------------------------------------------------
-DofMap::DofMap(std::tr1::shared_ptr<ufc::dof_map> dof_map, Mesh& mesh, MeshFunction<uint>& partitions)
+DofMap::DofMap(std::tr1::shared_ptr<ufc::dof_map> dof_map, const Mesh& mesh, MeshFunction<uint>& partitions)
   : dof_map(0), ufc_dof_map(dof_map), 
     dolfin_mesh(mesh), num_cells(mesh.numCells()), 
     partitions(&partitions), _offset(0)
@@ -54,7 +54,7 @@ DofMap::DofMap(std::tr1::shared_ptr<ufc::dof_map> dof_map, Mesh& mesh, MeshFunct
   init();
 }
 //-----------------------------------------------------------------------------
-DofMap::DofMap(const std::string signature, Mesh& mesh) 
+DofMap::DofMap(const std::string signature, const Mesh& mesh) 
   : dof_map(0), dolfin_mesh(mesh), num_cells(mesh.numCells()),
     partitions(0), _offset(0)
 {
@@ -68,7 +68,7 @@ DofMap::DofMap(const std::string signature, Mesh& mesh)
   init();
 }
 //-----------------------------------------------------------------------------
-DofMap::DofMap(const std::string signature, Mesh& mesh,
+DofMap::DofMap(const std::string signature, const Mesh& mesh,
                MeshFunction<uint>& partitions)
   : dof_map(0), dolfin_mesh(mesh),
     num_cells(mesh.numCells()), partitions(&partitions), _offset(0)
@@ -166,8 +166,12 @@ void DofMap::init()
 
   //dolfin_debug("Initializing dof map...");
 
+  // Check that mesh has been ordered
+  if (!dolfin_mesh.ordered())
+    error("Mesh is not ordered according to the UFC numbering convention, consider calling mesh.order().");
+
   // Order vertices, so entities will be created correctly according to convention
-  dolfin_mesh.order();
+  //dolfin_mesh.order();
 
   // Initialize mesh entities used by dof map
   for (uint d = 0; d <= dolfin_mesh.topology().dim(); d++)
