@@ -6,7 +6,7 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2003-11-28
-// Last changed: 2008-10-21
+// Last changed: 2008-10-26
 
 #ifndef __FUNCTION_H
 #define __FUNCTION_H
@@ -72,7 +72,7 @@ namespace dolfin
     /// Return the finite element
     const FiniteElement& element() const;
 
-    /// Return the vector of expansion coefficients
+    /// Return the vector of expansion coefficients (non-const version)
     GenericVector& vector();
 
     /// Return the vector of expansion coefficients (const version)
@@ -140,7 +140,7 @@ namespace dolfin
     double _time;
 
     // The current cell (if any, otherwise 0)
-    Cell* _cell;
+    const Cell* _cell;
 
     // The current facet (if any, otherwise -1)
     int _facet;

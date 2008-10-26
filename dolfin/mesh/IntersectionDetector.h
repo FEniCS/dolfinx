@@ -4,7 +4,7 @@
 // Modified by Kristoffer Selim, 2008.
 //
 // First added:  2006-06-21
-// Last changed: 2008-10-08
+// Last changed: 2008-10-26
 
 #ifndef __INTERSECTION_DETECTOR_H
 #define __INTERSECTION_DETECTOR_H
@@ -26,7 +26,7 @@ namespace dolfin
   public:
 
     /// Create intersection detector for mesh
-    IntersectionDetector(Mesh& mesh);
+    IntersectionDetector(const Mesh& mesh);
 
     /// Destructor
     ~IntersectionDetector();
@@ -44,7 +44,7 @@ namespace dolfin
     void intersection(Array<Point>& points, Array<uint>& intersection);
 
     /// Compute overlap with mesh
-    void intersection(Mesh& mesh, Array<uint>& intersection);
+    void intersection(const Mesh& mesh, Array<uint>& intersection);
     
   private:
 

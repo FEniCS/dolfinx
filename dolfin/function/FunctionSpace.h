@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-09-11
-// Last changed: 2008-10-21
+// Last changed: 2008-10-26
 
 #ifndef __FUNCTION_SPACE_H
 #define __FUNCTION_SPACE_H
@@ -30,10 +30,10 @@ namespace dolfin
   public:
 
     /// Create function space for given mesh, element and dofmap
-    FunctionSpace(Mesh& mesh, const FiniteElement &element, const DofMap& dofmap);
+    FunctionSpace(const Mesh& mesh, const FiniteElement &element, const DofMap& dofmap);
 
     /// Create function space for given mesh, element and dofmap (shared data)
-    FunctionSpace(std::tr1::shared_ptr<Mesh> mesh,
+    FunctionSpace(std::tr1::shared_ptr<const Mesh> mesh,
                   std::tr1::shared_ptr<const FiniteElement> element,
                   std::tr1::shared_ptr<const DofMap> dofmap);
 
@@ -47,9 +47,6 @@ namespace dolfin
     const FunctionSpace& operator= (const FunctionSpace& V);
 
     /// Return mesh
-    Mesh& mesh();
-
-    /// Return mesh (const version)
     const Mesh& mesh() const;
 
     /// Return finite element
@@ -108,7 +105,7 @@ namespace dolfin
     };
 
     // The mesh
-    std::tr1::shared_ptr<Mesh> _mesh;
+    std::tr1::shared_ptr<const Mesh> _mesh;
 
     // The finite element
     std::tr1::shared_ptr<const FiniteElement> _element;

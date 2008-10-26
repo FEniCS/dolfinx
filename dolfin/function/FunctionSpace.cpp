@@ -4,7 +4,7 @@
 // Modified by Kristoffer Selim, 2008.
 //
 // First added:  2008-09-11
-// Last changed: 2008-10-21
+// Last changed: 2008-10-26
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/NoDeleter.h>
@@ -19,10 +19,10 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-FunctionSpace::FunctionSpace(Mesh& mesh,
+FunctionSpace::FunctionSpace(const Mesh& mesh,
                              const FiniteElement &element,
                              const DofMap& dofmap)
-  : _mesh(&mesh, NoDeleter<Mesh>()),
+  : _mesh(&mesh, NoDeleter<const Mesh>()),
     _element(&element, NoDeleter<const FiniteElement>()),
     _dofmap(&dofmap, NoDeleter<const DofMap>()),
     scratch(element), intersection_detector(0)
@@ -30,7 +30,7 @@ FunctionSpace::FunctionSpace(Mesh& mesh,
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-FunctionSpace::FunctionSpace(std::tr1::shared_ptr<Mesh> mesh,
+FunctionSpace::FunctionSpace(std::tr1::shared_ptr<const Mesh> mesh,
                              std::tr1::shared_ptr<const FiniteElement> element,
                              std::tr1::shared_ptr<const DofMap> dofmap)
   : _mesh(mesh), _element(element), _dofmap(dofmap),
@@ -66,12 +66,6 @@ const FunctionSpace& FunctionSpace::operator= (const FunctionSpace& V)
   intersection_detector = 0;
 
   return *this;
-}
-//-----------------------------------------------------------------------------
-Mesh& FunctionSpace::mesh()
-{
-  dolfin_assert(_mesh);
-  return *_mesh;
 }
 //-----------------------------------------------------------------------------
 const Mesh& FunctionSpace::mesh() const

@@ -7,7 +7,7 @@
 // Modified by Kristoffer Selim, 2008.
 //
 // First added:  2006-06-21
-// Last changed: 2008-10-08
+// Last changed: 2008-10-26
 
 #include <algorithm>
 #include <dolfin/log/dolfin_log.h>
@@ -24,7 +24,7 @@ using namespace dolfin;
 #ifdef HAS_GTS
 
 //-----------------------------------------------------------------------------
-IntersectionDetector::IntersectionDetector(Mesh& mesh) : gts(0)
+IntersectionDetector::IntersectionDetector(const Mesh& mesh) : gts(0)
 {
   gts = new GTSInterface(mesh);
 }
@@ -66,7 +66,7 @@ void IntersectionDetector::intersection(Array<Point>& points, Array<uint>& cells
   cc.resize(it - cc.begin());  
 }
 //-----------------------------------------------------------------------------
-void IntersectionDetector::intersection(Mesh& mesh, Array<uint>& cells)
+void IntersectionDetector::intersection(const Mesh& mesh, Array<uint>& cells)
 {
   // Intersect each cell with mesh
   for (CellIterator cell(mesh); !cell.end(); ++cell)
@@ -83,7 +83,7 @@ void IntersectionDetector::intersection(Mesh& mesh, Array<uint>& cells)
 #else
 
 //-----------------------------------------------------------------------------
-IntersectionDetector::IntersectionDetector(Mesh& mesh)
+IntersectionDetector::IntersectionDetector(const Mesh& mesh)
 {
   error("DOLFIN has been compiled without GTS, intersection detection not available.");
 }
@@ -98,7 +98,7 @@ void IntersectionDetector::intersection(Cell& c, Array<uint>& intersection) {}
 //-----------------------------------------------------------------------------
 void IntersectionDetector::intersection(Array<Point>& points, Array<uint>& intersection) {}
 //-----------------------------------------------------------------------------
-void IntersectionDetector::intersection(Mesh& mesh, Array<uint>& intersection) {}
+void IntersectionDetector::intersection(const Mesh& mesh, Array<uint>& intersection) {}
 //-----------------------------------------------------------------------------
 
 #endif

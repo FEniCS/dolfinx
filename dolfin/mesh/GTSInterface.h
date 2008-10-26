@@ -4,7 +4,7 @@
 // Modified by Kristoffer Selim, 2008.
 //
 // First added:  2006-06-21
-// Last changed: 2008-10-08
+// Last changed: 2008-10-26
 
 #ifndef __GTS_INTERFACE_H
 #define __GTS_INTERFACE_H
