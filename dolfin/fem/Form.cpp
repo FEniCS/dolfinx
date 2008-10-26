@@ -60,9 +60,9 @@ const FunctionSpace& Form::function_space(uint i) const
   return *_function_spaces[i];
 }
 //-----------------------------------------------------------------------------
-const std::vector<FunctionSpace*> Form::function_spaces() const
+const std::vector<const FunctionSpace*> Form::function_spaces() const
 {
-  std::vector<FunctionSpace*> V;
+  std::vector<const FunctionSpace*> V;
   for (uint i = 0; i < _function_spaces.size(); ++i)
     V.push_back(_function_spaces[i].get());
 
@@ -75,9 +75,9 @@ const Function& Form::coefficient(uint i) const
   return *_coefficients[i];
 }
 //-----------------------------------------------------------------------------
-const std::vector<Function*> Form::coefficients() const
+const std::vector<const Function*> Form::coefficients() const
 {
-  std::vector<Function*> V;
+  std::vector<const Function*> V;
   for (uint i = 0; i < _coefficients.size(); ++i)
     V.push_back(_coefficients[i].get());
 

@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-01-17
-// Last changed: 2008-06-10
+// Last changed: 2008-10-26
 
 #ifndef __UFC_DATA_H
 #define __UFC_DATA_H
@@ -31,7 +31,7 @@ namespace dolfin
   public:
 
     /// Constructor
-    UFC(const ufc::form& form, std::vector<FunctionSpace*>& V);
+    UFC(const ufc::form& form, const std::vector<const FunctionSpace*>& V);
 
     /// Destructor
     ~UFC();

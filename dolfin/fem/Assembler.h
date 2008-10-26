@@ -5,7 +5,7 @@
 // Modified by Ola Skavhaug, 2008.
 //
 // First added:  2007-01-17
-// Last changed: 2008-10-23
+// Last changed: 2008-10-26
 
 #ifndef __ASSEMBLER_H
 #define __ASSEMBLER_H
@@ -47,7 +47,7 @@ namespace dolfin
     /// Assemble system (A, b) and apply Dirichlet boundary conditions from 
     /// given variational forms
     static void assemble(GenericMatrix& A, Form& a, GenericVector& b, Form& L, 
-                         std::vector<DirichletBC*>& bcs, bool reset_tensor=true);
+                         std::vector<const DirichletBC*>& bcs, bool reset_tensor=true);
 
     /// Assemble tensor from given variational form over a sub domain
     static void assemble(GenericTensor& A, Form& form, const SubDomain& sub_domain,
@@ -86,7 +86,7 @@ namespace dolfin
     /// or an empty MeshFunction may be used to specify that the tensor should be
     /// assembled over the entire set of cells or facets.
     static void assemble(GenericTensor& A, const Form& form,
-                         const std::vector<Function*>& coefficients,
+                         const std::vector<const Function*>& coefficients,
                          const MeshFunction<uint>* cell_domains,
                          const MeshFunction<uint>* exterior_facet_domains,
                          const MeshFunction<uint>* interior_facet_domains,
@@ -95,11 +95,11 @@ namespace dolfin
     /// Assemble linear system Ax = b and enforce Dirichlet conditions.  
     //  Notice that the Dirichlet conditions are enforced in a symmetric way.  
     static void assemble_system(GenericMatrix& A, const Form& A_form, 
-                                const std::vector<Function*>& A_coefficients,
+                                const std::vector<const Function*>& A_coefficients,
                                 GenericVector& b, const Form& b_form, 
-                                const std::vector<Function*>& b_coefficients,
+                                const std::vector<const Function*>& b_coefficients,
                                 const GenericVector* x0,
-                                std::vector<DirichletBC*> bcs, const MeshFunction<uint>* cell_domains, 
+                                std::vector<const DirichletBC*> bcs, const MeshFunction<uint>* cell_domains, 
                                 const MeshFunction<uint>* exterior_facet_domains,
                                 const MeshFunction<uint>* interior_facet_domains,
                                 bool reset_tensors=true);
@@ -109,7 +109,7 @@ namespace dolfin
     // Assemble over cells
     static void assembleCells(GenericTensor& A,
                               const Form& form,
-                              const std::vector<Function*>& coefficients,
+                              const std::vector<const Function*>& coefficients,
                               UFC& data,
                               const MeshFunction<uint>* domains,
                               std::vector<double>* values);
@@ -117,7 +117,7 @@ namespace dolfin
     // Assemble over exterior facets
     static void assembleExteriorFacets(GenericTensor& A,
                                        const Form& form,
-                                       const std::vector<Function*>& coefficients,
+                                       const std::vector<const Function*>& coefficients,
                                        UFC& data,
                                        const MeshFunction<uint>* domains,
                                        std::vector<double>* values);
@@ -125,14 +125,14 @@ namespace dolfin
     // Assemble over interior facets
     static void assembleInteriorFacets(GenericTensor& A,
                                        const Form& form,
-                                       const std::vector<Function*>& coefficients,
+                                       const std::vector<const Function*>& coefficients,
                                        UFC& data,
                                        const MeshFunction<uint>* domains,
                                        std::vector<double>* values);
 
     // Check arguments
     static void check(const Form& form,
-                      const std::vector<Function*>& coefficients,
+                      const std::vector<const Function*>& coefficients,
                       const Mesh& mesh);
     
     // Initialize global tensor

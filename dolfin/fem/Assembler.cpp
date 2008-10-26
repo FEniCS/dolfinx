@@ -47,13 +47,13 @@ void Assembler::assemble(GenericTensor& A, Form& form, bool reset_tensor)
 void Assembler::assemble(GenericMatrix& A, Form& a, GenericVector& b, Form& L, 
                          DirichletBC& bc, bool reset_tensor)
 {
-  std::vector<DirichletBC*> bcs;
+  std::vector<const DirichletBC*> bcs;
   bcs.push_back(&bc);
   assemble(A, a, b, L, bcs, reset_tensor); 
 }
 //-----------------------------------------------------------------------------
 void Assembler::assemble(GenericMatrix& A, Form& a, GenericVector& b, Form& L, 
-                         std::vector<DirichletBC*>& bcs, bool reset_tensor)
+                         std::vector<const DirichletBC*>& bcs, bool reset_tensor)
 {
   assemble_system(A, a, a.coefficients(), b, L, L.coefficients(), 
                   0, bcs, 0, 0 , 0, reset_tensor); 
@@ -131,7 +131,7 @@ double Assembler::assemble(Form& form, const MeshFunction<uint>& cell_domains,
 }
 //-----------------------------------------------------------------------------
 void Assembler::assemble(GenericTensor& A, const Form& form,
-                         const std::vector<Function*>& coefficients,
+                         const std::vector<const Function*>& coefficients,
                          const MeshFunction<uint>* cell_domains,
                          const MeshFunction<uint>* exterior_facet_domains,
                          const MeshFunction<uint>* interior_facet_domains,
@@ -147,7 +147,7 @@ void Assembler::assemble(GenericTensor& A, const Form& form,
   check(form, coefficients, mesh);
 
   // Create data structure for local assembly data
-  std::vector<FunctionSpace*> V = form.function_spaces();
+  std::vector<const FunctionSpace*> V = form.function_spaces();
   UFC ufc(form.ufc_form(), V);
 
   // Initialize global tensor
@@ -168,7 +168,7 @@ void Assembler::assemble(GenericTensor& A, const Form& form,
 //-----------------------------------------------------------------------------
 void Assembler::assembleCells(GenericTensor& A,
                               const Form& form,
-                              const std::vector<Function*>& coefficients,
+                              const std::vector<const Function*>& coefficients,
                               UFC& ufc,
                               const MeshFunction<uint>* domains,
                               std::vector<double>* values)
@@ -224,7 +224,7 @@ void Assembler::assembleCells(GenericTensor& A,
 //-----------------------------------------------------------------------------
 void Assembler::assembleExteriorFacets(GenericTensor& A,
                                        const Form& form,
-                                       const std::vector<Function*>& coefficients,
+                                       const std::vector<const Function*>& coefficients,
                                        UFC& ufc,
                                        const MeshFunction<uint>* domains,
                                        std::vector<double>* values)
@@ -293,7 +293,7 @@ void Assembler::assembleExteriorFacets(GenericTensor& A,
 //-----------------------------------------------------------------------------
 void Assembler::assembleInteriorFacets(GenericTensor& A,
                                        const Form& form,
-                                       const std::vector<Function*>& coefficients,
+                                       const std::vector<const Function*>& coefficients,
                                        UFC& ufc,
                                        const MeshFunction<uint>* domains,
                                        std::vector<double>* values)
@@ -374,7 +374,7 @@ void Assembler::assembleInteriorFacets(GenericTensor& A,
 }
 //-----------------------------------------------------------------------------
 void Assembler::check(const Form& form, 
-                      const std::vector<Function*>& coefficients, 
+                      const std::vector<const Function*>& coefficients, 
                       const Mesh& mesh)
 {
   // Check that we get the correct number of coefficients
@@ -493,11 +493,11 @@ std::string Assembler::progressMessage(uint rank, std::string integral_type)
 }
 //-----------------------------------------------------------------------------
 void Assembler::assemble_system(GenericMatrix& A, const Form& A_form, 
-                                const std::vector<Function*>& A_coefficients, 
+                                const std::vector<const Function*>& A_coefficients, 
                                 GenericVector& b, const Form& b_form, 
-                                const std::vector<Function*>& b_coefficients, 
+                                const std::vector<const Function*>& b_coefficients, 
                                 const GenericVector* x0,
-                                std::vector<DirichletBC*> bcs, 
+                                std::vector<const DirichletBC*> bcs, 
                                 const MeshFunction<uint>* cell_domains,
                                 const MeshFunction<uint>* exterior_facet_domains,
                                 const MeshFunction<uint>* interior_facet_domains,

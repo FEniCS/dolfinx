@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-01-17
-// Last changed: 2008-06-10
+// Last changed: 2008-10-26
 
 #include <dolfin/common/types.h>
 #include <dolfin/function/FunctionSpace.h>
@@ -13,10 +13,10 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-UFC::UFC(const ufc::form& form, std::vector<FunctionSpace*>& V) : form(form)
+UFC::UFC(const ufc::form& form, const std::vector<const FunctionSpace*>& V) : form(form)
 {
   // FIXME: This is a temporay fix during the new Function transition
-  Mesh& mesh = V[0]->mesh();
+  const Mesh& mesh = V[0]->mesh();
   
   // Create finite elements
   finite_elements = new FiniteElement*[form.rank()];
