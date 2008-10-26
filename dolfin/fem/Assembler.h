@@ -37,20 +37,20 @@ namespace dolfin
   public:
 
     /// Assemble tensor from given variational form
-    static void assemble(GenericTensor& A, Form& form, bool reset_tensor=true);
+    static void assemble(GenericTensor& A, const Form& form, bool reset_tensor=true);
 
     /// Assemble system (A, b) and apply Dirichlet boundary condition from 
     /// given variational forms
-    static void assemble(GenericMatrix& A, Form& a, GenericVector& b, Form& L, 
-                         DirichletBC& bc, bool reset_tensor=true);
+    static void assemble(GenericMatrix& A, const Form& a, GenericVector& b, const Form& L,
+                         const DirichletBC& bc, bool reset_tensor=true);
 
     /// Assemble system (A, b) and apply Dirichlet boundary conditions from 
     /// given variational forms
-    static void assemble(GenericMatrix& A, Form& a, GenericVector& b, Form& L, 
+    static void assemble(GenericMatrix& A, const Form& a, GenericVector& b, const Form& L, 
                          std::vector<const DirichletBC*>& bcs, bool reset_tensor=true);
 
     /// Assemble tensor from given variational form over a sub domain
-    static void assemble(GenericTensor& A, Form& form, const SubDomain& sub_domain,
+    static void assemble(GenericTensor& A, const Form& form, const SubDomain& sub_domain,
                          bool reset_tensor=true);
 
     /// Assemble tensor from given variational form over a sub domain
@@ -58,20 +58,20 @@ namespace dolfin
     //              const MeshFunction<uint>& domains, uint domain, bool reset_tensor = true);
 
     /// Assemble tensor from given variational form over sub domains
-    static void assemble(GenericTensor& A, Form& form,
+    static void assemble(GenericTensor& A, const Form& form,
                          const MeshFunction<uint>& cell_domains,
                          const MeshFunction<uint>& exterior_facet_domains,
                          const MeshFunction<uint>& interior_facet_domains,
                          bool reset_tensor=true);
     
     /// Assemble scalar from given variational form
-    static double assemble(Form& form, bool reset_tensor=true);
+    static double assemble(const Form& form, bool reset_tensor=true);
     
     /// Assemble scalar from given variational form over a sub domain
-    static double assemble(Form& form, const SubDomain& sub_domain, bool reset_tensor);
+    static double assemble(const Form& form, const SubDomain& sub_domain, bool reset_tensor);
     
     /// Assemble scalar from given variational form over sub domains
-    static double assemble(Form& form,
+    static double assemble(const Form& form,
                            const MeshFunction<uint>& cell_domains,
                            const MeshFunction<uint>& exterior_facet_domains,
                            const MeshFunction<uint>& interior_facet_domains,

@@ -86,17 +86,6 @@ namespace dolfin
     inline Cell* operator->() { return static_cast<Cell*>(MeshEntityIterator::operator->()); }
   };    
 
-  class ConstCellIterator : public MeshEntityIterator
-  {
-  public:
-    
-    ConstCellIterator(const Mesh& mesh) : MeshEntityIterator(mesh, mesh.topology().dim()) {}
-    ConstCellIterator(const MeshEntity& entity) : MeshEntityIterator(entity, entity.mesh().topology().dim()) {}
-
-    inline const Cell& operator*() { return *operator->(); }
-    inline const Cell* operator->() { return static_cast<Cell*>(MeshEntityIterator::operator->()); }
-  };    
-
 }
 
 #endif

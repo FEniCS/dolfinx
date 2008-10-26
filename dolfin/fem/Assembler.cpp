@@ -39,27 +39,27 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void Assembler::assemble(GenericTensor& A, Form& form, bool reset_tensor)
+void Assembler::assemble(GenericTensor& A, const Form& form, bool reset_tensor)
 {
   assemble(A, form, form.coefficients(), 0, 0, 0, reset_tensor);
 }
 //-----------------------------------------------------------------------------
-void Assembler::assemble(GenericMatrix& A, Form& a, GenericVector& b, Form& L, 
-                         DirichletBC& bc, bool reset_tensor)
+void Assembler::assemble(GenericMatrix& A, const Form& a, GenericVector& b, const Form& L, 
+                         const DirichletBC& bc, bool reset_tensor)
 {
   std::vector<const DirichletBC*> bcs;
   bcs.push_back(&bc);
   assemble(A, a, b, L, bcs, reset_tensor); 
 }
 //-----------------------------------------------------------------------------
-void Assembler::assemble(GenericMatrix& A, Form& a, GenericVector& b, Form& L, 
+void Assembler::assemble(GenericMatrix& A, const Form& a, GenericVector& b, const Form& L, 
                          std::vector<const DirichletBC*>& bcs, bool reset_tensor)
 {
   assemble_system(A, a, a.coefficients(), b, L, L.coefficients(), 
                   0, bcs, 0, 0 , 0, reset_tensor); 
 }
 //-----------------------------------------------------------------------------
-void Assembler::assemble(GenericTensor& A, Form& form, const SubDomain& sub_domain, bool reset_tensor)
+void Assembler::assemble(GenericTensor& A, const Form& form, const SubDomain& sub_domain, bool reset_tensor)
 {
   // Extract mesh
   const Mesh& mesh = form.mesh();
@@ -94,7 +94,7 @@ void Assembler::assemble(GenericTensor& A, Form& form, const SubDomain& sub_doma
     delete facet_domains;
 }
 //-----------------------------------------------------------------------------
-void Assembler::assemble(GenericTensor& A, Form& form,
+void Assembler::assemble(GenericTensor& A, const Form& form,
                          const MeshFunction<uint>& cell_domains,
                          const MeshFunction<uint>& exterior_facet_domains,
                          const MeshFunction<uint>& interior_facet_domains,
@@ -104,22 +104,22 @@ void Assembler::assemble(GenericTensor& A, Form& form,
            &exterior_facet_domains, &interior_facet_domains, reset_tensor);
 }
 //-----------------------------------------------------------------------------
-double Assembler::assemble(Form& form, bool reset_tensor)
+double Assembler::assemble(const Form& form, bool reset_tensor)
 {
   Scalar value;
   assemble(value, form, reset_tensor);
   return value;
 }
 //-----------------------------------------------------------------------------
-double Assembler::assemble(Form& form, const SubDomain& sub_domain,
-                                 bool reset_tensor)
+double Assembler::assemble(const Form& form, const SubDomain& sub_domain,
+                           bool reset_tensor)
 {
   Scalar value;
   assemble(value, form, sub_domain, reset_tensor);
   return value;
 }
 //-----------------------------------------------------------------------------
-double Assembler::assemble(Form& form, const MeshFunction<uint>& cell_domains,
+double Assembler::assemble(const Form& form, const MeshFunction<uint>& cell_domains,
                            const MeshFunction<uint>& exterior_facet_domains,
                            const MeshFunction<uint>& interior_facet_domains,
                            bool reset_tensor)
@@ -1165,4 +1165,3 @@ void Assembler::assemble_system(GenericMatrix& A, const Form& A_form,
 */
 }
 //-----------------------------------------------------------------------------
-
