@@ -14,9 +14,9 @@
 #include <dolfin/common/NoDeleter.h>
 
 // Forward declaration
-namespace ufc 
+namespace ufc
 {
-  class form; 
+  class form;
 }
 
 namespace dolfin
@@ -42,7 +42,7 @@ namespace dolfin
     /// Return rank of form (bilinear form = 2, linear form = 1, etc)
     uint rank() const;
 
-    /// Return the mesh (const version)
+    /// Return mesh
     const Mesh& mesh() const;
 
     /// Return function space for given argument

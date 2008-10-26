@@ -33,47 +33,25 @@ dolfin::uint Form::rank() const
 //-----------------------------------------------------------------------------
 const Mesh& Form::mesh() const
 {
-  const Mesh* _mesh = 0;
-
-  // Check function spaces
+  // Extract all meshes
+  std::vector<const Mesh*> meshes;
   for (uint i = 0; i < _function_spaces.size(); i++)
-  {
-    const Mesh* m = &_function_spaces[i]->mesh();
-
-    // Pick mesh
-    if (!_mesh)
-    {
-      _mesh = m;
-      continue;
-    }
-
-    // Check that meshes match
-    if (_mesh != m)
-      error("Unable to extract mesh from form, nonmatching meshes for function spaces.");
-  }
-
-  // Check coefficients
+    meshes.push_back(&_function_spaces[i]->mesh());
   for (uint i = 0; i < _coefficients.size(); i++)
-  {
-    const Mesh* m = &_coefficients[i]->function_space().mesh();
+    meshes.push_back(&_coefficients[i]->function_space().mesh());
 
-    // Pick mesh
-    if (!_mesh)
-    {
-      _mesh = m;
-      continue;
-    }
+  // Check that we got at least one mesh
+  if (meshes.size() == 0)
+    error("Unable to extract mesh from form (no mesh found).");
 
-    // Check that meshes match
-    if (_mesh != m)
-      error("Unable to extract mesh from form, nonmatching meshes for function spaces.");
-  }
+  // Check that all meshes are the same
+  for (uint i = 1; i < meshes.size(); i++)
+    if (meshes[i] != meshes[i - 1])
+      error("Unable to extract mesh from form (nonmatching meshes for function spaces).");
 
-  // Check that we got a mesh
-  if (!_mesh)
-    error("Unable to extract mesh from form.");
-
-  return *_mesh;
+  // Return first mesh
+  dolfin_assert(meshes[0]);
+  return *meshes[0];
 }
 //-----------------------------------------------------------------------------
 const FunctionSpace& Form::function_space(uint i) const
