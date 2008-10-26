@@ -4,7 +4,6 @@
 // First added:  2006-08-21
 // Last changed: 2006-10-26
 
-#include <dolfin/fem/assemble.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/la/GenericMatrix.h>
 #include <dolfin/la/GenericVector.h>

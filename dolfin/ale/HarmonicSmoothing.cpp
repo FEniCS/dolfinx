@@ -9,7 +9,6 @@
 #include <dolfin/la/Vector.h>
 #include <dolfin/la/solve.h>
 #include <dolfin/mesh/MeshData.h>
-#include <dolfin/fem/assemble.h>
 #include "Poisson1D.h"
 #include "Poisson2D.h"
 #include "Poisson3D.h"
