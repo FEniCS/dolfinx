@@ -194,42 +194,42 @@ void File::operator<<(GenericMatrix& A)
   *file << A;
 }
 //-----------------------------------------------------------------------------
-void File::operator<<(Mesh& mesh)
+void File::operator<<(const Mesh& mesh)
 {
   file->write();
   
   *file << mesh;
 }
 //-----------------------------------------------------------------------------
-void File::operator<<(MeshFunction<int>& meshfunction)
+void File::operator<<(const MeshFunction<int>& meshfunction)
 {
   file->write();
   
   *file << meshfunction;
 }
 //-----------------------------------------------------------------------------
-void File::operator<<(MeshFunction<unsigned int>& meshfunction)
+void File::operator<<(const MeshFunction<unsigned int>& meshfunction)
 {
   file->write();
   
   *file << meshfunction;
 }
 //-----------------------------------------------------------------------------
-void File::operator<<(MeshFunction<double>& meshfunction)
+void File::operator<<(const MeshFunction<double>& meshfunction)
 {
   file->write();
   
   *file << meshfunction;
 }
 //-----------------------------------------------------------------------------
-void File::operator<<(MeshFunction<bool>& meshfunction)
+void File::operator<<(const MeshFunction<bool>& meshfunction)
 {
   file->write();
   
   *file << meshfunction;
 }
 //-----------------------------------------------------------------------------
-void File::operator<<(Function& u)
+void File::operator<<(const Function& u)
 {
   file->write();
   

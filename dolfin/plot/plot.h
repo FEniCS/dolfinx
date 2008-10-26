@@ -24,19 +24,19 @@ namespace dolfin
   /// and "displacement".
   
   /// Plot function
-  void plot(Function& f, std::string mode = "");
+  void plot(const Function& f, std::string mode = "");
 
   /// Plot mesh
-  void plot(Mesh& mesh, std::string mode = "");
+  void plot(const Mesh& mesh, std::string mode = "");
 
   /// Plot mesh function
-  void plot(MeshFunction<uint>& f, std::string mode = "");
+  void plot(const MeshFunction<uint>& f, std::string mode = "");
 
   /// Plot mesh function
-  void plot(MeshFunction<double>& f, std::string mode = "");
+  void plot(const MeshFunction<double>& f, std::string mode = "");
 
   /// Plot mesh function
-  void plot(MeshFunction<bool>& f, std::string mode = "");
+  void plot(const MeshFunction<bool>& f, std::string mode = "");
 
 }
 

@@ -31,7 +31,7 @@ VTKFile::~VTKFile()
   // Do nothing
 }
 //----------------------------------------------------------------------------
-void VTKFile::operator<<(Mesh& mesh)
+void VTKFile::operator<<(const Mesh& mesh)
 {
   // Update vtu file name and clear file
   vtuNameUpdate(counter);
@@ -70,7 +70,7 @@ void VTKFile::operator<<(const MeshFunction<double>& meshfunction)
   MeshFunctionWrite(meshfunction);
 }
 //----------------------------------------------------------------------------
-void VTKFile::operator<<(Function& u)
+void VTKFile::operator<<(const Function& u)
 {
   // Update vtu file name and clear file
   vtuNameUpdate(counter);
@@ -158,7 +158,7 @@ void VTKFile::MeshWrite(const Mesh& mesh) const
   fclose(fp);
 }
 //----------------------------------------------------------------------------
-void VTKFile::ResultsWrite(Function& u) const
+void VTKFile::ResultsWrite(const Function& u) const
 {
   // Type of data (point or cell). Point by default.
   std::string data_type = "point";

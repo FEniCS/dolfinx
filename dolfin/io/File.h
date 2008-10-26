@@ -94,16 +94,16 @@ namespace dolfin
     void operator<< (GenericMatrix& A);
 
     /// Write mesh to file
-    void operator<< (Mesh& mesh);
+    void operator<< (const Mesh& mesh);
 
     /// Write mesh function to file
-    void operator<< (MeshFunction<int>& meshfunction);
-    void operator<< (MeshFunction<unsigned int>& meshfunction);
-    void operator<< (MeshFunction<double>& meshfunction);
-    void operator<< (MeshFunction<bool>& meshfunction);
+    void operator<< (const MeshFunction<int>& meshfunction);
+    void operator<< (const MeshFunction<unsigned int>& meshfunction);
+    void operator<< (const MeshFunction<double>& meshfunction);
+    void operator<< (const MeshFunction<bool>& meshfunction);
 
     /// Write function to file
-    void operator<< (Function& u);
+    void operator<< (const Function& u);
 
     /// Write ODE sample to file
     void operator<< (Sample& sample);

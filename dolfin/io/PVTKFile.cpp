@@ -32,7 +32,7 @@ PVTKFile::~PVTKFile()
   // Do nothing
 }
 //----------------------------------------------------------------------------
-void PVTKFile::operator<<(Mesh& mesh)
+void PVTKFile::operator<<(const Mesh& mesh)
 {
   // Update vtu file name and clear file
   vtuNameUpdate(counter);
@@ -66,22 +66,22 @@ void PVTKFile::operator<<(Mesh& mesh)
           mesh.name().c_str(), mesh.label().c_str(), filename.c_str());
 }
 //----------------------------------------------------------------------------
-void PVTKFile::operator<<(MeshFunction<int>& meshfunction)
+void PVTKFile::operator<<(const MeshFunction<int>& meshfunction)
 {
   MeshFunctionWrite(meshfunction);
 }
 //----------------------------------------------------------------------------
-void PVTKFile::operator<<(MeshFunction<unsigned int>& meshfunction)
+void PVTKFile::operator<<(const MeshFunction<unsigned int>& meshfunction)
 {
   MeshFunctionWrite(meshfunction);
 }
 //----------------------------------------------------------------------------
-void PVTKFile::operator<<(MeshFunction<double>& meshfunction)
+void PVTKFile::operator<<(const MeshFunction<double>& meshfunction)
 {
   MeshFunctionWrite(meshfunction);
 }
 //----------------------------------------------------------------------------
-void PVTKFile::operator<<(Function& u)
+void PVTKFile::operator<<(const Function& u)
 {
   // Update vtu file name and clear file
   vtuNameUpdate(counter);
@@ -182,7 +182,7 @@ void PVTKFile::MeshWrite(const Mesh& mesh) const
   fclose(fp);
 }
 //----------------------------------------------------------------------------
-void PVTKFile::ResultsWrite(Function& u) const
+void PVTKFile::ResultsWrite(const Function& u) const
 {
   // Open file
   FILE *fp = fopen(vtu_filename.c_str(), "a");
@@ -313,11 +313,10 @@ void PVTKFile::pvtuFileWrite()
   pvtuFile.close();
     
 }//----------------------------------------------------------------------------
-void PVTKFile::pvtuFileWrite_func(Function& u)
+void PVTKFile::pvtuFileWrite_func(const Function& u)
 {
   std::fstream pvtuFile;
 
-  
   // Open pvtu file
   pvtuFile.open(pvtu_filename.c_str(), std::ios::out|std::ios::trunc);
   // Write header

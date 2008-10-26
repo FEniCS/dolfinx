@@ -109,32 +109,32 @@ void GenericFile::operator<<(GenericMatrix& A)
   write_not_impl("Matrix");
 }
 //-----------------------------------------------------------------------------
-void GenericFile::operator<<(Mesh& mesh)
+void GenericFile::operator<<(const Mesh& mesh)
 {
   write_not_impl("Mesh");
 }
 //-----------------------------------------------------------------------------
-void GenericFile::operator<<(MeshFunction<int>& meshfunction)
+void GenericFile::operator<<(const MeshFunction<int>& meshfunction)
 {
   write_not_impl("MeshFunction<int>");
 }
 //-----------------------------------------------------------------------------
-void GenericFile::operator<<(MeshFunction<unsigned int>& meshfunction)
+void GenericFile::operator<<(const MeshFunction<unsigned int>& meshfunction)
 {
   write_not_impl("MeshFunction<unsigned int>");
 }
 //-----------------------------------------------------------------------------
-void GenericFile::operator<<(MeshFunction<double>& meshfunction)
+void GenericFile::operator<<(const MeshFunction<double>& meshfunction)
 {
   write_not_impl("MeshFunction<double>");
 }
 //-----------------------------------------------------------------------------
-void GenericFile::operator<<(MeshFunction<bool>& meshfunction)
+void GenericFile::operator<<(const MeshFunction<bool>& meshfunction)
 {
   write_not_impl("MeshFunction<bool>");
 }
 //-----------------------------------------------------------------------------
-void GenericFile::operator<<(Function& u)
+void GenericFile::operator<<(const Function& u)
 {
   write_not_impl("Function");
 }

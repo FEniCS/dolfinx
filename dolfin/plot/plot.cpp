@@ -120,7 +120,7 @@ namespace dolfin
   }
 
   // Plotting of mesh functions
-  template<class T> void plot(MeshFunction<T>& f, std::string type, std::string mode)
+  template<class T> void plot(const MeshFunction<T>& f, std::string type, std::string mode)
   {
     // Save data to temporary file
     std::string data_name = secure_tmp_filename("plot.xml");
@@ -136,27 +136,27 @@ namespace dolfin
 }
 
 //-----------------------------------------------------------------------------
-void dolfin::plot(Function& f, std::string mode)
+void dolfin::plot(const Function& f, std::string mode)
 {
   plot(f, "Function", mode);
 }
 //-----------------------------------------------------------------------------
-void dolfin::plot(Mesh& mesh, std::string mode)
+void dolfin::plot(const Mesh& mesh, std::string mode)
 {
   plot(mesh, "Mesh", mode);
 }
 //-----------------------------------------------------------------------------
-void dolfin::plot(MeshFunction<uint>& f, std::string mode)
+void dolfin::plot(const MeshFunction<uint>& f, std::string mode)
 {
   plot(f, "uint", mode);
 }
 //-----------------------------------------------------------------------------
-void dolfin::plot(MeshFunction<double>& f, std::string mode)
+void dolfin::plot(const MeshFunction<double>& f, std::string mode)
 {
   plot(f, "real", mode);
 }
 //-----------------------------------------------------------------------------
-void dolfin::plot(MeshFunction<bool>& f, std::string mode)
+void dolfin::plot(const MeshFunction<bool>& f, std::string mode)
 {
   plot(f, "bool", mode);
 }
