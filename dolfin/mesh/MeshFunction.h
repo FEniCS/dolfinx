@@ -35,7 +35,7 @@ namespace dolfin
     MeshFunction() : _values(0), _mesh(0), _dim(0), _size(0) {}
 
     /// Create empty mesh function on given mesh
-    MeshFunction(const Mesh& mesh) : _values(0), _mesh(&mesh), _dim(0), _size(0) {}
+    MeshFunction(Mesh& mesh) : _values(0), _mesh(&mesh), _dim(0), _size(0) {}
 
     /// Create mesh function on given mesh of given dimension
     MeshFunction(Mesh& mesh, uint dim) : _values(0), _mesh(&mesh), _dim(0), _size(0)

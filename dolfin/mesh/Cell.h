@@ -68,7 +68,7 @@ namespace dolfin
     { return _mesh.type().intersects(*this, p0, p1); }
 
     /// Check for intersection with cell
-    inline bool intersects(Cell& cell)
+    inline bool intersects(const Cell& cell)
     { return _mesh.type().intersects(*this, cell); }
 
   };
@@ -82,9 +82,19 @@ namespace dolfin
     CellIterator(const Mesh& mesh) : MeshEntityIterator(mesh, mesh.topology().dim()) {}
     CellIterator(const MeshEntity& entity) : MeshEntityIterator(entity, entity.mesh().topology().dim()) {}
 
+    inline Cell& operator*() { return *operator->(); }
+    inline Cell* operator->() { return static_cast<Cell*>(MeshEntityIterator::operator->()); }
+  };    
+
+  class ConstCellIterator : public MeshEntityIterator
+  {
+  public:
+    
+    ConstCellIterator(const Mesh& mesh) : MeshEntityIterator(mesh, mesh.topology().dim()) {}
+    ConstCellIterator(const MeshEntity& entity) : MeshEntityIterator(entity, entity.mesh().topology().dim()) {}
+
     inline const Cell& operator*() { return *operator->(); }
     inline const Cell* operator->() { return static_cast<Cell*>(MeshEntityIterator::operator->()); }
-
   };    
 
 }

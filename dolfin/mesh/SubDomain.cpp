@@ -41,7 +41,7 @@ void SubDomain::mark(MeshFunction<uint>& sub_domains, uint sub_domain) const
   const uint dim = sub_domains.dim();
 
   // Compute facet - cell connectivity if necessary
-  Mesh& mesh = sub_domains.mesh();
+  const Mesh& mesh = sub_domains.mesh();
   const uint D = mesh.topology().dim();
   if (dim == D - 1)
   {
@@ -65,7 +65,7 @@ void SubDomain::mark(MeshFunction<uint>& sub_domains, uint sub_domain) const
     {
       for (VertexIterator vertex(*entity); !vertex.end(); ++vertex)
       {
-        simple_array<double> x(mesh.geometry().dim(), vertex->x());
+        simple_array<const double> x(mesh.geometry().dim(), vertex->x());
         if (!inside(x, on_boundary))
         {
           all_vertices_inside = false;
@@ -76,11 +76,9 @@ void SubDomain::mark(MeshFunction<uint>& sub_domains, uint sub_domain) const
     // Dimension of facet == 0, so just check the vertex itself
     else
     {
-      simple_array<double> x(mesh.geometry().dim(), mesh.geometry().x(entity->index()));
+      simple_array<const double> x(mesh.geometry().dim(), mesh.geometry().x(entity->index()));
       if (!inside(x, on_boundary))
-      {
         all_vertices_inside = false;
-      }
     }
 
     // Mark entity with all vertices inside

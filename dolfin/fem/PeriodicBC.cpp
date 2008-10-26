@@ -129,7 +129,7 @@ void PeriodicBC::apply(GenericMatrix& A, GenericVector& b, const DofMap& dof_map
       // Get dof and coordinate of dof
       const uint local_dof = data.facet_dofs[i];
       const int global_dof = static_cast<int>(data.offset + data.cell_dofs[local_dof]);
-      const simple_array<double> x(mesh.geometry().dim(), data.coordinates[local_dof]);
+      const simple_array<const double> x(mesh.geometry().dim(), data.coordinates[local_dof]);
 
       // Map coordinate from H to G
       for (uint j = 0; j < mesh.geometry().dim(); j++)

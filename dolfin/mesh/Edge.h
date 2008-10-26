@@ -46,8 +46,8 @@ namespace dolfin
   {
   public:
     
-    EdgeIterator(Mesh& mesh) : MeshEntityIterator(mesh, 1) {}
-    EdgeIterator(MeshEntity& entity) : MeshEntityIterator(entity, 1) {}
+    EdgeIterator(const Mesh& mesh) : MeshEntityIterator(mesh, 1) {}
+    EdgeIterator(const MeshEntity& entity) : MeshEntityIterator(entity, 1) {}
 
     inline Edge& operator*() { return *operator->(); }
     inline Edge* operator->() { return static_cast<Edge*>(MeshEntityIterator::operator->()); }

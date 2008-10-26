@@ -30,7 +30,7 @@ namespace dolfin
   private: 
 
     /// Bisect edge of simplex cell
-    static void bisectEdgeOfSimplexCell(Cell& cell, Edge& edge, 
+    static void bisectEdgeOfSimplexCell(const Cell& cell, Edge& edge, 
                                         uint& new_vertex,  
                                         MeshEditor& editor, 
                                         uint& current_cell); 

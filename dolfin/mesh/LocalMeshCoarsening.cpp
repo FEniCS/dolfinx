@@ -93,13 +93,11 @@ void LocalMeshCoarsening::coarsenMeshByEdgeCollapse(Mesh& mesh,
     //cout << "presize: " << presize << endl;
 
     for(std::list<int>::iterator iter = cells_to_coarsen.begin();
-	iter != cells_to_coarsen.end(); iter++)
+          iter != cells_to_coarsen.end(); iter++)
     {
       // Map cells to new mesh
       if(*iter >= 0)
-      {
-	*iter = old2new_cell[*iter];
-      }
+        *iter = old2new_cell[*iter];
     }
 
     old2new_cell.resize(mesh.numCells());
@@ -107,33 +105,28 @@ void LocalMeshCoarsening::coarsenMeshByEdgeCollapse(Mesh& mesh,
 
     // Coarsen cells in list
     for(std::list<int>::iterator iter = cells_to_coarsen.begin();
-	iter != cells_to_coarsen.end(); iter++)
+          iter != cells_to_coarsen.end(); iter++)
     {
       bool mesh_ok = false;
       int cid = *iter;
-
       if(cid != -1)
       {
-	mesh_ok = coarsenCell(mesh, coarse_mesh, cid,
-			      old2new_vertex, old2new_cell,
-			      coarsen_boundary);
-	if(!mesh_ok)
-	{
-	  warning("Mesh not ok");
-	}
-	else
-	{
-	  mesh = coarse_mesh;
-	  cells_to_coarsen.erase(iter);
-	  break;
-	}
+        mesh_ok = coarsenCell(mesh, coarse_mesh, cid,
+			                        old2new_vertex, old2new_cell,
+			                        coarsen_boundary);
+        if(!mesh_ok)
+          warning("Mesh not ok");
+        else
+        {
+          mesh = coarse_mesh;
+          cells_to_coarsen.erase(iter);
+          break;
+        }
       }
     }
 
     if(presize == cells_to_coarsen.size())
-    {
       break;
-    }
   }
 }
 //-----------------------------------------------------------------------------
@@ -150,7 +143,7 @@ void LocalMeshCoarsening::collapseEdge(Mesh& mesh, Edge& edge,
 
   uint vert_slave = vertex_to_remove.index();
   uint vert_master = 0; 
-  uint* edge_vertex = edge.entities(0);
+  const uint* edge_vertex = edge.entities(0);
   //cout << "edge vertices: " << edge_vertex[0] << " " << edge_vertex[1] << endl;
   //cout << "vertex: " << vertex_to_remove.index() << endl;
 
@@ -169,9 +162,9 @@ void LocalMeshCoarsening::collapseEdge(Mesh& mesh, Edge& edge,
       for (VertexIterator v(*c); !v.end(); ++v)
       {  
         if ( v->index() == vert_slave )
-	  cell_vertices[cv_idx++] = old2new_vertex[vert_master]; 
+          cell_vertices[cv_idx++] = old2new_vertex[vert_master]; 
         else
-	  cell_vertices[cv_idx++] = old2new_vertex[v->index()];
+          cell_vertices[cv_idx++] = old2new_vertex[v->index()];
       }
       //cout << "adding new cell" << endl;
       editor.addCell(current_cell++, cell_vertices);
@@ -221,7 +214,7 @@ bool LocalMeshCoarsening::coarsenCell(Mesh& mesh, Mesh& coarse_mesh,
   }
   // Initialise data for finding which vertex to remove   
   bool collapse_edge = false;
-  uint* edge_vertex;
+  const uint* edge_vertex;
   uint shortest_edge_index = 0;
   double lmin, l;
   uint num_cells_to_remove = 0;
@@ -229,14 +222,15 @@ bool LocalMeshCoarsening::coarsenCell(Mesh& mesh, Mesh& coarse_mesh,
   // Get cell type
   const CellType& cell_type = mesh.type();
 
-  Cell c(mesh, cellid);
+  const Cell c(mesh, cellid);
 
   MeshEditor editor;
   editor.open(coarse_mesh, cell_type.cellType(),
-	      mesh.topology().dim(), mesh.geometry().dim());
+              mesh.topology().dim(), mesh.geometry().dim());
 
   MeshFunction<bool> cell_to_remove(mesh);  
   cell_to_remove.init(mesh.topology().dim());
+
   for (CellIterator ci(mesh); !ci.end(); ++ci)
     cell_to_remove.set(ci->index(), false);
 
@@ -251,16 +245,14 @@ bool LocalMeshCoarsening::coarsenCell(Mesh& mesh, Mesh& coarse_mesh,
   for (EdgeIterator e(c); !e.end(); ++e)
   {
     edge_vertex = e->entities(0);
-    if ( (vertex_forbidden.get(edge_vertex[0]) == false) || 
-	 (vertex_forbidden.get(edge_vertex[1]) == false) )
+    if ( !vertex_forbidden.get(edge_vertex[0]) || !vertex_forbidden.get(edge_vertex[1]) )
     {
-
       l = e->length();
       if ( lmin > l )
       {
-	lmin = l;
-	shortest_edge_index = e->index(); 
-	collapse_edge = true;
+        lmin = l;
+        shortest_edge_index = e->index(); 
+        collapse_edge = true;
       }
     }
   }
@@ -286,37 +278,21 @@ bool LocalMeshCoarsening::coarsenCell(Mesh& mesh, Mesh& coarse_mesh,
       return false;
     }
     if(vertex_forbidden.get(edge_vertex[0]) == true)
-    {
       vert2remove_idx = edge_vertex[1];
-    }
     else if(vertex_forbidden.get(edge_vertex[1]) == true)
-    {
       vert2remove_idx = edge_vertex[0];
-    }
-    else if(vertex_boundary.get(edge_vertex[1]) == true &&
-	    vertex_boundary.get(edge_vertex[0]) == false)
-    {
+    else if(vertex_boundary.get(edge_vertex[1]) == true && vertex_boundary.get(edge_vertex[0]) == false)
       vert2remove_idx = edge_vertex[0];
-    }
-    else if(vertex_boundary.get(edge_vertex[0]) == true &&
-	    vertex_boundary.get(edge_vertex[1]) == false)
-    {
+    else if(vertex_boundary.get(edge_vertex[0]) == true && vertex_boundary.get(edge_vertex[1]) == false)
       vert2remove_idx = edge_vertex[1];
-    }
     else if ( edge_vertex[0] > edge_vertex[1] ) 
-    {
       vert2remove_idx = edge_vertex[0];
-    }
     else
-    {
-      vert2remove_idx = edge_vertex[1];
-    }       
-    
+      vert2remove_idx = edge_vertex[1];    
   }
   else
   {
     // No vertices to remove, cannot coarsen
-
     cout << "all vertices forbidden" << endl;
     editor.close();
     return false;
@@ -360,13 +336,10 @@ bool LocalMeshCoarsening::coarsenCell(Mesh& mesh, Mesh& coarse_mesh,
   for(VertexIterator v(mesh); !v.end(); ++v)
   {
     if(vertex_to_remove.index() == v->index()) 
-    {
       old2new_vertex[v->index()] = -1;
-    }
     else
     {
       //cout << "adding old vertex at: " << v->point() << endl;
-
       old2new_vertex[v->index()] = vertex;
       editor.addVertex(vertex++, v->point());
     }
@@ -403,7 +376,6 @@ bool LocalMeshCoarsening::coarsenCell(Mesh& mesh, Mesh& coarse_mesh,
 
   bool mesh_ok = true;
 
-
   Cell removed_cell(mesh, cellid);
 
   // Check mesh quality (volume)
@@ -418,10 +390,10 @@ bool LocalMeshCoarsening::coarsenCell(Mesh& mesh, Mesh& coarse_mesh,
       double qm = cn.volume() / cn.diameter();
       if(qm < vol_tol)
       {
-	warning("Cell quality too low");
-	cout << "qm: " << qm << endl;
-	mesh_ok = false;
-	return mesh_ok;
+        warning("Cell quality too low");
+        cout << "qm: " << qm << endl;
+        mesh_ok = false;
+        return mesh_ok;
       }
     }
   }
@@ -438,15 +410,13 @@ bool LocalMeshCoarsening::coarsenCell(Mesh& mesh, Mesh& coarse_mesh,
 
       if(c->orientation() != cn.orientation())
       {
-	cout << "cell orientation inverted" << endl;
-	mesh_ok = false;
-	return mesh_ok;
+        cout << "cell orientation inverted" << endl;
+        mesh_ok = false;
+        return mesh_ok;
       }
     }
   }
-
   return mesh_ok;
-
 }
 //-----------------------------------------------------------------------------
 

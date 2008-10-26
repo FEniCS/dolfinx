@@ -577,7 +577,7 @@ void DirichletBC::computeBCPointwise(std::map<uint, double>& boundary_values,
     for (uint i = 0; i < data.dof_map->local_dimension(); ++i)
     {
       // Check if the coordinates are part of the sub domain
-      simple_array<double> x(data.ufc_mesh.geometric_dimension, data.coordinates[i]);
+      simple_array<const double> x(data.ufc_mesh.geometric_dimension, data.coordinates[i]);
       if ( !user_sub_domain->inside(x, false) )
         continue;
       

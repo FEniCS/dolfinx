@@ -46,7 +46,7 @@ void IntersectionDetector::intersection(const Point& p0, const Point& p1, Array<
   gts->intersection(p0, p1, cells);
 }
 //-----------------------------------------------------------------------------
-void IntersectionDetector::intersection(Cell& c, Array<uint>& cells)
+void IntersectionDetector::intersection(const Cell& c, Array<uint>& cells)
 {
   dolfin_assert(gts);
   gts->intersection(c, cells);

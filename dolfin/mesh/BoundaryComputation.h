@@ -30,7 +30,7 @@ namespace dolfin
   private:
 
     /// Reorder vertices so facet is right-oriented w.r.t. facet normal
-    static void reorder(Array<uint>& vertices, Facet& facet);
+    static void reorder(Array<uint>& vertices, const Facet& facet);
 
   };
 

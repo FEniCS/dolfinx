@@ -132,10 +132,10 @@ void BoundaryComputation::computeBoundary(const Mesh& mesh, BoundaryMesh& bounda
   editor.close();
 }
 //-----------------------------------------------------------------------------
-void BoundaryComputation::reorder(Array<uint>& vertices, Facet& facet)
+void BoundaryComputation::reorder(Array<uint>& vertices, const Facet& facet)
 {
   // Get mesh
-  Mesh& mesh = facet.mesh();
+  const Mesh& mesh = facet.mesh();
 
   // Get the vertex opposite to the facet (the one we remove)
   uint vertex = 0;

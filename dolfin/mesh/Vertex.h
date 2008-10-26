@@ -36,7 +36,10 @@ namespace dolfin
     inline Point point() const { return _mesh.geometry().point(_index); }
 
     /// Return array of vertex coordinates
-    inline const double* x() const { return _mesh.geometry().x(_index); }
+    //double* x() { return _mesh.geometry().x(_index); }
+
+    /// Return array of vertex coordinates (const version)
+    const double* x() const { return _mesh.geometry().x(_index); }
     
   };
 

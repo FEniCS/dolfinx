@@ -30,7 +30,7 @@ namespace dolfin
     ~BoundaryMesh();
 
     /// Initialize boundary mesh
-    void init(Mesh& mesh);
+    void init(const Mesh& mesh);
 
   };
 

@@ -17,6 +17,7 @@ typedef std::map<std::string, Array<dolfin::uint>*>::iterator a_iterator;
 typedef std::map<std::string, Array<dolfin::uint>*>::const_iterator a_const_iterator;
 
 typedef std::map<std::string, std::map<dolfin::uint, dolfin::uint>*>::iterator m_iterator;
+typedef std::map<std::string, std::map<dolfin::uint, dolfin::uint>*>::const_iterator m_const_iterator;
 
 //-----------------------------------------------------------------------------
 MeshData::MeshData(Mesh& mesh) : mesh(mesh)
@@ -100,30 +101,30 @@ std::map<dolfin::uint, dolfin::uint>* MeshData::createMapping(std::string name)
   return m;
 }
 //-----------------------------------------------------------------------------
-MeshFunction<dolfin::uint>* MeshData::meshFunction(std::string name)
+MeshFunction<dolfin::uint>* MeshData::meshFunction(const std::string name) const
 {
   // Check if data exists
-  mf_iterator it = meshfunctions.find(name);
+  mf_const_iterator it = meshfunctions.find(name);
   if (it == meshfunctions.end())
     return 0;
   
   return it->second;
 }
 //-----------------------------------------------------------------------------
-Array<dolfin::uint>* MeshData::array(std::string name)
+Array<dolfin::uint>* MeshData::array(const std::string name) const
 {
   // Check if data exists
-  a_iterator it = arrays.find(name);
+  a_const_iterator it = arrays.find(name);
   if (it == arrays.end())
     return 0;
   
   return it->second;
 }
 //-----------------------------------------------------------------------------
-std::map<dolfin::uint, dolfin::uint>* MeshData::mapping(std::string name)
+std::map<dolfin::uint, dolfin::uint>* MeshData::mapping(const std::string name) const
 {
   // Check if data exists
-  m_iterator it = maps.find(name);
+  m_const_iterator it = maps.find(name);
   if (it == maps.end())
     return 0;
 

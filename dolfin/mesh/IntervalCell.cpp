@@ -71,12 +71,12 @@ void IntervalCell::orderEntities(Cell& cell) const
   // Sort i - j for i > j: 1 - 0
 
   // Get mesh topology
-  MeshTopology& topology = cell.mesh().topology();
+  MeshTopology& topology = const_cast<MeshTopology&>(cell.mesh().topology());
 
   // Sort local vertices in ascending order, connectivity 1 - 0
   if ( topology(1, 0).size() > 0 )
   {
-    uint* cell_vertices = cell.entities(0);
+    uint* cell_vertices = const_cast<uint*>(cell.entities(0));
     std::sort(cell_vertices, cell_vertices + 2);
   }
 }

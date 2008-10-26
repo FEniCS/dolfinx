@@ -31,11 +31,14 @@ namespace dolfin
     /// Return true for points inside the sub domain (used for subclassing through SWIG interface)
     virtual bool inside(const simple_array<double>& x, bool on_boundary) const { return inside(x.data, on_boundary); }
 
+    /// Return true for points inside the sub domain (used for subclassing through SWIG interface)
+    virtual bool inside(const simple_array<const double>& x, bool on_boundary) const { return inside(x.data, on_boundary); }
+
     /// Return true for points inside the sub domain
     virtual bool inside(const double* x, bool on_boundary) const;
     
     /// Map coordinate x in domain H to coordinate y in domain G (used for subclassing through SWIG interface)
-    virtual void map(const simple_array<double>& x, simple_array<double>& y) const { map(x.data, y.data); }
+    virtual void map(const simple_array<const double>& x, simple_array<double>& y) const { map(x.data, y.data); }
 
     /// Map coordinate x in domain H to coordinate y in domain G (used for periodic boundary conditions)
     virtual void map(const double* x, double* y) const;

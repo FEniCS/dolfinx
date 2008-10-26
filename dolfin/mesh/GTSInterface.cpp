@@ -24,7 +24,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-GTSInterface::GTSInterface(Mesh& mesh) : mesh(mesh), tree(0)
+GTSInterface::GTSInterface(const Mesh& mesh) : mesh(mesh), tree(0)
 {
   if (mesh.geometry().dim() > 3)
     error("Sorry, GTS interface not implemented for meshes of dimension %d.",
@@ -98,7 +98,7 @@ void GTSInterface::intersection(const Point& p0, const Point& p1, Array<uint>& c
   gts_object_destroy(GTS_OBJECT(probe));
 }
 //-----------------------------------------------------------------------------
-void GTSInterface::intersection(Cell& cell, Array<uint>& cells)
+void GTSInterface::intersection(const Cell& cell, Array<uint>& cells)
 {
   // Create probe for cell
   GtsBBox* probe = createBox(cell);
@@ -154,7 +154,7 @@ GtsBBox* GTSInterface::createBox(const Point& p0, const Point& p1)
   return box;
 }
 //-----------------------------------------------------------------------------
-GtsBBox* GTSInterface::createBox(Cell& cell)
+GtsBBox* GTSInterface::createBox(const Cell& cell)
 {
   // Pick first vertex
   VertexIterator v(cell);

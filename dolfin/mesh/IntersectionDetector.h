@@ -38,7 +38,7 @@ namespace dolfin
     void intersection(const Point& p1, const Point& p2, Array<uint>& cells);
 
     /// Compute cells overlapping cell
-    void intersection(Cell& cell, Array<uint>& cells);
+    void intersection(const Cell& cell, Array<uint>& cells);
 
     /// Compute overlap with curve defined by points
     void intersection(Array<Point>& points, Array<uint>& intersection);

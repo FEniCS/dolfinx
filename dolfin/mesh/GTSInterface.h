@@ -33,7 +33,7 @@ namespace dolfin
   public:
 
     /// Create GTS interface for mesh
-    GTSInterface(Mesh& mesh);
+    GTSInterface(const Mesh& mesh);
 
     /// Destructor
     ~GTSInterface();
@@ -45,7 +45,7 @@ namespace dolfin
     void intersection(const Point& p0, const Point& p1, Array<uint>& cells);
 
     /// Compute cells overlapping cell
-    void intersection(Cell& cell, Array<uint>& cells);
+    void intersection(const Cell& cell, Array<uint>& cells);
 
   private:
 
@@ -56,13 +56,13 @@ namespace dolfin
     GtsBBox* createBox(const Point& p0, const Point& p1);
 
     /// Create bounding box for cell
-    GtsBBox* createBox(Cell& cell);
+    GtsBBox* createBox(const Cell& cell);
 
     // Build tree (hierarchy) of bounding boxes
     void buildCellTree();
 
     // The mesh
-    Mesh& mesh;
+    const Mesh& mesh;
 
     // GTS tree
     GNode* tree;
