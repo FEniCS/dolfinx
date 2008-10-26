@@ -68,9 +68,6 @@ namespace dolfin
     // The solution vector
     Vector x;
 
-    // Assembler 
-    Assembler assembler;
-
     // Solver
     NewtonSolver newton_solver;
       

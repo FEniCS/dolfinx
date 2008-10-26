@@ -16,7 +16,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 NonlinearPDE::NonlinearPDE(Form& a, Form& L, Mesh& mesh, DirichletBC& bc)
-  : a(a), L(L), mesh(mesh), assembler(mesh)
+  : a(a), L(L), mesh(mesh)
 {
   message("Creating nonlinear PDE with %d boundary condition(s).", bcs.size());
 
@@ -31,7 +31,7 @@ NonlinearPDE::NonlinearPDE(Form& a, Form& L, Mesh& mesh, DirichletBC& bc)
 }
 //-----------------------------------------------------------------------------
 NonlinearPDE::NonlinearPDE(Form& a, Form& L, Mesh& mesh, 
-  Array<DirichletBC*>& bcs) : a(a), L(L), mesh(mesh), bcs(bcs), assembler(mesh)
+  Array<DirichletBC*>& bcs) : a(a), L(L), mesh(mesh), bcs(bcs)
 {
   message("Creating nonlinear PDE with %d boundary condition(s).", bcs.size());
 
@@ -55,7 +55,7 @@ void NonlinearPDE::update(const GenericVector& x)
 void NonlinearPDE::F(GenericVector& b, const GenericVector& x)
 {
   // Assemble 
-  assembler.assemble(b, L);
+  Assembler::assemble(b, L);
 
   // Apply boundary conditions
   for (uint i = 0; i < bcs.size(); i++)
@@ -65,7 +65,7 @@ void NonlinearPDE::F(GenericVector& b, const GenericVector& x)
 void NonlinearPDE::J(GenericMatrix& A, const GenericVector& x)
 {
   // Assemble 
-  assembler.assemble(A, a);
+  Assembler::assemble(A, a);
 
   // Apply boundary conditions
   for (uint i = 0; i < bcs.size(); i++)

@@ -65,9 +65,8 @@ void LinearPDE::solve(Function& u)
   //assembler.assemble(A, a, b, L, bcs);
 
   // Assemble linear system and apply boundary conditions
-  Assembler assembler(mesh);  
-  assembler.assemble(A, a);
-  assembler.assemble(b, L);
+  Assembler::assemble(A, a);
+  Assembler::assemble(b, L);
   for (uint i = 0; i < bcs.size(); i++)
     bcs[i]->apply(A, b, a);
 
