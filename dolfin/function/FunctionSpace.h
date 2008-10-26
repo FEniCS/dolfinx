@@ -30,7 +30,9 @@ namespace dolfin
   public:
 
     /// Create function space for given mesh, element and dofmap
-    FunctionSpace(const Mesh& mesh, const FiniteElement &element, const DofMap& dofmap);
+    FunctionSpace(const Mesh& mesh,
+                  const FiniteElement& element,
+                  const DofMap& dofmap);
 
     /// Create function space for given mesh, element and dofmap (shared data)
     FunctionSpace(std::tr1::shared_ptr<const Mesh> mesh,

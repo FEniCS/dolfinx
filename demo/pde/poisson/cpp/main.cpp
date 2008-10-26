@@ -64,9 +64,12 @@ int main()
   // Create mesh
   UnitSquare mesh(32, 32);
 
+  // Create function space
+  PoissonFunctionSpace V(mesh);
+
   // Create functions
   Source f;
-  Flux   g;
+  Flux g;
 
   // Create boundary condition
   //Function u0(mesh, 0.0);
@@ -74,13 +77,12 @@ int main()
   //DirichletBC bc(u0, mesh, boundary);
   
   // Define PDE
-  PoissonBilinearForm a;
-  PoissonLinearForm L(f, g);
+  PoissonBilinearForm a(V, V);
+  PoissonLinearForm L(V, f, g);
   //LinearPDE pde(a, L, mesh, bc, symmetric);
   LinearPDE pde(a, L, mesh, symmetric);
 
   // Solve PDE
-  FunctionSpace V(mesh, a.finite_element(1), a.dofMaps()[1]);
   Function u(V);
   pde.solve(u);
 

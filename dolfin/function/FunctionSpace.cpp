@@ -39,15 +39,6 @@ FunctionSpace::FunctionSpace(std::tr1::shared_ptr<const Mesh> mesh,
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-FunctionSpace::FunctionSpace(const FunctionSpace& V)
-  : _mesh(static_cast<Mesh*>(0)),
-    _element(static_cast<FiniteElement*>(0)),
-    _dofmap(static_cast<DofMap*>(0)),
-    scratch(), intersection_detector(0)
-{
-  *this = V;
-}
-//-----------------------------------------------------------------------------
 FunctionSpace::~FunctionSpace()
 {
   delete intersection_detector;
