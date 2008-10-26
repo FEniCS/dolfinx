@@ -115,7 +115,7 @@ void TetrahedronCell::orderEntities(Cell& cell) const
   // Sort i - j for i > j: 1 - 0, 2 - 0, 2 - 1, 3 - 0, 3 - 1, 3 - 2
 
   // Get mesh topology
-  MeshTopology& topology = cell.mesh().topology();
+  const MeshTopology& topology = cell.mesh().topology();
 
   // Sort local vertices on edges in ascending order, connectivity 1 - 0
   if ( topology(1, 0).size() > 0 )
@@ -123,12 +123,12 @@ void TetrahedronCell::orderEntities(Cell& cell) const
     dolfin_assert(topology(3, 1).size() > 0);
 
     // Get edges
-    uint* cell_edges = cell.entities(1);
+    const uint* cell_edges = cell.entities(1);
 
     // Sort vertices on each edge
     for (uint i = 0; i < 6; i++)
     {
-      uint* edge_vertices = topology(1, 0)(cell_edges[i]);
+      uint* edge_vertices = const_cast<uint*>(topology(1, 0)(cell_edges[i]));
       std::sort(edge_vertices, edge_vertices + 2);
     }
   }
@@ -139,12 +139,12 @@ void TetrahedronCell::orderEntities(Cell& cell) const
     dolfin_assert(topology(3, 2).size() > 0);
 
     // Get facets
-    uint* cell_facets = cell.entities(2);
+    const uint* cell_facets = cell.entities(2);
 
     // Sort vertices on each facet
     for (uint i = 0; i < 4; i++)
     {
-      uint* facet_vertices = topology(2, 0)(cell_facets[i]);
+      uint* facet_vertices = const_cast<uint*>(topology(2, 0)(cell_facets[i]));
       std::sort(facet_vertices, facet_vertices + 3);
     }
   }
@@ -157,16 +157,16 @@ void TetrahedronCell::orderEntities(Cell& cell) const
     dolfin_assert(topology(1, 0).size() > 0);
 
     // Get facet numbers
-    uint* cell_facets = cell.entities(2);
+    const uint* cell_facets = cell.entities(2);
 
     // Loop over facets on cell
     for (uint i = 0; i < 4; i++)
     {
       // For each facet number get the global vertex numbers
-      uint* facet_vertices = topology(2, 0)(cell_facets[i]);
+      const uint* facet_vertices = topology(2, 0)(cell_facets[i]);
 
       // For each facet number get the global edge number
-      uint* cell_edges = topology(2, 1)(cell_facets[i]);
+      uint* cell_edges = const_cast<uint*>(topology(2, 1)(cell_facets[i]));
 
       // Loop over vertices on facet
       uint m = 0;
@@ -176,7 +176,7 @@ void TetrahedronCell::orderEntities(Cell& cell) const
         for (uint k(m); k < 3; k++)
         {
           // For each edge number get the global vertex numbers
-          uint* edge_vertices = topology(1, 0)(cell_edges[k]);
+          const uint* edge_vertices = topology(1, 0)(cell_edges[k]);
 
           // Check if the jth vertex of facet i is non-incident on edge k
           if (!std::count(edge_vertices, edge_vertices+2, facet_vertices[j]))
@@ -196,7 +196,7 @@ void TetrahedronCell::orderEntities(Cell& cell) const
   // Sort local vertices on cell in ascending order, connectivity 3 - 0
   if ( topology(3, 0).size() > 0 )
   {
-    uint* cell_vertices = cell.entities(0);
+    uint* cell_vertices = const_cast<uint*>(cell.entities(0));
     std::sort(cell_vertices, cell_vertices+4);
   }
 
@@ -206,8 +206,8 @@ void TetrahedronCell::orderEntities(Cell& cell) const
     dolfin_assert(topology(1, 0).size() > 0);
 
     // Get cell vertices and edge numbers
-    uint* cell_vertices = cell.entities(0);
-    uint* cell_edges = cell.entities(1);
+    const uint* cell_vertices = cell.entities(0);
+    uint* cell_edges = const_cast<uint*>(cell.entities(1));
 
     // Loop two vertices on cell as a lexicographical tuple
     // (i, j): (0,1) (0,2) (0,3) (1,2) (1,3) (2,3)
@@ -220,7 +220,7 @@ void TetrahedronCell::orderEntities(Cell& cell) const
         for (uint k = m; k < 6; k++)
         {
           // Get local vertices on edge
-          uint* edge_vertices = topology(1, 0)(cell_edges[k]);
+          const uint* edge_vertices = topology(1, 0)(cell_edges[k]);
 
           // Check if the ith and jth vertex of the cell are non-incident on edge k
           if (!std::count(edge_vertices, edge_vertices+2, cell_vertices[i]) && \
@@ -244,8 +244,8 @@ void TetrahedronCell::orderEntities(Cell& cell) const
     dolfin_assert(topology(2, 0).size() > 0);
 
     // Get cell vertices and facet numbers
-    uint* cell_vertices = cell.entities(0);
-    uint* cell_facets = cell.entities(2);
+    const uint* cell_vertices = cell.entities(0);
+    uint* cell_facets   = const_cast<uint*>(cell.entities(2));
 
     // Loop vertices on cell
     for (uint i = 0; i < 4; i++)
@@ -253,7 +253,7 @@ void TetrahedronCell::orderEntities(Cell& cell) const
       // Loop facets on cell
       for (uint j = i; j < 4; j++)
       {
-        uint* facet_vertices = topology(2, 0)(cell_facets[j]);
+        uint* facet_vertices = const_cast<uint*>(topology(2, 0)(cell_facets[j]));
 
         // Check if the ith vertex of the cell is non-incident on facet j
         if (!std::count(facet_vertices, facet_vertices+3, cell_vertices[i]))

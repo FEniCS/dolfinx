@@ -72,7 +72,17 @@ namespace dolfin
     T* values() { return _values; }
 
     /// Return value at given entity
-    inline const T& operator() (const MeshEntity& entity) const
+    T& operator() (const MeshEntity& entity)
+    {
+      dolfin_assert(_values);
+      dolfin_assert(&entity.mesh() == _mesh);
+      dolfin_assert(entity.dim() == _dim);
+      dolfin_assert(entity.index() < _size);
+      return _values[entity.index()];
+    }
+
+    /// Return value at given entity (const version)
+    const T& operator() (const MeshEntity& entity) const
     {
       dolfin_assert(_values);
       dolfin_assert(&entity.mesh() == _mesh);

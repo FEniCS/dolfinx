@@ -93,60 +93,60 @@ void TriangleCell::orderEntities(Cell& cell) const
   // Sort i - j for i > j: 1 - 0, 2 - 0, 2 - 1
 
   // Get mesh topology
-  MeshTopology& topology = cell.mesh().topology();
+  const MeshTopology& topology = cell.mesh().topology();
 
   // Sort local vertices on edges in ascending order, connectivity 1 - 0
   if ( topology(1, 0).size() > 0 )
+  {
+    dolfin_assert(topology(2, 1).size() > 0);
+
+    // Get edges
+    const uint* cell_edges = cell.entities(1);
+
+    // Sort vertices on each edge
+    for (uint i = 0; i < 3; i++)
     {
-      dolfin_assert(topology(2, 1).size() > 0);
-
-      // Get edges
-      uint* cell_edges = cell.entities(1);
-
-      // Sort vertices on each edge
-      for (uint i = 0; i < 3; i++)
-	{
-	  uint* edge_vertices = topology(1, 0)(cell_edges[i]);
-	  std::sort(edge_vertices, edge_vertices + 2);
-	}
+      uint* edge_vertices = const_cast<uint*>(topology(1, 0)(cell_edges[i]));
+      std::sort(edge_vertices, edge_vertices + 2);
     }
+  }
 
   // Sort local vertices on cell in ascending order, connectivity 2 - 0
   if ( topology(2, 0).size() > 0 )
-    {
-      uint* cell_vertices = cell.entities(0);
-      std::sort(cell_vertices, cell_vertices + 3);
-    }
+  {
+    uint* cell_vertices = const_cast<uint*>(cell.entities(0));
+    std::sort(cell_vertices, cell_vertices + 3);
+  }
 
   // Sort local edges on cell after non-incident vertex, connectivity 2 - 1
   if ( topology(2, 1).size() > 0 )
+  {
+    dolfin_assert(topology(2, 1).size() > 0);
+
+    // Get cell vertices and edges
+    const uint* cell_vertices = cell.entities(0);
+    uint* cell_edges = const_cast<uint*>(cell.entities(1));
+
+    // Loop over vertices on cell
+    for (uint i = 0; i < 3; i++)
     {
-      dolfin_assert(topology(2, 1).size() > 0);
+  	  // Loop over edges on cell
+  	  for (uint j = i; j < 3; j++)
+  	  {
+  	    const uint* edge_vertices = topology(1, 0)(cell_edges[j]);
 
-      // Get cell vertices and edges
-      uint* cell_vertices = cell.entities(0);
-      uint* cell_edges = cell.entities(1);
-
-      // Loop over vertices on cell
-      for (uint i = 0; i < 3; i++)
-	{
-	  // Loop over edges on cell
-	  for (uint j = i; j < 3; j++)
-	    {
-	      uint* edge_vertices = topology(1, 0)(cell_edges[j]);
-
-	      // Check if the ith vertex of the cell is non-incident with edge j
-	      if ( std::count(edge_vertices, edge_vertices + 2, cell_vertices[i]) == 0 )
-		{
-		  // Swap edge numbers
-		  uint tmp = cell_edges[i];
-		  cell_edges[i] = cell_edges[j];
-		  cell_edges[j] = tmp;
-		  break;
-		}
-	    }
-	}
+  	    // Check if the ith vertex of the cell is non-incident with edge j
+  	    if ( std::count(edge_vertices, edge_vertices + 2, cell_vertices[i]) == 0 )
+        {
+          // Swap edge numbers
+          uint tmp = cell_edges[i];
+          cell_edges[i] = cell_edges[j];
+          cell_edges[j] = tmp;
+          break;
+        }
+      }
     }
+  }
 }
 //-----------------------------------------------------------------------------
 void TriangleCell::refineCell(Cell& cell, MeshEditor& editor,

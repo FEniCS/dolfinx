@@ -51,7 +51,7 @@ namespace dolfin
     static bool contains(MeshEntity& e0, MeshEntity& e1);
 
     /// Check if array v0 contains array v1
-    static bool contains(uint* v0, uint n0, uint* v1, uint n1);
+    static bool contains(const uint* v0, uint n0, const uint* v1, uint n1);
     
   };
 
