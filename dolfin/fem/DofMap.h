@@ -1,10 +1,10 @@
 // Copyright (C) 2007-2008 Anders Logg and Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
-
+//
 // Modified by Martin Alnes, 2008
-
+//
 // First added:  2007-03-01
-// Last changed: 2008-10-26
+// Last changed: 2008-10-27
 
 #ifndef __DOF_MAP_H
 #define __DOF_MAP_H
@@ -54,7 +54,7 @@ namespace dolfin
     ~DofMap();
 
     /// Return a string identifying the dof map
-    const char* signature() const
+    std::string signature() const
     { 
       if (!dof_map)
         return ufc_dof_map->signature(); 

@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2003-07-15
-// Last changed: 2008-03-29
+// Last changed: 2008-10-27
 
 #ifndef __GENERIC_FILE_H
 #define __GENERIC_FILE_H
@@ -51,19 +51,19 @@ namespace dolfin
     
     // Output
     
-    virtual void operator<< (GenericVector& x);
-    virtual void operator<< (GenericMatrix& A);
+    virtual void operator<< (const GenericVector& x);
+    virtual void operator<< (const GenericMatrix& A);
     virtual void operator<< (const Mesh& mesh);
     virtual void operator<< (const MeshFunction<int>& meshfunction);
     virtual void operator<< (const MeshFunction<unsigned int>& meshfunction);
     virtual void operator<< (const MeshFunction<double>& meshfunction);
     virtual void operator<< (const MeshFunction<bool>& meshfunction);
     virtual void operator<< (const Function& u);
-    virtual void operator<< (Sample& sample);
-    virtual void operator<< (FiniteElementSpec& spec);
-    virtual void operator<< (ParameterList& parameters);
-    virtual void operator<< (BLASFormData& blas);
-    virtual void operator<< (Graph& graph);
+    virtual void operator<< (const Sample& sample);
+    virtual void operator<< (const FiniteElementSpec& spec);
+    virtual void operator<< (const ParameterList& parameters);
+    virtual void operator<< (const BLASFormData& blas);
+    virtual void operator<< (const Graph& graph);
     
     void read();
     void write();

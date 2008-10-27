@@ -1,10 +1,10 @@
-// Copyright (C) 2003-2006 Anders Logg.
+// Copyright (C) 2003-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Magnus Vikstrom 2007.
 //
 // First added:  2003-07-15
-// Last changed: 2007-03-21
+// Last changed: 2008-10-27
 
 #ifndef __XML_FILE_H
 #define __XML_FILE_H
@@ -51,21 +51,19 @@ namespace dolfin
     void parse(Function& f, FiniteElement& element);
     
     // Output
-    
-    void operator<< (GenericVector& x);
-    void operator<< (GenericMatrix& A);
-    void operator<< (Mesh& mesh);
-    void operator<< (Graph& graph);
-// Todo:
+
+    void operator<< (const GenericVector& x);
+    void operator<< (const GenericMatrix& A);
+    void operator<< (const Mesh& mesh);
+    void operator<< (const Graph& graph);
     void operator<< (const MeshFunction<int>& mesh);
     void operator<< (const MeshFunction<unsigned int>& mesh);
     void operator<< (const MeshFunction<double>& mesh);
     void operator<< (const MeshFunction<bool>& mesh);
-    void operator<< (Function& f);
-    void operator<< (ParameterList& parameters);
+    void operator<< (const Function& v);
+    void operator<< (const ParameterList& parameters);
     
     // Friends
-    
     friend void sax_start_element (void *ctx, const xmlChar *name, const xmlChar **attrs);
     friend void sax_end_element   (void *ctx, const xmlChar *name);
     
