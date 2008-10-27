@@ -68,6 +68,11 @@ void LinearPDE::solve(Function& u)
   Assembler::assemble(A, a);
   Assembler::assemble(b, L);
 
+//  cout << "Matrix before application of bc" << endl;
+//  A.disp();
+//  cout << "Vector before application of bc" << endl;
+//  b.disp();
+
   for (uint i = 0; i < bcs.size(); i++)
     bcs[i]->apply(A, b, a);
 

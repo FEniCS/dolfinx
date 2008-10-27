@@ -23,6 +23,19 @@
 
 using namespace dolfin;
 
+// Zero function
+class Zero : public Function
+{
+public:
+
+  Zero(const FunctionSpace& V) : Function(V) {}
+
+  double eval(const double* x) const
+  {
+    return 0.0;
+  }
+};
+
 // Source term
 class Source : public Function
 {
@@ -32,11 +45,11 @@ public:
 
   double eval(const double* x) const
   {
+    cout << "Inside Source::eval" << endl;
     double dx = x[0] - 0.5;
     double dy = x[1] - 0.5;
     return 500.0*exp(-(dx*dx + dy*dy)/0.02);
   }
-
 };
 
 // Neumann boundary condition
@@ -48,12 +61,12 @@ public:
   
   double eval(const double* x) const
   {
+    cout << "Inside Source::eval" << endl;
     if (x[0] > DOLFIN_EPS)
       return 25.0*sin(5.0*DOLFIN_PI*x[1]);
     else
       return 0.0;
   }
-  
 };
 
 // Sub domain for Dirichlet boundary condition
@@ -68,7 +81,7 @@ class DirichletBoundary : public SubDomain
 int main()
 {
   // Create mesh
-  UnitSquare mesh(32, 32);
+  UnitSquare mesh(1, 1);
   mesh.order();
   
   // Create function space
@@ -80,14 +93,15 @@ int main()
   
   // Create boundary condition
   //Function u0(mesh, 0.0);
-  //DirichletBoundary boundary;
-  //DirichletBC bc(u0, mesh, boundary);
+  Zero u0(V);
+  DirichletBoundary boundary;
+  DirichletBC bc(u0, mesh, boundary);
   
   // Define PDE
   PoissonBilinearForm a(V, V);
   PoissonLinearForm L(V, f, g);
-  //LinearPDE pde(a, L, mesh, bc, symmetric);
-  LinearPDE pde(a, L, mesh, symmetric);
+  LinearPDE pde(a, L, mesh, bc, symmetric);
+  //LinearPDE pde(a, L, mesh, symmetric);
 
   // Solve PDE
   Function u(V);
