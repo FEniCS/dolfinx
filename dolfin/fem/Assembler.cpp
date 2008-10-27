@@ -313,7 +313,7 @@ void Assembler::assembleInteriorFacets(GenericTensor& A,
   // Compute facets and facet - cell connectivity if not already computed
   mesh.init(mesh.topology().dim() - 1);
   mesh.init(mesh.topology().dim() - 1, mesh.topology().dim());
-  const_cast<Mesh&>(mesh).order();
+  dolfin_assert(mesh.ordered());
   
   // Assemble over interior facets (the facets of the mesh)
   Progress p(progressMessage(A.rank(), "interior facets"), form.mesh().numFacets());

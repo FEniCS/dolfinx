@@ -40,7 +40,7 @@ const Mesh& Form::mesh() const
   for (uint i = 0; i < _coefficients.size(); i++)
     meshes.push_back(&_coefficients[i]->function_space().mesh());
 
-  // Check that we got at least one mesh
+  // Check that we have at least one mesh
   if (meshes.size() == 0)
     error("Unable to extract mesh from form (no mesh found).");
 
@@ -92,6 +92,8 @@ const ufc::form& Form::ufc_form() const
 //-----------------------------------------------------------------------------
 void Form::check() const
 {
-  error("Form::check() not implemented.");
+  // Check that the number of function spaces matches the rank of the form
+  if (_ufc_form->rank() != _function_spaces.size())
+    error("Form expect %d FunctionSpaces, only %d provided.",_ufc_form->rank(), _function_spaces.size());
 }
 //-----------------------------------------------------------------------------

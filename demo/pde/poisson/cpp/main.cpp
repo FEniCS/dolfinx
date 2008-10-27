@@ -63,6 +63,7 @@ int main()
 
   // Create mesh
   UnitSquare mesh(32, 32);
+  mesh.order();
 
   // Create function space
   PoissonFunctionSpace V(mesh);
