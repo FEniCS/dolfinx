@@ -459,7 +459,7 @@ void XMLFile::operator<<(const Function& f)
 
   // Write the dof map
   fp = openFile();
-  fprintf(fp, "  <dofmap signature=\"%s\"/>\n", f.function_space().dofmap().signature());
+  fprintf(fp, "  <dofmap signature=\"%s\"/>\n", f.function_space().dofmap().signature().c_str());
   closeFile(fp);
 
   // End function
