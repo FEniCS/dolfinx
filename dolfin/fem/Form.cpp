@@ -100,5 +100,10 @@ void Form::check() const
   if (_ufc_form->rank() != _function_spaces.size())
     error("Form expects %d FunctionSpaces, only %d provided.",
           _ufc_form->rank(), _function_spaces.size());
+
+  // Check that the number of coefficient functions matches the number expecte by the form
+  if (_ufc_form->num_coefficients() != _coefficients.size())
+    error("Form expects %d coefficient functions, only %d provided.",
+          _ufc_form->num_coefficients(), _coefficients.size());
 }
 //-----------------------------------------------------------------------------
