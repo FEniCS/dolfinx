@@ -68,8 +68,8 @@ void LinearPDE::solve(Function& u)
   Assembler::assemble(A, a);
   Assembler::assemble(b, L);
 
-  //for (uint i = 0; i < bcs.size(); i++)
-  //  bcs[i]->apply(A, b, a);
+  for (uint i = 0; i < bcs.size(); i++)
+    bcs[i]->apply(A, b, a);
 
   // Solve linear system
   const std::string solver_type = get("PDE linear solver");

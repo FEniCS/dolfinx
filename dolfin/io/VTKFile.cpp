@@ -163,11 +163,6 @@ void VTKFile::ResultsWrite(const Function& u) const
   // Type of data (point or cell). Point by default.
   std::string data_type = "point";
 
-  // Check that we have a Function that can be handled
-  error("Need to add test for function type in Function.");
-  //if(u.type() == Function::empty || u.type() == Function::ufc)
-  //  error("Function type cannot be written in VTK format.");
- 
   // Get rank of Function
   const uint rank = u.element().value_rank();
   if(rank > 1)
@@ -178,8 +173,9 @@ void VTKFile::ResultsWrite(const Function& u) const
   if ( dim > 3 )
     warning("Cannot handle VTK file with number of components > 3. Writing first three components only");
 
-  // Test for DiscreteFunction finite element type by signature
-  error("Need to add test for function type");
+  // FIXME: Interpolate to vertices, then write to file.
+
+  // Test for finite element type by signature
 /*
   if(u.type() == Function::discrete)
   {
