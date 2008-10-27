@@ -44,22 +44,23 @@ void Assembler::assemble(GenericTensor& A, const Form& form, bool reset_tensor)
   assemble(A, form, form.coefficients(), 0, 0, 0, reset_tensor);
 }
 //-----------------------------------------------------------------------------
-void Assembler::assemble(GenericMatrix& A, const Form& a, GenericVector& b, const Form& L, 
-                         const DirichletBC& bc, bool reset_tensor)
+void Assembler::assemble(GenericMatrix& A, const Form& a, GenericVector& b, 
+                       const Form& L, const DirichletBC& bc, bool reset_tensor)
 {
   std::vector<const DirichletBC*> bcs;
   bcs.push_back(&bc);
   assemble(A, a, b, L, bcs, reset_tensor); 
 }
 //-----------------------------------------------------------------------------
-void Assembler::assemble(GenericMatrix& A, const Form& a, GenericVector& b, const Form& L, 
-                         std::vector<const DirichletBC*>& bcs, bool reset_tensor)
+void Assembler::assemble(GenericMatrix& A, const Form& a, GenericVector& b, 
+        const Form& L, std::vector<const DirichletBC*>& bcs, bool reset_tensor)
 {
   assemble_system(A, a, a.coefficients(), b, L, L.coefficients(), 
                   0, bcs, 0, 0 , 0, reset_tensor); 
 }
 //-----------------------------------------------------------------------------
-void Assembler::assemble(GenericTensor& A, const Form& form, const SubDomain& sub_domain, bool reset_tensor)
+void Assembler::assemble(GenericTensor& A, const Form& form, 
+                         const SubDomain& sub_domain, bool reset_tensor)
 {
   // Extract mesh
   const Mesh& mesh = form.mesh();

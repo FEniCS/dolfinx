@@ -66,7 +66,7 @@ namespace dolfin
     Mesh(const Mesh& mesh);
 
     /// Create mesh from data file
-    Mesh(std::string filename);
+    explicit Mesh(std::string filename);
     
     /// Destructor
     ~Mesh();
