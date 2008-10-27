@@ -92,8 +92,13 @@ const ufc::form& Form::ufc_form() const
 //-----------------------------------------------------------------------------
 void Form::check() const
 {
+  // FIXME: Further checks are needed here, in particular checking that
+  // FIXME: the element of each function space matches the corresponding
+  // FIXME: element in the form (check signatures).
+
   // Check that the number of function spaces matches the rank of the form
   if (_ufc_form->rank() != _function_spaces.size())
-    error("Form expect %d FunctionSpaces, only %d provided.",_ufc_form->rank(), _function_spaces.size());
+    error("Form expects %d FunctionSpaces, only %d provided.",
+          _ufc_form->rank(), _function_spaces.size());
 }
 //-----------------------------------------------------------------------------
