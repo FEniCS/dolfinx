@@ -1,8 +1,8 @@
-// Copyright (C) 2006-2007 Anders Logg.
+// Copyright (C) 2006-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-02-07
-// Last changed: 2007-08-20
+// Last changed: 2008-10-27
 //
 // This demo program solves Poisson's equation
 //
@@ -20,64 +20,64 @@
 
 #include <dolfin.h>
 #include "Poisson.h"
-  
+
 using namespace dolfin;
+
+// Source term
+class Source : public Function
+{
+public:
+
+  Source(const FunctionSpace& V) : Function(V) {}
+
+  double eval(const double* x) const
+  {
+    double dx = x[0] - 0.5;
+    double dy = x[1] - 0.5;
+    return 500.0*exp(-(dx*dx + dy*dy)/0.02);
+  }
+
+};
+
+// Neumann boundary condition
+class Flux : public Function
+{
+public:
+  
+  Flux(const FunctionSpace& V) : Function(V) {}
+  
+  double eval(const double* x) const
+  {
+    if (x[0] > DOLFIN_EPS)
+      return 25.0*sin(5.0*DOLFIN_PI*x[1]);
+    else
+      return 0.0;
+  }
+  
+};
+
+// Sub domain for Dirichlet boundary condition
+class DirichletBoundary : public SubDomain
+{
+  bool inside(const double* x, bool on_boundary) const
+  {
+    return x[0] < DOLFIN_EPS && on_boundary;
+  }
+};
 
 int main()
 {
-  // Source term
-  class Source : public Function
-  {
-  public:    
-
-    Source(const FunctionSpace& V) : Function(V) {}
-
-    double eval(const double* x) const
-    {
-      double dx = x[0] - 0.5;
-      double dy = x[1] - 0.5;
-      return 500.0*exp(-(dx*dx + dy*dy)/0.02);
-    }
-
-  };
-
-  // Neumann boundary condition
-  class Flux : public Function
-  {
-  public:
-  
-    Flux(const FunctionSpace& V) : Function(V) {}
-
-    double eval(const double* x) const
-    {
-      if (x[0] > DOLFIN_EPS)
-        return 25.0*sin(5.0*DOLFIN_PI*x[1]);
-      else
-        return 0.0;
-    }
-
-  };
-
-  // Sub domain for Dirichlet boundary condition
-  class DirichletBoundary : public SubDomain
-  {
-    bool inside(const double* x, bool on_boundary) const
-    {
-      return x[0] < DOLFIN_EPS && on_boundary;
-    }
-  };
-
   // Create mesh
   UnitSquare mesh(32, 32);
   mesh.order();
-
+  
   // Create function space
   PoissonFunctionSpace V(mesh);
-
+  
   // Create functions
   Source f(V);
   Flux g(V);
-
+  
   // Create boundary condition
   //Function u0(mesh, 0.0);
   //DirichletBoundary boundary;

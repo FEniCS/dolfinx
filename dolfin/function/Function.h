@@ -140,10 +140,10 @@ namespace dolfin
     double _time;
 
     // The current cell (if any, otherwise 0)
-    const Cell* _cell;
+    mutable Cell* _cell;
 
     // The current facet (if any, otherwise -1)
-    int _facet;
+    mutable int _facet;
 
   };
 

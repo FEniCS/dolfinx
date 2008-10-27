@@ -209,7 +209,24 @@ void Function::eval(simple_array<double>& values, const simple_array<double>& x)
 //-----------------------------------------------------------------------------
 void Function::evaluate(double* values, const double* coordinates, const ufc::cell& cell) const
 {
-  error("Not implemented, need to think about how to handle it when not user-defined.");
+  dolfin_assert(values);
+  dolfin_assert(coordinates);
+  dolfin_assert(cell.entity_indices);
+  dolfin_assert(_function_space);
+
+  // Not implemented for regular functions (but we may consider adding it)
+  if (_vector)
+    error("UFC callback evaluate() not implemented for regular functions (only user-defined).");
+
+  // Store cell data
+  _cell = new Cell(_function_space->mesh(), cell.entity_indices[cell.topological_dimension][0]);
+
+  // Call user-defined eval()
+  eval(values, coordinates);
+
+  // Delete cell data
+  delete _cell;
+  _cell = 0;
 }
 //-----------------------------------------------------------------------------
 void Function::interpolate(GenericVector& coefficients, const FunctionSpace& V) const
