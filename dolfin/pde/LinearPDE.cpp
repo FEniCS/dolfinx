@@ -57,7 +57,7 @@ void LinearPDE::solve(Function& u)
 
   // Create matrix and vector for assembly
   Matrix A;
-  //Vector b;
+  Vector b;
   //GenericVector& x = u.vector();
 
   // Assemble linear system and apply boundary conditions
@@ -66,7 +66,7 @@ void LinearPDE::solve(Function& u)
 
   // Assemble linear system and apply boundary conditions
   Assembler::assemble(A, a);
-  //Assembler::assemble(b, L);
+  Assembler::assemble(b, L);
 /*
   for (uint i = 0; i < bcs.size(); i++)
     bcs[i]->apply(A, b, a);

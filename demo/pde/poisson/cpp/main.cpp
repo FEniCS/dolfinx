@@ -29,6 +29,9 @@ int main()
   class Source : public Function
   {
   public:    
+
+    Source(const FunctionSpace& V) : Function(V) {}
+
     double eval(const double* x) const
     {
       double dx = x[0] - 0.5;
@@ -42,6 +45,9 @@ int main()
   class Flux : public Function
   {
   public:
+  
+    Flux(const FunctionSpace& V) : Function(V) {}
+
     double eval(const double* x) const
     {
       if (x[0] > DOLFIN_EPS)
@@ -69,8 +75,8 @@ int main()
   PoissonFunctionSpace V(mesh);
 
   // Create functions
-  Source f;
-  Flux g;
+  Source f(V);
+  Flux g(V);
 
   // Create boundary condition
   //Function u0(mesh, 0.0);

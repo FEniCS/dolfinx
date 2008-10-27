@@ -40,7 +40,7 @@ namespace dolfin
   public:
 
     /// Create an empty function
-    Function() { warning("Creating function without a basis"); };
+    Function() { error("Cannot creating function without a basis"); };
 
     /// Create function on given function space
     explicit Function(const FunctionSpace& V);
