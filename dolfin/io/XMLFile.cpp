@@ -25,7 +25,9 @@
 #include <dolfin/graph/Graph.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/function/Function.h>
+#include <dolfin/function/FunctionSpace.h>
 #include <dolfin/fem/DofMap.h>
+#include <dolfin/fem/FiniteElement.h>
 #include <dolfin/parameter/Parameter.h>
 #include <dolfin/parameter/ParameterList.h>
 
@@ -439,31 +441,25 @@ void XMLFile::operator<<(const MeshFunction<bool>& meshfunction)
 //-----------------------------------------------------------------------------
 void XMLFile::operator<<(const Function& f)
 {
-  error("Need to update XMLFile::operator<<(Function& f) for new Function interface.");
-  // Can only save discrete functions
-/*
-  if (f.type() != Function::discrete)
-    error("Only discrete functions can be saved in XML format.");
-
   // Begin function
   FILE *fp = openFile();
   fprintf(fp, "  <function> \n");
   closeFile(fp);
 
   // Write the mesh
-  *this << f.mesh();
+  *this << f.function_space().mesh();
   
   // Write the vector
   *this << f.vector();
 
   // Write the finite element
   fp = openFile();
-  fprintf(fp, "  <finiteelement signature=\"%s\"/>\n", f.signature().c_str());
+  fprintf(fp, "  <finiteelement signature=\"%s\"/>\n", f.element().signature().c_str());
   closeFile(fp);
 
   // Write the dof map
   fp = openFile();
-  fprintf(fp, "  <dofmap signature=\"%s\"/>\n", f.dofMap().signature());
+  fprintf(fp, "  <dofmap signature=\"%s\"/>\n", f.function_space().dofmap().signature());
   closeFile(fp);
 
   // End function
@@ -472,7 +468,6 @@ void XMLFile::operator<<(const Function& f)
   closeFile(fp);
 
   message(1, "Saved function to file %s in DOLFIN XML format.", filename.c_str());
-*/
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator<<(const ParameterList& parameters)
