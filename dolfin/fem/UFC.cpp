@@ -81,7 +81,7 @@ UFC::UFC(const ufc::form& form, const std::vector<const FunctionSpace*>& V) : fo
   // Initialize global dimensions
   global_dimensions = new uint[form.rank()];
   for (uint i = 0; i < form.rank(); i++)
-    global_dimensions[i] = V[i]->dofmap().local_dimension();
+    global_dimensions[i] = V[i]->dofmap().global_dimension();
 
   // Initialize dofs
   dofs = new uint*[form.rank()];

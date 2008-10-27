@@ -442,7 +442,7 @@ void Assembler::initGlobalTensor(GenericTensor& A, const Form& form,
     {
       std::vector<const DofMap*> dof_maps(0);
       for(uint i=0; i < form.rank(); ++i) 
-      dof_maps.push_back(&(form.function_space(i).dofmap()));
+        dof_maps.push_back(&(form.function_space(i).dofmap()));
       SparsityPatternBuilder::build(*sparsity_pattern, form.mesh(), ufc, dof_maps);
     }
     t0.stop();

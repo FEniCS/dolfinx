@@ -57,8 +57,8 @@ void LinearPDE::solve(Function& u)
 
   // Create matrix and vector for assembly
   Matrix A;
-  Vector b;
-  GenericVector& x = u.vector();
+  //Vector b;
+  //GenericVector& x = u.vector();
 
   // Assemble linear system and apply boundary conditions
   //Assembler assembler(mesh);  
@@ -66,7 +66,8 @@ void LinearPDE::solve(Function& u)
 
   // Assemble linear system and apply boundary conditions
   Assembler::assemble(A, a);
-  Assembler::assemble(b, L);
+  //Assembler::assemble(b, L);
+/*
   for (uint i = 0; i < bcs.size(); i++)
     bcs[i]->apply(A, b, a);
 
@@ -84,6 +85,7 @@ void LinearPDE::solve(Function& u)
     KrylovSolver solver(gmres);
     solver.set("parent", *this);
     solver.solve(A, x, b);
+*/
 /*
     if( matrix_type == symmetric)
     {
@@ -98,9 +100,9 @@ void LinearPDE::solve(Function& u)
       solver.solve(A, *x, b);
     }
 */
-  }
-  else
-    error("Unknown solver type \"%s\".", solver_type.c_str());
+//  }
+//  else
+//    error("Unknown solver type \"%s\".", solver_type.c_str());
 
   end();
 }
