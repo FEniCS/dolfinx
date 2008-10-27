@@ -8,6 +8,7 @@
 
 #include <ufc.h>
 #include <dolfin/log/log.h>
+#include <dolfin/fem/FiniteElement.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/function/Function.h>
 #include "Form.h"
@@ -92,18 +93,37 @@ const ufc::form& Form::ufc_form() const
 //-----------------------------------------------------------------------------
 void Form::check() const
 {
-  // FIXME: Further checks are needed here, in particular checking that
-  // FIXME: the element of each function space matches the corresponding
-  // FIXME: element in the form (check signatures).
-
   // Check that the number of function spaces matches the rank of the form
   if (_ufc_form->rank() != _function_spaces.size())
     error("Form expects %d FunctionSpaces, only %d provided.",
           _ufc_form->rank(), _function_spaces.size());
 
-  // Check that the number of coefficient functions matches the number expecte by the form
+  // Check that finite element for test/trial functions from form match provided function spaces
+  for(uint i = 0; i < _ufc_form->rank(); ++i)
+  {
+    ufc::finite_element* element = _ufc_form->create_finite_element(i);
+    if(!element)
+      error("Error extracting ufc::finite_element from Form.");
+    else if(element->signature() != _function_spaces[i]->element().signature())   
+      error("Provided FiniteElement does not much FiniteElement %d expected by Form.", i);
+    delete element;
+  }
+
+  // Check that the number of coefficient functions matches the number expected by the form
   if (_ufc_form->num_coefficients() != _coefficients.size())
     error("Form expects %d coefficient functions, only %d provided.",
           _ufc_form->num_coefficients(), _coefficients.size());
+
+  // Check that finite element for coeffiecient functions from form match provided coefficient finite elements
+  for(uint i = _ufc_form->rank(); i < _ufc_form->rank() + _ufc_form->num_coefficients(); ++i)
+  {
+    ufc::finite_element* element = _ufc_form->create_finite_element(i);
+    if(!element)
+      error("Error extracting ufc::finite_element from Form.");
+    else if(element->signature() != _function_spaces[i]->element().signature())   
+      error("Provided FiniteElement does not much FiniteElement %d expected by Form.", i);
+    delete element;
+  }
+
 }
 //-----------------------------------------------------------------------------
