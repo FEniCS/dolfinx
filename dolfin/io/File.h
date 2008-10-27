@@ -6,7 +6,7 @@
 // Modified by Nuno Lopes 2008
 //
 // First added:  2002-11-12
-// Last changed: 2008-06-17
+// Last changed: 2008-10-27
 
 #ifndef __FILE_H
 #define __FILE_H
@@ -87,11 +87,13 @@ namespace dolfin
 
     //--- Output ---
 
+    // FIXME: All outputs should be const!
+
     /// Write vector to file
-    void operator<< (GenericVector& x);
+    void operator<< (const GenericVector& x);
 
     /// Write matrix to file
-    void operator<< (GenericMatrix& A);
+    void operator<< (const GenericMatrix& A);
 
     /// Write mesh to file
     void operator<< (const Mesh& mesh);
@@ -103,22 +105,22 @@ namespace dolfin
     void operator<< (const MeshFunction<bool>& meshfunction);
 
     /// Write function to file
-    void operator<< (const Function& u);
+    void operator<< (const Function& v);
 
     /// Write ODE sample to file
-    void operator<< (Sample& sample);
+    void operator<< (const Sample& sample);
 
     /// Write finite element specification to file
-    void operator<< (FiniteElementSpec& spec);
+    void operator<< (const FiniteElementSpec& spec);
 
     /// Write parameter list to file
-    void operator<< (ParameterList& parameters);
+    void operator<< (const ParameterList& parameters);
 
     /// Write FFC BLAS data to file
-    void operator<< (BLASFormData& blas);
+    void operator<< (const BLASFormData& blas);
 	 
     /// Write graph to file
-    void operator<< (Graph& graph);
+    void operator<< (const Graph& graph);
     
   private:
     
