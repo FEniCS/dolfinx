@@ -5,7 +5,7 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2003-11-28
-// Last changed: 2008-10-14
+// Last changed: 2008-10-27
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/NoDeleter.h>
@@ -234,7 +234,9 @@ void Function::interpolate(GenericVector& coefficients, const FunctionSpace& V) 
   V.interpolate(coefficients, *this);
 }
 //-----------------------------------------------------------------------------
-void Function::interpolate(double* coefficients, const ufc::cell& ufc_cell) const
+void Function::interpolate(double* coefficients,
+                           const ufc::cell& ufc_cell,
+                           int local_facet) const
 {
   dolfin_assert(coefficients);
   dolfin_assert(_function_space);
@@ -258,9 +260,15 @@ void Function::interpolate(double* coefficients, const ufc::cell& ufc_cell) cons
     // Get element
     const FiniteElement& element = _function_space->element();
 
+    // Store local facet
+    _facet = local_facet;
+
     // Evaluate each dof to get coefficients for nodal basis expansion
     for (uint i = 0; i < element.space_dimension(); i++)
       coefficients[i] = element.evaluate_dof(i, *this, ufc_cell);
+
+    // Invalidate local facet
+    _facet = -1;
   }
 }
 //-----------------------------------------------------------------------------

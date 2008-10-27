@@ -6,7 +6,7 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2003-11-28
-// Last changed: 2008-10-26
+// Last changed: 2008-10-27
 
 #ifndef __FUNCTION_H
 #define __FUNCTION_H
@@ -106,7 +106,7 @@ namespace dolfin
     void interpolate(GenericVector& coefficients, const FunctionSpace& V) const;
 
     /// Interpolate function to local function space on cell
-    void interpolate(double* coefficients, const ufc::cell& ufc_cell) const;
+    void interpolate(double* coefficients, const ufc::cell& ufc_cell, int local_facet=-1) const;
 
     /// Interpolate function to local function space on cell (with check on function space)
     void interpolate(double* coefficients, const FunctionSpace& V, const ufc::cell& ufc_cell) const;
