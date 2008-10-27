@@ -102,12 +102,11 @@ void Form::check() const
   // Check that finite element for test/trial functions from form match provided function spaces
   for(uint i = 0; i < _function_spaces.size(); ++i)
   {
-    ufc::finite_element* element = _ufc_form->create_finite_element(i);
-    if(!element)
+    std::auto_ptr<ufc::finite_element> element(_ufc_form->create_finite_element(i));
+    if(!element.get())
       error("Error extracting ufc::finite_element from Form.");
     else if(element->signature() != _function_spaces[i]->element().signature())   
       error("Provided FiniteElement does not much FiniteElement %d expected by Form.", i);
-    delete element;
   }
 
   // Check that the number of coefficient functions matches the number expected by the form
@@ -118,12 +117,11 @@ void Form::check() const
   // Check that finite element for coeffiecient functions from form match provided coefficient finite elements
   for(uint i = 0; i < _coefficients.size(); ++i)
   {
-    ufc::finite_element* element = _ufc_form->create_finite_element(i + _ufc_form->rank());
-    if(!element)
+    std::auto_ptr<ufc::finite_element> element(_ufc_form->create_finite_element(i + _ufc_form->rank()));
+    if(!element.get())
       error("Error extracting ufc::finite_element from Form.");
     else if(element->signature() != _coefficients[i]->element().signature())   
       error("Provided FiniteElement does not much FiniteElement %d expected by Form.", i);
-    delete element;
   }
 
 }

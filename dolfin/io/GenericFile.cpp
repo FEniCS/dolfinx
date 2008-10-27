@@ -99,12 +99,12 @@ void GenericFile::operator>>(Graph& graph)
   read_not_impl("Graph");
 }
 //-----------------------------------------------------------------------------
-void GenericFile::operator<<(GenericVector& x)
+void GenericFile::operator<<(const GenericVector& x)
 {
   write_not_impl("Vector");
 }
 //-----------------------------------------------------------------------------
-void GenericFile::operator<<(GenericMatrix& A)
+void GenericFile::operator<<(const GenericMatrix& A)
 {
   write_not_impl("Matrix");
 }
@@ -139,27 +139,27 @@ void GenericFile::operator<<(const Function& u)
   write_not_impl("Function");
 }
 //-----------------------------------------------------------------------------
-void GenericFile::operator<<(Sample& sample)
+void GenericFile::operator<<(const Sample& sample)
 {
   write_not_impl("Sample");
 }
 //-----------------------------------------------------------------------------
-void GenericFile::operator<<(FiniteElementSpec& spec)
+void GenericFile::operator<<(const FiniteElementSpec& spec)
 {
   write_not_impl("FiniteElementSpec");
 }
 //-----------------------------------------------------------------------------
-void GenericFile::operator<<(ParameterList& parameters)
+void GenericFile::operator<<(const ParameterList& parameters)
 {
   write_not_impl("ParameterList");
 }
 //-----------------------------------------------------------------------------
-void GenericFile::operator<<(BLASFormData& blas)
+void GenericFile::operator<<(const BLASFormData& blas)
 {
   write_not_impl("BLASFormData");
 }
 //-----------------------------------------------------------------------------
-void GenericFile::operator<<(Graph& graph)
+void GenericFile::operator<<(const Graph& graph)
 {
   write_not_impl("Graph");
 }

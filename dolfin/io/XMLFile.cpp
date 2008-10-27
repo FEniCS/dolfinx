@@ -206,7 +206,7 @@ void XMLFile::operator>>(Graph& graph)
   parseFile();
 }
 //-----------------------------------------------------------------------------
-void XMLFile::operator<<(GenericVector& x)
+void XMLFile::operator<<(const GenericVector& x)
 {
   // Open file
   FILE* fp = openFile();
@@ -234,7 +234,7 @@ void XMLFile::operator<<(GenericVector& x)
   message(1, "Saved vector  to file %s in DOLFIN XML format.", filename.c_str());
 }
 //-----------------------------------------------------------------------------
-void XMLFile::operator<<(GenericMatrix& A)
+void XMLFile::operator<<(const GenericMatrix& A)
 {
   // Open file
   FILE *fp = openFile();
@@ -267,7 +267,7 @@ void XMLFile::operator<<(GenericMatrix& A)
   message(1, "Saved matrix file %s in DOLFIN XML format.", filename.c_str());
 }
 //-----------------------------------------------------------------------------
-void XMLFile::operator<<(Mesh& mesh)
+void XMLFile::operator<<(const Mesh& mesh)
 {
   // Open file
   FILE *fp = openFile();
@@ -437,7 +437,7 @@ void XMLFile::operator<<(const MeshFunction<bool>& meshfunction)
   message(1, "Saved mesh function to file %s in DOLFIN XML format.", filename.c_str());
 }
 //-----------------------------------------------------------------------------
-void XMLFile::operator<<(Function& f)
+void XMLFile::operator<<(const Function& f)
 {
   error("Need to update XMLFile::operator<<(Function& f) for new Function interface.");
   // Can only save discrete functions
@@ -475,7 +475,7 @@ void XMLFile::operator<<(Function& f)
 */
 }
 //-----------------------------------------------------------------------------
-void XMLFile::operator<<(ParameterList& parameters)
+void XMLFile::operator<<(const ParameterList& parameters)
 {
   // Open file
   FILE *fp = openFile();
@@ -512,7 +512,6 @@ void XMLFile::operator<<(ParameterList& parameters)
     default:
       ; // Do nothing
     }
-
   }
   
   fprintf(fp, "  </parameters>\n" );
@@ -523,7 +522,7 @@ void XMLFile::operator<<(ParameterList& parameters)
   message(1, "Saved parameters to file %s in DOLFIN XML format.", filename.c_str());
 }
 //-----------------------------------------------------------------------------
-void XMLFile::operator<<(Graph& graph)
+void XMLFile::operator<<(const Graph& graph)
 {
   // Open file
   FILE *fp = openFile();

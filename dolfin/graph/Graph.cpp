@@ -98,7 +98,7 @@ void Graph::partition(uint num_part, uint* vtx_part)
   GraphPartition::partition(*this, num_part, vtx_part);
 }
 //-----------------------------------------------------------------------------
-std::string Graph::typestr()
+const std::string Graph::typestr() const
 {
   switch ( _type )
   {
