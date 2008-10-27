@@ -108,7 +108,7 @@ void Form::check() const
   for (uint i = 0; i < _function_spaces.size(); ++i)
   {
     std::auto_ptr<ufc::finite_element> element(_ufc_form->create_finite_element(i));
-    if(!element.get())
+    dolfin_assert(element.get());
     if (element->signature() != _function_spaces[i]->element().signature())
       error("Wrong type of function space for argument %d.", i);
   }
@@ -116,8 +116,8 @@ void Form::check() const
   // Check that coefficient funtion spaces match provided function spaces
   for (uint i = 0; i < _coefficients.size(); ++i)
   {
-    std::auto_ptr<ufc::finite_element> element(_ufc_form->create_finite_element(i + _ufc_form->rank()));
-    if(!element)
+    std::auto_ptr<ufc::finite_element> element(_ufc_form->create_finite_element(i));
+    dolfin_assert(element.get());
     if (element->signature() != _coefficients[i]->element().signature())
       error("Wrong type of function space for coefficient %d.", i);
   }

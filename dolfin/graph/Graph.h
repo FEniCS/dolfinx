@@ -113,7 +113,7 @@ namespace dolfin
     void partition(uint num_part, uint* vtx_part);
 
     /// Return graph type as a string
-    std::string typestr();
+    std::string typestr() const;
     
     /// Display graph data
     void disp();
