@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2003-07-15
-// Last changed: 2008-03-29
+// Last changed: 2008-10-27
 
 #ifndef __GENERIC_FILE_H
 #define __GENERIC_FILE_H

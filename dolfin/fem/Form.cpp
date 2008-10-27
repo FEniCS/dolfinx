@@ -94,35 +94,32 @@ const ufc::form& Form::ufc_form() const
 //-----------------------------------------------------------------------------
 void Form::check() const
 {
-  // Check that the number of function spaces matches the rank of the form
+  // Check that the number of argument function spaces is correct
   if (_ufc_form->rank() != _function_spaces.size())
     error("Form expects %d FunctionSpaces, only %d provided.",
           _ufc_form->rank(), _function_spaces.size());
 
-  // Check that finite element for test/trial functions from form match provided function spaces
-  for(uint i = 0; i < _function_spaces.size(); ++i)
-  {
-    std::auto_ptr<ufc::finite_element> element(_ufc_form->create_finite_element(i));
-    if(!element.get())
-      error("Error extracting ufc::finite_element from Form.");
-    else if(element->signature() != _function_spaces[i]->element().signature())   
-      error("Provided FiniteElement does not much FiniteElement %d expected by Form.", i);
-  }
-
-  // Check that the number of coefficient functions matches the number expected by the form
+  // Check that the number of coefficient function spaces is correct
   if (_ufc_form->num_coefficients() != _coefficients.size())
     error("Form expects %d coefficient functions, only %d provided.",
           _ufc_form->num_coefficients(), _coefficients.size());
 
-  // Check that finite element for coeffiecient functions from form match provided coefficient finite elements
-  for(uint i = 0; i < _coefficients.size(); ++i)
+  // Check that argument function spaces match provided function spaces
+  for (uint i = 0; i < _function_spaces.size(); ++i)
   {
-    std::auto_ptr<ufc::finite_element> element(_ufc_form->create_finite_element(i + _ufc_form->rank()));
+    std::auto_ptr<ufc::finite_element> element(_ufc_form->create_finite_element(i));
     if(!element.get())
-      error("Error extracting ufc::finite_element from Form.");
-    else if(element->signature() != _coefficients[i]->element().signature())   
-      error("Provided FiniteElement does not much FiniteElement %d expected by Form.", i);
+    if (element->signature() != _function_spaces[i]->element().signature())
+      error("Wrong type of function space for argument %d.", i);
   }
 
+  // Check that coefficient funtion spaces match provided function spaces
+  for (uint i = 0; i < _coefficients.size(); ++i)
+  {
+    std::auto_ptr<ufc::finite_element> element(_ufc_form->create_finite_element(i + _ufc_form->rank()));
+    if(!element)
+    if (element->signature() != _coefficients[i]->element().signature())
+      error("Wrong type of function space for coefficient %d.", i);
+  }
 }
 //-----------------------------------------------------------------------------

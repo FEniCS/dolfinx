@@ -2,9 +2,10 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells, 2008.
+// Modified by Anders Logg, 2008.
 //
 // First added:  2007-02-12
-// Last changed: 2008-08-18
+// Last changed: 2008-10-27
 
 #ifndef __GRAPH_H
 #define __GRAPH_H
@@ -112,7 +113,7 @@ namespace dolfin
     void partition(uint num_part, uint* vtx_part);
 
     /// Return graph type as a string
-    const std::string typestr() const;
+    std::string typestr();
     
     /// Display graph data
     void disp();

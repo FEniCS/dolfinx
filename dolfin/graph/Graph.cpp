@@ -1,11 +1,11 @@
 // Copyright (C) 2007 Magnus Vikstrom.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Anders Logg, 2007.
+// Modified by Anders Logg, 2007-2008.
 // Modified by Garth N. Wells, 2008.
 //
 // First added:  2007-02-12
-// Last changed: 2008-08-19
+// Last changed: 2008-10-27
 
 #include <dolfin/log/log.h>
 #include <dolfin/log/LogStream.h>
@@ -98,7 +98,7 @@ void Graph::partition(uint num_part, uint* vtx_part)
   GraphPartition::partition(*this, num_part, vtx_part);
 }
 //-----------------------------------------------------------------------------
-const std::string Graph::typestr() const
+std::string Graph::typestr()
 {
   switch ( _type )
   {
