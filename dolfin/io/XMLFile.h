@@ -43,7 +43,7 @@ namespace dolfin
     void operator>> (MeshFunction<unsigned int>& meshfunction);
     void operator>> (MeshFunction<double>& meshfunction);
     void operator>> (MeshFunction<bool>& meshfunction);
-    void operator>> (Function& f);
+    void operator>> (Function& v);
     void operator>> (ParameterList& parameters);
     void operator>> (BLASFormData& blas);
     void operator>> (Graph& graph);

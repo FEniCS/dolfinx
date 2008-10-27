@@ -1,8 +1,8 @@
-// Copyright (C) 2006 Johan Jansson and Anders Logg.
+// Copyright (C) 2006-2008 Johan Jansson and Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-02-15
-// Last changed: 2006-05-23
+// Last changed: 2008-10-27
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/function/Function.h>
@@ -11,7 +11,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-XMLFunction::XMLFunction(Function& f) : XMLObject(), f(f)
+XMLFunction::XMLFunction(Function& v) : XMLObject(), v(v)
 {
   state = OUTSIDE;
 }

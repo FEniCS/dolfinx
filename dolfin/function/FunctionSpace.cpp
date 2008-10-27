@@ -4,7 +4,7 @@
 // Modified by Kristoffer Selim, 2008.
 //
 // First added:  2008-09-11
-// Last changed: 2008-10-26
+// Last changed: 2008-10-27
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/NoDeleter.h>
@@ -206,7 +206,7 @@ FunctionSpace* FunctionSpace::extract_sub_space(const Array<uint>& sub_system) c
 
   // Extract sub dofmap and offset
   uint offset = 0;
-  std::tr1::shared_ptr<DofMap> dofmap(_dofmap->extract_sub_dofmap(sub_system, offset));
+  std::tr1::shared_ptr<DofMap> dofmap(_dofmap->extract_sub_dofmap(sub_system, offset, *_mesh));
   
   return new FunctionSpace(_mesh, element, dofmap);
 }

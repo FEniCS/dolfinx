@@ -96,18 +96,14 @@ namespace dolfin
     void tabulate_coordinates(double** coordinates, const ufc::cell& ufc_cell) const
     { ufc_dof_map->tabulate_coordinates(coordinates, ufc_cell); }
 
-    /// Return mesh associated with map
-    const Mesh& mesh() const
-    { return dolfin_mesh; }
-
     /// Build parallel dof map
-    void build(UFC& ufc);
+    void build(UFC& ufc, const Mesh& mesh);
     
     /// Return renumbering (used for testing)
     std::map<uint, uint> getMap() const;
 
     /// Extract sub dofmap and offset for sub system
-    DofMap* extract_sub_dofmap(const Array<uint>& sub_system, uint& offset) const;
+    DofMap* extract_sub_dofmap(const Array<uint>& sub_system, uint& offset, const Mesh& mesh) const;
     
     /// Return offset into parent's vector of coefficients
     uint offset() const;
@@ -121,12 +117,13 @@ namespace dolfin
     friend class DofMapBuilder;
 
     /// Initialise DofMap
-    void init();
+    void init(const Mesh& mesh);
     
     // Recursively extract sub dofmap
     ufc::dof_map* extract_sub_dofmap(const ufc::dof_map& dof_map,
                                      uint& offset,
-                                     const Array<uint>& sub_system) const;
+                                     const Array<uint>& sub_system,
+                                     const Mesh& mesh) const;
 
     // Precomputed dof map
     uint* dof_map;
@@ -136,9 +133,6 @@ namespace dolfin
 
     // UFC mesh
     UFCMesh ufc_mesh;
-
-    // DOLFIN mesh
-    const Mesh& dolfin_mesh;
 
     // Number of cells in the mesh
     uint num_cells;

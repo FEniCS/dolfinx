@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells 2007, 2008.
 //
 // First added:  2008-06-18
-// Last changed: 2008-10-14
+// Last changed: 2008-10-27
 
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/mesh/Mesh.h>
@@ -51,7 +51,7 @@ BoundaryCondition::LocalData::LocalData(const ufc::form& form, const Mesh& mesh,
     finite_element = sub_finite_element;
 
     // Create sub dof map
-    dof_map = global_dof_map.extract_sub_dofmap(sub_system.array(), offset);
+    dof_map = global_dof_map.extract_sub_dofmap(sub_system.array(), offset, mesh);
 
     // Take responsibility for dof_map
     dof_map_local = dof_map;
