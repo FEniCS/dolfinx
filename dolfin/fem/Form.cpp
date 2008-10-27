@@ -8,6 +8,7 @@
 
 #include <ufc.h>
 #include <dolfin/log/log.h>
+#include <dolfin/log/LogStream.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/function/Function.h>
@@ -99,7 +100,7 @@ void Form::check() const
           _ufc_form->rank(), _function_spaces.size());
 
   // Check that finite element for test/trial functions from form match provided function spaces
-  for(uint i = 0; i < _ufc_form->rank(); ++i)
+  for(uint i = 0; i < _function_spaces.size(); ++i)
   {
     ufc::finite_element* element = _ufc_form->create_finite_element(i);
     if(!element)
@@ -115,12 +116,12 @@ void Form::check() const
           _ufc_form->num_coefficients(), _coefficients.size());
 
   // Check that finite element for coeffiecient functions from form match provided coefficient finite elements
-  for(uint i = _ufc_form->rank(); i < _ufc_form->rank() + _ufc_form->num_coefficients(); ++i)
+  for(uint i = 0; i < _coefficients.size(); ++i)
   {
-    ufc::finite_element* element = _ufc_form->create_finite_element(i);
+    ufc::finite_element* element = _ufc_form->create_finite_element(i + _ufc_form->rank());
     if(!element)
       error("Error extracting ufc::finite_element from Form.");
-    else if(element->signature() != _function_spaces[i]->element().signature())   
+    else if(element->signature() != _coefficients[i]->element().signature())   
       error("Provided FiniteElement does not much FiniteElement %d expected by Form.", i);
     delete element;
   }
