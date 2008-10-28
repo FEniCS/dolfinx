@@ -9,14 +9,14 @@
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/mesh/Mesh.h>
-#include "ConstantFunction.h"
+#include "Constant.h"
 #include "FunctionSpace.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 /*
-ConstantFunction::ConstantFunction(const ConstantFunction& f)
+Constant::Constant(const Constant& f)
   : values(0), value_rank(f.value_rank), shape(0), size(f.size)
 {
   error("Needs updating for new Function interface.");
@@ -29,7 +29,7 @@ ConstantFunction::ConstantFunction(const ConstantFunction& f)
 }
 */
 //-----------------------------------------------------------------------------
-ConstantFunction::ConstantFunction(double value)
+Constant::Constant(double value)
   : values(0), value_rank(0), shape(0), size(1)
 {
   error("Needs updating for new Function interface.");
@@ -39,7 +39,7 @@ ConstantFunction::ConstantFunction(double value)
   shape[0] = 1;
 }
 //-----------------------------------------------------------------------------
-ConstantFunction::ConstantFunction(uint size, double value)
+Constant::Constant(uint size, double value)
   : values(0), value_rank(1), shape(0), size(size)
 {
   error("Needs updating for new Function interface.");
@@ -50,7 +50,7 @@ ConstantFunction::ConstantFunction(uint size, double value)
     values[i] = value;
 }
 //-----------------------------------------------------------------------------
-ConstantFunction::ConstantFunction(const Array<double>& _values)
+Constant::Constant(const Array<double>& _values)
   : values(0), value_rank(1), shape(0), size(0)
 {
   size = _values.size();
@@ -61,7 +61,7 @@ ConstantFunction::ConstantFunction(const Array<double>& _values)
     values[i] = _values[i];
 }
 //-----------------------------------------------------------------------------
-ConstantFunction::ConstantFunction(const Array<uint>& _shape, const Array<double>& _values)
+Constant::Constant(const Array<uint>& _shape, const Array<double>& _values)
   : values(0), value_rank(0), shape(0), size(0)
 {
   value_rank = _shape.size();
@@ -79,25 +79,25 @@ ConstantFunction::ConstantFunction(const Array<uint>& _shape, const Array<double
     values[i] = _values[i];
 }
 //-----------------------------------------------------------------------------
-ConstantFunction::~ConstantFunction()
+Constant::~Constant()
 {
   delete [] shape;
   delete [] values;
 }
 //-----------------------------------------------------------------------------
-//dolfin::uint ConstantFunction::rank() const
+//dolfin::uint Constant::rank() const
 //{
 //  return value_rank;
 //}
 //-----------------------------------------------------------------------------
-//dolfin::uint ConstantFunction::dim(uint i) const
+//dolfin::uint Constant::dim(uint i) const
 //{
 //  if(i >= value_rank)
 //    error("Too large dimension in dim.");
 //  return shape[i];
 //}
 //-----------------------------------------------------------------------------
-void ConstantFunction::interpolate(double* _values, const FunctionSpace& V) const
+void Constant::interpolate(double* _values, const FunctionSpace& V) const
 {
   dolfin_assert(_values);
 
@@ -112,7 +112,7 @@ void ConstantFunction::interpolate(double* _values, const FunctionSpace& V) cons
   }
 }
 //-----------------------------------------------------------------------------
-void ConstantFunction::interpolate(double* coefficients,
+void Constant::interpolate(double* coefficients,
                                    const ufc::cell& cell,
                                    const FunctionSpace& V) const
 {
@@ -133,7 +133,7 @@ void ConstantFunction::interpolate(double* coefficients,
   //finite_element.evaluate_dofs(coefficients, *this, cell);
 }
 //-----------------------------------------------------------------------------
-void ConstantFunction::eval(double* _values, const double* x) const
+void Constant::eval(double* _values, const double* x) const
 {
   dolfin_assert(_values);
 

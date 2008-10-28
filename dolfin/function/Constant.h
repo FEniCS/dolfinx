@@ -4,10 +4,10 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2006-02-09
-// Last changed: 2008-07-07
+// Last changed: 2008-10-28
 
-#ifndef __CONSTANT_FUNCTION_H
-#define __CONSTANT_FUNCTION_H
+#ifndef __CONSTANT_H
+#define __CONSTANT_H
 
 #include "Function.h"
 
@@ -17,27 +17,27 @@ namespace dolfin
   /// This class implements the functionality for functions
   /// that take a single constant value.
 
-  class ConstantFunction : public Function
+  class Constant : public Function
   {
   public:
 
     /// Copy constructor
-    //ConstantFunction(const ConstantFunction& f);
+    //Constant(const ConstantFunction& f);
 
     /// Create constant scalar function from given value
-    explicit ConstantFunction(double value);
+    explicit Constant(double value);
 
     /// Create constant vector function from given size and value
-    ConstantFunction(uint size, double value);
+    Constant(uint size, double value);
 
     /// Create constant vector function from given size and values
-    ConstantFunction(const Array<double>& values);
+    Constant(const Array<double>& values);
 
     /// Create constant tensor function from given shape and values
-    ConstantFunction(const Array<uint>& shape, const Array<double>& values);
+    Constant(const Array<uint>& shape, const Array<double>& values);
 
     /// Destructor
-    ~ConstantFunction();
+    ~Constant();
 
     // FIXME: Why are the interpolate functions needed? Shouldn't it be
     // FIXME: enough to implement eval()?
