@@ -13,12 +13,13 @@
 #include <dolfin/mesh/Facet.h>
 #include <dolfin/fem/Form.h>
 #include <dolfin/fem/UFC.h>
+#include "FunctionSpace.h"
 #include "SpecialFunctions.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-MeshSize::MeshSize(Mesh& mesh) : Function(), mesh(mesh)
+MeshSize::MeshSize(const FunctionSpace& V) : Function(V)
 {
   // Do nothing
 }
@@ -30,7 +31,7 @@ double MeshSize::eval(const double* x) const
 //-----------------------------------------------------------------------------
 double MeshSize::min() const
 {
-  CellIterator c(mesh);
+  CellIterator c(function_space().mesh());
   double hmin = c->diameter();
   for (; !c.end(); ++c)
     hmin = std::min(hmin, c->diameter());
@@ -39,7 +40,7 @@ double MeshSize::min() const
 //-----------------------------------------------------------------------------
 double MeshSize::max() const
 {
-  CellIterator c(mesh);
+  CellIterator c(function_space().mesh());
   double hmax = c->diameter();
   for (; !c.end(); ++c)
     hmax = std::max(hmax, c->diameter());
@@ -56,7 +57,7 @@ double InvMeshSize::eval(const double* x) const
   return 1.0 / cell().diameter();
 }
 //-----------------------------------------------------------------------------
-AvgMeshSize::AvgMeshSize(Mesh& mesh) : Function(), mesh(mesh)
+AvgMeshSize::AvgMeshSize(const FunctionSpace& V) : Function(V)
 {
   // Do nothing
 }
@@ -69,14 +70,14 @@ double AvgMeshSize::eval(const double* x) const
   else
   {
     // Create facet from the global facet number
-    Facet facet0(mesh, cell().entities(cell().mesh().topology().dim() - 1)[facet()]);
+    Facet facet0(function_space().mesh(), cell().entities(cell().mesh().topology().dim() - 1)[facet()]);
 
     // If there are two cells connected to the facet
     if (facet0.numEntities(cell().mesh().topology().dim()) == 2)
     {
       // Create the two connected cells and return the average of their diameter
-      Cell cell0(mesh, facet0.entities(cell().mesh().topology().dim())[0]);
-      Cell cell1(mesh, facet0.entities(cell().mesh().topology().dim())[1]);
+      Cell cell0(function_space().mesh(), facet0.entities(cell().mesh().topology().dim())[0]);
+      Cell cell1(function_space().mesh(), facet0.entities(cell().mesh().topology().dim())[1]);
 
       return (cell0.diameter() + cell1.diameter())/2.0;
     }
@@ -87,7 +88,7 @@ double AvgMeshSize::eval(const double* x) const
   }
 }
 //-----------------------------------------------------------------------------
-FacetNormal::FacetNormal(Mesh& mesh) : Function(), mesh(mesh)
+FacetNormal::FacetNormal(const FunctionSpace& V) : Function(V)
 {
   // Do nothing
 }
@@ -115,7 +116,7 @@ dolfin::uint FacetNormal::dim(uint i) const
 {
   if(i > 0)
     error("Invalid dimension %d in FacetNormal::dim.", i);
-  return mesh.geometry().dim();
+  return function_space().mesh().geometry().dim();
 }
 //-----------------------------------------------------------------------------
 FacetArea::FacetArea(Mesh& mesh) : Function(), mesh(mesh)

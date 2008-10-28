@@ -32,7 +32,7 @@ int main()
   {
   public:
     
-    Source(Mesh& mesh) : Function(mesh) {}
+    Source(const FunctionSpace& V) : Function(V) {}
 
     double eval(const double* x) const
     {
@@ -45,25 +45,34 @@ int main()
  
   // Create mesh
   UnitSquare mesh(64, 64);
+  mesh.init();
+  mesh.order();
 
   // Create functions
-  Source f(mesh);
-  FacetNormal n(mesh);
-  AvgMeshSize h(mesh);
+  PoissonTestSpace V(mesh);
+  PoissonTrialSpace U(mesh);
+  Source f(V);
+
+  PoissonBilinearFormCoefficientSpace0 N(mesh);
+  FacetNormal n(N);
+
+  PoissonBilinearFormCoefficientSpace1 H(mesh);
+  AvgMeshSize h(H);
 
   // Define PDE
-  PoissonBilinearForm a(n, h);
-  PoissonLinearForm L(f);
+  PoissonBilinearForm a(V, U, n, h);
+  PoissonLinearForm L(V, f);
   LinearPDE pde(a, L, mesh);
 
   // Solve PDE
-  Function u;
+  Function u(V);
   pde.solve(u);
 
   // Project solution onto continuous basis for post-processing
-  Function u_proj;
-  P1ProjectionBilinearForm a_proj;
-  P1ProjectionLinearForm L_proj(u);
+  P1ProjectionTestSpace VP(mesh);
+  Function u_proj(VP);
+  P1ProjectionBilinearForm a_proj(VP, VP);
+  P1ProjectionLinearForm L_proj(VP, u);
   LinearPDE pde_proj(a_proj, L_proj, mesh);
   pde_proj.solve(u_proj);
 

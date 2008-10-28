@@ -18,6 +18,7 @@ namespace dolfin
 
   class Form;
   class UFC;
+  class FunctionSpace;
 
 
   /// This Function represents the local mesh size on a given mesh.
@@ -26,7 +27,7 @@ namespace dolfin
   public:
 
     /// Constructor
-    MeshSize(Mesh& mesh);
+    MeshSize(const FunctionSpace& V);
 
     /// Return cell size
     double eval(const double* x) const;
@@ -37,8 +38,8 @@ namespace dolfin
     /// Compute maximal cell diameter
     double max() const;    
 
-  private:
-    Mesh& mesh;  
+//  private:
+//    Mesh& mesh;  
   };
 
   /// This Function represents the inverse of the local cell size on a given 
@@ -64,13 +65,13 @@ namespace dolfin
   public:
 
     /// Constructor
-    AvgMeshSize(Mesh& mesh);
+    AvgMeshSize(const FunctionSpace& V);
 
     /// Return average cell size
     double eval(const double* x) const;
 
-  private:
-    Mesh& mesh;  
+//  private:
+//    Mesh& mesh;  
   };
 
   /// This Function represents the outward unit normal on cell facets.
@@ -79,7 +80,7 @@ namespace dolfin
   {
   public:
 
-    FacetNormal(Mesh& mesh);
+    FacetNormal(const FunctionSpace& V);
 
     void eval(double* values, const double* x) const;
 
@@ -87,8 +88,8 @@ namespace dolfin
     
     uint dim(uint i) const;
 
-  private:
-    Mesh& mesh;  
+//  private:
+//    Mesh& mesh;  
   };
 
   /// This function represents the area/length of a cell facet.
