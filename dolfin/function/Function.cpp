@@ -240,25 +240,12 @@ void Function::interpolate(double* coefficients,
 {
   dolfin_assert(coefficients);
   dolfin_assert(_function_space);
-  interpolate(coefficients, ufc_cell, *_function_space, local_facet);
-}
-//-----------------------------------------------------------------------------
-void Function::interpolate(double* coefficients,
-                           const ufc::cell& ufc_cell,
-                           const FunctionSpace& V,
-                           int local_facet) const
-{
-  dolfin_assert(coefficients);
-
-  // Check that function space is correct if not null
-  if (_function_space && &V != _function_space.get())
-    error("Wrong function space for local interpolation of function.");
 
   // Either pick values or evaluate dof functionals
   if (_vector)
   {
     // Get dofmap
-    const DofMap& dofmap = V.dofmap();
+    const DofMap& dofmap = _function_space->dofmap();
 
     // Tabulate dofs
     uint* dofs = new uint[dofmap.local_dimension()];
@@ -271,7 +258,7 @@ void Function::interpolate(double* coefficients,
   else
   {
     // Get element
-    const FiniteElement& element = V.element();
+    const FiniteElement& element = _function_space->element();
 
     // Store local facet
     _facet = local_facet;
