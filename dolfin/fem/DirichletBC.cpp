@@ -5,7 +5,7 @@
 // Modified by Martin Sandve Alnes, 2008
 //
 // First added:  2007-04-10
-// Last changed: 2008-10-13
+// Last changed: 2008-10-28
 
 #include <dolfin/common/constants.h>
 #include <dolfin/function/Function.h>
@@ -462,8 +462,7 @@ void DirichletBC::computeBCTopological(std::map<uint, double>& boundary_values,
     UFCCell ufc_cell(cell);
 
     // Interpolate function on cell
-    error("Need an interpolate function in Function which takes cell/facet as input."); 
-    //g.interpolate(data.w, ufc_cell, *(data.finite_element), cell, facet_number);
+    g.interpolate(data.w, ufc_cell, facet_number);
     
     // Tabulate dofs on cell
     data.dof_map->tabulate_dofs(data.cell_dofs, ufc_cell);
