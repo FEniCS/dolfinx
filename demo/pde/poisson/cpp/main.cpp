@@ -92,7 +92,7 @@ int main()
   
   // Create boundary condition
   //Function u0(mesh, 0.0);
-  Constant hej(mesh, 0.0);
+  //Constant hej(mesh, 0.0);
   Zero u0(V);
   DirichletBoundary boundary;
   DirichletBC bc(u0, mesh, boundary);

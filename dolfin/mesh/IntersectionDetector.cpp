@@ -94,7 +94,7 @@ void IntersectionDetector::intersection(const Point& p, Array<uint>& intersectio
 //-----------------------------------------------------------------------------
 void IntersectionDetector::intersection(const Point& p0, const Point& p1, Array<uint>& intersection) {}
 //-----------------------------------------------------------------------------
-void IntersectionDetector::intersection(Cell& c, Array<uint>& intersection) {}
+void IntersectionDetector::intersection(const Cell& c, Array<uint>& intersection) {}
 //-----------------------------------------------------------------------------
 void IntersectionDetector::intersection(Array<Point>& points, Array<uint>& intersection) {}
 //-----------------------------------------------------------------------------
