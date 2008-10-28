@@ -27,6 +27,7 @@ namespace dolfin
     /// Create constant scalar function from given value
     explicit Constant(double value);
 
+    /*
     /// Create constant vector function from given size and value
     Constant(uint size, double value);
 
@@ -35,6 +36,8 @@ namespace dolfin
 
     /// Create constant tensor function from given shape and values
     Constant(const Array<uint>& shape, const Array<double>& values);
+
+    */
 
     /// Destructor
     ~Constant();

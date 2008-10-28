@@ -30,7 +30,8 @@ Constant::Constant(const Constant& f)
 */
 //-----------------------------------------------------------------------------
 Constant::Constant(double value)
-  : values(0), value_rank(0), shape(0), size(1)
+  : Function(std::tr1::shared_ptr<const FunctionSpace>(static_cast<FunctionSpace*>(0))),
+    values(0), value_rank(0), shape(0), size(1)
 {
   error("Needs updating for new Function interface.");
   values = new double[1];
@@ -38,6 +39,8 @@ Constant::Constant(double value)
   values[0] = value;
   shape[0] = 1;
 }
+/*
+
 //-----------------------------------------------------------------------------
 Constant::Constant(uint size, double value)
   : values(0), value_rank(1), shape(0), size(size)
@@ -78,11 +81,14 @@ Constant::Constant(const Array<uint>& _shape, const Array<double>& _values)
   for(uint i=0; i<size; i++)
     values[i] = _values[i];
 }
+
+*/
+
 //-----------------------------------------------------------------------------
 Constant::~Constant()
 {
-  delete [] shape;
   delete [] values;
+  delete [] shape;
 }
 //-----------------------------------------------------------------------------
 //dolfin::uint Constant::rank() const

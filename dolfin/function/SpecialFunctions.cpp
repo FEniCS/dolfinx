@@ -47,7 +47,7 @@ double MeshSize::max() const
   return hmax;
 }
 //-----------------------------------------------------------------------------
-InvMeshSize::InvMeshSize(Mesh& mesh) : Function(), mesh(mesh) 
+InvMeshSize::InvMeshSize(const FunctionSpace& V) : Function(V)
 {
   // Do nothing
 }
@@ -119,7 +119,7 @@ dolfin::uint FacetNormal::dim(uint i) const
   return function_space().mesh().geometry().dim();
 }
 //-----------------------------------------------------------------------------
-FacetArea::FacetArea(Mesh& mesh) : Function(), mesh(mesh)
+FacetArea::FacetArea(const FunctionSpace& V) : Function(V)
 {
   // Do nothing
 }
@@ -132,7 +132,7 @@ void FacetArea::eval(double* values, const double* x) const
     values[0] = 0.0;
 }
 //-----------------------------------------------------------------------------
-InvFacetArea::InvFacetArea(Mesh& mesh) : Function(), mesh(mesh)
+InvFacetArea::InvFacetArea(const FunctionSpace& V) : Function(V)
 {
   // Do nothing
 }
@@ -145,6 +145,7 @@ void InvFacetArea::eval(double* values, const double* x) const
     values[0] = 0.0;
 }
 //-----------------------------------------------------------------------------
+/*
 OutflowFacet::OutflowFacet(Mesh& mesh, Form& form) : Function(), form(form), mesh(mesh)                           
 {
   // Some simple sanity checks on form
@@ -197,15 +198,7 @@ double OutflowFacet::eval(const double* x) const
   else
     return 0.0;
 }
+
+*/
+
 //-----------------------------------------------------------------------------
-
-
-
-
-
-
-
-
-
-
-

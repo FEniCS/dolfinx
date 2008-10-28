@@ -7,7 +7,7 @@
 // Modified by Martin Alnæs, 2008.
 //
 // First added:  2006-03-04
-// Last changed: 2008-09-07
+// Last changed: 2008-10-28
 
 #ifndef __UBLAS_VECTOR_H
 #define __UBLAS_VECTOR_H
@@ -46,7 +46,7 @@ namespace dolfin
     explicit uBLASVector(const uBLASVector& x);
 
     /// Construct vector from a ublas_vector
-    explicit uBLASVector(const std::tr1::shared_ptr<ublas_vector> x);
+    explicit uBLASVector(std::tr1::shared_ptr<ublas_vector> x);
 
     // Create vector from given uBLAS vector expression
     //template <class E>

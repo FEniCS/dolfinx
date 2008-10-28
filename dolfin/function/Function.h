@@ -39,17 +39,14 @@ namespace dolfin
   {
   public:
 
-    /// Create an empty function
-    Function() { error("Cannot creating function without a basis"); };
-
     /// Create function on given function space
     explicit Function(const FunctionSpace& V);
 
     /// Create function on given function space (shared data)
-    explicit Function(const std::tr1::shared_ptr<FunctionSpace> V);
+    explicit Function(std::tr1::shared_ptr<const FunctionSpace> V);
 
     /// Create function from file
-    explicit Function(const std::string filename);
+    explicit Function(std::string filename);
 
     /// Create function from sub function
     explicit Function(const SubFunction& v);
@@ -134,7 +131,7 @@ namespace dolfin
     void init();
 
     // The function space
-    const std::tr1::shared_ptr<const FunctionSpace> _function_space;
+    std::tr1::shared_ptr<const FunctionSpace> _function_space;
 
     // The vector of expansion coefficients
     GenericVector* _vector;

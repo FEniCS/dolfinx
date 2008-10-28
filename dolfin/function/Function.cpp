@@ -29,7 +29,7 @@ Function::Function(const FunctionSpace& V)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-Function::Function(const std::tr1::shared_ptr<FunctionSpace> V)
+Function::Function(std::tr1::shared_ptr<const FunctionSpace> V)
   : _function_space(V),
     _vector(0),
     _time(0), _cell(0), _facet(-1)
@@ -37,7 +37,7 @@ Function::Function(const std::tr1::shared_ptr<FunctionSpace> V)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-Function::Function(const std::string filename)
+Function::Function(std::string filename)
   : _function_space(static_cast<FunctionSpace*>(0)),
     _vector(0),
     _time(0), _cell(0), _facet(-1)
