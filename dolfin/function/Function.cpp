@@ -5,7 +5,7 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2003-11-28
-// Last changed: 2008-10-27
+// Last changed: 2008-10-28
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/NoDeleter.h>
@@ -307,6 +307,11 @@ dolfin::uint Function::facet() const
 Point Function::normal() const
 {
   return cell().normal(facet());
+}
+//-----------------------------------------------------------------------------
+bool Function::on_facet() const
+{
+  return _facet >= 0;
 }
 //-----------------------------------------------------------------------------
 void Function::init()

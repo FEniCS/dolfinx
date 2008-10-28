@@ -6,7 +6,7 @@
 // Modified by Garth N. Wells, 2008.
 //
 // First added:  2008-07-17
-// Last changed: 
+// Last changed: 2008-10-28
 
 #include <dolfin/common/constants.h>
 #include <dolfin/mesh/Mesh.h>
@@ -65,7 +65,7 @@ AvgMeshSize::AvgMeshSize(const FunctionSpace& V) : Function(V)
 double AvgMeshSize::eval(const double* x) const
 {
   // If there is no facet (assembling on interior), return cell diameter
-  if (facet() < 0)
+  if (!on_facet())
     return cell().diameter();
   else
   {
@@ -95,7 +95,7 @@ FacetNormal::FacetNormal(const FunctionSpace& V) : Function(V)
 //-----------------------------------------------------------------------------
 void FacetNormal::eval(double* values, const double* x) const
 {
-  if (facet() >= 0)
+  if (on_facet())
   {
     for (uint i = 0; i < cell().dim(); i++)
       values[i] = cell().normal(facet(), i);
