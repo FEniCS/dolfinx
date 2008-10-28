@@ -45,7 +45,6 @@ public:
 
   double eval(const double* x) const
   {
-    cout << "Inside Source::eval" << endl;
     double dx = x[0] - 0.5;
     double dy = x[1] - 0.5;
     return 500.0*exp(-(dx*dx + dy*dy)/0.02);
@@ -91,8 +90,7 @@ int main()
   Flux g(V);
   
   // Create boundary condition
-  //Function u0(mesh, 0.0);
-  Constant hej(0.0);
+  //Constant u0(0.0);
   Zero u0(V);
   DirichletBoundary boundary;
   DirichletBC bc(u0, mesh, boundary);

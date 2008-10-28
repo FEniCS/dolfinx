@@ -33,7 +33,6 @@ Constant::Constant(double value)
   : Function(std::tr1::shared_ptr<const FunctionSpace>(static_cast<FunctionSpace*>(0))),
     values(0), value_rank(0), shape(0), size(1)
 {
-  error("Needs updating for new Function interface.");
   values = new double[1];
   shape = new uint[1];
   values[0] = value;
