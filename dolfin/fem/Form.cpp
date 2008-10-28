@@ -7,6 +7,7 @@
 // Last changed: 2008-10-24
 
 #include <ufc.h>
+#include <dolfin/common/NoDeleter.h>
 #include <dolfin/log/log.h>
 #include <dolfin/log/LogStream.h>
 #include <dolfin/fem/FiniteElement.h>

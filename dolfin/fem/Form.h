@@ -11,6 +11,7 @@
 
 #include <vector>
 #include <tr1/memory>
+#include <dolfin/common/types.h>
 #include <dolfin/common/NoDeleter.h>
 
 // Forward declaration
