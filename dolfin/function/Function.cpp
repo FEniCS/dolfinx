@@ -229,11 +229,6 @@ void Function::evaluate(double* values, const double* coordinates, const ufc::ce
   _cell = 0;
 }
 //-----------------------------------------------------------------------------
-void Function::interpolate(GenericVector& coefficients, const FunctionSpace& V) const
-{
-  V.interpolate(coefficients, *this);
-}
-//-----------------------------------------------------------------------------
 void Function::interpolate(double* coefficients,
                            const ufc::cell& ufc_cell,
                            int local_facet) const
@@ -270,6 +265,12 @@ void Function::interpolate(double* coefficients,
     // Invalidate local facet
     _facet = -1;
   }  
+}
+//-----------------------------------------------------------------------------
+void Function::interpolate(GenericVector& coefficients,
+                           const FunctionSpace& V) const
+{
+  V.interpolate(coefficients, *this);
 }
 //-----------------------------------------------------------------------------
 void Function::interpolate(double* vertex_values) const

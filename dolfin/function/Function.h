@@ -99,14 +99,17 @@ namespace dolfin
     /// Evaluate function (needed for ufc::function interface)
     void evaluate(double* values, const double* coordinates, const ufc::cell& cell) const;
 
+    /// Interpolate function to local function space on cell
+    virtual void interpolate(double* coefficients, const ufc::cell& ufc_cell, int local_facet=-1) const;
+
     /// Interpolate function to given function space
     void interpolate(GenericVector& coefficients, const FunctionSpace& V) const;
 
-    /// Interpolate function to local function space on cell
-    void interpolate(double* coefficients, const ufc::cell& ufc_cell, int local_facet=-1) const;
-
     /// Interpolate function to vertices of mesh
     void interpolate(double* vertex_values) const;
+
+    /// Friends
+    friend class Coefficient;
 
   protected:
 

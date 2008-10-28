@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2008.
 //
 // First added:  2007-04-02
-// Last changed: 2008-10-24
+// Last changed: 2008-10-28
 
 #ifndef __FORM_H
 #define __FORM_H
@@ -60,13 +60,16 @@ namespace dolfin
     /// Return UFC form
     const ufc::form& ufc_form() const;
 
+    /// Friends
+    friend class Coefficient;
+
   protected:
 
     // Function spaces (one for each argument)
-    std::vector<std::tr1::shared_ptr<FunctionSpace> > _function_spaces;
+    std::vector<std::tr1::shared_ptr<const FunctionSpace> > _function_spaces;
 
     // Coefficients
-    std::vector<std::tr1::shared_ptr<Function> > _coefficients;
+    std::vector<std::tr1::shared_ptr<const Function> > _coefficients;
 
     // Check that function spaces match the form
     void check() const;
