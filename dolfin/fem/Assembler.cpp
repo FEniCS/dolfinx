@@ -6,7 +6,7 @@
 // Modified by Kent-Andre Mardal, 2008
 //
 // First added:  2007-01-17
-// Last changed: 2008-08-29
+// Last changed: 2008-10-28
 
 #include <ufc.h>
 #include <dolfin/main/MPI.h>
@@ -349,10 +349,9 @@ void Assembler::assembleInteriorFacets(GenericTensor& A,
     // Interpolate coefficients on cell
     for (uint i = 0; i < coefficients.size(); i++)
     {
-      //const uint offset = ufc.coefficient_elements[i]->space_dimension();
-      error("Assembler::assembleInteriorFacets: Need to update Function interface.");
-      //coefficients[i]->interpolate(ufc.macro_w[i], ufc.cell0, *ufc.coefficient_elements[i], cell0, facet0);
-      //coefficients[i]->interpolate(ufc.macro_w[i] + offset, ufc.cell1, *ufc.coefficient_elements[i], cell1, facet1);
+      const uint offset = ufc.coefficient_elements[i]->space_dimension();
+      coefficients[i]->interpolate(ufc.macro_w[i],          ufc.cell0, facet0);
+      coefficients[i]->interpolate(ufc.macro_w[i] + offset, ufc.cell1, facet1);
     }
 
     // Tabulate dofs for each dimension on macro element
