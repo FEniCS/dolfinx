@@ -8,6 +8,7 @@
 #define __QUADRATURE_H
 
 #include <dolfin/common/types.h>
+#include <dolfin/common/real.h>
 
 namespace dolfin
 {
@@ -26,13 +27,13 @@ namespace dolfin
     int size() const;
 
     /// Return quadrature point
-    double point(unsigned int i) const;
+    real point(unsigned int i) const;
 
     /// Return quadrature weight
-    double weight(unsigned int i) const;
+    real weight(unsigned int i) const;
 
     /// Return sum of weights (length, area, volume)
-    double measure() const;
+    real measure() const;
     
     /// Display quadrature data
     virtual void disp() const = 0;
@@ -40,9 +41,9 @@ namespace dolfin
   protected:
     
     uint n;        // Number of quadrature points
-    double* points;  // Quadrature points
-    double* weights; // Quadrature weights
-    double m;        // Sum of weights
+    real* points;  // Quadrature points
+    real* weights; // Quadrature weights
+    real m;        // Sum of weights
     
   };
   

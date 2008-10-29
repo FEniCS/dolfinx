@@ -4,10 +4,11 @@
 // First added:  2003-06-03
 // Last changed: 2006-10-23
 
-#include <cmath>
+#include <dolfin/common/real.h>
 #include <dolfin/common/constants.h>
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/math/Legendre.h>
+#include <dolfin/ode/ODE.h>
 #include "LobattoQuadrature.h"
 
 using namespace dolfin;
@@ -35,7 +36,7 @@ void LobattoQuadrature::disp() const
   cout << "-----------------------------------------------------" << endl;
 
   for (unsigned int i = 0; i < n; i++)
-    message("%2d   %.16e   %.16e", i, points[i], weights[i]);
+    message("%2d   %.16e   %.16e", i, to_double(points[i]), to_double(weights[i]));
 }
 //----------------------------------------------------------------------------
 void LobattoQuadrature::computePoints()
@@ -59,7 +60,7 @@ void LobattoQuadrature::computePoints()
   }
 
   Legendre p(n-1);
-  double x, dx;
+  real x, dx;
 
   // Set the first and last nodal points which are 0 and 1
   points[0] = -1.0;
@@ -69,14 +70,14 @@ void LobattoQuadrature::computePoints()
   for (unsigned int i = 1; i <= ((n-1)/2); i++) {
     
     // Initial guess
-    x = cos(DOLFIN_PI*double(i)/double(n-1));
+    x = cos(3.1415926*double(i)/double(n-1));
     
     // Newton's method
     do
     {
       dx = - p.ddx(x) / p.d2dx(x);
       x  = x + dx;
-    } while ( fabs(dx) > DOLFIN_EPS );
+    } while ( abs(dx) > ODE::epsilon() );
     
     // Save the value using the symmetry of the points
     points[i] = - x;
