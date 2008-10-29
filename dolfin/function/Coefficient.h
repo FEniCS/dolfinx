@@ -37,8 +37,8 @@ namespace dolfin
     /// Destructor
     virtual ~Coefficient();
 
-    /// Assign function to coefficient
-    const Coefficient& operator= (Function& v);
+    // Attach function to coefficient
+    void attach(Function& v);
 
     /// Create function space for coefficient
     virtual const FunctionSpace* create_function_space() const = 0;
@@ -50,11 +50,6 @@ namespace dolfin
     virtual std::string name() const = 0;
 
   protected:
-
-    // The mesh
-    const Mesh& mesh;
-
-  private:
 
     // The form
     Form& form;

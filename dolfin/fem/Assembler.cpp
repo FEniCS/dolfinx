@@ -376,13 +376,16 @@ void Assembler::check(const Form& form,
                       const std::vector<const Function*>& coefficients, 
                       const Mesh& mesh)
 {
+  // Check the form
+  form.check();
+
   // Check that we get the correct number of coefficients
   if (coefficients.size() != form.ufc_form().num_coefficients())
     error("Incorrect number of coefficients for form: %d given but %d required.",
           coefficients.size(), form.ufc_form().num_coefficients());
   
   // Check that all coefficients have valid value dimensions
-  for(uint i=0; i<coefficients.size(); ++i)
+  for (uint i = 0; i < coefficients.size(); ++i)
   {
     if(!coefficients[i])
       error("Got NULL Function as coefficient %d.", i);
@@ -394,11 +397,11 @@ void Assembler::check(const Form& form,
       
       uint r = coefficients[i]->element().value_rank();
       uint fe_r = fe->value_rank();
-      if(fe_r != r)
+      if (fe_r != r)
         warning("Invalid value rank of Function %d, got %d but expecting %d. \
 You may need to provide the rank of a user defined Function.", i, r, fe_r);
       
-      for(uint j=0; j<r; ++j)
+      for (uint j = 0; j < r; ++j)
       {
         uint dim = coefficients[i]->element().value_dimension(j);
         uint fe_dim = fe->value_dimension(j);
