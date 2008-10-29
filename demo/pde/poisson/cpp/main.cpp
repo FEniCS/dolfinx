@@ -98,6 +98,8 @@ int main()
   // Define PDE
   PoissonBilinearForm a(V, V);
   PoissonLinearForm L(V, f, g);
+  //L.f = f;
+  //L.g = g;
   LinearPDE pde(a, L, mesh, bc, symmetric);
   //LinearPDE pde(a, L, mesh, symmetric);
 
