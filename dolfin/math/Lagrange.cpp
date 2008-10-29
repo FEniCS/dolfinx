@@ -6,9 +6,10 @@
 // First added:  2003-06-12
 // Last changed: 2008-04-22
 
-#include <cmath>
 #include <dolfin/common/constants.h>
+#include <dolfin/common/real.h>
 #include <dolfin/log/dolfin_log.h>
+#include <dolfin/ode/ODE.h>
 #include "Lagrange.h"
 
 using namespace dolfin;
@@ -153,7 +154,7 @@ void Lagrange::init()
     for (unsigned int j = 0; j < n; j++)
       if ( j != i )
 	product *= points[i] - points[j];
-    if ( abs(product) > DOLFIN_EPS )
+    if ( abs(product) > ODE::epsilon() )
       constants[i] = 1.0 / product;
   }
 }
