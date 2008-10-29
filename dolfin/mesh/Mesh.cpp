@@ -7,7 +7,7 @@
 // Modified by Kristoffer Selim 2008.
 //
 // First added:  2006-05-09
-// Last changed: 2008-10-08
+// Last changed: 2008-10-29
 
 #include <sstream>
 
@@ -200,11 +200,6 @@ void Mesh::partition(MeshFunction<uint>& partitions, uint num_partitions)
 
   // Broadcast mesh according to parallel policy
   if (MPI::broadcast()) { MPIMeshCommunicator::broadcast(partitions); }
-}
-//-----------------------------------------------------------------------------
-void Mesh::partitionGeom(MeshFunction<uint>& partitions)
-{
-  MeshPartition::partitionGeom(*this, partitions);
 }
 //-----------------------------------------------------------------------------
 void Mesh::intersection(const Point& p, Array<uint>& cells, bool fixed_mesh)

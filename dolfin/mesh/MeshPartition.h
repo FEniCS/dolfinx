@@ -6,7 +6,7 @@
 // Modified by Niclas Jansson, 2008.
 //
 // First added:  2007-04-24
-// Last changed: 2008-09-16
+// Last changed: 2008-10-29
 
 #ifndef __MESH_PARTITIONING_H
 #define __MESH_PARTITIONING_H
@@ -37,10 +37,6 @@ namespace dolfin
 			  MeshFunction<uint>& partitions,
 			  MeshFunction<uint>& weight);
     
-    /// Partition a mesh based on coordinates
-    static void partitionGeom(Mesh& mesh, MeshFunction<uint>& partitions);
-    
-
   private:
 
     /// Common Metis interface

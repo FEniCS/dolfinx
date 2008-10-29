@@ -1,14 +1,16 @@
 // Copyright (C) 2003-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Niclas Jansson, 2008.
+//
 // First added:  2003-10-21
-// Last changed: 2008-05-21
+// Last changed: 2008-10-29
 
 #ifndef __NEW_PXML_MESH_H
 #define __NEW_PXML_MESH_H
 
 #include <dolfin/common/Array.h>
-#include <dolfin/mesh/MeshEditor.h>
+#include <dolfin/mesh/DynamicMeshEditor.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include "XMLObject.h"
 #include <map>
@@ -42,7 +44,6 @@ namespace dolfin
     // Callbacks for reading XML data
     void readMesh        (const xmlChar* name, const xmlChar** attrs);
     void readVertices    (const xmlChar* name, const xmlChar** attrs);
-    void readCells       (const xmlChar* name, const xmlChar** attrs);
     void readVertex      (const xmlChar* name, const xmlChar** attrs);
     void readInterval    (const xmlChar* name, const xmlChar** attrs);
     void readTriangle    (const xmlChar* name, const xmlChar** attrs);
@@ -51,6 +52,9 @@ namespace dolfin
     void readArray       (const xmlChar* name, const xmlChar** attrs);
     void readMeshEntity  (const xmlChar* name, const xmlChar** attrs);
     void readArrayElement(const xmlChar* name, const xmlChar** attrs);
+    
+    // Partition parsed vertices, called when finished reading vertices
+    void partitionVertices();
     
     // Close mesh, called when finished reading data
     void closeMesh();
@@ -66,7 +70,7 @@ namespace dolfin
     ParserState state;
 
     // Mesh editor
-    MeshEditor editor;
+    DynamicMeshEditor editor;
 
     // Pointer to current mesh function, used when reading mesh function data
     MeshFunction<uint>* f;
@@ -82,7 +86,15 @@ namespace dolfin
     // Data for parallel parsing
     std::map<uint, uint>* global_to_local;
     MeshFunction<uint>* global_numbering;
+    uint *global_number, *gp;
+    double *vertex_buffer, *vp;
     Array<uint> cell_buffer;
+    
+    // Number of local vertices and cells
+    uint num_local, num_cvert;
+
+    // Geometric and topological dimensions
+    uint gdim, tdim;
 
     // FIXME replace these with hash tables
     std::set<uint> local_vertices, shared_vertex, used_vertex;

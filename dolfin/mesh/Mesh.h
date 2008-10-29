@@ -8,7 +8,7 @@
 // Modified by Kristoffer Selim, 2008.
 //
 // First added:  2006-05-08
-// Last changed: 2008-10-23
+// Last changed: 2008-10-29
 
 #ifndef __MESH_H
 #define __MESH_H
@@ -181,9 +181,6 @@ namespace dolfin
 
     /// Partition mesh into num_partitions partitions
     void partition(MeshFunction<uint>& partitions, uint num_partitions);
-
-    /// Partition mesh into num_partitions partitions (geometric)
-    void partitionGeom(MeshFunction<uint>& partitions);
 
     // Distribute mesh according to mesh function
     void distribute(MeshFunction<uint>& partitions);
