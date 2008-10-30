@@ -57,26 +57,23 @@ class DirichletBoundary : public SubDomain
 
 int main()
 {
-  // Create mesh
+  // Create mesh and function space
   UnitSquare mesh(32, 32);
- 
-  // Create function space
   PoissonFunctionSpace V(mesh);
-
-  // Create functions
-  Source f;
-  Flux g;
 
   // Create boundary condition
   Constant u0(0.0);
   DirichletBoundary boundary;
   DirichletBC bc(u0, V, boundary);
 
+  // Create functions
+  Source f;
+  Flux g;
+
   // Define PDE
   PoissonBilinearForm a(V, V);
   PoissonLinearForm L(V);
-  L.f = f;
-  L.g = g;
+  L.f = f; L.g = g;
   LinearPDE pde(a, L, mesh, bc, symmetric);
 
   // Solve PDE
