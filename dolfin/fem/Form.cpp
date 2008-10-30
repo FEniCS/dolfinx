@@ -39,9 +39,11 @@ const Mesh& Form::mesh() const
   // Extract all meshes
   std::vector<const Mesh*> meshes;
   for (uint i = 0; i < _function_spaces.size(); i++)
-    meshes.push_back(&_function_spaces[i]->mesh());
+    if (_function_spaces[i])
+      meshes.push_back(&_function_spaces[i]->mesh());
   for (uint i = 0; i < _coefficients.size(); i++)
-    meshes.push_back(&_coefficients[i]->function_space().mesh());
+    if (_coefficients[i])
+      meshes.push_back(&_coefficients[i]->function_space().mesh());
 
   // Check that we have at least one mesh
   if (meshes.size() == 0)
@@ -105,7 +107,7 @@ void Form::check() const
     error("Form expects %d coefficient functions, only %d provided.",
           _ufc_form->num_coefficients(), _coefficients.size());
 
-  // Check that argument function spaces match provided function spaces
+  // Check argument function spaces
   for (uint i = 0; i < _function_spaces.size(); ++i)
   {
     std::auto_ptr<ufc::finite_element> element(_ufc_form->create_finite_element(i));
@@ -114,9 +116,14 @@ void Form::check() const
       error("Wrong type of function space for argument %d.", i);
   }
 
-  // Check that coefficient funtion spaces match provided function spaces
+  // Check coefficients
   for (uint i = 0; i < _coefficients.size(); ++i)
   {
+    if (!_coefficients[i])
+      error("Coefficient %d has not been defined.", i);
+
+    cout << "Checking coefficient " << i << endl;
+
     std::auto_ptr<ufc::finite_element> element(_ufc_form->create_finite_element(_ufc_form->rank() + i));
     dolfin_assert(element.get());
     if (element->signature() != _coefficients[i]->element().signature())

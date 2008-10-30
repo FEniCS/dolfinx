@@ -6,7 +6,7 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2003-11-28
-// Last changed: 2008-10-28
+// Last changed: 2008-10-30
 
 #ifndef __FUNCTION_H
 #define __FUNCTION_H
@@ -38,6 +38,9 @@ namespace dolfin
   class Function : public Variable, public ufc::function
   {
   public:
+
+    /// Create function (and let DOLFIN figure out the correct function space)
+    Function();
 
     /// Create function on given function space
     explicit Function(const FunctionSpace& V);
@@ -100,7 +103,10 @@ namespace dolfin
     void evaluate(double* values, const double* coordinates, const ufc::cell& cell) const;
 
     /// Interpolate function to local function space on cell
-    virtual void interpolate(double* coefficients, const ufc::cell& ufc_cell, int local_facet=-1) const;
+    void interpolate(double* coefficients, const ufc::cell& ufc_cell, int local_facet=-1) const;
+
+    /// Interpolate function to local function space on cell with check on function space
+    void interpolate(double* coefficients, const FunctionSpace& V, const ufc::cell& ufc_cell, int local_facet=-1) const;
 
     /// Interpolate function to given function space
     void interpolate(GenericVector& coefficients, const FunctionSpace& V) const;

@@ -39,8 +39,10 @@ UnitInterval::UnitInterval(uint nx) : Mesh()
   	editor.addCell(ix, v0, v1);
   }
 
+  // Order mesh
+  order();
+
   // Close mesh editor
   editor.close();
-
 }
 //-----------------------------------------------------------------------------

@@ -124,6 +124,9 @@ UnitSquare::UnitSquare(uint nx, uint ny, Type type) : Mesh()
   // Close mesh editor
   editor.close();
 
+  // Order mesh
+  order();
+
   // Broadcast mesh according to parallel policy
   if (MPI::broadcast()) { MPIMeshCommunicator::broadcast(*this); }
 }

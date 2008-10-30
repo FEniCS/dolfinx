@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-02-07
-// Last changed: 2008-10-27
+// Last changed: 2008-10-30
 //
 // This demo program solves Poisson's equation
 //
@@ -23,26 +23,9 @@
 
 using namespace dolfin;
 
-// Zero function
-class Zero : public Function
-{
-public:
-
-  Zero(const FunctionSpace& V) : Function(V) {}
-
-  double eval(const double* x) const
-  {
-    return 0.0;
-  }
-};
-
 // Source term
 class Source : public Function
 {
-public:
-
-  Source(const FunctionSpace& V) : Function(V) {}
-
   double eval(const double* x) const
   {
     double dx = x[0] - 0.5;
@@ -54,10 +37,6 @@ public:
 // Neumann boundary condition
 class Flux : public Function
 {
-public:
-  
-  Flux(const FunctionSpace& V) : Function(V) {}
-  
   double eval(const double* x) const
   {
     if (x[0] > DOLFIN_EPS)
@@ -78,28 +57,24 @@ class DirichletBoundary : public SubDomain
 
 int main()
 {
-  // Create mesh
+  // Create mesh and function space
   UnitSquare mesh(32, 32);
-  mesh.order();
-  
-  // Create function space
   PoissonFunctionSpace V(mesh);
-  
-  // Create functions
-  Source f(V);
-  Flux g(V);
-  
+
   // Create boundary condition
-  //Constant u0(0.0);
-  Zero u0(V);
+  Constant u0(0.0);
   DirichletBoundary boundary;
-  DirichletBC bc(u0, mesh, boundary);
-  
+  DirichletBC bc(u0, V, boundary);
+
+  // Create functions
+  Source f;
+  Flux g;
+
   // Define PDE
   PoissonBilinearForm a(V, V);
-  PoissonLinearForm L(V, f, g);
+  PoissonLinearForm L(V);
+  L.f = f; L.g = g;
   LinearPDE pde(a, L, mesh, bc, symmetric);
-  //LinearPDE pde(a, L, mesh, symmetric);
 
   // Solve PDE
   Function u(V);

@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-10-28
-// Last changed: 2008-10-28
+// Last changed: 2008-10-29
 
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/fem/Form.h>
@@ -23,7 +23,7 @@ Coefficient::~Coefficient()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-const Coefficient& Coefficient::operator= (Function& v)
+void Coefficient::attach(Function& v)
 {
   // Set function space for function if not already set
   if (!v._function_space)
@@ -39,7 +39,5 @@ const Coefficient& Coefficient::operator= (Function& v)
   dolfin_assert(number() < form._coefficients.size());
   std::tr1::shared_ptr<const Function> _v(&v, NoDeleter<const Function>());
   form._coefficients[number()] = _v;
-
-  return *this;
 }
 //-----------------------------------------------------------------------------

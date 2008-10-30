@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-10-28
-// Last changed: 2008-10-28
+// Last changed: 2008-10-29
 
 #ifndef __COEFFICIENT_H
 #define __COEFFICIENT_H
@@ -37,19 +37,19 @@ namespace dolfin
     /// Destructor
     virtual ~Coefficient();
 
-    /// Assign function to coefficient
-    const Coefficient& operator= (Function& v);
+    // Attach function to coefficient
+    void attach(Function& v);
 
     /// Create function space for coefficient
     virtual const FunctionSpace* create_function_space() const = 0;
 
-    /// Return number of coefficient
+    /// Return coefficient number
     virtual uint number() const = 0;
 
-    /// Return name of coefficient
+    /// Return coefficient name
     virtual std::string name() const = 0;
 
-  private:
+  protected:
 
     // The form
     Form& form;

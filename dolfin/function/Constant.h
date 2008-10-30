@@ -42,17 +42,6 @@ namespace dolfin
     /// Destructor
     ~Constant();
 
-    // FIXME: Why are the interpolate functions needed? Shouldn't it be
-    // FIXME: enough to implement eval()?
-
-    /// Interpolate function to vertices of mesh
-    void interpolate(double* values, const FunctionSpace& V) const;
-
-    /// Interpolate function to finite element space on cell
-    void interpolate(double* coefficients,
-                     const ufc::cell& cell,
-                     const FunctionSpace& V) const;
-
     /// Evaluate function at given point
     void eval(double* values, const double* x) const;
 

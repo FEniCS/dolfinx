@@ -61,6 +61,9 @@ namespace dolfin
     /// Return UFC form
     const ufc::form& ufc_form() const;
 
+    /// Check function spaces and coefficients
+    void check() const;
+
     /// Friends
     friend class Coefficient;
 
@@ -71,9 +74,6 @@ namespace dolfin
 
     // Coefficients
     std::vector<std::tr1::shared_ptr<const Function> > _coefficients;
-
-    // Check that function spaces match the form
-    void check() const;
 
     // The UFC form
     ufc::form* _ufc_form;

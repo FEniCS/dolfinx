@@ -5,7 +5,7 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2003-11-28
-// Last changed: 2008-10-28
+// Last changed: 2008-10-30
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/NoDeleter.h>
@@ -20,6 +20,14 @@
 
 using namespace dolfin;
 
+//-----------------------------------------------------------------------------
+Function::Function()
+  : _function_space(static_cast<FunctionSpace*>(0)),
+    _vector(0),
+    _time(0), _cell(0), _facet(-1)
+{
+  // Do nothing
+}
 //-----------------------------------------------------------------------------
 Function::Function(const FunctionSpace& V)
   : _function_space(&V, NoDeleter<const FunctionSpace>()),
@@ -156,7 +164,8 @@ double Function::time() const
 //-----------------------------------------------------------------------------
 bool Function::in(const FunctionSpace& V) const
 {
-  return &function_space() == &V;
+  // Function is in any space if V is not defined
+  return !_function_space || _function_space.get() == &V;
 }
 //-----------------------------------------------------------------------------
 void Function::eval(double* values, const double* x) const
@@ -212,14 +221,14 @@ void Function::evaluate(double* values, const double* coordinates, const ufc::ce
   dolfin_assert(values);
   dolfin_assert(coordinates);
   dolfin_assert(cell.entity_indices);
-  dolfin_assert(_function_space);
 
   // Not implemented for regular functions (but we may consider adding it)
   if (_vector)
     error("UFC callback evaluate() not implemented for regular functions (only user-defined).");
 
   // Store cell data
-  _cell = new Cell(_function_space->mesh(), cell.entity_indices[cell.topological_dimension][0]);
+  if (_function_space)
+    _cell = new Cell(_function_space->mesh(), cell.entity_indices[cell.topological_dimension][0]);
 
   // Call user-defined eval()
   eval(values, coordinates);
@@ -235,12 +244,25 @@ void Function::interpolate(double* coefficients,
 {
   dolfin_assert(coefficients);
   dolfin_assert(_function_space);
+  interpolate(coefficients, *_function_space, ufc_cell, local_facet);
+}
+//-----------------------------------------------------------------------------
+void Function::interpolate(double* coefficients,
+                           const FunctionSpace& V,
+                           const ufc::cell& ufc_cell,
+                           int local_facet) const
+{
+  dolfin_assert(coefficients);
+
+  // Check that function space matches
+  if (!in(V))
+    error("Unable to interpolate function, incorrect function space.");
 
   // Either pick values or evaluate dof functionals
   if (_vector)
   {
     // Get dofmap
-    const DofMap& dofmap = _function_space->dofmap();
+    const DofMap& dofmap = V.dofmap();
 
     // Tabulate dofs
     uint* dofs = new uint[dofmap.local_dimension()];
@@ -253,7 +275,7 @@ void Function::interpolate(double* coefficients,
   else
   {
     // Get element
-    const FiniteElement& element = _function_space->element();
+    const FiniteElement& element = V.element();
 
     // Store local facet
     _facet = local_facet;
