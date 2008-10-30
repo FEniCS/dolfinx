@@ -125,6 +125,10 @@ Rectangle::Rectangle(double a, double b, double c, double d, uint nx, uint ny,
   // Close mesh editor
   editor.close();
 
+  // Order mesh
+  order();
+
   // Broadcast mesh according to parallel policy
   if (MPI::broadcast()) { MPIMeshCommunicator::broadcast(*this); }
 }
+//-----------------------------------------------------------------------------

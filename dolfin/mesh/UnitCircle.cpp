@@ -135,6 +135,9 @@ UnitCircle::UnitCircle(uint nx, Type type, Transformation transformation) : Mesh
   // Close mesh editor
   editor.close();
 
+  // Order mesh
+  order();
+
   // Broadcast mesh according to parallel policy
   if (MPI::broadcast()) { MPIMeshCommunicator::broadcast(*this); }
 }
@@ -211,3 +214,4 @@ double UnitCircle::transformy(double x, double y, Transformation transformation)
       return y;
   }
 }
+//-----------------------------------------------------------------------------

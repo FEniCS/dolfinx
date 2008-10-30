@@ -44,5 +44,8 @@ Interval::Interval(uint nx,double a,double b) : Mesh()
 
   // Close mesh editor
   editor.close();
+
+  // Order mesh
+  order();
 }
 //-----------------------------------------------------------------------------

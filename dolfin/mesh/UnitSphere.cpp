@@ -86,6 +86,9 @@ UnitSphere::UnitSphere(uint nx) : Mesh()
   // Close mesh editor
   editor.close();
 
+  // Order mesh
+  order();
+
   // Broadcast mesh according to parallel policy
   if (MPI::broadcast()) { MPIMeshCommunicator::broadcast(*this); }
 }

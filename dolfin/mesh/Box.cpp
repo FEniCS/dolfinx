@@ -78,6 +78,9 @@ Box::Box(double a, double b, double c, double d, double e, double f, uint nx, ui
   // Close mesh editor
   editor.close();
 
+  // Order mesh
+  order();
+
   // Broadcast mesh according to parallel policy
   if (MPI::broadcast()) { MPIMeshCommunicator::broadcast(*this); }
 }
