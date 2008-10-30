@@ -1,3 +1,10 @@
+ - Add new class FunctionSpace
+ - Complete redesign of Function class hierarchy, now a single Function class
+ - Increased use of shared_ptr in Function, FunctionSpace, etc
+ - New interface for boundary conditions, form not necessary
+ - Allow simple setting of coefficient functions based on names (not their index)
+ - Don't order mesh automatically, meshes must now be ordered explicitly
+ - Simpler definition of user-defined functions (constructors not necessary)
  - Make mesh iterators const to allow for const-correct Mesh code
 0.8.1 [2008-10-20]
  - Add option to use ML multigrid preconditioner through PETSc
