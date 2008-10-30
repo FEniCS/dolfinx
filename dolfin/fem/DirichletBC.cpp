@@ -439,7 +439,7 @@ void DirichletBC::compute_bc_topological(std::map<uint, double>& boundary_values
     UFCCell ufc_cell(cell);
 
     // Interpolate function on cell
-    g.interpolate(data.w, ufc_cell, facet_number);
+    g.interpolate(data.w, *V, ufc_cell, facet_number);
     
     // Tabulate dofs on cell
     dofmap.tabulate_dofs(data.cell_dofs, ufc_cell);
@@ -521,9 +521,9 @@ void DirichletBC::compute_bc_geometric(std::map<uint, double>& boundary_values,
           {
             // Tabulate dofs on cell
             dofmap.tabulate_dofs(data.cell_dofs, ufc_cell);
+
             // Interpolate function on cell
-            error("Need an interpolate function in Function which takes cell as input."); 
-            //g.interpolate(data.w, ufc_cell, *data.finite_element, *c);
+            g.interpolate(data.w, *V, ufc_cell);
           }
           
           // Set boundary value
@@ -565,14 +565,15 @@ void DirichletBC::compute_bc_pointwise(std::map<uint, double>& boundary_values,
       if ( !user_sub_domain->inside(x, false) )
         continue;
       
-      if(!interpolated)
+      if (!interpolated)
       {
         interpolated = true;
+        
         // Tabulate dofs on cell
         dofmap.tabulate_dofs(data.cell_dofs, ufc_cell);
+
         // Interpolate function on cell
-        error("Need an interpolate function in Function which takes cell as input."); 
-        //g.interpolate(data.w, ufc_cell, *data.finite_element, *cell);
+        g.interpolate(data.w, *V, ufc_cell);
       }
       
       // Set boundary value

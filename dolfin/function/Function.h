@@ -100,7 +100,10 @@ namespace dolfin
     void evaluate(double* values, const double* coordinates, const ufc::cell& cell) const;
 
     /// Interpolate function to local function space on cell
-    virtual void interpolate(double* coefficients, const ufc::cell& ufc_cell, int local_facet=-1) const;
+    void interpolate(double* coefficients, const ufc::cell& ufc_cell, int local_facet=-1) const;
+
+    /// Interpolate function to local function space on cell with check on function space
+    void interpolate(double* coefficients, const FunctionSpace& V, const ufc::cell& ufc_cell, int local_facet=-1) const;
 
     /// Interpolate function to given function space
     void interpolate(GenericVector& coefficients, const FunctionSpace& V) const;

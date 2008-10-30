@@ -102,42 +102,6 @@ Constant::~Constant()
 //  return shape[i];
 //}
 //-----------------------------------------------------------------------------
-void Constant::interpolate(double* _values, const FunctionSpace& V) const
-{
-  dolfin_assert(_values);
-
-  // Set all vertex values to the constant tensor value
-  for (uint i = 0; i < V.mesh().numVertices(); i++)
-  {
-    for (uint j = 0; j < size; j++)
-    {
-      uint k = i*size + j;
-      _values[k] = values[j];
-    }
-  }
-}
-//-----------------------------------------------------------------------------
-void Constant::interpolate(double* coefficients,
-                                   const ufc::cell& cell,
-                                   const FunctionSpace& V) const
-{
-  dolfin_assert(coefficients);
-  
-  // Assert same value shape (TODO: Slow to do this for every element, should probably remove later)
-  dolfin_assert(value_rank == V.element().value_rank());
-  for (uint i = 0; i < value_rank; i++)
-    dolfin_assert(shape[i] == V.element().value_dimension(i));
-  
-  // UFC 1.0 version:
-  // Evaluate each dof to get coefficients for nodal basis expansion
-  for (uint i = 0; i < V.element().space_dimension(); i++)
-    coefficients[i] = V.element().evaluate_dof(i, *this, cell);
-  
-  // UFC 1.1 version:
-  /// Evaluate linear functionals for all dofs on the function f
-  //finite_element.evaluate_dofs(coefficients, *this, cell);
-}
-//-----------------------------------------------------------------------------
 void Constant::eval(double* _values, const double* x) const
 {
   dolfin_assert(_values);

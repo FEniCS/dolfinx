@@ -23,19 +23,6 @@
 
 using namespace dolfin;
 
-// Zero function
-class Zero : public Function
-{
-public:
-
-  Zero(const FunctionSpace& V) : Function(V) {}
-
-  double eval(const double* x) const
-  {
-    return 0.0;
-  }
-};
-
 // Source term
 class Source : public Function
 {
@@ -81,20 +68,19 @@ int main()
   // Create mesh
   UnitSquare mesh(32, 32);
   mesh.order();
-  
+ 
   // Create function space
   PoissonFunctionSpace V(mesh);
-  
+
   // Create functions
   Source f(V);
   Flux g(V);
-  
+
   // Create boundary condition
-  //Constant u0(0.0);
-  Zero u0(V);
+  Constant u0(0.0);
   DirichletBoundary boundary;
   DirichletBC bc(u0, V, boundary);
-  
+
   // Define PDE
   PoissonBilinearForm a(V, V);
   PoissonLinearForm L(V);
