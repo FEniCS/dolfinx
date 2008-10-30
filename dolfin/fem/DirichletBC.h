@@ -13,6 +13,8 @@
 #ifndef __DIRICHLET_BC_H
 #define __DIRICHLET_BC_H
 
+#include <map>
+#include <tr1/memory>
 #include <dolfin/common/types.h>
 #include "BoundaryCondition.h"
 #include "SubSystem.h"
@@ -20,11 +22,9 @@
 namespace dolfin
 {
 
-  class DofMap;
   class Function;
   class FunctionSpace;
   class Facet;
-  class Form;
   class GenericMatrix;
   class GenericVector;
   class SubDomain;
@@ -54,7 +54,8 @@ namespace dolfin
   /// and G is a sub domain of the mesh.
   ///
   /// A DirichletBC is specified by the Function g, the FunctionSpace
-  /// and boundary indicators on (a subset of) the mesh boundary.
+  /// (trial space) and boundary indicators on (a subset of) the mesh
+  /// boundary.
   ///
   /// The boundary indicators may be specified in a number of
   /// different ways.
@@ -122,98 +123,74 @@ namespace dolfin
     /// Destructor
     ~DirichletBC();
 
-    // FIXME: Should we pass a FunctionSpace or FiniteElement instead of a Form?
-
-    /// Apply boundary condition to linear system
-    void apply(GenericMatrix& A, const Form& form);
+    /// Apply boundary condition to a matrix
+    void apply(GenericMatrix& A);
 
     /// Apply boundary condition to a vector
-    void apply(GenericVector& b, const GenericVector& x, const Form& form);
+    void apply(GenericVector& b);
 
-    /// Apply boundary condition to linear system
-    void apply(GenericMatrix& A, GenericVector& b, const Form& form);
+    /// Apply boundary condition to a linear system
+    void apply(GenericMatrix& A, GenericVector& b);
 
-    /// Apply boundary condition to linear system
-    void apply(GenericMatrix& A, GenericVector& b, const DofMap& dof_map, const ufc::form& form);
+    /// Apply boundary condition to a vector for a nonlinear problem
+    void apply(GenericVector& b, const GenericVector& x);
 
-    /// Apply boundary condition to linear system for a nonlinear problem
-    void apply(GenericMatrix& A, GenericVector& b, const GenericVector& x, const Form& form);
-
-    /// Apply boundary condition to linear system for a nonlinear problem
-    void apply(GenericMatrix& A, const DofMap& dof_map, const ufc::form& form);
-
-    /// Apply boundary condition to linear system for a nonlinear problem
-    void apply(GenericVector& b, const GenericVector& x, const DofMap& dof_map, const ufc::form& form);
-
-    /// Apply boundary condition to linear system for a nonlinear problem
-    void apply(GenericMatrix& A, GenericVector& b, const GenericVector& x, const DofMap& dof_map, const ufc::form& form);
+    /// Apply boundary condition to a linear system for a nonlinear problem
+    void apply(GenericMatrix& A, GenericVector& b, const GenericVector& x);
 
     /// Make row associated with boundary conditions zero, useful for non-diagonal matrices in a block matrix. 
-    void zero(GenericMatrix& A, const Form& form);
-
-    /// Make row associated with boundary conditions zero, useful for non-diagonal matrices in a block matrix. 
-    void zero(GenericMatrix& A, const DofMap& dof_map, const ufc::form& form);
-
-    /// Set (or update) value for sub system
-    void setSubSystem(SubSystem sub_system);
+    void zero(GenericMatrix& A);
 
     /// Get Dirichlet values and indicators 
-    void getBC(uint n, uint* indicators, double* values, const DofMap& dof_map, const ufc::form& form); 
+    void get_bc(uint* indicators, double* values);
 
     /// Check if given function is compatible with boundary condition (checking only vertex values)
     bool is_compatible(Function& v) const;
 
   private:
 
-    /// Apply boundary conditions
-    void apply(GenericMatrix* A, GenericVector* b,
-               const GenericVector* x, const DofMap& dof_map, const ufc::form& form);
+    // Apply boundary conditions
+    void apply(GenericMatrix* A, GenericVector* b, const GenericVector* x);
     
-    /// Check input data
+    // Check input data
     void check() const;
 
     // Initialize sub domain markers from sub domain
-    void initFromSubDomain(SubDomain& sub_domain);
+    void init_from_sub_domain(SubDomain& sub_domain);
     
     // Initialize sub domain markers from MeshFunction
-    void initFromMeshFunction(MeshFunction<uint>& sub_domains, uint sub_domain);
+    void init_from_mesh_function(MeshFunction<uint>& sub_domains, uint sub_domain);
 
     // Initialize sub domain markers from mesh
-    void initFromMesh(uint sub_domain);
+    void init_from_mesh(uint sub_domain);
     
     // Compute dofs and values for application of boundary conditions
-    void computeBC(std::map<uint, double>& boundary_values,
-                   BoundaryCondition::LocalData& data);
+    void compute_bc(std::map<uint, double>& boundary_values,
+                    BoundaryCondition::LocalData& data);
     
     // Compute boundary values for facet (topological approach)
-    void computeBCTopological(std::map<uint, double>& boundary_values,
-                              BoundaryCondition::LocalData& data);
+    void compute_bc_topological(std::map<uint, double>& boundary_values,
+                                BoundaryCondition::LocalData& data);
     
     // Compute boundary values for facet (geometrical approach)
-    void computeBCGeometric(std::map<uint, double>& boundary_values,
-                            BoundaryCondition::LocalData& data);
+    void compute_bc_geometric(std::map<uint, double>& boundary_values,
+                              BoundaryCondition::LocalData& data);
     
     // Compute boundary values for facet (pointwise approach)
-    void computeBCPointwise(std::map<uint, double>& boundary_values,
-                            BoundaryCondition::LocalData& data);
+    void compute_bc_pointwise(std::map<uint, double>& boundary_values,
+                              BoundaryCondition::LocalData& data);
     
     // Check if the point is in the same plane as the given facet
-    static bool onFacet(double* coordinates, Facet& facet);
+    static bool on_facet(double* coordinates, Facet& facet);
 
     // The function
     const Function& g;
-
-    // The function space
-    const FunctionSpace& V;
 
     // Search method
     BCMethod method;
 
     // User defined sub domain
     SubDomain* user_sub_domain;
-
-    // Sub system
-    SubSystem sub_system;
 
     // Boundary facets, stored as pairs (cell, local facet number)
     std::vector< std::pair<uint, uint> > facets;

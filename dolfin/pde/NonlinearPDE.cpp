@@ -1,10 +1,10 @@
 // Copyright (C) 2005-2008 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Anders Logg, 2006-2007.
+// Modified by Anders Logg, 2006-2008.
 //
 // First added:  2005-10-24
-// Last changed: 2008-09-03
+// Last changed: 2008-10-30
 
 #include <dolfin/fem/DirichletBC.h>
 #include <dolfin/function/Function.h>
@@ -59,7 +59,7 @@ void NonlinearPDE::F(GenericVector& b, const GenericVector& x)
 
   // Apply boundary conditions
   for (uint i = 0; i < bcs.size(); i++)
-    bcs[i]->apply(b, x, a);
+    bcs[i]->apply(b, x);
 }
 //-----------------------------------------------------------------------------
 void NonlinearPDE::J(GenericMatrix& A, const GenericVector& x)
@@ -69,7 +69,7 @@ void NonlinearPDE::J(GenericMatrix& A, const GenericVector& x)
 
   // Apply boundary conditions
   for (uint i = 0; i < bcs.size(); i++)
-    bcs[i]->apply(A, a);
+    bcs[i]->apply(A);
 }
 //-----------------------------------------------------------------------------
 void NonlinearPDE::solve(Function& u, double& t, const double& T, const double& dt)

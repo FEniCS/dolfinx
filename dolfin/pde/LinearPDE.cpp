@@ -1,10 +1,10 @@
-// Copyright (C) 2004-2007 Anders Logg.
+// Copyright (C) 2004-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells, 2006-2008.
 //
 // First added:  2004
-// Last changed: 2008-10-27
+// Last changed: 2008-10-30
 
 #include <tr1/memory>
 #include <dolfin/fem/Assembler.h>
@@ -74,7 +74,7 @@ void LinearPDE::solve(Function& u)
 //  b.disp();
 
   for (uint i = 0; i < bcs.size(); i++)
-    bcs[i]->apply(A, b, a);
+    bcs[i]->apply(A, b);
 
   // Solve linear system
   const std::string solver_type = get("PDE linear solver");
