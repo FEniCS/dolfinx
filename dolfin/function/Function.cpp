@@ -5,7 +5,7 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2003-11-28
-// Last changed: 2008-10-28
+// Last changed: 2008-10-30
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/NoDeleter.h>
@@ -20,6 +20,14 @@
 
 using namespace dolfin;
 
+//-----------------------------------------------------------------------------
+Function::Function()
+  : _function_space(static_cast<FunctionSpace*>(0)),
+    _vector(0),
+    _time(0), _cell(0), _facet(-1)
+{
+  // Do nothing
+}
 //-----------------------------------------------------------------------------
 Function::Function(const FunctionSpace& V)
   : _function_space(&V, NoDeleter<const FunctionSpace>()),

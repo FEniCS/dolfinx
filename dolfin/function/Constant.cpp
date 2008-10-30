@@ -30,7 +30,7 @@ Constant::Constant(const Constant& f)
 */
 //-----------------------------------------------------------------------------
 Constant::Constant(double value)
-  : Function(std::tr1::shared_ptr<const FunctionSpace>(static_cast<FunctionSpace*>(0))),
+  : Function(),
     values(0), value_rank(0), shape(0), size(1)
 {
   values = new double[1];

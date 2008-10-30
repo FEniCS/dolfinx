@@ -26,10 +26,6 @@ using namespace dolfin;
 // Source term
 class Source : public Function
 {
-public:
-
-  Source(const FunctionSpace& V) : Function(V) {}
-
   double eval(const double* x) const
   {
     double dx = x[0] - 0.5;
@@ -41,10 +37,6 @@ public:
 // Neumann boundary condition
 class Flux : public Function
 {
-public:
-  
-  Flux(const FunctionSpace& V) : Function(V) {}
-  
   double eval(const double* x) const
   {
     if (x[0] > DOLFIN_EPS)
@@ -73,8 +65,8 @@ int main()
   PoissonFunctionSpace V(mesh);
 
   // Create functions
-  Source f(V);
-  Flux g(V);
+  Source f;
+  Flux g;
 
   // Create boundary condition
   Constant u0(0.0);

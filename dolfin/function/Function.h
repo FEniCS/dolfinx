@@ -6,7 +6,7 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2003-11-28
-// Last changed: 2008-10-28
+// Last changed: 2008-10-30
 
 #ifndef __FUNCTION_H
 #define __FUNCTION_H
@@ -38,6 +38,9 @@ namespace dolfin
   class Function : public Variable, public ufc::function
   {
   public:
+
+    /// Create function (and let DOLFIN figure out the correct function space)
+    Function();
 
     /// Create function on given function space
     explicit Function(const FunctionSpace& V);
