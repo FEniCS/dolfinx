@@ -429,6 +429,10 @@ You may need to provide the dimension of a user defined Function.", j, i, dim, f
       error("Mesh cell type (tetrahedra) does not match cell type of form.");
     delete element;
   }
+
+  // Check that the mesh is ordered
+  if (!mesh.ordered())
+    error("Unable to assemble, mesh is not correctly ordered (consider calling mesh.order()).");
 }
 //-----------------------------------------------------------------------------
 void Assembler::initGlobalTensor(GenericTensor& A, const Form& form, 

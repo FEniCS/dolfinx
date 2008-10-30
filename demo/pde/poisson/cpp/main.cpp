@@ -93,7 +93,7 @@ int main()
   //Constant u0(0.0);
   Zero u0(V);
   DirichletBoundary boundary;
-  DirichletBC bc(u0, mesh, boundary);
+  DirichletBC bc(u0, V, boundary);
   
   // Define PDE
   PoissonBilinearForm a(V, V);
