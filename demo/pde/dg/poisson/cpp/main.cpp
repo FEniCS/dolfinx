@@ -32,8 +32,6 @@ int main()
   {
   public:
     
-    Source(const FunctionSpace& V) : Function(V) {}
-
     double eval(const double* x) const
     {
       double dx = x[0] - 0.5;
@@ -45,13 +43,11 @@ int main()
  
   // Create mesh
   UnitSquare mesh(64, 64);
-  mesh.init();
-  mesh.order();
 
   // Create functions
   PoissonTestSpace V(mesh);
   PoissonTrialSpace U(mesh);
-  Source f(V);
+  Source f;
 
   PoissonBilinearFormCoefficientSpace0 N(mesh);
   FacetNormal n(N);
@@ -59,9 +55,14 @@ int main()
   PoissonBilinearFormCoefficientSpace1 H(mesh);
   AvgMeshSize h(H);
 
-  // Define PDE
-  PoissonBilinearForm a(V, U, n, h);
-  PoissonLinearForm L(V, f);
+  // Define forms and attach functions
+  PoissonBilinearForm a(V, U);
+  PoissonLinearForm L(V);
+  a.n = n;
+  a.h = h;
+  L.f = f;
+
+  // Create PDE
   LinearPDE pde(a, L, mesh);
 
   // Solve PDE
@@ -70,18 +71,19 @@ int main()
 
   // Project solution onto continuous basis for post-processing
   P1ProjectionTestSpace VP(mesh);
-  Function u_proj(VP);
   P1ProjectionBilinearForm a_proj(VP, VP);
-  P1ProjectionLinearForm L_proj(VP, u);
+  P1ProjectionLinearForm L_proj(VP);
+  L_proj.u = u;
   LinearPDE pde_proj(a_proj, L_proj, mesh);
-  pde_proj.solve(u_proj);
+  Function u_p(VP);
+  pde_proj.solve(u_p);
 
   // Plot solution
-  plot(u_proj);
+  plot(u_p);
 
   // Save solution to file
   File file("poisson.pvd");
-  file << u_proj;
+  file << u_p;
 
   return 0;
 }
