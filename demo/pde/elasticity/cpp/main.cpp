@@ -17,12 +17,26 @@ using namespace dolfin;
 
 int main()
 {
+  class Zero : public Function
+  {
+  public:
+
+    Zero(const FunctionSpace& V) : Function(V) {}
+
+    void eval(double* values, const double* x) const
+    {
+      values[0] = 0.0;
+      values[1] = 0.0;
+      values[2] = 0.0;
+    }
+  };
+
   // Dirichlet boundary condition for clamp at left end
   class Clamp : public Function
   {
   public:
 
-    Clamp(Mesh& mesh) : Function(mesh) {}
+    Clamp(const FunctionSpace& V) : Function(V) {}
 
     void eval(double* values, const double* x) const
     {
@@ -46,7 +60,7 @@ int main()
   {
   public:
 
-    Rotation(Mesh& mesh) : Function(mesh) {}
+    Rotation(const FunctionSpace& V) : Function(V) {}
 
     void eval(double* values, const double* x) const
     {
@@ -79,19 +93,23 @@ int main()
 
   // Read mesh
   Mesh mesh("../../../../data/meshes/gear.xml.gz");
+  mesh.order();
+
+  ElasticityFunctionSpace V(mesh);
 
   // Create right-hand side
-  Function f(mesh, 3, 0.0);
+  //Function f(mesh, 3, 0.0);
+  Zero f(V);
 
   // Set up boundary condition at left end
-  Clamp c(mesh);
+  Clamp c(V);
   Left left;
-  DirichletBC bcl(c, mesh, left);
+  DirichletBC bcl(c, V, left);
 
   // Set up boundary condition at right end
-  Rotation r(mesh);
+  Rotation r(V);
   Right right;
-  DirichletBC bcr(r, mesh, right);
+  DirichletBC bcr(r, V, right);
 
   // Set up boundary conditions
   Array<DirichletBC*> bcs;
@@ -101,16 +119,18 @@ int main()
   // Set elasticity parameters
   double E  = 10.0;
   double nu = 0.3;
-  Function mu(mesh, E / (2*(1 + nu)));
-  Function lambda(mesh, E*nu / ((1 + nu)*(1 - 2*nu)));
+  Constant mu(E / (2*(1 + nu)));
+  Constant lambda(E*nu / ((1 + nu)*(1 - 2*nu)));
 
   // Set up PDE (symmetric)
-  ElasticityBilinearForm a(mu, lambda);
-  ElasticityLinearForm L(f);
+  ElasticityBilinearForm a(V, V);
+  a.mu = mu; a.lmbda = lambda;
+  ElasticityLinearForm L(V);
+  L.f = f;
   LinearPDE pde(a, L, mesh, bcs, symmetric);
 
   // Solve PDE (using direct solver)
-  Function u;
+  Function u(V);
   pde.set("PDE linear solver", "direct");
   pde.solve(u);
 
