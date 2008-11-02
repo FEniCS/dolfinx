@@ -45,18 +45,15 @@ int main()
   UnitSquare mesh(64, 64);
 
   // Create functions
-  PoissonTestSpace V(mesh);
-  PoissonTrialSpace U(mesh);
   Source f;
+  FacetNormal n;
+  AvgMeshSize h;
 
-  PoissonBilinearFormCoefficientSpace0 N(mesh);
-  FacetNormal n(N);
-
-  PoissonBilinearFormCoefficientSpace1 H(mesh);
-  AvgMeshSize h(H);
+  // Create funtion space
+  PoissonFunctionSpace V(mesh);
 
   // Define forms and attach functions
-  PoissonBilinearForm a(V, U);
+  PoissonBilinearForm a(V, V);
   PoissonLinearForm L(V);
   a.n = n;
   a.h = h;
@@ -70,15 +67,15 @@ int main()
   pde.solve(u);
 
   // Project solution onto continuous basis for post-processing
-  P1ProjectionTestSpace VP(mesh);
-  P1ProjectionBilinearForm a_proj(VP, VP);
-  P1ProjectionLinearForm L_proj(VP);
-  L_proj.u = u;
-  LinearPDE pde_proj(a_proj, L_proj, mesh);
-  Function u_p(VP);
+  P1ProjectionFunctionSpace U(mesh);
+  P1ProjectionBilinearForm a_p(U, U);
+  P1ProjectionLinearForm L_p(U);
+  L_p.u = u;
+  LinearPDE pde_proj(a_p, L_p, mesh);
+  Function u_p(U);
   pde_proj.solve(u_p);
 
-  // Plot solution
+  // Plot solution projected
   plot(u_p);
 
   // Save solution to file

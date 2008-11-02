@@ -27,6 +27,9 @@ namespace dolfin
   public:
 
     /// Constructor
+    MeshSize();
+
+    /// Constructor
     MeshSize(const FunctionSpace& V);
 
     /// Return cell size
@@ -47,6 +50,9 @@ namespace dolfin
   public:
 
     /// Constructor
+    InvMeshSize();
+
+    /// Constructor
     InvMeshSize(const FunctionSpace& V);
 
     /// Return inverse of cell size
@@ -61,13 +67,14 @@ namespace dolfin
   public:
 
     /// Constructor
+    AvgMeshSize();
+
+    /// Constructor
     AvgMeshSize(const FunctionSpace& V);
 
     /// Return average cell size
     double eval(const double* x) const;
 
-//  private:
-//    Mesh& mesh;  
   };
 
   /// This Function represents the outward unit normal on cell facets.
@@ -76,6 +83,10 @@ namespace dolfin
   {
   public:
 
+    /// Constructor
+    FacetNormal();
+
+    /// Constructor
     FacetNormal(const FunctionSpace& V);
 
     void eval(double* values, const double* x) const;
@@ -84,8 +95,6 @@ namespace dolfin
     
     uint dim(uint i) const;
 
-//  private:
-//    Mesh& mesh;  
   };
 
   /// This function represents the area/length of a cell facet.
@@ -93,6 +102,10 @@ namespace dolfin
   {
   public:
 
+    /// Constructor
+    FacetArea();
+
+    /// Constructor
     FacetArea(const FunctionSpace& V);
 
     void eval(double* values, const double* x) const;
@@ -104,6 +117,10 @@ namespace dolfin
   {
   public:
 
+    /// Constructor
+    InvFacetArea();
+
+    /// Constructor
     InvFacetArea(const FunctionSpace& V);
 
     void eval(double* values, const double* x) const;

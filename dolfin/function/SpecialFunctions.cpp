@@ -19,6 +19,11 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
+MeshSize::MeshSize() : Function()
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
 MeshSize::MeshSize(const FunctionSpace& V) : Function(V)
 {
   // Do nothing
@@ -47,6 +52,12 @@ double MeshSize::max() const
   return hmax;
 }
 //-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+InvMeshSize::InvMeshSize() : Function()
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
 InvMeshSize::InvMeshSize(const FunctionSpace& V) : Function(V)
 {
   // Do nothing
@@ -55,6 +66,12 @@ InvMeshSize::InvMeshSize(const FunctionSpace& V) : Function(V)
 double InvMeshSize::eval(const double* x) const
 {
   return 1.0 / cell().diameter();
+}
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+AvgMeshSize::AvgMeshSize() : Function()
+{
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 AvgMeshSize::AvgMeshSize(const FunctionSpace& V) : Function(V)
@@ -88,6 +105,12 @@ double AvgMeshSize::eval(const double* x) const
   }
 }
 //-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+FacetNormal::FacetNormal() : Function()
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
 FacetNormal::FacetNormal(const FunctionSpace& V) : Function(V)
 {
   // Do nothing
@@ -119,6 +142,12 @@ dolfin::uint FacetNormal::dim(uint i) const
   return function_space().mesh().geometry().dim();
 }
 //-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+FacetArea::FacetArea() : Function()
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
 FacetArea::FacetArea(const FunctionSpace& V) : Function(V)
 {
   // Do nothing
@@ -130,6 +159,12 @@ void FacetArea::eval(double* values, const double* x) const
     values[0] = cell().facetArea(facet());
   else
     values[0] = 0.0;
+}
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+InvFacetArea::InvFacetArea() : Function()
+{
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 InvFacetArea::InvFacetArea(const FunctionSpace& V) : Function(V)
