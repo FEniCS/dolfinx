@@ -125,6 +125,11 @@ SubFunction Function::operator[] (uint i)
   return sub_function;
 }
 //-----------------------------------------------------------------------------
+bool Function::has_function_space() const
+{
+  return _function_space.get();
+}
+//-----------------------------------------------------------------------------
 const FunctionSpace& Function::function_space() const
 {
   dolfin_assert(_function_space);

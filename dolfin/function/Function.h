@@ -66,6 +66,9 @@ namespace dolfin
     /// Extract sub function
     SubFunction operator[] (uint i);
 
+    /// Test for the function space
+    bool has_function_space() const;
+
     /// Return the function space
     const FunctionSpace& function_space() const;
 
@@ -95,6 +98,9 @@ namespace dolfin
 
     /// Evaluate function at point x and time t (overload for scalar user-defined function)
     virtual double eval(const double* x, double t) const;
+
+    /// Evaluate function at point x and time t (calls a user-defined function)
+    void eval(double* values, const FunctionSpace& V, const double* x, double t) const;
 
     /// Evaluate function at given point (used for subclassing through SWIG interface)
     void eval(simple_array<double>& values, const simple_array<double>& x) const;
