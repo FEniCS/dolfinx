@@ -56,12 +56,6 @@ dolfin::uint TopologyComputation::computeEntities(Mesh& mesh, uint dim)
 
   //message("Computing mesh entities of topological dimension %d.", dim);
 
-  if(mesh.ordered())
-    warning("Mesh ordering has been invalidated.");
-
-  // Invalidate ordering
-  mesh._ordered = false;
-
   // Compute connectivity dim - dim if not already computed
   computeConnectivity(mesh, mesh.topology().dim(), mesh.topology().dim());
 
@@ -120,6 +114,10 @@ dolfin::uint TopologyComputation::computeEntities(Mesh& mesh, uint dim)
   delete [] entities;
 
   //message("Created %d new entities.", num_entities);
+  // If mesh was ordered, order again
+
+  if(mesh.ordered())
+    mesh.order();
 
   return num_entities;
 }
@@ -145,9 +143,6 @@ void TopologyComputation::computeConnectivity(Mesh& mesh, uint d0, uint d1)
   // Check if connectivity has already been computed
   if ( connectivity.size() > 0 )
     return;
-
-  // Invalidate ordering
-  mesh._ordered = false;
 
   //message("Computing mesh connectivity %d - %d.", d0, d1);
 
@@ -183,6 +178,10 @@ void TopologyComputation::computeConnectivity(Mesh& mesh, uint d0, uint d1)
     computeConnectivity(mesh, d, d1);
     computeFromIntersection(mesh, d0, d1, d);
   }
+
+  // If mesh was ordered, order again
+  if(mesh.ordered())
+    mesh.order();
 }
 //----------------------------------------------------------------------------
 void TopologyComputation::computeFromTranspose(Mesh& mesh, uint d0, uint d1)
@@ -280,18 +279,18 @@ void TopologyComputation::computeFromIntersection(Mesh& mesh,
       // Iterate over all connected entities of dimension d1
       for (MeshEntityIterator e1(*e, d1); !e1.end(); ++e1)
       {
-	if ( d0 == d1 )
-	{
-	  // An entity is not a neighbor to itself
-	  if ( e0->index() != e1->index() )
-	    entities.insert(e1->index());
-	}
-	else
-	{
-	  // Entity e1 must be completely contained in e0
-	  if ( contains(*e0, *e1) )
-	    entities.insert(e1->index());
-	}
+        if ( d0 == d1 )
+        {
+          // An entity is not a neighbor to itself
+          if ( e0->index() != e1->index() )
+            entities.insert(e1->index());
+        }
+        else
+        {
+          // Entity e1 must be completely contained in e0
+          if ( contains(*e0, *e1) )
+            entities.insert(e1->index());
+        }
       }
     }
 
@@ -314,18 +313,18 @@ void TopologyComputation::computeFromIntersection(Mesh& mesh,
       // Iterate over all connected entities of dimension d1
       for (MeshEntityIterator e1(*e, d1); !e1.end(); ++e1)
       {
-	if ( d0 == d1 )
-	{
-	  // An entity is not a neighbor to itself
-	  if ( e0->index() != e1->index() )
-	    entities.insert(e1->index());
-	}
-	else
-	{
-	  // Entity e1 must be completely contained in e0
-	  if ( contains(*e0, *e1) )
-	    entities.insert(e1->index());
-	}
+        if ( d0 == d1 )
+        {
+          // An entity is not a neighbor to itself
+          if ( e0->index() != e1->index() )
+            entities.insert(e1->index());
+        }
+        else
+        {
+          // Entity e1 must be completely contained in e0
+          if ( contains(*e0, *e1) )
+            entities.insert(e1->index());
+        }
       }
     }
 
