@@ -21,10 +21,8 @@ void MeshOrdering::order(Mesh& mesh)
 
   // Iterate over all cells and order the mesh entities locally
   for (CellIterator cell(mesh); !cell.end(); ++cell)
-  {
     cell_type.orderEntities(*cell);
-  }
-  
+
   mesh._ordered = true;
 }
 //-----------------------------------------------------------------------------

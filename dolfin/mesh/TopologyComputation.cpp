@@ -56,6 +56,9 @@ dolfin::uint TopologyComputation::computeEntities(Mesh& mesh, uint dim)
 
   //message("Computing mesh entities of topological dimension %d.", dim);
 
+  if(mesh.ordered())
+    warning("Mesh ordering has been invalidated.");
+
   // Invalidate ordering
   mesh._ordered = false;
 
