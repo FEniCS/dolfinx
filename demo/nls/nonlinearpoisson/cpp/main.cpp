@@ -38,12 +38,15 @@ class Source : public Function, public TimeDependent
 {
 public:
   
-    Source(Mesh& mesh, const double* t) : Function(mesh), TimeDependent(t) {}
+  Source(const double& t) : t(t) {}
 
-    double eval(const double* x) const
-    {
-      return time()*x[0]*sin(x[1]);
-    }
+  double eval(const double* x) const
+  {
+    return t*x[0]*sin(x[1]);
+  }
+  
+private:
+  const double & t;
 
 };
 
@@ -51,12 +54,17 @@ public:
 class DirichletBoundaryCondition : public Function, public TimeDependent
 {
 public:
-  DirichletBoundaryCondition(Mesh& mesh, const double* t) : Function(mesh), TimeDependent(t) {}
+  DirichletBoundaryCondition(const FunctionSpace& V, const double& t) : Function(V), t(t) {}
   
   double eval(const double* x) const
   {
-    return 1.0*time();
+    return 1.0*t;
   }
+
+private:
+
+  const double& t;
+
 };
 
 // Sub domain for Dirichlet boundary condition
@@ -74,60 +82,39 @@ class MyNonlinearProblem : public NonlinearProblem
   public:
 
     // Constructor 
-    MyNonlinearProblem(Mesh& mesh, SubDomain& dirichlet_boundary, 
+    MyNonlinearProblem(FunctionSpace& V, SubDomain& dirichlet_boundary, 
                        Function& g, Function& f, Function& u)  
-                       : assembler(mesh)
+                       : V(V), a(V, V), L(V), bc(g, V, dirichlet_boundary)
     {
-      // Create forms
-      a = new NonlinearPoissonBilinearForm(u);
-      L = new NonlinearPoissonLinearForm(u, f);
-
-      // Create boundary conditions
-      bc = new DirichletBC(g, mesh, dirichlet_boundary);
-
-      // Initialise dof map
-      dof_map_set.update(a->form(), mesh);
+      // Attache functions
+      a.u0 = u;
+      L.u0 = u;
+      L.f  = f;
 
       // Initialise solution vector u
-      u.init(mesh, *a, 1);
+      //u.init(mesh, *a, 1);
     }
 
-    // Destructor 
-    ~MyNonlinearProblem()
-    {
-      delete a;
-      delete L;
-      delete bc;
-    }
- 
     // User defined assemble of residual vector 
     void F(GenericVector& b, const GenericVector& x)
     {
-      //dolfin_set("output destination", "silent");
-      assembler.assemble(b, *L);
-      bc->apply(b, x, *a);
-      //dolfin_set("output destination", "terminal");
+      Assembler::assemble(b, L);
+      bc.apply(b, x);
     }
 
     // User defined assemble of Jacobian matrix 
     void J(GenericMatrix& A, const GenericVector& x)
     {
-      //dolfin_set("output destination", "silent");
-      assembler.assemble(A, *a);
-      bc->apply(A, *a);
-      //dolfin_set("output destination", "terminal");
+      Assembler::assemble(A, a);
+      bc.apply(A);
     }
-
 
   private:
 
-    Assembler assembler;
-
-    // Pointers to forms, mesh and boundary conditions
-    Form *a;
-    Form *L;
-    DirichletBC* bc;
-    DofMapSet dof_map_set;
+    FunctionSpace& V;
+    NonlinearPoissonBilinearForm a;
+    NonlinearPoissonLinearForm L;
+    DirichletBC bc;
 };
 
 int main(int argc, char* argv[])
@@ -135,23 +122,24 @@ int main(int argc, char* argv[])
   dolfin_init(argc, argv);
  
   // Create mesh
-  UnitSquare mesh(64, 64);
+  UnitSquare mesh(2, 2);
 
   // Pseudo time
   double t = 0.0;
 
   // Create source function
-  Source f(mesh, &t);
+  Source f(t);
 
   // Dirichlet boundary conditions
   DirichletBoundary dirichlet_boundary;
-  DirichletBoundaryCondition g(mesh, &t);
+  NonlinearPoissonTrialSpace V(mesh);
+  DirichletBoundaryCondition g(V, t);
 
   // Solution vector
   Function u;
 
   // Create user-defined nonlinear problem
-  MyNonlinearProblem nonlinear_problem(mesh, dirichlet_boundary, g, f, u);
+  MyNonlinearProblem nonlinear_problem(V, dirichlet_boundary, g, f, u);
 
   // Create nonlinear solver (using GMRES linear solver) and set parameters
   // NewtonSolver nonlinear_solver(gmres);
