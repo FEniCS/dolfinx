@@ -34,3 +34,12 @@ def set(self, key, value):
 %}
 
 }
+
+%extend dolfin::FunctionSpace {
+%pythoncode %{
+def __contains__(self,u):
+    " Check whether a function is in the FunctionSpace"
+    assert(isinstance(u,Function))
+    return u._in(self)
+%}
+}
