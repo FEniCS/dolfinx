@@ -4,6 +4,8 @@
 // First added:  2006-08-21
 // Last changed: 2006-10-26
 
+#include <dolfin/fem/Assembler.h>
+#include <dolfin/function/Constant.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/la/GenericMatrix.h>
 #include <dolfin/la/GenericVector.h>
@@ -24,44 +26,46 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 void MatrixFactory::computeMassMatrix(GenericMatrix& A, Mesh& mesh)
 {
-  error("MatrixFactory::computeMassMatrix need updating for new Function interface.");
-  /*
   warning("Using default dof map in MatrixFactory");
   if (mesh.type().cellType() == CellType::triangle)
   {
-    MassMatrix2DBilinearForm a;
-    assemble(A, a, mesh);
+    MassMatrix2DFunctionSpace V(mesh);
+    MassMatrix2DBilinearForm a(V, V);
+    Assembler::assemble(A, a);
   }
   else if (mesh.type().cellType() == CellType::tetrahedron)
   {
-    MassMatrix3DBilinearForm a;
-    assemble(A, a, mesh);
+    MassMatrix3DFunctionSpace V(mesh);
+    MassMatrix3DBilinearForm a(V, V);
+    Assembler::assemble(A, a);
   }
   else
     error("Unknown mesh type.");
-  */
 }
 //-----------------------------------------------------------------------------
 void MatrixFactory::computeStiffnessMatrix(GenericMatrix& A, Mesh& mesh, double c)
 {
-  error("MatrixFactory need to be updated for new Function interface.");
-/*
-  Function f(mesh, c);
+  // Create constant
+  Constant f(c);
 
   warning("Using default dof map in MatrixFactory");
   if (mesh.type().cellType() == CellType::triangle)
   {
-    StiffnessMatrix2DBilinearForm a(f);
-    assemble(A, a, mesh);
+    StiffnessMatrix2DFunctionSpace V(mesh);
+    StiffnessMatrix2DBilinearForm a(V, V);
+    a.c = f;
+    Assembler::assemble(A, a);
   }
   else if (mesh.type().cellType() == CellType::tetrahedron)
   {
-    StiffnessMatrix3DBilinearForm a(f);
-    assemble(A, a, mesh);
+    StiffnessMatrix3DFunctionSpace V(mesh);
+    StiffnessMatrix3DBilinearForm a(V, V);
+    a.c = f;
+    Assembler::assemble(A, a);
   }
   else
     error("Unknown mesh type.");
-*/
+
 }
 //-----------------------------------------------------------------------------
 void MatrixFactory::computeConvectionMatrix(GenericMatrix& A, Mesh& mesh,

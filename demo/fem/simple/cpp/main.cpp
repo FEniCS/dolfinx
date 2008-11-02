@@ -18,6 +18,7 @@ int main()
 {
   // Load reference mesh (just a simple tetrahedron)
   Mesh mesh("../tetrahedron.xml.gz");
+  mesh.order();
 
   // Create stiffness and mass matrices
   StiffnessMatrix A(mesh);

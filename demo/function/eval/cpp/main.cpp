@@ -19,7 +19,7 @@ public:
   {
     return sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2]);
   }
-  
+
 };
 
 int main()
