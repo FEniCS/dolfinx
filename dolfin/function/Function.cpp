@@ -200,6 +200,17 @@ void Function::eval(double* values, const double* x, double t) const
 //-----------------------------------------------------------------------------
 double Function::eval(const double* x) const
 {
+  dolfin_assert(x);
+  dolfin_assert(_function_space);
+
+  // Use vector of dofs if available
+  if (_vector)
+  {
+    real value;
+    _function_space->eval(&value, x, *this);
+    return value;
+  }
+
   // Use time-dependent eval if available
   return eval(x, _time);
 }
