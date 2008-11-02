@@ -86,13 +86,10 @@ class MyNonlinearProblem : public NonlinearProblem
                        Function& g, Function& f, Function& u)  
                        : V(V), a(V, V), L(V), bc(g, V, dirichlet_boundary)
     {
-      // Attache functions
+      // Attach functions
       a.u0 = u;
       L.u0 = u;
       L.f  = f;
-
-      // Initialise solution vector u
-      //u.init(mesh, *a, 1);
     }
 
     // User defined assemble of residual vector 
