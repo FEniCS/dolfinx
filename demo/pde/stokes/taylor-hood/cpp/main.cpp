@@ -1,8 +1,8 @@
-// Copyright (C) 2006-2007 Anders Logg.
+// Copyright (C) 2006-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-02-09
-// Last changed: 2007-07-11
+// Last changed: 2008-11-03
 //
 // This demo solves the Stokes equations, using quadratic
 // elements for the velocity and first degree elements for
@@ -21,8 +21,6 @@ int main()
   // Function for no-slip boundary condition for velocity
   class Zero : public Function
   {
-  public:
-
     void eval(double* values, const double* x) const
     {
       values[0] = 0.0;
@@ -33,30 +31,22 @@ int main()
   // Function for no-slip boundary condition for velocity
   class Noslip : public Function
   {
-  public:
-
     void eval(double* values, const double* x) const
     {
       values[0] = 0.0;
       values[1] = 0.0;
     }
-
   };
 
   // Function for inflow boundary condition for velocity
   class Inflow : public Function
   {
-  public:
-
     void eval(double* values, const double* x) const
     {
       values[0] = -sin(x[1]*DOLFIN_PI);
       values[1] = 0.0;
     }
-
   };
-
-  //dolfin_set("linear algebra backend", "PETSc");
 
   // Read mesh and sub domain markers
   Mesh mesh("../../../../../data/meshes/dolfin-2.xml.gz");
@@ -65,8 +55,8 @@ int main()
 
   // Create function spaces
   StokesFunctionSpace V(mesh);
-  std::auto_ptr<const FunctionSpace> Vu(V.extract_sub_space(0));
-  std::auto_ptr<const FunctionSpace> Vp(V.extract_sub_space(1));
+  SubSpace Vu(V, 0);
+  SubSpace Vp(V, 1);
 
   // Create functions for boundary conditions
   Noslip noslip;
@@ -74,19 +64,18 @@ int main()
   Constant zero(0.0);
   
   // No-slip boundary condition for velocity
-  DirichletBC bc0(noslip, *Vu, sub_domains, 0);
+  DirichletBC bc0(noslip, Vu, sub_domains, 0);
 
   // Inflow boundary condition for velocity
-  DirichletBC bc1(inflow, *Vu, sub_domains, 1);
+  DirichletBC bc1(inflow, Vu, sub_domains, 1);
 
   // Boundary condition for pressure at outflow
-  DirichletBC bc2(zero, *Vp, sub_domains, 2);
+  DirichletBC bc2(zero, Vp, sub_domains, 2);
 
   // Collect boundary conditions
   Array<DirichletBC*> bcs(&bc0, &bc1, &bc2);
 
   // Set up PDE
-  //Function f(mesh, 2, 0.0);
   Zero f;
   StokesBilinearForm a(V, V);
   StokesLinearForm L(V);
@@ -94,12 +83,11 @@ int main()
   LinearPDE pde(a, L, mesh, bcs);
 
   // Solve PDE
-  Function U(V);
+  Function w(V);
   pde.set("PDE linear solver", "direct");
-  pde.solve(U);
-
-  Function u = U[0];
-  Function p = U[1];
+  pde.solve(w);
+  Function u = w[0];
+  Function p = w[1];
 
   // Plot solution
   plot(u);
@@ -117,4 +105,3 @@ int main()
   File pfile_pvd("pressure.pvd");
   pfile_pvd << p;
 }
-

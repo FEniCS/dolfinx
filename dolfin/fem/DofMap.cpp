@@ -4,18 +4,16 @@
 // Modified by Martin Alnes, 2008
 //
 // First added:  2007-03-01
-// Last changed: 2008-10-26
+// Last changed: 2008-11-03
 
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/types.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/MeshData.h>
-#include <dolfin/common/Array.h>
 #include <dolfin/elements/ElementLibrary.h>
 #include <dolfin/main/MPI.h>
 #include "UFCCell.h"
-#include "SubSystem.h"
 #include "UFC.h"
 #include "DofMapBuilder.h"
 #include "DofMap.h"
@@ -96,7 +94,7 @@ DofMap::~DofMap()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-DofMap* DofMap::extract_sub_dofmap(const Array<uint>& sub_system,
+DofMap* DofMap::extract_sub_dofmap(const std::vector<uint>& component,
                                    uint& offset,
                                    const Mesh& mesh) const
 {
@@ -108,7 +106,7 @@ DofMap* DofMap::extract_sub_dofmap(const Array<uint>& sub_system,
   offset = 0;
 
   // Recursively extract sub dofmap
-  std::tr1::shared_ptr<ufc::dof_map> sub_dof_map(extract_sub_dofmap(*ufc_dof_map, offset, sub_system, mesh));
+  std::tr1::shared_ptr<ufc::dof_map> sub_dof_map(extract_sub_dofmap(*ufc_dof_map, offset, component, mesh));
   message(2, "Extracted dof map for sub system: %s", sub_dof_map->signature());
   message(2, "Offset for sub system: %d", offset);
 
@@ -127,7 +125,7 @@ DofMap* DofMap::extract_sub_dofmap(const Array<uint>& sub_system,
 //-----------------------------------------------------------------------------
 ufc::dof_map* DofMap::extract_sub_dofmap(const ufc::dof_map& dof_map,
                                          uint& offset,
-                                         const Array<uint>& sub_system,
+                                         const std::vector<uint>& component,
                                          const Mesh& mesh) const
 {
   // Check if there are any sub systems
@@ -135,16 +133,16 @@ ufc::dof_map* DofMap::extract_sub_dofmap(const ufc::dof_map& dof_map,
     error("Unable to extract sub system (there are no sub systems).");
 
   // Check that a sub system has been specified
-  if (sub_system.size() == 0)
+  if (component.size() == 0)
     error("Unable to extract sub system (no sub system specified).");
   
   // Check the number of available sub systems
-  if (sub_system[0] >= dof_map.num_sub_dof_maps())
+  if (component[0] >= dof_map.num_sub_dof_maps())
     error("Unable to extract sub system %d (only %d sub systems defined).",
-                  sub_system[0], dof_map.num_sub_dof_maps());
+                  component[0], dof_map.num_sub_dof_maps());
 
   // Add to offset if necessary
-  for (uint i = 0; i < sub_system[0]; i++)
+  for (uint i = 0; i < component[0]; i++)
   {
     ufc::dof_map* ufc_dof_map = dof_map.create_sub_dof_map(i);
     if (partitions)
@@ -156,17 +154,17 @@ ufc::dof_map* DofMap::extract_sub_dofmap(const ufc::dof_map& dof_map,
   }
   
   // Create sub system
-  ufc::dof_map* sub_dof_map = dof_map.create_sub_dof_map(sub_system[0]);
+  ufc::dof_map* sub_dof_map = dof_map.create_sub_dof_map(component[0]);
   
   // Return sub system if sub sub system should not be extracted
-  if (sub_system.size() == 1)
+  if (component.size() == 1)
     return sub_dof_map;
 
   // Otherwise, recursively extract the sub sub system
-  Array<uint> sub_sub_system;
-  for (uint i = 1; i < sub_system.size(); i++)
-    sub_sub_system.push_back(sub_system[i]);
-  ufc::dof_map* sub_sub_dof_map = extract_sub_dofmap(*sub_dof_map, offset, sub_sub_system, mesh);
+  std::vector<uint> sub_component;
+  for (uint i = 1; i < component.size(); i++)
+    sub_component.push_back(component[i]);
+  ufc::dof_map* sub_sub_dof_map = extract_sub_dofmap(*sub_dof_map, offset, sub_component, mesh);
   delete sub_dof_map;
 
   return sub_sub_dof_map;

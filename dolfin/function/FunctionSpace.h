@@ -8,6 +8,7 @@
 #define __FUNCTION_SPACE_H
 
 #include <tr1/memory>
+#include <vector>
 #include <dolfin/common/types.h>
 
 namespace dolfin
@@ -19,7 +20,6 @@ namespace dolfin
   class Function;
   class IntersectionDetector;
   class GenericVector;
-  template<class X> class Array;
 
   /// This class represents a finite element function space defined by
   /// a mesh, a finite element, and a local-to-global mapping of the
@@ -70,12 +70,9 @@ namespace dolfin
     void interpolate(double* vertex_values,
                      const Function& v) const;
 
-    /// Extract sub space for sub system
-    FunctionSpace* extract_sub_space(uint sub_system) const;
+    /// Extract sub space for component
+    FunctionSpace* extract_sub_space(const std::vector<uint>& component) const;
 
-    /// Extract sub space for sub system
-    FunctionSpace* extract_sub_space(const Array<uint>& sub_system) const;
-    
   private:
 
     // Scratch space, used for storing temporary local data

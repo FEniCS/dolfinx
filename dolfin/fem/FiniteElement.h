@@ -2,16 +2,16 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-09-11
-// Last changed: 2008-10-14
+// Last changed: 2008-11-03
 
 #ifndef __FINITE_ELEMENT_H
 #define __FINITE_ELEMENT_H
 
 #include <tr1/memory>
+#include <vector>
 #include <ufc.h>
 #include <dolfin/common/types.h>
 #include <dolfin/common/NoDeleter.h>
-#include <dolfin/common/Array.h>
 #include <dolfin/elements/ElementLibrary.h>
 
 namespace dolfin
@@ -75,14 +75,14 @@ namespace dolfin
     ufc::finite_element& ufc_element() const
     { return *element; } 
 
-    /// Extract sub finite element for sub system
-    FiniteElement* extract_sub_element(const Array<uint>& sub_system) const;
+    /// Extract sub finite element for component
+    FiniteElement* extract_sub_element(const std::vector<uint>& component) const;
 
   private:
 
     // Recursively extract sub finite element
     static FiniteElement* extract_sub_element(const FiniteElement& finite_element, 
-                                              const Array<uint>& sub_system);
+                                              const std::vector<uint>& component);
 
     // UFC finite element
     std::tr1::shared_ptr<ufc::finite_element> element;

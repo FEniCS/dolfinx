@@ -56,7 +56,7 @@ Function::Function(std::string filename)
 }
 //-----------------------------------------------------------------------------
 Function::Function(const SubFunction& v)
-  : _function_space(v.v.function_space().extract_sub_space(v.i)),
+  : _function_space(v.v.function_space().extract_sub_space(v.component)),
     _vector(0),
     _time(0), _cell(0), _facet(-1)
 {
