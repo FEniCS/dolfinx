@@ -34,13 +34,9 @@ class DirichletBoundary : public SubDomain
 // Source term
 class Source : public Function
 {
-public:
-    
-  Source(Mesh& mesh) : Function(mesh) {}
-
-  double eval(const double* x) const
+  void eval(double* values, const double* x) const
   {
-      return 9.0*DOLFIN_PI*DOLFIN_PI*sin(3.0*DOLFIN_PI*x[0]);
+    values[0] = 9.0*DOLFIN_PI*DOLFIN_PI*sin(3.0*DOLFIN_PI*x[0]);
   }
 
 };
@@ -50,21 +46,25 @@ int main()
   // Create mesh
   UnitInterval mesh(50);
 
+  // Create function space
+  PoissonFunctionSpace V(mesh);
+
   // Set up BCs
-  Function zero(mesh, 0.0);
+  Constant zero(0.0);
   DirichletBoundary boundary;
-  DirichletBC bc(zero, mesh, boundary);
+  DirichletBC bc(zero, V, boundary);
 
   // Create source
-  Source f(mesh);
+  Source f;
 
   // Define PDE
-  PoissonBilinearForm a;
-  PoissonLinearForm L(f);
+  PoissonBilinearForm a(V, V);
+  PoissonLinearForm L(V);
+  L.f = f;
   LinearPDE pde(a, L, mesh, bc);
 
   // Solve PDE
-  Function u;
+  Function u(V);
   pde.solve(u);
 
   // Save solution to file
