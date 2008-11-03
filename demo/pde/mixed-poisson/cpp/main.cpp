@@ -34,11 +34,11 @@ int main()
   {
   public:
     
-    double eval(const double* x) const
+    void eval(double* values, const double* x) const
     {
       double dx = x[0] - 0.5;
       double dy = x[1] - 0.5;
-      return 500.0*exp(-(dx*dx + dy*dy)/0.02);
+      values[0] = 500.0*exp(-(dx*dx + dy*dy)/0.02);
     }
 
   };
@@ -55,8 +55,6 @@ int main()
   LinearPDE pde(a, L, mesh);
 
   // Solve PDE
-  //Function sigma;
-  //Function u;
   Function U(V);
   pde.solve(U);
 

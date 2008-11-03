@@ -93,12 +93,6 @@ namespace dolfin
     /// Evaluate function at point x and time t (overload for user-defined function)
     virtual void eval(double* values, const double* x, double t) const;
 
-    /// Evaluate function at point x (overload for scalar user-defined function)
-    virtual double eval(const double* x) const;
-
-    /// Evaluate function at point x and time t (overload for scalar user-defined function)
-    virtual double eval(const double* x, double t) const;
-
     /// Evaluate function at point x and time t (calls a user-defined function)
     void eval(double* values, const FunctionSpace& V, const double* x, double t) const;
 

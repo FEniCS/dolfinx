@@ -40,10 +40,8 @@ public:
   
   Source(const double& t) : t(t) {}
 
-  double eval(const double* x) const
-  {
-    return t*x[0]*sin(x[1]);
-  }
+  void eval(double* values, const double* x) const
+    { values[0] = t*x[0]*sin(x[1]); }
   
 private:
   const double & t;
@@ -54,15 +52,12 @@ private:
 class DirichletBoundaryCondition : public Function, public TimeDependent
 {
 public:
-  DirichletBoundaryCondition(const FunctionSpace& V, const double& t) : Function(V), t(t) {}
+  DirichletBoundaryCondition(const double& t) : t(t) {}
   
-  double eval(const double* x) const
-  {
-    return 1.0*t;
-  }
+  void eval(double* values, const double* x) const
+    { values[0] = 1.0*t; }
 
 private:
-
   const double& t;
 
 };
@@ -71,9 +66,7 @@ private:
 class DirichletBoundary : public SubDomain
 {
   bool inside(const double* x, bool on_boundary) const
-  {
-    return std::abs(x[0] - 1.0) < DOLFIN_EPS && on_boundary;
-  }
+    { return std::abs(x[0] - 1.0) < DOLFIN_EPS && on_boundary; }
 };
 
 // User defined nonlinear problem 
@@ -131,7 +124,7 @@ int main(int argc, char* argv[])
   // Dirichlet boundary conditions
   DirichletBoundary dirichlet_boundary;
   NonlinearPoissonTrialSpace V(mesh);
-  DirichletBoundaryCondition g(V, t);
+  DirichletBoundaryCondition g(t);
 
   // Solution vector
   Function u;

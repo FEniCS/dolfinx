@@ -289,10 +289,6 @@ void DirichletBC::apply(GenericMatrix* A,
 //-----------------------------------------------------------------------------
 void DirichletBC::check() const
 {
-  // Check that boundary condition function has a function space
-  if (!g.has_function_space())
-    error("Boundary value function does not have a function space.");
-
   // Check that function is in function space
   if (!g.in(*V))
     error("Unable to create boundary condition, boundary value function is not in trial space.");

@@ -21,8 +21,6 @@ int main()
   {
   public:
 
-    Zero(const FunctionSpace& V) : Function(V) {}
-
     void eval(double* values, const double* x) const
     {
       values[0] = 0.0;
@@ -35,8 +33,6 @@ int main()
   class Clamp : public Function
   {
   public:
-
-    Clamp(const FunctionSpace& V) : Function(V) {}
 
     void eval(double* values, const double* x) const
     {
@@ -59,8 +55,6 @@ int main()
   class Rotation : public Function
   {
   public:
-
-    Rotation(const FunctionSpace& V) : Function(V) {}
 
     void eval(double* values, const double* x) const
     {
@@ -99,15 +93,15 @@ int main()
 
   // Create right-hand side
   //Function f(mesh, 3, 0.0);
-  Zero f(V);
+  Zero f;
 
   // Set up boundary condition at left end
-  Clamp c(V);
+  Clamp c;
   Left left;
   DirichletBC bcl(c, V, left);
 
   // Set up boundary condition at right end
-  Rotation r(V);
+  Rotation r;
   Right right;
   DirichletBC bcr(r, V, right);
 

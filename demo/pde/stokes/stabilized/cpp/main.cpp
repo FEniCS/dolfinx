@@ -17,18 +17,6 @@ using namespace dolfin;
 
 int main()
 {
-  class ScalarZero : public Function
-  {
-  public:
-
-    ScalarZero(const FunctionSpace& V) : Function(V) {}
-
-    double eval(const double* x) const
-    {
-      return 0.0;
-    }
-  };
-
   // Function for no-slip boundary condition for velocity
   class Zero : public Function
   {
@@ -46,8 +34,6 @@ int main()
   {
   public:
 
-    Noslip(const FunctionSpace& V) : Function(V) {}
-
     void eval(double* values, const double* x) const
     {
       values[0] = 0.0;
@@ -59,8 +45,6 @@ int main()
   class Inflow : public Function
   {
   public:
-
-    Inflow(const FunctionSpace& V) : Function(V) {}
 
     void eval(double* values, const double* x) const
     {
@@ -81,10 +65,9 @@ int main()
   std::auto_ptr<const FunctionSpace> Vp(V.extract_sub_space(1));
 
   // Create functions for boundary conditions
-  Noslip noslip(*Vu);
-  Inflow inflow(*Vu);
-  ScalarZero zero(*Vp);
-  //Constant zero(0.0);
+  Noslip noslip;
+  Inflow inflow;
+  Constant zero(0.0);
   
   // No-slip boundary condition for velocity
   DirichletBC bc0(noslip, *Vu, sub_domains, 0);

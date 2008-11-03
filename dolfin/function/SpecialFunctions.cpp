@@ -29,9 +29,9 @@ MeshSize::MeshSize(const FunctionSpace& V) : Function(V)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-double MeshSize::eval(const double* x) const
+void MeshSize::eval(double* values, const double* x) const
 {
-  return cell().diameter();
+  values[0] = cell().diameter();
 }
 //-----------------------------------------------------------------------------
 double MeshSize::min() const
@@ -63,9 +63,9 @@ InvMeshSize::InvMeshSize(const FunctionSpace& V) : Function(V)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-double InvMeshSize::eval(const double* x) const
+void InvMeshSize::eval(double* values, const double* x) const
 {
-  return 1.0 / cell().diameter();
+  values[0] = 1.0 / cell().diameter();
 }
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -79,11 +79,14 @@ AvgMeshSize::AvgMeshSize(const FunctionSpace& V) : Function(V)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-double AvgMeshSize::eval(const double* x) const
+void AvgMeshSize::eval(double* values, const double* x) const
 {
   // If there is no facet (assembling on interior), return cell diameter
   if (!on_facet())
-    return cell().diameter();
+  {
+    values[0] = cell().diameter();
+    return;
+  }
   else
   {
     // Create facet from the global facet number
@@ -96,12 +99,16 @@ double AvgMeshSize::eval(const double* x) const
       Cell cell0(function_space().mesh(), facet0.entities(cell().mesh().topology().dim())[0]);
       Cell cell1(function_space().mesh(), facet0.entities(cell().mesh().topology().dim())[1]);
 
-      return (cell0.diameter() + cell1.diameter())/2.0;
+      values[0] = (cell0.diameter() + cell1.diameter())/2.0;
+      return;
     }
     // Else there is only one cell connected to the facet and the average is 
     // the cell diameter
     else
-      return cell().diameter();
+    {
+      values[0] = cell().diameter();
+      return;
+    }
   }
 }
 //-----------------------------------------------------------------------------

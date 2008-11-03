@@ -187,13 +187,6 @@ void Function::eval(double* values, const double* x) const
     return;
   }
 
-  // Use scalar eval() if available
-  if (_function_space->element().value_rank() == 0)
-  {
-    values[0] = eval(x);
-    return;
-  }
-
   // Use time-dependent eval if available
   eval(values, x, _time);
 }
@@ -202,19 +195,6 @@ void Function::eval(double* values, const double* x, double t) const
 {
   // Missing eval() function if we get here
   error("Missing eval() for user-defined function (must be overloaded).");
-}
-//-----------------------------------------------------------------------------
-double Function::eval(const double* x) const
-{
-  // Use time-dependent eval if available
-  return eval(x, _time);
-}
-//-----------------------------------------------------------------------------
-double Function::eval(const double* x, double t) const
-{
-  // Missing eval() function if we get here
-  error("Missing eval() for scalar user-defined function (must be overloaded).");
-  return 0.0;
 }
 //-----------------------------------------------------------------------------
 void Function::eval(simple_array<double>& values, const simple_array<double>& x) const

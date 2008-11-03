@@ -33,7 +33,7 @@ namespace dolfin
     MeshSize(const FunctionSpace& V);
 
     /// Return cell size
-    double eval(const double* x) const;
+    void eval(double* values, const double* x) const;
     
     /// Compute minimal cell diameter
     double min() const;
@@ -56,7 +56,7 @@ namespace dolfin
     InvMeshSize(const FunctionSpace& V);
 
     /// Return inverse of cell size
-    double eval(const double* x) const;
+    void eval(double* values, const double* x) const;
 
   };
 
@@ -73,7 +73,7 @@ namespace dolfin
     AvgMeshSize(const FunctionSpace& V);
 
     /// Return average cell size
-    double eval(const double* x) const;
+    void eval(double* values, const double* x) const;
 
   };
 
