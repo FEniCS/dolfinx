@@ -17,7 +17,6 @@ using namespace dolfin;
 
 int main()
 {
-  // Function for no-slip boundary condition for velocity
   class ScalarZero : public Function
   {
   public:
