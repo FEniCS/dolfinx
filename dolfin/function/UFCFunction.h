@@ -1,48 +1,28 @@
-// Copyright (C) 2006-2008 Martin Sandve Alnes.
+// Copyright (C) 2008 Martin Sandve Alnes.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Anders Logg, 2008.
+//
 // First added:  2008-05-08
-// Last changed: 2008-05-08
+// Last changed: 2008-10-30
 
 #ifndef __UFC_FUNCTION_H
 #define __UFC_FUNCTION_H
 
-#include "GenericFunction.h"
+#include <ufc.h>
 
 namespace dolfin
 {
-  // TODO: Take rank and shape instead of size in constructor. 
-  // Or better: add rank() and dim(i) to ufc::function in next version.
 
-  /// This class implements the functionality for functions
-  /// that take a single constant value.
+  /// This is a utility class used by Function to wrap callbacks from
+  /// ufc::finite_element::evaluate_dof to ufc::function::evaluate.
 
-  class UFCFunction : public GenericFunction, public ufc::function
+  class UFCFunction : public ufc::function
   {
   public:
 
-    /// Create function to wrap given ufc::function 
-    UFCFunction(Mesh& mesh, const ufc::function& function, uint size);
-
-    /// Destructor
-    ~UFCFunction();
-
-    /// Return the rank of the value space
-    uint rank() const;
-
-    /// Return the dimension of the value space for axis i
-    uint dim(uint i) const;
-
-    /// Interpolate function to vertices of mesh
-    void interpolate(double* values) const;
-
-    /// Interpolate function to finite element space on cell
-    void interpolate(double* coefficients,
-                     const ufc::cell& cell,
-                     const FiniteElement& finite_element) const;
-
-    /// Evaluate function at given point
-    void eval(double* values, const double* x) const;
+    /// Create wrapper for given function
+    UFCFunction(const Function& v);
 
     /// Evaluate function at given point in cell (UFC function interface)
     void evaluate(double* values,
@@ -51,11 +31,8 @@ namespace dolfin
 
   private:
 
-    // Underlying ufc::function
-    const ufc::function& function;
-
-    // Size of value (number of entries in tensor value)
-    uint size;
+    // The function
+    const Function& v;
 
   };
 

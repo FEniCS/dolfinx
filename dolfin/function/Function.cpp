@@ -260,6 +260,9 @@ void Function::interpolate(double* coefficients,
   }
   else
   {
+    // Create UFC wrapper for this function
+    UFCFunction v(*this);
+
     // Get element
     const FiniteElement& element = V.element();
 
@@ -268,7 +271,7 @@ void Function::interpolate(double* coefficients,
 
     // Evaluate each dof to get coefficients for nodal basis expansion
     for (uint i = 0; i < element.space_dimension(); i++)
-      coefficients[i] = element.evaluate_dof(i, *this, ufc_cell);
+      coefficients[i] = element.evaluate_dof(i, v, ufc_cell);
 
     // Invalidate local facet
     _facet = -1;
