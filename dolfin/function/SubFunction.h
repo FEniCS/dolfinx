@@ -2,11 +2,12 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-04-27
-// Last changed: 2008-10-12
+// Last changed: 2008-11-03
 
 #ifndef __SUB_FUNCTION_H
 #define __SUB_FUNCTION_H
 
+#include <vector>
 #include <dolfin/common/types.h>
 
 namespace dolfin
@@ -29,8 +30,11 @@ namespace dolfin
   {
   public:
 
-    /// Create sub function
-    SubFunction(const Function& v, uint i) : v(v), i(i) {}
+    /// Create sub function for given component
+    SubFunction(const Function& v, uint i) : v(v)
+    {
+      component.push_back(i);
+    }
 
     /// Destructor
     ~SubFunction() {}
@@ -43,8 +47,8 @@ namespace dolfin
     // The function
     const Function& v;
 
-    // The sub function index
-    uint i;
+    // The component
+    std::vector<uint> component;
 
   };
 

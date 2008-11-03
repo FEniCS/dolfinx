@@ -4,13 +4,14 @@
 // Modified by Martin Alnes, 2008
 //
 // First added:  2007-03-01
-// Last changed: 2008-10-27
+// Last changed: 2008-11-03
 
 #ifndef __DOF_MAP_H
 #define __DOF_MAP_H
 
-#include <map>
 #include <tr1/memory>
+#include <map>
+#include <vector>
 #include <ufc.h>
 #include <dolfin/common/types.h>
 #include <dolfin/mesh/Mesh.h>
@@ -21,7 +22,6 @@
 namespace dolfin
 {
 
-  class SubSystem;
   class UFC;
 
   /// This class handles the mapping of degrees of freedom.
@@ -102,8 +102,8 @@ namespace dolfin
     /// Return renumbering (used for testing)
     std::map<uint, uint> getMap() const;
 
-    /// Extract sub dofmap and offset for sub system
-    DofMap* extract_sub_dofmap(const Array<uint>& sub_system, uint& offset, const Mesh& mesh) const;
+    /// Extract sub dofmap and offset for component
+    DofMap* extract_sub_dofmap(const std::vector<uint>& component, uint& offset, const Mesh& mesh) const;
     
     /// Return offset into parent's vector of coefficients
     uint offset() const;
@@ -122,7 +122,7 @@ namespace dolfin
     // Recursively extract sub dofmap
     ufc::dof_map* extract_sub_dofmap(const ufc::dof_map& dof_map,
                                      uint& offset,
-                                     const Array<uint>& sub_system,
+                                     const std::vector<uint>& component,
                                      const Mesh& mesh) const;
 
     // Precomputed dof map

@@ -1,3 +1,4 @@
+ - Add new class SubSpace (replacing SubSystem)
  - Add new class FunctionSpace
  - Complete redesign of Function class hierarchy, now a single Function class
  - Increased use of shared_ptr in Function, FunctionSpace, etc
