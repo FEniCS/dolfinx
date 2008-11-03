@@ -5,7 +5,6 @@
 
 #include <dolfin/fem/DofMap.h>
 #include <dolfin/fem/FiniteElement.h>
-#include <dolfin/fem/SubSystem.h>
 #include <dolfin/fem/BoundaryCondition.h>
 #include <dolfin/fem/DirichletBC.h>
 #include <dolfin/fem/PeriodicBC.h>
