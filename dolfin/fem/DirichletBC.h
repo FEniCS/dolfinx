@@ -14,10 +14,10 @@
 #define __DIRICHLET_BC_H
 
 #include <map>
+#include <vector>
 #include <tr1/memory>
 #include <dolfin/common/types.h>
 #include "BoundaryCondition.h"
-#include "SubSystem.h"
 
 namespace dolfin
 {
@@ -96,28 +96,6 @@ namespace dolfin
     DirichletBC(const Function& g,
                 const FunctionSpace& V,
                 uint sub_domain,
-                BCMethod method = topological);
-
-    /// Create sub system boundary condition for sub domain
-    DirichletBC(const Function& g,
-                const FunctionSpace& V,
-                SubDomain& sub_domain,
-                const SubSystem& sub_system,
-                BCMethod method = topological);
-
-    /// Create sub system boundary condition for sub domain specified by index
-    DirichletBC(const Function& g,
-                const FunctionSpace& V,
-                MeshFunction<uint>& sub_domains,
-                uint sub_domain,
-                const SubSystem& sub_system,
-                BCMethod method = topological);
-
-    /// Create sub system boundary condition for boundary data included in the mesh
-    DirichletBC(const Function& g,
-                const FunctionSpace& V,
-                uint sub_domain,
-                const SubSystem& sub_system,
                 BCMethod method = topological);
 
     /// Destructor

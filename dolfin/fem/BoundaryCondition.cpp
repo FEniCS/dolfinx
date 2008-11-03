@@ -10,7 +10,6 @@
 #include <dolfin/function/FunctionSpace.h>
 #include "DofMap.h"
 #include "Form.h"
-#include "SubSystem.h"
 #include "BoundaryCondition.h"
 
 using namespace dolfin;
@@ -20,18 +19,6 @@ BoundaryCondition::BoundaryCondition(const FunctionSpace& V)
   : V(&V, NoDeleter<const FunctionSpace>())
 {
   // Do nothing
-}
-//-----------------------------------------------------------------------------
-BoundaryCondition::BoundaryCondition(const FunctionSpace& V,
-                                     const SubSystem& sub_system)
-  : V(&V, NoDeleter<const FunctionSpace>())
-{
-  // Extract sub space if we have a sub system
-  if (sub_system.depth() > 0)
-  {
-    std::tr1::shared_ptr<const FunctionSpace> _V(V.extract_sub_space(sub_system.array()));
-    this->V = _V;
-  }
 }
 //-----------------------------------------------------------------------------
 BoundaryCondition::~BoundaryCondition()

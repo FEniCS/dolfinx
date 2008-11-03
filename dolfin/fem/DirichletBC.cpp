@@ -25,7 +25,6 @@
 #include "FiniteElement.h"
 #include "UFCMesh.h"
 #include "UFCCell.h"
-#include "SubSystem.h"
 #include "DirichletBC.h"
 
 using namespace dolfin;
@@ -61,46 +60,6 @@ DirichletBC::DirichletBC(const Function& g,
                          uint sub_domain,
                          BCMethod method)
   : BoundaryCondition(V),
-    g(g),
-    method(method), user_sub_domain(0)
-{
-  check();
-  init_from_mesh(sub_domain);
-}
-//-----------------------------------------------------------------------------
-DirichletBC::DirichletBC(const Function& g,
-                         const FunctionSpace& V,
-                         SubDomain& sub_domain,
-                         const SubSystem& sub_system,
-                         BCMethod method)
-  : BoundaryCondition(V, sub_system),
-    g(g),
-    method(method), user_sub_domain(&sub_domain)
-{
-  check();
-  init_from_sub_domain(sub_domain);
-}
-//-----------------------------------------------------------------------------
-DirichletBC::DirichletBC(const Function& g,
-                         const FunctionSpace& V,
-                         MeshFunction<uint>& sub_domains,
-                         uint sub_domain,
-                         const SubSystem& sub_system,
-                         BCMethod method)
-  : BoundaryCondition(V, sub_system),
-    g(g),
-    method(method), user_sub_domain(0)
-{
-  check();
-  init_from_mesh_function(sub_domains, sub_domain);
-}
-//-----------------------------------------------------------------------------
-DirichletBC::DirichletBC(const Function& g,
-                         const FunctionSpace& V,
-                         uint sub_domain,
-                         const SubSystem& sub_system,
-                         BCMethod method)
-  : BoundaryCondition(V, sub_system),
     g(g),
     method(method), user_sub_domain(0)
 {

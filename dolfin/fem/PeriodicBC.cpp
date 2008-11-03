@@ -21,7 +21,6 @@
 #include "DofMap.h"
 #include "UFCMesh.h"
 #include "UFCCell.h"
-#include "SubSystem.h"
 #include "BoundaryCondition.h"
 #include "PeriodicBC.h"
 
@@ -52,14 +51,6 @@ struct lt_coordinate
 PeriodicBC::PeriodicBC(const FunctionSpace& V,
                        const SubDomain& sub_domain)
   : BoundaryCondition(V), sub_domain(sub_domain)
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-PeriodicBC::PeriodicBC(const FunctionSpace& V,
-                       const SubDomain& sub_domain,
-                       const SubSystem& sub_system)
-  : BoundaryCondition(V, sub_system), sub_domain(sub_domain)
 {
   // Do nothing
 }

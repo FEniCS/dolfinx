@@ -9,6 +9,7 @@
 #ifndef __BOUNDARY_CONDITION_H
 #define __BOUNDARY_CONDITION_H
 
+#include <tr1/memory>
 #include <dolfin/common/types.h>
 
 namespace dolfin
@@ -16,7 +17,6 @@ namespace dolfin
 
   class GenericMatrix;
   class GenericVector;
-  class SubSystem;
   class FunctionSpace;
 
   /// Common base class for boundary conditions
@@ -27,9 +27,6 @@ namespace dolfin
 
     /// Constructor
     BoundaryCondition(const FunctionSpace& V);
-
-    /// Constructor
-    BoundaryCondition(const FunctionSpace& V, const SubSystem& sub_system);
 
     /// Destructor
     virtual ~BoundaryCondition();

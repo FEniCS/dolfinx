@@ -9,6 +9,7 @@
 #ifndef __NONLINEAR_PDE_H
 #define __NONLINEAR_PDE_H
 
+#include <dolfin/common/Array.h>
 #include <dolfin/nls/NonlinearProblem.h>
 #include <dolfin/nls/NewtonSolver.h>
 #include <dolfin/fem/Assembler.h>

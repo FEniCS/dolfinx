@@ -9,8 +9,8 @@
 #ifndef __PERIODIC_BC_H
 #define __PERIODIC_BC_H
 
+#include <tr1/memory>
 #include <dolfin/common/types.h>
-#include "SubSystem.h"
 #include "BoundaryCondition.h"
 
 namespace dolfin
@@ -48,11 +48,6 @@ namespace dolfin
     PeriodicBC(const FunctionSpace& V,
                const SubDomain& sub_domain);
 
-    /// Create sub system boundary condition for sub domain
-    PeriodicBC(const FunctionSpace& V,
-               const SubDomain& sub_domain,
-               const SubSystem& sub_system);
-    
     /// Destructor
     ~PeriodicBC();
 
