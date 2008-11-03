@@ -115,7 +115,7 @@ if env["enablePydolfin"]:
     #    swigFlags.append("-O")
 
     # Ths swig environment
-    swigEnv = env.Copy()
+    swigEnv = env.Clone()
     swigEnv["SWIGFLAGS"] = swigFlags
     swigEnv["SHLIBPREFIX"] = "_"
     if env["PLATFORM"] == "darwin":
@@ -186,7 +186,7 @@ for modName, mod in modules.items():
     if mod.libSources:
         # Register shared library targets in the module
 
-        modEnv = env.Copy(CXXFLAGS=mod.cxxFlags, LINKFLAGS=mod.linkFlags)
+        modEnv = env.Clone(CXXFLAGS=mod.cxxFlags, LINKFLAGS=mod.linkFlags)
         # Prepend the CPPPATH so that directories containing headers are searched before those
         # they are to be installed into, otherwise SCons might think it necessary to install
         # them first
@@ -206,7 +206,7 @@ for modName, mod in modules.items():
         # Register swig wrapper targets in the module
         mod.cxxFlags += " -fno-strict-aliasing"
 
-        modEnv = swigEnv.Copy(CXXFLAGS=mod.cxxFlags, LINKFLAGS=mod.linkFlags + linkOpts)
+        modEnv = swigEnv.Clone(CXXFLAGS=mod.cxxFlags, LINKFLAGS=mod.linkFlags + linkOpts)
         modEnv.Append(SWIGFLAGS=mod.swigFlags + ["-I%s" % i for i in swigcppPath])
         
         # Version previous to 1.3.36 together with gcc version 4.3 and later
@@ -244,7 +244,7 @@ for modName, mod in modules.items():
     for progName, progSources in mod.progSources.items():
         # Register program targets in the module
 
-        modEnv = env.Copy(CXXFLAGS=mod.cxxFlags, LINKFLAGS=mod.linkFlags)
+        modEnv = env.Clone(CXXFLAGS=mod.cxxFlags, LINKFLAGS=mod.linkFlags)
 
         # Prepend the CPPPATH so that directories containing headers are searched before those
         # they are to be installed into, otherwise SCons might think it necessary to install
