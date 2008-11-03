@@ -6,7 +6,7 @@
 // Modified by Kent-Andre Mardal, 2008
 //
 // First added:  2007-01-17
-// Last changed: 2008-10-28
+// Last changed: 2008-11-03
 
 #include <ufc.h>
 #include <dolfin/main/MPI.h>
@@ -395,7 +395,7 @@ void Assembler::check(const Form& form,
       // auto_ptr deletes its object when it exits its scope
       std::auto_ptr<ufc::finite_element> fe( form.ufc_form().create_finite_element(i+form.rank()) );
       
-      uint r = coefficients[i]->element().value_rank();
+      uint r = coefficients[i]->function_space().element().value_rank();
       uint fe_r = fe->value_rank();
       if (fe_r != r)
         warning("Invalid value rank of Function %d, got %d but expecting %d. \
@@ -403,7 +403,7 @@ You may need to provide the rank of a user defined Function.", i, r, fe_r);
       
       for (uint j = 0; j < r; ++j)
       {
-        uint dim = coefficients[i]->element().value_dimension(j);
+        uint dim = coefficients[i]->function_space().element().value_dimension(j);
         uint fe_dim = fe->value_dimension(j);
         if(dim != fe_dim)
           warning("Invalid value dimension %d of Function %d, got %d but expecting %d. \

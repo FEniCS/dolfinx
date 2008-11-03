@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2008.
 //
 // First added:  2007-12-10
-// Last changed: 2008-10-24
+// Last changed: 2008-11-03
 
 #include <ufc.h>
 #include <dolfin/common/NoDeleter.h>
@@ -126,7 +126,7 @@ void Form::check() const
 
     std::auto_ptr<ufc::finite_element> element(_ufc_form->create_finite_element(_ufc_form->rank() + i));
     dolfin_assert(element.get());
-    if (element->signature() != _coefficients[i]->element().signature())
+    if (element->signature() != _coefficients[i]->function_space().element().signature())
       error("Wrong type of function space for coefficient %d.", i);
   }
 }

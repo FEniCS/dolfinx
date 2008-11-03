@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2008.
 //
 // First added:  2008-05-08
-// Last changed: 2008-10-30
+// Last changed: 2008-11-03
 
 #ifndef __UFC_FUNCTION_H
 #define __UFC_FUNCTION_H
@@ -14,6 +14,9 @@
 namespace dolfin
 {
 
+  class Function;
+  class Data;
+
   /// This is a utility class used by Function to wrap callbacks from
   /// ufc::finite_element::evaluate_dof to ufc::function::evaluate.
 
@@ -22,7 +25,10 @@ namespace dolfin
   public:
 
     /// Create wrapper for given function
-    UFCFunction(const Function& v);
+    UFCFunction(const Function& v, Data& data);
+
+    /// Destructor
+    ~UFCFunction();
 
     /// Evaluate function at given point in cell (UFC function interface)
     void evaluate(double* values,
@@ -33,6 +39,9 @@ namespace dolfin
 
     // The function
     const Function& v;
+
+    // Function call data
+    mutable Data& data;
 
   };
 

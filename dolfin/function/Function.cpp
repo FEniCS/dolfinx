@@ -5,7 +5,7 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2003-11-28
-// Last changed: 2008-10-30
+// Last changed: 2008-11-03
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/Array.h>
@@ -15,6 +15,8 @@
 #include <dolfin/la/DefaultFactory.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/DofMap.h>
+#include "Data.h"
+#include "UFCFunction.h"
 #include "FunctionSpace.h"
 #include "SubFunction.h"
 #include "Function.h"
@@ -24,32 +26,28 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 Function::Function()
   : _function_space(static_cast<FunctionSpace*>(0)),
-    _vector(0),
-    _time(0), _cell(0), _facet(-1)
+    _vector(0)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 Function::Function(const FunctionSpace& V)
   : _function_space(&V, NoDeleter<const FunctionSpace>()),
-    _vector(0),
-    _time(0), _cell(0), _facet(-1)
+    _vector(0)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 Function::Function(std::tr1::shared_ptr<const FunctionSpace> V)
   : _function_space(V),
-    _vector(0),
-    _time(0), _cell(0), _facet(-1)
+    _vector(0)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 Function::Function(std::string filename)
   : _function_space(static_cast<FunctionSpace*>(0)),
-    _vector(0),
-    _time(0), _cell(0), _facet(-1)
+    _vector(0)
 {
   File file(filename);
   file >> *this;
@@ -57,8 +55,7 @@ Function::Function(std::string filename)
 //-----------------------------------------------------------------------------
 Function::Function(const SubFunction& v)
   : _function_space(v.v.function_space().extract_sub_space(v.component)),
-    _vector(0),
-    _time(0), _cell(0), _facet(-1)
+    _vector(0)
 {
   // Initialize vector
   init();
@@ -80,8 +77,8 @@ Function::Function(const SubFunction& v)
 }
 //-----------------------------------------------------------------------------
 Function::Function(const Function& v)
-  : _function_space(v._function_space), _vector(0),
-    _time(0), _cell(0), _facet(-1)
+  : _function_space(v._function_space),
+    _vector(0)
 {
   *this = v;
 }
@@ -95,7 +92,6 @@ const Function& Function::operator= (const Function& v)
 {
   // Note 1: function spaces must be the same
   // Note 2: vector needs special handling
-  // Note 3: don't assign cell and facet
 
   // Check that function spaces are the same
   if (!v.in(function_space()))
@@ -110,9 +106,6 @@ const Function& Function::operator= (const Function& v)
   dolfin_assert(_vector);
   *_vector = *v._vector;
 
-  // Assign time
-  _time = v._time;
-
   return *this;
 }
 //-----------------------------------------------------------------------------
@@ -124,11 +117,6 @@ SubFunction Function::operator[] (uint i)
 
   SubFunction sub_function(*this, i);
   return sub_function;
-}
-//-----------------------------------------------------------------------------
-bool Function::has_function_space() const
-{
-  return _function_space.get();
 }
 //-----------------------------------------------------------------------------
 const FunctionSpace& Function::function_space() const
@@ -163,9 +151,9 @@ const GenericVector& Function::vector() const
   return *_vector;
 }
 //-----------------------------------------------------------------------------
-double Function::time() const
+bool Function::has_function_space() const
 {
-  return _time;
+  return _function_space.get();
 }
 //-----------------------------------------------------------------------------
 bool Function::in(const FunctionSpace& V) const
@@ -174,54 +162,21 @@ bool Function::in(const FunctionSpace& V) const
   return !_function_space || _function_space.get() == &V;
 }
 //-----------------------------------------------------------------------------
-void Function::eval(double* values, const double* x) const
+void Function::eval(double* values, const Data& data) const
 {
   dolfin_assert(values);
-  dolfin_assert(x);
-  dolfin_assert(_function_space);
+  dolfin_assert(data.x);
 
   // Use vector of dofs if available
   if (_vector)
   {
-    _function_space->eval(values, x, *this);
+    dolfin_assert(_function_space);
+    _function_space->eval(values, data.x, *this);
     return;
   }
 
-  // Use time-dependent eval if available
-  eval(values, x, _time);
-}
-//-----------------------------------------------------------------------------
-void Function::eval(double* values, const double* x, double t) const
-{
   // Missing eval() function if we get here
   error("Missing eval() for user-defined function (must be overloaded).");
-}
-//-----------------------------------------------------------------------------
-void Function::eval(simple_array<double>& values, const simple_array<double>& x) const
-{
-  eval(values.data, x.data);
-}
-//-----------------------------------------------------------------------------
-void Function::evaluate(double* values, const double* coordinates, const ufc::cell& cell) const
-{
-  dolfin_assert(values);
-  dolfin_assert(coordinates);
-  dolfin_assert(cell.entity_indices);
-
-  // Not implemented for regular functions (but we may consider adding it)
-  if (_vector)
-    error("UFC callback evaluate() not implemented for regular functions (only user-defined).");
-
-  // Store cell data
-  if (_function_space)
-    _cell = new Cell(_function_space->mesh(), cell.entity_indices[cell.topological_dimension][0]);
-
-  // Call user-defined eval()
-  eval(values, coordinates);
-
-  // Delete cell data
-  delete _cell;
-  _cell = 0;
 }
 //-----------------------------------------------------------------------------
 void Function::interpolate(double* coefficients,
@@ -260,22 +215,20 @@ void Function::interpolate(double* coefficients,
   }
   else
   {
+    // Create data
+    const Cell cell(V.mesh(), ufc_cell.entities[V.mesh().topology().dim()][0]);
+    Data data(cell, local_facet);
+
     // Create UFC wrapper for this function
-    UFCFunction v(*this);
+    UFCFunction v(*this, data);
 
     // Get element
     const FiniteElement& element = V.element();
 
-    // Store local facet
-    _facet = local_facet;
-
     // Evaluate each dof to get coefficients for nodal basis expansion
     for (uint i = 0; i < element.space_dimension(); i++)
       coefficients[i] = element.evaluate_dof(i, v, ufc_cell);
-
-    // Invalidate local facet
-    _facet = -1;
-  }  
+  }
 }
 //-----------------------------------------------------------------------------
 void Function::interpolate(GenericVector& coefficients,
@@ -289,32 +242,6 @@ void Function::interpolate(double* vertex_values) const
   dolfin_assert(vertex_values);
   dolfin_assert(_function_space);
   _function_space->interpolate(vertex_values, *this);
-}
-//-----------------------------------------------------------------------------
-const Cell& Function::cell() const
-{
-  if (!_cell)
-    error("Current cell is unknown.");
-
-  return *_cell;
-}
-//-----------------------------------------------------------------------------
-dolfin::uint Function::facet() const
-{
-  if (_facet < 0)
-    error("Current facet is unknown.");
-
-  return static_cast<uint>(_facet);
-}
-//-----------------------------------------------------------------------------
-Point Function::normal() const
-{
-  return cell().normal(facet());
-}
-//-----------------------------------------------------------------------------
-bool Function::on_facet() const
-{
-  return _facet >= 0;
 }
 //-----------------------------------------------------------------------------
 void Function::init()

@@ -6,26 +6,23 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2003-11-28
-// Last changed: 2008-10-30
+// Last changed: 2008-11-03
 
 #ifndef __FUNCTION_H
 #define __FUNCTION_H
 
 #include <ufc.h>
 #include <tr1/memory>
-#include <dolfin/common/simple_array.h>
 #include <dolfin/common/Variable.h>
 #include <dolfin/log/log.h>
 
 namespace dolfin
 {
 
-  class Cell;
-  class FiniteElement;
   class FunctionSpace;
   class GenericVector;
-  class Point;
   class SubFunction;
+  class Data;
 
   /// This class represents a function u_h in a finite element
   /// function space V_h, given by
@@ -35,7 +32,7 @@ namespace dolfin
   /// where {phi_i}_i is a basis for V_h, and U is a vector of
   /// expansion coefficients for u_h.
 
-  class Function : public Variable, public ufc::function
+  class Function : public Variable
   {
   public:
 
@@ -66,14 +63,8 @@ namespace dolfin
     /// Extract sub function
     SubFunction operator[] (uint i);
 
-    /// Test for the function space
-    bool has_function_space() const;
-
     /// Return the function space
     const FunctionSpace& function_space() const;
-
-    /// Return the finite element
-    const FiniteElement& element() const;
 
     /// Return the vector of expansion coefficients (non-const version)
     GenericVector& vector();
@@ -81,23 +72,14 @@ namespace dolfin
     /// Return the vector of expansion coefficients (const version)
     const GenericVector& vector() const;
 
-    /// Return the current time
-    double time() const;
+    /// Test for the function space
+    bool has_function_space() const;
 
     /// Check if function is a member of the given function space
     bool in(const FunctionSpace& V) const;
 
     /// Evaluate function at point x (overload for user-defined function)
-    virtual void eval(double* values, const double* x) const;
-
-    /// Evaluate function at point x and time t (overload for user-defined function)
-    virtual void eval(double* values, const double* x, double t) const;
-
-    /// Evaluate function at given point (used for subclassing through SWIG interface)
-    void eval(simple_array<double>& values, const simple_array<double>& x) const;
-
-    /// Evaluate function (needed for ufc::function interface)
-    void evaluate(double* values, const double* coordinates, const ufc::cell& cell) const;
+    virtual void eval(double* values, const Data& data) const;
 
     /// Interpolate function to local function space on cell
     void interpolate(double* coefficients, const ufc::cell& ufc_cell, int local_facet=-1) const;
@@ -114,20 +96,6 @@ namespace dolfin
     /// Friends
     friend class Coefficient;
 
-  protected:
-
-    /// Access current cell (available during assembly for user-defined function)
-    const Cell& cell() const;
-
-    /// Access current facet (available during assembly for user-defined function)
-    uint facet() const;
-
-    /// Access current facet normal (available during assembly for user-defined function)
-    Point normal() const;
-
-    /// Check if we are on a facet (available during assembly for user-defined function)
-    bool on_facet() const;
-
   private:
 
     // Initialize vector
@@ -138,15 +106,6 @@ namespace dolfin
 
     // The vector of expansion coefficients
     GenericVector* _vector;
-
-    // The current time
-    double _time;
-
-    // The current cell (if any, otherwise 0)
-    mutable Cell* _cell;
-
-    // The current facet (if any, otherwise -1)
-    mutable int _facet;
 
   };
 
