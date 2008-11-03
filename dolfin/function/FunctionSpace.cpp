@@ -4,7 +4,7 @@
 // Modified by Kristoffer Selim, 2008.
 //
 // First added:  2008-09-11
-// Last changed: 2008-10-27
+// Last changed: 2008-11-03
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/NoDeleter.h>
@@ -195,9 +195,9 @@ void FunctionSpace::interpolate(double* vertex_values,
   delete [] local_vertex_values;
 }
 //-----------------------------------------------------------------------------
-FunctionSpace* FunctionSpace::extract_sub_space(const uint sub_system) const
+FunctionSpace* FunctionSpace::extract_sub_space(uint sub_system) const
 {
-  // Create sub syetm Array from scalar
+  // Create sub system Array from scalar
    Array<uint> _sub_system;
   _sub_system.push_back(sub_system);
   

@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-09-11
-// Last changed: 2008-10-26
+// Last changed: 2008-11-03
 
 #ifndef __FUNCTION_SPACE_H
 #define __FUNCTION_SPACE_H
@@ -70,10 +70,10 @@ namespace dolfin
     void interpolate(double* vertex_values,
                      const Function& v) const;
 
-    /// Extract sub finite element for sub system
-    FunctionSpace* extract_sub_space(const uint sub_system) const;
+    /// Extract sub space for sub system
+    FunctionSpace* extract_sub_space(uint sub_system) const;
 
-    /// Extract sub finite element for sub system
+    /// Extract sub space for sub system
     FunctionSpace* extract_sub_space(const Array<uint>& sub_system) const;
     
   private:
