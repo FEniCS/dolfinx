@@ -18,6 +18,19 @@ using namespace dolfin;
 int main()
 {
   // Function for no-slip boundary condition for velocity
+  class ScalarZero : public Function
+  {
+  public:
+
+    ScalarZero(const FunctionSpace& V) : Function(V) {}
+
+    double eval(const double* x) const
+    {
+      return 0.0;
+    }
+  };
+
+  // Function for no-slip boundary condition for velocity
   class Zero : public Function
   {
   public:
@@ -65,29 +78,23 @@ int main()
 
   // Create function spaces
   StokesFunctionSpace V(mesh);
-  StokesBilinearFormFunctionSpace0 Vu(mesh);
-  StokesBilinearFormFunctionSpace1 Vp(mesh);
+  std::auto_ptr<const FunctionSpace> Vu(V.extract_sub_space(0));
+  std::auto_ptr<const FunctionSpace> Vp(V.extract_sub_space(1));
 
   // Create functions for boundary conditions
-  Noslip noslip(Vu);
-  Inflow inflow(Vu);
-  Constant zero(0.0);
+  Noslip noslip(*Vu);
+  Inflow inflow(*Vu);
+  ScalarZero zero(*Vp);
+  //Constant zero(0.0);
   
-  // Define sub systems for boundary conditions
-  SubSystem velocity(0);
-  SubSystem pressure(1);
-
   // No-slip boundary condition for velocity
-  cout << "Create Dirichlet bc 0 for u." << endl;
-  DirichletBC bc0(noslip, V, sub_domains, 0, velocity);
+  DirichletBC bc0(noslip, *Vu, sub_domains, 0);
 
   // Inflow boundary condition for velocity
-  cout << "Create Dirichlet bc 1 for u." << endl;
-  DirichletBC bc1(inflow, Vu, sub_domains, 1, velocity);
+  DirichletBC bc1(inflow, *Vu, sub_domains, 1);
 
   // Boundary condition for pressure at outflow
-  cout << "Create Dirichlet bc for p." << endl;
-  DirichletBC bc2(zero, Vp, sub_domains, 2, pressure);
+  DirichletBC bc2(zero, *Vp, sub_domains, 2);
 
   // Collect boundary conditions
   Array<DirichletBC*> bcs(&bc0, &bc1, &bc2);
