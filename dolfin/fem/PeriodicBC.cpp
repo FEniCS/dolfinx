@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells 2007
 //
 // First added:  2007-07-08
-// Last changed: 2008-10-30
+// Last changed: 2008-11-03
 
 #include <vector>
 #include <map>
@@ -69,17 +69,17 @@ PeriodicBC::~PeriodicBC()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void PeriodicBC::apply(GenericMatrix& A)
+void PeriodicBC::apply(GenericMatrix& A) const
 {
   error("Not implemented.");
 }
 //-----------------------------------------------------------------------------
-void PeriodicBC::apply(GenericVector& b)
+void PeriodicBC::apply(GenericVector& b) const
 {
   error("Not implemented.");
 }
 //-----------------------------------------------------------------------------
-void PeriodicBC::apply(GenericMatrix& A, GenericVector& b)
+void PeriodicBC::apply(GenericMatrix& A, GenericVector& b) const
 {
   cout << "Applying periodic boundary conditions to linear system." << endl;
 
@@ -292,12 +292,14 @@ void PeriodicBC::apply(GenericMatrix& A, GenericVector& b)
   b.apply();
 }
 //-----------------------------------------------------------------------------
-void PeriodicBC::apply(GenericVector& b, const GenericVector& x)
+void PeriodicBC::apply(GenericVector& b, const GenericVector& x) const
 {
   error("Not implemented.");
 }
 //-----------------------------------------------------------------------------
-void PeriodicBC::apply(GenericMatrix& A, GenericVector& b, const GenericVector& x)
+void PeriodicBC::apply(GenericMatrix& A,
+                       GenericVector& b,
+                       const GenericVector& x) const
 {
   error("Not implemented.");
 }

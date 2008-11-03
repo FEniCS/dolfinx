@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells 2007, 2008.
 //
 // First added:  2008-06-18
-// Last changed: 2008-10-30
+// Last changed: 2008-11-03
 
 #ifndef __BOUNDARY_CONDITION_H
 #define __BOUNDARY_CONDITION_H
@@ -35,19 +35,19 @@ namespace dolfin
     virtual ~BoundaryCondition();
 
     /// Apply boundary condition to a matrix
-    virtual void apply(GenericMatrix& A) = 0;
+    virtual void apply(GenericMatrix& A) const = 0;
 
     /// Apply boundary condition to a vector
-    virtual void apply(GenericVector& b) = 0;
+    virtual void apply(GenericVector& b) const = 0;
 
     /// Apply boundary condition to a linear system
-    virtual void apply(GenericMatrix& A, GenericVector& b) = 0;
+    virtual void apply(GenericMatrix& A, GenericVector& b) const = 0;
 
     /// Apply boundary condition to a vector for a nonlinear problem
-    virtual void apply(GenericVector& b, const GenericVector& x) = 0;
+    virtual void apply(GenericVector& b, const GenericVector& x) const = 0;
 
     /// Apply boundary condition to a linear system for a nonlinear problem
-    virtual void apply(GenericMatrix& A, GenericVector& b, const GenericVector& x) = 0;
+    virtual void apply(GenericMatrix& A, GenericVector& b, const GenericVector& x) const = 0;
 
   protected:
 

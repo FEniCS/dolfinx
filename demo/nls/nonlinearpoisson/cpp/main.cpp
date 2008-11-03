@@ -112,6 +112,7 @@ class MyNonlinearProblem : public NonlinearProblem
     NonlinearPoissonBilinearForm a;
     NonlinearPoissonLinearForm L;
     DirichletBC bc;
+
 };
 
 int main(int argc, char* argv[])
@@ -148,7 +149,7 @@ int main(int argc, char* argv[])
   // Solve nonlinear problem in a series of steps
   GenericVector& x = u.vector();
   double dt = 1.0; double T  = 3.0;
-  while( t < T)
+  while(t < T)
   {
     t += dt;
     nonlinear_solver.solve(nonlinear_problem, x);

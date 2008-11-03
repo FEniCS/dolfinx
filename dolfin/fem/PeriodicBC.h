@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells 2007
 //
 // First added:  2007-07-08
-// Last changed: 2008-10-30
+// Last changed: 2008-11-03
 
 #ifndef __PERIODIC_BC_H
 #define __PERIODIC_BC_H
@@ -57,19 +57,19 @@ namespace dolfin
     ~PeriodicBC();
 
     /// Apply boundary condition to a matrix
-    void apply(GenericMatrix& A);
+    void apply(GenericMatrix& A) const;
 
     /// Apply boundary condition to a vector
-    void apply(GenericVector& b);
+    void apply(GenericVector& b) const;
 
     /// Apply boundary condition to a linear system
-    void apply(GenericMatrix& A, GenericVector& b);
+    void apply(GenericMatrix& A, GenericVector& b) const;
 
     /// Apply boundary condition to a vector for a nonlinear problem
-    void apply(GenericVector& b, const GenericVector& x);
+    void apply(GenericVector& b, const GenericVector& x) const;
 
     /// Apply boundary condition to a linear system for a nonlinear problem
-    void apply(GenericMatrix& A, GenericVector& b, const GenericVector& x);
+    void apply(GenericMatrix& A, GenericVector& b, const GenericVector& x) const;
 
   private:
 

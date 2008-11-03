@@ -113,32 +113,34 @@ DirichletBC::~DirichletBC()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void DirichletBC::apply(GenericMatrix& A)
+void DirichletBC::apply(GenericMatrix& A) const
 {
   apply(&A, 0, 0);
 }
 //-----------------------------------------------------------------------------
-void DirichletBC::apply(GenericVector& b)
+void DirichletBC::apply(GenericVector& b) const
 {
   apply(0, &b, 0);
 }
 //-----------------------------------------------------------------------------
-void DirichletBC::apply(GenericMatrix& A, GenericVector& b)
+void DirichletBC::apply(GenericMatrix& A, GenericVector& b) const
 {
   apply(&A, &b, 0);
 }
 //-----------------------------------------------------------------------------
-void DirichletBC::apply(GenericVector& b, const GenericVector& x)
+void DirichletBC::apply(GenericVector& b, const GenericVector& x) const
 {
   apply(0, &b, &x);
 }
 //-----------------------------------------------------------------------------
-void DirichletBC::apply(GenericMatrix& A, GenericVector& b, const GenericVector& x)
+void DirichletBC::apply(GenericMatrix& A,
+                        GenericVector& b,
+                        const GenericVector& x) const
 {
   apply(&A, &b, &x);
 }
 //-----------------------------------------------------------------------------
-void DirichletBC::zero(GenericMatrix& A)
+void DirichletBC::zero(GenericMatrix& A) const
 {
   // A map to hold the mapping from boundary dofs to boundary values
   std::map<uint, double> boundary_values;
@@ -232,7 +234,7 @@ bool DirichletBC::is_compatible(Function& v) const
 //-----------------------------------------------------------------------------
 void DirichletBC::apply(GenericMatrix* A,
                         GenericVector* b,
-                        const GenericVector* x)
+                        const GenericVector* x) const
 {
   // Check that boundary condition function has a function space
   if (!g.has_function_space())
@@ -397,7 +399,7 @@ void DirichletBC::init_from_mesh(uint sub_domain)
 }
 //-----------------------------------------------------------------------------
 void DirichletBC::compute_bc(std::map<uint, double>& boundary_values,
-                             BoundaryCondition::LocalData& data)
+                             BoundaryCondition::LocalData& data) const
 {
   // Choose strategy
   switch (method)
@@ -417,7 +419,7 @@ void DirichletBC::compute_bc(std::map<uint, double>& boundary_values,
 }
 //-----------------------------------------------------------------------------
 void DirichletBC::compute_bc_topological(std::map<uint, double>& boundary_values,
-                                         BoundaryCondition::LocalData& data)
+                                         BoundaryCondition::LocalData& data) const
 {
   // Special case
   if (facets.size() == 0)
@@ -472,7 +474,7 @@ void DirichletBC::compute_bc_topological(std::map<uint, double>& boundary_values
 }
 //-----------------------------------------------------------------------------
 void DirichletBC::compute_bc_geometric(std::map<uint, double>& boundary_values,
-                                       BoundaryCondition::LocalData& data)
+                                       BoundaryCondition::LocalData& data) const
 {
   // Special case
   if (facets.size() == 0)
@@ -541,7 +543,7 @@ void DirichletBC::compute_bc_geometric(std::map<uint, double>& boundary_values,
 }
 //-----------------------------------------------------------------------------
 void DirichletBC::compute_bc_pointwise(std::map<uint, double>& boundary_values,
-                                       BoundaryCondition::LocalData& data)
+                                       BoundaryCondition::LocalData& data) const
 {
   dolfin_assert(user_sub_domain);
 
@@ -590,7 +592,7 @@ void DirichletBC::compute_bc_pointwise(std::map<uint, double>& boundary_values,
   }
 }
 //-----------------------------------------------------------------------------
-bool DirichletBC::on_facet(double* coordinates, Facet& facet)
+bool DirichletBC::on_facet(double* coordinates, Facet& facet) const
 {
   // Check if the coordinates are on the same line as the line segment
   if ( facet.dim() == 1 )
@@ -642,7 +644,7 @@ bool DirichletBC::on_facet(double* coordinates, Facet& facet)
   return false;
 }
 //-----------------------------------------------------------------------------
-void DirichletBC::get_bc(uint* indicators, double* values)
+void DirichletBC::get_bc(uint* indicators, double* values) const
 {
   // A map to hold the mapping from boundary dofs to boundary values
   std::map<uint, double> boundary_values;

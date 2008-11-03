@@ -4,7 +4,7 @@
 // Modified by Kristian Oelgaard, 2007
 //
 // First added:  2007-04-10
-// Last changed: 2008-10-30
+// Last changed: 2008-11-03
 //
 // FIXME: This class needs some cleanup, in particular collecting
 // FIXME: all data from different representations into a common
@@ -124,25 +124,25 @@ namespace dolfin
     ~DirichletBC();
 
     /// Apply boundary condition to a matrix
-    void apply(GenericMatrix& A);
+    void apply(GenericMatrix& A) const;
 
     /// Apply boundary condition to a vector
-    void apply(GenericVector& b);
+    void apply(GenericVector& b) const;
 
     /// Apply boundary condition to a linear system
-    void apply(GenericMatrix& A, GenericVector& b);
+    void apply(GenericMatrix& A, GenericVector& b) const;
 
     /// Apply boundary condition to a vector for a nonlinear problem
-    void apply(GenericVector& b, const GenericVector& x);
+    void apply(GenericVector& b, const GenericVector& x) const;
 
     /// Apply boundary condition to a linear system for a nonlinear problem
-    void apply(GenericMatrix& A, GenericVector& b, const GenericVector& x);
+    void apply(GenericMatrix& A, GenericVector& b, const GenericVector& x) const;
 
     /// Make row associated with boundary conditions zero, useful for non-diagonal matrices in a block matrix. 
-    void zero(GenericMatrix& A);
+    void zero(GenericMatrix& A) const;
 
     /// Get Dirichlet values and indicators 
-    void get_bc(uint* indicators, double* values);
+    void get_bc(uint* indicators, double* values) const;
 
     /// Check if given function is compatible with boundary condition (checking only vertex values)
     bool is_compatible(Function& v) const;
@@ -150,7 +150,7 @@ namespace dolfin
   private:
 
     // Apply boundary conditions
-    void apply(GenericMatrix* A, GenericVector* b, const GenericVector* x);
+    void apply(GenericMatrix* A, GenericVector* b, const GenericVector* x) const;
     
     // Check input data
     void check() const;
@@ -166,22 +166,22 @@ namespace dolfin
     
     // Compute dofs and values for application of boundary conditions
     void compute_bc(std::map<uint, double>& boundary_values,
-                    BoundaryCondition::LocalData& data);
+                    BoundaryCondition::LocalData& data) const;
     
     // Compute boundary values for facet (topological approach)
     void compute_bc_topological(std::map<uint, double>& boundary_values,
-                                BoundaryCondition::LocalData& data);
+                                BoundaryCondition::LocalData& data) const;
     
     // Compute boundary values for facet (geometrical approach)
     void compute_bc_geometric(std::map<uint, double>& boundary_values,
-                              BoundaryCondition::LocalData& data);
+                              BoundaryCondition::LocalData& data) const;
     
     // Compute boundary values for facet (pointwise approach)
     void compute_bc_pointwise(std::map<uint, double>& boundary_values,
-                              BoundaryCondition::LocalData& data);
+                              BoundaryCondition::LocalData& data) const;
     
     // Check if the point is in the same plane as the given facet
-    static bool on_facet(double* coordinates, Facet& facet);
+    bool on_facet(double* coordinates, Facet& facet) const;
 
     // The function
     const Function& g;
