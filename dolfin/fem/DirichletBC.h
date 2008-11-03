@@ -71,10 +71,6 @@ namespace dolfin
   /// The third option is to attach the boundary information to the
   /// mesh. This is handled automatically when exporting a mesh from
   /// for example VMTK.
-  ///
-  /// For mixed systems (vector-valued and mixed elements), an
-  /// optional set of parameters may be used to specify for which sub
-  /// system the boundary condition should be specified.
 
   class DirichletBC : public BoundaryCondition
   {
@@ -84,19 +80,19 @@ namespace dolfin
     DirichletBC(const Function& g,
                 const FunctionSpace& V,
                 SubDomain& sub_domain,
-                BCMethod method = topological);
+                BCMethod method=topological);
 
     /// Create boundary condition for sub domain specified by index
     DirichletBC(const Function& g,
                 const FunctionSpace& V,
                 MeshFunction<uint>& sub_domains, uint sub_domain,
-                BCMethod method = topological);
+                BCMethod method=topological);
     
     /// Create boundary condition for boundary data included in the mesh
     DirichletBC(const Function& g,
                 const FunctionSpace& V,
                 uint sub_domain,
-                BCMethod method = topological);
+                BCMethod method=topological);
 
     /// Destructor
     ~DirichletBC();
