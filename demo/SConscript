@@ -27,8 +27,8 @@ for modName, mod in modules.items():
       linkOpts += dep.linkOpts
       cppPath += dep.cppPath
 
-  modEnv = env.Copy(CXXFLAGS=mod.cxxFlags, LINKFLAGS=mod.linkFlags,
-                    CPPPATH=Dir("#"), LIBPATH=mod.fullpath, LIBS=modName)
+  modEnv = env.Clone(CXXFLAGS=mod.cxxFlags, LINKFLAGS=mod.linkFlags,
+                     CPPPATH=Dir("#"), LIBPATH=mod.fullpath, LIBS=modName)
   modEnv.Append(LIBPATH=libPath)
   modEnv.Append(CPPPATH=cppPath)
   modEnv.Append(LIBS=libs)
