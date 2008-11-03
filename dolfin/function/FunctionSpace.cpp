@@ -195,6 +195,15 @@ void FunctionSpace::interpolate(double* vertex_values,
   delete [] local_vertex_values;
 }
 //-----------------------------------------------------------------------------
+FunctionSpace* FunctionSpace::extract_sub_space(const uint sub_system) const
+{
+  // Create sub syetm Array from scalar
+   Array<uint> _sub_system;
+  _sub_system.push_back(sub_system);
+  
+  return extract_sub_space(_sub_system);
+}
+//-----------------------------------------------------------------------------
 FunctionSpace* FunctionSpace::extract_sub_space(const Array<uint>& sub_system) const
 {
   dolfin_assert(_mesh);

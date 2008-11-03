@@ -8,6 +8,7 @@
 // Last changed: 2008-10-30
 
 #include <dolfin/log/log.h>
+#include <dolfin/common/Array.h>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/io/File.h>
 #include <dolfin/la/GenericVector.h>
@@ -55,7 +56,7 @@ Function::Function(std::string filename)
 }
 //-----------------------------------------------------------------------------
 Function::Function(const SubFunction& v)
-  : _function_space(v.v.function_space().extract_sub_space(Array<uint>(v.i))),
+  : _function_space(v.v.function_space().extract_sub_space(v.i)),
     _vector(0),
     _time(0), _cell(0), _facet(-1)
 {

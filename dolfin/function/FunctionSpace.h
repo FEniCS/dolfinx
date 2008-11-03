@@ -71,6 +71,9 @@ namespace dolfin
                      const Function& v) const;
 
     /// Extract sub finite element for sub system
+    FunctionSpace* extract_sub_space(const uint sub_system) const;
+
+    /// Extract sub finite element for sub system
     FunctionSpace* extract_sub_space(const Array<uint>& sub_system) const;
     
   private:
