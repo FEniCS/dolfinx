@@ -55,7 +55,7 @@ class DirichletBoundaryValue : public Function, public TimeDependent
 {
 public:
   
-  DirichletBoundaryValue(const FunctionSpace& V, const double& t) : t(t) {}
+  DirichletBoundaryValue(const double& t) : t(t) {}
   
   void eval(double* values, const double* x) const
   {
@@ -121,7 +121,7 @@ int main(int argc, char* argv[])
   dolfin_init(argc, argv);
  
   // Create mesh
-  UnitSquare mesh(2, 2);
+  UnitSquare mesh(16, 16);
 
   // Pseudo time
   double t = 0.0;
@@ -132,7 +132,7 @@ int main(int argc, char* argv[])
   // Dirichlet boundary conditions
   DirichletBoundary dirichlet_boundary;
   NonlinearPoissonTrialSpace V(mesh);
-  DirichletBoundaryValue g(V, t);
+  DirichletBoundaryValue g(t);
 
   // Solution vector
   Function u;
