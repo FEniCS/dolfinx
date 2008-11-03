@@ -34,8 +34,6 @@ int main()
   {
   public:
     
-    Source(Mesh& mesh) : Function(mesh) {}
-
     double eval(const double* x) const
     {
       double dx = x[0] - 0.5;
@@ -47,27 +45,35 @@ int main()
 
   // Create mesh and source term
   UnitSquare mesh(16, 16);
-  Source f(mesh);
+  Source f;
   
   // Define PDE
-  MixedPoissonBilinearForm a;
-  MixedPoissonLinearForm L(f);
+  MixedPoissonFunctionSpace V(mesh);
+  MixedPoissonBilinearForm a(V, V);
+  MixedPoissonLinearForm L(V);
+  L.f = f;
   LinearPDE pde(a, L, mesh);
 
   // Solve PDE
-  Function sigma;
-  Function u;
-  pde.solve(sigma, u);
+  //Function sigma;
+  //Function u;
+  Function U(V);
+  pde.solve(U);
+
+  Function sigma = U[0];  
+  Function u     = U[1];  
 
   // Project sigma onto P1 continuous Lagrange for post-processing
-  Function sigma_projected;
-  P1ProjectionBilinearForm a_projection;
-  P1ProjectionLinearForm L_projection(sigma);
-  LinearPDE pde_project(a_projection, L_projection, mesh);
-  pde_project.solve(sigma_projected);
+  P1ProjectionFunctionSpace Vp(mesh);
+  P1ProjectionBilinearForm a_p(Vp, Vp);
+  P1ProjectionLinearForm L_p(Vp);
+  L_p.f = sigma;
+  LinearPDE pde_project(a_p, L_p, mesh);
+  Function sigma_p(Vp);
+  pde_project.solve(sigma_p);
 
   // Plot solution
-  plot(sigma_projected);
+  plot(sigma_p);
   plot(u);
 
   // Save solution to file
@@ -79,7 +85,7 @@ int main()
   // Save solution to pvd format
   File f3("sigma.pvd");
   File f4("u.pvd");
-  f3 << sigma_projected;
+  f3 << sigma_p;
   f4 << u;
 
   return 0;

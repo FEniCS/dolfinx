@@ -52,7 +52,7 @@ namespace dolfin
     explicit Function(std::string filename);
 
     /// Create function from sub function
-    explicit Function(const SubFunction& v);
+    Function(const SubFunction& v);
 
     /// Copy constructor
     Function(const Function& v);
