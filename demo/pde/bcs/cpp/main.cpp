@@ -17,28 +17,31 @@ int main()
 {
   // Create mesh and finite element
   Mesh mesh("../../../../data/meshes/aneurysm.xml.gz");
+  mesh.order();
 
   // Define variational problem
-  Function f(mesh, 0.0);
-  PoissonBilinearForm a;
-  PoissonLinearForm L(f);
+  Constant f(0.0);
+  PoissonFunctionSpace V(mesh);
+  PoissonBilinearForm a(V, V);
+  PoissonLinearForm L(V);
+  L.f = f;
 
   // Define boundary condition values
-  Function u0(mesh, 0.0);
-  Function u1(mesh, 1.0);
-  Function u2(mesh, 2.0);
-  Function u3(mesh, 3.0);
+  Constant u0(0.0);
+  Constant u1(1.0);
+  Constant u2(2.0);
+  Constant u3(3.0);
 
   // Define boundary conditions
-  DirichletBC bc0(u0, mesh, 0);
-  DirichletBC bc1(u1, mesh, 1);
-  DirichletBC bc2(u2, mesh, 2);
-  DirichletBC bc3(u3, mesh, 3);
+  DirichletBC bc0(u0, V, 0);
+  DirichletBC bc1(u1, V, 1);
+  DirichletBC bc2(u2, V, 2);
+  DirichletBC bc3(u3, V, 3);
   Array<DirichletBC*> bcs(&bc0, &bc1, &bc2, &bc3);
 
   // Solve PDE and plot solution
   LinearPDE pde(a, L, mesh, bcs);
-  Function u;
+  Function u(V);
   pde.solve(u);
   plot(u);
 
