@@ -20,58 +20,63 @@ __license__  = "GNU LGPL Version 2.1"
 
 from dolfin import *
 
-# Create mesh and finite element
+# Create mesh and FunctionSpace
 mesh = UnitSquare(32, 32)
-element = FiniteElement("Lagrange", "triangle", 1)
+
+V = FunctionSpace(mesh, "Lagrange", 1)
 
 # Source term
 class Source(Function):
-    def __init__(self, element, mesh):
-        Function.__init__(self, element, mesh)
     def eval(self, values, x):
         dx = x[0] - 0.5
         dy = x[1] - 0.5
         values[0] = 500.0*exp(-(dx*dx + dy*dy)/0.02)
+    def dim(self,i):
+        return 2
+    def rank(self):
+        return 0
 
 # Neumann boundary condition
 class Flux(Function):
-    def __init__(self, element, mesh):
-        Function.__init__(self, element, mesh)
     def eval(self, values, x):
         if x[0] > DOLFIN_EPS:
             values[0] = 25.0*sin(5.0*DOLFIN_PI*x[1])
         else:
             values[0] = 0.0
+    def dim(self,i):
+        return 2
+    def rank(self):
+        return 0
 
 # Sub domain for Dirichlet boundary condition
-class DirichletBoundary(SubDomain):
-    def inside(self, x, on_boundary):
-        return bool(on_boundary and x[0] < DOLFIN_EPS)
+#class DirichletBoundary(SubDomain):
+#    def inside(self, x, on_boundary):
+#        return bool(on_boundary and x[0] < DOLFIN_EPS)
 
 # Define variational problem
-v = TestFunction(element)
-u = TrialFunction(element)
-f = Source(element, mesh)
-g = Flux(element, mesh)
+v = TestFunction(V)
+u = TrialFunction(V)
+f = Source(V)
+g = Flux(V)
 
 a = dot(grad(v), grad(u))*dx
 L = v*f*dx + v*g*ds
 
 # Define boundary condition
-u0 = Function(mesh, 0.0)
-boundary = DirichletBoundary()
-bc = DirichletBC(u0, mesh, boundary)
+#u0 = Function(mesh, 0.0)
+#boundary = DirichletBoundary()
+#bc = DirichletBC(u0, mesh, boundary)
 
 # Solve PDE and plot solution
-pde = LinearPDE(a, L, mesh, bc, symmetric)
-u = pde.solve()
-plot(u, warpscalar=True, rescale=True)
+#pde = LinearPDE(a, L, mesh, bc, symmetric)
+#u = pde.solve()
+#plot(u, warpscalar=True, rescale=True)
 
 # Save solution to file
-file = File("poisson.pvd")
-file << u
+#file = File("poisson.pvd")
+#file << u
 
 # Hold plot
-interactive()
+#interactive()
 
-summary()
+#summary()

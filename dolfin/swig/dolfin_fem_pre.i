@@ -1,7 +1,8 @@
-// Rename assemble --> cpp_assemble (gets mapped in assembly.py)
+// Rename of swig proxy classes
+// This is done so they can be distinguished from python versions
+// of the same classes defined in site-packages/dolfin/*
+
 %rename(cpp_assemble) dolfin::assemble;
 %rename(cpp_assemble_system) dolfin::assemble_system;
 %rename(cpp_DirichletBC) dolfin::DirichletBC;
 %rename(cpp_PeriodicBC) dolfin::PeriodicBC;
-%rename(sub) dolfin::DofMapSet::operator[];
-
