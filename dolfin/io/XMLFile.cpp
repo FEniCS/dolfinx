@@ -148,6 +148,7 @@ void XMLFile::operator>> (Function& v)
   // Read the mesh
   std::tr1::shared_ptr<Mesh> mesh(new Mesh());
   *this >> *mesh;
+  mesh->order();
 
   // Read the finite element specification
   std::string element_signature;

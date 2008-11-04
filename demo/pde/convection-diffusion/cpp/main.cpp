@@ -23,7 +23,9 @@ int main(int argc, char *argv[])
 
   // Read velocity field
   Function velocity("../velocity.xml.gz");
-
+  File file("temperature.pvd");
+  file << velocity;
+/*
   // Source term and initial condition
   Function f(mesh, 0.0);
   Function u0(mesh, 0.0);
@@ -82,5 +84,5 @@ int main(int argc, char *argv[])
 
   // Plot solution
   plot(u1);
-
+*/
 }

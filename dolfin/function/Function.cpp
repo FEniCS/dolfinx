@@ -93,6 +93,10 @@ const Function& Function::operator= (const Function& v)
   // Note 1: function spaces must be the same
   // Note 2: vector needs special handling
 
+  // Check that function has a function spaces
+  if (!has_function_space())
+    error("Unable to assign to function, function does not have a function space.");
+
   // Check that function spaces are the same
   if (!v.in(function_space()))
     error("Unable to assign to function, not in the same function space.");
