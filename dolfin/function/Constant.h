@@ -43,7 +43,7 @@ namespace dolfin
     ~Constant();
 
     /// Evaluate function at given point
-    void eval(double* values, const double* x) const;
+    void eval(double* values, const Data& data) const;
 
   private:
 

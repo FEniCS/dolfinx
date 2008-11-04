@@ -102,7 +102,7 @@ Constant::~Constant()
 //  return shape[i];
 //}
 //-----------------------------------------------------------------------------
-void Constant::eval(double* _values, const double* x) const
+void Constant::eval(double* _values, const Data& data) const
 {
   dolfin_assert(_values);
 
