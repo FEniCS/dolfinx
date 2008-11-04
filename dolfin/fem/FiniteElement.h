@@ -25,7 +25,8 @@ namespace dolfin
 
     // FIXME: This constructor should be removed!
     /// Create finite element from UFC finite element pointer
-    FiniteElement(ufc::finite_element* element) : element(element) {}
+    FiniteElement(ufc::finite_element* element) : 
+      element(element,NoDeleter<ufc::finite_element>()) {}
 
     // FIXME: This constructor should be removed!
     /// Create finite element from UFC finite element
@@ -40,6 +41,10 @@ namespace dolfin
 
     /// Create FiniteElement from a signature
     FiniteElement(std::string signature) : element(ElementLibrary::create_finite_element(signature)) {}
+
+    /// Destructor
+    ~FiniteElement()
+    {}
 
     std::string signature() const
     { return element->signature(); }
