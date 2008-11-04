@@ -125,12 +125,6 @@ const FunctionSpace& Function::function_space() const
   return *_function_space;
 }
 //-----------------------------------------------------------------------------
-const FiniteElement& Function::element() const
-{
-  dolfin_assert(_function_space);
-  return _function_space->element();
-}
-//-----------------------------------------------------------------------------
 GenericVector& Function::vector()
 {
   // Initialize vector of dofs if not initialized

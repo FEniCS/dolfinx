@@ -26,10 +26,10 @@ using namespace dolfin;
 // Source term
 class Source : public Function
 {
-  void eval(double* values, const double* x) const
+  void eval(double* values, const Data& data) const
   {
-    double dx = x[0] - 0.5;
-    double dy = x[1] - 0.5;
+    double dx = data.x[0] - 0.5;
+    double dy = data.x[1] - 0.5;
     values[0] = 500.0*exp(-(dx*dx + dy*dy)/0.02);
   }
 };
@@ -37,10 +37,12 @@ class Source : public Function
 // Neumann boundary condition
 class Flux : public Function
 {
-  void eval(double* values, const double* x) const
+  void eval(double* values, const Data& data) const
   {
-    if (x[0] > DOLFIN_EPS)
-      values[0] = 25.0*sin(5.0*DOLFIN_PI*x[1]);
+    double x = data.x[0];
+    double y = data.x[1];
+    if (x > DOLFIN_EPS)
+      values[0] = 25.0*sin(5.0*DOLFIN_PI*y);
     else
       values[0] =  0.0;
   }

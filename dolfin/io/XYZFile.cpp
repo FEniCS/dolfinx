@@ -48,19 +48,19 @@ void XYZFile::ResultsWrite(Function& u) const
   // Open file
   FILE *fp = fopen(xyz_filename.c_str(), "a");
   
-  const uint rank = u.element().value_rank();
+  const uint rank = u.function_space().element().value_rank();
   if(rank > 1)
     error("Only scalar functions can be saved in xyz format.");
 
   // Get number of components
-  const uint dim = u.element().value_dimension(0);
+  const uint dim = u.function_space().element().value_dimension(0);
 
   Mesh& mesh = const_cast<Mesh&>(u.function_space().mesh());
   
   // Allocate memory for function values at vertices
   uint size = mesh.numVertices();
-  for (uint i = 0; i < u.element().value_rank(); i++)
-    size *= u.element().value_dimension(i);
+  for (uint i = 0; i < u.function_space().element().value_rank(); i++)
+    size *= u.function_space().element().value_dimension(i);
   double* values = new double[size];
 
   // Get function values at vertices

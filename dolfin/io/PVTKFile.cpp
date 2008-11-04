@@ -325,7 +325,7 @@ void PVTKFile::pvtuFileWrite_func(const Function& u)
   pvtuFile << "<VTKFile type=\"PUnstructuredGrid\" version=\"0.1\">" << std::endl;
   pvtuFile << "<PUnstructuredGrid GhostLevel=\"0\">" << std::endl;
   
-  if(u.element().value_rank() == 0) {
+  if(u.function_space().element().value_rank() == 0) {
     pvtuFile << "<PPointData Scalars=\"U\">" << std::endl;    
     pvtuFile << "<PDataArray  type=\"Float64\"  Name=\"U\"  format=\"ascii\"/>" << std::endl;
   }

@@ -456,7 +456,7 @@ void XMLFile::operator<< (const Function& v)
 
   // Write the finite element
   fp = openFile();
-  fprintf(fp, "  <finiteelement signature=\"%s\"/>\n", v.element().signature().c_str());
+  fprintf(fp, "  <finiteelement signature=\"%s\"/>\n", v.function_space().element().signature().c_str());
   closeFile(fp);
 
   // Write the dof map
