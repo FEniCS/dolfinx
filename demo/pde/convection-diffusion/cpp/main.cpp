@@ -19,27 +19,33 @@ int main(int argc, char *argv[])
 {
   // Read mesh and sub domain markers
   Mesh mesh("../../../../data/meshes/dolfin-2.xml.gz");
+  mesh.order();
   MeshFunction<unsigned int> sub_domains(mesh, "../subdomains.xml.gz");
+
 
   // Read velocity field
   Function velocity("../velocity.xml.gz");
-  File file("temperature.pvd");
-  file << velocity;
-/*
+
+  // Create function space
+  ConvectionDiffusionFunctionSpace V(mesh);
+
   // Source term and initial condition
-  Function f(mesh, 0.0);
-  Function u0(mesh, 0.0);
+  Constant f(0.0);
+  Function u0(V);
+  u0.vector().zero();
 
   // Set up forms
-  ConvectionDiffusionBilinearForm a(velocity);
-  ConvectionDiffusionLinearForm L(u0, velocity, f);
+  ConvectionDiffusionBilinearForm a(V, V);
+  a.b = velocity;
+  ConvectionDiffusionLinearForm L(V);
+  L.u0 = u0; L.b = velocity; L.f = f;  
 
   // Set up boundary condition
-  Function g(mesh, 1.0);
-  DirichletBC bc(g, sub_domains, 1);
+  Constant g(1.0);
+  DirichletBC bc(g, V, sub_domains, 1);
 
   // Solution vector
-  Function u1(mesh, a);
+  Function u1(V);
 
   // Linear system
   Matrix A;
@@ -50,9 +56,9 @@ int main(int argc, char *argv[])
   LUSolver lu;
 
   // Assemble matrix
-  assemble(A, a, mesh);
-  assemble(b, L, mesh);
-  bc.apply(A, b, a);
+  Assembler::assemble(A, a);
+  Assembler::assemble(b, L);
+  bc.apply(A, b);
 
   // Parameters for time-stepping
   double T = 2.0;
@@ -67,8 +73,8 @@ int main(int argc, char *argv[])
   while ( t < T )
   {
     // Assemble vector and apply boundary conditions
-    assemble(b, L, mesh);
-    bc.apply(A, b, a);
+    Assembler::assemble(b, L);
+    bc.apply(A, b);
     
     // Solve the linear system
     lu.solve(A, x, b);
@@ -84,5 +90,4 @@ int main(int argc, char *argv[])
 
   // Plot solution
   plot(u1);
-*/
 }

@@ -175,10 +175,12 @@ void XMLFile::operator>> (Function& v)
   std::tr1::shared_ptr<DofMap> dofmap(new DofMap(dofmap_signature, *mesh));
   std::tr1::shared_ptr<FunctionSpace> V(new FunctionSpace(mesh, element, dofmap));
   Function _v(V);
-  v = _v;
 
   // Read the vector
-  *this >> v.vector();
+  *this >> _v.vector();
+
+  // Assign function
+  v = _v;
 
   v.rename("u", "discrete function from file data");
 }

@@ -90,12 +90,12 @@ Function::~Function()
 //-----------------------------------------------------------------------------
 const Function& Function::operator= (const Function& v)
 {
-  // Note 1: function spaces must be the same
+  // Note 1: function spaces must be the same or 'this' must have no function space
   // Note 2: vector needs special handling
 
-  // Check that function has a function spaces
+  // Check that function has a function space
   if (!has_function_space())
-    error("Unable to assign to function, function does not have a function space.");
+    _function_space = v.function_space_ptr();
 
   // Check that function spaces are the same
   if (!v.in(function_space()))
