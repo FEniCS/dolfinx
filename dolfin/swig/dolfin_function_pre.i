@@ -15,13 +15,5 @@
 %rename(assign) dolfin::Function::operator=;
 %rename(_in) dolfin::Function::in;
 
-// Trick to expose protected member cell() in Python
-%rename(old_cell) dolfin::Function::cell;
-%rename(cell) dolfin::Function::new_cell;
-
-// Trick to expose protected member normal() in Python
-%rename(old_normal) dolfin::Function::normal;
-%rename(normal) dolfin::Function::new_normal;
-
 
 
