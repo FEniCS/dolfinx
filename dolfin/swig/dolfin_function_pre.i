@@ -3,6 +3,7 @@
 
 // Rename misc function classes from Foo --> cpp_Foo (gets mapped in function.py)
 %rename(cpp_Function) dolfin::Function;
+%rename(cpp_FunctionSpace) dolfin::FunctionSpace;
 %rename(cpp_FacetNormal) dolfin::FacetNormal;
 %rename(cpp_MeshSize) dolfin::MeshSize;
 %rename(cpp_AvgMeshSize) dolfin::AvgMeshSize;
