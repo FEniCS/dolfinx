@@ -66,6 +66,9 @@ namespace dolfin
     /// Return the function space
     const FunctionSpace& function_space() const;
 
+    /// Return the function space
+    std::tr1::shared_ptr<const FunctionSpace> function_space_ptr() const;
+
     /// Return the vector of expansion coefficients (non-const version)
     GenericVector& vector();
 

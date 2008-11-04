@@ -129,6 +129,11 @@ const FunctionSpace& Function::function_space() const
   return *_function_space;
 }
 //-----------------------------------------------------------------------------
+std::tr1::shared_ptr<const FunctionSpace> Function::function_space_ptr() const
+{
+  return _function_space;
+}
+//-----------------------------------------------------------------------------
 GenericVector& Function::vector()
 {
   // Initialize vector of dofs if not initialized
