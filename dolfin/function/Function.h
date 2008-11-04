@@ -6,7 +6,7 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2003-11-28
-// Last changed: 2008-11-03
+// Last changed: 2008-11-04
 
 #ifndef __FUNCTION_H
 #define __FUNCTION_H
@@ -15,6 +15,7 @@
 #include <tr1/memory>
 #include <dolfin/common/Variable.h>
 #include <dolfin/log/log.h>
+#include "Data.h"
 
 namespace dolfin
 {
@@ -22,7 +23,6 @@ namespace dolfin
   class FunctionSpace;
   class GenericVector;
   class SubFunction;
-  class Data;
 
   /// This class represents a function u_h in a finite element
   /// function space V_h, given by
@@ -78,7 +78,7 @@ namespace dolfin
     /// Check if function is a member of the given function space
     bool in(const FunctionSpace& V) const;
 
-    /// Evaluate function at point x (overload for user-defined function)
+    /// Function evaluation (overload for user-defined function)
     virtual void eval(double* values, const Data& data) const;
 
     /// Interpolate function to local function space on cell

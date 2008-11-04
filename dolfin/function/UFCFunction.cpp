@@ -4,10 +4,11 @@
 // Modified by Anders Logg, 2008.
 //
 // First added:  2008-05-08
-// Last changed: 2008-11-03
+// Last changed: 2008-11-04
 
 #include <dolfin/log/log.h>
 #include "Data.h"
+#include "Function.h"
 #include "UFCFunction.h"
 
 using namespace dolfin;

@@ -6,7 +6,7 @@
 // Modified by Garth N. Wells, 2008.
 //
 // First added:  2006-02-09
-// Last changed: 2008-07-17
+// Last changed: 2008-11-03
 
 #ifndef __SPECIAL_FUNCTIONS_H
 #define __SPECIAL_FUNCTIONS_H
@@ -32,8 +32,8 @@ namespace dolfin
     /// Constructor
     MeshSize(const FunctionSpace& V);
 
-    /// Return cell size
-    void eval(double* values, const double* x) const;
+    /// Function evaluation
+    void eval(double* values, const Data& data) const;
     
     /// Compute minimal cell diameter
     double min() const;
@@ -55,8 +55,8 @@ namespace dolfin
     /// Constructor
     InvMeshSize(const FunctionSpace& V);
 
-    /// Return inverse of cell size
-    void eval(double* values, const double* x) const;
+    /// Function evaluation
+    void eval(double* values, const Data& data) const;
 
   };
 
@@ -72,8 +72,8 @@ namespace dolfin
     /// Constructor
     AvgMeshSize(const FunctionSpace& V);
 
-    /// Return average cell size
-    void eval(double* values, const double* x) const;
+    /// Function evaluation
+    void eval(double* values, const Data& data) const;
 
   };
 
@@ -89,8 +89,9 @@ namespace dolfin
     /// Constructor
     FacetNormal(const FunctionSpace& V);
 
-    void eval(double* values, const double* x) const;
-
+    /// Function evaluation
+    void eval(double* values, const Data& data) const;
+    
     uint rank() const;
     
     uint dim(uint i) const;
@@ -108,7 +109,8 @@ namespace dolfin
     /// Constructor
     FacetArea(const FunctionSpace& V);
 
-    void eval(double* values, const double* x) const;
+    /// Function evaluation
+    void eval(double* values, const Data& data) const;
 
   };
 
@@ -123,7 +125,8 @@ namespace dolfin
     /// Constructor
     InvFacetArea(const FunctionSpace& V);
 
-    void eval(double* values, const double* x) const;
+    /// Function evaluation
+    void eval(double* values, const Data& data) const;
 
   };
 

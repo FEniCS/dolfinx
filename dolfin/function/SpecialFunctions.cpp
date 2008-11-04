@@ -6,7 +6,7 @@
 // Modified by Garth N. Wells, 2008.
 //
 // First added:  2008-07-17
-// Last changed: 2008-10-28
+// Last changed: 2008-11-03
 
 #include <dolfin/common/constants.h>
 #include <dolfin/mesh/Mesh.h>
@@ -29,9 +29,9 @@ MeshSize::MeshSize(const FunctionSpace& V) : Function(V)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void MeshSize::eval(double* values, const double* x) const
+void MeshSize::eval(double* values, const Data& data) const
 {
-  values[0] = cell().diameter();
+  values[0] = data.cell().diameter();
 }
 //-----------------------------------------------------------------------------
 double MeshSize::min() const
@@ -63,9 +63,9 @@ InvMeshSize::InvMeshSize(const FunctionSpace& V) : Function(V)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void InvMeshSize::eval(double* values, const double* x) const
+void InvMeshSize::eval(double* values, const Data& data) const
 {
-  values[0] = 1.0 / cell().diameter();
+  values[0] = 1.0 / data.cell().diameter();
 }
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -79,25 +79,32 @@ AvgMeshSize::AvgMeshSize(const FunctionSpace& V) : Function(V)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void AvgMeshSize::eval(double* values, const double* x) const
+void AvgMeshSize::eval(double* values, const Data& data) const
 {
+  // Get the cell
+  const Cell& cell = data.cell();
+
   // If there is no facet (assembling on interior), return cell diameter
-  if (!on_facet())
+  if (!data.on_facet())
   {
-    values[0] = cell().diameter();
+    values[0] = cell.diameter();
     return;
   }
   else
   {
+    // Get the facet and the mesh
+    const uint facet = data.facet();
+    const Mesh& mesh = cell.mesh();
+
     // Create facet from the global facet number
-    Facet facet0(function_space().mesh(), cell().entities(cell().mesh().topology().dim() - 1)[facet()]);
+    Facet facet0(mesh, cell.entities(mesh.topology().dim() - 1)[facet]);
 
     // If there are two cells connected to the facet
-    if (facet0.numEntities(cell().mesh().topology().dim()) == 2)
+    if (facet0.numEntities(mesh.topology().dim()) == 2)
     {
       // Create the two connected cells and return the average of their diameter
-      Cell cell0(function_space().mesh(), facet0.entities(cell().mesh().topology().dim())[0]);
-      Cell cell1(function_space().mesh(), facet0.entities(cell().mesh().topology().dim())[1]);
+      Cell cell0(mesh, facet0.entities(mesh.topology().dim())[0]);
+      Cell cell1(mesh, facet0.entities(mesh.topology().dim())[1]);
 
       values[0] = (cell0.diameter() + cell1.diameter())/2.0;
       return;
@@ -106,7 +113,7 @@ void AvgMeshSize::eval(double* values, const double* x) const
     // the cell diameter
     else
     {
-      values[0] = cell().diameter();
+      values[0] = cell.diameter();
       return;
     }
   }
@@ -123,16 +130,19 @@ FacetNormal::FacetNormal(const FunctionSpace& V) : Function(V)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void FacetNormal::eval(double* values, const double* x) const
+void FacetNormal::eval(double* values, const Data& data) const
 {
-  if (on_facet())
+  const Cell& cell = data.cell();
+
+  if (data.on_facet())
   {
-    for (uint i = 0; i < cell().dim(); i++)
-      values[i] = cell().normal(facet(), i);
+    const uint facet = data.facet();
+    for (uint i = 0; i < cell.dim(); i++)
+      values[i] = cell.normal(facet, i);
   }
   else
   {
-    for (uint i = 0; i < cell().dim(); i++)
+    for (uint i = 0; i < cell.dim(); i++)
       values[i] = 0.0;
   }
 }
@@ -160,7 +170,7 @@ FacetArea::FacetArea(const FunctionSpace& V) : Function(V)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void FacetArea::eval(double* values, const double* x) const
+void FacetArea::eval(double* values, const Data& data) const
 {
   if (facet() >= 0)
     values[0] = cell().facetArea(facet());
@@ -179,7 +189,7 @@ InvFacetArea::InvFacetArea(const FunctionSpace& V) : Function(V)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void InvFacetArea::eval(double* values, const double* x) const
+void InvFacetArea::eval(double* values, const Data& data) const
 {
   if (facet() >= 0)
     values[0] = 1.0 / cell().facetArea(facet());
@@ -208,7 +218,7 @@ OutflowFacet::~OutflowFacet()
   delete ufc;
 }
 //-----------------------------------------------------------------------------
-double OutflowFacet::eval(const double* x) const
+void OutflowFacet::eval(double* values, const Data& data) const
 {
   // If there is no facet (assembling on interior), return 0.0
   if (facet() < 0)
