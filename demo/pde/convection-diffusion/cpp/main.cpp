@@ -17,14 +17,17 @@ using namespace dolfin;
 
 int main(int argc, char *argv[])
 {
+  // Read velocity field
+  Function velocity("../velocity.xml.gz");
+  Mesh& mesh = const_cast<Mesh&>(velocity.function_space().mesh());
   // Read mesh and sub domain markers
-  Mesh mesh("../../../../data/meshes/dolfin-2.xml.gz");
-  mesh.order();
+  //Mesh mesh("../../../../data/meshes/dolfin-2.xml.gz");
+  //mesh.order();
   MeshFunction<unsigned int> sub_domains(mesh, "../subdomains.xml.gz");
 
 
   // Read velocity field
-  Function velocity("../velocity.xml.gz");
+  //Function velocity("../velocity.xml.gz");
 
   // Create function space
   ConvectionDiffusionFunctionSpace V(mesh);

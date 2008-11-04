@@ -21,7 +21,7 @@ int main()
   // Function for no-slip boundary condition for velocity
   class Zero : public Function
   {
-    void eval(double* values, const double* x) const
+    void eval(double* values, const Data& data) const
     {
       values[0] = 0.0;
       values[1] = 0.0;
@@ -31,7 +31,7 @@ int main()
   // Function for no-slip boundary condition for velocity
   class Noslip : public Function
   {
-    void eval(double* values, const double* x) const
+    void eval(double* values, const Data& data) const
     {
       values[0] = 0.0;
       values[1] = 0.0;
@@ -41,9 +41,10 @@ int main()
   // Function for inflow boundary condition for velocity
   class Inflow : public Function
   {
-    void eval(double* values, const double* x) const
+    void eval(double* values, const Data& data) const
     {
-      values[0] = -sin(x[1]*DOLFIN_PI);
+      real y = data.x[1];
+      values[0] = -sin(y*DOLFIN_PI);
       values[1] = 0.0;
     }
   };
