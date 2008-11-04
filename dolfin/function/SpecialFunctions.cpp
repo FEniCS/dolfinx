@@ -172,8 +172,8 @@ FacetArea::FacetArea(const FunctionSpace& V) : Function(V)
 //-----------------------------------------------------------------------------
 void FacetArea::eval(double* values, const Data& data) const
 {
-  if (facet() >= 0)
-    values[0] = cell().facetArea(facet());
+  if (data.on_facet())
+    values[0] = data.cell().facetArea(data.facet());
   else
     values[0] = 0.0;
 }
@@ -191,8 +191,8 @@ InvFacetArea::InvFacetArea(const FunctionSpace& V) : Function(V)
 //-----------------------------------------------------------------------------
 void InvFacetArea::eval(double* values, const Data& data) const
 {
-  if (facet() >= 0)
-    values[0] = 1.0 / cell().facetArea(facet());
+  if (data.on_facet() >= 0)
+    values[0] = 1.0 / data.cell().facetArea(data.facet());
   else
     values[0] = 0.0;
 }

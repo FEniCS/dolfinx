@@ -187,26 +187,27 @@ void PVTKFile::ResultsWrite(const Function& u) const
   // Open file
   FILE *fp = fopen(vtu_filename.c_str(), "a");
   
-  Mesh& mesh = const_cast<Mesh&>(u.function_space().mesh());
+  const Mesh& mesh(u.function_space().mesh());
+  const FiniteElement& element(u.function_space().element());
 
-  const uint rank = u.element().value_rank();
+  const uint rank = element.value_rank();
   if(rank > 1)
     error("Only scalar and vectors functions can be saved in VTK format.");
 
   // Get number of components
-  const uint dim = u.element().value_dimension(0);
+  const uint dim = element.value_dimension(0);
 
   // Allocate memory for function values at vertices
   uint size = mesh.numVertices();
-  for (uint i = 0; i < u.element().value_rank(); i++)
-    size *= u.element().value_dimension(i);
+  for (uint i = 0; i < element.value_rank(); i++)
+    size *= element.value_dimension(i);
   double* values = new double[size];
 
   // Get function values at vertices
   u.interpolate(values);
 
   // Write function data at mesh vertices
-  if ( rank == 0 )
+  if (rank == 0)
   {
     fprintf(fp, "<PointData  Scalars=\"U\"> \n");
     fprintf(fp, "<DataArray  type=\"Float64\"  Name=\"U\"  format=\"ascii\">	 \n");
@@ -217,14 +218,14 @@ void PVTKFile::ResultsWrite(const Function& u) const
     fprintf(fp, "<DataArray  type=\"Float64\"  Name=\"U\"  NumberOfComponents=\"3\" format=\"ascii\">	 \n");	
   }
 
-  if ( dim > 3 )
+  if (dim > 3)
     warning("Cannot handle VTK file with number of components > 3. Writing first three components only");
 	
   for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
   {    
-    if ( rank == 0 ) 
+    if (rank == 0) 
       fprintf(fp," %e ", values[ vertex->index() ] );
-    else if ( u.element().value_dimension(0) == 2 ) 
+    else if (element.value_dimension(0) == 2 ) 
       fprintf(fp," %e %e  0.0", values[ vertex->index() ], 
                                 values[ vertex->index() + mesh.numVertices() ] );
     else  

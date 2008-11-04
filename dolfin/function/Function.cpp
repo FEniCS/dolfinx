@@ -5,7 +5,7 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2003-11-28
-// Last changed: 2008-11-03
+// Last changed: 2008-11-04
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/Array.h>
@@ -216,7 +216,7 @@ void Function::interpolate(double* coefficients,
   else
   {
     // Create data
-    const Cell cell(V.mesh(), ufc_cell.entities[V.mesh().topology().dim()][0]);
+    const Cell cell(V.mesh(), ufc_cell.entity_indices[V.mesh().topology().dim()][0]);
     Data data(cell, local_facet);
 
     // Create UFC wrapper for this function
