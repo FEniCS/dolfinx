@@ -42,7 +42,7 @@ namespace dolfin
     /// Destructor
     ~Constant();
 
-    /// Evaluate function at given point
+    /// Function evaluation
     void eval(double* values, const Data& data) const;
 
   private:
