@@ -23,20 +23,34 @@ class CahnHilliardEquation : public NonlinearProblem, public Parametrized
   public:
 
     // Constructor 
-    CahnHilliardEquation(Mesh& mesh, Function& u, Function& u0, Function& dt, 
-                         Function& theta, Function& lambda, Function& muFactor) 
-                       : assembler(mesh), reset_Jacobian(true)
+    CahnHilliardEquation(Mesh& mesh, Function& u, Function& u0, Constant& dt, 
+                         Constant& theta, Constant& lambda, Constant& muFactor) 
+                       : reset_Jacobian(true)
     {
       // Create forms
       if(mesh.topology().dim() == 2)
       {
-        a = new CahnHilliard2DBilinearForm(u, lambda, muFactor, dt, theta);
-        L = new CahnHilliard2DLinearForm(u, u0, lambda, muFactor, dt, theta);
+        V = new CahnHilliard2DFunctionSpace(mesh);
+        a = new CahnHilliard2DBilinearForm(*V, *V);
+        L = new CahnHilliard2DLinearForm(*V);
+        a->w0 = u;
+        a->lmbda = lambda;
+        a->muFactor = muFactor;
+        a->dt = dt;
+        a->theta = theta;
+        L->w0 = u;
+        L->w1 = u0;
+        L->lmbda = lambda;
+        L->muFactor = muFactor;
+        L->dt = dt;
+        L->theta = theta;
       }
       else if(mesh.topology().dim() == 3)
       {
-        a = new CahnHilliard3DBilinearForm(u, lambda, muFactor, dt, theta);
-        L = new CahnHilliard3DLinearForm(u, u0, lambda, muFactor, dt, theta);
+        error("3D Cahn-Hilliard demo need to be updated for new Function interface.");
+        //V = new CahnHilliard3DFunctionSpace(mesh);
+        //a = new CahnHilliard3DBilinearForm(*V, *V);
+        //L = new CahnHilliard3DLinearForm(*V);
       }
       else
         error("Cahn-Hilliard model is programmed for 2D and 3D only");
@@ -45,44 +59,33 @@ class CahnHilliardEquation : public NonlinearProblem, public Parametrized
     // Destructor 
     ~CahnHilliardEquation()
     {
+      delete V; 
       delete a; 
       delete L;
     }
  
-    // Return forms 
-    Form& form(dolfin::uint i) const
-    {
-      if( i == 1)
-        return *L;
-      else if( i == 2)
-        return *a;
-      else
-        error("Can only return linear or bilinear form.");
-      return *L;
-    }
-
     // User defined residual vector 
     void F(GenericVector& b, const GenericVector& x)
     {
       // Assemble RHS (Neumann boundary conditions)
-      assembler.assemble(b, *L);
+      Assembler::assemble(b, *L);
     }
 
     // User defined assemble of Jacobian 
     void J(GenericMatrix& A, const GenericVector& x)
     {
       // Assemble system and RHS (Neumann boundary conditions)
-      assembler.assemble(A, *a, reset_Jacobian);
+      Assembler::assemble(A, *a, reset_Jacobian);
       reset_Jacobian  = false;
     }
 
   private:
 
-    // Pointers to forms
-    Form *a;
-    Form *L;
+    // Pointers to FunctionSpace and forms
+    FunctionSpace* V;
+    CahnHilliard2DBilinearForm* a;
+    CahnHilliard2DLinearForm* L;
 
-    Assembler assembler;
     bool reset_Jacobian;
 };
 
@@ -95,10 +98,10 @@ int main(int argc, char* argv[])
 
   // Time stepping and model parameters
   double delta_t = 5.0e-6;
-  Function dt(mesh, delta_t); 
-  Function theta(mesh, 0.5); 
-  Function lambda(mesh, 1.0e-2); 
-  Function muFactor(mesh, 100.0); 
+  Constant dt(delta_t); 
+  Constant theta(0.5); 
+  Constant lambda(1.0e-2); 
+  Constant muFactor(100.0); 
 
   double t = 0.0; 
   double T = 50*delta_t;
@@ -109,10 +112,6 @@ int main(int argc, char* argv[])
 
   // Create user-defined nonlinear problem
   CahnHilliardEquation cahn_hilliard(mesh, u, u0, dt, theta, lambda, muFactor);
-
-  // Initialise discrete functions
-  u.init(mesh, cahn_hilliard.form(1), 1);
-  u0.init(mesh, cahn_hilliard.form(1), 1);
 
   // Create nonlinear solver and set parameters
   //NewtonSolver newton_solver;
@@ -139,26 +138,23 @@ int main(int argc, char* argv[])
 
   // Save initial condition to file
   File file("cahn_hilliard.pvd");
-  Function c;
-  c = u[1];
-  file << c;
+  file << u[1];
 
   while( t < T)
   {
     // Update for next time step
     t += delta_t;
-    u0 = u;
+    u0.vector() = u.vector();
     
     // Solve
     newton_solver.solve(cahn_hilliard, u.vector());
 
     // Save function to file
-    c = u[1];
-    file << c;
+    file << u[1];
   }
 
   // Plot solution
-  plot(c);
+  plot(u[1]);
   
   return 0;
 }
