@@ -23,9 +23,10 @@ int main()
   BoundaryMesh boundary(mesh);
 
   // Move vertices in boundary
+  MeshGeometry& mesh_geometry = mesh.geometry();
   for (VertexIterator v(boundary); !v.end(); ++v)
   {
-    double* x = v->x();
+    double* x = mesh_geometry.x(v->index());
     x[0] *= 3.0;
     x[1] += 0.1*sin(5.0*x[0]);
   }
