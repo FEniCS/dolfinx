@@ -26,8 +26,6 @@ int main()
     x[1] = 0.5*x[1] + 1.0;
   }
 
-  file2 << omega2;
-
   // Iterate over angle
   const double dtheta = 0.10*2*DOLFIN_PI;
   for (double theta = 0; theta < 2*DOLFIN_PI; theta += dtheta)
