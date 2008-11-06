@@ -5,7 +5,7 @@
 // Modified by Ola Skavhaug, 2008.
 //
 // First added:  2007-01-17
-// Last changed: 2008-10-26
+// Last changed: 2008-11-06
 
 #ifndef __ASSEMBLER_H
 #define __ASSEMBLER_H
@@ -65,17 +65,16 @@ namespace dolfin
                          bool reset_tensor=true);
     
     /// Assemble scalar from given variational form
-    static double assemble(const Form& form, bool reset_tensor=true);
+    static double assemble(const Form& form);
     
     /// Assemble scalar from given variational form over a sub domain
-    static double assemble(const Form& form, const SubDomain& sub_domain, bool reset_tensor);
+    static double assemble(const Form& form, const SubDomain& sub_domain);
     
     /// Assemble scalar from given variational form over sub domains
     static double assemble(const Form& form,
                            const MeshFunction<uint>& cell_domains,
                            const MeshFunction<uint>& exterior_facet_domains,
-                           const MeshFunction<uint>& interior_facet_domains,
-                           bool reset_tensor);
+                           const MeshFunction<uint>& interior_facet_domains);
     
     /// Assemble tensor from given (UFC) form, coefficients and sub domains.
     /// This is the main assembly function in DOLFIN. All other assembly functions

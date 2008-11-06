@@ -1,8 +1,8 @@
-// Copyright (C) 2007 Anders Logg.
+// Copyright (C) 2007-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-05-14
-// Last changed: 2007-08-20
+// Last changed: 2008-11-06
 //
 // This demo demonstrates how to compute functionals (or forms
 // in general) over subsets of the mesh. The two functionals
@@ -17,34 +17,33 @@
 
 using namespace dolfin;
 
+// Define sub domain for the dolphin
+class Fish : public SubDomain
+{
+  bool inside(const double* x, bool on_boundary) const
+  {
+    return (x[0] > DOLFIN_EPS && x[0] < (1.0 - DOLFIN_EPS) && 
+            x[1] > DOLFIN_EPS && x[1] < (1.0 - DOLFIN_EPS) &&
+            on_boundary);
+  }
+};  
+
 int main()
 {
-  // Read velocity field from file and get the mesh
+  // Read velocity field from file
   Function p("../pressure.xml.gz");
-  Mesh& mesh(p.mesh());
-
-  // Define sub domain for the dolphin
-  class Fish : public SubDomain
-  {
-    bool inside(const double* x, bool on_boundary) const
-    {
-      return (x[0] > DOLFIN_EPS && x[0] < (1.0 - DOLFIN_EPS) && 
-              x[1] > DOLFIN_EPS && x[1] < (1.0 - DOLFIN_EPS) &&
-              on_boundary);
-    }
-  };  
-  
-  // Facet normal
-  FacetNormal n(mesh);
 
   // Functionals for lift and drag
+  FacetNormal n;
   LiftFunctional L(p, n);
   DragFunctional D(p, n);
 
+  // FIXME: Move assemble() into DOLFIN namespace
+
   // Assemble functionals over sub domain
   Fish fish;
-  double lift = assemble(L, mesh, fish);
-  double drag = assemble(D, mesh, fish);
+  double lift = Assembler::assemble(L, fish);
+  double drag = Assembler::assemble(D, fish);
 
   message("Lift: %f", lift);
   message("Drag: %f", drag);

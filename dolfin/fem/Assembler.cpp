@@ -6,7 +6,7 @@
 // Modified by Kent-Andre Mardal, 2008
 //
 // First added:  2007-01-17
-// Last changed: 2008-11-03
+// Last changed: 2008-11-06
 
 #include <ufc.h>
 #include <dolfin/main/MPI.h>
@@ -105,29 +105,27 @@ void Assembler::assemble(GenericTensor& A, const Form& form,
            &exterior_facet_domains, &interior_facet_domains, reset_tensor);
 }
 //-----------------------------------------------------------------------------
-double Assembler::assemble(const Form& form, bool reset_tensor)
+double Assembler::assemble(const Form& form)
 {
   Scalar value;
-  assemble(value, form, reset_tensor);
+  assemble(value, form, true);
   return value;
 }
 //-----------------------------------------------------------------------------
-double Assembler::assemble(const Form& form, const SubDomain& sub_domain,
-                           bool reset_tensor)
+double Assembler::assemble(const Form& form, const SubDomain& sub_domain)
 {
   Scalar value;
-  assemble(value, form, sub_domain, reset_tensor);
+  assemble(value, form, sub_domain, true);
   return value;
 }
 //-----------------------------------------------------------------------------
 double Assembler::assemble(const Form& form, const MeshFunction<uint>& cell_domains,
                            const MeshFunction<uint>& exterior_facet_domains,
-                           const MeshFunction<uint>& interior_facet_domains,
-                           bool reset_tensor)
+                           const MeshFunction<uint>& interior_facet_domains)
 {
   Scalar value;
   assemble(value, form, cell_domains, exterior_facet_domains, 
-           interior_facet_domains, reset_tensor);
+           interior_facet_domains, true);
   return value;
 }
 //-----------------------------------------------------------------------------
