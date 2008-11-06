@@ -40,7 +40,7 @@ int main()
   Array<DirichletBC*> bcs(&bc0, &bc1, &bc2, &bc3);
 
   // Solve PDE and plot solution
-  LinearPDE pde(a, L, mesh, bcs);
+  LinearPDE pde(a, L, bcs);
   Function u(V);
   pde.solve(u);
   plot(u);

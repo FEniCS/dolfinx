@@ -90,7 +90,7 @@ int main()
   StokesLinearForm L(V);
   L.f = f;
   L.h = h;
-  LinearPDE pde(a, L, mesh, bcs);
+  LinearPDE pde(a, L, bcs);
 
   // Solve PDE
   Function U(V);

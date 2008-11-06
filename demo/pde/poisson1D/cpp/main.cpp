@@ -61,7 +61,7 @@ int main()
   PoissonBilinearForm a(V, V);
   PoissonLinearForm L(V);
   L.f = f;
-  LinearPDE pde(a, L, mesh, bc);
+  LinearPDE pde(a, L, bc);
 
   // Solve PDE
   Function u(V);

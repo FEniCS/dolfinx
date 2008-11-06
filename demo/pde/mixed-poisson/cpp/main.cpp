@@ -52,7 +52,7 @@ int main()
   MixedPoissonBilinearForm a(V, V);
   MixedPoissonLinearForm L(V);
   L.f = f;
-  LinearPDE pde(a, L, mesh);
+  LinearPDE pde(a, L);
 
   // Solve PDE
   Function U(V);
@@ -66,7 +66,7 @@ int main()
   P1ProjectionBilinearForm a_p(Vp, Vp);
   P1ProjectionLinearForm L_p(Vp);
   L_p.f = sigma;
-  LinearPDE pde_project(a_p, L_p, mesh);
+  LinearPDE pde_project(a_p, L_p);
   Function sigma_p(Vp);
   pde_project.solve(sigma_p);
 

@@ -30,15 +30,12 @@ int main()
   // Source term
   class Source : public Function
   {
-  public:
-    
     double eval(const double* x) const
     {
       double dx = x[0] - 0.5;
       double dy = x[1] - 0.5;
       return 500.0*exp(-(dx*dx + dy*dy)/0.02);
     }
-
   };
  
   // Create mesh
@@ -60,7 +57,7 @@ int main()
   L.f = f;
 
   // Create PDE
-  LinearPDE pde(a, L, mesh);
+  LinearPDE pde(a, L);
 
   // Solve PDE
   Function u(V);
@@ -71,7 +68,7 @@ int main()
   P1ProjectionBilinearForm a_p(U, U);
   P1ProjectionLinearForm L_p(U);
   L_p.u = u;
-  LinearPDE pde_proj(a_p, L_p, mesh);
+  LinearPDE pde_proj(a_p, L_p);
   Function u_p(U);
   pde_proj.solve(u_p);
 

@@ -121,7 +121,7 @@ int main()
   a.mu = mu; a.lmbda = lambda;
   ElasticityLinearForm L(V);
   L.f = f;
-  LinearPDE pde(a, L, mesh, bcs, symmetric);
+  LinearPDE pde(a, L, bcs, symmetric);
 
   // Solve PDE (using direct solver)
   Function u(V);

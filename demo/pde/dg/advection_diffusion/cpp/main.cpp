@@ -9,7 +9,7 @@
 #include <dolfin.h>
 
 #include "AdvectionDiffusion.h"
-#include "OutflowFacet.h"
+//#include "OutflowFacet.h"
 #include "Projection.h"
 
 using namespace dolfin;
@@ -19,11 +19,10 @@ class BC : public Function
 {
 public:
 
-  BC(Mesh& mesh) : Function(mesh) {}
-
-  double eval(const double* x) const
+  void eval(double* values, const Data& data) const
   {
-    return sin(DOLFIN_PI*5.0*x[1]);
+    real y = data.x[1];
+    values[0] = sin(DOLFIN_PI*5.0*y);
   }
 };
 
@@ -41,9 +40,7 @@ class Velocity : public Function
 {
 public:
     
-  Velocity(Mesh& mesh) : Function(mesh) {}
-
-  void eval(double* values, const double* x) const
+  void eval(double* values, const Data& data) const
   {
     values[0] = -1.0;
     values[1] = -0.4;
@@ -61,50 +58,67 @@ int main(int argc, char *argv[])
   // Read simple velocity field (-1.0, -0.4)
   // defined on a 64x64 unit square mesh and a quadratic vector Lagrange element
   Function velocity("../velocity.xml.gz");
-
-  UnitSquare mesh(64, 64);
+  Mesh& mesh = const_cast<Mesh&>(velocity.function_space().mesh());
 
   // Set up problem
   Matrix A;
   Vector b;
-  Function c(mesh, 0.0); // Diffusivity constant
-  Function f(mesh, 0.0); // Source term
+  Constant c(0.0); // Diffusivity constant
+  Constant f(0.0); // Source term
 
-  FacetNormal N(mesh);
-  AvgMeshSize h(mesh);
+  FacetNormal N;
+  AvgMeshSize h;
 
   // Definitions for outflow facet function
-  OutflowFacetFunctional M_of(velocity, N);
-  OutflowFacet of(mesh, M_of); // From SpecialFunctions.h
+  //OutflowFacetFunctional M_of(velocity, N);
+  //OutflowFacetFunctional M_of(velocity, N);
+  //M_of.velocity = velocity;
+  //M_of.n = N;
+
+  // From SpecialFunctions.h
+  //OutflowFacet of(M_of); 
+  error("FFC wrapper code for functionals needs to be fixed");
+  Constant of(0.0); 
 
   // Penalty parameter
-  Function alpha(mesh, 20.0);
+  Constant alpha(20.0);
 
-  AdvectionDiffusionBilinearForm a(velocity, N, h, of, c, alpha);
-  AdvectionDiffusionLinearForm L(f);
+  AdvectionDiffusionFunctionSpace V(mesh);
+  AdvectionDiffusionBilinearForm a(V, V);
+  a.b  = velocity;
+  a.n  = N;
+  a.h  = h;
+  a.of = of;
+  a.kappa = c;
+  a.alpha = alpha;
+
+  AdvectionDiffusionLinearForm L(V);
+  L.f = f;
 
   // Solution function
-  Function uh(mesh, a);
+  Function uh(V);
 
   // Set up boundary condition (apply strong BCs)
-  BC g(mesh);
+  BC g;
   DirichletBoundary boundary;
-  DirichletBC bc(g, mesh, boundary, geometric);
+  DirichletBC bc(g, V, boundary, geometric);
 
-  assemble(A, a, mesh);
-  assemble(b, L, mesh);
-  bc.apply(A, b, a);
+  Assembler::assemble(A, a);
+  Assembler::assemble(b, L);
+  bc.apply(A, b);
 
   GenericVector& x = uh.vector(); 
   solve(A, x, b);
 
   // Define PDE for projection
-  ProjectionBilinearForm ap;
-  ProjectionLinearForm Lp(uh);
-  LinearPDE pde(ap, Lp, mesh);
+  ProjectionFunctionSpace Vp(mesh);
+  ProjectionBilinearForm ap(Vp, Vp);
+  ProjectionLinearForm Lp(Vp);
+  Lp.u0 = uh;
+  LinearPDE pde(ap, Lp);
 
   // Solve PDE
-  Function up;
+  Function up(Vp);
   pde.solve(up);
 
   // Save projected solution

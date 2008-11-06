@@ -23,22 +23,22 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-LinearPDE::LinearPDE(Form& a, Form& L, Mesh& mesh, MatrixType matrix_type)
-                   : a(a), L(L), mesh(mesh), bcs(0), matrix_type(matrix_type)
+LinearPDE::LinearPDE(Form& a, Form& L, MatrixType matrix_type)
+                   : a(a), L(L), bcs(0), matrix_type(matrix_type)
 {
   message("Creating linear PDE.");
 }
 //-----------------------------------------------------------------------------
-LinearPDE::LinearPDE(Form& a, Form& L, Mesh& mesh, DirichletBC& bc, 
-                     MatrixType matrix_type) : a(a), L(L), mesh(mesh), 
+LinearPDE::LinearPDE(Form& a, Form& L, DirichletBC& bc, 
+                     MatrixType matrix_type) : a(a), L(L), 
                      matrix_type(matrix_type)
 {
   message("Creating linear PDE with one boundary condition.");
   bcs.push_back(&bc);
 } 
 //-----------------------------------------------------------------------------
-LinearPDE::LinearPDE(Form& a, Form& L, Mesh& mesh, Array<DirichletBC*>& bcs, 
-                     MatrixType matrix_type) : a(a), L(L), mesh(mesh), 
+LinearPDE::LinearPDE(Form& a, Form& L, Array<DirichletBC*>& bcs, 
+                     MatrixType matrix_type) : a(a), L(L), 
                      matrix_type(matrix_type)
 {
   message("Creating linear PDE with %d boundary condition(s).", bcs.size());
@@ -59,10 +59,6 @@ void LinearPDE::solve(Function& u)
   Matrix A;
   Vector b;
   GenericVector& x = u.vector();
-
-  // Assemble linear system and apply boundary conditions
-  //Assembler assembler(mesh);  
-  //assembler.assemble(A, a, b, L, bcs);
 
   // Assemble linear system and apply boundary conditions
   Assembler::assemble(A, a);
