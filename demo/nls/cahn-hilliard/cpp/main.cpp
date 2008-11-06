@@ -31,26 +31,48 @@ class CahnHilliardEquation : public NonlinearProblem, public Parametrized
       if(mesh.topology().dim() == 2)
       {
         V = new CahnHilliard2DFunctionSpace(mesh);
+
         a = new CahnHilliard2DBilinearForm(*V, *V);
+        CahnHilliard2DBilinearForm* _a = dynamic_cast<CahnHilliard2DBilinearForm*>(a);
+        if(!_a) error("Problem in downcast of CahnHilliard2DBilinearForm");
+        _a->w0 = u;
+        _a->lmbda = lambda;
+        _a->muFactor = muFactor;
+        _a->dt = dt;
+        _a->theta = theta;
+
         L = new CahnHilliard2DLinearForm(*V);
-        a->w0 = u;
-        a->lmbda = lambda;
-        a->muFactor = muFactor;
-        a->dt = dt;
-        a->theta = theta;
-        L->w0 = u;
-        L->w1 = u0;
-        L->lmbda = lambda;
-        L->muFactor = muFactor;
-        L->dt = dt;
-        L->theta = theta;
+        CahnHilliard2DLinearForm* _L = dynamic_cast<CahnHilliard2DLinearForm*>(L);
+        if(!_L) error("Problem in downcast of CahnHilliard2DLinearForm");
+        _L->w0 = u;
+        _L->w1 = u0;
+        _L->lmbda = lambda;
+        _L->muFactor = muFactor;
+        _L->dt = dt;
+        _L->theta = theta;
       }
       else if(mesh.topology().dim() == 3)
       {
-        error("3D Cahn-Hilliard demo need to be updated for new Function interface.");
-        //V = new CahnHilliard3DFunctionSpace(mesh);
-        //a = new CahnHilliard3DBilinearForm(*V, *V);
-        //L = new CahnHilliard3DLinearForm(*V);
+        V = new CahnHilliard3DFunctionSpace(mesh);
+
+        a = new CahnHilliard3DBilinearForm(*V, *V);
+        CahnHilliard3DBilinearForm* _a = dynamic_cast<CahnHilliard3DBilinearForm*>(a);
+        if(!_a) error("Problem in downcast of CahnHilliard3DBilinearForm");
+        _a->w0 = u;
+        _a->lmbda = lambda;
+        _a->muFactor = muFactor;
+        _a->dt = dt;
+        _a->theta = theta;
+
+        L = new CahnHilliard3DLinearForm(*V);
+        CahnHilliard3DLinearForm* _L = dynamic_cast<CahnHilliard3DLinearForm*>(L);
+        if(!_L) error("Problem in downcast of CahnHilliard3DLinearForm");
+        _L->w0 = u;
+        _L->w1 = u0;
+        _L->lmbda = lambda;
+        _L->muFactor = muFactor;
+        _L->dt = dt;
+        _L->theta = theta;
       }
       else
         error("Cahn-Hilliard model is programmed for 2D and 3D only");
@@ -83,8 +105,8 @@ class CahnHilliardEquation : public NonlinearProblem, public Parametrized
 
     // Pointers to FunctionSpace and forms
     FunctionSpace* V;
-    CahnHilliard2DBilinearForm* a;
-    CahnHilliard2DLinearForm* L;
+    Form* a;
+    Form* L;
 
     bool reset_Jacobian;
 };
