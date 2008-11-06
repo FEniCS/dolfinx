@@ -12,7 +12,6 @@
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/Facet.h>
 #include <dolfin/fem/Form.h>
-#include <dolfin/fem/UFC.h>
 #include "FunctionSpace.h"
 #include "SpecialFunctions.h"
 
@@ -197,60 +196,53 @@ void InvFacetArea::eval(double* values, const Data& data) const
     values[0] = 0.0;
 }
 //-----------------------------------------------------------------------------
-/*
-OutflowFacet::OutflowFacet(Mesh& mesh, Form& form) : Function(), form(form), mesh(mesh)                           
+OutflowFacet::OutflowFacet(const Form& form) : form(form), 
+          V(form.function_spaces()), ufc(form.ufc_form(), V)                            
 {
   // Some simple sanity checks on form
   if (!(form.rank() == 0 && form.ufc_form().num_coefficients() == 2))
     error("Invalid form: rank = %d, number of coefficients = %d. Must be rank 0 form with 2 coefficients.", 
               form.rank(), form.ufc_form().num_coefficients());
+
   if (!(form.ufc_form().num_cell_integrals() == 0 && form.ufc_form().num_exterior_facet_integrals() == 1 
         && form.ufc_form().num_interior_facet_integrals() == 0))
     error("Invalid form: Must have exactly 1 exterior facet integral");
-
-   error("Need to fix special function OutflowFacet::OutflowFacet for new interface.");
-  //form.updateDofMaps(mesh);
-  //ufc = new UFC(form.form(), mesh, form.dofMaps());
 }
 //-----------------------------------------------------------------------------
 OutflowFacet::~OutflowFacet()
 {
-  delete ufc;
+  //delete ufc;
 }
 //-----------------------------------------------------------------------------
 void OutflowFacet::eval(double* values, const Data& data) const
 {
   // If there is no facet (assembling on interior), return 0.0
-  if (facet() < 0)
-    return 0.0;
+  if (data.facet() < 0)
+  {
+    values[0] = 0.0;
+    return;
+  }
   else
   {
-    // Copy cell, cannot call interpolate with const cell()
-    Cell cell0(cell());
-    ufc->update(cell0);
+    ufc.update( data.cell() );
 
     // Interpolate coefficients on cell and current facet
-    error("Need to extend Function interface.");
-    //for (dolfin::uint i = 0; i < form.coefficients().size(); i++)
-    //  form.coefficients()[i]->interpolate(ufc->w[i], ufc->cell, 
-    //                            *ufc->coefficient_elements[i], cell0, facet());
+    for (uint i = 0; i < form.coefficients().size(); i++)
+      form.coefficient(i).interpolate(ufc.w[i], ufc.cell, data.facet());
 
     // Get exterior facet integral (we need to be able to tabulate ALL facets 
     // of a given cell)
-    ufc::exterior_facet_integral* integral = ufc->exterior_facet_integrals[0];
+    ufc::exterior_facet_integral* integral = ufc.exterior_facet_integrals[0];
 
     // Call tabulate_tensor on exterior facet integral, 
     // dot(velocity, facet_normal)
-    integral->tabulate_tensor(ufc->A, ufc->w, ufc->cell, facet());
+    integral->tabulate_tensor(ufc.A, ufc.w, ufc.cell, data.facet());
   }
 
    // If dot product is positive, the current facet is an outflow facet
-  if (ufc->A[0] > DOLFIN_EPS)
-    return 1.0;
+  if (ufc.A[0] > DOLFIN_EPS)
+     values[0] = 1.0;
   else
-    return 0.0;
+     values[0] = 0.0;
 }
-
-*/
-
 //-----------------------------------------------------------------------------

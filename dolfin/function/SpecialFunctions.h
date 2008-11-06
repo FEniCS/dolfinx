@@ -11,6 +11,8 @@
 #ifndef __SPECIAL_FUNCTIONS_H
 #define __SPECIAL_FUNCTIONS_H
 
+#include <vector>
+#include <dolfin/fem/UFC.h>
 #include "Function.h"
 
 namespace dolfin
@@ -136,25 +138,23 @@ namespace dolfin
   /// facet and velocity vector integrated over the exterior of the cell.
   /// The function returns 1.0 if the dot product > 0, 0.0 otherwise.
 
-  /*
   class OutflowFacet : public Function
   {
   public:
 
     // Constructor
-    OutflowFacet(Mesh& mesh, Form& form);
+    OutflowFacet(const Form& form);
 
     ~OutflowFacet();
 
-    double eval(const double* x) const;
+    void eval(double* values, const Data& data) const;
 
   private:
 
-    Form& form;
-    UFC* ufc;
-    Mesh& mesh;  
+    const Form& form;
+    std::vector<const FunctionSpace*> V;
+    mutable UFC ufc;
   };
-  */
 
 }
 

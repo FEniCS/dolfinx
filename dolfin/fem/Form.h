@@ -40,7 +40,7 @@ namespace dolfin
     /// Destructor
     virtual ~Form();
 
-    /// Return rank of form (bilinear form = 2, linear form = 1, etc)
+    /// Return rank of form (bilinear form = 2, linear form = 1, functional = 0, etc)
     uint rank() const;
 
     /// Return mesh
