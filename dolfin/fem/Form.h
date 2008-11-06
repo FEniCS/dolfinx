@@ -49,14 +49,14 @@ namespace dolfin
     /// Return function space for given argument
     const FunctionSpace& function_space(uint i) const;
 
-    /// Return function spaces
-    const std::vector<const FunctionSpace*> function_spaces() const;
+    /// Return function spaces for arguments
+    std::vector<const FunctionSpace*> function_spaces() const;
 
     /// Return function for given coefficient
     const Function& coefficient(uint i) const;
 
     /// Return coefficient functions
-    const std::vector<const Function*> coefficients() const;
+    std::vector<const Function*> coefficients() const;
 
     /// Return UFC form
     const ufc::form& ufc_form() const;

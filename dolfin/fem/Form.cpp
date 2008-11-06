@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2008.
 //
 // First added:  2007-12-10
-// Last changed: 2008-11-03
+// Last changed: 2008-11-06
 
 #include <ufc.h>
 #include <dolfin/common/NoDeleter.h>
@@ -65,7 +65,7 @@ const FunctionSpace& Form::function_space(uint i) const
   return *_function_spaces[i];
 }
 //-----------------------------------------------------------------------------
-const std::vector<const FunctionSpace*> Form::function_spaces() const
+std::vector<const FunctionSpace*> Form::function_spaces() const
 {
   std::vector<const FunctionSpace*> V;
   for (uint i = 0; i < _function_spaces.size(); ++i)
@@ -80,7 +80,7 @@ const Function& Form::coefficient(uint i) const
   return *_coefficients[i];
 }
 //-----------------------------------------------------------------------------
-const std::vector<const Function*> Form::coefficients() const
+std::vector<const Function*> Form::coefficients() const
 {
   std::vector<const Function*> V;
   for (uint i = 0; i < _coefficients.size(); ++i)

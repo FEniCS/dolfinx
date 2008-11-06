@@ -146,8 +146,7 @@ void Assembler::assemble(GenericTensor& A, const Form& form,
   check(form, coefficients, mesh);
 
   // Create data structure for local assembly data
-  std::vector<const FunctionSpace*> V = form.function_spaces();
-  UFC ufc(form.ufc_form(), V);
+  UFC ufc(form);
 
   // Initialize global tensor
   initGlobalTensor(A, form, ufc, reset_tensor);

@@ -197,7 +197,7 @@ void InvFacetArea::eval(double* values, const Data& data) const
 }
 //-----------------------------------------------------------------------------
 OutflowFacet::OutflowFacet(const Form& form) : form(form), 
-          V(form.function_spaces()), ufc(form.ufc_form(), V)                            
+                                               V(form.function_spaces()), ufc(form)                            
 {
   // Some simple sanity checks on form
   if (!(form.rank() == 0 && form.ufc_form().num_coefficients() == 2))

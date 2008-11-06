@@ -19,6 +19,7 @@ namespace dolfin
   class FunctionSpace;
   class Mesh;
   class Cell;
+  class Form;
 
   /// This class is a simple data structure that holds data used
   /// during assembly of a given UFC form. Data is created for each
@@ -31,7 +32,7 @@ namespace dolfin
   public:
 
     /// Constructor
-    UFC(const ufc::form& form, const std::vector<const FunctionSpace*>& V);
+    UFC(const Form& form);
 
     /// Destructor
     ~UFC();
