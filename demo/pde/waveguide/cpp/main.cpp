@@ -37,16 +37,16 @@ int main()
   // with the eigenvalues k_o^2 representing the square of the cutoff wavenumber 
   // and the corresponding right-eigenvector giving the coefficients of the 
   // discrete system used to obtain the approximate field anywhere in the domain   
-  Forms_0 s;
-  Forms_1 t;
+  FormsFunctionSpace V(mesh);
+  Forms_0 s(V, V);
+  Forms_1 t(V, V);
 
   // Assemble the system matrices stiffness (S) and mass matrices (T)
   PETScMatrix S;
   PETScMatrix T;
-  Assembler assembler(mesh);
 
-  assembler.assemble(S, s);
-  assembler.assemble(T, t);
+  Assembler::assemble(S, s);
+  Assembler::assemble(T, t);
 
   // Solve the eigen system
   SLEPcEigenSolver esolver;

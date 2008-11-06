@@ -15,9 +15,12 @@ class F : public Function
 {
 public:
   
-  double eval(const double* x) const
+  void eval(double* values, const Data& data) const
   {
-    return sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2]);
+    double x = data.x[0];
+    double y = data.x[1];
+    double z = data.x[2];
+    values[0] =  sin(3.0*x)*sin(3.0*y)*sin(3.0*z);
   }
 
 };
@@ -41,9 +44,16 @@ int main()
   Function g(V);
   pde.solve(g);
 
+  // Prepare dat for function evaluation
+  Data data;
+  data.x = x;
+  double value;
+
   // Evaluate user-defined function f
-  message("f(x) = %g", f.eval(x));
+  f.eval(&value, data);
+  message("f(x) = %g", value);
 
   // Evaluate discrete function g (projection of f)
-  message("g(x) = %g", g.eval(x));
+  g.eval(&value, data);
+  message("g(x) = %g", value);
 }
