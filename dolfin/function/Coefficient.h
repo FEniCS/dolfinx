@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-10-28
-// Last changed: 2008-10-29
+// Last changed: 2008-11-06
 
 #ifndef __COEFFICIENT_H
 #define __COEFFICIENT_H
