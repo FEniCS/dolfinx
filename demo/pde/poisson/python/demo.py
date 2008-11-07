@@ -23,30 +23,22 @@ from dolfin import *
 # Create mesh and FunctionSpace
 mesh = UnitSquare(32, 32)
 
-V = FunctionSpace(mesh, "Lagrange", 1)
+element = FiniteElement("Lagrange", "triangle",1)
 
-# Source term
+V = FunctionSpace(mesh, element)
+
+# Source term, using compiled c++ expression
 class Source(Function):
-    def eval(self, values, x):
-        dx = x[0] - 0.5
-        dy = x[1] - 0.5
-        values[0] = 500.0*exp(-(dx*dx + dy*dy)/0.02)
-    def dim(self,i):
-        return 2
-    def rank(self):
-        return 0
+    cppexpr = ("A*exp(-(pow(x[0]-0.5,2) + pow(x[1]-0.5,2))/B)")
+    default = {"A":500.0,"B":0.02}
 
-# Neumann boundary condition
+# Neumann boundary condition, using python Functor
 class Flux(Function):
     def eval(self, values, x):
         if x[0] > DOLFIN_EPS:
             values[0] = 25.0*sin(5.0*DOLFIN_PI*x[1])
         else:
             values[0] = 0.0
-    def dim(self,i):
-        return 2
-    def rank(self):
-        return 0
 
 # Sub domain for Dirichlet boundary condition
 #class DirichletBoundary(SubDomain):
@@ -54,13 +46,17 @@ class Flux(Function):
 #        return bool(on_boundary and x[0] < DOLFIN_EPS)
 
 # Define variational problem
-v = TestFunction(V)
-u = TrialFunction(V)
+v = TestFunction(element)
+u = TrialFunction(element)
+
 f = Source(V)
 g = Flux(V)
 
 a = dot(grad(v), grad(u))*dx
 L = v*f*dx + v*g*ds
+
+# A discrete function
+u = Function(V)
 
 # Define boundary condition
 #u0 = Function(mesh, 0.0)
