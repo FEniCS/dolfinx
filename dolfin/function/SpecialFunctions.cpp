@@ -217,7 +217,7 @@ OutflowFacet::~OutflowFacet()
 void OutflowFacet::eval(double* values, const Data& data) const
 {
   // If there is no facet (assembling on interior), return 0.0
-  if (data.facet() < 0)
+  if (!data.on_facet())
   {
     values[0] = 0.0;
     return;
