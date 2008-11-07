@@ -15,7 +15,6 @@
 #include <tr1/memory>
 #include <dolfin/common/Variable.h>
 #include <dolfin/log/log.h>
-#include "Data.h"
 
 namespace dolfin
 {
@@ -23,6 +22,7 @@ namespace dolfin
   class FunctionSpace;
   class GenericVector;
   class SubFunction;
+  class Data;
 
   /// This class represents a function u_h in a finite element
   /// function space V_h, given by

@@ -21,6 +21,7 @@ namespace dolfin
   class Form;
   class UFC;
   class FunctionSpace;
+  class Data;
 
 
   /// This Function represents the local mesh size on a given mesh.
@@ -156,6 +157,23 @@ namespace dolfin
     mutable UFC ufc;
   };
 
+  /// This function is used for the python interface. By inherit from this 
+  /// function instead of cpp_Function we avoid unnecessary calls through 
+  /// the swig created director class, when we deals with discrete functions 
+  /// in PyDOLFIN
+  class cpp_DiscreteFunction : public Function
+  {
+  public:
+
+    // Constructor
+    cpp_DiscreteFunction() : Function(){}
+    
+    // Constructor
+    cpp_DiscreteFunction(const FunctionSpace& V) : Function(V)
+    {
+      vector();
+    }
+  };
 }
 
 #endif

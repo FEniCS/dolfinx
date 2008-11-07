@@ -25,8 +25,7 @@ def set(self, key, value):
 %pythoncode %{
 def __contains__(self,u):
     " Check whether a function is in the FunctionSpace"
-    from function import Function
-    assert(isinstance(u,Function))
+    assert(isinstance(u,cpp_Function))
     return u._in(self)
 %}
 }

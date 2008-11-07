@@ -14,6 +14,7 @@
 #include <dolfin/fem/Form.h>
 #include "FunctionSpace.h"
 #include "SpecialFunctions.h"
+#include "Data.h"
 
 using namespace dolfin;
 

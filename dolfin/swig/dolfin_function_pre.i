@@ -15,5 +15,7 @@
 %rename(assign) dolfin::Function::operator=;
 %rename(_in) dolfin::Function::in;
 
-
-
+// Modifying the interface of DiscreteFunction
+%rename(sub)    dolfin::cpp_DiscreteFunction::operator[];
+%rename(assign) dolfin::cpp_DiscreteFunction::operator=;
+%rename(_in)    dolfin::cpp_DiscreteFunction::in;
