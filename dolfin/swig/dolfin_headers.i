@@ -76,6 +76,7 @@
 %include "dolfin/elements/ProjectionLibrary.h"
 
 // DOLFIN headers included from function
+%include "dolfin/function/Data.h"
 %include "dolfin/function/Function.h"
 %include "dolfin/function/FunctionSpace.h"
 %include "dolfin/function/SubFunction.h"
