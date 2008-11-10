@@ -30,7 +30,7 @@ OctaveFile::~OctaveFile()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void OctaveFile::operator<<(GenericMatrix& A)
+void OctaveFile::operator<<(const GenericMatrix& A)
 {
   // Octave file format for Matrix is not the same as the Matlab format,
   // since octave cannot handle sparse matrices.

@@ -25,7 +25,7 @@ namespace dolfin
     
     // Output
 
-    void operator<< (GenericMatrix& A);
+    void operator<< (const GenericMatrix& A);
         
   };
   

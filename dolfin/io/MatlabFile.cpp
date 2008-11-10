@@ -28,7 +28,7 @@ MatlabFile::~MatlabFile()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void MatlabFile::operator<<(GenericMatrix& A)
+void MatlabFile::operator<<(const GenericMatrix& A)
 {
   // Open file
   FILE *fp = fopen(filename.c_str(), "a");

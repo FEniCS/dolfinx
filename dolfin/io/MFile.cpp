@@ -34,7 +34,7 @@ MFile::~MFile()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void MFile::operator<<(GenericVector& x)
+void MFile::operator<<(const GenericVector& x)
 {
   // Open file
   FILE *fp = fopen(filename.c_str(), "a");
@@ -57,7 +57,7 @@ void MFile::operator<<(GenericVector& x)
   message("Saved vector to file %s in Octave/MATLAB format.", filename.c_str());
 }
 //-----------------------------------------------------------------------------
-void MFile::operator<<(Mesh& mesh)
+void MFile::operator<<(const Mesh& mesh)
 {
   Point p;
   
@@ -148,7 +148,7 @@ void MFile::operator<<(Mesh& mesh)
           mesh.name().c_str(), mesh.label().c_str(), filename.c_str());
 }
 //-----------------------------------------------------------------------------
-void MFile::operator<<(Function& u)
+void MFile::operator<<(const Function& u)
 {
   error("Function output in Matlab/Octave format not implemented for new Function.");
 /*

@@ -28,10 +28,10 @@ namespace dolfin
     
     // Output
 
-    void operator<< (GenericVector& x);
-    virtual void operator<< (GenericMatrix& A) = 0;
-    void operator<< (Mesh& mesh);
-    void operator<< (Function& u);
+    void operator<< (const GenericVector& x);
+    virtual void operator<< (const GenericMatrix& A) = 0;
+    void operator<< (const Mesh& mesh);
+    void operator<< (const Function& u);
     void operator<< (Sample& sample);
 
   };
