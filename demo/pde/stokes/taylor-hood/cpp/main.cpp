@@ -43,10 +43,11 @@ int main()
   {
     void eval(double* values, const Data& data) const
     {
-      real y = data.x[1];
+      double y  = data.x[1];
       values[0] = -sin(y*DOLFIN_PI);
       values[1] = 0.0;
     }
+
   };
 
   // Read mesh and sub domain markers
@@ -54,9 +55,13 @@ int main()
   MeshFunction<unsigned int> sub_domains(mesh, "../subdomains.xml.gz");
   mesh.order();
 
-  // Create function spaces
+  // Create function space
   StokesFunctionSpace V(mesh);
+
+  // Create velocity subspace
   SubSpace Vu(V, 0);
+
+  // Create pressure subspace
   SubSpace Vp(V, 1);
 
   // Create functions for boundary conditions

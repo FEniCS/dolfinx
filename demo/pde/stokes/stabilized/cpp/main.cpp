@@ -20,9 +20,7 @@ int main()
   // Function for no-slip boundary condition for velocity
   class Zero : public Function
   {
-  public:
-
-    void eval(double* values, const double* x) const
+    void eval(double* values, const Data& data) const
     {
       values[0] = 0.0;
       values[1] = 0.0;
@@ -32,9 +30,7 @@ int main()
   // Function for no-slip boundary condition for velocity
   class Noslip : public Function
   {
-  public:
-
-    void eval(double* values, const double* x) const
+    void eval(double* values, const Data& data) const
     {
       values[0] = 0.0;
       values[1] = 0.0;
@@ -44,11 +40,10 @@ int main()
   // Function for inflow boundary condition for velocity
   class Inflow : public Function
   {
-  public:
-
-    void eval(double* values, const double* x) const
+    void eval(double* values, const Data& data) const
     {
-      values[0] = -sin(x[1]*DOLFIN_PI);
+      double y  = data.x[1];
+      values[0] = -sin(y*DOLFIN_PI);
       values[1] = 0.0;
     }
 
@@ -59,10 +54,14 @@ int main()
   MeshFunction<unsigned int> sub_domains(mesh, "../subdomains.xml.gz");
   mesh.order();
 
-  // Create function spaces
+  // Create function space
   StokesFunctionSpace V(mesh);
-  std::auto_ptr<const FunctionSpace> Vu(V.extract_sub_space(0));
-  std::auto_ptr<const FunctionSpace> Vp(V.extract_sub_space(1));
+
+  // Create velocity subspace
+  SubSpace Vu(V, 0);
+
+  // Create pressure subspace
+  SubSpace Vp(V, 1);
 
   // Create functions for boundary conditions
   Noslip noslip;
@@ -70,13 +69,13 @@ int main()
   Constant zero(0.0);
   
   // No-slip boundary condition for velocity
-  DirichletBC bc0(noslip, *Vu, sub_domains, 0);
+  DirichletBC bc0(noslip, Vu, sub_domains, 0);
 
   // Inflow boundary condition for velocity
-  DirichletBC bc1(inflow, *Vu, sub_domains, 1);
+  DirichletBC bc1(inflow, Vu, sub_domains, 1);
 
   // Boundary condition for pressure at outflow
-  DirichletBC bc2(zero, *Vp, sub_domains, 2);
+  DirichletBC bc2(zero, Vp, sub_domains, 2);
 
   // Collect boundary conditions
   Array<DirichletBC*> bcs(&bc0, &bc1, &bc2);
