@@ -15,8 +15,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-NonlinearPDE::NonlinearPDE(Form& a, Form& L, Mesh& mesh, DirichletBC& bc)
-  : a(a), L(L), mesh(mesh)
+NonlinearPDE::NonlinearPDE(Form& a, Form& L, DirichletBC& bc) : a(a), L(L)
 {
   message("Creating nonlinear PDE with %d boundary condition(s).", bcs.size());
 
@@ -30,8 +29,8 @@ NonlinearPDE::NonlinearPDE(Form& a, Form& L, Mesh& mesh, DirichletBC& bc)
   bcs.push_back(&bc);
 }
 //-----------------------------------------------------------------------------
-NonlinearPDE::NonlinearPDE(Form& a, Form& L, Mesh& mesh, 
-  Array<DirichletBC*>& bcs) : a(a), L(L), mesh(mesh), bcs(bcs)
+NonlinearPDE::NonlinearPDE(Form& a, Form& L, Array<DirichletBC*>& bcs) 
+    : a(a), L(L), bcs(bcs)
 {
   message("Creating nonlinear PDE with %d boundary condition(s).", bcs.size());
 

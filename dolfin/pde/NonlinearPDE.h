@@ -31,10 +31,10 @@ namespace dolfin
   public:
 
     /// Constructor
-    NonlinearPDE(Form& a, Form& L, Mesh& mesh, DirichletBC& bc);
+    NonlinearPDE(Form& a, Form& L, DirichletBC& bc);
 
     /// Constructor
-    NonlinearPDE(Form& a, Form& L, Mesh& mesh, Array<DirichletBC*>& bcs);
+    NonlinearPDE(Form& a, Form& L, Array<DirichletBC*>& bcs);
 
     /// Destructor
     ~NonlinearPDE();
@@ -59,9 +59,6 @@ namespace dolfin
     
     // The linear form
     Form& L;
-
-    // The mesh
-    Mesh& mesh;
 
     // The boundary conditions
     Array<DirichletBC*> bcs;

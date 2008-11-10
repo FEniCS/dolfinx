@@ -34,12 +34,13 @@ using namespace dolfin;
 class Source : public Function, public TimeDependent
 {
   public:
+    Source(const double* t) : TimeDependent(t) {}
 
-    Source(Mesh& mesh, const double* t) : Function(mesh), TimeDependent(t) {}
-
-    double eval(const double* x) const
+    void eval(double* values, const Data& data) const
     {
-      return time()*x[0]*sin(x[1]);
+      double x = data.x[0];
+      double y = data.x[1];
+      values[0] = time()*x*sin(y);
     }
 };
 
@@ -47,11 +48,11 @@ class Source : public Function, public TimeDependent
 class DirichletBoundaryCondition : public Function, public TimeDependent
 {
   public:
-    DirichletBoundaryCondition(Mesh& mesh, const double* t) : Function(mesh), TimeDependent(t) {}
+    DirichletBoundaryCondition(const double* t) : TimeDependent(t) {}
 
-    double eval(const double* x) const
+    void eval(double* values, const Data& data) const
     {
-      return 1.0*time();
+      values[0] = 1.0*time();
     }
 };
 
@@ -75,20 +76,27 @@ int main(int argc, char* argv[])
   double t = 0.0;
 
   // Create source function
-  Source f(mesh, &t);
+  Source f(&t);
+
+  // Create function space
+  NonlinearPoissonFunctionSpace V(mesh);
+
+  // Solution function
+  Function u(V);
+
 
   // Dirichlet boundary conditions
   DirichletBoundary dirichlet_boundary;
-  DirichletBoundaryCondition g(mesh, &t);
-  DirichletBC bc(g, mesh, dirichlet_boundary);
+  DirichletBoundaryCondition g(&t);
+  DirichletBC bc(g, V, dirichlet_boundary);
 
-  // Solution function
-  Function u;
 
-  // Create forms and nonlinear PDE
-  NonlinearPoissonBilinearForm a(u);
-  NonlinearPoissonLinearForm L(u, f);
-  NonlinearPDE pde(a, L, mesh, bc);
+  // Create forms and PDE
+  NonlinearPoissonBilinearForm a(V, V);
+  a.U0 = u;
+  NonlinearPoissonLinearForm L(V);
+  L.U0 =u; L.f = f;
+  NonlinearPDE pde(a, L, bc);
 
   // Solve nonlinear problem in a series of steps
   double dt = 1.0; double T  = 3.0;
