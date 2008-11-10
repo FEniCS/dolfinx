@@ -40,8 +40,9 @@ public:
   
   Source(const double& t) : t(t) {}
 
-  void eval(double* values, const double* x) const
+  void eval(double* values, const Data& data) const
   {
+    const double* x = data.x;
     values[0] = t*x[0]*sin(x[1]);
   }
   
@@ -57,7 +58,7 @@ public:
   
   DirichletBoundaryValue(const double& t) : t(t) {}
   
-  void eval(double* values, const double* x) const
+  void eval(double* values, const Data& data) const
   {
     values[0] = 1.0*t;
   }
