@@ -30,7 +30,7 @@ namespace dolfin
     
     // Output
     
-    void operator<< (Sample& sample);
+    void operator<< (const Sample& sample);
 
     std::string filename_t, filename_u, filename_k, filename_r;
 

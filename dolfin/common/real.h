@@ -34,7 +34,7 @@ namespace dolfin
 #endif
 
   // Convert to double (if necessary)
-  inline double to_double(const real x)
+  inline double to_double(const real x) 
   {
 #ifdef HAS_GMP 
     return x.get_d();

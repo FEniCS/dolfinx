@@ -203,7 +203,7 @@ void MFile::operator<<(const Function& u)
 */
 }
 //-----------------------------------------------------------------------------
-void MFile::operator<<(Sample& sample)
+void MFile::operator<<(const Sample& sample)
 {
   // Open file
   FILE *fp = fopen(filename.c_str(), "a");

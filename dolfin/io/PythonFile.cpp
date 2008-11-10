@@ -39,7 +39,7 @@ PythonFile::~PythonFile()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void PythonFile::operator<<(Sample& sample)
+void PythonFile::operator<<(const Sample& sample)
 {
   FILE* fp_t = 0;
   FILE* fp_u = 0;
