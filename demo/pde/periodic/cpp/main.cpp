@@ -21,17 +21,14 @@ int main()
   // Source term
   class Source : public Function
   {
-  public:
-    
-    Source(Mesh& mesh) : Function(mesh) {}
-
-    double eval(const double* x) const
+    void eval(double* values, const Data& data) const
     {
-      double dx = x[0] - 0.5;
-      double dy = x[1] - 0.5;
-      return x[0]*sin(5.0*DOLFIN_PI*x[1]) + 1.0*exp(-(dx*dx + dy*dy)/0.02);
+      double x  = data.x[0];
+      double y  = data.x[1];
+      double dx = data.x[0] - 0.5;
+      double dy = data.x[1] - 0.5;
+      values[0] = x*sin(5.0*DOLFIN_PI*y) + 1.0*exp(-(dx*dx + dy*dy)/0.02);
     }
-
   };
 
   // Sub domain for Dirichlet boundary condition
@@ -62,33 +59,35 @@ int main()
   UnitSquare mesh(32, 32);
 
   // Create functions
-  Source f(mesh);
+  Source f;
+
+  // Define PDE
+  PoissonFunctionSpace V(mesh);
+  PoissonBilinearForm a(V, V);
+  PoissonLinearForm L(V);
+  L.f = f;
 
   // Create Dirichlet boundary condition
-  Function u0(mesh, 0.0);
+  Constant u0(0.0);
   DirichletBoundary dirichlet_boundary;
-  DirichletBC bc0(u0, mesh, dirichlet_boundary);
+  DirichletBC bc0(u0, V, dirichlet_boundary);
   
   // Create periodic boundary condition
   PeriodicBoundary periodic_boundary;
-  PeriodicBC bc1(mesh, periodic_boundary);
+  PeriodicBC bc1(V, periodic_boundary);
 
   // Collect boundary conditions
   Array<BoundaryCondition*> bcs(&bc0, &bc1);
 
-  // Define PDE
-  PoissonBilinearForm a;
-  PoissonLinearForm L(f);
-
   // Solve PDE
   Matrix A;
   Vector b;
-  assemble(A, a, mesh);
-  assemble(b, L, mesh);
+  Assembler::assemble(A, a);
+  Assembler::assemble(b, L);
   for (dolfin::uint i = 0; i < bcs.size(); i++)
-    bcs[i]->apply(A, b, a);
+    bcs[i]->apply(A, b);
 
-  Function u(mesh, a);
+  Function u(V);
   GenericVector& x = u.vector(); 
 
   LUSolver solver;
