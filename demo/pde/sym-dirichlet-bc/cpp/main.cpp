@@ -30,34 +30,26 @@ int main()
   // Source term
   class Source : public Function
   {
-  public:
-    
-    Source(Mesh& mesh) : Function(mesh) {}
-
-    double eval(const double* x) const
+    void eval(double* values, const Data& data) const
     {
-      double dx = x[0] - 0.5;
-      double dy = x[1] - 0.5;
-      return 500.0*exp(-(dx*dx + dy*dy)/0.02);
+      double dx = data.x[0] - 0.5;
+      double dy = data.x[1] - 0.5;
+      values[0] = 500.0*exp(-(dx*dx + dy*dy)/0.02);
     }
-
   };
 
-  // Neumann boundary condition
+// Neumann boundary condition
   class Flux : public Function
   {
-  public:
-
-    Flux(Mesh& mesh) : Function(mesh) {}
-
-    double eval(const double* x) const
+    void eval(double* values, const Data& data) const
     {
-      if (x[0] > DOLFIN_EPS)
-        return 25.0*sin(5.0*DOLFIN_PI*x[1]);
+      double x = data.x[0];
+      double y = data.x[1];
+      if (x > DOLFIN_EPS)
+        values[0] = 25.0*sin(5.0*DOLFIN_PI*y);
       else
-        return 0.0;
+        values[0] =  0.0;
     }
-
   };
 
   // Sub domain for Dirichlet boundary condition
@@ -73,20 +65,22 @@ int main()
   UnitSquare mesh(128, 128);
 
   // Create functions
-  Source f(mesh);
-  Flux g(mesh);
+  Source f;
+  Flux g;
+
+  // Define forms and attach functions
+  PoissonFunctionSpace V(mesh);
+  PoissonBilinearForm a(V, V);
+  PoissonLinearForm L(V);
+  L.f = f; L.g = g;
 
   // Create boundary condition
-  Function u0(mesh, 0.0);
+  Constant u0(0.0);
   DirichletBoundary boundary;
-  DirichletBC bc(u0, mesh, boundary);
+  DirichletBC bc(u0, V, boundary);
   
-  // Define forms
-  PoissonBilinearForm a;
-  PoissonLinearForm L(f, g);
-
   // Create function
-  Function u(mesh, a);
+  Function u(V);
 
   // Create table
   Table table("Assembly and application of bcs");
@@ -96,13 +90,13 @@ int main()
   Vector b;
 
   tic();
-  assemble(A, a, mesh);
-  assemble(b, L, mesh);
-  bc.apply(A, b, a);
+  Assembler::assemble(A, a);
+  Assembler::assemble(b, L);
+  bc.apply(A, b);
   table("Standard", "Assembly time") = toc();
 
   tic();
-  assemble(A, a, b, L, bc, mesh);
+  Assembler::assemble(A, a, b, L, bc);
   table("Symmetric", "Assembly time") = toc();
 
   table.disp();  
