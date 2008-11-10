@@ -40,7 +40,7 @@ int main()
   ProjectionBilinearForm a(V, V);
   ProjectionLinearForm L(V);
   L.f = f;
-  LinearPDE pde(a, L, mesh);
+  LinearPDE pde(a, L);
   Function g(V);
   pde.solve(g);
 
