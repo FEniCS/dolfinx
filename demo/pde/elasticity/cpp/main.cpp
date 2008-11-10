@@ -19,9 +19,7 @@ int main()
 {
   class Zero : public Function
   {
-  public:
-
-    void eval(double* values, const double* x) const
+    void eval(double* values, const Data& data) const
     {
       values[0] = 0.0;
       values[1] = 0.0;
@@ -34,7 +32,7 @@ int main()
   {
   public:
 
-    void eval(double* values, const double* x) const
+    void eval(double* values, const Data& data) const
     {
       values[0] = 0.0;
       values[1] = 0.0;
@@ -56,8 +54,10 @@ int main()
   {
   public:
 
-    void eval(double* values, const double* x) const
+    void eval(double* values, const Data& data) const
     {
+      const double* x = data.x;
+  
       // Center of rotation
       double y0 = 0.5;
       double z0 = 0.219;

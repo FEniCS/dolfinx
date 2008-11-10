@@ -34,9 +34,9 @@ class DirichletBoundary : public SubDomain
 // Source term
 class Source : public Function
 {
-  void eval(double* values, const double* x) const
+  void eval(double* values, const Data& data) const
   {
-    values[0] = 9.0*DOLFIN_PI*DOLFIN_PI*sin(3.0*DOLFIN_PI*x[0]);
+    values[0] = 9.0*DOLFIN_PI*DOLFIN_PI*sin(3.0*DOLFIN_PI*data.x[0]);
   }
 
 };

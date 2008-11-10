@@ -21,9 +21,6 @@ for dpath, dnames, fnames in os.walk(os.path.join(os.curdir, "..", "..", "demo")
     elif os.path.basename(dpath) == 'python':
         if os.path.isfile(os.path.join(dpath, 'demo.py')):
             pydemos.append(dpath)
-
-# Exclude pyDOLFIN demos until updated for new interface
-pydemos = []
     
 # Set non-interactive
 os.putenv('DOLFIN_NOPLOT', '1')
@@ -65,6 +62,9 @@ cppdemos.remove('./../../demo/fem/assembly/cpp')
 
 failed = []
 timing = []
+
+# Exclude pyDOLFIN demos until updated for new interface
+pydemos = []
 
 # Check if we should run only Python tests, use for quick testing
 if len(sys.argv) == 2 and sys.argv[1] == "--only-python":
