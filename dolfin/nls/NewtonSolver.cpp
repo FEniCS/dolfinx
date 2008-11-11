@@ -65,6 +65,8 @@ dolfin::uint NewtonSolver::solve(NonlinearProblem& nonlinear_problem, GenericVec
 
       set("output destination", "silent");
       // Perform linear solve and update total number of Krylov iterations
+      if(dx->size() > 0)
+        dx->zero();
       krylov_iterations += solver->solve(*A, *dx, *b);
       set("output destination", "terminal");
 

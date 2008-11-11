@@ -141,12 +141,17 @@ int main(int argc, char* argv[])
   // Create user-defined nonlinear problem
   MyNonlinearProblem nonlinear_problem(V, dirichlet_boundary, g, f, u);
 
-  // Create nonlinear solver (using GMRES linear solver) and set parameters
-  // NewtonSolver nonlinear_solver(gmres);
-  NewtonSolver nonlinear_solver;
+  // Create linear solver for use in Newton solver
+  DefaultFactory factory;
+  KrylovSolver solver(gmres);
+  solver.set("Krylov relative tolerance", 1e-10);
+  solver.set("Krylov absolute tolerance", 1e-10);
+
+  // Create Newton solver and set parameters
+  NewtonSolver nonlinear_solver(solver, factory);
   nonlinear_solver.set("Newton maximum iterations", 50);
-  nonlinear_solver.set("Newton relative tolerance", 1e-10);
-  nonlinear_solver.set("Newton absolute tolerance", 1e-10);
+  nonlinear_solver.set("Newton relative tolerance", 1e-8);
+  nonlinear_solver.set("Newton absolute tolerance", 1e-8);
 
   // Solve nonlinear problem in a series of steps
   GenericVector& x = u.vector();
