@@ -4,6 +4,7 @@
 // First added:  2008-08-11
 // Last changed: 2008-09-13
 
+#include <dolfin/fem/Assembler.h>
 #include <dolfin/log/log.h>
 #include <dolfin/la/Matrix.h>
 #include <dolfin/la/Vector.h>
@@ -19,22 +20,24 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 void HarmonicSmoothing::move(Mesh& mesh, Mesh& new_boundary)
 {
-  error("HarmonicSmoothing::move needs updating for new Function interface.");
-/*
-  // Choose form
+  // Choose form and function space
+  FunctionSpace* V = 0;
   Form* form = 0;
   const uint D = mesh.topology().dim();
   const uint d = mesh.geometry().dim();
   switch (D)
   {
   case 1:
-    form = new Poisson1DBilinearForm();
+    V    = new Poisson1DFunctionSpace(mesh);
+    form = new Poisson1DBilinearForm(*V, *V);
     break;
   case 2:
-    form = new Poisson2DBilinearForm();
+    V    = new Poisson2DFunctionSpace(mesh);
+    form = new Poisson2DBilinearForm(*V, *V);
     break;
   case 3:
-    form = new Poisson3DBilinearForm();
+    V    = new Poisson3DFunctionSpace(mesh);
+    form = new Poisson3DBilinearForm(*V, *V);
     break;
   default:
     error("Illegal mesh dimension %d for harmonic mesh smoothing.", D);
@@ -42,7 +45,7 @@ void HarmonicSmoothing::move(Mesh& mesh, Mesh& new_boundary)
 
   // Assemble matrix
   Matrix A;
-  assemble(A, *form, mesh);
+  Assembler::assemble(A, *form);
 
   // Initialize vector
   const uint N = mesh.numVertices();
@@ -89,6 +92,5 @@ void HarmonicSmoothing::move(Mesh& mesh, Mesh& new_boundary)
   delete form;
   delete [] values;
   delete [] new_coordinates;
-*/
 }
 //-----------------------------------------------------------------------------
