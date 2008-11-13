@@ -1,4 +1,4 @@
-// Copyright (C) 2008 Anders Logg and Magnus Vikstrøm
+// Copyright (C) 2008 Anders Logg and Magnus Vikstrøm.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-02-04
@@ -25,6 +25,9 @@ using namespace dolfin;
 
 int main()
 {
+  message("Sorry, this demo is currently broken.");
+  return 0;
+
 //#ifndef HAS_SCOTCH
 //  message("Sorry, this demo requires SCOTCH.");
 //  return 0;

@@ -15,7 +15,7 @@ class F(Function):
 
 # Create mesh and a point in the mesh
 mesh = UnitCube(8, 8, 8);
-x = array((0.3, 0.3, 0.3))
+x = array((0.31, 0.32, 0.33))
 values = array((0.0,))
 
 # A user-defined function

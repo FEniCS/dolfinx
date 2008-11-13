@@ -2,9 +2,9 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-03-11
-// Last changed: 2007-03-17
+// Last changed: 2008-11-13
 //
-// Testing evaluation at arbitrary points
+// Demonstrating function evaluation at arbitrary points.
 
 #include <dolfin.h>
 #include "Projection.h"
@@ -30,7 +30,7 @@ int main()
   // Create mesh and a point in the mesh
   UnitCube mesh(8, 8, 8);
   mesh.order();
-  double x[3] = {0.3, 0.3, 0.3};
+  double x[3] = {0.31, 0.32, 0.33};
 
   // A user-defined function
   F f;
