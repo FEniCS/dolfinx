@@ -45,7 +45,7 @@ public:
     };
 
     UnitCube mesh(8, 8, 8);
-    double x[3] = {0.3, 0.3, 0.3};
+    double x[3] = {0.31, 0.32, 0.33};
     double u[2] = {0.0, 0.0};
   
     Data data;

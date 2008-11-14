@@ -176,6 +176,7 @@ public:
     UnitCube mesh(2, 2, 2);
     BoundaryMesh b0(mesh);
     BoundaryMesh b1;
+    b0.order();
     b1.init(b0);
     CPPUNIT_ASSERT(b1.numVertices() == 0);
     CPPUNIT_ASSERT(b1.numCells() == 0);

@@ -88,16 +88,22 @@ dolfin::uint Mesh::init(uint dim) const
   // exists, it just hasn't been computed yet. The const_cast is also needed
   // to allow iterators over a const Mesh to create new connectivity.
 
+  // Skip if already computed
+  if (_topology.size(dim) > 0)
+    return _topology.size(dim);
+
   // Check that mesh is ordered
   if (!ordered())
     error("Mesh is not ordered according to the UFC numbering convention, consider calling mesh.order().");
 
   // Compute connectivity
   Mesh* mesh = const_cast<Mesh*>(this);
-  return TopologyComputation::computeEntities(*mesh, dim);
+  TopologyComputation::computeEntities(*mesh, dim);
 
   // Order mesh
   mesh->order();
+
+  return _topology.size(dim);
 }
 //-----------------------------------------------------------------------------
 void Mesh::init(uint d0, uint d1) const
@@ -106,6 +112,10 @@ void Mesh::init(uint d0, uint d1) const
   // new connectivity. However, in a sense all connectivity of a mesh always
   // exists, it just hasn't been computed yet. The const_cast is also needed
   // to allow iterators over a const Mesh to create new connectivity.
+
+  // Skip if already computed
+  if (_topology(d0, d1).size() > 0)
+    return;
 
   // Check that mesh is ordered
   if (!ordered())
