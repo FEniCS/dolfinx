@@ -11,5 +11,25 @@
     <cells size="1">
       <tetrahedron index="0" v0="0" v1="1" v2="2" v3="3"/>
     </cells>
+    <data>
+      <array name="boundary facet cells" type="uint" size="4">
+        <element index="0" value="0"/>
+        <element index="1" value="0"/>
+        <element index="2" value="0"/>
+        <element index="3" value="0"/>
+      </array>
+      <array name="boundary facet numbers" type="uint" size="4">
+        <element index="0" value="0"/>
+        <element index="1" value="1"/>
+        <element index="2" value="2"/>
+        <element index="3" value="3"/>
+      </array>
+      <array name="boundary indicators" type="uint" size="4">
+        <element index="0" value="0"/>
+        <element index="1" value="0"/>
+        <element index="2" value="1"/>
+        <element index="3" value="1"/>
+      </array>
+    </data>
   </mesh>
 </dolfin>

@@ -19,13 +19,13 @@
 #include <dolfin/ale/ALEType.h>
 #include "MeshTopology.h"
 #include "MeshGeometry.h"
+#include "MeshData.h"
 #include "CellType.h"
 
 namespace dolfin
 {
   
   template <class T> class MeshFunction;
-  class MeshData;
   class IntersectionDetector;
 
   /// A Mesh consists of a set of connected and numbered mesh entities.
@@ -113,12 +113,11 @@ namespace dolfin
     /// Return mesh geometry (const version)
     inline const MeshGeometry& geometry() const { return _geometry; }
 
-    /// Return mesh data
+    /// Return mesh data (non-const version)
     MeshData& data();
 
     /// Return mesh data (const version)
-    // FIXME: Implement
-    //const MeshData& data() const;
+    const MeshData& data() const;
 
     /// Return mesh cell type
     inline CellType& type() { dolfin_assert(_cell_type); return *_cell_type; }
@@ -210,7 +209,7 @@ namespace dolfin
     MeshGeometry _geometry;
 
     // Auxiliary mesh data
-    MeshData* _data;
+    MeshData _data;
 
     // Cell type
     CellType* _cell_type;

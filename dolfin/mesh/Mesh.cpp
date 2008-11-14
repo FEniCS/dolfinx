@@ -7,7 +7,7 @@
 // Modified by Kristoffer Selim 2008.
 //
 // First added:  2006-05-09
-// Last changed: 2008-10-29
+// Last changed: 2008-11-14
 
 #include <sstream>
 
@@ -27,26 +27,25 @@
 #include "Cell.h"
 #include "Vertex.h"
 #include "MPIMeshCommunicator.h"
-#include "MeshData.h"
 #include "Mesh.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 Mesh::Mesh()
-  : Variable("mesh", "DOLFIN mesh"), _data(0), _cell_type(0), detector(0)
+  : Variable("mesh", "DOLFIN mesh"), _data(*this), _cell_type(0), detector(0)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 Mesh::Mesh(const Mesh& mesh)
-  : Variable("mesh", "DOLFIN mesh"), _data(0), _cell_type(0), detector(0)
+  : Variable("mesh", "DOLFIN mesh"), _data(*this), _cell_type(0), detector(0)
 {
   *this = mesh;
 }
 //-----------------------------------------------------------------------------
 Mesh::Mesh(std::string filename)
-  : Variable("mesh", "DOLFIN mesh"), _data(0), _cell_type(0), detector(0)
+  : Variable("mesh", "DOLFIN mesh"), _data(*this), _cell_type(0), detector(0)
 {
   File file(filename);
   file >> *this;
@@ -74,10 +73,12 @@ const Mesh& Mesh::operator=(const Mesh& mesh)
 //-----------------------------------------------------------------------------
 MeshData& Mesh::data()
 {
-  if (!_data)
-    _data = new MeshData(*this);
-
-  return *_data;
+  return _data;
+}
+//-----------------------------------------------------------------------------
+const MeshData& Mesh::data() const
+{
+  return _data;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint Mesh::init(uint dim) const
@@ -118,10 +119,9 @@ void Mesh::clear()
 {
   _topology.clear();
   _geometry.clear();
+  _data.clear();
   delete _cell_type;
   _cell_type = 0;
-  delete _data;
-  _data = 0;
   delete detector;
   detector = 0;
 }
@@ -303,12 +303,8 @@ void Mesh::disp() const
   end();
 
   // Display mesh data
-  if (_data)
-  {
-    cout << endl;
-    _data->disp();
-  }
-  
+  _data.disp();
+
   // End indentation
   end();
 }

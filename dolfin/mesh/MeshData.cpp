@@ -4,8 +4,9 @@
 // Modified by Niclas Jansson, 2008.
 // 
 // First added:  2008-05-19
-// Last changed: 2008-09-16
+// Last changed: 2008-11-14
 
+#include "MeshFunction.h"
 #include "MeshData.h"
 
 using namespace dolfin;

@@ -8,7 +8,7 @@
 // Modified by Niclas Jansson 2008.
 //
 // First added:  2002-12-03
-// Last changed: 2008-09-18
+// Last changed: 2008-11-14
 
 #include <stdarg.h>
 #include <tr1/memory>
@@ -286,8 +286,8 @@ void XMLFile::operator<< (const Mesh& mesh)
   fprintf(fp, "  <mesh celltype=\"%s\" dim=\"%u\">\n",
           CellType::type2string(cell_type).c_str(), mesh.geometry().dim());
 
+  // Write vertices
   fprintf(fp, "    <vertices size=\"%u\">\n", mesh.numVertices());
-  
   for(VertexIterator v(mesh); !v.end(); ++v)
   {
     Point p = v->point();
@@ -309,10 +309,10 @@ void XMLFile::operator<< (const Mesh& mesh)
       error("The XML mesh file format only supports 1D, 2D and 3D meshes.");
     }
   }
-
   fprintf(fp, "    </vertices>\n");
-  fprintf(fp, "    <cells size=\"%u\">\n", mesh.numCells());
 
+  // Write cells
+  fprintf(fp, "    <cells size=\"%u\">\n", mesh.numCells());
   for (CellIterator c(mesh); !c.end(); ++c)
   {
     const uint* vertices = c->entities(0);
@@ -336,8 +336,40 @@ void XMLFile::operator<< (const Mesh& mesh)
       error("Unknown cell type: %u.", cell_type);
     }
   }
-
   fprintf(fp, "    </cells>\n");
+
+  // Write mesh data
+  const MeshData& data = mesh.data();
+  if (data.meshfunctions.size() > 0 || data.arrays.size() > 0)
+  {
+    fprintf(fp, "    <data>\n");
+
+    // Write mesh functions
+    for (std::map<std::string, MeshFunction<uint>*>::const_iterator it = data.meshfunctions.begin();
+         it != data.meshfunctions.end(); ++it)
+    {
+      fprintf(fp, "      <meshfunction name=\"%s\" type=\"uint\" dim=\"%d\" size=\"%d\">\n",
+              it->first.c_str(), it->second->dim(), it->second->size());
+      for (uint i = 0; i < it->second->size(); i++)
+        fprintf(fp, "        <entity index=\"%d\" value=\"%d\"/>\n", i, it->second->get(i));
+      fprintf(fp, "      </meshfunction>\n");
+    }
+
+    // Write arrays
+    for (std::map<std::string, Array<uint>*>::const_iterator it = data.arrays.begin();
+         it != data.arrays.end(); ++it)
+    {
+      fprintf(fp, "      <array name=\"%s\" type=\"uint\" size=\"%d\">\n",
+              it->first.c_str(), it->second->size());
+      for (uint i = 0; i < it->second->size(); i++)
+        fprintf(fp, "        <element index=\"%d\" value=\"%d\"/>\n", i, (*it->second)[i]);
+      fprintf(fp, "      </array>\n");
+    }
+
+    fprintf(fp, "    </data>\n");
+  }
+
+
   fprintf(fp, "  </mesh>\n");
  
   // Close file

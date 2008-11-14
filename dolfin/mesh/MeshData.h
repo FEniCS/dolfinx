@@ -10,15 +10,14 @@
 #define __MESH_DATA_H
 
 #include <map>
-
 #include <dolfin/common/types.h>
-#include <dolfin/common/Array.h>
-#include "MeshFunction.h"
 
 namespace dolfin
 {
 
   class Mesh;
+  template <class T> class MeshFunction;
+  template <class T> class Array;
 
   /// The class MeshData is a container for auxiliary mesh data,
   /// represented either as MeshFunctions over topological mesh
@@ -60,6 +59,9 @@ namespace dolfin
 
     /// Display data
     void disp() const;
+
+    /// Friends
+    friend class XMLFile;
 
   private:
 
