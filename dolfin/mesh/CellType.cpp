@@ -188,8 +188,12 @@ bool CellType::increasing(uint n0, const uint* v0,
 
   // Compare lexicographic ordering of w0 and w1
   for (uint k = 0; k < num_non_incident; k++)
-    if (w0[k] > w1[k])
+  {
+    if (w0[k] < w1[k])
+      return true;
+    else if (w0[k] > w1[k])
       return false;
+  }
 
   return true;
 }

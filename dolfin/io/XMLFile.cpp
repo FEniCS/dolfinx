@@ -365,10 +365,8 @@ void XMLFile::operator<< (const Mesh& mesh)
         fprintf(fp, "        <element index=\"%d\" value=\"%d\"/>\n", i, (*it->second)[i]);
       fprintf(fp, "      </array>\n");
     }
-
     fprintf(fp, "    </data>\n");
   }
-
 
   fprintf(fp, "  </mesh>\n");
  

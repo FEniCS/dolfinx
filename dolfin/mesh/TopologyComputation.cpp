@@ -114,7 +114,6 @@ dolfin::uint TopologyComputation::computeEntities(Mesh& mesh, uint dim)
   delete [] entities;
 
   //message("Created %d new entities.", num_entities);
-  // If mesh was ordered, order again
 
   return num_entities;
 }
@@ -175,10 +174,6 @@ void TopologyComputation::computeConnectivity(Mesh& mesh, uint d0, uint d1)
     computeConnectivity(mesh, d, d1);
     computeFromIntersection(mesh, d0, d1, d);
   }
-
-  // If mesh was ordered, order again
-  if(mesh.ordered())
-    mesh.order();
 }
 //----------------------------------------------------------------------------
 void TopologyComputation::computeFromTranspose(Mesh& mesh, uint d0, uint d1)
