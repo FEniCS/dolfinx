@@ -1,8 +1,8 @@
-// Copyright (C) 2006-2007 Anders Logg.
+// Copyright (C) 2006-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-02-09
-// Last changed: 2007-07-11
+// Last changed: 2008-11-14
 //
 // This demo solves the time-dependent convection-diffusion equation by
 // a least-squares stabilized cG(1)cG(1) method. The velocity field used
@@ -19,15 +19,10 @@ int main(int argc, char *argv[])
 {
   // Read velocity field
   Function velocity("../velocity.xml.gz");
-  Mesh& mesh = const_cast<Mesh&>(velocity.function_space().mesh());
-  // Read mesh and sub domain markers
-  //Mesh mesh("../../../../data/meshes/dolfin-2.xml.gz");
-  //mesh.order();
+
+  // Read sub domain markers
+  const Mesh& mesh(velocity.function_space().mesh());
   MeshFunction<unsigned int> sub_domains(mesh, "../subdomains.xml.gz");
-
-
-  // Read velocity field
-  //Function velocity("../velocity.xml.gz");
 
   // Create function space
   ConvectionDiffusionFunctionSpace V(mesh);
