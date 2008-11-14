@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-05-16
-// Last changed: 2008-08-22
+// Last changed: 2008-11-13
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/parameter/dolfin_parameter.h>
@@ -202,8 +202,13 @@ void MeshEditor::addCell(uint c, uint v0, uint v1, uint v2, uint v3)
   mesh->_topology(tdim, 0).set(c, vertices);
 }
 //-----------------------------------------------------------------------------
-void MeshEditor::close()
+void MeshEditor::close(bool order)
 {
+  // Order mesh if requested
+  dolfin_assert(mesh);
+  if (order)
+    mesh->order();
+
   // Clear data
   clear();
 }

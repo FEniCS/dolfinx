@@ -34,22 +34,19 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 Mesh::Mesh()
-  : Variable("mesh", "DOLFIN mesh"), _data(0), _cell_type(0), _ordered(false), 
-    detector(0)
+  : Variable("mesh", "DOLFIN mesh"), _data(0), _cell_type(0), detector(0)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 Mesh::Mesh(const Mesh& mesh)
-  : Variable("mesh", "DOLFIN mesh"), _data(0), _cell_type(0), _ordered(false),
-    detector(0)
+  : Variable("mesh", "DOLFIN mesh"), _data(0), _cell_type(0), detector(0)
 {
   *this = mesh;
 }
 //-----------------------------------------------------------------------------
 Mesh::Mesh(std::string filename)
-  : Variable("mesh", "DOLFIN mesh"), _data(0), _cell_type(0), _ordered(false),
-    detector(0)
+  : Variable("mesh", "DOLFIN mesh"), _data(0), _cell_type(0), detector(0)
 {
   File file(filename);
   file >> *this;
@@ -131,15 +128,12 @@ void Mesh::clear()
 //-----------------------------------------------------------------------------
 void Mesh::order()
 {
-  if (_ordered)
-    message(1, "Mesh has already been ordered, no need to reorder entities.");
-  else
-    MeshOrdering::order(*this);
+  MeshOrdering::order(*this);
 }
 //-----------------------------------------------------------------------------
 bool Mesh::ordered() const
 {
-  return _ordered;
+  return MeshOrdering::ordered(*this);
 }
 //-----------------------------------------------------------------------------
 void Mesh::refine()

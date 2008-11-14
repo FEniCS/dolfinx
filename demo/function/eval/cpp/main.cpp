@@ -29,7 +29,6 @@ int main()
 {
   // Create mesh and a point in the mesh
   UnitCube mesh(8, 8, 8);
-  mesh.order();
   double x[3] = {0.31, 0.32, 0.33};
 
   // A user-defined function

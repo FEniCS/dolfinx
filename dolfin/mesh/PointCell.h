@@ -5,7 +5,7 @@
 // Modified by Kristoffer Selim, 2008.
 //
 // First added:  2007-12-12
-// Last changed: 2008-10-08
+// Last changed: 2008-11-14
 
 #ifndef __POINT_CELL_H
 #define __POINT_CELL_H
@@ -59,6 +59,9 @@ namespace dolfin
 
     /// Compute the area/length of given facet with respect to the cell
     double facetArea(const Cell& cell, uint facet) const;
+
+    /// Order entities locally
+    void order(Cell& cell) const;
 
     /// Check for intersection with point
     bool intersects(const MeshEntity& entity, const Point& p) const;

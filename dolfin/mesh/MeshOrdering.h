@@ -1,8 +1,8 @@
-// Copyright (C) 2007 Anders Logg.
+// Copyright (C) 2007-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-01-30
-// Last changed: 2007-01-30
+// Last changed: 2008-11-13
 
 #ifndef __MESH_ORDERING_H
 #define __MESH_ORDERING_H
@@ -21,7 +21,11 @@ namespace dolfin
   {
   public:
 
+    /// Order mesh
     static void order(Mesh& mesh);
+
+    /// Check if mesh is ordered
+    static bool ordered(const Mesh& mesh);
 
   };
 

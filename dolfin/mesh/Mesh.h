@@ -8,7 +8,7 @@
 // Modified by Kristoffer Selim, 2008.
 //
 // First added:  2006-05-08
-// Last changed: 2008-10-29
+// Last changed: 2008-11-14
 
 #ifndef __MESH_H
 #define __MESH_H
@@ -215,9 +215,6 @@ namespace dolfin
     // Cell type
     CellType* _cell_type;
     
-    /// Return true iff topology is ordered according to the UFC numbering
-    bool _ordered;
-
     // Intersection detector
     IntersectionDetector* detector;
     

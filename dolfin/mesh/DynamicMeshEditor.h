@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-09-22
-// Last changed: 2008-09-22
+// Last changed: 2008-11-13
 
 #ifndef __DYNAMIC_MESH_EDITOR_H
 #define __DYNAMIC_MESH_EDITOR_H
@@ -63,8 +63,8 @@ namespace dolfin
     /// Add cell (tetrahedron) with given vertices
     void addCell(uint c, uint v0, uint v1, uint v2, uint v3);
 
-    /// Close mesh, finish editing
-    void close();
+    /// Close mesh, finish editing, and order entities locally
+    void close(bool order=false);
 
   private:
 

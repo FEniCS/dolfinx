@@ -1,11 +1,11 @@
-// Copyright (C) 2005-2006 Anders Logg.
+// Copyright (C) 2005-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells, 2007.
 // Modified by Nuno Lopes, 2008
 //
 // First added:  2005-12-02
-// Last changed: 2008-06-20
+// Last changed: 2008-11-13
 
 #include "MeshEditor.h"
 #include "UnitSphere.h"
@@ -85,9 +85,6 @@ UnitSphere::UnitSphere(uint nx) : Mesh()
 
   // Close mesh editor
   editor.close();
-
-  // Order mesh
-  order();
 
   // Broadcast mesh according to parallel policy
   if (MPI::broadcast()) { MPIMeshCommunicator::broadcast(*this); }

@@ -52,7 +52,6 @@ int main()
   // Read mesh and sub domain markers
   Mesh mesh("../../../../../data/meshes/dolfin-2.xml.gz");
   MeshFunction<unsigned int> sub_domains(mesh, "../subdomains.xml.gz");
-  mesh.order();
 
   // Create function space
   StokesFunctionSpace V(mesh);

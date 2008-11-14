@@ -6,7 +6,7 @@
 // Modified by Kristoffer Selim, 2008.
 //
 // First added:  2006-06-05
-// Last changed: 2008-10-08
+// Last changed: 2008-11-14
 
 #ifndef __TETRAHEDRON_CELL_H
 #define __TETRAHEDRON_CELL_H
@@ -42,9 +42,6 @@ namespace dolfin
     /// Create entities e of given topological dimension from vertices v
     void createEntities(uint** e, uint dim, const uint* v) const;
 
-    /// Order entities locally (connectivity 1-0, 2-0, 2-1, 3-0, 3-1, 3-2)
-    void orderEntities(Cell& cell) const;
-
     /// Regular refinement of cell 
     void refineCell(Cell& cell, MeshEditor& editor, uint& current_cell) const;
 
@@ -66,6 +63,9 @@ namespace dolfin
 
     /// Compute the area/length of given facet with respect to the cell
     double facetArea(const Cell& cell, uint facet) const;
+
+    /// Order entities locally
+    void order(Cell& cell) const;
 
     /// Check for intersection with point
     bool intersects(const MeshEntity& entity, const Point& p) const;

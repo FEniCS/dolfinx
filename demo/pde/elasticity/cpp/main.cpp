@@ -87,7 +87,6 @@ int main()
 
   // Read mesh
   Mesh mesh("../../../../data/meshes/gear.xml.gz");
-  mesh.order();
 
   ElasticityFunctionSpace V(mesh);
 

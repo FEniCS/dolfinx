@@ -4,7 +4,7 @@
 // Modified by Johan Hoffman 2006.
 //
 // First added:  2006-06-01
-// Last changed: 2008-10-23
+// Last changed: 2008-11-13
 
 #ifndef __CELL_H
 #define __CELL_H
@@ -58,6 +58,14 @@ namespace dolfin
     /// Compute the area/length of given facet with respect to the cell
     inline double facetArea(uint facet) const
     { return _mesh.type().facetArea(*this, facet); }
+
+    /// Order entities locally
+    inline void order()
+    { _mesh.type().order(*this); }
+
+    /// Check if entities are ordered
+    inline bool ordered() const
+    { return _mesh.type().ordered(*this); }
 
     /// Check for intersection with point
     inline bool intersects(const Point& p) const

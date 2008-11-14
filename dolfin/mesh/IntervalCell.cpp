@@ -5,7 +5,7 @@
 // Modified by Kristoffer Selim, 2008.
 //
 // First added:  2006-06-05
-// Last changed: 2008-10-08
+// Last changed: 2008-11-13
 
 #include <algorithm>
 #include <dolfin/log/dolfin_log.h>
@@ -66,23 +66,8 @@ void IntervalCell::createEntities(uint** e, uint dim, const uint* v) const
   error("Don't know how to create entities of topological dimension %d.", dim);
 }
 //-----------------------------------------------------------------------------
-void IntervalCell::orderEntities(Cell& cell) const
-{
-  // Sort i - j for i > j: 1 - 0
-
-  // Get mesh topology
-  MeshTopology& topology = const_cast<MeshTopology&>(cell.mesh().topology());
-
-  // Sort local vertices in ascending order, connectivity 1 - 0
-  if ( topology(1, 0).size() > 0 )
-  {
-    uint* cell_vertices = const_cast<uint*>(cell.entities(0));
-    std::sort(cell_vertices, cell_vertices + 2);
-  }
-}
-//-----------------------------------------------------------------------------
 void IntervalCell::refineCell(Cell& cell, MeshEditor& editor,
-			  uint& current_cell) const
+                              uint& current_cell) const
 {
   // Get vertices and edges
   const uint* v = cell.entities(0);
@@ -171,6 +156,21 @@ Point IntervalCell::normal(const Cell& cell, uint facet) const
 double IntervalCell::facetArea(const Cell& cell, uint facet) const
 {
   return 0.0;
+}
+//-----------------------------------------------------------------------------
+void IntervalCell::order(Cell& cell) const
+{
+  // Sort i - j for i > j: 1 - 0
+
+  // Get mesh topology
+  MeshTopology& topology = const_cast<MeshTopology&>(cell.mesh().topology());
+
+  // Sort local vertices in ascending order, connectivity 1 - 0
+  if ( topology(1, 0).size() > 0 )
+  {
+    uint* cell_vertices = const_cast<uint*>(cell.entities(0));
+    std::sort(cell_vertices, cell_vertices + 2);
+  }
 }
 //-----------------------------------------------------------------------------
 bool IntervalCell::intersects(const MeshEntity& entity, const Point& p) const

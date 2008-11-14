@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-06-02
-// Last changed: 2008-06-17
+// Last changed: 2008-11-14
 
 #include <set>
 #include <dolfin/log/dolfin_log.h>
@@ -115,9 +115,6 @@ dolfin::uint TopologyComputation::computeEntities(Mesh& mesh, uint dim)
 
   //message("Created %d new entities.", num_entities);
   // If mesh was ordered, order again
-
-  if(mesh.ordered())
-    mesh.order();
 
   return num_entities;
 }

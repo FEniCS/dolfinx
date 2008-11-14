@@ -267,6 +267,14 @@ env.Install(env["binDir"], os.path.join("misc","utils","convert","dolfin-convert
 env.Install(os.path.join(env["manDir"], "man1"),
             os.path.join("doc", "man", "man1", "dolfin-convert.1.gz"))
 
+# install dolfin-order into binDir
+env.Install(env["binDir"], os.path.join("misc","utils","order","dolfin-order"))
+
+# install dolfin-convert manual page into manDir/man1
+# man page missing, sorry Johannes...
+#env.Install(os.path.join(env["manDir"], "man1"),
+#            os.path.join("doc", "man", "man1", "dolfin-order.1.gz"))
+
 # shared libraries goes into our libDir:
 for l in buildDataHash["shlibs"]:
   env.InstallVersionedSharedLibrary(env["libDir"], l)

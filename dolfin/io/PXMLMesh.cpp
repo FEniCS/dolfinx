@@ -654,14 +654,14 @@ void PXMLMesh::closeMesh()
     }
   }
 
-  editor.close();
+  editor.close(false);
 
-  delete[] recv_shared;
-  delete[] recv_coords;
-  delete[] recv_indices;
-  delete[] recv_orphans;
-  delete[] global_number;
-  delete[] vertex_buffer;
+  delete [] recv_shared;
+  delete [] recv_coords;
+  delete [] recv_indices;
+  delete [] recv_orphans;
+  delete [] global_number;
+  delete [] vertex_buffer;
   
   // Recreate auxiliary mesh data
 
