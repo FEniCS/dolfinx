@@ -61,7 +61,7 @@ int main()
   LinearPDE pde(a, L);
 
   // Solve PDE
-  Function u(V);
+  Function u;
   pde.solve(u);
 
   // Project solution onto continuous basis for post-processing

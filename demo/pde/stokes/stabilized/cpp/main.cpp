@@ -91,12 +91,12 @@ int main()
   LinearPDE pde(a, L, bcs);
 
   // Solve PDE
-  Function U(V);
+  Function w;
   pde.set("PDE linear solver", "direct");
-  pde.solve(U);
+  pde.solve(w);
 
-  Function u = U[0];
-  Function p = U[1];
+  Function u = w[0];
+  Function p = w[1];
 
   // Plot solution
   plot(u);

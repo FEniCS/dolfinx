@@ -55,11 +55,11 @@ int main()
   LinearPDE pde(a, L);
 
   // Solve PDE
-  Function U(V);
-  pde.solve(U);
+  Function w;
+  pde.solve(w);
 
-  Function sigma = U[0];  
-  Function u     = U[1];  
+  Function sigma = w[0];
+  Function u     = w[1];  
 
   // Project sigma onto P1 continuous Lagrange for post-processing
   P1ProjectionFunctionSpace Vp(mesh);
@@ -67,7 +67,7 @@ int main()
   P1ProjectionLinearForm L_p(Vp);
   L_p.f = sigma;
   LinearPDE pde_project(a_p, L_p);
-  Function sigma_p(Vp);
+  Function sigma_p;
   pde_project.solve(sigma_p);
 
   // Plot solution

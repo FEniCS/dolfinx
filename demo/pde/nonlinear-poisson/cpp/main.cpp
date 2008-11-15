@@ -82,14 +82,12 @@ int main(int argc, char* argv[])
   NonlinearPoissonFunctionSpace V(mesh);
 
   // Solution function
-  Function u(V);
-
+  Function u;
 
   // Dirichlet boundary conditions
   DirichletBoundary dirichlet_boundary;
   DirichletBoundaryCondition g(&t);
   DirichletBC bc(g, V, dirichlet_boundary);
-
 
   // Create forms and PDE
   NonlinearPoissonBilinearForm a(V, V);

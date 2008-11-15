@@ -64,7 +64,7 @@ int main()
   LinearPDE pde(a, L, bc);
 
   // Solve PDE
-  Function u(V);
+  Function u;
   pde.solve(u);
 
   // Save solution to file

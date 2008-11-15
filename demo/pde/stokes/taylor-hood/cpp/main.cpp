@@ -88,7 +88,7 @@ int main()
   LinearPDE pde(a, L, bcs);
 
   // Solve PDE
-  Function w(V);
+  Function w;
   pde.set("PDE linear solver", "direct");
   pde.solve(w);
   Function u = w[0];

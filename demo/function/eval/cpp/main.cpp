@@ -40,7 +40,7 @@ int main()
   ProjectionLinearForm L(V);
   L.f = f;
   LinearPDE pde(a, L);
-  Function g(V);
+  Function g;
   pde.solve(g);
 
   // Prepare dat for function evaluation

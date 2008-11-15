@@ -83,7 +83,7 @@ int main()
   LinearPDE pde(a, L, bcs);
 
   // Solve PDE
-  Function u(V);
+  Function u;
   pde.solve(u);
 
   // Plot solution

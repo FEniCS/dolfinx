@@ -111,8 +111,8 @@ int main(int argc, char *argv[])
   Lp.u0 = uh;
   LinearPDE pde(ap, Lp);
 
-  // Solve PDE
-  Function up(Vp);
+  // Compute projection
+  Function up;
   pde.solve(up);
 
   // Save projected solution

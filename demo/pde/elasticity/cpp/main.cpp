@@ -123,7 +123,7 @@ int main()
   LinearPDE pde(a, L, bcs, symmetric);
 
   // Solve PDE (using direct solver)
-  Function u(V);
+  Function u;
   pde.set("PDE linear solver", "direct");
   pde.solve(u);
 
