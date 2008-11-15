@@ -40,7 +40,7 @@ int main()
 
   // Solve PDE and plot solution
   LinearPDE pde(a, L, bcs);
-  Function u(V);
+  Function u;
   pde.solve(u);
   plot(u);
 

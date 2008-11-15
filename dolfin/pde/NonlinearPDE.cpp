@@ -75,6 +75,13 @@ void NonlinearPDE::solve(Function& u, double& t, const double& T, const double& 
 {
   begin("Solving nonlinear PDE.");  
 
+  // Set function space if missing
+  if (!u.has_function_space())
+  {
+    dolfin_assert(a._function_spaces.size() == 2);
+    u._function_space = a._function_spaces[1];
+  }
+
   // Get vector associated with Function
   GenericVector& x = u.vector();
 
