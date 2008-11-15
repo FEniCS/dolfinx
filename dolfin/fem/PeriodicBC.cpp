@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells 2007
 //
 // First added:  2007-07-08
-// Last changed: 2008-11-03
+// Last changed: 2008-11-15
 
 #include <vector>
 #include <map>
@@ -211,14 +211,14 @@ void PeriodicBC::apply(GenericMatrix& A, GenericVector& b) const
     p++;
   }
 
-/*
+  /*
   // Insert 1 at (dof0, dof1)
   uint* rows = new uint[coordinate_dofs.size()];
   uint i = 0;
   for (iterator it = coordinate_dofs.begin(); it != coordinate_dofs.end(); ++it)
-    rows[i++] = static_cast<uint>(it->second.first);
+  rows[i++] = static_cast<uint>(it->second.first);
   A.ident(coordinate_dofs.size(), rows);
-*/
+  */
 
   // Insert -1 at (dof0, dof1) and 0 on right-hand side
   uint* rows = new uint[1];
@@ -231,7 +231,7 @@ void PeriodicBC::apply(GenericMatrix& A, GenericVector& b) const
     const int dof0 = it->second.first;
     const int dof1 = it->second.second;
     
-    cout <<dof0<< " " << dof1<<endl;
+    //cout << dof0 << " " << dof1 <<endl;
     
     if (dof0 == -1 || dof1 == -1)
     {

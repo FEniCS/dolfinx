@@ -1,8 +1,8 @@
-// Copyright (C) 2007 Anders Logg.
+// Copyright (C) 2007-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-07-11
-// Last changed: 2007-08-20
+// Last changed: 2008-11-15
 //
 // This demo program solves Poisson's equation
 //
@@ -79,34 +79,18 @@ int main()
   // Collect boundary conditions
   Array<BoundaryCondition*> bcs(&bc0, &bc1);
 
-  // Solve PDE
-  Matrix A;
-  Vector b;
-  Assembler::assemble(A, a);
-  Assembler::assemble(b, L);
-  for (dolfin::uint i = 0; i < bcs.size(); i++)
-    bcs[i]->apply(A, b);
-
-  Function u(V);
-  GenericVector& x = u.vector(); 
-
-  LUSolver solver;
-  solver.solve(A, x, b);
-
-/*
   // Define PDE
-  LinearPDE pde(a, L, mesh, bcs);
+  LinearPDE pde(a, L, bcs);
 
   // Solve PDE
-  Function u;
+  Function u(V);
   pde.solve(u);
-*/
 
   // Plot solution
   plot(u);
 
   // Save solution to file
-  File file("poisson.pvd");
+  File file("periodic.pvd");
   file << u;
 
   return 0;

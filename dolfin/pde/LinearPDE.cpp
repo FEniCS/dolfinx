@@ -4,11 +4,11 @@
 // Modified by Garth N. Wells, 2006-2008.
 //
 // First added:  2004
-// Last changed: 2008-10-30
+// Last changed: 2008-11-15
 
 #include <tr1/memory>
 #include <dolfin/fem/Assembler.h>
-#include <dolfin/fem/DirichletBC.h>
+#include <dolfin/fem/BoundaryCondition.h>
 #include <dolfin/fem/Form.h>
 #include <dolfin/la/Matrix.h>
 #include <dolfin/la/Vector.h>
@@ -29,7 +29,7 @@ LinearPDE::LinearPDE(Form& a, Form& L, MatrixType matrix_type)
   message("Creating linear PDE.");
 }
 //-----------------------------------------------------------------------------
-LinearPDE::LinearPDE(Form& a, Form& L, DirichletBC& bc, 
+LinearPDE::LinearPDE(Form& a, Form& L, BoundaryCondition& bc, 
                      MatrixType matrix_type) : a(a), L(L), 
                      matrix_type(matrix_type)
 {
@@ -37,7 +37,7 @@ LinearPDE::LinearPDE(Form& a, Form& L, DirichletBC& bc,
   bcs.push_back(&bc);
 } 
 //-----------------------------------------------------------------------------
-LinearPDE::LinearPDE(Form& a, Form& L, Array<DirichletBC*>& bcs, 
+LinearPDE::LinearPDE(Form& a, Form& L, Array<BoundaryCondition*>& bcs, 
                      MatrixType matrix_type) : a(a), L(L), 
                      matrix_type(matrix_type)
 {

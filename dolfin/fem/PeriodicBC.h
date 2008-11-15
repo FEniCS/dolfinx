@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells 2007
 //
 // First added:  2007-07-08
-// Last changed: 2008-11-03
+// Last changed: 2008-11-15
 
 #ifndef __PERIODIC_BC_H
 #define __PERIODIC_BC_H
@@ -67,9 +67,6 @@ namespace dolfin
     void apply(GenericMatrix& A, GenericVector& b, const GenericVector& x) const;
 
   private:
-
-    // The function space (possibly a sub function space)
-    std::tr1::shared_ptr<const FunctionSpace> V;
 
     // The subdomain
     const SubDomain& sub_domain;

@@ -68,7 +68,7 @@ pde = LinearPDE(a, L, mesh, bcs)
 u = pde.solve()
 
 # Save solution to file
-file = File("poisson.pvd")
+file = File("periodic.pvd")
 file << u
 
 # Plot solution
