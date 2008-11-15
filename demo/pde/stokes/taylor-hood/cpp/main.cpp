@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-02-09
-// Last changed: 2008-11-03
+// Last changed: 2008-11-15
 //
 // This demo solves the Stokes equations, using quadratic
 // elements for the velocity and first degree elements for
@@ -78,7 +78,7 @@ int main()
   DirichletBC bc2(zero, Vp, sub_domains, 2);
 
   // Collect boundary conditions
-  Array<DirichletBC*> bcs(&bc0, &bc1, &bc2);
+  Array<BoundaryCondition*> bcs(&bc0, &bc1, &bc2);
 
   // Set up PDE
   Zero f;

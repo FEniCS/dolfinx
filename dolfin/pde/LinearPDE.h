@@ -35,15 +35,15 @@ namespace dolfin
 
     /// Define a linear PDE with natural boundary conditions
     LinearPDE(Form& a, Form& L, 
-              dolfin::MatrixType matrix_type = nonsymmetric);
+              dolfin::MatrixType matrix_type=nonsymmetric);
     
     /// Define a linear PDE with a single Dirichlet boundary condition
     LinearPDE(Form& a, Form& L, BoundaryCondition& bc, 
-              dolfin::MatrixType matrix_type = nonsymmetric);
+              dolfin::MatrixType matrix_type=nonsymmetric);
     
     /// Define a linear PDE with a set of Dirichlet boundary conditions
     LinearPDE(Form& a, Form& L, Array<BoundaryCondition*>& bcs, 
-              dolfin::MatrixType matrix_type = nonsymmetric);
+              dolfin::MatrixType matrix_type=nonsymmetric);
 
     /// Destructor
     ~LinearPDE();

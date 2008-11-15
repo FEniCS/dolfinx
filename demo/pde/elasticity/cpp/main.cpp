@@ -1,10 +1,10 @@
-// Copyright (C) 2006-2007 Johan Jansson and Anders Logg.
+// Copyright (C) 2006-2008 Johan Jansson and Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells 2008
 //
 // First added:  2006-02-07
-// Last changed: 2008-05-21
+// Last changed: 2008-11-15
 //
 // This demo program solves the equations of static
 // linear elasticity for a gear clamped at two of its
@@ -105,7 +105,7 @@ int main()
   DirichletBC bcr(r, V, right);
 
   // Set up boundary conditions
-  Array<DirichletBC*> bcs;
+  Array<BoundaryCondition*> bcs;
   bcs.push_back(&bcl);
   bcs.push_back(&bcr);
 

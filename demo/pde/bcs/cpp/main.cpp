@@ -36,7 +36,7 @@ int main()
   DirichletBC bc1(u1, V, 1);
   DirichletBC bc2(u2, V, 2);
   DirichletBC bc3(u3, V, 3);
-  Array<DirichletBC*> bcs(&bc0, &bc1, &bc2, &bc3);
+  Array<BoundaryCondition*> bcs(&bc0, &bc1, &bc2, &bc3);
 
   // Solve PDE and plot solution
   LinearPDE pde(a, L, bcs);
