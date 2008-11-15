@@ -6,7 +6,7 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2003-11-28
-// Last changed: 2008-11-04
+// Last changed: 2008-11-15
 
 #ifndef __FUNCTION_H
 #define __FUNCTION_H
@@ -98,6 +98,8 @@ namespace dolfin
 
     /// Friends
     friend class Coefficient;
+    friend class LinearPDE;
+    friend class NonlinearPDE;
 
   private:
 

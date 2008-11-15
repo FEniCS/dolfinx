@@ -4,9 +4,9 @@
 // Modified by Anders Logg, 2006-2008.
 //
 // First added:  2005-10-24
-// Last changed: 2008-10-30
+// Last changed: 2008-11-15
 
-#include <dolfin/fem/DirichletBC.h>
+#include <dolfin/fem/BoundaryCondition.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/fem/Form.h>
 #include <dolfin/log/dolfin_log.h>
@@ -15,7 +15,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-NonlinearPDE::NonlinearPDE(Form& a, Form& L, DirichletBC& bc) : a(a), L(L)
+NonlinearPDE::NonlinearPDE(Form& a, Form& L, BoundaryCondition& bc) : a(a), L(L)
 {
   message("Creating nonlinear PDE with %d boundary condition(s).", bcs.size());
 
@@ -29,7 +29,7 @@ NonlinearPDE::NonlinearPDE(Form& a, Form& L, DirichletBC& bc) : a(a), L(L)
   bcs.push_back(&bc);
 }
 //-----------------------------------------------------------------------------
-NonlinearPDE::NonlinearPDE(Form& a, Form& L, Array<DirichletBC*>& bcs) 
+NonlinearPDE::NonlinearPDE(Form& a, Form& L, Array<BoundaryCondition*>& bcs) 
     : a(a), L(L), bcs(bcs)
 {
   message("Creating nonlinear PDE with %d boundary condition(s).", bcs.size());

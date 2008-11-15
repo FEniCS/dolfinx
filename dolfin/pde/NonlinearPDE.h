@@ -1,10 +1,10 @@
 // Copyright (C) 2005-2008 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Anders Logg, 2007
+// Modified by Anders Logg, 2007-2008.
 //
 // First added:  2005-10-24
-// Last changed: 2008-09-03
+// Last changed: 2008-11-15
 
 #ifndef __NONLINEAR_PDE_H
 #define __NONLINEAR_PDE_H
@@ -20,7 +20,7 @@ namespace dolfin
   // Forward declarations
   class Form;
   class Mesh;
-  class DirichletBC;
+  class BoundaryCondition;
   class GenericMatrix;
   class GenericVector;
 
@@ -31,10 +31,10 @@ namespace dolfin
   public:
 
     /// Constructor
-    NonlinearPDE(Form& a, Form& L, DirichletBC& bc);
+    NonlinearPDE(Form& a, Form& L, BoundaryCondition& bc);
 
     /// Constructor
-    NonlinearPDE(Form& a, Form& L, Array<DirichletBC*>& bcs);
+    NonlinearPDE(Form& a, Form& L, Array<BoundaryCondition*>& bcs);
 
     /// Destructor
     ~NonlinearPDE();
@@ -61,7 +61,7 @@ namespace dolfin
     Form& L;
 
     // The boundary conditions
-    Array<DirichletBC*> bcs;
+    Array<BoundaryCondition*> bcs;
 
     // The solution vector
     Vector x;
