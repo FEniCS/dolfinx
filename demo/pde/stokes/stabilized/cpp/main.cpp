@@ -46,7 +46,6 @@ int main()
       values[0] = -sin(y*DOLFIN_PI);
       values[1] = 0.0;
     }
-
   };
 
   // Read mesh and sub domain markers
@@ -66,7 +65,7 @@ int main()
   Noslip noslip;
   Inflow inflow;
   Constant zero(0.0);
-  
+
   // No-slip boundary condition for velocity
   DirichletBC bc0(noslip, Vu, sub_domains, 0);
 
@@ -81,13 +80,13 @@ int main()
 
   // Set up PDE
   MeshSize h;
+  // FIXME: Implement vector constants
   //Function f(2, 0.0);
   Zero f;
   StokesBilinearForm a(V, V);
   a.h = h;
   StokesLinearForm L(V);
-  L.f = f;
-  L.h = h;
+  L.f = f; L.h = h;
   LinearPDE pde(a, L, bcs);
 
   // Solve PDE
@@ -95,6 +94,7 @@ int main()
   pde.set("PDE linear solver", "direct");
   pde.solve(w);
 
+  // Extract subfunctions
   Function u = w[0];
   Function p = w[1];
 
@@ -102,7 +102,7 @@ int main()
   plot(u);
   plot(p);
 
-  // Save solution
+  // Save solution in XML format
   File ufile("velocity.xml");
   ufile << u;
   File pfile("pressure.xml");
@@ -116,6 +116,4 @@ int main()
 
   File x_file("x.xml");
   x_file << u.vector();
-
-
 }

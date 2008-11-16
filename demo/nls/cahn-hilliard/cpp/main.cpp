@@ -28,13 +28,13 @@ class CahnHilliardEquation : public NonlinearProblem, public Parametrized
                        : reset_Jacobian(true)
     {
       // Create forms
-      if(mesh.topology().dim() == 2)
+      if (mesh.topology().dim() == 2)
       {
         V = new CahnHilliard2DFunctionSpace(mesh);
 
         a = new CahnHilliard2DBilinearForm(*V, *V);
         CahnHilliard2DBilinearForm* _a = dynamic_cast<CahnHilliard2DBilinearForm*>(a);
-        if(!_a) error("Problem in downcast of CahnHilliard2DBilinearForm");
+        if (!_a) error("Problem in downcast of CahnHilliard2DBilinearForm");
         _a->w0 = u;
         _a->lmbda = lambda;
         _a->muFactor = muFactor;
@@ -43,7 +43,7 @@ class CahnHilliardEquation : public NonlinearProblem, public Parametrized
 
         L = new CahnHilliard2DLinearForm(*V);
         CahnHilliard2DLinearForm* _L = dynamic_cast<CahnHilliard2DLinearForm*>(L);
-        if(!_L) error("Problem in downcast of CahnHilliard2DLinearForm");
+        if (!_L) error("Problem in downcast of CahnHilliard2DLinearForm");
         _L->w0 = u;
         _L->w1 = u0;
         _L->lmbda = lambda;
@@ -57,7 +57,7 @@ class CahnHilliardEquation : public NonlinearProblem, public Parametrized
 
         a = new CahnHilliard3DBilinearForm(*V, *V);
         CahnHilliard3DBilinearForm* _a = dynamic_cast<CahnHilliard3DBilinearForm*>(a);
-        if(!_a) error("Problem in downcast of CahnHilliard3DBilinearForm");
+        if (!_a) error("Problem in downcast of CahnHilliard3DBilinearForm");
         _a->w0 = u;
         _a->lmbda = lambda;
         _a->muFactor = muFactor;
@@ -66,7 +66,7 @@ class CahnHilliardEquation : public NonlinearProblem, public Parametrized
 
         L = new CahnHilliard3DLinearForm(*V);
         CahnHilliard3DLinearForm* _L = dynamic_cast<CahnHilliard3DLinearForm*>(L);
-        if(!_L) error("Problem in downcast of CahnHilliard3DLinearForm");
+        if (!_L) error("Problem in downcast of CahnHilliard3DLinearForm");
         _L->w0 = u;
         _L->w1 = u0;
         _L->lmbda = lambda;

@@ -14,7 +14,6 @@ using namespace dolfin;
 class F : public Function
 {
 public:
-  
   void eval(double* values, const Data& data) const
   {
     double x = data.x[0];
@@ -22,7 +21,6 @@ public:
     double z = data.x[2];
     values[0] =  sin(3.0*x)*sin(3.0*y)*sin(3.0*z);
   }
-
 };
 
 int main()

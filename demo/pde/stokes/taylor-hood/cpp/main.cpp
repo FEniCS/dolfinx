@@ -2,14 +2,13 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-02-09
-// Last changed: 2008-11-15
+// Last changed: 2008-11-16
 //
-// This demo solves the Stokes equations, using quadratic
-// elements for the velocity and first degree elements for
-// the pressure (Taylor-Hood elements). The sub domains
-// for the different boundary conditions used in this
-// simulation are computed by the demo program in
-// src/demo/mesh/subdomains.
+// This demo solves the Stokes equations, using quadratic elements for
+// the velocity and first degree elements for the pressure
+// (Taylor-Hood elements). The sub domains for the different boundary
+// conditions used in this simulation are computed by the demo program
+// in src/demo/mesh/subdomains.
 
 #include <dolfin.h>
 #include "Stokes.h"
@@ -47,7 +46,6 @@ int main()
       values[0] = -sin(y*DOLFIN_PI);
       values[1] = 0.0;
     }
-
   };
 
   // Read mesh and sub domain markers
@@ -98,7 +96,7 @@ int main()
   plot(u);
   plot(p);
 
-  // Save solution
+  // Save solution in XML format
   File ufile("velocity.xml");
   ufile << u;
   File pfile("pressure.xml");

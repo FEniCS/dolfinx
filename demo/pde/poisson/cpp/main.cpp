@@ -2,21 +2,21 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-02-07
-// Last changed: 2008-10-30
+// Last changed: 2008-11-16
 //
-// This demo program solves Poisson's equation
+// This demo program solves Poisson's equation,
 //
 //     - div grad u(x, y) = f(x, y)
 //
 // on the unit square with source f given by
 //
-//     f(x, y) = 500*exp(-((x-0.5)^2 + (y-0.5)^2)/0.02)
+//     f(x, y) = 500*exp(-((x - 0.5)^2 + (y - 0.5)^2)/0.02)
 //
 // and boundary conditions given by
 //
-//     u(x, y)     = 0               for x = 0
-//     du/dn(x, y) = 25 sin(5 pi y)  for x = 1
-//     du/dn(x, y) = 0               otherwise
+//     u(x, y)     = 0               for x = 0,
+//     du/dn(x, y) = 25 cos(5 pi y)  for x = 1,
+//     du/dn(x, y) = 0               otherwise.
 
 #include <dolfin.h>
 #include "Poisson.h"
@@ -41,8 +41,8 @@ class Flux : public Function
   {
     double x = data.x[0];
     double y = data.x[1];
-    if (x > DOLFIN_EPS)
-      values[0] = 25.0*sin(5.0*DOLFIN_PI*y);
+    if (x > (1.0 - DOLFIN_EPS))
+      values[0] = 25.0*cos(5.0*DOLFIN_PI*y);
     else
       values[0] =  0.0;
   }
@@ -53,7 +53,7 @@ class DirichletBoundary : public SubDomain
 {
   bool inside(const double* x, bool on_boundary) const
   {
-    return x[0] < DOLFIN_EPS && on_boundary;
+    return x[0] < DOLFIN_EPS;
   }
 };
 
@@ -85,7 +85,7 @@ int main()
   // Plot solution
   plot(u);
 
-  // Save solution to file
+  // Save solution in VTK format
   File file("poisson.pvd");
   file << u;
 

@@ -30,8 +30,6 @@ int main()
   // Dirichlet boundary condition for clamp at left end
   class Clamp : public Function
   {
-  public:
-
     void eval(double* values, const Data& data) const
     {
       values[0] = 0.0;
@@ -52,8 +50,6 @@ int main()
   // Dirichlet boundary condition for rotation at right end
   class Rotation : public Function
   {
-  public:
-
     void eval(double* values, const Data& data) const
     {
       const double* x = data.x;
@@ -85,11 +81,11 @@ int main()
     }
   };
 
-  // Read mesh
+  // Read mesh and create function space
   Mesh mesh("../../../../data/meshes/gear.xml.gz");
-
   ElasticityFunctionSpace V(mesh);
 
+  // FIXME: Vector-valued Constant needs to be implemented
   // Create right-hand side
   //Function f(mesh, 3, 0.0);
   Zero f;
@@ -104,7 +100,7 @@ int main()
   Right right;
   DirichletBC bcr(r, V, right);
 
-  // Set up boundary conditions
+  // Collect boundary conditions
   Array<BoundaryCondition*> bcs;
   bcs.push_back(&bcl);
   bcs.push_back(&bcr);
@@ -130,11 +126,11 @@ int main()
   // Plot solution
   plot(u, "displacement");
 
-  // Save solution to VTK format
+  // Save solution in VTK format
   File vtk_file("elasticity.pvd");
   vtk_file << u;
 
-  // Save solution to XML format
+  // Save solution in XML format
   File xml_file("displacement.xml");
   xml_file << u;
 

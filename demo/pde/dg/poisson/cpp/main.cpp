@@ -4,7 +4,7 @@
 // First added:  2006-12-05
 // Last changed: 2007-08-20
 //
-// This demo program solves Poisson's equation
+// This demo program solves Poisson's equation,
 //
 //     - div grad u(x, y) = f(x, y)
 //
@@ -14,8 +14,8 @@
 //
 // and boundary conditions given by
 //
-//     u(x, y)     = 0
-//     du/dn(x, y) = 0
+//     u(x, y)     = 0,
+//     du/dn(x, y) = 0.
 //
 // using a discontinuous Galerkin formulation (interior penalty method).
 
@@ -53,9 +53,7 @@ int main()
   // Define forms and attach functions
   PoissonBilinearForm a(V, V);
   PoissonLinearForm L(V);
-  a.n = n;
-  a.h = h;
-  L.f = f;
+  a.n = n; a.h = h; L.f = f;
 
   // Create PDE
   LinearPDE pde(a, L);
@@ -76,7 +74,7 @@ int main()
   // Plot solution projected
   plot(u_p);
 
-  // Save solution to file
+  // Save solution in VTK format
   File file("poisson.pvd");
   file << u_p;
 

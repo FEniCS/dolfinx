@@ -4,22 +4,22 @@
 // Modified by Garth N. Wells, 2008.
 //
 // First added:  2007-04-20
-// Last changed: 2008-07-12
+// Last changed: 2008-11-16
 //
 // This demo program solves the mixed formulation of
-// Poisson's equation:
+// Poisson's equation,
 //
-//     sigma + grad(u) = 0
-//          div(sigma) = f
+//     sigma + grad(u) = 0,
+//          div(sigma) = f.
 //
-// The corresponding weak (variational problem)
+// The corresponding weak (variational problem),
 //
-//     <tau, sigma> - <div(tau), u> = 0       for all tau
-//                  <w, div(sigma)> = <w, f>  for all w
+//     <tau, sigma> - <div(tau), u> = 0       for all tau,
+//                  <w, div(sigma)> = <w, f>  for all w,
 //
-// is solved using BDM (Brezzi-Douglas-Marini) elements
-// of degree q (tau, sigma) and DG (discontinuous Galerkin)
-// elements of degree q - 1 for (w, u).
+// is solved using BDM (Brezzi-Douglas-Marini) elements of degree q
+// for (tau, sigma) and DG (discontinuous Galerkin) elements of degree
+// q - 1 for (w, u).
 
 #include <dolfin.h>
 #include "MixedPoisson.h"
@@ -32,21 +32,18 @@ int main()
   // Source term
   class Source : public Function
   {
-  public:
-    
     void eval(double* values, const Data& data) const
     {
       double dx = data.x[0] - 0.5;
       double dy = data.x[1] - 0.5;
       values[0] = 500.0*exp(-(dx*dx + dy*dy)/0.02);
     }
-
   };
 
   // Create mesh and source term
   UnitSquare mesh(16, 16);
   Source f;
-  
+
   // Define PDE
   MixedPoissonFunctionSpace V(mesh);
   MixedPoissonBilinearForm a(V, V);
@@ -58,8 +55,9 @@ int main()
   Function w;
   pde.solve(w);
 
+  // Extract sub functions
   Function sigma = w[0];
-  Function u     = w[1];  
+  Function u = w[1];  
 
   // Project sigma onto P1 continuous Lagrange for post-processing
   P1ProjectionFunctionSpace Vp(mesh);
@@ -74,13 +72,13 @@ int main()
   plot(sigma_p);
   plot(u);
 
-  // Save solution to file
+  // Save solution in XML format
   File f0("sigma.xml");
   File f1("u.xml");
   f0 << sigma;
   f1 << u;
 
-  // Save solution to pvd format
+  // Save solution in VTK format
   File f3("sigma.pvd");
   File f4("u.pvd");
   f3 << sigma_p;
