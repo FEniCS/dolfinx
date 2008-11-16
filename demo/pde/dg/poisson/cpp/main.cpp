@@ -14,8 +14,8 @@
 //
 // and boundary conditions given by
 //
-//     u(x, y)     = 0,
-//     du/dn(x, y) = 0.
+//     u(x, y)     = 0
+//     du/dn(x, y) = 0
 //
 // using a discontinuous Galerkin formulation (interior penalty method).
 
