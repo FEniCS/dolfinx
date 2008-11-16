@@ -6,7 +6,7 @@
 // Modified by Kent-Andre Mardal, 2008
 //
 // First added:  2007-01-17
-// Last changed: 2008-11-06
+// Last changed: 2008-11-16
 
 #include <ufc.h>
 #include <dolfin/main/MPI.h>
@@ -402,7 +402,7 @@ You may need to provide the rank of a user defined Function.", i, r, fe_r);
       {
         uint dim = coefficients[i]->function_space().element().value_dimension(j);
         uint fe_dim = fe->value_dimension(j);
-        if(dim != fe_dim)
+        if (dim != fe_dim)
           warning("Invalid value dimension %d of Function %d, got %d but expecting %d. \
 You may need to provide the dimension of a user defined Function.", j, i, dim, fe_dim);
       }
@@ -506,42 +506,45 @@ void Assembler::assemble_system(GenericMatrix& A, const Form& A_form,
                                 const MeshFunction<uint>* interior_facet_domains,
                                 bool reset_tensors)
 {
-  error("Assembler::assemble_system not updated for new Function interface.");
-/*
-   Timer timer("Assemble system");
+  Timer timer("Assemble system");
 
   // Note the importance of treating empty mesh functions as null pointers
   // for the PyDOLFIN interface.
+
+  // FIXME: 1. Need consistency check between a and L
+  // FIXME: 2. We assume that we get a bilinear and linear form, need to check this
+  // FIXME: 3. Some things can be simplified since we know it's a matrix and a vector
+
+  // Extract mesh
+  const Mesh& mesh = A_form.mesh();
 
   // Check arguments
   check(A_form, A_coefficients, mesh);
   check(b_form, b_coefficients, mesh);
 
-  // FIXME: consistency check between A_dof_map_set and b_dof_map_set 
-
   // Create data structure for local assembly data
-  UFC A_ufc(A_form, mesh, A_dof_map_set);
-  UFC b_ufc(b_form, mesh, b_dof_map_set);
+  UFC A_ufc(A_form);
+  UFC b_ufc(b_form);
 
   // Initialize global tensor
-  initGlobalTensor(A, A_dof_map_set, A_ufc, reset_tensors);
-  initGlobalTensor(b, b_dof_map_set, b_ufc, reset_tensors);
+  initGlobalTensor(A, A_form, A_ufc, reset_tensors);
+  initGlobalTensor(b, b_form, b_ufc, reset_tensors);
 
   // Pointers to element matrix and vector
   double* Ae = 0; 
   double* be = 0; 
 
   // Get boundary values (global) 
-  const uint N = A_dof_map_set[1].global_dimension();  
+  const uint N = A_form.function_space(1).dofmap().global_dimension();  
   uint* indicators = new uint[N];
-  double* g  = new double[N];
+  double* g = new double[N];
   for (uint i = 0; i < N; i++) 
   {
     indicators[i] = 0; 
-    g[i]          = 0.0; 
+    g[i] = 0.0; 
   }
   for(uint i = 0; i < bcs.size(); ++i)
-    bcs[i]->getBC(N, indicators, g, A_dof_map_set[1], A_form); 
+    bcs[i]->get_bc(indicators, g);
 
   // Modify boundary values for incremental (typically nonlinear) problems
   if (x0)
@@ -561,12 +564,12 @@ void Assembler::assemble_system(GenericMatrix& A, const Form& A_form,
     // Allocate memory for Ae and be 
     uint A_num_entries = 1;
     for (uint i = 0; i < A_form.rank(); i++)
-      A_num_entries *= A_dof_map_set[i].local_dimension();
+      A_num_entries *= A_form.function_space(i).dofmap().local_dimension();
     Ae = new double[A_num_entries];
 
     uint b_num_entries = 1;
     for (uint i = 0; i < b_form.rank(); i++)
-      b_num_entries *= b_dof_map_set[i].local_dimension();
+      b_num_entries *= b_form.function_space(i).dofmap().local_dimension();
     be = new double[b_num_entries];
 
     for (CellIterator cell(mesh); !cell.end(); ++cell) 
@@ -585,7 +588,7 @@ void Assembler::assemble_system(GenericMatrix& A, const Form& A_form,
 
       // Tabulate dofs for each dimension
       for (uint i = 0; i < A_ufc.form.rank(); i++)
-        A_dof_map_set[i].tabulate_dofs(A_ufc.dofs[i], A_ufc.cell, cell->index());
+        A_form.function_space(i).dofmap().tabulate_dofs(A_ufc.dofs[i], A_ufc.cell, cell->index());
 
       // Update to current cell
       b_ufc.update(*cell);
@@ -596,7 +599,7 @@ void Assembler::assemble_system(GenericMatrix& A, const Form& A_form,
 
       // Tabulate dofs for each dimension
       for (uint i = 0; i < b_ufc.form.rank(); i++)
-        b_dof_map_set[i].tabulate_dofs(b_ufc.dofs[i], b_ufc.cell, cell->index());
+        b_form.function_space(i).dofmap().tabulate_dofs(b_ufc.dofs[i], b_ufc.cell, cell->index());
 
       // Compute cell integral for A 
       if (A_ufc.form.num_cell_integrals() > 0) 
@@ -716,13 +719,13 @@ void Assembler::assemble_system(GenericMatrix& A, const Form& A_form,
   if (A_ufc.form.num_interior_facet_integrals() > 0 || b_ufc.form.num_interior_facet_integrals() > 0) 
   {
     // Create data structure for local assembly data
-    UFC A_macro_ufc(A_form, mesh, A_dof_map_set);
-    UFC b_macro_ufc(b_form, mesh, b_dof_map_set);
+    UFC A_macro_ufc(A_form);
+    UFC b_macro_ufc(b_form);
 
     // ---create some temporal storage for Ae, Ae_macro 
     uint A_num_entries = 1;
     for (uint i = 0; i < A_form.rank(); i++)
-      A_num_entries *= A_dof_map_set[i].local_dimension();
+      A_num_entries *= A_form.function_space(i).dofmap().local_dimension();
     uint A_macro_num_entries = A_num_entries*4; 
     Ae = new double[A_num_entries];
     double* Ae_macro = new double[A_macro_num_entries]; 
@@ -730,7 +733,7 @@ void Assembler::assemble_system(GenericMatrix& A, const Form& A_form,
     // ---create some temporal storage for be, be_macro 
     uint b_num_entries = 1;
     for (uint i = 0; i < b_form.rank(); i++)
-      b_num_entries *= b_dof_map_set[i].local_dimension();
+      b_num_entries *= b_form.function_space(i).dofmap().local_dimension();
     uint b_macro_num_entries = b_num_entries*2; 
     be = new double[b_num_entries];
     double* be_macro = new double[b_macro_num_entries]; 
@@ -759,16 +762,20 @@ void Assembler::assemble_system(GenericMatrix& A, const Form& A_form,
         for (uint i = 0; i < A_macro_ufc.form.rank(); i++)
         {
           const uint offset = A_macro_ufc.local_dimensions[i];
-          A_dof_map_set[i].tabulate_dofs(A_macro_ufc.macro_dofs[i],          A_macro_ufc.cell0, cell0.index());
-          A_dof_map_set[i].tabulate_dofs(A_macro_ufc.macro_dofs[i] + offset, A_macro_ufc.cell1, cell1.index());
+          A_form.function_space(i).dofmap().tabulate_dofs(A_macro_ufc.macro_dofs[i],
+                                                          A_macro_ufc.cell0, cell0.index());
+          A_form.function_space(i).dofmap().tabulate_dofs(A_macro_ufc.macro_dofs[i] + offset,
+                                                          A_macro_ufc.cell1, cell1.index());
         }
 
         // Tabulate dofs for each dimension on macro element
         for (uint i = 0; i < b_macro_ufc.form.rank(); i++)
         {
           const uint offset = b_macro_ufc.local_dimensions[i];
-          b_dof_map_set[i].tabulate_dofs(b_macro_ufc.macro_dofs[i],          b_macro_ufc.cell0, cell0.index());
-          b_dof_map_set[i].tabulate_dofs(b_macro_ufc.macro_dofs[i] + offset, b_macro_ufc.cell1, cell1.index());
+          b_form.function_space(i).dofmap().tabulate_dofs(b_macro_ufc.macro_dofs[i],
+                                                          b_macro_ufc.cell0, cell0.index());
+          b_form.function_space(i).dofmap().tabulate_dofs(b_macro_ufc.macro_dofs[i] + offset,
+                                                          b_macro_ufc.cell1, cell1.index());
         }
 
         if ( A_ufc.form.num_interior_facet_integrals() ) 
@@ -861,7 +868,7 @@ void Assembler::assemble_system(GenericMatrix& A, const Form& A_form,
 
             // Tabulate dofs for each dimension
             for (uint i = 0; i < A_ufc.form.rank(); i++)
-              A_dof_map_set[i].tabulate_dofs(A_ufc.dofs[i], A_ufc.cell, cell0.index());
+              A_form.function_space(i).dofmap().tabulate_dofs(A_ufc.dofs[i], A_ufc.cell, cell0.index());
 
             ufc::cell_integral* A_cell_integral =  A_ufc.cell_integrals[0];
 
@@ -893,7 +900,7 @@ void Assembler::assemble_system(GenericMatrix& A, const Form& A_form,
 
             // Tabulate dofs for each dimension
             for (uint i = 0; i < b_ufc.form.rank(); i++)
-              b_dof_map_set[i].tabulate_dofs(b_ufc.dofs[i], b_ufc.cell, cell0.index());
+              b_form.function_space(i).dofmap().tabulate_dofs(b_ufc.dofs[i], b_ufc.cell, cell0.index());
 
             ufc::cell_integral* b_cell_integral =  b_ufc.cell_integrals[0];
 
@@ -924,7 +931,7 @@ void Assembler::assemble_system(GenericMatrix& A, const Form& A_form,
 
             // Tabulate dofs for each dimension
             for (uint i = 0; i < A_ufc.form.rank(); i++)
-              A_dof_map_set[i].tabulate_dofs(A_ufc.dofs[i], A_ufc.cell, cell1.index());
+              A_form.function_space(i).dofmap().tabulate_dofs(A_ufc.dofs[i], A_ufc.cell, cell1.index());
 
             ufc::cell_integral* A_cell_integral =  A_ufc.cell_integrals[0];
 
@@ -956,7 +963,7 @@ void Assembler::assemble_system(GenericMatrix& A, const Form& A_form,
 
             // Tabulate dofs for each dimension
             for (uint i = 0; i < b_ufc.form.rank(); i++)
-              b_dof_map_set[i].tabulate_dofs(b_ufc.dofs[i], b_ufc.cell, cell1.index());
+              b_form.function_space(i).dofmap().tabulate_dofs(b_ufc.dofs[i], b_ufc.cell, cell1.index());
 
             ufc::cell_integral* b_cell_integral =  b_ufc.cell_integrals[0];
 
@@ -1027,7 +1034,7 @@ void Assembler::assemble_system(GenericMatrix& A, const Form& A_form,
         //  A_coefficients[i]->interpolate(A_ufc.w[i], A_ufc.cell, *A_ufc.coefficient_elements[i], cell, local_facet);
         // Tabulate dofs for each dimension
         for (uint i = 0; i < A_ufc.form.rank(); i++)
-          A_dof_map_set[i].tabulate_dofs(A_ufc.dofs[i], A_ufc.cell, cell.index());
+          A_form.function_space(i).dofmap().tabulate_dofs(A_ufc.dofs[i], A_ufc.cell, cell.index());
 
         // Interpolate coefficients on cell
         error("Need to extend Function interface.");
@@ -1036,7 +1043,7 @@ void Assembler::assemble_system(GenericMatrix& A, const Form& A_form,
 
         // Tabulate dofs for each dimension
         for (uint i = 0; i < b_ufc.form.rank(); i++)
-          b_dof_map_set[i].tabulate_dofs(b_ufc.dofs[i], b_ufc.cell, cell.index());
+          b_form.function_space(i).dofmap().tabulate_dofs(b_ufc.dofs[i], b_ufc.cell, cell.index());
 
         if (local_facet == 0) 
         {
@@ -1165,6 +1172,5 @@ void Assembler::assemble_system(GenericMatrix& A, const Form& A_form,
   delete [] be;
   delete [] g;
   delete [] indicators;
-*/
 }
 //-----------------------------------------------------------------------------
