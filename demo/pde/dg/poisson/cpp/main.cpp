@@ -40,7 +40,9 @@ int main()
   };
  
   // Create mesh
-  UnitSquare mesh(64, 64);
+  UnitSquare mesh(32, 32);
+
+  dolfin_set("linear algebra backend", "uBLAS");
 
   // Create functions
   Source f;
@@ -58,7 +60,7 @@ int main()
   L.f = f;
 
   // Create PDE
-  LinearPDE pde(a, L);
+  LinearPDE pde(a, L, symmetric);
 
   // Solve PDE
   Function u;

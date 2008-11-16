@@ -215,7 +215,7 @@ void Assembler::assembleCells(GenericTensor& A,
       (*values)[cell->index()] = ufc.A[0];
     else
       A.add(ufc.A, ufc.local_dimensions, ufc.dofs);
-    
+
     p++;
   }
 }
@@ -743,8 +743,10 @@ void Assembler::assemble_system(GenericMatrix& A, const Form& A_form,
       // Check if we have an interior facet
       if ( facet->numEntities(mesh.topology().dim()) == 2 ) 
       {
-        for (uint i=0; i<A_macro_num_entries; i++) Ae_macro[i] = 0.0; 
-        for (uint i=0; i<b_macro_num_entries; i++) be_macro[i] = 0.0; 
+        for (uint i=0; i<A_macro_num_entries; i++) 
+          Ae_macro[i] = 0.0; 
+        for (uint i=0; i<b_macro_num_entries; i++) 
+          be_macro[i] = 0.0; 
 
         // Get cells incident with facet
         Cell cell0(mesh, facet->entities(mesh.topology().dim())[0]);
@@ -778,7 +780,7 @@ void Assembler::assemble_system(GenericMatrix& A, const Form& A_form,
                                                           b_macro_ufc.cell1, cell1.index());
         }
 
-        if ( A_ufc.form.num_interior_facet_integrals() ) 
+        if ( A_ufc.form.num_interior_facet_integrals() > 0 ) 
         {  
           ufc::interior_facet_integral* interior_facet_integral = A_macro_ufc.interior_facet_integrals[0];
 
@@ -792,15 +794,13 @@ void Assembler::assemble_system(GenericMatrix& A, const Form& A_form,
               continue;
           }
 
-
           // Interpolate coefficients on cell
           for (uint i = 0; i < A_coefficients.size(); i++)
           {
-            const uint offset = A_ufc.coefficient_elements[i]->space_dimension();
-            A_coefficients[i]->interpolate(A_ufc.macro_w[i],          A_ufc.cell0, facet0);
-            A_coefficients[i]->interpolate(A_ufc.macro_w[i] + offset, A_ufc.cell1, facet1);
+            const uint offset = A_macro_ufc.coefficient_elements[i]->space_dimension();
+            A_coefficients[i]->interpolate(A_macro_ufc.macro_w[i],          A_macro_ufc.cell0, facet0);
+            A_coefficients[i]->interpolate(A_macro_ufc.macro_w[i] + offset, A_macro_ufc.cell1, facet1);
           }
-
 
           // Get integral for sub domain (if any)
           if (interior_facet_domains && interior_facet_domains->size() > 0)
@@ -828,9 +828,9 @@ void Assembler::assemble_system(GenericMatrix& A, const Form& A_form,
           // Interpolate coefficients on cell
           for (uint i = 0; i < b_coefficients.size(); i++)
           {
-            const uint offset = b_ufc.coefficient_elements[i]->space_dimension();
-            b_coefficients[i]->interpolate(b_ufc.macro_w[i],          b_ufc.cell0, facet0);
-            b_coefficients[i]->interpolate(b_ufc.macro_w[i] + offset, b_ufc.cell1, facet1);
+            const uint offset = b_macro_ufc.coefficient_elements[i]->space_dimension();
+            b_coefficients[i]->interpolate(b_macro_ufc.macro_w[i],          b_macro_ufc.cell0, facet0);
+            b_coefficients[i]->interpolate(b_macro_ufc.macro_w[i] + offset, b_macro_ufc.cell1, facet1);
           }
 
           // Get integral for sub domain (if any)
@@ -875,7 +875,7 @@ void Assembler::assemble_system(GenericMatrix& A, const Form& A_form,
                 continue;
             }
             // Tabulate cell tensor
-            A_cell_integral->tabulate_tensor(A_ufc.A, A_ufc.w, A_ufc.cell0);
+            A_cell_integral->tabulate_tensor(A_ufc.A, A_ufc.w, A_ufc.cell);
 
             uint nn = A_ufc.local_dimensions[0]; 
             uint mm = A_ufc.local_dimensions[1];
@@ -907,7 +907,7 @@ void Assembler::assemble_system(GenericMatrix& A, const Form& A_form,
                 continue;
             }
             // Tabulate cell tensor
-            b_cell_integral->tabulate_tensor(b_ufc.A, b_ufc.w, b_ufc.cell0);
+            b_cell_integral->tabulate_tensor(b_ufc.A, b_ufc.w, b_ufc.cell);
             for (uint i=0; i<b_num_entries; i++) 
               be_macro[i] += b_ufc.A[i]; 
           }
@@ -939,7 +939,7 @@ void Assembler::assemble_system(GenericMatrix& A, const Form& A_form,
             }
 
             // Tabulate cell tensor 
-            A_cell_integral->tabulate_tensor(A_ufc.A, A_ufc.w, A_ufc.cell1);
+            A_cell_integral->tabulate_tensor(A_ufc.A, A_ufc.w, A_ufc.cell);
             uint nn = A_ufc.local_dimensions[0]; 
             uint mm = A_ufc.local_dimensions[1];
             for (uint i=0; i<mm; i++)
@@ -970,7 +970,7 @@ void Assembler::assemble_system(GenericMatrix& A, const Form& A_form,
                 continue;
             }
             // Tabulate cell tensor
-            b_cell_integral->tabulate_tensor(b_ufc.A, b_ufc.w, b_ufc.cell1);
+            b_cell_integral->tabulate_tensor(b_ufc.A, b_ufc.w, b_ufc.cell);
             for (uint i=0; i<b_num_entries; i++) 
               be_macro[b_num_entries + i] += b_ufc.A[i]; 
           }
@@ -1023,13 +1023,16 @@ void Assembler::assemble_system(GenericMatrix& A, const Form& A_form,
         b_ufc.update(cell);
 
         // Interpolate coefficients on cell
+        for (uint i = 0; i < A_coefficients.size(); i++)
+          A_coefficients[i]->interpolate(A_ufc.w[i], A_ufc.cell, local_facet);
+
+        // Interpolate coefficients on cell
         for (uint i = 0; i < b_coefficients.size(); i++)
           b_coefficients[i]->interpolate(b_ufc.w[i], b_ufc.cell, local_facet);
 
         // Tabulate dofs for each dimension
         for (uint i = 0; i < A_ufc.form.rank(); i++)
           A_form.function_space(i).dofmap().tabulate_dofs(A_ufc.dofs[i], A_ufc.cell, cell.index());
-
 
         // Tabulate dofs for each dimension
         for (uint i = 0; i < b_ufc.form.rank(); i++)
