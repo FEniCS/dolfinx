@@ -69,6 +69,7 @@ void LinearPDE::solve(Function& u)
   GenericVector& x = u.vector();
 
   // Assemble linear system and apply boundary conditions
+<<<<<<< local
   if( matrix_type == symmetric)
   {
     cout << "Symm assembly " << endl;
@@ -94,6 +95,12 @@ void LinearPDE::solve(Function& u)
     //A.disp();
     //cout << "Vector before application of bc" << endl;
     //b.disp();
+=======
+  Assembler::assemble(A, a);
+  Assembler::assemble(b, L);
+  for (uint i = 0; i < bcs.size(); i++)
+    bcs[i]->apply(A, b);
+>>>>>>> other
 
   // Solve linear system
   const std::string solver_type = get("PDE linear solver");

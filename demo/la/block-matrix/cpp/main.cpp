@@ -10,10 +10,10 @@ int main()
   StiffnessMatrix A(mesh); 
 
   BlockMatrix AA(2,2); 
-  AA(0,0) = A; 
-  AA(1,0) = A; 
-  AA(0,1) = A; 
-  AA(1,1) = A; 
+  AA(0, 0) = A; 
+  AA(1, 0) = A; 
+  AA(0, 1) = A; 
+  AA(1, 1) = A; 
 
   Vector x(A.size(0)); 
   x.zero(); 
@@ -27,7 +27,4 @@ int main()
   yy(1) = y; 
 
   AA.mult(xx,yy); 
-  
 }; 
-
-

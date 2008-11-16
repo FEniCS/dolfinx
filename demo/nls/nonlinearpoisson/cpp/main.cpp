@@ -10,9 +10,9 @@
 // problems of the form F(u) = 0. The user must provide functions for the 
 // function (Fu) and update of the (approximate) Jacobian.  
 //
-// This simple program solves a nonlinear variant of Poisson's equation
+// This simple program solves a nonlinear variant of Poisson's equation,
 //
-//     - div (1+u^2) grad u(x, y) = f(x, y)
+//     - div (1+u^2) grad u(x, y) = f(x, y),
 //
 // on the unit square with source f given by
 //
@@ -20,13 +20,14 @@
 //
 // and boundary conditions given by
 //
-//     u(x, y)     = t  for x = 0
-//     du/dn(x, y) = 0  otherwise
+//     u(x, y)     = t  for x = 0,
+//     du/dn(x, y) = 0  otherwise,
 //
 // where t is pseudo time.
 //
-// This is equivalent to solving: 
-// F(u) = (grad(v), (1-u^2)*grad(u)) - f(x,y) = 0
+// This is equivalent to solving
+//
+//     F(u) = (grad(v), (1-u^2)*grad(u)) - f(x,y) = 0.
 
 #include <dolfin.h>
 #include "NonlinearPoisson.h"
@@ -47,6 +48,7 @@ public:
   }
   
 private:
+
   const double & t;
 
 };
@@ -165,7 +167,7 @@ int main(int argc, char* argv[])
   // Plot solution
   plot(u);
 
-  // Save function to file
+  // Save solution in VTK format
   File file("nonlinear_poisson.pvd");
   file << u;
 

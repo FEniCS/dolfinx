@@ -4,7 +4,8 @@
 // First added:  2007-06-29
 // Last changed: 2008-07-15
 //
-// Steady state advection-diffusion equation, discontinuous formulation using full upwinding.
+// Steady state advection-diffusion equation, discontinuous
+// formulation using full upwinding.
 
 #include <dolfin.h>
 
@@ -60,7 +61,7 @@ int main(int argc, char *argv[])
   Constant c(0.0); 
 
   //Source term
-  Constant f(0.0); 
+  Constant f(0.0);
 
   // Mesh-related functions
   FacetNormal N;
@@ -82,7 +83,7 @@ int main(int argc, char *argv[])
 
   // Create forms and attach functions
   AdvectionDiffusionBilinearForm a(V, V);
-  a.b  = velocity; a.n  = N; a.h  = h; a.of = of; a.kappa = c; a.alpha = alpha;
+  a.b = velocity; a.n = N; a.h = h; a.of = of; a.kappa = c; a.alpha = alpha;
   AdvectionDiffusionLinearForm L(V);
   L.f = f;
 
@@ -115,7 +116,7 @@ int main(int argc, char *argv[])
   Function up;
   pde.solve(up);
 
-  // Save projected solution
+  // Save projected solution in VTK format
   File file("temperature.pvd");
   file << up;
 

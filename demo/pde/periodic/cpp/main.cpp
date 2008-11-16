@@ -4,7 +4,7 @@
 // First added:  2007-07-11
 // Last changed: 2008-11-15
 //
-// This demo program solves Poisson's equation
+// This demo program solves Poisson's equation,
 //
 //     - div grad u(x, y) = f(x, y)
 //
@@ -89,7 +89,7 @@ int main()
   // Plot solution
   plot(u);
 
-  // Save solution to file
+  // Save solution in VTK format
   File file("periodic.pvd");
   file << u;
 

@@ -53,6 +53,5 @@ int main()
       x[0] = 0.5 + (cos(dtheta)*x0 - sin(dtheta)*x1);
       x[1] = 0.5 + (sin(dtheta)*x0 + cos(dtheta)*x1);
     }
-
   }
 }

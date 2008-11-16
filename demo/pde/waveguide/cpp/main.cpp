@@ -7,14 +7,14 @@
 // This demo demonstrates the calculation of a TM (Transverse Magnetic)
 // cutoff wavenumber of a rectangular waveguide with dimensions 1x0.5m.
 //
-// For more information regarding waveguides see
+// For more information regarding waveguides, see
 //
 //   http://www.ee.bilkent.edu.tr/~microwave/programs/magnetic/rect/info.htm
 //
-// See the pdf in the parent folder and the following reference
+// See the pdf in the parent folder and the following reference:
 //
-// The Finite Element in Electromagnetics (2nd Ed)
-// Jianming Jin [7.2.1 - 7.2.2]
+//   The Finite Element in Electromagnetics (2nd Ed)
+//   Jianming Jin [7.2.1 - 7.2.2]
 
 #include <dolfin.h>
 #include "Forms.h"
@@ -28,7 +28,7 @@ int main()
   // Specify the waveguide width and height in metres
   float width = 1.0;
   float height = 0.5;
-  
+
   // Create the mesh using a Rectangle
   Rectangle mesh(0, width, 0, height, 2, 1);
 
@@ -44,7 +44,6 @@ int main()
   // Assemble the system matrices stiffness (S) and mass matrices (T)
   PETScMatrix S;
   PETScMatrix T;
-
   Assembler::assemble(S, s);
   Assembler::assemble(T, t);
 

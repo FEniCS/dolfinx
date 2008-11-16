@@ -6,7 +6,7 @@
 // First added:  2006-02-07
 // Last changed: 2008-08-23
 //
-// This demo program solves Poisson's equation
+// This demo program solves Poisson's equation,
 //
 //     - div grad u(x, y) = f(x, y)
 //
@@ -16,13 +16,13 @@
 //
 // and boundary conditions given by
 //
-//     u(x, y)     = 0               for x = 0
-//     du/dn(x, y) = 25 sin(5 pi y)  for x = 1
-//     du/dn(x, y) = 0               otherwise
+//     u(x, y)     = 0               for x = 0,
+//     du/dn(x, y) = 25 cos(5 pi y)  for x = 1,
+//     du/dn(x, y) = 0               otherwise.
 
 #include <dolfin.h>
 #include "Poisson.h"
-  
+
 using namespace dolfin;
 
 int main()
@@ -45,8 +45,8 @@ int main()
     {
       double x = data.x[0];
       double y = data.x[1];
-      if (x > DOLFIN_EPS)
-        values[0] = 25.0*sin(5.0*DOLFIN_PI*y);
+      if (x > (1.0 - DOLFIN_EPS))
+        values[0] = 25.0*cos(5.0*DOLFIN_PI*y);
       else
         values[0] =  0.0;
     }
@@ -57,7 +57,7 @@ int main()
   {
     bool inside(const double* x, bool on_boundary) const
     {
-      return x[0] < DOLFIN_EPS && on_boundary;
+      return x[0] < DOLFIN_EPS;
     }
   };
 
@@ -78,7 +78,7 @@ int main()
   Constant u0(0.0);
   DirichletBoundary boundary;
   DirichletBC bc(u0, V, boundary);
-  
+
   // Create function
   Function u(V);
 
@@ -99,7 +99,7 @@ int main()
   Assembler::assemble(A, a, b, L, bc);
   table("Symmetric", "Assembly time") = toc();
 
-  table.disp();  
+  table.disp();
  
   // Solve system
   GenericVector& x = u.vector();
@@ -109,7 +109,7 @@ int main()
   // Plot solution
   plot(u);
 
-  // Save solution to file
+  // Save solution in VTK format
   File file("poisson.pvd");
   file << u;
 

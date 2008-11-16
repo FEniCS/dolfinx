@@ -4,7 +4,7 @@
 // First added:  2007-11-23
 // Last changed: 2008-04-28
 //
-// This demo program solves Poisson's equation
+// This demo program solves Poisson's equation,
 //
 //     - div grad u(x) = f(x)
 //
@@ -14,8 +14,8 @@
 //
 // and boundary conditions given by
 //
-//     u(x) = 0 for x = 0
-//    du/dx = 0 for x = 1
+//     u(x) = 0 for x = 0,
+//    du/dx = 0 for x = 1.
 
 #include <dolfin.h>
 #include "Poisson.h"
@@ -38,7 +38,6 @@ class Source : public Function
   {
     values[0] = 9.0*DOLFIN_PI*DOLFIN_PI*sin(3.0*DOLFIN_PI*data.x[0]);
   }
-
 };
 
 int main()
@@ -67,7 +66,7 @@ int main()
   Function u;
   pde.solve(u);
 
-  // Save solution to file
+  // Save solution in VTK format
   File file_u("poisson.pvd");
   file_u << u;
 
