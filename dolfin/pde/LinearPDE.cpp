@@ -9,6 +9,7 @@
 #include <tr1/memory>
 #include <dolfin/fem/Assembler.h>
 #include <dolfin/fem/BoundaryCondition.h>
+#include <dolfin/fem/DirichletBC.h>
 #include <dolfin/fem/Form.h>
 #include <dolfin/la/Matrix.h>
 #include <dolfin/la/Vector.h>
@@ -68,17 +69,32 @@ void LinearPDE::solve(Function& u)
   GenericVector& x = u.vector();
 
   // Assemble linear system and apply boundary conditions
-  Assembler::assemble(A, a);
-  Assembler::assemble(b, L);
-  for (uint i = 0; i < bcs.size(); i++)
-    bcs[i]->apply(A, b);
+  if( matrix_type == symmetric)
+  {
+    cout << "Symm assembly " << endl;
+    std::vector<const DirichletBC*> _bcs;
+    for(uint i=0; i< bcs.size(); ++i)
+    {
+      const DirichletBC* _bc = dynamic_cast<const DirichletBC*>(bcs[i]);
+      if (!_bc)
+        error("Error casting to DirichletBC in LinearPDE");    
+      _bcs.push_back(_bc);
+    }
+    Assembler::assemble(A, a, b, L, _bcs);
+  }
+  else
+  {
+    Assembler::assemble(A, a);
+    Assembler::assemble(b, L);
+    for (uint i = 0; i < bcs.size(); i++)
+      bcs[i]->apply(A, b);
+  }
 
   // Solve linear system
   const std::string solver_type = get("PDE linear solver");
   if (solver_type == "direct")
   {
-    //LUSolver solver(matrix_type);
-    LUSolver solver;
+    LUSolver solver(matrix_type);
     solver.set("parent", *this);
     solver.solve(A, x, b);
   }

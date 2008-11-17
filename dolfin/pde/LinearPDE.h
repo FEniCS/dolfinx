@@ -66,7 +66,7 @@ namespace dolfin
     Form& L;
 
     // The boundary conditions
-    Array<BoundaryCondition*> bcs;
+    Array<const BoundaryCondition*> bcs;
   
     // Symmetry of the bilinear form
     dolfin::MatrixType matrix_type;
