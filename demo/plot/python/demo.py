@@ -82,7 +82,7 @@ if 1 in demos:
     f = ScalarFunction(mesh)
     for i in range(100):
         f.t += 0.01
-        plot(f, rescale=False, title="Foo")
+        plot(f, rescale=True, title="Foo")
 
 if 1 in demos:
     # Plot scalar function
