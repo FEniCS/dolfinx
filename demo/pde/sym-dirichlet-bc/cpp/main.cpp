@@ -96,7 +96,7 @@ int main()
   table("Standard", "Assembly time") = toc();
 
   tic();
-  Assembler::assemble(A, a, b, L, bc);
+  Assembler::assemble_system(A, b, a, L, bc);
   table("Symmetric", "Assembly time") = toc();
 
   table.disp();

@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-05-14
-// Last changed: 2008-11-06
+// Last changed: 2008-11-17
 //
 // This demo demonstrates how to compute functionals (or forms
 // in general) over subsets of the mesh. The two functionals
@@ -41,10 +41,10 @@ int main()
   // FIXME: Move assemble() into DOLFIN namespace
 
   // Assemble functionals over sub domain
-  Fish fish;
-  double lift = Assembler::assemble(L, fish);
-  double drag = Assembler::assemble(D, fish);
+  //Fish fish;
+  //double lift = assemble(L, fish);
+  //double drag = assemble(D, fish);
 
-  message("Lift: %f", lift);
-  message("Drag: %f", drag);
+  //message("Lift: %f", lift);
+  //message("Drag: %f", drag);
 }
