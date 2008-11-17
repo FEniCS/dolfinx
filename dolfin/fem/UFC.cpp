@@ -19,13 +19,17 @@ UFC::UFC(const Form& form): form(form.ufc_form())
   // Create finite elements
   finite_elements = new FiniteElement*[this->form.rank()];
   for (uint i = 0; i < this->form.rank(); i++)
-    finite_elements[i] = new FiniteElement(this->form.create_finite_element(i));
-
+  {
+    std::tr1::shared_ptr<ufc::finite_element> element(this->form.create_finite_element(i)); 
+    finite_elements[i] = new FiniteElement(element);
+  }
   // Create finite elements for coefficients
   coefficient_elements = new FiniteElement*[this->form.num_coefficients()];
   for (uint i = 0; i < this->form.num_coefficients(); i++)
-    coefficient_elements[i] = new FiniteElement(this->form.create_finite_element(this->form.rank() + i));
-
+  {
+    std::tr1::shared_ptr<ufc::finite_element> element(this->form.create_finite_element(this->form.rank() + i)); 
+    coefficient_elements[i] = new FiniteElement(element);
+  }
   // Create cell integrals
   cell_integrals = new ufc::cell_integral*[this->form.num_cell_integrals()];
   for (uint i = 0; i < this->form.num_cell_integrals(); i++)
