@@ -10,6 +10,9 @@
 // a dolphin. Here, we use the pressure field obtained from
 // solving the Stokes equations (see demo program in the
 // sub directory src/demo/pde/stokes/taylor-hood).
+//
+// The calculation only includes the pressure contribution (not shear
+// forces).
 
 #include <dolfin.h>
 #include "Lift.h"
@@ -38,13 +41,11 @@ int main()
   LiftFunctional L(p, n);
   DragFunctional D(p, n);
 
-  // FIXME: Move assemble() into DOLFIN namespace
-
   // Assemble functionals over sub domain
-  //Fish fish;
-  //double lift = assemble(L, fish);
-  //double drag = assemble(D, fish);
+  Fish fish;
+  double lift = assemble(L, fish);
+  double drag = assemble(D, fish);
 
-  //message("Lift: %f", lift);
-  //message("Drag: %f", drag);
+  message("Lift: %f", lift);
+  message("Drag: %f", drag);
 }

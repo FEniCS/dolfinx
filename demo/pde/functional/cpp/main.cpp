@@ -37,20 +37,20 @@ int main()
     
   };
 
-  // Compute approximate value
+  // Define functional
   UnitSquare mesh(16, 16);
   EnergyNormCoefficientSpace V(mesh);
   MyFunction v(V);
   EnergyNormFunctional M;
   M.v = v;
 
-  Scalar s;
-  Assembler:: assemble(s, M);
+  // Evaluate functional
+  double approximate_value = assemble(M);
 
   // Compute exact value
   double exact_value = 2.0 + 2.0*sin(1.0)*(1.0 - cos(1.0));
 
-  message("The energy norm of v is %.15g (should be %.15g).", double(s), exact_value);
+  message("The energy norm of v is %.15g (should be %.15g).", approximate_value, exact_value);
   
   return 0;
 }

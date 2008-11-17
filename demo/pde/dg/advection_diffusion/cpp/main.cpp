@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-06-29
-// Last changed: 2008-07-15
+// Last changed: 2008-11-17
 //
 // Steady state advection-diffusion equation, discontinuous
 // formulation using full upwinding.
@@ -98,8 +98,8 @@ int main(int argc, char *argv[])
   // Assemble and apply boundary conditions
   Matrix A;
   Vector b;
-  Assembler::assemble(A, a);
-  Assembler::assemble(b, L);
+  assemble(A, a);
+  assemble(b, L);
   bc.apply(A, b);
 
   // Solve system

@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-02-09
-// Last changed: 2008-11-16
+// Last changed: 2008-11-17
 //
 // This demo solves the time-dependent convection-diffusion equation
 // by a least-squares stabilized cG(1)cG(1) method. The velocity field
@@ -54,8 +54,8 @@ int main(int argc, char *argv[])
   LUSolver lu;
 
   // Assemble matrix
-  Assembler::assemble(A, a);
-  Assembler::assemble(b, L);
+  assemble(A, a);
+  assemble(b, L);
   bc.apply(A, b);
 
   // Parameters for time-stepping
@@ -71,7 +71,7 @@ int main(int argc, char *argv[])
   while ( t < T )
   {
     // Assemble vector and apply boundary conditions
-    Assembler::assemble(b, L);
+    assemble(b, L);
     bc.apply(A, b);
     
     // Solve the linear system

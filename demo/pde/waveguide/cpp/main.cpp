@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-08-22
-// Last changed: 2008-10-02
+// Last changed: 2008-11-17
 //
 // This demo demonstrates the calculation of a TM (Transverse Magnetic)
 // cutoff wavenumber of a rectangular waveguide with dimensions 1x0.5m.
@@ -44,8 +44,8 @@ int main()
   // Assemble the system matrices stiffness (S) and mass matrices (T)
   PETScMatrix S;
   PETScMatrix T;
-  Assembler::assemble(S, s);
-  Assembler::assemble(T, t);
+  assemble(S, s);
+  assemble(T, t);
 
   // Solve the eigen system
   SLEPcEigenSolver esolver;

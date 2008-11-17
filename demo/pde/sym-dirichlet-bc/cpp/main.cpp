@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2008.
 //
 // First added:  2006-02-07
-// Last changed: 2008-08-23
+// Last changed: 2008-11-17
 //
 // This demo program solves Poisson's equation,
 //
@@ -85,20 +85,23 @@ int main()
   // Create table
   Table table("Assembly and application of bcs");
 
-  // Assemble system
+  // Matrix and vector to assemble
   Matrix A;
   Vector b;
 
+  // Assemble A and b separately
   tic();
-  Assembler::assemble(A, a);
-  Assembler::assemble(b, L);
+  assemble(A, a);
+  assemble(b, L);
   bc.apply(A, b);
   table("Standard", "Assembly time") = toc();
 
+  // Assemble A and b together
   tic();
-  Assembler::assemble_system(A, b, a, L, bc);
+  assemble_system(A, b, a, L, bc);
   table("Symmetric", "Assembly time") = toc();
 
+  // Display summary
   table.disp();
  
   // Solve system

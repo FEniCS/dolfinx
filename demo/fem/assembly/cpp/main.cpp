@@ -45,10 +45,8 @@ int main()
   mesh.partition(partitions);
 
   // Assemble matrix using parallel assembler
-  Matrix A;
-  //pAssembler assembler(mesh, partitions);
-  //assembler.assemble(A, a);
-  Assembler::assemble(A, a);
+  //Matrix A;
+  //pAssembler::assemble(mesh, partitions);
  
   return 0;
 }

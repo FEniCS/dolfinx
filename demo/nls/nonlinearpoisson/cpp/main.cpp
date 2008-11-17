@@ -1,10 +1,10 @@
 // Copyright (C) 2005-2007 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Anders Logg, 2005, 2007
+// Modified by Anders Logg, 2005-2008.
 //
 // First added:  2005
-// Last changed: 2007-08-20
+// Last changed: 2007-11-17
 //
 // This program illustrates the use of the DOLFIN nonlinear solver for solving 
 // problems of the form F(u) = 0. The user must provide functions for the 
@@ -99,14 +99,14 @@ class MyNonlinearProblem : public NonlinearProblem
     // User defined assemble of residual vector 
     void F(GenericVector& b, const GenericVector& x)
     {
-      Assembler::assemble(b, L);
+      assemble(b, L);
       bc.apply(b, x);
     }
 
     // User defined assemble of Jacobian matrix 
     void J(GenericMatrix& A, const GenericVector& x)
     {
-      Assembler::assemble(A, a);
+      assemble(A, a);
       bc.apply(A);
     }
 

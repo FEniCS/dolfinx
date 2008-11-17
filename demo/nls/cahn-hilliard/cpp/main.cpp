@@ -90,14 +90,14 @@ class CahnHilliardEquation : public NonlinearProblem, public Parametrized
     void F(GenericVector& b, const GenericVector& x)
     {
       // Assemble RHS (Neumann boundary conditions)
-      Assembler::assemble(b, *L);
+      assemble(b, *L);
     }
 
     // User defined assemble of Jacobian 
     void J(GenericMatrix& A, const GenericVector& x)
     {
       // Assemble system and RHS (Neumann boundary conditions)
-      Assembler::assemble(A, *a, reset_Jacobian);
+      assemble(A, *a, reset_Jacobian);
       reset_Jacobian  = false;
     }
 
