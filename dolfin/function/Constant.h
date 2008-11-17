@@ -4,40 +4,41 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2006-02-09
-// Last changed: 2008-10-28
+// Last changed: 2008-11-17
 
 #ifndef __CONSTANT_H
 #define __CONSTANT_H
 
+#include <vector>
 #include "Function.h"
 
 namespace dolfin
 {
 
-  /// This class implements the functionality for functions
-  /// that take a single constant value.
+  /// This class implements the functionality for functions that take
+  /// a single constant value.
 
   class Constant : public Function
   {
   public:
 
-    /// Copy constructor
-    //Constant(const ConstantFunction& f);
-
-    /// Create constant scalar function from given value
+    /// Create constant scalar function with given value
     explicit Constant(double value);
 
-    /*
-    /// Create constant vector function from given size and value
+    /// Create constant vector function with given size and value
     Constant(uint size, double value);
 
-    /// Create constant vector function from given size and values
-    Constant(const Array<double>& values);
+    /// Create constant vector function with given size and values
+    Constant(const std::vector<double>& values);
 
-    /// Create constant tensor function from given shape and values
-    Constant(const Array<uint>& shape, const Array<double>& values);
+    /// Create constant tensor function with given shape and values
+    Constant(const std::vector<uint>& shape, const std::vector<double>& values);
 
-    */
+    /// Copy constructor
+    Constant(const Constant& c);
+
+    /// Assignment operator
+    const Constant& operator= (const Constant& c);
 
     /// Destructor
     ~Constant();
@@ -47,17 +48,11 @@ namespace dolfin
 
   private:
 
-    // Values of constant function
-    double* values;
-
-    // Tensor rank
-    uint value_rank;
-
-    // Tensor shape
-    uint* shape;
-
     // Size of value (number of entries in tensor value)
-    uint size;
+    uint _size;
+
+    // Values of constant function
+    double* _values;
 
   };
 

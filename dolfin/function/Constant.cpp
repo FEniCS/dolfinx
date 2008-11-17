@@ -4,7 +4,7 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2006-02-09
-// Last changed: 2008-07-08
+// Last changed: 2008-11-17
 
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/log/dolfin_log.h>
@@ -15,99 +15,88 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-/*
-Constant::Constant(const Constant& f)
-  : values(0), value_rank(f.value_rank), shape(0), size(f.size)
-{
-  error("Needs updating for new Function interface.");
-  values = new double[size];
-  shape = new uint[value_rank];
-  for(uint i=0; i<value_rank; i++)
-    shape[i] = f.shape[i];
-  for(uint i=0; i<size; i++)  
-    values[i] = f.values[i];
-}
-*/
-//-----------------------------------------------------------------------------
 Constant::Constant(double value)
   : Function(),
-    values(0), value_rank(0), shape(0), size(1)
+    _size(1), _values(0)
 {
-  values = new double[1];
-  shape = new uint[1];
-  values[0] = value;
-  shape[0] = 1;
+  _values = new double[1];
+  _values[0] = value;
 }
-/*
-
 //-----------------------------------------------------------------------------
 Constant::Constant(uint size, double value)
-  : values(0), value_rank(1), shape(0), size(size)
+  : Function(),
+    _size(size), _values(0)
 {
-  error("Needs updating for new Function interface.");
-  shape = new uint[1];
-  shape[0] = size;
-  values = new double[size];
-  for(uint i=0; i<size; i++)
-    values[i] = value;
+  dolfin_assert(size > 0);
+
+  _values = new double[size];
+  for (uint i = 0; i < size; i++)
+    _values[i] = value;
 }
 //-----------------------------------------------------------------------------
-Constant::Constant(const Array<double>& _values)
-  : values(0), value_rank(1), shape(0), size(0)
+Constant::Constant(const std::vector<double>& values)
+  : Function(),
+    _size(values.size()), _values(0)
 {
-  size = _values.size();
-  shape = new uint[1];
-  shape[0] = size;
-  values = new double[size];
-  for(uint i=0; i<size; i++)
-    values[i] = _values[i];
+  dolfin_assert(values.size() > 0);
+
+  _values = new double[values.size()];
+  for (uint i = 0; i < values.size(); i++)
+    _values[i] = values[i];
 }
 //-----------------------------------------------------------------------------
-Constant::Constant(const Array<uint>& _shape, const Array<double>& _values)
-  : values(0), value_rank(0), shape(0), size(0)
+Constant::Constant(const std::vector<uint>& shape,
+                   const std::vector<double>& values)
+  : Function(),
+    _size(0), _values(0)
 {
-  value_rank = _shape.size();
-  shape = new uint[value_rank];
-  size = 1;
-  for(uint i=0; i<value_rank; i++)
-  {
-    shape[i] = _shape[i];
-    size *= shape[i];
-  }
-  if(size != _values.size())
-    error("Size of given values does not match shape.");
-  values = new double[size];
-  for(uint i=0; i<size; i++)
-    values[i] = _values[i];
+  dolfin_assert(shape.size() > 0);
+  dolfin_assert(values.size() > 0);
+
+  // Compute size
+  _size = 1;
+  for (uint i = 0; i < shape.size(); i++)
+    _size *= shape[i];
+
+  // Copy values
+  dolfin_assert(values.size() == _size);
+  for (uint i = 0; i < values.size(); i++)
+    _values[i] = values[i];
 }
+//-----------------------------------------------------------------------------
+Constant::Constant(const Constant& c)
+  : Function(),
+    _size(0), _values(0)
+{
+  *this = c;
+}
+//-----------------------------------------------------------------------------
+const Constant& Constant::operator= (const Constant& c)
+{
+  dolfin_assert(c._size > 0);
+  dolfin_assert(c._values);
 
-*/
+  delete _values;
+  _size = c._size;
+  _values = new double[c._size];
+  for (uint i = 0; i < c._size; i++)
+    _values[i] = c._values[i];
 
+  return *this;
+}
 //-----------------------------------------------------------------------------
 Constant::~Constant()
 {
-  delete [] values;
-  delete [] shape;
+  delete [] _values;
 }
 //-----------------------------------------------------------------------------
-//dolfin::uint Constant::rank() const
-//{
-//  return value_rank;
-//}
-//-----------------------------------------------------------------------------
-//dolfin::uint Constant::dim(uint i) const
-//{
-//  if(i >= value_rank)
-//    error("Too large dimension in dim.");
-//  return shape[i];
-//}
-//-----------------------------------------------------------------------------
-void Constant::eval(double* _values, const Data& data) const
+void Constant::eval(double* values, const Data& data) const
 {
+  dolfin_assert(values);
   dolfin_assert(_values);
 
-  // Set all values to the constant tensor value
-  for (uint i = 0; i < size; i++)
-    _values[i] = values[i];
+  // Copy values
+  for (uint i = 0; i < _size; i++)
+    values[i] = _values[i];
 }
 //-----------------------------------------------------------------------------
