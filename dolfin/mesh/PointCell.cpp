@@ -1,11 +1,11 @@
-// Copyright (C) 2007-2007 Kristian B. Oelgaard.
+// Copyright (C) 2007-2008 Kristian B. Oelgaard.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Anders Logg, 2008.
 // Modified by Kristoffer Sleim, 2008.
 //
 // First added:  2007-12-12
-// Last changed: 2008-11-14
+// Last changed: 2008-11-17
 
 #include <dolfin/log/dolfin_log.h>
 #include "Cell.h"
@@ -99,7 +99,7 @@ double PointCell::facetArea(const Cell& cell, uint facet) const
 //-----------------------------------------------------------------------------
 void PointCell::order(Cell& cell) const
 {
-  error("PointCell::order() not defined.");
+//  error("PointCell::order() not defined.");
 }
 //-----------------------------------------------------------------------------
 bool PointCell::intersects(const MeshEntity& entity, const Point& p) const

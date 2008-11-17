@@ -40,6 +40,15 @@ class Source : public Function
   }
 };
 
+// Neumann boundary condition
+class Flux : public Function
+{
+  void eval(double* values, const Data& data) const
+  {
+    values[0] =  3.0*DOLFIN_PI*cos(3.0*DOLFIN_PI*data.x[0]);
+  }
+};
+
 int main()
 {
   // Create mesh
@@ -53,13 +62,15 @@ int main()
   DirichletBoundary boundary;
   DirichletBC bc(zero, V, boundary);
 
-  // Create source
+  // Create source and flux terms
   Source f;
+  Flux g;
 
   // Define PDE
   PoissonBilinearForm a(V, V);
   PoissonLinearForm L(V);
   L.f = f;
+  L.g = g;
   LinearPDE pde(a, L, bc);
 
   // Solve PDE
