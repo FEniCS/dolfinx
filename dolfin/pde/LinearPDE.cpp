@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2006-2008.
 //
 // First added:  2004
-// Last changed: 2008-11-15
+// Last changed: 2008-11-17
 
 #include <tr1/memory>
 #include <dolfin/fem/Assembler.h>
@@ -80,7 +80,7 @@ void LinearPDE::solve(Function& u)
         error("Error casting to DirichletBC in LinearPDE");    
       _bcs.push_back(_bc);
     }
-    Assembler::assemble(A, a, b, L, _bcs);
+    Assembler::assemble_system(A, b, a, L, _bcs);
   }
   else
   {
