@@ -26,7 +26,6 @@ DofMap::DofMap(ufc::dof_map& dof_map, const Mesh& mesh)
     ufc_dof_map(&dof_map, NoDeleter<ufc::dof_map>()),
     num_cells(mesh.numCells()), partitions(0), _offset(0)
 {
-  dolfin_debug("constructor");
   init(mesh);
 }
 //-----------------------------------------------------------------------------
@@ -35,7 +34,6 @@ DofMap::DofMap(std::tr1::shared_ptr<ufc::dof_map> dof_map, const Mesh& mesh)
     ufc_dof_map(dof_map),
     num_cells(mesh.numCells()), partitions(0), _offset(0)
 {
-  dolfin_debug("constructor");
   init(mesh);
 }
 //-----------------------------------------------------------------------------
@@ -44,7 +42,6 @@ DofMap::DofMap(ufc::dof_map& dof_map, const Mesh& mesh, MeshFunction<uint>& part
     ufc_dof_map(&dof_map, NoDeleter<ufc::dof_map>()),
     num_cells(mesh.numCells()), partitions(&partitions), _offset(0)
 {
-  dolfin_debug("constructor");
   init(mesh);
 }
 //-----------------------------------------------------------------------------
@@ -55,7 +52,6 @@ DofMap::DofMap(std::tr1::shared_ptr<ufc::dof_map> dof_map,
     ufc_dof_map(dof_map), 
     num_cells(mesh.numCells()), partitions(&partitions), _offset(0)
 {
-  dolfin_debug("constructor");
   init(mesh);
 }
 //-----------------------------------------------------------------------------
@@ -64,8 +60,6 @@ DofMap::DofMap(const std::string signature,
   : dof_map(0),
     num_cells(mesh.numCells()), partitions(0), _offset(0)
 {
-  dolfin_debug("constructor");
-
   // FIXME: Missing initializer for ufc_dof_map?
 
   // Create ufc dof map from signature
@@ -83,8 +77,6 @@ DofMap::DofMap(const std::string signature, const Mesh& mesh,
   : dof_map(0),
     num_cells(mesh.numCells()), partitions(&partitions), _offset(0)
 {
-  dolfin_debug("constructor");
-
   // FIXME: Missing initializer for ufc_dof_map?
 
   // Create ufc dof map from signature

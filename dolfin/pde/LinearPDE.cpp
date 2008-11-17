@@ -71,7 +71,6 @@ void LinearPDE::solve(Function& u)
   // Assemble linear system and apply boundary conditions
   if( matrix_type == symmetric)
   {
-    cout << "Symm assembly " << endl;
     std::vector<const DirichletBC*> _bcs;
     for(uint i=0; i< bcs.size(); ++i)
     {

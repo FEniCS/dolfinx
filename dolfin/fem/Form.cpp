@@ -122,8 +122,6 @@ void Form::check() const
     if (!_coefficients[i])
       error("Coefficient %d has not been defined.", i);
 
-    cout << "Checking coefficient " << i << endl;
-
     std::auto_ptr<ufc::finite_element> element(_ufc_form->create_finite_element(_ufc_form->rank() + i));
     dolfin_assert(element.get());
     if (element->signature() != _coefficients[i]->function_space().element().signature())
