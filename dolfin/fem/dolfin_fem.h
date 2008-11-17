@@ -3,6 +3,7 @@
 
 // DOLFIN fem interface
 
+#include <dolfin/fem/assemble.h>
 #include <dolfin/fem/DofMap.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/BoundaryCondition.h>
