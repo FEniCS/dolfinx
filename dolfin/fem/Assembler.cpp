@@ -1125,6 +1125,8 @@ void Assembler::assemble_system(GenericMatrix& A,
         b.add(be, b_ufc.local_dimensions, b_ufc.dofs);
       }
     }
+    delete [] Ae_macro;
+    delete [] be_macro;
   }
 
   // -- Finalize tensors 

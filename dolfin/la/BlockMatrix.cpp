@@ -85,7 +85,8 @@ void BlockMatrix::disp(uint precision) const
 //-----------------------------------------------------------------------------
 void BlockMatrix::mult(const BlockVector& x, BlockVector& y, bool transposed) const  
 {
-  if (transposed) error("BlockMatrix::mult: transposed not implemented");  
+  if (transposed) 
+    error("BlockMatrix::mult: transposed not implemented");  
   DefaultFactory factory; 
   GenericVector* vec; 
   vec = factory.create_vector();
@@ -102,6 +103,7 @@ void BlockMatrix::mult(const BlockVector& x, BlockVector& y, bool transposed) co
       y.get(i) += *vec; 
     }
   }
+  delete vec;
 }
 //-----------------------------------------------------------------------------
 SubMatrix BlockMatrix::operator()(uint i, uint j)

@@ -8,23 +8,25 @@
 
 #include "NewtonSolver.h"
 #include "NonlinearProblem.h"
+#include <dolfin/common/NoDeleter.h>
 #include <dolfin/la/Matrix.h>
 #include <dolfin/la/Vector.h>
 #include <dolfin/la/GenericLinearSolver.h>
+#include <dolfin/la/LinearSolver.h>
 #include <iostream>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 NewtonSolver::NewtonSolver(SolverType solver_type, PreconditionerType pc_type) 
-             : solver(new LinearSolver(solver_type, pc_type)), local_solver(solver), 
+             : solver(new LinearSolver(solver_type, pc_type)), 
                A(new Matrix), dx(new Vector), b(new Vector)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 NewtonSolver::NewtonSolver(GenericLinearSolver& solver, LinearAlgebraFactory& factory) 
-            : solver(&solver), local_solver(0), A(factory.create_matrix()), 
+            : solver(&solver, NoDeleter<GenericLinearSolver>()), A(factory.create_matrix()), 
               dx(factory.create_vector()), b(factory.create_vector())
 {
   // Do nothing
@@ -32,9 +34,7 @@ NewtonSolver::NewtonSolver(GenericLinearSolver& solver, LinearAlgebraFactory& fa
 //-----------------------------------------------------------------------------
 NewtonSolver::~NewtonSolver()
 {
-  if(local_solver)
-    delete solver; 
-
+  delete A;
   delete dx;
   delete b;
 }

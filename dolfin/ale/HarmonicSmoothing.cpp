@@ -89,6 +89,7 @@ void HarmonicSmoothing::move(Mesh& mesh, Mesh& new_boundary)
       geometry.set(i, dim, new_coordinates[dim*N + i]);
 
   // Clean up
+  delete V;
   delete form;
   delete [] values;
   delete [] new_coordinates;
