@@ -1,8 +1,8 @@
-// Copyright (C) 2006-2007 Anders Logg.
+// Copyright (C) 2006-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-02-09
-// Last changed: 2007-07-11
+// Last changed: 2008-11-18
 //
 // This demo solves the Stokes equations, using stabilized
 // first order elements for the velocity and pressure. The
@@ -17,16 +17,6 @@ using namespace dolfin;
 
 int main()
 {
-  // Function for no-slip boundary condition for velocity
-  class Zero : public Function
-  {
-    void eval(double* values, const Data& data) const
-    {
-      values[0] = 0.0;
-      values[1] = 0.0;
-    }
-  };
-
   // Function for no-slip boundary condition for velocity
   class Noslip : public Function
   {
@@ -80,9 +70,7 @@ int main()
 
   // Set up PDE
   MeshSize h;
-  // FIXME: Implement vector constants
-  //Function f(2, 0.0);
-  Zero f;
+  Constant f(2, 0.0);
   StokesBilinearForm a(V, V);
   a.h = h;
   StokesLinearForm L(V);

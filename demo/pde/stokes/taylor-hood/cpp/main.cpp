@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-02-09
-// Last changed: 2008-11-16
+// Last changed: 2008-11-18
 //
 // This demo solves the Stokes equations, using quadratic elements for
 // the velocity and first degree elements for the pressure
@@ -17,16 +17,6 @@ using namespace dolfin;
 
 int main()
 {
-  // Function for no-slip boundary condition for velocity
-  class Zero : public Function
-  {
-    void eval(double* values, const Data& data) const
-    {
-      values[0] = 0.0;
-      values[1] = 0.0;
-    }
-  };
-
   // Function for no-slip boundary condition for velocity
   class Noslip : public Function
   {
@@ -79,7 +69,7 @@ int main()
   Array<BoundaryCondition*> bcs(&bc0, &bc1, &bc2);
 
   // Set up PDE
-  Zero f;
+  Constant f(2, 0.0);
   StokesBilinearForm a(V, V);
   StokesLinearForm L(V);
   L.f = f;

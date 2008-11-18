@@ -17,16 +17,6 @@ using namespace dolfin;
 
 int main()
 {
-  class Zero : public Function
-  {
-    void eval(double* values, const Data& data) const
-    {
-      values[0] = 0.0;
-      values[1] = 0.0;
-      values[2] = 0.0;
-    }
-  };
-
   // Dirichlet boundary condition for clamp at left end
   class Clamp : public Function
   {
@@ -85,10 +75,8 @@ int main()
   Mesh mesh("../../../../data/meshes/gear.xml.gz");
   ElasticityFunctionSpace V(mesh);
 
-  // FIXME: Vector-valued Constant needs to be implemented
   // Create right-hand side
-  //Function f(mesh, 3, 0.0);
-  Zero f;
+  Constant f(3, 0.0);
 
   // Set up boundary condition at left end
   Clamp c;
