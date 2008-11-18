@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-05-16
-// Last changed: 2008-11-13
+// Last changed: 2008-11-17
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/parameter/dolfin_parameter.h>
@@ -106,7 +106,7 @@ void MeshEditor::setMeshCoordinates(Vector& mesh_coord)
 void MeshEditor::setAffineCellIndicator(uint c, const std::string affine_str)
 {
   bool affine_value = true; // init
-  
+
   if ( affine_str=="false" )
     affine_value = false;
   
@@ -206,7 +206,7 @@ void MeshEditor::close(bool order)
 {
   // Order mesh if requested
   dolfin_assert(mesh);
-  if (order)
+  if (order && !mesh->ordered())
     mesh->order();
 
   // Clear data

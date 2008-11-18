@@ -290,9 +290,6 @@ void DirichletBC::init_from_mesh_function(MeshFunction<uint>& sub_domains,
   const uint dim = V->mesh().topology().dim();
   V->mesh().init(dim - 1, dim);
 
-  // Make sure the mesh has been ordered
-  const_cast<Mesh&>(V->mesh()).order();
-
   // Build set of boundary facets
   for (FacetIterator facet(V->mesh()); !facet.end(); ++facet)
   {

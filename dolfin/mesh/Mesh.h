@@ -8,7 +8,7 @@
 // Modified by Kristoffer Selim, 2008.
 //
 // First added:  2006-05-08
-// Last changed: 2008-11-14
+// Last changed: 2008-11-18
 
 #ifndef __MESH_H
 #define __MESH_H
@@ -216,6 +216,9 @@ namespace dolfin
     
     // Intersection detector
     IntersectionDetector* detector;
+
+    // True if mesh has been ordered
+    mutable bool _ordered;
     
   };
 
