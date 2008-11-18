@@ -207,7 +207,7 @@ FunctionSpace* FunctionSpace::extract_sub_space(const std::vector<uint>& compone
   dolfin_assert(_dofmap);
 
   // Extract sub element
-  std::tr1::shared_ptr<FiniteElement> element(_element->extract_sub_element(component));
+  std::tr1::shared_ptr<const FiniteElement> element(_element->extract_sub_element(component));
 
   // Extract sub dofmap and offset
   uint offset = 0;

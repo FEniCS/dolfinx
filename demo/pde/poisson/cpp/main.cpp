@@ -76,18 +76,18 @@ int main()
   PoissonBilinearForm a(V, V);
   PoissonLinearForm L(V);
   L.f = f; L.g = g;
-  LinearPDE pde(a, L, bc);
+  LinearPDE pde(a, L, bc, symmetric);
 
   // Solve PDE
   Function u;
   pde.solve(u);
 
   // Plot solution
-  //plot(u);
+  plot(u);
 
   // Save solution in VTK format
-  //File file("poisson.pvd");
-  //file << u;
+  File file("poisson.pvd");
+  file << u;
 
   return 0;
 }
