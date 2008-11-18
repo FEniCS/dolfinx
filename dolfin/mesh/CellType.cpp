@@ -104,8 +104,11 @@ bool CellType::ordered(const Cell& cell) const
     if (vertices[v - 1] >= vertices[v])
       return false;
 
+  // Note the comparison below: d + 1 < dim, not d < dim - 1
+  // Otherwise, d < dim - 1 will evaluate to true for dim = 0 with uint
+
   // Check numbering of entities of positive dimension and codimension
-  for (uint d = 1; d < dim - 1; d++)
+  for (uint d = 1; d + 1 < dim; d++)
   {
     // Check if entities exist, otherwise skip
     const MeshConnectivity& connectivity = topology(d, 0);
