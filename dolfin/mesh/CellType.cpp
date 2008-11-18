@@ -147,7 +147,7 @@ bool CellType::increasing(uint n0, const uint* v0,
   const uint num_non_incident = num_vertices - n0;
 
   // Compute non-incident vertices for first entity
-  uint* w0 = new uint[num_non_incident];
+  std::vector<uint> w0(num_non_incident);
   uint k = 0;
   for (uint i = 0; i < num_vertices; i++)
   {
@@ -167,7 +167,7 @@ bool CellType::increasing(uint n0, const uint* v0,
   dolfin_assert(k == num_non_incident);
 
   // Compute non-incident vertices for second entity
-  uint* w1 = new uint[num_non_incident];
+  std::vector<uint> w1(num_non_incident);
   k = 0;
   for (uint i = 0; i < num_vertices; i++)
   {
