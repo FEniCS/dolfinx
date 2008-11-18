@@ -360,7 +360,7 @@ void XMLFile::operator<< (const Mesh& mesh)
          it != data.arrays.end(); ++it)
     {
       fprintf(fp, "      <array name=\"%s\" type=\"uint\" size=\"%d\">\n",
-              it->first.c_str(), it->second->size());
+              it->first.c_str(), (int) it->second->size());
       for (uint i = 0; i < it->second->size(); i++)
         fprintf(fp, "        <element index=\"%d\" value=\"%d\"/>\n", i, (*it->second)[i]);
       fprintf(fp, "      </array>\n");
