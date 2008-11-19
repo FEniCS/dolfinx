@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells 2008
 //
 // First added:  2006-02-07
-// Last changed: 2008-11-15
+// Last changed: 2008-11-19
 //
 // This demo program solves the equations of static
 // linear elasticity for a gear clamped at two of its
@@ -20,7 +20,7 @@ int main()
   // Dirichlet boundary condition for clamp at left end
   class Clamp : public Function
   {
-    void eval(double* values, const Data& data) const
+    void eval(double* values, const double* x) const
     {
       values[0] = 0.0;
       values[1] = 0.0;
@@ -40,10 +40,8 @@ int main()
   // Dirichlet boundary condition for rotation at right end
   class Rotation : public Function
   {
-    void eval(double* values, const Data& data) const
+    void eval(double* values, const double* x) const
     {
-      const double* x = data.x;
-  
       // Center of rotation
       double y0 = 0.5;
       double z0 = 0.219;

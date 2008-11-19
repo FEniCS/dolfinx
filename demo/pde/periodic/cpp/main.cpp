@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-07-11
-// Last changed: 2008-11-15
+// Last changed: 2008-11-19
 //
 // This demo program solves Poisson's equation,
 //
@@ -21,13 +21,11 @@ int main()
   // Source term
   class Source : public Function
   {
-    void eval(double* values, const Data& data) const
+    void eval(double* values, const double* x) const
     {
-      double x  = data.x[0];
-      double y  = data.x[1];
-      double dx = data.x[0] - 0.5;
-      double dy = data.x[1] - 0.5;
-      values[0] = x*sin(5.0*DOLFIN_PI*y) + 1.0*exp(-(dx*dx + dy*dy)/0.02);
+      double dx = x[0] - 0.5;
+      double dy = x[1] - 0.5;
+      values[0] = x[0]*sin(5.0*DOLFIN_PI*x[1]) + 1.0*exp(-(dx*dx + dy*dy)/0.02);
     }
   };
 

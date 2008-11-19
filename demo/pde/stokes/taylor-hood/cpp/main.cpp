@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-02-09
-// Last changed: 2008-11-18
+// Last changed: 2008-11-19
 //
 // This demo solves the Stokes equations, using quadratic elements for
 // the velocity and first degree elements for the pressure
@@ -20,7 +20,7 @@ int main()
   // Function for no-slip boundary condition for velocity
   class Noslip : public Function
   {
-    void eval(double* values, const Data& data) const
+    void eval(double* values, const double* x) const
     {
       values[0] = 0.0;
       values[1] = 0.0;
@@ -30,10 +30,9 @@ int main()
   // Function for inflow boundary condition for velocity
   class Inflow : public Function
   {
-    void eval(double* values, const Data& data) const
+    void eval(double* values, const double* x) const
     {
-      double y  = data.x[1];
-      values[0] = -sin(y*DOLFIN_PI);
+      values[0] = -sin(x[1]*DOLFIN_PI);
       values[1] = 0.0;
     }
   };

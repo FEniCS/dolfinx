@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2005-2008.
 //
 // First added:  2005
-// Last changed: 2007-11-17
+// Last changed: 2007-11-19
 //
 // This program illustrates the use of the DOLFIN nonlinear solver for solving 
 // problems of the form F(u) = 0. The user must provide functions for the 
@@ -41,9 +41,8 @@ public:
   
   Source(const double& t) : t(t) {}
 
-  void eval(double* values, const Data& data) const
+  void eval(double* values, const double* x) const
   {
-    const double* x = data.x;
     values[0] = t*x[0]*sin(x[1]);
   }
   
@@ -60,7 +59,7 @@ public:
   
   DirichletBoundaryValue(const double& t) : t(t) {}
   
-  void eval(double* values, const Data& data) const
+  void eval(double* values, const double* x) const
   {
     values[0] = 1.0*t;
   }

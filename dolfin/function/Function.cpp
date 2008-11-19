@@ -167,6 +167,17 @@ bool Function::in(const FunctionSpace& V) const
 //-----------------------------------------------------------------------------
 void Function::eval(double* values, const double* x) const
 {
+  dolfin_assert(values);
+  dolfin_assert(x);
+
+  // Use vector of dofs if available
+  if (_vector)
+  {
+    dolfin_assert(_function_space);
+    _function_space->eval(values, x, *this);
+    return;
+  }
+
   // Missing eval() function if we get here
   error("Missing eval() for user-defined function (must be overloaded).");
 }
