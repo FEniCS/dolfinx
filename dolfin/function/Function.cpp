@@ -5,7 +5,7 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2003-11-28
-// Last changed: 2008-11-04
+// Last changed: 2008-11-19
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/Array.h>
@@ -165,6 +165,12 @@ bool Function::in(const FunctionSpace& V) const
   return !_function_space || _function_space.get() == &V;
 }
 //-----------------------------------------------------------------------------
+void Function::eval(double* values, const double* x) const
+{
+  // Missing eval() function if we get here
+  error("Missing eval() for user-defined function (must be overloaded).");
+}
+//-----------------------------------------------------------------------------
 void Function::eval(double* values, const Data& data) const
 {
   dolfin_assert(values);
@@ -178,8 +184,8 @@ void Function::eval(double* values, const Data& data) const
     return;
   }
 
-  // Missing eval() function if we get here
-  error("Missing eval() for user-defined function (must be overloaded).");
+  // Try simple eval function
+  eval(values, data.x);
 }
 //-----------------------------------------------------------------------------
 void Function::interpolate(double* coefficients,
