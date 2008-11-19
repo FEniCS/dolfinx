@@ -1,10 +1,10 @@
 // Copyright (C) 2006-2007 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Anders Logg, 2005.
+// Modified by Anders Logg, 2005-2008.
 //
 // First added:  2005
-// Last changed: 2007-08-20
+// Last changed: 2008-11-19
 //
 // This program illustrates the use of DOLFIN for solving a nonlinear
 // PDE by solving the nonlinear variant of Poisson's equation,
@@ -37,11 +37,9 @@ class Source : public Function, public TimeDependent
 public:
   Source(const double* t) : TimeDependent(t) {}
   
-  void eval(double* values, const Data& data) const
+  void eval(double* values, const double* x) const
   {
-    double x = data.x[0];
-    double y = data.x[1];
-    values[0] = time()*x*sin(y);
+    values[0] = time()*x[0]*sin(x[1]);
   }
 };
 
@@ -51,7 +49,7 @@ class DirichletBoundaryCondition : public Function, public TimeDependent
 public:
   DirichletBoundaryCondition(const double* t) : TimeDependent(t) {}
   
-  void eval(double* values, const Data& data) const
+  void eval(double* values, const double* x) const
   {
     values[0] = 1.0*time();
   }

@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-11-23
-// Last changed: 2008-04-28
+// Last changed: 2008-11-19
 //
 // This demo program solves Poisson's equation,
 //
@@ -34,18 +34,18 @@ class DirichletBoundary : public SubDomain
 // Source term
 class Source : public Function
 {
-  void eval(double* values, const Data& data) const
+  void eval(double* values, const double* x) const
   {
-    values[0] = 9.0*DOLFIN_PI*DOLFIN_PI*sin(3.0*DOLFIN_PI*data.x[0]);
+    values[0] = 9.0*DOLFIN_PI*DOLFIN_PI*sin(3.0*DOLFIN_PI*x[0]);
   }
 };
 
 // Neumann boundary condition
 class Flux : public Function
 {
-  void eval(double* values, const Data& data) const
+  void eval(double* values, const double* x) const
   {
-    values[0] =  3.0*DOLFIN_PI*cos(3.0*DOLFIN_PI*data.x[0]);
+    values[0] = 3.0*DOLFIN_PI*cos(3.0*DOLFIN_PI*x[0]);
   }
 };
 

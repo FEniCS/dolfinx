@@ -1,8 +1,8 @@
-// Copyright (C) 2006-2007 Anders Logg.
+// Copyright (C) 2006-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-09-19
-// Last changed: 2007-04-30
+// Last changed: 2008-11-19
 //
 // This demo program computes the value of the functional
 //
@@ -28,11 +28,9 @@ int main()
 
     MyFunction(const FunctionSpace& V) : Function(V) {}
 
-    void eval(double* values, const Data& data) const
+    void eval(double* values, const double* x) const
     {
-      double x = data.x[0];
-      double y = data.x[1];
-      values[0] = sin(x) + cos(y);
+      values[0] = sin(x[0]) + cos(x[1]);
     }
     
   };

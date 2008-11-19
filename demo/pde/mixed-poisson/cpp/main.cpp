@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2008.
 //
 // First added:  2007-04-20
-// Last changed: 2008-11-16
+// Last changed: 2008-11-19
 //
 // This demo program solves the mixed formulation of
 // Poisson's equation,
@@ -32,10 +32,10 @@ int main()
   // Source term
   class Source : public Function
   {
-    void eval(double* values, const Data& data) const
+    void eval(double* values, const double* x) const
     {
-      double dx = data.x[0] - 0.5;
-      double dy = data.x[1] - 0.5;
+      double dx = x[0] - 0.5;
+      double dy = x[1] - 0.5;
       values[0] = 500.0*exp(-(dx*dx + dy*dy)/0.02);
     }
   };

@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-02-07
-// Last changed: 2008-11-16
+// Last changed: 2008-11-19
 //
 // This demo program solves Poisson's equation,
 //
@@ -26,10 +26,10 @@ using namespace dolfin;
 // Source term
 class Source : public Function
 {
-  void eval(double* values, const Data& data) const
+  void eval(double* values, const double* x) const
   {
-    double dx = data.x[0] - 0.5;
-    double dy = data.x[1] - 0.5;
+    double dx = x[0] - 0.5;
+    double dy = x[1] - 0.5;
     values[0] = 500.0*exp(-(dx*dx + dy*dy)/0.02);
   }
 };
@@ -37,14 +37,12 @@ class Source : public Function
 // Neumann boundary condition
 class Flux : public Function
 {
-  void eval(double* values, const Data& data) const
+  void eval(double* values, const double* x) const
   {
-    double x = data.x[0];
-    double y = data.x[1];
-    if (x > (1.0 - DOLFIN_EPS))
-      values[0] = 25.0*cos(5.0*DOLFIN_PI*y);
+    if (x[0] > (1.0 - DOLFIN_EPS))
+      values[0] = 25.0*cos(5.0*DOLFIN_PI*x[1]);
     else
-      values[0] =  0.0;
+      values[0] = 0.0;
   }
 };
 

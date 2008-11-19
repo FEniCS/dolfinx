@@ -6,7 +6,7 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2003-11-28
-// Last changed: 2008-11-15
+// Last changed: 2008-11-19
 
 #ifndef __FUNCTION_H
 #define __FUNCTION_H
@@ -81,7 +81,10 @@ namespace dolfin
     /// Check if function is a member of the given function space
     bool in(const FunctionSpace& V) const;
 
-    /// Function evaluation (overload for user-defined function)
+    /// Function evaluation (overload for user-defined function, simple version)
+    virtual void eval(double* values, const double* x) const;
+
+    /// Function evaluation (overload for user-defined function, alternate version)
     virtual void eval(double* values, const Data& data) const;
 
     /// Interpolate function to local function space on cell
