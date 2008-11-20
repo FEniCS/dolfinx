@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-09-11
-// Last changed: 2008-11-03
+// Last changed: 2008-11-20
 
 #ifndef __FINITE_ELEMENT_H
 #define __FINITE_ELEMENT_H
@@ -23,8 +23,8 @@ namespace dolfin
   {
   public:
 
-    // FIXME: This constructor should be added!
     /// Create finite element from UFC finite element
+    FiniteElement(const ufc::finite_element& element) : element(&element, NoDeleter<const ufc::finite_element>()) {}
     //FiniteElement(const ufc::finite_element& element, uint dummy) : element(&element, NoDeleter<const ufc::finite_element>()) {}
 
     /// Create finite element from UFC finite element (data may be shared)
