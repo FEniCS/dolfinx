@@ -1,7 +1,7 @@
 """Run all tests, including unit tests and regression tests"""
 
 __author__ = "Anders Logg (logg@simula.no)"
-__date__ = "2007-06-09 -- 2008-04-09"
+__date__ = "2007-06-09 -- 2008-11-21"
 __copyright__ = "Copyright (C) 2007-2008 Anders Logg"
 __license__  = "GNU LGPL version 2.1"
 
@@ -10,7 +10,7 @@ from commands import getoutput
 import re, sys
 
 # Tests to run
-tests = ["unit", "system"]
+tests = ["unit", "system", "memory"]
 
 failed = []
 
