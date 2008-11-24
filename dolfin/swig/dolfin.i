@@ -4,7 +4,6 @@
 
 %{
 #define protected public
-
 #include <dolfin/dolfin.h>
 #include <numpy/arrayobject.h>
 using namespace dolfin;
@@ -12,7 +11,7 @@ using namespace dolfin;
 
 
 %init%{
-  import_array();
+import_array();
 %}
 
 // Renames
@@ -29,6 +28,17 @@ using namespace dolfin;
 
 // Exceptions
 %include "dolfin_exceptions.i"
+
+// Handle shared_ptr only available for swig version >= 1.3.34
+#ifdef USE_SHARED_PTR
+#if SWIG_VERSION >= 0x010334
+// Un comment these lines to use std::tr1, only works with patched swig
+//#define SWIG_SHARED_PTR_NAMESPACE std
+//#define SWIG_SHARED_PTR_SUBNAMESPACE tr1
+%include "boost_shared_ptr.i"
+%include dolfin_shared_ptr_classes.i
+#endif
+#endif
 
 // FIXME: what are these doing?
 %include "cpointer.i"
