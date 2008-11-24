@@ -40,9 +40,14 @@ namespace dolfin
     /// Constructor
     Form(std::tr1::shared_ptr<const ufc::form> ufc_form);
 
+    /// Constructor used in the python interface
+    Form(const std::vector<FunctionSpace*>& function_spaces,
+	 const std::vector<Function*>& coefficients,
+	 ufc::form& ufc_form);
+    
     /// Destructor
     virtual ~Form();
-
+    
     /// Return rank of form (bilinear form = 2, linear form = 1, functional = 0, etc)
     uint rank() const;
 
