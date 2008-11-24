@@ -18,19 +18,23 @@ __date__ = "2007-08-16 -- 2008-04-03"
 __copyright__ = "Copyright (C) 2007-2008 Anders Logg"
 __license__  = "GNU LGPL Version 2.1"
 
-from dolfin import *
+from   dolfin import *
+import dolfin
+
+dolfin_set("linear algebra backend","Epetra")
 
 # Create mesh and FunctionSpace
 mesh = UnitSquare(32, 32)
 
 element = FiniteElement("Lagrange", "triangle",1)
 
+ufc_element, ufc_dofmap = jit(element)
 V = FunctionSpace(mesh, element)
 
 # Source term, using compiled c++ expression
 class Source(Function):
     cppexpr = ("A*exp(-(pow(x[0]-0.5,2) + pow(x[1]-0.5,2))/B)")
-    default = {"A":500.0,"B":0.02}
+    defaults = {"A":500.0,"B":0.02}
 
 # Neumann boundary condition, using python Functor
 class Flux(Function):
@@ -46,17 +50,23 @@ class Flux(Function):
 #        return bool(on_boundary and x[0] < DOLFIN_EPS)
 
 # Define variational problem
-v = TestFunction(element)
-u = TrialFunction(element)
+v = TestFunction(V)
+u = TrialFunction(V)
 
-f = Source(V)
+f1 = Source(V)
+f2 = Function(V,cppexpr = ("A*exp(-(pow(x[0]-0.5,2) + pow(x[1]-0.5,2))/B)"),
+              defaults = {"A":500.0,"B":0.02})
 g = Flux(V)
 
 a = dot(grad(v), grad(u))*dx
-L = v*f*dx + v*g*ds
+L1 = v*f1*dx + v*g*ds
+L2 = v*f2*dx + v*g*ds
+
+A = assemble(a)
+b = assemble(L1)
 
 # A discrete function
-u = Function(V)
+u0 = Function(V)
 
 # Define boundary condition
 #u0 = Function(mesh, 0.0)

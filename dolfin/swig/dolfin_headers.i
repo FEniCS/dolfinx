@@ -148,6 +148,7 @@
 %include "dolfin/mesh/IntersectionDetector.h"
 
 // DOLFIN headers included from fem
+%include "dolfin/fem/assemble.h"
 %include "dolfin/fem/DofMap.h"
 %include "dolfin/fem/FiniteElement.h"
 %include "dolfin/fem/BoundaryCondition.h"
