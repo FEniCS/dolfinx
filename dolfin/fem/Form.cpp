@@ -23,6 +23,11 @@ Form::Form() : _ufc_form(0)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
+Form::Form(std::tr1::shared_ptr<const ufc::form> ufc_form) : __ufc_form(ufc_form)
+{
+  error("Form::Form(std::tr1::shared_ptr<const ufc::form> ufc_form) not working yet.");
+}
+//-----------------------------------------------------------------------------
 Form::~Form()
 {
   delete _ufc_form;

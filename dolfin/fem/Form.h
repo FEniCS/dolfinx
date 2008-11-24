@@ -37,6 +37,9 @@ namespace dolfin
     /// Constructor
     Form();
 
+    /// Constructor
+    Form(std::tr1::shared_ptr<const ufc::form> ufc_form);
+
     /// Destructor
     virtual ~Form();
 
@@ -79,6 +82,11 @@ namespace dolfin
 
     // The UFC form
     ufc::form* _ufc_form;
+  
+  private:
+
+    // The UFC form
+    std::tr1::shared_ptr<const ufc::form> __ufc_form;
 
   };
 
