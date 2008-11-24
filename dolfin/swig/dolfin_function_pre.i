@@ -1,6 +1,3 @@
-// Import ufc.h so ufc::function is known
-%import ufc.h
-
 // Rename misc function classes from Foo --> cpp_Foo (gets mapped in function.py)
 %rename(cpp_Function) dolfin::Function;
 %rename(cpp_FunctionSpace) dolfin::FunctionSpace;
@@ -19,3 +16,6 @@
 %rename(sub)    dolfin::cpp_DiscreteFunction::operator[];
 %rename(assign) dolfin::cpp_DiscreteFunction::operator=;
 %rename(_in)    dolfin::cpp_DiscreteFunction::in;
+
+// Ignore eval(val,data) function
+%ignore dolfin::Function::eval(double* values, const Data& data) const;

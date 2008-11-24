@@ -74,6 +74,12 @@ ALL_VALUES(dolfin::MeshFunction<unsigned int>, NPY_UINT)
 %ignore dolfin::MeshFunction::values;
 %ignore dolfin::MeshEditor::open(Mesh&, CellType::Type, uint, uint);
 
+// Ignore the double* valued inside functions in SubDomain
+// otherwise will the director typemap for the Function::eval kick in for 
+// these functions too, and we do not want that.
+%ignore dolfin::SubDomain::inside(const double* x, bool on_boundary) const;
+%ignore dolfin::SubDomain::map(const double* x, double* y) const;
+
 //--- Mesh iterators ---
 
 // Map increment operator and dereference operators for iterators
