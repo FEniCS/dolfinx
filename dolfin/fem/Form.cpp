@@ -18,32 +18,30 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Form::Form() : _ufc_form(0)
+Form::Form()
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-Form::Form(std::tr1::shared_ptr<const ufc::form> ufc_form) : __ufc_form(ufc_form)
+Form::Form(std::tr1::shared_ptr<const ufc::form> ufc_form) : _ufc_form(ufc_form)
 {
   error("Form::Form(std::tr1::shared_ptr<const ufc::form> ufc_form) not working yet.");
 }
 //-----------------------------------------------------------------------------
 Form::Form(const std::vector<FunctionSpace*>& function_spaces,
 	   const std::vector<Function*>& coefficients,
-	   ufc::form& ufc_form)
+	   const ufc::form& ufc_form)
 {
   for (uint i = 0; i < function_spaces.size(); i++)
     _function_spaces.push_back(std::tr1::shared_ptr<const FunctionSpace>(const_cast<const FunctionSpace*>(function_spaces[i]),NoDeleter<const FunctionSpace>()));
   for (uint i = 0; i < coefficients.size(); i++)
     _coefficients.push_back(std::tr1::shared_ptr<const Function>(const_cast<const Function*>(coefficients[i]),NoDeleter<const Function>()));
-  _ufc_form = &ufc_form;
+  _ufc_form = std::tr1::shared_ptr<const ufc::form>(&ufc_form,NoDeleter<const ufc::form>());
 }
 //-----------------------------------------------------------------------------
 Form::~Form()
 {
-  // Commented out because it caused memory corruption when using the python 
-  // interface constructor.
-  //delete _ufc_form; 
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 dolfin::uint Form::rank() const
