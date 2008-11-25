@@ -37,15 +37,11 @@ namespace dolfin
     /// Constructor
     Form();
 
-    /// Constructor
-    Form(std::tr1::shared_ptr<const ufc::form> ufc_form);
-
     /// Constructor used in the python interface 
     // Note: The pointers need to be non const for the swig interface.
     //       Any other way to do this?
-    Form(const std::vector<FunctionSpace*>& function_spaces,
-	 const std::vector<Function*>& coefficients,
-	 const ufc::form& ufc_form);
+    Form(const std::vector<FunctionSpace*>& function_spaces, 
+         const std::vector<Function*>& coefficients, const ufc::form& ufc_form);
     
     /// Destructor
     virtual ~Form();

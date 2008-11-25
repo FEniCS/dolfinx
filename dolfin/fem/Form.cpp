@@ -23,19 +23,16 @@ Form::Form()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-Form::Form(std::tr1::shared_ptr<const ufc::form> ufc_form) : _ufc_form(ufc_form)
-{
-  error("Form::Form(std::tr1::shared_ptr<const ufc::form> ufc_form) not working yet.");
-}
-//-----------------------------------------------------------------------------
 Form::Form(const std::vector<FunctionSpace*>& function_spaces,
-	   const std::vector<Function*>& coefficients,
-	   const ufc::form& ufc_form)
+	         const std::vector<Function*>& coefficients,
+	         const ufc::form& ufc_form)
 {
   for (uint i = 0; i < function_spaces.size(); i++)
-    _function_spaces.push_back(std::tr1::shared_ptr<const FunctionSpace>(const_cast<const FunctionSpace*>(function_spaces[i]),NoDeleter<const FunctionSpace>()));
+    _function_spaces.push_back(std::tr1::shared_ptr<const FunctionSpace>(const_cast<const FunctionSpace*>(function_spaces[i]), NoDeleter<const FunctionSpace>()));
+
   for (uint i = 0; i < coefficients.size(); i++)
-    _coefficients.push_back(std::tr1::shared_ptr<const Function>(const_cast<const Function*>(coefficients[i]),NoDeleter<const Function>()));
+    _coefficients.push_back(std::tr1::shared_ptr<const Function>(const_cast<const Function*>(coefficients[i]), NoDeleter<const Function>()));
+
   _ufc_form = std::tr1::shared_ptr<const ufc::form>(&ufc_form,NoDeleter<const ufc::form>());
 }
 //-----------------------------------------------------------------------------
@@ -57,6 +54,7 @@ const Mesh& Form::mesh() const
   for (uint i = 0; i < _function_spaces.size(); i++)
     if (_function_spaces[i])
       meshes.push_back(&_function_spaces[i]->mesh());
+
   for (uint i = 0; i < _coefficients.size(); i++)
     if (_coefficients[i])
       meshes.push_back(&_coefficients[i]->function_space().mesh());
