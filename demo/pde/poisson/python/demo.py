@@ -23,12 +23,7 @@ import dolfin
 
 # Create mesh and FunctionSpace
 mesh = UnitSquare(32, 32)
-# V = FunctionSpace(mesh, "Lagrange", 1)
-
-element = FiniteElement("Lagrange", "triangle",1)
-
-ufc_element, ufc_dofmap = jit(element)
-V = FunctionSpace(mesh, element)
+V = FunctionSpace(mesh, "Lagrange", 1)
 
 # Source term, using compiled c++ expression
 class Source(Function):
