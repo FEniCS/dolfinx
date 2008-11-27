@@ -91,7 +91,7 @@ namespace dolfin
     Array<uint> cell_buffer;
     
     // Number of local vertices and cells
-    uint num_local, num_cvert;
+    uint num_cell_vertices;
 
     // Geometric and topological dimensions
     uint gdim, tdim;

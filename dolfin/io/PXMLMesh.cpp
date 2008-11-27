@@ -43,13 +43,13 @@ PXMLMesh::~PXMLMesh()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void PXMLMesh::startElement(const xmlChar *name, const xmlChar **attrs)
+void PXMLMesh::startElement(const xmlChar* name, const xmlChar** attrs)
 {
   switch (state)
   {
   case OUTSIDE:
     
-    if (xmlStrcasecmp(name, (xmlChar *) "mesh") == 0)
+    if (xmlStrcasecmp(name, (xmlChar* ) "mesh") == 0)
     {
       readMesh(name, attrs);
       state = INSIDE_MESH;
@@ -59,16 +59,16 @@ void PXMLMesh::startElement(const xmlChar *name, const xmlChar **attrs)
 
   case INSIDE_MESH:
     
-    if (xmlStrcasecmp(name, (xmlChar *) "vertices") == 0)
+    if (xmlStrcasecmp(name, (xmlChar* ) "vertices") == 0)
     {
       readVertices(name, attrs);
       state = INSIDE_VERTICES;
     }
-    else if (xmlStrcasecmp(name, (xmlChar *) "cells") == 0)
+    else if (xmlStrcasecmp(name, (xmlChar* ) "cells") == 0)
     {
       state = INSIDE_CELLS;
     }
-    else if (xmlStrcasecmp(name, (xmlChar *) "data") == 0)
+    else if (xmlStrcasecmp(name, (xmlChar* ) "data") == 0)
     {
       error("Unable to read auxiliary mesh data in parallel, not implemented (yet).");
       state = INSIDE_DATA;
@@ -78,30 +78,30 @@ void PXMLMesh::startElement(const xmlChar *name, const xmlChar **attrs)
     
   case INSIDE_VERTICES:
     
-    if (xmlStrcasecmp(name, (xmlChar *) "vertex") == 0)
+    if (xmlStrcasecmp(name, (xmlChar* ) "vertex") == 0)
       readVertex(name, attrs);
 
     break;
     
   case INSIDE_CELLS:
     
-    if (xmlStrcasecmp(name, (xmlChar *) "interval") == 0)
+    if (xmlStrcasecmp(name, (xmlChar* ) "interval") == 0)
       readInterval(name, attrs);
-    else if (xmlStrcasecmp(name, (xmlChar *) "triangle") == 0)
+    else if (xmlStrcasecmp(name, (xmlChar* ) "triangle") == 0)
       readTriangle(name, attrs);
-    else if (xmlStrcasecmp(name, (xmlChar *) "tetrahedron") == 0)
+    else if (xmlStrcasecmp(name, (xmlChar* ) "tetrahedron") == 0)
       readTetrahedron(name, attrs);
     
     break;
 
   case INSIDE_DATA:
     
-    if (xmlStrcasecmp(name, (xmlChar *) "meshfunction") == 0)
+    if (xmlStrcasecmp(name, (xmlChar* ) "meshfunction") == 0)
     {
       readMeshFunction(name, attrs);
       state = INSIDE_MESH_FUNCTION;
     }
-    if (xmlStrcasecmp(name, (xmlChar *) "array") == 0)
+    else if (xmlStrcasecmp(name, (xmlChar* ) "array") == 0)
     {
       readArray(name, attrs);
       state = INSIDE_ARRAY;
@@ -111,30 +111,30 @@ void PXMLMesh::startElement(const xmlChar *name, const xmlChar **attrs)
 
   case INSIDE_MESH_FUNCTION:
     
-    if (xmlStrcasecmp(name, (xmlChar *) "entity") == 0)
+    if (xmlStrcasecmp(name, (xmlChar* ) "entity") == 0)
       readMeshEntity(name, attrs);
 
     break;
 
   case INSIDE_ARRAY:
     
-    if (xmlStrcasecmp(name, (xmlChar *) "element") == 0)
+    if (xmlStrcasecmp(name, (xmlChar* ) "element") == 0)
       readArrayElement(name, attrs);
 
     break;
 
   default:
-    ;
+    dolfin_error1("Inconsistent state in XML reader: %d.", state);
   }
 }
 //-----------------------------------------------------------------------------
-void PXMLMesh::endElement(const xmlChar *name)
+void PXMLMesh::endElement(const xmlChar* name)
 {
   switch (state)
   {
   case INSIDE_MESH:
     
-    if (xmlStrcasecmp(name, (xmlChar *) "mesh") == 0)
+    if (xmlStrcasecmp(name, (xmlChar* ) "mesh") == 0)
     {
       closeMesh();
       state = DONE;
@@ -144,9 +144,9 @@ void PXMLMesh::endElement(const xmlChar *name)
     
   case INSIDE_VERTICES:
     
-    if (xmlStrcasecmp(name, (xmlChar *) "vertices") == 0)
+    if (xmlStrcasecmp(name, (xmlChar* ) "vertices") == 0)
     {
-      partitionVertices();
+      closeVertices();
       state = INSIDE_MESH;    
     }
 
@@ -154,7 +154,7 @@ void PXMLMesh::endElement(const xmlChar *name)
 
   case INSIDE_CELLS:
 	 
-    if (xmlStrcasecmp(name, (xmlChar *) "cells") == 0)
+    if (xmlStrcasecmp(name, (xmlChar* ) "cells") == 0)
     {
       state = INSIDE_MESH;
     }
@@ -163,7 +163,7 @@ void PXMLMesh::endElement(const xmlChar *name)
 
   case INSIDE_DATA:
 
-    if (xmlStrcasecmp(name, (xmlChar *) "data") == 0)
+    if (xmlStrcasecmp(name, (xmlChar* ) "data") == 0)
     {
       state = INSIDE_MESH;
     }
@@ -172,7 +172,7 @@ void PXMLMesh::endElement(const xmlChar *name)
 
   case INSIDE_MESH_FUNCTION:
 
-    if (xmlStrcasecmp(name, (xmlChar *) "meshfunction") == 0)
+    if (xmlStrcasecmp(name, (xmlChar* ) "meshfunction") == 0)
     {
       state = INSIDE_DATA;
     }
@@ -181,7 +181,7 @@ void PXMLMesh::endElement(const xmlChar *name)
 
   case INSIDE_ARRAY:
 
-    if (xmlStrcasecmp(name, (xmlChar *) "array") == 0)
+    if (xmlStrcasecmp(name, (xmlChar* ) "array") == 0)
     {
       state = INSIDE_DATA;
     }
@@ -189,7 +189,7 @@ void PXMLMesh::endElement(const xmlChar *name)
     break;
 
   default:
-    ;
+    dolfin_error1("Inconsistent state in XML reader: %d.", state);
   }
 }
 //-----------------------------------------------------------------------------
@@ -203,120 +203,110 @@ bool PXMLMesh::close()
   return state == DONE;
 }
 //-----------------------------------------------------------------------------
-void PXMLMesh::readMesh(const xmlChar *name, const xmlChar **attrs)
+void PXMLMesh::readMesh(const xmlChar* name, const xmlChar** attrs)
 {
   // Parse values
   std::string type = parseString(name, attrs, "celltype");
   gdim = parseUnsignedInt(name, attrs, "dim");
   
   // Create cell type to get topological dimension
-  CellType* cell_type = CellType::create(type);
+  std::auto_ptr<CellType> cell_type(CellType::create(type));
   tdim = cell_type->dim();
+
   // Get number of entities for topological dimension 0
-  num_cvert = cell_type->numEntities(0);
-  delete cell_type;
+  num_cell_vertices = cell_type->numEntities(0);
 
   // Open mesh for editing
   editor.open(_mesh, CellType::string2type(type), tdim, gdim);
 }
 //-----------------------------------------------------------------------------
-void PXMLMesh::readVertices(const xmlChar *name, const xmlChar **attrs)
+void PXMLMesh::readVertices(const xmlChar* name, const xmlChar** attrs)
 {
-  // Parse the number of vertices
-  const uint num_vertices = parseUnsignedInt(name, attrs, "size");
+  // Parse the number of global vertices
+  const uint num_global_vertices = parseUnsignedInt(name, attrs, "size");
 
   // Get process number and number of processes
   const uint num_processes = MPI::num_processes();
   const uint process_number = MPI::process_number();
 
   // Compute number of vertices per process and remainder
-  const uint n = num_vertices / num_processes;
-  const uint r = num_vertices % num_processes;
+  const uint n = num_global_vertices / num_processes;
+  const uint r = num_global_vertices % num_processes;
 
   // Distribute remainder evenly among first r processes
-  num_local = 0;
-  if (process_number < r)
+  vertex_distribution = new uint[num_processes + 1];
+  uint offset = 0;
+  for (uint p = 0; p < num_processes + 1; p++)
   {
-    num_local    = n + 1;
-    first_vertex = process_number*n + process_number;
+    vertex_distribution[p] = offset;
+    if (p < r)
+      offset += n + 1;
+    else
+      offset += n;
   }
-  else
-  {
-    num_local    = n;
-    first_vertex = process_number*n + r;
-  }
-  last_vertex = first_vertex + num_local - 1;
 
-  // Set number of vertices
-  dolfin_debug2("Reading %d vertices out of %d", num_local, num_vertices);
-  
-  global_number = new uint[num_local];
-  vertex_buffer = new double[gdim * num_local];
+  // Reserve space for local-to-global vertex map and vertex coordinates
+  vertex_map.reserve(num_local_vertices());
+  vertex_coordinates.reserve(gdim * num_local_vertices());
 
-  gp = &global_number[0];
-  vp = &vertex_buffer[0];
-
-
-
+  dolfin_debug2("Reading %d vertices out of %d vertices.",
+                num_local_vertices(), num_global_vertices);
 }
 //-----------------------------------------------------------------------------
-void PXMLMesh::readVertex(const xmlChar *name, const xmlChar **attrs)
+void PXMLMesh::readVertex(const xmlChar* name, const xmlChar** attrs)
 {
-  // Read index
+  // Read vertex index
   const uint v = parseUnsignedInt(name, attrs, "index");
 
-  // FIXME: We could optimize here so that we don't need to
-  // FIXME: parse the entire mesh on each processor
-
   // Skip vertices not in range for this process
-  if (v < first_vertex || v > last_vertex)
+  if (v < first_local_vertex() || v > last_local_vertex())
     return;
   
-  // Handle differently depending on geometric dimension
-  switch ( gdim )
+  // Parse vertex coordinates
+  switch (gdim)
   {
   case 1:
     {
-      *(vp++) = parseReal(name, attrs, "x");
+      vertex_coordinates.push_back(parseReal(name, attrs, "x"));
     }
-    break;
+  break;
   case 2:
     {
-      *(vp++) = parseReal(name, attrs, "x");
-      *(vp++) = parseReal(name, attrs, "y");
+      vertex_coordinates.push_back(parseReal(name, attrs, "x"));
+      vertex_coordinates.push_back(parseReal(name, attrs, "y"));
     }
     break;
   case 3:
     {
-      *(vp++) = parseReal(name, attrs, "x");
-      *(vp++) = parseReal(name, attrs, "y");
-      *(vp++) = parseReal(name, attrs, "z");
+      vertex_coordinates.push_back(parseReal(name, attrs, "x"));
+      vertex_coordinates.push_back(parseReal(name, attrs, "y"));
+      vertex_coordinates.push_back(parseReal(name, attrs, "z"));
     }
     break;
   default:
-    error("Dimension of mesh must be 1, 2 or 3.");
+    error("Geometric dimension of mesh must be 1, 2 or 3.");
   }
 
   // Store global vertex numbering 
-  *(gp++) = v;
+  vertex_map.push_back(v);
 }
 //-----------------------------------------------------------------------------
-void PXMLMesh::readInterval(const xmlChar *name, const xmlChar **attrs)
+void PXMLMesh::readInterval(const xmlChar* name, const xmlChar** attrs)
 {
   // Check dimension
   if (tdim != 1)
     error("Mesh entity (interval) does not match dimension of mesh (%d).", tdim);
 
   // Parse values
-  uint c  = parseUnsignedInt(name, attrs, "index");
-  uint v0 = parseUnsignedInt(name, attrs, "v0");
-  uint v1 = parseUnsignedInt(name, attrs, "v1");
+  const uint c  = parseUnsignedInt(name, attrs, "index");
+  const uint v0 = parseUnsignedInt(name, attrs, "v0");
+  const uint v1 = parseUnsignedInt(name, attrs, "v1");
   
   // Add cell
   editor.addCell(c, v0, v1);
 }
 //-----------------------------------------------------------------------------
-void PXMLMesh::readTriangle(const xmlChar *name, const xmlChar **attrs)
+void PXMLMesh::readTriangle(const xmlChar* name, const xmlChar** attrs)
 {
   // Check dimension
   if (tdim != 2)  
@@ -350,7 +340,7 @@ void PXMLMesh::readTriangle(const xmlChar *name, const xmlChar **attrs)
   cell_buffer.push_back(v2);
 }
 //-----------------------------------------------------------------------------
-void PXMLMesh::readTetrahedron(const xmlChar *name, const xmlChar **attrs)
+void PXMLMesh::readTetrahedron(const xmlChar* name, const xmlChar** attrs)
 {
   // Check dimension
   if (tdim != 3)
@@ -458,7 +448,6 @@ void PXMLMesh::readArrayElement(const xmlChar* name, const xmlChar** attrs)
 //-----------------------------------------------------------------------------
 void PXMLMesh::closeMesh()
 {
-
   // Temporary mapping from global to local vertex numbering
   std::map<uint, uint> _global_to_local, __global_to_local;
   
@@ -483,6 +472,7 @@ void PXMLMesh::closeMesh()
 			   vertex_buffer[i+1], vertex_buffer[i+2]); 
 	  break;
 	}
+
 	// Temporary mapping for all used vertices
 	_global_to_local[global_number[j]] = current_vertex++;    
     }
@@ -690,47 +680,40 @@ void PXMLMesh::closeMesh()
   }
 }
 //-----------------------------------------------------------------------------
-void PXMLMesh::partitionVertices()
+void PXMLMesh::closeVertices()
 {
 #ifdef HAS_PARMETIS
+
+  dolfin_debug("Geometric partitioning of vertices");
 
   // Duplicate MPI communicator
   MPI_Comm comm; 
   MPI_Comm_dup(MPI_COMM_WORLD, &comm);
 
-  uint size = MPI::num_processes();
-  uint rank = MPI::process_number();
-
-  dolfin_debug("Geometric partitioning of vertices");
+  // Get process number and number of processes
+  const uint num_processes = MPI::num_processes();
+  const uint process_number = MPI::process_number();
   
-  // Create the vertex distribution array (vtxdist) 
-  idxtype *vtxdist = new idxtype[size+1];  
-  vtxdist[rank] = static_cast<idxtype>(num_local);
-  
-  MPI_Allgather(&vtxdist[rank], 1, MPI_INT, vtxdist, 1, 
-		MPI_INT, MPI_COMM_WORLD);
-
-  int sum = vtxdist[0];  
-  vtxdist[0] = 0;
-  for (uint i = 1; i < size + 1; i++)
-  {
-    const int tmp = vtxdist[i];
-    vtxdist[i] = sum;
-    sum = tmp + sum;
-  }
-
-  idxtype _gdim = static_cast<idxtype>(gdim);
-  idxtype *part = new idxtype[num_local];
-  float *xdy = new float[gdim * num_local];
-  
-  for (uint i = 0; i < gdim * num_local; i++)
-    xdy[i] = static_cast<float>(vertex_buffer[i]);
+  // Prepare arguments for ParMETIS
+  int* vtxdist = reinterpret_cast<int*>(vertex_distribution);
+  int* ndims = &static_cast<int>(gdim);
+  int* part = new int[vertex_map.size()];
+  float *xyz = new float[vertex_coordinates.size()];
+  for (uint i = 0; i < vertex_coordinates.size(); i++)
+    xyz[i] = static_cast<float>(vertex_coordinates[i]);
 
   // Call ParMETIS to partition vertex distribution array
-  ParMETIS_V3_PartGeom(vtxdist, &_gdim, xdy, part, &comm);
+  ParMETIS_V3_PartGeom(vtxdist, ndims, xyz, part, &comm);
 
-  Array<uint> *send_buff_glb = new Array<uint>[size];
-  Array<double> *send_buff_coords = new Array<double>[size];
+
+  std::vector<uint> vertex_map_send_size(num_processes);
+  std::vector<uint> vertex_coordinates_send_size(num_processes);
+
+
+  std::vector<uint*> vertex_map_send(num_processes);
+  std::vector<double*> vertex_coordinates_send(num_processes);
+
+
   std::set<uint> kept_local;
 
   // Duplicate vertex and global number buffers
@@ -743,9 +726,9 @@ void PXMLMesh::partitionVertices()
   delete[] global_number;
 
   // Process vertex distribution
-  for (uint i = 0; i < num_local; i++) 
+  for (uint i = 0; i < num_local; i++)
   {
-    if ( part[i] != (idxtype) rank) 
+    if (part[i] != static_cast<int>(process_number))
     {
       send_buff_glb[part[i]].push_back(tmp_glb[i]);
       for (uint j = 0; j < gdim; j++)
@@ -756,8 +739,9 @@ void PXMLMesh::partitionVertices()
   }
   
   // Determine size of receive buffers 
-  int recv_count, recv_size, send_size;  
-  for (uint i = 0; i < size; i++) {
+  int recv_count, send_size;  
+  for (uint i = 0; i < size; i++)
+  {
     send_size = send_buff_coords[i].size();
     MPI_Reduce(&send_size, &recv_count, 1, MPI_INT, MPI_MAX, i, MPI_COMM_WORLD);
     send_size = send_buff_glb[i].size();
@@ -769,7 +753,6 @@ void PXMLMesh::partitionVertices()
   uint recv_count_glb = recv_count / gdim;  
   double *recv_buff = new double[recv_count];
   uint* recv_buff_glb = new uint[recv_count_glb];  
-
 
   // Allocate new memory for vertex buffer 
   vertex_buffer = new double[num_local * gdim];
@@ -789,30 +772,44 @@ void PXMLMesh::partitionVertices()
       *(vp++) = tmp_buffer[(*it) * gdim + j];
   }
 
-  // Exchange vertices and global numbers
+  // Exchange vertex map and vertex coordinates
   MPI_Status status;
-  uint src,dest;
-  for (uint i = 1; i < size; i++) 
-  {    
-    src = (rank - i + size) % size;
-    dest = (rank + i) % size;
-    
-    MPI_Sendrecv(&send_buff_glb[dest][0], send_buff_glb[dest].size(),
-		 MPI_UNSIGNED, dest, 0, recv_buff_glb, recv_count_glb, 
-		 MPI_UNSIGNED, src, 0, MPI_COMM_WORLD, &status);
-    MPI_Get_count(&status, MPI_UNSIGNED, &recv_size);
-    
-    MPI_Sendrecv(&send_buff_coords[dest][0], send_buff_coords[dest].size(),
-		 MPI_DOUBLE, dest, 1, recv_buff, recv_count, MPI_DOUBLE, src,
-		 1, MPI_COMM_WORLD, &status);
 
-    for (uint j = 0; j < (uint) recv_size; j++) 
+
+  vertex_map.clear();
+  vertex_coordinates.clear();
+    
+  // Communicate vertex map and coordinates with all other processes
+  for (uint i = 1; i < num_processes; i++) 
+  {
+    int recv_size = 0;
+
+    // Decide which processes to communicate with
+    const uint source = (process_number + num_processes - i) % num_processes;
+    const uint dest   = (process_number + i) % num_processes;
+    
+    // Communicate vertex map (global numbers)
+    MPI_Sendrecv(vertex_map_send[dest], vertex_map_send_size[dest],   MPI_UNSIGNED, dest,   0,
+                 vertex_map_recv,       vertex_map_recv_size[source], MPI_UNSIGNED, source, 0,
+                 MPI_COMM_WORLD, &status);
+    MPI_Get_count(&status, MPI_UNSIGNED, &recv_size);
+
+    // Extract vertex map from receive buffer
+    for (uint j = 0; j < static_cast<uint>(recv_size); j++)
     {
-      *(gp++) = recv_buff_glb[j];
-      local_vertices.insert(recv_buff_glb[j]);
-      for (uint jj = 0; jj < gdim; jj++)
-	*(vp++) = recv_buff[j * gdim + jj];
-    }    
+      vertex_map.push_back(vertex_map_recv[j]);
+      local_vertices.insert(vertex_map_recv[j]); // ???
+    }
+    
+    // Communicate vertex coordinates
+    MPI_Sendrecv(vertex_coordinates_send[dest], vertex_coordinates_send_size[dest],   MPI_DOUBLE, dest,   1,
+                 vertex_coordinates_recv,       vertex_coordinates_recv_size[source], MPI_DOUBLE, source, 1,
+                 MPI_COMM_WORLD, &status);
+    MPI_Get_count(&status, MPI_DOUBLE, &recv_size);
+
+    // Extract vertex coordinates from receive buffer
+    for (uint j = 0; j < static_cast<uint>(recv_size); j++)
+      vertex_coordinates.push_back(vertex_coordinates_recv[j]);
   }
   
   // Clean up
@@ -836,6 +833,27 @@ void PXMLMesh::partitionVertices()
 #endif
 }
 //-----------------------------------------------------------------------------
+uint PXMLMesh::num_local_vertices() const
+{
+  dolfin_assert(vertex_distribution);
+  const uint process_number = MPI::process_number();
+  return vertex_distribution[process_number + 1] - vertex_distribution[process_number];
+}
+//-----------------------------------------------------------------------------
+uint PXMLMesh::first_local_vertex() const
+{
+  dolfin_assert(vertex_distribution);
+  const uint process_number = MPI::process_number();
+  return vertex_distribution[process_number];
+}
+//-----------------------------------------------------------------------------
+uint PXMLMesh::last_local_vertex() const
+{
+  dolfin_assert(vertex_distribution);
+  const uint process_number = MPI::process_number();
+  return vertex_distribution[process_number + 1] - 1;
+}
+//-----------------------------------------------------------------------------
 
 #else
 
@@ -847,9 +865,9 @@ PXMLMesh::PXMLMesh(Mesh& mesh) : _mesh(mesh)
 //-----------------------------------------------------------------------------
 PXMLMesh::~PXMLMesh() {}
 //-----------------------------------------------------------------------------
-void PXMLMesh::startElement(const xmlChar *name, const xmlChar **attrs) {}
+void PXMLMesh::startElement(const xmlChar* name, const xmlChar** attrs) {}
 //-----------------------------------------------------------------------------
-void PXMLMesh::endElement(const xmlChar *name) {}
+void PXMLMesh::endElement(const xmlChar* name) {}
 //-----------------------------------------------------------------------------
 void PXMLMesh::open(std::string filename) {}
 //-----------------------------------------------------------------------------
