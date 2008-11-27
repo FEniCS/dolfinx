@@ -25,6 +25,9 @@ import dolfin
 mesh = UnitSquare(32, 32)
 V = FunctionSpace(mesh, "Lagrange", 1)
 
+# Just testing
+W = VectorFunctionSpace(mesh, "Lagrange", 2)
+
 # Source term, using compiled c++ expression
 class Source(Function):
     cppexpr = ("A*exp(-(pow(x[0]-0.5,2) + pow(x[1]-0.5,2))/B)")
@@ -48,8 +51,10 @@ v = TestFunction(V)
 u = TrialFunction(V)
 
 f1 = Source(V)
-f2 = Function(V,cppexpr = ("A*exp(-(pow(x[0]-0.5,2) + pow(x[1]-0.5,2))/B)"),
+f2 = Function(V,
+              cppexpr = ("A*exp(-(pow(x[0]-0.5,2) + pow(x[1]-0.5,2))/B)"),
               defaults = {"A":500.0,"B":0.02})
+
 g = Flux(V)
 
 a = dot(grad(v), grad(u))*dx

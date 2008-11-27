@@ -45,7 +45,7 @@ void MeshPartition::partition(Mesh& mesh, MeshFunction<uint>& partitions,
   GraphPartition::partition(graph, num_partitions, partitions.values());
 
   bool report_edge_cut = dolfin_get("report edge cut");
-  if(report_edge_cut)
+  if (report_edge_cut)
     GraphPartition::edgecut(graph, num_partitions, partitions.values());
 }
 //-----------------------------------------------------------------------------
