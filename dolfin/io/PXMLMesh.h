@@ -6,8 +6,8 @@
 // First added:  2003-10-21
 // Last changed: 2008-10-29
 
-#ifndef __NEW_PXML_MESH_H
-#define __NEW_PXML_MESH_H
+#ifndef __PXML_MESH_H
+#define __PXML_MESH_H
 
 #include <dolfin/common/Array.h>
 #include <dolfin/mesh/DynamicMeshEditor.h>
