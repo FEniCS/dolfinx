@@ -54,7 +54,7 @@ namespace dolfin
     void readArrayElement(const xmlChar* name, const xmlChar** attrs);
     
     // Partition parsed vertices, called when finished reading vertices
-    void partitionVertices();
+    void closeVertices();
     
     // Close mesh, called when finished reading data
     void closeMesh();
@@ -62,6 +62,10 @@ namespace dolfin
     // Check if vertex is local
     inline bool is_local(uint vertex) const
     { return local_vertices.find(vertex) != local_vertices.end(); }
+
+    uint num_local_vertices() const;
+    uint first_local_vertex() const;
+    uint last_local_vertex() const;
 
     // Reference to the mesh
     Mesh& _mesh;
@@ -95,6 +99,15 @@ namespace dolfin
 
     // Geometric and topological dimensions
     uint gdim, tdim;
+
+    // Vertex distribution on all processes
+    uint* vertex_distribution;
+
+    // Local vertex map
+    std::vector<uint> vertex_map;
+
+    // Coordinates of local vertices
+    std::vector<double> vertex_coordinates;
 
     // FIXME replace these with hash tables
     std::set<uint> local_vertices, shared_vertex, used_vertex;

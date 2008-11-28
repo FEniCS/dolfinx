@@ -33,7 +33,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 PXMLMesh::PXMLMesh(Mesh& mesh)
   : XMLObject(), _mesh(mesh), state(OUTSIDE), f(0), a(0),
-    first_vertex(0), last_vertex(0), current_vertex(0)
+    first_vertex(0), last_vertex(0), current_vertex(0), vertex_distribution(0)
 {
   dolfin_debug("Creating parallel XML parser");
 }
@@ -124,7 +124,7 @@ void PXMLMesh::startElement(const xmlChar* name, const xmlChar** attrs)
     break;
 
   default:
-    dolfin_error1("Inconsistent state in XML reader: %d.", state);
+    error("Inconsistent state in XML reader: %d.", state);
   }
 }
 //-----------------------------------------------------------------------------
@@ -189,7 +189,7 @@ void PXMLMesh::endElement(const xmlChar* name)
     break;
 
   default:
-    dolfin_error1("Inconsistent state in XML reader: %d.", state);
+    error("Inconsistent state in XML reader: %d.", state);
   }
 }
 //-----------------------------------------------------------------------------
@@ -225,9 +225,9 @@ void PXMLMesh::readVertices(const xmlChar* name, const xmlChar** attrs)
   // Parse the number of global vertices
   const uint num_global_vertices = parseUnsignedInt(name, attrs, "size");
 
-  // Get process number and number of processes
+  // Get process number// and number of processes
   const uint num_processes = MPI::num_processes();
-  const uint process_number = MPI::process_number();
+  //const uint process_number = MPI::process_number();
 
   // Compute number of vertices per process and remainder
   const uint n = num_global_vertices / num_processes;
@@ -445,6 +445,7 @@ void PXMLMesh::readArrayElement(const xmlChar* name, const xmlChar** attrs)
   const uint value = parseUnsignedInt(name, attrs, "value");
   (*a)[index] = value;
 }
+/*
 //-----------------------------------------------------------------------------
 void PXMLMesh::closeMesh()
 {
@@ -454,7 +455,7 @@ void PXMLMesh::closeMesh()
   // Add all local vertices to the mesh
   uint current_vertex = 0;
   uint j = 0;
-  for(uint i = 0; i < num_local * gdim; i += gdim, j++)
+  for(uint i = 0; i < num_local_vertices() * gdim; i += gdim, j++)
   {
     if(used_vertex.find(global_number[j]) != used_vertex.end())
     {
@@ -493,7 +494,7 @@ void PXMLMesh::closeMesh()
     send_buff.push_back(*it);
 
   // Number of locally unused vertices
-  uint num_orphan = num_local - used_vertex.size();
+  uint num_orphan = num_local_vertices() - used_vertex.size();
   
   // Number of locally "missing" vertices
   uint num_shared = send_buff.size();
@@ -679,6 +680,7 @@ void PXMLMesh::closeMesh()
     }
   }
 }
+*/
 //-----------------------------------------------------------------------------
 void PXMLMesh::closeVertices()
 {
@@ -696,14 +698,14 @@ void PXMLMesh::closeVertices()
   
   // Prepare arguments for ParMETIS
   int* vtxdist = reinterpret_cast<int*>(vertex_distribution);
-  int* ndims = &static_cast<int>(gdim);
+  int ndims = static_cast<int>(gdim);
   int* part = new int[vertex_map.size()];
   float *xyz = new float[vertex_coordinates.size()];
   for (uint i = 0; i < vertex_coordinates.size(); i++)
     xyz[i] = static_cast<float>(vertex_coordinates[i]);
 
   // Call ParMETIS to partition vertex distribution array
-  ParMETIS_V3_PartGeom(vtxdist, ndims, xyz, part, &comm);
+  ParMETIS_V3_PartGeom(vtxdist, &ndims, xyz, part, &comm);
 
 
   std::vector<uint> vertex_map_send_size(num_processes);
@@ -719,12 +721,12 @@ void PXMLMesh::closeVertices()
   // Duplicate vertex and global number buffers
   // Why are these needed?
   std::vector<double> vertex_coordinates_copy;
-  vertex_coordinates_copy.reserve(vertex_coordinates.size());
+  //vertex_coordinates_copy.reserve(vertex_coordinates.size());
   vertex_coordinates_copy.swap(vertex_coordinates);
 
   std::vector<uint> vertex_map_copy;
   vertex_map_copy.reserve(vertex_map.size());
-  vertex_map_copy.swap(vertex_map);
+  //vertex_map_copy.swap(vertex_map);
 
   // Compute and allocate sizes to be exchanged
   for (uint i = 0; i < num_local_vertices(); ++i)
@@ -739,7 +741,7 @@ void PXMLMesh::closeVertices()
     vertex_coordinates_send[i] = new double[vertex_coordinates_send_size[i]];
   }
 
-  uint* idx[num_processes];
+  uint idx[num_processes];
 
   // Process vertex distribution
   for (uint i = 0; i < num_local_vertices(); i++)
@@ -763,23 +765,22 @@ void PXMLMesh::closeVertices()
 
   // Allocate memory for receive buffers
   uint vertex_map_recv_size = vertex_coordinates_recv_size/gdim;  
-  double *recv_buff = new double[vertex_map_recv_size];
-  uint* recv_buff_glb = new uint[vertex_map_recv_size];  
+  uint* vertex_map_recv = new uint[vertex_map_recv_size];  
 
   // Allocate new memory for vertex buffer 
   vertex_coordinates.reserve(comp_num_local_vertices*gdim);
+  double vertex_coordinates_recv[vertex_coordinates_recv_size];
 
   // Allocate new memory for global numbering
-  vertex_map.reserve(num_local);
+  vertex_map.reserve(num_local_vertices());
 
   // Add local vertices to new vertex buffer
   for (uint i = 0; i < vertex_map_send_size[process_number]; ++i)
   {
     vertex_map.push_back(vertex_map_send[process_number][i]);
-    for (iunt j = 0; j < gdim; ++j)
+    for (uint j = 0; j < gdim; ++j)
       vertex_coordinates.push_back(vertex_coordinates_send[process_number][i*gdim + j]);
   }
-
 
   // Exchange vertex map and vertex coordinates
   MPI_Status status;
@@ -797,8 +798,8 @@ void PXMLMesh::closeVertices()
     const uint dest   = (process_number + i) % num_processes;
     
     // Communicate vertex map (global numbers)
-    MPI_Sendrecv(vertex_map_send[dest], vertex_map_send_size[dest],   MPI_UNSIGNED, dest,   0,
-                 vertex_map_recv,       vertex_map_recv_size[source], MPI_UNSIGNED, source, 0,
+    MPI_Sendrecv(vertex_map_send[dest], vertex_map_send_size[dest], MPI_UNSIGNED, dest,   0,
+                 vertex_map_recv,       vertex_map_recv_size,       MPI_UNSIGNED, source, 0,
                  MPI_COMM_WORLD, &status);
     MPI_Get_count(&status, MPI_UNSIGNED, &recv_size);
 
@@ -810,8 +811,8 @@ void PXMLMesh::closeVertices()
     }
     
     // Communicate vertex coordinates
-    MPI_Sendrecv(vertex_coordinates_send[dest], vertex_coordinates_send_size[dest],   MPI_DOUBLE, dest,   1,
-                 vertex_coordinates_recv,       vertex_coordinates_recv_size[source], MPI_DOUBLE, source, 1,
+    MPI_Sendrecv(vertex_coordinates_send[dest], vertex_coordinates_send_size[dest], MPI_DOUBLE, dest,   1,
+                 vertex_coordinates_recv,       vertex_coordinates_recv_size,       MPI_DOUBLE, source, 1,
                  MPI_COMM_WORLD, &status);
     MPI_Get_count(&status, MPI_DOUBLE, &recv_size);
 
@@ -821,18 +822,13 @@ void PXMLMesh::closeVertices()
   }
   
   // Clean up
-  for (uint i = 0; i < size; i++)
+  for (uint i = 0; i < num_processes; i++)
   {
-    send_buff_glb[i].clear();
-    send_buff_coords[i].clear();
+    delete[] vertex_map_send[i];
+    delete[] vertex_coordinates_send[i];
   }
-  delete[] send_buff_glb;
-  delete[] send_buff_coords;
-  delete[] tmp_glb;
-  delete[] tmp_buffer;
-  delete[] xdy;
+  delete[] xyz;
   delete[] part;
-  delete[] vtxdist;
 
 #else
 
@@ -841,21 +837,21 @@ void PXMLMesh::closeVertices()
 #endif
 }
 //-----------------------------------------------------------------------------
-uint PXMLMesh::num_local_vertices() const
+dolfin::uint PXMLMesh::num_local_vertices() const
 {
   dolfin_assert(vertex_distribution);
   const uint process_number = MPI::process_number();
   return vertex_distribution[process_number + 1] - vertex_distribution[process_number];
 }
 //-----------------------------------------------------------------------------
-uint PXMLMesh::first_local_vertex() const
+dolfin::uint PXMLMesh::first_local_vertex() const
 {
   dolfin_assert(vertex_distribution);
   const uint process_number = MPI::process_number();
   return vertex_distribution[process_number];
 }
 //-----------------------------------------------------------------------------
-uint PXMLMesh::last_local_vertex() const
+dolfin::uint PXMLMesh::last_local_vertex() const
 {
   dolfin_assert(vertex_distribution);
   const uint process_number = MPI::process_number();
