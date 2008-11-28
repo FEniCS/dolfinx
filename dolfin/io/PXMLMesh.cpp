@@ -717,67 +717,75 @@ void PXMLMesh::closeVertices()
   std::set<uint> kept_local;
 
   // Duplicate vertex and global number buffers
-  double *tmp_buffer = new double[num_local * gdim];  
-  memcpy(&tmp_buffer[0], &vertex_buffer[0], gdim * num_local * sizeof(double));
-  delete[] vertex_buffer;
+  // Why are these needed?
+  std::vector<double> vertex_coordinates_copy;
+  vertex_coordinates_copy.reserve(vertex_coordinates.size());
+  vertex_coordinates_copy.swap(vertex_coordinates);
 
-  uint *tmp_glb = new uint[num_local];
-  memcpy(&tmp_glb[0], &global_number[0], num_local * sizeof(uint));
-  delete[] global_number;
+  std::vector<uint> vertex_map_copy;
+  vertex_map_copy.reserve(vertex_map.size());
+  vertex_map_copy.swap(vertex_map);
+
+  // Compute and allocate sizes to be exchanged
+  for (uint i = 0; i < num_local_vertices(); ++i)
+  {
+    vertex_map_send_size[part[i]] += 1;
+    vertex_coordinates_send_size[part[i]] += gdim; 
+  }
+
+  for (uint i = 0; i < num_processes; ++i)
+  {
+    vertex_map_send[i] = new uint[vertex_map_send_size[i]];
+    vertex_coordinates_send[i] = new double[vertex_coordinates_send_size[i]];
+  }
+
+  uint* idx[num_processes];
 
   // Process vertex distribution
-  for (uint i = 0; i < num_local; i++)
+  for (uint i = 0; i < num_local_vertices(); i++)
   {
-    if (part[i] != static_cast<int>(process_number))
-    {
-      send_buff_glb[part[i]].push_back(tmp_glb[i]);
-      for (uint j = 0; j < gdim; j++)
-	send_buff_coords[part[i]].push_back(tmp_buffer[i*gdim + j]);
-    }
-    else 
-      kept_local.insert(i);
+    vertex_map_send[part[i]][idx[i]] = vertex_map_copy[i];
+    for (uint j = 0; j < gdim; j++)
+      vertex_coordinates_send[part[i]][idx[i]*gdim + j] = vertex_coordinates_copy[i*gdim + j]; // FIXME: Ugly
+    idx[i] += 1;
   }
   
   // Determine size of receive buffers 
-  int recv_count, send_size;  
-  for (uint i = 0; i < size; i++)
+  int vertex_coordinates_recv_size, send_size, comp_num_local_vertices;
+  comp_num_local_vertices = static_cast<int>(num_local_vertices());
+  for (uint i = 0; i < num_processes; i++)
   {
-    send_size = send_buff_coords[i].size();
-    MPI_Reduce(&send_size, &recv_count, 1, MPI_INT, MPI_MAX, i, MPI_COMM_WORLD);
-    send_size = send_buff_glb[i].size();
-    MPI_Reduce(&send_size, &num_local, 1, MPI_INT, MPI_SUM, i, MPI_COMM_WORLD);
+    send_size = vertex_coordinates_send_size[i];
+    MPI_Reduce(&send_size, &vertex_coordinates_recv_size, 1, MPI_INT, MPI_MAX, i, MPI_COMM_WORLD);
+    send_size = vertex_map_send_size[i];
+    MPI_Reduce(&send_size, &comp_num_local_vertices, 1, MPI_INT, MPI_SUM, i, MPI_COMM_WORLD);
   }
-  num_local += kept_local.size();
 
   // Allocate memory for receive buffers
-  uint recv_count_glb = recv_count / gdim;  
-  double *recv_buff = new double[recv_count];
-  uint* recv_buff_glb = new uint[recv_count_glb];  
+  uint vertex_map_recv_size = vertex_coordinates_recv_size/gdim;  
+  double *recv_buff = new double[vertex_map_recv_size];
+  uint* recv_buff_glb = new uint[vertex_map_recv_size];  
 
   // Allocate new memory for vertex buffer 
-  vertex_buffer = new double[num_local * gdim];
-  vp = &vertex_buffer[0];
+  vertex_coordinates.reserve(comp_num_local_vertices*gdim);
 
   // Allocate new memory for global numbering
-  global_number = new uint[num_local];
-  gp = &global_number[0];
+  vertex_map.reserve(num_local);
 
   // Add local vertices to new vertex buffer
-  std::set<uint>::iterator it;
-  for(it = kept_local.begin(); it != kept_local.end(); it++) 
+  for (uint i = 0; i < vertex_map_send_size[process_number]; ++i)
   {
-    *(gp++) = tmp_glb[*it];
-    local_vertices.insert(tmp_glb[*it]);
-    for (uint j = 0; j < gdim; j++)
-      *(vp++) = tmp_buffer[(*it) * gdim + j];
+    vertex_map.push_back(vertex_map_send[process_number][i]);
+    for (iunt j = 0; j < gdim; ++j)
+      vertex_coordinates.push_back(vertex_coordinates_send[process_number][i*gdim + j]);
   }
+
 
   // Exchange vertex map and vertex coordinates
   MPI_Status status;
 
-
-  vertex_map.clear();
-  vertex_coordinates.clear();
+  //vertex_map.clear();
+  //vertex_coordinates.clear();
     
   // Communicate vertex map and coordinates with all other processes
   for (uint i = 1; i < num_processes; i++) 
