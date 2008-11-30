@@ -18,6 +18,7 @@ namespace dolfin {
 }
 
 %typemap(in) std::pair<dolfin::uint,dolfin::uint> ij (std::pair<dolfin::uint, dolfin::uint> ij) {
+  // ************************** pair TYPEMAP *********************************
    ij.first   = PyLong_AsUnsignedLong(PyTuple_GetItem($input,0));
    ij.second  = PyLong_AsUnsignedLong(PyTuple_GetItem($input,1));
    $1 = ij;
@@ -39,8 +40,8 @@ namespace dolfin {
     $1 = PyArray_Check($input);
 }
 
-// Define a macros for the linear algebra interface
-%define LA_PRE_INTERFACE(VEC_TYPE,MAT_TYPE)
+// Define a macro for the vector interface
+%define LA_PRE_VEC_INTERFACE(VEC_TYPE)
 %rename(assign) dolfin::VEC_TYPE::operator=;
 
 %ignore dolfin::VEC_TYPE::operator*=;
@@ -48,48 +49,74 @@ namespace dolfin {
 %ignore dolfin::VEC_TYPE::operator+=;
 %ignore dolfin::VEC_TYPE::operator-=;
 
+// Ignore the get and set functions used for blocks 
+// NOTE: The %ignore have to be set using the actuall type used in the declaration
+// so we cannot use dolfin::uint or unsigned int for uint. Strange...
+%ignore dolfin::VEC_TYPE::get(double*, uint, const uint*) const;
+%ignore dolfin::VEC_TYPE::get(double*, const uint*, const uint * const *) const;
+%ignore dolfin::VEC_TYPE::set(const double* , const uint* , const uint * const *);
+%ignore dolfin::VEC_TYPE::set(const double* , uint m, const uint*);
+		
+%ignore dolfin::VEC_TYPE::add;
+%ignore dolfin::VEC_TYPE::instance;
+
+%newobject dolfin::VEC_TYPE::copy;
+%enddef
+
+// Define a macro for the matrix interface
+%define LA_PRE_MAT_INTERFACE(MAT_TYPE)
+%rename(assign) dolfin::MAT_TYPE::operator=;
+
 %ignore dolfin::MAT_TYPE::operator*=;
 %ignore dolfin::MAT_TYPE::operator/=;
 %ignore dolfin::MAT_TYPE::operator+=;
 %ignore dolfin::MAT_TYPE::operator-=;
+%ignore dolfin::MAT_TYPE::get;
+%ignore dolfin::MAT_TYPE::set;
+%ignore dolfin::MAT_TYPE::add;
+%ignore dolfin::MAT_TYPE::instance;
 
-%newobject dolfin::VEC_TYPE::copy;
-%newobject dolfin::MAT_TYPE::copy;
 %newobject dolfin::MAT_TYPE::copy;
 
 %enddef
 
-// Define a macros for the linear algebra factory interface
+// Define a macro for the linear algebra factory interface
 %define LA_FACTORY(FACTORY_TYPE)
 %newobject dolfin::FACTORY_TYPE::create_matrix();
-%newobject dolfin::FACTORY_TYPE::create_pattern(); 
+%newobject dolfin::FACTORY_TYPE::create_pattern();
 %newobject dolfin::FACTORY_TYPE::create_vector();
 
 %enddef
 
 // Run the macros with different types
-LA_PRE_INTERFACE(GenericVector,GenericMatrix)
-LA_PRE_INTERFACE(Vector,Matrix)
-LA_PRE_INTERFACE(uBLASVector,uBLASMatrix)
+LA_PRE_VEC_INTERFACE(GenericVector)
+LA_PRE_VEC_INTERFACE(Vector)
+LA_PRE_VEC_INTERFACE(uBLASVector)
+
+LA_PRE_MAT_INTERFACE(GenericMatrix)
+LA_PRE_MAT_INTERFACE(Matrix)
+LA_PRE_MAT_INTERFACE(uBLASMatrix)
 
 LA_FACTORY(LinearAlgebraFactory)
 LA_FACTORY(DefaultFactory)
 
 #ifdef HAS_PETSC
-LA_PRE_INTERFACE(PETScVector,PETScMatrix)
+LA_PRE_VEC_INTERFACE(PETScVector)
+LA_PRE_MAT_INTERFACE(PETScMatrix)
 LA_FACTORY(PETScFactory)
 #endif
 
 #ifdef HAS_TRILINOS
-LA_PRE_INTERFACE(EpetraVector,EpetraMatrix)
+LA_PRE_VEC_INTERFACE(EpetraVector)
+LA_PRE_MAT_INTERFACE(EpetraMatrix)
 LA_FACTORY(EpetraFactory)
 #endif
 
 #ifdef HAS_MTL4
-LA_PRE_INTERFACE(MTL4Vector,MTL4Matrix)
+LA_PRE_VEC_INTERFACE(MTL4Vector)
+LA_PRE_MAT_INTERFACE(MTL4Matrix)
 LA_FACTORY(MTL4Factory)
 #endif
-
 
 
 
