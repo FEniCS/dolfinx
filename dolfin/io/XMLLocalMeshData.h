@@ -54,6 +54,9 @@ namespace dolfin
         // Close mesh, called when finished reading data
         void closeMesh();
 
+        uint vertex_index_start, vertex_index_stop;
+
+        //uint* vertex_distribution;
         LocalMeshData& mesh_data;
 
   };
