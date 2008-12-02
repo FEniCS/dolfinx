@@ -246,8 +246,8 @@ void XMLLocalMeshData::readVertices(const xmlChar* name, const xmlChar** attrs)
   }
 
   // Reserve space for local-to-global vertex map and vertex coordinates
-  mesh_data.vertex_indices.reserve(num_local_vertices());
-  mesh_data.vertex_coordinates.reserve(num_local_vertices());
+  mesh_data._vertex_indices.reserve(num_local_vertices());
+  mesh_data._vertex_coordinates.reserve(num_local_vertices());
 
   dolfin_debug2("Reading %d vertices out of %d vertices.",
                 num_local_vertices(), num_global_vertices);
@@ -270,7 +270,7 @@ void XMLLocalMeshData::readVertex(const xmlChar* name, const xmlChar** attrs)
   case 1:
     {
       coordinate.push_back(parseReal(name, attrs, "x"));
-      mesh_data.vertex_coordinates.push_back(coordinate);
+      mesh_data._vertex_coordinates.push_back(coordinate);
     }
   break;
   case 2:
@@ -278,7 +278,7 @@ void XMLLocalMeshData::readVertex(const xmlChar* name, const xmlChar** attrs)
       coordinate.reserve(2);
       coordinate.push_back(parseReal(name, attrs, "x"));
       coordinate.push_back(parseReal(name, attrs, "y"));
-      mesh_data.vertex_coordinates.push_back(coordinate);
+      mesh_data._vertex_coordinates.push_back(coordinate);
     }
     break;
   case 3:
@@ -287,7 +287,7 @@ void XMLLocalMeshData::readVertex(const xmlChar* name, const xmlChar** attrs)
       coordinate.push_back(parseReal(name, attrs, "x"));
       coordinate.push_back(parseReal(name, attrs, "y"));
       coordinate.push_back(parseReal(name, attrs, "z"));
-      mesh_data.vertex_coordinates.push_back(coordinate);
+      mesh_data._vertex_coordinates.push_back(coordinate);
     }
     break;
   default:
@@ -295,7 +295,7 @@ void XMLLocalMeshData::readVertex(const xmlChar* name, const xmlChar** attrs)
   }
 
   // Store global vertex numbering 
-  mesh_data.vertex_indices.push_back(v);
+  mesh_data._vertex_indices.push_back(v);
 }
 //-----------------------------------------------------------------------------
 void XMLLocalMeshData::readCells(const xmlChar* name, const xmlChar** attrs)
@@ -328,7 +328,7 @@ void XMLLocalMeshData::readCells(const xmlChar* name, const xmlChar** attrs)
   dolfin::cout << "num_local_cells  = " << num_local_cells() << dolfin::endl;
 
   // Reserve space for cells
-  mesh_data.cell_vertices.reserve(num_local_cells());
+  mesh_data._cell_vertices.reserve(num_local_cells());
 
   dolfin_debug2("Reading %d out of %d cells.",
                 num_local_cells(), num_global_cells);
@@ -350,7 +350,7 @@ void XMLLocalMeshData::readInterval(const xmlChar *name, const xmlChar **attrs)
   cell.push_back(v1);
 
   // Add cell
-  mesh_data.cell_vertices.push_back(cell);
+  mesh_data._cell_vertices.push_back(cell);
 }
 //-----------------------------------------------------------------------------
 void XMLLocalMeshData::readTriangle(const xmlChar *name, const xmlChar **attrs)
@@ -371,7 +371,7 @@ void XMLLocalMeshData::readTriangle(const xmlChar *name, const xmlChar **attrs)
   cell.push_back(v2);
 
   // Add cell
-  mesh_data.cell_vertices.push_back(cell);
+  mesh_data._cell_vertices.push_back(cell);
 }
 //-----------------------------------------------------------------------------
 void XMLLocalMeshData::readTetrahedron(const xmlChar *name, const xmlChar **attrs)
@@ -394,7 +394,7 @@ void XMLLocalMeshData::readTetrahedron(const xmlChar *name, const xmlChar **attr
   cell.push_back(v3);
 
   // Add cell
-  mesh_data.cell_vertices.push_back(cell);
+  mesh_data._cell_vertices.push_back(cell);
 }
 //-----------------------------------------------------------------------------
 void XMLLocalMeshData::readMeshFunction(const xmlChar* name, const xmlChar** attrs)
