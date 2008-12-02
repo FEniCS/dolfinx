@@ -1,34 +1,32 @@
 """Unit tests for the linear algebra interface"""
 
 __author__ = "Johan Hake (hake@simula.no)"
-__date__ = "2008-09-30"
+__date__ = "2008-09-30 -- 2008-10-06"
 __copyright__ = "Copyright (C) 2008 Johan Hake"
 __license__  = "GNU LGPL Version 2.1"
 
 import unittest
-import dolfin
 from dolfin import *
 
 class AbstractBaseTest(object):
 
     def assemble_matrix(self):
         " Assemble a simple matrix"
-        element = FiniteElement("Lagrange", "triangle", 1)
-        
-        u = TrialFunction(element)
-        v = TestFunction(element)
-        
         mesh = UnitSquare(3,3)
+
+        V = FunctionSpace(mesh,"Lagrange", 1)
+        
+        u = TrialFunction(V)
+        v = TestFunction(V)
+        
         A = self.MatrixType()
-        return assemble(dot(grad(u),grad(v))*dx,mesh,tensor=A)
+        return assemble(dot(grad(u),grad(v))*dx,tensor=A)
     
     def get_vector(self):
         " Assemble a simple matrix"
         from numpy import random, linspace
         vec = self.VectorType(16)
-        vec.assign(1)
-        # FIXME: EpetraVector does not support set.
-        #vec.set(random.rand(vec.size()))
+        vec.set(random.rand(vec.size()))
         return vec
 
     def test_matrix(self):
@@ -114,15 +112,19 @@ class AbstractBaseTest(object):
         from numpy import dot, absolute
         v = self.get_vector()
         A = self.assemble_matrix()
-        
+
         u = A*v
         self.assertTrue(isinstance(u,type(v)))
-        self.assertAlmostEqual(u.size(),v.size())
+        self.assertEqual(u.size(),v.size())
 
         v2 = v.array()
         A2 = A.array()
+        
         u2 = dot(A2,v2)
-        self.assertAlmostEqual(absolute(u.array()).sum(),absolute(u2).sum())
+        u3 = A*v2
+        
+        self.assertTrue(absolute(u.array()-u2).sum() < DOLFIN_EPS*v.size())
+        self.assertTrue(absolute(u3-u2).sum() < DOLFIN_EPS*v.size())
 
 class MatrixTester(AbstractBaseTest,unittest.TestCase):
     MatrixType = Matrix
@@ -140,11 +142,12 @@ if hasattr(dolfin,"PETScMatrix"):
     class PETScTester(AbstractBaseTest,unittest.TestCase):
         MatrixType = PETScMatrix
         VectorType = PETScVector
-    
-if hasattr(dolfin,"EpetraMatrix"):
-    class EpetraTester(AbstractBaseTest,unittest.TestCase):
-        MatrixType = EpetraMatrix
-        VectorType = EpetraVector
+
+# FIXME: EpetraVector does not support set()
+#if hasattr(dolfin,"EpetraMatrix"):
+#    class EpetraTester(AbstractBaseTest,unittest.TestCase):
+#        MatrixType = EpetraMatrix
+#        VectorType = EpetraVector
 
 if hasattr(dolfin,"MTL4Matrix"):
     class MTL4Tester(AbstractBaseTest,unittest.TestCase):
