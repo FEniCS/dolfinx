@@ -42,35 +42,29 @@ class Flux(Function):
             values[0] = 0.0
 
 # Sub domain for Dirichlet boundary condition
-#class DirichletBoundary(SubDomain):
-#    def inside(self, x, on_boundary):
-#        return bool(on_boundary and x[0] < DOLFIN_EPS)
+class DirichletBoundary(SubDomain):
+    def inside(self, x, on_boundary):
+        print "seems to be unscriptable, faulty typemap for simple_array?:", x
+        return bool(x[0] < DOLFIN_EPS)
 
 # Define variational problem
 v = TestFunction(V)
 u = TrialFunction(V)
-
-f1 = Source(V)
-f2 = Function(V,
-              cppexpr = ("A*exp(-(pow(x[0]-0.5,2) + pow(x[1]-0.5,2))/B)"),
-              defaults = {"A":500.0,"B":0.02})
-
+f = Function(V, cppexpr="500.0 * exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)")
 g = Flux(V)
-
 a = dot(grad(v), grad(u))*dx
-L1 = v*f1*dx + v*g*ds
-L2 = v*f2*dx + v*g*ds
+L = v*f*dx + v*g*ds
 
 A = assemble(a)
-b = assemble(L1)
+b = assemble(L)
 
 # A discrete function
-u0 = Function(V)
+#u0 = Function(V)
 
 # Define boundary condition
-#u0 = Function(mesh, 0.0)
-#boundary = DirichletBoundary()
-#bc = DirichletBC(u0, mesh, boundary)
+u0 = Constant("triangle", 0.0)
+boundary = DirichletBoundary()
+bc = DirichletBC(u0, V, boundary)
 
 # Solve PDE and plot solution
 #pde = LinearPDE(a, L, mesh, bc, symmetric)
