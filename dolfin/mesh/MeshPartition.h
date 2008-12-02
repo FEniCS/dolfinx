@@ -6,7 +6,7 @@
 // Modified by Niclas Jansson, 2008.
 //
 // First added:  2007-04-24
-// Last changed: 2008-10-29
+// Last changed: 2008-12-02
 
 #ifndef __MESH_PARTITIONING_H
 #define __MESH_PARTITIONING_H
@@ -15,11 +15,17 @@
 
 namespace dolfin
 {
+
+  class LocalMeshData;
+
   /// This class provides a set of functions to partition a Mesh
 
   class MeshPartition
   {
   public:
+
+    /// Create a partitioned mesh based on partitioned local mesh data
+    static void partition(Mesh& mesh, const LocalMeshData& data);
 
     /// Partition a mesh into num_part partitions
     static void partition(Mesh& mesh, MeshFunction<uint>& partitions, uint num_partitions);

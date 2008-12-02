@@ -3,38 +3,49 @@
 //
 // First added:  2008-11-28
 // Last changed: 2008-12-02
+//
+// Modified by Anders Logg, 2008.
 
 #ifndef __LOCALMESHDATA_H
 #define __LOCALMESHDATA_H
 
-
 #include <vector>
-
+#include <dolfin/common/types.h>
 
 namespace dolfin
 {
 
   class XMLLocalMeshData;
-
+  
   class LocalMeshData
   {
-      public:
+  public:
+    
+    /// Constructor
+    LocalMeshData();
+    
+    /// Destructor
+    ~LocalMeshData();
 
-        /// Constructor
-        LocalMeshData();
+    /// Clear all data
+    void clear();
+    
+  private:
+    
+    /// Coordinates for all vertices stored on local processor
+    std::vector<std::vector<double> > vertex_coordinates;
 
-        /// Destructor
-        ~LocalMeshData();
+    /// Global vertex indices for all vertices stored on local processor
+    std::vector<uint> vertex_indices;
 
-      private:
-        std::vector<std::vector<double> > vertex_coordinates;
-        std::vector<uint> vertex_indices;
-        std::vector<std::vector<uint> > cell_vertices;
-
-        // Friends
-        friend class XMLLocalMeshData;
-
+    /// Global vertex indices for all cells stored on local processor
+    std::vector<std::vector<uint> > cell_vertices;
+    
+    // Friends
+    friend class XMLLocalMeshData;
+    
   };
-
+  
 }
+
 #endif

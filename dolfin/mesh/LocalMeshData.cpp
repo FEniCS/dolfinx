@@ -3,6 +3,8 @@
 //
 // First added:  2008-11-28
 // Last changed: 2008-12-02
+//
+// Modified by Anders Logg, 2008.
 
 #include "LocalMeshData.h"
 
@@ -17,5 +19,12 @@ LocalMeshData::LocalMeshData()
 LocalMeshData::~LocalMeshData()
 {
   // Do nothing
+}
+//-----------------------------------------------------------------------------
+void LocalMeshData::clear()
+{
+  vertex_coordinates.clear();
+  vertex_indices.clear();
+  cell_vertices.clear();
 }
 //-----------------------------------------------------------------------------

@@ -14,6 +14,7 @@
 #include <parmetis.h>
 #endif
 
+#include <tr1/memory>
 #include <map>
 #include <cstring>
 

@@ -32,6 +32,11 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
+void MeshPartition::partition(Mesh& mesh, const LocalMeshData& data)
+{
+  error("Not implemented.");
+}
+//-----------------------------------------------------------------------------
 void MeshPartition::partition(Mesh& mesh, MeshFunction<uint>& partitions,
                               uint num_partitions)
 {

@@ -3,7 +3,10 @@
 //
 // First added:  2008-11-28
 // Last changed: 2008-12-02
+//
+// Modified by Anders Logg, 2008.
 
+#include <tr1/memory>
 #include <dolfin/log/log.h>
 #include <dolfin/main/MPI.h>
 #include <dolfin/mesh/CellType.h>
@@ -28,6 +31,7 @@ void XMLLocalMeshData::startElement(const xmlChar* name, const xmlChar** attrs)
   switch (state)
   {
   case OUTSIDE:
+
     if (xmlStrcasecmp(name, (xmlChar* ) "dolfin") == 0)
     {
       state = INSIDE_DOLFIN;
@@ -122,6 +126,7 @@ void XMLLocalMeshData::endElement(const xmlChar* name)
   switch (state)
   {
   case INSIDE_DOLFIN:
+
     if (xmlStrcasecmp(name, (xmlChar* ) "dolfin") == 0)
     {
       state = DONE;
@@ -198,6 +203,7 @@ bool XMLLocalMeshData::close()
 {
   return state == DONE;
 }
+//-----------------------------------------------------------------------------
 void XMLLocalMeshData::readMesh(const xmlChar* name, const xmlChar** attrs)
 {
   // Parse values
@@ -210,6 +216,9 @@ void XMLLocalMeshData::readMesh(const xmlChar* name, const xmlChar** attrs)
 
   // Get number of entities for topological dimension 0
   //num_cell_vertices = cell_type->numEntities(0);
+
+  // Clear all data
+  mesh_data.clear();
 }
 //-----------------------------------------------------------------------------
 void XMLLocalMeshData::readVertices(const xmlChar* name, const xmlChar** attrs)
@@ -224,7 +233,6 @@ void XMLLocalMeshData::readVertices(const xmlChar* name, const xmlChar** attrs)
   // Compute number of vertices per process and remainder
   const uint n = num_global_vertices / num_processes;
   const uint r = num_global_vertices % num_processes;
-
 
   if (process_number < r)
   {
@@ -418,4 +426,4 @@ dolfin::uint XMLLocalMeshData::num_local_cells() const
 {
   return cell_index_stop - cell_index_start + 1;
 }
-
+//-----------------------------------------------------------------------------
