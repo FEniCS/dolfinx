@@ -247,7 +247,7 @@ void XMLLocalMeshData::readVertices(const xmlChar* name, const xmlChar** attrs)
 
   // Reserve space for local-to-global vertex map and vertex coordinates
   mesh_data.vertex_indices.reserve(num_local_vertices());
-  mesh_data.vertex_coordinates.reserve(gdim * num_local_vertices());
+  mesh_data.vertex_coordinates.reserve(num_local_vertices());
 
   dolfin_debug2("Reading %d vertices out of %d vertices.",
                 num_local_vertices(), num_global_vertices);
