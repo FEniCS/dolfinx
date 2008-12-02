@@ -122,7 +122,7 @@ if False:
 # Print output for failed tests
 print ""
 if len(failed) > 0:
-    print "%d demo(s) failed, see demo.log for details." % len(failed)
+    print "%d demo(s) out of %d failed, see demo.log for details." % (len(failed), len(cppdemos))
     file = open("demo.log", "w")
     for (test, interface, output) in failed:
         file.write("----------------------------------------------------------------------\n")

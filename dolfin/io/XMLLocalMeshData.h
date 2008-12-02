@@ -7,12 +7,15 @@
 #ifndef __XMLLOCALMESHDATA_H
 #define __XMLLOCALMESHDATA_H
 
+#include <dolfin/mesh/LocalMeshData.h>
+#include "XMLObject.h"
 
 
 /// Documentation of class XMLLocalMeshData
 
 namespace dolfin
 {
+  class LocalMeshData;
 
   class XMLLocalMeshData: public XMLObject
   {
@@ -32,7 +35,7 @@ namespace dolfin
    
       private:
 
-        enum ParserState {OUTSIDE,
+        enum ParserState {OUTSIDE, INSIDE_DOLFIN, 
                       INSIDE_MESH, INSIDE_VERTICES, INSIDE_CELLS,
                       INSIDE_DATA, INSIDE_MESH_FUNCTION, INSIDE_ARRAY,
                       DONE};
@@ -40,6 +43,7 @@ namespace dolfin
         void readMesh        (const xmlChar* name, const xmlChar** attrs);
         void readVertices    (const xmlChar* name, const xmlChar** attrs);
         void readVertex      (const xmlChar* name, const xmlChar** attrs);
+        void readCells       (const xmlChar* name, const xmlChar** attrs);
         void readInterval    (const xmlChar* name, const xmlChar** attrs);
         void readTriangle    (const xmlChar* name, const xmlChar** attrs);
         void readTetrahedron (const xmlChar* name, const xmlChar** attrs);
@@ -47,18 +51,26 @@ namespace dolfin
         void readArray       (const xmlChar* name, const xmlChar** attrs);
         void readMeshEntity  (const xmlChar* name, const xmlChar** attrs);
         void readArrayElement(const xmlChar* name, const xmlChar** attrs);
-        
-        // Partition parsed vertices, called when finished reading vertices
-        void closeVertices();
-        
-        // Close mesh, called when finished reading data
-        void closeMesh();
 
+        // Number of local vertices
+        uint num_local_vertices() const;
+
+        // Number of local cells
+        uint num_local_cells() const;
+
+        // Geometrical mesh dimesion
+        uint gdim;
+
+        // Topological mesh dimesion
+        uint tdim;
+        
         uint vertex_index_start, vertex_index_stop;
+        uint cell_index_start, cell_index_stop;
 
-        //uint* vertex_distribution;
+        // Result object to build
         LocalMeshData& mesh_data;
 
+        ParserState state;
   };
 
 }

@@ -445,10 +445,11 @@ void PXMLMesh::readArrayElement(const xmlChar* name, const xmlChar** attrs)
   const uint value = parseUnsignedInt(name, attrs, "value");
   (*a)[index] = value;
 }
-/*
 //-----------------------------------------------------------------------------
 void PXMLMesh::closeMesh()
 {
+}
+/*
   // Temporary mapping from global to local vertex numbering
   std::map<uint, uint> _global_to_local, __global_to_local;
   
