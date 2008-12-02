@@ -157,10 +157,10 @@ namespace dolfin
     mutable UFC ufc;
   };
 
-  /// This function is used for the python interface. By inherit from this 
-  /// function instead of cpp_Function we avoid unnecessary calls through 
-  /// the swig created director class, when we deals with discrete functions 
-  /// in PyDOLFIN
+  /// This function is used for the Python interface. By inheriting
+  /// from this function instead of cpp_Function, we avoid unnecessary
+  /// calls through the SWIG created director class, when dealing
+  /// with discrete functions in PyDOLFIN.
   class cpp_DiscreteFunction : public Function
   {
   public:
@@ -173,6 +173,7 @@ namespace dolfin
     {
       vector();
     }
+
   };
 }
 
