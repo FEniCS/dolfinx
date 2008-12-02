@@ -10,7 +10,8 @@ from commands import getoutput
 import re, sys
 
 # Tests to run
-tests = ["unit", "system", "memory"]
+#tests = ["unit", "system", "memory"]
+tests = ["unit", "system"]#, "memory"]
 
 failed = []
 

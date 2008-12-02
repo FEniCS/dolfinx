@@ -24,6 +24,7 @@ namespace dolfin
   template <class T> class MeshFunction;
   class ParameterList;
   class BLASFormData;
+  class LocalMeshData;
 
   class XMLObject;
   
@@ -39,6 +40,7 @@ namespace dolfin
     void operator>> (GenericVector& x);
     void operator>> (GenericMatrix& A);
     void operator>> (Mesh& mesh);
+    void operator>> (LocalMeshData& meshdata);
     void operator>> (MeshFunction<int>& meshfunction);
     void operator>> (MeshFunction<unsigned int>& meshfunction);
     void operator>> (MeshFunction<double>& meshfunction);

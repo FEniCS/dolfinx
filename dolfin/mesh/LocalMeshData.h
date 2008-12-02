@@ -2,16 +2,19 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-11-28
-// Last changed: 2008-11-28
+// Last changed: 2008-12-02
 
 #ifndef __LOCALMESHDATA_H
 #define __LOCALMESHDATA_H
 
 
+#include <vector>
 
 
 namespace dolfin
 {
+
+  class XMLLocalMeshData;
 
   class LocalMeshData
   {
@@ -28,7 +31,8 @@ namespace dolfin
         std::vector<uint> vertex_indices;
         std::vector<std::vector<uint> > cell_vertices;
 
-        friend XMLLocalMeshData;
+        // Friends
+        friend class XMLLocalMeshData;
 
   };
 
