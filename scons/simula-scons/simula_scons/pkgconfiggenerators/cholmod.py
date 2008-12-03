@@ -309,7 +309,7 @@ Version: %s
 Description: CHOLMOD is a set of ANSI C routines for sparse Cholesky factorization and update/downdate.
 Libs: %s
 Cflags: %s
-""" % (version, libs, cflags)
+""" % (version, repr(libs)[1:-1], repr(cflags)[1:-1])
   pkg_file = open(os.path.join(directory, "cholmod.pc"), 'w')
   pkg_file.write(pkg_file_str)
   pkg_file.close()

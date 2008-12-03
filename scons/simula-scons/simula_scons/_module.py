@@ -230,7 +230,7 @@ def readModuleConfig(dirPath, modulePath, env):
       optDeps = _checkSequence(ns.get("OptDependencies", None), InvalidDependencies)
 
     cxxFlags = _checkSequence(ns.get("CxxFlags", cxxFlags), InvalidCxxFlags)
-    cxxFlags = " ".join(cxxFlags)
+
     linkFlags = _checkSequence(ns.get("LinkFlags", linkFlags), InvalidLinkFlags)
 
     swigFlags = _checkSequence(ns.get("SwigFlags", swigFlags), InvalidSwigFlags)

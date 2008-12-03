@@ -341,7 +341,7 @@ Version: %s
 Description: The UMFPACK project, a set of routines for solving sparse linear systems via LU factorization.
 Libs: %s
 Cflags: %s
-""" % (version, libs, cflags)
+""" % (version, repr(libs)[1:-1], repr(cflags)[1:-1])
   pkg_file = open(os.path.join(directory,"umfpack.pc"), 'w')
   pkg_file.write(pkg_file_str)
   pkg_file.close()

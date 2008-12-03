@@ -204,7 +204,7 @@ for modName, mod in modules.items():
 
     if mod.swigSources and env["enablePydolfin"]:
         # Register swig wrapper targets in the module
-        mod.cxxFlags += " -fno-strict-aliasing"
+        mod.cxxFlags += ["-fno-strict-aliasing"]
 
         modEnv = swigEnv.Clone(CXXFLAGS=mod.cxxFlags, LINKFLAGS=mod.linkFlags + linkOpts)
         modEnv.Append(SWIGFLAGS=mod.swigFlags + ["-I%s" % i for i in swigcppPath])
@@ -213,7 +213,8 @@ for modName, mod in modules.items():
         # produce warnings that are treated as error using -werror flag
         # FIXME: Is this correct? If so maybee we should insert a chek for gcc version?
         if not scons.checkVersion(swig_version, "1.3.36"):
-            modEnv["CXXFLAGS"] = modEnv["CXXFLAGS"].replace(" -Werror","")
+            if "-Werror" in modEnv["CXXFLAGS"]:
+                modEnv["CXXFLAGS"].remove("-Werror")
             
         # Add python dependency (always required in python wrappers)
         pyPkg = configuredPackages[python_version]
@@ -335,7 +336,7 @@ replacements['PACKAGE_REQUIRES'] = " ".join(configuredPackages.keys())
 cxxflags = ""
 linkflags = ""
 for mod in modules.values():
-    cxxflags += " " + mod.cxxFlags
+    cxxflags += " " + " ".join(mod.cxxFlags)
     linkflags += " " + " ".join(mod.linkFlags)
 replacements['PACKAGE_CXXFLAGS'] = cxxflags
 replacements['PACKAGE_LINKFLAGS'] = linkflags
