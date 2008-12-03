@@ -83,11 +83,18 @@ def swigScanner(node, env, path):
 swigscanner = SCons.Scanner.Scanner(function=swigScanner, skeys=[".i"])
 
 def swigEmitter(target, source, env):
-    for src in source:
-        src = str(src)
-        if "-python" in SCons.Util.CLVar(env.subst("$SWIGFLAGS")):
-            target.append(os.path.splitext(src)[0] + ".py")
-    return (target, source)
+    new_targets = []
+    # If we are swigging a python extension module
+    if "-python" in SCons.Util.CLVar(env.subst("$SWIGFLAGS")):
+        for t in target:
+            t = str(t)
+            # Add the python module to target by replacing the swig
+            # cxx suffix from the target by ".py"
+            new_targets.append(t.replace(env.subst(env["SWIGCXXFILESUFFIX"]),".py"))
+    return_targets = []
+    for t in zip(target,new_targets):
+        return_targets.extend(t)
+    return (return_targets, source)
 
 class Dependency:
 

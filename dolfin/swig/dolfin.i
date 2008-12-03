@@ -1,4 +1,4 @@
-%module(directors="1") dolfin
+%module(package="dolfin", directors="1") cpp
 
 %feature("autodoc", "1");
 
