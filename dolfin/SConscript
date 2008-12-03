@@ -114,7 +114,7 @@ if env["enablePydolfin"]:
     #if scons.checkVersion(swig_version, "1.3.28"):
     #    swigFlags.append("-O")
 
-    # Ths swig environment
+    # This swig environment
     swigEnv = env.Clone()
     swigEnv["SWIGFLAGS"] = swigFlags
     swigEnv["SHLIBPREFIX"] = "_"
@@ -236,8 +236,12 @@ for modName, mod in modules.items():
         if env["PLATFORM"] == "darwin":
             modEnv.Append(FRAMEWORKS=frameworks)
 
-        wrapCxx, wrapPy = modEnv.CXXFile(target=os.path.join(mod.path, "swig", modName), source=[os.path.join(mod.path, s) for s in mod.swigSources])
-        swig = modEnv.SharedLibrary(target=os.path.join(mod.path, "swig", modName), source=wrapCxx)[0]
+        # Setting the name of the extension module of to "cpp", not modName
+        swigModName = "cpp"
+        # FIXME: What happens if scons.cfg defines several source files? Shouldn't we
+        # have several target files then? Or do we asssume only one CXX file is built?
+        wrapCxx, wrapPy = modEnv.CXXFile(target=os.path.join(mod.path, "swig", swigModName), source=[os.path.join(mod.path, s) for s in mod.swigSources])
+        swig = modEnv.SharedLibrary(target=os.path.join(mod.path, "swig", swigModName), source=wrapCxx)[0]
         # The builder returns a node list
         ret["extModules"].append(swig)
         ret["pythonModules"].append(wrapPy)
