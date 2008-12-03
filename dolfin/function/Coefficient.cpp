@@ -2,8 +2,9 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-10-28
-// Last changed: 2008-11-06
+// Last changed: 2008-12-03
 
+#include <dolfin/log/log.h>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/fem/Form.h>
 #include "Function.h"
@@ -25,11 +26,18 @@ Coefficient::~Coefficient()
 //-----------------------------------------------------------------------------
 void Coefficient::attach(Function& v)
 {
-  // Set function space for function if not already set
+  // Create function space
+  std::tr1::shared_ptr<const FunctionSpace> _V(create_function_space());
+
+  // Set function space if not set or check that it matches
   if (!v._function_space)
   {
-    std::tr1::shared_ptr<const FunctionSpace> _V(create_function_space());
     v._function_space = _V;
+  }
+  else
+  {
+    if (!v.in(*_V))
+      error("Nonmatching function space for form coefficient.");
   }
   
   // Set variable name
