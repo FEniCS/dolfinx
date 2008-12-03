@@ -79,13 +79,13 @@ namespace dolfin
     /// Create boundary condition for sub domain
     DirichletBC(const Function& g,
                 const FunctionSpace& V,
-                SubDomain& sub_domain,
+                const SubDomain& sub_domain,
                 BCMethod method=topological);
 
     /// Create boundary condition for sub domain specified by index
     DirichletBC(const Function& g,
                 const FunctionSpace& V,
-                MeshFunction<uint>& sub_domains, uint sub_domain,
+                const MeshFunction<uint>& sub_domains, uint sub_domain,
                 BCMethod method=topological);
     
     /// Create boundary condition for boundary data included in the mesh
@@ -130,10 +130,10 @@ namespace dolfin
     void check() const;
 
     // Initialize sub domain markers from sub domain
-    void init_from_sub_domain(SubDomain& sub_domain);
+    void init_from_sub_domain(const SubDomain& sub_domain);
     
     // Initialize sub domain markers from MeshFunction
-    void init_from_mesh_function(MeshFunction<uint>& sub_domains, uint sub_domain);
+    void init_from_mesh_function(const MeshFunction<uint>& sub_domains, uint sub_domain);
 
     // Initialize sub domain markers from mesh
     void init_from_mesh(uint sub_domain);
@@ -164,7 +164,7 @@ namespace dolfin
     BCMethod method;
 
     // User defined sub domain
-    SubDomain* user_sub_domain;
+    const SubDomain* user_sub_domain;
 
     // Boundary facets, stored as pairs (cell, local facet number)
     std::vector< std::pair<uint, uint> > facets;

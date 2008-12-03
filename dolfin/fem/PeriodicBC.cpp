@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells 2007
 //
 // First added:  2007-07-08
-// Last changed: 2008-11-15
+// Last changed: 2008-12-03
 
 #include <vector>
 #include <map>
@@ -83,13 +83,16 @@ void PeriodicBC::apply(GenericMatrix& A, GenericVector& b) const
   const Mesh& mesh = V->mesh();
   const DofMap& dofmap = V->dofmap();
 
+  // Set geometric dimension (needed for SWIG interface)
+  sub_domain._geometric_dimension = mesh.geometry().dim();
+
   // Table of mappings from coordinates to dofs
   std::map<std::vector<double>, std::pair<int, int>, lt_coordinate> coordinate_dofs;
   typedef std::map<std::vector<double>, std::pair<int, int>, lt_coordinate>::iterator iterator;
   std::vector<double> xx(mesh.geometry().dim());
   
   // Array used for mapping coordinates
-  simple_array<double> y(mesh.geometry().dim(), new double[mesh.geometry().dim()]);
+  double* y = new double[mesh.geometry().dim()];
   for (uint i = 0; i < mesh.geometry().dim(); i++)
     y[i] = 0.0;
 
@@ -129,7 +132,7 @@ void PeriodicBC::apply(GenericMatrix& A, GenericVector& b) const
       // Get dof and coordinate of dof
       const uint local_dof = data.facet_dofs[i];
       const int global_dof = static_cast<int>(dofmap.offset() + data.cell_dofs[local_dof]);
-      const simple_array<const double> x(mesh.geometry().dim(), data.coordinates[local_dof]);
+      double* x = data.coordinates[local_dof];
 
       // Map coordinate from H to G
       for (uint j = 0; j < mesh.geometry().dim(); j++)
@@ -272,11 +275,13 @@ void PeriodicBC::apply(GenericMatrix& A, GenericVector& b) const
     A.set(vals, 1, rows, 1, cols);
     b.set(zero, 1, rows);
   }
+  
+  // Cleanup
   delete [] rows;
   delete [] cols;
   delete [] vals;
   delete [] zero;
-  delete [] y.data;
+  delete [] y;
 
   // Apply changes
   A.apply();
