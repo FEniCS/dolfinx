@@ -56,7 +56,6 @@ import_array();
 // Fixes for specific kernel modules (pre)
 %include "dolfin_la_pre.i"
 %include "dolfin_mesh_pre.i"
-%include "dolfin_fem_pre.i"
 %include "dolfin_function_pre.i"
 %include "dolfin_pde_pre.i"
 
