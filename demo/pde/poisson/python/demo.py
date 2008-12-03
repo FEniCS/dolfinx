@@ -44,7 +44,6 @@ class Flux(Function):
 # Sub domain for Dirichlet boundary condition
 class DirichletBoundary(SubDomain):
     def inside(self, x, on_boundary):
-        print "seems to be unscriptable, faulty typemap for simple_array?:", x
         return bool(x[0] < DOLFIN_EPS)
 
 # Define variational problem
@@ -57,9 +56,6 @@ L = v*f*dx + v*g*ds
 
 A = assemble(a)
 b = assemble(L)
-
-# A discrete function
-#u0 = Function(V)
 
 # Define boundary condition
 u0 = Constant("triangle", 0.0)
