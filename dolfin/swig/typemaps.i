@@ -4,35 +4,24 @@
 %typemap(in)  dolfin::uint = int;
 %typemap(out) dolfin::uint = int;
 
-// Typemap for dolfin::arrays as input arguments to overloaded functions.
-// This converts a C++ dolfin::simple_array to a numpy array in Python.
-// This typemap is used in the SubDomain class.
-%typemap(directorin) dolfin::simple_array<double>& {
+// Typemap for values (in Function)
+%typemap(directorin) double* values {
   {
-    npy_intp dims[1] = {$1_name.size};
-    $input = PyArray_SimpleNewFromData(1, dims, NPY_DOUBLE, reinterpret_cast<char *>($1_name.data));
-  }
-}
-
-// Typemap for the values in the eval function in the class Function
-%typemap(directorin) double* values{
-  {
-    // Note we have to use this instead of self, as this is a director class
-  // Compute size of value (number of entries in tensor value)
-  dolfin::uint size = 1;
-  for (dolfin::uint i = 0; i < this->function_space().element().value_rank(); i++)
-    size *= this->function_space().element().value_dimension(i);
-
-  npy_intp dims[1] = {size};
+    // Compute size of value (number of entries in tensor value)
+    dolfin::uint size = 1;
+    for (dolfin::uint i = 0; i < this->function_space().element().value_rank(); i++)
+      size *= this->function_space().element().value_dimension(i);
+    
+    npy_intp dims[1] = {size};
     $input = PyArray_SimpleNewFromData(1, dims, NPY_DOUBLE, reinterpret_cast<char *>($1_name));
   }
 }
-// Typemap for the x coordinate in the eval function in the class Function
-%typemap(directorin) const double* x{
+
+// Typemap for coordinates (in Function and SubDomain)
+%typemap(directorin) const double* x {
   {
-    // Note we have to use this instead of self, as this is a director class
     // Compute size of x
-    npy_intp dims[1] = {this->function_space().element().space_dimension()};
+    npy_intp dims[1] = {this->geometric_dimension()};
     $input = PyArray_SimpleNewFromData(1, dims, NPY_DOUBLE, reinterpret_cast<char *>(const_cast<double*>($1_name)));
   }
 }
