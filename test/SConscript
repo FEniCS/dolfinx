@@ -27,8 +27,8 @@ for modName, mod in modules.items():
       linkOpts += dep.linkOpts
       cppPath += dep.cppPath
 
-  modEnv = env.Copy(CXXFLAGS=mod.cxxFlags, LINKFLAGS=mod.linkFlags,
-                    CPPPATH=Dir("#"), LIBPATH=mod.fullpath, LIBS=modName)
+  modEnv = env.Clone(CXXFLAGS=mod.cxxFlags, LINKFLAGS=mod.linkFlags,
+                     CPPPATH=Dir("#"), LIBPATH=mod.fullpath, LIBS=modName)
   modEnv.Append(LIBPATH=libPath)
   modEnv.Append(CPPPATH=cppPath)
   modEnv.Append(LIBS=libs)
@@ -37,8 +37,8 @@ for modName, mod in modules.items():
   modEnv.Append(LIBS="cppunit")
   if env["PLATFORM"] == "darwin":
     modEnv.Append(FRAMEWORKS=frameworks)
-    modEnv.Append(CXXFLAGS=" -bind_at_load")
-    modEnv.Append(LDFLAGS=" -bind_at_load")
+    modEnv.Append(CXXFLAGS="-bind_at_load")
+    modEnv.Append(LDFLAGS="-bind_at_load")
   
   # the cpp tests!
   for dpath, dnames, fnames in os.walk(os.curdir):
