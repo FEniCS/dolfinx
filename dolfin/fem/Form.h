@@ -2,9 +2,10 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells, 2008.
+// Modified by Martin Alnes, 2008.
 //
 // First added:  2007-04-02
-// Last changed: 2008-11-15
+// Last changed: 2008-12-04
 
 #ifndef __FORM_H
 #define __FORM_H
@@ -12,7 +13,6 @@
 #include <vector>
 #include <tr1/memory>
 #include <dolfin/common/types.h>
-#include <dolfin/common/NoDeleter.h>
 
 // Forward declaration
 namespace ufc
@@ -36,6 +36,9 @@ namespace dolfin
 
     /// Constructor
     Form();
+
+    /// Constructor
+    Form(dolfin::uint rank, dolfin::uint num_coefficients);
 
     /// Constructor used in the python interface 
     // Note: The pointers need to be non const for the swig interface.

@@ -5,7 +5,7 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2003-11-28
-// Last changed: 2008-11-19
+// Last changed: 2008-12-04
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/Array.h>
@@ -32,7 +32,7 @@ Function::Function()
 }
 //-----------------------------------------------------------------------------
 Function::Function(const FunctionSpace& V)
-  : _function_space(&V, NoDeleter<const FunctionSpace>()),
+  : _function_space(reference_to_no_delete_pointer(V)),
     _vector(0)
 {
   // Do nothing
