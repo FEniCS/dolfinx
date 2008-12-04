@@ -29,14 +29,14 @@ int main(int argc, char *argv[])
 
   // Source term and initial condition
   Constant f(0.0);
-  Function u0(V);
-  u0.vector().zero();
+  Function u(V);
+  u.vector().zero();
 
   // Set up forms
   ConvectionDiffusionBilinearForm a(V, V);
   a.b = velocity;
   ConvectionDiffusionLinearForm L(V);
-  L.u0 = u0; L.b = velocity; L.f = f;
+  L.u0 = u; L.b = velocity; L.f = f;
 
   // Set up boundary condition
   Constant g(1.0);
@@ -48,15 +48,13 @@ int main(int argc, char *argv[])
   // Linear system
   Matrix A;
   Vector b;
-  GenericVector& x = u1.vector();
 
   // LU
   LUSolver lu;
 
   // Assemble matrix
   assemble(A, a);
-  assemble(b, L);
-  bc.apply(A, b);
+  bc.apply(A);
 
   // Parameters for time-stepping
   double T = 2.0;
@@ -72,20 +70,19 @@ int main(int argc, char *argv[])
   {
     // Assemble vector and apply boundary conditions
     assemble(b, L);
-    bc.apply(A, b);
+    bc.apply(b);
     
     // Solve the linear system
-    lu.solve(A, x, b);
+    lu.solve(A, u.vector(), b);
     
     // Save solution in VTK format
-    file << u1;
+    file << u;
 
     // Move to next interval
     p = t / T;
     t += k;
-    u0 = u1;
   }
 
   // Plot solution
-  plot(u1);
+  plot(u);
 }
