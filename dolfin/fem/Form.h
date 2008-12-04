@@ -44,7 +44,8 @@ namespace dolfin
     // Note: The pointers need to be non const for the swig interface.
     //       Any other way to do this?
     Form(const std::vector<FunctionSpace*>& function_spaces, 
-         const std::vector<Function*>& coefficients, const ufc::form& ufc_form);
+         const std::vector<Function*>& coefficients, 
+         const ufc::form& ufc_form);
     
     /// Destructor
     virtual ~Form();

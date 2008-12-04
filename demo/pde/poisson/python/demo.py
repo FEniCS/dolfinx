@@ -55,7 +55,7 @@ a = dot(grad(v), grad(u))*dx
 L = v*f*dx + v*g*ds
 
 A = assemble(a)
-b = assemble(L)
+#b = assemble(L)
 
 # Define boundary condition
 u0 = Constant("triangle", 0.0)
