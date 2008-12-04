@@ -50,12 +50,14 @@ class DirichletBoundary(SubDomain):
 v = TestFunction(V)
 u = TrialFunction(V)
 f = Function(V, cppexpr="500.0 * exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)")
+
+f2 = Source(V)
 g = Flux(V)
 a = dot(grad(v), grad(u))*dx
 L = v*f*dx + v*g*ds
 
 A = assemble(a)
-#b = assemble(L)
+b = assemble(L)
 
 # Define boundary condition
 u0 = Constant("triangle", 0.0)
