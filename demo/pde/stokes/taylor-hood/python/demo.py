@@ -74,14 +74,11 @@ bc2 = DirichletBC(zero, Q, sub_domains, 2)
 # Collect boundary conditions
 bcs = [bc0, bc1, bc2]
 
-# FIXME: Handle constants in forms
-
-
 # Define variational problem
 (v, q) = TestFunctions(W)
 (u, p) = TrialFunctions(W)
 f = Constant(mesh, [0, 0, 0])
-#f = Function(V, cppexpr=("0", "0", "0"))
+f = Function(V, cppexpr=("0", "0", "0"))
 a = (dot(grad(v), grad(u)) - div(v)*p + q*div(u))*dx
 L = dot(v, f)*dx
 
