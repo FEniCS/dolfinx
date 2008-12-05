@@ -8,9 +8,7 @@ on the unit square with source f given by
 
 and boundary conditions given by
 
-    u(x, y)     = 0               for x = 0
-    du/dn(x, y) = 25 cos(5 pi y)  for x = 1
-    du/dn(x, y) = 0               otherwise
+    u(x, y) = 0 for x = 0 or x = 1
 """
 
 __author__ = "Anders Logg (logg@simula.no)"
@@ -20,39 +18,31 @@ __license__  = "GNU LGPL Version 2.1"
 
 from dolfin import *
 
-# Create mesh and FunctionSpace
+# Create mesh and define function space
 mesh = UnitSquare(32, 32)
 V = FunctionSpace(mesh, "Lagrange", 1)
 
-# Neumann boundary condition, using python Functor
-class Flux(Function):
-    def eval(self, values, x):
-        if x[0] > (1.0 - DOLFIN_EPS):
-            values[0] = 25.0*cos(5.0*DOLFIN_PI*x[1])
-        else:
-            values[0] = 0.0
-
-# Subdomain for Dirichlet boundary condition
+# Define Dirichlet boundary (x = 0 or x = 1)
 class DirichletBoundary(SubDomain):
     def inside(self, x, on_boundary):
-        return x[0] < DOLFIN_EPS
+        return x[0] < DOLFIN_EPS or x[0] > 1.0 - DOLFIN_EPS
 
 # Define variational problem
 v = TestFunction(V)
 u = TrialFunction(V)
 f = Function(V, cppexpr="500.0 * exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)")
-g = Flux(V)
 a = dot(grad(v), grad(u))*dx
-L = v*f*dx + v*g*ds
+L = v*f*dx
 
 # Define boundary condition
 u0 = Constant("triangle", 0.0)
-boundary = DirichletBoundary()
-bc = DirichletBC(u0, V, boundary)
+bc = DirichletBC(u0, V, DirichletBoundary())
 
-# Solve PDE and plot solution
-pde = LinearPDE(a, L, bc, symmetric)
+# Solve PDE
+pde = LinearPDE(a, L, bc)
 u = pde.solve()
+
+# Plot solution
 plot(u, warpscalar=True, rescale=True)
 
 # Save solution to file
