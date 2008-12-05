@@ -389,7 +389,7 @@ void VTKFile::MeshFunctionWrite(T& meshfunction)
   const Mesh& mesh = meshfunction.mesh(); 
 
   if( meshfunction.dim() != mesh.topology().dim() )
-    error("VTK output of mesh functions is implemenetd for cell-based functions only.");    
+    error("VTK output of mesh functions is implemented for cell-based functions only.");    
 
   // Write headers
   VTKHeaderOpen(mesh);
