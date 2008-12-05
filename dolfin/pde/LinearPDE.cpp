@@ -75,7 +75,7 @@ void LinearPDE::solve(Function& u)
   GenericVector& x = u.vector();
 
   // Assemble linear system and apply boundary conditions
-  if( matrix_type == symmetric)
+  if (matrix_type == symmetric)
   {
     std::vector<const DirichletBC*> _bcs;
     for(uint i=0; i< bcs.size(); ++i)
