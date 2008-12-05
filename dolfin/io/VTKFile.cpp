@@ -188,7 +188,6 @@ void VTKFile::ResultsWrite(const Function& u) const
   else
   {
     // FIXME: Add test for other rank elements 
-    warning("Cell-based output for discontinuous elements is only supported for scalar elements (for now). Will attempt to interpolate to vertices.");
   }
 
   // Open file
