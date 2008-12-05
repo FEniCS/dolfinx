@@ -5,12 +5,13 @@
 // Modified by Dag Lindbo, 2008.
 //
 // First added:  2004
-// Last changed: 2008-08-15
+// Last changed: 2008-12-05
 
 #ifndef __LINEAR_PDE_H
 #define __LINEAR_PDE_H
 
-#include <dolfin/common/Array.h>
+#include <vector>
+
 #include <dolfin/parameter/Parametrized.h>
 #include <dolfin/la/enums_la.h>
 
@@ -34,15 +35,22 @@ namespace dolfin
   public:
 
     /// Define a linear PDE with natural boundary conditions
-    LinearPDE(Form& a, Form& L, 
+    LinearPDE(const Form& a,
+              const Form& L, 
               dolfin::MatrixType matrix_type=nonsymmetric);
     
     /// Define a linear PDE with a single Dirichlet boundary condition
-    LinearPDE(Form& a, Form& L, BoundaryCondition& bc, 
+    LinearPDE(const Form& a,
+              const Form& L,
+              const BoundaryCondition& bc, 
               dolfin::MatrixType matrix_type=nonsymmetric);
+
+    // FIXME: Pointers need to be const here to work with SWIG. Is there a fix for this?
     
     /// Define a linear PDE with a set of Dirichlet boundary conditions
-    LinearPDE(Form& a, Form& L, Array<BoundaryCondition*>& bcs, 
+    LinearPDE(const Form& a,
+              const Form& L,
+              std::vector<BoundaryCondition*>& bcs, 
               dolfin::MatrixType matrix_type=nonsymmetric);
 
     /// Destructor
@@ -60,10 +68,10 @@ namespace dolfin
   private:
     
     // The bilinear form
-    Form& a;
+    const Form& a;
     
     // The linear form
-    Form& L;
+    const Form& L;
 
     // The boundary conditions
     Array<const BoundaryCondition*> bcs;

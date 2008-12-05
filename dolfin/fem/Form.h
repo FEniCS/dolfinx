@@ -40,9 +40,9 @@ namespace dolfin
     /// Constructor
     Form(dolfin::uint rank, dolfin::uint num_coefficients);
 
+    // FIXME: Pointers need to be const here to work with SWIG. Is there a fix for this?
+
     /// Constructor used in the python interface 
-    // Note: The pointers need to be non const for the swig interface.
-    //       Any other way to do this?
     Form(const std::vector<FunctionSpace*>& function_spaces, 
          const std::vector<Function*>& coefficients, 
          const ufc::form& ufc_form);

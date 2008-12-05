@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2006-2008.
 //
 // First added:  2004
-// Last changed: 2008-11-17
+// Last changed: 2008-12-05
 
 #include <tr1/memory>
 #include <dolfin/fem/Assembler.h>
@@ -24,23 +24,29 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-LinearPDE::LinearPDE(Form& a, Form& L, MatrixType matrix_type)
-                   : a(a), L(L), bcs(0), matrix_type(matrix_type)
+LinearPDE::LinearPDE(const Form& a,
+                     const Form& L,
+                     MatrixType matrix_type)
+  : a(a), L(L), bcs(0), matrix_type(matrix_type)
 {
   message("Creating linear PDE.");
 }
 //-----------------------------------------------------------------------------
-LinearPDE::LinearPDE(Form& a, Form& L, BoundaryCondition& bc, 
-                     MatrixType matrix_type) : a(a), L(L), 
-                     matrix_type(matrix_type)
+LinearPDE::LinearPDE(const Form& a,
+                     const Form& L,
+                     const BoundaryCondition& bc, 
+                     MatrixType matrix_type)
+  : a(a), L(L), matrix_type(matrix_type)
 {
   message("Creating linear PDE with one boundary condition.");
   bcs.push_back(&bc);
 } 
 //-----------------------------------------------------------------------------
-LinearPDE::LinearPDE(Form& a, Form& L, Array<BoundaryCondition*>& bcs, 
-                     MatrixType matrix_type) : a(a), L(L), 
-                     matrix_type(matrix_type)
+LinearPDE::LinearPDE(const Form& a,
+                     const Form& L,
+                     std::vector<BoundaryCondition*>& bcs,
+                     MatrixType matrix_type)
+  : a(a), L(L), matrix_type(matrix_type)
 {
   message("Creating linear PDE with %d boundary condition(s).", bcs.size());
   for (uint i = 0; i < bcs.size(); i++)
