@@ -35,7 +35,7 @@ a = dot(grad(v), grad(u))*dx
 L = v*f*dx
 
 # Define boundary condition
-u0 = Constant("triangle", 0.0)
+u0 = Constant(mesh, 0.0)
 bc = DirichletBC(u0, V, DirichletBoundary())
 
 # Solve PDE
