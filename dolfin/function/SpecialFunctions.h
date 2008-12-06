@@ -21,6 +21,7 @@ namespace dolfin
   class Form;
   class UFC;
   class FunctionSpace;
+  class SubFunction;
   class Data;
 
 
@@ -173,6 +174,9 @@ namespace dolfin
     {
       vector();
     }
+
+    // Constructor
+    DiscreteFunction(const SubFunction& v) : Function(v){}
 
   };
 }

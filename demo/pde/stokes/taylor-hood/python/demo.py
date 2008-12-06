@@ -21,11 +21,6 @@ V = VectorFunctionSpace(mesh, "Lagrange", 2)
 Q = FunctionSpace(mesh, "Lagrange", 1)
 W = V + Q
 
-# FIXME: Does not seem optimal, first we put them together, than extract subspaces
-# Define subspaces
-Vu = SubSpace(V, 0)
-Vp = SubSpace(V, 1)
-
 # Load subdomains
 sub_domains = MeshFunction("uint", mesh, "../subdomains.xml.gz")
 
@@ -37,12 +32,6 @@ class Noslip(Function):
         values[0] = 0.0
         values[1] = 0.0
 
-    def rank(self):
-        return 1
-
-    def dim(self, i):
-        return 2
-
 # FIXME: Replace by simple cppexpr
 # Function for inflow boundary condition for velocity
 class Inflow(Function):
@@ -51,16 +40,10 @@ class Inflow(Function):
         values[0] = -sin(x[1]*DOLFIN_PI)
         values[1] = 0.0
 
-    def rank(self):
-        return 1
-
-    def dim(self, i):
-        return 2
-
 # Create functions for boundary conditions
-noslip = Noslip(V)
-inflow = Inflow(V)
-zero = Constant(mesh, 0.0)
+noslip = Constant(mesh, (0.0,0.0))
+inflow = Function(V,cppexpr = ("-sin(x[1]*pi)","0.0"))
+zero   = Constant(mesh, 0.0)
 
 # No-slip boundary condition for velocity
 bc0 = DirichletBC(noslip, V, sub_domains, 0)
@@ -77,30 +60,28 @@ bcs = [bc0, bc1, bc2]
 # Define variational problem
 (v, q) = TestFunctions(W)
 (u, p) = TrialFunctions(W)
-f = Constant(mesh, [0, 0, 0])
-f = Function(V, cppexpr=("0", "0", "0"))
+f = Constant(mesh, (0, 0, 0))
 a = (dot(grad(v), grad(u)) - div(v)*p + q*div(u))*dx
 L = dot(v, f)*dx
 
 # Solve PDE
 pde = LinearPDE(a, L, bcs)
 
-w = pde.solve()
-#(u, p) = pde.solve().split()
+(u, p) = pde.solve().split()
 
 # Save solution in DOLFIN XML format
-#ufile = File("velocity.xml")
-#ufile << u
-#pfile = File("pressure.xml")
-#pfile << p
+ufile = File("velocity.xml")
+ufile << u
+pfile = File("pressure.xml")
+pfile << p
 
 # Save solution in VTK format
-#ufile_pvd = File("velocity.pvd")
-#ufile_pvd << u
-#pfile_pvd = File("pressure.pvd")
-#pfile_pvd << p
+ufile_pvd = File("velocity.pvd")
+ufile_pvd << u
+pfile_pvd = File("pressure.pvd")
+pfile_pvd << p
 
 # Plot solution
-#plot(u)
-#plot(p)
-#interactive()
+plot(u)
+plot(p)
+interactive()
