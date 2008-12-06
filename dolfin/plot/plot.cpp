@@ -79,7 +79,7 @@ namespace dolfin
     fprintf(script_file, "try:\n");
     fprintf(script_file, "    from dolfin import *\n");
     fprintf(script_file, "except:\n");
-    fprintf(script_file, "    print \"Could not import pyDOLFIN library.\"\n");
+    fprintf(script_file, "    print \"Could not import DOLFIN Python module.\"\n");
     fprintf(script_file, "    sys.exit(1)\n\n");
 
     fprintf(script_file, "try:\n");
@@ -96,7 +96,7 @@ namespace dolfin
     fprintf(script_file, "    os.remove('%s')\n\n", script_name.c_str());
 
       fprintf(script_file, "except:\n");
-      fprintf(script_file, "    print \"Could not read DOLFIN mesh/function .xml file for plotting.\"\n");
+      fprintf(script_file, "    print \"Could not read DOLFIN mesh or function XML file for plotting.\"\n");
       fprintf(script_file, "    sys.exit(1)\n\n");
 
     fprintf(script_file, "try:\n");
@@ -107,7 +107,7 @@ namespace dolfin
     fprintf(script_file, "    interactive()\n");
 
     fprintf(script_file, "except:\n");
-    fprintf(script_file, "    print \"Could not plot DOLFIN mesh/function.\"\n");
+    fprintf(script_file, "    print \"Could not plot DOLFIN mesh or function.\"\n");
     fprintf(script_file, "    sys.exit(1)");
     fclose(script_file);
     
@@ -120,7 +120,7 @@ namespace dolfin
     std::string command = "python " + script_name;
 #endif
     if (system(command.c_str()) != 0)
-      message("Unable to plot (PyDOLFIN or Viper plotter not available).");
+      message("Unable to plot (DOLFIN Python module or Viper plotter not available).");
   }
 
   template<class T> void plot(T& t, std::string class_name, std::string mode)
