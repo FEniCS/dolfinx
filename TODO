@@ -103,7 +103,7 @@ OK demo/pde/poisson/python/demo.py
    demo/pde/dg/poisson/python/demo.py
    demo/pde/dg/advection_diffusion/python/demo.py
    demo/pde/adaptive-poisson/python/demo.py
-   demo/pde/functional/python/demo.py
+OK demo/pde/functional/python/demo.py
    demo/la/trilinos/python/demo.py
    demo/la/eigensolver/python/demo.py
    demo/la/block-matrix/python/demo.py
