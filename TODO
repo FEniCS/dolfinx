@@ -83,3 +83,42 @@ This gives convenient expand/collapse of bullets by pressing TAB.
 ** Update function names: fooBar --> foo_bar
 ** Use const in output functions in File
 ** Remove as much const_cast as possible
+
+** Current status of Python demos:
+   demo/pde/optimization/python/demo.py
+   demo/pde/nonlinear-poisson/python/demo.py
+   demo/pde/periodic/python/demo.py
+OK demo/pde/poisson/python/demo.py
+   demo/pde/dielectric/python/demo.py
+   demo/pde/mixed-poisson/python/demo.py
+   demo/pde/bcs/python/demo.py
+   demo/pde/elasticity/python/demo.py
+   demo/pde/convection-diffusion/python/demo.py
+   demo/pde/stokes/taylor-hood/python/demo.py
+   demo/pde/stokes/stabilized/python/demo.py
+   demo/pde/poisson1D/python/demo.py
+   demo/pde/waveguide/python/demo.py
+   demo/pde/sym-dirichlet-bc/python/demo.py
+   demo/pde/lift-drag/python/demo.py
+   demo/pde/dg/poisson/python/demo.py
+   demo/pde/dg/advection_diffusion/python/demo.py
+   demo/pde/adaptive-poisson/python/demo.py
+   demo/pde/functional/python/demo.py
+   demo/la/trilinos/python/demo.py
+   demo/la/eigensolver/python/demo.py
+   demo/la/block-matrix/python/demo.py
+   demo/nls/nonlinearpoisson/python/demo.py
+   demo/quadrature/python/demo.py
+   demo/mesh/subdomains/python/demo.py
+   demo/mesh/meshfunction/python/demo.py
+   demo/mesh/partitioning/python/demo.py
+   demo/mesh/built_in/python/demo.py
+   demo/mesh/ale/python/demo.py
+   demo/mesh/refinement/python/demo.py
+   demo/mesh/intersection/python/demo.py
+   demo/function/eval/python/demo.py
+   demo/function/projection-interpolation/python/demo.py
+   demo/ode/aliev-panfilov/python/demo.py
+   demo/ode/lorenz/python/demo.py
+   demo/fem/simple/python/demo.py
+   demo/plot/python/demo.py

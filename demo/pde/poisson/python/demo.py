@@ -4,7 +4,7 @@
 
 on the unit square with source f given by
 
-    f(x, y) = 500*exp(-((x-0.5)^2 + (y-0.5)^2)/0.02)
+    f(x, y) = 500*exp(-((x - 0.5)^2 + (y - 0.5)^2) / 0.02)
 
 and boundary conditions given by
 
@@ -12,7 +12,7 @@ and boundary conditions given by
 """
 
 __author__ = "Anders Logg (logg@simula.no)"
-__date__ = "2007-08-16 -- 2008-12-05"
+__date__ = "2007-08-16 -- 2008-12-07"
 __copyright__ = "Copyright (C) 2007-2008 Anders Logg"
 __license__  = "GNU LGPL Version 2.1"
 
@@ -38,7 +38,7 @@ L = v*f*dx
 u0 = Constant(mesh, 0.0)
 bc = DirichletBC(u0, V, DirichletBoundary())
 
-# Solve PDE
+# Compute solution
 pde = LinearPDE(a, L, bc)
 u = pde.solve()
 
