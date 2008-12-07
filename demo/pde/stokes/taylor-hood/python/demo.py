@@ -24,34 +24,19 @@ W = V + Q
 # Load subdomains
 sub_domains = MeshFunction("uint", mesh, "../subdomains.xml.gz")
 
-# FIXME: Replace by simple Constant
-# Function for no-slip boundary condition for velocity
-class Noslip(Function):
-
-    def eval(self, values, x):
-        values[0] = 0.0
-        values[1] = 0.0
-
-# FIXME: Replace by simple cppexpr
-# Function for inflow boundary condition for velocity
-class Inflow(Function):
-
-    def eval(self, values, x):
-        values[0] = -sin(x[1]*DOLFIN_PI)
-        values[1] = 0.0
-
-# Create functions for boundary conditions
-noslip = Constant(mesh, (0.0,0.0))
-inflow = Function(V,cppexpr = ("-sin(x[1]*pi)","0.0"))
-zero   = Constant(mesh, 0.0)
+print "offset0 =", W.sub(0).dofmap().offset()
+print "offset1 =", W.sub(1).dofmap().offset()
 
 # No-slip boundary condition for velocity
+noslip = Constant(mesh, (0, 0))
 bc0 = DirichletBC(noslip, W.sub(0), sub_domains, 0)
 
 # Inflow boundary condition for velocity
+inflow = Function(V, cppexpr = ("-sin(x[1]*pi)","0.0"))
 bc1 = DirichletBC(inflow, W.sub(0), sub_domains, 1)
 
 # Boundary condition for pressure at outflow
+zero = Constant(mesh, 0.0)
 bc2 = DirichletBC(zero, W.sub(1), sub_domains, 2)
 
 # Collect boundary conditions
@@ -64,9 +49,8 @@ f = Constant(mesh, (0, 0, 0))
 a = (dot(grad(v), grad(u)) - div(v)*p + q*div(u))*dx
 L = dot(v, f)*dx
 
-# Solve PDE
+# Compute solution
 pde = LinearPDE(a, L, bcs)
-
 (u, p) = pde.solve().split()
 
 # Save solution in DOLFIN XML format
