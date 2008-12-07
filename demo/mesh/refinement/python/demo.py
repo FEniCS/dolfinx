@@ -1,3 +1,5 @@
+"This demo illustrates mesh refinement."
+
 __author__ = "Anders Logg"
 __date__ = "2007-06-01 -- 2007-06-01"
 __copyright__ = "Copyright (C) 2007 Anders Logg"

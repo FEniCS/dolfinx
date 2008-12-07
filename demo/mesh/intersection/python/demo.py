@@ -1,8 +1,6 @@
-# This demo shows the intersection of the boundary of a unit
-# square (omega1) with a unit circle (omega2) rotating
-# around the center of the square.
-#
-# Original implementation: ../cpp/main.cpp by Kristoffer Selim
+"""This demo shows the intersection of the boundary of a unit square
+(omega1) with a unit circle (omega2) rotating around the center of the
+square."""
 
 __author__ = "Kristoffer Selim (selim@simula.no)"
 __date__ = "2008-10-14 -- 2008-10-14"

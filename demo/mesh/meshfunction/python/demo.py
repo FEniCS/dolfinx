@@ -1,7 +1,7 @@
-# Demonstration of MeshFunction
-#
-# Original implementation: ../cpp/main.cpp by Ola Skavhaug.
-#
+"""This demo illustrates use of the MeshFunction class.
+
+Original implementation: ../cpp/main.cpp by Ola Skavhaug."""
+
 __author__ = "Kristian B. Oelgaard (k.b.oelgaard@tudelft.nl)"
 __date__ = "2007-11-15 -- 2008-03-31"
 __copyright__ = "Copyright (C) 2007 Kristian B. Oelgaard"
@@ -11,7 +11,7 @@ from dolfin import *
 
 # Read mesh from file
 mesh = Mesh("../mesh2D.xml.gz")
- 
+
 # Read mesh function from file
 file_in = File("../meshfunction.xml")
 f = MeshFunction("real", mesh)
