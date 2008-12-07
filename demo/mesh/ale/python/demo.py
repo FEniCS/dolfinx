@@ -1,8 +1,7 @@
-"""This demo demonstrates how to move the vertex coordinates
-of a boundary mesh and then updating the interior vertex
-coordinates of the original mesh by suitably interpolating
-the vertex coordinates (useful for implementation of ALE
-methods)."""
+"""This demo demonstrates how to move the vertex coordinates of a
+boundary mesh and then updating the interior vertex coordinates of the
+original mesh by suitably interpolating the vertex coordinates (useful
+for implementation of ALE methods)."""
 
 __author__ = "Solveig Bruvoll (solveio@ifi.uio.no) and Anders Logg (logg@simula.no)"
 __date__ = "2008-05-02 -- 2008-05-28"

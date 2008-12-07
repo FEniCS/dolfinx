@@ -1,16 +1,17 @@
-# This demo program demonstrates how to mark sub domains
-# of a mesh and store the sub domain markers as a mesh
-# function to a DOLFIN XML file.
-#
-# The sub domain markers produced by this demo program
-# are the ones used for the Stokes demo programs.
-#
-# Original implementation: ../cpp/main.cpp by Anders Logg.
-#
+"""This demo program demonstrates how to mark sub domains of a mesh
+and store the sub domain markers as a mesh function to a DOLFIN XML
+file.
+
+The sub domain markers produced by this demo program are the ones used
+for the Stokes demo programs.
+"""
+
 __author__ = "Kristian B. Oelgaard (k.b.oelgaard@tudelft.nl)"
-__date__ = "2007-11-15 -- 2008-02-14"
+__date__ = "2007-11-15 -- 2008-12-07"
 __copyright__ = "Copyright (C) 2007 Kristian B. Oelgaard"
 __license__  = "GNU LGPL Version 2.1"
+
+# Modified by Anders Logg, 2008.
 
 from dolfin import *
 
