@@ -35,8 +35,8 @@ for modName, mod in modules.items():
   modEnv.Append(LINKFLAGS=linkOpts)
   if env["PLATFORM"] == "darwin":
     modEnv.Append(FRAMEWORKS=frameworks)
-    modEnv.Append(CXXFLAGS=" -bind_at_load")
-    modEnv.Append(LDFLAGS=" -bind_at_load")
+    modEnv.Append(CXXFLAGS="-bind_at_load")
+    modEnv.Append(LDFLAGS="-bind_at_load")
   
   # the cpp demos!
   for dpath, dnames, fnames in os.walk(os.curdir):

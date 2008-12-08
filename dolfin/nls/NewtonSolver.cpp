@@ -2,9 +2,10 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Anders Logg, 2005-2008.
+// Modified by Martin Alnes, 2008.
 //
 // First added:  2005-10-23
-// Last changed: 2008-08-26
+// Last changed: 2008-12-04
 
 #include "NewtonSolver.h"
 #include "NonlinearProblem.h"
@@ -26,7 +27,7 @@ NewtonSolver::NewtonSolver(SolverType solver_type, PreconditionerType pc_type)
 }
 //-----------------------------------------------------------------------------
 NewtonSolver::NewtonSolver(GenericLinearSolver& solver, LinearAlgebraFactory& factory) 
-            : solver(&solver, NoDeleter<GenericLinearSolver>()), A(factory.create_matrix()), 
+            : solver(reference_to_no_delete_pointer(solver)), A(factory.create_matrix()), 
               dx(factory.create_vector()), b(factory.create_vector())
 {
   // Do nothing

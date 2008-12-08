@@ -543,7 +543,7 @@ def checkVersion(v_check, v_required):
 
 # Find modules ( srcnode must be updated ) 
 def getModules(configuredPackages, resolve_deps=True,
-               directory=".", disabled_modules=[]):
+               directory=".", disabled_packages=[]):
     """Generate module objects from specification files in module directories. Directories starting with a dot,
        e.g. ".ShadowModule" will not be processed
        
@@ -561,7 +561,7 @@ def getModules(configuredPackages, resolve_deps=True,
     for dpath, dnames, fnames in os.walk(srcDir):
         dpath = dpath[len(srcDir):] # Make relative to source dir
         for d in dnames[:]:
-            if d.startswith(".") or d in disabled_modules:
+            if d.startswith(".") or d in disabled_packages:
                 # Ignore dirs starting with '.'
                 dnames.remove(d)
                 continue
@@ -580,6 +580,13 @@ def getModules(configuredPackages, resolve_deps=True,
       modules[mod.name] = mod
     except NoModule:
       pass
+
+    # For every module, remove all optional dependencies that are
+    # listed in disabled_pacakges:
+    for key, value in modules.items():
+      for d in disabled_packages:
+        if d in value.optDependencies:
+          value.optDependencies.remove(d)
         
     if resolve_deps:
         modules = resolveModuleDependencies(modules, configuredPackages)
@@ -597,7 +604,7 @@ def getModulesAndDependencies(directory=".",
     # Find all modules:
 
     modules = getModules({}, resolve_deps=False, directory=directory,
-                         disabled_modules=disabled_packages)
+                         disabled_packages=disabled_packages)
 
     # next, build a list of all external dependencies for each module.
     # We also include the optional dependencies, as those are separated
@@ -1088,19 +1095,19 @@ def resolveModuleDependencies(modules, configuredPackages, packcfgObjs,
                     if request_version: # requested version is not None
                         if checkVersion(configuredPackages[package].version, request_version):
                            # Add cxxflags, and add package as a regular dependency.
-                            mod.cxxFlags += " -DHAS_%s=1" % (package.upper())
+                            mod.cxxFlags.append("-DHAS_%s=1" % (package.upper()))
                             mod.swigFlags.append("-DHAS_%s=1" % (package.upper()))
                             addToDependencies(mod.dependencies,package)
                             found = True
                     else:
                         # Add cxxflags, and add package as a regular dependency.
-                        mod.cxxFlags += " -DHAS_%s=1" % (package.upper())
+                        mod.cxxFlags.append("-DHAS_%s=1" % (package.upper()))
                         mod.swigFlags.append("-DHAS_%s=1" % (package.upper()))
                         addToDependencies(mod.dependencies,package)
                         found = True
                 elif internalmodules.has_key(package):
                     # Add cxxflags, and add package as a regular dependency.
-                    mod.cxxFlags += " -DHAS_%s=1" % (package.upper())
+                    mod.cxxFlags.append("-DHAS_%s=1" % (package.upper()))
                     mod.swigFlags.append("-DHAS_%s=1" % (package.upper()))
                     addToDependencies(mod.dependencies,package)
                     found = True
@@ -1115,13 +1122,13 @@ def resolveModuleDependencies(modules, configuredPackages, packcfgObjs,
                 found = False
                 if configuredPackages.has_key(package):
                     # Add cxxflags, and add package as a regular dependency.
-                    mod.cxxFlags += " -DHAS_%s=1" % (package.upper())
+                    mod.cxxFlags.append("-DHAS_%s=1" % (package.upper()))
                     mod.swigFlags.append("-DHAS_%s=1" % (package.upper()))
                     addToDependencies(mod.dependencies,package)
                     found = True
                 elif internalmodules.has_key(package):
                     # Add cxxflags, and add package as a regular dependency.
-                    mod.cxxFlags += " -DHAS_%s=1" % (package.upper())
+                    mod.cxxFlags.append("-DHAS_%s=1" % (package.upper()))
                     mod.swigFlags.append("-DHAS_%s=1" % (package.upper()))
                     addToDependencies(mod.dependencies,package)
                     found = True

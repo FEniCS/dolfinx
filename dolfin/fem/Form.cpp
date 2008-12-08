@@ -2,9 +2,10 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Anders Logg, 2008.
+// Modified by Martin Alnes, 2008.
 //
 // First added:  2007-12-10
-// Last changed: 2008-11-06
+// Last changed: 2008-12-04
 
 #include <ufc.h>
 #include <dolfin/common/NoDeleter.h>
@@ -20,20 +21,29 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 Form::Form()
 {
+  // Do nothing (TODO: Remove?)
+}
+//-----------------------------------------------------------------------------
+Form::Form(dolfin::uint rank, dolfin::uint num_coefficients):
+    _function_spaces(rank),
+    _coefficients(num_coefficients)
+{
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 Form::Form(const std::vector<FunctionSpace*>& function_spaces,
-	         const std::vector<Function*>& coefficients,
-	         const ufc::form& ufc_form)
+           const std::vector<Function*>& coefficients,
+           const ufc::form& ufc_form):
+    _function_spaces(function_spaces.size()),
+    _coefficients(coefficients.size())
 {
   for (uint i = 0; i < function_spaces.size(); i++)
-    _function_spaces.push_back(std::tr1::shared_ptr<const FunctionSpace>(const_cast<const FunctionSpace*>(function_spaces[i]), NoDeleter<const FunctionSpace>()));
-
+    _function_spaces[i] = reference_to_no_delete_pointer(*function_spaces[i]);
+  
   for (uint i = 0; i < coefficients.size(); i++)
-    _coefficients.push_back(std::tr1::shared_ptr<const Function>(const_cast<const Function*>(coefficients[i]), NoDeleter<const Function>()));
+    _coefficients[i] = reference_to_no_delete_pointer(*coefficients[i]);
 
-  _ufc_form = std::tr1::shared_ptr<const ufc::form>(&ufc_form,NoDeleter<const ufc::form>());
+  _ufc_form = reference_to_no_delete_pointer(ufc_form);
 }
 //-----------------------------------------------------------------------------
 Form::~Form()

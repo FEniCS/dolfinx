@@ -2,9 +2,10 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Kristoffer Selim, 2008.
+// Modified by Martin Alnes, 2008.
 //
 // First added:  2008-09-11
-// Last changed: 2008-11-03
+// Last changed: 2008-12-08
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/NoDeleter.h>
@@ -22,9 +23,9 @@ using namespace dolfin;
 FunctionSpace::FunctionSpace(const Mesh& mesh,
                              const FiniteElement &element,
                              const DofMap& dofmap)
-  : _mesh(&mesh, NoDeleter<const Mesh>()),
-    _element(&element, NoDeleter<const FiniteElement>()),
-    _dofmap(&dofmap, NoDeleter<const DofMap>()),
+  : _mesh(reference_to_no_delete_pointer(mesh)),
+    _element(reference_to_no_delete_pointer(element)),
+    _dofmap(reference_to_no_delete_pointer(dofmap)),
     scratch(element), intersection_detector(0)
 {
   // Do nothing
@@ -80,6 +81,11 @@ const DofMap& FunctionSpace::dofmap() const
 {
   dolfin_assert(_dofmap);
   return *_dofmap;
+}
+//-----------------------------------------------------------------------------
+dolfin::uint FunctionSpace::dim() const
+{
+  return dofmap().global_dimension();
 }
 //-----------------------------------------------------------------------------
 void FunctionSpace::eval(double* values,

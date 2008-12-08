@@ -40,6 +40,9 @@ namespace dolfin
     // Attach function to coefficient
     void attach(Function& v);
 
+    // Attach function to coefficient
+    void attach(std::tr1::shared_ptr<Function> v);
+
     /// Create function space for coefficient
     virtual const FunctionSpace* create_function_space() const = 0;
 

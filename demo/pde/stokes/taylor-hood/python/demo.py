@@ -1,107 +1,71 @@
-# This demo solves the Stokes equations, using quadratic
-# elements for the velocity and first degree elements for
-# the pressure (Taylor-Hood elements). The sub domains
-# for the different boundary conditions used in this
-# simulation are computed by the demo program in
-# src/demo/mesh/subdomains.
-#
-# Original implementation: ../cpp/main.cpp by Anders Logg
-#
+"""This demo solves the Stokes equations, using quadratic elements for
+the velocity and first degree elements for the pressure (Taylor-Hood
+elements). The sub domains for the different boundary conditions
+used in this simulation are computed by the demo program in
+src/demo/mesh/subdomains."""
 
 __author__ = "Kristian B. Oelgaard (k.b.oelgaard@tudelft.nl)"
-__date__ = "2007-11-16 -- 2007-12-03"
+__date__ = "2007-11-16 -- 2008-12-05"
 __copyright__ = "Copyright (C) 2007 Kristian B. Oelgaard"
 __license__  = "GNU LGPL Version 2.1"
 
+# Modified by Anders Logg, 2008.
+
 from dolfin import *
 
-# Load mesh and create finite elements
+# Load mesh
 mesh = Mesh("../../../../../data/meshes/dolfin-2.xml.gz")
-scalar = FiniteElement("Lagrange", "triangle", 1)
-vector = VectorElement("Lagrange", "triangle", 2)
-system = vector + scalar
+
+# Define function spaces
+V = VectorFunctionSpace(mesh, "Lagrange", 2)
+Q = FunctionSpace(mesh, "Lagrange", 1)
+W = V + Q
 
 # Load subdomains
 sub_domains = MeshFunction("uint", mesh, "../subdomains.xml.gz")
 
-# Function for no-slip boundary condition for velocity
-class Noslip(Function):
-    def __init__(self, mesh):
-        Function.__init__(self, mesh)
-
-    def eval(self, values, x):
-        values[0] = 0.0
-        values[1] = 0.0
-
-    def rank(self):
-        return 1
-
-    def dim(self, i):
-        return 2
-
-# Function for inflow boundary condition for velocity
-class Inflow(Function):
-    def __init__(self, mesh):
-        Function.__init__(self, mesh)
-
-    def eval(self, values, x):
-        values[0] = -sin(x[1]*DOLFIN_PI)
-        values[1] = 0.0
-
-    def rank(self):
-        return 1
-
-    def dim(self, i):
-        return 2
-
-# Create functions for boundary conditions
-noslip = Noslip(mesh)
-inflow = Inflow(mesh)
-zero = Function(mesh, 0.0)
-
-# Define sub systems for boundary conditions
-velocity = SubSystem(0)
-pressure = SubSystem(1)
+print "offset0 =", W.sub(0).dofmap().offset()
+print "offset1 =", W.sub(1).dofmap().offset()
 
 # No-slip boundary condition for velocity
-bc0 = DirichletBC(noslip, sub_domains, 0, velocity)
+noslip = Constant(mesh, (0, 0))
+bc0 = DirichletBC(noslip, W.sub(0), sub_domains, 0)
 
 # Inflow boundary condition for velocity
-bc1 = DirichletBC(inflow, sub_domains, 1, velocity)
+inflow = Function(V, cppexpr = ("-sin(x[1]*pi)","0.0"))
+bc1 = DirichletBC(inflow, W.sub(0), sub_domains, 1)
 
 # Boundary condition for pressure at outflow
-bc2 = DirichletBC(zero, sub_domains, 2, pressure)
+zero = Constant(mesh, 0.0)
+bc2 = DirichletBC(zero, W.sub(1), sub_domains, 2)
 
 # Collect boundary conditions
 bcs = [bc0, bc1, bc2]
 
 # Define variational problem
-(v, q) = TestFunctions(system)
-(u, p) = TrialFunctions(system)
-f = Function(vector, mesh, 2, 0.0)
-
+(v, q) = TestFunctions(W)
+(u, p) = TrialFunctions(W)
+f = Constant(mesh, (0, 0, 0))
 a = (dot(grad(v), grad(u)) - div(v)*p + q*div(u))*dx
 L = dot(v, f)*dx
 
-# Set up PDE
-pde = LinearPDE(a, L, mesh, bcs)
+# Compute solution
+pde = LinearPDE(a, L, bcs)
+(u, p) = pde.solve().split()
 
-# Solve PDE
-(U, P) = pde.solve().split()
-
-# Save solution
+# Save solution in DOLFIN XML format
 ufile = File("velocity.xml")
-ufile << U
+ufile << u
 pfile = File("pressure.xml")
-pfile << P
+pfile << p
 
 # Save solution in VTK format
 ufile_pvd = File("velocity.pvd")
-ufile_pvd << U
+ufile_pvd << u
 pfile_pvd = File("pressure.pvd")
-pfile_pvd << P
+pfile_pvd << p
 
 # Plot solution
-plot(U)
-plot(P)
+plot(u)
+plot(p)
 interactive()

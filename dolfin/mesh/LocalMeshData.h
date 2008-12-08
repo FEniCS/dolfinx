@@ -39,7 +39,7 @@ namespace dolfin
     { return _vertex_indices; }
     
     /// Read only access do cell vertices
-    const std::vector<uint>& cell_vertices() const
+    const std::vector<std::vector<uint> >& cell_vertices() const
     { return _cell_vertices; }
 
   private:

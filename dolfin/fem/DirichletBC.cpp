@@ -5,7 +5,7 @@
 // Modified by Martin Sandve Alnes, 2008
 //
 // First added:  2007-04-10
-// Last changed: 2008-10-30
+// Last changed: 2008-12-03
 
 #include <dolfin/common/constants.h>
 #include <dolfin/function/Function.h>
@@ -32,7 +32,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(const Function& g,
                          const FunctionSpace& V,
-                         SubDomain& sub_domain,
+                         const SubDomain& sub_domain,
                          BCMethod method)
   : BoundaryCondition(V),
     g(g),
@@ -44,7 +44,7 @@ DirichletBC::DirichletBC(const Function& g,
 //-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(const Function& g,
                          const FunctionSpace& V,
-                         MeshFunction<uint>& sub_domains,
+                         const MeshFunction<uint>& sub_domains,
                          uint sub_domain,
                          BCMethod method)
   : BoundaryCondition(V),
@@ -140,8 +140,8 @@ bool DirichletBC::is_compatible(Function& v) const
   const uint rank = g.function_space().element().value_rank();
   for (uint i = 0; i < rank ; i++)
     size *= g.function_space().element().value_dimension(i);
-  simple_array<double> g_values(size, new double[size]);
-  simple_array<double> v_values(size, new double[size]);
+  double* g_values = new double[size];
+  double* v_values = new double[size];
 
   // Get mesh
   const Mesh& mesh = V->mesh();
@@ -163,31 +163,27 @@ bool DirichletBC::is_compatible(Function& v) const
     // Iterate over facet vertices
     for (VertexIterator vertex(facet); !vertex.end(); ++vertex)
     {
-      // Get facet coordinates
-      simple_array<const double> x(mesh.geometry().dim(), vertex->x());
-      
       // Evaluate g and v at vertex
-      error("New Function class need simple_array interface.");
-      //g.eval(g_values, x);
-      //v.eval(v_values, x);
+      g.eval(g_values, vertex->x());
+      v.eval(v_values, vertex->x());
 
       // Check values
       for (uint i = 0; i < size; i++)
       {
         if (std::abs(g_values[i] - v_values[i]) > DOLFIN_EPS)
         {
-          Point p(mesh.geometry().dim(), x.data);
-          cout << "Incompatible function value " << v_values[i] << " at p = " << p << ", should be " << g_values[i] << "." << endl;
-          delete [] g_values.data;
-          delete [] v_values.data;
+          Point p(mesh.geometry().dim(), vertex->x());
+          cout << "Incompatible function value " << v_values[i] << " at x = " << p << ", should be " << g_values[i] << "." << endl;
+          delete [] g_values;
+          delete [] v_values;
           return false;
         }
       }
     }
   }
 
-  delete [] g_values.data;
-  delete [] v_values.data;
+  delete [] g_values;
+  delete [] v_values;
   return true;
 }
 //-----------------------------------------------------------------------------
@@ -249,15 +245,15 @@ void DirichletBC::apply(GenericMatrix* A,
 void DirichletBC::check() const
 {
   // Check that function is in function space
-  if (!g.in(*V))
-    error("Unable to create boundary condition, boundary value function is not in trial space.");
+  //if (!g.in(*V))
+  //  error("Unable to create boundary condition, boundary value function is not in trial space.");
 
   // Check that the mesh is ordered
   if (!V->mesh().ordered())
     error("Unable to create boundary condition, mesh is not correctly ordered (consider calling mesh.order()).");
 }
 //-----------------------------------------------------------------------------
-void DirichletBC::init_from_sub_domain(SubDomain& sub_domain)
+void DirichletBC::init_from_sub_domain(const SubDomain& sub_domain)
 {
   dolfin_assert(facets.size() == 0);
 
@@ -271,6 +267,9 @@ void DirichletBC::init_from_sub_domain(SubDomain& sub_domain)
   V->mesh().init(dim - 1);
   MeshFunction<uint> sub_domains(const_cast<Mesh&>(V->mesh()), dim - 1);
 
+  // Set geometric dimension (needed for SWIG interface)
+  sub_domain._geometric_dimension = V->mesh().geometry().dim();
+
   // Mark everything as sub domain 1
   sub_domains = 1;
   
@@ -281,7 +280,7 @@ void DirichletBC::init_from_sub_domain(SubDomain& sub_domain)
   init_from_mesh_function(sub_domains, 0);
 }
 //-----------------------------------------------------------------------------
-void DirichletBC::init_from_mesh_function(MeshFunction<uint>& sub_domains,
+void DirichletBC::init_from_mesh_function(const MeshFunction<uint>& sub_domains,
                                           uint sub_domain)
 {
   dolfin_assert(facets.size() == 0);
@@ -519,8 +518,7 @@ void DirichletBC::compute_bc_pointwise(std::map<uint, double>& boundary_values,
     for (uint i = 0; i < dofmap.local_dimension(); ++i)
     {
       // Check if the coordinates are part of the sub domain
-      simple_array<const double> x(mesh.geometry().dim(), data.coordinates[i]);
-      if ( !user_sub_domain->inside(x, false) )
+      if ( !user_sub_domain->inside(data.coordinates[i], false) )
         continue;
       
       if (!interpolated)

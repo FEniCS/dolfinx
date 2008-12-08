@@ -1,7 +1,7 @@
-# The demo illustrates the built-in mesh types.
+"""This demo illustrates the built-in mesh types."""
 
 __author__    = "Garth N. Wells (gnw20@cam.ac.uk)"
-__date__      = "2008-07-11 -- 2008-07-15"
+__date__      = "2008-07-11 -- 2008-12-07"
 __copyright__ = "Copyright (C) 2008 Garth N. Wells"
 __license__   = "GNU LGPL Version 2.1"
 

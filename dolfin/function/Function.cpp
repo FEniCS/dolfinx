@@ -5,7 +5,7 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2003-11-28
-// Last changed: 2008-11-19
+// Last changed: 2008-12-04
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/Array.h>
@@ -32,7 +32,7 @@ Function::Function()
 }
 //-----------------------------------------------------------------------------
 Function::Function(const FunctionSpace& V)
-  : _function_space(&V, NoDeleter<const FunctionSpace>()),
+  : _function_space(reference_to_no_delete_pointer(V)),
     _vector(0)
 {
   // Do nothing
@@ -165,6 +165,12 @@ bool Function::in(const FunctionSpace& V) const
   return !_function_space || _function_space.get() == &V;
 }
 //-----------------------------------------------------------------------------
+dolfin::uint Function::geometric_dimension() const
+{
+  dolfin_assert(_function_space);
+  return _function_space->mesh().geometry().dim();
+}
+//-----------------------------------------------------------------------------
 void Function::eval(double* values, const double* x) const
 {
   dolfin_assert(values);
@@ -215,13 +221,13 @@ void Function::interpolate(double* coefficients,
 {
   dolfin_assert(coefficients);
 
-  // Check that function space matches
-  if (!in(V))
-    error("Unable to interpolate function, incorrect function space.");
-
   // Either pick values or evaluate dof functionals
   if (_vector)
   {
+    // Check that function space matches
+    if (!in(V))
+      error("Unable to interpolate function, incorrect function space.");
+
     // Get dofmap
     const DofMap& dofmap = V.dofmap();
 

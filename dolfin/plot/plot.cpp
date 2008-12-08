@@ -2,9 +2,10 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Joachim Berdal Haga, 2008.
+// Modified by Garth N. Wells, 2008.
 //
 // First added:  2007-05-02
-// Last changed: 2008-10-21
+// Last changed: 2008-12-06
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -76,35 +77,50 @@ namespace dolfin
     // Write script file
     fprintf(script_file, "import os, sys\n");
     fprintf(script_file, "try:\n");
-    fprintf(script_file, "    from dolfin import *\n\n");
+    fprintf(script_file, "    from dolfin import *\n");
+    fprintf(script_file, "except:\n");
+    fprintf(script_file, "    print \"Could not import DOLFIN Python module.\"\n");
+    fprintf(script_file, "    sys.exit(1)\n\n");
+
+    fprintf(script_file, "try:\n");
     if (mesh)
     {
       fprintf(script_file, "    mesh = Mesh('%s')\n", data_name.c_str());
       fprintf(script_file, "    f = MeshFunction('%s', mesh, '%s')\n\n", type.c_str(), data_name.c_str());
     }
     else
-      fprintf(script_file, "    f = %s(r'%s')\n\n", type.c_str(), data_name.c_str());
+    {
+      fprintf(script_file, "    f = %s(r'%s')\n", type.c_str(), data_name.c_str());
+    }
     fprintf(script_file, "    os.remove('%s')\n", data_name.c_str());
     fprintf(script_file, "    os.remove('%s')\n\n", script_name.c_str());
+
+      fprintf(script_file, "except:\n");
+      fprintf(script_file, "    print \"Could not read DOLFIN mesh or function XML file for plotting.\"\n");
+      fprintf(script_file, "    sys.exit(1)\n\n");
+
+    fprintf(script_file, "try:\n");
     if (mode == "")
       fprintf(script_file, "    plot(f)\n");
     else
       fprintf(script_file, "    plot(f, mode='%s')\n", mode.c_str());
     fprintf(script_file, "    interactive()\n");
+
     fprintf(script_file, "except:\n");
-    fprintf(script_file, "    sys.exit(1)\n");
+    fprintf(script_file, "    print \"Could not plot DOLFIN mesh or function.\"\n");
+    fprintf(script_file, "    sys.exit(1)");
     fclose(script_file);
     
     message("Plotting %s, press q to continue...", type.c_str());
 
     // Run script
 #ifdef __WIN32__
-    std::string command = "python " + script_name + " > nul";
+    std::string command = "python " + script_name;
 #else
-    std::string command = "python " + script_name + " > /dev/null";
+    std::string command = "python " + script_name;
 #endif
     if (system(command.c_str()) != 0)
-      message("Unable to plot (PyDOLFIN or Viper plotter not available).");
+      message("Unable to plot (DOLFIN Python module or Viper plotter not available).");
   }
 
   template<class T> void plot(T& t, std::string class_name, std::string mode)

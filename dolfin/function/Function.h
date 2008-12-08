@@ -6,7 +6,7 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2003-11-28
-// Last changed: 2008-11-19
+// Last changed: 2008-12-03
 
 #ifndef __FUNCTION_H
 #define __FUNCTION_H
@@ -81,6 +81,9 @@ namespace dolfin
     /// Check if function is a member of the given function space
     bool in(const FunctionSpace& V) const;
 
+    /// Return geometric dimension
+    uint geometric_dimension() const;
+    
     /// Function evaluation (overload for user-defined function, simple version)
     virtual void eval(double* values, const double* x) const;
 

@@ -23,8 +23,8 @@ LocalMeshData::~LocalMeshData()
 //-----------------------------------------------------------------------------
 void LocalMeshData::clear()
 {
-  vertex_coordinates.clear();
-  vertex_indices.clear();
-  cell_vertices.clear();
+  _vertex_coordinates.clear();
+  _vertex_indices.clear();
+  _cell_vertices.clear();
 }
 //-----------------------------------------------------------------------------

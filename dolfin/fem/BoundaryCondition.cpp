@@ -2,9 +2,10 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells 2007, 2008.
+// Modified by Martin Alnes, 2008.
 //
 // First added:  2008-06-18
-// Last changed: 2008-10-30
+// Last changed: 2008-12-04
 
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/function/FunctionSpace.h>
@@ -16,7 +17,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 BoundaryCondition::BoundaryCondition(const FunctionSpace& V)
-  : V(&V, NoDeleter<const FunctionSpace>())
+  : V(reference_to_no_delete_pointer(V))
 {
   // Do nothing
 }

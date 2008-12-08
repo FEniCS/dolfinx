@@ -175,36 +175,31 @@ void VTKFile::ResultsWrite(const Function& u) const
 
   // FIXME: Interpolate to vertices, then write to file.
 
-  // Test for finite element type by signature
-/*
-  if(u.type() == Function::discrete)
+  // Test for cell-based element type by signature
+  if(rank == 0)
   {
-    if(rank == 0)
-    {
-      // Test for P0 element
-      if(u.elemen().signature().substr(0, 49) == "Discontinuous Lagrange finite element of degree 0")
-        data_type = "cell";
-      // Test for non-Lagrane element
-      else if(u.element().signature().substr(0, 8) != "Lagrange")
-        error("Only Lagrange functions or order k > 0 can be written in VTK format. You may need to project your function."); 
-    }
-    else
-    {
-      // FIXME: Add test for other rank elements 
-    }
+    // Test for P0 element
+    if(u.function_space().element().signature().substr(0, 49) == "Discontinuous Lagrange finite element of degree 0")
+      data_type = "cell";
+    // Test for non-Lagrane element
+    else if(u.function_space().element().signature().substr(0, 8) != "Lagrange")
+      error("Discontinuous Lagrange functions of order k > 0 cannot be written in VTK format. You may need to project your function."); 
   }
-*/
+  else
+  {
+    // FIXME: Add test for other rank elements 
+  }
 
   // Open file
   FILE *fp = fopen(vtu_filename.c_str(), "a");
   
   // Get mesh
-  Mesh& mesh = const_cast<Mesh&>(u.function_space().mesh());
+  const Mesh& mesh = u.function_space().mesh();
 
   // Write function data at mesh cells
   if(data_type == "cell")
   {
-    // Allocate memory for function values at vertices
+    // Allocate memory for function values at cell centres
     uint size = mesh.numCells();
     for (uint i = 0; i < u.function_space().element().value_rank(); i++)
       size *= u.function_space().element().value_dimension(i);
@@ -389,7 +384,7 @@ void VTKFile::MeshFunctionWrite(T& meshfunction)
   const Mesh& mesh = meshfunction.mesh(); 
 
   if( meshfunction.dim() != mesh.topology().dim() )
-    error("VTK output of mesh functions is implemenetd for cell-based functions only.");    
+    error("VTK output of mesh functions is implemented for cell-based functions only.");    
 
   // Write headers
   VTKHeaderOpen(mesh);

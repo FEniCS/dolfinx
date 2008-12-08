@@ -21,6 +21,7 @@ namespace dolfin
   class Form;
   class UFC;
   class FunctionSpace;
+  class SubFunction;
   class Data;
 
 
@@ -158,21 +159,24 @@ namespace dolfin
   };
 
   /// This function is used for the Python interface. By inheriting
-  /// from this function instead of cpp_Function, we avoid unnecessary
+  /// from this function instead of dolfin::Function, we avoid unnecessary
   /// calls through the SWIG created director class, when dealing
   /// with discrete functions in PyDOLFIN.
-  class cpp_DiscreteFunction : public Function
+  class DiscreteFunction : public Function
   {
   public:
 
     // Constructor
-    cpp_DiscreteFunction() : Function(){}
+    DiscreteFunction() : Function(){}
     
     // Constructor
-    cpp_DiscreteFunction(const FunctionSpace& V) : Function(V)
+    DiscreteFunction(const FunctionSpace& V) : Function(V)
     {
       vector();
     }
+
+    // Constructor
+    DiscreteFunction(const SubFunction& v) : Function(v){}
 
   };
 }
