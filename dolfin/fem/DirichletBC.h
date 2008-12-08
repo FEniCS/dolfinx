@@ -4,7 +4,7 @@
 // Modified by Kristian Oelgaard, 2007
 //
 // First added:  2007-04-10
-// Last changed: 2008-11-03
+// Last changed: 2008-12-08
 //
 // FIXME: This class needs some cleanup, in particular collecting
 // FIXME: all data from different representations into a common
@@ -126,8 +126,11 @@ namespace dolfin
     // Apply boundary conditions
     void apply(GenericMatrix* A, GenericVector* b, const GenericVector* x) const;
     
-    // Check input data
+    // Check input data to constructor
     void check() const;
+
+    // Check input data to apply()
+    void check(GenericMatrix* A, GenericVector* b, const GenericVector* x) const;
 
     // Initialize sub domain markers from sub domain
     void init_from_sub_domain(const SubDomain& sub_domain);
