@@ -7,7 +7,7 @@
 // Modified by Kristoffer Selim 2008.
 //
 // First added:  2006-05-09
-// Last changed: 2008-11-18
+// Last changed: 2008-12-08
 
 #include <sstream>
 
@@ -22,7 +22,7 @@
 #include "MeshSmoothing.h"
 #include "MeshOrdering.h"
 #include "MeshFunction.h"
-#include "MeshPartition.h"
+#include "MeshPartitioning.h"
 #include "BoundaryMesh.h"
 #include "Cell.h"
 #include "Vertex.h"
@@ -236,7 +236,7 @@ void Mesh::smooth(uint num_smoothings)
 void Mesh::partition(MeshFunction<uint>& partitions)
 {
   //  partition(partitions, MPI::num_processes());
-  MeshPartition::partition(*this, partitions);
+  MeshPartitioning::partition(*this, partitions);
 
   // Mesh may not be ordered
   _ordered = false;
@@ -248,7 +248,7 @@ void Mesh::partition(MeshFunction<uint>& partitions, uint num_partitions)
   if (MPI::receive()) { MPIMeshCommunicator::receive(partitions); return; }
 
   // Partition mesh
-  MeshPartition::partition(*this, partitions, num_partitions);
+  MeshPartitioning::partition(*this, partitions, num_partitions);
 
   // Broadcast mesh according to parallel policy
   if (MPI::broadcast()) { MPIMeshCommunicator::broadcast(partitions); }

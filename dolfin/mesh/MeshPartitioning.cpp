@@ -21,7 +21,7 @@
 #include "Facet.h"
 #include "Vertex.h"
 #include "MeshFunction.h"
-#include "MeshPartition.h"
+#include "MeshPartitioning.h"
 
 #if defined HAS_PARMETIS && HAS_MPI
 
@@ -31,8 +31,10 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void MeshPartition::partition(Mesh& mesh, const LocalMeshData& data)
+void MeshPartitioning::partition(Mesh& mesh, const LocalMeshData& data)
 {
+  dolfin_debug("Partitioning mesh...");
+  
   // Get number of processes and process number
   const uint num_processes = MPI::num_processes();
   const uint process_number = MPI::process_number();
@@ -54,6 +56,7 @@ void MeshPartition::partition(Mesh& mesh, const LocalMeshData& data)
   int* vertex_distribution_send = new int[num_processes];
   int* vtxdist = new int[num_processes];
   vertex_distribution_send[process_number] = num_local_vertices;
+  dolfin_debug("Communicating vertex distribution across processors...");
   MPI_Allreduce(vertex_distribution_send, vtxdist, num_processes, 
                 MPI_INT, MPI_SUM, MPI_COMM_WORLD);
 
@@ -65,11 +68,12 @@ void MeshPartition::partition(Mesh& mesh, const LocalMeshData& data)
       xyz[i*gdim + j] = data.vertex_coordinates()[i][j];
 
   // Call ParMETIS to partition vertex distribution array
+  dolfin_debug("Calling ParMETIS to distribute vertices");
   ParMETIS_V3_PartGeom(vtxdist, &ndims, xyz, part, &comm);
 }
 //-----------------------------------------------------------------------------
-void MeshPartition::partition(Mesh& mesh, MeshFunction<uint>& partitions,
-                              uint num_partitions)
+void MeshPartitioning::partition(Mesh& mesh, MeshFunction<uint>& partitions,
+                                 uint num_partitions)
 {
   // Initialise MeshFunction partitions
   partitions.init(mesh, mesh.topology().dim());
@@ -85,7 +89,7 @@ void MeshPartition::partition(Mesh& mesh, MeshFunction<uint>& partitions,
     GraphPartition::edgecut(graph, num_partitions, partitions.values());
 }
 //-----------------------------------------------------------------------------
-void MeshPartition::partition(std::string meshfile, uint num_partitions)
+void MeshPartitioning::partition(std::string meshfile, uint num_partitions)
 {
   File infile(meshfile);
   Mesh mesh;
@@ -93,7 +97,7 @@ void MeshPartition::partition(std::string meshfile, uint num_partitions)
   MeshFunction<uint> partitions(mesh, mesh.topology().dim());
   partition(mesh, partitions, num_partitions);
 
-  error("MeshPartition::partition(std::string meshfile, uint num_partitions) not implemented");
+  error("MeshPartitioning::partition(std::string meshfile, uint num_partitions) not implemented");
   for (FacetIterator f(mesh); !f.end(); ++f) 
   {
     for (CellIterator c(*f); !c.end(); ++c) 
@@ -103,20 +107,20 @@ void MeshPartition::partition(std::string meshfile, uint num_partitions)
   }
 }
 //-----------------------------------------------------------------------------
-void MeshPartition::partition(Mesh& mesh, MeshFunction<uint>& partitions)
+void MeshPartitioning::partition(Mesh& mesh, MeshFunction<uint>& partitions)
 {
   partitionCommonMetis(mesh, partitions, 0);
 }
 //-----------------------------------------------------------------------------
-void MeshPartition::partition(Mesh& mesh, MeshFunction<uint>& partitions,
-			      MeshFunction<uint>& weight)
+void MeshPartitioning::partition(Mesh& mesh, MeshFunction<uint>& partitions,
+                                 MeshFunction<uint>& weight)
 {
   partitionCommonMetis(mesh, partitions, &weight);
 }
 //-----------------------------------------------------------------------------
-void MeshPartition::partitionCommonMetis(Mesh& mesh, 
-					 MeshFunction<uint>& partitions,
-					 MeshFunction<uint>* weight)
+void MeshPartitioning::partitionCommonMetis(Mesh& mesh, 
+                                            MeshFunction<uint>& partitions,
+                                            MeshFunction<uint>* weight)
 {
   // FIXME add code for dual graph based partitioning,
 }

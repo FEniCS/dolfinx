@@ -20,7 +20,7 @@ namespace dolfin
 
   /// This class provides a set of functions to partition a Mesh
 
-  class MeshPartition
+  class MeshPartitioning
   {
   public:
 
