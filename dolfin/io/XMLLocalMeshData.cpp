@@ -225,6 +225,7 @@ void XMLLocalMeshData::readVertices(const xmlChar* name, const xmlChar** attrs)
 {
   // Parse the number of global vertices
   const uint num_global_vertices = parseUnsignedInt(name, attrs, "size");
+  dolfin_debug1("num_global_vertices = %d", num_global_vertices);
 
   // Get process number and number of processes
   const uint num_processes  = MPI::num_processes();
@@ -245,12 +246,12 @@ void XMLLocalMeshData::readVertices(const xmlChar* name, const xmlChar** attrs)
     vertex_index_stop = vertex_index_start + n - 1;
   }
 
+  dolfin_debug3("vertex range: [%d, %d] size = %d",
+                vertex_index_start, vertex_index_stop, num_local_vertices());
+
   // Reserve space for local-to-global vertex map and vertex coordinates
   mesh_data._vertex_indices.reserve(num_local_vertices());
   mesh_data._vertex_coordinates.reserve(num_local_vertices());
-
-  dolfin_debug2("Reading %d vertices out of %d vertices.",
-                num_local_vertices(), num_global_vertices);
 }
 //-----------------------------------------------------------------------------
 void XMLLocalMeshData::readVertex(const xmlChar* name, const xmlChar** attrs)
@@ -302,7 +303,7 @@ void XMLLocalMeshData::readCells(const xmlChar* name, const xmlChar** attrs)
 {
   // Parse the number of global cells 
   const uint num_global_cells = parseUnsignedInt(name, attrs, "size");
-  dolfin::cout << "num_global_cells = " << num_global_cells << dolfin::endl;
+  dolfin_debug1("num_global_cells = %d", num_global_cells);
 
   // Get process number and number of processes
   const uint num_processes  = MPI::num_processes();
@@ -323,15 +324,11 @@ void XMLLocalMeshData::readCells(const xmlChar* name, const xmlChar** attrs)
     cell_index_stop = cell_index_start + n - 1;
   }
 
-  dolfin::cout << "cell_index_start = " << cell_index_start << dolfin::endl;
-  dolfin::cout << "cell_index_stop = " << cell_index_stop << dolfin::endl;
-  dolfin::cout << "num_local_cells  = " << num_local_cells() << dolfin::endl;
+  dolfin_debug3("cell range: [%d, %d] size = %d",
+                cell_index_start, cell_index_stop, num_local_cells());
 
   // Reserve space for cells
   mesh_data._cell_vertices.reserve(num_local_cells());
-
-  dolfin_debug2("Reading %d out of %d cells.",
-                num_local_cells(), num_global_cells);
 }
 //-----------------------------------------------------------------------------
 void XMLLocalMeshData::readInterval(const xmlChar *name, const xmlChar **attrs)

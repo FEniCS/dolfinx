@@ -4,7 +4,7 @@
 // Modified by Niclas Jansson, 2008.
 //
 // First added:  2002-11-12
-// Last changed: 2008-10-27
+// Last changed: 2008-12-08
 
 // FIXME: Use streams instead of stdio
 #include <stdio.h>
@@ -47,6 +47,11 @@ void GenericFile::operator>> (GenericMatrix& A)
 void GenericFile::operator>> (Mesh& mesh)
 {
   read_not_impl("Mesh");
+}
+//-----------------------------------------------------------------------------
+void GenericFile::operator>> (LocalMeshData& data)
+{
+  read_not_impl("LocalMeshData");
 }
 //-----------------------------------------------------------------------------
 void GenericFile::operator>> (MeshFunction<int>& meshfunction)
@@ -112,6 +117,11 @@ void GenericFile::operator<< (const GenericMatrix& A)
 void GenericFile::operator<< (const Mesh& mesh)
 {
   write_not_impl("Mesh");
+}
+//-----------------------------------------------------------------------------
+void GenericFile::operator<< (const LocalMeshData& data)
+{
+  write_not_impl("LocalMeshData");
 }
 //-----------------------------------------------------------------------------
 void GenericFile::operator<< (const MeshFunction<int>& meshfunction)

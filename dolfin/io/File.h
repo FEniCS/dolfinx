@@ -6,7 +6,7 @@
 // Modified by Nuno Lopes 2008
 //
 // First added:  2002-11-12
-// Last changed: 2008-10-27
+// Last changed: 2008-12-08
 
 #ifndef __FILE_H
 #define __FILE_H
@@ -20,6 +20,7 @@ namespace dolfin
 {
 
   class Mesh;
+  class LocalMeshData;
   class Graph;
   template <class T> class MeshFunction;
   class Function;
@@ -61,6 +62,9 @@ namespace dolfin
     /// Read mesh from file
     void operator>> (Mesh& mesh);
 
+    /// Read local mesh data from file
+    void operator>> (LocalMeshData& data);
+
     /// Read mesh function from file
     void operator>> (MeshFunction<int>& meshfunction);
     void operator>> (MeshFunction<unsigned int>& meshfunction);
@@ -87,8 +91,6 @@ namespace dolfin
 
     //--- Output ---
 
-    // FIXME: All outputs should be const!
-
     /// Write vector to file
     void operator<< (const GenericVector& x);
 
@@ -97,6 +99,9 @@ namespace dolfin
 
     /// Write mesh to file
     void operator<< (const Mesh& mesh);
+
+    /// Write local mesh data to file
+    void operator<< (const LocalMeshData& data);
 
     /// Write mesh function to file
     void operator<< (const MeshFunction<int>& meshfunction);
