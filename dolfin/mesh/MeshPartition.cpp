@@ -23,20 +23,16 @@
 #include "MeshFunction.h"
 #include "MeshPartition.h"
 
-#ifdef HAS_PARMETIS
-#include <parmetis.h>
-#endif
+#if defined HAS_PARMETIS && HAS_MPI
 
-#ifdef HAS_MPI
+#include <parmetis.h>
 #include <mpi.h>
-#endif
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 void MeshPartition::partition(Mesh& mesh, const LocalMeshData& data)
 {
-#ifdef HAS_PARMETIS
   // Get number of processes and process number
   const uint num_processes = MPI::num_processes();
   const uint process_number = MPI::process_number();
@@ -70,8 +66,6 @@ void MeshPartition::partition(Mesh& mesh, const LocalMeshData& data)
 
   // Call ParMETIS to partition vertex distribution array
   ParMETIS_V3_PartGeom(vtxdist, &ndims, xyz, part, &comm);
-#endif
-  error("Not implemented.");
 }
 //-----------------------------------------------------------------------------
 void MeshPartition::partition(Mesh& mesh, MeshFunction<uint>& partitions,
@@ -128,3 +122,4 @@ void MeshPartition::partitionCommonMetis(Mesh& mesh,
 }
 //-----------------------------------------------------------------------------
 
+#endif
