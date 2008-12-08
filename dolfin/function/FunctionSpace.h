@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-09-11
-// Last changed: 2008-11-03
+// Last changed: 2008-12-08
 
 #ifndef __FUNCTION_SPACE_H
 #define __FUNCTION_SPACE_H
@@ -56,6 +56,9 @@ namespace dolfin
 
     /// Return dofmap
     const DofMap& dofmap() const;
+
+    /// Return dimension of function space
+    uint dim() const;
 
     /// Evaluate function v in function space at given point
     void eval(double* values,

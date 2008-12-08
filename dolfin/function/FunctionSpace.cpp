@@ -5,7 +5,7 @@
 // Modified by Martin Alnes, 2008.
 //
 // First added:  2008-09-11
-// Last changed: 2008-12-04
+// Last changed: 2008-12-08
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/NoDeleter.h>
@@ -18,7 +18,6 @@
 #include "FunctionSpace.h"
 
 using namespace dolfin;
-
 
 //-----------------------------------------------------------------------------
 FunctionSpace::FunctionSpace(const Mesh& mesh,
@@ -82,6 +81,11 @@ const DofMap& FunctionSpace::dofmap() const
 {
   dolfin_assert(_dofmap);
   return *_dofmap;
+}
+//-----------------------------------------------------------------------------
+dolfin::uint FunctionSpace::dim() const
+{
+  return dofmap().global_dimension();
 }
 //-----------------------------------------------------------------------------
 void FunctionSpace::eval(double* values,
