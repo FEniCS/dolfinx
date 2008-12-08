@@ -27,7 +27,7 @@ Coefficient::~Coefficient()
 //-----------------------------------------------------------------------------
 void Coefficient::attach(Function& v)
 {
-  std::tr1::shared_ptr<const Function> _v(reference_to_no_delete_pointer(v));
+  std::tr1::shared_ptr<Function> _v(reference_to_no_delete_pointer(v));
   attach(_v);
 }
 //-----------------------------------------------------------------------------
