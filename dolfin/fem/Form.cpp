@@ -5,7 +5,7 @@
 // Modified by Martin Alnes, 2008.
 //
 // First added:  2007-12-10
-// Last changed: 2008-12-04
+// Last changed: 2008-12-09
 
 #include <ufc.h>
 #include <dolfin/common/NoDeleter.h>
@@ -24,17 +24,17 @@ Form::Form()
   // Do nothing (TODO: Remove?)
 }
 //-----------------------------------------------------------------------------
-Form::Form(dolfin::uint rank, dolfin::uint num_coefficients):
-    _function_spaces(rank),
+Form::Form(dolfin::uint rank, dolfin::uint num_coefficients)
+  : _function_spaces(rank),
     _coefficients(num_coefficients)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-Form::Form(const std::vector<FunctionSpace*>& function_spaces,
-           const std::vector<Function*>& coefficients,
-           const ufc::form& ufc_form):
-    _function_spaces(function_spaces.size()),
+Form::Form(const ufc::form& ufc_form,
+           const std::vector<FunctionSpace*>& function_spaces,
+           const std::vector<Function*>& coefficients)
+  : _function_spaces(function_spaces.size()),
     _coefficients(coefficients.size())
 {
   for (uint i = 0; i < function_spaces.size(); i++)
@@ -42,7 +42,7 @@ Form::Form(const std::vector<FunctionSpace*>& function_spaces,
   
   for (uint i = 0; i < coefficients.size(); i++)
     _coefficients[i] = reference_to_no_delete_pointer(*coefficients[i]);
-
+  
   _ufc_form = reference_to_no_delete_pointer(ufc_form);
 }
 //-----------------------------------------------------------------------------
