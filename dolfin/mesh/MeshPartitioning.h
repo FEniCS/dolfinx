@@ -18,24 +18,27 @@ namespace dolfin
 
   class LocalMeshData;
 
-  /// This class provides a set of functions to partition a Mesh
+  /// This class partitions and distributes a mesh based on
+  /// partitioned local mesh data. Note that the local mesh data will
+  /// also be repartitioned and redistributed during the computation
+  /// of the mesh partitioning.
 
   class MeshPartitioning
   {
   public:
 
     /// Create a partitioned mesh based on partitioned local mesh data
-    static void partition(Mesh& mesh, const LocalMeshData& data);
+    static void partition(Mesh& mesh, LocalMeshData& data);
 
-    /// Partition a mesh into num_part partitions
-    static void partition(Mesh& mesh, MeshFunction<uint>& partitions, uint num_partitions);
-    
   private:
 
-    // Geometric partitioning of vertices
-    static void partition_vertices();
+    // Partition vertices (geometric partitioning)
+    static void partition_vertices(const LocalMeshData& data, int* part);
 
-    // Topological partitioning of cells
+    // Distribute vertices according to "part" array
+    static void distribute_vertices(LocalMeshData& data, const int* part);
+
+    // Partition cells (topological partitioning)
     static void partition_cells();
 
   };
