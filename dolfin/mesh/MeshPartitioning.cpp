@@ -33,6 +33,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 void MeshPartitioning::partition(Mesh& mesh, const LocalMeshData& data)
 {
+#ifdef HAS_PARMETIS
   dolfin_debug("Partitioning mesh...");
   
   // Get number of processes and process number
@@ -79,6 +80,13 @@ void MeshPartitioning::partition(Mesh& mesh, const LocalMeshData& data)
   dolfin_debug("Calling ParMETIS to distribute vertices");
   ParMETIS_V3_PartGeom(vtxdist, &ndims, xyz, part, &comm);
   dolfin_debug("Done calling ParMETIS to distribute vertices");
+
+#else
+
+  error("Missing ParMETIS for parallel XML parser.");
+
+#endif
+
 }
 //-----------------------------------------------------------------------------
 void MeshPartitioning::partition(Mesh& mesh, MeshFunction<uint>& partitions,
