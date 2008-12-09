@@ -6,8 +6,8 @@
 // First added:  2003-10-21
 // Last changed: 2008-10-29
 
-#ifndef __PXML_MESH_H
-#define __PXML_MESH_H
+#ifndef __NEW_PXML_MESH_H
+#define __NEW_PXML_MESH_H
 
 #include <dolfin/common/Array.h>
 #include <dolfin/mesh/DynamicMeshEditor.h>
@@ -54,7 +54,7 @@ namespace dolfin
     void readArrayElement(const xmlChar* name, const xmlChar** attrs);
     
     // Partition parsed vertices, called when finished reading vertices
-    void closeVertices();
+    void partitionVertices();
     
     // Close mesh, called when finished reading data
     void closeMesh();
@@ -62,10 +62,6 @@ namespace dolfin
     // Check if vertex is local
     inline bool is_local(uint vertex) const
     { return local_vertices.find(vertex) != local_vertices.end(); }
-
-    uint num_local_vertices() const;
-    uint first_local_vertex() const;
-    uint last_local_vertex() const;
 
     // Reference to the mesh
     Mesh& _mesh;
@@ -95,19 +91,10 @@ namespace dolfin
     Array<uint> cell_buffer;
     
     // Number of local vertices and cells
-    uint num_cell_vertices;
+    uint num_local, num_cvert;
 
     // Geometric and topological dimensions
     uint gdim, tdim;
-
-    // Vertex distribution on all processes
-    uint* vertex_distribution;
-
-    // Local vertex map
-    std::vector<uint> vertex_map;
-
-    // Coordinates of local vertices
-    std::vector<double> vertex_coordinates;
 
     // FIXME replace these with hash tables
     std::set<uint> local_vertices, shared_vertex, used_vertex;

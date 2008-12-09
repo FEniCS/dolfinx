@@ -53,12 +53,20 @@ void MeshPartitioning::partition(Mesh& mesh, const LocalMeshData& data)
   // Prepare arguments for ParMetis
 
   // Communicate vertex distribution to all processes
-  int* vertex_distribution_send = new int[num_processes];
-  int* vtxdist = new int[num_processes];
-  vertex_distribution_send[process_number] = num_local_vertices;
+  int* vtxdist = new int[num_processes+1];
+  vtxdist[process_number] = static_cast<int>(num_local_vertices);
   dolfin_debug("Communicating vertex distribution across processors...");
-  MPI_Allreduce(vertex_distribution_send, vtxdist, num_processes, 
-                MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+  MPI_Allgather(&vtxdist[process_number], 1, MPI_INT, 
+                 vtxdist,                 1, MPI_INT, MPI_COMM_WORLD);
+
+  int sum = vtxdist[0];
+  vtxdist[0] = 0;
+  for (uint i = 1; i < num_processes + 1; ++i)
+  {
+    const int tmp = vtxdist[i];
+    vtxdist[i] = sum;
+    sum += tmp;
+  }  
 
   int ndims = static_cast<int>(gdim);
   int* part = new int[num_local_vertices];
@@ -70,6 +78,7 @@ void MeshPartitioning::partition(Mesh& mesh, const LocalMeshData& data)
   // Call ParMETIS to partition vertex distribution array
   dolfin_debug("Calling ParMETIS to distribute vertices");
   ParMETIS_V3_PartGeom(vtxdist, &ndims, xyz, part, &comm);
+  dolfin_debug("Done calling ParMETIS to distribute vertices");
 }
 //-----------------------------------------------------------------------------
 void MeshPartitioning::partition(Mesh& mesh, MeshFunction<uint>& partitions,
