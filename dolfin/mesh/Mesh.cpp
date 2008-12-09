@@ -233,30 +233,6 @@ void Mesh::smooth(uint num_smoothings)
     MeshSmoothing::smooth(*this);
 }
 //-----------------------------------------------------------------------------
-void Mesh::partition(MeshFunction<uint>& partitions)
-{
-  //  partition(partitions, MPI::num_processes());
-  MeshPartitioning::partition(*this, partitions);
-
-  // Mesh may not be ordered
-  _ordered = false;
-}
-//-----------------------------------------------------------------------------
-void Mesh::partition(MeshFunction<uint>& partitions, uint num_partitions)
-{
-  // Receive mesh partition function according to parallel policy
-  if (MPI::receive()) { MPIMeshCommunicator::receive(partitions); return; }
-
-  // Partition mesh
-  MeshPartitioning::partition(*this, partitions, num_partitions);
-
-  // Broadcast mesh according to parallel policy
-  if (MPI::broadcast()) { MPIMeshCommunicator::broadcast(partitions); }
-
-  // Mesh may not be ordered
-  _ordered = false;
-}
-//-----------------------------------------------------------------------------
 void Mesh::intersection(const Point& p, Array<uint>& cells, bool fixed_mesh)
 {
   // Don't reuse detector if mesh has moved
@@ -335,14 +311,6 @@ void Mesh::intersection(Mesh& mesh, Array<uint>& intersection, bool fixed_mesh)
     detector = new IntersectionDetector(*this);
 
   detector->intersection(mesh, intersection);
-}
-//-----------------------------------------------------------------------------
-void Mesh::distribute(MeshFunction<uint>& distribution)
-{
-  MPIMeshCommunicator::distribute(*this, distribution);
-
-  // Mesh may not be ordered
-  _ordered = false;
 }
 //-----------------------------------------------------------------------------
 void Mesh::disp() const

@@ -39,7 +39,7 @@ void MeshPartitioning::partition(Mesh& mesh, const LocalMeshData& data)
   const uint num_processes = MPI::num_processes();
   const uint process_number = MPI::process_number();
 
-  // Dimensions of local data
+  // Get dimensions of local data
   const uint num_local_vertices = data.vertex_coordinates().size();
   const uint num_local_cells = data.cell_vertices().size();
   dolfin_assert(num_local_vertices > 0);
@@ -75,6 +75,9 @@ void MeshPartitioning::partition(Mesh& mesh, const LocalMeshData& data)
 void MeshPartitioning::partition(Mesh& mesh, MeshFunction<uint>& partitions,
                                  uint num_partitions)
 {
+  // FIXME: This is an old implementation that keeps a single global mesh
+  // FIXME: on all processors. Should this be removed?
+
   // Initialise MeshFunction partitions
   partitions.init(mesh, mesh.topology().dim());
 
@@ -89,40 +92,15 @@ void MeshPartitioning::partition(Mesh& mesh, MeshFunction<uint>& partitions,
     GraphPartition::edgecut(graph, num_partitions, partitions.values());
 }
 //-----------------------------------------------------------------------------
-void MeshPartitioning::partition(std::string meshfile, uint num_partitions)
+void MeshPartitioning::partition_vertices()
 {
-  File infile(meshfile);
-  Mesh mesh;
-  infile >> mesh;
-  MeshFunction<uint> partitions(mesh, mesh.topology().dim());
-  partition(mesh, partitions, num_partitions);
 
-  error("MeshPartitioning::partition(std::string meshfile, uint num_partitions) not implemented");
-  for (FacetIterator f(mesh); !f.end(); ++f) 
-  {
-    for (CellIterator c(*f); !c.end(); ++c) 
-    {
-      // Do the dirty work here.
-    }
-  }
+
 }
 //-----------------------------------------------------------------------------
-void MeshPartitioning::partition(Mesh& mesh, MeshFunction<uint>& partitions)
+void MeshPartitioning::partition_cells()
 {
-  partitionCommonMetis(mesh, partitions, 0);
-}
-//-----------------------------------------------------------------------------
-void MeshPartitioning::partition(Mesh& mesh, MeshFunction<uint>& partitions,
-                                 MeshFunction<uint>& weight)
-{
-  partitionCommonMetis(mesh, partitions, &weight);
-}
-//-----------------------------------------------------------------------------
-void MeshPartitioning::partitionCommonMetis(Mesh& mesh, 
-                                            MeshFunction<uint>& partitions,
-                                            MeshFunction<uint>* weight)
-{
-  // FIXME add code for dual graph based partitioning,
+
 }
 //-----------------------------------------------------------------------------
 
