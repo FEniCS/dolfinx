@@ -5,7 +5,7 @@
 // Modified by Martin Sandve Alnes, 2008
 //
 // First added:  2007-04-10
-// Last changed: 2008-12-08
+// Last changed: 2008-12-09
 
 #include <dolfin/common/constants.h>
 #include <dolfin/function/Function.h>
@@ -260,22 +260,29 @@ void DirichletBC::check(GenericMatrix* A,
                         GenericVector* b,
                         const GenericVector* x) const
 {
-  dolfin_assert(A);
-  dolfin_assert(b);
   dolfin_assert(V);
 
-  // Check dimensions of matrix and vector
-  if (A->size(0) != b->size())
-    error("Matrix dimension (%d rows) does not match vector dimension (%d) for application of boundary conditions.",
-          A->size(0), b->size());
-  if (x && A->size(0) != x->size())
+  // Check matrix and vector dimensions
+  if (A && x && A->size(0) != x->size())
     error("Matrix dimension (%d rows) does not match vector dimension (%d) for application of boundary conditions.",
           A->size(0), x->size());
+  if (A && b && A->size(0) != b->size())
+    error("Matrix dimension (%d rows) does not match vector dimension (%d) for application of boundary conditions.",
+          A->size(0), b->size());
+  if (x && b && x->size() != b->size())
+    error("Vector dimension (%d rows) does not match vector dimension (%d) for application of boundary conditions.",
+          x->size(), b->size());
   
   // Check dimension of function space
-  if (A->size(0) < V->dim())
+  if (A && A->size(0) < V->dim())
     error("Dimension of function space (%d) too large for application to linear system (%d rows).",
           V->dim(), A->size(0));
+  if (x && x->size() < V->dim())
+    error("Dimension of function space (%d) too large for application to linear system (%d rows).",
+          V->dim(), x->size());
+  if (b && b->size() < V->dim())
+    error("Dimension of function space (%d) too large for application to linear system (%d rows).",
+          V->dim(), b->size());
 
   // FIXME: Check case A.size() > V->dim() for subspaces
 }
