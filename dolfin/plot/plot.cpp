@@ -74,53 +74,63 @@ namespace dolfin
     std::string script_name = secure_tmp_filename("plot.py");
     FILE* script_file = fopen(script_name.c_str(), "w");
 
-    // Write script file
-    fprintf(script_file, "import os, sys\n");
-    fprintf(script_file, "try:\n");
-    fprintf(script_file, "    from dolfin import *\n");
-    fprintf(script_file, "except:\n");
-    fprintf(script_file, "    print \"Could not import DOLFIN Python module.\"\n");
-    fprintf(script_file, "    sys.exit(1)\n\n");
+    fprintf(script_file, "is_mesh     = %d\n",   !!mesh);
+    fprintf(script_file, "plot_mode   = '%s'\n", mode.c_str());
+    fprintf(script_file, "plot_type   = '%s'\n", type.c_str());
+    fprintf(script_file, "data_name   = '%s'\n", data_name.c_str());
+    fprintf(script_file, "script_name = '%s'\n", script_name.c_str());
 
-    fprintf(script_file, "try:\n");
-    if (mesh)
-    {
-      fprintf(script_file, "    mesh = Mesh('%s')\n", data_name.c_str());
-      fprintf(script_file, "    f = MeshFunction('%s', mesh, '%s')\n\n", type.c_str(), data_name.c_str());
-    }
-    else
-    {
-      fprintf(script_file, "    f = %s(r'%s')\n", type.c_str(), data_name.c_str());
-    }
-    fprintf(script_file, "    os.remove('%s')\n", data_name.c_str());
-    fprintf(script_file, "    os.remove('%s')\n\n", script_name.c_str());
+    // We really really want to remove the temporary data files, since they can
+    // be large. To be extra sure, we do it in two places:
+    // - in python, as soon as it is read, in case of crash (this happens a lot,
+    // because of dodgy opengl stacks)
+    // - in c++ if the command fails (maybe because python is not installed)
+    // Deleting the script itself is less vital since it's small. Doing it in
+    // python works, but it seems iffy to delete it while it's running. So we do
+    // that in c++ only.
 
-      fprintf(script_file, "except:\n");
-      fprintf(script_file, "    print \"Could not read DOLFIN mesh or function XML file for plotting.\"\n");
-      fprintf(script_file, "    sys.exit(1)\n\n");
-
-    fprintf(script_file, "try:\n");
-    if (mode == "")
-      fprintf(script_file, "    plot(f)\n");
-    else
-      fprintf(script_file, "    plot(f, mode='%s')\n", mode.c_str());
-    fprintf(script_file, "    interactive()\n");
-
-    fprintf(script_file, "except:\n");
-    fprintf(script_file, "    print \"Could not plot DOLFIN mesh or function.\"\n");
-    fprintf(script_file, "    sys.exit(1)");
+#define _ "\n"
+    const char *script_body =
+      "import os, sys"_
+      ""_
+      "try:"_
+      "    what = 'import DOLFIN python module'"_
+      "    from dolfin import *"_
+      ""_
+      "    what = 'read DOLFIN mesh or function XML file for plotting'"_
+      "    if is_mesh:"_
+      "        mesh = Mesh(data_name)"_
+      "        f = MeshFunction(plot_type, mesh, data_name)"_
+      "    else:"_
+      "        plot_class = eval(plot_type)  # convert class name -> class"_
+      "        f = plot_class(data_name)"_
+      "    os.remove(data_name)"_
+      ""_
+      "    what = 'plot DOLFIN mesh or function'"_
+      "    if plot_mode:"_
+      "        plot(f, mode=plot_mode)"_
+      "    else:"_
+      "        plot(f)"_
+      "    interactive()"_
+      ""_
+      "except Exception, e:"_
+      "    print 'Failed to %s:' % what"_
+      "    print '  %s'          % str(e)"_
+      "    sys.exit(1)"_
+      ;
+#undef _
+    fprintf(script_file, "%s\n", script_body);
     fclose(script_file);
     
     message("Plotting %s, press q to continue...", type.c_str());
 
     // Run script
-#ifdef __WIN32__
     std::string command = "python " + script_name;
-#else
-    std::string command = "python " + script_name;
-#endif
-    if (system(command.c_str()) != 0)
+    if (system(command.c_str()) != 0) {
       message("Unable to plot (DOLFIN Python module or Viper plotter not available).");
+      remove(data_name.c_str()); // ignore errors, file may be deleted already
+    }
+    remove(script_name.c_str());
   }
 
   template<class T> void plot(T& t, std::string class_name, std::string mode)
@@ -140,6 +150,7 @@ namespace dolfin
   {
     // Save data to temporary file
     std::string data_name = secure_tmp_filename("plot.xml");
+
     dolfin_set("output destination", "silent");
     File file(data_name);
     file << f.mesh();
