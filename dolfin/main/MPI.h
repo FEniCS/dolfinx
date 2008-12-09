@@ -6,11 +6,12 @@
 // Modified by Anders Logg, 2008.
 //
 // First added:  2007-11-30
-// Last changed: 2008-09-18
+// Last changed: 2008-12-09
 
-#ifndef __MPI_helper_H
-#define __MPI_helper_H
+#ifndef __MPI_DOLFIN_WRAPPER_H
+#define __MPI_DOLFIN_WRAPPER_H
 
+#include <vector>
 #include <dolfin/common/types.h>
 
 namespace dolfin
@@ -34,7 +35,22 @@ namespace dolfin
     /// Determine whether we should receive (based on current parallel policy)
     static bool receive();
 
+    /// Distribute local arrays on all processors according to given partition
+    static void distribute(std::vector<uint>& values, const std::vector<uint> partition);
+
+    /// Distribute local arrays on all processors according to given partition
+    static void distribute(std::vector<double>& values, const std::vector<uint> partition);
+
+    /// Send-receive and return number of received values (wrapper for MPI_Sendrecv)
+    static uint send_recv(uint* send_buffer, uint send_size, uint dest,
+                          uint* recv_buffer, uint recv_size, uint source);
+
+    /// Send-receive and return number of received values (wrapper for MPI_Sendrecv)
+    static uint send_recv(double* send_buffer, uint send_size, uint dest,
+                          double* recv_buffer, uint recv_size, uint source);
+
   };
+
 }
 
 #endif

@@ -35,22 +35,27 @@ void MeshPartitioning::partition(Mesh& mesh, LocalMeshData& data)
   dolfin_debug("Partitioning mesh...");
   
   // Compute geometric partitioning of vertices
-  int* part = new int[data.vertex_coordinates().size()];
-  partition_vertices(data, part);
+  // FIXME: Use std::vector<uint> here instead!
+  int* vertex_partition = new int[data.vertex_coordinates().size()];
+  partition_vertices(data, vertex_partition);
 
   // Redistribute local mesh data according to partition
-  distribute_vertices(data, part);
+  distribute_vertices(data, vertex_partition);
 
   // Compute topological partitioning of cells
   partition_cells();
 
   // Cleanup
-  delete [] part;
+  delete [] vertex_partition;
 }
 //-----------------------------------------------------------------------------
 void MeshPartitioning::partition_vertices(const LocalMeshData& data,
-                                          int* part)
+                                          int* vertex_partition)
 {
+  // This function computes a (new) partition of all vertices by
+  // computing an array vertex_partition that assigns a new process
+  // number to each vertex stored by the local process.
+
   dolfin_debug("Computing geometric partitioning of vertices...");
 
   // Get number of processes and process number
@@ -59,8 +64,9 @@ void MeshPartitioning::partition_vertices(const LocalMeshData& data,
 
   // Get dimensions of local data
   const uint num_local_vertices = data.vertex_coordinates().size();
-  dolfin_assert(num_local_vertices > 0);
   const uint gdim = data.vertex_coordinates()[0].size();
+  dolfin_assert(num_local_vertices > 0);
+  dolfin_assert(gdim > 0);
 
   // FIXME: Why is this necessary?
   // Duplicate MPI communicator
@@ -93,7 +99,7 @@ void MeshPartitioning::partition_vertices(const LocalMeshData& data,
 
   // Call ParMETIS to partition vertex distribution array
   dolfin_debug("Calling ParMETIS to distribute vertices");
-  ParMETIS_V3_PartGeom(vtxdist, &ndims, xyz, part, &comm);
+  ParMETIS_V3_PartGeom(vtxdist, &ndims, xyz, vertex_partition, &comm);
   dolfin_debug("Done calling ParMETIS to distribute vertices");
 
   // Cleanup
@@ -102,10 +108,14 @@ void MeshPartitioning::partition_vertices(const LocalMeshData& data,
 }
 //-----------------------------------------------------------------------------
 void MeshPartitioning::distribute_vertices(LocalMeshData& data,
-                                           const int* part)
+                                           const int* vertex_partition)
 {
+  // This function redistributes the vertices stored by each process
+  // according to the array vertex_partition.
+
   dolfin_debug("Distributing local mesh data according to vertex partition...");
 
+  // Use MPI::distribute() here  
   
 }
 //-----------------------------------------------------------------------------

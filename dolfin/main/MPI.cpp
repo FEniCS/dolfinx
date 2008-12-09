@@ -8,8 +8,9 @@
 // First added:  2007-11-30
 // Last changed: 2008-08-18
 
-#include "MPI.h"
+#include "mpiutils.h"
 #include "SubSystemsManager.h"
+#include "MPI.h"
 
 #ifdef HAS_MPI
 
@@ -40,6 +41,54 @@ bool dolfin::MPI::receive()
 {
   // Always receive on processors with numbers > 0
   return num_processes() > 1 && process_number() > 0;
+}
+//-----------------------------------------------------------------------------
+void dolfin::MPI::distribute(std::vector<uint>& values,
+                             const std::vector<uint> partition)
+{
+  dolfin::distribute(values, partition);
+}
+//-----------------------------------------------------------------------------
+void dolfin::MPI::distribute(std::vector<double>& values,
+                             const std::vector<uint> partition)
+{
+  dolfin::distribute(values, partition);
+}
+//-----------------------------------------------------------------------------
+dolfin::uint dolfin::MPI::send_recv(uint* send_buffer, uint send_size, uint dest,
+                                    uint* recv_buffer, uint recv_size, uint source)
+{
+  MPI_Status status;
+
+  // Send and receive data
+  MPI_Sendrecv(send_buffer, static_cast<int>(send_size), MPI_UNSIGNED, static_cast<int>(dest), 0,
+               recv_buffer, static_cast<int>(recv_size), MPI_UNSIGNED, static_cast<int>(source),  0,
+               MPI_COMM_WORLD, &status);
+
+  // Check number of received values
+  int num_received = 0;
+  MPI_Get_count(&status, MPI_UNSIGNED, &num_received);
+  dolfin_assert(num_received >= 0);
+
+  return static_cast<uint>(num_received);
+}
+//-----------------------------------------------------------------------------
+dolfin::uint dolfin::MPI::send_recv(double* send_buffer, uint send_size, uint dest,
+                                    double* recv_buffer, uint recv_size, uint source)
+{
+  MPI_Status status;
+
+  // Send and receive data
+  MPI_Sendrecv(send_buffer, static_cast<int>(send_size), MPI_DOUBLE, static_cast<int>(dest), 0,
+               recv_buffer, static_cast<int>(recv_size), MPI_DOUBLE, static_cast<int>(source),  0,
+               MPI_COMM_WORLD, &status);
+
+  // Check number of received values
+  int num_received = 0;
+  MPI_Get_count(&status, MPI_DOUBLE, &num_received);
+  dolfin_assert(num_received >= 0);
+
+  return static_cast<uint>(num_received);
 }
 //-----------------------------------------------------------------------------
 
