@@ -32,7 +32,7 @@ noslip = Constant(mesh, (0, 0))
 bc0 = DirichletBC(noslip, W.sub(0), sub_domains, 0)
 
 # Inflow boundary condition for velocity
-inflow = Function(V, cppexpr = ("-sin(x[1]*pi)","0.0"))
+inflow = Function(V, ("-sin(x[1]*pi)","0.0"))
 bc1 = DirichletBC(inflow, W.sub(0), sub_domains, 1)
 
 # Boundary condition for pressure at outflow

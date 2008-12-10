@@ -30,7 +30,7 @@ class DirichletBoundary(SubDomain):
 # Define variational problem
 v = TestFunction(V)
 u = TrialFunction(V)
-f = Function(V, cppexpr="500.0 * exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)")
+f = Function(V,"500.0 * exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)")
 a = dot(grad(v), grad(u))*dx
 L = v*f*dx
 
