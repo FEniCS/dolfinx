@@ -337,8 +337,14 @@ void XMLLocalMeshData::readInterval(const xmlChar *name, const xmlChar **attrs)
   if (tdim != 1)
     error("Mesh entity (interval) does not match dimension of mesh (%d).", tdim);
 
+  // Read cell index
+  const uint c = parseUnsignedInt(name, attrs, "index");
+
+  // Skip cells not in range for this process
+  if (c < cell_index_start || c > cell_index_stop)
+    return;
+
   // Parse values
-  parseUnsignedInt(name, attrs, "index");
   uint v0 = parseUnsignedInt(name, attrs, "v0");
   uint v1 = parseUnsignedInt(name, attrs, "v1");
   
@@ -356,8 +362,14 @@ void XMLLocalMeshData::readTriangle(const xmlChar *name, const xmlChar **attrs)
   if (tdim != 2)
     error("Mesh entity (interval) does not match dimension of mesh (%d).", tdim);
 
+  // Read cell index
+  const uint c = parseUnsignedInt(name, attrs, "index");
+
+  // Skip cells not in range for this process
+  if (c < cell_index_start || c > cell_index_stop)
+    return;
+
   // Parse values
-  parseUnsignedInt(name, attrs, "index");
   uint v0 = parseUnsignedInt(name, attrs, "v0");
   uint v1 = parseUnsignedInt(name, attrs, "v1");
   uint v2 = parseUnsignedInt(name, attrs, "v2");
@@ -377,8 +389,14 @@ void XMLLocalMeshData::readTetrahedron(const xmlChar *name, const xmlChar **attr
   if (tdim != 3)
     error("Mesh entity (interval) does not match dimension of mesh (%d).", tdim);
 
+  // Read cell index
+  const uint c = parseUnsignedInt(name, attrs, "index");
+
+  // Skip cells not in range for this process
+  if (c < cell_index_start || c > cell_index_stop)
+    return;
+
   // Parse values
-  parseUnsignedInt(name, attrs, "index");
   uint v0 = parseUnsignedInt(name, attrs, "v0");
   uint v1 = parseUnsignedInt(name, attrs, "v1");
   uint v2 = parseUnsignedInt(name, attrs, "v2");
