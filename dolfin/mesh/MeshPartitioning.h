@@ -33,10 +33,12 @@ namespace dolfin
   private:
 
     // Partition vertices (geometric partitioning)
-    static void partition_vertices(const LocalMeshData& data, int* part);
+    static void partition_vertices(const LocalMeshData& data,
+                                   std::vector<uint>& vertex_partition);
 
     // Distribute vertices according to "part" array
-    static void distribute_vertices(LocalMeshData& data, const int* part);
+    static void distribute_vertices(LocalMeshData& data,
+                                    const std::vector<uint>& vertex_partition);
 
     // Partition cells (topological partitioning)
     static void partition_cells();

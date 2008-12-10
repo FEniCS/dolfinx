@@ -55,6 +55,26 @@ void dolfin::MPI::distribute(std::vector<double>& values,
   dolfin::distribute(values, partition);
 }
 //-----------------------------------------------------------------------------
+void dolfin::MPI::gather(std::vector<uint>& values)
+{
+  dolfin_assert(values.size() == num_processes());
+
+  // Prepare arrays
+  uint send_value = values[process_number()];
+  uint* received_values = new uint[values.size()];
+
+  // Call MPI
+  MPI_Allgather(&send_value,     1, MPI_UNSIGNED,
+                received_values, 1, MPI_UNSIGNED, MPI_COMM_WORLD);
+
+  // Copy values
+  for (uint i = 0; i < values.size(); i++)
+    values[i] = received_values[i];
+
+  // Cleanup
+  delete [] received_values;
+}
+//-----------------------------------------------------------------------------
 dolfin::uint dolfin::MPI::send_recv(uint* send_buffer, uint send_size, uint dest,
                                     uint* recv_buffer, uint recv_size, uint source)
 {

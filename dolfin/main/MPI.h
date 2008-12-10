@@ -41,6 +41,9 @@ namespace dolfin
     /// Distribute local arrays on all processors according to given partition
     static void distribute(std::vector<double>& values, const std::vector<uint> partition);
 
+    /// Gather values (wrapper for MPI_Allgather)
+    static void gather(std::vector<uint>& values);
+
     /// Send-receive and return number of received values (wrapper for MPI_Sendrecv)
     static uint send_recv(uint* send_buffer, uint send_size, uint dest,
                           uint* recv_buffer, uint recv_size, uint source);
