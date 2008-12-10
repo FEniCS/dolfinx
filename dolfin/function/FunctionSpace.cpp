@@ -42,7 +42,14 @@ FunctionSpace::FunctionSpace(std::tr1::shared_ptr<const Mesh> mesh,
 //-----------------------------------------------------------------------------
 FunctionSpace::FunctionSpace(const FunctionSpace& V)
 {
-  *this = V;
+  // Assign data (will be shared)
+  _mesh    = V._mesh;
+  _element = V._element;
+  _dofmap  = V._dofmap;
+
+  // Reinitialize scratch space and intersection detector
+  scratch.init(*_element);
+  intersection_detector = 0;
 }
 //-----------------------------------------------------------------------------
 FunctionSpace::~FunctionSpace()
@@ -59,9 +66,11 @@ const FunctionSpace& FunctionSpace::operator= (const FunctionSpace& V)
 
   // Reinitialize scratch space and intersection detector
   scratch.init(*_element);
-  delete intersection_detector;
-  intersection_detector = 0;
-
+  if (intersection_detector){
+    delete intersection_detector;
+    intersection_detector = 0;
+  }
+  
   return *this;
 }
 //-----------------------------------------------------------------------------
