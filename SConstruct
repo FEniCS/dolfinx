@@ -148,9 +148,15 @@ if not env.GetOption("clean"):
 
 # If we are in very-clean mode, remove the sconsign file. 
 if env.GetOption("clean"):
-  if env["veryClean"]:
-    os.unlink("%s.dblite" % (dolfin_sconsignfile))
-    # FIXME: should we also remove the file scons/options.cache?
+  try:
+    if env["veryClean"]:
+      os.unlink("%s.dblite" % dolfin_sconsignfile)
+      os.unlink(os.path.join('scons', 'options.cache'))
+      import glob
+      for f in glob.glob(os.path.join('scons', 'pkgconfig', '*.pc')):
+        os.unlink(f)
+  except OSError, msg:
+    scons.log("Error using 'veryClean' option:\n%s\n" % msg)
 
 # Set default compiler and linker flags (defining CXXFLAGS/LINKFLAGS
 # will override this)
