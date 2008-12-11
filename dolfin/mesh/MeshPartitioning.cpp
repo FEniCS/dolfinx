@@ -73,21 +73,32 @@ void MeshPartitioning::partition(Mesh& mesh, LocalMeshData& data)
   // Number of partitions (one for each process)
   int nparts = num_processes;
 
-  // Vertex weights
-  float* tpwgts = new float[num_processes];
-  for (uint p = 0; p < num_processes; p++)
-    tpwgts[p] = 1.0 / static_cast<float>(nparts);
+  // Strange weight arrays needed by ParMETIS
+  int ncon = 1;
+  float* tpwgts = new float[ncon*nparts];
+  for (int i = 0; i < ncon*nparts; i++)
+    tpwgts[i] = 1.0 / static_cast<float>(nparts);
+  float* ubvec = new float[ncon];
+  for (int i = 0; i < ncon; i++)
+    ubvec[i] = 1.05;
 
-  // Partitioning array for vertices to be computed by ParMETIS
-  int* part = new int[num_local_vertices];
+  // Options for ParMETIS, use default
+  int options[3];
+  options[0] = 0;
+  options[1] = 0;
+  options[2] = 0;
+  
+  // Partitioning array to be computed by ParMETIS
+  uint strange_size = num_local_vertices + 1000;
+  int* part = new int[strange_size];
+
+  for (uint i = 0; i < strange_size; i++)
+    part[i] = -1;
 
   // Prepare remaining arguments for ParMETIS
   int* elmwgt = 0;
   int wgtflag = 0;
   int numflag = 0;
-  int ncon    = 1;
-  float ubvec = 1.05;
-  int options = 0;
   int edgecut = 0;
 
   // FIXME: Move this part to MPI wrapper
@@ -98,9 +109,20 @@ void MeshPartitioning::partition(Mesh& mesh, LocalMeshData& data)
   ParMETIS_V3_PartMeshKway(elmdist, eptr, eind,
                            elmwgt, &wgtflag, &numflag, &ncon,
                            &ncommonnodes, &nparts,
-                           tpwgts, &ubvec, &options,
+                           tpwgts, ubvec, options,
                            &edgecut, part, &comm);
   message("Partitioned mesh, edge cut is %d.", edgecut);
+  
+  cout << "num_local_vertices = " << num_local_vertices << endl;
+  cout << "num_local_cells = " << num_local_cells << endl;
+  for (uint i = 0; i < strange_size; i++)
+  {
+    if (part[i] == -1)
+    {
+      cout << "Size of part = " << i + 1 << endl;
+      break;
+    }
+  }
 
   // Cleanup
   delete [] elmdist;

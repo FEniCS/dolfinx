@@ -345,12 +345,9 @@ void XMLLocalMeshData::readInterval(const xmlChar *name, const xmlChar **attrs)
     return;
 
   // Parse values
-  uint v0 = parseUnsignedInt(name, attrs, "v0");
-  uint v1 = parseUnsignedInt(name, attrs, "v1");
-  
   std::vector<uint> cell(2);
-  cell.push_back(v0);
-  cell.push_back(v1);
+  cell[0] = parseUnsignedInt(name, attrs, "v0");
+  cell[1] = parseUnsignedInt(name, attrs, "v1");
 
   // Add cell
   mesh_data._cell_vertices.push_back(cell);
@@ -370,15 +367,11 @@ void XMLLocalMeshData::readTriangle(const xmlChar *name, const xmlChar **attrs)
     return;
 
   // Parse values
-  uint v0 = parseUnsignedInt(name, attrs, "v0");
-  uint v1 = parseUnsignedInt(name, attrs, "v1");
-  uint v2 = parseUnsignedInt(name, attrs, "v2");
-  
   std::vector<uint> cell(3);
-  cell.push_back(v0);
-  cell.push_back(v1);
-  cell.push_back(v2);
-
+  cell[0] = parseUnsignedInt(name, attrs, "v0");
+  cell[1] = parseUnsignedInt(name, attrs, "v1");
+  cell[2] = parseUnsignedInt(name, attrs, "v2");
+  
   // Add cell
   mesh_data._cell_vertices.push_back(cell);
 }
@@ -397,17 +390,12 @@ void XMLLocalMeshData::readTetrahedron(const xmlChar *name, const xmlChar **attr
     return;
 
   // Parse values
-  uint v0 = parseUnsignedInt(name, attrs, "v0");
-  uint v1 = parseUnsignedInt(name, attrs, "v1");
-  uint v2 = parseUnsignedInt(name, attrs, "v2");
-  uint v3 = parseUnsignedInt(name, attrs, "v3");
-  
   std::vector<uint> cell(4);
-  cell.push_back(v0);
-  cell.push_back(v1);
-  cell.push_back(v2);
-  cell.push_back(v3);
-
+  cell[0] = parseUnsignedInt(name, attrs, "v0");
+  cell[1] = parseUnsignedInt(name, attrs, "v1");
+  cell[2] = parseUnsignedInt(name, attrs, "v2");
+  cell[3] = parseUnsignedInt(name, attrs, "v3");
+  
   // Add cell
   mesh_data._cell_vertices.push_back(cell);
 }
