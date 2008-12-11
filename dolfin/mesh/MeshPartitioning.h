@@ -11,6 +11,7 @@
 #ifndef __MESH_PARTITIONING_H
 #define __MESH_PARTITIONING_H
 
+#include <vector>
 #include <dolfin/common/types.h>
 
 namespace dolfin
@@ -32,16 +33,19 @@ namespace dolfin
 
   private:
 
+    // Compute cell partition
+    static void compute_partition(std::vector<uint>& cell_partition,
+                                  const LocalMeshData& data);
+
+    // Distribute mesh according to partition
+    static void distribute_mesh(Mesh& mesh,
+                                const std::vector<uint>& cell_partition,
+                                const LocalMeshData& data);
+
+    // FIXME: This can be removed
     // Partition vertices (geometric partitioning)
     static void partition_vertices(const LocalMeshData& data,
                                    std::vector<uint>& vertex_partition);
-
-    // Distribute vertices according to "part" array
-    static void distribute_vertices(LocalMeshData& data,
-                                    const std::vector<uint>& vertex_partition);
-
-    // Partition cells (topological partitioning)
-    static void partition_cells();
 
   };
 

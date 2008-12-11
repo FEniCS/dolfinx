@@ -33,14 +33,26 @@ using namespace dolfin;
 void MeshPartitioning::partition(Mesh& mesh, LocalMeshData& data)
 {
   dolfin_debug("Partitioning mesh...");
-  
+
+  // Compute cell partition
+  std::vector<uint> cell_partition;
+  compute_partition(cell_partition, data);
+
+  // Distribute mesh data
+  distribute_mesh(mesh, cell_partition, data);
+}
+//-----------------------------------------------------------------------------
+void MeshPartitioning::compute_partition(std::vector<uint>& cell_partition,
+                                         const LocalMeshData& data)
+{
+  dolfin_debug("Computing cell partition using ParMETIS...");
+
   // Get number of processes and process number
   const uint num_processes = MPI::num_processes();
   const uint process_number = MPI::process_number();
 
   // Get dimensions of local data
   const uint num_local_cells = data.cell_vertices().size();
-  const uint num_local_vertices = data.vertex_coordinates().size();
   const uint num_cell_vertices = data.cell_vertices()[0].size();
   dolfin_debug1("num_local_cells = %d", num_local_cells);
 
@@ -88,12 +100,8 @@ void MeshPartitioning::partition(Mesh& mesh, LocalMeshData& data)
   options[1] = 0;
   options[2] = 0;
   
-  // Partitioning array to be computed by ParMETIS
-  uint strange_size = num_local_vertices + 1000;
-  int* part = new int[strange_size];
-
-  for (uint i = 0; i < strange_size; i++)
-    part[i] = -1;
+  // Partitioning array to be computed by ParMETIS (note bug in manual: vertices, not cells!)
+  int* part = new int[num_local_cells];
 
   // Prepare remaining arguments for ParMETIS
   int* elmwgt = 0;
@@ -112,29 +120,57 @@ void MeshPartitioning::partition(Mesh& mesh, LocalMeshData& data)
                            tpwgts, ubvec, options,
                            &edgecut, part, &comm);
   message("Partitioned mesh, edge cut is %d.", edgecut);
-  
-  cout << "num_local_vertices = " << num_local_vertices << endl;
-  cout << "num_local_cells = " << num_local_cells << endl;
-  for (uint i = 0; i < strange_size; i++)
-  {
-    if (part[i] == -1)
-    {
-      cout << "Size of part = " << i + 1 << endl;
-      break;
-    }
-  }
 
+  // Copy data
+  cell_partition.clear();
+  cell_partition.reserve(num_local_cells);
+  for (uint i = 0; i < num_local_cells; i++)
+    cell_partition.push_back(static_cast<uint>(part[i]));
+  
   // Cleanup
   delete [] elmdist;
   delete [] eptr;
   delete [] eind;
   delete [] tpwgts;
+  delete [] ubvec;
   delete [] part;
+}
+//-----------------------------------------------------------------------------
+void MeshPartitioning::distribute_mesh(Mesh& mesh,
+                                       const std::vector<uint>& cell_partition,
+                                       const LocalMeshData& data)
+{
+  dolfin_debug("Distributing mesh data according to cell partition...");
+
+  // Get dimensions of local data
+  const uint num_local_cells = data.cell_vertices().size();
+  const uint num_cell_vertices = data.cell_vertices()[0].size();
+
+  // Build array of cell-vertex connectivity and partition vector
+  std::vector<uint> cell_vertices;
+  std::vector<uint> cell_vertices_partition;
+  cell_vertices.reserve(num_local_cells*num_cell_vertices);
+  cell_vertices_partition.reserve(num_local_cells*num_cell_vertices);
+  for (uint i = 0; i < num_local_cells; i++)
+  {
+    for (uint j = 0; j < num_cell_vertices; j++)
+    {
+      cell_vertices.push_back(data.cell_vertices()[i][j]);
+      cell_vertices_partition.push_back(cell_partition[i]);
+    }
+  }
+  
+  // Distribute cell-vertex connectivity
+  MPI::distribute(cell_vertices, cell_vertices_partition);
+  cell_vertices_partition.clear();
+
+  // Need to distribute vertices here also!
+
 }
 //-----------------------------------------------------------------------------
 void MeshPartitioning::partition_vertices(const LocalMeshData& data,
                                           std::vector<uint>& vertex_partition)
-{
+  {
   // This function computes a (new) partition of all vertices by
   // computing an array vertex_partition that assigns a new process
   // number to each vertex stored by the local process.
@@ -196,23 +232,6 @@ void MeshPartitioning::partition_vertices(const LocalMeshData& data,
   delete [] vtxdist;
   delete [] part;
   delete [] xyz;
-}
-//-----------------------------------------------------------------------------
-void MeshPartitioning::distribute_vertices(LocalMeshData& data,
-                                           const std::vector<uint>& vertex_partition)
-{
-  // This function redistributes the vertices stored by each process
-  // according to the array vertex_partition.
-
-  dolfin_debug("Distributing local mesh data according to vertex partition...");
-
-  // Use MPI::distribute() here
-  
-}
-//-----------------------------------------------------------------------------
-void MeshPartitioning::partition_cells()
-{
-  dolfin_debug("Computing topological partitioning of cells...");  
 }
 //-----------------------------------------------------------------------------
 

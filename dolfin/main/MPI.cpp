@@ -80,6 +80,8 @@ dolfin::uint dolfin::MPI::send_recv(uint* send_buffer, uint send_size, uint dest
 {
   MPI_Status status;
 
+  dolfin_debug2("Sending to %d, receiving from %d", dest, source);
+
   // Send and receive data
   MPI_Sendrecv(send_buffer, static_cast<int>(send_size), MPI_UNSIGNED, static_cast<int>(dest), 0,
                recv_buffer, static_cast<int>(recv_size), MPI_UNSIGNED, static_cast<int>(source),  0,
@@ -89,6 +91,7 @@ dolfin::uint dolfin::MPI::send_recv(uint* send_buffer, uint send_size, uint dest
   int num_received = 0;
   MPI_Get_count(&status, MPI_UNSIGNED, &num_received);
   dolfin_assert(num_received >= 0);
+  dolfin_debug1("Received %d values", num_received);
 
   return static_cast<uint>(num_received);
 }

@@ -29,6 +29,8 @@ namespace dolfin
     dolfin_assert(values.size() == partition.size());
     dolfin_assert(values.size() > 0);
 
+    dolfin_debug1("Number of values to distribute: %d", values.size());
+
     // Get number of processes and process number
     const uint num_processes = MPI::num_processes();
     const uint process_number = MPI::process_number();
@@ -50,19 +52,22 @@ namespace dolfin
     const std::vector<T>& local_values = send_data[process_number];
     for (uint i = 0; i < local_values.size(); i++)
       values.push_back(local_values[i]);
+    dolfin_debug1("Number of values to remain on processor: %d", values.size());
 
     // Determine size of send buffer
     uint send_buffer_size = 0;
     for (uint p = 0; p < send_data.size(); p++)
+    {
+      if (p == process_number)
+        continue;
       send_buffer_size = std::max(send_buffer_size, send_data[p].size());
+    }
+    dolfin_debug1("Size of send buffer: %d", send_buffer_size);
 
     // Determine size of receive buffer (same for all processes)
     uint recv_buffer_size = 0;
-    for (uint p = 0; p < send_data.size(); p++)
-    {
-      uint send_size = send_data[p].size();
-      MPI_Reduce(&send_size, &recv_buffer_size, 1, MPI_UNSIGNED, MPI_MAX, p, MPI_COMM_WORLD);
-    }
+    MPI_Allreduce(&send_buffer_size, &recv_buffer_size, 1, MPI_UNSIGNED, MPI_MAX, MPI_COMM_WORLD);
+    dolfin_debug1("Size of recv buffer: %d", recv_buffer_size);
 
     // Allocate memory for send and receive buffers
     dolfin_assert(send_buffer_size > 0);
@@ -78,7 +83,7 @@ namespace dolfin
 
       // We send data to process p + i (i steps to the right)
       const int dest = (process_number + i) % num_processes;
-    
+
       // Copy data to send buffer
       for (uint j = 0; j < send_data[dest].size(); j++)
         send_buffer[j] = send_data[dest][j];
@@ -91,6 +96,7 @@ namespace dolfin
       dolfin_assert(num_received <= recv_buffer_size);
       for (uint j = 0; j < num_received; j++)
         values.push_back(recv_buffer[j]);
+      dolfin_debug1("Number of values (kept and received) so far: %d", values.size());
     }
 
     // Clean up
