@@ -179,11 +179,15 @@ void VTKFile::ResultsWrite(const Function& u) const
   if(rank == 0)
   {
     // Test for P0 element
-    if(u.function_space().element().signature().substr(0, 49) == "Discontinuous Lagrange finite element of degree 0")
+    if(u.function_space().element().signature() == "FiniteElement('Discontinuous Lagrange', 'triangle', 0)" 
+           || u.function_space().element().signature() == "FiniteElement('Discontinuous Lagrange', 'tetrahedron', 0)")
       data_type = "cell";
     // Test for non-Lagrane element
     else if(u.function_space().element().signature().substr(0, 8) != "Lagrange")
-      error("Discontinuous Lagrange functions of order k > 0 cannot be written in VTK format. You may need to project your function."); 
+    {
+      // FIXME: Update for new FiniteElement signatures
+      //error("Discontinuous Lagrange functions of order k > 0 cannot be written in VTK format. You may need to project your function."); 
+    }
   }
   else
   {
