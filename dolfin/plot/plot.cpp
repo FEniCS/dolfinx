@@ -22,6 +22,7 @@
 #endif
 
 using namespace dolfin;
+
 namespace dolfin
 {
   std::string secure_tmp_filename(std::string ident)
