@@ -21,11 +21,15 @@ int main(int argc, char *argv[])
   Function velocity("../velocity.xml.gz");
 
   // Read sub domain markers
+  dolfin_debug("");
   const Mesh& mesh(velocity.function_space().mesh());
+  dolfin_debug("");
   MeshFunction<unsigned int> sub_domains(mesh, "../subdomains.xml.gz");
+  dolfin_debug("");
 
   // Create function space
   ConvectionDiffusionFunctionSpace V(mesh);
+  dolfin_debug("");
 
   // Source term and initial condition
   Constant f(0.0);
