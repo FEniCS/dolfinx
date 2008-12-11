@@ -233,6 +233,9 @@ class Configure(object):
             # Then ignore new values
             for o in options:
                 if o[0] in args:
+                    # Ignore veryClean option
+                    if o[0] == 'veryClean':
+                        continue
                     del args[o[0]]
 
         opts = Options(optsCache, args=args)
