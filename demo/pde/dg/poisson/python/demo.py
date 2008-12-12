@@ -24,7 +24,7 @@ __license__   = "GNU LGPL Version 2.1"
 from dolfin import *
 
 # Create mesh and define function space
-mesh = UnitSquare(16, 16)
+mesh = UnitSquare(24, 24)
 V = FunctionSpace(mesh, "DG", 1)
 
 # Define source term
@@ -54,13 +54,13 @@ a = dot(grad(v), grad(u))*dx \
    + alpha/h('+')*dot(jump(v, n), jump(u, n))*dS \
    - dot(grad(v), mult(u, n))*ds \
    - dot(mult(v, n), grad(u))*ds \
-   + gamma/h*v*u*ds
+   + gamma/h*dot(v, u)*ds
 
 # Define linear form
 L = v*f*dx
 
 # Compute solution
-pde = LinearPDE(a, L, mesh)
+pde = LinearPDE(a, L)
 u = pde.solve()
 
 # Project solution to piecewise linears

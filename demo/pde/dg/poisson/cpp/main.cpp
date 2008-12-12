@@ -39,7 +39,7 @@ int main()
   };
  
   // Create mesh
-  UnitSquare mesh(32, 32);
+  UnitSquare mesh(24, 24);
 
   dolfin_set("linear algebra backend", "uBLAS");
 
@@ -57,7 +57,7 @@ int main()
   a.n = n; a.h = h; L.f = f;
 
   // Create PDE
-  LinearPDE pde(a, L, symmetric);
+  LinearPDE pde(a, L);
 
   // Solve PDE
   Function u;
