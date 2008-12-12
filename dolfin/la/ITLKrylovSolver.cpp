@@ -66,7 +66,7 @@ dolfin::uint ITLKrylovSolver::solve(const MTL4Matrix& A, MTL4Vector& x,
   }
 
   // Solve
-  int errno = 0;
+  int errno_ = 0;
 
   // Developers note: the following code is not very elegant.
   // The problem is that ITL are all templates, but DOLFIN selects 
@@ -75,31 +75,31 @@ dolfin::uint ITLKrylovSolver::solve(const MTL4Matrix& A, MTL4Vector& x,
   {
     itl::pc::ilu_0<mtl4_sparse_matrix> P(A.mat());
     if(method == cg)
-      errno = itl::cg(A.mat(), x.vec(), b.vec(), P, iter);
+      errno_ = itl::cg(A.mat(), x.vec(), b.vec(), P, iter);
     else if(method == bicgstab)
-      errno = itl::bicgstab(A.mat(), x.vec(), b.vec(), P, iter);
+      errno_ = itl::bicgstab(A.mat(), x.vec(), b.vec(), P, iter);
   }
   else if(pc_type == icc)
   {
     itl::pc::ic_0<mtl4_sparse_matrix> P(A.mat());
     if(method == cg)
       error("There is a problem here with the MTL4 icc preconditioner. Please fix me.");
-      //errno = itl::cg(A.mat(), x.vec(), b.vec(), P, iter);
+      //errno_ = itl::cg(A.mat(), x.vec(), b.vec(), P, iter);
     else if(method == bicgstab)
       error("There is a problem here with the MTL4 icc preconditioner. Please fix me.");
-      //errno = itl::bicgstab(A.mat(), x.vec(), b.vec(), P, iter);
+      //errno_ = itl::bicgstab(A.mat(), x.vec(), b.vec(), P, iter);
   }
   else if(pc_type == none)
   {
     itl::pc::identity<mtl4_sparse_matrix> P(A.mat());
     if(method == cg)
-      errno = itl::cg(A.mat(), x.vec(), b.vec(), P, iter);
+      errno_ = itl::cg(A.mat(), x.vec(), b.vec(), P, iter);
     else if(method == bicgstab)
-      errno = itl::bicgstab(A.mat(), x.vec(), b.vec(), P, iter);
+      errno_ = itl::bicgstab(A.mat(), x.vec(), b.vec(), P, iter);
   }
   
   // Check exit condition
-  if(errno == 0)
+  if(errno_ == 0)
     message("ITLSolver (%d, %d) converged in %d iterations. Resid=%8.2e",
 	    method, pc_type, iter.iterations(), iter.resid());
   else
