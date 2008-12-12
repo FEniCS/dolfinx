@@ -4,7 +4,7 @@ original mesh by suitably interpolating the vertex coordinates (useful
 for implementation of ALE methods)."""
 
 __author__ = "Solveig Bruvoll (solveio@ifi.uio.no) and Anders Logg (logg@simula.no)"
-__date__ = "2008-05-02 -- 2008-05-28"
+__date__ = "2008-05-02 -- 2008-12-12"
 __copyright__ = "Copyright (C) 2008 Solveig Bruvoll and Anders Logg"
 __license__  = "GNU LGPL Version 2.1"
 
@@ -22,7 +22,7 @@ for x in boundary.coordinates():
     x[1] += 0.1*sin(5.0*x[0])
 
 # Move mesh
-mesh.move(boundary, hermite)
+mesh.move(boundary, harmonic)
 
 # Plot mesh
 plot(mesh, interactive=True)

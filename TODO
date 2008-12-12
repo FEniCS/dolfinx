@@ -122,7 +122,7 @@ EE demo/mesh/partitioning/python/demo.py
 OK demo/mesh/refinement/python/demo.py
 ?? demo/mesh/intersection/python/demo.py
 EE demo/function/eval/python/demo.py                      segmentation fault
-EE demo/function/projection-interpolation/python/demo.py  plotting not working for user-defined functions
+OK demo/function/projection-interpolation/python/demo.py
    demo/ode/aliev-panfilov/python/demo.py
    demo/ode/lorenz/python/demo.py
 EE demo/fem/simple/python/demo.py

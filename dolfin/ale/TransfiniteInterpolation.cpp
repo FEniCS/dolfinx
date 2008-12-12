@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-05-02
-// Last changed: 2008-09-11
+// Last changed: 2008-12-12
 
 #include <string.h>
 #include <dolfin/common/Array.h>
@@ -18,6 +18,8 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 void TransfiniteInterpolation::move(Mesh& mesh, Mesh& new_boundary, InterpolationType method)
 {
+  dolfin_error("Sorry, transfinite interpolation is currently broken.");
+
   // Only implemented in 2D and 3D so far
   if (mesh.topology().dim() < 2 || mesh.topology().dim() > 3 )
     error("Mesh interpolation only implemented in 2D and 3D so far.");
@@ -76,7 +78,7 @@ void TransfiniteInterpolation::meanValue(double* new_x, uint dim, Mesh& new_boun
   double ** u = new double * [size];
 
   // Compute distance d and direction vector u from x to all p
-  for (VertexIterator v(new_boundary);  !v.end(); ++v)
+  for (VertexIterator v(new_boundary); !v.end(); ++v)
   {
     // Old position of point x
     const double* x = vertex.x();
@@ -88,8 +90,8 @@ void TransfiniteInterpolation::meanValue(double* new_x, uint dim, Mesh& new_boun
     d[v->index()] = dist(p, x, dim);
           
     // Compute direction vector for p-x
-    u[v->index()] = new double [dim];
-    for (uint i=0; i<dim; i++)
+    u[v->index()] = new double[dim];
+    for (uint i = 0; i < dim; i++)
       u[v->index()][i]=(p[i] - x[i]) / d[v->index()];
   }
   
@@ -103,18 +105,24 @@ void TransfiniteInterpolation::meanValue(double* new_x, uint dim, Mesh& new_boun
   double** ghatCell = new double* [num_vertices];
   
   // Set new x to zero
-  for (uint i = 0; i < dim; ++i) {
+  for (uint i = 0; i < dim; ++i)
+  {
     new_x[i] = 0.0;
     if (method == interpolation_hermite)
       herm[i] = 0.0;
-  }  
+  }
+
   // Iterate over all cells in boundary
   double totalW = 0.0;
   for (CellIterator c(new_boundary); !c.end(); ++c)
   {
+    cout << *c << endl;
+
     // Get local data
     for (VertexIterator v(*c); !v.end(); ++v)
     {
+      cout << "  " << *v << endl;
+
       const uint ind = v.pos();
       new_p[ind] = v->x();
       uCell[ind] = u[v->index()];
@@ -130,8 +138,10 @@ void TransfiniteInterpolation::meanValue(double* new_x, uint dim, Mesh& new_boun
       computeWeights3D(w, uCell, dCell, dim, num_vertices);
 
     // Compute sum of weights
-    for (uint i=0; i<num_vertices; i++)
+    for (uint i = 0; i < num_vertices; i++)
       totalW += w[i];
+
+    cout << "totalW = " << totalW << endl;
     
     // Compute new position
     for (uint j=0; j<dim; j++) 
@@ -156,7 +166,7 @@ void TransfiniteInterpolation::meanValue(double* new_x, uint dim, Mesh& new_boun
       new_x[i] = new_x[i]/totalW + herm[i]/(totalW*totalW);
   }
 
-  //cout << "  New x: " << new_x[0] << " " << new_x[1] << " " << new_x[2] << endl;
+  cout << "  New x: " << new_x[0] << " " << new_x[1] << " " << new_x[2] << endl;
 
   // Free memory for d
   delete [] d;
@@ -178,7 +188,7 @@ void TransfiniteInterpolation::meanValue(double* new_x, uint dim, Mesh& new_boun
 void TransfiniteInterpolation::computeWeights2D(double* w, double** u, double* d,
                            uint dim, uint num_vertices)
 {  
-  for (uint i=0; i < num_vertices; i++)
+  for (uint i = 0; i < num_vertices; i++)
     w[i] = tan(asin(u[0][0]*u[1][1] - u[0][1]*u[1][0])/2) / d[i];
 }
 //-----------------------------------------------------------------------------
