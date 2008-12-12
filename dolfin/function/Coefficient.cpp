@@ -4,7 +4,9 @@
 // Modified by Martin Alnes, 2008.
 //
 // First added:  2008-10-28
-// Last changed: 2008-12-08
+// Last changed: 2008-12-12
+
+#include <sstream>
 
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/fem/Form.h>
@@ -33,7 +35,10 @@ void Coefficient::attach(Function& v)
 //-----------------------------------------------------------------------------
 void Coefficient::attach(std::tr1::shared_ptr<Function> v)
 {
-  // Set function space if not set // TODO: This logic doesn't scale to the case where a Function is used as a coefficient two or more places. Confusing!
+  // FIXME: This logic doesn't scale to the case where a Function is
+  // FIXME: used as a coefficient two or more places. Confusing!
+
+  // Set function space if not set
   if (!v->_function_space)
   {
     std::tr1::shared_ptr<const FunctionSpace> _V(create_function_space());
@@ -41,7 +46,12 @@ void Coefficient::attach(std::tr1::shared_ptr<Function> v)
   }
 
   // Set variable name
-  v->rename(name(), "A coefficient function"); // TODO: This logic doesn't scale to the case where a Function is used as a coefficient two or more places. Confusing!
+  if (v->label() == "unnamed function")
+  {
+    std::stringstream label;
+    label << "coefficient " << number();
+    v->rename(name(), label.str());
+  }
 
   // Set coefficient for form
   dolfin_assert(number() < form._coefficients.size());

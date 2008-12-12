@@ -25,28 +25,32 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 Function::Function()
-  : _function_space(static_cast<FunctionSpace*>(0)),
+  :  Variable("v", "unnamed function"),
+     _function_space(static_cast<FunctionSpace*>(0)),
     _vector(0)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 Function::Function(const FunctionSpace& V)
-  : _function_space(reference_to_no_delete_pointer(V)),
+  : Variable("v", "unnamed function"),
+    _function_space(reference_to_no_delete_pointer(V)),
     _vector(0)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 Function::Function(std::tr1::shared_ptr<const FunctionSpace> V)
-  : _function_space(V),
+  : Variable("v", "unnamed function"),
+    _function_space(V),
     _vector(0)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 Function::Function(std::string filename)
-  : _function_space(static_cast<FunctionSpace*>(0)),
+  : Variable("v", "unnamed function"),
+    _function_space(static_cast<FunctionSpace*>(0)),
     _vector(0)
 {
   File file(filename);
@@ -54,7 +58,8 @@ Function::Function(std::string filename)
 }
 //-----------------------------------------------------------------------------
 Function::Function(const SubFunction& v)
-  : _function_space(v.v.function_space().extract_sub_space(v.component)),
+  : Variable("v", "unnamed function"),
+    _function_space(v.v.function_space().extract_sub_space(v.component)),
     _vector(0)
 {
   // Initialize vector
@@ -77,7 +82,8 @@ Function::Function(const SubFunction& v)
 }
 //-----------------------------------------------------------------------------
 Function::Function(const Function& v)
-  : _function_space(v._function_space),
+  : Variable("v", "unnamed function"),
+    _function_space(v._function_space),
     _vector(0)
 {
   *this = v;
