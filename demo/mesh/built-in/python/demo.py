@@ -9,8 +9,6 @@ __license__   = "GNU LGPL Version 2.1"
 
 from dolfin import *
 
-# Create and plot built-in meshes
-
 mesh = UnitInterval(10)
 print "Plotting a UnitInterval"
 plot(mesh)

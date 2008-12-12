@@ -116,11 +116,11 @@ OK demo/pde/functional/python/demo.py
 OK demo/quadrature/python/demo.py
 OK demo/mesh/subdomains/python/demo.py
 OK demo/mesh/meshfunction/python/demo.py
-EE demo/mesh/partitioning/python/demo.py
-   demo/mesh/built-in/python/demo.py
-?? demo/mesh/ale/python/demo.py
+OK demo/mesh/partitioning/python/demo.py
+OK demo/mesh/built-in/python/demo.py
+OK demo/mesh/ale/python/demo.py
 OK demo/mesh/refinement/python/demo.py
-?? demo/mesh/intersection/python/demo.py
+EE demo/mesh/intersection/python/demo.py                  viper problem
 EE demo/function/eval/python/demo.py                      segmentation fault
 OK demo/function/projection-interpolation/python/demo.py
    demo/ode/aliev-panfilov/python/demo.py
