@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-11-23
-// Last changed: 2008-11-19
+// Last changed: 2008-12-12
 //
 // This demo program solves Poisson's equation,
 //
@@ -60,7 +60,7 @@ int main()
   // Set up BCs
   Constant zero(0.0);
   DirichletBoundary boundary;
-  DirichletBC bc(zero, V, boundary);
+  DirichletBC bc(V, zero, boundary);
 
   // Create source and flux terms
   Source f;

@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-02-09
-// Last changed: 2008-11-17
+// Last changed: 2008-12-12
 //
 // This demo solves the time-dependent convection-diffusion equation
 // by a least-squares stabilized cG(1)cG(1) method. The velocity field
@@ -44,7 +44,7 @@ int main(int argc, char *argv[])
 
   // Set up boundary condition
   Constant g(1.0);
-  DirichletBC bc(g, V, sub_domains, 1);
+  DirichletBC bc(V, g, sub_domains, 1);
 
   // Solution
   Function u1(V);
