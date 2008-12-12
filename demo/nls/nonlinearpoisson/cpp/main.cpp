@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2005-2008.
 //
 // First added:  2005
-// Last changed: 2007-11-19
+// Last changed: 2008-12-12
 //
 // This program illustrates the use of the DOLFIN nonlinear solver for solving 
 // problems of the form F(u) = 0. The user must provide functions for the 
@@ -12,7 +12,7 @@
 //
 // This simple program solves a nonlinear variant of Poisson's equation,
 //
-//     - div (1+u^2) grad u(x, y) = f(x, y),
+//     - div (1 + u^2) grad u(x, y) = f(x, y),
 //
 // on the unit square with source f given by
 //
@@ -27,7 +27,7 @@
 //
 // This is equivalent to solving
 //
-//     F(u) = (grad(v), (1-u^2)*grad(u)) - f(x,y) = 0.
+//     F(u) = (grad(v), (1 - u^2)*grad(u)) - f(x,y) = 0.
 
 #include <dolfin.h>
 #include "NonlinearPoisson.h"
@@ -87,7 +87,7 @@ class MyNonlinearProblem : public NonlinearProblem
     // Constructor 
     MyNonlinearProblem(FunctionSpace& V, SubDomain& dirichlet_boundary, 
                        Function& g, Function& f, Function& u)  
-                       : V(V), a(V, V), L(V), bc(g, V, dirichlet_boundary)
+                       : V(V), a(V, V), L(V), bc(V, g, dirichlet_boundary)
     {
       // Attach functions
       a.u0 = u;

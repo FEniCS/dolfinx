@@ -32,10 +32,10 @@ int main()
   Constant u3(3.0);
 
   // Define boundary conditions
-  DirichletBC bc0(u0, V, 0);
-  DirichletBC bc1(u1, V, 1);
-  DirichletBC bc2(u2, V, 2);
-  DirichletBC bc3(u3, V, 3);
+  DirichletBC bc0(V, u0, 0);
+  DirichletBC bc1(V, u1, 1);
+  DirichletBC bc2(V, u2, 2);
+  DirichletBC bc3(V, u3, 3);
   Array<BoundaryCondition*> bcs(&bc0, &bc1, &bc2, &bc3);
 
   // Solve PDE and plot solution

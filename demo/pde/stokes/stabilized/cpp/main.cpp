@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-02-09
-// Last changed: 2008-11-19
+// Last changed: 2008-12-12
 //
 // This demo solves the Stokes equations, using stabilized
 // first order elements for the velocity and pressure. The
@@ -41,14 +41,10 @@ int main()
   Mesh mesh("../../../../../data/meshes/dolfin-2.xml.gz");
   MeshFunction<unsigned int> sub_domains(mesh, "../subdomains.xml.gz");
 
-  // Create function space
-  StokesFunctionSpace V(mesh);
-
-  // Create velocity subspace
-  SubSpace Vu(V, 0);
-
-  // Create pressure subspace
-  SubSpace Vp(V, 1);
+  // Create function space and subspaces
+  StokesFunctionSpace W(mesh);
+  SubSpace W0(W, 0);
+  SubSpace W1(W, 1);
 
   // Create functions for boundary conditions
   Noslip noslip;
@@ -56,13 +52,13 @@ int main()
   Constant zero(0.0);
 
   // No-slip boundary condition for velocity
-  DirichletBC bc0(noslip, Vu, sub_domains, 0);
+  DirichletBC bc0(W0, noslip, sub_domains, 0);
 
   // Inflow boundary condition for velocity
-  DirichletBC bc1(inflow, Vu, sub_domains, 1);
+  DirichletBC bc1(W0, inflow, sub_domains, 1);
 
   // Boundary condition for pressure at outflow
-  DirichletBC bc2(zero, Vp, sub_domains, 2);
+  DirichletBC bc2(W1, zero, sub_domains, 2);
 
   // Collect boundary conditions
   Array<BoundaryCondition*> bcs(&bc0, &bc1, &bc2);
@@ -70,9 +66,9 @@ int main()
   // Set up PDE
   MeshSize h;
   Constant f(2, 0.0);
-  StokesBilinearForm a(V, V);
+  StokesBilinearForm a(W, W);
   a.h = h;
-  StokesLinearForm L(V);
+  StokesLinearForm L(W);
   L.f = f; L.h = h;
   LinearPDE pde(a, L, bcs);
 

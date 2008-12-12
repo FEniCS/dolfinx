@@ -4,7 +4,7 @@
 // Modified by Kristian Oelgaard, 2007
 //
 // First added:  2007-04-10
-// Last changed: 2008-12-08
+// Last changed: 2008-12-12
 //
 // FIXME: This class needs some cleanup, in particular collecting
 // FIXME: all data from different representations into a common
@@ -76,21 +76,21 @@ namespace dolfin
   {
   public:
 
-    /// Create boundary condition for sub domain
-    DirichletBC(const Function& g,
-                const FunctionSpace& V,
+    /// Create boundary condition for subdomain
+    DirichletBC(const FunctionSpace& V,
+                const Function& g,
                 const SubDomain& sub_domain,
                 BCMethod method=topological);
 
-    /// Create boundary condition for sub domain specified by index
-    DirichletBC(const Function& g,
-                const FunctionSpace& V,
+    /// Create boundary condition for subdomain specified by index
+    DirichletBC(const FunctionSpace& V,
+                const Function& g,
                 const MeshFunction<uint>& sub_domains, uint sub_domain,
                 BCMethod method=topological);
     
     /// Create boundary condition for boundary data included in the mesh
-    DirichletBC(const Function& g,
-                const FunctionSpace& V,
+    DirichletBC(const FunctionSpace& V,
+                const Function& g,
                 uint sub_domain,
                 BCMethod method=topological);
 

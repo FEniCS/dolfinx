@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-07-11
-// Last changed: 2008-11-19
+// Last changed: 2008-12-12
 //
 // This demo program solves Poisson's equation,
 //
@@ -68,7 +68,7 @@ int main()
   // Create Dirichlet boundary condition
   Constant u0(0.0);
   DirichletBoundary dirichlet_boundary;
-  DirichletBC bc0(u0, V, dirichlet_boundary);
+  DirichletBC bc0(V, u0, dirichlet_boundary);
   
   // Create periodic boundary condition
   PeriodicBoundary periodic_boundary;

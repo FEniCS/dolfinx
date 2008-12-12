@@ -30,8 +30,8 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-DirichletBC::DirichletBC(const Function& g,
-                         const FunctionSpace& V,
+DirichletBC::DirichletBC(const FunctionSpace& V,
+                         const Function& g,
                          const SubDomain& sub_domain,
                          BCMethod method)
   : BoundaryCondition(V),
@@ -42,8 +42,8 @@ DirichletBC::DirichletBC(const Function& g,
   init_from_sub_domain(sub_domain);
 }
 //-----------------------------------------------------------------------------
-DirichletBC::DirichletBC(const Function& g,
-                         const FunctionSpace& V,
+DirichletBC::DirichletBC(const FunctionSpace& V,
+                         const Function& g,
                          const MeshFunction<uint>& sub_domains,
                          uint sub_domain,
                          BCMethod method)
@@ -55,8 +55,8 @@ DirichletBC::DirichletBC(const Function& g,
   init_from_mesh_function(sub_domains, sub_domain);
 }
 //-----------------------------------------------------------------------------
-DirichletBC::DirichletBC(const Function& g,
-                         const FunctionSpace& V,
+DirichletBC::DirichletBC(const FunctionSpace& V,
+                         const Function& g,
                          uint sub_domain,
                          BCMethod method)
   : BoundaryCondition(V),

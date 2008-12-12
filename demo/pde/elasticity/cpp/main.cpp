@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells 2008
 //
 // First added:  2006-02-07
-// Last changed: 2008-11-19
+// Last changed: 2008-12-12
 //
 // This demo program solves the equations of static
 // linear elasticity for a gear clamped at two of its
@@ -79,12 +79,12 @@ int main()
   // Set up boundary condition at left end
   Clamp c;
   Left left;
-  DirichletBC bcl(c, V, left);
+  DirichletBC bcl(V, c, left);
 
   // Set up boundary condition at right end
   Rotation r;
   Right right;
-  DirichletBC bcr(r, V, right);
+  DirichletBC bcr(V, r, right);
 
   // Collect boundary conditions
   Array<BoundaryCondition*> bcs;

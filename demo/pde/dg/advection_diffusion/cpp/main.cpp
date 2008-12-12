@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-06-29
-// Last changed: 2008-11-19
+// Last changed: 2008-12-12
 //
 // Steady state advection-diffusion equation, discontinuous
 // formulation using full upwinding.
@@ -89,7 +89,7 @@ int main(int argc, char *argv[])
   // Set up boundary condition (apply strong BCs)
   BC g;
   DirichletBoundary boundary;
-  DirichletBC bc(g, V, boundary, geometric);
+  DirichletBC bc(V, g, boundary, geometric);
 
   // Solution function
   Function uh(V);

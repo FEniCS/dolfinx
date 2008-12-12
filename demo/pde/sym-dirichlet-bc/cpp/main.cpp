@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2008.
 //
 // First added:  2006-02-07
-// Last changed: 2008-11-19
+// Last changed: 2008-12-12
 //
 // This demo program solves Poisson's equation,
 //
@@ -12,7 +12,7 @@
 //
 // on the unit square with source f given by
 //
-//     f(x, y) = 500*exp(-((x-0.5)^2 + (y-0.5)^2)/0.02)
+//     f(x, y) = 500*exp(-((x - 0.5)^2 + (y - 0.5)^2)/0.02)
 //
 // and boundary conditions given by
 //
@@ -38,7 +38,7 @@ int main()
     }
   };
 
-// Neumann boundary condition
+  // Neumann boundary condition
   class Flux : public Function
   {
     void eval(double* values, const double* x) const
@@ -75,7 +75,7 @@ int main()
   // Create boundary condition
   Constant u0(0.0);
   DirichletBoundary boundary;
-  DirichletBC bc(u0, V, boundary);
+  DirichletBC bc(V, u0, boundary);
 
   // Create function
   Function u(V);
