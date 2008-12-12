@@ -24,15 +24,15 @@ W = V + Q
 
 # No-slip boundary condition for velocity
 noslip = Constant(mesh, (0, 0))
-bc0 = DirichletBC(noslip, W.sub(0), sub_domains, 0)
+bc0 = DirichletBC(W.sub(0), noslip, sub_domains, 0)
 
 # Inflow boundary condition for velocity
 inflow = Function(V, ("-sin(x[1]*pi)", "0.0"))
-bc1 = DirichletBC(inflow, W.sub(0), sub_domains, 1)
+bc1 = DirichletBC(W.sub(0), inflow, sub_domains, 1)
 
 # Boundary condition for pressure at outflow
 zero = Constant(mesh, 0.0)
-bc2 = DirichletBC(zero, W.sub(1), sub_domains, 2)
+bc2 = DirichletBC(W.sub(1), zero, sub_domains, 2)
 
 # Collect boundary conditions
 bcs = [bc0, bc1, bc2]
