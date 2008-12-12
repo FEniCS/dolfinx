@@ -60,7 +60,7 @@ namespace dolfin
     {
       if (p == process_number)
         continue;
-      send_buffer_size = std::max(send_buffer_size, send_data[p].size());
+      send_buffer_size = std::max(send_buffer_size, static_cast<uint>(send_data[p].size()));
     }
     dolfin_debug1("Size of send buffer: %d", send_buffer_size);
 
@@ -70,8 +70,8 @@ namespace dolfin
     dolfin_debug1("Size of recv buffer: %d", recv_buffer_size);
 
     // Allocate memory for send and receive buffers
-    dolfin_assert(send_buffer_size > 0);
-    dolfin_assert(recv_buffer_size > 0);
+    // dolfin_assert(send_buffer_size > 0);
+    // dolfin_assert(recv_buffer_size > 0);
     T* send_buffer = new T[send_buffer_size];
     T* recv_buffer = new T[recv_buffer_size];
 
@@ -87,10 +87,9 @@ namespace dolfin
       // Copy data to send buffer
       for (uint j = 0; j < send_data[dest].size(); j++)
         send_buffer[j] = send_data[dest][j];
-
       // Send and receive data
       const uint num_received = MPI::send_recv(send_buffer, send_data[dest].size(), dest,
-                                               recv_buffer, send_buffer_size,       source);
+                                               recv_buffer, recv_buffer_size,       source);
 
       // Copy data from receive buffer
       dolfin_assert(num_received <= recv_buffer_size);
