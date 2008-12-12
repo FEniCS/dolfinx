@@ -18,7 +18,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 void TransfiniteInterpolation::move(Mesh& mesh, Mesh& new_boundary, InterpolationType method)
 {
-  dolfin_error("Sorry, transfinite interpolation is currently broken.");
+  error("Sorry, transfinite interpolation is currently broken.");
 
   // Only implemented in 2D and 3D so far
   if (mesh.topology().dim() < 2 || mesh.topology().dim() > 3 )
