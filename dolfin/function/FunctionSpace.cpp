@@ -5,7 +5,7 @@
 // Modified by Martin Alnes, 2008.
 //
 // First added:  2008-09-11
-// Last changed: 2008-12-08
+// Last changed: 2008-12-12
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/NoDeleter.h>
@@ -194,7 +194,7 @@ void FunctionSpace::interpolate(double* vertex_values,
     _dofmap->tabulate_dofs(scratch.dofs, ufc_cell);
 
     // Pick values from global vector
-    v.vector().get(scratch.coefficients, _dofmap->local_dimension(), scratch.dofs);
+    v.interpolate(scratch.coefficients, ufc_cell);
 
     // Interpolate values at the vertices
     _element->interpolate_vertex_values(local_vertex_values, scratch.coefficients, ufc_cell);
