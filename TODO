@@ -123,7 +123,7 @@ OK demo/mesh/refinement/python/demo.py
 EE demo/mesh/intersection/python/demo.py                  viper problem
 EE demo/function/eval/python/demo.py                      segmentation fault
 OK demo/function/projection-interpolation/python/demo.py
-   demo/ode/aliev-panfilov/python/demo.py
-   demo/ode/lorenz/python/demo.py
+OK demo/ode/aliev-panfilov/python/demo.py
+OK demo/ode/lorenz/python/demo.py
 EE demo/fem/simple/python/demo.py
-EE demo/plot/python/demo.py
+OK demo/plot/python/demo.py

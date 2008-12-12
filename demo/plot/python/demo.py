@@ -14,6 +14,7 @@ import sys
 mesh = Mesh("dolfin-2.xml.gz")
 mesh.order()
 
+# Decide which demos to run
 try:
     demos = [int(sys.argv[-1])]
 except:
@@ -51,39 +52,22 @@ if 0 in demos:
         for j in xrange(mesh.numVertices()):
             coordinates[j] = original[j]
 
-# Define a vector function
-class VectorFunction(Function):
-    def __init__(self, mesh):
-        self.t = 0.0
-        Function.__init__(self, mesh)
-
-    def eval(self, values, x):
-        dx = x[0] - self.t
-        dy = x[1] - self.t
-        values[0] = -dy*exp(-10.0*(dx*dx + dy*dy))
-        values[1] = dx*exp(-10.0*(dx*dx + dy*dy))
-
-    def rank(self):
-        return 1
-
-    def dim(self, i):
-        return 2
-
+# Plot scalar function
 if 1 in demos:
-    # Plot scalar function
     V = FunctionSpace(mesh, "Lagrange", 1)
-    f = Function(V, cppexpr="t * 100 * exp(-10.0 * (pow(x[0] - t, 2) + pow(x[1] - t, 2)))")
+    f = Function(V, "t * 100 * exp(-10.0 * (pow(x[0] - t, 2) + pow(x[1] - t, 2)))")
     f.t = 0.0
     for i in range(100):
         f.t += 0.01
         plot(f, rescale=True, title="Scalar function")
 
+# Plot vector function
 if 2 in demos:
-    # Plot vector function
     mesh = UnitSquare(16, 16)
     V = VectorFunctionSpace(mesh, "Lagrange", 1)
-    f = Function(V, cppexpr=("-(x[1] - t)*exp(-10.0*(pow(x[0] - t, 2) + pow(x[1] - t, 2)))",
-                             " (x[0] - t)*exp(-10.0*(pow(x[0] - t, 2) + pow(x[1] - t, 2)))"))
+    f = Function(V, ("-(x[1] - t)*exp(-10.0*(pow(x[0] - t, 2) + pow(x[1] - t, 2)))",
+                     " (x[0] - t)*exp(-10.0*(pow(x[0] - t, 2) + pow(x[1] - t, 2)))"))
+    f.t = 0.0
     for i in range(200):
         f.t += 0.005
         plot(f, rescale=True, title="Vector function")
