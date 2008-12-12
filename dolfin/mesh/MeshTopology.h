@@ -58,11 +58,11 @@ namespace dolfin
     void init(uint dim, uint size);
 
     /// Return connectivity for given pair of topological dimensions
-    inline MeshConnectivity& operator() (uint d0, uint d1)
+    inline dolfin::MeshConnectivity& operator() (uint d0, uint d1)
     { dolfin_assert(d0 <= _dim && d1 <= _dim); return connectivity[d0][d1]; }
 
     /// Return connectivity for given pair of topological dimensions
-    inline const MeshConnectivity& operator() (uint d0, uint d1) const
+    inline const dolfin::MeshConnectivity& operator() (uint d0, uint d1) const
     { dolfin_assert(d0 <= _dim && d1 <= _dim); return connectivity[d0][d1]; }
 
     /// Display data
