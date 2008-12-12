@@ -13,26 +13,21 @@ __license__  = "GNU LGPL Version 2.1"
 
 from dolfin import *
 
-# Load mesh
+# Load mesh and subdomains
 mesh = Mesh("../../../../../data/meshes/dolfin-2.xml.gz")
-
-# Define function spaces
-V = VectorFunctionSpace(mesh, "Lagrange", 2)
-Q = FunctionSpace(mesh, "Lagrange", 1)
-W = V + Q
-
-# Load subdomains
 sub_domains = MeshFunction("uint", mesh, "../subdomains.xml.gz")
 
-print "offset0 =", W.sub(0).dofmap().offset()
-print "offset1 =", W.sub(1).dofmap().offset()
+# Define function spaces
+V = VectorFunctionSpace(mesh, "CG", 2)
+Q = FunctionSpace(mesh, "CG", 1)
+W = V + Q
 
 # No-slip boundary condition for velocity
 noslip = Constant(mesh, (0, 0))
 bc0 = DirichletBC(noslip, W.sub(0), sub_domains, 0)
 
 # Inflow boundary condition for velocity
-inflow = Function(V, ("-sin(x[1]*pi)","0.0"))
+inflow = Function(V, ("-sin(x[1]*pi)", "0.0"))
 bc1 = DirichletBC(inflow, W.sub(0), sub_domains, 1)
 
 # Boundary condition for pressure at outflow
