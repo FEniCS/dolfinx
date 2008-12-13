@@ -12,7 +12,7 @@ and boundary conditions given by
 """
 
 __author__ = "Anders Logg (logg@simula.no)"
-__date__ = "2007-08-16 -- 2008-12-07"
+__date__ = "2007-08-16 -- 2008-12-13"
 __copyright__ = "Copyright (C) 2007-2008 Anders Logg"
 __license__  = "GNU LGPL Version 2.1"
 
@@ -36,7 +36,7 @@ L = v*f*dx
 
 # Define boundary condition
 u0 = Constant(mesh, 0.0)
-bc = DirichletBC(u0, V, DirichletBoundary())
+bc = DirichletBC(V, u0, DirichletBoundary())
 
 # Compute solution
 pde = LinearPDE(a, L, bc)

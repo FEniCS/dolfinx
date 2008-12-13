@@ -112,11 +112,11 @@ EE: Not working
    demo/pde/optimization/python/demo.py
 EE demo/pde/nonlinear-poisson/python/demo.py
 EE demo/pde/periodic/python/demo.py
-EE demo/pde/poisson/python/demo.py
+OK demo/pde/poisson/python/demo.py
 EE demo/pde/dielectric/python/demo.py
 EE demo/pde/mixed-poisson/python/demo.py                results are wrong
-EE demo/pde/bcs/python/demo.py
-EE demo/pde/elasticity/python/demo.py
+OK demo/pde/bcs/python/demo.py
+OK demo/pde/elasticity/python/demo.py
 EE demo/pde/convection-diffusion/python/demo.py
 OK demo/pde/stokes/taylor-hood/python/demo.py
 EE demo/pde/stokes/stabilized/python/demo.py
@@ -127,7 +127,7 @@ EE demo/pde/lift-drag/python/demo.py
 OK demo/pde/dg/poisson/python/demo.py
 EE demo/pde/dg/advection_diffusion/python/demo.py
 EE demo/pde/adaptive-poisson/python/demo.py
-EE demo/pde/functional/python/demo.py
+EE demo/pde/functional/python/demo.py                   result is wrong
    demo/la/trilinos/python/demo.py
    demo/la/eigensolver/python/demo.py
 OK demo/la/block-matrix/python/demo.py
@@ -135,7 +135,7 @@ EE demo/nls/nonlinearpoisson/python/demo.py
 OK demo/quadrature/python/demo.py
 OK demo/mesh/subdomains/python/demo.py
 OK demo/mesh/meshfunction/python/demo.py
--- demo/mesh/partitioning/python/demo.py
+EE demo/mesh/partitioning/python/demo.py
 OK demo/mesh/built-in/python/demo.py
 OK demo/mesh/ale/python/demo.py
 OK demo/mesh/refinement/python/demo.py
