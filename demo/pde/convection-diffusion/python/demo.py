@@ -5,6 +5,7 @@
 # by the demo program in src/demo/subdomains.
 #
 # Modified by Anders Logg, 2008
+# Modified by Johan Hake, 2008
 
 __author__ = "Kristian B. Oelgaard (k.b.oelgaard@tudelft.nl)"
 __date__ = "2007-11-14 -- 2008-01-04"
@@ -13,18 +14,18 @@ __license__  = "GNU LGPL Version 2.1"
 
 from dolfin import *
 
-# Load mesh and create finite elements
-mesh = Mesh("../../../../data/meshes/dolfin-2.xml.gz")
-scalar = FiniteElement("Lagrange", "triangle", 1)
-vector = VectorElement("Lagrange", "triangle", 2)
-
 # Load subdomains and velocity
+velocity = Function("../velocity.xml.gz");
+mesh = velocity.function_space().mesh()
 sub_domains = MeshFunction("uint", mesh, "../subdomains.xml.gz");
-velocity = Function(vector, "../velocity.xml.gz");
+
+# Create FunctionSpaces 
+Q = FunctionSpace(mesh, "Lagrange", 1)
+V = VectorFunctionSpace(mesh, "Lagrange", 2)
 
 # Initialise source function and previous solution function
-f = Function(scalar, mesh, 0.0)
-u0 = Function(scalar, mesh, 0.0)
+f  = Function(Q, "0.0")
+u0 = Function(Q)
 
 # Parameters
 T = 5.0
@@ -33,25 +34,22 @@ t = k
 c = 0.005
 
 # Test and trial functions
-v = TestFunction(scalar)
-u = TrialFunction(scalar)
+v = TestFunction(Q)
+u = TrialFunction(Q)
 
 # Functions
-x0 = Vector()
-x1 = Vector()
-u0 = Function(scalar, mesh, x0)
-u1 = Function(scalar, mesh, x1)
+u1 = Function(Q)
 
 # Variational problem
 a = v*u*dx + 0.5*k*(v*dot(velocity, grad(u))*dx + c*dot(grad(v), grad(u))*dx)
 L = v*u0*dx - 0.5*k*(v*dot(velocity, grad(u0))*dx + c*dot(grad(v), grad(u0))*dx) + k*v*f*dx
 
 # Set up boundary condition
-g = Function(mesh, 1.0)
-bc = DirichletBC(g, sub_domains, 1)
+g = Constant(mesh, 1.0)
+bc = DirichletBC(Q, g, sub_domains, 1)
 
 # Assemble matrix
-A = assemble(a, mesh)
+A = assemble(a)
 
 # Output file
 out_file = File("temperature.pvd")
@@ -63,11 +61,11 @@ while t < T:
     u0.assign(u1)
 
     # Assemble vector and apply boundary conditions
-    b = assemble(L, mesh)
-    bc.apply(A, b, a)
+    b = assemble(L)
+    bc.apply(A, b)
     
     # Solve the linear system
-    solve(A, x1, b)
+    solve(A, u1.vector(), b)
     
     # Plot solution
     plot(u1)

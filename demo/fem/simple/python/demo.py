@@ -2,11 +2,12 @@
 matrices like the stiffness matrix and mass matrix."""
 
 __author__ = "Kristian B. Oelgaard (k.b.oelgaard@tudelft.nl)"
-__date__ = "2007-11-15 -- 2008-12-12"
+__date__ = "2007-11-15 -- 2008-12-13"
 __copyright__ = "Copyright (C) 2007 Kristian B. Oelgaard"
 __license__  = "GNU LGPL Version 2.1"
 
 # Modified by Anders Logg, 2008
+# Modified by Johan Hake, 2008
 
 from dolfin import *
 from numpy import array
@@ -24,7 +25,7 @@ M = assemble(v*u*dx)
 # Create reference matrices and set entries
 A0 = Matrix(4, 4)
 M0 = Matrix(4, 4)
-pos = array([0, 1, 2, 3], dtype='uint')
+pos = array([0, 1, 2, 3], dtype='I')
 A0.set(array([[1.0/2.0, -1.0/6.0, -1.0/6.0, -1.0/6.0],
               [-1.0/6.0, 1.0/6.0, 0.0, 0.0],
               [-1.0/6.0, 0.0, 1.0/6.0, 0.0],

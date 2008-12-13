@@ -40,6 +40,12 @@ namespace dolfin {
     $1 = PyArray_Check($input);
 }
 
+// Ignore low level interface from GenericTensor class
+%ignore dolfin::GenericTensor::get(double*, const uint*, const uint * const *) const;
+%ignore dolfin::GenericTensor::set(const double* , const uint* , const uint * const *);
+%ignore dolfin::GenericTensor::add;
+%ignore dolfin::GenericTensor::instance;
+
 // Define a macro for the vector interface
 %define LA_PRE_VEC_INTERFACE(VEC_TYPE)
 %rename(assign) dolfin::VEC_TYPE::operator=;
@@ -53,12 +59,9 @@ namespace dolfin {
 // NOTE: The %ignore have to be set using the actuall type used in the declaration
 // so we cannot use dolfin::uint or unsigned int for uint. Strange...
 %ignore dolfin::VEC_TYPE::get(double*, uint, const uint*) const;
-%ignore dolfin::VEC_TYPE::get(double*, const uint*, const uint * const *) const;
-%ignore dolfin::VEC_TYPE::set(const double* , const uint* , const uint * const *);
 %ignore dolfin::VEC_TYPE::set(const double* , uint m, const uint*);
 		
 %ignore dolfin::VEC_TYPE::add;
-%ignore dolfin::VEC_TYPE::instance;
 
 %newobject dolfin::VEC_TYPE::copy;
 %enddef
@@ -71,10 +74,7 @@ namespace dolfin {
 %ignore dolfin::MAT_TYPE::operator/=;
 %ignore dolfin::MAT_TYPE::operator+=;
 %ignore dolfin::MAT_TYPE::operator-=;
-%ignore dolfin::MAT_TYPE::get;
-%ignore dolfin::MAT_TYPE::set;
 %ignore dolfin::MAT_TYPE::add;
-%ignore dolfin::MAT_TYPE::instance;
 
 %newobject dolfin::MAT_TYPE::copy;
 
