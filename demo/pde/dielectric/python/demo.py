@@ -12,10 +12,11 @@
 #     u(x,y)      = V  for y = 0
 
 __author__ = "Kristen Kaasbjerg (cosby@fys.ku.dk)"
-__date__ = "2008-02-14"
+__date__ = "2008-02-14 -- 2008-12-13"
 __copyright__ = ""
 __license__  = "GNU LGPL Version 2.1"
 
+# Modified by Kristian Oelgaard 2008
 
 from dolfin import *
 
@@ -43,21 +44,17 @@ for refine in range(4):
     mesh.refine()
 
 # Finite elements
-element = FiniteElement("Lagrange", "triangle", 2) # last argument: order of the polynomial
+V2 = FunctionSpace(mesh, "CG", 2) # last argument: order of the polynomial
 # Discontinuous element needed for the dielectric function
-DG0 = FiniteElement("DG", "triangle", 0) # 0'th order are possible for DG elements
+V0 = FunctionSpace(mesh, "DG", 0) # 0'th order are possible for DG elements
 
 # Source term
 class Source(Function):
-    def __init__(self, element, mesh):
-        Function.__init__(self, element, mesh)
     def eval(self, values, x):
         values[0] = 0.0
 
 # Exact solution
 class Exact(Function):
-    def __init__(self, element, mesh):
-        Function.__init__(self, element, mesh)
     def eval(self, values, x):
         u = 0
         N = 20 # N needs to be rather large (~200) in other to have u=V for y=0 !
@@ -84,8 +81,6 @@ class Exact(Function):
         
 # Dielectric constant
 class Coefficient(Function):
-    def __init__(self, element, mesh):
-        Function.__init__(self, element, mesh)
     def eval(self, values, x):
         if x[1] <= h_:
             values[0] = e_r
@@ -94,8 +89,6 @@ class Coefficient(Function):
 
 # Dirichlet boundary condition
 class DirichletFunction(Function):
-    def __init__(self, element,mesh):
-        Function.__init__(self, element,mesh)
     def eval(self, values, x):
         if x[1] < DOLFIN_EPS:
             values[0] = V
@@ -108,21 +101,20 @@ class DirichletBoundary(SubDomain):
         return bool(on_boundary and True)
 
 # Define variational problem
-v = TestFunction(element)
-u = TrialFunction(element)
-f = Source(element,mesh)
-b = Coefficient(DG0, mesh)
+v = TestFunction(V2)
+u = TrialFunction(V2)
+f = Source(V2)
+b = Coefficient(V0)
 
 a = b*dot(grad(v), grad(u))*dx
 L = v*f*dx
 
 # Define boundary condition
-u0 = DirichletFunction(element,mesh)
-boundary = DirichletBoundary()
-bc = DirichletBC(u0, mesh, boundary)
+u0 = DirichletFunction(V2)
+bc = DirichletBC(V2, u0, DirichletBoundary())
 
 # Solve PDE and plot solution
-pde = LinearPDE(a, L, mesh, bc)
+pde = LinearPDE(a, L, bc)
 u = pde.solve()
 
 plot(u)
@@ -131,12 +123,12 @@ plot(u)
 # Use higher order element for exact solution,
 # because it is an interpolation of the exact solution
 # in the finite element space!
-Pk = FiniteElement("Lagrange", "triangle", 5)
-exact = Exact(Pk,mesh) 
+Pk = FunctionSpace(mesh, "CG", 5)
+exact = Exact(Pk)
 
 e = u - exact
 L2_norm = e*e*dx
-norm = assemble(L2_norm,mesh)
+norm = assemble(L2_norm)
 
 print "L2-norm is: ", norm
 

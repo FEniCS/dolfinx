@@ -113,7 +113,7 @@ EE: Not working
 EE demo/pde/nonlinear-poisson/python/demo.py
 EE demo/pde/periodic/python/demo.py                     PeriodicBC not defined
 OK demo/pde/poisson/python/demo.py
-EE demo/pde/dielectric/python/demo.py
+OK demo/pde/dielectric/python/demo.py
 EE demo/pde/mixed-poisson/python/demo.py                results are wrong
 OK demo/pde/bcs/python/demo.py
 OK demo/pde/elasticity/python/demo.py
