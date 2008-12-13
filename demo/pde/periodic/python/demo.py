@@ -8,7 +8,7 @@
 # Original implementation: ../cpp/main.cpp by Anders Logg
 #
 __author__ = "Kristian B. Oelgaard (k.b.oelgaard@tudelft.nl)"
-__date__ = "2007-11-15 -- 2007-11-28"
+__date__ = "2007-11-15 -- 2008-12-13"
 __copyright__ = "Copyright (C) 2007 Kristian B. Oelgaard"
 __license__  = "GNU LGPL Version 2.1"
 
@@ -16,13 +16,10 @@ from dolfin import *
 
 # Create mesh and finite element
 mesh = UnitSquare(32, 32)
-element = FiniteElement("Lagrange", "triangle", 1)
+V = FunctionSpace(mesh, "Lagrange", 1)
 
 # Source term
 class Source(Function):
-    def __init__(self, element, mesh):
-        Function.__init__(self, element, mesh)
-
     def eval(self, values, x):
         dx = x[0] - 0.5
         dy = x[1] - 0.5
@@ -44,27 +41,25 @@ class PeriodicBoundary(SubDomain):
 
 
 # Create Dirichlet boundary condition
-u0 = Function(mesh, 0.0)
-dirichlet_boundary = DirichletBoundary()
-bc0 = DirichletBC(u0, mesh, dirichlet_boundary)
+u0 = Constant(mesh, 0.0)
+bc0 = DirichletBC(V, u0, DirichletBoundary())
 
 # Create periodic boundary condition
-periodic_boundary = PeriodicBoundary()
-bc1 = PeriodicBC(mesh, periodic_boundary)
+bc1 = PeriodicBC(V, PeriodicBoundary())
 
 # Collect boundary conditions
 bcs = [bc0, bc1]
 
 # Define variational problem
-v = TestFunction(element)
-u = TrialFunction(element)
-f = Source(element, mesh)
+v = TestFunction(V)
+u = TrialFunction(V)
+f = Source(V)
 
 a = dot(grad(v), grad(u))*dx
 L = v*f*dx
 
 # Solve PDE
-pde = LinearPDE(a, L, mesh, bcs)
+pde = LinearPDE(a, L, bcs)
 u = pde.solve()
 
 # Save solution to file

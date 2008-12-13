@@ -9,7 +9,7 @@ The functional M corresponds to the energy norm for a
 simple reaction-diffusion equation."""
 
 __author__ = "Kristian B. Oelgaard (k.b.oelgaard@tudelft.nl)"
-__date__ = "2007-11-14 -- 2007-11-28"
+__date__ = "2007-11-14 -- 2008-12-13"
 __copyright__ = "Copyright (C) 2007 Kristian B. Oelgaard"
 __license__  = "GNU LGPL Version 2.1"
 

@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-09-19
-// Last changed: 2008-11-19
+// Last changed: 2008-12-13
 //
 // This demo program computes the value of the functional
 //
