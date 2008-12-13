@@ -58,22 +58,41 @@ This gives convenient expand/collapse of bullets by pressing TAB.
 ** Add function to display all parameters
 * Demos
 ** Add Python versions of all demos
-** Not working (in Python)
-  src/demo/pde/nonlinear-poisson/python/demo.py
-  src/demo/pde/lift-drag/python/demo.py
-  src/demo/la/eigensolver/python/demo.py
-  src/demo/nls/nonlinearpoisson/python/demo.py
-  src/demo/ode/aliev-panfilov/python/demo.py
-** Not added (in Python)
-   ode/complex
-   ode/stiff
-   ode/courtemanche
-   ode/homotopy/economy
-   ode/homotopy/simple
-   ode/harmonic
-   ode/lorenz
-   ode/method-weights
-   nls/cahn-hilliard
+*** List of missing Python demos
+  fem/assembly
+  nls/cahn-hilliard
+  ode/complex
+  ode/courtemanche
+  ode/harmonic
+  ode/method-weights
+  ode/stiff
+  ode/tentusscher
+
+** Add CPP versions of all demos
+*** List of missing CPP demos
+  function/projection-interpolation
+  la/trilinos
+  mesh/built-in
+  pde/adaptive-poisson
+  pde/dielectric
+
+*** List of broken CPP demos
+  fem/assembly
+  mesh/partitioning
+  ode/aliev-panfilov
+    - output 'Not solving the dual problem as requested.'
+  ode/complex
+    - output 'Not solving the dual problem as requested.'
+  ode/courtemanche
+    - multiple warnings
+    - output 'Not solving the dual problem as requested.'
+  ode/stiff
+    - multiple warnings
+    - output 'Not solving the dual problem as requested.'
+  ode/tentusscher
+    - multiple warnings
+    - output 'Not solving the dual problem as requested.'
+
 * PyDOLFIN
 ** Fix memory leak warning for Array of Function*
 ** Needing to convert numpy.bool to bool in inside
@@ -87,28 +106,28 @@ This gives convenient expand/collapse of bullets by pressing TAB.
 ** Current status of Python demos:
 
 EE: Not working
---: Missing
+--: Missing (see * Demos)
 ??: Strange
 
    demo/pde/optimization/python/demo.py
-   demo/pde/nonlinear-poisson/python/demo.py
-   demo/pde/periodic/python/demo.py
-OK demo/pde/poisson/python/demo.py
-   demo/pde/dielectric/python/demo.py
-OK demo/pde/mixed-poisson/python/demo.py
-OK demo/pde/bcs/python/demo.py
-OK demo/pde/elasticity/python/demo.py
-   demo/pde/convection-diffusion/python/demo.py
-   demo/pde/stokes/taylor-hood/python/demo.py
-   demo/pde/stokes/stabilized/python/demo.py
+EE demo/pde/nonlinear-poisson/python/demo.py
+EE demo/pde/periodic/python/demo.py
+EE demo/pde/poisson/python/demo.py
+EE demo/pde/dielectric/python/demo.py
+EE demo/pde/mixed-poisson/python/demo.py                results are wrong
+EE demo/pde/bcs/python/demo.py
+EE demo/pde/elasticity/python/demo.py
+EE demo/pde/convection-diffusion/python/demo.py
+OK demo/pde/stokes/taylor-hood/python/demo.py
+EE demo/pde/stokes/stabilized/python/demo.py
 EE demo/pde/poisson1D/python/demo.py                    viper problem with 1D
    demo/pde/waveguide/python/demo.py
-   demo/pde/sym-dirichlet-bc/python/demo.py
+EE demo/pde/sym-dirichlet-bc/python/demo.py
 EE demo/pde/lift-drag/python/demo.py
 OK demo/pde/dg/poisson/python/demo.py
-   demo/pde/dg/advection_diffusion/python/demo.py
-   demo/pde/adaptive-poisson/python/demo.py
-OK demo/pde/functional/python/demo.py
+EE demo/pde/dg/advection_diffusion/python/demo.py
+EE demo/pde/adaptive-poisson/python/demo.py
+EE demo/pde/functional/python/demo.py
    demo/la/trilinos/python/demo.py
    demo/la/eigensolver/python/demo.py
 OK demo/la/block-matrix/python/demo.py
@@ -116,14 +135,14 @@ EE demo/nls/nonlinearpoisson/python/demo.py
 OK demo/quadrature/python/demo.py
 OK demo/mesh/subdomains/python/demo.py
 OK demo/mesh/meshfunction/python/demo.py
-OK demo/mesh/partitioning/python/demo.py
+-- demo/mesh/partitioning/python/demo.py
 OK demo/mesh/built-in/python/demo.py
 OK demo/mesh/ale/python/demo.py
 OK demo/mesh/refinement/python/demo.py
 EE demo/mesh/intersection/python/demo.py                  viper problem
 EE demo/function/eval/python/demo.py                      segmentation fault
 OK demo/function/projection-interpolation/python/demo.py
-OK demo/ode/aliev-panfilov/python/demo.py
-OK demo/ode/lorenz/python/demo.py
+EE demo/ode/aliev-panfilov/python/demo.py
+EE demo/ode/lorenz/python/demo.py
 EE demo/fem/simple/python/demo.py
 OK demo/plot/python/demo.py
