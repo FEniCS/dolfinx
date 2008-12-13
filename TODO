@@ -119,7 +119,7 @@ OK demo/pde/bcs/python/demo.py
 OK demo/pde/elasticity/python/demo.py
 OK demo/pde/convection-diffusion/python/demo.py
 OK demo/pde/stokes/taylor-hood/python/demo.py
-EE demo/pde/stokes/stabilized/python/demo.py
+OK demo/pde/stokes/stabilized/python/demo.py
 EE demo/pde/poisson1D/python/demo.py                    viper problem with 1D
    demo/pde/waveguide/python/demo.py
 EE demo/pde/sym-dirichlet-bc/python/demo.py
