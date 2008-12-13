@@ -54,7 +54,7 @@ a = dot(grad(v), grad(u))*dx \
    + alpha/h('+')*dot(jump(v, n), jump(u, n))*dS \
    - dot(grad(v), mult(u, n))*ds \
    - dot(mult(v, n), grad(u))*ds \
-   + gamma/h*dot(v, u)*ds
+   + gamma/h*v*u*ds
 
 # Define linear form
 L = v*f*dx
