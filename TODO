@@ -126,7 +126,7 @@ OK demo/pde/sym-dirichlet-bc/python/demo.py
 EE demo/pde/lift-drag/python/demo.py
 OK demo/pde/dg/poisson/python/demo.py
 EE demo/pde/dg/advection_diffusion/python/demo.py
-EE demo/pde/adaptive-poisson/python/demo.py
+EE demo/pde/adaptive-poisson/python/demo.py             segmentation fault
 OK demo/pde/functional/python/demo.py
    demo/la/trilinos/python/demo.py
    demo/la/eigensolver/python/demo.py

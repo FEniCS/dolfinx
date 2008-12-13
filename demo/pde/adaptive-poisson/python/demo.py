@@ -13,7 +13,7 @@ edge (jump) terms and the size of the interpolation constant.
 """
 
 __author__ = "Rolv Erlend Bredesen <rolv@simula.no>"
-__date__ = "2008-04-03 -- 2008-05-23"
+__date__ = "2008-04-03 -- 2008-12-13"
 __copyright__ = "Copyright (C) 2008 Rolv Erlend Bredesen"
 __license__  = "GNU LGPL Version 2.1"
 
@@ -34,10 +34,10 @@ class Source(Function):
         values[0] = source(x)
     
 # Define variational problem
-element = FiniteElement("Lagrange", "triangle", 1)
-v = TestFunction(element)
-u = TrialFunction(element)
-f = Source(element, mesh)
+V = FunctionSpace(mesh, "CG", 1)
+v = TestFunction(V)
+u = TrialFunction(V)
+f = Source(V)
 a = dot(grad(v), grad(u))*dx
 L = v*f*dx
 
@@ -45,12 +45,11 @@ L = v*f*dx
 for level in xrange(MAX_ITER):
 
     # Define boundary condition
-    u0 = Function(mesh, 0.0)
-    boundary = DomainBoundary();
-    bc = DirichletBC(u0, mesh, boundary)
+    u0 = Constant(mesh, 0.0)
+    bc = DirichletBC(V, u0, DomainBoundary())
     
     # Compute solution
-    pde = LinearPDE(a, L, mesh, bc)
+    pde = LinearPDE(a, L, bc)
     u = pde.solve()
     
     # Compute error indicators
