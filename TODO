@@ -146,3 +146,6 @@ EE demo/ode/aliev-panfilov/python/demo.py
 EE demo/ode/lorenz/python/demo.py
 OK demo/fem/simple/python/demo.py
 OK demo/plot/python/demo.py
+
+- Change "Lagrange" everywhere to "CG" (more appropriate now when we have FunctionSpace)
+- Use simple strings instead of eval as much as possible in Python demos
