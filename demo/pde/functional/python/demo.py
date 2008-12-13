@@ -9,7 +9,7 @@ The functional M corresponds to the energy norm for a
 simple reaction-diffusion equation."""
 
 __author__ = "Kristian B. Oelgaard (k.b.oelgaard@tudelft.nl)"
-__date__ = "2007-11-14 -- 2007-11-28"
+__date__ = "2007-11-14 -- 2008-12-13"
 __copyright__ = "Copyright (C) 2007 Kristian B. Oelgaard"
 __license__  = "GNU LGPL Version 2.1"
 
@@ -22,7 +22,7 @@ mesh = UnitSquare(16, 16)
 V = FunctionSpace(mesh, "Lagrange", 2)
 
 # Define the function v
-v = Function(V, cppexpr="sin(x[0]) + cos(x[1])")
+v = Function(V, "sin(x[0]) + cos(x[1])")
 
 # Define functional
 M = (v*v + dot(grad(v), grad(v)))*dx
@@ -31,4 +31,7 @@ M = (v*v + dot(grad(v), grad(v)))*dx
 value = assemble(M)
 
 exact_value = 2.0 + 2.0*sin(1.0)*(1.0 - cos(1.0))
-print "The energy norm of v is %.15g (should be %.15g)." %(value, exact_value)
+print "The energy norm of v is: %.15g" % value
+print "It should be:            %.15g" % exact_value
+
+

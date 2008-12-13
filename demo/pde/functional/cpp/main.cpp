@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-09-19
-// Last changed: 2008-11-19
+// Last changed: 2008-12-13
 //
 // This demo program computes the value of the functional
 //
@@ -48,7 +48,8 @@ int main()
   // Compute exact value
   double exact_value = 2.0 + 2.0*sin(1.0)*(1.0 - cos(1.0));
 
-  message("The energy norm of v is %.15g (should be %.15g).", approximate_value, exact_value);
+  message("The energy norm of v is: %.15g", approximate_value);
+  message("It should be:            %.15g", exact_value);
   
   return 0;
 }
