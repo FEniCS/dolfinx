@@ -46,7 +46,9 @@ for level in xrange(MAX_ITER):
 
     # Define boundary condition
     u0 = Constant(mesh, 0.0)
-    bc = DirichletBC(V, u0, DomainBoundary())
+
+    db = DomainBoundary()
+    bc = DirichletBC(V, u0, db)
     
     # Compute solution
     pde = LinearPDE(a, L, bc)
