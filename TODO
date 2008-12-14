@@ -111,22 +111,22 @@ EE: Not working
 
    demo/pde/optimization/python/demo.py
 EE demo/pde/nonlinear-poisson/python/demo.py
-OK demo/pde/periodic/python/demo.py
+EE demo/pde/periodic/python/demo.py                     seg fault, same as function/eval
 OK demo/pde/poisson/python/demo.py
-EE demo/pde/dielectric/python/demo.py
+OK demo/pde/dielectric/python/demo.py
 EE demo/pde/mixed-poisson/python/demo.py                results are wrong
 OK demo/pde/bcs/python/demo.py
 OK demo/pde/elasticity/python/demo.py
-EE demo/pde/convection-diffusion/python/demo.py
+OK demo/pde/convection-diffusion/python/demo.py
 OK demo/pde/stokes/taylor-hood/python/demo.py
-EE demo/pde/stokes/stabilized/python/demo.py
+OK demo/pde/stokes/stabilized/python/demo.py
 EE demo/pde/poisson1D/python/demo.py                    viper problem with 1D
    demo/pde/waveguide/python/demo.py
-EE demo/pde/sym-dirichlet-bc/python/demo.py
+OK demo/pde/sym-dirichlet-bc/python/demo.py
 EE demo/pde/lift-drag/python/demo.py
 OK demo/pde/dg/poisson/python/demo.py
 EE demo/pde/dg/advection_diffusion/python/demo.py
-EE demo/pde/adaptive-poisson/python/demo.py
+EE demo/pde/adaptive-poisson/python/demo.py             segmentation fault
 OK demo/pde/functional/python/demo.py
    demo/la/trilinos/python/demo.py
    demo/la/eigensolver/python/demo.py
