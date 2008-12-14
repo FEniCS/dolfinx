@@ -26,6 +26,16 @@
   }
 }
 
+%typemap(directorin) double* y {
+  {
+    // Compute size of x
+    npy_intp dims[1] = {this->geometric_dimension()};
+    $input = PyArray_SimpleNewFromData(1, dims, NPY_DOUBLE, reinterpret_cast<char *>($1_name));
+  }
+}
+
+//%apply const double* x { const double* y };  
+
 // Typemap check
 %typecheck(SWIG_TYPECHECK_DOUBLE_ARRAY) double* {
     // General typemap
@@ -104,9 +114,9 @@
 // Typemap for sending numpy arrays as input to functions expecting a C array of real
 %typemap(in) double* {
     if PyArray_Check($input) {
-        PyArrayObject *xa = (PyArrayObject*)($input);
-        if (xa->descr->type == 'd')
-            $1 = (double *)(*xa).data;
+        PyArrayObject *xa = reinterpret_cast<PyArrayObject*>($input);
+        if ( PyArray_TYPE(xa) == NPY_DOUBLE )
+            $1  = static_cast<double*>(PyArray_DATA(xa));
         else
             SWIG_exception(SWIG_ValueError, "numpy array of doubles expected");
     } else 

@@ -16,7 +16,7 @@ from dolfin import *
 
 # Create mesh and finite element
 mesh = UnitSquare(32, 32)
-V = FunctionSpace(mesh, "Lagrange", 1)
+V = FunctionSpace(mesh, "CG", 1)
 
 # Source term
 class Source(Function):
@@ -42,10 +42,12 @@ class PeriodicBoundary(SubDomain):
 
 # Create Dirichlet boundary condition
 u0 = Constant(mesh, 0.0)
-bc0 = DirichletBC(V, u0, DirichletBoundary())
+dbc = DirichletBoundary()
+bc0 = DirichletBC(V, u0, dbc)
 
 # Create periodic boundary condition
-bc1 = PeriodicBC(V, PeriodicBoundary())
+pbc = PeriodicBoundary()
+bc1 = PeriodicBC(V, pbc)
 
 # Collect boundary conditions
 bcs = [bc0, bc1]
