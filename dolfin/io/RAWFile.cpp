@@ -70,14 +70,14 @@ void RAWFile::ResultsWrite(const Function& u) const
     error("Only scalar and vectors functions can be saved in Raw format.");
 
   // Get number of components
-  const uint dim = u.function_space().element().value_dimension(0);
+  uint dim = 1;
+  for (uint i = 0; i < rank; i++)
+    dim *= u.function_space().element().value_dimension(i);
 
   Mesh& mesh = const_cast<Mesh&>(u.function_space().mesh());
   
   // Allocate memory for function values at vertices
-  uint size = mesh.numVertices();
-  for (uint i = 0; i < u.function_space().element().value_rank(); i++)
-    size *= u.function_space().element().value_dimension(i);
+  const uint size = mesh.numVertices()*dim;
   double* values = new double[size];
 
   // Get function values at vertices
@@ -90,9 +90,9 @@ void RAWFile::ResultsWrite(const Function& u) const
   fprintf(fp,"%d \n",mesh.numVertices());
   for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
   {    
-    if ( rank == 0 ) 
+    if ( dim == 1 ) 
       fprintf(fp," %e ", values[ vertex->index() ] );
-    else if ( u.function_space().element().value_dimension(0) == 2 ) 
+    else if ( dim == 2 ) 
       fprintf(fp," %e %e", values[ vertex->index() ], 
                                 values[ vertex->index() + mesh.numVertices() ] );
     else  

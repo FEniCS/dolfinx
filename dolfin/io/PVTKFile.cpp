@@ -198,6 +198,8 @@ void PVTKFile::ResultsWrite(const Function& u) const
   uint dim = 1;
   for (uint i = 0; i < rank; i++)
     dim *= element.value_dimension(i);
+  if (dim > 3)
+    warning("Cannot handle VTK file with number of components > 3. Writing first three components only");
 
   // Allocate memory for function values at vertices
   const uint size = mesh.numVertices()*dim;
@@ -217,19 +219,18 @@ void PVTKFile::ResultsWrite(const Function& u) const
     fprintf(fp, "<PointData  Vectors=\"U\"> \n");
     fprintf(fp, "<DataArray  type=\"Float64\"  Name=\"U\"  NumberOfComponents=\"3\" format=\"ascii\">	 \n");	
   }
+  // TODO: Handle NumberOfComponents != 3 and tensors
 
-  if (dim > 3)
-    warning("Cannot handle VTK file with number of components > 3. Writing first three components only");
-	
   for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
-  {    
-    if (rank == 0) 
+  {
+    // TODO: Use stringstream to enable arbitrary dim 
+    if (dim == 1) 
       fprintf(fp," %e ", values[ vertex->index() ] );
-    else if (element.value_dimension(0) == 2 ) 
-      fprintf(fp," %e %e  0.0", values[ vertex->index() ], 
+    else if (dim == 2) 
+      fprintf(fp," %e %e 0.0 ", values[ vertex->index() ], 
                                 values[ vertex->index() + mesh.numVertices() ] );
-    else  
-      fprintf(fp," %e %e  %e", values[ vertex->index() ], 
+    else // TODO: Don't assume dim <= 3
+      fprintf(fp," %e %e %e ", values[ vertex->index() ], 
                                values[ vertex->index() +   mesh.numVertices() ], 
                                values[ vertex->index() + 2*mesh.numVertices() ] );
 

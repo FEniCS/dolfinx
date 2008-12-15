@@ -169,7 +169,9 @@ void VTKFile::ResultsWrite(const Function& u) const
     error("Only scalar and vectors functions can be saved in VTK format.");
 
   // Get number of components
-  const uint dim = u.function_space().element().value_dimension(0);
+  uint dim = 1;
+  for (uint i = 0; i < rank; i++)
+    dim *= u.function_space().element().value_dimension(i);
   if ( dim > 3 )
     warning("Cannot handle VTK file with number of components > 3. Writing first three components only");
 
@@ -204,9 +206,7 @@ void VTKFile::ResultsWrite(const Function& u) const
   if(data_type == "cell")
   {
     // Allocate memory for function values at cell centres
-    uint size = mesh.numCells();
-    for (uint i = 0; i < u.function_space().element().value_rank(); i++)
-      size *= u.function_space().element().value_dimension(i);
+    const uint size = mesh.numCells()*dim;
     double* values = new double[size];
 
     // Get function values on cells
@@ -226,9 +226,9 @@ void VTKFile::ResultsWrite(const Function& u) const
 
     for (CellIterator cell(mesh); !cell.end(); ++cell)
     {    
-      if ( rank == 0 ) 
+      if ( dim == 1 ) 
         fprintf(fp," %e ", values[ cell->index() ] );
-      else if ( u.function_space().element().value_dimension(0) == 2 ) 
+      else if ( dim == 2 ) 
         fprintf(fp," %e %e  0.0", values[ cell->index() ], 
                                   values[ cell->index() + mesh.numCells() ] );
       else  
@@ -246,9 +246,7 @@ void VTKFile::ResultsWrite(const Function& u) const
   else if(data_type == "point") 
   {
     // Allocate memory for function values at vertices
-    uint size = mesh.numVertices();
-    for (uint i = 0; i < u.function_space().element().value_rank(); i++)
-      size *= u.function_space().element().value_dimension(i);
+    uint size = mesh.numVertices()*dim;
     double* values = new double[size];
 
     // Get function values at vertices
@@ -267,9 +265,9 @@ void VTKFile::ResultsWrite(const Function& u) const
 
     for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
     {    
-      if ( rank == 0 ) 
+      if ( dim == 1 ) 
         fprintf(fp," %e ", values[ vertex->index() ] );
-      else if ( u.function_space().element().value_dimension(0) == 2 ) 
+      else if ( dim == 2 ) 
         fprintf(fp," %e %e  0.0", values[ vertex->index() ], 
                                   values[ vertex->index() + mesh.numVertices() ] );
       else  
