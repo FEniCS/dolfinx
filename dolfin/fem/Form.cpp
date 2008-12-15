@@ -5,8 +5,9 @@
 // Modified by Martin Alnes, 2008.
 //
 // First added:  2007-12-10
-// Last changed: 2008-12-09
+// Last changed: 2008-12-15
 
+#include <string>
 #include <ufc.h>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/log/log.h>
@@ -83,7 +84,7 @@ const Mesh& Form::mesh() const
   return *meshes[0];
 }
 //-----------------------------------------------------------------------------
-const FunctionSpace& Form::function_space(uint i) const
+const FunctionSpace& Form::function_space(dolfin::uint i) const
 {
   dolfin_assert(i < _function_spaces.size());
   return *_function_spaces[i];
@@ -98,7 +99,7 @@ std::vector<const FunctionSpace*> Form::function_spaces() const
   return V;
 }
 //-----------------------------------------------------------------------------
-const Function& Form::coefficient(uint i) const
+const Function& Form::coefficient(dolfin::uint i) const
 {
   dolfin_assert(i < _coefficients.size());
   return *_coefficients[i];
@@ -111,6 +112,20 @@ std::vector<const Function*> Form::coefficients() const
     V.push_back(_coefficients[i].get());
 
   return V;
+}
+//-----------------------------------------------------------------------------
+dolfin::uint Form::coefficient_number(const std::string & name) const
+{
+  // TODO: Dissect name, assuming "wi", and return i.
+  error("Not implemented.");
+  return 0;
+}
+//-----------------------------------------------------------------------------
+std::string Form::coefficient_name(dolfin::uint i) const
+{
+  // TODO: Create name "wi"
+  error("Not implemented.");
+  return "unnamed";
 }
 //-----------------------------------------------------------------------------
 const ufc::form& Form::ufc_form() const

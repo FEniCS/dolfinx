@@ -5,7 +5,7 @@
 // Modified by Martin Alnes, 2008.
 //
 // First added:  2007-04-02
-// Last changed: 2008-12-04
+// Last changed: 2008-12-15
 
 #ifndef __FORM_H
 #define __FORM_H
@@ -68,6 +68,12 @@ namespace dolfin
     /// Return coefficient functions
     std::vector<const Function*> coefficients() const;
 
+    /// Return the number of the coefficient with this name
+    virtual dolfin::uint coefficient_number(const std::string & name) const;
+    
+    /// Return the name of the coefficient with this number
+    virtual std::string coefficient_name(dolfin::uint i) const;
+    
     /// Return UFC form
     const ufc::form& ufc_form() const;
 
