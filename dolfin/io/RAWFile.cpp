@@ -2,9 +2,11 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Nuno Lopes 2008.
+// Modified by Martin Alnes 2008.
 //
 // First added:  2008-05-29
 
+#include <sstream>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/Vertex.h>
@@ -89,7 +91,8 @@ void RAWFile::ResultsWrite(const Function& u) const
 
   fprintf(fp,"%d \n",mesh.numVertices());
   for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
-  {    
+  {
+    /*    
     if ( dim == 1 ) 
       fprintf(fp," %e ", values[ vertex->index() ] );
     else if ( dim == 2 ) 
@@ -101,6 +104,16 @@ void RAWFile::ResultsWrite(const Function& u) const
                                values[ vertex->index() + 2*mesh.numVertices() ] );
 
     fprintf(fp,"\n");
+    */
+
+    std::ostringstream ss;
+    ss << std::scientific;
+    for(uint i=0; i<dim; i++)
+      ss << " " << values[vertex->index() + i*mesh.numCells()];
+    ss << std::endl;
+    std::string s = ss.str();
+    
+    fprintf(fp, s.c_str());    
   }	 
   
   // Close file

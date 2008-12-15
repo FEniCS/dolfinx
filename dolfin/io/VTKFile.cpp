@@ -3,10 +3,12 @@
 //
 // Modified by Anders Logg 2005-2006.
 // Modified by Kristian Oelgaard 2006.
+// Modified by Martin Alnes 2008.
 //
 // First added:  2005-07-05
-// Last changed: 2007-05-16
+// Last changed: 2008-12-15
 
+#include <sstream>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/Vertex.h>
@@ -172,8 +174,8 @@ void VTKFile::ResultsWrite(const Function& u) const
   uint dim = 1;
   for (uint i = 0; i < rank; i++)
     dim *= u.function_space().element().value_dimension(i);
-  if ( dim > 3 )
-    warning("Cannot handle VTK file with number of components > 3. Writing first three components only");
+//  if ( dim > 3 )
+//    warning("Cannot handle VTK file with number of components > 3. Writing first three components only");
 
   // FIXME: Interpolate to vertices, then write to file.
 
@@ -218,14 +220,24 @@ void VTKFile::ResultsWrite(const Function& u) const
       fprintf(fp, "<CellData  Scalars=\"U\"> \n");
       fprintf(fp, "<DataArray  type=\"Float64\"  Name=\"U\"  format=\"ascii\">	 \n");
     }
+    else if (rank == 1)
+    {
+      // Handle 2D vectors as 3D
+      uint vdim = dim;
+      if(vdim == 2)
+        vdim = 3;
+      fprintf(fp, "<CellData  Vectors=\"U\"> \n");
+      fprintf(fp, "<DataArray  type=\"Float64\"  Name=\"U\"  NumberOfComponents=\"%d\" format=\"ascii\">	 \n", vdim);	
+    }
     else
     {
-      fprintf(fp, "<CellData  Vectors=\"U\"> \n");
-      fprintf(fp, "<DataArray  type=\"Float64\"  Name=\"U\"  NumberOfComponents=\"3\" format=\"ascii\">	 \n");	
+      fprintf(fp, "<CellData  Tensors=\"U\"> \n");
+      fprintf(fp, "<DataArray  type=\"Float64\"  Name=\"U\"  NumberOfComponents=\"%d\" format=\"ascii\">     \n", dim);    
     }
 
     for (CellIterator cell(mesh); !cell.end(); ++cell)
-    {    
+    {
+      /*    
       if ( dim == 1 ) 
         fprintf(fp," %e ", values[ cell->index() ] );
       else if ( dim == 2 ) 
@@ -235,8 +247,27 @@ void VTKFile::ResultsWrite(const Function& u) const
         fprintf(fp," %e %e  %e", values[ cell->index() ], 
                                  values[ cell->index() +   mesh.numCells() ], 
                                  values[ cell->index() + 2*mesh.numCells() ] );
-  
       fprintf(fp,"\n");
+      */
+
+      std::ostringstream ss;
+      ss << std::scientific;
+      // Append 0.0 to 2D vectors to make them 3D
+      if(dim == 2)
+      {
+        for(uint i=0; i<dim; i++)
+          ss << " " << values[cell->index() + i*mesh.numCells()];
+        ss << " " << 0.0;
+      }
+      else
+      {
+        for(uint i=0; i<dim; i++)
+          ss << " " << values[cell->index() + i*mesh.numCells()];
+      }
+      ss << std::endl;
+      std::string s = ss.str();
+    
+      fprintf(fp, s.c_str());
     }	 
     fprintf(fp, "</DataArray> \n");
     fprintf(fp, "</CellData> \n");
@@ -255,16 +286,26 @@ void VTKFile::ResultsWrite(const Function& u) const
     if ( rank == 0 )
     {
       fprintf(fp, "<PointData  Scalars=\"U\"> \n");
-      fprintf(fp, "<DataArray  type=\"Float64\"  Name=\"U\"  format=\"ascii\">	 \n");
+      fprintf(fp, "<DataArray  type=\"Float64\"  Name=\"U\"  format=\"ascii\">   \n");
+    }
+    else if ( rank == 1 )
+    {
+      // Handle 2D vectors as 3D
+      uint vdim = dim;
+      if(vdim == 2)
+        vdim = 3;
+      fprintf(fp, "<PointData  Vectors=\"U\"> \n");
+      fprintf(fp, "<DataArray  type=\"Float64\"  Name=\"U\"  NumberOfComponents=\"%d\" format=\"ascii\">  \n", vdim);  
     }
     else
     {
-      fprintf(fp, "<PointData  Vectors=\"U\"> \n");
-      fprintf(fp, "<DataArray  type=\"Float64\"  Name=\"U\"  NumberOfComponents=\"3\" format=\"ascii\">	 \n");	
+      fprintf(fp, "<PointData  Tensors=\"U\"> \n");
+      fprintf(fp, "<DataArray  type=\"Float64\"  Name=\"U\"  NumberOfComponents=\"%d\" format=\"ascii\">  \n", dim);  
     }
 
     for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
-    {    
+    { 
+      /*   
       if ( dim == 1 ) 
         fprintf(fp," %e ", values[ vertex->index() ] );
       else if ( dim == 2 ) 
@@ -276,6 +317,26 @@ void VTKFile::ResultsWrite(const Function& u) const
                                  values[ vertex->index() + 2*mesh.numVertices() ] );
 
       fprintf(fp,"\n");
+      */
+
+      std::ostringstream ss;
+      ss << std::scientific;
+      // Append 0.0 to 2D vectors to make them 3D
+      if(dim == 2)
+      {
+        for(uint i=0; i<dim; i++)
+          ss << " " << values[vertex->index() + i*mesh.numCells()];
+        ss << " " << 0.0;
+      }
+      else
+      {
+        for(uint i=0; i<dim; i++)
+          ss << " " << values[vertex->index() + i*mesh.numCells()];
+      }
+      ss << std::endl;
+      std::string s = ss.str();
+    
+      fprintf(fp, s.c_str());
     }	 
     fprintf(fp, "</DataArray> \n");
     fprintf(fp, "</PointData> \n");
