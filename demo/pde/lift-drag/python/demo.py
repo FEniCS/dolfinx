@@ -15,16 +15,13 @@ from dolfin import *
 
 # FIXME: Not working, see notice below
 import sys
-print "This demo is not working, please fix me"
-sys.exit(1)
-
-# Define function space
-V = FunctionSpace("not working")
+#print "This demo is not working, please fix me"
+#sys.exit(1)
 
 # Read velocity field from file and get the mesh
-u = Function(V, "../velocity.xml.gz")
-p = Function(V, "../pressure.xml.gz")
-mesh =  p.mesh()
+u = Function("../velocity.xml.gz")
+p = Function("../pressure.xml.gz")
+mesh =  p.function_space().mesh()
 
 # Define sub domain for the dolphin
 class Fish(SubDomain):
@@ -43,13 +40,20 @@ def sigma(u, p):
 
 # Define functionals for drag and lift
 n = FacetNormal(mesh)
+
+# FIXME: Defining the lift and drag functional using both pressure and velocity
+#        from file won't work, as the two meshes are not the "same" meshes.
 D = mult(sigma(u, p), -n)[0]*ds
 L = mult(sigma(u, p), -n)[1]*ds
 
+# Use only the Pressure field
+D = p*n[0]*ds
+L = p*n[1]*ds
+
 # Assemble functionals over sub domain
 fish =  Fish()
-drag = assemble(D, mesh, fish)
-lift = assemble(L, mesh, fish)
+drag = assemble(D, exterior_facet_domains = fish)
+lift = assemble(L, exterior_facet_domains = fish)
 
 print "Lift: %f" %lift
 print "Drag: %f" %drag

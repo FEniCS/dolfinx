@@ -33,22 +33,21 @@ class Source(Function):
     def eval(self, values, x):
         values[0] = source(x)
     
-# Define variational problem
-V = FunctionSpace(mesh, "CG", 1)
-v = TestFunction(V)
-u = TrialFunction(V)
-f = Source(V)
-a = dot(grad(v), grad(u))*dx
-L = v*f*dx
-
 # Adaptive algorithm
 for level in xrange(MAX_ITER):
 
+    # Define variational problem
+    V = FunctionSpace(mesh, "CG", 1)
+    v = TestFunction(V)
+    u = TrialFunction(V)
+    f = Source(V)
+    a = dot(grad(v), grad(u))*dx
+    L = v*f*dx
+    
     # Define boundary condition
     u0 = Constant(mesh, 0.0)
 
-    db = DomainBoundary()
-    bc = DirichletBC(V, u0, db)
+    bc = DirichletBC(V, u0, DomainBoundary())
     
     # Compute solution
     pde = LinearPDE(a, L, bc)
