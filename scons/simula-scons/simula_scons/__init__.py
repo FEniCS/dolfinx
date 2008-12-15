@@ -699,7 +699,8 @@ def getModulesAndDependencies(directory=".",
                                     version=packcfg.version(),\
                                     compiler=packcfg.compiler())
           packcfgObjs[d] = packcfg
-        except:
+        except Exception, msg:
+          log(msg)
           print "failed"
 ##           print "failed"
 ##           print """ *** Unable to generate a suitable pkg-config file for %s.
