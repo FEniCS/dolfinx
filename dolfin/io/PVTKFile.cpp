@@ -195,12 +195,12 @@ void PVTKFile::ResultsWrite(const Function& u) const
     error("Only scalar and vectors functions can be saved in VTK format.");
 
   // Get number of components
-  const uint dim = 1;
+  uint dim = 1;
   for (uint i = 0; i < rank; i++)
     dim *= element.value_dimension(i);
 
   // Allocate memory for function values at vertices
-  uint size = mesh.numVertices()*dim;
+  const uint size = mesh.numVertices()*dim;
   double* values = new double[size];
 
   // Get function values at vertices
