@@ -24,7 +24,7 @@ namespace dolfin
 
   /// Distribute local arrays on all processors according to given partition
   template <typename T>
-  void distribute(std::vector<T>& values, const std::vector<uint> partition)
+  void distribute(std::vector<T>& values, std::vector<uint> partition)
   {
     dolfin_assert(values.size() == partition.size());
     dolfin_assert(values.size() > 0);
@@ -75,6 +75,9 @@ namespace dolfin
     T* send_buffer = new T[send_buffer_size];
     T* recv_buffer = new T[recv_buffer_size];
 
+    // Clear partition vector and reuse for storing sender of data
+    partition.clear();
+
     // Exchange data
     for (uint i = 1; i < send_data.size(); i++)
     {
@@ -94,7 +97,10 @@ namespace dolfin
       // Copy data from receive buffer
       dolfin_assert(num_received <= recv_buffer_size);
       for (uint j = 0; j < num_received; j++)
+      {
         values.push_back(recv_buffer[j]);
+        partition.push_back(source);
+      }
       dolfin_debug1("Number of values (kept and received) so far: %d", values.size());
     }
 

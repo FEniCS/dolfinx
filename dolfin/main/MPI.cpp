@@ -44,13 +44,13 @@ bool dolfin::MPI::receive()
 }
 //-----------------------------------------------------------------------------
 void dolfin::MPI::distribute(std::vector<uint>& values,
-                             const std::vector<uint> partition)
+                             std::vector<uint> partition)
 {
   dolfin::distribute(values, partition);
 }
 //-----------------------------------------------------------------------------
 void dolfin::MPI::distribute(std::vector<double>& values,
-                             const std::vector<uint> partition)
+                             std::vector<uint> partition)
 {
   dolfin::distribute(values, partition);
 }

@@ -38,8 +38,14 @@ void MeshPartitioning::partition(Mesh& mesh, LocalMeshData& data)
   std::vector<uint> cell_partition;
   compute_partition(cell_partition, data);
 
-  // Distribute mesh data
-  distribute_mesh(mesh, cell_partition, data);
+  // Distribute cells
+  distribute_cells(cell_partition, data);
+
+  // Distribute vertices
+  distribute_vertices(data);
+
+  // Build mesh
+  build_mesh(mesh, data);
 }
 //-----------------------------------------------------------------------------
 void MeshPartitioning::compute_partition(std::vector<uint>& cell_partition,
@@ -136,9 +142,8 @@ void MeshPartitioning::compute_partition(std::vector<uint>& cell_partition,
   delete [] part;
 }
 //-----------------------------------------------------------------------------
-void MeshPartitioning::distribute_mesh(Mesh& mesh,
-                                       const std::vector<uint>& cell_partition,
-                                       const LocalMeshData& data)
+void MeshPartitioning::distribute_cells(LocalMeshData& data,
+                                        const std::vector<uint>& cell_partition)
 {
   dolfin_debug("Distributing mesh data according to cell partition...");
 
@@ -164,77 +169,45 @@ void MeshPartitioning::distribute_mesh(Mesh& mesh,
   MPI::distribute(cell_vertices, cell_vertices_partition);
   cell_vertices_partition.clear();
 
-  // Need to distribute vertices here also!
+  // FIXME: Put data back into data.cell_vertices
+  data.cell_vertices.clear();
+  
+}
+//-----------------------------------------------------------------------------
+void MeshPartitioning::distribute_vertices(LocalMeshData& data)
+{
+
+  // Compute needs: std::set<uint> needed_vertex_indices
+  // Compute where they are located (simple formula): foo_partition
+  // MPI::distribute(needed_vertex_indices, vertex_partition);
+  // Build arrays: vertex_coordinates, vertex_coordinates_partition
+
+  // MPI::distribute(vertex_coordinates, vertex_coordinates_partition);
+
+  // FIXME: Put data back into data.vertex_coordinates
+  data.vertex_coordinates.clear();
 
 }
 //-----------------------------------------------------------------------------
-void MeshPartitioning::partition_vertices(const LocalMeshData& data,
-                                          std::vector<uint>& vertex_partition)
-  {
-  // This function computes a (new) partition of all vertices by
-  // computing an array vertex_partition that assigns a new process
-  // number to each vertex stored by the local process.
+void MeshPartitioning::build_mesh(Mesh& mesh, const LocalMeshData& data)
+{
+  // FIXME: Use MeshEditor to build Mesh from LocalMeshData
 
-  dolfin_debug("Computing geometric partitioning of vertices...");
+  MeshEditor editor;
+  editor.open(mesh);
+  
+  editor.initVertices(data.vertex_coordinates.size());
+  editor.initCells(data.cell_vertices.size());
 
-  // Get number of processes and process number
-  const uint num_processes = MPI::num_processes();
-  const uint process_number = MPI::process_number();
+  for (...)
+    editor.addVertex(...);
 
-  // Get dimensions of local data
-  const uint num_local_vertices = data.vertex_coordinates().size();
-  const uint gdim = data.vertex_coordinates()[0].size();
-  dolfin_assert(num_local_vertices > 0);
-  dolfin_assert(gdim > 0);
+  for (...)
+    editor.addCell(...);
 
-  // FIXME: Why is this necessary?
-  // Duplicate MPI communicator
-  MPI_Comm comm;
-  MPI_Comm_dup(MPI_COMM_WORLD, &comm);
-
-  // Communicate number of vertices between all processors
-  int* vtxdist = new int[num_processes + 1];
-  vtxdist[process_number] = static_cast<int>(num_local_vertices);
-  dolfin_debug("Communicating vertex distribution across processors...");
-  MPI_Allgather(&vtxdist[process_number], 1, MPI_INT, 
-                 vtxdist,                 1, MPI_INT, MPI_COMM_WORLD);
-
-  // Build vtxdist array with vertex offsets for all processor
-  int sum = vtxdist[0];
-  vtxdist[0] = 0;
-  for (uint i = 1; i < num_processes + 1; ++i)
-  {
-    const int tmp = vtxdist[i];
-    vtxdist[i] = sum;
-    sum += tmp;
-  }
-
-  // Prepare arguments for ParMetis
-  int ndims = static_cast<int>(gdim);
-  int* part = new int[num_local_vertices];
-  float* xyz = new float[gdim*num_local_vertices];
-  for (uint i = 0; i < num_local_vertices; ++i)
-    for (uint j = 0; j < gdim; ++j)
-      xyz[i*gdim + j] = data.vertex_coordinates()[i][j];
-
-  // Call ParMETIS to partition vertex distribution array
-  dolfin_debug("Calling ParMETIS to distribute vertices");
-  ParMETIS_V3_PartGeom(vtxdist, &ndims, xyz, part, &comm);
-  dolfin_debug("Done calling ParMETIS to distribute vertices");
-
-  // Copy partition data
-  vertex_partition.clear();
-  vertex_partition.reserve(num_local_vertices);
-  for (uint i = 0; i < num_local_vertices; i++)
-    vertex_partition.push_back(static_cast<uint>(part[i]));
-
-  // Cleanup
-  delete [] vtxdist;
-  delete [] part;
-  delete [] xyz;
+  editor.close();
 }
 //-----------------------------------------------------------------------------
-
 #else
 
 //-----------------------------------------------------------------------------

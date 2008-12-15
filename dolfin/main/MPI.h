@@ -35,11 +35,14 @@ namespace dolfin
     /// Determine whether we should receive (based on current parallel policy)
     static bool receive();
 
-    /// Distribute local arrays on all processors according to given partition
-    static void distribute(std::vector<uint>& values, const std::vector<uint> partition);
+    // FIXME: Write documentation for this very fancy and versatile function!
+    // FIXME: The mother of all MPI calls! It does everything anyone would ever need to do with MPI... :-)
 
     /// Distribute local arrays on all processors according to given partition
-    static void distribute(std::vector<double>& values, const std::vector<uint> partition);
+    static void distribute(std::vector<uint>& values, std::vector<uint> partition);
+
+    /// Distribute local arrays on all processors according to given partition
+    static void distribute(std::vector<double>& values, std::vector<uint> partition);
 
     /// Gather values (wrapper for MPI_Allgather)
     static void gather(std::vector<uint>& values);
