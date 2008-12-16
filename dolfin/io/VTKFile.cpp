@@ -267,7 +267,7 @@ void VTKFile::ResultsWrite(const Function& u) const
       ss << std::endl;
       std::string s = ss.str();
     
-      fprintf(fp, s.c_str());
+      fprintf(fp, "%s", s.c_str());
     }	 
     fprintf(fp, "</DataArray> \n");
     fprintf(fp, "</CellData> \n");
@@ -336,7 +336,7 @@ void VTKFile::ResultsWrite(const Function& u) const
       ss << std::endl;
       std::string s = ss.str();
     
-      fprintf(fp, s.c_str());
+      fprintf(fp, "%s", s.c_str());
     }	 
     fprintf(fp, "</DataArray> \n");
     fprintf(fp, "</PointData> \n");
