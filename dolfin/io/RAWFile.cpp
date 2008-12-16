@@ -7,6 +7,7 @@
 // First added:  2008-05-29
 
 #include <sstream>
+#include <fstream>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/Vertex.h>
@@ -65,7 +66,7 @@ void RAWFile::operator<<(const Function& u)
 void RAWFile::ResultsWrite(const Function& u) const
 {
   // Open file
-  FILE *fp = fopen(raw_filename.c_str(), "a");
+  std::ofstream fp(raw_filename.c_str(), std::ios_base::app);
   
   const uint rank = u.function_space().element().value_rank();
   if(rank > 1)
@@ -86,38 +87,20 @@ void RAWFile::ResultsWrite(const Function& u) const
   u.interpolate(values);
 
   // Write function data at mesh vertices
-  if ( dim > 3 )
-    warning("Cannot handle RAW file with number of components > 3. Writing first three components only");
+  uint num_vertices = mesh.numVertices();
+  fp << num_vertices << std::endl;
 
-  fprintf(fp,"%d \n",mesh.numVertices());
+  std::ostringstream ss;
+  ss << std::scientific;
   for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
   {
-    /*    
-    if ( dim == 1 ) 
-      fprintf(fp," %e ", values[ vertex->index() ] );
-    else if ( dim == 2 ) 
-      fprintf(fp," %e %e", values[ vertex->index() ], 
-                                values[ vertex->index() + mesh.numVertices() ] );
-    else  
-      fprintf(fp," %e  %e  %e", values[ vertex->index() ], 
-                               values[ vertex->index() +   mesh.numVertices() ], 
-                               values[ vertex->index() + 2*mesh.numVertices() ] );
-
-    fprintf(fp,"\n");
-    */
-
-    std::ostringstream ss;
-    ss << std::scientific;
+    ss.str("");
     for(uint i=0; i<dim; i++)
       ss << " " << values[vertex->index() + i*mesh.numCells()];
     ss << std::endl;
-    std::string s = ss.str();
     
-    fprintf(fp, s.c_str());    
-  }	 
-  
-  // Close file
-  fclose(fp);
+    fp << ss.str();
+  }
 
   delete [] values;
 }
