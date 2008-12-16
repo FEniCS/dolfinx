@@ -10,6 +10,7 @@
 // Last changed: 2008-12-15
 
 #include <sstream>
+#include <fstream>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshFunction.h>
@@ -186,23 +187,23 @@ void PVTKFile::MeshWrite(const Mesh& mesh) const
 //----------------------------------------------------------------------------
 void PVTKFile::ResultsWrite(const Function& u) const
 {
-  // Open file
-  FILE *fp = fopen(vtu_filename.c_str(), "a");
-  
-  const Mesh& mesh(u.function_space().mesh());
-  const FiniteElement& element(u.function_space().element());
+  // For brevity
+  const FunctionSpace & V = u.function_space();
+  const Mesh& mesh(V.mesh());
+  const FiniteElement& element(V.element());
 
+  // Get rank of Function
   const uint rank = element.value_rank();
-//if(rank > 1)
-//  error("Only scalar and vectors functions can be saved in VTK format.");
+  if(rank > 2)
+    error("Only scalar, vector and tensor functions can be saved in VTK format.");
 
   // Get number of components
   uint dim = 1;
   for (uint i = 0; i < rank; i++)
     dim *= element.value_dimension(i);
-  if (dim > 3)
-    warning("Cannot handle VTK file with number of components > 3. Writing first three components only");
 
+  // FIXME: Cell based data.
+  
   // Allocate memory for function values at vertices
   const uint size = mesh.numVertices()*dim;
   double* values = new double[size];
@@ -210,66 +211,68 @@ void PVTKFile::ResultsWrite(const Function& u) const
   // Get function values at vertices
   u.interpolate(values);
 
+  // Open file
+  std::ofstream fp(vtu_filename.c_str(), std::ios_base::app);
+  
   // Write function data at mesh vertices
   if (rank == 0)
   {
-    fprintf(fp, "<PointData  Scalars=\"U\"> \n");
-    fprintf(fp, "<DataArray  type=\"Float64\"  Name=\"U\"  format=\"ascii\">	 \n");
+    fp << "<PointData  Scalars=\"U\"> " << std::endl;
+    fp << "<DataArray  type=\"Float64\"  Name=\"U\"  format=\"ascii\"> " << std::endl;
   }
   else if (rank == 1)
   {
-    // Handle 2D vectors as 3D
-    uint vdim = dim;
-    if(vdim == 2)
-      vdim = 3;
-    fprintf(fp, "<PointData  Vectors=\"U\"> \n");
-    fprintf(fp, "<DataArray  type=\"Float64\"  Name=\"U\"  NumberOfComponents=\"%d\" format=\"ascii\">	 \n", vdim);	
+    if(!(dim == 2 || dim == 3))
+      error("don't know what to do with vector function with dim other than 2 or 3.");
+    fp << "<PointData  Vectors=\"U\"> " << std::endl;
+    fp << "<DataArray  type=\"Float64\"  Name=\"U\"  NumberOfComponents=\"3\" format=\"ascii\"> " << std::endl;
   }
-  else
+  else if (rank == 2)
   {
-    fprintf(fp, "<PointData  Tensors=\"U\"> \n");
-    fprintf(fp, "<DataArray  type=\"Float64\"  Name=\"U\"  NumberOfComponents=\"%d\" format=\"ascii\">    \n", dim);  
+    if(!(dim == 4 || dim == 9))
+      error("Don't know what to do with tensor function with dim other than 4 or 9.");
+    fp << "<PointData  Tensors=\"U\"> " << std::endl;
+    fp << "<DataArray  type=\"Float64\"  Name=\"U\"  NumberOfComponents=\"9\" format=\"ascii\">    " << std::endl;  
   }
 
+  std::ostringstream ss;
+  ss << std::scientific;
   for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
   {
-    /* 
-    if (dim == 1) 
-      fprintf(fp," %e ", values[ vertex->index() ] );
-    else if (dim == 2) 
-      fprintf(fp," %e %e 0.0 ", values[ vertex->index() ], 
-                                values[ vertex->index() + mesh.numVertices() ] );
-    else
-      fprintf(fp," %e %e %e ", values[ vertex->index() ], 
-                               values[ vertex->index() +   mesh.numVertices() ], 
-                               values[ vertex->index() + 2*mesh.numVertices() ] );
-    fprintf(fp,"\n");
-    */
+    ss.str("");
 
-    std::ostringstream ss;
-    ss << std::scientific;
-    // Append 0.0 to 2D vectors to make them 3D
-    if(dim == 2)
+    if(rank == 1 && dim == 2)
     {
+      // Append 0.0 to 2D vectors to make them 3D
       for(uint i=0; i<dim; i++)
         ss << " " << values[vertex->index() + i*mesh.numCells()];
       ss << " " << 0.0;
     }
+    else if(rank == 2 && dim == 4)
+    {
+      // Pad with 0.0 to 2D tensors to make them 3D
+      for(uint i=0; i<dim; i++)
+      {
+        ss << " " << values[vertex->index() + (2*i+0)*mesh.numCells()];
+        ss << " " << values[vertex->index() + (2*i+1)*mesh.numCells()];
+        ss << " " << 0.0;
+      }
+      ss << " " << 0.0;
+      ss << " " << 0.0;
+      ss << " " << 0.0;
+    }
     else
     {
+      // Write all components
       for(uint i=0; i<dim; i++)
         ss << " " << values[vertex->index() + i*mesh.numCells()];
     }
     ss << std::endl;
-    std::string s = ss.str();
 
-    fprintf(fp, "%s", s.c_str());
+    fp << ss.str();
   }	 
-  fprintf(fp, "</DataArray> \n");
-  fprintf(fp, "</PointData> \n");
-  
-  // Close file
-  fclose(fp);
+  fp << "</DataArray> " << std::endl;
+  fp << "</PointData> " << std::endl;
 
   delete [] values;
 }
