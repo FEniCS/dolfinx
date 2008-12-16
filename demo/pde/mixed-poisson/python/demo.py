@@ -32,7 +32,7 @@ V = BDM + DG
 # Define variational problem
 (tau, w) = TestFunctions(V)
 (sigma, u) = TrialFunctions(V)
-f = Function(DG, cppexpr="500.0*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)")
+f = Function(DG, "500.0*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)")
 
 a = (dot(tau, sigma) - div(tau)*u + w*div(sigma))*dx
 L = w*f*dx
@@ -48,6 +48,7 @@ sigma_proj = project(sigma, P1)
 
 # Plot solution
 plot(sigma_proj)
+interactive()
 plot(u)
 interactive()
 

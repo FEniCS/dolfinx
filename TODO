@@ -114,7 +114,7 @@ EE demo/pde/nonlinear-poisson/python/demo.py
 OK demo/pde/periodic/python/demo.py
 OK demo/pde/poisson/python/demo.py
 OK demo/pde/dielectric/python/demo.py
-EE demo/pde/mixed-poisson/python/demo.py                results are wrong
+OK demo/pde/mixed-poisson/python/demo.py
 OK demo/pde/bcs/python/demo.py
 OK demo/pde/elasticity/python/demo.py
 OK demo/pde/convection-diffusion/python/demo.py
