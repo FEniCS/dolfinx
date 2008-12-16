@@ -299,7 +299,7 @@ void VTKFile::ResultsWrite(const Function& u) const
     else if (rank == 1)
     {
       fp << "<PointData  Vectors=\"U\"> " << std::endl;
-      fp << "<DataArray  type=\"Float64\"  Name=\"U\"  NumberOfComponents=\"%d\" format=\"ascii\">  " << std::endl;
+      fp << "<DataArray  type=\"Float64\"  Name=\"U\"  NumberOfComponents=\"3\" format=\"ascii\">  " << std::endl;
     }
     else if (rank == 2)
     {
