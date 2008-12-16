@@ -257,7 +257,7 @@ void VTKFile::ResultsWrite(const Function& u) const
       else if(rank == 2 && dim == 4)
       {
         // Pad with 0.0 to 2D tensors to make them 3D
-        for(uint i=0; i<dim; i++)
+        for(uint i=0; i<2; i++)
         {
           ss << " " << values[cell->index() + (2*i+0)*mesh.numCells()];
           ss << " " << values[cell->index() + (2*i+1)*mesh.numCells()];
@@ -317,16 +317,16 @@ void VTKFile::ResultsWrite(const Function& u) const
       {
         // Append 0.0 to 2D vectors to make them 3D
         for(uint i=0; i<dim; i++)
-          ss << " " << values[vertex->index() + i*mesh.numCells()];
+          ss << " " << values[vertex->index() + i*mesh.numVertices()];
         ss << " " << 0.0;
       }
       else if(rank == 2 && dim == 4)
       {
         // Pad with 0.0 to 2D tensors to make them 3D
-        for(uint i=0; i<dim; i++)
+        for(uint i=0; i<2; i++)
         {
-          ss << " " << values[vertex->index() + (2*i+0)*mesh.numCells()];
-          ss << " " << values[vertex->index() + (2*i+1)*mesh.numCells()];
+          ss << " " << values[vertex->index() + (2*i+0)*mesh.numVertices()];
+          ss << " " << values[vertex->index() + (2*i+1)*mesh.numVertices()];
           ss << " " << 0.0;
         }
         ss << " " << 0.0;
@@ -337,7 +337,7 @@ void VTKFile::ResultsWrite(const Function& u) const
       {
         // Write all components
         for(uint i=0; i<dim; i++)
-          ss << " " << values[vertex->index() + i*mesh.numCells()];
+          ss << " " << values[vertex->index() + i*mesh.numVertices()];
       }
       ss << std::endl;
       
