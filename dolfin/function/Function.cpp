@@ -144,7 +144,10 @@ GenericVector& Function::vector()
 {
   // Initialize vector of dofs if not initialized
   if (!_vector)
+  {
     init();
+    interpolate(*_vector, *_function_space);
+  }
 
   dolfin_assert(_vector);
   return *_vector;
