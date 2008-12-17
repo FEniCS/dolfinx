@@ -109,7 +109,7 @@ EE: Not working
 --: Missing (see * Demos)
 ??: Strange
 
-   demo/pde/optimization/python/demo.py
+OK demo/pde/optimization/python/demo.py
 EE demo/pde/nonlinear-poisson/python/demo.py
 OK demo/pde/periodic/python/demo.py
 OK demo/pde/poisson/python/demo.py
@@ -129,7 +129,7 @@ EE demo/pde/dg/advection_diffusion/python/demo.py
 OK demo/pde/adaptive-poisson/python/demo.py
 OK demo/pde/functional/python/demo.py
 OK demo/la/trilinos/python/demo.py
-   demo/la/eigensolver/python/demo.py
+OK demo/la/eigensolver/python/demo.py
 OK demo/la/block-matrix/python/demo.py
 EE demo/nls/nonlinearpoisson/python/demo.py
 OK demo/quadrature/python/demo.py
