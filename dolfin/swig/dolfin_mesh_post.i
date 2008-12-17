@@ -59,13 +59,13 @@ MeshFunctionBool.__call__ = MeshFunctionBool.get
 
 %}
 
-%extend dolfin::Mesh {
-  dolfin::MeshFunction<uint>* partition(dolfin::uint n) {
-    dolfin::MeshFunction<dolfin::uint>* partitions = new dolfin::MeshFunction<dolfin::uint>;
-    self->partition(*partitions, n);
-    return partitions;
-  }
-}
+//%extend dolfin::Mesh {
+//  dolfin::MeshFunction<uint>* partition(dolfin::uint n) {
+//    dolfin::MeshFunction<dolfin::uint>* partitions = new dolfin::MeshFunction<dolfin::uint>;
+//   self->partition(*partitions, n);
+//    return partitions;
+//  }
+//}
 
 //--- Extend Point interface with Python selectors ---
 

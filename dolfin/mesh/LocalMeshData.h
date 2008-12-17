@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-11-28
-// Last changed: 2008-12-02
+// Last changed: 2008-12-17
 //
 // Modified by Anders Logg, 2008.
 
@@ -45,8 +45,8 @@ namespace dolfin
     /// Destructor
     ~LocalMeshData();
 
-
   private:
+
     /// Clear all data
     void clear();
 

@@ -29,8 +29,6 @@ namespace dolfin
     dolfin_assert(values.size() == partition.size());
     dolfin_assert(values.size() > 0);
 
-    dolfin_debug1("Number of values to distribute: %d", values.size());
-
     // Get number of processes and process number
     const uint num_processes = MPI::num_processes();
     const uint process_number = MPI::process_number();
@@ -41,12 +39,8 @@ namespace dolfin
     {
       // Get process number data should be sent to
       const uint p = partition[i];
-      if (p >= send_data.size())
-      {
-        dolfin_debug2("p is %d and i is %d", p, i);
-        error("blatti eller hva som helst");
-      }
-       dolfin_assert(p < send_data.size());
+      dolfin_assert(p < send_data.size());
+
       // Append data to array for process p
       send_data[p].push_back(values[i]);
     }
@@ -54,14 +48,12 @@ namespace dolfin
     // Store local data (don't send) and clear partition vector and reuse for storing sender of data
     values.clear();
     partition.clear();
-    dolfin_debug2("Sizes are %d, %d", values.size(), partition.size());
     const std::vector<T>& local_values = send_data[process_number];
     for (uint i = 0; i < local_values.size(); i++)
     {
       values.push_back(local_values[i]);
       partition.push_back(process_number);
     }
-    dolfin_debug1("Number of values to remain on processor: %d", values.size());
 
     // Determine size of send buffer
     uint send_buffer_size = 0;
@@ -71,19 +63,16 @@ namespace dolfin
         continue;
       send_buffer_size = std::max(send_buffer_size, static_cast<uint>(send_data[p].size()));
     }
-    dolfin_debug1("Size of send buffer: %d", send_buffer_size);
 
     // Determine size of receive buffer (same for all processes)
     uint recv_buffer_size = 0;
     MPI_Allreduce(&send_buffer_size, &recv_buffer_size, 1, MPI_UNSIGNED, MPI_MAX, MPI_COMM_WORLD);
-    dolfin_debug1("Size of recv buffer: %d", recv_buffer_size);
 
     // Allocate memory for send and receive buffers
     // dolfin_assert(send_buffer_size > 0);
     // dolfin_assert(recv_buffer_size > 0);
     T* send_buffer = new T[send_buffer_size];
     T* recv_buffer = new T[recv_buffer_size];
-
 
     // Exchange data
     for (uint i = 1; i < send_data.size(); i++)
@@ -97,6 +86,7 @@ namespace dolfin
       // Copy data to send buffer
       for (uint j = 0; j < send_data[dest].size(); j++)
         send_buffer[j] = send_data[dest][j];
+
       // Send and receive data
       const uint num_received = MPI::send_recv(send_buffer, send_data[dest].size(), dest,
                                                recv_buffer, recv_buffer_size,       source);
@@ -108,10 +98,8 @@ namespace dolfin
         values.push_back(recv_buffer[j]);
         partition.push_back(source);
       }
-      dolfin_debug1("Number of values (kept and received) so far: %d", values.size());
     }
 
-    dolfin_debug2("Sizes after are %d, %d", values.size(), partition.size());
     // Clean up
     delete [] send_buffer;
     delete [] recv_buffer;

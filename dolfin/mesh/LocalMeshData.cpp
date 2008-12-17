@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-11-28
-// Last changed: 2008-12-02
+// Last changed: 2008-12-17
 //
 // Modified by Anders Logg, 2008.
 
@@ -13,7 +13,9 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 LocalMeshData::LocalMeshData()
-  : cell_type(0)
+  : num_global_vertices(0), num_global_cells(0),
+    num_processes(0), process_number(0),
+    gdim(0), tdim(0), cell_type(0)
 {
   // Do nothing
 }
@@ -21,7 +23,6 @@ LocalMeshData::LocalMeshData()
 LocalMeshData::~LocalMeshData()
 {
   delete cell_type;
-  // Do nothing
 }
 //-----------------------------------------------------------------------------
 void LocalMeshData::clear()
@@ -37,15 +38,7 @@ dolfin::uint LocalMeshData::initial_vertex_location(uint vertex_index) const
   const uint remainder = num_global_vertices % num_processes;
   const uint breakpoint = remainder*(num_vertices_per_process + 1);
   if (vertex_index  < breakpoint)
-  {
-    dolfin_debug2("vertex_index is %d and return value is %d", vertex_index, vertex_index / (num_vertices_per_process + 1));
     return vertex_index / (num_vertices_per_process + 1);
-  }
-  dolfin_debug2("after if, vertex_index is %d and return value is %d", vertex_index,  (vertex_index - breakpoint) / num_vertices_per_process + remainder);
-  dolfin_debug1("after if, breakpont                = %d", breakpoint);
-  dolfin_debug1("after if, num_vertices_per_process = %d", num_vertices_per_process);
-  dolfin_debug1("after if, remainder                = %d", remainder);
-
   return (vertex_index - breakpoint) / num_vertices_per_process + remainder;
 }
 //-----------------------------------------------------------------------------
@@ -57,7 +50,6 @@ dolfin::uint LocalMeshData::initial_cell_location(uint cell_index) const
     return cell_index / (num_cells_per_process + 1);
   return cell_index / num_cells_per_process;
 }
-
 //-----------------------------------------------------------------------------
 dolfin::uint LocalMeshData::local_vertex_number(uint global_vertex_number) const
 {
@@ -104,4 +96,3 @@ void LocalMeshData::initial_cell_range(uint& start, uint& stop) const
   }
 }
 //-----------------------------------------------------------------------------
-

@@ -1,12 +1,8 @@
-// Copyright (C) 2007 Magnus Vikstrom
+// Copyright (C) 2008 Ola Skavhaug and Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Anders Logg, 2008.
-// Modified by Ola Skavhaug, 2008.
-// Modified by Niclas Jansson, 2008.
-//
-// First added:  2007-04-24
-// Last changed: 2008-12-02
+// First added:  2008-12-01
+// Last changed: 2008-12-15
 
 #ifndef __MESH_PARTITIONING_H
 #define __MESH_PARTITIONING_H
@@ -39,15 +35,15 @@ namespace dolfin
 
     // Distribute cells
     static void distribute_cells(LocalMeshData& data,
-                                const std::vector<uint>& cell_partition);
+                                 const std::vector<uint>& cell_partition);
 
     // Distribute vertices 
-    static void distribute_vertices(LocalMeshData& data, std::map<uint, uint>& glob2loc);
+    static void distribute_vertices(LocalMeshData& data,
+                                    std::map<uint, uint>& glob2loc);
 
     // Build mesh
-    static void build_mesh(Mesh& mesh, const LocalMeshData& data, std::map<uint, uint>& glob2loc);
-
-    static void compute_location(std::vector<uint>& locations, const std::vector<uint>& vertices);
+    static void build_mesh(Mesh& mesh, const LocalMeshData& data,
+                           std::map<uint, uint>& glob2loc);
 
   };
 

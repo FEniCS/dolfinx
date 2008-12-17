@@ -45,7 +45,6 @@
 #include "XMLBLASFormData.h"
 #include "XMLGraph.h"
 #include "XMLFile.h"
-#include "PXMLMesh.h"
 
 using namespace dolfin;
 
@@ -91,10 +90,7 @@ void XMLFile::operator>> (Mesh& mesh)
   if (xmlObject)
     delete xmlObject;
   
-  if (MPI::num_processes() > 1)
-    xmlObject = new PXMLMesh(mesh);
-  else
-    xmlObject = new XMLMesh(mesh);
+  xmlObject = new XMLMesh(mesh);
   parseFile();
 }
 //-----------------------------------------------------------------------------
