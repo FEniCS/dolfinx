@@ -22,11 +22,11 @@
 #include "MeshSmoothing.h"
 #include "MeshOrdering.h"
 #include "MeshFunction.h"
+#include "LocalMeshData.h"
 #include "MeshPartitioning.h"
 #include "BoundaryMesh.h"
 #include "Cell.h"
 #include "Vertex.h"
-#include "MPIMeshCommunicator.h"
 #include "Mesh.h"
 
 using namespace dolfin;
@@ -50,8 +50,21 @@ Mesh::Mesh(std::string filename)
   : Variable("mesh", "DOLFIN mesh"),
     _data(*this), _cell_type(0), detector(0), _ordered(false)
 {
-  File file(filename);
-  file >> *this;
+  if (MPI::num_processes() > 0)
+  {
+    // Read local mesh data
+    File file(filename);
+    LocalMeshData data;
+    file >> data;
+    
+    // Partition data
+    MeshPartitioning::partition(*this, data);
+  }
+  else
+  {
+    File file(filename);
+    file >> *this;
+  }
 }
 //-----------------------------------------------------------------------------
 Mesh::~Mesh()
