@@ -121,7 +121,7 @@ OK demo/pde/convection-diffusion/python/demo.py
 OK demo/pde/stokes/taylor-hood/python/demo.py
 OK demo/pde/stokes/stabilized/python/demo.py
 EE demo/pde/poisson1D/python/demo.py                    viper problem with 1D
-   demo/pde/waveguide/python/demo.py
+EE demo/pde/waveguide/python/demo.py                    results in C++ and Python differ
 OK demo/pde/sym-dirichlet-bc/python/demo.py
 OK demo/pde/lift-drag/python/demo.py
 OK demo/pde/dg/poisson/python/demo.py

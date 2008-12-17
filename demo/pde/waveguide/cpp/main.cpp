@@ -2,7 +2,9 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-08-22
-// Last changed: 2008-11-17
+// Last changed: 2008-12-17
+//
+// Modified by Anders Logg, 2008.
 //
 // This demo demonstrates the calculation of a TM (Transverse Magnetic)
 // cutoff wavenumber of a rectangular waveguide with dimensions 1x0.5m.
@@ -25,11 +27,9 @@ using namespace dolfin;
 
 int main()
 {
-  // Specify the waveguide width and height in metres
-  float width = 1.0;
-  float height = 0.5;
-
-  // Create the mesh using a Rectangle
+  // Create mesh
+  double width = 1.0;
+  double height = 0.5;
   Rectangle mesh(0, width, 0, height, 2, 1);
 
   // Define the forms - gererates an generalized eigenproblem of the form 
@@ -63,30 +63,23 @@ int main()
   // realizable modes.  These are called spurious modes.  
   // So, we need to identify the smallest, non-zero eigenvalue of the system - 
   // which corresponds with cutoff wavenumber of the the dominant cutoff mode.
-  int dominant_mode_index = -1;
+  double cutoff = -1.0;
   real lr, lc;
-  for ( int i = 0; i < (int)S.size(1); i++ )
+  for (unsigned int i = 0; i < S.size(1); i++)
   {
     esolver.getEigenvalue(lr, lc, i);
-    //printf("Eigenvalue %d : %f + i%f\n", i, lr, lc);
-    //ensure that the real part is large enough and that the complex part is zero
-    if ((lr > 1) && (lc == 0))
+    if (lr > 1 && lc == 0)
     {
-      message("Dominant mode found\n");
-      dominant_mode_index = i;
+      cutoff = sqrt(lr);
       break;
     }
   }
 
-  if (dominant_mode_index >= 0)
-  {
-    message("Dominant mode found.  Cuttoff Squared: %f\n", lr);
-    if ( lc != 0 )
-      warning("Cutoff mode is complex (%f + i%f)\n", lr, lc);
-  }
+  if (cutoff == -1.0)
+    message("Unable to find dominant mode.");
   else
-    error("Cutoff mode not found.");
-
+    message("Cutoff frequency = %g", cutoff);
+  
   return 0;
 }
 
