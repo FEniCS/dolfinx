@@ -293,6 +293,8 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
 
 #else
 
+using namespace dolfin;
+
 //-----------------------------------------------------------------------------
 void MeshPartitioning::partition(Mesh& mesh, LocalMeshData& data)
 {
