@@ -128,7 +128,7 @@ OK demo/pde/dg/poisson/python/demo.py
 EE demo/pde/dg/advection_diffusion/python/demo.py
 OK demo/pde/adaptive-poisson/python/demo.py
 OK demo/pde/functional/python/demo.py
-   demo/la/trilinos/python/demo.py
+OK demo/la/trilinos/python/demo.py
    demo/la/eigensolver/python/demo.py
 OK demo/la/block-matrix/python/demo.py
 EE demo/nls/nonlinearpoisson/python/demo.py
