@@ -146,7 +146,6 @@ GenericVector& Function::vector()
   if (!_vector)
   {
     init();
-    interpolate(*_vector, *_function_space);
   }
 
   dolfin_assert(_vector);
