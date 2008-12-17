@@ -51,7 +51,6 @@ u0 = Constant(mesh, 0.0)
 bc = DirichletBC(V, u0, DirichletBoundary())
 
 # Create linear system
-A = assemble(a) 
 A, b = assemble_system(a, L, bc) 
 
 # Solution   

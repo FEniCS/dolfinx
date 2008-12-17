@@ -29,7 +29,7 @@ v = TestFunction(V)
 u = TrialFunction(V)
 f = Function(V,"500.0 * exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)")
 
-a = u*v*dx + dot(grad(v), grad(u))*dx
+a = dot(grad(v), grad(u))*dx
 L = v*f*dx 
 
 # Define boundary condition
@@ -37,8 +37,6 @@ u0 = Constant(mesh, 0.0)
 bc = DirichletBC(V, u0, DirichletBoundary())
 
 # Create linear system
-A = assemble(a)
-b = assemble(L)
 A, b = assemble_system(a, L, bc, mesh) 
 
 # Create solution vector (also used as start vector) 
