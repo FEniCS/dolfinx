@@ -11,6 +11,7 @@
 
 #include <vector>
 #include <dolfin/common/types.h>
+#include "CellType.h"
 
 namespace dolfin
 {
@@ -44,34 +45,62 @@ namespace dolfin
     /// Destructor
     ~LocalMeshData();
 
+
+  private:
     /// Clear all data
     void clear();
 
-    /// Read-only access to vertex coordinates
-    const std::vector<std::vector<double> >& vertex_coordinates() const
-    { return _vertex_coordinates; }
-    
-    /// Read-only access to vertex indices
-    const std::vector<uint>& vertex_indices() const
-    { return _vertex_indices; }
-    
-    /// Read-only access to cell vertices
-    const std::vector<std::vector<uint> >& cell_vertices() const
-    { return _cell_vertices; }
+    /// Compute process number for vertex 
+    uint initial_vertex_location(uint vertex_index) const;
 
-  private:
-    
+    /// Compute process number for vertex 
+    uint initial_cell_location(uint cell_index) const;
+
+    /// Compute local number for given global vertex number
+    uint local_vertex_number(uint global_vertex_number) const;
+
+    /// Compute vertex range for local process
+    void initial_vertex_range(uint& start, uint& stop) const;
+
+    /// Compute with simple formula process number for vertex 
+    void initial_cell_range(uint& start, uint& stop) const;
+
     /// Coordinates for all vertices stored on local processor
-    std::vector<std::vector<double> > _vertex_coordinates;
+    std::vector<std::vector<double> > vertex_coordinates;
 
     /// Global vertex indices for all vertices stored on local processor
-    std::vector<uint> _vertex_indices;
+    std::vector<uint> vertex_indices;
+
+    /// Global to local mapping for all vertices stored on local processor
+    std::map<uint, uint> glob2loc;
 
     /// Global vertex indices for all cells stored on local processor
-    std::vector<std::vector<uint> > _cell_vertices;
-    
+    std::vector<std::vector<uint> > cell_vertices;
+
+    /// Global number of vertices
+    uint num_global_vertices;
+
+    /// Global number of cells
+    uint num_global_cells;
+
+    /// Number of processes
+    uint num_processes;
+
+    /// Local processes number
+    uint process_number;
+
+    /// Geometrical dimension
+    uint gdim;
+
+    /// Topological dimension
+    uint tdim;
+
+    /// Cell Type
+    CellType* cell_type;
+
     // Friends
     friend class XMLLocalMeshData;
+    friend class MeshPartitioning;
     
   };
   

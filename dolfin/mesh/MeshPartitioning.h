@@ -37,15 +37,17 @@ namespace dolfin
     static void compute_partition(std::vector<uint>& cell_partition,
                                   const LocalMeshData& data);
 
-    // Distribute mesh according to partition
-    static void distribute_mesh(Mesh& mesh,
-                                const std::vector<uint>& cell_partition,
-                                const LocalMeshData& data);
+    // Distribute cells
+    static void distribute_cells(LocalMeshData& data,
+                                const std::vector<uint>& cell_partition);
 
-    // FIXME: This can be removed
-    // Partition vertices (geometric partitioning)
-    static void partition_vertices(const LocalMeshData& data,
-                                   std::vector<uint>& vertex_partition);
+    // Distribute vertices 
+    static void distribute_vertices(LocalMeshData& data, std::map<uint, uint>& glob2loc);
+
+    // Build mesh
+    static void build_mesh(Mesh& mesh, const LocalMeshData& data, std::map<uint, uint>& glob2loc);
+
+    static void compute_location(std::vector<uint>& locations, const std::vector<uint>& vertices);
 
   };
 

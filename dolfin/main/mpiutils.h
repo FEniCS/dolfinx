@@ -24,7 +24,7 @@ namespace dolfin
 
   /// Distribute local arrays on all processors according to given partition
   template <typename T>
-  void distribute(std::vector<T>& values, std::vector<uint> partition)
+  void distribute(std::vector<T>& values, std::vector<uint>& partition)
   {
     dolfin_assert(values.size() == partition.size());
     dolfin_assert(values.size() > 0);
@@ -41,17 +41,26 @@ namespace dolfin
     {
       // Get process number data should be sent to
       const uint p = partition[i];
-      dolfin_assert(p < send_data.size());
-
+      if (p >= send_data.size())
+      {
+        dolfin_debug2("p is %d and i is %d", p, i);
+        error("blatti eller hva som helst");
+      }
+       dolfin_assert(p < send_data.size());
       // Append data to array for process p
       send_data[p].push_back(values[i]);
     }
 
-    // Store local data (don't send)
+    // Store local data (don't send) and clear partition vector and reuse for storing sender of data
     values.clear();
+    partition.clear();
+    dolfin_debug2("Sizes are %d, %d", values.size(), partition.size());
     const std::vector<T>& local_values = send_data[process_number];
     for (uint i = 0; i < local_values.size(); i++)
+    {
       values.push_back(local_values[i]);
+      partition.push_back(process_number);
+    }
     dolfin_debug1("Number of values to remain on processor: %d", values.size());
 
     // Determine size of send buffer
@@ -75,8 +84,6 @@ namespace dolfin
     T* send_buffer = new T[send_buffer_size];
     T* recv_buffer = new T[recv_buffer_size];
 
-    // Clear partition vector and reuse for storing sender of data
-    partition.clear();
 
     // Exchange data
     for (uint i = 1; i < send_data.size(); i++)
@@ -104,6 +111,7 @@ namespace dolfin
       dolfin_debug1("Number of values (kept and received) so far: %d", values.size());
     }
 
+    dolfin_debug2("Sizes after are %d, %d", values.size(), partition.size());
     // Clean up
     delete [] send_buffer;
     delete [] recv_buffer;

@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-11-28
-// Last changed: 2008-12-02
+// Last changed: 2008-12-15
 //
 // Modified by Anders Logg, 2008.
 
@@ -18,7 +18,9 @@ using namespace dolfin;
 XMLLocalMeshData::XMLLocalMeshData(LocalMeshData& mesh_data)
   : XMLObject(), mesh_data(mesh_data), state(OUTSIDE)
 {
-  // Do nothing
+  // Get number of processes and process number
+  mesh_data.num_processes = MPI::num_processes();
+  mesh_data.process_number = MPI::process_number();
 }
 //-----------------------------------------------------------------------------
 XMLLocalMeshData::~XMLLocalMeshData()
@@ -212,10 +214,14 @@ void XMLLocalMeshData::readMesh(const xmlChar* name, const xmlChar** attrs)
   
   // Create cell type to get topological dimension
   std::auto_ptr<CellType> cell_type(CellType::create(type));
+  
   tdim = cell_type->dim();
 
   // Get number of entities for topological dimension 0
   //num_cell_vertices = cell_type->numEntities(0);
+  mesh_data.cell_type = CellType::create(type);
+  mesh_data.tdim = tdim;
+  mesh_data.gdim = gdim;
 
   // Clear all data
   mesh_data.clear();
@@ -226,32 +232,17 @@ void XMLLocalMeshData::readVertices(const xmlChar* name, const xmlChar** attrs)
   // Parse the number of global vertices
   const uint num_global_vertices = parseUnsignedInt(name, attrs, "size");
   dolfin_debug1("num_global_vertices = %d", num_global_vertices);
+  mesh_data.num_global_vertices = num_global_vertices;
 
-  // Get process number and number of processes
-  const uint num_processes  = MPI::num_processes();
-  const uint process_number = MPI::process_number();
-
-  // Compute number of vertices per process and remainder
-  const uint n = num_global_vertices / num_processes;
-  const uint r = num_global_vertices % num_processes;
-
-  if (process_number < r)
-  {
-    vertex_index_start = process_number*(n + 1);
-    vertex_index_stop = vertex_index_start + n;
-  }
-  else
-  {
-    vertex_index_start = process_number*n + r;
-    vertex_index_stop = vertex_index_start + n - 1;
-  }
+  // Compute vertex range
+  mesh_data.initial_vertex_range(vertex_index_start, vertex_index_stop);
 
   dolfin_debug3("vertex range: [%d, %d] size = %d",
                 vertex_index_start, vertex_index_stop, num_local_vertices());
 
   // Reserve space for local-to-global vertex map and vertex coordinates
-  mesh_data._vertex_indices.reserve(num_local_vertices());
-  mesh_data._vertex_coordinates.reserve(num_local_vertices());
+  mesh_data.vertex_indices.reserve(num_local_vertices());
+  mesh_data.vertex_coordinates.reserve(num_local_vertices());
 }
 //-----------------------------------------------------------------------------
 void XMLLocalMeshData::readVertex(const xmlChar* name, const xmlChar** attrs)
@@ -271,7 +262,7 @@ void XMLLocalMeshData::readVertex(const xmlChar* name, const xmlChar** attrs)
   case 1:
     {
       coordinate.push_back(parseReal(name, attrs, "x"));
-      mesh_data._vertex_coordinates.push_back(coordinate);
+      mesh_data.vertex_coordinates.push_back(coordinate);
     }
   break;
   case 2:
@@ -279,7 +270,7 @@ void XMLLocalMeshData::readVertex(const xmlChar* name, const xmlChar** attrs)
       coordinate.reserve(2);
       coordinate.push_back(parseReal(name, attrs, "x"));
       coordinate.push_back(parseReal(name, attrs, "y"));
-      mesh_data._vertex_coordinates.push_back(coordinate);
+      mesh_data.vertex_coordinates.push_back(coordinate);
     }
     break;
   case 3:
@@ -288,7 +279,7 @@ void XMLLocalMeshData::readVertex(const xmlChar* name, const xmlChar** attrs)
       coordinate.push_back(parseReal(name, attrs, "x"));
       coordinate.push_back(parseReal(name, attrs, "y"));
       coordinate.push_back(parseReal(name, attrs, "z"));
-      mesh_data._vertex_coordinates.push_back(coordinate);
+      mesh_data.vertex_coordinates.push_back(coordinate);
     }
     break;
   default:
@@ -296,7 +287,7 @@ void XMLLocalMeshData::readVertex(const xmlChar* name, const xmlChar** attrs)
   }
 
   // Store global vertex numbering 
-  mesh_data._vertex_indices.push_back(v);
+  mesh_data.vertex_indices.push_back(v);
 }
 //-----------------------------------------------------------------------------
 void XMLLocalMeshData::readCells(const xmlChar* name, const xmlChar** attrs)
@@ -304,31 +295,16 @@ void XMLLocalMeshData::readCells(const xmlChar* name, const xmlChar** attrs)
   // Parse the number of global cells 
   const uint num_global_cells = parseUnsignedInt(name, attrs, "size");
   dolfin_debug1("num_global_cells = %d", num_global_cells);
+  mesh_data.num_global_cells = num_global_cells;
 
-  // Get process number and number of processes
-  const uint num_processes  = MPI::num_processes();
-  const uint process_number = MPI::process_number();
-
-  // Compute number of cells per process and remainder
-  const uint n = num_global_cells / num_processes;
-  const uint r = num_global_cells % num_processes;
-
-  if (process_number < r)
-  {
-    cell_index_start = process_number*(n + 1);
-    cell_index_stop = cell_index_start + n;
-  }
-  else
-  {
-    cell_index_start = process_number*n + r;
-    cell_index_stop = cell_index_start + n - 1;
-  }
+  // Compute cell range
+  mesh_data.initial_cell_range(cell_index_start, cell_index_stop);
 
   dolfin_debug3("cell range: [%d, %d] size = %d",
                 cell_index_start, cell_index_stop, num_local_cells());
 
   // Reserve space for cells
-  mesh_data._cell_vertices.reserve(num_local_cells());
+  mesh_data.cell_vertices.reserve(num_local_cells());
 }
 //-----------------------------------------------------------------------------
 void XMLLocalMeshData::readInterval(const xmlChar *name, const xmlChar **attrs)
@@ -350,7 +326,7 @@ void XMLLocalMeshData::readInterval(const xmlChar *name, const xmlChar **attrs)
   cell[1] = parseUnsignedInt(name, attrs, "v1");
 
   // Add cell
-  mesh_data._cell_vertices.push_back(cell);
+  mesh_data.cell_vertices.push_back(cell);
 }
 //-----------------------------------------------------------------------------
 void XMLLocalMeshData::readTriangle(const xmlChar *name, const xmlChar **attrs)
@@ -373,7 +349,7 @@ void XMLLocalMeshData::readTriangle(const xmlChar *name, const xmlChar **attrs)
   cell[2] = parseUnsignedInt(name, attrs, "v2");
   
   // Add cell
-  mesh_data._cell_vertices.push_back(cell);
+  mesh_data.cell_vertices.push_back(cell);
 }
 //-----------------------------------------------------------------------------
 void XMLLocalMeshData::readTetrahedron(const xmlChar *name, const xmlChar **attrs)
@@ -397,7 +373,7 @@ void XMLLocalMeshData::readTetrahedron(const xmlChar *name, const xmlChar **attr
   cell[3] = parseUnsignedInt(name, attrs, "v3");
   
   // Add cell
-  mesh_data._cell_vertices.push_back(cell);
+  mesh_data.cell_vertices.push_back(cell);
 }
 //-----------------------------------------------------------------------------
 void XMLLocalMeshData::readMeshFunction(const xmlChar* name, const xmlChar** attrs)

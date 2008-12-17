@@ -39,10 +39,10 @@ namespace dolfin
     // FIXME: The mother of all MPI calls! It does everything anyone would ever need to do with MPI... :-)
 
     /// Distribute local arrays on all processors according to given partition
-    static void distribute(std::vector<uint>& values, std::vector<uint> partition);
+    static void distribute(std::vector<uint>& values, std::vector<uint>& partition);
 
     /// Distribute local arrays on all processors according to given partition
-    static void distribute(std::vector<double>& values, std::vector<uint> partition);
+    static void distribute(std::vector<double>& values, std::vector<uint>& partition);
 
     /// Gather values (wrapper for MPI_Allgather)
     static void gather(std::vector<uint>& values);

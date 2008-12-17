@@ -7,7 +7,7 @@
 // Modified by Niclas Jansson, 2008.
 //
 // First added:  2007-04-03
-// Last changed: 2008-12-09
+// Last changed: 2008-12-15
 
 #include <dolfin/log/log.h>
 #include <dolfin/main/MPI.h>
@@ -19,6 +19,7 @@
 #include "Cell.h"
 #include "Facet.h"
 #include "Vertex.h"
+#include "MeshEditor.h"
 #include "MeshFunction.h"
 #include "MeshPartitioning.h"
 
@@ -30,26 +31,27 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void MeshPartitioning::partition(Mesh& mesh, LocalMeshData& data)
+void MeshPartitioning::partition(Mesh& mesh, LocalMeshData& mesh_data)
 {
   dolfin_debug("Partitioning mesh...");
 
   // Compute cell partition
   std::vector<uint> cell_partition;
-  compute_partition(cell_partition, data);
+  compute_partition(cell_partition, mesh_data);
 
   // Distribute cells
-  distribute_cells(cell_partition, data);
+  distribute_cells(mesh_data, cell_partition);
 
   // Distribute vertices
-  distribute_vertices(data);
+  std::map<uint, uint> glob2loc;
+  distribute_vertices(mesh_data, glob2loc);
 
   // Build mesh
-  build_mesh(mesh, data);
+  build_mesh(mesh, mesh_data, glob2loc);
 }
 //-----------------------------------------------------------------------------
 void MeshPartitioning::compute_partition(std::vector<uint>& cell_partition,
-                                         const LocalMeshData& data)
+                                         const LocalMeshData& mesh_data)
 {
   dolfin_debug("Computing cell partition using ParMETIS...");
 
@@ -57,9 +59,9 @@ void MeshPartitioning::compute_partition(std::vector<uint>& cell_partition,
   const uint num_processes = MPI::num_processes();
   const uint process_number = MPI::process_number();
 
-  // Get dimensions of local data
-  const uint num_local_cells = data.cell_vertices().size();
-  const uint num_cell_vertices = data.cell_vertices()[0].size();
+  // Get dimensions of local mesh_data
+  const uint num_local_cells = mesh_data.cell_vertices.size();
+  const uint num_cell_vertices = mesh_data.cell_vertices[0].size();
   dolfin_debug1("num_local_cells = %d", num_local_cells);
 
   // Communicate number of cells between all processors
@@ -78,10 +80,10 @@ void MeshPartitioning::compute_partition(std::vector<uint>& cell_partition,
   int* eind = new int[num_local_cells * num_cell_vertices];
   for (uint i = 0; i < num_local_cells; i++)
   {
-    dolfin_assert(data.cell_vertices()[i].size() == num_cell_vertices);
+    dolfin_assert(mesh_data.cell_vertices[i].size() == num_cell_vertices);
     eptr[i] = i * num_cell_vertices;
     for (uint j = 0; j < num_cell_vertices; j++)
-      eind[eptr[i] + j] = data.cell_vertices()[i][j];
+      eind[eptr[i] + j] = mesh_data.cell_vertices[i][j];
   }
   eptr[num_local_cells] = num_local_cells * num_cell_vertices;
 
@@ -127,7 +129,7 @@ void MeshPartitioning::compute_partition(std::vector<uint>& cell_partition,
                            &edgecut, part, &comm);
   message("Partitioned mesh, edge cut is %d.", edgecut);
 
-  // Copy data
+  // Copy mesh_data
   cell_partition.clear();
   cell_partition.reserve(num_local_cells);
   for (uint i = 0; i < num_local_cells; i++)
@@ -142,14 +144,14 @@ void MeshPartitioning::compute_partition(std::vector<uint>& cell_partition,
   delete [] part;
 }
 //-----------------------------------------------------------------------------
-void MeshPartitioning::distribute_cells(LocalMeshData& data,
+void MeshPartitioning::distribute_cells(LocalMeshData& mesh_data,
                                         const std::vector<uint>& cell_partition)
 {
-  dolfin_debug("Distributing mesh data according to cell partition...");
+  dolfin_debug("Distributing mesh mesh_data according to cell partition...");
 
-  // Get dimensions of local data
-  const uint num_local_cells = data.cell_vertices().size();
-  const uint num_cell_vertices = data.cell_vertices()[0].size();
+  // Get dimensions of local mesh_data
+  uint num_local_cells = mesh_data.cell_vertices.size();
+  const uint num_cell_vertices = mesh_data.cell_vertices[0].size();
 
   // Build array of cell-vertex connectivity and partition vector
   std::vector<uint> cell_vertices;
@@ -160,7 +162,7 @@ void MeshPartitioning::distribute_cells(LocalMeshData& data,
   {
     for (uint j = 0; j < num_cell_vertices; j++)
     {
-      cell_vertices.push_back(data.cell_vertices()[i][j]);
+      cell_vertices.push_back(mesh_data.cell_vertices[i][j]);
       cell_vertices_partition.push_back(cell_partition[i]);
     }
   }
@@ -169,41 +171,115 @@ void MeshPartitioning::distribute_cells(LocalMeshData& data,
   MPI::distribute(cell_vertices, cell_vertices_partition);
   cell_vertices_partition.clear();
 
-  // FIXME: Put data back into data.cell_vertices
-  data.cell_vertices.clear();
+  // Put mesh_data back into mesh_data.cell_vertices
+  mesh_data.cell_vertices.clear();
+  num_local_cells = cell_vertices.size()/num_cell_vertices;
+  for (uint i=0; i < num_local_cells; ++i)
+  {
+    std::vector<uint> cell(num_cell_vertices);
+    for (uint j=0; j < num_cell_vertices; ++j)
+      cell[j] = cell_vertices[i*num_cell_vertices+j];
+    mesh_data.cell_vertices.push_back(cell);
+  }
   
 }
 //-----------------------------------------------------------------------------
-void MeshPartitioning::distribute_vertices(LocalMeshData& data)
+void MeshPartitioning::distribute_vertices(LocalMeshData& mesh_data, std::map<uint, uint>& glob2loc)
 {
 
   // Compute needs: std::set<uint> needed_vertex_indices
-  // Compute where they are located (simple formula): foo_partition
-  // MPI::distribute(needed_vertex_indices, vertex_partition);
+
+  std::set<uint> needed_vertex_indices;
+  std::vector<std::vector<uint> >& cell_vertices = mesh_data.cell_vertices;
+
+  for (uint i=0; i < cell_vertices.size(); ++i)
+    for (uint j=0; j < cell_vertices[i].size(); ++j)
+      needed_vertex_indices.insert(cell_vertices[i][j]);
+
+  // Compute where (process number) the vertices are located
+  std::vector<uint> vertex_locations;
+  std::vector<std::vector<uint> > vertex_locations_array(mesh_data.num_processes);
+  std::vector<uint> vertex_indices;
+  std::set<uint>::const_iterator it;
+  for (it = needed_vertex_indices.begin(); it != needed_vertex_indices.end(); ++it)
+  {
+    const uint location = mesh_data.initial_vertex_location(*it);
+    vertex_locations.push_back(location);
+    vertex_indices.push_back(*it);
+    vertex_locations_array[location].push_back(*it);
+  }
+  needed_vertex_indices.clear(); 
+  MPI::distribute(vertex_indices, vertex_locations);
+  dolfin_assert(vertex_indices.size() == vertex_locations.size());
+
   // Build arrays: vertex_coordinates, vertex_coordinates_partition
+  std::vector<double> vertex_coordinates;
+  std::vector<uint> vertex_coordinates_partition;
+  const uint vertex_size =  mesh_data.vertex_coordinates[0].size();
+  for (uint i=0; i < vertex_locations.size(); ++i)
+  {
+    const std::vector<double>& x = mesh_data.vertex_coordinates[mesh_data.local_vertex_number(vertex_indices[i])];
+    dolfin_assert(x.size() == vertex_size);
+    for (uint j=0; j < vertex_size; ++j)
+      {
+        vertex_coordinates.push_back(x[j]);
+        vertex_coordinates_partition.push_back(vertex_locations[i]);
+      }
+  }
+  MPI::distribute(vertex_coordinates, vertex_coordinates_partition);
+  std::vector<uint> index_counters(mesh_data.num_processes);
 
-  // MPI::distribute(vertex_coordinates, vertex_coordinates_partition);
-
-  // FIXME: Put data back into data.vertex_coordinates
-  data.vertex_coordinates.clear();
+  // FIXME: Put mesh_data back into mesh_data.vertex_coordinates
+  mesh_data.vertex_coordinates.clear();
+  mesh_data.vertex_indices.clear();
+  const uint num_local_vertices = vertex_coordinates.size()/vertex_size;
+  for (uint i=0; i < num_local_vertices; ++i)
+  {
+    std::vector<double> vertex(vertex_size);
+    for (uint j=0; j < vertex_size; ++j)
+      vertex[j] = vertex_coordinates[i*vertex_size+j];
+    mesh_data.vertex_coordinates.push_back(vertex);
+    uint sender_process = vertex_coordinates_partition[i*vertex_size];
+    uint global_vertex_index = vertex_locations_array[sender_process][index_counters[sender_process]++];
+    //mesh_data.vertex_indices.push_back(global_vertex_index);
+    glob2loc[global_vertex_index] = i;
+  }
+  for (uint i=0; i< mesh_data.vertex_indices.size(); ++i)
+    glob2loc[mesh_data.vertex_indices[i]] = i;
 
 }
 //-----------------------------------------------------------------------------
-void MeshPartitioning::build_mesh(Mesh& mesh, const LocalMeshData& data)
+void MeshPartitioning::build_mesh(Mesh& mesh, const LocalMeshData& mesh_data, std::map<uint, uint>& glob2loc)
 {
   // FIXME: Use MeshEditor to build Mesh from LocalMeshData
 
   MeshEditor editor;
-  editor.open(mesh);
+  editor.open(mesh, mesh_data.cell_type->cellType(), mesh_data.gdim, mesh_data.tdim);
   
-  editor.initVertices(data.vertex_coordinates.size());
-  editor.initCells(data.cell_vertices.size());
+  editor.initVertices(mesh_data.vertex_coordinates.size());
+  editor.initCells(mesh_data.cell_vertices.size());
 
-  for (...)
-    editor.addVertex(...);
+  Point p(mesh_data.gdim);
 
-  for (...)
-    editor.addCell(...);
+  for (uint i=0; i < mesh_data.vertex_coordinates.size(); ++i)
+  {
+    for (uint j=0; j < mesh_data.gdim; ++j)
+      p[j] = mesh_data.vertex_coordinates[i][j];
+    editor.addVertex(i, p);
+  }
+
+  const uint num_vertices = mesh_data.cell_type->numEntities(0);
+  Array<uint> a(num_vertices);
+  for (uint i=0; i < mesh_data.cell_vertices.size(); ++i)
+  {
+    for (uint j=0; j < num_vertices; ++j)
+    {
+      const uint idx = mesh_data.cell_vertices[i][j];
+      const uint gidx = glob2loc[idx];
+      a[j] = gidx;
+    }
+    editor.addCell(i, a);
+  }
 
   editor.close();
 }
@@ -211,18 +287,18 @@ void MeshPartitioning::build_mesh(Mesh& mesh, const LocalMeshData& data)
 #else
 
 //-----------------------------------------------------------------------------
-void MeshPartitioning::partition(Mesh& mesh, LocalMeshData& data)
+void MeshPartitioning::partition(Mesh& mesh, LocalMeshData& mesh_data)
 {
   error("Mesh partitioning requires MPI and ParMETIS.");
 }
 //-----------------------------------------------------------------------------
-void MeshPartitioning::partition_vertices(const LocalMeshData& data,
+void MeshPartitioning::partition_vertices(const LocalMeshData& mesh_data,
                                           int* part)
 {
   error("Mesh partitioning requires MPI and ParMETIS.");
 }
 //-----------------------------------------------------------------------------
-void MeshPartitioning::distribute_vertices(LocalMeshData& data,
+void MeshPartitioning::distribute_vertices(LocalMeshData& mesh_data,
                                            const int* part)
 {
   error("Mesh partitioning requires MPI and ParMETIS.");
