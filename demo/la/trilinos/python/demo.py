@@ -19,36 +19,17 @@ except:
     exit()
 
 from dolfin import *
+
 dolfin_set("linear algebra backend", "Epetra")
 try:
-    dolfin.EpetraMatrix
+    EpetraMatrix
 except:
     print "PyDOLFIN has not been configured with Trilinos. Exiting."
     exit()
 
-
 # Create mesh and finite element
 mesh = UnitSquare(20,20)
-element = FiniteElement("Lagrange", "triangle", 1)
-
-# Source term
-class Source(Function):
-    def __init__(self, element, mesh):
-        Function.__init__(self, element, mesh)
-    def eval(self, values, x):
-        dx = x[0] - 0.5
-        dy = x[1] - 0.5
-        values[0] = 500.0*exp(-(dx*dx + dy*dy)/0.02)
-
-# Neumann boundary condition
-class Flux(Function):
-    def __init__(self, element, mesh):
-        Function.__init__(self, element, mesh)
-    def eval(self, values, x):
-        if x[0] > DOLFIN_EPS:
-            values[0] = 25.0*sin(5.0*DOLFIN_PI*x[1])
-        else:
-            values[0] = 0.0
+V = FunctionSpace(mesh, "Lagrange", 1)
 
 # Sub domain for Dirichlet boundary condition
 class DirichletBoundary(SubDomain):
@@ -56,30 +37,30 @@ class DirichletBoundary(SubDomain):
         return bool(on_boundary and x[0] < DOLFIN_EPS)
 
 # Define variational problem
-v = TestFunction(element)
-u = TrialFunction(element)
-f = Source(element, mesh)
-g = Flux(element, mesh)
+v = TestFunction(V)
+u = TrialFunction(V)
+f = Function(V,"500.0 * exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)")
+
 
 a = dot(grad(v), grad(u))*dx
-L = v*f*dx + v*g*ds
+L = v*f*dx 
 
 
 # Define boundary condition
-u0 = Function(mesh, 0.0)
-boundary = DirichletBoundary()
-bc = DirichletBC(u0, mesh, boundary)
+u0 = Constant(mesh, 0.0)
+bc = DirichletBC(V, u0, DirichletBoundary())
 
 # Create linear system
-A, b = assemble_system(a, L, bc, mesh) 
+A, b = assemble_system(a, L, bc) 
 
 # Solution   
-U = Function(element, mesh, Vector())
+U = Function(V)
 
 # Fetch underlying epetra objects 
-A_epetra = dolfin.down_cast_epetra_matrix(A.instance()).mat() 
-b_epetra = dolfin.down_cast_epetra_vector(b.instance()).vec() 
-x_epetra = dolfin.down_cast_epetra_vector(U.vector().instance()).vec() 
+
+A_epetra = cpp.down_cast_EpetraMatrix(A).mat() 
+b_epetra = cpp.down_cast_EpetraVector(b).vec() 
+x_epetra = cpp.down_cast_EpetraVector(U.vector()).vec() 
 
 # Sets up the parameters for ML using a python dictionary
 MLList = {"max levels"        : 3, 
