@@ -20,6 +20,7 @@
 #include <dolfin/la/GenericMatrix.h>
 #include <dolfin/main/MPI.h>
 #include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/LocalMeshData.h>
 #include <dolfin/mesh/Vertex.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/graph/Graph.h>
@@ -35,6 +36,7 @@
 #include "XMLVector.h"
 #include "XMLMatrix.h"
 #include "XMLMesh.h"
+#include "XMLLocalMeshData.h"
 #include "XMLMeshFunction.h"
 #include "XMLDofMap.h"
 #include "XMLFunction.h"
@@ -43,7 +45,6 @@
 #include "XMLBLASFormData.h"
 #include "XMLGraph.h"
 #include "XMLFile.h"
-#include "PXMLMesh.h"
 
 using namespace dolfin;
 
@@ -89,11 +90,17 @@ void XMLFile::operator>> (Mesh& mesh)
   if (xmlObject)
     delete xmlObject;
   
-  if (MPI::num_processes() > 1)
-    xmlObject = new PXMLMesh(mesh);
-  else
-    xmlObject = new XMLMesh(mesh);
+  xmlObject = new XMLMesh(mesh);
   parseFile();
+}
+//-----------------------------------------------------------------------------
+void XMLFile::operator>> (LocalMeshData& meshdata)
+{
+  if (xmlObject)
+    delete xmlObject;
+  xmlObject = new XMLLocalMeshData(meshdata);
+  parseFile();
+
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator>> (MeshFunction<int>& meshfunction)

@@ -11,7 +11,7 @@ from commands import getoutput
 import re
 
 # Tests to run
-tests = ["function", "mesh", "meshconvert", "la"]
+tests = ["function", "mesh", "meshconvert", "la", "io"]
 
 # FIXME: Graph tests disabled for now since SCOTCH is now required
 

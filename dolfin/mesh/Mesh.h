@@ -176,15 +176,6 @@ namespace dolfin
     /// Compute intersection with mesh
     void intersection(Mesh& mesh, Array<unsigned int>& cells, bool fixed_mesh=true);
 
-    /// Partition mesh into num_processes partitions
-    void partition(MeshFunction<uint>& partitions);
-
-    /// Partition mesh into num_partitions partitions
-    void partition(MeshFunction<uint>& partitions, uint num_partitions);
-
-    // Distribute mesh according to mesh function
-    void distribute(MeshFunction<uint>& partitions);
-
     /// Display mesh data
     void disp() const;
     

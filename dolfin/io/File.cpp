@@ -8,7 +8,7 @@
 // Modified by Niclas Jansson 2008.
 //
 // First added:  2002-11-12
-// Last changed: 2008-10-27
+// Last changed: 2008-12-08
 
 #include <string>
 #include <dolfin/main/MPI.h>
@@ -34,22 +34,22 @@ File::File(const std::string& filename)
   // FIXME: Use correct funtion to find the suffix; using rfind() makes
   // FIXME: it essential that the suffixes are checked in the correct order.
 
-  if ( filename.rfind(".xml") != filename.npos )
+  if (filename.rfind(".xml") != filename.npos)
     file = new XMLFile(filename);
-  else if ( filename.rfind(".xml.gz") != filename.npos )
+  else if (filename.rfind(".xml.gz") != filename.npos)
     file = new XMLFile(filename);
-  else if ( filename.rfind(".m") != filename.npos )
+ else if (filename.rfind(".m") != filename.npos)
     file = new OctaveFile(filename);
-  else if ( filename.rfind(".py") != filename.npos )
+  else if (filename.rfind(".py") != filename.npos)
     file = new PythonFile(filename);
-  else if ( filename.rfind(".pvd") != filename.npos )
+  else if (filename.rfind(".pvd") != filename.npos)
     if(MPI::num_processes() > 1)
       file = new PVTKFile(filename);
     else
       file = new VTKFile(filename);
-  else if ( filename.rfind(".raw") != filename.npos )
+  else if (filename.rfind(".raw") != filename.npos)
     file = new RAWFile(filename);
-  else if ( filename.rfind(".xyz") != filename.npos )
+  else if (filename.rfind(".xyz") != filename.npos)
     file = new XYZFile(filename);
   else
   {
@@ -60,7 +60,7 @@ File::File(const std::string& filename)
 //-----------------------------------------------------------------------------
 File::File(const std::string& filename, Type type)
 {
-  switch ( type ) {
+  switch (type) {
   case xml:
     file = new XMLFile(filename);
     break;
@@ -84,8 +84,7 @@ File::File(const std::string& filename, Type type)
 //-----------------------------------------------------------------------------
 File::~File()
 {
-  if ( file )
-    delete file;
+  delete file;
   file = 0;
 }
 //-----------------------------------------------------------------------------
@@ -108,6 +107,13 @@ void File::operator>> (Mesh& mesh)
   file->read();
   
   *file >> mesh;
+}
+//-----------------------------------------------------------------------------
+void File::operator>> (LocalMeshData& data)
+{
+  file->read();
+  
+  *file >> data;
 }
 //-----------------------------------------------------------------------------
 void File::operator>> (MeshFunction<int>& meshfunction)
@@ -199,6 +205,13 @@ void File::operator<< (const Mesh& mesh)
   file->write();
   
   *file << mesh;
+}
+//-----------------------------------------------------------------------------
+void File::operator<< (const LocalMeshData& data)
+{
+  file->write();
+  
+  *file << data;
 }
 //-----------------------------------------------------------------------------
 void File::operator<< (const MeshFunction<int>& meshfunction)

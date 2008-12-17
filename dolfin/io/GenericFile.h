@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2003-07-15
-// Last changed: 2008-10-27
+// Last changed: 2008-12-08
 
 #ifndef __GENERIC_FILE_H
 #define __GENERIC_FILE_H
@@ -16,6 +16,7 @@ namespace dolfin
 {
   
   class Mesh;
+  class LocalMeshData;
   class Graph;
   template <class T> class MeshFunction;
   class Function;
@@ -38,6 +39,7 @@ namespace dolfin
     virtual void operator>> (GenericVector& x);
     virtual void operator>> (GenericMatrix& A);
     virtual void operator>> (Mesh& mesh);
+    virtual void operator>> (LocalMeshData& data);
     virtual void operator>> (MeshFunction<int>& meshfunction);
     virtual void operator>> (MeshFunction<unsigned int>& meshfunction);
     virtual void operator>> (MeshFunction<double>& meshfunction);
@@ -54,6 +56,7 @@ namespace dolfin
     virtual void operator<< (const GenericVector& x);
     virtual void operator<< (const GenericMatrix& A);
     virtual void operator<< (const Mesh& mesh);
+    virtual void operator<< (const LocalMeshData& data);
     virtual void operator<< (const MeshFunction<int>& meshfunction);
     virtual void operator<< (const MeshFunction<unsigned int>& meshfunction);
     virtual void operator<< (const MeshFunction<double>& meshfunction);
