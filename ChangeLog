@@ -1,3 +1,4 @@
+ - Parallel parsing and partitioning of meshes (experimental)
  - Add script dolfin-order for ordering mesh files
  - Add new class SubSpace (replacing SubSystem)
  - Add new class FunctionSpace
