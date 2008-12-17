@@ -55,16 +55,16 @@ namespace dolfin
 
     /// Return a string identifying the dof map
     std::string signature() const
-    { 
+    {
       if (!dof_map)
-        return ufc_dof_map->signature(); 
+        return ufc_dof_map->signature();
       else
       {
         error("DofMap has been re-ordered. Cannot return signature string.");
-        return ufc_dof_map->signature(); 
-      }  
+        return ufc_dof_map->signature();
+      }
     }
-    
+
     /// Return the dimension of the global finite element function space
     unsigned int global_dimension() const
     { return ufc_dof_map->global_dimension(); }
@@ -90,7 +90,7 @@ namespace dolfin
 
     // FIXME: Can this function eventually be removed?
     /// Tabulate the local-to-global mapping of dofs on a ufc cell
-    void tabulate_dofs(uint* dofs, const ufc::cell& cell) const 
+    void tabulate_dofs(uint* dofs, const ufc::cell& cell) const
     { ufc_dof_map->tabulate_dofs(dofs, ufc_mesh, cell); }
 
     void tabulate_coordinates(double** coordinates, const ufc::cell& ufc_cell) const
@@ -98,19 +98,19 @@ namespace dolfin
 
     /// Build parallel dof map
     void build(UFC& ufc, const Mesh& mesh);
-    
+
     /// Return renumbering (used for testing)
     std::map<uint, uint> getMap() const;
 
     /// Extract sub dofmap and offset for component
     DofMap* extract_sub_dofmap(const std::vector<uint>& component, uint& offset, const Mesh& mesh) const;
-    
+
     /// Return offset into parent's vector of coefficients
     uint offset() const;
 
     /// Display mapping
     void disp() const;
-   
+
   private:
 
     /// Friends
@@ -118,7 +118,7 @@ namespace dolfin
 
     /// Initialise DofMap
     void init(const Mesh& mesh);
-    
+
     // Recursively extract sub dofmap
     ufc::dof_map* extract_sub_dofmap(const ufc::dof_map& dof_map,
                                      uint& offset,
@@ -145,6 +145,9 @@ namespace dolfin
 
     // Offset into parent's vector of coefficients
     uint _offset;
+
+    // Reference to mesh we live in
+    const Mesh & dolfin_mesh;
 
   };
 

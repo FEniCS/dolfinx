@@ -22,9 +22,10 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 DofMap::DofMap(ufc::dof_map& dof_map, const Mesh& mesh)
-  : dof_map(0), 
+  : dof_map(0),
     ufc_dof_map(&dof_map, NoDeleter<ufc::dof_map>()),
-    num_cells(mesh.numCells()), partitions(0), _offset(0)
+    num_cells(mesh.numCells()), partitions(0), _offset(0),
+    dolfin_mesh(mesh)
 {
   init(mesh);
 }
@@ -32,7 +33,8 @@ DofMap::DofMap(ufc::dof_map& dof_map, const Mesh& mesh)
 DofMap::DofMap(std::tr1::shared_ptr<ufc::dof_map> dof_map, const Mesh& mesh)
   : dof_map(0),
     ufc_dof_map(dof_map),
-    num_cells(mesh.numCells()), partitions(0), _offset(0)
+    num_cells(mesh.numCells()), partitions(0), _offset(0),
+    dolfin_mesh(mesh)
 {
   init(mesh);
 }
@@ -40,7 +42,8 @@ DofMap::DofMap(std::tr1::shared_ptr<ufc::dof_map> dof_map, const Mesh& mesh)
 DofMap::DofMap(ufc::dof_map& dof_map, const Mesh& mesh, MeshFunction<uint>& partitions)
   : dof_map(0),
     ufc_dof_map(&dof_map, NoDeleter<ufc::dof_map>()),
-    num_cells(mesh.numCells()), partitions(&partitions), _offset(0)
+    num_cells(mesh.numCells()), partitions(&partitions), _offset(0),
+    dolfin_mesh(mesh)
 {
   init(mesh);
 }
@@ -49,8 +52,9 @@ DofMap::DofMap(std::tr1::shared_ptr<ufc::dof_map> dof_map,
                const Mesh& mesh,
                MeshFunction<uint>& partitions)
   : dof_map(0),
-    ufc_dof_map(dof_map), 
-    num_cells(mesh.numCells()), partitions(&partitions), _offset(0)
+    ufc_dof_map(dof_map),
+    num_cells(mesh.numCells()), partitions(&partitions), _offset(0),
+    dolfin_mesh(mesh)
 {
   init(mesh);
 }
@@ -58,7 +62,8 @@ DofMap::DofMap(std::tr1::shared_ptr<ufc::dof_map> dof_map,
 DofMap::DofMap(const std::string signature,
                const Mesh& mesh)
   : dof_map(0),
-    num_cells(mesh.numCells()), partitions(0), _offset(0)
+    num_cells(mesh.numCells()), partitions(0), _offset(0),
+    dolfin_mesh(mesh)
 {
   // FIXME: Missing initializer for ufc_dof_map?
 
@@ -75,7 +80,8 @@ DofMap::DofMap(const std::string signature,
 DofMap::DofMap(const std::string signature, const Mesh& mesh,
                MeshFunction<uint>& partitions)
   : dof_map(0),
-    num_cells(mesh.numCells()), partitions(&partitions), _offset(0)
+    num_cells(mesh.numCells()), partitions(&partitions), _offset(0),
+    dolfin_mesh(mesh)
 {
   // FIXME: Missing initializer for ufc_dof_map?
 
@@ -135,7 +141,7 @@ ufc::dof_map* DofMap::extract_sub_dofmap(const ufc::dof_map& dof_map,
   // Check that a sub system has been specified
   if (component.size() == 0)
     error("Unable to extract sub system (no sub system specified).");
-  
+
   // Check the number of available sub systems
   if (component[0] >= dof_map.num_sub_dof_maps())
     error("Unable to extract sub system %d (only %d sub systems defined).",
@@ -152,10 +158,10 @@ ufc::dof_map* DofMap::extract_sub_dofmap(const ufc::dof_map& dof_map,
     offset += ufc_dof_map->global_dimension();
     delete ufc_dof_map;
   }
-  
+
   // Create sub system
   ufc::dof_map* sub_dof_map = dof_map.create_sub_dof_map(component[0]);
-  
+
   // Return sub system if sub sub system should not be extracted
   if (component.size() == 1)
     return sub_dof_map;
@@ -184,7 +190,7 @@ void DofMap::init(const Mesh& mesh)
   for (uint d = 0; d <= mesh.topology().dim(); d++)
     if (ufc_dof_map->needs_mesh_entities(d))
       mesh.init(d);
-  
+
   // Initialize UFC mesh data (must be done after entities are created)
   ufc_mesh.init(mesh);
 
@@ -217,7 +223,7 @@ void DofMap::tabulate_dofs(uint* dofs, ufc::cell& ufc_cell, uint cell_index) con
     for (uint i = 0; i < n; i++)
       dofs[i] = dof_map[offset + i];
     // FIXME: Maybe memcpy() can be used to speed this up? Test this!
-    //memcpy(dofs, dof_map[cell_index], sizeof(uint)*local_dimension()); 
+    //memcpy(dofs, dof_map[cell_index], sizeof(uint)*local_dimension());
   }
   else
     ufc_dof_map->tabulate_dofs(dofs, ufc_mesh, ufc_cell);
@@ -242,7 +248,7 @@ void DofMap::disp() const
 {
   cout << "DofMap" << endl;
   cout << "------" << endl;
-  
+
   // Begin indentation
   begin("");
 
@@ -257,8 +263,6 @@ void DofMap::disp() const
   cout << "Geometric dimension:  " << ufc_dof_map->geometric_dimension() << endl;
   cout << "Number of subdofmaps: " << ufc_dof_map->num_sub_dof_maps() << endl;
   cout << "Number of facet dofs: " << ufc_dof_map->num_facet_dofs() << endl;
-
-  /*
 
   for(uint d = 0; d <= dolfin_mesh.topology().dim(); d++)
   {
@@ -351,9 +355,9 @@ void DofMap::disp() const
     for (; !cell.end(); ++cell)
     {
       ufc_cell.update(*cell);
- 
+
       ufc_dof_map->tabulate_dofs(dofs, ufc_mesh, ufc_cell);
- 
+
       cout << "Cell " << ufc_cell.entity_indices[tdim][0] << ":  ";
       for(uint j=0; j<num_dofs; j++)
       {
@@ -407,13 +411,11 @@ void DofMap::disp() const
     cout << endl;
   }
 
-  */
-
   end();
 
   // TODO: Display information on renumbering?
   // TODO: Display information on parallel stuff?
-  
+
   // End indentation
   end();
 }
