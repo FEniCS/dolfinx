@@ -2,7 +2,9 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-10-08
-// Last changed: 2008-10-08
+// Last changed: 2008-12-18
+//
+// Modified by Anders Logg, 2008.
 
 #include <dolfin.h>
 #include <math.h>
@@ -11,32 +13,32 @@ using namespace dolfin;
 
 int main()
 {
-  // Create meshes
-  UnitSquare omega1(20,20);  
-  UnitCircle omega2(80);  
+  // Create meshes (omega0 overlapped by omega1)
+  UnitCircle omega0(80);
+  UnitSquare omega1(20, 20);
     
   // Access mesh geometry
-  MeshGeometry& mesh_geometry = omega2.geometry();
+  MeshGeometry& geometry = omega0.geometry();
 
   // Move and scale circle
-  for (VertexIterator vertex(omega2); !vertex.end(); ++vertex)
+  for (VertexIterator vertex(omega0); !vertex.end(); ++vertex)
   {
-    double* x = mesh_geometry.x(vertex->index());
+    double* x = geometry.x(vertex->index());
     x[0] = 0.5*x[0] + 1.0;
     x[1] = 0.5*x[1] + 1.0;
   }
 
   // Iterate over angle
-  const double dtheta = 0.10*2*DOLFIN_PI;
+  const double dtheta = 0.1*DOLFIN_PI;
   for (double theta = 0; theta < 2*DOLFIN_PI; theta += dtheta)
   {
     // Compute intersection with boundary of square
-    BoundaryMesh boundary(omega1);   
+    BoundaryMesh boundary(omega1);
     Array<unsigned int> cells;
-    omega2.intersection(boundary, cells, false);
+    omega0.intersection(boundary, cells, false);
     
-    // Create mesh function to plot intersection
-    MeshFunction<unsigned int> intersection(omega2, omega2.topology().dim());
+    // Copy values to mesh function for plotting
+    MeshFunction<unsigned int> intersection(omega0, omega0.topology().dim());
     intersection = 0;
     for (unsigned int i = 0; i < cells.size(); i++)
       intersection.set(cells[i], 1);
@@ -45,13 +47,13 @@ int main()
     plot(intersection);
  
     // Rotate circle around (0.5, 0.5)
-    for (VertexIterator vertex(omega2); !vertex.end(); ++vertex)
+    for (VertexIterator vertex(omega0); !vertex.end(); ++vertex)
     {
-      double* x = mesh_geometry.x(vertex->index());
-      const double x0 = x[0] - 0.5;
-      const double x1 = x[1] - 0.5;
-      x[0] = 0.5 + (cos(dtheta)*x0 - sin(dtheta)*x1);
-      x[1] = 0.5 + (sin(dtheta)*x0 + cos(dtheta)*x1);
+      double* x = geometry.x(vertex->index());
+      const double xr = x[0] - 0.5;
+      const double yr = x[1] - 0.5;
+      x[0] = 0.5 + (cos(dtheta)*xr - sin(dtheta)*yr);
+      x[1] = 0.5 + (sin(dtheta)*xr + cos(dtheta)*yr);
     }
   }
 }

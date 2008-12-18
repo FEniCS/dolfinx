@@ -10,27 +10,29 @@ __license__  = "GNU LGPL Version 2.1"
 from dolfin import *
 from numpy import *
 
-# Create meshes
+# Create meshes (omega0 overlapped by omega1)
+omega0 = UnitCircle(80)
 omega1 = UnitSquare(20, 20)
-omega2 = UnitCircle(80)
+
+# Access mesh geometry
+x = omega0.coordinates()
 
 # Move and scale circle
-coord = omega2.coordinates()
-coord *= 0.5
-coord += 1.0
+x *= 0.5
+x += 1.0
 
 # Iterate over angle
 theta = 0.0
 dtheta = 0.1*DOLFIN_PI
-intersection = MeshFunction("uint", omega2, omega2.topology().dim())
+intersection = MeshFunction("uint", omega0, omega0.topology().dim())
 while theta < 2*DOLFIN_PI:
         
     # Compute intersection with boundary of square
-    boundary = BoundaryMesh(omega1)        
+    boundary = BoundaryMesh(omega1)
     cells = ArrayUInt()
-    omega2.intersection(boundary, cells, False)
+    omega0.intersection(boundary, cells, False)
     
-    # Create mesh function to plot intersection
+    # Copy values to mesh function for plotting
     for j in range(intersection.size()):
         intersection.set(j, 0)
     for j in range(cells.size()):
@@ -39,11 +41,11 @@ while theta < 2*DOLFIN_PI:
     # Plot intersection
     plot(intersection)
                     
-    # Rotate circle around (0.5, 0.5)    
-    x_r = coord[:,0] - 0.5
-    y_r = coord[:,1] - 0.5
-    coord[:,0] = 0.5 + (cos(dtheta)*x_r - sin(dtheta)*y_r)
-    coord[:,1] = 0.5 + (sin(dtheta)*x_r + cos(dtheta)*y_r)
+    # Rotate circle around (0.5, 0.5)
+    xr = x[:, 0] - 0.5
+    yr = x[:, 1] - 0.5
+    x[:,0] = 0.5 + (cos(dtheta)*xr - sin(dtheta)*yr)
+    x[:,1] = 0.5 + (sin(dtheta)*xr + cos(dtheta)*yr)
  
     theta += dtheta
 
