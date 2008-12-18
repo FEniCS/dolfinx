@@ -38,7 +38,7 @@ dolfin_set("linear algebra backend", "PETSc")
 # Create mesh
 width = 1.0
 height = 0.5
-mesh = Rectangle(0, width, 0, height, 2, 1, 0)
+mesh = Rectangle(0, width, 0, height, 2, 1)
 
 # Define the function space
 V = FunctionSpace(mesh, "Nedelec", 2)
