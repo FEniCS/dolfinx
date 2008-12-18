@@ -4,11 +4,14 @@
 // Modified by Garth N. Wells, 2008.
 //
 // First added:  2007-01-17
-// Last changed: 2008-11-16
+// Last changed: 2008-12-18
 //
 // This file duplicates the Assembler::assemble* functions in
 // namespace dolfin, and adds special versions returning the value
 // directly for scalars. For documentation, refer to Assemble.h.
+
+#ifndef __ASSEMBLE_H
+#define __ASSEMBLE_H
 
 #include <dolfin/log/log.h>
 #include "Assembler.h"
@@ -122,3 +125,5 @@ namespace dolfin
   }
 
 }
+
+#endif
