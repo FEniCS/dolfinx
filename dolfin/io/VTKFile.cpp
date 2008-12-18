@@ -6,7 +6,7 @@
 // Modified by Martin Alnes 2008.
 //
 // First added:  2005-07-05
-// Last changed: 2008-12-15
+// Last changed: 2008-12-18
 
 #include <sstream>
 #include <fstream>
@@ -15,6 +15,7 @@
 #include <dolfin/mesh/Vertex.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/fem/FiniteElement.h>
+#include <dolfin/fem/DofMap.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/la/Vector.h>
@@ -170,6 +171,7 @@ void VTKFile::ResultsWrite(const Function& u) const
   const FunctionSpace& V = u.function_space();
   const Mesh& mesh(V.mesh());
   const FiniteElement& element(V.element());
+  const DofMap& dofmap(V.dofmap());
 
   // Get rank of Function
   const uint rank = element.value_rank();
@@ -185,33 +187,22 @@ void VTKFile::ResultsWrite(const Function& u) const
   // Get function values at vertices
   //u.interpolate(values);
 
-  // Test for cell-based element type by signature
-  if(rank == 0)
+  // Test for cell-based element type
+  const uint tdim = mesh.topology().dim();
+  bool only_cell_dofs = dofmap.needs_mesh_entities(tdim);
+  for (uint i = 0; i < tdim; i++)
   {
-    // Test for P0 element
-    if(   element.signature() == "FiniteElement('Discontinuous Lagrange', 'triangle', 0)" 
-       || element.signature() == "FiniteElement('Discontinuous Lagrange', 'tetrahedron', 0)")
-    {
-      data_type = "cell";
-    }
-
-    // Test for non-Lagrange element
-    else if(element.signature().substr(0, 8) != "Lagrange")
-    {
-      // FIXME: Update for new FiniteElement signatures
-      //error("Discontinuous Lagrange functions of order k > 0 cannot be written in VTK format. You may need to project your function."); 
-    }
+    if (dofmap.needs_mesh_entities(tdim))
+      only_cell_dofs = false;
   }
-  else
-  {
-    // FIXME: Add test for other rank elements 
-  }
+  if (only_cell_dofs)
+    data_type = "cell";
 
   // Open file
   std::ofstream fp(vtu_filename.c_str(), std::ios_base::app);
 
   // Write function data at mesh cells
-  if(data_type == "cell")
+  if (data_type == "cell")
   {
     // Allocate memory for function values at cell centres
     const uint size = mesh.numCells()*dim;
@@ -247,17 +238,17 @@ void VTKFile::ResultsWrite(const Function& u) const
     {
       ss.str("");
 
-      if(rank == 1 && dim == 2)
+      if (rank == 1 && dim == 2)
       {
         // Append 0.0 to 2D vectors to make them 3D
-        for(uint i=0; i<dim; i++)
+        for(uint i = 0; i < dim; i++)
           ss << " " << values[cell->index() + i*mesh.numCells()];
         ss << " " << 0.0;
       }
-      else if(rank == 2 && dim == 4)
+      else if (rank == 2 && dim == 4)
       {
         // Pad with 0.0 to 2D tensors to make them 3D
-        for(uint i=0; i<2; i++)
+        for(uint i = 0; i < 2; i++)
         {
           ss << " " << values[cell->index() + (2*i+0)*mesh.numCells()];
           ss << " " << values[cell->index() + (2*i+1)*mesh.numCells()];
@@ -270,7 +261,7 @@ void VTKFile::ResultsWrite(const Function& u) const
       else
       {
         // Write all components
-        for(uint i=0; i<dim; i++)
+        for (uint i = 0; i < dim; i++)
           ss << " " << values[cell->index() + i*mesh.numCells()];
       }
       ss << std::endl;
@@ -282,7 +273,7 @@ void VTKFile::ResultsWrite(const Function& u) const
 
     delete [] values;
   }
-  else if(data_type == "point") 
+  else if (data_type == "point") 
   {
     // Allocate memory for function values at vertices
     uint size = mesh.numVertices()*dim;
@@ -316,14 +307,14 @@ void VTKFile::ResultsWrite(const Function& u) const
       if(rank == 1 && dim == 2)
       {
         // Append 0.0 to 2D vectors to make them 3D
-        for(uint i=0; i<dim; i++)
+        for(uint i = 0; i < dim; i++)
           ss << " " << values[vertex->index() + i*mesh.numVertices()];
         ss << " " << 0.0;
       }
-      else if(rank == 2 && dim == 4)
+      else if (rank == 2 && dim == 4)
       {
         // Pad with 0.0 to 2D tensors to make them 3D
-        for(uint i=0; i<2; i++)
+        for(uint i = 0; i < 2; i++)
         {
           ss << " " << values[vertex->index() + (2*i+0)*mesh.numVertices()];
           ss << " " << values[vertex->index() + (2*i+1)*mesh.numVertices()];
@@ -336,7 +327,7 @@ void VTKFile::ResultsWrite(const Function& u) const
       else
       {
         // Write all components
-        for(uint i=0; i<dim; i++)
+        for(uint i = 0; i < dim; i++)
           ss << " " << values[vertex->index() + i*mesh.numVertices()];
       }
       ss << std::endl;

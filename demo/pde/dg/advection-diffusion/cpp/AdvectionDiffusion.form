@@ -6,7 +6,6 @@
 #
 # The bilinear form a(v, u) and linear form L(v) for
 # advection-diffusion. Discontinuous formulation with upwinding.
-#
 
 scalar = FiniteElement("Discontinuous Lagrange", "triangle", 1)
 vector = VectorElement("Lagrange", "triangle", 2)
@@ -22,7 +21,7 @@ g   = Function(scalar) # BC
 n   = FacetNormal("triangle")
 h   = MeshSize("triangle")
 of  = Function(constant)  # This function is a switch that determines if a facet is
-                            # an outflow facet or not 1.0 or 0.0
+                          # an outflow facet or not 1.0 or 0.0
 
 kappa = Constant("triangle")
 alpha = Constant("triangle")
@@ -43,5 +42,3 @@ a = a_int + a_fac + a_vel
 
 # Linear form
 L = v*f*dx
-
-

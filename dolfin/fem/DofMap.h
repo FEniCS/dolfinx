@@ -65,6 +65,10 @@ namespace dolfin
       }
     }
 
+    /// Return true iff mesh entities of topological dimension d are needed
+    bool needs_mesh_entities(unsigned int d) const
+    { return ufc_dof_map->needs_mesh_entities(d); }
+
     /// Return the dimension of the global finite element function space
     unsigned int global_dimension() const
     { return ufc_dof_map->global_dimension(); }
