@@ -192,7 +192,7 @@ void VTKFile::ResultsWrite(const Function& u) const
   bool only_cell_dofs = dofmap.needs_mesh_entities(tdim);
   for (uint i = 0; i < tdim; i++)
   {
-    if (dofmap.needs_mesh_entities(tdim))
+    if (dofmap.needs_mesh_entities(i))
       only_cell_dofs = false;
   }
   if (only_cell_dofs)
