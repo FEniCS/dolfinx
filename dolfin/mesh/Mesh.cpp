@@ -50,7 +50,7 @@ Mesh::Mesh(std::string filename)
   : Variable("mesh", "DOLFIN mesh"),
     _data(*this), _cell_type(0), detector(0), _ordered(false)
 {
-  if (MPI::num_processes() > 0)
+  if (MPI::num_processes() > 1)
   {
     // Read local mesh data
     File file(filename);
