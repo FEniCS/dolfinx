@@ -20,15 +20,15 @@ __license__  = "GNU LGPL Version 2.1"
 
 from dolfin import *
 
-l = 1. ; h = 1. # unit square 
-h_ = .5 # position of the dielectric interface
-e_r = 10 # dielectric constant for y<h_ (e_r=1 for y>h_
-V = 1. # applied voltage at the y=0 boundary
+l = 1.0; h = 1.0 # unit square 
+h_ = 0.5         # position of the dielectric interface
+e_r = 10         # dielectric constant for y<h_ (e_r=1 for y>h_
+V = 1.0          # applied voltage at the y=0 boundary
 
 # Create mesh and finite element
 mesh = Mesh()
 editor = MeshEditor()
-editor.open(mesh,"triangle", 2,2) 
+editor.open(mesh, "triangle", 2, 2) 
 editor.initVertices(4)
 editor.initCells(2)
 editor.addVertex(0, 0.0, 0.0)
@@ -43,15 +43,11 @@ editor.close()
 for refine in range(4):
     mesh.refine()
 
-# Finite elements
+# Function spaces
 V2 = FunctionSpace(mesh, "CG", 2) # last argument: order of the polynomial
+
 # Discontinuous element needed for the dielectric function
 V0 = FunctionSpace(mesh, "DG", 0) # 0'th order are possible for DG elements
-
-# Source term
-class Source(Function):
-    def eval(self, values, x):
-        values[0] = 0.0
 
 # Exact solution
 class Exact(Function):
@@ -103,9 +99,8 @@ class DirichletBoundary(SubDomain):
 # Define variational problem
 v = TestFunction(V2)
 u = TrialFunction(V2)
-f = Source(V2)
+f = Constant(V2, 0)
 b = Coefficient(V0)
-
 a = b*dot(grad(v), grad(u))*dx
 L = v*f*dx
 
@@ -119,7 +114,7 @@ u = pde.solve()
 
 plot(u)
 
-#Calculate difference between exact and FEM solution
+# Calculate difference between exact and FEM solution
 # Use higher order element for exact solution,
 # because it is an interpolation of the exact solution
 # in the finite element space!
@@ -128,14 +123,6 @@ exact = Exact(Pk)
 
 e = u - exact
 L2_norm = e*e*dx
-norm = assemble(L2_norm)
+norm = sqrt(assemble(L2_norm))
 
-print "L2-norm is: ", norm
-
-
-
-
-
-
-
-
+print "L2-norm of error is: ", norm

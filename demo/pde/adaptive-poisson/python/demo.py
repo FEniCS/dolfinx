@@ -13,9 +13,11 @@ edge (jump) terms and the size of the interpolation constant.
 """
 
 __author__ = "Rolv Erlend Bredesen <rolv@simula.no>"
-__date__ = "2008-04-03 -- 2008-12-13"
+__date__ = "2008-04-03 -- 2008-12-19"
 __copyright__ = "Copyright (C) 2008 Rolv Erlend Bredesen"
 __license__  = "GNU LGPL Version 2.1"
+
+# Modified by Anders Logg, 2008.
 
 from dolfin import *
 from numpy import array, sqrt
@@ -27,12 +29,6 @@ MAX_ITER = 20       # Maximal number of iterations
 # Create initial mesh
 mesh = UnitSquare(4, 4)
 
-# Source term
-source = lambda x: exp(-100*(x[0]**2+x[1]**2))
-class Source(Function):
-    def eval(self, values, x):
-        values[0] = source(x)
-    
 # Adaptive algorithm
 for level in xrange(MAX_ITER):
 
@@ -40,13 +36,12 @@ for level in xrange(MAX_ITER):
     V = FunctionSpace(mesh, "CG", 1)
     v = TestFunction(V)
     u = TrialFunction(V)
-    f = Source(V)
+    f = Function(V, "exp(-100.0*(pow(x[0], 2) + pow(x[1], 2)))")
     a = dot(grad(v), grad(u))*dx
     L = v*f*dx
     
     # Define boundary condition
     u0 = Constant(mesh, 0.0)
-
     bc = DirichletBC(V, u0, DomainBoundary())
     
     # Compute solution

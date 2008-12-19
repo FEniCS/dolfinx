@@ -4,7 +4,7 @@
 
 on the unit interval with source f given by
 
-    f(x) = 9.0*DOLFIN_PI*DOLFIN_PI*sin(3.0*DOLFIN_PI*x[0]);
+    f(x) = 9*pi^2*sin(3*pi*x[0])
 
 and boundary conditions given by
 
@@ -19,31 +19,20 @@ __license__  = "GNU LGPL Version 2.1"
 
 from dolfin import *
 
-# Create mesh and finite element
+# Create mesh and function space
 mesh = UnitInterval(50)
-
 V = FunctionSpace(mesh, "CG", 1)
-
-# Source term
-class Source(Function):
-    def eval(self, values, x):
-        values[0] = 9.0*DOLFIN_PI*DOLFIN_PI*sin(3.0*DOLFIN_PI*x[0])
-
-# Flux term
-class Flux(Function):
-    def eval(self, values, x):
-        values[0] = 3.0*DOLFIN_PI*cos(3.0*DOLFIN_PI*x[0])
 
 # Sub domain for Dirichlet boundary condition
 class DirichletBoundary(SubDomain):
     def inside(self, x, on_boundary):
-        return bool(on_boundary) and bool(x[0] < DOLFIN_EPS)
+        return on_boundary and x[0] < DOLFIN_EPS
 
 # Define variational problem
 v = TestFunction(V)
 u = TrialFunction(V)
-f = Source(V)
-g = Flux(V)
+f = Function(V, "9.0*pi*pi*sin(3.0*pi*x[0])")
+g = Function(V, "3.0*pi*cos(3.0*pi*x[0])")
 
 a = dot(grad(v), grad(u))*dx
 L = v*f*dx + v*g*ds

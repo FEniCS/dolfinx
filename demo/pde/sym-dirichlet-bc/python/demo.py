@@ -1,12 +1,10 @@
-"""This demo demonstrate how to assemble the matrix, the right-hands side 
-   as well as enforcing boundary conditions (in a symmetric way)
-   on the standard Poisson demo
-"""
+"""This demo demonstrate how to assemble a linear system including
+boundary conditions."""
 
 # Modified by Kristian Oelgaard, 2008
 
 __author__ = "Kent-Andre Mardal (kent-and@simula.no)"
-__date__ = "2008-08-13 -- 2008-12-13"
+__date__ = "2008-08-13 -- 2008-12-19"
 __copyright__ = "Copyright (C) 2008 Kent-Andre Mardal"
 __license__  = "GNU LGPL Version 2.1"
 

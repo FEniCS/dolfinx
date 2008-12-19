@@ -27,7 +27,6 @@ __license__  = "GNU LGPL Version 2.1"
 
 from dolfin import *
 
-
 # FIXME: Not working, see notice below
 import sys
 print "This demo is not working, please fix me"
@@ -59,7 +58,6 @@ class DirichletBoundaryCondition(Function, TimeDependent):
 class DirichletBoundary(SubDomain):
     def inside(self, x, on_boundary):
         return bool(abs(x[0] - 1.0) < DOLFIN_EPS and on_boundary)
-
 
 # Pseudo time
 t = 0.0
@@ -110,5 +108,3 @@ pde = NonlinearPDE(a, L, mesh, bc)
 # # Save function to file
 # file = File("nonlinear_poisson.pvd")
 # file << u
-
-

@@ -14,13 +14,6 @@ from dolfin import *
 mesh = Mesh("../../../../data/meshes/gear.xml.gz")
 V = VectorFunctionSpace(mesh, "CG", 1)
 
-# Dirichlet boundary condition for clamp at left end
-class Clamp(Function):
-    def eval(self, values, x):
-        values[0] = 0.0
-        values[1] = 0.0
-        values[2] = 0.0
-
 # Sub domain for clamp at left end
 class Left(SubDomain):
     def inside(self, x, on_boundary):
@@ -72,7 +65,7 @@ a = dot(epsilon(v), sigma(u))*dx
 L = dot(v, f)*dx
 
 # Set up boundary condition at left end
-c = Clamp(V)
+c = Constant(mesh, [0, 0, 0])
 bcl = DirichletBC(V, c, Left())
 
 # Set up boundary condition at right end

@@ -15,7 +15,7 @@ using a discontinuous Galerkin formulation (interior penalty method).
 """
 
 __author__    = "Kristian B. Oelgaard (k.b.oelgaard@tudelft.nl)"
-__date__      = "2007-10-02 -- 2008-12-07"
+__date__      = "2007-10-02 -- 2008-12-19"
 __copyright__ = "Copyright (C) 2007 Kristian B. Oelgaard"
 __license__   = "GNU LGPL Version 2.1"
 
@@ -27,13 +27,6 @@ from dolfin import *
 mesh = UnitSquare(24, 24)
 V = FunctionSpace(mesh, "DG", 1)
 
-# Define source term
-class Source(Function):
-    def eval(self, values, x):
-        dx = x[0] - 0.5
-        dy = x[1] - 0.5
-        values[0] = 500.0*exp(-(dx*dx + dy*dy)/0.02)
-
 # Define test and trial functions
 v = TestFunction(V)
 u = TrialFunction(V)
@@ -41,7 +34,7 @@ u = TrialFunction(V)
 # Define normal component, mesh size and right-hand side
 n = FacetNormal(mesh)
 h = AvgMeshSize(mesh)
-f = Source(V)
+f = Function(V, "500.0*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)")
 
 # Define parameters
 alpha = 4.0
