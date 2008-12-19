@@ -1,18 +1,19 @@
-# This demo program solves Poisson's equation
-#
-#     - div grad u(x) = f(x)
-#
-# on the unit interval with source f given by
-#
-#     f(x) = 9.0*DOLFIN_PI*DOLFIN_PI*sin(3.0*DOLFIN_PI*x[0]);
-#
-# and boundary conditions given by
-#
-#     u(x) = 0 for x = 0
-#    du/dx = 0 for x = 1
+"""This demo program solves Poisson's equation
+
+    - div grad u(x) = f(x)
+
+on the unit interval with source f given by
+
+    f(x) = 9.0*DOLFIN_PI*DOLFIN_PI*sin(3.0*DOLFIN_PI*x[0]);
+
+and boundary conditions given by
+
+    u(x) = 0 for x = 0
+    du/dx = 0 for x = 1
+"""
 
 __author__ = "Kristian B. Oelgaard (k.b.oelgaard@tudelft.nl)"
-__date__ = "2007-11-28 -- 2008-12-13"
+__date__ = "2007-11-28 -- 2008-12-19"
 __copyright__ = "Copyright (C) 2007 Kristian B. Oelgaard"
 __license__  = "GNU LGPL Version 2.1"
 
@@ -60,4 +61,4 @@ file = File("poisson.pvd")
 file << u
 
 # Plot solution
-plot(u, interactive=True)
+plot(u, interactive=True, rescale=False)
