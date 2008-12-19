@@ -49,5 +49,8 @@ while theta < 2*DOLFIN_PI:
  
     theta += dtheta
 
+# Notify about Viper bug
+print "Warning: This plot looks a little strange because of a bug in Viper."
+
 # Hold plot
 interactive()
