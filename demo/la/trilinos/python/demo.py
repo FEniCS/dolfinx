@@ -29,7 +29,7 @@ except:
 
 # Create mesh and finite element
 mesh = UnitSquare(20,20)
-V = FunctionSpace(mesh, "Lagrange", 1)
+V = FunctionSpace(mesh, "CG", 1)
 
 # Sub domain for Dirichlet boundary condition
 class DirichletBoundary(SubDomain):

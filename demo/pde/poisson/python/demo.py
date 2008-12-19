@@ -20,7 +20,7 @@ from dolfin import *
 
 # Create mesh and define function space
 mesh = UnitSquare(32, 32)
-V = FunctionSpace(mesh, "Lagrange", 1)
+V = FunctionSpace(mesh, "CG", 1)
 
 # Define Dirichlet boundary (x = 0 or x = 1)
 class DirichletBoundary(SubDomain):

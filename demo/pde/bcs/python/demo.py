@@ -11,7 +11,7 @@ from dolfin import *
 
 # Create mesh and define function space
 mesh = Mesh("../../../../data/meshes/aneurysm.xml.gz")
-V = FunctionSpace(mesh, "Lagrange", 1)
+V = FunctionSpace(mesh, "CG", 1)
 
 # Define variational problem
 v = TestFunction(V)

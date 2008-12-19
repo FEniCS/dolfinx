@@ -20,8 +20,8 @@ mesh = velocity.function_space().mesh()
 sub_domains = MeshFunction("uint", mesh, "../subdomains.xml.gz");
 
 # Create FunctionSpaces 
-Q = FunctionSpace(mesh, "Lagrange", 1)
-V = VectorFunctionSpace(mesh, "Lagrange", 2)
+Q = FunctionSpace(mesh, "CG", 1)
+V = VectorFunctionSpace(mesh, "CG", 2)
 
 # Initialise source function and previous solution function
 f  = Function(Q, "0.0")

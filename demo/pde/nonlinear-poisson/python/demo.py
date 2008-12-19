@@ -35,7 +35,7 @@ sys.exit(1)
 
 # Create mesh and finite element
 mesh = UnitSquare(16, 16)
-element = FiniteElement("Lagrange", "triangle", 1)
+element = FiniteElement("CG", "triangle", 1)
 
 # Source term
 class Source(Function, TimeDependent):

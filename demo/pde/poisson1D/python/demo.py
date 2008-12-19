@@ -22,7 +22,7 @@ from dolfin import *
 # Create mesh and finite element
 mesh = UnitInterval(50)
 
-V = FunctionSpace(mesh, "Lagrange", 1)
+V = FunctionSpace(mesh, "CG", 1)
 
 # Source term
 class Source(Function):

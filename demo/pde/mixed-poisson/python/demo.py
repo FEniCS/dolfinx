@@ -17,7 +17,7 @@ Original implementation: ../cpp/main.cpp by Anders Logg and Marie Rognes
 """
 
 __author__    = "Kristian B. Oelgaard (k.b.oelgaard@tudelft.nl)"
-__date__      = "2007-11-14 -- 2008-12-07"
+__date__      = "2007-11-14 -- 2008-12-19"
 __copyright__ = "Copyright (C) 2007 Kristian B. Oelgaard"
 __license__   = "GNU LGPL Version 2.1"
 
@@ -25,8 +25,8 @@ from dolfin import *
 
 # Create mesh and define function spaces
 mesh = UnitSquare(16, 16)
-BDM = FunctionSpace(mesh, "Brezzi-Douglas-Marini", 1)
-DG = FunctionSpace(mesh, "Discontinuous Lagrange", 0)
+BDM = FunctionSpace(mesh, "BDM", 1)
+DG = FunctionSpace(mesh, "DG", 0)
 V = BDM + DG
 
 # Define variational problem
@@ -42,7 +42,7 @@ pde = LinearPDE(a, L)
 (sigma, u) = pde.solve().split()
 
 # Project sigma for post-processing
-P1 = VectorFunctionSpace(mesh, "Lagrange", 1)
+P1 = VectorFunctionSpace(mesh, "CG", 1)
 sigma_proj = project(sigma, P1)
 # FIXME: Strange result here when interpolating!
 

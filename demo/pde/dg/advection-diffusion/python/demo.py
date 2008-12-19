@@ -62,10 +62,10 @@ def forms(scalar, vector, constant):
 mesh =  UnitSquare (64, 64)
 
 # Defining the finite element room
-scalar_DG = FiniteElement("Discontinuous Lagrange", "triangle", 2)
-scalar_CG = FiniteElement("Lagrange", "triangle", 2)
-vector_CG = VectorElement("Lagrange", "triangle", 2)
-constant  = FiniteElement("Discontinuous Lagrange", "triangle", 0)
+scalar_DG = FiniteElement("DG", "triangle", 2)
+scalar_CG = FiniteElement("CG", "triangle", 2)
+vector_CG = VectorElement("CG", "triangle", 2)
+constant  = FiniteElement("DG", "triangle", 0)
 
 # Defining dolfin coefficient functions
 file_string = open('functions2D.h').read()

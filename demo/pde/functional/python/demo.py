@@ -19,7 +19,7 @@ from dolfin import *
 
 # Create mesh and define function space
 mesh = UnitSquare(16, 16)
-V = FunctionSpace(mesh, "Lagrange", 2)
+V = FunctionSpace(mesh, "CG", 2)
 
 # Define the function v
 v = Function(V, "sin(x[0]) + cos(x[1])")

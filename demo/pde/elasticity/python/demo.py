@@ -12,7 +12,7 @@ from dolfin import *
 
 # Load mesh and define function space
 mesh = Mesh("../../../../data/meshes/gear.xml.gz")
-V = VectorFunctionSpace(mesh, "Lagrange", 1)
+V = VectorFunctionSpace(mesh, "CG", 1)
 
 # Dirichlet boundary condition for clamp at left end
 class Clamp(Function):

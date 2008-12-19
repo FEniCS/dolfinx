@@ -54,7 +54,7 @@ if 0 in demos:
 
 # Plot scalar function
 if 1 in demos:
-    V = FunctionSpace(mesh, "Lagrange", 1)
+    V = FunctionSpace(mesh, "CG", 1)
     f = Function(V, "t * 100 * exp(-10.0 * (pow(x[0] - t, 2) + pow(x[1] - t, 2)))")
     f.t = 0.0
     for i in range(100):
@@ -64,7 +64,7 @@ if 1 in demos:
 # Plot vector function
 if 2 in demos:
     mesh = UnitSquare(16, 16)
-    V = VectorFunctionSpace(mesh, "Lagrange", 1)
+    V = VectorFunctionSpace(mesh, "CG", 1)
     f = Function(V, ("-(x[1] - t)*exp(-10.0*(pow(x[0] - t, 2) + pow(x[1] - t, 2)))",
                      " (x[0] - t)*exp(-10.0*(pow(x[0] - t, 2) + pow(x[1] - t, 2)))"))
     f.t = 0.0
