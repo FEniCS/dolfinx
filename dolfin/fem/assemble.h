@@ -46,7 +46,7 @@ namespace dolfin
                 const MeshFunction<uint>* interior_facet_domains,
                 bool reset_tensor=true)
   {
-    Assembler::assemble(A, a, cell_domains, exterior_facet_domains, interior_facet_domains);
+    Assembler::assemble(A, a, cell_domains, exterior_facet_domains, interior_facet_domains, reset_tensor);
   }
 
   /// Assemble system (A, b) and apply Dirichlet boundary condition
