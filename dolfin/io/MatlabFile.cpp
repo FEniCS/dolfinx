@@ -32,6 +32,8 @@ void MatlabFile::operator<<(const GenericMatrix& A)
 {
   // Open file
   FILE *fp = fopen(filename.c_str(), "a");
+  if (!fp)
+    error("Unable to open file %s", filename.c_str());
 
   // Write matrix in sparse format
 //  fprintf(fp, "%s = [", A.name().c_str());

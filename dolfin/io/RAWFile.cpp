@@ -123,6 +123,9 @@ void RAWFile::rawNameUpdate(const int counter)
   
   // Make sure file is empty
   FILE* fp = fopen(raw_filename.c_str(), "w");
+  if (!fp)
+    error("Unable to open file %s", filename.c_str());
+
   fclose(fp);
 }
 //----------------------------------------------------------------------------

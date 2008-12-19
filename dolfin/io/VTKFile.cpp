@@ -108,6 +108,8 @@ void VTKFile::MeshWrite(const Mesh& mesh) const
 {
   // Open file
   FILE* fp = fopen(vtu_filename.c_str(), "a");
+  if (!fp)
+    error("Unable to open file %s", filename.c_str());
 
   // Write vertex positions
   fprintf(fp, "<Points>  \n");
@@ -384,6 +386,8 @@ void VTKFile::VTKHeaderOpen(const Mesh& mesh) const
 {
   // Open file
   FILE *fp = fopen(vtu_filename.c_str(), "a");
+  if (!fp)
+    error("Unable to open file %s", filename.c_str());
   
   // Write headers
   fprintf(fp, "<VTKFile type=\"UnstructuredGrid\"  version=\"0.1\"   >\n");
@@ -399,6 +403,8 @@ void VTKFile::VTKHeaderClose() const
 {
   // Open file
   FILE *fp = fopen(vtu_filename.c_str(), "a");
+  if (!fp)
+    error("Unable to open file %s", filename.c_str());
   
   // Close headers
   fprintf(fp, "</Piece> \n </UnstructuredGrid> \n </VTKFile>"); 
@@ -425,6 +431,8 @@ void VTKFile::vtuNameUpdate(const int counter)
   
   // Make sure file is empty
   FILE* fp = fopen(vtu_filename.c_str(), "w");
+  if (!fp)
+    error("Unable to open file %s", filename.c_str());
   fclose(fp);
 }
 //----------------------------------------------------------------------------

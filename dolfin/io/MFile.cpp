@@ -38,6 +38,8 @@ void MFile::operator<<(const GenericVector& x)
 {
   // Open file
   FILE *fp = fopen(filename.c_str(), "a");
+  if (!fp)
+    error("Unable to open file %s", filename.c_str());
   
   // Write vector
   fprintf(fp, "x = [");
@@ -63,6 +65,8 @@ void MFile::operator<<(const Mesh& mesh)
   
   // Open file
   FILE *fp = fopen(filename.c_str(), "a");
+  if (!fp)
+    error("Unable to open file %s", filename.c_str());
 
   // Create a list if we save the mesh a second time
   if ( counter == 1 )
@@ -158,6 +162,8 @@ void MFile::operator<<(const Function& u)
   
   // Open file
   FILE *fp = fopen(filename.c_str(), "a");
+  if (!fp)
+    error("Unable to open file %s", filename.c_str());
   
   // Move old vector into list if we are saving a new value
   if ( counter1 == 1 )
@@ -207,6 +213,8 @@ void MFile::operator<<(const Sample& sample)
 {
   // Open file
   FILE *fp = fopen(filename.c_str(), "a");
+  if (!fp)
+    error("Unable to open file %s", filename.c_str());
 
   // Initialize data structures first time
   if ( counter2 == 0 )

@@ -189,6 +189,8 @@ void GenericFile::write()
   if ( !opened_write ) {
     // Clear file
     FILE* fp = fopen(filename.c_str(), "w");
+    if (!fp)
+      error("Unable to open file %s", filename.c_str());
     fclose(fp);
   }
   

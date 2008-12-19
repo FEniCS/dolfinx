@@ -47,6 +47,8 @@ void XYZFile::ResultsWrite(Function& u) const
 {
   // Open file
   FILE *fp = fopen(xyz_filename.c_str(), "a");
+  if (!fp)
+    error("Unable to open file %s", filename.c_str());
   
   const uint rank = u.function_space().element().value_rank();
   if(rank > 1)
@@ -102,6 +104,8 @@ void XYZFile::xyzNameUpdate(const int counter)
   
   // Make sure file is empty
   FILE* fp = fopen(xyz_filename.c_str(), "w");
+  if (!fp)
+    error("Unable to open file %s", filename.c_str());
   fclose(fp);
 }
 //----------------------------------------------------------------------------
