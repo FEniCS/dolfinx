@@ -11,7 +11,10 @@
 #include <dolfin/common/constants.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/Facet.h>
+#include <dolfin/mesh/Point.h>
+#include <dolfin/mesh/Vertex.h>
 #include <dolfin/fem/Form.h>
+#include <dolfin/fem/FiniteElement.h>
 #include "FunctionSpace.h"
 #include "SpecialFunctions.h"
 #include "Data.h"
@@ -197,25 +200,25 @@ void InvFacetArea::eval(double* values, const Data& data) const
     values[0] = 0.0;
 }
 //-----------------------------------------------------------------------------
-OutflowFacet::OutflowFacet(const Form& form) : form(form), 
-                                               V(form.function_spaces()), ufc(form)                            
+IsOutflowFacet::IsOutflowFacet(const FunctionSpace& V, const Function& f) : Function(V),field(&f)
 {
-  // Some simple sanity checks on form
-  if (!(form.rank() == 0 && form.ufc_form().num_coefficients() == 2))
-    error("Invalid form: rank = %d, number of coefficients = %d. Must be rank 0 form with 2 coefficients.", 
-              form.rank(), form.ufc_form().num_coefficients());
+  // Some simple sanity checks on function
+  if (&V.mesh() != &f.function_space().mesh())
+    error("The mesh provided with the FunctionSpace must be the same as the one in the provided field Function.");
 
-  if (!(form.ufc_form().num_cell_integrals() == 0 && form.ufc_form().num_exterior_facet_integrals() == 1 
-        && form.ufc_form().num_interior_facet_integrals() == 0))
-    error("Invalid form: Must have exactly 1 exterior facet integral");
+  if (f.function_space().element().value_rank() != 1)
+    error("The provided field function need to be a vector valued function.");
+
+  if (f.function_space().element().value_dimension(0) != geometric_dimension())
+    error("The provided field function value dimension need to be the same as the geometric dimension.");
 }
 //-----------------------------------------------------------------------------
-OutflowFacet::~OutflowFacet()
+IsOutflowFacet::~IsOutflowFacet()
 {
-  //delete ufc;
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
-void OutflowFacet::eval(double* values, const Data& data) const
+void IsOutflowFacet::eval(double* values, const Data& data) const
 {
   // If there is no facet (assembling on interior), return 0.0
   if (!data.on_facet())
@@ -223,27 +226,46 @@ void OutflowFacet::eval(double* values, const Data& data) const
     values[0] = 0.0;
     return;
   }
-  else
+  
+  // Get the mesh
+  const Mesh& mesh = data.cell().mesh();
+  
+  // Create facet from the global facet number
+  Facet facet(mesh, data.cell().entities(mesh.topology().dim() - 1)[data.facet()]);
+  
+  uint num_vertices = 0; 
+  
+  // Instantiate the field_values array and facet_midpoint arrays
+  double * field_values = new double[geometric_dimension()];
+  double * facet_midpoint = new double[geometric_dimension()];
+  
+  // Initialize the facet_midpoint array
+  for (uint i = 0; i < geometric_dimension(); i++)
+    facet_midpoint[i] = 0.0;
+
+  // Collect the coordinates
+  for (VertexIterator v(facet); !v.end(); ++v)
   {
-    ufc.update( data.cell() );
+    for (uint i = 0; i < geometric_dimension(); i++)
+      facet_midpoint[i] += v->x(i);
 
-    // Interpolate coefficients on cell and current facet
-    for (uint i = 0; i < form.coefficients().size(); i++)
-      form.coefficient(i).interpolate(ufc.w[i], ufc.cell, data.facet());
-
-    // Get exterior facet integral (we need to be able to tabulate ALL facets 
-    // of a given cell)
-    ufc::exterior_facet_integral* integral = ufc.exterior_facet_integrals[0];
-
-    // Call tabulate_tensor on exterior facet integral, 
-    // dot(velocity, facet_normal)
-    integral->tabulate_tensor(ufc.A, ufc.w, ufc.cell, data.facet());
+    num_vertices++;
   }
-
-   // If dot product is positive, the current facet is an outflow facet
-  if (ufc.A[0] > DOLFIN_EPS)
+  
+  for (uint i = 0; i < geometric_dimension(); i++)
+    facet_midpoint[i] /= double(num_vertices);
+  
+  // Evaluate field function in mid point
+  field->eval(field_values, facet_midpoint);
+  Point p(geometric_dimension(),field_values);
+  
+  // Check the sign of the dot product between the field value and the facet normal
+  if ( p.dot(data.normal()) > DOLFIN_EPS)
      values[0] = 1.0;
   else
      values[0] = 0.0;
+
+  delete[] field_values;
+  delete[] facet_midpoint;
 }
 //-----------------------------------------------------------------------------

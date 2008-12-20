@@ -140,22 +140,20 @@ namespace dolfin
   /// facet and velocity vector integrated over the exterior of the cell.
   /// The function returns 1.0 if the dot product > 0, 0.0 otherwise.
 
-  class OutflowFacet : public Function
+  class IsOutflowFacet : public Function
   {
   public:
 
     // Constructor
-    OutflowFacet(const Form& form);
+    IsOutflowFacet(const FunctionSpace& V, const Function& f);
 
-    ~OutflowFacet();
+    ~IsOutflowFacet();
 
     void eval(double* values, const Data& data) const;
 
   private:
 
-    const Form& form;
-    std::vector<const FunctionSpace*> V;
-    mutable UFC ufc;
+    const Function* field;
   };
 
   /// This function is used for the Python interface. By inheriting

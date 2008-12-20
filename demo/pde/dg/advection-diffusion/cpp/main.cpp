@@ -33,20 +33,63 @@ class DirichletBoundary : public SubDomain
   }
 };
 
-// Advective velocity
-class Velocity : public Function
+class OutflowFacet : public Function
 {
-  void eval(double* values, const double* x) const
+public:
+
+  // Constructor
+  OutflowFacet(const Form& form): form(form), 
+				  V(form.function_spaces()), ufc(form)                            
   {
-    values[0] = -1.0;
-    values[1] = -0.4;
+    // Some simple sanity checks on form
+    if (!(form.rank() == 0 && form.ufc_form().num_coefficients() == 2))
+      error("Invalid form: rank = %d, number of coefficients = %d. Must be rank 0 form with 2 coefficients.", 
+	    form.rank(), form.ufc_form().num_coefficients());
+    
+    if (!(form.ufc_form().num_cell_integrals() == 0 && form.ufc_form().num_exterior_facet_integrals() == 1 
+	  && form.ufc_form().num_interior_facet_integrals() == 0))
+      error("Invalid form: Must have exactly 1 exterior facet integral");
   }
 
-  dolfin::uint rank() const
-  { return 1; }
+  ~OutflowFacet(){}
 
-  dolfin::uint dim(dolfin::uint i) const
-  { return 2; }
+  void eval(double* values, const Data& data) const
+  {
+    // If there is no facet (assembling on interior), return 0.0
+    if (!data.on_facet())
+    {
+      values[0] = 0.0;
+      return;
+    }
+    else
+    {
+      ufc.update( data.cell() );
+      
+      // Interpolate coefficients on cell and current facet
+      for (dolfin::uint i = 0; i < form.coefficients().size(); i++)
+        form.coefficient(i).interpolate(ufc.w[i], ufc.cell, data.facet());
+  
+      // Get exterior facet integral (we need to be able to tabulate ALL facets 
+      // of a given cell)
+      ufc::exterior_facet_integral* integral = ufc.exterior_facet_integrals[0];
+  
+      // Call tabulate_tensor on exterior facet integral, 
+      // dot(velocity, facet_normal)
+      integral->tabulate_tensor(ufc.A, ufc.w, ufc.cell, data.facet());
+    }
+    
+    // If dot product is positive, the current facet is an outflow facet
+    if (ufc.A[0] > DOLFIN_EPS)
+      values[0] = 1.0;
+    else
+      values[0] = 0.0;
+  }
+  
+private:
+
+  const Form& form;
+  std::vector<const FunctionSpace*> V;
+  mutable UFC ufc;
 };
 
 int main(int argc, char *argv[])
