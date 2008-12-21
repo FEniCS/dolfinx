@@ -153,18 +153,21 @@ void dolfin::MPI::distribute(std::vector<double>& values,
 void dolfin::MPI::gather(std::vector<uint>& values)
 {
   error("MPI::gather() requires MPI.");
+  return 0;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint dolfin::MPI::send_recv(uint* send_buffer, uint send_size, uint dest,
                                     uint* recv_buffer, uint recv_size, uint source)
 {
   error("MPI::send_recv() requires MPI.");
+  return 0;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint dolfin::MPI::send_recv(double* send_buffer, uint send_size, uint dest,
                                     double* recv_buffer, uint recv_size, uint source)
 {
   error("MPI::send_recv() requires MPI.");
+  return 0;
 }
 //-----------------------------------------------------------------------------
 
