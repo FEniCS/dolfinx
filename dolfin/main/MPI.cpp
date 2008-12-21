@@ -138,5 +138,34 @@ bool dolfin::MPI::receive()
   return false;
 }
 //-----------------------------------------------------------------------------
+void dolfin::MPI::distribute(std::vector<uint>& values,
+                             std::vector<uint>& partition)
+{
+  error("MPI::distribute() requires MPI.");
+}
+//-----------------------------------------------------------------------------
+void dolfin::MPI::distribute(std::vector<double>& values,
+                             std::vector<uint>& partition)
+{
+  error("MPI::distribute() requires MPI.");
+}
+//-----------------------------------------------------------------------------
+void dolfin::MPI::gather(std::vector<uint>& values)
+{
+  error("MPI::gather() requires MPI.");
+}
+//-----------------------------------------------------------------------------
+dolfin::uint dolfin::MPI::send_recv(uint* send_buffer, uint send_size, uint dest,
+                                    uint* recv_buffer, uint recv_size, uint source)
+{
+  error("MPI::send_recv() requires MPI.");
+}
+//-----------------------------------------------------------------------------
+dolfin::uint dolfin::MPI::send_recv(double* send_buffer, uint send_size, uint dest,
+                                    double* recv_buffer, uint recv_size, uint source)
+{
+  error("MPI::send_recv() requires MPI.");
+}
+//-----------------------------------------------------------------------------
 
 #endif
