@@ -130,7 +130,7 @@ void FunctionSpace::eval(double* values,
   v.vector().get(scratch.coefficients, _dofmap->local_dimension(), scratch.dofs);
 
   // Compute linear combination
-  for (uint j = 0; j < scratch.size; j++) 
+  for (uint j = 0; j < scratch.size; j++)
     values[j] = 0.0;
   for (uint i = 0; i < _element->space_dimension(); i++)
   {
