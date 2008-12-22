@@ -139,7 +139,7 @@ OK demo/mesh/partitioning/python/demo.py
 OK demo/mesh/built-in/python/demo.py
 OK demo/mesh/ale/python/demo.py
 OK demo/mesh/refinement/python/demo.py
-OK demo/mesh/intersection/python/demo.py                   strange transformation
+OK demo/mesh/intersection/python/demo.py
 OK demo/function/eval/python/demo.py
 OK demo/function/projection-interpolation/python/demo.py
 -- demo/ode/aliev-panfilov/python/demo.py
