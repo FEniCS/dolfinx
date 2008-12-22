@@ -220,52 +220,47 @@ IsOutflowFacet::~IsOutflowFacet()
 //-----------------------------------------------------------------------------
 void IsOutflowFacet::eval(double* values, const Data& data) const
 {
-  // If there is no facet (assembling on interior), return 0.0
+  dolfin_assert(values);
+  dolfin_assert(field);
+
+  // If there is no facet (assembling on interior), return 0
   if (!data.on_facet())
   {
     values[0] = 0.0;
     return;
   }
-  
-  // Get the mesh
+
+  // Get mesh and finite element
   const Mesh& mesh = data.cell().mesh();
-  
+  const FiniteElement& element = field->function_space().element();
+
   // Create facet from the global facet number
   Facet facet(mesh, data.cell().entities(mesh.topology().dim() - 1)[data.facet()]);
-  
-  uint num_vertices = 0; 
-  
-  // Instantiate the field_values array and facet_midpoint arrays
-  double * field_values = new double[geometric_dimension()];
-  double * facet_midpoint = new double[geometric_dimension()];
-  
-  // Initialize the facet_midpoint array
-  for (uint i = 0; i < geometric_dimension(); i++)
-    facet_midpoint[i] = 0.0;
 
-  // Collect the coordinates
+  // Compute facet midpoint
+  Point x;
   for (VertexIterator v(facet); !v.end(); ++v)
-  {
-    for (uint i = 0; i < geometric_dimension(); i++)
-      facet_midpoint[i] += v->x(i);
+    x += v->point();
+  x /= static_cast<double>(facet.numEntities(0));
+  
+  // Compute size of value
+  uint size = 1;
+  for (uint i = 0; i < element.value_rank(); i++)
+    size *= element.value_dimension(i);
+  dolfin_assert(size == geometric_dimension());
 
-    num_vertices++;
-  }
-  
-  for (uint i = 0; i < geometric_dimension(); i++)
-    facet_midpoint[i] /= double(num_vertices);
-  
-  // Evaluate field function in mid point
-  field->eval(field_values, facet_midpoint);
-  Point p(geometric_dimension(),field_values);
-  
+  // Evaluate function at facet midpoint
+  double* field_values = new double[size];
+  UFCCell ufc_cell(data.cell());
+  field->eval(field_values, x.coordinates(), ufc_cell);
+  Point u(geometric_dimension(), field_values);
+
   // Check the sign of the dot product between the field value and the facet normal
-  if ( p.dot(data.normal()) > DOLFIN_EPS)
-     values[0] = 1.0;
+  if (u.dot(data.normal()) > DOLFIN_EPS)
+    values[0] = 1.0;
   else
-     values[0] = 0.0;
+    values[0] = 0.0;
 
-  delete[] field_values;
-  delete[] facet_midpoint;
+  delete [] field_values;
 }
 //-----------------------------------------------------------------------------

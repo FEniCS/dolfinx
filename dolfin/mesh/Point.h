@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2006.
 //
 // First added:  2006-06-12
-// Last changed: 2008-10-01
+// Last changed: 2008-12-22
 
 #ifndef __POINT_H
 #define __POINT_H
@@ -52,6 +52,9 @@ namespace dolfin
 
     /// Return z-coordinate
     inline double z() const { return _x[2]; }
+
+    /// Return coordinate array
+    inline const double* coordinates() const { return _x; }
 
     /// Compute sum of two points
     Point operator+ (const Point& p) const { Point q(_x[0] + p._x[0], _x[1] + p._x[1], _x[2] + p._x[2]); return q; }
