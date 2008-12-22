@@ -6,7 +6,7 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2003-11-28
-// Last changed: 2008-12-03
+// Last changed: 2008-12-22
 
 #ifndef __FUNCTION_H
 #define __FUNCTION_H
@@ -89,6 +89,9 @@ namespace dolfin
 
     /// Function evaluation (overload for user-defined function, alternate version)
     virtual void eval(double* values, const Data& data) const;
+
+    /// Evaluate function v at given point in given cell
+    void eval(double* values, const double* x, const ufc::cell& ufc_cell) const;
 
     /// Interpolate function to local function space on cell
     void interpolate(double* coefficients, const ufc::cell& ufc_cell, int local_facet=-1) const;

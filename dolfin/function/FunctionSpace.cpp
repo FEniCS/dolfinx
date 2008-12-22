@@ -5,7 +5,7 @@
 // Modified by Martin Alnes, 2008.
 //
 // First added:  2008-09-11
-// Last changed: 2008-12-12
+// Last changed: 2008-12-22
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/NoDeleter.h>
@@ -123,11 +123,24 @@ void FunctionSpace::eval(double* values,
   Cell cell(*_mesh, cells[0]);
   UFCCell ufc_cell(cell);
 
-  // Tabulate dofs
-  _dofmap->tabulate_dofs(scratch.dofs, ufc_cell);
+  // Evaluate at point
+  eval(values, x, v, ufc_cell);
+}
+//-----------------------------------------------------------------------------
+void FunctionSpace::eval(double* values,
+                         const double* x,
+                         const Function& v,
+                         const ufc::cell& ufc_cell) const
+{
+  dolfin_assert(values);
+  dolfin_assert(x);
+  dolfin_assert(v.in(*this));
+  dolfin_assert(_mesh);
+  dolfin_assert(_element);
+  dolfin_assert(_dofmap);
 
-  // Pick values from vector of dofs
-  v.vector().get(scratch.coefficients, _dofmap->local_dimension(), scratch.dofs);
+  // Interpolate function to cell
+  v.interpolate(scratch.coefficients, *this, ufc_cell);
 
   // Compute linear combination
   for (uint j = 0; j < scratch.size; j++)

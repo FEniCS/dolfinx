@@ -2,13 +2,15 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-09-11
-// Last changed: 2008-12-08
+// Last changed: 2008-12-22
 
 #ifndef __FUNCTION_SPACE_H
 #define __FUNCTION_SPACE_H
 
 #include <tr1/memory>
 #include <vector>
+#include <ufc.h>
+
 #include <dolfin/common/types.h>
 
 namespace dolfin
@@ -64,6 +66,12 @@ namespace dolfin
     void eval(double* values,
               const double* x,
               const Function& v) const;
+
+    /// Evaluate function v in function space at given point in given cell
+    void eval(double* values,
+              const double* x,
+              const Function& v,
+              const ufc::cell& ufc_cell) const;
 
     /// Interpolate function v to function space
     void interpolate(GenericVector& coefficients,

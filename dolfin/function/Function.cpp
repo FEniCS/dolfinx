@@ -213,6 +213,12 @@ void Function::eval(double* values, const Data& data) const
   eval(values, data.x);
 }
 //-----------------------------------------------------------------------------
+void Function::eval(double* values, const double* x, const ufc::cell& ufc_cell) const
+{
+  dolfin_assert(_function_space);
+  _function_space->eval(values, x, *this, ufc_cell);
+}
+//-----------------------------------------------------------------------------
 void Function::interpolate(double* coefficients,
                            const ufc::cell& ufc_cell,
                            int local_facet) const
