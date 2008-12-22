@@ -6,10 +6,12 @@
 // Modified by Martin Alnes 2008.
 //
 // First added:  2005-07-05
-// Last changed: 2008-12-18
+// Last changed: 2008-12-22
 
+#include <cmath>
 #include <sstream>
 #include <fstream>
+
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/Vertex.h>
@@ -186,7 +188,7 @@ void VTKFile::ResultsWrite(const Function& u) const
     dim *= element.value_dimension(i);
 
   // Test for cell-based element type
-  if (dofmap.local_dimension() == std::pow(mesh.topology().dim(), rank))
+  if (dofmap.local_dimension() == std::pow(mesh.topology().dim(), static_cast<double>(rank)))
     data_type = "cell";
     
   // Open file
