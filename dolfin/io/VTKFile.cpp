@@ -186,7 +186,7 @@ void VTKFile::ResultsWrite(const Function& u) const
     dim *= element.value_dimension(i);
 
   // Test for cell-based element type
-  if( dofmap.local_dimension() == std::pow(mesh.topology().dim(), rank) )
+  if (dofmap.local_dimension() == std::pow(mesh.topology().dim(), rank))
     data_type = "cell";
     
   // Open file
