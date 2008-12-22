@@ -100,6 +100,7 @@ def pkgTests(forceCompiler=None, sconsEnv=None,
 
     # A program that do a real GMP test (thanks to Benjamin Kehlet)
     cpp_test_lib_str = r"""
+#include <cstdlib>
 #include <iostream>
 #include <gmpxx.h>
 
