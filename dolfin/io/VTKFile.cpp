@@ -1,4 +1,4 @@
-// Copyright (C) 2005-2007 Garth N. Wells.
+// Copyright (C) 2005-2008 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Anders Logg 2005-2006.
@@ -185,21 +185,10 @@ void VTKFile::ResultsWrite(const Function& u) const
   for (uint i = 0; i < rank; i++)
     dim *= element.value_dimension(i);
 
-  // FIXME: Interpolate to vertices, then write to file.
-  // Get function values at vertices
-  //u.interpolate(values);
-
   // Test for cell-based element type
-  const uint tdim = mesh.topology().dim();
-  bool only_cell_dofs = dofmap.needs_mesh_entities(tdim);
-  for (uint i = 0; i < tdim; i++)
-  {
-    if (dofmap.needs_mesh_entities(i))
-      only_cell_dofs = false;
-  }
-  if (only_cell_dofs)
+  if( dofmap.local_dimension() == std::pow(mesh.topology().dim(), rank) )
     data_type = "cell";
-
+    
   // Open file
   std::ofstream fp(vtu_filename.c_str(), std::ios_base::app);
 
