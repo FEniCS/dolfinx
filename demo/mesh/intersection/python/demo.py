@@ -25,6 +25,7 @@ x += 1.0
 theta = 0.0
 dtheta = 0.1*DOLFIN_PI
 intersection = MeshFunction("uint", omega0, omega0.topology().dim())
+_first = True
 while theta < 2*DOLFIN_PI:
         
     # Compute intersection with boundary of square
@@ -39,7 +40,13 @@ while theta < 2*DOLFIN_PI:
         intersection.set(cells[j], 1)
     
     # Plot intersection
-    plot(intersection)
+    if _first:
+        p = plot(intersection, rescale=False)
+        p.add_polygon([[0,0,-0.1],[1,0,-0.01],[1,1,-0.01],[0,1,-0.01],[0,0,-0.01]])
+        p.ren.ResetCamera()
+        _first = False
+    else:
+        plot(intersection)
                     
     # Rotate circle around (0.5, 0.5)
     xr = x[:, 0] - 0.5
