@@ -17,7 +17,6 @@ u = TrialFunction(scalar)
 
 b   = Function(vector) # Note: b('+') == b('-')
 f   = Function(scalar)
-g   = Function(scalar) # BC
 n   = FacetNormal("triangle")
 h   = MeshSize("triangle")
 of  = Function(constant)  # This function is a switch that determines if a facet is
