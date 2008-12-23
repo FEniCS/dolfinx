@@ -1,12 +1,11 @@
 """ Steady state advection-diffusion equation,
 discontinuous formulation using full upwinding.
 
-Implemented in python from cpp demo by Johan Hake
-
+Implemented in python from cpp demo by Johan Hake.
 """
 
 __author__ = "Johan Hake (hake@simula.no)"
-__date__ = "2008-06-19 -- 2008-12-20"
+__date__ = "2008-06-19 -- 2008-12-23"
 __copyright__ = "Copyright (C) 2008 Johan Hake"
 __license__  = "GNU LGPL Version 2.1"
 
@@ -14,7 +13,7 @@ from dolfin import *
 
 class DirichletBoundary(SubDomain):
     def inside(self, x, on_boundary):
-        return abs(x[0]-1.0) < DOLFIN_EPS and on_boundary
+        return abs(x[0] - 1.0) < DOLFIN_EPS and on_boundary
 
 # Load the velocity
 velocity = Function ("../velocity.xml.gz")
@@ -42,13 +41,13 @@ n = FacetNormal(mesh)
 h = AvgMeshSize(mesh)
 
 # IsOutflow facet function
-of = IsOutflowFacet(velocity) 
+of = IsOutflowFacet(velocity)
 
 def upwind(u, b):
   return [b[i]('+')*(of('+')*u('+') + of('-')*u('-')) for i in range(len(b))]
 
 # Bilinear form
-a_int = dot( grad(v), mult(kappa, grad(u)) - mult(velocity,u) )*dx
+a_int = dot(grad(v), mult(kappa, grad(u)) - mult(velocity, u))*dx
 
 a_fac = kappa('+')*alpha('+')/h('+')*dot(jump(v, n), jump(u, n))*dS \
       - kappa('+')*dot(avg(grad(v)), jump(u, n))*dS \
@@ -71,7 +70,6 @@ uh = Function(V_dg)
 # Assemble and apply boundary conditions
 A = assemble(a)
 b = assemble(L)
-
 bc.apply(A, b)
 
 # Solve system
