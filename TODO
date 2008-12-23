@@ -125,7 +125,7 @@ OK demo/pde/waveguide/python/demo.py
 OK demo/pde/sym-dirichlet-bc/python/demo.py
 OK demo/pde/lift-drag/python/demo.py
 OK demo/pde/dg/poisson/python/demo.py
-EE demo/pde/dg/advection_diffusion/python/demo.py
+OK demo/pde/dg/advection_diffusion/python/demo.py
 OK demo/pde/adaptive-poisson/python/demo.py
 OK demo/pde/functional/python/demo.py
 OK demo/la/trilinos/python/demo.py
