@@ -14,7 +14,7 @@ from dolfin import *
 
 class DirichletBoundary(SubDomain):
     def inside(self, x, on_boundary):
-        return abs(x[0]-1.0 < DOLFIN_EPS) and on_boundary
+        return abs(x[0]-1.0) < DOLFIN_EPS and on_boundary
 
 # Load the velocity
 velocity = Function ("../velocity.xml.gz")
