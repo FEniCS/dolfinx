@@ -283,14 +283,16 @@ double PETScVector::norm(NormType type) const
 double PETScVector::min() const
 {
   double value = 0.0;
-  VecMin(x, &value);
+  int position = 0;
+  VecMin(x, &position, &value);
   return value;
 }
 //-----------------------------------------------------------------------------
 double PETScVector::max() const
 {
   double value = 0.0;
-  VecMax(x, &value);
+  int position = 0;
+  VecMax(x, &position, &value);
   return value;
 }
 //-----------------------------------------------------------------------------
