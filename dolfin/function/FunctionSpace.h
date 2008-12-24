@@ -1,12 +1,16 @@
 // Copyright (C) 2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Garth N. Wells, 2008.
+//
 // First added:  2008-09-11
-// Last changed: 2008-12-22
+// Last changed: 2008-12-24
 
 #ifndef __FUNCTION_SPACE_H
 #define __FUNCTION_SPACE_H
 
+#include <map>
+#include <string>
 #include <tr1/memory>
 #include <vector>
 #include <ufc.h>
@@ -71,7 +75,8 @@ namespace dolfin
     void eval(double* values,
               const double* x,
               const Function& v,
-              const ufc::cell& ufc_cell) const;
+              const ufc::cell& ufc_cell,
+              uint cell_index) const;
 
     /// Interpolate function v to function space
     void interpolate(GenericVector& coefficients,
@@ -82,7 +87,7 @@ namespace dolfin
                      const Function& v) const;
 
     /// Extract sub space for component
-    FunctionSpace* extract_sub_space(const std::vector<uint>& component) const;
+    std::tr1::shared_ptr<FunctionSpace> extract_sub_space(const std::vector<uint>& component) const;
 
   private:
 
@@ -125,6 +130,9 @@ namespace dolfin
 
     // The dofmap
     std::tr1::shared_ptr<const DofMap> _dofmap;
+
+    // Cache of sub spaces
+    mutable std::map<std::string, std::tr1::shared_ptr<FunctionSpace> > subspaces;
 
     // Scratch space, used for storing temporary local data
     mutable Scratch scratch;

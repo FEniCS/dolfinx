@@ -433,7 +433,7 @@ void DirichletBC::compute_bc_topological(std::map<uint, double>& boundary_values
     g.interpolate(data.w, *V, ufc_cell, facet_number);
     
     // Tabulate dofs on cell
-    dofmap.tabulate_dofs(data.cell_dofs, ufc_cell);
+    dofmap.tabulate_dofs(data.cell_dofs, ufc_cell, cell_number);
     
     // Tabulate which dofs are on the facet
     dofmap.tabulate_facet_dofs(data.facet_dofs, facet_number);
@@ -511,10 +511,10 @@ void DirichletBC::compute_bc_geometric(std::map<uint, double>& boundary_values,
           if(!interpolated)
           {
             // Tabulate dofs on cell
-            dofmap.tabulate_dofs(data.cell_dofs, ufc_cell);
+            dofmap.tabulate_dofs(data.cell_dofs, ufc_cell, c->index());
 
             // Interpolate function on cell
-            g.interpolate(data.w, *V, ufc_cell);
+            g.interpolate(data.w, *V, ufc_cell, c->index());
           }
           
           // Set boundary value
@@ -560,10 +560,10 @@ void DirichletBC::compute_bc_pointwise(std::map<uint, double>& boundary_values,
         interpolated = true;
         
         // Tabulate dofs on cell
-        dofmap.tabulate_dofs(data.cell_dofs, ufc_cell);
+        dofmap.tabulate_dofs(data.cell_dofs, ufc_cell, cell->index());
 
         // Interpolate function on cell
-        g.interpolate(data.w, *V, ufc_cell);
+        g.interpolate(data.w, *V, ufc_cell, cell->index());
       }
       
       // Set boundary value

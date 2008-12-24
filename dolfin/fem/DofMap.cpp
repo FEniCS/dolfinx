@@ -4,7 +4,7 @@
 // Modified by Martin Alnes, 2008
 //
 // First added:  2007-03-01
-// Last changed: 2008-11-14
+// Last changed: 2008-12-24
 
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/common/Timer.h>
@@ -23,7 +23,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 DofMap::DofMap(ufc::dof_map& dof_map, const Mesh& mesh)
   : dof_map(0),
-    ufc_dof_map(&dof_map, NoDeleter<ufc::dof_map>()),
+    ufc_dof_map(reference_to_no_delete_pointer(dof_map)),
     num_cells(mesh.numCells()), partitions(0), _offset(0),
     dolfin_mesh(mesh)
 {
@@ -41,7 +41,7 @@ DofMap::DofMap(std::tr1::shared_ptr<ufc::dof_map> dof_map, const Mesh& mesh)
 //-----------------------------------------------------------------------------
 DofMap::DofMap(ufc::dof_map& dof_map, const Mesh& mesh, MeshFunction<uint>& partitions)
   : dof_map(0),
-    ufc_dof_map(&dof_map, NoDeleter<ufc::dof_map>()),
+    ufc_dof_map(reference_to_no_delete_pointer(dof_map)),
     num_cells(mesh.numCells()), partitions(&partitions), _offset(0),
     dolfin_mesh(mesh)
 {
@@ -211,7 +211,7 @@ void DofMap::init(const Mesh& mesh)
   //dolfin_debug("Dof map initialized");
 }
 //-----------------------------------------------------------------------------
-void DofMap::tabulate_dofs(uint* dofs, ufc::cell& ufc_cell, uint cell_index) const
+void DofMap::tabulate_dofs(uint* dofs, const ufc::cell& ufc_cell, uint cell_index) const
 {
   // Either lookup pretabulated values (if build() has been called)
   // or ask the ufc::dof_map to tabulate the values

@@ -200,7 +200,8 @@ void InvFacetArea::eval(double* values, const Data& data) const
     values[0] = 0.0;
 }
 //-----------------------------------------------------------------------------
-IsOutflowFacet::IsOutflowFacet(const FunctionSpace& V, const Function& f) : Function(V),field(&f)
+IsOutflowFacet::IsOutflowFacet(const FunctionSpace& V, const Function& f) 
+                             : Function(V), field(&f)
 {
   // Some simple sanity checks on function
   if (&V.mesh() != &f.function_space().mesh())
@@ -252,7 +253,7 @@ void IsOutflowFacet::eval(double* values, const Data& data) const
   // Evaluate function at facet midpoint
   double* field_values = new double[size];
   UFCCell ufc_cell(data.cell());
-  field->eval(field_values, x.coordinates(), ufc_cell);
+  field->eval(field_values, x.coordinates(), ufc_cell, data.cell().index());
   Point u(geometric_dimension(), field_values);
 
   // Check the sign of the dot product between the field value and the facet normal

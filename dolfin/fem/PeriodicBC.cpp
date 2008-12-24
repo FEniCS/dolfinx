@@ -118,7 +118,7 @@ void PeriodicBC::apply(GenericMatrix& A, GenericVector& b) const
     const uint local_facet = cell.index(*facet);
 
     // Tabulate dofs on cell
-    dofmap.tabulate_dofs(data.cell_dofs, ufc_cell);
+    dofmap.tabulate_dofs(data.cell_dofs, ufc_cell, cell.index());
     
     // Tabulate coordinates on cell
     dofmap.tabulate_coordinates(data.coordinates, ufc_cell);
