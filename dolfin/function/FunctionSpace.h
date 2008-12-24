@@ -82,7 +82,7 @@ namespace dolfin
                      const Function& v) const;
 
     /// Extract sub space for component
-    FunctionSpace* extract_sub_space(const std::vector<uint>& component) const;
+    std::tr1::shared_ptr<FunctionSpace> extract_sub_space(const std::vector<uint>& component) const;
 
   private:
 

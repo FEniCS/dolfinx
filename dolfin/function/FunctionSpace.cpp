@@ -228,7 +228,7 @@ void FunctionSpace::interpolate(double* vertex_values,
   delete [] local_vertex_values;
 }
 //-----------------------------------------------------------------------------
-FunctionSpace* FunctionSpace::extract_sub_space(const std::vector<uint>& component) const
+std::tr1::shared_ptr<FunctionSpace> FunctionSpace::extract_sub_space(const std::vector<uint>& component) const
 {
   dolfin_assert(_mesh);
   dolfin_assert(_element);
@@ -241,7 +241,7 @@ FunctionSpace* FunctionSpace::extract_sub_space(const std::vector<uint>& compone
   uint offset = 0;
   std::tr1::shared_ptr<DofMap> dofmap(_dofmap->extract_sub_dofmap(component, offset, *_mesh));
   
-  return new FunctionSpace(_mesh, element, dofmap);
+  return std::tr1::shared_ptr<FunctionSpace>(new FunctionSpace(_mesh, element, dofmap));
 }
 //-----------------------------------------------------------------------------
 FunctionSpace::Scratch::Scratch(const FiniteElement& element)
