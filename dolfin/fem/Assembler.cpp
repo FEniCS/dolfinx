@@ -170,7 +170,7 @@ void Assembler::assemble_cells(GenericTensor& A,
 
     // Interpolate coefficients on cell
     for (uint i = 0; i < coefficients.size(); i++)
-      coefficients[i]->interpolate(ufc.w[i], ufc.cell);
+      coefficients[i]->interpolate(ufc.w[i], ufc.cell, cell->index());
     
     // Tabulate dofs for each dimension
     for (uint i = 0; i < ufc.form.rank(); i++)
@@ -241,7 +241,7 @@ void Assembler::assemble_exterior_facets(GenericTensor& A,
 
     // Interpolate coefficients on cell
     for (uint i = 0; i < coefficients.size(); i++)
-      coefficients[i]->interpolate(ufc.w[i], ufc.cell, local_facet);
+      coefficients[i]->interpolate(ufc.w[i], ufc.cell, mesh_cell.index(), local_facet);
 
     // Tabulate dofs for each dimension
     for (uint i = 0; i < ufc.form.rank(); i++)
@@ -315,8 +315,8 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
     for (uint i = 0; i < coefficients.size(); i++)
     {
       const uint offset = ufc.coefficient_elements[i]->space_dimension();
-      coefficients[i]->interpolate(ufc.macro_w[i],          ufc.cell0, facet0);
-      coefficients[i]->interpolate(ufc.macro_w[i] + offset, ufc.cell1, facet1);
+      coefficients[i]->interpolate(ufc.macro_w[i],          ufc.cell0, cell0.index(), facet0);
+      coefficients[i]->interpolate(ufc.macro_w[i] + offset, ufc.cell1, cell1.index(), facet1);
     }
 
     // Tabulate dofs for each dimension on macro element
@@ -557,7 +557,7 @@ void Assembler::assemble_system(GenericMatrix& A,
 
       // Interpolate coefficients on cell
       for (uint i = 0; i < A_coefficients.size(); i++)
-        A_coefficients[i]->interpolate(A_ufc.w[i], A_ufc.cell);
+        A_coefficients[i]->interpolate(A_ufc.w[i], A_ufc.cell, cell->index());
 
       // Tabulate dofs for each dimension
       for (uint i = 0; i < A_ufc.form.rank(); i++)
@@ -568,7 +568,7 @@ void Assembler::assemble_system(GenericMatrix& A,
 
       // Interpolate coefficients on cell
       for (uint i = 0; i < b_coefficients.size(); i++)
-        b_coefficients[i]->interpolate(b_ufc.w[i], b_ufc.cell);
+        b_coefficients[i]->interpolate(b_ufc.w[i], b_ufc.cell, cell->index());
 
       // Tabulate dofs for each dimension
       for (uint i = 0; i < b_ufc.form.rank(); i++)
@@ -770,8 +770,8 @@ void Assembler::assemble_system(GenericMatrix& A,
           for (uint i = 0; i < A_coefficients.size(); i++)
           {
             const uint offset = A_ufc.coefficient_elements[i]->space_dimension();
-            A_coefficients[i]->interpolate(A_ufc.macro_w[i],          A_ufc.cell0, facet0);
-            A_coefficients[i]->interpolate(A_ufc.macro_w[i] + offset, A_ufc.cell1, facet1);
+            A_coefficients[i]->interpolate(A_ufc.macro_w[i],          A_ufc.cell0, cell0.index(), facet0);
+            A_coefficients[i]->interpolate(A_ufc.macro_w[i] + offset, A_ufc.cell1, cell1.index(), facet1);
           }
 
 
@@ -802,8 +802,8 @@ void Assembler::assemble_system(GenericMatrix& A,
           for (uint i = 0; i < b_coefficients.size(); i++)
           {
             const uint offset = b_ufc.coefficient_elements[i]->space_dimension();
-            b_coefficients[i]->interpolate(b_ufc.macro_w[i],          b_ufc.cell0, facet0);
-            b_coefficients[i]->interpolate(b_ufc.macro_w[i] + offset, b_ufc.cell1, facet1);
+            b_coefficients[i]->interpolate(b_ufc.macro_w[i],          b_ufc.cell0, cell0.index(), facet0);
+            b_coefficients[i]->interpolate(b_ufc.macro_w[i] + offset, b_ufc.cell1, cell1.index(), facet1);
           }
 
           // Get integral for sub domain (if any)
@@ -831,7 +831,7 @@ void Assembler::assemble_system(GenericMatrix& A,
 
             // Interpolate coefficients on cell
             for (uint i = 0; i < A_coefficients.size(); i++)
-              A_coefficients[i]->interpolate(A_ufc.w[i], A_ufc.cell);
+              A_coefficients[i]->interpolate(A_ufc.w[i], A_ufc.cell, cell0.index());
 
             // Tabulate dofs for each dimension
             for (uint i = 0; i < A_ufc.form.rank(); i++)
@@ -863,7 +863,7 @@ void Assembler::assemble_system(GenericMatrix& A,
 
             // Interpolate coefficients on cell
             for (uint i = 0; i < b_coefficients.size(); i++)
-              b_coefficients[i]->interpolate(b_ufc.w[i], b_ufc.cell);
+              b_coefficients[i]->interpolate(b_ufc.w[i], b_ufc.cell, cell0.index());
 
             // Tabulate dofs for each dimension
             for (uint i = 0; i < b_ufc.form.rank(); i++)
@@ -894,7 +894,7 @@ void Assembler::assemble_system(GenericMatrix& A,
 
             // Interpolate coefficients on cell
             for (uint i = 0; i < A_coefficients.size(); i++)
-              A_coefficients[i]->interpolate(A_ufc.w[i], A_ufc.cell);
+              A_coefficients[i]->interpolate(A_ufc.w[i], A_ufc.cell, cell1.index());
 
             // Tabulate dofs for each dimension
             for (uint i = 0; i < A_ufc.form.rank(); i++)
@@ -926,7 +926,7 @@ void Assembler::assemble_system(GenericMatrix& A,
 
             // Interpolate coefficients on cell
             for (uint i = 0; i < b_coefficients.size(); i++)
-              b_coefficients[i]->interpolate(b_ufc.w[i], b_ufc.cell);
+              b_coefficients[i]->interpolate(b_ufc.w[i], b_ufc.cell, cell1.index());
 
             // Tabulate dofs for each dimension
             for (uint i = 0; i < b_ufc.form.rank(); i++)
@@ -997,7 +997,7 @@ void Assembler::assemble_system(GenericMatrix& A,
 
         // Interpolate coefficients on cell
         for (uint i = 0; i < b_coefficients.size(); i++)
-          b_coefficients[i]->interpolate(b_ufc.w[i], b_ufc.cell, local_facet);
+          b_coefficients[i]->interpolate(b_ufc.w[i], b_ufc.cell, cell.index(), local_facet);
 
         // Tabulate dofs for each dimension
         for (uint i = 0; i < A_ufc.form.rank(); i++)

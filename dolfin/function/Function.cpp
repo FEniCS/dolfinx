@@ -220,12 +220,13 @@ void Function::eval(double* values, const double* x, const ufc::cell& ufc_cell, 
 }
 //-----------------------------------------------------------------------------
 void Function::interpolate(double* coefficients,
-                           const ufc::cell& ufc_cell,
+                           const ufc::cell& ufc_cell, 
+                           uint cell_index,
                            int local_facet) const
 {
   dolfin_assert(coefficients);
   dolfin_assert(_function_space);
-  interpolate(coefficients, *_function_space, ufc_cell, local_facet);
+  interpolate(coefficients, *_function_space, ufc_cell, cell_index, local_facet);
 }
 //-----------------------------------------------------------------------------
 void Function::interpolate(double* coefficients,

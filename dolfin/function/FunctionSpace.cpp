@@ -175,7 +175,7 @@ void FunctionSpace::interpolate(GenericVector& coefficients,
     ufc_cell.update(*cell);
 
     // Interpolate on cell
-    v.interpolate(scratch.coefficients, ufc_cell);
+    v.interpolate(scratch.coefficients, ufc_cell, cell->index());
 
     // Tabulate dofs
     _dofmap->tabulate_dofs(scratch.dofs, ufc_cell, cell->index());
@@ -209,7 +209,7 @@ void FunctionSpace::interpolate(double* vertex_values,
     _dofmap->tabulate_dofs(scratch.dofs, ufc_cell, cell->index());
 
     // Pick values from global vector
-    v.interpolate(scratch.coefficients, ufc_cell);
+    v.interpolate(scratch.coefficients, ufc_cell, cell->index());
 
     // Interpolate values at the vertices
     _element->interpolate_vertex_values(local_vertex_values, scratch.coefficients, ufc_cell);
