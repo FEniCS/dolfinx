@@ -283,20 +283,14 @@ double PETScVector::norm(NormType type) const
 double PETScVector::min() const
 {
   double value = 0.0;
-  /*
   VecMin(x, &value);
-  */
-  dolfin::cout << "FIXME: PETScVector::min() isn't implemented." << dolfin::endl;
   return value;
 }
 //-----------------------------------------------------------------------------
 double PETScVector::max() const
 {
   double value = 0.0;
-  /*
   VecMax(x, &value);
-  */
-  dolfin::cout << "FIXME: PETScVector::max() isn't implemented." << dolfin::endl;
   return value;
 }
 //-----------------------------------------------------------------------------
