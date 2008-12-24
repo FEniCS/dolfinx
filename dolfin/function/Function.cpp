@@ -213,10 +213,10 @@ void Function::eval(double* values, const Data& data) const
   eval(values, data.x);
 }
 //-----------------------------------------------------------------------------
-void Function::eval(double* values, const double* x, const ufc::cell& ufc_cell) const
+void Function::eval(double* values, const double* x, const ufc::cell& ufc_cell, uint cell_index) const
 {
   dolfin_assert(_function_space);
-  _function_space->eval(values, x, *this, ufc_cell);
+  _function_space->eval(values, x, *this, ufc_cell, cell_index);
 }
 //-----------------------------------------------------------------------------
 void Function::interpolate(double* coefficients,
@@ -231,6 +231,7 @@ void Function::interpolate(double* coefficients,
 void Function::interpolate(double* coefficients,
                            const FunctionSpace& V,
                            const ufc::cell& ufc_cell,
+                           uint cell_index,
                            int local_facet) const
 {
   dolfin_assert(coefficients);
@@ -247,7 +248,7 @@ void Function::interpolate(double* coefficients,
 
     // Tabulate dofs
     uint* dofs = new uint[dofmap.local_dimension()];
-    dofmap.tabulate_dofs(dofs, ufc_cell);
+    dofmap.tabulate_dofs(dofs, ufc_cell, cell_index);
     
     // Pick values from global vector
     _vector->get(coefficients, dofmap.local_dimension(), dofs);

@@ -4,7 +4,7 @@
 // Modified by Martin Alnes, 2008
 //
 // First added:  2007-03-01
-// Last changed: 2008-11-03
+// Last changed: 2008-12-24
 
 #ifndef __DOF_MAP_H
 #define __DOF_MAP_H
@@ -86,16 +86,11 @@ namespace dolfin
     { return ufc_dof_map->num_facet_dofs(); }
 
     /// Tabulate the local-to-global mapping of dofs on a cell
-    void tabulate_dofs(uint* dofs, ufc::cell& ufc_cell, uint cell_index) const;
+    void tabulate_dofs(uint* dofs, const ufc::cell& ufc_cell, uint cell_index) const;
 
     /// Tabulate local-local facet dofs
     void tabulate_facet_dofs(uint* dofs, uint local_facet) const
     { ufc_dof_map->tabulate_facet_dofs(dofs, local_facet); }
-
-    // FIXME: Can this function eventually be removed?
-    /// Tabulate the local-to-global mapping of dofs on a ufc cell
-    void tabulate_dofs(uint* dofs, const ufc::cell& cell) const
-    { ufc_dof_map->tabulate_dofs(dofs, ufc_mesh, cell); }
 
     void tabulate_coordinates(double** coordinates, const ufc::cell& ufc_cell) const
     { ufc_dof_map->tabulate_coordinates(coordinates, ufc_cell); }

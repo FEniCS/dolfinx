@@ -125,13 +125,14 @@ void FunctionSpace::eval(double* values,
   UFCCell ufc_cell(cell);
 
   // Evaluate at point
-  eval(values, x, v, ufc_cell);
+  eval(values, x, v, ufc_cell, cell.index());
 }
 //-----------------------------------------------------------------------------
 void FunctionSpace::eval(double* values,
                          const double* x,
                          const Function& v,
-                         const ufc::cell& ufc_cell) const
+                         const ufc::cell& ufc_cell,
+                         uint cell_index) const
 {
   dolfin_assert(values);
   dolfin_assert(x);
@@ -141,7 +142,7 @@ void FunctionSpace::eval(double* values,
   dolfin_assert(_dofmap);
 
   // Interpolate function to cell
-  v.interpolate(scratch.coefficients, *this, ufc_cell);
+  v.interpolate(scratch.coefficients, *this, ufc_cell, cell_index);
 
   // Compute linear combination
   for (uint j = 0; j < scratch.size; j++)
@@ -177,7 +178,7 @@ void FunctionSpace::interpolate(GenericVector& coefficients,
     v.interpolate(scratch.coefficients, ufc_cell);
 
     // Tabulate dofs
-    _dofmap->tabulate_dofs(scratch.dofs, ufc_cell);
+    _dofmap->tabulate_dofs(scratch.dofs, ufc_cell, cell->index());
 
     // Copy dofs to vector
     coefficients.set(scratch.coefficients, _dofmap->local_dimension(), scratch.dofs);
@@ -205,7 +206,7 @@ void FunctionSpace::interpolate(double* vertex_values,
     ufc_cell.update(*cell);
 
     // Tabulate dofs
-    _dofmap->tabulate_dofs(scratch.dofs, ufc_cell);
+    _dofmap->tabulate_dofs(scratch.dofs, ufc_cell, cell->index());
 
     // Pick values from global vector
     v.interpolate(scratch.coefficients, ufc_cell);

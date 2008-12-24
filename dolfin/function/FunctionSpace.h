@@ -75,7 +75,8 @@ namespace dolfin
     void eval(double* values,
               const double* x,
               const Function& v,
-              const ufc::cell& ufc_cell) const;
+              const ufc::cell& ufc_cell,
+              uint cell_index) const;
 
     /// Interpolate function v to function space
     void interpolate(GenericVector& coefficients,

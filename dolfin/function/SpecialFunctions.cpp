@@ -252,7 +252,7 @@ void IsOutflowFacet::eval(double* values, const Data& data) const
   // Evaluate function at facet midpoint
   double* field_values = new double[size];
   UFCCell ufc_cell(data.cell());
-  field->eval(field_values, x.coordinates(), ufc_cell);
+  field->eval(field_values, x.coordinates(), ufc_cell, data.cell().index());
   Point u(geometric_dimension(), field_values);
 
   // Check the sign of the dot product between the field value and the facet normal
