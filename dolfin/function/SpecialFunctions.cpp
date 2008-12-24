@@ -200,7 +200,8 @@ void InvFacetArea::eval(double* values, const Data& data) const
     values[0] = 0.0;
 }
 //-----------------------------------------------------------------------------
-IsOutflowFacet::IsOutflowFacet(const FunctionSpace& V, const Function& f) : Function(V),field(&f)
+IsOutflowFacet::IsOutflowFacet(const FunctionSpace& V, const Function& f) 
+                             : Function(V), field(&f)
 {
   // Some simple sanity checks on function
   if (&V.mesh() != &f.function_space().mesh())
