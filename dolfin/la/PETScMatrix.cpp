@@ -1,13 +1,13 @@
 // Copyright (C) 2004-2008 Johan Hoffman, Johan Jansson and Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Garth N. Wells 2005-2007.
+// Modified by Garth N. Wells 2005-2008.
 // Modified by Andy R. Terrel 2005.
 // Modified by Ola Skavhaug 2007.
 // Modified by Magnus Vikstrøm 2007-2008.
 //
 // First added:  2004
-// Last changed: 2008-05-15
+// Last changed: 2008-12-25
 
 #ifdef HAS_PETSC
 
@@ -120,9 +120,9 @@ void PETScMatrix::init(uint M, uint N, const uint* nz)
     MatCreate(PETSC_COMM_SELF, &A);
     MatSetSizes(A,  PETSC_DECIDE,  PETSC_DECIDE, M, N);
     setType();
+    MatSeqAIJSetPreallocation(A, PETSC_DEFAULT, (int*)nz);
     MatSetOption(A, MAT_KEEP_ZEROED_ROWS);
     MatSetFromOptions(A);
-    MatSeqAIJSetPreallocation(A, PETSC_DEFAULT, (int*)nz);
     MatZeroEntries(A);
   }
 }

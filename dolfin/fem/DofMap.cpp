@@ -218,7 +218,6 @@ void DofMap::tabulate_dofs(uint* dofs, const ufc::cell& ufc_cell, uint cell_inde
 
   if (dof_map)
   {
-    error("Hello! Inside DofMap::tabulate_dofs");
     const uint n = local_dimension();
     const uint offset = n*cell_index;
     for (uint i = 0; i < n; i++)
