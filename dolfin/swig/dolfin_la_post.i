@@ -150,7 +150,7 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
     
     def __rsub__(self,other):
         """x.__rsub__(y) <==> y-x"""
-        return NotImplemented
+        return self.__sub__(other)
     
     def __rmul__(self,other):
         """x.__rmul__(y) <==> y*x"""
