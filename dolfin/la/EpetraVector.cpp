@@ -7,6 +7,7 @@
 #ifdef HAS_TRILINOS
 
 #include <cmath>
+#include <cstring>
 #include <dolfin/math/dolfin_math.h>
 #include <dolfin/log/dolfin_log.h>
 #include "EpetraVector.h"
@@ -21,7 +22,8 @@
 #include <Epetra_MultiVector.h>
 #include <Epetra_SerialComm.h>
 
-// FIXME: A cleanup is needed with respect to correct use of parallell vectors. This depends on decisions w.r.t. dofmaps etc in dolfin.
+// FIXME: A cleanup is needed with respect to correct use of parallell vectors. 
+//        This depends on decisions w.r.t. dofmaps etc in dolfin.
 
 using namespace dolfin;
 
