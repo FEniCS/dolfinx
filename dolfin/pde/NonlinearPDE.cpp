@@ -86,10 +86,10 @@ void NonlinearPDE::solve(Function& u, double& t, const double& T, const double& 
   GenericVector& x = u.vector();
 
   // Solve
-  while( t < T )
+  while (t < T)
   {
     t += dt;
-    newton_solver.solve(*this ,x);
+    newton_solver.solve(*this, x);
   }
 
   end();

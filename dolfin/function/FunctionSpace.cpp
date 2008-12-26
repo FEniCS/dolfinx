@@ -6,7 +6,7 @@
 // Modified by Garth N. Wells, 2008.
 //
 // First added:  2008-09-11
-// Last changed: 2008-12-24
+// Last changed: 2008-12-26
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/NoDeleter.h>
@@ -237,13 +237,13 @@ std::tr1::shared_ptr<FunctionSpace> FunctionSpace::extract_sub_space(const std::
   dolfin_assert(_dofmap);
 
   // Create unique identifier string for sub space
-  std::ostringstream indentifier;
+  std::ostringstream identifier;
   for (uint i = 0; i < component.size(); ++i)
-    indentifier << component[i] << ".";
+    identifier << component[i] << ".";
   
   // Check if sub space is aleady in the cache
   std::map<std::string, std::tr1::shared_ptr<FunctionSpace> >::iterator subspace;
-  subspace = subspaces.find(indentifier.str());
+  subspace = subspaces.find(identifier.str());
   if (subspace != subspaces.end())
     return subspace->second;
 
@@ -258,7 +258,7 @@ std::tr1::shared_ptr<FunctionSpace> FunctionSpace::extract_sub_space(const std::
   std::tr1::shared_ptr<FunctionSpace> new_sub_space(new FunctionSpace(_mesh, element, dofmap));
 
   // Insert new sub space into cache
-  subspaces.insert(std::pair<std::string, std::tr1::shared_ptr<FunctionSpace> >(indentifier.str(), new_sub_space));
+  subspaces.insert(std::pair<std::string, std::tr1::shared_ptr<FunctionSpace> >(identifier.str(), new_sub_space));
 
   return new_sub_space;
 }
