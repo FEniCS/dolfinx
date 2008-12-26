@@ -74,7 +74,7 @@ int main()
 
   // Solve PDE
   Function w;
-  pde.set("PDE linear solver", "direct");
+  pde.set("linear solver", "direct");
   pde.solve(w);
 
   // Extract subfunctions

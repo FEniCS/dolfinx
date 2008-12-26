@@ -106,7 +106,7 @@ int main()
 
   // Solve PDE (using direct solver)
   Function u;
-  pde.set("PDE linear solver", "direct");
+  pde.set("linear solver", "direct");
   pde.solve(u);
 
   // Plot solution

@@ -96,7 +96,7 @@ void LinearPDE::solve(Function& u)
   }
 
   // Solve linear system
-  const std::string solver_type = get("PDE linear solver");
+  const std::string solver_type = get("linear solver");
   if (solver_type == "direct")
   {
     LUSolver solver(matrix_type);
