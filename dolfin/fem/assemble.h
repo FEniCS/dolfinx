@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2008.
 //
 // First added:  2007-01-17
-// Last changed: 2008-12-18
+// Last changed: 2008-12-26
 //
 // This file duplicates the Assembler::assemble* functions in
 // namespace dolfin, and adds special versions returning the value
@@ -14,6 +14,8 @@
 #define __ASSEMBLE_H
 
 #include <dolfin/log/log.h>
+#include "dolfin/la/Scalar.h"
+#include "Form.h"
 #include "Assembler.h"
 
 namespace dolfin

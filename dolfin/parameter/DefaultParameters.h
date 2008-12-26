@@ -18,7 +18,8 @@ add("optimize", false);                   // All of the above
 
 //--- General parameters ---
 
-add("timer prefix", "");                  // Prefix for timer tasks
+add("linear solver", "direct");
+add("timer prefix",  "");                 // Prefix for timer tasks
 
 // FIXME: Need to cleanup among parameters below
 
@@ -108,9 +109,6 @@ add("Krylov monitor convergence", false);
 
 //--- Parameter for direct (LU) solver ---
 add("LU report", true);
-
-//--- Parameter for PDE solver ---
-add("PDE linear solver", "direct");
 
 //--- Mesh partitioning ---
 add("report edge cut", false);

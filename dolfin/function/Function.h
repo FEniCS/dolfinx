@@ -6,7 +6,7 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2003-11-28
-// Last changed: 2008-12-22
+// Last changed: 2008-12-26
 
 #ifndef __FUNCTION_H
 #define __FUNCTION_H
@@ -21,8 +21,8 @@ namespace dolfin
 
   class FunctionSpace;
   class GenericVector;
-  class SubFunction;
   class Data;
+  class SubFunction;
 
   /// This class represents a function u_h in a finite element
   /// function space V_h, given by
@@ -109,6 +109,7 @@ namespace dolfin
     friend class Coefficient;
     friend class LinearPDE;
     friend class NonlinearPDE;
+    friend class VariationalProblem;
 
   private:
 

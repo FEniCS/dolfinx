@@ -11,6 +11,6 @@
 #include <dolfin/fem/assemble.h>
 #include <dolfin/fem/Form.h>
 #include <dolfin/fem/Assembler.h>
-#include <dolfin/fem/pAssembler.h>
+#include <dolfin/fem/VariationalProblem.h>
 
 #endif

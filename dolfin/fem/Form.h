@@ -5,7 +5,7 @@
 // Modified by Martin Alnes, 2008.
 //
 // First added:  2007-04-02
-// Last changed: 2008-12-15
+// Last changed: 2008-12-26
 
 #ifndef __FORM_H
 #define __FORM_H
@@ -84,6 +84,7 @@ namespace dolfin
     friend class Coefficient;
     friend class LinearPDE;
     friend class NonlinearPDE;
+    friend class VariationalProblem;
 
   protected:
 
