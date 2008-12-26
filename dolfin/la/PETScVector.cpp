@@ -78,10 +78,10 @@ void PETScVector::resize(uint N)
   if (MPI::num_processes() > 1)
   {
     dolfin_debug("PETScVector::init(N) - VecCreateMPI");
-    VecCreateMPI(PETSC_COMM_WORLD, PETSC_DECIDE, N, &x);
+    VecCreateMPI(PETSC_DECIDE, N, &x);
   }
   else
-    VecCreate(PETSC_COMM_SELF, &x);
+    VecCreate(&x);
 
   VecSetSizes(x, PETSC_DECIDE, N);
   VecSetFromOptions(x);
@@ -170,11 +170,10 @@ void PETScVector::zero()
 //-----------------------------------------------------------------------------
 dolfin::uint PETScVector::size() const
 {
-  int n = 0;
   if (x)
-    VecGetSize(x, &n);
-  
-  return static_cast<uint>(n);
+    return static_cast<uint>(VecGetSize(x));
+  else
+    return 0;
 }
 //-----------------------------------------------------------------------------
 const GenericVector& PETScVector::operator= (const GenericVector& v)
@@ -189,7 +188,6 @@ const PETScVector& PETScVector::operator= (const PETScVector& v)
 
   resize(v.size());
   VecCopy(v.x, x);
-
   return *this; 
 }
 //-----------------------------------------------------------------------------
@@ -199,7 +197,6 @@ const PETScVector& PETScVector::operator= (double a)
   VecSet(x, a);
   return *this; 
 }
-
 //-----------------------------------------------------------------------------
 const PETScVector& PETScVector::operator+= (const GenericVector& x)
 {
@@ -217,7 +214,6 @@ const PETScVector& PETScVector::operator*= (const double a)
 {
   dolfin_assert(x);
   VecScale(x, a);
-  
   return *this;
 }
 //-----------------------------------------------------------------------------
@@ -227,8 +223,7 @@ const PETScVector& PETScVector::operator/= (const double a)
   dolfin_assert(a != 0.0);
 
   const double b = 1.0 / a;
-  VecScale(x, b);
-  
+  VecScale(x, b);  
   return *this;
 }
 //-----------------------------------------------------------------------------
@@ -239,10 +234,7 @@ double PETScVector::inner(const GenericVector& y) const
   const PETScVector& v = y.down_cast<PETScVector>();
   dolfin_assert(v.x);
 
-  double a;
-  VecDot(v.x, x, &a);
-
-  return a;
+  return VecDot(v.x, x);
 }
 //-----------------------------------------------------------------------------
 void PETScVector::axpy(double a, const GenericVector& y) 
@@ -261,23 +253,18 @@ void PETScVector::axpy(double a, const GenericVector& y)
 double PETScVector::norm(NormType type) const
 {
   dolfin_assert(x);
-  double value = 0.0;
-
   switch (type) 
   {
     case l1:
-      VecNorm(x, NORM_1, &value);
-      break;
+      return VecNorm(x, NORM_1);
     case l2:
-      VecNorm(x, NORM_2, &value);
-      break;
+      return VecNorm(x, NORM_2);
     case linf:
-      VecNorm(x, NORM_INFINITY, &value);
-      break;
+      return VecNorm(x, NORM_INFINITY);
     default:
       error("Norm type for PETScVector unknown.");
   }
-  return value;
+  return 0.0;
 }
 //-----------------------------------------------------------------------------
 double PETScVector::min() const
