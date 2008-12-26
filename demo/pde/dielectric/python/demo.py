@@ -99,7 +99,7 @@ class DirichletBoundary(SubDomain):
 # Define variational problem
 v = TestFunction(V2)
 u = TrialFunction(V2)
-f = Constant(V2, 0)
+f = Constant(mesh, 0)
 b = Coefficient(V0)
 a = b*dot(grad(v), grad(u))*dx
 L = v*f*dx

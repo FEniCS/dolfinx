@@ -21,6 +21,7 @@ __license__  = "GNU LGPL Version 2.1"
 
 from dolfin import *
 from numpy import array, sqrt
+from math import pow
 
 TOL = 5e-4          # Error tolerance
 REFINE_RATIO = 0.50 # Refine 50 % of the cells in each iteration
@@ -28,7 +29,8 @@ MAX_ITER = 20       # Maximal number of iterations
 
 # Create initial mesh
 mesh = UnitSquare(4, 4)
-
+source_str = "exp(-100.0*(pow(x[0], 2) + pow(x[1], 2)))"
+source = eval("lambda x: " + source_str)
 # Adaptive algorithm
 for level in xrange(MAX_ITER):
 
@@ -36,7 +38,7 @@ for level in xrange(MAX_ITER):
     V = FunctionSpace(mesh, "CG", 1)
     v = TestFunction(V)
     u = TrialFunction(V)
-    f = Function(V, "exp(-100.0*(pow(x[0], 2) + pow(x[1], 2)))")
+    f = Function(V, source_str)
     a = dot(grad(v), grad(u))*dx
     L = v*f*dx
     
