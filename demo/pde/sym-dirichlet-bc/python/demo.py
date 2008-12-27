@@ -48,7 +48,7 @@ u0 = Constant(mesh, 0.0)
 bc = DirichletBC(V, u0, DirichletBoundary())
 
 # Solve PDE and plot solution
-pde = LinearPDE(a, L, bc, symmetric)
+pde = VariationalProblem(a, L, bc)
 U = pde.solve()
 
 plot(U)

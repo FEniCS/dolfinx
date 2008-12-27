@@ -39,7 +39,7 @@ int main()
   Array<BoundaryCondition*> bcs(&bc0, &bc1, &bc2, &bc3);
 
   // Solve PDE and plot solution
-  LinearPDE pde(a, L, bcs);
+  VariationalProblem pde(a, L, bcs);
   Function u;
   pde.solve(u);
   plot(u);

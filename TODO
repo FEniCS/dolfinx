@@ -110,7 +110,7 @@ EE: Not working
 ??: Strange
 
 OK demo/pde/optimization/python/demo.py
-EE demo/pde/nonlinear-poisson/python/demo.py
+OK demo/pde/nonlinear-poisson/python/demo.py
 OK demo/pde/periodic/python/demo.py
 OK demo/pde/poisson/python/demo.py
 OK demo/pde/dielectric/python/demo.py

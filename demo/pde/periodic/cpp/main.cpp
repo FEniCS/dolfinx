@@ -78,7 +78,7 @@ int main()
   Array<BoundaryCondition*> bcs(&bc0, &bc1);
 
   // Define PDE
-  LinearPDE pde(a, L, bcs);
+  VariationalProblem pde(a, L, bcs);
 
   // Solve PDE
   Function u;

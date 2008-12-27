@@ -61,7 +61,7 @@ a = dot(grad(v), grad(u))*dx
 L = v*f*dx
 
 # Solve PDE
-pde = LinearPDE(a, L, bcs)
+pde = VariationalProblem(a, L, bcs)
 u = pde.solve()
 
 # Save solution to file

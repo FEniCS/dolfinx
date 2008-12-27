@@ -76,7 +76,7 @@ bcr = DirichletBC(V, r, Right())
 bcs = [bcl, bcr]
 
 # Set up PDE and solve
-pde = LinearPDE(a, L, bcs)
+pde = VariationalProblem(a, L, bcs)
 sol = pde.solve()
 
 # Save solution to VTK format

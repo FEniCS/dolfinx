@@ -88,7 +88,7 @@ int main(int argc, char *argv[])
   ProjectionBilinearForm ap(Vp, Vp);
   ProjectionLinearForm Lp(Vp);
   Lp.u0 = uh;
-  LinearPDE pde(ap, Lp);
+  VariationalProblem pde(ap, Lp);
 
   // Compute projection
   Function up;

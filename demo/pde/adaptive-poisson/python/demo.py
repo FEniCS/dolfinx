@@ -47,7 +47,7 @@ for level in xrange(MAX_ITER):
     bc = DirichletBC(V, u0, DomainBoundary())
     
     # Compute solution
-    pde = LinearPDE(a, L, bc)
+    pde = VariationalProblem(a, L, bc)
     u = pde.solve()
     
     # Compute error indicators

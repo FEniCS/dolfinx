@@ -70,7 +70,7 @@ int main()
   a.h = h;
   StokesLinearForm L(W);
   L.f = f; L.h = h;
-  LinearPDE pde(a, L, bcs);
+  VariationalProblem pde(a, L, bcs);
 
   // Solve PDE
   Function w;

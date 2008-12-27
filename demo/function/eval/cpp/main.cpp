@@ -34,7 +34,7 @@ int main()
   ProjectionBilinearForm a(V, V);
   ProjectionLinearForm L(V);
   L.f = f;
-  LinearPDE pde(a, L);
+  VariationalProblem pde(a, L);
   Function g;
   pde.solve(g);
 

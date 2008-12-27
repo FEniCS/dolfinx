@@ -71,7 +71,7 @@ int main()
   PoissonLinearForm L(V);
   L.f = f;
   L.g = g;
-  LinearPDE pde(a, L, bc);
+  VariationalProblem pde(a, L, bc);
 
   // Solve PDE
   Function u;

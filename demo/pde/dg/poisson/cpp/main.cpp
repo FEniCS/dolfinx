@@ -57,7 +57,7 @@ int main()
   a.n = n; a.h = h; L.f = f;
 
   // Create PDE
-  LinearPDE pde(a, L);
+  VariationalProblem pde(a, L);
 
   // Solve PDE
   Function u;

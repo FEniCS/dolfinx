@@ -38,7 +38,7 @@ a = (dot(tau, sigma) - div(tau)*u + w*div(sigma))*dx
 L = w*f*dx
 
 # Compute solution
-pde = LinearPDE(a, L)
+pde = VariationalProblem(a, L)
 (sigma, u) = pde.solve().split()
 
 # Project sigma for post-processing

@@ -53,7 +53,7 @@ a = dot(grad(v), grad(u))*dx \
 L = v*f*dx
 
 # Compute solution
-pde = LinearPDE(a, L)
+pde = VariationalProblem(a, L)
 u = pde.solve()
 
 # Project solution to piecewise linears

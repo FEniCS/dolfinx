@@ -109,7 +109,7 @@ u0 = DirichletFunction(V2)
 bc = DirichletBC(V2, u0, DirichletBoundary())
 
 # Solve PDE and plot solution
-pde = LinearPDE(a, L, bc)
+pde = VariationalProblem(a, L, bc)
 u = pde.solve()
 
 plot(u)
