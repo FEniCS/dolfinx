@@ -4,12 +4,12 @@
 // First added:  2007-05-14
 // Last changed: 2008-11-17
 //
-// This demo demonstrates how to compute functionals (or forms
-// in general) over subsets of the mesh. The two functionals
-// lift and drag are computed for the pressure field around
-// a dolphin. Here, we use the pressure field obtained from
-// solving the Stokes equations (see demo program in the
-// sub directory src/demo/pde/stokes/taylor-hood).
+// This demo demonstrates how to compute functionals (or forms in
+// general) over subsets of the mesh. The two functionals lift and
+// drag are computed for the pressure field around a dolphin. Here, we
+// use the pressure field obtained from solving the Stokes equations
+// (see demo program in the sub directory
+// src/demo/pde/stokes/taylor-hood).
 //
 // The calculation only includes the pressure contribution (not shear
 // forces).
