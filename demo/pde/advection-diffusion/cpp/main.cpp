@@ -4,14 +4,14 @@
 // First added:  2006-02-09
 // Last changed: 2008-12-12
 //
-// This demo solves the time-dependent convection-diffusion equation
+// This demo solves the time-dependent advection-diffusion equation
 // by a least-squares stabilized cG(1)cG(1) method. The velocity field
 // used in the simulation is the output from the Stokes (Taylor-Hood)
 // demo.  The sub domains for the different boundary conditions are
 // computed by the demo program in src/demo/subdomains.
 
 #include <dolfin.h>
-#include "ConvectionDiffusion.h"
+#include "AdvectionDiffusion.h"
 
 using namespace dolfin;
 
@@ -28,7 +28,7 @@ int main(int argc, char *argv[])
   dolfin_debug("");
 
   // Create function space
-  ConvectionDiffusionFunctionSpace V(mesh);
+  AdvectionDiffusionFunctionSpace V(mesh);
   dolfin_debug("");
 
   // Source term and initial condition
@@ -37,9 +37,9 @@ int main(int argc, char *argv[])
   u.vector().zero();
 
   // Set up forms
-  ConvectionDiffusionBilinearForm a(V, V);
+  AdvectionDiffusionBilinearForm a(V, V);
   a.b = velocity;
-  ConvectionDiffusionLinearForm L(V);
+  AdvectionDiffusionLinearForm L(V);
   L.u0 = u; L.b = velocity; L.f = f;
 
   // Set up boundary condition
