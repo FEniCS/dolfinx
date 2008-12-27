@@ -84,7 +84,7 @@ void SLEPcEigenSolver::getEigenpair(double& lr, double& lc,
   EPSGetConverged(eps, &num_computed_eigenvalues);
 
   if (ii < num_computed_eigenvalues)
-    EPSGetEigenpair(eps, ii, &lr, &lc, r.vec(), c.vec());
+    EPSGetEigenpair(eps, ii, &lr, &lc, *r.vec(), *c.vec());
   else
     error("Requested eigenvalue/vector has not been computed");
 }

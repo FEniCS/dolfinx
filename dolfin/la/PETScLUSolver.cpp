@@ -66,7 +66,7 @@ dolfin::uint PETScLUSolver::solve(const PETScMatrix& A, PETScVector& x,
 
   // Solve linear system
   KSPSetOperators(ksp, A.mat(), A.mat(), DIFFERENT_NONZERO_PATTERN);
-  KSPSolve(ksp, b.vec(), x.vec());
+  KSPSolve(ksp, *b.vec(), *x.vec());
   
   // Get name of solver
   KSPType ksp_type;
@@ -107,7 +107,7 @@ dolfin::uint PETScLUSolver::solve(const PETScKrylovMatrix& A,
 
   // Solve linear system
   KSPSetOperators(ksp, B, B, DIFFERENT_NONZERO_PATTERN);
-  KSPSolve(ksp, b.vec(), x.vec());
+  KSPSolve(ksp, *b.vec(), *x.vec());
 
   // Estimate condition number for l1 norm
   const double xnorm = x.norm(l1);

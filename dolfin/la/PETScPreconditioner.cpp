@@ -9,8 +9,10 @@
 
 #ifdef HAS_PETSC
 
+#include <tr1/memory>
 #include <private/pcimpl.h>
 
+#include <dolfin/common/NoDeleter.h>
 #include "PETScPreconditioner.h"
 #include "PETScVector.h"
 
@@ -47,7 +49,9 @@ int PETScPreconditioner::PCApply(PC pc, Vec x, Vec y)
 
   PETScPreconditioner* newpc = (PETScPreconditioner*)pc->data;
 
-  PETScVector dolfinx(x), dolfiny(y);
+  std::tr1::shared_ptr<Vec> _x(&x, NoDeleter<Vec>());
+  std::tr1::shared_ptr<Vec> _y(&y, NoDeleter<Vec>());
+  PETScVector dolfinx(_x), dolfiny(_y);
 
   newpc->solve(dolfiny, dolfinx);
 

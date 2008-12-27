@@ -37,29 +37,29 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 PETScVector::PETScVector():
     Variable("x", "a sparse vector"),
-    x(static_cast<Vec*>(0))
+    x(static_cast<Vec*>(0), PETScVectorDeleter())
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 PETScVector::PETScVector(uint N):
     Variable("x", "a sparse vector"), 
-    x(static_cast<Vec*>(0))
+    x(static_cast<Vec*>(0), PETScVectorDeleter())
 {
   // Create PETSc vector
   resize(N);
 }
 //-----------------------------------------------------------------------------
-PETScVector::PETScVector(Vec x):
+PETScVector::PETScVector(std::tr1::shared_ptr<Vec> x):
     Variable("x", "a vector"),
-    x(&x, NoDeleter<Vec>())
+    x(x)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 PETScVector::PETScVector(const PETScVector& v):
     Variable("x", "a vector"),
-    x(static_cast<Vec*>(0))
+    x(static_cast<Vec*>(0), PETScVectorDeleter())
 {
   *this = v;
 }
@@ -71,33 +71,16 @@ PETScVector::~PETScVector()
 //-----------------------------------------------------------------------------
 void PETScVector::resize(uint N)
 {
-  // Three cases:
-  //
-  //   1. Already allocated and dimension doesn't change -> do nothing
-  //   1. Already allocated and dimension changes -> reallocate and set new size
-  //   2. Not allocated -> allocate and set size
-  //
-  // Otherwise do nothing
-  
   if (x && this->size() == N)
     return;      
-  else if (x)
-    VecDestroy(*x);
+
+  if ( x.use_count() > 1 )
+    error("Cannot resize PETScVector. More than one object points to the underlying PETSc object, therefore is cannot be resized.");
 
   // Create vector
-  if (MPI::num_processes() > 1)
-  {
-    dolfin_debug("PETScVector::init(N) - VecCreateMPI");
-    std::tr1::shared_ptr<Vec> _x(new Vec, PETScVectorDeleter());
-    x = _x;
-    VecCreateMPI(PETSC_DECIDE, N, x.get());
-  }
-  else
-  {
-    std::tr1::shared_ptr<Vec> _x(new Vec, PETScVectorDeleter());
-    x = _x;
-    VecCreate(x.get());
-  }
+  std::tr1::shared_ptr<Vec> _x(new Vec, PETScVectorDeleter());
+  x = _x;
+  VecCreate(x.get());
 
   // Set size
   VecSetSizes(*x, PETSC_DECIDE, N);
@@ -310,9 +293,9 @@ void PETScVector::disp(uint precision) const
   VecView(*x, PETSC_VIEWER_STDOUT_SELF);
 }
 //-----------------------------------------------------------------------------
-Vec PETScVector::vec() const
+std::tr1::shared_ptr<Vec> PETScVector::vec() const
 {
-  return *x;
+  return x;
 }
 //-----------------------------------------------------------------------------
 LinearAlgebraFactory& PETScVector::factory() const

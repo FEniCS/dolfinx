@@ -47,7 +47,7 @@ namespace dolfin
     explicit PETScVector(const PETScVector& x);
 
     /// Create vector from given PETSc Vec pointer
-    explicit PETScVector(Vec x);
+    explicit PETScVector(std::tr1::shared_ptr<Vec> x);
 
     /// Destructor
     virtual ~PETScVector();
@@ -132,8 +132,8 @@ namespace dolfin
 
     //--- Special PETSc functions ---
 
-    /// Return PETSc Vec pointer
-    Vec vec() const;
+    /// Return shared_ptr to PETSc Vec object
+    std::tr1::shared_ptr<Vec> vec() const;
 
     /// Assignment operator
     const PETScVector& operator= (const PETScVector& x);
