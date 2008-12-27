@@ -28,43 +28,32 @@ __license__  = "GNU LGPL Version 2.1"
 
 from dolfin import *
 
-# Create mesh and define function space
-mesh = UnitSquare(16, 16)
-V = FunctionSpace(mesh, "CG", 1)
-
 # Sub domain for Dirichlet boundary condition
 class DirichletBoundary(SubDomain):
     def inside(self, x, on_boundary):
         return abs(x[0] - 1.0) < DOLFIN_EPS and on_boundary
 
+# Create mesh and define function space
+mesh = UnitSquare(16, 16)
+V = FunctionSpace(mesh, "CG", 1)
+
 # Define boundary condition
-g = Function(V, "t")
+g = Constant(mesh, 1)
 bc = DirichletBC(V, g, DirichletBoundary())
+
+# Define source and solution functions
+f = Function(V, "x[0]*sin(x[1])")
+U = Function(V)
 
 # Define variational problem
 v = TestFunction(V)
 u = TrialFunction(V)
-f = Function(V, "t*x[0]*sin(x[1])")
-U = Function(V)
 a = v.dx(i)*(1.0 + U*U)*u.dx(i)*dx + v.dx(i)*(2.0*U*u)*U.dx(i)*dx
-L = v*f*dx - v.dx(i)*(1.0 + U*U)*U.dx(i)*dx
+L = v.dx(i)*(1.0 + U*U)*U.dx(i)*dx - v*f*dx
 
-# Define nonlinear variational problem
+# Solve nonlinear variational problem
 problem = VariationalProblem(a, L, bc, nonlinear=True)
-problem.set("Newton relative tolerance", 1e-6)
-problem.set("Newton convergence criterion", "incremental")
-
-# Solve variational problem by pseudo time-stepping
-n = 3
-dt = 1.0 / float(n)
-for i in range(n):
-
-    # Update pseudo-time
-    f.t += dt
-    g.t += dt
-    
-    # Solve nonlinear problem
-    problem.solve(U)
+problem.solve(U)
 
 # Plot solution
 plot(U, interactive=True)

@@ -33,28 +33,10 @@ using namespace dolfin;
 class Source : public Function
 {
 public:
-  Source() : t(0) {}
-
   void eval(double* values, const double* x) const
   {
-    values[0] = t*x[0]*sin(x[1]);
+    values[0] = x[0]*sin(x[1]);
   }
-
-  double t;
-};
-
-// Dirichlet boundary condition
-class DirichletBoundaryCondition : public Function
-{
-public:
-  DirichletBoundaryCondition() : t(0) {}
-  
-  void eval(double* values, const double* x) const
-  {
-    values[0] = t;
-  }
-
-  double t;
 };
 
 // Sub domain for Dirichlet boundary condition
@@ -66,53 +48,37 @@ class DirichletBoundary : public SubDomain
   }
 };
 
-int main(int argc, char* argv[])
+int main()
 {
-  dolfin_init(argc, argv);
- 
-  // Create mesh and function space
+  // Create mesh and define function space
   UnitSquare mesh(16, 16);
   NonlinearPoissonFunctionSpace V(mesh);
 
   // Define boundary condition
   DirichletBoundary dirichlet_boundary;
-  DirichletBoundaryCondition g;
+  Constant g(1.0);
   DirichletBC bc(V, g, dirichlet_boundary);
 
-  // Source and solution functions
+  // Define source and solution functions
   Source f;
-  Function u;
+  Function U;
 
   // Create forms
   NonlinearPoissonBilinearForm a(V, V);
-  a.U = u;
+  a.U = U;
   NonlinearPoissonLinearForm L(V);
-  L.U = u; L.f = f;
+  L.U = U; L.f = f;
 
-  // Define nonlinear variational problem
+  // Solve nonlinear variational problem
   VariationalProblem problem(a, L, bc, true);
-  problem.set("Newton relative tolerance", 1e-6);
-  problem.set("Newton convergence criterion", "incremental");
-
-  // Solve variational problem by pseudo time-stepping
-  unsigned int n = 3;
-  double dt = 1.0 / static_cast<double>(n);
-  for (unsigned int i = 0; i < n; i++)
-  {
-    // Update pseudo-time
-    f.t += dt;
-    g.t += dt;
-
-    // Solve nonlinear problem
-    problem.solve(u);
-  }
+  problem.solve(U);
 
   // Plot solution
-  plot(u);
+  plot(U);
 
   // Save solution in VTK format
   File file("nonlinear_poisson.pvd");
-  file << u;
+  file << U;
 
   return 0;
 }
