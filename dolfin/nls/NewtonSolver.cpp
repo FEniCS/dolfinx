@@ -108,14 +108,14 @@ bool NewtonSolver::converged(const GenericVector& b, const GenericVector& dx,
                              const NonlinearProblem& nonlinear_problem)
 {
   const std::string convergence_criterion = get("Newton convergence criterion");
-  const double rtol   = get("Newton relative tolerance");
-  const double atol   = get("Newton absolute tolerance");
+  const double rtol = get("Newton relative tolerance");
+  const double atol = get("Newton absolute tolerance");
   const bool report = get("Newton report");
 
   double residual = 1.0;
 
   // Compute resdiual
-  if(convergence_criterion == "residual")
+  if (convergence_criterion == "residual")
     residual = b.norm(l2);
   else if (convergence_criterion == "incremental")
     residual = dx.norm(l2);
@@ -123,22 +123,26 @@ bool NewtonSolver::converged(const GenericVector& b, const GenericVector& dx,
     error("Unknown Newton convergence criterion");
 
   // If this is the first iteration step, set initial residual
-  if(newton_iteration == 0)
+  if (newton_iteration == 0)
     residual0 = residual;
 
   // Relative residual
-  double relative_residual = residual/residual0;
+  double relative_residual = residual / residual0;
 
   // Output iteration number and residual
   //FIXME: allow precision to be set for dolfin::cout<<
   std::cout.precision(3);
   if(report && newton_iteration >0) 
-    std::cout<< "  Iteration = " << newton_iteration  << ", Absolute, relative residual (" 
-    << convergence_criterion  << " criterion) = " << std::scientific << residual 
-    << ", "<< std::scientific << relative_residual << std::endl;
+    std::cout << "  Iteration " << newton_iteration  
+              << ":"
+              << " r = " << std::scientific << residual
+              << " (atol = " << std::scientific << atol << ")"
+              << " r = " << std::scientific << relative_residual
+              << " (rtol = " << std::scientific << rtol << ")"
+              << std::endl;
 
   // Return true of convergence criterion is met
-  if(relative_residual < rtol || residual < atol)
+  if (relative_residual < rtol || residual < atol)
     return true;
 
   // Otherwise return false

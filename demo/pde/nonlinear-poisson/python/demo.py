@@ -24,7 +24,7 @@ __copyright__ = "Copyright (C) 2007 Kristian B. Oelgaard"
 __license__  = "GNU LGPL Version 2.1"
 
 # Original implementation (../cpp/main.cpp) by Garth N. Wells.
-# Modified by Anders Logg, 2008.
+# Modified by Anders Logg, 2008.from dolfin import *
 
 from dolfin import *
 
@@ -32,50 +32,43 @@ from dolfin import *
 mesh = UnitSquare(16, 16)
 V = FunctionSpace(mesh, "CG", 1)
 
-# Dirichlet boundary condition
-class DirichletBoundaryCondition(Function, TimeDependent):
-    def __init__(self, V, t):
-        Function.__init__(self, V)
-        TimeDependent.__init__(self, t)
-
-    def eval(self, values, x):
-      values[0] = 1.0*time()
-
 # Sub domain for Dirichlet boundary condition
 class DirichletBoundary(SubDomain):
     def inside(self, x, on_boundary):
         return abs(x[0] - 1.0) < DOLFIN_EPS and on_boundary
 
-# Pseudo-time
-t = 0.0
-
-# Create source function
-f = Function(V, "t*x[0]*sin(x[1])")
-
-# Dirichlet boundary conditions
+# Define boundary condition
 g = Function(V, "t")
 bc = DirichletBC(V, g, DirichletBoundary())
 
 # Define variational problem
 v = TestFunction(V)
 u = TrialFunction(V)
+f = Function(V, "t*x[0]*sin(x[1])")
 U = Function(V)
 a = v.dx(i)*(1.0 + U*U)*u.dx(i)*dx + v.dx(i)*(2.0*U*u)*U.dx(i)*dx
-L = v.dx(i)*(1.0 + U*U)*U.dx(i)*dx - v*f*dx
-#L = v*f*dx - v.dx(i)*(1.0 + U*U)*u.dx(i)*dx
+L = v*f*dx - v.dx(i)*(1.0 + U*U)*U.dx(i)*dx
 
-pde = NonlinearPDE(a, L, mesh, bc)
+# Define nonlinear variational problem
+problem = VariationalProblem(a, L, bc, nonlinear=True)
+problem.set("Newton relative tolerance", 1e-6)
+problem.set("Newton convergence criterion", "incremental")
 
-# Solve nonlinear problem in a series of steps
-dt = 1.0
-T  = 3.0
-pde.set("Newton relative tolerance", 1e-6)
-pde.set("Newton convergence criterion", "incremental")
-u = pde.solve(U0, t, T, dt)
+# Solve variational problem by pseudo time-stepping
+n = 3
+dt = 1.0 / float(n)
+for i in range(n):
+
+    # Update pseudo-time
+    f.t += dt
+    g.t += dt
+    
+    # Solve nonlinear problem
+    problem.solve(U)
 
 # Plot solution
-plot(u)
+plot(U, interactive=True)
 
-# Save function to file
+# Save solution in VTK format
 file = File("nonlinear_poisson.pvd")
-file << u
+file << U
