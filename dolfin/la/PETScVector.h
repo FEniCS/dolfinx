@@ -14,6 +14,7 @@
 
 #ifdef HAS_PETSC
 
+#include <tr1/memory>
 #include <petscvec.h>
 
 #include <dolfin/log/LogStream.h>
@@ -142,11 +143,8 @@ namespace dolfin
   private:
 
     // PETSc Vec pointer
-    Vec x;
+    std::tr1::shared_ptr<Vec> x;
     
-    // True if we don't own the vector x points to
-    bool is_view;
-
   };
 
   /// Output of PETScVector
