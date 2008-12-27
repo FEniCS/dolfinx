@@ -22,6 +22,12 @@ namespace dolfin
   {
   public:
 
+    /// Constructor
+    NonlinearProblem() {}
+
+    /// Destructor
+    virtual ~NonlinearProblem() {}
+
     /// Compute F at current point x
     virtual void F(GenericVector& b, const GenericVector& x) = 0;
 
