@@ -4,8 +4,11 @@
 // First added:  2008-12-26
 // Last changed: 2008-12-26
 
+#include <dolfin/la/Matrix.h>
+#include <dolfin/la/Vector.h>
 #include <dolfin/la/LUSolver.h>
 #include <dolfin/la/KrylovSolver.h>
+#include <dolfin/nls/NewtonSolver.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/SubFunction.h>
 #include "assemble.h"
@@ -18,7 +21,7 @@ using namespace dolfin;
 VariationalProblem::VariationalProblem(const Form& a,
                                        const Form& L,
                                        bool nonlinear)
-  : a(a), L(L), nonlinear(nonlinear)
+  : a(a), L(L), nonlinear(nonlinear), newton_solver(0)
 {
   // Do nothing
 }
@@ -27,7 +30,7 @@ VariationalProblem::VariationalProblem(const Form& a,
                                        const Form& L,
                                        const BoundaryCondition& bc,
                                        bool nonlinear)
-  : a(a), L(L), nonlinear(nonlinear)
+  : a(a), L(L), nonlinear(nonlinear), newton_solver(0)
 {
   bcs.push_back(&bc);
 }
@@ -36,7 +39,7 @@ VariationalProblem::VariationalProblem(const Form& a,
                                        const Form& L,
                                        std::vector<BoundaryCondition*>& bcs,
                                        bool nonlinear)
-  : a(a), L(L), nonlinear(nonlinear)
+  : a(a), L(L), nonlinear(nonlinear), newton_solver(0)
 {
   for (uint i = 0; i < bcs.size(); i++)
     this->bcs.push_back(bcs[i]);
@@ -44,7 +47,7 @@ VariationalProblem::VariationalProblem(const Form& a,
 //-----------------------------------------------------------------------------
 VariationalProblem::~VariationalProblem()
 {
-  // Do nothing
+  delete newton_solver;
 }
 //-----------------------------------------------------------------------------
 void VariationalProblem::solve(Function& u)
@@ -79,14 +82,29 @@ void VariationalProblem::solve(Function& u0, Function& u1, Function& u2)
   u2 = u[2];
 }
 //-----------------------------------------------------------------------------
-const GenericMatrix& VariationalProblem::matrix() const
+void VariationalProblem::F(GenericVector& b, const GenericVector& x)
 {
-  return A;
+  // Assemble
+  assemble(b, L);
+
+  // Apply boundary conditions
+  for (uint i = 0; i < bcs.size(); i++)
+    bcs[i]->apply(b, x);
 }
 //-----------------------------------------------------------------------------
-const GenericVector& VariationalProblem::vector() const
+void VariationalProblem::J(GenericMatrix& A, const GenericVector& x)
 {
-  return b;
+  // Assemble
+  assemble(A, a);
+
+  // Apply boundary conditions
+  for (uint i = 0; i < bcs.size(); i++)
+    bcs[i]->apply(A);
+}
+//-----------------------------------------------------------------------------
+void VariationalProblem::update(const GenericVector& x)
+{
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 void VariationalProblem::solve_linear(Function& u)
@@ -101,6 +119,8 @@ void VariationalProblem::solve_linear(Function& u)
   }
 
   // Assemble linear system
+  Matrix A;
+  Vector b;
   assemble(A, a);
   assemble(b, L);
 
@@ -130,9 +150,23 @@ void VariationalProblem::solve_linear(Function& u)
 //-----------------------------------------------------------------------------
 void VariationalProblem::solve_nonlinear(Function& u)
 {
-  // FIXME: Copy stuff from NonlinearPDE here, but without the pseudo
-  // FIXME: time-stepping.
+  begin("Solving nonlinear variational problem");
 
-  error("Not implemented.");
+  // Set function space if missing
+  if (!u.has_function_space())
+  {
+    dolfin_assert(a._function_spaces.size() == 2);
+    u._function_space = a._function_spaces[1];
+  }
+
+  // Create Newton solver if missing
+  if (!newton_solver)
+    newton_solver = new NewtonSolver();
+
+  // Call Newton solver
+  dolfin_assert(newton_solver);
+  newton_solver->solve(*this, u.vector());
+
+  end();
 }
 //-----------------------------------------------------------------------------

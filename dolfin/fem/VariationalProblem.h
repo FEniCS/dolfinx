@@ -2,15 +2,14 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-12-26
-// Last changed: 2008-12-26
+// Last changed: 2008-12-27
 
 #ifndef __VARIATIONAL_PROBLEM_H
 #define __VARIATIONAL_PROBLEM_H
 
 #include <vector>
 
-#include <dolfin/la/Matrix.h>
-#include <dolfin/la/Vector.h>
+#include <dolfin/nls/NonlinearProblem.h>
 #include <dolfin/parameter/Parametrized.h>
 
 namespace dolfin
@@ -19,6 +18,7 @@ namespace dolfin
   class Form;
   class BoundaryCondition;
   class Function;
+  class NewtonSolver;
 
   /// This class represents a (system of) partial differential
   /// equation(s) in variational form: Find u in V such that
@@ -42,7 +42,7 @@ namespace dolfin
   /// that is, a(v, u) should be the Frechet derivative of F_u
   /// with respect to u, and L = F.
 
-  class VariationalProblem : public Parametrized
+  class VariationalProblem : public Parametrized, public NonlinearProblem
   {
   public:
 
@@ -77,11 +77,14 @@ namespace dolfin
     /// Solve variational problem and extract sub functions
     void solve(Function& u0, Function& u1, Function& u2);
 
-    /// Return system matrix
-    const GenericMatrix& matrix() const;
+    /// Compute F at current point x
+    void F(GenericVector& b, const GenericVector& x);
 
-    /// Return system vector
-    const GenericVector& vector() const;
+    /// Compute J = F' at current point x
+    void J(GenericMatrix& A, const GenericVector& x);
+
+    /// Optional callback called before calls to F() and J()
+    virtual void update(const GenericVector& x);
 
   private:
 
@@ -103,11 +106,8 @@ namespace dolfin
     // True if problem is nonlinear
     bool nonlinear;
 
-    // Matrix
-    Matrix A;
-
-    // Vector
-    Vector b;
+    // Newton solver
+    NewtonSolver* newton_solver;
 
   };
 

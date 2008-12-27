@@ -3,6 +3,8 @@
 //
 // First added:  2005-10-24
 // Last changed: 2008-08-26
+//
+// Modified by Anders Logg, 2008.
 
 #ifndef __NONLINEAR_PROBLEM_H
 #define __NONLINEAR_PROBLEM_H
@@ -20,20 +22,11 @@ namespace dolfin
   {
   public:
 
-    /// Create nonlinear problem
-    NonlinearProblem();
+    /// Compute F at current point x
+    virtual void F(GenericVector& b, const GenericVector& x) = 0;
 
-    /// Destructor
-    virtual ~NonlinearProblem();
-
-     /// User-defined function to compute F(u) its Jacobian
-    virtual void form(GenericMatrix& A, GenericVector& b, const GenericVector& x);
-
-     /// User-defined function to compute F(u)
-    virtual void F(GenericVector& b, const GenericVector& x);
-
-     /// User-defined function to compute Jacobian matrix
-    virtual void J(GenericMatrix& A, const GenericVector& x);
+    /// Compute J = F' at current point x
+    virtual void J(GenericMatrix& A, const GenericVector& x) = 0;
 
   };
 }
