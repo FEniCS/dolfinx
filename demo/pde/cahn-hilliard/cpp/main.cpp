@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-03-02
-// Last changed: 2007-05-24
+// Last changed: 2008-12-27
 //
 // This program illustrates the use of the DOLFIN nonlinear solver for solving 
 // the Cahn-Hilliard equation.
@@ -51,7 +51,7 @@ class CahnHilliardEquation : public NonlinearProblem, public Parametrized
         _L->dt = dt;
         _L->theta = theta;
       }
-      else if(mesh.topology().dim() == 3)
+      else if (mesh.topology().dim() == 3)
       {
         V = new CahnHilliard3DFunctionSpace(mesh);
 
@@ -150,7 +150,7 @@ int main(int argc, char* argv[])
   unsigned int* x_pos = new unsigned int[size];
   for(dolfin::uint i=0; i < size; ++i)
   {
-     x_init[i] = 0.63 + 0.02*(0.5-dolfin::rand());
+     x_init[i] = 0.63 + 0.02*(0.5 - dolfin::rand());
      x_pos[i]  = i + size;
   }
   u.vector().set(x_init, size, x_pos);
@@ -162,7 +162,7 @@ int main(int argc, char* argv[])
   File file("cahn_hilliard.pvd");
   file << u[1];
 
-  while( t < T)
+  while (t < T)
   {
     // Update for next time step
     t += delta_t;
