@@ -17,11 +17,11 @@ element = None
 element = FiniteElement("Lagrange", "triangle", 1)
 
 v = TestFunction(element)
-U = TrialFunction(element)
-U0= Function(element)
+u = TrialFunction(element)
 f = Function(element)
-
-a = v.dx(i)*(1+U0*U0)*U.dx(i)*dx + v.dx(i)*2*U0*U*U0.dx(i)*dx
-L = v*f*dx - v.dx(i)*(1+U0*U0)*U0.dx(i)*dx
+U = Function(element)
+a = v.dx(i)*(1.0 + U*U)*u.dx(i)*dx + v.dx(i)*(2.0*U*u)*U.dx(i)*dx
+#L = v.dx(i)*(1.0 + U*U)*U.dx(i)*dx - v*f*dx
+L = v*f*dx - v.dx(i)*(1.0 + U*U)*U.dx(i)*dx
 
 compile([a, L, M, element], "NonlinearPoisson", options={'language': 'dolfin', 'blas': False, 'form_postfix': True, 'precision': '15', 'cache_dir': None, 'cpp optimize': False, 'split_implementation': False, 'quadrature_points': False, 'output_dir': '.', 'representation': 'tensor', 'shared_ptr': False, 'optimize': False}, global_variables=globals())

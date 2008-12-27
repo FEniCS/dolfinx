@@ -75,7 +75,7 @@ dolfin::uint NewtonSolver::solve(NonlinearProblem& nonlinear_problem, GenericVec
       newton_converged = converged(*b, *dx, nonlinear_problem);
 
     // Update solution
-    x -= (*dx);
+    x += (*dx);
 
     ++newton_iteration;
     

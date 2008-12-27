@@ -84,6 +84,10 @@ void VariationalProblem::solve(Function& u0, Function& u1, Function& u2)
 //-----------------------------------------------------------------------------
 void VariationalProblem::F(GenericVector& b, const GenericVector& x)
 {
+  // Check that we are solving a nonlinear problem
+  if (!nonlinear)
+    error("Attempt to solve linear variational problem with Newton solver.");
+
   // Assemble
   assemble(b, L);
 
@@ -94,6 +98,10 @@ void VariationalProblem::F(GenericVector& b, const GenericVector& x)
 //-----------------------------------------------------------------------------
 void VariationalProblem::J(GenericMatrix& A, const GenericVector& x)
 {
+  // Check that we are solving a nonlinear problem
+  if (!nonlinear)
+    error("Attempt to solve linear variational problem with Newton solver.");
+
   // Assemble
   assemble(A, a);
 
