@@ -75,8 +75,9 @@ dolfin::uint NewtonSolver::solve(NonlinearProblem& nonlinear_problem, GenericVec
       newton_converged = converged(*b, *dx, nonlinear_problem);
 
     // Update solution
-    x += (*dx);
+    x -= (*dx);
 
+    // Update number of iterations
     ++newton_iteration;
     
     //FIXME: this step is not needed if residual is based on dx and this has converged.
