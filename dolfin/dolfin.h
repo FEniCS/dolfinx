@@ -20,7 +20,6 @@
 #include <dolfin/mf/dolfin_mf.h>
 #include <dolfin/nls/dolfin_nls.h>
 #include <dolfin/ode/dolfin_ode.h>
-#include <dolfin/pde/dolfin_pde.h>
 #include <dolfin/plot/dolfin_plot.h>
 
 #endif

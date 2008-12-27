@@ -65,9 +65,9 @@ public:
     ProjectionBilinearForm a(V, V);
     ProjectionLinearForm L(V);
     L.f = f1;
-    LinearPDE pde(a, L);
+    VariationalProblem problem(a, L);
     Function g(V);
-    pde.solve(g);
+    problem.solve(g);
 
     const double tol = 1.0e-6;
     f1.eval(&u[0], data);

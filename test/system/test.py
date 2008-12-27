@@ -32,8 +32,6 @@ print "Found %d Python demos" % len(pydemos)
 print ""
 
 # Remove demos that are known not to work (FIXME's)
-pydemos.remove('./../../demo/nls/nonlinearpoisson/python')
-pydemos.remove('./../../demo/pde/nonlinear-poisson/python')
 pydemos.remove('./../../demo/pde/lift-drag/python')
 pydemos.remove('./../../demo/ode/aliev-panfilov/python')
 pydemos.remove('./../../demo/ode/lorenz/python')
@@ -49,7 +47,7 @@ for s in cppslow:
     cppdemos.append(s)
 
 # Remove overly slow demos
-cppdemos.remove('./../../demo/nls/cahn-hilliard/cpp')
+cppdemos.remove('./../../demo/pde/cahn-hilliard/cpp')
 
 # Demos that need command line arguments are treated separately
 pydemos.remove('./../../demo/quadrature/python')
