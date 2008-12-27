@@ -1,3 +1,6 @@
+ - Simple handling of JIT-compiled functions
+ - Sign change (bug fix) in increment for Newton solver
+ - New class VariationalProblem replacing LinearPDE and NonlinearPDE
  - Parallel parsing and partitioning of meshes (experimental)
  - Add script dolfin-order for ordering mesh files
  - Add new class SubSpace (replacing SubSystem)

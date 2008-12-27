@@ -131,7 +131,6 @@ OK demo/pde/functional/python/demo.py
 OK demo/la/trilinos/python/demo.py
 OK demo/la/eigensolver/python/demo.py
 OK demo/la/block-matrix/python/demo.py
-EE demo/nls/nonlinearpoisson/python/demo.py
 OK demo/quadrature/python/demo.py
 OK demo/mesh/subdomains/python/demo.py
 OK demo/mesh/meshfunction/python/demo.py
