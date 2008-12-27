@@ -75,7 +75,7 @@ void PETScVector::resize(uint N)
     return;      
 
   if ( x.use_count() > 1 )
-    error("Cannot resize PETScVector. More than one object points to the underlying PETSc object, therefore is cannot be resized.");
+    error("Cannot resize PETScVector. More than one object points to the underlying PETSc object, therefore it cannot be resized.");
 
   // Create vector
   std::tr1::shared_ptr<Vec> _x(new Vec, PETScVectorDeleter());
