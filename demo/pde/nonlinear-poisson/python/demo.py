@@ -55,8 +55,10 @@ L = v.dx(i)*(1.0 + U*U)*U.dx(i)*dx - v*f*dx
 problem = VariationalProblem(a, L, bc, nonlinear=True)
 problem.solve(U)
 
-# Plot solution
-plot(U, interactive=True)
+# Plot solution and solution gradient
+plot(U, title="Solution")
+plot(grad(U), title="Solution gradient")
+interactive()
 
 # Save solution in VTK format
 file = File("nonlinear_poisson.pvd")

@@ -42,8 +42,8 @@ bc = DirichletBC(V, u0, DirichletBoundary())
 pde = VariationalProblem(a, L, bc)
 u = pde.solve()
 
-# Plot solution
-plot(u, warpscalar=True, rescale=True)
+# Plot solution and gradient of solution
+plot(u)
 
 # Save solution to file
 file = File("poisson.pvd")
