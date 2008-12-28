@@ -11,7 +11,7 @@ from dolfin import *
 from numpy import *
 
 # Create meshes (omega0 overlapped by omega1)
-omega0 = UnitCircle(80)
+omega0 = UnitCircle(20)
 omega1 = UnitSquare(20, 20)
 
 # Access mesh geometry
@@ -23,7 +23,7 @@ x += 1.0
 
 # Iterate over angle
 theta = 0.0
-dtheta = 0.1*DOLFIN_PI
+dtheta = 0.01*DOLFIN_PI
 intersection = MeshFunction("uint", omega0, omega0.topology().dim())
 _first = True
 while theta < 2*DOLFIN_PI:
@@ -42,7 +42,7 @@ while theta < 2*DOLFIN_PI:
     # Plot intersection
     if _first:
         p = plot(intersection, rescale=False)
-        p.add_polygon([[0,0,-0.1],[1,0,-0.01],[1,1,-0.01],[0,1,-0.01],[0,0,-0.01]])
+        p.add_polygon([[0, 0, -0.01], [1, 0, -0.01], [1, 1, -0.01], [0, 1, -0.01], [0, 0, -0.01]])
         p.ren.ResetCamera()
         _first = False
     else:

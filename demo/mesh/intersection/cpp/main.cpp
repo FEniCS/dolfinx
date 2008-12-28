@@ -14,7 +14,7 @@ using namespace dolfin;
 int main()
 {
   // Create meshes (omega0 overlapped by omega1)
-  UnitCircle omega0(80);
+  UnitCircle omega0(20);
   UnitSquare omega1(20, 20);
     
   // Access mesh geometry
