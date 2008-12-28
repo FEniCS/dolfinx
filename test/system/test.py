@@ -61,9 +61,6 @@ cppdemos.remove('./../../demo/fem/assembly/cpp')
 failed = []
 timing = []
 
-# Exclude pyDOLFIN demos until updated for new interface
-pydemos = []
-
 # Check if we should run only Python tests, use for quick testing
 if len(sys.argv) == 2 and sys.argv[1] == "--only-python":
     only_python = True
