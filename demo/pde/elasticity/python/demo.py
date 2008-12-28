@@ -42,7 +42,7 @@ class Rotation(Function):
 # Sub domain for rotation at right end
 class Right(SubDomain):
     def inside(self, x, on_boundary):
-      return bool(x[0] > 0.9 and on_boundary)
+      return x[0] > 0.9 and on_boundary
 
 # Define variational problem
 v = TestFunction(V)

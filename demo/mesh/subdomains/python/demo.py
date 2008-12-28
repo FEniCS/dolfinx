@@ -25,12 +25,12 @@ class Noslip(SubDomain):
 # Sub domain for inflow (right)
 class Inflow(SubDomain):
     def inside(self, x, on_boundary):
-        return bool(x[0] > 1.0 - DOLFIN_EPS and on_boundary)
+        return x[0] > 1.0 - DOLFIN_EPS and on_boundary
 
 # Sub domain for outflow (left)
 class Outflow(SubDomain):
     def inside(self, x, on_boundary):
-        return bool(x[0] < DOLFIN_EPS and on_boundary)
+        return x[0] < DOLFIN_EPS and on_boundary
   
 # Read mesh
 mesh = Mesh("../../../../data/meshes/dolfin-2.xml.gz")

@@ -8,142 +8,34 @@ This gives convenient expand/collapse of bullets by pressing TAB.
 
 * Build system
 ** Demos are not built when using 'scons install . . . enableDemos=yes'
-** Python interface sometimes not regenerated when changing header files
 * Linear Algebra
-** Current items (discussion 2008-04-09)
-*** Make solve() work with GenericFoo
-*** GenericOperator --> Kent
-*** Vector(x), xx = x,array() --> Ola
-*** Remove copy(), create() --> Anders
-*** Add copy constructors --> Martin
-*** Assignment operators --> Martin
-*** getitem/setitem --> Ola
-*** operator[] etc --> Kent
-*** cleanup of all interfaces --> Anders
-** Old items
-*** Finalize GenericFoo interfaces and merge linear algebra with PyCC
-   - Assigned to: Martin, Garth, Anders
-** Parallelize necessary parts of Mesh
+** Parallel issues
+* Mesh
+** Parallel issues
    - Store both global and local indices for cell/vertex, add mesh
      functions for this
-   - IO: read/write mesh in parallel (each processor reads/writes only
-     its own part), should be doable with small extension of
-     MeshEditor and XMLMesh
    - Adapt BoundaryComputation for parallel mesh, use knowledge about
      which vertices are shared to decide if a facet is a global or
      local boundary
    - Use parallel mesh information in DofMap to simplify
      implementation - should only need map from local to global cell/vertex
-   - Use parallel mesh information in ParMETIS partitioning implementation
 * Manual
 ** Write incomplete sections
 ** Write appendix on coding style
 ** Document Python interface
-
 * Function
-** Assignment from other than discrete functions (use evaluate_dof)
 ** Input/output for time-series
-** Adding a FunctionSpace class, collecting a Mesh, dof_map and finite_element.
-
 * ODE solvers
 ** Solve dual and compute error estimate
 ** Automatic computation of stability factors as function of time T
-* PDE solvers
-** Improve NonlinearPDE
-** Create TimeDependentPDE
-   - Use ODE solvers
-** Linear PDE should not own a Vector
 * Parameters
 ** Load default parameters from file
 ** Add function to display all parameters
 * Demos
 ** Add Python versions of all demos
-*** List of missing Python demos
-  fem/assembly
-  nls/cahn-hilliard
-  ode/complex
-  ode/courtemanche
-  ode/harmonic
-  ode/method-weights
-  ode/stiff
-  ode/tentusscher
-
 ** Add CPP versions of all demos
-*** List of missing CPP demos
-  function/projection-interpolation
-  la/trilinos
-  mesh/built-in
-  pde/adaptive-poisson
-  pde/dielectric
-
-*** List of broken CPP demos
-  fem/assembly
-  mesh/partitioning
-  ode/aliev-panfilov
-    - output 'Not solving the dual problem as requested.'
-  ode/complex
-    - output 'Not solving the dual problem as requested.'
-  ode/courtemanche
-    - multiple warnings
-    - output 'Not solving the dual problem as requested.'
-  ode/stiff
-    - multiple warnings
-    - output 'Not solving the dual problem as requested.'
-  ode/tentusscher
-    - multiple warnings
-    - output 'Not solving the dual problem as requested.'
-
-* PyDOLFIN
-** Fix memory leak warning for Array of Function*
-** Needing to convert numpy.bool to bool in inside
 * General
 ** Replace stdio with iostream and fstream
 ** Fix setprecision() for cout
 ** Update function names: fooBar --> foo_bar
-** Use const in output functions in File
 ** Remove as much const_cast as possible
-
-** Current status of Python demos:
-
-EE: Not working
---: Missing (see * Demos)
-??: Strange
-
-OK demo/pde/optimization/python/demo.py
-OK demo/pde/nonlinear-poisson/python/demo.py
-OK demo/pde/periodic/python/demo.py
-OK demo/pde/poisson/python/demo.py
-OK demo/pde/dielectric/python/demo.py
-OK demo/pde/mixed-poisson/python/demo.py
-OK demo/pde/bcs/python/demo.py
-OK demo/pde/elasticity/python/demo.py
-OK demo/pde/convection-diffusion/python/demo.py
-OK demo/pde/stokes/taylor-hood/python/demo.py
-OK demo/pde/stokes/stabilized/python/demo.py
-OK demo/pde/poisson1D/python/demo.py
-OK demo/pde/waveguide/python/demo.py
-OK demo/pde/sym-dirichlet-bc/python/demo.py
-OK demo/pde/lift-drag/python/demo.py
-OK demo/pde/dg/poisson/python/demo.py
-OK demo/pde/dg/advection_diffusion/python/demo.py
-OK demo/pde/adaptive-poisson/python/demo.py
-OK demo/pde/functional/python/demo.py
-OK demo/la/trilinos/python/demo.py
-OK demo/la/eigensolver/python/demo.py
-OK demo/la/block-matrix/python/demo.py
-OK demo/quadrature/python/demo.py
-OK demo/mesh/subdomains/python/demo.py
-OK demo/mesh/meshfunction/python/demo.py
-OK demo/mesh/partitioning/python/demo.py
-OK demo/mesh/built-in/python/demo.py
-OK demo/mesh/ale/python/demo.py
-OK demo/mesh/refinement/python/demo.py
-OK demo/mesh/intersection/python/demo.py
-OK demo/function/eval/python/demo.py
-OK demo/function/projection-interpolation/python/demo.py
--- demo/ode/aliev-panfilov/python/demo.py
--- demo/ode/lorenz/python/demo.py
-OK demo/fem/simple/python/demo.py
-OK demo/plot/python/demo.py
-
-- Use simple strings instead of eval as much as possible in Python demos

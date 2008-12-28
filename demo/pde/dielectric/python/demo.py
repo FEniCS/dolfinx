@@ -94,7 +94,7 @@ class DirichletFunction(Function):
 # Sub domain for Dirichlet boundary condition
 class DirichletBoundary(SubDomain):
     def inside(self, x, on_boundary):
-        return bool(on_boundary and True)
+        return on_boundary and True
 
 # Define variational problem
 v = TestFunction(V2)

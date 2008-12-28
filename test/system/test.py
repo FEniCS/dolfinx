@@ -32,7 +32,6 @@ print "Found %d Python demos" % len(pydemos)
 print ""
 
 # Remove demos that are known not to work (FIXME's)
-pydemos.remove('./../../demo/pde/lift-drag/python')
 pydemos.remove('./../../demo/ode/aliev-panfilov/python')
 pydemos.remove('./../../demo/ode/lorenz/python')
 
@@ -54,9 +53,6 @@ pydemos.remove('./../../demo/quadrature/python')
 cppdemos.remove('./../../demo/quadrature/cpp')
 cppdemos.remove('./../../demo/ode/method-weights/cpp')
 cppdemos.remove('./../../demo/ode/stiff/cpp')
-
-# Remove currently broken demos
-cppdemos.remove('./../../demo/fem/assembly/cpp')
 
 failed = []
 timing = []

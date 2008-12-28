@@ -69,7 +69,7 @@ for level in xrange(MAX_ITER):
     cell_markers = MeshFunction("bool", mesh, mesh.topology().dim())
     gamma_0 = sorted(gamma, reverse=True)[int(len(gamma)*REFINE_RATIO)]
     for c in cells(mesh):
-        cell_markers.set(c, bool(gamma[c.index()] > gamma_0))
+        cell_markers.set(c, gamma[c.index()] > gamma_0)
         
     # Refine mesh
     mesh.refine(cell_markers)
