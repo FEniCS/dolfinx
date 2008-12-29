@@ -13,11 +13,7 @@
 #include "Epetra_FECrsMatrix.h"
 #include "Epetra_LinearProblem.h"
 #include "Epetra_Map.h"
-
-
 #include "AztecOO.h"
-
-//#include "ml_config.h"
 #include "ml_include.h"
 #include "Epetra_LinearProblem.h"
 #include "ml_MultiLevelOperator.h"
@@ -30,11 +26,8 @@
 #include "EpetraMatrix.h"
 #include "EpetraVector.h"
 
-
-
-
-
 using namespace dolfin; 
+
 //-----------------------------------------------------------------------------
 EpetraKrylovSolver::EpetraKrylovSolver(SolverType method, PreconditionerType pc) 
                     : method(method), pc_type(pc), prec(0) 
@@ -101,7 +94,7 @@ dolfin::uint EpetraKrylovSolver::solve(const EpetraMatrix& A, EpetraVector& x,
     error("EpetraKrylovSolver::solve solver type not supported."); 
 
   //FIXME GS or SSOR not a PreconditionerType not in 
-  if ( pc_type == jacobi) 
+  if ( pc_type == jacobi ) 
     linear_solver.SetAztecOption( AZ_precond, AZ_Jacobi);
   else if ( pc_type == sor) 
     linear_solver.SetAztecOption( AZ_precond, AZ_sym_GS);
@@ -113,7 +106,12 @@ dolfin::uint EpetraKrylovSolver::solve(const EpetraMatrix& A, EpetraVector& x,
   else if ( pc_type == icc) 
     linear_solver.SetAztecOption( AZ_precond, AZ_icc);
   else if ( pc_type == amg_ml) 
-    ;// Do nothing. Confiugured below    
+    ;// Do nothing. Configured below    
+  else if (pc_type == default_pc)
+  {
+    linear_solver.SetAztecOption( AZ_precond, AZ_dom_decomp);
+    linear_solver.SetAztecOption( AZ_subdomain_solve, AZ_ilu); 
+  }
   else
     error("EpetraKrylovSolver::solve pc type not supported."); 
 
