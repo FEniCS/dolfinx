@@ -99,11 +99,11 @@ void SLEPcEigenSolver::solve(const PETScMatrix* A,
   if (B)
   {
     dolfin_assert(B->size(0) == B->size(1) && B->size(0) == A->size(0));
-    EPSSetOperators(eps, A->mat(), B->mat());
+    EPSSetOperators(eps, *A->mat(), *B->mat());
   }
   else
   {
-    EPSSetOperators(eps, A->mat(), PETSC_NULL);
+    EPSSetOperators(eps, *A->mat(), PETSC_NULL);
   }
 
   // Set number of eigenpairs to compute

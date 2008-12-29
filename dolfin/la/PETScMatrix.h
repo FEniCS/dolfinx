@@ -14,6 +14,7 @@
 
 #ifdef HAS_PETSC
 
+#include <tr1/memory>
 #include <petscmat.h>
 
 #include <dolfin/log/LogStream.h>
@@ -28,7 +29,7 @@ namespace dolfin
   class PETScVector;
 
   /// This class provides a simple matrix class based on PETSc.
-  /// It is a simple wrapper for a PETSc matrix pointer (Mat)
+  /// It is a wrapper for a PETSc matrix pointer (Mat)
   /// implementing the GenericMatrix interface.
   ///
   /// The interface is intentionally simple. For advanced usage,
@@ -58,7 +59,7 @@ namespace dolfin
     explicit PETScMatrix(const PETScMatrix& A);
 
     /// Create matrix from given PETSc Mat pointer
-    explicit PETScMatrix(Mat A);
+    explicit PETScMatrix(std::tr1::shared_ptr<Mat> A);
 
     /// Destructor
     virtual ~PETScMatrix();
@@ -132,7 +133,7 @@ namespace dolfin
     //--- Special PETScFunctions ---
 
     /// Return PETSc Mat pointer
-    Mat mat() const;
+    std::tr1::shared_ptr<Mat> mat() const;
 
     /// Return PETSc matrix type 
     Type type() const;
@@ -164,10 +165,7 @@ namespace dolfin
     bool sameNonzeroPattern(const PETScMatrix& A) const;
 
     // PETSc Mat pointer
-    Mat A;
-
-    // True if we don't own the matrix A points to
-    bool is_view;
+    std::tr1::shared_ptr<Mat> A;
 
     // PETSc matrix type
     Type _type;

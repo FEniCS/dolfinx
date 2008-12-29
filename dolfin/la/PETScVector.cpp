@@ -39,7 +39,7 @@ PETScVector::PETScVector():
     Variable("x", "a sparse vector"),
     x(static_cast<Vec*>(0), PETScVectorDeleter())
 {
-  // Do nothing
+ // Do nothing
 }
 //-----------------------------------------------------------------------------
 PETScVector::PETScVector(uint N):
@@ -74,10 +74,9 @@ void PETScVector::resize(uint N)
   if (x && this->size() == N)
     return;      
 
-  if ( x.use_count() > 1 )
-    error("Cannot resize PETScVector. More than one object points to the underlying PETSc object, therefore it cannot be resized.");
-
   // Create vector
+  if (!x.unique())
+    error("Cannot resize PETScVector. More than one object points to the underlying PETSc object.");
   std::tr1::shared_ptr<Vec> _x(new Vec, PETScVectorDeleter());
   x = _x;
   VecCreate(x.get());
@@ -187,8 +186,12 @@ const PETScVector& PETScVector::operator= (const PETScVector& v)
 {
   dolfin_assert(v.x);
 
-  resize(v.size());
-  VecCopy(*(v.x), *x);
+  // Check for self-assignment
+  if (this != &v)
+  {
+    resize(v.size());
+    VecCopy(*(v.x), *x);
+  }
   return *this; 
 }
 //-----------------------------------------------------------------------------
@@ -223,7 +226,7 @@ const PETScVector& PETScVector::operator/= (const double a)
   dolfin_assert(x);
   dolfin_assert(a != 0.0);
 
-  const double b = 1.0 / a;
+  const double b = 1.0/a;
   VecScale(*x, b);  
   return *this;
 }
