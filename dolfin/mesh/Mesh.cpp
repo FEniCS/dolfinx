@@ -7,7 +7,7 @@
 // Modified by Kristoffer Selim 2008.
 //
 // First added:  2006-05-09
-// Last changed: 2008-12-08
+// Last changed: 2008-12-29
 
 #include <sstream>
 
@@ -78,6 +78,7 @@ const Mesh& Mesh::operator=(const Mesh& mesh)
 
   _topology = mesh._topology;
   _geometry = mesh._geometry;
+  _data = mesh._data;
   
   if (mesh._cell_type)
     _cell_type = CellType::create(mesh._cell_type->cellType());
@@ -87,16 +88,6 @@ const Mesh& Mesh::operator=(const Mesh& mesh)
   _ordered = mesh._ordered;
 
   return *this;
-}
-//-----------------------------------------------------------------------------
-MeshData& Mesh::data()
-{
-  return _data;
-}
-//-----------------------------------------------------------------------------
-const MeshData& Mesh::data() const
-{
-  return _data;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint Mesh::init(uint dim) const

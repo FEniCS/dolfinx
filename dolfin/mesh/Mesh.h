@@ -114,10 +114,10 @@ namespace dolfin
     inline const MeshGeometry& geometry() const { return _geometry; }
 
     /// Return mesh data (non-const version)
-    MeshData& data();
+    MeshData& data() { return _data; }
 
     /// Return mesh data (const version)
-    const MeshData& data() const;
+    const MeshData& data() const { return _data; }
 
     /// Return mesh cell type
     inline CellType& type() { dolfin_assert(_cell_type); return *_cell_type; }

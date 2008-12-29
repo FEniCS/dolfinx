@@ -31,6 +31,20 @@ MeshData::~MeshData()
   clear();
 }
 //-----------------------------------------------------------------------------
+const MeshData& MeshData::operator= (const MeshData& data)
+{
+  // Clear all data
+  clear();
+
+  // Copy everything except the mesh. Note that we need to recreate all
+  // data and copy the values one by one so that the data will be attached
+  // to the correct mesh.
+  
+  warning("Assignment operator for MeshData not implemented.");
+
+  return *this;
+}
+//-----------------------------------------------------------------------------
 void MeshData::clear()
 { 
   for (mf_iterator it = meshfunctions.begin(); it != meshfunctions.end(); ++it)
@@ -40,6 +54,10 @@ void MeshData::clear()
   for (a_iterator it = arrays.begin(); it != arrays.end(); ++it)
     delete it->second;
   arrays.clear();
+
+  for (m_iterator it = maps.begin(); it != maps.end(); ++it)
+    delete it->second;
+  maps.clear();
 }
 //-----------------------------------------------------------------------------
 MeshFunction<dolfin::uint>* MeshData::createMeshFunction(std::string name)
@@ -58,6 +76,14 @@ MeshFunction<dolfin::uint>* MeshData::createMeshFunction(std::string name)
 
   // Add to map
   meshfunctions[name] = f;
+
+  return f;
+}
+//-----------------------------------------------------------------------------
+MeshFunction<dolfin::uint>* MeshData::createMeshFunction(std::string name, uint dim)
+{
+  MeshFunction<uint>* f = createMeshFunction(name);
+  f->init(dim);
 
   return f;
 }
@@ -94,7 +120,6 @@ std::map<dolfin::uint, dolfin::uint>* MeshData::createMapping(std::string name)
 
   // Create new data
   std::map<uint, uint>* m = new std::map<uint, uint>;
-  //*m = 0;
   
   // Add to map
   maps[name] = m;

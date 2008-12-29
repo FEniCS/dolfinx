@@ -4,7 +4,7 @@
 // Modified by Niclas Jansson, 2008.
 //
 // First added:  2008-05-19
-// Last changed: 2008-09-22
+// Last changed: 2008-12-29
 
 #ifndef __MESH_DATA_H
 #define __MESH_DATA_H
@@ -36,11 +36,17 @@ namespace dolfin
     /// Destructor
     ~MeshData();
 
+    /// Assignment operator
+    const MeshData& operator= (const MeshData& data);
+
     /// Clear all data
     void clear();
 
     /// Create MeshFunction with given name (uninitialized)
     MeshFunction<uint>* createMeshFunction(std::string name);
+
+    /// Create MeshFunction with given name and dimension
+    MeshFunction<uint>* createMeshFunction(std::string name, uint dim);
 
     /// Create Array with given name and size
     Array<uint>* createArray(std::string name, uint size);
