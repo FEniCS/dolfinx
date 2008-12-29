@@ -238,12 +238,8 @@ void Function::interpolate(double* coefficients,
   dolfin_assert(coefficients);
 
   // Either pick values or evaluate dof functionals
-  if (_vector)
+  if (in(V) && _vector)
   {
-    // Check that function space matches
-    if (!in(V))
-      error("Unable to interpolate function, incorrect function space.");
-
     // Get dofmap
     const DofMap& dofmap = V.dofmap();
 
@@ -276,6 +272,7 @@ void Function::interpolate(double* coefficients,
 void Function::interpolate(GenericVector& coefficients,
                            const FunctionSpace& V) const
 {
+  dolfin_debug("check");
   V.interpolate(coefficients, *this);
 }
 //-----------------------------------------------------------------------------

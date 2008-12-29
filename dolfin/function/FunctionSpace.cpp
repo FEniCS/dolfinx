@@ -175,7 +175,7 @@ void FunctionSpace::interpolate(GenericVector& coefficients,
     ufc_cell.update(*cell);
 
     // Interpolate on cell
-    v.interpolate(scratch.coefficients, ufc_cell, cell->index());
+    v.interpolate(scratch.coefficients, *this, ufc_cell, cell->index());
 
     // Tabulate dofs
     _dofmap->tabulate_dofs(scratch.dofs, ufc_cell, cell->index());
