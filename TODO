@@ -29,6 +29,7 @@ This gives convenient expand/collapse of bullets by pressing TAB.
 ** Solve dual and compute error estimate
 ** Automatic computation of stability factors as function of time T
 * Parameters
+** Figure out where to store parameters: in DefaultParameters.h or create in constructors
 ** Load default parameters from file
 ** Add function to display all parameters
 * Demos
