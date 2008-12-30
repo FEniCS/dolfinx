@@ -478,6 +478,8 @@ void Assembler::assemble_system(GenericMatrix& A,
                                 bool reset_tensors)
 {
   Timer timer("Assemble system");
+  message("Assembling linear system and applying boundary conditions...");
+  warning("assemble_system() may not give correct results for forms involving facet integrals.");
 
   // Note the importance of treating empty mesh functions as null pointers
   // for the PyDOLFIN interface.

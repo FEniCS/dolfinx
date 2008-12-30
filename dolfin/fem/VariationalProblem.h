@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-12-26
-// Last changed: 2008-12-27
+// Last changed: 2008-12-30
 
 #ifndef __VARIATIONAL_PROBLEM_H
 #define __VARIATIONAL_PROBLEM_H
@@ -41,6 +41,11 @@ namespace dolfin
   ///
   /// that is, a(v, u) should be the Frechet derivative of F_u
   /// with respect to u, and L = F.
+  ///
+  /// Parameters:
+  ///
+  ///     "linear solvers": "direct" or "iterative" (default: "direct")
+  ///     "symmetric":      true or false (default: false)
 
   class VariationalProblem : public Parametrized, public NonlinearProblem
   {

@@ -61,8 +61,8 @@ a = dot(grad(v), grad(u))*dx
 L = v*f*dx
 
 # Solve PDE
-pde = VariationalProblem(a, L, bcs)
-u = pde.solve()
+problem = VariationalProblem(a, L, bcs)
+u = problem.solve()
 
 # Save solution to file
 file = File("periodic.pvd")

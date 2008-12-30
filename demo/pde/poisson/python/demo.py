@@ -27,6 +27,10 @@ class DirichletBoundary(SubDomain):
     def inside(self, x, on_boundary):
         return x[0] < DOLFIN_EPS or x[0] > 1.0 - DOLFIN_EPS
 
+# Define boundary condition
+u0 = Constant(mesh, 0.0)
+bc = DirichletBC(V, u0, DirichletBoundary())
+
 # Define variational problem
 v = TestFunction(V)
 u = TrialFunction(V)
@@ -34,18 +38,14 @@ f = Function(V, "500.0 * exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)"
 a = dot(grad(v), grad(u))*dx
 L = v*f*dx
 
-# Define boundary condition
-u0 = Constant(mesh, 0.0)
-bc = DirichletBC(V, u0, DirichletBoundary())
-
 # Compute solution
-pde = VariationalProblem(a, L, bc)
-u = pde.solve()
+problem = VariationalProblem(a, L, bc)
+u = problem.solve()
 
-# Plot solution and gradient of solution
+# Plot solution
 plot(u)
 
-# Save solution to file
+# Save solution in VTK format
 file = File("poisson.pvd")
 file << u
 

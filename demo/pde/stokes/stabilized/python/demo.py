@@ -55,10 +55,10 @@ a = (dot(grad(v), grad(u)) - div(v)*p + q*div(u) + delta*dot(grad(q), grad(p)))*
 L = dot(v + mult(delta, grad(q)), f)*dx
 
 # Set up PDE
-pde = VariationalProblem(a, L, bcs)
+problem = VariationalProblem(a, L, bcs)
 
 # Solve PDE
-(U, P) = pde.solve().split()
+(U, P) = problem.solve().split()
 
 # Save solution
 ufile = File("velocity.xml")

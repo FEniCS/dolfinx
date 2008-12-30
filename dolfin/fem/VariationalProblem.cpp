@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-12-26
-// Last changed: 2008-12-27
+// Last changed: 2008-12-30
 
 #include <dolfin/la/Matrix.h>
 #include <dolfin/la/Vector.h>
@@ -13,6 +13,7 @@
 #include <dolfin/function/SubFunction.h>
 #include "assemble.h"
 #include "BoundaryCondition.h"
+#include "DirichletBC.h"
 #include "VariationalProblem.h"
 
 using namespace dolfin;
@@ -23,7 +24,9 @@ VariationalProblem::VariationalProblem(const Form& a,
                                        bool nonlinear)
   : a(a), L(L), nonlinear(nonlinear), newton_solver(0)
 {
-  // Do nothing
+  // FIXME: Must be set in DefaultParameters.h because of bug in cross-platform parameter system 
+  // Add parameter "symmetric"
+  //add("symmetric", false);
 }
 //-----------------------------------------------------------------------------
 VariationalProblem::VariationalProblem(const Form& a,
@@ -32,7 +35,12 @@ VariationalProblem::VariationalProblem(const Form& a,
                                        bool nonlinear)
   : a(a), L(L), nonlinear(nonlinear), newton_solver(0)
 {
+  // Store boundary condition
   bcs.push_back(&bc);
+
+  // FIXME: Must be set in DefaultParameters.h because of bug in cross-platform parameter system 
+  // Add parameter "symmetric"
+  //add("symmetric", false);
 }
 //-----------------------------------------------------------------------------
 VariationalProblem::VariationalProblem(const Form& a,
@@ -41,8 +49,13 @@ VariationalProblem::VariationalProblem(const Form& a,
                                        bool nonlinear)
   : a(a), L(L), nonlinear(nonlinear), newton_solver(0)
 {
+  // Store boundary conditions
   for (uint i = 0; i < bcs.size(); i++)
     this->bcs.push_back(bcs[i]);
+
+  // FIXME: Must be set in DefaultParameters.h because of bug in cross-platform parameter system 
+  // Add parameter "symmetric"
+  //add("symmetric", false);
 }
 //-----------------------------------------------------------------------------
 VariationalProblem::~VariationalProblem()
@@ -126,15 +139,39 @@ void VariationalProblem::solve_linear(Function& u)
     u._function_space = a._function_spaces[1];
   }
 
-  // Assemble linear system
+  // Check if system is symmetric
+  const bool symmetric = get("symmetric");
+
+  // Create matrix and vector
   Matrix A;
   Vector b;
-  assemble(A, a);
-  assemble(b, L);
 
-  // Apply boundary conditions
-  for (uint i = 0; i < bcs.size(); i++)
-    bcs[i]->apply(A, b);
+  // Different assembly depending on whether or not the system is symmetric
+  if (symmetric)
+  {
+    // Need to cast to DirichletBC to use assemble_system
+    std::vector<const DirichletBC*> _bcs;
+    for (uint i = 0; i < bcs.size(); i++)
+    {
+      const DirichletBC* _bc = dynamic_cast<const DirichletBC*>(bcs[i]);
+      if (!_bc)
+        error("Only Dirichlet boundary conditions may be used for assembly of symmetric system.");
+      _bcs.push_back(_bc);
+    }
+
+    // Assemble linear system and apply boundary conditions
+    assemble_system(A, b, a, L, _bcs);
+  }
+  else
+  {
+    // Assemble linear system
+    assemble(A, a);
+    assemble(b, L);
+
+    // Apply boundary conditions
+    for (uint i = 0; i < bcs.size(); i++)
+      bcs[i]->apply(A, b);
+  }
 
   // Solve linear system
   const std::string solver_type = get("linear solver");
@@ -146,9 +183,18 @@ void VariationalProblem::solve_linear(Function& u)
   }
   else if (solver_type == "iterative")
   {
-    KrylovSolver solver(gmres);
-    solver.set("parent", *this);
-    solver.solve(A, u.vector(), b);
+    if (symmetric)
+    {
+      KrylovSolver solver(gmres);
+      solver.set("parent", *this);
+      solver.solve(A, u.vector(), b);
+    }
+    else
+    {
+      KrylovSolver solver(cg);
+      solver.set("parent", *this);
+      solver.solve(A, u.vector(), b);
+    }
   }
   else
     error("Unknown solver type \"%s\".", solver_type.c_str());

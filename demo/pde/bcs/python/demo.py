@@ -33,8 +33,8 @@ bc2 = DirichletBC(V, u2, 2)
 bc3 = DirichletBC(V, u3, 3)
 
 # Compute solution
-pde = VariationalProblem(a, L, [bc0, bc1, bc2, bc3])
-u = pde.solve()
+problem = VariationalProblem(a, L, [bc0, bc1, bc2, bc3])
+u = problem.solve()
 
 # Plot solution
 plot(u, interactive=True)

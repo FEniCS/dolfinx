@@ -20,6 +20,7 @@ add("optimize", false);                   // All of the above
 
 add("linear solver", "direct");
 add("timer prefix",  "");                 // Prefix for timer tasks
+add("symmetric", false);                  // Should not be set here!
 
 // FIXME: Need to cleanup among parameters below
 

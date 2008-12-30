@@ -53,8 +53,8 @@ a = dot(grad(v), grad(u))*dx \
 L = v*f*dx
 
 # Compute solution
-pde = VariationalProblem(a, L)
-u = pde.solve()
+problem = VariationalProblem(a, L)
+u = problem.solve()
 
 # Project solution to piecewise linears
 P1 = FunctionSpace(mesh, "CG", 1)

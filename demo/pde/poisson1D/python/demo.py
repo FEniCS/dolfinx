@@ -42,8 +42,8 @@ u0 = Constant(mesh, 0.0)
 bc = DirichletBC(V, u0, DirichletBoundary())
 
 # Solve PDE and plot solution
-pde = VariationalProblem(a, L, bc)
-u = pde.solve()
+problem = VariationalProblem(a, L, bc)
+u = problem.solve()
 
 # Save solution to file
 file = File("poisson.pvd")

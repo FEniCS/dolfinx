@@ -8,8 +8,6 @@ __author__ = "Kent-Andre Mardal (kent-and@simula.no)"
 __date__ = "2008-04-24"
 __copyright__ = "Copyright (C) 2008 Kent-Andre Mardal"
 
-
-
 # Test for Trilinos:
 try:
     from PyTrilinos import Epetra, AztecOO, TriUtils, ML 

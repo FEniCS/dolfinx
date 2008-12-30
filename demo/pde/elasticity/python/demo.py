@@ -76,8 +76,8 @@ bcr = DirichletBC(V, r, Right())
 bcs = [bcl, bcr]
 
 # Set up PDE and solve
-pde = VariationalProblem(a, L, bcs)
-sol = pde.solve()
+problem = VariationalProblem(a, L, bcs)
+sol = problem.solve()
 
 # Save solution to VTK format
 vtk_file = File("elasticity.pvd")

@@ -38,8 +38,8 @@ a = (dot(tau, sigma) - div(tau)*u + w*div(sigma))*dx
 L = w*f*dx
 
 # Compute solution
-pde = VariationalProblem(a, L)
-(sigma, u) = pde.solve().split()
+problem = VariationalProblem(a, L)
+(sigma, u) = problem.solve().split()
 
 # Project sigma for post-processing
 P1 = VectorFunctionSpace(mesh, "CG", 1)

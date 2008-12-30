@@ -48,8 +48,8 @@ u0 = Constant(mesh, 0.0)
 bc = DirichletBC(V, u0, DirichletBoundary())
 
 # Solve PDE and plot solution
-pde = VariationalProblem(a, L, bc)
-U = pde.solve()
+problem = VariationalProblem(a, L, bc)
+U = problem.solve()
 
 plot(U)
 

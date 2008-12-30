@@ -45,8 +45,8 @@ a = (dot(grad(v), grad(u)) - div(v)*p + q*div(u))*dx
 L = dot(v, f)*dx
 
 # Compute solution
-pde = VariationalProblem(a, L, bcs)
-(u, p) = pde.solve().split()
+problem = VariationalProblem(a, L, bcs)
+(u, p) = problem.solve().split()
 
 # Save solution in DOLFIN XML format
 ufile = File("velocity.xml")
