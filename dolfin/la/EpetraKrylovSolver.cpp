@@ -62,10 +62,10 @@ dolfin::uint EpetraKrylovSolver::solve(const EpetraMatrix& A, EpetraVector& x,
   // FIXME: check vector size
   // FIXME: permit initial guess
 
-  // cast matrix and vectors to proper type
-  Epetra_RowMatrix* row_matrix =  dynamic_cast<Epetra_RowMatrix*>(&(A.mat()));
-  Epetra_MultiVector* x_vec = dynamic_cast<Epetra_MultiVector*>(&x.vec());
-  Epetra_MultiVector* b_vec = dynamic_cast<Epetra_MultiVector*>(&b.vec());
+  // Cast matrix and vectors to proper type
+  Epetra_RowMatrix* row_matrix = dynamic_cast<Epetra_RowMatrix*>(A.mat().get());
+  Epetra_MultiVector* x_vec    = dynamic_cast<Epetra_MultiVector*>(&x.vec());
+  Epetra_MultiVector* b_vec    = dynamic_cast<Epetra_MultiVector*>(&b.vec());
 
   /*
   // Create linear system 
@@ -132,15 +132,15 @@ dolfin::uint EpetraKrylovSolver::solve(const EpetraMatrix& A, EpetraVector& x,
 
     ML_Create(&ml_handle,N_levels);
 
-    // wrap Epetra Matrix into ML matrix (data is NOT copied)
-    EpetraMatrix2MLMatrix(ml_handle, 0, &(A.mat()));
+    // Wrap Epetra Matrix into ML matrix (data is NOT copied)
+    EpetraMatrix2MLMatrix(ml_handle, 0, A.mat().get());
 
     // create a ML_Aggregate object to store the aggregates
     ML_Aggregate *agg_object;
     ML_Aggregate_Create(&agg_object);
 
     // specify max coarse size 
-    ML_Aggregate_Set_MaxCoarseSize(agg_object,1);
+    ML_Aggregate_Set_MaxCoarseSize(agg_object, 1);
 
     // generate the hierady
     N_levels = ML_Gen_MGHierarchy_UsingAggregation(ml_handle, 0, ML_INCREASING, agg_object);
@@ -152,7 +152,7 @@ dolfin::uint EpetraKrylovSolver::solve(const EpetraMatrix& A, EpetraVector& x,
     ML_Gen_Solver(ml_handle, ML_MGV, 0, N_levels-1);
 
     // wrap ML_Operator into Epetra_Operator
-    ML_Epetra::MultiLevelOperator  MLop(ml_handle,A.mat().Comm(),A.mat().DomainMap(),A.mat().RangeMap());
+    ML_Epetra::MultiLevelOperator  MLop(ml_handle, (*A.mat()).Comm(), (*A.mat()).DomainMap(), (*A.mat()).RangeMap());
 
     // set this operator as preconditioner for AztecOO
     linear_solver.SetPrecOperator(&MLop);
@@ -161,7 +161,7 @@ dolfin::uint EpetraKrylovSolver::solve(const EpetraMatrix& A, EpetraVector& x,
 //    error("EpetraKrylovSolver::solve not compiled with ML support."); 
 //#endif 
   }   
-  std::cout <<"starting to iterate "<<std::endl; 
+  std::cout << "starting to iterate " << std::endl; 
   linear_solver.Iterate(1000, 1.0e-9);
   return linear_solver.NumIters(); 
 }
