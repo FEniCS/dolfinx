@@ -3,11 +3,18 @@ import os, glob
 Import("env")
 Import("configuredPackages")
 Import("modules")
+Import("cppunitCfg")
 
 cpptests = []
 
 for modName, mod in modules.items():
   libs, libPath, linkOpts, cppPath, frameworks = [], [], [], [], []
+
+  # CppUnit is needed for the cpp tests
+  libs += cppunitCfg.libs()
+  libPath += cppunitCfg.libDirs()
+  linkOpts += cppunitCfg.linkOpts()
+  cppPath += cppunitCfg.includeDirs()
 
   ## this is needed to find dolfin.h
   cppPath = ["..", os.path.abspath(os.path.join("..",modName))]
@@ -33,8 +40,6 @@ for modName, mod in modules.items():
   modEnv.Append(CPPPATH=cppPath)
   modEnv.Append(LIBS=libs)
   modEnv.Append(LINKFLAGS=linkOpts)
-  # We need to add -lcppunit to LIBS:
-  modEnv.Append(LIBS="cppunit")
   if env["PLATFORM"] == "darwin":
     modEnv.Append(FRAMEWORKS=frameworks)
     modEnv.Append(CXXFLAGS="-bind_at_load")
