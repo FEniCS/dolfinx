@@ -160,9 +160,7 @@ std::map<dolfin::uint, dolfin::uint>* MeshData::mapping(const std::string name) 
 void MeshData::disp() const
 {
   // Begin indentation
-  cout << "Auxiliary mesh data" << endl;
-  begin("-------------------");
-  cout << endl;
+  begin("Auxiliary mesh data");
 
   for (mf_const_iterator it = meshfunctions.begin(); it != meshfunctions.end(); ++it)
   {
@@ -175,6 +173,10 @@ void MeshData::disp() const
 
   for (a_const_iterator it = arrays.begin(); it != arrays.end(); ++it)
     cout << "Array<uint> of size " << static_cast<uint>(it->second->size())
+         << ": \"" << it->first << "\"" << endl;
+
+  for (m_const_iterator it = maps.begin(); it != maps.end(); ++it)
+    cout << "map<uint, uint> of size " << static_cast<uint>(it->second->size())
          << ": \"" << it->first << "\"" << endl;
 
   // End indentation
