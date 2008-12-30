@@ -70,6 +70,10 @@
 %include "dolfin/la/BlockVector.h"
 %include "dolfin/la/BlockMatrix.h"
 
+// DOLFIN headers included from nls
+%include "dolfin/nls/NewtonSolver.h"
+%include "dolfin/nls/NonlinearProblem.h"
+
 // DOLFIN headers included from elements
 %include "dolfin/elements/ElementLibrary.h"
 %include "dolfin/elements/ProjectionLibrary.h"
@@ -161,10 +165,6 @@
 
 // DOLFIN headers included from mf
 %include "dolfin/mf/MatrixFactory.h"
-
-// DOLFIN headers included from nls
-%include "dolfin/nls/NewtonSolver.h"
-%include "dolfin/nls/NonlinearProblem.h"
 
 // DOLFIN headers included from ode
 %include "dolfin/ode/ODE.h"
