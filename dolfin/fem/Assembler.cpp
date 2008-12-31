@@ -633,6 +633,9 @@ void Assembler::assemble_system(GenericMatrix& A,
                   continue;
               }
               const uint local_facet = cell->index(*facet);
+              for (uint i = 0; i < A_coefficients.size(); i++)
+                A_coefficients[i]->interpolate(A_ufc.w[i], A_ufc.cell, cell->index(), local_facet);
+
               A_integral->tabulate_tensor(A_ufc.A, A_ufc.w, A_ufc.cell, local_facet);
               for (uint i=0; i<A_num_entries; i++) 
                 Ae[i] += A_ufc.A[i]; 
@@ -656,6 +659,9 @@ void Assembler::assemble_system(GenericMatrix& A,
                   continue;
               }
               const uint local_facet = cell->index(*facet);
+              for (uint i = 0; i < b_coefficients.size(); i++)
+                b_coefficients[i]->interpolate(b_ufc.w[i], b_ufc.cell, cell->index(), local_facet);
+
               b_integral->tabulate_tensor(b_ufc.A, b_ufc.w, b_ufc.cell, local_facet);
               for (uint i=0; i<b_num_entries; i++) 
                 be[i] += b_ufc.A[i]; 
@@ -697,15 +703,15 @@ void Assembler::assemble_system(GenericMatrix& A,
     UFC A_macro_ufc(a);
     UFC b_macro_ufc(L);
 
-    // ---create some temporal storage for Ae, Ae_macro 
+    // Create temporary storage for Ae, Ae_macro 
     uint A_num_entries = 1;
     for (uint i = 0; i < a.rank(); i++)
       A_num_entries *= a.function_space(i).dofmap().local_dimension();
-    uint A_macro_num_entries = A_num_entries*4; 
+    uint A_macro_num_entries = 4*A_num_entries; 
     Ae = new double[A_num_entries];
     double* Ae_macro = new double[A_macro_num_entries]; 
 
-    // ---create some temporal storage for be, be_macro 
+    // Create temporay storage for be, be_macro 
     uint b_num_entries = 1;
     for (uint i = 0; i < L.rank(); i++)
       b_num_entries *= L.function_space(i).dofmap().local_dimension();
@@ -718,8 +724,10 @@ void Assembler::assemble_system(GenericMatrix& A,
       // Check if we have an interior facet
       if ( facet->numEntities(mesh.topology().dim()) == 2 ) 
       {
-        for (uint i=0; i<A_macro_num_entries; i++) Ae_macro[i] = 0.0; 
-        for (uint i=0; i<b_macro_num_entries; i++) be_macro[i] = 0.0; 
+        for (uint i = 0; i < A_macro_num_entries; i++) 
+          Ae_macro[i] = 0.0; 
+        for (uint i = 0; i < b_macro_num_entries; i++) 
+          be_macro[i] = 0.0; 
 
         // Get cells incident with facet
         Cell cell0(mesh, facet->entities(mesh.topology().dim())[0]);
@@ -738,9 +746,9 @@ void Assembler::assemble_system(GenericMatrix& A,
         {
           const uint offset = A_macro_ufc.local_dimensions[i];
           a.function_space(i).dofmap().tabulate_dofs(A_macro_ufc.macro_dofs[i],
-                                                          A_macro_ufc.cell0, cell0.index());
+                                                     A_macro_ufc.cell0, cell0.index());
           a.function_space(i).dofmap().tabulate_dofs(A_macro_ufc.macro_dofs[i] + offset,
-                                                          A_macro_ufc.cell1, cell1.index());
+                                                     A_macro_ufc.cell1, cell1.index());
         }
 
         // Tabulate dofs for each dimension on macro element
@@ -748,9 +756,9 @@ void Assembler::assemble_system(GenericMatrix& A,
         {
           const uint offset = b_macro_ufc.local_dimensions[i];
           L.function_space(i).dofmap().tabulate_dofs(b_macro_ufc.macro_dofs[i],
-                                                          b_macro_ufc.cell0, cell0.index());
+                                                     b_macro_ufc.cell0, cell0.index());
           L.function_space(i).dofmap().tabulate_dofs(b_macro_ufc.macro_dofs[i] + offset,
-                                                          b_macro_ufc.cell1, cell1.index());
+                                                     b_macro_ufc.cell1, cell1.index());
         }
 
         if ( A_ufc.form.num_interior_facet_integrals() ) 
