@@ -79,7 +79,11 @@ void PETScVector::resize(uint N)
     error("Cannot resize PETScVector. More than one object points to the underlying PETSc object.");
   std::tr1::shared_ptr<Vec> _x(new Vec, PETScVectorDeleter());
   x = _x;
-  VecCreate(x.get());
+
+  if (MPI::num_processes() > 1)
+    VecCreateMPI(PETSC_COMM_WORLD, PETSC_DECIDE, N, x.get());
+  else
+    VecCreate(PETSC_COMM_SELF, x.get());
 
   // Set size
   VecSetSizes(*x, PETSC_DECIDE, N);
@@ -170,10 +174,10 @@ void PETScVector::zero()
 //-----------------------------------------------------------------------------
 dolfin::uint PETScVector::size() const
 {
+  int n = 0;
   if (x)
-    return static_cast<uint>(VecGetSize(*x));
-  else
-    return 0;
+    VecGetSize(*x, &n);
+  return static_cast<uint>(n);
 }
 //-----------------------------------------------------------------------------
 const GenericVector& PETScVector::operator= (const GenericVector& v)
@@ -238,7 +242,9 @@ double PETScVector::inner(const GenericVector& y) const
   const PETScVector& v = y.down_cast<PETScVector>();
   dolfin_assert(v.x);
 
-  return VecDot(*(v.x), *x);
+  double a;
+  VecDot(*(v.x), *x, &a);
+  return a;
 }
 //-----------------------------------------------------------------------------
 void PETScVector::axpy(double a, const GenericVector& y) 
@@ -257,18 +263,23 @@ void PETScVector::axpy(double a, const GenericVector& y)
 double PETScVector::norm(NormType type) const
 {
   dolfin_assert(x);
+
+  double value = 0.0;
   switch (type) 
   {
     case l1:
-      return VecNorm(*x, NORM_1);
+      VecNorm(*x, NORM_1, &value);
+      break;
     case l2:
-      return VecNorm(*x, NORM_2);
+      VecNorm(*x, NORM_2, &value);
+      break;
     case linf:
-      return VecNorm(*x, NORM_INFINITY);
+      VecNorm(*x, NORM_INFINITY, &value);
+      break;
     default:
       error("Norm type for PETScVector unknown.");
   }
-  return 0.0;
+  return value;
 }
 //-----------------------------------------------------------------------------
 double PETScVector::min() const
