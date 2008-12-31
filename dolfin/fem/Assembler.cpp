@@ -479,7 +479,6 @@ void Assembler::assemble_system(GenericMatrix& A,
 {
   Timer timer("Assemble system");
   message("Assembling linear system and applying boundary conditions...");
-  warning("assemble_system() may not give correct results for forms involving facet integrals.");
 
   // Note the importance of treating empty mesh functions as null pointers
   // for the PyDOLFIN interface.
@@ -699,10 +698,6 @@ void Assembler::assemble_system(GenericMatrix& A,
 
   if (A_ufc.form.num_interior_facet_integrals() > 0 || b_ufc.form.num_interior_facet_integrals() > 0) 
   {
-    // Create data structure for local assembly data
-    UFC A_macro_ufc(a);
-    UFC b_macro_ufc(L);
-
     // Create temporary storage for Ae, Ae_macro 
     uint A_num_entries = 1;
     for (uint i = 0; i < a.rank(); i++)
@@ -734,43 +729,43 @@ void Assembler::assemble_system(GenericMatrix& A,
         Cell cell1(mesh, facet->entities(mesh.topology().dim())[1]);
 
         // Update to current pair of cells
-        A_macro_ufc.update(cell0, cell1);
-        b_macro_ufc.update(cell0, cell1);
+        A_ufc.update(cell0, cell1);
+        b_ufc.update(cell0, cell1);
 
         // Get local index of facet with respect to each cell
         uint facet0 = cell0.index(*facet);
         uint facet1 = cell1.index(*facet);
 
         // Tabulate dofs for each dimension on macro element
-        for (uint i = 0; i < A_macro_ufc.form.rank(); i++)
+        for (uint i = 0; i < A_ufc.form.rank(); i++)
         {
-          const uint offset = A_macro_ufc.local_dimensions[i];
-          a.function_space(i).dofmap().tabulate_dofs(A_macro_ufc.macro_dofs[i],
-                                                     A_macro_ufc.cell0, cell0.index());
-          a.function_space(i).dofmap().tabulate_dofs(A_macro_ufc.macro_dofs[i] + offset,
-                                                     A_macro_ufc.cell1, cell1.index());
+          const uint offset = A_ufc.local_dimensions[i];
+          a.function_space(i).dofmap().tabulate_dofs(A_ufc.macro_dofs[i],
+                                                     A_ufc.cell0, cell0.index());
+          a.function_space(i).dofmap().tabulate_dofs(A_ufc.macro_dofs[i] + offset,
+                                                     A_ufc.cell1, cell1.index());
         }
 
         // Tabulate dofs for each dimension on macro element
-        for (uint i = 0; i < b_macro_ufc.form.rank(); i++)
+        for (uint i = 0; i < b_ufc.form.rank(); i++)
         {
-          const uint offset = b_macro_ufc.local_dimensions[i];
-          L.function_space(i).dofmap().tabulate_dofs(b_macro_ufc.macro_dofs[i],
-                                                     b_macro_ufc.cell0, cell0.index());
-          L.function_space(i).dofmap().tabulate_dofs(b_macro_ufc.macro_dofs[i] + offset,
-                                                     b_macro_ufc.cell1, cell1.index());
+          const uint offset = b_ufc.local_dimensions[i];
+          L.function_space(i).dofmap().tabulate_dofs(b_ufc.macro_dofs[i],
+                                                     b_ufc.cell0, cell0.index());
+          L.function_space(i).dofmap().tabulate_dofs(b_ufc.macro_dofs[i] + offset,
+                                                     b_ufc.cell1, cell1.index());
         }
 
         if ( A_ufc.form.num_interior_facet_integrals() ) 
         {  
-          ufc::interior_facet_integral* interior_facet_integral = A_macro_ufc.interior_facet_integrals[0];
+          ufc::interior_facet_integral* interior_facet_integral = A_ufc.interior_facet_integrals[0];
 
           // Get integral for sub domain (if any)
           if (interior_facet_domains && interior_facet_domains->size() > 0)
           {
             const uint domain = (*interior_facet_domains)(*facet);
-            if (domain < A_macro_ufc.form.num_interior_facet_integrals())
-              interior_facet_integral = A_macro_ufc.interior_facet_integrals[domain];
+            if (domain < A_ufc.form.num_interior_facet_integrals())
+              interior_facet_integral = A_ufc.interior_facet_integrals[domain];
             else
               continue;
           }
@@ -789,24 +784,24 @@ void Assembler::assemble_system(GenericMatrix& A,
           if (interior_facet_domains && interior_facet_domains->size() > 0)
           {
             const uint domain = (*interior_facet_domains)(*facet);
-            if (domain < A_macro_ufc.form.num_interior_facet_integrals())
-              interior_facet_integral = A_macro_ufc.interior_facet_integrals[domain];
+            if (domain < A_ufc.form.num_interior_facet_integrals())
+              interior_facet_integral = A_ufc.interior_facet_integrals[domain];
             else
               continue;
           }
 
           // Tabulate interior facet tensor on macro element
-          interior_facet_integral->tabulate_tensor(A_macro_ufc.macro_A, A_macro_ufc.macro_w, 
-                                      A_macro_ufc.cell0, A_macro_ufc.cell1, facet0, facet1);
+          interior_facet_integral->tabulate_tensor(A_ufc.macro_A, A_ufc.macro_w, 
+                                      A_ufc.cell0, A_ufc.cell1, facet0, facet1);
           for (uint i=0; i<A_macro_num_entries; i++) 
-            Ae_macro[i] += A_macro_ufc.macro_A[i]; 
+            Ae_macro[i] += A_ufc.macro_A[i]; 
         }
 
         if ( b_ufc.form.num_interior_facet_integrals() > 0 ) 
         {  
-          ufc::interior_facet_integral* interior_facet_integral = b_macro_ufc.interior_facet_integrals[0];
+          ufc::interior_facet_integral* interior_facet_integral = b_ufc.interior_facet_integrals[0];
 
-          b_macro_ufc.update(cell0, cell1);
+          b_ufc.update(cell0, cell1);
 
           // Interpolate coefficients on cell
           for (uint i = 0; i < b_coefficients.size(); i++)
@@ -820,17 +815,17 @@ void Assembler::assemble_system(GenericMatrix& A,
           if (interior_facet_domains && interior_facet_domains->size() > 0)
           {
             const uint domain = (*interior_facet_domains)(*facet);
-            if (domain < b_macro_ufc.form.num_interior_facet_integrals())
-              interior_facet_integral = b_macro_ufc.interior_facet_integrals[domain];
+            if (domain < b_ufc.form.num_interior_facet_integrals())
+              interior_facet_integral = b_ufc.interior_facet_integrals[domain];
             else
               continue;
           }
 
-          interior_facet_integral->tabulate_tensor(b_macro_ufc.macro_A, b_macro_ufc.macro_w, b_macro_ufc.cell0, 
-                                                   b_macro_ufc.cell1, facet0, facet1);
+          interior_facet_integral->tabulate_tensor(b_ufc.macro_A, b_ufc.macro_w, b_ufc.cell0, 
+                                                   b_ufc.cell1, facet0, facet1);
 
           for (uint i=0; i<b_macro_num_entries; i++) 
-            be_macro[i] += b_macro_ufc.macro_A[i]; 
+            be_macro[i] += b_ufc.macro_A[i]; 
         }
 
         if (facet0 == 0) 
@@ -866,6 +861,7 @@ void Assembler::assemble_system(GenericMatrix& A,
               for (uint j=0; j<nn; j++) 
                 Ae_macro[2*i*nn+j] += A_ufc.A[i*nn+j]; 
           }
+
           if (b_ufc.form.num_cell_integrals() > 0) 
           {
             // Update to cell0 
@@ -960,12 +956,12 @@ void Assembler::assemble_system(GenericMatrix& A,
         }
         // enforce BC  ---------------------------------------
 
-        const uint m = A_macro_ufc.macro_local_dimensions[0]; 
-        const uint n = A_macro_ufc.macro_local_dimensions[1]; 
+        const uint m = A_ufc.macro_local_dimensions[0]; 
+        const uint n = A_ufc.macro_local_dimensions[1]; 
 
         for (uint i=0; i<n; i++) 
         {  
-          uint ii = A_macro_ufc.macro_dofs[1][i]; 
+          uint ii = A_ufc.macro_dofs[1][i]; 
           if (indicators[ii] > 0) 
           {  
             be[i] = g[ii]; 
@@ -982,8 +978,8 @@ void Assembler::assemble_system(GenericMatrix& A,
         // enforce BC done  ------------------------------------------
 
         // Add entries to global tensor
-        A.add(Ae_macro, A_macro_ufc.macro_local_dimensions, A_macro_ufc.macro_dofs);
-        b.add(be_macro, b_macro_ufc.macro_local_dimensions, b_macro_ufc.macro_dofs);
+        A.add(Ae_macro, A_ufc.macro_local_dimensions, A_ufc.macro_dofs);
+        b.add(be_macro, b_ufc.macro_local_dimensions, b_ufc.macro_dofs);
       }
 
       // Check if we have an exterior facet
@@ -1006,13 +1002,16 @@ void Assembler::assemble_system(GenericMatrix& A,
         b_ufc.update(cell);
 
         // Interpolate coefficients on cell
+        for (uint i = 0; i < A_coefficients.size(); i++)
+          A_coefficients[i]->interpolate(A_ufc.w[i], A_ufc.cell, cell.index(), local_facet);
+
+        // Interpolate coefficients on cell
         for (uint i = 0; i < b_coefficients.size(); i++)
           b_coefficients[i]->interpolate(b_ufc.w[i], b_ufc.cell, cell.index(), local_facet);
 
         // Tabulate dofs for each dimension
         for (uint i = 0; i < A_ufc.form.rank(); i++)
           a.function_space(i).dofmap().tabulate_dofs(A_ufc.dofs[i], A_ufc.cell, cell.index());
-
 
         // Tabulate dofs for each dimension
         for (uint i = 0; i < b_ufc.form.rank(); i++)
