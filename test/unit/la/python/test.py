@@ -138,18 +138,18 @@ class uBLAS2Tester(AbstractBaseTest,unittest.TestCase):
     MatrixType = uBLASDenseMatrix
     VectorType = uBLASVector
 
-if hasattr(dolfin,"PETScMatrix"):
+if hasattr(cpp,"PETScMatrix"):
     class PETScTester(AbstractBaseTest,unittest.TestCase):
         MatrixType = PETScMatrix
         VectorType = PETScVector
 
 # FIXME: EpetraVector does not support set()
-#if hasattr(dolfin,"EpetraMatrix"):
+#if hasattr(cpp,"EpetraMatrix"):
 #    class EpetraTester(AbstractBaseTest,unittest.TestCase):
 #        MatrixType = EpetraMatrix
 #        VectorType = EpetraVector
 
-if hasattr(dolfin,"MTL4Matrix"):
+if hasattr(cpp,"MTL4Matrix"):
     class MTL4Tester(AbstractBaseTest,unittest.TestCase):
         MatrixType = MTL4Matrix
         VectorType = MTL4Vector
