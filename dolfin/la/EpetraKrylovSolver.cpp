@@ -64,8 +64,8 @@ dolfin::uint EpetraKrylovSolver::solve(const EpetraMatrix& A, EpetraVector& x,
 
   // Cast matrix and vectors to proper type
   Epetra_RowMatrix* row_matrix = dynamic_cast<Epetra_RowMatrix*>(A.mat().get());
-  Epetra_MultiVector* x_vec    = dynamic_cast<Epetra_MultiVector*>(&x.vec());
-  Epetra_MultiVector* b_vec    = dynamic_cast<Epetra_MultiVector*>(&b.vec());
+  Epetra_MultiVector* x_vec    = dynamic_cast<Epetra_MultiVector*>(x.vec().get());
+  Epetra_MultiVector* b_vec    = dynamic_cast<Epetra_MultiVector*>(b.vec().get());
 
   /*
   // Create linear system 
@@ -82,38 +82,55 @@ dolfin::uint EpetraKrylovSolver::solve(const EpetraMatrix& A, EpetraVector& x,
   linear_solver.SetLHS(x_vec); 
   linear_solver.SetRHS(b_vec); 
 
-  if ( method == cg) 
-    linear_solver.SetAztecOption( AZ_solver, AZ_cg);
-  else if ( method == gmres) 
+  // Set solver type
+  switch (method)
+  {
+  case default_solver:
     linear_solver.SetAztecOption( AZ_solver, AZ_gmres);
-  else if ( method == bicgstab) 
+    break;
+  case cg:
+    linear_solver.SetAztecOption( AZ_solver, AZ_cg);
+    break;
+  case gmres:
+    linear_solver.SetAztecOption( AZ_solver, AZ_gmres);
+    break;
+  case bicgstab:
     linear_solver.SetAztecOption( AZ_solver, AZ_bicgstab);
-  else if ( method == lu ) 
+    break;
+  case lu:
     error("EpetraKrylovSolver::solve LU not supported."); 
-  else
-    error("EpetraKrylovSolver::solve solver type not supported."); 
+    break;
+  default:
+    error("EpetraKrylovSolver::solve solver type not supported.");
+  }
 
   //FIXME GS or SSOR not a PreconditionerType not in 
-  if ( pc_type == jacobi ) 
+  // Set preconditioner
+  switch (pc_type)
+  {
+  case default_pc:
+    linear_solver.SetAztecOption( AZ_precond, AZ_dom_decomp);
+    linear_solver.SetAztecOption( AZ_subdomain_solve, AZ_ilu); 
+    break;
+  case jacobi:
     linear_solver.SetAztecOption( AZ_precond, AZ_Jacobi);
-  else if ( pc_type == sor) 
+    break;
+  case sor:
     linear_solver.SetAztecOption( AZ_precond, AZ_sym_GS);
-  else if ( pc_type == ilu) 
-  {
+    break;
+  case ilu:
     linear_solver.SetAztecOption( AZ_precond, AZ_dom_decomp);
     linear_solver.SetAztecOption( AZ_subdomain_solve, AZ_ilu); 
-  }
-  else if ( pc_type == icc) 
+    break;
+  case icc:
     linear_solver.SetAztecOption( AZ_precond, AZ_icc);
-  else if ( pc_type == amg_ml) 
-    ;// Do nothing. Configured below    
-  else if (pc_type == default_pc)
-  {
-    linear_solver.SetAztecOption( AZ_precond, AZ_dom_decomp);
-    linear_solver.SetAztecOption( AZ_subdomain_solve, AZ_ilu); 
-  }
-  else
+    break;
+  case amg_ml:
+    // Do nothing. Configured below    
+    break;
+  default:
     error("EpetraKrylovSolver::solve pc type not supported."); 
+  }
 
   if (pc_type == amg_ml) 
   {  
@@ -161,8 +178,10 @@ dolfin::uint EpetraKrylovSolver::solve(const EpetraMatrix& A, EpetraVector& x,
 //    error("EpetraKrylovSolver::solve not compiled with ML support."); 
 //#endif 
   }   
+
   std::cout << "starting to iterate " << std::endl; 
   linear_solver.Iterate(1000, 1.0e-9);
+
   return linear_solver.NumIters(); 
 }
 //-----------------------------------------------------------------------------

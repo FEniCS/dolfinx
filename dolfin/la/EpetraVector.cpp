@@ -187,14 +187,16 @@ void EpetraVector::add(const double* block, uint m, const uint* rows)
     error("EpetraVector::add : Did not manage to add the values to the vector"); 
 }
 //-----------------------------------------------------------------------------
-Epetra_FEVector& EpetraVector::vec() const
+Epetra_FEVector& EpetraVector::vec_ref() const
 {
   dolfin_assert(x);
+  warning("This may be removed shortly. If possible, use EpetraVector::vec() instead.");
   return *x;
 }
 //-----------------------------------------------------------------------------
-std::tr1::shared_ptr<Epetra_FEVector> EpetraVector::vec_ptr() const
+std::tr1::shared_ptr<Epetra_FEVector> EpetraVector::vec() const
 {
+  dolfin_assert(x);
   return x;
 }
 //-----------------------------------------------------------------------------
@@ -222,7 +224,7 @@ void EpetraVector::axpy(double a, const GenericVector& y)
   if (size() != v.size())
     error("The vectors must be of the same size.");  
 
-  int err = x->Update(a, v.vec(), 1.0); 
+  int err = x->Update(a, *(v.vec()), 1.0); 
   if (err!= 0) 
     error("EpetraVector::axpy: Did not manage to perform Update on Epetra vector."); 
 }
@@ -256,11 +258,11 @@ const EpetraVector& EpetraVector::operator= (const EpetraVector& v)
   {
     if (!x.unique())
       error("More than one object points to the underlying Epetra object.");
-    std::tr1::shared_ptr<Epetra_FEVector> _x(new Epetra_FEVector(v.vec()));
+    std::tr1::shared_ptr<Epetra_FEVector> _x(new Epetra_FEVector(*(v.vec())));
     x =_x; 
   }
   else
-    *x = v.vec(); 
+    *x = *(v.vec()); 
 
   return *this; 
 }

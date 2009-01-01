@@ -261,7 +261,7 @@ void EpetraMatrix::mult(const GenericVector& x_, GenericVector& Ax_, bool transp
   if (!Ax) 
     error("The vector Ax should be of type EpetraVector");  
 
-  A->Multiply(transposed, x->vec(), Ax->vec());
+  A->Multiply(transposed, *(x->vec()), *(Ax->vec()));
 }
 //-----------------------------------------------------------------------------
 void EpetraMatrix::getrow(uint row, Array<uint>& columns, Array<double>& values) const
@@ -298,6 +298,13 @@ void EpetraMatrix::setrow(uint row, const Array<uint>& columns, const Array<doub
 LinearAlgebraFactory& EpetraMatrix::factory() const
 {
   return EpetraFactory::instance();
+}
+//-----------------------------------------------------------------------------
+Epetra_FECrsMatrix& EpetraMatrix::mat_ref() const
+{
+  dolfin_assert(A); 
+  warning("This may be removed shortly. If possible, use EpetraVector::vec() instead.");
+  return *A;
 }
 //-----------------------------------------------------------------------------
 std::tr1::shared_ptr<Epetra_FECrsMatrix> EpetraMatrix::mat() const

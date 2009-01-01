@@ -56,9 +56,9 @@ U = Function(V)
 
 # Fetch underlying epetra objects 
 
-A_epetra = cpp.down_cast_EpetraMatrix(A).mat() 
-b_epetra = cpp.down_cast_EpetraVector(b).vec() 
-x_epetra = cpp.down_cast_EpetraVector(U.vector()).vec() 
+A_epetra = cpp.down_cast_EpetraMatrix(A).mat_ref() 
+b_epetra = cpp.down_cast_EpetraVector(b).vec_ref() 
+x_epetra = cpp.down_cast_EpetraVector(U.vector()).vec_ref() 
 
 # Sets up the parameters for ML using a python dictionary
 MLList = {"max levels"        : 3, 

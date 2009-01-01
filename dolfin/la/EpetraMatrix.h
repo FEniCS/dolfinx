@@ -126,6 +126,9 @@ namespace dolfin
     //--- Special Epetra functions ---
 
     /// Return Epetra_FECrsMatrix pointer
+    Epetra_FECrsMatrix& mat_ref() const;
+
+    /// Return Epetra_FECrsMatrix pointer
     std::tr1::shared_ptr<Epetra_FECrsMatrix> mat() const;
 
     /// Assignment operator

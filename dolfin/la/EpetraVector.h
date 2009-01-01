@@ -135,10 +135,10 @@ namespace dolfin
     //--- Special Epetra functions ---
 
     /// Return Epetra_FEVector reference
-    Epetra_FEVector& vec() const;
+    Epetra_FEVector& vec_ref() const;
 
     /// Return Epetra_FEVector pointer
-    std::tr1::shared_ptr<Epetra_FEVector> vec_ptr() const;
+    std::tr1::shared_ptr<Epetra_FEVector> vec() const;
 
     /// Assignment operator
     const EpetraVector& operator= (const EpetraVector& x);
