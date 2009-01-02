@@ -43,7 +43,7 @@ cppdemos.remove('./../../demo/ode/method-weights/cpp')
 cppdemos.remove('./../../demo/ode/stiff/cpp')
 
 # Demos that are too time consuming to Valgrind
-cppdemos.remove('./../../demo/nls/cahn-hilliard/cpp')
+cppdemos.remove('./../../demo/pde/cahn-hilliard/cpp')
 
 failed = []
 
