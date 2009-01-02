@@ -1,3 +1,7 @@
+ - Do not use initial guess in Newton solver
+ - Change OutflowFacet to IsOutflowFacet and change syntax
+ - Used shared_ptr for underling linear algebra objects
+ - Cache subspaces in FunctionSpace
  - Improved plotting, now support plot(grad(u)), plot(div(u)) etc
  - Simple handling of JIT-compiled functions
  - Sign change (bug fix) in increment for Newton solver

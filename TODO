@@ -8,8 +8,14 @@ This gives convenient expand/collapse of bullets by pressing TAB.
 
 * Build system
 ** Demos are not built when using 'scons install . . . enableDemos=yes'
+
+* Assembly
+** Break up function Assembler::assemble_system
+
 * Linear Algebra
+** Complete Trilinos implementation
 ** Parallel issues
+
 * Mesh
 ** Parallel issues
    - Store both global and local indices for cell/vertex, add mesh
@@ -19,22 +25,28 @@ This gives convenient expand/collapse of bullets by pressing TAB.
      local boundary
    - Use parallel mesh information in DofMap to simplify
      implementation - should only need map from local to global cell/vertex
+
 * Manual
 ** Write incomplete sections
 ** Write appendix on coding style
 ** Document Python interface
+
 * Function
 ** Input/output for time-series
+
 * ODE solvers
 ** Solve dual and compute error estimate
 ** Automatic computation of stability factors as function of time T
+
 * Parameters
 ** Figure out where to store parameters: in DefaultParameters.h or create in constructors
 ** Load default parameters from file
 ** Add function to display all parameters
+
 * Demos
 ** Add Python versions of all demos
 ** Add CPP versions of all demos
+
 * General
 ** Replace stdio with iostream and fstream
 ** Fix setprecision() for cout
