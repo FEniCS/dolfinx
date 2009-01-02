@@ -190,6 +190,9 @@ PETScMatrix* PETScMatrix::copy() const
   dolfin_assert(A);
 
   PETScMatrix* Acopy = new PETScMatrix();
+  std::tr1::shared_ptr<Mat> _A(new Mat, PETScMatrixDeleter());
+  Acopy->A = _A;
+
   MatDuplicate(*A, MAT_COPY_VALUES, Acopy->A.get());
   return Acopy;
 }
