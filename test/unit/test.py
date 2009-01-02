@@ -39,14 +39,14 @@ for test in tests:
     else:
         print "Skipping"
     
-#    print "Python:",
-#    output = getoutput("cd %s/python && python ./test.py" % test)
-#    if "OK" in output:
-#        num_tests = int(re.search("Ran (\d+) test", output).groups()[0])
-#        print "OK (%d tests)" % num_tests
-#    else:
-#        print "*** Failed"
-#        failed += [(test, "Python", output)]
+    print "Python:",
+    output = getoutput("cd %s/python && python ./test.py" % test)
+    if "OK" in output:
+        num_tests = int(re.search("Ran (\d+) test", output).groups()[0])
+        print "OK (%d tests)" % num_tests
+    else:
+        print "*** Failed"
+        failed += [(test, "Python", output)]
 
     print ""
 
