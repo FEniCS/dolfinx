@@ -116,12 +116,12 @@ void TransfiniteInterpolation::meanValue(double* new_x, uint dim, Mesh& new_boun
   double totalW = 0.0;
   for (CellIterator c(new_boundary); !c.end(); ++c)
   {
-    cout << *c << endl;
+    //cout << *c << endl;
 
     // Get local data
     for (VertexIterator v(*c); !v.end(); ++v)
     {
-      cout << "  " << *v << endl;
+      //cout << "  " << *v << endl;
 
       const uint ind = v.pos();
       new_p[ind] = v->x();
@@ -141,7 +141,7 @@ void TransfiniteInterpolation::meanValue(double* new_x, uint dim, Mesh& new_boun
     for (uint i = 0; i < num_vertices; i++)
       totalW += w[i];
 
-    cout << "totalW = " << totalW << endl;
+    //cout << "totalW = " << totalW << endl;
     
     // Compute new position
     for (uint j=0; j<dim; j++) 
@@ -166,7 +166,7 @@ void TransfiniteInterpolation::meanValue(double* new_x, uint dim, Mesh& new_boun
       new_x[i] = new_x[i]/totalW + herm[i]/(totalW*totalW);
   }
 
-  cout << "  New x: " << new_x[0] << " " << new_x[1] << " " << new_x[2] << endl;
+  //cout << "  New x: " << new_x[0] << " " << new_x[1] << " " << new_x[2] << endl;
 
   // Free memory for d
   delete [] d;
