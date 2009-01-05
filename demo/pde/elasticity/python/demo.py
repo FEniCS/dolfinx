@@ -1,3 +1,4 @@
+
 """This demo program solves the equations of static linear elasticity
 for a gear clamped at two of its ends and twisted 30 degrees."""
 
@@ -77,16 +78,16 @@ bcs = [bcl, bcr]
 
 # Set up PDE and solve
 problem = VariationalProblem(a, L, bcs)
-sol = problem.solve()
+u = problem.solve()
 
 # Save solution to VTK format
 vtk_file = File("elasticity.pvd")
-vtk_file << sol
+vtk_file << u
 
 # Save solution to XML format
 xml_file = File("elasticity.xml")
-xml_file << sol
+xml_file << u
 
 # Plot solution
-plot(sol, mode="displacement")
+plot(u, mode="displacement")
 interactive()

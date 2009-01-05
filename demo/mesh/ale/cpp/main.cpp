@@ -32,7 +32,7 @@ int main()
   }
   
   // Move mesh
-  mesh.move(boundary, lagrange);
+  mesh.move(boundary, harmonic);
 
   // Plot mesh
   plot(mesh);
