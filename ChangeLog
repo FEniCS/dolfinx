@@ -1,3 +1,8 @@
+0.9.0 [2009-01-05]
+ - Cross-platform fixes
+ - PETScMatrix::copy fix
+ - Some Trilinos fixes
+ - Improvements in MeshData class
  - Do not use initial guess in Newton solver
  - Change OutflowFacet to IsOutflowFacet and change syntax
  - Used shared_ptr for underling linear algebra objects
