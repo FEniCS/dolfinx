@@ -1,28 +1,44 @@
-#!/bin/sh
+#!/usr/bin/env python
 #
-# Copyright (C) 2005-2008 Anders Logg.
+# Copyright (C) 2005-2009 Anders Logg.
 # Licensed under the GNU LGPL Version 2.1.
 #
 # Recompile all ffc forms (use when FFC has been updated)
 # This script should be run from the top level directory.
 
-FORMFILES=`find . -name '*.form'`
-TOPDIR=`pwd`
+import os
 
-# Regenerate all forms in element and projection library
-cd $TOPDIR/dolfin/elements
-python generate_elements.py
-python generate_projections.py
+# Forms that need special options
+special = {"CahnHilliard2D.form": "-fsplit_implementation",
+           "CahnHilliard3D.form": "-fsplit_implementation"}
 
 # Compile all form files
-for FORMFILE in $FORMFILES; do
+cwd = os.getcwd()
+for root, dirs, files in os.walk(cwd):
 
-    echo "Compiling $FORMFILE"
+    # Check for .form files
+    formfiles = [f for f in files if len(f) > 5 and f[-5:] == ".form"]
+    if len(formfiles) == 0:
+        continue
 
-    DIRNAME=`dirname $FORMFILE`
-    FILENAME=`echo $FORMFILE | sed s#$DIRNAME/##`
+    # Compile files
+    os.chdir(root)
+    print "Compiling forms in %s..." % root
+    for f in formfiles:
+        if f in special:
+            options = special[f]
+        else:
+            options = ""
+        command = "ffc -l dolfin %s %s > /dev/null" % (options, f)
+        print "  " + command
+        ret = os.system(command)
+        if not ret == 0:
+            raise RuntimeError, "Unable to compile form: %s/%s" % (root, f)
 
-    cd $TOPDIR/$DIRNAME
-    ffc -s -l dolfin $FILENAME
+# Step back to top level directory
+os.chdir(cwd)
 
-done
+# Regenerate all forms in element and projection library
+os.chdir(os.path.join(cwd, "dolfin", "elements"))
+os.system("python generate_elements.py")
+os.system("python generate_projections.py")
