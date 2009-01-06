@@ -27,6 +27,8 @@ b = assemble(L0)
 file = File("M0.m"); file <<M
 file = File("b0.m"); file <<b
 
+print "size of matrix on the whole domain is ",M.size(0),"x",M.size(1)
+
 
 W = V.restriction(mesh_function) 
 fw = Function(W, cppexpr='1.0')
@@ -35,27 +37,42 @@ uw = TrialFunction(W)
 
 m = uw*vw*dx
 L1 = fw*vw*dx 
-
 M = assemble(m)
 b = assemble(L1)
+
+print "size of matrix on the smaller domain is ",M.size(0),"x",M.size(1)
 
 file = File("M1.m"); file <<M
 file = File("b1.m"); file <<b
 
-mixed = V + W 
-#fm = Function(mixed, cppexpr='1.0')
-(vv,vw) = TestFunctions(mixed)
-(uv,uw) = TrialFunctions(mixed)
-
-
-
-m = uv*vv*dx + uw*vw*dx
-L2 = fv*vv*dx + fw*vw*dx 
+m = uw*vv*dx
 M = assemble(m)
-b = assemble(L2)
-
 file = File("M2.m"); file <<M
-file = File("b2.m"); file <<b
+print "size of matrix with trial functions on the smaller domain and test functions on the whole domain ", M.size(0), "x", M.size(1)
+
+m = uv*vw*dx
+M = assemble(m)
+
+print "size of matrix with test functions on the smaller domain and trial functions on the whole domain ", M.size(0), "x", M.size(1)
+       
+
+file = File("M3.m"); file <<M
+
+
+# FIXME: the following is currently not working
+#
+#mixed = V + W 
+#
+#(vv,vw) = TestFunctions(mixed)
+#(uv,uw) = TrialFunctions(mixed)
+
+#m = uv*vv*dx + uw*vw*dx
+#L4 = fv*vv*dx + fw*vw*dx 
+#M = assemble(m)
+#b = assemble(L4)
+
+#file = File("M4.m"); file <<M
+#file = File("b4.m"); file <<b
 
 
 
