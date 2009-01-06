@@ -152,17 +152,16 @@ void Assembler::assemble_cells(GenericTensor& A,
   ufc::cell_integral* integral = ufc.cell_integrals[0];
 
   // Assemble over cells
-  uint NN = a.function_spaces().size();  
-  bool compute_on_cell; 
+  uint num_function_spaces = a.function_spaces().size();  
   Progress p(progress_message(A.rank(), "cells"), mesh.numCells());
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     // FIXME will move this check into a separate function. 
     // Need to check the coefficients as well. 
-    compute_on_cell = true; 
-    for (uint g = 0; g < NN; g++)
+    bool compute_on_cell = true; 
+    for (uint i = 0; i < num_function_spaces; i++)
     {  
-      if (!a.function_space(g).is_inside_restriction(cell->index()))
+      if (!a.function_space(i).is_inside_restriction(cell->index()))
         compute_on_cell = false;
     }
     if (!compute_on_cell)

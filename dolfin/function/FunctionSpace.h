@@ -101,8 +101,10 @@ namespace dolfin
     // Evaluate restriction 
     bool is_inside_restriction(uint c) const
     {
-      if (_restriction) return _restriction->get(c);
-      else return true;
+      if (_restriction) 
+        return _restriction->get(c);
+      else 
+        return true;
     }
 
   private:
