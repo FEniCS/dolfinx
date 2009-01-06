@@ -22,7 +22,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 DofMap::DofMap(ufc::dof_map& dof_map, const Mesh& mesh)
-  : dof_map(0),
+  : dof_map(0), dof_map_size(0), cell_map(0),     
     ufc_dof_map(reference_to_no_delete_pointer(dof_map)),
     num_cells(mesh.numCells()), partitions(0), _offset(0),
     dolfin_mesh(mesh)
@@ -31,7 +31,7 @@ DofMap::DofMap(ufc::dof_map& dof_map, const Mesh& mesh)
 }
 //-----------------------------------------------------------------------------
 DofMap::DofMap(std::tr1::shared_ptr<ufc::dof_map> dof_map, const Mesh& mesh)
-  : dof_map(0),
+  : dof_map(0), dof_map_size(0), cell_map(0),     
     ufc_dof_map(dof_map),
     num_cells(mesh.numCells()), partitions(0), _offset(0),
     dolfin_mesh(mesh)
@@ -40,7 +40,7 @@ DofMap::DofMap(std::tr1::shared_ptr<ufc::dof_map> dof_map, const Mesh& mesh)
 }
 //-----------------------------------------------------------------------------
 DofMap::DofMap(ufc::dof_map& dof_map, const Mesh& mesh, MeshFunction<uint>& partitions)
-  : dof_map(0),
+  : dof_map(0), dof_map_size(0), cell_map(0), 
     ufc_dof_map(reference_to_no_delete_pointer(dof_map)),
     num_cells(mesh.numCells()), partitions(&partitions), _offset(0),
     dolfin_mesh(mesh)
@@ -51,7 +51,7 @@ DofMap::DofMap(ufc::dof_map& dof_map, const Mesh& mesh, MeshFunction<uint>& part
 DofMap::DofMap(std::tr1::shared_ptr<ufc::dof_map> dof_map,
                const Mesh& mesh,
                MeshFunction<uint>& partitions)
-  : dof_map(0),
+  : dof_map(0), dof_map_size(0), cell_map(0), 
     ufc_dof_map(dof_map),
     num_cells(mesh.numCells()), partitions(&partitions), _offset(0),
     dolfin_mesh(mesh)
@@ -61,7 +61,7 @@ DofMap::DofMap(std::tr1::shared_ptr<ufc::dof_map> dof_map,
 //-----------------------------------------------------------------------------
 DofMap::DofMap(const std::string signature,
                const Mesh& mesh)
-  : dof_map(0),
+  : dof_map(0), dof_map_size(0), cell_map(0), 
     num_cells(mesh.numCells()), partitions(0), _offset(0),
     dolfin_mesh(mesh)
 {
@@ -79,7 +79,7 @@ DofMap::DofMap(const std::string signature,
 //-----------------------------------------------------------------------------
 DofMap::DofMap(const std::string signature, const Mesh& mesh,
                MeshFunction<uint>& partitions)
-  : dof_map(0),
+  : dof_map(0), dof_map_size(0), cell_map(0), 
     num_cells(mesh.numCells()), partitions(&partitions), _offset(0),
     dolfin_mesh(mesh)
 {
@@ -233,6 +233,70 @@ void DofMap::build(UFC& ufc, const Mesh& mesh)
 {
   DofMapBuilder::build(*this, ufc, mesh);
 }
+//-----------------------------------------------------------------------------
+void DofMap::build(const Mesh& mesh, const FiniteElement& fe, const MeshFunction<bool>& meshfunction)
+{
+  // Allocate dof map
+  uint n = ufc_dof_map->local_dimension(); 
+  uint* dofs = new uint[n]; 
+  dof_map = new int[n*mesh.numCells()];
+  cell_map = new int[mesh.numCells()]; 
+  int* restriction_mapping = new int[n*mesh.numCells()];
+  for (uint i=0; i<n*mesh.numCells(); i++) 
+  {
+    dof_map[i]  = -1;  
+  }
+  for (uint i=0; i<ufc_dof_map->global_dimension(); i++) 
+  {
+    restriction_mapping[i] = -1; 
+  }
+  for (uint i=0; i<mesh.numCells(); i++) {
+    cell_map[i] = -1; 
+  }
+
+  CellIterator cell(mesh);
+  UFCCell ufc_cell(*cell);
+  bool use_cell = false; 
+  std::map<int,int> R; 
+  std::map<int,int>:: iterator iter; 
+  uint dof_counter = 0; 
+  uint cell_counter = 0; 
+  for (; !cell.end(); ++cell)
+  {
+    ufc_cell.update(*cell);
+    use_cell = meshfunction.get(cell->index()); 
+    ufc_dof_map->init_cell(ufc_mesh, ufc_cell);
+    ufc_dof_map->tabulate_dofs(dofs, ufc_mesh, ufc_cell); 
+    if (use_cell) {
+      for (uint k=0; k<n; k++) {
+        if (R.find(dofs[k]) == R.end()){ 
+          R[dofs[k]] = dof_counter; 
+          dof_counter++;
+        }
+        cell_map[cell->index()] = cell_counter; 
+        dof_map[cell->index()*n + k] = R[dofs[k]];  
+        restriction_mapping [dofs[k]] = R[dofs[k]]; 
+      }
+      cell_counter++; 
+    }
+  }
+  dof_map_size = dof_counter; 
+
+  /* For debugging 
+  for (uint i=0; i<ufc_dof_map->global_dimension(); i++) {
+    std::cout <<"R["<<i<<"]="<<restriction_mapping[i]<<std::endl; 
+  }
+  for (uint c=0; c<mesh.numCells(); c++) { 
+    for (uint i=0; i<n; i++) {
+      std::cout <<"dof_map["<<c*n+i<<"]="<<dof_map[c*n+i]<<std::endl; 
+    }
+  }
+  */
+
+  delete [] dofs; 
+  delete [] restriction_mapping; 
+}
+
 //-----------------------------------------------------------------------------
 std::map<dolfin::uint, dolfin::uint> DofMap::getMap() const
 {
