@@ -319,11 +319,12 @@ void FunctionSpace:: attach(MeshFunction<bool>& restriction)
   }
 }
 //-----------------------------------------------------------------------------
-std::tr1::shared_ptr<FunctionSpace> FunctionSpace::restriction(MeshFunction<bool>& restriction)
+//std::tr1::shared_ptr<FunctionSpace> FunctionSpace::restriction(MeshFunction<bool>& restriction)
+FunctionSpace* FunctionSpace::restriction(MeshFunction<bool>& restriction)
 {
 
   std::tr1::shared_ptr<FunctionSpace> funcspace(new FunctionSpace(_mesh, _element, _dofmap));
   funcspace->attach(restriction); 
-  return funcspace; 
+  return funcspace.get(); 
 }
 //-----------------------------------------------------------------------------

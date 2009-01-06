@@ -28,14 +28,18 @@ file = File("M0.m"); file <<M
 file = File("b0.m"); file <<b
 
 
-#W = V.restriction(mesh_function) 
-W = V 
-fw = Function(W, cppexpr='1.0')
+W = V.restriction(mesh_function) 
+print type(V)
+print type(W)
+print dir(W)
+#W = V 
+#fw = Function(W, cppexpr='1.0')
 vw = TestFunction(W)
 uw = TrialFunction(W)
 
 m = uw*vw*dx
-L1 = fw*vw*dx 
+#L1 = fw*vw*dx 
+L1 = vw*dx 
 
 M = assemble(m)
 b = assemble(L1)
@@ -43,15 +47,11 @@ b = assemble(L1)
 file = File("M1.m"); file <<M
 file = File("b1.m"); file <<b
 
-mixed = MixedFunctionSpace([V,W]) 
+mixed = V + W 
 #fm = Function(mixed, cppexpr='1.0')
-vm = TestFunction(mixed)
-um = TrialFunction(mixed)
+(vv,vw) = TestFunctions(mixed)
+(uv,uw) = TrialFunctions(mixed)
 
-print dir(vm)
-#fv, fw = fm.split()
-vv, vw = vm.split()
-uv, uw = um.split()
 
 
 m = uv*vv*dx + uw*vw*dx
