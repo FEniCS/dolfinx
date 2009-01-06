@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells, 2008.
-// Modified by Kent-Andre Mardal 2009.
+// Modified by Kent-Andre Mardal, 2009.
 //
 // First added:  2008-09-11
 // Last changed: 2009-01-06
@@ -91,18 +91,18 @@ namespace dolfin
     /// Extract sub space for component
     std::tr1::shared_ptr<FunctionSpace> extract_sub_space(const std::vector<uint>& component) const;
 
-    // Attach restriction meshfunction 
-    void attach(MeshFunction<bool>& restriction); 
+    // Attach restriction meshfunction
+    void attach(MeshFunction<bool>& restriction);
 
-    // Create Functions space based on the restriction 
-//    std::tr1::shared_ptr<FunctionSpace> restriction(MeshFunction<bool>& restriction);
+    // Create Functions space based on the restriction
+    //    std::tr1::shared_ptr<FunctionSpace> restriction(MeshFunction<bool>& restriction);
     FunctionSpace* restriction(MeshFunction<bool>& restriction);
 
     // Evaluate restriction 
-    bool is_inside_restriction(uint c) const  
+    bool is_inside_restriction(uint c) const
     {
-      if (_restriction) return _restriction->get(c); 
-      else return true; 
+      if (_restriction) return _restriction->get(c);
+      else return true;
     }
 
   private:
@@ -147,8 +147,8 @@ namespace dolfin
     // The dofmap
     std::tr1::shared_ptr<const DofMap> _dofmap;
 
-    // The restriction meshfunction 
-    std::tr1::shared_ptr<const MeshFunction<bool> > _restriction; 
+    // The restriction meshfunction
+    std::tr1::shared_ptr<const MeshFunction<bool> > _restriction;
 
     // Cache of sub spaces
     mutable std::map<std::string, std::tr1::shared_ptr<FunctionSpace> > subspaces;

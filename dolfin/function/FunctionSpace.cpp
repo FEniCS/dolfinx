@@ -310,21 +310,21 @@ void FunctionSpace::Scratch::init(const FiniteElement& element)
     values[i] = 0.0;
 }
 //-----------------------------------------------------------------------------
-void FunctionSpace:: attach(MeshFunction<bool>& restriction) 
+void FunctionSpace:: attach(MeshFunction<bool>& restriction)
 {
-  if (restriction.dim() == (*_mesh).topology().dim()) { 
+  if (restriction.dim() == (*_mesh).topology().dim())
+  {
     _restriction.reset(&restriction);
     //FIXME: hack to cast away the const
-    const_cast<DofMap&>(*_dofmap).build(*_mesh, *_element, restriction); 
+    const_cast<DofMap&>(*_dofmap).build(*_mesh, *_element, restriction);
   }
 }
 //-----------------------------------------------------------------------------
 //std::tr1::shared_ptr<FunctionSpace> FunctionSpace::restriction(MeshFunction<bool>& restriction)
 FunctionSpace* FunctionSpace::restriction(MeshFunction<bool>& restriction)
 {
-
   std::tr1::shared_ptr<FunctionSpace> funcspace(new FunctionSpace(_mesh, _element, _dofmap));
-  funcspace->attach(restriction); 
-  return funcspace.get(); 
+  funcspace->attach(restriction);
+  return funcspace.get();
 }
 //-----------------------------------------------------------------------------
