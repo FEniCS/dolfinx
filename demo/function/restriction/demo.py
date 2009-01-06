@@ -29,7 +29,6 @@ file = File("b0.m"); file <<b
 
 
 W = V.restriction(mesh_function) 
-#W = V 
 fw = Function(W, cppexpr='1.0')
 vw = TestFunction(W)
 uw = TrialFunction(W)
@@ -51,9 +50,9 @@ mixed = V + W
 
 
 m = uv*vv*dx + uw*vw*dx
-#L2 = fv*vv*dx + fw*vw*dx 
+L2 = fv*vv*dx + fw*vw*dx 
 M = assemble(m)
-#b = assemble(L2)
+b = assemble(L2)
 
 file = File("M2.m"); file <<M
 file = File("b2.m"); file <<b
