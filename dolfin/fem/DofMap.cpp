@@ -2,9 +2,10 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Martin Alnes, 2008
+// Modified by Kent-Andre Mardal, 2009
 //
 // First added:  2007-03-01
-// Last changed: 2008-12-24
+// Last changed: 2009-01-06
 
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/common/Timer.h>

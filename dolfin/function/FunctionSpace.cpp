@@ -4,15 +4,17 @@
 // Modified by Kristoffer Selim, 2008.
 // Modified by Martin Alnes, 2008.
 // Modified by Garth N. Wells, 2008.
+// Modified by Kent-Andre Mardal, 2009.
 //
 // First added:  2008-09-11
-// Last changed: 2008-12-26
+// Last changed: 2009-01-06
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/mesh/Vertex.h>
 #include <dolfin/mesh/IntersectionDetector.h>
 #include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/DofMap.h>
 #include "Function.h"
@@ -306,5 +308,22 @@ void FunctionSpace::Scratch::init(const FiniteElement& element)
   values = new double[size];
   for (uint i = 0; i < size; i++)
     values[i] = 0.0;
+}
+//-----------------------------------------------------------------------------
+void FunctionSpace:: attach(MeshFunction<bool>& restriction) 
+{
+  if (restriction.dim() == (*_mesh).topology().dim()) { 
+    _restriction.reset(&restriction);
+    //FIXME: hack to cast away the const
+    const_cast<DofMap&>(*_dofmap).build(*_mesh, *_element, restriction); 
+  }
+}
+//-----------------------------------------------------------------------------
+std::tr1::shared_ptr<FunctionSpace> FunctionSpace::restriction(MeshFunction<bool>& restriction)
+{
+
+  std::tr1::shared_ptr<FunctionSpace> funcspace(new FunctionSpace(_mesh, _element, _dofmap));
+  funcspace->attach(restriction); 
+  return funcspace; 
 }
 //-----------------------------------------------------------------------------

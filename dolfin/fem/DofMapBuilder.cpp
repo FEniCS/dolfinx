@@ -28,7 +28,7 @@ void DofMapBuilder::build(DofMap& dof_map, UFC& ufc, const Mesh& mesh)
 
   // Allocate dof map
   const uint n = dof_map.local_dimension();
-  dof_map.dof_map = new uint[n*mesh.numCells()];
+  dof_map.dof_map = new int[n*mesh.numCells()];
   
   error("Not implemented.");
 
