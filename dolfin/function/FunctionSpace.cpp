@@ -265,6 +265,23 @@ std::tr1::shared_ptr<FunctionSpace> FunctionSpace::extract_sub_space(const std::
   return new_sub_space;
 }
 //-----------------------------------------------------------------------------
+void FunctionSpace:: attach(MeshFunction<bool>& restriction)
+{
+  if (restriction.dim() == (*_mesh).topology().dim())
+  {
+    _restriction.reset(&restriction);
+    //FIXME: hack to cast away the const
+    const_cast<DofMap&>(*_dofmap).build(*_mesh, *_element, restriction);
+  }
+}
+//-----------------------------------------------------------------------------
+std::tr1::shared_ptr<FunctionSpace> FunctionSpace::restriction(MeshFunction<bool>& restriction)
+{
+  std::tr1::shared_ptr<FunctionSpace> function_space(new FunctionSpace(_mesh, _element, _dofmap));
+  function_space->attach(restriction);
+  return function_space;
+}
+//-----------------------------------------------------------------------------
 FunctionSpace::Scratch::Scratch(const FiniteElement& element)
   : size(0), dofs(0), coefficients(0), values(0)
 {
@@ -310,21 +327,4 @@ void FunctionSpace::Scratch::init(const FiniteElement& element)
     values[i] = 0.0;
 }
 //-----------------------------------------------------------------------------
-void FunctionSpace:: attach(MeshFunction<bool>& restriction)
-{
-  if (restriction.dim() == (*_mesh).topology().dim())
-  {
-    _restriction.reset(&restriction);
-    //FIXME: hack to cast away the const
-    const_cast<DofMap&>(*_dofmap).build(*_mesh, *_element, restriction);
-  }
-}
-//-----------------------------------------------------------------------------
-//std::tr1::shared_ptr<FunctionSpace> FunctionSpace::restriction(MeshFunction<bool>& restriction)
-FunctionSpace* FunctionSpace::restriction(MeshFunction<bool>& restriction)
-{
-  std::tr1::shared_ptr<FunctionSpace> funcspace(new FunctionSpace(_mesh, _element, _dofmap));
-  funcspace->attach(restriction);
-  return funcspace.get();
-}
-//-----------------------------------------------------------------------------
+

@@ -95,14 +95,15 @@ namespace dolfin
     void attach(MeshFunction<bool>& restriction);
 
     // Create Functions space based on the restriction
-    //    std::tr1::shared_ptr<FunctionSpace> restriction(MeshFunction<bool>& restriction);
-    FunctionSpace* restriction(MeshFunction<bool>& restriction);
+    std::tr1::shared_ptr<FunctionSpace> restriction(MeshFunction<bool>& restriction);
 
     // Evaluate restriction 
     bool is_inside_restriction(uint c) const
     {
-      if (_restriction) return _restriction->get(c);
-      else return true;
+      if (_restriction) 
+        return _restriction->get(c);
+      else 
+        return true;
     }
 
   private:
