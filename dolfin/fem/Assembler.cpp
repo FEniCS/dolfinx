@@ -155,36 +155,38 @@ void Assembler::assemble_cells(GenericTensor& A,
   Progress p(progress_message(A.rank(), "cells"), mesh.numCells());
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
-    // Get integral for sub domain (if any)
-    if (domains && domains->size() > 0)
-    {
-      const uint domain = (*domains)(*cell);
-      if (domain < ufc.form.num_cell_integrals())
-        integral = ufc.cell_integrals[domain];
+    if (a.function_space(0).is_inside_restriction(cell->index())) { 
+
+      // Get integral for sub domain (if any)
+      if (domains && domains->size() > 0)
+      {
+        const uint domain = (*domains)(*cell);
+        if (domain < ufc.form.num_cell_integrals())
+          integral = ufc.cell_integrals[domain];
+        else
+          continue;
+      }
+
+      // Update to current cell
+      ufc.update(*cell);
+
+      // Interpolate coefficients on cell
+      for (uint i = 0; i < coefficients.size(); i++)
+        coefficients[i]->interpolate(ufc.w[i], ufc.cell, cell->index());
+
+      // Tabulate dofs for each dimension
+      for (uint i = 0; i < ufc.form.rank(); i++)
+        a.function_space(i).dofmap().tabulate_dofs(ufc.dofs[i], ufc.cell, cell->index());
+
+      // Tabulate cell tensor
+      integral->tabulate_tensor(ufc.A, ufc.w, ufc.cell);
+
+      // Add entries to global tensor
+      if (values && ufc.form.rank() == 0)
+        (*values)[cell->index()] = ufc.A[0];
       else
-        continue;
+        A.add(ufc.A, ufc.local_dimensions, ufc.dofs);
     }
-
-    // Update to current cell
-    ufc.update(*cell);
-
-    // Interpolate coefficients on cell
-    for (uint i = 0; i < coefficients.size(); i++)
-      coefficients[i]->interpolate(ufc.w[i], ufc.cell, cell->index());
-    
-    // Tabulate dofs for each dimension
-    for (uint i = 0; i < ufc.form.rank(); i++)
-      a.function_space(i).dofmap().tabulate_dofs(ufc.dofs[i], ufc.cell, cell->index());
-
-    // Tabulate cell tensor
-    integral->tabulate_tensor(ufc.A, ufc.w, ufc.cell);
-
-    // Add entries to global tensor
-    if (values && ufc.form.rank() == 0)
-      (*values)[cell->index()] = ufc.A[0];
-    else
-      A.add(ufc.A, ufc.local_dimensions, ufc.dofs);
-    
     p++;
   }
 }
