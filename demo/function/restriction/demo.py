@@ -29,17 +29,13 @@ file = File("b0.m"); file <<b
 
 
 W = V.restriction(mesh_function) 
-print type(V)
-print type(W)
-print dir(W)
 #W = V 
-#fw = Function(W, cppexpr='1.0')
+fw = Function(W, cppexpr='1.0')
 vw = TestFunction(W)
 uw = TrialFunction(W)
 
 m = uw*vw*dx
-#L1 = fw*vw*dx 
-L1 = vw*dx 
+L1 = fw*vw*dx 
 
 M = assemble(m)
 b = assemble(L1)
