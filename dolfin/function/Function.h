@@ -1,12 +1,12 @@
 // Copyright (C) 2003-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Garth N. Wells, 2005-2008.
+// Modified by Garth N. Wells, 2005-2009.
 // Modified by Kristian B. Oelgaard, 2007.
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2003-11-28
-// Last changed: 2008-12-26
+// Last changed: 2009-01-07
 
 #ifndef __FUNCTION_H
 #define __FUNCTION_H
@@ -42,8 +42,14 @@ namespace dolfin
     /// Create function on given function space
     explicit Function(const FunctionSpace& V);
 
+    /// Create function on given function space with a given vector
+    Function(const FunctionSpace& V, GenericVector& x);
+
     /// Create function on given function space (shared data)
     explicit Function(std::tr1::shared_ptr<const FunctionSpace> V);
+
+    /// Create function on given function space with a given vector (shared data)
+    Function(std::tr1::shared_ptr<const FunctionSpace> V, std::tr1::shared_ptr<GenericVector> x);
 
     /// Create function from file
     explicit Function(std::string filename);
@@ -120,7 +126,8 @@ namespace dolfin
     std::tr1::shared_ptr<const FunctionSpace> _function_space;
 
     // The vector of expansion coefficients
-    GenericVector* _vector;
+    std::tr1::shared_ptr<GenericVector> _vector;
+    //GenericVector* _vector;
 
   };
 
