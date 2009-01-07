@@ -540,7 +540,7 @@ void Assembler::assemble_system(GenericMatrix& A,
     double* x0_values = new double[N];
     x0->get(x0_values);
     for (uint i = 0; i < N; i++)
-      g[i] -= x0_values[i];
+      g[i] = x0_values[i] - g[i];
     delete [] x0_values;
   }
 
