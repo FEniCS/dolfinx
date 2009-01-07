@@ -1,11 +1,11 @@
 // Copyright (C) 2007-2008 Anders Logg and Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Kristian Oelgaard, 2007
+// Modified by Kristian Oelgaard, 2008
 // Modified by Martin Sandve Alnes, 2008
 //
 // First added:  2007-04-10
-// Last changed: 2008-12-27
+// Last changed: 2009-01-07
 
 #include <dolfin/common/constants.h>
 #include <dolfin/function/Function.h>
@@ -220,7 +220,7 @@ void DirichletBC::apply(GenericMatrix* A,
     double* x_values = new double[boundary_values.size()];
     x->get(x_values, boundary_values.size(), dofs);
     for (uint i = 0; i < boundary_values.size(); i++)
-      values[i] += x_values[i];
+      values[i] = x_values[i] - values[i];
     delete [] x_values;
   }
   
