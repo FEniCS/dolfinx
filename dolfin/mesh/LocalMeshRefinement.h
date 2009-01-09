@@ -26,14 +26,21 @@ namespace dolfin
     static void refineMeshByEdgeBisection(Mesh& mesh, 
                                           MeshFunction<bool>& cell_marker,
                                           bool refine_boundary = true); 
-
+    
+    /// Iteratively refine mesh locally by the longest edge bisection 
+    static void refineIterativelyByEdgeBisection(Mesh& mesh, 
+                                                 MeshFunction<bool>& cell_marker);
   private: 
 
     /// Bisect edge of simplex cell
     static void bisectEdgeOfSimplexCell(const Cell& cell, Edge& edge, 
-                                        uint& new_vertex,  
+                                        uint new_vertex,  
                                         MeshEditor& editor, 
                                         uint& current_cell); 
+                                        
+    static bool iterationOfRefinement(Mesh& mesh, 
+                                      MeshFunction<bool>& cell_marker,
+                                      MeshFunction<uint>& bisected_edges);
 
   };
 

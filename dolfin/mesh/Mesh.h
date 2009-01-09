@@ -146,8 +146,12 @@ namespace dolfin
     /// Refine mesh uniformly
     void refine();
 
-    /// Refine mesh according to cells marked for refinement
+    /// Refine mesh according to cells marked for refinement,
     void refine(MeshFunction<bool>& cell_markers, bool refine_boundary = true);
+
+    /// Refine mesh according to cells marked for refinement, 
+    /// Iterative the longest edge bisection algorithm 
+    void refine_iteratively(MeshFunction<bool>& cell_markers);
 
     /// Coarsen mesh uniformly
     void coarsen();

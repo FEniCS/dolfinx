@@ -201,6 +201,14 @@ void Mesh::refine(MeshFunction<bool>& cell_markers, bool refine_boundary)
   _ordered = false;
 }
 //-----------------------------------------------------------------------------
+void Mesh::refine_iteratively(MeshFunction<bool>& cell_markers)
+{
+  LocalMeshRefinement::refineIterativelyByEdgeBisection(*this, cell_markers);
+
+  // Mesh may not be ordered
+  _ordered = false;
+}
+//-----------------------------------------------------------------------------
 void Mesh::coarsen()
 {
   // FIXME: Move implementation to separate class and just call function here
