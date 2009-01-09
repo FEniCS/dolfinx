@@ -80,6 +80,15 @@ namespace dolfin
     // Current time
     double t;
     
+    // Always visible
+    bool always;
+    
+    // Finished flag
+    bool finished;
+    
+    // Displayed flag
+    bool displayed;
+    
   };
   
 }
