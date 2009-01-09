@@ -22,13 +22,11 @@ using namespace dolfin;
 
 struct cmp2 
 {
-   bool operator()(Array<uint> const a, Array<uint> const b) 
+   bool operator()(Array<dolfin::uint> const a, Array<dolfin::uint> const b) 
    {       
-     if(a[0] == b[0]) {
+     if (a[0] == b[0])
        return a[1] < b[1];
-     } else {
-       return a[0] < b[0];
-     } 
+     return a[0] < b[0];
    }
 };
 
@@ -44,7 +42,8 @@ void LocalMeshRefinement::refineMeshByEdgeBisection(Mesh& mesh,
   const uint num_cells = mesh.size(mesh.topology().dim());
   
   // Check cell marker 
-  if ( cell_marker.size() != num_cells ) error("Wrong dimension of cell_marker");
+  if (cell_marker.size() != num_cells)
+    error("Wrong dimension of cell_marker");
   
   // Generate cell - edge connectivity if not generated
   mesh.init(mesh.topology().dim(), 1);
