@@ -1,11 +1,11 @@
 // Copyright (C) 2003-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Garth N. Wells, 2005-2008.
+// Modified by Garth N. Wells, 2005-2009.
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2003-11-28
-// Last changed: 2008-12-04
+// Last changed: 2009-01-07
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/Array.h>
@@ -27,7 +27,7 @@ using namespace dolfin;
 Function::Function()
   :  Variable("v", "unnamed function"),
      _function_space(static_cast<FunctionSpace*>(0)),
-    _vector(0)
+    _vector(static_cast<GenericVector*>(0))
 {
   // Do nothing
 }
@@ -35,23 +35,42 @@ Function::Function()
 Function::Function(const FunctionSpace& V)
   : Variable("v", "unnamed function"),
     _function_space(reference_to_no_delete_pointer(V)),
-    _vector(0)
+    _vector(static_cast<GenericVector*>(0))
 {
   // Do nothing
+}
+//-----------------------------------------------------------------------------
+Function::Function(const FunctionSpace& V, GenericVector& x)
+  : Variable("v", "unnamed function"),
+    _function_space(reference_to_no_delete_pointer(V)),
+    _vector(reference_to_no_delete_pointer(x))
+{
+  // Basic test
+  dolfin_assert(V.dofmap().global_dimension() == x.size());
 }
 //-----------------------------------------------------------------------------
 Function::Function(std::tr1::shared_ptr<const FunctionSpace> V)
   : Variable("v", "unnamed function"),
     _function_space(V),
-    _vector(0)
+    _vector(static_cast<GenericVector*>(0))
 {
   // Do nothing
+}
+//-----------------------------------------------------------------------------
+Function::Function(std::tr1::shared_ptr<const FunctionSpace> V, 
+                   std::tr1::shared_ptr<GenericVector> x)
+  : Variable("v", "unnamed function"),
+    _function_space(V),
+    _vector(x)
+{
+  // Basic test
+  dolfin_assert(V->dofmap().global_dimension() == x->size());
 }
 //-----------------------------------------------------------------------------
 Function::Function(std::string filename)
   : Variable("v", "unnamed function"),
     _function_space(static_cast<FunctionSpace*>(0)),
-    _vector(0)
+    _vector(static_cast<GenericVector*>(0))
 {
   File file(filename);
   file >> *this;
@@ -60,7 +79,7 @@ Function::Function(std::string filename)
 Function::Function(const SubFunction& v)
   : Variable("v", "unnamed function"),
     _function_space(v.v.function_space().extract_sub_space(v.component)),
-    _vector(0)
+    _vector(static_cast<GenericVector*>(0))
 {
   // Initialize vector
   init();
@@ -84,14 +103,14 @@ Function::Function(const SubFunction& v)
 Function::Function(const Function& v)
   : Variable("v", "unnamed function"),
     _function_space(v._function_space),
-    _vector(0)
+    _vector(static_cast<GenericVector*>(0))
 {
   *this = v;
 }
 //-----------------------------------------------------------------------------
 Function::~Function()
 {
-  delete _vector;
+  // Do nothing;
 }
 //-----------------------------------------------------------------------------
 const Function& Function::operator= (const Function& v)
@@ -293,7 +312,8 @@ void Function::init()
   if (!_vector)
   {
     DefaultFactory factory;
-    _vector = factory.create_vector();
+    std::tr1::shared_ptr<GenericVector> _vec(factory.create_vector());
+    _vector = _vec;
   }
 
   // Initialize vector of dofs
