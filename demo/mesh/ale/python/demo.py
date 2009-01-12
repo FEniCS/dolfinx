@@ -22,7 +22,7 @@ for x in boundary.coordinates():
     x[1] += 0.1*sin(5.0*x[0])
 
 # Move mesh
-mesh.move(boundary, harmonic)
+mesh.move(boundary)
 
 # Plot mesh
 plot(mesh, interactive=True)

@@ -1,3 +1,4 @@
+ - Bug fix in transfinite mean-value interpolation
  - Less annoying progress bar (silent when progress is fast)
  - Fix assignment operator for MeshData
  - Improved adaptive mesh refinement producing better quality meshes
