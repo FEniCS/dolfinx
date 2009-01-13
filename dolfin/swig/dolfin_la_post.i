@@ -394,6 +394,22 @@ DOWN_CAST_MACRO(EpetraMatrix)
 %pythoncode %{
 _matrix_vector_mul_map[EpetraMatrix] = [EpetraVector]
 %}
+
+%extend dolfin::EpetraMatrix
+{
+  Epetra_FECrsMatrix& ref_mat() const
+  {
+    return *self->mat();
+  }
+}
+
+%extend dolfin::EpetraVector
+{
+  Epetra_FEVector& ref_vec() const
+  {
+    return *self->vec();
+  }
+}
 #endif
 
 #ifdef HAS_MTL4

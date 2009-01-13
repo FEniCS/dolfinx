@@ -110,6 +110,12 @@ LA_FACTORY(PETScFactory)
 LA_PRE_VEC_INTERFACE(EpetraVector)
 LA_PRE_MAT_INTERFACE(EpetraMatrix)
 LA_FACTORY(EpetraFactory)
+
+// Rename functions returning shared_ptr to underlying matrix/vector
+%rename (shared_mat) dolfin::EpetraMatrix::mat;
+%rename (mat) dolfin::EpetraMatrix::ref_mat;
+%rename (shared_vec) dolfin::EpetraVector::vec;
+%rename (vec) dolfin::EpetraVector::ref_vec;
 #endif
 
 #ifdef HAS_MTL4
