@@ -23,4 +23,4 @@ U = Function(element)
 a = v.dx(i)*(1.0 + U*U)*u.dx(i)*dx + v.dx(i)*(2.0*U*u)*U.dx(i)*dx
 L = v.dx(i)*(1.0 + U*U)*U.dx(i)*dx - v*f*dx
 
-compile([a, L, M, element], "NonlinearPoisson", options={'language': 'dolfin', 'blas': False, 'form_postfix': True, 'precision': '15', 'cache_dir': None, 'cpp optimize': False, 'split_implementation': False, 'quadrature_points': False, 'output_dir': '.', 'representation': 'tensor', 'shared_ptr': False, 'optimize': False}, global_variables=globals())
+compile([a, L, M, element], "NonlinearPoisson", options={'language': 'dolfin', 'blas': False, 'form_postfix': True, 'precision': '15', 'cache_dir': None, 'cpp optimize': False, 'split_implementation': False, 'quadrature_points': False, 'output_dir': '.', 'representation': 'tensor', 'shared_ptr': True, 'optimize': False}, global_variables=globals())

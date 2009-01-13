@@ -8,7 +8,7 @@
 
 #ifdef HAS_PETSC
 
-#include <tr1/memory>
+#include <boost/shared_ptr.hpp>
 #include <iostream>
 
 #include <dolfin/common/NoDeleter.h>
@@ -25,8 +25,8 @@ namespace dolfin
  
   int usermult(Mat A, Vec x, Vec y)
   {
-    std::tr1::shared_ptr<Vec> _x(&x, NoDeleter<Vec>());
-    std::tr1::shared_ptr<Vec> _y(&y, NoDeleter<Vec>());
+    boost::shared_ptr<Vec> _x(&x, NoDeleter<Vec>());
+    boost::shared_ptr<Vec> _y(&y, NoDeleter<Vec>());
 
     void* ctx = 0;
     MatShellGetContext(A, &ctx);

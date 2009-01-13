@@ -49,7 +49,7 @@ Function::Function(const FunctionSpace& V, GenericVector& x)
   dolfin_assert(V.dofmap().global_dimension() == x.size());
 }
 //-----------------------------------------------------------------------------
-Function::Function(std::tr1::shared_ptr<const FunctionSpace> V)
+Function::Function(boost::shared_ptr<const FunctionSpace> V)
   : Variable("v", "unnamed function"),
     _function_space(V),
     _vector(static_cast<GenericVector*>(0))
@@ -57,8 +57,8 @@ Function::Function(std::tr1::shared_ptr<const FunctionSpace> V)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-Function::Function(std::tr1::shared_ptr<const FunctionSpace> V, 
-                   std::tr1::shared_ptr<GenericVector> x)
+Function::Function(boost::shared_ptr<const FunctionSpace> V, 
+                   boost::shared_ptr<GenericVector> x)
   : Variable("v", "unnamed function"),
     _function_space(V),
     _vector(x)
@@ -154,7 +154,7 @@ const FunctionSpace& Function::function_space() const
   return *_function_space;
 }
 //-----------------------------------------------------------------------------
-std::tr1::shared_ptr<const FunctionSpace> Function::function_space_ptr() const
+boost::shared_ptr<const FunctionSpace> Function::function_space_ptr() const
 {
   return _function_space;
 }
@@ -312,7 +312,7 @@ void Function::init()
   if (!_vector)
   {
     DefaultFactory factory;
-    std::tr1::shared_ptr<GenericVector> _vec(factory.create_vector());
+    boost::shared_ptr<GenericVector> _vec(factory.create_vector());
     _vector = _vec;
   }
 

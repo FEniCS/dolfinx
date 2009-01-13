@@ -31,7 +31,7 @@ DofMap::DofMap(ufc::dof_map& dof_map, const Mesh& mesh)
   init(mesh);
 }
 //-----------------------------------------------------------------------------
-DofMap::DofMap(std::tr1::shared_ptr<ufc::dof_map> dof_map, const Mesh& mesh)
+DofMap::DofMap(boost::shared_ptr<ufc::dof_map> dof_map, const Mesh& mesh)
   : dof_map(0), dof_map_size(0), cell_map(0),     
     ufc_dof_map(dof_map),
     num_cells(mesh.numCells()), partitions(0), _offset(0),
@@ -49,7 +49,7 @@ DofMap::DofMap(ufc::dof_map& dof_map, const Mesh& mesh, MeshFunction<uint>& part
   init(mesh);
 }
 //-----------------------------------------------------------------------------
-DofMap::DofMap(std::tr1::shared_ptr<ufc::dof_map> dof_map,
+DofMap::DofMap(boost::shared_ptr<ufc::dof_map> dof_map,
                const Mesh& mesh,
                MeshFunction<uint>& partitions)
   : dof_map(0), dof_map_size(0), cell_map(0), 
@@ -69,7 +69,7 @@ DofMap::DofMap(const std::string signature,
   // FIXME: Missing initializer for ufc_dof_map?
 
   // Create ufc dof map from signature
-  std::tr1::shared_ptr<ufc::dof_map> _ufc_dof_map(ElementLibrary::create_dof_map(signature));
+  boost::shared_ptr<ufc::dof_map> _ufc_dof_map(ElementLibrary::create_dof_map(signature));
   ufc_dof_map.swap(_ufc_dof_map);
 
   if (!ufc_dof_map)
@@ -87,7 +87,7 @@ DofMap::DofMap(const std::string signature, const Mesh& mesh,
   // FIXME: Missing initializer for ufc_dof_map?
 
   // Create ufc dof map from signature
-  std::tr1::shared_ptr<ufc::dof_map> _ufc_dof_map(ElementLibrary::create_dof_map(signature));
+  boost::shared_ptr<ufc::dof_map> _ufc_dof_map(ElementLibrary::create_dof_map(signature));
   ufc_dof_map.swap(_ufc_dof_map);
 
   if (!ufc_dof_map)
@@ -113,7 +113,7 @@ DofMap* DofMap::extract_sub_dofmap(const std::vector<uint>& component,
   offset = 0;
 
   // Recursively extract sub dofmap
-  std::tr1::shared_ptr<ufc::dof_map> sub_dof_map(extract_sub_dofmap(*ufc_dof_map, offset, component, mesh));
+  boost::shared_ptr<ufc::dof_map> sub_dof_map(extract_sub_dofmap(*ufc_dof_map, offset, component, mesh));
   message(2, "Extracted dof map for sub system: %s", sub_dof_map->signature());
   message(2, "Offset for sub system: %d", offset);
 
