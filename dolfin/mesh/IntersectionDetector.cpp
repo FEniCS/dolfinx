@@ -72,8 +72,8 @@ void IntersectionDetector::intersection(Array<Point>& points, std::vector<uint>&
 void IntersectionDetector::intersection(const Mesh& mesh1, std::vector<uint>& cells)
 {
   // For testing
-  //new_intersection(mesh1, cells);
-  //return;
+  new_intersection(mesh1, cells);
+  return;
 
   // Intersect each cell with mesh
   for (CellIterator cell(mesh1); !cell.end(); ++cell)
