@@ -54,12 +54,12 @@ EpetraMatrix::EpetraMatrix(const EpetraMatrix& A):
 {
   if (A.mat())
   {
-    std::tr1::shared_ptr<Epetra_FECrsMatrix> _A(new Epetra_FECrsMatrix(*A.mat()));
+    boost::shared_ptr<Epetra_FECrsMatrix> _A(new Epetra_FECrsMatrix(*A.mat()));
     this->A = _A;
   }
 }
 //-----------------------------------------------------------------------------
-EpetraMatrix::EpetraMatrix(std::tr1::shared_ptr<Epetra_FECrsMatrix> A):
+EpetraMatrix::EpetraMatrix(boost::shared_ptr<Epetra_FECrsMatrix> A):
     Variable("A", "a sparse matrix"),
     A(A)
 {
@@ -90,7 +90,7 @@ void EpetraMatrix::init(const GenericSparsityPattern& sparsity_pattern)
     error("Cannot initialise EpetraMatrix. More than one object points to the underlying Epetra object.");
 
   const EpetraSparsityPattern& epetra_pattern = dynamic_cast<const EpetraSparsityPattern&>(sparsity_pattern);
-  std::tr1::shared_ptr<Epetra_FECrsMatrix> _A(new Epetra_FECrsMatrix(Copy, epetra_pattern.pattern()));
+  boost::shared_ptr<Epetra_FECrsMatrix> _A(new Epetra_FECrsMatrix(Copy, epetra_pattern.pattern()));
   A = _A;
 }
 //-----------------------------------------------------------------------------
@@ -300,14 +300,7 @@ LinearAlgebraFactory& EpetraMatrix::factory() const
   return EpetraFactory::instance();
 }
 //-----------------------------------------------------------------------------
-Epetra_FECrsMatrix& EpetraMatrix::mat_ref() const
-{
-  dolfin_assert(A); 
-  warning("This may be removed shortly. If possible, use EpetraVector::vec() instead.");
-  return *A;
-}
-//-----------------------------------------------------------------------------
-std::tr1::shared_ptr<Epetra_FECrsMatrix> EpetraMatrix::mat() const
+boost::shared_ptr<Epetra_FECrsMatrix> EpetraMatrix::mat() const
 {
   dolfin_assert(A); 
   return A;

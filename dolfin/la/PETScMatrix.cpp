@@ -48,7 +48,7 @@ PETScMatrix::PETScMatrix(const Type type):
   checkType();
 }
 //-----------------------------------------------------------------------------
-PETScMatrix::PETScMatrix(std::tr1::shared_ptr<Mat> A):
+PETScMatrix::PETScMatrix(boost::shared_ptr<Mat> A):
     Variable("A", "a sparse matrix"),
     A(A), _type(default_matrix)
 {
@@ -87,7 +87,7 @@ void PETScMatrix::resize(uint M, uint N)
   // Create matrix (any old matrix is destroyed automatically)
   if (!A.unique())
     error("Cannot resize PETScMatrix. More than one object points to the underlying PETSc object.");
-  std::tr1::shared_ptr<Mat> _A(new Mat, PETScMatrixDeleter());
+  boost::shared_ptr<Mat> _A(new Mat, PETScMatrixDeleter());
   A = _A;
 
   // FIXME: maybe 50 should be a parameter?
@@ -118,7 +118,7 @@ void PETScMatrix::init(uint M, uint N, const uint* nz)
   // Create matrix (any old matrix is destroyed automatically)
   if (!A.unique())
     error("Cannot initialise PETScMatrix. More than one object points to the underlying PETSc object.");
-  std::tr1::shared_ptr<Mat> _A(new Mat, PETScMatrixDeleter());
+  boost::shared_ptr<Mat> _A(new Mat, PETScMatrixDeleter());
   A = _A;
 
   // Create a sparse matrix in compressed row format
@@ -156,7 +156,7 @@ void PETScMatrix::init(uint M, uint N, const uint* d_nzrow, const uint* o_nzrow)
   // Create matrix (any old matrix is destroyed automatically)
   if (!A.unique())
     error("Cannot intialise PETScMatrix. More than one object points to the underlying PETSc object.");
-  std::tr1::shared_ptr<Mat> _A(new Mat, PETScMatrixDeleter());
+  boost::shared_ptr<Mat> _A(new Mat, PETScMatrixDeleter());
   A = _A;
   MatCreateMPIAIJ(PETSC_COMM_WORLD, PETSC_DECIDE, PETSC_DECIDE, M, N, PETSC_NULL, (int*)d_nzrow, PETSC_NULL, (int*)o_nzrow, A.get());
 }
@@ -190,7 +190,7 @@ PETScMatrix* PETScMatrix::copy() const
   dolfin_assert(A);
 
   PETScMatrix* Acopy = new PETScMatrix();
-  std::tr1::shared_ptr<Mat> _A(new Mat, PETScMatrixDeleter());
+  boost::shared_ptr<Mat> _A(new Mat, PETScMatrixDeleter());
   Acopy->A = _A;
 
   MatDuplicate(*A, MAT_COPY_VALUES, Acopy->A.get());
@@ -413,7 +413,7 @@ const PETScMatrix& PETScMatrix::operator= (const PETScMatrix& A)
       // Create matrix (any old matrix is destroyed automatically)
       if (!this->A.unique())
         error("Cannot assign PETScMatrix with different non-zero pattern becaue more than one object points to the underlying PETSc object.");
-      std::tr1::shared_ptr<Mat> _A(new Mat, PETScMatrixDeleter());
+      boost::shared_ptr<Mat> _A(new Mat, PETScMatrixDeleter());
       this->A = _A;
       
       // Duplicate with the same pattern as A.A
@@ -485,7 +485,7 @@ LinearAlgebraFactory& PETScMatrix::factory() const
   return PETScFactory::instance();
 }
 //-----------------------------------------------------------------------------
-std::tr1::shared_ptr<Mat> PETScMatrix::mat() const
+boost::shared_ptr<Mat> PETScMatrix::mat() const
 {
   return A;
 }

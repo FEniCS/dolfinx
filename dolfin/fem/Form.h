@@ -11,7 +11,7 @@
 #define __FORM_H
 
 #include <vector>
-#include <tr1/memory>
+#include <boost/shared_ptr.hpp>
 #include <dolfin/common/types.h>
 
 // Forward declaration
@@ -89,13 +89,13 @@ namespace dolfin
   protected:
 
     // Function spaces (one for each argument)
-    std::vector<std::tr1::shared_ptr<const FunctionSpace> > _function_spaces;
+    std::vector<boost::shared_ptr<const FunctionSpace> > _function_spaces;
 
     // Coefficients
-    std::vector<std::tr1::shared_ptr<const Function> > _coefficients;
+    std::vector<boost::shared_ptr<const Function> > _coefficients;
 
     // The UFC form
-    std::tr1::shared_ptr<const ufc::form> _ufc_form;
+    boost::shared_ptr<const ufc::form> _ufc_form;
 
   };
 

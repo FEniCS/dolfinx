@@ -14,7 +14,7 @@
 
 #ifdef HAS_PETSC
 
-#include <tr1/memory>
+#include <boost/shared_ptr.hpp>
 #include <petscvec.h>
 
 #include <dolfin/log/LogStream.h>
@@ -47,7 +47,7 @@ namespace dolfin
     explicit PETScVector(const PETScVector& x);
 
     /// Create vector from given PETSc Vec pointer
-    explicit PETScVector(std::tr1::shared_ptr<Vec> x);
+    explicit PETScVector(boost::shared_ptr<Vec> x);
 
     /// Destructor
     virtual ~PETScVector();
@@ -133,7 +133,7 @@ namespace dolfin
     //--- Special PETSc functions ---
 
     /// Return shared_ptr to PETSc Vec object
-    std::tr1::shared_ptr<Vec> vec() const;
+    boost::shared_ptr<Vec> vec() const;
 
     /// Assignment operator
     const PETScVector& operator= (const PETScVector& x);
@@ -143,7 +143,7 @@ namespace dolfin
   private:
 
     // PETSc Vec pointer
-    std::tr1::shared_ptr<Vec> x;
+    boost::shared_ptr<Vec> x;
     
   };
 

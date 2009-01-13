@@ -12,7 +12,7 @@
 
 #ifdef HAS_TRILINOS
 
-#include <tr1/memory>
+#include <boost/shared_ptr.hpp>
 
 #include <dolfin/log/LogStream.h>
 #include <dolfin/common/Variable.h>
@@ -48,7 +48,7 @@ namespace dolfin
     explicit EpetraMatrix(const EpetraMatrix& A);
 
     /// Create matrix from given Epetra_FECrsMatrix pointer
-    explicit EpetraMatrix(std::tr1::shared_ptr<Epetra_FECrsMatrix> A);
+    explicit EpetraMatrix(boost::shared_ptr<Epetra_FECrsMatrix> A);
 
     /// Create matrix from given Epetra_CrsGraph
     explicit EpetraMatrix(const Epetra_CrsGraph& graph);
@@ -126,10 +126,7 @@ namespace dolfin
     //--- Special Epetra functions ---
 
     /// Return Epetra_FECrsMatrix pointer
-    Epetra_FECrsMatrix& mat_ref() const;
-
-    /// Return Epetra_FECrsMatrix pointer
-    std::tr1::shared_ptr<Epetra_FECrsMatrix> mat() const;
+    boost::shared_ptr<Epetra_FECrsMatrix> mat() const;
 
     /// Assignment operator
     const EpetraMatrix& operator= (const EpetraMatrix& x);
@@ -138,7 +135,7 @@ namespace dolfin
   private:
 
     // Epetra_FECrsMatrix pointer
-    std::tr1::shared_ptr<Epetra_FECrsMatrix> A;
+    boost::shared_ptr<Epetra_FECrsMatrix> A;
     
   };
 

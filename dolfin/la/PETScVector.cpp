@@ -50,7 +50,7 @@ PETScVector::PETScVector(uint N):
   resize(N);
 }
 //-----------------------------------------------------------------------------
-PETScVector::PETScVector(std::tr1::shared_ptr<Vec> x):
+PETScVector::PETScVector(boost::shared_ptr<Vec> x):
     Variable("x", "a vector"),
     x(x)
 {
@@ -77,7 +77,7 @@ void PETScVector::resize(uint N)
   // Create vector
   if (!x.unique())
     error("Cannot resize PETScVector. More than one object points to the underlying PETSc object.");
-  std::tr1::shared_ptr<Vec> _x(new Vec, PETScVectorDeleter());
+  boost::shared_ptr<Vec> _x(new Vec, PETScVectorDeleter());
   x = _x;
 
   if (MPI::num_processes() > 1)
@@ -307,7 +307,7 @@ void PETScVector::disp(uint precision) const
   VecView(*x, PETSC_VIEWER_STDOUT_SELF);
 }
 //-----------------------------------------------------------------------------
-std::tr1::shared_ptr<Vec> PETScVector::vec() const
+boost::shared_ptr<Vec> PETScVector::vec() const
 {
   return x;
 }

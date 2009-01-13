@@ -1,8 +1,10 @@
 // Define classes in dolfin that are stored using shared_ptr
 // Objects of these classes can then be passed to c++ functions
-// demanding a shared_ptr<type>
+// demanding a boost::shared_ptr<type>
 
 # if defined(SWIG_SHARED_PTR_QNAMESPACE)
+%import "swig/ufc.i"
+
 SWIG_SHARED_PTR(DofMap,dolfin::DofMap)
 SWIG_SHARED_PTR(FiniteElement,dolfin::FiniteElement)
 
@@ -17,7 +19,7 @@ SWIG_SHARED_PTR_DERIVED(InvMeshSize,dolfin::Function,dolfin::InvMeshSize)
 SWIG_SHARED_PTR_DERIVED(FacetNormal,dolfin::Function,dolfin::FacetNormal)
 SWIG_SHARED_PTR_DERIVED(FacetArea,dolfin::Function,dolfin::FacetArea)
 SWIG_SHARED_PTR_DERIVED(InvFacetArea,dolfin::Function,dolfin::InvFacetArea)
-SWIG_SHARED_PTR_DERIVED(OutflowFacet,dolfin::Function,dolfin::OutflowFacet)
+SWIG_SHARED_PTR_DERIVED(IsOutflowFacet,dolfin::Function,dolfin::IsOutflowFacet)
 SWIG_SHARED_PTR_DERIVED(DiscreteFunction,dolfin::Function,dolfin::DiscreteFunction)
 
 SWIG_SHARED_PTR(Mesh,dolfin::Mesh)
@@ -30,13 +32,5 @@ SWIG_SHARED_PTR_DERIVED(UnitCircle,dolfin::Mesh,dolfin::UnitCircle)
 SWIG_SHARED_PTR_DERIVED(Box,dolfin::Mesh,dolfin::Box)
 SWIG_SHARED_PTR_DERIVED(Rectangle,dolfin::Mesh,dolfin::Rectangle)
 SWIG_SHARED_PTR_DERIVED(UnitSphere,dolfin::Mesh,dolfin::UnitSphere)
-
-// To be able to pass shared ufc objects we need to define these here and
-// %include ufc.h
-SWIG_SHARED_PTR(finite_element,ufc::finite_element)
-SWIG_SHARED_PTR(dof_map,ufc::dof_map)
-SWIG_SHARED_PTR(form,ufc::form)
-
-%include ufc.h
 
 #endif

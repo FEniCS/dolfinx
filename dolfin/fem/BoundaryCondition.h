@@ -9,7 +9,7 @@
 #ifndef __BOUNDARY_CONDITION_H
 #define __BOUNDARY_CONDITION_H
 
-#include <tr1/memory>
+#include <boost/shared_ptr.hpp>
 #include <dolfin/common/types.h>
 
 namespace dolfin
@@ -77,7 +77,7 @@ namespace dolfin
     };
 
     // The function space (possibly a sub function space)
-    std::tr1::shared_ptr<const FunctionSpace> V;
+    boost::shared_ptr<const FunctionSpace> V;
 
   };
 

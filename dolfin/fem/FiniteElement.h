@@ -7,7 +7,8 @@
 #ifndef __FINITE_ELEMENT_H
 #define __FINITE_ELEMENT_H
 
-#include <tr1/memory>
+#include <dolfin/log/log.h>
+#include <boost/shared_ptr.hpp>
 #include <vector>
 #include <ufc.h>
 #include <dolfin/common/types.h>
@@ -23,12 +24,12 @@ namespace dolfin
   {
   public:
 
+    /// Create finite element from UFC finite element (data may be shared)
+    FiniteElement(boost::shared_ptr<const ufc::finite_element> element) : element(element) {}
+
     /// Create finite element from UFC finite element
     FiniteElement(const ufc::finite_element& element) : element(&element, NoDeleter<const ufc::finite_element>()) {}
     //FiniteElement(const ufc::finite_element& element, uint dummy) : element(&element, NoDeleter<const ufc::finite_element>()) {}
-
-    /// Create finite element from UFC finite element (data may be shared)
-    FiniteElement(std::tr1::shared_ptr<const ufc::finite_element> element) : element(element) {}
 
     /// Create FiniteElement from a signature
     FiniteElement(std::string signature) : element(ElementLibrary::create_finite_element(signature)) {}
@@ -62,28 +63,28 @@ namespace dolfin
     { return element->evaluate_dof(i, function, cell); }
     
     /// Create sub element
-    std::tr1::shared_ptr<const FiniteElement> create_sub_element(uint i) const
+    boost::shared_ptr<const FiniteElement> create_sub_element(uint i) const
     { 
-      std::tr1::shared_ptr<const ufc::finite_element>  ufc_element(element->create_sub_element(i));
-      std::tr1::shared_ptr<const FiniteElement> _element(new const FiniteElement(ufc_element));
+      boost::shared_ptr<const ufc::finite_element>  ufc_element(element->create_sub_element(i));
+      boost::shared_ptr<const FiniteElement> _element(new const FiniteElement(ufc_element));
       return _element; 
     }
 
     /// Return ufc::finite_element
-    std::tr1::shared_ptr<const ufc::finite_element> ufc_element() const
+    boost::shared_ptr<const ufc::finite_element> ufc_element() const
     { return element; } 
 
     /// Extract sub finite element for component
-    std::tr1::shared_ptr<const FiniteElement> extract_sub_element(const std::vector<uint>& component) const;
+    boost::shared_ptr<const FiniteElement> extract_sub_element(const std::vector<uint>& component) const;
 
   private:
 
     // Recursively extract sub finite element
-    static std::tr1::shared_ptr<const FiniteElement> extract_sub_element(const FiniteElement& finite_element, 
+    static boost::shared_ptr<const FiniteElement> extract_sub_element(const FiniteElement& finite_element, 
                                               const std::vector<uint>& component);
 
     // UFC finite element
-    std::tr1::shared_ptr<const ufc::finite_element> element;
+    boost::shared_ptr<const ufc::finite_element> element;
 
   };
 

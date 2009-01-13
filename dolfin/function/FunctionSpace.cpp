@@ -34,9 +34,9 @@ FunctionSpace::FunctionSpace(const Mesh& mesh,
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-FunctionSpace::FunctionSpace(std::tr1::shared_ptr<const Mesh> mesh,
-                             std::tr1::shared_ptr<const FiniteElement> element,
-                             std::tr1::shared_ptr<const DofMap> dofmap)
+FunctionSpace::FunctionSpace(boost::shared_ptr<const Mesh> mesh,
+                             boost::shared_ptr<const FiniteElement> element,
+                             boost::shared_ptr<const DofMap> dofmap)
   : _mesh(mesh), _element(element), _dofmap(dofmap),
     scratch(*element), intersection_detector(0)
 {
@@ -232,7 +232,7 @@ void FunctionSpace::interpolate(double* vertex_values,
   delete [] local_vertex_values;
 }
 //-----------------------------------------------------------------------------
-std::tr1::shared_ptr<FunctionSpace> FunctionSpace::extract_sub_space(const std::vector<uint>& component) const
+boost::shared_ptr<FunctionSpace> FunctionSpace::extract_sub_space(const std::vector<uint>& component) const
 {
   dolfin_assert(_mesh);
   dolfin_assert(_element);
@@ -244,23 +244,23 @@ std::tr1::shared_ptr<FunctionSpace> FunctionSpace::extract_sub_space(const std::
     identifier << component[i] << ".";
   
   // Check if sub space is aleady in the cache
-  std::map<std::string, std::tr1::shared_ptr<FunctionSpace> >::iterator subspace;
+  std::map<std::string, boost::shared_ptr<FunctionSpace> >::iterator subspace;
   subspace = subspaces.find(identifier.str());
   if (subspace != subspaces.end())
     return subspace->second;
 
   // Extract sub element
-  std::tr1::shared_ptr<const FiniteElement> element(_element->extract_sub_element(component));
+  boost::shared_ptr<const FiniteElement> element(_element->extract_sub_element(component));
 
   // Extract sub dofmap and offset
   uint offset = 0;
-  std::tr1::shared_ptr<DofMap> dofmap(_dofmap->extract_sub_dofmap(component, offset, *_mesh));
+  boost::shared_ptr<DofMap> dofmap(_dofmap->extract_sub_dofmap(component, offset, *_mesh));
   
   // Create new sub space
-  std::tr1::shared_ptr<FunctionSpace> new_sub_space(new FunctionSpace(_mesh, element, dofmap));
+  boost::shared_ptr<FunctionSpace> new_sub_space(new FunctionSpace(_mesh, element, dofmap));
 
   // Insert new sub space into cache
-  subspaces.insert(std::pair<std::string, std::tr1::shared_ptr<FunctionSpace> >(identifier.str(), new_sub_space));
+  subspaces.insert(std::pair<std::string, boost::shared_ptr<FunctionSpace> >(identifier.str(), new_sub_space));
 
   return new_sub_space;
 }
@@ -275,9 +275,9 @@ void FunctionSpace:: attach(MeshFunction<bool>& restriction)
   }
 }
 //-----------------------------------------------------------------------------
-std::tr1::shared_ptr<FunctionSpace> FunctionSpace::restriction(MeshFunction<bool>& restriction)
+boost::shared_ptr<FunctionSpace> FunctionSpace::restriction(MeshFunction<bool>& restriction)
 {
-  std::tr1::shared_ptr<FunctionSpace> function_space(new FunctionSpace(_mesh, _element, _dofmap));
+  boost::shared_ptr<FunctionSpace> function_space(new FunctionSpace(_mesh, _element, _dofmap));
   function_space->attach(restriction);
   return function_space;
 }

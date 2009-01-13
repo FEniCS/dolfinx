@@ -9,7 +9,7 @@
 #ifndef __NEWTON_SOLVER_H
 #define __NEWTON_SOLVER_H
 
-#include <tr1/memory>
+#include <boost/shared_ptr.hpp>
 #include <dolfin/la/GenericLinearSolver.h>
 #include <dolfin/la/GenericMatrix.h>
 #include <dolfin/la/GenericVector.h>
@@ -60,7 +60,7 @@ namespace dolfin
     double residual0;
 
     /// Solver
-    std::tr1::shared_ptr<GenericLinearSolver> solver;
+    boost::shared_ptr<GenericLinearSolver> solver;
 
     /// Solver
     dolfin::PreconditionerType pc;

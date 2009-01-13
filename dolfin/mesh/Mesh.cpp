@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2008 Anders Logg.
+// Copyright (C) 2006-2009 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Johan Hoffman, 2007.
@@ -7,7 +7,7 @@
 // Modified by Kristoffer Selim 2008.
 //
 // First added:  2006-05-09
-// Last changed: 2008-12-29
+// Last changed: 2009-01-09
 
 #include <sstream>
 
@@ -192,10 +192,18 @@ void Mesh::refine()
   _ordered = false;
 }
 //-----------------------------------------------------------------------------
-void Mesh::refine(MeshFunction<bool>& cell_markers, bool refine_boundary)
+//void Mesh::refine(MeshFunction<bool>& cell_markers, bool refine_boundary)
+//{
+//  LocalMeshRefinement::refineMeshByEdgeBisection(*this, cell_markers,
+//                                                refine_boundary);
+//
+//  // Mesh may not be ordered
+//  _ordered = false;
+//}
+//-----------------------------------------------------------------------------
+void Mesh::refine(MeshFunction<bool>& cell_markers)
 {
-  LocalMeshRefinement::refineMeshByEdgeBisection(*this, cell_markers,
-                                                 refine_boundary);
+  LocalMeshRefinement::refineIterativelyByEdgeBisection(*this, cell_markers);
 
   // Mesh may not be ordered
   _ordered = false;

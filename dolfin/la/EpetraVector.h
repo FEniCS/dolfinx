@@ -12,7 +12,7 @@
 
 #ifdef HAS_TRILINOS
 
-#include <tr1/memory>
+#include <boost/shared_ptr.hpp>
 
 #include <dolfin/log/LogStream.h>
 #include <dolfin/common/Variable.h>
@@ -46,7 +46,7 @@ namespace dolfin
     explicit EpetraVector(const EpetraVector& x);
 
     /// Create vector view from given Epetra_FEVector pointer
-    explicit EpetraVector(std::tr1::shared_ptr<Epetra_FEVector> vector);
+    explicit EpetraVector(boost::shared_ptr<Epetra_FEVector> vector);
 
     /// Create vector from given Epetra_Map
     explicit EpetraVector(const Epetra_Map& map);
@@ -134,11 +134,8 @@ namespace dolfin
 
     //--- Special Epetra functions ---
 
-    /// Return Epetra_FEVector reference
-    Epetra_FEVector& vec_ref() const;
-
     /// Return Epetra_FEVector pointer
-    std::tr1::shared_ptr<Epetra_FEVector> vec() const;
+    boost::shared_ptr<Epetra_FEVector> vec() const;
 
     /// Assignment operator
     const EpetraVector& operator= (const EpetraVector& x);
@@ -148,7 +145,7 @@ namespace dolfin
   private:
 
     // Epetra_FEVector pointer
-    std::tr1::shared_ptr <Epetra_FEVector> x;
+    boost::shared_ptr<Epetra_FEVector> x;
 
   };  
 

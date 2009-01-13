@@ -15,7 +15,7 @@
 
 #include <map>
 #include <vector>
-#include <tr1/memory>
+#include <boost/shared_ptr.hpp>
 #include <dolfin/common/types.h>
 #include "BoundaryCondition.h"
 

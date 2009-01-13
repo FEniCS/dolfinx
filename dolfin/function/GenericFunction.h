@@ -9,7 +9,7 @@
 #ifndef __GENERIC_FUNCTION_H
 #define __GENERIC_FUNCTION_H
 
-#include <tr1/memory>
+#include <boost/shared_ptr.hpp>
 #include <ufc.h>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/common/types.h>
@@ -31,7 +31,7 @@ namespace dolfin
     GenericFunction(Mesh& mesh) : mesh(&mesh, NoDeleter<Mesh>()) {};
 
     /// Constructor (GenericFunction may or may not own the mesh)
-    GenericFunction(std::tr1::shared_ptr<Mesh> mesh) : mesh(mesh) {};
+    GenericFunction(boost::shared_ptr<Mesh> mesh) : mesh(mesh) {};
 
     /// Destructor
     virtual ~GenericFunction() {};
@@ -54,7 +54,7 @@ namespace dolfin
     virtual void eval(double* values, const double* x) const = 0;
 
     /// The mesh
-    std::tr1::shared_ptr<Mesh> mesh;
+    boost::shared_ptr<Mesh> mesh;
 
   };
 

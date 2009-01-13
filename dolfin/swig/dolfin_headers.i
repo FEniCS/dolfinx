@@ -81,7 +81,9 @@
 // DOLFIN headers included from function
 %include "dolfin/function/Data.h"
 %include "dolfin/function/Function.h"
+%include "dolfin/function/FunctionSpace.h"
 %include "dolfin/function/SubFunction.h"
+%include "dolfin/function/SubSpace.h"
 %include "dolfin/function/Constant.h"
 %include "dolfin/function/SpecialFunctions.h"
 %include "dolfin/function/ProjectL2.h"
@@ -149,10 +151,6 @@
 %include "dolfin/mesh/Rectangle.h"
 %include "dolfin/mesh/UnitSphere.h"
 %include "dolfin/mesh/IntersectionDetector.h"
-
-
-%include "dolfin/function/FunctionSpace.h"
-%include "dolfin/function/SubSpace.h"
 
 // DOLFIN headers included from fem
 %include "dolfin/fem/DofMap.h"

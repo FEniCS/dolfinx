@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2008 Anders Logg.
+// Copyright (C) 2006-2009 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Johan Hoffman, 2007.
@@ -8,7 +8,7 @@
 // Modified by Kristoffer Selim, 2008.
 //
 // First added:  2006-05-08
-// Last changed: 2008-11-18
+// Last changed: 2009-01-09
 
 #ifndef __MESH_H
 #define __MESH_H
@@ -146,8 +146,8 @@ namespace dolfin
     /// Refine mesh uniformly
     void refine();
 
-    /// Refine mesh according to cells marked for refinement
-    void refine(MeshFunction<bool>& cell_markers, bool refine_boundary = true);
+    /// Refine mesh according to cells marked for refinement,
+    void refine(MeshFunction<bool>& cell_markers);
 
     /// Coarsen mesh uniformly
     void coarsen();

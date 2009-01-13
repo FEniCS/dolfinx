@@ -182,7 +182,6 @@ for modName, mod in modules.items():
             swiglibPath += swigdep.libPath
             swigcppPath += swigdep.cppPath
 
-
     if mod.libSources:
         # Register shared library targets in the module
 
