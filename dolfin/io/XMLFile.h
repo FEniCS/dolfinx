@@ -1,10 +1,10 @@
-// Copyright (C) 2003-2008 Anders Logg.
+// Copyright (C) 2003-2009 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Magnus Vikstrom 2007.
 //
 // First added:  2003-07-15
-// Last changed: 2008-10-27
+// Last changed: 2009-01-14
 
 #ifndef __XML_FILE_H
 #define __XML_FILE_H
@@ -32,7 +32,7 @@ namespace dolfin
   {
   public:
     
-    XMLFile(const std::string filename);
+    XMLFile(const std::string filename, bool gzip);
     ~XMLFile();
     
     // Input
@@ -85,6 +85,9 @@ namespace dolfin
 
     // Most recent position in file
     long mark;
+
+    // True if file is/should be gzipped
+    bool gzip;
 
   };
   

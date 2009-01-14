@@ -1,8 +1,8 @@
-// Copyright (C) 2008 Solveig Bruvoll and Anders Logg.
+// Copyright (C) 2008-2009 Solveig Bruvoll and Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-05-02
-// Last changed: 2008-08-11
+// Last changed: 2009-01-12
 
 #ifndef __ALE_H
 #define __ALE_H
@@ -24,7 +24,7 @@ namespace dolfin
   public:
 
     /// Move coordinates of mesh according to new boundary coordinates
-    static void move(Mesh& mesh, Mesh& new_boundary, ALEType type=lagrange);
+    static void move(Mesh& mesh, Mesh& new_boundary, ALEType type=hermite);
 
   };
 

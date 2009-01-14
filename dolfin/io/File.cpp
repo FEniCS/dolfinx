@@ -1,4 +1,4 @@
-// Copyright (C) 2002-2008 Johan Hoffman and Anders Logg.
+// Copyright (C) 2002-2009 Johan Hoffman and Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells 2005, 2006.
@@ -8,7 +8,7 @@
 // Modified by Niclas Jansson 2008.
 //
 // First added:  2002-11-12
-// Last changed: 2008-12-08
+// Last changed: 2009-01-14
 
 #include <string>
 #include <dolfin/main/MPI.h>
@@ -34,19 +34,21 @@ File::File(const std::string& filename)
   // FIXME: Use correct funtion to find the suffix; using rfind() makes
   // FIXME: it essential that the suffixes are checked in the correct order.
 
-  if (filename.rfind(".xml") != filename.npos)
-    file = new XMLFile(filename);
-  else if (filename.rfind(".xml.gz") != filename.npos)
-    file = new XMLFile(filename);
- else if (filename.rfind(".m") != filename.npos)
+  if (filename.rfind(".xml.gz") != filename.npos)
+    file = new XMLFile(filename, true);
+  else if (filename.rfind(".xml") != filename.npos)
+    file = new XMLFile(filename, false);
+  else if (filename.rfind(".m") != filename.npos)
     file = new OctaveFile(filename);
   else if (filename.rfind(".py") != filename.npos)
     file = new PythonFile(filename);
   else if (filename.rfind(".pvd") != filename.npos)
-    if(MPI::num_processes() > 1)
+  {
+    if (MPI::num_processes() > 1)
       file = new PVTKFile(filename);
     else
       file = new VTKFile(filename);
+  }
   else if (filename.rfind(".raw") != filename.npos)
     file = new RAWFile(filename);
   else if (filename.rfind(".xyz") != filename.npos)
@@ -62,7 +64,7 @@ File::File(const std::string& filename, Type type)
 {
   switch (type) {
   case xml:
-    file = new XMLFile(filename);
+    file = new XMLFile(filename, false);
     break;
   case matlab:
     file = new MatlabFile(filename);

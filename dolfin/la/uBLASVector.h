@@ -12,7 +12,7 @@
 #ifndef __UBLAS_VECTOR_H
 #define __UBLAS_VECTOR_H
 
-#include <tr1/memory>
+#include <boost/shared_ptr.hpp>
 #include <dolfin/log/LogStream.h>
 #include <dolfin/common/Variable.h>
 #include "ublas.h"
@@ -46,7 +46,7 @@ namespace dolfin
     explicit uBLASVector(const uBLASVector& x);
 
     /// Construct vector from a ublas_vector
-    explicit uBLASVector(std::tr1::shared_ptr<ublas_vector> x);
+    explicit uBLASVector(boost::shared_ptr<ublas_vector> x);
 
     // Create vector from given uBLAS vector expression
     //template <class E>
@@ -165,7 +165,7 @@ namespace dolfin
   private:
 
     // Smart pointer to uBLAS vector object
-    std::tr1::shared_ptr<ublas_vector> x;
+    boost::shared_ptr<ublas_vector> x;
 
   };
 

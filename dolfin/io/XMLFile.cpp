@@ -1,4 +1,4 @@
-// Copyright (C) 2002-2008 Anders Logg.
+// Copyright (C) 2002-2009 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Erik Svensson 2003.
@@ -8,10 +8,10 @@
 // Modified by Niclas Jansson 2008.
 //
 // First added:  2002-12-03
-// Last changed: 2008-11-14
+// Last changed: 2009-01-14
 
 #include <stdarg.h>
-#include <tr1/memory>
+#include <boost/shared_ptr.hpp>
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/constants.h>
@@ -49,9 +49,11 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-XMLFile::XMLFile(const std::string filename) : GenericFile(filename),
-					       header_written(false),
-					       mark(0)
+XMLFile::XMLFile(const std::string filename, bool gzip)
+  : GenericFile(filename),
+    header_written(false),
+    mark(0),
+    gzip(gzip)
 {
   type = "XML";
   xmlObject = 0;
@@ -153,7 +155,7 @@ void XMLFile::operator>> (Function& v)
   message(1, "Reading function from %s.", filename.c_str());
 
   // Read the mesh
-  std::tr1::shared_ptr<Mesh> mesh(new Mesh());
+  boost::shared_ptr<Mesh> mesh(new Mesh());
   *this >> *mesh;
   mesh->order();
 
@@ -178,9 +180,9 @@ void XMLFile::operator>> (Function& v)
   parseFile(); 
   
   // Create Function
-  std::tr1::shared_ptr<FiniteElement> element(new FiniteElement(element_signature));
-  std::tr1::shared_ptr<DofMap> dofmap(new DofMap(dofmap_signature, *mesh));
-  std::tr1::shared_ptr<FunctionSpace> V(new FunctionSpace(mesh, element, dofmap));
+  boost::shared_ptr<FiniteElement> element(new FiniteElement(element_signature));
+  boost::shared_ptr<DofMap> dofmap(new DofMap(dofmap_signature, *mesh));
+  boost::shared_ptr<FunctionSpace> V(new FunctionSpace(mesh, element, dofmap));
   Function _v(V);
 
   // Read the vector
@@ -619,6 +621,10 @@ void XMLFile::operator<< (const Graph& graph)
 //-----------------------------------------------------------------------------
 FILE* XMLFile::openFile()
 {
+  // Cannot write gzipped files (yet)
+  if (gzip)
+    error("Unable to write data to file, gzipped XML (xml.gz) not supported for output.");
+
   // Open file
   FILE *fp = fopen(filename.c_str(), "r+");
   if (!fp)

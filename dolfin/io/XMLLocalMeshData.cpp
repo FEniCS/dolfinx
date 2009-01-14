@@ -6,7 +6,7 @@
 //
 // Modified by Anders Logg, 2008.
 
-#include <tr1/memory>
+#include <boost/shared_ptr.hpp>
 #include <dolfin/log/log.h>
 #include <dolfin/main/MPI.h>
 #include <dolfin/mesh/CellType.h>

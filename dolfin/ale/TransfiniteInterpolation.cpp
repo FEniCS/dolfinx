@@ -1,8 +1,8 @@
-// Copyright (C) 2008 Solveig Bruvoll and Anders Logg.
+// Copyright (C) 2008-2009 Solveig Bruvoll and Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-05-02
-// Last changed: 2008-12-12
+// Last changed: 2009-01-12
 
 #include <string.h>
 #include <dolfin/common/Array.h>
@@ -12,14 +12,13 @@
 #include <dolfin/mesh/Vertex.h>
 #include <dolfin/mesh/Cell.h>
 #include "TransfiniteInterpolation.h"
+#include <iostream>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 void TransfiniteInterpolation::move(Mesh& mesh, Mesh& new_boundary, InterpolationType method)
 {
-  error("Sorry, transfinite interpolation is currently broken.");
-
   // Only implemented in 2D and 3D so far
   if (mesh.topology().dim() < 2 || mesh.topology().dim() > 3 )
     error("Mesh interpolation only implemented in 2D and 3D so far.");
@@ -189,7 +188,7 @@ void TransfiniteInterpolation::computeWeights2D(double* w, double** u, double* d
                            uint dim, uint num_vertices)
 {  
   for (uint i = 0; i < num_vertices; i++)
-    w[i] = tan(asin(u[0][0]*u[1][1] - u[0][1]*u[1][0])/2) / d[i];
+    w[i] = sgn(det(u[0], u[1]))*tan(asin(u[0][0]*u[1][1] - u[0][1]*u[1][0])/2) / d[i];
 }
 //-----------------------------------------------------------------------------
 void TransfiniteInterpolation::computeWeights3D(double* w, double** u, double* d,

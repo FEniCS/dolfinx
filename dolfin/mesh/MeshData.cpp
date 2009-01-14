@@ -36,11 +36,30 @@ const MeshData& MeshData::operator= (const MeshData& data)
   // Clear all data
   clear();
 
-  // Copy everything except the mesh. Note that we need to recreate all
-  // data and copy the values one by one so that the data will be attached
-  // to the correct mesh.
-  
-  warning("Assignment operator for MeshData not implemented.");
+  // Copy MeshFunctions
+  for (mf_const_iterator it = data.meshfunctions.begin(); it != data.meshfunctions.end(); ++it)
+  {
+    MeshFunction<uint> *f = createMeshFunction( it->first, it->second->dim() );
+    for (uint i = 0; i < it->second->size(); i++)
+      f->values()[i] = it->second->values()[i];   
+  }
+
+  // Copy Arrays
+  for (a_const_iterator it = data.arrays.begin(); it != data.arrays.end(); ++it)
+  {
+    Array<uint>* a = createArray( it->first, static_cast<uint>(it->second->size()) );
+    for (uint i = 0; i < it->second->size(); i++)
+      (*a)[i] = (*(it->second))[i];   
+  }     
+
+  //Copy Mappings
+  for (m_const_iterator it = data.maps.begin(); it != data.maps.end(); ++it)
+  {
+    std::map<uint, uint>* m = createMapping( it->first );
+    std::map<uint, uint>::const_iterator i;
+    for (i = it->second->begin(); i != it->second->end(); ++i)
+      (*m)[i->first] = i->second;
+  }
 
   return *this;
 }

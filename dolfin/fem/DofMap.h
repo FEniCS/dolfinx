@@ -10,7 +10,7 @@
 #ifndef __DOF_MAP_H
 #define __DOF_MAP_H
 
-#include <tr1/memory>
+#include <boost/shared_ptr.hpp>
 #include <map>
 #include <vector>
 #include <ufc.h>
@@ -33,17 +33,17 @@ namespace dolfin
   {
   public:
 
+    /// Create dof map on mesh (may share ufc::dof_map)
+    DofMap(boost::shared_ptr<ufc::dof_map> dof_map, const Mesh& mesh);
+
     /// Create dof map on mesh
     DofMap(ufc::dof_map& dof_map, const Mesh& mesh);
-
-    /// Create dof map on mesh (may share ufc::dof_map)
-    DofMap(std::tr1::shared_ptr<ufc::dof_map> dof_map, const Mesh& mesh);
 
     /// Create dof map on mesh (parallel)
     DofMap(ufc::dof_map& dof_map, const Mesh& mesh, MeshFunction<uint>& partitions);
 
     /// Create dof map on mesh (may share ufc::dof_map) (parallel)
-    DofMap(std::tr1::shared_ptr<ufc::dof_map> dof_map, const Mesh& mesh, MeshFunction<uint>& partitions);
+    DofMap(boost::shared_ptr<ufc::dof_map> dof_map, const Mesh& mesh, MeshFunction<uint>& partitions);
 
     /// Create dof map on mesh
     DofMap(const std::string signature, const Mesh& mesh);
@@ -102,7 +102,7 @@ namespace dolfin
     /// Build parallel dof map
     void build(UFC& ufc, const Mesh& mesh);
 
-    /// Build dof map on subdomain 
+    /// Build dof map on only a subdomain of the mesh (meshfunction contains booleans for each cell)  
     void build(const Mesh& mesh, const FiniteElement& fe, const MeshFunction<bool>& meshfunction);
 
     /// Return renumbering (used for testing)
@@ -141,7 +141,7 @@ namespace dolfin
     int* cell_map; 
 
     // UFC dof map
-    std::tr1::shared_ptr<ufc::dof_map> ufc_dof_map;
+    boost::shared_ptr<ufc::dof_map> ufc_dof_map;
 
     // UFC mesh
     UFCMesh ufc_mesh;

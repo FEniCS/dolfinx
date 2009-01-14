@@ -12,12 +12,11 @@
 
 #include <map>
 #include <string>
-#include <tr1/memory>
+#include <boost/shared_ptr.hpp>
 #include <vector>
 #include <ufc.h>
 
 #include <dolfin/common/types.h>
-#include <dolfin/mesh/MeshFunction.h>
 
 namespace dolfin
 {
@@ -28,6 +27,9 @@ namespace dolfin
   class Function;
   class IntersectionDetector;
   class GenericVector;
+  template <class T> class MeshFunction; 
+//  template<> class MeshFunction<bool>;
+//  class MeshFunction<bool>;
 
   /// This class represents a finite element function space defined by
   /// a mesh, a finite element, and a local-to-global mapping of the
@@ -43,9 +45,9 @@ namespace dolfin
                   const DofMap& dofmap);
 
     /// Create function space for given mesh, element and dofmap (shared data)
-    FunctionSpace(std::tr1::shared_ptr<const Mesh> mesh,
-                  std::tr1::shared_ptr<const FiniteElement> element,
-                  std::tr1::shared_ptr<const DofMap> dofmap);
+    FunctionSpace(boost::shared_ptr<const Mesh> mesh,
+                  boost::shared_ptr<const FiniteElement> element,
+                  boost::shared_ptr<const DofMap> dofmap);
 
     /// Copy constructor
     FunctionSpace(const FunctionSpace& V);
@@ -89,22 +91,16 @@ namespace dolfin
                      const Function& v) const;
 
     /// Extract sub space for component
-    std::tr1::shared_ptr<FunctionSpace> extract_sub_space(const std::vector<uint>& component) const;
+    boost::shared_ptr<FunctionSpace> extract_sub_space(const std::vector<uint>& component) const;
 
     // Attach restriction meshfunction
     void attach(MeshFunction<bool>& restriction);
 
     // Create Functions space based on the restriction
-    std::tr1::shared_ptr<FunctionSpace> restriction(MeshFunction<bool>& restriction);
+    boost::shared_ptr<FunctionSpace> restriction(MeshFunction<bool>& restriction);
 
     // Evaluate restriction 
-    bool is_inside_restriction(uint c) const
-    {
-      if (_restriction) 
-        return _restriction->get(c);
-      else 
-        return true;
-    }
+    bool is_inside_restriction(uint c) const;
 
   private:
 
@@ -140,19 +136,19 @@ namespace dolfin
     };
 
     // The mesh
-    std::tr1::shared_ptr<const Mesh> _mesh;
+    boost::shared_ptr<const Mesh> _mesh;
 
     // The finite element
-    std::tr1::shared_ptr<const FiniteElement> _element;
+    boost::shared_ptr<const FiniteElement> _element;
 
     // The dofmap
-    std::tr1::shared_ptr<const DofMap> _dofmap;
+    boost::shared_ptr<const DofMap> _dofmap;
 
     // The restriction meshfunction
-    std::tr1::shared_ptr<const MeshFunction<bool> > _restriction;
+    boost::shared_ptr<const MeshFunction<bool> > _restriction;
 
     // Cache of sub spaces
-    mutable std::map<std::string, std::tr1::shared_ptr<FunctionSpace> > subspaces;
+    mutable std::map<std::string, boost::shared_ptr<FunctionSpace> > subspaces;
 
     // Scratch space, used for storing temporary local data
     mutable Scratch scratch;

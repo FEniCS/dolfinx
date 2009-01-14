@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-05-02
-// Last changed: 2009-01-05
+// Last changed: 2009-01-12
 //
 // This demo demonstrates how to move the vertex coordinates
 // of a boundary mesh and then updating the interior vertex
@@ -32,7 +32,7 @@ int main()
   }
   
   // Move mesh
-  mesh.move(boundary, harmonic);
+  mesh.move(boundary);
 
   // Plot mesh
   plot(mesh);

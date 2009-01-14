@@ -7,7 +7,7 @@
 #ifndef __COEFFICIENT_H
 #define __COEFFICIENT_H
 
-#include <tr1/memory>
+#include <boost/shared_ptr.hpp>
 
 namespace dolfin
 {
@@ -41,7 +41,7 @@ namespace dolfin
     void attach(Function& v);
 
     // Attach function to coefficient
-    void attach(std::tr1::shared_ptr<Function> v);
+    void attach(boost::shared_ptr<Function> v);
 
     /// Create function space for coefficient
     virtual const FunctionSpace* create_function_space() const = 0;

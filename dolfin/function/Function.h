@@ -12,7 +12,7 @@
 #define __FUNCTION_H
 
 #include <ufc.h>
-#include <tr1/memory>
+#include <boost/shared_ptr.hpp>
 #include <dolfin/common/Variable.h>
 #include <dolfin/log/log.h>
 
@@ -46,10 +46,10 @@ namespace dolfin
     Function(const FunctionSpace& V, GenericVector& x);
 
     /// Create function on given function space (shared data)
-    explicit Function(std::tr1::shared_ptr<const FunctionSpace> V);
+    explicit Function(boost::shared_ptr<const FunctionSpace> V);
 
     /// Create function on given function space with a given vector (shared data)
-    Function(std::tr1::shared_ptr<const FunctionSpace> V, std::tr1::shared_ptr<GenericVector> x);
+    Function(boost::shared_ptr<const FunctionSpace> V, boost::shared_ptr<GenericVector> x);
 
     /// Create function from file
     explicit Function(std::string filename);
@@ -73,7 +73,7 @@ namespace dolfin
     const FunctionSpace& function_space() const;
 
     /// Return the function space
-    std::tr1::shared_ptr<const FunctionSpace> function_space_ptr() const;
+    boost::shared_ptr<const FunctionSpace> function_space_ptr() const;
 
     /// Return the vector of expansion coefficients (non-const version)
     GenericVector& vector();
@@ -123,10 +123,10 @@ namespace dolfin
     void init();
 
     // The function space
-    std::tr1::shared_ptr<const FunctionSpace> _function_space;
+    boost::shared_ptr<const FunctionSpace> _function_space;
 
     // The vector of expansion coefficients
-    std::tr1::shared_ptr<GenericVector> _vector;
+    boost::shared_ptr<GenericVector> _vector;
     //GenericVector* _vector;
 
   };

@@ -31,7 +31,7 @@ DofMap::DofMap(ufc::dof_map& dof_map, const Mesh& mesh)
   init(mesh);
 }
 //-----------------------------------------------------------------------------
-DofMap::DofMap(std::tr1::shared_ptr<ufc::dof_map> dof_map, const Mesh& mesh)
+DofMap::DofMap(boost::shared_ptr<ufc::dof_map> dof_map, const Mesh& mesh)
   : dof_map(0), dof_map_size(0), cell_map(0),     
     ufc_dof_map(dof_map),
     num_cells(mesh.numCells()), partitions(0), _offset(0),
@@ -49,7 +49,7 @@ DofMap::DofMap(ufc::dof_map& dof_map, const Mesh& mesh, MeshFunction<uint>& part
   init(mesh);
 }
 //-----------------------------------------------------------------------------
-DofMap::DofMap(std::tr1::shared_ptr<ufc::dof_map> dof_map,
+DofMap::DofMap(boost::shared_ptr<ufc::dof_map> dof_map,
                const Mesh& mesh,
                MeshFunction<uint>& partitions)
   : dof_map(0), dof_map_size(0), cell_map(0), 
@@ -69,7 +69,7 @@ DofMap::DofMap(const std::string signature,
   // FIXME: Missing initializer for ufc_dof_map?
 
   // Create ufc dof map from signature
-  std::tr1::shared_ptr<ufc::dof_map> _ufc_dof_map(ElementLibrary::create_dof_map(signature));
+  boost::shared_ptr<ufc::dof_map> _ufc_dof_map(ElementLibrary::create_dof_map(signature));
   ufc_dof_map.swap(_ufc_dof_map);
 
   if (!ufc_dof_map)
@@ -87,7 +87,7 @@ DofMap::DofMap(const std::string signature, const Mesh& mesh,
   // FIXME: Missing initializer for ufc_dof_map?
 
   // Create ufc dof map from signature
-  std::tr1::shared_ptr<ufc::dof_map> _ufc_dof_map(ElementLibrary::create_dof_map(signature));
+  boost::shared_ptr<ufc::dof_map> _ufc_dof_map(ElementLibrary::create_dof_map(signature));
   ufc_dof_map.swap(_ufc_dof_map);
 
   if (!ufc_dof_map)
@@ -113,7 +113,7 @@ DofMap* DofMap::extract_sub_dofmap(const std::vector<uint>& component,
   offset = 0;
 
   // Recursively extract sub dofmap
-  std::tr1::shared_ptr<ufc::dof_map> sub_dof_map(extract_sub_dofmap(*ufc_dof_map, offset, component, mesh));
+  boost::shared_ptr<ufc::dof_map> sub_dof_map(extract_sub_dofmap(*ufc_dof_map, offset, component, mesh));
   message(2, "Extracted dof map for sub system: %s", sub_dof_map->signature());
   message(2, "Offset for sub system: %d", offset);
 
@@ -248,6 +248,9 @@ void DofMap::build(const Mesh& mesh, const FiniteElement& fe, const MeshFunction
   dof_map = new int[n*mesh.numCells()];
   cell_map = new int[mesh.numCells()]; 
   int* restriction_mapping = new int[n*mesh.numCells()];
+
+  // dof_map, restriction_mapping, and cell_map are initialized to -1 to indicate that an error 
+  // has occured when used outside the subdomain described by meshfunction
   for (uint i=0; i<n*mesh.numCells(); i++) 
   {
     dof_map[i]  = -1;  
@@ -263,18 +266,30 @@ void DofMap::build(const Mesh& mesh, const FiniteElement& fe, const MeshFunction
   CellIterator cell(mesh);
   UFCCell ufc_cell(*cell);
   bool use_cell = false; 
+
+  // restriction maping R  
   std::map<int,int> R; 
   std::map<int,int>:: iterator iter; 
   uint dof_counter = 0; 
   uint cell_counter = 0; 
+
+  // loop over all cells
   for (; !cell.end(); ++cell)
   {
     ufc_cell.update(*cell);
     use_cell = meshfunction.get(cell->index()); 
     ufc_dof_map->init_cell(ufc_mesh, ufc_cell);
     ufc_dof_map->tabulate_dofs(dofs, ufc_mesh, ufc_cell); 
+
+    // If the cell is marked by meshfunction then run through all dofs[k] 
+    // and check if they have been used before or not.
+    // If the dof is new then it is set to dof_counter.
+    // The reason why this simple algorithm works is that all already have 
+    // an unique global numbers. We only need to leave out some of them
+    // and have the other numbered in increasing order like 1,2,3,4 (without gaps like 1,3,4). 
     if (use_cell) {
       for (uint k=0; k<n; k++) {
+        // the dofs[k] is new 
         if (R.find(dofs[k]) == R.end()){ 
           R[dofs[k]] = dof_counter; 
           dof_counter++;

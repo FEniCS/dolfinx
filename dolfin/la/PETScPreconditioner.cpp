@@ -9,7 +9,7 @@
 
 #ifdef HAS_PETSC
 
-#include <tr1/memory>
+#include <boost/shared_ptr.hpp>
 #include <private/pcimpl.h>
 
 #include <dolfin/common/NoDeleter.h>
@@ -49,8 +49,8 @@ int PETScPreconditioner::PCApply(PC pc, Vec x, Vec y)
 
   PETScPreconditioner* newpc = (PETScPreconditioner*)pc->data;
 
-  std::tr1::shared_ptr<Vec> _x(&x, NoDeleter<Vec>());
-  std::tr1::shared_ptr<Vec> _y(&y, NoDeleter<Vec>());
+  boost::shared_ptr<Vec> _x(&x, NoDeleter<Vec>());
+  boost::shared_ptr<Vec> _y(&y, NoDeleter<Vec>());
   PETScVector dolfinx(_x), dolfiny(_y);
 
   newpc->solve(dolfiny, dolfinx);

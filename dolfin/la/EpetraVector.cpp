@@ -44,7 +44,7 @@ EpetraVector::EpetraVector(uint N):
   resize(N);
 }
 //-----------------------------------------------------------------------------
-EpetraVector::EpetraVector(std::tr1::shared_ptr<Epetra_FEVector> x):
+EpetraVector::EpetraVector(boost::shared_ptr<Epetra_FEVector> x):
     Variable("x", "a vector"),
     x(x)
 {
@@ -82,7 +82,7 @@ void EpetraVector::resize(uint N)
   Epetra_SerialComm Comm = f.getSerialComm();
   Epetra_Map map(N, N, 0, Comm);
 
-  std::tr1::shared_ptr<Epetra_FEVector> _x(new Epetra_FEVector(map));
+  boost::shared_ptr<Epetra_FEVector> _x(new Epetra_FEVector(map));
   x = _x; 
 }
 //-----------------------------------------------------------------------------
@@ -187,14 +187,7 @@ void EpetraVector::add(const double* block, uint m, const uint* rows)
     error("EpetraVector::add : Did not manage to add the values to the vector"); 
 }
 //-----------------------------------------------------------------------------
-Epetra_FEVector& EpetraVector::vec_ref() const
-{
-  dolfin_assert(x);
-  warning("This may be removed shortly. If possible, use EpetraVector::vec() instead.");
-  return *x;
-}
-//-----------------------------------------------------------------------------
-std::tr1::shared_ptr<Epetra_FEVector> EpetraVector::vec() const
+boost::shared_ptr<Epetra_FEVector> EpetraVector::vec() const
 {
   dolfin_assert(x);
   return x;
@@ -258,7 +251,7 @@ const EpetraVector& EpetraVector::operator= (const EpetraVector& v)
   {
     if (!x.unique())
       error("More than one object points to the underlying Epetra object.");
-    std::tr1::shared_ptr<Epetra_FEVector> _x(new Epetra_FEVector(*(v.vec())));
+    boost::shared_ptr<Epetra_FEVector> _x(new Epetra_FEVector(*(v.vec())));
     x =_x; 
   }
   else

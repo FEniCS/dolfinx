@@ -29,11 +29,11 @@ Coefficient::~Coefficient()
 //-----------------------------------------------------------------------------
 void Coefficient::attach(Function& v)
 {
-  std::tr1::shared_ptr<Function> _v(reference_to_no_delete_pointer(v));
+  boost::shared_ptr<Function> _v(reference_to_no_delete_pointer(v));
   attach(_v);
 }
 //-----------------------------------------------------------------------------
-void Coefficient::attach(std::tr1::shared_ptr<Function> v)
+void Coefficient::attach(boost::shared_ptr<Function> v)
 {
   // FIXME: This logic doesn't scale to the case where a Function is
   // FIXME: used as a coefficient two or more places. Confusing!
@@ -41,7 +41,7 @@ void Coefficient::attach(std::tr1::shared_ptr<Function> v)
   // Set function space if not set
   if (!v->_function_space)
   {
-    std::tr1::shared_ptr<const FunctionSpace> _V(create_function_space());
+    boost::shared_ptr<const FunctionSpace> _V(create_function_space());
     v->_function_space = _V;
   }
 

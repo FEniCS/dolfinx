@@ -292,22 +292,34 @@ void IntersectionDetector::compute_polygon(const Mesh& mesh1,
 #else
 
 //-----------------------------------------------------------------------------
-IntersectionDetector::IntersectionDetector(const Mesh& mesh)
+IntersectionDetector::IntersectionDetector(const Mesh& mesh) : mesh0(mesh)
 {
   error("DOLFIN has been compiled without GTS, intersection detection not available.");
 }
 //-----------------------------------------------------------------------------
 IntersectionDetector::~IntersectionDetector() {}
 //-----------------------------------------------------------------------------
-void IntersectionDetector::intersection(const Point& p, Array<uint>& intersection) {}
+void IntersectionDetector::intersection(const Point& p,
+                                        std::vector<uint>& cells) {}
 //-----------------------------------------------------------------------------
-void IntersectionDetector::intersection(const Point& p0, const Point& p1, Array<uint>& intersection) {}
+void IntersectionDetector::intersection(const Point& p1, const Point& p2,
+                                        std::vector<uint>& cells) {}
 //-----------------------------------------------------------------------------
-void IntersectionDetector::intersection(const Cell& c, Array<uint>& intersection) {}
+void IntersectionDetector::intersection(const Cell& cell,
+                                        std::vector<uint>& cells) {}
 //-----------------------------------------------------------------------------
-void IntersectionDetector::intersection(Array<Point>& points, Array<uint>& intersection) {}
+void IntersectionDetector::intersection(Array<Point>& points,
+                                        std::vector<uint>& intersection) {}
 //-----------------------------------------------------------------------------
-void IntersectionDetector::intersection(const Mesh& mesh, Array<uint>& intersection) {}
+void IntersectionDetector::intersection(const Mesh& mesh1,
+                                        std::vector<uint>& intersection) {}
+//-----------------------------------------------------------------------------
+void IntersectionDetector::new_intersection(const Mesh& mesh1,
+                                            std::vector<uint>& intersection) {}
+//-----------------------------------------------------------------------------
+void IntersectionDetector::compute_polygon(const Mesh& mesh1,
+                                           const Cell& c0, 
+                                           const std::vector<uint>& intersections) const {}
 //-----------------------------------------------------------------------------
 
 #endif
