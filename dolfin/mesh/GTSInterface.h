@@ -1,10 +1,10 @@
 // Copyright (C) 2006-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Kristoffer Selim, 2008.
+// Modified by Kristoffer Selim, 2009.
 //
 // First added:  2006-06-21
-// Last changed: 2008-10-26
+// Last changed: 2009-01-12
 
 #ifndef __GTS_INTERFACE_H
 #define __GTS_INTERFACE_H
@@ -12,6 +12,7 @@
 #ifdef HAS_GTS
 
 #include <dolfin/common/types.h>
+#include <vector>
 
 // Forward declarations
 struct  _GtsBBox;
@@ -39,13 +40,13 @@ namespace dolfin
     ~GTSInterface();
 
     /// Compute cells overlapping point
-    void intersection(const Point& p, Array<uint>& cells);
+    void intersection(const Point& p, std::vector<uint>& cells);
 
     /// Compute cells overlapping line defined by points
-    void intersection(const Point& p0, const Point& p1, Array<uint>& cells);
+    void intersection(const Point& p0, const Point& p1, std::vector<uint>& cells);
 
     /// Compute cells overlapping cell
-    void intersection(const Cell& cell, Array<uint>& cells);
+    void intersection(const Cell& cell, std::vector<uint>& cells);
 
   private:
 
