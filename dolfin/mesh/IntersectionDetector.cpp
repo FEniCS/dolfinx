@@ -7,7 +7,7 @@
 // Modified by Kristoffer Selim, 2009.
 //
 // First added:  2006-06-21
-// Last changed: 2009-01-12
+// Last changed: 2009-01-14
 
 #include <algorithm>
 #include <map>
@@ -99,8 +99,18 @@ void IntersectionDetector::new_intersection(const Mesh& mesh1,
   //
   // This mesh is the mesh that we are intersecting with. Typically,
   // this input mesh will be the boundary of some other mesh, see 
-  // /demo/mesh/intersection/python. 
+  // /demo/mesh/intersection/python/demo.py . 
 
+  // Intersect each cell with mesh
+  for (CellIterator cell(mesh1); !cell.end(); ++cell)
+    intersection(*cell, cells);
+  
+  // Remove repeated cells
+  std::sort(cells.begin(), cells.end());
+  std::vector<unsigned int>::iterator it;
+  it = std::unique(cells.begin(), cells.end());
+  cells.resize(it - cells.begin());
+  
   // Map from cell numbers in mesh0 to intersecting cells in mesh1
   std::map<uint, std::vector<uint> > cell_intersections;
   typedef std::map<uint, std::vector<uint> >::iterator map_iterator;
@@ -147,11 +157,6 @@ void IntersectionDetector::new_intersection(const Mesh& mesh1,
     compute_polygon(mesh1, c0, it->second);
   }
   
-  // Remove repeated cells
-  std::sort(cells.begin(), cells.end());
-  std::vector<unsigned int>::iterator it;
-  it = std::unique(cells.begin(), cells.end());
-  cells.resize(it - cells.begin());
 }
 //-----------------------------------------------------------------------------
 void IntersectionDetector::compute_polygon(const Mesh& mesh1,
