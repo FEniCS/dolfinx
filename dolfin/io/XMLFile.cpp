@@ -1,4 +1,4 @@
-// Copyright (C) 2002-2008 Anders Logg.
+// Copyright (C) 2002-2009 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Erik Svensson 2003.
@@ -8,7 +8,7 @@
 // Modified by Niclas Jansson 2008.
 //
 // First added:  2002-12-03
-// Last changed: 2008-11-14
+// Last changed: 2009-01-14
 
 #include <stdarg.h>
 #include <boost/shared_ptr.hpp>
@@ -49,9 +49,11 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-XMLFile::XMLFile(const std::string filename) : GenericFile(filename),
-					       header_written(false),
-					       mark(0)
+XMLFile::XMLFile(const std::string filename, bool gzip)
+  : GenericFile(filename),
+    header_written(false),
+    mark(0),
+    gzip(gzip)
 {
   type = "XML";
   xmlObject = 0;
@@ -619,6 +621,10 @@ void XMLFile::operator<< (const Graph& graph)
 //-----------------------------------------------------------------------------
 FILE* XMLFile::openFile()
 {
+  // Cannot write gzipped files (yet)
+  if (gzip)
+    error("Unable to write data to file, gzipped XML (xml.gz) not supported for output.");
+
   // Open file
   FILE *fp = fopen(filename.c_str(), "r+");
   if (!fp)
