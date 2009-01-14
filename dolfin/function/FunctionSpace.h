@@ -17,7 +17,6 @@
 #include <ufc.h>
 
 #include <dolfin/common/types.h>
-#include <dolfin/mesh/MeshFunction.h>
 
 namespace dolfin
 {
@@ -28,6 +27,9 @@ namespace dolfin
   class Function;
   class IntersectionDetector;
   class GenericVector;
+  template <class T> class MeshFunction; 
+//  template<> class MeshFunction<bool>;
+//  class MeshFunction<bool>;
 
   /// This class represents a finite element function space defined by
   /// a mesh, a finite element, and a local-to-global mapping of the
@@ -98,13 +100,7 @@ namespace dolfin
     boost::shared_ptr<FunctionSpace> restriction(MeshFunction<bool>& restriction);
 
     // Evaluate restriction 
-    bool is_inside_restriction(uint c) const
-    {
-      if (_restriction) 
-        return _restriction->get(c);
-      else 
-        return true;
-    }
+    bool is_inside_restriction(uint c) const;
 
   private:
 

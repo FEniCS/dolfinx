@@ -327,4 +327,11 @@ void FunctionSpace::Scratch::init(const FiniteElement& element)
     values[i] = 0.0;
 }
 //-----------------------------------------------------------------------------
+bool FunctionSpace::is_inside_restriction(uint c) const
+{
+  if (_restriction) 
+    return _restriction->get(c);
+  else 
+    return true;
+}
 
