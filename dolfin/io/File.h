@@ -128,7 +128,8 @@ namespace dolfin
     void operator<< (const Graph& graph);
     
   private:
-    
+
+    // Pointer to implementation (envelop-letter design)
     GenericFile* file;
     
   };
