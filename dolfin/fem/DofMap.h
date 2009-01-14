@@ -102,7 +102,7 @@ namespace dolfin
     /// Build parallel dof map
     void build(UFC& ufc, const Mesh& mesh);
 
-    /// Build dof map on subdomain 
+    /// Build dof map on only a subdomain of the mesh (meshfunction contains booleans for each cell)  
     void build(const Mesh& mesh, const FiniteElement& fe, const MeshFunction<bool>& meshfunction);
 
     /// Return renumbering (used for testing)

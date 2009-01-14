@@ -248,6 +248,9 @@ void DofMap::build(const Mesh& mesh, const FiniteElement& fe, const MeshFunction
   dof_map = new int[n*mesh.numCells()];
   cell_map = new int[mesh.numCells()]; 
   int* restriction_mapping = new int[n*mesh.numCells()];
+
+  // dof_map, restriction_mapping, and cell_map are initialized to -1 to indicate that an error 
+  // has occured when used outside the subdomain described by meshfunction
   for (uint i=0; i<n*mesh.numCells(); i++) 
   {
     dof_map[i]  = -1;  
@@ -263,18 +266,30 @@ void DofMap::build(const Mesh& mesh, const FiniteElement& fe, const MeshFunction
   CellIterator cell(mesh);
   UFCCell ufc_cell(*cell);
   bool use_cell = false; 
+
+  // restriction maping R  
   std::map<int,int> R; 
   std::map<int,int>:: iterator iter; 
   uint dof_counter = 0; 
   uint cell_counter = 0; 
+
+  // loop over all cells
   for (; !cell.end(); ++cell)
   {
     ufc_cell.update(*cell);
     use_cell = meshfunction.get(cell->index()); 
     ufc_dof_map->init_cell(ufc_mesh, ufc_cell);
     ufc_dof_map->tabulate_dofs(dofs, ufc_mesh, ufc_cell); 
+
+    // If the cell is marked by meshfunction then run through all dofs[k] 
+    // and check if they have been used before or not.
+    // If the dof is new then it is set to dof_counter.
+    // The reason why this simple algorithm works is that all already have 
+    // an unique global numbers. We only need to leave out some of them
+    // and have the other numbered in increasing order like 1,2,3,4 (without gaps like 1,3,4). 
     if (use_cell) {
       for (uint k=0; k<n; k++) {
+        // the dofs[k] is new 
         if (R.find(dofs[k]) == R.end()){ 
           R[dofs[k]] = dof_counter; 
           dof_counter++;
