@@ -43,12 +43,6 @@ class DirichletBoundary : public SubDomain
 
 int main()
 {
-  Mesh mesh2("../../../../data/meshes/snake.xml.gz");
-
-  // Save solution in VTK format
-  File file2("mesh.pvd");
-  file2 << mesh2;
-
   // Create mesh and function space
   UnitSquare mesh(32, 32);
   PoissonFunctionSpace V(mesh);
