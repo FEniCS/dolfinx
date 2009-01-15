@@ -24,7 +24,7 @@ int main()
   
   // Store partition to file
   char filename[100];
-  sprintf(filename, "unitsquare-%d.xml.gz", dolfin::MPI::process_number());
+  sprintf(filename, "unitsquare-%d.xml", dolfin::MPI::process_number());
   File file(filename);
   file << mesh;
 

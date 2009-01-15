@@ -10,7 +10,7 @@ num_partitions = int(sys.argv[1])
 from dolfin import *
 
 for i in range(num_partitions):
-    mesh = Mesh("unitsquare-%d.xml.gz" % i)
+    mesh = Mesh("unitsquare-%d.xml" % i)
     plot(mesh, title="Partition %d" % i)
 
 interactive()
