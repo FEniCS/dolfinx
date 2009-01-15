@@ -62,6 +62,15 @@ namespace dolfin
 
     /// Return Map with given name (returning zero if data is not available)
     std::map<uint, uint>* mapping(const std::string name) const;
+    
+    /// Erase MeshFunction with given name
+    void eraseMeshFunction(const std::string name);
+
+    /// Erase Array with given name
+    void eraseArray(const std::string name);
+
+    /// Erase Mapping with given name
+    void eraseMapping(const std::string name);
 
     /// Display data
     void disp() const;

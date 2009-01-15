@@ -176,6 +176,48 @@ std::map<dolfin::uint, dolfin::uint>* MeshData::mapping(const std::string name) 
   return it->second;
 }
 //-----------------------------------------------------------------------------
+void MeshData::eraseMeshFunction(const std::string name)
+{
+  mf_iterator it = meshfunctions.find(name);
+  if (it != meshfunctions.end())
+  {
+    delete it->second;
+    meshfunctions.erase(it);
+  }
+  else
+  {
+    warning("Mesh data named \"%s\" doesn't exist.", name.c_str());
+  }
+}
+//-----------------------------------------------------------------------------
+void MeshData::eraseArray(const std::string name)
+{
+  a_iterator it = arrays.find(name);
+  if (it != arrays.end())
+  {
+    delete it->second;
+    arrays.erase(it);
+  }
+  else
+  {
+    warning("Mesh data named \"%s\" doesn't exist.", name.c_str());
+  }
+}
+//-----------------------------------------------------------------------------
+void MeshData::eraseMapping(const std::string name)
+{
+  m_iterator it = maps.find(name);
+  if (it != maps.end())
+  {
+    delete it->second;
+    maps.erase(it);
+  }
+  else
+  {
+    warning("Mesh data named \"%s\" doesn't exist.", name.c_str());
+  }
+}
+//-----------------------------------------------------------------------------
 void MeshData::disp() const
 {
   // Begin indentation
