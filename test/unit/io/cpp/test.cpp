@@ -27,7 +27,7 @@ public:
   void testRead()
   {
     // Create undirected graph with edges added out of order (should pass)
-    XMLFile file("../../../../data/meshes/snake.xml.gz");
+    XMLFile file("../../../../data/meshes/snake.xml.gz", true);
     LocalMeshData localdata;
     file >> localdata;
   }
