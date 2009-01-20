@@ -9,4 +9,5 @@
 %rename(_in)    dolfin::DiscreteFunction::in;
 
 // Ignore eval(val, data) function
-%ignore dolfin::Function::eval(double* values, const Data& data) const;
+//%ignore dolfin::Function::eval(double* values, const Data& data) const;
+%rename(eval_data) dolfin::Function::eval(double* values, const Data& data) const;

@@ -59,4 +59,13 @@ def split(self):
     return tuple(self.sub(i) for i in xrange(num_sub_space))
 %}
 }
+%extend dolfin::Data {
+  double get_coordinate(uint i) {
+    if (i < self->dim())  
+      return self->x[i];  
+    else 
+      throw std::out_of_range("index out of range");
+    return 0.0; 
+  }
+}
 
