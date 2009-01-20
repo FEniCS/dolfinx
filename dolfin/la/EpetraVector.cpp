@@ -243,7 +243,7 @@ const EpetraVector& EpetraVector::operator= (double a)
 //-----------------------------------------------------------------------------
 const EpetraVector& EpetraVector::operator= (const EpetraVector& v)
 {
-  dolfin_assert(x);
+  dolfin_assert(v.x);
 
   // TODO: Check for self-assignment
 
