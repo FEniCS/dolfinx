@@ -125,7 +125,7 @@ void IntersectionDetector::new_intersection(const Mesh& mesh1,
     std::vector<uint> intersected_cells;
     intersection(*c1, intersected_cells);
 
-    cout << "Found " << intersected_cells.size() << " cells in Omega0" << endl;
+    cout << "Found " << static_cast<dolfin::uint>(intersected_cells.size()) << " cells in Omega0" << endl;
 
     // Iterate over intersected cells and add intersection
     for (uint i = 0; i < intersected_cells.size(); i++)
