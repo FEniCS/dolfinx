@@ -61,7 +61,7 @@ def split(self):
 }
 %extend dolfin::Data {
   double get_coordinate(uint i) {
-    if (i < self->dim())  
+    if (i < self->cell().dim())  
       return self->x[i];  
     else 
       throw std::out_of_range("index out of range");
