@@ -8,6 +8,10 @@
 %rename(assign) dolfin::DiscreteFunction::operator=;
 %rename(_in)    dolfin::DiscreteFunction::in;
 
-// Ignore eval(val, data) function
-//%ignore dolfin::Function::eval(double* values, const Data& data) const;
+// Rename eval(val, data) function
 %rename(eval_data) dolfin::Function::eval(double* values, const Data& data) const;
+
+// Ignore the Data.x, pointer to the coordinates in the Data object
+%ignore dolfin::Data::x;
+%rename (x) dolfin::Data::x_();
+
