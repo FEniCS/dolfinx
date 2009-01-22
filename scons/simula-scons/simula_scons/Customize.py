@@ -5,9 +5,9 @@ import os, sys, re
 
 def darwinCxx(env):
     """Change the cxx parts of env for the Darwin platform"""
-    env["CXXFLAGS"] += " -undefined dynamic_lookup"
-    env["SHLINKFLAGS"] += " -undefined dynamic_lookup"
-    env["LDMODULEFLAGS"] += " -undefined dynamic_lookup"
+    env.Append(CXXFLAGS=" -undefined dynamic_lookup")
+    env.Append(SHLINKFLAGS=" -undefined dynamic_lookup")
+    env.Append(LDMODULEFLAGS=" -undefined dynamic_lookup")
     if not env.GetOption("clean"):
         # remove /usr/lib if present in LIBPATH.
         # there should maybe be some testing here to make sure 
@@ -20,7 +20,7 @@ def darwinCxx(env):
 
 def winCxx(env):
     """Change the cxx parts of env for the Windows platform"""
-    env["SHLINKFLAGS"] += " -Wl,--enable-auto-import"
+    env.Append(SHLINKFLAGS=" -Wl,--enable-auto-import")
     return env
 
 def darwinSwig(env):
