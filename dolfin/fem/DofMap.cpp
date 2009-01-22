@@ -222,7 +222,7 @@ void DofMap::tabulate_dofs(uint* dofs, const ufc::cell& ufc_cell, uint cell_inde
     const uint n = local_dimension();
     uint offset = 0; 
     if (cell_map) {
-      offset = cell_map[cell_index];  
+      offset = n*cell_map[cell_index];  
     } else {
       offset = n*cell_index;
     }
@@ -303,13 +303,13 @@ void DofMap::build(const Mesh& mesh, const FiniteElement& fe, const MeshFunction
   }
   dof_map_size = dof_counter; 
 
-  /* For debugging 
+  /* For debugging  
   for (uint i=0; i<ufc_dof_map->global_dimension(); i++) {
     std::cout <<"R["<<i<<"]="<<restriction_mapping[i]<<std::endl; 
   }
   for (uint c=0; c<mesh.numCells(); c++) { 
     for (uint i=0; i<n; i++) {
-      std::cout <<"dof_map["<<c*n+i<<"]="<<dof_map[c*n+i]<<std::endl; 
+      std::cout <<" c "<<c<<" i "<<i<<" dof_map["<<c*n+i<<"]="<<dof_map[c*n+i]<<std::endl; 
     }
   }
   */
