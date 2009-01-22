@@ -22,7 +22,9 @@ using namespace dolfin;
 VariationalProblem::VariationalProblem(const Form& a,
                                        const Form& L,
                                        bool nonlinear)
-  : a(a), L(L), nonlinear(nonlinear), newton_solver(0)
+  : a(a), L(L), cell_domains(0), exterior_facet_domains(0), 
+    interior_facet_domains(0), nonlinear(nonlinear), newton_solver(0)
+    
 {
   // FIXME: Must be set in DefaultParameters.h because of bug in cross-platform parameter system 
   // Add parameter "symmetric"
@@ -33,7 +35,8 @@ VariationalProblem::VariationalProblem(const Form& a,
                                        const Form& L,
                                        const BoundaryCondition& bc,
                                        bool nonlinear)
-  : a(a), L(L), nonlinear(nonlinear), newton_solver(0)
+  : a(a), L(L), cell_domains(0), exterior_facet_domains(0),
+    interior_facet_domains(0), nonlinear(nonlinear), newton_solver(0)   
 {
   // Store boundary condition
   bcs.push_back(&bc);
@@ -47,7 +50,29 @@ VariationalProblem::VariationalProblem(const Form& a,
                                        const Form& L,
                                        std::vector<BoundaryCondition*>& bcs,
                                        bool nonlinear)
-  : a(a), L(L), nonlinear(nonlinear), newton_solver(0)
+  : a(a), L(L), cell_domains(0), exterior_facet_domains(0), 
+    interior_facet_domains(0), nonlinear(nonlinear), newton_solver(0) 
+{
+  // Store boundary conditions
+  for (uint i = 0; i < bcs.size(); i++)
+    this->bcs.push_back(bcs[i]);
+
+  // FIXME: Must be set in DefaultParameters.h because of bug in cross-platform parameter system 
+  // Add parameter "symmetric"
+  //add("symmetric", false);
+}
+//-----------------------------------------------------------------------------
+VariationalProblem::VariationalProblem(const Form& a,
+                                       const Form& L,
+                                       std::vector<BoundaryCondition*>& bcs,
+                                       const MeshFunction<uint>* cell_domains,
+                                       const MeshFunction<uint>* exterior_facet_domains,
+                                       const MeshFunction<uint>* interior_facet_domains,
+                                       bool nonlinear)
+  : a(a), L(L), cell_domains(cell_domains), 
+    exterior_facet_domains(exterior_facet_domains), 
+    interior_facet_domains(interior_facet_domains), nonlinear(nonlinear), 
+    newton_solver(0)
 {
   // Store boundary conditions
   for (uint i = 0; i < bcs.size(); i++)
@@ -102,7 +127,7 @@ void VariationalProblem::F(GenericVector& b, const GenericVector& x)
     error("Attempt to solve linear variational problem with Newton solver.");
 
   // Assemble
-  assemble(b, L);
+  assemble(b, L, cell_domains, exterior_facet_domains, interior_facet_domains);
 
   // Apply boundary conditions
   for (uint i = 0; i < bcs.size(); i++)
@@ -116,7 +141,7 @@ void VariationalProblem::J(GenericMatrix& A, const GenericVector& x)
     error("Attempt to solve linear variational problem with Newton solver.");
 
   // Assemble
-  assemble(A, a);
+  assemble(A, a, cell_domains, exterior_facet_domains, interior_facet_domains);
 
   // Apply boundary conditions
   for (uint i = 0; i < bcs.size(); i++)
@@ -160,13 +185,13 @@ void VariationalProblem::solve_linear(Function& u)
     }
 
     // Assemble linear system and apply boundary conditions
-    assemble_system(A, b, a, L, _bcs);
+    assemble_system(A, b, a, L, _bcs, cell_domains, exterior_facet_domains, interior_facet_domains, 0);
   }
   else
   {
     // Assemble linear system
-    assemble(A, a);
-    assemble(b, L);
+    assemble(A, a, cell_domains, exterior_facet_domains, interior_facet_domains);
+    assemble(b, L, cell_domains, exterior_facet_domains, interior_facet_domains);
 
     // Apply boundary conditions
     for (uint i = 0; i < bcs.size(); i++)

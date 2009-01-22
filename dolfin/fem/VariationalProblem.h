@@ -70,6 +70,16 @@ namespace dolfin
                        std::vector<BoundaryCondition*>& bcs,
                        bool nonlinear=false);
 
+    /// Define variational problem with a list of Dirichlet boundary conditions
+    /// and subdomains
+    VariationalProblem(const Form& a,
+                       const Form& L,
+                       std::vector<BoundaryCondition*>& bcs,
+                       const MeshFunction<uint>* cell_domains,
+                       const MeshFunction<uint>* exterior_facet_domains,
+                       const MeshFunction<uint>* interior_facet_domains,
+                       bool nonlinear=false);
+
     /// Destructor
     ~VariationalProblem();
 
@@ -107,6 +117,11 @@ namespace dolfin
 
     // Boundary conditions
     std::vector<const BoundaryCondition*> bcs;
+
+    // Mesh functions for assembly
+    const MeshFunction<uint>* cell_domains;
+    const MeshFunction<uint>* exterior_facet_domains;
+    const MeshFunction<uint>* interior_facet_domains;
 
     // True if problem is nonlinear
     bool nonlinear;
