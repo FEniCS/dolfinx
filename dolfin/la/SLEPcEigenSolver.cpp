@@ -209,5 +209,12 @@ void SLEPcEigenSolver::setTolerance(double tolerance, uint maxiter)
   EPSSetTolerances(eps, tolerance, static_cast<int>(maxiter));
 }
 //-----------------------------------------------------------------------------
+int SLEPcEigenSolver::getIterationNumber()
+{
+  int num_iter;
+  EPSGetIterationNumber(eps, &num_iter);
+  return num_iter;
+}
+//-----------------------------------------------------------------------------
 
 #endif

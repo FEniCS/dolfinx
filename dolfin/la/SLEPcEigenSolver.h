@@ -101,6 +101,9 @@ namespace dolfin
     /// Get eigenpair i
     void getEigenpair(double& lr, double& lc, PETScVector& r, PETScVector& c, uint i);
 
+    // Get the number of iterations used by the solver
+    int getIterationNumber();
+
   private:
 
     /// Compute eigenpairs
