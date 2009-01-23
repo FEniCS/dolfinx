@@ -68,5 +68,19 @@ import_array();
 %include "dolfin_common_post.i"
 %include "dolfin_function_post.i"
 
+%inline %{
+int swigversion() { return  SWIGVERSION; }
+%}
+
+int swigversion();
+
+%pythoncode %{
+"""Preliminary code for adding swig version to cpp module. Someone (tm) finish
+this.
+"""
+__swigversion__ = hex(swigversion())
+del swigversion
+%}
+
 //%typedef         std::map<dolfin::uint, dolfin::uint> iimap; //FIXME: Make this work
 //%template(iimap) std::map<dolfin::uint, dolfin::uint>; //FIXME: Make this work
