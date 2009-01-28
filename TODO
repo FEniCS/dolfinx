@@ -15,6 +15,7 @@ This gives convenient expand/collapse of bullets by pressing TAB.
 * Linear Algebra
 ** Complete Trilinos implementation
 ** Parallel issues
+** Remove need for calling apply() after changes (solvers may check and call it if necessary)
 
 * Mesh
 ** Parallel issues
