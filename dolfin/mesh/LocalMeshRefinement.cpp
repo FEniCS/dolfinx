@@ -17,6 +17,7 @@
 #include "Cell.h"
 #include "BoundaryMesh.h"
 #include "LocalMeshRefinement.h"
+#include "RivaraRefinement.h"
 
 using namespace dolfin;
 
@@ -268,6 +269,25 @@ void LocalMeshRefinement::refineIterativelyByEdgeBisection(Mesh& mesh,
 
 }
 //-----------------------------------------------------------------------------
+void LocalMeshRefinement::refineRecursivelyByEdgeBisection(Mesh& mesh, 
+                                                 MeshFunction<bool>& cell_marker)
+{
+  // Transformation maps
+  MeshFunction<dolfin::uint> cell_map;
+  Array<int> facet_map;
+  
+  // Create new mesh
+  Mesh newmesh;
+  newmesh = mesh;
+  
+  RivaraRefinement::refine(newmesh, cell_marker, cell_map, facet_map);
+  
+  transformMeshData(newmesh, mesh, cell_map, facet_map);
+
+  // Overwrite old mesh with refined mesh
+  mesh = newmesh;
+}
+//-----------------------------------------------------------------------------
 void LocalMeshRefinement::bisectEdgeOfSimplexCell(const Cell& cell, 
                                                   Edge& edge, 
                                                   uint new_vertex, 
@@ -482,4 +502,95 @@ bool LocalMeshRefinement::iterationOfRefinement(Mesh& mesh,
   return next_iteration;
 }
 //-----------------------------------------------------------------------------
+void LocalMeshRefinement::transformMeshData(Mesh& newmesh, Mesh& oldmesh, 
+                                            MeshFunction<uint>& cell_map,
+                                            Array<int>& facet_map)                                    
+{
+  
+  newmesh.data().clear();
+
+  // Rewrite materials
+  if( oldmesh.data().meshFunction("material indicators") )
+  {
+    MeshFunction<dolfin::uint>* mat;
+    mat = newmesh.data().createMeshFunction("material indicators", newmesh.type().dim());
+    for(dolfin::uint i=0; i< newmesh.numCells(); i++)
+      mat->set(i, oldmesh.data().meshFunction("material indicators")->get( cell_map.get(i) ));
+    message("MeshData MeshFunction \"material indicators\" transformed.");
+  }
+ 
+  //Rewrite boundary indicators
+  if( oldmesh.data().array("boundary facet cells") 
+      && oldmesh.data().array("boundary facet numbers")
+      && oldmesh.data().array("boundary indicators") )
+  {
+
+    dolfin::uint num_ent = oldmesh.type().numEntities(0);
+    Array<dolfin::uint>* bfc;
+    Array<dolfin::uint>* bfn;
+    Array<dolfin::uint>* bi ;  
+    bfc = oldmesh.data().array("boundary facet cells");
+    bfn = oldmesh.data().array("boundary facet numbers");
+    bi = oldmesh.data().array("boundary indicators"); 
+    dolfin::uint bi_table_size = oldmesh.numCells()*num_ent;
+    std::vector<int> bi_table;
+    bi_table.resize(bi_table_size);
+    for(dolfin::uint i=0; i< bi_table_size; i++)
+    {
+      bi_table[i] = -1;
+    }  
+    for(dolfin::uint i=0; i< bi->size(); i++)
+    {
+      bi_table[ (*bfc)[i]*num_ent+(*bfn)[i] ] = (*bi)[i];
+    }
+  
+    //Empty loop to count elements
+    dolfin::uint bi_size = 0;
+    for(dolfin::uint c=0; c< newmesh.numCells(); c++)
+    {
+      for(dolfin::uint f=0; f< num_ent; f++)
+      {
+        if( facet_map[ c*num_ent+f ] != -1 )
+        {
+          dolfin::uint table_map = cell_map.get(c)*num_ent + facet_map[c*num_ent+f];
+          if( bi_table[ table_map ] != -1 )
+          {
+            bi_size++;  
+          }
+        } 
+      }
+    }
+ 
+    // Create new MeshData Arrays for boundary indicators
+    Array<dolfin::uint>* bfc_new;
+    Array<dolfin::uint>* bfn_new;
+    Array<dolfin::uint>* bi_new ;    
+    bfc_new = newmesh.data().createArray("boundary facet cells", bi_size);
+    bfn_new = newmesh.data().createArray("boundary facet numbers", bi_size);
+    bi_new = newmesh.data().createArray("boundary indicators", bi_size);
+
+    // Main transformation loop
+    dolfin::uint number_bi = 0;
+    for(dolfin::uint c=0; c< newmesh.numCells(); c++)
+    {
+      for(dolfin::uint f=0; f< num_ent; f++)
+      {
+        if( facet_map[ c*num_ent+f ] != -1 )
+        {
+          dolfin::uint table_map = cell_map.get(c)*num_ent + facet_map[c*num_ent+f];
+          if( bi_table[ table_map ] != -1 )
+          {
+            (*bfc_new)[number_bi] = c;
+            (*bfn_new)[number_bi] = f;
+            (*bi_new)[number_bi] = bi_table[ table_map ];
+            number_bi++;  
+          }
+        } 
+      }
+    }
+
+  message("MeshData Array \"boundary indicators\" transformed.");
+  }
+ 
+}
 

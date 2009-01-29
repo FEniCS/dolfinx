@@ -203,7 +203,8 @@ void Mesh::refine()
 //-----------------------------------------------------------------------------
 void Mesh::refine(MeshFunction<bool>& cell_markers)
 {
-  LocalMeshRefinement::refineIterativelyByEdgeBisection(*this, cell_markers);
+//  LocalMeshRefinement::refineIterativelyByEdgeBisection(*this, cell_markers);
+  LocalMeshRefinement::refineRecursivelyByEdgeBisection(*this, cell_markers);
 
   // Mesh may not be ordered
   _ordered = false;
