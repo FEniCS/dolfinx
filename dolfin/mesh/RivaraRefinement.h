@@ -29,9 +29,7 @@ namespace dolfin
 
   private:
 
-    class DVertex;
     class DCell;
-    class DMesh;
   
     /// Vertex with list of connected cells
     class DVertex
@@ -39,7 +37,7 @@ namespace dolfin
     public:
       DVertex();
       int id;
-      std::list<DCell *> cells;
+      std::list<DCell*> cells;
       Point p;
     };
     
@@ -61,16 +59,14 @@ namespace dolfin
     public:
       DMesh();
       void addVertex(DVertex* v);
-      void addCell(DCell* c,
-		 std::vector<DVertex*> vs, int parent_id);
+      void addCell(DCell* c, std::vector<DVertex*> vs, int parent_id);
       void removeCell(DCell* c);
       void importMesh(Mesh& mesh);
       void exportMesh(Mesh& mesh, std::vector<int>& new2old_cell, std::vector<int>& new2old_facet);
       void number();
-      void bisect(DCell* dcell, DVertex* hangv,
-		DVertex* hv0, DVertex* hv1);
+      void bisect(DCell* dcell, DVertex* hangv, DVertex* hv0, DVertex* hv1);
       void bisectMarked(std::vector<bool> marked_ids);
-      DCell* opposite(DCell* dcell, DVertex* v1, DVertex* v2);
+                        DCell* opposite(DCell* dcell, DVertex* v1, DVertex* v2);
       void propagateFacets(DCell* dcell, DCell* c0, DCell* c1, uint ii, uint jj);
 
       std::list<DVertex *> vertices;
