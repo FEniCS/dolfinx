@@ -58,6 +58,7 @@ namespace dolfin
     {
     public:
       DMesh();
+      ~DMesh();
       void addVertex(DVertex* v);
       void addCell(DCell* c, std::vector<DVertex*> vs, int parent_id);
       void removeCell(DCell* c);

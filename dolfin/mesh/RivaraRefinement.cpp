@@ -46,7 +46,10 @@ void RivaraRefinement::refine(Mesh& mesh,
   {  
     DCell* dc = *it;
     if(dc->deleted)
+    {
+      delete *it;
       it = dmesh.cells.erase(it);
+    }
     else
       it++;
   }  
@@ -86,6 +89,19 @@ RivaraRefinement::DCell::DCell() : id(0), parent_id(0), vertices(0), deleted(fal
 RivaraRefinement::DMesh::DMesh() : vertices(0), cells(0)
 {
   // Do nothing
+}
+//-----------------------------------------------------------------------------
+RivaraRefinement::DMesh::~DMesh()
+{
+  // Delete allocated DVertices
+  for(std::list<DVertex* >::iterator it = vertices.begin();
+      it != vertices.end(); ++it)
+    delete *it;
+
+  // Delete allocated DCells
+  for(std::list<DCell* >::iterator it = cells.begin();
+      it != cells.end(); ++it)
+    delete *it;
 }
 //-----------------------------------------------------------------------------
 void RivaraRefinement::DMesh::importMesh(Mesh& mesh)
@@ -289,7 +305,6 @@ void RivaraRefinement::DMesh::bisect(DCell* dcell, DVertex* hangv,
         bisect(copp, mv, v0, v1);
       else
         break;
-      }
     }
   }
 }
