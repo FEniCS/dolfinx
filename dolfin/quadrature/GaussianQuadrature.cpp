@@ -52,7 +52,6 @@ void GaussianQuadrature::computeWeights()
 
   uBLASVector x(n), b(n);
   ublas_vector& _b = b.vec();
-  real x_real[n];
   real b_real[n];
 
   // Compute the matrix coefficients
@@ -86,6 +85,7 @@ void GaussianQuadrature::computeWeights()
 #else 
   //With extended precision: Use the double precision result as initial guess for the
   //extended precision SOR solver.
+  real x_real[n];
 
   for (uint i = 0; i < n; ++i) {
     x_real[i] = x[i];
