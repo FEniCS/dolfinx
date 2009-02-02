@@ -4,8 +4,9 @@
 // Modified by Niclas Jansson, 2008.
 // 
 // First added:  2008-05-19
-// Last changed: 2008-09-16
+// Last changed: 2008-11-14
 
+#include "MeshFunction.h"
 #include "MeshData.h"
 
 using namespace dolfin;
@@ -17,6 +18,7 @@ typedef std::map<std::string, Array<dolfin::uint>*>::iterator a_iterator;
 typedef std::map<std::string, Array<dolfin::uint>*>::const_iterator a_const_iterator;
 
 typedef std::map<std::string, std::map<dolfin::uint, dolfin::uint>*>::iterator m_iterator;
+typedef std::map<std::string, std::map<dolfin::uint, dolfin::uint>*>::const_iterator m_const_iterator;
 
 //-----------------------------------------------------------------------------
 MeshData::MeshData(Mesh& mesh) : mesh(mesh)
@@ -29,6 +31,39 @@ MeshData::~MeshData()
   clear();
 }
 //-----------------------------------------------------------------------------
+const MeshData& MeshData::operator= (const MeshData& data)
+{
+  // Clear all data
+  clear();
+
+  // Copy MeshFunctions
+  for (mf_const_iterator it = data.meshfunctions.begin(); it != data.meshfunctions.end(); ++it)
+  {
+    MeshFunction<uint> *f = createMeshFunction( it->first, it->second->dim() );
+    for (uint i = 0; i < it->second->size(); i++)
+      f->values()[i] = it->second->values()[i];   
+  }
+
+  // Copy Arrays
+  for (a_const_iterator it = data.arrays.begin(); it != data.arrays.end(); ++it)
+  {
+    Array<uint>* a = createArray( it->first, static_cast<uint>(it->second->size()) );
+    for (uint i = 0; i < it->second->size(); i++)
+      (*a)[i] = (*(it->second))[i];   
+  }     
+
+  //Copy Mappings
+  for (m_const_iterator it = data.maps.begin(); it != data.maps.end(); ++it)
+  {
+    std::map<uint, uint>* m = createMapping( it->first );
+    std::map<uint, uint>::const_iterator i;
+    for (i = it->second->begin(); i != it->second->end(); ++i)
+      (*m)[i->first] = i->second;
+  }
+
+  return *this;
+}
+//-----------------------------------------------------------------------------
 void MeshData::clear()
 { 
   for (mf_iterator it = meshfunctions.begin(); it != meshfunctions.end(); ++it)
@@ -38,6 +73,10 @@ void MeshData::clear()
   for (a_iterator it = arrays.begin(); it != arrays.end(); ++it)
     delete it->second;
   arrays.clear();
+
+  for (m_iterator it = maps.begin(); it != maps.end(); ++it)
+    delete it->second;
+  maps.clear();
 }
 //-----------------------------------------------------------------------------
 MeshFunction<dolfin::uint>* MeshData::createMeshFunction(std::string name)
@@ -56,6 +95,14 @@ MeshFunction<dolfin::uint>* MeshData::createMeshFunction(std::string name)
 
   // Add to map
   meshfunctions[name] = f;
+
+  return f;
+}
+//-----------------------------------------------------------------------------
+MeshFunction<dolfin::uint>* MeshData::createMeshFunction(std::string name, uint dim)
+{
+  MeshFunction<uint>* f = createMeshFunction(name);
+  f->init(dim);
 
   return f;
 }
@@ -92,7 +139,6 @@ std::map<dolfin::uint, dolfin::uint>* MeshData::createMapping(std::string name)
 
   // Create new data
   std::map<uint, uint>* m = new std::map<uint, uint>;
-  //*m = 0;
   
   // Add to map
   maps[name] = m;
@@ -100,42 +146,82 @@ std::map<dolfin::uint, dolfin::uint>* MeshData::createMapping(std::string name)
   return m;
 }
 //-----------------------------------------------------------------------------
-MeshFunction<dolfin::uint>* MeshData::meshFunction(std::string name)
+MeshFunction<dolfin::uint>* MeshData::meshFunction(const std::string name) const
 {
   // Check if data exists
-  mf_iterator it = meshfunctions.find(name);
+  mf_const_iterator it = meshfunctions.find(name);
   if (it == meshfunctions.end())
     return 0;
   
   return it->second;
 }
 //-----------------------------------------------------------------------------
-Array<dolfin::uint>* MeshData::array(std::string name)
+Array<dolfin::uint>* MeshData::array(const std::string name) const
 {
   // Check if data exists
-  a_iterator it = arrays.find(name);
+  a_const_iterator it = arrays.find(name);
   if (it == arrays.end())
     return 0;
   
   return it->second;
 }
 //-----------------------------------------------------------------------------
-std::map<dolfin::uint, dolfin::uint>* MeshData::mapping(std::string name)
+std::map<dolfin::uint, dolfin::uint>* MeshData::mapping(const std::string name) const
 {
   // Check if data exists
-  m_iterator it = maps.find(name);
+  m_const_iterator it = maps.find(name);
   if (it == maps.end())
     return 0;
 
   return it->second;
 }
 //-----------------------------------------------------------------------------
+void MeshData::eraseMeshFunction(const std::string name)
+{
+  mf_iterator it = meshfunctions.find(name);
+  if (it != meshfunctions.end())
+  {
+    delete it->second;
+    meshfunctions.erase(it);
+  }
+  else
+  {
+    warning("Mesh data named \"%s\" doesn't exist.", name.c_str());
+  }
+}
+//-----------------------------------------------------------------------------
+void MeshData::eraseArray(const std::string name)
+{
+  a_iterator it = arrays.find(name);
+  if (it != arrays.end())
+  {
+    delete it->second;
+    arrays.erase(it);
+  }
+  else
+  {
+    warning("Mesh data named \"%s\" doesn't exist.", name.c_str());
+  }
+}
+//-----------------------------------------------------------------------------
+void MeshData::eraseMapping(const std::string name)
+{
+  m_iterator it = maps.find(name);
+  if (it != maps.end())
+  {
+    delete it->second;
+    maps.erase(it);
+  }
+  else
+  {
+    warning("Mesh data named \"%s\" doesn't exist.", name.c_str());
+  }
+}
+//-----------------------------------------------------------------------------
 void MeshData::disp() const
 {
   // Begin indentation
-  cout << "Auxiliary mesh data" << endl;
-  begin("-------------------");
-  cout << endl;
+  begin("Auxiliary mesh data");
 
   for (mf_const_iterator it = meshfunctions.begin(); it != meshfunctions.end(); ++it)
   {
@@ -148,6 +234,10 @@ void MeshData::disp() const
 
   for (a_const_iterator it = arrays.begin(); it != arrays.end(); ++it)
     cout << "Array<uint> of size " << static_cast<uint>(it->second->size())
+         << ": \"" << it->first << "\"" << endl;
+
+  for (m_const_iterator it = maps.begin(); it != maps.end(); ++it)
+    cout << "map<uint, uint> of size " << static_cast<uint>(it->second->size())
          << ": \"" << it->first << "\"" << endl;
 
   // End indentation

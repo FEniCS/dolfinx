@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2008 Anders Logg.
+// Copyright (C) 2006-2009 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Johan Hoffman, 2007.
@@ -8,7 +8,7 @@
 // Modified by Kristoffer Selim, 2008.
 //
 // First added:  2006-05-08
-// Last changed: 2008-10-08
+// Last changed: 2009-01-09
 
 #ifndef __MESH_H
 #define __MESH_H
@@ -19,13 +19,13 @@
 #include <dolfin/ale/ALEType.h>
 #include "MeshTopology.h"
 #include "MeshGeometry.h"
+#include "MeshData.h"
 #include "CellType.h"
 
 namespace dolfin
 {
   
   template <class T> class MeshFunction;
-  class MeshData;
   class IntersectionDetector;
 
   /// A Mesh consists of a set of connected and numbered mesh entities.
@@ -66,7 +66,7 @@ namespace dolfin
     Mesh(const Mesh& mesh);
 
     /// Create mesh from data file
-    Mesh(std::string filename);
+    explicit Mesh(std::string filename);
     
     /// Destructor
     ~Mesh();
@@ -96,9 +96,6 @@ namespace dolfin
     inline const double* coordinates() const { return _geometry.x(); }
 
     /// Return connectivity for all cells
-    inline uint* cells() { return _topology(_topology.dim(), 0)(); }
-
-    /// Return connectivity for all cells
     inline const uint* cells() const { return _topology(_topology.dim(), 0)(); }
 
     /// Return number of entities of given topological dimension
@@ -116,8 +113,11 @@ namespace dolfin
     /// Return mesh geometry (const version)
     inline const MeshGeometry& geometry() const { return _geometry; }
 
-    /// Return mesh data
-    MeshData& data();
+    /// Return mesh data (non-const version)
+    MeshData& data() { return _data; }
+
+    /// Return mesh data (const version)
+    const MeshData& data() const { return _data; }
 
     /// Return mesh cell type
     inline CellType& type() { dolfin_assert(_cell_type); return *_cell_type; }
@@ -126,13 +126,13 @@ namespace dolfin
     inline const CellType& type() const { dolfin_assert(_cell_type); return *_cell_type; }
 
     /// Compute entities of given topological dimension and return number of entities
-    uint init(uint dim);
+    uint init(uint dim) const;
 
     /// Compute connectivity between given pair of dimensions
-    void init(uint d0, uint d1);
+    void init(uint d0, uint d1) const;
 
     /// Compute all entities and connectivity
-    void init();
+    void init() const;
 
     /// Clear all mesh data
     void clear();
@@ -146,8 +146,8 @@ namespace dolfin
     /// Refine mesh uniformly
     void refine();
 
-    /// Refine mesh according to cells marked for refinement
-    void refine(MeshFunction<bool>& cell_markers, bool refine_boundary = true);
+    /// Refine mesh according to cells marked for refinement,
+    void refine(MeshFunction<bool>& cell_markers);
 
     /// Coarsen mesh uniformly
     void coarsen();
@@ -176,18 +176,6 @@ namespace dolfin
     /// Compute intersection with mesh
     void intersection(Mesh& mesh, Array<unsigned int>& cells, bool fixed_mesh=true);
 
-    /// Partition mesh into num_processes partitions
-    void partition(MeshFunction<uint>& partitions);
-
-    /// Partition mesh into num_partitions partitions
-    void partition(MeshFunction<uint>& partitions, uint num_partitions);
-
-    /// Partition mesh into num_partitions partitions (geometric)
-    void partitionGeom(MeshFunction<uint>& partitions);
-
-    // Distribute mesh according to mesh function
-    void distribute(MeshFunction<uint>& partitions);
-
     /// Display mesh data
     void disp() const;
     
@@ -212,16 +200,16 @@ namespace dolfin
     MeshGeometry _geometry;
 
     // Auxiliary mesh data
-    MeshData* _data;
+    MeshData _data;
 
     // Cell type
     CellType* _cell_type;
     
-    /// Return true iff topology is ordered according to the UFC numbering
-    bool _ordered;
-
     // Intersection detector
     IntersectionDetector* detector;
+
+    // True if mesh has been ordered
+    mutable bool _ordered;
     
   };
 

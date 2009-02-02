@@ -4,7 +4,7 @@
 // Modified by Kristoffer Selim, 2008.
 //
 // First added:  2006-06-05
-// Last changed: 2008-10-08
+// Last changed: 2008-11-13
 
 #ifndef __CELL_TYPE_H
 #define __CELL_TYPE_H
@@ -74,9 +74,6 @@ namespace dolfin
     /// Refine cell uniformly
     virtual void refineCell(Cell& cell, MeshEditor& editor, uint& current_cell) const = 0;
 
-    /// Order entities locally
-    virtual void orderEntities(Cell& cell) const = 0;
-
     /// Compute (generalized) volume of mesh entity
     virtual double volume(const MeshEntity& entity) const = 0;
 
@@ -91,6 +88,15 @@ namespace dolfin
 
     /// Compute the area/length of given facet with respect to the cell
     virtual double facetArea(const Cell& cell, uint facet) const = 0;
+
+    // FIXME: The order() function should be reimplemented and use one common
+    // FIXME: implementation for all cell types, just as we have for ordered()
+
+    /// Order entities locally
+    virtual void order(Cell& cell) const = 0;
+
+    /// Check if entities are ordered
+    bool ordered(const Cell& cell) const;
 
     /// Check for intersection with point
     virtual bool intersects(const MeshEntity& entity, const Point& p) const = 0;
@@ -110,7 +116,14 @@ namespace dolfin
 
     Type cell_type;
     Type facet_type;
-    
+
+  private:
+
+    // Check that <entity e0 with vertices v0> <= <entity e1 with vertices v1>
+    static bool increasing(uint n0, const uint* v0,
+                           uint n1, const uint* v1,
+                           uint num_vertices, const uint* vertices);
+
   };
 
 }

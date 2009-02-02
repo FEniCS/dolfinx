@@ -9,16 +9,16 @@
 #ifndef __NEWTON_SOLVER_H
 #define __NEWTON_SOLVER_H
 
+#include <boost/shared_ptr.hpp>
+#include <dolfin/la/GenericLinearSolver.h>
 #include <dolfin/la/GenericMatrix.h>
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/parameter/Parametrized.h>
-#include <dolfin/la/LinearSolver.h>
 #include <dolfin/la/LinearAlgebraFactory.h>
 #include <dolfin/la/enums_la.h>
 
 namespace dolfin
 {
-  class GenericLinearSolver;
   class Mesh;
   class NonlinearProblem;
 
@@ -60,8 +60,7 @@ namespace dolfin
     double residual0;
 
     /// Solver
-    GenericLinearSolver* solver;
-    GenericLinearSolver* local_solver;
+    boost::shared_ptr<GenericLinearSolver> solver;
 
     /// Solver
     dolfin::PreconditionerType pc;

@@ -8,7 +8,7 @@
 # This script should be run from the top level directory.
                                                                                                     
 IMPL=`find dolfin -name '*.cpp' | xargs wc -l | grep total | awk '{ printf "%d", $1/1000 }'`
-HEAD=`find dolfin -name '*.h'   | xargs wc -l | grep total | awk '{ printf "%d", $1/1000 }'`
+HEAD=`find dolfin -name '*.h'   | grep -v elements | grep -v ffc-forms | xargs wc -l | grep total | awk '{ printf "%d", $1/1000 }'`
 
 TOTAL=`echo $IMPL $HEAD | awk '{ print $1 + $2 }'`
 

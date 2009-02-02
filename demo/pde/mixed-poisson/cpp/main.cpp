@@ -4,22 +4,22 @@
 // Modified by Garth N. Wells, 2008.
 //
 // First added:  2007-04-20
-// Last changed: 2008-07-12
+// Last changed: 2008-11-19
 //
 // This demo program solves the mixed formulation of
-// Poisson's equation:
+// Poisson's equation,
 //
-//     sigma + grad(u) = 0
-//          div(sigma) = f
+//     sigma + grad(u) = 0,
+//          div(sigma) = f.
 //
-// The corresponding weak (variational problem)
+// The corresponding weak (variational problem),
 //
-//     <tau, sigma> - <div(tau), u> = 0       for all tau
-//                  <w, div(sigma)> = <w, f>  for all w
+//     <tau, sigma> - <div(tau), u> = 0       for all tau,
+//                  <w, div(sigma)> = <w, f>  for all w,
 //
-// is solved using BDM (Brezzi-Douglas-Marini) elements
-// of degree q (tau, sigma) and DG (discontinuous Galerkin)
-// elements of degree q - 1 for (w, u).
+// is solved using BDM (Brezzi-Douglas-Marini) elements of degree q
+// for (tau, sigma) and DG (discontinuous Galerkin) elements of degree
+// q - 1 for (w, u).
 
 #include <dolfin.h>
 #include "MixedPoisson.h"
@@ -32,54 +32,56 @@ int main()
   // Source term
   class Source : public Function
   {
-  public:
-    
-    Source(Mesh& mesh) : Function(mesh) {}
-
-    double eval(const double* x) const
+    void eval(double* values, const double* x) const
     {
       double dx = x[0] - 0.5;
       double dy = x[1] - 0.5;
-      return 500.0*exp(-(dx*dx + dy*dy)/0.02);
+      values[0] = 500.0*exp(-(dx*dx + dy*dy)/0.02);
     }
-
   };
 
   // Create mesh and source term
   UnitSquare mesh(16, 16);
-  Source f(mesh);
-  
+  Source f;
+
   // Define PDE
-  MixedPoissonBilinearForm a;
-  MixedPoissonLinearForm L(f);
-  LinearPDE pde(a, L, mesh);
+  MixedPoissonFunctionSpace V(mesh);
+  MixedPoissonBilinearForm a(V, V);
+  MixedPoissonLinearForm L(V);
+  L.f = f;
+  VariationalProblem pde(a, L);
 
   // Solve PDE
-  Function sigma;
-  Function u;
-  pde.solve(sigma, u);
+  Function w;
+  pde.solve(w);
+
+  // Extract sub functions
+  Function sigma = w[0];
+  Function u = w[1];  
 
   // Project sigma onto P1 continuous Lagrange for post-processing
-  Function sigma_projected;
-  P1ProjectionBilinearForm a_projection;
-  P1ProjectionLinearForm L_projection(sigma);
-  LinearPDE pde_project(a_projection, L_projection, mesh);
-  pde_project.solve(sigma_projected);
+  P1ProjectionFunctionSpace Vp(mesh);
+  P1ProjectionBilinearForm a_p(Vp, Vp);
+  P1ProjectionLinearForm L_p(Vp);
+  L_p.f = sigma;
+  VariationalProblem pde_project(a_p, L_p);
+  Function sigma_p;
+  pde_project.solve(sigma_p);
 
   // Plot solution
-  plot(sigma_projected);
+  plot(sigma_p);
   plot(u);
 
-  // Save solution to file
+  // Save solution in XML format
   File f0("sigma.xml");
   File f1("u.xml");
   f0 << sigma;
   f1 << u;
 
-  // Save solution to pvd format
+  // Save solution in VTK format
   File f3("sigma.pvd");
   File f4("u.pvd");
-  f3 << sigma_projected;
+  f3 << sigma_p;
   f4 << u;
 
   return 0;

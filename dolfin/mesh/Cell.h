@@ -4,7 +4,7 @@
 // Modified by Johan Hoffman 2006.
 //
 // First added:  2006-06-01
-// Last changed: 2008-08-29
+// Last changed: 2008-11-13
 
 #ifndef __CELL_H
 #define __CELL_H
@@ -24,7 +24,7 @@ namespace dolfin
   public:
 
     /// Constructor
-    Cell(Mesh& mesh, uint index) : MeshEntity(mesh, mesh.topology().dim(), index) {}
+    Cell(const Mesh& mesh, uint index) : MeshEntity(mesh, mesh.topology().dim(), index) {}
 
     /// Destructor
     ~Cell() {}
@@ -59,6 +59,14 @@ namespace dolfin
     inline double facetArea(uint facet) const
     { return _mesh.type().facetArea(*this, facet); }
 
+    /// Order entities locally
+    inline void order()
+    { _mesh.type().order(*this); }
+
+    /// Check if entities are ordered
+    inline bool ordered() const
+    { return _mesh.type().ordered(*this); }
+
     /// Check for intersection with point
     inline bool intersects(const Point& p) const
     { return _mesh.type().intersects(*this, p); }
@@ -68,7 +76,7 @@ namespace dolfin
     { return _mesh.type().intersects(*this, p0, p1); }
 
     /// Check for intersection with cell
-    inline bool intersects(Cell& cell)
+    inline bool intersects(const Cell& cell)
     { return _mesh.type().intersects(*this, cell); }
 
   };
@@ -79,12 +87,11 @@ namespace dolfin
   {
   public:
     
-    CellIterator(Mesh& mesh) : MeshEntityIterator(mesh, mesh.topology().dim()) {}
-    CellIterator(MeshEntity& entity) : MeshEntityIterator(entity, entity.mesh().topology().dim()) {}
+    CellIterator(const Mesh& mesh) : MeshEntityIterator(mesh, mesh.topology().dim()) {}
+    CellIterator(const MeshEntity& entity) : MeshEntityIterator(entity, entity.mesh().topology().dim()) {}
 
     inline Cell& operator*() { return *operator->(); }
     inline Cell* operator->() { return static_cast<Cell*>(MeshEntityIterator::operator->()); }
-
   };    
 
 }

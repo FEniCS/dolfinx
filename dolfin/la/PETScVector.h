@@ -14,6 +14,7 @@
 
 #ifdef HAS_PETSC
 
+#include <boost/shared_ptr.hpp>
 #include <petscvec.h>
 
 #include <dolfin/log/LogStream.h>
@@ -46,7 +47,7 @@ namespace dolfin
     explicit PETScVector(const PETScVector& x);
 
     /// Create vector from given PETSc Vec pointer
-    explicit PETScVector(Vec x);
+    explicit PETScVector(boost::shared_ptr<Vec> x);
 
     /// Destructor
     virtual ~PETScVector();
@@ -131,8 +132,8 @@ namespace dolfin
 
     //--- Special PETSc functions ---
 
-    /// Return PETSc Vec pointer
-    Vec vec() const;
+    /// Return shared_ptr to PETSc Vec object
+    boost::shared_ptr<Vec> vec() const;
 
     /// Assignment operator
     const PETScVector& operator= (const PETScVector& x);
@@ -142,11 +143,8 @@ namespace dolfin
   private:
 
     // PETSc Vec pointer
-    Vec x;
+    boost::shared_ptr<Vec> x;
     
-    // True if we don't own the vector x points to
-    bool is_view;
-
   };
 
   /// Output of PETScVector

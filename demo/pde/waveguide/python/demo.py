@@ -12,21 +12,22 @@ Jianming Jin [7.2.1 - 7.2.2]
 
 """
 __author__ = "Evan Lezar evanlezar@gmail.com"
-__date__ = "2008-08-22"
+__date__ = "2008-08-22 -- 2008-12-17"
 __copyright__ = "Copyright (C) 2008 Evan Lezar"
 __license__  = "GNU LGPL Version 2.1"
 
+# Modified by Anders Logg, 2008.
+
 from dolfin import *
-import numpy as N
 
 # Test for PETSc and SLEPc
 try:
-    dolfin.PETScMatrix
+    PETScMatrix()
 except:
     print "PyDOLFIN has not been configured with PETSc. Exiting."
     exit()
 try:
-    dolfin.SLEPcEigenSolver
+    SLEPcEigenSolver()
 except:
     print "PyDOLFIN has not been configured with SLEPc. Exiting."
     exit()
@@ -34,25 +35,19 @@ except:
 # Make sure we use the PETSc backend
 dolfin_set("linear algebra backend", "PETSc")
 
-# Specify the waveguide width and height in metres
+# Create mesh
 width = 1.0
 height = 0.5
+mesh = Rectangle(0, width, 0, height, 2, 1)
 
-# Create the mesh using a Rectangle
-mesh = Rectangle(0, width, 0, height, 2, 1, 0)
-
-# Refine if desired
-# mesh.refine()
-
-# Define the finite element
-degree = 2
-element = FiniteElement("Nedelec", "triangle", degree)
+# Define the function space
+V = FunctionSpace(mesh, "Nedelec", 2)
 
 # Define the test and trial functions
-v = TestFunction(element)
-u = TrialFunction(element)
+v = TestFunction(V)
+u = TrialFunction(V)
 
-# Define the forms - gererates an generalized eigenproblem of the form 
+# Define the forms - generates an generalized eigenproblem of the form 
 # [S]{h} = k_o^2[T]{h}
 # with the eigenvalues k_o^2 representing the square of the cutoff wavenumber 
 # and the corresponding right-eigenvector giving the coefficients of the 
@@ -60,16 +55,17 @@ u = TrialFunction(element)
 s = dot(curl_t(v), curl_t(u))*dx
 t = dot(v, u)*dx
 
-# Assemble the system matrices stiffness (S) and mass matrices (T)
+# Assemble the stiffness matrix (S) and mass matrix (T)
 S = PETScMatrix()
 T = PETScMatrix()
-assemble(s, mesh, tensor=S)
-assemble(t, mesh, tensor=T)
+print S
+assemble(s, tensor=S)
+assemble(t, tensor=T)
 
 # Solve the eigensystem
 esolver = SLEPcEigenSolver()
 esolver.set("eigenvalue spectrum", "smallest real")
-esolver.set("eigenvalue solver", "lapack");
+esolver.set("eigenvalue solver", "lapack")
 esolver.solve(S, T)
 
 # The result should have real eigenvalues but due to rounding errors, some of 
@@ -82,20 +78,14 @@ esolver.solve(S, T)
 # realizable modes.  These are called spurious modes.  
 # So, we need to identify the smallest, non-zero eigenvalue of the system - 
 # which corresponds with cutoff wavenumber of the the dominant cutoff mode.
-dominant_mode_index = -1
-for i in range(S.size(1)):
+cutoff = None
+for i in range(S. size(1)):
     (lr, lc) = esolver.getEigenvalue(i)
-    # print "Eigenvalue " + str(i) + ": " + str(lr) + " + i" + str(lc)
-    # ensure that the real part is large enough and that the complex part is zero
-    if (lr > 1) and (lc == 0):
-        print "Dominant mode found"
-        dominant_mode_index = i
+    if lr > 1 and lc == 0:
+        cutoff = sqrt(lr)
         break
-       
 
-if dominant_mode_index >= 0:
-    print ("Dominant mode found.  Cutoff Squared: %f\n" % lr)
-    if ( lc != 0 ):
-        print "WARNING: Cutoff mode is complex (%f + i%f)\n" % (lr, lc)
+if cutoff is None:
+    print "Unable to find dominant mode"
 else:
-    print "ERROR: Dominant mode not found"
+    print "Cutoff frequency:", cutoff

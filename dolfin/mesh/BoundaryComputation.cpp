@@ -23,7 +23,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void BoundaryComputation::computeBoundary(Mesh& mesh, BoundaryMesh& boundary)
+void BoundaryComputation::computeBoundary(const Mesh& mesh, BoundaryMesh& boundary)
 {
   // We iterate over all facets in the mesh and check if they are on
   // the boundary. A facet is on the boundary if it is connected to
@@ -112,9 +112,9 @@ void BoundaryComputation::computeBoundary(Mesh& mesh, BoundaryMesh& boundary)
     if (f->numEntities(D) == 1)
     {
       // Compute new vertex numbers for cell
-      uint* vertices = f->entities(0);
+      const uint* vertices = f->entities(0);
       for (uint i = 0; i < cell.size(); i++)
-	cell[i] = boundary_vertices[vertices[i]];
+        cell[i] = boundary_vertices[vertices[i]];
 
       // Reorder vertices so facet is right-oriented w.r.t. facet normal
       reorder(cell, *f);
@@ -132,10 +132,10 @@ void BoundaryComputation::computeBoundary(Mesh& mesh, BoundaryMesh& boundary)
   editor.close();
 }
 //-----------------------------------------------------------------------------
-void BoundaryComputation::reorder(Array<uint>& vertices, Facet& facet)
+void BoundaryComputation::reorder(Array<uint>& vertices, const Facet& facet)
 {
   // Get mesh
-  Mesh& mesh = facet.mesh();
+  const Mesh& mesh = facet.mesh();
 
   // Get the vertex opposite to the facet (the one we remove)
   uint vertex = 0;

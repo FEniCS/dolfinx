@@ -100,6 +100,7 @@ def pkgTests(forceCompiler=None, sconsEnv=None,
 
     # A program that do a real GMP test (thanks to Benjamin Kehlet)
     cpp_test_lib_str = r"""
+#include <cstdlib>
 #include <iostream>
 #include <gmpxx.h>
 
@@ -134,7 +135,7 @@ int main (void)
         remove_cppfile(cpp_file, ofile=True)
         raise UnableToLinkException("GMP", cmd=cmdstr,
                                     program=cpp_test_lib_str,
-                                    errormsg=errormsg)
+                                    errormsg=cmdoutput)
 
     cmdstr = os.path.join(os.getcwd(), "a.out")
     runFailed, cmdoutput = getstatusoutput(cmdstr)

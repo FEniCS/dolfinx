@@ -2,9 +2,9 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-11-23
-// Last changed: 2008-04-28
+// Last changed: 2008-12-12
 //
-// This demo program solves Poisson's equation
+// This demo program solves Poisson's equation,
 //
 //     - div grad u(x) = f(x)
 //
@@ -14,8 +14,8 @@
 //
 // and boundary conditions given by
 //
-//     u(x) = 0 for x = 0
-//    du/dx = 0 for x = 1
+//     u(x) = 0 for x = 0,
+//    du/dx = 0 for x = 1.
 
 #include <dolfin.h>
 #include "Poisson.h"
@@ -34,15 +34,19 @@ class DirichletBoundary : public SubDomain
 // Source term
 class Source : public Function
 {
-public:
-    
-  Source(Mesh& mesh) : Function(mesh) {}
-
-  double eval(const double* x) const
+  void eval(double* values, const double* x) const
   {
-      return 9.0*DOLFIN_PI*DOLFIN_PI*sin(3.0*DOLFIN_PI*x[0]);
+    values[0] = 9.0*DOLFIN_PI*DOLFIN_PI*sin(3.0*DOLFIN_PI*x[0]);
   }
+};
 
+// Neumann boundary condition
+class Flux : public Function
+{
+  void eval(double* values, const double* x) const
+  {
+    values[0] = 3.0*DOLFIN_PI*cos(3.0*DOLFIN_PI*x[0]);
+  }
 };
 
 int main()
@@ -50,24 +54,30 @@ int main()
   // Create mesh
   UnitInterval mesh(50);
 
-  // Set up BCs
-  Function zero(mesh, 0.0);
-  DirichletBoundary boundary;
-  DirichletBC bc(zero, mesh, boundary);
+  // Create function space
+  PoissonFunctionSpace V(mesh);
 
-  // Create source
-  Source f(mesh);
+  // Set up BCs
+  Constant zero(0.0);
+  DirichletBoundary boundary;
+  DirichletBC bc(V, zero, boundary);
+
+  // Create source and flux terms
+  Source f;
+  Flux g;
 
   // Define PDE
-  PoissonBilinearForm a;
-  PoissonLinearForm L(f);
-  LinearPDE pde(a, L, mesh, bc);
+  PoissonBilinearForm a(V, V);
+  PoissonLinearForm L(V);
+  L.f = f;
+  L.g = g;
+  VariationalProblem pde(a, L, bc);
 
   // Solve PDE
   Function u;
   pde.solve(u);
 
-  // Save solution to file
+  // Save solution in VTK format
   File file_u("poisson.pvd");
   file_u << u;
 

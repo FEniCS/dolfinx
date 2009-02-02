@@ -1,10 +1,9 @@
-%module(directors="1") dolfin
+%module(package="dolfin", directors="1") cpp
 
 %feature("autodoc", "1");
 
 %{
 #define protected public
-
 #include <dolfin/dolfin.h>
 #include <numpy/arrayobject.h>
 using namespace dolfin;
@@ -12,7 +11,7 @@ using namespace dolfin;
 
 
 %init%{
-  import_array();
+import_array();
 %}
 
 // Renames
@@ -30,6 +29,15 @@ using namespace dolfin;
 // Exceptions
 %include "dolfin_exceptions.i"
 
+// Handle shared_ptr only available for swig version >= 1.3.34
+#if SWIG_VERSION >= 0x010334
+// Un comment these lines to use std::tr1, only works with patched swig
+//#define SWIG_SHARED_PTR_NAMESPACE std
+//#define SWIG_SHARED_PTR_SUBNAMESPACE tr1
+%include "boost_shared_ptr.i"
+%include dolfin_shared_ptr_classes.i
+#endif
+
 // FIXME: what are these doing?
 %include "cpointer.i"
 %include "std_sstream.i"
@@ -46,7 +54,6 @@ using namespace dolfin;
 // Fixes for specific kernel modules (pre)
 %include "dolfin_la_pre.i"
 %include "dolfin_mesh_pre.i"
-%include "dolfin_fem_pre.i"
 %include "dolfin_function_pre.i"
 %include "dolfin_pde_pre.i"
 
@@ -60,6 +67,20 @@ using namespace dolfin;
 %include "dolfin_log_post.i"
 %include "dolfin_common_post.i"
 %include "dolfin_function_post.i"
+
+%inline %{
+int swigversion() { return  SWIGVERSION; }
+%}
+
+int swigversion();
+
+%pythoncode %{
+"""Preliminary code for adding swig version to cpp module. Someone (tm) finish
+this.
+"""
+__swigversion__ = hex(swigversion())
+del swigversion
+%}
 
 //%typedef         std::map<dolfin::uint, dolfin::uint> iimap; //FIXME: Make this work
 //%template(iimap) std::map<dolfin::uint, dolfin::uint>; //FIXME: Make this work

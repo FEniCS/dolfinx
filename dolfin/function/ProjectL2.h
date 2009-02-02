@@ -7,6 +7,7 @@
 #ifndef __PROJECTL2_H
 #define __PROJECTL2_H
 
+/*
 namespace dolfin
 {
 
@@ -35,5 +36,6 @@ namespace dolfin
   };
   
 }
+*/
 
 #endif

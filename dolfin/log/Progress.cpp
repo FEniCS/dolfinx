@@ -18,28 +18,37 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 Progress::Progress(std::string title, unsigned int n) 
-  : title(title), n(n), i(0), p_step(0.1), t_step(1.0), p(0), t(0)
+  : title(title), n(n), i(0), p_step(0.1), t_step(1.0), p(0), t(0), 
+    always(false), finished(false), displayed(false) 
 {
   if (n <= 0)
     error("Number of steps for progress session must be positive.");
 
   //LogManager::logger.progress(title, 0.0);
   t = time();
+  
+  //When "debug level" is more than 0, progress is always visible
+  if (LogManager::logger.getDebugLevel() > 0 )
+    always = true;
+  
 }
+
 //-----------------------------------------------------------------------------
 Progress::Progress(std::string title)
-  : title(title), n(0), i(0), p_step(0.1), t_step(1.0), p(0), t(0)
+  : title(title), n(0), i(0), p_step(0.1), t_step(1.0), p(0), t(0), 
+    always(false), finished(false), displayed(false)
 {
   //LogManager::logger.progress(title, 0.0);
   t = time();
+  
+  //When "debug level" is more than 0, progress is always visible
+  if (LogManager::logger.getDebugLevel() > 0 )
+    always = true;
+
 }
 //-----------------------------------------------------------------------------
 Progress::~Progress()
 {
-  if (this->p == 0.0)
-    LogManager::logger.message(title + " (finished).");
-  else if (this ->p < 1.0)
-    LogManager::logger.progress(title, 1.0);
 }
 //-----------------------------------------------------------------------------
 void Progress::operator=(double p)
@@ -70,11 +79,18 @@ void Progress::update(double p)
   const bool t_check = t - this->t >= t_step - DOLFIN_EPS;
 
   // Only update when the increase is significant
-  if (t_check)
+  if (t_check || always || (p >= 1.0 && displayed && !finished))
   {
     LogManager::logger.progress(title, p);
     this->p = p;
     this->t = t;
+    always = false;
+    displayed = true;
   }
+  
+  // Update finished flag
+  if (p >= 1.0)
+    finished = true;
+
 }
 //-----------------------------------------------------------------------------

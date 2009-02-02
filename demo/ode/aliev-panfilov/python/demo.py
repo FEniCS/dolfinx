@@ -10,10 +10,9 @@ __license__  = "GNU LGPL Version 2.1"
 
 from dolfin import *
 
-# FIXME: Not working, see notice below
 import sys
-print "This demo is not working, please fix me"
-sys.exit(1)
+print "Sorry, this demo is currently broken."
+sys.exit(0)
 
 class AlievPanfilov(ODE):
     def __init__(self, N, T):
@@ -34,7 +33,5 @@ class AlievPanfilov(ODE):
         y[0] = -self.k*u[0]*(u[0] - self.a)*(u[0] - 1.0) - u[0]*u[1]
         y[1] = eps*(-u[1] - self.k*u[0]*(u[0] - self.a - 1.0))
 
-
 ode = AlievPanfilov(2, 300)
 ode.solve()
-

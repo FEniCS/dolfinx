@@ -14,6 +14,7 @@
 #include <dolfin/common/Timer.h>
 #include "GenericMatrix.h"
 #include "GenericVector.h"
+#include "LinearSolver.h"
 #include "enums_la.h"
 #include "uBLASKrylovSolver.h"
 #include "uBLASSparseMatrix.h"
@@ -34,7 +35,7 @@ namespace dolfin
   /// This class defines an interface for a Krylov solver. The underlying 
   /// Krylov solver type is defined in default_type.h.
   
-  class KrylovSolver : public Parametrized
+  class KrylovSolver : public GenericLinearSolver
   {
   public:
     

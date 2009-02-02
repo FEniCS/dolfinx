@@ -14,6 +14,8 @@
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MPIMeshCommunicator.h>
+#include <dolfin/mesh/MeshPartitioning.h>
+#include <dolfin/mesh/LocalMeshData.h>
 #include <dolfin/mesh/Vertex.h>
 #include <dolfin/mesh/Edge.h>
 #include <dolfin/mesh/Face.h>

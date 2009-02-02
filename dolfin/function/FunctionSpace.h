@@ -1,13 +1,22 @@
 // Copyright (C) 2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Garth N. Wells, 2008.
+// Modified by Kent-Andre Mardal, 2009.
+//
 // First added:  2008-09-11
-// Last changed: 2008-10-14
+// Last changed: 2009-01-06
 
 #ifndef __FUNCTION_SPACE_H
 #define __FUNCTION_SPACE_H
 
-#include <tr1/memory>
+#include <map>
+#include <string>
+#include <boost/shared_ptr.hpp>
+#include <vector>
+#include <ufc.h>
+
+#include <dolfin/common/types.h>
 
 namespace dolfin
 {
@@ -15,9 +24,12 @@ namespace dolfin
   class Mesh;
   class FiniteElement;
   class DofMap;
-  class NewFunction;
+  class Function;
   class IntersectionDetector;
   class GenericVector;
+  template <class T> class MeshFunction; 
+//  template<> class MeshFunction<bool>;
+//  class MeshFunction<bool>;
 
   /// This class represents a finite element function space defined by
   /// a mesh, a finite element, and a local-to-global mapping of the
@@ -28,12 +40,14 @@ namespace dolfin
   public:
 
     /// Create function space for given mesh, element and dofmap
-    FunctionSpace(Mesh& mesh, const FiniteElement &element, const DofMap& dofmap);
+    FunctionSpace(const Mesh& mesh,
+                  const FiniteElement& element,
+                  const DofMap& dofmap);
 
     /// Create function space for given mesh, element and dofmap (shared data)
-    FunctionSpace(std::tr1::shared_ptr<Mesh> mesh,
-                  std::tr1::shared_ptr<const FiniteElement> element,
-                  std::tr1::shared_ptr<const DofMap> dofmap);
+    FunctionSpace(boost::shared_ptr<const Mesh> mesh,
+                  boost::shared_ptr<const FiniteElement> element,
+                  boost::shared_ptr<const DofMap> dofmap);
 
     /// Copy constructor
     FunctionSpace(const FunctionSpace& V);
@@ -45,9 +59,6 @@ namespace dolfin
     const FunctionSpace& operator= (const FunctionSpace& V);
 
     /// Return mesh
-    Mesh& mesh();
-
-    /// Return mesh (const version)
     const Mesh& mesh() const;
 
     /// Return finite element
@@ -56,27 +67,41 @@ namespace dolfin
     /// Return dofmap
     const DofMap& dofmap() const;
 
+    /// Return dimension of function space
+    uint dim() const;
+
     /// Evaluate function v in function space at given point
     void eval(double* values,
               const double* x,
-              const NewFunction& v) const;
+              const Function& v) const;
+
+    /// Evaluate function v in function space at given point in given cell
+    void eval(double* values,
+              const double* x,
+              const Function& v,
+              const ufc::cell& ufc_cell,
+              uint cell_index) const;
 
     /// Interpolate function v to function space
     void interpolate(GenericVector& coefficients,
-                     const NewFunction& v) const;
-
-    /// Interpolate function v in function space to local function space on cell
-    void interpolate(double* coefficients,
-                     const ufc::cell& ufc_cell,
-                     const NewFunction& v) const;
+                     const Function& v) const;
 
     /// Interpolate function v in function space to vertices of mesh
     void interpolate(double* vertex_values,
-                     const NewFunction& v) const;
+                     const Function& v) const;
 
-    /// Extract sub finite element for sub system
-    FunctionSpace* extract_sub_space(const Array<uint>& sub_system) const;
-    
+    /// Extract sub space for component
+    boost::shared_ptr<FunctionSpace> extract_sub_space(const std::vector<uint>& component) const;
+
+    // Attach restriction meshfunction
+    void attach(MeshFunction<bool>& restriction);
+
+    // Create Functions space based on the restriction
+    boost::shared_ptr<FunctionSpace> restriction(MeshFunction<bool>& restriction);
+
+    // Evaluate restriction 
+    bool is_inside_restriction(uint c) const;
+
   private:
 
     // Scratch space, used for storing temporary local data
@@ -111,13 +136,19 @@ namespace dolfin
     };
 
     // The mesh
-    std::tr1::shared_ptr<Mesh> _mesh;
+    boost::shared_ptr<const Mesh> _mesh;
 
     // The finite element
-    std::tr1::shared_ptr<const FiniteElement> _element;
+    boost::shared_ptr<const FiniteElement> _element;
 
     // The dofmap
-    std::tr1::shared_ptr<const DofMap> _dofmap;
+    boost::shared_ptr<const DofMap> _dofmap;
+
+    // The restriction meshfunction
+    boost::shared_ptr<const MeshFunction<bool> > _restriction;
+
+    // Cache of sub spaces
+    mutable std::map<std::string, boost::shared_ptr<FunctionSpace> > subspaces;
 
     // Scratch space, used for storing temporary local data
     mutable Scratch scratch;

@@ -2,9 +2,9 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-03-11
-// Last changed: 2007-03-17
+// Last changed: 2008-11-19
 //
-// Testing evaluation at arbitrary points
+// Demonstrating function evaluation at arbitrary points.
 
 #include <dolfin.h>
 #include "Projection.h"
@@ -14,35 +14,36 @@ using namespace dolfin;
 class F : public Function
 {
 public:
-  
-  F(Mesh& mesh) : Function(mesh) {}
-
-  double eval(const double* x) const
+  void eval(double* values, const double* x) const
   {
-    return sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2]);
+    values[0] = sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2]);
   }
-  
 };
 
 int main()
 {
   // Create mesh and a point in the mesh
   UnitCube mesh(8, 8, 8);
-  double x[3] = {0.3, 0.3, 0.3};
+  double x[3] = {0.31, 0.32, 0.33};
 
   // A user-defined function
-  F f(mesh);
+  F f;
 
   // Project to a discrete function
-  ProjectionBilinearForm a;
-  ProjectionLinearForm L(f);
-  LinearPDE pde(a, L, mesh);
+  ProjectionFunctionSpace V(mesh);
+  ProjectionBilinearForm a(V, V);
+  ProjectionLinearForm L(V);
+  L.f = f;
+  VariationalProblem pde(a, L);
   Function g;
   pde.solve(g);
 
   // Evaluate user-defined function f
-  message("f(x) = %g", f.eval(x));
+  double value = 0.0;
+  f.eval(&value, x);
+  message("f(x) = %g", value);
 
   // Evaluate discrete function g (projection of f)
-  message("g(x) = %g", g.eval(x));
+  g.eval(&value, x);
+  message("g(x) = %g", value);
 }

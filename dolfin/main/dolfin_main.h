@@ -4,7 +4,6 @@
 /// DOLFIN main
 
 #include <dolfin/main/init.h>
-#include <dolfin/common/types.h>
+#include <dolfin/main/MPI.h>
 
 #endif
-

@@ -1,19 +1,40 @@
 // Type maps for PyDOLFIN
 
 // Basic typemaps
-%typemap(in)  double = double;
-%typemap(out) double = double;
 %typemap(in)  dolfin::uint = int;
 %typemap(out) dolfin::uint = int;
 
-// Typemap for dolfin::arrays as input arguments to overloaded functions.
-// This converts a C++ dolfin::simple_array to a numpy array in Python.
-%typemap(directorin) dolfin::simple_array<double>& {
+// Typemap for values (in Function)
+%typemap(directorin) double* values {
   {
-    npy_intp dims[1] = {$1_name.size};
-    $input = PyArray_SimpleNewFromData(1, dims, NPY_DOUBLE, reinterpret_cast<char *>($1_name.data));
+    // Compute size of value (number of entries in tensor value)
+    dolfin::uint size = 1;
+    for (dolfin::uint i = 0; i < this->function_space().element().value_rank(); i++)
+      size *= this->function_space().element().value_dimension(i);
+    
+    npy_intp dims[1] = {size};
+    $input = PyArray_SimpleNewFromData(1, dims, NPY_DOUBLE, reinterpret_cast<char *>($1_name));
   }
 }
+
+// Typemap for coordinates (in Function and SubDomain)
+%typemap(directorin) const double* x {
+  {
+    // Compute size of x
+    npy_intp dims[1] = {this->geometric_dimension()};
+    $input = PyArray_SimpleNewFromData(1, dims, NPY_DOUBLE, reinterpret_cast<char *>(const_cast<double*>($1_name)));
+  }
+}
+
+%typemap(directorin) double* y {
+  {
+    // Compute size of x
+    npy_intp dims[1] = {this->geometric_dimension()};
+    $input = PyArray_SimpleNewFromData(1, dims, NPY_DOUBLE, reinterpret_cast<char *>($1_name));
+  }
+}
+
+//%apply const double* x { const double* y };  
 
 // Typemap check
 %typecheck(SWIG_TYPECHECK_DOUBLE_ARRAY) double* {
@@ -93,9 +114,9 @@
 // Typemap for sending numpy arrays as input to functions expecting a C array of real
 %typemap(in) double* {
     if PyArray_Check($input) {
-        PyArrayObject *xa = (PyArrayObject*)($input);
-        if (xa->descr->type == 'd')
-            $1 = (double *)(*xa).data;
+        PyArrayObject *xa = reinterpret_cast<PyArrayObject*>($input);
+        if ( PyArray_TYPE(xa) == NPY_DOUBLE )
+            $1  = static_cast<double*>(PyArray_DATA(xa));
         else
             SWIG_exception(SWIG_ValueError, "numpy array of doubles expected");
     } else 

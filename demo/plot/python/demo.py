@@ -1,5 +1,7 @@
+"This demo illustrate basic plotting."
+
 __author__ = "Anders Logg (logg@simula.no)"
-__date__ = "2007-05-29 -- 2008-03-25"
+__date__ = "2007-05-29 -- 2008-12-07"
 __copyright__ = "Copyright (C) 2007-2008 Anders Logg"
 __license__  = "GNU LGPL Version 2.1"
 
@@ -10,23 +12,26 @@ import sys
 
 # Read and plot mesh from file
 mesh = Mesh("dolfin-2.xml.gz")
+mesh.order()
 
+# Decide which demos to run
 try:
     demos = [int(sys.argv[-1])]
 except:
-    demos = [0,1,2]
+    demos = [0, 1, 2]
 
 # Have some fun with the mesh
-R = 0.15
-H = 0.025
-X = 0.3
-Y = 0.4
-dX = H
-dY = 1.5*H
-coordinates = mesh.coordinates()
-original = coordinates.copy()
-
 if 0 in demos:
+
+    R = 0.15
+    H = 0.025
+    X = 0.3
+    Y = 0.4
+    dX = H
+    dY = 1.5*H
+    coordinates = mesh.coordinates()
+    original = coordinates.copy()
+
     for i in xrange(100):
 
         if X < H or X > 1.0 - H:
@@ -47,55 +52,22 @@ if 0 in demos:
         for j in xrange(mesh.numVertices()):
             coordinates[j] = original[j]
 
-# Define a scalar function
-class ScalarFunction(Function):
-    def __init__(self, mesh):
-        self.t = 0.0
-        Function.__init__(self, mesh)
-
-    def eval(self, values, x):
-        dx = x[0] - self.t
-        dy = x[1] - self.t
-        values[0] = self.t*100*exp(-10.0*(dx*dx + dy*dy))
-
-# Define a vector function
-class VectorFunction(Function):
-    def __init__(self, mesh):
-        self.t = 0.0
-        Function.__init__(self, mesh)
-
-    def eval(self, values, x):
-        dx = x[0] - self.t
-        dy = x[1] - self.t
-        values[0] = -dy*exp(-10.0*(dx*dx + dy*dy))
-        values[1] = dx*exp(-10.0*(dx*dx + dy*dy))
-
-    def rank(self):
-        return 1
-
-    def dim(self, i):
-        return 2
-    
-
+# Plot scalar function
 if 1 in demos:
-    # Plot scalar function
-    f = ScalarFunction(mesh)
+    V = FunctionSpace(mesh, "CG", 1)
+    f = Function(V, "t * 100 * exp(-10.0 * (pow(x[0] - t, 2) + pow(x[1] - t, 2)))")
+    f.t = 0.0
     for i in range(100):
         f.t += 0.01
-        plot(f, rescale=False, title="Foo")
+        plot(f, rescale=True, title="Scalar function")
 
-if 1 in demos:
-    # Plot scalar function
-    _f = ScalarFunction(mesh)
-    for i in range(100):
-        _f.t += 0.01
-        plot(_f, rescale=True)
-
-
+# Plot vector function
 if 2 in demos:
-    # Plot vector function
     mesh = UnitSquare(16, 16)
-    g = VectorFunction(mesh)
+    V = VectorFunctionSpace(mesh, "CG", 1)
+    f = Function(V, ("-(x[1] - t)*exp(-10.0*(pow(x[0] - t, 2) + pow(x[1] - t, 2)))",
+                     " (x[0] - t)*exp(-10.0*(pow(x[0] - t, 2) + pow(x[1] - t, 2)))"))
+    f.t = 0.0
     for i in range(200):
-        g.t += 0.005
-        plot(g, rescale=True)
+        f.t += 0.005
+        plot(f, rescale=True, title="Vector function")

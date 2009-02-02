@@ -1,11 +1,10 @@
-// Copyright (C) 2006 Anders Logg.
+// Copyright (C) 2006-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Kristoffer Selim, 2008. 
 //
 // First added:  2006-06-05
-// Last changed: 2008-10-08
-//
+// Last changed: 2008-11-18
 
 #include <dolfin/log/dolfin_log.h>
 #include "PointCell.h"
@@ -86,5 +85,118 @@ std::string CellType::type2string(Type type)
   }
 
   return "";
+}
+//-----------------------------------------------------------------------------
+bool CellType::ordered(const Cell& cell) const
+{
+  // Get mesh topology
+  const MeshTopology& topology = cell.mesh().topology();
+  const uint dim = topology.dim();
+  const uint c = cell.index();
+
+  // Get vertices
+  const uint num_vertices = topology(dim, 0).size(c);
+  const uint* vertices = topology(dim, 0)(c);
+  dolfin_assert(vertices);
+
+  // Check that vertices are in ascending order
+  for (uint v = 1; v < num_vertices; v++)
+    if (vertices[v - 1] >= vertices[v])
+      return false;
+
+  // Note the comparison below: d + 1 < dim, not d < dim - 1
+  // Otherwise, d < dim - 1 will evaluate to true for dim = 0 with uint
+
+  // Check numbering of entities of positive dimension and codimension
+  for (uint d = 1; d + 1 < dim; d++)
+  {
+    // Check if entities exist, otherwise skip
+    const MeshConnectivity& connectivity = topology(d, 0);
+    if (connectivity.size() == 0) continue;
+
+    // Get entities
+    const uint num_entities = topology(dim, d).size(c);
+    const uint* entities = topology(dim, d)(c);
+
+    // Iterate over entities
+    for (uint e = 1; e < num_entities; e++)
+    {
+      // Get vertices for first entity
+      const uint  e0 = entities[e - 1];
+      const uint  n0 = connectivity.size(e0);
+      const uint* v0 = connectivity(e0);
+
+      // Get vertices for second entity
+      const uint  e1 = entities[e];
+      const uint  n1 = connectivity.size(e1);
+      const uint* v1 = connectivity(e1);
+
+      // Check ordering of entities
+      if (!increasing(n0, v0, n1, v1, num_vertices, vertices))
+        return false;
+    }
+  }
+
+  return true;
+}
+//-----------------------------------------------------------------------------
+bool CellType::increasing(uint n0, const uint* v0,
+                          uint n1, const uint* v1,
+                          uint num_vertices, const uint* vertices)
+{
+  dolfin_assert(n0 == n1);
+  dolfin_assert(num_vertices > n0);
+  const uint num_non_incident = num_vertices - n0;
+
+  // Compute non-incident vertices for first entity
+  std::vector<uint> w0(num_non_incident);
+  uint k = 0;
+  for (uint i = 0; i < num_vertices; i++)
+  {
+    const uint v = vertices[i];
+    bool incident = false;
+    for (uint j = 0; j < n0; j++)
+    {
+      if (v0[j] == v)
+      {
+        incident = true;
+        break;
+      }
+    }
+    if (!incident)
+      w0[k++] = v;
+  }
+  dolfin_assert(k == num_non_incident);
+
+  // Compute non-incident vertices for second entity
+  std::vector<uint> w1(num_non_incident);
+  k = 0;
+  for (uint i = 0; i < num_vertices; i++)
+  {
+    const uint v = vertices[i];
+    bool incident = false;
+    for (uint j = 0; j < n1; j++)
+    {
+      if (v1[j] == v)
+      {
+        incident = true;
+        break;
+      }
+    }
+    if (!incident)
+      w1[k++] = v;
+  }
+  dolfin_assert(k == num_non_incident);
+
+  // Compare lexicographic ordering of w0 and w1
+  for (uint k = 0; k < num_non_incident; k++)
+  {
+    if (w0[k] < w1[k])
+      return true;
+    else if (w0[k] > w1[k])
+      return false;
+  }
+
+  return true;
 }
 //-----------------------------------------------------------------------------

@@ -1,29 +1,28 @@
 // Copyright (C) 2006-2007 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Anders Logg, 2005
+// Modified by Anders Logg, 2005-2008.
 //
 // First added:  2005
-// Last changed: 2007-08-20
+// Last changed: 2008-12-27
 //
-// This program illustrates the use of the DOLFIN for solving a nonlinear PDE
-// by solving the nonlinear variant of Poisson's equation
+// This demo illustrates how to use of DOLFIN for solving a nonlinear
+// PDE, in this case a nonlinear variant of Poisson's equation,
 //
-//     - div (1+u^2) grad u(x, y) = f(x, y)
+//     - div (1 + u^2) grad u(x, y) = f(x, y)
 //
 // on the unit square with source f given by
 //
-//     f(x, y) = t * x * sin(y)
+//     f(x, y) = x*sin(y)
 //
 // and boundary conditions given by
 //
-//     u(x, y)     = t  for x = 1
+//     u(x, y)     = 1  for x = 0
 //     du/dn(x, y) = 0  otherwise
 //
-// where t is pseudo time.
+// This is equivalent to solving
 //
-// This is equivalent to solving: 
-// F(u) = (grad(v), (1-u^2)*grad(u)) - f(x,y) = 0
+//    F(u) = (grad(v), (1 + u^2)*grad(u)) - (v, f) = 0
 
 #include <dolfin.h>
 #include "NonlinearPoisson.h"
@@ -31,28 +30,13 @@
 using namespace dolfin;
 
 // Right-hand side
-class Source : public Function, public TimeDependent
+class Source : public Function
 {
-  public:
-
-    Source(Mesh& mesh, const double* t) : Function(mesh), TimeDependent(t) {}
-
-    double eval(const double* x) const
-    {
-      return time()*x[0]*sin(x[1]);
-    }
-};
-
-// Dirichlet boundary condition
-class DirichletBoundaryCondition : public Function, public TimeDependent
-{
-  public:
-    DirichletBoundaryCondition(Mesh& mesh, const double* t) : Function(mesh), TimeDependent(t) {}
-
-    double eval(const double* x) const
-    {
-      return 1.0*time();
-    }
+public:
+  void eval(double* values, const double* x) const
+  {
+    values[0] = x[0]*sin(x[1]);
+  }
 };
 
 // Sub domain for Dirichlet boundary condition
@@ -64,47 +48,37 @@ class DirichletBoundary : public SubDomain
   }
 };
 
-int main(int argc, char* argv[])
+int main()
 {
-  dolfin_init(argc, argv);
- 
-  // Set up problem
+  // Create mesh and define function space
   UnitSquare mesh(16, 16);
+  NonlinearPoissonFunctionSpace V(mesh);
 
-  // Pseudo time
-  double t = 0.0;
-
-  // Create source function
-  Source f(mesh, &t);
-
-  // Dirichlet boundary conditions
+  // Define boundary condition
   DirichletBoundary dirichlet_boundary;
-  DirichletBoundaryCondition g(mesh, &t);
-  DirichletBC bc(g, mesh, dirichlet_boundary);
+  Constant g(1.0);
+  DirichletBC bc(V, g, dirichlet_boundary);
 
-  // Solution function
-  Function u;
+  // Define source and solution functions
+  Source f;
+  Function U;
 
-  // Create forms and nonlinear PDE
-  NonlinearPoissonBilinearForm a(u);
-  NonlinearPoissonLinearForm L(u, f);
-  NonlinearPDE pde(a, L, mesh, bc);
+  // Create forms
+  NonlinearPoissonBilinearForm a(V, V);
+  a.U = U;
+  NonlinearPoissonLinearForm L(V);
+  L.U = U; L.f = f;
 
-  // Solve nonlinear problem in a series of steps
-  double dt = 1.0; double T  = 3.0;
-
-//  pde.dolfin_set("Newton relative tolerance", 1e-6); 
-//  pde.dolfin_set("Newton convergence criterion", "incremental"); 
-
-  // Solve
-  pde.solve(u, t, T, dt);
+  // Solve nonlinear variational problem
+  VariationalProblem problem(a, L, bc, true);
+  problem.solve(U);
 
   // Plot solution
-  plot(u);
+  plot(U);
 
-  // Save function to file
+  // Save solution in VTK format
   File file("nonlinear_poisson.pvd");
-  file << u;
+  file << U;
 
   return 0;
 }

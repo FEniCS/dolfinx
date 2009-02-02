@@ -1,52 +1,46 @@
-# This demo program solves Poisson's equation
-#
-#     - div grad u(x, y) = f(x, y)
-#
-# on the unit square with source f given by
-#
-#     f(x, y) = 500*exp(-((x-0.5)^2 + (y-0.5)^2)/0.02)
-#
-# and boundary conditions given by
-#
-#     u(x, y)     = 0
-#     du/dn(x, y) = 0
-#
-# using a discontinuous Galerkin formulation (interior penalty method).
+"""This demo program solves Poisson's equation
+
+    - div grad u(x, y) = f(x, y)
+
+on the unit square with source f given by
+
+    f(x, y) = 500*exp(-((x-0.5)^2 + (y-0.5)^2)/0.02)
+
+and boundary conditions given by
+
+    u(x, y)     = 0
+    du/dn(x, y) = 0
+
+using a discontinuous Galerkin formulation (interior penalty method).
+"""
 
 __author__    = "Kristian B. Oelgaard (k.b.oelgaard@tudelft.nl)"
-__date__      = "2007-10-02 -- 2007-10-02"
+__date__      = "2007-10-02 -- 2008-12-19"
 __copyright__ = "Copyright (C) 2007 Kristian B. Oelgaard"
 __license__   = "GNU LGPL Version 2.1"
 
+# Modified by Anders Logg, 2008.
+
 from dolfin import *
 
-# Create mesh and finite element
-mesh = UnitSquare(16, 16)
+# Create mesh and define function space
+mesh = UnitSquare(24, 24)
+V = FunctionSpace(mesh, "DG", 1)
 
-# Source term
-class Source(Function):
-    def __init__(self, element, mesh):
-        Function.__init__(self, element, mesh)
-    def eval(self, values, x):
-        dx = x[0] - 0.5
-        dy = x[1] - 0.5
-        values[0] = 500.0*exp(-(dx*dx + dy*dy)/0.02)
+# Define test and trial functions
+v = TestFunction(V)
+u = TrialFunction(V)
 
-# Define variational problem
-element = FiniteElement("Discontinuous Lagrange", "triangle", 1)
-v = TestFunction(element)
-u = TrialFunction(element)
-f = Source(element, mesh)
+# Define normal component, mesh size and right-hand side
+n = FacetNormal(mesh)
+h = AvgMeshSize(mesh)
+f = Function(V, "500.0*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)")
 
-# Normal component, mesh size and right-hand side
-n = FacetNormal("triangle", mesh)
-h = AvgMeshSize("triangle", mesh)
-
-# Parameters
+# Define parameters
 alpha = 4.0
 gamma = 8.0
 
-# Bilinear form
+# Define bilinear form
 a = dot(grad(v), grad(u))*dx \
    - dot(avg(grad(v)), jump(u, n))*dS \
    - dot(jump(v, n), avg(grad(u)))*dS \
@@ -55,15 +49,15 @@ a = dot(grad(v), grad(u))*dx \
    - dot(mult(v, n), grad(u))*ds \
    + gamma/h*v*u*ds
 
-# Linear form
+# Define linear form
 L = v*f*dx
 
-# Solve PDE
-pde = LinearPDE(a, L, mesh)
-u = pde.solve()
+# Compute solution
+problem = VariationalProblem(a, L)
+u = problem.solve()
 
-# Project u
-P1 = FiniteElement("Lagrange", "triangle", 1)
+# Project solution to piecewise linears
+P1 = FunctionSpace(mesh, "CG", 1)
 u_proj = project(u, P1)
 
 # Save solution to file
@@ -72,4 +66,3 @@ file << u_proj
 
 # Plot solution
 plot(u_proj, interactive=True)
-

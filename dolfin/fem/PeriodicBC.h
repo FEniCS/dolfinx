@@ -1,16 +1,16 @@
-// Copyright (C) 2007 Anders Logg.
+// Copyright (C) 2007-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells 2007
 //
 // First added:  2007-07-08
-// Last changed: 2007-12-08
+// Last changed: 2008-11-15
 
 #ifndef __PERIODIC_BC_H
 #define __PERIODIC_BC_H
 
+#include <boost/shared_ptr.hpp>
 #include <dolfin/common/types.h>
-#include "SubSystem.h"
 #include "BoundaryCondition.h"
 
 namespace dolfin
@@ -45,37 +45,31 @@ namespace dolfin
   public:
 
     /// Create periodic boundary condition for sub domain
-    PeriodicBC(Mesh& mesh, SubDomain& sub_domain);
+    PeriodicBC(const FunctionSpace& V,
+               const SubDomain& sub_domain);
 
-    /// Create sub system boundary condition for sub domain
-    PeriodicBC(Mesh& mesh, SubDomain& sub_domain,
-               const SubSystem& sub_system);
-    
     /// Destructor
     ~PeriodicBC();
 
-    /// Apply boundary condition to linear system
-    void apply(GenericMatrix& A, GenericVector& b, const Form& form);
+    /// Apply boundary condition to a matrix
+    void apply(GenericMatrix& A) const;
 
-    /// Apply boundary condition to linear system
-    void apply(GenericMatrix& A, GenericVector& b, const DofMap& dof_map, const ufc::form& form);
+    /// Apply boundary condition to a vector
+    void apply(GenericVector& b) const;
 
-    /// Apply boundary condition to linear system for a nonlinear problem (not implemented)
-    void apply(GenericMatrix& A, GenericVector& b, const GenericVector& x, const Form& form);
+    /// Apply boundary condition to a linear system
+    void apply(GenericMatrix& A, GenericVector& b) const;
 
-    /// Apply boundary condition to linear system for a nonlinear problem (not implemented)
-    void apply(GenericMatrix& A, GenericVector& b, const GenericVector& x, const DofMap& dof_map, const ufc::form& form);
+    /// Apply boundary condition to a vector for a nonlinear problem
+    void apply(GenericVector& b, const GenericVector& x) const;
+
+    /// Apply boundary condition to a linear system for a nonlinear problem
+    void apply(GenericMatrix& A, GenericVector& b, const GenericVector& x) const;
 
   private:
 
-    // The mesh
-    Mesh& mesh;
-
     // The subdomain
-    SubDomain& sub_domain;
-
-    // Sub system
-    SubSystem sub_system;
+    const SubDomain& sub_domain;
 
   };
 

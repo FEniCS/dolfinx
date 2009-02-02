@@ -2,11 +2,12 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-01-17
-// Last changed: 2008-06-10
+// Last changed: 2008-10-26
 
 #ifndef __UFC_DATA_H
 #define __UFC_DATA_H
 
+#include <vector>
 #include <ufc.h>
 #include "UFCMesh.h"
 #include "UFCCell.h"
@@ -15,9 +16,10 @@ namespace dolfin
 {
 
   class FiniteElement;
+  class FunctionSpace;
   class Mesh;
   class Cell;
-  class DofMapSet;
+  class Form;
 
   /// This class is a simple data structure that holds data used
   /// during assembly of a given UFC form. Data is created for each
@@ -30,16 +32,16 @@ namespace dolfin
   public:
 
     /// Constructor
-    UFC(const ufc::form& form, Mesh& mesh, const DofMapSet& dof_map_set);
+    UFC(const Form& form);
 
     /// Destructor
     ~UFC();
     
     /// Update current cell
-    void update(Cell& cell);
+    void update(const Cell& cell);
 
     /// Update current pair of cells for macro element
-    void update(Cell& cell0, Cell& cell1);
+    void update(const Cell& cell0, const Cell& cell1);
 
     // Array of finite elements for primary arguments
     FiniteElement** finite_elements;

@@ -26,14 +26,34 @@ namespace dolfin
     static void refineMeshByEdgeBisection(Mesh& mesh, 
                                           MeshFunction<bool>& cell_marker,
                                           bool refine_boundary = true); 
-
+    
+    /// Iteratively refine mesh locally by the longest edge bisection 
+    static void refineIterativelyByEdgeBisection(Mesh& mesh, 
+                                                 MeshFunction<bool>& cell_marker);
+ 
+    /// Recursively refine mesh locally by the longest edge bisection 
+    /// Fast Rivara algorithm implementation with propagation MeshFunctions and
+    ///   arrays for boundary indicators  
+    static void refineRecursivelyByEdgeBisection(Mesh& mesh, 
+                                                 MeshFunction<bool>& cell_marker);
+ 
   private: 
 
     /// Bisect edge of simplex cell
-    static void bisectEdgeOfSimplexCell(Cell& cell, Edge& edge, 
-                                        uint& new_vertex,  
+    static void bisectEdgeOfSimplexCell(const Cell& cell, Edge& edge, 
+                                        uint new_vertex,  
                                         MeshEditor& editor, 
-                                        uint& current_cell); 
+                                        uint& current_cell);
+ 
+    /// Iteration of iterative algorithm                                        
+    static bool iterationOfRefinement(Mesh& mesh, 
+                                      MeshFunction<bool>& cell_marker,
+                                      MeshFunction<uint>& bisected_edges);
+
+    /// Transform MeshData
+    static void transformMeshData(Mesh& newmesh, Mesh& oldmesh, 
+                                  MeshFunction<uint>& cell_map,
+		                  Array<int>& facet_map);                                    
 
   };
 

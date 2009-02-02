@@ -19,9 +19,9 @@ hg push ssh://dolfin@fenics.org/hg/dolfin
 echo '--- Update version number in ChangeLog'
 sleep 1
 emacs -nw ChangeLog
-echo '--- Update version number in dolfin/SConscript'
+echo '--- Update version number in SConstruct'
 sleep 1
-emacs -nw dolfin/SConscript
+emacs -nw SConstruct
 echo '--- Update version number in dolfin/scons.cfg'
 sleep 1
 emacs -nw dolfin/scons.cfg
@@ -45,7 +45,7 @@ hg archive -t tgz dolfin-$VERSION.tar.gz
 
 # Copy files to web server
 echo '--- Copying files to web server'
-scp dolfin-$VERSION.tar.gz fenics@fenics.org:www.fenics.org/pub/software/dolfin/v0.8
+scp dolfin-$VERSION.tar.gz fenics@fenics.org:www.fenics.org/pub/software/dolfin/v0.9
 scp ChangeLog fenics@fenics.org:www.fenics.org/pub/software/dolfin
 scp TODO fenics@fenics.org:www.fenics.org/pub/software/dolfin
 

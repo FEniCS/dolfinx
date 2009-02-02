@@ -22,9 +22,7 @@ class Exponential : public ComplexODE
 {
 public:
   
-  Exponential() : ComplexODE(1, 10.0)
-  {
-  }
+  Exponential() : ComplexODE(1, 10.0) {}
   
   void z0(complex z[])
   {

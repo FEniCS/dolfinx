@@ -1,8 +1,8 @@
-// Copyright (C) 2008 Solveig Bruvoll and Anders Logg.
+// Copyright (C) 2008-2009 Solveig Bruvoll and Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-05-02
-// Last changed: 2008-09-11
+// Last changed: 2009-01-12
 
 #include <string.h>
 #include <dolfin/common/Array.h>
@@ -12,6 +12,7 @@
 #include <dolfin/mesh/Vertex.h>
 #include <dolfin/mesh/Cell.h>
 #include "TransfiniteInterpolation.h"
+#include <iostream>
 
 using namespace dolfin;
 
@@ -46,8 +47,9 @@ void TransfiniteInterpolation::move(Mesh& mesh, Mesh& new_boundary, Interpolatio
     meanValue(new_x + v->index()*dim, dim, new_boundary, mesh, *vertex_map, *v, ghat, method);
 
   // Update mesh coordinates
-  for (VertexIterator v(mesh); !v.end(); ++v)
-    memcpy(v->x(), new_x + v->index()*dim, dim*sizeof(double));
+  MeshGeometry& geometry = mesh.geometry();
+  for (uint i = 0; i < geometry.size(); i++)
+    memcpy(geometry.x(i), new_x + i*dim, dim*sizeof(double));
   
   delete [] new_x;
   if (method == interpolation_hermite)
@@ -57,8 +59,8 @@ void TransfiniteInterpolation::move(Mesh& mesh, Mesh& new_boundary, Interpolatio
 }
 //-----------------------------------------------------------------------------
 void TransfiniteInterpolation::meanValue(double* new_x, uint dim, Mesh& new_boundary,
-                    Mesh& mesh, const MeshFunction<uint>& vertex_map,
-                    Vertex& vertex, double** ghat, InterpolationType method)
+                                         Mesh& mesh, const MeshFunction<uint>& vertex_map,
+                                         const Vertex& vertex, double** ghat, InterpolationType method)
 {
   // Check if the point is on the boundary (no need to compute new coordinate)
   for (VertexIterator v(new_boundary); !v.end(); ++v)
@@ -75,7 +77,7 @@ void TransfiniteInterpolation::meanValue(double* new_x, uint dim, Mesh& new_boun
   double ** u = new double * [size];
 
   // Compute distance d and direction vector u from x to all p
-  for (VertexIterator v(new_boundary);  !v.end(); ++v)
+  for (VertexIterator v(new_boundary); !v.end(); ++v)
   {
     // Old position of point x
     const double* x = vertex.x();
@@ -87,39 +89,45 @@ void TransfiniteInterpolation::meanValue(double* new_x, uint dim, Mesh& new_boun
     d[v->index()] = dist(p, x, dim);
           
     // Compute direction vector for p-x
-    u[v->index()] = new double [dim];
-    for (uint i=0; i<dim; i++)
+    u[v->index()] = new double[dim];
+    for (uint i = 0; i < dim; i++)
       u[v->index()][i]=(p[i] - x[i]) / d[v->index()];
   }
   
   // Local arrays
   const uint num_vertices = new_boundary.topology().dim() + 1;
-  double * w         = new double [num_vertices];
-  double ** new_p    = new double * [num_vertices];
-  double * dCell     = new double [num_vertices];  
-  double ** uCell    = new double * [num_vertices];
-  double * herm      = new double [num_vertices];
-  double ** ghatCell = new double * [num_vertices];
+  double* w         = new double  [num_vertices];
+  double const** new_p = new double const * [num_vertices];
+  double* dCell     = new double  [num_vertices];  
+  double** uCell    = new double* [num_vertices];
+  double* herm      = new double  [num_vertices];
+  double** ghatCell = new double* [num_vertices];
   
   // Set new x to zero
-  for (uint i = 0; i < dim; ++i) {
+  for (uint i = 0; i < dim; ++i)
+  {
     new_x[i] = 0.0;
     if (method == interpolation_hermite)
       herm[i] = 0.0;
-  }  
+  }
+
   // Iterate over all cells in boundary
   double totalW = 0.0;
   for (CellIterator c(new_boundary); !c.end(); ++c)
   {
+    //cout << *c << endl;
+
     // Get local data
     for (VertexIterator v(*c); !v.end(); ++v)
     {
+      //cout << "  " << *v << endl;
+
       const uint ind = v.pos();
       new_p[ind] = v->x();
       uCell[ind] = u[v->index()];
       dCell[ind] = d[v->index()];
       if (method == interpolation_hermite)
-	ghatCell[ind]= ghat[v->index()];
+        ghatCell[ind]= ghat[v->index()];
     }
     
     // Compute weights w.
@@ -129,16 +137,19 @@ void TransfiniteInterpolation::meanValue(double* new_x, uint dim, Mesh& new_boun
       computeWeights3D(w, uCell, dCell, dim, num_vertices);
 
     // Compute sum of weights
-    for (uint i=0; i<num_vertices; i++)
+    for (uint i = 0; i < num_vertices; i++)
       totalW += w[i];
+
+    //cout << "totalW = " << totalW << endl;
     
     // Compute new position
-    for (uint j=0; j<dim; j++) {
-      for (uint i=0; i<num_vertices; i++) {
-	new_x[j] += w[i]*new_p[i][j];
-	if (method == interpolation_hermite) {
-	  herm[j] += w[i]*ghatCell[i][j];
-	}
+    for (uint j=0; j<dim; j++) 
+    {
+      for (uint i=0; i<num_vertices; i++) 
+      {
+        new_x[j] += w[i]*new_p[i][j];
+        if (method == interpolation_hermite) 
+	        herm[j] += w[i]*ghatCell[i][j];
       }
     }
   }
@@ -176,8 +187,8 @@ void TransfiniteInterpolation::meanValue(double* new_x, uint dim, Mesh& new_boun
 void TransfiniteInterpolation::computeWeights2D(double* w, double** u, double* d,
                            uint dim, uint num_vertices)
 {  
-  for (uint i=0; i < num_vertices; i++)
-    w[i] = tan(asin(u[0][0]*u[1][1] - u[0][1]*u[1][0])/2) / d[i];
+  for (uint i = 0; i < num_vertices; i++)
+    w[i] = sgn(det(u[0], u[1]))*tan(asin(u[0][0]*u[1][1] - u[0][1]*u[1][0])/2) / d[i];
 }
 //-----------------------------------------------------------------------------
 void TransfiniteInterpolation::computeWeights3D(double* w, double** u, double* d,
@@ -211,7 +222,7 @@ void TransfiniteInterpolation::computeWeights3D(double* w, double** u, double* d
     if (sinus < 0 || sqrt(sinus) < DOLFIN_EPS)
     {
       for (uint i = 0; i < num_vertices; i++) 
-	w[i]=0;
+        w[i]=0;
       return;
     }
     s[i] = sgn(det(u[0], u[1], u[2]))*sqrt(sinus);
@@ -226,13 +237,12 @@ void TransfiniteInterpolation::computeWeights3D(double* w, double** u, double* d
   } 
 }
 //-----------------------------------------------------------------------------
-void TransfiniteInterpolation::hermiteFunction(double ** ghat, uint dim, Mesh& new_boundary,
+void TransfiniteInterpolation::hermiteFunction(double** ghat, uint dim, Mesh& new_boundary,
 			  Mesh& mesh, const MeshFunction<uint>& vertex_map, 
 			  const MeshFunction<uint>& cell_map)
 {
-  double ** dfdn = new double * [new_boundary.numVertices()];
-  normals(dfdn, dim, new_boundary,
-	  mesh, vertex_map, cell_map);
+  double** dfdn = new double * [new_boundary.numVertices()];
+  normals(dfdn, dim, new_boundary, mesh, vertex_map, cell_map);
 
   double c = 0.0;
   if (dim == 2)
@@ -240,11 +250,12 @@ void TransfiniteInterpolation::hermiteFunction(double ** ghat, uint dim, Mesh& n
   else
     c = DOLFIN_PI;
 
+  // FIXME *All* comments should be in English
   //FAKTOREN c før dfdn, HVA VELGER VI DER?
-  for (VertexIterator v(new_boundary); !v.end(); ++v) {
-    ghat[v->index()]=new double [dim];
-    integral(ghat[v->index()], dim, new_boundary,
-	     mesh, vertex_map, *v);
+  for (VertexIterator v(new_boundary); !v.end(); ++v) 
+  {
+    ghat[v->index()] = new double [dim];
+    integral(ghat[v->index()], dim, new_boundary, mesh, vertex_map, *v);
     for (uint i=0; i<dim;i++) 
       ghat[v->index()][i]=c*dfdn[v->index()][i]-ghat[v->index()][i];
   }
@@ -257,8 +268,8 @@ void TransfiniteInterpolation::normals(double** dfdn, uint dim, Mesh& new_bounda
 		  Mesh& mesh, const MeshFunction<uint>& vertex_map, 
 		  const MeshFunction<uint>& cell_map){
   
-  double** p=new double* [dim];
-  double* n=new double[dim];
+  double** p = new double* [dim];
+  double* n  = new double[dim];
   
   for (VertexIterator v(new_boundary); !v.end(); ++v)
   {
@@ -296,7 +307,7 @@ void TransfiniteInterpolation::normals(double** dfdn, uint dim, Mesh& new_bounda
 //-----------------------------------------------------------------------------
 void TransfiniteInterpolation::integral(double* new_x, uint dim, Mesh& new_boundary,
                     Mesh& mesh, const MeshFunction<uint>& vertex_map,
-                    Vertex& vertex)
+                    const Vertex& vertex)
 {
   const uint size = new_boundary.numVertices();
   double * d = new double[size];
@@ -306,7 +317,8 @@ void TransfiniteInterpolation::integral(double* new_x, uint dim, Mesh& new_bound
   for (VertexIterator v(new_boundary);  !v.end(); ++v)
   {
     uint ind=v->index();
-    if(ind != vertex.index()) {
+    if(ind != vertex.index()) 
+    {
      
       // Old position of point x
       const double* x = mesh.geometry().x(vertex_map(vertex));
@@ -320,22 +332,23 @@ void TransfiniteInterpolation::integral(double* new_x, uint dim, Mesh& new_bound
       // Compute direction vector for p-x
       u[ind] = new double[dim];
       for (uint i=0; i<dim; i++) 
-	u[ind][i]=(p[i] - x[i]) / d[ind];
+        u[ind][i]=(p[i] - x[i]) / d[ind];
     }
-    else {
+    else 
+    {
       d[ind]=0;
       u[ind] = new double[dim];
       for (uint i=0; i<dim; i++)
-	u[ind][i]=0;
+        u[ind][i]=0;
     }
   }
   
   // Local arrays
   const uint num_vertices = new_boundary.topology().dim() + 1;
-  double * w      = new double [num_vertices];
-  double ** new_p = new double * [num_vertices];
-  double * dCell  = new double [num_vertices];  
-  double ** uCell = new double * [num_vertices];
+  double* w      = new double [num_vertices];
+  double const** new_p = new double const* [num_vertices];
+  double* dCell  = new double [num_vertices];  
+  double** uCell = new double * [num_vertices];
   
   // Set new x to zero
   for (uint i = 0; i < dim; ++i)
@@ -352,11 +365,12 @@ void TransfiniteInterpolation::integral(double* new_x, uint dim, Mesh& new_bound
     {
       const uint ind = v.pos();
       if (v->index()==vertex.index())
-	inCell=1;
-      else {
-	new_p[ind] = v->x();
-	uCell[ind] = u[v->index()];
-	dCell[ind] = d[v->index()];
+        inCell=1;
+      else 
+      {
+        new_p[ind] = v->x();
+        uCell[ind] = u[v->index()];
+        dCell[ind] = d[v->index()];
       }
     }
     
@@ -364,14 +378,14 @@ void TransfiniteInterpolation::integral(double* new_x, uint dim, Mesh& new_bound
     {
       // Compute weights w.
       if (mesh.topology().dim() == 2)
-	computeWeights2D(w, uCell, dCell, dim, num_vertices);
+        computeWeights2D(w, uCell, dCell, dim, num_vertices);
       else
-	computeWeights3D(w, uCell, dCell, dim, num_vertices);
+        computeWeights3D(w, uCell, dCell, dim, num_vertices);
        
       // Compute new position
       for (uint j=0; j<dim; j++)
-	for (uint i=0; i<num_vertices; i++)
-	  new_x[j] += w[i]*(new_p[i][j]-vertex.x()[j]);     
+        for (uint i=0; i<num_vertices; i++)
+          new_x[j] += w[i]*(new_p[i][j]-vertex.x()[j]);     
     }     
   }
 

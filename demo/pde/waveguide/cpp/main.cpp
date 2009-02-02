@@ -2,19 +2,21 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-08-22
-// Last changed: 2008-10-02
+// Last changed: 2008-12-17
+//
+// Modified by Anders Logg, 2008.
 //
 // This demo demonstrates the calculation of a TM (Transverse Magnetic)
 // cutoff wavenumber of a rectangular waveguide with dimensions 1x0.5m.
 //
-// For more information regarding waveguides see
+// For more information regarding waveguides, see
 //
 //   http://www.ee.bilkent.edu.tr/~microwave/programs/magnetic/rect/info.htm
 //
-// See the pdf in the parent folder and the following reference
+// See the pdf in the parent folder and the following reference:
 //
-// The Finite Element in Electromagnetics (2nd Ed)
-// Jianming Jin [7.2.1 - 7.2.2]
+//   The Finite Element in Electromagnetics (2nd Ed)
+//   Jianming Jin [7.2.1 - 7.2.2]
 
 #include <dolfin.h>
 #include "Forms.h"
@@ -25,11 +27,9 @@ using namespace dolfin;
 
 int main()
 {
-  // Specify the waveguide width and height in metres
-  float width = 1.0;
-  float height = 0.5;
-  
-  // Create the mesh using a Rectangle
+  // Create mesh
+  double width = 1.0;
+  double height = 0.5;
   Rectangle mesh(0, width, 0, height, 2, 1);
 
   // Define the forms - gererates an generalized eigenproblem of the form 
@@ -37,16 +37,15 @@ int main()
   // with the eigenvalues k_o^2 representing the square of the cutoff wavenumber 
   // and the corresponding right-eigenvector giving the coefficients of the 
   // discrete system used to obtain the approximate field anywhere in the domain   
-  Forms_0 s;
-  Forms_1 t;
+  FormsFunctionSpace V(mesh);
+  Forms_0 s(V, V);
+  Forms_1 t(V, V);
 
   // Assemble the system matrices stiffness (S) and mass matrices (T)
   PETScMatrix S;
   PETScMatrix T;
-  Assembler assembler(mesh);
-
-  assembler.assemble(S, s);
-  assembler.assemble(T, t);
+  assemble(S, s);
+  assemble(T, t);
 
   // Solve the eigen system
   SLEPcEigenSolver esolver;
@@ -64,30 +63,23 @@ int main()
   // realizable modes.  These are called spurious modes.  
   // So, we need to identify the smallest, non-zero eigenvalue of the system - 
   // which corresponds with cutoff wavenumber of the the dominant cutoff mode.
-  int dominant_mode_index = -1;
+  double cutoff = -1.0;
   real lr, lc;
-  for ( int i = 0; i < (int)S.size(1); i++ )
+  for (unsigned int i = 0; i < S.size(1); i++)
   {
     esolver.getEigenvalue(lr, lc, i);
-    //printf("Eigenvalue %d : %f + i%f\n", i, lr, lc);
-    //ensure that the real part is large enough and that the complex part is zero
-    if ((lr > 1) && (lc == 0))
+    if (lr > 1 && lc == 0)
     {
-      message("Dominant mode found\n");
-      dominant_mode_index = i;
+      cutoff = sqrt(lr);
       break;
     }
   }
 
-  if (dominant_mode_index >= 0)
-  {
-    message("Dominant mode found.  Cuttoff Squared: %f\n", lr);
-    if ( lc != 0 )
-      warning("Cutoff mode is complex (%f + i%f)\n", lr, lc);
-  }
+  if (cutoff == -1.0)
+    message("Unable to find dominant mode.");
   else
-    error("Cutoff mode not found.");
-
+    message("Cutoff frequency = %g", cutoff);
+  
   return 0;
 }
 

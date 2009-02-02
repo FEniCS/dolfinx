@@ -114,8 +114,8 @@ if env["enablePydolfin"]:
     #if scons.checkVersion(swig_version, "1.3.28"):
     #    swigFlags.append("-O")
 
-    # Ths swig environment
-    swigEnv = env.Copy()
+    # This swig environment
+    swigEnv = env.Clone()
     swigEnv["SWIGFLAGS"] = swigFlags
     swigEnv["SHLIBPREFIX"] = "_"
     if env["PLATFORM"] == "darwin":
@@ -182,11 +182,10 @@ for modName, mod in modules.items():
             swiglibPath += swigdep.libPath
             swigcppPath += swigdep.cppPath
 
-
     if mod.libSources:
         # Register shared library targets in the module
 
-        modEnv = env.Copy(CXXFLAGS=mod.cxxFlags, LINKFLAGS=mod.linkFlags)
+        modEnv = env.Clone(CXXFLAGS=mod.cxxFlags, LINKFLAGS=mod.linkFlags)
         # Prepend the CPPPATH so that directories containing headers are searched before those
         # they are to be installed into, otherwise SCons might think it necessary to install
         # them first
@@ -204,16 +203,16 @@ for modName, mod in modules.items():
 
     if mod.swigSources and env["enablePydolfin"]:
         # Register swig wrapper targets in the module
-        mod.cxxFlags += " -fno-strict-aliasing"
+        mod.cxxFlags += ["-fno-strict-aliasing"]
 
-        modEnv = swigEnv.Copy(CXXFLAGS=mod.cxxFlags, LINKFLAGS=mod.linkFlags + linkOpts)
+        modEnv = swigEnv.Clone(CXXFLAGS=mod.cxxFlags, LINKFLAGS=mod.linkFlags + linkOpts)
         modEnv.Append(SWIGFLAGS=mod.swigFlags + ["-I%s" % i for i in swigcppPath])
         
-        # Version previous to 1.3.36 together with gcc version 4.3 and later
+        # Version of swig together with gcc version 4.3 and later
         # produce warnings that are treated as error using -werror flag
         # FIXME: Is this correct? If so maybee we should insert a chek for gcc version?
-        if not scons.checkVersion(swig_version, "1.3.36"):
-            modEnv["CXXFLAGS"] = modEnv["CXXFLAGS"].replace(" -Werror","")
+        if "-Werror" in modEnv["CXXFLAGS"]:
+            modEnv["CXXFLAGS"].remove("-Werror")
             
         # Add python dependency (always required in python wrappers)
         pyPkg = configuredPackages[python_version]
@@ -235,8 +234,12 @@ for modName, mod in modules.items():
         if env["PLATFORM"] == "darwin":
             modEnv.Append(FRAMEWORKS=frameworks)
 
-        wrapCxx, wrapPy = modEnv.CXXFile(target=os.path.join(mod.path, "swig", modName), source=[os.path.join(mod.path, s) for s in mod.swigSources])
-        swig = modEnv.SharedLibrary(target=os.path.join(mod.path, "swig", modName), source=wrapCxx)[0]
+        # Setting the name of the extension module of to "cpp", not modName
+        swigModName = "cpp"
+        # FIXME: What happens if scons.cfg defines several source files? Shouldn't we
+        # have several target files then? Or do we asssume only one CXX file is built?
+        wrapCxx, wrapPy = modEnv.CXXFile(target=os.path.join(mod.path, "swig", swigModName), source=[os.path.join(mod.path, s) for s in mod.swigSources])
+        swig = modEnv.SharedLibrary(target=os.path.join(mod.path, "swig", swigModName), source=wrapCxx)[0]
         # The builder returns a node list
         ret["extModules"].append(swig)
         ret["pythonModules"].append(wrapPy)
@@ -244,7 +247,7 @@ for modName, mod in modules.items():
     for progName, progSources in mod.progSources.items():
         # Register program targets in the module
 
-        modEnv = env.Copy(CXXFLAGS=mod.cxxFlags, LINKFLAGS=mod.linkFlags)
+        modEnv = env.Clone(CXXFLAGS=mod.cxxFlags, LINKFLAGS=mod.linkFlags)
 
         # Prepend the CPPPATH so that directories containing headers are searched before those
         # they are to be installed into, otherwise SCons might think it necessary to install
@@ -300,15 +303,16 @@ ret["data"].extend([File(os.path.join("#data", f)) for f in data])
 # read the SConscript for tests if enabled
 ret["tests"] = []
 if env["enableTests"]:
-    # make sure CppUnit is found:
+    print "Checking for cppunit...", 
     try:
-        scons.runCommand("pkg-config", "--exists cppunit")
+        cppunitCfg = scons.pkgconfig.PkgConfig('cppunit', env=env)
     except Exception:
+        print 'no'
         print "*** Unable to find the Unit Testing Library for C++"
         print "*** Install CppUnit (libcppunit-dev) or disable testing with enableTests=no"
         Exit(1)
     ret["tests"] += env.SConscript(os.path.join("#test", "SConscript"),
-                                   exports=["env", "modules", "configuredPackages"])
+                                   exports=["env", "modules", "configuredPackages", "cppunitCfg"])
 
 # read SConscript for docs if enabled
 ret["docs"] = []
@@ -335,7 +339,7 @@ replacements['PACKAGE_REQUIRES'] = " ".join(configuredPackages.keys())
 cxxflags = ""
 linkflags = ""
 for mod in modules.values():
-    cxxflags += " " + mod.cxxFlags
+    cxxflags += " " + " ".join(mod.cxxFlags)
     linkflags += " " + " ".join(mod.linkFlags)
 replacements['PACKAGE_CXXFLAGS'] = cxxflags
 replacements['PACKAGE_LINKFLAGS'] = linkflags

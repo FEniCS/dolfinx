@@ -2,14 +2,17 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Anders Logg, 2008.
+// Modified by Garth N. Wells, 2008.
 //
 // First added:  2008-04-21
-// Last changed: 2008-08-25
+// Last changed: 2008-12-29
 
 #ifndef __EPETRA_VECTOR_H
 #define __EPETRA_VECTOR_H
 
 #ifdef HAS_TRILINOS
+
+#include <boost/shared_ptr.hpp>
 
 #include <dolfin/log/LogStream.h>
 #include <dolfin/common/Variable.h>
@@ -26,8 +29,8 @@ namespace dolfin
   /// implementing the GenericVector interface.
   ///
   /// The interface is intentionally simple. For advanced usage,
-  /// access the Epetra_FEVector object using the function vec() and
-  /// use the standard Epetra interface.
+  /// access the Epetra_FEVector object using the function vec() or vec_ptr() 
+  /// and use the standard Epetra interface.
 
   class EpetraVector: public GenericVector, public Variable
   {
@@ -43,7 +46,7 @@ namespace dolfin
     explicit EpetraVector(const EpetraVector& x);
 
     /// Create vector view from given Epetra_FEVector pointer
-    explicit EpetraVector(Epetra_FEVector* vector);
+    explicit EpetraVector(boost::shared_ptr<Epetra_FEVector> vector);
 
     /// Create vector from given Epetra_Map
     explicit EpetraVector(const Epetra_Map& map);
@@ -131,8 +134,8 @@ namespace dolfin
 
     //--- Special Epetra functions ---
 
-    /// Return Epetra_FEVector reference
-    Epetra_FEVector& vec() const;
+    /// Return Epetra_FEVector pointer
+    boost::shared_ptr<Epetra_FEVector> vec() const;
 
     /// Assignment operator
     const EpetraVector& operator= (const EpetraVector& x);
@@ -142,10 +145,7 @@ namespace dolfin
   private:
 
     // Epetra_FEVector pointer
-    Epetra_FEVector* x;
-
-    // True if we don't own the vector x points to
-    bool is_view;
+    boost::shared_ptr<Epetra_FEVector> x;
 
   };  
 
@@ -153,5 +153,5 @@ namespace dolfin
 
 }
 
-#endif //HAS_TRILINOS
-#endif //__EPETRA_VECTOR_H
+#endif
+#endif

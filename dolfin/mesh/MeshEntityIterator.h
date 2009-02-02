@@ -1,8 +1,8 @@
-// Copyright (C) 2006-2007 Anders Logg.
+// Copyright (C) 2006-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-05-09
-// Last changed: 2007-05-02
+// Last changed: 2008-10-23
 
 #ifndef __MESH_ENTITY_ITERATOR_H
 #define __MESH_ENTITY_ITERATOR_H
@@ -44,7 +44,7 @@ namespace dolfin
   public:
 
     /// Create iterator for mesh entities over given topological dimension
-    MeshEntityIterator(Mesh& mesh, uint dim) 
+    MeshEntityIterator(const Mesh& mesh, uint dim)
       : entity(mesh, dim, 0), _pos(0), pos_end(mesh.size(dim)), index(0)
     {
       // Compute entities if empty
@@ -52,19 +52,19 @@ namespace dolfin
         pos_end = mesh.init(dim);
     }
 
-    /// Create iterator for entities of given dimension connected to given entity    
-    MeshEntityIterator(MeshEntity& entity, uint dim)
-      : entity(entity.mesh(), dim, 0), _pos(0)
+    /// Create iterator for entities of given dimension connected to given entity
+    MeshEntityIterator(const MeshEntity& entity, uint dim)
+      : entity(entity.mesh(), dim, 0), _pos(0), index(0)
     {
       // Get connectivity
-      MeshConnectivity& c = entity.mesh().topology()(entity.dim(), dim);
+      const MeshConnectivity& c = entity.mesh().topology()(entity.dim(), dim);
       
       // Compute connectivity if empty
-      if ( c.size() == 0 )
+      if (c.size() == 0)
         entity.mesh().init(entity.dim(), dim);
       
       // Get size and index map
-      if ( c.size() == 0 )
+      if (c.size() == 0)
       {
         pos_end = 0;
         index = 0;
@@ -108,7 +108,7 @@ namespace dolfin
     ///
     /// c1 looks to be an iterator over the entities around c0 when it is in
     /// fact a copy of c0.
-    MeshEntityIterator(MeshEntityIterator& entity) :  entity(entity.entity.mesh(), 0, 0), _pos(0)
+    MeshEntityIterator(const MeshEntityIterator& entity) :  entity(entity.entity.mesh(), 0, 0), _pos(0)
     { error("Illegal use of mesh entity iterator."); }
     
     // Mesh entity
@@ -121,7 +121,7 @@ namespace dolfin
     uint pos_end;
 
     // Mapping from pos to index (if any)
-    uint* index;
+    const uint* index;
     
   };
 

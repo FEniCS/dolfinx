@@ -34,10 +34,12 @@ MFile::~MFile()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void MFile::operator<<(GenericVector& x)
+void MFile::operator<<(const GenericVector& x)
 {
   // Open file
   FILE *fp = fopen(filename.c_str(), "a");
+  if (!fp)
+    error("Unable to open file %s", filename.c_str());
   
   // Write vector
   fprintf(fp, "x = [");
@@ -57,12 +59,14 @@ void MFile::operator<<(GenericVector& x)
   message("Saved vector to file %s in Octave/MATLAB format.", filename.c_str());
 }
 //-----------------------------------------------------------------------------
-void MFile::operator<<(Mesh& mesh)
+void MFile::operator<<(const Mesh& mesh)
 {
   Point p;
   
   // Open file
   FILE *fp = fopen(filename.c_str(), "a");
+  if (!fp)
+    error("Unable to open file %s", filename.c_str());
 
   // Create a list if we save the mesh a second time
   if ( counter == 1 )
@@ -148,7 +152,7 @@ void MFile::operator<<(Mesh& mesh)
           mesh.name().c_str(), mesh.label().c_str(), filename.c_str());
 }
 //-----------------------------------------------------------------------------
-void MFile::operator<<(Function& u)
+void MFile::operator<<(const Function& u)
 {
   error("Function output in Matlab/Octave format not implemented for new Function.");
 /*
@@ -158,6 +162,8 @@ void MFile::operator<<(Function& u)
   
   // Open file
   FILE *fp = fopen(filename.c_str(), "a");
+  if (!fp)
+    error("Unable to open file %s", filename.c_str());
   
   // Move old vector into list if we are saving a new value
   if ( counter1 == 1 )
@@ -203,10 +209,12 @@ void MFile::operator<<(Function& u)
 */
 }
 //-----------------------------------------------------------------------------
-void MFile::operator<<(Sample& sample)
+void MFile::operator<<(const Sample& sample)
 {
   // Open file
   FILE *fp = fopen(filename.c_str(), "a");
+  if (!fp)
+    error("Unable to open file %s", filename.c_str());
 
   // Initialize data structures first time
   if ( counter2 == 0 )

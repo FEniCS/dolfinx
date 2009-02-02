@@ -1,4 +1,4 @@
-// Copyright (C) 2002-2008 Anders Logg.
+// Copyright (C) 2002-2009 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Erik Svensson 2003.
@@ -8,10 +8,10 @@
 // Modified by Niclas Jansson 2008.
 //
 // First added:  2002-12-03
-// Last changed: 2008-09-18
+// Last changed: 2009-01-14
 
 #include <stdarg.h>
-#include <tr1/memory>
+#include <boost/shared_ptr.hpp>
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/constants.h>
@@ -20,13 +20,15 @@
 #include <dolfin/la/GenericMatrix.h>
 #include <dolfin/main/MPI.h>
 #include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/LocalMeshData.h>
 #include <dolfin/mesh/Vertex.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/graph/Graph.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/function/Function.h>
-#include <dolfin/function/DiscreteFunction.h>
+#include <dolfin/function/FunctionSpace.h>
 #include <dolfin/fem/DofMap.h>
+#include <dolfin/fem/FiniteElement.h>
 #include <dolfin/parameter/Parameter.h>
 #include <dolfin/parameter/ParameterList.h>
 
@@ -34,6 +36,7 @@
 #include "XMLVector.h"
 #include "XMLMatrix.h"
 #include "XMLMesh.h"
+#include "XMLLocalMeshData.h"
 #include "XMLMeshFunction.h"
 #include "XMLDofMap.h"
 #include "XMLFunction.h"
@@ -42,14 +45,15 @@
 #include "XMLBLASFormData.h"
 #include "XMLGraph.h"
 #include "XMLFile.h"
-#include "PXMLMesh.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-XMLFile::XMLFile(const std::string filename) : GenericFile(filename),
-					       header_written(false),
-					       mark(0)
+XMLFile::XMLFile(const std::string filename, bool gzip)
+  : GenericFile(filename),
+    header_written(false),
+    mark(0),
+    gzip(gzip)
 {
   type = "XML";
   xmlObject = 0;
@@ -61,7 +65,7 @@ XMLFile::~XMLFile()
     delete xmlObject;
 }
 //-----------------------------------------------------------------------------
-void XMLFile::operator>>(GenericVector& x)
+void XMLFile::operator>> (GenericVector& x)
 {
   message(1, "Reading vector from file %s.", filename.c_str());
 
@@ -71,7 +75,7 @@ void XMLFile::operator>>(GenericVector& x)
   parseFile();
 }
 //-----------------------------------------------------------------------------
-void XMLFile::operator>>(GenericMatrix& A)
+void XMLFile::operator>> (GenericMatrix& A)
 {
   message(1, "Reading matrix from file %s.", filename.c_str());
 
@@ -81,21 +85,27 @@ void XMLFile::operator>>(GenericMatrix& A)
   parseFile();
 }
 //-----------------------------------------------------------------------------
-void XMLFile::operator>>(Mesh& mesh)
+void XMLFile::operator>> (Mesh& mesh)
 {
   message(1, "Reading mesh from file %s.", filename.c_str());
 
   if (xmlObject)
     delete xmlObject;
   
-  if (MPI::num_processes() > 1)
-    xmlObject = new PXMLMesh(mesh);
-  else
-    xmlObject = new XMLMesh(mesh);
+  xmlObject = new XMLMesh(mesh);
   parseFile();
 }
 //-----------------------------------------------------------------------------
-void XMLFile::operator>>(MeshFunction<int>& meshfunction)
+void XMLFile::operator>> (LocalMeshData& meshdata)
+{
+  if (xmlObject)
+    delete xmlObject;
+  xmlObject = new XMLLocalMeshData(meshdata);
+  parseFile();
+
+}
+//-----------------------------------------------------------------------------
+void XMLFile::operator>> (MeshFunction<int>& meshfunction)
 {
   message(1, "Reading int-valued mesh function from file %s.", filename.c_str());
 
@@ -105,7 +115,7 @@ void XMLFile::operator>>(MeshFunction<int>& meshfunction)
   parseFile();
 }
 //-----------------------------------------------------------------------------
-void XMLFile::operator>>(MeshFunction<unsigned int>& meshfunction)
+void XMLFile::operator>> (MeshFunction<unsigned int>& meshfunction)
 {
   message(1, "Reading uint-valued mesh function from file %s.", filename.c_str());
 
@@ -115,7 +125,7 @@ void XMLFile::operator>>(MeshFunction<unsigned int>& meshfunction)
   parseFile();
 }
 //-----------------------------------------------------------------------------
-void XMLFile::operator>>(MeshFunction<double>& meshfunction)
+void XMLFile::operator>> (MeshFunction<double>& meshfunction)
 {
   message(1, "Reading real-valued mesh function from file %s.", filename.c_str());
 
@@ -125,7 +135,7 @@ void XMLFile::operator>>(MeshFunction<double>& meshfunction)
   parseFile();
 }
 //-----------------------------------------------------------------------------
-void XMLFile::operator>>(MeshFunction<bool>& meshfunction)
+void XMLFile::operator>> (MeshFunction<bool>& meshfunction)
 {
   message(1, "Reading bool-valued mesh function from file %s.", filename.c_str());
 
@@ -135,50 +145,56 @@ void XMLFile::operator>>(MeshFunction<bool>& meshfunction)
   parseFile();
 }
 //-----------------------------------------------------------------------------
-void XMLFile::operator>>(Function& f)
+void XMLFile::operator>> (Function& v)
 {
   // We are cheating here. Instead of actually parsing the XML for
   // Function data nested inside <function></function>, we just ignore
   // the nesting and look for the first occurence of the data which
-  // might be outide of <function></function>
+  // might be outside of <function></function>.
 
   message(1, "Reading function from %s.", filename.c_str());
 
   // Read the mesh
-  std::tr1::shared_ptr<Mesh> mesh(new Mesh());
+  boost::shared_ptr<Mesh> mesh(new Mesh());
   *this >> *mesh;
+  mesh->order();
 
   // Read the finite element specification
-  std::string finite_element_signature;
+  std::string element_signature;
   if (xmlObject)
     delete xmlObject;
-  xmlObject = new XMLFiniteElement(finite_element_signature);
+  xmlObject = new XMLFiniteElement(element_signature);
   parseFile(); 
 
   // Read the dof map specification
-  std::string dof_map_signature;
+  std::string dofmap_signature;
   if (xmlObject)
     delete xmlObject;
-  xmlObject = new XMLDofMap(dof_map_signature);
+  xmlObject = new XMLDofMap(dofmap_signature);
   parseFile(); 
 
-  // Read the function
+  // Read the function (not really necessary, see comment above)
   if (xmlObject)
     delete xmlObject;
-  xmlObject = new XMLFunction(f);
+  xmlObject = new XMLFunction(v);
   parseFile(); 
   
   // Create Function
-  Function _f(mesh, finite_element_signature, dof_map_signature);  
-  f = _f;  
+  boost::shared_ptr<FiniteElement> element(new FiniteElement(element_signature));
+  boost::shared_ptr<DofMap> dofmap(new DofMap(dofmap_signature, *mesh));
+  boost::shared_ptr<FunctionSpace> V(new FunctionSpace(mesh, element, dofmap));
+  Function _v(V);
 
   // Read the vector
-  *this >> f.vector();
+  *this >> _v.vector();
 
-  f.rename("u", "discrete function from file data");
+  // Assign function
+  v = _v;
+
+  v.rename("u", "discrete function from file data");
 }
 //-----------------------------------------------------------------------------
-void XMLFile::operator>>(ParameterList& parameters)
+void XMLFile::operator>> (ParameterList& parameters)
 {
   message(1, "Reading parameter list from file %s.", filename.c_str());
 
@@ -188,7 +204,7 @@ void XMLFile::operator>>(ParameterList& parameters)
   parseFile();
 }
 //-----------------------------------------------------------------------------
-void XMLFile::operator>>(BLASFormData& blas)
+void XMLFile::operator>> (BLASFormData& blas)
 {
   if (xmlObject)
     delete xmlObject;
@@ -196,7 +212,7 @@ void XMLFile::operator>>(BLASFormData& blas)
   parseFile();
 }
 //-----------------------------------------------------------------------------
-void XMLFile::operator>>(Graph& graph)
+void XMLFile::operator>> (Graph& graph)
 {
   message(1, "Reading graph from file %s.", filename.c_str());
 
@@ -206,7 +222,7 @@ void XMLFile::operator>>(Graph& graph)
   parseFile();
 }
 //-----------------------------------------------------------------------------
-void XMLFile::operator<<(GenericVector& x)
+void XMLFile::operator<< (const GenericVector& x)
 {
   // Open file
   FILE* fp = openFile();
@@ -234,7 +250,7 @@ void XMLFile::operator<<(GenericVector& x)
   message(1, "Saved vector  to file %s in DOLFIN XML format.", filename.c_str());
 }
 //-----------------------------------------------------------------------------
-void XMLFile::operator<<(GenericMatrix& A)
+void XMLFile::operator<< (const GenericMatrix& A)
 {
   // Open file
   FILE *fp = openFile();
@@ -267,7 +283,7 @@ void XMLFile::operator<<(GenericMatrix& A)
   message(1, "Saved matrix file %s in DOLFIN XML format.", filename.c_str());
 }
 //-----------------------------------------------------------------------------
-void XMLFile::operator<<(Mesh& mesh)
+void XMLFile::operator<< (const Mesh& mesh)
 {
   // Open file
   FILE *fp = openFile();
@@ -279,8 +295,8 @@ void XMLFile::operator<<(Mesh& mesh)
   fprintf(fp, "  <mesh celltype=\"%s\" dim=\"%u\">\n",
           CellType::type2string(cell_type).c_str(), mesh.geometry().dim());
 
+  // Write vertices
   fprintf(fp, "    <vertices size=\"%u\">\n", mesh.numVertices());
-  
   for(VertexIterator v(mesh); !v.end(); ++v)
   {
     Point p = v->point();
@@ -302,13 +318,13 @@ void XMLFile::operator<<(Mesh& mesh)
       error("The XML mesh file format only supports 1D, 2D and 3D meshes.");
     }
   }
-
   fprintf(fp, "    </vertices>\n");
-  fprintf(fp, "    <cells size=\"%u\">\n", mesh.numCells());
 
+  // Write cells
+  fprintf(fp, "    <cells size=\"%u\">\n", mesh.numCells());
   for (CellIterator c(mesh); !c.end(); ++c)
   {
-    uint* vertices = c->entities(0);
+    const uint* vertices = c->entities(0);
     dolfin_assert(vertices);
 
     switch ( cell_type )
@@ -329,8 +345,38 @@ void XMLFile::operator<<(Mesh& mesh)
       error("Unknown cell type: %u.", cell_type);
     }
   }
-
   fprintf(fp, "    </cells>\n");
+
+  // Write mesh data
+  const MeshData& data = mesh.data();
+  if (data.meshfunctions.size() > 0 || data.arrays.size() > 0)
+  {
+    fprintf(fp, "    <data>\n");
+
+    // Write mesh functions
+    for (std::map<std::string, MeshFunction<uint>*>::const_iterator it = data.meshfunctions.begin();
+         it != data.meshfunctions.end(); ++it)
+    {
+      fprintf(fp, "      <meshfunction name=\"%s\" type=\"uint\" dim=\"%d\" size=\"%d\">\n",
+              it->first.c_str(), it->second->dim(), it->second->size());
+      for (uint i = 0; i < it->second->size(); i++)
+        fprintf(fp, "        <entity index=\"%d\" value=\"%d\"/>\n", i, it->second->get(i));
+      fprintf(fp, "      </meshfunction>\n");
+    }
+
+    // Write arrays
+    for (std::map<std::string, Array<uint>*>::const_iterator it = data.arrays.begin();
+         it != data.arrays.end(); ++it)
+    {
+      fprintf(fp, "      <array name=\"%s\" type=\"uint\" size=\"%d\">\n",
+              it->first.c_str(), (int) it->second->size());
+      for (uint i = 0; i < it->second->size(); i++)
+        fprintf(fp, "        <element index=\"%d\" value=\"%d\"/>\n", i, (*it->second)[i]);
+      fprintf(fp, "      </array>\n");
+    }
+    fprintf(fp, "    </data>\n");
+  }
+
   fprintf(fp, "  </mesh>\n");
  
   // Close file
@@ -339,7 +385,7 @@ void XMLFile::operator<<(Mesh& mesh)
   message(1, "Saved mesh to file %s in DOLFIN XML format.", filename.c_str());
 }
 //-----------------------------------------------------------------------------
-void XMLFile::operator<<(MeshFunction<int>& meshfunction)
+void XMLFile::operator<< (const MeshFunction<int>& meshfunction)
 {
   // Open file
   FILE *fp = openFile();
@@ -348,7 +394,7 @@ void XMLFile::operator<<(MeshFunction<int>& meshfunction)
   fprintf(fp, "  <meshfunction type=\"int\" dim=\"%u\" size=\"%u\">\n",
           meshfunction.dim(), meshfunction.size());
   
-  Mesh& mesh = meshfunction.mesh();
+  const Mesh& mesh = meshfunction.mesh();
   for(MeshEntityIterator e(mesh, meshfunction.dim()); !e.end(); ++e)
   {
       fprintf(fp, "    <entity index=\"%u\" value=\"%d\"/>\n",
@@ -363,7 +409,7 @@ void XMLFile::operator<<(MeshFunction<int>& meshfunction)
   message(1, "Saved mesh function to file %s in DOLFIN XML format.", filename.c_str());
 }
 //-----------------------------------------------------------------------------
-void XMLFile::operator<<(MeshFunction<unsigned int>& meshfunction)
+void XMLFile::operator<< (const MeshFunction<unsigned int>& meshfunction)
 {
   // Open file
   FILE *fp = openFile();
@@ -372,7 +418,7 @@ void XMLFile::operator<<(MeshFunction<unsigned int>& meshfunction)
   fprintf(fp, "  <meshfunction type=\"uint\" dim=\"%u\" size=\"%u\">\n",
           meshfunction.dim(), meshfunction.size());
   
-  Mesh& mesh = meshfunction.mesh();
+  const Mesh& mesh = meshfunction.mesh();
   for(MeshEntityIterator e(mesh, meshfunction.dim()); !e.end(); ++e)
   {
       fprintf(fp, "    <entity index=\"%u\" value=\"%d\"/>\n",
@@ -387,7 +433,7 @@ void XMLFile::operator<<(MeshFunction<unsigned int>& meshfunction)
   message(1, "Saved mesh function to file %s in DOLFIN XML format.", filename.c_str());
 }
 //-----------------------------------------------------------------------------
-void XMLFile::operator<<(MeshFunction<double>& meshfunction)
+void XMLFile::operator<< (const MeshFunction<double>& meshfunction)
 {
   // Open file
   FILE *fp = openFile();
@@ -396,7 +442,7 @@ void XMLFile::operator<<(MeshFunction<double>& meshfunction)
   fprintf(fp, "  <meshfunction type=\"double\" dim=\"%u\" size=\"%u\">\n",
           meshfunction.dim(), meshfunction.size());
 
-  Mesh& mesh = meshfunction.mesh();
+  const Mesh& mesh = meshfunction.mesh();
   for(MeshEntityIterator e(mesh, meshfunction.dim()); !e.end(); ++e)
   {
       fprintf(fp, "    <entity index=\"%u\" value=\"%g\"/>\n",
@@ -411,7 +457,7 @@ void XMLFile::operator<<(MeshFunction<double>& meshfunction)
   message(1, "Saved mesh function to file %s in DOLFIN XML format.", filename.c_str());
 }
 //-----------------------------------------------------------------------------
-void XMLFile::operator<<(MeshFunction<bool>& meshfunction)
+void XMLFile::operator<< (const MeshFunction<bool>& meshfunction)
 {
   // Open file
   FILE *fp = openFile();
@@ -420,7 +466,7 @@ void XMLFile::operator<<(MeshFunction<bool>& meshfunction)
   fprintf(fp, "  <meshfunction type=\"bool\" dim=\"%u\" size=\"%u\">\n",
           meshfunction.dim(), meshfunction.size());
 
-  Mesh& mesh = meshfunction.mesh();
+  const Mesh& mesh = meshfunction.mesh();
   std::string value;
   for (MeshEntityIterator e(mesh, meshfunction.dim()); !e.end(); ++e)
   {
@@ -437,31 +483,27 @@ void XMLFile::operator<<(MeshFunction<bool>& meshfunction)
   message(1, "Saved mesh function to file %s in DOLFIN XML format.", filename.c_str());
 }
 //-----------------------------------------------------------------------------
-void XMLFile::operator<<(Function& f)
+void XMLFile::operator<< (const Function& v)
 {
-  // Can only save discrete functions
-  if (f.type() != Function::discrete)
-    error("Only discrete functions can be saved in XML format.");
-
   // Begin function
   FILE *fp = openFile();
   fprintf(fp, "  <function> \n");
   closeFile(fp);
 
   // Write the mesh
-  *this << f.mesh();
+  *this << v.function_space().mesh();
   
   // Write the vector
-  *this << f.vector();
+  *this << v.vector();
 
   // Write the finite element
   fp = openFile();
-  fprintf(fp, "  <finiteelement signature=\"%s\"/>\n", f.signature().c_str());
+  fprintf(fp, "  <finiteelement signature=\"%s\"/>\n", v.function_space().element().signature().c_str());
   closeFile(fp);
 
   // Write the dof map
   fp = openFile();
-  fprintf(fp, "  <dofmap signature=\"%s\"/>\n", f.dofMap().signature());
+  fprintf(fp, "  <dofmap signature=\"%s\"/>\n", v.function_space().dofmap().signature().c_str());
   closeFile(fp);
 
   // End function
@@ -472,7 +514,7 @@ void XMLFile::operator<<(Function& f)
   message(1, "Saved function to file %s in DOLFIN XML format.", filename.c_str());
 }
 //-----------------------------------------------------------------------------
-void XMLFile::operator<<(ParameterList& parameters)
+void XMLFile::operator<< (const ParameterList& parameters)
 {
   // Open file
   FILE *fp = openFile();
@@ -509,7 +551,6 @@ void XMLFile::operator<<(ParameterList& parameters)
     default:
       ; // Do nothing
     }
-
   }
   
   fprintf(fp, "  </parameters>\n" );
@@ -520,7 +561,7 @@ void XMLFile::operator<<(ParameterList& parameters)
   message(1, "Saved parameters to file %s in DOLFIN XML format.", filename.c_str());
 }
 //-----------------------------------------------------------------------------
-void XMLFile::operator<<(Graph& graph)
+void XMLFile::operator<< (const Graph& graph)
 {
   // Open file
   FILE *fp = openFile();
@@ -580,8 +621,14 @@ void XMLFile::operator<<(Graph& graph)
 //-----------------------------------------------------------------------------
 FILE* XMLFile::openFile()
 {
+  // Cannot write gzipped files (yet)
+  if (gzip)
+    error("Unable to write data to file, gzipped XML (xml.gz) not supported for output.");
+
   // Open file
   FILE *fp = fopen(filename.c_str(), "r+");
+  if (!fp)
+    error("Unable to open file %s", filename.c_str());
 
   // Step to position before previously written footer
   //printf("Stepping to position: %ld\n", mark);

@@ -4,21 +4,20 @@
 // Modified by Niclas Jansson, 2008.
 //
 // First added:  2008-05-19
-// Last changed: 2008-09-22
+// Last changed: 2008-12-29
 
 #ifndef __MESH_DATA_H
 #define __MESH_DATA_H
 
 #include <map>
-
 #include <dolfin/common/types.h>
-#include <dolfin/common/Array.h>
-#include "MeshFunction.h"
 
 namespace dolfin
 {
 
   class Mesh;
+  template <class T> class MeshFunction;
+  template <class T> class Array;
 
   /// The class MeshData is a container for auxiliary mesh data,
   /// represented either as MeshFunctions over topological mesh
@@ -37,11 +36,17 @@ namespace dolfin
     /// Destructor
     ~MeshData();
 
+    /// Assignment operator
+    const MeshData& operator= (const MeshData& data);
+
     /// Clear all data
     void clear();
 
     /// Create MeshFunction with given name (uninitialized)
     MeshFunction<uint>* createMeshFunction(std::string name);
+
+    /// Create MeshFunction with given name and dimension
+    MeshFunction<uint>* createMeshFunction(std::string name, uint dim);
 
     /// Create Array with given name and size
     Array<uint>* createArray(std::string name, uint size);
@@ -50,16 +55,28 @@ namespace dolfin
     std::map<uint, uint>* createMapping(std::string name);
 
     /// Return Array with given name (returning zero if data is not available)
-    Array<uint>* array(std::string name);
+    Array<uint>* array(const std::string name) const;
     
     /// Return MeshFunction with given name (returning zero if data is not available)
-    MeshFunction<uint>* meshFunction(std::string name);
+    MeshFunction<uint>* meshFunction(const std::string name) const;
 
     /// Return Map with given name (returning zero if data is not available)
-    std::map<uint, uint>* mapping(std::string name);
+    std::map<uint, uint>* mapping(const std::string name) const;
+    
+    /// Erase MeshFunction with given name
+    void eraseMeshFunction(const std::string name);
+
+    /// Erase Array with given name
+    void eraseArray(const std::string name);
+
+    /// Erase Mapping with given name
+    void eraseMapping(const std::string name);
 
     /// Display data
     void disp() const;
+
+    /// Friends
+    friend class XMLFile;
 
   private:
 

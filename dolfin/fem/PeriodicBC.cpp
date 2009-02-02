@@ -4,12 +4,13 @@
 // Modified by Garth N. Wells 2007
 //
 // First added:  2007-07-08
-// Last changed: 2008-04-22
+// Last changed: 2008-12-03
 
 #include <vector>
 #include <map>
 
 #include <dolfin/common/constants.h>
+#include <dolfin/function/FunctionSpace.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/Vertex.h>
 #include <dolfin/mesh/Cell.h>
@@ -17,10 +18,9 @@
 #include <dolfin/mesh/SubDomain.h>
 #include <dolfin/la/GenericMatrix.h>
 #include <dolfin/la/GenericVector.h>
-#include "Form.h"
+#include "DofMap.h"
 #include "UFCMesh.h"
 #include "UFCCell.h"
-#include "SubSystem.h"
 #include "BoundaryCondition.h"
 #include "PeriodicBC.h"
 
@@ -48,15 +48,9 @@ struct lt_coordinate
 };
 
 //-----------------------------------------------------------------------------
-PeriodicBC::PeriodicBC(Mesh& mesh, SubDomain& sub_domain)
-                       : BoundaryCondition(), mesh(mesh), sub_domain(sub_domain)
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-PeriodicBC::PeriodicBC(Mesh& mesh, SubDomain& sub_domain,
-                      const SubSystem& sub_system) : BoundaryCondition(), 
-                      mesh(mesh), sub_domain(sub_domain), sub_system(sub_system)
+PeriodicBC::PeriodicBC(const FunctionSpace& V,
+                       const SubDomain& sub_domain)
+  : BoundaryCondition(V), sub_domain(sub_domain)
 {
   // Do nothing
 }
@@ -66,13 +60,17 @@ PeriodicBC::~PeriodicBC()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void PeriodicBC::apply(GenericMatrix& A, GenericVector& b, const Form& form)
+void PeriodicBC::apply(GenericMatrix& A) const
 {
-  apply(A, b, form.dofMaps()[0], form.form());
+  error("Not implemented.");
 }
 //-----------------------------------------------------------------------------
-void PeriodicBC::apply(GenericMatrix& A, GenericVector& b, const DofMap& dof_map,
-                       const ufc::form& form)
+void PeriodicBC::apply(GenericVector& b) const
+{
+  error("Not implemented.");
+}
+//-----------------------------------------------------------------------------
+void PeriodicBC::apply(GenericMatrix& A, GenericVector& b) const
 {
   cout << "Applying periodic boundary conditions to linear system." << endl;
 
@@ -81,18 +79,25 @@ void PeriodicBC::apply(GenericMatrix& A, GenericVector& b, const DofMap& dof_map
   // FIXME: each coordinate. Note that globally there may very well be
   // FIXME: more than one dof per coordinate (for conforming elements).
 
+  // Get mesh and dofmap
+  const Mesh& mesh = V->mesh();
+  const DofMap& dofmap = V->dofmap();
+
+  // Set geometric dimension (needed for SWIG interface)
+  sub_domain._geometric_dimension = mesh.geometry().dim();
+
   // Table of mappings from coordinates to dofs
   std::map<std::vector<double>, std::pair<int, int>, lt_coordinate> coordinate_dofs;
   typedef std::map<std::vector<double>, std::pair<int, int>, lt_coordinate>::iterator iterator;
   std::vector<double> xx(mesh.geometry().dim());
   
   // Array used for mapping coordinates
-  simple_array<double> y(mesh.geometry().dim(), new double[mesh.geometry().dim()]);
+  double* y = new double[mesh.geometry().dim()];
   for (uint i = 0; i < mesh.geometry().dim(); i++)
     y[i] = 0.0;
 
   // Create local data for application of boundary conditions
-  BoundaryCondition::LocalData data(form, mesh, dof_map, sub_system);
+  BoundaryCondition::LocalData data(*V);
 
   // Make sure we have the facet - cell connectivity
   const uint D = mesh.topology().dim();
@@ -113,21 +118,21 @@ void PeriodicBC::apply(GenericMatrix& A, GenericVector& b, const DofMap& dof_map
     const uint local_facet = cell.index(*facet);
 
     // Tabulate dofs on cell
-    data.dof_map->tabulate_dofs(data.cell_dofs, ufc_cell);
+    dofmap.tabulate_dofs(data.cell_dofs, ufc_cell, cell.index());
     
     // Tabulate coordinates on cell
-    data.dof_map->tabulate_coordinates(data.coordinates, ufc_cell);
+    dofmap.tabulate_coordinates(data.coordinates, ufc_cell);
 
     // Tabulate which dofs are on the facet
-    data.dof_map->tabulate_facet_dofs(data.facet_dofs, local_facet);
+    dofmap.tabulate_facet_dofs(data.facet_dofs, local_facet);
 
     // Iterate over facet dofs
-    for (uint i = 0; i < data.dof_map->num_facet_dofs(); i++)
+    for (uint i = 0; i < dofmap.num_facet_dofs(); i++)
     {
       // Get dof and coordinate of dof
       const uint local_dof = data.facet_dofs[i];
-      const int global_dof = static_cast<int>(data.offset + data.cell_dofs[local_dof]);
-      const simple_array<double> x(mesh.geometry().dim(), data.coordinates[local_dof]);
+      const int global_dof = static_cast<int>(dofmap.offset() + data.cell_dofs[local_dof]);
+      double* x = data.coordinates[local_dof];
 
       // Map coordinate from H to G
       for (uint j = 0; j < mesh.geometry().dim(); j++)
@@ -209,14 +214,14 @@ void PeriodicBC::apply(GenericMatrix& A, GenericVector& b, const DofMap& dof_map
     p++;
   }
 
-/*
+  /*
   // Insert 1 at (dof0, dof1)
   uint* rows = new uint[coordinate_dofs.size()];
   uint i = 0;
   for (iterator it = coordinate_dofs.begin(); it != coordinate_dofs.end(); ++it)
-    rows[i++] = static_cast<uint>(it->second.first);
+  rows[i++] = static_cast<uint>(it->second.first);
   A.ident(coordinate_dofs.size(), rows);
-*/
+  */
 
   // Insert -1 at (dof0, dof1) and 0 on right-hand side
   uint* rows = new uint[1];
@@ -229,7 +234,7 @@ void PeriodicBC::apply(GenericMatrix& A, GenericVector& b, const DofMap& dof_map
     const int dof0 = it->second.first;
     const int dof1 = it->second.second;
     
-    cout <<dof0<< " " << dof1<<endl;
+    //cout << dof0 << " " << dof1 <<endl;
     
     if (dof0 == -1 || dof1 == -1)
     {
@@ -270,32 +275,28 @@ void PeriodicBC::apply(GenericMatrix& A, GenericVector& b, const DofMap& dof_map
     A.set(vals, 1, rows, 1, cols);
     b.set(zero, 1, rows);
   }
+  
+  // Cleanup
   delete [] rows;
   delete [] cols;
   delete [] vals;
   delete [] zero;
-  delete [] y.data;
+  delete [] y;
 
   // Apply changes
   A.apply();
   b.apply();
 }
 //-----------------------------------------------------------------------------
-void PeriodicBC::apply(GenericMatrix& A, GenericVector& b,
-                       const GenericVector& x, const Form& form)
+void PeriodicBC::apply(GenericVector& b, const GenericVector& x) const
 {
-  apply(A, b, x, form.dofMaps()[0], form.form());
+  error("Not implemented.");
 }
 //-----------------------------------------------------------------------------
-void PeriodicBC::apply(GenericMatrix& A, GenericVector& b,
-                       const GenericVector& x, const DofMap& dof_map, const ufc::form& form)
+void PeriodicBC::apply(GenericMatrix& A,
+                       GenericVector& b,
+                       const GenericVector& x) const
 {
-  cout << "Applying periodic boundary conditions to nonlinear system." << endl;
-
-  //FIXME: Consistency of x should be checked! 
-  //FIXME: Only the increment is periodic!!!!! 
-  
-  apply(A, b, dof_map, form);
-
+  error("Not implemented.");
 }
 //-----------------------------------------------------------------------------

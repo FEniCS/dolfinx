@@ -25,12 +25,12 @@ namespace dolfin
   public:
     
     /// Compute the boundary of a given mesh
-    static void computeBoundary(Mesh& mesh, BoundaryMesh& boundary);
+    static void computeBoundary(const Mesh& mesh, BoundaryMesh& boundary);
 
   private:
 
     /// Reorder vertices so facet is right-oriented w.r.t. facet normal
-    static void reorder(Array<uint>& vertices, Facet& facet);
+    static void reorder(Array<uint>& vertices, const Facet& facet);
 
   };
 

@@ -16,7 +16,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 double Edge::length()
 {
-  uint* vertices = entities(0);
+  const uint* vertices = entities(0);
   dolfin_assert(vertices);
 
   const Vertex v0(_mesh, vertices[0]);
@@ -25,16 +25,16 @@ double Edge::length()
   const Point p0 = v0.point();
   const Point p1 = v1.point();
 
-  double length(sqrt((p1.x()-p0.x())*(p1.x()-p0.x()) + 
-		   (p1.y()-p0.y())*(p1.y()-p0.y()) + 
-		   (p1.z()-p0.z())*(p1.z()-p0.z())));
+  double length(sqrt((p1.x()-p0.x())*(p1.x()-p0.x()) 
+               + (p1.y()-p0.y())*(p1.y()-p0.y()) 
+               + (p1.z()-p0.z())*(p1.z()-p0.z())));
 
   return length;
 }
 //-----------------------------------------------------------------------------
 Point Edge::midpoint()
 {
-  uint* vertices = entities(0);
+  const uint* vertices = entities(0);
   dolfin_assert(vertices);
 
   const Vertex v0(_mesh, vertices[0]);
@@ -44,8 +44,8 @@ Point Edge::midpoint()
   const Point p1 = v1.point();
 
   Point p(0.5*(p0.x() + p1.x()),
-	  0.5*(p0.y() + p1.y()),
-	  0.5*(p0.z() + p1.z()));
+	        0.5*(p0.y() + p1.y()),
+	        0.5*(p0.z() + p1.z()));
 
   return p;
 }

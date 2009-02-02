@@ -27,13 +27,13 @@ namespace dolfin
     UFCCell() : ufc::cell(), num_vertices(0) {}
 
     /// Create UFC cell from DOLFIN cell
-    UFCCell(Cell& cell) : ufc::cell(), num_vertices(0)
+    UFCCell(const Cell& cell) : ufc::cell(), num_vertices(0)
     {
       init(cell);
     }
 
     /// Create UFC cell for first DOLFIN cell in mesh
-    UFCCell(Mesh& mesh) : ufc::cell(), num_vertices(0)
+    UFCCell(const Mesh& mesh) : ufc::cell(), num_vertices(0)
     {
       CellIterator cell(mesh);
       init(*cell);
@@ -46,7 +46,7 @@ namespace dolfin
     }
     
     /// Initialize UFC cell data
-    void init(Cell& cell)
+    void init(const Cell& cell)
     {
       // Clear old data
       clear();
@@ -80,14 +80,14 @@ namespace dolfin
       entity_indices = new uint*[topological_dimension + 1];
       entity_indices[topological_dimension] = new uint[1];
       for (uint d = 0; d < topological_dimension; d++)
-        entity_indices[d] = cell.entities(d);
+        entity_indices[d] = const_cast<uint*>(cell.entities(d));
       entity_indices[topological_dimension][0] = cell.index();
 
       /// Set vertex coordinates
-      uint* vertices = cell.entities(0);
+      const uint* vertices = cell.entities(0);
       coordinates = new double*[num_vertices];
       for (uint i = 0; i < num_vertices; i++)
-        coordinates[i] = cell.mesh().geometry().x(vertices[i]);
+        coordinates[i] = const_cast<double*> (cell.mesh().geometry().x(vertices[i]));
     }
 
     // Clear UFC cell data
@@ -110,17 +110,17 @@ namespace dolfin
     }
 
     // Update cell entities and coordinates
-    inline void update(Cell& cell)
+    inline void update(const Cell& cell)
     {
       // Set entity indices
       for (uint d = 0; d < topological_dimension; d++)
-        entity_indices[d] = cell.entities(d);
+        entity_indices[d] =  const_cast<uint*>(cell.entities(d));
       entity_indices[topological_dimension][0] = cell.index();
 
       /// Set vertex coordinates
       const uint* vertices = cell.entities(0);
       for (uint i = 0; i < num_vertices; i++)
-        coordinates[i] = cell.mesh().geometry().x(vertices[i]);
+        coordinates[i] =  const_cast<double*>(cell.mesh().geometry().x(vertices[i]));
     }
 
   private:

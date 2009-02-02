@@ -4,10 +4,10 @@
 // Modified by Johan Jansson, 2006.
 // Modified by Ola Skavhaug, 2006.
 // Modified by Dag Lindbo, 2008.
-// Modified by Kristoffer Selim, 2008.
+// Modified by Kristoffer Selim, 2009.
 //
 // First added:  2006-06-21
-// Last changed: 2008-10-08
+// Last changed: 2009-01-12
 
 #ifdef HAS_GTS
 
@@ -24,7 +24,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-GTSInterface::GTSInterface(Mesh& mesh) : mesh(mesh), tree(0)
+GTSInterface::GTSInterface(const Mesh& mesh) : mesh(mesh), tree(0)
 {
   if (mesh.geometry().dim() > 3)
     error("Sorry, GTS interface not implemented for meshes of dimension %d.",
@@ -40,7 +40,7 @@ GTSInterface::~GTSInterface()
   gts_bb_tree_destroy(tree, true);
 }
 //-----------------------------------------------------------------------------
-void GTSInterface::intersection(const Point& p, Array<uint>& cells)
+void GTSInterface::intersection(const Point& p, std::vector<uint>& cells)
 {
   // Create probe for point
   GtsBBox* probe = createBox(p);
@@ -69,7 +69,7 @@ void GTSInterface::intersection(const Point& p, Array<uint>& cells)
   gts_object_destroy(GTS_OBJECT(probe));
 }
 //-----------------------------------------------------------------------------
-void GTSInterface::intersection(const Point& p0, const Point& p1, Array<uint>& cells)
+void GTSInterface::intersection(const Point& p0, const Point& p1, std::vector<uint>& cells)
 {
   // Create probe for line
   GtsBBox* probe = createBox(p0, p1);
@@ -98,7 +98,7 @@ void GTSInterface::intersection(const Point& p0, const Point& p1, Array<uint>& c
   gts_object_destroy(GTS_OBJECT(probe));
 }
 //-----------------------------------------------------------------------------
-void GTSInterface::intersection(Cell& cell, Array<uint>& cells)
+void GTSInterface::intersection(const Cell& cell, std::vector<uint>& cells)
 {
   // Create probe for cell
   GtsBBox* probe = createBox(cell);
@@ -154,7 +154,7 @@ GtsBBox* GTSInterface::createBox(const Point& p0, const Point& p1)
   return box;
 }
 //-----------------------------------------------------------------------------
-GtsBBox* GTSInterface::createBox(Cell& cell)
+GtsBBox* GTSInterface::createBox(const Cell& cell)
 {
   // Pick first vertex
   VertexIterator v(cell);

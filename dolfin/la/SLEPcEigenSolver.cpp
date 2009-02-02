@@ -84,7 +84,7 @@ void SLEPcEigenSolver::getEigenpair(double& lr, double& lc,
   EPSGetConverged(eps, &num_computed_eigenvalues);
 
   if (ii < num_computed_eigenvalues)
-    EPSGetEigenpair(eps, ii, &lr, &lc, r.vec(), c.vec());
+    EPSGetEigenpair(eps, ii, &lr, &lc, *r.vec(), *c.vec());
   else
     error("Requested eigenvalue/vector has not been computed");
 }
@@ -99,11 +99,11 @@ void SLEPcEigenSolver::solve(const PETScMatrix* A,
   if (B)
   {
     dolfin_assert(B->size(0) == B->size(1) && B->size(0) == A->size(0));
-    EPSSetOperators(eps, A->mat(), B->mat());
+    EPSSetOperators(eps, *A->mat(), *B->mat());
   }
   else
   {
-    EPSSetOperators(eps, A->mat(), PETSC_NULL);
+    EPSSetOperators(eps, *A->mat(), PETSC_NULL);
   }
 
   // Set number of eigenpairs to compute
@@ -207,6 +207,13 @@ void SLEPcEigenSolver::setTolerance(double tolerance, uint maxiter)
 {
   dolfin_assert(tolerance > 0.0);
   EPSSetTolerances(eps, tolerance, static_cast<int>(maxiter));
+}
+//-----------------------------------------------------------------------------
+int SLEPcEigenSolver::getIterationNumber()
+{
+  int num_iter;
+  EPSGetIterationNumber(eps, &num_iter);
+  return num_iter;
 }
 //-----------------------------------------------------------------------------
 

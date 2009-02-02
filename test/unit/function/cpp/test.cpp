@@ -27,44 +27,52 @@ public:
     class F0 : public Function
     {
     public:
-      F0(Mesh& mesh) : Function(mesh) {}
-      void eval(double* values, const double* x) const
-      { values[0] = sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2]); } 
+      void eval(double* values, const Data& data) const
+      { 
+        const double* x = data.x;
+        values[0] = sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2]);
+      }
     };
  
     class F1 : public Function
     {
     public:
-      F1(Mesh& mesh) : Function(mesh) {}
-      void eval(double* values, const double* x) const
-      { values[0] = 1.0 + 3.0*x[0] + 4.0*x[1] + 0.5*x[2]; } 
+      void eval(double* values, const Data& data) const
+      { 
+        const double* x = data.x;
+        values[0] = 1.0 + 3.0*x[0] + 4.0*x[1] + 0.5*x[2]; 
+      } 
     };
 
     UnitCube mesh(8, 8, 8);
-    double x[3] = {0.3, 0.3, 0.3};
-    double u[1] = {0.0};
-    double v[1] = {0.0};
+    double x[3] = {0.31, 0.32, 0.33};
+    double u[2] = {0.0, 0.0};
   
+    Data data;
+    data.x = x;
+
     // User-defined functions (one from finite element space, one not)
-    F0 f0(mesh);
-    F1 f1(mesh);
+    F0 f0;
+    F1 f1;
 
     // Test evaluation of a user-defined function
-    f0.eval(v, x);
-    CPPUNIT_ASSERT(v[0] == sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2]));
+    f0.eval(&u[0], data);
+    CPPUNIT_ASSERT(u[0] == sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2]));
 
 #ifdef HAS_GTS
     // Test evaluation of a discrete function
-    ProjectionBilinearForm a;
-    ProjectionLinearForm L(f1);
-    LinearPDE pde(a, L, mesh);
-    Function g;
-    pde.solve(g);
+    ProjectionFunctionSpace V(mesh);
+    ProjectionBilinearForm a(V, V);
+    ProjectionLinearForm L(V);
+    L.f = f1;
+    VariationalProblem problem(a, L);
+    Function g(V);
+    problem.solve(g);
 
     const double tol = 1.0e-6;
-    f1.eval(u, x);
-    g.eval(v, x);
-    CPPUNIT_ASSERT( std::abs(u[0]-v[0]) < tol );
+    f1.eval(&u[0], data);
+    g.eval(&u[1], data);
+    CPPUNIT_ASSERT( std::abs(u[0]-u[1]) < tol );
 #endif
   }
 };

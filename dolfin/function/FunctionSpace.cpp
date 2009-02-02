@@ -2,37 +2,41 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Kristoffer Selim, 2008.
+// Modified by Martin Alnes, 2008.
+// Modified by Garth N. Wells, 2008.
+// Modified by Kent-Andre Mardal, 2009.
 //
 // First added:  2008-09-11
-// Last changed: 2008-10-14
+// Last changed: 2009-01-06
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/mesh/Vertex.h>
 #include <dolfin/mesh/IntersectionDetector.h>
 #include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/DofMap.h>
-#include "NewFunction.h"
+#include "Function.h"
 #include "FunctionSpace.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-FunctionSpace::FunctionSpace(Mesh& mesh,
+FunctionSpace::FunctionSpace(const Mesh& mesh,
                              const FiniteElement &element,
                              const DofMap& dofmap)
-  : _mesh(&mesh, NoDeleter<Mesh>()),
-    _element(&element, NoDeleter<const FiniteElement>()),
-    _dofmap(&dofmap, NoDeleter<const DofMap>()),
+  : _mesh(reference_to_no_delete_pointer(mesh)),
+    _element(reference_to_no_delete_pointer(element)),
+    _dofmap(reference_to_no_delete_pointer(dofmap)),
     scratch(element), intersection_detector(0)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-FunctionSpace::FunctionSpace(std::tr1::shared_ptr<Mesh> mesh,
-                             std::tr1::shared_ptr<const FiniteElement> element,
-                             std::tr1::shared_ptr<const DofMap> dofmap)
+FunctionSpace::FunctionSpace(boost::shared_ptr<const Mesh> mesh,
+                             boost::shared_ptr<const FiniteElement> element,
+                             boost::shared_ptr<const DofMap> dofmap)
   : _mesh(mesh), _element(element), _dofmap(dofmap),
     scratch(*element), intersection_detector(0)
 {
@@ -40,12 +44,15 @@ FunctionSpace::FunctionSpace(std::tr1::shared_ptr<Mesh> mesh,
 }
 //-----------------------------------------------------------------------------
 FunctionSpace::FunctionSpace(const FunctionSpace& V)
-  : _mesh(static_cast<Mesh*>(0)),
-    _element(static_cast<FiniteElement*>(0)),
-    _dofmap(static_cast<DofMap*>(0)),
-    scratch(), intersection_detector(0)
 {
-  *this = V;
+  // Assign data (will be shared)
+  _mesh    = V._mesh;
+  _element = V._element;
+  _dofmap  = V._dofmap;
+
+  // Reinitialize scratch space and intersection detector
+  scratch.init(*_element);
+  intersection_detector = 0;
 }
 //-----------------------------------------------------------------------------
 FunctionSpace::~FunctionSpace()
@@ -56,22 +63,18 @@ FunctionSpace::~FunctionSpace()
 const FunctionSpace& FunctionSpace::operator= (const FunctionSpace& V)
 {
   // Assign data (will be shared)
-  _mesh = V._mesh;
+  _mesh    = V._mesh;
   _element = V._element;
-  _dofmap = V._dofmap;
+  _dofmap  = V._dofmap;
 
   // Reinitialize scratch space and intersection detector
   scratch.init(*_element);
-  delete intersection_detector;
-  intersection_detector = 0;
-
+  if (intersection_detector){
+    delete intersection_detector;
+    intersection_detector = 0;
+  }
+  
   return *this;
-}
-//-----------------------------------------------------------------------------
-Mesh& FunctionSpace::mesh()
-{
-  dolfin_assert(_mesh);
-  return *_mesh;
 }
 //-----------------------------------------------------------------------------
 const Mesh& FunctionSpace::mesh() const
@@ -92,9 +95,14 @@ const DofMap& FunctionSpace::dofmap() const
   return *_dofmap;
 }
 //-----------------------------------------------------------------------------
+dolfin::uint FunctionSpace::dim() const
+{
+  return dofmap().global_dimension();
+}
+//-----------------------------------------------------------------------------
 void FunctionSpace::eval(double* values,
                          const double* x,
-                         const NewFunction& v) const
+                         const Function& v) const
 {
   dolfin_assert(values);
   dolfin_assert(x);
@@ -118,14 +126,29 @@ void FunctionSpace::eval(double* values,
   Cell cell(*_mesh, cells[0]);
   UFCCell ufc_cell(cell);
 
-  // Tabulate dofs
-  _dofmap->tabulate_dofs(scratch.dofs, ufc_cell);
+  // Evaluate at point
+  eval(values, x, v, ufc_cell, cell.index());
+}
+//-----------------------------------------------------------------------------
+void FunctionSpace::eval(double* values,
+                         const double* x,
+                         const Function& v,
+                         const ufc::cell& ufc_cell,
+                         uint cell_index) const
+{
+  dolfin_assert(values);
+  dolfin_assert(x);
+  dolfin_assert(v.in(*this));
+  dolfin_assert(_mesh);
+  dolfin_assert(_element);
+  dolfin_assert(_dofmap);
 
-  // Pick values from vector of dofs
-  v.vector().get(scratch.coefficients, _dofmap->local_dimension(), scratch.dofs);
+  // Interpolate function to cell
+  v.interpolate(scratch.coefficients, *this, ufc_cell, cell_index);
 
   // Compute linear combination
-  for (uint j = 0; j < scratch.size; j++) values[j] = 0.0;
+  for (uint j = 0; j < scratch.size; j++)
+    values[j] = 0.0;
   for (uint i = 0; i < _element->space_dimension(); i++)
   {
     _element->evaluate_basis(i, scratch.values, x, ufc_cell);
@@ -134,25 +157,8 @@ void FunctionSpace::eval(double* values,
   }
 }
 //-----------------------------------------------------------------------------
-void FunctionSpace::interpolate(double* coefficients,
-                                const ufc::cell& ufc_cell,
-                                const NewFunction& v) const
-{
-  dolfin_assert(coefficients);
-  dolfin_assert(v.in(*this));
-  dolfin_assert(_mesh);
-  dolfin_assert(_element);
-  dolfin_assert(_dofmap);
-
-  // Tabulate dofs
-  _dofmap->tabulate_dofs(scratch.dofs, ufc_cell);
-
-  // Pick values from global vector
-  v.vector().get(coefficients, _dofmap->local_dimension(), scratch.dofs);
-}
-//-----------------------------------------------------------------------------
 void FunctionSpace::interpolate(GenericVector& coefficients,
-                                const NewFunction& v) const
+                                const Function& v) const
 {
   dolfin_assert(_mesh);
   dolfin_assert(_element);
@@ -171,10 +177,10 @@ void FunctionSpace::interpolate(GenericVector& coefficients,
     ufc_cell.update(*cell);
 
     // Interpolate on cell
-    v.interpolate(scratch.coefficients, ufc_cell);
+    v.interpolate(scratch.coefficients, *this, ufc_cell, cell->index());
 
     // Tabulate dofs
-    _dofmap->tabulate_dofs(scratch.dofs, ufc_cell);
+    _dofmap->tabulate_dofs(scratch.dofs, ufc_cell, cell->index());
 
     // Copy dofs to vector
     coefficients.set(scratch.coefficients, _dofmap->local_dimension(), scratch.dofs);
@@ -182,7 +188,7 @@ void FunctionSpace::interpolate(GenericVector& coefficients,
 }
 //-----------------------------------------------------------------------------
 void FunctionSpace::interpolate(double* vertex_values,
-                                const NewFunction& v) const
+                                const Function& v) const
 {
   dolfin_assert(vertex_values);
   dolfin_assert(v.in(*this));
@@ -202,10 +208,10 @@ void FunctionSpace::interpolate(double* vertex_values,
     ufc_cell.update(*cell);
 
     // Tabulate dofs
-    _dofmap->tabulate_dofs(scratch.dofs, ufc_cell);
+    _dofmap->tabulate_dofs(scratch.dofs, ufc_cell, cell->index());
 
     // Pick values from global vector
-    v.vector().get(scratch.coefficients, _dofmap->local_dimension(), scratch.dofs);
+    v.interpolate(scratch.coefficients, ufc_cell, cell->index());
 
     // Interpolate values at the vertices
     _element->interpolate_vertex_values(local_vertex_values, scratch.coefficients, ufc_cell);
@@ -226,20 +232,54 @@ void FunctionSpace::interpolate(double* vertex_values,
   delete [] local_vertex_values;
 }
 //-----------------------------------------------------------------------------
-FunctionSpace* FunctionSpace::extract_sub_space(const Array<uint>& sub_system) const
+boost::shared_ptr<FunctionSpace> FunctionSpace::extract_sub_space(const std::vector<uint>& component) const
 {
   dolfin_assert(_mesh);
   dolfin_assert(_element);
   dolfin_assert(_dofmap);
 
+  // Create unique identifier string for sub space
+  std::ostringstream identifier;
+  for (uint i = 0; i < component.size(); ++i)
+    identifier << component[i] << ".";
+  
+  // Check if sub space is aleady in the cache
+  std::map<std::string, boost::shared_ptr<FunctionSpace> >::iterator subspace;
+  subspace = subspaces.find(identifier.str());
+  if (subspace != subspaces.end())
+    return subspace->second;
+
   // Extract sub element
-  std::tr1::shared_ptr<FiniteElement> element(_element->extract_sub_element(sub_system));
+  boost::shared_ptr<const FiniteElement> element(_element->extract_sub_element(component));
 
   // Extract sub dofmap and offset
   uint offset = 0;
-  std::tr1::shared_ptr<DofMap> dofmap(_dofmap->extract_sub_dofmap(sub_system, offset));
+  boost::shared_ptr<DofMap> dofmap(_dofmap->extract_sub_dofmap(component, offset, *_mesh));
   
-  return new FunctionSpace(_mesh, element, dofmap);
+  // Create new sub space
+  boost::shared_ptr<FunctionSpace> new_sub_space(new FunctionSpace(_mesh, element, dofmap));
+
+  // Insert new sub space into cache
+  subspaces.insert(std::pair<std::string, boost::shared_ptr<FunctionSpace> >(identifier.str(), new_sub_space));
+
+  return new_sub_space;
+}
+//-----------------------------------------------------------------------------
+void FunctionSpace:: attach(MeshFunction<bool>& restriction)
+{
+  if (restriction.dim() == (*_mesh).topology().dim())
+  {
+    _restriction.reset(&restriction);
+    //FIXME: hack to cast away the const
+    const_cast<DofMap&>(*_dofmap).build(*_mesh, *_element, restriction);
+  }
+}
+//-----------------------------------------------------------------------------
+boost::shared_ptr<FunctionSpace> FunctionSpace::restriction(MeshFunction<bool>& restriction)
+{
+  boost::shared_ptr<FunctionSpace> function_space(new FunctionSpace(_mesh, _element, _dofmap));
+  function_space->attach(restriction);
+  return function_space;
 }
 //-----------------------------------------------------------------------------
 FunctionSpace::Scratch::Scratch(const FiniteElement& element)
@@ -287,3 +327,11 @@ void FunctionSpace::Scratch::init(const FiniteElement& element)
     values[i] = 0.0;
 }
 //-----------------------------------------------------------------------------
+bool FunctionSpace::is_inside_restriction(uint c) const
+{
+  if (_restriction) 
+    return _restriction->get(c);
+  else 
+    return true;
+}
+

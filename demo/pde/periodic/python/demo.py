@@ -8,7 +8,7 @@
 # Original implementation: ../cpp/main.cpp by Anders Logg
 #
 __author__ = "Kristian B. Oelgaard (k.b.oelgaard@tudelft.nl)"
-__date__ = "2007-11-15 -- 2007-11-28"
+__date__ = "2007-11-15 -- 2008-12-13"
 __copyright__ = "Copyright (C) 2007 Kristian B. Oelgaard"
 __license__  = "GNU LGPL Version 2.1"
 
@@ -16,13 +16,10 @@ from dolfin import *
 
 # Create mesh and finite element
 mesh = UnitSquare(32, 32)
-element = FiniteElement("Lagrange", "triangle", 1)
+V = FunctionSpace(mesh, "CG", 1)
 
 # Source term
 class Source(Function):
-    def __init__(self, element, mesh):
-        Function.__init__(self, element, mesh)
-
     def eval(self, values, x):
         dx = x[0] - 0.5
         dy = x[1] - 0.5
@@ -35,6 +32,7 @@ class DirichletBoundary(SubDomain):
 
 # Sub domain for Periodic boundary condition
 class PeriodicBoundary(SubDomain):
+
     def inside(self, x, on_boundary):
         return bool(x[0] < DOLFIN_EPS and x[0] > -DOLFIN_EPS and on_boundary)
 
@@ -42,33 +40,32 @@ class PeriodicBoundary(SubDomain):
         y[0] = x[0] - 1.0
         y[1] = x[1]
 
-
 # Create Dirichlet boundary condition
-u0 = Function(mesh, 0.0)
-dirichlet_boundary = DirichletBoundary()
-bc0 = DirichletBC(u0, mesh, dirichlet_boundary)
+u0 = Constant(mesh, 0.0)
+dbc = DirichletBoundary()
+bc0 = DirichletBC(V, u0, dbc)
 
 # Create periodic boundary condition
-periodic_boundary = PeriodicBoundary()
-bc1 = PeriodicBC(mesh, periodic_boundary)
+pbc = PeriodicBoundary()
+bc1 = PeriodicBC(V, pbc)
 
 # Collect boundary conditions
 bcs = [bc0, bc1]
 
 # Define variational problem
-v = TestFunction(element)
-u = TrialFunction(element)
-f = Source(element, mesh)
+v = TestFunction(V)
+u = TrialFunction(V)
+f = Source(V)
 
 a = dot(grad(v), grad(u))*dx
 L = v*f*dx
 
 # Solve PDE
-pde = LinearPDE(a, L, mesh, bcs)
-u = pde.solve()
+problem = VariationalProblem(a, L, bcs)
+u = problem.solve()
 
 # Save solution to file
-file = File("poisson.pvd")
+file = File("periodic.pvd")
 file << u
 
 # Plot solution

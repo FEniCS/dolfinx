@@ -13,11 +13,7 @@
 #include "Epetra_FECrsMatrix.h"
 #include "Epetra_LinearProblem.h"
 #include "Epetra_Map.h"
-
-
 #include "AztecOO.h"
-
-//#include "ml_config.h"
 #include "ml_include.h"
 #include "Epetra_LinearProblem.h"
 #include "ml_MultiLevelOperator.h"
@@ -30,11 +26,8 @@
 #include "EpetraMatrix.h"
 #include "EpetraVector.h"
 
-
-
-
-
 using namespace dolfin; 
+
 //-----------------------------------------------------------------------------
 EpetraKrylovSolver::EpetraKrylovSolver(SolverType method, PreconditionerType pc) 
                     : method(method), pc_type(pc), prec(0) 
@@ -69,10 +62,10 @@ dolfin::uint EpetraKrylovSolver::solve(const EpetraMatrix& A, EpetraVector& x,
   // FIXME: check vector size
   // FIXME: permit initial guess
 
-  // cast matrix and vectors to proper type
-  Epetra_RowMatrix* row_matrix =  dynamic_cast<Epetra_RowMatrix*>(&(A.mat()));
-  Epetra_MultiVector* x_vec = dynamic_cast<Epetra_MultiVector*>(&x.vec());
-  Epetra_MultiVector* b_vec = dynamic_cast<Epetra_MultiVector*>(&b.vec());
+  // Cast matrix and vectors to proper type
+  Epetra_RowMatrix* row_matrix = dynamic_cast<Epetra_RowMatrix*>(A.mat().get());
+  Epetra_MultiVector* x_vec    = dynamic_cast<Epetra_MultiVector*>(x.vec().get());
+  Epetra_MultiVector* b_vec    = dynamic_cast<Epetra_MultiVector*>(b.vec().get());
 
   /*
   // Create linear system 
@@ -89,33 +82,55 @@ dolfin::uint EpetraKrylovSolver::solve(const EpetraMatrix& A, EpetraVector& x,
   linear_solver.SetLHS(x_vec); 
   linear_solver.SetRHS(b_vec); 
 
-  if ( method == cg) 
-    linear_solver.SetAztecOption( AZ_solver, AZ_cg);
-  else if ( method == gmres) 
+  // Set solver type
+  switch (method)
+  {
+  case default_solver:
     linear_solver.SetAztecOption( AZ_solver, AZ_gmres);
-  else if ( method == bicgstab) 
+    break;
+  case cg:
+    linear_solver.SetAztecOption( AZ_solver, AZ_cg);
+    break;
+  case gmres:
+    linear_solver.SetAztecOption( AZ_solver, AZ_gmres);
+    break;
+  case bicgstab:
     linear_solver.SetAztecOption( AZ_solver, AZ_bicgstab);
-  else if ( method == lu ) 
+    break;
+  case lu:
     error("EpetraKrylovSolver::solve LU not supported."); 
-  else
-    error("EpetraKrylovSolver::solve solver type not supported."); 
+    break;
+  default:
+    error("EpetraKrylovSolver::solve solver type not supported.");
+  }
 
   //FIXME GS or SSOR not a PreconditionerType not in 
-  if ( pc_type == jacobi) 
-    linear_solver.SetAztecOption( AZ_precond, AZ_Jacobi);
-  else if ( pc_type == sor) 
-    linear_solver.SetAztecOption( AZ_precond, AZ_sym_GS);
-  else if ( pc_type == ilu) 
+  // Set preconditioner
+  switch (pc_type)
   {
+  case default_pc:
     linear_solver.SetAztecOption( AZ_precond, AZ_dom_decomp);
     linear_solver.SetAztecOption( AZ_subdomain_solve, AZ_ilu); 
-  }
-  else if ( pc_type == icc) 
+    break;
+  case jacobi:
+    linear_solver.SetAztecOption( AZ_precond, AZ_Jacobi);
+    break;
+  case sor:
+    linear_solver.SetAztecOption( AZ_precond, AZ_sym_GS);
+    break;
+  case ilu:
+    linear_solver.SetAztecOption( AZ_precond, AZ_dom_decomp);
+    linear_solver.SetAztecOption( AZ_subdomain_solve, AZ_ilu); 
+    break;
+  case icc:
     linear_solver.SetAztecOption( AZ_precond, AZ_icc);
-  else if ( pc_type == amg_ml) 
-    ;// Do nothing. Confiugured below    
-  else
+    break;
+  case amg_ml:
+    // Do nothing. Configured below    
+    break;
+  default:
     error("EpetraKrylovSolver::solve pc type not supported."); 
+  }
 
   if (pc_type == amg_ml) 
   {  
@@ -134,15 +149,15 @@ dolfin::uint EpetraKrylovSolver::solve(const EpetraMatrix& A, EpetraVector& x,
 
     ML_Create(&ml_handle,N_levels);
 
-    // wrap Epetra Matrix into ML matrix (data is NOT copied)
-    EpetraMatrix2MLMatrix(ml_handle, 0, &(A.mat()));
+    // Wrap Epetra Matrix into ML matrix (data is NOT copied)
+    EpetraMatrix2MLMatrix(ml_handle, 0, A.mat().get());
 
     // create a ML_Aggregate object to store the aggregates
     ML_Aggregate *agg_object;
     ML_Aggregate_Create(&agg_object);
 
     // specify max coarse size 
-    ML_Aggregate_Set_MaxCoarseSize(agg_object,1);
+    ML_Aggregate_Set_MaxCoarseSize(agg_object, 1);
 
     // generate the hierady
     N_levels = ML_Gen_MGHierarchy_UsingAggregation(ml_handle, 0, ML_INCREASING, agg_object);
@@ -154,7 +169,7 @@ dolfin::uint EpetraKrylovSolver::solve(const EpetraMatrix& A, EpetraVector& x,
     ML_Gen_Solver(ml_handle, ML_MGV, 0, N_levels-1);
 
     // wrap ML_Operator into Epetra_Operator
-    ML_Epetra::MultiLevelOperator  MLop(ml_handle,A.mat().Comm(),A.mat().DomainMap(),A.mat().RangeMap());
+    ML_Epetra::MultiLevelOperator  MLop(ml_handle, (*A.mat()).Comm(), (*A.mat()).DomainMap(), (*A.mat()).RangeMap());
 
     // set this operator as preconditioner for AztecOO
     linear_solver.SetPrecOperator(&MLop);
@@ -163,8 +178,10 @@ dolfin::uint EpetraKrylovSolver::solve(const EpetraMatrix& A, EpetraVector& x,
 //    error("EpetraKrylovSolver::solve not compiled with ML support."); 
 //#endif 
   }   
-  std::cout <<"starting to iterate "<<std::endl; 
+
+  std::cout << "starting to iterate " << std::endl; 
   linear_solver.Iterate(1000, 1.0e-9);
+
   return linear_solver.NumIters(); 
 }
 //-----------------------------------------------------------------------------

@@ -4,7 +4,7 @@
 // Modified by Johan Hoffman, 2007.
 //
 // First added:  2006-05-22
-// Last changed: 2008-05-21
+// Last changed: 2008-11-14
 
 #ifndef __MESH_FUNCTION_H
 #define __MESH_FUNCTION_H
@@ -35,16 +35,16 @@ namespace dolfin
     MeshFunction() : _values(0), _mesh(0), _dim(0), _size(0) {}
 
     /// Create empty mesh function on given mesh
-    MeshFunction(Mesh& mesh) : _values(0), _mesh(&mesh), _dim(0), _size(0) {}
+    MeshFunction(const Mesh& mesh) : _values(0), _mesh(&mesh), _dim(0), _size(0) {}
 
     /// Create mesh function on given mesh of given dimension
-    MeshFunction(Mesh& mesh, uint dim) : _values(0), _mesh(&mesh), _dim(0), _size(0)
+    MeshFunction(const Mesh& mesh, uint dim) : _values(0), _mesh(&mesh), _dim(0), _size(0)
     {
       init(dim);
     }
 
     /// Create function from data file
-    MeshFunction(Mesh& mesh, const std::string filename) : _values(0), _mesh(&mesh), _dim(0), _size(0)
+    MeshFunction(const Mesh& mesh, const std::string filename) : _values(0), _mesh(&mesh), _dim(0), _size(0)
     {
       File file(filename);
       file >> *this;
@@ -57,34 +57,32 @@ namespace dolfin
     }
 
     /// Return mesh associated with mesh function
-    inline Mesh& mesh() { dolfin_assert(_mesh); return *_mesh; }
+    const Mesh& mesh() const { dolfin_assert(_mesh); return *_mesh; }
 
     /// Return topological dimension
-    inline uint dim() const { return _dim; }
+    uint dim() const { return _dim; }
 
     /// Return size (number of entities)
-    inline uint size() const { return _size; }
+    uint size() const { return _size; }
 
     /// Return array of values
-    inline const T* values() const { return _values; }
+    const T* values() const { return _values; }
 
     /// Return array of values
-    inline T* values() { return _values; }
+    T* values() { return _values; }
 
     /// Return value at given entity
-    inline T& operator() (MeshEntity& entity)
+    T& operator() (const MeshEntity& entity)
     {
-      // FIXME: Removed temporarily, to get parallel assembly working
-      //dolfin_assert(&entity.mesh() == _mesh);
-      
       dolfin_assert(_values);
+      dolfin_assert(&entity.mesh() == _mesh);
       dolfin_assert(entity.dim() == _dim);
       dolfin_assert(entity.index() < _size);
       return _values[entity.index()];
     }
 
-    /// Return value at given entity
-    inline const T& operator() (MeshEntity& entity) const
+    /// Return value at given entity (const version)
+    const T& operator() (const MeshEntity& entity) const
     {
       dolfin_assert(_values);
       dolfin_assert(&entity.mesh() == _mesh);
@@ -121,14 +119,14 @@ namespace dolfin
     }
 
     /// Initialize mesh function for given topological dimension
-    void init(Mesh& mesh, uint dim)
+    void init(const Mesh& mesh, uint dim)
     {
       mesh.init(dim);
       init(mesh, dim, mesh.size(dim));
     }
 
     /// Initialize mesh function for given topological dimension of given size
-    void init(Mesh& mesh, uint dim, uint size)
+    void init(const Mesh& mesh, uint dim, uint size)
     {
       // Initialize mesh for entities of given dimension
       mesh.init(dim);
@@ -201,7 +199,7 @@ namespace dolfin
     T* _values;
 
     /// The mesh
-    Mesh* _mesh;
+    const Mesh* _mesh;
 
     /// Topological dimension
     uint _dim;

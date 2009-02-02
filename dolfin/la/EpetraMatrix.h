@@ -2,14 +2,17 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Anders Logg, 2008.
+// Modified by Garth N. Wells, 2008.
 //
 // First added:  2008-04-21
-// Last changed: 2008-05-15
+// Last changed: 2008-13-30
 
 #ifndef __EPETRA_MATRIX_H
 #define __EPETRA_MATRIX_H
 
 #ifdef HAS_TRILINOS
+
+#include <boost/shared_ptr.hpp>
 
 #include <dolfin/log/LogStream.h>
 #include <dolfin/common/Variable.h>
@@ -45,7 +48,7 @@ namespace dolfin
     explicit EpetraMatrix(const EpetraMatrix& A);
 
     /// Create matrix from given Epetra_FECrsMatrix pointer
-    explicit EpetraMatrix(Epetra_FECrsMatrix* A);
+    explicit EpetraMatrix(boost::shared_ptr<Epetra_FECrsMatrix> A);
 
     /// Create matrix from given Epetra_CrsGraph
     explicit EpetraMatrix(const Epetra_CrsGraph& graph);
@@ -122,8 +125,8 @@ namespace dolfin
 
     //--- Special Epetra functions ---
 
-    /// Return Epetra_FECrsMatrix reference
-    Epetra_FECrsMatrix& mat() const;
+    /// Return Epetra_FECrsMatrix pointer
+    boost::shared_ptr<Epetra_FECrsMatrix> mat() const;
 
     /// Assignment operator
     const EpetraMatrix& operator= (const EpetraMatrix& x);
@@ -132,10 +135,7 @@ namespace dolfin
   private:
 
     // Epetra_FECrsMatrix pointer
-    Epetra_FECrsMatrix* A;
-    
-    // True if we don't own the matrix A points to
-    bool is_view;
+    boost::shared_ptr<Epetra_FECrsMatrix> A;
     
   };
 

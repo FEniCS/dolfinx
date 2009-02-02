@@ -8,75 +8,48 @@ This gives convenient expand/collapse of bullets by pressing TAB.
 
 * Build system
 ** Demos are not built when using 'scons install . . . enableDemos=yes'
-** Python interface sometimes not regenerated when changing header files
+
+* Assembly
+** Break up function Assembler::assemble_system
+
 * Linear Algebra
-** Current items (discussion 2008-04-09)
-*** Make solve() work with GenericFoo
-*** GenericOperator --> Kent
-*** Vector(x), xx = x,array() --> Ola
-*** Remove copy(), create() --> Anders
-*** Add copy constructors --> Martin
-*** Assignment operators --> Martin
-*** getitem/setitem --> Ola
-*** operator[] etc --> Kent
-*** cleanup of all interfaces --> Anders
-** Old items
-*** Finalize GenericFoo interfaces and merge linear algebra with PyCC
-   - Assigned to: Martin, Garth, Anders
-** Parallelize necessary parts of Mesh
+** Complete Trilinos implementation
+** Parallel issues
+** Remove need for calling apply() after changes (solvers may check and call it if necessary)
+
+* Mesh
+** Parallel issues
    - Store both global and local indices for cell/vertex, add mesh
      functions for this
-   - IO: read/write mesh in parallel (each processor reads/writes only
-     its own part), should be doable with small extension of
-     MeshEditor and XMLMesh
    - Adapt BoundaryComputation for parallel mesh, use knowledge about
      which vertices are shared to decide if a facet is a global or
      local boundary
    - Use parallel mesh information in DofMap to simplify
      implementation - should only need map from local to global cell/vertex
-   - Use parallel mesh information in ParMETIS partitioning implementation
+
 * Manual
 ** Write incomplete sections
 ** Write appendix on coding style
 ** Document Python interface
 
 * Function
-** Assignment from other than discrete functions (use evaluate_dof)
 ** Input/output for time-series
-** Adding a FunctionSpace class, collecting a Mesh, dof_map and finite_element.
 
 * ODE solvers
 ** Solve dual and compute error estimate
 ** Automatic computation of stability factors as function of time T
-* PDE solvers
-** Improve NonlinearPDE
-** Create TimeDependentPDE
-   - Use ODE solvers
-** Linear PDE should not own a Vector
+
 * Parameters
+** Figure out where to store parameters: in DefaultParameters.h or create in constructors
 ** Load default parameters from file
 ** Add function to display all parameters
+
 * Demos
 ** Add Python versions of all demos
-** Not working (in Python)
-  src/demo/pde/nonlinear-poisson/python/demo.py
-  src/demo/pde/lift-drag/python/demo.py
-  src/demo/la/eigensolver/python/demo.py
-  src/demo/nls/nonlinearpoisson/python/demo.py
-  src/demo/ode/aliev-panfilov/python/demo.py
-** Not added (in Python)
-   ode/complex
-   ode/stiff
-   ode/courtemanche
-   ode/homotopy/economy
-   ode/homotopy/simple
-   ode/harmonic
-   ode/lorenz
-   ode/method-weights
-   nls/cahn-hilliard
-* PyDOLFIN
-** Fix memory leak warning for Array of Function*
-** Needing to convert numpy.bool to bool in inside
+** Add CPP versions of all demos
+
 * General
 ** Replace stdio with iostream and fstream
 ** Fix setprecision() for cout
+** Update function names: fooBar --> foo_bar
+** Remove as much const_cast as possible

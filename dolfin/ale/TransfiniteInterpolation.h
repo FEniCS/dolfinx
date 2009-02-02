@@ -1,8 +1,8 @@
-// Copyright (C) 2008 Solveig Bruvoll and Anders Logg.
+// Copyright (C) 2008-2009 Solveig Bruvoll and Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-05-02
-// Last changed: 2008-08-12
+// Last changed: 2009-01-12
 
 #ifndef __TRANSFINITE_INTERPOLATION_H
 #define __TRANSFINITE_INTERPOLATION_H
@@ -28,14 +28,14 @@ namespace dolfin
 
     /// Move coordinates of mesh according to new boundary coordinates
     static void move(Mesh& mesh, Mesh& new_boundary,
-                     InterpolationType type=interpolation_lagrange);
+                     InterpolationType type);//=interpolation_lagrange);
     
   private:
     
     // Transfinite meanvalue interpolation
     static void meanValue(double* new_x, uint dim, Mesh& new_boundary,
                           Mesh& mesh, const MeshFunction<uint>& vertex_map,
-                          Vertex& vertex, double** ghat, InterpolationType type);
+                          const Vertex& vertex, double** ghat, InterpolationType type);
 
     // Compute weights for transfinite meanvalue interpolation
     static void computeWeights2D(double* w, double** u, double* d,
@@ -45,26 +45,31 @@ namespace dolfin
     static void computeWeights3D(double* w, double** u, double* d,
                                  uint dim, uint num_vertices);
 
-    static void normals(double ** dfdn, uint dim, Mesh& new_boundary,
+    static void normals(double** dfdn, uint dim, Mesh& new_boundary,
 			Mesh& mesh, const MeshFunction<uint>& vertex_map, 
 			const MeshFunction<uint>& cell_map);
 
-    static void hermiteFunction(double ** ghat, uint dim, Mesh& new_boundary,
+    static void hermiteFunction(double** ghat, uint dim, Mesh& new_boundary,
 				Mesh& mesh, 
 				const MeshFunction<uint>& vertex_map, 
 				const MeshFunction<uint>& cell_map);
+
     static void integral(double* new_x, uint dim, Mesh& new_boundary,
                     Mesh& mesh, const MeshFunction<uint>& vertex_map,
-			 Vertex& vertex);
+                    const Vertex& vertex);
 
 
     // Return sign
     inline static double sgn(double v)
     { return (v < 0.0 ? -1.0 : 1.0); }
 
-    // Return determinant
+    // Return determinant 2D
+    inline static double det(double* u, double* v)
+    { return (u[0]*v[1] - u[1]*v[0]); }
+
+    // Return determinant 3D
     inline static double det(double* u, double* v, double* w)
-    { return u[0]*(v[1]*w[2] - v[2]*w[1]) - u[1]*(v[0]*w[2] - v[2]*w[0]) + u[2]*(v[0]*w[1] - v[1]*w[0]); }
+    { return (u[0]*(v[1]*w[2] - v[2]*w[1]) - u[1]*(v[0]*w[2] - v[2]*w[0]) + u[2]*(v[0]*w[1] - v[1]*w[0])); }
 
     // Return next index
     inline static uint next(uint i, uint dim)

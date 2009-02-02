@@ -87,7 +87,7 @@ dolfin::uint PETScKrylovSolver::solve(const PETScMatrix& A, PETScVector& x,
     readParameters();
 
   // Solve linear system
-  KSPSetOperators(ksp, A.mat(), A.mat(), SAME_NONZERO_PATTERN);
+  KSPSetOperators(ksp, *A.mat(), *A.mat(), SAME_NONZERO_PATTERN);
 
   // FIXME: Preconditioner being set here to avoid PETSc bug with Hypre.
   //        See explanation inside PETScKrylovSolver:init().
@@ -97,7 +97,7 @@ dolfin::uint PETScKrylovSolver::solve(const PETScMatrix& A, PETScVector& x,
     pc_set = true;   
   }
 
-  KSPSolve(ksp, b.vec(), x.vec());
+  KSPSolve(ksp, *b.vec(), *x.vec());
 
   // Check if the solution converged
   KSPConvergedReason reason;
@@ -151,7 +151,7 @@ dolfin::uint PETScKrylovSolver::solve(const PETScKrylovMatrix& A, PETScVector& x
 
   // Solve linear system
   KSPSetOperators(ksp, A.mat(), A.mat(), DIFFERENT_NONZERO_PATTERN);
-  KSPSolve(ksp, b.vec(), x.vec());  
+  KSPSolve(ksp, *b.vec(), *x.vec());  
 
   // Check if the solution converged
   KSPConvergedReason reason;

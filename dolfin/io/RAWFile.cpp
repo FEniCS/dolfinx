@@ -2,14 +2,19 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Nuno Lopes 2008.
+// Modified by Martin Alnes 2008.
 //
 // First added:  2008-05-29
 
+#include <sstream>
+#include <fstream>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/Vertex.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/function/Function.h>
+#include <dolfin/function/FunctionSpace.h>
+#include <dolfin/fem/FiniteElement.h>
 #include <dolfin/la/Vector.h>
 #include "RAWFile.h"
 
@@ -27,29 +32,28 @@ RAWFile::~RAWFile()
   // Do nothing
 }
 //----------------------------------------------------------------------------
-void RAWFile::operator<<(MeshFunction<int>& meshfunction)
+void RAWFile::operator<<(const MeshFunction<int>& meshfunction)
 {
   MeshFunctionWrite(meshfunction);
 }
 //----------------------------------------------------------------------------
-void RAWFile::operator<<(MeshFunction<unsigned int>& meshfunction)
+void RAWFile::operator<<(const MeshFunction<unsigned int>& meshfunction)
 {
   MeshFunctionWrite(meshfunction);
 }
 //----------------------------------------------------------------------------
-void RAWFile::operator<<(MeshFunction<double>& meshfunction)
+void RAWFile::operator<<(const MeshFunction<double>& meshfunction)
 {
   MeshFunctionWrite(meshfunction);
 }
 //----------------------------------------------------------------------------
-void RAWFile::operator<<(Function& u)
+void RAWFile::operator<<(const Function& u)
 {
   // Update raw file name and clear file
   rawNameUpdate(counter);
         
   // Write results
   ResultsWrite(u);
-  
   
   // Increase the number of times we have saved the function
   counter++;
@@ -59,55 +63,44 @@ void RAWFile::operator<<(Function& u)
 
 }
 //----------------------------------------------------------------------------
-void RAWFile::ResultsWrite(Function& u) const
+void RAWFile::ResultsWrite(const Function& u) const
 {
   // Open file
-  FILE *fp = fopen(raw_filename.c_str(), "a");
+  std::ofstream fp(raw_filename.c_str(), std::ios_base::app);
   
- 
-  const uint rank = u.rank();
+  const uint rank = u.function_space().element().value_rank();
   if(rank > 1)
     error("Only scalar and vectors functions can be saved in Raw format.");
 
   // Get number of components
-  const uint dim = u.dim(0);
+  uint dim = 1;
+  for (uint i = 0; i < rank; i++)
+    dim *= u.function_space().element().value_dimension(i);
 
-  Mesh& mesh = u.mesh();
+  Mesh& mesh = const_cast<Mesh&>(u.function_space().mesh());
   
   // Allocate memory for function values at vertices
-  uint size = mesh.numVertices();
-  for (uint i = 0; i < u.rank(); i++)
-    size *= u.dim(i);
+  const uint size = mesh.numVertices()*dim;
   double* values = new double[size];
 
   // Get function values at vertices
   u.interpolate(values);
 
-  
   // Write function data at mesh vertices
-  
+  uint num_vertices = mesh.numVertices();
+  fp << num_vertices << std::endl;
 
-  if ( dim > 3 )
-    warning("Cannot handle RAW file with number of components > 3. Writing first three components only");
-
-  fprintf(fp,"%d \n",mesh.numVertices());
+  std::ostringstream ss;
+  ss << std::scientific;
   for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
-  {    
-    if ( rank == 0 ) 
-      fprintf(fp," %e ", values[ vertex->index() ] );
-    else if ( u.dim(0) == 2 ) 
-      fprintf(fp," %e %e", values[ vertex->index() ], 
-                                values[ vertex->index() + mesh.numVertices() ] );
-    else  
-      fprintf(fp," %e  %e  %e", values[ vertex->index() ], 
-                               values[ vertex->index() +   mesh.numVertices() ], 
-                               values[ vertex->index() + 2*mesh.numVertices() ] );
-
-    fprintf(fp,"\n");
-  }	 
-  
-  // Close file
-  fclose(fp);
+  {
+    ss.str("");
+    for(uint i=0; i<dim; i++)
+      ss << " " << values[vertex->index() + i*mesh.numCells()];
+    ss << std::endl;
+    
+    fp << ss.str();
+  }
 
   delete [] values;
 }
@@ -130,9 +123,11 @@ void RAWFile::rawNameUpdate(const int counter)
   
   // Make sure file is empty
   FILE* fp = fopen(raw_filename.c_str(), "w");
+  if (!fp)
+    error("Unable to open file %s", filename.c_str());
+
   fclose(fp);
 }
-//----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 template<class T>
 void RAWFile::MeshFunctionWrite(T& meshfunction) 
@@ -140,13 +135,11 @@ void RAWFile::MeshFunctionWrite(T& meshfunction)
   // Update raw file name and clear file
   rawNameUpdate(counter);
 
- 
-  Mesh& mesh = meshfunction.mesh(); 
+  const Mesh& mesh = meshfunction.mesh(); 
 
   if( meshfunction.dim() != mesh.topology().dim() )
     error("RAW output of mesh functions is implemenetd for cell-based functions only.");    
 
-  
   // Open file
   std::ofstream fp(raw_filename.c_str(), std::ios_base::app);
   
@@ -156,7 +149,6 @@ void RAWFile::MeshFunctionWrite(T& meshfunction)
   
   // Close file
   fp.close();
-
  
   // Increase the number of times we have saved the mesh function
   counter++;

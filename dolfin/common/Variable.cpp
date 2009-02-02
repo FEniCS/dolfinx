@@ -1,8 +1,8 @@
-// Copyright (C) 2003-2006 Anders Logg.
+// Copyright (C) 2003-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2003-02-26
-// Last changed: 2006-10-09
+// Last changed: 2008-12-12
 
 #include "Variable.h"
 
@@ -10,7 +10,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 Variable::Variable() :
-  _name("x"), _label("data with no label")
+  _name("x"), _label("unnamed data")
 {
   // Do nothing
 }

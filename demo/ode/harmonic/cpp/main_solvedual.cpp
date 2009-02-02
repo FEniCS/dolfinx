@@ -31,7 +31,7 @@ public:
 
   bool update(const uBLASVector& u, double t, bool end)
   {
-    if ( !end )
+    if (!end)
       return true;
 
     double e0 = u[0] - 0.0;
@@ -64,5 +64,4 @@ int main()
 
   Harmonic ode;
   ode.solve();
-  
 }

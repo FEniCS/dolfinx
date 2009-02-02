@@ -33,110 +33,110 @@
 
 dolfin::Form* dolfin::ProjectionLibrary::create_projection_a(const char* signature)
 {
-  if (strcmp(signature, "Lagrange finite element of degree 1 on a interval") == 0)
+  if (strcmp(signature, "FiniteElement('Lagrange', 'interval', 1)") == 0)
     return new ffc_L2proj_00BilinearForm;
-  if (strcmp(signature, "Lagrange finite element of degree 2 on a interval") == 0)
+  if (strcmp(signature, "FiniteElement('Lagrange', 'interval', 2)") == 0)
     return new ffc_L2proj_01BilinearForm;
-  if (strcmp(signature, "Lagrange finite element of degree 1 on a triangle") == 0)
+  if (strcmp(signature, "FiniteElement('Lagrange', 'triangle', 1)") == 0)
     return new ffc_L2proj_02BilinearForm;
-  if (strcmp(signature, "Lagrange finite element of degree 2 on a triangle") == 0)
+  if (strcmp(signature, "FiniteElement('Lagrange', 'triangle', 2)") == 0)
     return new ffc_L2proj_03BilinearForm;
-  if (strcmp(signature, "Lagrange finite element of degree 1 on a tetrahedron") == 0)
+  if (strcmp(signature, "FiniteElement('Lagrange', 'tetrahedron', 1)") == 0)
     return new ffc_L2proj_04BilinearForm;
-  if (strcmp(signature, "Lagrange finite element of degree 2 on a tetrahedron") == 0)
+  if (strcmp(signature, "FiniteElement('Lagrange', 'tetrahedron', 2)") == 0)
     return new ffc_L2proj_05BilinearForm;
-  if (strcmp(signature, "Discontinuous Lagrange finite element of degree 0 on a interval") == 0)
+  if (strcmp(signature, "FiniteElement('Discontinuous Lagrange', 'interval', 0)") == 0)
     return new ffc_L2proj_06BilinearForm;
-  if (strcmp(signature, "Discontinuous Lagrange finite element of degree 1 on a interval") == 0)
+  if (strcmp(signature, "FiniteElement('Discontinuous Lagrange', 'interval', 1)") == 0)
     return new ffc_L2proj_07BilinearForm;
-  if (strcmp(signature, "Discontinuous Lagrange finite element of degree 2 on a interval") == 0)
+  if (strcmp(signature, "FiniteElement('Discontinuous Lagrange', 'interval', 2)") == 0)
     return new ffc_L2proj_08BilinearForm;
-  if (strcmp(signature, "Discontinuous Lagrange finite element of degree 0 on a triangle") == 0)
+  if (strcmp(signature, "FiniteElement('Discontinuous Lagrange', 'triangle', 0)") == 0)
     return new ffc_L2proj_09BilinearForm;
-  if (strcmp(signature, "Discontinuous Lagrange finite element of degree 1 on a triangle") == 0)
+  if (strcmp(signature, "FiniteElement('Discontinuous Lagrange', 'triangle', 1)") == 0)
     return new ffc_L2proj_10BilinearForm;
-  if (strcmp(signature, "Discontinuous Lagrange finite element of degree 2 on a triangle") == 0)
+  if (strcmp(signature, "FiniteElement('Discontinuous Lagrange', 'triangle', 2)") == 0)
     return new ffc_L2proj_11BilinearForm;
-  if (strcmp(signature, "Discontinuous Lagrange finite element of degree 0 on a tetrahedron") == 0)
+  if (strcmp(signature, "FiniteElement('Discontinuous Lagrange', 'tetrahedron', 0)") == 0)
     return new ffc_L2proj_12BilinearForm;
-  if (strcmp(signature, "Discontinuous Lagrange finite element of degree 1 on a tetrahedron") == 0)
+  if (strcmp(signature, "FiniteElement('Discontinuous Lagrange', 'tetrahedron', 1)") == 0)
     return new ffc_L2proj_13BilinearForm;
-  if (strcmp(signature, "Discontinuous Lagrange finite element of degree 2 on a tetrahedron") == 0)
+  if (strcmp(signature, "FiniteElement('Discontinuous Lagrange', 'tetrahedron', 2)") == 0)
     return new ffc_L2proj_14BilinearForm;
-  if (strcmp(signature, "Mixed finite element: [Lagrange finite element of degree 1 on a triangle, Lagrange finite element of degree 1 on a triangle]") == 0)
+  if (strcmp(signature, "MixedElement([FiniteElement('Lagrange', 'triangle', 1), FiniteElement('Lagrange', 'triangle', 1)])") == 0)
     return new ffc_L2proj_15BilinearForm;
-  if (strcmp(signature, "Mixed finite element: [Lagrange finite element of degree 2 on a triangle, Lagrange finite element of degree 2 on a triangle]") == 0)
+  if (strcmp(signature, "MixedElement([FiniteElement('Lagrange', 'triangle', 2), FiniteElement('Lagrange', 'triangle', 2)])") == 0)
     return new ffc_L2proj_16BilinearForm;
-  if (strcmp(signature, "Mixed finite element: [Lagrange finite element of degree 1 on a tetrahedron, Lagrange finite element of degree 1 on a tetrahedron, Lagrange finite element of degree 1 on a tetrahedron]") == 0)
+  if (strcmp(signature, "MixedElement([FiniteElement('Lagrange', 'tetrahedron', 1), FiniteElement('Lagrange', 'tetrahedron', 1), FiniteElement('Lagrange', 'tetrahedron', 1)])") == 0)
     return new ffc_L2proj_17BilinearForm;
-  if (strcmp(signature, "Mixed finite element: [Lagrange finite element of degree 2 on a tetrahedron, Lagrange finite element of degree 2 on a tetrahedron, Lagrange finite element of degree 2 on a tetrahedron]") == 0)
+  if (strcmp(signature, "MixedElement([FiniteElement('Lagrange', 'tetrahedron', 2), FiniteElement('Lagrange', 'tetrahedron', 2), FiniteElement('Lagrange', 'tetrahedron', 2)])") == 0)
     return new ffc_L2proj_18BilinearForm;
-  if (strcmp(signature, "Mixed finite element: [Discontinuous Lagrange finite element of degree 0 on a triangle, Discontinuous Lagrange finite element of degree 0 on a triangle]") == 0)
+  if (strcmp(signature, "MixedElement([FiniteElement('Discontinuous Lagrange', 'triangle', 0), FiniteElement('Discontinuous Lagrange', 'triangle', 0)])") == 0)
     return new ffc_L2proj_19BilinearForm;
-  if (strcmp(signature, "Mixed finite element: [Discontinuous Lagrange finite element of degree 1 on a triangle, Discontinuous Lagrange finite element of degree 1 on a triangle]") == 0)
+  if (strcmp(signature, "MixedElement([FiniteElement('Discontinuous Lagrange', 'triangle', 1), FiniteElement('Discontinuous Lagrange', 'triangle', 1)])") == 0)
     return new ffc_L2proj_20BilinearForm;
-  if (strcmp(signature, "Mixed finite element: [Discontinuous Lagrange finite element of degree 0 on a tetrahedron, Discontinuous Lagrange finite element of degree 0 on a tetrahedron, Discontinuous Lagrange finite element of degree 0 on a tetrahedron]") == 0)
+  if (strcmp(signature, "MixedElement([FiniteElement('Discontinuous Lagrange', 'tetrahedron', 0), FiniteElement('Discontinuous Lagrange', 'tetrahedron', 0), FiniteElement('Discontinuous Lagrange', 'tetrahedron', 0)])") == 0)
     return new ffc_L2proj_21BilinearForm;
-  if (strcmp(signature, "Mixed finite element: [Discontinuous Lagrange finite element of degree 1 on a tetrahedron, Discontinuous Lagrange finite element of degree 1 on a tetrahedron, Discontinuous Lagrange finite element of degree 1 on a tetrahedron]") == 0)
+  if (strcmp(signature, "MixedElement([FiniteElement('Discontinuous Lagrange', 'tetrahedron', 1), FiniteElement('Discontinuous Lagrange', 'tetrahedron', 1), FiniteElement('Discontinuous Lagrange', 'tetrahedron', 1)])") == 0)
     return new ffc_L2proj_22BilinearForm;
-  if (strcmp(signature, "Mixed finite element: [Discontinuous Lagrange finite element of degree 2 on a tetrahedron, Discontinuous Lagrange finite element of degree 2 on a tetrahedron, Discontinuous Lagrange finite element of degree 2 on a tetrahedron]") == 0)
+  if (strcmp(signature, "MixedElement([FiniteElement('Discontinuous Lagrange', 'tetrahedron', 2), FiniteElement('Discontinuous Lagrange', 'tetrahedron', 2), FiniteElement('Discontinuous Lagrange', 'tetrahedron', 2)])") == 0)
     return new ffc_L2proj_23BilinearForm;
-  if (strcmp(signature, "Brezzi-Douglas-Marini finite element of degree 1 on a triangle") == 0)
+  if (strcmp(signature, "FiniteElement('Brezzi-Douglas-Marini', 'triangle', 1)") == 0)
     return new ffc_L2proj_24BilinearForm;
   return 0;
 }
 
 dolfin::Form* dolfin::ProjectionLibrary::create_projection_L(const char* signature, Function& f)
 {
-  if (strcmp(signature, "Lagrange finite element of degree 1 on a interval") == 0)
+  if (strcmp(signature, "FiniteElement('Lagrange', 'interval', 1)") == 0)
     return new ffc_L2proj_00LinearForm(f);
-  if (strcmp(signature, "Lagrange finite element of degree 2 on a interval") == 0)
+  if (strcmp(signature, "FiniteElement('Lagrange', 'interval', 2)") == 0)
     return new ffc_L2proj_01LinearForm(f);
-  if (strcmp(signature, "Lagrange finite element of degree 1 on a triangle") == 0)
+  if (strcmp(signature, "FiniteElement('Lagrange', 'triangle', 1)") == 0)
     return new ffc_L2proj_02LinearForm(f);
-  if (strcmp(signature, "Lagrange finite element of degree 2 on a triangle") == 0)
+  if (strcmp(signature, "FiniteElement('Lagrange', 'triangle', 2)") == 0)
     return new ffc_L2proj_03LinearForm(f);
-  if (strcmp(signature, "Lagrange finite element of degree 1 on a tetrahedron") == 0)
+  if (strcmp(signature, "FiniteElement('Lagrange', 'tetrahedron', 1)") == 0)
     return new ffc_L2proj_04LinearForm(f);
-  if (strcmp(signature, "Lagrange finite element of degree 2 on a tetrahedron") == 0)
+  if (strcmp(signature, "FiniteElement('Lagrange', 'tetrahedron', 2)") == 0)
     return new ffc_L2proj_05LinearForm(f);
-  if (strcmp(signature, "Discontinuous Lagrange finite element of degree 0 on a interval") == 0)
+  if (strcmp(signature, "FiniteElement('Discontinuous Lagrange', 'interval', 0)") == 0)
     return new ffc_L2proj_06LinearForm(f);
-  if (strcmp(signature, "Discontinuous Lagrange finite element of degree 1 on a interval") == 0)
+  if (strcmp(signature, "FiniteElement('Discontinuous Lagrange', 'interval', 1)") == 0)
     return new ffc_L2proj_07LinearForm(f);
-  if (strcmp(signature, "Discontinuous Lagrange finite element of degree 2 on a interval") == 0)
+  if (strcmp(signature, "FiniteElement('Discontinuous Lagrange', 'interval', 2)") == 0)
     return new ffc_L2proj_08LinearForm(f);
-  if (strcmp(signature, "Discontinuous Lagrange finite element of degree 0 on a triangle") == 0)
+  if (strcmp(signature, "FiniteElement('Discontinuous Lagrange', 'triangle', 0)") == 0)
     return new ffc_L2proj_09LinearForm(f);
-  if (strcmp(signature, "Discontinuous Lagrange finite element of degree 1 on a triangle") == 0)
+  if (strcmp(signature, "FiniteElement('Discontinuous Lagrange', 'triangle', 1)") == 0)
     return new ffc_L2proj_10LinearForm(f);
-  if (strcmp(signature, "Discontinuous Lagrange finite element of degree 2 on a triangle") == 0)
+  if (strcmp(signature, "FiniteElement('Discontinuous Lagrange', 'triangle', 2)") == 0)
     return new ffc_L2proj_11LinearForm(f);
-  if (strcmp(signature, "Discontinuous Lagrange finite element of degree 0 on a tetrahedron") == 0)
+  if (strcmp(signature, "FiniteElement('Discontinuous Lagrange', 'tetrahedron', 0)") == 0)
     return new ffc_L2proj_12LinearForm(f);
-  if (strcmp(signature, "Discontinuous Lagrange finite element of degree 1 on a tetrahedron") == 0)
+  if (strcmp(signature, "FiniteElement('Discontinuous Lagrange', 'tetrahedron', 1)") == 0)
     return new ffc_L2proj_13LinearForm(f);
-  if (strcmp(signature, "Discontinuous Lagrange finite element of degree 2 on a tetrahedron") == 0)
+  if (strcmp(signature, "FiniteElement('Discontinuous Lagrange', 'tetrahedron', 2)") == 0)
     return new ffc_L2proj_14LinearForm(f);
-  if (strcmp(signature, "Mixed finite element: [Lagrange finite element of degree 1 on a triangle, Lagrange finite element of degree 1 on a triangle]") == 0)
+  if (strcmp(signature, "MixedElement([FiniteElement('Lagrange', 'triangle', 1), FiniteElement('Lagrange', 'triangle', 1)])") == 0)
     return new ffc_L2proj_15LinearForm(f);
-  if (strcmp(signature, "Mixed finite element: [Lagrange finite element of degree 2 on a triangle, Lagrange finite element of degree 2 on a triangle]") == 0)
+  if (strcmp(signature, "MixedElement([FiniteElement('Lagrange', 'triangle', 2), FiniteElement('Lagrange', 'triangle', 2)])") == 0)
     return new ffc_L2proj_16LinearForm(f);
-  if (strcmp(signature, "Mixed finite element: [Lagrange finite element of degree 1 on a tetrahedron, Lagrange finite element of degree 1 on a tetrahedron, Lagrange finite element of degree 1 on a tetrahedron]") == 0)
+  if (strcmp(signature, "MixedElement([FiniteElement('Lagrange', 'tetrahedron', 1), FiniteElement('Lagrange', 'tetrahedron', 1), FiniteElement('Lagrange', 'tetrahedron', 1)])") == 0)
     return new ffc_L2proj_17LinearForm(f);
-  if (strcmp(signature, "Mixed finite element: [Lagrange finite element of degree 2 on a tetrahedron, Lagrange finite element of degree 2 on a tetrahedron, Lagrange finite element of degree 2 on a tetrahedron]") == 0)
+  if (strcmp(signature, "MixedElement([FiniteElement('Lagrange', 'tetrahedron', 2), FiniteElement('Lagrange', 'tetrahedron', 2), FiniteElement('Lagrange', 'tetrahedron', 2)])") == 0)
     return new ffc_L2proj_18LinearForm(f);
-  if (strcmp(signature, "Mixed finite element: [Discontinuous Lagrange finite element of degree 0 on a triangle, Discontinuous Lagrange finite element of degree 0 on a triangle]") == 0)
+  if (strcmp(signature, "MixedElement([FiniteElement('Discontinuous Lagrange', 'triangle', 0), FiniteElement('Discontinuous Lagrange', 'triangle', 0)])") == 0)
     return new ffc_L2proj_19LinearForm(f);
-  if (strcmp(signature, "Mixed finite element: [Discontinuous Lagrange finite element of degree 1 on a triangle, Discontinuous Lagrange finite element of degree 1 on a triangle]") == 0)
+  if (strcmp(signature, "MixedElement([FiniteElement('Discontinuous Lagrange', 'triangle', 1), FiniteElement('Discontinuous Lagrange', 'triangle', 1)])") == 0)
     return new ffc_L2proj_20LinearForm(f);
-  if (strcmp(signature, "Mixed finite element: [Discontinuous Lagrange finite element of degree 0 on a tetrahedron, Discontinuous Lagrange finite element of degree 0 on a tetrahedron, Discontinuous Lagrange finite element of degree 0 on a tetrahedron]") == 0)
+  if (strcmp(signature, "MixedElement([FiniteElement('Discontinuous Lagrange', 'tetrahedron', 0), FiniteElement('Discontinuous Lagrange', 'tetrahedron', 0), FiniteElement('Discontinuous Lagrange', 'tetrahedron', 0)])") == 0)
     return new ffc_L2proj_21LinearForm(f);
-  if (strcmp(signature, "Mixed finite element: [Discontinuous Lagrange finite element of degree 1 on a tetrahedron, Discontinuous Lagrange finite element of degree 1 on a tetrahedron, Discontinuous Lagrange finite element of degree 1 on a tetrahedron]") == 0)
+  if (strcmp(signature, "MixedElement([FiniteElement('Discontinuous Lagrange', 'tetrahedron', 1), FiniteElement('Discontinuous Lagrange', 'tetrahedron', 1), FiniteElement('Discontinuous Lagrange', 'tetrahedron', 1)])") == 0)
     return new ffc_L2proj_22LinearForm(f);
-  if (strcmp(signature, "Mixed finite element: [Discontinuous Lagrange finite element of degree 2 on a tetrahedron, Discontinuous Lagrange finite element of degree 2 on a tetrahedron, Discontinuous Lagrange finite element of degree 2 on a tetrahedron]") == 0)
+  if (strcmp(signature, "MixedElement([FiniteElement('Discontinuous Lagrange', 'tetrahedron', 2), FiniteElement('Discontinuous Lagrange', 'tetrahedron', 2), FiniteElement('Discontinuous Lagrange', 'tetrahedron', 2)])") == 0)
     return new ffc_L2proj_23LinearForm(f);
-  if (strcmp(signature, "Brezzi-Douglas-Marini finite element of degree 1 on a triangle") == 0)
+  if (strcmp(signature, "FiniteElement('Brezzi-Douglas-Marini', 'triangle', 1)") == 0)
     return new ffc_L2proj_24LinearForm(f);
   return 0;
 }

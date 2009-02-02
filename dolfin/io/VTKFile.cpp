@@ -1,17 +1,25 @@
-// Copyright (C) 2005-2007 Garth N. Wells.
+// Copyright (C) 2005-2008 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Anders Logg 2005-2006.
 // Modified by Kristian Oelgaard 2006.
+// Modified by Martin Alnes 2008.
 //
 // First added:  2005-07-05
-// Last changed: 2007-05-16
+// Last changed: 2008-12-22
+
+#include <cmath>
+#include <sstream>
+#include <fstream>
 
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/Vertex.h>
 #include <dolfin/mesh/Cell.h>
+#include <dolfin/fem/FiniteElement.h>
+#include <dolfin/fem/DofMap.h>
 #include <dolfin/function/Function.h>
+#include <dolfin/function/FunctionSpace.h>
 #include <dolfin/la/Vector.h>
 #include "VTKFile.h"
 
@@ -29,7 +37,7 @@ VTKFile::~VTKFile()
   // Do nothing
 }
 //----------------------------------------------------------------------------
-void VTKFile::operator<<(Mesh& mesh)
+void VTKFile::operator<<(const Mesh& mesh)
 {
   // Update vtu file name and clear file
   vtuNameUpdate(counter);
@@ -53,22 +61,22 @@ void VTKFile::operator<<(Mesh& mesh)
           mesh.name().c_str(), mesh.label().c_str(), filename.c_str());
 }
 //----------------------------------------------------------------------------
-void VTKFile::operator<<(MeshFunction<int>& meshfunction)
+void VTKFile::operator<<(const MeshFunction<int>& meshfunction)
 {
   MeshFunctionWrite(meshfunction);
 }
 //----------------------------------------------------------------------------
-void VTKFile::operator<<(MeshFunction<unsigned int>& meshfunction)
+void VTKFile::operator<<(const MeshFunction<unsigned int>& meshfunction)
 {
   MeshFunctionWrite(meshfunction);
 }
 //----------------------------------------------------------------------------
-void VTKFile::operator<<(MeshFunction<double>& meshfunction)
+void VTKFile::operator<<(const MeshFunction<double>& meshfunction)
 {
   MeshFunctionWrite(meshfunction);
 }
 //----------------------------------------------------------------------------
-void VTKFile::operator<<(Function& u)
+void VTKFile::operator<<(const Function& u)
 {
   // Update vtu file name and clear file
   vtuNameUpdate(counter);
@@ -76,7 +84,7 @@ void VTKFile::operator<<(Function& u)
   // Write pvd file
   pvdFileWrite(counter);
     
-  Mesh& mesh = u.mesh(); 
+  const Mesh& mesh = u.function_space().mesh(); 
 
   // Write headers
   VTKHeaderOpen(mesh);
@@ -98,10 +106,12 @@ void VTKFile::operator<<(Function& u)
 
 }
 //----------------------------------------------------------------------------
-void VTKFile::MeshWrite(Mesh& mesh) const
+void VTKFile::MeshWrite(const Mesh& mesh) const
 {
   // Open file
   FILE* fp = fopen(vtu_filename.c_str(), "a");
+  if (!fp)
+    error("Unable to open file %s", filename.c_str());
 
   // Write vertex positions
   fprintf(fp, "<Points>  \n");
@@ -156,56 +166,42 @@ void VTKFile::MeshWrite(Mesh& mesh) const
   fclose(fp);
 }
 //----------------------------------------------------------------------------
-void VTKFile::ResultsWrite(Function& u) const
+void VTKFile::ResultsWrite(const Function& u) const
 {
   // Type of data (point or cell). Point by default.
   std::string data_type = "point";
 
-  // Check that we have a Function that can be handled
-  if(u.type() == Function::empty || u.type() == Function::ufc)
-    error("Function type cannot be written in VTK format.");
- 
+  // For brevity
+  const FunctionSpace& V = u.function_space();
+  const Mesh& mesh(V.mesh());
+  const FiniteElement& element(V.element());
+  const DofMap& dofmap(V.dofmap());
+
   // Get rank of Function
-  const uint rank = u.rank();
-  if(rank > 1)
-    error("Only scalar and vectors functions can be saved in VTK format.");
+  const uint rank = element.value_rank();
+  if(rank > 2)
+    error("Only scalar, vector and tensor functions can be saved in VTK format.");
 
   // Get number of components
-  const uint dim = u.dim(0);
-  if ( dim > 3 )
-    warning("Cannot handle VTK file with number of components > 3. Writing first three components only");
+  uint dim = 1;
+  for (uint i = 0; i < rank; i++)
+    dim *= element.value_dimension(i);
 
-  // Test for DiscreteFunction finite element type by signature
-  if(u.type() == Function::discrete)
-  {
-    if(rank == 0)
-    {
-      // Test for P0 element
-      if(u.signature().substr(0, 49) == "Discontinuous Lagrange finite element of degree 0")
-        data_type = "cell";
-      // Test for non-Lagrane element
-      else if(u.signature().substr(0, 8) != "Lagrange")
-        error("Only Lagrange functions or order k > 0 can be written in VTK format. You may need to project your function."); 
-    }
-    else
-    {
-      // FIXME: Add test for other rank elements 
-    }
-  }
-
+  // Test for cell-based element type
+  uint cell_based_dim = 1;
+  for (uint i = 0; i < rank; i++)
+    cell_based_dim *= mesh.topology().dim();
+  if (dofmap.local_dimension() == cell_based_dim)
+    data_type = "cell";
+    
   // Open file
-  FILE *fp = fopen(vtu_filename.c_str(), "a");
-  
-  // Get mesh
-  Mesh& mesh = u.mesh();
+  std::ofstream fp(vtu_filename.c_str(), std::ios_base::app);
 
   // Write function data at mesh cells
-  if(data_type == "cell")
+  if (data_type == "cell")
   {
-    // Allocate memory for function values at vertices
-    uint size = mesh.numCells();
-    for (uint i = 0; i < u.rank(); i++)
-      size *= u.dim(i);
+    // Allocate memory for function values at cell centres
+    const uint size = mesh.numCells()*dim;
     double* values = new double[size];
 
     // Get function values on cells
@@ -214,80 +210,133 @@ void VTKFile::ResultsWrite(Function& u) const
     // Write headers
     if (rank == 0)
     {
-      fprintf(fp, "<CellData  Scalars=\"U\"> \n");
-      fprintf(fp, "<DataArray  type=\"Float64\"  Name=\"U\"  format=\"ascii\">	 \n");
+      fp << "<CellData  Scalars=\"U\"> " << std::endl;
+      fp << "<DataArray  type=\"Float64\"  Name=\"U\"  format=\"ascii\"> " << std::endl;
     }
-    else
+    else if (rank == 1)
     {
-      fprintf(fp, "<CellData  Vectors=\"U\"> \n");
-      fprintf(fp, "<DataArray  type=\"Float64\"  Name=\"U\"  NumberOfComponents=\"3\" format=\"ascii\">	 \n");	
+      if(!(dim == 2 || dim == 3))
+        error("don't know what to do with vector function with dim other than 2 or 3.");
+      fp << "<CellData  Vectors=\"U\"> " << std::endl;
+      fp << "<DataArray  type=\"Float64\"  Name=\"U\"  NumberOfComponents=\"3\" format=\"ascii\"> " << std::endl;
+    }
+    else if (rank == 2)
+    {
+      if(!(dim == 4 || dim == 9))
+        error("Don't know what to do with tensor function with dim other than 4 or 9.");
+      fp << "<CellData  Tensors=\"U\"> " << std::endl;
+      fp << "<DataArray  type=\"Float64\"  Name=\"U\"  NumberOfComponents=\"9\" format=\"ascii\">     " << std::endl;
     }
 
+    std::ostringstream ss;
+    ss << std::scientific;
     for (CellIterator cell(mesh); !cell.end(); ++cell)
-    {    
-      if ( rank == 0 ) 
-        fprintf(fp," %e ", values[ cell->index() ] );
-      else if ( u.dim(0) == 2 ) 
-        fprintf(fp," %e %e  0.0", values[ cell->index() ], 
-                                  values[ cell->index() + mesh.numCells() ] );
-      else  
-        fprintf(fp," %e %e  %e", values[ cell->index() ], 
-                                 values[ cell->index() +   mesh.numCells() ], 
-                                 values[ cell->index() + 2*mesh.numCells() ] );
-  
-      fprintf(fp,"\n");
-    }	 
-    fprintf(fp, "</DataArray> \n");
-    fprintf(fp, "</CellData> \n");
+    {
+      ss.str("");
+
+      if (rank == 1 && dim == 2)
+      {
+        // Append 0.0 to 2D vectors to make them 3D
+        for(uint i = 0; i < dim; i++)
+          ss << " " << values[cell->index() + i*mesh.numCells()];
+        ss << " " << 0.0;
+      }
+      else if (rank == 2 && dim == 4)
+      {
+        // Pad with 0.0 to 2D tensors to make them 3D
+        for(uint i = 0; i < 2; i++)
+        {
+          ss << " " << values[cell->index() + (2*i+0)*mesh.numCells()];
+          ss << " " << values[cell->index() + (2*i+1)*mesh.numCells()];
+          ss << " " << 0.0;
+        }
+        ss << " " << 0.0;
+        ss << " " << 0.0;
+        ss << " " << 0.0;
+      }
+      else
+      {
+        // Write all components
+        for (uint i = 0; i < dim; i++)
+          ss << " " << values[cell->index() + i*mesh.numCells()];
+      }
+      ss << std::endl;
+    
+      fp << ss.str();
+    } 
+    fp << "</DataArray> " << std::endl;
+    fp << "</CellData> " << std::endl;
 
     delete [] values;
   }
-  else if(data_type == "point") 
+  else if (data_type == "point") 
   {
     // Allocate memory for function values at vertices
-    uint size = mesh.numVertices();
-    for (uint i = 0; i < u.rank(); i++)
-      size *= u.dim(i);
+    uint size = mesh.numVertices()*dim;
     double* values = new double[size];
 
     // Get function values at vertices
     u.interpolate(values);
 
-    if ( rank == 0 )
+    if (rank == 0)
     {
-      fprintf(fp, "<PointData  Scalars=\"U\"> \n");
-      fprintf(fp, "<DataArray  type=\"Float64\"  Name=\"U\"  format=\"ascii\">	 \n");
+      fp << "<PointData  Scalars=\"U\"> " << std::endl;
+      fp << "<DataArray  type=\"Float64\"  Name=\"U\"  format=\"ascii\"> " << std::endl;
     }
-    else
+    else if (rank == 1)
     {
-      fprintf(fp, "<PointData  Vectors=\"U\"> \n");
-      fprintf(fp, "<DataArray  type=\"Float64\"  Name=\"U\"  NumberOfComponents=\"3\" format=\"ascii\">	 \n");	
+      fp << "<PointData  Vectors=\"U\"> " << std::endl;
+      fp << "<DataArray  type=\"Float64\"  Name=\"U\"  NumberOfComponents=\"3\" format=\"ascii\">  " << std::endl;
+    }
+    else if (rank == 2)
+    {
+      fp << "<PointData  Tensors=\"U\"> " << std::endl;
+      fp << "<DataArray  type=\"Float64\"  Name=\"U\"  NumberOfComponents=\"9\" format=\"ascii\">  " << std::endl;
     }
 
+    std::ostringstream ss;
+    ss << std::scientific;
     for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
-    {    
-      if ( rank == 0 ) 
-        fprintf(fp," %e ", values[ vertex->index() ] );
-      else if ( u.dim(0) == 2 ) 
-        fprintf(fp," %e %e  0.0", values[ vertex->index() ], 
-                                  values[ vertex->index() + mesh.numVertices() ] );
-      else  
-        fprintf(fp," %e %e  %e", values[ vertex->index() ], 
-                                 values[ vertex->index() +   mesh.numVertices() ], 
-                                 values[ vertex->index() + 2*mesh.numVertices() ] );
-
-      fprintf(fp,"\n");
-    }	 
-    fprintf(fp, "</DataArray> \n");
-    fprintf(fp, "</PointData> \n");
+    {
+      ss.str("");
+      
+      if(rank == 1 && dim == 2)
+      {
+        // Append 0.0 to 2D vectors to make them 3D
+        for(uint i = 0; i < dim; i++)
+          ss << " " << values[vertex->index() + i*mesh.numVertices()];
+        ss << " " << 0.0;
+      }
+      else if (rank == 2 && dim == 4)
+      {
+        // Pad with 0.0 to 2D tensors to make them 3D
+        for(uint i = 0; i < 2; i++)
+        {
+          ss << " " << values[vertex->index() + (2*i+0)*mesh.numVertices()];
+          ss << " " << values[vertex->index() + (2*i+1)*mesh.numVertices()];
+          ss << " " << 0.0;
+        }
+        ss << " " << 0.0;
+        ss << " " << 0.0;
+        ss << " " << 0.0;
+      }
+      else
+      {
+        // Write all components
+        for(uint i = 0; i < dim; i++)
+          ss << " " << values[vertex->index() + i*mesh.numVertices()];
+      }
+      ss << std::endl;
+      
+      fp << ss.str();
+    } 
+    fp << "</DataArray> " << std::endl;
+    fp << "</PointData> " << std::endl;
 
     delete [] values;
   }
   else
     error("Unknown VTK data type."); 
-  
-  // Close file
-  fclose(fp);
 }
 //----------------------------------------------------------------------------
 void VTKFile::pvdFileWrite(uint num)
@@ -327,16 +376,18 @@ void VTKFile::pvdFileWrite(uint num)
 
 }
 //----------------------------------------------------------------------------
-void VTKFile::VTKHeaderOpen(Mesh& mesh) const
+void VTKFile::VTKHeaderOpen(const Mesh& mesh) const
 {
   // Open file
   FILE *fp = fopen(vtu_filename.c_str(), "a");
+  if (!fp)
+    error("Unable to open file %s", filename.c_str());
   
   // Write headers
   fprintf(fp, "<VTKFile type=\"UnstructuredGrid\"  version=\"0.1\"   >\n");
   fprintf(fp, "<UnstructuredGrid>  \n");
   fprintf(fp, "<Piece  NumberOfPoints=\" %8u\"  NumberOfCells=\" %8u\">  \n",
-	  mesh.numVertices(), mesh.numCells());
+  mesh.numVertices(), mesh.numCells());
   
   // Close file
   fclose(fp);
@@ -346,9 +397,11 @@ void VTKFile::VTKHeaderClose() const
 {
   // Open file
   FILE *fp = fopen(vtu_filename.c_str(), "a");
+  if (!fp)
+    error("Unable to open file %s", filename.c_str());
   
   // Close headers
-  fprintf(fp, "</Piece> \n </UnstructuredGrid> \n </VTKFile>"); 	
+  fprintf(fp, "</Piece> \n </UnstructuredGrid> \n </VTKFile>"); 
   
   // Close file
   fclose(fp);
@@ -372,6 +425,8 @@ void VTKFile::vtuNameUpdate(const int counter)
   
   // Make sure file is empty
   FILE* fp = fopen(vtu_filename.c_str(), "w");
+  if (!fp)
+    error("Unable to open file %s", filename.c_str());
   fclose(fp);
 }
 //----------------------------------------------------------------------------
@@ -384,10 +439,10 @@ void VTKFile::MeshFunctionWrite(T& meshfunction)
   // Write pvd file
   pvdFileWrite(counter);
 
-  Mesh& mesh = meshfunction.mesh(); 
+  const Mesh& mesh = meshfunction.mesh(); 
 
   if( meshfunction.dim() != mesh.topology().dim() )
-    error("VTK output of mesh functions is implemenetd for cell-based functions only.");    
+    error("VTK output of mesh functions is implemented for cell-based functions only.");    
 
   // Write headers
   VTKHeaderOpen(mesh);

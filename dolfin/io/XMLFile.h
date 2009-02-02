@@ -1,10 +1,10 @@
-// Copyright (C) 2003-2006 Anders Logg.
+// Copyright (C) 2003-2009 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Magnus Vikstrom 2007.
 //
 // First added:  2003-07-15
-// Last changed: 2007-03-21
+// Last changed: 2009-01-14
 
 #ifndef __XML_FILE_H
 #define __XML_FILE_H
@@ -24,6 +24,7 @@ namespace dolfin
   template <class T> class MeshFunction;
   class ParameterList;
   class BLASFormData;
+  class LocalMeshData;
 
   class XMLObject;
   
@@ -31,7 +32,7 @@ namespace dolfin
   {
   public:
     
-    XMLFile(const std::string filename);
+    XMLFile(const std::string filename, bool gzip);
     ~XMLFile();
     
     // Input
@@ -39,11 +40,12 @@ namespace dolfin
     void operator>> (GenericVector& x);
     void operator>> (GenericMatrix& A);
     void operator>> (Mesh& mesh);
+    void operator>> (LocalMeshData& meshdata);
     void operator>> (MeshFunction<int>& meshfunction);
     void operator>> (MeshFunction<unsigned int>& meshfunction);
     void operator>> (MeshFunction<double>& meshfunction);
     void operator>> (MeshFunction<bool>& meshfunction);
-    void operator>> (Function& f);
+    void operator>> (Function& v);
     void operator>> (ParameterList& parameters);
     void operator>> (BLASFormData& blas);
     void operator>> (Graph& graph);
@@ -51,21 +53,19 @@ namespace dolfin
     void parse(Function& f, FiniteElement& element);
     
     // Output
-    
-    void operator<< (GenericVector& x);
-    void operator<< (GenericMatrix& A);
-    void operator<< (Mesh& mesh);
-    void operator<< (Graph& graph);
-// Todo:
-    void operator<< (MeshFunction<int>& mesh);
-    void operator<< (MeshFunction<unsigned int>& mesh);
-    void operator<< (MeshFunction<double>& mesh);
-    void operator<< (MeshFunction<bool>& mesh);
-    void operator<< (Function& f);
-    void operator<< (ParameterList& parameters);
+
+    void operator<< (const GenericVector& x);
+    void operator<< (const GenericMatrix& A);
+    void operator<< (const Mesh& mesh);
+    void operator<< (const Graph& graph);
+    void operator<< (const MeshFunction<int>& mesh);
+    void operator<< (const MeshFunction<unsigned int>& mesh);
+    void operator<< (const MeshFunction<double>& mesh);
+    void operator<< (const MeshFunction<bool>& mesh);
+    void operator<< (const Function& v);
+    void operator<< (const ParameterList& parameters);
     
     // Friends
-    
     friend void sax_start_element (void *ctx, const xmlChar *name, const xmlChar **attrs);
     friend void sax_end_element   (void *ctx, const xmlChar *name);
     
@@ -85,6 +85,9 @@ namespace dolfin
 
     // Most recent position in file
     long mark;
+
+    // True if file is/should be gzipped
+    bool gzip;
 
   };
   

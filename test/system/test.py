@@ -32,9 +32,6 @@ print "Found %d Python demos" % len(pydemos)
 print ""
 
 # Remove demos that are known not to work (FIXME's)
-pydemos.remove('./../../demo/nls/nonlinearpoisson/python')
-pydemos.remove('./../../demo/pde/nonlinear-poisson/python')
-pydemos.remove('./../../demo/pde/lift-drag/python')
 pydemos.remove('./../../demo/ode/aliev-panfilov/python')
 pydemos.remove('./../../demo/ode/lorenz/python')
 
@@ -49,16 +46,13 @@ for s in cppslow:
     cppdemos.append(s)
 
 # Remove overly slow demos
-cppdemos.remove('./../../demo/nls/cahn-hilliard/cpp')
+cppdemos.remove('./../../demo/pde/cahn-hilliard/cpp')
 
 # Demos that need command line arguments are treated separately
 pydemos.remove('./../../demo/quadrature/python')
 cppdemos.remove('./../../demo/quadrature/cpp')
 cppdemos.remove('./../../demo/ode/method-weights/cpp')
 cppdemos.remove('./../../demo/ode/stiff/cpp')
-
-# Remove currently broken demos
-cppdemos.remove('./../../demo/fem/assembly/cpp')
 
 failed = []
 timing = []
@@ -119,7 +113,7 @@ if False:
 # Print output for failed tests
 print ""
 if len(failed) > 0:
-    print "%d demo(s) failed, see demo.log for details." % len(failed)
+    print "%d demo(s) out of %d failed, see demo.log for details." % (len(failed), len(cppdemos))
     file = open("demo.log", "w")
     for (test, interface, output) in failed:
         file.write("----------------------------------------------------------------------\n")

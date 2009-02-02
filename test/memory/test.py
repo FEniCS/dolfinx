@@ -7,9 +7,15 @@ __license__  = "GNU LGPL Version 2.1"
 
 # Modified by Anders Logg 2008
 # Modified by Dag Lindbo 2008
+# Modified by Johannes Ring 2008
 
 import sys, os, re
+import platform
 from commands import getstatusoutput
+
+if platform.system() in ['Darwin', 'Windows']:
+    print "No support for Valgrind on this platform."
+    sys.exit(0)
 
 # Demos to run
 cppdemos = []
@@ -37,7 +43,7 @@ cppdemos.remove('./../../demo/ode/method-weights/cpp')
 cppdemos.remove('./../../demo/ode/stiff/cpp')
 
 # Demos that are too time consuming to Valgrind
-cppdemos.remove('./../../demo/nls/cahn-hilliard/cpp')
+cppdemos.remove('./../../demo/pde/cahn-hilliard/cpp')
 
 failed = []
 

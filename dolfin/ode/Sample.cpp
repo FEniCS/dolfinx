@@ -34,17 +34,17 @@ real Sample::t() const
   return time;
 }
 //-----------------------------------------------------------------------------
-real Sample::u(unsigned int index)
+real Sample::u(unsigned int index) const
 {
   return timeslab.usample(index, time);
 }
 //-----------------------------------------------------------------------------
-real Sample::k(unsigned int index)
+real Sample::k(unsigned int index) const
 {
   return timeslab.ksample(index, time);
 }
 //-----------------------------------------------------------------------------
-real Sample::r(unsigned int index)
+real Sample::r(unsigned int index) const
 {
   return timeslab.rsample(index, time);
 }

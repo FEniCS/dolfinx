@@ -33,6 +33,8 @@ int main()
   esolver.set("eigenvalue spectrum", "smallest magnitude");
   esolver.solve(AA, n);
 
+  cout << "Solver converted in " << esolver.getIterationNumber() << " iterations" << endl;
+
   // Display eigenvalues
   for (unsigned int i = 0; i < n; i++)
   {
@@ -48,5 +50,4 @@ int main()
   #endif
 
   return 0;
-
 }

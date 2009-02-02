@@ -1,20 +1,21 @@
-// Copyright (C) 2007 Anders Logg.
+// Copyright (C) 2007-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-04-27
-// Last changed: 2007-04-29
+// Last changed: 2008-11-03
 
 #ifndef __SUB_FUNCTION_H
 #define __SUB_FUNCTION_H
 
+#include <vector>
 #include <dolfin/common/types.h>
 
 namespace dolfin
 {
 
-  class DiscreteFunction;
+  class Function;
 
-  /// This class represents a sub function (view) of a (discrete function).
+  /// This class represents a sub function (view) of a function.
   /// It's purpose is to enable expressions like
   ///
   ///    Function w;
@@ -22,32 +23,32 @@ namespace dolfin
   ///    Function p = w[1];
   ///
   /// without needing to create and destroy temporaries. No data is created
-  /// until a Function is assigned to a SubFunction, at which point the data
-  /// needed to represent the sub function is created.
+  /// until a SubFunction is assigned to a Function, at which point the data
+  /// is copied.
 
   class SubFunction
   {
   public:
 
-    /// Create empty sub function
-    SubFunction() : f(0), i(0) {}
-
-    /// Create sub function
-    SubFunction(DiscreteFunction* f, uint i) : f(f), i(i) {}
+    /// Create sub function for given component
+    SubFunction(const Function& v, uint i) : v(v)
+    {
+      component.push_back(i);
+    }
 
     /// Destructor
     ~SubFunction() {}
 
     /// Friends
-    friend class DiscreteFunction;
+    friend class Function;
 
   private:
 
-    // Pointer to discrete function
-    DiscreteFunction* f;
+    // The function
+    const Function& v;
 
-    // Sub function index
-    uint i;
+    // The component
+    std::vector<uint> component;
 
   };
 

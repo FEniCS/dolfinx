@@ -39,7 +39,7 @@ PythonFile::~PythonFile()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void PythonFile::operator<<(Sample& sample)
+void PythonFile::operator<<(const Sample& sample)
 {
   FILE* fp_t = 0;
   FILE* fp_u = 0;
@@ -48,23 +48,41 @@ void PythonFile::operator<<(Sample& sample)
 
   // Open file
   FILE *fp = fopen(filename.c_str(), "a");
+  if (!fp)
+    error("Unable to open file %s", filename.c_str());
 
   // Open sub-files
   if ( counter2 == 0 )
   {
     // Open files (first time)
     fp_t = fopen(filename_t.c_str(), "w");
+    if (!fp_t)
+      error("Unable to open file %s", filename_t.c_str());
     fp_u = fopen(filename_u.c_str(), "w");
+    if (!fp_u)
+      error("Unable to open file %s", filename_u.c_str());
     fp_k = fopen(filename_k.c_str(), "w");
+    if (!fp_k)
+      error("Unable to open file %s", filename_k.c_str());
     fp_r = fopen(filename_r.c_str(), "w");
+    if (!fp_r)
+      error("Unable to open file %s", filename_r.c_str());
   }
   else
   {
     // Open files
     fp_t = fopen(filename_t.c_str(), "a");
+    if (!fp_t)
+      error("Unable to open file %s", filename_t.c_str());
     fp_u = fopen(filename_u.c_str(), "a");
+    if (!fp_u)
+      error("Unable to open file %s", filename_u.c_str());
     fp_k = fopen(filename_k.c_str(), "a");
+    if (!fp_k)
+      error("Unable to open file %s", filename_k.c_str());
     fp_r = fopen(filename_r.c_str(), "a");
+    if (!fp_r)
+      error("Unable to open file %s", filename_r.c_str());
   }
 
   // Python wrapper file

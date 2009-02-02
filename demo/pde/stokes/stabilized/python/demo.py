@@ -8,68 +8,34 @@
 #
 
 __author__ = "Kristian B. Oelgaard (k.b.oelgaard@tudelft.nl)"
-__date__ = "2007-11-15 -- 2007-12-03"
+__date__ = "2007-11-15 -- 2008-12-13"
 __copyright__ = "Copyright (C) 2007 Kristian B. Oelgaard"
 __license__  = "GNU LGPL Version 2.1"
 
 from dolfin import *
 
-# Load mesh and create finite elements
+# Load mesh and subdomains
 mesh = Mesh("../../../../../data/meshes/dolfin-2.xml.gz")
-scalar = FiniteElement("Lagrange", "triangle", 1)
-vector = VectorElement("Lagrange", "triangle", 1)
-system = vector + scalar
-
-# Load subdomains
 sub_domains = MeshFunction("uint", mesh, "../subdomains.xml.gz");
 
-# Function for no-slip boundary condition for velocity
-class Noslip(Function):
-    def __init__(self, mesh):
-        Function.__init__(self, mesh)
-
-    def eval(self, values, x):
-        values[0] = 0.0
-        values[1] = 0.0
-
-    def rank(self):
-        return 1
-
-    def dim(self, i):
-        return 2
-
-# Function for inflow boundary condition for velocity
-class Inflow(Function):
-    def __init__(self, mesh):
-        Function.__init__(self, mesh)
-
-    def eval(self, values, x):
-        values[0] = -sin(x[1]*DOLFIN_PI)
-        values[1] = 0.0
-
-    def rank(self):
-        return 1
-
-    def dim(self, i):
-        return 2
+# Define function spaces
+scalar = FunctionSpace(mesh, "CG", 1)
+vector = VectorFunctionSpace(mesh, "CG", 1)
+system = vector + scalar
 
 # Create functions for boundary conditions
-noslip = Noslip(mesh)
-inflow = Inflow(mesh)
-zero = Function(mesh, 0.0)
-
-# Define sub systems for boundary conditions
-velocity = SubSystem(0)
-pressure = SubSystem(1)
+noslip = Constant(mesh, (0, 0))
+inflow = Function(vector, ("-sin(x[1]*pi)", "0"))
+zero   = Constant(mesh, 0.0)
 
 # No-slip boundary condition for velocity
-bc0 = DirichletBC(noslip, sub_domains, 0, velocity)
+bc0 = DirichletBC(system.sub(0), noslip, sub_domains, 0)
 
 # Inflow boundary condition for velocity
-bc1 = DirichletBC(inflow, sub_domains, 1, velocity)
+bc1 = DirichletBC(system.sub(0), inflow, sub_domains, 1)
 
 # Boundary condition for pressure at outflow
-bc2 = DirichletBC(zero, sub_domains, 2, pressure)
+bc2 = DirichletBC(system.sub(1), zero, sub_domains, 2)
 
 # Collect boundary conditions
 bcs = [bc0, bc1, bc2]
@@ -79,8 +45,8 @@ bcs = [bc0, bc1, bc2]
 (v, q) = TestFunctions(system)
 (u, p) = TrialFunctions(system)
 
-f = Function(vector, mesh, 2, 0.0)
-h = MeshSize("triangle", mesh)
+f = Constant(mesh, (0, 0))
+h = MeshSize(mesh)
 
 beta  = 0.2
 delta = beta*h*h
@@ -89,10 +55,10 @@ a = (dot(grad(v), grad(u)) - div(v)*p + q*div(u) + delta*dot(grad(q), grad(p)))*
 L = dot(v + mult(delta, grad(q)), f)*dx
 
 # Set up PDE
-pde = LinearPDE(a, L, mesh, bcs)
+problem = VariationalProblem(a, L, bcs)
 
 # Solve PDE
-(U, P) = pde.solve().split()
+(U, P) = problem.solve().split()
 
 # Save solution
 ufile = File("velocity.xml")

@@ -1,8 +1,8 @@
-// Copyright (C) 2006 Anders Logg.
+// Copyright (C) 2006-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-05-11
-// Last changed: 2006-10-23
+// Last changed: 2008-10-23
 
 #ifndef __MESH_ENTITY_H
 #define __MESH_ENTITY_H
@@ -22,13 +22,10 @@ namespace dolfin
   public:
 
     /// Constructor
-    MeshEntity(Mesh& mesh, uint dim, uint index) : _mesh(mesh), _dim(dim), _index(index) {}
+    MeshEntity(const Mesh& mesh, uint dim, uint index) : _mesh(mesh), _dim(dim), _index(index) {}
 
     /// Destructor
     ~MeshEntity() {}
-
-    /// Return mesh associated with mesh entity
-    inline Mesh& mesh() { return _mesh; }
 
     /// Return mesh associated with mesh entity
     inline const Mesh& mesh() const { return _mesh; }
@@ -41,9 +38,6 @@ namespace dolfin
 
     /// Return number of incident mesh entities of given topological dimension
     inline uint numEntities(uint dim) const { return _mesh.topology()(_dim, dim).size(_index); }
-
-    /// Return array of indices for incident mesh entitites of given topological dimension
-    inline uint* entities(uint dim) { return _mesh.topology()(_dim, dim)(_index); }
 
     /// Return array of indices for incident mesh entitites of given topological dimension
     inline const uint* entities(uint dim) const { return _mesh.topology()(_dim, dim)(_index); }
@@ -63,7 +57,7 @@ namespace dolfin
     friend class MeshEntityIterator;
 
     // The mesh
-    Mesh& _mesh;
+    const Mesh& _mesh;
 
     // Topological dimension
     uint _dim;

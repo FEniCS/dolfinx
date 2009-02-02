@@ -1,7 +1,7 @@
 "Generate finite elements for DOLFIN library of precompiled elements"
 
 __author__ = "Anders Logg (logg@simula.no)"
-__date__ = "2007-04-12 -- 2008-04-13"
+__date__ = "2007-04-12 -- 2008-10-23"
 __copyright__ = "Copyright (C) 2007-2008 Anders Logg"
 __license__  = "GNU LGPL Version 2.1"
 
@@ -18,10 +18,8 @@ for i in range(len(elements)):
     
     # Don't generate all functions
     OPTIONS = FFC_OPTIONS.copy()
-    print OPTIONS
     OPTIONS["no-evaluate_basis"] = False
     OPTIONS["no-evaluate_basis_derivatives"] = False
-    OPTIONS["Ola"] = "Stupid"
 
     # Generate code
     print "Compiling element %d out of %d..." % (i, len(elements))

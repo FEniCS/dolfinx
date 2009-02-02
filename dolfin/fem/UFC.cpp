@@ -2,87 +2,95 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-01-17
-// Last changed: 2008-06-10
+// Last changed: 2008-11-06
 
 #include <dolfin/common/types.h>
-#include "DofMapSet.h"
+#include <dolfin/function/FunctionSpace.h>
 #include "DofMap.h"
 #include "FiniteElement.h"
+#include "Form.h"
 #include "UFC.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-UFC::UFC(const ufc::form& form, Mesh& mesh, const DofMapSet& dof_map_set) : form(form)
+UFC::UFC(const Form& form): form(form.ufc_form())
 {
   // Create finite elements
-  finite_elements = new FiniteElement*[form.rank()];
-  for (uint i = 0; i < form.rank(); i++)
-    finite_elements[i] = new FiniteElement(form.create_finite_element(i));
-
+  finite_elements = new FiniteElement*[this->form.rank()];
+  for (uint i = 0; i < this->form.rank(); i++)
+  {
+    boost::shared_ptr<ufc::finite_element> element(this->form.create_finite_element(i)); 
+    finite_elements[i] = new FiniteElement(element);
+  }
   // Create finite elements for coefficients
-  coefficient_elements = new FiniteElement*[form.num_coefficients()];
-  for (uint i = 0; i < form.num_coefficients(); i++)
-    coefficient_elements[i] = new FiniteElement(form.create_finite_element(form.rank() + i));
-
+  coefficient_elements = new FiniteElement*[this->form.num_coefficients()];
+  for (uint i = 0; i < this->form.num_coefficients(); i++)
+  {
+    boost::shared_ptr<ufc::finite_element> element(this->form.create_finite_element(this->form.rank() + i)); 
+    coefficient_elements[i] = new FiniteElement(element);
+  }
   // Create cell integrals
-  cell_integrals = new ufc::cell_integral*[form.num_cell_integrals()];
-  for (uint i = 0; i < form.num_cell_integrals(); i++)
-    cell_integrals[i] = form.create_cell_integral(i);
+  cell_integrals = new ufc::cell_integral*[this->form.num_cell_integrals()];
+  for (uint i = 0; i < this->form.num_cell_integrals(); i++)
+    cell_integrals[i] = this->form.create_cell_integral(i);
 
   // Create exterior facet integrals
-  exterior_facet_integrals = new ufc::exterior_facet_integral*[form.num_exterior_facet_integrals()];
-  for (uint i = 0; i < form.num_exterior_facet_integrals(); i++)
-    exterior_facet_integrals[i] = form.create_exterior_facet_integral(i);
+  exterior_facet_integrals = new ufc::exterior_facet_integral*[this->form.num_exterior_facet_integrals()];
+  for (uint i = 0; i < this->form.num_exterior_facet_integrals(); i++)
+    exterior_facet_integrals[i] = this->form.create_exterior_facet_integral(i);
 
   // Create interior facet integrals
-  interior_facet_integrals = new ufc::interior_facet_integral*[form.num_interior_facet_integrals()];
-  for (uint i = 0; i < form.num_interior_facet_integrals(); i++)
-    interior_facet_integrals[i] = form.create_interior_facet_integral(i);
+  interior_facet_integrals = new ufc::interior_facet_integral*[this->form.num_interior_facet_integrals()];
+  for (uint i = 0; i < this->form.num_interior_facet_integrals(); i++)
+    interior_facet_integrals[i] = this->form.create_interior_facet_integral(i);
 
   // Initialize mesh
-  this->mesh.init(mesh);
+  this->mesh.init(form.mesh());
 
   // Initialize cells with first cell in mesh
-  CellIterator cell(mesh);
+  CellIterator cell(form.mesh());
   this->cell.init(*cell);
   this->cell0.init(*cell);
   this->cell1.init(*cell);
 
+  // Get function spaces for arguments
+  std::vector<const FunctionSpace*> V = form.function_spaces();
+
   // Initialize local tensor
   uint num_entries = 1;
-  for (uint i = 0; i < form.rank(); i++)
-    num_entries *= dof_map_set[i].local_dimension();
+  for (uint i = 0; i < this->form.rank(); i++)
+    num_entries *= V[i]->dofmap().local_dimension();
   A = new double[num_entries];
   for (uint i = 0; i < num_entries; i++)
     A[i] = 0.0;
 
   // Initialize local tensor for macro element
   num_entries = 1;
-  for (uint i = 0; i < form.rank(); i++)
-    num_entries *= 2*dof_map_set[i].local_dimension();
+  for (uint i = 0; i < this->form.rank(); i++)
+    num_entries *= 2*V[i]->dofmap().local_dimension();
   macro_A = new double[num_entries];
   for (uint i = 0; i < num_entries; i++)
     macro_A[i] = 0.0;  
 
   // Initialize local dimensions
-  local_dimensions = new uint[form.rank()];
-  for (uint i = 0; i < form.rank(); i++)
-    local_dimensions[i] = dof_map_set[i].local_dimension();
+  local_dimensions = new uint[this->form.rank()];
+  for (uint i = 0; i < this->form.rank(); i++)
+    local_dimensions[i] = V[i]->dofmap().local_dimension();
 
   // Initialize local dimensions for macro element
-  macro_local_dimensions = new uint[form.rank()];
-  for (uint i = 0; i < form.rank(); i++)
-    macro_local_dimensions[i] = 2*dof_map_set[i].local_dimension();
+  macro_local_dimensions = new uint[this->form.rank()];
+  for (uint i = 0; i < this->form.rank(); i++)
+    macro_local_dimensions[i] = 2*V[i]->dofmap().local_dimension();
 
   // Initialize global dimensions
-  global_dimensions = new uint[form.rank()];
-  for (uint i = 0; i < form.rank(); i++)
-    global_dimensions[i] = dof_map_set[i].global_dimension();
+  global_dimensions = new uint[this->form.rank()];
+  for (uint i = 0; i < this->form.rank(); i++)
+    global_dimensions[i] = V[i]->dofmap().global_dimension();
 
   // Initialize dofs
-  dofs = new uint*[form.rank()];
-  for (uint i = 0; i < form.rank(); i++)
+  dofs = new uint*[this->form.rank()];
+  for (uint i = 0; i < this->form.rank(); i++)
   {
     dofs[i] = new uint[local_dimensions[i]];
     for (uint j = 0; j < local_dimensions[i]; j++)
@@ -90,8 +98,8 @@ UFC::UFC(const ufc::form& form, Mesh& mesh, const DofMapSet& dof_map_set) : form
   }
 
   // Initialize dofs on macro element
-  macro_dofs = new uint*[form.rank()];
-  for (uint i = 0; i < form.rank(); i++)
+  macro_dofs = new uint*[this->form.rank()];
+  for (uint i = 0; i < this->form.rank(); i++)
   {
     macro_dofs[i] = new uint[macro_local_dimensions[i]];
     for (uint j = 0; j < macro_local_dimensions[i]; j++)
@@ -99,8 +107,8 @@ UFC::UFC(const ufc::form& form, Mesh& mesh, const DofMapSet& dof_map_set) : form
   }
 
   // Initialize coefficients
-  w = new double*[form.num_coefficients()];
-  for (uint i = 0; i < form.num_coefficients(); i++)
+  w = new double*[this->form.num_coefficients()];
+  for (uint i = 0; i < this->form.num_coefficients(); i++)
   {
     const uint n = coefficient_elements[i]->space_dimension();
     w[i] = new double[n];
@@ -109,8 +117,8 @@ UFC::UFC(const ufc::form& form, Mesh& mesh, const DofMapSet& dof_map_set) : form
   }
 
   // Initialize coefficients on macro element
-  macro_w = new double*[form.num_coefficients()];
-  for (uint i = 0; i < form.num_coefficients(); i++)
+  macro_w = new double*[this->form.num_coefficients()];
+  for (uint i = 0; i < this->form.num_coefficients(); i++)
   {
     const uint n = 2*coefficient_elements[i]->space_dimension();
     macro_w[i] = new double[n];
@@ -122,27 +130,27 @@ UFC::UFC(const ufc::form& form, Mesh& mesh, const DofMapSet& dof_map_set) : form
 UFC::~UFC()
 {
   // Delete finite elements
-  for (uint i = 0; i < form.rank(); i++)
+  for (uint i = 0; i < this->form.rank(); i++)
     delete finite_elements[i];
   delete [] finite_elements;
 
   // Delete coefficient finite elements
-  for (uint i = 0; i < form.num_coefficients(); i++)
+  for (uint i = 0; i < this->form.num_coefficients(); i++)
     delete coefficient_elements[i];
   delete [] coefficient_elements;
 
   // Delete cell integrals
-  for (uint i = 0; i < form.num_cell_integrals(); i++)
+  for (uint i = 0; i < this->form.num_cell_integrals(); i++)
     delete cell_integrals[i];
   delete [] cell_integrals;
 
   // Delete exterior facet integrals
-  for (uint i = 0; i < form.num_exterior_facet_integrals(); i++)
+  for (uint i = 0; i < this->form.num_exterior_facet_integrals(); i++)
     delete exterior_facet_integrals[i];
   delete [] exterior_facet_integrals;
 
   // Delete interior facet integrals
-  for (uint i = 0; i < form.num_interior_facet_integrals(); i++)
+  for (uint i = 0; i < this->form.num_interior_facet_integrals(); i++)
     delete interior_facet_integrals[i];
   delete [] interior_facet_integrals;
 
@@ -162,27 +170,27 @@ UFC::~UFC()
   delete [] macro_local_dimensions;
 
   // Delete dofs
-  for (uint i = 0; i < form.rank(); i++)
+  for (uint i = 0; i < this->form.rank(); i++)
     delete [] dofs[i];
   delete [] dofs;
 
   // Delete macro dofs
-  for (uint i = 0; i < form.rank(); i++)
+  for (uint i = 0; i < this->form.rank(); i++)
     delete [] macro_dofs[i];
   delete [] macro_dofs;
 
   // Delete coefficients
-  for (uint i = 0; i < form.num_coefficients(); i++)
+  for (uint i = 0; i < this->form.num_coefficients(); i++)
     delete [] w[i];
   delete [] w;
 
   // Delete macro coefficients
-  for (uint i = 0; i < form.num_coefficients(); i++)
+  for (uint i = 0; i < this->form.num_coefficients(); i++)
     delete [] macro_w[i];
   delete [] macro_w;
 }
 //-----------------------------------------------------------------------------
-void UFC::update(Cell& cell)
+void UFC::update(const Cell& cell)
 {
   // Update UFC cell
   this->cell.update(cell);
@@ -190,7 +198,7 @@ void UFC::update(Cell& cell)
   // FIXME: Update coefficients
 }
 //-----------------------------------------------------------------------------
-void UFC::update(Cell& cell0, Cell& cell1)
+void UFC::update(const Cell& cell0, const Cell& cell1)
 {
   // Update UFC cells
   this->cell0.update(cell0);

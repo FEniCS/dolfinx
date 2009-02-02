@@ -1,10 +1,10 @@
-// Copyright (C) 2006-2007 Anders Logg and Kristian Oelgaard.
+// Copyright (C) 2006-2008 Anders Logg and Kristian Oelgaard.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-12-05
-// Last changed: 2007-08-20
+// Last changed: 2008-12-18
 //
-// This demo program solves Poisson's equation
+// This demo program solves Poisson's equation,
 //
 //     - div grad u(x, y) = f(x, y)
 //
@@ -30,49 +30,46 @@ int main()
   // Source term
   class Source : public Function
   {
-  public:
-    
-    Source(Mesh& mesh) : Function(mesh) {}
-
-    double eval(const double* x) const
+    void eval(double* values, const double* x) const
     {
       double dx = x[0] - 0.5;
       double dy = x[1] - 0.5;
-      return 500.0*exp(-(dx*dx + dy*dy)/0.02);
+      values[0] = 500.0*exp(-(dx*dx + dy*dy)/0.02);
     }
-
   };
  
   // Create mesh
-  UnitSquare mesh(64, 64);
+  UnitSquare mesh(24, 24);
+
+  dolfin_set("linear algebra backend", "uBLAS");
 
   // Create functions
-  Source f(mesh);
-  FacetNormal n(mesh);
-  AvgMeshSize h(mesh);
+  Source f;
+  FacetNormal n;
+  AvgMeshSize h;
 
-  // Define PDE
-  PoissonBilinearForm a(n, h);
-  PoissonLinearForm L(f);
-  LinearPDE pde(a, L, mesh);
+  // Create funtion space
+  PoissonFunctionSpace V(mesh);
+
+  // Define forms and attach functions
+  PoissonBilinearForm a(V, V);
+  PoissonLinearForm L(V);
+  a.n = n; a.h = h; L.f = f;
+
+  // Create PDE
+  VariationalProblem pde(a, L);
+  pde.set("symmetric", true);
 
   // Solve PDE
   Function u;
   pde.solve(u);
 
-  // Project solution onto continuous basis for post-processing
-  Function u_proj;
-  P1ProjectionBilinearForm a_proj;
-  P1ProjectionLinearForm L_proj(u);
-  LinearPDE pde_proj(a_proj, L_proj, mesh);
-  pde_proj.solve(u_proj);
+  // Plot solution projected
+  plot(u);
 
-  // Plot solution
-  plot(u_proj);
-
-  // Save solution to file
+  // Save solution in VTK format
   File file("poisson.pvd");
-  file << u_proj;
+  file << u;
 
   return 0;
 }

@@ -8,8 +8,10 @@
 
 #ifdef HAS_PETSC
 
+#include <boost/shared_ptr.hpp>
 #include <iostream>
 
+#include <dolfin/common/NoDeleter.h>
 #include <dolfin/log/dolfin_log.h>
 #include "PETScVector.h"
 #include "PETScKrylovMatrix.h"
@@ -23,9 +25,12 @@ namespace dolfin
  
   int usermult(Mat A, Vec x, Vec y)
   {
+    boost::shared_ptr<Vec> _x(&x, NoDeleter<Vec>());
+    boost::shared_ptr<Vec> _y(&y, NoDeleter<Vec>());
+
     void* ctx = 0;
     MatShellGetContext(A, &ctx);
-    PETScVector xx(x), yy(y);
+    PETScVector xx(_x), yy(_y);
     ((PETScKrylovMatrix*) ctx)->mult(xx, yy);
     return 0;
   }
@@ -48,17 +53,18 @@ PETScKrylovMatrix::PETScKrylovMatrix(const PETScVector& x, const PETScVector& y)
 PETScKrylovMatrix::~PETScKrylovMatrix()
 {
   // Free memory of matrix
-  if ( A ) MatDestroy(A);
+  if ( A ) 
+    MatDestroy(A);
 }
 //-----------------------------------------------------------------------------
 void PETScKrylovMatrix::init(const PETScVector& x, const PETScVector& y)
 {
   // Get size and local size of given vector
   int m(0), n(0), M(0), N(0);
-  VecGetLocalSize(y.vec(), &m);
-  VecGetLocalSize(x.vec(), &n);
-  VecGetSize(y.vec(), &M);
-  VecGetSize(x.vec(), &N);
+  VecGetLocalSize(*(y.vec()), &m);
+  VecGetLocalSize(*(x.vec()), &n);
+  VecGetSize(*(y.vec()), &M);
+  VecGetSize(*(x.vec()), &N);
   
   // Free previously allocated memory if necessary
   if ( A )

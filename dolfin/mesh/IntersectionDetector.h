@@ -1,14 +1,15 @@
 // Copyright (C) 2006-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Kristoffer Selim, 2008.
+// Modified by Kristoffer Selim, 2009.
 //
 // First added:  2006-06-21
-// Last changed: 2008-10-08
+// Last changed: 2008-01-12
 
 #ifndef __INTERSECTION_DETECTOR_H
 #define __INTERSECTION_DETECTOR_H
 
+#include <vector>
 #include <dolfin/common/types.h>
 
 namespace dolfin
@@ -26,31 +27,42 @@ namespace dolfin
   public:
 
     /// Create intersection detector for mesh
-    IntersectionDetector(Mesh& mesh);
+    IntersectionDetector(const Mesh& mesh0);
 
     /// Destructor
     ~IntersectionDetector();
 
     /// Compute cells overlapping point
-    void intersection(const Point& p, Array<uint>& cells);
+    void intersection(const Point& p, std::vector<uint>& cells);
 
     /// Compute cells overlapping line defined by points
-    void intersection(const Point& p1, const Point& p2, Array<uint>& cells);
+    void intersection(const Point& p1, const Point& p2, std::vector<uint>& cells);
 
     /// Compute cells overlapping cell
-    void intersection(Cell& cell, Array<uint>& cells);
+    void intersection(const Cell& cell, std::vector<uint>& cells);
 
     /// Compute overlap with curve defined by points
-    void intersection(Array<Point>& points, Array<uint>& intersection);
+    void intersection(Array<Point>& points, std::vector<uint>& intersection);
 
     /// Compute overlap with mesh
-    void intersection(Mesh& mesh, Array<uint>& intersection);
+    void intersection(const Mesh& mesh1, std::vector<uint>& intersection);
     
+    /// Compute overlap with mesh (test version)
+    void new_intersection(const Mesh& mesh1, std::vector<uint>& intersection);
+    
+
   private:
 
+    /// Compute points for the new intesected mesh
+    void compute_polygon(const Mesh& mesh1, const Cell& c0, 
+                         const std::vector<uint>& intersections) const;
+    
     // Interface to GTS
     GTSInterface* gts;
 
+    // The mesh that we are intersecting
+    const Mesh& mesh0;
+    
   };
 
 }

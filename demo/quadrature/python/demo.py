@@ -1,7 +1,4 @@
 #!/usr/bin/env python
-#
-# This simple demo generates different quadrature rules
-#
 
 __author__ = "Kristian B. Oelgaard (k.b.oelgaard@tudelft.nl)"
 __date__ = "2007-11-28 -- 2007-11-28"

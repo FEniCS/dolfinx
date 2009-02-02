@@ -1,18 +1,17 @@
-// Rename Function --> cpp_Function (gets mapped in assembly.py)
-%rename(cpp_Function) dolfin::Function;
-%rename(sub) dolfin::Function::operator[];
+// Modifying the interface of Function
+%rename(_sub) dolfin::Function::operator[];
 %rename(assign) dolfin::Function::operator=;
-%rename(cpp_FacetNormal) dolfin::FacetNormal;
-%rename(cpp_MeshSize) dolfin::MeshSize;
-%rename(cpp_AvgMeshSize) dolfin::AvgMeshSize;
-%rename(cpp_FacetArea) dolfin::FacetArea;
-%rename(cpp_InvFacetArea) dolfin::InvFacetArea;
+%rename(_in) dolfin::Function::in;
 
-// Trick to expose protected member cell() in Python
-%rename(old_cell) dolfin::Function::cell;
-%rename(cell) dolfin::Function::new_cell;
+// Modifying the interface of DiscreteFunction
+%rename(_sub)    dolfin::DiscreteFunction::operator[];
+%rename(assign) dolfin::DiscreteFunction::operator=;
+%rename(_in)    dolfin::DiscreteFunction::in;
 
-// Trick to expose protected member normal() in Python
-%rename(old_normal) dolfin::Function::normal;
-%rename(normal) dolfin::Function::new_normal;
+// Rename eval(val, data) function
+%rename(eval_data) dolfin::Function::eval(double* values, const Data& data) const;
+
+// Ignore the Data.x, pointer to the coordinates in the Data object
+%ignore dolfin::Data::x;
+%rename (x) dolfin::Data::x_();
 

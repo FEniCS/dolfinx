@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2003-10-21
-// Last changed: 2008-08-19
+// Last changed: 2008-11-13
 
 #include <cstring>
 #include <dolfin/log/dolfin_log.h>
@@ -459,6 +459,6 @@ void XMLMesh::closeMesh()
   //error("XMLMesh::closeMesh() introduces a memory leak. Please fix.");
   editor.setMeshCoordinates(*mesh_coord);   
 
-  editor.close();
+  editor.close(false);
 }
 //-----------------------------------------------------------------------------

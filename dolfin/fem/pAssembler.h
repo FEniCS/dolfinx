@@ -18,7 +18,6 @@
 namespace dolfin
 {
 
-  class DofMapSet;
   class GenericTensor;
   class Function;
   class Form;
@@ -29,6 +28,8 @@ namespace dolfin
   /// This class provides automated assembly of linear systems, or
   /// more generally, assembly of a sparse tensor from a given
   /// variational form.
+
+  /*
 
   class pAssembler
   {
@@ -120,6 +121,8 @@ namespace dolfin
     MeshFunction<uint>* partitions;
 
   };
+
+  */
 
 }
 

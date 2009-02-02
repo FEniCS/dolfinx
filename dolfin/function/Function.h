@@ -1,189 +1,133 @@
-// Copyright (C) 2007-2008 Anders Logg.
+// Copyright (C) 2003-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Garth N. Wells 2005-2008.
+// Modified by Garth N. Wells, 2005-2009.
 // Modified by Kristian B. Oelgaard, 2007.
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2003-11-28
-// Last changed: 2008-10-06
+// Last changed: 2009-01-07
 
 #ifndef __FUNCTION_H
 #define __FUNCTION_H
 
-#include <tr1/memory>
 #include <ufc.h>
-#include <dolfin/common/types.h>
-#include <dolfin/common/simple_array.h>
-#include <dolfin/la/Vector.h>
-#include <dolfin/mesh/Point.h>
-#include <dolfin/mesh/Cell.h>
+#include <boost/shared_ptr.hpp>
 #include <dolfin/common/Variable.h>
-#include "SubFunction.h"
+#include <dolfin/log/log.h>
 
 namespace dolfin
 {
 
-  class FiniteElement;
-  class Mesh;
-  class Form;
-  class GenericFunction;
-  class DofMap;
+  class FunctionSpace;
+  class GenericVector;
+  class Data;
+  class SubFunction;
 
-  /// This class represents a function that can be evaluated on a
-  /// mesh. The actual representation of the function can vary, but
-  /// the typical representation is in terms of a mesh, a vector of
-  /// degrees of freedom, a finite element and a dof map that
-  /// determines the distribution of degrees of freedom on the mesh.
+  /// This class represents a function u_h in a finite element
+  /// function space V_h, given by
   ///
-  /// It is also possible to have user-defined functions, either by
-  /// overloading the eval function of this class or by giving a
-  /// function (pointer) that returns the value of the function.
+  ///   u_h = sum_i U_i phi_i
+  ///
+  /// where {phi_i}_i is a basis for V_h, and U is a vector of
+  /// expansion coefficients for u_h.
 
   class Function : public Variable
   {
   public:
 
-    /// Function types
-    enum Type {empty, user, constant, discrete, ufc};
-
-    /// Create empty function (read data from file)
+    /// Create function (and let DOLFIN figure out the correct function space)
     Function();
 
-    /// Create user-defined function (evaluation operator must be overloaded)
-    explicit Function(Mesh& mesh);
+    /// Create function on given function space
+    explicit Function(const FunctionSpace& V);
 
-    /// Create constant scalar function from given value
-    Function(Mesh& mesh, double value);
+    /// Create function on given function space with a given vector
+    Function(const FunctionSpace& V, GenericVector& x);
 
-    /// Create constant vector function from given size and value
-    Function(Mesh& mesh, uint size, double value);
+    /// Create function on given function space (shared data)
+    explicit Function(boost::shared_ptr<const FunctionSpace> V);
 
-    /// Create constant vector function from given size and values
-    Function(Mesh& mesh, const Array<double>& values);
+    /// Create function on given function space with a given vector (shared data)
+    Function(boost::shared_ptr<const FunctionSpace> V, boost::shared_ptr<GenericVector> x);
 
-    /// Create constant tensor function from given shape and values
-    Function(Mesh& mesh, const Array<uint>& shape, const Array<double>& values);
+    /// Create function from file
+    explicit Function(std::string filename);
 
-    /// Create function from given ufc::function
-    Function(Mesh& mesh, const ufc::function& function, uint size);
+    /// Create function from sub function
+    Function(const SubFunction& v);
 
-    /// Create discrete function for argument function i of form
-    Function(Mesh& mesh, Form& form, uint i = 1);
-
-    /// Create discrete function for argument function i of form
-    Function(Mesh& mesh, DofMap& dof_map, const ufc::form& form, uint i = 1);
-
-    /// Create discrete function for argument function i of form (data may be shared)
-    Function(std::tr1::shared_ptr<Mesh> mesh, std::tr1::shared_ptr<GenericVector> x, 
-             std::tr1::shared_ptr<DofMap> dof_map, const ufc::form& form, uint i = 1);
-
-    /// Create discrete function from sub function
-    explicit Function(SubFunction sub_function);
-
-    /// Create function from data file
-    explicit Function(const std::string filename);
-
-    /// Create discrete function based on signatures
-    Function(std::tr1::shared_ptr<Mesh> mesh, const std::string finite_element_signature,
-             const std::string dof_map_signature);
-    
     /// Copy constructor
-    Function(const Function& f);
+    Function(const Function& v);
 
     /// Destructor
     virtual ~Function();
 
-    /// Create discrete function for argument function i of form
-    void init(Mesh& mesh, Form& form, uint i = 1);
+    /// Assignment from function
+    const Function& operator= (const Function& v);
 
-    /// Create discrete function for argument function i of form
-    void init(Mesh& mesh, DofMap& dof_map, const ufc::form& form, uint i = 1);
-
-    /// Return the type of function
-    Type type() const;
-
-    /// Return the rank of the value space
-    virtual uint rank() const;
-
-    /// Return the dimension of the value space for axis i
-    virtual uint dim(uint i) const;
-    
-    /// Return the mesh
-    Mesh& mesh() const;
-
-    /// Return the DofMap
-    DofMap& dofMap() const;
-
-    /// Return the signature of a DiscreteFunction
-    std::string signature() const;
-
-    /// Return the vector associated with a DiscreteFunction
-    GenericVector& vector() const;
-
-    /// Return the number of sub functions (only for discrete functions)
-    uint numSubFunctions() const;
-    
-    /// Extract sub function/slice (only for discrete function)
+    /// Extract sub function
     SubFunction operator[] (uint i);
 
-    /// Assign function
-    const Function& operator= (Function& f);
+    /// Return the function space
+    const FunctionSpace& function_space() const;
 
-    /// Assign sub function/slice
-    const Function& operator= (SubFunction f);
+    /// Return the function space
+    boost::shared_ptr<const FunctionSpace> function_space_ptr() const;
+
+    /// Return the vector of expansion coefficients (non-const version)
+    GenericVector& vector();
+
+    /// Return the vector of expansion coefficients (const version)
+    const GenericVector& vector() const;
+
+    /// Test for the function space
+    bool has_function_space() const;
+
+    /// Check if function is a member of the given function space
+    bool in(const FunctionSpace& V) const;
+
+    /// Return geometric dimension
+    uint geometric_dimension() const;
     
-    /// Interpolate function to vertices of mesh
-    void interpolate(double* values);
-
-    /// Interpolate function to given local finite element space
-    void interpolate(double* coefficients,
-                     const ufc::cell& ufc_cell,
-                     const FiniteElement& finite_element,
-                     Cell& cell, int facet=-1);
-
-    /// Interpolate function to given global finite element space
-    void interpolate(GenericVector& x,
-                     Mesh& mesh,
-                     const FiniteElement& finite_element,
-                     DofMap& dof_map);
-
-    /// Make current cell and facet available to user-defined function
-    void update(Cell& cell, int facet=-1);
-
-    /// Evaluate function at given point (used for subclassing through SWIG interface)
-    virtual void eval(simple_array<double>& values, const simple_array<double>& x) const { eval(values.data, x.data); }
-
-    /// Evaluate function at given point (overload for scalar user-defined function)
+    /// Function evaluation (overload for user-defined function, simple version)
     virtual void eval(double* values, const double* x) const;
 
-    /// Evaluate scalar function at given point (overload for scalar user-defined function)
-    virtual double eval(const double* x) const;
+    /// Function evaluation (overload for user-defined function, alternate version)
+    virtual void eval(double* values, const Data& data) const;
 
-  protected:
-    
-    /// Access current cell (available during assembly for user-defined function)
-    const Cell& cell() const;
+    /// Evaluate function v at given point in given cell
+    void eval(double* values, const double* x, const ufc::cell& ufc_cell, uint cell_index) const;
 
-    /// Access current facet normal (available during assembly for user-defined function)
-    Point normal() const;
+    /// Interpolate function to local function space on cell
+    void interpolate(double* coefficients, const ufc::cell& ufc_cell, uint cell_index, int local_facet=-1) const;
 
-    /// Access current facet (available during assembly for user-defined functions)
-    int facet() const;
+    /// Interpolate function to local function space on cell with check on function space
+    void interpolate(double* coefficients, const FunctionSpace& V, const ufc::cell& ufc_cell, uint cell_index, int local_facet=-1) const;
+
+    /// Interpolate function to given function space
+    void interpolate(GenericVector& coefficients, const FunctionSpace& V) const;
+
+    /// Interpolate function to vertices of mesh
+    void interpolate(double* vertex_values) const;
+
+    /// Friends
+    friend class Coefficient;
+    friend class LinearPDE;
+    friend class NonlinearPDE;
+    friend class VariationalProblem;
 
   private:
-    
-    // Pointer to current implementation (letter base class)
-    GenericFunction* f;
 
-    // Type of function
-    Type _type;
-    
-    // Pointer to current cell (if any, otherwise 0)
-    Cell* _cell;
+    // Initialize vector
+    void init();
 
-    // Current facet (if any, otherwise -1)
-    int _facet;
+    // The function space
+    boost::shared_ptr<const FunctionSpace> _function_space;
+
+    // The vector of expansion coefficients
+    boost::shared_ptr<GenericVector> _vector;
+    //GenericVector* _vector;
 
   };
 

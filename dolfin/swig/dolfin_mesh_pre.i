@@ -87,3 +87,47 @@ ALL_VALUES(dolfin::MeshFunction<unsigned int>, NPY_UINT)
 %rename(facets) dolfin::FacetIterator;
 %rename(cells) dolfin::CellIterator;
 %rename(entities) dolfin::MeshEntityIterator;
+
+// --- Return NumPy arrays for MeshConnectivity() and MeshEntity.entities() ---
+
+%extend dolfin::MeshConnectivity {
+    PyObject* _connections() {
+        int m = self->size();
+        int n = 0;
+
+        MAKE_ARRAY(1, m, n, self->operator()(), NPY_UINT)
+
+        return reinterpret_cast<PyObject*>(array);
+    }
+    
+    PyObject* _connections(dolfin::uint entity) {
+        int m = self->size(entity);
+        int n = 0;
+	
+        MAKE_ARRAY(1, m, n, self->operator()(entity), NPY_UINT)
+	  
+        return reinterpret_cast<PyObject*>(array);
+    }
+
+%pythoncode
+%{
+    def __call__(self, entity=None):
+        """ Return the number of connections"""
+        # If return all connections
+        if entity is None:
+            return self._connections()
+        return self._connections(entity)
+%}
+}
+
+%extend dolfin::MeshEntity {
+%pythoncode
+%{
+    def entities(self, dim):
+        """ Return number of incident mesh entities of given topological dimension"""
+        return self.mesh().topology()(self.dim(), dim)(self.index())
+%}
+}
+
+%ignore dolfin::MeshConnectivity::operator();
+%ignore dolfin::MeshEntity::entities;

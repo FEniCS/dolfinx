@@ -1,11 +1,11 @@
-// Copyright (C) 2005-2006 Anders Logg.
+// Copyright (C) 2005-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells 2007.
 // Modified by Nuno Lopes 2008
 //
 // First added:  2005-12-02
-// Last changed: 2008-06-19
+// Last changed: 2008-11-13
 
 #include "MeshEditor.h"
 #include "UnitCircle.h"
@@ -211,3 +211,4 @@ double UnitCircle::transformy(double x, double y, Transformation transformation)
       return y;
   }
 }
+//-----------------------------------------------------------------------------

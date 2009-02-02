@@ -1,10 +1,10 @@
-// Copyright (C) 2007 Anders Logg.
+// Copyright (C) 2007-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-07-11
-// Last changed: 2007-08-20
+// Last changed: 2008-12-12
 //
-// This demo program solves Poisson's equation
+// This demo program solves Poisson's equation,
 //
 //     - div grad u(x, y) = f(x, y)
 //
@@ -21,17 +21,12 @@ int main()
   // Source term
   class Source : public Function
   {
-  public:
-    
-    Source(Mesh& mesh) : Function(mesh) {}
-
-    double eval(const double* x) const
+    void eval(double* values, const double* x) const
     {
       double dx = x[0] - 0.5;
       double dy = x[1] - 0.5;
-      return x[0]*sin(5.0*DOLFIN_PI*x[1]) + 1.0*exp(-(dx*dx + dy*dy)/0.02);
+      values[0] = x[0]*sin(5.0*DOLFIN_PI*x[1]) + 1.0*exp(-(dx*dx + dy*dy)/0.02);
     }
-
   };
 
   // Sub domain for Dirichlet boundary condition
@@ -62,52 +57,38 @@ int main()
   UnitSquare mesh(32, 32);
 
   // Create functions
-  Source f(mesh);
+  Source f;
+
+  // Define PDE
+  PoissonFunctionSpace V(mesh);
+  PoissonBilinearForm a(V, V);
+  PoissonLinearForm L(V);
+  L.f = f;
 
   // Create Dirichlet boundary condition
-  Function u0(mesh, 0.0);
+  Constant u0(0.0);
   DirichletBoundary dirichlet_boundary;
-  DirichletBC bc0(u0, mesh, dirichlet_boundary);
+  DirichletBC bc0(V, u0, dirichlet_boundary);
   
   // Create periodic boundary condition
   PeriodicBoundary periodic_boundary;
-  PeriodicBC bc1(mesh, periodic_boundary);
+  PeriodicBC bc1(V, periodic_boundary);
 
   // Collect boundary conditions
   Array<BoundaryCondition*> bcs(&bc0, &bc1);
 
   // Define PDE
-  PoissonBilinearForm a;
-  PoissonLinearForm L(f);
-
-  // Solve PDE
-  Matrix A;
-  Vector b;
-  assemble(A, a, mesh);
-  assemble(b, L, mesh);
-  for (dolfin::uint i = 0; i < bcs.size(); i++)
-    bcs[i]->apply(A, b, a);
-
-  Function u(mesh, a);
-  GenericVector& x = u.vector(); 
-
-  LUSolver solver;
-  solver.solve(A, x, b);
-
-/*
-  // Define PDE
-  LinearPDE pde(a, L, mesh, bcs);
+  VariationalProblem pde(a, L, bcs);
 
   // Solve PDE
   Function u;
   pde.solve(u);
-*/
 
   // Plot solution
   plot(u);
 
-  // Save solution to file
-  File file("poisson.pvd");
+  // Save solution in VTK format
+  File file("periodic.pvd");
   file << u;
 
   return 0;

@@ -43,7 +43,7 @@ void MeshSmoothing::smooth(Mesh& mesh)
       continue;
     
     // Get coordinates of vertex
-    double* x = v->x();
+    double* x = const_cast<double*>(v->x());
     const Point p = v->point();
     
     // Compute center of mass of neighboring vertices

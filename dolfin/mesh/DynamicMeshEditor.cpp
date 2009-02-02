@@ -122,7 +122,7 @@ void DynamicMeshEditor::addCell(uint c, uint v0, uint v1, uint v2, uint v3)
   addCell(c, vertices);
 }
 //-----------------------------------------------------------------------------
-void DynamicMeshEditor::close()
+void DynamicMeshEditor::close(bool order)
 {
   dolfin_assert(mesh);
   dolfin_assert(cell_type);
@@ -161,7 +161,7 @@ void DynamicMeshEditor::close()
   }
 
   // Close editor
-  editor.close();
+  editor.close(order);
 
   // Clear data
   clear();

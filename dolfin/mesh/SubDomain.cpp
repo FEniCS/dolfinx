@@ -1,8 +1,8 @@
-// Copyright (C) 2007 Anders Logg.
+// Copyright (C) 2007-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-04-24
-// Last changed: 2007-12-12
+// Last changed: 2008-12-03
 
 #include <dolfin/log/log.h>
 #include "MeshEntityIterator.h"
@@ -12,7 +12,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-SubDomain::SubDomain()
+SubDomain::SubDomain() : _geometric_dimension(0)
 {
   // Do nothing
 }
@@ -41,13 +41,16 @@ void SubDomain::mark(MeshFunction<uint>& sub_domains, uint sub_domain) const
   const uint dim = sub_domains.dim();
 
   // Compute facet - cell connectivity if necessary
-  Mesh& mesh = sub_domains.mesh();
+  const Mesh& mesh = sub_domains.mesh();
   const uint D = mesh.topology().dim();
   if (dim == D - 1)
   {
     mesh.init(D - 1);
     mesh.init(D - 1, D);
   }
+
+  // Set geometric dimension (needed for SWIG interface)
+  _geometric_dimension = mesh.geometry().dim();
   
   // Always false when not marking facets
   bool on_boundary = false;
@@ -65,8 +68,7 @@ void SubDomain::mark(MeshFunction<uint>& sub_domains, uint sub_domain) const
     {
       for (VertexIterator vertex(*entity); !vertex.end(); ++vertex)
       {
-        simple_array<double> x(mesh.geometry().dim(), vertex->x());
-        if (!inside(x, on_boundary))
+        if (!inside(vertex->x(), on_boundary))
         {
           all_vertices_inside = false;
           break;
@@ -76,16 +78,22 @@ void SubDomain::mark(MeshFunction<uint>& sub_domains, uint sub_domain) const
     // Dimension of facet == 0, so just check the vertex itself
     else
     {
-      simple_array<double> x(mesh.geometry().dim(), mesh.geometry().x(entity->index()));
-      if (!inside(x, on_boundary))
-      {
+      if (!inside(mesh.geometry().x(entity->index()), on_boundary))
         all_vertices_inside = false;
-      }
     }
 
     // Mark entity with all vertices inside
     if (all_vertices_inside)
       sub_domains(*entity) = sub_domain;
   }
+}
+//-----------------------------------------------------------------------------
+dolfin::uint SubDomain::geometric_dimension() const
+{
+  // Check that dim has been set
+  if (_geometric_dimension == 0)
+    error("Internal error, dimension for subdomain has not been specified.");
+
+  return _geometric_dimension;
 }
 //-----------------------------------------------------------------------------

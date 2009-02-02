@@ -6,7 +6,7 @@
 // Modified by Nuno Lopes 2008
 //
 // First added:  2002-11-12
-// Last changed: 2008-06-17
+// Last changed: 2008-12-08
 
 #ifndef __FILE_H
 #define __FILE_H
@@ -20,6 +20,7 @@ namespace dolfin
 {
 
   class Mesh;
+  class LocalMeshData;
   class Graph;
   template <class T> class MeshFunction;
   class Function;
@@ -61,6 +62,9 @@ namespace dolfin
     /// Read mesh from file
     void operator>> (Mesh& mesh);
 
+    /// Read local mesh data from file
+    void operator>> (LocalMeshData& data);
+
     /// Read mesh function from file
     void operator>> (MeshFunction<int>& meshfunction);
     void operator>> (MeshFunction<unsigned int>& meshfunction);
@@ -88,40 +92,44 @@ namespace dolfin
     //--- Output ---
 
     /// Write vector to file
-    void operator<< (GenericVector& x);
+    void operator<< (const GenericVector& x);
 
     /// Write matrix to file
-    void operator<< (GenericMatrix& A);
+    void operator<< (const GenericMatrix& A);
 
     /// Write mesh to file
-    void operator<< (Mesh& mesh);
+    void operator<< (const Mesh& mesh);
+
+    /// Write local mesh data to file
+    void operator<< (const LocalMeshData& data);
 
     /// Write mesh function to file
-    void operator<< (MeshFunction<int>& meshfunction);
-    void operator<< (MeshFunction<unsigned int>& meshfunction);
-    void operator<< (MeshFunction<double>& meshfunction);
-    void operator<< (MeshFunction<bool>& meshfunction);
+    void operator<< (const MeshFunction<int>& meshfunction);
+    void operator<< (const MeshFunction<unsigned int>& meshfunction);
+    void operator<< (const MeshFunction<double>& meshfunction);
+    void operator<< (const MeshFunction<bool>& meshfunction);
 
     /// Write function to file
-    void operator<< (Function& u);
+    void operator<< (const Function& v);
 
     /// Write ODE sample to file
-    void operator<< (Sample& sample);
+    void operator<< (const Sample& sample);
 
     /// Write finite element specification to file
-    void operator<< (FiniteElementSpec& spec);
+    void operator<< (const FiniteElementSpec& spec);
 
     /// Write parameter list to file
-    void operator<< (ParameterList& parameters);
+    void operator<< (const ParameterList& parameters);
 
     /// Write FFC BLAS data to file
-    void operator<< (BLASFormData& blas);
+    void operator<< (const BLASFormData& blas);
 	 
     /// Write graph to file
-    void operator<< (Graph& graph);
+    void operator<< (const Graph& graph);
     
   private:
-    
+
+    // Pointer to implementation (envelop-letter design)
     GenericFile* file;
     
   };

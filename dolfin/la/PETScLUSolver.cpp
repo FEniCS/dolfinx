@@ -41,15 +41,15 @@ dolfin::uint PETScLUSolver::solve(const PETScMatrix& A, PETScVector& x,
   init();
 
   MatType mat_type;
-  MatGetType(A.mat(), &mat_type);
+  MatGetType(*A.mat(), &mat_type);
 
   // Convert to UMFPACK matrix if matrix type is MATSEQAIJ and UMFPACK is available.
   #if PETSC_HAVE_UMFPACK
     std::string _mat_type = mat_type;
     if(_mat_type == MATSEQAIJ)
     {
-      Mat Atemp = A.mat();
-      MatConvert(A.mat(), MATUMFPACK, MAT_REUSE_MATRIX, &Atemp);
+      Mat Atemp = *A.mat();
+      MatConvert(*A.mat(), MATUMFPACK, MAT_REUSE_MATRIX, &Atemp);
     }
   #endif
 
@@ -65,8 +65,8 @@ dolfin::uint PETScLUSolver::solve(const PETScMatrix& A, PETScVector& x,
             A.size(0), A.size(1), mat_type);
 
   // Solve linear system
-  KSPSetOperators(ksp, A.mat(), A.mat(), DIFFERENT_NONZERO_PATTERN);
-  KSPSolve(ksp, b.vec(), x.vec());
+  KSPSetOperators(ksp, *A.mat(), *A.mat(), DIFFERENT_NONZERO_PATTERN);
+  KSPSolve(ksp, *b.vec(), *x.vec());
   
   // Get name of solver
   KSPType ksp_type;
@@ -77,7 +77,7 @@ dolfin::uint PETScLUSolver::solve(const PETScMatrix& A, PETScVector& x,
   KSPGetPC(ksp, &pc);
   PCType pc_type;
   PCGetType(pc, &pc_type);
-  MatGetType(A.mat(), &mat_type);
+  MatGetType(*A.mat(), &mat_type);
 
   // Clear data
   clear();
@@ -107,7 +107,7 @@ dolfin::uint PETScLUSolver::solve(const PETScKrylovMatrix& A,
 
   // Solve linear system
   KSPSetOperators(ksp, B, B, DIFFERENT_NONZERO_PATTERN);
-  KSPSolve(ksp, b.vec(), x.vec());
+  KSPSolve(ksp, *b.vec(), *x.vec());
 
   // Estimate condition number for l1 norm
   const double xnorm = x.norm(l1);

@@ -1,7 +1,7 @@
 "Generate pre-compiled L2 projections for DOLFIN"
 
 __author__ = "Anders Logg (logg@simula.no), Johan Jansson (jjan@csc.kth.se)"
-__date__ = "2008-03-18 -- 2008-03-29"
+__date__ = "2008-03-18 -- 2008-10-23"
 __copyright__ = "Copyright (C) 2008 Anders Logg, Johan Jansson"
 __license__  = "GNU LGPL Version 2.1"
 
@@ -20,6 +20,7 @@ for i in range(len(elements)):
     OPTIONS = FFC_OPTIONS.copy()
     OPTIONS["no-evaluate_basis"] = True
     OPTIONS["no-evaluate_basis_derivatives"] = True
+    OPTIONS["language"] = "dolfin"
     
     # Generate code
     print "Compiling projection %d out of %d..." % (i, len(elements))
@@ -32,7 +33,7 @@ for i in range(len(elements)):
     L = dot(f, v) * dx
 
     name = "ffc_L2proj_%.2d" % i
-    compile([a, L], name, language="dolfin", options=OPTIONS)
+    compile([a, L], name, options=OPTIONS)
 
     # Save signatures of elements and dof maps
     dof_map = DofMap(element)

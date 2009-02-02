@@ -83,26 +83,30 @@ get_petsc_arch:
   cmdstr = "make -s -f slepc_makefile get_slepc_include"
   runFailed, cmdoutput = getstatusoutput(cmdstr)
   if runFailed:
-    os.unlink("slepc_makefile")
-    msg = "Unable to read SLEPc includes through make"
-    raise UnableToXXXException(msg, errormsg=cmdoutput)
-  slepc_includes = cmdoutput
+    print "Unable to read SLEPc config through make; trying defaults."
+    slepc_includes = "-I%s" % os.path.join(slepc_dir, 'include', 'slepc')
+  else:
+    slepc_includes = cmdoutput
 
-  cmdstr = "make -s -f slepc_makefile get_slepc_libs"
-  runFailed, cmdoutput = getstatusoutput(cmdstr)
+  if not runFailed:
+    cmdstr = "make -s -f slepc_makefile get_slepc_libs"
+    runFailed, cmdoutput = getstatusoutput(cmdstr)
   if runFailed:
-    os.unlink("slepc_makefile")
-    msg = "Unable to read SLEPc libs through make"
-    raise UnableToXXXException(msg, errormsg=cmdoutput)
-  slepc_libs = cmdoutput
+    slepc_libs = "-lslepc"
+  else:
+    slepc_libs = cmdoutput
 
-  cmdstr = "make -s -f slepc_makefile get_petsc_arch"
-  runFailed, cmdoutput = getstatusoutput(cmdstr)
+  if not runFailed:
+    cmdstr = "make -s -f slepc_makefile get_petsc_arch"
+    runFailed, cmdoutput = getstatusoutput(cmdstr)
   if runFailed:
-    os.unlink("slepc_makefile")
-    msg = "Unable to read SLEPc libs through make"
-    raise UnableToXXXException(msg, errormsg=cmdoutput)
-  petsc_arch = cmdoutput
+    petsc_arch = os.environ.get('PETSC_ARCH', None)
+    if not petsc_arch:
+      os.unlink("slepc_makefile")
+      msg = "Unable to read PETSc arch through make"
+      raise UnableToXXXException(msg, errormsg=cmdoutput)
+  else:
+    petsc_arch = cmdoutput
 
   # Try to get compiler and linker from petsc
   cmdstr = "pkg-config petsc --variable=compiler"

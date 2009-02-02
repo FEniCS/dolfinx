@@ -6,11 +6,13 @@
 // Modified by Garth N. Wells, 2008.
 //
 // First added:  2006-02-09
-// Last changed: 2008-07-17
+// Last changed: 2008-11-03
 
 #ifndef __SPECIAL_FUNCTIONS_H
 #define __SPECIAL_FUNCTIONS_H
 
+#include <vector>
+#include <dolfin/fem/UFC.h>
 #include "Function.h"
 
 namespace dolfin
@@ -18,6 +20,9 @@ namespace dolfin
 
   class Form;
   class UFC;
+  class FunctionSpace;
+  class SubFunction;
+  class Data;
 
 
   /// This Function represents the local mesh size on a given mesh.
@@ -26,16 +31,20 @@ namespace dolfin
   public:
 
     /// Constructor
-    MeshSize(Mesh& mesh);
+    MeshSize();
 
-    /// Return cell size
-    double eval(const double* x) const;
+    /// Constructor
+    MeshSize(const FunctionSpace& V);
+
+    /// Function evaluation
+    void eval(double* values, const Data& data) const;
     
     /// Compute minimal cell diameter
     double min() const;
 
     /// Compute maximal cell diameter
     double max() const;    
+
   };
 
   /// This Function represents the inverse of the local cell size on a given 
@@ -45,10 +54,14 @@ namespace dolfin
   public:
 
     /// Constructor
-    InvMeshSize(Mesh& mesh);
+    InvMeshSize();
 
-    /// Return inverse of cell size
-    double eval(const double* x) const;
+    /// Constructor
+    InvMeshSize(const FunctionSpace& V);
+
+    /// Function evaluation
+    void eval(double* values, const Data& data) const;
+
   };
 
   /// This Function represents the average of the local cell size (average of 
@@ -58,10 +71,14 @@ namespace dolfin
   public:
 
     /// Constructor
-    AvgMeshSize(Mesh& mesh);
+    AvgMeshSize();
 
-    /// Return average cell size
-    double eval(const double* x) const;
+    /// Constructor
+    AvgMeshSize(const FunctionSpace& V);
+
+    /// Function evaluation
+    void eval(double* values, const Data& data) const;
+
   };
 
   /// This Function represents the outward unit normal on cell facets.
@@ -70,13 +87,19 @@ namespace dolfin
   {
   public:
 
-    FacetNormal(Mesh& mesh);
+    /// Constructor
+    FacetNormal();
 
-    void eval(double* values, const double* x) const;
+    /// Constructor
+    FacetNormal(const FunctionSpace& V);
 
+    /// Function evaluation
+    void eval(double* values, const Data& data) const;
+    
     uint rank() const;
     
     uint dim(uint i) const;
+
   };
 
   /// This function represents the area/length of a cell facet.
@@ -84,9 +107,15 @@ namespace dolfin
   {
   public:
 
-    FacetArea(Mesh& mesh);
+    /// Constructor
+    FacetArea();
 
-    void eval(double* values, const double* x) const;
+    /// Constructor
+    FacetArea(const FunctionSpace& V);
+
+    /// Function evaluation
+    void eval(double* values, const Data& data) const;
+
   };
 
   /// This function represents the inverse area/length of a cell facet.
@@ -94,9 +123,15 @@ namespace dolfin
   {
   public:
 
-    InvFacetArea(Mesh& mesh);
+    /// Constructor
+    InvFacetArea();
 
-    void eval(double* values, const double* x) const;
+    /// Constructor
+    InvFacetArea(const FunctionSpace& V);
+
+    /// Function evaluation
+    void eval(double* values, const Data& data) const;
+
   };
 
   /// This function determines if the current facet is an outflow facet with
@@ -104,23 +139,47 @@ namespace dolfin
   /// M = dot(n, v)*ds, a functional, defined on the normal vector to the
   /// facet and velocity vector integrated over the exterior of the cell.
   /// The function returns 1.0 if the dot product > 0, 0.0 otherwise.
-  class OutflowFacet : public Function
+
+  class IsOutflowFacet : public Function
   {
   public:
 
     // Constructor
-    OutflowFacet(Mesh& mesh, Form& form);
+    IsOutflowFacet(const FunctionSpace& V, const Function& f);
 
-    ~OutflowFacet();
+    ~IsOutflowFacet();
 
-    double eval(const double* x) const;
+    void eval(double* values, const Data& data) const;
 
   private:
 
-    Form& form;
-    UFC* ufc;
+    const Function* field;
   };
 
+  /// This function is used for the Python interface. By inheriting
+  /// from this function instead of dolfin::Function, we avoid unnecessary
+  /// calls through the SWIG created director class, when dealing
+  /// with discrete functions in PyDOLFIN.
+  class DiscreteFunction : public Function
+  {
+  public:
+
+    // Constructor
+    DiscreteFunction() : Function(){}
+    
+    // Constructor
+    DiscreteFunction(const FunctionSpace& V) : Function(V)
+    {
+      vector();
+    }
+
+    // Constructor
+    DiscreteFunction(const SubFunction& v) : Function(v){}
+
+    // Constructor
+    DiscreteFunction(std::string filename) : Function(filename){}
+
+  };
 }
 
 #endif

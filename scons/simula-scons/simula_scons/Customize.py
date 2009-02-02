@@ -5,9 +5,9 @@ import os, sys, re
 
 def darwinCxx(env):
     """Change the cxx parts of env for the Darwin platform"""
-    env["CXXFLAGS"] += " -undefined dynamic_lookup"
-    env["SHLINKFLAGS"] += " -undefined dynamic_lookup"
-    env["LDMODULEFLAGS"] += " -undefined dynamic_lookup"
+    env.Append(CXXFLAGS=" -undefined dynamic_lookup")
+    env.Append(SHLINKFLAGS=" -undefined dynamic_lookup")
+    env.Append(LDMODULEFLAGS=" -undefined dynamic_lookup")
     if not env.GetOption("clean"):
         # remove /usr/lib if present in LIBPATH.
         # there should maybe be some testing here to make sure 
@@ -20,7 +20,7 @@ def darwinCxx(env):
 
 def winCxx(env):
     """Change the cxx parts of env for the Windows platform"""
-    env["SHLINKFLAGS"] += " -Wl,--enable-auto-import"
+    env.Append(SHLINKFLAGS=" -Wl,--enable-auto-import")
     return env
 
 def darwinSwig(env):
@@ -83,11 +83,18 @@ def swigScanner(node, env, path):
 swigscanner = SCons.Scanner.Scanner(function=swigScanner, skeys=[".i"])
 
 def swigEmitter(target, source, env):
-    for src in source:
-        src = str(src)
-        if "-python" in SCons.Util.CLVar(env.subst("$SWIGFLAGS")):
-            target.append(os.path.splitext(src)[0] + ".py")
-    return (target, source)
+    new_targets = []
+    # If we are swigging a python extension module
+    if "-python" in SCons.Util.CLVar(env.subst("$SWIGFLAGS")):
+        for t in target:
+            t = str(t)
+            # Add the python module to target by replacing the swig
+            # cxx suffix from the target by ".py"
+            new_targets.append(t.replace(env.subst(env["SWIGCXXFILESUFFIX"]),".py"))
+    return_targets = []
+    for t in zip(target,new_targets):
+        return_targets.extend(t)
+    return (return_targets, source)
 
 class Dependency:
 

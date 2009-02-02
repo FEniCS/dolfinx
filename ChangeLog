@@ -1,3 +1,35 @@
+ - Bug fix in dolfin-order script for gzipped files
+ - Make shared_ptr work across C++/Python interface
+ - Replace std::tr1::shared_ptr with boost::shared_ptr
+ - Bug fix in transfinite mean-value interpolation
+ - Less annoying progress bar (silent when progress is fast)
+ - Fix assignment operator for MeshData
+ - Improved adaptive mesh refinement (recursive Rivara) producing better quality meshes
+0.9.0 [2009-01-05]
+ - Cross-platform fixes
+ - PETScMatrix::copy fix
+ - Some Trilinos fixes
+ - Improvements in MeshData class
+ - Do not use initial guess in Newton solver
+ - Change OutflowFacet to IsOutflowFacet and change syntax
+ - Used shared_ptr for underling linear algebra objects
+ - Cache subspaces in FunctionSpace
+ - Improved plotting, now support plot(grad(u)), plot(div(u)) etc
+ - Simple handling of JIT-compiled functions
+ - Sign change (bug fix) in increment for Newton solver
+ - New class VariationalProblem replacing LinearPDE and NonlinearPDE
+ - Parallel parsing and partitioning of meshes (experimental)
+ - Add script dolfin-order for ordering mesh files
+ - Add new class SubSpace (replacing SubSystem)
+ - Add new class FunctionSpace
+ - Complete redesign of Function class hierarchy, now a single Function class
+ - Increased use of shared_ptr in Function, FunctionSpace, etc
+ - New interface for boundary conditions, form not necessary
+ - Allow simple setting of coefficient functions based on names (not their index)
+ - Don't order mesh automatically, meshes must now be ordered explicitly
+ - Simpler definition of user-defined functions (constructors not necessary)
+ - Make mesh iterators const to allow for const-correct Mesh code
+0.8.1 [2008-10-20]
  - Add option to use ML multigrid preconditioner through PETSc
  - Interface change for ODE solvers: uBLASVector --> double*
  - Remove homotopy solver

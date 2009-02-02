@@ -1,8 +1,17 @@
-// Copyright (C) 2008 Anders Logg and Magnus Vikström.
+// Copyright (C) 2008 Ola Skavhaug and Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// First added:  2007-05-08
-// Last changed: 2008-04-11
+// First added:  2008-12-18
+// Last changed: 2008-12-18
+//
+// Run this demo in parallel by
+//
+//     mpirun -n <n> ./demo
+//
+// where <n> is the desired number of processes.
+// Then plot the partitions by
+//
+//     ./plotpartitions <n>
 
 #include <dolfin.h>
 
@@ -10,20 +19,14 @@ using namespace dolfin;
 
 int main()
 {
-#ifndef HAS_SCOTCH
-  message("Sorry, this demo requires SCOTCH.");
-  return 0;
-#endif
-
-  // Create mesh
-  UnitCube mesh(16, 16, 16);
-
-  // Partition mesh
-  MeshFunction<unsigned int> partitions;
-  mesh.partition(partitions, 20);
-
-  // Plot mesh partition
-  plot(partitions);
+  // Read in mesh from XML file in parallel
+  Mesh mesh("unitsquare.xml.gz");
+  
+  // Store partition to file
+  char filename[100];
+  sprintf(filename, "unitsquare-%d.xml", dolfin::MPI::process_number());
+  File file(filename);
+  file << mesh;
 
   return 0;
 }

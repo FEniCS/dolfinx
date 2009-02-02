@@ -1,8 +1,8 @@
-// Copyright (C) 2007 Kristian B. Oelgaard.
+// Copyright (C) 2008 Kristian B. Oelgaard.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-11-23
-// Last changed: 2007-11-23
+// Last changed: 2008-11-13
 
 #include "MeshEditor.h"
 #include "UnitInterval.h"
@@ -41,6 +41,5 @@ UnitInterval::UnitInterval(uint nx) : Mesh()
 
   // Close mesh editor
   editor.close();
-
 }
 //-----------------------------------------------------------------------------

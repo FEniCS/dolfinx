@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-06-02
-// Last changed: 2008-06-17
+// Last changed: 2008-11-14
 
 #include <set>
 #include <dolfin/log/dolfin_log.h>
@@ -55,9 +55,6 @@ dolfin::uint TopologyComputation::computeEntities(Mesh& mesh, uint dim)
     error("Connectivity for topological dimension %d exists but entities are missing.", dim);
 
   //message("Computing mesh entities of topological dimension %d.", dim);
-
-  // Invalidate ordering
-  mesh._ordered = false;
 
   // Compute connectivity dim - dim if not already computed
   computeConnectivity(mesh, mesh.topology().dim(), mesh.topology().dim());
@@ -142,9 +139,6 @@ void TopologyComputation::computeConnectivity(Mesh& mesh, uint d0, uint d1)
   // Check if connectivity has already been computed
   if ( connectivity.size() > 0 )
     return;
-
-  // Invalidate ordering
-  mesh._ordered = false;
 
   //message("Computing mesh connectivity %d - %d.", d0, d1);
 
@@ -277,18 +271,18 @@ void TopologyComputation::computeFromIntersection(Mesh& mesh,
       // Iterate over all connected entities of dimension d1
       for (MeshEntityIterator e1(*e, d1); !e1.end(); ++e1)
       {
-	if ( d0 == d1 )
-	{
-	  // An entity is not a neighbor to itself
-	  if ( e0->index() != e1->index() )
-	    entities.insert(e1->index());
-	}
-	else
-	{
-	  // Entity e1 must be completely contained in e0
-	  if ( contains(*e0, *e1) )
-	    entities.insert(e1->index());
-	}
+        if ( d0 == d1 )
+        {
+          // An entity is not a neighbor to itself
+          if ( e0->index() != e1->index() )
+            entities.insert(e1->index());
+        }
+        else
+        {
+          // Entity e1 must be completely contained in e0
+          if ( contains(*e0, *e1) )
+            entities.insert(e1->index());
+        }
       }
     }
 
@@ -311,18 +305,18 @@ void TopologyComputation::computeFromIntersection(Mesh& mesh,
       // Iterate over all connected entities of dimension d1
       for (MeshEntityIterator e1(*e, d1); !e1.end(); ++e1)
       {
-	if ( d0 == d1 )
-	{
-	  // An entity is not a neighbor to itself
-	  if ( e0->index() != e1->index() )
-	    entities.insert(e1->index());
-	}
-	else
-	{
-	  // Entity e1 must be completely contained in e0
-	  if ( contains(*e0, *e1) )
-	    entities.insert(e1->index());
-	}
+        if ( d0 == d1 )
+        {
+          // An entity is not a neighbor to itself
+          if ( e0->index() != e1->index() )
+            entities.insert(e1->index());
+        }
+        else
+        {
+          // Entity e1 must be completely contained in e0
+          if ( contains(*e0, *e1) )
+            entities.insert(e1->index());
+        }
       }
     }
 
@@ -352,18 +346,18 @@ dolfin::uint TopologyComputation::countEntities(Mesh& mesh, MeshEntity& cell,
     {
       // Check only previously visited cells
       if ( c->index() >= cell.index() )
-	continue;
+        continue;
 
       // Check for vertices
       if ( contains(c->entities(0), c->numEntities(0), entities[i], n) )
-	goto found;
+        goto found;
     }
     
     // Increase counter
     num_entities++;
     
     // Entity found, don't need to count
-  found:
+    found:
     ;
   }
 
@@ -390,21 +384,21 @@ void TopologyComputation::addEntities(Mesh& mesh, MeshEntity& cell,
     {
       // Check only previously visited cells
       if ( c->index() >= cell.index() )
-	continue;
+        continue;
       
       // Check all entities of dimension dim in connected cell
       uint num_other_entities = c->numEntities(dim);
-      uint* other_entities = c->entities(dim);
+      const uint* other_entities = c->entities(dim);
       for (uint j = 0; j < num_other_entities; j++)
       {
-	// Can't use iterators since connectivity has not been computed
-	MeshEntity e(mesh, dim, other_entities[j]);
-	if ( contains(e.entities(0), e.numEntities(0), entities[i], n) )
-	{
-	  // Entity already exists, so pick the index
-	  ce.set(cell.index(), e.index(), i);
-	  goto found;
-	}
+        // Can't use iterators since connectivity has not been computed
+        MeshEntity e(mesh, dim, other_entities[j]);
+        if ( contains(e.entities(0), e.numEntities(0), entities[i], n) )
+        {
+          // Entity already exists, so pick the index
+          ce.set(cell.index(), e.index(), i);
+          goto found;
+        }
       }
     }
     
@@ -416,7 +410,7 @@ void TopologyComputation::addEntities(Mesh& mesh, MeshEntity& cell,
     current_entity++;
     
     // Entity found, don't need to create
-  found:
+    found:
     ;
   }
 }
@@ -428,7 +422,7 @@ bool TopologyComputation::contains(MeshEntity& e0, MeshEntity& e1)
 		  e1.entities(0), e1.numEntities(0));
 }
 //----------------------------------------------------------------------------
-bool TopologyComputation::contains(uint* v0, uint n0, uint* v1, uint n1)
+bool TopologyComputation::contains(const uint* v0, uint n0, const uint* v1, uint n1)
 {
   dolfin_assert(v0);
   dolfin_assert(v1);
@@ -440,8 +434,8 @@ bool TopologyComputation::contains(uint* v0, uint n0, uint* v1, uint n1)
     {
       if ( v0[i0] == v1[i1] )
       {
-	found = true;
-	break;
+        found = true;
+        break;
       }
     }
     if ( !found )

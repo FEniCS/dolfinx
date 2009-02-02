@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2008 Anders Logg.
+// Copyright (C) 2006-2009 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Johan Hoffman, 2007.
@@ -7,7 +7,7 @@
 // Modified by Kristoffer Selim 2008.
 //
 // First added:  2006-05-09
-// Last changed: 2008-10-08
+// Last changed: 2009-01-09
 
 #include <sstream>
 
@@ -22,37 +22,49 @@
 #include "MeshSmoothing.h"
 #include "MeshOrdering.h"
 #include "MeshFunction.h"
-#include "MeshPartition.h"
+#include "LocalMeshData.h"
+#include "MeshPartitioning.h"
 #include "BoundaryMesh.h"
 #include "Cell.h"
 #include "Vertex.h"
-#include "MPIMeshCommunicator.h"
-#include "MeshData.h"
 #include "Mesh.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 Mesh::Mesh()
-  : Variable("mesh", "DOLFIN mesh"), _data(0), _cell_type(0), _ordered(false), 
-    detector(0)
+  : Variable("mesh", "DOLFIN mesh"),
+    _data(*this), _cell_type(0), detector(0), _ordered(false)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 Mesh::Mesh(const Mesh& mesh)
-  : Variable("mesh", "DOLFIN mesh"), _data(0), _cell_type(0), _ordered(false),
-    detector(0)
+  : Variable("mesh", "DOLFIN mesh"),
+    _data(*this), _cell_type(0), detector(0), _ordered(false)
 {
   *this = mesh;
 }
 //-----------------------------------------------------------------------------
 Mesh::Mesh(std::string filename)
-  : Variable("mesh", "DOLFIN mesh"), _data(0), _cell_type(0), _ordered(false),
-    detector(0)
+  : Variable("mesh", "DOLFIN mesh"),
+    _data(*this), _cell_type(0), detector(0), _ordered(false)
 {
-  File file(filename);
-  file >> *this;
+  if (MPI::num_processes() > 1)
+  {
+    // Read local mesh data
+    File file(filename);
+    LocalMeshData data;
+    file >> data;
+    
+    // Partition data
+    MeshPartitioning::partition(*this, data);
+  }
+  else
+  {
+    File file(filename);
+    file >> *this;
+  }
 }
 //-----------------------------------------------------------------------------
 Mesh::~Mesh()
@@ -66,34 +78,69 @@ const Mesh& Mesh::operator=(const Mesh& mesh)
 
   _topology = mesh._topology;
   _geometry = mesh._geometry;
+  _data = mesh._data;
   
   if (mesh._cell_type)
     _cell_type = CellType::create(mesh._cell_type->cellType());
   
   rename(mesh.name(), mesh.label());
 
+  _ordered = mesh._ordered;
+
   return *this;
 }
 //-----------------------------------------------------------------------------
-MeshData& Mesh::data()
+dolfin::uint Mesh::init(uint dim) const
 {
-  if (!_data)
-    _data = new MeshData(*this);
+  // This function is obviously not const since it may potentially compute
+  // new connectivity. However, in a sense all connectivity of a mesh always
+  // exists, it just hasn't been computed yet. The const_cast is also needed
+  // to allow iterators over a const Mesh to create new connectivity.
 
-  return *_data;
+  // Skip if already computed
+  if (_topology.size(dim) > 0)
+    return _topology.size(dim);
+
+  // Check that mesh is ordered
+  if (!ordered())
+    error("Mesh is not ordered according to the UFC numbering convention, consider calling mesh.order().");
+
+  // Compute connectivity
+  Mesh* mesh = const_cast<Mesh*>(this);
+  TopologyComputation::computeEntities(*mesh, dim);
+
+  // Order mesh if necessary
+  if (!ordered())
+    mesh->order();
+
+  return _topology.size(dim);
 }
 //-----------------------------------------------------------------------------
-dolfin::uint Mesh::init(uint dim)
+void Mesh::init(uint d0, uint d1) const
 {
-  return TopologyComputation::computeEntities(*this, dim);
+  // This function is obviously not const since it may potentially compute
+  // new connectivity. However, in a sense all connectivity of a mesh always
+  // exists, it just hasn't been computed yet. The const_cast is also needed
+  // to allow iterators over a const Mesh to create new connectivity.
+
+  // Skip if already computed
+  if (_topology(d0, d1).size() > 0)
+    return;
+
+  // Check that mesh is ordered
+  if (!ordered())
+    error("Mesh is not ordered according to the UFC numbering convention, consider calling mesh.order().");
+
+  // Compute connectivity
+  Mesh* mesh = const_cast<Mesh*>(this);
+  TopologyComputation::computeConnectivity(*mesh, d0, d1);
+
+  // Order mesh if necessary
+  if (!ordered())
+    mesh->order();
 }
 //-----------------------------------------------------------------------------
-void Mesh::init(uint d0, uint d1)
-{
-  TopologyComputation::computeConnectivity(*this, d0, d1);
-}
-//-----------------------------------------------------------------------------
-void Mesh::init()
+void Mesh::init() const
 {
   // Compute all entities
   for (uint d = 0; d <= topology().dim(); d++)
@@ -109,25 +156,30 @@ void Mesh::clear()
 {
   _topology.clear();
   _geometry.clear();
+  _data.clear();
   delete _cell_type;
   _cell_type = 0;
-  delete _data;
-  _data = 0;
   delete detector;
   detector = 0;
-  
+  _ordered = false;
 }
 //-----------------------------------------------------------------------------
 void Mesh::order()
 {
-  if (_ordered)
-    message(1, "Mesh has already been ordered, no need to reorder entities.");
-  else
-    MeshOrdering::order(*this);
+  // Order mesh
+  MeshOrdering::order(*this);
+
+  // Remember that the mesh has been ordered
+  _ordered = true;
 }
 //-----------------------------------------------------------------------------
 bool Mesh::ordered() const
 {
+  // Don't check if we know (or think we know) that the mesh is ordered
+  if (_ordered)
+    return true;
+
+  _ordered = MeshOrdering::ordered(*this);
   return _ordered;
 }
 //-----------------------------------------------------------------------------
@@ -135,12 +187,27 @@ void Mesh::refine()
 {
   message("No cells marked for refinement, assuming uniform mesh refinement.");
   UniformMeshRefinement::refine(*this);
+
+  // Mesh may not be ordered
+  _ordered = false;
 }
 //-----------------------------------------------------------------------------
-void Mesh::refine(MeshFunction<bool>& cell_markers, bool refine_boundary)
+//void Mesh::refine(MeshFunction<bool>& cell_markers, bool refine_boundary)
+//{
+//  LocalMeshRefinement::refineMeshByEdgeBisection(*this, cell_markers,
+//                                                refine_boundary);
+//
+//  // Mesh may not be ordered
+//  _ordered = false;
+//}
+//-----------------------------------------------------------------------------
+void Mesh::refine(MeshFunction<bool>& cell_markers)
 {
-  LocalMeshRefinement::refineMeshByEdgeBisection(*this, cell_markers,
-                                                 refine_boundary);
+//  LocalMeshRefinement::refineIterativelyByEdgeBisection(*this, cell_markers);
+  LocalMeshRefinement::refineRecursivelyByEdgeBisection(*this, cell_markers);
+
+  // Mesh may not be ordered
+  _ordered = false;
 }
 //-----------------------------------------------------------------------------
 void Mesh::coarsen()
@@ -154,12 +221,18 @@ void Mesh::coarsen()
     cell_marker.set(c->index(),true);
 
   LocalMeshCoarsening::coarsenMeshByEdgeCollapse(*this,cell_marker);
+
+  // Mesh may not be ordered
+  _ordered = false;
 }
 //-----------------------------------------------------------------------------
 void Mesh::coarsen(MeshFunction<bool>& cell_markers, bool coarsen_boundary)
 {
   LocalMeshCoarsening::coarsenMeshByEdgeCollapse(*this, cell_markers,
                                                  coarsen_boundary);
+
+  // Mesh may not be ordered
+  _ordered = false;
 }
 //-----------------------------------------------------------------------------
 void Mesh::move(Mesh& boundary, ALEType method)
@@ -171,29 +244,6 @@ void Mesh::smooth(uint num_smoothings)
 {
   for (uint i = 0; i < num_smoothings; i++)
     MeshSmoothing::smooth(*this);
-}
-//-----------------------------------------------------------------------------
-void Mesh::partition(MeshFunction<uint>& partitions)
-{
-  //  partition(partitions, MPI::num_processes());
-  MeshPartition::partition(*this, partitions);
-}
-//-----------------------------------------------------------------------------
-void Mesh::partition(MeshFunction<uint>& partitions, uint num_partitions)
-{
-  // Receive mesh partition function according to parallel policy
-  if (MPI::receive()) { MPIMeshCommunicator::receive(partitions); return; }
-
-  // Partition mesh
-  MeshPartition::partition(*this, partitions, num_partitions);
-
-  // Broadcast mesh according to parallel policy
-  if (MPI::broadcast()) { MPIMeshCommunicator::broadcast(partitions); }
-}
-//-----------------------------------------------------------------------------
-void Mesh::partitionGeom(MeshFunction<uint>& partitions)
-{
-  MeshPartition::partitionGeom(*this, partitions);
 }
 //-----------------------------------------------------------------------------
 void Mesh::intersection(const Point& p, Array<uint>& cells, bool fixed_mesh)
@@ -276,11 +326,6 @@ void Mesh::intersection(Mesh& mesh, Array<uint>& intersection, bool fixed_mesh)
   detector->intersection(mesh, intersection);
 }
 //-----------------------------------------------------------------------------
-void Mesh::distribute(MeshFunction<uint>& distribution)
-{
-  MPIMeshCommunicator::distribute(*this, distribution);
-}
-//-----------------------------------------------------------------------------
 void Mesh::disp() const
 {
   // Begin indentation
@@ -303,12 +348,18 @@ void Mesh::disp() const
   end();
 
   // Display mesh data
-  if (_data)
-  {
-    cout << endl;
-    _data->disp();
-  }
-  
+  _data.disp();
+
+  // Display ordering
+  cout << "Ordering" << endl;
+  cout << "--------" << endl;
+  begin("");
+  if (_ordered)
+    cout << "Mesh is ordered" << endl;
+  else
+    cout << "Mesh may not be ordered" << endl;
+  end();
+
   // End indentation
   end();
 }

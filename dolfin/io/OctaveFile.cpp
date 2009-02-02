@@ -30,7 +30,7 @@ OctaveFile::~OctaveFile()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void OctaveFile::operator<<(GenericMatrix& A)
+void OctaveFile::operator<<(const GenericMatrix& A)
 {
   // Octave file format for Matrix is not the same as the Matlab format,
   // since octave cannot handle sparse matrices.
@@ -40,6 +40,8 @@ void OctaveFile::operator<<(GenericMatrix& A)
   double* row = new double[N];
   
   FILE *fp = fopen(filename.c_str(), "a");
+  if (!fp)
+    error("Unable to open file %s", filename.c_str());
 //  fprintf(fp, "%s = zeros(%u, %u);\n", A.name().c_str(), M, N);
   fprintf(fp, "A = zeros(%u, %u);\n", M, N);
   

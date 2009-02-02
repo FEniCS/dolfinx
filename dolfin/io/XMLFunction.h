@@ -1,8 +1,8 @@
-// Copyright (C) 2006 Johan Jansson and Anders Logg.
+// Copyright (C) 2006-2008 Johan Jansson and Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-02-15
-// Last changed: 2006-05-23
+// Last changed: 2008-10-27
 
 #ifndef __XML_FUNCTION_H
 #define __XML_FUNCTION_H
@@ -29,7 +29,7 @@ namespace dolfin
     
     void readFunction  (const xmlChar* name, const xmlChar** attrs);
     
-    Function& f;
+    Function& v;
     ParserState state;
     
   };

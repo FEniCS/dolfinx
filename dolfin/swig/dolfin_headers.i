@@ -9,7 +9,6 @@
 %include "dolfin/common/timing.h"
 %include "dolfin/common/Array.h"
 %include "dolfin/common/List.h"
-%include "dolfin/common/simple_array.h"
 %include "dolfin/common/Timer.h"
 %include "dolfin/common/TimeDependent.h"
 %include "dolfin/common/Variable.h"
@@ -71,12 +70,21 @@
 %include "dolfin/la/BlockVector.h"
 %include "dolfin/la/BlockMatrix.h"
 
+// DOLFIN headers included from nls
+%include "dolfin/nls/NewtonSolver.h"
+%include "dolfin/nls/NonlinearProblem.h"
+
 // DOLFIN headers included from elements
 %include "dolfin/elements/ElementLibrary.h"
 %include "dolfin/elements/ProjectionLibrary.h"
 
 // DOLFIN headers included from function
+%include "dolfin/function/Data.h"
 %include "dolfin/function/Function.h"
+%include "dolfin/function/FunctionSpace.h"
+%include "dolfin/function/SubFunction.h"
+%include "dolfin/function/SubSpace.h"
+%include "dolfin/function/Constant.h"
 %include "dolfin/function/SpecialFunctions.h"
 %include "dolfin/function/ProjectL2.h"
 
@@ -93,7 +101,7 @@
 
 // DOLFIN headers included from main
 %include "dolfin/main/init.h"
-%include "dolfin/common/types.h"
+%include "dolfin/main/MPI.h"
 
 // DOLFIN headers included from math
 %include "dolfin/math/basic.h"
@@ -123,6 +131,8 @@
 %include "dolfin/mesh/MeshFunction.h"
 %include "dolfin/mesh/Mesh.h"
 %include "dolfin/mesh/MPIMeshCommunicator.h"
+%include "dolfin/mesh/MeshPartitioning.h"
+%include "dolfin/mesh/LocalMeshData.h"
 %include "dolfin/mesh/Vertex.h"
 %include "dolfin/mesh/Edge.h"
 %include "dolfin/mesh/Face.h"
@@ -144,23 +154,17 @@
 
 // DOLFIN headers included from fem
 %include "dolfin/fem/DofMap.h"
-%include "dolfin/fem/DofMapSet.h"
 %include "dolfin/fem/FiniteElement.h"
-%include "dolfin/fem/SubSystem.h"
 %include "dolfin/fem/BoundaryCondition.h"
 %include "dolfin/fem/DirichletBC.h"
 %include "dolfin/fem/PeriodicBC.h"
 %include "dolfin/fem/assemble.h"
 %include "dolfin/fem/Form.h"
 %include "dolfin/fem/Assembler.h"
-%include "dolfin/fem/pAssembler.h"
+%include "dolfin/fem/VariationalProblem.h"
 
 // DOLFIN headers included from mf
 %include "dolfin/mf/MatrixFactory.h"
-
-// DOLFIN headers included from nls
-%include "dolfin/nls/NewtonSolver.h"
-%include "dolfin/nls/NonlinearProblem.h"
 
 // DOLFIN headers included from ode
 %include "dolfin/ode/ODE.h"
@@ -169,9 +173,5 @@
 %include "dolfin/ode/cGqMethod.h"
 %include "dolfin/ode/dGqMethod.h"
 %include "dolfin/ode/ODESolution.h"
-
-// DOLFIN headers included from pde
-%include "dolfin/pde/LinearPDE.h"
-%include "dolfin/pde/NonlinearPDE.h"
 
 // DOLFIN headers included from plot

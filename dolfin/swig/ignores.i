@@ -25,3 +25,4 @@
 %ignore dolfin::endl;
 %ignore *::operator<<(unsigned int);
 %ignore dolfin::MeshConnectivity::set(uint entity, uint* connections);
+%ignore dolfin::MPI::send_recv;

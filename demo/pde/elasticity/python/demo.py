@@ -1,47 +1,29 @@
-# This demo program solves the equations of static
-# linear elasticity for a gear clamped at two of its
-# ends and twisted 30 degrees.
-#
-# Original implementation: ../cpp/main.cpp by Johan Jansson and Anders Logg
-#
+
+"""This demo program solves the equations of static linear elasticity
+for a gear clamped at two of its ends and twisted 30 degrees."""
+
 __author__ = "Kristian B. Oelgaard (k.b.oelgaard@tudelft.nl)"
-__date__ = "2007-11-14 -- 2007-12-03"
+__date__ = "2007-11-14 -- 2008-12-13"
 __copyright__ = "Copyright (C) 2007 Kristian B. Oelgaard"
 __license__  = "GNU LGPL Version 2.1"
 
+# Modified by Anders Logg, 2008.
+
 from dolfin import *
 
-# Load mesh and create finite element
+# Load mesh and define function space
 mesh = Mesh("../../../../data/meshes/gear.xml.gz")
-element = VectorElement("Lagrange", "tetrahedron", 1)
-
-# Dirichlet boundary condition for clamp at left end
-class Clamp(Function):
-    def __init__(self, element, mesh):
-        Function.__init__(self, element, mesh)
-
-    def eval(self, values, x):
-        values[0] = 0.0
-        values[1] = 0.0
-        values[2] = 0.0
-
-    def rank(self):
-        return 1
-
-    def dim(self, i):
-        return 3
+V = VectorFunctionSpace(mesh, "CG", 1)
 
 # Sub domain for clamp at left end
 class Left(SubDomain):
     def inside(self, x, on_boundary):
-        return bool(x[0] < 0.5 and on_boundary)
+        return x[0] < 0.5 and on_boundary
 
 # Dirichlet boundary condition for rotation at right end
 class Rotation(Function):
-    def __init__(self, element, mesh):
-        Function.__init__(self, element, mesh)
-
     def eval(self, values, x):
+
         # Center of rotation
         y0 = 0.5
         z0 = 0.219
@@ -58,24 +40,15 @@ class Rotation(Function):
         values[1] = y - x[1]
         values[2] = z - x[2]
 
-    def rank(self):
-        return 1
-
-    def dim(self, i):
-        return 3
-
 # Sub domain for rotation at right end
 class Right(SubDomain):
     def inside(self, x, on_boundary):
-      return bool(x[0] > 0.9 and on_boundary)
-
-# Initialise source function
-f = Function(element, mesh, 3, 0.0)
+      return x[0] > 0.9 and on_boundary
 
 # Define variational problem
-# Test and trial functions
-v = TestFunction(element)
-u = TrialFunction(element)
+v = TestFunction(V)
+u = TrialFunction(V)
+f = Constant(mesh, (0, 0, 0))
 
 E  = 10.0
 nu = 0.3
@@ -93,31 +66,28 @@ a = dot(epsilon(v), sigma(u))*dx
 L = dot(v, f)*dx
 
 # Set up boundary condition at left end
-c = Clamp(element, mesh)
-left = Left()
-bcl = DirichletBC(c, mesh, left)
+c = Constant(mesh, [0, 0, 0])
+bcl = DirichletBC(V, c, Left())
 
 # Set up boundary condition at right end
-r = Rotation(element, mesh)
-right = Right()
-bcr = DirichletBC(r, mesh, right)
+r = Rotation(V)
+bcr = DirichletBC(V, r, Right())
 
 # Set up boundary conditions
 bcs = [bcl, bcr]
 
 # Set up PDE and solve
-pde = LinearPDE(a, L, mesh, bcs)
-sol = pde.solve()
+problem = VariationalProblem(a, L, bcs)
+u = problem.solve()
 
 # Save solution to VTK format
 vtk_file = File("elasticity.pvd")
-vtk_file << sol
+vtk_file << u
 
 # Save solution to XML format
 xml_file = File("elasticity.xml")
-xml_file << sol
-
+xml_file << u
 
 # Plot solution
-plot(sol, mode="displacement")
+plot(u, mode="displacement")
 interactive()

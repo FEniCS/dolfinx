@@ -1,15 +1,14 @@
-// Copyright (C) 2006-2007 Anders Logg.
+// Copyright (C) 2006-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-02-09
-// Last changed: 2007-07-11
+// Last changed: 2008-12-12
 //
-// This demo solves the Stokes equations, using quadratic
-// elements for the velocity and first degree elements for
-// the pressure (Taylor-Hood elements). The sub domains
-// for the different boundary conditions used in this
-// simulation are computed by the demo program in
-// src/demo/mesh/subdomains.
+// This demo solves the Stokes equations, using quadratic elements for
+// the velocity and first degree elements for the pressure
+// (Taylor-Hood elements). The sub domains for the different boundary
+// conditions used in this simulation are computed by the demo program
+// in src/demo/mesh/subdomains.
 
 #include <dolfin.h>
 #include "Stokes.h"
@@ -21,77 +20,70 @@ int main()
   // Function for no-slip boundary condition for velocity
   class Noslip : public Function
   {
-  public:
-
-    Noslip(Mesh& mesh) : Function(mesh) {}
-
     void eval(double* values, const double* x) const
     {
       values[0] = 0.0;
       values[1] = 0.0;
     }
-
   };
 
   // Function for inflow boundary condition for velocity
   class Inflow : public Function
   {
-  public:
-
-    Inflow(Mesh& mesh) : Function(mesh) {}
-
     void eval(double* values, const double* x) const
     {
       values[0] = -sin(x[1]*DOLFIN_PI);
       values[1] = 0.0;
     }
-
   };
-
-  dolfin_set("linear algebra backend", "PETSc");
 
   // Read mesh and sub domain markers
   Mesh mesh("../../../../../data/meshes/dolfin-2.xml.gz");
+  mesh.init(1);
+  mesh.order();
   MeshFunction<unsigned int> sub_domains(mesh, "../subdomains.xml.gz");
 
-  // Create functions for boundary conditions
-  Noslip noslip(mesh);
-  Inflow inflow(mesh);
-  Function zero(mesh, 0.0);
-  
-  // Define sub systems for boundary conditions
-  SubSystem velocity(0);
-  SubSystem pressure(1);
+  // Create function space and subspaces
+  StokesFunctionSpace W(mesh);
+  SubSpace W0(W, 0);
+  SubSpace W1(W, 1);
 
+  // Create functions for boundary conditions
+  Noslip noslip;
+  Inflow inflow;
+  Constant zero(0.0);
+  
   // No-slip boundary condition for velocity
-  DirichletBC bc0(noslip, sub_domains, 0, velocity);
+  DirichletBC bc0(W0, noslip, sub_domains, 0);
 
   // Inflow boundary condition for velocity
-  DirichletBC bc1(inflow, sub_domains, 1, velocity);
+  DirichletBC bc1(W0, inflow, sub_domains, 1);
 
   // Boundary condition for pressure at outflow
-  DirichletBC bc2(zero, sub_domains, 2, pressure);
+  DirichletBC bc2(W1, zero, sub_domains, 2);
 
   // Collect boundary conditions
-  Array<DirichletBC*> bcs(&bc0, &bc1, &bc2);
+  Array<BoundaryCondition*> bcs(&bc0, &bc1, &bc2);
 
   // Set up PDE
-  Function f(mesh, 2, 0.0);
-  StokesBilinearForm a;
-  StokesLinearForm L(f);
-  LinearPDE pde(a, L, mesh, bcs);
+  Constant f(2, 0.0);
+  StokesBilinearForm a(W, W);
+  StokesLinearForm L(W);
+  L.f = f;
+  VariationalProblem pde(a, L, bcs);
 
   // Solve PDE
-  Function u;
-  Function p;
-  pde.set("PDE linear solver", "direct");
-  pde.solve(u, p);
+  Function w;
+  pde.set("linear solver", "direct");
+  pde.solve(w);
+  Function u = w[0];
+  Function p = w[1];
 
   // Plot solution
   plot(u);
   plot(p);
 
-  // Save solution
+  // Save solution in XML format
   File ufile("velocity.xml");
   ufile << u;
   File pfile("pressure.xml");
@@ -103,4 +95,3 @@ int main()
   File pfile_pvd("pressure.pvd");
   pfile_pvd << p;
 }
-

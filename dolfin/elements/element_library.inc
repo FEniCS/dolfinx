@@ -33,110 +33,110 @@
 
 ufc::finite_element* dolfin::ElementLibrary::create_finite_element(const char* signature)
 {
-  if (strcmp(signature, "Lagrange finite element of degree 1 on a interval") == 0)
+  if (strcmp(signature, "FiniteElement('Lagrange', 'interval', 1)") == 0)
     return new ffc_00_finite_element_0();
-  if (strcmp(signature, "Lagrange finite element of degree 2 on a interval") == 0)
+  if (strcmp(signature, "FiniteElement('Lagrange', 'interval', 2)") == 0)
     return new ffc_01_finite_element_0();
-  if (strcmp(signature, "Lagrange finite element of degree 1 on a triangle") == 0)
+  if (strcmp(signature, "FiniteElement('Lagrange', 'triangle', 1)") == 0)
     return new ffc_02_finite_element_0();
-  if (strcmp(signature, "Lagrange finite element of degree 2 on a triangle") == 0)
+  if (strcmp(signature, "FiniteElement('Lagrange', 'triangle', 2)") == 0)
     return new ffc_03_finite_element_0();
-  if (strcmp(signature, "Lagrange finite element of degree 1 on a tetrahedron") == 0)
+  if (strcmp(signature, "FiniteElement('Lagrange', 'tetrahedron', 1)") == 0)
     return new ffc_04_finite_element_0();
-  if (strcmp(signature, "Lagrange finite element of degree 2 on a tetrahedron") == 0)
+  if (strcmp(signature, "FiniteElement('Lagrange', 'tetrahedron', 2)") == 0)
     return new ffc_05_finite_element_0();
-  if (strcmp(signature, "Discontinuous Lagrange finite element of degree 0 on a interval") == 0)
+  if (strcmp(signature, "FiniteElement('Discontinuous Lagrange', 'interval', 0)") == 0)
     return new ffc_06_finite_element_0();
-  if (strcmp(signature, "Discontinuous Lagrange finite element of degree 1 on a interval") == 0)
+  if (strcmp(signature, "FiniteElement('Discontinuous Lagrange', 'interval', 1)") == 0)
     return new ffc_07_finite_element_0();
-  if (strcmp(signature, "Discontinuous Lagrange finite element of degree 2 on a interval") == 0)
+  if (strcmp(signature, "FiniteElement('Discontinuous Lagrange', 'interval', 2)") == 0)
     return new ffc_08_finite_element_0();
-  if (strcmp(signature, "Discontinuous Lagrange finite element of degree 0 on a triangle") == 0)
+  if (strcmp(signature, "FiniteElement('Discontinuous Lagrange', 'triangle', 0)") == 0)
     return new ffc_09_finite_element_0();
-  if (strcmp(signature, "Discontinuous Lagrange finite element of degree 1 on a triangle") == 0)
+  if (strcmp(signature, "FiniteElement('Discontinuous Lagrange', 'triangle', 1)") == 0)
     return new ffc_10_finite_element_0();
-  if (strcmp(signature, "Discontinuous Lagrange finite element of degree 2 on a triangle") == 0)
+  if (strcmp(signature, "FiniteElement('Discontinuous Lagrange', 'triangle', 2)") == 0)
     return new ffc_11_finite_element_0();
-  if (strcmp(signature, "Discontinuous Lagrange finite element of degree 0 on a tetrahedron") == 0)
+  if (strcmp(signature, "FiniteElement('Discontinuous Lagrange', 'tetrahedron', 0)") == 0)
     return new ffc_12_finite_element_0();
-  if (strcmp(signature, "Discontinuous Lagrange finite element of degree 1 on a tetrahedron") == 0)
+  if (strcmp(signature, "FiniteElement('Discontinuous Lagrange', 'tetrahedron', 1)") == 0)
     return new ffc_13_finite_element_0();
-  if (strcmp(signature, "Discontinuous Lagrange finite element of degree 2 on a tetrahedron") == 0)
+  if (strcmp(signature, "FiniteElement('Discontinuous Lagrange', 'tetrahedron', 2)") == 0)
     return new ffc_14_finite_element_0();
-  if (strcmp(signature, "Mixed finite element: [Lagrange finite element of degree 1 on a triangle, Lagrange finite element of degree 1 on a triangle]") == 0)
+  if (strcmp(signature, "MixedElement([FiniteElement('Lagrange', 'triangle', 1), FiniteElement('Lagrange', 'triangle', 1)])") == 0)
     return new ffc_15_finite_element_0();
-  if (strcmp(signature, "Mixed finite element: [Lagrange finite element of degree 2 on a triangle, Lagrange finite element of degree 2 on a triangle]") == 0)
+  if (strcmp(signature, "MixedElement([FiniteElement('Lagrange', 'triangle', 2), FiniteElement('Lagrange', 'triangle', 2)])") == 0)
     return new ffc_16_finite_element_0();
-  if (strcmp(signature, "Mixed finite element: [Lagrange finite element of degree 1 on a tetrahedron, Lagrange finite element of degree 1 on a tetrahedron, Lagrange finite element of degree 1 on a tetrahedron]") == 0)
+  if (strcmp(signature, "MixedElement([FiniteElement('Lagrange', 'tetrahedron', 1), FiniteElement('Lagrange', 'tetrahedron', 1), FiniteElement('Lagrange', 'tetrahedron', 1)])") == 0)
     return new ffc_17_finite_element_0();
-  if (strcmp(signature, "Mixed finite element: [Lagrange finite element of degree 2 on a tetrahedron, Lagrange finite element of degree 2 on a tetrahedron, Lagrange finite element of degree 2 on a tetrahedron]") == 0)
+  if (strcmp(signature, "MixedElement([FiniteElement('Lagrange', 'tetrahedron', 2), FiniteElement('Lagrange', 'tetrahedron', 2), FiniteElement('Lagrange', 'tetrahedron', 2)])") == 0)
     return new ffc_18_finite_element_0();
-  if (strcmp(signature, "Mixed finite element: [Discontinuous Lagrange finite element of degree 0 on a triangle, Discontinuous Lagrange finite element of degree 0 on a triangle]") == 0)
+  if (strcmp(signature, "MixedElement([FiniteElement('Discontinuous Lagrange', 'triangle', 0), FiniteElement('Discontinuous Lagrange', 'triangle', 0)])") == 0)
     return new ffc_19_finite_element_0();
-  if (strcmp(signature, "Mixed finite element: [Discontinuous Lagrange finite element of degree 1 on a triangle, Discontinuous Lagrange finite element of degree 1 on a triangle]") == 0)
+  if (strcmp(signature, "MixedElement([FiniteElement('Discontinuous Lagrange', 'triangle', 1), FiniteElement('Discontinuous Lagrange', 'triangle', 1)])") == 0)
     return new ffc_20_finite_element_0();
-  if (strcmp(signature, "Mixed finite element: [Discontinuous Lagrange finite element of degree 0 on a tetrahedron, Discontinuous Lagrange finite element of degree 0 on a tetrahedron, Discontinuous Lagrange finite element of degree 0 on a tetrahedron]") == 0)
+  if (strcmp(signature, "MixedElement([FiniteElement('Discontinuous Lagrange', 'tetrahedron', 0), FiniteElement('Discontinuous Lagrange', 'tetrahedron', 0), FiniteElement('Discontinuous Lagrange', 'tetrahedron', 0)])") == 0)
     return new ffc_21_finite_element_0();
-  if (strcmp(signature, "Mixed finite element: [Discontinuous Lagrange finite element of degree 1 on a tetrahedron, Discontinuous Lagrange finite element of degree 1 on a tetrahedron, Discontinuous Lagrange finite element of degree 1 on a tetrahedron]") == 0)
+  if (strcmp(signature, "MixedElement([FiniteElement('Discontinuous Lagrange', 'tetrahedron', 1), FiniteElement('Discontinuous Lagrange', 'tetrahedron', 1), FiniteElement('Discontinuous Lagrange', 'tetrahedron', 1)])") == 0)
     return new ffc_22_finite_element_0();
-  if (strcmp(signature, "Mixed finite element: [Discontinuous Lagrange finite element of degree 2 on a tetrahedron, Discontinuous Lagrange finite element of degree 2 on a tetrahedron, Discontinuous Lagrange finite element of degree 2 on a tetrahedron]") == 0)
+  if (strcmp(signature, "MixedElement([FiniteElement('Discontinuous Lagrange', 'tetrahedron', 2), FiniteElement('Discontinuous Lagrange', 'tetrahedron', 2), FiniteElement('Discontinuous Lagrange', 'tetrahedron', 2)])") == 0)
     return new ffc_23_finite_element_0();
-  if (strcmp(signature, "Brezzi-Douglas-Marini finite element of degree 1 on a triangle") == 0)
+  if (strcmp(signature, "FiniteElement('Brezzi-Douglas-Marini', 'triangle', 1)") == 0)
     return new ffc_24_finite_element_0();
   return 0;
 }
 
 ufc::dof_map* dolfin::ElementLibrary::create_dof_map(const char* signature)
 {
-  if (strcmp(signature, "FFC dof map for Lagrange finite element of degree 1 on a interval") == 0)
+  if (strcmp(signature, "FFC dof map for FiniteElement('Lagrange', 'interval', 1)") == 0)
     return new ffc_00_dof_map_0();
-  if (strcmp(signature, "FFC dof map for Lagrange finite element of degree 2 on a interval") == 0)
+  if (strcmp(signature, "FFC dof map for FiniteElement('Lagrange', 'interval', 2)") == 0)
     return new ffc_01_dof_map_0();
-  if (strcmp(signature, "FFC dof map for Lagrange finite element of degree 1 on a triangle") == 0)
+  if (strcmp(signature, "FFC dof map for FiniteElement('Lagrange', 'triangle', 1)") == 0)
     return new ffc_02_dof_map_0();
-  if (strcmp(signature, "FFC dof map for Lagrange finite element of degree 2 on a triangle") == 0)
+  if (strcmp(signature, "FFC dof map for FiniteElement('Lagrange', 'triangle', 2)") == 0)
     return new ffc_03_dof_map_0();
-  if (strcmp(signature, "FFC dof map for Lagrange finite element of degree 1 on a tetrahedron") == 0)
+  if (strcmp(signature, "FFC dof map for FiniteElement('Lagrange', 'tetrahedron', 1)") == 0)
     return new ffc_04_dof_map_0();
-  if (strcmp(signature, "FFC dof map for Lagrange finite element of degree 2 on a tetrahedron") == 0)
+  if (strcmp(signature, "FFC dof map for FiniteElement('Lagrange', 'tetrahedron', 2)") == 0)
     return new ffc_05_dof_map_0();
-  if (strcmp(signature, "FFC dof map for Discontinuous Lagrange finite element of degree 0 on a interval") == 0)
+  if (strcmp(signature, "FFC dof map for FiniteElement('Discontinuous Lagrange', 'interval', 0)") == 0)
     return new ffc_06_dof_map_0();
-  if (strcmp(signature, "FFC dof map for Discontinuous Lagrange finite element of degree 1 on a interval") == 0)
+  if (strcmp(signature, "FFC dof map for FiniteElement('Discontinuous Lagrange', 'interval', 1)") == 0)
     return new ffc_07_dof_map_0();
-  if (strcmp(signature, "FFC dof map for Discontinuous Lagrange finite element of degree 2 on a interval") == 0)
+  if (strcmp(signature, "FFC dof map for FiniteElement('Discontinuous Lagrange', 'interval', 2)") == 0)
     return new ffc_08_dof_map_0();
-  if (strcmp(signature, "FFC dof map for Discontinuous Lagrange finite element of degree 0 on a triangle") == 0)
+  if (strcmp(signature, "FFC dof map for FiniteElement('Discontinuous Lagrange', 'triangle', 0)") == 0)
     return new ffc_09_dof_map_0();
-  if (strcmp(signature, "FFC dof map for Discontinuous Lagrange finite element of degree 1 on a triangle") == 0)
+  if (strcmp(signature, "FFC dof map for FiniteElement('Discontinuous Lagrange', 'triangle', 1)") == 0)
     return new ffc_10_dof_map_0();
-  if (strcmp(signature, "FFC dof map for Discontinuous Lagrange finite element of degree 2 on a triangle") == 0)
+  if (strcmp(signature, "FFC dof map for FiniteElement('Discontinuous Lagrange', 'triangle', 2)") == 0)
     return new ffc_11_dof_map_0();
-  if (strcmp(signature, "FFC dof map for Discontinuous Lagrange finite element of degree 0 on a tetrahedron") == 0)
+  if (strcmp(signature, "FFC dof map for FiniteElement('Discontinuous Lagrange', 'tetrahedron', 0)") == 0)
     return new ffc_12_dof_map_0();
-  if (strcmp(signature, "FFC dof map for Discontinuous Lagrange finite element of degree 1 on a tetrahedron") == 0)
+  if (strcmp(signature, "FFC dof map for FiniteElement('Discontinuous Lagrange', 'tetrahedron', 1)") == 0)
     return new ffc_13_dof_map_0();
-  if (strcmp(signature, "FFC dof map for Discontinuous Lagrange finite element of degree 2 on a tetrahedron") == 0)
+  if (strcmp(signature, "FFC dof map for FiniteElement('Discontinuous Lagrange', 'tetrahedron', 2)") == 0)
     return new ffc_14_dof_map_0();
-  if (strcmp(signature, "FFC dof map for Mixed finite element: [Lagrange finite element of degree 1 on a triangle, Lagrange finite element of degree 1 on a triangle]") == 0)
+  if (strcmp(signature, "FFC dof map for MixedElement([FiniteElement('Lagrange', 'triangle', 1), FiniteElement('Lagrange', 'triangle', 1)])") == 0)
     return new ffc_15_dof_map_0();
-  if (strcmp(signature, "FFC dof map for Mixed finite element: [Lagrange finite element of degree 2 on a triangle, Lagrange finite element of degree 2 on a triangle]") == 0)
+  if (strcmp(signature, "FFC dof map for MixedElement([FiniteElement('Lagrange', 'triangle', 2), FiniteElement('Lagrange', 'triangle', 2)])") == 0)
     return new ffc_16_dof_map_0();
-  if (strcmp(signature, "FFC dof map for Mixed finite element: [Lagrange finite element of degree 1 on a tetrahedron, Lagrange finite element of degree 1 on a tetrahedron, Lagrange finite element of degree 1 on a tetrahedron]") == 0)
+  if (strcmp(signature, "FFC dof map for MixedElement([FiniteElement('Lagrange', 'tetrahedron', 1), FiniteElement('Lagrange', 'tetrahedron', 1), FiniteElement('Lagrange', 'tetrahedron', 1)])") == 0)
     return new ffc_17_dof_map_0();
-  if (strcmp(signature, "FFC dof map for Mixed finite element: [Lagrange finite element of degree 2 on a tetrahedron, Lagrange finite element of degree 2 on a tetrahedron, Lagrange finite element of degree 2 on a tetrahedron]") == 0)
+  if (strcmp(signature, "FFC dof map for MixedElement([FiniteElement('Lagrange', 'tetrahedron', 2), FiniteElement('Lagrange', 'tetrahedron', 2), FiniteElement('Lagrange', 'tetrahedron', 2)])") == 0)
     return new ffc_18_dof_map_0();
-  if (strcmp(signature, "FFC dof map for Mixed finite element: [Discontinuous Lagrange finite element of degree 0 on a triangle, Discontinuous Lagrange finite element of degree 0 on a triangle]") == 0)
+  if (strcmp(signature, "FFC dof map for MixedElement([FiniteElement('Discontinuous Lagrange', 'triangle', 0), FiniteElement('Discontinuous Lagrange', 'triangle', 0)])") == 0)
     return new ffc_19_dof_map_0();
-  if (strcmp(signature, "FFC dof map for Mixed finite element: [Discontinuous Lagrange finite element of degree 1 on a triangle, Discontinuous Lagrange finite element of degree 1 on a triangle]") == 0)
+  if (strcmp(signature, "FFC dof map for MixedElement([FiniteElement('Discontinuous Lagrange', 'triangle', 1), FiniteElement('Discontinuous Lagrange', 'triangle', 1)])") == 0)
     return new ffc_20_dof_map_0();
-  if (strcmp(signature, "FFC dof map for Mixed finite element: [Discontinuous Lagrange finite element of degree 0 on a tetrahedron, Discontinuous Lagrange finite element of degree 0 on a tetrahedron, Discontinuous Lagrange finite element of degree 0 on a tetrahedron]") == 0)
+  if (strcmp(signature, "FFC dof map for MixedElement([FiniteElement('Discontinuous Lagrange', 'tetrahedron', 0), FiniteElement('Discontinuous Lagrange', 'tetrahedron', 0), FiniteElement('Discontinuous Lagrange', 'tetrahedron', 0)])") == 0)
     return new ffc_21_dof_map_0();
-  if (strcmp(signature, "FFC dof map for Mixed finite element: [Discontinuous Lagrange finite element of degree 1 on a tetrahedron, Discontinuous Lagrange finite element of degree 1 on a tetrahedron, Discontinuous Lagrange finite element of degree 1 on a tetrahedron]") == 0)
+  if (strcmp(signature, "FFC dof map for MixedElement([FiniteElement('Discontinuous Lagrange', 'tetrahedron', 1), FiniteElement('Discontinuous Lagrange', 'tetrahedron', 1), FiniteElement('Discontinuous Lagrange', 'tetrahedron', 1)])") == 0)
     return new ffc_22_dof_map_0();
-  if (strcmp(signature, "FFC dof map for Mixed finite element: [Discontinuous Lagrange finite element of degree 2 on a tetrahedron, Discontinuous Lagrange finite element of degree 2 on a tetrahedron, Discontinuous Lagrange finite element of degree 2 on a tetrahedron]") == 0)
+  if (strcmp(signature, "FFC dof map for MixedElement([FiniteElement('Discontinuous Lagrange', 'tetrahedron', 2), FiniteElement('Discontinuous Lagrange', 'tetrahedron', 2), FiniteElement('Discontinuous Lagrange', 'tetrahedron', 2)])") == 0)
     return new ffc_23_dof_map_0();
-  if (strcmp(signature, "FFC dof map for Brezzi-Douglas-Marini finite element of degree 1 on a triangle") == 0)
+  if (strcmp(signature, "FFC dof map for FiniteElement('Brezzi-Douglas-Marini', 'triangle', 1)") == 0)
     return new ffc_24_dof_map_0();
   return 0;
 }

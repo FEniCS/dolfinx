@@ -6,15 +6,12 @@ import os, os.path, sys
 EnsureSConsVersion(0, 96)
 
 # Import the local 'scons'
-try:
-  import simula_scons as scons
-except ImportError:
-  # Add simula-scons to sys.path and PYTHONPATH
-  os.environ["PYTHONPATH"] = \
-      os.pathsep.join([os.environ.get("PYTHONPATH",""),
-                       os.path.join(os.getcwd(),"scons","simula-scons")])
-  sys.path.insert(0, os.path.join(os.getcwd(),"scons","simula-scons"))
-  import simula_scons as scons
+# Add simula-scons to sys.path and PYTHONPATH
+os.environ["PYTHONPATH"] = \
+    os.pathsep.join([os.environ.get("PYTHONPATH",""),
+                     os.path.join(os.getcwd(),"scons","simula-scons")])
+sys.path.insert(0, os.path.join(os.getcwd(),"scons","simula-scons"))
+import simula_scons as scons
  
 # Import local exceptions
 from simula_scons.Errors import PkgconfigError, PkgconfigMissing
@@ -26,7 +23,7 @@ env = scons.ExtendedEnvironment(ENV=os.environ)
 env["projectname"] = "dolfin"
 
 # Set version
-env["PACKAGE_VERSION"] = "0.8.0"
+env["PACKAGE_VERSION"] = "0.9.0"
 
 scons.setDefaultEnv(env)
 
@@ -105,6 +102,7 @@ options = [
     PathOption("withParmetisDir", "Specify path to ParMETIS", None),
     PathOption("withGmpDir", "Specify path to GMP", None),
     PathOption("withBoostDir", "Specify path to Boost", None),
+    PathOption("withLibxml2Dir", "Specify path to libXML2", None),
     #
     # a few more options originally from PyCC:
     #BoolOption("autoFetch", "Automatically fetch datafiles from (password protected) SSH repository", 0),
@@ -151,9 +149,15 @@ if not env.GetOption("clean"):
 
 # If we are in very-clean mode, remove the sconsign file. 
 if env.GetOption("clean"):
-  if env["veryClean"]:
-    os.unlink("%s.dblite" % (dolfin_sconsignfile))
-    # FIXME: should we also remove the file scons/options.cache?
+  try:
+    if env["veryClean"]:
+      os.unlink("%s.dblite" % dolfin_sconsignfile)
+      os.unlink(os.path.join('scons', 'options.cache'))
+      import glob
+      for f in glob.glob(os.path.join('scons', 'pkgconfig', '*.pc')):
+        os.unlink(f)
+  except OSError, msg:
+    scons.log("Error using 'veryClean' option:\n%s\n" % msg)
 
 # Set default compiler and linker flags (defining CXXFLAGS/LINKFLAGS
 # will override this)
@@ -269,6 +273,13 @@ env.Install(env["binDir"], os.path.join("misc","utils","convert","dolfin-convert
 # install dolfin-convert manual page into manDir/man1:
 env.Install(os.path.join(env["manDir"], "man1"),
             os.path.join("doc", "man", "man1", "dolfin-convert.1.gz"))
+
+# install dolfin-order into binDir
+env.Install(env["binDir"], os.path.join("misc","utils","order","dolfin-order"))
+
+# install dolfin-order manual page into manDir/man1
+env.Install(os.path.join(env["manDir"], "man1"),
+            os.path.join("doc", "man", "man1", "dolfin-order.1.gz"))
 
 # shared libraries goes into our libDir:
 for l in buildDataHash["shlibs"]:

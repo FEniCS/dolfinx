@@ -2,9 +2,10 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Johan Hoffman 2006.
+// Modified by Kristoffer Selim 2009.
 //
 // First added:  2006-06-02
-// Last changed: 2007-05-02
+// Last changed: 2009-01-12
 
 #ifndef __EDGE_H
 #define __EDGE_H
@@ -24,7 +25,7 @@ namespace dolfin
   public:
 
     /// Create edge on given mesh
-    Edge(Mesh& mesh, uint index) : MeshEntity(mesh, 1, index) {}
+    Edge(const Mesh& mesh, uint index) : MeshEntity(mesh, 1, index) {}
 
     /// Create edge from mesh entity
     Edge(MeshEntity& entity) : MeshEntity(entity.mesh(), 1, entity.index()) {}
@@ -46,8 +47,8 @@ namespace dolfin
   {
   public:
     
-    EdgeIterator(Mesh& mesh) : MeshEntityIterator(mesh, 1) {}
-    EdgeIterator(MeshEntity& entity) : MeshEntityIterator(entity, 1) {}
+    EdgeIterator(const Mesh& mesh) : MeshEntityIterator(mesh, 1) {}
+    EdgeIterator(const MeshEntity& entity) : MeshEntityIterator(entity, 1) {}
 
     inline Edge& operator*() { return *operator->(); }
     inline Edge* operator->() { return static_cast<Edge*>(MeshEntityIterator::operator->()); }

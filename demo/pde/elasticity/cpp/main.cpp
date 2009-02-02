@@ -1,10 +1,10 @@
-// Copyright (C) 2006-2007 Johan Jansson and Anders Logg.
+// Copyright (C) 2006-2008 Johan Jansson and Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells 2008
 //
 // First added:  2006-02-07
-// Last changed: 2008-05-21
+// Last changed: 2008-12-12
 //
 // This demo program solves the equations of static
 // linear elasticity for a gear clamped at two of its
@@ -20,10 +20,6 @@ int main()
   // Dirichlet boundary condition for clamp at left end
   class Clamp : public Function
   {
-  public:
-
-    Clamp(Mesh& mesh) : Function(mesh) {}
-
     void eval(double* values, const double* x) const
     {
       values[0] = 0.0;
@@ -44,10 +40,6 @@ int main()
   // Dirichlet boundary condition for rotation at right end
   class Rotation : public Function
   {
-  public:
-
-    Rotation(Mesh& mesh) : Function(mesh) {}
-
     void eval(double* values, const double* x) const
     {
       // Center of rotation
@@ -77,51 +69,54 @@ int main()
     }
   };
 
-  // Read mesh
+  // Read mesh and create function space
   Mesh mesh("../../../../data/meshes/gear.xml.gz");
+  ElasticityFunctionSpace V(mesh);
 
   // Create right-hand side
-  Function f(mesh, 3, 0.0);
+  Constant f(3, 0.0);
 
   // Set up boundary condition at left end
-  Clamp c(mesh);
+  Clamp c;
   Left left;
-  DirichletBC bcl(c, mesh, left);
+  DirichletBC bcl(V, c, left);
 
   // Set up boundary condition at right end
-  Rotation r(mesh);
+  Rotation r;
   Right right;
-  DirichletBC bcr(r, mesh, right);
+  DirichletBC bcr(V, r, right);
 
-  // Set up boundary conditions
-  Array<DirichletBC*> bcs;
+  // Collect boundary conditions
+  Array<BoundaryCondition*> bcs;
   bcs.push_back(&bcl);
   bcs.push_back(&bcr);
 
   // Set elasticity parameters
   double E  = 10.0;
   double nu = 0.3;
-  Function mu(mesh, E / (2*(1 + nu)));
-  Function lambda(mesh, E*nu / ((1 + nu)*(1 - 2*nu)));
+  Constant mu(E / (2*(1 + nu)));
+  Constant lambda(E*nu / ((1 + nu)*(1 - 2*nu)));
 
   // Set up PDE (symmetric)
-  ElasticityBilinearForm a(mu, lambda);
-  ElasticityLinearForm L(f);
-  LinearPDE pde(a, L, mesh, bcs, symmetric);
+  ElasticityBilinearForm a(V, V);
+  a.mu = mu; a.lmbda = lambda;
+  ElasticityLinearForm L(V);
+  L.f = f;
+  VariationalProblem pde(a, L, bcs, symmetric);
 
   // Solve PDE (using direct solver)
   Function u;
-  pde.set("PDE linear solver", "direct");
+  pde.set("linear solver", "direct");
   pde.solve(u);
 
   // Plot solution
   plot(u, "displacement");
 
-  // Save solution to VTK format
+  // Save solution in VTK format
   File vtk_file("elasticity.pvd");
   vtk_file << u;
 
-  // Save solution to XML format
+  // Save solution in XML format
   File xml_file("displacement.xml");
   xml_file << u;
 

@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-05-23
-// Last changed: 2008-05-23
+// Last changed: 2008-11-16
 //
 // This demo illustrates how to set boundary conditions for meshes
 // that include boundary indicators. The mesh used in this demo was
@@ -19,25 +19,27 @@ int main()
   Mesh mesh("../../../../data/meshes/aneurysm.xml.gz");
 
   // Define variational problem
-  Function f(mesh, 0.0);
-  PoissonBilinearForm a;
-  PoissonLinearForm L(f);
+  Constant f(0.0);
+  PoissonFunctionSpace V(mesh);
+  PoissonBilinearForm a(V, V);
+  PoissonLinearForm L(V);
+  L.f = f;
 
   // Define boundary condition values
-  Function u0(mesh, 0.0);
-  Function u1(mesh, 1.0);
-  Function u2(mesh, 2.0);
-  Function u3(mesh, 3.0);
+  Constant u0(0.0);
+  Constant u1(1.0);
+  Constant u2(2.0);
+  Constant u3(3.0);
 
   // Define boundary conditions
-  DirichletBC bc0(u0, mesh, 0);
-  DirichletBC bc1(u1, mesh, 1);
-  DirichletBC bc2(u2, mesh, 2);
-  DirichletBC bc3(u3, mesh, 3);
-  Array<DirichletBC*> bcs(&bc0, &bc1, &bc2, &bc3);
+  DirichletBC bc0(V, u0, 0);
+  DirichletBC bc1(V, u1, 1);
+  DirichletBC bc2(V, u2, 2);
+  DirichletBC bc3(V, u3, 3);
+  Array<BoundaryCondition*> bcs(&bc0, &bc1, &bc2, &bc3);
 
   // Solve PDE and plot solution
-  LinearPDE pde(a, L, mesh, bcs);
+  VariationalProblem pde(a, L, bcs);
   Function u;
   pde.solve(u);
   plot(u);

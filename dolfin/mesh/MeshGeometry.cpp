@@ -5,7 +5,7 @@
 // Modified by Kristoffer Selim, 2008.
 //
 // First added:  2006-05-19
-// Last changed: 2008-10-08
+// Last changed: 2008-10-28
 
 #include <dolfin/log/dolfin_log.h>
 #include "MeshGeometry.h"
@@ -119,8 +119,8 @@ void MeshGeometry::set(uint n, uint i, double x)
 }
 //-----------------------------------------------------------------------------
 void MeshGeometry::setMeshCoordinates(Mesh& mesh, Vector& mesh_coord_vec,
-                                        const std::string FE_signature,
-                                        const std::string dofmap_signature)
+                                      const std::string FE_signature,
+                                      const std::string dofmap_signature)
 {
   // If the mesh.xml file contained higher order coordinate data,
   //    then store this in the MeshGeometry class
@@ -132,7 +132,7 @@ void MeshGeometry::setMeshCoordinates(Mesh& mesh, Vector& mesh_coord_vec,
   //  mesh_coordinates = new Function(mesh, mesh_coord_vec, FE_signature, dofmap_signature);
   // }
   //else
-    mesh_coordinates = new Function(); // an empty function
+  //mesh_coordinates = new Function(); // an empty function
 }
 //-----------------------------------------------------------------------------
 void MeshGeometry::disp() const

@@ -35,13 +35,13 @@ namespace dolfin
     real t() const;
 
     /// Return value of component with given index
-    real u(uint index);
+    real u(uint index) const;
 
     /// Return time step for component with given index
-    real k(uint index);
+    real k(uint index) const;
 
     /// Return residual for component with given index
-    real r(uint index);
+    real r(uint index) const;
     
   private:
 
