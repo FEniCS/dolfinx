@@ -40,6 +40,7 @@ namespace dolfin
     
     static void printMatrix(const uint n, const real* A);
     static void printVector(const uint n, const real* x);
+    static real err(uint n, const real* A, const real* x, const real* b);
 
   private:
 
