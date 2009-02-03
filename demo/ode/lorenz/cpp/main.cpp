@@ -63,10 +63,6 @@ private:
 
 int main()
 {
-  #ifdef HAS_GMP
-    mpf_set_default_prec(500);
-  #endif
-
   dolfin_set("ODE number of samples", 500);
   dolfin_set("ODE initial time step", 0.01);
   dolfin_set("ODE fixed time step", true);
