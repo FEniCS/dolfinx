@@ -1,8 +1,10 @@
 // Copyright (C) 2003-2005 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Benjamin Kehlet
+//
 // First added:  2003-05-06
-// Last changed: 2005-12-21
+// Last changed: 2008-11-18
 
 #include <dolfin/log/dolfin_log.h>
 #include "ParameterValue.h"
@@ -11,39 +13,39 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Parameter::Parameter(int value) : value(0), _type(type_int)
+Parameter::Parameter(int value) : value(0), _type(type_int), _changed(false)
 {
   this->value = new IntValue(value);
 }
 //-----------------------------------------------------------------------------
-Parameter::Parameter(uint value) : value(0), _type(type_int)
+Parameter::Parameter(uint value) : value(0), _type(type_int), _changed(false)
 {
   this->value = new IntValue(static_cast<int>(value));
 }
 //-----------------------------------------------------------------------------
-Parameter::Parameter(double value) : value(0), _type(type_real)
+Parameter::Parameter(double value) : value(0), _type(type_real), _changed(false)
 {
   this->value = new RealValue(value);
 }
 //-----------------------------------------------------------------------------
-Parameter::Parameter(bool value) : value(0), _type(type_bool)
+Parameter::Parameter(bool value) : value(0), _type(type_bool), _changed(false)
 {
   this->value = new BoolValue(value);
 }
 //-----------------------------------------------------------------------------
-Parameter::Parameter(std::string value) : value(0), _type(type_string)
+Parameter::Parameter(std::string value) : value(0), _type(type_string), _changed(false)
 {
   this->value = new StringValue(value);
 }
 //-----------------------------------------------------------------------------
-Parameter::Parameter(const char* value) : value(0), _type(type_string)
+Parameter::Parameter(const char* value) : value(0), _type(type_string), _changed(false)
 {
   std::string s(value);
   this->value = new StringValue(s);
 }
 //-----------------------------------------------------------------------------
 Parameter::Parameter(const Parameter& parameter)
-  : value(0), _type(parameter._type)
+  : value(0), _type(parameter._type), _changed(parameter._changed)
 { 
   switch ( parameter._type )
   {

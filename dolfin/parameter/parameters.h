@@ -2,9 +2,10 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells, 2006.
+// Modified by Benjamin Kehlet, 2009
 //
 // First added:  2005-12-19
-// Last changed: 2008-02-11
+// Last changed: 2009-02-01
 
 #ifndef __PARAMETERS_H
 #define __PARAMETERS_H
@@ -26,6 +27,9 @@ namespace dolfin
 
   /// Add parameter
   void dolfin_add(std::string key, dolfin::Parameter value);
+
+  /// Check if parameter has been changed from default value
+  bool dolfin_changed(std::string key);
  
 }
 
